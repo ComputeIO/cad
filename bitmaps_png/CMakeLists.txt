@@ -131,6 +131,7 @@ set( BMAPS_MID
     add_line2bus
     add_line_label
     add_line
+    add_net_tie
     add_pcb_target
     add_power
     add_rectangle
