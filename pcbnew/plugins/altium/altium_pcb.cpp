@@ -2204,14 +2204,14 @@ void ALTIUM_PCB::ParseTracks6Data( const CFB::CompoundFileReader& aReader,
 
         if( klayer >= F_Cu && klayer <= B_Cu )
         {
-            TRACK* track = new TRACK( m_board );
-            m_board->Add( track, ADD_MODE::APPEND );
+            TRACE* trace = new TRACE( m_board );
+            m_board->Add( trace, ADD_MODE::APPEND );
 
-            track->SetStart( elem.start );
-            track->SetEnd( elem.end );
-            track->SetWidth( elem.width );
-            track->SetLayer( klayer );
-            track->SetNetCode( GetNetCode( elem.net ) );
+            trace->SetStart( elem.start );
+            trace->SetEnd( elem.end );
+            trace->SetWidth( elem.width );
+            trace->SetLayer( klayer );
+            trace->SetNetCode( GetNetCode( elem.net ) );
         }
         else
         {

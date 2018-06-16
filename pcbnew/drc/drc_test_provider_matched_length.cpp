@@ -297,7 +297,7 @@ bool DRC_TEST_PROVIDER_MATCHED_LENGTH::runInternal( bool aDelayReportMode )
                 }
                 else if( citem->Type() == PCB_TRACE_T )
                 {
-                    ent.totalRoute += static_cast<TRACK*>( citem )->GetLength();
+                    ent.totalRoute += static_cast<TRACE*>( citem )->GetLength();
                 }
                 else if ( citem->Type() == PCB_ARC_T )
                 {

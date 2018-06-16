@@ -691,12 +691,12 @@ int EDIT_TOOL::ChangeTrackWidth( const TOOL_EVENT& aEvent )
             via->SetDrill( new_drill );
             via->SetWidth( new_width );
         }
-        else if ( TRACK* track = dyn_cast<TRACK*>( item ) )
+        else if ( TRACE* trace = dyn_cast<TRACE*>( item ) )
         {
             m_commit->Modify( item );
 
             int new_width = board()->GetDesignSettings().GetCurrentTrackWidth();
-            track->SetWidth( new_width );
+            trace->SetWidth( new_width );
         }
     }
 

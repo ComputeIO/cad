@@ -541,12 +541,13 @@ int CONVERT_TOOL::PolyToLines( const TOOL_EVENT& aEvent )
                 // Creating tracks
                 for( SEG& seg : segs )
                 {
-                    TRACK* track = new TRACK( parent );
+                    TRACE* trace = new TRACE( parent );
 
-                    track->SetLayer( layer );
-                    track->SetStart( wxPoint( seg.A ) );
-                    track->SetEnd( wxPoint( seg.B ) );
-                    commit.Add( track );
+                    trace->SetLayer( layer );
+                    trace->SetStart( wxPoint( seg.A ) );
+                    trace->SetEnd( wxPoint( seg.B ) );
+
+                    commit.Add( trace );
                 }
             }
         }

@@ -2345,7 +2345,7 @@ void EAGLE_PLUGIN::loadSignals( wxXmlNode* aSignals )
                         wxPoint end( KiROUND( radius * cos( end_angle + angle ) + center.x ),
                                      KiROUND( radius * sin( end_angle + angle ) + center.y ) );
 
-                        TRACK*  t = new TRACK( m_board );
+                        TRACK*  t = new TRACE( m_board );
 
                         t->SetPosition( start );
                         t->SetEnd( end );
@@ -2359,7 +2359,7 @@ void EAGLE_PLUGIN::loadSignals( wxXmlNode* aSignals )
                         angle -= delta_angle;
                     }
 
-                    TRACK*  t = new TRACK( m_board );
+                    TRACK*  t = new TRACE( m_board );
 
                     t->SetPosition( start );
                     t->SetEnd( wxPoint( kicad_x( w.x2 ), kicad_y( w.y2 ) ) );

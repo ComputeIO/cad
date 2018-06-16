@@ -184,7 +184,7 @@ static void extractDiffPairCoupledItems( DIFF_PAIR_ITEMS& aDp, DRC_RTREE& aTree 
 
         for ( BOARD_CONNECTED_ITEM* itemN : aDp.itemsN )
         {
-            auto sn = dyn_cast<TRACK*> ( itemN );
+            auto sn = dyn_cast<TRACE*> ( itemN );
 
             if(!sn)
                 continue;
@@ -354,15 +354,15 @@ bool test::DRC_TEST_PROVIDER_DIFF_PAIR_COUPLING::Run()
         for( auto& item : it.second.itemsN )
         {
             // fixme: include vias
-            if( auto track = dyn_cast<TRACK*>( item ) )
-                it.second.totalLengthN += track->GetLength();
+            if( auto trace = dyn_cast<TRACE*>( item ) )
+                it.second.totalLengthN += trace->GetLength();
         }
 
         for( auto& item : it.second.itemsP )
         {
             // fixme: include vias
-            if( auto track = dyn_cast<TRACK*>( item ) )
-                it.second.totalLengthP += track->GetLength();
+            if( auto trace = dyn_cast<TRACE*>( item ) )
+                it.second.totalLengthP += trace->GetLength();
         }
 
         for( auto& cpair : it.second.coupled )

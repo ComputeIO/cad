@@ -90,10 +90,10 @@ bool DRC_TEST_PROVIDER_TRACK_WIDTH::Run()
                     actual = arc->GetWidth();
                     p0 = arc->GetStart();
                 }
-                else if( TRACK* trk = dyn_cast<TRACK*>( item ) )
+                else if( TRACE* trc = dyn_cast<TRACE*>( item ) )
                 {
-                    actual = trk->GetWidth();
-                    p0 = ( trk->GetStart() + trk->GetEnd() ) / 2;
+                    actual = trc->GetWidth();
+                    p0 = ( trc->GetStart() + trc->GetEnd() ) / 2;
                 }
                 else
                 {

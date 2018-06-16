@@ -2311,13 +2311,13 @@ std::vector<TRACK*> CADSTAR_PCB_ARCHIVE_LOADER::makeTracksFromDrawsegments(
             if( ds->GetClass() == wxT( "MGRAPHIC" ) )
             {
                 FP_SHAPE* em = (FP_SHAPE*) ds;
-                track = new TRACK( aParentContainer );
+                track = new TRACE( aParentContainer );
                 track->SetStart( em->GetStart0() );
                 track->SetEnd( em->GetEnd0() );
             }
             else
             {
-                track = new TRACK( aParentContainer );
+                track = new TRACE( aParentContainer );
                 track->SetStart( ds->GetStart() );
                 track->SetEnd( ds->GetEnd() );
             }

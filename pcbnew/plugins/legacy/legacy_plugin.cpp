@@ -2271,7 +2271,7 @@ void LEGACY_PLUGIN::loadTrackList( int aStructType )
         switch( makeType )
         {
         default:
-        case PCB_TRACE_T: newTrack = new TRACK( m_board ); break;
+        case PCB_TRACE_T: newTrack = new TRACE( m_board ); break;
         case PCB_VIA_T:   newTrack = new VIA( m_board );   break;
         }
 

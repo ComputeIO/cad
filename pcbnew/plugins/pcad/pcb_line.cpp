@@ -137,7 +137,7 @@ void PCB_LINE::AddToBoard()
 {
     if( IsCopperLayer( m_KiCadLayer ) )
     {
-        TRACK* track = new TRACK( m_board );
+        TRACK* track = new TRACE( m_board );
         m_board->Add( track );
 
         track->SetPosition( wxPoint( m_positionX, m_positionY ) );

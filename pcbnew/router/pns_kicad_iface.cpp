@@ -92,7 +92,7 @@ private:
 private:
     PNS::ROUTER_IFACE* m_routerIface;
     BOARD*             m_board;
-    TRACK              m_dummyTrack;
+    TRACE              m_dummyTrace;
     ARC                m_dummyArc;
     VIA                m_dummyVia;
 
@@ -104,7 +104,7 @@ PNS_PCBNEW_RULE_RESOLVER::PNS_PCBNEW_RULE_RESOLVER( BOARD* aBoard,
                                                     PNS::ROUTER_IFACE* aRouterIface ) :
     m_routerIface( aRouterIface ),
     m_board( aBoard ),
-    m_dummyTrack( aBoard ),
+    m_dummyTrace( aBoard ),
     m_dummyArc( aBoard ),
     m_dummyVia( aBoard )
 {
@@ -225,8 +225,8 @@ bool PNS_PCBNEW_RULE_RESOLVER::QueryConstraint( PNS::CONSTRAINT_TYPE aType,
         {
         case PNS::ITEM::ARC_T:     parentA = &m_dummyArc;   break;
         case PNS::ITEM::VIA_T:     parentA = &m_dummyVia;   break;
-        case PNS::ITEM::SEGMENT_T: parentA = &m_dummyTrack; break;
-        case PNS::ITEM::LINE_T:    parentA = &m_dummyTrack; break;
+        case PNS::ITEM::SEGMENT_T: parentA = &m_dummyTrace; break;
+        case PNS::ITEM::LINE_T:    parentA = &m_dummyTrace; break;
         default: break;
         }
 
@@ -243,8 +243,8 @@ bool PNS_PCBNEW_RULE_RESOLVER::QueryConstraint( PNS::CONSTRAINT_TYPE aType,
         {
         case PNS::ITEM::ARC_T:     parentB = &m_dummyArc;   break;
         case PNS::ITEM::VIA_T:     parentB = &m_dummyVia;   break;
-        case PNS::ITEM::SEGMENT_T: parentB = &m_dummyTrack; break;
-        case PNS::ITEM::LINE_T:    parentB = &m_dummyTrack; break;
+        case PNS::ITEM::SEGMENT_T: parentB = &m_dummyTrace; break;
+        case PNS::ITEM::LINE_T:    parentB = &m_dummyTrace; break;
         default: break;
         }
 
@@ -1402,7 +1402,7 @@ void PNS_KICAD_IFACE::AddItem( PNS::ITEM* aItem )
     case PNS::ITEM::SEGMENT_T:
     {
         PNS::SEGMENT* seg = static_cast<PNS::SEGMENT*>( aItem );
-        TRACK* track = new TRACK( m_board );
+        TRACK* track = new TRACE( m_board );
         const SEG& s = seg->Seg();
         track->SetStart( wxPoint( s.A.x, s.A.y ) );
         track->SetEnd( wxPoint( s.B.x, s.B.y ) );

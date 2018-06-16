@@ -2056,7 +2056,7 @@ int DRAWING_TOOL::DrawVia( const TOOL_EVENT& aEvent )
 
             std::vector<KIGFX::VIEW::LAYER_ITEM_PAIR> items;
             auto view = m_frame->GetCanvas()->GetView();
-            std::vector<TRACK*> possible_tracks;
+            std::vector<TRACK*> possible_traces;
 
             view->Query( bbox, items );
 
@@ -2067,17 +2067,17 @@ int DRAWING_TOOL::DrawVia( const TOOL_EVENT& aEvent )
                 if( !(item->GetLayerSet() & lset ).any() )
                     continue;
 
-                if( auto track = dyn_cast<TRACK*>( item ) )
+                if( auto trace = dyn_cast<TRACE*>( item ) )
                 {
-                    if( TestSegmentHit( position, track->GetStart(), track->GetEnd(),
-                                        ( track->GetWidth() + aVia->GetWidth() ) / 2 ) )
-                        possible_tracks.push_back( track );
+                    if( TestSegmentHit( position, trace->GetStart(), trace->GetEnd(),
+                                        ( trace->GetWidth() + aVia->GetWidth() ) / 2 ) )
+                        possible_traces.push_back( trace );
                 }
             }
 
             TRACK* return_track = nullptr;
             int min_d = std::numeric_limits<int>::max();
-            for( auto track : possible_tracks )
+            for( auto track : possible_traces )
             {
                 SEG test( track->GetStart(), track->GetEnd() );
                 auto dist = ( test.NearestPoint( position ) - position ).EuclideanNorm();

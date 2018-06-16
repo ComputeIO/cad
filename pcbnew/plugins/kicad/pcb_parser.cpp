@@ -4181,7 +4181,7 @@ TRACK* PCB_PARSER::parseTRACK()
     wxPoint pt;
     T token;
 
-    std::unique_ptr<TRACK> track = std::make_unique<TRACK>( m_board );
+    std::unique_ptr< TRACK > track = std::make_unique<TRACE>( m_board );
 
     for( token = NextTok();  token != T_RIGHT;  token = NextTok() )
     {

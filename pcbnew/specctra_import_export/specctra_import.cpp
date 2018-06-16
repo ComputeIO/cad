@@ -167,7 +167,7 @@ TRACK* SPECCTRA_DB::makeTRACK( PATH* aPath, int aPointIndex, int aNetcode )
                 wxString::Format( _( "Session file uses invalid layer id \"%s\"" ), layerName ) );
     }
 
-    TRACK* track = new TRACK( m_sessionBoard );
+    TRACK* track = new TRACE( m_sessionBoard );
 
     track->SetStart( mapPt( aPath->points[aPointIndex+0], m_routeResolution ) );
     track->SetEnd( mapPt( aPath->points[aPointIndex+1], m_routeResolution ) );

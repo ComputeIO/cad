@@ -161,20 +161,20 @@ BOOST_AUTO_TEST_CASE( IntrospectedProperties )
     net1info->SetClass( netclass1 );
     net2info->SetClass( netclass2 );
 
-    TRACK trackA(&brd);
-    TRACK trackB(&brd);
+    TRACE traceA(&brd);
+    TRACE traceB(&brd);
 
-    trackA.SetNet( net1info );
-    trackB.SetNet( net2info );
+    traceA.SetNet( net1info );
+    traceB.SetNet( net2info );
 
-    trackB.SetLayer( F_Cu );
+    traceB.SetLayer( F_Cu );
 
-    trackA.SetWidth( Mils2iu( 10 ));
-    trackB.SetWidth( Mils2iu( 20 ));
+    traceA.SetWidth( Mils2iu( 10 ));
+    traceB.SetWidth( Mils2iu( 20 ));
 
     for( const auto& expr : introspectionExpressions )
     {
-        bool ok = testEvalExpr( expr.expression, expr.expectedResult, expr.expectError, &trackA, &trackB );
+        bool ok = testEvalExpr( expr.expression, expr.expectedResult, expr.expectError, &traceA, &traceB );
     }
 }
 

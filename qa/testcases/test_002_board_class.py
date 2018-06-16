@@ -26,28 +26,28 @@ class TestBoardClass(unittest.TestCase):
         module = self.pcb.FindFootprintByReference('P1')
         self.assertEqual(module.GetReference(),'P1')
 
-    def test_pcb_get_track_count(self):
+    def test_pcb_get_trace_count(self):
         pcb = BOARD()
 
         self.assertEqual(pcb.Tracks().size(),0)
 
-        track0 = TRACK(pcb)
-        pcb.Add(track0)
+        trace0 = TRACE(pcb)
+        pcb.Add(trace0)
         self.assertEqual(pcb.Tracks().size(),1)
 
-        track1 = TRACK(pcb)
-        pcb.Add(track1)
+        trace1 = TRACE(pcb)
+        pcb.Add(trace1)
         self.assertEqual(pcb.Tracks().size(),2)
 
     def test_pcb_bounding_box(self):
         pcb = BOARD()
-        track = TRACK(pcb)
-        pcb.Add(track)
+        trace = TRACE(pcb)
+        pcb.Add(trace)
 
-        track.SetStart(wxPointMM(10.0, 10.0))
-        track.SetEnd(wxPointMM(20.0, 30.0))
+        trace.SetStart(wxPointMM(10.0, 10.0))
+        trace.SetEnd(wxPointMM(20.0, 30.0))
 
-        track.SetWidth(FromMM(0.5))
+        trace.SetWidth(FromMM(0.5))
 
         #!!! THIS FAILS? == 0.0 x 0.0 ??
         #height, width = ToMM(pcb.ComputeBoundingBox().GetSize())
