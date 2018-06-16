@@ -85,12 +85,12 @@ bool DRC_TEST_PROVIDER_TRACK_WIDTH::Run()
                 int     actual;
                 wxPoint p0;
 
-                if( ARC* arc = dyn_cast<ARC*>( item ) )
+                if( ARC* arc = dynamic_cast<ARC*>( item ) )
                 {
                     actual = arc->GetWidth();
                     p0 = arc->GetStart();
                 }
-                else if( TRACE* trc = dyn_cast<TRACE*>( item ) )
+                else if( TRACE* trc = dynamic_cast<TRACE*>( item ) )
                 {
                     actual = trc->GetWidth();
                     p0 = ( trc->GetStart() + trc->GetEnd() ) / 2;

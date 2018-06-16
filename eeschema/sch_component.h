@@ -152,11 +152,6 @@ public:
 
     ~SCH_COMPONENT() { }
 
-    static inline bool ClassOf( const EDA_ITEM* aItem )
-    {
-        return aItem && SCH_COMPONENT_T == aItem->Type();
-    }
-
     wxString GetClass() const override
     {
         return wxT( "SCH_COMPONENT" );

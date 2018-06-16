@@ -696,7 +696,7 @@ const std::vector<CN_EDGE> CONNECTIVITY_DATA::GetRatsnestForItems( std::vector<B
                 item_set.insert( pad );
             }
         }
-        else if( auto conn_item = dyn_cast<BOARD_CONNECTED_ITEM*>( item ) )
+        else if( auto conn_item = dynamic_cast<BOARD_CONNECTED_ITEM*>( item ) )
         {
             item_set.insert( conn_item );
             nets.insert( conn_item->GetNetCode() );

@@ -81,7 +81,7 @@ bool DRC_TEST_PROVIDER_VIA_DIAMETER::Run()
                 if( m_drcEngine->IsErrorLimitExceeded( DRCE_VIA_DIAMETER ) )
                     return false;
 
-                VIA* via = dyn_cast<VIA*>( item );
+                VIA* via = dynamic_cast<VIA*>( item );
 
                 // fixme: move to pad stack check?
                 if( !via )

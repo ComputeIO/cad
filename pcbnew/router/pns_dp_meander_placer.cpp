@@ -133,14 +133,14 @@ long long int DP_MEANDER_PLACER::origPathLength() const
 
     for( const ITEM* item : m_tunedPathP.CItems() )
     {
-        if( const LINE* l = dyn_cast<const LINE*>( item ) )
+        if( const LINE* l = dynamic_cast<const LINE*>( item ) )
             totalP += l->CLine().Length();
 
     }
 
     for( const ITEM* item : m_tunedPathN.CItems() )
     {
-        if( const LINE* l = dyn_cast<const LINE*>( item ) )
+        if( const LINE* l = dynamic_cast<const LINE*>( item ) )
             totalN += l->CLine().Length();
     }
 
@@ -211,13 +211,13 @@ bool DP_MEANDER_PLACER::Move( const VECTOR2I& aP, ITEM* aEndItem )
 
     for( const ITEM* item : m_tunedPathP.CItems() )
     {
-        if( const LINE* l = dyn_cast<const LINE*>( item ) )
+        if( const LINE* l = dynamic_cast<const LINE*>( item ) )
             Dbg()->AddLine( l->CLine(), 5, 10000 );
     }
 
     for( const ITEM* item : m_tunedPathN.CItems() )
     {
-        if( const LINE* l = dyn_cast<const LINE*>( item ) )
+        if( const LINE* l = dynamic_cast<const LINE*>( item ) )
             Dbg()->AddLine( l->CLine(), 5, 10000 );
     }
 

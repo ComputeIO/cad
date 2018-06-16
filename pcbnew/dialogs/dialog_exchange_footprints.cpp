@@ -434,7 +434,7 @@ FP_TEXT* getMatchingTextItem( FP_TEXT* aRefItem, FOOTPRINT* aFootprint )
 
     for( BOARD_ITEM* item : aFootprint->GraphicalItems() )
     {
-        FP_TEXT* candidate = dyn_cast<FP_TEXT*>( item );
+        FP_TEXT* candidate = dynamic_cast<FP_TEXT*>( item );
 
         if( candidate && candidate->GetText() == aRefItem->GetText() )
             candidates.push_back( candidate );
@@ -533,7 +533,7 @@ void PCB_EDIT_FRAME::ExchangeFootprint( FOOTPRINT* aExisting, FOOTPRINT* aNew,
     // Copy fields in accordance with the reset* flags
     for( BOARD_ITEM* item : aExisting->GraphicalItems() )
     {
-        FP_TEXT* srcItem = dyn_cast<FP_TEXT*>( item );
+        FP_TEXT* srcItem = dynamic_cast<FP_TEXT*>( item );
 
         if( srcItem )
         {

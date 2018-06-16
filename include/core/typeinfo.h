@@ -27,50 +27,6 @@
 #define __KICAD_TYPEINFO_H
 
 
-#ifndef SWIG
-#include <type_traits>
-
-/**
- * Function IsA()
- *
- * Checks if the type of aObject is T.
- * @param aObject object for type check
- * @return true, if aObject type equals T.
- */
-template <class T, class I>
-bool IsA( const I* aObject )
-{
-    return aObject && std::remove_pointer<T>::type::ClassOf( aObject );
-}
-
-template <class T, class I>
-bool IsA( const I& aObject )
-{
-    return std::remove_pointer<T>::type::ClassOf( &aObject );
-}
-
-/**
- * Function dyn_cast()
- *
- * A lightweight dynamic downcast. Casts aObject to type Casted*.
- * Uses EDA_ITEM::Type() and EDA_ITEM::ClassOf() to check if type matches.
- * @param aObject object to be casted
- * @return down-casted object or NULL if type doesn't match Casted.
- */
-template<class Casted, class From>
-Casted dyn_cast( From aObject )
-{
-    if( std::remove_pointer<Casted>::type::ClassOf ( aObject ) )
-        return static_cast<Casted>( aObject );
-
-    return nullptr;
-}
-
-class EDA_ITEM;
-
-#endif  // SWIG
-
-
 /**
  * Enum KICAD_T
  * is the set of class identification values, stored in EDA_ITEM::m_structType

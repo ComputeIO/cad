@@ -111,11 +111,6 @@ public:
 
     ~LINE();
 
-    static inline bool ClassOf( const ITEM* aItem )
-    {
-        return aItem && LINE_T == aItem->Kind();
-    }
-
     /// @copydoc ITEM::Clone()
     virtual LINE* Clone() const override;
 

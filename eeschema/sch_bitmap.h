@@ -78,11 +78,6 @@ public:
         m_image->SetScale( aScale );
     }
 
-    static inline bool ClassOf( const EDA_ITEM* aItem )
-    {
-        return aItem && SCH_BITMAP_T == aItem->Type();
-    }
-
     wxString GetClass() const override
     {
         return wxT( "SCH_BITMAP" );

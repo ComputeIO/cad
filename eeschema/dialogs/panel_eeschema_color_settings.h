@@ -27,6 +27,7 @@
 
 class COLOR_SETTINGS;
 class SCH_BASE_FRAME;
+class EDA_ITEM;
 class PAGE_INFO;
 class SCH_ITEM;
 class SCH_PREVIEW_PANEL;

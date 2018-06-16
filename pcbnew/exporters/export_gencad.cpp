@@ -379,7 +379,7 @@ static void CreatePadsShapesSection( FILE* aFile, BOARD* aPcb )
     // The same for vias
     for( TRACK* track : aPcb->Tracks() )
     {
-        if( VIA* via = dyn_cast<VIA*>( track ) )
+        if( VIA* via = dynamic_cast<VIA*>( track ) )
             vias.push_back( via );
     }
 

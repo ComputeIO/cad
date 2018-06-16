@@ -116,7 +116,7 @@ void PCB_EDIT_FRAME::Edit_Zone_Params( ZONE* aZone )
 
     for( unsigned i = 0; i < s_PickedList.GetCount(); ++i )
     {
-        ZONE* zone = dyn_cast<ZONE*>( s_PickedList.GetPickedItem( i ) );
+        ZONE* zone = dynamic_cast<ZONE*>( s_PickedList.GetPickedItem( i ) );
 
         if( zone == nullptr )
         {

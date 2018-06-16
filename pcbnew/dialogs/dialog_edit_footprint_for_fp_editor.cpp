@@ -218,7 +218,7 @@ bool DIALOG_FOOTPRINT_FP_EDITOR::TransferDataToWindow()
 
     for( auto item : m_footprint->GraphicalItems() )
     {
-        auto textItem = dyn_cast<FP_TEXT*>( item );
+        auto textItem = dynamic_cast<FP_TEXT*>( item );
 
         if( textItem )
             m_texts->push_back( *textItem );

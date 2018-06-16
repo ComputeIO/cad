@@ -668,7 +668,7 @@ int EDIT_TOOL::ChangeTrackWidth( const TOOL_EVENT& aEvent )
 
     for( EDA_ITEM* item : selection )
     {
-        if( auto via = dyn_cast<VIA*>( item ) )
+        if( auto via = dynamic_cast<VIA*>( item ) )
         {
             m_commit->Modify( item );
 
@@ -691,7 +691,7 @@ int EDIT_TOOL::ChangeTrackWidth( const TOOL_EVENT& aEvent )
             via->SetDrill( new_drill );
             via->SetWidth( new_width );
         }
-        else if ( TRACE* trace = dyn_cast<TRACE*>( item ) )
+        else if ( TRACE* trace = dynamic_cast<TRACE*>( item ) )
         {
             m_commit->Modify( item );
 
@@ -767,7 +767,7 @@ int EDIT_TOOL::FilletTracks( const TOOL_EVENT& aEvent )
 
     for( auto it = selection.begin(); it != selection.end(); it++ )
     {
-        TRACK* track = dyn_cast<TRACK*>( *it );
+        TRACK* track = dynamic_cast<TRACK*>( *it );
 
         if( !track || track->Type() != PCB_TRACE_T || track->IsLocked()
                 || track->GetLength() == 0 )
@@ -787,7 +787,7 @@ int EDIT_TOOL::FilletTracks( const TOOL_EVENT& aEvent )
                 if( itemsOnAnchor.size() > 0 && selection.Contains( itemsOnAnchor.at( 0 ) )
                         && itemsOnAnchor.at( 0 )->Type() == PCB_TRACE_T )
                 {
-                    TRACK* trackOther = dyn_cast<TRACK*>( itemsOnAnchor.at( 0 ) );
+                    TRACK* trackOther = dynamic_cast<TRACK*>( itemsOnAnchor.at( 0 ) );
 
                     // Make sure we don't fillet the same pair of tracks twice
                     if( processedTracks.find( trackOther ) == processedTracks.end() )

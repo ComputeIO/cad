@@ -62,11 +62,6 @@ public:
 
     ~SCH_FIELD();
 
-    static inline bool ClassOf( const EDA_ITEM* aItem )
-    {
-        return aItem && SCH_FIELD_T == aItem->Type();
-    }
-
     wxString GetClass() const override
     {
         return wxT( "SCH_FIELD" );

@@ -1178,7 +1178,7 @@ void POINT_EDITOR::updateItem() const
         }
 
         // Update relative coordinates for footprint shapes
-        if( FP_SHAPE* fpShape = dyn_cast<FP_SHAPE*>( item ) )
+        if( FP_SHAPE* fpShape = dynamic_cast<FP_SHAPE*>( item ) )
             fpShape->SetLocalCoord();
 
         break;

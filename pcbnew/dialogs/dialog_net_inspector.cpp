@@ -1225,6 +1225,7 @@ void DIALOG_NET_INSPECTOR::OnBoardItemRemoved( BOARD& aBoard, BOARD_ITEM* aBoard
                 ( **r )->SubBoardWireLength( len );
 
                 if( track->Type() == PCB_VIA_T )
+
                 {
                     ( **r )->SubViaCount( 1 );
                     ( **r )->SubViaLength( calculateViaLength( track ) );

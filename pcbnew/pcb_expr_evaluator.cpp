@@ -420,7 +420,7 @@ static void isMicroVia( LIBEVAL::CONTEXT* aCtx, void* self )
     result->Set( 0.0 );
     aCtx->Push( result );
 
-    auto via = dyn_cast<VIA*>( item );
+    auto via = dynamic_cast<VIA*>( item );
 
     if( via && via->GetViaType() == VIATYPE::MICROVIA )
     {
@@ -438,7 +438,7 @@ static void isBlindBuriedVia( LIBEVAL::CONTEXT* aCtx, void* self )
     result->Set( 0.0 );
     aCtx->Push( result );
 
-    auto via = dyn_cast<VIA*>( item );
+    auto via = dynamic_cast<VIA*>( item );
 
     if( via && via->GetViaType() == VIATYPE::BLIND_BURIED )
     {

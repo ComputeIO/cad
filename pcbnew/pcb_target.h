@@ -52,11 +52,6 @@ public:
 
     ~PCB_TARGET();
 
-    static inline bool ClassOf( const EDA_ITEM* aItem )
-    {
-        return aItem && PCB_TARGET_T == aItem->Type();
-    }
-
     void SetPosition( const wxPoint& aPos ) override { m_pos = aPos; }
     wxPoint GetPosition() const override { return m_pos; }
 

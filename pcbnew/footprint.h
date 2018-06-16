@@ -120,10 +120,6 @@ public:
     FOOTPRINT& operator=( const FOOTPRINT& aOther );
     FOOTPRINT& operator=( FOOTPRINT&& aOther );
 
-    static inline bool ClassOf( const EDA_ITEM* aItem )
-    {
-        return aItem && aItem->Type() == PCB_FOOTPRINT_T;
-    }
 
     ///> @copydoc BOARD_ITEM_CONTAINER::Add()
     void Add( BOARD_ITEM* aItem, ADD_MODE aMode = ADD_MODE::INSERT ) override;

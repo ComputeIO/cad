@@ -86,12 +86,6 @@ public:
         m_viaType = aB.m_viaType;
     }
 
-    static inline bool ClassOf( const ITEM* aItem )
-    {
-        return aItem && VIA_T == aItem->Kind();
-    }
-
-
     const VECTOR2I& Pos() const
     {
         return m_pos;

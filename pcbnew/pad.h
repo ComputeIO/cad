@@ -77,10 +77,6 @@ public:
     static LSET UnplatedHoleMask(); ///< layer set for a mechanical unplated through hole pad
     static LSET ApertureMask();     ///< layer set for an aperture pad
 
-    static inline bool ClassOf( const EDA_ITEM* aItem )
-    {
-        return aItem && PCB_PAD_T == aItem->Type();
-    }
 
     bool IsType( const KICAD_T aScanTypes[] ) const override
     {

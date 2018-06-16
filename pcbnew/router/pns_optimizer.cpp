@@ -902,7 +902,7 @@ int OPTIMIZER::smartPadsSingle( LINE* aLine, ITEM* aPad, bool aEnd, int aEndVert
     typedef std::tuple<int, long long int, SHAPE_LINE_CHAIN> RtVariant;
     std::vector<RtVariant> variants;
 
-    SOLID* solid = dyn_cast<SOLID*>( aPad );
+    SOLID* solid = dynamic_cast<SOLID*>( aPad );
 
     // don't do optimized connections for offset pads
     if( solid && solid->Offset() != VECTOR2I( 0, 0 ) )

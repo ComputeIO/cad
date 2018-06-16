@@ -243,9 +243,9 @@ const ITEM_SET TOPOLOGY::AssembleTrivialPath( ITEM* aStart )
     SEGMENT* seg;
     VIA* via;
 
-    seg = dyn_cast<SEGMENT*> (aStart);
+    seg = dynamic_cast<SEGMENT*> (aStart);
 
-    if(!seg && (via = dyn_cast<VIA*>( aStart ) ) )
+    if(!seg && (via = dynamic_cast<VIA*>( aStart ) ) )
     {
         JOINT *jt = m_world->FindJoint( via->Pos(), via );
 
@@ -253,7 +253,7 @@ const ITEM_SET TOPOLOGY::AssembleTrivialPath( ITEM* aStart )
             return ITEM_SET();
 
         for( const auto& entry : jt->Links().Items() )
-            if( ( seg = dyn_cast<SEGMENT*>( entry.item ) ) )
+            if( ( seg = dynamic_cast<SEGMENT*>( entry.item ) ) )
                 break;
     }
 
@@ -301,11 +301,11 @@ bool TOPOLOGY::AssembleDiffPair( ITEM* aStart, DIFF_PAIR& aPair )
     SEGMENT* coupledSeg = NULL, *refSeg;
     int minDist = std::numeric_limits<int>::max();
 
-    if( ( refSeg = dyn_cast<SEGMENT*>( aStart ) ) != NULL )
+    if( ( refSeg = dynamic_cast<SEGMENT*>( aStart ) ) != NULL )
     {
         for( ITEM* item : coupledItems )
         {
-            if( SEGMENT* s = dyn_cast<SEGMENT*>( item ) )
+            if( SEGMENT* s = dynamic_cast<SEGMENT*>( item ) )
             {
                 if( s->Layers().Start() == refSeg->Layers().Start() && s->Width() == refSeg->Width() )
                 {

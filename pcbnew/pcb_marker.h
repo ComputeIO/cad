@@ -44,11 +44,6 @@ public:
     PCB_MARKER( std::shared_ptr<RC_ITEM> aItem, const wxPoint& aPosition );
     ~PCB_MARKER();
 
-    static inline bool ClassOf( const EDA_ITEM* aItem )
-    {
-        return aItem && PCB_MARKER_T == aItem->Type();
-    }
-
     const KIID GetUUID() const override { return m_Uuid; }
 
     wxString Serialize() const;

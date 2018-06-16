@@ -1415,7 +1415,7 @@ bool DRAWING_TOOL::drawSegment( const std::string& aTool, PCB_SHAPE** aGraphic,
             }
             else
             {
-                PCB_SHAPE* snapItem = dyn_cast<PCB_SHAPE*>( grid.GetSnapped() );
+                PCB_SHAPE* snapItem = dynamic_cast<PCB_SHAPE*>( grid.GetSnapped() );
 
                 if( twoPointManager.GetOrigin() == twoPointManager.GetEnd()
                     || ( evt->IsDblClick( BUT_LEFT ) && shape == S_SEGMENT ) || snapItem )
@@ -1786,7 +1786,7 @@ bool DRAWING_TOOL::getSourceZoneForAction( ZONE_MODE aMode, ZONE** aZone )
 
     // we want a single zone
     if( selection.Size() == 1 )
-        *aZone = dyn_cast<ZONE*>( selection[0] );
+        *aZone = dynamic_cast<ZONE*>( selection[0] );
 
     // expected a zone, but didn't get one
     if( !*aZone )
@@ -2067,7 +2067,7 @@ int DRAWING_TOOL::DrawVia( const TOOL_EVENT& aEvent )
                 if( !(item->GetLayerSet() & lset ).any() )
                     continue;
 
-                if( auto trace = dyn_cast<TRACE*>( item ) )
+                if( auto trace = dynamic_cast<TRACE*>( item ) )
                 {
                     if( TestSegmentHit( position, trace->GetStart(), trace->GetEnd(),
                                         ( trace->GetWidth() + aVia->GetWidth() ) / 2 ) )
@@ -2115,23 +2115,23 @@ int DRAWING_TOOL::DrawVia( const TOOL_EVENT& aEvent )
                 if( !(item->GetLayerSet() & lset ).any() )
                     continue;
 
-                if( TRACK* track = dyn_cast<TRACK*>( item ) )
+                if( TRACE* trace = dynamic_cast<TRACE*>( item ) )
                 {
                     int max_clearance = std::max( clearance,
-                                                  track->GetOwnClearance( track->GetLayer() ) );
+                                                  trace->GetOwnClearance( trace->GetLayer() ) );
 
-                    if( TestSegmentHit( position, track->GetStart(), track->GetEnd(),
-                            ( track->GetWidth() + aVia->GetWidth() ) / 2  + max_clearance ) )
+                    if( TestSegmentHit( position, trace->GetStart(), trace->GetEnd(),
+                            ( trace->GetWidth() + aVia->GetWidth() ) / 2  + max_clearance ) )
                     {
-                        if( net && track->GetNetCode() != net )
+                        if( net && trace->GetNetCode() != net )
                             return true;
 
-                        net = track->GetNetCode();
-                        clearance = track->GetOwnClearance( track->GetLayer() );
+                        net = trace->GetNetCode();
+                        clearance = trace->GetOwnClearance( trace->GetLayer() );
                     }
                 }
 
-                if( VIA* via = dyn_cast<VIA*>( item ) )
+                if( VIA* via = dynamic_cast<VIA*>( item ) )
                 {
                     int dist = KiROUND( GetLineLength( position, via->GetPosition() ) );
 

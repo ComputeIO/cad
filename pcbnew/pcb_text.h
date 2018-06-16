@@ -43,11 +43,6 @@ public:
 
     ~PCB_TEXT();
 
-    static inline bool ClassOf( const EDA_ITEM* aItem )
-    {
-        return aItem && PCB_TEXT_T == aItem->Type();
-    }
-
     bool IsType( const KICAD_T aScanTypes[] ) const override
     {
         if( BOARD_ITEM::IsType( aScanTypes ) )

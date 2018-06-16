@@ -48,11 +48,6 @@ public:
 
     ~SCH_NO_CONNECT() { }
 
-    static inline bool ClassOf( const EDA_ITEM* aItem )
-    {
-        return aItem && SCH_NO_CONNECT_T == aItem->Type();
-    }
-
     wxString GetClass() const override
     {
         return wxT( "SCH_NO_CONNECT" );

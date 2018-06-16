@@ -243,7 +243,7 @@ void BOARD_ADAPTER::createLayers( REPORTER* aStatusReporter )
                 continue;
 
             // Skip vias annulus when not connected on this layer (if removing is enabled)
-            const VIA *via = dyn_cast< const VIA*>( track );
+            const VIA *via = dynamic_cast< const VIA*>( track );
 
             if( via && !via->FlashLayer( curr_layer_id ) && IsCopperLayer( curr_layer_id ) )
                 continue;
@@ -450,7 +450,7 @@ void BOARD_ADAPTER::createLayers( REPORTER* aStatusReporter )
                     continue;
 
                 // Skip vias annulus when not connected on this layer (if removing is enabled)
-                const VIA *via = dyn_cast< const VIA*>( track );
+                const VIA *via = dynamic_cast< const VIA*>( track );
 
                 if( via && !via->FlashLayer( curr_layer_id ) && IsCopperLayer( curr_layer_id ) )
                     continue;

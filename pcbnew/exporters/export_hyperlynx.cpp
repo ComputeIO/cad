@@ -2,6 +2,7 @@
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
  * Copyright (C) 2019 CERN
+ * Copyright (C) 2019 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -414,7 +415,7 @@ bool HYPERLYNX_EXPORTER::writePadStacks()
 
     for( TRACK* trk : m_board->Tracks() )
     {
-        if( VIA* via = dyn_cast<VIA*>( trk ) )
+        if( VIA* via = dynamic_cast<VIA*>( trk ) )
         {
             HYPERLYNX_PAD_STACK* ps = addPadStack( HYPERLYNX_PAD_STACK( m_board, via ) );
             m_padMap[via] = ps;
@@ -432,7 +433,7 @@ bool HYPERLYNX_EXPORTER::writeNetObjects( const std::vector<BOARD_ITEM*>& aObjec
 {
     for( BOARD_ITEM* item : aObjects )
     {
-        if( PAD* pad = dyn_cast<PAD*>( item ) )
+        if( PAD* pad = dynamic_cast<PAD*>( item ) )
         {
             auto pstackIter = m_padMap.find( pad );
 
@@ -455,7 +456,7 @@ bool HYPERLYNX_EXPORTER::writeNetObjects( const std::vector<BOARD_ITEM*>& aObjec
                         pstackIter->second->GetId() );
             }
         }
-        else if( VIA* via = dyn_cast<VIA*>( item ) )
+        else if( VIA* via = dynamic_cast<VIA*>( item ) )
         {
             auto pstackIter = m_padMap.find( via );
 
@@ -465,7 +466,7 @@ bool HYPERLYNX_EXPORTER::writeNetObjects( const std::vector<BOARD_ITEM*>& aObjec
                         iu2hyp( via->GetPosition().y ), pstackIter->second->GetId() );
             }
         }
-        else if( TRACK* track = dyn_cast<TRACK*>( item ) )
+        else if( TRACK* track = dynamic_cast<TRACK*>( item ) )
         {
             const wxString layerName = m_board->GetLayerName( track->GetLayer() );
 
@@ -474,7 +475,7 @@ bool HYPERLYNX_EXPORTER::writeNetObjects( const std::vector<BOARD_ITEM*>& aObjec
                     iu2hyp( track->GetEnd().x ), iu2hyp( track->GetEnd().y ),
                     iu2hyp( track->GetWidth() ), (const char*) layerName.c_str() );
         }
-        else if( ZONE* zone = dyn_cast<ZONE*>( item ) )
+        else if( ZONE* zone = dynamic_cast<ZONE*>( item ) )
         {
             for( PCB_LAYER_ID layer : zone->GetLayerSet().Seq() )
             {

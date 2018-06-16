@@ -68,11 +68,6 @@ public:
         m_rank = aParentLine.Rank();
     }
 
-    static inline bool ClassOf( const ITEM* aItem )
-    {
-        return aItem && ARC_T == aItem->Kind();
-    }
-
     ARC* Clone() const override;
 
     const SHAPE* Shape() const override

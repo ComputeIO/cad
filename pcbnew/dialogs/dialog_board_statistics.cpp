@@ -256,7 +256,7 @@ void DIALOG_BOARD_STATISTICS::getDataFromPCB()
     // Get via counts
     for( TRACK* track : board->Tracks() )
     {
-        if( VIA* via = dyn_cast<VIA*>( track ) )
+        if( VIA* via = dynamic_cast<VIA*>( track ) )
         {
             for( auto& type : m_viasTypes )
             {

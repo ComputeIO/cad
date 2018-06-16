@@ -96,7 +96,7 @@ long long int MEANDER_PLACER::origPathLength() const
     long long int total = m_padToDieLenth;
     for( const ITEM* item : m_tunedPath.CItems() )
     {
-        if( const LINE* l = dyn_cast<const LINE*>( item ) )
+        if( const LINE* l = dynamic_cast<const LINE*>( item ) )
         {
             total += l->CLine().Length();
         }
@@ -150,7 +150,7 @@ bool MEANDER_PLACER::doMove( const VECTOR2I& aP, ITEM* aEndItem, long long int a
 
     for( const ITEM* item : m_tunedPath.CItems() )
     {
-        if( const LINE* l = dyn_cast<const LINE*>( item ) )
+        if( const LINE* l = dynamic_cast<const LINE*>( item ) )
         {
             Dbg()->AddLine( l->CLine(), 5, 30000 );
         }

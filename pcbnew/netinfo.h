@@ -87,11 +87,6 @@ public:
     NETINFO_ITEM( BOARD* aParent, const wxString& aNetName = wxEmptyString, int aNetCode = -1 );
     ~NETINFO_ITEM();
 
-    static inline bool ClassOf( const EDA_ITEM* aItem )
-    {
-        return aItem && PCB_NETINFO_T == aItem->Type();
-    }
-
     wxString GetClass() const override
     {
         return wxT( "NETINFO_ITEM" );

@@ -588,7 +588,7 @@ EDA_RECT FOOTPRINT::GetFootprintRect() const
 
     for( BOARD_ITEM* item : m_drawings )
     {
-        if( item->Type() == PCB_FP_SHAPE_T )
+        if( dynamic_cast<const FP_SHAPE*>( item ) )
             area.Merge( item->GetBoundingBox() );
     }
 

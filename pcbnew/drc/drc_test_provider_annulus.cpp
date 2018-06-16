@@ -88,7 +88,7 @@ bool DRC_TEST_PROVIDER_ANNULUS::Run()
 
                 int  v_min = 0;
                 int  v_max = 0;
-                VIA* via = dyn_cast<VIA*>( item );
+                VIA* via = dynamic_cast<VIA*>( item );
 
                 // fixme: check minimum IAR/OAR ring for THT pads too
                 if( !via )

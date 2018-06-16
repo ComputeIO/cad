@@ -250,10 +250,10 @@ void DRAGGER::dragViaMarkObstacles( const VIA_HANDLE& aHandle, NODE* aNode, cons
     {
         return;
     }
-    
+
     for( ITEM* item : fanout.Items() )
     {
-        if( const LINE* l = dyn_cast<const LINE*>( item ) )
+        if( const LINE* l = dynamic_cast<const LINE*>( item ) )
         {
             LINE origLine( *l );
             LINE draggedLine( *l );
@@ -266,7 +266,7 @@ void DRAGGER::dragViaMarkObstacles( const VIA_HANDLE& aHandle, NODE* aNode, cons
             m_lastNode->Remove( origLine );
             m_lastNode->Add( draggedLine );
         }
-        else if ( VIA *via = dyn_cast<VIA*>( item ) )
+        else if ( VIA *via = dynamic_cast<VIA*>( item ) )
         {
             auto nvia = Clone( *via );
 
@@ -293,7 +293,7 @@ void DRAGGER::dragViaWalkaround( const VIA_HANDLE& aHandle, NODE* aNode, const V
     
     for( ITEM* item : fanout.Items() )
     {
-        if( const LINE* l = dyn_cast<const LINE*>( item ) )
+        if( const LINE* l = dynamic_cast<const LINE*>( item ) )
         {
             LINE origLine( *l );
             LINE draggedLine( *l );
@@ -306,7 +306,7 @@ void DRAGGER::dragViaWalkaround( const VIA_HANDLE& aHandle, NODE* aNode, const V
             m_lastNode->Remove( origLine );
             m_lastNode->Add( draggedLine );
         }
-        else if ( VIA *via = dyn_cast<VIA*>( item ) )
+        else if ( VIA *via = dynamic_cast<VIA*>( item ) )
         {
             auto nvia = Clone( *via );
 

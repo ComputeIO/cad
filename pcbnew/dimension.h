@@ -344,11 +344,6 @@ public:
 
     ~ALIGNED_DIMENSION() = default;
 
-    static inline bool ClassOf( const EDA_ITEM* aItem )
-    {
-        return aItem && PCB_DIM_ALIGNED_T == aItem->Type();
-    }
-
     EDA_ITEM* Clone() const override;
 
     virtual void SwapData( BOARD_ITEM* aImage ) override;
@@ -422,11 +417,6 @@ public:
 
     ~ORTHOGONAL_DIMENSION() = default;
 
-    static inline bool ClassOf( const EDA_ITEM* aItem )
-    {
-        return aItem && PCB_DIM_ORTHOGONAL_T == aItem->Type();
-    }
-
     EDA_ITEM* Clone() const override;
 
     void SwapData( BOARD_ITEM* aImage ) override;
@@ -474,11 +464,6 @@ class LEADER : public DIMENSION_BASE
 public:
     LEADER( BOARD_ITEM* aParent );
 
-    static inline bool ClassOf( const EDA_ITEM* aItem )
-    {
-        return aItem && PCB_DIM_LEADER_T == aItem->Type();
-    }
-
     EDA_ITEM* Clone() const override;
 
     virtual void SwapData( BOARD_ITEM* aImage ) override;
@@ -511,11 +496,6 @@ class CENTER_DIMENSION : public DIMENSION_BASE
 
 public:
     CENTER_DIMENSION( BOARD_ITEM* aParent );
-
-    static inline bool ClassOf( const EDA_ITEM* aItem )
-    {
-        return aItem && PCB_DIM_CENTER_T == aItem->Type();
-    }
 
     EDA_ITEM* Clone() const override;
 

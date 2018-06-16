@@ -1638,7 +1638,7 @@ std::tuple<int, double, double> BOARD::GetTrackLength( const TRACK& aTrack ) con
     {
         count++;
 
-        if( TRACK* track = dyn_cast<TRACK*>( item ) )
+        if( TRACK* track = dynamic_cast<TRACK*>( item ) )
         {
             bool inPad = false;
 
@@ -1657,7 +1657,7 @@ std::tuple<int, double, double> BOARD::GetTrackLength( const TRACK& aTrack ) con
             if( !inPad )
                 length += track->GetLength();
         }
-        else if( PAD* pad = dyn_cast<PAD*>( item ) )
+        else if( PAD* pad = dynamic_cast<PAD*>( item ) )
         {
             package_length += pad->GetPadToDieLength();
         }

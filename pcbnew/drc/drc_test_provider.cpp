@@ -314,13 +314,13 @@ int DRC_TEST_PROVIDER::forEachGeometryItem( const std::vector<KICAD_T>& aTypes, 
 bool DRC_TEST_PROVIDER::isInvisibleText( const BOARD_ITEM* aItem ) const
 {
 
-    if( const FP_TEXT* text = dyn_cast<const FP_TEXT*>( aItem ) )
+    if( const FP_TEXT* text = dynamic_cast<const FP_TEXT*>( aItem ) )
     {
         if( !text->IsVisible() )
             return true;
     }
 
-    if( const PCB_TEXT* text = dyn_cast<const PCB_TEXT*>( aItem ) )
+    if( const PCB_TEXT* text = dynamic_cast<const PCB_TEXT*>( aItem ) )
     {
         if( !text->IsVisible() )
             return true;

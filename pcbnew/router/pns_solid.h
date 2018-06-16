@@ -64,11 +64,6 @@ public:
         m_padToDie = aSolid.m_padToDie;
     }
 
-    static inline bool ClassOf( const ITEM* aItem )
-    {
-        return aItem && SOLID_T == aItem->Kind();
-    }
-
     ITEM* Clone() const override;
 
     const SHAPE* Shape() const override { return m_shape; }

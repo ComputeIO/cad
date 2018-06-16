@@ -695,7 +695,7 @@ int PCB_INSPECTION_TOOL::HighlightItem( const TOOL_EVENT& aEvent )
 
         for( auto item : selection )
         {
-            if( auto ci = dyn_cast<BOARD_CONNECTED_ITEM*>( item ) )
+            if( auto ci = dynamic_cast<BOARD_CONNECTED_ITEM*>( item ) )
             {
                 int item_net = ci->GetNetCode();
 
@@ -915,11 +915,11 @@ int PCB_INSPECTION_TOOL::LocalRatsnestTool( const TOOL_EVENT& aEvent )
             {
                 for( EDA_ITEM* item : selection )
                 {
-                    if( PAD* pad = dyn_cast<PAD*>( item) )
+                    if( PAD* pad = dynamic_cast<PAD*>( item) )
                     {
                         pad->SetLocalRatsnestVisible( !pad->GetLocalRatsnestVisible() );
                     }
-                    else if( FOOTPRINT* fp = dyn_cast<FOOTPRINT*>( item) )
+                    else if( FOOTPRINT* fp = dynamic_cast<FOOTPRINT*>( item) )
                     {
                         if( !fp->Pads().empty() )
                         {
@@ -1014,23 +1014,22 @@ void PCB_INSPECTION_TOOL::calculateSelectionRatsnest( const VECTOR2I& aDelta )
     {
         BOARD_ITEM* item = static_cast<BOARD_ITEM*>( queued_items[i] );
 
-        if( item->Type() == PCB_FOOTPRINT_T )
+        if( FOOTPRINT *fp = dynamic_cast<FOOTPRINT*>( item ) )
         {
-            for( PAD* pad : static_cast<FOOTPRINT*>( item )->Pads() )
+            for( PAD* pad : fp->Pads() )
             {
                 if( pad->GetLocalRatsnestVisible() || displayOptions().m_ShowModuleRatsnest )
                     items.push_back( pad );
             }
         }
-        else if( item->Type() == PCB_GROUP_T )
+        else if( PCB_GROUP *group = dynamic_cast<PCB_GROUP*>( item ) )
         {
-            PCB_GROUP *group = static_cast<PCB_GROUP*>( item );
             group->RunOnDescendants( [ &queued_items ]( BOARD_ITEM *aItem )
                                      {
                                          queued_items.push_back( aItem );
                                      } );
         }
-        else if( BOARD_CONNECTED_ITEM* boardItem = dyn_cast<BOARD_CONNECTED_ITEM*>( item ) )
+        else if( BOARD_CONNECTED_ITEM* boardItem = dynamic_cast<BOARD_CONNECTED_ITEM*>( item ) )
         {
             if( boardItem->GetLocalRatsnestVisible() || displayOptions().m_ShowModuleRatsnest )
                 items.push_back( boardItem );

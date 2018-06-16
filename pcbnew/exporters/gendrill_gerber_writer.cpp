@@ -171,7 +171,7 @@ int GERBER_WRITER::createDrillFile( wxString& aFullFilename, bool aIsNpth,
         // "Slot" for oblong holes;
         GBR_METADATA gbr_metadata;
 
-        if( dyn_cast<const VIA*>(hole_descr.m_ItemParent ) )
+        if( dynamic_cast<const VIA*>(hole_descr.m_ItemParent ) )
         {
             gbr_metadata.SetApertureAttrib( GBR_APERTURE_METADATA::GBR_APERTURE_ATTRIB_VIADRILL );
 
@@ -183,10 +183,9 @@ int GERBER_WRITER::createDrillFile( wxString& aFullFilename, bool aIsNpth,
 
             last_item_is_via = true;
         }
-        else if( dyn_cast<const PAD*>( hole_descr.m_ItemParent ) )
+        else if( const PAD* pad = dynamic_cast<const PAD*>( hole_descr.m_ItemParent ) )
         {
             last_item_is_via = false;
-            const PAD* pad = dyn_cast<const PAD*>( hole_descr.m_ItemParent );
 
             if( pad->GetProperty() == PAD_PROP_CASTELLATED )
                 gbr_metadata.SetApertureAttrib( GBR_APERTURE_METADATA::GBR_APERTURE_ATTRIB_CASTELLATEDDRILL );

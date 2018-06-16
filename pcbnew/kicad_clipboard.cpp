@@ -118,7 +118,7 @@ void CLIPBOARD_IO::SaveSelection( const PCBNEW_SELECTION& aSelected, bool isFoot
                 clone = static_cast<BOARD_ITEM*>( item->Clone() );
 
             // If it is only a footprint, clear the nets from the pads
-            if( PAD* pad = dyn_cast<PAD*>( clone ) )
+            if( PAD* pad = dynamic_cast<PAD*>( clone ) )
                pad->SetNetCode( 0 );
 
             // Add the pad to the new footprint before moving to ensure the local coords are

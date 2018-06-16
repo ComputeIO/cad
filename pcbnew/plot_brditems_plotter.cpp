@@ -308,7 +308,7 @@ void BRDITEMS_PLOTTER::PlotFootprintTextItems( FOOTPRINT* aFootprint )
 
     for( BOARD_ITEM* item : aFootprint->GraphicalItems() )
     {
-        textItem = dyn_cast<FP_TEXT*>( item );
+        textItem = dynamic_cast<FP_TEXT*>( item );
 
         if( !textItem )
             continue;
@@ -1026,7 +1026,7 @@ void BRDITEMS_PLOTTER::PlotDrillMarks()
 
     for( auto pts : m_board->Tracks() )
     {
-        const VIA* via = dyn_cast<const VIA*>( pts );
+        const VIA* via = dynamic_cast<const VIA*>( pts );
 
         if( via )
         {

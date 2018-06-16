@@ -46,11 +46,6 @@ public:
 
     ~SCH_JUNCTION() { }
 
-    static inline bool ClassOf( const EDA_ITEM* aItem )
-    {
-        return aItem && SCH_JUNCTION_T == aItem->Type();
-    }
-
     wxString GetClass() const override
     {
         return wxT( "SCH_JUNCTION" );

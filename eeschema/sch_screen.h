@@ -168,11 +168,6 @@ public:
 
     bool HasSheets() const { return HasItems( SCH_SHEET_T ); }
 
-    static inline bool ClassOf( const EDA_ITEM* aItem )
-    {
-        return aItem && SCH_SCREEN_T == aItem->Type();
-    }
-
     virtual wxString GetClass() const override
     {
         return wxT( "SCH_SCREEN" );

@@ -244,11 +244,6 @@ private:
     }
 
 public:
-    static inline bool ClassOf( const EDA_ITEM* aItem )
-    {
-        return aItem && PCB_T == aItem->Type();
-    }
-
     /**
      * Set what the board is going to be used for.
      *

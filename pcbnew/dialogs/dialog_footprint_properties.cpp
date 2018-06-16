@@ -265,7 +265,7 @@ bool DIALOG_FOOTPRINT_PROPERTIES::TransferDataToWindow()
 
     for( BOARD_ITEM* item : m_footprint->GraphicalItems() )
     {
-        FP_TEXT* textItem = dyn_cast<FP_TEXT*>( item );
+        FP_TEXT* textItem = dynamic_cast<FP_TEXT*>( item );
 
         if( textItem )
             m_texts->push_back( *textItem );
@@ -645,7 +645,7 @@ bool DIALOG_FOOTPRINT_PROPERTIES::TransferDataFromWindow()
 
     for( BOARD_ITEM* item : m_footprint->GraphicalItems() )
     {
-        FP_TEXT* textItem = dyn_cast<FP_TEXT*>( item );
+        FP_TEXT* textItem = dynamic_cast<FP_TEXT*>( item );
 
         if( textItem )
         {

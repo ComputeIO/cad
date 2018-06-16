@@ -52,11 +52,6 @@ class PCB_GROUP : public BOARD_ITEM
 public:
     PCB_GROUP( BOARD_ITEM* aParent );
 
-    static inline bool ClassOf( const EDA_ITEM* aItem )
-    {
-        return aItem && PCB_GROUP_T == aItem->Type();
-    }
-
     wxString GetClass() const override
     {
         return wxT( "PCB_GROUP" );

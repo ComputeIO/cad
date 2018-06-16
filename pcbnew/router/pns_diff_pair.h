@@ -353,11 +353,6 @@ public:
         m_chamferLimit  = 0;
     }
 
-    static inline bool ClassOf( const ITEM* aItem )
-    {
-        return aItem && ITEM::DIFF_PAIR_T == aItem->Kind();
-    }
-
     DIFF_PAIR* Clone() const override { assert( false ); return NULL; }
 
     virtual void ClearLinks() override

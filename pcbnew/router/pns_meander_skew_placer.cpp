@@ -120,7 +120,7 @@ long long int MEANDER_SKEW_PLACER::itemsetLength( const ITEM_SET& aSet ) const
     long long int total = m_padToDieLenth;
     for( const ITEM* item : aSet.CItems() )
     {
-        if( const LINE* l = dyn_cast<const LINE*>( item ) )
+        if( const LINE* l = dynamic_cast<const LINE*>( item ) )
         {
             total += l->CLine().Length();
         }
@@ -140,13 +140,13 @@ bool MEANDER_SKEW_PLACER::Move( const VECTOR2I& aP, ITEM* aEndItem )
 {
     for( const ITEM* item : m_tunedPathP.CItems() )
     {
-        if( const LINE* l = dyn_cast<const LINE*>( item ) )
+        if( const LINE* l = dynamic_cast<const LINE*>( item ) )
             Dbg()->AddLine( l->CLine(), 5, 10000 );
     }
 
     for( const ITEM* item : m_tunedPathN.CItems() )
     {
-        if( const LINE* l = dyn_cast<const LINE*>( item ) )
+        if( const LINE* l = dynamic_cast<const LINE*>( item ) )
             Dbg()->AddLine( l->CLine(), 4, 10000 );
     }
 
