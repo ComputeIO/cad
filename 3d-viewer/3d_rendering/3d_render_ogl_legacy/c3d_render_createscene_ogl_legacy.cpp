@@ -606,6 +606,10 @@ void C3D_RENDER_OGL_LEGACY::reload( REPORTER *aStatusTextReporter )
                                                       m_settings.BiuTo3Dunits(), false );
         }
 
+        if( layer_id == F_Cu ) {
+            layerTriangles->WriteGLTF("F_Cu");
+        }
+
         // Create display list
         // /////////////////////////////////////////////////////////////////////
         m_ogl_disp_lists_layers[layer_id] = new CLAYERS_OGL_DISP_LISTS( *layerTriangles,
@@ -781,6 +785,8 @@ void C3D_RENDER_OGL_LEGACY::generate_3D_Vias_and_Pads()
                                    layerTriangleVIA );
             }
         }
+
+        layerTriangleVIA->WriteGLTF("vias");
 
         m_ogl_disp_list_via = new CLAYERS_OGL_DISP_LISTS( *layerTriangleVIA,
                                                           0,

@@ -182,6 +182,12 @@ public:
     CLAYER_TRIANGLE_CONTAINER *m_layer_middle_contourns_quads;
     CLAYER_TRIANGLE_CONTAINER *m_layer_bot_triangles;
     CLAYER_TRIANGLE_CONTAINER *m_layer_bot_segment_ends;
+
+    /**
+     * @brief WriteGLTF - writes the contents of the container to a GLTF directory of the given name
+     */
+    void WriteGLTF( const std::string &gltf_name ) const;
+
 };
 
 
