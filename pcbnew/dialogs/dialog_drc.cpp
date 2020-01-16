@@ -38,7 +38,7 @@
 #include <wildcards_and_files_ext.h>
 
 /* class DIALOG_DRC_CONTROL: a dialog to set DRC parameters (clearance, min cooper size)
- * and run DRC tests
+ * and run DRC tests 
  */
 
 // Keywords for read and write config
