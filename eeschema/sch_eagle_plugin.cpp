@@ -1448,9 +1448,9 @@ bool SCH_EAGLE_PLUGIN::loadSymbol( wxXmlNode* aSymbolNode, std::unique_ptr<LIB_P
                             pin->SetNumberTextSize( 0 );
                         }
 
-                        // Eagle does not connect multiple PT_NC pins together when they are stacked.
+                        // Eagle does not connect multiple NC pins together when they are stacked.
                         // KiCad will do this for pins that are coincident.  We opt here for correct
-                        // schematic netlist and leave out the multiple PT_NC pins when stacked.
+                        // schematic netlist and leave out the multiple NC pins when stacked.
                         for( unsigned i = 0; i < pads.GetCount(); i++ )
                         {
                             if( pin->GetType() == ELECTRICAL_PINTYPE::PT_NC && i > 0 )

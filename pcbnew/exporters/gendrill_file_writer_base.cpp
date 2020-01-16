@@ -395,7 +395,7 @@ const wxString GENDRILL_WRITER_BASE::BuildFileFunctionAttributeString(
     else
         text << "Buried";
 
-    // In PT_NC drill file, these previous parameters should be enough:
+    // In NC drill file, these previous parameters should be enough:
     if( aCompatNCdrill )
         return text;
 
