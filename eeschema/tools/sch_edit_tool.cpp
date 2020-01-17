@@ -1309,7 +1309,7 @@ int SCH_EDIT_TOOL::Properties( const TOOL_EVENT& aEvent )
         if( !selection.AreAllItemsIdentical() )
             break;
 
-        std::deque<SCH_TEXT*> texts;
+        std::vector<SCH_TEXT*> texts;
         for( auto selItem : selection.Items() )
         {
             SCH_TEXT* text = dynamic_cast<SCH_TEXT*>( selItem );

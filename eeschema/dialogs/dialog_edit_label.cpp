@@ -45,7 +45,7 @@ class SCH_TEXT;
 class DIALOG_LABEL_EDITOR : public DIALOG_LABEL_EDITOR_BASE
 {
 public:
-    DIALOG_LABEL_EDITOR( SCH_EDIT_FRAME* parent, std::deque<SCH_TEXT*> aTextItems );
+    DIALOG_LABEL_EDITOR( SCH_EDIT_FRAME* parent, std::vector<SCH_TEXT*>& aTextItems );
     ~DIALOG_LABEL_EDITOR();
 
     void SetTitle( const wxString& aTitle ) override
@@ -76,7 +76,7 @@ private:
     bool TransferDataToWindow() override;
     bool TransferDataFromWindow() override;
 
-    std::deque<SCH_TEXT*> m_textItems;
+    std::vector<SCH_TEXT*>& m_textItems;
     SCH_EDIT_FRAME*       m_Parent;
     wxWindow*             m_activeTextCtrl;
     wxTextEntry*          m_activeTextEntry;
@@ -85,7 +85,7 @@ private:
 };
 
 
-int InvokeDialogLabelEditor( SCH_EDIT_FRAME* aCaller, std::deque<SCH_TEXT*> aTextItems )
+int InvokeDialogLabelEditor( SCH_EDIT_FRAME* aCaller, std::vector<SCH_TEXT*>& aTextItems )
 {
     DIALOG_LABEL_EDITOR dialog( aCaller, aTextItems );
 
@@ -95,7 +95,7 @@ int InvokeDialogLabelEditor( SCH_EDIT_FRAME* aCaller, std::deque<SCH_TEXT*> aTex
 
 int InvokeDialogLabelEditor( SCH_EDIT_FRAME* aCaller, SCH_TEXT* aTextItem )
 {
-    std::deque<SCH_TEXT*> list;
+    std::vector<SCH_TEXT*> list;
     list.push_back( aTextItem );
     DIALOG_LABEL_EDITOR dialog( aCaller, list );
 
@@ -166,13 +166,13 @@ const int MAX_TEXTSIZE = INT_MAX;
 
 
 DIALOG_LABEL_EDITOR::DIALOG_LABEL_EDITOR(
-        SCH_EDIT_FRAME* aParent, std::deque<SCH_TEXT*> aTextItems )
+        SCH_EDIT_FRAME* aParent, std::vector<SCH_TEXT*>& aTextItems )
         : DIALOG_LABEL_EDITOR_BASE( aParent ),
           m_textSize( aParent, m_textSizeLabel, m_textSizeCtrl, m_textSizeUnits, false ),
-          m_netNameValidator( true )
+          m_netNameValidator( true ),
+          m_textItems( aTextItems )
 {
     m_Parent    = aParent;
-    m_textItems = aTextItems;
 
     wxASSERT( m_textItems.size() > 0 );
 
