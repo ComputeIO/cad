@@ -1,7 +1,6 @@
 BasedOnStyle: LLVM
 AccessModifierOffset: -4
 AlignAfterOpenBracket: DontAlign
-AlignConsecutiveAssignments: true
 AlignConsecutiveDeclarations: true
 AlignEscapedNewlinesLeft: true
 AlignOperands: true
@@ -38,7 +37,7 @@ Language: Cpp
 MaxEmptyLinesToKeep: 2
 NamespaceIndentation: Inner
 PointerAlignment: Left
-ReflowComments: true
+ReflowComments: false
 SortIncludes: true
 SpaceAfterCStyleCast: true
 SpaceBeforeAssignmentOperators: true
