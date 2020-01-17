@@ -10,6 +10,8 @@
 #include <wx/artprov.h>
 #include <wx/xrc/xmlres.h>
 #include <wx/intl.h>
+#include "widgets/text_ctrl_indeterminate.h"
+#include "widgets/styled_text_ctrl_indeterminate.h"
 #include "dialog_shim.h"
 #include <wx/string.h>
 #include <wx/stattext.h>
@@ -43,9 +45,9 @@ class DIALOG_LABEL_EDITOR_BASE : public DIALOG_SHIM
 
 		wxFlexGridSizer* m_textEntrySizer;
 		wxStaticText* m_labelSingleLine;
-		wxTextCtrl* m_valueSingleLine;
+		TEXT_CTRL_INDETERMINATE* m_valueSingleLine;
 		wxStaticText* m_labelMultiLine;
-		wxStyledTextCtrl* m_valueMultiLine;
+		STYLED_TEXT_CTRL_INDETERMINATE* m_valueMultiLine;
 		wxStaticText* m_labelCombo;
 		wxComboBox* m_valueCombo;
 		wxStaticText* m_textSizeLabel;

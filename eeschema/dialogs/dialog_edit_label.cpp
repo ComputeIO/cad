@@ -241,6 +241,9 @@ DIALOG_LABEL_EDITOR::DIALOG_LABEL_EDITOR(
         m_valueCombo->SetValidator( m_netNameValidator );
     }
 
+    m_valueSingleLine->SetIndeterminateAllowed( ( m_textItems.size() > 1 ) );
+    m_valueMultiLine->SetIndeterminateAllowed( ( m_textItems.size() > 1 ) );
+
     SetInitialFocus( m_activeTextCtrl );
 
     bool isShapableLabel =

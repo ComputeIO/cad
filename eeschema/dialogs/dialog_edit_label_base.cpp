@@ -28,7 +28,7 @@ DIALOG_LABEL_EDITOR_BASE::DIALOG_LABEL_EDITOR_BASE( wxWindow* parent, wxWindowID
 
 	m_textEntrySizer->Add( m_labelSingleLine, 0, wxALIGN_CENTER_VERTICAL|wxBOTTOM|wxRIGHT, 3 );
 
-	m_valueSingleLine = new wxTextCtrl( this, wxID_VALUESINGLE, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxTE_PROCESS_ENTER|wxTE_RICH );
+	m_valueSingleLine = new TEXT_CTRL_INDETERMINATE( this, wxID_VALUESINGLE, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxTE_PROCESS_ENTER|wxTE_RICH );
 	m_valueSingleLine->SetMinSize( wxSize( 360,-1 ) );
 
 	m_textEntrySizer->Add( m_valueSingleLine, 0, wxEXPAND|wxALIGN_CENTER_VERTICAL|wxBOTTOM|wxLEFT, 3 );
@@ -37,7 +37,7 @@ DIALOG_LABEL_EDITOR_BASE::DIALOG_LABEL_EDITOR_BASE( wxWindow* parent, wxWindowID
 	m_labelMultiLine->Wrap( -1 );
 	m_textEntrySizer->Add( m_labelMultiLine, 0, wxRIGHT, 5 );
 
-	m_valueMultiLine = new wxStyledTextCtrl( this, wxID_ANY, wxDefaultPosition, wxDefaultSize, 0, wxEmptyString );
+	m_valueMultiLine = new STYLED_TEXT_CTRL_INDETERMINATE( this, wxID_ANY, wxDefaultPosition, wxDefaultSize, 0, wxEmptyString );
 	m_valueMultiLine->SetUseTabs( true );
 	m_valueMultiLine->SetTabWidth( 4 );
 	m_valueMultiLine->SetIndent( 4 );

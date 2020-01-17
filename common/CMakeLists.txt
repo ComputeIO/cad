@@ -198,7 +198,9 @@ set( COMMON_WIDGET_SRCS
     widgets/progress_reporter.cpp
     widgets/split_button.cpp
     widgets/stepped_slider.cpp
+    widgets/styled_text_ctrl_indeterminate.cpp
     widgets/text_ctrl_eval.cpp
+    widgets/text_ctrl_indeterminate.cpp
     widgets/two_column_tree_list.cpp
     widgets/ui_common.cpp
     widgets/unit_binder.cpp
