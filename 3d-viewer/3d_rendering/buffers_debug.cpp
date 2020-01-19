@@ -29,6 +29,7 @@
 
 #include "buffers_debug.h"
 #include <wx/image.h>   // Used for save an image to disk
+#include <wx/mstream.h>
 
 /**
  * @brief dbg_save_rgb_buffer
@@ -48,6 +49,23 @@ static void dbg_save_rgb_buffer( const wxString& aFileName,
     image.SetData( aRGBpixelBuffer );
     image = image.Mirror( false );
     image.SaveFile( aFileName + ".png", wxBITMAP_TYPE_PNG );
+    image.Destroy();
+}
+
+static void dbg_save_rgba_buffer( wxOutputStream& stream,
+                                  unsigned char *aRGBpixelBuffer,
+                                  const unsigned char *alphaPixelBuffer,
+                                  unsigned int aXSize,
+                                  unsigned int aYSize )
+{
+    unsigned char *alphaBuffer = (unsigned char*) malloc( aXSize * aYSize );
+    std::memcpy( alphaBuffer, alphaPixelBuffer, aXSize * aYSize );
+
+    wxImage image( aXSize, aYSize );
+    image.SetData( aRGBpixelBuffer );
+    image.SetAlpha( alphaBuffer, true );
+    image = image.Mirror( false );
+    image.SaveFile( stream, wxBITMAP_TYPE_PNG );
     image.Destroy();
 }
 
@@ -72,6 +90,28 @@ void DBG_SaveBuffer( const wxString& aFileName,
     }
 
     dbg_save_rgb_buffer( aFileName, pixelbuffer, aXSize, aYSize );
+}
+
+void DBG_SaveBuffer_RGBA( wxOutputStream& stream,
+                          const unsigned char *aInBuffer,
+                          unsigned int aXSize,
+                          unsigned int aYSize )
+{
+    const unsigned int wxh = aXSize * aYSize;
+
+    unsigned char *pixelbuffer = (unsigned char*) malloc( wxh * 3 );
+
+    for( unsigned int i = 0; i < wxh; ++i )
+    {
+        unsigned char v = aInBuffer[i];
+
+        // Set RGB value with all same values intensities
+        pixelbuffer[i * 3 + 0] = 0xFF;
+        pixelbuffer[i * 3 + 1] = 0xFF;
+        pixelbuffer[i * 3 + 2] = 0xFF;
+    }
+
+    dbg_save_rgba_buffer( stream, pixelbuffer, aInBuffer, aXSize, aYSize );
 }
 
 

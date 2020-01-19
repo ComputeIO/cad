@@ -30,6 +30,7 @@
 #include "cimage.h"
 #include "buffers_debug.h"
 #include <string.h> // For memcpy
+#include <wx/mstream.h>
 
 #include <atomic>
 #include <thread>
@@ -536,4 +537,10 @@ void CIMAGE::SetPixelsFromNormalizedFloat( const float * aNormalizedFloatArray )
 void CIMAGE::SaveAsPNG( const wxString& aFileName ) const
 {
     DBG_SaveBuffer( aFileName, m_pixels, m_width, m_height );
+}
+
+
+void CIMAGE::SaveAsPNGStream( wxOutputStream& stream ) const
+{
+    DBG_SaveBuffer_RGBA( stream, m_pixels, m_width, m_height );
 }

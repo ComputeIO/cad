@@ -32,10 +32,14 @@
 
 #include <plugins/3dapi/xv3d_types.h>
 #include <wx/string.h>
+#include <wx/mstream.h>
 
 void DBG_SaveBuffer( const wxString& aFileName,
                      const unsigned char *aInBuffer,
                      unsigned int aXSize, unsigned int aYSize );
+void DBG_SaveBuffer_RGBA( wxOutputStream& stream,
+                          const unsigned char *aInBuffer,
+                          unsigned int aXSize, unsigned int aYSize );
 
 void DBG_SaveBuffer( const wxString& aFileName,
                      const float *aInBuffer,

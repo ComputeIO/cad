@@ -31,6 +31,7 @@
 #define CIMAGE_H
 
 #include <wx/string.h>
+#include <wx/mstream.h>
 
 /// Image operation type
 enum E_IMAGE_OP {
@@ -187,6 +188,7 @@ public:
      * @param aFileName fime name (without extension)
      */
     void SaveAsPNG( const wxString& aFileName ) const;
+    void SaveAsPNGStream( wxOutputStream& stream ) const;
 
     /**
      * Function SetPixelsFromNormalizedFloat
