@@ -132,21 +132,21 @@ wxString UnescapeString( const wxString& aSource )
 {
     wxString converted = aSource;
 
-    converted.Replace( L"{dblquote}", L"\"" );
-    converted.Replace( L"{quote}", L"'" );
-    converted.Replace( L"{lt}", L"<" );
-    converted.Replace( L"{gt}", L">" );
-    converted.Replace( L"{backslash}", L"\\" );
-    converted.Replace( L"{slash}", L"/" );
-    converted.Replace( L"{bar}", L"|" );
-    converted.Replace( L"{colon}", L":" );
-    converted.Replace( L"{space}", L" " );
-    converted.Replace( L"{dollar}", L"$" );
-    converted.Replace( L"{tab}", L"\t" );
-    converted.Replace( L"{return}", L"\n" );
+    converted.Replace( wxS( "{dblquote}" ), wxS( "\"" ) );
+    converted.Replace( wxS( "{quote}" ), wxS( "'" ) );
+    converted.Replace( wxS( "{lt}" ), wxS( "<" ) );
+    converted.Replace( wxS( "{gt}" ), wxS( ">" ) );
+    converted.Replace( wxS( "{backslash}" ), wxS( "\\" ) );
+    converted.Replace( wxS( "{slash}" ), wxS( "/" ) );
+    converted.Replace( wxS( "{bar}" ), wxS( "|" ) );
+    converted.Replace( wxS( "{colon}" ), wxS( ":" ) );
+    converted.Replace( wxS( "{space}" ), wxS( " " ) );
+    converted.Replace( wxS( "{dollar}" ), wxS( "$" ) );
+    converted.Replace( wxS( "{tab}" ), wxS( "\t" ) );
+    converted.Replace( wxS( "{return}" ), wxS( "\n" ) );
 
     // must be done last
-    converted.Replace( L"{brace}", L"{" );
+    converted.Replace( wxS( "{brace}" ), wxS( "{" ) );
 
     return converted;
 }
