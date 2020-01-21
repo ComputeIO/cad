@@ -129,7 +129,6 @@ struct orientationTypeStruct
 };
 
 
-// clang-format off
 /**
  * Conversion map between LABEL_SPIN_STYLE values and style names displayed
  */
