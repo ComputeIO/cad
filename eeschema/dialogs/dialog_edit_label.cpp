@@ -168,8 +168,8 @@ DIALOG_LABEL_EDITOR::DIALOG_LABEL_EDITOR(
         SCH_EDIT_FRAME* aParent, std::vector<SCH_TEXT*>& aTextItems )
         : DIALOG_LABEL_EDITOR_BASE( aParent ),
           m_textSize( aParent, m_textSizeLabel, m_textSizeCtrl, m_textSizeUnits, false ),
-          m_netNameValidator( true ),
-          m_textItems( aTextItems )
+          m_textItems( aTextItems ),
+          m_netNameValidator( true )
 {
     m_Parent    = aParent;
 
