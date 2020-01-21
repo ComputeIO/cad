@@ -87,8 +87,7 @@ EDA_TEXT::EDA_TEXT( const wxString& text ) :
         m_text( text ),
         m_e( 1<<TE_VISIBLE )
 {
-    int sz = Mils2iu( DEFAULT_SIZE_TEXT );
-    SetTextSize( wxSize( sz, sz ) );
+    SetTextSize( wxSize( DEFAULT_SIZE_TEXT, DEFAULT_SIZE_TEXT ) );
 
     if( !text.IsEmpty() )
         m_shown_text = UnescapeString( text );
