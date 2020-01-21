@@ -38,149 +38,184 @@ std::vector<unsigned char> CircleImage() {
     return circleImage_data;
 }
 
-void WriteGLTF( const CLAYER_TRIANGLES* geometry, const std::string& gltf_name ) {
-    int top_length = geometry->m_layer_top_triangles->GetVertexSize();
-    int top_bytes = top_length * sizeof(SFVEC3F);
+/**
+ * @brief PushUntexturedNode - Adds a new mesh node to the GLTF model from the
+ * given triangle container. If add_normals is false, the mesh is assumed to be
+ * flat.
+ */
+void PushUntexturedNode( tinygltf::Model& model, const CLAYER_TRIANGLE_CONTAINER* triangles, bool add_normals ) {
+    int length = triangles->GetVertexSize();
+    int length_bytes = length * sizeof(SFVEC3F);
 
-    int mid_length = geometry->m_layer_middle_contourns_quads->GetVertexSize();
-    int mid_bytes = mid_length * sizeof(SFVEC3F);
+    int node_index = model.nodes.size();
 
-    int top_seg_length = geometry->m_layer_top_segment_ends->GetVertexSize();
-    int top_seg_bytes = top_seg_length * sizeof(SFVEC3F);
+    model.scenes[0].nodes.push_back(node_index);
 
-    SFVEC2F *top_seg_uv_data = new SFVEC2F[top_seg_length];
+    int mesh_index = model.meshes.size();
 
-    for( int i = 0; i < top_seg_length; i += 3 ) {
-        top_seg_uv_data[i + 0] = SFVEC2F( 1.0f, 0.0f );
-        top_seg_uv_data[i + 1] = SFVEC2F( 0.0f, 1.0f );
-        top_seg_uv_data[i + 2] = SFVEC2F( 0.0f, 0.0f );
+    tinygltf::Node node = tinygltf::Node();
+    node.mesh = mesh_index;
+    model.nodes.push_back(node);
+
+    int vertex_buf_view_index = model.bufferViews.size();
+    int normal_buf_view_index = vertex_buf_view_index + 1;
+    int vertex_accessor_index = model.accessors.size();
+    int normal_accessor_index = vertex_accessor_index + 1;
+
+    tinygltf::Mesh mesh = tinygltf::Mesh();
+    tinygltf::Primitive primitive = tinygltf::Primitive();
+    primitive.attributes.insert(std::pair<std::string, int>("POSITION", vertex_accessor_index));
+    if (add_normals) {
+        primitive.attributes.insert(std::pair<std::string, int>("NORMAL", normal_accessor_index));
+    }
+    primitive.mode = TINYGLTF_MODE_TRIANGLES;
+    mesh.primitives.push_back(primitive);
+    model.meshes.push_back(mesh);
+
+    int vertex_buffer_byte_offset = model.buffers[0].data.size();
+    int normal_buffer_byte_offset = vertex_buffer_byte_offset + length_bytes;
+
+    const unsigned char* mid_vertices_data = (const unsigned char*) triangles->GetVertexPointer();
+    std::copy(&mid_vertices_data[0], &mid_vertices_data[length_bytes], std::back_inserter(model.buffers[0].data));
+    if (add_normals) {
+        const unsigned char* mid_normals_data = (const unsigned char*) triangles->GetNormalsPointer();
+        std::copy(&mid_normals_data[0], &mid_normals_data[length_bytes], std::back_inserter(model.buffers[0].data));
     }
 
-    int top_seg_uv_length = top_seg_length;
-    int top_seg_uv_bytes = top_seg_uv_length * sizeof(SFVEC2F);
+    tinygltf::BufferView vertices_view = tinygltf::BufferView();
+    vertices_view.buffer = 0;
+    vertices_view.byteOffset = vertex_buffer_byte_offset;
+    vertices_view.byteLength = length_bytes;
+    vertices_view.target = TINYGLTF_TARGET_ARRAY_BUFFER;
+    model.bufferViews.push_back(vertices_view);
+    if (add_normals) {
+        tinygltf::BufferView normals_view = tinygltf::BufferView();
+        normals_view.buffer = 0;
+        normals_view.byteOffset = normal_buffer_byte_offset;
+        normals_view.byteLength = length_bytes;
+        normals_view.target = TINYGLTF_TARGET_ARRAY_BUFFER;
+        model.bufferViews.push_back(normals_view);
+    }
 
+    tinygltf::Accessor vertices_accessor = tinygltf::Accessor();
+    vertices_accessor.bufferView = vertex_buf_view_index;
+    vertices_accessor.byteOffset = 0;
+    vertices_accessor.componentType = TINYGLTF_COMPONENT_TYPE_FLOAT;
+    vertices_accessor.count = length;
+    vertices_accessor.type = TINYGLTF_TYPE_VEC3;
+    model.accessors.push_back(vertices_accessor);
+    if (add_normals) {
+        tinygltf::Accessor normals_accessor = tinygltf::Accessor();
+        normals_accessor.bufferView = normal_buf_view_index;
+        normals_accessor.byteOffset = 0;
+        normals_accessor.componentType = TINYGLTF_COMPONENT_TYPE_FLOAT;
+        normals_accessor.count = length;
+        normals_accessor.type = TINYGLTF_TYPE_VEC3;
+        model.accessors.push_back(normals_accessor);
+    }
+}
+
+/**
+ * @brief PushTexturedNode - Adds a new textured mesh node to the GLTF model
+ * from the given triangle container.
+ */
+void PushTexturedNode( tinygltf::Model& model, const CLAYER_TRIANGLE_CONTAINER* triangles, int material_index ) {
+    int length = triangles->GetVertexSize();
+    int length_bytes = length * sizeof(SFVEC3F);
+
+    SFVEC2F *uv_data = new SFVEC2F[length];
+    for( int i = 0; i < length; i += 3 ) {
+        uv_data[i + 0] = SFVEC2F( 1.0f, 0.0f );
+        uv_data[i + 1] = SFVEC2F( 0.0f, 1.0f );
+        uv_data[i + 2] = SFVEC2F( 0.0f, 0.0f );
+    }
+
+    int uv_length = length;
+    int uv_length_bytes = uv_length * sizeof(SFVEC2F);
+
+    int node_index = model.nodes.size();
+
+    model.scenes[0].nodes.push_back(node_index);
+
+    int mesh_index = model.meshes.size();
+
+    tinygltf::Node node = tinygltf::Node();
+    node.mesh = mesh_index;
+    model.nodes.push_back(node);
+
+    int vertex_buf_view_index = model.bufferViews.size();
+    int texcoord_buf_view_index = vertex_buf_view_index + 1;
+    int vertex_accessor_index = model.accessors.size();
+    int texcoord_accessor_index = vertex_accessor_index + 1;
+
+    tinygltf::Mesh mesh = tinygltf::Mesh();
+    tinygltf::Primitive primitive = tinygltf::Primitive();
+    primitive.attributes.insert(std::pair<std::string, int>("POSITION", vertex_accessor_index));
+    primitive.attributes.insert(std::pair<std::string, int>("TEXCOORD_0", texcoord_accessor_index));
+    primitive.material = material_index;
+    primitive.mode = TINYGLTF_MODE_TRIANGLES;
+    mesh.primitives.push_back(primitive);
+    model.meshes.push_back(mesh);
+
+    int vertex_buffer_byte_offset = model.buffers[0].data.size();
+    int texcoord_buffer_byte_offset = vertex_buffer_byte_offset + length_bytes;
+
+    const unsigned char* vertex_data = (const unsigned char*) triangles->GetVertexPointer();
+    std::copy(&vertex_data[0], &vertex_data[length_bytes], std::back_inserter(model.buffers[0].data));
+    const unsigned char* uv_data_bytes = (const unsigned char*) uv_data;
+    std::copy(&uv_data_bytes[0], &uv_data_bytes[uv_length_bytes], std::back_inserter(model.buffers[0].data));
+
+    tinygltf::BufferView vertices_view = tinygltf::BufferView();
+    vertices_view.buffer = 0;
+    vertices_view.byteOffset = vertex_buffer_byte_offset;
+    vertices_view.byteLength = length_bytes;
+    vertices_view.target = TINYGLTF_TARGET_ARRAY_BUFFER;
+    model.bufferViews.push_back(vertices_view);
+    tinygltf::BufferView uv_view = tinygltf::BufferView();
+    uv_view.buffer = 0;
+    uv_view.byteOffset = texcoord_buffer_byte_offset;
+    uv_view.byteLength = uv_length_bytes;
+    uv_view.target = TINYGLTF_TARGET_ARRAY_BUFFER;
+    model.bufferViews.push_back(uv_view);
+
+    tinygltf::Accessor vertices_accessor = tinygltf::Accessor();
+    vertices_accessor.bufferView = vertex_buf_view_index;
+    vertices_accessor.byteOffset = 0;
+    vertices_accessor.componentType = TINYGLTF_COMPONENT_TYPE_FLOAT;
+    vertices_accessor.count = length;
+    vertices_accessor.type = TINYGLTF_TYPE_VEC3;
+    model.accessors.push_back(vertices_accessor);
+    tinygltf::Accessor uv_accessor = tinygltf::Accessor();
+    uv_accessor.bufferView = texcoord_buf_view_index;
+    uv_accessor.byteOffset = 0;
+    uv_accessor.componentType = TINYGLTF_COMPONENT_TYPE_FLOAT;
+    uv_accessor.count = uv_length;
+    uv_accessor.type = TINYGLTF_TYPE_VEC2;
+    model.accessors.push_back(uv_accessor);
+}
+
+/**
+ * @brief AddCircleTexture - Adds a circular image to the GLTF model for use as
+ * an alpha mask texture.
+ */
+int AddCircleTexture( tinygltf::Model& model ) {
     std::vector<unsigned char> circle_tex_data = CircleImage();
 
-    tinygltf::Model model = tinygltf::Model();
-    tinygltf::Scene scene = tinygltf::Scene();
-    scene.nodes.push_back(0);
-    scene.nodes.push_back(1);
-    scene.nodes.push_back(2);
-    model.scenes.push_back(scene);
-    tinygltf::Node top_face = tinygltf::Node();
-    top_face.mesh = 0;
-    model.nodes.push_back(top_face);
-    tinygltf::Node side_face = tinygltf::Node();
-    side_face.mesh = 1;
-    model.nodes.push_back(side_face);
-    tinygltf::Node top_circles = tinygltf::Node();
-    top_circles.mesh = 2;
-    model.nodes.push_back(top_circles);
-    tinygltf::Mesh top_face_mesh = tinygltf::Mesh();
-    tinygltf::Primitive top_face_primitive = tinygltf::Primitive();
-    top_face_primitive.attributes.insert(std::pair<std::string, int>("POSITION", 0));
-    top_face_primitive.mode = TINYGLTF_MODE_TRIANGLES;
-    top_face_mesh.primitives.push_back(top_face_primitive);
-    model.meshes.push_back(top_face_mesh);
-    tinygltf::Mesh side_face_mesh = tinygltf::Mesh();
-    tinygltf::Primitive side_face_primitive = tinygltf::Primitive();
-    side_face_primitive.attributes.insert(std::pair<std::string, int>("POSITION", 1));
-    side_face_primitive.attributes.insert(std::pair<std::string, int>("NORMAL", 2));
-    side_face_primitive.mode = TINYGLTF_MODE_TRIANGLES;
-    side_face_mesh.primitives.push_back(side_face_primitive);
-    model.meshes.push_back(side_face_mesh);
-    tinygltf::Mesh top_circles_mesh = tinygltf::Mesh();
-    tinygltf::Primitive top_circles_primitive = tinygltf::Primitive();
-    top_circles_primitive.attributes.insert(std::pair<std::string, int>("POSITION", 3));
-    top_circles_primitive.attributes.insert(std::pair<std::string, int>("TEXCOORD_0", 4));
-    top_circles_primitive.material = 0;
-    top_circles_primitive.mode = TINYGLTF_MODE_TRIANGLES;
-    top_circles_mesh.primitives.push_back(top_circles_primitive);
-    model.meshes.push_back(top_circles_mesh);
-    tinygltf::Buffer buffer = tinygltf::Buffer();
-    const unsigned char* top_vertices_data = (const unsigned char*) geometry->m_layer_top_triangles->GetVertexPointer();
-    std::copy(&top_vertices_data[0], &top_vertices_data[top_bytes], std::back_inserter(buffer.data));
-    const unsigned char* mid_vertices_data = (const unsigned char*) geometry->m_layer_middle_contourns_quads->GetVertexPointer();
-    std::copy(&mid_vertices_data[0], &mid_vertices_data[mid_bytes], std::back_inserter(buffer.data));
-    const unsigned char* mid_normals_data = (const unsigned char*) geometry->m_layer_middle_contourns_quads->GetNormalsPointer();
-    std::copy(&mid_normals_data[0], &mid_normals_data[mid_bytes], std::back_inserter(buffer.data));
-    const unsigned char* top_circles_data = (const unsigned char*) geometry->m_layer_top_segment_ends->GetVertexPointer();
-    std::copy(&top_circles_data[0], &top_circles_data[top_seg_bytes], std::back_inserter(buffer.data));
-    const unsigned char* top_circles_uv_data = (const unsigned char*) top_seg_uv_data;
-    std::copy(&top_circles_uv_data[0], &top_circles_uv_data[top_seg_uv_bytes], std::back_inserter(buffer.data));
-    std::copy(circle_tex_data.begin(), circle_tex_data.end(), std::back_inserter(buffer.data));
-    model.buffers.push_back(buffer);
-    tinygltf::BufferView top_vertices = tinygltf::BufferView();
-    top_vertices.buffer = 0;
-    top_vertices.byteOffset = 0;
-    top_vertices.byteLength = top_bytes;
-    top_vertices.target = TINYGLTF_TARGET_ARRAY_BUFFER;
-    model.bufferViews.push_back(top_vertices);
-    tinygltf::BufferView mid_vertices = tinygltf::BufferView();
-    mid_vertices.buffer = 0;
-    mid_vertices.byteOffset = top_bytes;
-    mid_vertices.byteLength = mid_bytes;
-    mid_vertices.target = TINYGLTF_TARGET_ARRAY_BUFFER;
-    model.bufferViews.push_back(mid_vertices);
-    tinygltf::BufferView mid_normals = tinygltf::BufferView();
-    mid_normals.buffer = 0;
-    mid_normals.byteOffset = top_bytes + mid_bytes;
-    mid_normals.byteLength = mid_bytes;
-    mid_normals.target = TINYGLTF_TARGET_ARRAY_BUFFER;
-    model.bufferViews.push_back(mid_normals);
-    tinygltf::BufferView top_seg_vertices = tinygltf::BufferView();
-    top_seg_vertices.buffer = 0;
-    top_seg_vertices.byteOffset = top_bytes + mid_bytes + mid_bytes;
-    top_seg_vertices.byteLength = top_seg_bytes;
-    top_seg_vertices.target = TINYGLTF_TARGET_ARRAY_BUFFER;
-    model.bufferViews.push_back(top_seg_vertices);
-    tinygltf::BufferView top_seg_uv = tinygltf::BufferView();
-    top_seg_uv.buffer = 0;
-    top_seg_uv.byteOffset = top_bytes + mid_bytes + mid_bytes + top_seg_bytes;
-    top_seg_uv.byteLength = top_seg_uv_bytes;
-    top_seg_uv.target = TINYGLTF_TARGET_ARRAY_BUFFER;
-    model.bufferViews.push_back(top_seg_uv);
+    int texture_byte_offset = model.buffers[0].data.size();
+
+    std::copy(circle_tex_data.begin(), circle_tex_data.end(), std::back_inserter(model.buffers[0].data));
+
+    int buffer_view_index = model.bufferViews.size();
+
     tinygltf::BufferView circle_tex_bufview = tinygltf::BufferView();
     circle_tex_bufview.buffer = 0;
-    circle_tex_bufview.byteOffset = top_bytes + mid_bytes + mid_bytes + top_seg_bytes + top_seg_uv_bytes;
+    circle_tex_bufview.byteOffset = texture_byte_offset;
     circle_tex_bufview.byteLength = circle_tex_data.size();
     circle_tex_bufview.target = 0;
     model.bufferViews.push_back(circle_tex_bufview);
-    tinygltf::Accessor top_vertices_accessor = tinygltf::Accessor();
-    top_vertices_accessor.bufferView = 0;
-    top_vertices_accessor.byteOffset = 0;
-    top_vertices_accessor.componentType = TINYGLTF_COMPONENT_TYPE_FLOAT;
-    top_vertices_accessor.count = top_length;
-    top_vertices_accessor.type = TINYGLTF_TYPE_VEC3;
-    model.accessors.push_back(top_vertices_accessor);
-    tinygltf::Accessor mid_vertices_accessor = tinygltf::Accessor();
-    mid_vertices_accessor.bufferView = 1;
-    mid_vertices_accessor.byteOffset = 0;
-    mid_vertices_accessor.componentType = TINYGLTF_COMPONENT_TYPE_FLOAT;
-    mid_vertices_accessor.count = mid_length;
-    mid_vertices_accessor.type = TINYGLTF_TYPE_VEC3;
-    model.accessors.push_back(mid_vertices_accessor);
-    tinygltf::Accessor mid_normals_accessor = tinygltf::Accessor();
-    mid_normals_accessor.bufferView = 2;
-    mid_normals_accessor.byteOffset = 0;
-    mid_normals_accessor.componentType = TINYGLTF_COMPONENT_TYPE_FLOAT;
-    mid_normals_accessor.count = mid_length;
-    mid_normals_accessor.type = TINYGLTF_TYPE_VEC3;
-    model.accessors.push_back(mid_normals_accessor);
-    tinygltf::Accessor top_seg_vertices_accessor = tinygltf::Accessor();
-    top_seg_vertices_accessor.bufferView = 3;
-    top_seg_vertices_accessor.byteOffset = 0;
-    top_seg_vertices_accessor.componentType = TINYGLTF_COMPONENT_TYPE_FLOAT;
-    top_seg_vertices_accessor.count = top_seg_length;
-    top_seg_vertices_accessor.type = TINYGLTF_TYPE_VEC3;
-    model.accessors.push_back(top_seg_vertices_accessor);
-    tinygltf::Accessor top_seg_uv_accessor = tinygltf::Accessor();
-    top_seg_uv_accessor.bufferView = 4;
-    top_seg_uv_accessor.byteOffset = 0;
-    top_seg_uv_accessor.componentType = TINYGLTF_COMPONENT_TYPE_FLOAT;
-    top_seg_uv_accessor.count = top_seg_uv_length;
-    top_seg_uv_accessor.type = TINYGLTF_TYPE_VEC2;
-    model.accessors.push_back(top_seg_uv_accessor);
+
+    int material_number = model.materials.size();
+
     tinygltf::Material circle_tex_material = tinygltf::Material();
     tinygltf::PbrMetallicRoughness circle_tex_pbrmr = tinygltf::PbrMetallicRoughness();
     circle_tex_pbrmr.baseColorFactor = std::vector<double>{ 1.0, 1.0, 1.0, 1.0 };
@@ -197,7 +232,7 @@ void WriteGLTF( const CLAYER_TRIANGLES* geometry, const std::string& gltf_name )
     circle_tex.source = 0;
     model.textures.push_back(circle_tex);
     tinygltf::Image circle_image = tinygltf::Image();
-    circle_image.bufferView = 5;
+    circle_image.bufferView = buffer_view_index;
     circle_image.mimeType = "image/png";
     model.images.push_back(circle_image);
     tinygltf::Sampler circle_tex_sampler = tinygltf::Sampler();
@@ -206,8 +241,28 @@ void WriteGLTF( const CLAYER_TRIANGLES* geometry, const std::string& gltf_name )
     circle_tex_sampler.wrapS = TINYGLTF_TEXTURE_WRAP_REPEAT;
     circle_tex_sampler.wrapT = TINYGLTF_TEXTURE_WRAP_REPEAT;
     model.samplers.push_back(circle_tex_sampler);
-    model.defaultScene = 0;
+
+    return material_number;
+}
+
+/**
+ * @brief WriteGLTF - Writes the geometry from the given PCB layer into a GLB
+ * file of the given name.
+ */
+void WriteGLTF( const CLAYER_TRIANGLES* geometry, const std::string& gltf_name ) {
+    tinygltf::Model model = tinygltf::Model();
     model.asset.version = "2.0";
+    model.scenes.push_back(tinygltf::Scene());
+    model.defaultScene = 0;
+    model.buffers.push_back(tinygltf::Buffer());
+
+    int circle_material = AddCircleTexture(model);
+
+    PushUntexturedNode(model, geometry->m_layer_top_triangles, false);
+    PushTexturedNode(model, geometry->m_layer_top_segment_ends, circle_material);
+    PushUntexturedNode(model, geometry->m_layer_middle_contourns_quads, true);
+    PushUntexturedNode(model, geometry->m_layer_bot_triangles, false);
+    PushTexturedNode(model, geometry->m_layer_bot_segment_ends, circle_material);
 
     tinygltf::TinyGLTF loader;
     loader.WriteGltfSceneToFile(&model, gltf_name + ".glb", false, true, false, true);
