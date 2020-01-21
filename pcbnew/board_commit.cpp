@@ -93,6 +93,12 @@ void BOARD_COMMIT::Push( const wxString& aMessage, bool aCreateUndoEntry, bool a
     SELECTION_TOOL*     selTool = m_toolMgr->GetTool<SELECTION_TOOL>();
     bool                itemsDeselected = false;
 
+    /* TODO: Work with mhebert to publish board changes to a web socket. For now, printing
+    an update message every time this push method is called will suffice.
+    */
+
+    std::cout << "Board updated." << std::endl;
+
     if( Empty() )
         return;
 
