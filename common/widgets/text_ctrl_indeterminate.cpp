@@ -50,7 +50,7 @@ void TEXT_CTRL_INDETERMINATE::SetValue( const wxString& aValue )
 
 wxString TEXT_CTRL_INDETERMINATE::GetValue() const
 {
-    if( m_canBeIndeterminate && wxTextCtrl::GetValue() == m_indeterminateStr  )
+    if( IsIndeterminate() )
     {
         return wxEmptyString;
     }
@@ -61,7 +61,7 @@ wxString TEXT_CTRL_INDETERMINATE::GetValue() const
 
 void TEXT_CTRL_INDETERMINATE::onTextFocusGet( wxFocusEvent& aEvent )
 {
-    if( m_canBeIndeterminate && wxTextCtrl::GetValue() == m_indeterminateStr  )
+    if( IsIndeterminate() )
     {
         wxTextCtrl::SetValue( wxEmptyString );
     }
@@ -84,6 +84,17 @@ bool TEXT_CTRL_INDETERMINATE::checkSetIndeterminateState( const wxString& aValue
     {
         wxTextCtrl::SetValue( m_indeterminateStr );
         SetStyle( 0, wxTextCtrl::GetValue().Length(), wxTextAttr( *wxLIGHT_GREY, wxNullColour, *wxITALIC_FONT ) );
+        return true;
+    }
+
+    return false;
+}
+
+
+bool TEXT_CTRL_INDETERMINATE::IsIndeterminate() const
+{
+    if( m_canBeIndeterminate && wxTextCtrl::GetValue() == m_indeterminateStr )
+    {
         return true;
     }
 

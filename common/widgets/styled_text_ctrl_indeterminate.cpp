@@ -48,7 +48,7 @@ void STYLED_TEXT_CTRL_INDETERMINATE::SetValue( const wxString& aValue )
 
 wxString STYLED_TEXT_CTRL_INDETERMINATE::GetValue() const
 {
-    if( m_canBeIndeterminate && wxStyledTextCtrl::GetValue() == m_indeterminateStr  )
+    if( IsIndeterminate() )
     {
         return wxEmptyString;
     }
@@ -59,7 +59,7 @@ wxString STYLED_TEXT_CTRL_INDETERMINATE::GetValue() const
 
 void STYLED_TEXT_CTRL_INDETERMINATE::onTextFocusGet( wxFocusEvent& aEvent )
 {
-    if( m_canBeIndeterminate && wxStyledTextCtrl::GetValue() == m_indeterminateStr )
+    if( IsIndeterminate() )
     {
         wxStyledTextCtrl::SetValue( wxEmptyString );
         StyleClearAll();
@@ -89,6 +89,17 @@ bool STYLED_TEXT_CTRL_INDETERMINATE::checkSetIndeterminateState( const wxString&
     else
     {
         StyleClearAll();
+    }
+
+    return false;
+}
+
+
+bool STYLED_TEXT_CTRL_INDETERMINATE::IsIndeterminate() const
+{
+    if( m_canBeIndeterminate && wxStyledTextCtrl::GetValue() == m_indeterminateStr )
+    {
+        return true;
     }
 
     return false;

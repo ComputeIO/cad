@@ -56,6 +56,8 @@ public:
         m_canBeIndeterminate = aYes;
     }
 
+    bool IsIndeterminate() const;
+
 protected:
     wxString m_indeterminateStr;
     bool m_canBeIndeterminate = false;
