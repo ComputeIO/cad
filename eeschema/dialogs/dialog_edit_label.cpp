@@ -103,16 +103,16 @@ int InvokeDialogLabelEditor( SCH_EDIT_FRAME* aCaller, SCH_TEXT* aTextItem )
 }
 
 
+// clang-format off
 struct shapeTypeStruct
 {
     wxString             name;
     const BITMAP_OPAQUE* bitmap;
 };
 
-/*
- * Conversion map between PLOT_DASH_TYPE values and style names displayed
+/**
+ * Conversion map between PINSHEETLABEL_SHAPE values and style names displayed
  */
-// clang-format off
 const std::map<PINSHEETLABEL_SHAPE, struct shapeTypeStruct> shapeTypeNames = {
     { PINSHEETLABEL_SHAPE::PS_INPUT,        { _( "Input" ),         pintype_input_xpm } },
     { PINSHEETLABEL_SHAPE::PS_OUTPUT,       { _( "Output" ),        pintype_output_xpm } },
@@ -120,7 +120,6 @@ const std::map<PINSHEETLABEL_SHAPE, struct shapeTypeStruct> shapeTypeNames = {
     { PINSHEETLABEL_SHAPE::PS_TRISTATE,     { _( "Tri-state" ),     pintype_3states_xpm } },
     { PINSHEETLABEL_SHAPE::PS_UNSPECIFIED,  { _( "Passive" ),       pintype_passive_xpm } },
 };
-// clang-format on
 
 
 struct orientationTypeStruct
@@ -129,17 +128,18 @@ struct orientationTypeStruct
     const BITMAP_OPAQUE* bitmap;
 };
 
-/*
- * Conversion map between PLOT_DASH_TYPE values and style names displayed
- */
+
 // clang-format off
+/**
+ * Conversion map between LABEL_SPIN_STYLE values and style names displayed
+ */
 const std::map<LABEL_SPIN_STYLE, struct orientationTypeStruct> orientationOptionsMap = {
     { LABEL_SPIN_STYLE::LEFT,   { _("Left"),    align_items_left_sm_xpm } },
     { LABEL_SPIN_STYLE::UP,     { _("Up"),      align_items_top_sm_xpm } },
     { LABEL_SPIN_STYLE::RIGHT,  { _("Right"),   align_items_right_sm_xpm } },
     { LABEL_SPIN_STYLE::BOTTOM, { _("Down"),    align_items_bottom_sm_xpm } },
 };
-// clang-format on
+
 
 struct textStyleStruct
 {
@@ -147,10 +147,10 @@ struct textStyleStruct
     const BITMAP_OPAQUE* bitmap;
 };
 
-/*
- * Conversion map between PLOT_DASH_TYPE values and style names displayed
+
+/**
+ * Conversion map between font style values and style names displayed
  */
-// clang-format off
 const std::map<int, struct textStyleStruct> textStylesMap = {
     { 0, { _("Normal"),             font_normal_xpm } },
     { 1, { _("Italic"),             font_italic_xpm } },
