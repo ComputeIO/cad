@@ -81,8 +81,8 @@ bool STYLED_TEXT_CTRL_INDETERMINATE::checkSetIndeterminateState( const wxString&
 {
     if( m_canBeIndeterminate && aValue.IsEmpty() )
     {
-        StyleSetForeground( wxSTC_C_DEFAULT, *wxLIGHT_GREY );
-        StyleSetItalic( wxSTC_C_DEFAULT, true );
+        StyleSetForeground( wxSTC_C_DEFAULT, wxColour( 169, 169, 169, wxALPHA_OPAQUE ) );
+        StyleSetBold( wxSTC_C_DEFAULT, true );
         wxStyledTextCtrl::SetValue( m_indeterminateStr );
         return true;
     }

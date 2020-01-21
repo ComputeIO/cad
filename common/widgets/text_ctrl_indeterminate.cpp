@@ -83,7 +83,9 @@ bool TEXT_CTRL_INDETERMINATE::checkSetIndeterminateState( const wxString& aValue
     if( m_canBeIndeterminate && aValue.IsEmpty() )
     {
         wxTextCtrl::SetValue( m_indeterminateStr );
-        SetStyle( 0, wxTextCtrl::GetValue().Length(), wxTextAttr( *wxLIGHT_GREY, wxNullColour, *wxITALIC_FONT ) );
+        SetStyle( 0, wxTextCtrl::GetValue().Length(),
+                wxTextAttr( wxColour( 169, 169, 169, wxALPHA_OPAQUE ), wxNullColour,
+                        ( *wxNORMAL_FONT ).Bold() ) );
         return true;
     }
 
