@@ -52,7 +52,7 @@ wxString TEXT_CTRL_INDETERMINATE::GetValue() const
 {
     if( m_canBeIndeterminate && wxTextCtrl::GetValue() == m_indeterminateStr  )
     {
-        return "";
+        return wxEmptyString;
     }
 
     return wxTextCtrl::GetValue();
@@ -63,7 +63,7 @@ void TEXT_CTRL_INDETERMINATE::onTextFocusGet( wxFocusEvent& aEvent )
 {
     if( m_canBeIndeterminate && wxTextCtrl::GetValue() == m_indeterminateStr  )
     {
-        wxTextCtrl::SetValue( "" );
+        wxTextCtrl::SetValue( wxEmptyString );
     }
 
     aEvent.Skip();

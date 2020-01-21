@@ -50,7 +50,7 @@ wxString STYLED_TEXT_CTRL_INDETERMINATE::GetValue() const
 {
     if( m_canBeIndeterminate && wxStyledTextCtrl::GetValue() == m_indeterminateStr  )
     {
-        return "";
+        return wxEmptyString;
     }
 
     return wxStyledTextCtrl::GetValue();
@@ -61,7 +61,7 @@ void STYLED_TEXT_CTRL_INDETERMINATE::onTextFocusGet( wxFocusEvent& aEvent )
 {
     if( m_canBeIndeterminate && wxStyledTextCtrl::GetValue() == m_indeterminateStr )
     {
-        wxStyledTextCtrl::SetValue( "" );
+        wxStyledTextCtrl::SetValue( wxEmptyString );
         StyleClearAll();
     }
 
