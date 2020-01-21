@@ -42,6 +42,11 @@ public:
     {
     }
 
+    void SetIndeterminateString( const wxString& aStr )
+    {
+        m_indeterminateStr = aStr;
+    }
+
     void SetValue( const wxString& aValue ) override;
 
     wxString GetValue() const override;
@@ -52,6 +57,7 @@ public:
     }
 
 protected:
+    wxString m_indeterminateStr;
     bool m_canBeIndeterminate = false;
 
     void onTextFocusGet( wxFocusEvent& aEvent );

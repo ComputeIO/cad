@@ -23,13 +23,14 @@
 
 #include <widgets/text_ctrl_indeterminate.h>
 
-#define INDETERMINATE_STRING "<...>"
+#define DEFAULT_INDETERMINATE_STRING "<...>"
 
 TEXT_CTRL_INDETERMINATE::TEXT_CTRL_INDETERMINATE( wxWindow* aParent, wxWindowID aId,
         const wxString& aValue, const wxPoint& aPos, const wxSize& aSize, long aStyle,
         const wxValidator& aValidator, const wxString& aName )
         : wxTextCtrl( aParent, aId, aValue, aPos, aSize, aStyle | wxTE_PROCESS_ENTER, aValidator,
-                  aName )
+                  aName ),
+          m_indeterminateStr( DEFAULT_INDETERMINATE_STRING )
 {
     Connect( wxEVT_SET_FOCUS, wxFocusEventHandler( TEXT_CTRL_INDETERMINATE::onTextFocusGet ), NULL,
             this );
@@ -49,7 +50,7 @@ void TEXT_CTRL_INDETERMINATE::SetValue( const wxString& aValue )
 
 wxString TEXT_CTRL_INDETERMINATE::GetValue() const
 {
-    if( m_canBeIndeterminate && wxTextCtrl::GetValue() == INDETERMINATE_STRING  )
+    if( m_canBeIndeterminate && wxTextCtrl::GetValue() == m_indeterminateStr  )
     {
         return "";
     }
@@ -60,7 +61,7 @@ wxString TEXT_CTRL_INDETERMINATE::GetValue() const
 
 void TEXT_CTRL_INDETERMINATE::onTextFocusGet( wxFocusEvent& aEvent )
 {
-    if( m_canBeIndeterminate && wxTextCtrl::GetValue() == INDETERMINATE_STRING  )
+    if( m_canBeIndeterminate && wxTextCtrl::GetValue() == m_indeterminateStr  )
     {
         wxTextCtrl::SetValue( "" );
     }
@@ -81,7 +82,7 @@ bool TEXT_CTRL_INDETERMINATE::checkSetIndeterminateState( const wxString& aValue
 {
     if( m_canBeIndeterminate && aValue.IsEmpty() )
     {
-        wxTextCtrl::SetValue( INDETERMINATE_STRING );
+        wxTextCtrl::SetValue( m_indeterminateStr );
         SetStyle( 0, wxTextCtrl::GetValue().Length(), wxTextAttr( *wxLIGHT_GREY, wxNullColour, *wxITALIC_FONT ) );
         return true;
     }

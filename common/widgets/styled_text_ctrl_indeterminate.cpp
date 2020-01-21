@@ -23,11 +23,12 @@
 
 #include <widgets/styled_text_ctrl_indeterminate.h>
 
-#define INDETERMINATE_STRING "<...>"
+#define DEFAULT_INDETERMINATE_STRING "<...>"
 
 STYLED_TEXT_CTRL_INDETERMINATE::STYLED_TEXT_CTRL_INDETERMINATE( wxWindow* aParent, wxWindowID aId,
         const wxPoint& aPos, const wxSize& aSize, long aStyle, const wxString& aName )
-        : wxStyledTextCtrl( aParent, aId, aPos, aSize, aStyle | wxTE_PROCESS_ENTER, aName )
+        : wxStyledTextCtrl( aParent, aId, aPos, aSize, aStyle | wxTE_PROCESS_ENTER, aName ),
+          m_indeterminateStr( DEFAULT_INDETERMINATE_STRING )
 {
     Connect( wxEVT_SET_FOCUS, wxFocusEventHandler( STYLED_TEXT_CTRL_INDETERMINATE::onTextFocusGet ),
             NULL, this );
@@ -47,7 +48,7 @@ void STYLED_TEXT_CTRL_INDETERMINATE::SetValue( const wxString& aValue )
 
 wxString STYLED_TEXT_CTRL_INDETERMINATE::GetValue() const
 {
-    if( m_canBeIndeterminate && wxStyledTextCtrl::GetValue() == INDETERMINATE_STRING  )
+    if( m_canBeIndeterminate && wxStyledTextCtrl::GetValue() == m_indeterminateStr  )
     {
         return "";
     }
@@ -58,7 +59,7 @@ wxString STYLED_TEXT_CTRL_INDETERMINATE::GetValue() const
 
 void STYLED_TEXT_CTRL_INDETERMINATE::onTextFocusGet( wxFocusEvent& aEvent )
 {
-    if( m_canBeIndeterminate && wxStyledTextCtrl::GetValue() == INDETERMINATE_STRING )
+    if( m_canBeIndeterminate && wxStyledTextCtrl::GetValue() == m_indeterminateStr )
     {
         wxStyledTextCtrl::SetValue( "" );
         StyleClearAll();
@@ -82,7 +83,7 @@ bool STYLED_TEXT_CTRL_INDETERMINATE::checkSetIndeterminateState( const wxString&
     {
         StyleSetForeground( wxSTC_C_DEFAULT, *wxLIGHT_GREY );
         StyleSetItalic( wxSTC_C_DEFAULT, true );
-        wxStyledTextCtrl::SetValue( INDETERMINATE_STRING );
+        wxStyledTextCtrl::SetValue( m_indeterminateStr );
         return true;
     }
     else
