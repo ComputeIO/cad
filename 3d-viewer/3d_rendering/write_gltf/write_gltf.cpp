@@ -43,7 +43,17 @@ std::vector<unsigned char> CircleImage() {
  * given triangle container. If add_normals is false, the mesh is assumed to be
  * flat.
  */
-void PushUntexturedNode( tinygltf::Model& model, const CLAYER_TRIANGLE_CONTAINER* triangles, bool add_normals ) {
+void PushUntexturedNode( tinygltf::Model& model, const CLAYER_TRIANGLE_CONTAINER* triangles ) {
+    if (triangles->GetVertexSize() == 0) {
+        // Don't do anything if the layer is empty
+        return;
+    }
+
+    bool add_normals = false;
+    if (triangles->GetNormalsSize()) {
+        add_normals = true;
+    }
+
     int length = triangles->GetVertexSize();
     int length_bytes = length * sizeof(SFVEC3F);
 
@@ -120,6 +130,11 @@ void PushUntexturedNode( tinygltf::Model& model, const CLAYER_TRIANGLE_CONTAINER
  * from the given triangle container.
  */
 void PushTexturedNode( tinygltf::Model& model, const CLAYER_TRIANGLE_CONTAINER* triangles, int material_index ) {
+    if (triangles->GetVertexSize() == 0) {
+        // Don't do anything if the layer is empty
+        return;
+    }
+
     int length = triangles->GetVertexSize();
     int length_bytes = length * sizeof(SFVEC3F);
 
@@ -256,13 +271,15 @@ void WriteGLTF( const CLAYER_TRIANGLES* geometry, const std::string& gltf_name )
     model.defaultScene = 0;
     model.buffers.push_back(tinygltf::Buffer());
 
-    int circle_material = AddCircleTexture(model);
+    PushUntexturedNode(model, geometry->m_layer_top_triangles);
+    PushUntexturedNode(model, geometry->m_layer_middle_contourns_quads);
+    PushUntexturedNode(model, geometry->m_layer_bot_triangles);
 
-    PushUntexturedNode(model, geometry->m_layer_top_triangles, false);
-    PushTexturedNode(model, geometry->m_layer_top_segment_ends, circle_material);
-    PushUntexturedNode(model, geometry->m_layer_middle_contourns_quads, true);
-    PushUntexturedNode(model, geometry->m_layer_bot_triangles, false);
-    PushTexturedNode(model, geometry->m_layer_bot_segment_ends, circle_material);
+    if(geometry->m_layer_top_segment_ends->GetVertexSize() || geometry->m_layer_bot_segment_ends->GetVertexSize()) {
+        int circle_material = AddCircleTexture(model);
+        PushTexturedNode(model, geometry->m_layer_top_segment_ends, circle_material);
+        PushTexturedNode(model, geometry->m_layer_bot_segment_ends, circle_material);
+    }
 
     tinygltf::TinyGLTF loader;
     loader.WriteGltfSceneToFile(&model, gltf_name + ".glb", false, true, false, true);

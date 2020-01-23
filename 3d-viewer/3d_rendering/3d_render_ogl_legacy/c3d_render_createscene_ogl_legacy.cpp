@@ -607,9 +607,7 @@ void C3D_RENDER_OGL_LEGACY::reload( REPORTER *aStatusTextReporter )
                                                       m_settings.BiuTo3Dunits(), false );
         }
 
-        if( layer_id == F_Cu ) {
-            WriteGLTF(layerTriangles, "F_Cu");
-        }
+        WriteGLTF(layerTriangles, BOARD::GetStandardLayerName(layer_id).ToStdString());
 
         // Create display list
         // /////////////////////////////////////////////////////////////////////
