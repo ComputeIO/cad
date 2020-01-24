@@ -20,9 +20,7 @@ of requirements that must be completed before work can begin on any of the
 tasks.  The status section should include a list of completed tasks or marked
 as complete as when the goal is met.
 
-<!-- [TOC] Note: as of 2020-01-24, GitLab does not support generating tables
-of contents in markdown documents located in the source tree.  See:
-https://gitlab.com/gitlab-org/gitlab/issues/21901 -->
+[TOC] 
 
 # General
 This section defines the tasks that affect all or most of KiCad or do not
