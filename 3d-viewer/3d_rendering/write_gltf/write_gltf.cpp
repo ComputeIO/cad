@@ -93,7 +93,7 @@ void PushUntexturedNode( tinygltf::Model& model, const CLAYER_TRIANGLE_CONTAINER
 
     int node_index = model.nodes.size();
 
-    model.scenes[0].nodes.push_back(node_index);
+    model.nodes[0].children.push_back(node_index);
 
     int mesh_index = model.meshes.size();
 
@@ -188,7 +188,7 @@ void PushTexturedNode( tinygltf::Model& model, const CLAYER_TRIANGLE_CONTAINER* 
 
     int node_index = model.nodes.size();
 
-    model.scenes[0].nodes.push_back(node_index);
+    model.nodes[0].children.push_back(node_index);
 
     int mesh_index = model.meshes.size();
 
@@ -312,6 +312,8 @@ void WriteGLTF( const CLAYER_TRIANGLES* geometry, const std::string& gltf_name )
     model.scenes.push_back(tinygltf::Scene());
     model.defaultScene = 0;
     model.buffers.push_back(tinygltf::Buffer());
+    model.nodes.push_back(tinygltf::Node());
+    model.scenes[0].nodes.push_back(0);
 
     PushUntexturedNode(model, geometry->m_layer_top_triangles);
     PushUntexturedNode(model, geometry->m_layer_middle_contourns_quads);
