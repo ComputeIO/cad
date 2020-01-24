@@ -1,4 +1,4 @@
-# Version 6 Road Map # {#v6_road_map}
+# Version 6 Road Map
 
 This document is the KiCad version 6 Developer's road map document.  It is
 living document that should be maintained during the version 6 development
@@ -20,14 +20,16 @@ of requirements that must be completed before work can begin on any of the
 tasks.  The status section should include a list of completed tasks or marked
 as complete as when the goal is met.
 
-[TOC]
+<!-- [TOC] Note: as of 2020-01-24, GitLab does not support generating tables
+of contents in markdown documents located in the source tree.  See:
+https://gitlab.com/gitlab-org/gitlab/issues/21901 -->
 
-# General # {#v6_general}
+# General
 This section defines the tasks that affect all or most of KiCad or do not
 fit under as specific part of the code such as the board editor or the
 schematic editor.
 
-## User Interface Modernization ## {#v6_wxaui}
+## User Interface Modernization
 **Goal:**
 
 Give KiCad a more modern user interface with dockable tool bars and windows.
@@ -50,7 +52,7 @@ Create perspectives to allow users to arrange dockable windows as they prefer.
 **Status:**
 - No progress.
 
-## Object Properties and Introspection ## {#v6_object_props}
+## Object Properties and Introspection
 **Goal:**
 
 Provide an object introspection system using properties.
@@ -68,11 +70,73 @@ Provide an object introspection system using properties.
 **Status:**
 - In progress.
 
+**Team:**
+- Orson
 
-# Eeschema: Schematic Editor # {#v6_eeschema}
+## New project and user settings framework
+**Goal:**
+
+Improve management of project and user settings, removing settings that are
+not associated with design data from the design files.
+
+**Task:**
+- Switch from wxConfig to JSON-based settings files
+- Centralize settings file management (new SETTINGS_MANAGER object)
+- Add support for versioned settings and automatic migration
+- Create new project settings directory
+- Migrate settings out of the board file (etc) into new settings files
+
+**Dependencies:**
+- None
+
+**Status:**
+- In progress
+
+**Team:**
+- Jon
+
+## Color theme support
+**Goal:**
+
+Support storing color themes in standalone settings files, easy switching
+between color themes, and a better color editor across all applications.
+
+**Task:**
+- Migrate color settings storage into a unified color theme file
+- New color settings GUI that supports managing themes
+
+**Dependencies:**
+- [New project and user settings framework](#object-properties-and-introspection)
+
+**Status:**
+- In progress
+
+**Team:**
+- Jon
+
+## String substitution
+**Goal:**
+
+Allow substituting object properties into strings through an escape sequence.
+
+**Task:**
+- Migrate color settings storage into a unified color theme file
+- New color settings GUI that supports managing themes
+
+**Dependencies:**
+- [Object Properties and Introspection](#new-project-and-user-settings-framework)
+
+**Status:**
+- No progress.
+
+**Team:**
+- Jon
+
+
+# Eeschema: Schematic Editor
 This section applies to the source code for the Eeschema schematic editor.
 
-## Coherent SCHEMATIC Object ## {#v6_sch_object}
+## Coherent SCHEMATIC Object
 **Goal:**
 
 Clean up the code related to the schematic object(s) into a coherent object for
@@ -94,7 +158,10 @@ and Python scripting.
 **Status:**
 - In progress.
 
-## Implement Sweet (S-Expression) Symbol Libraries ## {#v6_sch_sweet}
+**Team:**
+- Wayne
+
+## Implement Sweet (S-Expression) Symbol Libraries
 **Goal:**
 
 Make symbol library design more robust and feature rich.  Use s-expressions
@@ -109,7 +176,10 @@ to make component library files more readable.
 **Status:**
 - Initial SWEET library file format document  written.
 
-## S-Expression File Format ## {#v6_sch_sexpr}
+**Team:**
+- Wayne
+
+## S-Expression File Format
 **Goal:**
 
 Make schematic file format more readable, add new features, and take advantage
@@ -123,12 +193,15 @@ of the s-expression parser and formatter capability used in Pcbnew.
 - Add new s-expression file format to plugin.
 
 **Dependencies:**
-- [S-expression file format](#v6_sch_sweet).
+- [S-expression file format](#s-expression-file-format).
 
 **Status:**
 - File format document initial draft complete.
 
-## Move Common Schematic Code into a Shared Object ## {#v6_sch_shared_object}
+**Team:**
+- Wayne
+
+## Move Common Schematic Code into a Shared Object
 **Goal:**
 
 Refactor all schematic object code so that it can be built into a shared object
@@ -147,23 +220,30 @@ programs.
 **Progress:**
 - No progress.
 
-## ERC Improvements ## {#v6_sch_erc_improvements}
+**Team:**
+- Wayne
+
+## ERC Improvements
 **Goal:**
 
 Improve the coverage and usability of the electrical rules checker (ERC).
 
 **Task:**
-- Add warning when multiple labels are defined for a single net.  The user should
-  be able to disable this warning.
-- Save electrical rules settings to project file between sessions.
+- Refactor and clean up the ERC codebase
+- Store ERC settings with a project
+- Improve ERC UI and UX
+- Add new ERC features requested by users
 
 **Dependencies:**
-- None
+- [New project and user settings framework](#new-project-and-user-settings-framework)
 
 **Status:**
-- No progress.
+- [Specification written](https://docs.google.com/document/d/19Dg5e_Ez25AnGzMN5f1XsZkz1DjTY1g-kkRJDx4e_GQ/edit#)
 
-## Port Editing Tools to New Tool Framework ## {#v6_sch_tool_framework}
+**Team:**
+- Jon
+
+## Port Editing Tools to New Tool Framework
 **Goal:**
 
 Convert all editing tool to new tool framework.
@@ -175,12 +255,12 @@ Convert all editing tool to new tool framework.
 - Remove legacy tool framework.
 
 **Dependencies:**
-- None.
+- None
 
 **Status:**
-- Schematic editor complete.
+- Complete
 
-## Net Highlighting ## {#v6_sch_net_highlight}
+## Net Highlighting
 **Goal:**
 Highlight wires, buses, and junctions when corresponding net in Pcbnew is selected.
 
@@ -195,7 +275,7 @@ Highlight wires, buses, and junctions when corresponding net in Pcbnew is select
 **Status:**
 - Complete.
 
-## Allow Use of System Fonts ## {#v6_sch_sys_fonts}
+## Allow Use of System Fonts
 **Goal:**
 
 Currently the schematic editor uses the stroke drawn fonts which aren't really
@@ -208,12 +288,12 @@ for schematic text.
 - Add support for selecting text object fonts.
 
 **Dependencies:**
-- [S-expression schematic file format](#v6_sch_sexpr).
+- [S-expression schematic file format](#s-expression-file-format).
 
 **Status:**
 - No progress.
 
-## Symbol and Netlist Attributes ## {#v6_netlist_attributes}
+## Symbol and Netlist Attributes
 **Goal:**
 
 Provide a method of passing information to other tools via the net list.
@@ -225,12 +305,12 @@ Provide a method of passing information to other tools via the net list.
   format.
 
 **Dependencies:**
-- [S-expression schematic file format](#v6_sch_sexpr).
+- [S-expression schematic file format](#s-expression-file-format).
 
 **Status:**
 - No progress.
 
-## Orthogonal Wire Drag ## {#v6_orthogonal_drag}
+## Orthogonal Wire Drag
 **Goal:**
 
 Keep wires and buses orthogonal when dragging a symbol.
@@ -239,12 +319,12 @@ Keep wires and buses orthogonal when dragging a symbol.
 - Add code to new tool framework to allow for orthogonal dragging of symbols.
 
 **Dependencies:**
-- [New tool framework](#v6_sch_tool_framework).
+- [New tool framework](#port-editing-tools-to-new-tool-framework).
 
 **Status:**
 - No progress.
 
-## Custom Wire and Bus Attributes ## {#v6_sch_bus_wire_attr}
+## Custom Wire and Bus Attributes
 **Goal:**
 
 Allow for wires and buses to have different widths, colors, and line types.
@@ -254,12 +334,12 @@ Allow for wires and buses to have different widths, colors, and line types.
 - Add user interface element to support changing wire and bus attributes.
 
 **Dependencies:**
-- [S-Expression File Format](#v6_sch_sexpr).
+- [S-Expression File Format](#s-expression-file-format).
 
 **Status:**
 - No progress.
 
-## Connectivity Improvements ## {#v6_sch_connectivity}
+## Connectivity Improvements
 **Goal:**
 
 Support structured buses, real time netlist calculations, and other
@@ -276,24 +356,10 @@ connectivity improvements.
 **Status:**
 - Real time netlist and structured bus support complete.
 
-## ERC Improvements ## {#v6_sch_erc}
-**Goal:**
+**Team:**
+- Jon
 
-Improve ERC test coverage and other ERC usability features.
-
-**Task:**
-- Add missing ERC tests to improve coverage.
-- Save ERC settings in project file.
-- Add mechanism to allow import and export of ERC settings.
-- ERC user interface improvements.
-
-**Dependencies:**
-- None.
-
-**Status:**
-- Preliminary specification draft complete.
-
-## Python Support ## {#v6_sch_python}
+## Python Support
 **Goal:**
 
 SWIG all schematic low level objects and coherent schematic object to
@@ -305,20 +371,20 @@ coherent schematic object code.
 - Add Python interpreter launcher.
 
 **Dependencies:**
-- [Coherent Schematic Object](#v6_sch_object).
+- [Coherent Schematic Object](#coherent-schematic-object).
 
 **Status:**
 - No Progress.
 
 
-# CvPcb: Footprint Association Tool # {#v6_cvpcb}
+# CvPcb: Footprint Association Tool
 This section covers the source code of the footprint assignment tool CvPcb.
 
 
-# Pcbnew: Circuit Board Editor # {#v6_pcbnew}
+# Pcbnew: Circuit Board Editor
 This section covers the source code of the board editing application Pcbnew.
 
-## Push and Shove Router Improvements ## {#v6_ps_router_improvements}
+## Push and Shove Router Improvements
 
 **Goal:**
 
@@ -349,7 +415,11 @@ Add finishing touches to push and shove router.
 **Status:**
 - In progress.
 
-## Selection Filtering ## {#v6_pcb_selection_filtering}
+**Team:**
+- Tom
+- Seth
+
+## Selection Filtering
 **Goal:**
 
 Make the selection tool easier for the user to determine which object(s) are
@@ -360,12 +430,15 @@ being selected by filtering.
   or possibly some other UI element to provide filtered selection options.
 
 **Dependencies:**
-- None
+- [Object Properties and Introspection](#object-properties-and-introspection)
 
 **Status:**
 - In progress.
 
-## Design Rule Check (DRC) Improvements. ## {#v6_drc_improvements}
+**Team:**
+- Orson
+
+## Design Rule Check (DRC) Improvements.
 **Goal:**
 
 Create additional DRC tests for improved error checking.
@@ -379,12 +452,17 @@ Create additional DRC tests for improved error checking.
 - Add option for saving and loading DRC options.
 
 **Dependencies:**
-- [Constraint Management System](#v6_pcb_constraint).
+- [Constraint Management System](#constraint-management-system).
 
 **Progress:**
 - In progress.
 
-## Linked Objects ## {#v6_pcb_linked_objects}
+**Team:**
+- Tom
+- Orson
+- Jon
+
+## Linked Objects
 **Goal:**
 
 Provide a way to allow external objects such as footprints to be externally
@@ -404,7 +482,7 @@ the way for reusable board modules.
 **Status:**
 - No progress.
 
-## Pin and Part Swapping ## {#v6_pcb_drc}
+## Pin and Part Swapping
 **Goal:**
 
 Allow Pcbnew to perform pin and/or part swapping during layout so the user
@@ -420,12 +498,12 @@ does not have to do it in Eeschema and re-import the net list.
 - Add support to handle net label back annotation changes.
 
 **Dependencies:**
-- [S-Expression File Format](#v6_sch_sexpr).
+- [S-Expression File Format](#s-expression-file-format).
 
 **Status:**
 - No progress.
 
-## Keepout Zones. ## {#v6_keepout_zones}
+## Keepout Zones.
 **Goal:**
 
 Add support for keepout zones on boards and footprints.
@@ -436,12 +514,12 @@ Add support for keepout zones on boards and footprints.
 - Add keepout zone support to library editor.
 
 **Dependencies:**
-- [DRC Improvements.](#v6_drc_improvements)
+- None
 
 **Progress:**
-- In progress.
+- Complete.
 
-## Clipboard Support ## {#v6_fp_edit_clipboard}
+## Clipboard Support
 **Goal:**
 
 Provide clipboard cut and paste for footprints.
@@ -451,12 +529,12 @@ Provide clipboard cut and paste for footprints.
   editor.
 
 **Dependencies:**
-- None
+- None.
 
 **Status:**
 - Complete.
 
-## Net Highlighting ## {#v6_pcb_net_highlight}
+## Net Highlighting
 **Goal:**
 
 Highlight rats nest links and/or traces when corresponding net in Eeschema is selected.
@@ -472,7 +550,28 @@ Highlight rats nest links and/or traces when corresponding net in Eeschema is se
 **Status:**
 - Complete.
 
-## Hatched Zone Filling ## {#v6_pcb_hatched_zones}
+## Visibility and Colors Improvements
+**Goal:**
+
+Improve the controls and features of layer and object color / visibility.
+[Specification document](https://docs.google.com/document/d/1iEFqhLd4CHjx86uqAUxH37lhfppWQ7E0Hi2oMn_T4CE/edit#)
+
+**Task:**
+- Add the concept of "saved views" to store a snapshot of current visibility
+- Support setting object opacity independently of copper layer opacity
+- Create new appearance widget to replace the current layers manager
+
+**Dependencies:**
+- [New project and user settings framework](#new-project-and-user-settings-framework)
+- [Color theme support](#color-theme-support)
+
+**Status:**
+- In development
+
+**Team:**
+- Jon
+
+## Hatched Zone Filling
 **Goal:**
 
 Currently Pcbnew only supports solid zone files.  Add option to fill zones
@@ -488,7 +587,7 @@ with hatching.
 **Status:**
 - Complete.
 
-## Board Stack Up Impedance Calculator ## {#v6_pcb_impedance_calc}
+## Board Stack Up Impedance Calculator
 **Goal:**
 
 Provide a calculator to compute trace impedances using a full board stackup.
@@ -503,7 +602,7 @@ Maybe this should be included in the PCB calculator application.
 **Status:**
 - In progress.
 
-## Net Class Improvements ## {#v6_pcb_net_class_improvements}
+## Net Class Improvements
 **Goal:**
 
 Add support for route impedance, color selection, etc in net class object.
@@ -517,12 +616,16 @@ Add support for route impedance, color selection, etc in net class object.
 - Update the render tab UI code to view traces by net class.
 
 **Dependencies:**
-- None.
+- [S-Expression File Format](#s-expression-file-format)
+- [New project and user settings framework](#new-project-and-user-settings-framework)
 
 **Status:**
 - No progress.
 
-## Ratsnest Improvements ## {#v6_pcb_ratsnest_improvements}
+**Team:**
+- Jon (colors and UI)
+
+## Ratsnest Improvements
 **Goal:**
 
 Add support for curved rats and per net color and visibility settings.
@@ -533,12 +636,16 @@ Add support for curved rats and per net color and visibility settings.
 - Update ratsnest code to handle per net color and visibility.
 
 **Dependencies:**
-- None.
+- [New project and user settings framework](#new-project-and-user-settings-framework)
 
 **Status:**
 - Curved rat support complete.
+- Ratsnest colors and visibility in progress.
 
-## DXF Improvements ## {#v6_pcb_dxf_import}
+**Team:**
+- Jon (ratsnest colors and visibility)
+
+## DXF Improvements
 **Goal:**
 
 - Allow for anchor point setting and layer mapping support on DXF import and
@@ -555,7 +662,7 @@ Add support for curved rats and per net color and visibility settings.
 **Status:**
 - No progress.
 
-## Improve Dimension Tool ## {#v6_pcb_dim_tool}
+## Improve Dimension Tool
 **Goal:**
 
 Make dimensions link to objects and change when objects are modified and add
@@ -571,7 +678,10 @@ basic mechanical constraints.
 **Status:**
 - In progress.
 
-## Constraint Management System ## {#v6_pcb_constraint}
+**Team:**
+- Tom
+
+## Constraint Management System
 **Goal:**
 
 Implement full featured constraint management system to allow for complex
@@ -589,9 +699,13 @@ board constraints instead of netclass only constraints.
 - None.
 
 **Status**
-- No Progress.
+- Specification being written
 
-## Append Board in Project Mode ## {#v6_pcb_append}
+**Team:**
+- Tom
+- Jon
+
+## Append Board in Project Mode
 **Goal:**
 
 Allow appending to the board when running Pcbnew in the project mode.
@@ -607,7 +721,7 @@ Allow appending to the board when running Pcbnew in the project mode.
 **Status:**
 - No progress.
 
-## Grid and Auxiliary Origin Improvements ## {#v6_pcb_origin}
+## Grid and Auxiliary Origin Improvements
 **Goal:**
 
 Allow reset grid and auxiliary origin without hotkey only.  Add support to
@@ -625,7 +739,7 @@ make all coordinates relative to the plot origin.
 **Status:**
 - Relative coordinate entry in progress.
 
-## Addition Mechanical Layers ## {#v6_pcb_mech_layers}
+## Addition Mechanical Layers
 **Goal:**
 
 Add more mechanical layers.
@@ -639,7 +753,10 @@ Add more mechanical layers.
 **Status:**
 - No progress.
 
-## Layer Renaming ## {#v6_pcb_layer_rename}
+**Team:**
+- Wayne
+
+## Layer Renaming
 **Goal:**
 
 Allow mechanical layers to be renamed.
@@ -655,7 +772,10 @@ Allow mechanical layers to be renamed.
 **Status:**
 - Quoted layer names complete.
 
-## Stable Python API ## {#v6_pcb_python_api}
+**Team:**
+- Wayne
+
+## Stable Python API
 **Goal:**
 
 Create a Python wrapper to hide the SWIG generated API.
@@ -670,7 +790,7 @@ Create a Python wrapper to hide the SWIG generated API.
 **Status:**
 - Initial technical specification drafted.
 
-## Track Refining ## {#v6_pcb_track_refine}
+## Track Refining
 **Goal:**
 
 Add support for teardrops and automatically updating length tuning
@@ -687,7 +807,10 @@ meandering.
 **Status:**
 - Initial technical specification drafted.
 
-## Groups and Rooms  ## {#v6_pcb_groups}
+**Team:**
+- Seth
+
+## Groups and Rooms
 **Goal:**
 
 Support grouping board objects into reusable snippets.
@@ -703,7 +826,10 @@ Support grouping board objects into reusable snippets.
 **Status:**
 - Initial technical specification drafted.
 
-## Pad Stack Support ## {#v6_pcb_padstack}
+**Team:**
+- Seth
+
+## Pad Stack Support
 **Goal:**
 
 Add padstack support.
@@ -722,7 +848,10 @@ Add padstack support.
 **Status:**
 - Initial technical specification drafted.
 
-## Net Ties ## {#v6_pcb_net_ties}
+**Team:**
+- Orson
+
+## Net Ties
 **Goal:**
 
 Add support for net ties.
@@ -736,12 +865,12 @@ Add support for net ties.
 - Add user interface support for net ties to editors.
 
 **Dependencies:**
-- [S-Expression File Format](#v6_sch_sexpr).
+- [S-Expression File Format](#s-expression-file-format).
 
 **Status:**
 - No Progress.
 
-## Anti-pad Improvements ## {#v6_pcb_anti_pad}
+## Anti-pad Improvements
 **Goal:**
 
 Use anti-pads on vias and through hold pads on internal layers as required.
@@ -755,7 +884,7 @@ Use anti-pads on vias and through hold pads on internal layers as required.
 **Status:**
 - No Progress.
 
-## Thermal Relief Improvements ## {#v6_pcb_thermal_relief}
+## Thermal Relief Improvements
 **Goal:**
 
 Allow for custom thermal reliefs in zones and custom pad shapes.
@@ -773,7 +902,7 @@ Allow for custom thermal reliefs in zones and custom pad shapes.
 **Status:**
 - No Progress.
 
-## Merge KiCad2Step ## {#v6_pcb_kicad2step}
+## Merge KiCad2Step
 **Goal:**
 
 Merge export to STEP file code from KiCad2Step so that conversion does
@@ -789,7 +918,7 @@ not run in a separate process.
 **Status:**
 - No Progress.
 
-## 3D Model Improvements ## {#v6_pcb_3d_model_opacity}
+## 3D Model Improvements
 **Goal:**
 
 Add opacity to 3D model support and convert from path look up to library
@@ -808,7 +937,7 @@ table to access 3D models.
 **Status:**
 - No Progress.
 
-## IPC-2581 Support ## {#v6_pcb_ipc_2581}
+## IPC-2581 Support
 **Goal:**
 
 Add support for exporting to and importing from IPC-2581.
@@ -823,7 +952,10 @@ Add support for exporting to and importing from IPC-2581.
 **Status:**
 - No Progress.
 
-## Curved Trace Support ## {#v6_pcb}
+**Team:**
+- Seth
+
+## Curved Trace Support
 **Goal:**
 
 Add curved trace support to the board editor.
@@ -839,9 +971,14 @@ Add curved trace support to the board editor.
 - None.
 
 **Status:**
-- No Progress.
+- In Development
+
+**Team:**
+- Seth
 
 
-# GerbView: Gerber File Viewer # {#v6_gerbview}
+# GerbView: Gerber File Viewer
 
 This section covers the source code for the GerbView gerber file viewer.
+
+There are currently no roadmap features specific to GerbView for KiCad 6.0
