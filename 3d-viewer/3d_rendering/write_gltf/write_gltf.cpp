@@ -38,6 +38,40 @@ std::vector<unsigned char> CircleImage() {
     return circleImage_data;
 }
 
+std::vector<double> vec3_elementwise_min(const float* elements, size_t length) {
+    std::vector<float> min = std::vector<float>{elements[0], elements[1], elements[2]};
+    for (unsigned int i = 3; i < length * 3; i += 3) {
+        const float* element = elements + i;
+        if (element[0] < min[0]) {
+            min[0] = element[0];
+        }
+        if (element[1] < min[1]) {
+            min[1] = element[1];
+        }
+        if (element[2] < min[2]) {
+            min[2] = element[2];
+        }
+    }
+    return std::vector<double>{min[0], min[1], min[2]};
+}
+
+std::vector<double> vec3_elementwise_max(const float* elements, size_t length) {
+    std::vector<float> max = std::vector<float>{elements[0], elements[1], elements[2]};
+    for (unsigned int i = 3; i < length * 3; i += 3) {
+        const float* element = elements + i;
+        if (element[0] > max[0]) {
+            max[0] = element[0];
+        }
+        if (element[1] > max[1]) {
+            max[1] = element[1];
+        }
+        if (element[2] > max[2]) {
+            max[2] = element[2];
+        }
+    }
+    return std::vector<double>{max[0], max[1], max[2]};
+}
+
 /**
  * @brief PushUntexturedNode - Adds a new mesh node to the GLTF model from the
  * given triangle container. If add_normals is false, the mesh is assumed to be
@@ -54,8 +88,8 @@ void PushUntexturedNode( tinygltf::Model& model, const CLAYER_TRIANGLE_CONTAINER
         add_normals = true;
     }
 
-    int length = triangles->GetVertexSize();
-    int length_bytes = length * sizeof(SFVEC3F);
+    size_t length = triangles->GetVertexSize();
+    size_t length_bytes = length * sizeof(SFVEC3F);
 
     int node_index = model.nodes.size();
 
@@ -113,6 +147,8 @@ void PushUntexturedNode( tinygltf::Model& model, const CLAYER_TRIANGLE_CONTAINER
     vertices_accessor.componentType = TINYGLTF_COMPONENT_TYPE_FLOAT;
     vertices_accessor.count = length;
     vertices_accessor.type = TINYGLTF_TYPE_VEC3;
+    vertices_accessor.minValues = vec3_elementwise_min(triangles->GetVertexPointer(), length);
+    vertices_accessor.maxValues = vec3_elementwise_max(triangles->GetVertexPointer(), length);
     model.accessors.push_back(vertices_accessor);
     if (add_normals) {
         tinygltf::Accessor normals_accessor = tinygltf::Accessor();
@@ -121,6 +157,8 @@ void PushUntexturedNode( tinygltf::Model& model, const CLAYER_TRIANGLE_CONTAINER
         normals_accessor.componentType = TINYGLTF_COMPONENT_TYPE_FLOAT;
         normals_accessor.count = length;
         normals_accessor.type = TINYGLTF_TYPE_VEC3;
+        normals_accessor.minValues = vec3_elementwise_min(triangles->GetNormalsPointer(), length);
+        normals_accessor.maxValues = vec3_elementwise_max(triangles->GetNormalsPointer(), length);
         model.accessors.push_back(normals_accessor);
     }
 }
@@ -135,18 +173,18 @@ void PushTexturedNode( tinygltf::Model& model, const CLAYER_TRIANGLE_CONTAINER* 
         return;
     }
 
-    int length = triangles->GetVertexSize();
-    int length_bytes = length * sizeof(SFVEC3F);
+    size_t length = triangles->GetVertexSize();
+    size_t length_bytes = length * sizeof(SFVEC3F);
 
     SFVEC2F *uv_data = new SFVEC2F[length];
-    for( int i = 0; i < length; i += 3 ) {
+    for( unsigned int i = 0; i < length; i += 3 ) {
         uv_data[i + 0] = SFVEC2F( 1.0f, 0.0f );
         uv_data[i + 1] = SFVEC2F( 0.0f, 1.0f );
         uv_data[i + 2] = SFVEC2F( 0.0f, 0.0f );
     }
 
-    int uv_length = length;
-    int uv_length_bytes = uv_length * sizeof(SFVEC2F);
+    size_t uv_length = length;
+    size_t uv_length_bytes = uv_length * sizeof(SFVEC2F);
 
     int node_index = model.nodes.size();
 
@@ -199,6 +237,8 @@ void PushTexturedNode( tinygltf::Model& model, const CLAYER_TRIANGLE_CONTAINER* 
     vertices_accessor.componentType = TINYGLTF_COMPONENT_TYPE_FLOAT;
     vertices_accessor.count = length;
     vertices_accessor.type = TINYGLTF_TYPE_VEC3;
+    vertices_accessor.minValues = vec3_elementwise_min(triangles->GetVertexPointer(), length);
+    vertices_accessor.maxValues = vec3_elementwise_max(triangles->GetVertexPointer(), length);
     model.accessors.push_back(vertices_accessor);
     tinygltf::Accessor uv_accessor = tinygltf::Accessor();
     uv_accessor.bufferView = texcoord_buf_view_index;
@@ -206,6 +246,8 @@ void PushTexturedNode( tinygltf::Model& model, const CLAYER_TRIANGLE_CONTAINER* 
     uv_accessor.componentType = TINYGLTF_COMPONENT_TYPE_FLOAT;
     uv_accessor.count = uv_length;
     uv_accessor.type = TINYGLTF_TYPE_VEC2;
+    uv_accessor.minValues = std::vector<double>{0., 0.};
+    uv_accessor.maxValues = std::vector<double>{1., 1.};
     model.accessors.push_back(uv_accessor);
 }
 
