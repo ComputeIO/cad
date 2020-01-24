@@ -52,7 +52,7 @@ Create perspectives to allow users to arrange dockable windows as they prefer.
 **Status:**
 - No progress.
 
-## Object Properties and Introspection
+## Object Properties and Introspection {#object-properties}
 **Goal:**
 
 Provide an object introspection system using properties.
@@ -73,7 +73,7 @@ Provide an object introspection system using properties.
 **Team:**
 - Orson
 
-## New project and user settings framework
+## New project and user settings framework {#settings}
 **Goal:**
 
 Improve management of project and user settings, removing settings that are
@@ -95,7 +95,7 @@ not associated with design data from the design files.
 **Team:**
 - Jon
 
-## Color theme support
+## Color theme support {#color-themes}
 **Goal:**
 
 Support storing color themes in standalone settings files, easy switching
@@ -106,7 +106,7 @@ between color themes, and a better color editor across all applications.
 - New color settings GUI that supports managing themes
 
 **Dependencies:**
-- [New project and user settings framework](#object-properties-and-introspection)
+- [New project and user settings framework](#object-properties)
 
 **Status:**
 - In progress
@@ -124,7 +124,7 @@ Allow substituting object properties into strings through an escape sequence.
 - New color settings GUI that supports managing themes
 
 **Dependencies:**
-- [Object Properties and Introspection](#new-project-and-user-settings-framework)
+- [Object Properties and Introspection](#settings)
 
 **Status:**
 - No progress.
@@ -136,7 +136,7 @@ Allow substituting object properties into strings through an escape sequence.
 # Eeschema: Schematic Editor
 This section applies to the source code for the Eeschema schematic editor.
 
-## Coherent SCHEMATIC Object
+## Coherent SCHEMATIC Object {#schematic-object}
 **Goal:**
 
 Clean up the code related to the schematic object(s) into a coherent object for
@@ -161,7 +161,7 @@ and Python scripting.
 **Team:**
 - Wayne
 
-## Implement Sweet (S-Expression) Symbol Libraries
+## Implement Sweet (S-Expression) Symbol Libraries {#sexpr-library-format}
 **Goal:**
 
 Make symbol library design more robust and feature rich.  Use s-expressions
@@ -174,12 +174,12 @@ to make component library files more readable.
 - None
 
 **Status:**
-- Initial SWEET library file format document  written.
+- Initial SWEET library file format document written.
 
 **Team:**
 - Wayne
 
-## S-Expression File Format
+## S-Expression File Format {#sexpr-format}
 **Goal:**
 
 Make schematic file format more readable, add new features, and take advantage
@@ -193,7 +193,7 @@ of the s-expression parser and formatter capability used in Pcbnew.
 - Add new s-expression file format to plugin.
 
 **Dependencies:**
-- [S-expression file format](#s-expression-file-format).
+- [S-Expression Symbol Libraries](#sexpr-library-format)
 
 **Status:**
 - File format document initial draft complete.
@@ -235,7 +235,7 @@ Improve the coverage and usability of the electrical rules checker (ERC).
 - Add new ERC features requested by users
 
 **Dependencies:**
-- [New project and user settings framework](#new-project-and-user-settings-framework)
+- [New project and user settings framework](#settings)
 
 **Status:**
 - [Specification written](https://docs.google.com/document/d/19Dg5e_Ez25AnGzMN5f1XsZkz1DjTY1g-kkRJDx4e_GQ/edit#)
@@ -243,7 +243,7 @@ Improve the coverage and usability of the electrical rules checker (ERC).
 **Team:**
 - Jon
 
-## Port Editing Tools to New Tool Framework
+## Port Editing Tools to New Tool Framework {#tool-framework}
 **Goal:**
 
 Convert all editing tool to new tool framework.
@@ -288,7 +288,7 @@ for schematic text.
 - Add support for selecting text object fonts.
 
 **Dependencies:**
-- [S-expression schematic file format](#s-expression-file-format).
+- [S-expression schematic file format](#sexpr-format).
 
 **Status:**
 - No progress.
@@ -305,7 +305,7 @@ Provide a method of passing information to other tools via the net list.
   format.
 
 **Dependencies:**
-- [S-expression schematic file format](#s-expression-file-format).
+- [S-expression schematic file format](#sexpr-format).
 
 **Status:**
 - No progress.
@@ -319,7 +319,7 @@ Keep wires and buses orthogonal when dragging a symbol.
 - Add code to new tool framework to allow for orthogonal dragging of symbols.
 
 **Dependencies:**
-- [New tool framework](#port-editing-tools-to-new-tool-framework).
+- [New tool framework](#tool-framework).
 
 **Status:**
 - No progress.
@@ -334,7 +334,7 @@ Allow for wires and buses to have different widths, colors, and line types.
 - Add user interface element to support changing wire and bus attributes.
 
 **Dependencies:**
-- [S-Expression File Format](#s-expression-file-format).
+- [S-Expression File Format](#sexpr-format).
 
 **Status:**
 - No progress.
@@ -371,7 +371,7 @@ coherent schematic object code.
 - Add Python interpreter launcher.
 
 **Dependencies:**
-- [Coherent Schematic Object](#coherent-schematic-object).
+- [Coherent Schematic Object](#schematic-object).
 
 **Status:**
 - No Progress.
@@ -430,7 +430,7 @@ being selected by filtering.
   or possibly some other UI element to provide filtered selection options.
 
 **Dependencies:**
-- [Object Properties and Introspection](#object-properties-and-introspection)
+- [Object Properties and Introspection](#object-properties)
 
 **Status:**
 - In progress.
@@ -452,7 +452,7 @@ Create additional DRC tests for improved error checking.
 - Add option for saving and loading DRC options.
 
 **Dependencies:**
-- [Constraint Management System](#constraint-management-system).
+- [Constraint Management System](#constraints).
 
 **Progress:**
 - In progress.
@@ -498,7 +498,7 @@ does not have to do it in Eeschema and re-import the net list.
 - Add support to handle net label back annotation changes.
 
 **Dependencies:**
-- [S-Expression File Format](#s-expression-file-format).
+- [S-Expression File Format](#sexpr-format).
 
 **Status:**
 - No progress.
@@ -562,8 +562,8 @@ Improve the controls and features of layer and object color / visibility.
 - Create new appearance widget to replace the current layers manager
 
 **Dependencies:**
-- [New project and user settings framework](#new-project-and-user-settings-framework)
-- [Color theme support](#color-theme-support)
+- [New project and user settings framework](#settings)
+- [Color theme support](#color-themes)
 
 **Status:**
 - In development
@@ -616,8 +616,8 @@ Add support for route impedance, color selection, etc in net class object.
 - Update the render tab UI code to view traces by net class.
 
 **Dependencies:**
-- [S-Expression File Format](#s-expression-file-format)
-- [New project and user settings framework](#new-project-and-user-settings-framework)
+- [S-Expression File Format](#sexpr-format)
+- [New project and user settings framework](#settings)
 
 **Status:**
 - No progress.
@@ -636,7 +636,7 @@ Add support for curved rats and per net color and visibility settings.
 - Update ratsnest code to handle per net color and visibility.
 
 **Dependencies:**
-- [New project and user settings framework](#new-project-and-user-settings-framework)
+- [New project and user settings framework](#settings)
 
 **Status:**
 - Curved rat support complete.
@@ -681,7 +681,7 @@ basic mechanical constraints.
 **Team:**
 - Tom
 
-## Constraint Management System
+## Constraint Management System {#constraints}
 **Goal:**
 
 Implement full featured constraint management system to allow for complex
@@ -865,7 +865,7 @@ Add support for net ties.
 - Add user interface support for net ties to editors.
 
 **Dependencies:**
-- [S-Expression File Format](#s-expression-file-format).
+- [S-Expression File Format](#sexpr-format).
 
 **Status:**
 - No Progress.
