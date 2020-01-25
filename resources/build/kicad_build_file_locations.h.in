@@ -1,0 +1,60 @@
+/*
+ * This program source code file is part of KiCad, a free EDA CAD application.
+ *
+ * Copyright (C) 2020 KiCad Developers, see AUTHORS.txt for contributors.
+ *
+ * This program is free software: you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the
+ * Free Software Foundation, either version 3 of the License, or (at your
+ * option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+#ifndef KICAD_BUILD_FILE_LOCATIONS_H_
+#define KICAD_BUILD_FILE_LOCATIONS_H_
+
+#ifdef DEBUG
+
+/*
+ * Absolute path to the directory containing the executable files for each program
+ * inside the build directory.
+ */
+#define KICAD_EXEPATH_EESCHEMA         "@KICAD_EXEPATH_EESCHEMA@"
+#define KICAD_EXEPATH_PCBNEW           "@KICAD_EXEPATH_PCBNEW@"
+#define KICAD_EXEPATH_KICAD            "@KICAD_EXEPATH_KICAD@"
+#define KICAD_EXEPATH_GERBVIEW         "@KICAD_EXEPATH_GERBVIEW@"
+#define KICAD_EXEPATH_PL_EDITOR        "@KICAD_EXEPATH_PL_EDITOR@"
+#define KICAD_EXEPATH_PCB_CALCULATOR   "@KICAD_EXEPATH_PCB_CALCULATOR@"
+#define KICAD_EXEPATH_BITMAP2COMPONENT "@KICAD_EXEPATH_BITMAP2COMPONENT@"
+
+
+/*
+ * Absolute path to the directory containing the kiface libraries for each program
+ * inside the build directory.
+ */
+#define KICAD_DSOPATH_KIFACE_EESCHEMA       "@KICAD_DSOPATH_KIFACE_EESCHEMA@"
+#define KICAD_DSOPATH_KIFACE_PCBNEW         "@KICAD_DSOPATH_KIFACE_PCBNEW@"
+#define KICAD_DSOPATH_KIFACE_CVPCB          "@KICAD_DSOPATH_KIFACE_CVPCB@"
+#define KICAD_DSOPATH_KIFACE_GERBVIEW       "@KICAD_DSOPATH_KIFACE_GERBVIEW@"
+#define KICAD_DSOPATH_KIFACE_PL_EDITOR      "@KICAD_DSOPATH_KIFACE_PL_EDITOR@"
+#define KICAD_DSOPATH_KIFACE_PCB_CALCULATOR "@KICAD_DSOPATH_KIFACE_PCB_CALCULATOR@"
+
+
+/*
+ * Absolute path to the 3D viewer plugins and library inside the build directory.
+ */
+#define KICAD_DSOPATH_3DSG          "@KICAD_DSOPATH_3DSG@"
+#define KICAD_DSOPATH_3DPLUGIN_VRML "@KICAD_DSOPATH_3DPLUGIN_VRML@"
+#define KICAD_DSOPATH_3DPLUGIN_IDF  "@KICAD_DSOPATH_3DPLUGIN_IDF@"
+#define KICAD_DSOPATH_3DPLUGIN_OCE  "@KICAD_DSOPATH_3DPLUGIN_OCE@"
+
+#endif // #ifdef DEBUG
+
+#endif // #ifndef KICAD_BUILD_FILE_LOCATIONS_H_

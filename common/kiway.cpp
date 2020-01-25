@@ -33,6 +33,9 @@
 #include <id.h>
 #include <settings/settings_manager.h>
 
+// For the build directories where the kifaces are located
+#include <kicad_build_file_locations.h>
+
 #include <wx/stdpaths.h>
 #include <wx/debug.h>
 #include <wx/utils.h>
@@ -131,35 +134,34 @@ const wxString KIWAY::dso_search_path( FACE_T aFaceId )
     fn.AppendDir( wxT( "PlugIns" ) );
 #endif
 
-    fn.SetName( name );
 
 #ifdef DEBUG
     // To speed up development, it's sometimes nice to run kicad from inside
-    // the build path.  In that case, each program will be in a subdirectory.
-    // To find the DSOs, we need to go up one directory and then enter a subdirectory.
+    // the build path. The location of each kiface depends on the OS (macOS
+    // needs things in a weird place), so we set the locations at configure time.
 
     if( wxGetEnv( wxT( "KICAD_RUN_FROM_BUILD_DIR" ), nullptr ) )
     {
-#ifdef __WXMAC__
-        fn = wxStandardPaths::Get().GetExecutablePath();
-        fn.RemoveLastDir();
-        fn.AppendDir( wxT( "PlugIns" ) );
-        fn.SetName( name );
-#else
-        const char*   dirName;
+        fn.Clear();
 
-        // The subdirectories usually have the same name as the kiface
+        // Use the compile-time definition for the directory where the kiface is located
         switch( aFaceId )
         {
-            case FACE_PL_EDITOR: dirName = "pagelayout_editor";   break;
-            default:             dirName = name + 1;              break;
-        }
+        case FACE_SCH:              fn.SetPath( KICAD_DSOPATH_KIFACE_EESCHEMA );        break;
+        case FACE_PCB:              fn.SetPath( KICAD_DSOPATH_KIFACE_PCBNEW );          break;
+        case FACE_CVPCB:            fn.SetPath( KICAD_DSOPATH_KIFACE_CVPCB );           break;
+        case FACE_GERBVIEW:         fn.SetPath( KICAD_DSOPATH_KIFACE_GERBVIEW );        break;
+        case FACE_PL_EDITOR:        fn.SetPath( KICAD_DSOPATH_KIFACE_PL_EDITOR );       break;
+        case FACE_PCB_CALCULATOR:   fn.SetPath( KICAD_DSOPATH_KIFACE_PCB_CALCULATOR );  break;
 
-        fn.RemoveLastDir();
-        fn.AppendDir( dirName );
-#endif
+        default:
+            wxASSERT_MSG( 0, wxT( "caller has a bug, passed a bad aFaceId" ) );
+            return wxEmptyString;
+        }
     }
 #endif
+
+    fn.SetName( name );
 
     // Here a "suffix" == an extension with a preceding '.',
     // so skip the preceding '.' to get an extension

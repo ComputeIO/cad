@@ -1000,3 +1000,57 @@ if ( KICAD_INSTALL_DEMOS )
 add_subdirectory( demos )
 endif ( KICAD_INSTALL_DEMOS )
 add_subdirectory( template )
+
+
+
+#================================================
+# Write the locations of the different shared libraries we compile into the kicad_build_file_locations
+# header.
+# We do this after adding all the targets to make it easier to extract their location on OSX.
+#================================================
+
+if( APPLE )
+    set( KICAD_EXEPATH_EESCHEMA         ${PROJECT_BINARY_DIR}/eeschema/eeschema.app/${OSX_BUNDLE_BIN_DIR} )
+    set( KICAD_EXEPATH_PCBNEW           ${PROJECT_BINARY_DIR}/pcbnew/pcbnew.app/${OSX_BUNDLE_BIN_DIR} )
+    set( KICAD_EXEPATH_KICAD            ${PROJECT_BINARY_DIR}/kicad/kicad.app/${OSX_BUNDLE_BIN_DIR} )
+    set( KICAD_EXEPATH_GERBVIEW         ${PROJECT_BINARY_DIR}/gerbview/gerbview.app/${OSX_BUNDLE_BIN_DIR} )
+    set( KICAD_EXEPATH_PL_EDITOR        ${PROJECT_BINARY_DIR}/pagelayout_editor/pl_editor.app/${OSX_BUNDLE_BIN_DIR} )
+    set( KICAD_EXEPATH_PCB_CALCULATOR   ${PROJECT_BINARY_DIR}/pcb_calculator/pcb_calculator.app/${OSX_BUNDLE_BIN_DIR} )
+    set( KICAD_EXEPATH_BITMAP2COMPONENT ${PROJECT_BINARY_DIR}/bitmap2component/bitmap2component.app/${OSX_BUNDLE_BIN_DIR} )
+
+    get_target_property( KICAD_DSOPATH_KIFACE_EESCHEMA       eeschema_kiface       LIBRARY_OUTPUT_DIRECTORY )
+    get_target_property( KICAD_DSOPATH_KIFACE_PCBNEW         pcbnew_kiface         LIBRARY_OUTPUT_DIRECTORY )
+    get_target_property( KICAD_DSOPATH_KIFACE_CVPCB          cvpcb_kiface          LIBRARY_OUTPUT_DIRECTORY )
+    get_target_property( KICAD_DSOPATH_KIFACE_GERBVIEW       gerbview_kiface       LIBRARY_OUTPUT_DIRECTORY )
+    get_target_property( KICAD_DSOPATH_KIFACE_PL_EDITOR      pl_editor_kiface      LIBRARY_OUTPUT_DIRECTORY )
+    get_target_property( KICAD_DSOPATH_KIFACE_PCB_CALCULATOR pcb_calculator_kiface LIBRARY_OUTPUT_DIRECTORY )
+
+    get_target_property( KICAD_DSOPATH_3DSG                  kicad_3dsg            LIBRARY_OUTPUT_DIRECTORY )
+    get_target_property( KICAD_DSOPATH_3DPLUGIN_VRML         s3d_plugin_vrml       LIBRARY_OUTPUT_DIRECTORY )
+    get_target_property( KICAD_DSOPATH_3DPLUGIN_IDF          s3d_plugin_idf        LIBRARY_OUTPUT_DIRECTORY )
+    get_target_property( KICAD_DSOPATH_3DPLUGIN_OCE          s3d_plugin_oce        LIBRARY_OUTPUT_DIRECTORY )
+else()
+    set( KICAD_EXEPATH_EESCHEMA         ${PROJECT_BINARY_DIR}/eeschema )
+    set( KICAD_EXEPATH_PCBNEW           ${PROJECT_BINARY_DIR}/pcbnew )
+    set( KICAD_EXEPATH_KICAD            ${PROJECT_BINARY_DIR}/kicad )
+    set( KICAD_EXEPATH_GERBVIEW         ${PROJECT_BINARY_DIR}/gerbview )
+    set( KICAD_EXEPATH_PL_EDITOR        ${PROJECT_BINARY_DIR}/pagelayout_editor )
+    set( KICAD_EXEPATH_PCB_CALCULATOR   ${PROJECT_BINARY_DIR}/pcb_calculator )
+    set( KICAD_EXEPATH_BITMAP2COMPONENT ${PROJECT_BINARY_DIR}/bitmap2component )
+
+    set( KICAD_DSOPATH_KIFACE_EESCHEMA       ${PROJECT_BINARY_DIR}/eeschema )
+    set( KICAD_DSOPATH_KIFACE_PCBNEW         ${PROJECT_BINARY_DIR}/pcbnew )
+    set( KICAD_DSOPATH_KIFACE_CVPCB          ${PROJECT_BINARY_DIR}/cvpcb )
+    set( KICAD_DSOPATH_KIFACE_GERBVIEW       ${PROJECT_BINARY_DIR}/gerbview )
+    set( KICAD_DSOPATH_KIFACE_PL_EDITOR      ${PROJECT_BINARY_DIR}/pagelayout_editor )
+    set( KICAD_DSOPATH_KIFACE_PCB_CALCULATOR ${PROJECT_BINARY_DIR}/pcb_calculator )
+
+    set( KICAD_DSOPATH_3DSG                  ${PROJECT_BINARY_DIR}/3d-viewer/3d_cache/sg/kicad_3dsg )
+    set( KICAD_DSOPATH_3DPLUGIN_VRML         ${PROJECT_BINARY_DIR}/plugins/3d/vrml/ )
+    set( KICAD_DSOPATH_3DPLUGIN_IDF          ${PROJECT_BINARY_DIR}/plugins/3d/idf )
+    set( KICAD_DSOPATH_3DPLUGIN_OCE          ${PROJECT_BINARY_DIR}/plugins/3d/oce )
+endif()
+
+configure_file( ${PROJECT_SOURCE_DIR}/resources/build/kicad_build_file_locations.h.in
+                ${PROJECT_BINARY_DIR}/kicad_build_file_locations.h
+                @ONLY )

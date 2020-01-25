@@ -30,6 +30,7 @@ auto_renamed_to_cpp
 Testing
 version.h
 config.h
+kicad_build_file_locations.h
 install_manifest.txt
 Documentation/doxygen
 Documentation/development/doxygen
