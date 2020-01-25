@@ -118,8 +118,9 @@ between color themes, and a better color editor across all applications.
 Allow substituting object properties into strings through an escape sequence.
 
 **Task:**
-- Migrate color settings storage into a unified color theme file
-- New color settings GUI that supports managing themes
+- Build string substitution spec
+- Integrate with object properties system
+- Create UI for specifying custom variables
 
 **Dependencies:**
 - [Object Properties and Introspection](#settings)
