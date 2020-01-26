@@ -50,6 +50,7 @@ set(3D-VIEWER_SRCS
     3d_rendering/3d_render_ogl_legacy/c3d_render_ogl_legacy.cpp
     3d_rendering/3d_render_ogl_legacy/clayer_triangles.cpp
     3d_rendering/write_gltf/write_gltf.cpp
+    3d_rendering/write_gltf/geom3d.cpp
     ${DIR_RAY_ACC}/caccelerator.cpp
     ${DIR_RAY_ACC}/cbvh_packet_traversal.cpp
     ${DIR_RAY_ACC}/cbvh_pbrt.cpp

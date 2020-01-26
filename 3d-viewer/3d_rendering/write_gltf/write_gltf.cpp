@@ -1,4 +1,5 @@
 #include <wx/mstream.h>
+#include <wx/dir.h>
 
 #include "streamwrapper.h"
 #define TINYGLTF_IMPLEMENTATION
@@ -6,11 +7,16 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "tinygltf/tiny_gltf.h"
 
-#include "../../3d_rendering/3d_render_ogl_legacy/c3d_render_ogl_legacy.h"
-#include "../../3d_rendering/cimage.h"
-#include "../../3d_rendering/buffers_debug.h"
+#include "3d_render_ogl_legacy/clayer_triangles.h"
+#include "cimage.h"
+#include "buffers_debug.h"
+#include "geom3d.h"
 
 #include "write_gltf.h"
+
+// Used to create a circle image for use as a segment end texture
+//#include "3d_render_ogl_legacy/c3d_render_ogl_legacy.h"
+#define SIZE_OF_CIRCLE_TEXTURE 1024
 
 /**
  * @brief CircleImage - Returns the bytes of a circle in PNG format for use as
@@ -306,7 +312,7 @@ int AddCircleTexture( tinygltf::Model& model ) {
  * @brief WriteGLTF - Writes the geometry from the given PCB layer into a GLB
  * file of the given name.
  */
-void WriteGLTF( const CLAYER_TRIANGLES* geometry, const std::string& gltf_name ) {
+void WriteGLTFLayer( const CLAYER_TRIANGLES* geometry, const std::string& gltf_name, const std::string& out_dir ) {
     tinygltf::Model model = tinygltf::Model();
     model.asset.version = "2.0";
     model.scenes.push_back(tinygltf::Scene());
@@ -327,4 +333,14 @@ void WriteGLTF( const CLAYER_TRIANGLES* geometry, const std::string& gltf_name )
 
     tinygltf::TinyGLTF loader;
     loader.WriteGltfSceneToFile(&model, gltf_name + ".glb", false, true, false, true);
+}
+
+void WriteGLTF( const BOARD* board, const PCB_LAYER_ID layer_id, const std::string& out_dir ) {
+    const wxString wx_out_dir = wxString(out_dir);
+    if ( !wxDir::Exists(wx_out_dir) ) {
+        wxDir::Make( wx_out_dir, wxS_DIR_DEFAULT, wxPATH_MKDIR_FULL );
+    }
+    const CLAYER_TRIANGLES* layerTriangles = generate_3D_layer( board, layer_id );
+    WriteGLTFLayer(layerTriangles, BOARD::GetStandardLayerName(layer_id).ToStdString(), out_dir);
+    delete layerTriangles;
 }

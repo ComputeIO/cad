@@ -36,7 +36,6 @@
 #include <trigo.h>
 #include <project.h>
 #include <profile.h>        // To use GetRunningMicroSecs or another profiling utility
-#include "../write_gltf/write_gltf.h"
 
 
 void C3D_RENDER_OGL_LEGACY::add_object_to_triangle_layer( const CFILLEDCIRCLE2D * aFilledCircle,
@@ -607,8 +606,6 @@ void C3D_RENDER_OGL_LEGACY::reload( REPORTER *aStatusTextReporter )
                                                       m_settings.BiuTo3Dunits(), false );
         }
 
-        WriteGLTF(layerTriangles, BOARD::GetStandardLayerName(layer_id).ToStdString());
-
         // Create display list
         // /////////////////////////////////////////////////////////////////////
         m_ogl_disp_lists_layers[layer_id] = new CLAYERS_OGL_DISP_LISTS( *layerTriangles,
@@ -784,8 +781,6 @@ void C3D_RENDER_OGL_LEGACY::generate_3D_Vias_and_Pads()
                                    layerTriangleVIA );
             }
         }
-
-        WriteGLTF(layerTriangleVIA, "vias");
 
         m_ogl_disp_list_via = new CLAYERS_OGL_DISP_LISTS( *layerTriangleVIA,
                                                           0,
