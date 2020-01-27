@@ -5,12 +5,12 @@
 #define TINYGLTF_IMPLEMENTATION
 #define STB_IMAGE_IMPLEMENTATION
 #define STB_IMAGE_WRITE_IMPLEMENTATION
-#include "tinygltf/tiny_gltf.h"
+#include "write_gltf/tinygltf/tiny_gltf.h"
 
-#include "3d_render_ogl_legacy/clayer_triangles.h"
+#include "geom3d/clayer_triangles.h"
+#include "geom3d/geom3d.h"
 #include "cimage.h"
 #include "buffers_debug.h"
-#include "geom3d.h"
 
 #include "write_gltf.h"
 
@@ -312,7 +312,7 @@ int AddCircleTexture( tinygltf::Model& model ) {
  * @brief WriteGLTF - Writes the geometry from the given PCB layer into a GLB
  * file of the given name.
  */
-void WriteGLTFLayer( const CLAYER_TRIANGLES* geometry, const std::string& gltf_name, const std::string& out_dir ) {
+void WriteGLTFLayer( const CLAYER_TRIANGLES* geometry, const std::string& out_fname ) {
     tinygltf::Model model = tinygltf::Model();
     model.asset.version = "2.0";
     model.scenes.push_back(tinygltf::Scene());
@@ -332,15 +332,18 @@ void WriteGLTFLayer( const CLAYER_TRIANGLES* geometry, const std::string& gltf_n
     }
 
     tinygltf::TinyGLTF loader;
-    loader.WriteGltfSceneToFile(&model, gltf_name + ".glb", false, true, false, true);
+    loader.WriteGltfSceneToFile(&model, out_fname, false, true, false, true);
 }
 
-void WriteGLTF( const BOARD* board, const PCB_LAYER_ID layer_id, const std::string& out_dir ) {
-    const wxString wx_out_dir = wxString(out_dir);
-    if ( !wxDir::Exists(wx_out_dir) ) {
-        wxDir::Make( wx_out_dir, wxS_DIR_DEFAULT, wxPATH_MKDIR_FULL );
+void WriteGLTF( const BOARD* board, const PCB_LAYER_ID layer_id, const wxString& out_dir ) {
+    if ( !wxDir::Exists(out_dir) ) {
+        wxDir::Make( out_dir, wxS_DIR_DEFAULT, wxPATH_MKDIR_FULL );
     }
+
+    wxFileName fname;
+    fname.Assign(out_dir, BOARD::GetStandardLayerName(layer_id), wxString("glb"));
+
     const CLAYER_TRIANGLES* layerTriangles = generate_3D_layer( board, layer_id );
-    WriteGLTFLayer(layerTriangles, BOARD::GetStandardLayerName(layer_id).ToStdString(), out_dir);
+    WriteGLTFLayer(layerTriangles, fname.GetFullPath().ToStdString());
     delete layerTriangles;
 }

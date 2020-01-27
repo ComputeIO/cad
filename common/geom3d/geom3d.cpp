@@ -1,15 +1,38 @@
+/*#define PCBNEW
+#include <convert_to_biu.h>
+#undef PCBNEW*/
+constexpr double IU_PER_MM = 1e5;
+constexpr double MM_PER_IU = ( 1 / IU_PER_MM );
+
+
+/// Convert mm to internal units (iu).
+constexpr inline int Millimeter2iu( double mm )
+{
+    return (int) ( mm < 0 ? mm * IU_PER_MM - 0.5 : mm * IU_PER_MM + 0.5 );
+}
+
+/// Convert mm to internal units (iu).
+constexpr inline double Iu2Millimeter( int iu )
+{
+    return iu / IU_PER_MM;
+}
+
+constexpr int ARC_LOW_DEF = Millimeter2iu( 0.02 );
+constexpr int ARC_HIGH_DEF = Millimeter2iu( 0.005 );
+
 #include "class_board.h"
-#include "3d_render_ogl_legacy/clayer_triangles.h"
+#include "geom3d/clayer_triangles.h"
 
+#include <plugins/3dapi/xv3d_types.h>
 #include <geometry/geometry_utils.h>
-#include "3d_render_raytracing/accelerators/ccontainer2d.h"
-#include "3d_render_raytracing/shapes2D/cfilledcircle2d.h"
-#include "3d_render_raytracing/shapes2D/croundsegment2d.h"
-#include "3d_render_raytracing/shapes2D/cpolygon4pts2d.h"
-#include "3d_render_raytracing/shapes2D/ctriangle2d.h"
-#include "3d_render_raytracing/shapes2D/cring2d.h"
+#include "../3d-viewer/3d_rendering/3d_render_raytracing/accelerators/ccontainer2d.h" //TODO
+#include "../3d-viewer/3d_rendering/3d_render_raytracing/shapes2D/cfilledcircle2d.h"
+#include "../3d-viewer/3d_rendering/3d_render_raytracing/shapes2D/croundsegment2d.h"
+#include "../3d-viewer/3d_rendering/3d_render_raytracing/shapes2D/cpolygon4pts2d.h"
+#include "../3d-viewer/3d_rendering/3d_render_raytracing/shapes2D/ctriangle2d.h"
+#include "../3d-viewer/3d_rendering/3d_render_raytracing/shapes2D/cring2d.h"
 
-#include "geom3d.h"
+#include "geom3d/geom3d.h"
 
 #define SIZE_OF_CIRCLE_TEXTURE 1024
 
@@ -20,11 +43,19 @@ const double biu_to_3d_units = 1.0;
 #define COPPER_THICKNESS KiROUND( 0.035 * IU_PER_MM )   // for 35 um
 const float copperThickness3DU = COPPER_THICKNESS * biu_to_3d_units;
 
+unsigned int GetNrSegmentsCircleBIU( int aDiameterBIU )
+{
+    wxASSERT( aDiameterBIU > 0 );
+
+    // Require at least 3 segments for a circle
+    return std::max( GetArcToSegmentCount( aDiameterBIU / 2, ARC_HIGH_DEF, 360.0 ), 3 );
+}
+
 unsigned int GetNrSegmentsCircle( float aDiameter3DU )
 {
     wxASSERT( aDiameter3DU > 0.0f );
 
-    return GetNrSegmentsCircle( (int)( aDiameter3DU / biu_to_3d_units ) );
+    return GetNrSegmentsCircleBIU( (int)( aDiameter3DU / biu_to_3d_units ) );
 }
 
 double GetCircleCorrectionFactor( int aNrSides )
@@ -34,12 +65,6 @@ double GetCircleCorrectionFactor( int aNrSides )
     return GetCircletoPolyCorrectionFactor( aNrSides );
 }
 
-bool Is3DLayerEnabled( PCB_LAYER_ID aLayer )
-{
-    // TODO
-    return true;
-}
-
 unsigned int GetStatsNrVias( BOARD* board, float* med_via_hole_diameter )
 {
     unsigned int nr_vias = 0;
@@ -47,9 +72,6 @@ unsigned int GetStatsNrVias( BOARD* board, float* med_via_hole_diameter )
 
     for( const TRACK* track = board->m_Track; track; track = track->Next() )
     {
-        if( !Is3DLayerEnabled( track->GetLayer() ) ) // Skip non enabled layers
-            continue;
-
         if( track->Type() == PCB_VIA_T )
         {
             const VIA *via = static_cast< const VIA*>( track );
@@ -488,49 +510,26 @@ void add_object_to_triangle_layer( const CROUNDSEGMENT2D * aSeg,
 }
 
 CLAYER_TRIANGLES* generate_3D_layer( const BOARD* board, const PCB_LAYER_ID layer_id ) {
-    // ii->second here is from m_settings.GetMapLayers()
-    //
-    // which is of type
-    // typedef std::map< PCB_LAYER_ID, CBVHCONTAINER2D *> MAP_CONTAINER_2D;
-    //
-    // so ii->second is of type CBVHCONTAINER2D
-    //
-    // which is held in m_settings.m_layers_container2D[layer_id]
-    //
-    // which is created for layer_id in 3d-viewer/3d_canvas/create_layer_items.cpp
     CBVHCONTAINER2D *container2d = new CBVHCONTAINER2D;
 
-    unsigned int nTracks = board->m_Track.GetCount();
-    std::vector< const TRACK *> trackList;
-    trackList.reserve( nTracks );
-
-    //if( GetFlag( FL_RENDER_OPENGL_COPPER_THICKNESS ) &&
-    //    (m_render_engine == RENDER_ENGINE_OPENGL_LEGACY) )
-    //{
     SHAPE_POLY_SET *layerPoly = new SHAPE_POLY_SET;
-    //    m_layers_poly[layer_id] = layerPoly;
-    //}
 
     for( const TRACK* track = board->m_Track; track; track = track->Next() )
     {
-        // Note: a TRACK holds normal segment tracks and
-        // also vias circles (that have also drill values)
-        if( track->IsOnLayer( layer_id ) )
-          trackList.push_back( track ); //TODO do we need trackList??
+        if( track->IsOnLayer( layer_id ) ) {
+          container2d->Add( createNewTrack( track, 0.0f ) );
 
-        container2d->Add( createNewTrack( track, 0.0f ) );
+          // Add the track contour
+          int nrSegments = GetNrSegmentsCircle( track->GetWidth() );
 
-        // Add the track contour
-        int nrSegments = GetNrSegmentsCircle( track->GetWidth() );
-
-        track->TransformShapeWithClearanceToPolygon(
-                    *layerPoly,
-                    0,
-                    nrSegments,
-                    GetCircleCorrectionFactor( nrSegments ) );
+          track->TransformShapeWithClearanceToPolygon(
+                      *layerPoly,
+                      0,
+                      nrSegments,
+                      GetCircleCorrectionFactor( nrSegments ) );
+        }
     }
 
-    //const CBVHCONTAINER2D *container2d = static_cast<const CBVHCONTAINER2D *>(ii->second);
     const LIST_OBJECT2D &listObject2d = container2d->GetList();
 
     if( listObject2d.size() == 0 ) {
@@ -592,11 +591,5 @@ CLAYER_TRIANGLES* generate_3D_layer( const BOARD* board, const PCB_LAYER_ID laye
         layerTriangles->AddToMiddleContourns( *layerPoly, layer_z_bot, layer_z_top,
                                               biu_to_3d_units, false );
 
-    // Create display list
-    // /////////////////////////////////////////////////////////////////////
-    /*m_ogl_disp_lists_layers[layer_id] = new CLAYERS_OGL_DISP_LISTS( *layerTriangles,
-                                                                    m_ogl_circle_texture,
-                                                                    layer_z_bot,
-                                                                    layer_z_top );*/
     return layerTriangles;
 }

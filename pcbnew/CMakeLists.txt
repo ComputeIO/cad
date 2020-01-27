@@ -321,6 +321,8 @@ set( PCBNEW_CLASS_SRCS
     zones_functions_for_undo_redo.cpp
     zones_test_and_combine_areas.cpp
 
+    write_gltf/write_gltf.cpp
+
     tools/drawing_tool.cpp
     tools/edit_constraints.cpp
     tools/edit_points.cpp

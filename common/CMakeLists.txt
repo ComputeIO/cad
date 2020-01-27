@@ -268,6 +268,11 @@ set( PLOTTERS_CONTROL_SRCS
     plotters/common_plot_functions.cpp
     )
 
+set( GEOM3D_SRCS
+    geom3d/geom3d.cpp
+    geom3d/clayer_triangles.cpp
+    )
+
 set( COMMON_SRCS
     ${LIB_KICAD_SRCS}
     ${COMMON_ABOUT_DLG_SRCS}
@@ -276,6 +281,7 @@ set( COMMON_SRCS
     ${COMMON_PAGE_LAYOUT_SRCS}
     ${COMMON_PREVIEW_ITEMS_SRCS}
     ${PLOTTERS_CONTROL_SRCS}
+    ${GEOM3D_SRCS}
     advanced_config.cpp
     array_options.cpp
     base_struct.cpp
@@ -285,6 +291,8 @@ set( COMMON_SRCS
     bitmap_base.cpp
     board_printout.cpp
     build_version.cpp
+    buffers_debug.cpp
+    cimage.cpp
     colors_design_settings.cpp
     colors.cpp
     commit.cpp
@@ -451,6 +459,7 @@ set( PCB_COMMON_SRCS
     pcb_plot_params_keywords.cpp
     ../pcbnew/pcb_base_frame.cpp
     ../pcbnew/board_commit.cpp
+    ../pcbnew/write_gltf/write_gltf.cpp
     ../pcbnew/board_connected_item.cpp
     ../pcbnew/board_design_settings.cpp
     ../pcbnew/board_items_to_polygon_shape_transform.cpp

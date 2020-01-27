@@ -103,8 +103,6 @@ void DBG_SaveBuffer_RGBA( wxOutputStream& stream,
 
     for( unsigned int i = 0; i < wxh; ++i )
     {
-        unsigned char v = aInBuffer[i];
-
         // Set RGB value with all same values intensities
         pixelbuffer[i * 3 + 0] = 0xFF;
         pixelbuffer[i * 3 + 1] = 0xFF;
