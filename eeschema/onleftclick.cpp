@@ -114,7 +114,22 @@ void SCH_EDIT_FRAME::OnLeftClick( wxDC* aDC, const wxPoint& aPosition )
     switch( GetToolId() )
     {
     case ID_NO_TOOL_SELECTED:
-        break;
+        {
+        // highlight selection if foundItem is not null, or clear any highlighted selection
+        constexpr KICAD_T wiresAndComponents[] = { SCH_LINE_T,
+                                                       SCH_COMPONENT_T,
+                                                       SCH_SHEET_PIN_T,
+                                                       EOT };
+        item = LocateAndShowItem( aPosition, wiresAndComponents );
+
+        if( !item )
+            break;
+        // clear any highligthed symbol
+        GetCanvas()->GetView()->HighlightItem( nullptr, nullptr );
+        // highlight
+        GetCanvas()->GetView()->HighlightItem( item, nullptr );
+        GetCanvas()->Refresh();
+        }
 
     case ID_ZOOM_SELECTION:
         break;
