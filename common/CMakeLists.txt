@@ -418,6 +418,7 @@ add_dependencies( common version_header )
 
 target_link_libraries( common
     kimath
+    kiplatform
     bitmaps
     gal
     ${Boost_LIBRARIES}

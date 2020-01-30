@@ -20,9 +20,16 @@
 
 #include <kiplatform/ui.h>
 
+#include <wx/nonownedwnd.h>
 #include <wx/window.h>
 
 void KIPLATFORM::ForceFocus( wxWindow* aWindow )
 {
     aWindow->SetFocus();
+}
+
+
+void KIPLATFORM::ReparentQuasiModal( wxNonOwnedWindow* aWindow )
+{
+    // Not needed on this platform
 }

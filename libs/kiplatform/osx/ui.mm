@@ -22,10 +22,26 @@
 
 #import <Cocoa/Cocoa.h>
 
+#include <wx/nonownedwnd.h>
+#include <wx/toplevel.h>
 #include <wx/window.h>
 
 void KIPLATFORM::ForceFocus( wxWindow* aWindow )
 {
     // On OSX we need to forcefully give the focus to the window
     [[aWindow->GetHandle() window] makeFirstResponder: aWindow->GetHandle()];
+}
+
+
+void KIPLATFORM::ReparentQuasiModal( wxNonOwnedWindow* aWindow )
+{
+    wxTopLevelWindow* parent =
+            static_cast<wxTopLevelWindow*>( wxGetTopLevelParent( aWindow->GetParent() ) );
+
+    wxASSERT_MSG(parent, "QuasiModal windows require a parent.");
+
+    NSWindow* parentWindow = parent->GetWXWindow();
+    NSWindow* theWindow    = aWindow->GetWXWindow();
+
+    [parentWindow addChildWindow:theWindow ordered:NSWindowAbove];
 }
