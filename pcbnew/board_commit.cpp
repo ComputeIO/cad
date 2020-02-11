@@ -32,6 +32,8 @@
 #include <tools/pcb_actions.h>
 #include <connectivity/connectivity_data.h>
 
+#include "write_gltf/write_gltf.h"
+
 #include <functional>
 using namespace std::placeholders;
 
@@ -303,6 +305,8 @@ void BOARD_COMMIT::Push( const wxString& aMessage, bool aCreateUndoEntry, bool a
         frame->OnModify();
 
     frame->UpdateMsgPanel();
+
+    WriteGLTF( board, B_Cu, wxString("gltf-out") );
 
     clear();
 }

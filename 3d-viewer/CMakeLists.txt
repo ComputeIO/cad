@@ -48,7 +48,7 @@ set(3D-VIEWER_SRCS
     3d_rendering/3d_render_ogl_legacy/ogl_legacy_utils.cpp
     3d_rendering/3d_render_ogl_legacy/c3d_render_createscene_ogl_legacy.cpp
     3d_rendering/3d_render_ogl_legacy/c3d_render_ogl_legacy.cpp
-    3d_rendering/3d_render_ogl_legacy/clayer_triangles.cpp
+    3d_rendering/3d_render_ogl_legacy/clayers_ogl_disp_lists.cpp
     ${DIR_RAY_ACC}/caccelerator.cpp
     ${DIR_RAY_ACC}/cbvh_packet_traversal.cpp
     ${DIR_RAY_ACC}/cbvh_pbrt.cpp
@@ -80,11 +80,9 @@ set(3D-VIEWER_SRCS
     ${DIR_RAY_3D}/cplane.cpp
     ${DIR_RAY_3D}/croundseg.cpp
     ${DIR_RAY_3D}/ctriangle.cpp
-    3d_rendering/buffers_debug.cpp
     3d_rendering/c3d_render_base.cpp
     3d_rendering/ccamera.cpp
     3d_rendering/ccolorrgb.cpp
-    3d_rendering/cimage.cpp
     3d_rendering/cpostshader.cpp
     3d_rendering/cpostshader_ssao.cpp
     3d_rendering/ctrack_ball.cpp

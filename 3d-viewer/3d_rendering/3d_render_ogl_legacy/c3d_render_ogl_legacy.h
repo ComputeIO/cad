@@ -31,7 +31,8 @@
 #define C3D_RENDER_OGL_LEGACY_H_
 
 #include "../c3d_render_base.h"
-#include "clayer_triangles.h"
+#include "geom3d/clayer_triangles.h"
+#include "clayers_ogl_disp_lists.h"
 
 #include "../3d_render_raytracing/shapes2D/cpolygon2d.h"
 #include "../3d_render_raytracing/shapes2D/ctriangle2d.h"
