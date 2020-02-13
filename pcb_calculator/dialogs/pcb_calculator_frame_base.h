@@ -119,20 +119,6 @@ class PCB_CALCULATOR_FRAME_BASE : public KIWAY_PLAYER
 		wxStaticText* m_staticTextAttMsg;
 		wxHtmlWindow* m_Attenuator_Messages;
 		wxHtmlWindow* m_panelAttFormula;
-		wxPanel* m_panelColorCode;
-		wxRadioBox* m_rbToleranceSelection;
-		wxStaticText* m_staticText31;
-		wxStaticText* m_staticText34;
-		wxStaticText* m_staticText35;
-		wxStaticText* m_Band4Label;
-		wxStaticText* m_staticText37;
-		wxStaticText* m_staticText38;
-		wxStaticBitmap* m_Band1bitmap;
-		wxStaticBitmap* m_Band2bitmap;
-		wxStaticBitmap* m_Band3bitmap;
-		wxStaticBitmap* m_Band4bitmap;
-		wxStaticBitmap* m_Band_mult_bitmap;
-		wxStaticBitmap* m_Band_tol_bitmap;
 		wxPanel* m_panelTransline;
 		wxRadioBox* m_TranslineSelection;
 		wxPanel* m_panelDisplayshape;
@@ -210,6 +196,20 @@ class PCB_CALCULATOR_FRAME_BASE : public KIWAY_PLAYER
 		wxStaticText* m_left_message7;
 		wxStaticText* m_Message7;
 		wxButton* m_buttonTransLineReset;
+		wxPanel* m_panelColorCode;
+		wxRadioBox* m_rbToleranceSelection;
+		wxStaticText* m_staticText31;
+		wxStaticText* m_staticText34;
+		wxStaticText* m_staticText35;
+		wxStaticText* m_Band4Label;
+		wxStaticText* m_staticText37;
+		wxStaticText* m_staticText38;
+		wxStaticBitmap* m_Band1bitmap;
+		wxStaticBitmap* m_Band2bitmap;
+		wxStaticBitmap* m_Band3bitmap;
+		wxStaticBitmap* m_Band4bitmap;
+		wxStaticBitmap* m_Band_mult_bitmap;
+		wxStaticBitmap* m_Band_tol_bitmap;
 		wxPanel* m_panelTrackWidth;
 		wxStaticText* m_staticTextCurrent;
 		wxTextCtrl* m_TrackCurrentValue;
@@ -357,7 +357,6 @@ class PCB_CALCULATOR_FRAME_BASE : public KIWAY_PLAYER
 		virtual void OnAttenuatorSelection( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnPaintAttenuatorPanel( wxPaintEvent& event ) { event.Skip(); }
 		virtual void OnCalculateAttenuator( wxCommandEvent& event ) { event.Skip(); }
-		virtual void OnToleranceSelection( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnTranslineSelection( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnPaintTranslinePanel( wxPaintEvent& event ) { event.Skip(); }
 		virtual void OnTranslineEpsilonR_Button( wxCommandEvent& event ) { event.Skip(); }
@@ -366,6 +365,7 @@ class PCB_CALCULATOR_FRAME_BASE : public KIWAY_PLAYER
 		virtual void OnTranslineAnalyse( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnTranslineSynthetize( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnTransLineResetButtonClick( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnToleranceSelection( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnTWCalculateFromCurrent( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnTWParametersChanged( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnTWCalculateFromExtWidth( wxCommandEvent& event ) { event.Skip(); }
