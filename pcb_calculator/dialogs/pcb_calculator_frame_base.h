@@ -37,11 +37,11 @@ class UNIT_SELECTOR_THICKNESS;
 #include <wx/choice.h>
 #include <wx/button.h>
 #include <wx/panel.h>
+#include <wx/radiobox.h>
+#include <wx/bmpbuttn.h>
 #include <wx/html/htmlwin.h>
 #include <wx/statline.h>
 #include <wx/grid.h>
-#include <wx/radiobox.h>
-#include <wx/bmpbuttn.h>
 #include <wx/notebook.h>
 #include <wx/frame.h>
 
@@ -93,6 +93,123 @@ class PCB_CALCULATOR_FRAME_BASE : public KIWAY_PLAYER
 		wxButton* m_buttonAddItem;
 		wxButton* m_buttonRemoveItem;
 		wxStaticText* m_RegulMessage;
+		wxPanel* m_panelAttenuators;
+		wxRadioBox* m_AttenuatorsSelection;
+		wxPanel* m_panelDisplayAttenuator;
+		wxStaticText* m_attenuationLabel;
+		wxTextCtrl* m_AttValueCtrl;
+		wxStaticText* m_attUnit;
+		wxStaticText* m_attenuationZinLabel;
+		wxTextCtrl* m_ZinValueCtrl;
+		wxStaticText* m_attZinUnit;
+		wxStaticText* m_ZoutLabel;
+		wxTextCtrl* m_ZoutValueCtrl;
+		wxStaticText* m_attZoutUnit;
+		wxButton* m_buttonAlcAtt;
+		wxBitmapButton* m_bpButtonCalcAtt;
+		wxStaticText* m_attenuatorR1Label;
+		wxTextCtrl* m_Att_R1_Value;
+		wxStaticText* m_attR1Unit;
+		wxStaticText* m_attenuatorR2Label;
+		wxTextCtrl* m_Att_R2_Value;
+		wxStaticText* m_attR2Unit1;
+		wxStaticText* m_attenuatorR3Label;
+		wxTextCtrl* m_Att_R3_Value;
+		wxStaticText* m_attR3Unit;
+		wxStaticText* m_staticTextAttMsg;
+		wxHtmlWindow* m_Attenuator_Messages;
+		wxHtmlWindow* m_panelAttFormula;
+		wxPanel* m_panelColorCode;
+		wxRadioBox* m_rbToleranceSelection;
+		wxStaticText* m_staticText31;
+		wxStaticText* m_staticText34;
+		wxStaticText* m_staticText35;
+		wxStaticText* m_Band4Label;
+		wxStaticText* m_staticText37;
+		wxStaticText* m_staticText38;
+		wxStaticBitmap* m_Band1bitmap;
+		wxStaticBitmap* m_Band2bitmap;
+		wxStaticBitmap* m_Band3bitmap;
+		wxStaticBitmap* m_Band4bitmap;
+		wxStaticBitmap* m_Band_mult_bitmap;
+		wxStaticBitmap* m_Band_tol_bitmap;
+		wxPanel* m_panelTransline;
+		wxRadioBox* m_TranslineSelection;
+		wxPanel* m_panelDisplayshape;
+		wxStaticLine* m_staticline1;
+		wxStaticText* m_EpsilonR_label;
+		wxTextCtrl* m_Value_EpsilonR;
+		wxButton* m_button_EpsilonR;
+		wxStaticText* m_TanD_label;
+		wxTextCtrl* m_Value_TanD;
+		wxButton* m_button_TanD;
+		wxStaticText* m_Rho_label;
+		wxTextCtrl* m_Value_Rho;
+		wxButton* m_button_Rho;
+		wxStaticText* m_substrate_prm4_label;
+		wxTextCtrl* m_Substrate_prm4_Value;
+		UNIT_SELECTOR_LEN* m_SubsPrm4_choiceUnit;
+		wxStaticText* m_substrate_prm5_label;
+		wxTextCtrl* m_Substrate_prm5_Value;
+		UNIT_SELECTOR_LEN* m_SubsPrm5_choiceUnit;
+		wxStaticText* m_substrate_prm6_label;
+		wxTextCtrl* m_Substrate_prm6_Value;
+		UNIT_SELECTOR_LEN* m_SubsPrm6_choiceUnit;
+		wxStaticText* m_substrate_prm7_label;
+		wxTextCtrl* m_Substrate_prm7_Value;
+		UNIT_SELECTOR_LEN* m_SubsPrm7_choiceUnit;
+		wxStaticText* m_substrate_prm8_label;
+		wxTextCtrl* m_Substrate_prm8_Value;
+		UNIT_SELECTOR_LEN* m_SubsPrm8_choiceUnit;
+		wxStaticText* m_substrate_prm9_label;
+		wxTextCtrl* m_Substrate_prm9_Value;
+		UNIT_SELECTOR_LEN* m_SubsPrm9_choiceUnit;
+		wxStaticText* m_Frequency_label;
+		wxTextCtrl* m_Value_Frequency_Ctrl;
+		UNIT_SELECTOR_FREQUENCY* m_choiceUnit_Frequency;
+		wxStaticBitmap* m_bmCMicrostripZoddZeven;
+		wxFlexGridSizer* m_fgSizerZcomment;
+		wxStaticText* m_staticTextZdiff;
+		wxStaticText* m_staticTextZcommon;
+		wxStaticText* m_phys_prm1_label;
+		wxTextCtrl* m_Phys_prm1_Value;
+		UNIT_SELECTOR_LEN* m_choiceUnit_Param1;
+		wxRadioButton* m_radioBtnPrm1;
+		wxStaticText* m_phys_prm2_label;
+		wxTextCtrl* m_Phys_prm2_Value;
+		UNIT_SELECTOR_LEN* m_choiceUnit_Param2;
+		wxRadioButton* m_radioBtnPrm2;
+		wxStaticText* m_phys_prm3_label;
+		wxTextCtrl* m_Phys_prm3_Value;
+		UNIT_SELECTOR_LEN* m_choiceUnit_Param3;
+		wxBitmapButton* m_bpButtonAnalyze;
+		wxButton* m_AnalyseButton;
+		wxButton* m_SynthetizeButton;
+		wxBitmapButton* m_bpButtonSynthetize;
+		wxStaticText* m_elec_prm1_label;
+		wxTextCtrl* m_Elec_prm1_Value;
+		UNIT_SELECTOR_RESISTOR* m_choiceUnit_ElecPrm1;
+		wxStaticText* m_elec_prm2_label;
+		wxTextCtrl* m_Elec_prm2_Value;
+		UNIT_SELECTOR_RESISTOR* m_choiceUnit_ElecPrm2;
+		wxStaticText* m_elec_prm3_label;
+		wxTextCtrl* m_Elec_prm3_Value;
+		UNIT_SELECTOR_ANGLE* m_choiceUnit_ElecPrm3;
+		wxStaticText* m_left_message1;
+		wxStaticText* m_Message1;
+		wxStaticText* m_left_message2;
+		wxStaticText* m_Message2;
+		wxStaticText* m_left_message3;
+		wxStaticText* m_Message3;
+		wxStaticText* m_left_message4;
+		wxStaticText* m_Message4;
+		wxStaticText* m_left_message5;
+		wxStaticText* m_Message5;
+		wxStaticText* m_left_message6;
+		wxStaticText* m_Message6;
+		wxStaticText* m_left_message7;
+		wxStaticText* m_Message7;
+		wxButton* m_buttonTransLineReset;
 		wxPanel* m_panelTrackWidth;
 		wxStaticText* m_staticTextCurrent;
 		wxTextCtrl* m_TrackCurrentValue;
@@ -221,123 +338,6 @@ class PCB_CALCULATOR_FRAME_BASE : public KIWAY_PLAYER
 		wxStaticText* m_staticTextElectricalSpacing;
 		wxGrid* m_gridElectricalSpacingValues;
 		wxStaticText* m_staticText88;
-		wxPanel* m_panelTransline;
-		wxRadioBox* m_TranslineSelection;
-		wxPanel* m_panelDisplayshape;
-		wxStaticLine* m_staticline1;
-		wxStaticText* m_EpsilonR_label;
-		wxTextCtrl* m_Value_EpsilonR;
-		wxButton* m_button_EpsilonR;
-		wxStaticText* m_TanD_label;
-		wxTextCtrl* m_Value_TanD;
-		wxButton* m_button_TanD;
-		wxStaticText* m_Rho_label;
-		wxTextCtrl* m_Value_Rho;
-		wxButton* m_button_Rho;
-		wxStaticText* m_substrate_prm4_label;
-		wxTextCtrl* m_Substrate_prm4_Value;
-		UNIT_SELECTOR_LEN* m_SubsPrm4_choiceUnit;
-		wxStaticText* m_substrate_prm5_label;
-		wxTextCtrl* m_Substrate_prm5_Value;
-		UNIT_SELECTOR_LEN* m_SubsPrm5_choiceUnit;
-		wxStaticText* m_substrate_prm6_label;
-		wxTextCtrl* m_Substrate_prm6_Value;
-		UNIT_SELECTOR_LEN* m_SubsPrm6_choiceUnit;
-		wxStaticText* m_substrate_prm7_label;
-		wxTextCtrl* m_Substrate_prm7_Value;
-		UNIT_SELECTOR_LEN* m_SubsPrm7_choiceUnit;
-		wxStaticText* m_substrate_prm8_label;
-		wxTextCtrl* m_Substrate_prm8_Value;
-		UNIT_SELECTOR_LEN* m_SubsPrm8_choiceUnit;
-		wxStaticText* m_substrate_prm9_label;
-		wxTextCtrl* m_Substrate_prm9_Value;
-		UNIT_SELECTOR_LEN* m_SubsPrm9_choiceUnit;
-		wxStaticText* m_Frequency_label;
-		wxTextCtrl* m_Value_Frequency_Ctrl;
-		UNIT_SELECTOR_FREQUENCY* m_choiceUnit_Frequency;
-		wxStaticBitmap* m_bmCMicrostripZoddZeven;
-		wxFlexGridSizer* m_fgSizerZcomment;
-		wxStaticText* m_staticTextZdiff;
-		wxStaticText* m_staticTextZcommon;
-		wxStaticText* m_phys_prm1_label;
-		wxTextCtrl* m_Phys_prm1_Value;
-		UNIT_SELECTOR_LEN* m_choiceUnit_Param1;
-		wxRadioButton* m_radioBtnPrm1;
-		wxStaticText* m_phys_prm2_label;
-		wxTextCtrl* m_Phys_prm2_Value;
-		UNIT_SELECTOR_LEN* m_choiceUnit_Param2;
-		wxRadioButton* m_radioBtnPrm2;
-		wxStaticText* m_phys_prm3_label;
-		wxTextCtrl* m_Phys_prm3_Value;
-		UNIT_SELECTOR_LEN* m_choiceUnit_Param3;
-		wxBitmapButton* m_bpButtonAnalyze;
-		wxButton* m_AnalyseButton;
-		wxButton* m_SynthetizeButton;
-		wxBitmapButton* m_bpButtonSynthetize;
-		wxStaticText* m_elec_prm1_label;
-		wxTextCtrl* m_Elec_prm1_Value;
-		UNIT_SELECTOR_RESISTOR* m_choiceUnit_ElecPrm1;
-		wxStaticText* m_elec_prm2_label;
-		wxTextCtrl* m_Elec_prm2_Value;
-		UNIT_SELECTOR_RESISTOR* m_choiceUnit_ElecPrm2;
-		wxStaticText* m_elec_prm3_label;
-		wxTextCtrl* m_Elec_prm3_Value;
-		UNIT_SELECTOR_ANGLE* m_choiceUnit_ElecPrm3;
-		wxStaticText* m_left_message1;
-		wxStaticText* m_Message1;
-		wxStaticText* m_left_message2;
-		wxStaticText* m_Message2;
-		wxStaticText* m_left_message3;
-		wxStaticText* m_Message3;
-		wxStaticText* m_left_message4;
-		wxStaticText* m_Message4;
-		wxStaticText* m_left_message5;
-		wxStaticText* m_Message5;
-		wxStaticText* m_left_message6;
-		wxStaticText* m_Message6;
-		wxStaticText* m_left_message7;
-		wxStaticText* m_Message7;
-		wxButton* m_buttonTransLineReset;
-		wxPanel* m_panelAttenuators;
-		wxRadioBox* m_AttenuatorsSelection;
-		wxPanel* m_panelDisplayAttenuator;
-		wxStaticText* m_attenuationLabel;
-		wxTextCtrl* m_AttValueCtrl;
-		wxStaticText* m_attUnit;
-		wxStaticText* m_attenuationZinLabel;
-		wxTextCtrl* m_ZinValueCtrl;
-		wxStaticText* m_attZinUnit;
-		wxStaticText* m_ZoutLabel;
-		wxTextCtrl* m_ZoutValueCtrl;
-		wxStaticText* m_attZoutUnit;
-		wxButton* m_buttonAlcAtt;
-		wxBitmapButton* m_bpButtonCalcAtt;
-		wxStaticText* m_attenuatorR1Label;
-		wxTextCtrl* m_Att_R1_Value;
-		wxStaticText* m_attR1Unit;
-		wxStaticText* m_attenuatorR2Label;
-		wxTextCtrl* m_Att_R2_Value;
-		wxStaticText* m_attR2Unit1;
-		wxStaticText* m_attenuatorR3Label;
-		wxTextCtrl* m_Att_R3_Value;
-		wxStaticText* m_attR3Unit;
-		wxStaticText* m_staticTextAttMsg;
-		wxHtmlWindow* m_Attenuator_Messages;
-		wxHtmlWindow* m_panelAttFormula;
-		wxPanel* m_panelColorCode;
-		wxRadioBox* m_rbToleranceSelection;
-		wxStaticText* m_staticText31;
-		wxStaticText* m_staticText34;
-		wxStaticText* m_staticText35;
-		wxStaticText* m_Band4Label;
-		wxStaticText* m_staticText37;
-		wxStaticText* m_staticText38;
-		wxStaticBitmap* m_Band1bitmap;
-		wxStaticBitmap* m_Band2bitmap;
-		wxStaticBitmap* m_Band3bitmap;
-		wxStaticBitmap* m_Band4bitmap;
-		wxStaticBitmap* m_Band_mult_bitmap;
-		wxStaticBitmap* m_Band_tol_bitmap;
 		wxPanel* m_panelBoardClass;
 		UNIT_SELECTOR_LEN* m_BoardClassesUnitsSelector;
 		wxStaticText* m_staticTextBrdClass;
@@ -354,6 +354,18 @@ class PCB_CALCULATOR_FRAME_BASE : public KIWAY_PLAYER
 		virtual void OnEditRegulator( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnAddRegulator( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnRemoveRegulator( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnAttenuatorSelection( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnPaintAttenuatorPanel( wxPaintEvent& event ) { event.Skip(); }
+		virtual void OnCalculateAttenuator( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnToleranceSelection( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnTranslineSelection( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnPaintTranslinePanel( wxPaintEvent& event ) { event.Skip(); }
+		virtual void OnTranslineEpsilonR_Button( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnTranslineTanD_Button( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnTranslineRho_Button( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnTranslineAnalyse( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnTranslineSynthetize( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnTransLineResetButtonClick( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnTWCalculateFromCurrent( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnTWParametersChanged( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnTWCalculateFromExtWidth( wxCommandEvent& event ) { event.Skip(); }
@@ -366,18 +378,6 @@ class PCB_CALCULATOR_FRAME_BASE : public KIWAY_PLAYER
 		virtual void OnViaResetButtonClick( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnElectricalSpacingUnitsSelection( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnElectricalSpacingRefresh( wxCommandEvent& event ) { event.Skip(); }
-		virtual void OnTranslineSelection( wxCommandEvent& event ) { event.Skip(); }
-		virtual void OnPaintTranslinePanel( wxPaintEvent& event ) { event.Skip(); }
-		virtual void OnTranslineEpsilonR_Button( wxCommandEvent& event ) { event.Skip(); }
-		virtual void OnTranslineTanD_Button( wxCommandEvent& event ) { event.Skip(); }
-		virtual void OnTranslineRho_Button( wxCommandEvent& event ) { event.Skip(); }
-		virtual void OnTranslineAnalyse( wxCommandEvent& event ) { event.Skip(); }
-		virtual void OnTranslineSynthetize( wxCommandEvent& event ) { event.Skip(); }
-		virtual void OnTransLineResetButtonClick( wxCommandEvent& event ) { event.Skip(); }
-		virtual void OnAttenuatorSelection( wxCommandEvent& event ) { event.Skip(); }
-		virtual void OnPaintAttenuatorPanel( wxPaintEvent& event ) { event.Skip(); }
-		virtual void OnCalculateAttenuator( wxCommandEvent& event ) { event.Skip(); }
-		virtual void OnToleranceSelection( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnBoardClassesUnitsSelection( wxCommandEvent& event ) { event.Skip(); }
 
 
