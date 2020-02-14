@@ -3,6 +3,12 @@ if( COMPILER_SUPPORTS_WSHADOW )
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${WSHADOW_FLAGS}")
 endif()
 
+#================ VR STUFF =====================
+
+add_subdirectory( godot_server )
+
+#================ END OF VR STUFF ==============
+
 add_subdirectory( libeval )
 
 include_directories( BEFORE ${INC_BEFORE} )
