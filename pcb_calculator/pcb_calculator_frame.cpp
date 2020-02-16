@@ -26,7 +26,6 @@
 #include <bitmaps.h>
 #include <geometry/shape_poly_set.h>
 
-
 #define KEYWORD_FRAME_POSX                      wxT( "Pcb_calculator_Pos_x" )
 #define KEYWORD_FRAME_POSY                      wxT( "Pcb_calculator_Pos_y" )
 #define KEYWORD_FRAME_SIZEX                     wxT( "Pcb_calculator_Size_x" )
@@ -90,9 +89,9 @@ PCB_CALCULATOR_FRAME::PCB_CALCULATOR_FRAME( KIWAY* aKiway, wxWindow* aParent ) :
     TranslineTypeSelection( m_currTransLineType );
     m_TranslineSelection->SetSelection( m_currTransLineType );
 
-    TW_Init( config.get() );
-
-    VS_Init( config.get() );
+    TW_Init( config.get() );		// Track Width
+    VS_Init( config.get() );		// Via Size
+    ES_Init();				// E_Series
 
     SetAttenuator( m_AttenuatorsSelection->GetSelection() );
 

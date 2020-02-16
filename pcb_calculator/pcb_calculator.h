@@ -102,12 +102,16 @@ private:
     void SetDataFilename( const wxString & aFilename);
 
     // Trace width / maximum current capability calculations.
-
     /**
      * Function TW_Init
      * Read config and init dialog widgets values
      */
     void TW_Init( wxConfigBase* aCfg );
+
+    // E-Series calculator panel
+    void ES_Init( void );
+    void OnCalculateESeries( wxCommandEvent& event ) override;
+//  void OnESeriesSelection( wxCommandEvent& event ) override;
 
     /**
      * Function TW_WriteConfig
