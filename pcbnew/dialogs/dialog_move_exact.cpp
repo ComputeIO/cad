@@ -66,8 +66,8 @@ DIALOG_MOVE_EXACT::DIALOG_MOVE_EXACT( PCB_BASE_FRAME *aParent, wxPoint& aTransla
 
     // and set up the entries according to the saved options
     m_polarCoords->SetValue( m_options.polarCoords );
-    m_moveX.SetValue( m_options.entry1 );
-    m_moveY.SetValue( m_options.entry2 );
+    m_moveX.SetDoubleValue( m_options.entry1 );
+    m_moveY.SetDoubleValue( m_options.entry2 );
 
     m_rotate.SetUnits( EDA_UNITS::DEGREES );
     m_rotate.SetValue( m_options.entryRotation );
@@ -115,12 +115,12 @@ void DIALOG_MOVE_EXACT::ToPolarDeg( double x, double y, double& r, double& q )
 }
 
 
-bool DIALOG_MOVE_EXACT::GetTranslationInIU ( wxPoint& val, bool polar )
+bool DIALOG_MOVE_EXACT::GetTranslationInIU ( wxRealPoint& val, bool polar )
 {
     if( polar )
     {
-        const int r = m_moveX.GetValue();
-        const double q = m_moveY.GetValue();
+        const double r = m_moveX.GetDoubleValue();
+        const double q = m_moveY.GetDoubleValue();
 
         val.x = r * cos( DEG2RAD( q / 10.0 ) );
         val.y = r * sin( DEG2RAD( q / 10.0 ) );
@@ -128,8 +128,8 @@ bool DIALOG_MOVE_EXACT::GetTranslationInIU ( wxPoint& val, bool polar )
     else
     {
         // direct read
-        val.x = m_moveX.GetValue();
-        val.y = m_moveY.GetValue();
+        val.x = m_moveX.GetDoubleValue();
+        val.y = m_moveY.GetDoubleValue();
     }
 
     // no validation to do here, but in future, you could return false here
@@ -140,7 +140,7 @@ bool DIALOG_MOVE_EXACT::GetTranslationInIU ( wxPoint& val, bool polar )
 void DIALOG_MOVE_EXACT::OnPolarChanged( wxCommandEvent& event )
 {
     bool newPolar = m_polarCoords->IsChecked();
-    wxPoint val;
+    wxRealPoint val;
 
     // get the value as previously stored
     GetTranslationInIU( val, !newPolar );
@@ -154,17 +154,13 @@ void DIALOG_MOVE_EXACT::OnPolarChanged( wxCommandEvent& event )
         double r, q;
         ToPolarDeg( val.x, val.y, r, q );
 
-        m_moveX.SetValue( KiROUND( r / 10.0) * 10 );
-        m_moveY.SetValue( q * 10 );
+        m_moveX.SetDoubleValue( r );
+        m_moveY.SetDoubleValue( q * 10 );
     }
     else
     {
-        // vector is already in Cartesian, so just render out
-        // note - round off the last decimal place (10nm) to prevent
-        // (some) rounding causing errors when round-tripping
-        // you can never eliminate entirely, however
-        m_moveX.SetValue( KiROUND( val.x / 10.0 ) * 10 );
-        m_moveY.SetValue( KiROUND( val.y / 10.0 ) * 10 );
+        m_moveX.SetDoubleValue( val.x );
+        m_moveY.SetDoubleValue( val.y );
     }
 
 }
@@ -214,7 +210,10 @@ void DIALOG_MOVE_EXACT::OnClear( wxCommandEvent& event )
 bool DIALOG_MOVE_EXACT::TransferDataFromWindow()
 {
     // for the output, we only deliver a Cartesian vector
-    bool ok = GetTranslationInIU( m_translation, m_polarCoords->IsChecked() );
+    wxRealPoint translation;
+    bool ok = GetTranslationInIU( translation, m_polarCoords->IsChecked() );
+    m_translation.x = KiROUND(translation.x);
+    m_translation.y = KiROUND(translation.y);
     m_rotation = m_rotate.GetValue();
     m_rotationAnchor = m_menuIDs[ m_anchorOptions->GetSelection() ];
 
@@ -222,8 +221,8 @@ bool DIALOG_MOVE_EXACT::TransferDataFromWindow()
     {
         // save the settings
         m_options.polarCoords = m_polarCoords->GetValue();
-        m_options.entry1 = m_moveX.GetValue();
-        m_options.entry2 = m_moveY.GetValue();
+        m_options.entry1 = m_moveX.GetDoubleValue();
+        m_options.entry2 = m_moveY.GetDoubleValue();
         m_options.entryRotation = m_rotate.GetValue();
         m_options.entryAnchorSelection = (size_t) std::max( m_anchorOptions->GetSelection(), 0 );
         return true;
@@ -247,8 +246,8 @@ void DIALOG_MOVE_EXACT::OnTextFocusLost( wxFocusEvent& event )
 void DIALOG_MOVE_EXACT::OnTextChanged( wxCommandEvent& event )
 {
 
-    double delta_x = m_moveX.GetValue();
-    double delta_y = m_moveY.GetValue();
+    double delta_x = m_moveX.GetDoubleValue();
+    double delta_y = m_moveY.GetDoubleValue();
     double max_border = std::numeric_limits<int>::max() * 0.7071;
 
     if( m_bbox.GetLeft() + delta_x < -max_border ||

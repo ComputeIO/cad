@@ -92,7 +92,7 @@ private:
      * @param polar interpret as polar coords
      * @return false if error (though the text conversion functions don't report errors)
      */
-    bool GetTranslationInIU ( wxPoint& val, bool polar );
+    bool GetTranslationInIU ( wxRealPoint& val, bool polar );
 
     void buildRotationAnchorMenu();
 
