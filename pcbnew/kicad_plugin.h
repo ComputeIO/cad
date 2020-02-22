@@ -2,7 +2,7 @@
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
  * Copyright (C) 2012 CERN.
- * Copyright (C) 1992-2017 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 1992-2020 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -65,7 +65,8 @@ class TEXTE_PCB;
 //#define SEXPR_BOARD_FILE_VERSION    20190905  // Add board physical stackup info in setup section
 //#define SEXPR_BOARD_FILE_VERSION    20190907  // Keepout areas in footprints
 //#define SEXPR_BOARD_FILE_VERSION    20191123  // pin function in pads
-#define SEXPR_BOARD_FILE_VERSION    20200104    // pad property for fabrication
+//#define SEXPR_BOARD_FILE_VERSION    20200104    // pad property for fabrication
+#define SEXPR_BOARD_FILE_VERSION      20200119  // arcs in tracks
 
 #define CTL_STD_LAYER_NAMES         (1 << 0)    ///< Use English Standard layer names
 #define CTL_OMIT_NETS               (1 << 1)    ///< Omit pads net names (useless in library)
