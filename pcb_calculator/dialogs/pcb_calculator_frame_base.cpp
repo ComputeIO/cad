@@ -269,7 +269,7 @@ PCB_CALCULATOR_FRAME_BASE::PCB_CALCULATOR_FRAME_BASE( wxWindow* parent, wxWindow
 	wxString m_AttenuatorsSelectionChoices[] = { _("PI"), _("Tee"), _("Bridged Tee"), _("Resistive Splitter") };
 	int m_AttenuatorsSelectionNChoices = sizeof( m_AttenuatorsSelectionChoices ) / sizeof( wxString );
 	m_AttenuatorsSelection = new wxRadioBox( m_panelAttenuators, wxID_ANY, _("Attenuators:"), wxDefaultPosition, wxDefaultSize, m_AttenuatorsSelectionNChoices, m_AttenuatorsSelectionChoices, 1, wxRA_SPECIFY_COLS );
-	m_AttenuatorsSelection->SetSelection( 1 );
+	m_AttenuatorsSelection->SetSelection( 0 );
 	bLeftSizerAtt->Add( m_AttenuatorsSelection, 0, wxEXPAND|wxALL, 5 );
 
 	m_panelDisplayAttenuator = new wxPanel( m_panelAttenuators, wxID_ANY, wxDefaultPosition, wxSize( 256,256 ), wxTAB_TRAVERSAL|wxBORDER_SIMPLE );
@@ -463,10 +463,11 @@ PCB_CALCULATOR_FRAME_BASE::PCB_CALCULATOR_FRAME_BASE( wxWindow* parent, wxWindow
 	fgSizerAttPrms1->Add( m_ResRequired, 0, wxTOP|wxRIGHT|wxLEFT, 5 );
 
 	m_checkBox1 = new wxCheckBox( sbSizerESeriesInput->GetStaticBox(), wxID_ANY, _("Exclude Values:"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_checkBox1->SetValue(true);
 	fgSizerAttPrms1->Add( m_checkBox1, 0, wxALL, 5 );
 
-	m_ZoutValueCtrl1 = new wxTextCtrl( sbSizerESeriesInput->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
-	fgSizerAttPrms1->Add( m_ZoutValueCtrl1, 0, wxALL, 5 );
+	m_ResExclude = new wxTextCtrl( sbSizerESeriesInput->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
+	fgSizerAttPrms1->Add( m_ResExclude, 0, wxALL, 5 );
 
 	m_checkBox2 = new wxCheckBox( sbSizerESeriesInput->GetStaticBox(), wxID_ANY, _("4 R Solution"), wxDefaultPosition, wxDefaultSize, 0 );
 	fgSizerAttPrms1->Add( m_checkBox2, 0, wxALL, 5 );
@@ -1850,6 +1851,7 @@ PCB_CALCULATOR_FRAME_BASE::PCB_CALCULATOR_FRAME_BASE( wxWindow* parent, wxWindow
 
 	this->SetSizer( bmainFrameSizer );
 	this->Layout();
+	bmainFrameSizer->Fit( this );
 
 	this->Centre( wxBOTH );
 

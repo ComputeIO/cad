@@ -1,0 +1,26 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Events Calendar//iCal4j 1.0//EN
+CALSCALE:GREGORIAN
+BEGIN:VEVENT
+DTSTAMP:20200218T092132Z
+DTSTART:20200303T074000Z
+DTEND:20200303T074500Z
+SUMMARY:Termin bei Dr. von Richthofen
+DESCRIPTION:Sehr geehrter Herr Jürgen Veith\,\n\nhiermit bestätigen wir Ihr
+ en Termin für Herr Jürgen Veith am Dienstag\, den 03. März 2020 um 08:40 U
+ hr  bei Dr. von Richthofen.\nBitte informieren Sie uns rechtzeitig\, falls 
+ Sie den Termin nicht wahrnehmen können.\n\nAntworten Sie bitte nicht auf d
+ iese E-Mail. Wenn Sie Fragen haben\, schauen Sie bitte auf unsere Webseite 
+ oder rufen Sie uns an.\n\nMit freundlichen Grüßen\n\nDr. Esther von Richth
+ ofen
+UID:85f3d688-484a-471a-a2e3-4606ff49b206@null
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER;RELATED=START:P-1D
+DESCRIPTION:Termin bei Dr. von Richthofen
+REPEAT:6
+DURATION:PT4H
+END:VALARM
+END:VEVENT
+END:VCALENDAR

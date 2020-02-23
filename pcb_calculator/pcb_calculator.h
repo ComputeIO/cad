@@ -111,7 +111,8 @@ private:
     // E-Series calculator panel
     void ES_Init( void );
     void OnCalculateESeries( wxCommandEvent& event ) override;
-//  void OnESeriesSelection( wxCommandEvent& event ) override;
+    void OnESerieSelection( wxCommandEvent& event ) override;
+    void SetESerie( unsigned aIdx );
 
     /**
      * Function TW_WriteConfig
@@ -307,6 +308,8 @@ private:
     // Color Code panel
     void OnToleranceSelection( wxCommandEvent& event ) override;
     void ToleranceSelection( int aSelection );
+
+ 
 
     // Attenuators Panel
     void OnAttenuatorSelection( wxCommandEvent& event ) override;

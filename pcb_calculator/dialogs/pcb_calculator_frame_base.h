@@ -125,7 +125,7 @@ class PCB_CALCULATOR_FRAME_BASE : public KIWAY_PLAYER
 		wxStaticText* m_ESrequired;
 		wxTextCtrl* m_ResRequired;
 		wxCheckBox* m_checkBox1;
-		wxTextCtrl* m_ZoutValueCtrl1;
+		wxTextCtrl* m_ResExclude;
 		wxCheckBox* m_checkBox2;
 		wxCheckBox* m_checkBox4;
 		wxRadioBox* m_rbESerieSelection;
@@ -408,7 +408,7 @@ class PCB_CALCULATOR_FRAME_BASE : public KIWAY_PLAYER
 
 	public:
 
-		PCB_CALCULATOR_FRAME_BASE( wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = _("PCB Calculator"), const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( 1073,711 ), long style = wxDEFAULT_FRAME_STYLE|wxRESIZE_BORDER|wxFULL_REPAINT_ON_RESIZE|wxTAB_TRAVERSAL, const wxString& name = wxT("pcb_calculator") );
+		PCB_CALCULATOR_FRAME_BASE( wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = _("PCB Calculator"), const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( -1,-1 ), long style = wxDEFAULT_FRAME_STYLE|wxRESIZE_BORDER|wxFULL_REPAINT_ON_RESIZE|wxTAB_TRAVERSAL, const wxString& name = wxT("pcb_calculator") );
 
 		~PCB_CALCULATOR_FRAME_BASE();
 

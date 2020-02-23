@@ -71,7 +71,6 @@ double DoubleFromString( const wxString& TextValue )
     return value;
 }
 
-
 // Functions to Read/Write parameters in pcb_calculator main frame:
 // They are only wrapper to actual functions, so all transline functions do not
 // depend on Graphic User Interface

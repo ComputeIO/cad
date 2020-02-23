@@ -1,6 +1,27 @@
+/*
+ * This program source code file is part of KiCad, a free EDA CAD application.
+ *
+ * Copyright (C) 2020 <author> janvi@veith.net
+ * Copyright (C) 2020 KiCad Developers, see AUTHORS.txt for contributors.
+ *
+ * This program is free software: you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the
+ * Free Software Foundation, either version 3 of the License, or (at your
+ * option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 #include <wx/wx.h>
 
 #include <pcb_calculator.h>
+//#include <pcb_calculator_frame_base.h>
 #include <dialog_helpers.h>
 
 wxString eseries_help =
@@ -8,661 +29,501 @@ wxString eseries_help =
 
 extern double DoubleFromString( const wxString& TextValue );
 
-void PCB_CALCULATOR_FRAME::ES_Init() 	// initialize ESeries tab at each pcb-calculator start
+//** Known limitations against the javascript version (see www.veith.net/e12calc.html)
+
+// todo 2 exclude values
+// todo remove redundand brackets for 3R and 4R solutions
+// todo cleanup unused UI checkbox
+// 3 result output
+
+//**
+//** 1) Only one exclude value is allowed
+//** If you need more than one exclude value, consider to select a smaller available E series
+//** and complete your stock with E6 and E12 standard components
+//** 
+//** 2) Using Kicad DoubleFromString() limit the calculator to enter the resistance in Kiloohms 
+//** from 0,005 KiloOhm to 2000 KiloOhm. No formulas accepted. 5 decades excel available toler-
+//** ance down to 0,1%. User are free to abstract the units from Megaohm or (milli)Ohm to KiloOhm 
+//** as well as the parallel serial swap rule in case of capacitors itself.
+
+// E-Values derived from a geometric sequence formula by Charles Renard were already  
+// accepted and widely used before the ISO recommendation no. 3 has been published. 
+// For this historical reason, rounding rules of some values are sometimes irregular.
+// Although all E-Values could be calculated at runtime, we initialize them in a lookup table
+// what seems the most easy way to consider any inconvenient irregular rules. Same table can 
+// also be used to lookup non calculatable but readable value strings commonly used in BOM.
+// Smaller E-series are a subset of the next bigger E-series. E48, E96 and E192 do not follow  
+// this rule. Such predicament causes frequently requests from contract manufacturers like:
+// Are we allowed to use a pullup resistor value of 4k75 instead of 4k7 given by BOM ?
+// To solve this, most (but not all) values of the lower E-series are inserted in the E-196 series 
+// This way, designer can use small tolerance E-196 series and limit the stock to E12 values.
+// For exhaustive calculations, unsorted E-series LookUpTables (LUT) are sufficient.
+// Higher E-Series increase computing time and memory use by square to cube. Although this seems 
+// a dont care for Kicads multikernel workstations, this calculator is limited to the E12 series.
+
+enum              {E12, E6, E3, E1};            // usable E-series
+enum              {S2R, S3R, S4R};              // number of resistors for a solution
+
+struct r_data    { 
+                     bool        e_use;        
+                     std::string e_name;       
+                     double      e_value;      
+                 };
+
+struct lut_dir   {
+                     r_data*  lut_ptr;
+                     uint     lut_size;
+                 };
+
+// Number of used values for each E-Series in use 
+
+#define E12_SIZE ( sizeof ( e12_lut ) / sizeof ( r_data ) )
+#define E6_SIZE  ( sizeof ( e6_lut )  / sizeof ( r_data ) )
+#define E3_SIZE  ( sizeof ( e3_lut )  / sizeof ( r_data ) )
+#define E1_SIZE  ( sizeof ( e1_lut )  / sizeof ( r_data ) )
+
+// Number of parallel & serial brute force solutions for the largest E-Series E12 in use 
+// Swappable terms, generate a single, equal and redundant result for each of the combinations
+
+#define MAX_COMB ( 2 * ( E12_SIZE * E12_SIZE ) )
+
+// Used E-series values from 10 Ohms to 1 and its associated BOM strings. All series larger E1 
+// are defined by additional values what are containing the previous series
+
+#define E1_VAL 	 {true,"1K",1000},\
+                 {true,"10K",10000},\
+                 {true,"100K",100000},\
+                 {true,"10R",10},\
+                 {true,"100R",100},\
+                 {true,"1M",1000000}
+
+#define E3_ADD 	 {true,"22R",22},\
+                 {true,"47R",47},\
+                 {true,"220R",220},\
+                 {true,"470R",470},\
+                 {true,"2K2",2200},\
+                 {true,"4K7",4700},\
+                 {true,"22K",22000},\
+                 {true,"47K",47000},\
+                 {true,"220K",220000},\
+                 {true,"470K",470000}
+
+#define E6_ADD 	 {true,"15R",15},\
+                 {true,"33R",33},\
+                 {true,"68R",68},\
+                 {true,"150R",150},\
+                 {true,"330R",330},\
+                 {true,"680R",680},\
+                 {true,"1K5",1500},\
+                 {true,"3K3",3300},\
+                 {true,"6K8",6800},\
+                 {true,"15K",15000},\
+                 {true,"33K",33000},\
+                 {true,"68K",68000},\
+                 {true,"150K",150000},\
+                 {true,"330K",330000},\
+                 {true,"680K",680000}
+
+#define E12_ADD  {true,"12R",12},\
+                 {true,"18R",18},\
+                 {true,"27R",27},\
+                 {true,"39R",39},\
+                 {true,"56R",56},\
+                 {true,"82R",82},\
+                 {true,"120R",120},\
+                 {true,"180R",180},\
+                 {true,"270R",270},\
+                 {true,"390R",390},\
+                 {true,"560R",560},\
+                 {true,"820R",820},\
+                 {true,"1K2",1200},\
+                 {true,"1K8",1800},\
+                 {true,"2K7",2700},\
+                 {true,"3K9",3900},\
+                 {true,"5K6",5600},\
+                 {true,"8K2",8200},\
+                 {true,"12K",12000},\
+                 {true,"18K",18000},\
+                 {true,"27K",27000},\
+                 {true,"39K",39000},\
+                 {true,"56K",56000},\
+                 {true,"82K",820000},\
+                 {true,"120K",120000},\
+                 {true,"180K",180000},\
+                 {true,"270K",270000},\
+                 {true,"390K",390000},\
+                 {true,"560K",560000},\
+                 {true,"820K",820000}
+
+r_data e1_lut[] = {
+                    E1_VAL
+                  };
+
+r_data e3_lut[] = {
+                    E1_VAL,
+                    E3_ADD
+                  };
+
+r_data e6_lut[] = {
+                    E1_VAL,
+                    E3_ADD,
+                    E6_ADD
+                  };
+
+r_data e12_lut[] ={
+                    E1_VAL,
+                    E3_ADD,
+                    E6_ADD,
+                    E12_ADD
+                  };
+
+lut_dir lut_tab[] =  {
+                      {( e12_lut), E12_SIZE},\
+                      {( e6_lut ),  E6_SIZE},\
+                      {( e3_lut ),  E3_SIZE},\
+                      {( e1_lut ),  E1_SIZE}
+                     };				//directory for look up tables 
+                      
+r_data comb_lut[MAX_COMB];	// array with all 2 components combination solutions
+r_data rslt_lut[S4R+1];		// array with 2,3 and 4 component solutions
+
+uint act_rb = 0;		// radio button default selection
+double targetR;			// required resistor value what is searched for
+
+//************************************************************************************************
+
+void lut_dump(uint size)
 {
-    std::cout<<"ES_Init"<<std::endl;
-    wxString html_txt;			//show markdown formula explanation in lower help panel
-    ConvertMarkdown2Html( wxGetTranslation( eseries_help ), html_txt );
-    m_panelESeriesHelp->SetPage( html_txt );	
+  uint i;
+
+  std::cout<<"Solutions 2R, 3R, 4R:"<<std::endl;
+  for (i=0; i<size;  i++)
+  {std::cout<<\
+   rslt_lut[i].e_use<<" "<<\
+   rslt_lut[i].e_name<<\
+   " Deviation: "<<(rslt_lut[i].e_value)<<" Ohm"\
+   <<std::endl;
+  }
 }
+
+//************************************************************************************************
+//**
+//** If any value of the solution is not available, it can be entered as an exclude value.
+
+void parseExclude(double res_exclude)
+{
+  uint i;                                  // Index to initialize all resistor data lookup tables
+
+  for (i=0; i<E12_SIZE; i++)   e12_lut[i].e_use = true;	// assume all values available
+  for (i=0; i<E6_SIZE;  i++)   e6_lut[i].e_use  = true;
+  for (i=0; i<E3_SIZE;  i++)   e3_lut[i].e_use  = true;
+  for (i=0; i<E1_SIZE;  i++)   e1_lut[i].e_use  = true;
+
+  for (i=0; i<=S4R;      i++) rslt_lut[i].e_use  = false; // no results before calculation done
+  for (i=0; i<MAX_COMB;  i++) comb_lut[i].e_use  = false; // no combinations available
+
+ /*
+  std::cout<<"Exclude ";
+  if (res_exclude)
+  {
+      std::cout<<res_exclude<< "K Ohm"<<std::endl;   // entry was in KiloOhms
+      res_exclude = res_exclude * 1000;              // convert to Ohms
+      for (i=0; i<E1_SIZE;  i++)		     // check all E-series without care for its use
+      {
+         if ( e1_lut[i].e_value == res_exclude)      // if value to exclude found
+         { 
+           e1_lut[i].e_use = false;		     // disable its use
+         }
+      }
+      for (i=0; i<E3_SIZE;  i++)		     // check all E-series without care for its use
+      {
+         if ( e3_lut[i].e_value == res_exclude)      // if value to exclude found
+         {  
+           e3_lut[i].e_use = false;		     // disable its use
+         }
+      }
+      for (i=0; i<E6_SIZE;  i++)		     // check all E-series without care for its use
+      {
+         if ( e6_lut[i].e_value == res_exclude)      // if value to exclude found
+         { 
+           e6_lut[i].e_use = false;		     // disable its use
+         }
+      }
+      for (i=0; i<E12_SIZE;  i++)		     // check all E-series without care for its use
+      {
+         if ( e12_lut[i].e_value == res_exclude)     // if value to exclude found
+         { 
+           e12_lut[i].e_use = false;	     	     // disable its use
+         }
+      }
+    }
+  else std::cout<<"All values available"<<std::endl; //entry was in KiloOhms
+*/
+}
+
+//************************************************************************************************
+//
+// search for closest two component solution
+
+void simple_solution (uint size)
+{
+  uint i;
+  rslt_lut[S2R].e_value = 9999999;	 // assume no 2R solution or very big deviation
+  
+  #ifdef DEBUG  
+  std::cout<<"S2R search, Combi = "<<size<<std::endl;
+  #endif
+  
+  for (i=0; i<size; i++)
+  {if ( abs( comb_lut[i].e_value - targetR )  < abs( rslt_lut[S2R].e_value ) )
+      {
+     rslt_lut[S2R].e_value = comb_lut[i].e_value - targetR;	// save deviation in Ohms
+     rslt_lut[S2R].e_name = comb_lut[i].e_name;			// save combination text
+     rslt_lut[S2R].e_use = true;				// this is a possible solution
+
+     #ifdef DEBUG
+     std::cout<<"found: "    <<rslt_lut[S2R].e_name<<\
+                " Deviation "<<rslt_lut[S2R].e_value<<\
+     std::endl;
+     #endif
+    }
+  }
+}
+
+//************************************************************************************************
+//
+// Check if there is a better four component solution. The parameter 
+// (uint size) gives the number of combinations to be checked inside comb_lut
+// 5 decade E12 series gives over 100 Mio combinations
+
+void combine4(uint size)
+{
+    uint i,j;
+    double tmp_result;
+    std::string s;
+
+    rslt_lut[S4R].e_use = false;                   // disable 4R solution, until
+    rslt_lut[S4R].e_value = rslt_lut[S3R].e_value; // 4R becomes better than 3R solution
+
+    #ifdef DEBUG
+    std::cout<<"S4R serial search "<<std::endl;
+    #endif
+    
+    for (i=0; i<size;  i++) 			// 2R+2R=4R serial search
+    {                                           // go through all 2R solutions 
+      for (j=0; j<size;  j++)			// combine all with itself
+      {
+        tmp_result = comb_lut[j].e_value + comb_lut[i].e_value;     // calculate 2R+2R serial
+        tmp_result -= targetR;                                      // calculate 4R deviation
+        if ( abs ( tmp_result )  < abs ( rslt_lut[S4R].e_value ) )  // if new 4R is better
+        {                                                           // then take it
+          rslt_lut[S4R].e_value = tmp_result;                       // save amount of benefit
+          s = "( "; 
+          s.append ( comb_lut[i].e_name );                          // mention 1st 2 component
+          s.append ( " ) + ( " );	                            // in series
+          s.append ( comb_lut[j].e_name );                          // with 2nd 2 components
+          s.append ( " )" );
+          rslt_lut[S4R].e_name = s;	                            // with 2nd 2 components
+          rslt_lut[S4R].e_use = true;                               // enable later use
+          std::cout<<"found: "<<rslt_lut[S4R].e_name<<\
+          " Deviation "<<rslt_lut[S4R].e_value<<std::endl;
+        }
+      }
+    }
+    
+    #ifdef DEBUG
+    std::cout<<"S4R parallel search "<<std::endl;
+    #endif
+    
+    for (i=0; i<size;  i++) 			// 2R|2R=4R parallel search
+    {                                           // go through all 2R solutions 
+      for (j=0; j<size;  j++)			// combine all with itself
+      {
+        tmp_result = 1 /\
+        ( 1 / comb_lut[j].e_value + 1 / comb_lut[i].e_value);       // calculate 2R|2R parallel
+        tmp_result -= targetR;                                      // calculate 4R deviation
+        if ( abs ( tmp_result )  < abs ( rslt_lut[S4R].e_value ) )  // if new 4R is better
+        {                                                           // then take it
+        rslt_lut[S4R].e_value = tmp_result;			   // save amount of benefit
+        s = "( "; 
+        s.append ( comb_lut[i].e_name );                           // mention 1st 2 component
+        s.append ( " ) + ( " );		                           // in series
+        s.append ( comb_lut[j].e_name );                           // with 2nd 2 components
+        s.append ( " )" );
+        rslt_lut[S4R].e_name = s;				   // with 2nd 2 components
+        rslt_lut[S4R].e_use = true;                                // enable later use
+        #ifdef DEBUG
+        std::cout<<"found: "<<rslt_lut[S4R].e_name<<\
+        " Deviation "<<rslt_lut[S4R].e_value<<std::endl;
+        #endif
+        }
+      }
+    }
+}
+
+//************************************************************************************************
+//
+// Check if there is a better three component solution. The parameter 
+// (uint size) gives the number of combinations to be checked inside comb_lut
+
+void combine3(uint size)
+{
+    uint act_size,i,j = 0;
+    r_data* act_serie;
+    double tmp_result;
+    std::string s;
+
+    act_serie = lut_tab[act_rb].lut_ptr;           //lookup selected E-series
+    act_size =  lut_tab[act_rb].lut_size;          //and its number of entries
+
+    rslt_lut[S3R].e_use = false;                   // disable 3R solution, until
+    rslt_lut[S3R].e_value = rslt_lut[S2R].e_value; // 3R should be better than 2R solution
+    
+    #ifdef DEBUG
+    std::cout<<\
+    "S3R serial search "<<\
+    std::endl;
+    #endif
+                                                
+    for (i=0; i<act_size;  i++) 		// Solution search for 3R serial
+    {                                           // go through all values from used E-serie 
+      if ( act_serie[i].e_use)                  // skip all excluded values
+      {
+        for (j=0; j<size;  j++)			// combine with all 2R combinations
+        {
+          tmp_result = comb_lut[j].e_value + act_serie[i].e_value;    // calculate serial combi
+          tmp_result -= targetR;                                      // calculate deviation
+
+          if ( abs ( tmp_result )  < abs ( rslt_lut[S3R].e_value ) )  // compare if better
+          {                                                           // its an improvment, take it
+            s = ( act_serie[i].e_name );                              // mention 3rd component
+            s.append( " + ( " );			              // in series
+            s.append( comb_lut[j].e_name );                           // with 2R combination
+            s.append( " )" );
+            rslt_lut[S3R].e_name = s;                                 // save S3R result
+            rslt_lut[S3R].e_value = tmp_result;			      // save amount of benefit
+            rslt_lut[S3R].e_use = true;                               // enable later use
+            #ifdef DEBUG
+            std::cout<<"found: "<<rslt_lut[S3R].e_name<<\
+            " Deviation "<<rslt_lut[S3R].e_value<<std::endl;
+            #endif
+          }
+        }
+      }
+    }
+    
+    #ifdef DEBUG
+    std::cout<<"S3R parallel search "<<std::endl;
+    #endif
+                                                
+    for (i=0; i<act_size;  i++) 		// Solution search for 3R parallel
+    {                                           // go through all values from used E-serie 
+      if ( act_serie[i].e_use)                  // skip all excluded values
+      {
+        for (j=0; j<size;  j++)			// combine with all 2R combinations
+        {
+          tmp_result = 1/( 1/comb_lut[j].e_value + 1/act_serie[i].e_value );    // parallel combi
+          tmp_result -= targetR;                                      // calculate deviation
+
+          if ( abs ( tmp_result )  < abs ( rslt_lut[S3R].e_value ) )  // compare if better
+          {                                                           // then take it
+            s = act_serie[i].e_name;		                      // mention 3rd component
+            s.append( " | ( " );                                      // in parallel
+            s.append( comb_lut[j].e_name );                           // with 2R combination
+            s.append( " )" );
+            rslt_lut[S3R].e_name = s;
+            rslt_lut[S3R].e_value = tmp_result;			      // save amount of benefit
+            rslt_lut[S3R].e_use = true;                               // enable later use
+            #ifdef DEBUG
+            std::cout<<"found: "<<rslt_lut[S3R].e_name<<\
+            " Deviation: "<<rslt_lut[S3R].e_value<<std::endl;
+            #endif
+          }
+        }
+      }
+    }
+    combine4(size);  // continiue searching for a possibly better 4R solution
+}
+  
+//************************************************************************************************
+//**
+//** According to MAX_COMB makro, 2 component combinations including redundant swappable terms are
+//** 72 combinations for E1
+//** 512 combinations for E3
+//** 1922 combinations for E6
+//** 7442 combinations for E12
+
+void doCalculate(void)
+{
+    uint act_size,i,j,i_results=0;
+    r_data* act_serie;
+    std::string s;
+
+    act_serie = lut_tab[act_rb].lut_ptr;	 // lookup selected E-series
+    act_size =  lut_tab[act_rb].lut_size;	 // and its number of entries
+
+    for (i=0; i<act_size;  i++) 		// calculate 2 component serial results 
+    {
+      for (j=0; j<act_size;  j++)
+      {
+      comb_lut[i_results].e_use = true;
+      comb_lut[i_results].e_value = act_serie [i].e_value + act_serie[j].e_value;
+      s = act_serie[i].e_name;		                              // mention first component
+      s.append(" + ");			                              // in series
+      comb_lut[i_results++].e_name = s.append(act_serie[j].e_name);    // with second component
+      }
+    }
+
+    for (i=0; i<act_size;  i++) 		// calculate 2 component parallel results 
+    {
+      for (j=0; j<act_size;  j++)
+      {
+      comb_lut[i_results].e_use = true;
+      comb_lut[i_results].e_value = 1 /
+      ((1 / act_serie[i].e_value) + (1 / (act_serie[j].e_value)));
+      s = act_serie[i].e_name;		                            // mention first component
+      s.append(" | ");			                            // in parallel
+      comb_lut[i_results++].e_name = s.append(act_serie[j].e_name); // with second component
+      }
+    }
+    simple_solution(i_results);
+    combine3(i_results);        // continiue searching for a possibly better 3 components solution
+    lut_dump(3);
+}
+
+//************************************************************************************************
 
 void PCB_CALCULATOR_FRAME::OnCalculateESeries( wxCommandEvent& event )
 {
-    double targetR;     // resistor value required
-
-// preliminary dummy loop uses DoubleFromString what cannot do proper input parsing
-
-    std::cout<<"Now calculating"<<std::endl;
-    std::cout<<m_ResRequired->GetValue()<<std::endl;
     targetR = std::abs( DoubleFromString( m_ResRequired->GetValue() ) );
-    std::cout<<targetR<<std::endl;
+
+    #ifdef DEBUG
+    std::cout<<", targetR = "<<targetR<<std::endl;
+    #endif
+    
+    parseExclude(std::abs( DoubleFromString( m_ResExclude->GetValue() ) ));
+    doCalculate();
 }
 
-// Called on a ESeries Radio Button
-//void PCB_CALCULATOR_FRAME::OnESeriesSelection( wxCommandEvent& event )
-//{
-//    std::cout<<"OnESerieSelection"<<std::endl;
-//    SetESeries( (unsigned) event.GetSelection() );
-//    Refresh();
-//}
+//************************************************************************************************
 
-//void PCB_CALCULATOR_FRAME::SetESeries( unsigned aIdx )
-//{
-//      std::cout<<aIdx<<std::endl;
-//}
-
-/* down here old but functional javascript requires cpp conversion
-
-var form
-var targetR			//required resistor value
-var useAllValues
-var showValue
-
-var arrayTop			//array of results with pointer to
-var rName$ = new Array
-var rangeTop			//range array
-var rValue = new Array
-var excludeTop			//exclude array
-var excludeValue = new Array
-
-var l$
-var cPtr
-var c$
-var w$
-var o$
-var x$
-var lastTerm
-
-function Create(e12name$,e12value)
-{ arrayTop++
-  rName$[arrayTop] = e12name$
-  rValue[arrayTop] = e12value
+void PCB_CALCULATOR_FRAME::OnESerieSelection( wxCommandEvent& event )
+{
+    act_rb = event.GetSelection();
+    #ifdef DEBUG
+    std::cout<<"act_rb = "<<act_rb<<\
+    ", NoOfValues= "<<lut_tab[act_rb].lut_size;
+    #endif
 }
 
-function R(e12name$,e12value)
-{ var useThisValue = ( e12value != lastTerm ) || useAllValues
-  if ( excludeTop != 0 )
-  { var i = excludeTop
-    while ( i > 0 && useThisValue )
-    {if ( e12value == excludeValue[i] ) useThisValue = false
-     i--
-  } }
-  if ( useThisValue ) Create(e12name$,e12value)
+//************************************************************************************************
+
+void PCB_CALCULATOR_FRAME::ES_Init()    // initialize ESeries tab at each pcb-calculator start
+{
+    #ifdef DEBUG
+    std::cout<<"ES_Init"<<std::endl;
+    #endif
+    wxString html_txt;                  //show markdown formula explanation in lower help panel
+    ConvertMarkdown2Html( wxGetTranslation( eseries_help ), html_txt );
+    m_panelESeriesHelp->SetPage( html_txt );	
 }
-
-function E1()
-{ R("1K", 1e3)
-  R("10K", 10e3)
-  R("100K", 100e3)
-  R("10R", 10)
-  R("100R", 100)
-  R("1M", 1e6)
-}
-
-function E3()
-{ E1()
-  R("10R", 10)
-  R("22R", 22)
-  R("47R", 47)
-  R("100R", 100)
-  R("220R", 220)
-  R("470R", 470)
-  R("2K2", 2.2e3)
-  R("4K7", 4.7e3)
-  R("22K", 22e3)
-  R("47K", 47e3)
-  R("220K", 220e3)
-  R("470K", 470e3)
-  R("1M", 1e6)
-}
-
-function E6()
-{ E1()
-  E3() 
-  R("15R", 15)
-  R("33R", 33)
-  R("68R", 68)
-  R("150R", 150)
-  R("330R", 330)
-  R("680R", 680)
-  R("1K5", 1.5e3)
-  R("3K3", 3.3e3)
-  R("6K8", 6.8e3)
-  R("15K", 15e3)
-  R("33K", 33e3)
-  R("68K", 68e3)
-  R("150K", 150e3)
-  R("330K", 330e3)
-  R("680K", 680e3)
-}
-
-function E12()
-{ E1()
-  E3()
-  E6()
-  R("12R", 12)
-  R("18R", 18)
-  R("27R", 27)
-  R("39R", 39)
-  R("56R", 56)
-  R("82R", 82)
-  R("120R", 120)
-  R("180R", 180)
-  R("270R", 270)
-  R("390R", 390)
-  R("560R", 560)
-  R("820R", 820)
-  R("1K2", 1.2e3)
-  R("1K8", 1.8e3)
-  R("2K7", 2.7e3)
-  R("3K9", 3.9e3)
-  R("5K6", 5.6e3)
-  R("8K2", 8.2e3)
-  R("12K", 12e3)
-  R("18K", 18e3)
-  R("27K", 27e3)
-  R("39K", 39e3)
-  R("56K", 56e3)
-  R("82K", 82e3)
-  R("120K", 120e3)
-  R("180K", 180e3)
-  R("270K", 270e3)
-  R("390K", 390e3)
-  R("560K", 560e3)
-  R("820K", 820e3)
-  R("1M", 1e6)
-}
-
-
-function Value(e12value$)
-{ var i
-  var k$ = ""
-  i = Instr(e12value$,"E")
-  if ( i != 0 ) showValue = true
-  else
-  {i = Instr(e12value$,"R")
-   if ( i == 0 )
-    {i = Instr(e12value$,"K")
-      if ( i > 0 ) k$ = "e3"
-      else
-      {i = Instr(e12value$,"M")
-        if ( i > 0 )
-        {k$ = "e6"
-    } } }
-
-    if ( i != 0 )
-    { var j = Instr(e12value$,".")
-      if ( j > 0 )
-      { e12value$ = Left$(e12value$,i-1)+Right$(e12value$,-i)
-        showValue = true
-      }
-      else e12value$ = PokeMid$(e12value$,i,".")
-      e12value$ = e12value$+k$
-    }
-    if ( Left$(e12value$,1) == "." ) e12value$ = "0"+e12value$
-  }
-  return Math.abs(Val(e12value$))
-
-}
-
-function ErrorPercent(gap,target)
-{ if ( gap == 0 ) return( "None" )
-  else
-  { if ( gap > 0 )return( "+"+(parseInt((gap*100/target)*100)/100)+"%" )
-    else return( ""+(parseInt((gap*100/target)*100)/100)+"%" )
-} }
-
-*************************************************************
-
-function FormatR$(value)
-{ if ( value >= 1e6 ) return ReplacePoint$(value,1e6,"M")
-  else
-  { if ( value >= 1e3 ) return ReplacePoint$(value,1e3,"K")
-    else return ReplacePoint$(value,1,"R")
-  }
-}
-
-*************************************************************
-
-function ReplacePoint$(value,divisor,symbol$)
-{ var t$ = ""+(value/divisor)
-  var i = Instr(t$,".")
-  if ( i == 0 ) return t$+symbol$
-  else
-  {if ( i == 1 )
-    { t$="0"+t$
-      i=2
-    }
-    return PokeMid$(t$,i,symbol$)
-} }
-
-*************************************************************
-
-function DetermineName$(i,op,j)
-{ var nameI$ = rName$[i]
-  if ( j == 0 ) return nameI$
-  else
-  {var nameJ$ = rName$[j]
-    if ( op == 0 )
-    {if ( Instr(nameI$,"|") > 0 )
-      { if ( Instr(nameJ$,"|") > 0 ) return "("+nameI$+") + ("+nameJ$+")"
-        else return nameJ$+" + ( "+nameI$+" )"
-      }
-      else
-      { if ( Instr(nameJ$,"|") > 0 ) return nameI$+" + ( "+nameJ$+" )"
-        else return nameI$+" + "+nameJ$
-      }
-    }
-    else
-    {if ( Instr(nameI$,"+") > 0 )
-      {if ( Instr(nameJ$,"+") > 0 ) return "("+nameI$+") | ("+nameJ$+")"
-        else return nameJ$+" | ( "+nameI$+" )"
-      }
-      else
-      {if ( Instr(nameJ$,"+") > 0 ) return nameI$+" | ( "+nameJ$+" )"
-       else return nameI$+" | "+nameJ$
-} } } }
-
-*************************************************************
-
-function ClearResults(form)
-{ window.status=""
-  form.txtMinimum.value = ""
-  form.txtMinimumError.value = ""
-  form.txtAlternative.value = ""
-  form.txtAlternativeError.value = ""
-  if (form.txtERange[0].checked || form.txtERange[1].checked )
-  {form.txtFourRs.disabled = true
-   form.txtFourRs.checked = false
-  }
-  {form.txtFourRs.disabled = false
-} }
-
-*************************************************************
-
-function DoCalculate(aForm)
-{ form = aForm
-  ClearResults(form)
-  if ( Trim$(form.txtValue.value) == "" ) { return };
-  targetR = ParseExpr(form.txtValue.value); //fetch required value
-
-  if ( targetR == 0 )								
-  { form.txtMinimum.value = "Wire Link"
-    form.txtMinimumError.value = "None"
-    form.txtAlternative.value = "0R Resistor"
-    form.txtAlternativeError.value = "None"
-    return
-  }
-  arrayTop = 0		// Create single values
-  ParseExclude()	// fetch exclude values
-  if ( targetR < 5 )
-  { R("1R", 1)
-    if ( targetR < 1 ) Create("Wire Link", 0)
-  }
-
-  if ( form.txtERange[0].checked ) { E12() }
-  if ( form.txtERange[1].checked ) { E6()  }
-  if ( form.txtERange[2].checked ) { E3()  }
-  if ( form.txtERange[3].checked ) { E1()  }
-
-
-  if ( targetR > 3e6 || arrayTop == 0 )
-  { R("10M", 10e6)
-    if ( targetR > 30e6 || arrayTop <= 1 ) R("100M", 100e6)
-  }
-
-  if ( arrayTop == 0 )
-  { form.txtMinimum.value = "All resistors are excluded"
-    return
-  }
-
-  var rangeTop = arrayTop	//now calcualting
-  var i		// index cnt 
-  var j
-  var k
-  var n$	// result string
-
-  for ( i=1; i<=rangeTop; i++ )
-    Create( rName$[i]+" + "+rName$[i] , rValue[i]*2 ) //2R serial combination
-
-  for ( i=1; i<=rangeTop; i++ ) 
-    Create( rName$[i]+" | "+rName$[i] , rValue[i]/2 ) //2R parallel combination
-
-  for ( i=1; i<=rangeTop; i++ )			// Create unequal serial combinations
-  { k = rValue[i]
-    n$ = rName$[i]+" + "
-    for ( j=i+1; j<=rangeTop; j++ ) Create( n$+rName$[j] , k+rValue[j] )
-  }
-
-  for ( i=1; i<=rangeTop; i++ ) //Create unequal parallel combinations
-  {k = 1/rValue[i]
-   n$ = rName$[i]+" | "
-   for ( j=i+1; j<=rangeTop; j++ ) Create( n$+rName$[j] , 1/(k+(1/rValue[j])) )
-  }
-
-                                // now select the best result
-  var bestR      = rValue[1]	// Start with any arbitrary selection
-  var bestGap    = Math.abs(bestR-targetR)
-  var thisI = 1
-  var thisJ = 0
-  var thisOp = 0
-  var thisR
-  var thisGap
-  i=2		// Try and find an exact match with what we have
-  while ( ( i <= arrayTop ) && ( bestGap != 0 ) )
-  {if ( Math.abs(rValue[i]-targetR) < bestGap )
-    { bestR = rValue[i]
-      bestGap = Math.abs(bestR-targetR)
-      thisI = i
-    }
-    i++
-  }
-
-  var fN$ = DetermineName$(thisI,thisOp,thisJ) // Return  simple result
-  var fR$ = FormatR$(targetR)
-  if ( showValue && fN$ != fR$ )
-  { if ( bestR == targetR ) form.txtMinimum.value = fN$+"  [ = "+fR$+" ]"
-    else form.txtMinimum.value = fN$+"  [ ~= "+fR$+" ]"
-  }
-  else form.txtMinimum.value = fN$
-  form.txtMinimumError.value = ErrorPercent(bestR-targetR,targetR)
-  var minimumGap = 0.002*targetR
-  if ( form.txtExact.checked ) minimumGap = 1e-6
-  if ( bestGap == 0 ) form.txtAlternative.value = "Not needed"
-  else
-  {if ( bestGap > minimumGap ) form.txtAlternative.value = "Nothing better"
-    else form.txtAlternative.value = "Not worth using"
-  }
-
-  if ( bestGap > minimumGap )
-  { window.status="Looking for alternatives"
-    var anythingBetter = false	// Note if we get anything better
-    var thisTop = rangeTop	// Check known with added serial resistor
-    if ( ( ! form.txtFourRs.disabled ) && form.txtFourRs.checked )
-    { if ( form.txtERange[2].checked ) { thisTop = arrayTop  } // E3
-      if ( form.txtERange[3].checked ) { thisTop = arrayTop  } // E1
-    }
-    i = 1
-    while ( ( i <= arrayTop ) && ( bestGap > minimumGap ) )
-    { k=rValue[i]
-      j = 1
-      while ( ( j <= thisTop ) && ( bestGap > minimumGap ) )
-      { if ( Math.abs(k+rValue[j]-targetR) < bestGap )
-        { anythingBetter = true
-          bestR = k+rValue[j]
-          bestGap = Math.abs( bestR-targetR )
-          thisI = i
-          thisJ = j
-          thisOp = 0
-        }
-        j++
-      }
-      i++
-    }
-
-    if ( bestGap > minimumGap )	// locking for more alternatives
-    {i = 1 	// Check known with added parallel resistor
-     while ( ( i <= arrayTop ) && ( bestGap > minimumGap ) )
-      { k=1/rValue[i]
-        j = 1
-        while ( ( j <= thisTop ) && ( bestGap > minimumGap ) )
-        { thisR = 1/(k+(1/rValue[j]))
-          thisGap = Math.abs( thisR-targetR )
-          if ( thisGap < bestGap )
-          { anythingBetter = true
-            bestR = thisR
-            bestGap = thisGap
-            thisI = i
-            thisJ = j
-            thisOp = 1
-          }
-          j++
-        }
-        i++
-    } }
-
-    if ( anythingBetter )    // If we got anything better; show it
-    { form.txtAlternative.value = DetermineName$(thisI,thisOp,thisJ)
-      form.txtAlternativeError.value = ErrorPercent(bestR-targetR,targetR)
-    }
-  }
-}
-
-*************************************************************
-
-function ParseExpr(expr$)
-{ l$ = expr$
-  o$ = ""
-  x$ = ""
-  lastTerm=-1
-  useAllValues = false
-  showValue = false
-  FirstWord()
-  var acc = Math.abs(Expr())
-  if ( o$ != x$ ) form.txtValue.value = x$
-  return acc
-}
-
-*************************************************************
-
-function Expr()
-{ var acc = Term()
-  while ( w$ != "" && w$ != ")" )
-  { showValue = true
-    if ( w$ == "|" )
-    { x$=x$+"|"
-      Word()
-      var t = Term()
-      if ( acc == 0 || t == 0 ) acc = 0
-      else acc = 1/( (1/acc) + (1/t) )
-    }
-    else
-    {if ( w$ == "-" )
-      { x$=x$+"-"
-        Word()
-        acc = acc - Term()
-      }
-      else
-      { x$=x$+"+"
-        if ( w$ == "+" ) Word()
-        acc = acc + Term()
-  } } }
-  return acc
-}
-
-*************************************************************
-
-function Term()
-{ var acc
-  var mpy
-  if ( w$ == "(" )
-  { x$=x$+"("
-    Word()
-    acc = Expr()
-    if ( w$ == ")" ) Word()
-    x$=x$+")"
-  }
-  else
-  {if ( w$ == "-" )
-    {
-      x$=x$+"-"
-      Word()
-      acc = -Term()
-    }
-    else
-    { if ( w$ == "" || w$ == ")" ) { w$ = "0R" }
-      x$=x$+w$
-      acc = Value(Ucase$(w$));
-      Word()
-      if ( acc != lastTerm && lastTerm >= 0 ) useAllValues = true
-      lastTerm = acc
-  } }
-  while ( w$ == "*" || w$ == "/" )
-  { showValue = true
-    x$=x$+w$
-    if ( w$ == "*" )
-    { Word()
-      x$=x$+w$
-      mpy=Val(w$)
-      acc = acc * mpy
-    }
-    else
-    { Word()
-      x$=x$+w$
-      mpy=Val(w$)
-      if ( mpy != 0 ) acc = acc / mpy
-    }
-    Word()
-  }
-  return acc
-}
-
-*************************************************************
-
-function FirstWord()
-{ cPtr = 1
-  Char()
-  Word()
-}
-
-function Word()
-{ while ( c$ == " " ) Char()
-  w$ = c$
-  Char()
-  if
-  (w$ != ""  &&
-    w$ != " " &&
-    w$ != "+" &&
-    w$ != "-" &&
-    w$ != "|" &&
-    w$ != "*" &&
-    w$ != "/" &&
-    w$ != "(" &&
-    w$ != ")"
-  )
-  {while
-    ( c$ != ""  &&
-      c$ != " " &&
-      c$ != "+" &&
-      c$ != "-" &&
-      c$ != "|" &&
-      c$ != "*" &&
-      c$ != "/" &&
-      c$ != "(" &&
-      c$ != ")"
-    )
-    { w$ = w$+c$
-      Char()
-    }
-  }
-  o$=o$+w$
-}
-
-function Char()
-{if ( cPtr > Len(l$) ) c$ = ""
-  else
-  {
-    c$ = Mid$(l$,cPtr,1)
-    cPtr++
-} }
-
-function ParseExclude()
-{ excludeTop = 0
-  if ( form.txtExclude.checked )
-  { var acc
-    l$ = Ucase$(form.txtExcludeValues.value)
-    o$=""
-    x$=""
-    FirstWord()
-    while ( w$ != "" )
-    { o$=o$+" "
-      acc = Value(w$)
-      if ( ! isNaN(acc) )
-      { excludeTop++
-        excludeValue[excludeTop] = acc
-        x$=x$+w$+" "
-      }
-      Word()
-    }
-    if ( o$ != x$ ) form.txtExcludeValues.value = x$
-} }
-
-****************************************************************************
-// string manipulation helper library
-
-// remove leading and trailing spaces		      
-// Trim$("  Hello There  ") ==> "Hello There"
-
-function Trim$(t$)
-{return ( Ltrim$(Rtrim$(t$)) )
-}
-
-// remove all leading spaces from a string
-// Ltrim$("  Hello There  ") ==> "Hello There
-
-function Ltrim$(t$)
-{ var Alpha$ = t$
-  while ( Left$(Alpha$,1) == " " ) Alpha$ = Right$(Alpha$,-1)
-  return ( Alpha$ )
-}
-
-//remove all trailing spaces from a string
-//Rtrim$("  Hello There  ") ==> "  Hello There"
-
-function Rtrim$(t$)
-{ var Alpha$ = t$
-  while ( Right$(Alpha$,1) == " " ) Alpha$ = Left$(Alpha$,-1)
-  return ( Alpha$ )
-}
-
-//returns the leftmost n or removes rightmost -n characters of a string 
-//Left$("Hello There", 4) ==> "Hell"
-//Left$("Hello There",-4) ==> "Hello T"
-
-function Left$(t$,n)
-{if ( n >=0 )
-    return ( t$.substring(0,n) )
- else
-    return ( Left$(t$,Len(t$)+n) )
-}
-
-// return the rightmost n or removes the leftmost -n charcters
-
-function Right$(t$,n)
-{ if ( n >=0 )
-    return ( t$.substring(Len(t$)-n,Len(t$)) )
-  else
-    return ( Right$(t$,Len(t$)+n) )
-}
-
-//return w characters of string starting from position n
-//Mid$("Hello There",3,5) ==> "llo T"
-
-function Mid$(t$,n,w)
-{  return ( t$.substring(n-1,n-1+w) )
-}
-
-// Overwrites string t at position n by string w
-// PokeMid$("Hello There",3,"XX") ==> "HeXXo There"
-
-function PokeMid$(t$,n,w$)
-{return ( Left$(t$,n-1)+w$+Right$(t$, (-(n+Len(w$)))+1 ) )
-}
-
-// convert a string to uppercase
-// Ucase$("Hello There") ==> "HELLO THERE"
-
-function Ucase$(t$)
-{return ( t$.toUpperCase() )
-}
-
-// return the number of characters in a string
-// Len("Hello There") ==> 11                             
-// Len("")            ==>  0                             
-// Len(null)          ==>  0                             
-
-function Len(t$)
-{if ( t$ == null ) 	return ( 0 )
- else 			return ( t$.length )
-}
-
-// will return the position of target string where substring is found
-// Instr("Hello There","There") ==> 7                 
-// Instr("Hello There","llo")   ==> 3
-// Instr("Hello There","X")     ==> 0
-
-function Instr(t$,s$)
-{ return ( t$.indexOf(s$)+1 )
-}
-
-*/
