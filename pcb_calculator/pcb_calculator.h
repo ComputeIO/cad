@@ -102,12 +102,17 @@ private:
     void SetDataFilename( const wxString & aFilename);
 
     // Trace width / maximum current capability calculations.
-
     /**
      * Function TW_Init
      * Read config and init dialog widgets values
      */
     void TW_Init( wxConfigBase* aCfg );
+
+    // E-Series calculator panel
+    void ES_Init( void );
+    void OnCalculateESeries( wxCommandEvent& event ) override;
+    void OnESerieSelection( wxCommandEvent& event ) override;
+    void SetESerie( unsigned aIdx );
 
     /**
      * Function TW_WriteConfig
@@ -303,6 +308,8 @@ private:
     // Color Code panel
     void OnToleranceSelection( wxCommandEvent& event ) override;
     void ToleranceSelection( int aSelection );
+
+ 
 
     // Attenuators Panel
     void OnAttenuatorSelection( wxCommandEvent& event ) override;

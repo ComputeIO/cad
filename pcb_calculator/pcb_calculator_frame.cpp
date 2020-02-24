@@ -90,9 +90,9 @@ PCB_CALCULATOR_FRAME::PCB_CALCULATOR_FRAME( KIWAY* aKiway, wxWindow* aParent ) :
     TranslineTypeSelection( m_currTransLineType );
     m_TranslineSelection->SetSelection( m_currTransLineType );
 
-    TW_Init( config.get() );
-
-    VS_Init( config.get() );
+    TW_Init( config.get() );   // Track Width
+    VS_Init( config.get() );   // Via Size
+    ES_Init();                 // E-Series
 
     SetAttenuator( m_AttenuatorsSelection->GetSelection() );
 
