@@ -41,7 +41,11 @@ DIALOG_MOVE_EXACT::DIALOG_MOVE_EXACT( PCB_BASE_FRAME *aParent, wxPoint& aTransla
     m_bbox( aBbox ),
     m_moveX( aParent, m_xLabel, m_xEntry, m_xUnit ),
     m_moveY( aParent, m_yLabel, m_yEntry, m_yUnit ),
-    m_rotate( aParent, m_rotLabel, m_rotEntry, m_rotUnit )
+    m_rotate( aParent, m_rotLabel, m_rotEntry, m_rotUnit ),
+    m_stateX(0.0),
+    m_stateY(0.0),
+    m_stateRadius(0.0),
+    m_stateTheta(0.0)
 {
     // We can't set the tab order through wxWidgets due to shortcomings in their mnemonics
     // implementation on MSW
@@ -140,29 +144,50 @@ bool DIALOG_MOVE_EXACT::GetTranslationInIU ( wxRealPoint& val, bool polar )
 void DIALOG_MOVE_EXACT::OnPolarChanged( wxCommandEvent& event )
 {
     bool newPolar = m_polarCoords->IsChecked();
-    wxRealPoint val;
-
-    // get the value as previously stored
-    GetTranslationInIU( val, !newPolar );
-
-    // now switch the controls to the new representations
+    double moveX = m_moveX.GetDoubleValue();
+    double moveY = m_moveY.GetDoubleValue();
     updateDialogControls( newPolar );
 
-    if( newPolar )
+    if(newPolar)
     {
-        // convert to polar coordinates
-        double r, q;
-        ToPolarDeg( val.x, val.y, r, q );
+        if( moveX != m_stateX || moveY != m_stateY )
+        {
+            m_stateX = moveX;
+            m_stateY = moveY;
+            ToPolarDeg( m_stateX, m_stateY, m_stateRadius, m_stateTheta );
+            m_stateTheta *= 10.0;
 
-        m_moveX.SetDoubleValue( r );
-        m_moveY.SetDoubleValue( q * 10 );
+            m_moveX.SetDoubleValue( m_stateRadius );
+            m_stateRadius = m_moveX.GetDoubleValue();
+            m_moveY.SetDoubleValue( m_stateTheta );
+            m_stateTheta = m_moveY.GetDoubleValue();
+        }
+        else
+        {
+            m_moveX.SetDoubleValue( m_stateRadius );
+            m_moveY.SetDoubleValue( m_stateTheta );
+        }
     }
     else
     {
-        m_moveX.SetDoubleValue( val.x );
-        m_moveY.SetDoubleValue( val.y );
-    }
+        if( moveX != m_stateRadius || moveY != m_stateTheta )
+        {
+            m_stateRadius = moveX;
+            m_stateTheta = moveY;
+            m_stateX = m_stateRadius * cos( DEG2RAD( m_stateTheta / 10.0 ) );
+            m_stateY = m_stateRadius * sin( DEG2RAD( m_stateTheta / 10.0 ) );
 
+            m_moveX.SetDoubleValue( m_stateX );
+            m_stateX = m_moveX.GetDoubleValue();
+            m_moveY.SetDoubleValue( m_stateY );
+            m_stateY = m_moveY.GetDoubleValue();
+        }
+        else
+        {
+            m_moveX.SetDoubleValue( m_stateX );
+            m_moveY.SetDoubleValue( m_stateY );
+        }
+    }
 }
 
 

@@ -38,7 +38,11 @@ DIALOG_POSITION_RELATIVE::DIALOG_POSITION_RELATIVE( PCB_BASE_FRAME* aParent, wxP
     m_translation( translation ),
     m_anchor_position( anchor ),
     m_xOffset( aParent, m_xLabel, m_xEntry, m_xUnit ),
-    m_yOffset( aParent, m_yLabel, m_yEntry, m_yUnit )
+    m_yOffset( aParent, m_yLabel, m_yEntry, m_yUnit ),
+    m_stateX(0.0),
+    m_stateY(0.0),
+    m_stateRadius(0.0),
+    m_stateTheta(0.0)
 {
     // We can't set the tab order through wxWidgets due to shortcomings in their mnemonics
     // implementation on MSW
@@ -98,27 +102,49 @@ bool DIALOG_POSITION_RELATIVE::GetTranslationInIU ( wxRealPoint& val, bool polar
 void DIALOG_POSITION_RELATIVE::OnPolarChanged( wxCommandEvent& event )
 {
     bool newPolar = m_polarCoords->IsChecked();
-    wxRealPoint val;
-
-    // get the value as previously stored
-    GetTranslationInIU( val, !newPolar );
-
-    // now switch the controls to the new representations
+    double xOffset = m_xOffset.GetDoubleValue();
+    double yOffset = m_yOffset.GetDoubleValue();
     updateDialogControls( newPolar );
 
     if( newPolar )
     {
-        // convert to polar coordinates
-        double r, q;
-        ToPolarDeg( val.x, val.y, r, q );
+        if( xOffset != m_stateX || yOffset != m_stateY )
+        {
+            m_stateX = xOffset;
+            m_stateY = yOffset;
+            ToPolarDeg( m_stateX, m_stateY, m_stateRadius, m_stateTheta );
+            m_stateTheta *= 10.0;
 
-        m_xOffset.SetDoubleValue( r );
-        m_yOffset.SetDoubleValue( q * 10 );
+            m_xOffset.SetDoubleValue( m_stateRadius );
+            m_stateRadius = m_xOffset.GetDoubleValue();
+            m_yOffset.SetDoubleValue( m_stateTheta );
+            m_stateTheta = m_yOffset.GetDoubleValue();
+        }
+        else
+        {
+            m_xOffset.SetDoubleValue( m_stateRadius );
+            m_yOffset.SetDoubleValue( m_stateTheta );
+        }
     }
     else
     {
-        m_xOffset.SetDoubleValue( val.x );
-        m_yOffset.SetDoubleValue( val.y );
+        if( xOffset != m_stateRadius || yOffset != m_stateTheta )
+        {
+            m_stateRadius = xOffset;
+            m_stateTheta = yOffset;
+            m_stateX = m_stateRadius * cos( DEG2RAD( m_stateTheta / 10.0 ) );
+            m_stateY = m_stateRadius * sin( DEG2RAD( m_stateTheta / 10.0 ) );
+
+            m_xOffset.SetDoubleValue( m_stateX );
+            m_stateX = m_xOffset.GetDoubleValue();
+            m_yOffset.SetDoubleValue( m_stateY );
+            m_stateY = m_yOffset.GetDoubleValue();
+        }
+        else
+        {
+            m_xOffset.SetDoubleValue( m_stateX );
+            m_yOffset.SetDoubleValue( m_stateY );
+        }
     }
 }
 

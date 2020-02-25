@@ -43,6 +43,12 @@ private:
     UNIT_BINDER   m_xOffset;
     UNIT_BINDER   m_yOffset;
 
+    double m_stateX;
+    double m_stateY;
+    double m_stateRadius;
+    double m_stateTheta;
+
+
 public:
     // Constructor and destructor
     DIALOG_POSITION_RELATIVE( PCB_BASE_FRAME* aParent, wxPoint& translation, wxPoint& anchor );
