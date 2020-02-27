@@ -42,10 +42,10 @@ DIALOG_MOVE_EXACT::DIALOG_MOVE_EXACT( PCB_BASE_FRAME *aParent, wxPoint& aTransla
     m_moveX( aParent, m_xLabel, m_xEntry, m_xUnit ),
     m_moveY( aParent, m_yLabel, m_yEntry, m_yUnit ),
     m_rotate( aParent, m_rotLabel, m_rotEntry, m_rotUnit ),
-    m_stateX(0.0),
-    m_stateY(0.0),
-    m_stateRadius(0.0),
-    m_stateTheta(0.0)
+    m_stateX( 0.0 ),
+    m_stateY( 0.0 ),
+    m_stateRadius( 0.0 ),
+    m_stateTheta( 0.0 )
 {
     // We can't set the tab order through wxWidgets due to shortcomings in their mnemonics
     // implementation on MSW
@@ -119,7 +119,7 @@ void DIALOG_MOVE_EXACT::ToPolarDeg( double x, double y, double& r, double& q )
 }
 
 
-bool DIALOG_MOVE_EXACT::GetTranslationInIU ( wxRealPoint& val, bool polar )
+bool DIALOG_MOVE_EXACT::GetTranslationInIU( wxRealPoint& val, bool polar )
 {
     if( polar )
     {
@@ -148,7 +148,7 @@ void DIALOG_MOVE_EXACT::OnPolarChanged( wxCommandEvent& event )
     double moveY = m_moveY.GetDoubleValue();
     updateDialogControls( newPolar );
 
-    if(newPolar)
+    if( newPolar )
     {
         if( moveX != m_stateX || moveY != m_stateY )
         {

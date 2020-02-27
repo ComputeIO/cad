@@ -39,10 +39,10 @@ DIALOG_POSITION_RELATIVE::DIALOG_POSITION_RELATIVE( PCB_BASE_FRAME* aParent, wxP
     m_anchor_position( anchor ),
     m_xOffset( aParent, m_xLabel, m_xEntry, m_xUnit ),
     m_yOffset( aParent, m_yLabel, m_yEntry, m_yUnit ),
-    m_stateX(0.0),
-    m_stateY(0.0),
-    m_stateRadius(0.0),
-    m_stateTheta(0.0)
+    m_stateX( 0.0 ),
+    m_stateY( 0.0 ),
+    m_stateRadius( 0.0 ),
+    m_stateTheta( 0.0 )
 {
     // We can't set the tab order through wxWidgets due to shortcomings in their mnemonics
     // implementation on MSW
@@ -77,7 +77,7 @@ void DIALOG_POSITION_RELATIVE::ToPolarDeg( double x, double y, double& r, double
 }
 
 
-bool DIALOG_POSITION_RELATIVE::GetTranslationInIU ( wxRealPoint& val, bool polar )
+bool DIALOG_POSITION_RELATIVE::GetTranslationInIU( wxRealPoint& val, bool polar )
 {
     if( polar )
     {
