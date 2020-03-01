@@ -1008,7 +1008,16 @@ bool PNS_KICAD_IFACE::IsAnyLayerVisible( const LAYER_RANGE& aLayer )
 
 bool PNS_KICAD_IFACE::IsItemVisible( const PNS::ITEM* aItem )
 {
-    if( !m_view || !aItem->Parent() )
+    //Fix of Related fix: a28f58d14d on master
+    //Since the added exception is only for newly created segments during the interactive routing, we should
+    //add a new situation where an visible item without a Parent should return true and everything else that
+    //either is invisible or has no Parent would return false.
+
+    // by default, all items are visible (new ones created by the router have parent == NULL as they have not been
+    // committed yet to the BOARD)
+    if( m_view && !aItem->Parent() )
+        return true;
+    else if( !m_view || !aItem->Parent() )
         return false;
 
     auto item = aItem->Parent();
