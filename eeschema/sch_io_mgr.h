@@ -5,7 +5,7 @@
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
  * Copyright (C) 2016 CERN
- * Copyright (C) 2016-2017 KiCad Developers, see CHANGELOG.TXT for contributors.
+ * Copyright (C) 2016-2020 KiCad Developers, see CHANGELOG.TXT for contributors.
  *
  * @author Wayne Stambaugh <stambaughw@gmail.com>
  *
@@ -53,7 +53,7 @@ public:
     DEFINE_ENUM_VECTOR( SCH_FILE_T,
     {
         SCH_LEGACY,      ///< Legacy Eeschema file formats prior to s-expression.
-//      SCH_KICAD,       ///< The s-expression version of the schematic file formats.
+        SCH_KICAD,       ///< The s-expression version of the schematic file formats.
         SCH_EAGLE,       ///< Autodesk Eagle file format
         // Add your schematic type here.
 
@@ -96,13 +96,22 @@ public:
     static SCH_FILE_T EnumFromStr( const wxString& aFileType );
 
     /**
-     * Return the file extension for \a aFileType.
+     * Return the schematic file extension for \a aFileType.
      *
      * @param aFileType is the #SCH_FILE_T type.
      *
      * @return the file extension for \a aFileType or an empty string if \a aFileType is invalid.
      */
     static const wxString GetFileExtension( SCH_FILE_T aFileType );
+
+    /**
+     * Return the symbol library file extension (if any) for \a aFileType.
+     *
+     * @param aFileType is the #SCH_FILE_T type.
+     *
+     * @return the file extension for \a aFileType or an empty string if \a aFileType is invalid.
+     */
+    static const wxString GetLibraryFileExtension( SCH_FILE_T aFileType );
 
     /**
      * Return a plugin type given a footprint library's libPath.
@@ -199,6 +208,11 @@ public:
      * Returns the file extension for the #SCH_PLUGIN.
      */
     virtual const wxString GetFileExtension() const = 0;
+
+    /**
+     * Return the library file extension for the #SCH_PLUGIN object.
+     */
+    virtual const wxString GetLibraryFileExtension() const = 0;
 
     /**
      * Return the modification hash from the library cache.

@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2004-2015 Jean-Pierre Charras, jp.charras at wanadoo.fr
  * Copyright (C) 2008 Wayne Stambaugh <stambaughw@gmail.com>
- * Copyright (C) 2004-2019 KiCad Developers, see change_log.txt for contributors.
+ * Copyright (C) 2004-2020 KiCad Developers, see change_log.txt for contributors.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -79,6 +79,14 @@ struct PART_DRAW_OPTIONS
         def.show_elec_type      = false;
         return def;
     }
+};
+
+
+struct PART_UNITS
+{
+    int m_unit;                       ///< The unit number.
+    int m_convert;                    ///< The alternate body style of the unit.
+    std::vector<LIB_ITEM*> m_items;   ///< The items unique to this unit and alternate body style.
 };
 
 
@@ -469,9 +477,10 @@ public:
      * count is less than the current count, all draw objects for units
      * greater that count are removed from the part.
      *
-     * @param count - Number of units per package.
+     * @param aCount - Number of units per package.
+     * @param aDuplicateDrawItems Create duplicate draw items of unit 1 for each additionl unit.
      */
-    void SetUnitCount( int count );
+    void SetUnitCount( int aCount, bool aDuplicateDrawItems = true );
     int GetUnitCount() const override;
 
     /**
@@ -530,8 +539,9 @@ public:
      * added to the part.
      *
      * @param aSetConvert - Set or clear the part alternate body style.
+     * @param aDuplicatePins - Duplicate all pins from original body style if true.
      */
-    void SetConversion( bool aSetConvert );
+    void SetConversion( bool aSetConvert, bool aDuplicatePins = true );
 
     /**
      * Set the offset in mils of the pin name text from the pin symbol.
@@ -583,6 +593,36 @@ public:
      * @return a flattened symbol on the heap
      */
     std::unique_ptr< LIB_PART > Flatten() const;
+
+    /**
+     * Return a list of LIB_ITEM objects separated by unit and convert number.
+     *
+     * @note This does not include LIB_FIELD objects since they are not associated with
+     *       unit and/or convert numbers.
+     */
+    std::vector<struct PART_UNITS> GetUnitDrawItems();
+
+    /**
+     * Return a list of unit numbers that are unique to this symbol.
+     *
+     * If the symbol is inherited (alias), the unique units of the parent symbol are returned.
+     * When comparing pins, the pin number is ignored.
+     *
+     * @return a list of unique unit numbers and their associated draw items.
+     */
+    std::vector<struct PART_UNITS> GetUniqueUnits();
+
+    /**
+     * Return a list of item pointers for \a aUnit and \a aConvert for this symbol.
+     *
+     * @note #LIB_FIELD objects are not included.
+     *
+     * @param aUnit is the unit number of the item, -1 includes all units.
+     * @param aConvert is the alternate body styple of the item, -1 includes all body styles.
+     *
+     * @return a list of unit items.
+     */
+    std::vector<LIB_ITEM*> GetUnitItems( int aUnit, int aConvert );
 
 #if defined(DEBUG)
     void Show( int nestLevel, std::ostream& os ) const override { ShowDummy( os ); }

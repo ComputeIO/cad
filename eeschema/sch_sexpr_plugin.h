@@ -1,11 +1,10 @@
-#ifndef _SCH_LEGACY_PLUGIN_H_
-#define _SCH_LEGACY_PLUGIN_H_
+#ifndef _SCH_SEXPR_PLUGIN_H_
+#define _SCH_SEXPR_PLUGIN_H_
 
 /*
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
- * Copyright (C) 2016 CERN
- * Copyright (C) 2016-2019 KiCad Developers, see change_log.txt for contributors.
+ * Copyright (C) 2020 CERN
  *
  * @author Wayne Stambaugh <stambaughw@gmail.com>
  *
@@ -43,43 +42,37 @@ class SCH_COMPONENT;
 class SCH_FIELD;
 class PROPERTIES;
 class SELECTION;
-class SCH_LEGACY_PLUGIN_CACHE;
+class SCH_SEXPR_PLUGIN_CACHE;
 class LIB_PART;
 class PART_LIB;
 class BUS_ALIAS;
 
-
 /**
- * A #SCH_PLUGIN derivation for loading schematic files created before the new s-expression
+ * A #SCH_PLUGIN derivation for loading schematic files using the new s-expression
  * file format.
- *
- * The legacy parser and formatter attempt to be compatible with the legacy file format.
- * The original parser was very forgiving in that it would parse only part of a keyword.
- * So "$C", "$Co", and "$Com" could be used for "$Comp" and the old parser would allow
- * this.  This parser is not that forgiving and sticks to the legacy file format document.
  *
  * As with all SCH_PLUGINs there is no UI dependencies i.e. windowing calls allowed.
  */
-class SCH_LEGACY_PLUGIN : public SCH_PLUGIN
+class SCH_SEXPR_PLUGIN : public SCH_PLUGIN
 {
 public:
 
-    SCH_LEGACY_PLUGIN();
-    virtual ~SCH_LEGACY_PLUGIN();
+    SCH_SEXPR_PLUGIN();
+    virtual ~SCH_SEXPR_PLUGIN();
 
     const wxString GetName() const override
     {
-        return wxT( "Eeschema-Legacy" );
+        return wxT( "Eeschema s-expression" );
     }
 
     const wxString GetFileExtension() const override
     {
-        return wxT( "sch" );
+        return wxT( "kicad_sch" );
     }
 
     const wxString GetLibraryFileExtension() const override
     {
-        return wxT( "lib" );
+        return wxT( "kicad_sym" );
     }
 
     /**
@@ -88,12 +81,6 @@ public:
      * when writing the schematic cache library file or saving a library to a new file name.
      */
     static const char* PropBuffering;
-
-    /**
-     * The property used internally by the plugin to disable writing the library
-     * documentation (.dcm) file when saving the library cache.
-     */
-    static const char* PropNoDocFile;
 
     int GetModifyHash() const override;
 
@@ -165,7 +152,6 @@ private:
     void saveBusAlias( std::shared_ptr<BUS_ALIAS> aAlias );
 
     void cacheLib( const wxString& aLibraryFileName );
-    bool writeDocFile( const PROPERTIES* aProperties );
     bool isBuffering( const PROPERTIES* aProperties );
 
 protected:
@@ -180,10 +166,10 @@ protected:
     KIWAY*               m_kiway;      ///< Required for path to legacy component libraries.
     SCH_SHEET*           m_rootSheet;  ///< The root sheet of the schematic being loaded..
     OUTPUTFORMATTER*     m_out;        ///< The output formatter for saving SCH_SCREEN objects.
-    SCH_LEGACY_PLUGIN_CACHE* m_cache;
+    SCH_SEXPR_PLUGIN_CACHE* m_cache;
 
     /// initialize PLUGIN like a constructor would.
     void init( KIWAY* aKiway, const PROPERTIES* aProperties = nullptr );
 };
 
-#endif  // _SCH_LEGACY_PLUGIN_H_
+#endif  // _SCH_SEXPR_PLUGIN_H_
