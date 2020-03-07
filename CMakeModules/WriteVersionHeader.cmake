@@ -28,7 +28,7 @@ include( ${CMAKE_MODULE_PATH}/KiCadFullVersion.cmake )
 
 # Extract the major and minor build version as a string
 string( REGEX MATCH
-        "([0-9]*\\.[0-9]*)\\..*"
+        "([0-9]+\\.[0-9]+)\\..*"
         KICAD_MAJOR_MINOR_VERSION
         "${KICAD_SEMANTIC_VERSION}"
     )

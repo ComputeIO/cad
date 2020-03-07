@@ -31,7 +31,7 @@ class wxString;
 
 
 /**
- * Gets the full KiCad version string. This string contains platform-specific information
+ * Get the full KiCad version string. This string contains platform-specific information
  * added by the packagers. It is created by CMake in the KICAD_FULL_VERSION variable.
  *
  * @return the full version string
