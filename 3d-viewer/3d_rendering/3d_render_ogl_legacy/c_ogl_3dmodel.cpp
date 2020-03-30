@@ -1,6 +1,7 @@
 /*
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
+ * Copyright (C) 2020 Oleg Endo <olegendo@gcc.gnu.org>
  * Copyright (C) 2015-2016 Mario Luzeiro <mrluzeiro@ua.pt>
  * Copyright (C) 1992-2016 KiCad Developers, see AUTHORS.txt for contributors.
  *
@@ -27,334 +28,281 @@
  * @brief
  */
 
+#include <GL/glew.h>
 #include "c_ogl_3dmodel.h"
 #include "ogl_legacy_utils.h"
 #include "../common_ogl/ogl_utils.h"
 #include "../3d_math.h"
 #include <wx/debug.h>
+#include <chrono>
 
+const wxChar * C_OGL_3DMODEL::m_logTrace = wxT( "KI_TRACE_EDA_OGL_3DMODEL" );
 
 C_OGL_3DMODEL::C_OGL_3DMODEL( const S3DMODEL &a3DModel,
                               MATERIAL_MODE aMaterialMode )
 {
-    m_ogl_idx_list_meshes = 0;
-    m_ogl_idx_list_opaque = 0;
-    m_ogl_idx_list_transparent = 0;
-    m_nr_meshes = 0;
-    m_meshs_bbox = NULL;
+    wxLogTrace (m_logTrace, wxT ("C_OGL_3DMODEL::C_OGL_3DMODEL %u meshes %u materials"),
+                (unsigned int)a3DModel.m_MeshesSize,
+                (unsigned int)a3DModel.m_MaterialsSize);
+
+    auto start_time = std::chrono::high_resolution_clock::now ();
 
     // Validate a3DModel pointers
-    wxASSERT( a3DModel.m_Materials != NULL );
-    wxASSERT( a3DModel.m_Meshes != NULL );
+    wxASSERT( a3DModel.m_Materials != nullptr );
+    wxASSERT( a3DModel.m_Meshes != nullptr );
     wxASSERT( a3DModel.m_MaterialsSize > 0 );
     wxASSERT( a3DModel.m_MeshesSize > 0 );
 
-    if( (a3DModel.m_Materials != NULL) && (a3DModel.m_Meshes != NULL) &&
-        (a3DModel.m_MaterialsSize > 0) && (a3DModel.m_MeshesSize > 0) )
+    m_material_mode = aMaterialMode;
+
+    if( (a3DModel.m_Materials == nullptr) || (a3DModel.m_Meshes == nullptr)
+        || (a3DModel.m_MaterialsSize == 0) || (a3DModel.m_MeshesSize == 0) )
+      return;
+
+    // create empty bbox for each mesh.  it will be updated when the vertices
+    // are copied.
+    m_meshes_bbox.resize (a3DModel.m_MeshesSize);
+
+    // copy materials for later use during rendering.
+    m_materials.reserve (a3DModel.m_MaterialsSize);
+    for (unsigned int i = 0; i < a3DModel.m_MaterialsSize; ++i)
+        m_materials.emplace_back (a3DModel.m_Materials[i]);
+
+
+    // group all meshes by material.
+    // for each material create a combined vertex and index buffer.
+    // some models might have many sub-meshes.  so iterate over the
+    // input meshes only once.
+    struct mesh_group
     {
-        m_nr_meshes = a3DModel.m_MeshesSize;
+        std::vector<vertex> vertices;
+        std::vector<GLuint> indices;
+    };
 
-        m_meshs_bbox = new CBBOX[a3DModel.m_MeshesSize];
+    std::vector<mesh_group> mesh_groups (m_materials.size ());
 
-        // Generate m_MeshesSize auxiliar lists to render the meshes
-        m_ogl_idx_list_meshes = glGenLists( a3DModel.m_MeshesSize );
+    for (unsigned int mesh_i = 0; mesh_i < a3DModel.m_MeshesSize; ++mesh_i)
+    {
+      const auto& mesh = a3DModel.m_Meshes[mesh_i];
 
-        // Render each mesh of the model
-        // /////////////////////////////////////////////////////////////////////
-        for( unsigned int mesh_i = 0; mesh_i < a3DModel.m_MeshesSize; ++mesh_i )
+      // silently ignore meshes that have invalid material references
+      // or invalid geometry.
+      if (mesh.m_MaterialIdx >= m_materials.size ()
+          || mesh.m_Positions == nullptr
+          || mesh.m_FaceIdx == nullptr
+          || mesh.m_Normals == nullptr
+          || mesh.m_FaceIdxSize == 0
+          || mesh.m_VertexSize == 0)
+        continue;
+
+      auto& mesh_group = mesh_groups[mesh.m_MaterialIdx];
+      auto& material = m_materials[mesh.m_MaterialIdx];
+
+      if (material.is_transparent ())
+        m_have_transparent_meshes = true;
+      else
+        m_have_opaque_meshes = true;
+
+      const unsigned int vtx_offset = mesh_group.vertices.size ();
+      mesh_group.vertices.resize (mesh_group.vertices.size () + mesh.m_VertexSize);
+
+      // copy vertex data and update the bounding box.
+      for (unsigned int vtx_i = 0; vtx_i < mesh.m_VertexSize; ++vtx_i)
+      {
+        m_meshes_bbox[mesh_i].Union( mesh.m_Positions[vtx_i] );
+
+        auto& vtx_out = mesh_group.vertices[vtx_offset + vtx_i];
+
+        vtx_out.pos = mesh.m_Positions[vtx_i];
+        vtx_out.nrm = mesh.m_Normals[vtx_i];
+
+        vtx_out.tex_uv = mesh.m_Texcoords != nullptr
+                         ? mesh.m_Texcoords[vtx_i]
+                         : SFVEC2F (0);
+
+        if (mesh.m_Color != nullptr)
         {
-            if( glIsList( m_ogl_idx_list_meshes + mesh_i ) )
-            {
-                const SMESH &mesh = a3DModel.m_Meshes[mesh_i];
-
-                // Validate the mesh pointers
-                wxASSERT( mesh.m_Positions != NULL );
-                wxASSERT( mesh.m_FaceIdx != NULL );
-                wxASSERT( mesh.m_Normals != NULL );
-
-                if( (mesh.m_Positions != NULL) &&
-                    (mesh.m_Normals != NULL) &&
-                    (mesh.m_FaceIdx != NULL) &&
-                    (mesh.m_FaceIdxSize > 0) && (mesh.m_VertexSize > 0) )
-                {
-                    SFVEC4F *pColorRGBA = NULL;
-
-                    // Create the bbox for this mesh
-                    // /////////////////////////////////////////////////////////
-                    m_meshs_bbox[mesh_i].Reset();
-
-                    for( unsigned int vertex_i = 0;
-                         vertex_i < mesh.m_VertexSize;
-                         ++vertex_i )
-                    {
-                        m_meshs_bbox[mesh_i].Union( mesh.m_Positions[vertex_i] );
-                    }
-
-                    // Make sure we start with client state disabled
-                    // /////////////////////////////////////////////////////////
-                    glDisableClientState( GL_TEXTURE_COORD_ARRAY );
-                    glDisableClientState( GL_COLOR_ARRAY );
-
-
-                    // Enable arrays client states
-                    // /////////////////////////////////////////////////////////
-                    glEnableClientState( GL_VERTEX_ARRAY );
-                    glEnableClientState( GL_NORMAL_ARRAY );
-
-                    glVertexPointer( 3, GL_FLOAT, 0, mesh.m_Positions );
-                    glNormalPointer( GL_FLOAT, 0, mesh.m_Normals );
-
-                    if( mesh.m_Color != NULL )
-                    {
-                        glEnableClientState( GL_COLOR_ARRAY );
-
-                        float transparency = 0.0f;
-
-                        if( mesh.m_MaterialIdx < a3DModel.m_MaterialsSize )
-                            transparency = a3DModel.m_Materials[mesh.m_MaterialIdx].m_Transparency;
-
-                        if( ( transparency > FLT_EPSILON )
-                                && ( aMaterialMode == MATERIAL_MODE::NORMAL ) )
-                        {
-                            // Create a new array of RGBA colors
-                            pColorRGBA = new SFVEC4F[mesh.m_VertexSize];
-
-                            // Copy RGB array and add the Alpha value
-                            for( unsigned int i = 0; i < mesh.m_VertexSize; ++i )
-                                pColorRGBA[i] = SFVEC4F( mesh.m_Color[i],
-                                                         1.0f - transparency );
-
-                            // Load an RGBA array
-                            glColorPointer( 4, GL_FLOAT, 0, pColorRGBA );
-                        }
-                        else
-                        {
-                            switch( aMaterialMode )
-                            {
-                            case MATERIAL_MODE::NORMAL:
-                            case MATERIAL_MODE::DIFFUSE_ONLY:
-                                // load the original RGB color array
-                                glColorPointer( 3, GL_FLOAT, 0, mesh.m_Color );
-                                break;
-                            case MATERIAL_MODE::CAD_MODE:
-                                // Create a new array of RGBA colors
-                                pColorRGBA = new SFVEC4F[mesh.m_VertexSize];
-
-                                // Copy RGB array and add the Alpha value
-                                for( unsigned int i = 0; i < mesh.m_VertexSize; ++i )
-                                {
-                                    pColorRGBA[i] =
-                                            SFVEC4F( MaterialDiffuseToColorCAD( mesh.m_Color[i] ),
-                                                     1.0f );
-                                }
-
-                                // Load an RGBA array
-                                glColorPointer( 4, GL_FLOAT, 0, pColorRGBA );
-                                break;
-                            default:
-                                break;
-                            }
-                        }
-                    }
-
-                    if( mesh.m_Texcoords != NULL )
-                    {
-                        glEnableClientState( GL_TEXTURE_COORD_ARRAY );
-                        glTexCoordPointer( 2, GL_FLOAT, 0, mesh.m_Texcoords );
-                    }
-
-                    // Compile the display list to store triangles
-                    // /////////////////////////////////////////////////////////
-                    glNewList( m_ogl_idx_list_meshes + mesh_i, GL_COMPILE );
-
-                    // Set material properties
-                    // /////////////////////////////////////////////////////////
-
-                    if( mesh.m_Color != NULL )
-                    {
-                        // This enables the use of the Color Pointer information
-                        glEnable( GL_COLOR_MATERIAL );
-                        glColorMaterial( GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE );
-                    }
-                    else
-                    {
-                        glDisable( GL_COLOR_MATERIAL );
-                    }
-
-                    if( mesh.m_MaterialIdx < a3DModel.m_MaterialsSize )
-                    {
-                        switch( aMaterialMode )
-                        {
-                        case MATERIAL_MODE::NORMAL:
-                            OGL_SetMaterial( a3DModel.m_Materials[mesh.m_MaterialIdx] );
-                            break;
-                        case MATERIAL_MODE::DIFFUSE_ONLY:
-                            OGL_SetDiffuseOnlyMaterial(
-                                        a3DModel.m_Materials[mesh.m_MaterialIdx].m_Diffuse );
-                            break;
-                        case MATERIAL_MODE::CAD_MODE:
-                            OGL_SetDiffuseOnlyMaterial(
-                                        MaterialDiffuseToColorCAD(
-                                            a3DModel.m_Materials[mesh.m_MaterialIdx].m_Diffuse ) );
-                            break;
-                        default:
-                            break;
-                        }
-                    }
-
-                    // Draw mesh
-                    // /////////////////////////////////////////////////////////
-                    glDrawElements( GL_TRIANGLES, mesh.m_FaceIdxSize,
-                                    GL_UNSIGNED_INT, mesh.m_FaceIdx );
-
-                    glDisable( GL_COLOR_MATERIAL );
-
-                    glEndList();
-
-                    // Disable arrays client states
-                    // /////////////////////////////////////////////////////////
-                    glDisableClientState( GL_TEXTURE_COORD_ARRAY );
-                    glDisableClientState( GL_COLOR_ARRAY );
-                    glDisableClientState( GL_NORMAL_ARRAY );
-                    glDisableClientState( GL_VERTEX_ARRAY );
-
-                    glFlush();
-
-                    delete [] pColorRGBA;
-                }
-            }
-        }// for each mesh
-
-
-        m_ogl_idx_list_opaque = glGenLists( 1 );
-
-        // Check if the generated list is valid
-        if( glIsList( m_ogl_idx_list_opaque ) )
-        {
-            bool have_opaque_meshes = false;
-            bool have_transparent_meshes = false;
-
-            // Compile the model display list
-            glNewList( m_ogl_idx_list_opaque, GL_COMPILE );
-
-            // Render each mesh display list (opaque first)
-            // /////////////////////////////////////////////////////////////////
-            for( unsigned int mesh_i = 0; mesh_i < a3DModel.m_MeshesSize; ++mesh_i )
-            {
-                const SMESH &mesh = a3DModel.m_Meshes[mesh_i];
-
-                if( mesh.m_MaterialIdx < a3DModel.m_MaterialsSize )
-                {
-                    const SMATERIAL &material = a3DModel.m_Materials[mesh.m_MaterialIdx];
-
-                    if( material.m_Transparency == 0.0f )
-                    {
-                        have_opaque_meshes = true; // Flag that we have at least one opaque mesh
-                        glCallList( m_ogl_idx_list_meshes + mesh_i );
-                    }
-                    else
-                    {
-                        have_transparent_meshes = true; // Flag that we found a transparent mesh
-                    }
-                }
-            }
-
-            glEndList();
-
-            if( !have_opaque_meshes )
-            {
-                // If we dont have opaque meshes, we can free the list
-                glDeleteLists( m_ogl_idx_list_opaque, 1 );
-                m_ogl_idx_list_opaque = 0;
-            }
-
-            if( have_transparent_meshes )
-            {
-                m_ogl_idx_list_transparent = glGenLists( 1 );
-
-                // Check if the generated list is valid
-                if( glIsList( m_ogl_idx_list_transparent ) )
-                {
-                    // Compile the model display list
-                    glNewList( m_ogl_idx_list_transparent, GL_COMPILE );
-
-                    glEnable( GL_BLEND );
-                    glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
-
-                    // Render each mesh display list
-                    // /////////////////////////////////////////////////////////
-                    for( unsigned mesh_i = 0; mesh_i < a3DModel.m_MeshesSize; ++mesh_i )
-                    {
-                        const SMESH &mesh = a3DModel.m_Meshes[mesh_i];
-
-                        if( mesh.m_MaterialIdx < a3DModel.m_MaterialsSize )
-                        {
-                            const SMATERIAL &material = a3DModel.m_Materials[mesh.m_MaterialIdx];
-
-                            // Render the transparent mesh if it have a transparency value
-                            if( material.m_Transparency != 0.0f )
-                                glCallList( m_ogl_idx_list_meshes + mesh_i );
-                        }
-                    }
-
-                    glDisable( GL_BLEND );
-
-                    glEndList();
-                }
-                else
-                {
-                    m_ogl_idx_list_transparent = 0;
-                }
-            }
+          vtx_out.color = SFVEC4F (mesh.m_Color[vtx_i], 1 - material.m_Transparency);
+          vtx_out.cad_color = SFVEC4F( MaterialDiffuseToColorCAD( mesh.m_Color[vtx_i] ), 1 );
         }
         else
         {
-            m_ogl_idx_list_opaque = 0;
+          // the mesh will be rendered with other meshes that might have
+          // vertex colors.  thus, we can't enable/disable vertex colors
+          // for individual meshes during rendering.
+
+          // if there are no vertex colors, use material color instead.
+          vtx_out.color = SFVEC4F (material.m_Diffuse, 1 - material.m_Transparency);
+          vtx_out.cad_color =SFVEC4F ( MaterialDiffuseToColorCAD( material.m_Diffuse ), 1 );
+        }
+      }
+
+      // bump the outer bounding box
+      if (m_meshes_bbox[mesh_i].IsInitialized ())
+        m_model_bbox.Union( m_meshes_bbox[mesh_i] );
+
+
+      // append indices of this mesh to the mesh group.
+      const unsigned int idx_offset = mesh_group.indices.size ();
+      unsigned int use_idx_count = mesh.m_FaceIdxSize;
+      if (use_idx_count % 3 != 0)
+      {
+        wxLogTrace (m_logTrace, wxT ("  index count %u not multiple of 3, truncating"),
+                    (unsigned int)use_idx_count);
+        use_idx_count = (use_idx_count / 3) * 3;
+      }
+      mesh_group.indices.resize (mesh_group.indices.size () + use_idx_count);
+
+      for (unsigned int idx_i = 0; idx_i < use_idx_count; ++idx_i)
+      {
+        if (mesh.m_FaceIdx[idx_i] >= mesh.m_VertexSize)
+        {
+          wxLogTrace (m_logTrace, wxT (" index %u out of range (%u)"),
+                      (unsigned int)mesh.m_FaceIdx[idx_i], (unsigned int)mesh.m_VertexSize);
+
+          // FIXME: should skip this triangle
         }
 
-        // Create the main bbox
-        // /////////////////////////////////////////////////////////////////////
-        m_model_bbox.Reset();
-
-        for( unsigned int mesh_i = 0; mesh_i < a3DModel.m_MeshesSize; ++mesh_i )
-            m_model_bbox.Union( m_meshs_bbox[mesh_i] );
-
-        glFlush();
+        mesh_group.indices[idx_offset + idx_i] = mesh.m_FaceIdx[idx_i] + vtx_offset;
+      }
     }
+
+    // merge the mesh group geometry data.
+    unsigned int total_vertex_count = 0;
+    unsigned int total_index_count = 0;
+
+    for (auto& mg : mesh_groups)
+    {
+      total_vertex_count += mg.vertices.size ();
+      total_index_count += mg.indices.size ();
+    }
+
+    wxLogTrace (m_logTrace, wxT ("  total %u vertices, %u indices"),
+                total_vertex_count, total_index_count);
+
+    glGenBuffers (1, &m_vertex_buffer);
+    glBindBuffer (GL_ARRAY_BUFFER, m_vertex_buffer);
+    glBufferData (GL_ARRAY_BUFFER, sizeof (vertex) * total_vertex_count,
+                  nullptr, GL_STATIC_DRAW);
+
+    glGenBuffers (1, &m_index_buffer);
+    glBindBuffer (GL_ELEMENT_ARRAY_BUFFER, m_index_buffer);
+    glBufferData (GL_ELEMENT_ARRAY_BUFFER, sizeof (GLuint) * total_index_count,
+                  nullptr, GL_STATIC_DRAW);
+
+    unsigned int prev_vtx_count = 0;
+    unsigned int idx_offset = 0;
+    unsigned int vtx_offset = 0;
+
+    for (unsigned int mg_i = 0; mg_i < mesh_groups.size (); ++mg_i)
+    {
+      auto& mg = mesh_groups[mg_i];
+      auto& mat = m_materials[mg_i];
+
+      if (prev_vtx_count != 0)
+        for (auto& idx : mg.indices)
+          idx += prev_vtx_count;
+
+      glBufferSubData (GL_ARRAY_BUFFER,
+                       vtx_offset,
+                       mg.vertices.size () * sizeof (vertex),
+                       mg.vertices.data ());
+
+      glBufferSubData (GL_ELEMENT_ARRAY_BUFFER,
+                       idx_offset,
+                       mg.indices.size () * sizeof (GLuint),
+                       mg.indices.data ());
+
+      mat.render_idx_buffer_offset = idx_offset;
+      mat.render_idx_count = mg.indices.size ();
+
+      prev_vtx_count += mg.vertices.size ();
+      idx_offset += mg.indices.size () * sizeof (GLuint);
+      vtx_offset += mg.vertices.size () * sizeof (vertex);
+    }
+
+    glBindBuffer (GL_ARRAY_BUFFER, 0);
+    glBindBuffer (GL_ELEMENT_ARRAY_BUFFER, 0);
+
+    auto end_time = std::chrono::high_resolution_clock::now ();
+
+    wxLogTrace (m_logTrace, wxT ("  loaded in %u ms\n"),
+                (unsigned int)std::chrono::duration_cast<std::chrono::milliseconds> (end_time - start_time).count ());
 }
 
-
-void C_OGL_3DMODEL::Draw_opaque() const
+void C_OGL_3DMODEL::BeginDrawMulti (void)
 {
-    if( glIsList( m_ogl_idx_list_opaque ) )
-        glCallList( m_ogl_idx_list_opaque );
+  glEnableClientState (GL_VERTEX_ARRAY);
+  glEnableClientState (GL_NORMAL_ARRAY);
+  glEnableClientState (GL_COLOR_ARRAY);
+  glEnableClientState (GL_TEXTURE_COORD_ARRAY);
+
+  glEnable (GL_COLOR_MATERIAL);
+  glColorMaterial (GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE);
 }
 
-
-void C_OGL_3DMODEL::Draw_transparent() const
+void C_OGL_3DMODEL::EndDrawMulti (void)
 {
-    if( glIsList( m_ogl_idx_list_transparent ) )
-        glCallList( m_ogl_idx_list_transparent );
+  glDisable( GL_COLOR_MATERIAL );
+  glDisableClientState (GL_VERTEX_ARRAY);
+  glDisableClientState (GL_NORMAL_ARRAY);
+  glDisableClientState (GL_COLOR_ARRAY);
+  glDisableClientState (GL_TEXTURE_COORD_ARRAY);
+
+  glBindBuffer (GL_ARRAY_BUFFER, 0);
+  glBindBuffer (GL_ELEMENT_ARRAY_BUFFER, 0);
 }
 
+
+void C_OGL_3DMODEL::Draw (bool transparent) const
+{
+  glBindBuffer (GL_ARRAY_BUFFER, m_vertex_buffer);
+  glBindBuffer (GL_ELEMENT_ARRAY_BUFFER, m_index_buffer);
+
+  glVertexPointer (3, GL_FLOAT, sizeof (vertex), (const void*)offsetof (vertex, pos));
+  glNormalPointer (GL_FLOAT, sizeof (vertex), (const void*)offsetof (vertex, nrm));
+  glColorPointer (4, GL_FLOAT, sizeof (vertex), (const void*)
+                  (m_material_mode == MATERIAL_MODE::CAD_MODE
+                   ? offsetof (vertex, cad_color)
+                   : offsetof (vertex, color)));
+  glTexCoordPointer (2, GL_FLOAT, sizeof (vertex), (const void*)offsetof (vertex, tex_uv));
+
+  // BeginDrawMulti ();
+
+  for (auto& mat : m_materials)
+  {
+    if (mat.is_transparent () != transparent)
+      continue;
+
+    switch (m_material_mode)
+    {
+    case MATERIAL_MODE::NORMAL:
+      OGL_SetMaterial (mat);
+      break;
+
+    case MATERIAL_MODE::DIFFUSE_ONLY:
+      OGL_SetDiffuseOnlyMaterial( mat.m_Diffuse );
+      break;
+
+    case MATERIAL_MODE::CAD_MODE:
+      OGL_SetDiffuseOnlyMaterial(MaterialDiffuseToColorCAD(mat.m_Diffuse));
+      break;
+
+    default:
+      break;
+    }
+
+    glDrawElements (GL_TRIANGLES, mat.render_idx_count, GL_UNSIGNED_INT,
+                    (const void*)(uintptr_t)mat.render_idx_buffer_offset);
+  }
+
+  // EndDrawMulti ();
+}
 
 C_OGL_3DMODEL::~C_OGL_3DMODEL()
 {
-    if( glIsList( m_ogl_idx_list_opaque ) )
-        glDeleteLists( m_ogl_idx_list_opaque, 1 );
-
-    if( glIsList( m_ogl_idx_list_transparent ) )
-        glDeleteLists( m_ogl_idx_list_transparent, 1 );
-
-    if( glIsList( m_ogl_idx_list_meshes ) )
-        glDeleteLists( m_ogl_idx_list_meshes, m_nr_meshes );
-
-    m_ogl_idx_list_meshes = 0;
-    m_ogl_idx_list_opaque = 0;
-    m_ogl_idx_list_transparent = 0;
-
-    delete[] m_meshs_bbox;
-    m_meshs_bbox = NULL;
+  glDeleteBuffers (1, &m_vertex_buffer);
+  glDeleteBuffers (1, &m_index_buffer);
 }
 
 
@@ -366,18 +314,7 @@ void C_OGL_3DMODEL::Draw_bbox() const
 
 void C_OGL_3DMODEL::Draw_bboxes() const
 {
-    for( unsigned int mesh_i = 0; mesh_i < m_nr_meshes; ++mesh_i )
-        OGL_draw_bbox( m_meshs_bbox[mesh_i] );
+//    for( unsigned int mesh_i = 0; mesh_i < m_nr_meshes; ++mesh_i )
+//        OGL_draw_bbox( m_meshs_bbox[mesh_i] );
 }
 
-
-bool C_OGL_3DMODEL::Have_opaque() const
-{
-    return glIsList( m_ogl_idx_list_opaque );
-}
-
-
-bool C_OGL_3DMODEL::Have_transparent() const
-{
-    return glIsList( m_ogl_idx_list_transparent );
-}

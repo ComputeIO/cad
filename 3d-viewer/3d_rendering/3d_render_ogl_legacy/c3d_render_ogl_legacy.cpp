@@ -1079,6 +1079,8 @@ void C3D_RENDER_OGL_LEGACY::render_solder_mask_layer( PCB_LAYER_ID aLayerID,
 void C3D_RENDER_OGL_LEGACY::render_3D_models( bool aRenderTopOrBot,
                                               bool aRenderTransparentOnly )
 {
+    C_OGL_3DMODEL::BeginDrawMulti ();
+
     // Go for all modules
     for( auto module : m_boardAdapter.GetBoard()->Modules() )
     {
@@ -1088,6 +1090,8 @@ void C3D_RENDER_OGL_LEGACY::render_3D_models( bool aRenderTopOrBot,
                         || ( !aRenderTopOrBot && module->IsFlipped() ) )
                     render_3D_module( module, aRenderTransparentOnly );
     }
+
+    C_OGL_3DMODEL::EndDrawMulti ();
 }
 
 
@@ -1130,12 +1134,10 @@ void C3D_RENDER_OGL_LEGACY::render_3D_module( const MODULE* module,
             if( !sM->m_Filename.empty() )
             {
                 // Check if the model is present in our cache map
-                if( m_3dmodel_map.find( sM->m_Filename ) != m_3dmodel_map.end() )
+                auto cache_i = m_3dmodel_map.find( sM->m_Filename );
+                if( cache_i != m_3dmodel_map.end() )
                 {
-                    // It is not present, try get it from cache
-                    const C_OGL_3DMODEL *modelPtr = m_3dmodel_map[ sM->m_Filename ];
-
-                    if( modelPtr )
+                    if( const C_OGL_3DMODEL *modelPtr = cache_i->second )
                     {
                         if( ( (!aRenderTransparentOnly) && modelPtr->Have_opaque() ) ||
                             ( aRenderTransparentOnly && modelPtr->Have_transparent() ) )
