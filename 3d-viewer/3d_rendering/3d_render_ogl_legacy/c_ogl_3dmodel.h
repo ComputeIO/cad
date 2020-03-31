@@ -110,20 +110,18 @@ private:
     // unified vertex format for mesh rendering.
     struct vertex
     {
-      SFVEC3F pos;
-      SFVEC3F nrm;
-      SFVEC2F tex_uv;
-      SFVEC4F color;      // regular color
-      SFVEC4F cad_color;  // "CAD" mode rendering color
+      glm::vec3 pos;
+      glm::u8vec4 nrm;        // only 3 components used
+      glm::u8vec4 color;      // regular color
+      glm::u8vec4 cad_color;  // "CAD" mode rendering color
+      glm::vec2 tex_uv;
     };
 
     // vertex buffer and index buffers that include all the individual meshes
     // lumped together.
     GLuint m_vertex_buffer = 0;
     GLuint m_index_buffer = 0;
-
-    // FIXME: most models fit into uint16_t index buffer.
-    //GLenum m_index_buffer_type;
+    GLenum m_index_buffer_type = GL_INVALID_ENUM;
 
     // internal material definition
     // all meshes are grouped by material for rendering purposes.

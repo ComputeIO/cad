@@ -114,16 +114,16 @@ C_OGL_3DMODEL::C_OGL_3DMODEL( const S3DMODEL &a3DModel,
         auto& vtx_out = mesh_group.vertices[vtx_offset + vtx_i];
 
         vtx_out.pos = mesh.m_Positions[vtx_i];
-        vtx_out.nrm = mesh.m_Normals[vtx_i];
+        vtx_out.nrm = glm::clamp (glm::vec4 (mesh.m_Normals[vtx_i], 1.0f) * 127.0f, -127.0f, 127.0f);
 
         vtx_out.tex_uv = mesh.m_Texcoords != nullptr
                          ? mesh.m_Texcoords[vtx_i]
-                         : SFVEC2F (0);
+                         : glm::vec2 (0);
 
         if (mesh.m_Color != nullptr)
         {
-          vtx_out.color = SFVEC4F (mesh.m_Color[vtx_i], 1 - material.m_Transparency);
-          vtx_out.cad_color = SFVEC4F( MaterialDiffuseToColorCAD( mesh.m_Color[vtx_i] ), 1 );
+          vtx_out.color = glm::clamp (glm::vec4 (mesh.m_Color[vtx_i], 1 - material.m_Transparency) * 255.0f, 0.0f, 255.0f);
+          vtx_out.cad_color = glm::clamp (glm::vec4 ( MaterialDiffuseToColorCAD( mesh.m_Color[vtx_i] ), 1 ) * 255.0f, 0.0f, 255.0f);
         }
         else
         {
@@ -132,8 +132,8 @@ C_OGL_3DMODEL::C_OGL_3DMODEL( const S3DMODEL &a3DModel,
           // for individual meshes during rendering.
 
           // if there are no vertex colors, use material color instead.
-          vtx_out.color = SFVEC4F (material.m_Diffuse, 1 - material.m_Transparency);
-          vtx_out.cad_color =SFVEC4F ( MaterialDiffuseToColorCAD( material.m_Diffuse ), 1 );
+          vtx_out.color = glm::clamp (glm::vec4 (material.m_Diffuse, 1 - material.m_Transparency) * 255.0f, 0.0f, 255.0f);
+          vtx_out.cad_color = glm::clamp (glm::vec4 ( MaterialDiffuseToColorCAD( material.m_Diffuse ), 1 ) * 255.0f, 0.0f, 255.0f);
         }
       }
 
@@ -185,10 +185,22 @@ C_OGL_3DMODEL::C_OGL_3DMODEL( const S3DMODEL &a3DModel,
     glBufferData (GL_ARRAY_BUFFER, sizeof (vertex) * total_vertex_count,
                   nullptr, GL_STATIC_DRAW);
 
-    glGenBuffers (1, &m_index_buffer);
-    glBindBuffer (GL_ELEMENT_ARRAY_BUFFER, m_index_buffer);
-    glBufferData (GL_ELEMENT_ARRAY_BUFFER, sizeof (GLuint) * total_index_count,
-                  nullptr, GL_STATIC_DRAW);
+    unsigned int idx_size = 0;
+
+    if (total_vertex_count <= std::numeric_limits<GLushort>::max ())
+    {
+      m_index_buffer_type = GL_UNSIGNED_SHORT;
+      idx_size = sizeof (GLushort);
+    }
+    else
+    {
+      m_index_buffer_type = GL_UNSIGNED_INT;
+      idx_size = sizeof (GLuint);
+    }
+
+    // temporary index buffer which will contain either GLushort or GLuint
+    // type indices.  allocate with a bit of meadow at the end.
+    auto tmp_idx = std::make_unique<GLuint[]> ((idx_size * total_index_count + 8) / sizeof (GLuint));
 
     unsigned int prev_vtx_count = 0;
     unsigned int idx_offset = 0;
@@ -199,27 +211,36 @@ C_OGL_3DMODEL::C_OGL_3DMODEL( const S3DMODEL &a3DModel,
       auto& mg = mesh_groups[mg_i];
       auto& mat = m_materials[mg_i];
 
-      if (prev_vtx_count != 0)
-        for (auto& idx : mg.indices)
-          idx += prev_vtx_count;
+      if (m_index_buffer_type == GL_UNSIGNED_SHORT)
+      {
+        auto* idx_out = (GLushort*)((uintptr_t)tmp_idx.get () + idx_offset);
+        for (auto idx : mg.indices)
+          *idx_out++ = (GLushort)(idx + prev_vtx_count);
+      }
+      else if (m_index_buffer_type == GL_UNSIGNED_INT)
+      {
+        auto* idx_out = (GLuint*)((uintptr_t)tmp_idx.get () + idx_offset);
+        for (auto idx : mg.indices)
+          *idx_out++ = (GLuint)(idx + prev_vtx_count);
+      }
 
       glBufferSubData (GL_ARRAY_BUFFER,
                        vtx_offset,
                        mg.vertices.size () * sizeof (vertex),
                        mg.vertices.data ());
 
-      glBufferSubData (GL_ELEMENT_ARRAY_BUFFER,
-                       idx_offset,
-                       mg.indices.size () * sizeof (GLuint),
-                       mg.indices.data ());
-
       mat.render_idx_buffer_offset = idx_offset;
       mat.render_idx_count = mg.indices.size ();
 
       prev_vtx_count += mg.vertices.size ();
-      idx_offset += mg.indices.size () * sizeof (GLuint);
+      idx_offset += mg.indices.size () * idx_size;
       vtx_offset += mg.vertices.size () * sizeof (vertex);
     }
+
+    glGenBuffers (1, &m_index_buffer);
+    glBindBuffer (GL_ELEMENT_ARRAY_BUFFER, m_index_buffer);
+    glBufferData (GL_ELEMENT_ARRAY_BUFFER, idx_size * total_index_count,
+                  tmp_idx.get (), GL_STATIC_DRAW);
 
     glBindBuffer (GL_ARRAY_BUFFER, 0);
     glBindBuffer (GL_ELEMENT_ARRAY_BUFFER, 0);
@@ -260,8 +281,8 @@ void C_OGL_3DMODEL::Draw (bool transparent) const
   glBindBuffer (GL_ELEMENT_ARRAY_BUFFER, m_index_buffer);
 
   glVertexPointer (3, GL_FLOAT, sizeof (vertex), (const void*)offsetof (vertex, pos));
-  glNormalPointer (GL_FLOAT, sizeof (vertex), (const void*)offsetof (vertex, nrm));
-  glColorPointer (4, GL_FLOAT, sizeof (vertex), (const void*)
+  glNormalPointer (GL_BYTE, sizeof (vertex), (const void*)offsetof (vertex, nrm));
+  glColorPointer (4, GL_UNSIGNED_BYTE, sizeof (vertex), (const void*)
                   (m_material_mode == MATERIAL_MODE::CAD_MODE
                    ? offsetof (vertex, cad_color)
                    : offsetof (vertex, color)));
@@ -292,7 +313,7 @@ void C_OGL_3DMODEL::Draw (bool transparent) const
       break;
     }
 
-    glDrawElements (GL_TRIANGLES, mat.render_idx_count, GL_UNSIGNED_INT,
+    glDrawElements (GL_TRIANGLES, mat.render_idx_count, m_index_buffer_type,
                     (const void*)(uintptr_t)mat.render_idx_buffer_offset);
   }
 
