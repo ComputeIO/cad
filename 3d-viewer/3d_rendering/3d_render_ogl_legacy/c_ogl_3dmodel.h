@@ -139,6 +139,19 @@ private:
     bool m_have_opaque_meshes = false;
     bool m_have_transparent_meshes = false;
 
+    // vertex buffer and index buffer for the bounding boxes.
+    // the first box is always the outer box, followed by inner boxes (one for each mesh).
+    static constexpr unsigned int bbox_vtx_count = 8;
+    static constexpr unsigned int bbox_idx_count = 24;
+
+    GLuint m_bbox_vertex_buffer = 0;
+    GLuint m_bbox_index_buffer = 0;
+    GLenum m_bbox_index_buffer_type = GL_INVALID_ENUM;
+
+    static void MakeBbox (const CBBOX& box, unsigned int idx_offset,
+                          vertex* vtx_out, GLuint* idx_out,
+                          const glm::vec4& color);
+
     void Draw (bool transparent) const;
 };
 

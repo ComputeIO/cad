@@ -38,6 +38,45 @@
 
 const wxChar * C_OGL_3DMODEL::m_logTrace = wxT( "KI_TRACE_EDA_OGL_3DMODEL" );
 
+void C_OGL_3DMODEL::MakeBbox (const CBBOX& box, unsigned int idx_offset,
+                              vertex* vtx_out, GLuint* idx_out,
+                              const glm::vec4& color)
+{
+  vtx_out[0].pos = { box.Min ().x, box.Min ().y, box.Min ().z };
+  vtx_out[1].pos = { box.Max ().x, box.Min ().y, box.Min ().z };
+  vtx_out[2].pos = { box.Max ().x, box.Max ().y, box.Min ().z };
+  vtx_out[3].pos = { box.Min ().x, box.Max ().y, box.Min ().z };
+
+  vtx_out[4].pos = { box.Min ().x, box.Min ().y, box.Max ().z };
+  vtx_out[5].pos = { box.Max ().x, box.Min ().y, box.Max ().z };
+  vtx_out[6].pos = { box.Max ().x, box.Max ().y, box.Max ().z };
+  vtx_out[7].pos = { box.Min ().x, box.Max ().y, box.Max ().z };
+
+  for (unsigned int i = 0; i < 8; ++i)
+    vtx_out[i].color = vtx_out[i].cad_color = glm::clamp (color * 255.0f, 0.0f, 255.0f);
+
+  #define bbox_line(vtx_a, vtx_b)\
+     do { *idx_out++ = vtx_a + idx_offset; \
+          *idx_out++ = vtx_b + idx_offset; } while (0)
+
+  bbox_line (0, 1);
+  bbox_line (1, 2);
+  bbox_line (2, 3);
+  bbox_line (3, 0);
+
+  bbox_line (4, 5);
+  bbox_line (5, 6);
+  bbox_line (6, 7);
+  bbox_line (7, 4);
+
+  bbox_line (0, 4);
+  bbox_line (1, 5);
+  bbox_line (2, 6);
+  bbox_line (3, 7);
+
+  #undef bbox_line
+}
+
 C_OGL_3DMODEL::C_OGL_3DMODEL( const S3DMODEL &a3DModel,
                               MATERIAL_MODE aMaterialMode )
 {
@@ -68,6 +107,10 @@ C_OGL_3DMODEL::C_OGL_3DMODEL( const S3DMODEL &a3DModel,
     for (unsigned int i = 0; i < a3DModel.m_MaterialsSize; ++i)
         m_materials.emplace_back (a3DModel.m_Materials[i]);
 
+    // build temporary vertex and index buffers for bounding boxes.
+    // the first box is the outer box.
+    std::vector<vertex> bbox_tmp_vertices ((m_meshes_bbox.size () + 1) * bbox_vtx_count);
+    std::vector<GLuint> bbox_tmp_indices ((m_meshes_bbox.size () + 1) * bbox_idx_count);
 
     // group all meshes by material.
     // for each material create a combined vertex and index buffer.
@@ -137,9 +180,19 @@ C_OGL_3DMODEL::C_OGL_3DMODEL( const S3DMODEL &a3DModel,
         }
       }
 
-      // bump the outer bounding box
       if (m_meshes_bbox[mesh_i].IsInitialized ())
+      {
+        // generate geometry for the bounding box
+        MakeBbox (m_meshes_bbox[mesh_i], (mesh_i + 1) * bbox_vtx_count,
+                  &bbox_tmp_vertices[(mesh_i + 1) * bbox_vtx_count],
+                  &bbox_tmp_indices[(mesh_i + 1) * bbox_idx_count],
+
+                  // FIXME: use red color for now
+                  { 1.0f, 0.0f, 0.0f, 1.0f });
+
+        // bump the outer bounding box
         m_model_bbox.Union( m_meshes_bbox[mesh_i] );
+      }
 
 
       // append indices of this mesh to the mesh group.
@@ -166,6 +219,39 @@ C_OGL_3DMODEL::C_OGL_3DMODEL( const S3DMODEL &a3DModel,
         mesh_group.indices[idx_offset + idx_i] = mesh.m_FaceIdx[idx_i] + vtx_offset;
       }
     }
+
+    // generate geometry for the outer bounding box
+    if (m_model_bbox.IsInitialized ())
+      MakeBbox (m_model_bbox, 0, &bbox_tmp_vertices[0], &bbox_tmp_indices[0],
+                { 0.0f, 1.0f, 0.0f, 1.0f });
+
+    // create bounding box buffers
+    glGenBuffers (1, &m_bbox_vertex_buffer);
+    glBindBuffer (GL_ARRAY_BUFFER, m_bbox_vertex_buffer);
+    glBufferData (GL_ARRAY_BUFFER, sizeof (vertex) * bbox_tmp_vertices.size (),
+                  bbox_tmp_vertices.data (), GL_STATIC_DRAW);
+
+    glGenBuffers (1, &m_bbox_index_buffer);
+    glBindBuffer (GL_ELEMENT_ARRAY_BUFFER, m_bbox_index_buffer);
+
+    if (bbox_tmp_vertices.size () <= std::numeric_limits<GLushort>::max ())
+    {
+      m_bbox_index_buffer_type = GL_UNSIGNED_SHORT;
+
+      auto u16buf = std::make_unique<GLushort[]> (bbox_tmp_indices.size ());
+      for (unsigned int i = 0; i < bbox_tmp_indices.size (); ++i)
+        u16buf[i] = (GLushort)bbox_tmp_indices[i];
+
+      glBufferData (GL_ELEMENT_ARRAY_BUFFER, sizeof (GLushort) * bbox_tmp_indices.size (),
+                    u16buf.get (), GL_STATIC_DRAW);
+    }
+    else
+    {
+      m_bbox_index_buffer_type = GL_UNSIGNED_INT;
+      glBufferData (GL_ELEMENT_ARRAY_BUFFER, sizeof (GLuint) * bbox_tmp_indices.size (),
+                  bbox_tmp_indices.data (), GL_STATIC_DRAW);
+    }
+
 
     // merge the mesh group geometry data.
     unsigned int total_vertex_count = 0;
@@ -324,18 +410,36 @@ C_OGL_3DMODEL::~C_OGL_3DMODEL()
 {
   glDeleteBuffers (1, &m_vertex_buffer);
   glDeleteBuffers (1, &m_index_buffer);
+  glDeleteBuffers (1, &m_bbox_vertex_buffer);
+  glDeleteBuffers (1, &m_bbox_index_buffer);
 }
 
 
 void C_OGL_3DMODEL::Draw_bbox() const
 {
-    OGL_draw_bbox( m_model_bbox );
+  glBindBuffer (GL_ARRAY_BUFFER, m_bbox_vertex_buffer);
+  glBindBuffer (GL_ELEMENT_ARRAY_BUFFER, m_bbox_index_buffer);
+
+  glVertexPointer (3, GL_FLOAT, sizeof (vertex), (const void*)offsetof (vertex, pos));
+  glColorPointer (4, GL_UNSIGNED_BYTE, sizeof (vertex), (const void*)offsetof (vertex, color));
+
+  glDrawElements (GL_LINES, bbox_idx_count, m_bbox_index_buffer_type,
+                  (const void*)(uintptr_t)0);
 }
 
 
 void C_OGL_3DMODEL::Draw_bboxes() const
 {
-//    for( unsigned int mesh_i = 0; mesh_i < m_nr_meshes; ++mesh_i )
-//        OGL_draw_bbox( m_meshs_bbox[mesh_i] );
+  glBindBuffer (GL_ARRAY_BUFFER, m_bbox_vertex_buffer);
+  glBindBuffer (GL_ELEMENT_ARRAY_BUFFER, m_bbox_index_buffer);
+
+  glVertexPointer (3, GL_FLOAT, sizeof (vertex), (const void*)offsetof (vertex, pos));
+  glColorPointer (4, GL_UNSIGNED_BYTE, sizeof (vertex), (const void*)offsetof (vertex, color));
+
+  unsigned int idx_size = m_bbox_index_buffer_type == GL_UNSIGNED_SHORT
+                          ? sizeof (GLushort) : sizeof (GLuint);
+
+  glDrawElements (GL_LINES, bbox_idx_count * m_meshes_bbox.size (), m_bbox_index_buffer_type,
+                  (const void*)(uintptr_t)(bbox_idx_count * idx_size));
 }
 

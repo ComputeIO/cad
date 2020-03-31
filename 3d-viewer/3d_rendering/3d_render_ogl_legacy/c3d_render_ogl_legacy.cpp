@@ -1126,15 +1126,12 @@ void C3D_RENDER_OGL_LEGACY::render_3D_module( const MODULE* module,
                   modelunit_to_3d_units_factor );
 
         // Get the list of model files for this model
-        auto sM = module->Models().begin();
-        auto eM = module->Models().end();
-
-        while( sM != eM )
+        for (auto& sM : module->Models ())
         {
-            if( !sM->m_Filename.empty() )
+            if( !sM.m_Filename.empty() )
             {
                 // Check if the model is present in our cache map
-                auto cache_i = m_3dmodel_map.find( sM->m_Filename );
+                auto cache_i = m_3dmodel_map.find( sM.m_Filename );
                 if( cache_i != m_3dmodel_map.end() )
                 {
                     if( const C_OGL_3DMODEL *modelPtr = cache_i->second )
@@ -1144,13 +1141,15 @@ void C3D_RENDER_OGL_LEGACY::render_3D_module( const MODULE* module,
                         {
                             glPushMatrix();
 
-                            glTranslatef( sM->m_Offset.x, sM->m_Offset.y, sM->m_Offset.z );
-
-                            glRotatef( -sM->m_Rotation.z, 0.0f, 0.0f, 1.0f );
-                            glRotatef( -sM->m_Rotation.y, 0.0f, 1.0f, 0.0f );
-                            glRotatef( -sM->m_Rotation.x, 1.0f, 0.0f, 0.0f );
-
-                            glScalef( sM->m_Scale.x, sM->m_Scale.y, sM->m_Scale.z );
+                            // FIXME: don't do this over and over again unless the
+                            // values have changed.  cache the matrix somewhere.
+                            glm::mat4 mtx (1);
+                            mtx = glm::translate (mtx, { sM.m_Offset.x, sM.m_Offset.y, sM.m_Offset.z });
+                            mtx = glm::rotate (mtx, glm::radians ((float)-sM.m_Rotation.z), { 0.0f, 0.0f, 1.0f });
+                            mtx = glm::rotate (mtx, glm::radians ((float)-sM.m_Rotation.y), { 0.0f, 1.0f, 0.0f });
+                            mtx = glm::rotate (mtx, glm::radians ((float)-sM.m_Rotation.x), { 1.0f, 0.0f, 0.0f });
+                            mtx = glm::scale (mtx, { sM.m_Scale.x, sM.m_Scale.y, sM.m_Scale.z });
+                            glMultMatrixf (glm::value_ptr( mtx ));
 
                             if( aRenderTransparentOnly )
                                 modelPtr->Draw_transparent();
@@ -1162,17 +1161,16 @@ void C3D_RENDER_OGL_LEGACY::render_3D_module( const MODULE* module,
                                 glEnable( GL_BLEND );
                                 glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
 
-                                glLineWidth( 1 );
-                                modelPtr->Draw_bboxes();
-
                                 glDisable( GL_LIGHTING );
 
-                                glColor4f( 0.0f, 1.0f, 0.0f, 1.0f );
+                                glLineWidth( 1 );
+                                modelPtr->Draw_bboxes();
 
                                 glLineWidth( 4 );
                                 modelPtr->Draw_bbox();
 
                                 glEnable( GL_LIGHTING );
+                                glDisable (GL_BLEND);
                             }
 
                             glPopMatrix();
@@ -1180,8 +1178,6 @@ void C3D_RENDER_OGL_LEGACY::render_3D_module( const MODULE* module,
                     }
                 }
             }
-
-            ++sM;
         }
 
         glPopMatrix();
