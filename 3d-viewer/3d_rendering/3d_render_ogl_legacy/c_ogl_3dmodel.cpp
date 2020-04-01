@@ -150,6 +150,10 @@ C_OGL_3DMODEL::C_OGL_3DMODEL( const S3DMODEL &a3DModel,
       mesh_group.vertices.resize (mesh_group.vertices.size () + mesh.m_VertexSize);
 
       // copy vertex data and update the bounding box.
+      // use material color for mesh bounding box or some sort of average
+      // vertex color.
+      glm::vec3 avg_color = material.m_Diffuse;
+
       for (unsigned int vtx_i = 0; vtx_i < mesh.m_VertexSize; ++vtx_i)
       {
         m_meshes_bbox[mesh_i].Union( mesh.m_Positions[vtx_i] );
@@ -165,6 +169,8 @@ C_OGL_3DMODEL::C_OGL_3DMODEL( const S3DMODEL &a3DModel,
 
         if (mesh.m_Color != nullptr)
         {
+          avg_color = (avg_color + mesh.m_Color[vtx_i]) * 0.5f;
+
           vtx_out.color = glm::clamp (glm::vec4 (mesh.m_Color[vtx_i], 1 - material.m_Transparency) * 255.0f, 0.0f, 255.0f);
           vtx_out.cad_color = glm::clamp (glm::vec4 ( MaterialDiffuseToColorCAD( mesh.m_Color[vtx_i] ), 1 ) * 255.0f, 0.0f, 255.0f);
         }
@@ -186,9 +192,7 @@ C_OGL_3DMODEL::C_OGL_3DMODEL( const S3DMODEL &a3DModel,
         MakeBbox (m_meshes_bbox[mesh_i], (mesh_i + 1) * bbox_vtx_count,
                   &bbox_tmp_vertices[(mesh_i + 1) * bbox_vtx_count],
                   &bbox_tmp_indices[(mesh_i + 1) * bbox_idx_count],
-
-                  // FIXME: use red color for now
-                  { 1.0f, 0.0f, 0.0f, 1.0f });
+                  { avg_color, 1.0f });
 
         // bump the outer bounding box
         m_model_bbox.Union( m_meshes_bbox[mesh_i] );
