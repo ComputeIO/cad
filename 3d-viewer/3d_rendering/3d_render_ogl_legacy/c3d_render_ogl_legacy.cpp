@@ -1079,7 +1079,7 @@ void C3D_RENDER_OGL_LEGACY::render_solder_mask_layer( PCB_LAYER_ID aLayerID,
 void C3D_RENDER_OGL_LEGACY::render_3D_models( bool aRenderTopOrBot,
                                               bool aRenderTransparentOnly )
 {
-    C_OGL_3DMODEL::BeginDrawMulti ();
+    C_OGL_3DMODEL::BeginDrawMulti();
 
     // Go for all modules
     for( auto module : m_boardAdapter.GetBoard()->Modules() )
@@ -1091,7 +1091,7 @@ void C3D_RENDER_OGL_LEGACY::render_3D_models( bool aRenderTopOrBot,
                     render_3D_module( module, aRenderTransparentOnly );
     }
 
-    C_OGL_3DMODEL::EndDrawMulti ();
+    C_OGL_3DMODEL::EndDrawMulti();
 }
 
 
@@ -1143,13 +1143,13 @@ void C3D_RENDER_OGL_LEGACY::render_3D_module( const MODULE* module,
 
                             // FIXME: don't do this over and over again unless the
                             // values have changed.  cache the matrix somewhere.
-                            glm::mat4 mtx (1);
-                            mtx = glm::translate (mtx, { sM.m_Offset.x, sM.m_Offset.y, sM.m_Offset.z });
-                            mtx = glm::rotate (mtx, glm::radians ((float)-sM.m_Rotation.z), { 0.0f, 0.0f, 1.0f });
-                            mtx = glm::rotate (mtx, glm::radians ((float)-sM.m_Rotation.y), { 0.0f, 1.0f, 0.0f });
-                            mtx = glm::rotate (mtx, glm::radians ((float)-sM.m_Rotation.x), { 1.0f, 0.0f, 0.0f });
-                            mtx = glm::scale (mtx, { sM.m_Scale.x, sM.m_Scale.y, sM.m_Scale.z });
-                            glMultMatrixf (glm::value_ptr( mtx ));
+                            glm::mat4 mtx( 1 );
+                            mtx = glm::translate( mtx, { sM.m_Offset.x, sM.m_Offset.y, sM.m_Offset.z } );
+                            mtx = glm::rotate( mtx, glm::radians( (float)-sM.m_Rotation.z ), { 0.0f, 0.0f, 1.0f } );
+                            mtx = glm::rotate( mtx, glm::radians( (float)-sM.m_Rotation.y ), { 0.0f, 1.0f, 0.0f } );
+                            mtx = glm::rotate( mtx, glm::radians( (float)-sM.m_Rotation.x ), { 1.0f, 0.0f, 0.0f } );
+                            mtx = glm::scale( mtx, { sM.m_Scale.x, sM.m_Scale.y, sM.m_Scale.z } );
+                            glMultMatrixf( glm::value_ptr( mtx ) );
 
                             if( aRenderTransparentOnly )
                                 modelPtr->Draw_transparent();
@@ -1170,7 +1170,7 @@ void C3D_RENDER_OGL_LEGACY::render_3D_module( const MODULE* module,
                                 modelPtr->Draw_bbox();
 
                                 glEnable( GL_LIGHTING );
-                                glDisable (GL_BLEND);
+                                glDisable( GL_BLEND );
                             }
 
                             glPopMatrix();

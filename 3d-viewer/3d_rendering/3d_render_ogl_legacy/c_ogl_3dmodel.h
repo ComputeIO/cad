@@ -53,12 +53,12 @@ public:
     /**
      * @brief Draw_opaque - render the model into the current context
      */
-    void Draw_opaque() const { Draw (false); }
+    void Draw_opaque() const { Draw( false ); }
 
     /**
      * @brief Draw_transparent - render the model into the current context
      */
-    void Draw_transparent() const { Draw (true); }
+    void Draw_transparent() const { Draw( true ); }
 
     /**
      * @brief Have_opaque - return true if have opaque meshs to render
@@ -89,12 +89,12 @@ public:
     /**
      * @brief BeginDrawMulti - set some basic render states before drawing multiple models
      */
-    static void BeginDrawMulti (void);
+    static void BeginDrawMulti();
 
     /**
      * @brief EndDrawMulti - cleanup render states after drawing multiple models
      */
-    static void EndDrawMulti (void);
+    static void EndDrawMulti();
 
 private:
     static const wxChar *m_logTrace;
@@ -108,13 +108,13 @@ private:
     std::vector<CBBOX> m_meshes_bbox;   ///< individual bbox for each mesh
 
     // unified vertex format for mesh rendering.
-    struct vertex
+    struct VERTEX
     {
-      glm::vec3 pos;
-      glm::u8vec4 nrm;        // only 3 components used
-      glm::u8vec4 color;      // regular color
-      glm::u8vec4 cad_color;  // "CAD" mode rendering color
-      glm::vec2 tex_uv;
+        glm::vec3   m_pos;
+        glm::u8vec4 m_nrm;        // only 3 components used
+        glm::u8vec4 m_color;      // regular color
+        glm::u8vec4 m_cad_color;  // "CAD" mode rendering color
+        glm::vec2   m_tex_uv;
     };
 
     // vertex buffer and index buffers that include all the individual meshes
@@ -125,16 +125,16 @@ private:
 
     // internal material definition
     // all meshes are grouped by material for rendering purposes.
-    struct material : SMATERIAL
+    struct MATERIAL : SMATERIAL
     {
-      unsigned int render_idx_buffer_offset = 0;
-      unsigned int render_idx_count = 0;
+        unsigned int m_render_idx_buffer_offset = 0;
+        unsigned int m_render_idx_count = 0;
 
-      material (const SMATERIAL& rhs) : SMATERIAL (rhs) { }
-      bool is_transparent (void) const { return m_Transparency > FLT_EPSILON; }
+        MATERIAL( const SMATERIAL &aOther ) : SMATERIAL( aOther ) { }
+        bool IsTransparent() const { return m_Transparency > FLT_EPSILON; }
     };
 
-    std::vector<material> m_materials;
+    std::vector<MATERIAL> m_materials;
 
     bool m_have_opaque_meshes = false;
     bool m_have_transparent_meshes = false;
@@ -148,11 +148,11 @@ private:
     GLuint m_bbox_index_buffer = 0;
     GLenum m_bbox_index_buffer_type = GL_INVALID_ENUM;
 
-    static void MakeBbox (const CBBOX& box, unsigned int idx_offset,
-                          vertex* vtx_out, GLuint* idx_out,
-                          const glm::vec4& color);
+    static void MakeBbox( const CBBOX &aBox, unsigned int aIdxOffset,
+                          VERTEX *aVtxOut, GLuint *aIdxOut,
+                          const glm::vec4 &aColor );
 
-    void Draw (bool transparent) const;
+    void Draw( bool aTransparent ) const;
 };
 
 #endif // _C_OGL_3DMODEL_H_
