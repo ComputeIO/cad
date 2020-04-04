@@ -35,6 +35,7 @@
 #include <view/view_controls.h>
 #include <pcb_painter.h>
 #include <connectivity/connectivity_data.h>
+#include <connectivity/connectivity_algo.h>
 
 class DIALOG_SELECT_NET_FROM_LIST: public DIALOG_SELECT_NET_FROM_LIST_BASE
 {
@@ -51,7 +52,8 @@ public:
      * @param aNetName is the name of net to be highlighted.  An empty string will unhighlight
      * any currently highlighted net.
      */
-    void HighlightNet( const wxString& aNetName );
+    void HighlightNet( const wxString& aNetName ) const;
+    void HighlightNet( NETINFO_ITEM* aNet ) const;
 
 private:
     void onSelChanged( wxDataViewEvent& event ) override;
@@ -69,7 +71,6 @@ private:
     wxString getListColumnHeaderLength() { return _( "Length" ); };
     void adjustListColumns();
 
-    wxArrayString   m_netsInitialNames;   // The list of escaped netnames (original names)
     wxString        m_selection;
     bool            m_wasSelected;
     BOARD*          m_brd;
@@ -125,22 +126,51 @@ void DIALOG_SELECT_NET_FROM_LIST::buildNetsList()
     wxString                   netFilter = m_textCtrlFilter->GetValue();
     EDA_PATTERN_MATCH_WILDCARD filter;
 
-    constexpr KICAD_T types[] = { PCB_TRACE_T, PCB_VIA_T, PCB_PAD_T, EOT };
-
     filter.SetPattern( netFilter.MakeUpper() );
 
     m_netsList->DeleteAllItems();
-    m_netsInitialNames.Clear();
 
     auto connectivity = m_brd->GetConnectivity();
 
     auto units = GetUserUnits();
 
+    // pre-filter the connectivity items and sort them by netcode.
+    // this avoids quadratic runtime when building the whole net list and
+    // calculating the total length for each net.
+    const auto type_bits = std::bitset<MAX_STRUCT_TYPE_ID>()
+        .set( PCB_TRACE_T )
+        .set( PCB_VIA_T )
+        .set( PCB_PAD_T );
+
+    std::vector<CN_ITEM*> prefiltered_cn_items;
+    prefiltered_cn_items.reserve( 1024 );
+
+    struct CMP_NETCODE
+    {
+        bool operator() ( const CN_ITEM* a, const CN_ITEM* b ) const { return a->Net() < b->Net(); }
+        bool operator() ( const CN_ITEM* a, int b ) const { return a->Net() < b; }
+        bool operator() ( int a, const CN_ITEM* b ) const { return a < b->Net(); }
+    };
+
+    for( auto& cn_item : connectivity->GetConnectivityAlgo()->ItemList() )
+    {
+        if( cn_item->Valid() && type_bits[cn_item->Parent()->Type()] )
+            prefiltered_cn_items.push_back( cn_item );
+    }
+
+    std::sort( prefiltered_cn_items.begin(), prefiltered_cn_items.end(), CMP_NETCODE() );
+
+    wxVector<wxVariant> dataLine;
+    dataLine.resize( 7 );
+
+
     // Populate the nets list with nets names matching the filters:
     // Note: the filtering is case insensitive.
-    for( unsigned netcode = 0; netcode < m_brd->GetNetCount(); netcode++ )
+
+    for( auto&& ni : m_brd->GetNetInfo().NetsByNetcode() )
     {
-        NETINFO_ITEM* net = m_brd->GetNetInfo().GetNetItem( netcode );
+        unsigned int netcode = ni.first;
+        NETINFO_ITEM *net = ni.second;
 
         if( !netFilter.IsEmpty() )
         {
@@ -155,22 +185,24 @@ void DIALOG_SELECT_NET_FROM_LIST::buildNetsList()
         if( !m_cbShowZeroPad->IsChecked() && nodes == 0 )
             continue;
 
-        wxVector<wxVariant> dataLine;
-
-        dataLine.push_back( wxVariant( wxString::Format( "%.3d", netcode ) ) );
-        dataLine.push_back( wxVariant( UnescapeString( net->GetNetname() ) ) );
-        m_netsInitialNames.Add( net->GetNetname() );
+        dataLine[0] = wxVariant( wxString::Format( "%.3d", netcode ) );
+        dataLine[1] = wxVariant( UnescapeString( net->GetNetname() ) );
 
         if( netcode )
         {
-            dataLine.push_back( wxVariant( wxString::Format( "%u", nodes ) ) );
+            dataLine[2] = wxVariant( wxString::Format( "%u", nodes ) );
 
             int lenPadToDie = 0;
             int len = 0;
             int viaCount = 0;
 
-            for( auto item : connectivity->GetNetItems( netcode, types ) )
+            const auto cn_items = std::equal_range( prefiltered_cn_items.begin(),
+                                                    prefiltered_cn_items.end(),
+                                                    netcode, CMP_NETCODE() );
+
+            for( auto i = cn_items.first; i != cn_items.second; ++i )
             {
+                auto item = ( *i )->Parent ();
 
                 if( item->Type() == PCB_PAD_T )
                 {
@@ -188,28 +220,29 @@ void DIALOG_SELECT_NET_FROM_LIST::buildNetsList()
                 }
             }
 
-            dataLine.push_back( wxVariant( wxString::Format( "%u", viaCount ) ) );
-            dataLine.push_back( wxVariant( MessageTextFromValue( units, len ) ) );
-            dataLine.push_back( wxVariant( MessageTextFromValue( units, lenPadToDie ) ) );
-            dataLine.push_back( wxVariant( MessageTextFromValue( units, len + lenPadToDie ) ) );
+            dataLine[3] = wxVariant( wxString::Format( "%u", viaCount ) );
+            dataLine[4] = wxVariant( MessageTextFromValue( units, len ) );
+            dataLine[5] = wxVariant( MessageTextFromValue( units, lenPadToDie ) );
+            dataLine[6] = wxVariant( MessageTextFromValue( units, len + lenPadToDie ) );
+
         }
         else    // For the net 0 (unconnected pads), the pad count is not known
         {
-            dataLine.push_back( wxVariant( "---" ) );
-            dataLine.push_back( wxVariant( "---" ) );   // vias
-            dataLine.push_back( wxVariant( "---" ) );   // board
-            dataLine.push_back( wxVariant( "---" ) );   // die
-            dataLine.push_back( wxVariant( "---" ) );   // length
+            dataLine[2] = wxVariant( "---" );
+            dataLine[3] = wxVariant( "---" );   // vias
+            dataLine[4] = wxVariant( "---" );   // board
+            dataLine[5] = wxVariant( "---" );   // die
+            dataLine[6] = wxVariant( "---" );   // length
         }
 
-        m_netsList->AppendItem( dataLine );
+        m_netsList->AppendItem( dataLine, reinterpret_cast<wxUIntPtr>( net ) );
     }
 
     m_wasSelected = false;
 }
 
 
-void DIALOG_SELECT_NET_FROM_LIST::HighlightNet( const wxString& aNetName )
+void DIALOG_SELECT_NET_FROM_LIST::HighlightNet( const wxString& aNetName ) const
 {
     int           netCode = -1;
 
@@ -222,6 +255,18 @@ void DIALOG_SELECT_NET_FROM_LIST::HighlightNet( const wxString& aNetName )
     }
 
     KIGFX::RENDER_SETTINGS* render = m_frame->GetCanvas()->GetView()->GetPainter()->GetSettings();
+    render->SetHighlight( netCode >= 0, netCode );
+
+    m_frame->GetCanvas()->GetView()->UpdateAllLayersColor();
+    m_frame->GetCanvas()->Refresh();
+}
+
+
+void DIALOG_SELECT_NET_FROM_LIST::HighlightNet( NETINFO_ITEM* aNet ) const
+{
+    int netCode = aNet != nullptr ? aNet->GetNet() : -1;
+
+    KIGFX::RENDER_SETTINGS *render = m_frame->GetCanvas()->GetView()->GetPainter()->GetSettings();
     render->SetHighlight( netCode >= 0, netCode );
 
     m_frame->GetCanvas()->GetView()->UpdateAllLayersColor();
@@ -246,18 +291,20 @@ void DIALOG_SELECT_NET_FROM_LIST::onSelChanged( wxDataViewEvent&  )
 
     if( selected_row >= 0 )
     {
-        // We no not use the displayed net name returnded by
-        // m_netsList->GetTextValue( selected_row, 1 ); because we need the initial escaped net name
-        m_selection = m_netsInitialNames[ selected_row ];
-        m_wasSelected = true;
+       auto net = reinterpret_cast<NETINFO_ITEM*>(
+           m_netsList->GetItemData( m_netsList->RowToItem( selected_row ) ) );
 
-        HighlightNet( m_selection );
+       if( net != nullptr )
+       {
+         m_selection = net->GetNetname();
+         m_wasSelected = true;
+         HighlightNet( net );
+         return;
+       }
     }
-    else
-    {
-        HighlightNet( "" );
-        m_wasSelected = false;
-    }
+
+    HighlightNet( nullptr );
+    m_wasSelected = false;
 }
 
 
