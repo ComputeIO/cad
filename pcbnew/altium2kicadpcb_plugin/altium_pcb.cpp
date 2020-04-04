@@ -54,13 +54,19 @@ void ParseAltiumPcb( BOARD* aBoard, const wxString& aFileName,
     }
 
     fseek( fp, 0, SEEK_END );
-    size_t                           len = ftell( fp );
+    long len = ftell( fp );
+    if( len < 0 )
+    {
+        fclose( fp );
+        THROW_IO_ERROR( "Reading error, cannot determine length of file" );
+    }
+
     std::unique_ptr<unsigned char[]> buffer( new unsigned char[len] );
     fseek( fp, 0, SEEK_SET );
 
     size_t bytesRead = fread( buffer.get(), sizeof( unsigned char ), len, fp );
     fclose( fp );
-    if( len != bytesRead )
+    if( static_cast<size_t>( len ) != bytesRead )
     {
         THROW_IO_ERROR( "Reading error" );
     }
