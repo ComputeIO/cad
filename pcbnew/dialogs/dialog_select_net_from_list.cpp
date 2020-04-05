@@ -202,7 +202,7 @@ void DIALOG_SELECT_NET_FROM_LIST::buildNetsList()
 
             for( auto i = cn_items.first; i != cn_items.second; ++i )
             {
-                auto item = ( *i )->Parent ();
+                auto item = ( *i )->Parent();
 
                 if( item->Type() == PCB_PAD_T )
                 {

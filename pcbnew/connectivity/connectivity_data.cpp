@@ -387,6 +387,7 @@ const std::vector<BOARD_CONNECTED_ITEM*> CONNECTIVITY_DATA::GetNetItems( int aNe
     items.reserve( 32 );
 
     std::bitset<MAX_STRUCT_TYPE_ID> type_bits;
+
     for( unsigned int i = 0; aTypes[i] != EOT; ++i )
     {
         wxASSERT( aTypes[i] < MAX_STRUCT_TYPE_ID );
@@ -400,8 +401,8 @@ const std::vector<BOARD_CONNECTED_ITEM*> CONNECTIVITY_DATA::GetNetItems( int aNe
             items.push_back ( aItem.Parent() );
     } );
 
-    std::sort( items.begin (), items.end () );
-    items.erase( std::unique( items.begin (), items.end () ), items.end () );
+    std::sort( items.begin(), items.end() );
+    items.erase( std::unique( items.begin(), items.end() ), items.end() );
     return items;
 }
 
