@@ -1,0 +1,34 @@
+# Dockerfile to build kicad
+#
+# To use this then from the root repo top folder run these commands:
+#
+# $ cp Dockerfiles/Dockerfile_ubuntu_18.04 Dockerfile
+# $ docker build --build-arg userid=$(id -u) --build-arg groupid=$(id -g) -t kicad-builder .
+# $ mkdir -p build/release
+# $ cd build/release
+# $ docker run --rm -it -v "`pwd`../../../":`pwd` --workdir=`pwd` kicad-builder /bin/bash -c "cmake -DCMAKE_BUILD_TYPE=Release && make -j$(nproc)"
+
+FROM ubuntu:18.04
+
+# NOTE: ARGs are overridden from build arguments, values here are defaults
+ARG userid=1000
+ARG groupid=1000
+
+# Install needed packages
+RUN apt-get update \
+    && apt-get install -y \
+    build-essential libboost-dev libboost-system-dev \
+    libboost-test1.65-dev libboost-filesystem1.65-dev \
+    cmake freeglut3-dev libglew-dev libglm-dev \
+    liboce-foundation-dev liboce-ocaf-dev python-wxgtk3.0-dev \
+    libwxgtk3.0-gtk3-dev git autoconf automake bison flex \
+    gcc git libtool make libcurl4-openssl-dev libcairo2-dev \
+    swig python-dev libssl-dev
+
+# Remove apt lists to save space
+RUN rm -rf /var/lib/apt/lists/*
+
+# Build and install libngspice
+ADD scripting/build_tools/get_libngspice_so.sh /usr/bin/get_libngspice_so.sh
+RUN /usr/bin/get_libngspice_so.sh
+RUN /usr/bin/get_libngspice_so.sh install
