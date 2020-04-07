@@ -25,7 +25,8 @@
 
 #include <bitmaps.h>
 #include <dialog_shim.h>
-#include <dialogs/panel_common_settings.h>
+#include <dialogs/panel_common_ui_settings.h>
+#include <dialogs/panel_common_file_settings.h>
 #include <filehistory.h>
 #include <id.h>
 #include <kiface_i.h>
@@ -616,7 +617,9 @@ void EDA_BASE_FRAME::OnPreferences( wxCommandEvent& event )
     PAGED_DIALOG dlg( this, _( "Preferences" ) );
     wxTreebook* book = dlg.GetTreebook();
 
-    book->AddPage( new PANEL_COMMON_SETTINGS( &dlg, book ), _( "Common" ) );
+    book->AddPage( new wxPanel( book ), _( "Common" ) );
+    book->AddSubPage( new PANEL_COMMON_FILE_SETTINGS( &dlg, book ), _( "File Handling" ) );
+    book->AddSubPage( new PANEL_COMMON_UI_SETTINGS( &dlg, book ), _( "User Interface" ) );
 
     PANEL_HOTKEYS_EDITOR* hotkeysPanel = new PANEL_HOTKEYS_EDITOR( this, book, false );
     book->AddPage( hotkeysPanel, _( "Hotkeys" ) );

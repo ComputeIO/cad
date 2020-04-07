@@ -67,6 +67,12 @@ public:
         wxString working_dir;
     };
 
+    struct FILE_HANDLING
+    {
+        int  compressionLevel;
+        bool preferCompressedPcbFiles;
+    };
+
     COMMON_SETTINGS();
 
     virtual ~COMMON_SETTINGS() {}
@@ -83,6 +89,8 @@ public:
     GRAPHICS m_Graphics;
 
     SYSTEM m_System;
+
+    FILE_HANDLING m_FileHandling;
 
     // TODO: These may not want to be in common
     wxString m_3DLibsUrl;

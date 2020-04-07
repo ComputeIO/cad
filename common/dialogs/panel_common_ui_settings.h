@@ -1,7 +1,7 @@
 /*
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
- * Copyright (C) 2018 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 2018-2020 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -21,20 +21,20 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
 
-#ifndef KICAD_DIALOG_SUITE_OPTIONS_H
-#define KICAD_DIALOG_SUITE_OPTIONS_H
+#ifndef PANEL_COMMON_UI_SETTINGS_H_
+#define PANEL_COMMON_UI_SETTINGS_H_
 
-#include "panel_common_settings_base.h"
+#include <panel_common_ui_settings_base.h>
 
 
 class DIALOG_SHIM;
 
 
-class PANEL_COMMON_SETTINGS : public PANEL_COMMON_SETTINGS_BASE
+class PANEL_COMMON_UI_SETTINGS : public PANEL_COMMON_UI_SETTINGS_BASE
 {
 public:
-    PANEL_COMMON_SETTINGS( DIALOG_SHIM* aDialog, wxWindow* aParent );
-    ~PANEL_COMMON_SETTINGS() override;
+    PANEL_COMMON_UI_SETTINGS( DIALOG_SHIM* aDialog, wxWindow* aParent );
+    ~PANEL_COMMON_UI_SETTINGS() override;
 
 protected:
     bool TransferDataFromWindow() override;
@@ -42,9 +42,6 @@ protected:
 
     void OnScaleSlider( wxScrollEvent& aEvent ) override;
     void OnIconScaleAuto( wxCommandEvent& aEvent ) override;
-    void OnTextEditorClick( wxCommandEvent& event ) override;
-    void OnPDFViewerClick( wxCommandEvent& event ) override;
-    void onUpdateUIPdfPath( wxUpdateUIEvent& event ) override;
 
     /**
      * Event fired when the canvas scale field is modified

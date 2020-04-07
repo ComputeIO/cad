@@ -1,7 +1,7 @@
 /*
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
- * Copyright (C) 2018 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 2018-2020 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -21,7 +21,7 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
 
-#include "panel_common_settings.h"
+#include <panel_common_ui_settings.h>
 
 #include <bitmap_types.h>
 #include <bitmaps.h>
@@ -37,8 +37,8 @@ static constexpr int dpi_scaling_precision = 1;
 static constexpr double dpi_scaling_increment = 0.5;
 
 
-PANEL_COMMON_SETTINGS::PANEL_COMMON_SETTINGS( DIALOG_SHIM* aDialog, wxWindow* aParent )
-        : PANEL_COMMON_SETTINGS_BASE( aParent ),
+PANEL_COMMON_UI_SETTINGS::PANEL_COMMON_UI_SETTINGS( DIALOG_SHIM* aDialog, wxWindow* aParent )
+        : PANEL_COMMON_UI_SETTINGS_BASE( aParent ),
           m_dialog( aDialog ),
           m_last_scale( -1 )
 {
@@ -66,30 +66,19 @@ PANEL_COMMON_SETTINGS::PANEL_COMMON_SETTINGS( DIALOG_SHIM* aDialog, wxWindow* aP
 
     m_iconScaleSlider->SetStep( 25 );
 
-    m_textEditorBtn->SetBitmap( KiBitmap( folder_xpm ) );
-    m_pdfViewerBtn->SetBitmap( KiBitmap( folder_xpm ) );
-
-    m_canvasScaleCtrl->Connect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( PANEL_COMMON_SETTINGS::OnCanvasScaleChange ), NULL, this );
+    m_canvasScaleCtrl->Connect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( PANEL_COMMON_UI_SETTINGS::OnCanvasScaleChange ), NULL, this );
 }
 
 
-PANEL_COMMON_SETTINGS::~PANEL_COMMON_SETTINGS()
+PANEL_COMMON_UI_SETTINGS::~PANEL_COMMON_UI_SETTINGS()
 {
-    m_canvasScaleCtrl->Disconnect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( PANEL_COMMON_SETTINGS::OnCanvasScaleChange ), NULL, this );
+    m_canvasScaleCtrl->Disconnect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( PANEL_COMMON_UI_SETTINGS::OnCanvasScaleChange ), NULL, this );
 }
 
 
-bool PANEL_COMMON_SETTINGS::TransferDataToWindow()
+bool PANEL_COMMON_UI_SETTINGS::TransferDataToWindow()
 {
     COMMON_SETTINGS* commonSettings = Pgm().GetCommonSettings();
-
-    int timevalue = commonSettings->m_System.autosave_interval;
-    wxString msg;
-
-    msg << timevalue / 60;
-    m_SaveTime->SetValue( msg );
-
-    m_fileHistorySize->SetValue( commonSettings->m_System.file_history_size );
 
     m_antialiasing->SetSelection( commonSettings->m_Graphics.opengl_aa_mode );
     m_antialiasingFallback->SetSelection( commonSettings->m_Graphics.cairo_aa_mode );
@@ -122,22 +111,13 @@ bool PANEL_COMMON_SETTINGS::TransferDataToWindow()
     m_warpMouseOnMove->SetValue( commonSettings->m_Input.warp_mouse_on_move );
     m_NonImmediateActions->SetValue( !commonSettings->m_Input.immediate_actions );
 
-    // TODO(JE) Move these into COMMON_SETTINGS probably
-    m_textEditorPath->SetValue( Pgm().GetEditorName( false ) );
-    m_defaultPDFViewer->SetValue( Pgm().UseSystemPdfBrowser() );
-    m_otherPDFViewer->SetValue( !Pgm().UseSystemPdfBrowser() );
-    m_PDFViewerPath->SetValue( Pgm().GetPdfBrowserName() );
-
     return true;
 }
 
 
-bool PANEL_COMMON_SETTINGS::TransferDataFromWindow()
+bool PANEL_COMMON_UI_SETTINGS::TransferDataFromWindow()
 {
     COMMON_SETTINGS* commonSettings = Pgm().GetCommonSettings();
-
-    commonSettings->m_System.autosave_interval = m_SaveTime->GetValue() * 60;
-    commonSettings->m_System.file_history_size = m_fileHistorySize->GetValue();
 
     commonSettings->m_Graphics.opengl_aa_mode = m_antialiasing->GetSelection();
     commonSettings->m_Graphics.cairo_aa_mode = m_antialiasingFallback->GetSelection();
@@ -159,25 +139,19 @@ bool PANEL_COMMON_SETTINGS::TransferDataFromWindow()
     commonSettings->m_Input.prefer_select_to_drag = m_PreferSelectToDrag->GetValue();
     commonSettings->m_Input.warp_mouse_on_move = m_warpMouseOnMove->GetValue();
 
-    Pgm().SetEditorName( m_textEditorPath->GetValue() );
-
-    Pgm().SetPdfBrowserName( m_PDFViewerPath->GetValue() );
-    Pgm().ForceSystemPdfBrowser( m_defaultPDFViewer->GetValue() );
-    Pgm().WritePdfBrowserInfos();
-
     Pgm().GetSettingsManager().Save( commonSettings );
 
     return true;
 }
 
 
-void PANEL_COMMON_SETTINGS::OnScaleSlider( wxScrollEvent& aEvent )
+void PANEL_COMMON_UI_SETTINGS::OnScaleSlider( wxScrollEvent& aEvent )
 {
     m_iconScaleAuto->SetValue( false );
 }
 
 
-void PANEL_COMMON_SETTINGS::OnIconScaleAuto( wxCommandEvent& aEvent )
+void PANEL_COMMON_UI_SETTINGS::OnIconScaleAuto( wxCommandEvent& aEvent )
 {
     if( m_iconScaleAuto->GetValue() )
     {
@@ -192,13 +166,13 @@ void PANEL_COMMON_SETTINGS::OnIconScaleAuto( wxCommandEvent& aEvent )
 }
 
 
-void PANEL_COMMON_SETTINGS::OnCanvasScaleChange( wxCommandEvent& aEvent )
+void PANEL_COMMON_UI_SETTINGS::OnCanvasScaleChange( wxCommandEvent& aEvent )
 {
     m_canvasScaleAuto->SetValue( false );
 }
 
 
-void PANEL_COMMON_SETTINGS::OnCanvasScaleAuto( wxCommandEvent& aEvent )
+void PANEL_COMMON_UI_SETTINGS::OnCanvasScaleAuto( wxCommandEvent& aEvent )
 {
     const bool automatic = m_canvasScaleAuto->GetValue();
 
@@ -211,49 +185,3 @@ void PANEL_COMMON_SETTINGS::OnCanvasScaleAuto( wxCommandEvent& aEvent )
         m_canvasScaleCtrl->SetValue( dpi.GetScaleFactor() );
     }
 }
-
-
-void PANEL_COMMON_SETTINGS::OnTextEditorClick( wxCommandEvent& event )
-{
-    // Ask the user to select a new editor, but suggest the current one as the default.
-    wxString editorname = Pgm().AskUserForPreferredEditor( m_textEditorPath->GetValue() );
-
-    // If we have a new editor name request it to be copied to m_editor_name and saved
-    // to the preferences file. If the user cancelled the dialog then the previous
-    // value will be retained.
-    if( !editorname.IsEmpty() )
-        m_textEditorPath->SetValue( editorname );
-}
-
-
-void PANEL_COMMON_SETTINGS::OnPDFViewerClick( wxCommandEvent& event )
-{
-    wxString mask( wxT( "*" ) );
-
-#ifdef __WINDOWS__
-    mask += wxT( ".exe" );
-#endif
-
-    wxString wildcard = _( "Executable files (" ) + mask + wxT( ")|" ) + mask;
-
-    Pgm().ReadPdfBrowserInfos();
-    wxFileName fn = Pgm().GetPdfBrowserName();
-
-    wxFileDialog dlg( this, _( "Select Preferred PDF Browser" ), fn.GetPath(), fn.GetFullPath(),
-                      wildcard, wxFD_OPEN | wxFD_FILE_MUST_EXIST );
-
-    if( dlg.ShowModal() == wxID_CANCEL )
-        return;
-
-    m_otherPDFViewer->SetValue( true );
-    m_PDFViewerPath->SetValue( dlg.GetPath() );
-}
-
-
-void PANEL_COMMON_SETTINGS::onUpdateUIPdfPath( wxUpdateUIEvent& event )
-{
-    bool enabled = m_otherPDFViewer->GetValue();
-    m_PDFViewerPath->Enable( enabled );
-    m_pdfViewerBtn->Enable( enabled );
-}
-

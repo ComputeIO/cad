@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2004-2015 Jean-Pierre Charras, jp.charras at wanadoo.fr
  * Copyright (C) 2011 Wayne Stambaugh <stambaughw@gmail.com>
- * Copyright (C) 2016-2018 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 2016-2020 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -53,6 +53,7 @@
 #include <pcb_layer_widget.h>
 #include <wx/wupdlock.h>
 
+#include <settings/common_settings.h>
 
 //#define     USE_INSTRUMENTATION     1
 #define     USE_INSTRUMENTATION     0
@@ -85,6 +86,7 @@ bool AskLoadBoardFileName( wxWindow* aParent, int* aCtl, wxString* aFileName, bo
     } loaders[] =
     {
         { PcbFileWildcard(),                    IO_MGR::KICAD_SEXP },            // Current Kicad board files
+        { CompressedPcbFileWildcard(),          IO_MGR::KICAD_SEXP },            // Current Kicad board files (compressed version)
         { LegacyPcbFileWildcard(),              IO_MGR::LEGACY },                // Old Kicad board files
         { EaglePcbFileWildcard(),               IO_MGR::EAGLE },                 // Import Eagle board files
         { PCadPcbFileWildcard(),                IO_MGR::PCAD },                  // Import PCAD board files
@@ -99,7 +101,7 @@ bool AskLoadBoardFileName( wxWindow* aParent, int* aCtl, wxString* aFileName, bo
 
     if( aKicadFilesOnly )
     {
-        for( unsigned ii = 0; ii < 2; ++ii )
+        for( unsigned ii = 0; ii < 3; ++ii )
         {
             if( !fileFilters.IsEmpty() )
                 fileFilters += wxChar( '|' );
@@ -163,10 +165,15 @@ bool AskLoadBoardFileName( wxWindow* aParent, int* aCtl, wxString* aFileName, bo
  */
 bool AskSaveBoardFileName( wxWindow* aParent, wxString* aFileName )
 {
-    wxString    wildcard =  PcbFileWildcard();
-    wxFileName  fn = *aFileName;
+    bool       preferCompressed = Pgm().GetCommonSettings()->m_FileHandling.preferCompressedPcbFiles;
+    wxString   wildcard         = PcbFileWildcard() + "|" + CompressedPcbFileWildcard();
+    wxFileName fn               = *aFileName;
 
-    fn.SetExt( KiCadPcbFileExtension );
+    // If the user prefers to compress files, default to the compressed file extension
+    if( preferCompressed )
+        fn.SetExt( KiCadCompressedPcbFileExtension );
+    else
+        fn.SetExt( KiCadPcbFileExtension );
 
     wxFileDialog dlg( aParent,
             _( "Save Board File As" ),
@@ -176,13 +183,20 @@ bool AskSaveBoardFileName( wxWindow* aParent, wxString* aFileName )
             wxFD_SAVE | wxFD_OVERWRITE_PROMPT
             );
 
+    // If the user prefers to compress files, default to the compressed file filter
+    if( preferCompressed )
+        dlg.SetFilterIndex( 1 );
+
     if( dlg.ShowModal() != wxID_OK )
         return false;
 
     fn = dlg.GetPath();
 
-    // always enforce filename extension, user may not have entered it.
-    fn.SetExt( KiCadPcbFileExtension );
+    // Enforce the proper filename depending on what the user requested
+    if( dlg.GetFilterIndex() )
+        fn.SetExt( KiCadCompressedPcbFileExtension );
+    else
+        fn.SetExt( KiCadPcbFileExtension );
 
     *aFileName = fn.GetFullPath();
 
@@ -749,11 +763,18 @@ bool PCB_EDIT_FRAME::SavePcbFile( const wxString& aFileName, bool aCreateBackupF
 
     try
     {
-        PLUGIN::RELEASER    pi( IO_MGR::PluginFind( IO_MGR::KICAD_SEXP ) );
+        PROPERTIES props;
+        char       compLevel[2];
+
+        // The KiCad plugin uses this when the user asked for a compressed file
+        sprintf( compLevel, "%d", Pgm().GetCommonSettings()->m_FileHandling.compressionLevel );
+        props["compression_level"] = compLevel;
+
+        PLUGIN::RELEASER pi( IO_MGR::PluginFind( IO_MGR::KICAD_SEXP ) );
 
         wxASSERT( pcbFileName.IsAbsolute() );
 
-        pi->Save( pcbFileName.GetFullPath(), GetBoard(), NULL );
+        pi->Save( pcbFileName.GetFullPath(), GetBoard(), &props );
     }
     catch( const IO_ERROR& ioe )
     {
@@ -804,9 +825,6 @@ bool PCB_EDIT_FRAME::SavePcbCopy( const wxString& aFileName )
 {
     wxFileName  pcbFileName = aFileName;
 
-    // Ensure the file ext is the right ext:
-    pcbFileName.SetExt( KiCadPcbFileExtension );
-
     if( !IsWritable( pcbFileName ) )
     {
         wxString msg = wxString::Format( _(
@@ -826,11 +844,18 @@ bool PCB_EDIT_FRAME::SavePcbCopy( const wxString& aFileName )
 
     try
     {
-        PLUGIN::RELEASER    pi( IO_MGR::PluginFind( IO_MGR::KICAD_SEXP ) );
+        PROPERTIES props;
+        char       compLevel[2];
+
+        // The KiCad plugin uses this when the user asked for a compressed file
+        sprintf( compLevel, "%d", Pgm().GetCommonSettings()->m_FileHandling.compressionLevel );
+        props["compression_level"] = compLevel;
+
+        PLUGIN::RELEASER pi( IO_MGR::PluginFind( IO_MGR::KICAD_SEXP ) );
 
         wxASSERT( pcbFileName.IsAbsolute() );
 
-        pi->Save( pcbFileName.GetFullPath(), GetBoard(), NULL );
+        pi->Save( pcbFileName.GetFullPath(), GetBoard(), &props );
     }
     catch( const IO_ERROR& ioe )
     {

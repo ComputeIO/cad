@@ -99,6 +99,12 @@ COMMON_SETTINGS::COMMON_SETTINGS() :
 
     m_params.emplace_back( new PARAM<wxString>( "system.working_dir",
             &m_System.working_dir, "" ) );
+
+    m_params.emplace_back( new PARAM<bool>( "file_handling.prefer_compressed_pcb",
+            &m_FileHandling.preferCompressedPcbFiles, false ) );
+
+    m_params.emplace_back( new PARAM<int>( "file_handling.compression_level",
+            &m_FileHandling.compressionLevel, 6 ) );
 }
 
 
