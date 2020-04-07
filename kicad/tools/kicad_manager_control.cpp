@@ -32,6 +32,7 @@
 #include <tools/kicad_manager_control.h>
 #include <dialogs/dialog_template_selector.h>
 #include <gestfich.h>
+#include <settings/common_settings.h>
 
 ///> Helper widget to select whether a new directory should be created for a project
 class DIR_CHECKBOX : public wxPanel
@@ -622,13 +623,32 @@ int KICAD_MANAGER_CONTROL::ShowPlayer( const TOOL_EVENT& aEvent )
         }
         else if( playerType == FRAME_PCB_EDITOR )
         {
-            wxFileName  kicad_board( m_frame->PcbFileName() );
-            wxFileName  legacy_board( m_frame->PcbLegacyFileName() );
+            std::vector<wxFileName> boardFileNames;
 
-            if( !legacy_board.FileExists() || kicad_board.FileExists() )
-                filepath = kicad_board.GetFullPath();
+            if( Pgm().GetCommonSettings()->m_FileHandling.preferCompressedPcbFiles )
+            {
+                boardFileNames.push_back( m_frame->CompressedPcbFileName() );
+                boardFileNames.push_back( m_frame->PcbFileName() );
+            }
             else
-                filepath = legacy_board.GetFullPath();
+            {
+                boardFileNames.push_back( m_frame->PcbFileName() );
+                boardFileNames.push_back( m_frame->CompressedPcbFileName() );
+            }
+
+            boardFileNames.push_back( m_frame->PcbLegacyFileName() );
+
+            for( auto& fn : boardFileNames )
+            {
+                if( fn.FileExists() )
+                {
+                    filepath = fn.GetFullPath();
+                    break;
+                }
+            }
+
+            if( filepath.IsEmpty() )
+                filepath = boardFileNames.front().GetFullPath();
         }
 
         if( !filepath.IsEmpty() )

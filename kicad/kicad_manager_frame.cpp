@@ -239,6 +239,15 @@ const wxString KICAD_MANAGER_FRAME::SchLegacyFileName()
 }
 
 
+const wxString KICAD_MANAGER_FRAME::CompressedPcbFileName()
+{
+   wxFileName fn( GetProjectFileName() );
+
+   fn.SetExt( KiCadCompressedPcbFileExtension );
+   return fn.GetFullPath();
+}
+
+
 const wxString KICAD_MANAGER_FRAME::PcbFileName()
 {
    wxFileName   fn( GetProjectFileName() );

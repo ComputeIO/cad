@@ -44,26 +44,27 @@ class KICAD_SETTINGS;
 enum TreeFileType {
     TREE_ROOT = 0,
     TREE_PROJECT,
-    TREE_SCHEMA,            // Schematic file (.sch)
-    TREE_LEGACY_PCB,        // board file (.brd) legacy format
-    TREE_SEXP_PCB,          // board file (.kicad_brd) new s expression format
-    TREE_GERBER,            // Gerber  file (.pho, .g*)
-    TREE_HTML,              // HTML file (.htm, *.html)
-    TREE_PDF,               // PDF file (.pdf)
-    TREE_TXT,               // ascii text file (.txt)
-    TREE_NET,               // netlist file (.net)
+    TREE_SCHEMA,              // Schematic file (.sch)
+    TREE_LEGACY_PCB,          // Board file (.brd) legacy format
+    TREE_SEXP_PCB,            // Board file (.kicad_pcb) new s expression format
+    TREE_COMPRESSED_SEXP_PCB, // Compressed KiCad board file (.kicad_pcbz)
+    TREE_GERBER,              // Gerber  file (.pho, .g*)
+    TREE_HTML,                // HTML file (.htm, *.html)
+    TREE_PDF,                 // PDF file (.pdf)
+    TREE_TXT,                 // ascii text file (.txt)
+    TREE_NET,                 // netlist file (.net)
     TREE_UNKNOWN,
     TREE_DIRECTORY,
-    TREE_CMP_LINK,          // cmp/footprint link file (.cmp)
-    TREE_REPORT,            // report file (.rpt)
-    TREE_FP_PLACE,          // fooprints position (place) file (.pos)
-    TREE_DRILL,             // Excellon drill file (.drl)
-    TREE_DRILL_NC,          // Similar Excellon drill file (.nc)
-    TREE_DRILL_XNC,         // Similar Excellon drill file (.xnc)
-    TREE_SVG,               // SVG file (.svg)
-    TREE_PAGE_LAYOUT_DESCR, // Page layout and title block descr file (.kicad_wks)
-    TREE_FOOTPRINT_FILE,    // footprint file (.kicad_mod)
-    TREE_SCHEMATIC_LIBFILE, // schematic library file (.lib)
+    TREE_CMP_LINK,            // cmp/footprint link file (.cmp)
+    TREE_REPORT,              // report file (.rpt)
+    TREE_FP_PLACE,            // fooprints position (place) file (.pos)
+    TREE_DRILL,               // Excellon drill file (.drl)
+    TREE_DRILL_NC,            // Similar Excellon drill file (.nc)
+    TREE_DRILL_XNC,           // Similar Excellon drill file (.xnc)
+    TREE_SVG,                 // SVG file (.svg)
+    TREE_PAGE_LAYOUT_DESCR,   // Page layout and title block descr file (.kicad_wks)
+    TREE_FOOTPRINT_FILE,      // footprint file (.kicad_mod)
+    TREE_SCHEMATIC_LIBFILE,   // schematic library file (.lib)
     TREE_MAX
 };
 
@@ -158,6 +159,7 @@ public:
     const wxString SchFileName();
     const wxString SchLegacyFileName();
     const wxString PcbFileName();
+    const wxString CompressedPcbFileName();
     const wxString PcbLegacyFileName();
 
     void ReCreateTreePrj();

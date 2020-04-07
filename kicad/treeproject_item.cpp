@@ -182,7 +182,10 @@ void TREEPROJECT_ITEM::Activate( TREE_PROJECT_FRAME* aTreePrjFrame )
 
     case TREE_LEGACY_PCB:
     case TREE_SEXP_PCB:
-        if( fullFileName == frame->PcbFileName() || fullFileName == frame->PcbLegacyFileName() )
+    case TREE_COMPRESSED_SEXP_PCB:
+        if( fullFileName == frame->PcbFileName() ||
+            fullFileName == frame->CompressedPcbFileName() ||
+            fullFileName == frame->PcbLegacyFileName() )
         {
             toolMgr->RunAction( KICAD_MANAGER_ACTIONS::editPCB, true );
         }
