@@ -2,7 +2,7 @@
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
  * Copyright (C) 2007-2011 SoftPLC Corporation, Dick Hollenbeck <dick@softplc.com>
- * Copyright (C) 2017 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 2017-2020 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -27,6 +27,9 @@
 #include <config.h> // HAVE_FGETC_NOLOCK
 
 #include <richio.h>
+
+#include <wx/wfstream.h>
+#include <wx/zstream.h>
 
 
 // Fall back to getc() when getc_unlocked() is not available on the target platform.
@@ -205,6 +208,70 @@ char* FILE_LINE_READER::ReadLine()
 
         // faster, POSIX compatible fgetc(), no locking.
         int cc = getc_unlocked( m_fp );
+
+        if( cc == EOF )
+            break;
+
+        m_line[ m_length++ ] = (char) cc;
+
+        if( cc == '\n' )
+            break;
+    }
+
+    m_line[ m_length ] = 0;
+
+    // m_lineNum is incremented even if there was no line read, because this
+    // leads to better error reporting when we hit an end of file.
+    ++m_lineNum;
+
+    return m_length ? m_line : NULL;
+}
+
+
+COMPRESSED_FILE_LINE_READER::COMPRESSED_FILE_LINE_READER( const wxString& aFileName,
+            unsigned aStartingLineNumber, unsigned aMaxLineLength )
+    : LINE_READER( aMaxLineLength )
+{
+    if( !wxZlibInputStream::CanHandleGZip() )
+        THROW_IO_ERROR( _( "GZip compression not supported" ) );
+
+    wxFileInputStream* fstream = new wxFileInputStream( aFileName );
+
+    if( !fstream || !fstream->IsOk() )
+        THROW_IO_ERROR( strerror( errno ) );
+
+    // The zlib stream owns the fstream object now
+    m_compressedStream = new wxZlibInputStream( fstream, wxZLIB_GZIP );
+
+    if( !m_compressedStream || !m_compressedStream->IsOk() )
+        THROW_IO_ERROR( strerror( errno ) );
+
+    m_source  = aFileName;
+    m_lineNum = aStartingLineNumber;
+}
+
+
+COMPRESSED_FILE_LINE_READER::~COMPRESSED_FILE_LINE_READER()
+{
+    if( m_compressedStream )
+         delete m_compressedStream;
+}
+
+
+char* COMPRESSED_FILE_LINE_READER::ReadLine()
+{
+    m_length = 0;
+
+    for(;;)
+    {
+        if( m_length >= m_maxLineLength )
+            THROW_IO_ERROR( _( "Maximum line length exceeded" ) );
+
+        if( m_length >= m_capacity )
+            expandCapacity( m_capacity * 2 );
+
+        // Get the next character from the stream
+        int cc = m_compressedStream->GetC();
 
         if( cc == EOF )
             break;
@@ -526,6 +593,46 @@ FILE_OUTPUTFORMATTER::~FILE_OUTPUTFORMATTER()
 void FILE_OUTPUTFORMATTER::write( const char* aOutBuf, int aCount )
 {
     if( fwrite( aOutBuf, (unsigned) aCount, 1, m_fp ) != 1 )
+        THROW_IO_ERROR( strerror( errno ) );
+}
+
+
+//-----<COMPRESSED_FILE_OUTPUTFORMATTER>----------------------------------------
+
+COMPRESSED_FILE_OUTPUTFORMATTER::COMPRESSED_FILE_OUTPUTFORMATTER( const wxString& aFileName,
+    const int aCompressionLevel, char aQuoteChar)
+    : OUTPUTFORMATTER( OUTPUTFMTBUFZ, aQuoteChar ),
+      m_filename( aFileName )
+{
+    if( !wxZlibOutputStream::CanHandleGZip() )
+        THROW_IO_ERROR( _( "GZip compression not supported" ) );
+
+    wxFileOutputStream* fstream = new wxFileOutputStream( aFileName );
+
+    if( !fstream || !fstream->IsOk() )
+        THROW_IO_ERROR( strerror( errno ) );
+
+    // The zlib stream owns the fstream object now
+    m_compressedStream = new wxZlibOutputStream( fstream, aCompressionLevel, wxZLIB_GZIP );
+
+    if( !m_compressedStream || !m_compressedStream->IsOk() )
+        THROW_IO_ERROR( strerror( errno ) );
+}
+
+
+COMPRESSED_FILE_OUTPUTFORMATTER::~COMPRESSED_FILE_OUTPUTFORMATTER()
+{
+    if( m_compressedStream )
+         delete m_compressedStream;
+}
+
+
+void COMPRESSED_FILE_OUTPUTFORMATTER::write( const char* aOutBuf, int aCount )
+{
+    // Write to the stream
+    m_compressedStream->Write( aOutBuf, (unsigned) aCount );
+
+    if( m_compressedStream->LastWrite() != aCount )
         THROW_IO_ERROR( strerror( errno ) );
 }
 

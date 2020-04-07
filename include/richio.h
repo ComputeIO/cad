@@ -2,7 +2,7 @@
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
  * Copyright (C) 2007-2010 SoftPLC Corporation, Dick Hollenbeck <dick@softplc.com>
- * Copyright (C) 2016 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 2016-2020 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -36,6 +36,7 @@
 // but the errorText needs to be wide char so wxString rules.
 #include <cstdio>
 #include <wx/wx.h>
+#include <wx/zstream.h>
 
 #include <ki_exception.h>
 
@@ -246,6 +247,48 @@ public:
     }
 };
 
+/**
+ * COMPRESSED_FILE_LINE_READER
+ * is a LINE_READER that reads from a gzipped text file.
+ */
+class COMPRESSED_FILE_LINE_READER : public LINE_READER
+{
+protected:
+    wxZlibInputStream* m_compressedStream;
+
+public:
+
+    /**
+     * Constructor COMPRESSED_FILE_LINE_READER
+     * takes @a aFileName and the size of the desired line buffer and opens
+     * the file and assumes the obligation to close it.
+     *
+     * @param aFileName is the name of the file to open and to use for error reporting purposes.
+     *
+     * @param aStartingLineNumber is the initial line number to report on error, and is
+     *  accessible here for the case where multiple DSNLEXERs are reading from the
+     *  same file in sequence, all from the same open file (with @a doOwn = false).
+     *  Internally it is incremented by one after each ReadLine(), so the first
+     *  reported line number will always be one greater than what is provided here.
+     *
+     * @param aMaxLineLength is the number of bytes to use in the line buffer.
+     *
+     * @throw IO_ERROR if @a aFileName cannot be opened.
+     */
+    COMPRESSED_FILE_LINE_READER( const wxString& aFileName,
+            unsigned aStartingLineNumber = 0,
+            unsigned aMaxLineLength = LINE_READER_LINE_DEFAULT_MAX );
+
+    /**
+     * Destructor
+     * may or may not close the open file, depending on @a doOwn in constructor.
+     */
+    ~COMPRESSED_FILE_LINE_READER();
+
+    char* ReadLine() override;
+};
+
+
 
 /**
  * STRING_LINE_READER
@@ -332,7 +375,6 @@ class OUTPUTFORMATTER
     int sprint( const char* fmt, ... );
     int vprint( const char* fmt,  va_list ap );
 
-
 protected:
     OUTPUTFORMATTER( int aReserve = OUTPUTFMTBUFZ, char aQuoteChar = '"' ) :
             m_buffer( aReserve, '\0' )
@@ -340,8 +382,6 @@ protected:
         quoteChar[0] = aQuoteChar;
         quoteChar[1] = '\0';
     }
-
-    virtual ~OUTPUTFORMATTER() {}
 
     /**
      * Function GetQuoteChar
@@ -380,6 +420,8 @@ protected:
 #endif
 
 public:
+    // The destructor is public so we can delete using an OUTPUTFORMATTER variable type
+    virtual ~OUTPUTFORMATTER() {}
 
     //-----<interface functions>------------------------------------------
 
@@ -457,6 +499,10 @@ public:
     {
     }
 
+    ~STRING_FORMATTER()
+    {
+    }
+
     /**
      * Function Clear
      * clears the buffer and empties the internal string.
@@ -519,6 +565,38 @@ protected:
 
 
 /**
+ * COMPRESSED_FILE_OUTPUTFORMATTER
+ * may be used for gzip compressed text file output.
+ */
+class COMPRESSED_FILE_OUTPUTFORMATTER : public OUTPUTFORMATTER
+{
+public:
+
+    /**
+     * Constructor
+     * @param aFileName is the full filename to open and save to as a compressed text file.
+     * @param aCompressionLevel is the compression level for the gzip compression (between 1-9)
+     * @param aQuoteChar is a char used for quoting problematic strings
+            (with whitespace or special characters in them).
+     * @throw IO_ERROR if the file cannot be opened.
+     */
+    COMPRESSED_FILE_OUTPUTFORMATTER( const wxString& aFileName,
+                                     const int aCompressionLevel = 6,
+                                     char aQuoteChar = '"' );
+
+    ~COMPRESSED_FILE_OUTPUTFORMATTER();
+
+protected:
+    //-----<OUTPUTFORMATTER>------------------------------------------------
+    void write( const char* aOutBuf, int aCount ) override;
+    //-----</OUTPUTFORMATTER>-----------------------------------------------
+
+    wxString            m_filename;
+    wxZlibOutputStream* m_compressedStream;
+};
+
+
+/**
  * STREAM_OUTPUTFORMATTER
  * implements OUTPUTFORMATTER to a wxWidgets wxOutputStream.  The stream is
  * neither opened nor closed by this class.
@@ -536,6 +614,10 @@ public:
     STREAM_OUTPUTFORMATTER( wxOutputStream& aStream, char aQuoteChar = '"' ) :
         OUTPUTFORMATTER( OUTPUTFMTBUFZ, aQuoteChar ),
         m_os( aStream )
+    {
+    }
+
+    ~STREAM_OUTPUTFORMATTER()
     {
     }
 

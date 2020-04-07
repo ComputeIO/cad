@@ -132,6 +132,7 @@ const std::string EquFileExtension( "equ" );
 
 const std::string LegacyPcbFileExtension( "brd" );
 const std::string KiCadPcbFileExtension( "kicad_pcb" );
+const std::string KiCadCompressedPcbFileExtension( "kicad_pcbz" );
 const std::string PageLayoutDescrFileExtension( "kicad_wks" );
 
 const std::string PdfFileExtension( "pdf" );
@@ -263,6 +264,12 @@ wxString AltiumCircuitMakerPcbFileWildcard()
 wxString PcbFileWildcard()
 {
     return _( "KiCad printed circuit board files" ) + AddFileExtListToFilter( { "kicad_pcb" } );
+}
+
+
+wxString CompressedPcbFileWildcard()
+{
+    return _( "KiCad compressed printed circuit board files" ) + AddFileExtListToFilter( { "kicad_pcbz" } );
 }
 
 

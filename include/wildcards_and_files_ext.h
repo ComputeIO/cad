@@ -126,6 +126,7 @@ extern const std::string EquFileExtension;
 extern const std::string LegacyPcbFileExtension;
 extern const std::string KiCadPcbFileExtension;
 #define PcbFileExtension    KiCadPcbFileExtension       // symlink choice
+extern const std::string KiCadCompressedPcbFileExtension;
 extern const std::string KiCadSymbolLibFileExtension;
 extern const std::string PageLayoutDescrFileExtension;
 
@@ -184,6 +185,7 @@ extern wxString HtmlFileWildcard();
 extern wxString CsvFileWildcard();
 extern wxString LegacyPcbFileWildcard();
 extern wxString PcbFileWildcard();
+extern wxString CompressedPcbFileWildcard();
 extern wxString EaglePcbFileWildcard();
 extern wxString EagleSchematicFileWildcard();
 extern wxString EagleFilesWildcard();

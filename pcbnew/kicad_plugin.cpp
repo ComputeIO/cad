@@ -40,6 +40,7 @@
 #include <class_pcb_target.h>
 #include <class_edge_mod.h>
 #include <pcb_plot_params.h>
+#include <properties.h>
 #include <zones.h>
 #include <kicad_plugin.h>
 #include <pcb_parser.h>
@@ -355,7 +356,8 @@ long long FP_CACHE::GetTimestamp( const wxString& aLibPath )
 
 void PCB_IO::Save( const wxString& aFileName, BOARD* aBoard, const PROPERTIES* aProperties )
 {
-    LOCALE_IO   toggle;     // toggles on, then off, the C locale.
+    LOCALE_IO        toggle;     // toggles on, then off, the C locale.
+    OUTPUTFORMATTER* formatter;  // Formatter to use for writing the PCB file
 
     init( aProperties );
 
@@ -364,16 +366,34 @@ void PCB_IO::Save( const wxString& aFileName, BOARD* aBoard, const PROPERTIES* a
     // Prepare net mapping that assures that net codes saved in a file are consecutive integers
     m_mapping->SetBoard( aBoard );
 
-    FILE_OUTPUTFORMATTER    formatter( aFileName );
+    wxFileName fn = aFileName;
 
-    m_out = &formatter;     // no ownership
+    // Choose either a gzip compressed file or the uncompressed file
+    if( fn.GetExt() == "kicad_pcbz" )
+    {
+        int  compressionLevel = 6;
+        UTF8 compressionString;
+
+        if( m_props && m_props->Value( "compression_level",  &compressionString ) )
+            compressionLevel = atoi( compressionString.c_str() );
+
+        formatter = new COMPRESSED_FILE_OUTPUTFORMATTER( aFileName, compressionLevel );
+    }
+    else
+        formatter = new FILE_OUTPUTFORMATTER( aFileName );
+
+    wxASSERT( formatter );
+
+    m_out = formatter;     // no ownership is passed
 
     m_out->Print( 0, "(kicad_pcb (version %d) (host pcbnew %s)\n", SEXPR_BOARD_FILE_VERSION,
-                  formatter.Quotew( GetBuildVersion() ).c_str() );
+                  formatter->Quotew( GetBuildVersion() ).c_str() );
 
     Format( aBoard, 1 );
 
     m_out->Print( 0, ")\n" );
+
+    delete formatter;
 }
 
 
@@ -2058,14 +2078,23 @@ PCB_IO::~PCB_IO()
 
 BOARD* PCB_IO::Load( const wxString& aFileName, BOARD* aAppendToMe, const PROPERTIES* aProperties )
 {
-    FILE_LINE_READER    reader( aFileName );
+    BOARD*       board;
+    LINE_READER* reader;  // Reader to use for ingesting the PCB file
+
+    wxFileName fn = aFileName;
+
+    // Choose to read with either gzip compression or a text file
+    if( fn.GetExt() == "kicad_pcbz" )
+        reader = new COMPRESSED_FILE_LINE_READER( aFileName );
+    else
+        reader = new FILE_LINE_READER( aFileName );
+
+    wxASSERT( reader );
 
     init( aProperties );
 
-    m_parser->SetLineReader( &reader );
+    m_parser->SetLineReader( reader );
     m_parser->SetBoard( aAppendToMe );
-
-    BOARD* board;
 
     try
     {
@@ -2095,6 +2124,8 @@ BOARD* PCB_IO::Load( const wxString& aFileName, BOARD* aAppendToMe, const PROPER
     // Give the filename to the board if it's new
     if( !aAppendToMe )
         board->SetFileName( aFileName );
+
+    delete reader;
 
     return board;
 }
