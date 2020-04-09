@@ -301,8 +301,8 @@ int EE_SELECTION_TOOL::Main( const TOOL_EVENT& aEvent )
         {
             m_frame->FocusOnItem( nullptr );
 
-            SelectPoint( evt->Position(), EE_COLLECTOR::AllItems, nullptr, false,
-                         m_additive, m_subtractive, m_exclusive_or );
+            SelectPoint( evt->Position(), EE_COLLECTOR::AllItems, nullptr, nullptr, false,
+                    m_additive, m_subtractive, m_exclusive_or );
         }
 
         // right click? if there is any object - show the context menu
@@ -314,7 +314,8 @@ int EE_SELECTION_TOOL::Main( const TOOL_EVENT& aEvent )
                     !m_selection.GetBoundingBox().Contains( wxPoint( evt->Position() ) ) )
             {
                 ClearSelection();
-                SelectPoint( evt->Position(), EE_COLLECTOR::AllItems, &selectionCancelled );
+                SelectPoint(
+                        evt->Position(), EE_COLLECTOR::AllItems, nullptr, &selectionCancelled );
                 m_selection.SetIsHover( true );
             }
 
@@ -417,9 +418,9 @@ EE_SELECTION& EE_SELECTION_TOOL::GetSelection()
 }
 
 
-EDA_ITEM* EE_SELECTION_TOOL::SelectPoint( const VECTOR2I& aWhere, const KICAD_T* aFilterList,
-                                          bool* aSelectionCancelledFlag, bool aCheckLocked,
-                                          bool aAdd, bool aSubtract, bool aExclusiveOr )
+bool EE_SELECTION_TOOL::SelectPoint( const VECTOR2I& aWhere, const KICAD_T* aFilterList,
+        EDA_ITEM** aItem, bool* aSelectionCancelledFlag, bool aCheckLocked, bool aAdd,
+        bool aSubtract, bool aExclusiveOr )
 {
     EE_COLLECTOR collector;
 
@@ -430,7 +431,7 @@ EDA_ITEM* EE_SELECTION_TOOL::SelectPoint( const VECTOR2I& aWhere, const KICAD_T*
         auto part = static_cast<LIB_EDIT_FRAME*>( m_frame )->GetCurPart();
 
         if( !part )
-            return nullptr;
+            return false;
 
         collector.Collect( part->GetDrawItems(), aFilterList, (wxPoint) aWhere, m_unit, m_convert );
     }
@@ -487,32 +488,47 @@ EDA_ITEM* EE_SELECTION_TOOL::SelectPoint( const VECTOR2I& aWhere, const KICAD_T*
             if( aSelectionCancelledFlag )
                 *aSelectionCancelledFlag = true;
 
-            return nullptr;
+            return false;
         }
     }
 
     if( !aAdd && !aSubtract && !aExclusiveOr )
         ClearSelection();
 
-    if( collector.GetCount() == 1 )
-    {
-        EDA_ITEM* item = collector[ 0 ];
+    bool anyAdded      = false;
+    bool anySubtracted = false;
 
-        if( aSubtract || ( aExclusiveOr && item->IsSelected() ) )
+    if( collector.GetCount() > 0 )
+    {
+        for( int i = 0; i < collector.GetCount(); ++i )
         {
-            unselect( item );
-            m_toolMgr->ProcessEvent( EVENTS::UnselectedEvent );
-            return nullptr;
-        }
-        else
-        {
-            select( item );
-            m_toolMgr->ProcessEvent( EVENTS::SelectedEvent );
-            return item;
+            if( aSubtract || ( aExclusiveOr && collector[i]->IsSelected() ) )
+            {
+                unselect( collector[i] );
+                anySubtracted = false;
+            }
+            else
+            {
+                select( collector[i] );
+                anySubtracted = true;
+            }
         }
     }
 
-    return nullptr;
+    if( anyAdded )
+    {
+        m_toolMgr->ProcessEvent( EVENTS::SelectedEvent );
+        if( aItem && collector.GetCount() == 1 )
+            *aItem = collector[0];
+        return true;
+    }
+    else if( anySubtracted )
+    {
+        m_toolMgr->ProcessEvent( EVENTS::UnselectedEvent );
+        return true;
+    }
+
+    return false;
 }
 
 
@@ -1037,6 +1053,7 @@ bool EE_SELECTION_TOOL::doSelectionMenu( EE_COLLECTOR* aCollector )
 {
     EDA_ITEM*   current = nullptr;
     ACTION_MENU menu( true );
+    bool        selectAll = false;
 
     int limit = std::min( MAX_SELECT_ITEM_IDS, aCollector->GetCount() );
 
@@ -1050,6 +1067,9 @@ bool EE_SELECTION_TOOL::doSelectionMenu( EE_COLLECTOR* aCollector )
         menu.Add( menuText, i + 1, item->GetMenuImage() );
     }
 
+    menu.AppendSeparator();
+    menu.Add( _( "&A Select All" ), limit + 1, net_highlight_schematic_xpm );
+
     if( aCollector->m_MenuTitle.Length() )
         menu.SetTitle( aCollector->m_MenuTitle );
 
@@ -1061,7 +1081,12 @@ bool EE_SELECTION_TOOL::doSelectionMenu( EE_COLLECTOR* aCollector )
     {
         if( evt->Action() == TA_CHOICE_MENU_UPDATE )
         {
-            if( current )
+            if( selectAll )
+            {
+                for( int i = 0; i < aCollector->GetCount(); ++i )
+                    unhighlight( ( *aCollector )[i], BRIGHTENED );
+            }
+            else if( current )
                 unhighlight( current, BRIGHTENED );
 
             int id = *evt->GetCommandId();
@@ -1073,22 +1098,47 @@ bool EE_SELECTION_TOOL::doSelectionMenu( EE_COLLECTOR* aCollector )
                 highlight( current, BRIGHTENED );
             }
             else
-            {
                 current = nullptr;
+
+            // User has pointed on the "Select All" option
+            if( id == limit + 1 )
+            {
+                for( int i = 0; i < aCollector->GetCount(); ++i )
+                    highlight( ( *aCollector )[i], BRIGHTENED );
+                selectAll = true;
             }
+            else
+                selectAll = false;
         }
         else if( evt->Action() == TA_CHOICE_MENU_CHOICE )
         {
-            if( current )
+            if( selectAll )
+            {
+                for( int i = 0; i < aCollector->GetCount(); ++i )
+                    unhighlight( ( *aCollector )[i], BRIGHTENED );
+            }
+            else if( current )
                 unhighlight( current, BRIGHTENED );
 
             OPT<int> id = evt->GetCommandId();
 
+            // User has selected the "Select All" option
+            if( id == limit + 1 )
+            {
+                selectAll = true;
+                current   = nullptr;
+            }
             // User has selected an item, so this one will be returned
-            if( id && ( *id > 0 ) )
+            else if( id && ( *id > 0 ) && ( *id <= limit ) )
+            {
+                selectAll = false;
                 current = ( *aCollector )[*id - 1];
+            }
             else
+            {
+                selectAll = false;
                 current = nullptr;
+            }
 
             break;
         }
@@ -1097,7 +1147,9 @@ bool EE_SELECTION_TOOL::doSelectionMenu( EE_COLLECTOR* aCollector )
         m_frame->GetCanvas()->Refresh();
     }
 
-    if( current )
+    if( selectAll )
+        return true;
+    else if( current )
     {
         unhighlight( current, BRIGHTENED );
 
