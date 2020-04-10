@@ -98,6 +98,7 @@ LANGUAGE_DESCR LanguagesList[] =
     { wxLANGUAGE_JAPANESE,   ID_LANGUAGE_JAPANESE,   lang_jp_xpm,   _( "Japanese" ),   false },
     { wxLANGUAGE_BULGARIAN,  ID_LANGUAGE_BULGARIAN,  lang_bg_xpm,   _( "Bulgarian" ),  false },
     { wxLANGUAGE_LITHUANIAN, ID_LANGUAGE_LITHUANIAN, lang_lt_xpm,   _( "Lithuanian" ), false },
+    { wxLANGUAGE_SERBIAN,    ID_LANGUAGE_SERBIAN,    lang_def_xpm,  _( "Serbian" ),    false },
     { 0, 0, lang_def_xpm,   "", false }         // Sentinel
 };
 #undef _
