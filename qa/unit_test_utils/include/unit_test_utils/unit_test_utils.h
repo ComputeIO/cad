@@ -26,7 +26,7 @@
 
 #include <boost/test/unit_test.hpp>
 
-#include <unit_test_utils/wx_assert.h>
+#include <unit_test_utils/wx_util.h>
 
 #include <functional>
 #include <set>

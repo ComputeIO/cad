@@ -27,6 +27,7 @@
  */
 
 #include <unit_test_utils/unit_test_utils.h>
+#include <unit_test_utils/wx_util.h>
 
 // Code under test
 #include <bitmap_base.h>
@@ -66,7 +67,7 @@ static const KIGFX::COLOR4D col_blue{ 0.0, 0.0, 1.0, 1.0 };
 static const KIGFX::COLOR4D col_black{ 0.0, 0.0, 0.0, 1.0 };
 
 
-class TEST_BITMAP_BASE_FIXTURE
+class TEST_BITMAP_BASE_FIXTURE : public KI_TEST::WX_FIXTURE_BASE<KI_TEST::TEST_APP_BASE>
 {
 public:
     TEST_BITMAP_BASE_FIXTURE()

@@ -30,10 +30,13 @@
  */
 
 #include <unit_test_utils/unit_test_utils.h>
+#include <unit_test_utils/wx_util.h>
 
 #include <tool/coroutine.h>
 
 #include <common.h>
+
+using namespace KI_TEST;
 
 
 /**
@@ -91,11 +94,11 @@ public:
      * The coroutine test take ints and returns them
      */
     using TEST_COROUTINE = COROUTINE<int, int>;
-
     using EVT_HANDLER = std::function<void( const COROUTINE_TEST_EVENT& )>;
+    using WX_CONFIG = KI_TEST::WX_FIXTURE_BASE<KI_TEST::TEST_APP_BASE>;
 
     COROUTINE_INCREMENTING_HARNESS( EVT_HANDLER aHandler, int aCount )
-            : m_handler( aHandler ), m_count( aCount )
+            : m_wxConfig( new TEST_APP_BASE() ), m_handler( aHandler ), m_count( aCount )
     {
     }
 
@@ -131,6 +134,7 @@ public:
         m_handler( { COROUTINE_TEST_EVENT::TYPE::END, ret_val } );
     }
 
+    WX_CONFIG                       m_wxConfig;
     EVT_HANDLER                     m_handler;
     std::unique_ptr<TEST_COROUTINE> m_cofunc;
     int                             m_count;

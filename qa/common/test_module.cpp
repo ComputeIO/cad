@@ -33,25 +33,14 @@
 bool init_unit_test()
 {
     boost::unit_test::framework::master_test_suite().p_name.value = "Common library module tests";
-    bool ok = wxInitialize();
 
-    if( ok )
-    {
-        // need these for library image functions
-        wxInitAllImageHandlers();
-    }
-
-    return ok;
+    return true;
 }
 
 
 int main( int argc, char* argv[] )
 {
     int ret = boost::unit_test::unit_test_main( &init_unit_test, argc, argv );
-
-    // This causes some glib warnings on GTK3 (http://trac.wxwidgets.org/ticket/18274)
-    // but without it, Valgrind notices a lot of leaks from WX
-    wxUninitialize();
 
     return ret;
 }

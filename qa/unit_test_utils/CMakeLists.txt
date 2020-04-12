@@ -29,7 +29,7 @@ find_package( Boost COMPONENTS unit_test_framework filesystem system REQUIRED )
 
 set( SRCS
     unit_test_utils.cpp
-    wx_assert.cpp
+    wx_util.cpp
 )
 
 add_library( unit_test_utils STATIC ${SRCS} )

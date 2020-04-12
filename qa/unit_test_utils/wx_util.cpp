@@ -21,7 +21,7 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
 
-#include <unit_test_utils/wx_assert.h>
+#include <unit_test_utils/wx_util.h>
 
 #include <sstream>
 
@@ -48,5 +48,32 @@ const char* WX_ASSERT_ERROR::what() const noexcept
 {
     return m_format_msg.c_str();
 }
+
+
+void TEST_APP_BASE::RefreshWindow( wxWindow* aWin )
+{
+    ProcessPendingEvents();
+    SafeYield( nullptr, true );
+
+    aWin->Layout();
+    aWin->Refresh();
+    aWin->Update();
+
+    ProcessPendingEvents();
+    SafeYield( nullptr, true );
+}
+
+
+void TEST_APP_BASE::DisposeOfWindow( wxWindow** aWin )
+{
+    for( auto ch : (*aWin)->GetChildren() )
+        ch->DeletePendingEvents();
+
+    (*aWin)->DeletePendingEvents();
+    (*aWin)->Destroy();
+
+    (*aWin) = nullptr;
+}
+
 
 } // namespace KI_TEST

@@ -22,7 +22,8 @@
  */
 
 #include <unit_test_utils/unit_test_utils.h>
-#include <unit_test_utils/wx_assert.h>
+#include <unit_test_utils/wx_util.h>
+using namespace KI_TEST;
 
 // Code under test
 #include <sch_pin.h>
@@ -30,7 +31,7 @@
 #include <eda_rect.h>
 
 
-class TEST_SCH_PIN_FIXTURE
+class TEST_SCH_PIN_FIXTURE : public WX_FIXTURE_BASE<TEST_APP_BASE>
 {
 public:
     TEST_SCH_PIN_FIXTURE()
