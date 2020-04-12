@@ -33,7 +33,7 @@
 #include <wx/app.h>
 #include <wx/init.h>
 
-#include <qa_utils/wx_utils/wx_assert.h>
+#include <qa_utils/wx_utils/wx_util.h>
 
 /*
  * Simple function to handle a WX assertion and throw a real exception.

@@ -21,9 +21,11 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
 
-#include <qa_utils/wx_utils/wx_assert.h>
+#include <qa_utils/wx_utils/wx_util.h>
 
 #include <sstream>
+
+#include "pgm_base.h"
 
 namespace KI_TEST
 {
@@ -48,5 +50,46 @@ const char* WX_ASSERT_ERROR::what() const noexcept
 {
     return m_format_msg.c_str();
 }
+
+
+bool TEST_KICAD_APP::OnInit()
+{
+    Pgm().InitPgm( true ); // Initialize in headless mode
+    return true;
+}
+
+
+int TEST_KICAD_APP::OnExit()
+{
+    Pgm().Destroy();
+    return 0;
+}
+
+
+void TEST_WXAPP_BASE::RefreshWindow( wxWindow* aWin )
+{
+    ProcessPendingEvents();
+    SafeYield( nullptr, true );
+
+    aWin->Layout();
+    aWin->Refresh();
+    aWin->Update();
+
+    ProcessPendingEvents();
+    SafeYield( nullptr, true );
+}
+
+
+void TEST_WXAPP_BASE::DisposeOfWindow( wxWindow** aWin )
+{
+    for( auto ch : (*aWin)->GetChildren() )
+        ch->DeletePendingEvents();
+
+    (*aWin)->DeletePendingEvents();
+    (*aWin)->Destroy();
+
+    (*aWin) = nullptr;
+}
+
 
 } // namespace KI_TEST
