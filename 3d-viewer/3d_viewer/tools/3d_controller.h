@@ -69,6 +69,7 @@ public:
     int RotateView( const TOOL_EVENT& aEvent );
 
     int On3DGridSelection( const TOOL_EVENT& aEvent );
+    int OnAnimationSpeedSelection( const TOOL_EVENT& aEvent );
 
     int ToggleOrtho( const TOOL_EVENT& aEvent );
     int ToggleVisibility( const TOOL_EVENT& aEvent );

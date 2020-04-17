@@ -234,6 +234,27 @@ class BOARD_ADAPTER
     MATERIAL_MODE MaterialModeGet() const { return m_material_mode; }
 
     /**
+     * @brief AnimationSpeedSet
+     * @param aAnimationSpeed = the animation speed
+     */
+    void AnimationSpeedSet( ANIMATION_SPEED aAnimationSpeed ) { m_animation_speed = aAnimationSpeed; }
+
+    /**
+     * @brief AnimationSpeedGet
+     * @return animation speed
+     */
+    ANIMATION_SPEED AnimationSpeedGet() const { return m_animation_speed; }
+
+    /**
+     * @brief AnimationSpeedNormalizedGet
+     * @return normalized animation speed 
+     */
+    float AnimationSpeedNormalizedGet() const {
+        // map enum values [1,2,6] to normalized values [0.5x,1x,3x]
+        return static_cast<float>( m_animation_speed ) / 2.0f;
+    }
+
+    /**
      * @brief GetBoardPoly - Get the current polygon of the epoxy board
      * @return the shape polygon
      */
@@ -521,7 +542,7 @@ private:
     GRID3D_TYPE         m_3D_grid_type;
     RENDER_ENGINE       m_render_engine;
     MATERIAL_MODE       m_material_mode;
-
+    ANIMATION_SPEED     m_animation_speed;
 
     // Pcb board position
 

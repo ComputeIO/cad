@@ -175,6 +175,21 @@ TOOL_ACTION EDA_3D_ACTIONS::show1mmGrid( "3DViewer.Control.show1mmGrid",
         _( "3D Grid 1mm" ), _( "3D Grid 1mm" ),
         nullptr, AF_NONE, (void*) GRID3D_TYPE::GRID_1MM );
 
+TOOL_ACTION EDA_3D_ACTIONS::animationSpeedSlow( "3DViewer.Control.animationSpeedSlow",
+        AS_GLOBAL, 0, "",
+        _( "Animation Speed Slow" ), _( "Animation Speed Slow" ),
+        nullptr, AF_NONE, (void*) ANIMATION_SPEED::SLOW );
+
+TOOL_ACTION EDA_3D_ACTIONS::animationSpeedNormal( "3DViewer.Control.animationSpeedNormal",
+        AS_GLOBAL, 0, "",
+        _( "Animation Speed Normal" ), _( "Animation Speed Normal" ),
+        nullptr, AF_NONE, (void*) ANIMATION_SPEED::NORMAL );
+
+TOOL_ACTION EDA_3D_ACTIONS::animationSpeedFast( "3DViewer.Control.animationSpeedFast",
+        AS_GLOBAL, 0, "",
+        _( "Animation Speed Fast" ), _( "Animation Speed Fast" ),
+        nullptr, AF_NONE, (void*) ANIMATION_SPEED::FAST );
+
 TOOL_ACTION EDA_3D_ACTIONS::rotate45axisZ( "3DViewer.Control.rotate45axisZ",
         AS_ACTIVE,
         WXK_TAB, "",

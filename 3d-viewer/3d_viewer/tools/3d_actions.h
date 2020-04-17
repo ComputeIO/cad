@@ -71,6 +71,10 @@ public:
     static TOOL_ACTION show2_5mmGrid;
     static TOOL_ACTION show1mmGrid;
 
+    static TOOL_ACTION animationSpeedSlow;
+    static TOOL_ACTION animationSpeedNormal;
+    static TOOL_ACTION animationSpeedFast;
+
     static TOOL_ACTION rotate45axisZ;
     static TOOL_ACTION attributesTHT;
     static TOOL_ACTION attributesSMD;

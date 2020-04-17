@@ -225,6 +225,15 @@ int EDA_3D_CONTROLLER::On3DGridSelection( const TOOL_EVENT& aEvent )
 }
 
 
+int EDA_3D_CONTROLLER::OnAnimationSpeedSelection( const TOOL_EVENT& aEvent )
+{
+    ANIMATION_SPEED animation_speed = aEvent.Parameter<ANIMATION_SPEED>();
+    m_boardAdapter->AnimationSpeedSet( animation_speed );
+
+    return 0;
+}
+
+
 int EDA_3D_CONTROLLER::ZoomRedraw( const TOOL_EVENT& aEvent )
 {
     m_canvas->Request_refresh();
@@ -316,6 +325,11 @@ void EDA_3D_CONTROLLER::setTransitions()
     Go( &EDA_3D_CONTROLLER::On3DGridSelection,  EDA_3D_ACTIONS::show5mmGrid.MakeEvent() );
     Go( &EDA_3D_CONTROLLER::On3DGridSelection,  EDA_3D_ACTIONS::show2_5mmGrid.MakeEvent() );
     Go( &EDA_3D_CONTROLLER::On3DGridSelection,  EDA_3D_ACTIONS::show1mmGrid.MakeEvent() );
+
+    // Animation Speed
+    Go( &EDA_3D_CONTROLLER::OnAnimationSpeedSelection,  EDA_3D_ACTIONS::animationSpeedSlow.MakeEvent() );
+    Go( &EDA_3D_CONTROLLER::OnAnimationSpeedSelection,  EDA_3D_ACTIONS::animationSpeedNormal.MakeEvent() );
+    Go( &EDA_3D_CONTROLLER::OnAnimationSpeedSelection,  EDA_3D_ACTIONS::animationSpeedFast.MakeEvent() );
 
     // Visibility
     Go( &EDA_3D_CONTROLLER::ToggleOrtho,        EDA_3D_ACTIONS::toggleOrtho.MakeEvent() );

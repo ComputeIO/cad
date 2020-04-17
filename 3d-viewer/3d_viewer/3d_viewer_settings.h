@@ -33,6 +33,7 @@ public:
         int  engine;
         int  grid_type;
         int  material_mode;
+        int  animation_speed;
         bool opengl_copper_thickness;
         bool opengl_show_model_bbox;
         bool raytrace_anti_aliasing;

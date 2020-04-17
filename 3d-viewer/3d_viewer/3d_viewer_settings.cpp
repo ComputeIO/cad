@@ -48,6 +48,11 @@ EDA_3D_VIEWER_SETTINGS::EDA_3D_VIEWER_SETTINGS() :
             static_cast<int>( MATERIAL_MODE::NORMAL ),
             static_cast<int>( MATERIAL_MODE::CAD_MODE ) ) );
 
+    m_params.emplace_back( new PARAM<int>("render.animation_speed", &m_Render.animation_speed,
+            static_cast<int>( ANIMATION_SPEED::SLOW ),
+            static_cast<int>( ANIMATION_SPEED::NORMAL ),
+            static_cast<int>( ANIMATION_SPEED::FAST ) ) );
+
     m_params.emplace_back( new PARAM<bool>(
             "render.opengl_copper_thickness", &m_Render.opengl_copper_thickness, true ) );
     m_params.emplace_back( new PARAM<bool>(
