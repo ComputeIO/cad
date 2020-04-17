@@ -500,7 +500,8 @@ void ALTIUM_PCB::ParseBoard6Data(
     for( size_t i                                = static_cast<size_t>( ALTIUM_LAYER::TOP_LAYER );
             i < elem.stackup.size() && i != 0; i = elem.stackup[i - 1].nextId, layercount++ )
         ;
-    m_board->SetCopperLayerCount( layercount );
+    size_t kicadLayercount = ( layercount % 2 == 0 ) ? layercount : layercount + 1;
+    m_board->SetCopperLayerCount( kicadLayercount );
 
     BOARD_DESIGN_SETTINGS& designSettings = m_board->GetDesignSettings();
     BOARD_STACKUP&         stackup        = designSettings.GetStackupDescriptor();
@@ -516,9 +517,31 @@ void ALTIUM_PCB::ParseBoard6Data(
 
     auto curLayer = static_cast<int>( F_Cu );
     for( size_t i                                = static_cast<size_t>( ALTIUM_LAYER::TOP_LAYER );
-            i < elem.stackup.size() && i != 0; i = elem.stackup[i - 1].nextId, layercount++ )
+            i < elem.stackup.size() && i != 0; i = elem.stackup[i - 1].nextId )
     {
         auto layer = elem.stackup.at( i - 1 ); // array starts with 0, but stackup with 1
+
+        // handle unused layer in case of odd layercount
+        if( layer.nextId == 0 && layercount != kicadLayercount )
+        {
+            m_board->SetLayerName( ( *it )->GetBrdLayerId(), "[unused]" );
+
+            if( ( *it )->GetType() != BS_ITEM_TYPE_COPPER )
+            {
+                THROW_IO_ERROR( "Board6 stream, unexpected item while parsing stackup" );
+            }
+            ( *it )->SetThickness( 0 );
+
+            ++it;
+            if( ( *it )->GetType() != BS_ITEM_TYPE_DIELECTRIC )
+            {
+                THROW_IO_ERROR( "Board6 stream, unexpected item while parsing stackup" );
+            }
+            ( *it )->SetThickness( 0, 0 );
+            ( *it )->SetThicknessLocked( true, 0 );
+            ++it;
+        }
+
         m_layermap.insert(
                 { static_cast<ALTIUM_LAYER>( i ), static_cast<PCB_LAYER_ID>( curLayer++ ) } );
 
@@ -527,6 +550,8 @@ void ALTIUM_PCB::ParseBoard6Data(
             THROW_IO_ERROR( "Board6 stream, unexpected item while parsing stackup" );
         }
         ( *it )->SetThickness( layer.copperthick );
+
+        m_board->SetLayerName( ( *it )->GetBrdLayerId(), layer.name );
 
         if( ( *it )->GetBrdLayerId() == B_Cu )
         {
