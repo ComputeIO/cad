@@ -304,6 +304,33 @@ void EDA_3D_VIEWER::CreateMenuBar()
 
     prefsMenu->AddMenu( gridSubmenu,                           SELECTION_CONDITIONS::ShowAlways );
 
+    // Animation Speed  submenu
+    CONDITIONAL_MENU* animationSpeedSubmenu = new CONDITIONAL_MENU( false, tool );
+    animationSpeedSubmenu->SetTitle( _( "Animation Speed" ) );
+
+    //clang-format off
+    auto animationSpeedSlowCondition = [this]( const SELECTION& aSel )
+    {
+        return m_boardAdapter.AnimationSpeedGet() == ANIMATION_SPEED::SLOW;
+    };
+
+    auto animationSpeedNormalCondition = [this]( const SELECTION& aSel )
+    {
+        return m_boardAdapter.AnimationSpeedGet() == ANIMATION_SPEED::NORMAL;
+    };
+
+    auto animationSpeedFastCondition = [this]( const SELECTION& aSel )
+    {
+        return m_boardAdapter.AnimationSpeedGet() == ANIMATION_SPEED::FAST;
+    };
+    //clang-format on
+
+    animationSpeedSubmenu->AddCheckItem( EDA_3D_ACTIONS::animationSpeedSlow,    animationSpeedSlowCondition );
+    animationSpeedSubmenu->AddCheckItem( EDA_3D_ACTIONS::animationSpeedNormal,  animationSpeedNormalCondition );
+    animationSpeedSubmenu->AddCheckItem( EDA_3D_ACTIONS::animationSpeedFast,    animationSpeedFastCondition );
+
+    prefsMenu->AddMenu( animationSpeedSubmenu,                                  SELECTION_CONDITIONS::ShowAlways );
+
     prefsMenu->AddSeparator();
     prefsMenu->AddItem( ID_MENU3D_RESET_DEFAULTS, _( "Reset to Default Settings" ), "",
                         tools_xpm,                             SELECTION_CONDITIONS::ShowAlways );

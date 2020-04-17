@@ -444,6 +444,7 @@ void EDA_3D_VIEWER::LoadSettings( APP_SETTINGS_BASE *aCfg )
         m_boardAdapter.RenderEngineSet( engine );
 
         m_boardAdapter.MaterialModeSet( static_cast<MATERIAL_MODE>( cfg->m_Render.material_mode ) );
+        m_boardAdapter.AnimationSpeedSet( static_cast<ANIMATION_SPEED>( cfg->m_Render.animation_speed ) );
 
 #undef TRANSFER_SETTING
     }
@@ -482,9 +483,10 @@ void EDA_3D_VIEWER::SaveSettings( APP_SETTINGS_BASE *aCfg )
     {
 #define TRANSFER_SETTING( field, flag ) cfg->m_Render.field = m_boardAdapter.GetFlag( flag )
 
-        cfg->m_Render.engine        = static_cast<int>( m_boardAdapter.RenderEngineGet() );
-        cfg->m_Render.grid_type     = static_cast<int>( m_boardAdapter.GridGet() );
-        cfg->m_Render.material_mode = static_cast<int>( m_boardAdapter.MaterialModeGet() );
+        cfg->m_Render.engine          = static_cast<int>( m_boardAdapter.RenderEngineGet() );
+        cfg->m_Render.grid_type       = static_cast<int>( m_boardAdapter.GridGet() );
+        cfg->m_Render.material_mode   = static_cast<int>( m_boardAdapter.MaterialModeGet() );
+        cfg->m_Render.animation_speed = static_cast<float>( m_boardAdapter.AnimationSpeedGet() );
 
         TRANSFER_SETTING( opengl_copper_thickness,      FL_RENDER_OPENGL_COPPER_THICKNESS );
         TRANSFER_SETTING( opengl_show_model_bbox,       FL_RENDER_OPENGL_SHOW_MODEL_BBOX );

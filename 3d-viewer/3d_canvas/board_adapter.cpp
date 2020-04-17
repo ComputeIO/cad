@@ -64,6 +64,7 @@ BOARD_ADAPTER::BOARD_ADAPTER() :
 
     m_render_engine = RENDER_ENGINE::OPENGL_LEGACY;
     m_material_mode = MATERIAL_MODE::NORMAL;
+    m_animation_speed = ANIMATION_SPEED::NORMAL;
 
     m_boardPos = wxPoint();
     m_boardSize = wxSize();

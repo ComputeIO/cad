@@ -756,6 +756,8 @@ void EDA_3D_CANVAS::request_start_moving_camera( float aMovingSpeed, bool aRende
 {
     wxASSERT( aMovingSpeed > FLT_EPSILON );
 
+    aMovingSpeed *= m_boardAdapter.AnimationSpeedNormalizedGet();
+
     m_render_pivot = aRenderPivot;
     m_camera_moving_speed = aMovingSpeed;
 

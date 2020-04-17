@@ -84,6 +84,15 @@ enum class GRID3D_TYPE
 };
 
 
+/// Animation Speed Types
+enum class ANIMATION_SPEED
+{
+    SLOW   = 1,
+    NORMAL = 2,
+    FAST   = 6,
+};
+
+
 /// Render engine mode
 enum class RENDER_ENGINE
 {
