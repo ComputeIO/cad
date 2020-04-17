@@ -600,7 +600,7 @@ APAD6::APAD6( ALTIUM_PARSER& aReader )
     size_t subrecord5 = aReader.ReadAndSetSubrecordLength();
 
     // TODO: exact minimum length we know?
-    if( subrecord5 < 120 )
+    if( subrecord5 < 114 )
         THROW_IO_ERROR( "Pads6 stream subrecord has length < 120, which is unexpected" );
 
     layer = static_cast<ALTIUM_LAYER>( aReader.Read<uint8_t>() );
