@@ -360,7 +360,7 @@ void EDA_BASE_FRAME::LoadWindowSettings( WINDOW_SETTINGS* aCfg )
         wxLogTrace( traceDisplayLocation, "Previous display not found" );
 
         // If it isn't attached, use the first display
-        wxDisplay display( int( 0 ) );
+        wxDisplay display( 0U );
         wxRect    clientSize = display.GetClientArea();
 
         wxLogDebug( "Client size (%d, %d)", clientSize.width, clientSize.height );
