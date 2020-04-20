@@ -694,12 +694,6 @@ DIALOG_PAD_PROPERTIES_BASE::DIALOG_PAD_PROPERTIES_BASE( wxWindow* parent, wxWind
 
 	bSizerDisplayPad->Add( 0, 0, 1, wxEXPAND, 5 );
 
-	m_panelShowPad = new wxPanel( this, wxID_ANY, wxDefaultPosition, wxSize( -1,-1 ), wxFULL_REPAINT_ON_RESIZE|wxBORDER_SIMPLE );
-	m_panelShowPad->SetBackgroundColour( wxColour( 0, 0, 0 ) );
-	m_panelShowPad->SetMinSize( wxSize( 280,-1 ) );
-
-	bSizerDisplayPad->Add( m_panelShowPad, 12, wxEXPAND|wxALL, 5 );
-
 	m_panelShowPadGal = new PCB_DRAW_PANEL_GAL( this, -1, wxPoint( 0, 0 ), wxDefaultSize, m_galOptions, EDA_DRAW_PANEL_GAL::GAL_TYPE_CAIRO);
 	m_panelShowPadGal->SetMinSize( wxSize( 280,-1 ) );
 

@@ -255,7 +255,6 @@ void DIALOG_PAD_PROPERTIES::prepareCanvas()
     m_panelShowPadGal->GetViewControls()->EnableMousewheelPan( mousewheelPan );
 
     m_panelShowPadGal->Show();
-    m_panelShowPad->Hide();
 
     KIGFX::VIEW* view = m_panelShowPadGal->GetView();
 
