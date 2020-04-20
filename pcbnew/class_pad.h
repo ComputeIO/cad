@@ -546,16 +546,6 @@ public:
     int GetThermalGap() const;
 
     /**
-     * Function PrintShape
-     * basic function to print a pad.
-     * <p>
-     * This function is used by Print after calculation of parameters (color, ) final
-     * orientation transforms are set.
-     * </p>
-     */
-    void PrintShape( wxDC* aDC, PAD_DRAWINFO& aDrawInfo );
-
-    /**
      * Function BuildPadPolygon
      * Has meaning only for polygonal pads (trapezoid and rectangular)
      * Build the Corner list of the polygonal shape,
