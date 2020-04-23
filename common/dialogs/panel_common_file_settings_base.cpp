@@ -81,7 +81,7 @@ PANEL_COMMON_FILE_SETTINGS_BASE::PANEL_COMMON_FILE_SETTINGS_BASE( wxWindow* pare
 	sizerCompression->Add( bSizer4, 1, wxEXPAND, 5 );
 
 
-	bLeftSizer->Add( sizerCompression, 1, wxEXPAND, 5 );
+	bLeftSizer->Add( sizerCompression, 1, wxALL|wxEXPAND, 5 );
 
 	wxStaticBoxSizer* sizerHelperApps;
 	sizerHelperApps = new wxStaticBoxSizer( new wxStaticBox( this, wxID_ANY, _("Helper Applications") ), wxVERTICAL );
