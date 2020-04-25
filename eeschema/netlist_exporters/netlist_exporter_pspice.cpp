@@ -24,9 +24,10 @@
  */
 
 #include "netlist_exporter_pspice.h"
-#include <fctsys.h>
 #include <build_version.h>
 #include <confirm.h>
+#include <fctsys.h>
+#include <filename_resolver.h>
 
 #include <map>
 #include <search_stack.h>
@@ -97,7 +98,8 @@ bool NETLIST_EXPORTER_PSPICE::Format( OUTPUTFORMATTER* aFormatter, unsigned aCtl
         if( ( aCtl & NET_ADJUST_INCLUDE_PATHS ) )
         {
             // Look for the library in known search locations
-            full_path = ResolveFile( lib, &Pgm().GetLocalEnvVariables(), &m_schematic->Prj() );
+            FILENAME_RESOLVER* fnr = m_schematic->Prj().GetFilenameResolver();
+            full_path              = fnr->ExpandPathVariable( lib );
 
             if( full_path.IsEmpty() )
             {
