@@ -196,6 +196,7 @@ public:
         ELEM_SCH_SEARCH_STACK,
         ELEM_3DCACHE,
         ELEM_SYMBOL_LIB_TABLE,
+        ELEM_FILENAME_RESOLVER,
 
         ELEM_COUNT
     };

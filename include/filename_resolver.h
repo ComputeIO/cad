@@ -48,7 +48,7 @@ struct SEARCH_PATH
     wxString m_description;     // description of the aliased path
 };
 
-class FILENAME_RESOLVER
+class FILENAME_RESOLVER : public PROJECT::_ELEM
 {
 private:
     wxString               m_ConfigDir;     // 3D configuration directory
@@ -106,6 +106,14 @@ private:
 
 public:
     FILENAME_RESOLVER();
+    virtual ~FILENAME_RESOLVER()
+    {
+    }
+
+    KICAD_T Type() noexcept override
+    {
+        return FILENAME_RESOLVER_T;
+    }
 
     /**
      * Function Set3DConfigDir
