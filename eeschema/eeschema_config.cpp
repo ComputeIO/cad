@@ -23,6 +23,8 @@
 
 #include <class_library.h>
 #include <confirm.h>
+#include <default_values.h> // For some default values
+#include <dialogs/dialog_schematic_setup.h>
 #include <dialogs/panel_eeschema_color_settings.h>
 #include <dialogs/panel_eeschema_display_options.h>
 #include <dialogs/panel_eeschema_settings.h>
@@ -33,6 +35,7 @@
 #include <eeschema_config.h>
 #include <fctsys.h>
 #include <kiway.h>
+#include <filename_resolver.h>
 #include <lib_edit_frame.h>
 #include <panel_gal_display_options.h>
 #include <panel_hotkeys_editor.h>
@@ -433,6 +436,23 @@ void LIB_EDIT_FRAME::InstallPreferences( PAGED_DIALOG* aParent,
     book->AddSubPage( new PANEL_LIBEDIT_COLOR_SETTINGS( this, book ), _( "Colors" ) );
 
     aHotkeysPanel->AddHotKeys( GetToolManager() );
+}
+
+
+FILENAME_RESOLVER* PROJECT::GetFilenameResolver()
+{
+    FILENAME_RESOLVER* fnr = (FILENAME_RESOLVER*) GetElem( ELEM_FILENAME_RESOLVER );
+
+    wxASSERT( !fnr || fnr->Type() == FILENAME_RESOLVER_T );
+
+    if( !fnr )
+    {
+        fnr = new FILENAME_RESOLVER();
+        fnr->SetProject( this );
+        fnr->SetProgramBase( &Pgm() );
+    }
+
+    return fnr;
 }
 
 

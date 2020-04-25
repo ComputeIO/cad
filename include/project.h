@@ -289,8 +289,10 @@ public:
     /// Accessor for project symbol library table.
     SYMBOL_LIB_TABLE* SchSymbolLibTable();
 
-    /// Accessor for 3D path resolver
-    FILENAME_RESOLVER* Get3DFilenameResolver() { return nullptr; }
+    /**
+     * Accessor for the path resolver.
+     */
+    FILENAME_RESOLVER* GetFilenameResolver();
 #endif
 
     //-----</KIFACE Specific APIs>-----------------------------------------------
