@@ -26,9 +26,10 @@
 #include "wildcards_and_files_ext.h"
 #include "dialog_spice_model.h"
 
-#include <sim/spice_value.h>
 #include <confirm.h>
+#include <filename_resolver.h>
 #include <project.h>
+#include <sim/spice_value.h>
 
 #include <wx/tokenzr.h>
 #include <wx/wupdlock.h>
@@ -367,7 +368,9 @@ bool DIALOG_SPICE_MODEL::TransferDataToWindow()
             {
                 const wxString& libFile = m_modelLibrary->GetValue();
                 m_fieldsTmp[SF_LIB_FILE] = libFile;
-                loadLibrary( libFile );
+                FILENAME_RESOLVER* fnr          = Prj().GetFilenameResolver();
+                const wxString     resolvedFile = fnr->ExpandPathVariable( libFile );
+                loadLibrary( resolvedFile );
             }
             break;
 
