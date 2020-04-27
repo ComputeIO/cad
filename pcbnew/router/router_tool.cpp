@@ -557,12 +557,13 @@ int ROUTER_TOOL::onViaCommand( const TOOL_EVENT& aEvent )
     if( selectLayer )
     {
         wxPoint dlgPosition = wxGetMousePosition();
+        VECTOR2D cursorPos = controls()->GetCursorPosition();
 
         targetLayer = frame()->SelectLayer(
                 static_cast<PCB_LAYER_ID>( currentLayer ), LSET::AllNonCuMask(), dlgPosition );
 
         // Reset the cursor to the position where the event occured
-        controls()->SetCursorPosition( aEvent.HasPosition() ? aEvent.Position() : dlgPosition );
+        controls()->SetCursorPosition( aEvent.HasPosition() ? aEvent.Position() : cursorPos );
     }
 
     // fixme: P&S supports more than one fixed layer pair. Update the dialog?
