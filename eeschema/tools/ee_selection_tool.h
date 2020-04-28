@@ -103,9 +103,9 @@ public:
      * @param aCheckLocked indicates if locked items should be excluded.
      */
     bool SelectPoint( const VECTOR2I& aWhere, const KICAD_T* aFilterList = EE_COLLECTOR::AllItems,
-            EDA_ITEM** aItem = nullptr, bool* aSelectionCancelledFlag = nullptr,
-            bool aCheckLocked = false, bool aAdd = false, bool aSubtract = false,
-            bool aExclusiveOr = false );
+                      EDA_ITEM** aItem = nullptr, bool* aSelectionCancelledFlag = nullptr,
+                      bool aCheckLocked = false, bool aAdd = false, bool aSubtract = false,
+                      bool aExclusiveOr = false );
 
     int AddItemToSel( const TOOL_EVENT& aEvent );
     void AddItemToSel( EDA_ITEM* aItem, bool aQuietMode = false );

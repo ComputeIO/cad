@@ -453,7 +453,7 @@ bool SELECTION_TOOL::selectPoint( const VECTOR2I& aWhere, bool aOnDrag,
         {
             // Don't fire an event now as it will end up redundant if we fire a SelectedEvent
             // or an UnselectedEvent.
-            ClearSelection( true );
+            ClearSelection( true /*quiet mode*/ );
         }
     }
 
@@ -1167,7 +1167,7 @@ void SELECTION_TOOL::findCallback( BOARD_ITEM* aItem )
         // Don't fire an event now; most of the time it will be redundant as we're about to
         // fire a SelectedEvent.
         cleared = true;
-        ClearSelection(  true /*quiet mode*/ );
+        ClearSelection( true /*quiet mode*/ );
     }
 
     if( aItem )
@@ -1380,12 +1380,12 @@ bool SELECTION_TOOL::doSelectionMenu( GENERAL_COLLECTOR* aCollector, const wxStr
         BOARD_ITEM* item = ( *aCollector )[i];
         text = item->GetSelectMenuText( m_frame->GetUserUnits() );
 
-        wxString menuText = wxString::Format("&%d. %s", i + 1, text );
+        wxString menuText = wxString::Format("&%d. %s\t%d", i + 1, text, i + 1 );
         menu.Add( menuText, i + 1, item->GetMenuImage() );
     }
 
     menu.AppendSeparator();
-    menu.Add( _( "&A Select All" ), limit + 1, net_highlight_xpm );
+    menu.Add( _( "Select &All\tA" ), limit + 1, net_highlight_xpm );
 
     if( aTitle.Length() )
         menu.SetTitle( aTitle );

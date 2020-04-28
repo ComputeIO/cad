@@ -329,7 +329,7 @@ int EE_SELECTION_TOOL::Main( const TOOL_EVENT& aEvent )
                 schframe->FocusOnItem( nullptr );
 
             SelectPoint( evt->Position(), EE_COLLECTOR::AllItems, nullptr, nullptr, false,
-                    m_additive, m_subtractive, m_exclusive_or );
+                         m_additive, m_subtractive, m_exclusive_or );
         }
 
         // right click? if there is any object - show the context menu
@@ -341,8 +341,8 @@ int EE_SELECTION_TOOL::Main( const TOOL_EVENT& aEvent )
                     !m_selection.GetBoundingBox().Contains( wxPoint( evt->Position() ) ) )
             {
                 ClearSelection();
-                SelectPoint(
-                        evt->Position(), EE_COLLECTOR::AllItems, nullptr, &selectionCancelled );
+                SelectPoint( evt->Position(), EE_COLLECTOR::AllItems, nullptr,
+                             &selectionCancelled );
                 m_selection.SetIsHover( true );
             }
 
@@ -554,8 +554,10 @@ bool EE_SELECTION_TOOL::SelectPoint( const VECTOR2I& aWhere, const KICAD_T* aFil
     if( anyAdded )
     {
         m_toolMgr->ProcessEvent( EVENTS::SelectedEvent );
+
         if( aItem && collector.GetCount() == 1 )
             *aItem = collector[0];
+
         return true;
     }
     else if( anySubtracted )
@@ -1101,12 +1103,12 @@ bool EE_SELECTION_TOOL::doSelectionMenu( EE_COLLECTOR* aCollector )
         EDA_ITEM* item = ( *aCollector )[i];
         text = item->GetSelectMenuText( m_frame->GetUserUnits() );
 
-        wxString menuText = wxString::Format("&%d. %s", i + 1, text );
+        wxString menuText = wxString::Format("&%d. %s\t%d", i + 1, text, i + 1 );
         menu.Add( menuText, i + 1, item->GetMenuImage() );
     }
 
     menu.AppendSeparator();
-    menu.Add( _( "&A Select All" ), limit + 1, net_highlight_schematic_xpm );
+    menu.Add( _( "Select &All\tA" ), limit + 1, net_highlight_schematic_xpm );
 
     if( aCollector->m_MenuTitle.Length() )
         menu.SetTitle( aCollector->m_MenuTitle );
@@ -1125,7 +1127,9 @@ bool EE_SELECTION_TOOL::doSelectionMenu( EE_COLLECTOR* aCollector )
                     unhighlight( ( *aCollector )[i], BRIGHTENED );
             }
             else if( current )
+            {
                 unhighlight( current, BRIGHTENED );
+            }
 
             int id = *evt->GetCommandId();
 
@@ -1136,7 +1140,9 @@ bool EE_SELECTION_TOOL::doSelectionMenu( EE_COLLECTOR* aCollector )
                 highlight( current, BRIGHTENED );
             }
             else
+            {
                 current = nullptr;
+            }
 
             // User has pointed on the "Select All" option
             if( id == limit + 1 )
@@ -1146,7 +1152,9 @@ bool EE_SELECTION_TOOL::doSelectionMenu( EE_COLLECTOR* aCollector )
                 selectAll = true;
             }
             else
+            {
                 selectAll = false;
+            }
         }
         else if( evt->Action() == TA_CHOICE_MENU_CHOICE )
         {
