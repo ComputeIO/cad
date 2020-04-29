@@ -1380,7 +1380,7 @@ bool SELECTION_TOOL::doSelectionMenu( GENERAL_COLLECTOR* aCollector, const wxStr
         BOARD_ITEM* item = ( *aCollector )[i];
         text = item->GetSelectMenuText( m_frame->GetUserUnits() );
 
-        wxString menuText = wxString::Format("&%d. %s\t%d", i + 1, text, i + 1 );
+        wxString menuText = wxString::Format( "&%d. %s\t%d", i + 1, text, i + 1 );
         menu.Add( menuText, i + 1, item->GetMenuImage() );
     }
 
