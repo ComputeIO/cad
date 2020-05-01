@@ -100,6 +100,7 @@ public:
 
     void SetPosition( const wxPoint& aPos ) override { m_Start = aPos; }
     const wxPoint GetPosition() const override { return m_Start; }
+    const wxPoint GetFocusPosition() const override { return ( m_Start + m_End ) / 2; }
 
     void SetWidth( int aWidth )                 { m_Width = aWidth; }
     int GetWidth() const                        { return m_Width; }
@@ -199,12 +200,14 @@ public:
      * returned clearance is the greater of this object's clearance and
      * aItem's clearance.  If \a aItem is NULL, then this objects clearance
      * is returned.
-     * @param aItem is another BOARD_CONNECTED_ITEM or NULL
+     * @param aItem is an optional BOARD_CONNECTED_ITEM
+     * @param aSource [out] optionally reports the source as a user-readable string
      * @return int - the clearance in internal units.
      */
-    virtual int GetClearance( BOARD_CONNECTED_ITEM* aItem = NULL ) const override;
+    int GetClearance( BOARD_CONNECTED_ITEM* aItem = nullptr,
+                      wxString* aSource = nullptr ) const override;
 
-    virtual wxString GetSelectMenuText( EDA_UNITS aUnits ) const override;
+    wxString GetSelectMenuText( EDA_UNITS aUnits ) const override;
 
     BITMAP_DEF GetMenuImage() const override;
 
