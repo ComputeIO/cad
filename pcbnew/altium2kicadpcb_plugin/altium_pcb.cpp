@@ -266,7 +266,7 @@ PCB_LAYER_ID ALTIUM_PCB::GetKicadLayer( ALTIUM_LAYER aAltiumLayer ) const
     case ALTIUM_LAYER::DRILL_GUIDE:
         return Dwgs_User;
     case ALTIUM_LAYER::KEEP_OUT_LAYER:
-        return UNDEFINED_LAYER;
+        return Margin;
 
     case ALTIUM_LAYER::MECHANICAL_1:
         return Dwgs_User; //Edge_Cuts;
@@ -905,7 +905,7 @@ void ALTIUM_PCB::HelperParseDimensions6Linear( const ADIMENSION6& aElem )
     PCB_LAYER_ID klayer = GetKicadLayer( aElem.layer );
     if( klayer == UNDEFINED_LAYER )
     {
-        wxLogInfo( wxString::Format(
+        wxLogWarning( wxString::Format(
                 _( "Dimension on Altium layer %d has no KiCad equivalent. Put it on Eco1_User instead" ),
                 aElem.layer ) );
         klayer = Eco1_User;
@@ -980,7 +980,7 @@ void ALTIUM_PCB::HelperParseDimensions6Leader( const ADIMENSION6& aElem )
     PCB_LAYER_ID klayer = GetKicadLayer( aElem.layer );
     if( klayer == UNDEFINED_LAYER )
     {
-        wxLogInfo( wxString::Format(
+        wxLogWarning( wxString::Format(
                 _( "Dimension on Altium layer %d has no KiCad equivalent. Put it on Eco1_User instead" ),
                 aElem.layer ) );
         klayer = Eco1_User;
@@ -1058,7 +1058,7 @@ void ALTIUM_PCB::HelperParseDimensions6Datum( const ADIMENSION6& aElem )
     PCB_LAYER_ID klayer = GetKicadLayer( aElem.layer );
     if( klayer == UNDEFINED_LAYER )
     {
-        wxLogInfo( wxString::Format(
+        wxLogWarning( wxString::Format(
                 _( "Dimension on Altium layer %d has no KiCad equivalent. Put it on Eco1_User instead" ),
                 aElem.layer ) );
         klayer = Eco1_User;
@@ -1081,7 +1081,7 @@ void ALTIUM_PCB::HelperParseDimensions6Center( const ADIMENSION6& aElem )
     PCB_LAYER_ID klayer = GetKicadLayer( aElem.layer );
     if( klayer == UNDEFINED_LAYER )
     {
-        wxLogInfo( wxString::Format(
+        wxLogWarning( wxString::Format(
                 _( "Dimension on Altium layer %d has no KiCad equivalent. Put it on Eco1_User instead" ),
                 aElem.layer ) );
         klayer = Eco1_User;
@@ -1129,14 +1129,14 @@ void ALTIUM_PCB::ParseDimensions6Data(
             HelperParseDimensions6Leader( elem );
             break;
         case ALTIUM_DIMENSION_KIND::DATUM:
-            wxLogInfo( wxString::Format( "Ignore dimension object of kind %d", elem.kind ) );
+            wxLogWarning( wxString::Format( "Ignore dimension object of kind %d", elem.kind ) );
             // HelperParseDimensions6Datum( elem );
             break;
         case ALTIUM_DIMENSION_KIND::CENTER:
             HelperParseDimensions6Center( elem );
             break;
         default:
-            wxLogInfo( wxString::Format( "Ignore dimension object of kind %d", elem.kind ) );
+            wxLogWarning( wxString::Format( "Ignore dimension object of kind %d", elem.kind ) );
             break;
         }
     }
@@ -1442,7 +1442,7 @@ void ALTIUM_PCB::ParseShapeBasedRegions6Data(
                 PCB_LAYER_ID klayer = GetKicadLayer( elem.layer );
                 if( klayer == UNDEFINED_LAYER )
                 {
-                    wxLogInfo( wxString::Format(
+                    wxLogWarning( wxString::Format(
                             _( "Zone on Altium layer %d has no KiCad equivalent. Put it on Eco1_User instead" ),
                             elem.layer ) );
                     klayer = Eco1_User;
@@ -1467,7 +1467,7 @@ void ALTIUM_PCB::ParseShapeBasedRegions6Data(
                 PCB_LAYER_ID klayer = GetKicadLayer( elem.layer );
                 if( klayer == UNDEFINED_LAYER )
                 {
-                    wxLogInfo( wxString::Format(
+                    wxLogWarning( wxString::Format(
                             _( "Polygon on Altium layer %d has no KiCad equivalent. Put it on Eco1_User instead" ),
                             elem.layer ) );
                     klayer = Eco1_User;
@@ -1582,7 +1582,7 @@ void ALTIUM_PCB::ParseArcs6Data(
         PCB_LAYER_ID klayer = GetKicadLayer( elem.layer );
         if( klayer == UNDEFINED_LAYER )
         {
-            wxLogInfo( wxString::Format(
+            wxLogWarning( wxString::Format(
                     _( "Arc on Altium layer %d has no KiCad equivalent. Put it on Eco1_User instead" ),
                     elem.layer ) );
             klayer = Eco1_User;
@@ -1895,7 +1895,7 @@ void ALTIUM_PCB::HelperParsePad6NonCopper( const APAD6& aElem )
     PCB_LAYER_ID klayer = GetKicadLayer( aElem.layer );
     if( klayer == UNDEFINED_LAYER )
     {
-        wxLogInfo( wxString::Format(
+        wxLogWarning( wxString::Format(
                 _( "Non-Copper Pad on Altium layer %d has no KiCad equivalent. Put it on Eco1_User instead" ),
                 aElem.layer ) );
         klayer = Eco1_User;
@@ -2151,7 +2151,7 @@ void ALTIUM_PCB::ParseTracks6Data(
         PCB_LAYER_ID klayer = GetKicadLayer( elem.layer );
         if( klayer == UNDEFINED_LAYER )
         {
-            wxLogInfo( wxString::Format(
+            wxLogWarning( wxString::Format(
                     _( "Track on Altium layer %d has no KiCad equivalent. Put it on Eco1_User instead" ),
                     elem.layer ) );
             klayer = Eco1_User;
@@ -2222,6 +2222,14 @@ void ALTIUM_PCB::ParseTexts6Data(
     {
         ATEXT6 elem( reader );
 
+        if( elem.fonttype == ALTIUM_TEXT_TYPE::BARCODE )
+        {
+            wxLogWarning( wxString::Format(
+                    _( "Ignore Barcode on Altium layer %d because it is not supported right now." ),
+                    elem.layer ) );
+            continue;
+        }
+
         // TODO: better approach to select if item belongs to a MODULE
         EDA_TEXT*   tx  = nullptr;
         BOARD_ITEM* itm = nullptr;
@@ -2255,6 +2263,8 @@ void ALTIUM_PCB::ParseTexts6Data(
                 txm = new TEXTE_MODULE( module );
                 module->Add( txm, ADD_MODE::APPEND );
             }
+
+            txm->SetKeepUpright( false );
 
             tx  = txm;
             itm = txm;
@@ -2297,16 +2307,26 @@ void ALTIUM_PCB::ParseTexts6Data(
         PCB_LAYER_ID klayer = GetKicadLayer( elem.layer );
         if( klayer == UNDEFINED_LAYER )
         {
-            wxLogInfo( wxString::Format(
+            wxLogWarning( wxString::Format(
                     _( "Text on Altium layer %d has no KiCad equivalent. Put it on Eco1_User instead" ),
                     elem.layer ) );
             klayer = Eco1_User;
         }
         itm->SetLayer( klayer );
 
-        tx->SetTextSize( wxSize( elem.height, elem.height ) ); // TODO: parse text width
+        if( elem.fonttype == ALTIUM_TEXT_TYPE::TRUETYPE )
+        {
+            // TODO: why is this required? Somehow, truetype size is calculated differently
+            tx->SetTextSize( wxSize( elem.height / 2, elem.height / 2 ) );
+        }
+        else
+        {
+            tx->SetTextSize( wxSize( elem.height, elem.height ) ); // TODO: parse text width
+        }
         tx->SetTextThickness( elem.strokewidth );
-        tx->SetMirrored( elem.mirrored );
+        tx->SetBold( elem.isBold );
+        tx->SetItalic( elem.isItalic );
+        tx->SetMirrored( elem.isMirrored );
         if( elem.isDesignator || elem.isComment ) // That's just a bold assumption
         {
             tx->SetHorizJustify( EDA_TEXT_HJUSTIFY_T::GR_TEXT_HJUSTIFY_LEFT );
@@ -2385,7 +2405,7 @@ void ALTIUM_PCB::ParseFills6Data(
         PCB_LAYER_ID klayer = GetKicadLayer( elem.layer );
         if( klayer == UNDEFINED_LAYER )
         {
-            wxLogInfo( wxString::Format(
+            wxLogWarning( wxString::Format(
                     _( "Fill on Altium layer %d has no KiCad equivalent. Put it on Eco1_User instead" ),
                     elem.layer ) );
             klayer = Eco1_User;

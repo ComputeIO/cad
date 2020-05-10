@@ -743,6 +743,7 @@ APAD6::APAD6( ALTIUM_PARSER& aReader )
     // Subrecord 6
     size_t subrecord6 = aReader.ReadAndSetSubrecordLength();
     // Known lengths: 596, 628, 651
+    // 596 is the number of bytes read in this code-block
     if( subrecord6 >= 596 )
     {                              // TODO: detect type from something else than the size?
         sizeAndShape = std::make_unique<APAD6_SIZE_AND_SHAPE>();
@@ -884,11 +885,16 @@ ATEXT6::ATEXT6( ALTIUM_PARSER& aReader )
     height   = aReader.ReadKicadUnit();
     aReader.Skip( 2 );
     rotation     = aReader.Read<double>();
-    mirrored     = aReader.Read<uint8_t>() != 0;
+    isMirrored   = aReader.Read<uint8_t>() != 0;
     strokewidth  = aReader.ReadKicadUnit();
     isComment    = aReader.Read<uint8_t>() != 0;
     isDesignator = aReader.Read<uint8_t>() != 0;
-    aReader.Skip( 90 );
+    aReader.Skip( 2 );
+    isBold   = aReader.Read<uint8_t>() != 0;
+    isItalic = aReader.Read<uint8_t>() != 0;
+    aReader.Skip( 64 ); // font_name
+    isInverted = aReader.Read<uint8_t>() != 0;
+    aReader.Skip( 21 );
     textposition = static_cast<ALTIUM_TEXT_POSITION>( aReader.Read<uint8_t>() );
     /**
      * In Altium 14 (subrecord1 == 230) only left bottom is valid? I think there is a bit missing.
@@ -899,7 +905,7 @@ ATEXT6::ATEXT6( ALTIUM_PARSER& aReader )
         textposition = ALTIUM_TEXT_POSITION::LEFT_BOTTOM;
     }
     aReader.Skip( 27 );
-    isTruetype = aReader.Read<uint8_t>() != 0;
+    fonttype = static_cast<ALTIUM_TEXT_TYPE>( aReader.Read<uint8_t>() );
 
     aReader.SkipSubrecord();
 

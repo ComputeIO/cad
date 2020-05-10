@@ -191,6 +191,15 @@ enum class ALTIUM_TEXT_POSITION
     RIGHT_BOTTOM  = 9
 };
 
+enum class ALTIUM_TEXT_TYPE
+{
+    UNKNOWN = -1,
+
+    STROKE   = 0,
+    TRUETYPE = 1,
+    BARCODE  = 2
+};
+
 struct ALTIUM_VERTICE
 {
     const bool    isRound;
@@ -630,11 +639,16 @@ struct ATEXT6
     double               rotation;
     uint32_t             strokewidth;
     ALTIUM_TEXT_POSITION textposition;
-    bool                 mirrored;
+
+    bool isBold;
+    bool isItalic;
+    bool isMirrored;
+    bool isInverted;
 
     bool isComment;
     bool isDesignator;
-    bool isTruetype;
+
+    ALTIUM_TEXT_TYPE fonttype;
 
     wxString text;
 
