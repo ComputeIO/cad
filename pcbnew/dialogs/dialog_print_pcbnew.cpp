@@ -232,12 +232,10 @@ void DIALOG_PRINT_PCBNEW::createLeftPanel()
     m_checkboxNoEdge = new wxCheckBox( sbLayersSizer->GetStaticBox(), wxID_ANY, _( "Exclude PCB edge layer" ) );
     m_checkboxNoEdge->SetToolTip( _("Exclude contents of Edges_Pcb layer from all other layers") );
 
-
     // Static box sizer layout
     sbLayersSizer->Add( bLayerListsSizer, 1, wxALL | wxEXPAND, 5 );
     sbLayersSizer->Add( buttonSizer, 0, wxALL | wxEXPAND, 5 );
     sbLayersSizer->Add( m_checkboxNoEdge, 0, wxALL | wxEXPAND, 5 );
-
 
     getMainSizer()->Insert( 0, sbLayersSizer, 1, wxEXPAND );
 }
@@ -256,11 +254,13 @@ void DIALOG_PRINT_PCBNEW::onDeselectAllClick( wxCommandEvent& event )
     setListBoxValue( m_listTechLayers, false );
 }
 
+
 void DIALOG_PRINT_PCBNEW::setListBoxValue( wxCheckListBox* aList, bool aValue )
 {
     for( unsigned int i = 0; i < aList->GetCount(); ++i )
         aList->Check( i, aValue );
 }
+
 
 bool DIALOG_PRINT_PCBNEW::isLayerEnabled( unsigned int aLayer ) const
 {
