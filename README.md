@@ -3,6 +3,20 @@
 For specific documentation like Compiling, GUI translation, old
 changelogs see the [Documentation](Documentation) subfolder.
 
+You may also take a look into the [Wiki](https://gitlab.com/kicad/code/kicad/-/wikis/home)
+
+## Quick Start
+
+To get started with Kicad:
+
+
+1. For live use, download the [latest stable version](https://kicad-pcb.org/download/).
+2. For experimentation and testing, download a [development release.](https://kicad-pcb.org/download/).
+3. To live on the bleeding edge, clone the repo: git clone https://gitlab.com/kicad/code/kicad.git
+
+
+[![Packaging status](https://repology.org/badge/tiny-repos/kicad.svg)](https://repology.org/metapackage/kicad/versions)
+
 ## Files
 * [AUTHORS.txt](AUTHORS.txt) - The authors, contributors, document writers and translators list
 * [CMakeLists.txt](CMakeLists.txt) - Main CMAKE build tool script
