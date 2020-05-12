@@ -266,7 +266,7 @@ PCB_LAYER_ID ALTIUM_PCB::GetKicadLayer( ALTIUM_LAYER aAltiumLayer ) const
     case ALTIUM_LAYER::DRILL_GUIDE:
         return Dwgs_User;
     case ALTIUM_LAYER::KEEP_OUT_LAYER:
-        return UNDEFINED_LAYER;
+        return Margin;
 
     case ALTIUM_LAYER::MECHANICAL_1:
         return Dwgs_User; //Edge_Cuts;
@@ -330,8 +330,9 @@ PCB_LAYER_ID ALTIUM_PCB::GetKicadLayer( ALTIUM_LAYER aAltiumLayer ) const
 
 ALTIUM_PCB::ALTIUM_PCB( BOARD* aBoard )
 {
-    m_board = aBoard;
-    m_num_nets = 0;
+    m_board              = aBoard;
+    m_num_nets           = 0;
+    m_highest_pour_index = 0;
 }
 
 ALTIUM_PCB::~ALTIUM_PCB()
@@ -451,6 +452,27 @@ void ALTIUM_PCB::Parse( const CFB::CompoundFileReader& aReader,
         {
             wxLogError( wxString::Format( _( "File not found: '%s'" ), mappedDirectory->second ) );
         }
+    }
+
+    // fixup zone priorities since Altium stores them in the opposite order
+    for( auto& zone : m_polygons )
+    {
+        if( !zone )
+            continue;
+
+        // Altium "fills" - not poured in Altium
+        if( zone->GetPriority() == 1000 )
+        {
+            // Unlikely, but you never know
+            if( m_highest_pour_index >= 1000 )
+                zone->SetPriority( m_highest_pour_index + 1 );
+
+            continue;
+        }
+
+        int priority = m_highest_pour_index - zone->GetPriority();
+
+        zone->SetPriority( priority >= 0 ? priority : 0 );
     }
 
     // change priority of outer zone to zero
@@ -883,7 +905,7 @@ void ALTIUM_PCB::HelperParseDimensions6Linear( const ADIMENSION6& aElem )
     PCB_LAYER_ID klayer = GetKicadLayer( aElem.layer );
     if( klayer == UNDEFINED_LAYER )
     {
-        wxLogInfo( wxString::Format(
+        wxLogWarning( wxString::Format(
                 _( "Dimension on Altium layer %d has no KiCad equivalent. Put it on Eco1_User instead" ),
                 aElem.layer ) );
         klayer = Eco1_User;
@@ -958,7 +980,7 @@ void ALTIUM_PCB::HelperParseDimensions6Leader( const ADIMENSION6& aElem )
     PCB_LAYER_ID klayer = GetKicadLayer( aElem.layer );
     if( klayer == UNDEFINED_LAYER )
     {
-        wxLogInfo( wxString::Format(
+        wxLogWarning( wxString::Format(
                 _( "Dimension on Altium layer %d has no KiCad equivalent. Put it on Eco1_User instead" ),
                 aElem.layer ) );
         klayer = Eco1_User;
@@ -1036,7 +1058,7 @@ void ALTIUM_PCB::HelperParseDimensions6Datum( const ADIMENSION6& aElem )
     PCB_LAYER_ID klayer = GetKicadLayer( aElem.layer );
     if( klayer == UNDEFINED_LAYER )
     {
-        wxLogInfo( wxString::Format(
+        wxLogWarning( wxString::Format(
                 _( "Dimension on Altium layer %d has no KiCad equivalent. Put it on Eco1_User instead" ),
                 aElem.layer ) );
         klayer = Eco1_User;
@@ -1059,7 +1081,7 @@ void ALTIUM_PCB::HelperParseDimensions6Center( const ADIMENSION6& aElem )
     PCB_LAYER_ID klayer = GetKicadLayer( aElem.layer );
     if( klayer == UNDEFINED_LAYER )
     {
-        wxLogInfo( wxString::Format(
+        wxLogWarning( wxString::Format(
                 _( "Dimension on Altium layer %d has no KiCad equivalent. Put it on Eco1_User instead" ),
                 aElem.layer ) );
         klayer = Eco1_User;
@@ -1107,14 +1129,14 @@ void ALTIUM_PCB::ParseDimensions6Data(
             HelperParseDimensions6Leader( elem );
             break;
         case ALTIUM_DIMENSION_KIND::DATUM:
-            wxLogInfo( wxString::Format( "Ignore dimension object of kind %d", elem.kind ) );
+            wxLogWarning( wxString::Format( "Ignore dimension object of kind %d", elem.kind ) );
             // HelperParseDimensions6Datum( elem );
             break;
         case ALTIUM_DIMENSION_KIND::CENTER:
             HelperParseDimensions6Center( elem );
             break;
         default:
-            wxLogInfo( wxString::Format( "Ignore dimension object of kind %d", elem.kind ) );
+            wxLogWarning( wxString::Format( "Ignore dimension object of kind %d", elem.kind ) );
             break;
         }
     }
@@ -1249,6 +1271,10 @@ void ALTIUM_PCB::ParsePolygons6Data(
         zone->SetLayer( klayer );
         zone->SetPosition( elem.vertices.at( 0 ).position );
         zone->SetLocked( elem.locked );
+        zone->SetPriority( elem.pourindex > 0 ? elem.pourindex : 0 );
+
+        if( elem.pourindex > m_highest_pour_index )
+            m_highest_pour_index = elem.pourindex;
 
         for( auto& vertice : elem.vertices )
         {
@@ -1257,17 +1283,39 @@ void ALTIUM_PCB::ParsePolygons6Data(
 
         // TODO: more flexible rule parsing
         const ARULE6* clearanceRule = GetRuleDefault( ALTIUM_RULE_KIND::PLANE_CLEARANCE );
+
         if( clearanceRule != nullptr )
         {
             zone->SetZoneClearance( clearanceRule->planeclearanceClearance );
         }
+
         const ARULE6* polygonConnectRule = GetRuleDefault( ALTIUM_RULE_KIND::POLYGON_CONNECT );
+
         if( polygonConnectRule != nullptr )
         {
+            switch( polygonConnectRule->polygonconnectStyle )
+            {
+            case ALTIUM_CONNECT_STYLE::DIRECT:
+                zone->SetPadConnection( ZONE_CONNECTION::FULL );
+                break;
+
+            case ALTIUM_CONNECT_STYLE::NONE:
+                zone->SetPadConnection( ZONE_CONNECTION::NONE );
+                break;
+
+            default:
+            case ALTIUM_CONNECT_STYLE::RELIEF:
+                zone->SetPadConnection( ZONE_CONNECTION::THERMAL );
+                break;
+            }
+
             // TODO: correct variables?
             zone->SetThermalReliefCopperBridge(
                     polygonConnectRule->polygonconnectReliefconductorwidth );
             zone->SetThermalReliefGap( polygonConnectRule->polygonconnectAirgapwidth );
+
+            if( polygonConnectRule->polygonconnectReliefconductorwidth < zone->GetMinThickness() )
+                zone->SetMinThickness( polygonConnectRule->polygonconnectReliefconductorwidth );
         }
 
         if( IsAltiumLayerAPlane( elem.layer ) )
@@ -1372,24 +1420,17 @@ void ALTIUM_PCB::ParseShapeBasedRegions6Data(
         {
             HelperCreateBoardOutline( elem.vertices );
         }
-        else if( elem.kind == ALTIUM_REGION_KIND::POLYGON_CUTOUT )
+        else if( elem.kind == ALTIUM_REGION_KIND::POLYGON_CUTOUT || elem.is_keepout )
         {
             ZONE_CONTAINER* zone = new ZONE_CONTAINER( m_board );
             m_board->Add( zone, ADD_MODE::APPEND );
 
-            if( elem.kind == ALTIUM_REGION_KIND::POLYGON_CUTOUT || elem.is_keepout )
-            {
-                zone->SetIsKeepout( true );
-                zone->SetDoNotAllowTracks( false );
-                zone->SetDoNotAllowVias( false );
-                zone->SetDoNotAllowPads( false );
-                zone->SetDoNotAllowFootprints( false );
-                zone->SetDoNotAllowCopperPour( true );
-            }
-            else
-            {
-                zone->SetNetCode( GetNetCode( elem.net ) );
-            }
+            zone->SetIsKeepout( true );
+            zone->SetDoNotAllowTracks( false );
+            zone->SetDoNotAllowVias( false );
+            zone->SetDoNotAllowPads( false );
+            zone->SetDoNotAllowFootprints( false );
+            zone->SetDoNotAllowCopperPour( true );
 
             if( elem.layer == ALTIUM_LAYER::MULTI_LAYER )
             {
@@ -1401,7 +1442,7 @@ void ALTIUM_PCB::ParseShapeBasedRegions6Data(
                 PCB_LAYER_ID klayer = GetKicadLayer( elem.layer );
                 if( klayer == UNDEFINED_LAYER )
                 {
-                    wxLogInfo( wxString::Format(
+                    wxLogWarning( wxString::Format(
                             _( "Zone on Altium layer %d has no KiCad equivalent. Put it on Eco1_User instead" ),
                             elem.layer ) );
                     klayer = Eco1_User;
@@ -1426,7 +1467,7 @@ void ALTIUM_PCB::ParseShapeBasedRegions6Data(
                 PCB_LAYER_ID klayer = GetKicadLayer( elem.layer );
                 if( klayer == UNDEFINED_LAYER )
                 {
-                    wxLogInfo( wxString::Format(
+                    wxLogWarning( wxString::Format(
                             _( "Polygon on Altium layer %d has no KiCad equivalent. Put it on Eco1_User instead" ),
                             elem.layer ) );
                     klayer = Eco1_User;
@@ -1541,7 +1582,7 @@ void ALTIUM_PCB::ParseArcs6Data(
         PCB_LAYER_ID klayer = GetKicadLayer( elem.layer );
         if( klayer == UNDEFINED_LAYER )
         {
-            wxLogInfo( wxString::Format(
+            wxLogWarning( wxString::Format(
                     _( "Arc on Altium layer %d has no KiCad equivalent. Put it on Eco1_User instead" ),
                     elem.layer ) );
             klayer = Eco1_User;
@@ -1854,7 +1895,7 @@ void ALTIUM_PCB::HelperParsePad6NonCopper( const APAD6& aElem )
     PCB_LAYER_ID klayer = GetKicadLayer( aElem.layer );
     if( klayer == UNDEFINED_LAYER )
     {
-        wxLogInfo( wxString::Format(
+        wxLogWarning( wxString::Format(
                 _( "Non-Copper Pad on Altium layer %d has no KiCad equivalent. Put it on Eco1_User instead" ),
                 aElem.layer ) );
         klayer = Eco1_User;
@@ -2110,7 +2151,7 @@ void ALTIUM_PCB::ParseTracks6Data(
         PCB_LAYER_ID klayer = GetKicadLayer( elem.layer );
         if( klayer == UNDEFINED_LAYER )
         {
-            wxLogInfo( wxString::Format(
+            wxLogWarning( wxString::Format(
                     _( "Track on Altium layer %d has no KiCad equivalent. Put it on Eco1_User instead" ),
                     elem.layer ) );
             klayer = Eco1_User;
@@ -2181,6 +2222,14 @@ void ALTIUM_PCB::ParseTexts6Data(
     {
         ATEXT6 elem( reader );
 
+        if( elem.fonttype == ALTIUM_TEXT_TYPE::BARCODE )
+        {
+            wxLogWarning( wxString::Format(
+                    _( "Ignore Barcode on Altium layer %d because it is not supported right now." ),
+                    elem.layer ) );
+            continue;
+        }
+
         // TODO: better approach to select if item belongs to a MODULE
         EDA_TEXT*   tx  = nullptr;
         BOARD_ITEM* itm = nullptr;
@@ -2214,6 +2263,8 @@ void ALTIUM_PCB::ParseTexts6Data(
                 txm = new TEXTE_MODULE( module );
                 module->Add( txm, ADD_MODE::APPEND );
             }
+
+            txm->SetKeepUpright( false );
 
             tx  = txm;
             itm = txm;
@@ -2256,16 +2307,26 @@ void ALTIUM_PCB::ParseTexts6Data(
         PCB_LAYER_ID klayer = GetKicadLayer( elem.layer );
         if( klayer == UNDEFINED_LAYER )
         {
-            wxLogInfo( wxString::Format(
+            wxLogWarning( wxString::Format(
                     _( "Text on Altium layer %d has no KiCad equivalent. Put it on Eco1_User instead" ),
                     elem.layer ) );
             klayer = Eco1_User;
         }
         itm->SetLayer( klayer );
 
-        tx->SetTextSize( wxSize( elem.height, elem.height ) ); // TODO: parse text width
+        if( elem.fonttype == ALTIUM_TEXT_TYPE::TRUETYPE )
+        {
+            // TODO: why is this required? Somehow, truetype size is calculated differently
+            tx->SetTextSize( wxSize( elem.height / 2, elem.height / 2 ) );
+        }
+        else
+        {
+            tx->SetTextSize( wxSize( elem.height, elem.height ) ); // TODO: parse text width
+        }
         tx->SetTextThickness( elem.strokewidth );
-        tx->SetMirrored( elem.mirrored );
+        tx->SetBold( elem.isBold );
+        tx->SetItalic( elem.isItalic );
+        tx->SetMirrored( elem.isMirrored );
         if( elem.isDesignator || elem.isComment ) // That's just a bold assumption
         {
             tx->SetHorizJustify( EDA_TEXT_HJUSTIFY_T::GR_TEXT_HJUSTIFY_LEFT );
@@ -2344,7 +2405,7 @@ void ALTIUM_PCB::ParseFills6Data(
         PCB_LAYER_ID klayer = GetKicadLayer( elem.layer );
         if( klayer == UNDEFINED_LAYER )
         {
-            wxLogInfo( wxString::Format(
+            wxLogWarning( wxString::Format(
                     _( "Fill on Altium layer %d has no KiCad equivalent. Put it on Eco1_User instead" ),
                     elem.layer ) );
             klayer = Eco1_User;

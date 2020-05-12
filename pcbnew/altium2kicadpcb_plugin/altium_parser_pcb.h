@@ -106,6 +106,14 @@ enum class ALTIUM_RULE_KIND
     POLYGON_CONNECT        = 9,
 };
 
+enum class ALTIUM_CONNECT_STYLE
+{
+    UNKNOWN = 0,
+    DIRECT  = 1,
+    RELIEF  = 2,
+    NONE    = 3
+};
+
 enum class ALTIUM_RECORD
 {
     ARC    = 1,
@@ -181,6 +189,15 @@ enum class ALTIUM_TEXT_POSITION
     RIGHT_TOP     = 7,
     RIGHT_CENTER  = 8,
     RIGHT_BOTTOM  = 9
+};
+
+enum class ALTIUM_TEXT_TYPE
+{
+    UNKNOWN = -1,
+
+    STROKE   = 0,
+    TRUETYPE = 1,
+    BARCODE  = 2
 };
 
 struct ALTIUM_VERTICE
@@ -427,6 +444,9 @@ struct APOLYGON6
     int32_t minprimlength;
     bool    useoctagons;
 
+    // Note: Altium pour index is the opposite of KiCad zone priority!
+    int32_t pourindex;
+
     std::vector<ALTIUM_VERTICE> vertices;
 
     explicit APOLYGON6( ALTIUM_PARSER& aReader );
@@ -450,9 +470,10 @@ struct ARULE6
     int planeclearanceClearance;
 
     // ALTIUM_RULE_KIND::POLYGON_CONNECT
-    int32_t polygonconnectAirgapwidth;
-    int32_t polygonconnectReliefconductorwidth;
-    int     polygonconnectReliefentries;
+    int32_t              polygonconnectAirgapwidth;
+    int32_t              polygonconnectReliefconductorwidth;
+    int                  polygonconnectReliefentries;
+    ALTIUM_CONNECT_STYLE polygonconnectStyle;
 
     // TODO: implement different types of rules we need to parse
 
@@ -618,11 +639,16 @@ struct ATEXT6
     double               rotation;
     uint32_t             strokewidth;
     ALTIUM_TEXT_POSITION textposition;
-    bool                 mirrored;
+
+    bool isBold;
+    bool isItalic;
+    bool isMirrored;
+    bool isInverted;
 
     bool isComment;
     bool isDesignator;
-    bool isTruetype;
+
+    ALTIUM_TEXT_TYPE fonttype;
 
     wxString text;
 
