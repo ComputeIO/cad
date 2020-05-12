@@ -507,6 +507,20 @@ public:
     static LSET InternalCuMask();
 
     /**
+     * Function FrontAssembly()
+     * returns a complete set of all top assembly layers, which is all F_SilkS
+     * and F_Mask
+     */
+    static LSET FrontAssembly();
+
+    /**
+     * Function BackAssembly()
+     * returns a complete set of all bottom assembly layers, which is all B_SilkS
+     * and B_Mask
+     */
+    static LSET BackAssembly();    
+
+    /**
      * Function AllCuMask
      * returns a mask holding the requested number of Cu PCB_LAYER_IDs.
      */
@@ -761,6 +775,42 @@ inline bool IsFrontLayer( PCB_LAYER_ID aLayerId )
     case F_Mask:
     case F_CrtYd:
     case F_Fab:
+        return true;
+    default:
+        ;
+    }
+
+    return false;
+}
+
+/**
+ * Layer classification: check if it's a front assembly layer
+ */
+inline bool IsFrontAssemblyLayer( PCB_LAYER_ID aLayerId )
+{
+    switch( aLayerId )
+    {
+    case F_SilkS:
+    case F_Mask:
+    case Edge_Cuts:
+        return true;
+    default:
+        ;
+    }
+
+    return false;
+}
+
+/**
+ * Layer classification: check if it's a back assembly layer
+ */
+inline bool IsBackAssemblyLayer( PCB_LAYER_ID aLayerId )
+{
+    switch( aLayerId )
+    {
+    case B_SilkS:
+    case B_Mask:
+    case Edge_Cuts:
         return true;
     default:
         ;
