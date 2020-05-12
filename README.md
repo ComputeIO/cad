@@ -10,7 +10,10 @@ You may also take a look into the [Wiki](https://gitlab.com/kicad/code/kicad/-/w
 [<img alt="Jenkins" src="https://img.shields.io/jenkins/build?jobUrl=https%3A%2F%2Fjenkins.simonrichter.eu%2Fview%2FKiCad%2520Status%2Fjob%2Flinux-kicad-head%2F&label=Linux%2C%20amd64&style=plastic">](https://jenkins.simonrichter.eu/view/KiCad%20Status/job/linux-kicad-head/)
 [<img alt="Jenkins" src="https://img.shields.io/jenkins/build?jobUrl=https%3A%2F%2Fjenkins.simonrichter.eu%2Fview%2FKiCad%2520Status%2Fjob%2Fwindows-kicad-msvc-head%2F&label=Windows%2C%20MSVC&style=plastic">](https://jenkins.simonrichter.eu/view/KiCad%20Status/job/windows-kicad-msvc-head/)
 [<img alt="Jenkins" src="https://img.shields.io/jenkins/build?jobUrl=https%3A%2F%2Fjenkins.simonrichter.eu%2Fview%2FKiCad%2520Status%2Fjob%2Fwindows-kicad-msys2-pipeline%2F&label=%28Windows%2C%20MSYS2%29%20Nightly%20Build&style=plastic">](https://jenkins.simonrichter.eu/view/KiCad%20Status/job/windows-kicad-msys2-pipeline/)
-[![Packaging status](https://repology.org/badge/tiny-repos/kicad.svg)](https://repology.org/metapackage/kicad/versions)
+
+## Release status
+[![latest released version(s)](https://repology.org/badge/latest-versions/kicad.svg)](https://repology.org/project/kicad/versions)
+[![Release status](https://repology.org/badge/tiny-repos/kicad.svg)](https://repology.org/metapackage/kicad/versions)
 
 ## Files
 * [AUTHORS.txt](AUTHORS.txt) - The authors, contributors, document writers and translators list
