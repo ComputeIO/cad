@@ -5,7 +5,7 @@ changelogs see the [Documentation](Documentation) subfolder.
 
 ## Files
 * [AUTHORS.txt](AUTHORS.txt) - The authors, contributors, document writers and translators list
-* [CMakeList.txt](CMakeList.txt) - Main CMAKE build tool script
+* [CMakeLists.txt](CMakeLists.txt) - Main CMAKE build tool script
 * [copyright.h](copyright.h) - A very short copy of the GNU General Public License to be included in new source files
 * [CTestConfig.cmake](CTestConfig.cmake) - Support for CTest and CDash testing tools
 * [Doxyfile](Doxyfile) - Doxygen config file for KiCad
@@ -35,7 +35,6 @@ changelogs see the [Documentation](Documentation) subfolder.
 * [pcbnew](pcbnew)           - Sourcecode of the printed circuit board editor
 * [plugins](plugins)           - Sourcecode of the new plugin concept
 * [polygon](polygon)           - Sourcecode of the polygon library
-* [potrace](potrace)           - Sourcecode of the potrace library, used in bitmap2component
 * [qa](qa)                - Testcases using the python interface
 * [resources](resources)         - Resources for freedesktop mime-types for linux
 * [scripting](scripting)         - SWIG Python scripting definitions and build scripts
