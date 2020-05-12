@@ -783,6 +783,7 @@ inline bool IsFrontLayer( PCB_LAYER_ID aLayerId )
     return false;
 }
 
+
 /**
  * Layer classification: check if it's a back layer
  */
