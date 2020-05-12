@@ -449,6 +449,7 @@ set( BMAPS_MID
     select_w_layer
     select_same_sheet
     shape_3d
+    shape_3d_back
     sheetset
     simulator
     sim_run
