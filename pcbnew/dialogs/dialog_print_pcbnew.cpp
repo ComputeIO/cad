@@ -227,14 +227,17 @@ void DIALOG_PRINT_PCBNEW::createLeftPanel()
     buttonSizer->Add( m_buttonSelectAll, 1, wxALL, 5 );
     buttonSizer->Add( m_buttonDeselectAll, 1, wxALL, 5 );
 
+
     // Exclude Edge.Pcb layer checkbox
     m_checkboxNoEdge = new wxCheckBox( sbLayersSizer->GetStaticBox(), wxID_ANY, _( "Exclude PCB edge layer" ) );
     m_checkboxNoEdge->SetToolTip( _("Exclude contents of Edges_Pcb layer from all other layers") );
+
 
     // Static box sizer layout
     sbLayersSizer->Add( bLayerListsSizer, 1, wxALL | wxEXPAND, 5 );
     sbLayersSizer->Add( buttonSizer, 0, wxALL | wxEXPAND, 5 );
     sbLayersSizer->Add( m_checkboxNoEdge, 0, wxALL | wxEXPAND, 5 );
+
 
     getMainSizer()->Insert( 0, sbLayersSizer, 1, wxEXPAND );
 }
