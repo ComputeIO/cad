@@ -1,17 +1,16 @@
-KiCad README
+# KiCad README
 ============
 For specific documentation like Compiling, GUI translation, old
 changelogs see the Documentation subfolder.
 
-Files
+## Files
 -----
-AUTHORS.txt       - The authors, contributors, document writers and translators list
+[AUTHORS.txt](https://gitlab.com/kicad/code/kicad/-/blob/master/AUTHORS.txt)       - The authors, contributors, document writers and translators list
 CMakeList.txt     - Main CMAKE build tool script
 copyright.h       - A very short copy of the GNU General Public License to be included in new source files
 CTestConfig.cmake - Support for CTest and CDash testing tools
 Doxyfile          - Doxygen config file for KiCad
 INSTALL.txt       - The release (binary) installation instructions
-TODO.txt          - Todo list (looks outdated)
 uncrustify.cfg    - Uncrustify config file for uncrustify sources formatting tool
 _clang-format     - clang config file for clang-format sources formatting tool
 
