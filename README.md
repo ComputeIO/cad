@@ -7,19 +7,9 @@ You may also take a look into the [Wiki](https://gitlab.com/kicad/code/kicad/-/w
 
 ## Build state
 
-<img alt="Jenkins" src="https://img.shields.io/jenkins/build?jobUrl=https%3A%2F%2Fjenkins.simonrichter.eu%2Fview%2FKiCad%2520Status%2Fjob%2Flinux-kicad-head%2F&label=Linux%2C%20amd64&style=plastic">
-<img alt="Jenkins" src="https://img.shields.io/jenkins/build?jobUrl=https%3A%2F%2Fjenkins.simonrichter.eu%2Fview%2FKiCad%2520Status%2Fjob%2Fwindows-kicad-msvc-head%2F&label=Windows%2C%20MSVC&style=plastic">
-<img alt="Jenkins" src="https://img.shields.io/jenkins/build?jobUrl=https%3A%2F%2Fjenkins.simonrichter.eu%2Fview%2FKiCad%2520Status%2Fjob%2Fwindows-kicad-msys2-pipeline%2F&label=%28Windows%2C%20MSYS2%29%20Nightly%20Build&style=plastic">
-## Quick Start
-
-To get started with Kicad:
-
-
-1. For live use, download the [latest stable version](https://kicad-pcb.org/download/).
-2. For experimentation and testing, download a [development release.](https://kicad-pcb.org/download/).
-3. To live on the bleeding edge, clone the repo: git clone https://gitlab.com/kicad/code/kicad.git
-
-
+[<img alt="Jenkins" src="https://img.shields.io/jenkins/build?jobUrl=https%3A%2F%2Fjenkins.simonrichter.eu%2Fview%2FKiCad%2520Status%2Fjob%2Flinux-kicad-head%2F&label=Linux%2C%20amd64&style=plastic">](https://jenkins.simonrichter.eu/view/KiCad%20Status/job/linux-kicad-head/)
+[<img alt="Jenkins" src="https://img.shields.io/jenkins/build?jobUrl=https%3A%2F%2Fjenkins.simonrichter.eu%2Fview%2FKiCad%2520Status%2Fjob%2Fwindows-kicad-msvc-head%2F&label=Windows%2C%20MSVC&style=plastic">](https://jenkins.simonrichter.eu/view/KiCad%20Status/job/windows-kicad-msvc-head/)
+[<img alt="Jenkins" src="https://img.shields.io/jenkins/build?jobUrl=https%3A%2F%2Fjenkins.simonrichter.eu%2Fview%2FKiCad%2520Status%2Fjob%2Fwindows-kicad-msys2-pipeline%2F&label=%28Windows%2C%20MSYS2%29%20Nightly%20Build&style=plastic">](https://jenkins.simonrichter.eu/view/KiCad%20Status/job/windows-kicad-msys2-pipeline/)
 [![Packaging status](https://repology.org/badge/tiny-repos/kicad.svg)](https://repology.org/metapackage/kicad/versions)
 
 ## Files
