@@ -784,43 +784,6 @@ inline bool IsFrontLayer( PCB_LAYER_ID aLayerId )
 }
 
 /**
- * Layer classification: check if it's a front assembly layer
- */
-inline bool IsFrontAssemblyLayer( PCB_LAYER_ID aLayerId )
-{
-    switch( aLayerId )
-    {
-    case F_SilkS:
-    case F_Mask:
-    case Edge_Cuts:
-        return true;
-    default:
-        ;
-    }
-
-    return false;
-}
-
-/**
- * Layer classification: check if it's a back assembly layer
- */
-inline bool IsBackAssemblyLayer( PCB_LAYER_ID aLayerId )
-{
-    switch( aLayerId )
-    {
-    case B_SilkS:
-    case B_Mask:
-    case Edge_Cuts:
-        return true;
-    default:
-        ;
-    }
-
-    return false;
-}
-
-
-/**
  * Layer classification: check if it's a back layer
  */
 inline bool IsBackLayer( PCB_LAYER_ID aLayerId )
