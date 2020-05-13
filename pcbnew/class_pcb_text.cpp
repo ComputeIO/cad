@@ -178,7 +178,7 @@ void TEXTE_PCB::Flip( const wxPoint& aCentre, bool aFlipLeftRight )
     SetMirrored( !IsMirrored() );
 
     double text_angle = GetTextAngle();
-    if ( text_angle < 1800 )
+    if( text_angle < 1800 )
         text_angle = 1800 - text_angle;
     else
         text_angle = 3600 - text_angle + 1800;
