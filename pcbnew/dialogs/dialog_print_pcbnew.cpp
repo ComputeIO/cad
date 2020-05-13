@@ -57,9 +57,15 @@ private:
 
     void onSelectAllClick( wxCommandEvent& event );
     void onDeselectAllClick( wxCommandEvent& event );
+    void onOnlyFrontClick( wxCommandEvent& event );
+    void onOnlyBackClick ( wxCommandEvent& event );
 
     ///> (Un)checks all items in a checklist box
     void setListBoxValue( wxCheckListBox* aList, bool aValue );
+
+    ///> (Un)checks all front / back layer
+    void show_front_layer( void );
+    void show_back_layer( void );
 
     ///> Check whether a layer is enabled in a listbox
     bool isLayerEnabled( unsigned int aLayer ) const;
@@ -88,6 +94,8 @@ private:
     wxCheckListBox* m_listCopperLayers;
     wxButton* m_buttonSelectAll;
     wxButton* m_buttonDeselectAll;
+    wxButton* m_buttonOnlyFront;
+	wxButton* m_buttonOnlyBack;
     wxCheckBox* m_checkboxNoEdge;
     wxCheckBox* m_checkboxMirror;
     wxChoice* m_drillMarksChoice;
@@ -227,6 +235,18 @@ void DIALOG_PRINT_PCBNEW::createLeftPanel()
     buttonSizer->Add( m_buttonSelectAll, 1, wxALL, 5 );
     buttonSizer->Add( m_buttonDeselectAll, 1, wxALL, 5 );
 
+    // only Front/Back Layers buttons
+	m_buttonOnlyFront = new wxButton( sbLayersSizer->GetStaticBox(), wxID_ANY, _( "only Front Layers" ) );
+	m_buttonOnlyBack = new wxButton( sbLayersSizer->GetStaticBox(), wxID_ANY, _( "only Back Layers" ) );
+	
+	m_buttonOnlyFront->Connect( wxEVT_COMMAND_BUTTON_CLICKED,
+	            wxCommandEventHandler( DIALOG_PRINT_PCBNEW::onOnlyFrontClick ), NULL, this );
+	m_buttonOnlyBack->Connect( wxEVT_COMMAND_BUTTON_CLICKED,
+	            wxCommandEventHandler( DIALOG_PRINT_PCBNEW::onOnlyBackClick ), NULL, this );
+	
+	wxBoxSizer* buttonSizer2 = new wxBoxSizer( wxHORIZONTAL );
+	buttonSizer2->Add( m_buttonOnlyFront, 1, wxALL, 5 );
+	buttonSizer2->Add( m_buttonOnlyBack, 1, wxALL, 5 );
 
     // Exclude Edge.Pcb layer checkbox
     m_checkboxNoEdge = new wxCheckBox( sbLayersSizer->GetStaticBox(), wxID_ANY, _( "Exclude PCB edge layer" ) );
@@ -235,6 +255,7 @@ void DIALOG_PRINT_PCBNEW::createLeftPanel()
     // Static box sizer layout
     sbLayersSizer->Add( bLayerListsSizer, 1, wxALL | wxEXPAND, 5 );
     sbLayersSizer->Add( buttonSizer, 0, wxALL | wxEXPAND, 5 );
+    sbLayersSizer->Add( buttonSizer2, 0, wxALL | wxEXPAND, 5 );
     sbLayersSizer->Add( m_checkboxNoEdge, 0, wxALL | wxEXPAND, 5 );
 
     getMainSizer()->Insert( 0, sbLayersSizer, 1, wxEXPAND );
@@ -254,6 +275,19 @@ void DIALOG_PRINT_PCBNEW::onDeselectAllClick( wxCommandEvent& event )
     setListBoxValue( m_listTechLayers, false );
 }
 
+void DIALOG_PRINT_PCBNEW::onOnlyFrontClick( wxCommandEvent& event )
+{
+    setListBoxValue( m_listCopperLayers, false );
+    setListBoxValue( m_listTechLayers, false );
+	show_front_layer();
+}
+
+void DIALOG_PRINT_PCBNEW::onOnlyBackClick( wxCommandEvent& event )
+{
+    setListBoxValue( m_listCopperLayers, false );
+    setListBoxValue( m_listTechLayers, false );
+	show_back_layer();
+}
 
 void DIALOG_PRINT_PCBNEW::setListBoxValue( wxCheckListBox* aList, bool aValue )
 {
@@ -261,6 +295,33 @@ void DIALOG_PRINT_PCBNEW::setListBoxValue( wxCheckListBox* aList, bool aValue )
         aList->Check( i, aValue );
 }
 
+void DIALOG_PRINT_PCBNEW::show_front_layer( )
+{
+    BOARD* board = m_parent->GetBoard();
+
+    for( LSEQ seq = board->GetEnabledLayers().UIOrder(); seq; ++seq )
+	{
+		PCB_LAYER_ID layer = *seq;
+		if( IsFrontLayer( layer ) )
+		{
+			enableLayer( layer , true);
+		}
+	}
+}
+
+void DIALOG_PRINT_PCBNEW::show_back_layer( )
+{
+    BOARD* board = m_parent->GetBoard();
+
+    for( LSEQ seq = board->GetEnabledLayers().UIOrder(); seq; ++seq )
+	{
+		PCB_LAYER_ID layer = *seq;
+		if( IsBackLayer( layer ) )
+		{
+			enableLayer( layer , true);
+		}
+	}
+}
 
 bool DIALOG_PRINT_PCBNEW::isLayerEnabled( unsigned int aLayer ) const
 {
