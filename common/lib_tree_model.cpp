@@ -28,6 +28,8 @@
 #include <pgm_base.h>
 #include <kicad_string.h>
 
+#include <algorithm>
+
 // Each node gets this lowest score initially, without any matches applied.
 // Matches will then increase this score depending on match quality.  This way,
 // an empty search string will result in all components being displayed as they
