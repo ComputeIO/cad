@@ -1401,7 +1401,7 @@ void C3D_RENDER_RAYTRACING::add_3D_models( const S3DMODEL *a3DModel,
     wxASSERT( aModuleOpacity > 0.0f );
     wxASSERT( aModuleOpacity <= 1.0f );
 
-    if(aModuleOpacity > 1.0f)
+    if( aModuleOpacity > 1.0f )
     {
         aModuleOpacity = 1.0f;
     }
