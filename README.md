@@ -7,17 +7,6 @@ You may also take a look into the [Wiki](https://gitlab.com/kicad/code/kicad/-/w
 the [Developers](https://kicad-pcb.org/contribute/developers/) section on our [Website](https://kicad-pcb.org/) and
 our [Forum](https://forum.kicad.info/).
 
-# Basic Rules for Merge Requests:
-
-Please configure your fork of the KiCad project with the following settings so that the CI tests work properly:
-- Enable public pipelines (the item Settings->General->Visibility->Pipelines should be enabled and set to "Everyone with access" in you KiCad fork).
-- Set your pipeline timeout to be >3h (6h seems to work) in Settings -> CI/CD -> General Pipelines.
-- Please ensure that the "Enable contributions from maintainers" option is set for this merge request (the checkbox at the bottom of the merge request edit page).
-
-Coding Style:
-- [KiCad Coding Style Policy.](Documentation/development/coding-style-policy.md)
-- for User Interface changes please consider the [User Interface Guidelines](Documentation/development/ui-policy.md)
-
 ## Build state
 
 [<img alt="Jenkins" src="https://img.shields.io/jenkins/build?jobUrl=https%3A%2F%2Fjenkins.simonrichter.eu%2Fview%2FKiCad%2520Status%2Fjob%2Flinux-kicad-head%2F&label=Linux%2C%20amd64&style=plastic">](https://jenkins.simonrichter.eu/view/KiCad%20Status/job/linux-kicad-head/)
