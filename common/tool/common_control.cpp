@@ -165,7 +165,7 @@ int COMMON_CONTROL::ShowHelp( const TOOL_EVENT& aEvent )
 
         if( !helpFile )
         {
-            msg = wxString::Format( _( "Help file \"%s\" could not be found." ), base_name );
+            msg = wxString::Format( _( "Help file \"%s\" could not be found. #padentros" ), base_name );
             wxMessageBox( msg );
             return -1;
         }
