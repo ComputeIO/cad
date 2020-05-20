@@ -39,6 +39,7 @@
 #include <eda_doc.h>
 
 #define URL_GET_INVOLVED "http://kicad-pcb.org/contribute/"
+#define URL_GET_MANUAL   "https://docs.kicad-pcb.org/"
 
 
 void COMMON_CONTROL::Reset( RESET_REASON aReason )
@@ -167,6 +168,7 @@ int COMMON_CONTROL::ShowHelp( const TOOL_EVENT& aEvent )
         {
             msg = wxString::Format( _( "Help file \"%s\" could not be found." ), base_name );
             wxMessageBox( msg );
+            wxLaunchDefaultBrowser( URL_GET_MANUAL );
             return -1;
         }
     }
