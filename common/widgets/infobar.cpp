@@ -41,6 +41,9 @@ WX_INFOBAR::WX_INFOBAR( wxWindow* aParent, wxAuiManager *aMgr, wxWindowID aWinid
 {
     m_showTimer = new wxTimer( this, ID_CLOSE_INFOBAR );
 
+    // Don't use any effects since they leave the sizer area visible under the infobar
+    SetShowHideEffects( wxSHOW_EFFECT_NONE, wxSHOW_EFFECT_NONE );
+
     // On GTK, the infobar seems to start too small, so increase its height
 #ifdef __WXGTK__
     int sx, sy;
@@ -72,9 +75,6 @@ void WX_INFOBAR::ShowMessage( const wxString& aMessage, int aFlags )
 
     if( m_showTime > 0 )
         m_showTimer->StartOnce( m_showTime );
-
-    Refresh();
-    Update();
 }
 
 
@@ -126,7 +126,7 @@ void WX_INFOBAR::AddButton( wxButton* aButton )
     // smaller buttons look better in the (narrow) info bar under OS X
     aButton->SetWindowVariant( wxWINDOW_VARIANT_SMALL );
 #endif // __WXMAC__
-    sizer->Add( aButton, wxSizerFlags().Centre() );
+    sizer->Add( aButton, wxSizerFlags().Centre().Border( wxRIGHT ) );
 
     if( IsShown() )
         sizer->Layout();
@@ -201,7 +201,7 @@ void EDA_INFOBAR_PANEL::AddInfoBar( WX_INFOBAR* aInfoBar )
     wxASSERT( aInfoBar );
 
     aInfoBar->Reparent( this );
-    m_mainSizer->Add( aInfoBar, 1, wxALIGN_TOP | wxEXPAND, 0 );
+    m_mainSizer->Add( aInfoBar, 1, wxEXPAND, 0 );
     m_mainSizer->Layout();
 }
 
@@ -211,7 +211,7 @@ void EDA_INFOBAR_PANEL::AddOtherItem( wxWindow* aOtherItem )
     wxASSERT( aOtherItem );
 
     aOtherItem->Reparent( this );
-    m_mainSizer->Add( aOtherItem, 1, wxALIGN_BOTTOM | wxEXPAND, 0 );
+    m_mainSizer->Add( aOtherItem, 1, wxEXPAND, 0 );
 
     m_mainSizer->AddGrowableRow( 1, 1 );
     m_mainSizer->Layout();

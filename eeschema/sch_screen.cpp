@@ -120,9 +120,8 @@ static GRID_TYPE SchematicGridList[] = {
 };
 
 
-SCH_SCREEN::SCH_SCREEN( KIWAY* aKiway ) :
-    BASE_SCREEN( SCH_SCREEN_T ),
-    KIWAY_HOLDER( aKiway, KIWAY_HOLDER::HOLDER_TYPE::SCREEN ),
+SCH_SCREEN::SCH_SCREEN( EDA_ITEM* aParent ) :
+    BASE_SCREEN( aParent, SCH_SCREEN_T ),
     m_paper( wxT( "A4" ) )
 {
     m_modification_sync = 0;
@@ -592,13 +591,15 @@ bool SCH_SCREEN::IsTerminalPoint( const wxPoint& aPosition, int aLayer )
 
 void SCH_SCREEN::UpdateSymbolLinks( REPORTER* aReporter )
 {
+    wxCHECK_RET( Schematic(), "Cannot call SCH_SCREEN::UpdateSymbolLinks with no SCHEMATIC" );
+
     wxString msg;
     std::unique_ptr< LIB_PART > libSymbol;
     std::vector<SCH_COMPONENT*> symbols;
-    SYMBOL_LIB_TABLE* libs = Prj().SchSymbolLibTable();
+    SYMBOL_LIB_TABLE* libs = Schematic()->Prj().SchSymbolLibTable();
 
     // This will be a nullptr if an s-expression schematic is loaded.
-    PART_LIBS* legacyLibs = Prj().SchLibs();
+    PART_LIBS* legacyLibs = Schematic()->Prj().SchLibs();
 
     for( auto item : Items().OfType( SCH_COMPONENT_T ) )
         symbols.push_back( static_cast<SCH_COMPONENT*>( item ) );
@@ -746,9 +747,15 @@ void SCH_SCREEN::UpdateSymbolLinks( REPORTER* aReporter )
 
 void SCH_SCREEN::UpdateLocalLibSymbolLinks()
 {
+    std::vector<SCH_COMPONENT*> symbols;
+
     for( auto item : Items().OfType( SCH_COMPONENT_T ) )
+        symbols.push_back( static_cast<SCH_COMPONENT*>( item ) );
+
+    for( auto symbol : symbols )
     {
-        SCH_COMPONENT* symbol = static_cast<SCH_COMPONENT*>( item );
+        // Changing the symbol may adjust the bbox of the symbol; remove and reinsert it afterwards.
+        m_rtree.remove( symbol );
 
         auto it = m_libSymbols.find( symbol->GetSchSymbolLibraryName() );
 
@@ -758,6 +765,8 @@ void SCH_SCREEN::UpdateLocalLibSymbolLinks()
             libSymbol = new LIB_PART( *it->second );
 
         symbol->SetLibSymbol( libSymbol );
+
+        m_rtree.insert( symbol );
     }
 }
 
