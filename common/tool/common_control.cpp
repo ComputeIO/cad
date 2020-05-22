@@ -37,16 +37,13 @@
 #include <kiface_i.h>
 #include <dialog_configure_paths.h>
 #include <eda_doc.h>
-
 #include <build_version.h>
 #include <pgm_base.h>
-#include <string>
-
-extern LANGUAGE_DESCR LanguagesList[];
 
 #define URL_GET_INVOLVED  "http://kicad-pcb.org/contribute/"
 #define URL_GET_DOCUMENTS "https://docs.kicad-pcb.org/"
 
+extern LANGUAGE_DESCR LanguagesList[];
 
 void COMMON_CONTROL::Reset( RESET_REASON aReason )
 {
