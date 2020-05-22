@@ -38,8 +38,14 @@
 #include <dialog_configure_paths.h>
 #include <eda_doc.h>
 
-#define URL_GET_INVOLVED "http://kicad-pcb.org/contribute/"
-#define URL_GET_MANUAL   "https://docs.kicad-pcb.org/"
+#include <build_version.h>
+#include <pgm_base.h>
+#include <string>
+
+extern LANGUAGE_DESCR LanguagesList[];
+
+#define URL_GET_INVOLVED  "http://kicad-pcb.org/contribute/"
+#define URL_GET_DOCUMENTS "https://docs.kicad-pcb.org/"
 
 
 void COMMON_CONTROL::Reset( RESET_REASON aReason )
@@ -126,6 +132,22 @@ int COMMON_CONTROL::ShowHelp( const TOOL_EVENT& aEvent )
     wxString            helpFile;
     wxString            msg;
 
+
+    // the master version is the updated file version
+	wxString doc_version = "master";
+
+	// the default language is English
+	wxString lang_code = "en";
+
+	for( unsigned ii = 0;  LanguagesList[ii].m_KI_Lang_Identifier != 0; ii++ )
+	{
+		if ( LanguagesList[ii].m_WX_Lang_Identifier == Pgm().GetSelectedLanguageIdentifier() )
+		{
+			lang_code = LanguagesList[ii].m_Lang_Code;
+			break;
+		}
+	}
+
     /* We have to get document for beginners,
      * or the full specific doc
      * if event id is wxID_INDEX, we want the document for beginners.
@@ -150,11 +172,16 @@ int COMMON_CONTROL::ShowHelp( const TOOL_EVENT& aEvent )
                 break;
         }
 
+        wxString url_getting_started = URL_GET_DOCUMENTS + doc_version + "/" + lang_code + "/getting_started_in_kicad/getting_started_in_kicad.pdf";
+
         if( !helpFile )
         {
             msg = wxString::Format( _( "Html or pdf help file \n%s\nor\n%s could not be found." ),
                                     names[0], names[1] );
             wxMessageBox( msg );
+
+            wxLaunchDefaultBrowser( url_getting_started );
+
             return -1;
         }
     }
@@ -162,13 +189,15 @@ int COMMON_CONTROL::ShowHelp( const TOOL_EVENT& aEvent )
     {
         wxString base_name = m_frame->help_name();
 
+        wxString url_manual = URL_GET_DOCUMENTS + doc_version + "/" + lang_code + "/kicad/kicad.pdf";
+
         helpFile = SearchHelpFileFullPath( search, base_name );
 
         if( !helpFile )
         {
             msg = wxString::Format( _( "Help file \"%s\" could not be found." ), base_name );
             wxMessageBox( msg );
-            wxLaunchDefaultBrowser( URL_GET_MANUAL );
+            wxLaunchDefaultBrowser( url_manual );
             return -1;
         }
     }

@@ -69,6 +69,9 @@ struct LANGUAGE_DESCR
     /// Labels used in menus
     wxString    m_Lang_Label;
 
+    // Labes used in website documents
+    wxString	m_Lang_Code;
+
     /// Set to true if the m_Lang_Label must not be translated
     bool        m_DoNotTranslate;
 };
