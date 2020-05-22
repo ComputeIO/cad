@@ -1,0 +1,16 @@
+tasks:
+  - init: |
+      mkdir -p build/gitpod /workspace/install/bin
+      cd build/gitpod
+      cmake ../.. -GNinja \
+          -DPYTHON_EXECUTABLE=/usr/bin/python3 \
+          -DKICAD_SCRIPTING_WXPYTHON=ON \
+          -DKICAD_SCRIPTING_WXPYTHON_PHOENIX=ON \
+          -DKICAD_SCRIPTING_PYTHON3=ON \
+          -DCMAKE_INSTALL_PREFIX=/workspace/install && \
+      ninja install
+    command: |
+      export PATH=/workspace/install/bin:$PATH
+      export LD_LIBRARY_PATH=/workspace/install/lib
+image:
+  file: .gitpod.Dockerfile

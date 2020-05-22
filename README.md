@@ -1,3 +1,5 @@
+[![Gitpod Ready-to-Code](https://img.shields.io/badge/Gitpod-Ready--to--Code-blue?logo=gitpod)](https://gitpod.io/#https://gitlab.com/kicad/code/kicad) 
+
 # KiCad README
 
 For specific documentation like [Compiling](Documentation/development/compiling.md), GUI translation, old
