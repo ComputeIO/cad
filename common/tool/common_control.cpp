@@ -169,7 +169,7 @@ int COMMON_CONTROL::ShowHelp( const TOOL_EVENT& aEvent )
                 break;
         }
 
-        wxString url_getting_started = URL_GET_DOCUMENTS + doc_version + "/" + lang_code + "/getting_started_in_kicad/getting_started_in_kicad.pdf";
+        wxString url_getting_started = URL_GET_DOCUMENTS + doc_version + "/" + lang_code + "/getting_started_in_kicad/getting_started_in_kicad.html";
 
         if( !helpFile )
         {
@@ -186,7 +186,7 @@ int COMMON_CONTROL::ShowHelp( const TOOL_EVENT& aEvent )
     {
         wxString base_name = m_frame->help_name();
 
-        wxString url_manual = URL_GET_DOCUMENTS + doc_version + "/" + lang_code + "/kicad/kicad.pdf";
+        wxString url_manual = URL_GET_DOCUMENTS + doc_version + "/" + lang_code + "/kicad/kicad.html";
 
         helpFile = SearchHelpFileFullPath( search, base_name );
 
