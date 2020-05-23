@@ -1,5 +1,3 @@
-[![Gitpod Ready-to-Code](https://img.shields.io/badge/Gitpod-Ready--to--Code-blue?logo=gitpod)](https://gitpod.io/#https://gitlab.com/kicad/code/kicad) 
-
 # KiCad README
 
 For specific documentation like [Compiling](Documentation/development/compiling.md), GUI translation, old
@@ -8,6 +6,10 @@ changelogs see the [Documentation](Documentation) subfolder.
 You may also take a look into the [Wiki](https://gitlab.com/kicad/code/kicad/-/wikis/home),
 the [Developers](https://kicad-pcb.org/contribute/developers/) section on our [Website](https://kicad-pcb.org/) and
 our [Forum](https://forum.kicad.info/).
+
+## Preconfigured web IDE
+
+[![Gitpod Ready-to-Code](https://img.shields.io/badge/Gitpod-Ready--to--Code-blue?logo=gitpod)](https://gitpod.io/#https://gitlab.com/kicad/code/kicad) 
 
 ## Build state
 
