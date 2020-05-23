@@ -7,6 +7,10 @@ You may also take a look into the [Wiki](https://gitlab.com/kicad/code/kicad/-/w
 the [Developers](https://kicad-pcb.org/contribute/developers/) section on our [Website](https://kicad-pcb.org/) and
 our [Forum](https://forum.kicad.info/).
 
+## Preconfigured web IDE
+
+[![Gitpod Ready-to-Code](https://img.shields.io/badge/Gitpod-Ready--to--Code-blue?logo=gitpod)](https://gitpod.io/#https://gitlab.com/kicad/code/kicad) 
+
 ## Build state
 
 [<img alt="Jenkins" src="https://img.shields.io/jenkins/build?jobUrl=https%3A%2F%2Fjenkins.simonrichter.eu%2Fview%2FKiCad%2520Status%2Fjob%2Flinux-kicad-head%2F&label=Linux%2C%20amd64&style=plastic">](https://jenkins.simonrichter.eu/view/KiCad%20Status/job/linux-kicad-head/)
