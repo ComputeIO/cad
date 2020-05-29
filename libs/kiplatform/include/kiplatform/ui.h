@@ -18,6 +18,9 @@
  * with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#ifndef KIPLATFORM_UI_H_
+#define KIPLATFORM_UI_H_
+
 class wxNonOwnedWindow;
 class wxWindow;
 
@@ -46,3 +49,5 @@ namespace KIPLATFORM
      */
     void ReparentQuasiModal( wxNonOwnedWindow* aWindow );
 }
+
+#endif // KIPLATFORM_UI_H_
