@@ -35,6 +35,14 @@ CONDITIONAL_MENU::CONDITIONAL_MENU( bool isContextMenu, TOOL_INTERACTIVE* aTool 
     m_tool = aTool;
 }
 
+CONDITIONAL_MENU::~CONDITIONAL_MENU()
+{
+    //delete all menu items we alloced in this instance
+    for( const auto& item : m_allocatedMenuItems )
+    {
+        delete item;
+    }
+}
 
 ACTION_MENU* CONDITIONAL_MENU::create() const
 {
@@ -65,6 +73,7 @@ void CONDITIONAL_MENU::AddItem( int aId, const wxString& aText, const wxString& 
                                 int aOrder )
 {
     wxMenuItem* item = new wxMenuItem( nullptr, aId, aText, aTooltip, wxITEM_NORMAL );
+    m_allocatedMenuItems.push_back( item );
 
     if( aIcon )
         AddBitmapToMenuItem( item, KiBitmap( aIcon ) );
@@ -78,6 +87,7 @@ void CONDITIONAL_MENU::AddCheckItem( int aId, const wxString& aText, const wxStr
                                      int aOrder )
 {
     wxMenuItem* item = new wxMenuItem( nullptr, aId, aText, aTooltip, wxITEM_CHECK );
+    m_allocatedMenuItems.push_back( item );
 
     if( aIcon )
         AddBitmapToMenuItem( item, KiBitmap( aIcon ) );

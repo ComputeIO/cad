@@ -44,6 +44,8 @@ public:
 
     CONDITIONAL_MENU( bool isContextMenu, TOOL_INTERACTIVE* aTool );
 
+    ~CONDITIONAL_MENU();
+
     ACTION_MENU* create() const override;
 
     /**
@@ -259,6 +261,9 @@ private:
 
     ///> List of all menu entries.
     std::list<ENTRY> m_entries;
+
+    //list of wxMenuItem that we alloced, we need to delete them in the end
+    std::list<wxMenuItem*> m_allocatedMenuItems;
 };
 
 #endif /* CONDITIONAL_MENU_H */
