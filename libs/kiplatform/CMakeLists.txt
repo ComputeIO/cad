@@ -11,7 +11,7 @@ if( APPLE )
         "-framework CoreData"
         "-framework Foundation"
         )
-elseif(WIN32)
+elseif( WIN32 )
     set( PLATFORM_SRCS
         msw/ui.cpp
         )
