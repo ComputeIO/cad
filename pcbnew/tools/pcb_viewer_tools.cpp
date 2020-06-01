@@ -71,7 +71,7 @@ int PCB_VIEWER_TOOLS::Show3DViewer( const TOOL_EVENT& aEvent )
         frame()->Update3DView( true );
 
         // A stronger version of Raise() which promotes the window to its parent's level.
-        KIPLATFORM::ReparentQuasiModal( draw3DFrame );
+        KIPLATFORM::UI::ReparentQuasiModal( draw3DFrame );
     }
     return 0;
 }

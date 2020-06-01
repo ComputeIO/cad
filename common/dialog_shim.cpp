@@ -403,7 +403,7 @@ int DIALOG_SHIM::ShowQuasiModal()
     // us the event, so we have no way to stop it.  Instead, we must set an order on
     // the windows so that the quasi-modal will be pushed in front of the disabled
     // window when it is raised.
-    KIPLATFORM::ReparentQuasiModal( this );
+    KIPLATFORM::UI::ReparentQuasiModal( this );
 
     Show( true );
 

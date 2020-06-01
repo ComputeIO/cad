@@ -26,14 +26,14 @@
 #include <wx/toplevel.h>
 #include <wx/window.h>
 
-void KIPLATFORM::ForceFocus( wxWindow* aWindow )
+void KIPLATFORM::UI::ForceFocus( wxWindow* aWindow )
 {
     // On OSX we need to forcefully give the focus to the window
     [[aWindow->GetHandle() window] makeFirstResponder: aWindow->GetHandle()];
 }
 
 
-void KIPLATFORM::ReparentQuasiModal( wxNonOwnedWindow* aWindow )
+void KIPLATFORM::UI::ReparentQuasiModal( wxNonOwnedWindow* aWindow )
 {
     wxTopLevelWindow* parent =
             static_cast<wxTopLevelWindow*>( wxGetTopLevelParent( aWindow->GetParent() ) );

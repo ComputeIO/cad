@@ -502,7 +502,7 @@ protected:
 
     void doSetFocus( wxWindow* aWindow )
     {
-        KIPLATFORM::ForceFocus( aWindow );
+        KIPLATFORM::UI::ForceFocus( aWindow );
     }
 
 protected:

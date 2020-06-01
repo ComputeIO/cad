@@ -26,28 +26,31 @@ class wxWindow;
 
 namespace KIPLATFORM
 {
-    /**
-     * Pass the current focus to the window. On OSX this will forcefully give the focus to
-     * the desired window, while on MSW and GTK it will simply call the wxWidgets SetFocus()
-     * function.
-     *
-     * @param aWindow is the window to pass focus to
-     */
-    void ForceFocus( wxWindow* aWindow );
+    namespace UI
+    {
+        /**
+         * Pass the current focus to the window. On OSX this will forcefully give the focus to
+         * the desired window, while on MSW and GTK it will simply call the wxWidgets SetFocus()
+         * function.
+         *
+         * @param aWindow is the window to pass focus to
+         */
+        void ForceFocus( wxWindow* aWindow );
 
-    /**
-     * Move a window's parent to be the top-level window and force the window to be on top.
-     *
-     * This only has an affect for OSX, it is a NOP for GTK and MSW.
-     *
-     * Apple in its infinite wisdom will raise a disabled window before even passing
-     * us the event, so we have no way to stop it.  Instead, we must set an order on
-     * the windows so that the quasi-modal will be pushed in front of the disabled
-     * window when it is raised.
-     *
-     * @param aWindow is the window to reparent
-     */
-    void ReparentQuasiModal( wxNonOwnedWindow* aWindow );
+        /**
+         * Move a window's parent to be the top-level window and force the window to be on top.
+         *
+         * This only has an affect for OSX, it is a NOP for GTK and MSW.
+         *
+         * Apple in its infinite wisdom will raise a disabled window before even passing
+         * us the event, so we have no way to stop it.  Instead, we must set an order on
+         * the windows so that the quasi-modal will be pushed in front of the disabled
+         * window when it is raised.
+         *
+         * @param aWindow is the window to reparent
+         */
+        void ReparentQuasiModal( wxNonOwnedWindow* aWindow );
+    }
 }
 
 #endif // KIPLATFORM_UI_H_
