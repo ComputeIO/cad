@@ -44,8 +44,6 @@ public:
 
     CONDITIONAL_MENU( bool isContextMenu, TOOL_INTERACTIVE* aTool );
 
-    ~CONDITIONAL_MENU();
-
     ACTION_MENU* create() const override;
 
     /**
@@ -162,15 +160,9 @@ private:
             m_data.menu = aMenu;
         }
 
-        ENTRY( wxMenuItem* aItem, const BITMAP_OPAQUE* aWxMenuBitmap,
-                SELECTION_CONDITION aCondition, int aOrder, bool aCheckmark ) :
-            m_type( WXITEM ), m_icon( aWxMenuBitmap ),
-            m_condition( aCondition ),
-            m_order( aOrder ),
-            m_isCheckmarkEntry( aCheckmark )
-        {
-            m_data.wxItem = aItem;
-        }
+        ENTRY( int aId, const wxString& aText, const wxString& aTooltip,
+                const BITMAP_OPAQUE* aWxMenuBitmap, const SELECTION_CONDITION& aCondition,
+                int aOrder, bool aCheckmark );
 
         // Separator
         ENTRY( SELECTION_CONDITION aCondition, int aOrder ) :
@@ -214,7 +206,7 @@ private:
         inline wxMenuItem* wxItem() const
         {
             assert( m_type == WXITEM );
-            return m_data.wxItem;
+            return m_wxItem.get();
         }
 
         inline bool IsCheckmarkEntry() const
@@ -244,8 +236,8 @@ private:
         union {
             const TOOL_ACTION* action;
             ACTION_MENU*       menu;
-            wxMenuItem*        wxItem;
         } m_data;
+        std::shared_ptr<wxMenuItem> m_wxItem;
 
         ///> Condition to be fulfilled to show the entry in menu.
         SELECTION_CONDITION m_condition;
@@ -261,9 +253,6 @@ private:
 
     ///> List of all menu entries.
     std::list<ENTRY> m_entries;
-
-    //list of wxMenuItem that we alloced, we need to delete them in the end
-    std::list<wxMenuItem*> m_allocatedMenuItems;
 };
 
 #endif /* CONDITIONAL_MENU_H */

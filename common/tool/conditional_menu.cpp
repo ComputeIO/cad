@@ -35,14 +35,6 @@ CONDITIONAL_MENU::CONDITIONAL_MENU( bool isContextMenu, TOOL_INTERACTIVE* aTool 
     m_tool = aTool;
 }
 
-CONDITIONAL_MENU::~CONDITIONAL_MENU()
-{
-    //delete all menu items we alloced in this instance
-    for( const auto& item : m_allocatedMenuItems )
-    {
-        delete item;
-    }
-}
 
 ACTION_MENU* CONDITIONAL_MENU::create() const
 {
@@ -72,13 +64,8 @@ void CONDITIONAL_MENU::AddItem( int aId, const wxString& aText, const wxString& 
                                 BITMAP_DEF aIcon, const SELECTION_CONDITION& aCondition,
                                 int aOrder )
 {
-    wxMenuItem* item = new wxMenuItem( nullptr, aId, aText, aTooltip, wxITEM_NORMAL );
-    m_allocatedMenuItems.push_back( item );
-
-    if( aIcon )
-        AddBitmapToMenuItem( item, KiBitmap( aIcon ) );
-
-    addEntry( ENTRY( item, aIcon, aCondition, aOrder, false ) );
+    ENTRY entry( aId, aText, aTooltip, aIcon, aCondition, aOrder, true );
+    addEntry( entry );
 }
 
 
@@ -86,13 +73,8 @@ void CONDITIONAL_MENU::AddCheckItem( int aId, const wxString& aText, const wxStr
                                      BITMAP_DEF aIcon, const SELECTION_CONDITION& aCondition,
                                      int aOrder )
 {
-    wxMenuItem* item = new wxMenuItem( nullptr, aId, aText, aTooltip, wxITEM_CHECK );
-    m_allocatedMenuItems.push_back( item );
-
-    if( aIcon )
-        AddBitmapToMenuItem( item, KiBitmap( aIcon ) );
-
-    addEntry( ENTRY( item, aIcon, aCondition, aOrder, true ) );
+    ENTRY entry( aId, aText, aTooltip, aIcon, aCondition, aOrder, false );
+    addEntry( entry );
 }
 
 
@@ -259,3 +241,14 @@ void CONDITIONAL_MENU::addEntry( ENTRY aEntry )
 
     m_entries.insert( it, aEntry );
 }
+
+CONDITIONAL_MENU::ENTRY::ENTRY( int aId, const wxString& aText, const wxString& aTooltip,
+        const BITMAP_OPAQUE* aWxMenuBitmap, const SELECTION_CONDITION& aCondition, int aOrder,
+        bool aCheckmark )
+        : m_type( WXITEM ), m_icon( aWxMenuBitmap ), m_condition( aCondition ), m_order( aOrder )
+{
+    m_isCheckmarkEntry = aCheckmark;
+    m_wxItem = std::make_shared<wxMenuItem>( nullptr, aId, aText, aTooltip, wxITEM_CHECK );
+    if( aWxMenuBitmap )
+        AddBitmapToMenuItem( m_wxItem.get(), KiBitmap( aWxMenuBitmap ) );
+};
