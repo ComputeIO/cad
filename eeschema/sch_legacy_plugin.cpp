@@ -2728,10 +2728,7 @@ void SCH_LEGACY_PLUGIN_CACHE::loadDocs()
 
             case 'F':
                 if( symbol )
-                {
-                    symbol->SetDocFileName( text );
                     symbol->GetField( DATASHEET )->SetText( text );
-                }
                 break;
 
             case 0:
@@ -2964,6 +2961,26 @@ void SCH_LEGACY_PLUGIN_CACHE::loadAliases( std::unique_ptr<LIB_PART>& aPart,
         if( aMap )
         {
             LIB_PART* newPart = new LIB_PART( newAliasName );
+
+            // Inherit the parent mandatory field attributes.
+            for( int id=0;  id<MANDATORY_FIELDS;  ++id )
+            {
+                LIB_FIELD* field = newPart->GetField( id );
+
+                // the MANDATORY_FIELDS are exactly that in RAM.
+                wxASSERT( field );
+
+                LIB_FIELD* parentField = aPart->GetField( id );
+
+                wxASSERT( parentField );
+
+                *field = *parentField;
+
+                if( id == VALUE )
+                    field->SetText( newAliasName );
+
+                field->SetParent( newPart );
+            }
 
             newPart->SetParent( aPart.get() );
 
@@ -4248,7 +4265,7 @@ void SCH_LEGACY_PLUGIN_CACHE::saveDocFile()
     {
         wxString description =  it->second->GetDescription();
         wxString keyWords = it->second->GetKeyWords();
-        wxString docFileName = it->second->GetDocFileName();
+        wxString docFileName = it->second->GetDatasheetField().GetText();
 
         if( description.IsEmpty() && keyWords.IsEmpty() && docFileName.IsEmpty() )
             continue;

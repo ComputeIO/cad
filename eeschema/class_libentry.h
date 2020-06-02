@@ -118,7 +118,6 @@ class LIB_PART : public EDA_ITEM, public LIB_TREE_ITEM
     wxString            m_name;             ///< Symbol name.
     wxString            m_description;      ///< documentation for info
     wxString            m_keyWords;         ///< keyword list (used for search for parts by keyword)
-    wxString            m_docFileName;      ///< Associate doc file name
 
     static int  m_subpartIdSeparator;       ///< the separator char between
                                             ///< the subpart id and the reference like U1A
@@ -177,13 +176,6 @@ public:
     }
 
     wxString GetKeyWords() const { return m_keyWords; }
-
-    void SetDocFileName( const wxString& aDocFileName )
-    {
-        m_docFileName = aDocFileName;
-    }
-
-    wxString GetDocFileName() const { return m_docFileName; }
 
     wxString GetSearchText() override;
 
@@ -279,6 +271,11 @@ public:
      */
     LIB_FIELD* FindField( const wxString& aFieldName );
 
+    const LIB_FIELD* FindField( const wxString& aFieldName ) const
+    {
+        return const_cast<LIB_FIELD*>( FindField( aFieldName ) );
+    }
+
     /**
      * Return pointer to the requested field.
      *
@@ -295,6 +292,9 @@ public:
 
     /** Return reference to the footprint field */
     LIB_FIELD& GetFootprintField();
+
+    /** Return reference to the datasheet field. */
+    LIB_FIELD& GetDatasheetField();
 
     /**
      * Print part.
