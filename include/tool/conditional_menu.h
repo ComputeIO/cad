@@ -160,9 +160,16 @@ private:
             m_data.menu = aMenu;
         }
 
-        ENTRY( int aId, const wxString& aText, const wxString& aTooltip,
-                const BITMAP_OPAQUE* aWxMenuBitmap, const SELECTION_CONDITION& aCondition,
-                int aOrder, bool aCheckmark );
+        ENTRY( wxMenuItem* aItem, const BITMAP_OPAQUE* aWxMenuBitmap,
+              SELECTION_CONDITION aCondition, int aOrder, bool aCheckmark ) :
+            m_type( WXITEM ), m_icon( aWxMenuBitmap ),
+            m_condition( aCondition ),
+            m_order( aOrder ),
+            m_isCheckmarkEntry( aCheckmark )
+        {
+            m_data.wxItem = new wxMenuItem( nullptr, aItem->GetId(), aItem->GetItemLabel(),
+                                            aItem->GetHelp(), aItem->GetKind() );
+        }
 
         // Separator
         ENTRY( SELECTION_CONDITION aCondition, int aOrder ) :
@@ -172,6 +179,10 @@ private:
             m_isCheckmarkEntry( false )
         {
         }
+
+        ENTRY( const ENTRY& aEntry );
+
+        ~ENTRY();
 
         ///> Possible entry types.
         enum ENTRY_TYPE {
@@ -206,7 +217,7 @@ private:
         inline wxMenuItem* wxItem() const
         {
             assert( m_type == WXITEM );
-            return m_wxItem.get();
+            return m_data.wxItem;
         }
 
         inline bool IsCheckmarkEntry() const
@@ -233,11 +244,13 @@ private:
         ENTRY_TYPE m_type;
         const BITMAP_OPAQUE* m_icon;
 
+        // This class owns the wxItem object and needs to create, copy and delete it accordingly
+        // But it does not own the action nor menu item
         union {
             const TOOL_ACTION* action;
             ACTION_MENU*       menu;
+            wxMenuItem*        wxItem;
         } m_data;
-        std::shared_ptr<wxMenuItem> m_wxItem;
 
         ///> Condition to be fulfilled to show the entry in menu.
         SELECTION_CONDITION m_condition;

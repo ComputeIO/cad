@@ -64,8 +64,12 @@ void CONDITIONAL_MENU::AddItem( int aId, const wxString& aText, const wxString& 
                                 BITMAP_DEF aIcon, const SELECTION_CONDITION& aCondition,
                                 int aOrder )
 {
-    ENTRY entry( aId, aText, aTooltip, aIcon, aCondition, aOrder, true );
-    addEntry( entry );
+    wxMenuItem item( nullptr, aId, aText, aTooltip, wxITEM_NORMAL );
+
+    if( aIcon )
+        AddBitmapToMenuItem( &item, KiBitmap( aIcon ) );
+
+    addEntry( ENTRY( &item, aIcon, aCondition, aOrder, false ) );
 }
 
 
@@ -73,8 +77,12 @@ void CONDITIONAL_MENU::AddCheckItem( int aId, const wxString& aText, const wxStr
                                      BITMAP_DEF aIcon, const SELECTION_CONDITION& aCondition,
                                      int aOrder )
 {
-    ENTRY entry( aId, aText, aTooltip, aIcon, aCondition, aOrder, false );
-    addEntry( entry );
+    wxMenuItem item( nullptr, aId, aText, aTooltip, wxITEM_CHECK );
+
+    if( aIcon )
+        AddBitmapToMenuItem( &item, KiBitmap( aIcon ) );
+
+    addEntry( ENTRY( &item, aIcon, aCondition, aOrder, true ) );
 }
 
 
@@ -242,13 +250,37 @@ void CONDITIONAL_MENU::addEntry( ENTRY aEntry )
     m_entries.insert( it, aEntry );
 }
 
-CONDITIONAL_MENU::ENTRY::ENTRY( int aId, const wxString& aText, const wxString& aTooltip,
-        const BITMAP_OPAQUE* aWxMenuBitmap, const SELECTION_CONDITION& aCondition, int aOrder,
-        bool aCheckmark )
-        : m_type( WXITEM ), m_icon( aWxMenuBitmap ), m_condition( aCondition ), m_order( aOrder )
+CONDITIONAL_MENU::ENTRY::ENTRY( const ENTRY& aEntry )
 {
-    m_isCheckmarkEntry = aCheckmark;
-    m_wxItem = std::make_shared<wxMenuItem>( nullptr, aId, aText, aTooltip, wxITEM_CHECK );
-    if( aWxMenuBitmap )
-        AddBitmapToMenuItem( m_wxItem.get(), KiBitmap( aWxMenuBitmap ) );
-};
+    m_type = aEntry.m_type;
+    m_icon = aEntry.m_icon;
+    switch( aEntry.m_type )
+    {
+    case ACTION:
+        m_data.action = aEntry.m_data.action;
+        break;
+    case MENU:
+        m_data.menu = aEntry.m_data.menu;
+        break;
+    case WXITEM:
+        //we own the wxItem, we need to copy it so that we can delete it in both instances
+        m_data.wxItem = new wxMenuItem( nullptr,
+                                        aEntry.m_data.wxItem->GetId(),
+                                        aEntry.m_data.wxItem->GetItemLabel(),
+                                        aEntry.m_data.wxItem->GetHelp(),
+                                        aEntry.m_data.wxItem->GetKind() );
+        break;
+    case SEPARATOR:
+        break; //No data to copy
+    }
+    m_condition        = aEntry.m_condition;
+    m_order            = aEntry.m_order;
+    m_isCheckmarkEntry = aEntry.m_isCheckmarkEntry;
+}
+
+CONDITIONAL_MENU::ENTRY::~ENTRY()
+{
+    if( WXITEM == m_type )
+        delete m_data.wxItem;
+}
+
