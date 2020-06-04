@@ -69,7 +69,7 @@ void CONDITIONAL_MENU::AddItem( int aId, const wxString& aText, const wxString& 
     if( aIcon )
         AddBitmapToMenuItem( &item, KiBitmap( aIcon ) );
 
-    addEntry( ENTRY( &item, aIcon, aCondition, aOrder, false ) );
+    addEntry( ENTRY( item, aIcon, aCondition, aOrder, false ) );
 }
 
 
@@ -82,7 +82,7 @@ void CONDITIONAL_MENU::AddCheckItem( int aId, const wxString& aText, const wxStr
     if( aIcon )
         AddBitmapToMenuItem( &item, KiBitmap( aIcon ) );
 
-    addEntry( ENTRY( &item, aIcon, aCondition, aOrder, true ) );
+    addEntry( ENTRY( item, aIcon, aCondition, aOrder, true ) );
 }
 
 
@@ -263,7 +263,7 @@ CONDITIONAL_MENU::ENTRY::ENTRY( const ENTRY& aEntry )
         m_data.menu = aEntry.m_data.menu;
         break;
     case WXITEM:
-        //we own the wxItem, we need to copy it so that we can delete it in both instances
+        // We own the wxItem, so we need to make a new one for the new object
         m_data.wxItem = new wxMenuItem( nullptr,
                                         aEntry.m_data.wxItem->GetId(),
                                         aEntry.m_data.wxItem->GetItemLabel(),
