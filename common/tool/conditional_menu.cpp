@@ -254,6 +254,7 @@ CONDITIONAL_MENU::ENTRY::ENTRY( const ENTRY& aEntry )
 {
     m_type = aEntry.m_type;
     m_icon = aEntry.m_icon;
+
     switch( aEntry.m_type )
     {
     case ACTION:
