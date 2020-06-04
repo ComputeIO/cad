@@ -94,7 +94,10 @@ void EDA_3D_VIEWER::CreateMenuBar()
     viewMenu->AddItem( EDA_3D_ACTIONS::moveRight,      SELECTION_CONDITIONS::ShowAlways );
     viewMenu->AddItem( EDA_3D_ACTIONS::moveUp,         SELECTION_CONDITIONS::ShowAlways );
     viewMenu->AddItem( EDA_3D_ACTIONS::moveDown,       SELECTION_CONDITIONS::ShowAlways );
-
+    
+    viewMenu->AddSeparator();
+    viewMenu->AddItem( EDA_3D_ACTIONS::flipView,       SELECTION_CONDITIONS::ShowAlways );
+    
     viewMenu->Resolve();
 
     //-- Preferences menu -----------------------------------------------

@@ -179,7 +179,6 @@ int EDA_3D_CONTROLLER::ToggleOrtho( const TOOL_EVENT& aEvent )
     return 0;
 }
 
-
 int EDA_3D_CONTROLLER::ToggleVisibility( const TOOL_EVENT& aEvent )
 {
     DISPLAY3D_FLG flag = aEvent.Parameter<DISPLAY3D_FLG>();
@@ -295,6 +294,7 @@ void EDA_3D_CONTROLLER::setTransitions()
     Go( &EDA_3D_CONTROLLER::ViewControl,        EDA_3D_ACTIONS::pivotCenter.MakeEvent() );
     Go( &EDA_3D_CONTROLLER::ViewControl,        EDA_3D_ACTIONS::homeView.MakeEvent() );
     Go( &EDA_3D_CONTROLLER::ViewControl,        EDA_3D_ACTIONS::resetView.MakeEvent() );
+    Go( &EDA_3D_CONTROLLER::ViewControl,        EDA_3D_ACTIONS::flipView.MakeEvent() );
     Go( &EDA_3D_CONTROLLER::RotateView,         EDA_3D_ACTIONS::rotateXCW.MakeEvent() );
     Go( &EDA_3D_CONTROLLER::RotateView,         EDA_3D_ACTIONS::rotateXCCW.MakeEvent() );
     Go( &EDA_3D_CONTROLLER::RotateView,         EDA_3D_ACTIONS::rotateYCW.MakeEvent() );
