@@ -40,6 +40,8 @@
 #include <pcb_draw_panel_gal.h>
 #include <pcbnew.h>
 #include <pcbnew_scripting_helpers.h>
+#include <project.h>
+#include <fp_lib_table.h>
 
 static PCB_EDIT_FRAME* s_PcbEditFrame = NULL;
 
@@ -102,6 +104,53 @@ bool SaveBoard( wxString& aFileName, BOARD* aBoard, IO_MGR::PCB_FILE_T aFormat )
 bool SaveBoard( wxString& aFileName, BOARD* aBoard )
 {
     return SaveBoard( aFileName, aBoard, IO_MGR::KICAD_SEXP );
+}
+
+
+FP_LIB_TABLE* GetFootprintLibraryTable()
+{
+    BOARD* board = GetBoard();
+
+    if( !board )
+        return nullptr;
+
+    PROJECT* project = board->GetProject();
+
+    if( !project )
+        return nullptr;
+
+    return project->PcbFootprintLibs();
+}
+
+
+wxArrayString GetFootprintLibraries()
+{
+    wxArrayString footprintLibraryNames;
+
+    FP_LIB_TABLE* tbl = GetFootprintLibraryTable();
+
+    if( !tbl )
+        return footprintLibraryNames;
+
+    for( const wxString& name : tbl->GetLogicalLibs() )
+        footprintLibraryNames.Add( name );
+
+    return footprintLibraryNames;
+}
+
+
+wxArrayString GetFootprints( const wxString& aNickName )
+{
+    wxArrayString footprintNames;
+
+    FP_LIB_TABLE* tbl = GetFootprintLibraryTable();
+
+    if( !tbl )
+        return footprintNames;
+
+    tbl->FootprintEnumerate( footprintNames, aNickName, true );
+
+    return footprintNames;
 }
 
 
