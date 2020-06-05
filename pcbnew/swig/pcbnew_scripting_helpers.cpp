@@ -34,6 +34,7 @@
 #include <build_version.h>
 #include <class_board.h>
 #include <cstdlib>
+#include <fp_lib_table.h>
 #include <io_mgr.h>
 #include <kicad_string.h>
 #include <macros.h>
@@ -41,7 +42,6 @@
 #include <pcbnew.h>
 #include <pcbnew_scripting_helpers.h>
 #include <project.h>
-#include <fp_lib_table.h>
 
 static PCB_EDIT_FRAME* s_PcbEditFrame = NULL;
 
