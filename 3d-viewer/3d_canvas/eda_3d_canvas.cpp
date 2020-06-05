@@ -951,7 +951,7 @@ bool EDA_3D_CANVAS::SetView3D( int aKeycode )
     case ID_VIEW3D_FLIP:
         m_camera.SetInterpolateMode( CAMERA_INTERPOLATION::BEZIER );
         m_camera.SetT0_and_T1_current_T();
-        m_camera.RotateX_T1( glm::radians( 179.999f ) );
+        m_camera.RotateY_T1( glm::radians( 179.999f ) );
         request_start_moving_camera();
 
     default:

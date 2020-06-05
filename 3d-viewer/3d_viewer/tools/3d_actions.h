@@ -56,9 +56,8 @@ public:
     static TOOL_ACTION moveDown;
     static TOOL_ACTION homeView;
     static TOOL_ACTION resetView;
-    static TOOL_ACTION toggleOrtho;
-    
     static TOOL_ACTION flipView;
+    static TOOL_ACTION toggleOrtho;
 
     static TOOL_ACTION viewFront;
     static TOOL_ACTION viewBack;

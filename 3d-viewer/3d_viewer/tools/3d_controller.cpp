@@ -182,6 +182,7 @@ int EDA_3D_CONTROLLER::ToggleOrtho( const TOOL_EVENT& aEvent )
     return 0;
 }
 
+
 int EDA_3D_CONTROLLER::ToggleVisibility( const TOOL_EVENT& aEvent )
 {
     DISPLAY3D_FLG flag = aEvent.Parameter<DISPLAY3D_FLG>();
