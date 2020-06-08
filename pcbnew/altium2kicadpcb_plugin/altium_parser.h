@@ -120,14 +120,29 @@ public:
 
     std::map<wxString, wxString> ReadProperties();
 
-    static int32_t ConvertToKicadUnit( const int32_t aValue )
-    {
-        return ( ( (int64_t) aValue ) * 254L ) / 100;
-    }
+   static int32_t ConvertToKicadUnit( const int32_t aValue )
+   {
+      int64_t tmp_aValue,rnd_aValue;
+
+      tmp_aValue = ((int64_t) aValue ) * 254L;
+      rnd_aValue = (tmp_aValue < 0) ? (tmp_aValue - 199) : (tmp_aValue + 199);
+
+      rnd_aValue = rnd_aValue / 400;
+
+
+      return ( (int32_t)(rnd_aValue * 4) );
+   }
 
     static int32_t ConvertToKicadUnit( const double aValue )
     {
-        return KiROUND( aValue * 2.54L );
+      int64_t tmp_aValue,rnd_aValue;
+
+      tmp_aValue = (int64_t) (aValue  * 254);
+      rnd_aValue = (tmp_aValue < 0) ? (tmp_aValue - 50) : (tmp_aValue + 50);
+
+      rnd_aValue = rnd_aValue / 100;
+
+      return ( (int32_t)(rnd_aValue) );
     }
 
     static int PropertiesReadInt(
