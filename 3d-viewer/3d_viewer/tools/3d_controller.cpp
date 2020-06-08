@@ -50,7 +50,7 @@ bool EDA_3D_CONTROLLER::Init()
     ctxMenu.AddSeparator();
     ctxMenu.AddItem( EDA_3D_ACTIONS::viewFront,   SELECTION_CONDITIONS::ShowAlways );
     ctxMenu.AddItem( EDA_3D_ACTIONS::viewBack,    SELECTION_CONDITIONS::ShowAlways );
-    
+
     ctxMenu.AddSeparator();
     ctxMenu.AddItem( EDA_3D_ACTIONS::flipView,   SELECTION_CONDITIONS::ShowAlways );
 
