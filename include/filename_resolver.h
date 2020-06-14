@@ -154,6 +154,18 @@ public:
      */
     bool UpdatePathList( std::vector< SEARCH_PATH >& aPathList );
 
+
+    /**
+     * ResolvePathVarialble
+     * If aFileName contains a valid and defined path variable, than
+     * the content of aFileName is returned with the path variable
+     * replaced with its content.
+     * If aFileName doesn't contain a valid and defined path variable,
+     * than the content of aFileName is returned.
+     */
+    wxString ExpandPathVariable( const wxString& aFileName );
+
+
     /**
      * Function ResolvePath
      * determines the full path of the given file name. In the future
