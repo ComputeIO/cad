@@ -57,12 +57,7 @@ class PL_EDITOR_FRAME : public EDA_DRAW_FRAME
 
 protected:
     /// The last filename chosen to be proposed to the user
-    wxString                m_lastFileName;
     PROPERTIES_FRAME*       m_propertiesPagelayout;
-
-private:
-    // list of PARAM_CFG_xxx to read/write parameters saved in config
-    std::vector<PARAM_CFG*> m_configSettings;
 
 public:
     PL_EDITOR_FRAME( KIWAY* aKiway, wxWindow* aParent );
@@ -127,12 +122,6 @@ public:
     const PAGE_INFO& GetPageSettings () const override;
     const wxSize GetPageSizeIU() const override;
 
-    /**
-     * Function GetZoomLevelIndicator
-     * returns a human readable value which can be displayed in dialogs.
-     */
-    const wxString GetZoomLevelIndicator() const override;
-
     PL_DRAW_PANEL_GAL* GetCanvas() const override;
 
     PL_EDITOR_SCREEN* GetScreen() const override
@@ -147,15 +136,8 @@ public:
     }
     void SetAuxOrigin( const wxPoint& aPosition ) override {}
 
-    const wxPoint& GetGridOrigin() const override
-    {
-        return m_grid_origin;
-    }
-
-    void SetGridOrigin( const wxPoint& aPoint ) override
-    {
-        m_grid_origin = aPoint;
-    }
+    const wxPoint& GetGridOrigin() const override { return m_grid_origin; }
+    void SetGridOrigin( const wxPoint& aPoint ) override { m_grid_origin = aPoint; }
 
     /**
      * calculate the position (in page, in iu) of the corner used as coordinate origin
@@ -166,7 +148,7 @@ public:
     const TITLE_BLOCK& GetTitleBlock() const override;
     void SetTitleBlock( const TITLE_BLOCK& aTitleBlock ) override;
 
-    void DisplayGridMsg();
+    void DisplayGridMsg() override;
 
     void UpdateStatusBar() override;
 

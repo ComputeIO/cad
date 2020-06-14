@@ -87,10 +87,6 @@ SCH_BASE_FRAME::SCH_BASE_FRAME( KIWAY* aKiway, wxWindow* aParent, FRAME_T aWindo
     m_defaults( &m_base_frame_defaults )
 {
     createCanvas();
-
-    // Adjusted to display zoom level ~ 1 when the screen shows a 1:1 image
-    // Obviously depends on the monitor, but this is an acceptable value
-    m_zoomLevelCoeff = 11.0 * IU_PER_MILS;
 }
 
 
@@ -114,12 +110,6 @@ EESCHEMA_SETTINGS* SCH_BASE_FRAME::eeconfig() const
 LIBEDIT_SETTINGS* SCH_BASE_FRAME::libeditconfig() const
 {
     return dynamic_cast<LIBEDIT_SETTINGS*>( config() );
-}
-
-
-const wxString SCH_BASE_FRAME::GetZoomLevelIndicator() const
-{
-    return EDA_DRAW_FRAME::GetZoomLevelIndicator();
 }
 
 
@@ -283,15 +273,6 @@ void SCH_BASE_FRAME::RedrawScreen( const wxPoint& aCenterPoint, bool aWarpPointe
 {
     KIGFX::GAL* gal = GetCanvas()->GetGAL();
 
-    double selectedZoom = GetScreen()->GetZoom();
-    double zoomFactor = gal->GetWorldScale() / gal->GetZoomFactor();
-    double scale = 1.0 / ( zoomFactor * selectedZoom );
-
-    if( aCenterPoint != wxPoint( 0, 0 ) )
-        GetCanvas()->GetView()->SetScale( scale, aCenterPoint );
-    else
-        GetCanvas()->GetView()->SetScale( scale );
-
     GetCanvas()->GetView()->SetCenter( aCenterPoint );
 
     if( aWarpPointer )
@@ -442,8 +423,6 @@ void SCH_BASE_FRAME::RemoveFromScreen( EDA_ITEM* aItem, SCH_SCREEN* aScreen )
 
 void SCH_BASE_FRAME::SyncView()
 {
-    auto gs = GetScreen()->GetGridSize();
-    GetCanvas()->GetGAL()->SetGridSize( VECTOR2D( gs.x, gs.y ));
     GetCanvas()->GetView()->UpdateAllItems( KIGFX::ALL );
 }
 

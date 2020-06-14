@@ -158,13 +158,10 @@ void EDA_DRAW_PANEL_GAL::SetFocus()
 
 void EDA_DRAW_PANEL_GAL::onPaint( wxPaintEvent& WXUNUSED( aEvent ) )
 {
-    // Update current zoom settings if the canvas is managed by a EDA frame
+    // Update scroll position if the canvas is managed by a EDA frame
     // (i.e. not by a preview panel in a dialog)
     if( GetParentEDAFrame() && GetParentEDAFrame()->GetScreen() )
-    {
-        GetParentEDAFrame()->GetScreen()->SetZoom( GetLegacyZoom() );
         GetParentEDAFrame()->GetScreen()->m_ScrollCenter = GetView()->GetCenter();
-    }
 
     m_viewControls->UpdateScrollbars();
 
@@ -355,19 +352,15 @@ void EDA_DRAW_PANEL_GAL::SetTopLayer( int aLayer )
 }
 
 
-double EDA_DRAW_PANEL_GAL::GetLegacyZoom() const
-{
-    return m_edaFrame->GetZoomLevelCoeff() / m_gal->GetZoomFactor();
-}
-
-
 bool EDA_DRAW_PANEL_GAL::SwitchBackend( GAL_TYPE aGalType )
 {
     // Do not do anything if the currently used GAL is correct
     if( aGalType == m_backend && m_gal != NULL )
         return true;
 
-    bool result = true; // assume everything will be fine
+    VECTOR2D grid_size = m_gal ? m_gal->GetGridSize() : VECTOR2D();
+    bool     grid_visibility = m_gal ? m_gal->GetGridVisibility() : true;
+    bool     result = true; // assume everything will be fine
 
     // Prevent refreshing canvas during backend switch
     StopDrawing();
@@ -436,6 +429,11 @@ bool EDA_DRAW_PANEL_GAL::SwitchBackend( GAL_TYPE aGalType )
     clientSize.x = std::max( 10, clientSize.x );
     clientSize.y = std::max( 10, clientSize.y );
     m_gal->ResizeScreen( clientSize.GetX(), clientSize.GetY() );
+
+    if( grid_size.x > 0 && grid_size.y > 0 )
+        m_gal->SetGridSize( grid_size );
+
+    m_gal->SetGridVisibility( grid_visibility );
 
     if( m_painter )
         m_painter->SetGAL( m_gal );

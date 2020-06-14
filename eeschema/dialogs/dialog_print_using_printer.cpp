@@ -422,7 +422,6 @@ bool SCH_PRINTOUT::OnBeginDocument( int startPage, int endPage )
  */
 void SCH_PRINTOUT::PrintPage( SCH_SCREEN* aScreen )
 {
-    int      oldZoom;
     wxPoint  tmp_startvisu;
     wxSize   pageSizeIU;             // Page size in internal units
     wxPoint  old_org;
@@ -431,9 +430,8 @@ void SCH_PRINTOUT::PrintPage( SCH_SCREEN* aScreen )
 
     wxBusyCursor dummy;
 
-    // Save current scale factor, offsets, and clip box.
+    // Save current offsets and clip box.
     tmp_startvisu = aScreen->m_StartVisu;
-    oldZoom = aScreen->GetZoom();
     old_org = aScreen->m_DrawOrg;
 
     SETTINGS_MANAGER&  mgr   = Pgm().GetSettingsManager();
@@ -486,8 +484,6 @@ void SCH_PRINTOUT::PrintPage( SCH_SCREEN* aScreen )
     dc->SetLogicalFunction( wxCOPY );
     GRResetPenAndBrush( dc );
 
-    aScreen->m_IsPrinting = true;
-
     COLOR4D savedBgColor = m_parent->GetDrawBgColor();
     COLOR4D bgColor      = m_parent->GetColorSettings()->GetColor( LAYER_SCHEMATIC_BACKGROUND );
 
@@ -529,13 +525,11 @@ void SCH_PRINTOUT::PrintPage( SCH_SCREEN* aScreen )
     aScreen->Print( &renderSettings );
 
     m_parent->SetDrawBgColor( savedBgColor );
-    aScreen->m_IsPrinting = false;
 
     GRForceBlackPen( false );
 
     aScreen->m_StartVisu = tmp_startvisu;
     aScreen->m_DrawOrg   = old_org;
-    aScreen->SetZoom( oldZoom );
 }
 
 

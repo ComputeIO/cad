@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////
-// C++ code generated with wxFormBuilder (version Nov  6 2019)
+// C++ code generated with wxFormBuilder (version Oct 26 2018)
 // http://www.wxformbuilder.org/
 //
 // PLEASE DO *NOT* EDIT THIS FILE!
@@ -58,6 +58,7 @@ class DIALOG_EDIT_COMPONENT_IN_SCHEMATIC_BASE : public DIALOG_SHIM
 		wxChoice* m_unitChoice;
 		wxCheckBox* m_cbAlternateSymbol;
 		wxCheckBox* m_cbExcludeFromBom;
+		wxCheckBox* m_cbExcludeFromBoard;
 		wxRadioBox* m_rbOrientation;
 		wxRadioBox* m_rbMirror;
 		wxStaticLine* m_staticline1;

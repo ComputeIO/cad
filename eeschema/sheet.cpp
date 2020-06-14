@@ -564,14 +564,14 @@ void SCH_EDIT_FRAME::DrawCurrentSheetToClipboard()
     // scale is the ratio resolution (in PPI) / internal units
     double ppi = 300;   // Use 300 pixels per inch to create bitmap images on start
     double inch2Iu = 1000.0 * IU_PER_MILS;
-    double  scale = ppi / inch2Iu;
+    double scale = ppi / inch2Iu;
 
     wxSize dcsize = DrawArea.GetSize();
 
     int maxdim = std::max( dcsize.x, dcsize.y );
 
-    // the max size in pixels of the bitmap used to byuild the sheet copy
-    const int maxbitmapsize = 3000;
+    // the max size in pixels of the bitmap used to build the sheet copy
+    const int maxbitmapsize = 5600;
 
     while( int( maxdim * scale ) > maxbitmapsize )
     {
@@ -585,28 +585,22 @@ void SCH_EDIT_FRAME::DrawCurrentSheetToClipboard()
     // Set draw offset, zoom... to values needed to draw in the memory DC
     // after saving initial values:
     wxPoint tmp_startvisu = screen->m_StartVisu;
-    double tmpzoom = screen->GetZoom();
-    wxPoint old_org = screen->m_DrawOrg;
+    wxPoint old_org       = screen->m_DrawOrg;
     screen->m_DrawOrg.x   = screen->m_DrawOrg.y = 0;
     screen->m_StartVisu.x = screen->m_StartVisu.y = 0;
-
-    screen->SetZoom( 1 );   // we use zoom = 1 in draw functions.
 
     wxMemoryDC dc;
     wxBitmap image( dcsize );
     dc.SelectObject( image );
+    dc.Clear();
 
     GRResetPenAndBrush( &dc );
     GRForceBlackPen( false );
-    screen->m_IsPrinting = true;
     dc.SetUserScale( scale, scale );
 
-    dc.Clear();
     GetRenderSettings()->SetPrintDC( &dc );
 
     PrintPage( GetRenderSettings() );
-
-    screen->m_IsPrinting = false;
 
     if( wxTheClipboard->Open() )
     {
@@ -623,7 +617,6 @@ void SCH_EDIT_FRAME::DrawCurrentSheetToClipboard()
 
     screen->m_StartVisu = tmp_startvisu;
     screen->m_DrawOrg   = old_org;
-    screen->SetZoom( tmpzoom );
 }
 
 

@@ -39,12 +39,16 @@ struct CURSOR_SETTINGS
 struct GRID_SETTINGS
 {
     bool axes_enabled;
-    int last_size;
+    std::vector<wxString> sizes;
+    wxString user_grid_x;
+    wxString user_grid_y;
+    int last_size_idx;
     double line_width;
     double min_spacing;
     bool show;
     int style;
 };
+
 
 /**
  * Stores the common settings that are saved and loaded for each window / frame
@@ -58,6 +62,8 @@ struct WINDOW_SETTINGS
     wxString perspective;
     int pos_x;
     int pos_y;
+
+    std::vector<double> zoom_factors;
 
     CURSOR_SETTINGS cursor;
     GRID_SETTINGS grid;
@@ -113,7 +119,7 @@ public:
         int                   units;
     };
 
-    APP_SETTINGS_BASE( std::string aFilename, int aSchemaVersion );
+    APP_SETTINGS_BASE( const std::string& aFilename, int aSchemaVersion );
 
     virtual ~APP_SETTINGS_BASE() {}
 

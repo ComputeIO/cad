@@ -26,9 +26,7 @@
 
 #include <fctsys.h>
 #include <kiface_i.h>
-#include <eda_base_frame.h>
 #include <confirm.h>
-#include <kiface_i.h>
 #include <dialog_helpers.h>
 #include <pcb_base_frame.h>
 #include <base_units.h>
@@ -40,12 +38,10 @@
 #include <fp_lib_table.h>
 #include <pcbnew_id.h>
 #include <class_board.h>
-#include <class_track.h>
 #include <class_module.h>
 #include <class_drawsegment.h>
 #include <collectors.h>
 #include <pcb_draw_panel_gal.h>
-#include <pcb_view.h>
 #include <math/vector2d.h>
 #include <trigo.h>
 #include <pcb_painter.h>
@@ -54,7 +50,7 @@
 #include <tool/tool_manager.h>
 #include <tool/tool_dispatcher.h>
 #include <tools/pcb_actions.h>
-#include <pcbnew_settings.h>
+#include <tool/grid_menu.h>
 
 wxDEFINE_EVENT( BOARD_CHANGED, wxCommandEvent );
 
@@ -70,16 +66,6 @@ PCB_BASE_FRAME::PCB_BASE_FRAME( KIWAY* aKiway, wxWindow* aParent, FRAME_T aFrame
     EDA_DRAW_FRAME( aKiway, aParent, aFrameType, aTitle, aPos, aSize, aStyle, aFrameName ),
     m_Pcb( nullptr )
 {
-    m_UserGridSize        = wxPoint( (int) 10 * IU_PER_MILS, (int) 10 * IU_PER_MILS );
-
-    m_FastGrid1           = 0;
-    m_FastGrid2           = 0;
-
-    m_zoomLevelCoeff      = 11.0 * IU_PER_MILS;  // Adjusted to roughly displays zoom level = 1
-                                        // when the screen shows a 1:1 image
-                                        // obviously depends on the monitor,
-                                        // but this is an acceptable value
-
     m_Settings = static_cast<PCBNEW_SETTINGS*>( Kiface().KifaceSettings() );
 }
 
@@ -471,11 +457,11 @@ void PCB_BASE_FRAME::OnUpdateSelectZoom( wxUpdateUIEvent& aEvent )
     int current = 0;    // display Auto if no match found
 
     // check for a match within 1%
-    double zoom = GetCanvas()->GetLegacyZoom();
+    double zoom = GetCanvas()->GetGAL()->GetZoomFactor() / ZOOM_COEFF;
 
-    for( unsigned i = 0; i < GetScreen()->m_ZoomList.size(); i++ )
+    for( unsigned i = 0; i < config()->m_Window.zoom_factors.size(); i++ )
     {
-        if( std::fabs( zoom - GetScreen()->m_ZoomList[i] ) < ( zoom / 100.0 ) )
+        if( std::fabs( zoom - config()->m_Window.zoom_factors[i] ) < ( zoom / 100.0 ) )
         {
             current = i + 1;
             break;
@@ -522,26 +508,13 @@ void PCB_BASE_FRAME::DisplayGridMsg()
 
     switch( m_userUnits )
     {
-    case EDA_UNITS::INCHES:
-        gridformatter = "grid X %.6f  Y %.6f";
-        break;
-
-    case EDA_UNITS::MILLIMETRES:
-        gridformatter = "grid X %.6f  Y %.6f";
-        break;
-
-    default:
-        gridformatter = "grid X %f  Y %f";
-        break;
+    case EDA_UNITS::INCHES:      gridformatter = "grid X %.6f  Y %.6f"; break;
+    case EDA_UNITS::MILLIMETRES: gridformatter = "grid X %.6f  Y %.6f"; break;
+    default:                     gridformatter = "grid X %f  Y %f";     break;
     }
 
-    BASE_SCREEN* screen = GetScreen();
-    wxArrayString gridsList;
-
-    int        icurr = screen->BuildGridsChoiceList( gridsList, m_userUnits != EDA_UNITS::INCHES );
-    GRID_TYPE& grid = screen->GetGrid( icurr );
-    double grid_x = To_User_Unit( m_userUnits, grid.m_Size.x );
-    double grid_y = To_User_Unit( m_userUnits, grid.m_Size.y );
+    double grid_x = To_User_Unit( m_userUnits, GetCanvas()->GetGAL()->GetGridSize().x );
+    double grid_y = To_User_Unit( m_userUnits, GetCanvas()->GetGAL()->GetGridSize().y );
     line.Printf( gridformatter, grid_x, grid_y );
 
     SetStatusText( line, 4 );
@@ -654,23 +627,68 @@ void PCB_BASE_FRAME::LoadSettings( APP_SETTINGS_BASE* aCfg )
 {
     EDA_DRAW_FRAME::LoadSettings( aCfg );
 
-    auto cfg = dynamic_cast<PCBNEW_SETTINGS*>( aCfg );
-    wxCHECK( cfg, /*void*/ );
+    if( aCfg->m_Window.grid.sizes.empty() )
+    {
+        aCfg->m_Window.grid.sizes = { "1000 mil",
+                                      "500 mil",
+                                      "250 mil",
+                                      "200 mil",
+                                      "100 mil",
+                                      "50 mil",
+                                      "25 mil",
+                                      "20 mil",
+                                      "10 mil",
+                                      "5 mil",
+                                      "2 mil",
+                                      "1 mil",
+                                      "5.0 mm",
+                                      "2.5 mm",
+                                      "1.0 mm",
+                                      "0.5 mm",
+                                      "0.25 mm",
+                                      "0.2 mm",
+                                      "0.1 mm",
+                                      "0.05 mm",
+                                      "0.025 mm",
+                                      "0.01 mm" };
+    }
 
-    // Ensure grid id is an existent grid id:
-    if( (m_LastGridSizeId <= 0) ||
-        (m_LastGridSizeId > (ID_POPUP_GRID_USER - ID_POPUP_GRID_LEVEL_1000)) )
-        m_LastGridSizeId = ID_POPUP_GRID_LEVEL_500 - ID_POPUP_GRID_LEVEL_1000;
+    if( aCfg->m_Window.zoom_factors.empty() )
+    {
+        aCfg->m_Window.zoom_factors = { 0.035,
+                                        0.05,
+                                        0.08,
+                                        0.13,
+                                        0.22,
+                                        0.35,
+                                        0.6,
+                                        1.0,
+                                        1.5,
+                                        2.2,
+                                        3.5,
+                                        5.0,
+                                        8.0,
+                                        13.0,
+                                        20.0,
+                                        35.0,
+                                        50.0,
+                                        80.0,
+                                        130.0,
+                                        220.0,
+                                        300.0 };
+    }
 
-    EDA_UNITS userGridUnits = static_cast<EDA_UNITS>( cfg->m_UserGrid.units );
-    m_UserGridSize.x = (int) From_User_Unit( userGridUnits, cfg->m_UserGrid.size_x );
-    m_UserGridSize.y = (int) From_User_Unit( userGridUnits, cfg->m_UserGrid.size_y );
+    for( double& factor : aCfg->m_Window.zoom_factors )
+        factor = std::min( factor, MAX_ZOOM_FACTOR );
 
-    m_DisplayOptions = cfg->m_Display;
-    m_PolarCoords = cfg->m_PolarCoords;
+    // Some, but not all derived classes have a PCBNEW_SETTINGS.
+    PCBNEW_SETTINGS* cfg = dynamic_cast<PCBNEW_SETTINGS*>( aCfg );
 
-    m_FastGrid1 = cfg->m_FastGrid1;
-    m_FastGrid2 = cfg->m_FastGrid2;
+    if( cfg )
+    {
+        m_DisplayOptions = cfg->m_Display;
+        m_PolarCoords = cfg->m_PolarCoords;
+    }
 }
 
 
@@ -678,18 +696,14 @@ void PCB_BASE_FRAME::SaveSettings( APP_SETTINGS_BASE* aCfg )
 {
     EDA_DRAW_FRAME::SaveSettings( aCfg );
 
-    auto cfg = dynamic_cast<PCBNEW_SETTINGS*>( aCfg );
-    wxCHECK( cfg, /*void*/ );
+    // Some, but not all derived classes have a PCBNEW_SETTINGS.
+    PCBNEW_SETTINGS* cfg = dynamic_cast<PCBNEW_SETTINGS*>( aCfg );
 
-    cfg->m_UserGrid.size_x = To_User_Unit( m_userUnits, m_UserGridSize.x );
-    cfg->m_UserGrid.size_y = To_User_Unit( m_userUnits, m_UserGridSize.y );
-    cfg->m_UserGrid.units = static_cast<int>( m_userUnits );
-
-    cfg->m_Display = m_DisplayOptions;
-    cfg->m_PolarCoords = m_PolarCoords;
-
-    cfg->m_FastGrid1 = m_FastGrid1;
-    cfg->m_FastGrid2 = m_FastGrid2;
+    if( cfg )
+    {
+        cfg->m_Display = m_DisplayOptions;
+        cfg->m_PolarCoords = m_PolarCoords;
+    }
 }
 
 
@@ -735,12 +749,6 @@ void PCB_BASE_FRAME::OnModify()
 }
 
 
-const wxString PCB_BASE_FRAME::GetZoomLevelIndicator() const
-{
-    return EDA_DRAW_FRAME::GetZoomLevelIndicator();
-}
-
-
 void PCB_BASE_FRAME::UpdateGridSelectBox()
 {
     UpdateStatusBar();
@@ -752,18 +760,16 @@ void PCB_BASE_FRAME::UpdateGridSelectBox()
     // Update grid values with the current units setting.
     m_gridSelectBox->Clear();
     wxArrayString gridsList;
-    int icurr = GetScreen()->BuildGridsChoiceList( gridsList, GetUserUnits() != EDA_UNITS::INCHES );
 
-    for( size_t i = 0; i < GetScreen()->GetGridCount(); i++ )
-    {
-        GRID_TYPE& grid = GetScreen()->GetGrid( i );
-        m_gridSelectBox->Append( gridsList[i], (void*) &grid.m_CmdId );
-    }
+    GRID_MENU::BuildChoiceList( &gridsList, config(), GetUserUnits() != EDA_UNITS::INCHES );
+
+    for( const wxString& grid : gridsList )
+        m_gridSelectBox->Append( grid );
 
     m_gridSelectBox->Append( wxT( "---" ) );
     m_gridSelectBox->Append( _( "Edit User Grid..." ) );
 
-    m_gridSelectBox->SetSelection( icurr );
+    m_gridSelectBox->SetSelection( config()->m_Window.grid.last_size_idx );
 }
 
 
@@ -772,70 +778,20 @@ void PCB_BASE_FRAME::updateZoomSelectBox()
     if( m_zoomSelectBox == NULL )
         return;
 
-    wxString msg;
+    double zoom = GetCanvas()->GetGAL()->GetZoomFactor() / ZOOM_COEFF;
 
     m_zoomSelectBox->Clear();
     m_zoomSelectBox->Append( _( "Zoom Auto" ) );
     m_zoomSelectBox->SetSelection( 0 );
 
-    for( unsigned i = 0;  i < GetScreen()->m_ZoomList.size();  ++i )
+    for( unsigned i = 0;  i < config()->m_Window.zoom_factors.size();  ++i )
     {
-        msg = _( "Zoom " );
+        double current = config()->m_Window.zoom_factors[i];
 
-        double level =  m_zoomLevelCoeff / (double)GetScreen()->m_ZoomList[i];
-        wxString value = wxString::Format( wxT( "%.2f" ), level );
-        msg += value;
+        m_zoomSelectBox->Append( wxString::Format( _( "Zoom %.2f" ), current ) );
 
-        m_zoomSelectBox->Append( msg );
-
-        if( GetScreen()->GetZoom() == GetScreen()->m_ZoomList[i] )
+        if( zoom == current )
             m_zoomSelectBox->SetSelection( i + 1 );
-    }
-}
-
-
-void PCB_BASE_FRAME::SetFastGrid1()
-{
-    if( m_FastGrid1 >= (int)GetScreen()->GetGridCount() )
-        return;
-
-    int cmdId = GetScreen()->GetGrids()[m_FastGrid1].m_CmdId - ID_POPUP_GRID_LEVEL_1000;
-    GetToolManager()->RunAction( "common.Control.gridPreset", true, cmdId );
-}
-
-
-void PCB_BASE_FRAME::SetFastGrid2()
-{
-    if( m_FastGrid2 >= (int)GetScreen()->GetGridCount() )
-        return;
-
-    int cmdId = GetScreen()->GetGrids()[m_FastGrid2].m_CmdId - ID_POPUP_GRID_LEVEL_1000;
-    GetToolManager()->RunAction( "common.Control.gridPreset", true, cmdId );
-}
-
-
-bool PCB_BASE_FRAME::IsGridVisible() const
-{
-    return m_drawGrid;
-}
-
-
-void PCB_BASE_FRAME::SetGridVisibility( bool aVisible )
-{
-    m_drawGrid = aVisible;
-
-    // Update the display with the new grid
-    if( GetCanvas() )
-    {
-        // Check to ensure these exist, since this function could be called before
-        // the GAL and View have been created
-        if( GetCanvas()->GetGAL() )
-            GetCanvas()->GetGAL()->SetGridVisibility( aVisible );
-
-        if( GetCanvas()->GetView() )
-            GetCanvas()->GetView()->MarkTargetDirty( KIGFX::TARGET_NONCACHED );
-
-        GetCanvas()->Refresh();
     }
 }
 
@@ -855,7 +811,7 @@ void PCB_BASE_FRAME::ActivateGalCanvas()
     if( m_toolManager )
     {
         m_toolManager->SetEnvironment( m_Pcb, GetCanvas()->GetView(),
-                                       GetCanvas()->GetViewControls(), this );
+                                       GetCanvas()->GetViewControls(), config(), this );
     }
 
     SetBoard( m_Pcb );
@@ -873,9 +829,5 @@ void PCB_BASE_FRAME::ActivateGalCanvas()
     canvas->GetView()->RecacheAllItems();
     canvas->SetEventDispatcher( m_toolDispatcher );
     canvas->StartDrawing();
-
-    // Initialize the grid settings
-    GetCanvas()->GetGAL()->SetGridSize( VECTOR2D( GetScreen()->GetGridSize() ) );
-    GetCanvas()->GetGAL()->SetGridVisibility( IsGridVisible() );
 }
 

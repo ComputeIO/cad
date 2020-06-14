@@ -40,7 +40,6 @@ class ACTION_TOOLBAR;
 class COLOR_SETTINGS;
 class TOOL_MENU;
 class APP_SETTINGS_BASE;
-class EDA_INFOBAR_PANEL;
 
 namespace KIGFX
 {
@@ -81,17 +80,10 @@ protected:
 
     std::unique_ptr<wxSingleInstanceChecker> m_file_checker;    ///< prevents opening same file multiple times.
 
-    int                m_LastGridSizeId;    // The command id offset (>= 0) of the last selected
-                                            // grid 0 is for the grid corresponding to a
-                                            // wxCommand ID = ID_POPUP_GRID_LEVEL_1000.
-    bool               m_drawGrid;          // Hide/Show grid
     bool               m_showPageLimits;    // True to display the page limits
     COLOR4D            m_gridColor;         // Grid color
     COLOR4D            m_drawBgColor;       // The background color of the draw canvas; BLACK for
                                             // Pcbnew, BLACK or WHITE for eeschema
-    double             m_zoomLevelCoeff;    // A suitable value to convert the internal zoom
-                                            // scaling factor to a zoom level value which rougly
-                                            // gives 1.0 when the board/schematic is at scale = 1
     int                m_UndoRedoCountMax;  // Default Undo/Redo command Max depth, to be handed
                                             // to screens
     bool               m_PolarCoords;       // For those frames that support polar coordinates
@@ -207,9 +199,6 @@ public:
     virtual const wxPoint& GetGridOrigin() const = 0;
     virtual void SetGridOrigin( const wxPoint& aPosition ) = 0;
 
-    int GetLastGridSizeId() const { return m_LastGridSizeId; }
-    void SetLastGridSizeId( int aId ) { m_LastGridSizeId = aId; }
-
     /**
      * Return the nearest \a aGridSize location to \a aPosition.
      *
@@ -223,14 +212,7 @@ public:
 
     // the background color of the draw canvas:
     // Virtual because some frames can have a specific way to get/set the bg color
-    /**
-     * @return the COLOR4D for the canvas background
-     */
     virtual COLOR4D GetDrawBgColor() const { return m_drawBgColor; }
-
-    /**
-     * @param aColor: the COLOR4D for the canvas background
-     */
     virtual void SetDrawBgColor( COLOR4D aColor) { m_drawBgColor= aColor ; }
 
     /// Returns a pointer to the active color theme settings
@@ -242,9 +224,8 @@ public:
     virtual wxString GetScreenDesc() const;
 
     /**
-     * Return a pointer to a BASE_SCREEN or one of its
-     * derivatives.  It is overloaded by derived classes to return
-     * SCH_SCREEN or PCB_SCREEN.
+     * Return a pointer to a BASE_SCREEN or one of its derivatives.  It is overloaded by
+     * derived classes to return SCH_SCREEN or PCB_SCREEN.
      */
     virtual BASE_SCREEN* GetScreen() const  { return m_currentScreen; }
 
@@ -260,19 +241,9 @@ public:
     virtual void ExecuteRemoteCommand( const char* cmdline ){}
 
     /**
-     * Return a human readable value which can be displayed as zoom
-     * level indicator in dialogs.
-     * this can be a percentage or other indicator.
-     * it is virtual because it could be different for pcbnew, gerbview or eeschema
-     * (different internal units and different purposes)
-     * note also adjust m_zoomLevelCoeff is the way to adjust the displayed value
+     * Return a human readable value for display in dialogs.
      */
-    virtual const wxString GetZoomLevelIndicator() const;
-
-    /**
-     * Return the coefficient to convert internal display scale factor to zoom level.
-     */
-    inline double GetZoomLevelCoeff() const { return m_zoomLevelCoeff; }
+    const wxString GetZoomLevelIndicator() const;
 
     void EraseMsgBox();
 
@@ -286,8 +257,8 @@ public:
      * These 4 functions provide a basic way to show/hide grid and /get/set grid color.
      * These parameters are saved in KiCad config for each main frame.
      */
-    virtual bool IsGridVisible() const { return m_drawGrid; }
-    virtual void SetGridVisibility( bool aVisible ) { m_drawGrid = aVisible; }
+    bool IsGridVisible() const;
+    virtual void SetGridVisibility( bool aVisible );
 
     virtual COLOR4D GetGridColor() { return m_gridColor; }
     virtual void SetGridColor( COLOR4D aColor ) { m_gridColor = aColor; }
@@ -346,11 +317,6 @@ public:
     void FocusOnLocation( const wxPoint& aPos );
 
     /**
-     * @return The current zoom level.
-     */
-    double GetZoom();
-
-    /**
      * Function CreateBasicMenu
      *
      * Construct a "basic" menu for a tool, containing only items
@@ -388,14 +354,14 @@ public:
     void UpdateStatusBar() override;
 
     /**
-     * Display current unit pane on the status bar.
+     * Display current unit pane in the status bar.
      */
     void DisplayUnitsMsg();
 
     /**
-     * Display current grid pane on the status bar.
+     * Display current grid size in the status bar.
      */
-    void DisplayGridMsg();
+    virtual void DisplayGridMsg();
 
     /* interprocess communication */
     void CreateServer( int service, bool local = true );
