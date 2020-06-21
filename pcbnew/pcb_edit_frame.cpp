@@ -370,14 +370,6 @@ BOARD_ITEM_CONTAINER* PCB_EDIT_FRAME::GetModel() const
 }
 
 
-int PCB_EDIT_FRAME::GetSeverity( int aErrorCode ) const
-{
-    BOARD_DESIGN_SETTINGS& bds = GetBoard()->GetDesignSettings();
-
-    return bds.m_DRCSeverities[ aErrorCode ];
-}
-
-
 void PCB_EDIT_FRAME::SetPageSettings( const PAGE_INFO& aPageSettings )
 {
     PCB_BASE_FRAME::SetPageSettings( aPageSettings );
@@ -904,8 +896,8 @@ void PCB_EDIT_FRAME::UpdateUserInterface()
     // (layer and items visibility, colors ...)
 
     // Rebuild list of nets (full ratsnest rebuild)
-    Compile_Ratsnest( true );
     GetBoard()->BuildConnectivity();
+    Compile_Ratsnest( true );
 
     // Update info shown by the horizontal toolbars
     ReCreateLayerBox();

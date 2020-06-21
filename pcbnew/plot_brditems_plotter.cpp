@@ -39,7 +39,6 @@
 #include <trigo.h>
 
 #include <board_design_settings.h>            // for BOARD_DESIGN_SETTINGS
-#include <colors.h>                           // for LIGHTGRAY, WHITE
 #include <core/typeinfo.h>                    // for dyn_cast, PCB_DIMENSION_T
 #include <eda_text.h>                         // for FILLED, EDA_DRAW_MODE_T
 #include <gal/color4d.h>                      // for COLOR4D, operator!=
@@ -534,16 +533,33 @@ void BRDITEMS_PLOTTER::PlotFootprintGraphicItem( EDGE_MODULE* aEdge )
         std::vector<wxPoint> pts;
         aEdge->GetRectCorners( &pts );
 
-        m_plotter->ThickSegment( pts[0], pts[1], thickness, GetPlotMode(), &gbr_metadata );
-        m_plotter->ThickSegment( pts[1], pts[2], thickness, GetPlotMode(), &gbr_metadata );
-        m_plotter->ThickSegment( pts[2], pts[3], thickness, GetPlotMode(), &gbr_metadata );
-        m_plotter->ThickSegment( pts[3], pts[0], thickness, GetPlotMode(), &gbr_metadata );
+        if( aEdge->GetWidth() > 0 )
+        {
+            m_plotter->ThickSegment( pts[0], pts[1], thickness, GetPlotMode(), &gbr_metadata );
+            m_plotter->ThickSegment( pts[1], pts[2], thickness, GetPlotMode(), &gbr_metadata );
+            m_plotter->ThickSegment( pts[2], pts[3], thickness, GetPlotMode(), &gbr_metadata );
+            m_plotter->ThickSegment( pts[3], pts[0], thickness, GetPlotMode(), &gbr_metadata );
+        }
+        else
+        {
+            SHAPE_LINE_CHAIN poly;
+
+            for( const wxPoint& pt : pts )
+                poly.Append( pt );
+
+            m_plotter->PlotPoly( poly, FILLED_SHAPE, -1, &gbr_metadata );
+        }
     }
         break;
 
     case S_CIRCLE:
         radius = KiROUND( GetLineLength( end, pos ) );
-        m_plotter->ThickCircle( pos, radius * 2, thickness, GetPlotMode(), &gbr_metadata );
+
+        if( aEdge->GetWidth() > 0 )
+            m_plotter->ThickCircle( pos, radius * 2, thickness, GetPlotMode(), &gbr_metadata );
+        else
+            m_plotter->Circle( pos, radius * 2, FILLED_SHAPE, -1 );
+
         break;
 
     case S_ARC:

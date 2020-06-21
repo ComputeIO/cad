@@ -37,8 +37,8 @@
 #include <confirm.h>
 #include <dialogs/panel_modedit_color_settings.h>
 #include <dialogs/panel_modedit_defaults.h>
-#include <dialogs/panel_modedit_display_options.h>
-#include <dialogs/panel_modedit_settings.h>
+#include <dialogs/panel_display_options.h>
+#include <dialogs/panel_edit_options.h>
 #include <fctsys.h>
 #include <footprint_edit_frame.h>
 #include <footprint_editor_settings.h>
@@ -171,11 +171,10 @@ FOOTPRINT_EDIT_FRAME::FOOTPRINT_EDIT_FRAME( KIWAY* aKiway, wxWindow* aParent,
 
     GetGalDisplayOptions().m_axesEnabled = true;
 
-    SetScreen( new PCB_SCREEN( GetPageSettings().GetSizeIU() ) );
-    GetScreen()->SetMaxUndoItems( m_UndoRedoCountMax );
-
     // In modedit, set the default paper size to A4 for plot/print
     SetPageSettings( PAGE_INFO( PAGE_INFO::A4 ) );
+    SetScreen( new PCB_SCREEN( GetPageSettings().GetSizeIU() ) );
+    GetScreen()->SetMaxUndoItems( m_UndoRedoCountMax );
 
     // Create the manager and dispatcher & route draw panel events to the dispatcher
     setupTools();
@@ -284,7 +283,7 @@ void FOOTPRINT_EDIT_FRAME::HardRedraw()
 
 void FOOTPRINT_EDIT_FRAME::ToggleSearchTree()
 {
-    auto& treePane = m_auimgr.GetPane( m_treePane );
+    wxAuiPaneInfo& treePane = m_auimgr.GetPane( m_treePane );
     treePane.Show( !IsSearchTreeShown() );
     m_auimgr.Update();
 }
@@ -350,22 +349,22 @@ void FOOTPRINT_EDIT_FRAME::retainLastFootprint()
 
     if( id.IsValid() )
     {
-        Prj().SetRString( PROJECT::PCB_FOOTPRINT_EDITOR_NICKNAME, id.GetLibNickname() );
-        Prj().SetRString( PROJECT::PCB_FOOTPRINT_EDITOR_FPNAME, id.GetLibItemName() );
+        Prj().SetRString( PROJECT::PCB_FOOTPRINT_EDITOR_LIB_NICKNAME, id.GetLibNickname() );
+        Prj().SetRString( PROJECT::PCB_FOOTPRINT_EDITOR_FP_NAME, id.GetLibItemName() );
     }
 }
 
 
 void FOOTPRINT_EDIT_FRAME::restoreLastFootprint()
 {
-    const wxString& curFootprintName = Prj().GetRString( PROJECT::PCB_FOOTPRINT_EDITOR_FPNAME );
-    const wxString& curNickname =  Prj().GetRString( PROJECT::PCB_FOOTPRINT_EDITOR_NICKNAME );
+    const wxString& footprintName = Prj().GetRString( PROJECT::PCB_FOOTPRINT_EDITOR_FP_NAME );
+    const wxString& libNickname =  Prj().GetRString( PROJECT::PCB_FOOTPRINT_EDITOR_LIB_NICKNAME );
 
-    if( curNickname.Length() && curFootprintName.Length() )
+    if( libNickname.Length() && footprintName.Length() )
     {
         LIB_ID id;
-        id.SetLibNickname( curNickname );
-        id.SetLibItemName( curFootprintName );
+        id.SetLibNickname( libNickname );
+        id.SetLibItemName( footprintName );
 
         MODULE* module = loadFootprint( id );
 
@@ -410,21 +409,15 @@ void FOOTPRINT_EDIT_FRAME::SetDesignSettings( const BOARD_DESIGN_SETTINGS& aSett
 
 const PCB_PLOT_PARAMS& FOOTPRINT_EDIT_FRAME::GetPlotSettings() const
 {
-    // get the settings from the parent editor, not our BOARD.
-    PCB_BASE_FRAME* parentFrame = (PCB_BASE_FRAME*) Kiway().Player( FRAME_PCB_EDITOR, true );
-    wxASSERT( parentFrame );
+    wxFAIL_MSG( "Plotting not supported in Footprint Editor" );
 
-    return parentFrame->GetPlotSettings();
+    return PCB_BASE_FRAME::GetPlotSettings();
 }
 
 
 void FOOTPRINT_EDIT_FRAME::SetPlotSettings( const PCB_PLOT_PARAMS& aSettings )
 {
-    // set the settings into parent editor, not our BOARD.
-    PCB_BASE_FRAME* parentFrame = (PCB_BASE_FRAME*) Kiway().Player( FRAME_PCB_EDITOR, true );
-    wxASSERT( parentFrame );
-
-    parentFrame->SetPlotSettings( aSettings );
+    wxFAIL_MSG( "Plotting not supported in Footprint Editor" );
 }
 
 
@@ -839,9 +832,9 @@ void FOOTPRINT_EDIT_FRAME::InstallPreferences( PAGED_DIALOG* aParent,
     wxTreebook* book = aParent->GetTreebook();
 
     book->AddPage( new wxPanel( book ), _( "Footprint Editor" ) );
-    book->AddSubPage( new PANEL_MODEDIT_DISPLAY_OPTIONS( this, aParent ), _( "Display Options" ) );
+    book->AddSubPage( new PANEL_DISPLAY_OPTIONS( this, aParent ), _( "Display Options" ) );
     book->AddSubPage( new PANEL_MODEDIT_COLOR_SETTINGS( this, book ), _( "Colors" ) );
-    book->AddSubPage( new PANEL_MODEDIT_SETTINGS( this, aParent ), _( "Editing Options" ) );
+    book->AddSubPage( new PANEL_EDIT_OPTIONS( this, aParent ), _( "Editing Options" ) );
     book->AddSubPage( new PANEL_MODEDIT_DEFAULTS( this, aParent ), _( "Default Values" ) );
 
     aHotkeysPanel->AddHotKeys( GetToolManager() );
@@ -867,7 +860,7 @@ void FOOTPRINT_EDIT_FRAME::setupTools()
     m_toolManager->RegisterTool( new PAD_TOOL );
     m_toolManager->RegisterTool( new DRAWING_TOOL );
     m_toolManager->RegisterTool( new POINT_EDITOR );
-    m_toolManager->RegisterTool( new PCBNEW_CONTROL );
+    m_toolManager->RegisterTool( new PCBNEW_CONTROL );            // copy/paste
     m_toolManager->RegisterTool( new FOOTPRINT_EDITOR_TOOLS );
     m_toolManager->RegisterTool( new ALIGN_DISTRIBUTE_TOOL );
     m_toolManager->RegisterTool( new PCBNEW_PICKER_TOOL );

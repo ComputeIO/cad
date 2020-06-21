@@ -58,6 +58,9 @@ void DRC_RULES_PARSER::initLayerMap()
     {
         std::string untranslated = TO_UTF8( wxString( LSET::Name( PCB_LAYER_ID( layer ) ) ) );
         m_layerMap[ untranslated ] = PCB_LAYER_ID( layer );
+
+        std::string userName = m_board->GetLayerName( PCB_LAYER_ID( layer ) ).ToStdString();
+        m_layerMap[ userName ] = PCB_LAYER_ID( layer );
     }
 }
 
@@ -186,7 +189,18 @@ DRC_SELECTOR* DRC_RULES_PARSER::parseDRC_SELECTOR( wxString* aRuleName )
 
         case T_match_layer:
             NeedSYMBOL();
-            selector->m_MatchLayers.push_back( m_layerMap[ curText ] );
+
+            if( m_layerMap.count( curText ) )
+            {
+                selector->m_MatchLayers.push_back( m_layerMap[ curText ] );
+            }
+            else
+            {
+                wxString errText = wxString::Format( _( "Layer \"%s\" not found." ),
+                                                     wxString( curText ) );
+                THROW_PARSE_ERROR( errText, CurSource(), CurLine(), CurLineNumber(), CurOffset() );
+            }
+
             NeedRIGHT();
             break;
 
@@ -346,23 +360,5 @@ void DRC_RULES_PARSER::parseConstraint( DRC_RULE* aRule )
 
 int DRC_RULES_PARSER::parseValue( DRCRULE_T::T aToken )
 {
-    char* tmp;
-
-    errno = 0;
-
-    double fval = strtod( CurText(), &tmp );
-
-    if( errno )
-    {
-        THROW_PARSE_ERROR( _( "Invalid floating point number" ), CurSource(), CurLine(),
-                           CurLineNumber(), CurOffset() );
-    }
-
-    if( CurText() == tmp )
-    {
-        THROW_PARSE_ERROR( _( "Missing floating point number" ), CurSource(), CurLine(),
-                           CurLineNumber(), CurOffset() );
-    }
-
-    return KiROUND( fval * IU_PER_MM );
+    return (int) ValueFromString( EDA_UNITS::MILLIMETRES, CurText(), true );
 }

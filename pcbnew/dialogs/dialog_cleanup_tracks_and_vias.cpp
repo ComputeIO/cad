@@ -20,23 +20,20 @@
  * or you may write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
-#include <wx/wx.h>
 
-#include <board_commit.h>
+#include <wx/wx.h>
 #include <dialog_cleanup_tracks_and_vias.h>
-#include <kiface_i.h>
 #include <pcb_edit_frame.h>
 #include <pcbnew_settings.h>
-#include <reporter.h>
 #include <tool/tool_manager.h>
 #include <tools/pcb_actions.h>
 #include <tracks_cleaner.h>
 #include <drc/drc_item.h>
 #include <drc/drc_provider.h>
 
-DIALOG_CLEANUP_TRACKS_AND_VIAS::DIALOG_CLEANUP_TRACKS_AND_VIAS( PCB_EDIT_FRAME* aParentFrame ):
+DIALOG_CLEANUP_TRACKS_AND_VIAS::DIALOG_CLEANUP_TRACKS_AND_VIAS( PCB_EDIT_FRAME* aParentFrame ) :
         DIALOG_CLEANUP_TRACKS_AND_VIAS_BASE( aParentFrame ),
-    m_parentFrame( aParentFrame )
+        m_parentFrame( aParentFrame )
 {
     auto cfg = m_parentFrame->GetPcbNewSettings();
 
@@ -71,7 +68,7 @@ DIALOG_CLEANUP_TRACKS_AND_VIAS::~DIALOG_CLEANUP_TRACKS_AND_VIAS()
     cfg->m_Cleanup.cleanup_short_circuits = m_cleanShortCircuitOpt->GetValue();
     cfg->m_Cleanup.cleanup_tracks_in_pad  = m_deleteTracksInPadsOpt->GetValue();
 
-    for( DRC_ITEM* item : m_items )
+    for( CLEANUP_ITEM* item : m_items )
         delete item;
 
     m_changesTreeModel->DecRef();
@@ -104,7 +101,7 @@ void DIALOG_CLEANUP_TRACKS_AND_VIAS::doCleanup( bool aDryRun )
 {
     wxBusyCursor busy;
     BOARD_COMMIT commit( m_parentFrame );
-    TRACKS_CLEANER cleaner( m_parentFrame->GetUserUnits(), m_parentFrame->GetBoard(), commit );
+    TRACKS_CLEANER cleaner( m_parentFrame->GetBoard(), commit );
 
     if( !aDryRun )
     {
@@ -115,7 +112,7 @@ void DIALOG_CLEANUP_TRACKS_AND_VIAS::doCleanup( bool aDryRun )
         m_changesTreeModel->SetProvider( nullptr );
     }
 
-    for( DRC_ITEM* item : m_items )
+    for( CLEANUP_ITEM* item : m_items )
         delete item;
 
     m_items.clear();
@@ -123,19 +120,18 @@ void DIALOG_CLEANUP_TRACKS_AND_VIAS::doCleanup( bool aDryRun )
     // Old model has to be refreshed, GAL normally does not keep updating it
     m_parentFrame->Compile_Ratsnest( false );
 
-    bool modified = cleaner.CleanupBoard( aDryRun, &m_items,
-                                          m_cleanShortCircuitOpt->GetValue(),
-                                          m_cleanViasOpt->GetValue(),
-                                          m_mergeSegmOpt->GetValue(),
-                                          m_deleteUnconnectedOpt->GetValue(),
-                                          m_deleteTracksInPadsOpt->GetValue() );
+    cleaner.CleanupBoard( aDryRun, &m_items, m_cleanShortCircuitOpt->GetValue(),
+                                             m_cleanViasOpt->GetValue(),
+                                             m_mergeSegmOpt->GetValue(),
+                                             m_deleteUnconnectedOpt->GetValue(),
+                                             m_deleteTracksInPadsOpt->GetValue() );
 
     if( aDryRun )
     {
-        RC_ITEMS_PROVIDER* provider = new VECTOR_DRC_ITEMS_PROVIDER( m_parentFrame, &m_items );
+        RC_ITEMS_PROVIDER* provider = new VECTOR_CLEANUP_ITEMS_PROVIDER( &m_items );
         m_changesTreeModel->SetProvider( provider );
     }
-    else if( modified )
+    else if( !commit.Empty() )
     {
         // Clear undo and redo lists to avoid inconsistencies between lists
         commit.Push( _( "Board cleanup" ) );

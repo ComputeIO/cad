@@ -55,6 +55,8 @@ set( PCBNEW_DIALOGS
     dialogs/dialog_board_statistics.cpp
     dialogs/dialog_board_statistics_base.cpp
     dialogs/dialog_choose_footprint.cpp
+    dialogs/dialog_cleanup_graphics.cpp
+    dialogs/dialog_cleanup_graphics_base.cpp
     dialogs/dialog_cleanup_tracks_and_vias.cpp
     dialogs/dialog_cleanup_tracks_and_vias_base.cpp
     dialogs/dialog_copper_zones.cpp
@@ -140,19 +142,16 @@ set( PCBNEW_DIALOGS
     dialogs/dialog_track_via_size_base.cpp
     dialogs/dialog_update_pcb.cpp
     dialogs/dialog_update_pcb_base.cpp
+    dialogs/panel_display_options.cpp
+    dialogs/panel_display_options_base.cpp
+    dialogs/panel_edit_options.cpp
+    dialogs/panel_edit_options_base.cpp
     dialogs/panel_fp_lib_table.cpp
     dialogs/panel_fp_lib_table_base.cpp
     dialogs/panel_modedit_color_settings.cpp
     dialogs/panel_modedit_defaults.cpp
     dialogs/panel_modedit_defaults_base.cpp
-    dialogs/panel_modedit_display_options.cpp
-    dialogs/panel_modedit_settings.cpp
-    dialogs/panel_modedit_settings_base.cpp
     dialogs/panel_pcbnew_color_settings.cpp
-    dialogs/panel_pcbnew_display_options.cpp
-    dialogs/panel_pcbnew_display_options_base.cpp
-    dialogs/panel_pcbnew_settings.cpp
-    dialogs/panel_pcbnew_settings_base.cpp
     dialogs/panel_setup_mask_and_paste.cpp
     dialogs/panel_setup_mask_and_paste_base.cpp
     dialogs/panel_setup_feature_constraints.cpp
@@ -262,6 +261,7 @@ set( PCBNEW_CLASS_SRCS
     array_creator.cpp
     array_pad_name_provider.cpp
     build_BOM_from_board.cpp
+    cleanup_item.cpp
     cross-probing.cpp
     edit.cpp
     edit_track_width.cpp
@@ -276,6 +276,7 @@ set( PCBNEW_CLASS_SRCS
     footprint_viewer_frame.cpp
     fp_tree_model_adapter.cpp
     generate_footprint_info.cpp
+    graphics_cleaner.cpp
     grid_layer_box_helpers.cpp
     grid_layer_box_helpers.h
     initpcb.cpp

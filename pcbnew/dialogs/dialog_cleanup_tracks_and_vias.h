@@ -26,19 +26,17 @@
 #define DIALOG_CLEANUP_TRACKS_AND_VIAS_H_
 
 #include <dialog_cleanup_tracks_and_vias_base.h>
-
-#include <drc/drc.h>
+#include <cleanup_item.h>
 
 
 class PCB_EDIT_FRAME;
-class DRC_TREE_MODEL;
 
 
 class DIALOG_CLEANUP_TRACKS_AND_VIAS: public DIALOG_CLEANUP_TRACKS_AND_VIAS_BASE
 {
-    PCB_EDIT_FRAME*        m_parentFrame;
-    std::vector<DRC_ITEM*> m_items;
-    RC_TREE_MODEL*         m_changesTreeModel;
+    PCB_EDIT_FRAME*            m_parentFrame;
+    std::vector<CLEANUP_ITEM*> m_items;
+    RC_TREE_MODEL*             m_changesTreeModel;
 
     void doCleanup( bool aDryRun );
 

@@ -356,6 +356,14 @@ TOOL_ACTION PCB_ACTIONS::defaultPadProperties( "pcbnew.ModuleEditor.defaultPadPr
         options_pad_xpm );
 
 
+// SHAPE_EDITOR_TOOLS
+//
+TOOL_ACTION PCB_ACTIONS::shapeProperties( "pcbnew.ShapeEditor.shapeProperties",
+        AS_GLOBAL, 0, "",
+        _( "Shape Properties..." ), "",
+        options_pad_xpm );
+
+
 // GLOBAL_EDIT_TOOL
 //
 TOOL_ACTION PCB_ACTIONS::updateFootprint( "pcbnew.GlobalEdit.updateFootprint",
@@ -405,9 +413,14 @@ TOOL_ACTION PCB_ACTIONS::globalDeletions( "pcbnew.GlobalEdit.globalDeletions",
 TOOL_ACTION PCB_ACTIONS::cleanupTracksAndVias( "pcbnew.GlobalEdit.cleanupTracksAndVias",
         AS_GLOBAL, 0, "",
         _( "Cleanup Tracks & Vias..." ),
-        _( "Clean stubs, vias, delete break points or unconnected tracks" ),
+        _( "Cleanup redundant items, shorting items, etc." ),
         delete_xpm );
 
+TOOL_ACTION PCB_ACTIONS::cleanupGraphics( "pcbnew.GlobalEdit.cleanupGraphics",
+        AS_GLOBAL, 0, "",
+        _( "Cleanup Graphics..." ),
+        _( "Cleanup redundant items, etc." ),
+        delete_xpm );
 
 // MICROWAVE_TOOL
 //

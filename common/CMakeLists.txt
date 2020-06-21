@@ -30,6 +30,7 @@ set( GAL_SRCS
     newstroke_font.cpp
     painter.cpp
     gal/color4d.cpp
+    gal/dpi_scaling.cpp
     gal/gal_display_options.cpp
     gal/graphics_abstraction_layer.cpp
     gal/hidpi_gl_canvas.cpp
@@ -107,7 +108,6 @@ add_library( singletop STATIC EXCLUDE_FROM_ALL
 # Functions and data all need to use the #include <import_export.h> and be declared
 # as APIEXPORT
 set( LIB_KICAD_SRCS
-    colors.cpp
     string.cpp
     )
 
@@ -272,7 +272,6 @@ set( COMMON_SRCS
     bitmap_base.cpp
     board_printout.cpp
     build_version.cpp
-    colors.cpp
     commit.cpp
     common.cpp
     config_params.cpp
@@ -280,7 +279,6 @@ set( COMMON_SRCS
     cursor_store.cpp
     dialog_shim.cpp
     displlst.cpp
-    dpi_scaling.cpp
     gr_text.cpp
     dsnlexer.cpp
     eagle_parser.cpp
