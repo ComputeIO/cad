@@ -55,7 +55,14 @@ option( BUILD_SMALL_DEBUG_FILES "In debug build: create smaller binaries." OFF )
 
 option( KICAD_SCRIPTING
     "Build the Python scripting support inside KiCad binaries (default ON)."
-    ON )
+    OFF )
+
+if ( NOT KICAD_SCRIPTING )
+    message( STATUS "KICAD_SCRIPTING is fucking turned OFF!!!" )
+else()
+    message( STATUS "KICAD_SCRIPTING is turned ON fucker!!!" )
+endif()
+
 
 option( KICAD_SCRIPTING_MODULES
     "Build native portion of the pcbnew Python module: _pcbnew.{pyd,so} for OS command line use of Python."
