@@ -507,7 +507,7 @@ int LAYERS_MAP_DIALOG:: findNumAltiumGerbersLoaded(std::vector<int> &aGerber2Kic
 
 	    }
 
-	DbgMsg = wxT("Gerbers with Altium extensions found:\n\n") + DbgMsg;
+	DbgMsg = wxT("HI! Gerbers with Altium extensions found:\n\n") + DbgMsg;
 	wxMessageBox(DbgMsg); // Display debug dialog with the matches we found
 
 	// Return number of Altium Gerbers we found.  The passed vector will have the matching
