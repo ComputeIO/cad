@@ -111,8 +111,10 @@ void RN_NET::kruskalMST( std::priority_queue<CN_EDGE> &aEdges )
 
     m_rnEdges.clear();
 
-    for( size_t i = 0; i < m_nodes.size(); i++ )
-        m_nodes[i]->SetTag( i );
+    int i = 0;
+
+    for( auto& node : m_nodes )
+        node->SetTag( i++ );
 
     while( !aEdges.empty() )
     {
@@ -316,7 +318,7 @@ void RN_NET::compute()
             auto last = ++m_nodes.begin();
 
             // There can be only one possible connection, but it is missing
-            CN_EDGE edge (*m_nodes.begin(), *last );
+            CN_EDGE edge ( *m_nodes.begin(), *last );
             edge.GetSourceNode()->SetTag( 0 );
             edge.GetTargetNode()->SetTag( 1 );
 
@@ -397,7 +399,7 @@ void RN_NET::AddCluster( CN_CLUSTER_PTR aCluster )
         for( unsigned int i = 0; i < nAnchors; i++ )
         {
             anchors[i]->SetCluster( aCluster );
-            m_nodes.push_back(anchors[i]);
+            m_nodes.insert( anchors[i] );
 
             if( firstAnchor )
             {
@@ -422,15 +424,48 @@ bool RN_NET::NearestBicoloredPair( const RN_NET& aOtherNet, CN_ANCHOR_PTR& aNode
 
     VECTOR2I::extended_type distMax = VECTOR2I::ECOORD_MAX;
 
-    for( const auto& nodeA : m_nodes )
+    for( const auto& nodeA : aOtherNet.m_nodes )
     {
         if( nodeA->GetNoLine() )
             continue;
 
-        for( const auto& nodeB : aOtherNet.m_nodes )
+        auto fwd_it = m_nodes.lower_bound( nodeA );
+        auto rev_it = std::make_reverse_iterator( fwd_it );
+
+        for( ; fwd_it != m_nodes.end(); ++fwd_it )
         {
+            auto nodeB = *fwd_it;
+
             if( nodeB->GetNoLine() )
                 continue;
+
+            VECTOR2I::extended_type distX = nodeA->Pos().x - nodeB->Pos().x;
+
+            if( distX * distX > distMax )
+                break;
+
+            auto squaredDist = ( nodeA->Pos() - nodeB->Pos() ).SquaredEuclideanNorm();
+
+            if( squaredDist < distMax )
+            {
+                rv      = true;
+                distMax = squaredDist;
+                aNode1  = nodeA;
+                aNode2  = nodeB;
+            }
+        }
+
+        for( ++rev_it; rev_it != m_nodes.rend(); ++rev_it )
+        {
+            auto nodeB = *rev_it;
+
+            if( nodeB->GetNoLine() )
+                continue;
+
+            VECTOR2I::extended_type distX = nodeA->Pos().x - nodeB->Pos().x;
+
+            if( distX * distX > distMax )
+                break;
 
             auto squaredDist = ( nodeA->Pos() - nodeB->Pos() ).SquaredEuclideanNorm();
 
