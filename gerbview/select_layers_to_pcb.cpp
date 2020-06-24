@@ -216,29 +216,26 @@ void LAYERS_MAP_DIALOG::initDialog()
 
     std::vector<int> Gerber2KicadMapping;
     // See how many of the loaded Gerbers have Altium file extensions
-    int NumAltiumGerbers = findNumAltiumGerbersLoaded(Gerber2KicadMapping);
-    if (NumAltiumGerbers > 0)
+    int NumAltiumGerbers = findNumAltiumGerbersLoaded( Gerber2KicadMapping );
+    if ( NumAltiumGerbers > 0 )
     {
 		int ReturnVal;
+
 		// See if the user wants to map the Altium Gerbers to known KiCad PCB layers
-		//ReturnVal = wxMessageBox(_("Found " + wxString::Format(wxT("%i"), NumAltiumGerbers) + " Gerbers with Altium extensions\n\nMap to standard KiCad PCB layers?"),
-		ReturnVal = wxMessageBox(_("Gerbers found with Altium extensions: " + wxString::Format(wxT("%i"), NumAltiumGerbers) + "\n\nMap to standard KiCad PCB layers?"),
-					 _("Altium Gerbers"), wxOK | wxCANCEL | wxOK_DEFAULT);
+		ReturnVal = wxMessageBox( _( "Number of Gerbers found with Altium extensions: " + wxString::Format(wxT("%i"), NumAltiumGerbers) + "\n\nMap to standard KiCad PCB layers?" ),
+					 _( "Altium Gerbers" ), wxOK | wxCANCEL | wxOK_DEFAULT );
 		if (ReturnVal == wxOK)
 		{
 			for( int ii = 0; ii < m_gerberActiveLayersCount; ii++ )
 			{
 				int CurrLayer = Gerber2KicadMapping[ii];
+                
+                //Default to "Do Not Export" for unseletced or undefined layer
 				if(( CurrLayer == UNSELECTED_LAYER ) || ( CurrLayer == UNDEFINED_LAYER ))
 				{
 					m_layersList[ii]->SetLabel( _( "Do not export" ) );
 					m_layersList[ii]->SetForegroundColour( *wxBLUE );
 				}
-				/*else if( CurrLayer == UNDEFINED_LAYER )
-				{
-					m_layersList[ii]->SetLabel( _( "Hole data" ) );
-					m_layersList[ii]->SetForegroundColour( wxColour( 255, 0, 128 ) );
-				}*/
 				else
 				{
 					m_layersList[ii]->SetLabel( GetPCBDefaultLayerName( CurrLayer ) );
@@ -438,6 +435,7 @@ int LAYERS_MAP_DIALOG:: findNumAltiumGerbersLoaded(std::vector<int> &aGerber2Kic
     int             NumProtelMatches = 0; // Assume these aren't Altium Gerbers
     wxString 	  	CurrFilename;
     wxString		DbgMsg;
+    // These are the known Altium file extensions for Gerbers that we care about.  Empty strings indicate a layer we don't map
     wxString AltiumExt[] = { "GTL", // Top copper
     		                 "G1", "G2", "G3", "G4", "G5", "G6", "G7", "G8", "G9", "G10",
                              "G11", "G12", "G13", "G14", "G15", "G16", "G17", "G18", "G19", "G20",
@@ -455,22 +453,6 @@ int LAYERS_MAP_DIALOG:: findNumAltiumGerbersLoaded(std::vector<int> &aGerber2Kic
 
     GERBER_FILE_IMAGE_LIST* images = m_Parent->GetGerberLayout()->GetImagesList();
 
-    // Loop through all button IDs and get layers.  Extract file extensions and make string for dialog
-
-/*    for( unsigned ii = 0; ii < GERBER_DRAWLAYERS_COUNT; ++ii )
-    {
-        if( images->GetGbrImage( ii ) == NULL )
-            break;
-
-        //if( (pcb_layer_num == m_exportBoardCopperLayersCount - 1)
-         //  && (m_exportBoardCopperLayersCount > 1) )
-         //   pcb_layer_num = F_Cu;
-
-//        m_buttonTable[m_gerberActiveLayersCount] = ii;
-//        m_layersLookUpTable[ii]  = pcb_layer_num;
-//        m_gerberActiveLayersCount++;
-//        ++pcb_layer_num;
-    }*/
     DbgMsg = "";
     // Loop through all loaded Gerbers looking for any with Altium specific extensions
 	for( int ii = 0; ii < m_gerberActiveLayersCount; ii++ )
@@ -507,10 +489,11 @@ int LAYERS_MAP_DIALOG:: findNumAltiumGerbersLoaded(std::vector<int> &aGerber2Kic
 
 	    }
 
-	DbgMsg = wxT("HI! Gerbers with Altium extensions found:\n\n") + DbgMsg;
+	DbgMsg = wxT("Gerbers with Altium extensions found:\n\n") + DbgMsg;
 	wxMessageBox(DbgMsg); // Display debug dialog with the matches we found
 
-	// Return number of Altium Gerbers we found.  The passed vector will have the matching
+	// Return number of Altium Gerbers we found.  Each index in the passed vector corresponds to 
+    // a loaded Gerber layer, and the entry will contain the index to the matching
 	// KiCad layer for Altium Gerbers, or "UNDEFINED_LAYER" for the rest.
 	return (NumProtelMatches);
 }
