@@ -491,8 +491,10 @@ int PCB_EDITOR_CONTROL::TrackWidthInc( const TOOL_EVENT& aEvent )
     {
         int widthIndex = designSettings.GetTrackWidthIndex() + 1;
 
-        if( widthIndex >= (int) designSettings.m_TrackWidthList.size() )
-            widthIndex = designSettings.m_TrackWidthList.size() - 1;
+        if( widthIndex >= (int) designSettings.m_TrackWidthList.size() ){
+            //widthIndex = designSettings.m_TrackWidthList.size() - 1;
+            widthIndex = 0;
+        }
 
         designSettings.SetTrackWidthIndex( widthIndex );
         designSettings.UseCustomTrackViaSize( false );
@@ -538,10 +540,16 @@ int PCB_EDITOR_CONTROL::TrackWidthDec( const TOOL_EVENT& aEvent )
     }
     else
     {
-        int widthIndex = designSettings.GetTrackWidthIndex() - 1;
-
-        if( widthIndex < 0 )
-            widthIndex = 0;
+        int widthIndex = 0; // Assume we only have a single track width entry
+        
+        if ( designSettings.m_TrackWidthList.size() > 0) // If there are more, cycle through them backwards
+        {
+            widthIndex = designSettings.GetTrackWidthIndex() - 1;
+            // If we get to the lowest entry start over at the highest
+            if( widthIndex < 0 )
+                widthIndex = designSettings.m_TrackWidthList.size() - 1;
+        } 
+            
 
         designSettings.SetTrackWidthIndex( widthIndex );
         designSettings.UseCustomTrackViaSize( false );
@@ -588,8 +596,10 @@ int PCB_EDITOR_CONTROL::ViaSizeInc( const TOOL_EVENT& aEvent )
     {
         int sizeIndex = designSettings.GetViaSizeIndex() + 1;
 
+        // If we've gone past the last via entry in the list, start over at the beginning
         if( sizeIndex >= (int) designSettings.m_ViasDimensionsList.size() )
-            sizeIndex = designSettings.m_ViasDimensionsList.size() - 1;
+            sizeIndex = 0;
+            //sizeIndex = designSettings.m_ViasDimensionsList.size() - 1;
 
         designSettings.SetViaSizeIndex( sizeIndex );
         designSettings.UseCustomTrackViaSize( false );
@@ -636,10 +646,22 @@ int PCB_EDITOR_CONTROL::ViaSizeDec( const TOOL_EVENT& aEvent )
     }
     else
     {
-        int sizeIndex = designSettings.GetViaSizeIndex() - 1;
+/*        int sizeIndex = designSettings.GetViaSizeIndex() - 1;
 
         if( sizeIndex < 0 )
-            sizeIndex = 0;
+            sizeIndex = 0;*/
+            
+        int sizeIndex = 0; // Assume we only have a single via size entry
+
+        if ( designSettings.m_ViasDimensionsList.size() > 0 ) // If there are more, cycle through them backwards
+        {
+            sizeIndex = designSettings.GetViaSizeIndex() - 1;
+            
+            // If we get to the lowest entry start over at the highest
+            if( sizeIndex < 0 )
+                sizeIndex = designSettings.m_ViasDimensionsList.size() - 1;
+        }
+            
 
         designSettings.SetViaSizeIndex( sizeIndex );
         designSettings.UseCustomTrackViaSize( false );
