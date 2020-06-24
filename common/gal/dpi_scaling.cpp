@@ -77,11 +77,11 @@ static OPT<double> getEnviromentScale()
     const wxPortId port_id = wxPlatformInfo::Get().GetPortId();
     OPT<double>    scale;
 
-    /*if( port_id == wxPORT_GTK )
+    if( port_id == wxPORT_GTK )
     {
         // Under GTK, the user can use GDK_SCALE to force the scaling
         scale = GetEnvVar<double>( "GDK_SCALE" );
-    }*/
+    }
 
     if( scale )
     {
