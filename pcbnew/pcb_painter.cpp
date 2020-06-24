@@ -44,7 +44,9 @@
 #include <gal/graphics_abstraction_layer.h>
 #include <geometry/geometry_utils.h>
 #include <geometry/shape_line_chain.h>
-
+#include <geometry/shape_segment.h>
+#include <geometry/shape_circle.h>
+#include <geometry/shape_simple.h>
 
 using namespace KIGFX;
 
@@ -790,92 +792,62 @@ void PCB_PAINTER::draw( const D_PAD* aPad, int aLayer )
     // Choose drawing settings depending on if we are drawing a pad itself or a hole
     if( aLayer == LAYER_PADS_PLATEDHOLES || aLayer == LAYER_NON_PLATEDHOLES )
     {
-        m_gal->Save();
-        m_gal->Translate( VECTOR2D( aPad->GetPosition() ) );
-        m_gal->Rotate( -aPad->GetOrientationRadians() );
+        const std::shared_ptr<SHAPE_SEGMENT>& seg = aPad->GetEffectiveHoleShape();
 
-        // Drawing hole: has same shape as PAD_CIRCLE or PAD_OVAL
-        size  = getDrillSize( aPad ) / 2.0;
-
-        if( getDrillShape( aPad ) == PAD_DRILL_SHAPE_OBLONG )
-        {
-            if( size.y >= size.x )
-            {
-                m = ( size.y - size.x );
-                n = size.x;
-
-                m_gal->DrawArc( VECTOR2D( 0, -m ), n, -M_PI, 0 );
-                m_gal->DrawArc( VECTOR2D( 0, m ),  n, M_PI, 0 );
-
-                if( m_pcbSettings.m_sketchMode[LAYER_PADS_TH] )
-                {
-                    m_gal->DrawLine( VECTOR2D( -n, -m ), VECTOR2D( -n, m ) );
-                    m_gal->DrawLine( VECTOR2D( n, -m ),  VECTOR2D( n, m ) );
-                }
-                else
-                {
-                    m_gal->DrawRectangle( VECTOR2D( -n, -m ), VECTOR2D( n, m ) );
-                }
-            }
-            else
-            {
-                m = ( size.x - size.y );
-                n = size.y;
-                m_gal->DrawArc( VECTOR2D( -m, 0 ), n, M_PI / 2, 3 * M_PI / 2 );
-                m_gal->DrawArc( VECTOR2D( m, 0 ),  n, M_PI / 2, -M_PI / 2 );
-
-                if( m_pcbSettings.m_sketchMode[LAYER_PADS_TH] )
-                {
-                    m_gal->DrawLine( VECTOR2D( -m, -n ), VECTOR2D( m, -n ) );
-                    m_gal->DrawLine( VECTOR2D( -m, n ),  VECTOR2D( m, n ) );
-                }
-                else
-                {
-                    m_gal->DrawRectangle( VECTOR2D( -m, -n ), VECTOR2D( m, n ) );
-                }
-            }
-        }
-        else
-        {
-            m_gal->DrawCircle( VECTOR2D( 0.0, 0.0 ), size.x );
-        }
-
-        m_gal->Restore();
+        m_gal->DrawSegment( seg->GetSeg().A, seg->GetSeg().B, seg->GetWidth() );
     }
     else
     {
-        SHAPE_POLY_SET polySet;
+        wxSize pad_size = aPad->GetSize();
+        wxSize margin;
 
         switch( aLayer )
         {
         case F_Mask:
         case B_Mask:
-            {
-            int clearance = aPad->GetSolderMaskMargin();
-            aPad->TransformShapeWithClearanceToPolygon( polySet, clearance );
-            }
+            margin.x = margin.y = aPad->GetSolderMaskMargin();
             break;
 
         case F_Paste:
         case B_Paste:
-            {
-            wxSize pad_size = aPad->GetSize();
-            wxSize margin = aPad->GetSolderPasteMargin();
-            const_cast<D_PAD*>(aPad)->SetSize( pad_size + margin + margin );
-            aPad->TransformShapeWithClearanceToPolygon( polySet, 0 );
-            const_cast<D_PAD*>(aPad)->SetSize( pad_size );
-            }
+            margin = aPad->GetSolderPasteMargin();
             break;
 
         default:
-            aPad->TransformShapeWithClearanceToPolygon( polySet, 0 );
+            margin.x = margin.y = 0;
             break;
         }
 
-        m_gal->DrawPolygon( polySet );
+        if( margin.x != margin.y )
+        {
+            const_cast<D_PAD*>( aPad )->SetSize( pad_size + margin + margin );
+            margin.x = margin.y = 0;
+        }
+
+        const std::vector<std::shared_ptr<SHAPE>>& shapes = aPad->GetEffectiveShapes();
+
+        if( shapes.size() == 1 && shapes[0]->Type() == SH_SEGMENT )
+        {
+            const SHAPE_SEGMENT* seg = (SHAPE_SEGMENT*) shapes[0].get();
+            m_gal->DrawSegment( seg->GetSeg().A, seg->GetSeg().B, seg->GetWidth() + 2 * margin.x );
+        }
+        else if( shapes.size() == 1 && shapes[0]->Type() == SH_CIRCLE )
+        {
+            const SHAPE_CIRCLE* circle = (SHAPE_CIRCLE*) shapes[0].get();
+            m_gal->DrawCircle( circle->GetCenter(), circle->GetRadius() + margin.x );
+        }
+        else
+        {
+            SHAPE_POLY_SET polySet;
+            aPad->TransformShapeWithClearanceToPolygon( polySet, margin.x );
+            m_gal->DrawPolygon( polySet );
+        }
+
+        if( aPad->GetSize() != pad_size )
+            const_cast<D_PAD*>( aPad )->SetSize( pad_size );
     }
 
-    // Clearance lines
+    // Clearance outlines
     constexpr int clearanceFlags = PCB_RENDER_SETTINGS::CL_PADS;
 
     if( ( m_pcbSettings.m_clearance & clearanceFlags ) == clearanceFlags
@@ -883,13 +855,30 @@ void PCB_PAINTER::draw( const D_PAD* aPad, int aLayer )
                 || aLayer == LAYER_PAD_BK
                 || aLayer == LAYER_PADS_TH ) )
     {
-        SHAPE_POLY_SET polySet;
-        aPad->TransformShapeWithClearanceToPolygon( polySet, aPad->GetClearance() );
         m_gal->SetLineWidth( m_pcbSettings.m_outlineWidth );
         m_gal->SetIsStroke( true );
         m_gal->SetIsFill( false );
         m_gal->SetStrokeColor( color );
-        m_gal->DrawPolygon( polySet );
+        int clearance = aPad->GetClearance();
+
+        const std::vector<std::shared_ptr<SHAPE>>& shapes = aPad->GetEffectiveShapes();
+
+        if( shapes.size() == 1 && shapes[0]->Type() == SH_SEGMENT )
+        {
+            const SHAPE_SEGMENT* seg = (SHAPE_SEGMENT*) shapes[0].get();
+            m_gal->DrawSegment( seg->GetSeg().A, seg->GetSeg().B, seg->GetWidth() + 2 * clearance );
+        }
+        else if( shapes.size() == 1 && shapes[0]->Type() == SH_CIRCLE )
+        {
+            const SHAPE_CIRCLE* circle = (SHAPE_CIRCLE*) shapes[0].get();
+            m_gal->DrawCircle( circle->GetCenter(), circle->GetRadius() + clearance );
+        }
+        else
+        {
+            SHAPE_POLY_SET polySet;
+            aPad->TransformShapeWithClearanceToPolygon( polySet, clearance );
+            m_gal->DrawPolygon( polySet );
+        }
     }
 }
 
