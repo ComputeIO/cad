@@ -33,7 +33,6 @@
 
 #include <common.h>
 #include <lib_id.h>
-#include <plotter.h>
 
 #include <class_libentry.h>
 #include <lib_arc.h>
@@ -419,9 +418,9 @@ void SCH_SEXPR_PARSER::parseStroke( STROKE_PARAMS& aStroke )
     wxCHECK_RET( CurTok() == T_stroke,
                  wxT( "Cannot parse " ) + GetTokenString( CurTok() ) + wxT( " as a stroke." ) );
 
-    aStroke.m_Width = Mils2iu( DEFAULT_LINE_THICKNESS );
-    aStroke.m_Type = PLOT_DASH_TYPE::DEFAULT;
-    aStroke.m_Color = COLOR4D::UNSPECIFIED;
+    aStroke.SetWidth( Mils2iu( DEFAULT_LINE_THICKNESS ) );
+    aStroke.SetType( PLOT_DASH_TYPE::DEFAULT );
+    aStroke.SetColor( COLOR4D::UNSPECIFIED );
 
     T token;
 
@@ -435,7 +434,7 @@ void SCH_SEXPR_PARSER::parseStroke( STROKE_PARAMS& aStroke )
         switch( token )
         {
         case T_width:
-            aStroke.m_Width = parseInternalUnits( "stroke width" );
+            aStroke.SetWidth( parseInternalUnits( "stroke width" ) );
             NeedRIGHT();
             break;
 
@@ -445,10 +444,10 @@ void SCH_SEXPR_PARSER::parseStroke( STROKE_PARAMS& aStroke )
 
             switch( token )
             {
-            case T_dash:      aStroke.m_Type = PLOT_DASH_TYPE::DASH;      break;
-            case T_dot:       aStroke.m_Type = PLOT_DASH_TYPE::DOT;       break;
-            case T_dash_dot:  aStroke.m_Type = PLOT_DASH_TYPE::DASHDOT;   break;
-            case T_solid:     aStroke.m_Type = PLOT_DASH_TYPE::SOLID;     break;
+            case T_dash:      aStroke.SetType( PLOT_DASH_TYPE::DASH );      break;
+            case T_dot:       aStroke.SetType( PLOT_DASH_TYPE::DOT );       break;
+            case T_dash_dot:  aStroke.SetType( PLOT_DASH_TYPE::DASHDOT );   break;
+            case T_solid:     aStroke.SetType( PLOT_DASH_TYPE::SOLID );     break;
             default:
                 Expecting( "solid, dash, dash_dot, or dot" );
             }
@@ -466,7 +465,7 @@ void SCH_SEXPR_PARSER::parseStroke( STROKE_PARAMS& aStroke )
             color.b = parseInt( "blue" ) / 255.0;
             color.a = Clamp( parseDouble( "alpha" ), 0.0, 1.0 );
 
-            aStroke.m_Color = color;
+            aStroke.SetColor( color );
             NeedRIGHT();
             break;
         }
@@ -2325,8 +2324,8 @@ SCH_SHEET* SCH_SEXPR_PARSER::parseSheet()
 
         case T_stroke:
             parseStroke( stroke );
-            sheet->SetBorderWidth( stroke.m_Width );
-            sheet->SetBorderColor( stroke.m_Color );
+            sheet->SetBorderWidth( stroke.GetWidth() );
+            sheet->SetBorderColor( stroke.GetColor() );
             break;
 
         case T_fill:
@@ -2395,6 +2394,25 @@ SCH_JUNCTION* SCH_SEXPR_PARSER::parseJunction()
             NeedRIGHT();
             break;
 
+        case T_diameter:
+            junction->SetDiameter( parseInternalUnits( "junction diameter" ) );
+            NeedRIGHT();
+            break;
+
+        case T_color:
+        {
+            COLOR4D color;
+
+            color.r = parseInt( "red" ) / 255.0;
+            color.g = parseInt( "green" ) / 255.0;
+            color.b = parseInt( "blue" ) / 255.0;
+            color.a = Clamp( parseDouble( "alpha" ), 0.0, 1.0 );
+
+            junction->SetColor( color );
+            NeedRIGHT();
+            break;
+        }
+
         default:
             Expecting( "at" );
         }
@@ -2441,6 +2459,7 @@ SCH_BUS_WIRE_ENTRY* SCH_SEXPR_PARSER::parseBusEntry()
                  wxT( "Cannot parse " ) + GetTokenString( CurTok() ) + wxT( " as a bus entry." ) );
 
     T token;
+    STROKE_PARAMS stroke;
     std::unique_ptr<SCH_BUS_WIRE_ENTRY> busEntry( new SCH_BUS_WIRE_ENTRY() );
 
     for( token = NextTok();  token != T_RIGHT;  token = NextTok() )
@@ -2472,8 +2491,13 @@ SCH_BUS_WIRE_ENTRY* SCH_SEXPR_PARSER::parseBusEntry()
             break;
         }
 
+        case T_stroke:
+            parseStroke( stroke );
+            busEntry->SetStroke( stroke );
+            break;
+
         default:
-            Expecting( "at or size" );
+            Expecting( "at, size, or stroke" );
         }
     }
 
@@ -2528,9 +2552,7 @@ SCH_LINE* SCH_SEXPR_PARSER::parseLine()
 
         case T_stroke:
             parseStroke( stroke );
-            line->SetLineWidth( stroke.m_Width );
-            line->SetLineStyle( stroke.m_Type );
-            line->SetLineColor( stroke.m_Color );
+            line->SetStroke( stroke );
             break;
 
         default:

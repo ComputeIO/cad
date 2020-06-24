@@ -2,7 +2,7 @@
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
  * Copyright (C) 2019 CERN
- * Copyright (C) 2019 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 2019-2020 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -39,6 +39,7 @@
 #include <sch_view.h>
 #include <sch_line.h>
 #include <sch_bus_entry.h>
+#include <sch_junction.h>
 #include <sch_edit_frame.h>
 #include <schematic.h>
 #include <ws_proxy_view_item.h>
@@ -51,6 +52,7 @@
 #include <dialogs/dialog_edit_component_in_schematic.h>
 #include <dialogs/dialog_edit_sheet_pin.h>
 #include <dialogs/dialog_edit_one_field.h>
+#include <dialogs/dialog_junction_props.h>
 #include "sch_drawing_tools.h"
 #include <math/util.h>      // for KiROUND
 #include <pgm_base.h>
@@ -193,12 +195,26 @@ bool SCH_EDIT_TOOL::Init()
                 if( aSel.GetSize() == 0 )
                     return true;            // Show worksheet properties
 
+                SCH_ITEM* firstItem = dynamic_cast<SCH_ITEM*>( aSel.Front() );
+
+                wxCHECK( firstItem, false );
+
+                const EE_SELECTION* eeSelection = dynamic_cast<const EE_SELECTION*>( &aSel );
+
+                wxCHECK( eeSelection, false );
+
                 if( aSel.GetSize() != 1
-                        && !( aSel.GetSize() >= 1 && aSel.Front()->Type() == SCH_LINE_T
-                                   && aSel.AreAllItemsIdentical() ) )
+                        && !( aSel.GetSize() >= 1
+                            && ( firstItem->Type() == SCH_LINE_T
+                               || firstItem->Type() == SCH_BUS_WIRE_ENTRY_T )
+                  && eeSelection->AllItemsHaveLineStroke() ) )
                     return false;
 
-                EDA_ITEM* firstItem = static_cast<EDA_ITEM*>( aSel.Front() );
+                if( aSel.GetSize() != 1
+                        && !( aSel.GetSize() >= 1
+                            && ( firstItem->Type() == SCH_JUNCTION_T )
+                            && eeSelection->AreAllItemsIdentical() ) )
+                    return false;
 
                 switch( firstItem->Type() )
                 {
@@ -214,14 +230,18 @@ bool SCH_EDIT_TOOL::Init()
                     return aSel.GetSize() == 1;
 
                 case SCH_LINE_T:
+                case SCH_BUS_WIRE_ENTRY_T:
                     for( EDA_ITEM* item : aSel.GetItems() )
                     {
-                        SCH_LINE* line = dynamic_cast<SCH_LINE*>( item );
+                        SCH_ITEM* schItem = dynamic_cast<SCH_ITEM*>( item );
 
-                        if( !line )
+                        if( !schItem || !schItem->HasLineStroke() )
                             return false;
                     }
 
+                    return true;
+
+                case SCH_JUNCTION_T:
                     return true;
 
                 default:
@@ -1263,6 +1283,13 @@ int SCH_EDIT_TOOL::Properties( const TOOL_EVENT& aEvent )
     switch( item->Type() )
     {
     case SCH_LINE_T:
+    case SCH_BUS_WIRE_ENTRY_T:
+        if( !selection.AllItemsHaveLineStroke() )
+            return 0;
+
+        break;
+
+    case SCH_JUNCTION_T:
         if( !selection.AreAllItemsIdentical() )
             return 0;
 
@@ -1386,20 +1413,21 @@ int SCH_EDIT_TOOL::Properties( const TOOL_EVENT& aEvent )
         break;
 
     case SCH_LINE_T:
+    case SCH_BUS_WIRE_ENTRY_T:
     {
-        std::deque<SCH_LINE*> lines;
+        std::deque<SCH_ITEM*> strokeItems;
 
         for( auto selItem : selection.Items() )
         {
-            SCH_LINE* line = dynamic_cast<SCH_LINE*>( selItem );
+            SCH_ITEM* schItem = dynamic_cast<SCH_ITEM*>( selItem );
 
-            if( line )
-                lines.push_back( line );
+            if( schItem && schItem->HasLineStroke() )
+                strokeItems.push_back( schItem );
             else
                 return 0;
         }
 
-        DIALOG_EDIT_LINE_STYLE dlg( m_frame, lines );
+        DIALOG_EDIT_LINE_STYLE dlg( m_frame, strokeItems );
 
         if( dlg.ShowModal() == wxID_OK )
         {
@@ -1409,8 +1437,29 @@ int SCH_EDIT_TOOL::Properties( const TOOL_EVENT& aEvent )
     }
     break;
 
-    case SCH_MARKER_T:        // These items have no properties to edit
     case SCH_JUNCTION_T:
+    {
+        std::deque<SCH_JUNCTION*> junctions;
+
+        for( auto selItem : selection.Items() )
+        {
+            SCH_JUNCTION* junction = dynamic_cast<SCH_JUNCTION*>( selItem );
+
+            wxCHECK( junction, 0 );
+
+            junctions.push_back( junction );
+        }
+
+        DIALOG_JUNCTION_PROPS dlg( m_frame, junctions );
+
+        if( dlg.ShowModal() == wxID_OK )
+        {
+            m_toolMgr->PostEvent( EVENTS::SelectedItemsModified );
+            m_frame->OnModify();
+        }
+    }
+
+    case SCH_MARKER_T:        // These items have no properties to edit
     case SCH_NO_CONNECT_T:
         break;
 

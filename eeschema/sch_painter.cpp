@@ -261,6 +261,20 @@ COLOR4D SCH_PAINTER::getRenderColor( const EDA_ITEM* aItem, int aLayer, bool aDr
         if( lineColor != COLOR4D::UNSPECIFIED )
             color = lineColor;
     }
+    else if( aItem->Type() == SCH_BUS_WIRE_ENTRY_T )
+    {
+        COLOR4D busEntryColor = static_cast<const SCH_BUS_WIRE_ENTRY*>( aItem )->GetStrokeColor();
+
+        if( busEntryColor != COLOR4D::UNSPECIFIED )
+            color = busEntryColor;
+    }
+    else if( aItem->Type() == SCH_JUNCTION_T )
+    {
+        COLOR4D junctionColor = static_cast<const SCH_JUNCTION*>( aItem )->GetColor();
+
+        if( junctionColor != COLOR4D::UNSPECIFIED )
+            color = junctionColor;
+    }
     else if( aItem->Type() == SCH_SHEET_T )
     {
         SCH_SHEET* sheet = (SCH_SHEET*) aItem;
@@ -1167,9 +1181,10 @@ void SCH_PAINTER::draw( LIB_BEZIER *aCurve, int aLayer )
 
 // Draw the target (an open square) for a wire or label which has no connection or is
 // being moved.
-void SCH_PAINTER::drawDanglingSymbol( const wxPoint& aPos, bool aDrawingShadows )
+void SCH_PAINTER::drawDanglingSymbol( const wxPoint& aPos, int aWidth, bool aDrawingShadows )
 {
-    wxPoint radius( Mils2iu( DANGLING_SYMBOL_SIZE ), Mils2iu( DANGLING_SYMBOL_SIZE ) );
+    wxPoint radius( aWidth + Mils2iu( DANGLING_SYMBOL_SIZE / 2 ),
+                    aWidth + Mils2iu( DANGLING_SYMBOL_SIZE /2 ) );
 
     m_gal->SetIsStroke( true );
     m_gal->SetIsFill( false );
@@ -1188,12 +1203,17 @@ void SCH_PAINTER::draw( SCH_JUNCTION *aJct, int aLayer )
 
     COLOR4D color = getRenderColor( aJct, aJct->GetLayer(), drawingShadows );
 
+    int junctionSize = m_schSettings.m_JunctionSize / 2.0;
+
+    if( aJct->GetDiameter() != 0 )
+        junctionSize = aJct->GetDiameter() / 2;
+
     m_gal->SetIsStroke( drawingShadows );
     m_gal->SetLineWidth( getLineWidth( aJct, drawingShadows ) );
     m_gal->SetStrokeColor( color );
     m_gal->SetIsFill( !drawingShadows );
     m_gal->SetFillColor( color );
-    m_gal->DrawCircle( aJct->GetPosition(), m_schSettings.m_JunctionSize / 2.0 );
+    m_gal->DrawCircle( aJct->GetPosition(), junctionSize );
 }
 
 
@@ -1262,10 +1282,12 @@ void SCH_PAINTER::draw( SCH_LINE *aLine, int aLayer )
     }
 
     if( aLine->IsStartDangling() )
-        drawDanglingSymbol( aLine->GetStartPoint(), drawingShadows );
+        drawDanglingSymbol( aLine->GetStartPoint(), getLineWidth( aLine, drawingShadows ),
+                            drawingShadows );
 
     if( aLine->IsEndDangling() )
-        drawDanglingSymbol( aLine->GetEndPoint(), drawingShadows );
+        drawDanglingSymbol( aLine->GetEndPoint(), getLineWidth( aLine, drawingShadows ),
+                            drawingShadows );
 }
 
 
@@ -1350,7 +1372,8 @@ void SCH_PAINTER::draw( SCH_TEXT *aText, int aLayer )
     }
 
     if( aText->IsDangling() )
-        drawDanglingSymbol( aText->GetTextPos(), drawingShadows );
+        drawDanglingSymbol( aText->GetTextPos(), Mils2iu( DANGLING_SYMBOL_SIZE / 2 ),
+                            drawingShadows );
 }
 
 
@@ -1703,34 +1726,41 @@ void SCH_PAINTER::draw( SCH_NO_CONNECT *aNC, int aLayer )
 
 void SCH_PAINTER::draw( SCH_BUS_ENTRY_BASE *aEntry, int aLayer )
 {
+    SCH_LINE line;
     bool drawingShadows = aLayer == LAYER_SELECTION_SHADOWS;
 
-    if( drawingShadows && !aEntry->IsSelected() )
-        return;
+    line.SetLayer( aEntry->Type() == SCH_BUS_WIRE_ENTRY_T ? LAYER_WIRE : LAYER_BUS );
 
-    COLOR4D color = getRenderColor( aEntry, LAYER_WIRE, drawingShadows );
+    if( aEntry->IsSelected() )
+        line.SetSelected();
 
-    if( aEntry->Type() == SCH_BUS_BUS_ENTRY_T )
-        color = getRenderColor( aEntry, LAYER_BUS, drawingShadows );
+    line.SetStartPoint( aEntry->GetPosition() );
+    line.SetEndPoint( aEntry->m_End() );
+    line.SetStroke( aEntry->GetStroke() );
 
-    m_gal->SetIsStroke( true );
-    m_gal->SetLineWidth( getLineWidth( aEntry, drawingShadows ) );
-    m_gal->SetStrokeColor( color );
+    if( aEntry->GetStrokeColor() == COLOR4D::UNSPECIFIED )
+    {
+        COLOR4D color = getRenderColor( aEntry, LAYER_WIRE, drawingShadows );
+
+        if( aEntry->Type() == SCH_BUS_BUS_ENTRY_T )
+            color = getRenderColor( aEntry, LAYER_BUS, drawingShadows );
+
+        line.SetLineColor( color );
+    }
+
+    draw( &line, aLayer );
+
     m_gal->SetIsFill( false );
-
-    VECTOR2D pos = aEntry->GetPosition();
-    VECTOR2D endPos = aEntry->m_End();
-
-    m_gal->DrawLine( pos, endPos );
-
-    // Draw dangling symbols:
-    m_gal->SetLineWidth ( getLineWidth( aEntry, drawingShadows ) );
+    m_gal->SetIsStroke( true );
+    m_gal->SetLineWidth( drawingShadows ? getShadowWidth() : 1.0 );
 
     if( aEntry->IsDanglingStart() )
-        m_gal->DrawCircle( pos, TARGET_BUSENTRY_RADIUS );
+        m_gal->DrawCircle( aEntry->GetPosition(),
+                           aEntry->GetPenWidth() + ( TARGET_BUSENTRY_RADIUS / 2 ) );
 
     if( aEntry->IsDanglingEnd() )
-        m_gal->DrawCircle( endPos, TARGET_BUSENTRY_RADIUS );
+        m_gal->DrawCircle( aEntry->m_End(),
+                           aEntry->GetPenWidth() + ( TARGET_BUSENTRY_RADIUS / 2 ) );
 }
 
 

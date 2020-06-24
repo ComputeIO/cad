@@ -44,35 +44,15 @@
 #include <schematic.h>
 
 
-static wxPenStyle getwxPenStyle( PLOT_DASH_TYPE aType )
-{
-    switch( aType )
-    {
-    case PLOT_DASH_TYPE::DEFAULT:
-    case PLOT_DASH_TYPE::SOLID:
-        return wxPENSTYLE_SOLID;
-    case PLOT_DASH_TYPE::DASH:
-        return wxPENSTYLE_SHORT_DASH;
-    case PLOT_DASH_TYPE::DOT:
-        return wxPENSTYLE_DOT;
-    case PLOT_DASH_TYPE::DASHDOT:
-        return wxPENSTYLE_DOT_DASH;
-    default:
-        wxFAIL_MSG( "Unhandled PlotDashType" );
-        return wxPENSTYLE_SOLID;
-    }
-}
-
-
 SCH_LINE::SCH_LINE( const wxPoint& pos, int layer ) :
     SCH_ITEM( NULL, SCH_LINE_T )
 {
     m_start           = pos;
     m_end             = pos;
     m_startIsDangling = m_endIsDangling = false;
-    m_size                              = 0;
-    m_style                             = PLOT_DASH_TYPE::DEFAULT;
-    m_color                             = COLOR4D::UNSPECIFIED;
+    m_stroke.SetWidth( 0 );
+    m_stroke.SetType( PLOT_DASH_TYPE::DEFAULT );
+    m_stroke.SetColor( COLOR4D::UNSPECIFIED );
 
     switch( layer )
     {
@@ -96,9 +76,7 @@ SCH_LINE::SCH_LINE( const SCH_LINE& aLine ) :
 {
     m_start = aLine.m_start;
     m_end = aLine.m_end;
-    m_size = aLine.m_size;
-    m_style = aLine.m_style;
-    m_color = aLine.m_color;
+    m_stroke = aLine.m_stroke;
     m_startIsDangling = aLine.m_startIsDangling;
     m_endIsDangling = aLine.m_endIsDangling;
 }
@@ -204,8 +182,8 @@ void SCH_LINE::ViewGetLayers( int aLayers[], int& aCount ) const
 
 const EDA_RECT SCH_LINE::GetBoundingBox() const
 {
-    int      width = m_size / 2;
-    int      extra = m_size & 0x1;
+    int      width = m_stroke.GetWidth() / 2;
+    int      extra = m_stroke.GetWidth() & 0x1;
 
     int      xmin = std::min( m_start.x, m_end.x ) - width;
     int      ymin = std::min( m_start.y, m_end.y ) - width;
@@ -225,9 +203,9 @@ double SCH_LINE::GetLength() const
 }
 
 
-void SCH_LINE::SetLineColor( const COLOR4D aColor )
+void SCH_LINE::SetLineColor( const COLOR4D& aColor )
 {
-    m_color = aColor;
+    m_stroke.SetColor( aColor );
 }
 
 
@@ -236,19 +214,19 @@ void SCH_LINE::SetLineColor( const double r, const double g, const double b, con
     COLOR4D newColor(r, g, b, a);
 
     if( newColor == COLOR4D::UNSPECIFIED )
-        m_color = COLOR4D::UNSPECIFIED;
+        m_stroke.SetColor( COLOR4D::UNSPECIFIED );
     else
     {
         // Eeschema does not allow alpha channel in colors
         newColor.a = 1.0;
-        m_color = newColor;
+        m_stroke.SetColor( newColor );
     }
 }
 
 
 COLOR4D SCH_LINE::GetLineColor() const
 {
-    return m_color;
+    return m_stroke.GetColor();
 }
 
 
@@ -270,16 +248,16 @@ void SCH_LINE::SetLineStyle( const int aStyleId )
 void SCH_LINE::SetLineStyle( const PLOT_DASH_TYPE aStyle )
 {
     if( aStyle == GetDefaultStyle() )
-        m_style = PLOT_DASH_TYPE::DEFAULT;
+        m_stroke.SetType( PLOT_DASH_TYPE::DEFAULT );
     else
-        m_style = aStyle;
+        m_stroke.SetType( aStyle );
 }
 
 
 PLOT_DASH_TYPE SCH_LINE::GetLineStyle() const
 {
-    if( m_style != PLOT_DASH_TYPE::DEFAULT )
-        return m_style;
+    if( m_stroke.GetType() != PLOT_DASH_TYPE::DEFAULT )
+        return m_stroke.GetType();
 
     return GetDefaultStyle();
 }
@@ -287,23 +265,23 @@ PLOT_DASH_TYPE SCH_LINE::GetLineStyle() const
 
 void SCH_LINE::SetLineWidth( const int aSize )
 {
-    m_size = aSize;
+    m_stroke.SetWidth( aSize );
 }
 
 
 int SCH_LINE::GetPenWidth() const
 {
-    if( m_size == 0 && Schematic() )
+    if( m_stroke.GetWidth() == 0 && Schematic() )
         return std::max( Schematic()->Settings().m_DefaultLineWidth, 1 );
 
-    return std::max( m_size, 1 );
+    return std::max( m_stroke.GetWidth(), 1 );
 }
 
 
 void SCH_LINE::Print( RENDER_SETTINGS* aSettings, const wxPoint& offset )
 {
     wxDC*   DC = aSettings->GetPrintDC();
-    COLOR4D color = m_color;
+    COLOR4D color = m_stroke.GetColor();
     wxPoint start = m_start;
     wxPoint end = m_end;
     int     penWidth = std::max( GetPenWidth(), aSettings->GetDefaultPenWidth() );
@@ -312,7 +290,7 @@ void SCH_LINE::Print( RENDER_SETTINGS* aSettings, const wxPoint& offset )
         color = aSettings->GetLayerColor( m_Layer );
 
     GRLine( nullptr, DC, start.x, start.y, end.x, end.y, penWidth, color,
-            getwxPenStyle( (PLOT_DASH_TYPE) GetLineStyle() ) );
+            GetwxPenStyle( GetLineStyle() ) );
 }
 
 
@@ -731,9 +709,7 @@ void SCH_LINE::SwapData( SCH_ITEM* aItem )
     std::swap( m_end, item->m_end );
     std::swap( m_startIsDangling, item->m_startIsDangling );
     std::swap( m_endIsDangling, item->m_endIsDangling );
-    std::swap( m_style, item->m_style );
-    std::swap( m_size, item->m_size );
-    std::swap( m_color, item->m_color );
+    std::swap( m_stroke, item->m_stroke );
 }
 
 
@@ -751,10 +727,10 @@ void SCH_LINE::Plot( PLOTTER* aPlotter )
     auto* settings = static_cast<KIGFX::SCH_RENDER_SETTINGS*>( aPlotter->RenderSettings() );
     int   penWidth;
 
-    if( m_color != COLOR4D::UNSPECIFIED )
-        aPlotter->SetColor( m_color );
+    if( m_stroke.GetColor() != COLOR4D::UNSPECIFIED )
+        aPlotter->SetColor( m_stroke.GetColor() );
     else
-        aPlotter->SetColor( aPlotter->RenderSettings()->GetLayerColor( GetLayer() ) );
+        aPlotter->SetColor( settings->GetLayerColor( GetLayer() ) );
 
     switch( m_Layer )
     {
@@ -764,6 +740,9 @@ void SCH_LINE::Plot( PLOTTER* aPlotter )
     }
 
     penWidth = std::max( penWidth, aPlotter->RenderSettings()->GetDefaultPenWidth() );
+
+    if( m_stroke.GetWidth() != 0 )
+        penWidth = m_stroke.GetWidth();
 
     aPlotter->SetCurrentLineWidth( penWidth );
     aPlotter->SetDash( GetLineStyle() );
@@ -788,12 +767,14 @@ void SCH_LINE::GetMsgPanelInfo( EDA_DRAW_FRAME* aFrame, MSG_PANEL_ITEMS& aList )
 
     switch( GetLayer() )
     {
-    case LAYER_WIRE: msg = _( "Net Wire" );  break;
-    case LAYER_BUS:  msg = _( "Bus Wire" );  break;
-    default:         msg = _( "Graphical" ); return;
+    case LAYER_WIRE: msg = _( "Wire" );      break;
+    case LAYER_BUS:  msg = _( "Bus" );       break;
+    default:         msg = _( "Graphical" ); break;
     }
 
     aList.push_back( MSG_PANEL_ITEM( _( "Line Type" ), msg, DARKCYAN ) );
+    msg = GetLineStyleName( GetLineStyle() );
+    aList.push_back( MSG_PANEL_ITEM( _( "Line Style" ), msg, DARKCYAN ) );
 
     SCH_EDIT_FRAME* frame = dynamic_cast<SCH_EDIT_FRAME*>( aFrame );
 
@@ -828,6 +809,7 @@ bool SCH_LINE::IsWire() const
 
 bool SCH_LINE::UsesDefaultStroke() const
 {
-    return m_size == 0 && m_color == COLOR4D::UNSPECIFIED
-                && ( m_style == GetDefaultStyle() || m_style == PLOT_DASH_TYPE::DEFAULT );
+    return m_stroke.GetWidth() == 0 && m_stroke.GetColor() == COLOR4D::UNSPECIFIED
+            && ( m_stroke.GetType() == GetDefaultStyle()
+            || m_stroke.GetType() == PLOT_DASH_TYPE::DEFAULT );
 }
