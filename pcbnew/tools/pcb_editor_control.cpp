@@ -544,7 +544,7 @@ int PCB_EDITOR_CONTROL::TrackWidthDec( const TOOL_EVENT& aEvent )
         int widthIndex = 0; // Assume we only have a single track width entry
 
         // If there are more, cycle through them backwards
-        if ( designSettings.m_TrackWidthList.size() > 0)
+        if( designSettings.m_TrackWidthList.size() > 0 )
         {
             widthIndex = designSettings.GetTrackWidthIndex() - 1;
             // If we get to the lowest entry start over at the highest
