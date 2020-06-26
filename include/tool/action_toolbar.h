@@ -29,6 +29,7 @@
 #include <wx/aui/auibar.h>
 #include <tool/tool_event.h>
 
+class CONDITIONAL_MENU;
 class EDA_BASE_FRAME;
 class TOOL_MANAGER;
 class TOOL_ACTION;
@@ -45,7 +46,7 @@ public:
                     const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize,
                     long style = wxAUI_TB_DEFAULT_STYLE );
 
-    virtual ~ACTION_TOOLBAR() {}
+    virtual ~ACTION_TOOLBAR();
 
     /**
      * Function Add()
@@ -60,6 +61,29 @@ public:
      * @param aAction
      */
     void AddButton( const TOOL_ACTION& aAction );
+
+    /**
+     * Add a separator that introduces space on either side to not squash the tools
+     * when scaled.
+     *
+     * @param aWindow is the window to get the scaling factor of
+     */
+    void AddScaledSeparator( wxWindow* aWindow );
+
+    /**
+     * Add a context menu to a specific tool item on the toolbar.
+     * This toolbar gets ownership of the menu object, and will delete it when the
+     * ClearToolbar() function is called.
+     *
+     * @param aAction is the action to get the menu
+     * @param aMenu is the context menu
+     */
+    void AddToolContextMenu( const TOOL_ACTION& aAction, CONDITIONAL_MENU* aMenu );
+
+    /**
+     * Clear the toolbar and remove all associated menus.
+     */
+    void ClearToolbar();
 
     /**
      * Function SetToolBitmap()
@@ -82,6 +106,9 @@ protected:
     ///> The default tool event handler.
     void onToolEvent( wxAuiToolBarEvent& aEvent );
 
+    ///> Handle a right-click on a menu item
+    void onToolRightClick( wxAuiToolBarEvent& aEvent );
+
 protected:
     ///> Tool items with ID higher than that are considered TOOL_ACTIONs
     static const int ACTION_ID = 10000;
@@ -89,6 +116,7 @@ protected:
     TOOL_MANAGER* m_toolManager;
     std::map<int, bool>               m_toolKinds;
     std::map<int, const TOOL_ACTION*> m_toolActions;
+    std::map<int, CONDITIONAL_MENU*>  m_toolMenus;
 };
 
 #endif

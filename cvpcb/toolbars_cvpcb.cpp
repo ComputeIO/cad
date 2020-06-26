@@ -35,33 +35,33 @@
 void CVPCB_MAINFRAME::ReCreateHToolbar()
 {
     if( m_mainToolBar )
-        m_mainToolBar->Clear();
+        m_mainToolBar->ClearToolbar();
     else
         m_mainToolBar = new ACTION_TOOLBAR( this, ID_H_TOOLBAR, wxDefaultPosition, wxDefaultSize,
                 KICAD_AUI_TB_STYLE | wxAUI_TB_HORZ_LAYOUT );
 
     m_mainToolBar->Add( CVPCB_ACTIONS::saveAssociations );
 
-    KiScaledSeparator( m_mainToolBar, this );
+    m_mainToolBar->AddScaledSeparator( this );
     m_mainToolBar->Add( ACTIONS::showFootprintLibTable );
 
-    KiScaledSeparator( m_mainToolBar, this );
+    m_mainToolBar->AddScaledSeparator( this );
     m_mainToolBar->Add( CVPCB_ACTIONS::showFootprintViewer );
 
 
-    KiScaledSeparator( m_mainToolBar, this );
+    m_mainToolBar->AddScaledSeparator( this );
     m_mainToolBar->Add( CVPCB_ACTIONS::gotoPreviousNA );
     m_mainToolBar->Add( CVPCB_ACTIONS::gotoNextNA );
 
-    KiScaledSeparator( m_mainToolBar, this );
+    m_mainToolBar->AddScaledSeparator( this );
     m_mainToolBar->Add( ACTIONS::undo );
     m_mainToolBar->Add( ACTIONS::redo );
     m_mainToolBar->Add( CVPCB_ACTIONS::autoAssociate );
     m_mainToolBar->Add( CVPCB_ACTIONS::deleteAll );
 
     // Add tools for footprint names filtering:
-    KiScaledSeparator( m_mainToolBar, this );
-    
+    m_mainToolBar->AddScaledSeparator( this );
+
     // wxGTK with GTK3 has a serious issue with bold texts: strings are incorrectly sized
     // and truncated after the first space.
     // so use SetLabelMarkup is a trick to fix this issue.
@@ -78,7 +78,7 @@ void CVPCB_MAINFRAME::ReCreateHToolbar()
     m_mainToolBar->Add( CVPCB_ACTIONS::filterFPbyPin, true );
     m_mainToolBar->Add( CVPCB_ACTIONS::FilterFPbyLibrary, true );
 
-    KiScaledSeparator( m_mainToolBar, this );
+    m_mainToolBar->AddScaledSeparator( this );
     m_mainToolBar->Add( CVPCB_ACTIONS::FilterFPbyTextPattern, true );
 
     m_tcFilterString = new wxTextCtrl( m_mainToolBar, ID_CVPCB_FILTER_TEXT_EDIT );

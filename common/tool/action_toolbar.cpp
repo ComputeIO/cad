@@ -22,13 +22,17 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
 
-#include <functional>
+#include <bitmaps.h>
 #include <eda_draw_frame.h>
+#include <functional>
+#include <memory>
+#include <pgm_base.h>
+#include <settings/common_settings.h>
+#include <tool/action_toolbar.h>
 #include <tool/actions.h>
 #include <tool/tool_event.h>
-#include <tool/tool_manager.h>
 #include <tool/tool_interactive.h>
-#include <tool/action_toolbar.h>
+#include <tool/tool_manager.h>
 
 
 ACTION_TOOLBAR::ACTION_TOOLBAR( EDA_BASE_FRAME* parent, wxWindowID id, const wxPoint& pos,
@@ -36,7 +40,20 @@ ACTION_TOOLBAR::ACTION_TOOLBAR( EDA_BASE_FRAME* parent, wxWindowID id, const wxP
     wxAuiToolBar( parent, id, pos, size, style ),
     m_toolManager( parent->GetToolManager() )
 {
-    Connect( wxEVT_COMMAND_TOOL_CLICKED, wxAuiToolBarEventHandler( ACTION_TOOLBAR::onToolEvent ), NULL, this );
+    Connect( wxEVT_COMMAND_TOOL_CLICKED, wxAuiToolBarEventHandler( ACTION_TOOLBAR::onToolEvent ),
+             NULL, this );
+    Connect( wxEVT_AUITOOLBAR_RIGHT_CLICK, wxAuiToolBarEventHandler( ACTION_TOOLBAR::onToolRightClick ),
+             NULL, this );
+}
+
+
+ACTION_TOOLBAR::~ACTION_TOOLBAR()
+{
+    // Delete all the menus
+    for( auto it = m_toolMenus.begin(); it != m_toolMenus.end(); it++ )
+        delete it->second;
+
+    m_toolMenus.clear();
 }
 
 
@@ -63,6 +80,55 @@ void ACTION_TOOLBAR::AddButton( const TOOL_ACTION& aAction )
 
     m_toolKinds[ toolId ] = false;
     m_toolActions[ toolId ] = &aAction;
+}
+
+
+void ACTION_TOOLBAR::AddScaledSeparator( wxWindow* aWindow )
+{
+    int scale = Pgm().GetCommonSettings()->m_Appearance.icon_scale;
+
+    if( scale == 0 )
+        scale = KiIconScale( aWindow );
+
+    if( scale > 4 )
+        AddSpacer( 16 * ( scale - 4 ) / 4 );
+
+    AddSeparator();
+
+    if( scale > 4 )
+        AddSpacer( 16 * ( scale - 4 ) / 4 );
+}
+
+
+void ACTION_TOOLBAR::AddToolContextMenu( const TOOL_ACTION& aAction, CONDITIONAL_MENU* aMenu )
+{
+    int toolId = aAction.GetId() + ACTION_ID;
+
+    // If this is replacing an existing menu, delete the existing menu before adding the new one
+    const auto it = m_toolMenus.find( toolId );
+
+    if( it != m_toolMenus.end() )
+    {
+        // Don't delete it if it is the same menu, just ignore this call
+        if( it->second == aMenu )
+            return;
+
+        delete it->second;
+    }
+
+    m_toolMenus[toolId] = aMenu;
+}
+
+
+void ACTION_TOOLBAR::ClearToolbar()
+{
+    // Delete all the menus
+    for( auto it = m_toolMenus.begin(); it != m_toolMenus.end(); it++ )
+        delete it->second;
+
+    // Clear the menu items and the actual toolbar
+    m_toolMenus.clear();
+    Clear();
 }
 
 
@@ -127,3 +193,29 @@ void ACTION_TOOLBAR::onToolEvent( wxAuiToolBarEvent& aEvent )
     }
 }
 
+
+void ACTION_TOOLBAR::onToolRightClick( wxAuiToolBarEvent& aEvent )
+{
+    int toolId = aEvent.GetToolId();
+
+    // This means the event was not on a button
+    if( toolId == -1 )
+        return;
+
+    const auto it = m_toolMenus.find( aEvent.GetId() );
+
+    if( it == m_toolMenus.end() )
+        return;
+
+    // Update and show the menu
+    CONDITIONAL_MENU* menu = it->second;
+    SELECTION         dummySel;
+
+    menu->Evaluate( dummySel );
+    menu->UpdateAll();
+    PopupMenu( menu );
+
+    // Remove hovered item when the menu closes, otherwise it remains hovered even if the
+    // mouse is not on the toolbar
+    SetHoverItem( nullptr );
+}

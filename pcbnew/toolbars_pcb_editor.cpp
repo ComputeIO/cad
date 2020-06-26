@@ -37,11 +37,15 @@
 #include <pcbnew_id.h>
 #include <pcbnew_settings.h>
 #include <pgm_base.h>
+#include <router/pns_routing_settings.h>
+#include <router/router_tool.h>
 #include <settings/color_settings.h>
 #include <settings/common_settings.h>
 #include <tool/action_toolbar.h>
 #include <tool/actions.h>
+#include <tool/tool_manager.h>
 #include <tools/pcb_actions.h>
+#include <tools/selection_tool.h>
 #include <view/view.h>
 #include <wx/wupdlock.h>
 
@@ -213,18 +217,13 @@ void PCB_EDIT_FRAME::ReCreateHToolbar()
     // them and therefore do not delete them
     // So we do not recreate them after clearing the tools.
 
-    wxString msg;
-
     wxWindowUpdateLocker dummy( this );
 
     if( m_mainToolBar )
-        m_mainToolBar->Clear();
+        m_mainToolBar->ClearToolbar();
     else
         m_mainToolBar = new ACTION_TOOLBAR( this, ID_H_TOOLBAR, wxDefaultPosition, wxDefaultSize,
                                             KICAD_AUI_TB_STYLE | wxAUI_TB_HORZ_LAYOUT );
-
-#define ADD_TOOL( id, xpm, tooltip ) \
-    m_mainToolBar->AddTool( id, wxEmptyString, KiScaledBitmap( xpm, this ), tooltip );
 
     // Set up toolbar
     if( Kiface().IsSingle() )
@@ -235,37 +234,37 @@ void PCB_EDIT_FRAME::ReCreateHToolbar()
 
     m_mainToolBar->Add( ACTIONS::save );
 
-    KiScaledSeparator( m_mainToolBar, this );
+    m_mainToolBar->AddScaledSeparator( this );
     m_mainToolBar->Add( PCB_ACTIONS::boardSetup );
 
-    KiScaledSeparator( m_mainToolBar, this );
+    m_mainToolBar->AddScaledSeparator( this );
     m_mainToolBar->Add( ACTIONS::pageSettings );
     m_mainToolBar->Add( ACTIONS::print );
     m_mainToolBar->Add( ACTIONS::plot );
 
-    KiScaledSeparator( m_mainToolBar, this );
+    m_mainToolBar->AddScaledSeparator( this );
     m_mainToolBar->Add( ACTIONS::undo );
     m_mainToolBar->Add( ACTIONS::redo );
 
-    KiScaledSeparator( m_mainToolBar, this );
+    m_mainToolBar->AddScaledSeparator( this );
     m_mainToolBar->Add( ACTIONS::find );
 
-    KiScaledSeparator( m_mainToolBar, this );
+    m_mainToolBar->AddScaledSeparator( this );
     m_mainToolBar->Add( ACTIONS::zoomRedraw );
     m_mainToolBar->Add( ACTIONS::zoomInCenter );
     m_mainToolBar->Add( ACTIONS::zoomOutCenter );
     m_mainToolBar->Add( ACTIONS::zoomFitScreen );
     m_mainToolBar->Add( ACTIONS::zoomTool, ACTION_TOOLBAR::TOGGLE );
 
-    KiScaledSeparator( m_mainToolBar, this );
+    m_mainToolBar->AddScaledSeparator( this );
     m_mainToolBar->Add( ACTIONS::showFootprintEditor );
     m_mainToolBar->Add( ACTIONS::showFootprintBrowser );
 
-    KiScaledSeparator( m_mainToolBar, this );
+    m_mainToolBar->AddScaledSeparator( this );
     m_mainToolBar->Add( ACTIONS::updatePcbFromSchematic );
     m_mainToolBar->Add( PCB_ACTIONS::runDRC );
 
-    KiScaledSeparator( m_mainToolBar, this );
+    m_mainToolBar->AddScaledSeparator( this );
 
     if( m_SelLayerBox == nullptr )
     {
@@ -279,14 +278,14 @@ void PCB_EDIT_FRAME::ReCreateHToolbar()
     m_mainToolBar->Add( PCB_ACTIONS::selectLayerPair );
     PrepareLayerIndicator( true );    // Force rebuild of the bitmap with the active layer colors
 
-    KiScaledSeparator( m_mainToolBar, this );
+    m_mainToolBar->AddScaledSeparator( this );
     m_mainToolBar->Add( PCB_ACTIONS::showEeschema );
 
     // Access to the scripting console
 #if defined(KICAD_SCRIPTING_WXPYTHON)
     if( IsWxPythonLoaded() )
     {
-        KiScaledSeparator( m_mainToolBar, this );
+        m_mainToolBar->AddScaledSeparator( this );
         m_mainToolBar->Add( PCB_ACTIONS::showPythonConsole, ACTION_TOOLBAR::TOGGLE );
 
 #if defined(KICAD_SCRIPTING) && defined(KICAD_SCRIPTING_ACTION_MENU)
@@ -297,8 +296,6 @@ void PCB_EDIT_FRAME::ReCreateHToolbar()
 
     // after adding the buttons to the toolbar, must call Realize() to reflect the changes
     m_mainToolBar->Realize();
-
-#undef ADD_TOOL
 }
 
 
@@ -314,7 +311,7 @@ void PCB_EDIT_FRAME::ReCreateOptToolbar()
     wxWindowUpdateLocker dummy( this );
 
     if( m_optionsToolBar )
-        m_optionsToolBar->Clear();
+        m_optionsToolBar->ClearToolbar();
     else
         m_optionsToolBar = new ACTION_TOOLBAR( this, ID_OPT_TOOLBAR,
                                                wxDefaultPosition, wxDefaultSize,
@@ -327,27 +324,26 @@ void PCB_EDIT_FRAME::ReCreateOptToolbar()
     m_optionsToolBar->Add( ACTIONS::metricUnits,              ACTION_TOOLBAR::TOGGLE );
     m_optionsToolBar->Add( ACTIONS::toggleCursorStyle,        ACTION_TOOLBAR::TOGGLE );
 
-    KiScaledSeparator( m_optionsToolBar, this );
+    m_optionsToolBar->AddScaledSeparator( this );
     m_optionsToolBar->Add( PCB_ACTIONS::showRatsnest,         ACTION_TOOLBAR::TOGGLE );
     m_optionsToolBar->Add( PCB_ACTIONS::ratsnestLineMode,     ACTION_TOOLBAR::TOGGLE );
 
-    KiScaledSeparator( m_optionsToolBar, this );
+    m_optionsToolBar->AddScaledSeparator( this );
     m_optionsToolBar->Add( PCB_ACTIONS::zoneDisplayEnable,    ACTION_TOOLBAR::TOGGLE );
     m_optionsToolBar->Add( PCB_ACTIONS::zoneDisplayDisable,   ACTION_TOOLBAR::TOGGLE );
     m_optionsToolBar->Add( PCB_ACTIONS::zoneDisplayOutlines,  ACTION_TOOLBAR::TOGGLE );
 
-    KiScaledSeparator( m_optionsToolBar, this );
+    m_optionsToolBar->AddScaledSeparator( this );
     m_optionsToolBar->Add( PCB_ACTIONS::padDisplayMode,       ACTION_TOOLBAR::TOGGLE );
     m_optionsToolBar->Add( PCB_ACTIONS::viaDisplayMode,       ACTION_TOOLBAR::TOGGLE );
     m_optionsToolBar->Add( PCB_ACTIONS::trackDisplayMode,     ACTION_TOOLBAR::TOGGLE );
     m_optionsToolBar->Add( ACTIONS::highContrastMode,         ACTION_TOOLBAR::TOGGLE );
 
     // Tools to show/hide toolbars:
-    KiScaledSeparator( m_optionsToolBar, this );
+    m_optionsToolBar->AddScaledSeparator( this );
     m_optionsToolBar->Add( PCB_ACTIONS::showLayersManager,    ACTION_TOOLBAR::TOGGLE  );
     m_optionsToolBar->Add( PCB_ACTIONS::showMicrowaveToolbar, ACTION_TOOLBAR::TOGGLE  );
 
-    KiScaledSeparator( m_optionsToolBar, this );
     m_optionsToolBar->Realize();
 }
 
@@ -357,7 +353,7 @@ void PCB_EDIT_FRAME::ReCreateVToolbar()
     wxWindowUpdateLocker dummy( this );
 
     if( m_drawToolBar )
-        m_drawToolBar->Clear();
+        m_drawToolBar->ClearToolbar();
     else
         m_drawToolBar = new ACTION_TOOLBAR( this, ID_V_TOOLBAR, wxDefaultPosition, wxDefaultSize,
                                             KICAD_AUI_TB_STYLE | wxAUI_TB_VERTICAL );
@@ -366,14 +362,14 @@ void PCB_EDIT_FRAME::ReCreateVToolbar()
     m_drawToolBar->Add( PCB_ACTIONS::highlightNetTool,     ACTION_TOOLBAR::TOGGLE );
     m_drawToolBar->Add( PCB_ACTIONS::localRatsnestTool,    ACTION_TOOLBAR::TOGGLE );
 
-    KiScaledSeparator( m_drawToolBar, this );
+    m_drawToolBar->AddScaledSeparator( this );
     m_drawToolBar->Add( PCB_ACTIONS::placeModule,          ACTION_TOOLBAR::TOGGLE );
     m_drawToolBar->Add( PCB_ACTIONS::routeSingleTrack,     ACTION_TOOLBAR::TOGGLE );
     m_drawToolBar->Add( PCB_ACTIONS::drawVia,              ACTION_TOOLBAR::TOGGLE );
     m_drawToolBar->Add( PCB_ACTIONS::drawZone,             ACTION_TOOLBAR::TOGGLE );
     m_drawToolBar->Add( PCB_ACTIONS::drawZoneKeepout,      ACTION_TOOLBAR::TOGGLE );
 
-    KiScaledSeparator( m_drawToolBar, this );
+    m_drawToolBar->AddScaledSeparator( this );
     m_drawToolBar->Add( PCB_ACTIONS::drawLine,             ACTION_TOOLBAR::TOGGLE );
     m_drawToolBar->Add( PCB_ACTIONS::drawCircle,           ACTION_TOOLBAR::TOGGLE );
     m_drawToolBar->Add( PCB_ACTIONS::drawArc,              ACTION_TOOLBAR::TOGGLE );
@@ -383,10 +379,45 @@ void PCB_EDIT_FRAME::ReCreateVToolbar()
     m_drawToolBar->Add( PCB_ACTIONS::placeTarget,          ACTION_TOOLBAR::TOGGLE );
     m_drawToolBar->Add( ACTIONS::deleteTool,               ACTION_TOOLBAR::TOGGLE );
 
-    KiScaledSeparator( m_drawToolBar, this );
+    m_drawToolBar->AddScaledSeparator( this );
     m_drawToolBar->Add( PCB_ACTIONS::drillOrigin,          ACTION_TOOLBAR::TOGGLE );
     m_drawToolBar->Add( PCB_ACTIONS::gridSetOrigin,        ACTION_TOOLBAR::TOGGLE );
     m_drawToolBar->Add( ACTIONS::measureTool,              ACTION_TOOLBAR::TOGGLE );
+
+    auto isHighlightMode =
+        [this]( const SELECTION& aSel )
+        {
+            ROUTER_TOOL* tool = m_toolManager->GetTool<ROUTER_TOOL>();
+            return tool->GetRouterMode() == PNS::RM_MarkObstacles;
+        };
+
+    auto isShoveMode =
+        [this]( const SELECTION& aSel )
+        {
+            ROUTER_TOOL* tool = m_toolManager->GetTool<ROUTER_TOOL>();
+            return tool->GetRouterMode() == PNS::RM_Shove;
+        };
+
+    auto isWalkaroundMode =
+        [this]( const SELECTION& aSel )
+        {
+            ROUTER_TOOL* tool = m_toolManager->GetTool<ROUTER_TOOL>();
+            return tool->GetRouterMode() == PNS::RM_Walkaround;
+        };
+
+    SELECTION_TOOL*   selTool   = m_toolManager->GetTool<SELECTION_TOOL>();
+    CONDITIONAL_MENU* routeMenu = new CONDITIONAL_MENU( false, selTool );
+    routeMenu->AddCheckItem( PCB_ACTIONS::routerHighlightMode, isHighlightMode );
+    routeMenu->AddCheckItem( PCB_ACTIONS::routerShoveMode, isShoveMode );
+    routeMenu->AddCheckItem( PCB_ACTIONS::routerWalkaroundMode, isWalkaroundMode );
+    routeMenu->AddSeparator();
+    routeMenu->AddItem( PCB_ACTIONS::routerSettingsDialog, SELECTION_CONDITIONS::ShowAlways );
+    m_drawToolBar->AddToolContextMenu( PCB_ACTIONS::routeSingleTrack, routeMenu );
+
+    CONDITIONAL_MENU* zoneMenu = new CONDITIONAL_MENU( false, selTool );
+    zoneMenu->AddItem( PCB_ACTIONS::zoneFillAll, SELECTION_CONDITIONS::ShowAlways );
+    zoneMenu->AddItem( PCB_ACTIONS::zoneUnfillAll, SELECTION_CONDITIONS::ShowAlways );
+    m_drawToolBar->AddToolContextMenu( PCB_ACTIONS::drawZone, zoneMenu );
 
     m_drawToolBar->Realize();
 }
@@ -399,7 +430,7 @@ void PCB_EDIT_FRAME::ReCreateMicrowaveVToolbar()
     wxWindowUpdateLocker dummy(this);
 
     if( m_microWaveToolBar )
-        m_microWaveToolBar->Clear();
+        m_microWaveToolBar->ClearToolbar();
     else
         m_microWaveToolBar = new ACTION_TOOLBAR( this, ID_MICROWAVE_V_TOOLBAR, wxDefaultPosition,
                                                  wxDefaultSize,
@@ -409,7 +440,7 @@ void PCB_EDIT_FRAME::ReCreateMicrowaveVToolbar()
     m_microWaveToolBar->Add( PCB_ACTIONS::microwaveCreateLine,          ACTION_TOOLBAR::TOGGLE );
     m_microWaveToolBar->Add( PCB_ACTIONS::microwaveCreateGap,           ACTION_TOOLBAR::TOGGLE );
 
-    KiScaledSeparator( m_microWaveToolBar, this );
+    m_microWaveToolBar->AddScaledSeparator( this );
     m_microWaveToolBar->Add( PCB_ACTIONS::microwaveCreateStub,          ACTION_TOOLBAR::TOGGLE );
     m_microWaveToolBar->Add( PCB_ACTIONS::microwaveCreateStubArc,       ACTION_TOOLBAR::TOGGLE );
     m_microWaveToolBar->Add( PCB_ACTIONS::microwaveCreateFunctionShape, ACTION_TOOLBAR::TOGGLE );
@@ -461,7 +492,7 @@ void PCB_EDIT_FRAME::ReCreateAuxiliaryToolbar()
 
     UpdateViaSizeSelectBox( m_SelViaSizeBox );
     m_auxiliaryToolBar->AddControl( m_SelViaSizeBox );
-    KiScaledSeparator( m_auxiliaryToolBar, this );
+    m_auxiliaryToolBar->AddScaledSeparator( this );
 
     // Creates box to display and choose strategy to handle tracks an vias sizes:
     m_auxiliaryToolBar->AddTool( ID_AUX_TOOLBAR_PCB_SELECT_AUTO_WIDTH, wxEmptyString,
@@ -471,7 +502,7 @@ void PCB_EDIT_FRAME::ReCreateAuxiliaryToolbar()
                                  wxITEM_CHECK );
 
     // Add the box to display and select the current grid size:
-    KiScaledSeparator( m_auxiliaryToolBar, this );
+    m_auxiliaryToolBar->AddScaledSeparator( this );
 
     if( m_gridSelectBox == nullptr )
         m_gridSelectBox = new wxChoice( m_auxiliaryToolBar, ID_ON_GRID_SELECT,
@@ -482,7 +513,7 @@ void PCB_EDIT_FRAME::ReCreateAuxiliaryToolbar()
     m_auxiliaryToolBar->AddControl( m_gridSelectBox );
 
     //  Add the box to display and select the current Zoom
-    KiScaledSeparator( m_auxiliaryToolBar, this );
+    m_auxiliaryToolBar->AddScaledSeparator( this );
 
     if( m_zoomSelectBox == nullptr )
         m_zoomSelectBox = new wxChoice( m_auxiliaryToolBar, ID_ON_ZOOM_SELECT,
