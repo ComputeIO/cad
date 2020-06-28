@@ -126,6 +126,9 @@ hatch_smoothing_level
 hatch_smoothing_value
 hide
 hole_to_hole_min
+island
+island_removal_mode
+island_area_min
 italic
 justify
 keepout
@@ -150,6 +153,7 @@ mod_text_width
 mode
 model
 module
+name
 net
 net_class
 net_name

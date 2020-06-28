@@ -180,6 +180,13 @@ void CONNECTIVITY_DATA::RecalculateRatsnest( BOARD_COMMIT* aCommit  )
     {
         int net = c->OriginNet();
 
+        // Don't add intentionally-kept zone islands to the ratsnest
+        if( c->IsOrphaned() && c->Size() == 1 )
+        {
+            if( dynamic_cast<CN_ZONE*>( *c->begin() ) )
+                continue;
+        }
+
         if( m_connAlgo->IsNetDirty( net ) )
         {
             addRatsnestCluster( c );
@@ -235,7 +242,10 @@ int CONNECTIVITY_DATA::GetNetCount() const
 void CONNECTIVITY_DATA::FindIsolatedCopperIslands( ZONE_CONTAINER* aZone,
         std::vector<int>& aIslands )
 {
+    // TODO(JE) ZONES
+#if 0
     m_connAlgo->FindIsolatedCopperIslands( aZone, aIslands );
+#endif
 }
 
 void CONNECTIVITY_DATA::FindIsolatedCopperIslands( std::vector<CN_ZONE_ISOLATED_ISLAND_LIST>& aZones )
