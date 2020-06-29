@@ -57,3 +57,10 @@ wxString GetMajorMinorVersion()
     wxString msg = wxString::Format( wxT( "%s" ), wxT( KICAD_MAJOR_MINOR_VERSION ) );
     return msg;
 }
+
+wxString * GetDocumentOnlineVersions(int *doc_Versions_Length)
+{
+	static wxString document_Online_Versions[] = { "4.0.7", "5.0.2", "5.1.6" };
+	*doc_Versions_Length = ( sizeof(document_Online_Versions) / sizeof(document_Online_Versions[0]) );
+	return document_Online_Versions;
+}

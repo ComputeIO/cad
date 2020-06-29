@@ -128,10 +128,30 @@ int COMMON_CONTROL::ShowHelp( const TOOL_EVENT& aEvent )
     const SEARCH_STACK& search = m_frame->sys_search();
     wxString            helpFile;
     wxString            msg;
+    int doc_Versions_Length = 0;
 
+    // the master version is the updated file version.
+	wxString document_Version = GetMajorMinorVersion();
 
-    // the master version is the updated file version
-	wxString doc_version = "master";
+	// get the online document versions and array length by reference.
+	wxString *document_Online_Versions =  GetDocumentOnlineVersions(&doc_Versions_Length);
+
+	// counter to verify if current version is online.
+	int document_Counter = 0;
+
+	// loop to compare online version with current kicad version.
+	for( int i = 0; i < doc_Versions_Length; i++ )
+	{
+		if ( *(document_Online_Versions + i ) != document_Version )
+		{
+			document_Counter++;
+		}
+	}
+
+	if ( document_Counter == doc_Versions_Length )
+	{
+		document_Version = "master";
+	}
 
 	// the default language is English
 	wxString lang_code = "en";
@@ -169,15 +189,21 @@ int COMMON_CONTROL::ShowHelp( const TOOL_EVENT& aEvent )
                 break;
         }
 
-        wxString url_getting_started = URL_GET_DOCUMENTS + doc_version + "/" + lang_code + "/getting_started_in_kicad/getting_started_in_kicad.html";
+        wxString url_getting_started = URL_GET_DOCUMENTS + document_Version + "/" + lang_code + "/" +
+        		names[0] + "/" + names[0] + ".html";
 
         if( !helpFile )
         {
-            msg = wxString::Format( _( "Html or pdf help file \n%s\nor\n%s could not be found." ),
-                                    names[0], names[1] );
-            wxMessageBox( msg );
 
-            wxLaunchDefaultBrowser( url_getting_started );
+            wxMessageDialog *dial = new wxMessageDialog(NULL,
+                wxT("Do you want the 'getting started in kicad' online version?"),
+				wxT("Question"),
+                wxYES_NO | wxNO_DEFAULT | wxICON_QUESTION);
+
+            if ( dial->ShowModal() ==  wxID_YES )
+            {
+            	wxLaunchDefaultBrowser( url_getting_started );
+            }
 
             return -1;
         }
@@ -186,16 +212,25 @@ int COMMON_CONTROL::ShowHelp( const TOOL_EVENT& aEvent )
     {
         wxString base_name = m_frame->help_name();
 
-        wxString url_manual = URL_GET_DOCUMENTS + doc_version + "/" + lang_code + "/kicad/kicad.html";
+        wxString url_manual = URL_GET_DOCUMENTS + document_Version + "/" + lang_code + "/" +
+        		base_name + "/" + base_name + ".html";
 
         helpFile = SearchHelpFileFullPath( search, base_name );
 
         if( !helpFile )
         {
-            msg = wxString::Format( _( "Help file \"%s\" could not be found." ), base_name );
-            wxMessageBox( msg );
-            wxLaunchDefaultBrowser( url_manual );
-            return -1;
+
+        	 wxMessageDialog *dial = new wxMessageDialog(NULL,
+        	 wxT("Do you want the 'help file kicad' online version?"), wxT("Question"),
+			 wxYES_NO | wxNO_DEFAULT | wxICON_QUESTION);
+
+        	 if ( dial->ShowModal() ==  wxID_YES )
+        	 {
+
+        		 wxLaunchDefaultBrowser( url_manual );
+        	 }
+
+        	 return -1;
         }
     }
 

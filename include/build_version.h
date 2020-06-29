@@ -61,4 +61,12 @@ wxString GetMajorMinorVersion();
  */
 wxString GetBuildDate();
 
+/**
+ * Get the kicad online documentation version
+ *
+ * @return the kicad online documentation version
+ */
+
+wxString * GetDocumentOnlineVersions(int *doc_Versions_Length);
+
 #endif	// KICAD_BUILD_VERSION_H
