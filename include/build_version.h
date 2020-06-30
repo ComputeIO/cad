@@ -27,7 +27,10 @@
 #ifndef KICAD_BUILD_VERSION_H
 #define KICAD_BUILD_VERSION_H
 
+#include <vector>
+
 class wxString;
+
 
 
 /**
@@ -67,6 +70,6 @@ wxString GetBuildDate();
  * @return the kicad online documentation version
  */
 
-wxString * GetDocumentOnlineVersions(int *doc_Versions_Length);
+std::vector<wxString>  GetDocumentOnlineVersions();
 
 #endif	// KICAD_BUILD_VERSION_H

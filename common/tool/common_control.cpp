@@ -128,27 +128,26 @@ int COMMON_CONTROL::ShowHelp( const TOOL_EVENT& aEvent )
     const SEARCH_STACK& search = m_frame->sys_search();
     wxString            helpFile;
     wxString            msg;
-    int doc_Versions_Length = 0;
 
     // the master version is the updated file version.
-	wxString document_Version = GetMajorMinorVersion();
+	wxString document_Version =  "5.1.6";//GetMajorMinorVersion();
 
 	// get the online document versions and array length by reference.
-	wxString *document_Online_Versions =  GetDocumentOnlineVersions(&doc_Versions_Length);
+	std::vector<wxString> document_Online_Versions =  GetDocumentOnlineVersions();
 
 	// counter to verify if current version is online.
-	int document_Counter = 0;
+	long unsigned int document_Counter = 0;
 
 	// loop to compare online version with current kicad version.
-	for( int i = 0; i < doc_Versions_Length; i++ )
+	for( wxString current_Document : document_Online_Versions )
 	{
-		if ( *(document_Online_Versions + i ) != document_Version )
+		if ( current_Document != document_Version )
 		{
 			document_Counter++;
 		}
 	}
 
-	if ( document_Counter == doc_Versions_Length )
+	if ( document_Counter == document_Online_Versions.size() )
 	{
 		document_Version = "master";
 	}
@@ -196,7 +195,7 @@ int COMMON_CONTROL::ShowHelp( const TOOL_EVENT& aEvent )
         {
 
             wxMessageDialog *dial = new wxMessageDialog(NULL,
-                wxT("Do you want the 'getting started in kicad' online version?"),
+                wxT("Do you want to access KiCad online help?"),
 				wxT("Question"),
                 wxYES_NO | wxNO_DEFAULT | wxICON_QUESTION);
 
@@ -221,7 +220,7 @@ int COMMON_CONTROL::ShowHelp( const TOOL_EVENT& aEvent )
         {
 
         	 wxMessageDialog *dial = new wxMessageDialog(NULL,
-        	 wxT("Do you want the 'help file kicad' online version?"), wxT("Question"),
+        	 wxT("Do you want to access KiCad online help?"), wxT("Question"),
 			 wxYES_NO | wxNO_DEFAULT | wxICON_QUESTION);
 
         	 if ( dial->ShowModal() ==  wxID_YES )

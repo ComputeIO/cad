@@ -29,7 +29,7 @@
 // determined.  In this case KICAD_VERSION_FULL will default to the KICAD_VERSION
 // that is set in KiCadVersion.cmake.
 #include <kicad_build_version.h>
-
+#include <vector>
 
 wxString GetBuildVersion()
 {
@@ -58,9 +58,8 @@ wxString GetMajorMinorVersion()
     return msg;
 }
 
-wxString * GetDocumentOnlineVersions(int *doc_Versions_Length)
+std::vector<wxString> GetDocumentOnlineVersions()
 {
-	static wxString document_Online_Versions[] = { "4.0.7", "5.0.2", "5.1.6" };
-	*doc_Versions_Length = ( sizeof(document_Online_Versions) / sizeof(document_Online_Versions[0]) );
+	std::vector<wxString> document_Online_Versions { "5.0.2", "5.1.6" };
 	return document_Online_Versions;
 }
