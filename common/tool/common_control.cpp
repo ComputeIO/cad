@@ -196,7 +196,7 @@ int COMMON_CONTROL::ShowHelp( const TOOL_EVENT& aEvent )
 
             wxMessageDialog *dial = new wxMessageDialog(NULL,
                 wxT("Do you want to access KiCad online help?"),
-				wxT("Getting started in KiCad file not found"),
+				wxT("File Not Found"),
                 wxYES_NO | wxNO_DEFAULT | wxICON_QUESTION);
 
             if ( dial->ShowModal() ==  wxID_YES )
@@ -221,7 +221,7 @@ int COMMON_CONTROL::ShowHelp( const TOOL_EVENT& aEvent )
 
         	 wxMessageDialog *dial = new wxMessageDialog(NULL,
         	 wxT("Do you want to access KiCad online help?"),
-			 wxT("Help file not found"),
+			 wxT("File Not Found"),
 			 wxYES_NO | wxNO_DEFAULT | wxICON_QUESTION);
 
         	 if ( dial->ShowModal() ==  wxID_YES )
