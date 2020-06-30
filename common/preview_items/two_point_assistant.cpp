@@ -76,21 +76,21 @@ void TWO_POINT_ASSISTANT::ViewDraw( int aLayer, KIGFX::VIEW* aView ) const
     if( m_constructMan.IsReset() )
         return;
 
-    gal.SetLineWidth( 1.0 );
-    gal.SetIsStroke( true );
-    gal.SetIsFill( true );
+    const auto origin = m_constructMan.GetOrigin();
+    const auto end    = m_constructMan.GetEnd();
+    const auto radVec = end - origin;
+
+    if( radVec.x == 0 && radVec.y == 0 )
+    {
+        return; // text next to cursor jumps alot around in this corner case
+    }
 
     gal.ResetTextAttributes();
 
     // constant text size on screen
     SetConstantGlyphHeight( gal, 12.0 );
 
-    const auto origin = m_constructMan.GetOrigin();
-    const auto end    = m_constructMan.GetEnd();
-
     std::vector<wxString> cursorStrings;
-
-    const auto radVec = end - origin;
 
     if( m_shape == GEOM_SHAPE::SEGMENT )
     {
@@ -117,7 +117,7 @@ void TWO_POINT_ASSISTANT::ViewDraw( int aLayer, KIGFX::VIEW* aView ) const
         cursorStrings.push_back( DimensionLabel( "x", std::abs( radVec.x ), m_units ) );
         cursorStrings.push_back( DimensionLabel( "y", std::abs( radVec.y ), m_units ) );
     }
-    else
+    else if( m_shape == GEOM_SHAPE::CIRCLE )
     {
         KIGFX::PREVIEW::DRAW_CONTEXT preview_ctx( *aView );
         preview_ctx.DrawLine( origin, end, false );
