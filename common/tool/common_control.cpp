@@ -130,7 +130,7 @@ int COMMON_CONTROL::ShowHelp( const TOOL_EVENT& aEvent )
     wxString            msg;
 
     // the master version is the updated file version.
-	wxString document_Version = GetMajorMinorVersion();
+    wxString document_Version = GetMajorMinorVersion();
 
 	// get the online document versions and array length by reference.
 	std::vector<wxString> document_Online_Versions =  GetDocumentOnlineVersions();
