@@ -292,59 +292,60 @@ vector<BOARD_ITEM*> initTextTable(
         width += colWidth[i];
     }
     // Draw the frame
-    int          y = 0;
+    int          y = origin.y;
     DRAWSEGMENT* line;
     for( i = 0; i < aRows; i++ )
     {
         line = new DRAWSEGMENT;
         line->SetLayer( aLayer );
-        line->SetStartX( 0 );
+        line->SetStartX( origin.x );
         line->SetStartY( y );
-        line->SetEndX( width );
+        line->SetEndX( origin.x + width );
         line->SetEndY( y );
         y += rowHeight[i];
         table.push_back( line );
     }
     line = new DRAWSEGMENT;
     line->SetLayer( aLayer );
-    line->SetStartX( 0 );
+    line->SetStartX( origin.x );
     line->SetStartY( y );
-    line->SetEndX( width );
+    line->SetEndX( origin.x + width );
     line->SetEndY( y );
     table.push_back( line );
-    int x = 0;
+    int x = origin.x;
     for( i = 0; i < aCols; i++ )
     {
         line = new DRAWSEGMENT;
         line->SetLayer( aLayer );
         line->SetStartX( x );
-        line->SetStartY( 0 );
+        line->SetStartY( origin.y );
         line->SetEndX( x );
-        line->SetEndY( height );
+        line->SetEndY( origin.y + height );
         x += colWidth[i];
         table.push_back( line );
     }
     line = new DRAWSEGMENT;
     line->SetLayer( aLayer );
     line->SetStartX( x );
-    line->SetStartY( 0 );
+    line->SetStartY( origin.y );
     line->SetEndX( x );
-    line->SetEndY( height );
+    line->SetEndY( origin.y + height );
     table.push_back( line );
     //Now add the text
     i           = 0;
-    wxPoint pos = wxPoint( xmargin / 2, ymargin );
+    wxPoint pos = wxPoint( origin.x + xmargin / 2, ymargin );
     for( auto col : aContent )
     {
         j = 0;
         if( i >= aCols )
             break;
-        pos.y = ymargin;
+        pos.y = origin.y + ymargin;
         for( auto cell : col )
         {
             if( j >= aRows )
                 break;
             cell->SetTextPos( pos );
+            cell->SetLayer( aLayer );
             pos.y = pos.y + rowHeight[j];
             table.push_back( cell );
             j++;
@@ -404,7 +405,15 @@ int DRAWING_TOOL::DrawSpecificationStackup( const TOOL_EVENT& aEvent )
     t->SetText( "Material" );
     colMaterial.push_back( t );
     t = (TEXTE_PCB*) style1->Duplicate();
-    t->SetText( "Thickness (mm)" );
+
+    if( m_frame->GetUserUnits() == EDA_UNITS::MILLIMETRES )
+    {
+        t->SetText( "Thickness (mm)" );
+    }
+    else if( m_frame->GetUserUnits() == EDA_UNITS::INCHES )
+    {
+        t->SetText( "Thickness (mils)" );
+    }
     colThickness.push_back( t );
     t = (TEXTE_PCB*) style1->Duplicate();
     t->SetText( "Color" );
@@ -427,7 +436,14 @@ int DRAWING_TOOL::DrawSpecificationStackup( const TOOL_EVENT& aEvent )
         t->SetText( layers.at( i )->GetMaterial() );
         colMaterial.push_back( t );
         t = (TEXTE_PCB*) style2->Duplicate();
-        t->SetText( std::to_string( layers.at( i )->GetThickness() / 1000000.0 ) );
+        if( m_frame->GetUserUnits() == EDA_UNITS::MILLIMETRES )
+        {
+            t->SetText( std::to_string( layers.at( i )->GetThickness() / 1000000.0 ) );
+        }
+        else if( m_frame->GetUserUnits() == EDA_UNITS::INCHES )
+        {
+            t->SetText( std::to_string( Mm2mils( layers.at( i )->GetThickness() / 1000000.0 ) ) );
+        }
         colThickness.push_back( t );
         t = (TEXTE_PCB*) style2->Duplicate();
         t->SetText( layers.at( i )->GetColor() );
@@ -446,7 +462,8 @@ int DRAWING_TOOL::DrawSpecificationStackup( const TOOL_EVENT& aEvent )
     texts.push_back( colColor );
     texts.push_back( colEpsilon );
     texts.push_back( colTanD );
-    vector<BOARD_ITEM*> table = initTextTable( texts, 7, stackup.GetCount() + 1, Eco1_User );
+    vector<BOARD_ITEM*> table = initTextTable(
+            texts, 7, stackup.GetCount() + 1, wxPoint( 5000000, 5000000 ), Eco1_User );
 
     for( auto item : table )
     {
@@ -1575,14 +1592,7 @@ bool DRAWING_TOOL::drawSegment( const std::string& aTool, PCB_SHAPE** aGraphic,
 
         grid.SetSnap( !evt->Modifier( MD_SHIFT ) );
         grid.SetUseGrid( getView()->GetGAL()->GetGridSnapping() && !evt->Modifier( MD_ALT ) );
-
-        // The first point in a circle should be able to snap to items on all layers because it doesn't
-        // overlap the graphical line
-        if( !started && graphic && shape == S_CIRCLE )
-            cursorPos = grid.BestSnapAnchor( m_controls->GetMousePosition(), nullptr );
-        else
-            cursorPos = grid.BestSnapAnchor( m_controls->GetMousePosition(), m_frame->GetActiveLayer() );
-
+        cursorPos = grid.BestSnapAnchor( m_controls->GetMousePosition(), m_frame->GetActiveLayer() );
         m_controls->ForceCursorPosition( true, cursorPos );
 
         // 45 degree angle constraint enabled with an option and toggled with Ctrl
@@ -1885,15 +1895,7 @@ bool DRAWING_TOOL::drawArc( const std::string& aTool, PCB_SHAPE** aGraphic, bool
 
         grid.SetSnap( !evt->Modifier( MD_SHIFT ) );
         grid.SetUseGrid( getView()->GetGAL()->GetGridSnapping() && !evt->Modifier( MD_ALT ) );
-        VECTOR2I cursorPos;
-
-        // The first point in an arc should be able to snap to items on all layers because it doesn't
-        // overlap the graphical line
-        if( firstPoint )
-            cursorPos = grid.BestSnapAnchor( m_controls->GetMousePosition(), graphic );
-        else
-            cursorPos = grid.BestSnapAnchor( m_controls->GetMousePosition(), nullptr );
-
+        VECTOR2I cursorPos = grid.BestSnapAnchor( m_controls->GetMousePosition(), graphic );
         m_controls->ForceCursorPosition( true, cursorPos );
 
         auto cleanup =
