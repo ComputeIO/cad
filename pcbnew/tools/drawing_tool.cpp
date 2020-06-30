@@ -357,7 +357,7 @@ vector<BOARD_ITEM*> initTextTable(
 }
 
 
-int DRAWING_TOOL::DrawSpecificationStackup( wxPoint origin )
+int DRAWING_TOOL::DrawSpecificationStackup( wxPoint aOrigin, PCB_LAYER_ID aLayer )
 {
     BOARD_COMMIT               commit( m_frame );
     vector<vector<TEXTE_PCB*>> texts;
@@ -463,8 +463,7 @@ int DRAWING_TOOL::DrawSpecificationStackup( wxPoint origin )
     texts.push_back( colColor );
     texts.push_back( colEpsilon );
     texts.push_back( colTanD );
-    vector<BOARD_ITEM*> table =
-            initTextTable( texts, 7, stackup.GetCount() + 1, origin, Eco1_User );
+    vector<BOARD_ITEM*> table = initTextTable( texts, 7, stackup.GetCount() + 1, aOrigin, aLayer );
 
     for( auto item : table )
     {
@@ -550,7 +549,9 @@ int DRAWING_TOOL::PlaceSpecificationStackup( const TOOL_EVENT& aEvent )
         else if( evt->IsClick( BUT_LEFT ) )
         {
             VECTOR2D pos = m_controls->GetCursorPosition();
-            DrawSpecificationStackup( wxPoint( pos.x, pos.y ) );
+            PCB_LAYER_ID targetLayer = frame()->SelectLayer( static_cast<PCB_LAYER_ID>( Cmts_User ),
+                    LSET::AllCuMask() | LSET::AllBoardTechMask(), wxPoint( pos.x, pos.y ) );
+            DrawSpecificationStackup( wxPoint( pos.x, pos.y ), targetLayer );
             break;
         }
 

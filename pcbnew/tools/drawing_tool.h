@@ -88,10 +88,10 @@ public:
     /**
      * Function DrawSpecificationStackup()
      */
-    int DrawSpecificationStackup( wxPoint origin );
+    int DrawSpecificationStackup( wxPoint origin, PCB_LAYER_ID aLayer );
 
     /**
-     * Function DrawSpecificationStackup()
+     * Function PlaceSpecificationStackup()
      */
     int PlaceSpecificationStackup( const TOOL_EVENT& aEvent );
 
