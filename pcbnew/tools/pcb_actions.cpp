@@ -88,6 +88,10 @@ TOOL_ACTION PCB_ACTIONS::convertToTracks( "pcbnew.Convert.convertToTracks",
 
 // DRAWING_TOOL
 //
+TOOL_ACTION PCB_ACTIONS::drawSpecificationStackup( "pcbnew.InteractiveDrawing.specificationStackup",
+        AS_GLOBAL, 0, LEGACY_HK_NAME( "Add Stackup Table" ), _( "Add Stackup Tabl" ),
+        _( "Add Stackup Tabl" ), add_graphical_segments_xpm, AF_ACTIVATE );
+
 TOOL_ACTION PCB_ACTIONS::drawLine( "pcbnew.InteractiveDrawing.line",
         AS_GLOBAL,
         MD_SHIFT + MD_CTRL + 'L', LEGACY_HK_NAME( "Draw Line" ),

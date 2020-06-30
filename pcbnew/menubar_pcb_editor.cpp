@@ -294,7 +294,7 @@ void PCB_EDIT_FRAME::ReCreateMenuBar()
     //
     ACTION_MENU* placeMenu = new ACTION_MENU( false, selTool );
 
-    placeMenu->Add( PCB_ACTIONS::placeFootprint );
+    placeMenu->Add( PCB_ACTIONS::placeModule );
     placeMenu->Add( PCB_ACTIONS::drawVia );
     placeMenu->Add( PCB_ACTIONS::drawZone );
     placeMenu->Add( PCB_ACTIONS::drawRuleArea );
@@ -303,6 +303,8 @@ void PCB_EDIT_FRAME::ReCreateMenuBar()
     placeMenu->Add( PCB_ACTIONS::drawArc );
     placeMenu->Add( PCB_ACTIONS::drawRectangle );
     placeMenu->Add( PCB_ACTIONS::drawCircle );
+    placeMenu->Add( PCB_ACTIONS::drawSpecificationStackup);
+    placeMenu->Add( PCB_ACTIONS::drawLine );
     placeMenu->Add( PCB_ACTIONS::drawPolygon );
 
     placeMenu->AppendSeparator();
@@ -422,8 +424,8 @@ void PCB_EDIT_FRAME::ReCreateMenuBar()
 #endif
     // Populate the Action Plugin sub-menu: Must be done before Add
     // Since the object is cloned by Add
-    submenuActionPlugins->AppendSeparator();
     buildActionPluginMenus( submenuActionPlugins );
+    submenuActionPlugins->AppendSeparator();
 
     toolsMenu->AppendSeparator();
     toolsMenu->Add( submenuActionPlugins );

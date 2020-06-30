@@ -236,6 +236,225 @@ DRAWING_TOOL::MODE DRAWING_TOOL::GetDrawingMode() const
     return m_mode;
 }
 
+vector<BOARD_ITEM*> initTextTable(
+        vector<vector<TEXTE_PCB*>> aContent, int aCols, int aRows, PCB_LAYER_ID aLayer )
+{
+    aRows = aRows > 99 ? 99 : aRows;
+    aCols = aCols > 99 ? 99 : aCols;
+    int rowHeight[99];
+    int colWidth[99];
+    int i = 0;
+    int j;
+
+    vector<BOARD_ITEM*> table;
+
+    int xmargin = 750000;
+    int ymargin = 750000;
+
+    // Init table
+    for( i = 0; i < aRows; i++ )
+    {
+        rowHeight[i] = 0;
+    }
+    for( i = 0; i < aCols; i++ )
+    {
+        colWidth[i] = 0;
+    }
+    // First, we determine what the height/Width should be for every cell
+    i = 0;
+    for( auto col : aContent )
+    {
+        j = 0;
+        if( i >= aCols )
+            break;
+        for( auto cell : col )
+        {
+            if( j >= aRows )
+                break;
+            int height   = cell->GetBoundingBox().GetHeight() + ymargin;
+            int width    = cell->GetBoundingBox().GetWidth() + xmargin;
+            rowHeight[j] = rowHeight[j] > height ? rowHeight[j] : height;
+            colWidth[i]  = colWidth[i] > width ? colWidth[i] : width;
+            j++;
+        }
+        i++;
+    }
+
+    // get table size
+    int height = 0;
+    for( i = 0; i < aRows; i++ )
+    {
+        height += rowHeight[i];
+    }
+    int width = 0;
+    for( i = 0; i < aCols; i++ )
+    {
+        width += colWidth[i];
+    }
+    // Draw the frame
+    int          y = 0;
+    DRAWSEGMENT* line;
+    for( i = 0; i < aRows; i++ )
+    {
+        line = new DRAWSEGMENT;
+        line->SetLayer( aLayer );
+        line->SetStartX( 0 );
+        line->SetStartY( y );
+        line->SetEndX( width );
+        line->SetEndY( y );
+        y += rowHeight[i];
+        table.push_back( line );
+    }
+    line = new DRAWSEGMENT;
+    line->SetLayer( aLayer );
+    line->SetStartX( 0 );
+    line->SetStartY( y );
+    line->SetEndX( width );
+    line->SetEndY( y );
+    table.push_back( line );
+    int x = 0;
+    for( i = 0; i < aCols; i++ )
+    {
+        line = new DRAWSEGMENT;
+        line->SetLayer( aLayer );
+        line->SetStartX( x );
+        line->SetStartY( 0 );
+        line->SetEndX( x );
+        line->SetEndY( height );
+        x += colWidth[i];
+        table.push_back( line );
+    }
+    line = new DRAWSEGMENT;
+    line->SetLayer( aLayer );
+    line->SetStartX( x );
+    line->SetStartY( 0 );
+    line->SetEndX( x );
+    line->SetEndY( height );
+    table.push_back( line );
+    //Now add the text
+    i           = 0;
+    wxPoint pos = wxPoint( xmargin / 2, ymargin );
+    for( auto col : aContent )
+    {
+        j = 0;
+        if( i >= aCols )
+            break;
+        pos.y = ymargin;
+        for( auto cell : col )
+        {
+            if( j >= aRows )
+                break;
+            cell->SetTextPos( pos );
+            pos.y = pos.y + rowHeight[j];
+            table.push_back( cell );
+            j++;
+        }
+        pos.x = pos.x + colWidth[i];
+        i++;
+    }
+    return table;
+}
+
+int DRAWING_TOOL::DrawSpecificationStackup( const TOOL_EVENT& aEvent )
+{
+    BOARD_COMMIT               commit( m_frame );
+    vector<vector<TEXTE_PCB*>> texts;
+    // Style : Header
+    TEXTE_PCB* style1 = new TEXTE_PCB( (MODULE*) m_frame->GetModel() );
+    style1->SetLayer( Eco1_User );
+    style1->SetTextSize( wxSize( 1500000, 1500000 ) );
+    style1->SetTextThickness( 300000 );
+    style1->SetItalic( false );
+    style1->SetTextPos( wxPoint( 0, 0 ) );
+    style1->SetText( "Layer" );
+    style1->SetHorizJustify( GR_TEXT_HJUSTIFY_LEFT );
+    style1->SetVertJustify( GR_TEXT_VJUSTIFY_TOP );
+    // Style : data
+    TEXTE_PCB* style2 = new TEXTE_PCB( (MODULE*) m_frame->GetModel() );
+    style2->SetLayer( Eco1_User );
+    style2->SetTextSize( wxSize( 1500000, 1500000 ) );
+    style2->SetTextThickness( 100000 );
+    style2->SetItalic( false );
+    style2->SetTextPos( wxPoint( 0, 0 ) );
+    style2->SetText( "Layer" );
+    style2->SetHorizJustify( GR_TEXT_HJUSTIFY_LEFT );
+    style2->SetVertJustify( GR_TEXT_VJUSTIFY_TOP );
+    //Get Layer names
+    BOARD_DESIGN_SETTINGS&           dsnSettings = m_frame->GetDesignSettings();
+    BOARD_STACKUP                    stackup     = dsnSettings.GetStackupDescriptor();
+    std::vector<BOARD_STACKUP_ITEM*> layers      = stackup.GetList();
+
+    int i;
+
+    vector<TEXTE_PCB*> colLayer;
+    vector<TEXTE_PCB*> colType;
+    vector<TEXTE_PCB*> colMaterial;
+    vector<TEXTE_PCB*> colThickness;
+    vector<TEXTE_PCB*> colColor;
+    vector<TEXTE_PCB*> colEpsilon;
+    vector<TEXTE_PCB*> colTanD;
+    TEXTE_PCB*         t;
+    t = (TEXTE_PCB*) style1->Duplicate();
+    t->SetText( "Layer Name" );
+    colLayer.push_back( t );
+    t = (TEXTE_PCB*) style1->Duplicate();
+    t->SetText( "Type" );
+    colType.push_back( t );
+    t = (TEXTE_PCB*) style1->Duplicate();
+    t->SetText( "Material" );
+    colMaterial.push_back( t );
+    t = (TEXTE_PCB*) style1->Duplicate();
+    t->SetText( "Thickness (mm)" );
+    colThickness.push_back( t );
+    t = (TEXTE_PCB*) style1->Duplicate();
+    t->SetText( "Color" );
+    colColor.push_back( t );
+    t = (TEXTE_PCB*) style1->Duplicate();
+    t->SetText( "Epsilon R" );
+    colEpsilon.push_back( t );
+    t = (TEXTE_PCB*) style1->Duplicate();
+    t->SetText( "Loss Tangent" );
+    colTanD.push_back( t );
+    for( i = 0; i < stackup.GetCount(); i++ )
+    {
+        t = (TEXTE_PCB*) style2->Duplicate();
+        t->SetText( layers.at( i )->GetLayerName() );
+        colLayer.push_back( t );
+        t = (TEXTE_PCB*) style2->Duplicate();
+        t->SetText( layers.at( i )->GetTypeName() );
+        colType.push_back( t );
+        t = (TEXTE_PCB*) style2->Duplicate();
+        t->SetText( layers.at( i )->GetMaterial() );
+        colMaterial.push_back( t );
+        t = (TEXTE_PCB*) style2->Duplicate();
+        t->SetText( std::to_string( layers.at( i )->GetThickness() / 1000000.0 ) );
+        colThickness.push_back( t );
+        t = (TEXTE_PCB*) style2->Duplicate();
+        t->SetText( layers.at( i )->GetColor() );
+        colColor.push_back( t );
+        t = (TEXTE_PCB*) style2->Duplicate();
+        t->SetText( std::to_string( layers.at( i )->GetEpsilonR() ) );
+        colEpsilon.push_back( t );
+        t = (TEXTE_PCB*) style2->Duplicate();
+        t->SetText( std::to_string( layers.at( i )->GetLossTangent() ) );
+        colTanD.push_back( t );
+    }
+    texts.push_back( colLayer );
+    texts.push_back( colType );
+    texts.push_back( colMaterial );
+    texts.push_back( colThickness );
+    texts.push_back( colColor );
+    texts.push_back( colEpsilon );
+    texts.push_back( colTanD );
+    vector<BOARD_ITEM*> table = initTextTable( texts, 7, stackup.GetCount() + 1, Eco1_User );
+
+    for( auto item : table )
+    {
+        commit.Add( item );
+    }
+    commit.Push( _( "Draw a table" ) );
+    return 0;
+}
 
 int DRAWING_TOOL::DrawLine( const TOOL_EVENT& aEvent )
 {
