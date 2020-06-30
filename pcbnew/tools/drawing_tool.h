@@ -88,7 +88,12 @@ public:
     /**
      * Function DrawSpecificationStackup()
      */
-    int DrawSpecificationStackup( const TOOL_EVENT& aEvent );
+    int DrawSpecificationStackup( wxPoint origin );
+
+    /**
+     * Function DrawSpecificationStackup()
+     */
+    int PlaceSpecificationStackup( const TOOL_EVENT& aEvent );
 
 
     /**

@@ -356,7 +356,8 @@ vector<BOARD_ITEM*> initTextTable(
     return table;
 }
 
-int DRAWING_TOOL::DrawSpecificationStackup( const TOOL_EVENT& aEvent )
+
+int DRAWING_TOOL::DrawSpecificationStackup( wxPoint origin )
 {
     BOARD_COMMIT               commit( m_frame );
     vector<vector<TEXTE_PCB*>> texts;
@@ -462,14 +463,102 @@ int DRAWING_TOOL::DrawSpecificationStackup( const TOOL_EVENT& aEvent )
     texts.push_back( colColor );
     texts.push_back( colEpsilon );
     texts.push_back( colTanD );
-    vector<BOARD_ITEM*> table = initTextTable(
-            texts, 7, stackup.GetCount() + 1, wxPoint( 5000000, 5000000 ), Eco1_User );
+    vector<BOARD_ITEM*> table =
+            initTextTable( texts, 7, stackup.GetCount() + 1, origin, Eco1_User );
 
     for( auto item : table )
     {
         commit.Add( item );
     }
     commit.Push( _( "Draw a table" ) );
+    return 0;
+}
+
+int DRAWING_TOOL::PlaceSpecificationStackup( const TOOL_EVENT& aEvent )
+{
+    if( m_editModules && !m_frame->GetModel() )
+        return 0;
+
+    BOARD_ITEM*  text = NULL;
+    BOARD_COMMIT commit( m_frame );
+
+    m_toolMgr->RunAction( PCB_ACTIONS::selectionClear, true );
+    m_controls->ShowCursor( true );
+    m_controls->SetSnapping( true );
+    // do not capture or auto-pan until we start placing the table
+
+    SCOPED_DRAW_MODE scopedDrawMode( m_mode, MODE::TEXT );
+
+    std::string tool = aEvent.GetCommandStr().get();
+    m_frame->PushTool( tool );
+    Activate();
+
+    bool reselect = false;
+
+    // Prime the pump
+    if( aEvent.HasPosition() )
+        m_toolMgr->RunAction( ACTIONS::cursorClick );
+
+    // Main loop: keep receiving events
+    while( TOOL_EVENT* evt = Wait() )
+    {
+        m_frame->GetCanvas()->SetCurrentCursor( text ? wxCURSOR_ARROW : wxCURSOR_PENCIL );
+
+        if( reselect && text )
+            m_toolMgr->RunAction( PCB_ACTIONS::selectItem, true, text );
+
+        auto cleanup = [&]() {
+            m_toolMgr->RunAction( PCB_ACTIONS::selectionClear, true );
+            m_controls->ForceCursorPosition( false );
+            m_controls->ShowCursor( true );
+            m_controls->SetAutoPan( false );
+            m_controls->CaptureCursor( false );
+            delete text;
+            text = NULL;
+        };
+
+        if( evt->IsCancelInteractive() )
+        {
+            if( text )
+                cleanup();
+            else
+            {
+                m_frame->PopTool( tool );
+                break;
+            }
+        }
+        else if( evt->IsActivate() )
+        {
+            if( text )
+                cleanup();
+
+            if( evt->IsMoveTool() )
+            {
+                // leave ourselves on the stack so we come back after the move
+                break;
+            }
+            else
+            {
+                m_frame->PopTool( tool );
+                break;
+            }
+        }
+        else if( evt->IsClick( BUT_RIGHT ) )
+        {
+            m_menu.ShowContextMenu( selection() );
+        }
+        else if( evt->IsClick( BUT_LEFT ) )
+        {
+            VECTOR2D pos = m_controls->GetCursorPosition();
+            DrawSpecificationStackup( wxPoint( pos.x, pos.y ) );
+            break;
+        }
+
+        else
+            evt->SetPassEvent();
+    }
+
+    frame()->SetMsgPanel( board() );
     return 0;
 }
 
@@ -2733,6 +2822,8 @@ const unsigned int DRAWING_TOOL::WIDTH_STEP = Millimeter2iu( 0.1 );
 
 void DRAWING_TOOL::setTransitions()
 {
+    Go( &DRAWING_TOOL::PlaceSpecificationStackup,
+            PCB_ACTIONS::drawSpecificationStackup.MakeEvent() );
     Go( &DRAWING_TOOL::DrawLine,              PCB_ACTIONS::drawLine.MakeEvent() );
     Go( &DRAWING_TOOL::DrawZone,              PCB_ACTIONS::drawPolygon.MakeEvent() );
     Go( &DRAWING_TOOL::DrawRectangle,         PCB_ACTIONS::drawRectangle.MakeEvent() );
