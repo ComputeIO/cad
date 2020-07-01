@@ -56,6 +56,7 @@ bool ARC_GEOM_MANAGER::acceptPoint( const VECTOR2I& aPt )
 void ARC_GEOM_MANAGER::SetClockwise( bool aCw )
 {
     m_clockwise = aCw;
+    m_directionLocked = true;
     setGeometryChanged();
 }
 
@@ -63,6 +64,7 @@ void ARC_GEOM_MANAGER::SetClockwise( bool aCw )
 void ARC_GEOM_MANAGER::ToggleClockwise()
 {
     m_clockwise = !m_clockwise;
+    m_directionLocked = true;
     setGeometryChanged();
 }
 
@@ -158,6 +160,20 @@ bool ARC_GEOM_MANAGER::setEnd( const VECTOR2I& aCursor )
     // normalise into 0-2Pi
     while( m_endAngle < 0 )
         m_endAngle += M_PI * 2;
+
+    // as long as every angle is < 60 degree, we will choose the smaller one.
+    if( !m_directionLocked )
+    {
+        double ccwAngle = m_endAngle - m_startAngle;
+        if( m_endAngle <= m_startAngle )
+            ccwAngle += 2 * M_PI;
+        double cwAngle = std::abs( ccwAngle - 2 * M_PI );
+
+        if( std::min( ccwAngle, cwAngle ) >= M_PI / 3 )
+            m_directionLocked = true;
+        else
+            m_clockwise = cwAngle < ccwAngle;
+    }
 
     // if the end is the same as the start, this is a bad point
     return m_endAngle != m_startAngle;
