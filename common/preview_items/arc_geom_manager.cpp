@@ -161,18 +161,23 @@ bool ARC_GEOM_MANAGER::setEnd( const VECTOR2I& aCursor )
     while( m_endAngle < 0 )
         m_endAngle += M_PI * 2;
 
-    // as long as every angle is < 60 degree, we will choose the smaller one.
     if( !m_directionLocked )
     {
         double ccwAngle = m_endAngle - m_startAngle;
+
         if( m_endAngle <= m_startAngle )
             ccwAngle += 2 * M_PI;
+
         double cwAngle = std::abs( ccwAngle - 2 * M_PI );
 
-        if( std::min( ccwAngle, cwAngle ) >= M_PI / 3 )
+        if( std::min( ccwAngle, cwAngle ) >= M_PI_2 )
             m_directionLocked = true;
         else
             m_clockwise = cwAngle < ccwAngle;
+    }
+    else if( std::abs( GetSubtended() ) < M_PI_2 )
+    {
+        m_directionLocked = false;
     }
 
     // if the end is the same as the start, this is a bad point
