@@ -87,20 +87,19 @@ void LAYERS_MAP_DIALOG::initDialog()
     for( int ii = 0; ii < GERBER_DRAWLAYERS_COUNT; ++ii )
     {
         // Specify the default value for each member of these arrays.
-        m_buttonTable[ii] = -1;
+        m_buttonTable[ii]       = -1;
         m_layersLookUpTable[ii] = UNSELECTED_LAYER;
     }
 
     // Ensure we have:
-    //    at least 2 copper layers and less than max pacb copper layers count
-    //    and even layers count because a board *must* have even layers count
+    //    At least 2 copper layers and less than max pcb copper layers count
+    //    Even number of layers because a board *must* have even layers count
     normalizeBrdLayersCount();
 
     int idx = ( m_exportBoardCopperLayersCount / 2 ) - 1;
     m_comboCopperLayersCount->SetSelection( idx );
 
-    LAYER_NUM pcb_layer_num = 0;
-    m_gerberActiveLayersCount = 0;
+    m_gerberActiveLayersCount      = 0;
     GERBER_FILE_IMAGE_LIST* images = m_Parent->GetGerberLayout()->GetImagesList();
 
     for( unsigned ii = 0; ii < GERBER_DRAWLAYERS_COUNT; ++ii )
@@ -108,17 +107,11 @@ void LAYERS_MAP_DIALOG::initDialog()
         if( images->GetGbrImage( ii ) == NULL )
             break;
 
-        if( (pcb_layer_num == m_exportBoardCopperLayersCount - 1)
-           && (m_exportBoardCopperLayersCount > 1) )
-            pcb_layer_num = F_Cu;
-
         m_buttonTable[m_gerberActiveLayersCount] = ii;
-        m_layersLookUpTable[ii]  = pcb_layer_num;
         m_gerberActiveLayersCount++;
-        ++pcb_layer_num;
     }
 
-    if( m_gerberActiveLayersCount <= GERBER_DRAWLAYERS_COUNT/2 )    // Only one list is enough
+    if( m_gerberActiveLayersCount <= GERBER_DRAWLAYERS_COUNT / 2 ) // Only one list is enough
     {
         m_staticlineSep->Hide();
     }
@@ -129,16 +122,16 @@ void LAYERS_MAP_DIALOG::initDialog()
     {
         // Each Gerber layer has an associated static text string (to
         // identify that layer), a button (for invoking a child dialog
-        // box to change which Pcbnew layer that the Gerber layer is
+        // box to change which PCBNew layer that the Gerber layer is
         // mapped to), and a second static text string (to depict which
-        // Pcbnew layer that the Gerber layer has been mapped to). Each
+        // PCBNew layer that the Gerber layer has been mapped to). Each
         // of those items are placed into the left hand column, middle
         // column, and right hand column (respectively) of the Flexgrid
         // sizer, and the color of the second text string is set to
         // fuchsia or blue (to respectively indicate whether the Gerber
-        // layer has been mapped to a Pcbnew layer or is not being
+        // layer has been mapped to a PCBNew layer or is not being
         // exported at all).  (Experimentation has shown that if a text
-        // control is used to depict which Pcbnew layer that each Gerber
+        // control is used to depict which PCBNew layer that each Gerber
         // layer is mapped to (instead of a static text string), then
         // those controls do not behave in a fully satisfactory manner
         // in the Linux version. Even when the read-only attribute is
@@ -152,7 +145,7 @@ void LAYERS_MAP_DIALOG::initDialog()
         // is nb_items; otherwise, the number of rows is 16 (with two
         // separate columns of controls being used if nb_items > 16).
 
-        if( ii == GERBER_DRAWLAYERS_COUNT/2 )
+        if( ii == GERBER_DRAWLAYERS_COUNT / 2 )
             flexColumnBoxSizer = m_flexRightColumnBoxSizer;
 
         // Provide a text string to identify the Gerber layer
@@ -167,29 +160,34 @@ void LAYERS_MAP_DIALOG::initDialog()
         flexColumnBoxSizer->Add( label, 0, wxALIGN_CENTER_VERTICAL | wxALL, 5 );
 
         // Provide a button for this layer (which will invoke a child dialog box)
-        item_ID = ID_BUTTON_0 + ii;
-        wxButton * Button = new wxButton( this, item_ID, wxT( "..." ), wxDefaultPosition,
-                                          wxDefaultSize, wxBU_EXACTFIT );
+        item_ID          = ID_BUTTON_0 + ii;
+        wxButton* Button = new wxButton(
+                this, item_ID, wxT( "..." ), wxDefaultPosition, wxDefaultSize, wxBU_EXACTFIT );
 
         flexColumnBoxSizer->Add( Button, 0, wxALIGN_CENTER_VERTICAL | wxALL );
 
-        // Provide another text string to specify which Pcbnew layer that this
-        // Gerber layer is initially mapped to, and set the initial text to
-        // specify the appropriate Pcbnew layer, and set the foreground color
-        // of the text to fuchsia (to indicate that the layer is being exported).
+        // Provide another text string to specify which PCBNew layer that this
+        // Gerber layer is mapped to.  All layers initially default to
+        // "Do NotExport" (which corresponds to UNSELECTED_LAYER).  Whenever
+        // a layer is set to "Do Not Export" it's displayed in blue.  When a
+        // user selects a specific KiCad layer to map to, it's displayed in
+        // magenta which indicates it will be exported.
         item_ID = ID_TEXT_0 + ii;
+
+        // All layers defualt to "Do Not Export" displayed in blue
+        msg  = _( "Do not export" );
+        text = new wxStaticText( this, item_ID, msg );
+        text->SetForegroundColour( *wxBLUE );
 
         // When the first of these text strings is being added, determine what
         // size is necessary to to be able to display any possible string
         // without it being truncated. Then specify that size as the minimum
         // size for all of these text strings. (If this minimum size is not
         // determined in this fashion, then it is possible for the display of
-        // one or more of these strings to be truncated after different Pcbnew
+        // one or more of these strings to be truncated after different PCBNew
         // layers are selected.)
         if( ii == 0 )
         {
-            msg  = _( "Do not export" );
-            text = new wxStaticText( this, item_ID, msg );
             goodSize = text->GetSize();
 
             for( LAYER_NUM jj = 0; jj < GERBER_DRAWLAYERS_COUNT; ++jj )
@@ -199,15 +197,9 @@ void LAYERS_MAP_DIALOG::initDialog()
                 if( goodSize.x < text->GetSize().x )
                     goodSize.x = text->GetSize().x;
             }
+            text->SetLabel( msg ); // Reset label to default text
+        }
 
-            msg = GetPCBDefaultLayerName( m_layersLookUpTable[m_buttonTable[ii]] );
-            text->SetLabel( msg );
-        }
-        else
-        {
-            msg  = GetPCBDefaultLayerName( m_layersLookUpTable[m_buttonTable[ii]] );
-            text = new wxStaticText( this, item_ID, msg );
-        }
         text->SetMinSize( goodSize );
         flexColumnBoxSizer->Add( text, 1, wxALIGN_CENTER_VERTICAL | wxALL, 5 );
 
@@ -250,13 +242,17 @@ void LAYERS_MAP_DIALOG::OnResetClick( wxCommandEvent& event )
     LAYER_NUM layer;
     for( ii = 0, layer = 0; ii < m_gerberActiveLayersCount; ii++, ++layer )
     {
-        if( (layer == m_exportBoardCopperLayersCount - 1)
-           && (m_exportBoardCopperLayersCount > 1) )
-            layer = F_Cu;
-        m_layersLookUpTable[ii] = layer;
-        msg = GetPCBDefaultLayerName( layer );
-        m_layersList[ii]->SetLabel( msg );
-        m_layersList[ii]->SetForegroundColour( wxNullColour );
+        //~if( (layer == m_exportBoardCopperLayersCount - 1)
+           //~&& (m_exportBoardCopperLayersCount > 1) )
+            //~layer = F_Cu;
+        //~m_layersLookUpTable[ii] = layer;
+        //~msg = GetPCBDefaultLayerName( layer );
+        m_layersLookUpTable[ii] = UNSELECTED_LAYER;
+        //~msg = GetPCBDefaultLayerName( UNSELECTED_LAYER );
+        //~m_layersList[ii]->SetLabel( msg );
+        //~m_layersList[ii]->SetForegroundColour( wxNullColour );
+        m_layersList[ii]->SetLabel( _( "Do not export" ) );
+        m_layersList[ii]->SetForegroundColour( *wxBLUE );
         m_buttonTable[ii] = ii;
     }
 }
