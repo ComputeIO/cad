@@ -94,23 +94,7 @@ void TWO_POINT_ASSISTANT::ViewDraw( int aLayer, KIGFX::VIEW* aView ) const
 
     if( m_shape == GEOM_SHAPE::SEGMENT )
     {
-        if( m_constructMan.GetAngleSnap() )
-        {
-            const auto absX = std::abs( radVec.x );
-            const auto absY = std::abs( radVec.y );
-
-            const double minDistance = std::min( absX, absY );
-            const double maxDistance = std::max( absX, absY );
-
-            const double lin45Distance = VECTOR2D( minDistance, minDistance ).EuclideanNorm();
-
-            const double distance = std::max( lin45Distance, maxDistance - minDistance );
-            cursorStrings.push_back( DimensionLabel( "d", distance, m_units ) );
-        }
-        else
-        {
-            cursorStrings.push_back( DimensionLabel( "d", radVec.EuclideanNorm(), m_units ) );
-        }
+        cursorStrings.push_back( DimensionLabel( "l", radVec.EuclideanNorm(), m_units ) );
     }
     else if( m_shape == GEOM_SHAPE::RECT )
     {
