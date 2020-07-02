@@ -125,6 +125,7 @@ void KIGFX::PREVIEW::DrawTextNextToCursor( KIGFX::VIEW* aView,
         textPos.x -= 15.0 / gal->GetWorldScale();
     }
 
+    gal->SetLineWidth( 1.0f );
     gal->SetStrokeColor( rs->GetLayerColor( LAYER_AUX_ITEMS ).WithAlpha(
                             PreviewOverlayDeemphAlpha( true ) ) );
     gal->SetIsFill( false );
