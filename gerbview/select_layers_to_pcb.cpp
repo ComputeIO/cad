@@ -186,6 +186,7 @@ void LAYERS_MAP_DIALOG::initDialog()
         // determined in this fashion, then it is possible for the display of
         // one or more of these strings to be truncated after different PCBNew
         // layers are selected.)
+
         if( ii == 0 )
         {
             goodSize = text->GetSize();
