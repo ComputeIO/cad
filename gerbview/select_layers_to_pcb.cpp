@@ -154,7 +154,7 @@ void LAYERS_MAP_DIALOG::initDialog()
         label = new wxStaticText( this, wxID_STATIC, msg );
         flexColumnBoxSizer->Add( label, 0, wxALIGN_CENTER_VERTICAL | wxALL, 5 );
 
-        /* Add file name and extension without path. */
+        /* Add file name and extension without path.  */
         wxFileName fn( images->GetGbrImage( ii )->m_FileName );
         label = new wxStaticText( this, wxID_STATIC, fn.GetFullName() );
         flexColumnBoxSizer->Add( label, 0, wxALIGN_CENTER_VERTICAL | wxALL, 5 );
