@@ -174,7 +174,7 @@ void LAYERS_MAP_DIALOG::initDialog()
         // magenta which indicates it will be exported.
         item_ID = ID_TEXT_0 + ii;
 
-        // All layers defualt to "Do Not Export" displayed in blue
+        // All layers default to "Do Not Export" displayed in blue
         msg  = _( "Do not export" );
         text = new wxStaticText( this, item_ID, msg );
         text->SetForegroundColour( *wxBLUE );
@@ -237,20 +237,12 @@ void LAYERS_MAP_DIALOG::OnBrdLayersCountSelection( wxCommandEvent& event )
  */
 void LAYERS_MAP_DIALOG::OnResetClick( wxCommandEvent& event )
 {
-    wxString msg;
-    int ii;
+    wxString  msg;
+    int       ii;
     LAYER_NUM layer;
     for( ii = 0, layer = 0; ii < m_gerberActiveLayersCount; ii++, ++layer )
     {
-        //~if( (layer == m_exportBoardCopperLayersCount - 1)
-           //~&& (m_exportBoardCopperLayersCount > 1) )
-            //~layer = F_Cu;
-        //~m_layersLookUpTable[ii] = layer;
-        //~msg = GetPCBDefaultLayerName( layer );
         m_layersLookUpTable[ii] = UNSELECTED_LAYER;
-        //~msg = GetPCBDefaultLayerName( UNSELECTED_LAYER );
-        //~m_layersList[ii]->SetLabel( msg );
-        //~m_layersList[ii]->SetForegroundColour( wxNullColour );
         m_layersList[ii]->SetLabel( _( "Do not export" ) );
         m_layersList[ii]->SetForegroundColour( *wxBLUE );
         m_buttonTable[ii] = ii;
