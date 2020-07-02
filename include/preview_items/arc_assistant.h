@@ -27,8 +27,10 @@
 #include <base_struct.h>
 #include <preview_items/arc_geom_manager.h>
 
-namespace KIGFX {
-namespace PREVIEW {
+namespace KIGFX
+{
+namespace PREVIEW
+{
     /**
      * SELECTION_AREA
      *
@@ -47,27 +49,26 @@ namespace PREVIEW {
          */
         void ViewDraw( int aLayer, KIGFX::VIEW* aView ) const override final;
 
-#if defined(DEBUG)
-    void Show( int x, std::ostream& st ) const override
-    {
-    }
+#if defined( DEBUG )
+        void Show( int x, std::ostream& st ) const override
+        {
+        }
 #endif
 
-    /**
-     * Get class name
-     * @return  string "ARC_ASSISTANT"
-     */
-    wxString GetClass() const override
-    {
-        return "ARC_ASSISTANT";
-    }
+        /**
+         * Get class name
+         * @return  string "ARC_ASSISTANT"
+         */
+        wxString GetClass() const override
+        {
+            return "ARC_ASSISTANT";
+        }
 
-private:
-
-    const ARC_GEOM_MANAGER& m_constructMan;
-    EDA_UNITS               m_units;
+    private:
+        const ARC_GEOM_MANAGER& m_constructMan;
+        EDA_UNITS               m_units;
     };
-}       // PREVIEW
-}       // KIGFX
+} // namespace PREVIEW
+} // namespace KIGFX
 
-#endif  // PREVIEW_ITEMS_ARC_ASSISTANT_H
+#endif // PREVIEW_ITEMS_ARC_ASSISTANT_H
