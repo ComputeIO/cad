@@ -327,16 +327,22 @@ void D_PAD::BuildEffectiveShapes() const
 
     if( GetShape() == PAD_SHAPE_CUSTOM )
     {
-        SHAPE_POLY_SET* poly = new SHAPE_POLY_SET();
-        MergePrimitivesAsPolygon( poly );
-        poly->Rotate( -DECIDEG2RAD( m_Orient ) );
-        poly->Move( shapePos );
-        add( poly );
+        for( const std::shared_ptr<DRAWSEGMENT>& primitive : m_editPrimitives )
+        {
+            for( SHAPE* shape : primitive->MakeEffectiveShapes() )
+            {
+                shape->Rotate( -DECIDEG2RAD( m_Orient ) );
+                shape->Move( shapePos );
+                add( shape );
+            }
+        }
     }
 
     // Bounding box and radius
     //
     m_effectiveBoundingRadius = calcBoundingRadius();
+
+    m_effectiveBoundingBox = EDA_RECT();        // reset to prepare for merging
 
     for( const std::shared_ptr<SHAPE>& shape : m_effectiveShapes )
     {
