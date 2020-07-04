@@ -167,6 +167,16 @@ PCBNEW_SETTINGS::PCBNEW_SETTINGS()
     m_params.emplace_back(
             new PARAM<int>( "pcb_display.zone_mode", &m_Display.m_DisplayZonesMode, 0, 0, 2 ) );
 
+    m_params.emplace_back( new PARAM<int>( "pcb_display.origin_mode",
+            reinterpret_cast<int*>( &m_Display.m_DisplayOrigin ),
+            PCB_DISPLAY_OPTIONS::PCB_ORIGIN_PAGE ) );
+
+    m_params.emplace_back(
+            new PARAM<bool>( "pcb_display.origin_invert_x_axis", &m_Display.m_DisplayInvertXAxis, false ) );
+
+    m_params.emplace_back(
+            new PARAM<bool>( "pcb_display.origin_invert_y_axis", &m_Display.m_DisplayInvertYAxis, false ) );
+
     m_params.emplace_back(
             new PARAM<double>( "plot.line_width", &m_PlotLineWidth, 0.1, 0.01, 5.0 ) );
 
@@ -453,6 +463,9 @@ bool PCBNEW_SETTINGS::MigrateFromLegacy( wxConfigBase* aCfg )
     ret &= fromLegacy<bool>(  aCfg, "ModAffC",                 "pcb_display.footprint_edge_fill" );
     ret &= fromLegacy<bool>(  aCfg, "ModAffT",                 "pcb_display.footprint_text_fill" );
     ret &= fromLegacy<int>(   aCfg, "ShowNetNamesMode",        "pcb_display.net_names_mode" );
+    ret &= fromLegacy<int>(   aCfg, "PcbDisplayOrigin",        "pcb_display.origin_mode" );
+    ret &= fromLegacy<bool>(  aCfg, "PcbInvertXAxis",          "pcb_display.origin_invert_x_axis" );
+    ret &= fromLegacy<bool>(  aCfg, "PcbInvertYAxis",          "pcb_display.origin_invert_y_axis" );
     ret &= fromLegacy<bool>(  aCfg, "PadAffG",                 "pcb_display.pad_clearance" );
     ret &= fromLegacy<bool>(  aCfg, "PadFill",                 "pcb_display.pad_fill" );
     ret &= fromLegacy<bool>(  aCfg, "PadSNum",                 "pcb_display.pad_numbers" );
