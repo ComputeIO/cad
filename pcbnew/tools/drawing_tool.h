@@ -84,7 +84,7 @@ public:
      * MODE::NONE if not currently in any drawing mode
      */
     MODE GetDrawingMode() const;
-
+    int  DrawSpecification( const TOOL_EVENT& aEvent );
     /**
      * Function DrawSpecificationStackup()
      */

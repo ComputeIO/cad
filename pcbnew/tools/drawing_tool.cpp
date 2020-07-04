@@ -236,8 +236,8 @@ DRAWING_TOOL::MODE DRAWING_TOOL::GetDrawingMode() const
     return m_mode;
 }
 
-vector<BOARD_ITEM*> initTextTable(
-        vector<vector<TEXTE_PCB*>> aContent, int aCols, int aRows, PCB_LAYER_ID aLayer )
+vector<BOARD_ITEM*> initTextTable( vector<vector<TEXTE_PCB*>> aContent, int aCols, int aRows,
+        wxPoint origin, PCB_LAYER_ID aLayer, wxPoint* aTableSize, bool aDrawFrame = true )
 {
     aRows = aRows > 99 ? 99 : aRows;
     aCols = aCols > 99 ? 99 : aCols;
@@ -291,46 +291,51 @@ vector<BOARD_ITEM*> initTextTable(
     {
         width += colWidth[i];
     }
+    aTableSize->x = width;
+    aTableSize->y = height;
     // Draw the frame
-    int          y = origin.y;
-    DRAWSEGMENT* line;
-    for( i = 0; i < aRows; i++ )
+    if( aDrawFrame )
     {
+        int          y = origin.y;
+        DRAWSEGMENT* line;
+        for( i = 0; i < aRows; i++ )
+        {
+            line = new DRAWSEGMENT;
+            line->SetLayer( aLayer );
+            line->SetStartX( origin.x );
+            line->SetStartY( y );
+            line->SetEndX( origin.x + width );
+            line->SetEndY( y );
+            y += rowHeight[i];
+            table.push_back( line );
+        }
         line = new DRAWSEGMENT;
         line->SetLayer( aLayer );
         line->SetStartX( origin.x );
         line->SetStartY( y );
         line->SetEndX( origin.x + width );
         line->SetEndY( y );
-        y += rowHeight[i];
         table.push_back( line );
-    }
-    line = new DRAWSEGMENT;
-    line->SetLayer( aLayer );
-    line->SetStartX( origin.x );
-    line->SetStartY( y );
-    line->SetEndX( origin.x + width );
-    line->SetEndY( y );
-    table.push_back( line );
-    int x = origin.x;
-    for( i = 0; i < aCols; i++ )
-    {
+        int x = origin.x;
+        for( i = 0; i < aCols; i++ )
+        {
+            line = new DRAWSEGMENT;
+            line->SetLayer( aLayer );
+            line->SetStartX( x );
+            line->SetStartY( origin.y );
+            line->SetEndX( x );
+            line->SetEndY( origin.y + height );
+            x += colWidth[i];
+            table.push_back( line );
+        }
         line = new DRAWSEGMENT;
         line->SetLayer( aLayer );
         line->SetStartX( x );
         line->SetStartY( origin.y );
         line->SetEndX( x );
         line->SetEndY( origin.y + height );
-        x += colWidth[i];
         table.push_back( line );
     }
-    line = new DRAWSEGMENT;
-    line->SetLayer( aLayer );
-    line->SetStartX( x );
-    line->SetStartY( origin.y );
-    line->SetEndX( x );
-    line->SetEndY( origin.y + height );
-    table.push_back( line );
     //Now add the text
     i           = 0;
     wxPoint pos = wxPoint( origin.x + xmargin / 2, ymargin );
@@ -463,7 +468,9 @@ int DRAWING_TOOL::DrawSpecificationStackup( wxPoint aOrigin, PCB_LAYER_ID aLayer
     texts.push_back( colColor );
     texts.push_back( colEpsilon );
     texts.push_back( colTanD );
-    vector<BOARD_ITEM*> table = initTextTable( texts, 7, stackup.GetCount() + 1, aOrigin, aLayer );
+    wxPoint             tableSize = wxPoint();
+    vector<BOARD_ITEM*> table =
+            initTextTable( texts, 7, stackup.GetCount() + 1, aOrigin, aLayer, &tableSize );
 
     for( auto item : table )
     {
@@ -472,7 +479,235 @@ int DRAWING_TOOL::DrawSpecificationStackup( wxPoint aOrigin, PCB_LAYER_ID aLayer
     commit.Push( _( "Draw a table" ) );
     return 0;
 }
+int DRAWING_TOOL::DrawSpecification( const TOOL_EVENT& aEvent )
+{
+    BOARD_COMMIT commit( m_frame );
+    // Add a 1 cm margin
+    int xmargin = From_User_Unit( EDA_UNITS::MILLIMETRES, 10.0 );
+    int ymargin = From_User_Unit( EDA_UNITS::MILLIMETRES, 10.0 );
 
+    wxPoint cursorPos = wxPoint( xmargin, ymargin );
+
+    // Style : Section header
+    TEXTE_PCB* style2 = new TEXTE_PCB( (MODULE*) m_frame->GetModel() );
+    style2->SetLayer( Eco1_User );
+    style2->SetTextSize( wxSize( 2000000, 2000000 ) );
+    style2->SetTextThickness( 4000000 );
+    style2->SetItalic( false );
+    style2->SetTextPos( wxPoint( 0, 0 ) );
+    style2->SetHorizJustify( GR_TEXT_HJUSTIFY_LEFT );
+    style2->SetVertJustify( GR_TEXT_VJUSTIFY_TOP );
+
+    // Style : Data
+    TEXTE_PCB* style1 = new TEXTE_PCB( (MODULE*) m_frame->GetModel() );
+    style1->SetLayer( Eco1_User );
+    style1->SetTextSize( wxSize( 1500000, 1500000 ) );
+    style1->SetTextThickness( 200000 );
+    style1->SetItalic( false );
+    style1->SetTextPos( wxPoint( 0, 0 ) );
+    style1->SetHorizJustify( GR_TEXT_HJUSTIFY_LEFT );
+    style1->SetVertJustify( GR_TEXT_VJUSTIFY_TOP );
+
+    TEXTE_PCB* t;
+
+    wxString title, revision, date;
+    title    = m_frame->GetBoard()->GetTitleBlock().GetTitle();
+    revision = m_frame->GetBoard()->GetTitleBlock().GetRevision();
+    date     = m_frame->GetBoard()->GetTitleBlock().GetDate();
+
+    if( !( title.IsEmpty() && revision.IsEmpty() && date.IsEmpty() ) )
+    {
+        t = (TEXTE_PCB*) style2->Duplicate();
+        t->SetText( "BOARD IDENTIFICATION" );
+        t->SetPosition( cursorPos );
+        commit.Add( t );
+        commit.Push( "Text" );
+        cursorPos.y = cursorPos.y + t->GetBoundingBox().GetHeight()
+                      + From_User_Unit( EDA_UNITS::MILLIMETRES, 1.0 );
+
+        if( !( title.IsEmpty() ) )
+        {
+            t = (TEXTE_PCB*) style1->Duplicate();
+            t->SetText( "Board name: " + title );
+            t->SetPosition(
+                    cursorPos + wxPoint( From_User_Unit( EDA_UNITS::MILLIMETRES, 2.0 ), 0 ) );
+            commit.Add( t );
+            commit.Push( "Text" );
+            cursorPos.y = cursorPos.y + t->GetBoundingBox().GetHeight()
+                          + From_User_Unit( EDA_UNITS::MILLIMETRES, 0.5 );
+        }
+
+        if( !( revision.IsEmpty() ) )
+        {
+            t = (TEXTE_PCB*) style1->Duplicate();
+            t->SetText( "Revision: " + revision );
+            t->SetPosition(
+                    cursorPos + wxPoint( From_User_Unit( EDA_UNITS::MILLIMETRES, 2.0 ), 0 ) );
+            commit.Add( t );
+            commit.Push( "Text" );
+            cursorPos.y = cursorPos.y + t->GetBoundingBox().GetHeight()
+                          + From_User_Unit( EDA_UNITS::MILLIMETRES, 0.5 );
+        }
+
+        if( !( date.IsEmpty() ) )
+        {
+            t = (TEXTE_PCB*) style1->Duplicate();
+            t->SetText( "Issue date: " + date );
+            t->SetPosition(
+                    cursorPos + wxPoint( From_User_Unit( EDA_UNITS::MILLIMETRES, 2.0 ), 0 ) );
+            commit.Add( t );
+            commit.Push( "Text" );
+            cursorPos.y = cursorPos.y + t->GetBoundingBox().GetHeight()
+                          + From_User_Unit( EDA_UNITS::MILLIMETRES, 0.5 );
+        }
+        cursorPos.y = cursorPos.y + From_User_Unit( EDA_UNITS::MILLIMETRES, 1.5 );
+    }
+
+    t = (TEXTE_PCB*) style2->Duplicate();
+    t->SetText( "BOARD CHARACTERISTICS" );
+    t->SetPosition( cursorPos );
+    commit.Add( t );
+    commit.Push( "Text" );
+
+    cursorPos.y = cursorPos.y + t->GetBoundingBox().GetHeight()
+                  + From_User_Unit( EDA_UNITS::MILLIMETRES, 1.0 );
+
+    vector<vector<TEXTE_PCB*>> texts;
+    vector<TEXTE_PCB*>         colLabel1;
+    vector<TEXTE_PCB*>         colData1;
+    vector<TEXTE_PCB*>         colbreak;
+    vector<TEXTE_PCB*>         colLabel2;
+    vector<TEXTE_PCB*>         colData2;
+    wxString                   text = wxString( "" );
+
+    t = (TEXTE_PCB*) style1->Duplicate();
+    t->SetText( "Copper Layer Count: " );
+    colLabel1.push_back( t );
+    t = (TEXTE_PCB*) style1->Duplicate();
+    t->SetText( std::to_string( m_frame->GetBoard()->GetDesignSettings().GetCopperLayerCount() ) );
+    colData1.push_back( t );
+
+    EDA_RECT size = m_frame->GetBoard()->ComputeBoundingBox( true );
+    t             = (TEXTE_PCB*) style1->Duplicate();
+    t->SetText( "Board overall dimensions: " );
+    colLabel1.push_back( t );
+    t    = (TEXTE_PCB*) style1->Duplicate();
+    text = std::to_string( To_User_Unit( EDA_UNITS::MILLIMETRES, size.GetWidth() ) );
+    text += " x ";
+    text += std::to_string( To_User_Unit( EDA_UNITS::MILLIMETRES, size.GetHeight() ) );
+    text += " mm ";
+    t->SetText( text );
+    colData1.push_back( t );
+
+    t = (TEXTE_PCB*) style1->Duplicate();
+    t->SetText( "Min track/spacing: " );
+    colLabel1.push_back( t );
+    t    = (TEXTE_PCB*) style1->Duplicate();
+    text = std::to_string( To_User_Unit(
+            EDA_UNITS::MILLIMETRES, m_frame->GetBoard()->GetDesignSettings().m_TrackMinWidth ) );
+    text += " / ";
+    text += std::to_string( To_User_Unit(
+            EDA_UNITS::MILLIMETRES, m_frame->GetBoard()->GetDesignSettings().m_MinClearance ) );
+    text += " mm ";
+    t->SetText( text );
+    colData1.push_back( t );
+    t = (TEXTE_PCB*) style1->Duplicate();
+    t->SetText( "Copper Finish: " );
+    colLabel1.push_back( t );
+    t = (TEXTE_PCB*) style1->Duplicate();
+    t->SetText( m_frame->GetBoard()->GetDesignSettings().GetStackupDescriptor().m_FinishType );
+    colData1.push_back( t );
+    t = (TEXTE_PCB*) style1->Duplicate();
+    t->SetText( "Castellated pads: " );
+    colLabel1.push_back( t );
+    t = (TEXTE_PCB*) style1->Duplicate();
+    t->SetText( m_frame->GetBoard()->GetDesignSettings().GetStackupDescriptor().m_CastellatedPads ?
+                        "Yes" :
+                        "No" );
+    colData1.push_back( t );
+
+    t = (TEXTE_PCB*) style1->Duplicate();
+    t->SetText( "Board Thickness: " );
+    colLabel2.push_back( t );
+    t = (TEXTE_PCB*) style1->Duplicate();
+    t->SetText(
+            std::to_string( To_User_Unit( EDA_UNITS::MILLIMETRES,
+                                    m_frame->GetBoard()->GetDesignSettings().GetBoardThickness() )
+                            + " mm" ) );
+    colData2.push_back( t );
+    t = (TEXTE_PCB*) style1->Duplicate();
+    colLabel2.push_back( t );
+    t = (TEXTE_PCB*) style1->Duplicate();
+    colData2.push_back( t );
+    t = (TEXTE_PCB*) style1->Duplicate();
+    t->SetText( "Min hole diameter: " );
+    colLabel2.push_back( t );
+    t = (TEXTE_PCB*) style1->Duplicate();
+    if( m_frame->GetBoard()->GetDesignSettings().m_MinThroughDrill
+            > m_frame->GetBoard()->GetDesignSettings().m_ViasMinSize )
+        t->SetText( std::to_string( To_User_Unit( EDA_UNITS::MILLIMETRES,
+                                            m_frame->GetBoard()->GetDesignSettings().m_ViasMinSize )
+                                    + " mm" ) );
+    else
+        t->SetText(
+                std::to_string( To_User_Unit( EDA_UNITS::MILLIMETRES,
+                                        m_frame->GetBoard()->GetDesignSettings().m_MinThroughDrill )
+                                + " mm" ) );
+    colData2.push_back( t );
+    t = (TEXTE_PCB*) style1->Duplicate();
+    t->SetText( "Impedance Control: " );
+    colLabel2.push_back( t );
+    t = (TEXTE_PCB*) style1->Duplicate();
+    t->SetText( m_frame->GetBoard()->GetDesignSettings().GetStackupDescriptor().m_CastellatedPads ?
+                        "Yes" :
+                        "No" );
+    colData2.push_back( t );
+    t = (TEXTE_PCB*) style1->Duplicate();
+    t->SetText( "Plated Board Edge: " );
+    colLabel2.push_back( t );
+    t = (TEXTE_PCB*) style1->Duplicate();
+    t->SetText( m_frame->GetBoard()
+                                ->GetDesignSettings()
+                                .GetStackupDescriptor()
+                                .m_HasDielectricConstrains ?
+                        "Yes" :
+                        "No" );
+    colData2.push_back( t );
+
+    texts.push_back( colLabel1 );
+    texts.push_back( colData1 );
+    texts.push_back( colbreak );
+    texts.push_back( colLabel2 );
+    texts.push_back( colData2 );
+    wxPoint tableSize = wxPoint();
+
+    vector<BOARD_ITEM*> table =
+            initTextTable( texts, 5, 5, cursorPos, Eco1_User, &tableSize, false );
+    for( auto item : table )
+    {
+        commit.Add( item );
+        commit.Push( "Text" );
+    }
+
+    cursorPos.y = cursorPos.y + tableSize.y + From_User_Unit( EDA_UNITS::MILLIMETRES, 2.0 );
+
+    t = (TEXTE_PCB*) style2->Duplicate();
+    t->SetText( "BOARD CHARACTERISTICS" );
+
+    t = (TEXTE_PCB*) style2->Duplicate();
+    t->SetText( "BOARD STACKUP" );
+    t->SetPosition( cursorPos );
+    commit.Add( t );
+    commit.Push( "Text" );
+
+    cursorPos.y = cursorPos.y + t->GetBoundingBox().GetHeight()
+                  + From_User_Unit( EDA_UNITS::MILLIMETRES, 2.0 );
+
+
+    DrawSpecificationStackup( cursorPos, Eco1_User );
+
+    return 1;
+}
 int DRAWING_TOOL::PlaceSpecificationStackup( const TOOL_EVENT& aEvent )
 {
     if( m_editModules && !m_frame->GetModel() )
@@ -2823,8 +3058,7 @@ const unsigned int DRAWING_TOOL::WIDTH_STEP = Millimeter2iu( 0.1 );
 
 void DRAWING_TOOL::setTransitions()
 {
-    Go( &DRAWING_TOOL::PlaceSpecificationStackup,
-            PCB_ACTIONS::drawSpecificationStackup.MakeEvent() );
+    Go( &DRAWING_TOOL::DrawSpecification, PCB_ACTIONS::drawSpecificationStackup.MakeEvent() );
     Go( &DRAWING_TOOL::DrawLine,              PCB_ACTIONS::drawLine.MakeEvent() );
     Go( &DRAWING_TOOL::DrawZone,              PCB_ACTIONS::drawPolygon.MakeEvent() );
     Go( &DRAWING_TOOL::DrawRectangle,         PCB_ACTIONS::drawRectangle.MakeEvent() );
