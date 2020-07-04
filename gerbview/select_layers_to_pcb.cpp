@@ -112,9 +112,7 @@ void LAYERS_MAP_DIALOG::initDialog()
     }
 
     if( m_gerberActiveLayersCount <= GERBER_DRAWLAYERS_COUNT / 2 ) // Only one list is enough
-    {
         m_staticlineSep->Hide();
-    }
 
     wxFlexGridSizer* flexColumnBoxSizer = m_flexLeftColumnBoxSizer;
 
@@ -122,16 +120,16 @@ void LAYERS_MAP_DIALOG::initDialog()
     {
         // Each Gerber layer has an associated static text string (to
         // identify that layer), a button (for invoking a child dialog
-        // box to change which PCBNew layer that the Gerber layer is
+        // box to change which Pcbnew layer that the Gerber layer is
         // mapped to), and a second static text string (to depict which
-        // PCBNew layer that the Gerber layer has been mapped to). Each
+        // Pcbnew layer that the Gerber layer has been mapped to). Each
         // of those items are placed into the left hand column, middle
         // column, and right hand column (respectively) of the Flexgrid
         // sizer, and the color of the second text string is set to
         // fuchsia or blue (to respectively indicate whether the Gerber
-        // layer has been mapped to a PCBNew layer or is not being
+        // layer has been mapped to a Pcbnew layer or is not being
         // exported at all).  (Experimentation has shown that if a text
-        // control is used to depict which PCBNew layer that each Gerber
+        // control is used to depict which Pcbnew layer that each Gerber
         // layer is mapped to (instead of a static text string), then
         // those controls do not behave in a fully satisfactory manner
         // in the Linux version. Even when the read-only attribute is
@@ -161,12 +159,12 @@ void LAYERS_MAP_DIALOG::initDialog()
 
         // Provide a button for this layer (which will invoke a child dialog box)
         item_ID          = ID_BUTTON_0 + ii;
-        wxButton* Button = new wxButton(
-                this, item_ID, wxT( "..." ), wxDefaultPosition, wxDefaultSize, wxBU_EXACTFIT );
+        wxButton * Button = new wxButton( this, item_ID, wxT( "..." ), wxDefaultPosition,
+                                          wxDefaultSize, wxBU_EXACTFIT );
 
         flexColumnBoxSizer->Add( Button, 0, wxALIGN_CENTER_VERTICAL | wxALL );
 
-        // Provide another text string to specify which PCBNew layer that this
+        // Provide another text string to specify which Pcbnew layer that this
         // Gerber layer is mapped to.  All layers initially default to
         // "Do NotExport" (which corresponds to UNSELECTED_LAYER).  Whenever
         // a layer is set to "Do Not Export" it's displayed in blue.  When a
@@ -184,7 +182,7 @@ void LAYERS_MAP_DIALOG::initDialog()
         // without it being truncated. Then specify that size as the minimum
         // size for all of these text strings. (If this minimum size is not
         // determined in this fashion, then it is possible for the display of
-        // one or more of these strings to be truncated after different PCBNew
+        // one or more of these strings to be truncated after different Pcbnew
         // layers are selected.)
 
         if( ii == 0 )
