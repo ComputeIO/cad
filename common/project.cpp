@@ -23,22 +23,24 @@
 
 #include <wx/stdpaths.h>
 
+#include <common.h> // NAMELESS_PROJECT
+#include <config_params.h>
+#include <confirm.h>
 #include <fctsys.h>
+#include <fp_lib_table.h>
+#include <kicad_string.h>
+#include <kiface_ids.h>
+#include <kiway.h>
 #include <macros.h>
 #include <pgm_base.h>
 #include <project.h>
-#include <common.h>         // NAMELESS_PROJECT
-#include <confirm.h>
-#include <kicad_string.h>
-#include <config_params.h>
-#include <wildcards_and_files_ext.h>
-#include <fp_lib_table.h>
-#include <kiway.h>
-#include <kiface_ids.h>
+#include <project/project_file.h>
 #include <trace_helpers.h>
+#include <wildcards_and_files_ext.h>
 
 
-PROJECT::PROJECT()
+PROJECT::PROJECT() :
+        m_projectFile( nullptr )
 {
     memset( m_elems, 0, sizeof(m_elems) );
 }
@@ -63,9 +65,9 @@ PROJECT::~PROJECT()
 
 bool PROJECT::TextVarResolver( wxString* aToken ) const
 {
-    if( m_textVars.count( *aToken ) > 0 )
+    if( GetTextVars().count( *aToken ) > 0 )
     {
-        *aToken = m_textVars.at( *aToken );
+        *aToken = GetTextVars().at( *aToken );
         return true;
     }
 
@@ -73,7 +75,13 @@ bool PROJECT::TextVarResolver( wxString* aToken ) const
 }
 
 
-void PROJECT::SetProjectFullName( const wxString& aFullPathAndName )
+std::map<wxString, wxString>& PROJECT::GetTextVars() const
+{
+    return GetProjectFile().m_TextVars;
+}
+
+
+void PROJECT::setProjectFullName( const wxString& aFullPathAndName )
 {
     // Compare paths, rather than inodes, to be less surprising to the user.
     // Create a temporary wxFileName to normalize the path
@@ -184,20 +192,8 @@ const wxString PROJECT::GetSheetName( const KIID& aSheetID )
 {
     if( m_sheetNames.empty() )
     {
-        std::unique_ptr<wxConfigBase> config( configCreate( SEARCH_STACK(), GROUP_SHEET_NAMES ) );
-
-        config->SetPath( GROUP_SHEET_NAMES );
-
-        int index = 1;
-        wxString entry;
-
-        while( config->Read( wxString::Format( "%d", index++ ), &entry ) )
-        {
-            wxArrayString tokens = wxSplit( entry, ':' );
-
-            if( tokens.size() == 2 )
-                m_sheetNames[ KIID( tokens[0] ) ] = tokens[1];
-        }
+        for( auto pair : GetProjectFile().GetSheets() )
+            m_sheetNames[pair.first] = pair.second;
     }
 
     if( m_sheetNames.count( aSheetID ) )
@@ -268,179 +264,6 @@ void PROJECT::SetElem( ELEM_T aIndex, _ELEM* aElem )
         delete m_elems[aIndex];
         m_elems[aIndex] = aElem;
     }
-}
-
-
-static bool copy_pro_file_template( const SEARCH_STACK& aSearchS, const wxString& aDestination )
-{
-    if( aDestination.IsEmpty() )
-    {
-        wxLogTrace( tracePathsAndFiles, "%s: destination is empty.", __func__ );
-        return false;
-    }
-
-    wxString templateFile = wxT( "kicad." ) + ProjectFileExtension;
-
-    wxString kicad_pro_template = aSearchS.FindValidPath( templateFile );
-
-    if( !kicad_pro_template )
-    {
-        wxLogTrace( tracePathsAndFiles, "%s: template file '%s' not found using search paths.",
-                    __func__, TO_UTF8( templateFile ) );
-
-        wxFileName  templ( wxStandardPaths::Get().GetDocumentsDir(),
-                            wxT( "kicad" ), ProjectFileExtension );
-
-        if( !templ.IsFileReadable() )
-        {
-            wxString msg = wxString::Format( _(
-                    "Unable to find \"%s\" template config file." ),
-                    GetChars( templateFile ) );
-
-            DisplayErrorMessage( nullptr, _( "Error copying project file template" ), msg );
-
-            return false;
-        }
-
-        kicad_pro_template = templ.GetFullPath();
-    }
-
-    wxLogTrace( tracePathsAndFiles, "%s: using template file '%s' as project file.",
-                __func__, TO_UTF8( kicad_pro_template ) );
-
-    // Verify aDestination can be created. if this is not the case, wxCopyFile
-    // will generate a crappy log error message, and we *do not want* this kind
-    // of stupid message
-    wxFileName fn( aDestination );
-    bool success = true;
-
-    if( fn.IsOk() && fn.IsDirWritable() )
-        success = wxCopyFile( kicad_pro_template, aDestination );
-    else
-    {
-        wxLogMessage( _( "Cannot create prj file \"%s\" (Directory not writable)" ),
-                      GetChars( aDestination) );
-        success = false;
-    }
-
-    return success;
-}
-
-
-wxConfigBase* PROJECT::configCreate( const SEARCH_STACK& aSList,
-        const wxString& aGroupName, const wxString& aProjectFileName )
-{
-    wxConfigBase*   cfg = 0;
-    wxString        cur_pro_fn = !aProjectFileName ? GetProjectFullName() : aProjectFileName;
-
-    // If we do not have a project name or specified name, choose an empty file to store the
-    // temporary configuration data in.
-    if( cur_pro_fn.IsEmpty() )
-        cur_pro_fn = wxFileName::CreateTempFileName( GetProjectPath() );
-
-    if( wxFileName( cur_pro_fn ).IsFileReadable() )
-    {
-        // Note: currently, aGroupName is not used.
-        // Previoulsy, the version of aGroupName was tested, but it
-        // was useless, and if the version is important,
-        // this is not the right place here, because configCreate does know anything
-        // about info stored in this config file.
-        cfg = new wxFileConfig( wxEmptyString, wxEmptyString, cur_pro_fn, wxEmptyString );
-        return cfg;
-    }
-
-    // No suitable pro file was found, either does not exist, or not readable.
-    // Use the template kicad.pro file.  Find it by using caller's SEARCH_STACK.
-    copy_pro_file_template( aSList, cur_pro_fn );
-
-    cfg = new wxFileConfig( wxEmptyString, wxEmptyString, cur_pro_fn, wxEmptyString );
-
-    return cfg;
-}
-
-
-void PROJECT::ConfigSave( const SEARCH_STACK& aSList, const wxString& aGroupName,
-                          const std::vector<PARAM_CFG*>& aParams, const wxString& aFileName )
-{
-    std::unique_ptr<wxConfigBase> cfg( configCreate( aSList, aGroupName, aFileName ) );
-
-    if( !cfg.get() )
-    {
-        // could not find template
-        return;
-    }
-
-    cfg->SetPath( wxT( "/" ) );
-
-    cfg->Write( wxT( "update" ), DateAndTime() );
-
-    // @todo: pass in aLastClient wxString:
-    cfg->Write( wxT( "last_client" ), Pgm().App().GetAppName() );
-
-    // Save parameters
-    cfg->DeleteGroup( aGroupName );     // Erase all data
-    cfg->Flush();
-
-    cfg->SetPath( aGroupName );
-    cfg->Write( wxT( "version" ), CONFIG_VERSION );
-
-    cfg->SetPath( wxT( "/" ) );
-
-    wxConfigSaveParams( cfg.get(), aParams, aGroupName );
-
-    cfg->DeleteGroup( GROUP_TEXT_VARS );
-    cfg->SetPath( GROUP_TEXT_VARS );
-    int index = 1;
-
-    for( const auto& textvar : m_textVars )
-    {
-        cfg->Write( wxString::Format( "%d", index++ ),
-                    wxString::Format( "%s:%s", textvar.first, textvar.second ) );
-    }
-
-    cfg->SetPath( wxT( "/" ) );
-
-    cfg->Flush();
-}
-
-
-bool PROJECT::ConfigLoad( const SEARCH_STACK& aSList, const wxString&  aGroupName,
-                          const std::vector<PARAM_CFG*>& aParams,
-                          const wxString& aForeignProjectFileName )
-{
-    std::unique_ptr<wxConfigBase> cfg( configCreate( aSList, aGroupName,
-                                                     aForeignProjectFileName ) );
-
-    if( !cfg.get() )
-    {
-        // could not find template
-        return false;
-    }
-
-    // We do not want expansion of env var values when reading our project config file
-    cfg->SetExpandEnvVars( false );
-
-    cfg->SetPath( wxCONFIG_PATH_SEPARATOR );
-
-    wxString timestamp = cfg->Read( wxT( "update" ) );
-
-    m_pro_date_and_time = timestamp;
-
-    wxConfigLoadParams( cfg.get(), aParams, aGroupName );
-
-    cfg->SetPath( GROUP_TEXT_VARS );
-
-    int index = 1;
-    wxString entry;
-
-    while( cfg->Read( wxString::Format( "%d", index++ ), &entry ) )
-    {
-        wxArrayString tokens = wxSplit( entry, ':' );
-
-        if( tokens.size() == 2 )
-            m_textVars[ tokens[0] ] = tokens[1];
-    }
-    return true;
 }
 
 

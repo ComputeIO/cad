@@ -342,15 +342,15 @@ void D_PAD::BuildEffectiveShapes() const
     //
     m_effectiveBoundingRadius = calcBoundingRadius();
 
-    m_effectiveBoundingBox = EDA_RECT();        // reset to prepare for merging
+    // reset the bbox to uninitialized state to prepare for merging
+    m_effectiveBoundingBox = EDA_RECT();
 
     for( const std::shared_ptr<SHAPE>& shape : m_effectiveShapes )
     {
         BOX2I r = shape->BBox();
         m_effectiveBoundingBox.Merge( EDA_RECT( (wxPoint) r.GetOrigin(),
-                                                wxSize( r.GetWidth(), r.GetHeight() ) ) );
+                                      wxSize( r.GetWidth(), r.GetHeight() ) ) );
     }
-
     // Hole shape
     //
     wxSize  half_size = m_Drill / 2;
@@ -484,37 +484,6 @@ void D_PAD::MirrorXPrimitives( int aX )
         primitive->Flip( wxPoint( aX, 0 ), true );
 
     m_shapesDirty = true;
-}
-
-
-void D_PAD::AppendConfigs( std::vector<PARAM_CFG*>* aResult )
-{
-    // Parameters stored in config are only significant parameters
-    // for a template.
-    // So not all parameters are stored, just few.
-    aResult->push_back( new PARAM_CFG_INT_WITH_SCALE( wxT( "PadDrill" ),
-                                                      &m_Drill.x,
-                                                      Millimeter2iu( 0.6 ),
-                                                      Millimeter2iu( 0.1 ), Millimeter2iu( 10.0 ),
-                                                      NULL, MM_PER_IU ) );
-
-    aResult->push_back( new PARAM_CFG_INT_WITH_SCALE( wxT( "PadDrillOvalY" ),
-                                                      &m_Drill.y,
-                                                      Millimeter2iu( 0.6 ),
-                                                      Millimeter2iu( 0.1 ), Millimeter2iu( 10.0 ),
-                                                      NULL, MM_PER_IU ) );
-
-    aResult->push_back( new PARAM_CFG_INT_WITH_SCALE( wxT( "PadSizeH" ),
-                                                      &m_Size.x,
-                                                      Millimeter2iu( 1.4 ),
-                                                      Millimeter2iu( 0.1 ), Millimeter2iu( 20.0 ),
-                                                      NULL, MM_PER_IU ) );
-
-    aResult->push_back( new PARAM_CFG_INT_WITH_SCALE( wxT( "PadSizeV" ),
-                                                      &m_Size.y,
-                                                      Millimeter2iu( 1.4 ),
-                                                      Millimeter2iu( 0.1 ), Millimeter2iu( 20.0 ),
-                                                      NULL, MM_PER_IU ) );
 }
 
 

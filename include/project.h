@@ -47,6 +47,8 @@ class S3D_CACHE;
 class KIWAY;
 class SYMBOL_LIB_TABLE;
 class FILENAME_RESOLVER;
+class PROJECT_FILE;
+class PROJECT_LOCAL_SETTINGS;
 
 #define VTBL_ENTRY      virtual
 
@@ -58,6 +60,9 @@ class FILENAME_RESOLVER;
  */
 class PROJECT
 {
+    friend class SETTINGS_MANAGER; // so that SM can set project path
+    friend class TEST_NETLISTS_FIXTURE; // TODO(JE) make this not required
+
 public:
 
     /// A PROJECT can hold stuff it knows nothing about, in the form of
@@ -80,19 +85,8 @@ public:
     //-----<Cross Module API>----------------------------------------------------
 
     VTBL_ENTRY bool TextVarResolver( wxString* aToken ) const;
-    VTBL_ENTRY std::map<wxString, wxString>& GetTextVars() { return m_textVars; }
 
-    // VTBL_ENTRY bool MaybeLoadProjectSettings( const std::vector<wxString>& aFileSet );
-
-    /**
-     * Function SetProjectFullName
-     * sets the:
-     * 1) full directory, 2) basename, and 3) extension of the project.  This is
-     * the name of the *.pro file with full absolute path and it also defines
-     * the name of the project.  The project name and the *.pro file names are
-     * exactly the same, providing the *.pro filename is absolute.
-     */
-    VTBL_ENTRY void SetProjectFullName( const wxString& aFullPathAndName );
+    VTBL_ENTRY std::map<wxString, wxString>& GetTextVars() const;
 
     /**
      * Function GetProjectFullName
@@ -132,44 +126,17 @@ public:
      */
     VTBL_ENTRY const wxString SymbolLibTableName() const;
 
-    /**
-     * Function ConfigSave
-     * saves the current "project" parameters into the wxConfigBase* derivative.
-     * Then the wxConfigBase derivative is written to the *.pro file for the project.
-     *
-     * @param aSList a SEARCH_STACK
-     * @param aGroupName is the name of the group inside the config which contains parameters
-     * @param aParams is a ptr vector of PARAM_CFG derivatives.
-     *  Saved parameters are the subset in this array having the .m_Setup member
-     *  set to false.
-     * @param aFileName is where to save the *.pro file and if NULL means use this PROJECT's
-     *   @a m_project_name.
-     */
-    VTBL_ENTRY void ConfigSave( const SEARCH_STACK& aSList, const wxString& aGroupName,
-                                const std::vector<PARAM_CFG*>& aParams,
-                                const wxString& aFileName = wxEmptyString );
+    VTBL_ENTRY PROJECT_FILE& GetProjectFile() const
+    {
+        wxASSERT( m_projectFile );
+        return *m_projectFile;
+    }
 
-    /**
-     * Function ConfigLoad
-     * reads a subset of parameters from the "project" file.  Parameters are the
-     * subset of variables given in @a aParams array which have the .m_Setup member
-     * set to false.  The file which is read in and then extracted from is the
-     * '*.pro' file for the project.
-     * <p>
-     * set:
-     *  m_pro_date_and_time
-     *
-     * @param aSearchS a SEARCH_STACK where a kicad.pro template file may be found.
-     * @param aGroupName
-     * @param aParams is ptr vector of PARAM_CFG derivatives.
-     * @param aForeignConfigFileName when NULL means load the *.pro filename given
-     *  in this PROJECT's @a m_project_name field, otherwise load the provided filename.
-     *
-     * @return bool - true if loaded OK.
-     */
-    VTBL_ENTRY bool ConfigLoad( const SEARCH_STACK& aSearchS, const wxString& aGroupName,
-                                const std::vector<PARAM_CFG*>& aParams,
-                                const wxString& aForeignConfigFileName = wxEmptyString );
+    VTBL_ENTRY PROJECT_LOCAL_SETTINGS& GetLocalSettings() const
+    {
+        wxASSERT( m_localSettings );
+        return *m_localSettings;
+    }
 
     /// Retain a number of project specific wxStrings, enumerated here:
     enum RSTRING_T
@@ -322,15 +289,32 @@ public:
 private:
 
     /**
-     * Function configCreate
-     * loads a *.pro file and returns a wxConfigBase.
-     *
-     * @param aSList is the KIFACE or PGM's SEARCH_STACK
-     * @param aGroupName is the default config file subset to use.
-     * @param aProjectFileName is the *.pro file to open.
+     * Sets the:
+     * 1) full directory, 2) basename, and 3) extension of the project.  This is
+     * the name of the *.pro file with full absolute path and it also defines
+     * the name of the project.  The project name and the *.pro file names are
+     * exactly the same, providing the *.pro filename is absolute.
      */
-    wxConfigBase* configCreate( const SEARCH_STACK& aSList,
-            const wxString& aGroupName, const wxString& aProjectFileName = wxEmptyString );
+    VTBL_ENTRY void setProjectFullName( const wxString& aFullPathAndName );
+
+    /**
+     * Sets the backing store file for this project
+     * Should only be called by SETTINGS_MANGER on load.
+     * @param aFile is a loaded PROJECT_FILE
+     */
+    VTBL_ENTRY void setProjectFile( PROJECT_FILE* aFile )
+    {
+        m_projectFile = aFile;
+    }
+
+    /**
+     * Sets the local settings backing store.  Should only be called by SETTINGS_MANAGER on load.
+     * @param aSettings is the local settings object (may or may not exist on disk at this point)
+     */
+    VTBL_ENTRY void setLocalSettings( PROJECT_LOCAL_SETTINGS* aSettings )
+    {
+        m_localSettings = aSettings;
+    }
 
     /**
      * Return the full path and file name of the project specific library table \a aLibTableName..
@@ -340,8 +324,13 @@ private:
     wxFileName      m_project_name;         ///< \<fullpath\>/\<basename\>.pro
     wxString        m_pro_date_and_time;
 
+    /// Backing store for project data -- owned by SETTINGS_MANAGER
+    PROJECT_FILE*   m_projectFile;
+
+    /// Backing store for project local settings -- owned by SETTINGS_MANAGER
+    PROJECT_LOCAL_SETTINGS* m_localSettings;
+
     std::map<KIID, wxString>     m_sheetNames;
-    std::map<wxString, wxString> m_textVars;
 
     /// @see this::SetRString(), GetRString(), and enum RSTRING_T.
     wxString        m_rstrings[RSTRING_COUNT];

@@ -87,6 +87,8 @@ EDA_BASE_FRAME::EDA_BASE_FRAME( wxWindow* aParent, FRAME_T aFrameType,
     m_mruPath       = wxStandardPaths::Get().GetDocumentsDir();
     m_FrameSize     = wxSize( s_minsize_x, s_minsize_y );
 
+    m_settingsManager = &Pgm().GetSettingsManager();
+
     // Set a reasonable minimal size for the frame
     SetSizeHints( s_minsize_x, s_minsize_y, -1, -1, -1, -1 );
 
@@ -767,23 +769,6 @@ void EDA_BASE_FRAME::CheckForAutoSaveFile( const wxFileName& aFileName )
     // the file name.
     if( response == wxYES )
     {
-        // Get the backup file name.
-        wxFileName backupFileName = aFileName;
-        backupFileName.SetExt( aFileName.GetExt() + GetBackupSuffix() );
-
-        // If an old backup file exists, delete it.  If an old copy of the file exists, rename
-        // it to the backup file name
-        if( aFileName.FileExists() )
-        {
-            // Rename the old file to the backup file name.
-            if( !wxRenameFile( aFileName.GetFullPath(), backupFileName.GetFullPath(), true ) )
-            {
-                msg.Printf( _( "Could not create backup file \"%s\"" ),
-                            GetChars( backupFileName.GetFullPath() ) );
-                wxMessageBox( msg );
-            }
-        }
-
         if( !wxRenameFile( autoSaveFileName.GetFullPath(), aFileName.GetFullPath() ) )
         {
             wxMessageBox( _( "The auto save file could not be renamed to the board file name." ),

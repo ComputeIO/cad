@@ -51,6 +51,9 @@
 #include <ratsnest/ratsnest_data.h>
 
 #include <wx/wupdlock.h>
+#include <settings/settings_manager.h>
+#include <project/project_file.h>
+#include <project/project_local_settings.h>
 
 
 //#define     USE_INSTRUMENTATION     1
@@ -245,22 +248,13 @@ bool PCB_EDIT_FRAME::Files_io_from_id( int id )
                        && OpenProjectFiles( std::vector<wxString>( 1, fileName ), open_ctl );
         }
 
-    case ID_MENU_READ_BOARD_BACKUP_FILE:
     case ID_MENU_RECOVER_BOARD_AUTOSAVE:
         {
             wxFileName currfn = Prj().AbsolutePath( GetBoard()->GetFileName() );
             wxFileName fn = currfn;
 
-            if( id == ID_MENU_RECOVER_BOARD_AUTOSAVE )
-            {
-                wxString rec_name = GetAutoSaveFilePrefix() + fn.GetName();
-                fn.SetName( rec_name );
-            }
-            else
-            {
-                wxString backup_ext = fn.GetExt() + GetBackupSuffix();
-                fn.SetExt( backup_ext );
-            }
+            wxString rec_name = GetAutoSaveFilePrefix() + fn.GetName();
+            fn.SetName( rec_name );
 
             if( !fn.FileExists() )
             {
@@ -269,7 +263,7 @@ bool PCB_EDIT_FRAME::Files_io_from_id( int id )
                 return false;
             }
 
-            msg.Printf( _( "OK to load recovery or backup file \"%s\"" ), fn.GetFullPath() );
+            msg.Printf( _( "OK to load recovery file \"%s\"" ), fn.GetFullPath() );
 
             if( !IsOK( this, msg ) )
                 return false;
@@ -304,13 +298,22 @@ bool PCB_EDIT_FRAME::Files_io_from_id( int id )
                 return false;
         }
 
-        if( !Clear_Pcb( false ) )
-            return false;
+        SETTINGS_MANAGER* mgr = GetSettingsManager();
+
+        mgr->SaveProject( mgr->Prj().GetProjectFullName() );
+        mgr->UnloadProject( &mgr->Prj() );
+
+        GetBoard()->ClearProject();
 
         wxFileName fn( wxStandardPaths::Get().GetDocumentsDir(), wxT( "noname" ),
                        ProjectFileExtension );
 
-        Prj().SetProjectFullName( fn.GetFullPath() );
+        mgr->LoadProject( fn.GetFullPath() );
+
+        LoadProjectSettings();
+
+        if( !Clear_Pcb( false ) )
+            return false;
 
         onBoardLoaded();
 
@@ -343,7 +346,7 @@ bool PCB_EDIT_FRAME::Files_io_from_id( int id )
                 if( id == ID_COPY_BOARD_AS )
                     return SavePcbCopy( filename );
                 else
-                    return SavePcbFile( filename, NO_BACKUP_FILE );
+                    return SavePcbFile( filename, false );
             }
             return false;
         }
@@ -467,7 +470,7 @@ bool PCB_EDIT_FRAME::OpenProjectFiles( const std::vector<wxString>& aFileSet, in
     if( IsContentModified() )
     {
         if( !HandleUnsavedChanges( this, _( "The current PCB has been modified.  Save changes?" ),
-            [&]()->bool { return SavePcbFile( GetBoard()->GetFileName(), CREATE_BACKUP_FILE ); } ) )
+            [&]()->bool { return SavePcbFile( GetBoard()->GetFileName() ); } ) )
         {
             return false;
         }
@@ -493,7 +496,11 @@ bool PCB_EDIT_FRAME::OpenProjectFiles( const std::vector<wxString>& aFileSet, in
 
     wxWindowUpdateLocker no_update( m_Layers );     // Avoid flicker when rebuilding m_Layers
 
-    Clear_Pcb( false );     // pass false since we prompted above for a modified board
+    // Unlink the old project if needed
+    GetBoard()->ClearProject();
+
+    // No save prompt (we already prompted above), and only reset to a new blank board if new
+    Clear_Pcb( false, !is_new );
 
     IO_MGR::PCB_FILE_T  pluginType = plugin_type( fullFileName, aCtl );
 
@@ -501,13 +508,20 @@ bool PCB_EDIT_FRAME::OpenProjectFiles( const std::vector<wxString>& aFileSet, in
 
     if( !converted )
     {
-        // PROJECT::SetProjectFullName() is an impactful function.  It should only be
-        // called under carefully considered circumstances.
+        // Loading a project should only be done under carefully considered circumstances.
 
         // The calling code should know not to ask me here to change projects unless
         // it knows what consequences that will have on other KIFACEs running and using
         // this same PROJECT.  It can be very harmful if that calling code is stupid.
-        Prj().SetProjectFullName( pro.GetFullPath() );
+        SETTINGS_MANAGER* mgr = GetSettingsManager();
+
+        if( pro.GetFullPath() != mgr->Prj().GetProjectFullName() )
+        {
+            mgr->SaveProject( mgr->Prj().GetProjectFullName() );
+            mgr->UnloadProject( &mgr->Prj() );
+
+            mgr->LoadProject( pro.GetFullPath() );
+        }
 
         // load project settings before BOARD
         LoadProjectSettings();
@@ -559,40 +573,30 @@ bool PCB_EDIT_FRAME::OpenProjectFiles( const std::vector<wxString>& aFileSet, in
                 DisplayErrorMessage( this, msg, ioe.What() );
             }
 
+            // We didn't create a new blank board above, so do that now
+            Clear_Pcb( false );
+
             return false;
         }
 
-        BOARD_DESIGN_SETTINGS& bds = loadedBoard->m_designSettings;
+        SetBoard( loadedBoard );
 
-        if( bds.m_CopperEdgeClearance == Millimeter2iu( LEGACY_COPPEREDGECLEARANCE ) )
+        // On save; design settings will be removed from the board
+        if( loadedBoard->m_LegacyDesignSettingsLoaded )
+            loadedBoard->SetModified();
+
+        // Move legacy view settings to local project settings
+        if( !loadedBoard->m_LegacyVisibleLayers.test( Rescue ) )
         {
-            // 5.1 boards stored some settings in the config so as not to bump the file version.
-            // These will have been loaded into the config-initialized board, so we copy them
-            // from there.
-            BOARD_DESIGN_SETTINGS& configBds = GetBoard()->GetDesignSettings();
-
-            bds.m_DRCSeverities                     = configBds.m_DRCSeverities;
-            bds.m_HoleToHoleMin                     = configBds.m_HoleToHoleMin;
-            bds.m_LineThickness[LAYER_CLASS_OTHERS] = configBds.m_LineThickness[LAYER_CLASS_OTHERS];
-            bds.m_TextSize[LAYER_CLASS_OTHERS]      = configBds.m_TextSize[LAYER_CLASS_OTHERS];
-            bds.m_TextThickness[LAYER_CLASS_OTHERS] = configBds.m_TextThickness[LAYER_CLASS_OTHERS];
-            std::copy( configBds.m_TextItalic,  configBds.m_TextItalic + 4,  bds.m_TextItalic );
-            std::copy( configBds.m_TextUpright, configBds.m_TextUpright + 4, bds.m_TextUpright );
-            bds.m_DiffPairDimensionsList            = configBds.m_DiffPairDimensionsList;
-            bds.m_CopperEdgeClearance               = configBds.m_CopperEdgeClearance;
-
-            // Before we had a copper edge clearance setting, the edge line widths could be used
-            // as a kludge to control them.  So if there's no setting then infer it from the
-            // edge widths.
-            if( bds.m_CopperEdgeClearance == Millimeter2iu( LEGACY_COPPEREDGECLEARANCE ) )
-                bds.SetCopperEdgeClearance( inferLegacyEdgeClearance( loadedBoard ) );
+            Prj().GetLocalSettings().m_VisibleLayers = loadedBoard->m_LegacyVisibleLayers;
+            loadedBoard->SetModified();
         }
 
-        // We store the severities in the config to keep board-file changes to a minimum
-        BOARD_DESIGN_SETTINGS& configBds = GetBoard()->GetDesignSettings();
-        bds.m_DRCSeverities              = configBds.m_DRCSeverities;
-
-        SetBoard( loadedBoard );
+        if( !loadedBoard->m_LegacyVisibleItems.test( GAL_LAYER_INDEX( GAL_LAYER_ID_BITMASK_END ) ) )
+        {
+            Prj().GetLocalSettings().m_VisibleItems = loadedBoard->m_LegacyVisibleItems;
+            loadedBoard->SetModified();
+        }
 
         // we should not ask PLUGINs to do these items:
         loadedBoard->BuildListOfNets();
@@ -670,40 +674,7 @@ bool PCB_EDIT_FRAME::OpenProjectFiles( const std::vector<wxString>& aFileSet, in
 }
 
 
-wxString PCB_EDIT_FRAME::createBackupFile( const wxString& aFileName )
-{
-    wxFileName  fn = aFileName;
-    wxFileName  backupFileName = aFileName;
-
-    backupFileName.SetExt( fn.GetExt() + GetBackupSuffix() );
-
-    // If an old backup file exists, delete it.  If an old board file exists,
-    // rename it to the backup file name.
-    if( fn.FileExists() )
-    {
-        // Remove the old file xxx.kicad_pcb-bak if it exists.
-        if( backupFileName.FileExists() )
-            wxRemoveFile( backupFileName.GetFullPath() );
-
-        // Copy the current file from <xxx>.kicad_pcb to <xxx>.kicad_pcb-bak
-        if( !wxCopyFile( fn.GetFullPath(), backupFileName.GetFullPath() ) )
-        {
-            wxString msg = wxString::Format( _(
-                    "Warning: unable to create backup file \"%s\"" ),
-                    backupFileName.GetFullPath() );
-            DisplayError( NULL, msg );
-        }
-    }
-    else
-    {
-        backupFileName.Clear();
-    }
-
-    return backupFileName.GetFullPath();
-}
-
-
-bool PCB_EDIT_FRAME::SavePcbFile( const wxString& aFileName, bool aCreateBackupFile )
+bool PCB_EDIT_FRAME::SavePcbFile( const wxString& aFileName, bool addToHistory )
 {
     // please, keep it simple.  prompting goes elsewhere.
 
@@ -722,11 +693,25 @@ bool PCB_EDIT_FRAME::SavePcbFile( const wxString& aFileName, bool aCreateBackupF
         return false;
     }
 
-    wxString backupFileName;
+    // TODO: this will break if we ever go multi-board
+    wxFileName projectFile( pcbFileName );
+    projectFile.SetExt( ProjectFileExtension );
 
-    if( aCreateBackupFile )
+    if( !projectFile.FileExists() )
     {
-        backupFileName = createBackupFile( aFileName );
+        // If this is a new board, project filename won't be set yet
+        if( projectFile.GetFullPath() != Prj().GetProjectFullName() )
+        {
+            GetBoard()->ClearProject();
+
+            SETTINGS_MANAGER* mgr = GetSettingsManager();
+
+            mgr->SaveProject( Prj().GetProjectFullName() );
+            mgr->UnloadProject( &Prj() );
+
+            mgr->LoadProject( projectFile.GetFullPath() );
+            GetBoard()->SetProject( &Prj() );
+        }
     }
 
     wxFileName tempFile( aFileName );
@@ -741,6 +726,8 @@ bool PCB_EDIT_FRAME::SavePcbFile( const wxString& aFileName, bool aCreateBackupF
     // Save various DRC parameters, such as violation severities (which may have been
     // edited via the DRC dialog as well as the Board Setup dialog), DRC exclusions, etc.
     SaveProjectSettings();
+
+    GetSettingsManager()->SaveProject();
 
     ClearMsgPanel();
 
@@ -792,9 +779,8 @@ bool PCB_EDIT_FRAME::SavePcbFile( const wxString& aFileName, bool aCreateBackupF
     GetBoard()->SetFileName( pcbFileName.GetFullPath() );
     UpdateTitle();
 
-    // Put the saved file in File History, unless aCreateBackupFile is false (which indicates
-    // an autosave -- and we don't want autosave files in the file history).
-    if( aCreateBackupFile )
+    // Put the saved file in File History if requested
+    if( addToHistory )
         UpdateFileHistory( GetBoard()->GetFileName() );
 
     // Delete auto save file on successful save.
@@ -805,8 +791,6 @@ bool PCB_EDIT_FRAME::SavePcbFile( const wxString& aFileName, bool aCreateBackupF
     if( autoSaveFileName.FileExists() )
         wxRemoveFile( autoSaveFileName.GetFullPath() );
 
-    if( !!backupFileName )
-        upperTxt.Printf( _( "Backup file: \"%s\"" ), backupFileName );
 
     lowerTxt.Printf( _( "Wrote board file: \"%s\"" ), pcbFileName.GetFullPath() );
 
@@ -902,7 +886,7 @@ bool PCB_EDIT_FRAME::doAutoSave()
 
     wxLogTrace( traceAutoSave, "Creating auto save file <" + autoSaveFileName.GetFullPath() + ">" );
 
-    if( SavePcbFile( autoSaveFileName.GetFullPath(), NO_BACKUP_FILE ) )
+    if( SavePcbFile( autoSaveFileName.GetFullPath(), false ) )
     {
         GetScreen()->SetModify();
         GetBoard()->SetFileName( tmpFileName.GetFullPath() );

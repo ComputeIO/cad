@@ -30,48 +30,56 @@ NESTED_SETTINGS::NESTED_SETTINGS( const std::string& aName, int aVersion, JSON_S
         JSON_SETTINGS( aName, SETTINGS_LOC::NESTED, aVersion ),
         m_parent( aParent ), m_path( aPath )
 {
-    if( m_parent )
-    {
-    	m_parent->AddNestedSettings( this );
-    }
-
-    // In case we were created after the parent's ctor
-    LoadFromFile();
+    SetParent( aParent );
 }
 
 
 NESTED_SETTINGS::~NESTED_SETTINGS()
 {
-    m_parent->ReleaseNestedSettings( this );
+    if( m_parent )
+        m_parent->ReleaseNestedSettings( this );
 }
 
 
-void NESTED_SETTINGS::LoadFromFile( const std::string& aDirectory )
+bool NESTED_SETTINGS::LoadFromFile( const std::string& aDirectory )
 {
     clear();
+    bool success = false;
 
     if( m_parent )
     {
-        try
-        {
-            update( ( *m_parent )[PointerFromString( m_path )] );
+        nlohmann::json::json_pointer ptr = PointerFromString( m_path );
 
-            wxLogTrace( traceSettings, "Loaded NESTED_SETTINGS %s with schema %d", GetFilename(),
-                    m_schemaVersion );
-        }
-        catch( ... )
+        if( m_parent->contains( ptr ) )
         {
-            wxLogTrace( traceSettings, "NESTED_SETTINGS %s: Could not load from %s at %s",
-                    m_filename, m_parent->GetFilename(), m_path );
+            try
+            {
+                update( ( *m_parent )[ptr] );
+
+                wxLogTrace( traceSettings, "Loaded NESTED_SETTINGS %s with schema %d",
+                        GetFilename(), m_schemaVersion );
+
+                success = true;
+            }
+            catch( ... )
+            {
+                wxLogTrace( traceSettings, "NESTED_SETTINGS %s: Could not load from %s at %s",
+                        m_filename, m_parent->GetFilename(), m_path );
+            }
         }
     }
 
     Load();
+
+    return success;
 }
 
 
 bool NESTED_SETTINGS::SaveToFile( const std::string& aDirectory, bool aForce )
 {
+    if( !m_parent )
+        return false;
+
     bool modified = Store();
 
     try
@@ -102,4 +110,18 @@ bool NESTED_SETTINGS::SaveToFile( const std::string& aDirectory, bool aForce )
     }
 
     return modified;
+}
+
+
+void NESTED_SETTINGS::SetParent( JSON_SETTINGS* aParent )
+{
+    m_parent = aParent;
+
+    if( m_parent )
+    {
+        m_parent->AddNestedSettings( this );
+
+        // In case we were created after the parent's ctor
+        LoadFromFile();
+    }
 }

@@ -240,6 +240,7 @@ set( COMMON_PREVIEW_ITEMS_SRCS
     preview_items/ruler_item.cpp
     preview_items/selection_area.cpp
     preview_items/simple_overlay_item.cpp
+    preview_items/two_point_assistant.cpp
     )
 
 set( PLOTTERS_CONTROL_SRCS
@@ -317,8 +318,10 @@ set( COMMON_SRCS
     lib_tree_model.cpp
     lib_tree_model_adapter.cpp
     lockfile.cpp
+    lset.cpp
     marker_base.cpp
     msgpanel.cpp
+    netclass.cpp
     observable.cpp
     prependpath.cpp
     printout.cpp
@@ -400,6 +403,10 @@ set( COMMON_SRCS
     settings/nested_settings.cpp
     settings/settings_manager.cpp
 
+    project/net_settings.cpp
+    project/project_file.cpp
+    project/project_local_settings.cpp
+
     libeval/numeric_evaluator.cpp
     )
 
@@ -437,7 +444,6 @@ set( PCB_COMMON_SRCS
     eda_text.cpp
     fp_lib_table.cpp
     hash_eda.cpp
-    lset.cpp
     origin_viewitem.cpp
     page_info.cpp
     ${CMAKE_SOURCE_DIR}/pcbnew/pcb_base_frame.cpp
@@ -452,7 +458,6 @@ set( PCB_COMMON_SRCS
     ${CMAKE_SOURCE_DIR}/pcbnew/class_edge_mod.cpp
     ${CMAKE_SOURCE_DIR}/pcbnew/class_marker_pcb.cpp
     ${CMAKE_SOURCE_DIR}/pcbnew/class_module.cpp
-    ${CMAKE_SOURCE_DIR}/pcbnew/netclass.cpp
     ${CMAKE_SOURCE_DIR}/pcbnew/netinfo_item.cpp
     ${CMAKE_SOURCE_DIR}/pcbnew/netinfo_list.cpp
     ${CMAKE_SOURCE_DIR}/pcbnew/class_pad.cpp

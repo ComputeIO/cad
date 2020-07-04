@@ -27,6 +27,7 @@
 #include <fctsys.h>
 #include <sch_draw_panel.h>
 #include <confirm.h>
+#include <env_paths.h>
 #include <gestfich.h>
 #include <sch_edit_frame.h>
 #include <pgm_base.h>
@@ -54,12 +55,13 @@
 #include <connection_graph.h>
 #include <tool/actions.h>
 #include <tools/sch_editor_control.h>
+#include <project/project_file.h>
+#include <settings/settings_manager.h>
 #include <netlist.h>
 #include <widgets/infobar.h>
 
 
-bool SCH_EDIT_FRAME::SaveEEFile( SCH_SHEET* aSheet, bool aSaveUnderNewName,
-                                 bool aCreateBackupFile )
+bool SCH_EDIT_FRAME::SaveEEFile( SCH_SHEET* aSheet, bool aSaveUnderNewName )
 {
     wxString msg;
     wxFileName schematicFileName;
@@ -98,25 +100,6 @@ bool SCH_EDIT_FRAME::SaveEEFile( SCH_SHEET* aSheet, bool aSaveUnderNewName,
 
     if( !IsWritable( schematicFileName ) )
         return false;
-
-    // Create backup if requested
-    if( aCreateBackupFile && schematicFileName.FileExists() )
-    {
-        wxFileName backupFileName = schematicFileName;
-
-        // Rename the old file to a '-bak' suffixed one:
-        backupFileName.SetExt( schematicFileName.GetExt() + GetBackupSuffix()  );
-
-        if( backupFileName.FileExists() )
-            wxRemoveFile( backupFileName.GetFullPath() );
-
-        if( !wxCopyFile( schematicFileName.GetFullPath(), backupFileName.GetFullPath() ) )
-        {
-            msg.Printf( _( "Could not save backup of file \"%s\"" ),
-                        schematicFileName.GetFullPath() );
-            DisplayError( this, msg );
-        }
-    }
 
     wxFileName tempFile( schematicFileName );
     tempFile.SetName( wxT( "." ) + tempFile.GetName() );
@@ -281,9 +264,6 @@ bool SCH_EDIT_FRAME::OpenProjectFiles( const std::vector<wxString>& aFileSet, in
         CreateScreens();
     }
 
-    GetScreen()->SetFileName( fullFileName );
-    Schematic().Root().SetFileName( fullFileName );
-
     SetStatusText( wxEmptyString );
     ClearMsgPanel();
 
@@ -296,15 +276,26 @@ bool SCH_EDIT_FRAME::OpenProjectFiles( const std::vector<wxString>& aFileSet, in
     // it knows what consequences that will have on other KIFACEs running and using
     // this same PROJECT.  It can be very harmful if that calling code is stupid.
 
+    // NOTE: The calling code should never call this in hosted (non-standalone) mode with a
+    // different project than what has been loaded by the manager frame.  This will crash.
+
+    bool differentProject = pro.GetFullPath() != Prj().GetProjectFullName();
+
+    if( differentProject )
+    {
+        GetSettingsManager()->SaveProject();
+        Schematic().SetProject( nullptr );
+        GetSettingsManager()->UnloadProject( &Prj() );
+        GetSettingsManager()->LoadProject( pro.GetFullPath() );
+        CreateScreens();
+    }
+
     if( schFileType == SCH_IO_MGR::SCH_LEGACY )
     {
         // Don't reload the symbol libraries if we are just launching Eeschema from KiCad again.
         // They are already saved in the kiface project object.
-        if( pro.GetFullPath() != Prj().GetProjectFullName()
-          || !Prj().GetElem( PROJECT::ELEM_SCH_PART_LIBS ) )
+        if( differentProject || !Prj().GetElem( PROJECT::ELEM_SCH_PART_LIBS ) )
         {
-            Prj().SetProjectFullName( pro.GetFullPath() );
-
             // load the libraries here, not in SCH_SCREEN::Draw() which is a context
             // that will not tolerate DisplayError() dialog since we're already in an
             // event handler in there.
@@ -320,15 +311,13 @@ bool SCH_EDIT_FRAME::OpenProjectFiles( const std::vector<wxString>& aFileSet, in
         Prj().SetElem( PROJECT::ELEM_SCH_PART_LIBS, NULL );
     }
 
-    // Make sure the project file name is set (it won't be in standalone mode)
-    if( pro.GetFullPath() != Prj().GetProjectFullName() )
-        Prj().SetProjectFullName( pro.GetFullPath() );
-
-    LoadProjectFile();
-
     // Load the symbol library table, this will be used forever more.
     Prj().SetElem( PROJECT::ELEM_SYMBOL_LIB_TABLE, NULL );
     Prj().SchSymbolLibTable();
+
+    // Load project settings after schematic has been set up with the project link, since this will
+    // update some of the needed schematic settings such as drawing defaults
+    LoadProjectSettings();
 
     SetShutdownBlockReason( _( "Schematic file changes are unsaved" ) );
 
@@ -340,7 +329,6 @@ bool SCH_EDIT_FRAME::OpenProjectFiles( const std::vector<wxString>& aFileSet, in
     else
     {
         SetScreen( nullptr );
-        Schematic().Reset();
 
         SCH_PLUGIN* plugin = SCH_IO_MGR::FindPlugin( schFileType );
         SCH_PLUGIN::SCH_PLUGIN_RELEASER pi( plugin );
@@ -606,7 +594,7 @@ void SCH_EDIT_FRAME::OnImportProject( wxCommandEvent& aEvent )
     {
         wxFileName projectFn( dlg.GetPath() );
         projectFn.SetExt( ProjectFileExtension );
-        Prj().SetProjectFullName( projectFn.GetFullPath() );
+        GetSettingsManager()->LoadProject( projectFn.GetFullPath() );
     }
 
     // For now there is only one import plugin
@@ -715,22 +703,16 @@ bool SCH_EDIT_FRAME::SaveProject()
         UpdateFileHistory( Schematic().RootScreen()->GetFileName() );
 
     // Save the sheet name map to the project file
-    wxString      configFile = Prj().GetProjectFullName();
-    wxConfigBase* config = new wxFileConfig( wxEmptyString, wxEmptyString, configFile );
-    int           index = 1;
-
-    config->DeleteGroup( GROUP_SHEET_NAMES );
-    config->SetPath( GROUP_SHEET_NAMES );
+    std::vector<FILE_INFO_PAIR>& sheets = Prj().GetProjectFile().GetSheets();
+    sheets.clear();
 
     for( SCH_SHEET_PATH& sheetPath : Schematic().GetSheets() )
     {
         SCH_SHEET* sheet = sheetPath.Last();
-        config->Write( wxString::Format( "%d", index++ ),
-                       wxString::Format( "%s:%s", sheet->m_Uuid.AsString(), sheet->GetName() ) );
+        sheets.emplace_back( std::make_pair( sheet->m_Uuid, sheet->GetName() ) );
     }
 
-    config->Flush();
-    delete config;
+    Pgm().GetSettingsManager().SaveProject();
 
     UpdateTitle();
 
@@ -768,7 +750,7 @@ bool SCH_EDIT_FRAME::doAutoSave()
 
         screens.GetScreen( i )->SetFileName( fn.GetFullPath() );
 
-        if( SaveEEFile( screens.GetSheet( i ), false, NO_BACKUP_FILE ) )
+        if( SaveEEFile( screens.GetSheet( i ), false ) )
             screens.GetScreen( i )->SetModify();
         else
             autoSaveOk = false;

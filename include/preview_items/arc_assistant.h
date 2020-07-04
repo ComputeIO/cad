@@ -27,47 +27,48 @@
 #include <base_struct.h>
 #include <preview_items/arc_geom_manager.h>
 
-namespace KIGFX {
-namespace PREVIEW {
-/**
- * SELECTION_AREA
- *
- * Represents an assitant draw when interactively drawing an
- * arc on a canvas.
- */
-class ARC_ASSISTANT : public EDA_ITEM
+namespace KIGFX
 {
-public:
-    ARC_ASSISTANT( const ARC_GEOM_MANAGER& aManager, EDA_UNITS aUnits );
-
-    const BOX2I ViewBBox() const override;
-
+namespace PREVIEW
+{
     /**
-     * Draw the assistance (with reference to the contstruction manager
+     * SELECTION_AREA
+     *
+     * Represents an assistant draw when interactively drawing an
+     * arc on a canvas.
      */
-    void ViewDraw( int aLayer, KIGFX::VIEW* aView ) const override final;
-
-#if defined(DEBUG)
-    void Show( int x, std::ostream& st ) const override
+    class ARC_ASSISTANT : public EDA_ITEM
     {
-    }
+    public:
+        ARC_ASSISTANT( const ARC_GEOM_MANAGER& aManager, EDA_UNITS aUnits );
+
+        const BOX2I ViewBBox() const override;
+
+        /**
+         * Draw the assistance (with reference to the contstruction manager
+         */
+        void ViewDraw( int aLayer, KIGFX::VIEW* aView ) const override final;
+
+#if defined( DEBUG )
+        void Show( int x, std::ostream& st ) const override
+        {
+        }
 #endif
 
-    /**
-     * Get class name
-     * @return  string "ARC_ASSISTANT"
-     */
-    wxString GetClass() const override
-    {
-        return "ARC_ASSISTANT";
-    }
+        /**
+         * Get class name
+         * @return  string "ARC_ASSISTANT"
+         */
+        wxString GetClass() const override
+        {
+            return "ARC_ASSISTANT";
+        }
 
-private:
+    private:
+        const ARC_GEOM_MANAGER& m_constructMan;
+        EDA_UNITS               m_units;
+    };
+} // namespace PREVIEW
+} // namespace KIGFX
 
-    const ARC_GEOM_MANAGER& m_constructMan;
-    EDA_UNITS               m_units;
-};
-}       // PREVIEW
-}       // KIGFX
-
-#endif  // PREVIEW_ITEMS_ARC_ASSISTANT_H
+#endif // PREVIEW_ITEMS_ARC_ASSISTANT_H

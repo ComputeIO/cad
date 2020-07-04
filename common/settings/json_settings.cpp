@@ -45,11 +45,12 @@ JSON_SETTINGS::JSON_SETTINGS( const std::string& aFilename, SETTINGS_LOC aLocati
         m_createIfMissing( aCreateIfMissing ),
         m_createIfDefault( aCreateIfDefault ),
         m_writeFile( aWriteFile ),
+        m_deleteLegacyAfterMigration( true ),
+        m_resetParamsIfMissing( true ),
         m_schemaVersion( aSchemaVersion ),
         m_manager( nullptr )
 {
-    m_params.emplace_back(
-            new PARAM<std::string>( "meta.filename", &m_filename, m_filename, true ) );
+    ( *this )[PointerFromString( "meta.filename" )] = GetFullFilename();
 
     m_params.emplace_back(
             new PARAM<int>( "meta.version", &m_schemaVersion, m_schemaVersion, true ) );
@@ -65,13 +66,19 @@ JSON_SETTINGS::~JSON_SETTINGS()
 }
 
 
+wxString JSON_SETTINGS::GetFullFilename() const
+{
+    return wxString( m_filename.c_str(), wxConvUTF8 ) + "." + getFileExt();
+}
+
+
 void JSON_SETTINGS::Load()
 {
     for( auto param : m_params )
     {
         try
         {
-            param->Load( this );
+            param->Load( this, m_resetParamsIfMissing );
         }
         catch( ... )
         {
@@ -84,17 +91,32 @@ void JSON_SETTINGS::Load()
 }
 
 
-void JSON_SETTINGS::LoadFromFile( const std::string& aDirectory )
+bool JSON_SETTINGS::LoadFromFile( const std::string& aDirectory )
 {
     // First, load all params to default values
     clear();
     Load();
 
-    bool      migrated        = false;
-    bool      legacy_migrated = false;
+    bool success         = true;
+    bool migrated        = false;
+    bool legacy_migrated = false;
+
     LOCALE_IO locale;
 
     auto migrateFromLegacy = [&] ( wxFileName& aPath ) {
+        // Backup and restore during migration so that the original can be mutated if convenient
+        wxFileName temp;
+        temp.AssignTempFileName( aPath.GetFullPath() );
+
+        bool backed_up = true;
+
+        if( !wxCopyFile( aPath.GetFullPath(), temp.GetFullPath() ) )
+        {
+            wxLogTrace( traceSettings, "%s: could not create temp file for migration",
+                        GetFullFilename() );
+            backed_up = false;
+        }
+
         wxConfigBase::DontCreateOnDemand();
         auto cfg = std::make_unique<wxFileConfig>( wxT( "" ), wxT( "" ), aPath.GetFullPath() );
 
@@ -103,23 +125,41 @@ void JSON_SETTINGS::LoadFromFile( const std::string& aDirectory )
         if( !MigrateFromLegacy( cfg.get() ) )
         {
             wxLogTrace( traceSettings,
-                        "%s: migrated; not all settings were found in legacy file", m_filename );
+                        "%s: migrated; not all settings were found in legacy file",
+                        GetFullFilename() );
         }
         else
         {
-            wxLogTrace( traceSettings, "%s: migrated from legacy format", m_filename );
+            wxLogTrace( traceSettings, "%s: migrated from legacy format", GetFullFilename() );
+        }
+
+        if( backed_up )
+        {
+            cfg.reset();
+            wxCopyFile( temp.GetFullPath(), aPath.GetFullPath() );
+            wxRemoveFile( temp.GetFullPath() );
         }
 
         // Either way, we want to clean up the old file afterwards
         legacy_migrated = true;
     };
 
-    wxFileName path( aDirectory, m_filename, "json" );
+    wxFileName path;
+
+    if( aDirectory.empty() )
+    {
+        path.Assign( m_filename );
+        path.SetExt( getFileExt() );
+    }
+    else
+    {
+        path.Assign( aDirectory, m_filename, getFileExt() );
+    }
 
     if( !path.Exists() )
     {
         // Case 1: legacy migration, no .json extension yet
-        path.ClearExt();
+        path.SetExt( getLegacyFileExt() );
 
         if( path.Exists() )
         {
@@ -132,6 +172,10 @@ void JSON_SETTINGS::LoadFromFile( const std::string& aDirectory )
 
             if( path.Exists() )
                 migrateFromLegacy( path );
+        }
+        else
+        {
+            success = false;
         }
     }
     else
@@ -150,13 +194,15 @@ void JSON_SETTINGS::LoadFromFile( const std::string& aDirectory )
             }
             catch( ... )
             {
-                wxLogTrace( traceSettings, "%s: file version could not be read!", m_filename );
+                wxLogTrace(
+                        traceSettings, "%s: file version could not be read!", GetFullFilename() );
+                success = false;
             }
 
             if( filever >= 0 && filever < m_schemaVersion )
             {
                 wxLogTrace( traceSettings, "%s: attempting migration from version %d to %d",
-                        m_filename, filever, m_schemaVersion );
+                            GetFullFilename(), filever, m_schemaVersion );
 
                 if( Migrate() )
                 {
@@ -164,13 +210,13 @@ void JSON_SETTINGS::LoadFromFile( const std::string& aDirectory )
                 }
                 else
                 {
-                    wxLogTrace( traceSettings, "%s: migration failed!", m_filename );
+                    wxLogTrace( traceSettings, "%s: migration failed!", GetFullFilename() );
                 }
             }
             else if( filever > m_schemaVersion )
             {
                 wxLogTrace( traceSettings,
-                        "%s: warning: file version %d is newer than latest (%d)", m_filename,
+                        "%s: warning: file version %d is newer than latest (%d)", GetFullFilename(),
                         filever, m_schemaVersion );
             }
         }
@@ -190,12 +236,12 @@ void JSON_SETTINGS::LoadFromFile( const std::string& aDirectory )
     for( auto settings : m_nested_settings )
         settings->LoadFromFile();
 
-    wxLogTrace( traceSettings, "Loaded %s with schema %d", GetFilename(), m_schemaVersion );
+    wxLogTrace( traceSettings, "Loaded %s with schema %d", GetFullFilename(), m_schemaVersion );
 
     // If we migrated, clean up the legacy file (with no extension)
     if( legacy_migrated || migrated )
     {
-        if( legacy_migrated && !wxRemoveFile( path.GetFullPath() ) )
+        if( legacy_migrated && m_deleteLegacyAfterMigration && !wxRemoveFile( path.GetFullPath() ) )
         {
             wxLogTrace(
                     traceSettings, "Warning: could not remove legacy file %s", path.GetFullPath() );
@@ -204,6 +250,8 @@ void JSON_SETTINGS::LoadFromFile( const std::string& aDirectory )
         // And write-out immediately so that we don't lose data if the program later crashes.
         SaveToFile( aDirectory );
     }
+
+    return success;
 }
 
 
@@ -233,13 +281,27 @@ bool JSON_SETTINGS::SaveToFile( const std::string& aDirectory, bool aForce )
     if( !m_writeFile )
         return false;
 
-    wxFileName path( aDirectory, m_filename, "json" );
+    // Default PROJECT won't have a filename set
+    if( m_filename.empty() )
+        return false;
+
+    wxFileName path;
+
+    if( aDirectory.empty() )
+    {
+        path.Assign( m_filename );
+        path.SetExt( getFileExt() );
+    }
+    else
+    {
+        path.Assign( aDirectory, m_filename, getFileExt() );
+    }
 
     if( !m_createIfMissing && !path.FileExists() )
     {
         wxLogTrace( traceSettings,
                 "File for %s doesn't exist and m_createIfMissing == false; not saving",
-                m_filename );
+                GetFullFilename() );
         return false;
     }
 
@@ -252,25 +314,25 @@ bool JSON_SETTINGS::SaveToFile( const std::string& aDirectory, bool aForce )
 
     if( !modified && !aForce && path.FileExists() )
     {
-        wxLogTrace( traceSettings, "%s contents not modified, skipping save", m_filename );
+        wxLogTrace( traceSettings, "%s contents not modified, skipping save", GetFullFilename() );
         return false;
     }
     else if( !modified && !aForce && !m_createIfDefault )
     {
         wxLogTrace( traceSettings,
                 "%s contents still default and m_createIfDefault == false; not saving",
-                m_filename );
+                    GetFullFilename() );
         return false;
     }
 
     if( !path.DirExists() && !path.Mkdir() )
     {
         wxLogTrace( traceSettings, "Warning: could not create path %s, can't save %s",
-                    path.GetPath(), m_filename );
+                    path.GetPath(), GetFullFilename() );
         return false;
     }
 
-    wxLogTrace( traceSettings, "Saving %s", m_filename );
+    wxLogTrace( traceSettings, "Saving %s", GetFullFilename() );
 
     LOCALE_IO dummy;
 
@@ -281,7 +343,7 @@ bool JSON_SETTINGS::SaveToFile( const std::string& aDirectory, bool aForce )
     }
     catch( const std::exception& e )
     {
-        wxLogTrace( traceSettings, "Warning: could not save %s: %s", m_filename, e.what() );
+        wxLogTrace( traceSettings, "Warning: could not save %s: %s", GetFullFilename(), e.what() );
     }
     catch( ... )
     {
@@ -291,9 +353,9 @@ bool JSON_SETTINGS::SaveToFile( const std::string& aDirectory, bool aForce )
 }
 
 
-OPT<nlohmann::json> JSON_SETTINGS::GetJson( std::string aPath ) const
+OPT<nlohmann::json> JSON_SETTINGS::GetJson( const std::string& aPath ) const
 {
-    nlohmann::json::json_pointer ptr = PointerFromString( std::move( aPath ) );
+    nlohmann::json::json_pointer ptr = PointerFromString( aPath );
 
     if( this->contains( ptr ) )
     {
@@ -443,6 +505,9 @@ void JSON_SETTINGS::AddNestedSettings( NESTED_SETTINGS* aSettings )
 
 void JSON_SETTINGS::ReleaseNestedSettings( NESTED_SETTINGS* aSettings )
 {
+    if( !aSettings )
+        return;
+
     auto it = std::find_if( m_nested_settings.begin(), m_nested_settings.end(),
                             [&aSettings]( const JSON_SETTINGS* aPtr ) {
                               return aPtr == aSettings;
@@ -454,21 +519,23 @@ void JSON_SETTINGS::ReleaseNestedSettings( NESTED_SETTINGS* aSettings )
         ( *it )->SaveToFile();
         m_nested_settings.erase( it );
     }
+
+    aSettings->SetParent( nullptr );
 }
 
 
 // Specializations to allow conversion between wxString and std::string via JSON_SETTINGS API
 
-template<> OPT<wxString> JSON_SETTINGS::Get( std::string aPath ) const
+template<> OPT<wxString> JSON_SETTINGS::Get( const std::string& aPath ) const
 {
-    if( OPT<nlohmann::json> opt_json = GetJson( std::move( aPath ) ) )
+    if( OPT<nlohmann::json> opt_json = GetJson( aPath ) )
         return wxString( opt_json->get<std::string>().c_str(), wxConvUTF8 );
 
     return NULLOPT;
 }
 
 
-template<> void JSON_SETTINGS::Set<wxString>( std::string aPath, wxString aVal )
+template<> void JSON_SETTINGS::Set<wxString>( const std::string& aPath, wxString aVal )
 {
     ( *this )[PointerFromString( std::move( aPath ) ) ] = aVal.ToUTF8();
 }

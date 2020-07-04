@@ -115,6 +115,8 @@ extern const std::string SchematicBackupFileExtension;
 
 extern const std::string VrmlFileExtension;
 extern const std::string ProjectFileExtension;
+extern const std::string LegacyProjectFileExtension;
+extern const std::string ProjectLocalSettingsFileExtension;
 extern const std::string LegacySchematicFileExtension;
 extern const std::string KiCadSchematicFileExtension;
 extern const std::string NetlistFileExtension;
@@ -175,6 +177,8 @@ extern wxString SchematicSymbolFileWildcard();
 extern wxString KiCadSymbolLibFileWildcard();
 extern wxString LegacySymbolLibFileWildcard();
 extern wxString ProjectFileWildcard();
+extern wxString LegacyProjectFileWildcard();
+extern wxString AllProjectFilesWildcard();
 extern wxString KiCadSchematicFileWildcard();
 extern wxString LegacySchematicFileWildcard();
 extern wxString BoardFileWildcard();

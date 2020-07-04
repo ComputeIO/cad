@@ -45,11 +45,13 @@
 #include <pgm_base.h>
 #include <profile.h>
 #include <project.h>
+#include <project/project_file.h>
 #include <reporter.h>
 #include <sch_edit_frame.h>
 #include <sch_painter.h>
 #include <sch_sheet.h>
 #include <schematic.h>
+#include <settings/settings_manager.h>
 #include <advanced_config.h>
 #include <sim/sim_plot_frame.h>
 #include <symbol_lib_table.h>
@@ -209,9 +211,7 @@ SCH_EDIT_FRAME::SCH_EDIT_FRAME( KIWAY* aKiway, wxWindow* aParent ):
     m_highlightedConn( nullptr ),
     m_item_to_repeat( nullptr )
 {
-    m_schematic = new SCHEMATIC( &Prj() );
-
-    m_defaults = &m_schematic->Settings();
+    m_schematic = new SCHEMATIC( nullptr );
 
     m_showBorderAndTitleBlock = true;   // true to show sheet references
     m_hasAutoSave = true;
@@ -228,7 +228,12 @@ SCH_EDIT_FRAME::SCH_EDIT_FRAME( KIWAY* aKiway, wxWindow* aParent ):
 
     LoadSettings( eeconfig() );
 
+    // Also links the schematic to the loaded project
     CreateScreens();
+
+    // After schematic has been linked to project, SCHEMATIC_SETTINGS works
+    m_defaults = &m_schematic->Settings();
+    LoadProjectSettings();
 
     setupTools();
     ReCreateMenuBar();
@@ -295,6 +300,10 @@ SCH_EDIT_FRAME::SCH_EDIT_FRAME( KIWAY* aKiway, wxWindow* aParent ):
 
 SCH_EDIT_FRAME::~SCH_EDIT_FRAME()
 {
+    GetSettingsManager()->SaveProject();
+    Schematic().SetTemplateFieldNames( nullptr );
+    Schematic().Reset();
+
     // Shutdown all running tools
     if( m_toolManager )
         m_toolManager->ShutdownAllTools();
@@ -413,7 +422,12 @@ wxString SCH_EDIT_FRAME::GetScreenDesc() const
 void SCH_EDIT_FRAME::CreateScreens()
 {
     m_schematic->Reset();
+    m_schematic->SetProject( &Prj() );
+    m_schematic->SetTemplateFieldNames( &m_templateFieldNames );
+
     m_schematic->SetRoot( new SCH_SHEET( m_schematic ) );
+
+    m_defaults = &m_schematic->Settings();
 
     SCH_SCREEN* rootScreen = new SCH_SCREEN( m_schematic );
     rootScreen->SetMaxUndoItems( m_UndoRedoCountMax );

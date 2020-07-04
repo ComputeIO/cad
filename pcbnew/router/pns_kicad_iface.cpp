@@ -50,6 +50,8 @@
 
 #include <memory>
 
+#include <advanced_config.h>
+
 #include "tools/pcb_tool_base.h"
 
 #include "pns_kicad_iface.h"
@@ -126,7 +128,7 @@ PNS_PCBNEW_RULE_RESOLVER::PNS_PCBNEW_RULE_RESOLVER( BOARD* aBoard, PNS::ROUTER* 
         ent.coupledNet = DpCoupledNet( i );
 
         wxString netClassName = ni->GetClassName();
-        NETCLASSPTR nc = m_board->GetDesignSettings().m_NetClasses.Find( netClassName );
+        NETCLASSPTR nc = m_board->GetDesignSettings().GetNetClasses().Find( netClassName );
 
         int clearance = nc->GetClearance();
         ent.clearance = clearance;
@@ -154,7 +156,7 @@ PNS_PCBNEW_RULE_RESOLVER::PNS_PCBNEW_RULE_RESOLVER( BOARD* aBoard, PNS::ROUTER* 
         }
     }
 
-    auto defaultRule = m_board->GetDesignSettings().m_NetClasses.Find ("Default");
+    auto defaultRule = m_board->GetDesignSettings().GetNetClasses().Find ("Default");
 
     if( defaultRule )
     {
@@ -498,6 +500,9 @@ public:
 
     void AddLine( const SHAPE_LINE_CHAIN& aLine, int aType, int aWidth,  const std::string aName = "" ) override
     {
+        if( !m_view )
+            return;
+
         ROUTER_PREVIEW_ITEM* pitem = new ROUTER_PREVIEW_ITEM( NULL, m_view );
 
         pitem->Line( aLine, aWidth, aType );
@@ -1237,9 +1242,10 @@ void PNS_KICAD_IFACE::SetView( KIGFX::VIEW* aView )
     delete m_debugDecorator;
 
     auto dec = new PNS_PCBNEW_DEBUG_DECORATOR();
-    dec->SetView( m_view );
-
     m_debugDecorator = dec;
+
+    if( ADVANCED_CFG::GetCfg().m_ShowRouterDebugGraphics )
+        dec->SetView( m_view );
 }
 
 

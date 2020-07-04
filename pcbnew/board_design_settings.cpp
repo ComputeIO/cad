@@ -32,502 +32,33 @@
 #include <drc/drc.h>
 #include <widgets/ui_common.h>
 #include <drc/drc_rule.h>
-
-#define CopperLayerCountKey         wxT( "CopperLayerCount" )
-#define BoardThicknessKey           wxT( "BoardThickness" )
-
-#define LayerKeyPrefix              wxT( "Layer" )
-#define LayerNameKey                wxT( "Name" )
-#define LayerTypeKey                wxT( "Type" )
-#define LayerEnabledKey             wxT( "Enabled" )
-
-#define NetclassNameKey             wxT( "Name" )
-#define ClearanceKey                wxT( "Clearance" )
-#define TrackWidthKey               wxT( "TrackWidth" )
-#define ViaDiameterKey              wxT( "ViaDiameter" )
-#define ViaDrillKey                 wxT( "ViaDrill" )
-#define uViaDiameterKey             wxT( "uViaDiameter" )
-#define uViaDrillKey                wxT( "uViaDrill" )
-#define dPairWidthKey               wxT( "dPairWidth" )
-#define dPairGapKey                 wxT( "dPairGap" )
-#define dPairViaGapKey              wxT( "dPairViaGap" )
+#include <settings/parameters.h>
+#include <project/project_file.h>
 
 
-class PARAM_CFG_SEVERITIES : public PARAM_CFG
+const int bdsSchemaVersion = 0;
+
+
+BOARD_DESIGN_SETTINGS::BOARD_DESIGN_SETTINGS( JSON_SETTINGS* aParent, const std::string& aPath ) :
+        NESTED_SETTINGS( "board_design_settings", bdsSchemaVersion, aParent, aPath ),
+        m_Pad_Master( NULL )
+
 {
-protected:
-    BOARD* m_Pt_param;   ///< Pointer to the parameter value
+    // We want to leave alone parameters that aren't found in the project JSON as they may be
+    // initialized by the board file parser before NESTED_SETTINGS::LoadFromFile is called.
+    m_resetParamsIfMissing = false;
+
+    // Create a default NETCLASS list so that things don't break horribly if there's no project
+    // loaded.  This also is used during file load for legacy boards that have netclasses stored
+    // in the file.  After load, this information will be moved to the project and the pointer
+    // updated.
+    m_netClasses = &m_internalNetClasses;
 
-public:
-    PARAM_CFG_SEVERITIES( BOARD* ptparam, const wxChar* group = nullptr ) :
-            PARAM_CFG( wxEmptyString, PARAM_SEVERITIES, group )
-    {
-        m_Pt_param = ptparam;
-    }
-
-    void ReadParam( wxConfigBase* aConfig ) const override
-    {
-        if( !m_Pt_param || !aConfig )
-            return;
-
-        BOARD*                 board = m_Pt_param;
-        BOARD_DESIGN_SETTINGS& bds = board->GetDesignSettings();
-        wxString               oldPath = aConfig->GetPath();
-
-        // Read legacy settings first so that modern settings will overwrite them
-        bool flag;
-
-        if( aConfig->Read( wxT( "RequireCourtyardDefinitions" ), &flag, false ) )
-        {
-            if( flag )
-                bds.m_DRCSeverities[ DRCE_MISSING_COURTYARD ] = RPT_SEVERITY_ERROR;
-            else
-                bds.m_DRCSeverities[ DRCE_MISSING_COURTYARD ] = RPT_SEVERITY_IGNORE;
-        }
-
-        if( aConfig->Read( wxT( "ProhibitOverlappingCourtyards" ), &flag, false ) )
-        {
-            if( flag )
-                bds.m_DRCSeverities[ DRCE_OVERLAPPING_FOOTPRINTS ] = RPT_SEVERITY_ERROR;
-            else
-                bds.m_DRCSeverities[ DRCE_OVERLAPPING_FOOTPRINTS ] = RPT_SEVERITY_IGNORE;
-        }
-
-        DRC_ITEM drc( 0 );
-        wxString severity;
-
-        auto mapSeverity = []( const wxString& aSeverity )
-                           {
-                               if( aSeverity == wxT( "warning" ) )
-                                   return RPT_SEVERITY_WARNING;
-                               else if( aSeverity == wxT( "ignore" ) )
-                                   return RPT_SEVERITY_IGNORE;
-                               else
-                                   return RPT_SEVERITY_ERROR;
-                           };
-
-        for( int i = DRCE_FIRST; i <= DRCE_LAST; ++i )
-        {
-            wxString name = drc.GetErrorText( i, false );
-            name.Replace( wxT( " " ), wxT( "_" ) );
-
-            if( aConfig->Read( name, &severity, wxEmptyString ) )
-                bds.m_DRCSeverities[i] = mapSeverity( severity );
-        }
-
-        aConfig->SetPath( oldPath );
-    }
-
-    void SaveParam( wxConfigBase* aConfig ) const override
-    {
-        if( !m_Pt_param || !aConfig )
-            return;
-
-        BOARD*                 board = m_Pt_param;
-        BOARD_DESIGN_SETTINGS& bds = board->GetDesignSettings();
-        wxString               oldPath = aConfig->GetPath();
-        DRC_ITEM               drc( 0 );
-
-        auto mapSeverity = []( int aSeverity )
-                           {
-                               if( aSeverity == RPT_SEVERITY_IGNORE )
-                                   return wxT( "ignore" );
-                               else if( aSeverity == RPT_SEVERITY_WARNING )
-                                   return wxT( "warning" );
-                               else
-                                   return wxT( "error" );
-                           };
-
-        for( int i = DRCE_FIRST; i <= DRCE_LAST; ++i )
-        {
-            wxString name = drc.GetErrorText( i, false );
-            name.Replace( wxT( " " ), wxT( "_" ) );
-
-            aConfig->Write( name, mapSeverity( bds.m_DRCSeverities[i] ) );
-        }
-
-        aConfig->SetPath( oldPath );
-    }
-};
-
-
-//
-// NOTE: layer configuration info is stored in both the BOARD and BOARD_DESIGN_SETTINGS so one
-// of the two needs to read/write the config so we don't end up with order dependency issues.
-//
-class PARAM_CFG_LAYERS : public PARAM_CFG
-{
-protected:
-    BOARD* m_Pt_param;   ///< Pointer to the parameter value
-
-public:
-    PARAM_CFG_LAYERS( BOARD* ptparam, const wxChar* group = nullptr ) :
-            PARAM_CFG( wxEmptyString, PARAM_LAYERS, group )
-    {
-        m_Pt_param = ptparam;
-    }
-
-    void ReadParam( wxConfigBase* aConfig ) const override
-    {
-        if( !m_Pt_param || !aConfig )
-            return;
-
-        BOARD*                 board = m_Pt_param;
-        BOARD_DESIGN_SETTINGS& bds = board->GetDesignSettings();
-        LSET                   enabledLayers = bds.GetEnabledLayers();
-        wxString               oldPath = aConfig->GetPath();
-        wxString               layerKeyPrefix = LayerKeyPrefix;
-
-        bds.SetCopperLayerCount( aConfig->Read( CopperLayerCountKey, 2 ) );
-
-        double thickness = aConfig->ReadDouble( BoardThicknessKey, DEFAULT_BOARD_THICKNESS_MM );
-        bds.SetBoardThickness( Millimeter2iu( thickness ) );
-
-        for( LSEQ seq = LSET::AllLayersMask().Seq(); seq; ++seq )
-        {
-            PCB_LAYER_ID layer = *seq;
-            wxString     path = layerKeyPrefix + wxT( "." ) + board->GetStandardLayerName( layer );
-            wxString     layerName;
-            int          layerType;
-            bool         layerEnabled;
-
-            aConfig->SetPath( oldPath );
-            aConfig->SetPath( path );
-
-            if( aConfig->Read( LayerNameKey, &layerName ) )
-                board->SetLayerName( layer, layerName );
-
-            if( aConfig->Read( LayerTypeKey, &layerType ) )
-                board->SetLayerType( layer, (LAYER_T) layerType );
-
-            if( aConfig->Read( LayerEnabledKey, &layerEnabled ) )
-                enabledLayers.set( layer, layerEnabled );
-        }
-
-        board->SetEnabledLayers( enabledLayers );
-
-        aConfig->SetPath( oldPath );
-    }
-
-    void SaveParam( wxConfigBase* aConfig ) const override
-    {
-        if( !m_Pt_param || !aConfig )
-            return;
-
-        BOARD*                 board = m_Pt_param;
-        BOARD_DESIGN_SETTINGS& bds = board->GetDesignSettings();
-        wxString               oldPath = aConfig->GetPath();
-        wxString               layerKeyPrefix = LayerKeyPrefix;
-
-        aConfig->Write( CopperLayerCountKey, board->GetCopperLayerCount() );
-        aConfig->Write( BoardThicknessKey, Iu2Millimeter( bds.GetBoardThickness() ) );
-
-        for( LSEQ seq = LSET::AllLayersMask().Seq(); seq; ++seq )
-        {
-            PCB_LAYER_ID layer = *seq;
-            wxString     path = layerKeyPrefix + wxT( "." ) + board->GetStandardLayerName( layer );
-            wxString     layerName = board->GetLayerName( layer );
-            LAYER_T      layerType = board->GetLayerType( layer );
-
-            aConfig->SetPath( oldPath );
-            aConfig->SetPath( path );
-
-            if( IsCopperLayer( layer ) )
-            {
-                aConfig->Write( LayerNameKey, layerName );
-                aConfig->Write( LayerTypeKey, (int) layerType );
-            }
-
-            aConfig->Write( LayerEnabledKey, board->IsLayerEnabled( layer ) );
-        }
-
-        aConfig->SetPath( oldPath );
-    }
-};
-
-
-class PARAM_CFG_TRACKWIDTHS : public PARAM_CFG
-{
-protected:
-    std::vector<int>* m_Pt_param;   ///< Pointer to the parameter value
-
-public:
-    PARAM_CFG_TRACKWIDTHS( std::vector<int>* ptparam, const wxChar* group = nullptr ) :
-            PARAM_CFG( wxEmptyString, PARAM_TRACKWIDTHS, group )
-    {
-        m_Pt_param = ptparam;
-    }
-
-    void ReadParam( wxConfigBase* aConfig ) const override
-    {
-        if( !m_Pt_param || !aConfig )
-            return;
-
-        m_Pt_param->clear();
-
-        for( int index = 1; ; ++index )
-        {
-            wxString key = TrackWidthKey;
-            double width;
-
-            if( !aConfig->Read( key << index, &width ) )
-                break;
-
-            m_Pt_param->push_back( Millimeter2iu( width ) );
-        }
-    }
-
-    void SaveParam( wxConfigBase* aConfig ) const override
-    {
-        if( !m_Pt_param || !aConfig )
-            return;
-
-        for( size_t index = 1; index <= m_Pt_param->size(); ++index )
-        {
-            wxString key = TrackWidthKey;
-            aConfig->Write( key << index, Iu2Millimeter( m_Pt_param->at( index - 1 ) ) );
-        }
-    }
-};
-
-
-class PARAM_CFG_VIADIMENSIONS : public PARAM_CFG
-{
-protected:
-    std::vector<VIA_DIMENSION>* m_Pt_param;   ///< Pointer to the parameter value
-
-public:
-    PARAM_CFG_VIADIMENSIONS( std::vector<VIA_DIMENSION>* ptparam, const wxChar* group = nullptr ) :
-            PARAM_CFG( wxEmptyString, PARAM_VIADIMENSIONS, group )
-    {
-        m_Pt_param = ptparam;
-    }
-
-    void ReadParam( wxConfigBase* aConfig ) const override
-    {
-        if( !m_Pt_param || !aConfig )
-            return;
-
-        m_Pt_param->clear();
-
-        for( int index = 1; ; ++index )
-        {
-            double diameter = 0.0, drill = 0.0;
-
-            wxString key = ViaDiameterKey;
-
-            if( !aConfig->Read( key << index, &diameter ) )
-                break;
-
-            key = ViaDrillKey;
-            drill = aConfig->ReadDouble( key << index, 0.0 );
-
-            m_Pt_param->emplace_back( VIA_DIMENSION( Millimeter2iu( diameter ),
-                                                     Millimeter2iu( drill ) ) );
-        }
-    }
-
-    void SaveParam( wxConfigBase* aConfig ) const override
-    {
-        if( !m_Pt_param || !aConfig )
-            return;
-
-        for( size_t index = 1; index <= m_Pt_param->size(); ++index )
-        {
-            wxString key = ViaDiameterKey;
-            aConfig->Write( key << index, Iu2Millimeter( m_Pt_param->at( index - 1 ).m_Diameter ) );
-            key = ViaDrillKey;
-            aConfig->Write( key << index, Iu2Millimeter( m_Pt_param->at( index - 1 ).m_Drill ) );
-        }
-    }
-};
-
-
-class PARAM_CFG_DIFFPAIRDIMENSIONS : public PARAM_CFG
-{
-protected:
-    std::vector<DIFF_PAIR_DIMENSION>* m_Pt_param;   ///< Pointer to the parameter value
-
-public:
-    PARAM_CFG_DIFFPAIRDIMENSIONS( std::vector<DIFF_PAIR_DIMENSION>* ptparam,
-                                  const wxChar* group = nullptr ) :
-            PARAM_CFG( wxEmptyString, PARAM_DIFFPAIRDIMENSIONS, group )
-    {
-        m_Pt_param = ptparam;
-    }
-
-    void ReadParam( wxConfigBase* aConfig ) const override
-    {
-        if( !m_Pt_param || !aConfig )
-            return;
-
-        m_Pt_param->clear();
-
-        for( int index = 1; ; ++index )
-        {
-            double width, gap, viagap;
-
-            wxString key = dPairWidthKey;
-
-            if( !aConfig->Read( key << index, &width ) )
-                break;
-
-            key = dPairGapKey;
-            gap = aConfig->ReadDouble( key << index, 0.0 );
-
-            key = dPairViaGapKey;
-            viagap = aConfig->ReadDouble( key << index, 0.0 );
-
-            m_Pt_param->emplace_back( DIFF_PAIR_DIMENSION( Millimeter2iu( width ),
-                                                           Millimeter2iu( gap ),
-                                                           Millimeter2iu( viagap ) ) );
-        }
-    }
-
-    void SaveParam( wxConfigBase* aConfig ) const override
-    {
-        if( !m_Pt_param || !aConfig )
-            return;
-
-        for( size_t index = 1; index <= m_Pt_param->size(); ++index )
-        {
-            wxString key = dPairWidthKey;
-            aConfig->Write( key << index, Iu2Millimeter( m_Pt_param->at( index - 1 ).m_Width ) );
-            key = dPairGapKey;
-            aConfig->Write( key << index, Iu2Millimeter( m_Pt_param->at( index - 1 ).m_Gap ) );
-            key = dPairViaGapKey;
-            aConfig->Write( key << index, Iu2Millimeter( m_Pt_param->at( index - 1 ).m_ViaGap ) );
-        }
-    }
-};
-
-
-class PARAM_CFG_NETCLASSES : public PARAM_CFG
-{
-protected:
-    NETCLASSES* m_Pt_param;     ///<  Pointer to the parameter value
-
-public:
-    PARAM_CFG_NETCLASSES( const wxChar* ident, NETCLASSES* ptparam,
-                          const wxChar* group = nullptr ) :
-            PARAM_CFG( ident, PARAM_NETCLASSES, group )
-    {
-        m_Pt_param = ptparam;
-    }
-
-    void ReadParam( wxConfigBase* aConfig ) const override
-    {
-        if( !m_Pt_param || !aConfig )
-            return;
-
-        wxString oldPath = aConfig->GetPath();
-
-        m_Pt_param->Clear();
-
-        for( int index = 0; ; ++index )
-        {
-            wxString    path = "";
-            NETCLASSPTR netclass;
-            wxString    netclassName;
-
-            if( index == 0 )
-                path = "Default";
-            else
-                path << index;
-
-            aConfig->SetPath( oldPath );
-            aConfig->SetPath( m_Ident );
-            aConfig->SetPath( path );
-
-            if( !aConfig->Read( NetclassNameKey, &netclassName ) )
-                break;
-
-            if( index == 0 )
-                netclass = m_Pt_param->GetDefault();
-            else
-                netclass = std::make_shared<NETCLASS>( netclassName );
-
-#define READ_MM( aKey, aDefault ) Millimeter2iu( aConfig->ReadDouble( aKey, aDefault ) )
-            netclass->SetClearance( READ_MM( ClearanceKey, netclass->GetClearance() ) );
-            netclass->SetTrackWidth( READ_MM( TrackWidthKey, netclass->GetTrackWidth() ) );
-            netclass->SetViaDiameter( READ_MM( ViaDiameterKey, netclass->GetViaDiameter() ) );
-            netclass->SetViaDrill( READ_MM( ViaDrillKey, netclass->GetViaDrill() ) );
-            netclass->SetuViaDiameter( READ_MM( uViaDiameterKey, netclass->GetuViaDiameter() ) );
-            netclass->SetuViaDrill( READ_MM( uViaDrillKey, netclass->GetuViaDrill() ) );
-            netclass->SetDiffPairWidth( READ_MM( dPairWidthKey, netclass->GetDiffPairWidth() ) );
-            netclass->SetDiffPairGap( READ_MM( dPairGapKey, netclass->GetDiffPairGap() ) );
-            netclass->SetDiffPairViaGap( READ_MM( dPairViaGapKey, netclass->GetDiffPairViaGap() ) );
-
-            if( index > 0 )
-                m_Pt_param->Add( netclass );
-        }
-
-        aConfig->SetPath( oldPath );
-    }
-
-    void SaveParam( wxConfigBase* aConfig ) const override
-    {
-        if( !m_Pt_param || !aConfig )
-            return;
-
-        wxString                   oldPath = aConfig->GetPath();
-        NETCLASSES::const_iterator nc = m_Pt_param->begin();
-
-        for( unsigned index = 0; index <= m_Pt_param->GetCount(); ++index )
-        {
-            wxString    path = "";
-            NETCLASSPTR netclass;
-
-            if( index == 0 )
-                path = "Default";
-            else
-                path << index;
-
-            aConfig->SetPath( oldPath );
-            aConfig->SetPath( m_Ident );
-            aConfig->SetPath( path );
-
-            if( index == 0 )
-            {
-                netclass = m_Pt_param->GetDefault();
-            }
-            else
-            {
-                netclass = nc->second;
-                ++nc;
-            }
-
-            aConfig->Write( NetclassNameKey, netclass->GetName() );
-
-#define WRITE_MM( aKey, aValue ) aConfig->Write( aKey, Iu2Millimeter( aValue ) )
-            WRITE_MM( ClearanceKey,    netclass->GetClearance() );
-            WRITE_MM( TrackWidthKey,   netclass->GetTrackWidth() );
-            WRITE_MM( ViaDiameterKey,  netclass->GetViaDiameter() );
-            WRITE_MM( ViaDrillKey,     netclass->GetViaDrill() );
-            WRITE_MM( uViaDiameterKey, netclass->GetuViaDiameter() );
-            WRITE_MM( uViaDrillKey,    netclass->GetuViaDrill() );
-            WRITE_MM( dPairWidthKey,   netclass->GetDiffPairWidth() );
-            WRITE_MM( dPairGapKey,     netclass->GetDiffPairGap() );
-            WRITE_MM( dPairViaGapKey,  netclass->GetDiffPairViaGap() );
-        }
-
-        aConfig->SetPath( oldPath );
-    }
-};
-
-
-BOARD_DESIGN_SETTINGS::BOARD_DESIGN_SETTINGS() :
-    m_Pad_Master( NULL )
-{
     m_HasStackup = false;                   // no stackup defined by default
 
     LSET all_set = LSET().set();
     m_enabledLayers = all_set;              // All layers enabled at first.
                                             // SetCopperLayerCount() will adjust this.
-    SetVisibleLayers( all_set );
-
-    // set all but hidden text as visible.
-    m_visibleElements = ~( 1 << GAL_LAYER_INDEX( LAYER_MOD_TEXT_INVISIBLE ) );
 
     SetCopperLayerCount( 2 );               // Default design is a double sided board
     m_CurrentViaType = VIATYPE::THROUGH;
@@ -642,212 +173,513 @@ BOARD_DESIGN_SETTINGS::BOARD_DESIGN_SETTINGS() :
     m_viaSizeIndex = 0;
     m_trackWidthIndex = 0;
     m_diffPairIndex = 0;
-}
 
-// Add parameters to save in project config.
-// values are saved in mm
-void BOARD_DESIGN_SETTINGS::AppendConfigs( BOARD* aBoard, std::vector<PARAM_CFG*>* aResult )
-{
-    aResult->push_back( new PARAM_CFG_LAYERS( aBoard ) );
+    // Parameters stored in JSON in the project file
 
-    aResult->push_back( new PARAM_CFG_BOOL( wxT( "AllowMicroVias" ),
-          &m_MicroViasAllowed, false ) );
+    // NOTE: Previously, BOARD_DESIGN_SETTINGS stored the basic board layer information (layer
+    // names and enable/disable state) in the project file even though this information is also
+    // stored in the board file.  This was implemented for importing these settings from another
+    // project.  Going forward, the import feature will just import from other board files (since
+    // we could have multi-board projects in the future anyway) so this functionality is dropped.
 
-    aResult->push_back( new PARAM_CFG_BOOL( wxT( "AllowBlindVias" ),
-          &m_BlindBuriedViaAllowed, false ) );
+    m_params.emplace_back( new PARAM<bool>( "rules.allow_microvias", &m_MicroViasAllowed, false ) );
 
-    aResult->push_back( new PARAM_CFG_INT_WITH_SCALE( wxT( "MinClearance" ),
-          &m_MinClearance,
-          Millimeter2iu( DEFAULT_MINCLEARANCE ), Millimeter2iu( 0.01 ), Millimeter2iu( 25.0 ),
-          nullptr, MM_PER_IU ) );
+    m_params.emplace_back(
+            new PARAM<bool>( "rules.allow_blind_buried_vias", &m_BlindBuriedViaAllowed, false ) );
 
-    aResult->push_back( new PARAM_CFG_INT_WITH_SCALE( wxT( "MinTrackWidth" ),
-          &m_TrackMinWidth,
-          Millimeter2iu( DEFAULT_TRACKMINWIDTH ), Millimeter2iu( 0.01 ), Millimeter2iu( 25.0 ),
-          nullptr, MM_PER_IU ) );
+    m_params.emplace_back( new PARAM_SCALED<int>( "rules.min_clearance", &m_MinClearance,
+            Millimeter2iu( DEFAULT_MINCLEARANCE ), Millimeter2iu( 0.01 ), Millimeter2iu( 25.0 ),
+            MM_PER_IU ) );
 
-    aResult->push_back( new PARAM_CFG_INT_WITH_SCALE( wxT( "MinViaAnnulus" ),
-          &m_ViasMinAnnulus,
-          Millimeter2iu( DEFAULT_VIASMINSIZE ), Millimeter2iu( 0.01 ), Millimeter2iu( 25.0 ),
-          nullptr, MM_PER_IU ) );
+    m_params.emplace_back( new PARAM_SCALED<int>( "rules.min_track_width", &m_TrackMinWidth,
+            Millimeter2iu( DEFAULT_TRACKMINWIDTH ), Millimeter2iu( 0.01 ), Millimeter2iu( 25.0 ),
+            MM_PER_IU ) );
 
-    aResult->push_back( new PARAM_CFG_INT_WITH_SCALE( wxT( "MinViaDiameter" ),
-          &m_ViasMinSize,
-          Millimeter2iu( DEFAULT_VIASMINSIZE ), Millimeter2iu( 0.01 ), Millimeter2iu( 25.0 ),
-          nullptr, MM_PER_IU ) );
+    m_params.emplace_back( new PARAM_SCALED<int>( "rules.min_via_annulus", &m_ViasMinAnnulus,
+            Millimeter2iu( DEFAULT_VIASMINSIZE ), Millimeter2iu( 0.01 ), Millimeter2iu( 25.0 ),
+            MM_PER_IU ) );
 
-    aResult->push_back( new PARAM_CFG_INT_WITH_SCALE( wxT( "MinThroughDrill" ),
-          &m_MinThroughDrill,
-          Millimeter2iu( DEFAULT_MINTHROUGHDRILL ), Millimeter2iu( 0.01 ), Millimeter2iu( 25.0 ),
-          nullptr, MM_PER_IU, wxT( "MinViaDrill" ) ) );
+    m_params.emplace_back( new PARAM_SCALED<int>( "rules.min_via_diameter", &m_ViasMinSize,
+            Millimeter2iu( DEFAULT_VIASMINSIZE ), Millimeter2iu( 0.01 ), Millimeter2iu( 25.0 ),
+            MM_PER_IU ) );
 
-    aResult->push_back( new PARAM_CFG_INT_WITH_SCALE( wxT( "MinMicroViaDiameter" ),
-          &m_MicroViasMinSize,
-          Millimeter2iu( DEFAULT_MICROVIASMINSIZE ), Millimeter2iu( 0.01 ), Millimeter2iu( 10.0 ),
-          nullptr, MM_PER_IU ) );
+    m_params.emplace_back( new PARAM_SCALED<int>( "rules.min_through_hole_diameter",
+            &m_MinThroughDrill, Millimeter2iu( DEFAULT_MINTHROUGHDRILL ), Millimeter2iu( 0.01 ),
+            Millimeter2iu( 25.0 ), MM_PER_IU ) );
 
-    aResult->push_back( new PARAM_CFG_INT_WITH_SCALE( wxT( "MinMicroViaDrill" ),
-          &m_MicroViasMinDrill,
-          Millimeter2iu( DEFAULT_MICROVIASMINDRILL ), Millimeter2iu( 0.01 ), Millimeter2iu( 10.0 ),
-          nullptr, MM_PER_IU ) );
+    m_params.emplace_back( new PARAM_SCALED<int>( "rules.min_microvia_diameter",
+            &m_MicroViasMinSize, Millimeter2iu( DEFAULT_MICROVIASMINSIZE ), Millimeter2iu( 0.01 ),
+            Millimeter2iu( 10.0 ), MM_PER_IU ) );
 
-    aResult->push_back( new PARAM_CFG_INT_WITH_SCALE( wxT( "MinHoleToHole" ),
-          &m_HoleToHoleMin,
-          Millimeter2iu( DEFAULT_HOLETOHOLEMIN ), Millimeter2iu( 0.0 ), Millimeter2iu( 10.0 ),
-          nullptr, MM_PER_IU ) );
+    m_params.emplace_back( new PARAM_SCALED<int>( "rules.min_microvia_drill", &m_MicroViasMinDrill,
+            Millimeter2iu( DEFAULT_MICROVIASMINDRILL ), Millimeter2iu( 0.01 ),
+            Millimeter2iu( 10.0 ), MM_PER_IU ) );
 
-    aResult->push_back( new PARAM_CFG_SEVERITIES( aBoard ) );
+    m_params.emplace_back( new PARAM_SCALED<int>( "rules.min_hole_to_hole", &m_HoleToHoleMin,
+            Millimeter2iu( DEFAULT_HOLETOHOLEMIN ), Millimeter2iu( 0.00 ), Millimeter2iu( 10.0 ),
+            MM_PER_IU ) );
 
     // Note: a clearance of -0.01 is a flag indicating we should use the legacy (pre-6.0) method
     // based on the edge cut thicknesses.
-    aResult->push_back( new PARAM_CFG_INT_WITH_SCALE( wxT( "CopperEdgeClearance" ),
-          &m_CopperEdgeClearance,
-          Millimeter2iu( LEGACY_COPPEREDGECLEARANCE ), Millimeter2iu( -0.01 ), Millimeter2iu( 25.0 ),
-          nullptr, MM_PER_IU ) );
+    m_params.emplace_back( new PARAM_SCALED<int>( "rules.min_copper_edge_clearance",
+            &m_CopperEdgeClearance, Millimeter2iu( LEGACY_COPPEREDGECLEARANCE ),
+            Millimeter2iu( -0.01 ), Millimeter2iu( 25.0 ), MM_PER_IU ) );
 
-    aResult->push_back( new PARAM_CFG_TRACKWIDTHS( &m_TrackWidthList ) );
-    aResult->push_back( new PARAM_CFG_VIADIMENSIONS( &m_ViasDimensionsList ) );
-    aResult->push_back( new PARAM_CFG_DIFFPAIRDIMENSIONS( &m_DiffPairDimensionsList ) );
+    m_params.emplace_back( new PARAM_SCALED<int>( "rules.solder_mask_clearance",
+            &m_SolderMaskMargin, Millimeter2iu( DEFAULT_SOLDERMASK_CLEARANCE ),
+            Millimeter2iu( -1.0 ), Millimeter2iu( 1.0 ), MM_PER_IU ) );
 
-    aResult->push_back( new PARAM_CFG_NETCLASSES( wxT( "Netclasses" ), &m_NetClasses ) );
+    m_params.emplace_back( new PARAM_SCALED<int>( "rules.solder_mask_min_width",
+            &m_SolderMaskMinWidth, Millimeter2iu( DEFAULT_SOLDERMASK_MIN_WIDTH ), 0,
+            Millimeter2iu( 1.0 ), MM_PER_IU ) );
 
-    aResult->push_back( new PARAM_CFG_INT_WITH_SCALE( wxT( "SilkLineWidth" ),
-          &m_LineThickness[ LAYER_CLASS_SILK ],
-          Millimeter2iu( DEFAULT_SILK_LINE_WIDTH ), Millimeter2iu( 0.01 ), Millimeter2iu( 5.0 ),
-          nullptr, MM_PER_IU, wxT( "ModuleOutlineThickness" ) ) );
+    m_params.emplace_back( new PARAM_SCALED<int>( "rules.solder_paste_clearance",
+            &m_SolderPasteMargin, Millimeter2iu( DEFAULT_SOLDERPASTE_CLEARANCE ),
+            Millimeter2iu( -1.0 ), Millimeter2iu( 1.0 ), MM_PER_IU ) );
 
-    aResult->push_back( new PARAM_CFG_INT_WITH_SCALE( wxT( "SilkTextSizeV" ),
-          &m_TextSize[ LAYER_CLASS_SILK ].y,
-          Millimeter2iu( DEFAULT_SILK_TEXT_SIZE ), TEXTS_MIN_SIZE, TEXTS_MAX_SIZE,
-          nullptr, MM_PER_IU, wxT( "ModuleTextSizeV" ) ) );
+    m_params.emplace_back( new PARAM<double>( "rules.solder_paste_margin_ratio",
+            &m_SolderPasteMarginRatio, DEFAULT_SOLDERPASTE_RATIO, -0.5, 1.0 ) );
 
-    aResult->push_back( new PARAM_CFG_INT_WITH_SCALE( wxT( "SilkTextSizeH" ),
-          &m_TextSize[ LAYER_CLASS_SILK ].x,
-          Millimeter2iu( DEFAULT_SILK_TEXT_SIZE ), TEXTS_MIN_SIZE, TEXTS_MAX_SIZE,
-          nullptr, MM_PER_IU, wxT( "ModuleTextSizeH" ) ) );
+    m_params.emplace_back( new PARAM_LAMBDA<nlohmann::json>( "rule_severities",
+            [&]() -> nlohmann::json
+            {
+                nlohmann::json ret = {};
 
-    aResult->push_back( new PARAM_CFG_INT_WITH_SCALE( wxT( "SilkTextSizeThickness" ),
-          &m_TextThickness[ LAYER_CLASS_SILK ],
-          Millimeter2iu( DEFAULT_SILK_TEXT_WIDTH ), 1, TEXTS_MAX_WIDTH,
-          nullptr, MM_PER_IU, wxT( "ModuleTextSizeThickness" ) ) );
+                for( const RC_ITEM& item : DRC_ITEM::GetItemsWithSeverities() )
+                {
+                    int code = item.GetErrorCode();
 
-    aResult->push_back( new PARAM_CFG_BOOL( wxT( "SilkTextItalic" ),
-          &m_TextItalic[ LAYER_CLASS_SILK ], false ) );
+                    if( !m_DRCSeverities.count( code ) )
+                        continue;
 
-    aResult->push_back( new PARAM_CFG_BOOL( wxT( "SilkTextUpright" ),
-          &m_TextUpright[ LAYER_CLASS_SILK ], true ) );
+                    wxString name = item.GetSettingsKey();
 
-    aResult->push_back( new PARAM_CFG_INT_WITH_SCALE( wxT( "CopperLineWidth" ),
-          &m_LineThickness[ LAYER_CLASS_COPPER ],
-          Millimeter2iu( DEFAULT_SILK_LINE_WIDTH ), Millimeter2iu( 0.01 ), Millimeter2iu( 5.0 ),
-          nullptr, MM_PER_IU, wxT( "DrawSegmentWidth" ) ) );
+                    ret[std::string( name.ToUTF8() )] =
+                            SeverityToString( static_cast<SEVERITY>( m_DRCSeverities[code] ) );
+                }
 
-    aResult->push_back( new PARAM_CFG_INT_WITH_SCALE( wxT( "CopperTextSizeV" ),
-          &m_TextSize[ LAYER_CLASS_COPPER ].y,
-          Millimeter2iu( DEFAULT_COPPER_TEXT_SIZE  ), TEXTS_MIN_SIZE, TEXTS_MAX_SIZE,
-          nullptr, MM_PER_IU, wxT( "PcbTextSizeV" ) ) );
+                return ret;
+            },
+            [&]( const nlohmann::json& aJson )
+            {
+                if( !aJson.is_object() )
+                    return;
 
-    aResult->push_back( new PARAM_CFG_INT_WITH_SCALE( wxT( "CopperTextSizeH" ),
-          &m_TextSize[ LAYER_CLASS_COPPER ].x,
-          Millimeter2iu( DEFAULT_COPPER_TEXT_SIZE  ), TEXTS_MIN_SIZE, TEXTS_MAX_SIZE,
-          nullptr, MM_PER_IU, wxT( "PcbTextSizeH" ) ) );
+                for( const RC_ITEM& item : DRC_ITEM::GetItemsWithSeverities() )
+                {
+                    wxString name = item.GetSettingsKey();
+                    std::string key( name.ToUTF8() );
 
-    aResult->push_back( new PARAM_CFG_INT_WITH_SCALE( wxT( "CopperTextThickness" ),
-          &m_TextThickness[ LAYER_CLASS_COPPER ],
-          Millimeter2iu( DEFAULT_COPPER_TEXT_WIDTH ), Millimeter2iu( 0.01 ), Millimeter2iu( 5.0 ),
-          nullptr, MM_PER_IU, wxT( "PcbTextThickness" ) ) );
+                    if( aJson.contains( key ) )
+                        m_DRCSeverities[item.GetErrorCode()] = SeverityFromString( aJson[key] );
+                }
+            }, {} ) );
 
-    aResult->push_back( new PARAM_CFG_BOOL( wxT( "CopperTextItalic" ),
-          &m_TextItalic[ LAYER_CLASS_COPPER ], false ) );
+    m_params.emplace_back( new PARAM_LAMBDA<nlohmann::json>( "drc_exclusions",
+            [&]() -> nlohmann::json
+            {
+                nlohmann::json js = nlohmann::json::array();
 
-    aResult->push_back( new PARAM_CFG_BOOL( wxT( "CopperTextUpright" ),
-          &m_TextUpright[ LAYER_CLASS_COPPER ], true ) );
+                for( const auto& entry : m_DrcExclusions )
+                    js.push_back( entry );
 
-    aResult->push_back( new PARAM_CFG_INT_WITH_SCALE( wxT( "EdgeCutLineWidth" ),
-          &m_LineThickness[ LAYER_CLASS_EDGES ],
-          Millimeter2iu( DEFAULT_SILK_LINE_WIDTH ), Millimeter2iu( 0.01 ), Millimeter2iu( 5.0 ),
-          nullptr, MM_PER_IU, wxT( "BoardOutlineThickness" ) ) );
+                return js;
+            },
+            [&]( const nlohmann::json& aObj )
+            {
+                m_DrcExclusions.clear();
 
-    aResult->push_back( new PARAM_CFG_INT_WITH_SCALE( wxT( "CourtyardLineWidth" ),
-          &m_LineThickness[ LAYER_CLASS_COURTYARD ],
-          Millimeter2iu( DEFAULT_SILK_LINE_WIDTH ), Millimeter2iu( 0.01 ), Millimeter2iu( 5.0 ),
-          nullptr, MM_PER_IU ) );
+                if( !aObj.is_array() )
+                    return;
 
-    aResult->push_back( new PARAM_CFG_INT_WITH_SCALE( wxT( "FabLineWidth" ),
-          &m_LineThickness[ LAYER_CLASS_FAB ],
-          Millimeter2iu( DEFAULT_LINE_WIDTH ), Millimeter2iu( 0.01 ), Millimeter2iu( 5.0 ),
-          nullptr, MM_PER_IU ) );
+                for( const nlohmann::json& entry : aObj )
+                {
+                    if( entry.empty() )
+                        continue;
 
-    aResult->push_back( new PARAM_CFG_INT_WITH_SCALE( wxT( "FabTextSizeV" ),
-          &m_TextSize[ LAYER_CLASS_FAB ].x,
-          Millimeter2iu( DEFAULT_TEXT_SIZE ), TEXTS_MIN_SIZE, TEXTS_MAX_SIZE,
-          nullptr, MM_PER_IU ) );
+                    m_DrcExclusions.insert( entry.get<wxString>() );
+                }
+            },
+            {} ) );
 
-    aResult->push_back( new PARAM_CFG_INT_WITH_SCALE( wxT( "FabTextSizeH" ),
-          &m_TextSize[ LAYER_CLASS_FAB ].y,
-          Millimeter2iu( DEFAULT_TEXT_SIZE ), TEXTS_MIN_SIZE, TEXTS_MAX_SIZE,
-          nullptr, MM_PER_IU ) );
+    m_params.emplace_back( new PARAM_LAMBDA<nlohmann::json>( "track_widths",
+            [&]() -> nlohmann::json
+            {
+                nlohmann::json js = nlohmann::json::array();
 
-    aResult->push_back( new PARAM_CFG_INT_WITH_SCALE( wxT( "FabTextSizeThickness" ),
-          &m_TextThickness[ LAYER_CLASS_FAB ],
-          Millimeter2iu( DEFAULT_TEXT_WIDTH ), 1, TEXTS_MAX_WIDTH,
-          nullptr, MM_PER_IU ) );
+                for( const int& width : m_TrackWidthList )
+                    js.push_back( Iu2Millimeter( width ) );
 
-    aResult->push_back( new PARAM_CFG_BOOL( wxT( "FabTextItalic" ),
-          &m_TextItalic[ LAYER_CLASS_FAB ], false ) );
+                return js;
+            },
+            [&]( const nlohmann::json& aJson )
+            {
+                if( !aJson.is_array() )
+                    return;
 
-    aResult->push_back( new PARAM_CFG_BOOL( wxT( "FabTextUpright" ),
-          &m_TextUpright[ LAYER_CLASS_FAB ], true ) );
+                m_TrackWidthList.clear();
 
-    aResult->push_back( new PARAM_CFG_INT_WITH_SCALE( wxT( "OthersLineWidth" ),
-          &m_LineThickness[ LAYER_CLASS_OTHERS ],
-          Millimeter2iu( DEFAULT_SILK_LINE_WIDTH ), Millimeter2iu( 0.01 ), Millimeter2iu( 5.0 ),
-          nullptr, MM_PER_IU, wxT( "ModuleOutlineThickness" ) ) );
+                for( const nlohmann::json& entry : aJson )
+                {
+                    if( entry.empty() )
+                        continue;
 
-    aResult->push_back( new PARAM_CFG_INT_WITH_SCALE( wxT( "OthersTextSizeV" ),
-          &m_TextSize[ LAYER_CLASS_OTHERS ].x,
-          Millimeter2iu( DEFAULT_TEXT_SIZE ), TEXTS_MIN_SIZE, TEXTS_MAX_SIZE,
-          nullptr, MM_PER_IU ) );
+                    m_TrackWidthList.emplace_back( Millimeter2iu( entry.get<double>() ) );
+                }
+            },
+            {} ) );
 
-    aResult->push_back( new PARAM_CFG_INT_WITH_SCALE( wxT( "OthersTextSizeH" ),
-          &m_TextSize[ LAYER_CLASS_OTHERS ].y,
-          Millimeter2iu( DEFAULT_TEXT_SIZE ), TEXTS_MIN_SIZE, TEXTS_MAX_SIZE,
-          nullptr, MM_PER_IU ) );
+    m_params.emplace_back( new PARAM_LAMBDA<nlohmann::json>( "via_dimensions",
+            [&]() -> nlohmann::json
+            {
+                nlohmann::json js = nlohmann::json::array();
 
-    aResult->push_back( new PARAM_CFG_INT_WITH_SCALE( wxT( "OthersTextSizeThickness" ),
-          &m_TextThickness[ LAYER_CLASS_OTHERS ],
-          Millimeter2iu( DEFAULT_TEXT_WIDTH ), 1, TEXTS_MAX_WIDTH,
-          nullptr, MM_PER_IU ) );
+                for( const auto& via : m_ViasDimensionsList )
+                {
+                    nlohmann::json entry = {};
 
-    aResult->push_back( new PARAM_CFG_BOOL( wxT( "OthersTextItalic" ),
-          &m_TextItalic[ LAYER_CLASS_OTHERS ], false ) );
+                    entry["diameter"] = Iu2Millimeter( via.m_Diameter );
+                    entry["drill"]    = Iu2Millimeter( via.m_Drill );
 
-    aResult->push_back( new PARAM_CFG_BOOL( wxT( "OthersTextUpright" ),
-          &m_TextUpright[ LAYER_CLASS_OTHERS ], true ) );
+                    js.push_back( entry );
+                }
 
-    aResult->push_back( new PARAM_CFG_INT( wxT( "DimensionUnits" ),
-          &m_DimensionUnits, 0, 0, 2 ) );
-    aResult->push_back( new PARAM_CFG_INT( wxT( "DimensionPrecision" ),
-          &m_DimensionPrecision, 1, 0, 2 ) );
+                return js;
+            },
+            [&]( const nlohmann::json& aObj )
+            {
+                if( !aObj.is_array() )
+                    return;
 
-    aResult->push_back( new PARAM_CFG_INT_WITH_SCALE( wxT( "SolderMaskClearance" ),
-          &m_SolderMaskMargin,
-          Millimeter2iu( DEFAULT_SOLDERMASK_CLEARANCE ), Millimeter2iu( -1.0 ), Millimeter2iu( 1.0 ),
-          nullptr, MM_PER_IU ) );
+                m_ViasDimensionsList.clear();
 
-    aResult->push_back( new PARAM_CFG_INT_WITH_SCALE( wxT( "SolderMaskMinWidth" ),
-          &m_SolderMaskMinWidth,
-          Millimeter2iu( DEFAULT_SOLDERMASK_MIN_WIDTH ), 0, Millimeter2iu( 1.0 ),
-          nullptr, MM_PER_IU ) );
+                for( const nlohmann::json& entry : aObj )
+                {
+                    if( entry.empty() || !entry.is_object() )
+                        continue;
 
-    aResult->push_back( new PARAM_CFG_INT_WITH_SCALE( wxT( "SolderPasteClearance" ),
-          &m_SolderPasteMargin,
-          Millimeter2iu( DEFAULT_SOLDERPASTE_CLEARANCE ), Millimeter2iu( -1.0 ), Millimeter2iu( 1.0 ),
-          nullptr, MM_PER_IU ) );
+                    if( !entry.contains( "diameter" ) || !entry.contains( "drill" ) )
+                        continue;
 
-    aResult->push_back( new PARAM_CFG_DOUBLE( wxT( "SolderPasteRatio" ),
-          &m_SolderPasteMarginRatio,
-          DEFAULT_SOLDERPASTE_RATIO, -0.5, 1.0 ) );
+                    int diameter = Millimeter2iu( entry["diameter"].get<double>() );
+                    int drill    = Millimeter2iu( entry["drill"].get<double>() );
+
+                    m_ViasDimensionsList.emplace_back( VIA_DIMENSION( diameter, drill ) );
+                }
+            },
+            {} ) );
+
+    m_params.emplace_back( new PARAM_LAMBDA<nlohmann::json>( "diff_pair_dimensions",
+            [&]() -> nlohmann::json
+            {
+                nlohmann::json js = nlohmann::json::array();
+
+                for( const auto& pair : m_DiffPairDimensionsList )
+                {
+                    nlohmann::json entry = {};
+
+                    entry["width"]   = Iu2Millimeter( pair.m_Width );
+                    entry["gap"]     = Iu2Millimeter( pair.m_Gap );
+                    entry["via_gap"] = Iu2Millimeter( pair.m_ViaGap );
+
+                    js.push_back( entry );
+                }
+
+                return js;
+            },
+            [&]( const nlohmann::json& aObj )
+            {
+                if( !aObj.is_array() )
+                    return;
+
+              m_DiffPairDimensionsList.clear();
+
+                for( const nlohmann::json& entry : aObj )
+                {
+                    if( entry.empty() || !entry.is_object() )
+                        continue;
+
+                    if( !entry.contains( "width" ) || !entry.contains( "gap" )
+                            || !entry.contains( "via_gap" ) )
+                        continue;
+
+                    int width   = Millimeter2iu( entry["width"].get<int>() );
+                    int gap     = Millimeter2iu( entry["gap"].get<int>() );
+                    int via_gap = Millimeter2iu( entry["via_gap"].get<int>() );
+
+                    m_DiffPairDimensionsList.emplace_back(
+                            DIFF_PAIR_DIMENSION( width, gap, via_gap ) );
+                }
+            },
+            {} ) );
+
+    m_params.emplace_back( new PARAM_SCALED<int>( "defaults.silk_line_width",
+            &m_LineThickness[LAYER_CLASS_SILK], Millimeter2iu( DEFAULT_SILK_LINE_WIDTH ),
+            Millimeter2iu( 0.01 ), Millimeter2iu( 5.0 ), MM_PER_IU ) );
+
+    m_params.emplace_back( new PARAM_SCALED<int>( "defaults.silk_text_size_v",
+            &m_TextSize[LAYER_CLASS_SILK].y, Millimeter2iu( DEFAULT_SILK_TEXT_SIZE ),
+            TEXTS_MIN_SIZE, TEXTS_MAX_SIZE, MM_PER_IU ) );
+
+    m_params.emplace_back( new PARAM_SCALED<int>( "defaults.silk_text_size_h",
+            &m_TextSize[LAYER_CLASS_SILK].x, Millimeter2iu( DEFAULT_SILK_TEXT_SIZE ),
+            TEXTS_MIN_SIZE, TEXTS_MAX_SIZE, MM_PER_IU ) );
+
+    m_params.emplace_back( new PARAM_SCALED<int>( "defaults.silk_text_thickness",
+            &m_TextThickness[LAYER_CLASS_SILK], Millimeter2iu( DEFAULT_SILK_TEXT_WIDTH ), 1,
+            TEXTS_MAX_WIDTH, MM_PER_IU ) );
+
+    m_params.emplace_back( new PARAM<bool>(
+            "defaults.silk_text_italic", &m_TextItalic[LAYER_CLASS_SILK], false ) );
+
+    m_params.emplace_back( new PARAM<bool>(
+            "defaults.silk_text_upright", &m_TextUpright[ LAYER_CLASS_SILK ], true ) );
+
+    m_params.emplace_back( new PARAM_SCALED<int>( "defaults.copper_line_width",
+            &m_LineThickness[LAYER_CLASS_COPPER], Millimeter2iu( DEFAULT_SILK_LINE_WIDTH ),
+            Millimeter2iu( 0.01 ), Millimeter2iu( 5.0 ), MM_PER_IU ) );
+
+    m_params.emplace_back( new PARAM_SCALED<int>( "defaults.copper_text_size_v",
+            &m_TextSize[LAYER_CLASS_COPPER].y, Millimeter2iu( DEFAULT_COPPER_TEXT_SIZE ),
+            TEXTS_MIN_SIZE, TEXTS_MAX_SIZE, MM_PER_IU ) );
+
+    m_params.emplace_back( new PARAM_SCALED<int>( "defaults.copper_text_size_h",
+            &m_TextSize[LAYER_CLASS_COPPER].x, Millimeter2iu( DEFAULT_COPPER_TEXT_SIZE ),
+            TEXTS_MIN_SIZE, TEXTS_MAX_SIZE, MM_PER_IU ) );
+
+    m_params.emplace_back( new PARAM_SCALED<int>( "defaults.copper_text_thickness",
+            &m_TextThickness[LAYER_CLASS_COPPER], Millimeter2iu( DEFAULT_COPPER_TEXT_WIDTH ),
+            Millimeter2iu( 0.01 ), Millimeter2iu( 5.0 ), MM_PER_IU ) );
+
+    m_params.emplace_back( new PARAM<bool>(
+            "defaults.copper_text_italic", &m_TextItalic[LAYER_CLASS_COPPER], false ) );
+
+    m_params.emplace_back( new PARAM<bool>(
+            "defaults.copper_text_upright", &m_TextUpright[LAYER_CLASS_COPPER], true ) );
+
+    m_params.emplace_back( new PARAM_SCALED<int>( "defaults.board_outline_line_width",
+            &m_LineThickness[LAYER_CLASS_EDGES], Millimeter2iu( DEFAULT_SILK_LINE_WIDTH ),
+            Millimeter2iu( 0.01 ), Millimeter2iu( 5.0 ), MM_PER_IU ) );
+
+    m_params.emplace_back( new PARAM_SCALED<int>( "defaults.courtyard_line_width",
+            &m_LineThickness[LAYER_CLASS_COURTYARD], Millimeter2iu( DEFAULT_SILK_LINE_WIDTH ),
+            Millimeter2iu( 0.01 ), Millimeter2iu( 5.0 ), MM_PER_IU ) );
+
+    m_params.emplace_back( new PARAM_SCALED<int>( "defaults.fab_line_width",
+            &m_LineThickness[LAYER_CLASS_FAB], Millimeter2iu( DEFAULT_LINE_WIDTH ),
+            Millimeter2iu( 0.01 ), Millimeter2iu( 5.0 ), MM_PER_IU ) );
+
+    m_params.emplace_back( new PARAM_SCALED<int>( "defaults.fab_text_size_v",
+            &m_TextSize[LAYER_CLASS_FAB].y, Millimeter2iu( DEFAULT_TEXT_SIZE ),
+            TEXTS_MIN_SIZE, TEXTS_MAX_SIZE, MM_PER_IU ) );
+
+    m_params.emplace_back( new PARAM_SCALED<int>( "defaults.fab_text_size_h",
+            &m_TextSize[LAYER_CLASS_FAB].x, Millimeter2iu( DEFAULT_TEXT_SIZE ),
+            TEXTS_MIN_SIZE, TEXTS_MAX_SIZE, MM_PER_IU ) );
+
+    m_params.emplace_back( new PARAM_SCALED<int>( "defaults.fab_text_thickness",
+            &m_TextThickness[LAYER_CLASS_FAB], Millimeter2iu( DEFAULT_TEXT_WIDTH ),
+            Millimeter2iu( 0.01 ), Millimeter2iu( 5.0 ), MM_PER_IU ) );
+
+    m_params.emplace_back(
+            new PARAM<bool>( "defaults.fab_text_italic", &m_TextItalic[LAYER_CLASS_FAB], false ) );
+
+    m_params.emplace_back(
+            new PARAM<bool>( "defaults.fab_text_upright", &m_TextUpright[LAYER_CLASS_FAB], true ) );
+
+    m_params.emplace_back( new PARAM_SCALED<int>( "defaults.other_line_width",
+            &m_LineThickness[LAYER_CLASS_OTHERS], Millimeter2iu( DEFAULT_LINE_WIDTH ),
+            Millimeter2iu( 0.01 ), Millimeter2iu( 5.0 ), MM_PER_IU ) );
+
+    m_params.emplace_back( new PARAM_SCALED<int>( "defaults.other_text_size_v",
+            &m_TextSize[LAYER_CLASS_OTHERS].y, Millimeter2iu( DEFAULT_TEXT_SIZE ), TEXTS_MIN_SIZE,
+            TEXTS_MAX_SIZE, MM_PER_IU ) );
+
+    m_params.emplace_back( new PARAM_SCALED<int>( "defaults.other_text_size_h",
+            &m_TextSize[LAYER_CLASS_OTHERS].x, Millimeter2iu( DEFAULT_TEXT_SIZE ), TEXTS_MIN_SIZE,
+            TEXTS_MAX_SIZE, MM_PER_IU ) );
+
+    m_params.emplace_back( new PARAM_SCALED<int>( "defaults.other_text_thickness",
+            &m_TextThickness[LAYER_CLASS_OTHERS], Millimeter2iu( DEFAULT_TEXT_WIDTH ),
+            Millimeter2iu( 0.01 ), Millimeter2iu( 5.0 ), MM_PER_IU ) );
+
+    m_params.emplace_back( new PARAM<bool>(
+            "defaults.other_text_italic", &m_TextItalic[LAYER_CLASS_OTHERS], false ) );
+
+    m_params.emplace_back( new PARAM<bool>(
+            "defaults.other_text_upright", &m_TextUpright[LAYER_CLASS_OTHERS], true ) );
+
+    m_params.emplace_back(
+            new PARAM<int>( "defaults.dimension_units", &m_DimensionUnits, 0, 0, 2 ) );
+
+    m_params.emplace_back(
+            new PARAM<int>( "defaults.dimension_precision", &m_DimensionPrecision, 1, 0, 2 ) );
+
+    m_params.emplace_back( new PARAM<bool>(
+            "defaults.zones.45_degree_only", &m_defaultZoneSettings.m_Zone_45_Only, false ) );
+
+    m_params.emplace_back( new PARAM_SCALED<int>( "defaults.zones.min_clearance",
+            &m_defaultZoneSettings.m_ZoneClearance, Mils2iu( ZONE_CLEARANCE_MIL ),
+            Millimeter2iu( 0.0 ), Millimeter2iu( 25.0 ), MM_PER_IU ) );
+
+    m_params.emplace_back( new PARAM_LAMBDA<nlohmann::json>( "defaults.pads",
+            [&]() -> nlohmann::json
+            {
+                nlohmann::json ret =
+                        {
+                            { "width",  Iu2Millimeter( m_Pad_Master.GetSize().x ) },
+                            { "height", Iu2Millimeter( m_Pad_Master.GetSize().y ) },
+                            { "drill",  Iu2Millimeter( m_Pad_Master.GetDrillSize().x ) }
+                        };
+
+                return ret;
+            },
+            [&]( const nlohmann::json& aJson )
+            {
+                if( aJson.contains( "width" ) && aJson.contains( "height" )
+                        && aJson.contains( "drill" ) )
+                {
+                    wxSize sz;
+                    sz.SetWidth( Millimeter2iu( aJson["width"].get<double>() ) );
+                    sz.SetHeight( Millimeter2iu( aJson["height"].get<double>() ) );
+
+                    m_Pad_Master.SetSize( sz );
+
+                    int drill = Millimeter2iu( aJson["drill"].get<double>() );
+
+                    m_Pad_Master.SetDrillSize( wxSize( drill, drill ) );
+                }
+            }, {} ) );
+
+    m_params.emplace_back( new PARAM_SCALED<int>( "rules.max_error", &m_MaxError, ARC_HIGH_DEF,
+            Millimeter2iu( 0.0001 ), Millimeter2iu( 1.0 ), MM_PER_IU ) );
+
+    m_params.emplace_back(
+            new PARAM<bool>( "zones_use_no_outline", &m_ZoneUseNoOutlineInFill, false ) );
+}
+
+
+BOARD_DESIGN_SETTINGS::~BOARD_DESIGN_SETTINGS()
+{
+    if( m_parent )
+    {
+        m_parent->ReleaseNestedSettings( this );
+        m_parent = nullptr;
+    }
+}
+
+
+BOARD_DESIGN_SETTINGS& BOARD_DESIGN_SETTINGS::operator=( const BOARD_DESIGN_SETTINGS& aOther )
+{
+    // Copy of NESTED_SETTINGS around is not allowed, so let's just update the params.
+    m_TrackWidthList         = aOther.m_TrackWidthList;
+    m_ViasDimensionsList     = aOther.m_ViasDimensionsList;
+    m_DiffPairDimensionsList = aOther.m_DiffPairDimensionsList;
+    m_DRCRuleSelectors       = aOther.m_DRCRuleSelectors;
+    m_DRCRules               = aOther.m_DRCRules;
+    m_MicroViasAllowed       = aOther.m_MicroViasAllowed;
+    m_BlindBuriedViaAllowed  = aOther.m_BlindBuriedViaAllowed;
+    m_CurrentViaType         = aOther.m_CurrentViaType;
+    m_UseConnectedTrackWidth = aOther.m_UseConnectedTrackWidth;
+    m_MinClearance           = aOther.m_MinClearance;
+    m_TrackMinWidth          = aOther.m_TrackMinWidth;
+    m_ViasMinAnnulus         = aOther.m_ViasMinAnnulus;
+    m_ViasMinSize            = aOther.m_ViasMinSize;
+    m_MinThroughDrill        = aOther.m_MinThroughDrill;
+    m_MicroViasMinSize       = aOther.m_MicroViasMinSize;
+    m_MicroViasMinDrill      = aOther.m_MicroViasMinDrill;
+    m_CopperEdgeClearance    = aOther.m_CopperEdgeClearance;
+    m_HoleToHoleMin          = aOther.m_HoleToHoleMin;
+    m_DRCSeverities          = aOther.m_DRCSeverities;
+    m_DrcExclusions          = aOther.m_DrcExclusions;
+    m_ZoneUseNoOutlineInFill = aOther.m_ZoneUseNoOutlineInFill;
+    m_MaxError               = aOther.m_MaxError;
+    m_SolderMaskMargin       = aOther.m_SolderMaskMargin;
+    m_SolderMaskMinWidth     = aOther.m_SolderMaskMinWidth;
+    m_SolderPasteMarginRatio = aOther.m_SolderPasteMarginRatio;
+    m_DefaultFPTextItems     = aOther.m_DefaultFPTextItems;
+    m_DimensionUnits         = aOther.m_DimensionUnits;
+    m_DimensionPrecision     = aOther.m_DimensionPrecision;
+    m_AuxOrigin              = aOther.m_AuxOrigin;
+    m_GridOrigin             = aOther.m_GridOrigin;
+
+    std::copy( std::begin( aOther.m_LineThickness ), std::end( aOther.m_LineThickness ),
+               std::begin( m_LineThickness ) );
+
+    std::copy( std::begin( aOther.m_TextSize ), std::end( aOther.m_TextSize ),
+               std::begin( m_TextSize ) );
+
+    std::copy( std::begin( aOther.m_TextThickness ), std::end( aOther.m_TextThickness ),
+               std::begin( m_TextThickness ) );
+
+    std::copy( std::begin( aOther.m_TextItalic ), std::end( aOther.m_TextItalic ),
+               std::begin( m_TextItalic ) );
+
+    std::copy( std::begin( aOther.m_TextUpright ), std::end( aOther.m_TextUpright ),
+               std::begin( m_TextUpright ) );
+
+    return *this;
+}
+
+
+bool BOARD_DESIGN_SETTINGS::LoadFromFile( const std::string& aDirectory )
+{
+    bool ret = NESTED_SETTINGS::LoadFromFile( aDirectory );
+
+    // A number of things won't have been translated by the PROJECT_FILE migration because of
+    // descoped objects required to decode this data.  So, it will be in the legacy.pcbnew
+    // section and needs to be pulled out here
+
+    PROJECT_FILE* project = dynamic_cast<PROJECT_FILE*>( GetParent() );
+
+    if( !project )
+        return ret;
+
+    bool migrated = false;
+
+    auto drcName =
+            []( int aCode ) -> std::string
+            {
+                DRC_ITEM* item = DRC_ITEM::Create( aCode );
+                wxString name = item->GetSettingsKey();
+                delete item;
+                return std::string( name.ToUTF8() );
+            };
+
+    std::string bp = "board.design_settings.rule_severities.";
+    std::string rs = "rule_severities.";
+
+    if( OPT<bool> v =
+                    project->Get<bool>( PointerFromString( bp + "legacy_no_courtyard_defined" ) ) )
+    {
+        if( *v )
+            ( *this )[PointerFromString( rs + drcName( DRCE_MISSING_COURTYARD ) )] = "error";
+        else
+            ( *this )[PointerFromString( rs + drcName( DRCE_MISSING_COURTYARD ) )] = "ignore";
+
+        project->erase( PointerFromString( bp + "legacy_no_courtyard_defined" ) );
+        migrated = true;
+    }
+
+    if( OPT<bool> v = project->Get<bool>( PointerFromString( bp + "legacy_courtyards_overlap" ) ) )
+    {
+        if( *v )
+            ( *this )[PointerFromString( rs + drcName( DRCE_OVERLAPPING_FOOTPRINTS ) )] = "error";
+        else
+            ( *this )[PointerFromString( rs + drcName( DRCE_OVERLAPPING_FOOTPRINTS ) )] = "ignore";
+
+        project->erase( PointerFromString( bp + "legacy_courtyards_overlap" ) );
+        migrated = true;
+    }
+
+    if( project->contains( "legacy" ) )
+        project->at( "legacy" ).erase( "pcbnew" );
+
+    // Now that we have everything, we need to load again
+    if( migrated )
+        Load();
+
+    return ret;
 }
 
 
@@ -865,12 +697,12 @@ bool BOARD_DESIGN_SETTINGS::Ignore( int aDRCErrorCode )
 
 bool BOARD_DESIGN_SETTINGS::SetCurrentNetClass( const wxString& aNetClassName )
 {
-    NETCLASSPTR netClass = m_NetClasses.Find( aNetClassName );
+    NETCLASSPTR netClass = GetNetClasses().Find( aNetClassName );
     bool        lists_sizes_modified = false;
 
     // if not found (should not happen) use the default
     if( !netClass )
-        netClass = m_NetClasses.GetDefault();
+        netClass = GetNetClasses().GetDefault();
 
     m_currentNetClassName = netClass->GetName();
 
@@ -949,7 +781,7 @@ int BOARD_DESIGN_SETTINGS::GetBiggestClearanceValue()
 {
     int clearance = GetDefault()->GetClearance();
 
-    for( const std::pair<const wxString, NETCLASSPTR>& netclass : m_NetClasses.NetClasses() )
+    for( const std::pair<const wxString, NETCLASSPTR>& netclass : GetNetClasses().NetClasses() )
         clearance = std::max( clearance, netclass.second->GetClearance() );
 
     for( const DRC_RULE* rule : m_DRCRules )
@@ -963,7 +795,7 @@ int BOARD_DESIGN_SETTINGS::GetSmallestClearanceValue()
 {
     int clearance = GetDefault()->GetClearance();
 
-    for( const std::pair<const wxString, NETCLASSPTR>& netclass : m_NetClasses.NetClasses() )
+    for( const std::pair<const wxString, NETCLASSPTR>& netclass : GetNetClasses().NetClasses() )
         clearance = std::min( clearance, netclass.second->GetClearance() );
 
     return clearance;
@@ -972,7 +804,7 @@ int BOARD_DESIGN_SETTINGS::GetSmallestClearanceValue()
 
 int BOARD_DESIGN_SETTINGS::GetCurrentMicroViaSize()
 {
-    NETCLASSPTR netclass = m_NetClasses.Find( m_currentNetClassName );
+    NETCLASSPTR netclass = GetNetClasses().Find( m_currentNetClassName );
 
     return netclass->GetuViaDiameter();
 }
@@ -980,7 +812,7 @@ int BOARD_DESIGN_SETTINGS::GetCurrentMicroViaSize()
 
 int BOARD_DESIGN_SETTINGS::GetCurrentMicroViaDrill()
 {
-    NETCLASSPTR netclass = m_NetClasses.Find( m_currentNetClassName );
+    NETCLASSPTR netclass = GetNetClasses().Find( m_currentNetClassName );
 
     return netclass->GetuViaDrill();
 }
@@ -1032,28 +864,6 @@ void BOARD_DESIGN_SETTINGS::SetCopperEdgeClearance( int aDistance )
 }
 
 
-void BOARD_DESIGN_SETTINGS::SetVisibleAlls()
-{
-    SetVisibleLayers( LSET().set() );
-    m_visibleElements = -1;
-}
-
-
-void BOARD_DESIGN_SETTINGS::SetLayerVisibility( PCB_LAYER_ID aLayer, bool aNewState )
-{
-    m_visibleLayers.set( aLayer, aNewState && IsLayerEnabled( aLayer ));
-}
-
-
-void BOARD_DESIGN_SETTINGS::SetElementVisibility( GAL_LAYER_ID aElementCategory, bool aNewState )
-{
-    if( aNewState )
-        m_visibleElements |= 1 << GAL_LAYER_INDEX( aElementCategory );
-    else
-        m_visibleElements &= ~( 1 << GAL_LAYER_INDEX( aElementCategory ) );
-}
-
-
 void BOARD_DESIGN_SETTINGS::SetCopperLayerCount( int aNewLayerCount )
 {
     m_copperLayerCount = aNewLayerCount;
@@ -1072,9 +882,6 @@ void BOARD_DESIGN_SETTINGS::SetEnabledLayers( LSET aMask )
     aMask.set( B_Cu ).set( F_Cu );
 
     m_enabledLayers = aMask;
-
-    // A disabled layer cannot be visible
-    m_visibleLayers &= aMask;
 
     // update m_CopperLayerCount to ensure its consistency with m_EnabledLayers
     m_copperLayerCount = ( aMask & LSET::AllCuMask() ).count();

@@ -192,16 +192,6 @@ public:
     const wxString& GetPlotDirectoryName() const { return m_plotDirectoryName; }
     void SetPlotDirectoryName( const wxString& aDirName ) { m_plotDirectoryName = aDirName; }
 
-    void AddFormattingParameters( std::vector<PARAM_CFG*>& params );
-
-    /**
-     * Return the project file parameter list for Eeschema.
-     *
-     * Populate the project file parameter array specific to Eeschema if it hasn't
-     * already been populated and return a reference to the array to the caller.
-     */
-    std::vector<PARAM_CFG*>& GetProjectFileParameters();
-
     /**
      * Save changes to the project settings to the project (.pro) file.
      */
@@ -212,7 +202,7 @@ public:
      *
      * @return True if the project file was loaded correctly.
      */
-    bool LoadProjectFile();
+    bool LoadProjectSettings();
 
     void ShowSchematicSetupDialog( const wxString& aInitialPage = wxEmptyString );
 
@@ -590,15 +580,10 @@ public:
      *               the current screen only.
      * @param aSaveUnderNewName Controls how the file is to be saved;: using  previous name
      *                          or under a new name .
-     * @param aCreateBackupFile Creates a back of the file associated with \a aScreen
-     *                          if true.
-     *                           Helper definitions #CREATE_BACKUP_FILE and
-     *                          #NO_BACKUP_FILE are defined for improved code readability.
      * @return True if the file has been saved.
      */
     bool SaveEEFile( SCH_SHEET* aSheet,
-                     bool       aSaveUnderNewName = false,
-                     bool       aCreateBackupFile = CREATE_BACKUP_FILE );
+                     bool       aSaveUnderNewName = false );
 
 
     /**

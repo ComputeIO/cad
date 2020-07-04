@@ -192,11 +192,10 @@ int KICAD_MANAGER_CONTROL::NewFromTemplate( const TOOL_EVENT& aEvent )
 
     // wxFileName automatically extracts an extension.  But if it isn't
     // a .pro extension, we should keep it as part of the filename
-    if( !fn.GetExt().IsEmpty()
-        && fn.GetExt().ToStdString() != ProjectFileExtension )
+    if( !fn.GetExt().IsEmpty() && fn.GetExt().ToStdString() != ProjectFileExtension )
         fn.SetName( fn.GetName() + wxT( "." ) + fn.GetExt() );
 
-    fn.SetExt( ProjectFileExtension );     // enforce extension
+    fn.SetExt( ProjectFileExtension );
 
     if( !fn.IsAbsolute() )
         fn.MakeAbsolute();
@@ -292,15 +291,17 @@ int KICAD_MANAGER_CONTROL::NewFromTemplate( const TOOL_EVENT& aEvent )
 
 int KICAD_MANAGER_CONTROL::OpenProject( const TOOL_EVENT& aEvent )
 {
+    wxString wildcard = AllProjectFilesWildcard() + "|" + ProjectFileWildcard() + "|"
+                        + LegacyProjectFileWildcard();
+
     wxString     default_dir = m_frame->GetMruPath();
     wxFileDialog dlg( m_frame, _( "Open Existing Project" ), default_dir, wxEmptyString,
-                      ProjectFileWildcard(), wxFD_OPEN | wxFD_FILE_MUST_EXIST );
+                      wildcard, wxFD_OPEN | wxFD_FILE_MUST_EXIST );
 
     if( dlg.ShowModal() == wxID_CANCEL )
         return -1;
 
     wxFileName pro( dlg.GetPath() );
-    pro.SetExt( ProjectFileExtension );     // enforce extension
 
     if( !pro.IsAbsolute() )
         pro.MakeAbsolute();

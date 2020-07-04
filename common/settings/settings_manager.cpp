@@ -29,10 +29,14 @@
 #include <dialogs/dialog_migrate_settings.h>
 #include <gestfich.h>
 #include <macros.h>
+#include <project.h>
+#include <project/project_file.h>
+#include <project/project_local_settings.h>
 #include <settings/app_settings.h>
+#include <settings/color_settings.h>
 #include <settings/common_settings.h>
 #include <settings/settings_manager.h>
-#include <settings/color_settings.h>
+#include <wildcards_and_files_ext.h>
 
 
 /**
@@ -42,7 +46,12 @@
 const char* traceSettings = "SETTINGS";
 
 
-SETTINGS_MANAGER::SETTINGS_MANAGER() :
+/// Project settings path will be <projectname> + this
+#define PROJECT_BACKUPS_DIR_SUFFIX wxT( "-backups" )
+
+
+SETTINGS_MANAGER::SETTINGS_MANAGER( bool aHeadless ) :
+        m_headless( aHeadless ),
         m_common_settings( nullptr ),
         m_migration_source()
 {
@@ -66,6 +75,7 @@ SETTINGS_MANAGER::~SETTINGS_MANAGER()
 {
     m_settings.clear();
     m_color_settings.clear();
+    m_projects.clear();
 }
 
 
@@ -75,7 +85,7 @@ JSON_SETTINGS* SETTINGS_MANAGER::RegisterSettings( JSON_SETTINGS* aSettings, boo
 
     ptr->SetManager( this );
 
-    wxLogTrace( traceSettings, "Registered new settings object %s", ptr->GetFilename() );
+    wxLogTrace( traceSettings, "Registered new settings object %s", ptr->GetFullFilename() );
 
     if( aLoadNow )
         ptr->LoadFromFile( GetPathForSettingsFile( ptr.get() ) );
@@ -131,13 +141,13 @@ void SETTINGS_MANAGER::Save( JSON_SETTINGS* aSettings )
 
     if( it != m_settings.end() )
     {
-        wxLogTrace( traceSettings, "Saving %s", ( *it )->GetFilename() );
+        wxLogTrace( traceSettings, "Saving %s", ( *it )->GetFullFilename() );
         ( *it )->SaveToFile( GetPathForSettingsFile( it->get() ) );
     }
 }
 
 
-void SETTINGS_MANAGER::FlushAndRelease( JSON_SETTINGS* aSettings )
+void SETTINGS_MANAGER::FlushAndRelease( JSON_SETTINGS* aSettings, bool aSave )
 {
     auto it = std::find_if( m_settings.begin(), m_settings.end(),
                             [&aSettings]( const std::unique_ptr<JSON_SETTINGS>& aPtr )
@@ -147,8 +157,11 @@ void SETTINGS_MANAGER::FlushAndRelease( JSON_SETTINGS* aSettings )
 
     if( it != m_settings.end() )
     {
-        wxLogTrace( traceSettings, "Flush and release %s", ( *it )->GetFilename() );
-        ( *it )->SaveToFile( GetPathForSettingsFile( it->get() ) );
+        wxLogTrace( traceSettings, "Flush and release %s", ( *it )->GetFullFilename() );
+
+        if( aSave )
+            ( *it )->SaveToFile( GetPathForSettingsFile( it->get() ) );
+
         m_settings.erase( it );
     }
 }
@@ -324,11 +337,13 @@ std::string SETTINGS_MANAGER::GetPathForSettingsFile( JSON_SETTINGS* aSettings )
         return GetUserSettingsPath();
 
     case SETTINGS_LOC::PROJECT:
-        // TODO(JE)
-        return "";
+        return std::string( Prj().GetProjectPath().ToUTF8() );
 
     case SETTINGS_LOC::COLORS:
         return GetColorSettingsPath();
+
+    case SETTINGS_LOC::NONE:
+        return "";
 
     default:
         wxASSERT_MSG( false, "Unknown settings location!" );
@@ -411,6 +426,12 @@ bool SETTINGS_MANAGER::MigrateIfNeeded()
             wxLogTrace( traceSettings, "Path exists and has a kicad_common, continuing!" );
             return true;
         }
+    }
+
+    if( m_headless )
+    {
+        wxLogTrace( traceSettings, "Manual settings migration required but running headless!" );
+        return false;
     }
 
     // Now we have an empty path, let's figure out what to put in it
@@ -653,4 +674,150 @@ bool SETTINGS_MANAGER::extractVersion( const std::string& aVersionString, int* a
     }
 
     return false;
+}
+
+
+bool SETTINGS_MANAGER::LoadProject( const wxString& aFullPath, bool aSetActive )
+{
+    // Normalize path to new format even if migrating from a legacy file
+    wxFileName path( aFullPath );
+
+    if( path.GetExt() == LegacyProjectFileExtension )
+        path.SetExt( ProjectFileExtension );
+
+    wxString fullPath = path.GetFullPath();
+
+    // If already loaded, we are all set.  This might be called more than once over a project's
+    // lifetime in case the project is first loaded by the KiCad manager and then eeschema or
+    // pcbnew try to load it again when they are launched.
+    if( m_projects.count( fullPath ) )
+        return true;
+
+    // No MDI yet
+    if( aSetActive && !m_projects.empty() && !UnloadProject( m_projects.begin()->second.get() ) )
+        return false;
+
+    wxLogTrace( traceSettings, "Load project %s", fullPath );
+
+    std::unique_ptr<PROJECT> project = std::make_unique<PROJECT>();
+    project->setProjectFullName( fullPath );
+
+    bool success = loadProjectFile( *project );
+
+    m_projects[fullPath].reset( project.release() );
+
+    std::string fn( path.GetName() );
+
+    PROJECT_LOCAL_SETTINGS* settings = static_cast<PROJECT_LOCAL_SETTINGS*>(
+            RegisterSettings( new PROJECT_LOCAL_SETTINGS( fn ) ) );
+
+    m_projects[fullPath]->setLocalSettings( settings );
+    settings->SetProject( m_projects[fullPath].get() );
+
+    return success;
+}
+
+
+bool SETTINGS_MANAGER::UnloadProject( PROJECT* aProject, bool aSave )
+{
+    if( !aProject || !m_projects.count( aProject->GetProjectFullName() ) )
+        return false;
+
+    if( !unloadProjectFile( aProject, aSave ) )
+        return false;
+
+    wxLogTrace( traceSettings, "Unload project %s", aProject->GetProjectFullName() );
+
+    m_projects.erase( aProject->GetProjectFullName() );
+
+    return true;
+}
+
+
+PROJECT& SETTINGS_MANAGER::Prj() const
+{
+    // No MDI yet:  First project in the list is the active project
+    return *m_projects.begin()->second;
+}
+
+
+PROJECT* SETTINGS_MANAGER::GetProject( const wxString& aFullPath ) const
+{
+    if( m_projects.count( aFullPath ) )
+        return m_projects.at( aFullPath ).get();
+
+    return nullptr;
+}
+
+
+bool SETTINGS_MANAGER::SaveProject( const wxString& aFullPath )
+{
+    wxString path = aFullPath;
+
+    if( path.empty() )
+        path = Prj().GetProjectFullName();
+
+    if( !m_project_files.count( path ) )
+        return false;
+
+    PROJECT_FILE* project     = m_project_files.at( path );
+    std::string   projectPath = GetPathForSettingsFile( project );
+
+    project->SaveToFile( projectPath );
+    Prj().GetLocalSettings().SaveToFile( projectPath );
+
+    return true;
+}
+
+
+bool SETTINGS_MANAGER::loadProjectFile( PROJECT& aProject )
+{
+    wxFileName fullFn( aProject.GetProjectFullName() );
+    std::string fn( fullFn.GetName().ToUTF8() );
+
+    PROJECT_FILE* file =
+            static_cast<PROJECT_FILE*>( RegisterSettings( new PROJECT_FILE( fn ), false ) );
+
+    m_project_files[aProject.GetProjectFullName()] = file;
+
+    aProject.setProjectFile( file );
+    file->SetProject( &aProject );
+
+    return file->LoadFromFile( std::string( fullFn.GetPath().ToUTF8() ) );
+}
+
+
+bool SETTINGS_MANAGER::unloadProjectFile( PROJECT* aProject, bool aSave )
+{
+    if( !aProject )
+        return false;
+
+    wxString name = aProject->GetProjectFullName();
+
+    if( !m_project_files.count( name ) )
+        return false;
+
+    PROJECT_FILE* file = m_project_files[name];
+
+    auto it = std::find_if( m_settings.begin(), m_settings.end(),
+                            [&file]( const std::unique_ptr<JSON_SETTINGS>& aPtr )
+                            {
+                              return aPtr.get() == file;
+                            } );
+
+    if( it != m_settings.end() )
+    {
+        std::string projectPath = GetPathForSettingsFile( it->get() );
+
+        FlushAndRelease( &aProject->GetLocalSettings(), aSave );
+
+        if( aSave )
+            ( *it )->SaveToFile( projectPath );
+
+        m_settings.erase( it );
+    }
+
+    m_project_files.erase( name );
+
+    return true;
 }

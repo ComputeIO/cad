@@ -38,6 +38,7 @@ enum class SETTINGS_LOC {
     PROJECT,    ///< The settings directory inside a project folder
     COLORS,     ///< The color scheme directory (e.g. ~/.config/kicad/colors/)
     NESTED,     ///< Not stored in a file, but inside another JSON_SETTINGS
+    NONE,       ///< No directory prepended, full path in filename (used for PROJECT_FILE)
 };
 
 
@@ -53,6 +54,8 @@ public:
     virtual ~JSON_SETTINGS();
 
     std::string GetFilename() const { return m_filename; }
+
+    wxString GetFullFilename() const;
 
     SETTINGS_LOC GetLocation() const { return m_location; }
 
@@ -73,16 +76,16 @@ public:
     /**
      * Loads the backing file from disk and then calls Load()
      * @param aDirectory is the path to the file
+     * @return true if the file was found on disk and loaded or migrated
      */
-    virtual void LoadFromFile( const std::string& aDirectory );
+    virtual bool LoadFromFile( const std::string& aDirectory = "" );
 
     /**
      * Calls Store() and then writes the contents of the JSON document to a file
      * @param aDirectory is the directory to save to, including trailing separator
-     * @param aForce if true will always save, even if contents are not modified
-     * @return true if the file was saved
+c     * @return true if the file was saved
      */
-    virtual bool SaveToFile( const std::string& aDirectory, bool aForce = false );
+    virtual bool SaveToFile( const std::string& aDirectory = "", bool aForce = false );
 
     /**
      * Resets all parameters to default values.  Does NOT write to file or update underlying JSON.
@@ -95,7 +98,7 @@ public:
      * @param aPath is a string containing one or more keys separated by '.'
      * @return a JSON object from within this one
      */
-    OPT<nlohmann::json> GetJson( std::string aPath ) const;
+    OPT<nlohmann::json> GetJson( const std::string& aPath ) const;
 
     /**
      * Fetches a value from within the JSON document.
@@ -105,9 +108,9 @@ public:
      * @return a value from within this document
      */
     template<typename ValueType>
-    OPT<ValueType> Get( std::string aPath ) const
+    OPT<ValueType> Get( const std::string& aPath ) const
     {
-        if( OPT<nlohmann::json> ret = GetJson( std::move( aPath ) ) )
+        if( OPT<nlohmann::json> ret = GetJson( aPath ) )
         {
             try
             {
@@ -129,9 +132,9 @@ public:
      * @param aVal is the value to store
      */
     template<typename ValueType>
-    void Set( std::string aPath, ValueType aVal )
+    void Set( const std::string& aPath, ValueType aVal )
     {
-        ( *this )[PointerFromString( std::move( aPath ) ) ] = aVal;
+        ( *this )[PointerFromString( aPath ) ] = aVal;
     }
 
     /**
@@ -211,6 +214,16 @@ protected:
     bool fromLegacyColor( wxConfigBase* aConfig, const std::string& aKey,
                           const std::string& aDest );
 
+    virtual wxString getFileExt() const
+    {
+        return wxT( "json" );
+    }
+
+    virtual wxString getLegacyFileExt() const
+    {
+        return wxEmptyString;
+    }
+
     /// The filename (not including path) of this settings file
     std::string m_filename;
 
@@ -238,6 +251,12 @@ protected:
     /// Whether or not the backing store file should be written
     bool m_writeFile;
 
+    /// Whether or not to delete legacy file after migration
+    bool m_deleteLegacyAfterMigration;
+
+    /// Whether or not to set parameters to their default value if missing from JSON on Load()
+    bool m_resetParamsIfMissing;
+
     /// Version of this settings schema.
     int m_schemaVersion;
 
@@ -250,9 +269,9 @@ protected:
 
 // Specializations to allow conversion between wxString and std::string via JSON_SETTINGS API
 
-template<> OPT<wxString> JSON_SETTINGS::Get( std::string aPath ) const;
+template<> OPT<wxString> JSON_SETTINGS::Get( const std::string& aPath ) const;
 
-template<> void JSON_SETTINGS::Set<wxString>( std::string aPath, wxString aVal );
+template<> void JSON_SETTINGS::Set<wxString>( const std::string& aPath, wxString aVal );
 
 // Specializations to allow directly reading/writing wxStrings from JSON
 

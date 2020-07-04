@@ -42,8 +42,12 @@
 #include <pcbnew.h>
 #include <pcbnew_scripting_helpers.h>
 #include <project.h>
+#include <settings/settings_manager.h>
+#include <wildcards_and_files_ext.h>
 
 static PCB_EDIT_FRAME* s_PcbEditFrame = NULL;
+
+static SETTINGS_MANAGER* s_SettingsManager = nullptr;
 
 BOARD* GetBoard()
 {
@@ -73,17 +77,67 @@ BOARD* LoadBoard( wxString& aFileName )
 }
 
 
+SETTINGS_MANAGER* GetSettingsManager()
+{
+    if( !s_SettingsManager )
+        s_SettingsManager = new SETTINGS_MANAGER( true );
+
+    return s_SettingsManager;
+}
+
+
+PROJECT* GetDefaultProject()
+{
+    PROJECT* project = GetSettingsManager()->GetProject( "" );
+
+    if( !project )
+    {
+        GetSettingsManager()->LoadProject( "" );
+        project = GetSettingsManager()->GetProject( "" );
+    }
+
+    return project;
+}
+
+
 BOARD* LoadBoard( wxString& aFileName, IO_MGR::PCB_FILE_T aFormat )
 {
+    wxFileName pro = aFileName;
+    pro.SetExt( ProjectFileExtension );
+    pro.MakeAbsolute();
+    wxString projectPath = pro.GetFullPath();
+
+    PROJECT* project = GetSettingsManager()->GetProject( projectPath );
+
+    if( !project )
+    {
+        GetSettingsManager()->LoadProject( projectPath );
+        GetSettingsManager()->GetProject( projectPath );
+    }
+
+    // Board cannot be loaded without a project, so create the default project
+    if( !project )
+        project = GetDefaultProject();
+
     BOARD* brd = IO_MGR::Load( aFormat, aFileName );
 
     if( brd )
     {
+        brd->SetProject( project );
         brd->BuildConnectivity();
         brd->BuildListOfNets();
         brd->SynchronizeNetsAndNetClasses();
     }
 
+    return brd;
+}
+
+
+BOARD* CreateEmptyBoard()
+{
+    BOARD* brd = new BOARD();
+
+    brd->SetProject( GetDefaultProject() );
 
     return brd;
 }
@@ -96,6 +150,13 @@ bool SaveBoard( wxString& aFileName, BOARD* aBoard, IO_MGR::PCB_FILE_T aFormat )
     aBoard->GetDesignSettings().SetCurrentNetClass( NETCLASS::Default );
 
     IO_MGR::Save( aFormat, aFileName, aBoard, NULL );
+
+    wxFileName pro = aFileName;
+    pro.SetExt( ProjectFileExtension );
+    pro.MakeAbsolute();
+    wxString projectPath = pro.GetFullPath();
+
+    GetSettingsManager()->SaveProject( pro.GetFullPath() );
 
     return true;
 }

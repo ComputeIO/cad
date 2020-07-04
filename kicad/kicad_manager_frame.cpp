@@ -37,6 +37,7 @@
 #include <launch_ext.h>
 #include <panel_hotkeys_editor.h>
 #include <settings/common_settings.h>
+#include <settings/settings_manager.h>
 #include <tool/action_toolbar.h>
 #include <tool/common_control.h>
 #include <tool/tool_manager.h>
@@ -54,14 +55,6 @@
 
 
 #define SEP()   wxFileName::GetPathSeparator()
-
-// Not really useful, provided to save/restore params in project config file,
-// (Add them in s_KicadManagerParams if any)
-// Used also to create new .pro files from the kicad.pro template file
-// for new projects
-#define     GeneralGroupName            wxT( "/general" )
-
-std::vector<PARAM_CFG*>     s_KicadManagerParams;
 
 
 // Menubar and toolbar event table
@@ -203,8 +196,6 @@ void KICAD_MANAGER_FRAME::SetProjectFileName( const wxString& aFullProjectProFil
     if( !fn.IsAbsolute() )
         fn.MakeAbsolute();
 
-    Prj().SetProjectFullName( fn.GetFullPath() );
-
     SetTitle( wxString( "KiCad " ) + GetBuildVersion() );
     wxString title = GetTitle() + " " + fn.GetFullPath();
 
@@ -343,17 +334,21 @@ void KICAD_MANAGER_FRAME::LoadProject( const wxFileName& aProjectFileName )
 
     // Save the project file for the currently loaded project.
     if( m_active_project )
-        Prj().ConfigLoad( PgmTop().SysSearch(), GeneralGroupName, s_KicadManagerParams );
+    {
+        Pgm().GetSettingsManager().SaveProject();
+        Pgm().GetSettingsManager().UnloadProject( &Prj() );
+    }
 
     m_active_project = true;
     ClearMsg();
-    SetProjectFileName( aProjectFileName.GetFullPath() );
-    Prj().ConfigLoad( PgmTop().SysSearch(), GeneralGroupName, s_KicadManagerParams );
+
+    Pgm().GetSettingsManager().LoadProject( aProjectFileName.GetFullPath() );
+    SetProjectFileName( Prj().GetProjectFullName() );
 
     if( aProjectFileName.IsDirWritable() )
         SetMruPath( Prj().GetProjectPath() ); // Only set MRU path if we have write access. Why?
 
-    UpdateFileHistory( aProjectFileName.GetFullPath() );
+    UpdateFileHistory( Prj().GetProjectFullName() );
 
     m_leftWin->ReCreateTreePrj();
 
@@ -378,16 +373,33 @@ void KICAD_MANAGER_FRAME::CreateNewProject( const wxFileName& aProjectFileName )
     // Init project filename.  This clears all elements from the project object.
     SetProjectFileName( aProjectFileName.GetFullPath() );
 
-    // Copy kicad.pro file from template folder.
+    // If the project is legacy, convert it
     if( !aProjectFileName.FileExists() )
     {
-        wxString srcFileName = sys_search().FindValidPath( "kicad.pro" );
+        wxFileName legacyPro( aProjectFileName );
+        legacyPro.SetExt( LegacyProjectFileExtension );
 
-        // Create a minimal project (.pro) file if the template project file could not be copied.
-        if( !wxFileName::FileExists( srcFileName )
-            || !wxCopyFile( srcFileName, aProjectFileName.GetFullPath() ) )
+        if( legacyPro.FileExists() )
         {
-            Prj().ConfigSave( PgmTop().SysSearch(), GeneralGroupName, s_KicadManagerParams );
+            GetSettingsManager()->LoadProject( legacyPro.GetFullPath() );
+            GetSettingsManager()->SaveProject();
+
+            wxRemoveFile( legacyPro.GetFullPath() );
+        }
+        else
+        {
+            // Copy template project file from template folder.
+            wxString srcFileName = sys_search().FindValidPath( "kicad.kicad_pro" );
+
+            wxFileName destFileName( aProjectFileName );
+            destFileName.SetExt( ProjectFileExtension );
+
+            // Create a minimal project file if the template project file could not be copied
+            if( !wxFileName::FileExists( srcFileName )
+                || !wxCopyFile( srcFileName, destFileName.GetFullPath() ) )
+            {
+                Pgm().GetSettingsManager().SaveProject();
+            }
         }
     }
 

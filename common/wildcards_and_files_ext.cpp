@@ -120,7 +120,9 @@ const std::string LegacySymbolLibFileExtension( "lib" );
 
 const std::string VrmlFileExtension( "wrl" );
 
-const std::string ProjectFileExtension( "pro" );
+const std::string ProjectFileExtension( "kicad_pro" );
+const std::string LegacyProjectFileExtension( "pro" );
+const std::string ProjectLocalSettingsFileExtension( "kicad_prl" );
 const std::string LegacySchematicFileExtension( "sch" );
 const std::string KiCadSchematicFileExtension( "kicad_sch" );
 const std::string NetlistFileExtension( "net" );
@@ -188,7 +190,19 @@ wxString LegacySymbolLibFileWildcard()
 
 wxString ProjectFileWildcard()
 {
-    return _( "KiCad project files" ) + AddFileExtListToFilter( { "pro" } );
+    return _( "KiCad project files" ) + AddFileExtListToFilter( { "kicad_pro" } );
+}
+
+
+wxString LegacyProjectFileWildcard()
+{
+    return _( "KiCad legacy project files" ) + AddFileExtListToFilter( { "pro" } );
+}
+
+
+wxString AllProjectFilesWildcard()
+{
+    return _( "All KiCad project files" ) + AddFileExtListToFilter( { "kicad_pro", "pro" } );
 }
 
 

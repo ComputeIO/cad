@@ -24,7 +24,6 @@
 #include <unordered_map>
 #include <map>
 #include "pcb_base_edit_frame.h"
-#include "config_params.h"
 #include "undo_redo_container.h"
 #include "zones.h"
 
@@ -60,6 +59,7 @@ class IO_ERROR;
 class FP_LIB_TABLE;
 class BOARD_NETLIST_UPDATER;
 class ACTION_MENU;
+enum LAST_PATH_TYPE : unsigned int;
 
 namespace PCB { struct IFACE; }     // KIFACE_I is in pcbnew.cpp
 
@@ -71,18 +71,6 @@ enum TRACK_ACTION_RESULT
     TRACK_ACTION_DRC_ERROR = -1,//!< TRACK_ACTION_DRC_ERROR - Track not changed to to DRC
     TRACK_ACTION_SUCCESS,       //!< TRACK_ACTION_SUCCESS - Track changed successfully
     TRACK_ACTION_NONE           //!< TRACK_ACTION_NONE - Nothing to change
-};
-
-enum LAST_PATH_TYPE
-{
-    LAST_PATH_NETLIST = 0,
-    LAST_PATH_STEP,
-    LAST_PATH_IDF,
-    LAST_PATH_VRML,
-    LAST_PATH_SPECCTRADSN,
-    LAST_PATH_GENCAD,
-
-    LAST_PATH_SIZE
 };
 
 /**
@@ -102,11 +90,6 @@ class PCB_EDIT_FRAME : public PCB_BASE_EDIT_FRAME
     ACTION_TOOLBAR*         m_microWaveToolBar;
 
 protected:
-    std::vector<PARAM_CFG*> m_projectFileParams;
-
-    wxString                m_lastPath[ LAST_PATH_SIZE ];
-
-    std::set<wxString>      m_drcExclusions;
 
     /**
      * Store the previous layer toolbar icon state information
@@ -135,8 +118,6 @@ protected:
 
     // The Tool Framework initalization
     void setupTools();
-
-    wxString createBackupFile( const wxString& aFileName );
 
     /**
      * switches currently used canvas (Cairo / OpenGL).
@@ -378,20 +359,6 @@ public:
 #endif
 
     /**
-     * Function GetProjectFileParameters
-     * returns a project file parameter list for Pcbnew.
-     * <p>
-     * Populate a project file parameter array specific to Pcbnew.
-     * Creating the parameter list at run time has the advantage of being able
-     * to define local variables.  The old method of statically building the array
-     * at compile time requiring global variable definitions by design.
-     * </p>
-     * @return std::vector<PARAM_CFG*> - it is only good until SetBoard() is called, so
-     *         don't keep it around past that event.
-     */
-    std::vector<PARAM_CFG*>& GetProjectFileParameters();
-
-    /**
      * Function SaveProjectSettings
      * saves changes to the project settings to the project (.pro) file.
      */
@@ -603,7 +570,6 @@ public:
      * Read and write board files
      * @param aId is an event ID ciming from file command events:
      * ID_LOAD_FILE
-     * ID_MENU_READ_BOARD_BACKUP_FILE
      * ID_MENU_RECOVER_BOARD_AUTOSAVE
      * ID_NEW_BOARD
      * ID_SAVE_BOARD
@@ -636,12 +602,10 @@ public:
      *
      * @param aFileName The file name to write or wxEmptyString to prompt user for
      *                  file name.
-     * @param aCreateBackupFile Creates a back of \a aFileName if true.  Helper
-     *                          definitions #CREATE_BACKUP_FILE and #NO_BACKUP_FILE
-     *                          are defined for improved code readability.
+     * @param addToHistory controsl whether or not to add the saved file to the recent file list
      * @return True if file was saved successfully.
      */
-    bool SavePcbFile( const wxString& aFileName, bool aCreateBackupFile = CREATE_BACKUP_FILE );
+    bool SavePcbFile( const wxString& aFileName, bool addToHistory = true );
 
     /**
      * Function SavePcbCopy

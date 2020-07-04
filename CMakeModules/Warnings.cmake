@@ -124,6 +124,7 @@ if( CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang" )
         message( STATUS "Enabling warning -Wsign-compare" )
     endif()
 
+
     # Warn about missing initializers in construction
     CHECK_CXX_COMPILER_FLAG( "-Wmissing-field-initializers" COMPILER_SUPPORTS_WMISSING_INIT )
 
@@ -133,4 +134,37 @@ if( CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang" )
     endif()
 
 
+    # Warn about empty if/for/while bodies
+    CHECK_CXX_COMPILER_FLAG( "-Wempty-body" COMPILER_SUPPORTS_WEMPTY_BODY )
+
+    if( COMPILER_SUPPORTS_WEMPTY_BODY )
+        set( WARN_FLAGS_CXX "${WARN_FLAGS_CXX} -Wempty-body" )
+        message( STATUS "Enabling warning -Wempty-body" )
+    endif()
+
+
+    # Warn about out of order intialization
+    CHECK_CXX_COMPILER_FLAG( "-Wreorder" COMPILER_SUPPORTS_WREORDER )
+
+    if( COMPILER_SUPPORTS_WREORDER )
+        set( WARN_FLAGS_CXX "${WARN_FLAGS_CXX} -Wreorder" )
+        message( STATUS "Enabling warning -Wreorder" )
+    endif()
+
+
+    # Warn about mismatched class/struct declarations
+    CHECK_CXX_COMPILER_FLAG( "-Wmismatched-tags" COMPILER_SUPPORTS_WMISMATCHED_TAGS )
+
+    if( COMPILER_SUPPORTS_WMISMATCHED_TAGS )
+        set( WARN_FLAGS_CXX "${WARN_FLAGS_CXX} -Wmismatched-tags" )
+        message( STATUS "Enabling warning -Wmismatched-tags" )
+    endif()
+
+    # See if the compiler will throw warnings on these conversions
+    CHECK_CXX_COMPILER_FLAG( "-Wimplicit-int-float-conversion" COMPILER_SUPPORTS_WIMPLICIT_FLOAT_CONVERSION )
+
+    if( COMPILER_SUPPORTS_WIMPLICIT_FLOAT_CONVERSION )
+        # This one is different, it is used to guard warning removal for this inside the code
+        set( HAVE_WIMPLICIT_FLOAT_CONVERSION true )
+    endif()
 endif()
