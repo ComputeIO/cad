@@ -86,6 +86,22 @@ public:
     bool m_DisplayRatsnestLinesCurved;  // Airwires can be drawn as straight lines (false)
                                         // or curved lines (true)
 
+    /**
+     * Enum PCB_DISPLAY_ORIGIN_OPTIONS_T
+     * is the set of values for DISPLAY_OPTIONS.DisplayOrigin parameter option.
+     * This parameter controls what is used as the origin point for location values
+     */
+    enum PCB_DISPLAY_ORIGIN_OPTIONS_T {
+        PCB_ORIGIN_PAGE = 0,
+        PCB_ORIGIN_AUX,
+        PCB_ORIGIN_GRID,
+    };
+
+    /// Which origin is used for display transforms
+    PCB_DISPLAY_ORIGIN_OPTIONS_T m_DisplayOrigin;
+    bool m_DisplayInvertXAxis;          //< true: Invert the X axis for display
+    bool m_DisplayInvertYAxis;          //< true: Invert the Y axis for display
+
 public:
 
     PCB_DISPLAY_OPTIONS();
