@@ -503,6 +503,7 @@ set( PCB_COMMON_SRCS
     ${CMAKE_SOURCE_DIR}/pcbnew/pcb_parser.cpp
     ${CMAKE_SOURCE_DIR}/pcbnew/pcb_plot_params.cpp
     ${CMAKE_SOURCE_DIR}/pcbnew/pcb_screen.cpp
+    ${CMAKE_SOURCE_DIR}/pcbnew/pcb_unit_binder.cpp
     ${CMAKE_SOURCE_DIR}/pcbnew/pcb_view.cpp
     ${CMAKE_SOURCE_DIR}/pcbnew/pcbnew_settings.cpp
     ${CMAKE_SOURCE_DIR}/pcbnew/plugin.cpp
