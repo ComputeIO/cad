@@ -255,6 +255,38 @@ void PCB_BASE_FRAME::SetGridOrigin( const wxPoint& aPoint )
 }
 
 
+const wxPoint& PCB_BASE_FRAME::GetAuxOrigin() const
+{
+    wxASSERT( m_Pcb );
+    return m_Pcb->GetDesignSettings().m_AuxOrigin;
+}
+
+
+const wxPoint PCB_BASE_FRAME::GetUserOrigin() const
+{
+    auto& displ_opts = GetDisplayOptions();
+    wxPoint origin( 0, 0 );
+
+    switch( displ_opts.m_DisplayOrigin )
+    {
+    case PCB_DISPLAY_OPTIONS::PCB_ORIGIN_PAGE:
+        // No-op
+        break;
+    case PCB_DISPLAY_OPTIONS::PCB_ORIGIN_AUX:
+        origin = GetAuxOrigin();
+        break;
+    case PCB_DISPLAY_OPTIONS::PCB_ORIGIN_GRID:
+        origin = GetGridOrigin();
+        break;
+    default:
+        wxASSERT( false );
+        break;
+    }
+
+    return origin;
+}
+
+
 const TITLE_BLOCK& PCB_BASE_FRAME::GetTitleBlock() const
 {
     wxASSERT( m_Pcb );

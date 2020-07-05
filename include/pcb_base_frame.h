@@ -144,6 +144,10 @@ public:
     const wxPoint& GetGridOrigin() const override;
     void SetGridOrigin( const wxPoint& aPoint ) override;
 
+    const wxPoint& GetAuxOrigin() const;
+
+    const wxPoint GetUserOrigin() const;
+
     const TITLE_BLOCK& GetTitleBlock() const override;
     void SetTitleBlock( const TITLE_BLOCK& aTitleBlock ) override;
 
