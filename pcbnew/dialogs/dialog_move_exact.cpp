@@ -58,6 +58,10 @@ DIALOG_MOVE_EXACT::DIALOG_MOVE_EXACT( PCB_BASE_FRAME *aParent, wxPoint& aTransla
         m_stdButtonsCancel
     };
 
+    // Configure display origin transforms
+    m_moveX.SetOriginTransform( PCB_UNIT_BINDER::REL_X_COORD );
+    m_moveY.SetOriginTransform( PCB_UNIT_BINDER::REL_Y_COORD );
+
     updateDialogControls( m_options.polarCoords );
 
     m_menuIDs.push_back( aAnchor );

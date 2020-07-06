@@ -31,8 +31,8 @@
 #include <array_options.h>
 #include <class_board_item.h>
 #include <pcb_base_frame.h>
+#include <pcb_unit_binder.h>
 
-#include <widgets/unit_binder.h>
 #include <widgets/widget_save_restore.h>
 
 #include <memory>
@@ -74,11 +74,11 @@ private:
     // some uses of arrays might not allow component renumbering
     bool m_numberingEnabled;
 
-    UNIT_BINDER m_hSpacing, m_vSpacing;
-    UNIT_BINDER m_hOffset, m_vOffset;
-    UNIT_BINDER m_hCentre, m_vCentre;
-    UNIT_BINDER m_circRadius;
-    UNIT_BINDER m_circAngle;
+    PCB_UNIT_BINDER m_hSpacing, m_vSpacing;
+    PCB_UNIT_BINDER m_hOffset, m_vOffset;
+    PCB_UNIT_BINDER m_hCentre, m_vCentre;
+    PCB_UNIT_BINDER m_circRadius;
+    PCB_UNIT_BINDER m_circAngle;
 
     WIDGET_SAVE_RESTORE m_cfg_persister;
 };

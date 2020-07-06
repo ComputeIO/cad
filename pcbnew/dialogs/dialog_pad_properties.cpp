@@ -142,6 +142,10 @@ DIALOG_PAD_PROPERTIES::DIALOG_PAD_PROPERTIES( PCB_BASE_FRAME* aParent, D_PAD* aP
 
     m_board      = m_parent->GetBoard();
 
+    // Configure display origin transforms
+    m_posX.SetOriginTransform( PCB_UNIT_BINDER::ABS_X_COORD );
+    m_posY.SetOriginTransform( PCB_UNIT_BINDER::ABS_Y_COORD );
+
     // Disable the pad property if not allowed in advanced config
     if( !ADVANCED_CFG::GetCfg().m_EnableUsePadProperty )
     {

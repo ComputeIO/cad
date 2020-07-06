@@ -38,7 +38,7 @@
 #include <dialog_pad_properties_base.h>
 #include <widgets/text_ctrl_eval.h>
 #include <pcb_draw_panel_gal.h>
-#include <widgets/unit_binder.h>
+#include <pcb_unit_binder.h>
 
 /**
  * DIALOG_PAD_PROPERTIES, derived from DIALOG_PAD_PROPERTIES_BASE,
@@ -73,18 +73,18 @@ private:
     KIGFX::ORIGIN_VIEWITEM*       m_axisOrigin;    // origin of the preview canvas
     static bool                   m_sketchPreview; // session storage
 
-    UNIT_BINDER m_posX, m_posY;
-    UNIT_BINDER m_sizeX, m_sizeY;
-    UNIT_BINDER m_offsetX, m_offsetY;
-    UNIT_BINDER m_padToDie;
-    UNIT_BINDER m_trapDelta;
-    UNIT_BINDER m_cornerRadius;
-    UNIT_BINDER m_holeX, m_holeY;
+    PCB_UNIT_BINDER m_posX, m_posY;
+    PCB_UNIT_BINDER m_sizeX, m_sizeY;
+    PCB_UNIT_BINDER m_offsetX, m_offsetY;
+    PCB_UNIT_BINDER m_padToDie;
+    PCB_UNIT_BINDER m_trapDelta;
+    PCB_UNIT_BINDER m_cornerRadius;
+    PCB_UNIT_BINDER m_holeX, m_holeY;
     wxFloatingPointValidator<double>    m_OrientValidator;
-    double      m_OrientValue;
-    UNIT_BINDER m_clearance;
-    UNIT_BINDER m_maskClearance, m_pasteClearance;
-    UNIT_BINDER m_spokeWidth, m_thermalGap;
+    double          m_OrientValue;
+    PCB_UNIT_BINDER m_clearance;
+    PCB_UNIT_BINDER m_maskClearance, m_pasteClearance;
+    PCB_UNIT_BINDER m_spokeWidth, m_thermalGap;
 
 private:
     void prepareCanvas();       // Initialize the canvases (legacy or gal) to display the pad
@@ -185,16 +185,16 @@ private:
     // The basic shape currently edited
     DRAWSEGMENT* m_shape;
 
-    UNIT_BINDER  m_startX;
-    UNIT_BINDER  m_startY;
-    UNIT_BINDER  m_ctrl1X;
-    UNIT_BINDER  m_ctrl1Y;
-    UNIT_BINDER  m_ctrl2X;
-    UNIT_BINDER  m_ctrl2Y;
-    UNIT_BINDER  m_endX;
-    UNIT_BINDER  m_endY;
-    UNIT_BINDER  m_radius;
-    UNIT_BINDER  m_thickness;
+    PCB_UNIT_BINDER  m_startX;
+    PCB_UNIT_BINDER  m_startY;
+    PCB_UNIT_BINDER  m_ctrl1X;
+    PCB_UNIT_BINDER  m_ctrl1Y;
+    PCB_UNIT_BINDER  m_ctrl2X;
+    PCB_UNIT_BINDER  m_ctrl2Y;
+    PCB_UNIT_BINDER  m_endX;
+    PCB_UNIT_BINDER  m_endY;
+    PCB_UNIT_BINDER  m_radius;
+    PCB_UNIT_BINDER  m_thickness;
 };
 
 
@@ -209,7 +209,7 @@ class DIALOG_PAD_PRIMITIVE_POLY_PROPS: public DIALOG_PAD_PRIMITIVE_POLY_PROPS_BA
     // The working copy of the basic shape currently edited
     std::vector<wxPoint> m_currPoints;
 
-    UNIT_BINDER          m_thickness;
+    PCB_UNIT_BINDER          m_thickness;
 
 public:
     DIALOG_PAD_PRIMITIVE_POLY_PROPS( wxWindow* aParent, PCB_BASE_FRAME* aFrame,
@@ -283,9 +283,9 @@ public:
 private:
     std::vector<std::shared_ptr<DRAWSEGMENT>>& m_list;
 
-    UNIT_BINDER  m_vectorX;
-    UNIT_BINDER  m_vectorY;
-    UNIT_BINDER  m_rotation;
+    PCB_UNIT_BINDER  m_vectorX;
+    PCB_UNIT_BINDER  m_vectorY;
+    PCB_UNIT_BINDER  m_rotation;
 };
 
 #endif      // #ifndef _DIALOG_PAD_PROPERTIES_H_

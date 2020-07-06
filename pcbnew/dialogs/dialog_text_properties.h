@@ -24,7 +24,7 @@
 #ifndef DIALOG_TEXT_PROPERTIES_H
 #define DIALOG_TEXT_PROPERTIES_H
 
-#include <widgets/unit_binder.h>
+#include <pcb_unit_binder.h>
 #include <wx/valnum.h>
 
 #include <dialog_text_properties_base.h>
@@ -50,12 +50,12 @@ private:
     TEXTE_MODULE*        m_modText;     // only non-null for TEXTE_MODULEs
     TEXTE_PCB*           m_pcbText;     // only non-null for TEXTE_PCBs and DIMENSIONs
 
-    UNIT_BINDER          m_textWidth;
-    UNIT_BINDER          m_textHeight;
-    UNIT_BINDER          m_thickness;
-    UNIT_BINDER          m_posX;
-    UNIT_BINDER          m_posY;
-    UNIT_BINDER          m_linesThickness;  // lines thikness for dimension graphic
+    PCB_UNIT_BINDER      m_textWidth;
+    PCB_UNIT_BINDER      m_textHeight;
+    PCB_UNIT_BINDER      m_thickness;
+    PCB_UNIT_BINDER      m_posX;
+    PCB_UNIT_BINDER      m_posY;
+    PCB_UNIT_BINDER      m_linesThickness;  // lines thikness for dimension graphic
 
     wxFloatingPointValidator<double>    m_OrientValidator;
     double               m_OrientValue;

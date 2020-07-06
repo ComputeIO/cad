@@ -37,7 +37,7 @@
 #include <class_board.h>
 #include <class_drawsegment.h>
 #include <class_edge_mod.h>
-#include <widgets/unit_binder.h>
+#include <pcb_unit_binder.h>
 
 #include <dialog_graphic_item_properties_base.h>
 
@@ -48,12 +48,12 @@ private:
     DRAWSEGMENT*          m_item;
     EDGE_MODULE*          m_moduleItem;
 
-    UNIT_BINDER           m_startX, m_startY;
-    UNIT_BINDER           m_endX, m_endY;
-    UNIT_BINDER           m_angle;
-    UNIT_BINDER           m_thickness;
-    UNIT_BINDER           m_bezierCtrl1X, m_bezierCtrl1Y;
-    UNIT_BINDER           m_bezierCtrl2X, m_bezierCtrl2Y;
+    PCB_UNIT_BINDER       m_startX, m_startY;
+    PCB_UNIT_BINDER       m_endX, m_endY;
+    PCB_UNIT_BINDER       m_angle;
+    PCB_UNIT_BINDER       m_thickness;
+    PCB_UNIT_BINDER       m_bezierCtrl1X, m_bezierCtrl1Y;
+    PCB_UNIT_BINDER       m_bezierCtrl2X, m_bezierCtrl2Y;
 
     bool                  m_flipStartEnd;
 
@@ -100,6 +100,16 @@ DIALOG_GRAPHIC_ITEM_PROPERTIES::DIALOG_GRAPHIC_ITEM_PROPERTIES( PCB_BASE_EDIT_FR
     m_parent = aParent;
     m_item = dynamic_cast<DRAWSEGMENT*>( aItem );
     m_moduleItem = dynamic_cast<EDGE_MODULE*>( aItem );
+
+    // Configure display origin transforms
+    m_startX.SetOriginTransform( PCB_UNIT_BINDER::ABS_X_COORD );
+    m_startY.SetOriginTransform( PCB_UNIT_BINDER::ABS_Y_COORD );
+    m_endX.SetOriginTransform( PCB_UNIT_BINDER::ABS_X_COORD );
+    m_endY.SetOriginTransform( PCB_UNIT_BINDER::ABS_Y_COORD );
+    m_bezierCtrl1X.SetOriginTransform( PCB_UNIT_BINDER::ABS_X_COORD );
+    m_bezierCtrl1Y.SetOriginTransform( PCB_UNIT_BINDER::ABS_Y_COORD );
+    m_bezierCtrl2X.SetOriginTransform( PCB_UNIT_BINDER::ABS_X_COORD );
+    m_bezierCtrl2Y.SetOriginTransform( PCB_UNIT_BINDER::ABS_Y_COORD );
 
     m_angle.SetUnits( EDA_UNITS::DEGREES );
     m_AngleValidator.SetRange( -360.0, 360.0 );
@@ -164,6 +174,7 @@ bool DIALOG_GRAPHIC_ITEM_PROPERTIES::TransferDataToWindow()
         SetTitle( _( "Circle Properties" ) );
         m_startPointLabel->SetLabel( _( "Center" ) );
         m_endPointLabel->SetLabel( _( "Radius" ) );
+        m_endY.SetOriginTransform( PCB_UNIT_BINDER::NULL_XFORM );
         m_endY.Show( false );
         break;
 
