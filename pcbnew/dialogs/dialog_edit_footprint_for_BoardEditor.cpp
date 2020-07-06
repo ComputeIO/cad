@@ -68,6 +68,10 @@ DIALOG_FOOTPRINT_BOARD_EDITOR::DIALOG_FOOTPRINT_BOARD_EDITOR( PCB_EDIT_FRAME* aP
     m_frame     = aParent;
     m_footprint = aModule;
 
+    // Configure display origin transforms
+    m_posX.SetOriginTransform( PCB_UNIT_BINDER::ABS_X_COORD );
+    m_posY.SetOriginTransform( PCB_UNIT_BINDER::ABS_Y_COORD );
+
     for( size_t i = 0; i < m_NoteBook->GetPageCount(); ++i )
    	    m_macHack.push_back( true );
 

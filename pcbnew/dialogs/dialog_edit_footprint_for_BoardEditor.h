@@ -31,7 +31,7 @@
 #include <wx/valnum.h>
 #include <text_mod_grid_table.h>
 #include <class_module.h>
-#include <widgets/unit_binder.h>
+#include <pcb_unit_binder.h>
 
 
 class PCB_EDIT_FRAME;
@@ -47,14 +47,14 @@ private:
     static int                       m_page;       // remember the last open page during session
 
     TEXT_MOD_GRID_TABLE*             m_texts;
-    UNIT_BINDER                      m_posX;
-    UNIT_BINDER                      m_posY;
+    PCB_UNIT_BINDER                  m_posX;
+    PCB_UNIT_BINDER                  m_posY;
     wxFloatingPointValidator<double> m_OrientValidator;
     double                           m_OrientValue;
 
-    UNIT_BINDER                      m_netClearance;
-    UNIT_BINDER                      m_solderMask;
-    UNIT_BINDER                      m_solderPaste;
+    PCB_UNIT_BINDER                  m_netClearance;
+    PCB_UNIT_BINDER                  m_solderMask;
+    PCB_UNIT_BINDER                  m_solderPaste;
 
     std::vector<MODULE_3D_SETTINGS>  m_shapes3D_list;
     PANEL_PREV_3D*                   m_PreviewPane;

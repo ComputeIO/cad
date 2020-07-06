@@ -26,7 +26,7 @@
 #define __DIALOG_MOVE_EXACT__
 
 #include <vector>
-#include <widgets/unit_binder.h>
+#include <pcb_unit_binder.h>
 
 #include <dialogs/dialog_move_exact_base.h>
 
@@ -51,9 +51,9 @@ private:
     ROTATION_ANCHOR&  m_rotationAnchor;
     const EDA_RECT&   m_bbox;
 
-    UNIT_BINDER       m_moveX;
-    UNIT_BINDER       m_moveY;
-    UNIT_BINDER       m_rotate;
+    PCB_UNIT_BINDER   m_moveX;
+    PCB_UNIT_BINDER   m_moveY;
+    PCB_UNIT_BINDER   m_rotate;
 
     std::vector<ROTATION_ANCHOR> m_menuIDs;
 

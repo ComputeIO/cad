@@ -152,6 +152,14 @@ DIALOG_CREATE_ARRAY::DIALOG_CREATE_ARRAY( PCB_BASE_FRAME* aParent,
           m_circAngle( aParent, m_labelCircAngle, m_entryCircAngle, m_unitLabelCircAngle ),
           m_cfg_persister( saved_array_options.m_optionsSet )
 {
+    // Configure display origin transforms
+    m_hSpacing.SetOriginTransform( PCB_UNIT_BINDER::REL_X_COORD );
+    m_vSpacing.SetOriginTransform( PCB_UNIT_BINDER::REL_Y_COORD );
+    m_hOffset.SetOriginTransform( PCB_UNIT_BINDER::REL_X_COORD );
+    m_vOffset.SetOriginTransform( PCB_UNIT_BINDER::REL_Y_COORD );
+    m_hCentre.SetOriginTransform( PCB_UNIT_BINDER::ABS_X_COORD );
+    m_vCentre.SetOriginTransform( PCB_UNIT_BINDER::ABS_Y_COORD );
+
     // Set up numbering scheme drop downs character set strings
     for( const auto& numData : numberingTypeData )
     {

@@ -23,7 +23,7 @@
  */
 
 #include <dialogs/dialog_track_via_properties_base.h>
-#include <widgets/unit_binder.h>
+#include <pcb_unit_binder.h>
 #include <core/optional.h>
 #include <layers_id_colors_and_visibility.h>
 
@@ -54,12 +54,12 @@ private:
     const PCBNEW_SELECTION& m_items;   // List of items to be modified.
     COMMIT&                 m_commit;  // An undo record to add any changes to.
 
-    UNIT_BINDER             m_trackStartX, m_trackStartY;
-    UNIT_BINDER             m_trackEndX, m_trackEndY;
-    UNIT_BINDER             m_trackWidth;
+    PCB_UNIT_BINDER         m_trackStartX, m_trackStartY;
+    PCB_UNIT_BINDER         m_trackEndX, m_trackEndY;
+    PCB_UNIT_BINDER         m_trackWidth;
 
-    UNIT_BINDER             m_viaX, m_viaY;
-    UNIT_BINDER             m_viaDiameter, m_viaDrill;
+    PCB_UNIT_BINDER         m_viaX, m_viaY;
+    PCB_UNIT_BINDER         m_viaDiameter, m_viaDrill;
 
     bool                    m_tracks;  // True if dialog displays any track properties.
     bool                    m_vias;    // True if dialog displays any via properties.

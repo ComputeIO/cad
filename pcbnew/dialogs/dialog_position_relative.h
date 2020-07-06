@@ -29,7 +29,7 @@
 #include <dialogs/dialog_position_relative_base.h>
 
 #include <tool/tool_manager.h>
-#include <widgets/unit_binder.h>
+#include <pcb_unit_binder.h>
 #include "tools/position_relative_tool.h"
 
 class DIALOG_POSITION_RELATIVE : public DIALOG_POSITION_RELATIVE_BASE
@@ -40,8 +40,8 @@ private:
     wxPoint&      m_translation;
     wxPoint&      m_anchor_position;
 
-    UNIT_BINDER   m_xOffset;
-    UNIT_BINDER   m_yOffset;
+    PCB_UNIT_BINDER m_xOffset;
+    PCB_UNIT_BINDER m_yOffset;
 
     double m_stateX;
     double m_stateY;
