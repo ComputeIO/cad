@@ -28,8 +28,10 @@
 
 #include <core/optional.h>
 #include <tool/tool_menu.h>
-#include <tools/pcb_tool_base.h>
 #include <tools/pcb_actions.h>
+#include <tools/pcb_tool_base.h>
+#include <vector>
+using namespace std;
 
 namespace KIGFX
 {
@@ -88,7 +90,8 @@ public:
     /**
      * Function DrawSpecificationStackup()
      */
-    int DrawSpecificationStackup( wxPoint origin, PCB_LAYER_ID aLayer );
+    vector<BOARD_ITEM*> DrawSpecificationStackup(
+            wxPoint origin, PCB_LAYER_ID aLayer, bool aDrawNow, wxPoint* tablesize );
 
     /**
      * Function PlaceSpecificationStackup()

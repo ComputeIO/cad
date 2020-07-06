@@ -362,7 +362,8 @@ vector<BOARD_ITEM*> initTextTable( vector<vector<TEXTE_PCB*>> aContent, int aCol
 }
 
 
-int DRAWING_TOOL::DrawSpecificationStackup( wxPoint aOrigin, PCB_LAYER_ID aLayer )
+vector<BOARD_ITEM*> DRAWING_TOOL::DrawSpecificationStackup(
+        wxPoint aOrigin, PCB_LAYER_ID aLayer, bool aDrawNow, wxPoint* tableSize )
 {
     BOARD_COMMIT               commit( m_frame );
     vector<vector<TEXTE_PCB*>> texts;
@@ -468,16 +469,17 @@ int DRAWING_TOOL::DrawSpecificationStackup( wxPoint aOrigin, PCB_LAYER_ID aLayer
     texts.push_back( colColor );
     texts.push_back( colEpsilon );
     texts.push_back( colTanD );
-    wxPoint             tableSize = wxPoint();
     vector<BOARD_ITEM*> table =
-            initTextTable( texts, 7, stackup.GetCount() + 1, aOrigin, aLayer, &tableSize );
-
-    for( auto item : table )
+            initTextTable( texts, 7, stackup.GetCount() + 1, aOrigin, aLayer, tableSize, true );
+    if( aDrawNow )
     {
-        commit.Add( item );
+        for( auto item : table )
+        {
+            commit.Add( item );
+        }
+        commit.Push( _( "Draw a table" ) );
     }
-    commit.Push( _( "Draw a table" ) );
-    return 0;
+    return table;
 }
 int DRAWING_TOOL::DrawSpecification( const TOOL_EVENT& aEvent )
 {
@@ -630,10 +632,9 @@ int DRAWING_TOOL::DrawSpecification( const TOOL_EVENT& aEvent )
     t->SetText( "Board Thickness: " );
     colLabel2.push_back( t );
     t = (TEXTE_PCB*) style1->Duplicate();
-    t->SetText(
-            std::to_string( To_User_Unit( EDA_UNITS::MILLIMETRES,
-                                    m_frame->GetBoard()->GetDesignSettings().GetBoardThickness() )
-                            + " mm" ) );
+    t->SetText( std::to_string( To_User_Unit( EDA_UNITS::MILLIMETRES,
+                        m_frame->GetBoard()->GetDesignSettings().GetBoardThickness() ) )
+                + " mm" );
     colData2.push_back( t );
     t = (TEXTE_PCB*) style1->Duplicate();
     colLabel2.push_back( t );
@@ -646,13 +647,12 @@ int DRAWING_TOOL::DrawSpecification( const TOOL_EVENT& aEvent )
     if( m_frame->GetBoard()->GetDesignSettings().m_MinThroughDrill
             > m_frame->GetBoard()->GetDesignSettings().m_ViasMinSize )
         t->SetText( std::to_string( To_User_Unit( EDA_UNITS::MILLIMETRES,
-                                            m_frame->GetBoard()->GetDesignSettings().m_ViasMinSize )
-                                    + " mm" ) );
+                            m_frame->GetBoard()->GetDesignSettings().m_ViasMinSize ) )
+                    + " mm" );
     else
-        t->SetText(
-                std::to_string( To_User_Unit( EDA_UNITS::MILLIMETRES,
-                                        m_frame->GetBoard()->GetDesignSettings().m_MinThroughDrill )
-                                + " mm" ) );
+        t->SetText( std::to_string( To_User_Unit( EDA_UNITS::MILLIMETRES,
+                            m_frame->GetBoard()->GetDesignSettings().m_MinThroughDrill ) )
+                    + " mm" );
     colData2.push_back( t );
     t = (TEXTE_PCB*) style1->Duplicate();
     t->SetText( "Impedance Control: " );
@@ -680,7 +680,6 @@ int DRAWING_TOOL::DrawSpecification( const TOOL_EVENT& aEvent )
     texts.push_back( colLabel2 );
     texts.push_back( colData2 );
     wxPoint tableSize = wxPoint();
-
     vector<BOARD_ITEM*> table =
             initTextTable( texts, 5, 5, cursorPos, Eco1_User, &tableSize, false );
     for( auto item : table )
@@ -704,7 +703,7 @@ int DRAWING_TOOL::DrawSpecification( const TOOL_EVENT& aEvent )
                   + From_User_Unit( EDA_UNITS::MILLIMETRES, 2.0 );
 
 
-    DrawSpecificationStackup( cursorPos, Eco1_User );
+    DrawSpecificationStackup( cursorPos, Eco1_User, true, &tableSize );
 
     return 1;
 }
@@ -734,9 +733,43 @@ int DRAWING_TOOL::PlaceSpecificationStackup( const TOOL_EVENT& aEvent )
         m_toolMgr->RunAction( ACTIONS::cursorClick );
 
     // Main loop: keep receiving events
+    wxPoint             tableSize = wxPoint();
+    vector<BOARD_ITEM*> table     = DrawSpecificationStackup(
+            wxPoint( 0, 0 ), m_frame->GetActiveLayer(), false, &tableSize );
+
+    DRAWSEGMENT* line1 = new DRAWSEGMENT;
+    DRAWSEGMENT* line2 = new DRAWSEGMENT;
+    DRAWSEGMENT* line3 = new DRAWSEGMENT;
+    DRAWSEGMENT* line4 = new DRAWSEGMENT;
+    line1->SetStartX( 0 );
+    line1->SetStartY( 0 );
+    line1->SetEndX( tableSize.x );
+    line1->SetEndY( 0 );
+    line2->SetStartX( 0 );
+    line2->SetStartY( 0 );
+    line2->SetEndX( 0 );
+    line2->SetEndY( tableSize.y );
+    line3->SetStartX( tableSize.x );
+    line3->SetStartY( 0 );
+    line3->SetEndX( tableSize.x );
+    line3->SetEndY( tableSize.y );
+    line4->SetStartX( 0 );
+    line4->SetStartY( tableSize.y );
+    line4->SetEndX( tableSize.x );
+    line4->SetEndY( tableSize.y );
+    wxPoint wxCursorPosition = wxPoint();
+    commit.Add( line1 );
+    commit.Add( line2 );
+    commit.Add( line3 );
+    commit.Add( line4 );
+    commit.Push( "temporary commit", false );
     while( TOOL_EVENT* evt = Wait() )
     {
         m_frame->GetCanvas()->SetCurrentCursor( text ? wxCURSOR_ARROW : wxCURSOR_PENCIL );
+        VECTOR2D pos       = m_controls->GetCursorPosition();
+        wxCursorPosition.x = pos.x;
+        wxCursorPosition.y = pos.y;
+
 
         if( reselect && text )
             m_toolMgr->RunAction( PCB_ACTIONS::selectItem, true, text );
@@ -758,14 +791,28 @@ int DRAWING_TOOL::PlaceSpecificationStackup( const TOOL_EVENT& aEvent )
             else
             {
                 m_frame->PopTool( tool );
+                commit.Revert();
                 break;
             }
+        }
+
+        if( evt->IsMotion() )
+        {
+            commit.Revert();
+            line1->Move( wxCursorPosition - line1->GetPosition() );
+            line2->Move( wxCursorPosition - line2->GetPosition() );
+            line3->Move( wxCursorPosition + wxPoint( tableSize.x, 0 ) - line3->GetPosition() );
+            line4->Move( wxCursorPosition + wxPoint( 0, tableSize.y ) - line4->GetPosition() );
+            commit.Modify( line1 );
+            commit.Modify( line2 );
+            commit.Modify( line3 );
+            commit.Modify( line4 );
+            commit.Push( "temporary commit", false );
         }
         else if( evt->IsActivate() )
         {
             if( text )
                 cleanup();
-
             if( evt->IsMoveTool() )
             {
                 // leave ourselves on the stack so we come back after the move
@@ -783,10 +830,10 @@ int DRAWING_TOOL::PlaceSpecificationStackup( const TOOL_EVENT& aEvent )
         }
         else if( evt->IsClick( BUT_LEFT ) )
         {
-            VECTOR2D pos = m_controls->GetCursorPosition();
+            commit.Revert();
             PCB_LAYER_ID targetLayer = frame()->SelectLayer( static_cast<PCB_LAYER_ID>( Cmts_User ),
                     LSET::AllCuMask() | LSET::AllBoardTechMask(), wxPoint( pos.x, pos.y ) );
-            DrawSpecificationStackup( wxPoint( pos.x, pos.y ), targetLayer );
+            DrawSpecificationStackup( wxPoint( pos.x, pos.y ), targetLayer, true, &tableSize );
             break;
         }
 
@@ -794,6 +841,11 @@ int DRAWING_TOOL::PlaceSpecificationStackup( const TOOL_EVENT& aEvent )
             evt->SetPassEvent();
     }
 
+    commit.Remove( line1 );
+    commit.Remove( line2 );
+    commit.Remove( line3 );
+    commit.Remove( line4 );
+    commit.Push( "temporary commit", false );
     frame()->SetMsgPanel( board() );
     return 0;
 }
@@ -3058,7 +3110,8 @@ const unsigned int DRAWING_TOOL::WIDTH_STEP = Millimeter2iu( 0.1 );
 
 void DRAWING_TOOL::setTransitions()
 {
-    Go( &DRAWING_TOOL::DrawSpecification, PCB_ACTIONS::drawSpecificationStackup.MakeEvent() );
+    Go( &DRAWING_TOOL::PlaceSpecificationStackup,
+            PCB_ACTIONS::drawSpecificationStackup.MakeEvent() );
     Go( &DRAWING_TOOL::DrawLine,              PCB_ACTIONS::drawLine.MakeEvent() );
     Go( &DRAWING_TOOL::DrawZone,              PCB_ACTIONS::drawPolygon.MakeEvent() );
     Go( &DRAWING_TOOL::DrawRectangle,         PCB_ACTIONS::drawRectangle.MakeEvent() );
