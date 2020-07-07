@@ -38,15 +38,17 @@
 const char NETCLASS::Default[] = "Default";
 
 // Initial values for netclass initialization
-const int DEFAULT_CLEARANCE        = Millimeter2iu( 0.2 ); // track to track and track to pads clearance
-const int DEFAULT_VIA_DIAMETER     = Millimeter2iu( 0.8 );
-const int DEFAULT_VIA_DRILL        = Millimeter2iu( 0.4 );
-const int DEFAULT_UVIA_DIAMETER    = Millimeter2iu( 0.3 );
-const int DEFAULT_UVIA_DRILL       = Millimeter2iu( 0.1 );
-const int DEFAULT_TRACK_WIDTH      = Millimeter2iu( 0.25 );
-const int DEFAULT_DIFF_PAIR_WIDTH  = Millimeter2iu( 0.2 );
-const int DEFAULT_DIFF_PAIR_GAP    = Millimeter2iu( 0.25 );
-const int DEFAULT_DIFF_PAIR_VIAGAP = Millimeter2iu( 0.25 );
+const int DEFAULT_CLEARANCE         = Millimeter2iu( 0.2 ); // track to track and track to pads clearance
+const int DEFAULT_CLEARANCE_INNER   = Millimeter2iu( 0.3 );
+const int DEFAULT_VIA_DIAMETER      = Millimeter2iu( 0.8 );
+const int DEFAULT_VIA_DRILL         = Millimeter2iu( 0.4 );
+const int DEFAULT_UVIA_DIAMETER     = Millimeter2iu( 0.3 );
+const int DEFAULT_UVIA_DRILL        = Millimeter2iu( 0.1 );
+const int DEFAULT_TRACK_WIDTH       = Millimeter2iu( 0.25 );
+const int DEFAULT_TRACK_WIDTH_INNER = Millimeter2iu( 0.35 );
+const int DEFAULT_DIFF_PAIR_WIDTH   = Millimeter2iu( 0.2 );
+const int DEFAULT_DIFF_PAIR_GAP     = Millimeter2iu( 0.25 );
+const int DEFAULT_DIFF_PAIR_VIAGAP  = Millimeter2iu( 0.25 );
 
 
 NETCLASS::NETCLASS( const wxString& aName ) :
@@ -54,11 +56,13 @@ NETCLASS::NETCLASS( const wxString& aName ) :
 {
     // Default settings
     SetClearance( DEFAULT_CLEARANCE );
+    SetClearanceInner( DEFAULT_CLEARANCE_INNER );
     SetViaDrill( DEFAULT_VIA_DRILL );
     SetuViaDrill( DEFAULT_UVIA_DRILL );
     // These defaults will be overwritten by SetParams,
     // from the board design parameters, later
     SetTrackWidth( DEFAULT_TRACK_WIDTH );
+    SetTrackWidth( DEFAULT_TRACK_WIDTH_INNER );
     SetViaDiameter( DEFAULT_VIA_DIAMETER );
     SetuViaDiameter( DEFAULT_UVIA_DIAMETER );
     SetDiffPairWidth( DEFAULT_DIFF_PAIR_WIDTH );
@@ -70,7 +74,9 @@ NETCLASS::NETCLASS( const wxString& aName ) :
 void NETCLASS::SetParams( const NETCLASS& aDefaults )
 {
     SetClearance( aDefaults.GetClearance() );
+    SetClearanceInner( aDefaults.GetClearanceInner() );
     SetTrackWidth( aDefaults.GetTrackWidth() );
+    SetTrackWidthInner( aDefaults.GetTrackWidthInner() );
     SetViaDiameter( aDefaults.GetViaDiameter() );
     SetViaDrill( aDefaults.GetViaDrill() );
     SetuViaDiameter( aDefaults.GetuViaDiameter() );
