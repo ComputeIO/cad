@@ -61,7 +61,7 @@ NETCLASS::NETCLASS( const wxString& aName ) :
     // These defaults will be overwritten by SetParams,
     // from the board design parameters, later
     SetTrackWidth( DEFAULT_TRACK_WIDTH );
-    SetTrackWidth( DEFAULT_TRACK_WIDTH_INNER );
+    SetTrackWidthInner( DEFAULT_TRACK_WIDTH_INNER );
     SetViaDiameter( DEFAULT_VIA_DIAMETER );
     SetuViaDiameter( DEFAULT_UVIA_DIAMETER );
     SetDiffPairWidth( DEFAULT_DIFF_PAIR_WIDTH );
