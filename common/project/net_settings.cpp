@@ -131,11 +131,11 @@ NET_SETTINGS::NET_SETTINGS( JSON_SETTINGS* aParent, const std::string& aPath ) :
                         netclass = std::make_shared<NETCLASS>( name );
 
                     netclass->SetClearance( get( entry, "clearance", netclass->GetClearance() ) );
-                    netclass->SetClearanceInner( get( entry, "clearance_inner", netclass->GetClearanceInner() ) );
+                    netclass->SetClearanceInner( get( entry, "clearance_inner", netclass->GetClearance() ) );
                     netclass->SetTrackWidth(
                             get( entry, "track_width", netclass->GetTrackWidth() ) );
                     netclass->SetTrackWidthInner(
-                            get( entry, "track_width_inner", netclass->GetTrackWidthInner() ) );
+                            get( entry, "track_width_inner", netclass->GetTrackWidth() ) );
                     netclass->SetViaDiameter(
                             get( entry, "via_diameter", netclass->GetViaDiameter() ) );
                     netclass->SetViaDrill( get( entry, "via_drill", netclass->GetViaDrill() ) );
