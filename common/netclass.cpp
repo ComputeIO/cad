@@ -32,13 +32,13 @@ const char NETCLASS::Default[] = "Default";
 
 // Initial values for netclass initialization
 const int DEFAULT_CLEARANCE         = PcbMillimeter2iu( 0.2 ); // track to track and track to pads clearance
-const int DEFAULT_CLEARANCE_INNER   = PcbMillimeter2iu( 0.2 );
+const int DEFAULT_CLEARANCE_INNER   = PcbMillimeter2iu( 0.4 );
 const int DEFAULT_VIA_DIAMETER      = PcbMillimeter2iu( 0.8 );
 const int DEFAULT_VIA_DRILL         = PcbMillimeter2iu( 0.4 );
 const int DEFAULT_UVIA_DIAMETER     = PcbMillimeter2iu( 0.3 );
 const int DEFAULT_UVIA_DRILL        = PcbMillimeter2iu( 0.1 );
 const int DEFAULT_TRACK_WIDTH       = PcbMillimeter2iu( 0.25 );
-const int DEFAULT_TRACK_WIDTH_INNER = PcbMillimeter2iu( 0.25 );
+const int DEFAULT_TRACK_WIDTH_INNER = PcbMillimeter2iu( 0.5 );
 const int DEFAULT_DIFF_PAIR_WIDTH   = PcbMillimeter2iu( 0.2 );
 const int DEFAULT_DIFF_PAIR_GAP     = PcbMillimeter2iu( 0.25 );
 const int DEFAULT_DIFF_PAIR_VIAGAP  = PcbMillimeter2iu( 0.25 );
@@ -72,6 +72,21 @@ NETCLASS::NETCLASS( const wxString& aName ) :
     SetBusWidth( DEFAULT_BUS_WIDTH );
     SetSchematicColor( COLOR4D::UNSPECIFIED );
     SetLineStyle( DEFAULT_LINE_STYLE );
+}
+
+void NETCLASS::SetParams( const NETCLASS& aDefaults )
+{
+    SetClearance( aDefaults.GetClearance() );
+    SetClearanceInner( aDefaults.GetClearanceInner() );
+    SetTrackWidth( aDefaults.GetTrackWidth() );
+    SetTrackWidthInner( aDefaults.GetTrackWidthInner() );
+    SetViaDiameter( aDefaults.GetViaDiameter() );
+    SetViaDrill( aDefaults.GetViaDrill() );
+    SetuViaDiameter( aDefaults.GetuViaDiameter() );
+    SetuViaDrill( aDefaults.GetuViaDrill() );
+    SetDiffPairWidth( aDefaults.GetDiffPairWidth() );
+    SetDiffPairGap( aDefaults.GetDiffPairGap() );
+    SetDiffPairViaGap( aDefaults.GetDiffPairViaGap() );
 }
 
 
