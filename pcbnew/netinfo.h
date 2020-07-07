@@ -152,6 +152,16 @@ public:
     }
 
     /**
+     * Function GetTrackWidthInner
+     * returns the width of tracks used to route this net on inner layers.
+     */
+    int GetTrackWidthInner()
+    {
+        wxASSERT( m_NetClass );
+        return m_NetClass->GetTrackWidthInner();
+    }
+
+    /**
      * Function GetViaSize
      * returns the size of vias used to route this net
      */
@@ -212,6 +222,14 @@ public:
     int GetClearance()
     {
         return m_NetClass ? m_NetClass->GetClearance() : 0;
+    }
+
+    /**
+     * Function GetClearanceInner
+     */
+    int GetClearanceInner()
+    {
+        return m_NetClass ? m_NetClass->GetClearanceInner() : 0;
     }
 
 #endif
