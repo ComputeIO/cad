@@ -52,7 +52,8 @@ const int DEFAULT_DIFF_PAIR_VIAGAP  = Millimeter2iu( 0.25 );
 
 
 NETCLASS::NETCLASS( const wxString& aName ) :
-    m_Name( aName )
+    m_Name( aName ),
+    m_PcbColor( KIGFX::COLOR4D::UNSPECIFIED )
 {
     // Default settings
     SetClearance( DEFAULT_CLEARANCE );
@@ -84,6 +85,7 @@ void NETCLASS::SetParams( const NETCLASS& aDefaults )
     SetDiffPairWidth( aDefaults.GetDiffPairWidth() );
     SetDiffPairGap( aDefaults.GetDiffPairGap() );
     SetDiffPairViaGap( aDefaults.GetDiffPairViaGap() );
+    SetPcbColor( KIGFX::COLOR4D::UNSPECIFIED );
 }
 
 
