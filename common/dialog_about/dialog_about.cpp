@@ -206,7 +206,7 @@ void DIALOG_ABOUT::createNotebookPageByCategory( wxAuiNotebook* aParent, const w
     // Of course the padding is different depending on the platform so we adjust the
     // padding accordingly.
 #if defined( __WXGTK__ )
-    padding += "    ";
+    padding += "      ";
 #endif
 
     wxBoxSizer* bSizer = new wxBoxSizer( wxHORIZONTAL );
@@ -269,7 +269,7 @@ void DIALOG_ABOUT::createNotebookPageByCategory( wxAuiNotebook* aParent, const w
                     if( sub_contributor->GetUrl().IsEmpty() )
                     {
                         ctrl = new wxStaticText( m_scrolledWindow1, wxID_ANY,
-                                                 wxT( "• " ) + sub_contributor->GetName(),
+                                                 padding + wxT( "• " ) + sub_contributor->GetName(),
                                                  wxDefaultPosition,
                                                  wxDefaultSize, 0 );
                     }
@@ -277,7 +277,7 @@ void DIALOG_ABOUT::createNotebookPageByCategory( wxAuiNotebook* aParent, const w
                     {
                         // Display a hyperlink control instead
                         ctrl = new wxHyperlinkCtrl( m_scrolledWindow1, wxID_ANY,
-                                                    padding + wxT( "• " ) + sub_contributor->GetName(),
+                                                    wxT( "• " ) + sub_contributor->GetName(),
                                                     sub_contributor->GetUrl(),
                                                     wxDefaultPosition,
                                                     wxDefaultSize,
