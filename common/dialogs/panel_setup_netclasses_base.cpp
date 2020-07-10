@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////
-// C++ code generated with wxFormBuilder (version Oct 26 2018)
+// C++ code generated with wxFormBuilder (version 3.9.0 Jul  7 2020)
 // http://www.wxformbuilder.org/
 //
 // PLEASE DO *NOT* EDIT THIS FILE!
@@ -27,7 +27,7 @@ PANEL_SETUP_NETCLASSES_BASE::PANEL_SETUP_NETCLASSES_BASE( wxWindow* parent, wxWi
 	m_netclassGrid = new WX_GRID( m_netclassesPane, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxBORDER_DEFAULT|wxHSCROLL|wxTAB_TRAVERSAL|wxVSCROLL );
 
 	// Grid
-	m_netclassGrid->CreateGrid( 1, 13 );
+	m_netclassGrid->CreateGrid( 1, 15 );
 	m_netclassGrid->EnableEditing( true );
 	m_netclassGrid->EnableGridLines( true );
 	m_netclassGrid->EnableDragGridSize( false );
@@ -39,17 +39,19 @@ PANEL_SETUP_NETCLASSES_BASE::PANEL_SETUP_NETCLASSES_BASE( wxWindow* parent, wxWi
 	m_netclassGrid->SetColLabelSize( 24 );
 	m_netclassGrid->SetColLabelValue( 0, _("Name") );
 	m_netclassGrid->SetColLabelValue( 1, _("Clearance") );
-	m_netclassGrid->SetColLabelValue( 2, _("Track Width") );
-	m_netclassGrid->SetColLabelValue( 3, _("Via Size") );
-	m_netclassGrid->SetColLabelValue( 4, _("Via Drill") );
-	m_netclassGrid->SetColLabelValue( 5, _("uVia Size") );
-	m_netclassGrid->SetColLabelValue( 6, _("uVia Drill") );
-	m_netclassGrid->SetColLabelValue( 7, _("DP Width") );
-	m_netclassGrid->SetColLabelValue( 8, _("DP Gap") );
-	m_netclassGrid->SetColLabelValue( 9, _("Wire Thickness") );
-	m_netclassGrid->SetColLabelValue( 10, _("Bus Thickness") );
-	m_netclassGrid->SetColLabelValue( 11, _("Color") );
-	m_netclassGrid->SetColLabelValue( 12, _("Line Style") );
+	m_netclassGrid->SetColLabelValue( 2, _("Clearance (Inner)") );
+	m_netclassGrid->SetColLabelValue( 3, _("Track Width") );
+	m_netclassGrid->SetColLabelValue( 4, _("Track Width (Inner)") );
+	m_netclassGrid->SetColLabelValue( 5, _("Via Size") );
+	m_netclassGrid->SetColLabelValue( 6, _("Via Drill") );
+	m_netclassGrid->SetColLabelValue( 7, _("uVia Size") );
+	m_netclassGrid->SetColLabelValue( 8, _("uVia Drill") );
+	m_netclassGrid->SetColLabelValue( 9, _("DP Width") );
+	m_netclassGrid->SetColLabelValue( 10, _("DP Gap") );
+	m_netclassGrid->SetColLabelValue( 11, _("Wire Thickness") );
+	m_netclassGrid->SetColLabelValue( 12, _("Bus Thickness") );
+	m_netclassGrid->SetColLabelValue( 13, _("Color") );
+	m_netclassGrid->SetColLabelValue( 14, _("Line Style") );
 	m_netclassGrid->SetColLabelAlignment( wxALIGN_CENTER, wxALIGN_CENTER );
 
 	// Rows
