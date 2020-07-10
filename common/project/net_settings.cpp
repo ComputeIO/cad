@@ -50,9 +50,12 @@ NET_SETTINGS::NET_SETTINGS( JSON_SETTINGS* aParent, const std::string& aPath ) :
                     // Note: we're in common/, but we do happen to know which of these fields
                     // are used in which units system.
                     nlohmann::json netJson = {
+<<<<<<< HEAD
                         { "name",              netclass->GetName().ToUTF8() },
                         { "clearance",         PcbIu2Millimeter( netclass->GetClearance() ) },
+                        { "clearance_inner",   PcbIu2Millimeter( netclass->GetClearance() ) },
                         { "track_width",       PcbIu2Millimeter( netclass->GetTrackWidth() ) },
+                        { "track_width_inner", PcbIu2Millimeter( netclass->GetTrackWidth() ) },
                         { "via_diameter",      PcbIu2Millimeter( netclass->GetViaDiameter() ) },
                         { "via_drill",         PcbIu2Millimeter( netclass->GetViaDrill() ) },
                         { "microvia_diameter", PcbIu2Millimeter( netclass->GetuViaDiameter() ) },
@@ -60,6 +63,20 @@ NET_SETTINGS::NET_SETTINGS( JSON_SETTINGS* aParent, const std::string& aPath ) :
                         { "diff_pair_width",   PcbIu2Millimeter( netclass->GetDiffPairWidth() ) },
                         { "diff_pair_gap",     PcbIu2Millimeter( netclass->GetDiffPairGap() ) },
                         { "diff_pair_via_gap", PcbIu2Millimeter( netclass->GetDiffPairViaGap() ) }
+=======
+                        { "name",               netclass->GetName().ToUTF8() },
+                        { "clearance",          Iu2Millimeter( netclass->GetClearance() ) },
+                        { "clearance_inner",    Iu2Millimeter( netclass->GetClearanceInner() ) },
+                        { "track_width",        Iu2Millimeter( netclass->GetTrackWidth() ) },
+                        { "track_width_inner",  Iu2Millimeter( netclass->GetTrackWidthInner() ) },
+                        { "via_diameter",       Iu2Millimeter( netclass->GetViaDiameter() ) },
+                        { "via_drill",          Iu2Millimeter( netclass->GetViaDrill() ) },
+                        { "microvia_diameter",  Iu2Millimeter( netclass->GetuViaDiameter() ) },
+                        { "microvia_drill",     Iu2Millimeter( netclass->GetuViaDrill() ) },
+                        { "diff_pair_width",    Iu2Millimeter( netclass->GetDiffPairWidth() ) },
+                        { "diff_pair_gap",      Iu2Millimeter( netclass->GetDiffPairGap() ) },
+                        { "diff_pair_via_gap",  Iu2Millimeter( netclass->GetDiffPairViaGap() ) }
+>>>>>>> 8076ef58d... Added net setings for inner specs
                         };
 
                     if( netclass->GetPcbColor() != KIGFX::COLOR4D::UNSPECIFIED )
@@ -114,8 +131,11 @@ NET_SETTINGS::NET_SETTINGS( JSON_SETTINGS* aParent, const std::string& aPath ) :
                         netclass = std::make_shared<NETCLASS>( name );
 
                     netclass->SetClearance( get( entry, "clearance", netclass->GetClearance() ) );
+                    netclass->SetClearanceInner( get( entry, "clearance_inner", netclass->GetClearanceInner() ) );
                     netclass->SetTrackWidth(
                             get( entry, "track_width", netclass->GetTrackWidth() ) );
+                    netclass->SetTrackWidthInner(
+                            get( entry, "track_width_inner", netclass->GetTrackWidthInner() ) );
                     netclass->SetViaDiameter(
                             get( entry, "via_diameter", netclass->GetViaDiameter() ) );
                     netclass->SetViaDrill( get( entry, "via_drill", netclass->GetViaDrill() ) );
