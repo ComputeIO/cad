@@ -848,6 +848,16 @@ inline bool IsBackLayer( PCB_LAYER_ID aLayerId )
 
 
 /**
+ * Layer classification: check if it's an inner layer
+ */
+inline bool IsInnerLayer( PCB_LAYER_ID aLayerId )
+{
+    return !(IsFrontLayer(aLayerId) || IsBackLayer(aLayerId));
+}
+
+
+
+/**
  * Function FlippedLayerNumber
  * @return the layer number after flipping an item
  * some (not all) layers: external copper, and paired layers( Mask, Paste, solder ... )
