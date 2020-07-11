@@ -49,7 +49,7 @@ enum layer_sel_id {
 class SELECT_LAYER_DIALOG : public DIALOG_SHIM
 {
 private:
-    int               mPassedDefaultLayer; // Remember this in case user hits Cancel
+    int               m_PassedDefaultLayer; // Remember this in case user hits Cancel
     wxRadioBox*       m_layerRadioBox;
     std::vector <int> m_layerId;
 
@@ -115,7 +115,7 @@ SELECT_LAYER_DIALOG::SELECT_LAYER_DIALOG( GERBVIEW_FRAME* parent, int aDefaultLa
     int selected = -1;
 
     // Store the passed default layer in case the user hits Cancel
-    mPassedDefaultLayer = aDefaultLayer;
+    m_PassedDefaultLayer = aDefaultLayer;
 
     // Build the layer list; first build copper layers list
     int layerCount = 0;
@@ -207,7 +207,7 @@ void SELECT_LAYER_DIALOG::OnLayerSelected( wxCommandEvent& event )
 
 void SELECT_LAYER_DIALOG::OnCancelClick( wxCommandEvent& event )
 {
-    EndModal( mPassedDefaultLayer );
+    EndModal( m_PassedDefaultLayer );
 }
 
 // This function is a duplicate of
