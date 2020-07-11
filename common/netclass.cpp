@@ -74,6 +74,7 @@ NETCLASS::NETCLASS( const wxString& aName ) :
     SetLineStyle( DEFAULT_LINE_STYLE );
 }
 
+/*
 void NETCLASS::SetParams( const NETCLASS& aDefaults )
 {
     SetClearance( aDefaults.GetClearance() );
@@ -88,6 +89,7 @@ void NETCLASS::SetParams( const NETCLASS& aDefaults )
     SetDiffPairGap( aDefaults.GetDiffPairGap() );
     SetDiffPairViaGap( aDefaults.GetDiffPairViaGap() );
 }
+*/
 
 
 NETCLASS::~NETCLASS()
