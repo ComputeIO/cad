@@ -448,10 +448,16 @@ bool DIALOG_TRACK_VIA_PROPERTIES::TransferDataFromWindow()
                     t->SetEnd( wxPoint( t->GetEnd().x, m_trackEndY.GetValue() ) );
 
                 if( m_trackNetclass->IsChecked() )
+                {
                     if( t->IsOnInnerLayer() )
-                        t->setWidth( t->GetNetClass()->GetTrackWidthInner() );
+                    {
+                        t->SetWidth( t->GetNetClass()->GetTrackWidthInner() );
+                    }
                     else
+                    {
                         t->SetWidth( t->GetNetClass()->GetTrackWidth() );
+                    }
+                }
                 else if( !m_trackWidth.IsIndeterminate() )
                     t->SetWidth( m_trackWidth.GetValue() );
 
