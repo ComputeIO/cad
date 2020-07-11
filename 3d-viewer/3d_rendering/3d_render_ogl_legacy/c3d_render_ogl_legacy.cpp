@@ -62,7 +62,6 @@ C3D_RENDER_OGL_LEGACY::C3D_RENDER_OGL_LEGACY( BOARD_ADAPTER& aAdapter, CCAMERA& 
 
     m_ogl_disp_list_through_holes_outer_with_npth = NULL;
     m_ogl_disp_list_through_holes_outer = NULL;
-    m_ogl_disp_list_through_holes_inner = NULL;
     m_ogl_disp_list_through_holes_vias_outer = NULL;
     //m_ogl_disp_list_through_holes_vias_inner = NULL;
     m_ogl_disp_list_via = NULL;
@@ -732,11 +731,6 @@ bool C3D_RENDER_OGL_LEGACY::Redraw(
         CLAYERS_OGL_DISP_LISTS *pLayerDispList = static_cast<CLAYERS_OGL_DISP_LISTS*>(ii->second);
         set_layer_material( layer_id );
 
-        if( m_ogl_disp_list_through_holes_outer )
-            m_ogl_disp_list_through_holes_outer->ApplyScalePosition(
-                        pLayerDispList->GetZBot(),
-                        pLayerDispList->GetZTop() - pLayerDispList->GetZBot() );
-
         if( (layer_id >= F_Cu) && (layer_id <= B_Cu) )
         {
             if( skipRenderHoles )
@@ -745,6 +739,11 @@ bool C3D_RENDER_OGL_LEGACY::Redraw(
             }
             else
             {
+                if( m_ogl_disp_list_through_holes_outer )
+                    m_ogl_disp_list_through_holes_outer->ApplyScalePosition(
+                                pLayerDispList->GetZBot(),
+                                pLayerDispList->GetZTop() - pLayerDispList->GetZBot() );
+
                 if( m_ogl_disp_lists_layers_holes_outer.find( layer_id ) !=
                     m_ogl_disp_lists_layers_holes_outer.end() )
                 {
@@ -772,6 +771,11 @@ bool C3D_RENDER_OGL_LEGACY::Redraw(
         }
         else
         {
+            if( m_ogl_disp_list_through_holes_vias_outer )
+                m_ogl_disp_list_through_holes_vias_outer->ApplyScalePosition(
+                            pLayerDispList->GetZBot(),
+                            pLayerDispList->GetZTop() - pLayerDispList->GetZBot() );
+
             if( (!skipRenderHoles) &&
                 m_boardAdapter.GetFlag( FL_SUBTRACT_MASK_FROM_SILK ) &&
                 ( ( ( layer_id == B_SilkS ) &&
@@ -1061,9 +1065,6 @@ void C3D_RENDER_OGL_LEGACY::ogl_free_all_display_lists()
 
     delete m_ogl_disp_list_through_holes_outer;
     m_ogl_disp_list_through_holes_outer = 0;
-
-    delete m_ogl_disp_list_through_holes_inner;
-    m_ogl_disp_list_through_holes_inner = 0;
 
     delete m_ogl_disp_list_through_holes_vias_outer;
     m_ogl_disp_list_through_holes_vias_outer = 0;
