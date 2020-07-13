@@ -381,6 +381,16 @@ class BOARD_ADAPTER
     }
 
     /**
+     * @brief GetThroughHole_Outer_Ring - Get the ThroughHole container that
+     * include the width of the annular ring.
+     * @return a container with holes.
+     */
+    const CBVHCONTAINER2D& GetThroughHole_Outer_Ring() const noexcept
+    {
+        return m_through_holes_outer_ring;
+    }
+
+    /**
      * @brief GetThroughHole_Outer_poly -
      * @return
      */
@@ -690,6 +700,8 @@ private:
     /// It contains the list of throughHoles of the board,
     /// the radius of the hole is inflated with the copper tickness
     CBVHCONTAINER2D   m_through_holes_outer;
+
+    CBVHCONTAINER2D m_through_holes_outer_ring;
 
     /// It contains the list of throughHoles of the board,
     /// the radius is the inner hole

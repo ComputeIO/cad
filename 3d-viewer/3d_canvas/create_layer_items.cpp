@@ -97,6 +97,7 @@ void BOARD_ADAPTER::destroyLayers()
 
     m_through_holes_inner.Clear();
     m_through_holes_outer.Clear();
+    m_through_holes_outer_ring.Clear();
     m_through_holes_vias_outer.Clear();
     m_through_holes_vias_inner.Clear();
     m_through_outer_holes_poly_NPTH.RemoveAllContours();
@@ -260,6 +261,7 @@ void BOARD_ADAPTER::createLayers( REPORTER* aStatusReporter )
                 const float   holediameter      = via->GetDrillValue() * BiuTo3Dunits();
                 const float   thickness         = GetCopperThickness3DU();
                 const float   hole_inner_radius = ( holediameter / 2.0f );
+                const float   ring_radius       = via->GetWidth() * BiuTo3Dunits() / 2;
 
                 const SFVEC2F via_center(
                         via->GetStart().x * m_biuTo3Dunits, -via->GetStart().y * m_biuTo3Dunits );
@@ -297,6 +299,8 @@ void BOARD_ADAPTER::createLayers( REPORTER* aStatusReporter )
                     m_through_holes_outer.Add( new CFILLEDCIRCLE2D( via_center,
                                                                     hole_inner_radius + thickness,
                                                                     *track ) );
+                    m_through_holes_outer_ring.Add(
+                            new CFILLEDCIRCLE2D( via_center, ring_radius, *track ) );
 
                     m_through_holes_vias_outer.Add(
                                 new CFILLEDCIRCLE2D( via_center,
@@ -1049,6 +1053,7 @@ void BOARD_ADAPTER::createLayers( REPORTER* aStatusReporter )
 
     m_through_holes_inner.BuildBVH();
     m_through_holes_outer.BuildBVH();
+    m_through_holes_outer_ring.BuildBVH();
 
     if( !m_layers_holes2D.empty() )
     {
