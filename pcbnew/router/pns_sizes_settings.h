@@ -39,6 +39,7 @@ class SIZES_SETTINGS {
 public:
     SIZES_SETTINGS()
             : m_trackWidth( 155000 ),
+              m_trackWidthInner( 155000 ),
               m_diffPairWidth( 125000 ),
               m_diffPairGap( 180000 ),
               m_diffPairViaGap( 180000 ),
@@ -57,6 +58,9 @@ public:
 
     int TrackWidth() const { return m_trackWidth; }
     void SetTrackWidth( int aWidth ) { m_trackWidth = aWidth; }
+
+    int TrackWidthInner() const { return m_trackWidthInner; }
+    void SetTrackWidthInner( int aWidth ) { m_trackWidthInner = aWidth; }
 
     int DiffPairWidth() const { return m_diffPairWidth; }
     int DiffPairGap() const { return m_diffPairGap; }
@@ -107,6 +111,7 @@ private:
     int inheritTrackWidth( ITEM* aItem );
 
     int m_trackWidth;
+    int m_trackWidthInner;
     int m_diffPairWidth;
     int m_diffPairGap;
     int m_diffPairViaGap;

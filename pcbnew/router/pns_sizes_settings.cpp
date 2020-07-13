@@ -101,16 +101,20 @@ void SIZES_SETTINGS::Init( BOARD* aBoard, ITEM* aStartItem, int aNet )
     if( bds.m_UseConnectedTrackWidth && aStartItem != NULL )
     {
         m_trackWidth = inheritTrackWidth( aStartItem );
+        m_trackWidthInner = m_trackWidth;
     }
 
     if( !m_trackWidth && ( bds.UseNetClassTrack() && netClass != NULL ) ) // netclass value
     {
         m_trackWidth = netClass->GetTrackWidth();
+        m_trackWidthInner = netClass->GetTrackWidthInner();
+
     }
 
     if( !m_trackWidth )
     {
         m_trackWidth = bds.GetCurrentTrackWidth();
+        m_trackWidthInner = m_trackWidth;
     }
 
     if( bds.UseNetClassVia() && netClass != NULL )   // netclass value
@@ -166,6 +170,7 @@ void SIZES_SETTINGS::AddLayerPair( int aL1, int aL2 )
 void SIZES_SETTINGS::ImportCurrent( BOARD_DESIGN_SETTINGS& aSettings )
 {
     m_trackWidth = aSettings.GetCurrentTrackWidth();
+    m_trackWidthInner = m_trackWidth;
     m_viaDiameter = aSettings.GetCurrentViaSize();
     m_viaDrill = aSettings.GetCurrentViaDrill();
 
