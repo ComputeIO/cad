@@ -995,8 +995,17 @@ void LINE_PLACER::initPlacement()
     m_tail.SetNet( m_currentNet );
     m_head.SetLayer( m_currentLayer );
     m_tail.SetLayer( m_currentLayer );
-    m_head.SetWidth( m_sizes.TrackWidth() );
-    m_tail.SetWidth( m_sizes.TrackWidth() );
+    if(IsInnerLayer( ToLAYER_ID( m_currentLayer )))
+    {
+        m_head.SetWidth( m_sizes.TrackWidthInner() );
+        m_tail.SetWidth( m_sizes.TrackWidthInner() );
+    }
+    else
+    {
+        m_head.SetWidth( m_sizes.TrackWidth() );
+        m_tail.SetWidth( m_sizes.TrackWidth() );
+    }
+
     m_head.RemoveVia();
     m_tail.RemoveVia();
 
