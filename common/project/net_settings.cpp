@@ -52,9 +52,9 @@ NET_SETTINGS::NET_SETTINGS( JSON_SETTINGS* aParent, const std::string& aPath ) :
                     nlohmann::json netJson = {
                         { "name",              netclass->GetName().ToUTF8() },
                         { "clearance",         PcbIu2Millimeter( netclass->GetClearance() ) },
-                        { "clearance_inner",   PcbIu2Millimeter( netclass->GetClearance() ) },
+                        { "clearance_inner",   PcbIu2Millimeter( netclass->GetClearanceInner() ) },
                         { "track_width",       PcbIu2Millimeter( netclass->GetTrackWidth() ) },
-                        { "track_width_inner", PcbIu2Millimeter( netclass->GetTrackWidth() ) },
+                        { "track_width_inner", PcbIu2Millimeter( netclass->GetTrackWidthInner() ) },
                         { "via_diameter",      PcbIu2Millimeter( netclass->GetViaDiameter() ) },
                         { "via_drill",         PcbIu2Millimeter( netclass->GetViaDrill() ) },
                         { "microvia_diameter", PcbIu2Millimeter( netclass->GetuViaDiameter() ) },
