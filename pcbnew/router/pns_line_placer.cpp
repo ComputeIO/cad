@@ -949,7 +949,7 @@ bool LINE_PLACER::SetLayer( int aLayer )
     if( m_idle )
     {
         m_currentLayer = aLayer;
-        UpdateUpdateWidthFromLayer();WidthFromLayer();
+        UpdateWidthFromLayer();
         return true;
     }
     else if( m_chainedPlacement )
