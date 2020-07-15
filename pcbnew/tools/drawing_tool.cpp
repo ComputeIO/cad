@@ -714,7 +714,7 @@ int DRAWING_TOOL::DrawSpecification( const TOOL_EVENT& aEvent )
 
     return 1;
 }
-int DRAWING_TOOL::PlaceSpecificationStackup( const TOOL_EVENT& aEvent )
+int DRAWING_TOOL::PlaceStackup( const TOOL_EVENT& aEvent )
 {
     if( m_editModules && !m_frame->GetModel() )
         return 0;
@@ -3117,8 +3117,7 @@ const unsigned int DRAWING_TOOL::WIDTH_STEP = Millimeter2iu( 0.1 );
 
 void DRAWING_TOOL::setTransitions()
 {
-    Go( &DRAWING_TOOL::PlaceSpecificationStackup,
-            PCB_ACTIONS::drawSpecificationStackup.MakeEvent() );
+    Go( &DRAWING_TOOL::PlaceStackup,          PCB_ACTIONS::drawStackup.MakeEvent() );
     Go( &DRAWING_TOOL::DrawLine,              PCB_ACTIONS::drawLine.MakeEvent() );
     Go( &DRAWING_TOOL::DrawZone,              PCB_ACTIONS::drawPolygon.MakeEvent() );
     Go( &DRAWING_TOOL::DrawRectangle,         PCB_ACTIONS::drawRectangle.MakeEvent() );

@@ -88,10 +88,6 @@ TOOL_ACTION PCB_ACTIONS::convertToTracks( "pcbnew.Convert.convertToTracks",
 
 // DRAWING_TOOL
 //
-TOOL_ACTION PCB_ACTIONS::drawSpecificationStackup( "pcbnew.InteractiveDrawing.specificationStackup",
-        AS_GLOBAL, 0, LEGACY_HK_NAME( "Add Stackup Table" ), _( "Add Stackup Tabl" ),
-        _( "Add Stackup Tabl" ), add_graphical_segments_xpm, AF_ACTIVATE );
-
 TOOL_ACTION PCB_ACTIONS::drawLine( "pcbnew.InteractiveDrawing.line",
         AS_GLOBAL,
         MD_SHIFT + MD_CTRL + 'L', LEGACY_HK_NAME( "Draw Line" ),
@@ -108,6 +104,10 @@ TOOL_ACTION PCB_ACTIONS::drawRectangle( "pcbnew.InteractiveDrawing.rectangle",
         AS_GLOBAL, 0, "",
         _( "Draw Rectangle" ), _( "Draw a rectangle" ),
         BITMAPS::add_rectangle, AF_ACTIVATE );
+
+TOOL_ACTION PCB_ACTIONS::drawStackup( "pcbnew.InteractiveDrawing.stackup",
+        AS_GLOBAL, 0, LEGACY_HK_NAME( "Add Stackup Table" ), _( "Add Stackup Table" ),
+        _( "Add Stackup Tabl" ), nullptr, AF_ACTIVATE );
 
 TOOL_ACTION PCB_ACTIONS::drawCircle( "pcbnew.InteractiveDrawing.circle",
         AS_GLOBAL,

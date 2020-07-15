@@ -94,9 +94,9 @@ public:
             wxPoint origin, PCB_LAYER_ID aLayer, bool aDrawNow, wxPoint* tablesize );
 
     /**
-     * Function PlaceSpecificationStackup()
+     * Function PlaceStackup()
      */
-    int PlaceSpecificationStackup( const TOOL_EVENT& aEvent );
+    int PlaceStackup( const TOOL_EVENT& aEvent );
 
 
     /**
