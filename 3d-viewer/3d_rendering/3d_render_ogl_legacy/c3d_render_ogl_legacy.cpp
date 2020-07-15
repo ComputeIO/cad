@@ -773,7 +773,8 @@ bool C3D_RENDER_OGL_LEGACY::Redraw(
         else
         {
             CLAYERS_OGL_DISP_LISTS* dispListThoughHolesOuter =
-                    m_boardAdapter.GetFlag( FL_CLIP_SILK_ON_VIA_ANNULUS ) ?
+                    ( m_boardAdapter.GetFlag( FL_CLIP_SILK_ON_VIA_ANNULUS )
+                            && ( ( layer_id == B_SilkS ) || ( layer_id == F_SilkS ) ) ) ?
                             m_ogl_disp_list_through_holes_vias_outer_ring :
                             m_ogl_disp_list_through_holes_vias_outer;
             if( dispListThoughHolesOuter )

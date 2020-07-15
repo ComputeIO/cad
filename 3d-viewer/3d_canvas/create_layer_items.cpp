@@ -301,15 +301,18 @@ void BOARD_ADAPTER::createLayers( REPORTER* aStatusReporter )
                     m_through_holes_outer.Add( new CFILLEDCIRCLE2D( via_center,
                                                                     hole_inner_radius + thickness,
                                                                     *track ) );
-                    m_through_holes_outer_ring.Add(
-                                new CFILLEDCIRCLE2D( via_center, ring_radius, *track ) );
-
                     m_through_holes_vias_outer.Add(
                                 new CFILLEDCIRCLE2D( via_center,
                                                      hole_inner_radius + thickness,
                                                      *track ) );
-                    m_through_holes_vias_outer_ring.Add(
+
+                    if( GetFlag( FL_CLIP_SILK_ON_VIA_ANNULUS ) )
+                    {
+                        m_through_holes_outer_ring.Add(
                                 new CFILLEDCIRCLE2D( via_center, ring_radius, *track ) );
+                        m_through_holes_vias_outer_ring.Add(
+                                new CFILLEDCIRCLE2D( via_center, ring_radius, *track ) );
+                    }
 
                     m_through_holes_inner.Add( new CFILLEDCIRCLE2D( via_center,
                                                                     hole_inner_radius,
@@ -408,10 +411,13 @@ void BOARD_ADAPTER::createLayers( REPORTER* aStatusReporter )
 
                     // Add samething for vias only
 
-                    TransformCircleToPolygon( m_through_outer_holes_vias_poly, via->GetStart(),
-                            hole_outer_radius, ARC_HIGH_DEF );
-                    TransformCircleToPolygon( m_through_outer_ring_holes_vias_poly, via->GetStart(),
-                            hole_outer_ring_radius, ARC_HIGH_DEF );
+                    TransformCircleToPolygon( m_through_outer_holes_vias_poly,
+                            via->GetStart(), hole_outer_radius, ARC_HIGH_DEF );
+                    if( GetFlag( FL_CLIP_SILK_ON_VIA_ANNULUS ) )
+                    {
+                        TransformCircleToPolygon( m_through_outer_ring_holes_vias_poly,
+                                via->GetStart(), hole_outer_ring_radius, ARC_HIGH_DEF );
+                    }
 
                     //TransformCircleToPolygon( m_through_inner_holes_vias_poly,
                     //                          via->GetStart(),
