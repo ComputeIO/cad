@@ -443,14 +443,21 @@ vector<BOARD_ITEM*> DRAWING_TOOL::DrawSpecificationStackup(
         t->SetText( layers.at( i )->GetMaterial() );
         colMaterial.push_back( t );
         t = (TEXTE_PCB*) style2->Duplicate();
+
+        double data;
+
         if( m_frame->GetUserUnits() == EDA_UNITS::MILLIMETRES )
         {
-            t->SetText( std::to_string( layers.at( i )->GetThickness() / 1000000.0 ) );
+            data = To_User_Unit( EDA_UNITS::MILLIMETRES, layers.at( i )->GetThickness() );
         }
         else if( m_frame->GetUserUnits() == EDA_UNITS::INCHES )
         {
-            t->SetText( std::to_string( Mm2mils( layers.at( i )->GetThickness() / 1000000.0 ) ) );
+            data = To_User_Unit( EDA_UNITS::INCHES, layers.at( i )->GetThickness(), true );
         }
+
+        // Set preicision ? Currently: 6 decimal places
+        t->SetText( std::to_string( data ) );
+
         colThickness.push_back( t );
         t = (TEXTE_PCB*) style2->Duplicate();
         t->SetText( layers.at( i )->GetColor() );
