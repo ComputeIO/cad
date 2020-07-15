@@ -852,7 +852,7 @@ inline bool IsBackLayer( PCB_LAYER_ID aLayerId )
  */
 inline bool IsInnerLayer( PCB_LAYER_ID aLayerId )
 {
-    return !(IsFrontLayer(aLayerId) || IsBackLayer(aLayerId));
+    return !( IsFrontLayer( aLayerId ) || IsBackLayer( aLayerId ) );
 }
 
 
