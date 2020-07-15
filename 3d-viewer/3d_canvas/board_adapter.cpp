@@ -95,7 +95,7 @@ BOARD_ADAPTER::BOARD_ADAPTER() :
     SetFlag( FL_USE_REALISTIC_MODE, true );
     SetFlag( FL_MODULE_ATTRIBUTES_NORMAL, true );
     SetFlag( FL_SHOW_BOARD_BODY, true );
-    SetFlag( FL_CLIP_SILK_ON_VIA_ANNULUS, true );
+    SetFlag( FL_CLIP_SILK_ON_VIA_ANNULUS, false );
     SetFlag( FL_MODULE_ATTRIBUTES_NORMAL, true );
     SetFlag( FL_MODULE_ATTRIBUTES_NORMAL_INSERT, true );
     SetFlag( FL_MODULE_ATTRIBUTES_VIRTUAL, true );
