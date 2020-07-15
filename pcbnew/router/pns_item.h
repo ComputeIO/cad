@@ -29,6 +29,7 @@
 #include <geometry/shape_line_chain.h>
 
 #include "pns_layerset.h"
+#include <layers_id_colors_and_visibility.h>
 
 class BOARD_CONNECTED_ITEM;
 
@@ -163,6 +164,11 @@ public:
     bool LayersOverlap( const ITEM* aOther ) const
     {
         return Layers().Overlaps( aOther->Layers() );
+    }
+
+    bool isOnInnerLayer() const
+    {
+        return IsInnerLayer( ToLAYER_ID( Layer() ) );
     }
 
     /**
