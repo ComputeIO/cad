@@ -52,7 +52,9 @@ NET_SETTINGS::NET_SETTINGS( JSON_SETTINGS* aParent, const std::string& aPath ) :
                     nlohmann::json netclassJson = {
                         { "name",              netclass->GetName().ToUTF8() },
                         { "clearance",         PcbIu2Millimeter( netclass->GetClearance() ) },
+                        { "clearance_inner",   PcbIu2Millimeter( netclass->GetClearanceInner() ) },    
                         { "track_width",       PcbIu2Millimeter( netclass->GetTrackWidth() ) },
+                        { "track_width_inner", PcbIu2Millimeter( netclass->GetTrackWidthInner() ) },
                         { "via_diameter",      PcbIu2Millimeter( netclass->GetViaDiameter() ) },
                         { "via_drill",         PcbIu2Millimeter( netclass->GetViaDrill() ) },
                         { "microvia_diameter", PcbIu2Millimeter( netclass->GetuViaDiameter() ) },
@@ -127,8 +129,12 @@ NET_SETTINGS::NET_SETTINGS( JSON_SETTINGS* aParent, const std::string& aPath ) :
 
                     netclass->SetClearance( getInPcbUnits( entry, "clearance",
                                                            netclass->GetClearance() ) );
+                    netclass->SetClearanceInner( getInPcbUnits ( entry, "clearance_inner",
+                                                                 netclass->GetClearance() ) );
                     netclass->SetTrackWidth( getInPcbUnits( entry, "track_width",
                                                             netclass->GetTrackWidth() ) );
+                    netclass->SetTrackWidthInner( getInPcbUnits( entry, "track_width_inner",
+                                                                 netclass->GetTrackWidth() ) );
                     netclass->SetViaDiameter( getInPcbUnits( entry, "via_diameter",
                                                              netclass->GetViaDiameter() ) );
                     netclass->SetViaDrill( getInPcbUnits( entry, "via_drill",
