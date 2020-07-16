@@ -2038,8 +2038,16 @@ void PCB_PARSER::parseNETCLASS()
             nc->SetClearance( parseBoardUnits( T_clearance ) );
             break;
 
+        case T_clearance_inner:
+            nc->SetClearanceInner( parseBoardUnits( T_clearance_inner ) );
+            break;
+
         case T_trace_width:
             nc->SetTrackWidth( parseBoardUnits( T_trace_width ) );
+            break;
+
+        case T_trace_width_inner:
+            nc->SetTrackWidthInner( parseBoardUnits( T_trace_width_inner ) );
             break;
 
         case T_via_dia:
@@ -2072,7 +2080,7 @@ void PCB_PARSER::parseNETCLASS()
             break;
 
         default:
-            Expecting( "clearance, trace_width, via_dia, via_drill, uvia_dia, uvia_drill, diff_pair_width, diff_pair_gap or add_net" );
+            Expecting( "clearance, clearance_inner, trace_width, trace_width_inner, via_dia, via_drill, uvia_dia, uvia_drill, diff_pair_width, diff_pair_gap or add_net" );
         }
 
         NeedRIGHT();
