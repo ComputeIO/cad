@@ -57,6 +57,7 @@ chamfer
 chamfer_ratio
 circle
 clearance
+clearance_inner
 clearance_min
 color
 comment
@@ -267,6 +268,7 @@ top
 top_left
 top_right
 trace_width
+trace_width_inner
 tracks
 trace_min
 trace_clearance
