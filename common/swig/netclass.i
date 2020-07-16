@@ -62,8 +62,14 @@ public:
     int     GetClearance() const            { return (*self)->GetClearance(); }
     void    SetClearance( int aClearance )  { (*self)->SetClearance( aClearance ); }
 
+    int     GetClearanceInner() const            { return (*self)->GetClearanceInner(); }
+    void    SetClearanceInner( int aClearance )  { (*self)->SetClearanceInner( aClearance ); }
+
     int     GetTrackWidth() const           { return (*self)->GetTrackWidth(); }
     void    SetTrackWidth( int aWidth )     { (*self)->SetTrackWidth( aWidth ); }
+
+    int     GetTrackWidthInner() const           { return (*self)->GetTrackWidthInner(); }
+    void    SetTrackWidthInner( int aWidth )     { (*self)->SetTrackWidthInner( aWidth ); }
 
     int     GetViaDiameter() const          { return (*self)->GetViaDiameter(); }
     void    SetViaDiameter( int aDia )      { (*self)->SetViaDiameter( aDia ); }
