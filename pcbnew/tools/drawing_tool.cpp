@@ -770,6 +770,11 @@ int DRAWING_TOOL::InteractivePlaceWithPreview( const TOOL_EVENT& aEvent, vector<
                 PCB_LAYER_ID targetLayer = frame()->SelectLayer(
                         PCB_LAYER_ID::PCB_LAYER_ID_COUNT, *aLayers, wxPoint( pos.x, pos.y ) );
 
+                if( targetLayer == PCB_LAYER_ID::PCB_LAYER_ID_COUNT )
+                {
+                    break; // The user did not pick any layer.
+                }
+
                 for( auto item : aItems )
                 {
                     item->SetLayer( targetLayer );
