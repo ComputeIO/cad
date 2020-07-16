@@ -486,6 +486,10 @@ void BOARD_ADAPTER::createLayers( REPORTER* aStatusReporter )
                                              pad->GetDrillSize().y ) / 2.0f ) * m_biuTo3Dunits;
 
             m_through_holes_outer.Add( createNewPadDrill( pad, inflate ) );
+            if( GetFlag( FL_CLIP_SILK_ON_VIA_ANNULUS ) )
+            {
+                m_through_holes_outer_ring.Add( createNewPadDrill( pad, inflate ) );
+            }
             m_through_holes_inner.Add( createNewPadDrill( pad,       0 ) );
         }
     }
