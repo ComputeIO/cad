@@ -258,6 +258,16 @@ public:
     void GetModifiedNets( std::vector<int>& aNets ) const override;
 
     /**
+     * Function UpdateWidthFromLayer()
+     *
+     * Updates the track width to match the respective inner or outer layer
+     * netclass settings. Used when starting routing or switching layers.
+     * 
+     */
+    void UpdateWidthFromLayer();
+
+
+    /**
      * Function SplitAdjacentSegments()
      *
      * Checks if point aP lies on segment aSeg. If so, splits the segment in two,

@@ -936,12 +936,27 @@ bool LINE_PLACER::SplitAdjacentSegments( NODE* aNode, ITEM* aSeg, const VECTOR2I
     return true;
 }
 
+void LINE_PLACER::UpdateWidthFromLayer()
+{
+    if(IsInnerLayer( ToLAYER_ID( m_currentLayer )))
+    {
+        m_head.SetWidth( m_sizes.TrackWidthInner() );
+        m_tail.SetWidth( m_sizes.TrackWidthInner() );
+    }
+    else
+    {
+        m_head.SetWidth( m_sizes.TrackWidth() );
+        m_tail.SetWidth( m_sizes.TrackWidth() );
+    }
+} 
+
 
 bool LINE_PLACER::SetLayer( int aLayer )
 {
     if( m_idle )
     {
         m_currentLayer = aLayer;
+        UpdateWidthFromLayer();
         return true;
     }
     else if( m_chainedPlacement )
@@ -955,6 +970,7 @@ bool LINE_PLACER::SetLayer( int aLayer )
         m_tail.Line().Clear();
         m_head.SetLayer( m_currentLayer );
         m_tail.SetLayer( m_currentLayer );
+        UpdateWidthFromLayer();
         Move( m_currentEnd, NULL );
         return true;
     }
@@ -1006,8 +1022,7 @@ void LINE_PLACER::initPlacement()
     m_tail.SetNet( m_currentNet );
     m_head.SetLayer( m_currentLayer );
     m_tail.SetLayer( m_currentLayer );
-    m_head.SetWidth( m_sizes.TrackWidth() );
-    m_tail.SetWidth( m_sizes.TrackWidth() );
+    UpdateWidthFromLayer();
     m_head.RemoveVia();
     m_tail.RemoveVia();
 
