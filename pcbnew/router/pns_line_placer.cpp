@@ -938,7 +938,7 @@ bool LINE_PLACER::SplitAdjacentSegments( NODE* aNode, ITEM* aSeg, const VECTOR2I
 
 void LINE_PLACER::UpdateWidthFromLayer()
 {
-    if(IsInnerLayer( ToLAYER_ID( m_currentLayer )))
+    if( IsInnerLayer( ToLAYER_ID( m_currentLayer ) ) )
     {
         m_head.SetWidth( m_sizes.TrackWidthInner() );
         m_tail.SetWidth( m_sizes.TrackWidthInner() );
