@@ -144,6 +144,7 @@ public:
 
     // Drawing Tool Activations
     static TOOL_ACTION drawLine;
+    static TOOL_ACTION drawCharacteristics;
     static TOOL_ACTION drawPolygon;
     static TOOL_ACTION drawRectangle;
     static TOOL_ACTION drawStackup;

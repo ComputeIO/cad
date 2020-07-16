@@ -105,9 +105,13 @@ TOOL_ACTION PCB_ACTIONS::drawRectangle( "pcbnew.InteractiveDrawing.rectangle",
         _( "Draw Rectangle" ), _( "Draw a rectangle" ),
         BITMAPS::add_rectangle, AF_ACTIVATE );
 
-TOOL_ACTION PCB_ACTIONS::drawStackup( "pcbnew.InteractiveDrawing.stackup",
-        AS_GLOBAL, 0, LEGACY_HK_NAME( "Add Stackup Table" ), _( "Add Stackup Table" ),
-        _( "Add Stackup Tabl" ), nullptr, AF_ACTIVATE );
+TOOL_ACTION PCB_ACTIONS::drawStackup( "pcbnew.InteractiveDrawing.stackup", AS_GLOBAL, 0,
+        LEGACY_HK_NAME( "Add Stackup Table" ), _( "Add Stackup Table" ), _( "Add Stackup Table" ),
+        nullptr, AF_ACTIVATE );
+
+TOOL_ACTION PCB_ACTIONS::drawCharacteristics( "pcbnew.InteractiveDrawing.characteristics",
+        AS_GLOBAL, 0, LEGACY_HK_NAME( "Add Board Characteristics" ),
+        _( "Add Characteristics Table" ), _( "Add Board Characteristics" ), nullptr, AF_ACTIVATE );
 
 TOOL_ACTION PCB_ACTIONS::drawCircle( "pcbnew.InteractiveDrawing.circle",
         AS_GLOBAL,

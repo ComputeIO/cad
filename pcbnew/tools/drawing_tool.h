@@ -87,6 +87,14 @@ public:
      */
     MODE GetDrawingMode() const;
     int  DrawSpecification( const TOOL_EVENT& aEvent );
+    int  DrawCharacteristics( const TOOL_EVENT& aEvent );
+
+    /**
+     * Function DrawBoardCharacteristics()
+     */
+    vector<BOARD_ITEM*> DrawBoardCharacteristics(
+            wxPoint origin, PCB_LAYER_ID aLayer, bool aDrawNow, wxPoint* tablesize );
+
     /**
      * Function DrawSpecificationStackup()
      */
@@ -94,10 +102,14 @@ public:
             wxPoint origin, PCB_LAYER_ID aLayer, bool aDrawNow, wxPoint* tablesize );
 
     /**
+     * Function PlaceCharacteristics()
+     */
+    int PlaceCharacteristics( const TOOL_EVENT& aEvent );
+
+    /**
      * Function PlaceStackup()
      */
     int PlaceStackup( const TOOL_EVENT& aEvent );
-
 
     /**
      * Function DrawLine()
