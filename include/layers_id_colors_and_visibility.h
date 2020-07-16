@@ -857,6 +857,14 @@ inline bool IsBackLayer( PCB_LAYER_ID aLayerId )
     return false;
 }
 
+/**
+ * Layer classification: Check if it's an inner layer
+ */
+inline bool IsInnerLayer( PCB_LAYER_ID aLayerId )
+{
+    return !( IsFrontLayer( aLayerId ) || IsBackLayer( aLayerId ) );
+}
+
 
 /**
  * @return the layer number after flipping an item
