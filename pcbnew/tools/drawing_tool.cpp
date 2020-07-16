@@ -547,10 +547,22 @@ vector<BOARD_ITEM*> DRAWING_TOOL::DrawBoardCharacteristics(
     t->SetText( "Board overall dimensions: " );
     colLabel1.push_back( t );
     t    = (TEXTE_PCB*) style1->Duplicate();
-    text = std::to_string( To_User_Unit( EDA_UNITS::MILLIMETRES, size.GetWidth() ) );
-    text += " x ";
-    text += std::to_string( To_User_Unit( EDA_UNITS::MILLIMETRES, size.GetHeight() ) );
-    text += " mm ";
+
+    if( m_frame->GetUserUnits() == EDA_UNITS::MILLIMETRES )
+    {
+        text = std::to_string( To_User_Unit( EDA_UNITS::MILLIMETRES, size.GetWidth() ) );
+        text += " x ";
+        text += std::to_string( To_User_Unit( EDA_UNITS::MILLIMETRES, size.GetHeight() ) );
+        text += " mm ";
+    }
+    else if( m_frame->GetUserUnits() == EDA_UNITS::INCHES )
+    {
+        text = std::to_string( To_User_Unit( EDA_UNITS::INCHES, size.GetWidth() ) );
+        text += " x ";
+        text += std::to_string( To_User_Unit( EDA_UNITS::INCHES, size.GetHeight() ) );
+        text += " in ";
+    }
+
     t->SetText( text );
     colData1.push_back( t );
 
@@ -558,12 +570,26 @@ vector<BOARD_ITEM*> DRAWING_TOOL::DrawBoardCharacteristics(
     t->SetText( "Min track/spacing: " );
     colLabel1.push_back( t );
     t    = (TEXTE_PCB*) style1->Duplicate();
-    text = std::to_string( To_User_Unit(
-            EDA_UNITS::MILLIMETRES, m_frame->GetBoard()->GetDesignSettings().m_TrackMinWidth ) );
-    text += " / ";
-    text += std::to_string( To_User_Unit(
-            EDA_UNITS::MILLIMETRES, m_frame->GetBoard()->GetDesignSettings().m_MinClearance ) );
-    text += " mm ";
+
+    if( m_frame->GetUserUnits() == EDA_UNITS::MILLIMETRES )
+    {
+        text = std::to_string( To_User_Unit( EDA_UNITS::MILLIMETRES,
+                m_frame->GetBoard()->GetDesignSettings().m_TrackMinWidth ) );
+        text += " / ";
+        text += std::to_string( To_User_Unit(
+                EDA_UNITS::MILLIMETRES, m_frame->GetBoard()->GetDesignSettings().m_MinClearance ) );
+        text += " mm ";
+    }
+    else if( m_frame->GetUserUnits() == EDA_UNITS::INCHES )
+    {
+        text = std::to_string( To_User_Unit( EDA_UNITS::INCHES,
+                m_frame->GetBoard()->GetDesignSettings().m_TrackMinWidth, true ) );
+        text += " / ";
+        text += std::to_string( To_User_Unit( EDA_UNITS::MILLIMETRES,
+                m_frame->GetBoard()->GetDesignSettings().m_MinClearance, true ) );
+        text += " mils ";
+    }
+
     t->SetText( text );
     colData1.push_back( t );
     t = static_cast<TEXTE_PCB*>( style1->Duplicate() );
@@ -585,9 +611,21 @@ vector<BOARD_ITEM*> DRAWING_TOOL::DrawBoardCharacteristics(
     t->SetText( "Board Thickness: " );
     colLabel2.push_back( t );
     t = static_cast<TEXTE_PCB*>( style1->Duplicate() );
-    t->SetText( std::to_string( To_User_Unit( EDA_UNITS::MILLIMETRES,
-                        m_frame->GetBoard()->GetDesignSettings().GetBoardThickness() ) )
-                + " mm" );
+
+    if( m_frame->GetUserUnits() == EDA_UNITS::MILLIMETRES )
+    {
+        text = std::to_string( To_User_Unit( EDA_UNITS::MILLIMETRES,
+                m_frame->GetBoard()->GetDesignSettings().GetBoardThickness() ) );
+        text += " mm ";
+    }
+    else if( m_frame->GetUserUnits() == EDA_UNITS::INCHES )
+    {
+        text = std::to_string( To_User_Unit( EDA_UNITS::INCHES,
+                m_frame->GetBoard()->GetDesignSettings().GetBoardThickness(), true ) );
+        text += " mils ";
+    }
+
+    t->SetText( text );
     colData2.push_back( t );
     t = static_cast<TEXTE_PCB*>( style1->Duplicate() );
     colLabel2.push_back( t );
@@ -597,15 +635,32 @@ vector<BOARD_ITEM*> DRAWING_TOOL::DrawBoardCharacteristics(
     t->SetText( "Min hole diameter: " );
     colLabel2.push_back( t );
     t = static_cast<TEXTE_PCB*>( style1->Duplicate() );
+
+    double holeSize;
+
     if( m_frame->GetBoard()->GetDesignSettings().m_MinThroughDrill
             > m_frame->GetBoard()->GetDesignSettings().m_ViasMinSize )
-        t->SetText( std::to_string( To_User_Unit( EDA_UNITS::MILLIMETRES,
-                            m_frame->GetBoard()->GetDesignSettings().m_ViasMinSize ) )
-                    + " mm" );
+    {
+        holeSize = m_frame->GetBoard()->GetDesignSettings().m_ViasMinSize;
+    }
     else
-        t->SetText( std::to_string( To_User_Unit( EDA_UNITS::MILLIMETRES,
-                            m_frame->GetBoard()->GetDesignSettings().m_MinThroughDrill ) )
-                    + " mm" );
+    {
+        holeSize = m_frame->GetBoard()->GetDesignSettings().m_MinThroughDrill;
+    }
+
+    if( m_frame->GetUserUnits() == EDA_UNITS::MILLIMETRES )
+    {
+        text = std::to_string( To_User_Unit( EDA_UNITS::MILLIMETRES, holeSize ) );
+        text += " mm";
+    }
+    else if( m_frame->GetUserUnits() == EDA_UNITS::INCHES )
+    {
+        text = std::to_string( To_User_Unit( EDA_UNITS::INCHES, holeSize, true ) );
+        text += " mils";
+    }
+
+    t->SetText( text );
+
     colData2.push_back( t );
     t = static_cast<TEXTE_PCB*>( style1->Duplicate() );
     t->SetText( "Impedance Control: " );
