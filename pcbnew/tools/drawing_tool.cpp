@@ -688,7 +688,7 @@ int DRAWING_TOOL::InteractivePlaceWithPreview( const TOOL_EVENT& aEvent, vector<
     {
         commit.Add( item );
     }
-    
+
     commit.Push( "temporary commit", false );
 
     // Main loop: keep receiving events
@@ -772,12 +772,17 @@ int DRAWING_TOOL::InteractivePlaceWithPreview( const TOOL_EVENT& aEvent, vector<
 
                 for( auto item : aItems )
                 {
-                    item->Move( wxCursorPosition );
                     item->SetLayer( targetLayer );
-                    commit.Add( item );
-                    commit.Push( "Placing item" );
                 }
             }
+
+            for( auto item : aItems )
+            {
+                item->Move( wxCursorPosition );
+                commit.Add( item );
+            }
+
+            commit.Push( "Placing items" );
             break;
         }
 
