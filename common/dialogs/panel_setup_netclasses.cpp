@@ -45,7 +45,9 @@ enum {
 
     GRID_FIRST_PCBNEW,
     GRID_CLEARANCE = GRID_FIRST_PCBNEW,
+    GRID_CLEARANCE_INNER,
     GRID_TRACKSIZE,
+    GRID_TRACKSIZE_INNER,
     GRID_VIASIZE,
     GRID_VIADRILL,
     GRID_uVIASIZE,
@@ -202,7 +204,9 @@ static void netclassToGridRow( EDA_UNITS aUnits, wxGrid* aGrid, int aRow, const 
     aGrid->SetCellValue( aRow, col, StringFromValue( aUnits, val, true, true ) )
 
     SET_MILS_CELL( GRID_CLEARANCE, nc->GetClearance() );
+    SET_MILS_CELL( GRID_CLEARANCE_INNER, nc->GetClearanceInner() );
     SET_MILS_CELL( GRID_TRACKSIZE, nc->GetTrackWidth() );
+    SET_MILS_CELL( GRID_TRACKSIZE_INNER, nc->GetTrackWidthInner() );
     SET_MILS_CELL( GRID_VIASIZE, nc->GetViaDiameter() );
     SET_MILS_CELL( GRID_VIADRILL, nc->GetViaDrill() );
     SET_MILS_CELL( GRID_uVIASIZE, nc->GetuViaDiameter() );
@@ -330,7 +334,9 @@ static void gridRowToNetclass( EDA_UNITS aUnits, wxGrid* grid, int row, const NE
     ValueFromString( aUnits, grid->GetCellValue( row, col ), true )
 
     nc->SetClearance( MYCELL( GRID_CLEARANCE ) );
+    nc->SetClearanceInner( MYCELL( GRID_CLEARANCE_INNER ) );
     nc->SetTrackWidth( MYCELL( GRID_TRACKSIZE ) );
+    nc->SetTrackWidthInner( MYCELL( GRID_TRACKSIZE_INNER ) );
     nc->SetViaDiameter( MYCELL( GRID_VIASIZE ) );
     nc->SetViaDrill( MYCELL( GRID_VIADRILL ) );
     nc->SetuViaDiameter( MYCELL( GRID_uVIASIZE ) );
