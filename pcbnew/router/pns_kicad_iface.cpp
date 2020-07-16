@@ -80,6 +80,7 @@ public:
 
     virtual int Clearance( const PNS::ITEM* aA, const PNS::ITEM* aB ) const override;
     virtual int Clearance( int aNetCode ) const override;
+    virtual int Clearance( int aNetCode, bool aInnerLayer) const override;
     virtual int DpCoupledNet( int aNet ) override;
     virtual int DpNetPolarity( int aNet ) override;
     virtual bool DpNetPair( PNS::ITEM* aItem, int& aNetP, int& aNetN ) override;
@@ -92,6 +93,7 @@ private:
         int coupledNet;
         int dpClearance;
         int clearance;
+        int clearanceInner;
     };
 
     int holeRadius( const PNS::ITEM* aItem ) const;
@@ -129,6 +131,9 @@ PNS_PCBNEW_RULE_RESOLVER::PNS_PCBNEW_RULE_RESOLVER( BOARD* aBoard, PNS::ROUTER_I
 
         int clearance = nc->GetClearance();
         ent.clearance = clearance;
+        int clearanceInner = nc->GetClearanceInner();
+        ent.clearanceInner = clearanceInner;
+
         ent.dpClearance = nc->GetDiffPairGap();
         m_netClearanceCache[i] = ent;
 
@@ -249,10 +254,11 @@ int PNS_PCBNEW_RULE_RESOLVER::localPadClearance( const PNS::ITEM* aItem ) const
 int PNS_PCBNEW_RULE_RESOLVER::Clearance( const PNS::ITEM* aA, const PNS::ITEM* aB ) const
 {
     int net_a = aA->Net();
-    int cl_a = Clearance( net_a );
     int net_b = aB->Net();
-    int cl_b = Clearance( net_b );
 
+    int cl_a = Clearance( net_a, aA->isOnInnerLayer() );
+    int cl_b = Clearance( net_b, aB->isOnInnerLayer() );
+        
     // Pad clearance is 0 if the ITEM* is not a pad
     int pad_a = localPadClearance( aA );
     int pad_b = localPadClearance( aB );
@@ -286,6 +292,19 @@ int PNS_PCBNEW_RULE_RESOLVER::Clearance( int aNetCode ) const
         wxFAIL_MSG( "PNS_PCBNEW_RULE_RESOLVER::Clearance: net not found in clearance cache." );
         return m_defaultClearance;
     }
+}
+
+int PNS_PCBNEW_RULE_RESOLVER::Clearance( int aNetCode, bool aInnerLayer) const
+{
+    if( aNetCode > 0 && aNetCode < (int) m_netClearanceCache.size() )
+        if( aInnerLayer )
+            return m_netClearanceCache[aNetCode].clearanceInner;
+        else
+            return m_netClearanceCache[aNetCode].clearance;
+    else
+        wxFAIL_MSG( "PNS_PCBNEW_RULE_RESOLVER::Clearance: net not found in clearance cache." );
+
+    return m_defaultClearance;
 }
 
 
