@@ -57,8 +57,11 @@ protected:
     /// The units on these parameters is Internal Units (1 nm)
 
     int         m_Clearance;            ///< clearance when routing
+    int         m_ClearanceInner;       ///< clearance when routing inner layers
 
     int         m_TrackWidth;           ///< track width used to route NETs in this NETCLASS
+    int         m_TrackWidthInner;      ///< track width used to route in inner layers
+    
     int         m_ViaDia;               ///< via diameter
     int         m_ViaDrill;             ///< via drill hole diameter
 
@@ -165,8 +168,21 @@ public:
 
     void    SetClearance( int aClearance )  { m_Clearance = aClearance; }
 
+    int GetClearanceInner( wxString* aSource = nullptr ) const
+    {
+        if( aSource )
+            *aSource = wxString::Format( _( "'%s' netclass" ), m_Name );
+
+        return m_ClearanceInner;
+    }
+
+    void    SetClearanceInner( int aClearance )  { m_ClearanceInner = aClearance; }
+
     int     GetTrackWidth() const           { return m_TrackWidth; }
     void    SetTrackWidth( int aWidth )     { m_TrackWidth = aWidth; }
+
+    int     GetTrackWidthInner() const           { return m_TrackWidthInner; }
+    void    SetTrackWidthInner( int aWidth )     { m_TrackWidthInner = aWidth; }
 
     int     GetViaDiameter() const          { return m_ViaDia; }
     void    SetViaDiameter( int aDia )      { m_ViaDia = aDia; }
