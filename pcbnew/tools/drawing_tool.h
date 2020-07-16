@@ -181,6 +181,9 @@ public:
      */
     int PlaceImportedGraphics( const TOOL_EVENT& aEvent );
 
+    int InteractivePlaceWithPreview( const TOOL_EVENT& aEvent, vector<BOARD_ITEM*> aItems,
+            vector<BOARD_ITEM*> aPreview, LSET* aLayers );
+
     /**
      * Function SetAnchor()
      * Places the footprint anchor (only in footprint editor).

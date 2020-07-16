@@ -658,7 +658,8 @@ vector<BOARD_ITEM*> DRAWING_TOOL::DrawBoardCharacteristics(
     return objects;
 }
 
-int DRAWING_TOOL::PlaceCharacteristics( const TOOL_EVENT& aEvent )
+int DRAWING_TOOL::InteractivePlaceWithPreview( const TOOL_EVENT& aEvent, vector<BOARD_ITEM*> aItems,
+        vector<BOARD_ITEM*> aPreview, LSET* aLayers )
 {
     if( m_editModules && !m_frame->GetModel() )
         return 0;
@@ -683,37 +684,17 @@ int DRAWING_TOOL::PlaceCharacteristics( const TOOL_EVENT& aEvent )
     if( aEvent.HasPosition() )
         m_toolMgr->RunAction( ACTIONS::cursorClick );
 
-    // Main loop: keep receiving events
-    wxPoint             tableSize = wxPoint();
-    vector<BOARD_ITEM*> table     = DrawBoardCharacteristics(
-            wxPoint( 0, 0 ), m_frame->GetActiveLayer(), false, &tableSize );
-
-    DRAWSEGMENT* line1 = new DRAWSEGMENT;
-    DRAWSEGMENT* line2 = new DRAWSEGMENT;
-    DRAWSEGMENT* line3 = new DRAWSEGMENT;
-    DRAWSEGMENT* line4 = new DRAWSEGMENT;
-    line1->SetStartX( 0 );
-    line1->SetStartY( 0 );
-    line1->SetEndX( tableSize.x );
-    line1->SetEndY( 0 );
-    line2->SetStartX( 0 );
-    line2->SetStartY( 0 );
-    line2->SetEndX( 0 );
-    line2->SetEndY( tableSize.y );
-    line3->SetStartX( tableSize.x );
-    line3->SetStartY( 0 );
-    line3->SetEndX( tableSize.x );
-    line3->SetEndY( tableSize.y );
-    line4->SetStartX( 0 );
-    line4->SetStartY( tableSize.y );
-    line4->SetEndX( tableSize.x );
-    line4->SetEndY( tableSize.y );
-    wxPoint wxCursorPosition = wxPoint();
-    commit.Add( line1 );
-    commit.Add( line2 );
-    commit.Add( line3 );
-    commit.Add( line4 );
+    for( auto item : aPreview )
+    {
+        commit.Add( item );
+    }
+    
     commit.Push( "temporary commit", false );
+
+    // Main loop: keep receiving events
+    wxPoint wxCursorPosition = wxPoint();
+    wxPoint wxPreviousCursorPosition = wxPoint( 0, 0 );
+
     while( TOOL_EVENT* evt = Wait() )
     {
         m_frame->GetCanvas()->SetCurrentCursor( text ? wxCURSOR_ARROW : wxCURSOR_PENCIL );
@@ -750,14 +731,16 @@ int DRAWING_TOOL::PlaceCharacteristics( const TOOL_EVENT& aEvent )
         if( evt->IsMotion() )
         {
             commit.Revert();
-            line1->Move( wxCursorPosition - line1->GetPosition() );
-            line2->Move( wxCursorPosition - line2->GetPosition() );
-            line3->Move( wxCursorPosition + wxPoint( tableSize.x, 0 ) - line3->GetPosition() );
-            line4->Move( wxCursorPosition + wxPoint( 0, tableSize.y ) - line4->GetPosition() );
-            commit.Modify( line1 );
-            commit.Modify( line2 );
-            commit.Modify( line3 );
-            commit.Modify( line4 );
+
+            for( auto item : aPreview )
+            {
+                item->Move( wxCursorPosition - wxPreviousCursorPosition );
+                commit.Modify( item );
+            }
+
+            wxPreviousCursorPosition.x = wxCursorPosition.x;
+            wxPreviousCursorPosition.y = wxCursorPosition.y;
+
             commit.Push( "temporary commit", false );
         }
         else if( evt->IsActivate() )
@@ -782,9 +765,19 @@ int DRAWING_TOOL::PlaceCharacteristics( const TOOL_EVENT& aEvent )
         else if( evt->IsClick( BUT_LEFT ) )
         {
             commit.Revert();
-            PCB_LAYER_ID targetLayer = frame()->SelectLayer( static_cast<PCB_LAYER_ID>( Cmts_User ),
-                    LSET::AllCuMask() | LSET::AllBoardTechMask(), wxPoint( pos.x, pos.y ) );
-            DrawBoardCharacteristics( wxPoint( pos.x, pos.y ), targetLayer, true, &tableSize );
+            if( aLayers != NULL )
+            {
+                PCB_LAYER_ID targetLayer = frame()->SelectLayer(
+                        PCB_LAYER_ID::PCB_LAYER_ID_COUNT, *aLayers, wxPoint( pos.x, pos.y ) );
+
+                for( auto item : aItems )
+                {
+                    item->Move( wxCursorPosition );
+                    item->SetLayer( targetLayer );
+                    commit.Add( item );
+                    commit.Push( "Placing item" );
+                }
+            }
             break;
         }
 
@@ -792,44 +785,22 @@ int DRAWING_TOOL::PlaceCharacteristics( const TOOL_EVENT& aEvent )
             evt->SetPassEvent();
     }
 
-    commit.Remove( line1 );
-    commit.Remove( line2 );
-    commit.Remove( line3 );
-    commit.Remove( line4 );
+    for( auto item : aPreview )
+    {
+        commit.Remove( item );
+    }
+
     commit.Push( "temporary commit", false );
     frame()->SetMsgPanel( board() );
     return 0;
 }
 
-int DRAWING_TOOL::PlaceStackup( const TOOL_EVENT& aEvent )
+int DRAWING_TOOL::PlaceCharacteristics( const TOOL_EVENT& aEvent )
 {
-    if( m_editModules && !m_frame->GetModel() )
-        return 0;
-
-    BOARD_ITEM*  text = NULL;
-    BOARD_COMMIT commit( m_frame );
-
-    m_toolMgr->RunAction( PCB_ACTIONS::selectionClear, true );
-    m_controls->ShowCursor( true );
-    m_controls->SetSnapping( true );
-    // do not capture or auto-pan until we start placing the table
-
-    SCOPED_DRAW_MODE scopedDrawMode( m_mode, MODE::TEXT );
-
-    std::string tool = aEvent.GetCommandStr().get();
-    m_frame->PushTool( tool );
-    Activate();
-
-    bool reselect = false;
-
-    // Prime the pump
-    if( aEvent.HasPosition() )
-        m_toolMgr->RunAction( ACTIONS::cursorClick );
-
-    // Main loop: keep receiving events
     wxPoint             tableSize = wxPoint();
-    vector<BOARD_ITEM*> table     = DrawSpecificationStackup(
+    vector<BOARD_ITEM*> table     = DrawBoardCharacteristics(
             wxPoint( 0, 0 ), m_frame->GetActiveLayer(), false, &tableSize );
+    vector<BOARD_ITEM*>* preview = new vector<BOARD_ITEM*>;
 
     DRAWSEGMENT* line1 = new DRAWSEGMENT;
     DRAWSEGMENT* line2 = new DRAWSEGMENT;
@@ -851,97 +822,63 @@ int DRAWING_TOOL::PlaceStackup( const TOOL_EVENT& aEvent )
     line4->SetStartY( tableSize.y );
     line4->SetEndX( tableSize.x );
     line4->SetEndY( tableSize.y );
-    wxPoint wxCursorPosition = wxPoint();
-    commit.Add( line1 );
-    commit.Add( line2 );
-    commit.Add( line3 );
-    commit.Add( line4 );
-    commit.Push( "temporary commit", false );
-    while( TOOL_EVENT* evt = Wait() )
-    {
-        m_frame->GetCanvas()->SetCurrentCursor( text ? wxCURSOR_ARROW : wxCURSOR_PENCIL );
-        VECTOR2D pos       = m_controls->GetCursorPosition();
-        wxCursorPosition.x = pos.x;
-        wxCursorPosition.y = pos.y;
 
+    line1->SetLayer( m_frame->GetActiveLayer() );
+    line2->SetLayer( m_frame->GetActiveLayer() );
+    line3->SetLayer( m_frame->GetActiveLayer() );
+    line4->SetLayer( m_frame->GetActiveLayer() );
 
-        if( reselect && text )
-            m_toolMgr->RunAction( PCB_ACTIONS::selectItem, true, text );
+    preview->push_back( line1 );
+    preview->push_back( line2 );
+    preview->push_back( line3 );
+    preview->push_back( line4 );
 
-        auto cleanup = [&]() {
-            m_toolMgr->RunAction( PCB_ACTIONS::selectionClear, true );
-            m_controls->ForceCursorPosition( false );
-            m_controls->ShowCursor( true );
-            m_controls->SetAutoPan( false );
-            m_controls->CaptureCursor( false );
-            delete text;
-            text = NULL;
-        };
+    LSET layerSet = LSET();
+    layerSet      = LSET::AllCuMask() | LSET::AllBoardTechMask();
+    return InteractivePlaceWithPreview( aEvent, table, *preview, &layerSet );
+}
 
-        if( evt->IsCancelInteractive() )
-        {
-            if( text )
-                cleanup();
-            else
-            {
-                m_frame->PopTool( tool );
-                commit.Revert();
-                break;
-            }
-        }
+int DRAWING_TOOL::PlaceStackup( const TOOL_EVENT& aEvent )
+{
+    wxPoint             tableSize = wxPoint();
+    vector<BOARD_ITEM*> table     = DrawSpecificationStackup(
+            wxPoint( 0, 0 ), m_frame->GetActiveLayer(), false, &tableSize );
+    vector<BOARD_ITEM*>* preview = new vector<BOARD_ITEM*>;
 
-        if( evt->IsMotion() )
-        {
-            commit.Revert();
-            line1->Move( wxCursorPosition - line1->GetPosition() );
-            line2->Move( wxCursorPosition - line2->GetPosition() );
-            line3->Move( wxCursorPosition + wxPoint( tableSize.x, 0 ) - line3->GetPosition() );
-            line4->Move( wxCursorPosition + wxPoint( 0, tableSize.y ) - line4->GetPosition() );
-            commit.Modify( line1 );
-            commit.Modify( line2 );
-            commit.Modify( line3 );
-            commit.Modify( line4 );
-            commit.Push( "temporary commit", false );
-        }
-        else if( evt->IsActivate() )
-        {
-            if( text )
-                cleanup();
-            if( evt->IsMoveTool() )
-            {
-                // leave ourselves on the stack so we come back after the move
-                break;
-            }
-            else
-            {
-                m_frame->PopTool( tool );
-                break;
-            }
-        }
-        else if( evt->IsClick( BUT_RIGHT ) )
-        {
-            m_menu.ShowContextMenu( selection() );
-        }
-        else if( evt->IsClick( BUT_LEFT ) )
-        {
-            commit.Revert();
-            PCB_LAYER_ID targetLayer = frame()->SelectLayer( static_cast<PCB_LAYER_ID>( Cmts_User ),
-                    LSET::AllCuMask() | LSET::AllBoardTechMask(), wxPoint( pos.x, pos.y ) );
-            DrawSpecificationStackup( wxPoint( pos.x, pos.y ), targetLayer, true, &tableSize );
-            break;
-        }
+    DRAWSEGMENT* line1 = new DRAWSEGMENT;
+    DRAWSEGMENT* line2 = new DRAWSEGMENT;
+    DRAWSEGMENT* line3 = new DRAWSEGMENT;
+    DRAWSEGMENT* line4 = new DRAWSEGMENT;
+    line1->SetStartX( 0 );
+    line1->SetStartY( 0 );
+    line1->SetEndX( tableSize.x );
+    line1->SetEndY( 0 );
+    line2->SetStartX( 0 );
+    line2->SetStartY( 0 );
+    line2->SetEndX( 0 );
+    line2->SetEndY( tableSize.y );
+    line3->SetStartX( tableSize.x );
+    line3->SetStartY( 0 );
+    line3->SetEndX( tableSize.x );
+    line3->SetEndY( tableSize.y );
+    line4->SetStartX( 0 );
+    line4->SetStartY( tableSize.y );
+    line4->SetEndX( tableSize.x );
+    line4->SetEndY( tableSize.y );
 
-        else
-            evt->SetPassEvent();
-    }
+    line1->SetLayer( m_frame->GetActiveLayer() );
+    line2->SetLayer( m_frame->GetActiveLayer() );
+    line3->SetLayer( m_frame->GetActiveLayer() );
+    line4->SetLayer( m_frame->GetActiveLayer() );
 
-    commit.Remove( line1 );
-    commit.Remove( line2 );
-    commit.Remove( line3 );
-    commit.Remove( line4 );
-    commit.Push( "temporary commit", false );
-    frame()->SetMsgPanel( board() );
-    return 0;
+    preview->push_back( line1 );
+    preview->push_back( line2 );
+    preview->push_back( line3 );
+    preview->push_back( line4 );
+
+    LSET layerSet = LSET();
+    layerSet      = LSET::AllCuMask() | LSET::AllBoardTechMask();
+    return InteractivePlaceWithPreview( aEvent, table, *preview, &layerSet );
 }
 
 int DRAWING_TOOL::DrawLine( const TOOL_EVENT& aEvent )
