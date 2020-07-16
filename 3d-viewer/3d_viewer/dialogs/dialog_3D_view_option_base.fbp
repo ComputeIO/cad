@@ -842,7 +842,7 @@
                                                                     <property name="gripper">0</property>
                                                                     <property name="hidden">0</property>
                                                                     <property name="id">wxID_ANY</property>
-                                                                    <property name="label">Clip Silkscreen at via annulus</property>
+                                                                    <property name="label">Clip silkscreen at via annulus</property>
                                                                     <property name="max_size"></property>
                                                                     <property name="maximize_button">0</property>
                                                                     <property name="maximum_size"></property>

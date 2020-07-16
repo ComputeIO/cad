@@ -74,7 +74,7 @@ DIALOG_3D_VIEW_OPTIONS_BASE::DIALOG_3D_VIEW_OPTIONS_BASE( wxWindow* parent, wxWi
 	m_bitmapClipSilkOnViaAnnulus = new wxStaticBitmap( sbSizer1->GetStaticBox(), wxID_ANY, wxNullBitmap, wxDefaultPosition, wxDefaultSize, 0 );
 	fgSizerRenderOptions->Add( m_bitmapClipSilkOnViaAnnulus, 0, wxALL, 5 );
 
-	m_checkBoxClipSilkOnViaAnnulus = new wxCheckBox( sbSizer1->GetStaticBox(), wxID_ANY, _("Clip Silkscreen at via annulus"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_checkBoxClipSilkOnViaAnnulus = new wxCheckBox( sbSizer1->GetStaticBox(), wxID_ANY, _("Clip silkscreen at via annulus"), wxDefaultPosition, wxDefaultSize, 0 );
 	fgSizerRenderOptions->Add( m_checkBoxClipSilkOnViaAnnulus, 0, wxALL, 5 );
 
 	wxFlexGridSizer* fgSizer3;

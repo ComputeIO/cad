@@ -158,7 +158,6 @@ bool EDA_3D_VIEWER_SETTINGS::MigrateFromLegacy( wxConfigBase* aCfg )
     ret &= fromLegacy<bool>( aCfg, "ShowSolderPasteLayers",     "render.show_solderpaste" );
     ret &= fromLegacy<bool>( aCfg, "ShowZones",                 "render.show_zones" );
     ret &= fromLegacy<bool>( aCfg, "SubtractMaskFromSilk",      "render.subtract_mask_from_silk" );
-    ret &= fromLegacy<bool>( aCfg, "ClipSilkOnViaAnnulus",      "render.clip_silk_on_via_annulus" );
 
     auto migrate_color =
             [&] ( const std::string& k_r, const std::string& k_g,

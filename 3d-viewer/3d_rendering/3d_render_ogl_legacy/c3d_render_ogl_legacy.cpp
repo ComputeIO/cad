@@ -777,6 +777,7 @@ bool C3D_RENDER_OGL_LEGACY::Redraw(
                             && ( ( layer_id == B_SilkS ) || ( layer_id == F_SilkS ) ) ) ?
                             m_ogl_disp_list_through_holes_vias_outer_ring :
                             m_ogl_disp_list_through_holes_vias_outer;
+
             if( dispListThoughHolesOuter )
                 dispListThoughHolesOuter->ApplyScalePosition( pLayerDispList->GetZBot(),
                         pLayerDispList->GetZTop() - pLayerDispList->GetZBot() );
