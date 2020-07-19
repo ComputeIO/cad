@@ -24,6 +24,14 @@
 #include <dialog_shim.h>
 #include <wx/treebook.h>
 
+class PAGED_DIALOG_NULL_PANEL : public wxPanel
+{
+public:
+    PAGED_DIALOG_NULL_PANEL( wxWindow* aParent ) : wxPanel( aParent )
+    {
+    }
+};
+
 
 class PAGED_DIALOG : public DIALOG_SHIM
 {
@@ -62,6 +70,7 @@ protected:
     void OnResetButton( wxCommandEvent& aEvent );
     void OnUpdateUI( wxUpdateUIEvent& event );
     void OnPageChange( wxBookCtrlEvent& event );
+    void OnPageChanging( wxBookCtrlEvent& aEvent );
 
     wxTreebook* m_treebook;
     wxButton*   m_auxiliaryButton;

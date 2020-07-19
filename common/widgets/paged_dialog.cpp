@@ -96,6 +96,19 @@ PAGED_DIALOG::PAGED_DIALOG( wxWindow* aParent, const wxString& aTitle, bool aUse
 
     m_treebook->Connect( wxEVT_TREEBOOK_PAGE_CHANGED, wxBookCtrlEventHandler( PAGED_DIALOG::OnPageChange ), NULL, this );
     Connect( wxEVT_UPDATE_UI, wxUpdateUIEventHandler( PAGED_DIALOG::OnUpdateUI ), nullptr, this );
+
+    m_treebook->Bind( wxEVT_TREEBOOK_PAGE_CHANGING, &PAGED_DIALOG::OnPageChanging, this );
+}
+
+
+void PAGED_DIALOG::OnPageChanging( wxBookCtrlEvent& aEvent )
+{
+    int page = aEvent.GetSelection();
+
+    if( auto panel = dynamic_cast<PAGED_DIALOG_NULL_PANEL*>( m_treebook->GetPage( page ) ) )
+    {
+        aEvent.Veto();
+    }
 }
 
 
