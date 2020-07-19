@@ -61,6 +61,7 @@ public:
     // above constructor.
 
     // these were once wxStrings, but it caused static construction sequence problems:
+    static const wxChar A5[];
     static const wxChar A4[];
     static const wxChar A3[];
     static const wxChar A2[];
@@ -200,6 +201,7 @@ protected:
 private:
 
     // standard pre-defined sizes
+    static const PAGE_INFO pageA5;
     static const PAGE_INFO pageA4;
     static const PAGE_INFO pageA3;
     static const PAGE_INFO pageA2;
