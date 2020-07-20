@@ -158,12 +158,17 @@ public:
     const wxString& GetDescription() const  { return m_Description; }
     void  SetDescription( const wxString& aDesc ) { m_Description = aDesc; }
 
-    int GetClearance( wxString* aSource = nullptr ) const
+    int GetClearance( wxString* aSource = nullptr, bool aUseInnerLayer = false ) const
     {
         if( aSource )
             *aSource = wxString::Format( _( "'%s' netclass" ), m_Name );
 
-        return m_Clearance;
+        return aUseInnerLayer ? m_ClearanceInner : m_Clearance;
+    }
+
+    int GetClearance( bool aUseInnerLayer ) const
+    {
+        return aUseInnerLayer ? m_ClearanceInner : m_Clearance;
     }
 
     void    SetClearance( int aClearance )  { m_Clearance = aClearance; }
