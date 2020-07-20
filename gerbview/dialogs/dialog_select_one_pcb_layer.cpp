@@ -55,7 +55,8 @@ private:
 
 public:
     // Constructor and destructor
-    SELECT_LAYER_DIALOG( GERBVIEW_FRAME* parent, int aDefaultLayer, int aCopperLayerCount, wxString aGerberName );
+    SELECT_LAYER_DIALOG( GERBVIEW_FRAME* parent, int aDefaultLayer, int aCopperLayerCount,
+            wxString aGerberName );
     ~SELECT_LAYER_DIALOG() { };
 
 private:
@@ -90,7 +91,8 @@ END_EVENT_TABLE()
  */
 int GERBVIEW_FRAME::SelectPCBLayer( int aDefaultLayer, int aCopperLayerCount, wxString aGerberName )
 {
-    SELECT_LAYER_DIALOG* frame = new SELECT_LAYER_DIALOG( this, aDefaultLayer, aCopperLayerCount, aGerberName );
+    SELECT_LAYER_DIALOG* frame =
+            new SELECT_LAYER_DIALOG( this, aDefaultLayer, aCopperLayerCount, aGerberName );
 
     int layer = frame->ShowModal();
     frame->Destroy();
@@ -104,10 +106,10 @@ int GERBVIEW_FRAME::SelectPCBLayer( int aDefaultLayer, int aCopperLayerCount, wx
  * radiobuttons, in which case they are positioned (in a vertical line)
  * to the right of that radiobox.
  */
-SELECT_LAYER_DIALOG::SELECT_LAYER_DIALOG( GERBVIEW_FRAME* parent, int aDefaultLayer,
-                                          int aCopperLayerCount, wxString aGerberName ) :
-        DIALOG_SHIM( parent, -1, _( "Select Layer: " + aGerberName ), wxDefaultPosition, wxDefaultSize,
-                     wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER )
+SELECT_LAYER_DIALOG::SELECT_LAYER_DIALOG(
+        GERBVIEW_FRAME* parent, int aDefaultLayer, int aCopperLayerCount, wxString aGerberName )
+        : DIALOG_SHIM( parent, -1, _( "Select Layer: " + aGerberName ), wxDefaultPosition,
+                wxDefaultSize, wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER )
 {
     wxButton* button;
     int ii;
