@@ -253,6 +253,12 @@ public:
         return wxT( "GERBER_FILE_IMAGE" );
     }
 
+    wxString GetSelectMenuText( EDA_UNITS aUnits ) const override
+    {
+        wxFAIL_MSG( GetClass() + wxT( " should not take part in selection clarification" ) );
+        return GetClass();
+    }
+
     /**
      * Read and load a gerber file.
      * @param aFullFileName = the full filename of the Gerber file

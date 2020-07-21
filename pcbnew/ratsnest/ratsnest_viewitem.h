@@ -71,6 +71,12 @@ public:
         return wxT( "RATSNEST_VIEWITEM" );
     }
 
+    wxString GetSelectMenuText( EDA_UNITS aUnits ) const override
+    {
+        wxFAIL_MSG( GetClass() + wxT( " should not take part in selection clarification" ) );
+        return GetClass();
+    }
+
 protected:
     ///> Object containing ratsnest data.
     std::shared_ptr<CONNECTIVITY_DATA> m_data;

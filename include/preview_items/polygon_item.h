@@ -54,6 +54,11 @@ public:
     ///> Gets the bounding box of the polygon
     virtual const BOX2I ViewBBox() const override;
 
+    wxString GetSelectMenuText( EDA_UNITS aUnits ) const override
+    {
+        wxFAIL_MSG( GetClass() + wxT( " should not take part in selection clarification" ) );
+        return GetClass();
+    }
 
     /**
      * Set the polygon points

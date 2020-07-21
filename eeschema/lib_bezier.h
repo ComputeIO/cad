@@ -49,6 +49,12 @@ public:
         return wxT( "LIB_BEZIER" );
     }
 
+    wxString GetSelectMenuText( EDA_UNITS aUnits ) const override
+    {
+        wxFAIL_MSG( GetClass() + wxT( " should not take part in selection clarification" ) );
+        return GetClass();
+    }
+
     wxString GetTypeName() override
     {
         return _( "Bezier" );

@@ -551,6 +551,12 @@ public:
         return wxT( "EDIT_POINTS" );
     }
 
+    wxString GetSelectMenuText( EDA_UNITS aUnits ) const override
+    {
+        wxFAIL_MSG( GetClass() + wxT( " should not take part in selection clarification" ) );
+        return GetClass();
+    }
+
 private:
     EDA_ITEM* m_parent;                 ///< Parent of the EDIT_POINTs
     std::deque<EDIT_POINT> m_points;    ///< EDIT_POINTs for modifying m_parent

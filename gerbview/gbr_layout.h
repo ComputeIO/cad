@@ -60,6 +60,12 @@ public:
         return wxT( "GBR_LAYOUT" );
     }
 
+    wxString GetSelectMenuText( EDA_UNITS aUnits ) const override
+    {
+        wxFAIL_MSG( GetClass() + wxT( " should not take part in selection clarification" ) );
+        return GetClass();
+    }
+
     // Accessor to the GERBER_FILE_IMAGE_LIST,
     // which handles the list of gerber files (and drill files) images loaded
     GERBER_FILE_IMAGE_LIST* GetImagesList() const;

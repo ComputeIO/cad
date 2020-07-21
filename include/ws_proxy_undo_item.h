@@ -52,6 +52,12 @@ public:
         return wxT( "WS_PROXY_UNDO_ITEM" );
     }
 
+    wxString GetSelectMenuText( EDA_UNITS aUnits ) const override
+    {
+        wxFAIL_MSG( GetClass() + wxT( " should not take part in selection clarification" ) );
+        return GetClass();
+    }
+
 protected:
     TITLE_BLOCK m_titleBlock;
     PAGE_INFO   m_pageInfo;

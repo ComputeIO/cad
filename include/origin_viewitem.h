@@ -82,6 +82,12 @@ public:
         return wxT( "ORIGIN_VIEWITEM" );
     }
 
+    wxString GetSelectMenuText( EDA_UNITS aUnits ) const override
+    {
+        wxFAIL_MSG( GetClass() + wxT( " should not take part in selection clarification" ) );
+        return GetClass();
+    }
+
     /**
      * Function SetDrawAtZero()
      * Set the draw at zero flag. When set the marker will be drawn when it's position is 0,0.

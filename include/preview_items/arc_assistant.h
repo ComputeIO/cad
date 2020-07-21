@@ -64,6 +64,12 @@ namespace PREVIEW
             return "ARC_ASSISTANT";
         }
 
+        wxString GetSelectMenuText( EDA_UNITS aUnits ) const override
+        {
+            wxFAIL_MSG( GetClass() + wxT( " should not take part in selection clarification" ) );
+            return GetClass();
+        }
+
     private:
         const ARC_GEOM_MANAGER& m_constructMan;
         EDA_UNITS               m_units;

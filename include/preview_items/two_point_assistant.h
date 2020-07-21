@@ -74,6 +74,12 @@ namespace PREVIEW
             return "TWO_POINT_ASSISTANT";
         }
 
+        wxString GetSelectMenuText( EDA_UNITS aUnits ) const override
+        {
+            wxFAIL_MSG( GetClass() + wxT( " should not take part in selection clarification" ) );
+            return GetClass();
+        }
+
     private:
         const TWO_POINT_GEOMETRY_MANAGER& m_constructMan;
         EDA_UNITS                         m_units;

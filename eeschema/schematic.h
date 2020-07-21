@@ -70,6 +70,12 @@ public:
         return wxT( "SCHEMATIC" );
     }
 
+    wxString GetSelectMenuText( EDA_UNITS aUnits ) const override
+    {
+        wxFAIL_MSG( GetClass() + wxT( " should not take part in selection clarification" ) );
+        return GetClass();
+    }
+
     /// Initializes this schematic to a blank one, unloading anything existing
     void Reset();
 

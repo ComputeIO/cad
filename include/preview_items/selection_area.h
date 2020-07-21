@@ -76,6 +76,12 @@ public:
         return wxT( "SELECTION_AREA" );
     }
 
+    wxString GetSelectMenuText( EDA_UNITS aUnits ) const override
+    {
+        wxFAIL_MSG( GetClass() + wxT( " should not take part in selection clarification" ) );
+        return GetClass();
+    }
+
     VECTOR2I GetOrigin() const { return m_origin; }
 
     VECTOR2I GetEnd() const { return m_end; }

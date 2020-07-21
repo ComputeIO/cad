@@ -133,15 +133,6 @@ SEARCH_RESULT EDA_ITEM::Visit( INSPECTOR inspector, void* testData, const KICAD_
 }
 
 
-wxString EDA_ITEM::GetSelectMenuText( EDA_UNITS aUnits ) const
-{
-    wxFAIL_MSG( wxT( "GetSelectMenuText() was not overridden for schematic item type " ) +
-                GetClass() );
-
-    return wxString( wxT( "Undefined menu text for " ) + GetClass() );
-}
-
-
 bool EDA_ITEM::Matches( const wxString& aText, wxFindReplaceData& aSearchData )
 {
     wxString text = aText;

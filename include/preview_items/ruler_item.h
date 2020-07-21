@@ -70,6 +70,12 @@ public:
         return wxT( "RULER_ITEM" );
     }
 
+    wxString GetSelectMenuText( EDA_UNITS aUnits ) const override
+    {
+        wxFAIL_MSG( GetClass() + wxT( " should not take part in selection clarification" ) );
+        return GetClass();
+    }
+
     void SwitchUnits()
     {
         if( m_userUnits == EDA_UNITS::INCHES )

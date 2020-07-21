@@ -105,6 +105,12 @@ public:
         return wxT( "WS_PROXY_VIEW_ITEM" );
     }
 
+    wxString GetSelectMenuText( EDA_UNITS aUnits ) const override
+    {
+        wxFAIL_MSG( GetClass() + wxT( " should not take part in selection clarification" ) );
+        return GetClass();
+    }
+
     bool HitTestWorksheetItems( VIEW* aView, const wxPoint& aPosition );
 
 protected:

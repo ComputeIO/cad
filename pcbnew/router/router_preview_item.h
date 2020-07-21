@@ -99,6 +99,12 @@ public:
         return wxT( "ROUTER_PREVIEW_ITEM" );
     }
 
+    wxString GetSelectMenuText( EDA_UNITS aUnits ) const override
+    {
+        wxFAIL_MSG( GetClass() + wxT( " should not take part in selection clarification" ) );
+        return GetClass();
+    }
+
     const BOX2I ViewBBox() const override;
 
     virtual void ViewDraw( int aLayer, KIGFX::VIEW* aView ) const override;

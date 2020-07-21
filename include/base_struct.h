@@ -424,13 +424,11 @@ public:
     /**
      * Function GetSelectMenuText
      * returns the text to display to be used in the selection clarification context menu
-     * when multiple items are found at the current cursor position.  The default version
-     * of this function raises an assertion in the debug mode and returns a string to
-     * indicate that it was not overridden to provide the object specific text.
+     * when multiple items are found at the current cursor position.
      *
      * @return The menu text string.
      */
-    virtual wxString GetSelectMenuText( EDA_UNITS aUnits ) const;
+    virtual wxString GetSelectMenuText( EDA_UNITS aUnits ) const = 0;
 
     /**
      * Function GetMenuImage
