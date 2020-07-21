@@ -125,7 +125,10 @@ public:
         m_penWidth  = aPenWidth;
     }
 
-    virtual wxString GetClass() const override { return wxT( "WS_DRAW_ITEM_LINE" ); }
+    virtual wxString GetClass() const override final
+    {
+        return wxT( "WS_DRAW_ITEM_LINE" );
+    }
 
     // Accessors:
     const wxPoint&  GetStart() const { return m_start; }
@@ -169,7 +172,10 @@ public:
         m_pos = aPos;
     }
 
-    virtual wxString GetClass() const override { return wxT( "WS_DRAW_ITEM_POLYPOLYGONS" ); }
+    virtual wxString GetClass() const override final
+    {
+        return wxT( "WS_DRAW_ITEM_POLYPOLYGONS" );
+    }
 
     // Accessors:
     SHAPE_POLY_SET& GetPolygons() { return m_Polygons; }
@@ -205,7 +211,10 @@ public:
         m_penWidth  = aPenWidth;
     }
 
-    virtual wxString GetClass() const override { return wxT( "WS_DRAW_ITEM_RECT" ); }
+    virtual wxString GetClass() const override
+    {
+        return wxT( "WS_DRAW_ITEM_RECT" );
+    }
 
     // Accessors:
     const wxPoint&  GetStart() const { return m_start; }
@@ -246,7 +255,10 @@ public:
         m_markerSize = aMarkerSize;
     }
 
-    virtual wxString GetClass() const override { return wxT( "WS_DRAW_ITEM_PAGE" ); }
+    virtual wxString GetClass() const override final
+    {
+        return wxT( "WS_DRAW_ITEM_PAGE" );
+    }
 
     // Accessors:
     void SetPageSize( wxSize aSize ) { m_pageSize = aSize; }
@@ -289,7 +301,10 @@ public:
         SetBold( aBold );
     }
 
-    virtual wxString GetClass() const override { return wxT( "WS_DRAW_ITEM_TEXT" ); }
+    virtual wxString GetClass() const override final
+    {
+        return wxT( "WS_DRAW_ITEM_TEXT" );
+    }
 
     void PrintWsItem( RENDER_SETTINGS* aSettings, const wxPoint& aOffset ) override;
 
@@ -326,7 +341,10 @@ public:
 
     ~WS_DRAW_ITEM_BITMAP() {}
 
-    virtual wxString GetClass() const override { return wxT( "WS_DRAW_ITEM_BITMAP" ); }
+    virtual wxString GetClass() const override final
+    {
+        return wxT( "WS_DRAW_ITEM_BITMAP" );
+    }
 
     wxPoint GetPosition() const override { return m_pos; }
     void SetPosition( wxPoint aPos ) override { m_pos = aPos; }

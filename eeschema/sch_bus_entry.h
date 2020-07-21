@@ -142,7 +142,7 @@ public:
         return aItem && SCH_BUS_WIRE_ENTRY_T == aItem->Type();
     }
 
-    wxString GetClass() const override
+    wxString GetClass() const override final
     {
         return wxT( "SCH_BUS_WIRE_ENTRY" );
     }
@@ -190,7 +190,7 @@ public:
         return aItem && SCH_BUS_BUS_ENTRY_T == aItem->Type();
     }
 
-    wxString GetClass() const override
+    wxString GetClass() const override final
     {
         return wxT( "SCH_BUS_BUS_ENTRY" );
     }

@@ -276,7 +276,7 @@ public:
      * returns the class name.
      * @return wxString
      */
-    wxString GetClass() const override
+    wxString GetClass() const override final
     {
         return wxT( "GERBER_DRAW_ITEM" );
     }

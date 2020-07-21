@@ -59,7 +59,7 @@ namespace PREVIEW
          * Get class name
          * @return  string "ARC_ASSISTANT"
          */
-        wxString GetClass() const override
+        wxString GetClass() const override final
         {
             return "ARC_ASSISTANT";
         }

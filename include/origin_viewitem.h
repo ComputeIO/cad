@@ -77,7 +77,7 @@ public:
     /** Get class name
      * @return  string "ORIGIN_VIEWITEM"
      */
-    wxString GetClass() const override
+    wxString GetClass() const override final
     {
         return wxT( "ORIGIN_VIEWITEM" );
     }

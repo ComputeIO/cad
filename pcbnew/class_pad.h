@@ -521,7 +521,7 @@ public:
     bool Collide( const SHAPE_SEGMENT* aSeg, int aMinClearance, int* aActual = nullptr );
     bool Collide( const D_PAD* aPad, int aMinClearance, int* aActual = nullptr );
 
-    wxString GetClass() const override
+    wxString GetClass() const override final
     {
         return wxT( "PAD" );
     }

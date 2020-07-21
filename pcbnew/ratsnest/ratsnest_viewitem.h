@@ -66,7 +66,7 @@ public:
     /** Get class name
      * @return  string "RATSNEST_VIEWITEM"
      */
-    virtual wxString GetClass() const override
+    virtual wxString GetClass() const override final
     {
         return wxT( "RATSNEST_VIEWITEM" );
     }

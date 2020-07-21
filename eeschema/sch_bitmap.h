@@ -83,7 +83,7 @@ public:
         return aItem && SCH_BITMAP_T == aItem->Type();
     }
 
-    wxString GetClass() const override
+    wxString GetClass() const override final
     {
         return wxT( "SCH_BITMAP" );
     }

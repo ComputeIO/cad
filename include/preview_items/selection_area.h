@@ -71,7 +71,7 @@ public:
      * Get class name
      * @return  string "SELECTION_AREA"
      */
-    wxString GetClass() const override
+    wxString GetClass() const override final
     {
         return wxT( "SELECTION_AREA" );
     }

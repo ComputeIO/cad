@@ -100,7 +100,7 @@ public:
     /** Get class name
      * @return  string "WORKSHEET_VIEWITEM"
      */
-    virtual wxString GetClass() const override
+    virtual wxString GetClass() const override final
     {
         return wxT( "WS_PROXY_VIEW_ITEM" );
     }

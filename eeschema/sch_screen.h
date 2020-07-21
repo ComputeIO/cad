@@ -172,7 +172,7 @@ public:
         return aItem && SCH_SCREEN_T == aItem->Type();
     }
 
-    virtual wxString GetClass() const override
+    virtual wxString GetClass() const override final
     {
         return wxT( "SCH_SCREEN" );
     }

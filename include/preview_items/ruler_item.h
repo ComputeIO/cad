@@ -65,7 +65,7 @@ public:
      * Get class name
      * @return  string "RULER_ITEM"
      */
-    wxString GetClass() const override
+    wxString GetClass() const override final
     {
         return wxT( "RULER_ITEM" );
     }

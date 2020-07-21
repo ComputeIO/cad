@@ -248,7 +248,7 @@ public:
     GERBER_FILE_IMAGE( int layer );
     virtual ~GERBER_FILE_IMAGE();
 
-    wxString GetClass() const override
+    wxString GetClass() const override final
     {
         return wxT( "GERBER_FILE_IMAGE" );
     }

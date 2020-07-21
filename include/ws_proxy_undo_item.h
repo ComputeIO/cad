@@ -47,7 +47,7 @@ public:
     void Show( int x, std::ostream& st ) const override { }
 #endif
 
-    wxString GetClass() const override
+    wxString GetClass() const override final
     {
         return wxT( "WS_PROXY_UNDO_ITEM" );
     }

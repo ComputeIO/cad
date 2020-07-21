@@ -108,6 +108,7 @@ public:
      * Function GetClass
      * returns the class name.
      * @return wxString
+     * @todo make final or remove
      */
     virtual wxString GetClass() const override
     {

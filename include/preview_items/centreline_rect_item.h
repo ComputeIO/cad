@@ -59,7 +59,7 @@ public:
     ///> Gets the bounding box of the rectangle
     virtual const BOX2I ViewBBox() const override;
 
-    wxString GetClass() const override
+    wxString GetClass() const override final
     {
         return wxT( "CENTRELINE_RECT_ITEM" );
     }

@@ -55,7 +55,7 @@ public:
     GBR_LAYOUT();
     ~GBR_LAYOUT();
 
-    wxString GetClass() const override
+    wxString GetClass() const override final
     {
         return wxT( "GBR_LAYOUT" );
     }

@@ -69,7 +69,7 @@ namespace PREVIEW
          * Get class name
          * @return  string "TWO_POINT_ASSISTANT"
          */
-        wxString GetClass() const override
+        wxString GetClass() const override final
         {
             return "TWO_POINT_ASSISTANT";
         }

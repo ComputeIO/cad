@@ -92,7 +92,7 @@ public:
         return aItem && PCB_NETINFO_T == aItem->Type();
     }
 
-    wxString GetClass() const override
+    wxString GetClass() const override final
     {
         return wxT( "NETINFO_ITEM" );
     }

@@ -200,6 +200,7 @@ public:
         return a.ApproxCollinear( b );
     }
 
+    /// @todo make final
     wxString GetClass() const override
     {
         return wxT( "TRACK" );
@@ -309,7 +310,7 @@ public:
 
     virtual bool HitTest( const EDA_RECT& aRect, bool aContained = true, int aAccuracy = 0 ) const override;
 
-    wxString GetClass() const override
+    wxString GetClass() const override final
     {
         return wxT( "ARC" );
     }
@@ -416,7 +417,7 @@ public:
     bool HitTest( const wxPoint& aPosition, int aAccuracy = 0 ) const override;
     bool HitTest( const EDA_RECT& aRect, bool aContained, int aAccuracy = 0 ) const override;
 
-    wxString GetClass() const override
+    wxString GetClass() const override final
     {
         return wxT( "VIA" );
     }

@@ -58,7 +58,7 @@ public:
         return _( "(Deleted Item)" );
     }
 
-    wxString GetClass() const override
+    wxString GetClass() const override final
     {
         return wxT( "DELETED_SHEET_ITEM" );
     }

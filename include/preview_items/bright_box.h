@@ -71,7 +71,7 @@ public:
     /** Get class name
      * @return  string "BRIGHT_BOX"
      */
-    virtual wxString GetClass() const override
+    virtual wxString GetClass() const override final
     {
         return wxT( "BRIGHT_BOX" );
     }

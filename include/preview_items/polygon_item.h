@@ -54,7 +54,7 @@ public:
     ///> Gets the bounding box of the polygon
     virtual const BOX2I ViewBBox() const override;
 
-    wxString GetClass() const override
+    wxString GetClass() const override final
     {
         return wxT( "POLYGON_ITEM" );
     }

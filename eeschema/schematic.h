@@ -65,7 +65,7 @@ public:
 
     ~SCHEMATIC();
 
-    virtual wxString GetClass() const override
+    virtual wxString GetClass() const override final
     {
         return wxT( "SCHEMATIC" );
     }

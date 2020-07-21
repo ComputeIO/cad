@@ -105,7 +105,7 @@ public:
         return aItem && SCH_SHEET_PIN_T == aItem->Type();
     }
 
-    wxString GetClass() const override
+    wxString GetClass() const override final
     {
         return wxT( "SCH_SHEET_PIN" );
     }
@@ -249,7 +249,7 @@ public:
         return aItem && SCH_SHEET_T == aItem->Type();
     }
 
-    wxString GetClass() const override
+    wxString GetClass() const override final
     {
         return wxT( "SCH_SHEET" );
     }

@@ -546,7 +546,7 @@ public:
     /** Get class name
      * @return  string "EDIT_POINTS"
      */
-    virtual wxString GetClass() const override
+    virtual wxString GetClass() const override final
     {
         return wxT( "EDIT_POINTS" );
     }

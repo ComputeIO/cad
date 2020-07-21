@@ -202,6 +202,7 @@ public:
         return aItem && SCH_TEXT_T == aItem->Type();
     }
 
+    /// @todo make final or remove
     virtual wxString GetClass() const override
     {
         return wxT( "SCH_TEXT" );
@@ -344,7 +345,7 @@ public:
         return aItem && SCH_LABEL_T == aItem->Type();
     }
 
-    wxString GetClass() const override
+    wxString GetClass() const override final
     {
         return wxT( "SCH_LABEL" );
     }
@@ -390,7 +391,7 @@ public:
         return aItem && SCH_GLOBAL_LABEL_T == aItem->Type();
     }
 
-    wxString GetClass() const override
+    wxString GetClass() const override final
     {
         return wxT( "SCH_GLOBALLABEL" );
     }
@@ -438,11 +439,6 @@ public:
     static inline bool ClassOf( const EDA_ITEM* aItem )
     {
         return aItem && SCH_HIER_LABEL_T == aItem->Type();
-    }
-
-    wxString GetClass() const override
-    {
-        return wxT( "SCH_HIERLABEL" );
     }
 
     void SetLabelSpinStyle( LABEL_SPIN_STYLE aSpinStyle ) override;

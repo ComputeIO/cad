@@ -97,7 +97,7 @@ public:
 
     ~LIB_PIN() { }
 
-    wxString GetClass() const override
+    wxString GetClass() const override final
     {
         return wxT( "LIB_PIN" );
     }

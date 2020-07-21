@@ -132,7 +132,7 @@ public:
 
     void GetMsgPanelInfo( EDA_DRAW_FRAME* aFrame, std::vector<MSG_PANEL_ITEM>& aList ) override;
 
-    wxString GetClass() const override
+    wxString GetClass() const override final
     {
         return wxT( "MGRAPHIC" );
     }

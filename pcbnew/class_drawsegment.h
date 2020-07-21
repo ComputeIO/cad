@@ -253,6 +253,7 @@ public:
     bool HitTest( const wxPoint& aPosition, int aAccuracy = 0 ) const override;
     bool HitTest( const EDA_RECT& aRect, bool aContained, int aAccuracy = 0 ) const override;
 
+    /// @todo make final or remove
     wxString GetClass() const override
     {
         return wxT( "DRAWSEGMENT" );

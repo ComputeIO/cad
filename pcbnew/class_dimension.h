@@ -239,7 +239,7 @@ public:
     bool HitTest( const wxPoint& aPosition, int aAccuracy ) const override;
     bool HitTest( const EDA_RECT& aRect, bool aContained, int aAccuracy = 0 ) const override;
 
-    wxString GetClass() const override
+    wxString GetClass() const override final
     {
         return wxT( "DIMENSION" );
     }

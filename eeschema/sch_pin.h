@@ -55,7 +55,7 @@ public:
         return aItem && SCH_PIN_T == aItem->Type();
     }
 
-    wxString GetClass() const override
+    wxString GetClass() const override final
     {
         return wxT( "SCH_PIN" );
     }

@@ -61,7 +61,7 @@ public:
     MY_DRAWING() : EDA_ITEM( NOT_USED ) {};
     virtual ~MY_DRAWING(){};
 
-    wxString GetClass() const override
+    wxString GetClass() const override final
     {
         return wxT( "MyDrawing" );
     }

@@ -44,7 +44,7 @@ public:
 
     ~LIB_RECTANGLE() { }
 
-    wxString GetClass() const override
+    wxString GetClass() const override final
     {
         return wxT( "LIB_RECTANGLE" );
     }

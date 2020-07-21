@@ -150,7 +150,7 @@ public:
     void SetParent( LIB_PART* aParent = nullptr );
     PART_REF& GetParent() { return m_parent; }
 
-    virtual wxString GetClass() const override
+    virtual wxString GetClass() const override final
     {
         return wxT( "LIB_PART" );
     }
