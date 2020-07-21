@@ -116,7 +116,7 @@ void PANEL_SETUP_RULES::onScintillaCharAdded( wxStyledTextEvent &aEvent )
         {
             if( !sexprs.empty() )
                 sexprs.pop();
-                
+
             context = NONE;
         }
         else if( c == ' ' )
