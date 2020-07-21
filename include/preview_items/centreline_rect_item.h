@@ -59,6 +59,11 @@ public:
     ///> Gets the bounding box of the rectangle
     virtual const BOX2I ViewBBox() const override;
 
+    wxString GetClass() const override
+    {
+        return wxT( "CENTRELINE_RECT_ITEM" );
+    }
+
     wxString GetSelectMenuText( EDA_UNITS aUnits ) const override
     {
         wxFAIL_MSG( GetClass() + wxT( " should not take part in selection clarification" ) );

@@ -78,15 +78,6 @@ public:
     }
 #endif
 
-    /**
-     * Get class name
-     * @return  string "SIMPLE_OVERLAY_ITEM"
-     */
-    virtual wxString GetClass() const override
-    {
-        return "SIMPLE_OVERLAY_ITEM";
-    }
-
     ///> Set the stroke colour to set before drawing preview
     void SetStrokeColor( const COLOR4D& aNewColor )
     {

@@ -211,11 +211,6 @@ public:
 
     ~SCH_ITEM();
 
-    virtual wxString GetClass() const override
-    {
-        return wxT( "SCH_ITEM" );
-    }
-
     /**
      * Swap the internal data structures \a aItem with the schematic item.
      * Obviously, aItem must have the same type than me
