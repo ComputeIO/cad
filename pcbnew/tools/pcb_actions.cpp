@@ -105,7 +105,6 @@ TOOL_ACTION PCB_ACTIONS::drawRectangle( "pcbnew.InteractiveDrawing.rectangle",
         _( "Draw Rectangle" ), _( "Draw a rectangle" ),
         BITMAPS::add_rectangle, AF_ACTIVATE );
 
-
 TOOL_ACTION PCB_ACTIONS::drawCircle( "pcbnew.InteractiveDrawing.circle",
         AS_GLOBAL,
         MD_SHIFT + MD_CTRL + 'C', LEGACY_HK_NAME( "Draw Circle" ),
