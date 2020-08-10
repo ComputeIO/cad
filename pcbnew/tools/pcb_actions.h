@@ -144,10 +144,8 @@ public:
 
     // Drawing Tool Activations
     static TOOL_ACTION drawLine;
-    static TOOL_ACTION drawCharacteristics;
     static TOOL_ACTION drawPolygon;
     static TOOL_ACTION drawRectangle;
-    static TOOL_ACTION drawStackup;
     static TOOL_ACTION drawCircle;
     static TOOL_ACTION drawArc;
     static TOOL_ACTION placeText;
@@ -160,7 +158,9 @@ public:
     static TOOL_ACTION drawRuleArea;
     static TOOL_ACTION drawZoneCutout;
     static TOOL_ACTION drawSimilarZone;
+    static TOOL_ACTION placeCharacteristics;
     static TOOL_ACTION placeTarget;
+    static TOOL_ACTION placeStackup;
     static TOOL_ACTION placeFootprint;
     static TOOL_ACTION placeImportedGraphics;
     static TOOL_ACTION setAnchor;
@@ -475,7 +475,7 @@ public:
     static TOOL_ACTION convertToArc;
     static TOOL_ACTION convertToTracks;
 
-    ///< @copydoc COMMON_ACTIONS::TranslateLegacyId()
+    ///> @copydoc COMMON_ACTIONS::TranslateLegacyId()
     virtual OPT<TOOL_EVENT> TranslateLegacyId( int aId ) override;
 };
 

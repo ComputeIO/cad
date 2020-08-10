@@ -313,9 +313,9 @@ void PCB_EDIT_FRAME::ReCreateMenuBar()
     placeMenu->Add( PCB_ACTIONS::drawLeader );
 
     placeMenu->AppendSeparator();
+    placeMenu->Add( PCB_ACTIONS::placeCharacteristics );
+    placeMenu->Add( PCB_ACTIONS::placeStackup );
     placeMenu->Add( PCB_ACTIONS::placeTarget );
-    placeMenu->Add( PCB_ACTIONS::drawSpecificationStackup );
-    placeMenu->Add( PCB_ACTIONS::drawCharacteristics );
 
     placeMenu->AppendSeparator();
     placeMenu->Add( PCB_ACTIONS::drillOrigin );
