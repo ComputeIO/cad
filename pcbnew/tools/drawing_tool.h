@@ -30,8 +30,6 @@
 #include <tool/tool_menu.h>
 #include <tools/pcb_actions.h>
 #include <tools/pcb_tool_base.h>
-#include <vector>
-using namespace std;
 
 namespace KIGFX
 {
@@ -93,14 +91,14 @@ public:
     /**
      * Function DrawBoardCharacteristics()
      */
-    vector<BOARD_ITEM*> DrawBoardCharacteristics(
-            wxPoint origin, PCB_LAYER_ID aLayer, bool aDrawNow, wxPoint* tablesize );
+    std::vector<BOARD_ITEM*> DrawBoardCharacteristics( wxPoint origin, PCB_LAYER_ID aLayer,
+                                                       bool aDrawNow, wxPoint* tablesize );
 
     /**
      * Function DrawSpecificationStackup()
      */
-    vector<BOARD_ITEM*> DrawSpecificationStackup(
-            wxPoint origin, PCB_LAYER_ID aLayer, bool aDrawNow, wxPoint* tablesize );
+    std::vector<BOARD_ITEM*> DrawSpecificationStackup( wxPoint origin, PCB_LAYER_ID aLayer,
+                                                       bool aDrawNow, wxPoint* tablesize );
 
     /**
      * Function PlaceCharacteristics()
@@ -192,8 +190,8 @@ public:
      * @param aLayers   Set of allowed destination when asking the user.
      *                  If set to NULL, the user is not asked and all BOARD_ITEMs remain on their layers. 
      */
-    int InteractivePlaceWithPreview( const TOOL_EVENT& aEvent, vector<BOARD_ITEM*> aItems,
-            vector<BOARD_ITEM*> aPreview, LSET* aLayers );
+    int InteractivePlaceWithPreview( const TOOL_EVENT& aEvent, std::vector<BOARD_ITEM*> aItems,
+                                     std::vector<BOARD_ITEM*> aPreview, LSET* aLayers );
 
     /**
      * Function SetAnchor()
