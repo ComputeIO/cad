@@ -395,7 +395,7 @@ std::vector<BOARD_ITEM*> DRAWING_TOOL::DrawSpecificationStackup(
     std::vector<std::vector<TEXTE_PCB*>> texts;
 
     // Style : Header
-    TEXTE_PCB* style1 = new TEXTE_PCB( (MODULE*) m_frame->GetModel() );
+    TEXTE_PCB* style1 = new TEXTE_PCB( static_cast<MODULE*>( m_frame->GetModel() ) );
     style1->SetLayer( Eco1_User );
     style1->SetTextSize( wxSize( 1500000, 1500000 ) );
     style1->SetTextThickness( 300000 );
@@ -406,7 +406,7 @@ std::vector<BOARD_ITEM*> DRAWING_TOOL::DrawSpecificationStackup(
     style1->SetVertJustify( GR_TEXT_VJUSTIFY_TOP );
 
     // Style : data
-    TEXTE_PCB* style2 = new TEXTE_PCB( (MODULE*) m_frame->GetModel() );
+    TEXTE_PCB* style2 = new TEXTE_PCB( static_cast<MODULE*>( m_frame->GetModel() ) );
     style2->SetLayer( Eco1_User );
     style2->SetTextSize( wxSize( 1500000, 1500000 ) );
     style2->SetTextThickness( 100000 );
@@ -535,7 +535,7 @@ std::vector<BOARD_ITEM*> DRAWING_TOOL::DrawBoardCharacteristics(
     wxPoint cursorPos = aOrigin;
 
     // Style : Section header
-    TEXTE_PCB* style2 = new TEXTE_PCB( (MODULE*) m_frame->GetModel() );
+    TEXTE_PCB* style2 = new TEXTE_PCB( static_cast<MODULE*>( m_frame->GetModel() ) );
     style2->SetLayer( Eco1_User );
     style2->SetTextSize( wxSize( 2000000, 2000000 ) );
     style2->SetTextThickness( 4000000 );
@@ -545,7 +545,7 @@ std::vector<BOARD_ITEM*> DRAWING_TOOL::DrawBoardCharacteristics(
     style2->SetVertJustify( GR_TEXT_VJUSTIFY_TOP );
 
     // Style : Data
-    TEXTE_PCB* style1 = new TEXTE_PCB( (MODULE*) m_frame->GetModel() );
+    TEXTE_PCB* style1 = new TEXTE_PCB( static_cast<MODULE*>( m_frame->GetModel() ) );
     style1->SetLayer( Eco1_User );
     style1->SetTextSize( wxSize( 1500000, 1500000 ) );
     style1->SetTextThickness( 200000 );
