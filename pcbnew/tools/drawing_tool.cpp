@@ -418,10 +418,8 @@ std::vector<BOARD_ITEM*> DRAWING_TOOL::DrawSpecificationStackup(
 
     //Get Layer names
     BOARD_DESIGN_SETTINGS&           dsnSettings = m_frame->GetDesignSettings();
-    BOARD_STACKUP                    stackup     = dsnSettings.GetStackupDescriptor();
+    BOARD_STACKUP&                   stackup     = dsnSettings.GetStackupDescriptor();
     std::vector<BOARD_STACKUP_ITEM*> layers      = stackup.GetList();
-
-    int i;
 
     std::vector<TEXTE_PCB*> colLayer;
     std::vector<TEXTE_PCB*> colType;
@@ -462,6 +460,8 @@ std::vector<BOARD_ITEM*> DRAWING_TOOL::DrawSpecificationStackup(
     t = static_cast<TEXTE_PCB*>( headStyle->Duplicate() );
     t->SetText( "Loss Tangent" );
     colTanD.push_back( t );
+
+    int i;
 
     for( i = 0; i < stackup.GetCount(); i++ )
     {
