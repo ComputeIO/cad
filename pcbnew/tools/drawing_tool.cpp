@@ -481,17 +481,8 @@ std::vector<BOARD_ITEM*> DRAWING_TOOL::DrawSpecificationStackup(
         colMaterial.push_back( t );
 
         t = static_cast<TEXTE_PCB*>( dataStyle->Duplicate() );
-
-        double data;
-
-        if( m_frame->GetUserUnits() == EDA_UNITS::MILLIMETRES )
-            data = To_User_Unit( EDA_UNITS::MILLIMETRES, layers.at( i )->GetThickness() );
-
-        else if( m_frame->GetUserUnits() == EDA_UNITS::INCHES )
-            data = To_User_Unit( EDA_UNITS::INCHES, layers.at( i )->GetThickness(), true );
-
-        // Set precision ? Currently: 6 decimal places
-        t->SetText( std::to_string( data ) );
+        t->SetText( StringFromValue( m_frame->GetUserUnits(), layers.at( i )->GetThickness(),
+                                     false, true ) );
         colThickness.push_back( t );
 
         t = static_cast<TEXTE_PCB*>( dataStyle->Duplicate() );
@@ -499,11 +490,13 @@ std::vector<BOARD_ITEM*> DRAWING_TOOL::DrawSpecificationStackup(
         colColor.push_back( t );
 
         t = static_cast<TEXTE_PCB*>( dataStyle->Duplicate() );
-        t->SetText( std::to_string( layers.at( i )->GetEpsilonR() ) );
+        t->SetText( StringFromValue( EDA_UNITS::UNSCALED, layers.at( i )->GetEpsilonR(),
+                                     false, false ) );
         colEpsilon.push_back( t );
 
         t = static_cast<TEXTE_PCB*>( dataStyle->Duplicate() );
-        t->SetText( std::to_string( layers.at( i )->GetLossTangent() ) );
+        t->SetText( StringFromValue( EDA_UNITS::UNSCALED, layers.at( i )->GetLossTangent(),
+                                     false, false ) );
         colTanD.push_back( t );
     }
 
@@ -582,7 +575,9 @@ std::vector<BOARD_ITEM*> DRAWING_TOOL::DrawBoardCharacteristics(
     colLabel1.push_back( t );
 
     t = static_cast<TEXTE_PCB*>( dataStyle->Duplicate() );
-    t->SetText( std::to_string( m_frame->GetBoard()->GetDesignSettings().GetCopperLayerCount() ) );
+    t->SetText( StringFromValue( EDA_UNITS::UNSCALED,
+                                 m_frame->GetBoard()->GetDesignSettings().GetCopperLayerCount(),
+                                 false, false ) );
     colData1.push_back( t );
 
     EDA_RECT size = m_frame->GetBoard()->ComputeBoundingBox( true );
@@ -591,22 +586,9 @@ std::vector<BOARD_ITEM*> DRAWING_TOOL::DrawBoardCharacteristics(
     colLabel1.push_back( t );
 
     t = (TEXTE_PCB*) dataStyle->Duplicate();
-
-    if( m_frame->GetUserUnits() == EDA_UNITS::MILLIMETRES )
-    {
-        text = std::to_string( To_User_Unit( EDA_UNITS::MILLIMETRES, size.GetWidth() ) );
-        text += " x ";
-        text += std::to_string( To_User_Unit( EDA_UNITS::MILLIMETRES, size.GetHeight() ) );
-        text += " mm ";
-    }
-    else if( m_frame->GetUserUnits() == EDA_UNITS::INCHES )
-    {
-        text = std::to_string( To_User_Unit( EDA_UNITS::INCHES, size.GetWidth() ) );
-        text += " x ";
-        text += std::to_string( To_User_Unit( EDA_UNITS::INCHES, size.GetHeight() ) );
-        text += " in ";
-    }
-
+    text = StringFromValue( m_frame->GetUserUnits(), size.GetWidth(),  false, false );
+    text += " x ";
+    text += StringFromValue( m_frame->GetUserUnits(), size.GetWidth(),  true, false );
     t->SetText( text );
     colData1.push_back( t );
 
@@ -615,26 +597,13 @@ std::vector<BOARD_ITEM*> DRAWING_TOOL::DrawBoardCharacteristics(
     colLabel1.push_back( t );
 
     t = (TEXTE_PCB*) dataStyle->Duplicate();
-
-    if( m_frame->GetUserUnits() == EDA_UNITS::MILLIMETRES )
-    {
-        text = std::to_string( To_User_Unit( EDA_UNITS::MILLIMETRES,
-                m_frame->GetBoard()->GetDesignSettings().m_TrackMinWidth ) );
-        text += " / ";
-        text += std::to_string( To_User_Unit(
-                EDA_UNITS::MILLIMETRES, m_frame->GetBoard()->GetDesignSettings().m_MinClearance ) );
-        text += " mm ";
-    }
-    else if( m_frame->GetUserUnits() == EDA_UNITS::INCHES )
-    {
-        text = std::to_string( To_User_Unit( EDA_UNITS::INCHES,
-                m_frame->GetBoard()->GetDesignSettings().m_TrackMinWidth, true ) );
-        text += " / ";
-        text += std::to_string( To_User_Unit( EDA_UNITS::MILLIMETRES,
-                m_frame->GetBoard()->GetDesignSettings().m_MinClearance, true ) );
-        text += " mils ";
-    }
-
+    text = StringFromValue( m_frame->GetUserUnits(),
+                            m_frame->GetBoard()->GetDesignSettings().m_TrackMinWidth,
+                            false, true );
+    text += " / ";
+    text += StringFromValue( m_frame->GetUserUnits(),
+                            m_frame->GetBoard()->GetDesignSettings().m_MinClearance,
+                            true, true );
     t->SetText( text );
     colData1.push_back( t );
 
@@ -661,20 +630,9 @@ std::vector<BOARD_ITEM*> DRAWING_TOOL::DrawBoardCharacteristics(
     colLabel2.push_back( t );
 
     t = static_cast<TEXTE_PCB*>( dataStyle->Duplicate() );
-
-    if( m_frame->GetUserUnits() == EDA_UNITS::MILLIMETRES )
-    {
-        text = std::to_string( To_User_Unit( EDA_UNITS::MILLIMETRES,
-                m_frame->GetBoard()->GetDesignSettings().GetBoardThickness() ) );
-        text += " mm ";
-    }
-    else if( m_frame->GetUserUnits() == EDA_UNITS::INCHES )
-    {
-        text = std::to_string( To_User_Unit( EDA_UNITS::INCHES,
-                m_frame->GetBoard()->GetDesignSettings().GetBoardThickness(), true ) );
-        text += " mils ";
-    }
-
+    text = StringFromValue( m_frame->GetUserUnits(),
+                            m_frame->GetBoard()->GetDesignSettings().GetBoardThickness(),
+                            true, true );
     t->SetText( text );
     colData2.push_back( t );
 
@@ -697,17 +655,7 @@ std::vector<BOARD_ITEM*> DRAWING_TOOL::DrawBoardCharacteristics(
     else
         holeSize = m_frame->GetBoard()->GetDesignSettings().m_MinThroughDrill;
 
-    if( m_frame->GetUserUnits() == EDA_UNITS::MILLIMETRES )
-    {
-        text = std::to_string( To_User_Unit( EDA_UNITS::MILLIMETRES, holeSize ) );
-        text += " mm";
-    }
-    else if( m_frame->GetUserUnits() == EDA_UNITS::INCHES )
-    {
-        text = std::to_string( To_User_Unit( EDA_UNITS::INCHES, holeSize, true ) );
-        text += " mils";
-    }
-
+    text = StringFromValue( m_frame->GetUserUnits(), holeSize, true, true );
     t->SetText( text );
     colData2.push_back( t );
 
