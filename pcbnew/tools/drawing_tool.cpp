@@ -747,15 +747,16 @@ int DRAWING_TOOL::InteractivePlaceWithPreview( const TOOL_EVENT& aEvent, std::ve
         if( reselect && text )
             m_toolMgr->RunAction( PCB_ACTIONS::selectItem, true, text );
 
-        auto cleanup = [&]() {
-            m_toolMgr->RunAction( PCB_ACTIONS::selectionClear, true );
-            m_controls->ForceCursorPosition( false );
-            m_controls->ShowCursor( true );
-            m_controls->SetAutoPan( false );
-            m_controls->CaptureCursor( false );
-            delete text;
-            text = NULL;
-        };
+        auto cleanup = [&]()
+            {
+                m_toolMgr->RunAction( PCB_ACTIONS::selectionClear, true );
+                m_controls->ForceCursorPosition( false );
+                m_controls->ShowCursor( true );
+                m_controls->SetAutoPan( false );
+                m_controls->CaptureCursor( false );
+                delete text;
+                text = NULL;
+            };
 
         if( evt->IsCancelInteractive() )
         {
