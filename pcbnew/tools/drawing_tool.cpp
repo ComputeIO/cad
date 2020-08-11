@@ -258,19 +258,25 @@ std::vector<BOARD_ITEM*> initTextTable( std::vector<std::vector<TEXTE_PCB*>> aCo
     {
         rowHeight[i] = 0;
     }
+
     for( i = 0; i < aCols; i++ )
     {
         colWidth[i] = 0;
     }
+
     // First, we determine what the height/Width should be for every cell
     i = 0;
+    
     for( auto col : aContent )
     {
         j = 0;
+
         if( i >= aCols )
             break;
+
         for( auto cell : col )
         {
+
             if( j >= aRows )
                 break;
             int height   = cell->GetBoundingBox().GetHeight() + ymargin;
@@ -278,28 +284,36 @@ std::vector<BOARD_ITEM*> initTextTable( std::vector<std::vector<TEXTE_PCB*>> aCo
             rowHeight[j] = rowHeight[j] > height ? rowHeight[j] : height;
             colWidth[i]  = colWidth[i] > width ? colWidth[i] : width;
             j++;
+
         }
+
         i++;
     }
 
     // get table size
     int height = 0;
+
     for( i = 0; i < aRows; i++ )
     {
         height += rowHeight[i];
     }
+
     int width = 0;
+
     for( i = 0; i < aCols; i++ )
     {
         width += colWidth[i];
     }
+
     aTableSize->x = width;
     aTableSize->y = height;
     // Draw the frame
+
     if( aDrawFrame )
     {
         int          y = origin.y;
         DRAWSEGMENT* line;
+
         for( i = 0; i < aRows; i++ )
         {
             line = new DRAWSEGMENT;
@@ -311,6 +325,7 @@ std::vector<BOARD_ITEM*> initTextTable( std::vector<std::vector<TEXTE_PCB*>> aCo
             y += rowHeight[i];
             table.push_back( line );
         }
+
         line = new DRAWSEGMENT;
         line->SetLayer( aLayer );
         line->SetStartX( origin.x );
@@ -319,6 +334,7 @@ std::vector<BOARD_ITEM*> initTextTable( std::vector<std::vector<TEXTE_PCB*>> aCo
         line->SetEndY( y );
         table.push_back( line );
         int x = origin.x;
+
         for( i = 0; i < aCols; i++ )
         {
             line = new DRAWSEGMENT;
@@ -330,6 +346,7 @@ std::vector<BOARD_ITEM*> initTextTable( std::vector<std::vector<TEXTE_PCB*>> aCo
             x += colWidth[i];
             table.push_back( line );
         }
+
         line = new DRAWSEGMENT;
         line->SetLayer( aLayer );
         line->SetStartX( x );
@@ -341,22 +358,29 @@ std::vector<BOARD_ITEM*> initTextTable( std::vector<std::vector<TEXTE_PCB*>> aCo
     //Now add the text
     i           = 0;
     wxPoint pos = wxPoint( origin.x + xmargin / 2, ymargin );
+
     for( auto col : aContent )
     {
         j = 0;
+
         if( i >= aCols )
             break;
+
         pos.y = origin.y + ymargin;
+
         for( auto cell : col )
         {
+
             if( j >= aRows )
                 break;
+
             cell->SetTextPos( pos );
             cell->SetLayer( aLayer );
             pos.y = pos.y + rowHeight[j];
             table.push_back( cell );
             j++;
         }
+
         pos.x = pos.x + colWidth[i];
         i++;
     }
@@ -369,6 +393,7 @@ std::vector<BOARD_ITEM*> DRAWING_TOOL::DrawSpecificationStackup(
 {
     BOARD_COMMIT               commit( m_frame );
     std::vector<std::vector<TEXTE_PCB*>> texts;
+
     // Style : Header
     TEXTE_PCB* style1 = new TEXTE_PCB( (MODULE*) m_frame->GetModel() );
     style1->SetLayer( Eco1_User );
@@ -379,6 +404,7 @@ std::vector<BOARD_ITEM*> DRAWING_TOOL::DrawSpecificationStackup(
     style1->SetText( "Layer" );
     style1->SetHorizJustify( GR_TEXT_HJUSTIFY_LEFT );
     style1->SetVertJustify( GR_TEXT_VJUSTIFY_TOP );
+
     // Style : data
     TEXTE_PCB* style2 = new TEXTE_PCB( (MODULE*) m_frame->GetModel() );
     style2->SetLayer( Eco1_User );
@@ -389,6 +415,7 @@ std::vector<BOARD_ITEM*> DRAWING_TOOL::DrawSpecificationStackup(
     style2->SetText( "Layer" );
     style2->SetHorizJustify( GR_TEXT_HJUSTIFY_LEFT );
     style2->SetVertJustify( GR_TEXT_VJUSTIFY_TOP );
+
     //Get Layer names
     BOARD_DESIGN_SETTINGS&           dsnSettings = m_frame->GetDesignSettings();
     BOARD_STACKUP                    stackup     = dsnSettings.GetStackupDescriptor();
@@ -404,6 +431,7 @@ std::vector<BOARD_ITEM*> DRAWING_TOOL::DrawSpecificationStackup(
     std::vector<TEXTE_PCB*> colEpsilon;
     std::vector<TEXTE_PCB*> colTanD;
     TEXTE_PCB*         t;
+
     t = static_cast<TEXTE_PCB*> ( style1->Duplicate() );
     t->SetText( "Layer Name" );
     colLayer.push_back( t );
@@ -423,6 +451,7 @@ std::vector<BOARD_ITEM*> DRAWING_TOOL::DrawSpecificationStackup(
     {
         t->SetText( "Thickness (mils)" );
     }
+
     colThickness.push_back( t );
     t = static_cast<TEXTE_PCB*> ( style1->Duplicate() );
     t->SetText( "Color" );
@@ -433,6 +462,7 @@ std::vector<BOARD_ITEM*> DRAWING_TOOL::DrawSpecificationStackup(
     t = static_cast<TEXTE_PCB*> (  style1->Duplicate() );
     t->SetText( "Loss Tangent" );
     colTanD.push_back( t );
+
     for( i = 0; i < stackup.GetCount(); i++ )
     {
         t = static_cast<TEXTE_PCB*> (  style2->Duplicate() );
@@ -471,6 +501,7 @@ std::vector<BOARD_ITEM*> DRAWING_TOOL::DrawSpecificationStackup(
         t->SetText( std::to_string( layers.at( i )->GetLossTangent() ) );
         colTanD.push_back( t );
     }
+
     texts.push_back( colLayer );
     texts.push_back( colType );
     texts.push_back( colMaterial );
@@ -480,14 +511,18 @@ std::vector<BOARD_ITEM*> DRAWING_TOOL::DrawSpecificationStackup(
     texts.push_back( colTanD );
     std::vector<BOARD_ITEM*> table =
             initTextTable( texts, 7, stackup.GetCount() + 1, aOrigin, aLayer, tableSize, true );
+
     if( aDrawNow )
     {
+
         for( auto item : table )
         {
             commit.Add( item );
         }
+
         commit.Push( _( "Draw a table" ) );
     }
+
     return table;
 }
 
@@ -804,6 +839,7 @@ int DRAWING_TOOL::InteractivePlaceWithPreview( const TOOL_EVENT& aEvent, std::ve
         {
             if( text )
                 cleanup();
+
             if( evt->IsMoveTool() )
             {
                 // leave ourselves on the stack so we come back after the move
@@ -822,6 +858,7 @@ int DRAWING_TOOL::InteractivePlaceWithPreview( const TOOL_EVENT& aEvent, std::ve
         else if( evt->IsClick( BUT_LEFT ) )
         {
             commit.Revert();
+
             if( aLayers != NULL )
             {
                 PCB_LAYER_ID targetLayer = frame()->SelectLayer(
@@ -873,18 +910,22 @@ int DRAWING_TOOL::PlaceCharacteristics( const TOOL_EVENT& aEvent )
     DRAWSEGMENT* line2 = new DRAWSEGMENT;
     DRAWSEGMENT* line3 = new DRAWSEGMENT;
     DRAWSEGMENT* line4 = new DRAWSEGMENT;
+
     line1->SetStartX( 0 );
     line1->SetStartY( 0 );
     line1->SetEndX( tableSize.x );
     line1->SetEndY( 0 );
+
     line2->SetStartX( 0 );
     line2->SetStartY( 0 );
     line2->SetEndX( 0 );
     line2->SetEndY( tableSize.y );
+
     line3->SetStartX( tableSize.x );
     line3->SetStartY( 0 );
     line3->SetEndX( tableSize.x );
     line3->SetEndY( tableSize.y );
+
     line4->SetStartX( 0 );
     line4->SetStartY( tableSize.y );
     line4->SetEndX( tableSize.x );
@@ -916,18 +957,22 @@ int DRAWING_TOOL::PlaceStackup( const TOOL_EVENT& aEvent )
     DRAWSEGMENT* line2 = new DRAWSEGMENT;
     DRAWSEGMENT* line3 = new DRAWSEGMENT;
     DRAWSEGMENT* line4 = new DRAWSEGMENT;
+
     line1->SetStartX( 0 );
     line1->SetStartY( 0 );
     line1->SetEndX( tableSize.x );
     line1->SetEndY( 0 );
+
     line2->SetStartX( 0 );
     line2->SetStartY( 0 );
     line2->SetEndX( 0 );
     line2->SetEndY( tableSize.y );
+
     line3->SetStartX( tableSize.x );
     line3->SetStartY( 0 );
     line3->SetEndX( tableSize.x );
     line3->SetEndY( tableSize.y );
+
     line4->SetStartX( 0 );
     line4->SetStartY( tableSize.y );
     line4->SetEndX( tableSize.x );
