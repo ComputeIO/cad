@@ -260,6 +260,20 @@ std::vector<BOARD_ITEM*> initTextTable( std::vector<std::vector<TEXTE_PCB*>> aCo
 
     std::vector<BOARD_ITEM*> table;
 
+    // xmargin and ymargin are margins between the text and the the table lines.
+    //
+    //  +--------------------------------+
+    //  |            ^                   |
+    //  |            | ymargin           |
+    //  |            v                   |
+    //  |<------->TEXT_TEXT_TEXT<------->|
+    //  | xmargin    ^           xmargin |
+    //  |            | ymargin           |
+    //  |            v                   |
+    //  +--------------------------------+
+    //
+    // Note: these are internal units.
+
     int xmargin = 750000;
     int ymargin = 750000;
 
@@ -290,8 +304,8 @@ std::vector<BOARD_ITEM*> initTextTable( std::vector<std::vector<TEXTE_PCB*>> aCo
             if( j >= nbRows )
                 break;
 
-            int height   = cell->GetBoundingBox().GetHeight() + ymargin;
-            int width    = cell->GetBoundingBox().GetWidth() + xmargin;
+            int height   = cell->GetBoundingBox().GetHeight() + 2 * ymargin;
+            int width    = cell->GetBoundingBox().GetWidth() + 2 * xmargin;
             rowHeight[j] = rowHeight[j] > height ? rowHeight[j] : height;
             colWidth[i]  = colWidth[i] > width ? colWidth[i] : width;
             j++;
@@ -368,7 +382,7 @@ std::vector<BOARD_ITEM*> initTextTable( std::vector<std::vector<TEXTE_PCB*>> aCo
     }
     //Now add the text
     i           = 0;
-    wxPoint pos = wxPoint( origin.x + xmargin / 2, ymargin );
+    wxPoint pos = wxPoint( origin.x + xmargin, origin.y + ymargin );
 
     for( auto col : aContent )
     {
