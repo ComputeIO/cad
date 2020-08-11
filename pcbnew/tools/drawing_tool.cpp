@@ -442,13 +442,10 @@ std::vector<BOARD_ITEM*> DRAWING_TOOL::DrawSpecificationStackup(
     t = static_cast<TEXTE_PCB*>( headStyle->Duplicate() );
 
     if( m_frame->GetUserUnits() == EDA_UNITS::MILLIMETRES )
-    {
         t->SetText( "Thickness (mm)" );
-    }
+
     else if( m_frame->GetUserUnits() == EDA_UNITS::INCHES )
-    {
         t->SetText( "Thickness (mils)" );
-    }
 
     colThickness.push_back( t );
     t = static_cast<TEXTE_PCB*>( headStyle->Duplicate() );
@@ -479,13 +476,10 @@ std::vector<BOARD_ITEM*> DRAWING_TOOL::DrawSpecificationStackup(
         double data;
 
         if( m_frame->GetUserUnits() == EDA_UNITS::MILLIMETRES )
-        {
             data = To_User_Unit( EDA_UNITS::MILLIMETRES, layers.at( i )->GetThickness() );
-        }
+
         else if( m_frame->GetUserUnits() == EDA_UNITS::INCHES )
-        {
             data = To_User_Unit( EDA_UNITS::INCHES, layers.at( i )->GetThickness(), true );
-        }
 
         // Set preicision ? Currently: 6 decimal places
         t->SetText( std::to_string( data ) );
@@ -677,13 +671,9 @@ std::vector<BOARD_ITEM*> DRAWING_TOOL::DrawBoardCharacteristics(
 
     if( m_frame->GetBoard()->GetDesignSettings().m_MinThroughDrill
             > m_frame->GetBoard()->GetDesignSettings().m_ViasMinSize )
-    {
         holeSize = m_frame->GetBoard()->GetDesignSettings().m_ViasMinSize;
-    }
     else
-    {
         holeSize = m_frame->GetBoard()->GetDesignSettings().m_MinThroughDrill;
-    }
 
     if( m_frame->GetUserUnits() == EDA_UNITS::MILLIMETRES )
     {
