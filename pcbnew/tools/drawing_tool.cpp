@@ -667,12 +667,8 @@ std::vector<BOARD_ITEM*> DRAWING_TOOL::DrawBoardCharacteristics(
     t->SetText( _( "Plated Board Edge: " ) );
     colLabel2.push_back( t );
     t = static_cast<TEXTE_PCB*>( dataStyle->Duplicate() );
-    t->SetText( m_frame->GetBoard()
-                                ->GetDesignSettings()
-                                .GetStackupDescriptor()
-                                .m_HasDielectricConstrains ?
-                        _( "Yes" ) :
-                        _( "No" ) );
+    t->SetText( m_frame->GetBoard()->GetDesignSettings().GetStackupDescriptor()
+                .m_HasDielectricConstrains ? _( "Yes" ) : _( "No" ) );
     colData2.push_back( t );
 
     texts.push_back( colLabel1 );
@@ -685,16 +681,13 @@ std::vector<BOARD_ITEM*> DRAWING_TOOL::DrawBoardCharacteristics(
             initTextTable( texts, 5, 5, cursorPos, Eco1_User, &tableSize2, false );
 
     for( auto item : table )
-    {
         objects.push_back( item );
-    }
 
     if( aDrawNow )
     {
         for( auto item : objects )
-        {
             commit.Add( item );
-        }
+
         commit.Push( "Board Characteristics" );
     }
 
