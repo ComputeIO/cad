@@ -581,11 +581,11 @@ std::vector<BOARD_ITEM*> DRAWING_TOOL::DrawBoardCharacteristics(
     colData1.push_back( t );
 
     EDA_RECT size = m_frame->GetBoard()->ComputeBoundingBox( true );
-    t             = (TEXTE_PCB*) dataStyle->Duplicate();
+    t             = static_cast<TEXTE_PCB*>( dataStyle->Duplicate() );
     t->SetText( __( "Board overall dimensions: " ) );
     colLabel1.push_back( t );
 
-    t = (TEXTE_PCB*) dataStyle->Duplicate();
+    t = static_cast<TEXTE_PCB*>( dataStyle->Duplicate() );
     text = StringFromValue( m_frame->GetUserUnits(), size.GetWidth(),  false, false );
     text += " x ";
     text += StringFromValue( m_frame->GetUserUnits(), size.GetWidth(),  true, false );
@@ -596,7 +596,7 @@ std::vector<BOARD_ITEM*> DRAWING_TOOL::DrawBoardCharacteristics(
     t->SetText( __( "Min track/spacing: " ) );
     colLabel1.push_back( t );
 
-    t = (TEXTE_PCB*) dataStyle->Duplicate();
+    t = static_cast<TEXTE_PCB*>( dataStyle->Duplicate() );
     text = StringFromValue( m_frame->GetUserUnits(),
                             m_frame->GetBoard()->GetDesignSettings().m_TrackMinWidth,
                             false, true );
