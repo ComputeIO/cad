@@ -647,14 +647,8 @@ std::vector<BOARD_ITEM*> DRAWING_TOOL::DrawBoardCharacteristics(
     colLabel2.push_back( t );
     t = static_cast<TEXTE_PCB*>( dataStyle->Duplicate() );
 
-    double holeSize;
-
-    if( m_frame->GetBoard()->GetDesignSettings().m_MinThroughDrill
-            > m_frame->GetBoard()->GetDesignSettings().m_ViasMinSize )
-        holeSize = m_frame->GetBoard()->GetDesignSettings().m_ViasMinSize;
-    else
-        holeSize = m_frame->GetBoard()->GetDesignSettings().m_MinThroughDrill;
-
+    double holeSize = std::min( m_frame->GetBoard()->GetDesignSettings().m_MinThroughDrill,
+                                m_frame->GetBoard()->GetDesignSettings().m_ViasMinSize );
     text = StringFromValue( m_frame->GetUserUnits(), holeSize, true, true );
     t->SetText( text );
     colData2.push_back( t );
