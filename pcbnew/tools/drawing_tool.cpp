@@ -312,15 +312,8 @@ std::vector<BOARD_ITEM*> initTextTable( std::vector<std::vector<TEXTE_PCB*>> aCo
     }
 
     // get table size
-    int height = 0;
-
-    for( i = 0; i < nbRows; i++ )
-        height += rowHeight[i];
-
-    int width = 0;
-
-    for( i = 0; i < nbCols; i++ )
-        width += colWidth[i];
+    int height = std::accumulate( rowHeight, rowHeight + nbRows, 0 );
+    int width  = std::accumulate( colWidth, colWidth + nbCols, 0 );
 
     aTableSize->x = width;
     aTableSize->y = height;
