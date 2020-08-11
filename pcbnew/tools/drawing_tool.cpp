@@ -433,12 +433,15 @@ std::vector<BOARD_ITEM*> DRAWING_TOOL::DrawSpecificationStackup(
     t = static_cast<TEXTE_PCB*>( headStyle->Duplicate() );
     t->SetText( "Layer Name" );
     colLayer.push_back( t );
+
     t = static_cast<TEXTE_PCB*>( headStyle->Duplicate() );
     t->SetText( "Type" );
     colType.push_back( t );
+
     t = static_cast<TEXTE_PCB*>( headStyle->Duplicate() );
     t->SetText( "Material" );
     colMaterial.push_back( t );
+
     t = static_cast<TEXTE_PCB*>( headStyle->Duplicate() );
 
     if( m_frame->GetUserUnits() == EDA_UNITS::MILLIMETRES )
@@ -448,12 +451,15 @@ std::vector<BOARD_ITEM*> DRAWING_TOOL::DrawSpecificationStackup(
         t->SetText( "Thickness (mils)" );
 
     colThickness.push_back( t );
+
     t = static_cast<TEXTE_PCB*>( headStyle->Duplicate() );
     t->SetText( "Color" );
     colColor.push_back( t );
+
     t = static_cast<TEXTE_PCB*>( headStyle->Duplicate() );
     t->SetText( "Epsilon R" );
     colEpsilon.push_back( t );
+
     t = static_cast<TEXTE_PCB*>( headStyle->Duplicate() );
     t->SetText( "Loss Tangent" );
     colTanD.push_back( t );
@@ -465,12 +471,15 @@ std::vector<BOARD_ITEM*> DRAWING_TOOL::DrawSpecificationStackup(
         t = static_cast<TEXTE_PCB*>( dataStyle->Duplicate() );
         t->SetText( layers.at( i )->GetLayerName() );
         colLayer.push_back( t );
+
         t = static_cast<TEXTE_PCB*>( dataStyle->Duplicate() );
         t->SetText( layers.at( i )->GetTypeName() );
         colType.push_back( t );
+
         t = static_cast<TEXTE_PCB*>( dataStyle->Duplicate() );
         t->SetText( layers.at( i )->GetMaterial() );
         colMaterial.push_back( t );
+
         t = static_cast<TEXTE_PCB*>( dataStyle->Duplicate() );
 
         double data;
@@ -481,16 +490,18 @@ std::vector<BOARD_ITEM*> DRAWING_TOOL::DrawSpecificationStackup(
         else if( m_frame->GetUserUnits() == EDA_UNITS::INCHES )
             data = To_User_Unit( EDA_UNITS::INCHES, layers.at( i )->GetThickness(), true );
 
-        // Set preicision ? Currently: 6 decimal places
+        // Set precision ? Currently: 6 decimal places
         t->SetText( std::to_string( data ) );
-
         colThickness.push_back( t );
+
         t = static_cast<TEXTE_PCB*>( dataStyle->Duplicate() );
         t->SetText( layers.at( i )->GetColor() );
         colColor.push_back( t );
+
         t = static_cast<TEXTE_PCB*>( dataStyle->Duplicate() );
         t->SetText( std::to_string( layers.at( i )->GetEpsilonR() ) );
         colEpsilon.push_back( t );
+
         t = static_cast<TEXTE_PCB*>( dataStyle->Duplicate() );
         t->SetText( std::to_string( layers.at( i )->GetLossTangent() ) );
         colTanD.push_back( t );
@@ -569,6 +580,7 @@ std::vector<BOARD_ITEM*> DRAWING_TOOL::DrawBoardCharacteristics(
     t = static_cast<TEXTE_PCB*>( dataStyle->Duplicate() );
     t->SetText( "Copper Layer Count: " );
     colLabel1.push_back( t );
+
     t = static_cast<TEXTE_PCB*>( dataStyle->Duplicate() );
     t->SetText( std::to_string( m_frame->GetBoard()->GetDesignSettings().GetCopperLayerCount() ) );
     colData1.push_back( t );
@@ -577,6 +589,7 @@ std::vector<BOARD_ITEM*> DRAWING_TOOL::DrawBoardCharacteristics(
     t             = (TEXTE_PCB*) dataStyle->Duplicate();
     t->SetText( "Board overall dimensions: " );
     colLabel1.push_back( t );
+
     t = (TEXTE_PCB*) dataStyle->Duplicate();
 
     if( m_frame->GetUserUnits() == EDA_UNITS::MILLIMETRES )
@@ -600,6 +613,7 @@ std::vector<BOARD_ITEM*> DRAWING_TOOL::DrawBoardCharacteristics(
     t = static_cast<TEXTE_PCB*>( dataStyle->Duplicate() );
     t->SetText( "Min track/spacing: " );
     colLabel1.push_back( t );
+
     t = (TEXTE_PCB*) dataStyle->Duplicate();
 
     if( m_frame->GetUserUnits() == EDA_UNITS::MILLIMETRES )
@@ -623,15 +637,19 @@ std::vector<BOARD_ITEM*> DRAWING_TOOL::DrawBoardCharacteristics(
 
     t->SetText( text );
     colData1.push_back( t );
+
     t = static_cast<TEXTE_PCB*>( dataStyle->Duplicate() );
     t->SetText( "Copper Finish: " );
     colLabel1.push_back( t );
+
     t = static_cast<TEXTE_PCB*>( dataStyle->Duplicate() );
     t->SetText( m_frame->GetBoard()->GetDesignSettings().GetStackupDescriptor().m_FinishType );
     colData1.push_back( t );
+
     t = static_cast<TEXTE_PCB*>( dataStyle->Duplicate() );
     t->SetText( "Castellated pads: " );
     colLabel1.push_back( t );
+
     t = static_cast<TEXTE_PCB*>( dataStyle->Duplicate() );
     t->SetText( m_frame->GetBoard()->GetDesignSettings().GetStackupDescriptor().m_CastellatedPads ?
                         "Yes" :
@@ -641,6 +659,7 @@ std::vector<BOARD_ITEM*> DRAWING_TOOL::DrawBoardCharacteristics(
     t = static_cast<TEXTE_PCB*>( dataStyle->Duplicate() );
     t->SetText( "Board Thickness: " );
     colLabel2.push_back( t );
+
     t = static_cast<TEXTE_PCB*>( dataStyle->Duplicate() );
 
     if( m_frame->GetUserUnits() == EDA_UNITS::MILLIMETRES )
@@ -658,10 +677,13 @@ std::vector<BOARD_ITEM*> DRAWING_TOOL::DrawBoardCharacteristics(
 
     t->SetText( text );
     colData2.push_back( t );
+
+    // some empty cells
     t = static_cast<TEXTE_PCB*>( dataStyle->Duplicate() );
     colLabel2.push_back( t );
     t = static_cast<TEXTE_PCB*>( dataStyle->Duplicate() );
     colData2.push_back( t );
+
     t = static_cast<TEXTE_PCB*>( dataStyle->Duplicate() );
     t->SetText( "Min hole diameter: " );
     colLabel2.push_back( t );
@@ -687,16 +709,18 @@ std::vector<BOARD_ITEM*> DRAWING_TOOL::DrawBoardCharacteristics(
     }
 
     t->SetText( text );
-
     colData2.push_back( t );
+
     t = static_cast<TEXTE_PCB*>( dataStyle->Duplicate() );
     t->SetText( "Impedance Control: " );
     colLabel2.push_back( t );
+
     t = static_cast<TEXTE_PCB*>( dataStyle->Duplicate() );
     t->SetText( m_frame->GetBoard()->GetDesignSettings().GetStackupDescriptor().m_CastellatedPads ?
                         "Yes" :
                         "No" );
     colData2.push_back( t );
+
     t = static_cast<TEXTE_PCB*>( dataStyle->Duplicate() );
     t->SetText( "Plated Board Edge: " );
     colLabel2.push_back( t );
