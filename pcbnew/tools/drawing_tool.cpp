@@ -279,6 +279,7 @@ std::vector<BOARD_ITEM*> initTextTable( std::vector<std::vector<TEXTE_PCB*>> aCo
 
             if( j >= aRows )
                 break;
+
             int height   = cell->GetBoundingBox().GetHeight() + ymargin;
             int width    = cell->GetBoundingBox().GetWidth() + xmargin;
             rowHeight[j] = rowHeight[j] > height ? rowHeight[j] : height;
@@ -692,10 +693,8 @@ std::vector<BOARD_ITEM*> DRAWING_TOOL::DrawBoardCharacteristics(
         commit.Push( "Board Characteristics" );
     }
 
-    cursorPos.y = cursorPos.y + tableSize2.y + From_User_Unit( EDA_UNITS::MILLIMETRES, 2.0 );
-
     tableSize->x = tableSize2.x;
-    tableSize->y = cursorPos.y;
+    tableSize->y = cursorPos.y + tableSize2.y + From_User_Unit( EDA_UNITS::MILLIMETRES, 2.0 );
 
     return objects;
 }
