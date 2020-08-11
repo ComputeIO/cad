@@ -518,7 +518,7 @@ std::vector<BOARD_ITEM*> DRAWING_TOOL::DrawSpecificationStackup(
             commit.Add( item );
         }
 
-        commit.Push( _( "Draw a table" ) );
+        commit.Push( _( "Insert board stackup table" ) );
     }
 
     return table;
