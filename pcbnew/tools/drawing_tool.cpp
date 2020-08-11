@@ -279,14 +279,10 @@ std::vector<BOARD_ITEM*> initTextTable( std::vector<std::vector<TEXTE_PCB*>> aCo
 
     // Init table
     for( i = 0; i < nbRows; i++ )
-    {
         rowHeight[i] = 0;
-    }
 
     for( i = 0; i < nbCols; i++ )
-    {
         colWidth[i] = 0;
-    }
 
     // First, we determine what the height/Width should be for every cell
     i = 0;
@@ -319,16 +315,12 @@ std::vector<BOARD_ITEM*> initTextTable( std::vector<std::vector<TEXTE_PCB*>> aCo
     int height = 0;
 
     for( i = 0; i < nbRows; i++ )
-    {
         height += rowHeight[i];
-    }
 
     int width = 0;
 
     for( i = 0; i < nbCols; i++ )
-    {
         width += colWidth[i];
-    }
 
     aTableSize->x = width;
     aTableSize->y = height;
@@ -539,9 +531,7 @@ std::vector<BOARD_ITEM*> DRAWING_TOOL::DrawSpecificationStackup(
     {
 
         for( auto item : table )
-        {
             commit.Add( item );
-        }
 
         commit.Push( _( "Insert board stackup table" ) );
     }
