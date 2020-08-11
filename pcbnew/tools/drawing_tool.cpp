@@ -238,15 +238,25 @@ DRAWING_TOOL::MODE DRAWING_TOOL::GetDrawingMode() const
     return m_mode;
 }
 
-std::vector<BOARD_ITEM*> initTextTable( std::vector<std::vector<TEXTE_PCB*>> aContent, int aCols, int aRows,
-        wxPoint origin, PCB_LAYER_ID aLayer, wxPoint* aTableSize, bool aDrawFrame = true )
+std::vector<BOARD_ITEM*> initTextTable( std::vector<std::vector<TEXTE_PCB*>> aContent,
+                                        wxPoint origin, PCB_LAYER_ID aLayer, wxPoint* aTableSize,
+                                        bool aDrawFrame = true )
 {
-    aRows = aRows > 99 ? 99 : aRows;
-    aCols = aCols > 99 ? 99 : aCols;
+    int i;
+    int j;
+
+    int nbCols = aContent.size();
+    int nbRows = 0;
+
+    for( auto col : aContent )
+        nbRows = std::max( nbRows, static_cast<int>( col.size() ) );
+
+    // Limit the number of cells
+    nbCols = std::min( nbCols, 99 );
+    nbRows = std::min( nbRows, 99 );
+
     int rowHeight[99];
     int colWidth[99];
-    int i = 0;
-    int j;
 
     std::vector<BOARD_ITEM*> table;
 
@@ -254,12 +264,12 @@ std::vector<BOARD_ITEM*> initTextTable( std::vector<std::vector<TEXTE_PCB*>> aCo
     int ymargin = 750000;
 
     // Init table
-    for( i = 0; i < aRows; i++ )
+    for( i = 0; i < nbRows; i++ )
     {
         rowHeight[i] = 0;
     }
 
-    for( i = 0; i < aCols; i++ )
+    for( i = 0; i < nbCols; i++ )
     {
         colWidth[i] = 0;
     }
@@ -271,13 +281,13 @@ std::vector<BOARD_ITEM*> initTextTable( std::vector<std::vector<TEXTE_PCB*>> aCo
     {
         j = 0;
 
-        if( i >= aCols )
+        if( i >= nbCols )
             break;
 
         for( auto cell : col )
         {
 
-            if( j >= aRows )
+            if( j >= nbRows )
                 break;
 
             int height   = cell->GetBoundingBox().GetHeight() + ymargin;
@@ -294,14 +304,14 @@ std::vector<BOARD_ITEM*> initTextTable( std::vector<std::vector<TEXTE_PCB*>> aCo
     // get table size
     int height = 0;
 
-    for( i = 0; i < aRows; i++ )
+    for( i = 0; i < nbRows; i++ )
     {
         height += rowHeight[i];
     }
 
     int width = 0;
 
-    for( i = 0; i < aCols; i++ )
+    for( i = 0; i < nbCols; i++ )
     {
         width += colWidth[i];
     }
@@ -315,7 +325,7 @@ std::vector<BOARD_ITEM*> initTextTable( std::vector<std::vector<TEXTE_PCB*>> aCo
         int          y = origin.y;
         DRAWSEGMENT* line;
 
-        for( i = 0; i < aRows; i++ )
+        for( i = 0; i < nbRows; i++ )
         {
             line = new DRAWSEGMENT;
             line->SetLayer( aLayer );
@@ -336,7 +346,7 @@ std::vector<BOARD_ITEM*> initTextTable( std::vector<std::vector<TEXTE_PCB*>> aCo
         table.push_back( line );
         int x = origin.x;
 
-        for( i = 0; i < aCols; i++ )
+        for( i = 0; i < nbCols; i++ )
         {
             line = new DRAWSEGMENT;
             line->SetLayer( aLayer );
@@ -364,7 +374,7 @@ std::vector<BOARD_ITEM*> initTextTable( std::vector<std::vector<TEXTE_PCB*>> aCo
     {
         j = 0;
 
-        if( i >= aCols )
+        if( i >= nbCols )
             break;
 
         pos.y = origin.y + ymargin;
@@ -372,7 +382,7 @@ std::vector<BOARD_ITEM*> initTextTable( std::vector<std::vector<TEXTE_PCB*>> aCo
         for( auto cell : col )
         {
 
-            if( j >= aRows )
+            if( j >= nbRows )
                 break;
 
             cell->SetTextPos( pos );
@@ -509,7 +519,7 @@ std::vector<BOARD_ITEM*> DRAWING_TOOL::DrawSpecificationStackup(
     texts.push_back( colEpsilon );
     texts.push_back( colTanD );
     std::vector<BOARD_ITEM*> table =
-            initTextTable( texts, 7, stackup.GetCount() + 1, aOrigin, aLayer, tableSize, true );
+            initTextTable( texts, aOrigin, aLayer, tableSize, true );
 
     if( aDrawNow )
     {
@@ -679,7 +689,7 @@ std::vector<BOARD_ITEM*> DRAWING_TOOL::DrawBoardCharacteristics(
     texts.push_back( colData2 );
     wxPoint tableSize2 = wxPoint();
 
-    std::vector<BOARD_ITEM*> table = initTextTable( texts, 5, 5, cursorPos, Eco1_User, &tableSize2,
+    std::vector<BOARD_ITEM*> table = initTextTable( texts, cursorPos, Eco1_User, &tableSize2,
                                                     false );
 
     for( auto item : table )
