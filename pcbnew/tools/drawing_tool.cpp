@@ -594,10 +594,9 @@ std::vector<BOARD_ITEM*> DRAWING_TOOL::DrawBoardCharacteristics(
     colLabel1.push_back( t );
 
     t = static_cast<TEXTE_PCB*>( dataStyle->Duplicate() );
-    text = StringFromValue( m_frame->GetUserUnits(), size.GetWidth(),  false, false );
-    text += " x ";
-    text += StringFromValue( m_frame->GetUserUnits(), size.GetWidth(),  true, false );
-    t->SetText( text );
+    t->SetText( wxString::Format("%s x %s",
+                StringFromValue( m_frame->GetUserUnits(), size.GetWidth(),  false, false ),
+                StringFromValue( m_frame->GetUserUnits(), size.GetWidth(),  true, false ) ) );
     colData1.push_back( t );
 
     t = static_cast<TEXTE_PCB*>( dataStyle->Duplicate() );
@@ -605,14 +604,13 @@ std::vector<BOARD_ITEM*> DRAWING_TOOL::DrawBoardCharacteristics(
     colLabel1.push_back( t );
 
     t = static_cast<TEXTE_PCB*>( dataStyle->Duplicate() );
-    text = StringFromValue( m_frame->GetUserUnits(),
-                            m_frame->GetBoard()->GetDesignSettings().m_TrackMinWidth,
-                            false, true );
-    text += " / ";
-    text += StringFromValue( m_frame->GetUserUnits(),
-                            m_frame->GetBoard()->GetDesignSettings().m_MinClearance,
-                            true, true );
-    t->SetText( text );
+    t->SetText( wxString::Format("%s / %s",
+                StringFromValue( m_frame->GetUserUnits(),
+                                 m_frame->GetBoard()->GetDesignSettings().m_TrackMinWidth,
+                                 false, true ),
+                StringFromValue( m_frame->GetUserUnits(),
+                                 m_frame->GetBoard()->GetDesignSettings().m_MinClearance,
+                                 true, true ) ) );
     colData1.push_back( t );
 
     t = static_cast<TEXTE_PCB*>( dataStyle->Duplicate() );
