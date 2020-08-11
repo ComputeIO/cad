@@ -677,8 +677,9 @@ std::vector<BOARD_ITEM*> DRAWING_TOOL::DrawBoardCharacteristics(
     texts.push_back( colLabel2 );
     texts.push_back( colData2 );
     wxPoint tableSize2 = wxPoint();
-    std::vector<BOARD_ITEM*> table =
-            initTextTable( texts, 5, 5, cursorPos, Eco1_User, &tableSize2, false );
+
+    std::vector<BOARD_ITEM*> table = initTextTable( texts, 5, 5, cursorPos, Eco1_User, &tableSize2,
+                                                    false );
 
     for( auto item : table )
         objects.push_back( item );
