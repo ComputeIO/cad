@@ -730,13 +730,6 @@ int DRAWING_TOOL::InteractivePlaceWithPreview( const TOOL_EVENT& aEvent, std::ve
     if( aEvent.HasPosition() )
         m_toolMgr->RunAction( ACTIONS::cursorClick );
 
-    for( auto item : aPreview )
-    {
-        commit.Add( item );
-    }
-
-    commit.Push( "temporary commit", false );
-
     // Main loop: keep receiving events
     wxPoint wxCursorPosition = wxPoint();
     wxPoint wxPreviousCursorPosition = wxPoint( 0, 0 );
@@ -770,25 +763,26 @@ int DRAWING_TOOL::InteractivePlaceWithPreview( const TOOL_EVENT& aEvent, std::ve
             else
             {
                 m_frame->PopTool( tool );
-                commit.Revert();
                 break;
             }
         }
 
         if( evt->IsMotion() )
         {
-            commit.Revert();
-
+            view()->ClearPreview();
             for( auto item : aPreview )
             {
                 item->Move( wxCursorPosition - wxPreviousCursorPosition );
-                commit.Modify( item );
+
+                // Add item to preview
+                auto item2 = item->Clone();
+                view()->Add( item2 );
+                view()->AddToPreview( item2 );
             }
 
             wxPreviousCursorPosition.x = wxCursorPosition.x;
             wxPreviousCursorPosition.y = wxCursorPosition.y;
 
-            commit.Push( "temporary commit", false );
         }
         else if( evt->IsActivate() )
         {
@@ -812,7 +806,7 @@ int DRAWING_TOOL::InteractivePlaceWithPreview( const TOOL_EVENT& aEvent, std::ve
         }
         else if( evt->IsClick( BUT_LEFT ) )
         {
-            commit.Revert();
+            view()->ClearPreview();
 
             if( aLayers != NULL )
             {
@@ -844,12 +838,7 @@ int DRAWING_TOOL::InteractivePlaceWithPreview( const TOOL_EVENT& aEvent, std::ve
             evt->SetPassEvent();
     }
 
-    for( auto item : aPreview )
-    {
-        commit.Remove( item );
-    }
-
-    commit.Push( "temporary commit", false );
+    view()->ClearPreview();
     frame()->SetMsgPanel( board() );
     return 0;
 }
