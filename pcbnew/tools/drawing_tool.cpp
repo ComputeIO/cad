@@ -537,6 +537,8 @@ std::vector<BOARD_ITEM*> DRAWING_TOOL::DrawBoardCharacteristics(
 {
     BOARD_COMMIT        commit( m_frame );
     std::vector<BOARD_ITEM*> objects;
+    BOARD_DESIGN_SETTINGS&   settings = m_frame->GetBoard()->GetDesignSettings();
+    BOARD_STACKUP&           stackup  = settings.GetStackupDescriptor();
 
     wxPoint cursorPos = aOrigin;
 
@@ -583,9 +585,8 @@ std::vector<BOARD_ITEM*> DRAWING_TOOL::DrawBoardCharacteristics(
     colLabel1.push_back( t );
 
     t = static_cast<TEXTE_PCB*>( dataStyle->Duplicate() );
-    t->SetText( StringFromValue( EDA_UNITS::UNSCALED,
-                                 m_frame->GetBoard()->GetDesignSettings().GetCopperLayerCount(),
-                                 false, false ) );
+    t->SetText(
+            StringFromValue( EDA_UNITS::UNSCALED, settings.GetCopperLayerCount(), false, false ) );
     colData1.push_back( t );
 
     EDA_RECT size = m_frame->GetBoard()->ComputeBoundingBox( true );
@@ -604,13 +605,9 @@ std::vector<BOARD_ITEM*> DRAWING_TOOL::DrawBoardCharacteristics(
     colLabel1.push_back( t );
 
     t = static_cast<TEXTE_PCB*>( dataStyle->Duplicate() );
-    t->SetText( wxString::Format("%s / %s",
-                StringFromValue( m_frame->GetUserUnits(),
-                                 m_frame->GetBoard()->GetDesignSettings().m_TrackMinWidth,
-                                 false, true ),
-                StringFromValue( m_frame->GetUserUnits(),
-                                 m_frame->GetBoard()->GetDesignSettings().m_MinClearance,
-                                 true, true ) ) );
+    t->SetText( wxString::Format( "%s / %s",
+            StringFromValue( m_frame->GetUserUnits(), settings.m_TrackMinWidth, false, true ),
+            StringFromValue( m_frame->GetUserUnits(), settings.m_MinClearance, true, true ) ) );
     colData1.push_back( t );
 
     t = static_cast<TEXTE_PCB*>( dataStyle->Duplicate() );
@@ -618,7 +615,7 @@ std::vector<BOARD_ITEM*> DRAWING_TOOL::DrawBoardCharacteristics(
     colLabel1.push_back( t );
 
     t = static_cast<TEXTE_PCB*>( dataStyle->Duplicate() );
-    t->SetText( m_frame->GetBoard()->GetDesignSettings().GetStackupDescriptor().m_FinishType );
+    t->SetText( stackup.m_FinishType );
     colData1.push_back( t );
 
     t = static_cast<TEXTE_PCB*>( dataStyle->Duplicate() );
@@ -626,9 +623,7 @@ std::vector<BOARD_ITEM*> DRAWING_TOOL::DrawBoardCharacteristics(
     colLabel1.push_back( t );
 
     t = static_cast<TEXTE_PCB*>( dataStyle->Duplicate() );
-    t->SetText( m_frame->GetBoard()->GetDesignSettings().GetStackupDescriptor().m_CastellatedPads ?
-                        _( "Yes" ) :
-                        _( "No" ) );
+    t->SetText( stackup.m_CastellatedPads ? _( "Yes" ) : _( "No" ) );
     colData1.push_back( t );
 
     t = static_cast<TEXTE_PCB*>( dataStyle->Duplicate() );
@@ -636,9 +631,7 @@ std::vector<BOARD_ITEM*> DRAWING_TOOL::DrawBoardCharacteristics(
     colLabel2.push_back( t );
 
     t = static_cast<TEXTE_PCB*>( dataStyle->Duplicate() );
-    text = StringFromValue( m_frame->GetUserUnits(),
-                            m_frame->GetBoard()->GetDesignSettings().GetBoardThickness(),
-                            true, true );
+    text = StringFromValue( m_frame->GetUserUnits(), settings.GetBoardThickness(), true, true );
     t->SetText( text );
     colData2.push_back( t );
 
@@ -653,8 +646,7 @@ std::vector<BOARD_ITEM*> DRAWING_TOOL::DrawBoardCharacteristics(
     colLabel2.push_back( t );
     t = static_cast<TEXTE_PCB*>( dataStyle->Duplicate() );
 
-    double holeSize = std::min( m_frame->GetBoard()->GetDesignSettings().m_MinThroughDrill,
-                                m_frame->GetBoard()->GetDesignSettings().m_ViasMinSize );
+    double holeSize = std::min( settings.m_MinThroughDrill, settings.m_ViasMinSize );
     text = StringFromValue( m_frame->GetUserUnits(), holeSize, true, true );
     t->SetText( text );
     colData2.push_back( t );
@@ -664,17 +656,14 @@ std::vector<BOARD_ITEM*> DRAWING_TOOL::DrawBoardCharacteristics(
     colLabel2.push_back( t );
 
     t = static_cast<TEXTE_PCB*>( dataStyle->Duplicate() );
-    t->SetText( m_frame->GetBoard()->GetDesignSettings().GetStackupDescriptor().m_CastellatedPads ?
-                        _( "Yes" ) :
-                        _( "No" ) );
+    t->SetText( stackup.m_CastellatedPads ? _( "Yes" ) : _( "No" ) );
     colData2.push_back( t );
 
     t = static_cast<TEXTE_PCB*>( dataStyle->Duplicate() );
     t->SetText( _( "Plated Board Edge: " ) );
     colLabel2.push_back( t );
     t = static_cast<TEXTE_PCB*>( dataStyle->Duplicate() );
-    t->SetText( m_frame->GetBoard()->GetDesignSettings().GetStackupDescriptor()
-                .m_HasDielectricConstrains ? _( "Yes" ) : _( "No" ) );
+    t->SetText( stackup.m_HasDielectricConstrains ? _( "Yes" ) : _( "No" ) );
     colData2.push_back( t );
 
     texts.push_back( colLabel1 );
