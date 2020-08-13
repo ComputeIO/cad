@@ -698,7 +698,9 @@ int DRAWING_TOOL::InteractivePlaceWithPreview( const TOOL_EVENT& aEvent, std::ve
         std::vector<BOARD_ITEM*> aPreview, LSET* aLayers )
 {
     if( m_editModules && !m_frame->GetModel() )
-        return 0;
+        return -1;
+
+    bool cancelled = false;
 
     BOARD_ITEM*  text = NULL;
     BOARD_COMMIT commit( m_frame );
@@ -753,6 +755,7 @@ int DRAWING_TOOL::InteractivePlaceWithPreview( const TOOL_EVENT& aEvent, std::ve
             else
             {
                 m_frame->PopTool( tool );
+                cancelled = true;
                 break;
             }
         }
@@ -782,11 +785,13 @@ int DRAWING_TOOL::InteractivePlaceWithPreview( const TOOL_EVENT& aEvent, std::ve
             if( evt->IsMoveTool() )
             {
                 // leave ourselves on the stack so we come back after the move
+                cancelled = true;
                 break;
             }
             else
             {
                 m_frame->PopTool( tool );
+                cancelled = true;
                 break;
             }
         }
@@ -805,6 +810,7 @@ int DRAWING_TOOL::InteractivePlaceWithPreview( const TOOL_EVENT& aEvent, std::ve
 
                 if( targetLayer == PCB_LAYER_ID::PCB_LAYER_ID_COUNT )
                 {
+                    cancelled = true;
                     break; // The user did not pick any layer.
                 }
 
@@ -830,12 +836,29 @@ int DRAWING_TOOL::InteractivePlaceWithPreview( const TOOL_EVENT& aEvent, std::ve
 
     view()->ClearPreview();
     frame()->SetMsgPanel( board() );
+
+    if( cancelled )
+        return -1;
+
     return 0;
 }
 
 int DRAWING_TOOL::PlaceCharacteristics( const TOOL_EVENT& aEvent )
 {
     wxPoint             tableSize = wxPoint();
+
+    LSET layerSet = ( layerSet.AllCuMask() | layerSet.AllTechMask() );
+    layerSet      = static_cast<LSET>( layerSet.set( Edge_Cuts ).set( Margin ) );
+
+    PCB_LAYER_ID layer      = m_frame->GetActiveLayer();
+    PCB_LAYER_ID savedLayer = layer;
+
+    if( ( layerSet & LSET( layer ) ).count() ) // if layer is a forbidden layer
+    {
+        m_frame->SetActiveLayer( Cmts_User );
+        layer = Cmts_User;
+    }
+
     std::vector<BOARD_ITEM*> table     = DrawBoardCharacteristics(
             wxPoint( 0, 0 ), m_frame->GetActiveLayer(), false, &tableSize );
     std::vector<BOARD_ITEM*>* preview = new std::vector<BOARD_ITEM*>;
@@ -875,9 +898,10 @@ int DRAWING_TOOL::PlaceCharacteristics( const TOOL_EVENT& aEvent )
     preview->push_back( line3 );
     preview->push_back( line4 );
 
-    LSET layerSet = LSET();
-    layerSet      = LSET::AllCuMask() | LSET::AllBoardTechMask();
-    return InteractivePlaceWithPreview( aEvent, table, *preview, &layerSet );
+    if( InteractivePlaceWithPreview( aEvent, table, *preview, &layerSet ) == -1 )
+        m_frame->SetActiveLayer( savedLayer );
+
+    return 0;
 }
 
 int DRAWING_TOOL::PlaceStackup( const TOOL_EVENT& aEvent )
