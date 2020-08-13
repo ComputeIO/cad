@@ -595,9 +595,9 @@ std::vector<BOARD_ITEM*> DRAWING_TOOL::DrawBoardCharacteristics(
     colLabel1.push_back( t );
 
     t = static_cast<TEXTE_PCB*>( dataStyle->Duplicate() );
-    t->SetText( wxString::Format("%s x %s",
-                StringFromValue( m_frame->GetUserUnits(), size.GetWidth(),  false, false ),
-                StringFromValue( m_frame->GetUserUnits(), size.GetWidth(),  true, false ) ) );
+    t->SetText( wxString::Format( "%s x %s",
+                MessageTextFromValue( m_frame->GetUserUnits(), size.GetWidth(), true ),
+                MessageTextFromValue( m_frame->GetUserUnits(), size.GetHeight(), true ) ) );
     colData1.push_back( t );
 
     t = static_cast<TEXTE_PCB*>( dataStyle->Duplicate() );
@@ -606,8 +606,8 @@ std::vector<BOARD_ITEM*> DRAWING_TOOL::DrawBoardCharacteristics(
 
     t = static_cast<TEXTE_PCB*>( dataStyle->Duplicate() );
     t->SetText( wxString::Format( "%s / %s",
-                StringFromValue( m_frame->GetUserUnits(), settings.m_TrackMinWidth, false, true ),
-                StringFromValue( m_frame->GetUserUnits(), settings.m_MinClearance, true, true ) ) );
+                MessageTextFromValue( m_frame->GetUserUnits(), settings.m_TrackMinWidth, true ),
+                MessageTextFromValue( m_frame->GetUserUnits(), settings.m_MinClearance, true ) ) );
     colData1.push_back( t );
 
     t = static_cast<TEXTE_PCB*>( dataStyle->Duplicate() );
@@ -631,7 +631,8 @@ std::vector<BOARD_ITEM*> DRAWING_TOOL::DrawBoardCharacteristics(
     colLabel2.push_back( t );
 
     t = static_cast<TEXTE_PCB*>( dataStyle->Duplicate() );
-    text = StringFromValue( m_frame->GetUserUnits(), settings.GetBoardThickness(), true, true );
+    text = MessageTextFromValue( m_frame->GetUserUnits(), settings.GetBoardThickness(), true );
+
     t->SetText( text );
     colData2.push_back( t );
 
@@ -647,7 +648,7 @@ std::vector<BOARD_ITEM*> DRAWING_TOOL::DrawBoardCharacteristics(
     t = static_cast<TEXTE_PCB*>( dataStyle->Duplicate() );
 
     double holeSize = std::min( settings.m_MinThroughDrill, settings.m_ViasMinSize );
-    text = StringFromValue( m_frame->GetUserUnits(), holeSize, true, true );
+    text            = MessageTextFromValue( m_frame->GetUserUnits(), holeSize, true );
     t->SetText( text );
     colData2.push_back( t );
 
