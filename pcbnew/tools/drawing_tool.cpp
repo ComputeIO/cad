@@ -606,8 +606,8 @@ std::vector<BOARD_ITEM*> DRAWING_TOOL::DrawBoardCharacteristics(
 
     t = static_cast<TEXTE_PCB*>( dataStyle->Duplicate() );
     t->SetText( wxString::Format( "%s / %s",
-            StringFromValue( m_frame->GetUserUnits(), settings.m_TrackMinWidth, false, true ),
-            StringFromValue( m_frame->GetUserUnits(), settings.m_MinClearance, true, true ) ) );
+                StringFromValue( m_frame->GetUserUnits(), settings.m_TrackMinWidth, false, true ),
+                StringFromValue( m_frame->GetUserUnits(), settings.m_MinClearance, true, true ) ) );
     colData1.push_back( t );
 
     t = static_cast<TEXTE_PCB*>( dataStyle->Duplicate() );
