@@ -560,6 +560,16 @@ class SHAPE_POLY_SET : public SHAPE
         int Append( int x, int y, int aOutline = -1, int aHole = -1,
                     bool aAllowDuplication = false );
 
+        /**
+         * Appends a new arc to the contour indexed by \p aOutline and \p aHole (defaults to the
+         * outline of the last polygon).
+         * @param aArc      The arc to be inserted
+         * @param aOutline  Index of the polygon
+         * @param aHole     Index of the hole (-1 for the main outline)
+         * @return the number of points in the arc (including the interpolated points from the arc)
+         */
+        int Append( SHAPE_ARC& aArc, int aOutline = -1, int aHole = -1 );
+
         ///> Merges polygons from two sets.
         void Append( const SHAPE_POLY_SET& aSet );
 

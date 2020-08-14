@@ -58,6 +58,7 @@ class PCB_TARGET;
 class VIA;
 class ZONE;
 class FP_3DMODEL;
+class SHAPE_LINE_CHAIN;
 struct LAYER;
 
 
@@ -230,6 +231,15 @@ class PCB_PARSER : public PCB_LEXER
     void parseXY( int* aX, int* aY );
 
     std::pair<wxString, wxString> parseProperty();
+
+    /**
+     * Parses possible outline points and stores them into \p aPoly.  This accepts points
+     * for DRAWSEGMENT polygons, EDGEMODULE polygons and ZONE_CONTAINER polygons.  Points
+     * and arcs are added to the most recent outline
+     *
+     * @param aPoly polygon container to add points and arcs
+     */
+    void parseOutlinePoints( SHAPE_LINE_CHAIN& aPoly );
 
     /**
      * Function parseEDA_TEXT
