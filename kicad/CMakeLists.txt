@@ -108,8 +108,14 @@ if( APPLE )
         set( SPICE_HELPER "0" )
     endif()
 
+    if( PYTHON_FRAMEWORK )
+        set( PYTHON_FRAMEWORK_HELPER "1" )
+    else()
+        set( PYTHON_FRAMEWORK_HELPER "0" )
+    endif()
+
     if( KICAD_USE_OCC )
-        set( KICAD_BUNDLE_LIBS ${OCC_LIBRARY_DIR} )
+        set( KICAD_BUNDLE_DIRS ${OCC_LIBRARY_DIR} )
     endif()
 
     # make main bundle relocatable
@@ -126,7 +132,6 @@ if( APPLE )
             set( BUNDLE_FIX_LIBS \${BUNDLE_FIX_LIBS} \${PLUGINS_NGSPICE} )
         endif()
 
-        # Find python if it is requested
         if( ${SCRIPTING_HELPER} )
             file( GLOB WXPYTHON_DIR RELATIVE ${OSX_BUNDLE_INSTALL_LIB_DIR}/${PYTHON_LIB_DIR} ${OSX_BUNDLE_INSTALL_LIB_DIR}/${PYTHON_LIB_DIR}/wx-?.?-osx_cocoa )
             file( GLOB PYTHON_SCRIPTING_SO ${OSX_BUNDLE_INSTALL_LIB_DIR}/${PYTHON_LIB_DIR}/*.so )
@@ -141,10 +146,54 @@ if( APPLE )
         # do all the work
         include( BundleUtilities )
 
-        fixup_bundle( ${OSX_BUNDLE_INSTALL_BIN_DIR}/kicad
-            \"\${BUNDLE_FIX_LIBS}\"
-            \" ${KICAD_BUNDLE_LIBS}\"
+        if ( ${PYTHON_FRAMEWORK_HELPER} )
+            execute_process( COMMAND cp -RP ${PYTHON_FRAMEWORK} ${OSX_BUNDLE_INSTALL_LIB_DIR}/)
+            # CMake's COPY_RESOLVED_BUNDLE... and COPY_DIRECTORY don't handle symlinks correctly
+
+            # Add any .so files in the site-packages directory to the list of things to fixup during fixup_bundle
+            set( PYTHON_SITE_PACKAGES_PATH ${OSX_BUNDLE_INSTALL_LIB_DIR}/Python.framework/Versions/3.8/lib/python3.8/site-packages)
+            file( GLOB_RECURSE PYTHON_SITE_PACKAGES_LIBS \${PYTHON_SITE_PACKAGES_PATH}/*.so )
+            set( BUNDLE_FIX_LIBS \${BUNDLE_FIX_LIBS} \${PYTHON_SITE_PACKAGES_LIBS} )
+
+            fixup_bundle( ${OSX_BUNDLE_INSTALL_BIN_DIR}/kicad
+                \"\${BUNDLE_FIX_LIBS}\"
+                \"\${KICAD_BUNDLE_DIRS}\"
+                IGNORE_ITEM \"Python;python;python3;python3.8;pythonw;pythonw3;pythonw3.8\"
+                )
+
+            # On 10.11, fixup_bundle here is pulling in OS Python into Contents/MacOS/Python.framework.  Remove it.
+            # It has been a few years, let's see if we still see this issue.
+            if( EXISTS ${OSX_BUNDLE_INSTALL_BIN_DIR}/Python.framework )
+                message( STATUS \"Detected Python.framework directly inside ${OSX_BUNDLE_INSTALL_BIN_DIR}. Removing it...\" )
+                file(REMOVE_RECURSE ${OSX_BUNDLE_INSTALL_BIN_DIR}/Python.framework)
+            endif( )
+
+            # BundleUtilities clobbers the rpaths and install_names that we carefully setup in Python.framework, even if we mark Python things as IGNORE_ITEMs.
+            message( STATUS \"Refixing rpaths and install_names: ${OSX_BUNDLE_INSTALL_LIB_DIR}\" )
+
+            # python/site-packages/_pcbnew.so
+            execute_process( COMMAND install_name_tool -change @executable_path/../../Contents/MacOS/Python.framework/Versions/3.8/Python @rpath/Python.framework/Python ${OSX_BUNDLE_INSTALL_LIB_DIR}/python/site-packages/_pcbnew.so )
+            execute_process( COMMAND install_name_tool -change @executable_path/../../Contents/MacOS/Python.framework/Python @rpath/Python.framework/Python ${OSX_BUNDLE_INSTALL_LIB_DIR}/python/site-packages/_pcbnew.so )
+            execute_process( COMMAND install_name_tool -change @executable_path/../../Contents/MacOS/Python.framework/Versions/3.8/Resources/Python.app/Contents/MacOS/Python @rpath/Python.framework/Python ${OSX_BUNDLE_INSTALL_LIB_DIR}/python/site-packages/_pcbnew.so )
+            # _pcbnew.kiface
+            execute_process( COMMAND install_name_tool -change @executable_path/../../Contents/MacOS/Python.framework/Python @rpath/Python.framework/Python ${OSX_BUNDLE_INSTALL_KIFACE_DIR}/_pcbnew.kiface )
+            execute_process( COMMAND install_name_tool -add_rpath @executable_path/../Frameworks ${OSX_BUNDLE_INSTALL_KIFACE_DIR}/_pcbnew.kiface )
+            # Python.framework/Versions/Current/bin/python3
+            execute_process( COMMAND install_name_tool -change @executable_path/../../Contents/MacOS/Python.framework/Python @rpath/Python.framework/Python ${OSX_BUNDLE_INSTALL_LIB_DIR}/Python.framework/Versions/Current/bin/python3 )
+            execute_process( COMMAND install_name_tool -add_rpath @executable_path/../../../../ ${OSX_BUNDLE_INSTALL_LIB_DIR}/Python.framework/Versions/Current/bin/python3 )
+            # Python.framework/Versions/Current/Resources/Python.app/Contents/MacOS/Python
+            execute_process( COMMAND install_name_tool -change @executable_path/../../Contents/MacOS/Python.framework/Versions/3.8/Resources/Python.app/Contents/MacOS/Python @rpath/Python.framework/Python ${OSX_BUNDLE_INSTALL_LIB_DIR}/Python.framework/Versions/Current/Resources/Python.app/Contents/MacOS/Python )
+            execute_process( COMMAND install_name_tool -add_rpath @executable_path/../Frameworks ${OSX_BUNDLE_INSTALL_LIB_DIR}/Python.framework/Resources/Python.app/Contents/MacOS/Python )
+            execute_process( COMMAND install_name_tool -add_rpath @executable_path/../../../../../../../ ${OSX_BUNDLE_INSTALL_LIB_DIR}/Python.framework/Resources/Python.app/Contents/MacOS/Python )
+            execute_process( COMMAND install_name_tool -add_rpath @executable_path/../../../../../../../ ${OSX_BUNDLE_INSTALL_LIB_DIR}/Python.framework/Resources/Python.app/Contents/MacOS/Python )
+            execute_process( COMMAND install_name_tool -add_rpath @executable_path/../../../../../ ${OSX_BUNDLE_INSTALL_LIB_DIR}/Python.framework/Resources/Python.app/Contents/MacOS/Python )
+
+        else()
+            fixup_bundle( ${OSX_BUNDLE_INSTALL_BIN_DIR}/kicad
+                \"\${BUNDLE_FIX_LIBS}\"
+                \"${KICAD_BUNDLE_DIRS}\"
             )
+        endif()
 
         if( ${SPICE_HELPER} )
             execute_process( COMMAND install_name_tool -id @executable_path/../PlugIns/sim/libngspice.0.dylib libngspice.0.dylib
