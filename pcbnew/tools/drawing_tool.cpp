@@ -702,7 +702,6 @@ int DRAWING_TOOL::InteractivePlaceWithPreview( const TOOL_EVENT& aEvent, std::ve
 
     bool cancelled = false;
 
-    BOARD_ITEM*  text = NULL;
     BOARD_COMMIT commit( m_frame );
 
     m_toolMgr->RunAction( PCB_ACTIONS::selectionClear, true );
@@ -737,14 +736,10 @@ int DRAWING_TOOL::InteractivePlaceWithPreview( const TOOL_EVENT& aEvent, std::ve
 
     while( TOOL_EVENT* evt = Wait() )
     {
-        m_frame->GetCanvas()->SetCurrentCursor( text ? wxCURSOR_ARROW : wxCURSOR_PENCIL );
+        m_frame->GetCanvas()->SetCurrentCursor( wxCURSOR_PENCIL );
         VECTOR2D pos       = m_controls->GetCursorPosition();
         wxCursorPosition.x = pos.x;
         wxCursorPosition.y = pos.y;
-
-
-        if( reselect && text )
-            m_toolMgr->RunAction( PCB_ACTIONS::selectItem, true, text );
 
         auto cleanup = [&]()
             {
@@ -753,20 +748,13 @@ int DRAWING_TOOL::InteractivePlaceWithPreview( const TOOL_EVENT& aEvent, std::ve
                 m_controls->ShowCursor( true );
                 m_controls->SetAutoPan( false );
                 m_controls->CaptureCursor( false );
-                delete text;
-                text = NULL;
             };
 
         if( evt->IsCancelInteractive() )
         {
-            if( text )
-                cleanup();
-            else
-            {
-                m_frame->PopTool( tool );
-                cancelled = true;
-                break;
-            }
+            m_frame->PopTool( tool );
+            cancelled = true;
+            break;
         }
 
         if( evt->IsMotion() )
@@ -786,8 +774,6 @@ int DRAWING_TOOL::InteractivePlaceWithPreview( const TOOL_EVENT& aEvent, std::ve
         }
         else if( evt->IsActivate() )
         {
-            if( text )
-                cleanup();
 
             if( evt->IsMoveTool() )
             {
@@ -834,6 +820,8 @@ int DRAWING_TOOL::InteractivePlaceWithPreview( const TOOL_EVENT& aEvent, std::ve
             }
 
             commit.Push( "Placing items" );
+            m_frame->PopTool( tool );
+
             break;
         }
 
