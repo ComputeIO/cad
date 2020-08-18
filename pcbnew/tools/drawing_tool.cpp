@@ -726,6 +726,15 @@ int DRAWING_TOOL::InteractivePlaceWithPreview( const TOOL_EVENT& aEvent, std::ve
     wxPoint wxCursorPosition = wxPoint();
     wxPoint wxPreviousCursorPosition = wxPoint( 0, 0 );
 
+    view()->ClearPreview();
+    view()->InitPreview();
+
+    for( auto item : aPreview )
+    {
+        item->Move( wxCursorPosition - wxPreviousCursorPosition );
+        view()->AddToPreview( item );
+    }
+
     while( TOOL_EVENT* evt = Wait() )
     {
         m_frame->GetCanvas()->SetCurrentCursor( text ? wxCURSOR_ARROW : wxCURSOR_PENCIL );
@@ -762,16 +771,14 @@ int DRAWING_TOOL::InteractivePlaceWithPreview( const TOOL_EVENT& aEvent, std::ve
 
         if( evt->IsMotion() )
         {
-            view()->ClearPreview();
+            view()->ShowPreview( false );
+
             for( auto item : aPreview )
             {
                 item->Move( wxCursorPosition - wxPreviousCursorPosition );
-
-                // Add item to preview
-                auto item2 = item->Clone();
-                view()->Add( item2 );
-                view()->AddToPreview( item2 );
             }
+
+            view()->ShowPreview( true );
 
             wxPreviousCursorPosition.x = wxCursorPosition.x;
             wxPreviousCursorPosition.y = wxCursorPosition.y;
