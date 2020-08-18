@@ -794,12 +794,13 @@ int DRAWING_TOOL::InteractivePlaceWithPreview( const TOOL_EVENT& aEvent, std::ve
         }
         else if( evt->IsClick( BUT_LEFT ) )
         {
-            view()->ClearPreview();
 
             if( aLayers != NULL )
             {
                 PCB_LAYER_ID targetLayer = frame()->SelectLayer(
                         PCB_LAYER_ID::PCB_LAYER_ID_COUNT, *aLayers, wxPoint( pos.x, pos.y ) );
+
+                view()->ClearPreview();
 
                 if( targetLayer == PCB_LAYER_ID::PCB_LAYER_ID_COUNT )
                 {
