@@ -715,8 +715,6 @@ int DRAWING_TOOL::InteractivePlaceWithPreview( const TOOL_EVENT& aEvent, std::ve
     m_frame->PushTool( tool );
     Activate();
 
-    bool reselect = false;
-
     // Prime the pump
     if( aEvent.HasPosition() )
         m_toolMgr->RunAction( ACTIONS::cursorClick );
@@ -740,15 +738,6 @@ int DRAWING_TOOL::InteractivePlaceWithPreview( const TOOL_EVENT& aEvent, std::ve
         VECTOR2D pos       = m_controls->GetCursorPosition();
         wxCursorPosition.x = pos.x;
         wxCursorPosition.y = pos.y;
-
-        auto cleanup = [&]()
-            {
-                m_toolMgr->RunAction( PCB_ACTIONS::selectionClear, true );
-                m_controls->ForceCursorPosition( false );
-                m_controls->ShowCursor( true );
-                m_controls->SetAutoPan( false );
-                m_controls->CaptureCursor( false );
-            };
 
         if( evt->IsCancelInteractive() )
         {
