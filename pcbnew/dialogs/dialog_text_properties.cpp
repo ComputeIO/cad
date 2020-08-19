@@ -66,6 +66,10 @@ DIALOG_TEXT_PROPERTIES::DIALOG_TEXT_PROPERTIES( PCB_BASE_EDIT_FRAME* aParent, BO
     m_MultiLineText->SetScrollWidth( 1 );
     m_MultiLineText->SetScrollWidthTracking( true );
 
+    wxFont defaultFont = wxFont( wxNORMAL_FONT->GetPointSize(), wxFONTFAMILY_DEFAULT,
+            wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL );
+    m_MultiLineText->StyleSetFont( wxSTC_STYLE_DEFAULT, defaultFont );
+
     m_linesThickness.Show( m_item->Type() == PCB_DIMENSION_T );
 
     if( m_item->Type() == PCB_DIMENSION_T )
