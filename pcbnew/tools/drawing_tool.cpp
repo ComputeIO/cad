@@ -799,7 +799,14 @@ int DRAWING_TOOL::InteractivePlaceWithPreview( const TOOL_EVENT& aEvent, std::ve
 
                 for( auto item : aItems )
                 {
-                    item->SetLayer( targetLayer );
+                    if( item->Type() == PCB_GROUP_T )
+                    {
+                        static_cast<PCB_GROUP*>( item )->SetLayerReccursive( targetLayer );
+                    }
+                    else
+                    {
+                        item->SetLayer( targetLayer );
+                    }
                 }
             }
 
@@ -847,6 +854,7 @@ int DRAWING_TOOL::PlaceCharacteristics( const TOOL_EVENT& aEvent )
     std::vector<BOARD_ITEM*> table     = DrawBoardCharacteristics(
             wxPoint( 0, 0 ), m_frame->GetActiveLayer(), false, &tableSize );
     std::vector<BOARD_ITEM*>* preview = new std::vector<BOARD_ITEM*>;
+    std::vector<BOARD_ITEM*>* items   = new std::vector<BOARD_ITEM*>;
 
     DRAWSEGMENT* line1 = new DRAWSEGMENT;
     DRAWSEGMENT* line2 = new DRAWSEGMENT;
@@ -883,7 +891,14 @@ int DRAWING_TOOL::PlaceCharacteristics( const TOOL_EVENT& aEvent )
     preview->push_back( line3 );
     preview->push_back( line4 );
 
-    if( InteractivePlaceWithPreview( aEvent, table, *preview, &layerSet ) == -1 )
+    PCB_GROUP* group = new PCB_GROUP( m_board );
+
+    for( auto item : table )
+        group->AddItem( static_cast<BOARD_ITEM*>( item ) );
+
+    items->push_back( static_cast<BOARD_ITEM*>( group ) );
+
+    if( InteractivePlaceWithPreview( aEvent, *items, *preview, &layerSet ) == -1 )
         m_frame->SetActiveLayer( savedLayer );
 
     return 0;
@@ -908,6 +923,7 @@ int DRAWING_TOOL::PlaceStackup( const TOOL_EVENT& aEvent )
     std::vector<BOARD_ITEM*> table     = DrawSpecificationStackup(
             wxPoint( 0, 0 ), m_frame->GetActiveLayer(), false, &tableSize );
     std::vector<BOARD_ITEM*>* preview = new std::vector<BOARD_ITEM*>;
+    std::vector<BOARD_ITEM*>* items   = new std::vector<BOARD_ITEM*>;
 
     DRAWSEGMENT* line1 = new DRAWSEGMENT;
     DRAWSEGMENT* line2 = new DRAWSEGMENT;
@@ -944,7 +960,14 @@ int DRAWING_TOOL::PlaceStackup( const TOOL_EVENT& aEvent )
     preview->push_back( line3 );
     preview->push_back( line4 );
 
-    if( InteractivePlaceWithPreview( aEvent, table, *preview, &layerSet ) == -1 )
+    PCB_GROUP* group = new PCB_GROUP( m_board );
+
+    for( auto item : table )
+        group->AddItem( item );
+
+    items->push_back( static_cast<BOARD_ITEM*>( group ) );
+
+    if( InteractivePlaceWithPreview( aEvent, *items, *preview, &layerSet ) == -1 )
         m_frame->SetActiveLayer( savedLayer );
 
 
