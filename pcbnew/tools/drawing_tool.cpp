@@ -907,6 +907,8 @@ int DRAWING_TOOL::PlaceCharacteristics( const TOOL_EVENT& aEvent )
 
     if( InteractivePlaceWithPreview( aEvent, *items, *preview, &layerSet ) == -1 )
         m_frame->SetActiveLayer( savedLayer );
+    else
+        m_frame->SetActiveLayer( table.front()->GetLayer() );
 
     return 0;
 }
@@ -976,7 +978,8 @@ int DRAWING_TOOL::PlaceStackup( const TOOL_EVENT& aEvent )
 
     if( InteractivePlaceWithPreview( aEvent, *items, *preview, &layerSet ) == -1 )
         m_frame->SetActiveLayer( savedLayer );
-
+    else
+        m_frame->SetActiveLayer( table.front()->GetLayer() );
 
     return 0;
 }
