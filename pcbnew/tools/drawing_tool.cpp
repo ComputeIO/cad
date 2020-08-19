@@ -801,7 +801,7 @@ int DRAWING_TOOL::InteractivePlaceWithPreview( const TOOL_EVENT& aEvent, std::ve
                 {
                     if( item->Type() == PCB_GROUP_T )
                     {
-                        static_cast<PCB_GROUP*>( item )->SetLayerReccursive( targetLayer );
+                        static_cast<PCB_GROUP*>( item )->SetLayerRecursive( targetLayer );
                     }
                     else
                     {
@@ -815,12 +815,9 @@ int DRAWING_TOOL::InteractivePlaceWithPreview( const TOOL_EVENT& aEvent, std::ve
                 item->Move( wxCursorPosition );
 
                 if( item->Type() == PCB_GROUP_T )
-                {
-                    for( auto item2 : static_cast<PCB_GROUP*>( item )->GetItems() )
-                        commit.Add( item2 );
-                }
-
-                commit.Add( item );
+                    static_cast<PCB_GROUP*>( item )->CommitRecursive( commit );
+                else
+                    commit.Add( item );
             }
 
             commit.Push( "Placing items" );

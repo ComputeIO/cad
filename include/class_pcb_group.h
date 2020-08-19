@@ -111,14 +111,20 @@ public:
     ///> @copydoc BOARD_ITEM::SetLayer
     void SetLayer( PCB_LAYER_ID aLayer ) override
     {
-        wxFAIL_MSG( "groups don't support layer SetLayer. Use SetLayerReccursive" );
+        wxFAIL_MSG( "groups don't support layer SetLayer. Use SetLayerReccursive, if intended" );
     }
 
     /** Set layer for all items within the group.
      * 
      * To avoid freezes with circular references, the maximum depth is 20 by default.
      */
-    void SetLayerReccursive( PCB_LAYER_ID aLayer, int aDepth = 20 );
+    void SetLayerRecursive( PCB_LAYER_ID aLayer, int aDepth = 20 );
+
+    /** Commit the whole group ( the group itself, and its content ).
+     * 
+     * To avoid freezes with circular references, the maximum depth is 20 by default.
+     */
+    void CommitRecursive( BOARD_COMMIT aCommit, int aDepth = 20 );
 
     ///> @copydoc EDA_ITEM::Clone
     EDA_ITEM* Clone() const override;

@@ -57,17 +57,34 @@ void PCB_GROUP::SetPosition( const wxPoint& newpos )
     Move( delta );
 }
 
-void PCB_GROUP::SetLayerReccursive( PCB_LAYER_ID aLayer, int aDepth )
+
+void PCB_GROUP::SetLayerRecursive( PCB_LAYER_ID aLayer, int aDepth )
 {
     for( auto item : m_items )
     {
         if( ( item->Type() == PCB_GROUP_T ) && ( aDepth > 0 ) )
         {
-            static_cast<PCB_GROUP*>( item )->SetLayerReccursive( aLayer, aDepth - 1 );
+            static_cast<PCB_GROUP*>( item )->SetLayerRecursive( aLayer, aDepth - 1 );
         }
         else
         {
             item->SetLayer( aLayer );
+        }
+    }
+}
+
+
+void PCB_GROUP::CommitRecursive( BOARD_COMMIT aCommit, int aDepth )
+{
+    for( auto item : m_items )
+    {
+        if( ( item->Type() == PCB_GROUP_T ) && ( aDepth > 0 ) )
+        {
+            static_cast<PCB_GROUP*>( item )->CommitRecursive( aCommit, aDepth - 1 );
+        }
+        else
+        {
+            aCommit.Add( item );
         }
     }
 }
