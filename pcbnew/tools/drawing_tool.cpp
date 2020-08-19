@@ -813,6 +813,13 @@ int DRAWING_TOOL::InteractivePlaceWithPreview( const TOOL_EVENT& aEvent, std::ve
             for( auto item : aItems )
             {
                 item->Move( wxCursorPosition );
+
+                if( item->Type() == PCB_GROUP_T )
+                {
+                    for( auto item2 : static_cast<PCB_GROUP*>( item )->GetItems() )
+                        commit.Add( item2 );
+                }
+
                 commit.Add( item );
             }
 
