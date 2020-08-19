@@ -58,6 +58,9 @@ void WX_GRID::SetColLabelSize( int aHeight )
 
 void WX_GRID::SetTable( wxGridTableBase* aTable, bool aTakeOwnership )
 {
+    wxFont labelFont = wxSystemSettings::GetFont( wxSYS_SYSTEM_FONT );
+    wxGrid::SetLabelFont( labelFont );
+
     // wxGrid::SetTable() messes up the column widths from wxFormBuilder so we have to save
     // and restore them.
     int numberCols = GetNumberCols();
