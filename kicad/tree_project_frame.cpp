@@ -574,7 +574,7 @@ void TREE_PROJECT_FRAME::ReCreateTreePrj()
 
     // root tree:
     m_root = m_TreeProject->AddRoot( fn.GetFullName(), TREE_ROOT, TREE_ROOT );
-    m_TreeProject->SetItemFont( m_root, wxFont( wxNORMAL_FONT->GetPointSize(), wxFONTFAMILY_DEFAULT,
+    m_TreeProject->SetItemFont( m_root, wxFont( wxNORMAL_FONT->GetPointSize(), wxFONTFAMILY_SWISS,
                                                 wxFONTSTYLE_NORMAL, wxFONTWEIGHT_BOLD ) );
 
     // The main project file is now a JSON file

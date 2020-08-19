@@ -64,14 +64,13 @@ DIALOG_LABEL_EDITOR::DIALOG_LABEL_EDITOR( SCH_EDIT_FRAME* aParent, SCH_TEXT* aTe
 
     m_valueMultiLine->SetEOLMode( wxSTC_EOL_LF );
 
-    wxFont defaultFont = wxFont( wxNORMAL_FONT->GetPointSize(), wxFONTFAMILY_DEFAULT,
+    wxFont defaultFont = wxFont( wxNORMAL_FONT->GetPointSize(), wxFONTFAMILY_SWISS,
             wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL );
     m_valueMultiLine->StyleSetFont( wxSTC_STYLE_DEFAULT, defaultFont );
 
     m_scintillaTricks = new SCINTILLA_TRICKS( m_valueMultiLine, wxT( "()" ) );
 
-    m_formattingHelp->SetFont( wxFont( wxNORMAL_FONT->GetPointSize(), wxFONTFAMILY_DEFAULT,
-            wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL, true ) );
+    m_formattingHelp->SetFont( defaultFont.Underlined() );
 
     if( m_CurrentText->IsMultilineAllowed() )
     {
