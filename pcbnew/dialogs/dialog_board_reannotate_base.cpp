@@ -308,6 +308,12 @@ DIALOG_BOARD_REANNOTATE_BASE::DIALOG_BOARD_REANNOTATE_BASE( wxWindow* parent, wx
 	wxBoxSizer* m_buttonsSizer;
 	m_buttonsSizer = new wxBoxSizer( wxHORIZONTAL );
 
+	m_UndoBtn = new wxButton( this, wxID_ANY, _("Undo"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_buttonsSizer->Add( m_UndoBtn, 0, wxALL, 5 );
+
+	m_RedoBtn = new wxButton( this, wxID_ANY, _("Redo"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_buttonsSizer->Add( m_RedoBtn, 0, wxALL, 5 );
+
 	m_sdbSizer = new wxStdDialogButtonSizer();
 	m_sdbSizerOK = new wxButton( this, wxID_OK );
 	m_sdbSizer->AddButton( m_sdbSizerOK );
@@ -326,8 +332,11 @@ DIALOG_BOARD_REANNOTATE_BASE::DIALOG_BOARD_REANNOTATE_BASE( wxWindow* parent, wx
 
 	// Connect Events
 	this->Connect( wxEVT_CLOSE_WINDOW, wxCloseEventHandler( DIALOG_BOARD_REANNOTATE_BASE::OnClose ) );
+	m_UpdateSchematic->Connect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( DIALOG_BOARD_REANNOTATE_BASE::onUpdateSchCheckBoxClick ), NULL, this );
 	m_FrontPrefix->Connect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( DIALOG_BOARD_REANNOTATE_BASE::FilterFrontPrefix ), NULL, this );
 	m_BackPrefix->Connect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( DIALOG_BOARD_REANNOTATE_BASE::FilterBackPrefix ), NULL, this );
+	m_UndoBtn->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( DIALOG_BOARD_REANNOTATE_BASE::onUndoClick ), NULL, this );
+	m_RedoBtn->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( DIALOG_BOARD_REANNOTATE_BASE::onRedoClick ), NULL, this );
 	m_sdbSizerCancel->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( DIALOG_BOARD_REANNOTATE_BASE::OnCloseClick ), NULL, this );
 	m_sdbSizerOK->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( DIALOG_BOARD_REANNOTATE_BASE::OnApplyClick ), NULL, this );
 }
@@ -336,8 +345,11 @@ DIALOG_BOARD_REANNOTATE_BASE::~DIALOG_BOARD_REANNOTATE_BASE()
 {
 	// Disconnect Events
 	this->Disconnect( wxEVT_CLOSE_WINDOW, wxCloseEventHandler( DIALOG_BOARD_REANNOTATE_BASE::OnClose ) );
+	m_UpdateSchematic->Disconnect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( DIALOG_BOARD_REANNOTATE_BASE::onUpdateSchCheckBoxClick ), NULL, this );
 	m_FrontPrefix->Disconnect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( DIALOG_BOARD_REANNOTATE_BASE::FilterFrontPrefix ), NULL, this );
 	m_BackPrefix->Disconnect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( DIALOG_BOARD_REANNOTATE_BASE::FilterBackPrefix ), NULL, this );
+	m_UndoBtn->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( DIALOG_BOARD_REANNOTATE_BASE::onUndoClick ), NULL, this );
+	m_RedoBtn->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( DIALOG_BOARD_REANNOTATE_BASE::onRedoClick ), NULL, this );
 	m_sdbSizerCancel->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( DIALOG_BOARD_REANNOTATE_BASE::OnCloseClick ), NULL, this );
 	m_sdbSizerOK->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( DIALOG_BOARD_REANNOTATE_BASE::OnApplyClick ), NULL, this );
 
