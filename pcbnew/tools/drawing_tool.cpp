@@ -801,7 +801,7 @@ int DRAWING_TOOL::InteractivePlaceWithPreview( const TOOL_EVENT& aEvent, std::ve
                 {
                     if( item->Type() == PCB_GROUP_T )
                     {
-                        static_cast<PCB_GROUP*>( item )->SetLayerRecursive( targetLayer );
+                        static_cast<PCB_GROUP*>( item )->SetLayerRecursive( targetLayer, 200 );
                     }
                     else
                     {
@@ -815,7 +815,15 @@ int DRAWING_TOOL::InteractivePlaceWithPreview( const TOOL_EVENT& aEvent, std::ve
                 item->Move( wxCursorPosition );
 
                 if( item->Type() == PCB_GROUP_T )
-                    static_cast<PCB_GROUP*>( item )->CommitRecursive( commit );
+                {
+                    // Does not support groups inside a group.
+                    for( auto item2 : static_cast<PCB_GROUP*>( item )->GetItems() )
+                    {
+                        commit.Add( item2 );
+                    }
+
+                    commit.Add( item );
+                }
                 else
                     commit.Add( item );
             }

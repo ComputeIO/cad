@@ -22,6 +22,7 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
 #include <bitmaps.h>
+#include <board_commit.h>
 #include <class_pcb_group.h>
 #include <confirm.h>
 #include <msgpanel.h>
@@ -69,22 +70,6 @@ void PCB_GROUP::SetLayerRecursive( PCB_LAYER_ID aLayer, int aDepth )
         else
         {
             item->SetLayer( aLayer );
-        }
-    }
-}
-
-
-void PCB_GROUP::CommitRecursive( BOARD_COMMIT aCommit, int aDepth )
-{
-    for( auto item : m_items )
-    {
-        if( ( item->Type() == PCB_GROUP_T ) && ( aDepth > 0 ) )
-        {
-            static_cast<PCB_GROUP*>( item )->CommitRecursive( aCommit, aDepth - 1 );
-        }
-        else
-        {
-            aCommit.Add( item );
         }
     }
 }
