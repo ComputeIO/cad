@@ -126,6 +126,7 @@ private:
     int m_GridIndex;
     int m_AnnotationChoice;
     int m_Severity;
+    int m_UndoBaseCount; // # of Undo levels available when reannotate dialog is opened
 
     double m_SortGridx;
     double m_SortGridy;
@@ -152,9 +153,13 @@ private:
 
     void GetParameters( void );
     void InitValues( void );
+    void updateUndoRedoBtnState( void ); // Undo/Redo buttons visible when reannotation changes made
 
     void OnApplyClick( wxCommandEvent& event ) override;
     void OnCloseClick( wxCommandEvent& event ) override;
+    void onUndoClick( wxCommandEvent& event ) override;
+    void onRedoClick( wxCommandEvent& event ) override;
+    void onUpdateSchCheckBoxClick( wxCommandEvent& event ) override;
     void FilterFrontPrefix( wxCommandEvent& event ) override;
     void FilterBackPrefix( wxCommandEvent& event ) override;
 

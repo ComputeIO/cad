@@ -36,6 +36,9 @@
 #include <sstream>
 #include <tool/tool_manager.h>
 #include <tool/grid_menu.h>
+#include <tools/pcbnew_control.h>
+#include <tools/pcb_editor_conditions.h>
+
 
 bool SortYFirst;
 bool DescendingFirst;
@@ -105,6 +108,12 @@ DIALOG_BOARD_REANNOTATE::DIALOG_BOARD_REANNOTATE( PCB_EDIT_FRAME* aParentFrame )
     m_screen     = m_frame->GetScreen();
     m_Units      = m_frame->GetUserUnits();
     m_Standalone = !m_frame->TestStandalone(); //Do this here forces the menu on top
+    // Note initial Undo levels available so we only allow undoing reannotation changes
+    m_UndoBaseCount = m_frame->GetUndoCommandCount();
+    // Make sure Undo/Redo buttons disabled at the start
+    m_UndoBtn->Enable( false );
+    m_RedoBtn->Enable( false );
+
 
     if( m_Standalone )
     { //Only update the schematic if not in standalone mode
@@ -223,11 +232,63 @@ void DIALOG_BOARD_REANNOTATE::InitValues( void )
 }
 
 
+void DIALOG_BOARD_REANNOTATE::updateUndoRedoBtnState( void )
+{
+    // Disable Undo/Redo buttons when schematic is set to auto-update.
+    if( m_UpdateSchematic->GetValue() )
+    {
+        m_UndoBtn->Enable( false );
+        m_RedoBtn->Enable( false );
+        return;
+    }
+
+    // Only allow Undo/Redo events created after Geographic Reannotation dialog was opened
+
+    if( m_frame )
+    {
+        // Disable "Undo" button when no valid Undo remains, otherwise Enable it
+        m_UndoBtn->Enable( m_frame->GetUndoCommandCount() > m_UndoBaseCount );
+        // Same for Redo
+        m_RedoBtn->Enable( m_frame->GetRedoCommandCount() > 0 );
+    }
+}
+
+
 void DIALOG_BOARD_REANNOTATE::OnCloseClick( wxCommandEvent& event )
 {
     EndDialog( wxID_OK );
 }
 
+
+void DIALOG_BOARD_REANNOTATE::onUpdateSchCheckBoxClick( wxCommandEvent& event )
+{
+    // Make sure Undo button gets disabled when user choose to auto-update schematic
+    updateUndoRedoBtnState();
+}
+
+
+void DIALOG_BOARD_REANNOTATE::onUndoClick( wxCommandEvent& event )
+{
+    PCB_BASE_EDIT_FRAME* editFrame = dynamic_cast<PCB_BASE_EDIT_FRAME*>( m_frame );
+    wxCommandEvent       dummy;
+
+    if( editFrame )
+        editFrame->RestoreCopyFromUndoList( dummy ); // Perform undo
+
+    updateUndoRedoBtnState(); // Enable Undo/Redo buttons as appropriate
+}
+
+
+void DIALOG_BOARD_REANNOTATE::onRedoClick( wxCommandEvent& event )
+{
+    PCB_BASE_EDIT_FRAME* editFrame = dynamic_cast<PCB_BASE_EDIT_FRAME*>( m_frame );
+    wxCommandEvent       dummy;
+
+    if( editFrame )
+        editFrame->RestoreCopyFromRedoList( dummy ); // Perform redo
+
+    updateUndoRedoBtnState(); // Enable Undo/Redo buttons as appropriate
+}
 
 //
 ///  Check to make sure the prefix (if there is one) is properly constructed
@@ -288,6 +349,7 @@ void DIALOG_BOARD_REANNOTATE::OnApplyClick( wxCommandEvent& event )
     m_MessageWindow->Flush( false );
     m_frame->GetCanvas()->Refresh(); //Redraw
     m_frame->OnModify();             //Need to save file on exit.
+    updateUndoRedoBtnState(); // Enable Undo/Redo buttons as appropriate
 }
 
 
@@ -359,8 +421,8 @@ void DIALOG_BOARD_REANNOTATE::MakeSampleText( wxString& aMessage )
 
     bool moduleLocation = m_locationChoice->GetSelection() == 0;
 
-    aMessage += wxString::Format( _( "\nPrior to sorting by %s, the coordinates of which will be "
-                                     "rounded to a %s, %s grid. " ),
+    aMessage += wxString::Format( _( "\nPrior to sorting by %s, the coordinates will be "
+                                     "rounded to a %s x %s grid." ),
                                   moduleLocation ? _( "footprint location" )
                                                  : _( "reference designator location" ),
                                   MessageTextFromValue( m_Units, m_SortGridx, false ),

@@ -90,14 +90,19 @@ class DIALOG_BOARD_REANNOTATE_BASE : public DIALOG_SHIM
 		wxStaticText* m_ExcludeListText;
 		wxTextCtrl* m_ExcludeList;
 		WX_HTML_REPORT_PANEL* m_MessageWindow;
+		wxButton* m_UndoBtn;
+		wxButton* m_RedoBtn;
 		wxStdDialogButtonSizer* m_sdbSizer;
 		wxButton* m_sdbSizerOK;
 		wxButton* m_sdbSizerCancel;
 
 		// Virtual event handlers, overide them in your derived class
 		virtual void OnClose( wxCloseEvent& event ) { event.Skip(); }
+		virtual void onUpdateSchCheckBoxClick( wxCommandEvent& event ) { event.Skip(); }
 		virtual void FilterFrontPrefix( wxCommandEvent& event ) { event.Skip(); }
 		virtual void FilterBackPrefix( wxCommandEvent& event ) { event.Skip(); }
+		virtual void onUndoClick( wxCommandEvent& event ) { event.Skip(); }
+		virtual void onRedoClick( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnCloseClick( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnApplyClick( wxCommandEvent& event ) { event.Skip(); }
 
