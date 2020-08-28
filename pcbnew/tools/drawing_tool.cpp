@@ -816,16 +816,10 @@ int DRAWING_TOOL::InteractivePlaceWithPreview( const TOOL_EVENT& aEvent, std::ve
 
                 if( item->Type() == PCB_GROUP_T )
                 {
-                    // Does not support groups inside a group.
-                    for( auto item2 : static_cast<PCB_GROUP*>( item )->GetItems() )
-                    {
-                        commit.Add( item2 );
-                    }
-
-                    commit.Add( item );
+                    static_cast<PCB_GROUP*>( item )->AddChildrenToCommit( commit );
                 }
-                else
-                    commit.Add( item );
+                
+                commit.Add( item );
             }
 
             commit.Push( "Placing items" );
