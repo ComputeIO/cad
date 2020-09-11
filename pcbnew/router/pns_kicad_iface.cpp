@@ -258,7 +258,7 @@ int PNS_PCBNEW_RULE_RESOLVER::Clearance( const PNS::ITEM* aA, const PNS::ITEM* a
 
     int cl_a = Clearance( net_a, aA->isOnInnerLayer() );
     int cl_b = Clearance( net_b, aB->isOnInnerLayer() );
-        
+
     // Pad clearance is 0 if the ITEM* is not a pad
     int pad_a = localPadClearance( aA );
     int pad_b = localPadClearance( aB );

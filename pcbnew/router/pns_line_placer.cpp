@@ -948,7 +948,7 @@ void LINE_PLACER::UpdateWidthFromLayer()
         m_head.SetWidth( m_sizes.TrackWidth() );
         m_tail.SetWidth( m_sizes.TrackWidth() );
     }
-} 
+}
 
 
 bool LINE_PLACER::SetLayer( int aLayer )

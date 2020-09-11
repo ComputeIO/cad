@@ -58,7 +58,7 @@ public:
 
     int TrackWidth() const { return m_trackWidth; }
     void SetTrackWidth( int aWidth ) { m_trackWidth = aWidth; }
-    
+
     int TrackWidthInner() const { return m_trackWidthInner; }
     void SetTrackWidthInner( int aWidth ) { m_trackWidthInner = aWidth; }
 

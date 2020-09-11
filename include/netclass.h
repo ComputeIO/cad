@@ -61,7 +61,7 @@ protected:
 
     int         m_TrackWidth;           ///< track width used to route NETs in this NETCLASS
     int         m_TrackWidthInner;      ///< track width used to route in inner layers
-    
+
     int         m_ViaDia;               ///< via diameter
     int         m_ViaDrill;             ///< via drill hole diameter
 

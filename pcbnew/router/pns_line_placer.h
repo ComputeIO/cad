@@ -262,7 +262,7 @@ public:
      *
      * Updates the track width to match the respective inner or outer layer
      * netclass settings. Used when starting routing or switching layers.
-     * 
+     *
      */
     void UpdateWidthFromLayer();
 
