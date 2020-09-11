@@ -296,6 +296,14 @@ int PNS_PCBNEW_RULE_RESOLVER::Clearance( int aNetCode ) const
 
 int PNS_PCBNEW_RULE_RESOLVER::Clearance( int aNetCode, bool aInnerLayer) const
 {
+    if( aNetCode == -1 )
+    {
+        return 0;
+    }
+    else if( aNetCode == 0 )
+    {
+        return m_defaultClearance;
+    }
     if( aNetCode > 0 && aNetCode < (int) m_netClearanceCache.size() )
         if( aInnerLayer )
             return m_netClearanceCache[aNetCode].clearanceInner;
