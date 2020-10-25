@@ -51,8 +51,8 @@ wxString NETLIST_EXPORTER_PSPICE_SIM::ComponentToVector(
 
     else if( aType & SPT_CURRENT )
     {
-        wxString device = GetSpiceDevice( aName ).Lower();
-        wxString param = aParam.Lower();
+        wxString device = aName.Lower();
+        wxString param  = aParam.Lower();
 
         if( device[0] == 'x' )
         {

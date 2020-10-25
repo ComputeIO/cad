@@ -27,11 +27,15 @@
 #include <sim/sim_plot_frame.h>
 
 #include <sim/netlist_exporter_pspice_sim.h>
+#include <sim/spice_simulator.h>
 
-DIALOG_SIGNAL_LIST::DIALOG_SIGNAL_LIST( SIM_PLOT_FRAME* aParent, NETLIST_EXPORTER_PSPICE_SIM* aExporter )
-    : DIALOG_SIGNAL_LIST_BASE( aParent ), m_plotFrame( aParent ), m_exporter( aExporter )
+DIALOG_SIGNAL_LIST::DIALOG_SIGNAL_LIST( SIM_PLOT_FRAME* aParent,
+        NETLIST_EXPORTER_PSPICE_SIM* aExporter, SPICE_SIMULATOR* aSimulator )
+        : DIALOG_SIGNAL_LIST_BASE( aParent ),
+          m_plotFrame( aParent ),
+          m_exporter( aExporter ),
+          m_simulator( aSimulator )
 {
-
 }
 
 
@@ -50,30 +54,26 @@ bool DIALOG_SIGNAL_LIST::TransferDataToWindow()
 {
     // Create a list of possible signals
     /// @todo it could include separated mag & phase for AC analysis
-    if( m_exporter )
+    if( m_simulator )
     {
-        // Voltage list
-        for( const auto& net : m_exporter->GetNetIndexMap() )
+        for( const auto& net : m_simulator->AllPlots() )
         {
             // netnames are escaped (can contain "{slash}" for '/') Unscape them:
-            wxString netname = UnescapeString( net.first );
+            wxString netname = UnescapeString( net );
+            // Get the part in the parentheses
+            wxString vector = netname.AfterFirst( '[' ).BeforeLast( ']' );
+            // Get the name of the device
+            if( netname.StartsWith('@')) {
+                netname = netname.AfterFirst( '@' ).BeforeFirst( '[' );
+            }
+
+            if(vector.IsEmpty() ) {
+                vector = "V";
+            }
 
             if( netname != "GND" && netname != "0" )
-                m_signals->Append( wxString::Format( "V(%s)", netname ) );
-        }
-
-        auto simType = m_exporter->GetSimType();
-
-        if( simType == ST_TRANSIENT || simType == ST_DC )
-        {
-            for( const auto& item : m_exporter->GetSpiceItems() )
             {
-                // Add all possible currents for the primitive
-                for( const auto& current :
-                        NETLIST_EXPORTER_PSPICE_SIM::GetCurrents( (SPICE_PRIMITIVE) item.m_primitive ) )
-                {
-                    m_signals->Append( wxString::Format( "%s(%s)", current, item.m_refName ) );
-                }
+                m_signals->Append( wxString::Format( "%s(%s)", vector, netname ) );
             }
         }
     }

@@ -29,11 +29,13 @@
 
 class SIM_PLOT_FRAME;
 class NETLIST_EXPORTER_PSPICE_SIM;
+class SPICE_SIMULATOR;
 
 class DIALOG_SIGNAL_LIST : public DIALOG_SIGNAL_LIST_BASE
 {
 public:
-    DIALOG_SIGNAL_LIST( SIM_PLOT_FRAME* aParent, NETLIST_EXPORTER_PSPICE_SIM* aExporter );
+    DIALOG_SIGNAL_LIST( SIM_PLOT_FRAME* aParent, NETLIST_EXPORTER_PSPICE_SIM* aExporter,
+            SPICE_SIMULATOR* aSimulator );
 
     bool TransferDataFromWindow() override;
     bool TransferDataToWindow() override;
@@ -47,8 +49,9 @@ private:
     void addSelectionToPlotFrame();
     bool addSignalToPlotFrame( const wxString& aPlotName );
 
-    SIM_PLOT_FRAME* m_plotFrame;
+    SIM_PLOT_FRAME*              m_plotFrame;
     NETLIST_EXPORTER_PSPICE_SIM* m_exporter;
+    SPICE_SIMULATOR*             m_simulator;
 };
 
 #endif /* DIALOG_SIGNAL_LIST_H */

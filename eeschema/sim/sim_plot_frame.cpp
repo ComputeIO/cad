@@ -1333,7 +1333,7 @@ void SIM_PLOT_FRAME::onAddSignal( wxCommandEvent& event )
         return;
     }
 
-    DIALOG_SIGNAL_LIST dialog( this, m_exporter.get() );
+    DIALOG_SIGNAL_LIST dialog( this, m_exporter.get(), m_simulator.get() );
     dialog.ShowModal();
 }
 
