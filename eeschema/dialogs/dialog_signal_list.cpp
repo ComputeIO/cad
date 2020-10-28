@@ -58,8 +58,8 @@ bool DIALOG_SIGNAL_LIST::TransferDataToWindow()
     {
         for( const auto& net : m_simulator->AllPlots() )
         {
-            // netnames are escaped (can contain "{slash}" for '/') Unscape them:
-            wxString netname = UnescapeString( net );
+            wxString netname = net;
+            if( netname.IsEmpty() ) continue;
             // Get the part in the parentheses
             wxString vector = netname.AfterFirst( '[' ).BeforeLast( ']' );
             // Get the name of the device
@@ -71,10 +71,7 @@ bool DIALOG_SIGNAL_LIST::TransferDataToWindow()
                 vector = "V";
             }
 
-            if( netname != "GND" && netname != "0" )
-            {
-                m_signals->Append( wxString::Format( "%s(%s)", vector, netname ) );
-            }
+            m_signals->Append( wxString::Format( "%s(%s)", vector, netname ) );
         }
     }
 
