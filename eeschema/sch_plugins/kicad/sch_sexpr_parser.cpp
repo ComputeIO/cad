@@ -300,17 +300,17 @@ LIB_SYMBOL* SCH_SEXPR_PARSER::ParseSymbol( LIB_SYMBOL_MAP& aSymbolLibMap, int aF
 
             if( !tokenizer.GetNextToken().ToLong( &tmp ) )
             {
-                error.Printf( _( "Invalid symbol convert number %s" ), name.c_str() );
+                error.Printf( _( "Invalid symbol shape number %s" ), name.c_str() );
                 THROW_PARSE_ERROR( error, CurSource(), CurLine(), CurLineNumber(), CurOffset() );
             }
 
             m_convert = static_cast<int>( tmp );
 
-            if( m_convert > 1 )
-                symbol->SetConversion( true, false );
+            if( m_convert > symbol->GetConvertCount() )
+                symbol->SetConvertCount( m_convert );
 
             if( m_unit > symbol->GetUnitCount() )
-                symbol->SetUnitCount( m_unit, false );
+                symbol->SetUnitCount( m_unit );
 
             for( token = NextTok();  token != T_RIGHT;  token = NextTok() )
             {

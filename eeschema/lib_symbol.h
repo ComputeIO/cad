@@ -82,8 +82,8 @@ struct LIB_SYMBOL_OPTIONS
 struct LIB_SYMBOL_UNIT
 {
     int m_unit;                       ///< The unit number.
-    int m_convert;                    ///< The alternate body style of the unit.
-    std::vector<LIB_ITEM*> m_items;   ///< The items unique to this unit and alternate body style.
+    int m_convert;                    ///< The (alternate) shape of the unit.
+    std::vector<LIB_ITEM*> m_items;   ///< The items unique to this unit and shape.
 };
 
 
@@ -198,9 +198,9 @@ public:
      *
      * @return the symbol bounding box ( in user coordinates )
      * @param aUnit = unit selection = 0, or 1..n
-     * @param aConvert = 0, 1 or 2
+     * @param aConvert = 0, or 1..m
      *  If aUnit == 0, unit is not used
-     *  if aConvert == 0 Convert is non used
+     *  if aConvert == 0, convert is not used
      *  Invisible fields are not taken in account
      **/
     const EDA_RECT GetUnitBoundingBox( int aUnit, int aConvert ) const;
@@ -210,9 +210,9 @@ public:
      *
      * @return the symbol bounding box ( in user coordinates ) without fields
      * @param aUnit = unit selection = 0, or 1..n
-     * @param aConvert = 0, 1 or 2
+     * @param aConvert = 0, 0, or 1..m
      *  If aUnit == 0, unit is not used
-     *  if aConvert == 0 Convert is non used
+     *  if aConvert == 0, convert is not used
      *  Fields are not taken in account
      **/
     const EDA_RECT GetBodyBoundingBox( int aUnit, int aConvert, bool aIncludePins ) const;
@@ -297,7 +297,7 @@ public:
      *
      * @param aOffset - Position of symbol.
      * @param aMulti - unit if multiple units per symbol.
-     * @param aConvert - Symbol conversion (DeMorgan) if available.
+     * @param aConvert - shape if alternate symbol shapes.
      * @param aOpts - Drawing options
      */
     void Print( const RENDER_SETTINGS* aSettings, const wxPoint& aOffset,
@@ -309,8 +309,8 @@ public:
      * is used to plot schematic items, which have they own fields
      *
      * @param aPlotter - Plotter object to plot to.
-     * @param aUnit - Symbol symbol to plot.
-     * @param aConvert - Symbol alternate body style to plot.
+     * @param aUnit - Symbol unit to plot.
+     * @param aConvert - Symbol alternate shape to plot.
      * @param aOffset - Distance to shift the plot coordinates.
      * @param aTransform - Symbol plot transform matrix.
      */
@@ -322,8 +322,8 @@ public:
      * is used to plot the full lib symbol, outside the schematic
      *
      * @param aPlotter - Plotter object to plot to.
-     * @param aUnit - Symbol to plot.
-     * @param aConvert - Symbol alternate body style to plot.
+     * @param aUnit - Symbol unit to plot.
+     * @param aConvert - Symbol alternate shape to plot.
      * @param aOffset - Distance to shift the plot coordinates.
      * @param aTransform - Symbol plot transform matrix.
      */
@@ -395,8 +395,8 @@ public:
      * @param aNumber - Number of the pin to find.
      * @param aUnit - Unit of the symbol to find.  Set to 0 if a specific
      *                unit number is not required.
-     * @param aConvert - Alternate body style filter (DeMorgan).  Set to 0 if
-     *                   no alternate body style is required.
+     * @param aConvert - Alternate symbol shape filter (De Morgan).  Set to 0 if
+     *                   no alternate symbol shape is required.
      * @return The pin object if found.  Otherwise NULL.
      */
     LIB_PIN* GetPin( const wxString& aNumber, int aUnit = 0, int aConvert = 0 ) const;
@@ -429,9 +429,9 @@ public:
     void RemoveDuplicateDrawItems();
 
     /**
-     * Test if symbol has more than one body conversion type (DeMorgan).
+     * Test if symbol has alternate symbol shapes.
      *
-     * @return True if symbol has more than one conversion.
+     * @return True if symbol has alternate symbol shapes.
      */
     bool HasConversion() const;
 
@@ -445,7 +445,7 @@ public:
      * Locate a draw object.
      *
      * @param aUnit - Unit number of draw item.
-     * @param aConvert - Body style of draw item.
+     * @param aConvert - Shape number of draw item.
      * @param aType - Draw object type, set to 0 to search for any type.
      * @param aPoint - Coordinate for hit testing.
      * @return The draw object if found.  Otherwise NULL.
@@ -456,7 +456,7 @@ public:
      * Locate a draw object (overlaid)
      *
      * @param aUnit - Unit number of draw item.
-     * @param aConvert - Body style of draw item.
+     * @param aConvert - Shape number of draw item.
      * @param aType - Draw object type, set to 0 to search for any type.
      * @param aPoint - Coordinate for hit testing.
      * @param aTransform = the transform matrix
@@ -478,15 +478,20 @@ public:
     /**
      * Set the units per symbol count.
      *
-     * If the count is greater than the current count, then the all of the
-     * current draw items are duplicated for each additional symbol.  If the
-     * count is less than the current count, all draw objects for units
-     * greater that count are removed from the symbol.
+     * If \a aCount is greater than the current count, then any draw items
+     * of unit \a aUnit are duplicated for each additional symbol, if not 0.
+     * If \a aCount is less than the current count, any draw items for units
+     * greater than \a aCount are removed from the symbol.
      *
      * @param aCount - Number of units per package.
-     * @param aDuplicateDrawItems Create duplicate draw items of unit 1 for each additionl unit.
+     * @param aUnit - If not 0, create duplicate draw items of this unit
+     *                for each additional unit.
      */
-    void SetUnitCount( int aCount, bool aDuplicateDrawItems = true );
+    void SetUnitCount( int aCount, int aUnit = 0 );
+
+    /**
+     * For symbols with multiple units, return the number of units.
+     */
     int GetUnitCount() const override;
 
     /**
@@ -537,18 +542,23 @@ public:
     static void SetSubpartIdNotation( int aSep, int aFirstId );
 
     /**
-     * Set or clear the alternate body style (DeMorgan) for the symbol.
+     * Set the (alternate) symbol shape count for the symbol.
      *
-     * If the symbol already has an alternate body style set and a
-     * asConvert if false, all of the existing draw items for the alternate
-     * body style are remove.  If the alternate body style is not set and
-     * asConvert is true, than the base draw items are duplicated and
-     * added to the symbol.
+     * If \a aCount is greater than the current count, then any draw items of
+     * shape \a aConvert are duplicated for each additional shape, if not 0.
+     * If \a aCount is less than the current count, any draw items for shapes
+     * greater than \a aCount are removed from the symbol.
      *
-     * @param aSetConvert - Set or clear the symbol alternate body style.
-     * @param aDuplicatePins - Duplicate all pins from original body style if true.
+     * @param aCount - Number of (alternate) symbol shapes.
+     * @param aConvert - If not 0, create duplicate draw items of this shape
+     *                   for each additional shape.
      */
-    void SetConversion( bool aSetConvert, bool aDuplicatePins = true );
+    void SetConvertCount( int aCount, int aConvert = 0 );
+
+    /**
+     * For symbols with alternate shapes, return the number of shapes.
+     */
+    int GetConvertCount() const override;
 
     /**
      * Set the offset in mils of the pin name text from the pin symbol.
@@ -642,7 +652,7 @@ public:
      * @note #LIB_FIELD objects are not included.
      *
      * @param aUnit is the unit number of the item, -1 includes all units.
-     * @param aConvert is the alternate body styple of the item, -1 includes all body styles.
+     * @param aConvert is the alternate shape of the item, -1 includes all shapes.
      *
      * @return a list of unit items.
      */
@@ -665,6 +675,7 @@ private:
     timestamp_t         m_lastModDate;
 
     int                 m_unitCount;        ///< Number of units (parts) per package.
+    int                 m_convertCount;     ///< Number of (alternate) symbol shapes.
     bool                m_unitsLocked;      ///< True if symbol has multiple units and changing one
                                             ///< unit does not automatically change another unit.
 

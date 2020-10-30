@@ -73,6 +73,7 @@ BEGIN_EVENT_TABLE( SYMBOL_VIEWER_FRAME, EDA_DRAW_FRAME )
     EVT_TOOL( ID_LIBVIEW_SELECT_PART, SYMBOL_VIEWER_FRAME::OnSelectSymbol )
     EVT_TOOL( ID_LIBVIEW_NEXT, SYMBOL_VIEWER_FRAME::onSelectNextSymbol )
     EVT_TOOL( ID_LIBVIEW_PREVIOUS, SYMBOL_VIEWER_FRAME::onSelectPreviousSymbol )
+    EVT_CHOICE( ID_LIBVIEW_SELECT_CONVERT_NUMBER, SYMBOL_VIEWER_FRAME::onSelectSymbolConvert )
     EVT_CHOICE( ID_LIBVIEW_SELECT_UNIT_NUMBER, SYMBOL_VIEWER_FRAME::onSelectSymbolUnit )
 
     // listbox events
@@ -84,6 +85,7 @@ BEGIN_EVENT_TABLE( SYMBOL_VIEWER_FRAME, EDA_DRAW_FRAME )
     EVT_MENU( wxID_CLOSE, SYMBOL_VIEWER_FRAME::CloseLibraryViewer )
     EVT_MENU( ID_GRID_SETTINGS, SCH_BASE_FRAME::OnGridSettings )
 
+    EVT_UPDATE_UI( ID_LIBVIEW_SELECT_CONVERT_NUMBER, SYMBOL_VIEWER_FRAME::onUpdateConvertChoice )
     EVT_UPDATE_UI( ID_LIBVIEW_SELECT_UNIT_NUMBER, SYMBOL_VIEWER_FRAME::onUpdateUnitChoice )
 
 END_EVENT_TABLE()
@@ -274,26 +276,6 @@ void SYMBOL_VIEWER_FRAME::setupUIConditions()
             return GetRenderSettings()->m_ShowPinsElectricalType;
         };
 
-    auto demorganCond =
-        [this] ( const SELECTION& )
-        {
-            LIB_SYMBOL* symbol = GetSelectedSymbol();
-
-            return symbol && symbol->HasConversion();
-        };
-
-    auto demorganStandardCond =
-        [] ( const SELECTION& )
-        {
-            return m_convert == LIB_ITEM::LIB_CONVERT::BASE;
-        };
-
-    auto demorganAlternateCond =
-        [] ( const SELECTION& )
-        {
-            return m_convert == LIB_ITEM::LIB_CONVERT::DEMORGAN;
-        };
-
     auto haveDatasheetCond =
         [this] ( const SELECTION& )
         {
@@ -304,11 +286,6 @@ void SYMBOL_VIEWER_FRAME::setupUIConditions()
 
     mgr->SetConditions( EE_ACTIONS::showDatasheet,       ENABLE( haveDatasheetCond ) );
     mgr->SetConditions( EE_ACTIONS::showElectricalTypes, CHECK( electricalTypesShownCondition ) );
-
-    mgr->SetConditions( EE_ACTIONS::showDeMorganStandard,
-                        ACTION_CONDITIONS().Enable( demorganCond ).Check( demorganStandardCond ) );
-    mgr->SetConditions( EE_ACTIONS::showDeMorganAlternate,
-                        ACTION_CONDITIONS().Enable( demorganCond ).Check( demorganAlternateCond ) );
 
 #undef CHECK
 #undef ENABLE
@@ -437,6 +414,39 @@ void SYMBOL_VIEWER_FRAME::OnSize( wxSizeEvent& SizeEv )
         m_auimgr.Update();
 
     SizeEv.Skip();
+}
+
+
+void SYMBOL_VIEWER_FRAME::onUpdateConvertChoice( wxUpdateUIEvent& aEvent )
+{
+    LIB_SYMBOL* symbol = GetSelectedSymbol();
+
+    int convert_count = 1;
+
+    if( symbol )
+        convert_count = std::max( symbol->GetConvertCount(), 1 );
+
+    m_convertChoice->Enable( convert_count > 1 );
+
+    if( convert_count > 1 )
+    {
+        // rebuild the shape list if it is not suitable (after a new selection for instance)
+        if( convert_count != (int)m_convertChoice->GetCount() )
+        {
+            m_convertChoice->Clear();
+
+            for( int ii = 0; ii < convert_count; ii++ )
+                m_convertChoice->Append( wxString::Format( _( "Shape %d" ), ii + 1 ) );
+
+        }
+
+        if( m_convertChoice->GetSelection() != std::max( 0, m_convert - 1 ) )
+            m_convertChoice->SetSelection( std::max( 0, m_convert - 1 ) );
+    }
+    else if( m_convertChoice->GetCount() )
+    {
+        m_convertChoice->Clear();
+    }
 }
 
 
@@ -893,6 +903,19 @@ void SYMBOL_VIEWER_FRAME::onSelectPreviousSymbol( wxCommandEvent& aEvent )
 
     m_symbolList->SetSelection( ii );
     ProcessEvent( evt );
+}
+
+
+void SYMBOL_VIEWER_FRAME::onSelectSymbolConvert( wxCommandEvent& aEvent )
+{
+    int ii = m_convertChoice->GetSelection();
+
+    if( ii < 0 )
+        return;
+
+    m_convert = ii + 1;
+
+    updatePreviewSymbol();
 }
 
 

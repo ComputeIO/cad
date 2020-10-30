@@ -173,7 +173,7 @@ bool DIALOG_LIB_SYMBOL_PROPERTIES::TransferDataToWindow()
     m_SelNumberOfUnits->SetValue( m_libEntry->GetUnitCount() );
     m_OptionPartsInterchangeable->SetValue( !m_libEntry->UnitsLocked() ||
                                             m_libEntry->GetUnitCount() == 1 );
-    m_AsConvertButt->SetValue( m_libEntry->HasConversion() );
+    m_SelNumberOfConverts->SetValue( m_libEntry->GetConvertCount() );
     m_OptionPower->SetValue( m_libEntry->IsPower() );
     m_excludeFromBomCheckBox->SetValue( !m_libEntry->GetIncludeInBom() );
     m_excludeFromBoardCheckBox->SetValue( !m_libEntry->GetIncludeOnBoard() );
@@ -282,9 +282,9 @@ bool DIALOG_LIB_SYMBOL_PROPERTIES::Validate()
             return false;
     }
 
-    if( !m_AsConvertButt->GetValue() && m_libEntry->HasConversion() )
+    if( m_SelNumberOfConverts->GetValue() < m_libEntry->GetConvertCount() )
     {
-        if( !IsOK( this, _( "Delete alternate body style (De Morgan) from symbol?" ) ) )
+        if( !IsOK( this, _( "Delete alternate shapes from symbol?" ) ) )
             return false;
     }
 
@@ -362,10 +362,10 @@ bool DIALOG_LIB_SYMBOL_PROPERTIES::TransferDataFromWindow()
     m_libEntry->SetName( newName );
     m_libEntry->SetDescription( m_DescCtrl->GetValue() );
     m_libEntry->SetKeyWords( m_KeywordCtrl->GetValue() );
-    m_libEntry->SetUnitCount( m_SelNumberOfUnits->GetValue() );
+    m_libEntry->SetUnitCount( m_SelNumberOfUnits->GetValue(), m_Parent->GetUnit() );
     m_libEntry->LockUnits( m_libEntry->GetUnitCount() > 1 &&
                            !m_OptionPartsInterchangeable->GetValue() );
-    m_libEntry->SetConversion( m_AsConvertButt->GetValue() );
+    m_libEntry->SetConvertCount( m_SelNumberOfConverts->GetValue(), m_Parent->GetConvert() );
 
     if( m_OptionPower->GetValue() )
         m_libEntry->SetPower();
@@ -393,11 +393,6 @@ bool DIALOG_LIB_SYMBOL_PROPERTIES::TransferDataFromWindow()
     m_libEntry->SetFPFilters( m_FootprintFilterListBox->GetStrings());
 
     m_Parent->UpdateAfterSymbolProperties( &oldName );
-
-    // It's possible that the symbol being edited has no pins, in which case there may be no
-    // alternate body style objects causing #LIB_SYMBOL::HasCoversion() to always return false.
-    // This allows the user to edit the alternate body style just in case this condition occurs.
-    m_Parent->SetShowDeMorgan( m_AsConvertButt->GetValue() );
 
     return true;
 }

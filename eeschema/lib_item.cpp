@@ -53,14 +53,12 @@ void LIB_ITEM::GetMsgPanelInfo( EDA_DRAW_FRAME* aFrame, std::vector<MSG_PANEL_IT
 
     aList.emplace_back( _( "Unit" ), msg );
 
-    if( m_convert == LIB_ITEM::LIB_CONVERT::BASE )
-        msg = _( "no" );
-    else if( m_convert == LIB_ITEM::LIB_CONVERT::DEMORGAN )
-        msg = _( "yes" );
+    if( m_convert == 0 )
+        msg = _( "All" );
     else
-        msg = wxT( "?" );
+        msg.Printf( wxT( "%d" ), m_convert );
 
-    aList.emplace_back( _( "Converted" ), msg );
+    aList.emplace_back( _( "Shape" ), msg );
 }
 
 

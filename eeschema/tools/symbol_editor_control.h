@@ -60,8 +60,6 @@ public:
     int ExportSymbolAsSVG( const TOOL_EVENT& aEvent );
     int AddSymbolToSchematic( const TOOL_EVENT& aEvent );
 
-    int OnDeMorgan( const TOOL_EVENT& aEvent );
-
     int ShowElectricalTypes( const TOOL_EVENT& aEvent );
     int PinLibrary( const TOOL_EVENT& aEvent );
     int UnpinLibrary( const TOOL_EVENT& aEvent );

@@ -77,14 +77,14 @@ SELECTION_CONDITION EE_CONDITIONS::SingleSymbolOrPower = []( const SELECTION& aS
 };
 
 
-SELECTION_CONDITION EE_CONDITIONS::SingleDeMorganSymbol = []( const SELECTION& aSel )
+SELECTION_CONDITION EE_CONDITIONS::SingleMultiConvertSymbol = []( const SELECTION& aSel )
 {
     if( aSel.GetSize() == 1 )
     {
         SCH_SYMBOL* symbol = dynamic_cast<SCH_SYMBOL*>( aSel.Front() );
 
         if( symbol )
-            return symbol->GetLibSymbolRef() && symbol->GetLibSymbolRef()->HasConversion();
+            return symbol->GetLibSymbolRef() && symbol->GetLibSymbolRef()->GetConvertCount() >= 2;
     }
 
     return false;
@@ -573,7 +573,7 @@ int EE_SELECTION_TOOL::Main( const TOOL_EVENT& aEvent )
         {
             m_disambiguateTimer.Stop();
 
-            // context sub-menu selection?  Handle unit selection or bus unfolding
+            // context sub-menu selection?  Handle unit/shape selection or bus unfolding
             if( evt->GetCommandId().get() >= ID_POPUP_SCH_SELECT_UNIT_CMP
                 && evt->GetCommandId().get() <= ID_POPUP_SCH_SELECT_UNIT_SYM_MAX )
             {
@@ -582,6 +582,15 @@ int EE_SELECTION_TOOL::Main( const TOOL_EVENT& aEvent )
 
                 if( symbol )
                     static_cast<SCH_EDIT_FRAME*>( m_frame )->SelectUnit( symbol, unit );
+            }
+            else if( evt->GetCommandId().get() >= ID_POPUP_SCH_SELECT_CONVERT_CMP
+                && evt->GetCommandId().get() <= ID_POPUP_SCH_SELECT_CONVERT_SYM_MAX )
+            {
+                SCH_SYMBOL* symbol = dynamic_cast<SCH_SYMBOL*>( m_selection.Front() );
+                int convert = evt->GetCommandId().get() - ID_POPUP_SCH_SELECT_CONVERT_CMP;
+
+                if( symbol )
+                    static_cast<SCH_EDIT_FRAME*>( m_frame )->SelectConvert( symbol, convert );
             }
             else if( evt->GetCommandId().get() >= ID_POPUP_SCH_UNFOLD_BUS
                      && evt->GetCommandId().get() <= ID_POPUP_SCH_UNFOLD_BUS_END )

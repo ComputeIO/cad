@@ -2963,7 +2963,18 @@ LIB_SYMBOL* SCH_LEGACY_PLUGIN_CACHE::LoadPart( LINE_READER& aReader, int aMajorV
         else if( *line == 'F' )                             // Fields
             loadField( symbol, aReader );
         else if( strCompare( "DRAW", line, &line ) )        // Drawing objects.
+        {
             loadDrawEntries( symbol, aReader, aMajorVersion, aMinorVersion );
+
+            // Update number of used symbol shapes
+            int maxConvert = LIB_ITEM::LIB_CONVERT::BASE;
+
+            for( const LIB_ITEM& item : symbol->GetDrawItems() )
+                maxConvert = std::max( maxConvert, item.GetConvert() );
+
+            symbol->SetConvertCount( maxConvert );
+        }
+
         else if( strCompare( "$FPLIST", line, &line ) )     // Footprint filter list
             loadFootprintFilters( symbol, aReader );
         else if( strCompare( "ENDDEF", line, &line ) )      // End of symbol description

@@ -117,16 +117,16 @@ void SYMBOL_EDIT_FRAME::ReCreateHToolbar()
     m_mainToolBar->Add( EE_ACTIONS::checkSymbol );
 
     m_mainToolBar->AddScaledSeparator( this );
-    m_mainToolBar->Add( EE_ACTIONS::showDeMorganStandard,  ACTION_TOOLBAR::TOGGLE );
-    m_mainToolBar->Add( EE_ACTIONS::showDeMorganAlternate, ACTION_TOOLBAR::TOGGLE );
-
-    m_mainToolBar->AddScaledSeparator( this );
-
     if( m_unitSelectBox == nullptr )
         m_unitSelectBox = new wxComboBox( m_mainToolBar, ID_LIBEDIT_SELECT_UNIT_NUMBER,
                 wxEmptyString, wxDefaultPosition, wxSize( LISTBOX_WIDTH, -1 ), 0,
                 nullptr, wxCB_READONLY );
     m_mainToolBar->AddControl( m_unitSelectBox );
+    if( m_convertSelectBox == nullptr )
+        m_convertSelectBox = new wxComboBox( m_mainToolBar, ID_LIBEDIT_SELECT_CONVERT_NUMBER,
+                wxEmptyString, wxDefaultPosition, wxSize( LISTBOX_WIDTH, -1 ), 0,
+                nullptr, wxCB_READONLY );
+    m_mainToolBar->AddControl( m_convertSelectBox );
 
     m_mainToolBar->AddScaledSeparator( this );
     m_mainToolBar->Add( EE_ACTIONS::toggleSyncedPinsMode, ACTION_TOOLBAR::TOGGLE );

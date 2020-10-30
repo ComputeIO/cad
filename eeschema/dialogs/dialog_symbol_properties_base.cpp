@@ -125,39 +125,51 @@ DIALOG_SYMBOL_PROPERTIES_BASE::DIALOG_SYMBOL_PROPERTIES_BASE( wxWindow* parent, 
 
 	m_unitLabel = new wxStaticText( sbGeneralProps->GetStaticBox(), wxID_ANY, _("Unit:"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_unitLabel->Wrap( -1 );
+	m_unitLabel->SetToolTip( _("Enter the number of units for a symbol that contains more than one unit.") );
+
 	gbSizer1->Add( m_unitLabel, wxGBPosition( 0, 0 ), wxGBSpan( 1, 1 ), wxALIGN_CENTER_VERTICAL|wxLEFT|wxRIGHT, 5 );
 
 	wxArrayString m_unitChoiceChoices;
 	m_unitChoice = new wxChoice( sbGeneralProps->GetStaticBox(), wxID_ANY, wxDefaultPosition, wxDefaultSize, m_unitChoiceChoices, 0 );
 	m_unitChoice->SetSelection( 0 );
+	m_unitChoice->SetToolTip( _("Enter the number of units for a symbol that contains more than one unit.") );
 	m_unitChoice->SetMinSize( wxSize( 100,-1 ) );
 
 	gbSizer1->Add( m_unitChoice, wxGBPosition( 0, 1 ), wxGBSpan( 1, 1 ), wxEXPAND|wxLEFT|wxRIGHT, 5 );
 
-	m_cbAlternateSymbol = new wxCheckBox( sbGeneralProps->GetStaticBox(), wxID_ANY, _("Alternate symbol (De Morgan)"), wxDefaultPosition, wxDefaultSize, 0 );
-	m_cbAlternateSymbol->SetToolTip( _("Use the alternate shape of this symbol.\nFor gates, this is the \"De Morgan\" conversion") );
+	m_convertLabel = new wxStaticText( sbGeneralProps->GetStaticBox(), wxID_ANY, _("Shape:"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_convertLabel->Wrap( -1 );
+	m_convertLabel->SetToolTip( _("Enter the number of shapes for a symbol that contains alternate shapes.") );
 
-	gbSizer1->Add( m_cbAlternateSymbol, wxGBPosition( 1, 0 ), wxGBSpan( 1, 2 ), wxBOTTOM|wxEXPAND|wxLEFT|wxRIGHT, 5 );
+	gbSizer1->Add( m_convertLabel, wxGBPosition( 1, 0 ), wxGBSpan( 1, 1 ), wxALIGN_CENTER_VERTICAL|wxBOTTOM|wxLEFT|wxRIGHT, 5 );
+
+	wxArrayString m_convertChoiceChoices;
+	m_convertChoice = new wxChoice( sbGeneralProps->GetStaticBox(), wxID_ANY, wxDefaultPosition, wxDefaultSize, m_convertChoiceChoices, 0 );
+	m_convertChoice->SetSelection( 0 );
+	m_convertChoice->SetToolTip( _("Enter the number of shapes for a symbol that contains alternate shapes.") );
+	m_convertChoice->SetMinSize( wxSize( 100,-1 ) );
+
+	gbSizer1->Add( m_convertChoice, wxGBPosition( 1, 1 ), wxGBSpan( 1, 1 ), wxBOTTOM|wxEXPAND|wxLEFT|wxRIGHT, 5 );
 
 	m_orientationLabel = new wxStaticText( sbGeneralProps->GetStaticBox(), wxID_ANY, _("Angle:"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_orientationLabel->Wrap( -1 );
-	gbSizer1->Add( m_orientationLabel, wxGBPosition( 3, 0 ), wxGBSpan( 1, 1 ), wxALIGN_CENTER_VERTICAL|wxLEFT|wxRIGHT|wxTOP, 5 );
+	gbSizer1->Add( m_orientationLabel, wxGBPosition( 2, 0 ), wxGBSpan( 1, 1 ), wxALIGN_CENTER_VERTICAL|wxLEFT|wxRIGHT, 5 );
 
 	wxString m_orientationCtrlChoices[] = { _("0"), _("+90"), _("-90"), _("180") };
 	int m_orientationCtrlNChoices = sizeof( m_orientationCtrlChoices ) / sizeof( wxString );
 	m_orientationCtrl = new wxChoice( sbGeneralProps->GetStaticBox(), wxID_ANY, wxDefaultPosition, wxDefaultSize, m_orientationCtrlNChoices, m_orientationCtrlChoices, 0 );
 	m_orientationCtrl->SetSelection( 0 );
-	gbSizer1->Add( m_orientationCtrl, wxGBPosition( 3, 1 ), wxGBSpan( 1, 1 ), wxEXPAND|wxLEFT|wxRIGHT, 5 );
+	gbSizer1->Add( m_orientationCtrl, wxGBPosition( 2, 1 ), wxGBSpan( 1, 1 ), wxEXPAND|wxLEFT|wxRIGHT, 5 );
 
 	m_mirrorLabel = new wxStaticText( sbGeneralProps->GetStaticBox(), wxID_ANY, _("Mirror:"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_mirrorLabel->Wrap( -1 );
-	gbSizer1->Add( m_mirrorLabel, wxGBPosition( 4, 0 ), wxGBSpan( 1, 1 ), wxALIGN_CENTER_VERTICAL|wxLEFT|wxRIGHT, 5 );
+	gbSizer1->Add( m_mirrorLabel, wxGBPosition( 3, 0 ), wxGBSpan( 1, 1 ), wxALIGN_CENTER_VERTICAL|wxLEFT|wxRIGHT, 5 );
 
 	wxString m_mirrorCtrlChoices[] = { _("Not mirrored"), _("Around X axis"), _("Around Y axis") };
 	int m_mirrorCtrlNChoices = sizeof( m_mirrorCtrlChoices ) / sizeof( wxString );
 	m_mirrorCtrl = new wxChoice( sbGeneralProps->GetStaticBox(), wxID_ANY, wxDefaultPosition, wxDefaultSize, m_mirrorCtrlNChoices, m_mirrorCtrlChoices, 0 );
 	m_mirrorCtrl->SetSelection( 0 );
-	gbSizer1->Add( m_mirrorCtrl, wxGBPosition( 4, 1 ), wxGBSpan( 1, 1 ), wxEXPAND|wxLEFT|wxRIGHT, 5 );
+	gbSizer1->Add( m_mirrorCtrl, wxGBPosition( 3, 1 ), wxGBSpan( 1, 1 ), wxEXPAND|wxLEFT|wxRIGHT, 5 );
 
 
 	gbSizer1->AddGrowableCol( 1 );
@@ -343,7 +355,7 @@ DIALOG_SYMBOL_PROPERTIES_BASE::DIALOG_SYMBOL_PROPERTIES_BASE( wxWindow* parent, 
 	m_bpMoveDown->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( DIALOG_SYMBOL_PROPERTIES_BASE::OnMoveDown ), NULL, this );
 	m_bpDelete->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( DIALOG_SYMBOL_PROPERTIES_BASE::OnDeleteField ), NULL, this );
 	m_unitChoice->Connect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( DIALOG_SYMBOL_PROPERTIES_BASE::OnChoice ), NULL, this );
-	m_cbAlternateSymbol->Connect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( DIALOG_SYMBOL_PROPERTIES_BASE::OnCheckBox ), NULL, this );
+	m_convertChoice->Connect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( DIALOG_SYMBOL_PROPERTIES_BASE::OnChoice ), NULL, this );
 	m_orientationCtrl->Connect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( DIALOG_SYMBOL_PROPERTIES_BASE::OnChoice ), NULL, this );
 	m_mirrorCtrl->Connect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( DIALOG_SYMBOL_PROPERTIES_BASE::OnChoice ), NULL, this );
 	m_ShowPinNumButt->Connect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( DIALOG_SYMBOL_PROPERTIES_BASE::OnCheckBox ), NULL, this );
@@ -371,7 +383,7 @@ DIALOG_SYMBOL_PROPERTIES_BASE::~DIALOG_SYMBOL_PROPERTIES_BASE()
 	m_bpMoveDown->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( DIALOG_SYMBOL_PROPERTIES_BASE::OnMoveDown ), NULL, this );
 	m_bpDelete->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( DIALOG_SYMBOL_PROPERTIES_BASE::OnDeleteField ), NULL, this );
 	m_unitChoice->Disconnect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( DIALOG_SYMBOL_PROPERTIES_BASE::OnChoice ), NULL, this );
-	m_cbAlternateSymbol->Disconnect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( DIALOG_SYMBOL_PROPERTIES_BASE::OnCheckBox ), NULL, this );
+	m_convertChoice->Disconnect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( DIALOG_SYMBOL_PROPERTIES_BASE::OnChoice ), NULL, this );
 	m_orientationCtrl->Disconnect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( DIALOG_SYMBOL_PROPERTIES_BASE::OnChoice ), NULL, this );
 	m_mirrorCtrl->Disconnect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( DIALOG_SYMBOL_PROPERTIES_BASE::OnChoice ), NULL, this );
 	m_ShowPinNumButt->Disconnect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( DIALOG_SYMBOL_PROPERTIES_BASE::OnCheckBox ), NULL, this );

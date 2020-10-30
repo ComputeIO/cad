@@ -448,19 +448,14 @@ TOOL_ACTION EE_ACTIONS::assignNetclass( "eeschema.InteractiveEdit.assignNetclass
         AS_GLOBAL, 0, "",
         _( "Assign Netclass..." ), _( "Assign a netclass to the net of the selected wire" ) );
 
-TOOL_ACTION EE_ACTIONS::toggleDeMorgan( "eeschema.InteractiveEdit.toggleDeMorgan",
+TOOL_ACTION EE_ACTIONS::changeToPreviousConvert( "eeschema.InteractiveEdit.changeToPreviousShape",
         AS_GLOBAL, 0, "",
-        _( "De Morgan Conversion" ), _( "Switch between De Morgan representations" ),
-        BITMAPS::morgan2 );
-
-TOOL_ACTION EE_ACTIONS::showDeMorganStandard( "eeschema.InteractiveEdit.showDeMorganStandard",
-        AS_GLOBAL, 0, "",
-        _( "De Morgan Standard" ), _( "Switch to standard De Morgan representation" ),
+        _( "Change to Previous Shape" ), _( "Change symbol to previous alternate shape" ),
         BITMAPS::morgan1 );
 
-TOOL_ACTION EE_ACTIONS::showDeMorganAlternate( "eeschema.InteractiveEdit.showDeMorganAlternate",
+TOOL_ACTION EE_ACTIONS::changeToNextConvert( "eeschema.InteractiveEdit.changeToNextShape",
         AS_GLOBAL, 0, "",
-        _( "De Morgan Alternate" ), _( "Switch to alternate De Morgan representation" ),
+        _( "Change to Next Shape" ), _( "Change symbol to next alternate shape" ),
         BITMAPS::morgan2 );
 
 TOOL_ACTION EE_ACTIONS::toLabel( "eeschema.InteractiveEdit.toLabel",

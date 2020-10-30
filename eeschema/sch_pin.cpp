@@ -190,14 +190,12 @@ void SCH_PIN::GetMsgPanelInfo( EDA_DRAW_FRAME* aFrame, std::vector<MSG_PANEL_ITE
 
     aList.emplace_back( _( "Unit" ), msg );
 
-    if( m_libPin->GetConvert() == LIB_ITEM::LIB_CONVERT::BASE )
-        msg = _( "no" );
-    else if( m_libPin->GetConvert() == LIB_ITEM::LIB_CONVERT::DEMORGAN )
-        msg = _( "yes" );
+    if( m_libPin->GetConvert() == 0 )
+        msg = _( "All" );
     else
-        msg = wxT( "?" );
+        msg.Printf( wxT( "%d" ), m_libPin->GetConvert() );
 
-    aList.emplace_back( _( "Converted" ), msg );
+    aList.emplace_back( _( "Shape" ), msg );
 
     aList.emplace_back( _( "Name" ), GetShownName() );
     aList.emplace_back( _( "Number" ), GetShownNumber() );

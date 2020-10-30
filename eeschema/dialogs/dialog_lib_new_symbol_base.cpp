@@ -57,10 +57,25 @@ DIALOG_LIB_NEW_SYMBOL_BASE::DIALOG_LIB_NEW_SYMBOL_BASE( wxWindow* parent, wxWind
 
 	m_staticTextUnits = new wxStaticText( this, wxID_ANY, _("Number of units per package:"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_staticTextUnits->Wrap( -1 );
+	m_staticTextUnits->SetToolTip( _("Enter the number of units for a symbol that contains more than one unit.") );
+
 	fgSizer31->Add( m_staticTextUnits, 0, wxALIGN_CENTER_VERTICAL, 5 );
 
-	m_spinPartCount = new wxSpinCtrl( this, wxID_ANY, wxT("1"), wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, 1, 64, 0 );
-	fgSizer31->Add( m_spinPartCount, 0, wxALIGN_CENTER_VERTICAL|wxEXPAND, 5 );
+	m_spinUnitCount = new wxSpinCtrl( this, wxID_ANY, wxT("1"), wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, 1, 64, 0 );
+	m_spinUnitCount->SetToolTip( _("Enter the number of units for a symbol that contains more than one unit.") );
+
+	fgSizer31->Add( m_spinUnitCount, 0, wxALIGN_CENTER_VERTICAL|wxEXPAND, 5 );
+
+	m_staticTextConverts = new wxStaticText( this, wxID_ANY, _("Number of symbol shapes:"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_staticTextConverts->Wrap( -1 );
+	m_staticTextConverts->SetToolTip( _("Enter the number of shapes for a symbol that contains alternate shapes.") );
+
+	fgSizer31->Add( m_staticTextConverts, 0, wxALIGN_CENTER_VERTICAL, 5 );
+
+	m_spinConvertCount = new wxSpinCtrl( this, wxID_ANY, wxT("1"), wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, 1, 64, 0 );
+	m_spinConvertCount->SetToolTip( _("Enter the number of shapes for a symbol that contains alternate shapes.") );
+
+	fgSizer31->Add( m_spinConvertCount, 0, wxALIGN_CENTER_VERTICAL|wxEXPAND, 5 );
 
 
 	bSizerTop->Add( fgSizer31, 1, wxALL|wxEXPAND, 5 );
@@ -72,9 +87,6 @@ DIALOG_LIB_NEW_SYMBOL_BASE::DIALOG_LIB_NEW_SYMBOL_BASE( wxWindow* parent, wxWind
 	m_checkLockItems->SetToolTip( _("Check this option to allow symbols with multiple units to have different\nelements.  Uncheck this option when all symbol units are identical except\nfor pin numbers.") );
 
 	bSizer17->Add( m_checkLockItems, 0, wxRIGHT|wxLEFT, 5 );
-
-	m_checkHasConversion = new wxCheckBox( this, wxID_ANY, _("Create symbol with alternate body style (De Morgan)"), wxDefaultPosition, wxDefaultSize, 0 );
-	bSizer17->Add( m_checkHasConversion, 0, wxTOP|wxRIGHT|wxLEFT, 5 );
 
 	m_checkIsPowerSymbol = new wxCheckBox( this, wxID_ANY, _("Create symbol as power symbol"), wxDefaultPosition, wxDefaultSize, 0 );
 	bSizer17->Add( m_checkIsPowerSymbol, 0, wxTOP|wxRIGHT|wxLEFT, 5 );

@@ -338,6 +338,17 @@ int SCH_DRAWING_TOOLS::PlaceSymbol( const TOOL_EVENT& aEvent )
                     m_toolMgr->RunAction( ACTIONS::refreshPreview );
                 }
             }
+            else if( evt->GetCommandId().get() >= ID_POPUP_SCH_SELECT_CONVERT_CMP
+                && evt->GetCommandId().get() <= ID_POPUP_SCH_SELECT_CONVERT_SYM_MAX )
+            {
+                int convert = evt->GetCommandId().get() - ID_POPUP_SCH_SELECT_CONVERT_CMP;
+
+                if( symbol )
+                {
+                    m_frame->SelectConvert( symbol, convert );
+                    m_toolMgr->RunAction( ACTIONS::refreshPreview );
+                }
+            }
         }
         else if( symbol && ( evt->IsAction( &ACTIONS::refreshPreview ) || evt->IsMotion() ) )
         {

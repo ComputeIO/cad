@@ -650,7 +650,7 @@ public:
      */
     void DeleteJunction( SCH_ITEM* aItem, bool aAppend = false );
 
-    void ConvertPart( SCH_SYMBOL* aSymbol );
+    void SelectConvert( SCH_SYMBOL* aSymbol, int aConvert );
 
     void SelectUnit( SCH_SYMBOL* aSymbol, int aUnit );
 

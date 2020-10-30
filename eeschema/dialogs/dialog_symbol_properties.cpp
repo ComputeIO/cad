@@ -325,14 +325,14 @@ DIALOG_SYMBOL_PROPERTIES::DIALOG_SYMBOL_PROPERTIES( SCH_EDIT_FRAME* aParent,
         m_fieldsGrid->ShowHideColumns( m_shownColumns );
     }
 
-    if( m_part && m_part->HasConversion() )
+    if( m_part && m_part->GetConvertCount() > 1 )
     {
-        // DeMorgan conversions are a subclass of alternate pin assignments, so don't allow
+        // alternate symbol shapes are a subclass of alternate pin assignments, so don't allow
         // free-form alternate assignments as well.  (We won't know how to map the alternates
         // back and forth when the conversion is changed.)
         m_pinTablePage->Disable();
-        m_pinTablePage->SetToolTip( _( "Alternate pin assignments are not available for De Morgan "
-                                       "symbols." ) );
+        m_pinTablePage->SetToolTip( _( "Alternate pin assignments are not available for alternate "
+                                       "shapes symbols." ) );
     }
     else
     {
@@ -456,14 +456,19 @@ bool DIALOG_SYMBOL_PROPERTIES::TransferDataToWindow()
         m_unitChoice->Enable( false );
     }
 
-    if( m_part && m_part->HasConversion() )
+    // If a multi-shape symbol, set up the shape selector and interchangeable checkbox.
+    if( m_symbol->GetConvertCount() > 1 )
     {
-        if( m_symbol->GetConvert() > LIB_ITEM::LIB_CONVERT::BASE )
-            m_cbAlternateSymbol->SetValue( true );
+        for( int ii = 1; ii <= m_symbol->GetConvertCount(); ii++ )
+            m_convertChoice->Append( wxString::Format( wxT( "%d" ), ii ) );
+
+        if( m_symbol->GetConvert() <= ( int )m_convertChoice->GetCount() )
+            m_convertChoice->SetSelection( m_symbol->GetConvert() - 1 );
     }
     else
     {
-        m_cbAlternateSymbol->Enable( false );
+        m_convertLabel->Enable( false );
+        m_convertChoice->Enable( false );
     }
 
     // Set the symbol orientation and mirroring.
@@ -620,13 +625,11 @@ bool DIALOG_SYMBOL_PROPERTIES::TransferDataFromWindow()
     // Save current flags which could be modified by next change settings
     EDA_ITEM_FLAGS flags = m_symbol->GetFlags();
 
-    // For symbols with multiple shapes (De Morgan representation) Set the selected shape:
-    if( m_cbAlternateSymbol->IsEnabled() && m_cbAlternateSymbol->GetValue() )
-        m_symbol->SetConvert( LIB_ITEM::LIB_CONVERT::DEMORGAN );
-    else
-        m_symbol->SetConvert( LIB_ITEM::LIB_CONVERT::BASE );
+    // Set the alternate symbol shape selection
+    int convert_selection = m_convertChoice->IsEnabled() ? m_convertChoice->GetSelection() + 1 : 1;
+    m_symbol->SetConvert( convert_selection );
 
-    //Set the part selection in multiple part per package
+    // Set the unit selection in multiple part per package
     int unit_selection = m_unitChoice->IsEnabled() ? m_unitChoice->GetSelection() + 1 : 1;
     m_symbol->SetUnitSelection( &GetParent()->GetCurrentSheet(), unit_selection );
     m_symbol->SetUnit( unit_selection );

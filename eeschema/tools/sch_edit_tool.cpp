@@ -130,6 +130,66 @@ private:
 };
 
 
+class SYMBOL_CONVERT_MENU : public ACTION_MENU
+{
+public:
+    SYMBOL_CONVERT_MENU() :
+        ACTION_MENU( true )
+    {
+        SetIcon( BITMAPS::component_select_alternate_shape );
+        SetTitle( _( "Symbol Shape" ) );
+    }
+
+protected:
+    ACTION_MENU* create() const override
+    {
+        return new SYMBOL_CONVERT_MENU();
+    }
+
+private:
+    void update() override
+    {
+        EE_SELECTION_TOOL* selTool = getToolManager()->GetTool<EE_SELECTION_TOOL>();
+        EE_SELECTION&      selection = selTool->GetSelection();
+        SCH_SYMBOL*        symbol = dynamic_cast<SCH_SYMBOL*>( selection.Front() );
+
+        Clear();
+
+        if( !symbol )
+        {
+            Append( ID_POPUP_SCH_UNFOLD_BUS, _( "no symbol selected" ), wxEmptyString );
+            Enable( ID_POPUP_SCH_UNFOLD_BUS, false );
+            return;
+        }
+
+        int  convert = symbol->GetConvert();
+
+        if( !symbol->GetLibSymbolRef() || symbol->GetLibSymbolRef()->GetConvertCount() < 2 )
+        {
+            Append( ID_POPUP_SCH_UNFOLD_BUS, _( "symbol does not have alternate shapes" ), wxEmptyString );
+            Enable( ID_POPUP_SCH_UNFOLD_BUS, false );
+            return;
+        }
+
+        for( int ii = 0; ii < symbol->GetLibSymbolRef()->GetConvertCount(); ii++ )
+        {
+            wxString num_convert;
+            num_convert.Printf( _( "Shape %d" ), ii + 1 );
+
+            wxMenuItem * item = Append( ID_POPUP_SCH_SELECT_CONVERT1 + ii, num_convert, wxEmptyString,
+                                        wxITEM_CHECK );
+            if( convert == ii + 1 )
+                item->Check(true);
+
+            // The ID max for these submenus is ID_POPUP_SCH_SELECT_CONVERT_SYM_MAX
+            // See eeschema_id to modify this value.
+            if( ii >= (ID_POPUP_SCH_SELECT_CONVERT_SYM_MAX - ID_POPUP_SCH_SELECT_CONVERT1) )
+                break;      // We have used all IDs for these submenus
+        }
+    }
+};
+
+
 SCH_EDIT_TOOL::SCH_EDIT_TOOL() :
         EE_TOOL_BASE<SCH_EDIT_FRAME>( "eeschema.InteractiveEdit" )
 {
@@ -314,12 +374,16 @@ bool SCH_EDIT_TOOL::Init()
         moveMenu.AddItem( EE_ACTIONS::editReference,   E_C::SingleSymbol );
         moveMenu.AddItem( EE_ACTIONS::editValue,       E_C::SingleSymbol );
         moveMenu.AddItem( EE_ACTIONS::editFootprint,   E_C::SingleSymbol );
-        moveMenu.AddItem( EE_ACTIONS::toggleDeMorgan,  E_C::SingleDeMorganSymbol );
 
         std::shared_ptr<SYMBOL_UNIT_MENU> symUnitMenu = std::make_shared<SYMBOL_UNIT_MENU>();
         symUnitMenu->SetTool( this );
         m_menu.AddSubMenu( symUnitMenu );
         moveMenu.AddMenu( symUnitMenu.get(), E_C::SingleMultiUnitSymbol, 1 );
+
+        std::shared_ptr<SYMBOL_CONVERT_MENU> symConvertMenu = std::make_shared<SYMBOL_CONVERT_MENU>();
+        symConvertMenu->SetTool( this );
+        m_menu.AddSubMenu( symConvertMenu );
+        moveMenu.AddMenu( symConvertMenu.get(), E_C::SingleMultiConvertSymbol, 1 );
 
         moveMenu.AddSeparator();
         moveMenu.AddItem( ACTIONS::cut,                E_C::IdleSelection );
@@ -346,12 +410,16 @@ bool SCH_EDIT_TOOL::Init()
     drawMenu.AddItem( EE_ACTIONS::editValue,        E_C::SingleSymbol, 200 );
     drawMenu.AddItem( EE_ACTIONS::editFootprint,    E_C::SingleSymbol, 200 );
     drawMenu.AddItem( EE_ACTIONS::autoplaceFields,  autoplaceCondition, 200 );
-    drawMenu.AddItem( EE_ACTIONS::toggleDeMorgan,   E_C::SingleDeMorganSymbol, 200 );
 
     std::shared_ptr<SYMBOL_UNIT_MENU> symUnitMenu2 = std::make_shared<SYMBOL_UNIT_MENU>();
     symUnitMenu2->SetTool( drawingTools );
     drawingTools->GetToolMenu().AddSubMenu( symUnitMenu2 );
     drawMenu.AddMenu( symUnitMenu2.get(), E_C::SingleMultiUnitSymbol, 1 );
+
+    std::shared_ptr<SYMBOL_CONVERT_MENU> symConvertMenu2 = std::make_shared<SYMBOL_CONVERT_MENU>();
+    symConvertMenu2->SetTool( drawingTools );
+    drawingTools->GetToolMenu().AddSubMenu( symConvertMenu2 );
+    drawMenu.AddMenu( symConvertMenu2.get(), E_C::SingleMultiConvertSymbol, 1 );
 
     drawMenu.AddItem( EE_ACTIONS::editWithLibEdit,     E_C::SingleSymbolOrPower && E_C::Idle, 200 );
 
@@ -375,12 +443,16 @@ bool SCH_EDIT_TOOL::Init()
     selToolMenu.AddItem( EE_ACTIONS::editValue,        E_C::SingleSymbol, 200 );
     selToolMenu.AddItem( EE_ACTIONS::editFootprint,    E_C::SingleSymbol, 200 );
     selToolMenu.AddItem( EE_ACTIONS::autoplaceFields,  autoplaceCondition, 200 );
-    selToolMenu.AddItem( EE_ACTIONS::toggleDeMorgan,   E_C::SingleSymbol, 200 );
 
     std::shared_ptr<SYMBOL_UNIT_MENU> symUnitMenu3 = std::make_shared<SYMBOL_UNIT_MENU>();
     symUnitMenu3->SetTool( m_selectionTool );
     m_selectionTool->GetToolMenu().AddSubMenu( symUnitMenu3 );
     selToolMenu.AddMenu( symUnitMenu3.get(), E_C::SingleMultiUnitSymbol, 1 );
+
+    std::shared_ptr<SYMBOL_CONVERT_MENU> symConvertMenu3 = std::make_shared<SYMBOL_CONVERT_MENU>();
+    symConvertMenu3->SetTool( m_selectionTool );
+    m_selectionTool->GetToolMenu().AddSubMenu( symConvertMenu3 );
+    selToolMenu.AddMenu( symConvertMenu3.get(), E_C::SingleMultiConvertSymbol, 1 );
 
     selToolMenu.AddItem( EE_ACTIONS::editWithLibEdit,  E_C::SingleSymbolOrPower && E_C::Idle, 200 );
     selToolMenu.AddItem( EE_ACTIONS::changeSymbol,     E_C::SingleSymbolOrPower, 200 );
@@ -1249,7 +1321,7 @@ int SCH_EDIT_TOOL::ChangeSymbols( const TOOL_EVENT& aEvent )
 }
 
 
-int SCH_EDIT_TOOL::ConvertDeMorgan( const TOOL_EVENT& aEvent )
+int SCH_EDIT_TOOL::ChangeConvert( const TOOL_EVENT& aEvent )
 {
     EE_SELECTION& selection = m_selectionTool->RequestSelection( EE_COLLECTOR::SymbolsOnly );
 
@@ -1257,15 +1329,16 @@ int SCH_EDIT_TOOL::ConvertDeMorgan( const TOOL_EVENT& aEvent )
         return 0;
 
     SCH_SYMBOL* symbol = (SCH_SYMBOL*) selection.Front();
+    int convert = symbol->GetConvert();
 
-    if( aEvent.IsAction( &EE_ACTIONS::showDeMorganStandard )
-            && symbol->GetConvert() == LIB_ITEM::LIB_CONVERT::BASE )
+    if( aEvent.IsAction( &EE_ACTIONS::changeToPreviousConvert )
+            && --convert < LIB_ITEM::LIB_CONVERT::BASE )
     {
         return 0;
     }
 
-    if( aEvent.IsAction( &EE_ACTIONS::showDeMorganAlternate )
-            && symbol->GetConvert() != LIB_ITEM::LIB_CONVERT::DEMORGAN )
+    if( aEvent.IsAction( &EE_ACTIONS::changeToNextConvert )
+            && ++convert > LIB_ITEM::LIB_CONVERT::BASE )
     {
         return 0;
     }
@@ -1273,7 +1346,7 @@ int SCH_EDIT_TOOL::ConvertDeMorgan( const TOOL_EVENT& aEvent )
     if( !symbol->IsNew() )
         saveCopyInUndoList( symbol, UNDO_REDO::CHANGED );
 
-    m_frame->ConvertPart( symbol );
+    m_frame->SelectConvert( symbol, convert );
 
     if( symbol->IsNew() )
         m_toolMgr->RunAction( ACTIONS::refreshPreview );
@@ -1810,9 +1883,8 @@ void SCH_EDIT_TOOL::setTransitions()
     Go( &SCH_EDIT_TOOL::ChangeSymbols,      EE_ACTIONS::updateSymbols.MakeEvent() );
     Go( &SCH_EDIT_TOOL::ChangeSymbols,      EE_ACTIONS::changeSymbol.MakeEvent() );
     Go( &SCH_EDIT_TOOL::ChangeSymbols,      EE_ACTIONS::updateSymbol.MakeEvent() );
-    Go( &SCH_EDIT_TOOL::ConvertDeMorgan,    EE_ACTIONS::toggleDeMorgan.MakeEvent() );
-    Go( &SCH_EDIT_TOOL::ConvertDeMorgan,    EE_ACTIONS::showDeMorganStandard.MakeEvent() );
-    Go( &SCH_EDIT_TOOL::ConvertDeMorgan,    EE_ACTIONS::showDeMorganAlternate.MakeEvent() );
+    Go( &SCH_EDIT_TOOL::ChangeConvert,      EE_ACTIONS::changeToPreviousConvert.MakeEvent() );
+    Go( &SCH_EDIT_TOOL::ChangeConvert,      EE_ACTIONS::changeToNextConvert.MakeEvent() );
     Go( &SCH_EDIT_TOOL::ChangeTextType,     EE_ACTIONS::toLabel.MakeEvent() );
     Go( &SCH_EDIT_TOOL::ChangeTextType,     EE_ACTIONS::toHLabel.MakeEvent() );
     Go( &SCH_EDIT_TOOL::ChangeTextType,     EE_ACTIONS::toGLabel.MakeEvent() );

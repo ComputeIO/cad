@@ -65,6 +65,11 @@ public:
      * For items with units, return an identifier for unit x.
      */
     virtual wxString GetUnitReference( int aUnit ) { return wxEmptyString; }
+
+    /**
+     * For items with alternate shapes, return the number of shapes.
+     */
+    virtual int GetConvertCount() const { return 0; }
 };
 
 #endif //LIB_TREE_ITEM_H

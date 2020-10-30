@@ -71,17 +71,7 @@ bool DIALOG_LIB_SHAPE_PROPERTIES::TransferDataToWindow()
     m_checkApplyToAllUnits->SetValue( m_item->GetUnit() == 0 );
     m_checkApplyToAllUnits->Enable( symbol && symbol->GetUnitCount() > 1 );
     m_checkApplyToAllConversions->SetValue( m_item->GetConvert() == 0 );
-
-    bool enblConvOptStyle = symbol && symbol->HasConversion();
-
-    // if a symbol contains no graphic items, symbol->HasConversion() returns false.
-    // but when creating a new symbol, with DeMorgan option set, the ApplyToAllConversions
-    // must be enabled even if symbol->HasConversion() returns false in order to be able
-    // to create graphic items shared by all body styles
-    if( m_frame->GetShowDeMorgan() )
-        enblConvOptStyle = true;
-
-    m_checkApplyToAllConversions->Enable( enblConvOptStyle );
+    m_checkApplyToAllConversions->Enable( symbol && symbol->GetConvertCount() > 1 );
 
     if( shape )
         m_fillCtrl->SetSelection( static_cast<int>( shape->GetFillType() ) - 1 );

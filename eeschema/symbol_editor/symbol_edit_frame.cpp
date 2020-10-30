@@ -75,13 +75,11 @@
 #include <string_utils.h>
 
 
-bool SYMBOL_EDIT_FRAME::m_showDeMorgan = false;
-
-
 BEGIN_EVENT_TABLE( SYMBOL_EDIT_FRAME, EDA_DRAW_FRAME )
     EVT_SIZE( SYMBOL_EDIT_FRAME::OnSize )
 
     EVT_COMBOBOX( ID_LIBEDIT_SELECT_UNIT_NUMBER, SYMBOL_EDIT_FRAME::OnSelectUnit )
+    EVT_COMBOBOX( ID_LIBEDIT_SELECT_CONVERT_NUMBER, SYMBOL_EDIT_FRAME::OnSelectConvert )
 
     // menubar commands
     EVT_MENU( wxID_EXIT, SYMBOL_EDIT_FRAME::OnExitKiCad )
@@ -90,6 +88,7 @@ BEGIN_EVENT_TABLE( SYMBOL_EDIT_FRAME, EDA_DRAW_FRAME )
 
     // Update user interface elements.
     EVT_UPDATE_UI( ID_LIBEDIT_SELECT_UNIT_NUMBER, SYMBOL_EDIT_FRAME::OnUpdateUnitNumber )
+    EVT_UPDATE_UI( ID_LIBEDIT_SELECT_CONVERT_NUMBER, SYMBOL_EDIT_FRAME::OnUpdateConvertNumber )
 
 END_EVENT_TABLE()
 
@@ -99,9 +98,9 @@ SYMBOL_EDIT_FRAME::SYMBOL_EDIT_FRAME( KIWAY* aKiway, wxWindow* aParent ) :
                         wxDefaultPosition, wxDefaultSize, KICAD_DEFAULT_DRAWFRAME_STYLE,
                         LIB_EDIT_FRAME_NAME ),
         m_unitSelectBox( nullptr ),
+        m_convertSelectBox( nullptr ),
         m_isSymbolFromSchematic( false )
 {
-    SetShowDeMorgan( false );
     m_SyncPinEdit = false;
 
     m_symbol = nullptr;
@@ -161,6 +160,7 @@ SYMBOL_EDIT_FRAME::SYMBOL_EDIT_FRAME( KIWAY* aKiway, wxWindow* aParent ) :
     updateTitle();
     UpdateSymbolMsgPanelInfo();
     RebuildSymbolUnitsList();
+    RebuildSymbolConvertsList();
 
     m_auimgr.SetManagedWindow( this );
 
@@ -434,24 +434,6 @@ void SYMBOL_EDIT_FRAME::setupUIConditions()
     mgr->SetConditions( EE_ACTIONS::showElectricalTypes, CHECK( pinTypeCond ) );
     mgr->SetConditions( EE_ACTIONS::showSymbolTree, CHECK( showCompTreeCond ) );
 
-    auto demorganCond =
-        [this] ( const SELECTION& )
-        {
-            return GetShowDeMorgan();
-        };
-
-    auto demorganStandardCond =
-        [this] ( const SELECTION& )
-        {
-            return m_convert == LIB_ITEM::LIB_CONVERT::BASE;
-        };
-
-    auto demorganAlternateCond =
-        [this] ( const SELECTION& )
-        {
-            return m_convert == LIB_ITEM::LIB_CONVERT::DEMORGAN;
-        };
-
     auto multiUnitModeCond =
         [this] ( const SELECTION& )
         {
@@ -475,14 +457,10 @@ void SYMBOL_EDIT_FRAME::setupUIConditions()
     mgr->SetConditions( EE_ACTIONS::runERC,           ENABLE( haveSymbolCond ) );
     mgr->SetConditions( EE_ACTIONS::pinTable,         ENABLE( isEditableCond && haveSymbolCond ) );
 
-    mgr->SetConditions( EE_ACTIONS::showDeMorganStandard,
-                        ACTION_CONDITIONS().Enable( demorganCond ).Check( demorganStandardCond ) );
-    mgr->SetConditions( EE_ACTIONS::showDeMorganAlternate,
-                        ACTION_CONDITIONS().Enable( demorganCond ).Check( demorganAlternateCond ) );
     mgr->SetConditions( EE_ACTIONS::toggleSyncedPinsMode,
                         ACTION_CONDITIONS().Enable( multiUnitModeCond ).Check( syncedPinsModeCond ) );
 
-// Only enable a tool if the symbol is edtable
+// Only enable a tool if the symbol is editable
 #define EDIT_TOOL( tool ) ACTION_CONDITIONS().Enable( isEditableCond ).Check( cond.CurrentTool( tool ) )
 
     mgr->SetConditions( ACTIONS::deleteTool,             EDIT_TOOL( ACTIONS::deleteTool ) );
@@ -576,6 +554,36 @@ void SYMBOL_EDIT_FRAME::RebuildSymbolUnitsList()
 }
 
 
+void SYMBOL_EDIT_FRAME::RebuildSymbolConvertsList()
+{
+    if( !m_convertSelectBox )
+        return;
+
+    if( m_convertSelectBox->GetCount() != 0 )
+        m_convertSelectBox->Clear();
+
+    if( !m_symbol || m_symbol->GetConvertCount() <= 1 )
+    {
+        m_convert = LIB_ITEM::LIB_CONVERT::BASE;
+        m_convertSelectBox->Append( wxEmptyString );
+    }
+    else
+    {
+        for( int i = 0; i < m_symbol->GetConvertCount(); i++ )
+        {
+            wxString convert = wxString::Format( _( "Shape %d" ), i + 1 );
+            m_convertSelectBox->Append( convert );
+        }
+    }
+
+    // Ensure the selected shape is compatible with the number of shapes of the current symbol:
+    if( m_symbol && m_symbol->GetConvertCount() < m_convert )
+        m_convert = LIB_ITEM::LIB_CONVERT::BASE;
+
+    m_convertSelectBox->SetSelection(( m_convert > 0 ) ? m_convert - 1 : 0 );
+}
+
+
 void SYMBOL_EDIT_FRAME::OnToggleSymbolTree( wxCommandEvent& event )
 {
     auto& treePane = m_auimgr.GetPane( m_treePane );
@@ -616,6 +624,12 @@ void SYMBOL_EDIT_FRAME::OnUpdateUnitNumber( wxUpdateUIEvent& event )
 }
 
 
+void SYMBOL_EDIT_FRAME::OnUpdateConvertNumber( wxUpdateUIEvent& event )
+{
+    event.Enable( m_symbol && m_symbol->GetConvertCount() > 1 );
+}
+
+
 void SYMBOL_EDIT_FRAME::OnSelectUnit( wxCommandEvent& event )
 {
     int i = event.GetSelection();
@@ -627,6 +641,24 @@ void SYMBOL_EDIT_FRAME::OnSelectUnit( wxCommandEvent& event )
     m_toolManager->RunAction( EE_ACTIONS::clearSelection, true );
 
     m_unit = i + 1;
+
+    m_toolManager->ResetTools( TOOL_BASE::MODEL_RELOAD );
+    RebuildView();
+    UpdateSymbolMsgPanelInfo();
+}
+
+
+void SYMBOL_EDIT_FRAME::OnSelectConvert( wxCommandEvent& event )
+{
+    int i = event.GetSelection();
+
+    if( ( i == wxNOT_FOUND ) || ( ( i + 1 ) == m_convert ) )
+        return;
+
+    m_toolManager->RunAction( ACTIONS::cancelInteractive, true );
+    m_toolManager->RunAction( EE_ACTIONS::clearSelection, true );
+
+    m_convert = i + 1;
 
     m_toolManager->ResetTools( TOOL_BASE::MODEL_RELOAD );
     RebuildView();
@@ -1331,7 +1363,7 @@ void SYMBOL_EDIT_FRAME::LoadSymbolFromSchematic( SCH_SYMBOL* aSymbol )
 
     updateTitle();
     RebuildSymbolUnitsList();
-    SetShowDeMorgan( GetCurSymbol()->HasConversion() );
+    RebuildSymbolConvertsList();
     UpdateSymbolMsgPanelInfo();
     Refresh();
 }

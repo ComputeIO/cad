@@ -78,7 +78,7 @@ class SCH_SEXPR_PARSER : public SCHEMATIC_LEXER
     int m_requiredVersion;  ///< Set to the symbol library file version required.
     int m_fieldId;          ///< The current field ID.
     int m_unit;             ///< The current unit being parsed.
-    int m_convert;          ///< The current body style being parsed.
+    int m_convert;          ///< The current alternate shape being parsed.
     wxString m_symbolName;  ///< The current symbol name.
 
     PROGRESS_REPORTER* m_progressReporter;  // optional; may be nullptr

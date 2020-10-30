@@ -86,6 +86,7 @@ LIB_SYMBOL::LIB_SYMBOL( const wxString& aName, LIB_SYMBOL* aParent, SYMBOL_LIB* 
 {
     m_lastModDate    = 0;
     m_unitCount      = 1;
+    m_convertCount   = 1;
     m_pinNameOffset  = Mils2iu( DEFAULT_PIN_NAME_OFFSET );
     m_options        = ENTRY_NORMAL;
     m_unitsLocked    = false;
@@ -119,6 +120,7 @@ LIB_SYMBOL::LIB_SYMBOL( const LIB_SYMBOL& aSymbol, SYMBOL_LIB* aLibrary ) :
     m_name           = aSymbol.m_name;
     m_fpFilters      = wxArrayString( aSymbol.m_fpFilters );
     m_unitCount      = aSymbol.m_unitCount;
+    m_convertCount   = aSymbol.m_convertCount;
     m_unitsLocked    = aSymbol.m_unitsLocked;
     m_pinNameOffset  = aSymbol.m_pinNameOffset;
     m_showPinNumbers = aSymbol.m_showPinNumbers;
@@ -174,6 +176,7 @@ const LIB_SYMBOL& LIB_SYMBOL::operator=( const LIB_SYMBOL& aSymbol )
     m_name           = aSymbol.m_name;
     m_fpFilters      = wxArrayString( aSymbol.m_fpFilters );
     m_unitCount      = aSymbol.m_unitCount;
+    m_convertCount   = aSymbol.m_convertCount;
     m_unitsLocked    = aSymbol.m_unitsLocked;
     m_pinNameOffset  = aSymbol.m_pinNameOffset;
     m_showPinNumbers = aSymbol.m_showPinNumbers;
@@ -235,6 +238,9 @@ int LIB_SYMBOL::Compare( const LIB_SYMBOL& aRhs ) const
 
     if( m_unitCount != aRhs.m_unitCount )
         return m_unitCount - aRhs.m_unitCount;
+
+    if( m_convertCount != aRhs.m_convertCount )
+        return m_convertCount - aRhs.m_convertCount;
 
     if( m_drawings.size() != aRhs.m_drawings.size() )
         return m_drawings.size() - aRhs.m_drawings.size();
@@ -706,9 +712,9 @@ void LIB_SYMBOL::GetPins( LIB_PINS& aList, int aUnit, int aConvert ) const
 {
     /* Notes:
      * when aUnit == 0: no unit filtering
-     * when aConvert == 0: no convert (shape selection) filtering
-     * when m_unit == 0, the body item is common to units
-     * when m_convert == 0, the body item is common to shapes
+     * when aConvert == 0: no alternate symbol shape filtering
+     * when .m_Unit == 0, the draw item is common to all units
+     * when .m_Convert == 0, the draw item is common to all shapes
      */
 
     LIB_SYMBOL_SPTR                  parent = m_parent.lock();
@@ -720,7 +726,7 @@ void LIB_SYMBOL::GetPins( LIB_PINS& aList, int aUnit, int aConvert ) const
         if( aUnit && item.m_unit && ( item.m_unit != aUnit ) )
             continue;
 
-        // Shape filtering:
+        // Alternate symbol shape filtering:
         if( aConvert && item.m_convert && ( item.m_convert != aConvert ) )
             continue;
 
@@ -768,7 +774,7 @@ bool LIB_SYMBOL::PinsConflictWith( const LIB_SYMBOL& aOtherPart, bool aTestNums,
             if( eachThisPin->GetUnit() != eachOtherPin->GetUnit() )
                 continue;
 
-            // Same body stype?
+            // Same alternate symbol shape?
             if( eachThisPin->GetConvert() != eachOtherPin->GetConvert() )
                 continue;
 
@@ -1047,22 +1053,7 @@ void LIB_SYMBOL::RemoveDuplicateDrawItems()
 
 bool LIB_SYMBOL::HasConversion() const
 {
-    for( const LIB_ITEM& item : m_drawings )
-    {
-        if( item.m_convert > LIB_ITEM::LIB_CONVERT::BASE )
-            return true;
-    }
-
-    if( LIB_SYMBOL_SPTR parent = m_parent.lock() )
-    {
-        for( const LIB_ITEM& item : parent->GetDrawItems() )
-        {
-            if( item.m_convert > LIB_ITEM::LIB_CONVERT::BASE )
-                return true;
-        }
-    }
-
-    return false;
+    return GetConvertCount() > 1;
 }
 
 
@@ -1138,7 +1129,7 @@ SEARCH_RESULT LIB_SYMBOL::Visit( INSPECTOR aInspector, void* aTestData,
 }
 
 
-void LIB_SYMBOL::SetUnitCount( int aCount, bool aDuplicateDrawItems )
+void LIB_SYMBOL::SetUnitCount( int aCount, int aUnit )
 {
     if( m_unitCount == aCount )
         return;
@@ -1155,7 +1146,7 @@ void LIB_SYMBOL::SetUnitCount( int aCount, bool aDuplicateDrawItems )
                 ++i;
         }
     }
-    else if( aDuplicateDrawItems )
+    else if( aUnit != 0 )
     {
         int prevCount = m_unitCount;
 
@@ -1166,7 +1157,7 @@ void LIB_SYMBOL::SetUnitCount( int aCount, bool aDuplicateDrawItems )
 
         for( LIB_ITEM& item : m_drawings )
         {
-            if( item.m_unit != 1 )
+            if( item.m_unit != aUnit )
                 continue;
 
             for( int j = prevCount + 1; j <= aCount; j++ )
@@ -1195,55 +1186,61 @@ int LIB_SYMBOL::GetUnitCount() const
 }
 
 
-void LIB_SYMBOL::SetConversion( bool aSetConvert, bool aDuplicatePins )
+void LIB_SYMBOL::SetConvertCount( int aCount, int aConvert )
 {
-    if( aSetConvert == HasConversion() )
+    if( m_convertCount == aCount )
         return;
 
-    // Duplicate items to create the converted shape
-    if( aSetConvert )
+    if( aCount < m_convertCount )
     {
-        if( aDuplicatePins )
-        {
-            std::vector< LIB_ITEM* > tmp;     // Temporarily store the duplicated pins here.
-
-            for( LIB_ITEM& item : m_drawings )
-            {
-                // Only pins are duplicated.
-                if( item.Type() != LIB_PIN_T )
-                    continue;
-
-                if( item.m_convert == 1 )
-                {
-                    LIB_ITEM* newItem = (LIB_ITEM*) item.Clone();
-                    newItem->m_convert = 2;
-                    tmp.push_back( newItem );
-                }
-            }
-
-            // Transfer the new pins to the LIB_SYMBOL.
-            for( unsigned i = 0;  i < tmp.size();  i++ )
-                m_drawings.push_back( tmp[i] );
-        }
-    }
-    else
-    {
-        // Delete converted shape items because the converted shape does
-        // not exist
         LIB_ITEMS_CONTAINER::ITERATOR i = m_drawings.begin();
 
         while( i != m_drawings.end() )
         {
-            if( i->m_convert > 1 )
+            if( i->m_convert > aCount )
                 i = m_drawings.erase( i );
             else
                 ++i;
         }
     }
+    else if( aConvert != 0 )
+    {
+        int prevCount = m_convertCount;
+
+        // Temporary storage for new items, as adding new items directly to
+        // m_drawings may cause the buffer reallocation which invalidates the
+        // iterators
+        std::vector< LIB_ITEM* > tmp;
+
+        for( LIB_ITEM& item : m_drawings )
+        {
+            if( item.m_convert != aConvert )
+                continue;
+
+            for( int j = prevCount + 1; j <= aCount; j++ )
+            {
+                LIB_ITEM* newItem = (LIB_ITEM*) item.Clone();
+                newItem->m_convert = j;
+                tmp.push_back( newItem );
+            }
+        }
+
+        for( auto item : tmp )
+            m_drawings.push_back( item );
+    }
 
     m_drawings.sort();
+    m_convertCount = aCount;
 }
 
+
+int LIB_SYMBOL::GetConvertCount() const
+{
+    if( LIB_SYMBOL_SPTR parent = m_parent.lock() )
+        return parent->GetConvertCount();
+
+    return m_convertCount;
+}
 
 void LIB_SYMBOL::SetSubpartIdNotation( int aSep, int aFirstId )
 {
@@ -1318,6 +1315,7 @@ std::vector<struct LIB_SYMBOL_UNIT> LIB_SYMBOL::GetUnitDrawItems()
 std::vector<struct LIB_SYMBOL_UNIT> LIB_SYMBOL::GetUniqueUnits()
 {
     int unitNum;
+    int convertNum;
     size_t i;
     struct LIB_SYMBOL_UNIT unit;
     std::vector<LIB_ITEM*> compareDrawItems;
@@ -1370,14 +1368,14 @@ std::vector<struct LIB_SYMBOL_UNIT> LIB_SYMBOL::GetUniqueUnits()
         }
     }
 
-    if( HasConversion() )
+    for( convertNum = 2; convertNum <= GetConvertCount(); convertNum++ )
     {
         currentDrawItems = GetUnitDrawItems( 1, 2 );
 
         if( ( GetUnitCount() == 1 || UnitsLocked() ) )
         {
             unit.m_unit = 1;
-            unit.m_convert = 2;
+            unit.m_convert = convertNum;
             unit.m_items = currentDrawItems;
             uniqueUnits.emplace_back( unit );
 
@@ -1386,7 +1384,7 @@ std::vector<struct LIB_SYMBOL_UNIT> LIB_SYMBOL::GetUniqueUnits()
 
         for( unitNum = 2; unitNum <= GetUnitCount(); unitNum++ )
         {
-            compareDrawItems = GetUnitDrawItems( unitNum, 2 );
+            compareDrawItems = GetUnitDrawItems( unitNum, convertNum );
 
             wxCHECK2_MSG( compareDrawItems.size() != 0, continue,
                           "Multiple unit symbol defined with empty units." );
@@ -1394,7 +1392,7 @@ std::vector<struct LIB_SYMBOL_UNIT> LIB_SYMBOL::GetUniqueUnits()
             if( currentDrawItems.size() != compareDrawItems.size() )
             {
                 unit.m_unit = unitNum;
-                unit.m_convert = 2;
+                unit.m_convert = convertNum;
                 unit.m_items = compareDrawItems;
                 uniqueUnits.emplace_back( unit );
             }
@@ -1406,7 +1404,7 @@ std::vector<struct LIB_SYMBOL_UNIT> LIB_SYMBOL::GetUniqueUnits()
                                                       LIB_ITEM::COMPARE_FLAGS::UNIT ) != 0 )
                     {
                         unit.m_unit = unitNum;
-                        unit.m_convert = 2;
+                        unit.m_convert = convertNum;
                         unit.m_items = compareDrawItems;
                         uniqueUnits.emplace_back( unit );
                     }

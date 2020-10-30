@@ -239,44 +239,39 @@ void SCH_EDIT_FRAME::SelectUnit( SCH_SYMBOL* aSymbol, int aUnit )
 }
 
 
-void SCH_EDIT_FRAME::ConvertPart( SCH_SYMBOL* aSymbol )
+void SCH_EDIT_FRAME::SelectConvert( SCH_SYMBOL* aSymbol, int aConvert )
 {
-    if( !aSymbol || !aSymbol->GetLibSymbolRef() )
+    LIB_SYMBOL* symbol = GetLibSymbol( aSymbol->GetLibId() );
+
+    if( !symbol )
         return;
 
-    wxString msg;
+    int convertCount = symbol->GetConvertCount();
 
-    if( !aSymbol->GetLibSymbolRef()->HasConversion() )
-    {
-        LIB_ID id = aSymbol->GetLibSymbolRef()->GetLibId();
-
-        msg.Printf( _( "No alternate body style found for symbol '%s' in library '%s'." ),
-                    id.GetLibItemName().wx_str(),
-                    id.GetLibNickname().wx_str() );
-        DisplayError( this,  msg );
+    if( convertCount <= 1 || aSymbol->GetConvert() == aConvert )
         return;
-    }
+
+    if( aConvert > convertCount )
+        aConvert = convertCount;
 
     EDA_ITEM_FLAGS savedFlags = aSymbol->GetFlags();
 
-    aSymbol->SetConvert( aSymbol->GetConvert() + 1 );
+    if( !aSymbol->GetEditFlags() )    // No command in progress: save in undo list
+        SaveCopyInUndoList( GetScreen(), aSymbol, UNDO_REDO::CHANGED, false );
 
-    // ensure m_convert = 1 or 2
-    // 1 = shape 1 = not converted
-    // 2 = shape 2 = first converted shape
-    // > 2 is not currently supported
-    // When m_convert = val max, return to the first shape
-    if( aSymbol->GetConvert() > LIB_ITEM::LIB_CONVERT::DEMORGAN )
-        aSymbol->SetConvert( LIB_ITEM::LIB_CONVERT::BASE );
-
-    TestDanglingEnds();
+    /* Update the shape number. */
+    aSymbol->SetConvert( aConvert );
     aSymbol->ClearFlags();
-    aSymbol->SetFlags( savedFlags );   // Restore m_flags (modified by SetConvert())
+    aSymbol->SetFlags( savedFlags ); // Restore m_Flag modified by SetConvert()
 
-    // If selected make sure all the now-included pins are selected
-    if( aSymbol->IsSelected() )
-        m_toolManager->RunAction( EE_ACTIONS::addItemToSel, true, aSymbol );
+    if( !aSymbol->GetEditFlags() )   // No command in progress: update schematic
+    {
+        if( eeconfig()->m_AutoplaceFields.enable )
+            aSymbol->AutoAutoplaceFields( GetScreen() );
 
-    UpdateItem( aSymbol, false, true );
-    OnModify();
+        TestDanglingEnds();
+
+        UpdateItem( aSymbol, false, true );
+        OnModify();
+    }
 }

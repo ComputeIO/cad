@@ -202,7 +202,7 @@ bool sort_by_pin_number( const LIB_PIN* ref, const LIB_PIN* tst )
     // Use number as primary key
     int test = ref->GetNumber().Cmp( tst->GetNumber() );
 
-    // Use DeMorgan variant as secondary key
+    // Use shape variant as secondary key
     if( test == 0 )
         test = ref->GetConvert() - tst->GetConvert();
 
@@ -259,13 +259,13 @@ int EE_INSPECTION_TOOL::CheckSymbol( const TOOL_EVENT& aEvent )
         if( next->GetName() != "~"  && !next->GetName().IsEmpty() )
             nextName = " '" + next->GetName() + "'";
 
-        if( symbol->HasConversion() && next->GetConvert() )
+        if( symbol->GetConvertCount() > 1 && next->GetConvert() )
         {
             if( symbol->GetUnitCount() <= 1 )
             {
                 msg.Printf( _( "<b>Duplicate pin %s</b> %s at location <b>(%.3f, %.3f)</b>"
                                " conflicts with pin %s%s at location <b>(%.3f, %.3f)</b>"
-                               " of converted." ),
+                               " of shape %d." ),
                             next->GetNumber(),
                             nextName,
                             MessageTextFromValue( units, next->GetPosition().x ),
@@ -273,13 +273,14 @@ int EE_INSPECTION_TOOL::CheckSymbol( const TOOL_EVENT& aEvent )
                             pin->GetNumber(),
                             pin->GetName(),
                             MessageTextFromValue( units, pin->GetPosition().x ),
-                            MessageTextFromValue( units, -pin->GetPosition().y ) );
+                            MessageTextFromValue( units, -pin->GetPosition().y ),
+                            next->GetConvert() );
             }
             else
             {
                 msg.Printf( _( "<b>Duplicate pin %s</b> %s at location <b>(%.3f, %.3f)</b>"
                                " conflicts with pin %s%s at location <b>(%.3f, %.3f)</b>"
-                               " in units %c and %c of converted." ),
+                               " in units %c and %c of shape %d." ),
                             next->GetNumber(),
                             nextName,
                             MessageTextFromValue( units, next->GetPosition().x ),
@@ -289,7 +290,8 @@ int EE_INSPECTION_TOOL::CheckSymbol( const TOOL_EVENT& aEvent )
                             MessageTextFromValue( units, pin->GetPosition().x ),
                             MessageTextFromValue( units, -pin->GetPosition().y ),
                             'A' + next->GetUnit() - 1,
-                            'A' + pin->GetUnit() - 1 );
+                            'A' + pin->GetUnit() - 1,
+                            next->GetConvert() );
             }
         }
         else
@@ -343,26 +345,28 @@ int EE_INSPECTION_TOOL::CheckSymbol( const TOOL_EVENT& aEvent )
                 && !pin->IsVisible() )
         {
             // hidden power pin
-            if( symbol->HasConversion() && pin->GetConvert() )
+            if( symbol->GetConvertCount() > 1 && pin->GetConvert() )
             {
                 if( symbol->GetUnitCount() <= 1 )
                 {
                     msg.Printf( _( "Info: <b>Hidden power pin %s</b> %s at location <b>(%s, %s)</b>"
-                                   " of converted." ),
-                                pin->GetNumber(),
-                                pinName,
-                                MessageTextFromValue( units, pin->GetPosition().x ),
-                                MessageTextFromValue( units, -pin->GetPosition().y ) );
-                }
-                else
-                {
-                    msg.Printf( _( "Info: <b>Hidden power pin %s</b> %s at location <b>(%s, %s)</b>"
-                                   " in unit %c of converted." ),
+                                   " of shape %d." ),
                                 pin->GetNumber(),
                                 pinName,
                                 MessageTextFromValue( units, pin->GetPosition().x ),
                                 MessageTextFromValue( units, -pin->GetPosition().y ),
-                                'A' + pin->GetUnit() - 1 );
+                                pin->GetConvert() );
+                }
+                else
+                {
+                    msg.Printf( _( "Info: <b>Hidden power pin %s</b> %s at location <b>(%s, %s)</b>"
+                                   " in unit %c of shape %d." ),
+                                pin->GetNumber(),
+                                pinName,
+                                MessageTextFromValue( units, pin->GetPosition().x ),
+                                MessageTextFromValue( units, -pin->GetPosition().y ),
+                                'A' + pin->GetUnit() - 1,
+                                pin->GetConvert() );
                 }
             }
             else
@@ -397,26 +401,28 @@ int EE_INSPECTION_TOOL::CheckSymbol( const TOOL_EVENT& aEvent )
                 || ( (pin->GetPosition().y % clamped_grid_size) != 0 ) )
         {
             // pin is off grid
-            if( symbol->HasConversion() && pin->GetConvert() )
+            if( symbol->GetConvertCount() > 1 && pin->GetConvert() )
             {
                 if( symbol->GetUnitCount() <= 1 )
                 {
                     msg.Printf( _( "<b>Off grid pin %s</b> %s at location <b>(%s, %s)</b>"
-                                   " of converted." ),
-                                pin->GetNumber(),
-                                pinName,
-                                MessageTextFromValue( units, pin->GetPosition().x ),
-                                MessageTextFromValue( units, -pin->GetPosition().y ) );
-                }
-                else
-                {
-                    msg.Printf( _( "<b>Off grid pin %s</b> %s at location <b>(%.3s, %.3s)</b>"
-                                   " in unit %c of converted." ),
+                                   " of shape %d." ),
                                 pin->GetNumber(),
                                 pinName,
                                 MessageTextFromValue( units, pin->GetPosition().x ),
                                 MessageTextFromValue( units, -pin->GetPosition().y ),
-                                'A' + pin->GetUnit() - 1 );
+                                pin->GetConvert() );
+                }
+                else
+                {
+                    msg.Printf( _( "<b>Off grid pin %s</b> %s at location <b>(%.3s, %.3s)</b>"
+                                   " in unit %c of shape %d." ),
+                                pin->GetNumber(),
+                                pinName,
+                                MessageTextFromValue( units, pin->GetPosition().x ),
+                                MessageTextFromValue( units, -pin->GetPosition().y ),
+                                'A' + pin->GetUnit() - 1,
+                                pin->GetConvert() );
                 }
             }
             else
