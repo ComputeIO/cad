@@ -8,5 +8,7 @@ Exec=bitmap2component
 Name=Bitmap to Component Converter
 GenericName=Bitmap to Component Converter
 GenericName[it]=Convertitore da bitmap a componente
+GenericName[pt]=Conversor de Bitmap para componente
 Comment=Create a component from a bitmap for use with KiCad
 Comment[it]=Crea un componente KiCad da un'immagine bitmap
+GenericName[pt]=Cria um Footprint a partir de um Bitmap (arquivo de imagem)

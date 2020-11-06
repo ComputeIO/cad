@@ -4,12 +4,14 @@
 		<sub-class-of type="text/plain"/>
 		<comment>KiCad Project</comment>
 		<comment xml:lang="fr">Projet KiCad</comment>
+		<comment xml:lang="pt">Projeto do KiCad</comment>
 		<glob pattern="*.pro"/>
 	</mime-type>
 	<mime-type type="application/x-kicad-schematic">
 		<sub-class-of type="text/plain"/>
 		<comment>KiCad Schematic</comment>
 		<comment xml:lang="fr">Schéma électronique KiCad</comment>
+		<comment xml:lang="pt">Esquema eletrônico do KiCad</comment>
 		<glob pattern="*.sch"/>
 		<glob pattern="*.kicad_sch"/>
 	</mime-type>
@@ -17,6 +19,7 @@
 		<sub-class-of type="text/plain"/>
 		<comment>KiCad Printed Circuit Board</comment>
 		<comment xml:lang="fr">Circuit imprimé KiCad</comment>
+		<comment xml:lang="pt">PCB do KiCad</comment>
 		<glob pattern="*.kicad_pcb"/>
 	</mime-type>
 </mime-info>

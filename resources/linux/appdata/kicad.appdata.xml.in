@@ -12,6 +12,7 @@
   <summary xml:lang="de">EDA Lösung</summary>
   <summary xml:lang="it">Suite EDA</summary>
   <summary xml:lang="sv">EDA Programpaket</summary>
+  <summary xml:lang="pt">Pacote de EDA</summary>
 
   <provides>
     <binary>kicad</binary>
@@ -55,6 +56,12 @@
       design automatisering. KiCad innehåller program för utveckling och redigering
       av kretsscheman och tryckta kretskort samt för export av kretskort,
       t.ex. med Gerber-format.
+    </p>
+    <p xml:lang="it">
+      KiCad é uma solução de software EDA (Electronic Design Automation) gratuita
+      e multiplataforma. Contém programas para desenvolvimento de modificação de
+      esquemas eletrônicos, PCBs com impressão e exportação para diversos formatos
+      de produção (GERBER, drill, position files).
     </p>
   </description>
 

@@ -9,5 +9,7 @@ MimeType=application/x-gerber;application/x-excellon
 Name=GerbView
 GenericName=Gerber File Viewer
 GenericName[it]=Visualizzatore file Gerber
+GenericName[pt]=Visualizador GERBER
 Comment=View Gerber files
 Comment[it]=Visualizza file in formato Gerber
+Comment[pt]=Visualiza arquivos GERBERs and de furação
