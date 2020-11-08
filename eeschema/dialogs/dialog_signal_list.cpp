@@ -54,24 +54,16 @@ bool DIALOG_SIGNAL_LIST::TransferDataToWindow()
 {
     // Create a list of possible signals
     /// @todo it could include separated mag & phase for AC analysis
-    if( m_simulator )
+    if( m_simulator && m_exporter )
     {
         for( const auto& net : m_simulator->AllPlots() )
         {
-            wxString netname = net;
-            if( netname.IsEmpty() ) continue;
-            // Get the part in the parentheses
-            wxString vector = netname.AfterFirst( '[' ).BeforeLast( ']' );
-            // Get the name of the device
-            if( netname.StartsWith('@')) {
-                netname = netname.AfterFirst( '@' ).BeforeFirst( '[' );
-            }
+            wxString netname;
+            auto     sigtype = m_exporter->VectorToSignal( net, netname );
+            if( sigtype == SPT_UNKNOWN )
+                continue;
 
-            if(vector.IsEmpty() ) {
-                vector = "V";
-            }
-
-            m_signals->Append( wxString::Format( "%s(%s)", vector, netname ) );
+            m_signals->Append( netname );
         }
     }
 
