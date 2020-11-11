@@ -356,6 +356,8 @@ bool test::DRC_TEST_PROVIDER_DIFF_PAIR_COUPLING::Run()
             // fixme: include vias
             if( auto trace = dynamic_cast<TRACE*>( item ) )
                 it.second.totalLengthN += trace->GetLength();
+            else if( auto arc = dynamic_cast<ARC*>( item ) )
+                it.second.totalLengthN += arc->GetLength();
         }
 
         for( auto& item : it.second.itemsP )
@@ -363,6 +365,8 @@ bool test::DRC_TEST_PROVIDER_DIFF_PAIR_COUPLING::Run()
             // fixme: include vias
             if( auto trace = dynamic_cast<TRACE*>( item ) )
                 it.second.totalLengthP += trace->GetLength();
+            else if( auto arc = dynamic_cast<ARC*>( item ) )
+                it.second.totalLengthN += arc->GetLength();
         }
 
         for( auto& cpair : it.second.coupled )
