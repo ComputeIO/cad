@@ -56,8 +56,11 @@ bool DIALOG_SIGNAL_LIST::TransferDataToWindow()
     /// @todo it could include separated mag & phase for AC analysis
     if( m_simulator && m_exporter )
     {
+        wxString xaxis = m_simulator->GetXAxis( m_exporter->GetSimType() );
         for( const auto& net : m_simulator->AllPlots() )
         {
+            if( net.empty() || xaxis == net || m_simulator->GetPlot( net ).empty() )
+                continue;
             wxString netname;
             auto     sigtype = m_exporter->VectorToSignal( net, netname );
             if( sigtype == SPT_UNKNOWN )
