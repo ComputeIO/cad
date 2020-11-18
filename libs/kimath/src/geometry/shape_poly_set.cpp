@@ -55,7 +55,6 @@
 #include <geometry/shape_simple.h>
 #include <geometry/shape_compound.h>
 
-using namespace ClipperLib;
 
 SHAPE_POLY_SET::SHAPE_POLY_SET() :
     SHAPE( SH_POLY_SET )
@@ -490,25 +489,25 @@ void SHAPE_POLY_SET::booleanOp( ClipperLib::ClipType aType,
         const SHAPE_POLY_SET& aOtherShape,
         POLYGON_MODE aFastMode )
 {
-    Clipper c;
+    ClipperLib::Clipper c;
 
     c.StrictlySimple( aFastMode == PM_STRICTLY_SIMPLE );
 
     for( auto poly : aShape.m_polys )
     {
         for( size_t i = 0 ; i < poly.size(); i++ )
-            c.AddPath( poly[i].convertToClipper( i == 0 ), ptSubject, true );
+            c.AddPath( poly[i].convertToClipper( i == 0 ), ClipperLib::ptSubject, true );
     }
 
     for( auto poly : aOtherShape.m_polys )
     {
         for( size_t i = 0; i < poly.size(); i++ )
-            c.AddPath( poly[i].convertToClipper( i == 0 ), ptClip, true );
+            c.AddPath( poly[i].convertToClipper( i == 0 ), ClipperLib::ptClip, true );
     }
 
-    PolyTree solution;
+    ClipperLib::PolyTree solution;
 
-    c.Execute( aType, solution, pftNonZero, pftNonZero );
+    c.Execute( aType, solution, ClipperLib::pftNonZero, ClipperLib::pftNonZero );
 
     importTree( &solution );
 }
@@ -516,19 +515,19 @@ void SHAPE_POLY_SET::booleanOp( ClipperLib::ClipType aType,
 
 void SHAPE_POLY_SET::BooleanAdd( const SHAPE_POLY_SET& b, POLYGON_MODE aFastMode )
 {
-    booleanOp( ctUnion, b, aFastMode );
+    booleanOp( ClipperLib::ctUnion, b, aFastMode );
 }
 
 
 void SHAPE_POLY_SET::BooleanSubtract( const SHAPE_POLY_SET& b, POLYGON_MODE aFastMode )
 {
-    booleanOp( ctDifference, b, aFastMode );
+    booleanOp( ClipperLib::ctDifference, b, aFastMode );
 }
 
 
 void SHAPE_POLY_SET::BooleanIntersection( const SHAPE_POLY_SET& b, POLYGON_MODE aFastMode )
 {
-    booleanOp( ctIntersection, b, aFastMode );
+    booleanOp( ClipperLib::ctIntersection, b, aFastMode );
 }
 
 
@@ -536,7 +535,7 @@ void SHAPE_POLY_SET::BooleanAdd( const SHAPE_POLY_SET& a,
         const SHAPE_POLY_SET& b,
         POLYGON_MODE aFastMode )
 {
-    booleanOp( ctUnion, a, b, aFastMode );
+    booleanOp( ClipperLib::ctUnion, a, b, aFastMode );
 }
 
 
@@ -544,7 +543,7 @@ void SHAPE_POLY_SET::BooleanSubtract( const SHAPE_POLY_SET& a,
         const SHAPE_POLY_SET& b,
         POLYGON_MODE aFastMode )
 {
-    booleanOp( ctDifference, a, b, aFastMode );
+    booleanOp( ClipperLib::ctDifference, a, b, aFastMode );
 }
 
 
@@ -552,7 +551,7 @@ void SHAPE_POLY_SET::BooleanIntersection( const SHAPE_POLY_SET& a,
         const SHAPE_POLY_SET& b,
         POLYGON_MODE aFastMode )
 {
-    booleanOp( ctIntersection, a, b, aFastMode );
+    booleanOp( ClipperLib::ctIntersection, a, b, aFastMode );
 }
 
 
@@ -568,6 +567,7 @@ void SHAPE_POLY_SET::InflateWithLinkedHoles( int aFactor, int aCircleSegmentsCou
 void SHAPE_POLY_SET::Inflate( int aAmount, int aCircleSegmentsCount,
                               CORNER_STRATEGY aCornerStrategy )
 {
+    using namespace ClipperLib;
     // A static table to avoid repetitive calculations of the coefficient
     // 1.0 - cos( M_PI / aCircleSegmentsCount )
     // aCircleSegmentsCount is most of time <= 64 and usually 8, 12, 16, 32
@@ -648,11 +648,11 @@ void SHAPE_POLY_SET::Inflate( int aAmount, int aCircleSegmentsCount,
 }
 
 
-void SHAPE_POLY_SET::importTree( PolyTree* tree )
+void SHAPE_POLY_SET::importTree( ClipperLib::PolyTree* tree )
 {
     m_polys.clear();
 
-    for( PolyNode* n = tree->GetFirst(); n; n = n->GetNext() )
+    for( ClipperLib::PolyNode* n = tree->GetFirst(); n; n = n->GetNext() )
     {
         if( !n->IsHole() )
         {
@@ -1081,7 +1081,7 @@ void SHAPE_POLY_SET::Simplify( POLYGON_MODE aFastMode )
 {
     SHAPE_POLY_SET empty;
 
-    booleanOp( ctUnion, empty, aFastMode );
+    booleanOp( ClipperLib::ctUnion, empty, aFastMode );
 }
 
 
