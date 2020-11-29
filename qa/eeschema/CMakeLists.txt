@@ -28,6 +28,8 @@ include_directories(
     ${CMAKE_SOURCE_DIR}
     ${CMAKE_SOURCE_DIR}/include
     ${CMAKE_SOURCE_DIR}/pcbnew
+    ${CMAKE_SOURCE_DIR}/eeschema
+    ${CMAKE_SOURCE_DIR}/eeschema/sim
     ${INC_AFTER}
     )
 
@@ -67,6 +69,7 @@ if( KICAD_SPICE )
         ${QA_EESCHEMA_SRCS}
         # Simulation tests
         sim/test_netlist_exporter_pspice_sim.cpp
+        dialogs/test_dialog_sim_settings.cpp
     )
 endif()
 

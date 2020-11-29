@@ -117,7 +117,7 @@ public:
     /**
      * @brief Returns simulation command directives placed in schematic sheets (if any).
      */
-    wxString GetSheetSimCommand();
+    virtual wxString GetSheetSimCommand();
 
     /**
      * Parses a two-source .dc command directive into its components
