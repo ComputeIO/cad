@@ -125,7 +125,9 @@ bool DIALOG_SIM_SETTINGS::TransferDataFromWindow()
 
             try
             {
-                wxString dcSource = m_exporter->GetSpiceDevice( m_dcSource1->GetValue() );
+                wxString dcSource = m_dcSource1->GetValue();
+                if( dcSource.Cmp( "TEMP" ) )
+                    dcSource = m_exporter->GetSpiceDevice( m_dcSource1->GetValue() );
 
                 simCmd += wxString::Format( "%s %s %s %s",
                     dcSource,
@@ -170,7 +172,9 @@ bool DIALOG_SIM_SETTINGS::TransferDataFromWindow()
 
             try
             {
-                wxString dcSource = m_exporter->GetSpiceDevice( m_dcSource2->GetValue() );
+                wxString dcSource = m_dcSource2->GetValue();
+                if( dcSource.Cmp( "TEMP" ) )
+                    dcSource = m_exporter->GetSpiceDevice( m_dcSource2->GetValue() );
 
                 if( m_dcEnable1->IsChecked() )
                     simCmd += " ";
@@ -323,12 +327,15 @@ int DIALOG_SIM_SETTINGS::ShowModal()
 
     for( const auto& item : m_exporter->GetSpiceItems() )
     {
-        if( item.m_primitive == 'V' )
+        if( item.m_primitive == 'V' || item.m_primitive == 'I' || item.m_primitive == 'R' )
         {
             for( auto c : cmbSrc )
                 c.first->Append( item.m_refName );
         }
     }
+
+    for( auto c : cmbSrc )
+        c.first->Append( wxT( "TEMP" ) );
 
     // Try to restore the previous selection, if possible
     for( auto c : cmbSrc )
