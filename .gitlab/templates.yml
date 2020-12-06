@@ -25,6 +25,10 @@
   before_script:
     - export BOOST_TEST_LOGGER='JUNIT,all,test_results.${TEST}.xml:HRF,warning'
     - export CTEST_OUTPUT_ON_FAILURE=1
+    - Xvfb :1 -screen 0 1024x768x8 &
+    - export DISPLAY=:1
+  after_script:
+    - killall Xvnc
   script:
     - cd build/linux/qa
     - ctest -R ${TEST}
