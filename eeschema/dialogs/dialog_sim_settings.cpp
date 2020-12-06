@@ -406,7 +406,7 @@ bool DIALOG_SIM_SETTINGS::parseCommand( const wxString& aCommand )
             }
 
             // Check if the directive is complete
-            if( !m_dcEnable1->IsChecked() || !m_dcEnable2->IsChecked() )
+            if( !m_dcEnable1->IsChecked() && !m_dcEnable2->IsChecked() )
                 return false;
         }
 
@@ -423,6 +423,11 @@ bool DIALOG_SIM_SETTINGS::parseCommand( const wxString& aCommand )
 
             if( !tkn.IsEmpty() )
                 m_transInitial->SetValue( SPICE_VALUE( tkn ).ToSpiceString() );
+        }
+
+        else if( tkn == ".op" )
+        {
+            m_simPages->SetSelection( m_simPages->FindPage( m_pgOP ) );
         }
 
         // Custom directives
