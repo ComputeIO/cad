@@ -69,6 +69,7 @@ public:
         case COL_LENGTH:       return _( "Length" );
         case COL_POSX:         return _( "X Position" );
         case COL_POSY:         return _( "Y Position" );
+        case COL_VISIBLE:      return _( "Visible" );
         default:               wxFAIL; return wxEmptyString;
         }
     }
@@ -126,6 +127,9 @@ public:
                 break;
             case COL_POSY:
                 val = StringFromValue( aUserUnits, pin->GetPosition().y );
+                break;
+            case COL_VISIBLE:
+                val = StringFromBool( pin->IsVisible() );
                 break;
             default:
                 wxFAIL;
@@ -207,7 +211,10 @@ public:
                 pin->SetPosition( wxPoint( pin->GetPosition().x,
                                            ValueFromString( m_userUnits, aValue ) ) );
                 break;
-
+            
+            case COL_VISIBLE:
+                pin->SetVisible(BoolFromString( aValue ));
+                break;
             default:
                 wxFAIL;
                 break;
@@ -270,6 +277,9 @@ public:
         case COL_POSY:
             res = cmp( ValueFromString( units, lhStr ), ValueFromString( units, rhStr ) );
             break;
+        case COL_VISIBLE:
+            //res = cmp( lhStr, rhStr );
+            //break;
         default:
             res = cmp( StrNumCmp( lhStr, rhStr ), 0 );
             break;
@@ -380,6 +390,32 @@ public:
     {
         return m_edited;
     }
+    
+    static wxString StringFromBool( bool aValue )
+    {
+        if( aValue )
+            return wxT( "1" );
+        else
+            return wxT( "0" );
+    }
+
+    static bool BoolFromString( wxString aValue )
+    {
+        if( aValue == "1" )
+        {
+            return true;
+        }
+        else if( aValue == "0" )
+        {
+            return false;
+        }
+        else
+        {
+            wxFAIL_MSG( wxString::Format( "string \"%s\" can't be converted to boolean "
+                                        "correctly, it will have been perceived as FALSE", aValue ) );
+            return false;
+        }
+    }
 };
 
 
@@ -429,6 +465,12 @@ DIALOG_LIB_EDIT_PIN_TABLE::DIALOG_LIB_EDIT_PIN_TABLE( SYMBOL_EDIT_FRAME* parent,
     attr->SetRenderer( new GRID_CELL_ICON_TEXT_RENDERER( PinOrientationIcons(), orientationNames ) );
     attr->SetEditor( new GRID_CELL_ICON_TEXT_POPUP( PinOrientationIcons(), orientationNames ) );
     m_grid->SetColAttr( COL_ORIENTATION, attr );
+    
+    attr = new wxGridCellAttr;
+    attr->SetRenderer( new wxGridCellBoolRenderer() );
+    attr->SetEditor( new wxGridCellBoolEditor() );
+    attr->SetAlignment( wxALIGN_CENTER, wxALIGN_CENTER );
+    m_grid->SetColAttr( COL_VISIBLE, attr );
 
     /* Right-aligned position values look much better, but only MSW and GTK2+
      * currently support righ-aligned textEditCtrls, so the text jumps on all
