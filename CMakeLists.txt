@@ -738,16 +738,17 @@ if( KICAD_SCRIPTING OR KICAD_SCRIPTING_MODULES )
     include( ${SWIG_USE_FILE} )
 
     if( KICAD_SCRIPTING_PYTHON3 )
-        find_package(Python 3 REQUIRED)
+        set( PythonInterp_FIND_VERSION 3.3 )
+        set( PythonLibs_FIND_VERSION 3.3 )
     else()
         # force a python version < 3.0
-        find_package(Python 2 REQUIRED)
+        set( PythonInterp_FIND_VERSION 2.6 )
+        set( PythonLibs_FIND_VERSION 2.6 )
     endif()
 
-    check_find_package_result( Python_Interpreter_FOUND "Python Interpreter" )
-    
-    # Set the previous PYTHON_EXECUTABLE variable to the new syntax to not break other stuff
-    set(PYTHON_EXECUTABLE "${Python_EXECUTABLE}") 
+    find_package( PythonInterp )
+
+    check_find_package_result( PYTHONINTERP_FOUND "Python Interpreter" )
 
     if( NOT KICAD_SCRIPTING_PYTHON3 AND NOT PYTHON_VERSION_MAJOR EQUAL 2 )
         message( FATAL_ERROR "Python 2.x is required." )
@@ -767,7 +768,7 @@ if( KICAD_SCRIPTING OR KICAD_SCRIPTING_MODULES )
     endif()
 
     if( NOT APPLE )
-	    set( PYTHON_DEST "${PYTHON_SITE_PACKAGE_PATH}"
+        set( PYTHON_DEST "${PYTHON_SITE_PACKAGE_PATH}"
             CACHE PATH "Python module install path."
             )
     else()
