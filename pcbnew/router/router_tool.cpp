@@ -1518,7 +1518,9 @@ int ROUTER_TOOL::InlineDrag( const TOOL_EVENT& aEvent )
     }
     else if( footprint )
     {
-        p = footprint->GetPosition();
+        // When dragging footprint, use mouse position as start point instead of footprint 
+        // anchor so footprint doesn't jump when the mouse starts dragging.
+        p = controls()->GetCursorPosition();
     }
 
     int dragMode = aEvent.Parameter<int64_t> ();
