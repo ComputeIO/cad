@@ -45,7 +45,7 @@
             <property name="minimum_size"></property>
             <property name="name">DIALOG_LIB_EDIT_PIN_TABLE_BASE</property>
             <property name="pos"></property>
-            <property name="size">727,281</property>
+            <property name="size">-1,-1</property>
             <property name="style">wxDEFAULT_DIALOG_STYLE|wxRESIZE_BORDER</property>
             <property name="subclass">DIALOG_SHIM; dialog_shim.h</property>
             <property name="title">Pin Table</property>

@@ -118,6 +118,7 @@ DIALOG_LIB_EDIT_PIN_TABLE_BASE::DIALOG_LIB_EDIT_PIN_TABLE_BASE( wxWindow* parent
 
 	this->SetSizer( top_sizer );
 	this->Layout();
+	top_sizer->Fit( this );
 
 	this->Centre( wxBOTH );
 

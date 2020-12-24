@@ -278,8 +278,6 @@ public:
             res = cmp( ValueFromString( units, lhStr ), ValueFromString( units, rhStr ) );
             break;
         case COL_VISIBLE:
-            //res = cmp( lhStr, rhStr );
-            //break;
         default:
             res = cmp( StrNumCmp( lhStr, rhStr ), 0 );
             break;
