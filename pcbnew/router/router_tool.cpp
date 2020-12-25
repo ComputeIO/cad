@@ -1518,8 +1518,24 @@ int ROUTER_TOOL::InlineDrag( const TOOL_EVENT& aEvent )
     }
     else if( footprint )
     {
-        // When dragging footprint, use mouse position as start point instead of footprint 
-        // anchor so footprint doesn't jump when the mouse starts dragging.
+        // The mouse is going to be moved on grid before dragging begins.
+        VECTOR2I             tweakedMousePos;
+        PCB_BASE_EDIT_FRAME* editFrame = getEditFrame<PCB_BASE_EDIT_FRAME>();
+
+        // Check if user wants to warp the mouse to origin of moved object
+
+        if( editFrame->GetMoveWarpsCursor() )
+            tweakedMousePos = footprint->GetPosition(); // Use footprint anchor to warp mouse
+        else
+            tweakedMousePos = controls()->GetCursorPosition(); // Just use current mouse pos
+
+        // We tweak the mouse position using the value from above, and then use that as the
+        // start position to prevent the footprint from jumping when we start dragging.
+        // First we move the visual crosshair cursor...
+        controls()->ForceCursorPosition( true, tweakedMousePos );
+        controls()->SetCursorPosition( tweakedMousePos ); // ...then the mouse pointer
+
+        // Now that the mouse is in the right position, get a copy of the position to use later
         p = controls()->GetCursorPosition();
     }
 
