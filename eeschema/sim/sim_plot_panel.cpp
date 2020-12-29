@@ -120,145 +120,66 @@ static int countDecimalDigits( double x, int maxDigits )
 }
 
 
-static void formatSILabels( mpScaleBase* scale, const wxString& aUnit, int nDigits )
+template <typename parent>
+class LIN_SCALE : public parent
 {
-    double maxVis = scale->AbsVisibleMaxValue();
+private:
+    const wxString m_unit;
 
-    wxString suffix;
-    int power, digits = 0;
-
-    getSISuffix( maxVis, aUnit, power, suffix );
-
-    double sf = pow( 10.0, power );
-
-    for( auto &l : scale->TickLabels() )
-    {
-        int k = countDecimalDigits( l.pos / sf, nDigits );
-
-        digits = std::max( digits, k );
-    }
-
-    for( auto &l : scale->TickLabels() )
-    {
-        l.label = formatFloat ( l.pos / sf, digits ) + suffix;
-        l.visible = true;
-    }
-}
-
-
-class FREQUENCY_LOG_SCALE : public mpScaleXLog
-{
 public:
-    FREQUENCY_LOG_SCALE( wxString name, int flags ) :
-        mpScaleXLog( name, flags ) {};
+    LIN_SCALE( wxString name, wxString unit, int flags ) : parent( name, flags ), m_unit( unit ){};
 
     void formatLabels() override
     {
-        const wxString unit = wxT( "Hz" );
+        double maxVis = parent::AbsVisibleMaxValue();
+
         wxString suffix;
-        int power;
+        int power, digits = 0;
+        int constexpr DIGITS = 3;
 
-        for( auto &l : TickLabels() )
+        getSISuffix( maxVis, m_unit, power, suffix );
+
+        double sf = pow( 10.0, power );
+
+        for( auto& l : parent::TickLabels() )
         {
-            getSISuffix( l.pos, unit, power, suffix );
-            double sf = pow( 10.0, power );
-            int k = countDecimalDigits( l.pos / sf, 3 );
+            int k = countDecimalDigits( l.pos / sf, DIGITS );
 
-            l.label = formatFloat( l.pos / sf, k ) + suffix;
+            digits = std::max( digits, k );
+        }
+
+        for( auto& l : parent::TickLabels() )
+        {
+            l.label = formatFloat( l.pos / sf, digits ) + suffix;
             l.visible = true;
         }
     }
 };
 
 
-class FREQUENCY_LIN_SCALE : public mpScaleX
+template <typename parent>
+class LOG_SCALE : public parent
 {
+private:
+    const wxString m_unit;
+
 public:
-    FREQUENCY_LIN_SCALE( wxString name, int flags ) :
-        mpScaleX( name, flags, false , 0 ) {};
+    LOG_SCALE( wxString name, wxString unit, int flags ) : parent( name, flags ), m_unit( unit ){};
 
     void formatLabels() override
     {
-        formatSILabels( this, wxT( "Hz" ), 3 );
-    }
-};
+        wxString suffix;
+        int      power;
 
+        for( auto& l : parent::TickLabels() )
+        {
+            getSISuffix( l.pos, m_unit, power, suffix );
+            double sf = pow( 10.0, power );
+            int    k = countDecimalDigits( l.pos / sf, 3 );
 
-class TIME_SCALE : public mpScaleX
-{
-public:
-    TIME_SCALE( wxString name, int flags ) :
-        mpScaleX( name, flags, false, 0 ) {};
-
-    void formatLabels() override
-    {
-        formatSILabels( this, wxT( "s" ), 3 );
-    }
-};
-
-
-class VOLTAGE_SCALE_X : public mpScaleX
-{
-public:
-    VOLTAGE_SCALE_X( wxString name, int flags ) :
-        mpScaleX( name, flags, false, 0 ) {};
-
-    void formatLabels() override
-    {
-        formatSILabels( this, wxT( "V" ), 3 );
-    }
-};
-
-
-class GAIN_SCALE : public mpScaleY
-{
-public:
-    GAIN_SCALE( wxString name, int flags ) :
-        mpScaleY( name, flags, false ) {};
-
-    void formatLabels() override
-    {
-        formatSILabels( this, wxT( "dBV" ), 3 );
-    }
-
-};
-
-
-class PHASE_SCALE : public mpScaleY
-{
-public:
-    PHASE_SCALE( wxString name, int flags ) :
-        mpScaleY( name, flags, false ) {};
-
-    void formatLabels() override
-    {
-        formatSILabels( this, wxT( "\u00B0" ), 3 );     // degree sign
-    }
-};
-
-
-class VOLTAGE_SCALE_Y : public mpScaleY
-{
-public:
-    VOLTAGE_SCALE_Y( wxString name, int flags ) :
-        mpScaleY( name, flags, false ) {};
-
-    void formatLabels() override
-    {
-        formatSILabels( this, wxT( "V" ), 3 );
-    }
-};
-
-
-class CURRENT_SCALE : public mpScaleY
-{
-public:
-    CURRENT_SCALE( wxString name, int flags ) :
-        mpScaleY( name, flags, false ) {};
-
-    void formatLabels() override
-    {
-        formatSILabels( this, wxT( "A" ), 3 );
+            l.label = formatFloat( l.pos / sf, k ) + suffix;
+            l.visible = true;
+        }
     }
 };
 
@@ -385,27 +306,30 @@ SIM_PLOT_PANEL::SIM_PLOT_PANEL( SIM_TYPE aType, wxWindow* parent, SIM_PLOT_FRAME
     switch( GetType() )
     {
         case ST_AC:
-            m_axis_x = new FREQUENCY_LOG_SCALE( _( "Frequency" ), mpALIGN_BOTTOM );
-            m_axis_y1 = new GAIN_SCALE( _( "Gain" ), mpALIGN_LEFT );
-            m_axis_y2 = new PHASE_SCALE( _( "Phase" ), mpALIGN_RIGHT );
+            m_axis_x = new LOG_SCALE<mpScaleXLog>( _( "Frequency" ), wxT( "Hz" ), mpALIGN_BOTTOM );
+            m_axis_y1 = new LIN_SCALE<mpScaleY>( _( "Gain" ), wxT( "dBV" ), mpALIGN_LEFT );
+            m_axis_y2 = new LIN_SCALE<mpScaleY>( _( "Phase" ), wxT( "\u00B0" ),
+                                                 mpALIGN_RIGHT ); // degree sign
             m_axis_y2->SetMasterScale( m_axis_y1 );
             break;
 
         case ST_DC:
-            m_axis_x = new VOLTAGE_SCALE_X( _( "Voltage (swept)" ), mpALIGN_BOTTOM );
-            m_axis_y1 = new VOLTAGE_SCALE_Y( _( "Voltage (measured)" ), mpALIGN_LEFT );
-            m_axis_y2 = new CURRENT_SCALE( _( "Current" ), mpALIGN_RIGHT );
+            m_axis_x =
+                    new LIN_SCALE<mpScaleX>( _( "Voltage (swept)" ), wxT( "V" ), mpALIGN_BOTTOM );
+            m_axis_y1 =
+                    new LIN_SCALE<mpScaleY>( _( "Voltage (measured)" ), wxT( "V" ), mpALIGN_LEFT );
+            m_axis_y2 = new LIN_SCALE<mpScaleY>( _( "Current" ), wxT( "A" ), mpALIGN_RIGHT );
             break;
 
         case ST_NOISE:
-            m_axis_x = new FREQUENCY_LOG_SCALE( _( "Frequency" ), mpALIGN_BOTTOM );
+            m_axis_x = new LOG_SCALE<mpScaleXLog>( _( "Frequency" ), wxT( "Hz" ), mpALIGN_BOTTOM );
             m_axis_y1 = new mpScaleY( _( "noise [(V or A)^2/Hz]" ), mpALIGN_LEFT );
             break;
 
         case ST_TRANSIENT:
-            m_axis_x = new TIME_SCALE( _( "Time" ), mpALIGN_BOTTOM );
-            m_axis_y1 = new VOLTAGE_SCALE_Y( _( "Voltage" ), mpALIGN_LEFT );
-            m_axis_y2 = new CURRENT_SCALE( _( "Current" ), mpALIGN_RIGHT );
+            m_axis_x = new LIN_SCALE<mpScaleX>( _( "Time" ), wxT( "s" ), mpALIGN_BOTTOM );
+            m_axis_y1 = new LIN_SCALE<mpScaleY>( _( "Voltage" ), wxT( "V" ), mpALIGN_LEFT );
+            m_axis_y2 = new LIN_SCALE<mpScaleY>( _( "Current" ), wxT( "A" ), mpALIGN_RIGHT );
             m_axis_y2->SetMasterScale( m_axis_y1 );
             break;
 
