@@ -475,6 +475,7 @@ compilation errors about missing files, it is probably because your path is too 
 
 #### Visual Studio
 You must first install [Visual Studio][] with the **Desktop development with C++** feature set installed.
+Additionally, you'll need to make sure the optional component [**C++ CMake tools for Windows**](https://docs.microsoft.com/en-us/cpp/build/cmake-projects-in-visual-studio?view=msvc-160#installation) is installed.
 
 
 #### vcpkg
