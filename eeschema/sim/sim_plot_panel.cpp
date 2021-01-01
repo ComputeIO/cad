@@ -29,6 +29,8 @@
 #include <algorithm>
 #include <limits>
 
+#include <wx/regex.h>
+
 static wxString formatFloat( double x, int nDigits )
 {
     wxString rv, fmt;
@@ -284,9 +286,9 @@ void CURSOR::UpdateReference()
 }
 
 
-SIM_PLOT_PANEL::SIM_PLOT_PANEL( SIM_TYPE aType, wxWindow* parent, SIM_PLOT_FRAME* aMainFrame,
+SIM_PLOT_PANEL::SIM_PLOT_PANEL( wxString aCommand, wxWindow* parent, SIM_PLOT_FRAME* aMainFrame,
         wxWindowID id, const wxPoint& pos, const wxSize& size, long style, const wxString& name )
-        : SIM_PANEL_BASE( aType, parent, id, pos, size, style, name ),
+        : SIM_PANEL_BASE( aCommand, parent, id, pos, size, style, name ),
           m_colorIdx( 0 ),
           m_axis_x( nullptr ),
           m_axis_y1( nullptr ),
@@ -314,11 +316,7 @@ SIM_PLOT_PANEL::SIM_PLOT_PANEL( SIM_TYPE aType, wxWindow* parent, SIM_PLOT_FRAME
             break;
 
         case ST_DC:
-            m_axis_x =
-                    new LIN_SCALE<mpScaleX>( _( "Voltage (swept)" ), wxT( "V" ), mpALIGN_BOTTOM );
-            m_axis_y1 =
-                    new LIN_SCALE<mpScaleY>( _( "Voltage (measured)" ), wxT( "V" ), mpALIGN_LEFT );
-            m_axis_y2 = new LIN_SCALE<mpScaleY>( _( "Current" ), wxT( "A" ), mpALIGN_RIGHT );
+            prepareDCAxes();
             break;
 
         case ST_NOISE:
@@ -376,6 +374,38 @@ SIM_PLOT_PANEL::SIM_PLOT_PANEL( SIM_TYPE aType, wxWindow* parent, SIM_PLOT_FRAME
 SIM_PLOT_PANEL::~SIM_PLOT_PANEL()
 {
     // ~mpWindow destroys all the added layers, so there is no need to destroy m_traces contents
+}
+
+
+void SIM_PLOT_PANEL::prepareDCAxes()
+{
+    wxRegEx simCmd( "^.dc[[:space:]]+([[:alnum:]]+\\M).*", wxRE_ADVANCED | wxRE_ICASE );
+
+    if( simCmd.Matches( m_simCommand ) )
+    {
+        switch( static_cast<char>( simCmd.GetMatch( m_simCommand.Lower(), 1 ).GetChar( 0 ) ) )
+        {
+        case 'v':
+            m_axis_x =
+                    new LIN_SCALE<mpScaleX>( _( "Voltage (swept)" ), wxT( "V" ), mpALIGN_BOTTOM );
+            break;
+        case 'i':
+            m_axis_x =
+                    new LIN_SCALE<mpScaleX>( _( "Current (swept)" ), wxT( "A" ), mpALIGN_BOTTOM );
+            break;
+        case 'r':
+            m_axis_x = new LIN_SCALE<mpScaleX>( _( "Resistance (swept)" ), wxT( "\u03A9" ),
+                                                mpALIGN_BOTTOM );
+            break;
+        case 't':
+            m_axis_x = new LIN_SCALE<mpScaleX>( _( "Temperature (swept)" ), wxT( "\u00B0C" ),
+                                                mpALIGN_BOTTOM );
+            break;
+        }
+
+        m_axis_y1 = new LIN_SCALE<mpScaleY>( _( "Voltage (measured)" ), wxT( "V" ), mpALIGN_LEFT );
+        m_axis_y2 = new LIN_SCALE<mpScaleY>( _( "Current" ), wxT( "A" ), mpALIGN_RIGHT );
+    }
 }
 
 
