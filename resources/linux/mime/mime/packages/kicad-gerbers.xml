@@ -3,11 +3,13 @@
   <mime-type type="application/x-gerber">
     <sub-class-of type="text/plain"/>
     <comment>Gerber File</comment>
+	<comment xml:lang="zh_CN">Gerber 文件</comment>
     <glob pattern="*.gbr"/>
   </mime-type>
   <mime-type type="application/x-excellon">
     <sub-class-of type="text/plain"/>
     <comment>Excellon drill file</comment>
+	<comment xml:lang="zh_CN">Excellon 钻孔文件</comment>
     <glob pattern="*.drl"/>
     <magic priority="50">
       <match value="M48" type="string" offset="0"/>
