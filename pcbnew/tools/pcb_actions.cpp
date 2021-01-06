@@ -394,13 +394,13 @@ TOOL_ACTION PCB_ACTIONS::updateFootprint( "pcbnew.GlobalEdit.updateFootprint",
         AS_GLOBAL, 0, "",
         _( "Update Footprint..." ),
         _( "Update footprint to include any changes from the library" ),
-        reload_xpm );
+        refresh_xpm );
 
 TOOL_ACTION PCB_ACTIONS::updateFootprints( "pcbnew.GlobalEdit.updateFootprints",
         AS_GLOBAL, 0, "",
         _( "Update Footprints from Library..." ),
         _( "Update footprints to include any changes from the library" ),
-        reload_xpm );
+        refresh_xpm );
 
 TOOL_ACTION PCB_ACTIONS::removeUnusedPads( "pcbnew.GlobalEdit.removeUnusedPads",
         AS_GLOBAL, 0, "",
@@ -635,7 +635,7 @@ TOOL_ACTION PCB_ACTIONS::drillOrigin( "pcbnew.EditorControl.drillOrigin",
         AS_GLOBAL, 0, "",
         _( "Drill/Place File Origin" ),
         _( "Place origin point for drill files and footprint position files" ),
-        pcb_offset_xpm, AF_ACTIVATE );
+        set_origin_xpm, AF_ACTIVATE );
 
 TOOL_ACTION PCB_ACTIONS::toggleLock( "pcbnew.EditorControl.toggleLock",
         AS_GLOBAL,
@@ -1197,7 +1197,7 @@ TOOL_ACTION PCB_ACTIONS::selectSameSheet( "pcbnew.InteractiveSelection.SelectSam
 TOOL_ACTION PCB_ACTIONS::filterSelection( "pcbnew.InteractiveSelection.FilterSelection",
         AS_GLOBAL, 0, "",
         _( "Filter Selection..." ), _( "Filter the types of items in the selection" ),
-        options_generic_xpm );
+        filter_xpm );
 
 
 // ZONE_FILLER_TOOL

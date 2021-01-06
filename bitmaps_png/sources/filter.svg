@@ -11,8 +11,8 @@
    data-name="Слой 1"
    viewBox="0 0 24 24"
    version="1.1"
-   sodipodi:docname="loading.svg"
-   inkscape:version="1.0.1 (3bc2e813f5, 2020-09-07)">
+   sodipodi:docname="filter.svg"
+   inkscape:version="1.0.1 (c497b03c, 2020-09-10)">
   <sodipodi:namedview
      pagecolor="#ffffff"
      bordercolor="#666666"
@@ -22,15 +22,15 @@
      guidetolerance="10"
      inkscape:pageopacity="0"
      inkscape:pageshadow="2"
-     inkscape:window-width="1609"
-     inkscape:window-height="1286"
+     inkscape:window-width="1280"
+     inkscape:window-height="715"
      id="namedview30"
      showgrid="true"
-     inkscape:zoom="27.961538"
-     inkscape:cx="3.3259971"
-     inkscape:cy="13"
+     inkscape:zoom="17.400005"
+     inkscape:cx="12.49122"
+     inkscape:cy="12.932069"
      inkscape:window-x="0"
-     inkscape:window-y="37"
+     inkscape:window-y="23"
      inkscape:window-maximized="0"
      inkscape:document-rotation="0"
      inkscape:current-layer="Слой_1">
@@ -53,7 +53,7 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title>add_arc</dc:title>
+        <dc:title>drc</dc:title>
       </cc:Work>
       <cc:License
          rdf:about="http://creativecommons.org/licenses/by-sa/4.0/">
@@ -73,28 +73,15 @@
     </rdf:RDF>
   </metadata>
   <defs
-     id="defs158206">
+     id="defs116686">
     <style
-       id="style158204">.cls-1,.cls-2{fill:none;stroke-linecap:round;stroke-linejoin:round;stroke-width:2px;}.cls-1{stroke:#1a81c4;}.cls-2{stroke:#545454;}</style>
+       id="style116684">.cls-1{fill:#b9b9b9;}.cls-2{fill:#fff;}.cls-2,.cls-3{stroke:#545454;}.cls-2,.cls-3,.cls-4{stroke-linecap:round;stroke-linejoin:round;}.cls-3,.cls-4{fill:none;}.cls-4{stroke:#1a81c4;}.cls-5{fill:#545454;}</style>
   </defs>
   <title
-     id="title158208">loading</title>
+     id="title116688">drc</title>
   <path
-     class="cls-1"
-     d="M 2.2252,11.0051 A 9.8346,9.8346 0 0 1 21.4523,9.3134"
-     id="path158210" />
-  <path
-     class="cls-2"
-     d="M 21.7762,13.0009 A 9.8347,9.8347 0 0 1 2.56,14.7205"
-     id="path158212" />
-  <polyline
-     class="cls-2"
-     points="2.009 18.582 3.545 15.68 6.436 17.199"
-     id="polyline158214"
-     transform="translate(-1,-1)" />
-  <polyline
-     class="cls-1"
-     points="24.009 7.431 22.474 10.333 19.582 8.815"
-     id="polyline158216"
-     transform="translate(-1,-1)" />
+     style="display:inline;fill:#f3f3f3;fill-opacity:1;stroke:#545454;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+     d="m 1.5,1.5 h 21 v 3 0 l -8,8 v 10 h -5 v -10 l -8,-8 z"
+     id="path943"
+     sodipodi:nodetypes="cccccccccc" />
 </svg>

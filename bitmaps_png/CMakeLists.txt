@@ -181,7 +181,6 @@ set( BMAPS_MID
     bus_definition_tool
     cancel
     change_entry_orient
-    change_lib_symbols_in_schematic
     contrast_mode
     curved_ratsnest
     checked_ok
@@ -215,7 +214,6 @@ set( BMAPS_MID
     edit_comp_value
     editor
     edit_cmp_symb_links
-    edit_text
     edit
     edge_to_copper_clearance
     enter_sheet
@@ -247,13 +245,13 @@ set( BMAPS_MID
     file_pos
     file_svg
     fill_zone
+    filter
     find
     find_replace
     flag
     flag_remove
     flip_board
     footprint_browser
-    footprint_text
     gbr_select_mode2
     gerber_job_file
     gerbview_show_negative_objects
@@ -275,7 +273,6 @@ set( BMAPS_MID
     hidden_pin
     hide_ratsnest
     hierarchy_nav
-    highlight_remove
     hotkeys
     hole_to_hole_clearance
     hole_to_copper_clearance
@@ -366,7 +363,6 @@ set( BMAPS_MID
     pagelayout_special_view_mode
     part_properties
     paste
-    pcb_offset
     pin2pin
     pin_size_to
     pin_show_etype
@@ -433,6 +429,7 @@ set( BMAPS_MID
     sim_add_signal
     sim_settings
     search_tree
+    set_origin
     setcolor_3d_bg
     setcolor_silkscreen
     setcolor_soldermask
@@ -474,7 +471,6 @@ set( BMAPS_MID
     up
     update_pcb_from_sch
     update_sch_from_pcb
-    update_lib_symbols_in_schematic
     use_3D_copper_thickness
     via
     via_annulus
