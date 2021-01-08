@@ -29,6 +29,7 @@
 #ifndef STROKE_FONT_H_
 #define STROKE_FONT_H_
 
+#include <map>
 #include <deque>
 #include <algorithm>
 
@@ -44,6 +45,7 @@ class GAL;
 
 typedef std::vector<std::vector<VECTOR2D>*> GLYPH;
 typedef std::vector<GLYPH*>                 GLYPH_LIST;
+typedef std::vector<BOX2D>                  GLYPH_BOUNDING_BOX_LIST;
 
 /**
  * Class STROKE_FONT implements stroke font drawing.
@@ -68,13 +70,21 @@ public:
     bool LoadNewStrokeFont( const char* const aNewStrokeFont[], int aNewStrokeFontSize );
 
     /**
+     * Load a Hershey font.
+     *
+     * @param aHersheyFontName is the name of the font (example: "futural")
+     * @return true if the font was successfully loaded, else false.
+     */
+    bool LoadHersheyFont( const wxString& aHersheyFontName );
+
+    /**
      * Draw a string.
      *
      * @param aText is the text to be drawn.
      * @param aPosition is the text position in world coordinates.
      * @param aRotationAngle is the text rotation angle in radians.
      */
-    void Draw( const UTF8& aText, const VECTOR2D& aPosition, double aRotationAngle );
+    void Draw( const UTF8& aText, const VECTOR2D& aPosition, double aRotationAngle ) const;
 
     /**
      * Changes Graphics Abstraction Layer used for drawing items for a new one.
@@ -147,7 +157,17 @@ private:
      *
      * @param aText is the text to be drawn.
      */
-    void drawSingleLineText( const UTF8& aText );
+    void drawSingleLineText( const UTF8& aText ) const;
+
+    /**
+     * Process a string representing a Hershey font glyph. Not used for Newstroke font
+     * as the format is slightly different from the original Hershey format.
+     *
+     * @param aGlyphString String containing the glyph data
+     * @param aGlyphWidth Computed glyph width is stored here
+     * @return newly created GLYPH
+     */
+    GLYPH* processGlyph( std::string aGlyphString, double& aGlyphWidth );
 
     /**
      * Returns number of lines for a given text.
@@ -164,9 +184,10 @@ private:
             return std::count( aText.begin(), aText.end() - 1, '\n' ) + 1;
     }
 
-    GAL*                      m_gal;                  ///< Pointer to the GAL
-    const GLYPH_LIST*         m_glyphs;               ///< Glyph list
-    const std::vector<BOX2D>* m_glyphBoundingBoxes;   ///< Bounding boxes of the glyphs
+    GAL*                           m_gal;                ///< The GAL
+    wxString                       m_fontName;           ///< Font name
+    const GLYPH_LIST*              m_glyphs;             ///< Glyph list
+    const GLYPH_BOUNDING_BOX_LIST* m_glyphBoundingBoxes; ///< Bounding boxes of the glyphs
 
     ///> Factor that determines relative vertical position of the overbar.
     static const double OVERBAR_POSITION_FACTOR;
@@ -185,6 +206,9 @@ private:
     ///> Factor that determines the pitch between 2 lines.
     static const double INTERLINE_PITCH_RATIO;
 };
+
+typedef std::map<wxString, STROKE_FONT*> FONT_MAP;
+
 } // namespace KIGFX
 
 #endif // STROKE_FONT_H_
