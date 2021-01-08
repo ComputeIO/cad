@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2012 SoftPLC Corporation, Dick Hollenbeck <dick@softplc.com>
  * Copyright (C) 2012 Jean-Pierre Charras, jp.charras at wanadoo.fr
- * Copyright (C) 1992-2020 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 1992-2021 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -214,8 +214,13 @@ void PROJECT_TREE_PANE::onOpenDirectory( wxCommandEvent& event )
 
         system( msg.c_str() );
 #else
+    #if !wxCHECK_VERSION( 3, 1, 0 )
         // Quote in case there are spaces in the path.
+        // Not needed on 3.1.4, but needed in 3.0 versions
+        // Moreover, on Linux, on 3.1.4 wx version, adding quotes breaks
+        // wxLaunchDefaultApplication
         AddDelimiterString( curr_dir );
+    #endif
 
         wxLaunchDefaultApplication( curr_dir );
 #endif
@@ -304,7 +309,7 @@ std::vector<wxString> getProjects( const wxDir& dir )
 
 
 wxTreeItemId PROJECT_TREE_PANE::addItemToProjectTree( const wxString& aName,
-                                                      const wxTreeItemId& aRoot,
+                                                      const wxTreeItemId& aParent,
                                                       std::vector<wxString>* aProjectNames,
                                                       bool aRecurse )
 {
@@ -378,13 +383,25 @@ wxTreeItemId PROJECT_TREE_PANE::addItemToProjectTree( const wxString& aName,
     if( currfile.GetExt() == GetFileExt( TREE_FILE_TYPE::LEGACY_SCHEMATIC )
                 || currfile.GetExt() == GetFileExt( TREE_FILE_TYPE::SEXPR_SCHEMATIC ) )
     {
-        if( aProjectNames && !alg::contains( *aProjectNames, currfile.GetName() ) )
-            return wxTreeItemId();
+        if( aProjectNames )
+        {
+            if( !alg::contains( *aProjectNames, currfile.GetName() ) )
+                return wxTreeItemId();
+        }
+        else
+        {
+            PROJECT_TREE_ITEM*    parentTreeItem = GetItemIdData( aParent );
+            wxDir                 parentDir( parentTreeItem->GetDir() );
+            std::vector<wxString> projects = getProjects( parentDir );
+
+            if( !alg::contains( projects, currfile.GetName() ) )
+                return wxTreeItemId();
+        }
     }
 
     // also check to see if it is already there.
     wxTreeItemIdValue cookie;
-    wxTreeItemId      kid = m_TreeProject->GetFirstChild( aRoot, cookie );
+    wxTreeItemId      kid = m_TreeProject->GetFirstChild( aParent, cookie );
 
     while( kid.IsOk() )
     {
@@ -393,14 +410,14 @@ wxTreeItemId PROJECT_TREE_PANE::addItemToProjectTree( const wxString& aName,
         if( itemData && itemData->GetFileName() == aName )
             return itemData->GetId();    // well, we would have added it, but it is already here!
 
-        kid = m_TreeProject->GetNextChild( aRoot, cookie );
+        kid = m_TreeProject->GetNextChild( aParent, cookie );
     }
 
     // Only show current files if both legacy and current files are present
     if( type == TREE_FILE_TYPE::LEGACY_PROJECT || type == TREE_FILE_TYPE::JSON_PROJECT
         || type == TREE_FILE_TYPE::LEGACY_SCHEMATIC || type == TREE_FILE_TYPE::SEXPR_SCHEMATIC )
     {
-        kid = m_TreeProject->GetFirstChild( aRoot, cookie );
+        kid = m_TreeProject->GetFirstChild( aParent, cookie );
 
         while( kid.IsOk() )
         {
@@ -444,12 +461,12 @@ wxTreeItemId PROJECT_TREE_PANE::addItemToProjectTree( const wxString& aName,
                 }
             }
 
-            kid = m_TreeProject->GetNextChild( aRoot, cookie );
+            kid = m_TreeProject->GetNextChild( aParent, cookie );
         }
     }
 
     // Append the item (only appending the filename not the full path):
-    wxTreeItemId       newItemId = m_TreeProject->AppendItem( aRoot, file );
+    wxTreeItemId       newItemId = m_TreeProject->AppendItem( aParent, file );
     PROJECT_TREE_ITEM* data = new PROJECT_TREE_ITEM( type, aName, m_TreeProject );
 
     m_TreeProject->SetItemData( newItemId, data );
@@ -567,6 +584,10 @@ void PROJECT_TREE_PANE::ReCreateTreePrj()
                 if( filename != fn.GetFullName() )
                 {
                     wxString name = dir.GetName() + wxFileName::GetPathSeparator() + filename;
+                    // Add items living in the project directory, and do not populate the item
+                    // if it is a directory (sub directories will be not populated)
+                    // (Populate the directory is better but creates wxWidgets alerts in debug
+                    // mode)
                     addItemToProjectTree( name, m_root, &projects, false );
                 }
 
