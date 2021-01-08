@@ -191,7 +191,7 @@ GLYPH* STROKE_FONT::processGlyph( std::string aGlyphString, double& aGlyphWidth 
         }
     }
 
-    std::cerr << "Glyph " << aGlyphString << " has " << strokes << " strokes" << std::endl;
+    // std::cerr << "Glyph " << aGlyphString << " has " << strokes << " strokes" << std::endl;
     glyph->reserve( strokes + 1 );
 
     i = 8;
@@ -212,10 +212,12 @@ GLYPH* STROKE_FONT::processGlyph( std::string aGlyphString, double& aGlyphWidth 
             glyphStartX = ( coordinate[0] - 'R' ) * STROKE_FONT_SCALE;
             glyphEndX = ( coordinate[1] - 'R' ) * STROKE_FONT_SCALE;
             aGlyphWidth = glyphEndX - glyphStartX;
+            /*
             std::cerr << "Glyph width start (" << coordinate[0] << "==" << ( coordinate[0] - 'R' )
                       << ") " << glyphStartX << " end (" << coordinate[1]
                       << "==" << ( coordinate[1] - 'R' ) << ") " << glyphEndX << " has width "
                       << aGlyphWidth << std::endl;
+            */
         }
         else if( ( coordinate[0] == ' ' ) && ( coordinate[1] == 'R' ) )
         {
@@ -267,8 +269,6 @@ bool STROKE_FONT::LoadHersheyFont( const wxString& aFontName )
         return false;
     }
 
-    std::cerr << "LoadHersheyFont(\"" << aFontName << "\")" << std::endl;
-
     wxFileName fontFile( aFontName );
     fontFile.SetExt( "jhf" );
     fontFile.SetPath( SETTINGS_MANAGER::GetUserSettingsPath() + wxT( "/fonts" ) );
@@ -277,7 +277,7 @@ bool STROKE_FONT::LoadHersheyFont( const wxString& aFontName )
 
     if( !wxFile::Exists( fileName ) )
     {
-        std::cerr << "File [" << fileName << "] does not exist" << std::endl;
+        // std::cerr << "File [" << fileName << "] does not exist" << std::endl;
         return false;
     }
 
@@ -285,7 +285,7 @@ bool STROKE_FONT::LoadHersheyFont( const wxString& aFontName )
 
     if( !font.Open( fileName ) )
     {
-        std::cerr << "Could not open [" << fileName << "]" << std::endl;
+        // std::cerr << "Could not open [" << fileName << "]" << std::endl;
         return false;
     }
 

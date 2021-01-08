@@ -778,18 +778,10 @@ bool SVG_PLOTTER::EndPlot()
 }
 
 
-void SVG_PLOTTER::Text( const wxPoint&              aPos,
-                        const COLOR4D               aColor,
-                        const wxString&             aText,
-                        double                      aOrient,
-                        const wxSize&               aSize,
-                        enum EDA_TEXT_HJUSTIFY_T    aH_justify,
-                        enum EDA_TEXT_VJUSTIFY_T    aV_justify,
-                        int                         aWidth,
-                        bool                        aItalic,
-                        bool                        aBold,
-                        bool                        aMultilineAllowed,
-                        void*                       aData )
+void SVG_PLOTTER::Text( const wxPoint& aPos, const COLOR4D aColor, const wxString& aText,
+                        double aOrient, const wxSize& aSize, enum EDA_TEXT_HJUSTIFY_T aH_justify,
+                        enum EDA_TEXT_VJUSTIFY_T aV_justify, int aWidth, bool aItalic, bool aBold,
+                        bool aMultilineAllowed, void* aData, wxString* aFont )
 {
     setFillMode( FILL_TYPE::NO_FILL );
     SetColor( aColor );
@@ -861,7 +853,7 @@ void SVG_PLOTTER::Text( const wxPoint&              aPos,
     fprintf( m_outputFile,
              "<g class=\"stroked-text\"><desc>%s</desc>\n",
              TO_UTF8( XmlEsc( aText ) ) );
-    PLOTTER::Text( aPos, aColor, aText, aOrient, aSize, aH_justify, aV_justify,
-                   aWidth, aItalic, aBold, aMultilineAllowed );
+    PLOTTER::Text( aPos, aColor, aText, aOrient, aSize, aH_justify, aV_justify, aWidth, aItalic,
+                   aBold, aMultilineAllowed, NULL, aFont );
     fputs( "</g>", m_outputFile );
 }

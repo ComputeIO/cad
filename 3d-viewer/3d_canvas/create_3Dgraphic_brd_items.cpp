@@ -116,7 +116,7 @@ void BOARD_ADAPTER::addShapeWithClearance( const PCB_TEXT* aText, CONTAINER_2D_B
 
             GRText( nullptr, positions[ii], dummy_color, txt, aText->GetTextAngle(), size,
                     aText->GetHorizJustify(), aText->GetVertJustify(), penWidth, aText->IsItalic(),
-                    forceBold, addTextSegmToContainer, &font );
+                    forceBold, addTextSegmToContainer, nullptr, nullptr, &font );
         }
     }
     else
@@ -125,7 +125,7 @@ void BOARD_ADAPTER::addShapeWithClearance( const PCB_TEXT* aText, CONTAINER_2D_B
 
         GRText( nullptr, aText->GetTextPos(), dummy_color, txt, aText->GetTextAngle(), size,
                 aText->GetHorizJustify(), aText->GetVertJustify(), penWidth, aText->IsItalic(),
-                forceBold, addTextSegmToContainer, &font );
+                forceBold, addTextSegmToContainer, nullptr, nullptr, &font );
     }
 }
 

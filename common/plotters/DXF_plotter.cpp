@@ -865,22 +865,14 @@ bool containsNonAsciiChars( const wxString& string )
     return false;
 }
 
-void DXF_PLOTTER::Text( const wxPoint&              aPos,
-                        COLOR4D                     aColor,
-                        const wxString&             aText,
-                        double                      aOrient,
-                        const wxSize&               aSize,
-                        enum EDA_TEXT_HJUSTIFY_T    aH_justify,
-                        enum EDA_TEXT_VJUSTIFY_T    aV_justify,
-                        int                         aWidth,
-                        bool                        aItalic,
-                        bool                        aBold,
-                        bool                        aMultilineAllowed,
-                        void*                       aData )
+void DXF_PLOTTER::Text( const wxPoint& aPos, COLOR4D aColor, const wxString& aText, double aOrient,
+                        const wxSize& aSize, enum EDA_TEXT_HJUSTIFY_T aH_justify,
+                        enum EDA_TEXT_VJUSTIFY_T aV_justify, int aWidth, bool aItalic, bool aBold,
+                        bool aMultilineAllowed, void* aData, wxString* aFont )
 {
     // Fix me: see how to use DXF text mode for multiline texts
     if( aMultilineAllowed && !aText.Contains( wxT( "\n" ) ) )
-        aMultilineAllowed = false;  // the text has only one line.
+        aMultilineAllowed = false; // the text has only one line.
 
     bool processSuperSub = aText.Contains( wxT( "^{" ) ) || aText.Contains( wxT( "_{" ) );
 
@@ -889,8 +881,8 @@ void DXF_PLOTTER::Text( const wxPoint&              aPos,
         // output text as graphics.
         // Perhaps multiline texts could be handled as DXF text entity
         // but I do not want spend time about this (JPC)
-        PLOTTER::Text( aPos, aColor, aText, aOrient, aSize, aH_justify, aV_justify,
-                       aWidth, aItalic, aBold, aMultilineAllowed );
+        PLOTTER::Text( aPos, aColor, aText, aOrient, aSize, aH_justify, aV_justify, aWidth, aItalic,
+                       aBold, aMultilineAllowed, NULL, aFont );
     }
     else
     {
@@ -1045,4 +1037,3 @@ void DXF_PLOTTER::Text( const wxPoint&              aPos,
         putc( '\n', m_outputFile );
     }
 }
-

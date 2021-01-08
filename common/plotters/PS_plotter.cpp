@@ -993,19 +993,10 @@ bool PS_PLOTTER::EndPlot()
 }
 
 
-
-void PS_PLOTTER::Text( const wxPoint&       aPos,
-                const COLOR4D               aColor,
-                const wxString&             aText,
-                double                      aOrient,
-                const wxSize&               aSize,
-                enum EDA_TEXT_HJUSTIFY_T    aH_justify,
-                enum EDA_TEXT_VJUSTIFY_T    aV_justify,
-                int                         aWidth,
-                bool                        aItalic,
-                bool                        aBold,
-                bool                        aMultilineAllowed,
-                void*                       aData )
+void PS_PLOTTER::Text( const wxPoint& aPos, const COLOR4D aColor, const wxString& aText,
+                       double aOrient, const wxSize& aSize, enum EDA_TEXT_HJUSTIFY_T aH_justify,
+                       enum EDA_TEXT_VJUSTIFY_T aV_justify, int aWidth, bool aItalic, bool aBold,
+                       bool aMultilineAllowed, void* aData, wxString* aFont )
 {
     SetCurrentLineWidth( aWidth );
     SetColor( aColor );
@@ -1014,12 +1005,12 @@ void PS_PLOTTER::Text( const wxPoint&       aPos,
     if( m_textMode == PLOT_TEXT_MODE::PHANTOM )
     {
         std::string ps_test = encodeStringForPlotter( aText );
-        DPOINT pos_dev = userToDeviceCoordinates( aPos );
+        DPOINT      pos_dev = userToDeviceCoordinates( aPos );
         fprintf( m_outputFile, "%s %g %g phantomshow\n", ps_test.c_str(), pos_dev.x, pos_dev.y );
     }
 
-    PLOTTER::Text( aPos, aColor, aText, aOrient, aSize, aH_justify, aV_justify, aWidth,
-                   aItalic, aBold, aMultilineAllowed );
+    PLOTTER::Text( aPos, aColor, aText, aOrient, aSize, aH_justify, aV_justify, aWidth, aItalic,
+                   aBold, aMultilineAllowed, NULL, aFont );
 }
 
 

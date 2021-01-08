@@ -693,7 +693,8 @@ void BRDITEMS_PLOTTER::PlotFootprintGraphicItem( FP_SHAPE* aShape )
 // Plot a PCB Text, i.e. a text found on a copper or technical layer
 void BRDITEMS_PLOTTER::PlotPcbText( PCB_TEXT* aText )
 {
-    wxString shownText( aText->GetShownText() );
+    wxString font;
+    wxString shownText( aText->GetShownText( 0, &font ) );
 
     if( shownText.IsEmpty() )
         return;
@@ -736,17 +737,17 @@ void BRDITEMS_PLOTTER::PlotPcbText( PCB_TEXT* aText )
 
         for( unsigned ii = 0; ii <  strings_list.Count(); ii++ )
         {
-            wxString& txt =  strings_list.Item( ii );
+            wxString& txt = strings_list.Item( ii );
             m_plotter->Text( positions[ii], color, txt, orient, size, aText->GetHorizJustify(),
-                             aText->GetVertJustify(), thickness, aText->IsItalic(),
-                             allow_bold, false, &gbr_metadata );
+                             aText->GetVertJustify(), thickness, aText->IsItalic(), allow_bold,
+                             false, &gbr_metadata, &font );
         }
     }
     else
     {
         m_plotter->Text( pos, color, shownText, orient, size, aText->GetHorizJustify(),
-                         aText->GetVertJustify(), thickness, aText->IsItalic(), allow_bold,
-                         false, &gbr_metadata );
+                         aText->GetVertJustify(), thickness, aText->IsItalic(), allow_bold, false,
+                         &gbr_metadata, &font );
     }
 }
 

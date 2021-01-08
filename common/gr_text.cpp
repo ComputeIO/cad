@@ -215,25 +215,16 @@ void GRHaloText( wxDC * aDC, const wxPoint &aPos, COLOR4D aBgColor, COLOR4D aCol
  *  @param aMultilineAllowed = true to plot text as multiline, otherwise single line
  *  @param aData = a parameter used by some plotters in SetCurrentLineWidth(),
  * not directly used here.
+ *  @param aFont = name of font (null for default)
  */
-void PLOTTER::Text( const wxPoint&              aPos,
-                    const COLOR4D               aColor,
-                    const wxString&             aText,
-                    double                      aOrient,
-                    const wxSize&               aSize,
-                    enum EDA_TEXT_HJUSTIFY_T    aH_justify,
-                    enum EDA_TEXT_VJUSTIFY_T    aV_justify,
-                    int                         aPenWidth,
-                    bool                        aItalic,
-                    bool                        aBold,
-                    bool                        aMultilineAllowed,
-                    void*                       aData )
+void PLOTTER::Text( const wxPoint& aPos, const COLOR4D aColor, const wxString& aText,
+                    double aOrient, const wxSize& aSize, enum EDA_TEXT_HJUSTIFY_T aH_justify,
+                    enum EDA_TEXT_VJUSTIFY_T aV_justify, int aPenWidth, bool aItalic, bool aBold,
+                    bool aMultilineAllowed, void* aData, wxString* aFont )
 {
     SetColor( aColor );
     SetCurrentLineWidth( aPenWidth );
 
-    std::cerr << "PLOTTER::Text " << aText << std::endl;
-
-    GRText( NULL, aPos, aColor, aText, aOrient, aSize, aH_justify, aV_justify, aPenWidth,
-            aItalic, aBold, nullptr, nullptr, this );
+    GRText( NULL, aPos, aColor, aText, aOrient, aSize, aH_justify, aV_justify, aPenWidth, aItalic,
+            aBold, nullptr, nullptr, this, aFont );
 }
