@@ -121,7 +121,7 @@ public:
 
     void SetId( int aId );
 
-    wxString GetShownText( int aDepth = 0 ) const override;
+    wxString GetShownText( int aDepth = 0, wxString* fontSpecifier = nullptr ) const override;
 
     const EDA_RECT GetBoundingBox() const override;
 

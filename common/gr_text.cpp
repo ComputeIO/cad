@@ -128,11 +128,11 @@ int GraphicTextWidth( const wxString& aText, const wxSize& aSize, bool aItalic, 
  *  @param aPlotter = a pointer to a PLOTTER instance, when this function is used to plot
  *                  the text. NULL to draw this text.
  */
-void GRText( wxDC* aDC, const wxPoint& aPos, COLOR4D aColor, const wxString& aText,
-             double aOrient, const wxSize& aSize, enum EDA_TEXT_HJUSTIFY_T aH_justify,
+void GRText( wxDC* aDC, const wxPoint& aPos, COLOR4D aColor, const wxString& aText, double aOrient,
+             const wxSize& aSize, enum EDA_TEXT_HJUSTIFY_T aH_justify,
              enum EDA_TEXT_VJUSTIFY_T aV_justify, int aWidth, bool aItalic, bool aBold,
-             void (* aCallback)( int x0, int y0, int xf, int yf, void* aData ),
-             void* aCallbackData, PLOTTER* aPlotter )
+             void ( *aCallback )( int x0, int y0, int xf, int yf, void* aData ),
+             void* aCallbackData, PLOTTER* aPlotter, wxString* aFont )
 {
     bool fill_mode = true;
 
@@ -169,7 +169,7 @@ void GRText( wxDC* aDC, const wxPoint& aPos, COLOR4D aColor, const wxString& aTe
     basic_gal.m_Color = aColor;
     basic_gal.SetClipBox( nullptr );
 
-    basic_gal.StrokeText( aText, VECTOR2D( aPos ), aOrient * M_PI/1800 );
+    basic_gal.StrokeText( aText, VECTOR2D( aPos ), aOrient * M_PI / 1800, aFont );
 }
 
 
@@ -231,6 +231,8 @@ void PLOTTER::Text( const wxPoint&              aPos,
 {
     SetColor( aColor );
     SetCurrentLineWidth( aPenWidth );
+
+    std::cerr << "PLOTTER::Text " << aText << std::endl;
 
     GRText( NULL, aPos, aColor, aText, aOrient, aSize, aH_justify, aV_justify, aPenWidth,
             aItalic, aBold, nullptr, nullptr, this );

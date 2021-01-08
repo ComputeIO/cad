@@ -1346,7 +1346,8 @@ void PCB_PAINTER::draw( const PCB_SHAPE* aShape, int aLayer )
 
 void PCB_PAINTER::draw( const PCB_TEXT* aText, int aLayer )
 {
-    wxString shownText( aText->GetShownText() );
+    wxString fontName;
+    wxString shownText( aText->GetShownText( 0, &fontName ) );
 
     if( shownText.Length() == 0 )
         return;
@@ -1369,13 +1370,14 @@ void PCB_PAINTER::draw( const PCB_TEXT* aText, int aLayer )
     m_gal->SetIsFill( false );
     m_gal->SetIsStroke( true );
     m_gal->SetTextAttributes( aText );
-    m_gal->StrokeText( shownText, position, aText->GetTextAngleRadians() );
+    m_gal->StrokeText( shownText, position, aText->GetTextAngleRadians(), &fontName );
 }
 
 
 void PCB_PAINTER::draw( const FP_TEXT* aText, int aLayer )
 {
-    wxString shownText( aText->GetShownText() );
+    wxString fontName;
+    wxString shownText( aText->GetShownText( 0, &fontName ) );
 
     if( shownText.Length() == 0 )
         return;
@@ -1398,7 +1400,7 @@ void PCB_PAINTER::draw( const FP_TEXT* aText, int aLayer )
     m_gal->SetIsFill( false );
     m_gal->SetIsStroke( true );
     m_gal->SetTextAttributes( aText );
-    m_gal->StrokeText( shownText, position, aText->GetDrawRotationRadians() );
+    m_gal->StrokeText( shownText, position, aText->GetDrawRotationRadians(), &fontName );
 
     // Draw the umbilical line
     if( aText->IsSelected() )
@@ -1648,8 +1650,11 @@ void PCB_PAINTER::draw( const DIMENSION_BASE* aDimension, int aLayer )
         m_gal->SetLineWidth( getLineThickness( text.GetEffectiveTextPenWidth() ) );
     }
 
+    wxString fontName;
+    wxString shownText( text.GetShownText( 0, &fontName ) );
+
     m_gal->SetTextAttributes( &text );
-    m_gal->StrokeText( text.GetShownText(), position, text.GetTextAngleRadians() );
+    m_gal->StrokeText( shownText, position, text.GetTextAngleRadians(), &fontName );
 }
 
 

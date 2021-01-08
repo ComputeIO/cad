@@ -109,12 +109,14 @@ int GraphicTextWidth( const wxString& aText, const wxSize& aSize, bool italic, b
  *                       This can be nullptr if no auxiliary parameter is needed.
  *  @param aPlotter = a pointer to a PLOTTER instance, when this function is used to plot
  *                    the text. NULL to draw this text.
+ *  @param aFont name of font to use (NULL for Newstroke)
  */
-void GRText( wxDC* aDC, const wxPoint& aPos, COLOR4D aColor, const wxString& aText,
-             double aOrient, const wxSize& aSize, enum EDA_TEXT_HJUSTIFY_T aH_justify,
+void GRText( wxDC* aDC, const wxPoint& aPos, COLOR4D aColor, const wxString& aText, double aOrient,
+             const wxSize& aSize, enum EDA_TEXT_HJUSTIFY_T aH_justify,
              enum EDA_TEXT_VJUSTIFY_T aV_justify, int aWidth, bool aItalic, bool aBold,
-             void (*aCallback)( int x0, int y0, int xf, int yf, void* aData ) = nullptr,
-             void* aCallbackData = nullptr, PLOTTER* aPlotter = nullptr );
+             void ( *aCallback )( int x0, int y0, int xf, int yf, void* aData ) = nullptr,
+             void* aCallbackData = nullptr, PLOTTER* aPlotter = nullptr,
+             wxString* aFont = nullptr );
 
 
 /**

@@ -62,7 +62,7 @@ public:
         return false;
     }
 
-    wxString GetShownText( int aDepth = 0 ) const override;
+    wxString GetShownText( int aDepth = 0, wxString* fontSpecifier = nullptr ) const override;
 
     bool Matches( wxFindReplaceData& aSearchData, void* aAuxData ) override
     {

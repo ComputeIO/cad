@@ -49,7 +49,7 @@ PCB_TEXT::~PCB_TEXT()
 }
 
 
-wxString PCB_TEXT::GetShownText( int aDepth ) const
+wxString PCB_TEXT::GetShownText( int aDepth, wxString* fontSpecifier ) const
 {
     BOARD* board = dynamic_cast<BOARD*>( GetParent() );
 
@@ -66,16 +66,34 @@ wxString PCB_TEXT::GetShownText( int aDepth ) const
                 {
                     wxString      remainder;
                     wxString      ref = token->BeforeFirst( ':', &remainder );
-                    BOARD_ITEM*   refItem = board->GetItem( KIID( ref ) );
 
-                    if( refItem && refItem->Type() == PCB_FOOTPRINT_T )
+                    if( !ref.Cmp( "FONT" ) )
                     {
-                        FOOTPRINT* refFP = static_cast<FOOTPRINT*>( refItem );
+                        // special case: handle "${FONT:futural}" in Text item
+                        // as font specifier
+                        //
+                        // remainder = font name
+                        if( fontSpecifier )
+                            *fontSpecifier = remainder;
 
-                        if( refFP->ResolveTextVar( &remainder, aDepth + 1 ) )
+                        // put "" in token as we don't want the font specifier
+                        // to show
+                        *token = "";
+                        return true;
+                    }
+                    else
+                    {
+                        BOARD_ITEM* refItem = board->GetItem( KIID( ref ) );
+
+                        if( refItem && refItem->Type() == PCB_FOOTPRINT_T )
                         {
-                            *token = remainder;
-                            return true;
+                            FOOTPRINT* refFP = static_cast<FOOTPRINT*>( refItem );
+
+                            if( refFP->ResolveTextVar( &remainder, aDepth + 1 ) )
+                            {
+                                *token = remainder;
+                                return true;
+                            }
                         }
                     }
                 }

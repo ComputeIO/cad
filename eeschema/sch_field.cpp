@@ -101,7 +101,7 @@ void SCH_FIELD::SetId( int aId )
 }
 
 
-wxString SCH_FIELD::GetShownText( int aDepth ) const
+wxString SCH_FIELD::GetShownText( int aDepth, wxString* fontSpecifier ) const
 {
     std::function<bool( wxString* )> symbolResolver =
             [&]( wxString* token ) -> bool

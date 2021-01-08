@@ -136,9 +136,14 @@ public:
      * Return the string actually shown after processing of the base text.
      *
      * @param aDepth is used to prevent infinite recursions and loops when expanding
-     * text variables.
+     *     text variables.
+     * @param fontSpecifier contains the font name specified with "${FONT:fontname}"
+     *     in the base item. Only used for PCB text objects for now.
      */
-    virtual wxString GetShownText( int aDepth = 0 ) const { return m_shown_text; }
+    virtual wxString GetShownText( int aDepth = 0, wxString* fontSpecifier = nullptr ) const
+    {
+        return m_shown_text;
+    }
 
     /**
      * A version of GetShownText() which also indicates whether or not the text needs

@@ -505,7 +505,7 @@ void SCH_TEXT::GetContextualTextVars( wxArrayString* aVars ) const
 }
 
 
-wxString SCH_TEXT::GetShownText( int aDepth ) const
+wxString SCH_TEXT::GetShownText( int aDepth, wxString* fontSpecifier ) const
 {
     std::function<bool( wxString* )> textResolver =
             [&]( wxString* token ) -> bool

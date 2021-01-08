@@ -45,7 +45,6 @@ class BITMAP_BASE;
 
 namespace KIGFX
 {
-
 /**
  * Class GAL is the abstract interface for drawing on a 2D-surface.
  *
@@ -331,23 +330,18 @@ public:
     // Text
     // ----
 
-    const STROKE_FONT& GetStrokeFont() const
-    {
-        return strokeFont;
-    }
+    const STROKE_FONT& GetStrokeFont( const wxString* fontSpecifier = nullptr );
 
     /**
-     * Draws a vector type text using preloaded Newstroke font.
+     * Draws a vector type text.
      *
      * @param aText is the text to be drawn.
      * @param aPosition is the text position in world coordinates.
      * @param aRotationAngle is the text rotation angle.
+     * @param aFontSpecifier is the font name (null or empty string = Newstroke)
      */
     virtual void StrokeText( const wxString& aText, const VECTOR2D& aPosition,
-                             double aRotationAngle )
-    {
-        strokeFont.Draw( aText, aPosition, aRotationAngle );
-    }
+                             double aRotationAngle, wxString* aFontSpecifier = nullptr );
 
     /**
      * Draws a text using a bitmap font. It should be faster than StrokeText(),
@@ -1132,8 +1126,11 @@ protected:
     bool               fullscreenCursor;       ///< Shape of the cursor (fullscreen or small cross)
     VECTOR2D           cursorPosition;         ///< Current cursor position (world coordinates)
 
-    /// Instance of object that stores information about how to draw texts
+    /// Instance of object that stores information about how to draw texts (default font)
     STROKE_FONT        strokeFont;
+
+    /// Alternate fonts
+    FONT_MAP fontMap;
 
 private:
     struct TEXT_PROPERTIES

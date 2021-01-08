@@ -77,6 +77,7 @@ GAL::GAL( GAL_DISPLAY_OPTIONS& aDisplayOptions ) :
     // Initialize text properties
     ResetTextAttributes();
 
+    // Load default font (Hershey fonts loaded on demand) - TODO: do something on failure
     strokeFont.LoadNewStrokeFont( newstroke_font, newstroke_font_bufsize );
 
     // subscribe for settings updates
@@ -168,6 +169,50 @@ void GAL::ResetTextAttributes()
     SetFontItalic( false );
     SetFontUnderlined( false );
     SetTextMirrored( false );
+}
+
+
+const STROKE_FONT& GAL::GetStrokeFont( const wxString* fontSpecifier )
+{
+    if( !fontSpecifier )
+    {
+        return strokeFont;
+    }
+
+    FONT_MAP::iterator it = fontMap.find( *fontSpecifier );
+
+    if( it != fontMap.end() )
+    {
+        // font is already loaded
+        return *( it->second );
+    }
+    else
+    {
+        // try loading font
+        STROKE_FONT* font = new STROKE_FONT( this );
+        bool         success = font->LoadHersheyFont( *fontSpecifier );
+
+        if( success )
+        {
+            // save font for future use
+            fontMap[*fontSpecifier] = font;
+
+            // return the newly loaded font
+            return *font;
+        }
+        else
+        {
+            // font loading failed, default to Newstroke
+            return strokeFont;
+        }
+    }
+}
+
+
+void GAL::StrokeText( const wxString& aText, const VECTOR2D& aPosition, double aRotationAngle,
+                      wxString* aFontSpecifier )
+{
+    GetStrokeFont( aFontSpecifier ).Draw( aText, aPosition, aRotationAngle );
 }
 
 

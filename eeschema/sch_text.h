@@ -214,7 +214,7 @@ public:
      */
     void GetContextualTextVars( wxArrayString* aVars ) const;
 
-    wxString GetShownText( int aDepth = 0 ) const override;
+    wxString GetShownText( int aDepth = 0, wxString* fontSpecifier = nullptr ) const override;
 
     /**
      * Increment the label text, if it ends with a number.

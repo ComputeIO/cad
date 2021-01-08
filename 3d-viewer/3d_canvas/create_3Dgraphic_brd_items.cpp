@@ -99,29 +99,33 @@ void BOARD_ADAPTER::addShapeWithClearance( const PCB_TEXT* aText, CONTAINER_2D_B
     const COLOR4D dummy_color = COLOR4D::BLACK;
     bool          forceBold = true;
     int           penWidth = 0;         // force max width for bold
+    wxString      font;
+    wxString      txt;
 
     if( aText->IsMultilineAllowed() )
     {
         wxArrayString strings_list;
-        wxStringSplit( aText->GetShownText(), strings_list, '\n' );
+        wxStringSplit( aText->GetShownText( 0, &font ), strings_list, '\n' );
         std::vector<wxPoint> positions;
         positions.reserve( strings_list.Count() );
         aText->GetLinePositions( positions, strings_list.Count() );
 
         for( unsigned ii = 0; ii < strings_list.Count(); ++ii )
         {
-            wxString txt = strings_list.Item( ii );
+            txt = strings_list.Item( ii );
 
             GRText( nullptr, positions[ii], dummy_color, txt, aText->GetTextAngle(), size,
-                    aText->GetHorizJustify(), aText->GetVertJustify(), penWidth,
-                    aText->IsItalic(), forceBold, addTextSegmToContainer );
+                    aText->GetHorizJustify(), aText->GetVertJustify(), penWidth, aText->IsItalic(),
+                    forceBold, addTextSegmToContainer, &font );
         }
     }
     else
     {
-        GRText( nullptr, aText->GetTextPos(), dummy_color, aText->GetShownText(),
-                aText->GetTextAngle(), size, aText->GetHorizJustify(), aText->GetVertJustify(),
-                penWidth, aText->IsItalic(), forceBold, addTextSegmToContainer );
+        txt = aText->GetShownText( 0, &font );
+
+        GRText( nullptr, aText->GetTextPos(), dummy_color, txt, aText->GetTextAngle(), size,
+                aText->GetHorizJustify(), aText->GetVertJustify(), penWidth, aText->IsItalic(),
+                forceBold, addTextSegmToContainer, &font );
     }
 }
 
