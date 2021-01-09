@@ -61,21 +61,12 @@ public:
     STROKE_FONT( GAL* aGal );
 
     /**
-     * Load the new stroke font.
+     * Load a font.
      *
-     * @param aNewStrokeFont is the pointer to the font data.
-     * @param aNewStrokeFontSize is the size of the font data.
+     * @param aFontName is the name of the font. If empty, Newstroke is loaded by default.
      * @return True, if the font was successfully loaded, else false.
      */
-    bool LoadNewStrokeFont( const char* const aNewStrokeFont[], int aNewStrokeFontSize );
-
-    /**
-     * Load a Hershey font.
-     *
-     * @param aHersheyFontName is the name of the font (example: "futural")
-     * @return true if the font was successfully loaded, else false.
-     */
-    bool LoadHersheyFont( const wxString& aHersheyFontName );
+    bool LoadFont( const wxString& aFontName = "" );
 
     /**
      * Draw a string.
@@ -125,6 +116,23 @@ public:
     static double GetInterline( double aGlyphHeight );
 
 private:
+    /**
+     * Load the new stroke font.
+     *
+     * @param aNewStrokeFont is the pointer to the font data.
+     * @param aNewStrokeFontSize is the size of the font data.
+     * @return True, if the font was successfully loaded, else false.
+     */
+    bool LoadNewStrokeFont( const char* const aNewStrokeFont[], int aNewStrokeFontSize );
+
+    /**
+     * Load a Hershey font.
+     *
+     * @param aHersheyFontName is the name of the font (example: "futural")
+     * @return true if the font was successfully loaded, else false.
+     */
+    bool LoadHersheyFont( const wxString& aHersheyFontName );
+
     /**
      * Compute the X and Y size of a given text. The text is expected to be
      * a only one line text.

@@ -37,7 +37,6 @@
 #include <gal/definitions.h>
 #include <gal/stroke_font.h>
 #include <gal/gal_display_options.h>
-#include <newstroke_font.h>
 
 class SHAPE_LINE_CHAIN;
 class SHAPE_POLY_SET;

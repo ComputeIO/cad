@@ -29,7 +29,6 @@
 
 #include <gal/stroke_font.h>
 #include <gal/graphics_abstraction_layer.h>
-#include <newstroke_font.h>
 
 class PLOTTER;
 

@@ -77,8 +77,8 @@ GAL::GAL( GAL_DISPLAY_OPTIONS& aDisplayOptions ) :
     // Initialize text properties
     ResetTextAttributes();
 
-    // Load default font (Hershey fonts loaded on demand) - TODO: do something on failure
-    strokeFont.LoadNewStrokeFont( newstroke_font, newstroke_font_bufsize );
+    // Load default font - TODO: do something on failure
+    strokeFont.LoadFont();
 
     // subscribe for settings updates
     observerLink = options.Subscribe( this );
@@ -190,7 +190,7 @@ const STROKE_FONT& GAL::GetStrokeFont( const wxString* fontSpecifier )
     {
         // try loading font
         STROKE_FONT* font = new STROKE_FONT( this );
-        bool         success = font->LoadHersheyFont( *fontSpecifier );
+        bool         success = font->LoadFont( *fontSpecifier );
 
         if( success )
         {

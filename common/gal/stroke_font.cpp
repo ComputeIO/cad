@@ -32,6 +32,7 @@
 #include <wx/string.h>
 #include <gr_text.h>
 #include <settings/settings_manager.h>
+#include <newstroke_font.h>
 
 using namespace KIGFX;
 
@@ -52,6 +53,27 @@ STROKE_FONT::STROKE_FONT( GAL* aGal ) :
 {
 }
 
+
+bool STROKE_FONT::LoadFont( const wxString& aFontName )
+{
+    if( aFontName.empty() )
+    {
+        return LoadNewStrokeFont( newstroke_font, newstroke_font_bufsize );
+    }
+    else
+    {
+        // TODO: try ttf first
+        bool success = LoadHersheyFont( aFontName );
+
+        if( !success )
+        {
+            TRUETYPE_FONT* ttf = new TRUETYPE_FONT( m_gal );
+            success = ttf->LoadFont( aFontName );
+        }
+
+        return success;
+    }
+}
 
 #define FONT_OFFSET -10
 
