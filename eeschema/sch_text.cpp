@@ -32,7 +32,7 @@
 #include <sch_edit_frame.h>
 #include <plotter.h>
 #include <widgets/msgpanel.h>
-#include <gal/stroke_font.h>
+#include <gal/font.h>
 #include <bitmaps.h>
 #include <kicad_string.h>
 #include <sch_text.h>

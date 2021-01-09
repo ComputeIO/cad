@@ -4,7 +4,7 @@
  * Copyright (C) 2021 Ola Rinta-Koski
  * Copyright (C) 2021 Kicad Developers, see AUTHORS.txt for contributors.
  *
- * Stroke font class
+ * Font abstract base class
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -24,41 +24,49 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
 
-#ifndef TRUETYPE_FONT_H_
-#define TRUETYPE_FONT_H_
+#ifndef FONT_H_
+#define FONT_H_
 
-#include <gal/graphics_abstraction_layer.h>
-#include <freetype2/ft2build.h>
-#include FT_FREETYPE_H
-#include <gal/font.h>
+#include <map>
+#include <wx/string.h>
+
+#include <utf8.h>
+#include <eda_text.h>
 
 namespace KIGFX
 {
-/**
- * Class TRUETYPE_FONT implements TrueType font drawing.
- */
-class TRUETYPE_FONT : public FONT
+class GAL;
+
+class FONT
 {
 public:
-    TRUETYPE_FONT();
+    explicit FONT();
+
+    virtual ~FONT()
+    {
+        //
+    }
+
+    static FONT* GetFont( const wxString& aFontName = "" );
 
     /**
-     * Load a TrueType font.
-     * @param aFontFileName is the name of the font file
-     * @return true if the font was successfully loaded, otherwise false.
+     * Load a font.
+     *
+     * @param aFontName is the name of the font. If empty, Newstroke is loaded by default.
+     * @return True, if the font was successfully loaded, else false.
      */
-    bool LoadFont( const wxString& aFontFileName ) override;
+    virtual bool LoadFont( const wxString& aFontName = "" ) = 0;
 
     /**
      * Draw a string.
      *
-     * @param aGal
+     * @param aGal is the graphics context.
      * @param aText is the text to be drawn.
      * @param aPosition is the text position in world coordinates.
      * @param aRotationAngle is the text rotation angle in radians.
      */
-    void Draw( GAL* aGal, const UTF8& aText, const VECTOR2D& aPosition,
-               double aRotationAngle ) const override;
+    virtual void Draw( GAL* aGal, const UTF8& aText, const VECTOR2D& aPosition,
+                       double aRotationAngle ) const = 0;
 
     /**
      * Compute the boundary limits of aText (the bounding box of all shapes).
@@ -67,9 +75,9 @@ public:
      *
      * @return a VECTOR2D giving the width and height of text.
      */
-    VECTOR2D ComputeStringBoundaryLimits( const GAL* aGal, const UTF8& aText,
-                                          const VECTOR2D& aGlyphSize,
-                                          double          aGlyphThickness ) const override;
+    virtual VECTOR2D ComputeStringBoundaryLimits( const GAL* aGal, const UTF8& aText,
+                                                  const VECTOR2D& aGlyphSize,
+                                                  double          aGlyphThickness ) const = 0;
 
     /**
      * Compute the vertical position of an overbar, sometimes used in texts.
@@ -79,7 +87,7 @@ public:
      * @param aGlyphHeight is the height (vertical size) of the text.
      * @return the relative position of the overbar axis.
      */
-    double ComputeOverbarVerticalPosition( double aGlyphHeight ) const override;
+    virtual double ComputeOverbarVerticalPosition( double aGlyphHeight ) const = 0;
 
     /**
      * Compute the distance (interline) between 2 lines of text (for multiline texts).
@@ -87,7 +95,7 @@ public:
      * @param aGlyphHeight is the height (vertical size) of the text.
      * @return the interline.
      */
-    double GetInterline( double aGlyphHeight ) const override;
+    virtual double GetInterline( double aGlyphHeight ) const = 0;
 
     /**
      * Compute the X and Y size of a given text. The text is expected to be
@@ -96,24 +104,33 @@ public:
      * @param aText is the text string (one line).
      * @return the text size.
      */
-    VECTOR2D ComputeTextLineSize( const GAL* aGal, const UTF8& aText ) const override;
+    virtual VECTOR2D ComputeTextLineSize( const GAL* aGal, const UTF8& aText ) const = 0;
 
-private:
-    // FreeType variables
-    static FT_Library mFreeType;
-    FT_Face           mFace;
-
-    FT_Error loadFace( const wxString& aFontFileName );
+protected:
+    wxString m_fontName;     ///< Font name
+    wxString m_fontFileName; ///< Font file name
 
     /**
-     * Draws a single line of text. Multiline texts should be split before using the
-     * function.
+     * Returns number of lines for a given text.
      *
-     * @param aText is the text to be drawn.
+     * @param aText is the text to be checked.
+     * @return unsigned - The number of lines in aText.
      */
-    void drawSingleLineText( const GAL* aGal, const UTF8& aText ) const;
+    inline unsigned linesCount( const UTF8& aText ) const
+    {
+        if( aText.empty() )
+            return 0; // std::count does not work well with empty strings
+        else
+            // aText.end() - 1 is to skip a newline character that is potentially at the end
+            return std::count( aText.begin(), aText.end() - 1, '\n' ) + 1;
+    }
+
+private:
+    static FONT* defaultFont;
 };
+
+typedef std::map<wxString, FONT*> FONT_MAP;
 
 } // namespace KIGFX
 
-#endif // TRUETYPE_FONT_H_
+#endif // FONT_H_

@@ -32,12 +32,9 @@
 #include <map>
 #include <deque>
 #include <algorithm>
-
 #include <utf8.h>
-
-#include <eda_text.h>
-
 #include <math/box2.h>
+#include <gal/font.h>
 
 namespace KIGFX
 {
@@ -52,13 +49,11 @@ typedef std::vector<BOX2D>                  GLYPH_BOUNDING_BOX_LIST;
  *
  * A stroke font is composed of lines.
  */
-class STROKE_FONT
+class STROKE_FONT : public FONT
 {
-    friend class GAL;
-
 public:
     /// Constructor
-    STROKE_FONT( GAL* aGal );
+    STROKE_FONT();
 
     /**
      * Load a font.
@@ -66,26 +61,18 @@ public:
      * @param aFontName is the name of the font. If empty, Newstroke is loaded by default.
      * @return True, if the font was successfully loaded, else false.
      */
-    bool LoadFont( const wxString& aFontName = "" );
+    bool LoadFont( const wxString& aFontName = "" ) override;
 
     /**
      * Draw a string.
      *
+     * @param aGal
      * @param aText is the text to be drawn.
      * @param aPosition is the text position in world coordinates.
      * @param aRotationAngle is the text rotation angle in radians.
      */
-    void Draw( const UTF8& aText, const VECTOR2D& aPosition, double aRotationAngle ) const;
-
-    /**
-     * Changes Graphics Abstraction Layer used for drawing items for a new one.
-     *
-     * @param aGal is the new GAL instance.
-     */
-    void SetGAL( GAL* aGal )
-    {
-        m_gal = aGal;
-    }
+    void Draw( GAL* aGal, const UTF8& aText, const VECTOR2D& aPosition,
+               double aRotationAngle ) const override;
 
     /**
      * Compute the boundary limits of aText (the bounding box of all shapes).
@@ -94,8 +81,9 @@ public:
      *
      * @return a VECTOR2D giving the width and height of text.
      */
-    VECTOR2D ComputeStringBoundaryLimits( const UTF8& aText, const VECTOR2D& aGlyphSize,
-                                          double aGlyphThickness ) const;
+    VECTOR2D ComputeStringBoundaryLimits( const GAL* aGal, const UTF8& aText,
+                                          const VECTOR2D& aGlyphSize,
+                                          double          aGlyphThickness ) const override;
 
     /**
      * Compute the vertical position of an overbar, sometimes used in texts.
@@ -105,7 +93,7 @@ public:
      * @param aGlyphHeight is the height (vertical size) of the text.
      * @return the relative position of the overbar axis.
      */
-    double ComputeOverbarVerticalPosition( double aGlyphHeight ) const;
+    double ComputeOverbarVerticalPosition( double aGlyphHeight ) const override;
 
     /**
      * Compute the distance (interline) between 2 lines of text (for multiline texts).
@@ -113,7 +101,16 @@ public:
      * @param aGlyphHeight is the height (vertical size) of the text.
      * @return the interline.
      */
-    static double GetInterline( double aGlyphHeight );
+    double GetInterline( double aGlyphHeight ) const override;
+
+    /**
+     * Compute the X and Y size of a given text. The text is expected to be
+     * a only one line text.
+     *
+     * @param aText is the text string (one line).
+     * @return the text size.
+     */
+    VECTOR2D ComputeTextLineSize( const GAL* aGal, const UTF8& aText ) const override;
 
 private:
     /**
@@ -123,7 +120,7 @@ private:
      * @param aNewStrokeFontSize is the size of the font data.
      * @return True, if the font was successfully loaded, else false.
      */
-    bool LoadNewStrokeFont( const char* const aNewStrokeFont[], int aNewStrokeFontSize );
+    bool loadNewStrokeFont( const char* const aNewStrokeFont[], int aNewStrokeFontSize );
 
     /**
      * Load a Hershey font.
@@ -131,24 +128,15 @@ private:
      * @param aHersheyFontName is the name of the font (example: "futural")
      * @return true if the font was successfully loaded, else false.
      */
-    bool LoadHersheyFont( const wxString& aHersheyFontName );
-
-    /**
-     * Compute the X and Y size of a given text. The text is expected to be
-     * a only one line text.
-     *
-     * @param aText is the text string (one line).
-     * @return the text size.
-     */
-    VECTOR2D computeTextLineSize( const UTF8& aText ) const;
+    bool loadHersheyFont( const wxString& aHersheyFontName );
 
     /**
      * Compute the vertical position of an overbar, sometimes used in texts.
      * This is the distance between the text base line and the overbar.
      * @return the relative position of the overbar axis.
      */
-    double computeOverbarVerticalPosition() const;
-    double computeUnderlineVerticalPosition() const;
+    double computeOverbarVerticalPosition( const GAL* aGal ) const;
+    double computeUnderlineVerticalPosition( const GAL* aGal ) const;
 
     /**
      * Compute the bounding box of a given glyph.
@@ -165,7 +153,7 @@ private:
      *
      * @param aText is the text to be drawn.
      */
-    void drawSingleLineText( const UTF8& aText ) const;
+    void drawSingleLineText( GAL* aGal, const UTF8& aText ) const;
 
     /**
      * Process a string representing a Hershey font glyph. Not used for Newstroke font
@@ -177,23 +165,6 @@ private:
      */
     GLYPH* processGlyph( std::string aGlyphString, double& aGlyphWidth );
 
-    /**
-     * Returns number of lines for a given text.
-     *
-     * @param aText is the text to be checked.
-     * @return unsigned - The number of lines in aText.
-     */
-    inline unsigned linesCount( const UTF8& aText ) const
-    {
-        if( aText.empty() )
-            return 0;   // std::count does not work well with empty strings
-        else
-            // aText.end() - 1 is to skip a newline character that is potentially at the end
-            return std::count( aText.begin(), aText.end() - 1, '\n' ) + 1;
-    }
-
-    GAL*                           m_gal;                ///< The GAL
-    wxString                       m_fontName;           ///< Font name
     const GLYPH_LIST*              m_glyphs;             ///< Glyph list
     const GLYPH_BOUNDING_BOX_LIST* m_glyphBoundingBoxes; ///< Bounding boxes of the glyphs
 
@@ -214,8 +185,6 @@ private:
     ///> Factor that determines the pitch between 2 lines.
     static const double INTERLINE_PITCH_RATIO;
 };
-
-typedef std::map<wxString, STROKE_FONT*> FONT_MAP;
 
 } // namespace KIGFX
 

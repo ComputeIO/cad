@@ -29,16 +29,14 @@
 #include <gal/graphics_abstraction_layer.h>
 #include <gal/definitions.h>
 
-#include <math/util.h>      // for KiROUND
+#include <math/util.h> // for KiROUND
 
 #include <cmath>
 
 using namespace KIGFX;
 
 
-GAL::GAL( GAL_DISPLAY_OPTIONS& aDisplayOptions ) :
-    options( aDisplayOptions ),
-    strokeFont( this )
+GAL::GAL( GAL_DISPLAY_OPTIONS& aDisplayOptions ) : options( aDisplayOptions )
 {
     // Set the default values for the internal variables
     SetIsFill( false );
@@ -77,8 +75,8 @@ GAL::GAL( GAL_DISPLAY_OPTIONS& aDisplayOptions ) :
     // Initialize text properties
     ResetTextAttributes();
 
-    // Load default font - TODO: do something on failure
-    strokeFont.LoadFont();
+    // Load default font
+    defaultFont = FONT::GetFont();
 
     // subscribe for settings updates
     observerLink = options.Subscribe( this );
@@ -105,7 +103,7 @@ bool GAL::updatedGalDisplayOptions( const GAL_DISPLAY_OPTIONS& aOptions )
 
     if( options.m_gridStyle != gridStyle )
     {
-        gridStyle = options.m_gridStyle ;
+        gridStyle = options.m_gridStyle;
         refresh = true;
     }
 
@@ -158,8 +156,8 @@ void GAL::SetTextAttributes( const EDA_TEXT* aText )
 
 void GAL::ResetTextAttributes()
 {
-     // Tiny but non-zero - this will always need setting
-     // there is no built-in default
+    // Tiny but non-zero - this will always need setting
+    // there is no built-in default
     SetGlyphSize( { 1.0, 1.0 } );
 
     SetHorizontalJustify( GR_TEXT_HJUSTIFY_CENTER );
@@ -172,27 +170,26 @@ void GAL::ResetTextAttributes()
 }
 
 
-const STROKE_FONT& GAL::GetStrokeFont( const wxString* fontSpecifier )
+const FONT& GAL::GetStrokeFont( const wxString* fontSpecifier )
 {
-    if( !fontSpecifier )
+    if( !fontSpecifier || fontSpecifier->empty() )
     {
-        return strokeFont;
+        return *defaultFont;
     }
 
     FONT_MAP::iterator it = fontMap.find( *fontSpecifier );
 
     if( it != fontMap.end() )
     {
-        // font is already loaded
+        // already loaded
         return *( it->second );
     }
     else
     {
         // try loading font
-        STROKE_FONT* font = new STROKE_FONT( this );
-        bool         success = font->LoadFont( *fontSpecifier );
+        FONT* font = FONT::GetFont( *fontSpecifier );
 
-        if( success )
+        if( font )
         {
             // save font for future use
             fontMap[*fontSpecifier] = font;
@@ -203,7 +200,7 @@ const STROKE_FONT& GAL::GetStrokeFont( const wxString* fontSpecifier )
         else
         {
             // font loading failed, default to Newstroke
-            return strokeFont;
+            return *defaultFont;
         }
     }
 }
@@ -212,16 +209,18 @@ const STROKE_FONT& GAL::GetStrokeFont( const wxString* fontSpecifier )
 void GAL::StrokeText( const wxString& aText, const VECTOR2D& aPosition, double aRotationAngle,
                       wxString* aFontSpecifier )
 {
-    GetStrokeFont( aFontSpecifier ).Draw( aText, aPosition, aRotationAngle );
+    GetStrokeFont( aFontSpecifier ).Draw( this, aText, aPosition, aRotationAngle );
 }
 
 
 VECTOR2D GAL::GetTextLineSize( const UTF8& aText ) const
 {
     // Compute the X and Y size of a given text.
-    // Because computeTextLineSize expects a one line text,
+    // Because ComputeTextLineSize expects a one line text,
     // aText is expected to be only one line text.
-    return strokeFont.computeTextLineSize( aText );
+    //
+    // TODO: use something other than defaultFont when appropriate
+    return defaultFont->ComputeTextLineSize( this, aText );
 }
 
 
@@ -270,10 +269,12 @@ VECTOR2D GAL::GetGridPoint( const VECTOR2D& aPoint ) const
                      KiROUND( ( aPoint.y - gridOffset.y ) / gridSize.y ) * gridSize.y + gridOffset.y );
 #else
     // if grid size == 0.0 there is no grid, so use aPoint as grid reference position
-    double cx = gridSize.x > 0.0 ? KiROUND( ( aPoint.x - gridOffset.x ) / gridSize.x ) * gridSize.x + gridOffset.x
-            : aPoint.x;
-    double cy = gridSize.y > 0.0 ? KiROUND( ( aPoint.y - gridOffset.y ) / gridSize.y ) * gridSize.y + gridOffset.y
-            : aPoint.y;
+    double cx = gridSize.x > 0.0 ? KiROUND( ( aPoint.x - gridOffset.x ) / gridSize.x ) * gridSize.x
+                                           + gridOffset.x
+                                 : aPoint.x;
+    double cy = gridSize.y > 0.0 ? KiROUND( ( aPoint.y - gridOffset.y ) / gridSize.y ) * gridSize.y
+                                           + gridOffset.y
+                                 : aPoint.y;
 
     return VECTOR2D( cx, cy );
 #endif

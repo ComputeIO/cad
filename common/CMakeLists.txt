@@ -37,6 +37,7 @@ set( GAL_SRCS
     gal/gal_display_options.cpp
     gal/graphics_abstraction_layer.cpp
     gal/hidpi_gl_canvas.cpp
+    gal/font.cpp
     gal/stroke_font.cpp
     gal/truetype_font.cpp
 
@@ -78,6 +79,7 @@ target_link_libraries( gal
     ${CAIRO_LIBRARIES}
     ${PIXMAN_LIBRARIES}
 	${FREETYPE_LIBRARIES}
+	${HARFBUZZ_LIBRARIES}
     ${OPENGL_LIBRARIES}
     ${GDI_PLUS_LIBRARIES}
 )
