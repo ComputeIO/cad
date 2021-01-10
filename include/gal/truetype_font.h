@@ -31,6 +31,7 @@
 #include <freetype2/ft2build.h>
 #include FT_FREETYPE_H
 #include <gal/font.h>
+#include <harfbuzz/hb.h>
 
 namespace KIGFX
 {
@@ -111,7 +112,7 @@ private:
      *
      * @param aText is the text to be drawn.
      */
-    void drawSingleLineText( const GAL* aGal, const UTF8& aText ) const;
+    void drawSingleLineText( GAL* aGal, hb_buffer_t* aText, hb_font_t* aFont ) const;
 };
 
 } // namespace KIGFX

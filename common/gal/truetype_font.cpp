@@ -24,10 +24,13 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
 
-#include <gal/truetype_font.h>
 #include <wx/string.h>
 #include <settings/settings_manager.h>
-#include <harfbuzz/hb.h>
+#include <gal/truetype_font.h>
+#include FT_GLYPH_H
+#include FT_BBOX_H
+#include FT_OUTLINE_H
+#include <harfbuzz/hb-ft.h>
 
 using namespace KIGFX;
 
@@ -59,13 +62,22 @@ bool TRUETYPE_FONT::LoadFont( const wxString& aFontFileName )
     if( ft_error )
     {
         // Try user dir
-        fontFile.SetExt( "ttf" );
+        fontFile.SetExt( "otf" );
         fontFile.SetPath( SETTINGS_MANAGER::GetUserSettingsPath() + wxT( "/fonts" ) );
         fileName = fontFile.GetFullPath();
 
         if( wxFile::Exists( fileName ) )
         {
             ft_error = loadFace( fileName );
+        }
+        else
+        {
+            fontFile.SetExt( "ttf" );
+            fileName = fontFile.GetFullPath();
+            if( wxFile::Exists( fileName ) )
+            {
+                ft_error = loadFace( fileName );
+            }
         }
     }
 
@@ -122,9 +134,17 @@ void TRUETYPE_FONT::Draw( GAL* aGal, const UTF8& aText, const VECTOR2D& aPositio
     hb_buffer_set_script( buf, HB_SCRIPT_LATIN );
     hb_buffer_set_language( buf, hb_language_from_string( "en", -1 ) );
 
+    FT_Select_Charmap( mFace, FT_Encoding::FT_ENCODING_UNICODE );
+    FT_Set_Char_Size( mFace, 0, 1000, 0, 0 );
+
+#if 0
     hb_blob_t* blob = hb_blob_create_from_file( m_fontFileName.c_str() );
     hb_face_t* face = hb_face_create( blob, 0 );
     hb_font_t* font = hb_font_create( face );
+#else
+    hb_font_t* font = hb_ft_font_create_referenced( mFace );
+    hb_ft_font_set_funcs( font );
+#endif
 
     hb_shape( font, buf, NULL, 0 );
 
@@ -149,22 +169,20 @@ void TRUETYPE_FONT::Draw( GAL* aGal, const UTF8& aText, const VECTOR2D& aPositio
         cursor_y += y_advance;
     }
 
-    hb_buffer_destroy( buf );
-    hb_font_destroy( font );
-    hb_face_destroy( face );
-    hb_blob_destroy( blob );
+    // Context needs to be saved before any transformations
+    aGal->Save();
+
+    aGal->Translate( aPosition );
+    aGal->Rotate( -aRotationAngle );
+    const VECTOR2D& glyphSize = aGal->GetGlyphSize();
+
+    std::cerr << "GAL glyphSize == " << glyphSize << std::endl;
 
 #ifdef FOOFAA
-    // Context needs to be saved before any transformations
-    m_gal->Save();
-
-    m_gal->Translate( aPosition );
-    m_gal->Rotate( -aRotationAngle );
-
     // Single line height
-    int             lineHeight = KiROUND( GetInterline( m_gal->GetGlyphSize().y ) );
-    int             lineCount = linesCount( aText );
-    const VECTOR2D& glyphSize = m_gal->GetGlyphSize();
+    int lineHeight = KiROUND( GetInterline( m_gal->GetGlyphSize().y ) );
+    int lineCount = linesCount( aText );
+    //const VECTOR2D& glyphSize = m_gal->GetGlyphSize();
 
     // align the 1st line of text
     switch( m_gal->GetVerticalJustify() )
@@ -222,8 +240,17 @@ void TRUETYPE_FONT::Draw( GAL* aGal, const UTF8& aText, const VECTOR2D& aPositio
     if( !aText.empty() )
         drawSingleLineText( aText.substr( begin ) );
 
-    m_gal->Restore();
 #endif // FOOFAA
+
+    drawSingleLineText( aGal, buf, font );
+
+    hb_buffer_destroy( buf );
+#if 0
+    hb_font_destroy( font );
+    hb_face_destroy( face );
+    hb_blob_destroy( blob );
+#endif
+    aGal->Restore();
 }
 
 
@@ -281,7 +308,109 @@ VECTOR2D TRUETYPE_FONT::ComputeTextLineSize( const GAL* aGal, const UTF8& aText 
 }
 
 
-void TRUETYPE_FONT::drawSingleLineText( const GAL* aGal, const UTF8& aText ) const
+void TRUETYPE_FONT::drawSingleLineText( GAL* aGal, hb_buffer_t* aText, hb_font_t* aFont ) const
 {
-    assert( 1 == 0 ); // TODO!!!
+    const VECTOR2D& galGlyphSize = aGal->GetGlyphSize();
+
+    // Context needs to be saved before any transformations
+    aGal->Save();
+
+    unsigned int         glyphCount;
+    hb_glyph_info_t*     glyphInfo = hb_buffer_get_glyph_infos( aText, &glyphCount );
+    hb_glyph_position_t* glyphPos = hb_buffer_get_glyph_positions( aText, &glyphCount );
+
+    hb_position_t cursor_x = 0;
+    hb_position_t cursor_y = 0;
+    for( unsigned int i = 0; i < glyphCount; i++ )
+    {
+        hb_codepoint_t glyphid = glyphInfo[i].codepoint;
+        hb_position_t  x_offset = glyphPos[i].x_offset;
+        hb_position_t  y_offset = glyphPos[i].y_offset;
+        hb_position_t  x_advance = glyphPos[i].x_advance;
+        hb_position_t  y_advance = glyphPos[i].y_advance;
+        /* draw_glyph(glyphid, cursor_x + x_offset, cursor_y + y_offset); */
+        std::cerr << "Glyph #" << i << "/" << glyphCount << " id " << glyphid << " x " << cursor_x
+                  << "+" << x_advance << " offset " << x_offset << " y " << cursor_y << "+"
+                  << y_advance << " offset " << y_offset << std::endl;
+        cursor_x += x_advance;
+        cursor_y += y_advance;
+    }
+
+    const int             GLYPH_NAME_LEN = 256;
+    char                  glyph_name[GLYPH_NAME_LEN];
+    std::vector<VECTOR2D> ptListScaled;
+
+    const double mirror_factor = ( aGal->IsTextMirrored() ? 1 : -1 );
+    const double xyscaler = 3.0e2;
+    const double x_scale_factor = mirror_factor * galGlyphSize.x / xyscaler;
+    const double y_scale_factor = galGlyphSize.y / xyscaler;
+    const double advance_scale_factor = 1.5; // / 10.0;
+
+    cursor_x = 0;
+    cursor_y = 0;
+    for( unsigned int i = 0; i < glyphCount; i++ )
+    {
+        int                  cluster = glyphInfo[i].cluster;
+        int                  codepoint = glyphInfo[i].codepoint;
+        hb_glyph_position_t& pos = glyphPos[i];
+        std::cerr << "ch[" << i << "] cluster " << cluster << " codepoint " << codepoint
+                  << " advance " << pos.x_advance << "," << pos.y_advance << " offset "
+                  << pos.x_offset << "," << pos.y_offset << std::endl;
+
+        //FT_Load_Char( mFace, codepoint, FT_LOAD_NO_BITMAP | FT_LOAD_NO_SCALE );
+        FT_Load_Glyph( mFace, codepoint, FT_LOAD_NO_BITMAP | FT_LOAD_NO_SCALE );
+        FT_Get_Glyph_Name( mFace, codepoint, glyph_name, GLYPH_NAME_LEN );
+
+        FT_GlyphSlot glyph = mFace->glyph;
+        unsigned int glyph_index = glyph->glyph_index;
+
+        std::cerr << "glyph name [" << glyph_name << "] " << glyph_index << std::endl;
+
+        FT_Outline outline = glyph->outline;
+
+        int ptCount = 0;
+        ptListScaled.clear();
+
+        for( unsigned int p = 0; p < (unsigned int) outline.n_points; p++ )
+        {
+            FT_Vector    point = outline.points[p];
+            char         tags = outline.tags[p];
+            unsigned int onCurve = ( tags & 0x1 );
+            unsigned int thirdOrderBezierPoint = ( onCurve ? ( tags & 0x2 ) : 0 );
+            unsigned int hasDropout = ( tags & 0x4 );
+            unsigned int dropoutMode = ( hasDropout ? ( tags & ( 0x8 | 0x10 | 0x20 ) ) : 0 );
+
+#ifdef TTF_GAL_TRANSFORM
+            VECTOR2D pt( point.x + cursor_x, point.y + cursor_y );
+            VECTOR2D scaledPt( pt.x * x_scale_factor, pt.y * y_scale_factor );
+#else
+            // TODO: figure out how to use aGal->Transform( ... ) instead
+            // of hacking the coordinates
+            VECTOR2D pt( -( point.x + cursor_x ), -( point.y + cursor_y ) );
+            VECTOR2D scaledPt( pt.x * x_scale_factor, pt.y * y_scale_factor );
+#endif
+
+            std::cerr << "Point [" << scaledPt.x << "," << scaledPt.y << "] "
+                      << ( onCurve ? "on curve " : "off curve " )
+                      << ( onCurve ? ""
+                                   : ( thirdOrderBezierPoint ? "3rd order Bezier point, "
+                                                             : "2nd order Bezier point, " ) )
+                      << ( hasDropout ? "dropout " : "no dropout " )
+                      << ( hasDropout ? dropoutMode : 0 ) << std::endl;
+
+            ptListScaled.push_back( scaledPt );
+            ptCount++;
+        }
+
+        if( !ptListScaled.empty() )
+        {
+            aGal->DrawPolyline( &ptListScaled[0], ptCount );
+        }
+
+        cursor_x += ( pos.x_advance * advance_scale_factor );
+        cursor_y += ( pos.y_advance * advance_scale_factor );
+    }
+
+    // Restore context
+    aGal->Restore();
 }
