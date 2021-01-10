@@ -371,6 +371,7 @@ void TRUETYPE_FONT::drawSingleLineText( GAL* aGal, hb_buffer_t* aText, hb_font_t
         int ptCount = 0;
         ptListScaled.clear();
 
+#ifdef FOO
         for( unsigned int p = 0; p < (unsigned int) outline.n_points; p++ )
         {
             FT_Vector    point = outline.points[p];
@@ -401,6 +402,16 @@ void TRUETYPE_FONT::drawSingleLineText( GAL* aGal, hb_buffer_t* aText, hb_font_t
             ptListScaled.push_back( scaledPt );
             ptCount++;
         }
+#else
+        std::vector<VECTOR2D> straightSegments = outlineToStraightSegments( outline );
+        for( VECTOR2D v : straightSegments)
+        {
+            VECTOR2D pt( -( v.x + cursor_x ), -( v.y + cursor_y ) );
+            VECTOR2D scaledPt( pt.x * x_scale_factor, pt.y * y_scale_factor );
+            ptListScaled.push_back( scaledPt );
+            ptCount++;
+        }
+#endif // FOO
 
         if( !ptListScaled.empty() )
         {
@@ -413,4 +424,115 @@ void TRUETYPE_FONT::drawSingleLineText( GAL* aGal, hb_buffer_t* aText, hb_font_t
 
     // Restore context
     aGal->Restore();
+}
+
+
+std::vector<VECTOR2D> TRUETYPE_FONT::outlineToStraightSegments( FT_Outline aOutline ) const
+{
+    std::vector<VECTOR2D> segments;
+    std::vector<VECTOR2D> bezier;
+
+    FT_Vector    prev_point;
+    FT_Vector    prev_prev_point;
+    unsigned int bezierControlPointCount = 0;
+    for( unsigned int p = 0; p < (unsigned int) aOutline.n_points; p++ )
+    {
+        FT_Vector    point = aOutline.points[p];
+        char         tags = aOutline.tags[p];
+        unsigned int onCurve = ( tags & 0x1 );
+        unsigned int thirdOrderBezierPoint = ( onCurve ? ( tags & 0x2 ) : 0 );
+        unsigned int hasDropout = ( tags & 0x4 );
+        unsigned int dropoutMode = ( hasDropout ? ( tags & ( 0x8 | 0x10 | 0x20 ) ) : 0 );
+
+#ifdef DEBUG
+        std::cerr << "Point [" << point.x << "," << point.y << "] "
+                  << ( onCurve ? "on curve " : "off curve " )
+                  << ( onCurve ? ""
+                               : ( thirdOrderBezierPoint ? "3rd order Bezier point"
+                                                         : "2nd order Bezier point" ) );
+        if( hasDropout )
+        {
+            std::cerr << ", dropout " << dropoutMode;
+        }
+        std::cerr << std::endl;
+#endif
+
+        if( onCurve )
+        {
+            // straight segment
+            VECTOR2D pt( point.x, point.y );
+            segments.push_back( pt );
+        }
+        else
+        {
+            // Bezier control point
+            if( thirdOrderBezierPoint )
+            {
+                // TODO
+                assert( 1 == 0 );
+            }
+            else
+            {
+                if( bezierControlPointCount == 0 )
+                {
+                    VECTOR2D bp( prev_point.x, prev_point.y );
+                    bezier.push_back( bp );
+                }
+                VECTOR2D bp( point.x, point.y );
+                bezier.push_back( bp );
+                bezierControlPointCount++;
+                if( bezierControlPointCount == 2 )
+                {
+                    std::vector<VECTOR2D> approximation = approximateBezierCurve( bezier );
+                    segments.insert( segments.end(), approximation.begin(), approximation.end() );
+                    bezierControlPointCount = 0;
+                    bezier.clear();
+                }
+            }
+        }
+
+        // TODO: use a stack for these
+        prev_prev_point = prev_point;
+        prev_point = point;
+    }
+
+    return segments;
+}
+
+VECTOR2D TRUETYPE_FONT::approximate( const double t, const double oneMinusT, const VECTOR2D& pt1,
+                                     const VECTOR2D& pt2 ) const
+{
+    VECTOR2D pt1prime( pt1.x * oneMinusT, pt1.y * oneMinusT );
+    VECTOR2D pt2prime( pt2.x * t, pt2.y * t );
+    VECTOR2D r = pt1prime + pt2prime;
+    return r;
+}
+
+std::vector<VECTOR2D> TRUETYPE_FONT::approximateBezierCurve( std::vector<VECTOR2D> bezier ) const
+{
+    std::vector<VECTOR2D> approximatedPoints;
+    std::vector<VECTOR2D> resultPoints;
+
+    const double precision = 0.1;
+    for( double t = 0; t < 1; t += precision )
+    {
+        double oneMinusT = ( 1 - t );
+        approximatedPoints = bezier;
+        while( approximatedPoints.size() > 1 )
+        {
+            auto ptIter = approximatedPoints.begin();
+            auto ptIterEnd = std::prev( approximatedPoints.end() );
+            while( ptIter != ptIterEnd )
+            {
+                auto        updateThisIter = ptIter;
+                const auto& pt1 = *( ptIter++ );
+                const auto& pt2 = *( ptIter );
+                const auto  approximatedPoint = approximate( t, oneMinusT, pt1, pt2 );
+                *updateThisIter = approximatedPoint;
+                approximatedPoints.pop_back();
+            }
+            resultPoints.push_back( approximatedPoints[0] );
+        }
+    }
+    return resultPoints;
 }
