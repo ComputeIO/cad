@@ -40,10 +40,6 @@ namespace KIGFX
 {
 class GAL;
 
-typedef std::vector<std::vector<VECTOR2D>*> GLYPH;
-typedef std::vector<GLYPH*>                 GLYPH_LIST;
-typedef std::vector<BOX2D>                  GLYPH_BOUNDING_BOX_LIST;
-
 /**
  * Class STROKE_FONT implements stroke font drawing.
  *
