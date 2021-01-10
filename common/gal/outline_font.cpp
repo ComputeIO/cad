@@ -26,18 +26,18 @@
 
 #include <wx/string.h>
 #include <settings/settings_manager.h>
-#include <gal/truetype_font.h>
+#include <harfbuzz/hb-ft.h>
+#include <gal/outline_font.h>
 #include FT_GLYPH_H
 #include FT_BBOX_H
 #include FT_OUTLINE_H
-#include <harfbuzz/hb-ft.h>
 
 using namespace KIGFX;
 
 FT_Library OUTLINE_FONT::mFreeType = nullptr;
 
 
-OUTLINE_FONT::TRUETYPE_FONT()
+OUTLINE_FONT::OUTLINE_FONT()
 {
     if( !mFreeType )
     {
@@ -357,65 +357,39 @@ void OUTLINE_FONT::drawSingleLineText( GAL* aGal, hb_buffer_t* aText, hb_font_t*
                   << " advance " << pos.x_advance << "," << pos.y_advance << " offset "
                   << pos.x_offset << "," << pos.y_offset << std::endl;
 
-        //FT_Load_Char( mFace, codepoint, FT_LOAD_NO_BITMAP | FT_LOAD_NO_SCALE );
         FT_Load_Glyph( mFace, codepoint, FT_LOAD_NO_BITMAP | FT_LOAD_NO_SCALE );
         FT_Get_Glyph_Name( mFace, codepoint, glyph_name, GLYPH_NAME_LEN );
 
         FT_GlyphSlot glyph = mFace->glyph;
         unsigned int glyph_index = glyph->glyph_index;
 
+#ifdef DEBUG
         std::cerr << "glyph name [" << glyph_name << "] " << glyph_index << std::endl;
-
-        FT_Outline outline = glyph->outline;
-
-        int ptCount = 0;
-        ptListScaled.clear();
-
-#ifdef FOO
-        for( unsigned int p = 0; p < (unsigned int) outline.n_points; p++ )
-        {
-            FT_Vector    point = outline.points[p];
-            char         tags = outline.tags[p];
-            unsigned int onCurve = ( tags & 0x1 );
-            unsigned int thirdOrderBezierPoint = ( onCurve ? ( tags & 0x2 ) : 0 );
-            unsigned int hasDropout = ( tags & 0x4 );
-            unsigned int dropoutMode = ( hasDropout ? ( tags & ( 0x8 | 0x10 | 0x20 ) ) : 0 );
-
-#ifdef TTF_GAL_TRANSFORM
-            VECTOR2D pt( point.x + cursor_x, point.y + cursor_y );
-            VECTOR2D scaledPt( pt.x * x_scale_factor, pt.y * y_scale_factor );
-#else
-            // TODO: figure out how to use aGal->Transform( ... ) instead
-            // of hacking the coordinates
-            VECTOR2D pt( -( point.x + cursor_x ), -( point.y + cursor_y ) );
-            VECTOR2D scaledPt( pt.x * x_scale_factor, pt.y * y_scale_factor );
 #endif
 
-            std::cerr << "Point [" << scaledPt.x << "," << scaledPt.y << "] "
-                      << ( onCurve ? "on curve " : "off curve " )
-                      << ( onCurve ? ""
-                                   : ( thirdOrderBezierPoint ? "3rd order Bezier point, "
-                                                             : "2nd order Bezier point, " ) )
-                      << ( hasDropout ? "dropout " : "no dropout " )
-                      << ( hasDropout ? dropoutMode : 0 ) << std::endl;
-
-            ptListScaled.push_back( scaledPt );
-            ptCount++;
-        }
-#else
-        std::vector<VECTOR2D> straightSegments = outlineToStraightSegments( outline );
-        for( VECTOR2D v : straightSegments )
+        POINTS_LIST contours = outlineToStraightSegments( glyph->outline );
+        for( POINTS points : contours )
         {
-            VECTOR2D pt( -( v.x + cursor_x ), -( v.y + cursor_y ) );
-            VECTOR2D scaledPt( pt.x * x_scale_factor, pt.y * y_scale_factor );
-            ptListScaled.push_back( scaledPt );
-            ptCount++;
-        }
-#endif // FOO
+            int ptCount = 0;
+            ptListScaled.clear();
+            VECTOR2D firstPoint;
+            for( VECTOR2D v : points )
+            {
+                VECTOR2D pt( -( v.x + cursor_x ), -( v.y + cursor_y ) );
+                VECTOR2D scaledPt( pt.x * x_scale_factor, pt.y * y_scale_factor );
+                ptListScaled.push_back( scaledPt );
+                if( ptCount == 0 )
+                {
+                    // save 1st point as we need to draw a line back to it at the end
+                    firstPoint = scaledPt;
+                }
+                ptCount++;
+            }
 
-        if( !ptListScaled.empty() )
-        {
-            aGal->DrawPolyline( &ptListScaled[0], ptCount );
+            if( !ptListScaled.empty() )
+            {
+                aGal->DrawPolyline( &ptListScaled[0], ptCount );
+            }
         }
 
         cursor_x += ( pos.x_advance * advance_scale_factor );
@@ -427,91 +401,184 @@ void OUTLINE_FONT::drawSingleLineText( GAL* aGal, hb_buffer_t* aText, hb_font_t*
 }
 
 
-std::vector<VECTOR2D> OUTLINE_FONT::outlineToStraightSegments( FT_Outline aOutline ) const
+POINTS_LIST OUTLINE_FONT::outlineToStraightSegments( FT_Outline aOutline ) const
 {
-    std::vector<VECTOR2D> segments;
-    std::vector<VECTOR2D> bezier;
+    POINTS_LIST contours;
 
-    FT_Vector    prev_point;
-    FT_Vector    prev_prev_point;
-    unsigned int bezierControlPointCount = 0;
-    for( unsigned int p = 0; p < (unsigned int) aOutline.n_points; p++ )
+    for( unsigned int c = 0; c < (unsigned int) aOutline.n_contours; c++ )
     {
-        FT_Vector    point = aOutline.points[p];
-        char         tags = aOutline.tags[p];
-        unsigned int onCurve = ( tags & 0x1 );
-        unsigned int thirdOrderBezierPoint = ( onCurve ? ( tags & 0x2 ) : 0 );
-        unsigned int hasDropout = ( tags & 0x4 );
-        unsigned int dropoutMode = ( hasDropout ? ( tags & ( 0x8 | 0x10 | 0x20 ) ) : 0 );
+        POINTS            bezier;
+        POINTS            contour_points;
+        std::vector<bool> contour_point_on_curve;
+        char              prev_tags = 0;
+        unsigned int      contour_start = 0;
+        if( c > 0 )
+        {
+            contour_start = (unsigned int) ( aOutline.contours[c - 1] + 1 );
+        }
+        unsigned int contour_end = (unsigned int) aOutline.contours[c];
+        FT_Vector    prev_point;
+        prev_point.x = 0;
+        prev_point.y = 0;
+
+        for( unsigned int p = contour_start; p <= contour_end; p++ )
+        {
+            FT_Vector point = aOutline.points[p];
+            char      tags = aOutline.tags[p];
 
 #ifdef DEBUG
-        std::cerr << "Point [" << point.x << "," << point.y << "] "
-                  << ( onCurve ? "on curve " : "off curve " )
-                  << ( onCurve ? ""
-                               : ( thirdOrderBezierPoint ? "3rd order Bezier point"
-                                                         : "2nd order Bezier point" ) );
-        if( hasDropout )
-        {
-            std::cerr << ", dropout " << dropoutMode;
-        }
-        std::cerr << std::endl;
+            std::cerr << "Point [" << point.x << "," << point.y << "] "
+                      << ( onCurve( tags ) ? "on curve " : "off curve " )
+                      << ( onCurve( tags )
+                                   ? ""
+                                   : ( thirdOrderBezierPoint( tags ) ? "3rd order Bezier point"
+                                                                     : "2nd order Bezier point" ) );
+            if( hasDropout( tags ) )
+            {
+                std::cerr << ", dropout " << dropoutMode( tags );
+            }
+            std::cerr << std::endl;
 #endif
-
-        if( onCurve )
-        {
-            // straight segment
-            VECTOR2D pt( point.x, point.y );
-            segments.push_back( pt );
-        }
-        else
-        {
-            // Bezier control point
-            if( thirdOrderBezierPoint )
+            if( thirdOrderBezierPoint( tags ) )
             {
                 // TODO
                 assert( 1 == 0 );
             }
+
+            if( !onCurve( tags ) && !onCurve( prev_tags ) )
+            {
+                // Two consecutive off-curve control points, add virtual midpoint
+                //
+                // Note: 1st point of contour is assumed to be on-curve;
+                // the font is malformed if this is not the case
+                VECTOR2D midpoint( ( point.x + prev_point.x ) / 2.0,
+                                   ( point.y + prev_point.y ) / 2.0 );
+                contour_points.push_back( midpoint );
+                contour_point_on_curve.push_back( true );
+            }
+
+            VECTOR2D pt( point.x, point.y );
+            contour_points.push_back( pt );
+            contour_point_on_curve.push_back( onCurve( tags ) ? true : false );
+            prev_point = point;
+            prev_tags = tags;
+        }
+
+        POINTS approximated_contour = approximateContour( contour_points, contour_point_on_curve );
+        contours.push_back( approximated_contour );
+    }
+
+    return contours;
+}
+
+
+POINTS
+OUTLINE_FONT::approximateContour( const POINTS&            contour_points,
+                                  const std::vector<bool>& contour_point_on_curve ) const
+{
+    POINTS                            approximation;
+    POINTS                            bezier;
+    POINTS::const_iterator            point_it = contour_points.begin();
+    POINTS::const_iterator            prev_point_it;
+    POINTS::const_iterator            prev2_point_it;
+    std::vector<bool>::const_iterator on_curve_it = contour_point_on_curve.begin();
+    std::vector<bool>::const_iterator prev_on_curve_it;
+    std::vector<bool>::const_iterator prev2_on_curve_it;
+    int                               n = 0;
+    VECTOR2D                          first_point = *point_it;
+    while( point_it != contour_points.end() )
+    {
+#ifdef DEBUG
+        VECTOR2D p = *point_it;
+        std::cerr << "Point " << p << " " << ( *on_curve_it ? "on" : "off" ) << " curve"
+                  << std::endl;
+#endif
+        if( *on_curve_it )
+        {
+            // This point is on curve
+            if( n == 0 )
+            {
+                // First point
+                approximation.push_back( *point_it );
+            }
             else
             {
-                if( bezierControlPointCount == 0 )
+                if( n > 0 && *prev_on_curve_it )
                 {
-                    VECTOR2D bp( prev_point.x, prev_point.y );
-                    bezier.push_back( bp );
+                    // Previous point is also on curve - straight line segment
+                    approximation.push_back( *point_it );
                 }
-                VECTOR2D bp( point.x, point.y );
-                bezier.push_back( bp );
-                bezierControlPointCount++;
-                if( bezierControlPointCount == 2 )
+                else
                 {
-                    std::vector<VECTOR2D> approximation = approximateBezierCurve( bezier );
-                    segments.insert( segments.end(), approximation.begin(), approximation.end() );
-                    bezierControlPointCount = 0;
-                    bezier.clear();
+                    // Previous point is not on curve
+                    if( n > 1 )
+                    {
+                        if( *prev2_on_curve_it )
+                        {
+                            // This point is on curve, previous is not, the one before that is
+                            // == quadratic Bezier curve segment
+                            //
+                            // TODO: handle cubic curves
+                            bezier.clear();
+                            bezier.push_back( *prev2_point_it );
+                            bezier.push_back( *prev_point_it );
+                            bezier.push_back( *point_it );
+                            bool success = approximateBezierCurve( approximation, bezier );
+                            if( !success )
+                            {
+                                std::cerr << "OUTLINE_FONT::approximateContour() Bezier curve "
+                                             "approximation failed"
+                                          << std::endl;
+                            }
+                        }
+                        else
+                        {
+                            // This should not happen as the points have been
+                            // preprocessed to insert implicit on-curve points!
+                            std::cerr << "OUTLINE_FONT::approximateContour() impossible point "
+                                         "sequence"
+                                      << std::endl;
+                            //assert( 1 == 0 );
+                        }
+                    }
+                    else
+                    {
+                        // TODO: how did we get here?
+                        std::cerr
+                                << "OUTLINE_FONT::approximateContour() TODO define state, handling "
+                                   "point #"
+                                << n << std::endl;
+                    }
                 }
             }
         }
 
-        // TODO: use a stack for these
-        prev_prev_point = prev_point;
-        prev_point = point;
+        n++;
+        prev2_point_it = prev_point_it;
+        prev_point_it = point_it++;
+        prev2_on_curve_it = prev_on_curve_it;
+        prev_on_curve_it = on_curve_it++;
     }
 
-    return segments;
+    // add a copy of 1st point to end to close the contour
+    approximation.push_back( first_point );
+    return approximation;
 }
 
-VECTOR2D OUTLINE_FONT::approximate( const double t, const double oneMinusT, const VECTOR2D& pt1,
-                                    const VECTOR2D& pt2 ) const
+
+VECTOR2D OUTLINE_FONT::approximateBezierPoint( const double aT, const double aOneMinusT,
+                                               const VECTOR2D& aPt1, const VECTOR2D& aPt2 ) const
 {
-    VECTOR2D pt1prime( pt1.x * oneMinusT, pt1.y * oneMinusT );
-    VECTOR2D pt2prime( pt2.x * t, pt2.y * t );
+    VECTOR2D pt1prime( aPt1.x * aOneMinusT, aPt1.y * aOneMinusT );
+    VECTOR2D pt2prime( aPt2.x * aT, aPt2.y * aT );
     VECTOR2D r = pt1prime + pt2prime;
     return r;
 }
 
-std::vector<VECTOR2D> OUTLINE_FONT::approximateBezierCurve( std::vector<VECTOR2D> bezier ) const
+
+bool OUTLINE_FONT::approximateBezierCurve( POINTS& result, const POINTS& bezier ) const
 {
     std::vector<VECTOR2D> approximatedPoints;
-    std::vector<VECTOR2D> resultPoints;
 
     const double precision = 0.1;
     for( double t = 0; t < 1; t += precision )
@@ -527,12 +594,12 @@ std::vector<VECTOR2D> OUTLINE_FONT::approximateBezierCurve( std::vector<VECTOR2D
                 auto        updateThisIter = ptIter;
                 const auto& pt1 = *( ptIter++ );
                 const auto& pt2 = *( ptIter );
-                const auto  approximatedPoint = approximate( t, oneMinusT, pt1, pt2 );
+                const auto  approximatedPoint = approximateBezierPoint( t, oneMinusT, pt1, pt2 );
                 *updateThisIter = approximatedPoint;
                 approximatedPoints.pop_back();
             }
-            resultPoints.push_back( approximatedPoints[0] );
+            result.push_back( approximatedPoints[0] );
         }
     }
-    return resultPoints;
+    return true;
 }
