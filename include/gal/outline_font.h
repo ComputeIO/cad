@@ -113,6 +113,12 @@ private:
      * @param aText is the text to be drawn.
      */
     void drawSingleLineText( GAL* aGal, hb_buffer_t* aText, hb_font_t* aFont ) const;
+
+    std::vector<VECTOR2D> outlineToStraightSegments( FT_Outline aOutline ) const;
+
+    std::vector<VECTOR2D> approximateBezierCurve( std::vector<VECTOR2D> bezier ) const;
+
+    VECTOR2D approximate(const double t, const double oneMinusT, const VECTOR2D& pt1, const VECTOR2D& pt2) const;
 };
 
 } // namespace KIGFX
