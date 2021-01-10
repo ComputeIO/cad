@@ -4,7 +4,7 @@
  * Copyright (C) 2021 Ola Rinta-Koski
  * Copyright (C) 2021 Kicad Developers, see AUTHORS.txt for contributors.
  *
- * Stroke font class
+ * Outline font class
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -24,8 +24,8 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
 
-#ifndef TRUETYPE_FONT_H_
-#define TRUETYPE_FONT_H_
+#ifndef OUTLINE_FONT_H_
+#define OUTLINE_FONT_H_
 
 #include <gal/graphics_abstraction_layer.h>
 #include <freetype2/ft2build.h>
@@ -36,15 +36,16 @@
 namespace KIGFX
 {
 /**
- * Class TRUETYPE_FONT implements TrueType font drawing.
+ * Class OUTLINE_FONT implements outline font drawing.
  */
-class TRUETYPE_FONT : public FONT
+class OUTLINE_FONT : public FONT
 {
 public:
-    TRUETYPE_FONT();
+    OUTLINE_FONT();
 
     /**
-     * Load a TrueType font.
+     * Load an outline font. TrueType (.ttf) and OpenType (.otf)
+     * are supported.
      * @param aFontFileName is the name of the font file
      * @return true if the font was successfully loaded, otherwise false.
      */
@@ -123,4 +124,4 @@ private:
 
 } // namespace KIGFX
 
-#endif // TRUETYPE_FONT_H_
+#endif // OUTLINE_FONT_H_

@@ -25,7 +25,7 @@
  */
 
 #include <gal/stroke_font.h>
-#include <gal/truetype_font.h>
+#include <gal/outline_font.h>
 
 using namespace KIGFX;
 
@@ -49,8 +49,8 @@ FONT* FONT::GetFont( const wxString& aFontName )
         return defaultFont;
     }
 
-    // Try TrueType first
-    FONT* font = new TRUETYPE_FONT();
+    // Try outline first
+    FONT* font = new OUTLINE_FONT();
     bool  success = font->LoadFont( aFontName );
 
     if( !success )

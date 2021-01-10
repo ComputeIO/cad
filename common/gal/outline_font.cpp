@@ -4,7 +4,7 @@
  * Copyright (C) 2021 Ola Rinta-Koski
  * Copyright (C) 2016 Kicad Developers, see change_log.txt for contributors.
  *
- * TrueType font class
+ * Outline font class
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -34,10 +34,10 @@
 
 using namespace KIGFX;
 
-FT_Library TRUETYPE_FONT::mFreeType = nullptr;
+FT_Library OUTLINE_FONT::mFreeType = nullptr;
 
 
-TRUETYPE_FONT::TRUETYPE_FONT()
+OUTLINE_FONT::TRUETYPE_FONT()
 {
     if( !mFreeType )
     {
@@ -48,10 +48,10 @@ TRUETYPE_FONT::TRUETYPE_FONT()
 }
 
 
-bool TRUETYPE_FONT::LoadFont( const wxString& aFontFileName )
+bool OUTLINE_FONT::LoadFont( const wxString& aFontFileName )
 {
 #ifdef DEBUG
-    std::cerr << "TRUETYPE_FONT::LoadFont( \"" << aFontFileName << "\" )" << std::endl;
+    std::cerr << "OUTLINE_FONT::LoadFont( \"" << aFontFileName << "\" )" << std::endl;
 #endif
 
     wxFileName fontFile( aFontFileName );
@@ -105,7 +105,7 @@ bool TRUETYPE_FONT::LoadFont( const wxString& aFontFileName )
 }
 
 
-FT_Error TRUETYPE_FONT::loadFace( const wxString& aFontFileName )
+FT_Error OUTLINE_FONT::loadFace( const wxString& aFontFileName )
 {
     // TODO: check that going from wxString to char* with UTF-8
     // conversion for filename makes sense on any/all platforms
@@ -121,8 +121,8 @@ FT_Error TRUETYPE_FONT::loadFace( const wxString& aFontFileName )
  * @param aPosition is the text position in world coordinates.
  * @param aRotationAngle is the text rotation angle in radians.
  */
-void TRUETYPE_FONT::Draw( GAL* aGal, const UTF8& aText, const VECTOR2D& aPosition,
-                          double aRotationAngle ) const
+void OUTLINE_FONT::Draw( GAL* aGal, const UTF8& aText, const VECTOR2D& aPosition,
+                         double aRotationAngle ) const
 {
     if( aText.empty() )
         return;
@@ -261,9 +261,9 @@ void TRUETYPE_FONT::Draw( GAL* aGal, const UTF8& aText, const VECTOR2D& aPositio
  *
  * @return a VECTOR2D giving the width and height of text.
  */
-VECTOR2D TRUETYPE_FONT::ComputeStringBoundaryLimits( const GAL* aGal, const UTF8& aText,
-                                                     const VECTOR2D& aGlyphSize,
-                                                     double          aGlyphThickness ) const
+VECTOR2D OUTLINE_FONT::ComputeStringBoundaryLimits( const GAL* aGal, const UTF8& aText,
+                                                    const VECTOR2D& aGlyphSize,
+                                                    double          aGlyphThickness ) const
 {
     assert( 1 == 0 ); // TODO!!!
 }
@@ -277,7 +277,7 @@ VECTOR2D TRUETYPE_FONT::ComputeStringBoundaryLimits( const GAL* aGal, const UTF8
  * @param aGlyphHeight is the height (vertical size) of the text.
  * @return the relative position of the overbar axis.
  */
-double TRUETYPE_FONT::ComputeOverbarVerticalPosition( double aGlyphHeight ) const
+double OUTLINE_FONT::ComputeOverbarVerticalPosition( double aGlyphHeight ) const
 {
     assert( 1 == 0 ); // TODO!!!
 }
@@ -289,7 +289,7 @@ double TRUETYPE_FONT::ComputeOverbarVerticalPosition( double aGlyphHeight ) cons
  * @param aGlyphHeight is the height (vertical size) of the text.
  * @return the interline.
  */
-double TRUETYPE_FONT::GetInterline( double aGlyphHeight ) const
+double OUTLINE_FONT::GetInterline( double aGlyphHeight ) const
 {
     assert( 1 == 0 ); // TODO!!!
 }
@@ -302,13 +302,13 @@ double TRUETYPE_FONT::GetInterline( double aGlyphHeight ) const
  * @param aText is the text string (one line).
  * @return the text size.
  */
-VECTOR2D TRUETYPE_FONT::ComputeTextLineSize( const GAL* aGal, const UTF8& aText ) const
+VECTOR2D OUTLINE_FONT::ComputeTextLineSize( const GAL* aGal, const UTF8& aText ) const
 {
     assert( 1 == 0 ); // TODO!!!
 }
 
 
-void TRUETYPE_FONT::drawSingleLineText( GAL* aGal, hb_buffer_t* aText, hb_font_t* aFont ) const
+void OUTLINE_FONT::drawSingleLineText( GAL* aGal, hb_buffer_t* aText, hb_font_t* aFont ) const
 {
     const VECTOR2D& galGlyphSize = aGal->GetGlyphSize();
 
@@ -404,7 +404,7 @@ void TRUETYPE_FONT::drawSingleLineText( GAL* aGal, hb_buffer_t* aText, hb_font_t
         }
 #else
         std::vector<VECTOR2D> straightSegments = outlineToStraightSegments( outline );
-        for( VECTOR2D v : straightSegments)
+        for( VECTOR2D v : straightSegments )
         {
             VECTOR2D pt( -( v.x + cursor_x ), -( v.y + cursor_y ) );
             VECTOR2D scaledPt( pt.x * x_scale_factor, pt.y * y_scale_factor );
@@ -427,7 +427,7 @@ void TRUETYPE_FONT::drawSingleLineText( GAL* aGal, hb_buffer_t* aText, hb_font_t
 }
 
 
-std::vector<VECTOR2D> TRUETYPE_FONT::outlineToStraightSegments( FT_Outline aOutline ) const
+std::vector<VECTOR2D> OUTLINE_FONT::outlineToStraightSegments( FT_Outline aOutline ) const
 {
     std::vector<VECTOR2D> segments;
     std::vector<VECTOR2D> bezier;
@@ -499,8 +499,8 @@ std::vector<VECTOR2D> TRUETYPE_FONT::outlineToStraightSegments( FT_Outline aOutl
     return segments;
 }
 
-VECTOR2D TRUETYPE_FONT::approximate( const double t, const double oneMinusT, const VECTOR2D& pt1,
-                                     const VECTOR2D& pt2 ) const
+VECTOR2D OUTLINE_FONT::approximate( const double t, const double oneMinusT, const VECTOR2D& pt1,
+                                    const VECTOR2D& pt2 ) const
 {
     VECTOR2D pt1prime( pt1.x * oneMinusT, pt1.y * oneMinusT );
     VECTOR2D pt2prime( pt2.x * t, pt2.y * t );
@@ -508,7 +508,7 @@ VECTOR2D TRUETYPE_FONT::approximate( const double t, const double oneMinusT, con
     return r;
 }
 
-std::vector<VECTOR2D> TRUETYPE_FONT::approximateBezierCurve( std::vector<VECTOR2D> bezier ) const
+std::vector<VECTOR2D> OUTLINE_FONT::approximateBezierCurve( std::vector<VECTOR2D> bezier ) const
 {
     std::vector<VECTOR2D> approximatedPoints;
     std::vector<VECTOR2D> resultPoints;
