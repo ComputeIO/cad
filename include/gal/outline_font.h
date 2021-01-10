@@ -115,11 +115,34 @@ private:
      */
     void drawSingleLineText( GAL* aGal, hb_buffer_t* aText, hb_font_t* aFont ) const;
 
-    std::vector<VECTOR2D> outlineToStraightSegments( FT_Outline aOutline ) const;
+    POINTS_LIST outlineToStraightSegments( FT_Outline aOutline ) const;
 
-    std::vector<VECTOR2D> approximateBezierCurve( std::vector<VECTOR2D> bezier ) const;
+    POINTS approximateContour( const POINTS&            contour_points,
+                               const std::vector<bool>& contour_point_on_curve ) const;
 
-    VECTOR2D approximate(const double t, const double oneMinusT, const VECTOR2D& pt1, const VECTOR2D& pt2) const;
+    bool approximateBezierCurve( POINTS& result, const POINTS& bezier ) const;
+
+    VECTOR2D approximateBezierPoint( const double t, const double oneMinusT, const VECTOR2D& pt1,
+                                     const VECTOR2D& pt2 ) const;
+
+    inline const unsigned int onCurve( char aTags ) const { return aTags & 0x1; }
+
+    inline const unsigned int thirdOrderBezierPoint( char aTags ) const
+    {
+        return onCurve( aTags ) ? 0 : aTags & 0x2;
+    }
+
+    inline const unsigned int secondOrderBezierPoint( char aTags ) const
+    {
+        return onCurve( aTags ) ? 0 : !thirdOrderBezierPoint( aTags );
+    }
+
+    inline const unsigned int hasDropout( char aTags ) const { return aTags & 0x4; }
+
+    inline const unsigned int dropoutMode( char aTags ) const
+    {
+        return hasDropout( aTags ) ? ( aTags & 0x38 ) : 0;
+    }
 };
 
 } // namespace KIGFX
