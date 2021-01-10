@@ -39,7 +39,7 @@ set( GAL_SRCS
     gal/hidpi_gl_canvas.cpp
     gal/font.cpp
     gal/stroke_font.cpp
-    gal/truetype_font.cpp
+    gal/outline_font.cpp
 
     view/view_controls.cpp
     view/view_overlay.cpp
