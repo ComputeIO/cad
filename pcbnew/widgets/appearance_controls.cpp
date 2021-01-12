@@ -1139,6 +1139,7 @@ void APPEARANCE_CONTROLS::setVisibleObjects( GAL_SET aLayers )
             PCB_DISPLAY_OPTIONS opt = m_frame->GetDisplayOptions();
             aLayers.set( LAYER_RATSNEST, opt.m_ShowGlobalRatsnest );
         }
+
         m_frame->GetBoard()->SetVisibleElements( aLayers );
     }
 }
