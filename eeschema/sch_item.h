@@ -244,7 +244,7 @@ public:
      * Usually return true for small items (labels, junctions) and false for
      * items which can be large (hierarchical sheets, symbols)
      */
-    virtual bool IsMovableFromAnchorPoint() { return true; }
+    virtual bool IsMovableFromAnchorPoint() const { return true; }
 
     wxPoint& GetStoredPos() { return m_storedPos; }
     void     SetStoredPos( wxPoint aPos ) { m_storedPos = aPos; }
@@ -289,7 +289,7 @@ public:
      *
      * @param aLayer The layer number.
      */
-    void SetLayer( SCH_LAYER_ID aLayer )  { m_layer = aLayer; }
+    void SetLayer( SCH_LAYER_ID aLayer ) { m_layer = aLayer; }
 
     /**
      * Return the layers the item is drawn on (which may be more than its "home" layer)
@@ -308,7 +308,7 @@ public:
      *
      * @param aOffset drawing offset (usually {0,0} but can be different when moving an object)
      */
-    virtual void Print( RENDER_SETTINGS* aSettings, const wxPoint&  aOffset ) = 0;
+    virtual void Print( const RENDER_SETTINGS* aSettings, const wxPoint& aOffset ) = 0;
 
     /**
      * Move the item by \a aMoveVector to a new position.

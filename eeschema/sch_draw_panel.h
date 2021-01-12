@@ -44,8 +44,8 @@ public:
 
     ~SCH_DRAW_PANEL();
 
-    void DisplayComponent( const LIB_PART *aComponent );
-    void DisplaySheet( const SCH_SCREEN *aScreen );
+    void DisplayComponent( LIB_PART *aComponent );
+    void DisplaySheet( SCH_SCREEN *aScreen );
 
     bool SwitchBackend( GAL_TYPE aGalType ) override;
 
@@ -61,4 +61,4 @@ protected:
     void setDefaultLayerDeps();     ///> Sets rendering targets & dependencies for layers.
 };
 
-#endif
+#endif // __SCH_DRAW_PANEL_H

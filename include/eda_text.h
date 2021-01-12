@@ -237,7 +237,7 @@ public:
      *                    search and replace criteria.
      * @return True if the text item was modified, otherwise false.
      */
-    bool Replace( wxFindReplaceData& aSearchData );
+    bool Replace( const wxFindReplaceData& aSearchData );
 
     bool IsDefaultFormatting() const;
 
@@ -272,8 +272,8 @@ public:
      * @param aColor text color.
      * @param aDisplay_mode #FILLED or #SKETCH.
      */
-    void Print( RENDER_SETTINGS* aSettings, const wxPoint& aOffset, COLOR4D aColor,
-                OUTLINE_MODE aDisplay_mode = FILLED );
+    void Print( const RENDER_SETTINGS* aSettings, const wxPoint& aOffset,
+                COLOR4D aColor, OUTLINE_MODE aDisplay_mode = FILLED );
 
     /**
      * Convert the text shape to a list of segment.
@@ -297,7 +297,7 @@ public:
     void TransformBoundingBoxWithClearanceToPolygon( SHAPE_POLY_SET* aCornerBuffer,
                                                      int aClearanceValue ) const;
 
-    std::shared_ptr<SHAPE_COMPOUND> GetEffectiveTextShape( ) const;
+    std::shared_ptr<SHAPE_COMPOUND> GetEffectiveTextShape() const;
 
     /**
      * Test if \a aPoint is within the bounds of this object.
@@ -383,7 +383,7 @@ private:
      * @param aText the single line of text to draw.
      * @param aPos the position of this line ).
      */
-    void printOneLineOfText( RENDER_SETTINGS* aSettings, const wxPoint& aOffset, COLOR4D aColor,
+    void printOneLineOfText( const RENDER_SETTINGS* aSettings, const wxPoint& aOffset, COLOR4D aColor,
                              OUTLINE_MODE aFillMode, const wxString& aText, const wxPoint& aPos );
 
     wxString      m_text;

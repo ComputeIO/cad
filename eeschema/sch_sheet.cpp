@@ -288,12 +288,12 @@ void SCH_SHEET::AddPin( SCH_SHEET_PIN* aSheetPin )
 }
 
 
-void SCH_SHEET::RemovePin( SCH_SHEET_PIN* aSheetPin )
+void SCH_SHEET::RemovePin( const SCH_SHEET_PIN* aSheetPin )
 {
     wxASSERT( aSheetPin != NULL );
     wxASSERT( aSheetPin->Type() == SCH_SHEET_PIN_T );
 
-    for( auto i = m_pins.begin();  i < m_pins.end();  ++i )
+    for( auto i = m_pins.begin(); i < m_pins.end(); ++i )
     {
         if( *i == aSheetPin )
         {
@@ -305,7 +305,7 @@ void SCH_SHEET::RemovePin( SCH_SHEET_PIN* aSheetPin )
 }
 
 
-bool SCH_SHEET::HasPin( const wxString& aName )
+bool SCH_SHEET::HasPin( const wxString& aName ) const
 {
     for( SCH_SHEET_PIN* pin : m_pins )
     {
@@ -350,7 +350,7 @@ bool SCH_SHEET::IsVerticalOrientation() const
 }
 
 
-bool SCH_SHEET::HasUndefinedPins()
+bool SCH_SHEET::HasUndefinedPins() const
 {
     for( SCH_SHEET_PIN* pin : m_pins )
     {
@@ -789,7 +789,7 @@ void SCH_SHEET::Resize( const wxSize& aSize )
 }
 
 
-bool SCH_SHEET::Matches( wxFindReplaceData& aSearchData, void* aAuxData )
+bool SCH_SHEET::Matches( const wxFindReplaceData& aSearchData, void* aAuxData ) const
 {
     wxLogTrace( traceFindItem, wxT( "  item " ) + GetSelectMenuText( EDA_UNITS::MILLIMETRES ) );
 
@@ -979,15 +979,15 @@ void SCH_SHEET::Plot( PLOTTER* aPlotter )
 }
 
 
-void SCH_SHEET::Print( RENDER_SETTINGS* aSettings, const wxPoint& aOffset )
+void SCH_SHEET::Print( const RENDER_SETTINGS* aSettings, const wxPoint& aOffset )
 {
-    wxDC*     DC = aSettings->GetPrintDC();
-    wxPoint   pos = m_pos + aOffset;
-    int       lineWidth = std::max( GetPenWidth(), aSettings->GetDefaultPenWidth() );
-    auto*     settings = dynamic_cast<KIGFX::SCH_RENDER_SETTINGS*>( aSettings );
-    bool      override = settings && settings->m_OverrideItemColors;
-    COLOR4D   border = GetBorderColor();
-    COLOR4D   background = GetBackgroundColor();
+    wxDC*       DC = aSettings->GetPrintDC();
+    wxPoint     pos = m_pos + aOffset;
+    int         lineWidth = std::max( GetPenWidth(), aSettings->GetDefaultPenWidth() );
+    const auto* settings = dynamic_cast<const KIGFX::SCH_RENDER_SETTINGS*>( aSettings );
+    bool        override = settings && settings->m_OverrideItemColors;
+    COLOR4D     border = GetBorderColor();
+    COLOR4D     background = GetBackgroundColor();
 
     if( override || border == COLOR4D::UNSPECIFIED )
         border = aSettings->GetLayerColor( LAYER_SHEET );

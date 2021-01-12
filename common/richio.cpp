@@ -362,12 +362,12 @@ const char* OUTPUTFORMATTER::GetQuoteChar( const char* wrapee, const char* quote
 }
 
 
-const char* OUTPUTFORMATTER::GetQuoteChar( const char* wrapee )
+const char* OUTPUTFORMATTER::GetQuoteChar( const char* wrapee ) const
 {
     return GetQuoteChar( wrapee, quoteChar );
 }
 
-int OUTPUTFORMATTER::vprint( const char* fmt,  va_list ap )
+int OUTPUTFORMATTER::vprint( const char* fmt, va_list ap )
 {
     // This function can call vsnprintf twice.
     // But internally, vsnprintf retrieves arguments from the va_list identified by arg as if
@@ -395,7 +395,7 @@ int OUTPUTFORMATTER::vprint( const char* fmt,  va_list ap )
 
 int OUTPUTFORMATTER::sprint( const char* fmt, ... )
 {
-    va_list     args;
+    va_list args;
 
     va_start( args, fmt );
     int ret = vprint( fmt, args);
@@ -416,7 +416,7 @@ int OUTPUTFORMATTER::Print( int nestLevel, const char* fmt, ... )
     int result = 0;
     int total  = 0;
 
-    for( int i=0; i<nestLevel;  ++i )
+    for( int i = 0; i < nestLevel; ++i )
     {
         // no error checking needed, an exception indicates an error.
         result = sprint( "%*c", NESTWIDTH, ' ' );
@@ -434,15 +434,15 @@ int OUTPUTFORMATTER::Print( int nestLevel, const char* fmt, ... )
 }
 
 
-std::string OUTPUTFORMATTER::Quotes( const std::string& aWrapee )
+std::string OUTPUTFORMATTER::Quotes( const std::string& aWrapee ) const
 {
     std::string ret;
 
-    ret.reserve( aWrapee.size()*2 + 2 );
+    ret.reserve( aWrapee.size() * 2 + 2 );
 
     ret += '"';
 
-    for( std::string::const_iterator it = aWrapee.begin(); it!=aWrapee.end(); ++it )
+    for( std::string::const_iterator it = aWrapee.begin(); it != aWrapee.end(); ++it )
     {
         switch( *it )
         {
@@ -473,7 +473,7 @@ std::string OUTPUTFORMATTER::Quotes( const std::string& aWrapee )
 }
 
 
-std::string OUTPUTFORMATTER::Quotew( const wxString& aWrapee )
+std::string OUTPUTFORMATTER::Quotew( const wxString& aWrapee ) const
 {
     // wxStrings are always encoded as UTF-8 as we convert to a byte sequence.
     // The non-virutal function calls the virtual workhorse function, and if
@@ -493,13 +493,13 @@ void STRING_FORMATTER::write( const char* aOutBuf, int aCount )
 
 void STRING_FORMATTER::StripUseless()
 {
-    std::string  copy = m_mystring;
+    std::string copy = m_mystring;
 
     m_mystring.clear();
 
-    for( std::string::iterator i=copy.begin();  i!=copy.end();  ++i )
+    for( std::string::iterator i = copy.begin(); i != copy.end(); ++i )
     {
-        if( !isspace( *i ) && *i!=')' && *i!='(' && *i!='"' )
+        if( !isspace( *i ) && *i != ')' && *i != '(' && *i != '"' )
         {
             m_mystring += *i;
         }

@@ -352,7 +352,7 @@ int SCH_COMPONENT::GetUnitCount() const
 }
 
 
-void SCH_COMPONENT::Print( RENDER_SETTINGS* aSettings, const wxPoint& aOffset )
+void SCH_COMPONENT::Print( const RENDER_SETTINGS* aSettings, const wxPoint& aOffset )
 {
     PART_DRAW_OPTIONS opts;
     opts.transform = m_transform;
@@ -811,7 +811,7 @@ void SCH_COMPONENT::RunOnChildren( const std::function<void( SCH_ITEM* )>& aFunc
 }
 
 
-SCH_PIN* SCH_COMPONENT::GetPin( const wxString& aNumber )
+SCH_PIN* SCH_COMPONENT::GetPin( const wxString& aNumber ) const
 {
     for( const std::unique_ptr<SCH_PIN>& pin : m_pins )
     {
@@ -823,7 +823,7 @@ SCH_PIN* SCH_COMPONENT::GetPin( const wxString& aNumber )
 }
 
 
-void SCH_COMPONENT::GetLibPins( std::vector<LIB_PIN*>& aPinsList )
+void SCH_COMPONENT::GetLibPins( std::vector<LIB_PIN*>& aPinsList ) const
 {
     if( m_part )
         m_part->GetPins( aPinsList, m_unit, m_convert );
@@ -1478,7 +1478,7 @@ void SCH_COMPONENT::Rotate( wxPoint aPosition )
 }
 
 
-bool SCH_COMPONENT::Matches( wxFindReplaceData& aSearchData, void* aAuxData )
+bool SCH_COMPONENT::Matches( const wxFindReplaceData& aSearchData, void* aAuxData ) const
 {
     wxLogTrace( traceFindItem, wxT( "  item " ) + GetSelectMenuText( EDA_UNITS::MILLIMETRES ) );
 

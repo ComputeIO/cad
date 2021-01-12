@@ -315,7 +315,7 @@ int SCH_LINE::GetPenWidth() const
 }
 
 
-void SCH_LINE::Print( RENDER_SETTINGS* aSettings, const wxPoint& offset )
+void SCH_LINE::Print( const RENDER_SETTINGS* aSettings, const wxPoint& offset )
 {
     wxDC*   DC = aSettings->GetPrintDC();
     COLOR4D color = GetLineColor();
@@ -365,7 +365,7 @@ void SCH_LINE::RotateEnd( wxPoint aPosition )
 }
 
 
-bool SCH_LINE::IsSameQuadrant( SCH_LINE* aLine, const wxPoint& aPosition )
+bool SCH_LINE::IsSameQuadrant( const SCH_LINE* aLine, const wxPoint& aPosition ) const
 {
     wxPoint first;
     wxPoint second;
@@ -388,7 +388,7 @@ bool SCH_LINE::IsSameQuadrant( SCH_LINE* aLine, const wxPoint& aPosition )
 }
 
 
-bool SCH_LINE::IsParallel( SCH_LINE* aLine )
+bool SCH_LINE::IsParallel( const SCH_LINE* aLine ) const
 {
     wxCHECK_MSG( aLine != NULL && aLine->Type() == SCH_LINE_T, false,
                  wxT( "Cannot test line segment for overlap." ) );
