@@ -402,9 +402,8 @@ TOOL_ACTION PCB_ACTIONS::updateFootprints( "pcbnew.GlobalEdit.updateFootprints",
         _( "Update footprints to include any changes from the library" ),
         refresh_xpm );
 
-TOOL_ACTION PCB_ACTIONS::removeUnusedPads( "pcbnew.GlobalEdit.removeUnusedPads",
-        AS_GLOBAL, 0, "",
-        _( "Remove Unused Pads..." ),
+TOOL_ACTION PCB_ACTIONS::removeUnusedPads(
+        "pcbnew.GlobalEdit.removeUnusedPads", AS_GLOBAL, 0, "", _( "Remove Unused Pads..." ),
         _( "Remove or restore the unconnected inner layers on through hole pads and vias" ),
         pads_remove_xpm );
 
@@ -1227,14 +1226,12 @@ TOOL_ACTION PCB_ACTIONS::zoneUnfillAll( "pcbnew.ZoneFiller.zoneUnfillAll",
 
 // AUTOPLACER_TOOL
 //
-TOOL_ACTION PCB_ACTIONS::autoplaceSelectedComponents( "pcbnew.Autoplacer.autoplaceSelected",
-        AS_GLOBAL, 0, "",
-        _( "Place Selected Footprints" ),
+TOOL_ACTION PCB_ACTIONS::autoplaceSelectedComponents(
+        "pcbnew.Autoplacer.autoplaceSelected", AS_GLOBAL, 0, "", _( "Place Selected Footprints" ),
         _( "Performs automatic placement of selected components" ) );
 
-TOOL_ACTION PCB_ACTIONS::autoplaceOffboardComponents( "pcbnew.Autoplacer.autoplaceOffboard",
-        AS_GLOBAL, 0, "",
-        _( "Place Off-Board Footprints" ),
+TOOL_ACTION PCB_ACTIONS::autoplaceOffboardComponents(
+        "pcbnew.Autoplacer.autoplaceOffboard", AS_GLOBAL, 0, "", _( "Place Off-Board Footprints" ),
         _( "Performs automatic placement of components outside board area" ) );
 
 

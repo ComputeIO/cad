@@ -99,10 +99,7 @@ public:
     /**
      * Return the generated HTML.
      */
-    wxString GetHtml() const
-    {
-        return m_html;
-    }
+    wxString GetHtml() const { return m_html; }
 
 protected:
     void SetHtmlName()

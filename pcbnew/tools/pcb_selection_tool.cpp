@@ -283,7 +283,7 @@ int PCB_SELECTION_TOOL::Main( const TOOL_EVENT& aEvent )
         bool modifier_enabled = m_subtractive || m_additive || m_exclusive_or;
         PCB_BASE_FRAME* frame = getEditFrame<PCB_BASE_FRAME>();
         bool brd_editor = frame && frame->IsType( FRAME_PCB_EDITOR );
-        ROUTER_TOOL* router = m_toolMgr->GetTool<ROUTER_TOOL>();
+        ROUTER_TOOL*    router = m_toolMgr->GetTool<ROUTER_TOOL>();
 
         // If the router tool is active, don't override
         if( router && router->IsToolActive() )
@@ -430,11 +430,9 @@ int PCB_SELECTION_TOOL::Main( const TOOL_EVENT& aEvent )
         if( m_frame->ToolStackIsEmpty() )
         {
             //move cursor prediction
-            if( !modifier_enabled
-                    && dragAction == MOUSE_DRAG_ACTION::DRAG_SELECTED
-                    && !m_selection.Empty()
-                    && evt->HasPosition()
-                    && selectionContains( evt->Position() ) )
+            if( !modifier_enabled && dragAction == MOUSE_DRAG_ACTION::DRAG_SELECTED
+                && !m_selection.Empty() && evt->HasPosition()
+                && selectionContains( evt->Position() ) )
             {
                 m_frame->GetCanvas()->SetCurrentCursor( KICURSOR::MOVING );
             }
@@ -2475,7 +2473,7 @@ void PCB_SELECTION_TOOL::FilterCollectorForGroups( GENERAL_COLLECTOR& aCollector
             continue;
         }
 
-        PCB_GROUP*  aTop = PCB_GROUP::TopLevelGroup( item, m_enteredGroup, m_isFootprintEditor );
+        PCB_GROUP* aTop = PCB_GROUP::TopLevelGroup( item, m_enteredGroup, m_isFootprintEditor );
 
         if( aTop )
         {

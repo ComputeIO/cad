@@ -129,8 +129,8 @@ public:
      * @param aPoints = a buffer to fill with polygon corners coordinates
      * @param aPos = Position of the shape
      */
-    void CreateGraphicShape( const RENDER_SETTINGS* aSettings,
-                             std::vector <wxPoint>& aPoints, const wxPoint& aPos ) override;
+    void CreateGraphicShape( const RENDER_SETTINGS* aSettings, std::vector<wxPoint>& aPoints,
+                             const wxPoint& aPos ) override;
 
     void SwapData( SCH_ITEM* aItem ) override;
 
@@ -364,10 +364,7 @@ public:
 
     std::vector<SCH_SHEET_PIN*>& GetPins() { return m_pins; }
 
-    const std::vector<SCH_SHEET_PIN*>& GetPins() const
-    {
-        return m_pins;
-    }
+    const std::vector<SCH_SHEET_PIN*>& GetPins() const { return m_pins; }
 
     /**
      * Remove \a aSheetPin from the sheet.
@@ -548,9 +545,9 @@ public:
 
     bool CanConnect( const SCH_ITEM* aItem ) const override
     {
-        return ( aItem->Type() == SCH_LINE_T && aItem->GetLayer() == LAYER_WIRE ) ||
-               ( aItem->Type() == SCH_LINE_T && aItem->GetLayer() == LAYER_BUS )  ||
-               ( aItem->Type() == SCH_NO_CONNECT_T );
+        return ( aItem->Type() == SCH_LINE_T && aItem->GetLayer() == LAYER_WIRE )
+               || ( aItem->Type() == SCH_LINE_T && aItem->GetLayer() == LAYER_BUS )
+               || ( aItem->Type() == SCH_NO_CONNECT_T );
     }
 
     std::vector<wxPoint> GetConnectionPoints() const override;

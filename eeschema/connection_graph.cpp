@@ -207,7 +207,7 @@ bool CONNECTION_SUBGRAPH::ResolveDrivers( bool aCheckMultipleDrivers )
 
         if( !same )
         {
-            m_first_driver  = m_driver;
+            m_first_driver = m_driver;
             m_second_driver = second_item;
         }
     }
@@ -1823,10 +1823,10 @@ void CONNECTION_GRAPH::propagateToNeighbors( CONNECTION_SUBGRAPH* aSubgraph )
             // b) is a strong driver and we're a weak driver
             // c) meets or exceeds our priority, is a strong driver, and has a shorter path
 
-            if( ( priority >= CONNECTION_SUBGRAPH::PRIORITY::POWER_PIN ) ||
-                ( !originalStrong && candidateStrong ) ||
-                ( priority >= highest && candidateStrong &&
-                  subgraph->m_sheet.size() < aSubgraph->m_sheet.size() ) )
+            if( ( priority >= CONNECTION_SUBGRAPH::PRIORITY::POWER_PIN )
+                || ( !originalStrong && candidateStrong )
+                || ( priority >= highest && candidateStrong
+                     && subgraph->m_sheet.size() < aSubgraph->m_sheet.size() ) )
             {
                 driver = subgraph;
             }
@@ -2189,14 +2189,14 @@ bool CONNECTION_GRAPH::ercCheckMultipleDrivers( const CONNECTION_SUBGRAPH* aSubg
     if( !aSubgraph->m_second_driver )
         return true;
 
-    SCH_ITEM* primary   = aSubgraph->m_first_driver;
+    SCH_ITEM* primary = aSubgraph->m_first_driver;
     SCH_ITEM* secondary = aSubgraph->m_second_driver;
 
-    wxPoint pos = primary->Type() == SCH_PIN_T ?
-                  static_cast<SCH_PIN*>( primary )->GetTransformedPosition() :
-                  primary->GetPosition();
+    wxPoint pos = primary->Type() == SCH_PIN_T
+                          ? static_cast<SCH_PIN*>( primary )->GetTransformedPosition()
+                          : primary->GetPosition();
 
-    wxString primaryName   = aSubgraph->GetNameForDriver( primary );
+    wxString primaryName = aSubgraph->GetNameForDriver( primary );
     wxString secondaryName = aSubgraph->GetNameForDriver( secondary );
 
     wxString msg = wxString::Format( _( "Both %s and %s are attached to the same "

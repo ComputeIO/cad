@@ -92,9 +92,9 @@ void SYMBOL_TREE_SYNCHRONIZING_ADAPTER::Sync( bool aForce,
         // libraries before the symbol library table which prevents the library from being
         // removed from the tree control.
         if( !m_libMgr->LibraryExists( name, true )
-          || !m_frame->Prj().SchSymbolLibTable()->HasLibrary( name, true )
-          || ( m_frame->Prj().SchSymbolLibTable()->FindRow( name, true ) !=
-               m_frame->Prj().SchSymbolLibTable()->FindRow( name, false ) ) )
+            || !m_frame->Prj().SchSymbolLibTable()->HasLibrary( name, true )
+            || ( m_frame->Prj().SchSymbolLibTable()->FindRow( name, true )
+                 != m_frame->Prj().SchSymbolLibTable()->FindRow( name, false ) ) )
         {
             it = deleteLibrary( it );
             continue;

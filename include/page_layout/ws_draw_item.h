@@ -270,7 +270,9 @@ public:
     wxPoint GetPosition() const override { return wxPoint( 0, 0 ); }
     void SetPosition( const wxPoint& aPos ) override { /* do nothing */ }
 
-    void PrintWsItem( const RENDER_SETTINGS* , const wxPoint& ) override { /* do nothing */ }
+    void PrintWsItem( const RENDER_SETTINGS*, const wxPoint& ) override
+    { /* do nothing */
+    }
 
     const EDA_RECT GetBoundingBox() const override;
     bool HitTest( const wxPoint& aPosition, int aAccuracy = 0 ) const override { return false; }

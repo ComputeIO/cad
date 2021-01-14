@@ -86,15 +86,14 @@ public:
 
     virtual void SetPenDiameter( double diameter );
 
-    virtual void SetViewport( const wxPoint& aOffset, double aIusPerDecimil,
-                              double aScale, bool aMirror ) override;
+    virtual void SetViewport( const wxPoint& aOffset, double aIusPerDecimil, double aScale,
+                              bool aMirror ) override;
     virtual void Rect( const wxPoint& p1, const wxPoint& p2, FILL_TYPE fill,
                        int width = USE_DEFAULT_LINE_WIDTH ) override;
     virtual void Circle( const wxPoint& pos, int diametre, FILL_TYPE fill,
                          int width = USE_DEFAULT_LINE_WIDTH ) override;
-    virtual void PlotPoly( const std::vector< wxPoint >& aCornerList,
-                           FILL_TYPE aFill, int aWidth = USE_DEFAULT_LINE_WIDTH,
-                           void * aData = NULL ) override;
+    virtual void PlotPoly( const std::vector<wxPoint>& aCornerList, FILL_TYPE aFill,
+                           int aWidth = USE_DEFAULT_LINE_WIDTH, void* aData = NULL ) override;
 
     virtual void ThickSegment( const wxPoint& start, const wxPoint& end, int width,
                                OUTLINE_MODE tracemode, void* aData ) override;
@@ -152,11 +151,10 @@ protected:
     struct HPGL_ITEM
     {
         HPGL_ITEM() :
-            lift_before( false ),
-            lift_after( false ),
-            pen_returns( false ),
-            pen( 0 ),
-            dashType( PLOT_DASH_TYPE::SOLID ) {}
+                lift_before( false ), lift_after( false ), pen_returns( false ), pen( 0 ),
+                dashType( PLOT_DASH_TYPE::SOLID )
+        {
+        }
 
         /// Location the pen should start at
         DPOINT         loc_start;

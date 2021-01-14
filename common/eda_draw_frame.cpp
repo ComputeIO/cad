@@ -851,8 +851,8 @@ void PrintPageLayout( const RENDER_SETTINGS* aSettings, const PAGE_INFO& aPageIn
 
 
 void EDA_DRAW_FRAME::PrintWorkSheet( const RENDER_SETTINGS* aSettings, BASE_SCREEN* aScreen,
-                                     double aMils2Iu, const wxString &aFilename,
-                                     const wxString &aSheetLayer )
+                                     double aMils2Iu, const wxString& aFilename,
+                                     const wxString& aSheetLayer )
 {
     if( !m_showBorderAndTitleBlock )
         return;

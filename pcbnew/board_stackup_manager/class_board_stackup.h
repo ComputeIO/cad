@@ -293,7 +293,7 @@ public:
      * ((<= 0 to use all copper layers)
      */
     void BuildDefaultStackupList( const BOARD_DESIGN_SETTINGS* aSettings,
-            int aActiveCopperLayersCount = 0 );
+                                  int                          aActiveCopperLayersCount = 0 );
 
     /**
      * Writes the stackup info on board file
@@ -301,8 +301,8 @@ public:
      * @param aBoard is the board
      * @param aNestLevel is the index to nest level to indent the lines in file
      */
-    void FormatBoardStackup( OUTPUTFORMATTER* aFormatter,
-                             const BOARD* aBoard, int aNestLevel ) const;
+    void FormatBoardStackup( OUTPUTFORMATTER* aFormatter, const BOARD* aBoard,
+                             int aNestLevel ) const;
 };
 
 

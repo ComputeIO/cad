@@ -1377,10 +1377,9 @@ void SIM_PLOT_FRAME::onShowNetlist( wxCommandEvent& event )
             EndModal( GetReturnCode() );
         }
 
-        NETLIST_VIEW_DIALOG( wxWindow* parent, wxString source) :
-            DIALOG_SHIM( parent, wxID_ANY, "SPICE Netlist",
-                         wxDefaultPosition, wxDefaultSize,
-                         wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER )
+        NETLIST_VIEW_DIALOG( wxWindow* parent, wxString source ) :
+                DIALOG_SHIM( parent, wxID_ANY, "SPICE Netlist", wxDefaultPosition, wxDefaultSize,
+                             wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER )
         {
             wxStyledTextCtrl* text = new wxStyledTextCtrl( this, wxID_ANY );
             text->SetMinSize( wxSize( 600, 400 ) );

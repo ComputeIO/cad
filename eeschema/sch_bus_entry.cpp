@@ -198,8 +198,9 @@ void SCH_BUS_BUS_ENTRY::GetEndPoints( std::vector< DANGLING_END_ITEM >& aItemLis
 void SCH_BUS_ENTRY_BASE::Print( const RENDER_SETTINGS* aSettings, const wxPoint& aOffset )
 {
     wxDC*   DC = aSettings->GetPrintDC();
-    COLOR4D color = ( GetStrokeColor() == COLOR4D::UNSPECIFIED ) ?
-                    aSettings->GetLayerColor( m_layer ) : GetStrokeColor();
+    COLOR4D color = ( GetStrokeColor() == COLOR4D::UNSPECIFIED )
+                            ? aSettings->GetLayerColor( m_layer )
+                            : GetStrokeColor();
     int     penWidth = ( GetPenWidth() == 0 ) ? aSettings->GetDefaultPenWidth() : GetPenWidth();
 
     GRLine( nullptr, DC, m_pos.x + aOffset.x, m_pos.y + aOffset.y, GetEnd().x + aOffset.x,

@@ -302,7 +302,7 @@ void SYMBOL_LIB_TABLE::EnumerateSymbolLib( const wxString& aNickname, wxArrayStr
 SYMBOL_LIB_TABLE_ROW* SYMBOL_LIB_TABLE::FindRow( const wxString& aNickname, bool aCheckIfEnabled )
 {
     SYMBOL_LIB_TABLE_ROW* row =
-            dynamic_cast< SYMBOL_LIB_TABLE_ROW* >( findRow( aNickname, aCheckIfEnabled ) );
+            dynamic_cast<SYMBOL_LIB_TABLE_ROW*>( findRow( aNickname, aCheckIfEnabled ) );
 
     if( !row )
         return nullptr;

@@ -401,13 +401,12 @@ TOOL_ACTION ACTIONS::cursorDblClick( "common.Control.cursorDblClick",
 TOOL_ACTION ACTIONS::refreshPreview( "common.Control.refreshPreview",
          AS_GLOBAL );
 
-TOOL_ACTION ACTIONS::pinLibrary( "common.Control.pinLibrary",
-         AS_GLOBAL, 0, "",
-         _( "Pin Library" ), "Keep the library at the top of the list" );
+TOOL_ACTION ACTIONS::pinLibrary( "common.Control.pinLibrary", AS_GLOBAL, 0, "", _( "Pin Library" ),
+                                 "Keep the library at the top of the list" );
 
-TOOL_ACTION ACTIONS::unpinLibrary( "common.Control.unpinLibrary",
-         AS_GLOBAL, 0, "",
-         _( "Unpin Library" ), "No longer keep the library at the top of the list" );
+TOOL_ACTION ACTIONS::unpinLibrary( "common.Control.unpinLibrary", AS_GLOBAL, 0, "",
+                                   _( "Unpin Library" ),
+                                   "No longer keep the library at the top of the list" );
 
 TOOL_ACTION ACTIONS::panUp( "common.Control.panUp",
         AS_GLOBAL,
@@ -618,11 +617,8 @@ TOOL_ACTION ACTIONS::gettingStarted( "common.SuiteControl.gettingStarted",
         _( "Open \"Getting Started in KiCad\" guide for beginners" ),
         help_xpm );
 
-TOOL_ACTION ACTIONS::help( "common.SuiteControl.help",
-        AS_GLOBAL, 0, "",
-        _( "Help" ),
-        _( "Open product documentation in a web browser" ),
-        help_online_xpm );
+TOOL_ACTION ACTIONS::help( "common.SuiteControl.help", AS_GLOBAL, 0, "", _( "Help" ),
+                           _( "Open product documentation in a web browser" ), help_online_xpm );
 
 TOOL_ACTION ACTIONS::listHotKeys( "common.SuiteControl.listHotKeys",
         AS_GLOBAL,

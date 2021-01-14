@@ -243,8 +243,7 @@ int EDIT_TOOL::Drag( const TOOL_EVENT& aEvent )
         mode |= PNS::DM_FREE_ANGLE;
 
     PCB_SELECTION& selection = m_selectionTool->RequestSelection(
-            []( const VECTOR2I& aPt, GENERAL_COLLECTOR& aCollector, PCB_SELECTION_TOOL* sTool )
-            {
+            []( const VECTOR2I& aPt, GENERAL_COLLECTOR& aCollector, PCB_SELECTION_TOOL* sTool ) {
                 // Iterate from the back so we don't have to worry about removals.
                 for( int i = aCollector.GetCount() - 1; i >= 0; --i )
                 {
@@ -252,7 +251,7 @@ int EDIT_TOOL::Drag( const TOOL_EVENT& aEvent )
 
                     // We don't operate on pads; convert them to footprint selections
                     if( !sTool->IsFootprintEditor() && item->IsLocked() && item->Type() == PCB_PAD_T
-                            && !item->GetParent()->IsLocked() )
+                        && !item->GetParent()->IsLocked() )
                     {
                         aCollector.Remove( item );
 
@@ -332,8 +331,7 @@ int EDIT_TOOL::doMoveSelection( TOOL_EVENT aEvent, bool aPickReference )
     // Now filter out locked and grouped items.  We cannot do this in the first RequestSelection()
     // as we need the item_layers when a pad is the selection front.
     selection = m_selectionTool->RequestSelection(
-            []( const VECTOR2I& aPt, GENERAL_COLLECTOR& aCollector, PCB_SELECTION_TOOL* sTool )
-            {
+            []( const VECTOR2I& aPt, GENERAL_COLLECTOR& aCollector, PCB_SELECTION_TOOL* sTool ) {
                 std::set<BOARD_ITEM*> to_add;
 
                 // Iterate from the back so we don't have to worry about removals.
@@ -963,8 +961,7 @@ int EDIT_TOOL::Rotate( const TOOL_EVENT& aEvent )
     PCB_BASE_EDIT_FRAME* editFrame = getEditFrame<PCB_BASE_EDIT_FRAME>();
 
     PCB_SELECTION& selection = m_selectionTool->RequestSelection(
-            []( const VECTOR2I& aPt, GENERAL_COLLECTOR& aCollector, PCB_SELECTION_TOOL* sTool )
-            {
+            []( const VECTOR2I& aPt, GENERAL_COLLECTOR& aCollector, PCB_SELECTION_TOOL* sTool ) {
                 std::set<BOARD_ITEM*> added_items;
 
                 // Iterate from the back so we don't have to worry about removals.
@@ -1089,8 +1086,7 @@ int EDIT_TOOL::Mirror( const TOOL_EVENT& aEvent )
     }
 
     PCB_SELECTION& selection = m_selectionTool->RequestSelection(
-            []( const VECTOR2I& aPt, GENERAL_COLLECTOR& aCollector, PCB_SELECTION_TOOL* sTool )
-            {
+            []( const VECTOR2I& aPt, GENERAL_COLLECTOR& aCollector, PCB_SELECTION_TOOL* sTool ) {
                 std::set<BOARD_ITEM*> added_items;
 
                 // Iterate from the back so we don't have to worry about removals.
@@ -1208,8 +1204,7 @@ int EDIT_TOOL::Flip( const TOOL_EVENT& aEvent )
     }
 
     PCB_SELECTION& selection = m_selectionTool->RequestSelection(
-            []( const VECTOR2I& aPt, GENERAL_COLLECTOR& aCollector, PCB_SELECTION_TOOL* sTool )
-            {
+            []( const VECTOR2I& aPt, GENERAL_COLLECTOR& aCollector, PCB_SELECTION_TOOL* sTool ) {
                 std::set<BOARD_ITEM*> added_items;
 
                 // Iterate from the back so we don't have to worry about removals.
@@ -1233,7 +1228,7 @@ int EDIT_TOOL::Flip( const TOOL_EVENT& aEvent )
 
                 sTool->FilterCollectorForGroups( aCollector );
             },
-            !m_dragging && !m_isFootprintEditor/* prompt user regarding locked items */ );
+            !m_dragging && !m_isFootprintEditor /* prompt user regarding locked items */ );
 
     if( selection.Empty() )
         return 0;
@@ -1320,8 +1315,8 @@ int EDIT_TOOL::Remove( const TOOL_EVENT& aEvent )
     else
     {
         selectionCopy = m_selectionTool->RequestSelection(
-                []( const VECTOR2I& aPt, GENERAL_COLLECTOR& aCollector, PCB_SELECTION_TOOL* sTool )
-                {
+                []( const VECTOR2I& aPt, GENERAL_COLLECTOR& aCollector,
+                    PCB_SELECTION_TOOL* sTool ) {
                 },
                 !m_isFootprintEditor /* prompt user regarding locked items */ );
     }
@@ -1502,8 +1497,7 @@ int EDIT_TOOL::MoveExact( const TOOL_EVENT& aEvent )
     }
 
     const PCB_SELECTION& selection = m_selectionTool->RequestSelection(
-            []( const VECTOR2I& aPt, GENERAL_COLLECTOR& aCollector, PCB_SELECTION_TOOL* sTool )
-            {
+            []( const VECTOR2I& aPt, GENERAL_COLLECTOR& aCollector, PCB_SELECTION_TOOL* sTool ) {
                 std::set<BOARD_ITEM*> added_items;
 
                 // Iterate from the back so we don't have to worry about removals.
@@ -1955,10 +1949,10 @@ int EDIT_TOOL::copyToClipboard( const TOOL_EVENT& aEvent )
     Activate();
 
     PCB_SELECTION& selection = m_selectionTool->RequestSelection(
-            []( const VECTOR2I& aPt, GENERAL_COLLECTOR& aCollector, PCB_SELECTION_TOOL* sTool )
-            {
+            []( const VECTOR2I& aPt, GENERAL_COLLECTOR& aCollector, PCB_SELECTION_TOOL* sTool ) {
             },
-            aEvent.IsAction( &ACTIONS::cut ) && !m_isFootprintEditor /* prompt user regarding locked items */ );
+            aEvent.IsAction( &ACTIONS::cut )
+                    && !m_isFootprintEditor /* prompt user regarding locked items */ );
 
     if( !selection.Empty() )
     {

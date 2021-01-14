@@ -581,10 +581,9 @@ int EE_SELECTION_TOOL::Main( const TOOL_EVENT& aEvent )
             {
                 m_nonModifiedCursor = KICURSOR::HAND;
             }
-            else if( !m_selection.Empty()
-                        && drag_action == MOUSE_DRAG_ACTION::DRAG_SELECTED
-                        && evt->HasPosition()
-                        && selectionContains( evt->Position() ) ) //move/drag option prediction
+            else if( !m_selection.Empty() && drag_action == MOUSE_DRAG_ACTION::DRAG_SELECTED
+                     && evt->HasPosition()
+                     && selectionContains( evt->Position() ) ) //move/drag option prediction
             {
                 m_nonModifiedCursor = KICURSOR::MOVING;
             }

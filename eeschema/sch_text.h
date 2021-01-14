@@ -254,7 +254,7 @@ public:
      * Mainly for derived classes (SCH_SHEET_PIN and Hierarchical labels)
      */
     virtual void CreateGraphicShape( const RENDER_SETTINGS* aSettings,
-                                     std::vector <wxPoint>& aPoints, const wxPoint& Pos )
+                                     std::vector<wxPoint>& aPoints, const wxPoint& Pos )
     {
         aPoints.clear();
     }
@@ -412,8 +412,8 @@ public:
 
     const EDA_RECT GetBoundingBox() const override;
 
-    void CreateGraphicShape( const RENDER_SETTINGS* aRenderSettings,
-                             std::vector<wxPoint>& aPoints, const wxPoint& aPos ) override;
+    void CreateGraphicShape( const RENDER_SETTINGS* aRenderSettings, std::vector<wxPoint>& aPoints,
+                             const wxPoint& aPos ) override;
 
     void UpdateIntersheetRefProps();
     void AutoplaceFields( SCH_SCREEN* aScreen, bool aManual ) override;

@@ -75,8 +75,8 @@ DIALOG_BOARD_SETUP::DIALOG_BOARD_SETUP( PCB_EDIT_FRAME* aFrame ) :
     m_physicalStackupPage = 2;  // The page number (from 0) to select the m_physicalStackup panel
     m_treebook->AddSubPage( m_maskAndPaste,  _( "Solder Mask/Paste" ) );
 
-    m_treebook->AddPage( new wxPanel( this ),  _( "Text & Graphics" ) );
-    m_treebook->AddSubPage( m_textAndGraphics,  _( "Defaults" ) );
+    m_treebook->AddPage( new wxPanel( this ), _( "Text & Graphics" ) );
+    m_treebook->AddSubPage( m_textAndGraphics, _( "Defaults" ) );
     m_treebook->AddSubPage( m_textVars, _( "Text Variables" ) );
 
     m_treebook->AddPage( new wxPanel( this ),  _( "Design Rules" ) );

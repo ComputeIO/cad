@@ -664,8 +664,8 @@ bool PGM_BASE::SetLanguage( wxString& aErrMsg, bool first_time )
     // the verification is skipped.
     if( !m_locale->IsLoaded( dictionaryName ) && m_language_id != wxLANGUAGE_ENGLISH )
     {
-        wxLogTrace( traceLocale, "Unable to load dictionary %s.mo in %s",
-                    dictionaryName, m_locale->GetName() );
+        wxLogTrace( traceLocale, "Unable to load dictionary %s.mo in %s", dictionaryName,
+                    m_locale->GetName() );
 
         setLanguageId( wxLANGUAGE_DEFAULT );
         delete m_locale;

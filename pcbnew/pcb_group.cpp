@@ -75,7 +75,7 @@ PCB_GROUP* PCB_GROUP::TopLevelGroup( BOARD_ITEM* aItem, PCB_GROUP* aScope, bool 
 
     // Don't get the footprint's group if we are in the footprint editor
     if( !candidate && aItem->GetParent() && aItem->GetParent()->Type() == PCB_FOOTPRINT_T
-            && !aFootprintEditor )
+        && !aFootprintEditor )
         candidate = aItem->GetParent()->GetParentGroup();
 
     while( candidate && candidate->GetParentGroup() && candidate->GetParentGroup() != aScope )

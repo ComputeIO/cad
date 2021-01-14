@@ -502,7 +502,7 @@ void RENDER_3D_RAYTRACE::renderRayPackets( const SFVEC3F* bgColorY, const RAY* a
 }
 
 
-void RENDER_3D_RAYTRACE::renderAntiAliasPackets( const SFVEC3F* aBgColorY,
+void RENDER_3D_RAYTRACE::renderAntiAliasPackets( const SFVEC3F*        aBgColorY,
                                                  const HITINFO_PACKET* aHitPck_X0Y0,
                                                  const HITINFO_PACKET* aHitPck_AA_X1Y1,
                                                  const RAY* aRayPck, SFVEC3F* aOutHitColor )
@@ -541,7 +541,7 @@ void RENDER_3D_RAYTRACE::renderAntiAliasPackets( const SFVEC3F* aBgColorY,
             unsigned int nodex1y1 = 0;
 
             if( ( x < ( RAYPACKET_DIM - 1 ) ) && ( y < ( RAYPACKET_DIM - 1 ) )
-              && idx1y1 < RAYPACKET_RAYS_PER_PACKET )
+                && idx1y1 < RAYPACKET_RAYS_PER_PACKET )
                 nodex1y1 = aHitPck_X0Y0[idx1y1].m_HitInfo.m_acc_node_info;
 
             // If all notes are equal we assume there was no change on the object hits.

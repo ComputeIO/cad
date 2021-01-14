@@ -656,10 +656,7 @@ public:
         return m_polys[aIndex][0];
     }
 
-    const SHAPE_LINE_CHAIN& Outline( int aIndex ) const
-    {
-        return m_polys[aIndex][0];
-    }
+    const SHAPE_LINE_CHAIN& Outline( int aIndex ) const { return m_polys[aIndex][0]; }
 
     /**
      * Function Subset

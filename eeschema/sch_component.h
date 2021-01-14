@@ -133,9 +133,8 @@ public:
      * @param pos - Position to place new component.
      * @param setNewItemFlag - Set the component IS_NEW and IS_MOVED flags.
      */
-    SCH_COMPONENT( LIB_PART& aPart, LIB_ID aLibId, SCH_SHEET_PATH* aSheet,
-                   int unit = 0, int convert = 0,
-                   const wxPoint& pos = wxPoint( 0, 0 ) );
+    SCH_COMPONENT( LIB_PART& aPart, LIB_ID aLibId, SCH_SHEET_PATH* aSheet, int unit = 0,
+                   int convert = 0, const wxPoint& pos = wxPoint( 0, 0 ) );
 
     SCH_COMPONENT( LIB_PART& aPart, SCH_SHEET_PATH* aSheet, PICKED_SYMBOL& aSel,
                    const wxPoint& pos = wxPoint( 0, 0 ) );
@@ -204,7 +203,7 @@ public:
     bool UseLibIdLookup() const { return m_schLibSymbolName.IsEmpty(); }
 
     std::unique_ptr< LIB_PART >& GetPartRef() { return m_part; }
-    const std::unique_ptr< LIB_PART >& GetPartRef() const { return m_part; }
+    const std::unique_ptr<LIB_PART>& GetPartRef() const { return m_part; }
 
     /**
      * Set this schematic symbol library symbol reference to \a aLibSymbol
@@ -270,7 +269,7 @@ public:
 
     void SetPrefix( const wxString& aPrefix ) { m_prefix = aPrefix; }
 
-    TRANSFORM& GetTransform() { return m_transform; }
+    TRANSFORM&       GetTransform() { return m_transform; }
     const TRANSFORM& GetTransform() const { return m_transform; }
 
     void SetTransform( const TRANSFORM& aTransform );

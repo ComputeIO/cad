@@ -285,7 +285,7 @@ void PROPERTIES_FRAME::CopyPrmsFromItemToPanel( WS_DATA_ITEM* aItem )
     m_textCtrlThicknessBinder.Show( aItem->GetType() != WS_DATA_ITEM::WS_BITMAP );
 
     if( aItem->GetType() == WS_DATA_ITEM::WS_TEXT
-            || aItem->GetType() == WS_DATA_ITEM::WS_POLYPOLYGON )
+        || aItem->GetType() == WS_DATA_ITEM::WS_POLYPOLYGON )
     {
         m_staticTextRot->Show( true );
         m_textCtrlRotation->Show( true );

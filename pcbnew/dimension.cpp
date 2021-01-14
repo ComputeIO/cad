@@ -906,7 +906,7 @@ void LEADER::updateGeometry()
     VECTOR2I start( m_start );
     start += firstLine.Resize( m_extensionOffset );
 
-    SEG primarySeg( m_start, m_end );
+    SEG          primarySeg( m_start, m_end );
     OPT_VECTOR2I primaryEndpoint = segPolyIntersection( polyBox, primarySeg );
 
     if( !primaryEndpoint )

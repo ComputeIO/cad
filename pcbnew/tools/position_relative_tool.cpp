@@ -67,8 +67,7 @@ int POSITION_RELATIVE_TOOL::PositionRelative( const TOOL_EVENT& aEvent )
     PCB_BASE_FRAME* editFrame = getEditFrame<PCB_BASE_FRAME>();
 
     const auto& selection = m_selectionTool->RequestSelection(
-            []( const VECTOR2I& aPt, GENERAL_COLLECTOR& aCollector, PCB_SELECTION_TOOL* sTool )
-            {
+            []( const VECTOR2I& aPt, GENERAL_COLLECTOR& aCollector, PCB_SELECTION_TOOL* sTool ) {
                 // Iterate from the back so we don't have to worry about removals.
                 for( int i = aCollector.GetCount() - 1; i >= 0; --i )
                 {

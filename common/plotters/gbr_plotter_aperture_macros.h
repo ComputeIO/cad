@@ -35,8 +35,8 @@
 
 #define APER_MACRO_ROUNDRECT_NAME "RoundRect"
 
-#define APER_MACRO_ROUNDRECT_HEADER \
-"%AMRoundRect*\n\
+#define APER_MACRO_ROUNDRECT_HEADER                                                                \
+    "%AMRoundRect*\n\
 0 Rectangle with rounded corners*\n\
 0 $1 Rounding radius*\n\
 0 $2 $3 $4 $5 $6 $7 $8 $9 X,Y pos of 4 corners*\n\
@@ -74,8 +74,8 @@
 // plotted
 #define APER_MACRO_SHAPE_OVAL_NAME "HorizOval"
 
-#define APER_MACRO_SHAPE_OVAL_HEADER \
-"%AMHorizOval*\n\
+#define APER_MACRO_SHAPE_OVAL_HEADER                                                               \
+    "%AMHorizOval*\n\
 0 Thick line with rounded ends*\n\
 0 $1 width*\n\
 0 $2 $3 position (X,Y) of the first rounded end (center of the circle)*\n\

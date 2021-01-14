@@ -44,37 +44,16 @@
 const int pcbnewSchemaVersion = 0;
 
 
-PCBNEW_SETTINGS::PCBNEW_SETTINGS()
-        : APP_SETTINGS_BASE( "pcbnew", pcbnewSchemaVersion ),
-          m_AuiPanels(),
-          m_Cleanup(),
-          m_DrcDialog(),
-          m_ExportIdf(),
-          m_ExportStep(),
-          m_ExportSvg(),
-          m_ExportVrml(),
-          m_FootprintWizardList(),
-          m_GenDrill(),
-          m_ImportGraphics(),
-          m_NetlistDialog(),
-          m_PlaceFile(),
-          m_Plot(),
-          m_FootprintChooser(),
-          m_Zones(),
-          m_FootprintViewer(),
-          m_FootprintWizard(),
-          m_Display(),
-          m_TrackDragAction( TRACK_DRAG_ACTION::DRAG ),
-          m_Use45DegreeGraphicSegments( false ),
-          m_FlipLeftRight( false ),
-          m_AddUnlockedPads( false ),
-          m_PolarCoords( false ),
-          m_RotationAngle( 900 ),
-          m_PlotLineWidth( 0.1 ),
-          m_ShowPageLimits( true ),
-          m_PnsSettings( nullptr ),
-          m_FootprintViewerAutoZoom( false ),
-          m_FootprintViewerZoom( 1.0 )
+PCBNEW_SETTINGS::PCBNEW_SETTINGS() :
+        APP_SETTINGS_BASE( "pcbnew", pcbnewSchemaVersion ), m_AuiPanels(), m_Cleanup(),
+        m_DrcDialog(), m_ExportIdf(), m_ExportStep(), m_ExportSvg(), m_ExportVrml(),
+        m_FootprintWizardList(), m_GenDrill(), m_ImportGraphics(), m_NetlistDialog(), m_PlaceFile(),
+        m_Plot(), m_FootprintChooser(), m_Zones(), m_FootprintViewer(), m_FootprintWizard(),
+        m_Display(), m_TrackDragAction( TRACK_DRAG_ACTION::DRAG ),
+        m_Use45DegreeGraphicSegments( false ), m_FlipLeftRight( false ), m_AddUnlockedPads( false ),
+        m_PolarCoords( false ), m_RotationAngle( 900 ), m_PlotLineWidth( 0.1 ),
+        m_ShowPageLimits( true ), m_PnsSettings( nullptr ), m_FootprintViewerAutoZoom( false ),
+        m_FootprintViewerZoom( 1.0 )
 {
     m_MagneticItems.pads     = MAGNETIC_OPTIONS::CAPTURE_CURSOR_IN_TRACK_TOOL;
     m_MagneticItems.tracks   = MAGNETIC_OPTIONS::CAPTURE_CURSOR_IN_TRACK_TOOL;
@@ -104,8 +83,8 @@ PCBNEW_SETTINGS::PCBNEW_SETTINGS()
     m_params.emplace_back( new PARAM<bool>( "editing.flip_left_right",
             &m_FlipLeftRight, true ) );
 
-    m_params.emplace_back( new PARAM<bool>( "editing.add_unlocked_pads",
-            &m_AddUnlockedPads, false ) );
+    m_params.emplace_back(
+            new PARAM<bool>( "editing.add_unlocked_pads", &m_AddUnlockedPads, false ) );
 
     m_params.emplace_back( new PARAM<bool>( "editing.magnetic_graphics",
             &m_MagneticItems.graphics, true ) );

@@ -285,8 +285,8 @@ void SHEETLIST_ERC_ITEMS_PROVIDER::visitMarkers( std::function<void( SCH_MARKER*
                 continue;
 
             // Don't show non-specific markers more than once
-            if( !firstTime &&
-                !static_cast<ERC_ITEM*>( marker->GetRCItem().get() )->IsSheetSpecific() )
+            if( !firstTime
+                && !static_cast<ERC_ITEM*>( marker->GetRCItem().get() )->IsSheetSpecific() )
             {
                 continue;
             }
@@ -305,19 +305,17 @@ void SHEETLIST_ERC_ITEMS_PROVIDER::SetSeverities( int aSeverities )
 
     ERC_SETTINGS& settings = m_schematic->ErcSettings();
 
-    visitMarkers(
-            [&]( SCH_MARKER* aMarker )
-            {
-                SEVERITY markerSeverity;
+    visitMarkers( [&]( SCH_MARKER* aMarker ) {
+        SEVERITY markerSeverity;
 
-                if( aMarker->IsExcluded() )
-                    markerSeverity = RPT_SEVERITY_EXCLUSION;
-                else
-                    markerSeverity = settings.GetSeverity( aMarker->GetRCItem()->GetErrorCode() );
+        if( aMarker->IsExcluded() )
+            markerSeverity = RPT_SEVERITY_EXCLUSION;
+        else
+            markerSeverity = settings.GetSeverity( aMarker->GetRCItem()->GetErrorCode() );
 
-                if( markerSeverity & m_severities )
-                    m_filteredMarkers.push_back( aMarker );
-            } );
+        if( markerSeverity & m_severities )
+            m_filteredMarkers.push_back( aMarker );
+    } );
 }
 
 
@@ -330,19 +328,17 @@ int SHEETLIST_ERC_ITEMS_PROVIDER::GetCount( int aSeverity )
 
     ERC_SETTINGS& settings = m_schematic->ErcSettings();
 
-    visitMarkers(
-            [&]( SCH_MARKER* aMarker )
-            {
-                SEVERITY markerSeverity;
+    visitMarkers( [&]( SCH_MARKER* aMarker ) {
+        SEVERITY markerSeverity;
 
-                if( aMarker->IsExcluded() )
-                    markerSeverity = RPT_SEVERITY_EXCLUSION;
-                else
-                    markerSeverity = settings.GetSeverity( aMarker->GetRCItem()->GetErrorCode() );
+        if( aMarker->IsExcluded() )
+            markerSeverity = RPT_SEVERITY_EXCLUSION;
+        else
+            markerSeverity = settings.GetSeverity( aMarker->GetRCItem()->GetErrorCode() );
 
-                if( markerSeverity == aSeverity )
-                    count++;
-            } );
+        if( markerSeverity == aSeverity )
+            count++;
+    } );
 
     return count;
 }

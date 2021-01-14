@@ -48,8 +48,8 @@ public:
     enum TEXT_TYPE
     {
         TEXT_is_REFERENCE = 0,
-        TEXT_is_VALUE     = 1,
-        TEXT_is_DIVERS    = 2
+        TEXT_is_VALUE = 1,
+        TEXT_is_DIVERS = 2
     };
 
     FP_TEXT( FOOTPRINT* aParentFootprint, TEXT_TYPE text_type = TEXT_is_DIVERS );
@@ -105,10 +105,7 @@ public:
      * @return force the text rotation to be always between -90 .. 90 deg. Otherwise the text is not easy to read
      * if false, the text rotation is free.
      */
-    bool IsKeepUpright() const
-    {
-        return m_keepUpright;
-    }
+    bool IsKeepUpright() const { return m_keepUpright; }
 
     void SetKeepUpright( bool aKeepUpright )
     {

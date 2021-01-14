@@ -746,9 +746,9 @@ static void export_vrml_drawsegment( MODEL_VRML& aModel, PCB_SHAPE* drawseg )
 
         pointCtrl.emplace_back( x, y );
         pointCtrl.emplace_back( drawseg->GetBezControl1().x * BOARD_SCALE,
-                drawseg->GetBezControl1().y * BOARD_SCALE );
+                                drawseg->GetBezControl1().y * BOARD_SCALE );
         pointCtrl.emplace_back( drawseg->GetBezControl2().x * BOARD_SCALE,
-                drawseg->GetBezControl2().y * BOARD_SCALE );
+                                drawseg->GetBezControl2().y * BOARD_SCALE );
         pointCtrl.emplace_back( xf, yf );
 
         BEZIER_POLY converter( pointCtrl );
@@ -756,8 +756,8 @@ static void export_vrml_drawsegment( MODEL_VRML& aModel, PCB_SHAPE* drawseg )
 
         for( size_t i = 1; i < output.size(); ++i )
         {
-            export_vrml_line( aModel, layer, output[i - 1].x, output[i - 1].y,
-                                             output[i].x, output[i].y, w );
+            export_vrml_line( aModel, layer, output[i - 1].x, output[i - 1].y, output[i].x,
+                              output[i].y, w );
         }
 
         break;
@@ -1128,9 +1128,9 @@ static void export_vrml_fp_shape( MODEL_VRML& aModel, FP_SHAPE* aOutline, FOOTPR
 
         pointCtrl.emplace_back( x, y );
         pointCtrl.emplace_back( aOutline->GetBezControl1().x * BOARD_SCALE,
-                aOutline->GetBezControl1().y * BOARD_SCALE );
+                                aOutline->GetBezControl1().y * BOARD_SCALE );
         pointCtrl.emplace_back( aOutline->GetBezControl2().x * BOARD_SCALE,
-                aOutline->GetBezControl2().y * BOARD_SCALE );
+                                aOutline->GetBezControl2().y * BOARD_SCALE );
         pointCtrl.emplace_back( xf, yf );
 
         BEZIER_POLY converter( pointCtrl );
@@ -1138,8 +1138,8 @@ static void export_vrml_fp_shape( MODEL_VRML& aModel, FP_SHAPE* aOutline, FOOTPR
 
         for( size_t i = 1; i < output.size(); ++i )
         {
-            export_vrml_line( aModel, layer, output[i - 1].x, output[i - 1].y,
-                                             output[i].x, output[i].y, w );
+            export_vrml_line( aModel, layer, output[i - 1].x, output[i - 1].y, output[i].x,
+                              output[i].y, w );
         }
 
         break;

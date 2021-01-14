@@ -425,8 +425,8 @@ DIALOG_LIB_EDIT_PIN_TABLE::DIALOG_LIB_EDIT_PIN_TABLE( SYMBOL_EDIT_FRAME* parent,
     attr = new wxGridCellAttr;
     wxArrayString orientationNames = PinOrientationNames();
     orientationNames.push_back( INDETERMINATE_STATE );
-    attr->SetRenderer( new GRID_CELL_ICON_TEXT_RENDERER( PinOrientationIcons(),
-                                                         orientationNames ) );
+    attr->SetRenderer(
+            new GRID_CELL_ICON_TEXT_RENDERER( PinOrientationIcons(), orientationNames ) );
     attr->SetEditor( new GRID_CELL_ICON_TEXT_POPUP( PinOrientationIcons(), orientationNames ) );
     m_grid->SetColAttr( COL_ORIENTATION, attr );
 

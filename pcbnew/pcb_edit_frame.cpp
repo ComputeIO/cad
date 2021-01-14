@@ -1650,12 +1650,12 @@ void PCB_EDIT_FRAME::CommonSettingsChanged( bool aEnvVarsChanged, bool aTextVars
     }
     catch( PARSE_ERROR& pe )
     {
-        wxHyperlinkCtrl* button = new wxHyperlinkCtrl( infobar, wxID_ANY, _( "Edit design rules" ),
-                                                       wxEmptyString );
+        wxHyperlinkCtrl* button =
+                new wxHyperlinkCtrl( infobar, wxID_ANY, _( "Edit design rules" ), wxEmptyString );
 
-        button->Bind( wxEVT_COMMAND_HYPERLINK, std::function<void( wxHyperlinkEvent& aEvent )>(
-                [&]( wxHyperlinkEvent& aEvent )
-                {
+        button->Bind(
+                wxEVT_COMMAND_HYPERLINK,
+                std::function<void( wxHyperlinkEvent & aEvent )>( [&]( wxHyperlinkEvent& aEvent ) {
                     ShowBoardSetupDialog( _( "Custom Rules" ) );
                 } ) );
 

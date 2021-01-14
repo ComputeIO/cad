@@ -197,7 +197,8 @@ void WS_DRAW_ITEM_TEXT::SetTextAngle( double aAngle )
 
 // ============================ POLYGON =================================
 
-void WS_DRAW_ITEM_POLYPOLYGONS::PrintWsItem( const RENDER_SETTINGS* aSettings, const wxPoint& aOffset )
+void WS_DRAW_ITEM_POLYPOLYGONS::PrintWsItem( const RENDER_SETTINGS* aSettings,
+                                             const wxPoint&         aOffset )
 {
     wxDC*   DC = aSettings->GetPrintDC();
     COLOR4D color = aSettings->GetLayerColor( LAYER_WORKSHEET );

@@ -120,8 +120,7 @@ private:
 class PCB_EXPR_NETCLASS_REF : public PCB_EXPR_VAR_REF
 {
 public:
-    PCB_EXPR_NETCLASS_REF( int aItemIndex ) :
-        PCB_EXPR_VAR_REF( aItemIndex )
+    PCB_EXPR_NETCLASS_REF( int aItemIndex ) : PCB_EXPR_VAR_REF( aItemIndex )
     {
         SetType( LIBEVAL::VT_STRING );
         //printf("*** CreateVarRef %p %d\n", this, aItemIndex );
@@ -135,8 +134,7 @@ public:
 class PCB_EXPR_NETNAME_REF : public PCB_EXPR_VAR_REF
 {
 public:
-    PCB_EXPR_NETNAME_REF( int aItemIndex ) :
-        PCB_EXPR_VAR_REF( aItemIndex )
+    PCB_EXPR_NETNAME_REF( int aItemIndex ) : PCB_EXPR_VAR_REF( aItemIndex )
     {
         SetType( LIBEVAL::VT_STRING );
         //printf("*** CreateVarRef %p %d\n", this, aItemIndex );

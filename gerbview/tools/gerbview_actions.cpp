@@ -46,11 +46,9 @@ TOOL_ACTION GERBVIEW_ACTIONS::openDrillFile( "gerbview.Control.openDrillFile",
         _( "Open Excellon drill file(s) on the current layer. Previous data will be deleted" ),
         load_drill_xpm );
 
-TOOL_ACTION GERBVIEW_ACTIONS::openJobFile( "gerbview.Control.openJobFile",
-        AS_GLOBAL, 0, "",
-        _( "Open Gerber Job File..." ),
-        _( "Open a Gerber job file and its associated gerber plot files" ),
-        file_gerber_job_xpm );
+TOOL_ACTION GERBVIEW_ACTIONS::openJobFile(
+        "gerbview.Control.openJobFile", AS_GLOBAL, 0, "", _( "Open Gerber Job File..." ),
+        _( "Open a Gerber job file and its associated gerber plot files" ), file_gerber_job_xpm );
 
 TOOL_ACTION GERBVIEW_ACTIONS::openZipFile( "gerbview.Control.openZipFile",
         AS_GLOBAL, 0, "",
@@ -76,11 +74,10 @@ TOOL_ACTION GERBVIEW_ACTIONS::showSource( "gerbview.Inspection.showSource",
         _( "Show source file for the current layer" ),
         tools_xpm );
 
-TOOL_ACTION GERBVIEW_ACTIONS::exportToPcbnew( "gerbview.Control.exportToPcbnew",
-        AS_GLOBAL, 0, "",
-        _( "Export to Pcbnew..." ),
-        _( "Export data in Pcbnew format" ),
-        export_to_pcbnew_xpm );
+TOOL_ACTION GERBVIEW_ACTIONS::exportToPcbnew( "gerbview.Control.exportToPcbnew", AS_GLOBAL, 0, "",
+                                              _( "Export to Pcbnew..." ),
+                                              _( "Export data in Pcbnew format" ),
+                                              export_to_pcbnew_xpm );
 
 TOOL_ACTION GERBVIEW_ACTIONS::clearLayer( "gerbview.Control.clearLayer",
         AS_GLOBAL, 0, "",

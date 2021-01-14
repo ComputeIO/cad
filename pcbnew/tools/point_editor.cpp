@@ -58,7 +58,10 @@ enum RECT_POINTS
 
 enum RECT_LINES
 {
-    RECT_TOP, RECT_RIGHT, RECT_BOT, RECT_LEFT
+    RECT_TOP,
+    RECT_RIGHT,
+    RECT_BOT,
+    RECT_LEFT
 };
 
 enum ARC_POINTS
@@ -195,7 +198,8 @@ std::shared_ptr<EDIT_POINTS> POINT_EDITOR::makePoints( EDA_ITEM* aItem )
             points->AddLine( points->Point( RECT_TOP_LEFT ), points->Point( RECT_TOP_RIGHT ) );
             points->Line( RECT_TOP ).SetConstraint( new EC_PERPLINE( points->Line( RECT_TOP ) ) );
             points->AddLine( points->Point( RECT_TOP_RIGHT ), points->Point( RECT_BOT_RIGHT ) );
-            points->Line( RECT_RIGHT ).SetConstraint( new EC_PERPLINE( points->Line( RECT_RIGHT ) ) );
+            points->Line( RECT_RIGHT )
+                    .SetConstraint( new EC_PERPLINE( points->Line( RECT_RIGHT ) ) );
             points->AddLine( points->Point( RECT_BOT_RIGHT ), points->Point( RECT_BOT_LEFT ) );
             points->Line( RECT_BOT ).SetConstraint( new EC_PERPLINE( points->Line( RECT_BOT ) ) );
             points->AddLine( points->Point( RECT_BOT_LEFT ), points->Point( RECT_TOP_LEFT ) );
@@ -1144,7 +1148,8 @@ void POINT_EDITOR::updateItem() const
             for( unsigned i = 0; i < m_editPoints->LinesSize(); ++i )
             {
                 if( !isModified( m_editPoints->Line( i ) ) )
-                    m_editPoints->Line( i ).SetConstraint( new EC_PERPLINE( m_editPoints->Line( i ) ) );
+                    m_editPoints->Line( i ).SetConstraint(
+                            new EC_PERPLINE( m_editPoints->Line( i ) ) );
             }
         }
             break;

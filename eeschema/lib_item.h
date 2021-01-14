@@ -175,8 +175,8 @@ public:
      *              pass reference to the lib component for pins.
      * @param aTransform Transform Matrix (rotation, mirror ..)
      */
-    virtual void Print( const RENDER_SETTINGS* aSettings, const wxPoint &aOffset,
-                        void* aData, const TRANSFORM& aTransform );
+    virtual void Print( const RENDER_SETTINGS* aSettings, const wxPoint& aOffset, void* aData,
+                        const TRANSFORM& aTransform );
 
     virtual int GetPenWidth() const = 0;
 

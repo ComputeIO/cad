@@ -271,10 +271,7 @@ public:
      *
      * @return if the board is just holding a footprint
      */
-    bool IsFootprintHolder() const
-    {
-        return m_boardUse == BOARD_USE::FPHOLDER;
-    }
+    bool IsFootprintHolder() const { return m_boardUse == BOARD_USE::FPHOLDER; }
 
     void SetFileName( const wxString& aFileName ) { m_fileName = aFileName; }
 
@@ -593,7 +590,7 @@ public:
     void SetPlotOptions( const PCB_PLOT_PARAMS& aOptions )  { m_plotOptions = aOptions; }
 
     TITLE_BLOCK& GetTitleBlock()                            { return m_titles; }
-    const TITLE_BLOCK& GetTitleBlock() const                { return m_titles; }
+    const TITLE_BLOCK& GetTitleBlock() const { return m_titles; }
     void SetTitleBlock( const TITLE_BLOCK& aTitleBlock )    { m_titles = aTitleBlock; }
 
     wxString GetSelectMenuText( EDA_UNITS aUnits ) const override;

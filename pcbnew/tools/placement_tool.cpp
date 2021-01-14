@@ -473,8 +473,7 @@ int ALIGN_DISTRIBUTE_TOOL::AlignCenterY( const TOOL_EVENT& aEvent )
 int ALIGN_DISTRIBUTE_TOOL::DistributeHorizontally( const TOOL_EVENT& aEvent )
 {
     PCB_SELECTION& selection = m_selectionTool->RequestSelection(
-            []( const VECTOR2I& aPt, GENERAL_COLLECTOR& aCollector, PCB_SELECTION_TOOL* sTool )
-            {
+            []( const VECTOR2I& aPt, GENERAL_COLLECTOR& aCollector, PCB_SELECTION_TOOL* sTool ) {
                 // Iterate from the back so we don't have to worry about removals.
                 for( int i = aCollector.GetCount() - 1; i >= 0; --i )
                 {
@@ -594,8 +593,7 @@ void ALIGN_DISTRIBUTE_TOOL::doDistributeCentersHorizontally( ALIGNMENT_RECTS &it
 int ALIGN_DISTRIBUTE_TOOL::DistributeVertically( const TOOL_EVENT& aEvent )
 {
     PCB_SELECTION& selection = m_selectionTool->RequestSelection(
-            []( const VECTOR2I& aPt, GENERAL_COLLECTOR& aCollector, PCB_SELECTION_TOOL* sTool )
-            {
+            []( const VECTOR2I& aPt, GENERAL_COLLECTOR& aCollector, PCB_SELECTION_TOOL* sTool ) {
                 // Iterate from the back so we don't have to worry about removals.
                 for( int i = aCollector.GetCount() - 1; i >= 0; --i )
                 {

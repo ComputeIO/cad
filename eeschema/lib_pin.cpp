@@ -69,9 +69,10 @@ const wxString LIB_PIN::GetCanonicalElectricalTypeName( ELECTRICAL_PINTYPE aType
 // i.e. the clock symbols (falling clock is actually external but is of
 // the same kind)
 
-static int internalPinDecoSize( const RENDER_SETTINGS* aSettings, const LIB_PIN &aPin )
+static int internalPinDecoSize( const RENDER_SETTINGS* aSettings, const LIB_PIN& aPin )
 {
-    const KIGFX::SCH_RENDER_SETTINGS* settings = static_cast<const KIGFX::SCH_RENDER_SETTINGS*>( aSettings );
+    const KIGFX::SCH_RENDER_SETTINGS* settings =
+            static_cast<const KIGFX::SCH_RENDER_SETTINGS*>( aSettings );
 
     if( settings && settings->m_PinSymbolSize )
         return settings->m_PinSymbolSize;
@@ -82,9 +83,10 @@ static int internalPinDecoSize( const RENDER_SETTINGS* aSettings, const LIB_PIN 
 /// Utility for getting the size of the 'external' pin decorators (as a radius)
 // i.e. the negation circle, the polarity 'slopes' and the nonlogic
 // marker
-static int externalPinDecoSize( const RENDER_SETTINGS* aSettings, const LIB_PIN &aPin )
+static int externalPinDecoSize( const RENDER_SETTINGS* aSettings, const LIB_PIN& aPin )
 {
-    const KIGFX::SCH_RENDER_SETTINGS* settings = static_cast<const KIGFX::SCH_RENDER_SETTINGS*>( aSettings );
+    const KIGFX::SCH_RENDER_SETTINGS* settings =
+            static_cast<const KIGFX::SCH_RENDER_SETTINGS*>( aSettings );
 
     if( settings && settings->m_PinSymbolSize )
         return settings->m_PinSymbolSize;
@@ -457,7 +459,6 @@ void LIB_PIN::printPinTexts( const RENDER_SETTINGS* aSettings, wxPoint& aPinPos,
         }
     }
 }
-
 
 
 void LIB_PIN::printPinElectricalTypeName( const RENDER_SETTINGS* aSettings, wxPoint& aPosition,
