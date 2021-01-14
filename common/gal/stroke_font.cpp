@@ -394,7 +394,7 @@ BOX2D STROKE_FONT::computeBoundingBox( const GLYPH* aGLYPH, double aGlyphWidth )
 
 
 void STROKE_FONT::Draw( GAL* aGal, const UTF8& aText, const VECTOR2D& aPosition,
-                        double aRotationAngle ) const
+                        double aRotationAngle )
 {
     if( aText.empty() )
         return;
