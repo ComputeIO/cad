@@ -29,42 +29,106 @@
 
 using namespace KIGFX;
 
-FONT* FONT::defaultFont = nullptr;
+FONT*                     FONT::s_defaultFont = nullptr;
+std::map<wxString, FONT*> FONT::s_fontMap;
 
 FONT::FONT()
 {
 }
 
 
-FONT* FONT::GetFont( const wxString& aFontName )
+#if 0
+FONT& GAL::GetFont( const wxString* fontSpecifier )
+{
+
+    if( !fontSpecifier || fontSpecifier->empty() )
+    {
+        return FONT::DefaultFont();
+    }
+
+    FONT_MAP::iterator it = fontMap.find( *fontSpecifier );
+
+    if( it != fontMap.end() )
+    {
+        // already loaded
+        return *( it->second );
+    }
+    else
+    {
+        // try loading font
+        FONT* font = FONT::GetFont( *fontSpecifier );
+        if( font )
+        {
+            // save font for future use
+            fontMap[*fontSpecifier] = font;
+
+            // return the newly loaded font
+            return *font;
+        }
+        else
+        {
+            // font loading failed, default to Newstroke
+            return *defaultFont;
+        }
+    }
+}
+#endif
+
+FONT& FONT::GetFont( const wxString& aFontName )
 {
     if( aFontName.empty() )
     {
-        if( !defaultFont )
+        if( !s_defaultFont )
         {
-            defaultFont = new STROKE_FONT();
-            defaultFont->LoadFont(); // TODO: do something on failure
+            s_defaultFont = new STROKE_FONT();
+            s_defaultFont->LoadFont(); // TODO: do something on failure
         }
 
-        return defaultFont;
+        return *s_defaultFont;
     }
 
-    // Try outline first
-    FONT* font = new OUTLINE_FONT();
-    bool  success = font->LoadFont( aFontName );
+    FONT* font = s_fontMap[aFontName];
 
-    if( !success )
+    if( !font )
     {
-        // Could not load TrueType, falling back to Hershey
-        delete font;
-        font = new STROKE_FONT();
-        success = font->LoadFont( aFontName );
+        // Try outline first
+        font = new OUTLINE_FONT();
+        bool success = font->LoadFont( aFontName );
+
         if( !success )
         {
+            // Could not load TrueType, falling back to Hershey
             delete font;
-            font = nullptr;
+            font = new STROKE_FONT();
+            success = font->LoadFont( aFontName );
+            if( !success )
+            {
+                delete font;
+                font = nullptr;
+            }
+        }
+        if( font )
+        {
+            s_fontMap[aFontName] = font;
+        }
+        else
+        {
+            // TODO: signal error? font was not found
+            return *s_defaultFont;
         }
     }
 
-    return font;
+    return *font;
+}
+
+
+bool FONT::IsOutline( const wxString& aFontName )
+{
+    // note: if aFontName does not name an existing font, default
+    // (Newstroke) is used - but IsOutline() returns false for
+    // Newstroke anyway, so I guess it's OK
+    //
+    // TODO: figure out whether it would be a good idea to do
+    // something else in case aFontName is not found
+    return GetFont( aFontName ).IsOutline();
 }

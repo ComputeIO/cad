@@ -54,7 +54,11 @@ public:
         //
     }
 
-    static FONT* GetFont( const wxString& aFontName = "" );
+    virtual bool IsStroke() const { return false; }
+    virtual bool IsOutline() const { return false; }
+
+    static FONT& GetFont( const wxString& aFontName = "" );
+    static bool  IsOutline( const wxString& aFontName );
 
     /**
      * Load a font.
@@ -73,7 +77,7 @@ public:
      * @param aRotationAngle is the text rotation angle in radians.
      */
     virtual void Draw( GAL* aGal, const UTF8& aText, const VECTOR2D& aPosition,
-                       double aRotationAngle ) const = 0;
+                       double aRotationAngle ) = 0;
 
     /**
      * Compute the boundary limits of aText (the bounding box of all shapes).
@@ -133,10 +137,9 @@ protected:
     }
 
 private:
-    static FONT* defaultFont;
+    static FONT*                     s_defaultFont;
+    static std::map<wxString, FONT*> s_fontMap;
 };
-
-typedef std::map<wxString, FONT*> FONT_MAP;
 
 } // namespace KIGFX
 
