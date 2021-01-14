@@ -405,7 +405,7 @@ TOOL_ACTION PCB_ACTIONS::updateFootprints( "pcbnew.GlobalEdit.updateFootprints",
 TOOL_ACTION PCB_ACTIONS::removeUnusedPads( "pcbnew.GlobalEdit.removeUnusedPads",
         AS_GLOBAL, 0, "",
         _( "Remove Unused Pads..." ),
-        _( "Remove or reset the unconnected inner layers on through hole pads and vias" ),
+        _( "Remove or restore the unconnected inner layers on through hole pads and vias" ),
         pads_remove_xpm );
 
 TOOL_ACTION PCB_ACTIONS::changeFootprint( "pcbnew.GlobalEdit.changeFootprint",
@@ -1230,14 +1230,12 @@ TOOL_ACTION PCB_ACTIONS::zoneUnfillAll( "pcbnew.ZoneFiller.zoneUnfillAll",
 TOOL_ACTION PCB_ACTIONS::autoplaceSelectedComponents( "pcbnew.Autoplacer.autoplaceSelected",
         AS_GLOBAL, 0, "",
         _( "Place Selected Footprints" ),
-        _( "Performs automatic placement of selected components" ),
-        module_check_xpm );
+        _( "Performs automatic placement of selected components" ) );
 
 TOOL_ACTION PCB_ACTIONS::autoplaceOffboardComponents( "pcbnew.Autoplacer.autoplaceOffboard",
         AS_GLOBAL, 0, "",
         _( "Place Off-Board Footprints" ),
-        _( "Performs automatic placement of components outside board area" ),
-        module_xpm );
+        _( "Performs automatic placement of components outside board area" ) );
 
 
 // ROUTER_TOOL

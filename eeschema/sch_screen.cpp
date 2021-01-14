@@ -120,7 +120,7 @@ void SCH_SCREEN::DecRefCount()
 
 bool SCH_SCREEN::HasItems( KICAD_T aItemType ) const
 {
-    EE_RTREE::EE_TYPE sheets = const_cast<EE_RTREE&>( m_rtree ).OfType( aItemType );
+    EE_RTREE::EE_TYPE sheets = m_rtree.OfType( aItemType );
 
     return sheets.begin() != sheets.end();
 }
@@ -739,7 +739,7 @@ void SCH_SCREEN::UpdateLocalLibSymbolLinks()
 }
 
 
-void SCH_SCREEN::Print( RENDER_SETTINGS* aSettings )
+void SCH_SCREEN::Print( const RENDER_SETTINGS* aSettings )
 {
     // Ensure links are up to date, even if a library was reloaded for some reason:
     std::vector<SCH_ITEM*> junctions;

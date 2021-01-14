@@ -257,6 +257,15 @@ void DIALOG_FIND::search( bool aDirection )
                         m_hitList.push_back( textItem );
                     }
                 }
+
+                for( BOARD_ITEM* item : m_frame->GetBoard()->Zones() )
+                {
+                    ZONE* zoneItem = dynamic_cast<ZONE*>( item );
+                    if( zoneItem && zoneItem->Matches( m_frame->GetFindReplaceData(), nullptr ) )
+                    {
+                        m_hitList.push_back( zoneItem );
+                    }
+                }
             }
         }
 
@@ -326,6 +335,8 @@ void DIALOG_FIND::search( bool aDirection )
         m_frame->SetStatusText( wxEmptyString );
         msg.Printf( _( "\"%s\" not found" ), searchString );
         m_frame->ShowInfoBarMsg( msg );
+
+        m_status->SetLabel( msg );
     }
     else if( endIsReached )
     {

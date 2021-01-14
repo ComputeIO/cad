@@ -202,9 +202,14 @@ int PL_SELECTION_TOOL::Main( const TOOL_EVENT& aEvent )
 
         if( m_frame->ToolStackIsEmpty() )
         {
-            if( !modifier_enabled && !m_selection.Empty() && !m_frame->GetDragSelects()
-                    && evt->HasPosition() && selectionContains( evt->Position() ) )
+            if( !modifier_enabled
+                    && !m_selection.Empty()
+                    && m_frame->GetDragAction() == MOUSE_DRAG_ACTION::DRAG_SELECTED
+                    && evt->HasPosition()
+                    && selectionContains( evt->Position() ) )
+            {
                 m_frame->GetCanvas()->SetCurrentCursor( KICURSOR::MOVING );
+            }
             else
             {
                 if( m_additive )
@@ -584,7 +589,7 @@ bool PL_SELECTION_TOOL::doSelectionMenu( COLLECTOR* aCollector )
     }
 
     menu.AppendSeparator();
-    menu.Add( _( "Select &All\tA" ), limit + 1, plus_xpm );
+    menu.Add( _( "Select &All\tA" ), limit + 1, nullptr );
 
     if( aCollector->m_MenuTitle.Length() )
     {

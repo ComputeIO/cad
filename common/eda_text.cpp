@@ -387,8 +387,8 @@ bool EDA_TEXT::TextHitTest( const EDA_RECT& aRect, bool aContains, int aAccuracy
 }
 
 
-void EDA_TEXT::Print( const RENDER_SETTINGS* aSettings, const wxPoint& aOffset, COLOR4D aColor,
-                      OUTLINE_MODE aFillMode )
+void EDA_TEXT::Print( const RENDER_SETTINGS* aSettings, const wxPoint& aOffset,
+                      COLOR4D aColor, OUTLINE_MODE aFillMode )
 {
     if( IsMultilineAllowed() )
     {
@@ -447,8 +447,8 @@ void EDA_TEXT::GetLinePositions( std::vector<wxPoint>& aPositions, int aLineCoun
 }
 
 void EDA_TEXT::printOneLineOfText( const RENDER_SETTINGS* aSettings, const wxPoint& aOffset,
-                                   COLOR4D aColor, OUTLINE_MODE aFillMode, const wxString& aText,
-                                   const wxPoint& aPos )
+                                   COLOR4D aColor, OUTLINE_MODE aFillMode,
+                                   const wxString& aText, const wxPoint &aPos )
 {
     wxDC* DC = aSettings->GetPrintDC();
     int   penWidth = std::max( GetEffectiveTextPenWidth(), aSettings->GetDefaultPenWidth() );
@@ -501,12 +501,12 @@ void EDA_TEXT::Format( OUTPUTFORMATTER* aFormatter, int aNestLevel, int aControl
     // Text size
     aFormatter->Print( 0, " (font" );
 
-    aFormatter->Print( 0, " (size %s %s)", FormatInternalUnits( GetTextHeight() ).c_str(),
+    aFormatter->Print( 0, " (size %s %s)",
+                       FormatInternalUnits( GetTextHeight() ).c_str(),
                        FormatInternalUnits( GetTextWidth() ).c_str() );
 
     if( GetTextThickness() )
-        aFormatter->Print( 0, " (thickness %s)",
-                           FormatInternalUnits( GetTextThickness() ).c_str() );
+        aFormatter->Print( 0, " (thickness %s)", FormatInternalUnits( GetTextThickness() ).c_str() );
 
     if( IsBold() )
         aFormatter->Print( 0, " bold" );
@@ -514,20 +514,19 @@ void EDA_TEXT::Format( OUTPUTFORMATTER* aFormatter, int aNestLevel, int aControl
     if( IsItalic() )
         aFormatter->Print( 0, " italic" );
 
-    aFormatter->Print( 0, ")" ); // (font
+    aFormatter->Print( 0, ")"); // (font
 
-    if( IsMirrored() || GetHorizJustify() != GR_TEXT_HJUSTIFY_CENTER
-        || GetVertJustify() != GR_TEXT_VJUSTIFY_CENTER )
+    if( IsMirrored() ||
+        GetHorizJustify() != GR_TEXT_HJUSTIFY_CENTER ||
+        GetVertJustify() != GR_TEXT_VJUSTIFY_CENTER )
     {
-        aFormatter->Print( 0, " (justify" );
+        aFormatter->Print( 0, " (justify");
 
         if( GetHorizJustify() != GR_TEXT_HJUSTIFY_CENTER )
-            aFormatter->Print( 0, ( GetHorizJustify() == GR_TEXT_HJUSTIFY_LEFT ) ? " left"
-                                                                                 : " right" );
+            aFormatter->Print( 0, (GetHorizJustify() == GR_TEXT_HJUSTIFY_LEFT) ? " left" : " right" );
 
         if( GetVertJustify() != GR_TEXT_VJUSTIFY_CENTER )
-            aFormatter->Print( 0,
-                               ( GetVertJustify() == GR_TEXT_VJUSTIFY_TOP ) ? " top" : " bottom" );
+            aFormatter->Print( 0, (GetVertJustify() == GR_TEXT_VJUSTIFY_TOP) ? " top" : " bottom" );
 
         if( IsMirrored() )
             aFormatter->Print( 0, " mirror" );

@@ -135,7 +135,7 @@ public:
      */
     SCH_COMPONENT( LIB_PART& aPart, LIB_ID aLibId, SCH_SHEET_PATH* aSheet,
                    int unit = 0, int convert = 0,
-                   const wxPoint& pos = wxPoint( 0, 0 )  );
+                   const wxPoint& pos = wxPoint( 0, 0 ) );
 
     SCH_COMPONENT( LIB_PART& aPart, SCH_SHEET_PATH* aSheet, PICKED_SYMBOL& aSel,
                    const wxPoint& pos = wxPoint( 0, 0 ) );
@@ -182,11 +182,11 @@ public:
      *
      * @return true for a component
      */
-    bool IsMovableFromAnchorPoint() override { return true; }
+    bool IsMovableFromAnchorPoint() const override { return true; }
 
     void SetLibId( const LIB_ID& aName );
 
-    const LIB_ID& GetLibId() const        { return m_lib_id; }
+    const LIB_ID& GetLibId() const { return m_lib_id; }
 
     /**
      * The name of the symbol in the schematic library symbol list.
@@ -204,6 +204,7 @@ public:
     bool UseLibIdLookup() const { return m_schLibSymbolName.IsEmpty(); }
 
     std::unique_ptr< LIB_PART >& GetPartRef() { return m_part; }
+    const std::unique_ptr< LIB_PART >& GetPartRef() const { return m_part; }
 
     /**
      * Set this schematic symbol library symbol reference to \a aLibSymbol
@@ -269,7 +270,8 @@ public:
 
     void SetPrefix( const wxString& aPrefix ) { m_prefix = aPrefix; }
 
-    TRANSFORM& GetTransform() const { return const_cast< TRANSFORM& >( m_transform ); }
+    TRANSFORM& GetTransform() { return m_transform; }
+    const TRANSFORM& GetTransform() const { return m_transform; }
 
     void SetTransform( const TRANSFORM& aTransform );
 
@@ -467,14 +469,14 @@ public:
      *
      * @return Pin object if found, otherwise NULL.
      */
-    SCH_PIN* GetPin( const wxString& number );
+    SCH_PIN* GetPin( const wxString& number ) const;
 
     /**
      * Populate a vector with all the pins from the library object.
      *
      * @param aPinsList is the list to populate with all of the pins.
      */
-    void GetLibPins( std::vector<LIB_PIN*>& aPinsList );
+    void GetLibPins( std::vector<LIB_PIN*>& aPinsList ) const;
 
     SCH_PIN* GetPin( LIB_PIN* aLibPin );
 
@@ -495,7 +497,7 @@ public:
      * @param aOffset is the drawing offset (usually wxPoint(0,0),
      *  but can be different when moving an object)
      */
-    void Print( RENDER_SETTINGS* aSettings, const wxPoint& aOffset ) override;
+    void Print( const RENDER_SETTINGS* aSettings, const wxPoint& aOffset ) override;
 
     void SwapData( SCH_ITEM* aItem ) override;
 
@@ -592,7 +594,7 @@ public:
     void MirrorX( int aXaxis_position ) override;
     void Rotate( wxPoint aPosition ) override;
 
-    bool Matches( wxFindReplaceData& aSearchData, void* aAuxData ) override;
+    bool Matches( const wxFindReplaceData& aSearchData, void* aAuxData ) const override;
 
     void GetEndPoints( std::vector<DANGLING_END_ITEM>& aItemList ) override;
 

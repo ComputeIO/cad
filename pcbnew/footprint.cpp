@@ -148,7 +148,7 @@ FOOTPRINT::FOOTPRINT( const FOOTPRINT& aFootprint ) :
     {
         PCB_GROUP* newGroup = static_cast<PCB_GROUP*>( ptrMap[ group ] );
 
-        const_cast<std::unordered_set<BOARD_ITEM*>*>( &newGroup->GetItems() )->clear();
+        newGroup->GetItems().clear();
 
         for( BOARD_ITEM* member : group->GetItems() )
             newGroup->AddItem( ptrMap[ member ] );
@@ -279,7 +279,7 @@ FOOTPRINT& FOOTPRINT::operator=( FOOTPRINT&& aOther )
     m_3D_Drawings.clear();
     m_3D_Drawings = aOther.m_3D_Drawings;
     m_doc         = aOther.m_doc;
-    m_keywords     = aOther.m_keywords;
+    m_keywords    = aOther.m_keywords;
     m_properties  = aOther.m_properties;
 
     // Ensure auxiliary data is up to date

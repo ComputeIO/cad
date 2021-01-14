@@ -167,7 +167,7 @@ private:
         return m_padStacks.back();
     }
 
-    const std::string formatPadShape( HYPERLYNX_PAD_STACK& aStack )
+    const std::string formatPadShape( const HYPERLYNX_PAD_STACK& aStack )
     {
         int  shapeId = 0;
         char buf[1024];
@@ -175,9 +175,9 @@ private:
         switch( aStack.m_shape )
         {
         case PAD_SHAPE_CIRCLE:
-        case PAD_SHAPE_OVAL: shapeId = 0; break;
+        case PAD_SHAPE_OVAL:      shapeId = 0; break;
         case PAD_SHAPE_ROUNDRECT: shapeId = 2; break;
-        case PAD_SHAPE_RECT: shapeId = 1; break;
+        case PAD_SHAPE_RECT:      shapeId = 1; break;
         default:
             shapeId = 0;
 
@@ -334,7 +334,7 @@ bool HYPERLYNX_EXPORTER::writeStackupInfo()
     LSEQ layers = m_board->GetDesignSettings().GetEnabledLayers().CuStack();
 
     // Get the board physical stackup structure
-    BOARD_STACKUP& stackup = m_board->GetDesignSettings().GetStackupDescriptor();
+    const BOARD_STACKUP& stackup = m_board->GetDesignSettings().GetStackupDescriptor();
 
     m_out->Print( 0, "{STACKUP\n" );
 

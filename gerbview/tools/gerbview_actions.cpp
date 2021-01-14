@@ -50,7 +50,7 @@ TOOL_ACTION GERBVIEW_ACTIONS::openJobFile( "gerbview.Control.openJobFile",
         AS_GLOBAL, 0, "",
         _( "Open Gerber Job File..." ),
         _( "Open a Gerber job file and its associated gerber plot files" ),
-        gerber_job_file_xpm );
+        file_gerber_job_xpm );
 
 TOOL_ACTION GERBVIEW_ACTIONS::openZipFile( "gerbview.Control.openZipFile",
         AS_GLOBAL, 0, "",
@@ -80,7 +80,7 @@ TOOL_ACTION GERBVIEW_ACTIONS::exportToPcbnew( "gerbview.Control.exportToPcbnew",
         AS_GLOBAL, 0, "",
         _( "Export to Pcbnew..." ),
         _( "Export data in Pcbnew format" ),
-        export_xpm );
+        export_to_pcbnew_xpm );
 
 TOOL_ACTION GERBVIEW_ACTIONS::clearLayer( "gerbview.Control.clearLayer",
         AS_GLOBAL, 0, "",

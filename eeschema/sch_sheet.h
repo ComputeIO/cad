@@ -119,9 +119,9 @@ public:
      *
      * @return true for a hierarchical sheet pin
      */
-    bool IsMovableFromAnchorPoint() override { return true; }
+    bool IsMovableFromAnchorPoint() const override { return true; }
 
-    void Print( RENDER_SETTINGS* aSettings, const wxPoint& aOffset ) override;
+    void Print( const RENDER_SETTINGS* aSettings, const wxPoint& aOffset ) override;
 
     /**
      * Calculate the graphic shape (a polygon) associated to the text.
@@ -129,7 +129,7 @@ public:
      * @param aPoints = a buffer to fill with polygon corners coordinates
      * @param aPos = Position of the shape
      */
-    void CreateGraphicShape( RENDER_SETTINGS* aSettings,
+    void CreateGraphicShape( const RENDER_SETTINGS* aSettings,
                              std::vector <wxPoint>& aPoints, const wxPoint& aPos ) override;
 
     void SwapData( SCH_ITEM* aItem ) override;
@@ -183,12 +183,12 @@ public:
     void MirrorY( int aYaxis_position ) override;
     void Rotate( wxPoint aPosition ) override;
 
-    bool Matches( wxFindReplaceData& aSearchData, void* aAuxData ) override
+    bool Matches( const wxFindReplaceData& aSearchData, void* aAuxData ) const override
     {
         return SCH_ITEM::Matches( GetText(), aSearchData );
     }
 
-    bool Replace( wxFindReplaceData& aSearchData, void* aAuxData = NULL ) override
+    bool Replace( const wxFindReplaceData& aSearchData, void* aAuxData = NULL ) override
     {
         return EDA_TEXT::Replace( aSearchData );
     }
@@ -265,9 +265,10 @@ public:
      *
      * @return false for a hierarchical sheet
      */
-    bool IsMovableFromAnchorPoint() override { return false; }
+    bool IsMovableFromAnchorPoint() const override { return false; }
 
     std::vector<SCH_FIELD>& GetFields() { return m_fields; }
+    const std::vector<SCH_FIELD>& GetFields() const { return m_fields; }
 
     /**
      * Set multiple schematic fields.
@@ -283,7 +284,7 @@ public:
 
     SCH_SCREEN* GetScreen() const { return m_screen; }
 
-    wxSize GetSize() { return m_size; }
+    wxSize GetSize() const { return m_size; }
     void SetSize( const wxSize& aSize ) { m_size = aSize; }
 
     int GetBorderWidth() const { return m_borderWidth; }
@@ -363,9 +364,9 @@ public:
 
     std::vector<SCH_SHEET_PIN*>& GetPins() { return m_pins; }
 
-    std::vector<SCH_SHEET_PIN*>& GetPins() const
+    const std::vector<SCH_SHEET_PIN*>& GetPins() const
     {
-        return const_cast< std::vector<SCH_SHEET_PIN*>& >( m_pins );
+        return m_pins;
     }
 
     /**
@@ -373,7 +374,7 @@ public:
      *
      * @param aSheetPin The sheet pin item to remove from the sheet.
      */
-    void RemovePin( SCH_SHEET_PIN* aSheetPin );
+    void RemovePin( const SCH_SHEET_PIN* aSheetPin );
 
     /**
      * Delete sheet label which do not have a corresponding hierarchical label.
@@ -399,16 +400,16 @@ public:
      *
      * @return  True if sheet pin with \a aName is found, otherwise false.
      */
-    bool HasPin( const wxString& aName );
+    bool HasPin( const wxString& aName ) const;
 
-    bool HasPins() { return !m_pins.empty(); }
+    bool HasPins() const { return !m_pins.empty(); }
 
     /**
      * Check all sheet labels against schematic for undefined hierarchical labels.
      *
      * @return True if there are any undefined labels.
      */
-    bool HasUndefinedPins();
+    bool HasUndefinedPins() const;
 
     /**
      * Return the minimum width of the sheet based on the widths of the sheet pin text.
@@ -437,7 +438,7 @@ public:
 
     int GetPenWidth() const override;
 
-    void Print( RENDER_SETTINGS* aSettings, const wxPoint& aOffset ) override;
+    void Print( const RENDER_SETTINGS* aSettings, const wxPoint& aOffset ) override;
 
     /**
      * Return a bounding box for the sheet body but not the fields.
@@ -525,7 +526,7 @@ public:
     void MirrorX( int aXaxis_position ) override;
     void Rotate( wxPoint aPosition ) override;
 
-    bool Matches( wxFindReplaceData& aSearchData, void* aAuxData ) override;
+    bool Matches( const wxFindReplaceData& aSearchData, void* aAuxData ) const override;
 
     bool IsReplaceable() const override { return true; }
 
@@ -548,8 +549,8 @@ public:
     bool CanConnect( const SCH_ITEM* aItem ) const override
     {
         return ( aItem->Type() == SCH_LINE_T && aItem->GetLayer() == LAYER_WIRE ) ||
-                ( aItem->Type() == SCH_LINE_T && aItem->GetLayer() == LAYER_BUS ) ||
-                ( aItem->Type() == SCH_NO_CONNECT_T );
+               ( aItem->Type() == SCH_LINE_T && aItem->GetLayer() == LAYER_BUS )  ||
+               ( aItem->Type() == SCH_NO_CONNECT_T );
     }
 
     std::vector<wxPoint> GetConnectionPoints() const override;

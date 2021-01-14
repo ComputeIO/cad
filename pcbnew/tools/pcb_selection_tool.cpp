@@ -45,6 +45,7 @@ using namespace std::placeholders;
 #include <view/view_controls.h>
 #include <preview_items/selection_area.h>
 #include <painter.h>
+#include <router/router_tool.h>
 #include <bitmaps.h>
 #include <pcbnew_settings.h>
 #include <tool/tool_event.h>
@@ -208,8 +209,8 @@ int PCB_SELECTION_TOOL::Main( const TOOL_EVENT& aEvent )
     // Main loop: keep receiving events
     while( TOOL_EVENT* evt = Wait() )
     {
-        bool dragAlwaysSelects = getEditFrame<PCB_BASE_FRAME>()->GetDragSelects();
-        TRACK_DRAG_ACTION dragAction = getEditFrame<PCB_BASE_FRAME>()->Settings().m_TrackDragAction;
+        MOUSE_DRAG_ACTION dragAction = m_frame->GetDragAction();
+        TRACK_DRAG_ACTION trackDragAction = m_frame->Settings().m_TrackDragAction;
 
         // on left click, a selection is made, depending on modifiers ALT, SHIFT, CTRL:
         // Due to the fact ALT key modifier cannot be useed freely on Winows and Linux,
@@ -282,9 +283,15 @@ int PCB_SELECTION_TOOL::Main( const TOOL_EVENT& aEvent )
         bool modifier_enabled = m_subtractive || m_additive || m_exclusive_or;
         PCB_BASE_FRAME* frame = getEditFrame<PCB_BASE_FRAME>();
         bool brd_editor = frame && frame->IsType( FRAME_PCB_EDITOR );
+        ROUTER_TOOL* router = m_toolMgr->GetTool<ROUTER_TOOL>();
 
+        // If the router tool is active, don't override
+        if( router && router->IsToolActive() )
+        {
+            evt->SetPassEvent();
+        }
         // Single click? Select single object
-        if( evt->IsClick( BUT_LEFT ) )
+        else if( evt->IsClick( BUT_LEFT ) )
         {
             if( highlight_modifier && brd_editor )
                 m_toolMgr->RunAction( PCB_ACTIONS::highlightNet, true );
@@ -340,7 +347,11 @@ int PCB_SELECTION_TOOL::Main( const TOOL_EVENT& aEvent )
             m_frame->FocusOnItem( nullptr );
             m_toolMgr->ProcessEvent( EVENTS::InhibitSelectionEditing );
 
-            if( modifier_enabled || dragAlwaysSelects )
+            if( modifier_enabled || dragAction == MOUSE_DRAG_ACTION::SELECT )
+            {
+                selectMultiple();
+            }
+            else if( m_selection.Empty() && dragAction != MOUSE_DRAG_ACTION::DRAG_ANY )
             {
                 selectMultiple();
             }
@@ -384,9 +395,9 @@ int PCB_SELECTION_TOOL::Main( const TOOL_EVENT& aEvent )
                     // Yes -> run the move tool and wait till it finishes
                     TRACK* track = dynamic_cast<TRACK*>( m_selection.GetItem( 0 ) );
 
-                    if( track && dragAction == TRACK_DRAG_ACTION::DRAG )
+                    if( track && trackDragAction == TRACK_DRAG_ACTION::DRAG )
                         m_toolMgr->RunAction( PCB_ACTIONS::drag45Degree, true );
-                    else if( track && dragAction == TRACK_DRAG_ACTION::DRAG_FREE_ANGLE )
+                    else if( track && trackDragAction == TRACK_DRAG_ACTION::DRAG_FREE_ANGLE )
                         m_toolMgr->RunAction( PCB_ACTIONS::dragFreeAngle, true );
                     else
                         m_toolMgr->RunAction( PCB_ACTIONS::move, true );
@@ -419,8 +430,11 @@ int PCB_SELECTION_TOOL::Main( const TOOL_EVENT& aEvent )
         if( m_frame->ToolStackIsEmpty() )
         {
             //move cursor prediction
-            if( !modifier_enabled && !dragAlwaysSelects && !m_selection.Empty()
-                    && evt->HasPosition() && selectionContains( evt->Position() ) )
+            if( !modifier_enabled
+                    && dragAction == MOUSE_DRAG_ACTION::DRAG_SELECTED
+                    && !m_selection.Empty()
+                    && evt->HasPosition()
+                    && selectionContains( evt->Position() ) )
             {
                 m_frame->GetCanvas()->SetCurrentCursor( KICURSOR::MOVING );
             }
@@ -1760,7 +1774,7 @@ bool PCB_SELECTION_TOOL::doSelectionMenu( GENERAL_COLLECTOR* aCollector )
         }
 
         menu.AppendSeparator();
-        menu.Add( _( "Select &All\tA" ), limit + 1, plus_xpm );
+        menu.Add( _( "Select &All\tA" ), limit + 1, nullptr );
 
         if( !expandSelection && aCollector->HasAdditionalItems() )
             menu.Add( _( "&Expand Selection\tE" ), limit + 2, nullptr );
@@ -1866,43 +1880,6 @@ bool PCB_SELECTION_TOOL::doSelectionMenu( GENERAL_COLLECTOR* aCollector )
     }
 
     return false;
-}
-
-
-BOARD_ITEM* PCB_SELECTION_TOOL::pickSmallestComponent( GENERAL_COLLECTOR* aCollector )
-{
-    int count = aCollector->GetPrimaryCount();     // try to use preferred layer
-
-    if( 0 == count )
-        count = aCollector->GetCount();
-
-    for( int i = 0; i < count; ++i )
-    {
-        if(( *aCollector )[i]->Type() != PCB_FOOTPRINT_T )
-            return NULL;
-    }
-
-    // All are footprints, now find smallest FOOTPRINT
-    int minDim = 0x7FFFFFFF;
-    int minNdx = 0;
-
-    for( int i = 0; i < count; ++i )
-    {
-        FOOTPRINT* footprint = (FOOTPRINT*) ( *aCollector )[i];
-
-        int lx = footprint->GetFootprintRect().GetWidth();
-        int ly = footprint->GetFootprintRect().GetHeight();
-
-        int lmin = std::min( lx, ly );
-
-        if( lmin < minDim )
-        {
-            minDim = lmin;
-            minNdx = i;
-        }
-    }
-
-    return (*aCollector)[minNdx];
 }
 
 
@@ -2220,11 +2197,13 @@ void PCB_SELECTION_TOOL::unhighlightInternal( BOARD_ITEM* aItem, int aMode, bool
 
 bool PCB_SELECTION_TOOL::selectionContains( const VECTOR2I& aPoint ) const
 {
-    const unsigned GRIP_MARGIN = 20;
-    VECTOR2I margin = getView()->ToWorld( VECTOR2I( GRIP_MARGIN, GRIP_MARGIN ), false );
-
     GENERAL_COLLECTORS_GUIDE   guide = getCollectorsGuide();
     GENERAL_COLLECTOR          collector;
+
+    // Since we're just double-checking, we want a considerably sloppier check than the initial
+    // selection (for which most tools use 5 pixels).  So we increase this to an effective 20
+    // pixels by artificially inflating the value of a pixel by 4X.
+    guide.SetOnePixelInIU( guide.OnePixelInIU() * 4 );
 
     collector.Collect( board(), m_isFootprintEditor ? GENERAL_COLLECTOR::FootprintItems
                                                     : GENERAL_COLLECTOR::AllBoardItems,
@@ -2234,7 +2213,7 @@ bool PCB_SELECTION_TOOL::selectionContains( const VECTOR2I& aPoint ) const
     {
         BOARD_ITEM* item = collector[i];
 
-        if( item->IsSelected() && item->HitTest( (wxPoint) aPoint, margin.x ) )
+        if( item->IsSelected() && item->HitTest( (wxPoint) aPoint, 5 * guide.OnePixelInIU() ) )
             return true;
     }
 
@@ -2414,7 +2393,13 @@ void PCB_SELECTION_TOOL::GuessSelectionCandidates( GENERAL_COLLECTOR& aCollector
                 && static_cast<ZONE*>( item )->HitTestForEdge( where, MAX_SLOP * pixel / 2 ) )
         {
             // Zone borders are very specific, so make them "small"
-            area = MAX_SLOP * pixel * pixel;
+            area = MAX_SLOP * SEG::Square( pixel );
+        }
+        else if( item->Type() == PCB_VIA_T )
+        {
+            // Vias rarely hide other things, and we don't want them deferring to short track
+            // segments -- so make them artificially small by dropping the π from πr².
+            area = SEG::Square( static_cast<VIA*>( item )->GetDrill() / 2 );
         }
         else
         {
@@ -2490,7 +2475,7 @@ void PCB_SELECTION_TOOL::FilterCollectorForGroups( GENERAL_COLLECTOR& aCollector
             continue;
         }
 
-        PCB_GROUP*  aTop = PCB_GROUP::TopLevelGroup( item, m_enteredGroup );
+        PCB_GROUP*  aTop = PCB_GROUP::TopLevelGroup( item, m_enteredGroup, m_isFootprintEditor );
 
         if( aTop )
         {

@@ -77,7 +77,7 @@ public:
     wxString GetSelectMenuText( EDA_UNITS aUnits ) const override;
     void GetMsgPanelInfo( EDA_DRAW_FRAME* aFrame, MSG_PANEL_ITEMS& aList ) override;
 
-    void Print( RENDER_SETTINGS* aSettings, const wxPoint& aOffset ) override {}
+    void Print( const RENDER_SETTINGS* aSettings, const wxPoint& aOffset ) override {}
 
     void Move( const wxPoint& aMoveVector ) override {}
 
@@ -101,9 +101,9 @@ public:
     /// Returns the pin's position in global coordinates
     wxPoint GetTransformedPosition() const;
 
-    bool Matches( wxFindReplaceData& aSearchData, void* aAuxData ) override;
+    bool Matches( const wxFindReplaceData& aSearchData, void* aAuxData ) const override;
 
-    bool Replace( wxFindReplaceData& aSearchData, void* aAuxData ) override;
+    bool Replace( const wxFindReplaceData& aSearchData, void* aAuxData ) override;
 
     /*
      * While many of these are currently simply covers for the equivalent LIB_PIN methods,

@@ -511,7 +511,7 @@ int PCB_EDIT_FRAME::inferLegacyEdgeClearance( BOARD* aBoard )
     {
         // If they had different widths then we can't ensure that fills will be the same.
         wxMessageBox( _( "If the zones on this board are refilled the Copper Edge Clearance "
-                         "setting will be used (see Board Setup > Design Rules).\n"
+                         "setting will be used (see Board Setup > Design Rules > Constraints).\n"
                          "This may result in different fills from previous Kicad versions which "
                          "used the line thicknesses of the board boundary on the Edge Cuts layer." ),
                       _( "Edge Clearance Warning" ), wxOK|wxICON_WARNING, this );
@@ -581,9 +581,6 @@ bool PCB_EDIT_FRAME::OpenProjectFiles( const std::vector<wxString>& aFileSet, in
     // consumming, so display a busy cursor
     wxBusyCursor dummy;
 
-    // Unlink the old project if needed
-    GetBoard()->ClearProject();
-
     // No save prompt (we already prompted above), and only reset to a new blank board if new
     Clear_Pcb( false, !is_new );
 
@@ -603,6 +600,7 @@ bool PCB_EDIT_FRAME::OpenProjectFiles( const std::vector<wxString>& aFileSet, in
         // calls SaveProject
         SaveProjectSettings();
 
+        GetBoard()->ClearProject();
         mgr->UnloadProject( &mgr->Prj() );
 
         mgr->LoadProject( pro.GetFullPath() );
@@ -936,6 +934,10 @@ bool PCB_EDIT_FRAME::SavePcbFile( const wxString& aFileName, bool addToHistory,
     lowerTxt.Printf( _( "File \"%s\" saved." ), pcbFileName.GetFullPath() );
 
     SetStatusText( lowerTxt, 0 );
+
+    // Get rid of the old version conversion warning, or any other dismissable warning :)
+    if( m_infoBar->IsShown() && m_infoBar->HasCloseButton() )
+        m_infoBar->Dismiss();
 
     GetScreen()->ClrModify();
     GetScreen()->ClrSave();

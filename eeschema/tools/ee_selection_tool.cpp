@@ -324,7 +324,8 @@ int EE_SELECTION_TOOL::Main( const TOOL_EVENT& aEvent )
         else if( evt->Modifier( MD_CTRL ) )
             m_exclusive_or = true;
 
-        bool modifier_enabled = m_subtractive || m_additive || m_exclusive_or;
+        bool              modifier_enabled = m_subtractive || m_additive || m_exclusive_or;
+        MOUSE_DRAG_ACTION drag_action = m_frame->GetDragAction();
 
         // Is the user requesting that the selection list include all possible
         // items without removing less likely selection candidates
@@ -431,7 +432,11 @@ int EE_SELECTION_TOOL::Main( const TOOL_EVENT& aEvent )
             if( SCH_EDIT_FRAME* schframe = dynamic_cast<SCH_EDIT_FRAME*>( m_frame ) )
                 schframe->FocusOnItem( nullptr );
 
-            if( modifier_enabled || ( m_selection.Empty() && m_frame->GetDragSelects() ) )
+            if( modifier_enabled || drag_action == MOUSE_DRAG_ACTION::SELECT )
+            {
+                selectMultiple();
+            }
+            else if( m_selection.Empty() && drag_action != MOUSE_DRAG_ACTION::DRAG_ANY )
             {
                 selectMultiple();
             }
@@ -576,8 +581,10 @@ int EE_SELECTION_TOOL::Main( const TOOL_EVENT& aEvent )
             {
                 m_nonModifiedCursor = KICURSOR::HAND;
             }
-            else if( !m_selection.Empty() && !m_frame->GetDragSelects() && evt->HasPosition()
-                     && selectionContains( evt->Position() ) ) //move/drag option prediction
+            else if( !m_selection.Empty()
+                        && drag_action == MOUSE_DRAG_ACTION::DRAG_SELECTED
+                        && evt->HasPosition()
+                        && selectionContains( evt->Position() ) ) //move/drag option prediction
             {
                 m_nonModifiedCursor = KICURSOR::MOVING;
             }
@@ -1399,7 +1406,7 @@ bool EE_SELECTION_TOOL::doSelectionMenu( EE_COLLECTOR* aCollector )
         }
 
         menu.AppendSeparator();
-        menu.Add( _( "Select &All\tA" ), limit + 1, net_highlight_schematic_xpm );
+        menu.Add( _( "Select &All\tA" ), limit + 1, nullptr );
 
         if( !expandSelection && aCollector->HasAdditionalItems() )
             menu.Add( _( "&Expand Selection\tE" ), limit + 2, nullptr );

@@ -220,8 +220,6 @@ void PCB_EDIT_FRAME::ReCreateMenuBar()
     editMenu->AppendSeparator();
     editMenu->Add( ACTIONS::deleteTool );
     editMenu->Add( PCB_ACTIONS::globalDeletions );
-    editMenu->Add( PCB_ACTIONS::cleanupTracksAndVias );
-    editMenu->Add( PCB_ACTIONS::cleanupGraphics );
 
 
     //----- View menu -----------------------------------------------------------
@@ -381,7 +379,6 @@ void PCB_EDIT_FRAME::ReCreateMenuBar()
     ACTION_MENU* toolsMenu = new ACTION_MENU( false, selTool );
 
     toolsMenu->Add( ACTIONS::updatePcbFromSchematic );
-    toolsMenu->Add( ACTIONS::updateSchematicFromPcb );
     toolsMenu->Add( PCB_ACTIONS::showEeschema );
 
     toolsMenu->AppendSeparator();
@@ -389,9 +386,14 @@ void PCB_EDIT_FRAME::ReCreateMenuBar()
     toolsMenu->Add( PCB_ACTIONS::updateFootprints );
 
     toolsMenu->AppendSeparator();
-    toolsMenu->Add( PCB_ACTIONS::boardReannotate );
+    toolsMenu->Add( PCB_ACTIONS::cleanupTracksAndVias );
     toolsMenu->Add( PCB_ACTIONS::removeUnusedPads );
+    toolsMenu->Add( PCB_ACTIONS::cleanupGraphics );
     toolsMenu->Add( PCB_ACTIONS::repairBoard );
+
+    toolsMenu->AppendSeparator();
+    toolsMenu->Add( PCB_ACTIONS::boardReannotate );
+    toolsMenu->Add( ACTIONS::updateSchematicFromPcb );
 
 #if defined(KICAD_SCRIPTING_WXPYTHON)
     toolsMenu->AppendSeparator();
@@ -402,7 +404,7 @@ void PCB_EDIT_FRAME::ReCreateMenuBar()
     ACTION_MENU* submenuActionPlugins = new ACTION_MENU( false );
     submenuActionPlugins->SetTool( selTool );
     submenuActionPlugins->SetTitle( _( "External Plugins" ) );
-    submenuActionPlugins->SetIcon( hammer_xpm );
+    submenuActionPlugins->SetIcon( puzzle_piece_xpm );
 
     submenuActionPlugins->Add( _( "Refresh Plugins" ),
                                _( "Reload all python plugins and refresh plugin menus" ),

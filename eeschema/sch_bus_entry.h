@@ -56,7 +56,7 @@ public:
      *  and false for items moved with no reference to anchor
      * @return false for a bus entry
      */
-    bool IsMovableFromAnchorPoint() override { return false; }
+    bool IsMovableFromAnchorPoint() const override { return false; }
 
     wxPoint GetEnd() const;
 
@@ -79,7 +79,7 @@ public:
 
     void ViewGetLayers( int aLayers[], int& aCount ) const override;
 
-    void Print( RENDER_SETTINGS* aSettings, const wxPoint& aOffset ) override;
+    void Print( const RENDER_SETTINGS* aSettings, const wxPoint& aOffset ) override;
 
     const EDA_RECT GetBoundingBox() const override;
 

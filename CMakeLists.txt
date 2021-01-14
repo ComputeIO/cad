@@ -404,6 +404,8 @@ if( MSVC )
     string( APPEND CMAKE_CXX_FLAGS " /Zi" )
     # /GF: enable string pooling
     string( APPEND CMAKE_CXX_FLAGS_RELEASE " /GF" )
+    # Avoid fatal error because /GF + swig wrapper exceed standard obj file limits
+    string( APPEND CMAKE_CXX_FLAGS " /bigobj" )
     foreach( type EXE SHARED MODULE)
         # /DEBUG: create PDB
         string( APPEND CMAKE_${type}_LINKER_FLAGS " /DEBUG /MANIFEST:NO" )
@@ -490,8 +492,14 @@ if( NOT APPLE )
     set( KICAD_BIN bin
         CACHE PATH "Location of KiCad binaries." )
 
-    set( KICAD_DATA ${CMAKE_INSTALL_DATADIR}/kicad
-        CACHE PATH "Location of KiCad data files." )
+    # Do not make these variables "PATH" b/c cmake will truncate them and we need the full path
+    if( NOT IS_ABSOLUTE ${CMAKE_INSTALL_DATADIR} )
+        set( KICAD_DATA ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_DATADIR}/kicad
+            CACHE STRING "Location of KiCad data files." )
+    else()
+        set( KICAD_DATA ${CMAKE_INSTALL_DATADIR}/kicad
+            CACHE STRING "Location of KiCad data files." )
+    endif()
 
     if( WIN32 )
         set( KICAD_PLUGINS ${KICAD_BIN}/scripting/plugins
