@@ -78,12 +78,12 @@ public:
     void DrawCircle( const VECTOR2D& aCenterPoint, double aRadius ) override;
 
     /// @copydoc GAL::DrawArc()
-    void DrawArc( const VECTOR2D& aCenterPoint, double aRadius,
-                          double aStartAngle, double aEndAngle ) override;
+    void DrawArc( const VECTOR2D& aCenterPoint, double aRadius, double aStartAngle,
+                  double aEndAngle ) override;
 
     /// @copydoc GAL::DrawArcSegment()
-    void DrawArcSegment( const VECTOR2D& aCenterPoint, double aRadius,
-                                 double aStartAngle, double aEndAngle, double aWidth ) override;
+    void DrawArcSegment( const VECTOR2D& aCenterPoint, double aRadius, double aStartAngle,
+                         double aEndAngle, double aWidth ) override;
 
     /// @copydoc GAL::DrawRectangle()
     void DrawRectangle( const VECTOR2D& aStartPoint, const VECTOR2D& aEndPoint ) override;
@@ -96,6 +96,15 @@ public:
     }
 
     void DrawPolyline( const SHAPE_LINE_CHAIN& aLineChain ) override { drawPoly( aLineChain ); }
+
+    /// @copydoc GAL::FillPolyline()
+    void FillPolyline( const std::vector<VECTOR2D>& aPointList ) override
+    {
+        Save();
+        SetIsFill( true );
+        DrawPolyline( &aPointList[0], aPointList.size() );
+        Restore();
+    }
 
     /// @copydoc GAL::DrawPolygon()
     void DrawPolygon( const std::deque<VECTOR2D>& aPointList ) override { drawPoly( aPointList ); }
@@ -219,7 +228,7 @@ public:
 
 protected:
     // Geometric transforms according to the currentWorld2Screen transform matrix:
-    const double xform( double x );             // scale
+    const double   xform( double x );           // scale
     const VECTOR2D xform( double x, double y ); // rotation, scale and offset
     const VECTOR2D xform( const VECTOR2D& aP ); // rotation, scale and offset
 
@@ -261,7 +270,7 @@ protected:
 
 
     void flushPath();
-    void storePath();                           ///< Store the actual path
+    void storePath(); ///< Store the actual path
 
     /**
      * Blits cursor into the current screen.
@@ -280,8 +289,8 @@ protected:
      */
     unsigned int getNewGroupNumber();
 
-    void syncLineWidth( bool aForceWidth = false, double aWidth = 0.0 );
-    void updateWorldScreenMatrix();
+    void           syncLineWidth( bool aForceWidth = false, double aWidth = 0.0 );
+    void           updateWorldScreenMatrix();
     const VECTOR2D roundp( const VECTOR2D& v );
 
     /// Super class definition
@@ -293,52 +302,53 @@ protected:
     /// Definitions for the command recorder
     enum GRAPHICS_COMMAND
     {
-        CMD_SET_FILL,                               ///< Enable/disable filling
-        CMD_SET_STROKE,                             ///< Enable/disable stroking
-        CMD_SET_FILLCOLOR,                          ///< Set the fill color
-        CMD_SET_STROKECOLOR,                        ///< Set the stroke color
-        CMD_SET_LINE_WIDTH,                         ///< Set the line width
-        CMD_STROKE_PATH,                            ///< Set the stroke path
-        CMD_FILL_PATH,                              ///< Set the fill path
+        CMD_SET_FILL,        ///< Enable/disable filling
+        CMD_SET_STROKE,      ///< Enable/disable stroking
+        CMD_SET_FILLCOLOR,   ///< Set the fill color
+        CMD_SET_STROKECOLOR, ///< Set the stroke color
+        CMD_SET_LINE_WIDTH,  ///< Set the line width
+        CMD_STROKE_PATH,     ///< Set the stroke path
+        CMD_FILL_PATH,       ///< Set the fill path
         //CMD_TRANSFORM,                              ///< Transform the actual context
-        CMD_ROTATE,                                 ///< Rotate the context
-        CMD_TRANSLATE,                              ///< Translate the context
-        CMD_SCALE,                                  ///< Scale the context
-        CMD_SAVE,                                   ///< Save the transformation matrix
-        CMD_RESTORE,                                ///< Restore the transformation matrix
-        CMD_CALL_GROUP                              ///< Call a group
+        CMD_ROTATE,    ///< Rotate the context
+        CMD_TRANSLATE, ///< Translate the context
+        CMD_SCALE,     ///< Scale the context
+        CMD_SAVE,      ///< Save the transformation matrix
+        CMD_RESTORE,   ///< Restore the transformation matrix
+        CMD_CALL_GROUP ///< Call a group
     };
 
     /// Type definition for an graphics group element
     typedef struct
     {
-        GRAPHICS_COMMAND command;                   ///< Command to execute
-        union {
-            double dblArg[MAX_CAIRO_ARGUMENTS];     ///< Arguments for Cairo commands
-            bool boolArg;                           ///< A bool argument
-            int intArg;                             ///< An int argument
+        GRAPHICS_COMMAND command; ///< Command to execute
+        union
+        {
+            double dblArg[MAX_CAIRO_ARGUMENTS]; ///< Arguments for Cairo commands
+            bool   boolArg;                     ///< A bool argument
+            int    intArg;                      ///< An int argument
         } argument;
-        cairo_path_t* cairoPath;                    ///< Pointer to a Cairo path
+        cairo_path_t* cairoPath; ///< Pointer to a Cairo path
     } GROUP_ELEMENT;
 
     // Variables for the grouping function
-    bool                        isGrouping;         ///< Is grouping enabled ?
-    bool                        isElementAdded;     ///< Was an graphic element added ?
-    typedef std::deque<GROUP_ELEMENT> GROUP;        ///< A graphic group type definition
-    std::map<int, GROUP>        groups;             ///< List of graphic groups
-    unsigned int                groupCounter;       ///< Counter used for generating keys for groups
-    GROUP*                      currentGroup;       ///< Currently used group
+    bool                              isGrouping;     ///< Is grouping enabled ?
+    bool                              isElementAdded; ///< Was an graphic element added ?
+    typedef std::deque<GROUP_ELEMENT> GROUP;          ///< A graphic group type definition
+    std::map<int, GROUP>              groups;         ///< List of graphic groups
+    unsigned int                      groupCounter; ///< Counter used for generating keys for groups
+    GROUP*                            currentGroup; ///< Currently used group
 
     double linePixelWidth;
     double lineWidthInPixels;
-    bool lineWidthIsOdd;
+    bool   lineWidthIsOdd;
 
-    cairo_matrix_t      cairoWorldScreenMatrix; ///< Cairo world to screen transformation matrix
-    cairo_matrix_t      currentXform;
-    cairo_matrix_t      currentWorld2Screen;
-    cairo_t*            currentContext;         ///< Currently used Cairo context for drawing
-    cairo_t*            context;                ///< Cairo image
-    cairo_surface_t*    surface;                ///< Cairo surface
+    cairo_matrix_t   cairoWorldScreenMatrix; ///< Cairo world to screen transformation matrix
+    cairo_matrix_t   currentXform;
+    cairo_matrix_t   currentWorld2Screen;
+    cairo_t*         currentContext; ///< Currently used Cairo context for drawing
+    cairo_t*         context;        ///< Cairo image
+    cairo_surface_t* surface;        ///< Cairo surface
 
     /// List of surfaces that were created by painting images, to be cleaned up later
     std::vector<cairo_surface_t*> imageSurfaces;
@@ -370,10 +380,7 @@ public:
     ~CAIRO_GAL();
 
     ///> @copydoc GAL::IsVisible()
-    bool IsVisible() const override
-    {
-        return IsShownOnScreen() && !GetClientRect().IsEmpty();
-    }
+    bool IsVisible() const override { return IsShownOnScreen() && !GetClientRect().IsEmpty(); }
 
     void ResizeScreen( int aWidth, int aHeight ) override;
 
@@ -397,15 +404,9 @@ public:
      */
     void PostPaint( wxPaintEvent& aEvent );
 
-    void SetMouseListener( wxEvtHandler* aMouseListener )
-    {
-        mouseListener = aMouseListener;
-    }
+    void SetMouseListener( wxEvtHandler* aMouseListener ) { mouseListener = aMouseListener; }
 
-    void SetPaintListener( wxEvtHandler* aPaintListener )
-    {
-        paintListener = aPaintListener;
-    }
+    void SetPaintListener( wxEvtHandler* aPaintListener ) { paintListener = aPaintListener; }
 
     /// @copydoc GAL::BeginDrawing()
     void beginDrawing() override;
@@ -448,27 +449,27 @@ public:
 
 protected:
     // Compositor related variables
-    std::shared_ptr<CAIRO_COMPOSITOR> compositor;   ///< Object for layers compositing
-    unsigned int            mainBuffer;             ///< Handle to the main buffer
-    unsigned int            overlayBuffer;          ///< Handle to the overlay buffer
-    RENDER_TARGET           currentTarget;          ///< Current rendering target
-    bool                    validCompositor;        ///< Compositor initialization flag
+    std::shared_ptr<CAIRO_COMPOSITOR> compositor;      ///< Object for layers compositing
+    unsigned int                      mainBuffer;      ///< Handle to the main buffer
+    unsigned int                      overlayBuffer;   ///< Handle to the overlay buffer
+    RENDER_TARGET                     currentTarget;   ///< Current rendering target
+    bool                              validCompositor; ///< Compositor initialization flag
 
     // Variables related to wxWidgets
-    wxWindow*               parentWindow;           ///< Parent window
-    wxEvtHandler*           mouseListener;          ///< Mouse listener
-    wxEvtHandler*           paintListener;          ///< Paint listener
-    unsigned int            bufferSize;             ///< Size of buffers cairoOutput, bitmapBuffers
-    unsigned char*          wxOutput;               ///< wxImage compatible buffer
+    wxWindow*      parentWindow;  ///< Parent window
+    wxEvtHandler*  mouseListener; ///< Mouse listener
+    wxEvtHandler*  paintListener; ///< Paint listener
+    unsigned int   bufferSize;    ///< Size of buffers cairoOutput, bitmapBuffers
+    unsigned char* wxOutput;      ///< wxImage compatible buffer
 
     // Variables related to Cairo <-> wxWidgets
-    unsigned char*      bitmapBuffer;           ///< Storage of the cairo image
-    int                 stride;                 ///< Stride value for Cairo
-    int                 wxBufferWidth;
-    bool                isInitialized;          ///< Are Cairo image & surface ready to use
-    COLOR4D             backgroundColor;        ///< Background color
+    unsigned char* bitmapBuffer; ///< Storage of the cairo image
+    int            stride;       ///< Stride value for Cairo
+    int            wxBufferWidth;
+    bool           isInitialized;   ///< Are Cairo image & surface ready to use
+    COLOR4D        backgroundColor; ///< Background color
 };
 
 } // namespace KIGFX
 
-#endif  // CAIROGAL_H_
+#endif // CAIROGAL_H_
