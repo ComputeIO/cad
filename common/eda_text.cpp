@@ -170,7 +170,7 @@ int EDA_TEXT::GetEffectiveTextPenWidth( int aDefaultWidth ) const
 }
 
 
-bool EDA_TEXT::Replace( wxFindReplaceData& aSearchData )
+bool EDA_TEXT::Replace( const wxFindReplaceData& aSearchData )
 {
     bool retval = EDA_ITEM::Replace( aSearchData, m_text );
     m_shown_text = UnescapeString( m_text );
@@ -387,7 +387,7 @@ bool EDA_TEXT::TextHitTest( const EDA_RECT& aRect, bool aContains, int aAccuracy
 }
 
 
-void EDA_TEXT::Print( RENDER_SETTINGS* aSettings, const wxPoint& aOffset, COLOR4D aColor,
+void EDA_TEXT::Print( const RENDER_SETTINGS* aSettings, const wxPoint& aOffset, COLOR4D aColor,
                       OUTLINE_MODE aFillMode )
 {
     if( IsMultilineAllowed() )
@@ -446,7 +446,7 @@ void EDA_TEXT::GetLinePositions( std::vector<wxPoint>& aPositions, int aLineCoun
     }
 }
 
-void EDA_TEXT::printOneLineOfText( RENDER_SETTINGS* aSettings, const wxPoint& aOffset,
+void EDA_TEXT::printOneLineOfText( const RENDER_SETTINGS* aSettings, const wxPoint& aOffset,
                                    COLOR4D aColor, OUTLINE_MODE aFillMode, const wxString& aText,
                                    const wxPoint& aPos )
 {
