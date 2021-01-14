@@ -51,6 +51,8 @@ public:
     /// Constructor
     STROKE_FONT();
 
+    bool IsStroke() const override { return true; }
+
     /**
      * Load a font.
      *
@@ -68,7 +70,7 @@ public:
      * @param aRotationAngle is the text rotation angle in radians.
      */
     void Draw( GAL* aGal, const UTF8& aText, const VECTOR2D& aPosition,
-               double aRotationAngle ) const override;
+               double aRotationAngle ) override;
 
     /**
      * Compute the boundary limits of aText (the bounding box of all shapes).
