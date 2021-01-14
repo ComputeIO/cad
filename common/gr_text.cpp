@@ -31,11 +31,11 @@
 
 #include <gr_basic.h>
 #include <plotter.h>
-#include <eda_text.h>           // EDA_TEXT_HJUSTIFY_T and EDA_TEXT_VJUSTIFY_T
+#include <eda_text.h> // EDA_TEXT_HJUSTIFY_T and EDA_TEXT_VJUSTIFY_T
 #include <trigo.h>
 #include <base_screen.h>
 #include <gr_text.h>
-#include <math/util.h>          // for KiROUND
+#include <math/util.h> // for KiROUND
 
 #include <basic_gal.h>
 
@@ -68,7 +68,7 @@ int GetPenSizeForNormal( int aTextSize )
  */
 int Clamp_Text_PenSize( int aPenSize, int aSize, bool aBold )
 {
-    double scale    = aBold ? 4.0 : 6.0;
+    double scale = aBold ? 4.0 : 6.0;
     int    maxWidth = KiROUND( (double) aSize / scale );
 
     return std::min( aPenSize, maxWidth );
@@ -77,7 +77,7 @@ int Clamp_Text_PenSize( int aPenSize, int aSize, bool aBold )
 
 float Clamp_Text_PenSize( float aPenSize, int aSize, bool aBold )
 {
-    float scale    = aBold ? 4.0 : 6.0;
+    float scale = aBold ? 4.0 : 6.0;
     float maxWidth = (float) aSize / scale;
 
     return std::min( aPenSize, maxWidth );
@@ -127,12 +127,20 @@ int GraphicTextWidth( const wxString& aText, const wxSize& aSize, bool aItalic, 
  *                         can be nullptr if no auxiliary parameter is needed
  *  @param aPlotter = a pointer to a PLOTTER instance, when this function is used to plot
  *                  the text. NULL to draw this text.
+ *  @param aFont name of font to use (NULL for Newstroke)
+ *  @param aOutlineCallback ( const std::vector<VECTOR2D>* aOutline, void* aData ) is a function called
+ *                          (if non null) to draw text using an outline font as a polygon.
+ *                          Returns true if aCallback should also be called.
+ *  @param aOutlineCallbackData is the auxiliary parameter aData for the outline callback function.
+ *                              Defaults to nullptr.
  */
 void GRText( wxDC* aDC, const wxPoint& aPos, COLOR4D aColor, const wxString& aText, double aOrient,
              const wxSize& aSize, enum EDA_TEXT_HJUSTIFY_T aH_justify,
              enum EDA_TEXT_VJUSTIFY_T aV_justify, int aWidth, bool aItalic, bool aBold,
              void ( *aCallback )( int x0, int y0, int xf, int yf, void* aData ),
-             void* aCallbackData, PLOTTER* aPlotter, wxString* aFont )
+             void* aCallbackData, PLOTTER* aPlotter, wxString* aFont,
+             bool ( *aOutlineCallback )( const std::vector<wxPoint>& aOutline, void* aData ),
+             void* aOutlineCallbackData )
 {
     bool fill_mode = true;
 
@@ -158,13 +166,14 @@ void GRText( wxDC* aDC, const wxPoint& aPos, COLOR4D aColor, const wxString& aTe
     dummy.SetMirrored( size.x < 0 );
 
     if( size.x < 0 )
-        size.x = - size.x;
+        size.x = -size.x;
 
     dummy.SetTextSize( size );
 
     basic_gal.SetTextAttributes( &dummy );
     basic_gal.SetPlotter( aPlotter );
     basic_gal.SetCallback( aCallback, aCallbackData );
+    basic_gal.SetOutlineCallback( aOutlineCallback, aOutlineCallbackData );
     basic_gal.m_DC = aDC;
     basic_gal.m_Color = aColor;
     basic_gal.SetClipBox( nullptr );
@@ -173,12 +182,12 @@ void GRText( wxDC* aDC, const wxPoint& aPos, COLOR4D aColor, const wxString& aTe
 }
 
 
-void GRHaloText( wxDC * aDC, const wxPoint &aPos, COLOR4D aBgColor, COLOR4D aColor1,
-                 COLOR4D aColor2, const wxString &aText, double aOrient, const wxSize &aSize,
+void GRHaloText( wxDC* aDC, const wxPoint& aPos, COLOR4D aBgColor, COLOR4D aColor1, COLOR4D aColor2,
+                 const wxString& aText, double aOrient, const wxSize& aSize,
                  enum EDA_TEXT_HJUSTIFY_T aH_justify, enum EDA_TEXT_VJUSTIFY_T aV_justify,
                  int aWidth, bool aItalic, bool aBold,
-                 void (*aCallback)( int x0, int y0, int xf, int yf, void* aData ),
-                 void* aCallbackData, PLOTTER * aPlotter )
+                 void ( *aCallback )( int x0, int y0, int xf, int yf, void* aData ),
+                 void* aCallbackData, PLOTTER* aPlotter )
 {
     // Swap color if contrast would be better
     // TODO: Maybe calculate contrast some way other than brightness
@@ -194,7 +203,7 @@ void GRHaloText( wxDC * aDC, const wxPoint &aPos, COLOR4D aBgColor, COLOR4D aCol
             aBold, aCallback, aCallbackData, aPlotter );
 
     // Draw the text
-    GRText( aDC, aPos, aColor2, aText, aOrient, aSize, aH_justify, aV_justify, aWidth/4, aItalic,
+    GRText( aDC, aPos, aColor2, aText, aOrient, aSize, aH_justify, aV_justify, aWidth / 4, aItalic,
             aBold, aCallback, aCallbackData, aPlotter );
 }
 
