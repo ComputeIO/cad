@@ -39,6 +39,7 @@
 #include <tools/edit_tool.h>
 #include <tools/pcb_actions.h>
 #include <tools/pcb_selection_tool.h>
+#include <convert_basic_shapes_to_polygon.h>
 
 #include "convert_tool.h"
 
@@ -69,34 +70,30 @@ bool CONVERT_TOOL::Init()
     // Create a context menu and make it available through selection tool
     m_menu = new CONDITIONAL_MENU( this );
     m_menu->SetIcon( convert_xpm );
-    m_menu->SetTitle( _( "Convert..." ) );
+    m_menu->SetTitle( _( "Convert" ) );
 
     static KICAD_T convertableTracks[] = { PCB_TRACE_T, PCB_ARC_T, EOT };
-    static KICAD_T convertableZones[]  = { PCB_ZONE_T, PCB_FP_ZONE_T, EOT };
+    static KICAD_T zones[]  = { PCB_ZONE_T, PCB_FP_ZONE_T, EOT };
 
-    auto graphicLines = P_S_C::OnlyGraphicShapeTypes( { S_SEGMENT, S_RECT } ) && P_S_C::SameLayer();
+    auto graphicLines = P_S_C::OnlyGraphicShapeTypes( { S_SEGMENT, S_RECT, S_CIRCLE } )
+                                && P_S_C::SameLayer();
 
-    auto trackLines   = S_C::MoreThan( 1 ) &&
-                        S_C::OnlyTypes( convertableTracks ) && P_S_C::SameLayer();
+    auto trackLines   = S_C::MoreThan( 1 ) && S_C::OnlyTypes( convertableTracks )
+                                && P_S_C::SameLayer();
 
     auto anyLines     = graphicLines || trackLines;
 
-    auto anyPolys     = ( S_C::OnlyTypes( convertableZones ) ||
-                          P_S_C::OnlyGraphicShapeTypes( { S_POLYGON, S_RECT } ) );
+    auto anyPolys     = S_C::OnlyTypes( zones )
+                                || P_S_C::OnlyGraphicShapeTypes( { S_POLYGON, S_RECT } );
 
-    auto lineToArc    = S_C::Count( 1 ) && ( P_S_C::OnlyGraphicShapeTypes( { S_SEGMENT } ) ||
-                                             S_C::OnlyType( PCB_TRACE_T ) );
+    auto lineToArc    = S_C::Count( 1 ) && ( P_S_C::OnlyGraphicShapeTypes( { S_SEGMENT } )
+                                                    || S_C::OnlyType( PCB_TRACE_T ) );
 
     auto showConvert = anyPolys || anyLines || lineToArc;
 
     m_menu->AddItem( PCB_ACTIONS::convertToPoly, anyLines );
-
-    if( m_frame->IsType( FRAME_PCB_EDITOR ) )
-        m_menu->AddItem( PCB_ACTIONS::convertToZone, anyLines );
-
-    if( m_frame->IsType( FRAME_PCB_EDITOR ) )
-        m_menu->AddItem( PCB_ACTIONS::convertToKeepout, anyLines );
-
+    m_menu->AddItem( PCB_ACTIONS::convertToZone, anyLines );
+    m_menu->AddItem( PCB_ACTIONS::convertToKeepout, anyLines );
     m_menu->AddItem( PCB_ACTIONS::convertToLines, anyPolys );
 
     // Currently the code exists, but tracks are not really existing in footprints
@@ -106,11 +103,8 @@ bool CONVERT_TOOL::Init()
 
     m_menu->AddItem( PCB_ACTIONS::convertToArc, lineToArc );
 
-    for( std::shared_ptr<ACTION_MENU>& subMenu : m_selectionTool->GetToolMenu().GetSubMenus() )
-    {
-        if( dynamic_cast<SPECIAL_TOOLS_CONTEXT_MENU*>( subMenu.get() ) )
-            static_cast<CONDITIONAL_MENU*>( subMenu.get() )->AddMenu( m_menu, showConvert );
-    }
+    CONDITIONAL_MENU& selToolMenu = m_selectionTool->GetToolMenu().GetMenu();
+    selToolMenu.AddMenu( m_menu, showConvert, 100 );
 
     return true;
 }
@@ -135,6 +129,7 @@ int CONVERT_TOOL::LinesToPoly( const TOOL_EVENT& aEvent )
                         {
                         case S_SEGMENT:
                         case S_RECT:
+                        case S_CIRCLE:
                         // case S_ARC: // Not yet
                             break;
 
@@ -165,6 +160,8 @@ int CONVERT_TOOL::LinesToPoly( const TOOL_EVENT& aEvent )
     SHAPE_POLY_SET polySet = makePolysFromSegs( selection.GetItems() );
 
     polySet.Append( makePolysFromRects( selection.GetItems() ) );
+
+    polySet.Append( makePolysFromCircles( selection.GetItems() ) );
 
     if( polySet.IsEmpty() )
         return 0;
@@ -359,6 +356,33 @@ SHAPE_POLY_SET CONVERT_TOOL::makePolysFromRects( const std::deque<EDA_ITEM*>& aI
 }
 
 
+SHAPE_POLY_SET CONVERT_TOOL::makePolysFromCircles( const std::deque<EDA_ITEM*>& aItems )
+{
+    SHAPE_POLY_SET poly;
+
+    for( EDA_ITEM* item : aItems )
+    {
+        if( item->Type() != PCB_SHAPE_T && item->Type() != PCB_FP_SHAPE_T )
+            continue;
+
+        PCB_SHAPE* graphic = static_cast<PCB_SHAPE*>( item );
+
+        if( graphic->GetShape() != S_CIRCLE )
+            continue;
+
+        BOARD_DESIGN_SETTINGS& bds = graphic->GetBoard()->GetDesignSettings();
+        SHAPE_LINE_CHAIN outline;
+
+        TransformCircleToPolygon( outline, graphic->GetPosition(), graphic->GetRadius(),
+                                  bds.m_MaxError, ERROR_OUTSIDE );
+
+        poly.AddOutline( outline );
+    }
+
+    return poly;
+}
+
+
 int CONVERT_TOOL::PolyToLines( const TOOL_EVENT& aEvent )
 {
     auto& selection = m_selectionTool->RequestSelection(
@@ -394,8 +418,7 @@ int CONVERT_TOOL::PolyToLines( const TOOL_EVENT& aEvent )
                         aCollector.Remove( item );
                     }
                 }
-            },
-            true /* prompt user regarding locked items */ );
+            } );
 
     if( selection.Empty() )
         return 0;
@@ -570,8 +593,7 @@ int CONVERT_TOOL::SegmentToArc( const TOOL_EVENT& aEvent )
                         aCollector.Remove( item );
                     }
                 }
-            },
-            true /* prompt user regarding locked items */ );
+            } );
 
     EDA_ITEM* source = selection.Front();
     VECTOR2I start, end, mid;

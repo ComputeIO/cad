@@ -195,7 +195,7 @@ int SCH_FIELD::GetPenWidth() const
 }
 
 
-void SCH_FIELD::Print( RENDER_SETTINGS* aSettings, const wxPoint& aOffset )
+void SCH_FIELD::Print( const RENDER_SETTINGS* aSettings, const wxPoint& aOffset )
 {
     wxDC*    DC = aSettings->GetPrintDC();
     COLOR4D  color = aSettings->GetLayerColor( IsForceVisible() ? LAYER_HIDDEN : m_layer );
@@ -324,7 +324,7 @@ bool SCH_FIELD::IsVoid() const
 }
 
 
-bool SCH_FIELD::Matches( wxFindReplaceData& aSearchData, void* aAuxData )
+bool SCH_FIELD::Matches( const wxFindReplaceData& aSearchData, void* aAuxData ) const
 {
     wxString text = GetShownText();
     int      flags = aSearchData.GetFlags();
@@ -391,7 +391,7 @@ bool SCH_FIELD::IsReplaceable() const
 }
 
 
-bool SCH_FIELD::Replace( wxFindReplaceData& aSearchData, void* aAuxData )
+bool SCH_FIELD::Replace( const wxFindReplaceData& aSearchData, void* aAuxData )
 {
     bool isReplaced = false;
 
@@ -558,11 +558,11 @@ BITMAP_DEF SCH_FIELD::GetMenuImage() const
         case REFERENCE_FIELD: return edit_comp_ref_xpm;
         case VALUE_FIELD:     return edit_comp_value_xpm;
         case FOOTPRINT_FIELD: return edit_comp_footprint_xpm;
-        default:              return edit_text_xpm;
+        default:              return text_xpm;
         }
     }
 
-    return edit_text_xpm;
+    return text_xpm;
 }
 
 

@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: KiCad\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2021-01-04 06:10-0800\n"
+"POT-Creation-Date: 2021-01-11 08:21-0800\n"
 "PO-Revision-Date: 2018-07-15 17:07+0200\n"
 "Last-Translator: Simon Richter <Simon.Richter@hogyros.de>\n"
 "Language-Team: Simon Richter <Simon.Richter@hogyros.de>\n"
@@ -240,29 +240,6 @@ msgstr "Set display options, and some layers visibility"
 msgid "Render current view using Raytracing"
 msgstr "Render current view using Raytracing"
 
-msgid "Realistic mode"
-msgstr "Realistic mode"
-
-msgid "Show board body"
-msgstr "Show board body"
-
-msgid "Show filled areas in zones"
-msgstr "Show filled areas in zones"
-
-msgid "Subtract soldermask from silkscreen"
-msgstr "Subtract soldermask from silkscreen"
-
-msgid "Clip silkscreen at via annulus"
-msgstr "Clip silkscreen at via annulus"
-
-msgid "Non plated pads copper as bare copper"
-msgstr "Non plated pads copper as bare copper"
-
-msgid ""
-"Display plated pads as plated but other copper as raw copper material. (Slow)"
-msgstr ""
-"Display plated pads as plated but other copper as raw copper material. (Slow)"
-
 msgid "3D Model Visibility"
 msgstr "3D Model Visibility"
 
@@ -299,6 +276,27 @@ msgstr "Show comments and drawings layers"
 msgid "Show ECO layers"
 msgstr "Show ECO layers"
 
+msgid "Realistic mode"
+msgstr "Realistic mode"
+
+msgid "Show board body"
+msgstr "Show board body"
+
+msgid "Show filled areas in zones"
+msgstr "Show filled areas in zones"
+
+msgid "Subtract soldermask from silkscreen"
+msgstr "Subtract soldermask from silkscreen"
+
+msgid "Clip silkscreen at via annulus"
+msgstr "Clip silkscreen at via annulus"
+
+msgid "Use bare copper color for unplated copper"
+msgstr "Use bare copper color for unplated copper"
+
+msgid "Use different colors for plated and unplated copper. (Slow)"
+msgstr "Use different colors for plated and unplated copper. (Slow)"
+
 msgid "Camera Options"
 msgstr "Camera Options"
 
@@ -326,8 +324,8 @@ msgstr "Show copper thickness"
 msgid "Other Options"
 msgstr "Other Options"
 
-msgid "Anti-aliasing"
-msgstr "Anti-aliasing"
+msgid "Anti-aliasing:"
+msgstr "Anti-aliasing:"
 
 msgid "Disabled"
 msgstr "Disabled"
@@ -344,8 +342,8 @@ msgstr "8x"
 msgid "3D-Viewer must be closed and re-opened to apply this setting"
 msgstr "3D-Viewer must be closed and re-opened to apply this setting"
 
-msgid "Selection color"
-msgstr "Selection color"
+msgid "Selection color:"
+msgstr "Selection color:"
 
 msgid "While Moving"
 msgstr "While Moving"
@@ -374,6 +372,9 @@ msgstr "Procedural textures"
 msgid "Add floor"
 msgstr "Add floor"
 
+msgid "Anti-aliasing"
+msgstr "Anti-aliasing"
+
 msgid "Post-processing"
 msgstr "Post-processing"
 
@@ -383,11 +384,11 @@ msgstr "Number of Samples"
 msgid "Spread Factor %"
 msgstr "Spread Factor %"
 
-msgid "Recursive Level"
-msgstr "Recursive Level"
+msgid "Recursion Level"
+msgstr "Recursion Level"
 
-msgid "Shadows"
-msgstr "Shadows"
+msgid "Shadows:"
+msgstr "Shadows:"
 
 msgid ""
 "Number of rays that will be cast, into light direction, to evaluate a shadow "
@@ -399,8 +400,8 @@ msgstr ""
 msgid "Random direction factor of the cast rays"
 msgstr "Random direction factor of the cast rays"
 
-msgid "Reflections"
-msgstr "Reflections"
+msgid "Reflections:"
+msgstr "Reflections:"
 
 msgid "Number of rays that will be cast to evaluate a reflection point"
 msgstr "Number of rays that will be cast to evaluate a reflection point"
@@ -412,8 +413,8 @@ msgstr ""
 "Interactions number that a ray can travel through objects. (higher number of "
 "levels improve results, specially on very transparent boards)"
 
-msgid "Refractions"
-msgstr "Refractions"
+msgid "Refractions:"
+msgstr "Refractions:"
 
 msgid "Number of rays that will be cast to evaluate a refraction point"
 msgstr "Number of rays that will be cast to evaluate a refraction point"
@@ -421,17 +422,17 @@ msgstr "Number of rays that will be cast to evaluate a refraction point"
 msgid "Number of bounces that a ray can hit reflective objects"
 msgstr "Number of bounces that a ray can hit reflective objects"
 
-msgid "Lights configuration"
-msgstr "Lights configuration"
+msgid "Lights Configuration"
+msgstr "Lights Configuration"
 
-msgid "Ambient Camera Light"
-msgstr "Ambient Camera Light"
+msgid "Ambient camera light:"
+msgstr "Ambient camera light:"
 
-msgid "Top Light"
-msgstr "Top Light"
+msgid "Top light:"
+msgstr "Top light:"
 
-msgid "Bottom Light"
-msgstr "Bottom Light"
+msgid "Bottom light:"
+msgstr "Bottom light:"
 
 msgid "Elevation (degrees)"
 msgstr "Elevation (degrees)"
@@ -439,29 +440,29 @@ msgstr "Elevation (degrees)"
 msgid "Azimuth (degrees)"
 msgstr "Azimuth (degrees)"
 
-msgid "1"
-msgstr "1"
+msgid "1:"
+msgstr "1:"
 
-msgid "5"
-msgstr "5"
+msgid "5:"
+msgstr "5:"
 
-msgid "2"
-msgstr "2"
+msgid "2:"
+msgstr "2:"
 
-msgid "6"
-msgstr "6"
+msgid "6:"
+msgstr "6:"
 
-msgid "3"
-msgstr "3"
+msgid "3:"
+msgstr "3:"
 
-msgid "7"
-msgstr "7"
+msgid "7:"
+msgstr "7:"
 
-msgid "4"
-msgstr "4"
+msgid "4:"
+msgstr "4:"
 
-msgid "8"
-msgstr "8"
+msgid "8:"
+msgstr "8:"
 
 msgid "Reset to defaults"
 msgstr "Reset to defaults"
@@ -651,8 +652,14 @@ msgstr "Add Floor"
 msgid "Adds a floor plane below the board (slow)"
 msgstr "Adds a floor plane below the board (slow)"
 
+msgid "Refractions"
+msgstr "Refractions"
+
 msgid "Render materials with refractive properties on final render (slow)"
 msgstr "Render materials with refractive properties on final render (slow)"
+
+msgid "Reflections"
+msgstr "Reflections"
 
 msgid "Render materials with reflective properties on final render (slow)"
 msgstr "Render materials with reflective properties on final render (slow)"
@@ -1835,9 +1842,6 @@ msgstr "Show icons in menus"
 msgid "Editing"
 msgstr "Editing"
 
-msgid "Prefer selection to dragging"
-msgstr "Prefer selection to dragging"
-
 msgid "Warp mouse to origin of moved object"
 msgstr "Warp mouse to origin of moved object"
 
@@ -1983,8 +1987,20 @@ msgstr "Auto pan speed:"
 msgid "How fast to pan when moving an object off the edge of the screen"
 msgstr "How fast to pan when moving an object off the edge of the screen"
 
-msgid "Mouse Buttons"
-msgstr "Mouse Buttons"
+msgid "Drag Gestures"
+msgstr "Drag Gestures"
+
+msgid "Left button drag:"
+msgstr "Left button drag:"
+
+msgid "Draw selection rectangle"
+msgstr "Draw selection rectangle"
+
+msgid "Drag selected objects; otherwise draw selection rectangle"
+msgstr "Drag selected objects; otherwise draw selection rectangle"
+
+msgid "Drag any object (selected or not)"
+msgstr "Drag any object (selected or not)"
 
 msgid "Middle button drag:"
 msgstr "Middle button drag:"
@@ -2001,14 +2017,14 @@ msgstr "None"
 msgid "Right button drag:"
 msgstr "Right button drag:"
 
-msgid "Mouse Wheel and Touchpad Scrolling"
-msgstr "Mouse Wheel and Touchpad Scrolling"
+msgid "Scroll Gestures"
+msgstr "Scroll Gestures"
 
-msgid "Behavior of vertical touchpad or scroll wheel:"
-msgstr "Behavior of vertical touchpad or scroll wheel:"
+msgid "Vertical touchpad or scroll wheel movement:"
+msgstr "Vertical touchpad or scroll wheel movement:"
 
-msgid "While pressing:"
-msgstr "While pressing:"
+msgid "--"
+msgstr "--"
 
 msgid "Ctrl"
 msgstr "Ctrl"
@@ -2022,14 +2038,14 @@ msgstr "Alt"
 msgid "Zoom:"
 msgstr "Zoom:"
 
-msgid "Pan up / down:"
-msgstr "Pan up / down:"
+msgid "Pan up/down:"
+msgstr "Pan up/down:"
 
-msgid "Pan left / right:"
-msgstr "Pan left / right:"
+msgid "Pan left/right:"
+msgstr "Pan left/right:"
 
-msgid "Pan left/right with horizontal touchpad or scroll wheel movement"
-msgstr "Pan left/right with horizontal touchpad or scroll wheel movement"
+msgid "Pan left/right with horizontal movement"
+msgstr "Pan left/right with horizontal movement"
 
 msgid ""
 "Pan the canvas left and right when scrolling left to right on the touchpad"
@@ -2069,14 +2085,14 @@ msgstr "Track Width"
 msgid "Via Size"
 msgstr "Via Size"
 
-msgid "Via Drill"
-msgstr "Via Drill"
+msgid "Via Hole"
+msgstr "Via Hole"
 
 msgid "uVia Size"
 msgstr "µVia Size"
 
-msgid "uVia Drill"
-msgstr "µVia Drill"
+msgid "uVia Hole"
+msgstr "uVia Hole"
 
 msgid "DP Width"
 msgstr "DP Width"
@@ -3266,6 +3282,9 @@ msgstr "Executable file (*)|*"
 
 msgid "Select Preferred Editor"
 msgstr "Select Preferred Editor"
+
+msgid "Environmental variable HOME is empty.  Unable to continue."
+msgstr "Environmental variable HOME is empty.  Unable to continue."
 
 #, c-format
 msgid "%s is already running. Continue?"
@@ -5428,6 +5447,9 @@ msgstr "Text Size:"
 msgid "Syntax help"
 msgstr "Syntax help"
 
+msgid "Show syntax help window"
+msgstr "Show syntax help window"
+
 msgid "Note:"
 msgstr "Note:"
 
@@ -6123,8 +6145,15 @@ msgid "Enter the number of units for a symbol that contains more than one unit"
 msgstr ""
 "Enter the number of units for a symbol that contains more than one unit"
 
-msgid "All units are not interchangeable"
-msgstr "All units are not interchangeable"
+msgid "All units are interchangeable"
+msgstr "All units are interchangeable"
+
+msgid ""
+"Check this option when all symbol units are identical except\n"
+"for pin numbers."
+msgstr ""
+"Check this option when all symbol units are identical except\n"
+"for pin numbers."
 
 msgid "Pin Text Options"
 msgstr "Pin Text Options"
@@ -6319,6 +6348,9 @@ msgstr "Paste Special"
 msgid "Alternate Pin Name"
 msgstr "Alternate Pin Name"
 
+msgid "Alternate pin assignments are not available for DeMorgan components."
+msgstr "Alternate pin assignments are not available for DeMorgan components."
+
 msgid "Alternate pin definitions must have a name."
 msgstr "Alternate pin definitions must have a name."
 
@@ -6436,6 +6468,9 @@ msgstr "D"
 msgid "E"
 msgstr "E"
 
+msgid "Schematic"
+msgstr "Schematic"
+
 #, c-format
 msgid "Could not write plot files to folder \"%s\"."
 msgstr "Could not write plot files to folder “%s”."
@@ -6505,14 +6540,20 @@ msgstr ""
 msgid "HPGL Options"
 msgstr "HPGL Options"
 
-msgid "Position:"
-msgstr "Position:"
+msgid "Position and units:"
+msgstr "Position and units:"
 
-msgid "Bottom left"
-msgstr "Bottom left"
+msgid "Bottom left, plotter units"
+msgstr "Bottom left, plotter units"
 
-msgid "Center on page"
-msgstr "Center on page"
+msgid "Centered, plotter units"
+msgstr "Centered, plotter units"
+
+msgid "Page fit, user units"
+msgstr "Page fit, user units"
+
+msgid "Content fit, user units"
+msgstr "Content fit, user units"
 
 msgid "Pen width:"
 msgstr "Pen width:"
@@ -8554,9 +8595,6 @@ msgstr ""
 "Cannot update the PCB, because the Schematic Editor is opened in stand-alone "
 "mode. In order to create/update PCBs from schematics, launch the Kicad shell "
 "and create a project."
-
-msgid "Schematic"
-msgstr "Schematic"
 
 msgid "New Schematic"
 msgstr "New Schematic"
@@ -11912,9 +11950,6 @@ msgstr "Highlight Items of Net “%s”"
 msgid "Highlight Aperture Type \"%s\""
 msgstr "Highlight Aperture Type “%s”"
 
-msgid "Clarify selection"
-msgstr "Clarify selection"
-
 msgid "Layers"
 msgstr "Layers"
 
@@ -12736,9 +12771,6 @@ msgstr ""
 
 msgid "Error writing objects to clipboard"
 msgstr "Error writing objects to clipboard"
-
-msgid "Clarify Selection"
-msgstr "Clarify Selection"
 
 #, c-format
 msgid "Attenuation more than %f dB"
@@ -14520,6 +14552,9 @@ msgstr "Front reference start:"
 msgid "Starting reference designation for front."
 msgstr "Starting reference designation for front."
 
+msgid "1"
+msgstr "1"
+
 msgid "Default is 1"
 msgstr "Default is 1"
 
@@ -14609,17 +14644,14 @@ msgstr "Board Editor Layers"
 msgid "Physical Stackup"
 msgstr "Physical Stackup"
 
-msgid "Defaults"
-msgstr "Defaults"
+msgid "Solder Mask/Paste"
+msgstr "Solder Mask/Paste"
 
 msgid "Text & Graphics"
 msgstr "Text & Graphics"
 
-msgid "Tracks & Vias"
-msgstr "Tracks & Vias"
-
-msgid "Solder Mask/Paste"
-msgstr "Solder Mask/Paste"
+msgid "Defaults"
+msgstr "Defaults"
 
 msgid "Design Rules"
 msgstr "Design Rules"
@@ -14627,8 +14659,11 @@ msgstr "Design Rules"
 msgid "Constraints"
 msgstr "Constraints"
 
-msgid "Rules"
-msgstr "Rules"
+msgid "Pre-defined Sizes"
+msgstr "Pre-defined Sizes"
+
+msgid "Custom Rules"
+msgstr "Custom Rules"
 
 #, c-format
 msgid ""
@@ -14840,6 +14875,9 @@ msgstr "Delete tracks that have both start and end positions inside of a pad"
 
 msgid "Cleanup Tracks and Vias"
 msgstr "Cleanup Tracks and Vias"
+
+msgid "Rules"
+msgstr "Rules"
 
 msgid "Constraints Resolution Report"
 msgstr "Constraints Resolution Report"
@@ -15096,6 +15134,9 @@ msgstr "Bad parameters"
 msgid "Horizontal count:"
 msgstr "Horizontal count:"
 
+msgid "5"
+msgstr "5"
+
 msgid "Vertical count:"
 msgstr "Vertical count:"
 
@@ -15186,6 +15227,9 @@ msgstr ""
 
 msgid "Count:"
 msgstr "Count:"
+
+msgid "4"
+msgstr "4"
 
 msgid "How many items in the array."
 msgstr "How many items in the array."
@@ -16088,25 +16132,29 @@ msgid "Footprint Checker"
 msgstr "Footprint Checker"
 
 msgid ""
-"Footprint can be freely moved and auto placed. User can arbitrarily select "
-"and edit footprint's pads."
+"Footprint can be freely moved and oriented on the canvas. At least some of "
+"the footprint's pads are unlocked and can be moved with respect to the "
+"footprint."
 msgstr ""
-"Footprint can be freely moved and auto placed. User can arbitrarily select "
-"and edit footprint's pads."
+"Footprint can be freely moved and oriented on the canvas. At least some of "
+"the footprint's pads are unlocked and can be moved with respect to the "
+"footprint."
 
 msgid ""
-"Footprint can be freely moved and auto placed, but its pads cannot be edited."
+"Footprint can be freely moved and oriented on the canvas, but all of its "
+"pads are locked with respect to their position within in the footprint."
 msgstr ""
-"Footprint can be freely moved and auto placed, but its pads cannot be edited."
+"Footprint can be freely moved and oriented on the canvas, but all of its "
+"pads are locked with respect to their position within in the footprint."
 
 msgid ""
-"Footprint is locked: it cannot be freely moved or auto placed, and can only "
-"be selected when the 'Locked items' checkbox is enabled in the selection "
-"filter."
+"Footprint is locked: it cannot be freely moved and oriented on the canvas "
+"and can only be selected when the 'Locked items' checkbox is enabled in the "
+"selection filter."
 msgstr ""
-"Footprint is locked: it cannot be freely moved or auto placed, and can only "
-"be selected when the 'Locked items' checkbox is enabled in the selection "
-"filter."
+"Footprint is locked: it cannot be freely moved and oriented on the canvas "
+"and can only be selected when the 'Locked items' checkbox is enabled in the "
+"selection filter."
 
 msgid "Keep Upright"
 msgstr "Keep Upright"
@@ -16467,11 +16515,14 @@ msgstr "Zones"
 msgid "Board outlines"
 msgstr "Board outlines"
 
-msgid "Drawings"
-msgstr "Drawings"
+msgid "Graphics"
+msgstr "Graphics"
 
 msgid "Footprints"
 msgstr "Footprints"
+
+msgid "Tracks && vias"
+msgstr "Tracks && vias"
 
 msgid "Markers"
 msgstr "Markers"
@@ -16482,20 +16533,23 @@ msgstr "Clear board"
 msgid "Filter Settings"
 msgstr "Filter Settings"
 
-msgid "Automatically routed tracks"
-msgstr "Automatically routed tracks"
+msgid "Locked graphics"
+msgstr "Locked graphics"
 
-msgid "Locked tracks"
-msgstr "Locked tracks"
-
-msgid "Unlocked tracks"
-msgstr "Unlocked tracks"
+msgid "Unlocked graphics"
+msgstr "Unlocked graphics"
 
 msgid "Locked footprints"
 msgstr "Locked footprints"
 
 msgid "Unlocked footprints"
 msgstr "Unlocked footprints"
+
+msgid "Locked tracks"
+msgstr "Locked tracks"
+
+msgid "Unlocked tracks"
+msgstr "Unlocked tracks"
 
 msgid "All layers"
 msgstr "All layers"
@@ -16574,6 +16628,12 @@ msgstr "Keep upright"
 
 msgid "Set to layer default values:"
 msgstr "Set to layer default values:"
+
+msgid "Via Drill"
+msgstr "Via Drill"
+
+msgid "uVia Drill"
+msgstr "µVia Drill"
 
 msgid "Filter Items"
 msgstr "Filter Items"
@@ -17083,14 +17143,14 @@ msgstr ""
 "Warning: Pad drill will leave no copper or drill shape and pad shape do not "
 "overlap."
 
-msgid "Error: Negative local clearance values will have no effect."
-msgstr "Error: Negative local clearance values will have no effect."
+msgid "Warning: Negative local clearance values will have no effect."
+msgstr "Warning: Negative local clearance values will have no effect."
 
 msgid ""
-"Error: Negative solder mask clearances are not supported for custom pad "
+"Warning: Negative solder mask clearances are not supported for custom pad "
 "shapes."
 msgstr ""
-"Error: Negative solder mask clearances are not supported for custom pad "
+"Warning: Negative solder mask clearances are not supported for custom pad "
 "shapes."
 
 msgid ""
@@ -17117,35 +17177,36 @@ msgstr ""
 "Warning: Plated through holes should normally have a copper pad on at least "
 "one layer."
 
-msgid "Incorrect value for pad offset."
-msgstr "Incorrect value for pad offset."
-
 msgid "Too large value for pad delta size."
 msgstr "Too large value for pad delta size."
 
-msgid "Error: Through hole pad has no hole."
-msgstr "Error: Through hole pad has no hole."
+msgid "Warning: Through hole pad has no hole."
+msgstr "Warning: Through hole pad has no hole."
 
-msgid "Error: Connector pads have no solder paste. Use an SMD pad instead."
-msgstr "Error: Connector pads have no solder paste. Use an SMD pad instead."
+msgid ""
+"Warning: Connector pads normally have no solder paste. Use an SMD pad "
+"instead."
+msgstr ""
+"Warning: Connector pads normally have no solder paste. Use an SMD pad "
+"instead."
 
 msgid "Warning: SMD pad has no outer layers."
 msgstr "Warning: SMD pad has no outer layers."
 
-msgid "Warning: Fiducial property cannot be set on NPTH pads."
-msgstr "Warning: Fiducial property cannot be set on NPTH pads."
+msgid "Warning: Fiducial property makes no sense on NPTH pads."
+msgstr "Warning: Fiducial property makes no sense on NPTH pads."
 
-msgid "Warning: Testpoint property cannot be set on NPTH pads."
-msgstr "Warning: Testpoint property cannot be set on NPTH pads."
+msgid "Warning: Testpoint property makes no sense on NPTH pads."
+msgstr "Warning: Testpoint property makes no sense on NPTH pads."
 
-msgid "Warning: Heatsink property cannot be set on NPTH pads."
-msgstr "Warning: Heatsink property cannot be set on NPTH pads."
+msgid "Warning: Heatsink property makes no sense of NPTH pads."
+msgstr "Warning: Heatsink property makes no sense of NPTH pads."
 
-msgid "Warning: Castellated property can be set only on PTH pads."
-msgstr "Warning: Castellated property can be set only on PTH pads."
+msgid "Warning: Castellated property is for PTH pads."
+msgstr "Warning: Castellated property is for PTH pads."
 
-msgid "Warning: BGA property can be set only on SMD pads."
-msgstr "Warning: BGA property can be set only on SMD pads."
+msgid "Warning: BGA property is for SMD pads."
+msgstr "Warning: BGA property is for SMD pads."
 
 msgid "Error: Corner size not a number."
 msgstr "Error: Corner size not a number."
@@ -17159,8 +17220,11 @@ msgstr "Warning: Corner size will make pad circular."
 msgid "Error: Custom pad shape must resolve to a single polygon."
 msgstr "Error: Custom pad shape must resolve to a single polygon."
 
-msgid "Pad setup errors list"
-msgstr "Pad setup errors list"
+msgid "Pad Properties Errors"
+msgstr "Pad Properties Errors"
+
+msgid "Pad Properties Warnings"
+msgstr "Pad Properties Warnings"
 
 msgid "Modify pad"
 msgstr "Modify pad"
@@ -17194,6 +17258,10 @@ msgstr "SMD Aperture"
 
 msgid "Pad number:"
 msgstr "Pad number:"
+
+msgid "Do not allow position of pad relative to parent footprint to be changed"
+msgstr ""
+"Do not allow position of pad relative to parent footprint to be changed"
 
 msgid "Pad shape:"
 msgstr "Pad shape:"
@@ -17282,6 +17350,9 @@ msgstr "Top left"
 
 msgid "Top right"
 msgstr "Top right"
+
+msgid "Bottom left"
+msgstr "Bottom left"
 
 msgid "Bottom right"
 msgstr "Bottom right"
@@ -18248,8 +18319,8 @@ msgstr "Change Nets"
 msgid "Leave Nets Unchanged"
 msgstr "Leave Nets Unchanged"
 
-msgid "Via drill size must be smaller than via diameter"
-msgstr "Via drill size must be smaller than via diameter"
+msgid "Via hole size must be smaller than via diameter"
+msgstr "Via hole size must be smaller than via diameter"
 
 msgid "Via start layer and end layer cannot be the same"
 msgstr "Via start layer and end layer cannot be the same"
@@ -18259,6 +18330,16 @@ msgstr "Edit track/via properties"
 
 msgid "Updating nets"
 msgstr "Updating nets"
+
+msgid "Automatically update via nets"
+msgstr "Automatically update via nets"
+
+msgid ""
+"Automatically change the net of this via when the pads or zones it touches "
+"are changed"
+msgstr ""
+"Automatically change the net of this via when the pads or zones it touches "
+"are changed"
 
 msgid "Start point X:"
 msgstr "Start point X:"
@@ -18287,8 +18368,8 @@ msgstr "Pre-defined sizes:"
 msgid "Via diameter:"
 msgstr "Via diameter:"
 
-msgid "Via drill:"
-msgstr "Via drill:"
+msgid "Via hole:"
+msgstr "Via hole:"
 
 msgid "Use net class sizes"
 msgstr "Use net class sizes"
@@ -18311,21 +18392,14 @@ msgstr "Start layer:"
 msgid "End layer:"
 msgstr "End layer:"
 
-msgid "Automatically update via net"
-msgstr "Automatically update via net"
-
-msgid ""
-"Automatically change the net of this via when the pads or zones it touches "
-"are changed"
-msgstr ""
-"Automatically change the net of this via when the pads or zones it touches "
-"are changed"
-
 msgid "Track & Via Properties"
 msgstr "Track & Via Properties"
 
 msgid "Via drill size has to be smaller than via diameter"
 msgstr "Via drill size has to be smaller than via diameter"
+
+msgid "Via drill:"
+msgstr "Via drill:"
 
 msgid "Track Width and Via Size"
 msgstr "Track Width and Via Size"
@@ -18339,20 +18413,20 @@ msgstr "&Vias"
 msgid "&Pads"
 msgstr "&Pads"
 
-msgid "&Remove Unused"
-msgstr "&Remove Unused"
+msgid "&Remove unused layers"
+msgstr "&Remove unused layers"
 
-msgid "Reset &Unused"
-msgstr "Reset &Unused"
+msgid "Res&tore unused layers"
+msgstr "Res&tore unused layers"
 
 msgid "&Selection only"
 msgstr "&Selection only"
 
-msgid "&Keep pads at first and last layers"
-msgstr "&Keep pads at first and last layers"
+msgid "Keep &outside layers"
+msgstr "Keep &outside layers"
 
-msgid "Unused Pad Layers"
-msgstr "Unused Pad Layers"
+msgid "Remove Unused Pads"
+msgstr "Remove Unused Pads"
 
 msgid "Delete footprints with no symbols"
 msgstr "Delete footprints with no symbols"
@@ -18760,8 +18834,8 @@ msgstr "uVias"
 msgid "Minimum uVia diameter:"
 msgstr "Minimum uVia diameter:"
 
-msgid "Minimum uVia drill:"
-msgstr "Minimum uVia drill:"
+msgid "Minimum uVia hole:"
+msgstr "Minimum uVia hole:"
 
 msgid "Silkscreen"
 msgstr "Silkscreen"
@@ -18850,6 +18924,15 @@ msgstr "Four layers, parts on Front & Back"
 
 msgid "All layers on"
 msgstr "All layers on"
+
+msgid "2"
+msgstr "2"
+
+msgid "6"
+msgstr "6"
+
+msgid "8"
+msgstr "8"
 
 msgid "10"
 msgstr "10"
@@ -19125,6 +19208,9 @@ msgstr "Comments"
 msgid "If you want a layer for documentation drawings"
 msgstr "If you want a layer for documentation drawings"
 
+msgid "Drawings"
+msgstr "Drawings"
+
 msgid "User1"
 msgstr "User1"
 
@@ -19311,8 +19397,14 @@ msgstr "Differential pair via gap less than minimum clearance (%s)."
 msgid "Pre-defined track and via dimensions:"
 msgstr "Pre-defined track and via dimensions:"
 
-msgid "Drill"
-msgstr "Drill"
+msgid "3"
+msgstr "3"
+
+msgid "7"
+msgstr "7"
+
+msgid "Hole"
+msgstr "Hole"
 
 msgid "Differential Pairs"
 msgstr "Differential Pairs"
@@ -19397,11 +19489,11 @@ msgid "Keepout layer(s) not matched."
 msgstr "Keepout layer(s) not matched."
 
 #, c-format
-msgid "Rule layer \"%s\" not matched."
-msgstr "Rule layer \"%s\" not matched."
+msgid "Rule layer '%s' not matched; rule ignored."
+msgstr "Rule layer '%s' not matched; rule ignored."
 
-msgid "Rule layer not matched."
-msgstr "Rule layer not matched."
+msgid "Rule layer not matched; rule ignored."
+msgstr "Rule layer not matched; rule ignored."
 
 msgid "Unconditional constraint applied."
 msgstr "Unconditional constraint applied."
@@ -19465,8 +19557,8 @@ msgstr "Copper areas intersect"
 msgid "Copper zone net has no pads"
 msgstr "Copper zone net has no pads"
 
-msgid "Via is not connected"
-msgstr "Via is not connected"
+msgid "Via is not connected or connected on only one layer"
+msgstr "Via is not connected or connected on only one layer"
 
 msgid "Track has unconnected end"
 msgstr "Track has unconnected end"
@@ -19806,6 +19898,9 @@ msgstr "(%s min diameter %s; actual %s)"
 #, c-format
 msgid "(%s max diameter %s; actual %s)"
 msgstr "(%s max diameter %s; actual %s)"
+
+msgid "Tracks & Vias"
+msgstr "Tracks & Vias"
 
 msgid "Modify zone properties"
 msgstr "Modify zone properties"
@@ -20910,8 +21005,8 @@ msgstr "Diameter"
 msgid "Length in Package"
 msgstr "Length in Package"
 
-msgid "Drill X / Y"
-msgstr "Drill X / Y"
+msgid "Hole X / Y"
+msgstr "Hole X / Y"
 
 #, c-format
 msgid "Min Clearance: %s"
@@ -21981,15 +22076,6 @@ msgstr ""
 msgid "Can't find a suitable starting point for coupled net \"%s\"."
 msgstr "Can't find a suitable starting point for coupled net “%s”."
 
-msgid "Can't start a differential pair  in the middle of nowhere."
-msgstr "Can't start a differential pair  in the middle of nowhere."
-
-msgid "Current track/via gap setting violates design rules for this net."
-msgstr "Current track/via gap setting violates design rules for this net."
-
-msgid "Current track width setting violates design rules."
-msgstr "Current track width setting violates design rules."
-
 msgid "Please select a track whose length you want to tune."
 msgstr "Please select a track whose length you want to tune."
 
@@ -22049,8 +22135,27 @@ msgstr "Too short: skew "
 msgid "Tuned: skew "
 msgstr "Tuned: skew "
 
+msgid "Cannot start routing from a non-plated hole."
+msgstr "Cannot start routing from a non-plated hole."
+
+#, c-format
+msgid "Rule area '%s' disallows tracks."
+msgstr "Rule area '%s' disallows tracks."
+
+msgid "Rule area disallows tracks."
+msgstr "Rule area disallows tracks."
+
+msgid "Cannot start routing from a text item."
+msgstr "Cannot start routing from a text item."
+
+msgid "Cannot start routing from a graphic."
+msgstr "Cannot start routing from a graphic."
+
 msgid "The routing start point violates DRC."
 msgstr "The routing start point violates DRC."
+
+msgid "Cannot start a differential pair in the middle of nowhere."
+msgstr "Cannot start a differential pair in the middle of nowhere."
 
 msgid "Undo last segment"
 msgstr "Undo last segment"
@@ -22444,6 +22549,9 @@ msgstr "Silkscreen clearance resolution for:"
 msgid "%s not present on layer %s.  No clearance defined."
 msgstr "%s not present on layer %s.  No clearance defined."
 
+msgid "Edge clearance resolution for:"
+msgstr "Edge clearance resolution for:"
+
 msgid "Clearance resolution for:"
 msgstr "Clearance resolution for:"
 
@@ -22514,9 +22622,6 @@ msgstr "Item <b>disallowed</b> at current location."
 msgid "Item allowed at current location."
 msgstr "Item allowed at current location."
 
-msgid "Convert..."
-msgstr "Convert..."
-
 msgid "Convert shapes to polygon"
 msgstr "Convert shapes to polygon"
 
@@ -22574,8 +22679,8 @@ msgstr "Refilling all zones..."
 msgid "DRC"
 msgstr "DRC"
 
-msgid "Special Tools..."
-msgstr "Special Tools..."
+msgid "Special Tools"
+msgstr "Special Tools"
 
 msgid "Select reference point for move..."
 msgstr "Select reference point for move..."
@@ -22605,8 +22710,8 @@ msgstr "Unable to fillet the selected track segments."
 msgid "Some of the track segments could not be filleted."
 msgstr "Some of the track segments could not be filleted."
 
-msgid "Flip"
-msgstr "Flip"
+msgid "Change Side / Flip"
+msgstr "Change Side / Flip"
 
 msgid "Fill Zone"
 msgstr "Fill Zone"
@@ -22975,9 +23080,9 @@ msgid "Remove Unused Pads..."
 msgstr "Remove Unused Pads..."
 
 msgid ""
-"Remove or reset the unconnected inner layers on through hole pads and vias"
+"Remove or restore the unconnected inner layers on through hole pads and vias"
 msgstr ""
-"Remove or reset the unconnected inner layers on through hole pads and vias"
+"Remove or restore the unconnected inner layers on through hole pads and vias"
 
 msgid "Assign a different footprint from the library"
 msgstr "Assign a different footprint from the library"
@@ -23822,6 +23927,9 @@ msgstr "Blind/Buried Via"
 msgid "Through Via"
 msgstr "Through Via"
 
+msgid "Drill"
+msgstr "Drill"
+
 #, c-format
 msgid "Min Annular Width: %s"
 msgstr "Min Annular Width: %s"
@@ -24249,9 +24357,6 @@ msgstr "Locked items"
 msgid "Allow selection of locked items"
 msgstr "Allow selection of locked items"
 
-msgid "Graphics"
-msgstr "Graphics"
-
 msgid "Rule Areas"
 msgstr "Rule Areas"
 
@@ -24361,6 +24466,199 @@ msgstr "Performing polygon fills…"
 
 msgid "[INFO] load failed: input line too long\n"
 msgstr "[INFO] load failed: input line too long\n"
+
+#~ msgid "Non plated pads copper as bare copper"
+#~ msgstr "Non plated pads copper as bare copper"
+
+#~ msgid ""
+#~ "Display plated pads as plated but other copper as raw copper material. "
+#~ "(Slow)"
+#~ msgstr ""
+#~ "Display plated pads as plated but other copper as raw copper material. "
+#~ "(Slow)"
+
+#~ msgid "Selection color"
+#~ msgstr "Selection color"
+
+#~ msgid "Recursive Level"
+#~ msgstr "Recursive Level"
+
+#~ msgid "Shadows"
+#~ msgstr "Shadows"
+
+#~ msgid "Lights configuration"
+#~ msgstr "Lights configuration"
+
+#~ msgid "Ambient Camera Light"
+#~ msgstr "Ambient Camera Light"
+
+#~ msgid "Top Light"
+#~ msgstr "Top Light"
+
+#~ msgid "Bottom Light"
+#~ msgstr "Bottom Light"
+
+#~ msgid "Prefer selection to dragging"
+#~ msgstr "Prefer selection to dragging"
+
+#~ msgid "Mouse Buttons"
+#~ msgstr "Mouse Buttons"
+
+#~ msgid "Mouse Wheel and Touchpad Scrolling"
+#~ msgstr "Mouse Wheel and Touchpad Scrolling"
+
+#~ msgid "Behavior of vertical touchpad or scroll wheel:"
+#~ msgstr "Behavior of vertical touchpad or scroll wheel:"
+
+#~ msgid "While pressing:"
+#~ msgstr "While pressing:"
+
+#~ msgid "Pan up / down:"
+#~ msgstr "Pan up / down:"
+
+#~ msgid "Pan left / right:"
+#~ msgstr "Pan left / right:"
+
+#~ msgid "Pan left/right with horizontal touchpad or scroll wheel movement"
+#~ msgstr "Pan left/right with horizontal touchpad or scroll wheel movement"
+
+#~ msgid ""
+#~ "Footprint can be freely moved and auto placed. User can arbitrarily "
+#~ "select and edit footprint's pads."
+#~ msgstr ""
+#~ "Footprint can be freely moved and auto placed. User can arbitrarily "
+#~ "select and edit footprint's pads."
+
+#~ msgid ""
+#~ "Footprint can be freely moved and auto placed, but its pads cannot be "
+#~ "edited."
+#~ msgstr ""
+#~ "Footprint can be freely moved and auto placed, but its pads cannot be "
+#~ "edited."
+
+#~ msgid ""
+#~ "Footprint is locked: it cannot be freely moved or auto placed, and can "
+#~ "only be selected when the 'Locked items' checkbox is enabled in the "
+#~ "selection filter."
+#~ msgstr ""
+#~ "Footprint is locked: it cannot be freely moved or auto placed, and can "
+#~ "only be selected when the 'Locked items' checkbox is enabled in the "
+#~ "selection filter."
+
+#~ msgid "Error: Negative local clearance values will have no effect."
+#~ msgstr "Error: Negative local clearance values will have no effect."
+
+#~ msgid ""
+#~ "Error: Negative solder mask clearances are not supported for custom pad "
+#~ "shapes."
+#~ msgstr ""
+#~ "Error: Negative solder mask clearances are not supported for custom pad "
+#~ "shapes."
+
+#~ msgid "Incorrect value for pad offset."
+#~ msgstr "Incorrect value for pad offset."
+
+#~ msgid "Error: Through hole pad has no hole."
+#~ msgstr "Error: Through hole pad has no hole."
+
+#~ msgid "Error: Connector pads have no solder paste. Use an SMD pad instead."
+#~ msgstr "Error: Connector pads have no solder paste. Use an SMD pad instead."
+
+#~ msgid "Warning: Fiducial property cannot be set on NPTH pads."
+#~ msgstr "Warning: Fiducial property cannot be set on NPTH pads."
+
+#~ msgid "Warning: Testpoint property cannot be set on NPTH pads."
+#~ msgstr "Warning: Testpoint property cannot be set on NPTH pads."
+
+#~ msgid "Warning: Heatsink property cannot be set on NPTH pads."
+#~ msgstr "Warning: Heatsink property cannot be set on NPTH pads."
+
+#~ msgid "Warning: Castellated property can be set only on PTH pads."
+#~ msgstr "Warning: Castellated property can be set only on PTH pads."
+
+#~ msgid "Warning: BGA property can be set only on SMD pads."
+#~ msgstr "Warning: BGA property can be set only on SMD pads."
+
+#~ msgid "Pad setup errors list"
+#~ msgstr "Pad setup errors list"
+
+#~ msgid "Via drill size must be smaller than via diameter"
+#~ msgstr "Via drill size must be smaller than via diameter"
+
+#~ msgid "&Keep unused layers"
+#~ msgstr "&Keep unused layers"
+
+#~ msgid "Minimum uVia drill:"
+#~ msgstr "Minimum uVia drill:"
+
+#~ msgid "Via is not connected"
+#~ msgstr "Via is not connected"
+
+#~ msgid "Drill X / Y"
+#~ msgstr "Drill X / Y"
+
+#~ msgid ""
+#~ "Remove or reset the unconnected inner layers on through hole pads and vias"
+#~ msgstr ""
+#~ "Remove or reset the unconnected inner layers on through hole pads and vias"
+
+#~ msgid "Automatically routed tracks"
+#~ msgstr "Automatically routed tracks"
+
+#~ msgid "&Remove Unused"
+#~ msgstr "&Remove Unused"
+
+#~ msgid "Reset &Unused"
+#~ msgstr "Reset &Unused"
+
+#~ msgid "&Keep pads at first and last layers"
+#~ msgstr "&Keep pads at first and last layers"
+
+#~ msgid "Unused Pad Layers"
+#~ msgstr "Unused Pad Layers"
+
+#~ msgid "Flip"
+#~ msgstr "Flip"
+
+#~ msgid "All units are not interchangeable"
+#~ msgstr "All units are not interchangeable"
+
+#~ msgid "Position:"
+#~ msgstr "Position:"
+
+#~ msgid "Center on page"
+#~ msgstr "Center on page"
+
+#~ msgid "Clarify selection"
+#~ msgstr "Clarify selection"
+
+#~ msgid "Clarify Selection"
+#~ msgstr "Clarify Selection"
+
+#~ msgid "Automatically update via net"
+#~ msgstr "Automatically update via net"
+
+#, c-format
+#~ msgid "Rule layer \"%s\" not matched."
+#~ msgstr "Rule layer \"%s\" not matched."
+
+#~ msgid "Rule layer not matched."
+#~ msgstr "Rule layer not matched."
+
+#~ msgid "Can't start a differential pair  in the middle of nowhere."
+#~ msgstr "Can't start a differential pair  in the middle of nowhere."
+
+#~ msgid "Current track/via gap setting violates design rules for this net."
+#~ msgstr "Current track/via gap setting violates design rules for this net."
+
+#~ msgid "Current track width setting violates design rules."
+#~ msgstr "Current track width setting violates design rules."
+
+#~ msgid "Convert..."
+#~ msgstr "Convert..."
+
+#~ msgid "Special Tools..."
+#~ msgstr "Special Tools..."
 
 #~ msgid "Tight"
 #~ msgstr "Tight"

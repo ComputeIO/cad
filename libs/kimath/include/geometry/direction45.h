@@ -39,9 +39,10 @@ class DIRECTION_45
 public:
 
     /**
-     * Enum Directions
      * Represents available directions - there are 8 of them, as on a rectilinear map (north = up) +
      * an extra undefined direction, reserved for traces that don't respect 45-degree routing regime.
+     * NOTE: North represents "up" to the user looking at the application, which is the negative-y
+     * direction in the world coordinate space!
      */
     enum Directions : int
     {
@@ -75,12 +76,14 @@ public:
 
     /**
      * Constructor
-     * @param aVec vector, whose direction will be translated into a DIRECTION_45.
+     * @param aVec vector in world space, whose direction will be translated into a DIRECTION_45.
      */
     DIRECTION_45( const VECTOR2I &aVec, bool a90 = false ) :
             m_90deg( a90 )
     {
-        construct_( aVec );
+        VECTOR2I vec( aVec );
+        vec.y = -vec.y;
+        construct_( vec );
     }
 
     /**
@@ -90,7 +93,21 @@ public:
     DIRECTION_45( const SEG& aSeg, bool a90 = false ) :
             m_90deg( a90 )
     {
-        construct_( aSeg.B - aSeg.A );
+        VECTOR2I vec( aSeg.B - aSeg.A );
+        vec.y = -vec.y;
+        construct_( vec );
+    }
+
+    /**
+     * Creates a DIRECTION_45 from the endpoints of a given arc
+     * @param aArc will be translated into the closest DIRECTION_45
+     */
+    DIRECTION_45( const SHAPE_ARC& aArc, bool a90 = false ) :
+            m_90deg( a90 )
+    {
+        VECTOR2I vec( aArc.GetP1() - aArc.GetP0() );
+        vec.y = -vec.y;
+        construct_( vec );
     }
 
     /**
@@ -259,22 +276,20 @@ public:
     }
 
     /**
-     * Function ToVector()
-     *
-     * Returns a unit vector corresponding to our direction.
+     * @return a unit vector in world coordinate system corresponding to our direction.
      */
     const VECTOR2I ToVector() const
     {
         switch( m_dir )
         {
-            case N: return VECTOR2I( 0, 1 );
-            case S: return VECTOR2I( 0, -1 );
+            case N: return VECTOR2I( 0, -1 );
+            case S: return VECTOR2I( 0, 1 );
             case E: return VECTOR2I( 1, 0 );
             case W: return VECTOR2I( -1, 0 );
-            case NE: return VECTOR2I( 1, 1 );
-            case NW: return VECTOR2I( -1, 1 );
-            case SE: return VECTOR2I( 1, -1 );
-            case SW: return VECTOR2I( -1, -1 );
+            case NE: return VECTOR2I( 1, -1 );
+            case NW: return VECTOR2I( -1, -1 );
+            case SE: return VECTOR2I( 1, 1 );
+            case SW: return VECTOR2I( -1, 1 );
 
             default:
                 return VECTOR2I( 0, 0 );

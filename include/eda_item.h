@@ -117,8 +117,8 @@ typedef const INSPECTOR_FUNC& INSPECTOR;
 #define SKIP_STRUCT    (1 << 15)   ///< flag indicating that the structure should be ignored
 #define DO_NOT_DRAW    (1 << 16)   ///< Used to disable draw function
 #define IS_PASTED      (1 << 17)   ///< Modifier on IS_NEW which indicates it came from clipboard
-#define TRACK_LOCKED   (1 << 18)   ///< Pcbnew: track locked: protected from global deletion
-#define TRACK_AR       (1 << 19)   ///< Pcbnew: autorouted track
+#define LOCKED         (1 << 18)   ///< Pcbnew: locked from movement and deletion
+#define UNUSED         (1 << 19)
 #define MALFORMED_F_COURTYARD (1 << 20)
 #define MALFORMED_B_COURTYARD (1 << 21)
 #define MALFORMED_COURTYARDS ( MALFORMED_F_COURTYARD | MALFORMED_B_COURTYARD )
@@ -133,7 +133,7 @@ typedef const INSPECTOR_FUNC& INSPECTOR;
 #define UR_TRANSIENT   (1 << 28)   ///< indicates the item is owned by the undo/redo stack
 
 #define IS_DANGLING    (1 << 29)   ///< indicates a pin is dangling
-#define ENTERED        (1 << 30)
+#define ENTERED        (1 << 30)   ///< indicates a group has been entered
 
 // WARNING: if you add flags, you'll probably need to adjust the masks in GetEditFlags() and
 // ClearTempFlags().
@@ -201,7 +201,7 @@ public:
     void SetFlags( STATUS_FLAGS aMask ) { m_flags |= aMask; }
     void ClearFlags( STATUS_FLAGS aMask = EDA_ITEM_ALL_FLAGS ) { m_flags &= ~aMask; }
     STATUS_FLAGS GetFlags() const { return m_flags; }
-    bool HasFlag( STATUS_FLAGS aFlag ) { return ( m_flags & aFlag ) == aFlag; }
+    bool HasFlag( STATUS_FLAGS aFlag ) const { return ( m_flags & aFlag ) == aFlag; }
 
     STATUS_FLAGS GetEditFlags() const
     {
@@ -410,7 +410,7 @@ public:
      * @param aAuxData A pointer to optional data required for the search or NULL if not used.
      * @return True if the item's text matches the search criteria in \a aSearchData.
      */
-    virtual bool Matches( wxFindReplaceData& aSearchData, void* aAuxData )
+    virtual bool Matches( const wxFindReplaceData& aSearchData, void* aAuxData ) const
     {
         return false;
     }
@@ -424,7 +424,7 @@ public:
      * @param aText A reference to a wxString object containing the text to be replaced.
      * @return True if \a aText was modified, otherwise false.
      */
-    static bool Replace( wxFindReplaceData& aSearchData, wxString& aText );
+    static bool Replace( const wxFindReplaceData& aSearchData, wxString& aText );
 
     /**
      * Perform a text replace using the find and replace criteria in \a aSearchData
@@ -437,7 +437,7 @@ public:
      * @param aAuxData A pointer to optional data required for the search or NULL if not used.
      * @return True if the item text was modified, otherwise false.
      */
-    virtual bool Replace( wxFindReplaceData& aSearchData, void* aAuxData = nullptr )
+    virtual bool Replace( const wxFindReplaceData& aSearchData, void* aAuxData = nullptr )
     {
         return false;
     }
@@ -517,7 +517,7 @@ protected:
      * @param aSearchData The criteria to search against.
      * @return True if \a aText matches the search criteria in \a aSearchData.
      */
-    bool Matches( const wxString& aText, wxFindReplaceData& aSearchData );
+    bool Matches( const wxString& aText, const wxFindReplaceData& aSearchData ) const;
 
 public:
     const KIID  m_Uuid;

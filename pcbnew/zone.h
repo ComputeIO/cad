@@ -131,6 +131,11 @@ public:
     wxString GetZoneName() const { return m_zoneName; }
     void SetZoneName( const wxString& aName ) { m_zoneName = aName; }
 
+    bool Matches( const wxFindReplaceData& aSearchData, void* aAuxData ) const override
+    {
+        return BOARD_ITEM::Matches( GetZoneName(), aSearchData );
+    }
+
     /**
      * Function GetBoundingBox (virtual)
      * @return an EDA_RECT that is the bounding box of the zone outline
@@ -316,7 +321,7 @@ public:
     }
 
     SHAPE_POLY_SET* Outline() { return m_Poly; }
-    const SHAPE_POLY_SET* Outline() const { return const_cast< SHAPE_POLY_SET* >( m_Poly ); }
+    const SHAPE_POLY_SET* Outline() const { return m_Poly; }
 
     void SetOutline( SHAPE_POLY_SET* aOutline ) { m_Poly = aOutline; }
 
@@ -679,10 +684,10 @@ public:
     /**
      * Checks if a given filled polygon is an insulated island
      * @param aLayer is the layer to test
-     * @param aPolyIdx is an inndex into m_FilledPolysList[aLayer]
+     * @param aPolyIdx is an index into m_FilledPolysList[aLayer]
      * @return true if the given polygon is insulated (i.e. has no net connection)
      */
-    bool IsIsland( PCB_LAYER_ID aLayer, int aPolyIdx );
+    bool IsIsland( PCB_LAYER_ID aLayer, int aPolyIdx ) const;
 
     void SetIsIsland( PCB_LAYER_ID aLayer, int aPolyIdx )
     {

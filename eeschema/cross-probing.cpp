@@ -78,7 +78,7 @@ SCH_ITEM* SCH_EDITOR_CONTROL::FindComponentAndItem( const wxString& aReference,
                     if( pin )
                     {
                         pos = pin->GetPosition();
-                        foundItem = component;
+                        foundItem = pin;
                         break;
                     }
                 }
@@ -310,6 +310,8 @@ void SCH_EDIT_FRAME::ExecuteRemoteCommand( const char* cmdline )
 
         if( auto sg = Schematic().ConnectionGraph()->FindFirstSubgraphByName( netName ) )
             m_highlightedConn = sg->m_driver_connection;
+        else
+            m_highlightedConn = nullptr;
 
         GetToolManager()->RunAction( EE_ACTIONS::updateNetHighlighting, true );
 

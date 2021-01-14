@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2015 Jean-Pierre Charras, jp.charras at wanadoo.fr
  * Copyright (C) 2011 Wayne Stambaugh <stambaughw@gmail.com>
- * Copyright (C) 1992-2020 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 1992-2021 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -530,6 +530,7 @@ int ERC_TESTER::TestPinToPin()
                             ERC_ITEM::Create( erc == PIN_ERROR::WARNING ? ERCE_PIN_TO_PIN_WARNING :
                                                                           ERCE_PIN_TO_PIN_ERROR );
                     ercItem->SetItems( refPin, testPin );
+                    ercItem->SetIsSheetSpecific();
 
                     ercItem->SetErrorMessage(
                             wxString::Format( _( "Pins of type %s and %s are connected" ),
@@ -602,6 +603,7 @@ int ERC_TESTER::TestMultUnitPinConflicts()
                                 pin->GetNumber(), netName, pinToNetMap[name].first ) );
 
                         ercItem->SetItems( pin, pinToNetMap[name].second );
+                        ercItem->SetIsSheetSpecific();
 
                         SCH_MARKER* marker = new SCH_MARKER( ercItem,
                                                              pin->GetTransformedPosition() );
@@ -697,7 +699,7 @@ int ERC_TESTER::TestLibSymbolIssues()
             wxCHECK2( libSymbolInSchematic, continue );
 
             wxString       libName = symbol->GetLibId().GetLibNickname();
-            LIB_TABLE_ROW* libTableRow = libTable->FindRow( libName );
+            LIB_TABLE_ROW* libTableRow = libTable->FindRow( libName, true );
 
             if( !libTableRow )
             {

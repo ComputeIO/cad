@@ -167,8 +167,7 @@ TOOL_ACTION ACTIONS::paste( "common.Interactive.paste",
 TOOL_ACTION ACTIONS::selectAll( "common.Interactive.selectAll",
         AS_GLOBAL,
         MD_CTRL + 'A', "",
-        _( "Select All" ), _( "Select all items on screen" ),
-        plus_xpm );
+        _( "Select All" ), _( "Select all items on screen" ) );
 
 TOOL_ACTION ACTIONS::pasteSpecial( "common.Interactive.pasteSpecial",
         AS_GLOBAL, 0, "",
@@ -404,13 +403,11 @@ TOOL_ACTION ACTIONS::refreshPreview( "common.Control.refreshPreview",
 
 TOOL_ACTION ACTIONS::pinLibrary( "common.Control.pinLibrary",
          AS_GLOBAL, 0, "",
-         _( "Pin Library" ), "Keep the library at the top of the list",
-         flag_xpm );
+         _( "Pin Library" ), "Keep the library at the top of the list" );
 
 TOOL_ACTION ACTIONS::unpinLibrary( "common.Control.unpinLibrary",
          AS_GLOBAL, 0, "",
-         _( "Unpin Library" ), "No longer keep the library at the top of the list",
-         flag_remove_xpm );
+         _( "Unpin Library" ), "No longer keep the library at the top of the list" );
 
 TOOL_ACTION ACTIONS::panUp( "common.Control.panUp",
         AS_GLOBAL,
@@ -625,7 +622,7 @@ TOOL_ACTION ACTIONS::help( "common.SuiteControl.help",
         AS_GLOBAL, 0, "",
         _( "Help" ),
         _( "Open product documentation in a web browser" ),
-        online_help_xpm );
+        help_online_xpm );
 
 TOOL_ACTION ACTIONS::listHotKeys( "common.SuiteControl.listHotKeys",
         AS_GLOBAL,

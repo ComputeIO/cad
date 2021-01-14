@@ -48,7 +48,6 @@ static std::unordered_set<NODE*> allocNodes;
 
 NODE::NODE()
 {
-    wxLogTrace( "PNS", "NODE::create %p", this );
     m_depth = 0;
     m_root = this;
     m_parent = NULL;
@@ -64,8 +63,6 @@ NODE::NODE()
 
 NODE::~NODE()
 {
-    wxLogTrace( "PNS", "NODE::delete %p", this );
-
     if( !m_children.empty() )
     {
         wxLogTrace( "PNS", "attempting to free a node that has kids." );
@@ -127,8 +124,6 @@ NODE* NODE::Branch()
 {
     NODE* child = new NODE;
 
-    wxLogTrace( "PNS", "NODE::branch %p (parent %p)", child, this );
-
     m_children.insert( child );
 
     child->m_depth = m_depth + 1;
@@ -150,10 +145,12 @@ NODE* NODE::Branch()
         child->m_override = m_override;
     }
 
+#if 0
     wxLogTrace( "PNS", "%d items, %d joints, %d overrides",
                 child->m_index->Size(),
                 (int) child->m_joints.size(),
                 (int) child->m_override.size() );
+#endif
 
     return child;
 }
@@ -864,8 +861,8 @@ void NODE::Remove( LINE& aLine )
 
 
 void NODE::followLine( LINKED_ITEM* aCurrent, int aScanDirection, int& aPos, int aLimit,
-                       VECTOR2I* aCorners, LINKED_ITEM** aSegments, bool& aGuardHit,
-                       bool aStopAtLockedJoints )
+                       VECTOR2I* aCorners, LINKED_ITEM** aSegments, bool* aArcReversed,
+                       bool& aGuardHit, bool aStopAtLockedJoints )
 {
     bool prevReversed = false;
 
@@ -880,9 +877,18 @@ void NODE::followLine( LINKED_ITEM* aCurrent, int aScanDirection, int& aPos, int
 
         aCorners[aPos] = jt->Pos();
         aSegments[aPos] = aCurrent;
+        aArcReversed[aPos] = false;
+
+        if( aCurrent->Kind() == ITEM::ARC_T )
+        {
+            if( ( aScanDirection && jt->Pos() == aCurrent->Anchor( 0 ) ) ||
+                ( !aScanDirection && jt->Pos() == aCurrent->Anchor( 1 ) ) )
+                aArcReversed[aPos] = true;
+        }
+
         aPos += ( aScanDirection ? 1 : -1 );
 
-        if( count && guard == p)
+        if( count && guard == p )
         {
             aSegments[aPos] = NULL;
             aGuardHit = true;
@@ -908,6 +914,7 @@ const LINE NODE::AssembleLine( LINKED_ITEM* aSeg, int* aOriginSegmentIndex,
 
     VECTOR2I corners[MaxVerts + 1];
     LINKED_ITEM* segs[MaxVerts + 1];
+    bool arcReversed[MaxVerts + 1];
 
     LINE pl;
     bool guardHit = false;
@@ -919,10 +926,14 @@ const LINE NODE::AssembleLine( LINKED_ITEM* aSeg, int* aOriginSegmentIndex,
     pl.SetNet( aSeg->Net() );
     pl.SetOwner( this );
 
-    followLine( aSeg, false, i_start, MaxVerts, corners, segs, guardHit, aStopAtLockedJoints );
+    followLine( aSeg, false, i_start, MaxVerts, corners, segs, arcReversed,
+                guardHit, aStopAtLockedJoints );
 
     if( !guardHit )
-        followLine( aSeg, true, i_end, MaxVerts, corners, segs, guardHit, aStopAtLockedJoints );
+    {
+        followLine( aSeg, true, i_end, MaxVerts, corners, segs, arcReversed, guardHit,
+                    aStopAtLockedJoints );
+    }
 
     int n = 0;
 
@@ -931,25 +942,38 @@ const LINE NODE::AssembleLine( LINKED_ITEM* aSeg, int* aOriginSegmentIndex,
 
     for( int i = i_start + 1; i < i_end; i++ )
     {
-        const VECTOR2I& p = corners[i];
+        const VECTOR2I& p  = corners[i];
+        LINKED_ITEM*    li = segs[i];
 
-        pl.Line().Append( p );
+        if( !li || li->Kind() != ITEM::ARC_T )
+            pl.Line().Append( p );
 
-        if( segs[i] && prev_seg != segs[i] )
+        if( li && prev_seg != li )
         {
-            pl.Link( segs[i] );
+            if( li->Kind() == ITEM::ARC_T )
+            {
+                const ARC*       arc = static_cast<const ARC*>( li );
+                const SHAPE_ARC* sa  = static_cast<const SHAPE_ARC*>( arc->Shape() );
+                pl.Line().Append( arcReversed[i] ? sa->Reversed() : *sa );
+            }
+
+            pl.Link( li );
 
             // latter condition to avoid loops
-            if( segs[i] == aSeg && aOriginSegmentIndex && !originSet )
+            if( li == aSeg && aOriginSegmentIndex && !originSet )
             {
                 *aOriginSegmentIndex = n;
                 originSet = true;
             }
+
             n++;
         }
 
-        prev_seg = segs[i];
+        prev_seg = li;
     }
+
+    // Remove duplicate verts, but do NOT remove colinear segments here!
+    pl.Line().Simplify( false );
 
     assert( pl.SegmentCount() != 0 );
 
@@ -1243,23 +1267,23 @@ void NODE::releaseGarbage()
 
 
 void NODE::Commit( NODE* aNode )
+{
+    if( aNode->isRoot() )
+        return;
+
+    for( ITEM* item : aNode->m_override )
+        Remove( item );
+
+    for( ITEM* item : *aNode->m_index )
     {
-        if( aNode->isRoot() )
-            return;
-
-        for( ITEM* item : aNode->m_override )
-            Remove( item );
-
-        for( auto i : *aNode->m_index )
-        {
-            i->SetRank( -1 );
-            i->Unmark();
-            Add( std::unique_ptr<ITEM>( i ) );
-        }
-
-        releaseChildren();
-        releaseGarbage();
+        item->SetRank( -1 );
+        item->Unmark();
+        Add( std::unique_ptr<ITEM>( item ) );
     }
+
+    releaseChildren();
+    releaseGarbage();
+}
 
 
 void NODE::KillChildren()
@@ -1274,9 +1298,11 @@ void NODE::AllItemsInNet( int aNet, std::set<ITEM*>& aItems, int aKindMask)
 
     if( l_cur )
     {
-        for( ITEM*item : *l_cur )
-            if( item->OfKind( aKindMask ) )
+        for( ITEM* item : *l_cur )
+        {
+            if( item->OfKind( aKindMask ) && item->IsRoutable() )
                 aItems.insert( item );
+        }
     }
 
     if( !isRoot() )
@@ -1285,10 +1311,10 @@ void NODE::AllItemsInNet( int aNet, std::set<ITEM*>& aItems, int aKindMask)
 
         if( l_root )
         {
-            for( INDEX::NET_ITEMS_LIST::iterator i = l_root->begin(); i != l_root->end(); ++i )
+            for( ITEM* item : *l_root )
             {
-                if( !Overrides( *i ) && (*i)->OfKind( aKindMask ) )
-                    aItems.insert( *i );
+                if( !Overrides( item ) && item->OfKind( aKindMask ) && item->IsRoutable() )
+                    aItems.insert( item );
             }
         }
     }
@@ -1297,10 +1323,10 @@ void NODE::AllItemsInNet( int aNet, std::set<ITEM*>& aItems, int aKindMask)
 
 void NODE::ClearRanks( int aMarkerMask )
 {
-    for( INDEX::ITEM_SET::iterator i = m_index->begin(); i != m_index->end(); ++i )
+    for( ITEM* item : *m_index )
     {
-        (*i)->SetRank( -1 );
-        (*i)->Mark( (*i)->Marker() & (~aMarkerMask) );
+        item->SetRank( -1 );
+        item->Mark( item->Marker() & ~aMarkerMask );
     }
 }
 
@@ -1318,6 +1344,7 @@ void NODE::RemoveByMarker( int aMarker )
     for( ITEM* item : garbage )
         Remove( item );
 }
+
 
 SEGMENT* NODE::findRedundantSegment( const VECTOR2I& A, const VECTOR2I& B, const LAYER_RANGE& lr,
                                      int aNet )
@@ -1347,10 +1374,12 @@ SEGMENT* NODE::findRedundantSegment( const VECTOR2I& A, const VECTOR2I& B, const
     return nullptr;
 }
 
+
 SEGMENT* NODE::findRedundantSegment( SEGMENT* aSeg )
 {
     return findRedundantSegment( aSeg->Seg().A, aSeg->Seg().B, aSeg->Layers(), aSeg->Net() );
 }
+
 
 ARC* NODE::findRedundantArc( const VECTOR2I& A, const VECTOR2I& B, const LAYER_RANGE& lr,
                              int aNet )
@@ -1379,6 +1408,7 @@ ARC* NODE::findRedundantArc( const VECTOR2I& A, const VECTOR2I& B, const LAYER_R
 
     return nullptr;
 }
+
 
 ARC* NODE::findRedundantArc( ARC* aArc )
 {

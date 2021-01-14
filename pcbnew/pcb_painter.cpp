@@ -348,11 +348,11 @@ COLOR4D PCB_RENDER_SETTINGS::GetColor( const VIEW_ITEM* aItem, int aLayer ) cons
         {
             if( item->Type() == PCB_VIA_T )
             {
-                isActive = static_cast<const VIA*>( item )->IsOnLayer( primary );
+                isActive = static_cast<const VIA*>( item )->FlashLayer( primary, true );
             }
             else if( item->Type() == PCB_PAD_T )
             {
-                isActive = static_cast<const PAD*>( item )->IsOnLayer( primary );
+                isActive = static_cast<const PAD*>( item )->FlashLayer( primary, true );
             }
             else if( item->Type() == PCB_TRACE_T || item->Type() == PCB_ARC_T )
             {
@@ -692,23 +692,6 @@ void PCB_PAINTER::draw( const VIA* aVia, int aLayer )
             || ( aLayer == LAYER_VIA_BBLIND && aVia->GetViaType() == VIATYPE::BLIND_BURIED )
             || ( aLayer == LAYER_VIA_MICROVIA && aVia->GetViaType() == VIATYPE::MICROVIA ) )
     {
-        if( m_pcbSettings.GetHighContrast() )
-        {
-            bool draw_annular = false;
-
-            for( unsigned int layer : m_pcbSettings.GetHighContrastLayers() )
-            {
-                if( aVia->FlashLayer( static_cast<PCB_LAYER_ID>( layer ) , true ) )
-                {
-                    draw_annular = true;
-                    break;
-                }
-            }
-
-            if( !draw_annular )
-                return;
-        }
-
         radius = aVia->GetWidth() / 2.0;
     }
     else
@@ -917,33 +900,6 @@ void PCB_PAINTER::draw( const PAD* aPad, int aLayer )
     // Pad drawing
     BOARD_DESIGN_SETTINGS& bds = aPad->GetBoard()->GetDesignSettings();
     COLOR4D                color = m_pcbSettings.GetColor( aPad, aLayer );
-    bool                   draw_annular = true;
-
-    if( aLayer == LAYER_PADS_TH
-                    && aPad->GetSizeX() <= aPad->GetDrillSizeX()
-                    && aPad->GetSizeY() <= aPad->GetDrillSizeY() )
-    {
-        draw_annular = false;
-    }
-    else if( m_pcbSettings.GetHighContrast() )
-    {
-        draw_annular = false;
-
-        for( unsigned int layer : m_pcbSettings.GetHighContrastLayers() )
-        {
-            if( aPad->FlashLayer( static_cast<PCB_LAYER_ID>( layer ) , true ) )
-            {
-                draw_annular = true;
-                break;
-            }
-            else if( !IsCopperLayer( layer ) )
-            {
-                // If a non-copper layer is the high-contrast layer, just show the pad
-                draw_annular = true;
-                break;
-            }
-        }
-    }
 
     if( m_pcbSettings.m_sketchMode[LAYER_PADS_TH] )
     {
@@ -971,7 +927,10 @@ void PCB_PAINTER::draw( const PAD* aPad, int aLayer )
         else
             m_gal->DrawSegment( seg->GetSeg().A, seg->GetSeg().B, seg->GetWidth() );
     }
-    else if( !draw_annular )
+    else if( aLayer == LAYER_PADS_TH
+            && aPad->GetShape() != PAD_SHAPE_CUSTOM
+            && aPad->GetSizeX() <= aPad->GetDrillSizeX()
+            && aPad->GetSizeY() <= aPad->GetDrillSizeY() )
     {
         // no annular ring to draw
     }
@@ -997,18 +956,21 @@ void PCB_PAINTER::draw( const PAD* aPad, int aLayer )
             break;
         }
 
-        if( pad_size.x + margin.x <= 0 || pad_size.y + margin.y <= 0 )
-            return;
-
         std::unique_ptr<PAD>            dummyPad;
         std::shared_ptr<SHAPE_COMPOUND> shapes;
         bool                            simpleShapes = true;
 
-        if( margin.x != margin.y )
+        if( margin.x != margin.y && aPad->GetShape() != PAD_SHAPE_CUSTOM )
         {
             // Our algorithms below (polygon inflation in particular) can't handle differential
             // inflation along separate axes.  So for those cases we build a dummy pad instead,
             // and inflate it.
+
+            // Margin is added to both sides.  If the total margin is larger than the pad
+            // then don't display this layer
+            if( pad_size.x + 2 * margin.x <= 0 || pad_size.y + 2 * margin.y <= 0 )
+                return;
+
             dummyPad.reset( static_cast<PAD*>( aPad->Duplicate() ) );
             dummyPad->SetSize( pad_size + margin + margin );
             shapes = std::dynamic_pointer_cast<SHAPE_COMPOUND>( dummyPad->GetEffectiveShape() );
@@ -1053,43 +1015,55 @@ void PCB_PAINTER::draw( const PAD* aPad, int aLayer )
                 case SH_SEGMENT:
                 {
                     const SHAPE_SEGMENT* seg = (SHAPE_SEGMENT*) shape;
-                    m_gal->DrawSegment( seg->GetSeg().A, seg->GetSeg().B,
-                                        seg->GetWidth() + 2 * margin.x );
+                    int                  effectiveWidth = seg->GetWidth() + 2 * margin.x;
+
+                    if( effectiveWidth > 0 )
+                        m_gal->DrawSegment( seg->GetSeg().A, seg->GetSeg().B, effectiveWidth );
                 }
                     break;
 
                 case SH_CIRCLE:
                 {
                     const SHAPE_CIRCLE* circle = (SHAPE_CIRCLE*) shape;
-                    m_gal->DrawCircle( circle->GetCenter(), circle->GetRadius() + margin.x );
+                    int                 effectiveRadius = circle->GetRadius() + margin.x;
+
+                    if( effectiveRadius > 0 )
+                        m_gal->DrawCircle( circle->GetCenter(), effectiveRadius );
                 }
                     break;
 
                 case SH_RECT:
                 {
                     const SHAPE_RECT* r = (SHAPE_RECT*) shape;
+                    VECTOR2I          position = r->GetPosition();
+                    VECTOR2I          effectiveSize = r->GetSize() + margin;
 
                     // At this point, if margin.x < 0 the actual rectangle size is
                     // smaller than SHAPE_RECT r (the pad size was not modifed)
                     if( margin.x < 0 )
-                        m_gal->DrawRectangle( r->GetPosition() - margin,
-                                              r->GetPosition() + r->GetSize() + margin );
-                    else
-                        m_gal->DrawRectangle( r->GetPosition(), r->GetPosition() + r->GetSize() );
-
-                    if( margin.x > 0 )  // We draw a roudned rect shape
                     {
-                        m_gal->DrawSegment( r->GetPosition(),
-                                            r->GetPosition() + VECTOR2I( r->GetWidth(), 0 ),
+                        if( effectiveSize.x > 0 && effectiveSize.y > 0 )
+                            m_gal->DrawRectangle( position - margin, position + effectiveSize );
+                    }
+                    else
+                    {
+                        m_gal->DrawRectangle( r->GetPosition(), r->GetPosition() + r->GetSize() );
+                    }
+
+                    // Now add on a rounded margin (using segments) if the margin > 0
+                    if( margin.x > 0 )
+                    {
+                        m_gal->DrawSegment( position,
+                                            position + VECTOR2I( r->GetWidth(), 0 ),
                                             margin.x * 2 );
-                        m_gal->DrawSegment( r->GetPosition() + VECTOR2I( r->GetWidth(), 0 ),
-                                            r->GetPosition() + r->GetSize(),
+                        m_gal->DrawSegment( position + VECTOR2I( r->GetWidth(), 0 ),
+                                            position + r->GetSize(),
                                             margin.x * 2 );
-                        m_gal->DrawSegment( r->GetPosition() + r->GetSize(),
-                                            r->GetPosition() + VECTOR2I( 0, r->GetHeight() ),
+                        m_gal->DrawSegment( position + r->GetSize(),
+                                            position + VECTOR2I( 0, r->GetHeight() ),
                                             margin.x * 2 );
-                        m_gal->DrawSegment( r->GetPosition() + VECTOR2I( 0, r->GetHeight() ),
-                                            r->GetPosition(),
+                        m_gal->DrawSegment( position + VECTOR2I( 0, r->GetHeight() ),
+                                            position,
                                             margin.x * 2 );
                     }
                 }
@@ -1100,6 +1074,7 @@ void PCB_PAINTER::draw( const PAD* aPad, int aLayer )
                     const SHAPE_SIMPLE* poly = static_cast<const SHAPE_SIMPLE*>( shape );
                     m_gal->DrawPolygon( poly->Vertices() );
 
+                    // Now add on a rounded margin (using segments) if the margin > 0
                     if( margin.x > 0 )
                     {
                         for( size_t ii = 0; ii < poly->GetSegmentCount(); ++ii )

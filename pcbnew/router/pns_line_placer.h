@@ -95,7 +95,11 @@ public:
 
     void FlipPosture();
 
-    void SetDisabled( bool aDisabled = true ) { m_disabled = aDisabled; }
+    /**
+     * Disables the mouse-trail portion of the posture solver; leaving only the manual posture
+     * switch and the previous-segment posture algorithm
+     */
+    void SetMouseDisabled( bool aDisabled = true ) { m_disableMouse = aDisabled; }
 
     bool IsManuallyForced() const { return m_manuallyForced; }
 
@@ -105,7 +109,7 @@ private:
     DIRECTION_45     m_direction;
     DIRECTION_45     m_lastSegDirection;
     bool             m_forced;
-    bool             m_disabled;
+    bool             m_disableMouse;
     bool             m_manuallyForced;
 };
 
@@ -320,22 +324,11 @@ private:
     void removeLoops( NODE* aNode, LINE& aLatest );
 
     /**
-     * Function simplifyNewLine()
-     *
-     * Assembles a line starting from segment aLatest, removes collinear segments
+     * Assembles a line starting from segment or arc aLatest, removes collinear segments
      * and redundant vertexes. If a simplification bhas been found, replaces the
      * old line with the simplified one in aNode.
      */
-    void simplifyNewLine( NODE* aNode, SEGMENT* aLatest );
-
-    /**
-     * Function checkObtusity()
-     *
-     * Helper function, checking if segments a and b form an obtuse angle
-     * (in 45-degree regime).
-     * @return true, if angle (aA, aB) is obtuse
-     */
-    bool checkObtusity( const SEG& aA, const SEG& aB ) const;
+    void simplifyNewLine( NODE* aNode, LINKED_ITEM* aLatest );
 
     /**
      * Function handleSelfIntersections()

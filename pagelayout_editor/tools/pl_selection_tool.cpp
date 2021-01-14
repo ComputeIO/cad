@@ -202,9 +202,14 @@ int PL_SELECTION_TOOL::Main( const TOOL_EVENT& aEvent )
 
         if( m_frame->ToolStackIsEmpty() )
         {
-            if( !modifier_enabled && !m_selection.Empty() && !m_frame->GetDragSelects()
-                    && evt->HasPosition() && selectionContains( evt->Position() ) )
+            if( !modifier_enabled
+                    && !m_selection.Empty()
+                    && m_frame->GetDragAction() == MOUSE_DRAG_ACTION::DRAG_SELECTED
+                    && evt->HasPosition()
+                    && selectionContains( evt->Position() ) )
+            {
                 m_frame->GetCanvas()->SetCurrentCursor( KICURSOR::MOVING );
+            }
             else
             {
                 if( m_additive )
@@ -256,8 +261,6 @@ void PL_SELECTION_TOOL::SelectPoint( const VECTOR2I& aWhere, bool* aSelectionCan
     // If still more than one item we're going to have to ask the user.
     if( collector.GetCount() > 1 )
     {
-        collector.m_MenuTitle =  _( "Clarify Selection" );
-
         // Must call selectionMenu via RunAction() to avoid event-loop contention
         m_toolMgr->RunAction( PL_ACTIONS::selectionMenu, true, &collector );
 
@@ -586,13 +589,19 @@ bool PL_SELECTION_TOOL::doSelectionMenu( COLLECTOR* aCollector )
     }
 
     menu.AppendSeparator();
-    menu.Add( _( "Select &All\tA" ), limit + 1, plus_xpm );
+    menu.Add( _( "Select &All\tA" ), limit + 1, nullptr );
 
     if( aCollector->m_MenuTitle.Length() )
+    {
         menu.SetTitle( aCollector->m_MenuTitle );
+        menu.SetIcon( info_xpm );
+        menu.DisplayTitle( true );
+    }
+    else
+    {
+        menu.DisplayTitle( false );
+    }
 
-    menu.SetIcon( info_xpm );
-    menu.DisplayTitle( true );
     SetContextMenu( &menu, CMENU_NOW );
 
     bool selectAll = false;

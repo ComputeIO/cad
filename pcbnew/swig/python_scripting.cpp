@@ -41,6 +41,8 @@
 
 #include <wx/app.h>
 
+#include <config.h>
+
 /* init functions defined by swig */
 
 #if PY_MAJOR_VERSION >= 3
@@ -165,12 +167,12 @@ bool pcbnewInitPythonScripting( const char * aUserScriptingPath )
     // Under vcpkg/msvc, we need to explicitly set the python home
     // or else it'll start consuming system python registry keys and the like instead
     // We are going to follow the "unix" layout for the msvc/vcpkg distributions so exes in /root/bin
-    // And the python lib in /root/share/python3(/Lib,/DLLs)
+    // And the python lib in /root/lib/python3(/Lib,/DLLs)
     wxFileName pyHome;
 
     pyHome.Assign( Pgm().GetExecutablePath() );
     pyHome.AppendDir( wxT("..") );
-    pyHome.AppendDir( wxT("share") );
+    pyHome.AppendDir( wxT("lib") );
     pyHome.AppendDir( wxT("python3") );
 
     pyHome.Normalize();
@@ -655,10 +657,13 @@ wxString PyScriptingPath( bool aUserPath )
         }
         else
         {
+            //TODO(snh) break out the directory functions into KIPLATFORM
 #if defined( __WXMAC__ )
             path = GetOSXKicadDataDir() + wxT( "/scripting" );
-#else
+#elif defined( __WXMSW__ )
             path = Pgm().GetExecutablePath() + wxT( "../share/kicad/scripting" );
+#else
+            path = wxString( KICAD_DATA ) + wxS( "/scripting" );
 #endif
         }
     }

@@ -436,8 +436,8 @@ wxString LIB_PART::SubReference( int aUnit, bool aAddSeparator )
 }
 
 
-void LIB_PART::Print( RENDER_SETTINGS* aSettings, const wxPoint& aOffset, int aMulti,
-                      int aConvert, const PART_DRAW_OPTIONS& aOpts )
+void LIB_PART::Print( const RENDER_SETTINGS* aSettings, const wxPoint& aOffset,
+                      int aMulti, int aConvert, const PART_DRAW_OPTIONS& aOpts )
 {
     /* draw background for filled items using background option
      * Solid lines will be drawn after the background
@@ -621,7 +621,7 @@ void LIB_PART::AddDrawItem( LIB_ITEM* aItem )
 }
 
 
-LIB_ITEM* LIB_PART::GetNextDrawItem( LIB_ITEM* aItem, KICAD_T aType )
+LIB_ITEM* LIB_PART::GetNextDrawItem( const LIB_ITEM* aItem, KICAD_T aType )
 {
     if( aItem == NULL )
     {

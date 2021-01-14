@@ -45,6 +45,7 @@ using namespace std::placeholders;
 #include <view/view_controls.h>
 #include <preview_items/selection_area.h>
 #include <painter.h>
+#include <router/router_tool.h>
 #include <bitmaps.h>
 #include <pcbnew_settings.h>
 #include <tool/tool_event.h>
@@ -65,7 +66,6 @@ public:
         ACTION_MENU( true )
     {
         SetTitle( _( "Select" ) );
-        SetIcon( options_generic_xpm );
 
         Add( PCB_ACTIONS::filterSelection );
 
@@ -209,8 +209,8 @@ int PCB_SELECTION_TOOL::Main( const TOOL_EVENT& aEvent )
     // Main loop: keep receiving events
     while( TOOL_EVENT* evt = Wait() )
     {
-        bool dragAlwaysSelects = getEditFrame<PCB_BASE_FRAME>()->GetDragSelects();
-        TRACK_DRAG_ACTION dragAction = getEditFrame<PCB_BASE_FRAME>()->Settings().m_TrackDragAction;
+        MOUSE_DRAG_ACTION dragAction = m_frame->GetDragAction();
+        TRACK_DRAG_ACTION trackDragAction = m_frame->Settings().m_TrackDragAction;
 
         // on left click, a selection is made, depending on modifiers ALT, SHIFT, CTRL:
         // Due to the fact ALT key modifier cannot be useed freely on Winows and Linux,
@@ -283,9 +283,15 @@ int PCB_SELECTION_TOOL::Main( const TOOL_EVENT& aEvent )
         bool modifier_enabled = m_subtractive || m_additive || m_exclusive_or;
         PCB_BASE_FRAME* frame = getEditFrame<PCB_BASE_FRAME>();
         bool brd_editor = frame && frame->IsType( FRAME_PCB_EDITOR );
+        ROUTER_TOOL* router = m_toolMgr->GetTool<ROUTER_TOOL>();
 
+        // If the router tool is active, don't override
+        if( router && router->IsToolActive() )
+        {
+            evt->SetPassEvent();
+        }
         // Single click? Select single object
-        if( evt->IsClick( BUT_LEFT ) )
+        else if( evt->IsClick( BUT_LEFT ) )
         {
             if( highlight_modifier && brd_editor )
                 m_toolMgr->RunAction( PCB_ACTIONS::highlightNet, true );
@@ -341,7 +347,11 @@ int PCB_SELECTION_TOOL::Main( const TOOL_EVENT& aEvent )
             m_frame->FocusOnItem( nullptr );
             m_toolMgr->ProcessEvent( EVENTS::InhibitSelectionEditing );
 
-            if( modifier_enabled || dragAlwaysSelects )
+            if( modifier_enabled || dragAction == MOUSE_DRAG_ACTION::SELECT )
+            {
+                selectMultiple();
+            }
+            else if( m_selection.Empty() && dragAction != MOUSE_DRAG_ACTION::DRAG_ANY )
             {
                 selectMultiple();
             }
@@ -385,9 +395,9 @@ int PCB_SELECTION_TOOL::Main( const TOOL_EVENT& aEvent )
                     // Yes -> run the move tool and wait till it finishes
                     TRACK* track = dynamic_cast<TRACK*>( m_selection.GetItem( 0 ) );
 
-                    if( track && dragAction == TRACK_DRAG_ACTION::DRAG )
+                    if( track && trackDragAction == TRACK_DRAG_ACTION::DRAG )
                         m_toolMgr->RunAction( PCB_ACTIONS::drag45Degree, true );
-                    else if( track && dragAction == TRACK_DRAG_ACTION::DRAG_FREE_ANGLE )
+                    else if( track && trackDragAction == TRACK_DRAG_ACTION::DRAG_FREE_ANGLE )
                         m_toolMgr->RunAction( PCB_ACTIONS::dragFreeAngle, true );
                     else
                         m_toolMgr->RunAction( PCB_ACTIONS::move, true );
@@ -420,9 +430,14 @@ int PCB_SELECTION_TOOL::Main( const TOOL_EVENT& aEvent )
         if( m_frame->ToolStackIsEmpty() )
         {
             //move cursor prediction
-            if( !modifier_enabled && !dragAlwaysSelects && !m_selection.Empty()
-                    && evt->HasPosition() && selectionContains( evt->Position() ) )
+            if( !modifier_enabled
+                    && dragAction == MOUSE_DRAG_ACTION::DRAG_SELECTED
+                    && !m_selection.Empty()
+                    && evt->HasPosition()
+                    && selectionContains( evt->Position() ) )
+            {
                 m_frame->GetCanvas()->SetCurrentCursor( KICURSOR::MOVING );
+            }
             else
             {
                 if( m_additive )
@@ -565,8 +580,25 @@ PCB_SELECTION& PCB_SELECTION_TOOL::RequestSelection( CLIENT_SELECTION_FILTER aCl
         {
             BOARD_ITEM* boardItem = static_cast<BOARD_ITEM*>( item );
 
-            if( boardItem->IsLocked() )
+            if( boardItem->Type() == PCB_GROUP_T )
+            {
+                PCB_GROUP* group = static_cast<PCB_GROUP*>( boardItem );
+                bool       lockedDescendant = false;
+
+                group->RunOnDescendants(
+                        [&lockedDescendant]( BOARD_ITEM* child )
+                        {
+                            if( child->IsLocked() )
+                                lockedDescendant = true;
+                        } );
+
+                if( lockedDescendant )
+                    lockedItems.push_back( group );
+            }
+            else if( boardItem->IsLocked() )
+            {
                 lockedItems.push_back( boardItem );
+            }
         }
 
         if( !lockedItems.empty() )
@@ -671,7 +703,7 @@ bool PCB_SELECTION_TOOL::selectPoint( const VECTOR2I& aWhere, bool aOnDrag,
         if( aOnDrag )
             Wait( TOOL_EVENT( TC_ANY, TA_MOUSE_UP, BUT_LEFT ) );
 
-        if( !doSelectionMenu( &collector, wxEmptyString ) )
+        if( !doSelectionMenu( &collector ) )
         {
             if( aSelectionCancelledFlag )
                 *aSelectionCancelledFlag = true;
@@ -1704,13 +1736,13 @@ int PCB_SELECTION_TOOL::SelectionMenu( const TOOL_EVENT& aEvent )
 {
     GENERAL_COLLECTOR* collector = aEvent.Parameter<GENERAL_COLLECTOR*>();
 
-    doSelectionMenu( collector, wxEmptyString );
+    doSelectionMenu( collector );
 
     return 0;
 }
 
 
-bool PCB_SELECTION_TOOL::doSelectionMenu( GENERAL_COLLECTOR* aCollector, const wxString& aTitle )
+bool PCB_SELECTION_TOOL::doSelectionMenu( GENERAL_COLLECTOR* aCollector )
 {
     BOARD_ITEM*   current = nullptr;
     PCB_SELECTION highlightGroup;
@@ -1742,19 +1774,21 @@ bool PCB_SELECTION_TOOL::doSelectionMenu( GENERAL_COLLECTOR* aCollector, const w
         }
 
         menu.AppendSeparator();
-        menu.Add( _( "Select &All\tA" ), limit + 1, plus_xpm );
+        menu.Add( _( "Select &All\tA" ), limit + 1, nullptr );
 
         if( !expandSelection && aCollector->HasAdditionalItems() )
             menu.Add( _( "&Expand Selection\tE" ), limit + 2, nullptr );
 
-        if( aTitle.Length() )
+        if( aCollector->m_MenuTitle.Length() )
         {
-            menu.SetTitle( aTitle );
+            menu.SetTitle( aCollector->m_MenuTitle );
             menu.SetIcon( info_xpm );
             menu.DisplayTitle( true );
         }
         else
+        {
             menu.DisplayTitle( false );
+        }
 
         SetContextMenu( &menu, CMENU_NOW );
 
@@ -2200,16 +2234,23 @@ void PCB_SELECTION_TOOL::unhighlightInternal( BOARD_ITEM* aItem, int aMode, bool
 
 bool PCB_SELECTION_TOOL::selectionContains( const VECTOR2I& aPoint ) const
 {
-    const unsigned GRIP_MARGIN = 20;
-    VECTOR2I margin = getView()->ToWorld( VECTOR2I( GRIP_MARGIN, GRIP_MARGIN ), false );
+    GENERAL_COLLECTORS_GUIDE   guide = getCollectorsGuide();
+    GENERAL_COLLECTOR          collector;
 
-    // Check if the point is located within any of the currently selected items bounding boxes
-    for( EDA_ITEM* item : m_selection )
+    // Since we're just double-checking, we want something considerably sloppier than the initial
+    // selection (most tools use a 5 pixel slop value).  We increase this to an effective 20 pixels
+    // by inflating the value of a pixel by 4x.
+    guide.SetOnePixelInIU( guide.OnePixelInIU() * 4 );
+
+    collector.Collect( board(), m_isFootprintEditor ? GENERAL_COLLECTOR::FootprintItems
+                                                    : GENERAL_COLLECTOR::AllBoardItems,
+                       (wxPoint) aPoint, guide );
+
+    for( int i = collector.GetCount() - 1; i >= 0; --i )
     {
-        BOX2I itemBox = item->ViewBBox();
-        itemBox.Inflate( margin.x, margin.y );    // Give some margin for gripping an item
+        BOARD_ITEM* item = collector[i];
 
-        if( itemBox.Contains( aPoint ) )
+        if( item->IsSelected() && item->HitTest( (wxPoint) aPoint, 5 * guide.OnePixelInIU() ) )
             return true;
     }
 
@@ -2465,7 +2506,7 @@ void PCB_SELECTION_TOOL::FilterCollectorForGroups( GENERAL_COLLECTOR& aCollector
             continue;
         }
 
-        PCB_GROUP*  aTop = PCB_GROUP::TopLevelGroup( item, m_enteredGroup );
+        PCB_GROUP*  aTop = PCB_GROUP::TopLevelGroup( item, m_enteredGroup, m_isFootprintEditor );
 
         if( aTop )
         {

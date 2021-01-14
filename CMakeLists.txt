@@ -123,9 +123,9 @@ option( KICAD_NETLIST_QA
     "Run eeschema netlist QA tests (requires Python 3)"
     OFF )
 
-option( KICAD_WIN32_DPI_AWARE
+cmake_dependent_option( KICAD_WIN32_DPI_AWARE
     "Turn on DPI awareness for Windows builds only"
-    OFF )
+    OFF "WIN32" OFF )
 
 option( KICAD_USE_EGL
     "Build KiCad with EGL backend support for Wayland."
@@ -404,6 +404,8 @@ if( MSVC )
     string( APPEND CMAKE_CXX_FLAGS " /Zi" )
     # /GF: enable string pooling
     string( APPEND CMAKE_CXX_FLAGS_RELEASE " /GF" )
+    # Avoid fatal error because /GF + swig wrapper exceed standard obj file limits
+    string( APPEND CMAKE_CXX_FLAGS " /bigobj" )
     foreach( type EXE SHARED MODULE)
         # /DEBUG: create PDB
         string( APPEND CMAKE_${type}_LINKER_FLAGS " /DEBUG /MANIFEST:NO" )
@@ -490,8 +492,14 @@ if( NOT APPLE )
     set( KICAD_BIN bin
         CACHE PATH "Location of KiCad binaries." )
 
-    set( KICAD_DATA ${CMAKE_INSTALL_DATADIR}/kicad
-        CACHE PATH "Location of KiCad data files." )
+    # Do not make these variables "PATH" b/c cmake will truncate them and we need the full path
+    if( NOT IS_ABSOLUTE ${CMAKE_INSTALL_DATADIR} )
+        set( KICAD_DATA ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_DATADIR}/kicad
+            CACHE STRING "Location of KiCad data files." )
+    else()
+        set( KICAD_DATA ${CMAKE_INSTALL_DATADIR}/kicad
+            CACHE STRING "Location of KiCad data files." )
+    endif()
 
     if( WIN32 )
         set( KICAD_PLUGINS ${KICAD_BIN}/scripting/plugins
@@ -526,7 +534,7 @@ else()
         CACHE PATH "Location of KiCad binaries." FORCE )
 
     # some paths to single app bundle
-    set( OSX_BUNDLE_MAIN "kicad.app" )
+    set( OSX_BUNDLE_MAIN "KiCad.app" )
     set( OSX_BUNDLE_BIN_DIR "Contents/MacOS" )
     set( OSX_BUNDLE_LIB_DIR "Contents/Frameworks" )
     set( OSX_BUNDLE_KIFACE_DIR "Contents/PlugIns" )
@@ -544,7 +552,7 @@ else()
     set( OSX_BUNDLE_INSTALL_PLUGIN_DIR "${OSX_BUNDLE_INSTALL_DIR}/${OSX_BUNDLE_KIFACE_DIR}" )
 
     # everything provided with the application bundle goes into
-    # kicad.app/Contents/SharedSupport => accessible via GetDataDir()
+    # KiCad.app/Contents/SharedSupport => accessible via GetDataDir()
     # everything else to the .dmg image
     set( KICAD_DATA ${OSX_BUNDLE_INSTALL_DIR}/${OSX_BUNDLE_SUP_DIR}
         CACHE PATH "Location of KiCad data files." FORCE )
@@ -767,15 +775,19 @@ if( KICAD_SCRIPTING OR KICAD_SCRIPTING_MODULES )
         endif()
     endif()
 
-    if( NOT APPLE )
-        set( PYTHON_DEST "${PYTHON_SITE_PACKAGE_PATH}"
-            CACHE PATH "Python module install path."
-            )
-    else()
+    if( APPLE )
         # relative path for python in bundle
         set( PYTHON_LIB_DIR "python/site-packages" )
         # install into bundle Frameworks folder
         set( PYTHON_DEST "${OSX_BUNDLE_BUILD_LIB_DIR}/${PYTHON_LIB_DIR}"
+            CACHE PATH "Python module install path."
+            )
+	elseif( VCPKG_TOOLCHAIN )
+        set( PYTHON_DEST "${CMAKE_INSTALL_PREFIX}/lib/python3/Lib/site-packages"
+            CACHE PATH "Python module install path."
+            )
+    else()
+        set( PYTHON_DEST "${PYTHON_SITE_PACKAGE_PATH}"
             CACHE PATH "Python module install path."
             )
     endif()
@@ -900,12 +912,12 @@ if( APPLE )
     install( CODE "
             message( STATUS \"Removing existing application bundles...\" )
             # Remove links to standalone apps
-            file( REMOVE ${KICAD_BIN}/bitmap2component.app )
-            file( REMOVE ${KICAD_BIN}/eeschema.app )
-            file( REMOVE ${KICAD_BIN}/gerbview.app )
-            file( REMOVE ${KICAD_BIN}/pcb_calculator.app )
-            file( REMOVE ${KICAD_BIN}/pcbnew.app )
-            file( REMOVE ${KICAD_BIN}/pl_editor.app )
+            file( REMOVE \"${KICAD_BIN}/Bitmap2Component.app\" )
+            file( REMOVE \"${KICAD_BIN}/Eeschema.app\" )
+            file( REMOVE \"${KICAD_BIN}/GerbView.app\" )
+            file( REMOVE \"${KICAD_BIN}/PCB Calculator.app\" )
+            file( REMOVE \"${KICAD_BIN}/Pcbnew.app\" )
+            file( REMOVE \"${KICAD_BIN}/Page Layout Editor.app\" )
             # Remove main bundle
             file( REMOVE_RECURSE ${KICAD_BIN}/${OSX_BUNDLE_MAIN} )
         " COMPONENT Runtime

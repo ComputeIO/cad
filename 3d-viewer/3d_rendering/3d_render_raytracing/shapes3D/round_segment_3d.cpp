@@ -27,6 +27,7 @@
  */
 
 #include "round_segment_3d.h"
+#include "../shapes2D/round_segment_2d.h"
 
 
 ROUND_SEGMENT::ROUND_SEGMENT( const ROUND_SEGMENT_2D& aSeg2D, float aZmin, float aZmax ) :
@@ -83,7 +84,7 @@ bool ROUND_SEGMENT::Intersect( const RAY& aRay, HITINFO& aHitInfo ) const
             aHitInfo.m_HitNormal = SFVEC3F( 0.0f, 0.0f, aRay.m_dirIsNeg[2] ? 1.0f : -1.0f );
             aHitInfo.pHitObject = this;
 
-            m_material->PerturbeNormal( aHitInfo.m_HitNormal, aRay, aHitInfo );
+            m_material->Generate( aHitInfo.m_HitNormal, aRay, aHitInfo );
 
             return true;
         }
@@ -118,7 +119,7 @@ bool ROUND_SEGMENT::Intersect( const RAY& aRay, HITINFO& aHitInfo ) const
                                                     0.0f );
                     aHitInfo.pHitObject = this;
 
-                    m_material->PerturbeNormal( aHitInfo.m_HitNormal, aRay, aHitInfo );
+                    m_material->Generate( aHitInfo.m_HitNormal, aRay, aHitInfo );
 
                     return true;
                 }
@@ -155,7 +156,7 @@ bool ROUND_SEGMENT::Intersect( const RAY& aRay, HITINFO& aHitInfo ) const
                                                         0.0f );
                         aHitInfo.pHitObject = this;
 
-                        m_material->PerturbeNormal( aHitInfo.m_HitNormal, aRay, aHitInfo );
+                        m_material->Generate( aHitInfo.m_HitNormal, aRay, aHitInfo );
 
                         return true;
                     }
@@ -198,14 +199,13 @@ bool ROUND_SEGMENT::Intersect( const RAY& aRay, HITINFO& aHitInfo ) const
 
                 const SFVEC2F hitPoint2D = SFVEC2F( aHitInfo.m_HitPoint.x, aHitInfo.m_HitPoint.y );
 
-                aHitInfo.m_HitNormal = SFVEC3F(
-                            (hitPoint2D.x - m_segment.m_Start.x) * m_inv_radius,
-                            (hitPoint2D.y - m_segment.m_Start.y) * m_inv_radius,
-                            0.0f );
+                aHitInfo.m_HitNormal =
+                        SFVEC3F( ( hitPoint2D.x - m_segment.m_Start.x ) * m_inv_radius,
+                                 ( hitPoint2D.y - m_segment.m_Start.y ) * m_inv_radius, 0.0f );
 
                 aHitInfo.pHitObject = this;
 
-                m_material->PerturbeNormal( aHitInfo.m_HitNormal, aRay, aHitInfo );
+                m_material->Generate( aHitInfo.m_HitNormal, aRay, aHitInfo );
 
                 return true;
             }
@@ -229,7 +229,7 @@ bool ROUND_SEGMENT::Intersect( const RAY& aRay, HITINFO& aHitInfo ) const
     if( delta_End > FLT_EPSILON )
     {
         const float sdelta = sqrtf( delta_End );
-        const float t = (-b_End - sdelta) / a;
+        const float t = ( -b_End - sdelta ) / a;
         const float z = aRay.m_Origin.z + t * aRay.m_Dir.z;
 
         if( ( z >= m_bbox.Min().z ) && ( z <= m_bbox.Max().z ) )
@@ -239,16 +239,14 @@ bool ROUND_SEGMENT::Intersect( const RAY& aRay, HITINFO& aHitInfo ) const
                 aHitInfo.m_tHit = t;
                 aHitInfo.m_HitPoint = aRay.at( t );
 
-                const SFVEC2F hitPoint2D = SFVEC2F( aHitInfo.m_HitPoint.x,
-                                                    aHitInfo.m_HitPoint.y );
+                const SFVEC2F hitPoint2D = SFVEC2F( aHitInfo.m_HitPoint.x, aHitInfo.m_HitPoint.y );
 
-                aHitInfo.m_HitNormal = SFVEC3F(
-                                (hitPoint2D.x - m_segment.m_End.x) * m_inv_radius,
-                                (hitPoint2D.y - m_segment.m_End.y) * m_inv_radius,
-                                0.0f );
+                aHitInfo.m_HitNormal =
+                        SFVEC3F( ( hitPoint2D.x - m_segment.m_End.x ) * m_inv_radius,
+                                 ( hitPoint2D.y - m_segment.m_End.y ) * m_inv_radius, 0.0f );
                 aHitInfo.pHitObject = this;
 
-                m_material->PerturbeNormal( aHitInfo.m_HitNormal, aRay, aHitInfo );
+                m_material->Generate( aHitInfo.m_HitNormal, aRay, aHitInfo );
 
                 return true;
             }
@@ -287,6 +285,8 @@ bool ROUND_SEGMENT::IntersectP( const RAY& aRay, float aMaxDistance ) const
     // Since the IntersectP is used for shadows, we are simplifying the test
     // intersection and only consider the top/bottom plane of the segment
     return false;
+
+    /// @todo Either fix the code below or get rid of it.
 #if 0
     // Test LEFT / RIGHT plane
     float normal_dot_ray = glm::dot( m_plane_dir_right, aRay.m_Dir );

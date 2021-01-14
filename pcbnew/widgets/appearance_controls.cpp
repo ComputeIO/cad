@@ -1059,7 +1059,14 @@ void APPEARANCE_CONTROLS::OnLayerChanged()
         b = wxChar( std::max( (int) b - 15, 0 ) );
     }
 
-    PCB_LAYER_ID        current = m_frame->GetActiveLayer();
+    PCB_LAYER_ID current = m_frame->GetActiveLayer();
+
+    if( !m_layerSettingsMap.count( current ) )
+    {
+        wxASSERT( m_layerSettingsMap.count( F_Cu ) );
+        current = F_Cu;
+    }
+
     APPEARANCE_SETTING* newSetting = m_layerSettingsMap[ current ];
 
     newSetting->ctl_panel->SetBackgroundColour( wxColour( r, g, b ) );
@@ -1126,6 +1133,13 @@ void APPEARANCE_CONTROLS::setVisibleObjects( GAL_SET aLayers )
     }
     else
     {
+        // Ratsnest visibility is controlled by the ratsnest option, and not by the preset
+        if( m_frame->IsType( FRAME_PCB_EDITOR ) )
+        {
+            PCB_DISPLAY_OPTIONS opt = m_frame->GetDisplayOptions();
+            aLayers.set( LAYER_RATSNEST, opt.m_ShowGlobalRatsnest );
+        }
+
         m_frame->GetBoard()->SetVisibleElements( aLayers );
     }
 }
@@ -1334,6 +1348,7 @@ void APPEARANCE_CONTROLS::rebuildLayers()
 #endif
 
     m_layerSettings.clear();
+    m_layerSettingsMap.clear();
     m_layersOuterSizer->Clear( true );
 
     auto appendLayer =
@@ -1567,7 +1582,7 @@ void APPEARANCE_CONTROLS::rebuildLayerContextMenu()
     m_layerContextMenu->AppendSeparator();
 
     AddMenuItem( m_layerContextMenu, ID_PRESET_FRONT_ASSEMBLY,
-                 _( "Show Only Front Assembly Layers" ), KiBitmap( shape_3d_xpm ) );
+                 _( "Show Only Front Assembly Layers" ), KiBitmap( show_front_assembly_layers_xpm ) );
 
     AddMenuItem( m_layerContextMenu, ID_PRESET_FRONT, _( "Show Only Front Layers" ),
                  KiBitmap( show_all_front_layers_xpm ) );
@@ -1583,7 +1598,7 @@ void APPEARANCE_CONTROLS::rebuildLayerContextMenu()
                  KiBitmap( show_all_back_layers_xpm ) );
 
     AddMenuItem( m_layerContextMenu, ID_PRESET_BACK_ASSEMBLY, _( "Show Only Back Assembly Layers" ),
-                 KiBitmap( shape_3d_back_xpm ) );
+                 KiBitmap( show_back_assembly_layers_xpm ) );
 }
 
 

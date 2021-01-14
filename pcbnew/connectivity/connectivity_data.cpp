@@ -612,6 +612,35 @@ bool CONNECTIVITY_DATA::TestTrackEndpointDangling( TRACK* aTrack, wxPoint* aPos 
         }
     }
 
+    // Test if a via is only connected on one layer
+    if( aTrack->Type() == PCB_VIA_T )
+    {
+        const CN_ITEM::CONNECTED_ITEMS& connected = citem->ConnectedItems();
+
+        // This is a bit redundant but better safe than sorry here
+        if( connected.empty() )
+        {
+            if( aPos )
+                *aPos = aTrack->GetPosition();
+
+            return true;
+        }
+
+        // Here, we check if the via is connected only to items on a single layer
+        int first_layer = connected.front()->Layer();
+
+        for( auto& item : connected )
+        {
+           if( item->Layer() != first_layer )
+               return false;
+        }
+
+        if( aPos )
+            *aPos = aTrack->GetPosition();
+
+        return true;
+    }
+
     return false;
 }
 

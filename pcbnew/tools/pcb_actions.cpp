@@ -286,7 +286,7 @@ TOOL_ACTION PCB_ACTIONS::rotateCcw( "pcbnew.InteractiveEdit.rotateCcw",
 TOOL_ACTION PCB_ACTIONS::flip( "pcbnew.InteractiveEdit.flip",
         AS_GLOBAL,
         'F', LEGACY_HK_NAME( "Flip Item" ),
-        _( "Flip" ), _( "Flips selected item(s) to opposite side of board" ),
+        _( "Change Side / Flip" ), _( "Flips selected item(s) to opposite side of board" ),
         swap_layer_xpm );
 
 TOOL_ACTION PCB_ACTIONS::mirror( "pcbnew.InteractiveEdit.mirror",
@@ -394,18 +394,18 @@ TOOL_ACTION PCB_ACTIONS::updateFootprint( "pcbnew.GlobalEdit.updateFootprint",
         AS_GLOBAL, 0, "",
         _( "Update Footprint..." ),
         _( "Update footprint to include any changes from the library" ),
-        reload_xpm );
+        refresh_xpm );
 
 TOOL_ACTION PCB_ACTIONS::updateFootprints( "pcbnew.GlobalEdit.updateFootprints",
         AS_GLOBAL, 0, "",
         _( "Update Footprints from Library..." ),
         _( "Update footprints to include any changes from the library" ),
-        reload_xpm );
+        refresh_xpm );
 
 TOOL_ACTION PCB_ACTIONS::removeUnusedPads( "pcbnew.GlobalEdit.removeUnusedPads",
         AS_GLOBAL, 0, "",
         _( "Remove Unused Pads..." ),
-        _( "Remove or reset the unconnected inner layers on through hole pads and vias" ),
+        _( "Remove or restore the unconnected inner layers on through hole pads and vias" ),
         pads_remove_xpm );
 
 TOOL_ACTION PCB_ACTIONS::changeFootprint( "pcbnew.GlobalEdit.changeFootprint",
@@ -635,7 +635,7 @@ TOOL_ACTION PCB_ACTIONS::drillOrigin( "pcbnew.EditorControl.drillOrigin",
         AS_GLOBAL, 0, "",
         _( "Drill/Place File Origin" ),
         _( "Place origin point for drill files and footprint position files" ),
-        pcb_offset_xpm, AF_ACTIVATE );
+        set_origin_xpm, AF_ACTIVATE );
 
 TOOL_ACTION PCB_ACTIONS::toggleLock( "pcbnew.EditorControl.toggleLock",
         AS_GLOBAL,
@@ -1197,7 +1197,7 @@ TOOL_ACTION PCB_ACTIONS::selectSameSheet( "pcbnew.InteractiveSelection.SelectSam
 TOOL_ACTION PCB_ACTIONS::filterSelection( "pcbnew.InteractiveSelection.FilterSelection",
         AS_GLOBAL, 0, "",
         _( "Filter Selection..." ), _( "Filter the types of items in the selection" ),
-        options_generic_xpm );
+        filter_xpm );
 
 
 // ZONE_FILLER_TOOL
@@ -1230,14 +1230,12 @@ TOOL_ACTION PCB_ACTIONS::zoneUnfillAll( "pcbnew.ZoneFiller.zoneUnfillAll",
 TOOL_ACTION PCB_ACTIONS::autoplaceSelectedComponents( "pcbnew.Autoplacer.autoplaceSelected",
         AS_GLOBAL, 0, "",
         _( "Place Selected Footprints" ),
-        _( "Performs automatic placement of selected components" ),
-        module_check_xpm );
+        _( "Performs automatic placement of selected components" ) );
 
 TOOL_ACTION PCB_ACTIONS::autoplaceOffboardComponents( "pcbnew.Autoplacer.autoplaceOffboard",
         AS_GLOBAL, 0, "",
         _( "Place Off-Board Footprints" ),
-        _( "Performs automatic placement of components outside board area" ),
-        module_xpm );
+        _( "Performs automatic placement of components outside board area" ) );
 
 
 // ROUTER_TOOL

@@ -384,64 +384,64 @@ BOARD_ITEM* PCB_IO::Parse( const wxString& aClipboardSourceInput )
 }
 
 
-void PCB_IO::Format( BOARD_ITEM* aItem, int aNestLevel ) const
+void PCB_IO::Format( const BOARD_ITEM* aItem, int aNestLevel ) const
 {
     LOCALE_IO   toggle;     // public API function, perform anything convenient for caller
 
     switch( aItem->Type() )
     {
     case PCB_T:
-        format( static_cast<BOARD*>( aItem ), aNestLevel );
+        format( static_cast<const BOARD*>( aItem ), aNestLevel );
         break;
 
     case PCB_DIM_ALIGNED_T:
     case PCB_DIM_CENTER_T:
     case PCB_DIM_ORTHOGONAL_T:
     case PCB_DIM_LEADER_T:
-        format( static_cast<DIMENSION_BASE*>( aItem ), aNestLevel );
+        format( static_cast<const DIMENSION_BASE*>( aItem ), aNestLevel );
         break;
 
     case PCB_SHAPE_T:
-        format( static_cast<PCB_SHAPE*>( aItem ), aNestLevel );
+        format( static_cast<const PCB_SHAPE*>( aItem ), aNestLevel );
         break;
 
     case PCB_FP_SHAPE_T:
-        format( static_cast<FP_SHAPE*>( aItem ), aNestLevel );
+        format( static_cast<const FP_SHAPE*>( aItem ), aNestLevel );
         break;
 
     case PCB_TARGET_T:
-        format( static_cast<PCB_TARGET*>( aItem ), aNestLevel );
+        format( static_cast<const PCB_TARGET*>( aItem ), aNestLevel );
         break;
 
     case PCB_FOOTPRINT_T:
-        format( static_cast<FOOTPRINT*>( aItem ), aNestLevel );
+        format( static_cast<const FOOTPRINT*>( aItem ), aNestLevel );
         break;
 
     case PCB_PAD_T:
-        format( static_cast<PAD*>( aItem ), aNestLevel );
+        format( static_cast<const PAD*>( aItem ), aNestLevel );
         break;
 
     case PCB_TEXT_T:
-        format( static_cast<PCB_TEXT*>( aItem ), aNestLevel );
+        format( static_cast<const PCB_TEXT*>( aItem ), aNestLevel );
         break;
 
     case PCB_FP_TEXT_T:
-        format( static_cast<FP_TEXT*>( aItem ), aNestLevel );
+        format( static_cast<const FP_TEXT*>( aItem ), aNestLevel );
         break;
 
     case PCB_GROUP_T:
-        format( static_cast<PCB_GROUP*>( aItem ), aNestLevel );
+        format( static_cast<const PCB_GROUP*>( aItem ), aNestLevel );
         break;
 
     case PCB_TRACE_T:
     case PCB_ARC_T:
     case PCB_VIA_T:
-        format( static_cast<TRACK*>( aItem ), aNestLevel );
+        format( static_cast<const TRACK*>( aItem ), aNestLevel );
         break;
 
     case PCB_FP_ZONE_T:
     case PCB_ZONE_T:
-        format( static_cast<ZONE*>( aItem ), aNestLevel );
+        format( static_cast<const ZONE*>( aItem ), aNestLevel );
         break;
 
     default:
@@ -458,13 +458,13 @@ void PCB_IO::formatLayer( const BOARD_ITEM* aItem ) const
 }
 
 
-void PCB_IO::formatSetup( BOARD* aBoard, int aNestLevel ) const
+void PCB_IO::formatSetup( const BOARD* aBoard, int aNestLevel ) const
 {
     // Setup
     m_out->Print( aNestLevel, "(setup\n" );
 
     // Save the board physical stackup structure
-    BOARD_STACKUP& stackup = aBoard->GetDesignSettings().GetStackupDescriptor();
+    const BOARD_STACKUP& stackup = aBoard->GetDesignSettings().GetStackupDescriptor();
 
     if( aBoard->GetDesignSettings().m_HasStackup )
         stackup.FormatBoardStackup( m_out, aBoard, aNestLevel+1 );
@@ -487,7 +487,7 @@ void PCB_IO::formatSetup( BOARD* aBoard, int aNestLevel ) const
 }
 
 
-void PCB_IO::formatGeneral( BOARD* aBoard, int aNestLevel ) const
+void PCB_IO::formatGeneral( const BOARD* aBoard, int aNestLevel ) const
 {
     const BOARD_DESIGN_SETTINGS& dsnSettings = aBoard->GetDesignSettings();
 
@@ -503,7 +503,7 @@ void PCB_IO::formatGeneral( BOARD* aBoard, int aNestLevel ) const
 }
 
 
-void PCB_IO::formatBoardLayers( BOARD* aBoard, int aNestLevel ) const
+void PCB_IO::formatBoardLayers( const BOARD* aBoard, int aNestLevel ) const
 {
     m_out->Print( aNestLevel, "(layers\n" );
 
@@ -556,7 +556,7 @@ void PCB_IO::formatBoardLayers( BOARD* aBoard, int aNestLevel ) const
         User_9
     };
 
-    for( LSEQ seq = aBoard->GetEnabledLayers().Seq( non_cu, arrayDim( non_cu ) );  seq;  ++seq )
+    for( LSEQ seq = aBoard->GetEnabledLayers().Seq( non_cu, arrayDim( non_cu ) ); seq; ++seq )
     {
         PCB_LAYER_ID layer = *seq;
 
@@ -573,7 +573,7 @@ void PCB_IO::formatBoardLayers( BOARD* aBoard, int aNestLevel ) const
 }
 
 
-void PCB_IO::formatNetInformation( BOARD* aBoard, int aNestLevel ) const
+void PCB_IO::formatNetInformation( const BOARD* aBoard, int aNestLevel ) const
 {
     for( NETINFO_ITEM* net : *m_mapping )
     {
@@ -589,7 +589,7 @@ void PCB_IO::formatNetInformation( BOARD* aBoard, int aNestLevel ) const
 }
 
 
-void PCB_IO::formatProperties( BOARD* aBoard, int aNestLevel ) const
+void PCB_IO::formatProperties( const BOARD* aBoard, int aNestLevel ) const
 {
     for( const std::pair<const wxString, wxString>& prop : aBoard->GetProperties() )
     {
@@ -602,7 +602,7 @@ void PCB_IO::formatProperties( BOARD* aBoard, int aNestLevel ) const
 }
 
 
-void PCB_IO::formatHeader( BOARD* aBoard, int aNestLevel ) const
+void PCB_IO::formatHeader( const BOARD* aBoard, int aNestLevel ) const
 {
     formatGeneral( aBoard, aNestLevel );
     // Layers list.
@@ -619,7 +619,7 @@ void PCB_IO::formatHeader( BOARD* aBoard, int aNestLevel ) const
 }
 
 
-void PCB_IO::format( BOARD* aBoard, int aNestLevel ) const
+void PCB_IO::format( const BOARD* aBoard, int aNestLevel ) const
 {
     std::set<BOARD_ITEM*, BOARD_ITEM::ptr_cmp> sorted_footprints( aBoard->Footprints().begin(),
                                                                   aBoard->Footprints().end() );
@@ -667,12 +667,12 @@ void PCB_IO::format( BOARD* aBoard, int aNestLevel ) const
 }
 
 
-void PCB_IO::format( DIMENSION_BASE* aDimension, int aNestLevel ) const
+void PCB_IO::format( const DIMENSION_BASE* aDimension, int aNestLevel ) const
 {
-    ALIGNED_DIMENSION*    aligned = dynamic_cast<ALIGNED_DIMENSION*>( aDimension );
-    ORTHOGONAL_DIMENSION* ortho   = dynamic_cast<ORTHOGONAL_DIMENSION*>( aDimension );
-    CENTER_DIMENSION*     center  = dynamic_cast<CENTER_DIMENSION*>( aDimension );
-    LEADER*               leader  = dynamic_cast<LEADER*>( aDimension );
+    const ALIGNED_DIMENSION*    aligned = dynamic_cast<const ALIGNED_DIMENSION*>( aDimension );
+    const ORTHOGONAL_DIMENSION* ortho   = dynamic_cast<const ORTHOGONAL_DIMENSION*>( aDimension );
+    const CENTER_DIMENSION*     center  = dynamic_cast<const CENTER_DIMENSION*>( aDimension );
+    const LEADER*               leader  = dynamic_cast<const LEADER*>( aDimension );
 
     m_out->Print( aNestLevel, "(dimension" );
 
@@ -759,7 +759,7 @@ void PCB_IO::format( DIMENSION_BASE* aDimension, int aNestLevel ) const
 }
 
 
-void PCB_IO::format( PCB_SHAPE* aShape, int aNestLevel ) const
+void PCB_IO::format( const PCB_SHAPE* aShape, int aNestLevel ) const
 {
     switch( aShape->GetShape() )
     {
@@ -795,13 +795,13 @@ void PCB_IO::format( PCB_SHAPE* aShape, int aNestLevel ) const
     case S_POLYGON: // Polygon
         if( aShape->IsPolyShapeValid() )
         {
-            SHAPE_POLY_SET& poly = aShape->GetPolyShape();
-            SHAPE_LINE_CHAIN& outline = poly.Outline( 0 );
-            int pointsCount = outline.PointCount();
+            const SHAPE_POLY_SET& poly = aShape->GetPolyShape();
+            const SHAPE_LINE_CHAIN& outline = poly.Outline( 0 );
+            const int pointsCount = outline.PointCount();
 
             m_out->Print( aNestLevel, "(gr_poly (pts\n" );
 
-            for( int ii = 0; ii < pointsCount;  ++ii )
+            for( int ii = 0; ii < pointsCount; ++ii )
             {
                 int nestLevel = 0;
 
@@ -853,13 +853,16 @@ void PCB_IO::format( PCB_SHAPE* aShape, int aNestLevel ) const
             m_out->Print( 0, " (fill none)" );
     }
 
+    if( aShape->IsLocked() )
+        m_out->Print( 0, " (locked)" );
+
     m_out->Print( 0, " (tstamp %s)", TO_UTF8( aShape->m_Uuid.AsString() ) );
 
     m_out->Print( 0, ")\n" );
 }
 
 
-void PCB_IO::format( FP_SHAPE* aFPShape, int aNestLevel ) const
+void PCB_IO::format( const FP_SHAPE* aFPShape, int aNestLevel ) const
 {
     switch( aFPShape->GetShape() )
     {
@@ -891,13 +894,13 @@ void PCB_IO::format( FP_SHAPE* aFPShape, int aNestLevel ) const
     case S_POLYGON: // Polygonal segment
         if( aFPShape->IsPolyShapeValid() )
         {
-            SHAPE_POLY_SET& poly = aFPShape->GetPolyShape();
-            SHAPE_LINE_CHAIN& outline = poly.Outline( 0 );
+            const SHAPE_POLY_SET& poly = aFPShape->GetPolyShape();
+            const SHAPE_LINE_CHAIN& outline = poly.Outline( 0 );
             int pointsCount = outline.PointCount();
 
             m_out->Print( aNestLevel, "(fp_poly (pts" );
 
-            for( int ii = 0; ii < pointsCount;  ++ii )
+            for( int ii = 0; ii < pointsCount; ++ii )
             {
                 int nestLevel = 0;
 
@@ -948,13 +951,16 @@ void PCB_IO::format( FP_SHAPE* aFPShape, int aNestLevel ) const
             m_out->Print( 0, " (fill none)" );
     }
 
+    if( aFPShape->IsLocked() )
+        m_out->Print( 0, " (locked)" );
+
     m_out->Print( 0, " (tstamp %s)", TO_UTF8( aFPShape->m_Uuid.AsString() ) );
 
     m_out->Print( 0, ")\n" );
 }
 
 
-void PCB_IO::format( PCB_TARGET* aTarget, int aNestLevel ) const
+void PCB_IO::format( const PCB_TARGET* aTarget, int aNestLevel ) const
 {
     m_out->Print( aNestLevel, "(target %s (at %s) (size %s)",
                   ( aTarget->GetShape() ) ? "x" : "plus",
@@ -972,7 +978,7 @@ void PCB_IO::format( PCB_TARGET* aTarget, int aNestLevel ) const
 }
 
 
-void PCB_IO::format( FOOTPRINT* aFootprint, int aNestLevel ) const
+void PCB_IO::format( const FOOTPRINT* aFootprint, int aNestLevel ) const
 {
     if( !( m_ctl & CTL_OMIT_INITIAL_COMMENTS ) )
     {
@@ -980,8 +986,8 @@ void PCB_IO::format( FOOTPRINT* aFootprint, int aNestLevel ) const
 
         if( initial_comments )
         {
-            for( unsigned i=0;  i<initial_comments->GetCount();  ++i )
-                m_out->Print( aNestLevel, "%s\n",  TO_UTF8( (*initial_comments)[i] ) );
+            for( unsigned i = 0; i < initial_comments->GetCount(); ++i )
+                m_out->Print( aNestLevel, "%s\n", TO_UTF8( (*initial_comments)[i] ) );
 
             m_out->Print( 0, "\n" );    // improve readability?
         }
@@ -1171,7 +1177,7 @@ void PCB_IO::format( FOOTPRINT* aFootprint, int aNestLevel ) const
 
 void PCB_IO::formatLayers( LSET aLayerMask, int aNestLevel ) const
 {
-    std::string  output;
+    std::string output;
 
     if( aNestLevel == 0 )
         output += ' ';
@@ -1256,7 +1262,7 @@ void PCB_IO::formatLayers( LSET aLayerMask, int aNestLevel ) const
 }
 
 
-void PCB_IO::format( PAD* aPad, int aNestLevel ) const
+void PCB_IO::format( const PAD* aPad, int aNestLevel ) const
 {
     const char* shape;
 
@@ -1312,6 +1318,10 @@ void PCB_IO::format( PAD* aPad, int aNestLevel ) const
         m_out->Print( 0, " %s", FormatAngle( aPad->GetOrientation() ).c_str() );
 
     m_out->Print( 0, ")" );
+
+    if( aPad->IsLocked() )
+        m_out->Print( 0, " (locked)" );
+
     m_out->Print( 0, " (size %s)", FormatInternalUnits( aPad->GetSize() ).c_str() );
 
     if( (aPad->GetDelta().GetWidth()) != 0 || (aPad->GetDelta().GetHeight() != 0 ) )
@@ -1562,7 +1572,7 @@ void PCB_IO::format( PAD* aPad, int aNestLevel ) const
 }
 
 
-void PCB_IO::format( PCB_TEXT* aText, int aNestLevel ) const
+void PCB_IO::format( const PCB_TEXT* aText, int aNestLevel ) const
 {
     m_out->Print( aNestLevel, "(gr_text %s (at %s",
                   m_out->Quotew( aText->GetText() ).c_str(),
@@ -1585,7 +1595,7 @@ void PCB_IO::format( PCB_TEXT* aText, int aNestLevel ) const
 }
 
 
-void PCB_IO::format( PCB_GROUP* aGroup, int aNestLevel ) const
+void PCB_IO::format( const PCB_GROUP* aGroup, int aNestLevel ) const
 {
     // Don't write empty groups
     if( aGroup->GetItems().empty() )
@@ -1612,7 +1622,7 @@ void PCB_IO::format( PCB_GROUP* aGroup, int aNestLevel ) const
 }
 
 
-void PCB_IO::format( FP_TEXT* aText, int aNestLevel ) const
+void PCB_IO::format( const FP_TEXT* aText, int aNestLevel ) const
 {
     std::string type;
 
@@ -1674,7 +1684,7 @@ void PCB_IO::format( FP_TEXT* aText, int aNestLevel ) const
 }
 
 
-void PCB_IO::format( TRACK* aTrack, int aNestLevel ) const
+void PCB_IO::format( const TRACK* aTrack, int aNestLevel ) const
 {
     if( aTrack->Type() == PCB_VIA_T )
     {
@@ -1762,7 +1772,7 @@ void PCB_IO::format( TRACK* aTrack, int aNestLevel ) const
 }
 
 
-void PCB_IO::format( ZONE* aZone, int aNestLevel ) const
+void PCB_IO::format( const ZONE* aZone, int aNestLevel ) const
 {
     // Save the NET info; For keepout zones, net code and net name are irrelevant
     // so be sure a dummy value is stored, just for ZONE compatibility
@@ -1922,21 +1932,21 @@ void PCB_IO::format( ZONE* aZone, int aNestLevel ) const
     if( aZone->GetNumCorners() )
     {
         bool new_polygon = true;
-        bool is_closed = false;
+        bool is_closed   = false;
 
-        for( auto iterator = aZone->IterateWithHoles(); iterator; iterator++ )
+        for( auto iterator = aZone->CIterateWithHoles(); iterator; ++iterator )
         {
             if( new_polygon )
             {
                 newLine = 0;
-                m_out->Print( aNestLevel+1, "(polygon\n" );
-                m_out->Print( aNestLevel+2, "(pts\n" );
+                m_out->Print( aNestLevel + 1, "(polygon\n" );
+                m_out->Print( aNestLevel + 2, "(pts\n" );
                 new_polygon = false;
                 is_closed = false;
             }
 
             if( newLine == 0 )
-                m_out->Print( aNestLevel+3, "(xy %s %s)",
+                m_out->Print( aNestLevel + 3, "(xy %s %s)",
                               FormatInternalUnits( iterator->x ).c_str(),
                               FormatInternalUnits( iterator->y ).c_str() );
             else
@@ -1961,8 +1971,8 @@ void PCB_IO::format( ZONE* aZone, int aNestLevel ) const
                 if( newLine != 0 )
                     m_out->Print( 0, "\n" );
 
-                m_out->Print( aNestLevel+2, ")\n" );
-                m_out->Print( aNestLevel+1, ")\n" );
+                m_out->Print( aNestLevel + 2, ")\n" );
+                m_out->Print( aNestLevel + 1, ")\n" );
                 new_polygon = true;
             }
         }
@@ -1972,8 +1982,8 @@ void PCB_IO::format( ZONE* aZone, int aNestLevel ) const
             if( newLine != 0 )
                 m_out->Print( 0, "\n" );
 
-            m_out->Print( aNestLevel+2, ")\n" );
-            m_out->Print( aNestLevel+1, ")\n" );
+            m_out->Print( aNestLevel + 2, ")\n" );
+            m_out->Print( aNestLevel + 1, ")\n" );
         }
     }
 

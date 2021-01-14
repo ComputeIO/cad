@@ -82,7 +82,9 @@ public:
     virtual bool DpNetPair( const PNS::ITEM* aItem, int& aNetP, int& aNetN ) override;
     virtual bool IsDiffPair( const PNS::ITEM* aA, const PNS::ITEM* aB ) override;
 
-    virtual bool QueryConstraint( PNS::CONSTRAINT_TYPE aType, const PNS::ITEM* aItemA, const PNS::ITEM* aItemB, int aLayer, PNS::CONSTRAINT* aConstraint ) override;
+    virtual bool QueryConstraint( PNS::CONSTRAINT_TYPE aType, const PNS::ITEM* aItemA,
+                                  const PNS::ITEM* aItemB, int aLayer,
+                                  PNS::CONSTRAINT* aConstraint ) override;
     virtual wxString NetName( int aNet ) override;
 
 private:
@@ -281,18 +283,6 @@ int PNS_PCBNEW_RULE_RESOLVER::Clearance( const PNS::ITEM* aA, const PNS::ITEM* a
 
     PNS::CONSTRAINT constraint;
     int rv = 0;
-
-    if( aB && IsDiffPair( aA, aB ) )
-    {
-        // for diff pairs, we use the gap value for shoving/dragging
-        if( QueryConstraint( PNS::CONSTRAINT_TYPE::CT_DIFF_PAIR_GAP, aA, aB, aA->Layer(),
-                             &constraint ) )
-        {
-            rv = constraint.m_Value.Opt();
-            m_clearanceCache[ key ] = rv;
-            return rv;
-        }
-    }
 
     if( isCopper( aA ) && ( !aB || isCopper( aB ) ) )
     {
@@ -497,6 +487,8 @@ bool PNS_KICAD_IFACE_BASE::ImportSizes( PNS::SIZES_SETTINGS& aSizes, PNS::ITEM* 
     aSizes.SetDiffPairWidth( diffPairWidth );
     aSizes.SetDiffPairGap( diffPairGap );
     aSizes.SetDiffPairViaGap( diffPairViaGap );
+
+    aSizes.SetHoleToHole( bds.m_HoleToHoleMin );
 
     aSizes.ClearLayerPairs();
 
@@ -1339,8 +1331,6 @@ void PNS_KICAD_IFACE_BASE::SetDebugDecorator( PNS::DEBUG_DECORATOR *aDec )
 
 void PNS_KICAD_IFACE::DisplayItem( const PNS::ITEM* aItem, int aClearance, bool aEdit )
 {
-    wxLogTrace( "PNS", "DisplayItem %p", aItem );
-
     ROUTER_PREVIEW_ITEM* pitem = new ROUTER_PREVIEW_ITEM( aItem, m_view );
 
     if( aClearance >= 0 )

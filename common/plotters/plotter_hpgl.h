@@ -1,7 +1,7 @@
 /*
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
- * Copyright (C) 2016-2020 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 2016-2021 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * This program is free software: you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -54,6 +54,12 @@ public:
     /// @param chord_len - chord length in IUs
     void SetTargetChordLength( double chord_len );
 
+    /// Switch to the user coordinate system
+    void SetUserCoords( bool user_coords ) { useUserCoords = user_coords; }
+
+    /// Set whether the user coordinate system is fit to content
+    void SetUserCoordsFit( bool user_coords_fit ) { fitUserCoords = user_coords_fit; }
+
     virtual bool StartPlot() override;
     virtual bool EndPlot() override;
 
@@ -81,14 +87,14 @@ public:
     virtual void SetPenDiameter( double diameter );
 
     virtual void SetViewport( const wxPoint& aOffset, double aIusPerDecimil,
-                  double aScale, bool aMirror ) override;
+                              double aScale, bool aMirror ) override;
     virtual void Rect( const wxPoint& p1, const wxPoint& p2, FILL_TYPE fill,
-               int width = USE_DEFAULT_LINE_WIDTH ) override;
+                       int width = USE_DEFAULT_LINE_WIDTH ) override;
     virtual void Circle( const wxPoint& pos, int diametre, FILL_TYPE fill,
                          int width = USE_DEFAULT_LINE_WIDTH ) override;
     virtual void PlotPoly( const std::vector< wxPoint >& aCornerList,
                            FILL_TYPE aFill, int aWidth = USE_DEFAULT_LINE_WIDTH,
-                           void * aData = NULL) override;
+                           void * aData = NULL ) override;
 
     virtual void ThickSegment( const wxPoint& start, const wxPoint& end, int width,
                                OUTLINE_MODE tracemode, void* aData ) override;
@@ -111,7 +117,8 @@ public:
                                  double aPadOrient, OUTLINE_MODE aTraceMode,
                                  void* aData ) override;
     virtual void FlashRegularPolygon( const wxPoint& aShapePos, int aDiameter, int aCornerCount,
-                            double aOrient, OUTLINE_MODE aTraceMode, void* aData ) override;
+                                      double aOrient, OUTLINE_MODE aTraceMode,
+                                      void* aData ) override;
 
 protected:
     /// Start a new HPGL_ITEM if necessary, keeping the current one if it exists.
@@ -133,21 +140,33 @@ protected:
     /// @return whether a new item was made
     bool startOrAppendItem( DPOINT location, wxString const& content );
 
-    int    penSpeed;
-    int    penNumber;
-    double penDiameter;
+    int            penSpeed;
+    int            penNumber;
+    double         penDiameter;
     double         arcTargetChordLength;
     double         arcMinChordDegrees;
     PLOT_DASH_TYPE dashType;
+    bool           useUserCoords;
+    bool           fitUserCoords;
 
     struct HPGL_ITEM
     {
+        HPGL_ITEM() :
+            lift_before( false ),
+            lift_after( false ),
+            pen_returns( false ),
+            pen( 0 ),
+            dashType( PLOT_DASH_TYPE::SOLID ) {}
+
         /// Location the pen should start at
         DPOINT         loc_start;
 
         /// Location the pen will be at when it finishes. If this is not known,
         /// leave it equal to loc_start and set lift_after.
         DPOINT         loc_end;
+
+        /// Bounding box of this item
+        BOX2D          bbox;
 
         /// Whether the command should be executed with the pen lifted
         bool           lift_before;
@@ -182,5 +201,3 @@ protected:
     std::list<HPGL_ITEM> m_items;
     HPGL_ITEM*           m_current_item;
 };
-
-

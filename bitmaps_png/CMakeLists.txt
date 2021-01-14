@@ -181,7 +181,6 @@ set( BMAPS_MID
     bus_definition_tool
     cancel
     change_entry_orient
-    change_lib_symbols_in_schematic
     contrast_mode
     curved_ratsnest
     checked_ok
@@ -215,7 +214,6 @@ set( BMAPS_MID
     edit_comp_value
     editor
     edit_cmp_symb_links
-    edit_text
     edit
     edge_to_copper_clearance
     enter_sheet
@@ -235,32 +233,29 @@ set( BMAPS_MID
     export_png
     export_step
     export_svg
+    export_to_pcbnew
     export
     fabrication
     file_bom
     file_drl
     file_dsn
     file_gbr
+    file_gerber_job
     file_html
     file_idf
     file_pdf
     file_pos
     file_svg
     fill_zone
+    filter
     find
     find_replace
     flag
-    flag_remove
     flip_board
-    footprint_browser
-    footprint_text
     gbr_select_mode2
-    gerber_job_file
     gerbview_show_negative_objects
-    gerbview_drill_file
     general_deletions
     general_ratsnest
-    green
     grid_select
     grid_select_axis
     grid
@@ -270,16 +265,16 @@ set( BMAPS_MID
     group_leave
     group_remove
     group_ungroup
-    hammer
     help
+    help_online
     hidden_pin
     hide_ratsnest
     hierarchy_nav
-    highlight_remove
     hotkeys
     hole_to_hole_clearance
     hole_to_copper_clearance
     icon_cvpcb_24
+    icon_footprint_browser
     icon_gerbview_24
     import3d
     image
@@ -318,7 +313,6 @@ set( BMAPS_MID
     mirror_h
     mirror_v
     mode_module
-    module_check
     module_editor
     module_wizard
     module_filtered_list
@@ -346,7 +340,6 @@ set( BMAPS_MID
     new_project_with_template
     noconn
     normal
-    online_help
     open_project
     options_3drender
     options_board
@@ -366,14 +359,12 @@ set( BMAPS_MID
     pagelayout_special_view_mode
     part_properties
     paste
-    pcb_offset
     pin2pin
     pin_size_to
     pin_show_etype
     pin_table
     pin
     plot
-    plus
     polar_coord
     post_bom
     post_compo
@@ -393,6 +384,7 @@ set( BMAPS_MID
     ps_diff_pair_tune_phase
     ps_tune_length
     push_pad_settings
+    puzzle_piece
     py_script
     recent
     redo
@@ -433,6 +425,7 @@ set( BMAPS_MID
     sim_add_signal
     sim_settings
     search_tree
+    set_origin
     setcolor_3d_bg
     setcolor_silkscreen
     setcolor_soldermask
@@ -453,6 +446,8 @@ set( BMAPS_MID
     show_all_copper_layers
     show_all_front_layers
     show_all_back_layers
+    show_front_assembly_layers
+    show_back_assembly_layers
     special_tools
     spreadsheet
     swap_layer
@@ -474,7 +469,6 @@ set( BMAPS_MID
     up
     update_pcb_from_sch
     update_sch_from_pcb
-    update_lib_symbols_in_schematic
     use_3D_copper_thickness
     via
     via_annulus

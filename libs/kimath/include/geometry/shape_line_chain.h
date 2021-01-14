@@ -233,6 +233,13 @@ public:
     }
 
     /**
+     * Returns the number of shapes (line segments or arcs) in this line chain.
+     * This is kind of like SegmentCount() but will only count arcs as 1 segment
+     * @return ArcCount() + the number of non-arc segments
+     */
+    int ShapeCount() const;
+
+    /**
      * Function PointCount()
      *
      * Returns the number of points (vertices) in this line chain
@@ -276,11 +283,25 @@ public:
             aIndex += SegmentCount();
 
         if( aIndex == (int)( m_points.size() - 1 ) && m_closed )
-            return SEG( const_cast<VECTOR2I&>( m_points[aIndex] ),
-                        const_cast<VECTOR2I&>( m_points[0] ), aIndex );
+            return SEG( m_points[aIndex], m_points[0], aIndex );
         else
-            return SEG( const_cast<VECTOR2I&>( m_points[aIndex] ),
-                        const_cast<VECTOR2I&>( m_points[aIndex + 1] ), aIndex );
+            return SEG( m_points[aIndex], m_points[aIndex + 1], aIndex );
+    }
+
+    /**
+     * Returns the vertex index of the next shape in the chain, or -1 if aPoint is in the last shape
+     * If aPoint is the start of a segment, this will be ( aPoint + 1 ).
+     * If aPoint is part of an arc, this will be the index of the start of the next shape after the
+     * arc, in other words, the last point of the arc.
+     * @param aPointIndex is a vertex in the chain
+     * @param aForwards is true if the next shape is desired, false for previous shape
+     * @return the vertex index of the start of the next shape after aPoint's shape
+     */
+    int NextShape( int aPointIndex, bool aForwards = true ) const;
+
+    int PrevShape( int aPointIndex ) const
+    {
+        return NextShape( aPointIndex, false );
     }
 
     /**
@@ -490,6 +511,14 @@ public:
     }
 
     /**
+     * Removes the shape at the given index from the line chain.
+     * If the given index is inside an arc, the entire arc will be removed.
+     * Otherwise this is equivalent to Remove( aPointIndex ).
+     * @param aPointIndex is the index of the point to remove
+     */
+    void RemoveShape( int aPointIndex );
+
+    /**
      * Function Split()
      *
      * Inserts the point aP belonging to one of the our segments, splitting the adjacent segment
@@ -597,9 +626,10 @@ public:
      * Function Simplify()
      *
      * Simplifies the line chain by removing colinear adjacent segments and duplicate vertices.
+     * @param aRemoveColinear controsl the removal of colinear adjacent segments
      * @return reference to self.
      */
-    SHAPE_LINE_CHAIN& Simplify();
+    SHAPE_LINE_CHAIN& Simplify( bool aRemoveColinear = true );
 
     /**
      * Converts an arc to only a point chain by removing the arc and references
@@ -622,16 +652,15 @@ public:
     int NearestSegment( const VECTOR2I& aP ) const;
 
     /**
-     * Function NearestPoint()
-     *
      * Finds a point on the line chain that is closest to point aP.
+     * @param aP is the point to find
+     * @param aAllowInternalShapePoints if false will not return points internal to an arc (i.e.
+     *                                  only the arc endpoints are possible candidates)
      * @return the nearest point.
      */
-    const VECTOR2I NearestPoint( const VECTOR2I& aP ) const;
+    const VECTOR2I NearestPoint( const VECTOR2I& aP, bool aAllowInternalShapePoints = true ) const;
 
     /**
-     * Function NearestPoint()
-     *
      * Finds a point on the line chain that is closest to the line defined by the points of
      * segment aSeg, also returns the distance.
      * @param aSeg Segment defining the line.
@@ -716,7 +745,14 @@ public:
 
     bool isArc( size_t aSegment ) const
     {
-        return aSegment < m_shapes.size() && m_shapes[aSegment] != SHAPE_IS_PT;
+        /**
+         * A segment is part of an arc except in the special case of two arcs next to each other
+         * but without a shared vertex.  Here there is a segment between the end of the first arc
+         * and the start of the second arc.
+         */
+        return ( aSegment < m_shapes.size() - 1
+                 && m_shapes[aSegment] != SHAPE_IS_PT
+                 && m_shapes[aSegment] == m_shapes[aSegment + 1] );
     }
 
     virtual const VECTOR2I GetPoint( int aIndex ) const override { return CPoint(aIndex); }

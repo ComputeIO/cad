@@ -43,6 +43,7 @@ using namespace std::placeholders;
 #include <painter.h>
 #include <pcbnew_settings.h>
 #include <tool/tool_manager.h>
+#include <tools/pcb_tool_base.h>
 #include <view/view.h>
 #include <view/view_controls.h>
 
@@ -275,6 +276,13 @@ std::set<BOARD_ITEM*> GRID_HELPER::queryVisible( const BOX2I& aArea,
     {
         BOARD_ITEM* item = static_cast<BOARD_ITEM*>( it.first );
 
+        // If we are in the footprint editor, don't use the footprint itself
+        if( static_cast<PCB_TOOL_BASE*>( m_toolMgr->GetCurrentTool() )->IsFootprintEditor()
+                && item->Type() == PCB_FOOTPRINT_T )
+        {
+            continue;
+        }
+
         // The item must be visible and on an active layer
         if( view->IsVisible( item )
                 && ( !isHighContrast || activeLayers.count( it.second ) )
@@ -407,7 +415,11 @@ void GRID_HELPER::computeAnchors( BOARD_ITEM* aItem, const VECTOR2I& aRefPos, bo
     auto handlePadShape =
             [&]( PAD* aPad )
             {
-                addAnchor( aPad->GetPosition(), CORNER | SNAPPABLE, aPad );
+                addAnchor( aPad->GetPosition(), ORIGIN | SNAPPABLE, aPad );
+
+                /// If we are getting a drag point, we don't want to center the edge of pads
+                if( aFrom )
+                    return;
 
                 const std::shared_ptr<SHAPE> eshape = aPad->GetEffectiveShape( aPad->GetLayer() );
 

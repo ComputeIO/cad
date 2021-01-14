@@ -39,6 +39,7 @@
 #include <wx/sysopt.h>
 #include <wx/richmsgdlg.h>
 #include <wx/filedlg.h>
+#include <wx/tooltip.h>
 
 #include <build_version.h>
 #include <config_params.h>
@@ -73,25 +74,29 @@
 LANGUAGE_DESCR LanguagesList[] =
 {
     { wxLANGUAGE_DEFAULT,    ID_LANGUAGE_DEFAULT,    _( "Default" ),    false },
-    { wxLANGUAGE_ENGLISH,    ID_LANGUAGE_ENGLISH,    wxT( "English" ),  true },
-    { wxLANGUAGE_FRENCH,     ID_LANGUAGE_FRENCH,     wxT( "Français" ), true },
-    { wxLANGUAGE_SPANISH,    ID_LANGUAGE_SPANISH,    wxT( "Español" ),  true },
-    { wxLANGUAGE_PORTUGUESE, ID_LANGUAGE_PORTUGUESE, wxT( "Português" ),true },
-    { wxLANGUAGE_ITALIAN,    ID_LANGUAGE_ITALIAN,    wxT( "Italiano" ), true },
+    { wxLANGUAGE_CATALAN,    ID_LANGUAGE_CATALAN,    wxT( "Català" ),   true },
+    { wxLANGUAGE_CZECH,      ID_LANGUAGE_CZECH,      wxT( "Čeština" ),  true },
+    { wxLANGUAGE_DANISH,     ID_LANGUAGE_DANISH,     wxT( "Dansk" ),    true },
     { wxLANGUAGE_GERMAN,     ID_LANGUAGE_GERMAN,     wxT( "Deutsch" ),  true },
     { wxLANGUAGE_GREEK,      ID_LANGUAGE_GREEK,      wxT( "Ελληνικά" ), true },
+    { wxLANGUAGE_ENGLISH,    ID_LANGUAGE_ENGLISH,    wxT( "English" ),  true },
+    { wxLANGUAGE_SPANISH,    ID_LANGUAGE_SPANISH,    wxT( "Español" ),  true },
+    { wxLANGUAGE_FRENCH,     ID_LANGUAGE_FRENCH,     wxT( "Français" ), true },
+    { wxLANGUAGE_INDONESIAN, ID_LANGUAGE_INDONESIAN, wxT( "Indonesia" ), true },
+    { wxLANGUAGE_ITALIAN,    ID_LANGUAGE_ITALIAN,    wxT( "Italiano" ), true },
+    { wxLANGUAGE_LITHUANIAN, ID_LANGUAGE_LITHUANIAN, wxT( "Lietuvių" ), true },
     { wxLANGUAGE_HUNGARIAN,  ID_LANGUAGE_HUNGARIAN,  wxT( "Magyar" ),   true },
+    { wxLANGUAGE_JAPANESE,   ID_LANGUAGE_JAPANESE,   wxT( "日本語" ),    true },
     { wxLANGUAGE_POLISH,     ID_LANGUAGE_POLISH,     wxT( "Polski" ),   true },
-    { wxLANGUAGE_CZECH,      ID_LANGUAGE_CZECH,      wxT( "Čeština" ),  true },
+    { wxLANGUAGE_PORTUGUESE, ID_LANGUAGE_PORTUGUESE, wxT( "Português" ),true },
     { wxLANGUAGE_RUSSIAN,    ID_LANGUAGE_RUSSIAN,    wxT( "Русский" ),  true },
+    { wxLANGUAGE_FINNISH,    ID_LANGUAGE_FINNISH,    wxT( "Suomalainen" ),  true },
+    { wxLANGUAGE_VIETNAMESE, ID_LANGUAGE_VIETNAMESE, wxT( "Tiếng việt" ), true },
+    { wxLANGUAGE_TURKISH,    ID_LANGUAGE_TURKISH,    wxT( "Türk" ),     true },
     { wxLANGUAGE_CHINESE_SIMPLIFIED, ID_LANGUAGE_CHINESE_SIMPLIFIED,
             wxT( "简体中文" ), true },
     { wxLANGUAGE_CHINESE_TRADITIONAL, ID_LANGUAGE_CHINESE_TRADITIONAL,
             wxT( "繁體中文" ), false },
-    { wxLANGUAGE_CATALAN,    ID_LANGUAGE_CATALAN,    wxT( "Català" ),   true },
-    { wxLANGUAGE_JAPANESE,   ID_LANGUAGE_JAPANESE,   wxT( "日本語" ),    true },
-    { wxLANGUAGE_LITHUANIAN, ID_LANGUAGE_LITHUANIAN, wxT( "Lietuvių" ), true },
-    { wxLANGUAGE_VIETNAMESE, ID_LANGUAGE_VIETNAMESE, wxT( "Tiếng việt" ), true },
     { 0, 0, "", false }         // Sentinel
 };
 #undef _
@@ -211,6 +216,14 @@ bool PGM_BASE::InitPgm()
 
     wxInitAllImageHandlers();
 
+#ifndef __WINDOWS__
+    if( wxString( wxGetenv( "HOME" ) ).IsEmpty() )
+    {
+        DisplayErrorMessage( nullptr, _( "Environmental variable HOME is empty.  Unable to continue." ) );
+        return false;
+    }
+#endif
+
     m_pgm_checker = new wxSingleInstanceChecker( pgm_name.GetName().Lower() + wxT( "-" ) +
                                                  wxGetUserId(), GetKicadLockFilePath() );
 
@@ -222,12 +235,6 @@ bool PGM_BASE::InitPgm()
         if( !IsOK( NULL, quiz ) )
             return false;
     }
-
-    m_settings_manager = std::make_unique<SETTINGS_MANAGER>();
-
-    // Something got in the way of settings load: can't continue
-    if( !m_settings_manager->IsOK() )
-        return false;
 
     // Init KiCad environment
     // the environment variable KICAD (if exists) gives the kicad path:
@@ -259,9 +266,16 @@ bool PGM_BASE::InitPgm()
     wxFileSystem::AddHandler( new wxZipFSHandler );
 
     // Analyze the command line & initialize the binary path
+    wxString tmp;
     setExecutablePath();
-
     SetLanguagePath();
+    SetDefaultLanguage( tmp );
+
+    m_settings_manager = std::make_unique<SETTINGS_MANAGER>();
+
+    // Something got in the way of settings load: can't continue
+    if( !m_settings_manager->IsOK() )
+        return false;
 
     wxFileName baseSharePath;
 #if defined( __WXMSW__ )
@@ -425,7 +439,6 @@ bool PGM_BASE::InitPgm()
     // Init user language *before* calling loadCommonSettings, because
     // env vars could be incorrectly initialized on Linux
     // (if the value contains some non ASCII7 chars, the env var is not initialized)
-    wxString tmp;
     SetLanguage( tmp, true );
 
     loadCommonSettings();
@@ -440,6 +453,11 @@ bool PGM_BASE::InitPgm()
     // TODO(JE): Remove this if apps are refactored to not assume Prj() always works
     // Need to create a project early for now (it can have an empty path for the moment)
     GetSettingsManager().LoadProject( "" );
+
+    // TODO: Move tooltips into KIPLATFORM
+    // This sets the maximum tooltip display duration to 10s (up from 5) but only affects
+    // Windows as other platforms display tooltips while the mouse is not moving
+    wxToolTip::SetAutoPop( 10000 );
 
     return true;
 }
@@ -635,6 +653,44 @@ bool PGM_BASE::SetLanguage( wxString& aErrMsg, bool first_time )
         cfg->m_System.language = languageSel;
         cfg->SaveToFile( GetSettingsManager().GetPathForSettingsFile( cfg ) );
     }
+
+    // Try adding the dictionary if it is not currently loaded
+    if( !m_locale->IsLoaded( dictionaryName ) )
+        m_locale->AddCatalog( dictionaryName );
+
+    // Verify the Kicad dictionary was loaded properly
+    // However, for the English language, the dictionary is not mandatory, as
+    // all messages are already in English, just restricted to ASCII7 chars,
+    // the verification is skipped.
+    if( !m_locale->IsLoaded( dictionaryName ) && m_language_id != wxLANGUAGE_ENGLISH )
+    {
+        wxLogTrace( traceLocale, "Unable to load dictionary %s.mo in %s",
+                    dictionaryName, m_locale->GetName() );
+
+        setLanguageId( wxLANGUAGE_DEFAULT );
+        delete m_locale;
+
+        m_locale = new wxLocale;
+        m_locale->Init();
+
+        aErrMsg = _( "The KiCad language file for this language is not installed." );
+        return false;
+    }
+
+    return true;
+}
+
+
+bool PGM_BASE::SetDefaultLanguage( wxString& aErrMsg )
+{
+    setLanguageId( wxLANGUAGE_DEFAULT );
+
+    // dictionary file name without extend (full name is kicad.mo)
+    wxString dictionaryName( "kicad" );
+
+    delete m_locale;
+    m_locale = new wxLocale;
+    m_locale->Init();
 
     // Try adding the dictionary if it is not currently loaded
     if( !m_locale->IsLoaded( dictionaryName ) )

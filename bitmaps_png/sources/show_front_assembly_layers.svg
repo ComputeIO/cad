@@ -11,7 +11,7 @@
    data-name="Слой 1"
    viewBox="0 0 24 24"
    version="1.1"
-   sodipodi:docname="loading.svg"
+   sodipodi:docname="show_front_assembly_layers.svg"
    inkscape:version="1.0.1 (3bc2e813f5, 2020-09-07)">
   <sodipodi:namedview
      pagecolor="#ffffff"
@@ -22,8 +22,8 @@
      guidetolerance="10"
      inkscape:pageopacity="0"
      inkscape:pageshadow="2"
-     inkscape:window-width="1609"
-     inkscape:window-height="1286"
+     inkscape:window-width="2802"
+     inkscape:window-height="1682"
      id="namedview30"
      showgrid="true"
      inkscape:zoom="27.961538"
@@ -53,7 +53,7 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title>add_arc</dc:title>
+        <dc:title>show_no_copper_layers</dc:title>
       </cc:Work>
       <cc:License
          rdf:about="http://creativecommons.org/licenses/by-sa/4.0/">
@@ -73,28 +73,31 @@
     </rdf:RDF>
   </metadata>
   <defs
-     id="defs158206">
+     id="defs27201">
     <style
-       id="style158204">.cls-1,.cls-2{fill:none;stroke-linecap:round;stroke-linejoin:round;stroke-width:2px;}.cls-1{stroke:#1a81c4;}.cls-2{stroke:#545454;}</style>
+       id="style27199">.cls-1{fill:#39b4ea;}.cls-2{fill:#b9b9b9;}.cls-3{fill:#d8d8d8;}</style>
   </defs>
   <title
-     id="title158208">loading</title>
-  <path
+     id="title27203">show_no_copper_layers</title>
+  <polygon
      class="cls-1"
-     d="M 2.2252,11.0051 A 9.8346,9.8346 0 0 1 21.4523,9.3134"
-     id="path158210" />
-  <path
+     points="5,18.5 13,12 21,18.5 13,25 "
+     id="polygon27205"
+     transform="translate(-1,-1)"
+     style="fill:#d8d8d8;fill-opacity:1" />
+  <polygon
      class="cls-2"
-     d="M 21.7762,13.0009 A 9.8347,9.8347 0 0 1 2.56,14.7205"
-     id="path158212" />
-  <polyline
-     class="cls-2"
-     points="2.009 18.582 3.545 15.68 6.436 17.199"
-     id="polyline158214"
+     points="5,14.833 13,8.333 21,14.833 13,21.333 "
+     id="polygon27207"
      transform="translate(-1,-1)" />
-  <polyline
+  <polygon
+     class="cls-3"
+     points="5,11.167 13,4.667 21,11.167 13,17.667 "
+     id="polygon27209"
+     transform="translate(-1,-1)" />
+  <polygon
      class="cls-1"
-     points="24.009 7.431 22.474 10.333 19.582 8.815"
-     id="polyline158216"
+     points="5,7.5 13,1 21,7.5 13,14 "
+     id="polygon27211"
      transform="translate(-1,-1)" />
 </svg>

@@ -107,7 +107,7 @@ EDA_3D_VIEWER::EDA_3D_VIEWER( KIWAY *aKiway, PCB_BASE_FRAME *aParent, const wxSt
     SetStatusWidths( arrayDim( status_dims ), status_dims );
 
     m_canvas = new EDA_3D_CANVAS( this,
-                                  OGL_ATT_LIST::GetAttributesList( m_boardAdapter.AntiAliasingGet() ),
+                                  OGL_ATT_LIST::GetAttributesList( m_boardAdapter.GetAntiAliasingMode() ),
                                   aParent->GetBoard(), m_boardAdapter, m_currentCamera,
                                   Prj().Get3DCacheManager() );
 
@@ -193,7 +193,7 @@ void EDA_3D_VIEWER::setupUIConditions()
 
     auto raytracingCondition = [this]( const SELECTION& aSel )
     {
-        return m_boardAdapter.RenderEngineGet() != RENDER_ENGINE::OPENGL_LEGACY;
+        return m_boardAdapter.GetRenderEngine() != RENDER_ENGINE::OPENGL_LEGACY;
     };
 
     RegisterUIUpdateHandler( ID_RENDER_CURRENT_VIEW,
@@ -268,14 +268,14 @@ void EDA_3D_VIEWER::NewDisplay( bool aForceImmediateRedraw )
 void EDA_3D_VIEWER::Redraw()
 {
     // Only update in OpenGL for an interactive interaction
-    if( m_boardAdapter.RenderEngineGet() == RENDER_ENGINE::OPENGL_LEGACY )
+    if( m_boardAdapter.GetRenderEngine() == RENDER_ENGINE::OPENGL_LEGACY )
         m_canvas->Request_refresh( true );
 }
 
 
 void EDA_3D_VIEWER::refreshRender()
 {
-    if( m_boardAdapter.RenderEngineGet() == RENDER_ENGINE::OPENGL_LEGACY )
+    if( m_boardAdapter.GetRenderEngine() == RENDER_ENGINE::OPENGL_LEGACY )
         m_canvas->Request_refresh();
     else
         NewDisplay( true );
@@ -388,18 +388,18 @@ void EDA_3D_VIEWER::Process_Special_Functions( wxCommandEvent &event )
 
 void EDA_3D_VIEWER::OnRenderEngineSelection( wxCommandEvent &event )
 {
-    const RENDER_ENGINE old_engine = m_boardAdapter.RenderEngineGet();
+    const RENDER_ENGINE old_engine = m_boardAdapter.GetRenderEngine();
 
     if( old_engine == RENDER_ENGINE::OPENGL_LEGACY )
-        m_boardAdapter.RenderEngineSet( RENDER_ENGINE::RAYTRACING );
+        m_boardAdapter.SetRenderEngine( RENDER_ENGINE::RAYTRACING );
     else
-        m_boardAdapter.RenderEngineSet( RENDER_ENGINE::OPENGL_LEGACY );
+        m_boardAdapter.SetRenderEngine( RENDER_ENGINE::OPENGL_LEGACY );
 
     wxLogTrace( m_logTrace, "EDA_3D_VIEWER::OnRenderEngineSelection type %s ",
-            ( m_boardAdapter.RenderEngineGet() == RENDER_ENGINE::RAYTRACING ) ? "Ray Trace" :
+            ( m_boardAdapter.GetRenderEngine() == RENDER_ENGINE::RAYTRACING ) ? "Ray Trace" :
                                                                                 "OpenGL Legacy" );
 
-    if( old_engine != m_boardAdapter.RenderEngineGet() )
+    if( old_engine != m_boardAdapter.GetRenderEngine() )
         RenderEngineChanged();
 }
 
@@ -409,7 +409,7 @@ void EDA_3D_VIEWER::OnDisableRayTracing( wxCommandEvent& aEvent )
     wxLogTrace( m_logTrace, "EDA_3D_VIEWER::%s disabling ray tracing.", __WXFUNCTION__ );
 
     m_disable_ray_tracing = true;
-    m_boardAdapter.RenderEngineSet( RENDER_ENGINE::OPENGL_LEGACY );
+    m_boardAdapter.SetRenderEngine( RENDER_ENGINE::OPENGL_LEGACY );
 }
 
 
@@ -475,20 +475,19 @@ void EDA_3D_VIEWER::LoadSettings( APP_SETTINGS_BASE *aCfg )
 
     if( cfg )
     {
-        m_boardAdapter.m_raytrace_lightColorCamera =
+        m_boardAdapter.m_RtCameraLightColor =
                 m_boardAdapter.GetColor( cfg->m_Render.raytrace_lightColorCamera );
-        m_boardAdapter.m_raytrace_lightColorTop =
+        m_boardAdapter.m_RtLightColorTop =
                 m_boardAdapter.GetColor( cfg->m_Render.raytrace_lightColorTop );
-        m_boardAdapter.m_raytrace_lightColorBottom =
+        m_boardAdapter.m_RtLightColorBottom =
                 m_boardAdapter.GetColor( cfg->m_Render.raytrace_lightColorBottom );
 
-        m_boardAdapter.m_raytrace_lightColor.resize( cfg->m_Render.raytrace_lightColor.size() );
-        m_boardAdapter.m_raytrace_lightSphericalCoords.resize(
-                cfg->m_Render.raytrace_lightColor.size() );
+        m_boardAdapter.m_RtLightColor.resize( cfg->m_Render.raytrace_lightColor.size() );
+        m_boardAdapter.m_RtLightSphericalCoords.resize( cfg->m_Render.raytrace_lightColor.size() );
 
         for( size_t i = 0; i < cfg->m_Render.raytrace_lightColor.size(); ++i )
         {
-            m_boardAdapter.m_raytrace_lightColor[i] =
+            m_boardAdapter.m_RtLightColor[i] =
                     m_boardAdapter.GetColor( cfg->m_Render.raytrace_lightColor[i] );
 
             SFVEC2F sphericalCoord =
@@ -498,7 +497,7 @@ void EDA_3D_VIEWER::LoadSettings( APP_SETTINGS_BASE *aCfg )
             sphericalCoord.x = glm::clamp( sphericalCoord.x, 0.0f, 1.0f );
             sphericalCoord.y = glm::clamp( sphericalCoord.y, 0.0f, 2.0f );
 
-            m_boardAdapter.m_raytrace_lightSphericalCoords[i] = sphericalCoord;
+            m_boardAdapter.m_RtLightSphericalCoords[i] = sphericalCoord;
         }
 
 #define TRANSFER_SETTING( flag, field ) m_boardAdapter.SetFlag( flag, cfg->m_Render.field )
@@ -539,26 +538,24 @@ void EDA_3D_VIEWER::LoadSettings( APP_SETTINGS_BASE *aCfg )
         TRANSFER_SETTING( FL_CLIP_SILK_ON_VIA_ANNULUS,        clip_silk_on_via_annulus );
         TRANSFER_SETTING( FL_RENDER_PLATED_PADS_AS_PLATED,    renderPlatedPadsAsPlated );
 
-        m_boardAdapter.GridSet( static_cast<GRID3D_TYPE>( cfg->m_Render.grid_type ) );
-        m_boardAdapter.AntiAliasingSet(
+        m_boardAdapter.SetGridType( static_cast<GRID3D_TYPE>( cfg->m_Render.grid_type ) );
+        m_boardAdapter.SetAntiAliasingMode(
                 static_cast<ANTIALIASING_MODE>( cfg->m_Render.opengl_AA_mode ) );
 
-        m_boardAdapter.m_opengl_selectionColor =
+        m_boardAdapter.m_OpenGlSelectionColor =
                 m_boardAdapter.GetColor( cfg->m_Render.opengl_selection_color );
 
-        m_boardAdapter.m_raytrace_nrsamples_shadows = cfg->m_Render.raytrace_nrsamples_shadows;
-        m_boardAdapter.m_raytrace_nrsamples_reflections =
-                cfg->m_Render.raytrace_nrsamples_reflections;
-        m_boardAdapter.m_raytrace_nrsamples_refractions =
-                cfg->m_Render.raytrace_nrsamples_refractions;
+        m_boardAdapter.m_RtShadowSampleCount = cfg->m_Render.raytrace_nrsamples_shadows;
+        m_boardAdapter.m_RtReflectionSampleCount = cfg->m_Render.raytrace_nrsamples_reflections;
+        m_boardAdapter.m_RtRefractionSampleCount = cfg->m_Render.raytrace_nrsamples_refractions;
 
-        m_boardAdapter.m_raytrace_spread_shadows = cfg->m_Render.raytrace_spread_shadows;
-        m_boardAdapter.m_raytrace_spread_reflections = cfg->m_Render.raytrace_spread_reflections;
-        m_boardAdapter.m_raytrace_spread_refractions = cfg->m_Render.raytrace_spread_refractions;
+        m_boardAdapter.m_RtSpreadShadows = cfg->m_Render.raytrace_spread_shadows;
+        m_boardAdapter.m_RtSpreadReflections = cfg->m_Render.raytrace_spread_reflections;
+        m_boardAdapter.m_RtSpreadRefractions = cfg->m_Render.raytrace_spread_refractions;
 
-        m_boardAdapter.m_raytrace_recursivelevel_refractions =
+        m_boardAdapter.m_RtRecursiveRefractionCount =
                 cfg->m_Render.raytrace_recursivelevel_refractions;
-        m_boardAdapter.m_raytrace_recursivelevel_reflections =
+        m_boardAdapter.m_RtRecursiveReflectionCount =
                 cfg->m_Render.raytrace_recursivelevel_reflections;
 
         // When opening the 3D viewer, we use the opengl mode, not the ray tracing engine
@@ -570,10 +567,10 @@ void EDA_3D_VIEWER::LoadSettings( APP_SETTINGS_BASE *aCfg )
                                 "EDA_3D_VIEWER::LoadSettings render setting Ray Trace" :
                                 "EDA_3D_VIEWER::LoadSettings render setting OpenGL" );
 #else
-        m_boardAdapter.RenderEngineSet( RENDER_ENGINE::OPENGL_LEGACY );
+        m_boardAdapter.SetRenderEngine( RENDER_ENGINE::OPENGL_LEGACY );
 #endif
 
-        m_boardAdapter.MaterialModeSet( static_cast<MATERIAL_MODE>( cfg->m_Render.material_mode ) );
+        m_boardAdapter.SetMaterialMode( static_cast<MATERIAL_MODE>( cfg->m_Render.material_mode ) );
 
         m_canvas->AnimationEnabledSet( cfg->m_Camera.animation_enabled );
         m_canvas->MovingSpeedMultiplierSet( cfg->m_Camera.moving_speed_multiplier );
@@ -625,7 +622,7 @@ void EDA_3D_VIEWER::SaveSettings( APP_SETTINGS_BASE *aCfg )
 
     Pgm().GetSettingsManager().SaveColorSettings( colors, "3d_viewer" );
 
-    wxLogTrace( m_logTrace, m_boardAdapter.RenderEngineGet() == RENDER_ENGINE::RAYTRACING ?
+    wxLogTrace( m_logTrace, m_boardAdapter.GetRenderEngine() == RENDER_ENGINE::RAYTRACING ?
                             "EDA_3D_VIEWER::SaveSettings render setting Ray Trace" :
                             "EDA_3D_VIEWER::SaveSettings render setting OpenGL" );
 
@@ -638,48 +635,41 @@ void EDA_3D_VIEWER::SaveSettings( APP_SETTINGS_BASE *aCfg )
                     aTarget = COLOR4D( aSource.r, aSource.g, aSource.b, 1.0 );
                 };
 
-        save_color( m_boardAdapter.m_raytrace_lightColorCamera,
-                    cfg->m_Render.raytrace_lightColorCamera );
-
-        save_color( m_boardAdapter.m_raytrace_lightColorTop,
-                    cfg->m_Render.raytrace_lightColorTop );
-        save_color( m_boardAdapter.m_raytrace_lightColorBottom,
-                    cfg->m_Render.raytrace_lightColorBottom );
+        save_color( m_boardAdapter.m_RtCameraLightColor, cfg->m_Render.raytrace_lightColorCamera );
+        save_color( m_boardAdapter.m_RtLightColorTop, cfg->m_Render.raytrace_lightColorTop );
+        save_color( m_boardAdapter.m_RtLightColorBottom, cfg->m_Render.raytrace_lightColorBottom );
 
         for( size_t i = 0; i < cfg->m_Render.raytrace_lightColor.size(); ++i )
         {
-            save_color( m_boardAdapter.m_raytrace_lightColor[i],
-                        cfg->m_Render.raytrace_lightColor[i] );
+            save_color( m_boardAdapter.m_RtLightColor[i], cfg->m_Render.raytrace_lightColor[i] );
 
             cfg->m_Render.raytrace_lightElevation[i] =
-                    (int)( m_boardAdapter.m_raytrace_lightSphericalCoords[i].x * 180.0f - 90.0f );
+                    (int)( m_boardAdapter.m_RtLightSphericalCoords[i].x * 180.0f - 90.0f );
             cfg->m_Render.raytrace_lightAzimuth[i] =
-                    (int)( m_boardAdapter.m_raytrace_lightSphericalCoords[i].y * 180.0f );
+                    (int)( m_boardAdapter.m_RtLightSphericalCoords[i].y * 180.0f );
         }
 
-        cfg->m_Render.raytrace_nrsamples_shadows = m_boardAdapter.m_raytrace_nrsamples_shadows;
-        cfg->m_Render.raytrace_nrsamples_reflections =
-                m_boardAdapter.m_raytrace_nrsamples_reflections;
-        cfg->m_Render.raytrace_nrsamples_refractions =
-                m_boardAdapter.m_raytrace_nrsamples_refractions;
+        cfg->m_Render.raytrace_nrsamples_shadows = m_boardAdapter.m_RtShadowSampleCount;
+        cfg->m_Render.raytrace_nrsamples_reflections = m_boardAdapter.m_RtReflectionSampleCount;
+        cfg->m_Render.raytrace_nrsamples_refractions = m_boardAdapter.m_RtRefractionSampleCount;
 
-        cfg->m_Render.raytrace_spread_shadows = m_boardAdapter.m_raytrace_spread_shadows;
-        cfg->m_Render.raytrace_spread_reflections = m_boardAdapter.m_raytrace_spread_reflections;
-        cfg->m_Render.raytrace_spread_refractions = m_boardAdapter.m_raytrace_spread_refractions;
+        cfg->m_Render.raytrace_spread_shadows = m_boardAdapter.m_RtSpreadShadows;
+        cfg->m_Render.raytrace_spread_reflections = m_boardAdapter.m_RtSpreadReflections;
+        cfg->m_Render.raytrace_spread_refractions = m_boardAdapter.m_RtSpreadRefractions;
 
         cfg->m_Render.raytrace_recursivelevel_refractions =
-                m_boardAdapter.m_raytrace_recursivelevel_refractions;
+                m_boardAdapter.m_RtRecursiveRefractionCount;
         cfg->m_Render.raytrace_recursivelevel_reflections =
-                m_boardAdapter.m_raytrace_recursivelevel_reflections;
+                m_boardAdapter.m_RtRecursiveReflectionCount;
 
 #define TRANSFER_SETTING( field, flag ) cfg->m_Render.field = m_boardAdapter.GetFlag( flag )
 
-        cfg->m_Render.engine         = static_cast<int>( m_boardAdapter.RenderEngineGet() );
-        cfg->m_Render.grid_type      = static_cast<int>( m_boardAdapter.GridGet() );
-        cfg->m_Render.material_mode  = static_cast<int>( m_boardAdapter.MaterialModeGet() );
-        cfg->m_Render.opengl_AA_mode = static_cast<int>( m_boardAdapter.AntiAliasingGet() );
+        cfg->m_Render.engine         = static_cast<int>( m_boardAdapter.GetRenderEngine() );
+        cfg->m_Render.grid_type      = static_cast<int>( m_boardAdapter.GetGridType() );
+        cfg->m_Render.material_mode  = static_cast<int>( m_boardAdapter.GetMaterialMode() );
+        cfg->m_Render.opengl_AA_mode = static_cast<int>( m_boardAdapter.GetAntiAliasingMode() );
 
-        save_color( m_boardAdapter.m_opengl_selectionColor, cfg->m_Render.opengl_selection_color );
+        save_color( m_boardAdapter.m_OpenGlSelectionColor, cfg->m_Render.opengl_selection_color );
 
         cfg->m_Camera.animation_enabled       = m_canvas->AnimationEnabledGet();
         cfg->m_Camera.moving_speed_multiplier = m_canvas->MovingSpeedMultiplierGet();

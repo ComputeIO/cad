@@ -38,6 +38,7 @@
 #include <dialogs/html_messagebox.h>
 #include <macros.h>
 #include <pcb_base_frame.h>
+#include <footprint_edit_frame.h>
 #include <pcb_painter.h>
 #include <pcbnew_settings.h>
 #include <settings/color_settings.h>
@@ -136,6 +137,7 @@ DIALOG_PAD_PROPERTIES::DIALOG_PAD_PROPERTIES( PCB_BASE_FRAME* aParent, PAD* aPad
     m_thermalGap( aParent, m_thermalGapLabel, m_thermalGapCtrl, m_thermalGapUnits, true )
 {
     SetName( PAD_PROPERTIES_DLG_NAME );
+    m_isFpEditor = dynamic_cast<FOOTPRINT_EDIT_FRAME*>( aParent ) != nullptr;
 
     m_currentPad = aPad;        // aPad can be NULL, if the dialog is called
                                 // from the footprint editor to set default pad setup
@@ -187,6 +189,9 @@ DIALOG_PAD_PROPERTIES::DIALOG_PAD_PROPERTIES( PCB_BASE_FRAME* aParent, PAD* aPad
     m_staticTextInfoNegVal->SetFont( infoFont );
     m_staticTextInfoPosValue->SetFont( infoFont );
     m_staticTextPrimitiveListWarning->SetFont( infoFont );
+
+    // Do not allow locking items in the footprint editor
+    m_locked->Show( !m_isFpEditor );
 
     // Usually, TransferDataToWindow is called by OnInitDialog
     // calling it here fixes all widget sizes so FinishDialogSettings can safely fix minsizes
@@ -458,17 +463,20 @@ void DIALOG_PAD_PROPERTIES::initValues()
     m_PadLayerECO2->SetLabel( m_board->GetLayerName( Eco2_User ) );
     m_PadLayerDraft->SetLabel( m_board->GetLayerName( Dwgs_User ) );
 
-    m_isFlipped = false;
-
     if( m_currentPad )
     {
+        m_locked->SetValue( m_currentPad->IsLocked() );
         m_isFlipped = m_currentPad->IsFlipped();
 
-        // Diplay parent footprint info
         FOOTPRINT* footprint = m_currentPad->GetParent();
 
         if( footprint )
         {
+            angle = m_dummyPad->GetOrientation();
+            angle -= footprint->GetOrientation();
+            m_dummyPad->SetOrientation( angle );
+
+            // Diplay parent footprint info
             msg.Printf( _("Footprint %s (%s), %s, rotated %g deg"),
                          footprint->Reference().GetShownText(),
                          footprint->Value().GetShownText(),
@@ -479,17 +487,10 @@ void DIALOG_PAD_PROPERTIES::initValues()
 
         m_parentInfo->SetLabel( msg );
     }
-
-    if( m_currentPad )
+    else
     {
-        FOOTPRINT* footprint = m_currentPad->GetParent();
-
-        if( footprint )
-        {
-            angle = m_dummyPad->GetOrientation();
-            angle -= footprint->GetOrientation();
-            m_dummyPad->SetOrientation( angle );
-        }
+        m_locked->Hide();
+        m_isFlipped = false;
     }
 
     if( m_isFlipped )
@@ -994,6 +995,10 @@ void DIALOG_PAD_PROPERTIES::PadTypeSelected( wxCommandEvent& event )
 
 void DIALOG_PAD_PROPERTIES::OnUpdateUI( wxUpdateUIEvent& event )
 {
+    // Enable/disable position
+    m_posX.Enable( !m_locked->GetValue() || m_isFpEditor );
+    m_posY.Enable( !m_locked->GetValue() || m_isFpEditor );
+
     bool hasHole = true;
     bool hasConnection = true;
 
@@ -1196,7 +1201,6 @@ void DIALOG_PAD_PROPERTIES::OnSetLayers( wxCommandEvent& event )
 bool DIALOG_PAD_PROPERTIES::padValuesOK()
 {
     bool error = transferDataToPad( m_dummyPad );
-    bool skip_tstoffset = false;    // the offset prm is not always tested
 
     wxArrayString error_msgs;
     wxArrayString warning_msgs;
@@ -1204,10 +1208,19 @@ bool DIALOG_PAD_PROPERTIES::padValuesOK()
     wxSize        pad_size = m_dummyPad->GetSize();
     wxSize        drill_size = m_dummyPad->GetDrillSize();
 
-    // Test for incorrect values
-    if( pad_size.x <= 0 || ( pad_size.y <= 0 && m_dummyPad->GetShape() != PAD_SHAPE_CIRCLE ) )
+    if( m_dummyPad->GetShape() == PAD_SHAPE_CUSTOM )
     {
-        error_msgs.Add( _( "Warning: Pad size is less than zero." ) );
+        // allow 0-sized anchor pads
+    }
+    else if( m_dummyPad->GetShape() == PAD_SHAPE_CIRCLE )
+    {
+        if( pad_size.x <= 0 )
+            warning_msgs.Add( _( "Warning: Pad size is less than zero." ) );
+    }
+    else
+    {
+        if( pad_size.x <= 0 || pad_size.y <= 0 )
+            warning_msgs.Add( _( "Warning: Pad size is less than zero." ) );
     }
 
     // Test hole size against pad size
@@ -1230,18 +1243,15 @@ bool DIALOG_PAD_PROPERTIES::padValuesOK()
 
         drillOutline.BooleanSubtract( padOutline, SHAPE_POLY_SET::POLYGON_MODE::PM_FAST );
 
-        if( ( drillOutline.BBox().GetWidth() > 0 ) || ( drillOutline.BBox().GetHeight() > 0 ) )
+        if( drillOutline.BBox().GetWidth() > 0 || drillOutline.BBox().GetHeight() > 0 )
         {
             warning_msgs.Add( _( "Warning: Pad drill will leave no copper or drill shape and "
                                  "pad shape do not overlap." ) );
-            skip_tstoffset = true;  // offset parameter will be not tested because if the drill
-                                    // value is incorrect the offset parameter is always seen as
-                                    // incorrect, even if it is 0
         }
     }
 
     if( m_dummyPad->GetLocalClearance() < 0 )
-        error_msgs.Add( _( "Error: Negative local clearance values will have no effect." ) );
+        warning_msgs.Add( _( "Warning: Negative local clearance values will have no effect." ) );
 
     // Some pads need a negative solder mask clearance (mainly for BGA with small pads)
     // However the negative solder mask clearance must not create negative mask size
@@ -1250,8 +1260,8 @@ bool DIALOG_PAD_PROPERTIES::padValuesOK()
     // allowed for custom pad shape
     if( m_dummyPad->GetLocalSolderMaskMargin() < 0 && m_dummyPad->GetShape() == PAD_SHAPE_CUSTOM )
     {
-        error_msgs.Add( _( "Error: Negative solder mask clearances are not supported for custom "
-                           "pad shapes." ) );
+        warning_msgs.Add( _( "Warning: Negative solder mask clearances are not supported for "
+                             "custom pad shapes." ) );
     }
     else
     {
@@ -1263,8 +1273,8 @@ bool DIALOG_PAD_PROPERTIES::padValuesOK()
 
         if( solder_size.x <= 0 || solder_size.y <= 0 )
         {
-            error_msgs.Add( _( "Warning: Negative solder mask clearance larger than pad. No "
-                               "solder mask will be generated." ) );
+            warning_msgs.Add( _( "Warning: Negative solder mask clearance larger than pad. No "
+                                 "solder mask will be generated." ) );
         }
     }
 
@@ -1282,8 +1292,8 @@ bool DIALOG_PAD_PROPERTIES::padValuesOK()
 
     if( paste_size.x <= 0 || paste_size.y <= 0 )
     {
-        error_msgs.Add( _( "Warning: Negative solder paste margins larger than pad. No solder "
-                           "paste mask will be generated." ) );
+        warning_msgs.Add( _( "Warning: Negative solder paste margins larger than pad. No solder "
+                             "paste mask will be generated." ) );
     }
 
     LSET padlayers_mask = m_dummyPad->GetLayerSet();
@@ -1300,22 +1310,6 @@ bool DIALOG_PAD_PROPERTIES::padValuesOK()
         }
     }
 
-    //Note: the below test might be unnecessary
-    if( !skip_tstoffset && m_dummyPad->GetShape() != PAD_SHAPE_CUSTOM )
-    {
-        wxPoint max_size;
-        max_size.x = std::abs( m_dummyPad->GetOffset().x );
-        max_size.y = std::abs( m_dummyPad->GetOffset().y );
-        max_size.x += m_dummyPad->GetDrillSize().x / 2;
-        max_size.y += m_dummyPad->GetDrillSize().y / 2;
-
-        if( ( m_dummyPad->GetSize().x / 2 < max_size.x ) ||
-            ( m_dummyPad->GetSize().y / 2 < max_size.y ) )
-        {
-            error_msgs.Add( _( "Incorrect value for pad offset." ) );
-        }
-    }
-
     if( error )
         error_msgs.Add(  _( "Too large value for pad delta size." ) );
 
@@ -1326,15 +1320,15 @@ bool DIALOG_PAD_PROPERTIES::padValuesOK()
         if( drill_size.x <= 0
             || ( drill_size.y <= 0 && m_dummyPad->GetDrillShape() == PAD_DRILL_SHAPE_OBLONG ) )
         {
-            error_msgs.Add( _( "Error: Through hole pad has no hole." ) );
+            warning_msgs.Add( _( "Warning: Through hole pad has no hole." ) );
         }
         break;
 
     case PAD_ATTRIB_CONN:      // Connector pads are smd pads, just they do not have solder paste.
         if( padlayers_mask[B_Paste] || padlayers_mask[F_Paste] )
         {
-            error_msgs.Add( _( "Error: Connector pads have no solder paste. Use an SMD pad "
-                               "instead." ) );
+            warning_msgs.Add( _( "Warning: Connector pads normally have no solder paste. Use an "
+                                 "SMD pad instead." ) );
         }
         KI_FALLTHROUGH;
 
@@ -1342,44 +1336,41 @@ bool DIALOG_PAD_PROPERTIES::padValuesOK()
     {
         LSET innerlayers_mask = padlayers_mask & LSET::InternalCuMask();
 
-        if( ( padlayers_mask[F_Cu] && padlayers_mask[B_Cu] ) ||
-            innerlayers_mask.count() != 0 )
-        {
+        if( ( padlayers_mask[F_Cu] && padlayers_mask[B_Cu] ) || innerlayers_mask.count() != 0 )
             warning_msgs.Add( _( "Warning: SMD pad has no outer layers." ) );
-        }
     }
         break;
     }
 
-    if( ( m_dummyPad->GetProperty() == PAD_PROP_FIDUCIAL_GLBL
-       || m_dummyPad->GetProperty() == PAD_PROP_FIDUCIAL_LOCAL )
-            && m_dummyPad->GetAttribute() == PAD_ATTRIB_NPTH )
+    if( ( m_dummyPad->GetProperty() == PAD_PROP_FIDUCIAL_GLBL ||
+          m_dummyPad->GetProperty() == PAD_PROP_FIDUCIAL_LOCAL ) &&
+        m_dummyPad->GetAttribute() == PAD_ATTRIB_NPTH )
     {
-        error_msgs.Add(  _( "Warning: Fiducial property cannot be set on NPTH pads." ) );
+        warning_msgs.Add(  _( "Warning: Fiducial property makes no sense on NPTH pads." ) );
     }
 
     if( m_dummyPad->GetProperty() == PAD_PROP_TESTPOINT &&
         m_dummyPad->GetAttribute() == PAD_ATTRIB_NPTH )
     {
-        error_msgs.Add(  _( "Warning: Testpoint property cannot be set on NPTH pads." ) );
+        warning_msgs.Add(  _( "Warning: Testpoint property makes no sense on NPTH pads." ) );
     }
 
     if( m_dummyPad->GetProperty() == PAD_PROP_HEATSINK &&
         m_dummyPad->GetAttribute() == PAD_ATTRIB_NPTH )
     {
-        error_msgs.Add(  _( "Warning: Heatsink property cannot be set on NPTH pads." ) );
+        warning_msgs.Add(  _( "Warning: Heatsink property makes no sense of NPTH pads." ) );
     }
 
     if( m_dummyPad->GetProperty() == PAD_PROP_CASTELLATED &&
         m_dummyPad->GetAttribute() != PAD_ATTRIB_PTH )
     {
-        error_msgs.Add(  _( "Warning: Castellated property can be set only on PTH pads." ) );
+        warning_msgs.Add(  _( "Warning: Castellated property is for PTH pads." ) );
     }
 
     if( m_dummyPad->GetProperty() == PAD_PROP_BGA &&
         m_dummyPad->GetAttribute() != PAD_ATTRIB_SMD )
     {
-        error_msgs.Add(  _( "Warning: BGA property can be set only on SMD pads." ) );
+        warning_msgs.Add(  _( "Warning: BGA property is for SMD pads." ) );
     }
 
     if( m_dummyPad->GetShape() == PAD_SHAPE_ROUNDRECT ||
@@ -1398,7 +1389,7 @@ bool DIALOG_PAD_PROPERTIES::padValuesOK()
             if( rrRadiusRatioPercent < 0.0 )
                 error_msgs.Add( _( "Error: Negative corner size." ) );
             else if( rrRadiusRatioPercent > 50.0 )
-                error_msgs.Add( _( "Warning: Corner size will make pad circular." ) );
+                warning_msgs.Add( _( "Warning: Corner size will make pad circular." ) );
         }
     }
 
@@ -1413,20 +1404,18 @@ bool DIALOG_PAD_PROPERTIES::padValuesOK()
     }
 
 
-    if( error_msgs.GetCount() )
+    if( error_msgs.GetCount() || warning_msgs.GetCount() )
     {
-        HTML_MESSAGE_BOX dlg( this, _( "Pad setup errors list" ) );
+        wxString title = error_msgs.GetCount() ? _( "Pad Properties Errors" )
+                                               : _( "Pad Properties Warnings" );
+        HTML_MESSAGE_BOX dlg( this, title );
+
         dlg.ListSet( error_msgs );
 
         if( warning_msgs.GetCount() )
             dlg.ListSet( warning_msgs );
 
         dlg.ShowModal();
-    }
-    else
-    {
-        for( size_t i = 0; i < warning_msgs.GetCount(); ++i )
-            m_parent->ShowInfoBarWarning( warning_msgs[i] );
     }
 
     return error_msgs.GetCount() == 0;
@@ -1556,8 +1545,12 @@ bool DIALOG_PAD_PROPERTIES::TransferDataFromWindow()
     // Update values
     m_currentPad->SetShape( m_padMaster->GetShape() );
     m_currentPad->SetAttribute( m_padMaster->GetAttribute() );
-    m_currentPad->SetPosition( m_padMaster->GetPosition() );
     m_currentPad->SetOrientation( m_padMaster->GetOrientation() );
+
+    m_currentPad->SetLocked( m_locked->GetValue() );
+
+    if( !m_locked->GetValue() || m_isFpEditor )
+        m_currentPad->SetPosition( m_padMaster->GetPosition() );
 
     wxSize     size;
     FOOTPRINT* footprint = m_currentPad->GetParent();

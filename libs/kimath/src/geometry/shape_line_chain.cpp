@@ -220,6 +220,8 @@ const SHAPE_LINE_CHAIN SHAPE_LINE_CHAIN::Reverse() const
             sh = a.m_arcs.size() - sh - 1;
     }
 
+    for( SHAPE_ARC& arc : a.m_arcs )
+        arc.Reverse();
 
     a.m_closed = m_closed;
 
@@ -390,6 +392,11 @@ int SHAPE_LINE_CHAIN::Split( const VECTOR2I& aP )
 
     if( ii >= 0 )
     {
+        // Are we splitting at the beginning of an arc?  If so, let's split right before so that
+        // the shape is preserved
+        if( ii < PointCount() - 1 && m_shapes[ii] >= 0 && m_shapes[ii] == m_shapes[ii + 1] )
+            ii--;
+
         m_points.insert( m_points.begin() + ii + 1, aP );
         m_shapes.insert( m_shapes.begin() + ii + 1, ssize_t( SHAPE_IS_PT ) );
 
@@ -420,6 +427,104 @@ int SHAPE_LINE_CHAIN::FindSegment( const VECTOR2I& aP ) const
 }
 
 
+int SHAPE_LINE_CHAIN::ShapeCount() const
+{
+    if( m_points.empty() )
+        return 0;
+
+    int numPoints = static_cast<int>( m_shapes.size() );
+    int numShapes = 0;
+    int arcIdx    = -1;
+
+    for( int i = 0; i < m_points.size() - 1; i++ )
+    {
+        if( m_shapes[i] == SHAPE_IS_PT )
+        {
+            numShapes++;
+        }
+        else
+        {
+            arcIdx = m_shapes[i];
+            numShapes++;
+
+            // Now skip the rest of the arc
+            while( i < numPoints && m_shapes[i] == arcIdx )
+                i++;
+
+            // Is there another arc right after?  Add the "hidden" segment
+            if( i < numPoints &&
+                m_shapes[i] != SHAPE_IS_PT &&
+                m_shapes[i] != arcIdx &&
+                m_points[i] != m_points[i - 1] )
+            {
+                numShapes++;
+            }
+
+            i--;
+        }
+    }
+
+    return numShapes;
+}
+
+
+int SHAPE_LINE_CHAIN::NextShape( int aPointIndex, bool aForwards ) const
+{
+    if( aPointIndex < 0 )
+        aPointIndex += PointCount();
+
+    // First or last point?
+    if( ( aForwards && aPointIndex == PointCount() - 1 ) ||
+        ( !aForwards && aPointIndex == 0 ) )
+    {
+        return -1;
+    }
+
+    int delta = aForwards ? 1 : -1;
+
+    if( m_shapes[aPointIndex] == SHAPE_IS_PT )
+        return aPointIndex + delta;
+
+    int arcIndex = m_shapes[aPointIndex];
+    int arcStart = aPointIndex;
+
+    while( aPointIndex < static_cast<int>( m_shapes.size() ) && m_shapes[aPointIndex] == arcIndex )
+        aPointIndex += delta;
+
+    // We want the last vertex of the arc if the initial point was the start of one
+    // Well-formed arcs should generate more than one point to travel above
+    if( aPointIndex - arcStart > 1 )
+        aPointIndex -= delta;
+
+    return aPointIndex;
+}
+
+
+void SHAPE_LINE_CHAIN::RemoveShape( int aPointIndex )
+{
+    if( aPointIndex < 0 )
+        aPointIndex += PointCount();
+
+    if( m_shapes[aPointIndex] == SHAPE_IS_PT )
+    {
+        Remove( aPointIndex );
+        return;
+    }
+
+    int start  = aPointIndex;
+    int end    = aPointIndex;
+    int arcIdx = m_shapes[aPointIndex];
+
+    while( start >= 0 && m_shapes[start] == arcIdx )
+        start--;
+
+    while( end < static_cast<int>( m_shapes.size() ) - 1 && m_shapes[end] == arcIdx )
+        end++;
+
+    Remove( start, end );
+}
+
+
 const SHAPE_LINE_CHAIN SHAPE_LINE_CHAIN::Slice( int aStartIndex, int aEndIndex ) const
 {
     SHAPE_LINE_CHAIN rv;
@@ -430,8 +535,42 @@ const SHAPE_LINE_CHAIN SHAPE_LINE_CHAIN::Slice( int aStartIndex, int aEndIndex )
     if( aStartIndex < 0 )
         aStartIndex += PointCount();
 
-    for( int i = aStartIndex; i <= aEndIndex && static_cast<size_t>( i ) < m_points.size(); i++ )
-        rv.Append( m_points[i] );
+    int numPoints = static_cast<int>( m_points.size() );
+
+    for( int i = aStartIndex; i <= aEndIndex && i < numPoints; i++ )
+    {
+        if( m_shapes[i] != SHAPE_IS_PT )
+        {
+            int  arcIdx   = m_shapes[i];
+            bool wholeArc = true;
+            int  arcStart = i;
+
+            if( i > 0 && m_shapes[i - 1] >= 0 && m_shapes[i - 1] != arcIdx )
+                wholeArc = false;
+
+            while( i < numPoints && m_shapes[i] == arcIdx )
+                i++;
+
+            i--;
+
+            if( i > aEndIndex )
+                wholeArc = false;
+
+            if( wholeArc )
+            {
+                rv.Append( m_arcs[arcIdx] );
+            }
+            else
+            {
+                rv.Append( m_points[arcStart] );
+                i = arcStart;
+            }
+        }
+        else
+        {
+            rv.Append( m_points[i] );
+        }
+    }
 
     return rv;
 }
@@ -812,7 +951,7 @@ const OPT<SHAPE_LINE_CHAIN::INTERSECTION> SHAPE_LINE_CHAIN::SelfIntersecting() c
 }
 
 
-SHAPE_LINE_CHAIN& SHAPE_LINE_CHAIN::Simplify()
+SHAPE_LINE_CHAIN& SHAPE_LINE_CHAIN::Simplify( bool aRemoveColinear )
 {
     std::vector<VECTOR2I> pts_unique;
     std::vector<ssize_t> shapes_unique;
@@ -837,11 +976,25 @@ SHAPE_LINE_CHAIN& SHAPE_LINE_CHAIN::Simplify()
     {
         int j = i + 1;
 
-        while( j < np && m_points[i] == m_points[j] && m_shapes[i] == m_shapes[j] )
+        // We can eliminate duplicate vertices as long as they are part of the same shape, OR if
+        // one of them is part of a shape and one is not.
+        while( j < np && m_points[i] == m_points[j] &&
+               ( m_shapes[i] == m_shapes[j] ||
+                 m_shapes[i] == SHAPE_IS_PT ||
+                 m_shapes[j] == SHAPE_IS_PT ) )
+        {
             j++;
+        }
+
+        int shapeToKeep = m_shapes[i];
+
+        if( shapeToKeep == SHAPE_IS_PT )
+            shapeToKeep = m_shapes[j - 1];
+
+        wxASSERT( shapeToKeep < static_cast<int>( m_arcs.size() ) );
 
         pts_unique.push_back( CPoint( i ) );
-        shapes_unique.push_back( m_shapes[i] );
+        shapes_unique.push_back( shapeToKeep );
 
         i = j;
     }
@@ -852,17 +1005,20 @@ SHAPE_LINE_CHAIN& SHAPE_LINE_CHAIN::Simplify()
 
     i = 0;
 
-    // stage 1: eliminate collinear segments
+    // stage 2: eliminate colinear segments
     while( i < np - 2 )
     {
         const VECTOR2I p0 = pts_unique[i];
         const VECTOR2I p1 = pts_unique[i + 1];
         int n = i;
 
-        while( n < np - 2
-                && ( SEG( p0, p1 ).LineDistance( pts_unique[n + 2] ) <= 1
-                        || SEG( p0, p1 ).Collinear( SEG( p1, pts_unique[n + 2] ) ) ) )
-            n++;
+        if( aRemoveColinear )
+        {
+            while( n < np - 2
+                    && ( SEG( p0, p1 ).LineDistance( pts_unique[n + 2] ) <= 1
+                            || SEG( p0, p1 ).Collinear( SEG( p1, pts_unique[n + 2] ) ) ) )
+                n++;
+        }
 
         m_points.push_back( p0 );
         m_shapes.push_back( shapes_unique[i] );
@@ -895,7 +1051,8 @@ SHAPE_LINE_CHAIN& SHAPE_LINE_CHAIN::Simplify()
 }
 
 
-const VECTOR2I SHAPE_LINE_CHAIN::NearestPoint( const VECTOR2I& aP ) const
+const VECTOR2I SHAPE_LINE_CHAIN::NearestPoint( const VECTOR2I& aP,
+                                               bool aAllowInternalShapePoints ) const
 {
     int min_d = INT_MAX;
     int nearest = 0;
@@ -904,11 +1061,36 @@ const VECTOR2I SHAPE_LINE_CHAIN::NearestPoint( const VECTOR2I& aP ) const
     {
         int d = CSegment( i ).Distance( aP );
 
-        if( d < min_d )
+        bool isInternalShapePoint = false;
+
+        // An internal shape point here is everything after the start of an arc and before the
+        // second-to-last vertex of the arc, because we are looking at segments here!
+        if( i > 0 && i < SegmentCount() - 1 && m_shapes[i] >= 0 &&
+                ( ( m_shapes[i - 1] >= 0 && m_shapes[i - 1] == m_shapes[i] ) &&
+                  ( m_shapes[i + 2] >= 0 && m_shapes[i + 2] == m_shapes[i] ) ) )
+        {
+            isInternalShapePoint = true;
+        }
+
+        if( ( d < min_d ) && ( aAllowInternalShapePoints || !isInternalShapePoint ) )
         {
             min_d = d;
             nearest = i;
         }
+    }
+
+    // Is this the start of an arc?  If so, return it directly
+    if( !aAllowInternalShapePoints &&
+        ( ( nearest == 0 && m_shapes[nearest] >= 0 ) ||
+          ( m_shapes[nearest] >= 0 && m_shapes[nearest] != m_shapes[nearest - 1] ) ) )
+    {
+        return m_points[nearest];
+    }
+    else if( !aAllowInternalShapePoints && nearest < SegmentCount() &&
+             m_shapes[nearest] >= 0 && m_shapes[nearest + 1] == m_shapes[nearest] )
+    {
+        // If the nearest segment is the last of the arc, just return the arc endpoint
+        return m_points[nearest + 1];
     }
 
     return CSegment( nearest ).NearestPoint( aP );

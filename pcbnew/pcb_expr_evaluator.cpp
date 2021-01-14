@@ -147,20 +147,47 @@ static void insideCourtyard( LIBEVAL::CONTEXT* aCtx, void* self )
         return;
     }
 
-    PCB_EXPR_VAR_REF* vref = static_cast<PCB_EXPR_VAR_REF*>( self );
-    BOARD_ITEM*       item = vref ? vref->GetObject( aCtx ) : nullptr;
-    FOOTPRINT*        footprint = nullptr;
+    PCB_EXPR_VAR_REF*      vref = static_cast<PCB_EXPR_VAR_REF*>( self );
+    BOARD_ITEM*            item = vref ? vref->GetObject( aCtx ) : nullptr;
+    EDA_RECT               itemBBox;
+    std::shared_ptr<SHAPE> shape;
 
     if( !item )
         return;
 
+    if( item->Type() == PCB_ZONE_T || item->Type() == PCB_FP_ZONE_T )
+        itemBBox = static_cast<ZONE*>( item )->GetCachedBoundingBox();
+    else
+        itemBBox = item->GetBoundingBox();
+
+    auto insideFootprint =
+            [&]( FOOTPRINT* footprint ) -> bool
+            {
+                SHAPE_POLY_SET footprintCourtyard;
+
+                if( footprint->IsFlipped() )
+                    footprintCourtyard = footprint->GetPolyCourtyardBack();
+                else
+                    footprintCourtyard = footprint->GetPolyCourtyardFront();
+
+                if( !footprint->GetBoundingBox().Intersects( itemBBox ) )
+                    return false;
+
+                if( !shape )
+                    shape = item->GetEffectiveShape( context->GetLayer() );
+
+                return footprintCourtyard.Collide( shape.get() );
+            };
+
     if( arg->AsString() == "A" )
     {
-        footprint = dynamic_cast<FOOTPRINT*>( context->GetItem( 0 ) );
+        if( insideFootprint( dynamic_cast<FOOTPRINT*>( context->GetItem( 0 ) ) ) )
+            result->Set( 1.0 );
     }
     else if( arg->AsString() == "B" )
     {
-        footprint = dynamic_cast<FOOTPRINT*>( context->GetItem( 1 ) );
+        if( insideFootprint( dynamic_cast<FOOTPRINT*>( context->GetItem( 1 ) ) ) )
+            result->Set( 1.0 );
     }
     else
     {
@@ -168,29 +195,13 @@ static void insideCourtyard( LIBEVAL::CONTEXT* aCtx, void* self )
         {
             if( candidate->GetReference().Matches( arg->AsString() ) )
             {
-                footprint = candidate;
-                break;
+                if( insideFootprint( candidate ) )
+                {
+                    result->Set( 1.0 );
+                    return;
+                }
             }
         }
-    }
-
-    if( footprint )
-    {
-        SHAPE_POLY_SET footprintCourtyard;
-
-        if( footprint->IsFlipped() )
-            footprintCourtyard = footprint->GetPolyCourtyardBack();
-        else
-            footprintCourtyard = footprint->GetPolyCourtyardFront();
-
-        SHAPE_POLY_SET testPoly;
-
-        item->TransformShapeWithClearanceToPolygon( testPoly, context->GetLayer(), 0,
-                                                    ARC_LOW_DEF, ERROR_INSIDE );
-        testPoly.BooleanIntersection( footprintCourtyard, SHAPE_POLY_SET::PM_FAST );
-
-        if( testPoly.OutlineCount() )
-            result->Set( 1.0 );
     }
 }
 
@@ -211,11 +222,18 @@ static void insideArea( LIBEVAL::CONTEXT* aCtx, void* self )
         return;
     }
 
-    PCB_EXPR_VAR_REF* vref = static_cast<PCB_EXPR_VAR_REF*>( self );
-    BOARD_ITEM*       item = vref ? vref->GetObject( aCtx ) : nullptr;
+    PCB_EXPR_VAR_REF*      vref = static_cast<PCB_EXPR_VAR_REF*>( self );
+    BOARD_ITEM*            item = vref ? vref->GetObject( aCtx ) : nullptr;
+    EDA_RECT               itemBBox;
+    std::shared_ptr<SHAPE> shape;
 
     if( !item )
         return;
+
+    if( item->Type() == PCB_ZONE_T || item->Type() == PCB_FP_ZONE_T )
+        itemBBox = static_cast<ZONE*>( item )->GetCachedBoundingBox();
+    else
+        itemBBox = item->GetBoundingBox();
 
     auto insideZone =
             [&]( ZONE* zone ) -> bool
@@ -223,7 +241,7 @@ static void insideArea( LIBEVAL::CONTEXT* aCtx, void* self )
                 if( !zone )
                     return false;
 
-                if( !zone->GetCachedBoundingBox().Intersects( item->GetBoundingBox() ) )
+                if( !zone->GetCachedBoundingBox().Intersects( itemBBox ) )
                     return false;
 
                 if( item->GetFlags() & HOLE_PROXY )
@@ -289,10 +307,28 @@ static void insideArea( LIBEVAL::CONTEXT* aCtx, void* self )
                     return false;
                 }
 
+                if( item->Type() == PCB_ZONE_T || item->Type() == PCB_FP_ZONE_T )
+                {
+                    ZONE* testZone = static_cast<ZONE*>( item );
 
-                std::shared_ptr<SHAPE> shape = item->GetEffectiveShape( context->GetLayer() );
+                    if( !zone->GetCachedBoundingBox().Contains( itemBBox ) )
+                        return false;
 
-                return zone->Outline()->Collide( shape.get() );
+                    for( auto i = testZone->Outline()->CIterate( 0 ); i; i++ )
+                    {
+                        if( !zone->Outline()->Contains( *i ) )
+                            return false;
+                    }
+
+                    return true;
+                }
+                else
+                {
+                    if( !shape )
+                        shape = item->GetEffectiveShape( context->GetLayer() );
+
+                    return zone->Outline()->Collide( shape.get() );
+                }
             };
 
     if( arg->AsString() == "A" )
@@ -577,6 +613,34 @@ LIBEVAL::VALUE PCB_EXPR_VAR_REF::GetValue( LIBEVAL::CONTEXT* aCtx )
 }
 
 
+LIBEVAL::VALUE PCB_EXPR_NETCLASS_REF::GetValue( LIBEVAL::CONTEXT* aCtx )
+{
+    BOARD_ITEM* item = GetObject( aCtx );
+
+    if( !item )
+        return LIBEVAL::VALUE();
+
+    if( item->IsConnected() )
+        return LIBEVAL::VALUE( static_cast<BOARD_CONNECTED_ITEM*>( item )->GetNetClassName() );
+    else
+        return LIBEVAL::VALUE();
+}
+
+
+LIBEVAL::VALUE PCB_EXPR_NETNAME_REF::GetValue( LIBEVAL::CONTEXT* aCtx )
+{
+    BOARD_ITEM* item = GetObject( aCtx );
+
+    if( !item )
+        return LIBEVAL::VALUE();
+
+    if( item->IsConnected() )
+        return LIBEVAL::VALUE( static_cast<BOARD_CONNECTED_ITEM*>( item )->GetNetname() );
+    else
+        return LIBEVAL::VALUE();
+}
+
+
 LIBEVAL::FUNC_CALL_REF PCB_EXPR_UCODE::CreateFuncCall( const wxString& aName )
 {
     PCB_EXPR_BUILTIN_FUNCTIONS& registry = PCB_EXPR_BUILTIN_FUNCTIONS::Instance();
@@ -590,6 +654,27 @@ std::unique_ptr<LIBEVAL::VAR_REF> PCB_EXPR_UCODE::CreateVarRef( const wxString& 
 {
     PROPERTY_MANAGER& propMgr = PROPERTY_MANAGER::Instance();
     std::unique_ptr<PCB_EXPR_VAR_REF> vref;
+
+    // Check for a couple of very common cases and compile them straight to "object code".
+
+    if( aField.CmpNoCase( "NetClass" ) == 0 )
+    {
+        if( aVar == "A" )
+            return std::make_unique<PCB_EXPR_NETCLASS_REF>( 0 );
+        else if( aVar == "B" )
+            return std::make_unique<PCB_EXPR_NETCLASS_REF>( 1 );
+        else
+            return nullptr;
+    }
+    else if( aField.CmpNoCase( "NetName" ) == 0 )
+    {
+        if( aVar == "A" )
+            return std::make_unique<PCB_EXPR_NETNAME_REF>( 0 );
+        else if( aVar == "B" )
+            return std::make_unique<PCB_EXPR_NETNAME_REF>( 1 );
+        else
+            return nullptr;
+    }
 
     if( aVar == "A" )
         vref = std::make_unique<PCB_EXPR_VAR_REF>( 0 );

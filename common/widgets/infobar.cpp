@@ -153,6 +153,9 @@ void WX_INFOBAR::Dismiss()
     if( m_auiManager )
         updateAuiLayout( false );
 
+    if( m_callback )
+        (*m_callback)();
+
     m_updateLock = false;
 }
 
@@ -269,6 +272,22 @@ void WX_INFOBAR::RemoveAllButtons()
 
         delete sItem->GetWindow();
     }
+}
+
+
+bool WX_INFOBAR::HasCloseButton() const
+{
+    wxSizer* sizer = GetSizer();
+
+    if( sizer->GetItemCount() == 0 )
+        return false;
+
+    if( sizer->GetItem( sizer->GetItemCount() - 1 )->IsSpacer() )
+        return false;
+
+    wxSizerItem* item = sizer->GetItem( sizer->GetItemCount() - 1 );
+
+    return ( item->GetWindow()->GetId() == ID_CLOSE_INFOBAR );
 }
 
 

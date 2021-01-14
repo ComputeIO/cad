@@ -1118,7 +1118,7 @@ void PCB_PARSER::parseBoardStackup()
     int dielectric_idx = 1;     // the index of dielectric layers
     BOARD_STACKUP& stackup = m_board->GetDesignSettings().GetStackupDescriptor();
 
-    for( token = NextTok();  token != T_RIGHT;  token = NextTok() )
+    for( token = NextTok(); token != T_RIGHT; token = NextTok() )
     {
         if( CurTok() != T_LEFT )
             Expecting( T_LEFT );
@@ -2318,8 +2318,13 @@ PCB_SHAPE* PCB_PARSER::parsePCB_SHAPE()
             NeedRIGHT();
             break;
 
+        case T_locked:
+            shape->SetLocked( true );
+            NeedRIGHT();
+            break;
+
         default:
-            Expecting( "layer, width, fill, tstamp, or status" );
+            Expecting( "layer, width, fill, tstamp, locked or status" );
         }
     }
 
@@ -2386,7 +2391,7 @@ PCB_TEXT* PCB_PARSER::parsePCB_TEXT()
         Unexpected( CurText() );
     }
 
-    for( token = NextTok();  token != T_RIGHT;  token = NextTok() )
+    for( token = NextTok(); token != T_RIGHT; token = NextTok() )
     {
         if( token != T_LEFT )
             Expecting( T_LEFT );
@@ -3136,13 +3141,12 @@ FOOTPRINT* PCB_PARSER::parseFOOTPRINT_unchecked( wxArrayString* aInitialComments
             break;
 
         default:
-            Expecting(
-                    "locked, placed, tedit, tstamp, at, descr, tags, path, "
-                    "autoplace_cost90, autoplace_cost180, solder_mask_margin, "
-                    "solder_paste_margin, solder_paste_ratio, clearance, "
-                    "zone_connect, thermal_width, thermal_gap, attr, fp_text, "
-                    "fp_arc, fp_circle, fp_curve, fp_line, fp_poly, fp_rect, pad, "
-                    "zone, group, generator, version or model" );
+            Expecting( "locked, placed, tedit, tstamp, at, descr, tags, path, "
+                       "autoplace_cost90, autoplace_cost180, solder_mask_margin, "
+                       "solder_paste_margin, solder_paste_ratio, clearance, "
+                       "zone_connect, thermal_width, thermal_gap, attr, fp_text, "
+                       "fp_arc, fp_circle, fp_curve, fp_line, fp_poly, fp_rect, pad, "
+                       "zone, group, generator, version or model" );
         }
     }
 
@@ -3154,15 +3158,22 @@ FOOTPRINT* PCB_PARSER::parseFOOTPRINT_unchecked( wxArrayString* aInitialComments
     if( m_requiredVersion < 20200826 && attributes == 0 )
         attributes |= FP_THROUGH_HOLE;
 
+    // Legacy files controlled pad locking at the footprint level.
+    if( m_requiredVersion < 20210108 )
+    {
+        for( PAD* pad : footprint->Pads() )
+            pad->SetLocked( footprint->IsLocked() || footprint->LegacyPadsLocked() );
+    }
+
     footprint->SetAttributes( attributes );
 
     footprint->SetFPID( fpid );
     footprint->SetProperties( properties );
 
-    // We want to calculate the bounding box in most cases except
-    // if the advanced config is set and its a general footprint load
-    // This improves debugging greatly under MSVC where full std iterator debugging
-    // is present and loading a massive amount of footprints can lead to 2 minute load times
+    // We want to calculate the bounding box in most cases except if the advanced config is set
+    // and its a general footprint load.  This improves debugging greatly under MSVC where full
+    // STL iterator debugging is present and loading a massive amount of footprints can lead to
+    // 2 minute load times.
     if( !ADVANCED_CFG::GetCfg().m_SkipBoundingBoxOnFpLoad || m_board != nullptr
             || reader->GetSource().Contains( "clipboard" ) )
     {
@@ -3495,8 +3506,13 @@ FP_SHAPE* PCB_PARSER::parseFP_SHAPE()
             NeedRIGHT();
             break;
 
+        case T_locked:
+            shape->SetLocked( true );
+            NeedRIGHT();
+            break;
+
         default:
-            Expecting( "layer, width, fill, tstamp, or status" );
+            Expecting( "layer, width, fill, tstamp, locked, or status" );
         }
     }
 
@@ -3976,6 +3992,11 @@ PAD* PCB_PARSER::parsePAD( FOOTPRINT* aParent )
             NeedRIGHT();
             break;
 
+        case T_locked:
+            pad->SetLocked( true );
+            NeedRIGHT();
+            break;
+
         case T_tstamp:
             NextTok();
             const_cast<KIID&>( pad->m_Uuid ) = CurStrToKIID();
@@ -3983,9 +4004,10 @@ PAD* PCB_PARSER::parsePAD( FOOTPRINT* aParent )
             break;
 
         default:
-            Expecting( "at, drill, layers, net, die_length, solder_mask_margin, roundrect_rratio,\n"
-                       "solder_paste_margin, solder_paste_margin_ratio, clearance, tstamp,\n"
-                       "zone_connect, fp_poly, primitives, thermal_width, or thermal_gap" );
+            Expecting( "at, locked, drill, layers, net, die_length, roundrect_rratio, "
+                       "solder_mask_margin, solder_paste_margin, solder_paste_margin_ratio, "
+                       "clearance, tstamp, primitives, remove_unused_layers, keep_end_layers, "
+                       "zone_connect, thermal_width, or thermal_gap" );
         }
     }
 
@@ -4187,7 +4209,7 @@ ARC* PCB_PARSER::parseARC()
             break;
 
         case T_locked:
-            arc->SetState( TRACK_LOCKED, 1 );
+            arc->SetLocked( true );
             break;
 
         default:
@@ -4258,7 +4280,7 @@ TRACK* PCB_PARSER::parseTRACK()
             break;
 
         case T_locked:
-            track->SetState( TRACK_LOCKED, 1 );
+            track->SetLocked( true );
             break;
 
         default:
@@ -4365,7 +4387,7 @@ VIA* PCB_PARSER::parseVIA()
             break;
 
         case T_locked:
-            via->SetState( TRACK_LOCKED, 1 );
+            via->SetLocked( true );
             NeedRIGHT();
             break;
 

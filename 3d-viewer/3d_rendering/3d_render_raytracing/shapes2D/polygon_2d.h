@@ -94,8 +94,7 @@ class POLYGON_2D : public OBJECT_2D
 {
 public:
     POLYGON_2D( const SEGMENTS_WIDTH_NORMALS& aOpenSegmentList,
-                const OUTERS_AND_HOLES& aOuter_and_holes,
-                const BOARD_ITEM& aBoardItem );
+                const OUTERS_AND_HOLES& aOuterAndHoles, const BOARD_ITEM& aBoardItem );
 
     bool Overlaps( const BBOX_2D& aBBox ) const override;
     bool Intersects( const BBOX_2D& aBBox ) const override;
@@ -145,17 +144,13 @@ public:
  *
  * @param aMainPath the polygon are that was converted from the pcb board
  * @param aDstContainer the destination container to put the created sub blocks
- * @param aBiuTo3DunitsScale the rendering target 3d scale
+ * @param aBiuTo3dUnitsScale the rendering target 3d scale
  * @param aDivFactor a division factor (in 3Dunits) to divide the polygon plane,
  *                   0.0f will use the internal polygon segm statistics
  */
-void Convert_path_polygon_to_polygon_blocks_and_dummy_blocks(
-        const SHAPE_POLY_SET& aMainPath,
-        CONTAINER_2D_BASE& aDstContainer,
-        float aBiuTo3DunitsScale,
-        float aDivFactor,
-        const BOARD_ITEM& aBoardItem,
-        int aPolyIndex );
+void CovertPolygonToBlocks( const SHAPE_POLY_SET& aMainPath, CONTAINER_2D_BASE& aDstContainer,
+                            float aBiuTo3dUnitsScale, float aDivFactor,
+                            const BOARD_ITEM& aBoardItem, int aPolyIndex );
 
 void Polygon2d_TestModule();
 

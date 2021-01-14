@@ -2,7 +2,7 @@
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
  * Copyright (C) 1992-2012 Jean-Pierre Charras, jp.charras at wanadoo.fr
- * Copyright (C) 1992-2012 KiCad Developers, see change_log.txt for contributors.
+ * Copyright (C) 1992-2021 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -62,7 +62,7 @@ public:
      * Reinit the watched paths
      * Should be called after opening a new project to
      * rebuild the list of watched paths.
-     * Should be called *atfer* the main loop event handler is started
+     * Should be called *after* the main loop event handler is started
      */
     void FileWatcherReset();
 
@@ -159,12 +159,12 @@ private:
      * Function addItemToProjectTree
      * @brief  Add the file or directory aName to the project tree
      * @param aName = the filename or the directory name to add in tree
-     * @param aRoot = the wxTreeItemId item where to add sub tree items
+     * @param aParent = the wxTreeItemId item where to add sub tree items
      * @param aRecurse = true to add file or subdir names to the current tree item
      *                   false to stop file add.
      * @return the Id for the new tree item
      */
-    wxTreeItemId addItemToProjectTree( const wxString& aName, const wxTreeItemId& aRoot,
+    wxTreeItemId addItemToProjectTree( const wxString& aName, const wxTreeItemId& aParent,
                                        std::vector<wxString>* aProjectNames, bool aRecurse );
 
     /**
@@ -188,11 +188,14 @@ public:
     PROJECT_TREE*           m_TreeProject;
 
 private:
-    bool                    m_isRenaming; // Are we in the process of renaming a file
+    bool                    m_isRenaming;       // Are we in the process of renaming a file
     wxTreeItemId            m_root;
     std::vector<wxString>   m_filters;
-    wxFileSystemWatcher*    m_watcher; // file system watcher
+    wxFileSystemWatcher*    m_watcher;          // file system watcher
     PROJECT_TREE_ITEM*      m_selectedItem;
+    bool                    m_watcherNeedReset; // true if FileWatcherReset() must be called
+                                                // (during an idle time for instance) after
+                                                // the main loop event handler is started
 
     DECLARE_EVENT_TABLE()
 };

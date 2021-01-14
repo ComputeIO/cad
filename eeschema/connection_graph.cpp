@@ -58,7 +58,7 @@ static const wxChar ConnProfileMask[] = wxT( "CONN_PROFILE" );
 static const wxChar ConnTrace[] = wxT( "CONN" );
 
 
-bool CONNECTION_SUBGRAPH::ResolveDrivers( bool aCreateMarkers )
+bool CONNECTION_SUBGRAPH::ResolveDrivers( bool aCheckMultipleDrivers )
 {
     PRIORITY               highest_priority = PRIORITY::INVALID;
     std::vector<SCH_ITEM*> candidates;
@@ -188,7 +188,7 @@ bool CONNECTION_SUBGRAPH::ResolveDrivers( bool aCreateMarkers )
         m_driver_connection = nullptr;
     }
 
-    if( aCreateMarkers && m_multiple_drivers )
+    if( aCheckMultipleDrivers && m_multiple_drivers )
     {
         // First check if all the candidates are actually the same
         bool same = true;
@@ -207,30 +207,12 @@ bool CONNECTION_SUBGRAPH::ResolveDrivers( bool aCreateMarkers )
 
         if( !same )
         {
-            wxPoint pos = candidates[0]->Type() == SCH_PIN_T ?
-                              static_cast<SCH_PIN*>( candidates[0] )->GetTransformedPosition() :
-                              candidates[0]->GetPosition();
-
-            wxString msg = wxString::Format( _( "Both %s and %s are attached to the same "
-                                                "items; %s will be used in the netlist" ),
-                                             first,
-                                             GetNameForDriver( second_item ),
-                                             first );
-
-            std::shared_ptr<ERC_ITEM> ercItem = ERC_ITEM::Create( ERCE_DRIVER_CONFLICT );
-            ercItem->SetItems( candidates[0], second_item );
-            ercItem->SetErrorMessage( msg );
-
-            SCH_MARKER* marker = new SCH_MARKER( ercItem, pos );
-            m_sheet.LastScreen()->Append( marker );
-
-            // If aCreateMarkers is true, then this is part of ERC check, so we
-            // should return false even if the driver was assigned
-            return false;
+            m_first_driver  = m_driver;
+            m_second_driver = second_item;
         }
     }
 
-    return aCreateMarkers || ( m_driver != nullptr );
+    return ( m_driver != nullptr );
 }
 
 
@@ -280,19 +262,14 @@ std::vector<SCH_ITEM*> CONNECTION_SUBGRAPH::GetBusLabels() const
 }
 
 
-const wxString& CONNECTION_SUBGRAPH::GetNameForDriver( SCH_ITEM* aItem )
+wxString CONNECTION_SUBGRAPH::driverName( SCH_ITEM* aItem ) const
 {
-    auto it = m_driver_name_cache.find( aItem );
-
-    if( it != m_driver_name_cache.end() )
-        return it->second;
-
     switch( aItem->Type() )
     {
     case SCH_PIN_T:
     {
         SCH_PIN* pin = static_cast<SCH_PIN*>( aItem );
-        m_driver_name_cache[aItem] = pin->GetDefaultNetName( m_sheet );
+        return pin->GetDefaultNetName( m_sheet );
         break;
     }
 
@@ -301,8 +278,7 @@ const wxString& CONNECTION_SUBGRAPH::GetNameForDriver( SCH_ITEM* aItem )
     case SCH_HIER_LABEL_T:
     case SCH_SHEET_PIN_T:
     {
-        m_driver_name_cache[aItem] = EscapeString( static_cast<SCH_TEXT*>( aItem )->GetShownText(),
-                                                   CTX_NETNAME );
+        return EscapeString( static_cast<SCH_TEXT*>( aItem )->GetShownText(), CTX_NETNAME );
         break;
     }
 
@@ -311,7 +287,31 @@ const wxString& CONNECTION_SUBGRAPH::GetNameForDriver( SCH_ITEM* aItem )
         break;
     }
 
+    return wxEmptyString;
+}
+
+
+const wxString& CONNECTION_SUBGRAPH::GetNameForDriver( SCH_ITEM* aItem )
+{
+    auto it = m_driver_name_cache.find( aItem );
+
+    if( it != m_driver_name_cache.end() )
+        return it->second;
+
+    m_driver_name_cache[aItem] = driverName( aItem );
+
     return m_driver_name_cache.at( aItem );
+}
+
+
+const wxString CONNECTION_SUBGRAPH::GetNameForDriver( SCH_ITEM* aItem ) const
+{
+    auto it = m_driver_name_cache.find( aItem );
+
+    if( it != m_driver_name_cache.end() )
+        return it->second;
+
+    return driverName( aItem );
 }
 
 
@@ -734,7 +734,7 @@ void CONNECTION_GRAPH::buildConnectionGraph()
 
             if( connection->SubgraphCode() == 0 )
             {
-                auto subgraph = new CONNECTION_SUBGRAPH( this );
+                CONNECTION_SUBGRAPH* subgraph = new CONNECTION_SUBGRAPH( this );
 
                 subgraph->m_code = m_last_subgraph_code++;
                 subgraph->m_sheet = sheet;
@@ -749,7 +749,7 @@ void CONNECTION_GRAPH::buildConnectionGraph()
                 auto get_items =
                         [&]( SCH_ITEM* aItem ) -> bool
                         {
-                            auto* conn = aItem->Connection( &sheet );
+                            SCH_CONNECTION* conn = aItem->Connection( &sheet );
 
                             if( !conn )
                                 conn = aItem->InitializeConnection( sheet, this );
@@ -761,12 +761,12 @@ void CONNECTION_GRAPH::buildConnectionGraph()
                               item->ConnectedItems( sheet ).end(),
                               std::back_inserter( members ), get_items );
 
-                for( auto connected_item : members )
+                for( SCH_ITEM* connected_item : members )
                 {
                     if( connected_item->Type() == SCH_NO_CONNECT_T )
                         subgraph->m_no_connect = connected_item;
 
-                    auto connected_conn = connected_item->Connection( &sheet );
+                    SCH_CONNECTION* connected_conn = connected_item->Connection( &sheet );
 
                     wxASSERT( connected_conn );
 
@@ -861,7 +861,7 @@ void CONNECTION_GRAPH::buildConnectionGraph()
                 }
             }
 
-            subgraph->ResolveDrivers();
+            subgraph->ResolveDrivers( true );
             subgraph->m_dirty = false;
         }
 
@@ -1806,6 +1806,7 @@ void CONNECTION_GRAPH::propagateToNeighbors( CONNECTION_SUBGRAPH* aSubgraph )
     CONNECTION_SUBGRAPH* driver = aSubgraph;
     CONNECTION_SUBGRAPH::PRIORITY highest =
             CONNECTION_SUBGRAPH::GetDriverPriority( aSubgraph->m_driver );
+    bool originalStrong = ( highest >= CONNECTION_SUBGRAPH::PRIORITY::HIER_LABEL );
 
     // Check if a subsheet has a higher-priority connection to the same net
     if( highest < CONNECTION_SUBGRAPH::PRIORITY::POWER_PIN )
@@ -1815,13 +1816,20 @@ void CONNECTION_GRAPH::propagateToNeighbors( CONNECTION_SUBGRAPH* aSubgraph )
             CONNECTION_SUBGRAPH::PRIORITY priority =
                     CONNECTION_SUBGRAPH::GetDriverPriority( subgraph->m_driver );
 
-            // Upgrade driver to be this subgraph if this subgraph has a power pin or global
-            // Also upgrade if we found something with a shorter sheet path (higher in hierarchy)
-            // but with an equivalent priority
+            bool candidateStrong = ( priority >= CONNECTION_SUBGRAPH::PRIORITY::HIER_LABEL );
+
+            // Pick a better driving subgraph if it:
+            // a) has a power pin or global driver
+            // b) is a strong driver and we're a weak driver
+            // c) meets or exceeds our priority, is a strong driver, and has a shorter path
 
             if( ( priority >= CONNECTION_SUBGRAPH::PRIORITY::POWER_PIN ) ||
-                ( priority >= highest && subgraph->m_sheet.size() < aSubgraph->m_sheet.size() ) )
+                ( !originalStrong && candidateStrong ) ||
+                ( priority >= highest && candidateStrong &&
+                  subgraph->m_sheet.size() < aSubgraph->m_sheet.size() ) )
+            {
                 driver = subgraph;
+            }
         }
     }
 
@@ -2091,9 +2099,13 @@ int CONNECTION_GRAPH::RunERC()
 {
     int error_count = 0;
 
-    wxCHECK_MSG( m_schematic, true, "Null m_schematic in CONNECTION_GRAPH::ercCheckLabels" );
+    wxCHECK_MSG( m_schematic, true, "Null m_schematic in CONNECTION_GRAPH::RunERC" );
 
     ERC_SETTINGS& settings = m_schematic->ErcSettings();
+
+    // We don't want to run many ERC checks more than once on a given screen even though it may
+    // represent multiple sheets with multiple subgraphs.  We can tell these apart by drivers.
+    std::set<SCH_ITEM*> seenDriverInstances;
 
     for( auto&& subgraph : m_subgraphs )
     {
@@ -2102,6 +2114,11 @@ int CONNECTION_GRAPH::RunERC()
 
         if( subgraph->m_absorbed )
             continue;
+
+        if( seenDriverInstances.count( subgraph->m_driver ) )
+            continue;
+
+        seenDriverInstances.insert( subgraph->m_driver );
 
         /**
          * NOTE:
@@ -2113,14 +2130,13 @@ int CONNECTION_GRAPH::RunERC()
          * won't actually be connected to bus wires if they aren't in the right
          * format due to their TestDanglingEnds() implementation.
          */
-
         if( settings.IsTestEnabled( ERCE_DRIVER_CONFLICT ) )
         {
-            if( !subgraph->ResolveDrivers( true ) )
+            if( !ercCheckMultipleDrivers( subgraph ) )
                 error_count++;
         }
-        else
-            subgraph->ResolveDrivers( false );
+
+        subgraph->ResolveDrivers( false );
 
         if( settings.IsTestEnabled( ERCE_BUS_TO_NET_CONFLICT ) )
         {
@@ -2165,6 +2181,36 @@ int CONNECTION_GRAPH::RunERC()
         error_count += ercCheckHierSheets();
 
     return error_count;
+}
+
+
+bool CONNECTION_GRAPH::ercCheckMultipleDrivers( const CONNECTION_SUBGRAPH* aSubgraph )
+{
+    if( !aSubgraph->m_second_driver )
+        return true;
+
+    SCH_ITEM* primary   = aSubgraph->m_first_driver;
+    SCH_ITEM* secondary = aSubgraph->m_second_driver;
+
+    wxPoint pos = primary->Type() == SCH_PIN_T ?
+                  static_cast<SCH_PIN*>( primary )->GetTransformedPosition() :
+                  primary->GetPosition();
+
+    wxString primaryName   = aSubgraph->GetNameForDriver( primary );
+    wxString secondaryName = aSubgraph->GetNameForDriver( secondary );
+
+    wxString msg = wxString::Format( _( "Both %s and %s are attached to the same "
+                                        "items; %s will be used in the netlist" ),
+                                     primaryName, secondaryName, primaryName );
+
+    std::shared_ptr<ERC_ITEM> ercItem = ERC_ITEM::Create( ERCE_DRIVER_CONFLICT );
+    ercItem->SetItems( primary, secondary );
+    ercItem->SetErrorMessage( msg );
+
+    SCH_MARKER* marker = new SCH_MARKER( ercItem, pos );
+    aSubgraph->m_sheet.LastScreen()->Append( marker );
+
+    return false;
 }
 
 
@@ -2602,6 +2648,11 @@ bool CONNECTION_GRAPH::ercCheckLabels( const CONNECTION_SUBGRAPH* aSubgraph )
     if( aSubgraph->m_no_connect )
         return true;
 
+    // Buses are excluded from this test: many users create buses with only a single instance
+    // and it's not really a problem as long as the nets in the bus pass ERC
+    if( aSubgraph->m_driver_connection->IsBus() )
+        return true;
+
     ERC_SETTINGS& settings            = m_schematic->ErcSettings();
     bool          ok                  = true;
     SCH_TEXT*     text                = nullptr;
@@ -2711,6 +2762,8 @@ int CONNECTION_GRAPH::ercCheckHierSheets()
 {
     int errors = 0;
 
+    ERC_SETTINGS& settings = m_schematic->ErcSettings();
+
     for( const SCH_SHEET_PATH& sheet : m_sheetList )
     {
         for( SCH_ITEM* item : sheet.LastScreen()->Items() )
@@ -2723,7 +2776,20 @@ int CONNECTION_GRAPH::ercCheckHierSheets()
             std::map<wxString, SCH_SHEET_PIN*> pins;
 
             for( SCH_SHEET_PIN* pin : parentSheet->GetPins() )
+            {
                 pins[pin->GetText()] = pin;
+
+                if( pin->IsDangling() && settings.IsTestEnabled( ERCE_PIN_NOT_CONNECTED ) )
+                {
+                    std::shared_ptr<ERC_ITEM> ercItem = ERC_ITEM::Create( ERCE_PIN_NOT_CONNECTED );
+                    ercItem->SetItems( pin );
+
+                    SCH_MARKER* marker = new SCH_MARKER( ercItem, pin->GetPosition() );
+                    sheet.LastScreen()->Append( marker );
+
+                    errors++;
+                }
+            }
 
             for( SCH_ITEM* subItem : parentSheet->GetScreen()->Items() )
             {
@@ -2743,6 +2809,7 @@ int CONNECTION_GRAPH::ercCheckHierSheets()
                 std::shared_ptr<ERC_ITEM> ercItem = ERC_ITEM::Create( ERCE_HIERACHICAL_LABEL );
                 ercItem->SetItems( unmatched.second );
                 ercItem->SetErrorMessage( msg );
+                ercItem->SetIsSheetSpecific();
 
                 SCH_MARKER* marker = new SCH_MARKER( ercItem, unmatched.second->GetPosition() );
                 sheet.LastScreen()->Append( marker );

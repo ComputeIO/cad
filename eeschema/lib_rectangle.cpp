@@ -158,8 +158,8 @@ int LIB_RECTANGLE::GetPenWidth() const
 }
 
 
-void LIB_RECTANGLE::print( RENDER_SETTINGS* aSettings, const wxPoint& aOffset, void* aData,
-                           const TRANSFORM& aTransform )
+void LIB_RECTANGLE::print( const RENDER_SETTINGS* aSettings, const wxPoint& aOffset,
+                           void* aData, const TRANSFORM& aTransform )
 {
     bool forceNoFill = static_cast<bool>( aData );
     int  penWidth = GetPenWidth();
@@ -251,6 +251,23 @@ bool LIB_RECTANGLE::HitTest( const wxPoint& aPosition, int aAccuracy ) const
         return true;
 
     return false;
+}
+
+
+bool LIB_RECTANGLE::HitTest( const EDA_RECT& aRect, bool aContained, int aAccuracy ) const
+{
+    if( m_flags & (STRUCT_DELETED | SKIP_STRUCT ) )
+        return false;
+
+    EDA_RECT sel = aRect;
+
+    if ( aAccuracy )
+        sel.Inflate( aAccuracy );
+
+    if( aContained )
+        return sel.Contains( GetBoundingBox() );
+
+    return sel.Intersects( GetBoundingBox() );
 }
 
 

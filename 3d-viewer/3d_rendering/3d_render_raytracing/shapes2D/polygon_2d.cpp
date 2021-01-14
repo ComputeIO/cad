@@ -27,11 +27,8 @@
  */
 
 #include "polygon_2d.h"
+#include "../ray.h"
 #include <wx/debug.h>
-
-#ifdef PRINT_STATISTICS_3D_VIEWER
-#include <stdio.h>
-#endif
 
 
 static bool polygon_IsPointInside( const SEGMENTS& aSegments, const SFVEC2F& aPoint )
@@ -65,7 +62,7 @@ static bool polygon_IsPointInside( const SEGMENTS& aSegments, const SFVEC2F& aPo
 
 
 POLYGON_2D::POLYGON_2D( const SEGMENTS_WIDTH_NORMALS& aOpenSegmentList,
-                        const OUTERS_AND_HOLES& aOuter_and_holes, const BOARD_ITEM& aBoardItem )
+                        const OUTERS_AND_HOLES& aOuterAndHoles, const BOARD_ITEM& aBoardItem )
         : OBJECT_2D( OBJECT_2D_TYPE::POLYGON, aBoardItem )
 {
     m_open_segments.resize( aOpenSegmentList.size() );
@@ -74,7 +71,7 @@ POLYGON_2D::POLYGON_2D( const SEGMENTS_WIDTH_NORMALS& aOpenSegmentList,
     for( unsigned int i = 0; i < aOpenSegmentList.size(); i++ )
         m_open_segments[i] = aOpenSegmentList[i];
 
-    m_outers_and_holes = aOuter_and_holes;
+    m_outers_and_holes = aOuterAndHoles;
 
     // Compute bounding box with the points of the polygon
     m_bbox.Reset();
@@ -93,11 +90,11 @@ POLYGON_2D::POLYGON_2D( const SEGMENTS_WIDTH_NORMALS& aOpenSegmentList,
     wxASSERT( m_open_segments.size() > 0 );
 
     wxASSERT( m_outers_and_holes.m_Outers.size() > 0 );
-    wxASSERT( m_outers_and_holes.m_Outers.size() == aOuter_and_holes.m_Outers.size() );
-    wxASSERT( m_outers_and_holes.m_Holes.size() == aOuter_and_holes.m_Holes.size() );
+    wxASSERT( m_outers_and_holes.m_Outers.size() == aOuterAndHoles.m_Outers.size() );
+    wxASSERT( m_outers_and_holes.m_Holes.size() == aOuterAndHoles.m_Holes.size() );
 
     wxASSERT( m_outers_and_holes.m_Outers[0].size() >= 3 );
-    wxASSERT( m_outers_and_holes.m_Outers[0].size() == aOuter_and_holes.m_Outers[0].size() );
+    wxASSERT( m_outers_and_holes.m_Outers[0].size() == aOuterAndHoles.m_Outers[0].size() );
 
     wxASSERT( m_bbox.IsInitialized() );
 }
@@ -115,7 +112,7 @@ bool POLYGON_2D::Intersects( const BBOX_2D& aBBox ) const
 
 bool POLYGON_2D::Overlaps( const BBOX_2D& aBBox ) const
 {
-    // NOT IMPLEMENTED
+    // NOT IMPLEMENTED, why?
     return false;
 }
 
@@ -352,7 +349,7 @@ static void extractPathsFrom( const SEGMENTS_WIDTH_NORMALS& aSegList, const BBOX
 
 
 static void polygon_Convert( const SHAPE_LINE_CHAIN& aPath, SEGMENTS& aOutSegment,
-                             float aBiuTo3DunitsScale )
+                             float aBiuTo3dUnitsScale )
 {
     aOutSegment.resize( aPath.PointCount() );
 
@@ -360,8 +357,8 @@ static void polygon_Convert( const SHAPE_LINE_CHAIN& aPath, SEGMENTS& aOutSegmen
     {
         const VECTOR2I& a = aPath.CPoint( j );
 
-        aOutSegment[j].m_Start = SFVEC2F( (float) a.x * aBiuTo3DunitsScale,
-                                          (float) -a.y * aBiuTo3DunitsScale );
+        aOutSegment[j].m_Start = SFVEC2F( (float) a.x * aBiuTo3dUnitsScale,
+                                          (float) -a.y * aBiuTo3dUnitsScale );
     }
 
     unsigned int i;
@@ -378,9 +375,9 @@ static void polygon_Convert( const SHAPE_LINE_CHAIN& aPath, SEGMENTS& aOutSegmen
 }
 
 
-void Convert_path_polygon_to_polygon_blocks_and_dummy_blocks( const SHAPE_POLY_SET& aMainPath,
-        CONTAINER_2D_BASE& aDstContainer, float aBiuTo3DunitsScale, float aDivFactor,
-        const BOARD_ITEM& aBoardItem, int aPolyIndex )
+void CovertPolygonToBlocks( const SHAPE_POLY_SET& aMainPath, CONTAINER_2D_BASE& aDstContainer,
+                            float aBiuTo3dUnitsScale, float aDivFactor,
+                            const BOARD_ITEM& aBoardItem, int aPolyIndex )
 {
     // Get the path
     wxASSERT( aPolyIndex < aMainPath.OutlineCount() );
@@ -408,8 +405,8 @@ void Convert_path_polygon_to_polygon_blocks_and_dummy_blocks( const SHAPE_POLY_S
     {
         const VECTOR2I& a = path.CPoint( i );
 
-        const SFVEC2F point( (float) ( a.x ) * aBiuTo3DunitsScale,
-                             (float) ( -a.y ) * aBiuTo3DunitsScale );
+        const SFVEC2F point( (float) ( a.x ) * aBiuTo3dUnitsScale,
+                             (float) ( -a.y ) * aBiuTo3dUnitsScale );
 
         // Only add points that are not coincident
         if( ( i == 0 ) || ( fabs( prevPoint.x - point.x ) > FLT_EPSILON )
@@ -631,7 +628,7 @@ void Convert_path_polygon_to_polygon_blocks_and_dummy_blocks( const SHAPE_POLY_S
 
                     SEGMENTS solutionSegment;
 
-                    polygon_Convert( outline, solutionSegment, aBiuTo3DunitsScale );
+                    polygon_Convert( outline, solutionSegment, aBiuTo3dUnitsScale );
                     outersAndHoles.m_Outers.push_back( solutionSegment );
 
                     stats_sum_size_of_polygons += solutionSegment.size();
@@ -640,7 +637,7 @@ void Convert_path_polygon_to_polygon_blocks_and_dummy_blocks( const SHAPE_POLY_S
                     {
                         const SHAPE_LINE_CHAIN& hole = solution.Hole( idx, holeIdx );
 
-                        polygon_Convert( hole, solutionSegment, aBiuTo3DunitsScale );
+                        polygon_Convert( hole, solutionSegment, aBiuTo3dUnitsScale );
                         outersAndHoles.m_Holes.push_back( solutionSegment );
                         stats_sum_size_of_polygons += solutionSegment.size();
                     }
@@ -666,14 +663,14 @@ void Convert_path_polygon_to_polygon_blocks_and_dummy_blocks( const SHAPE_POLY_S
 
 #ifdef DEBUG
 static void polygon_Convert( const ClipperLib::Path& aPath, SEGMENTS& aOutSegment,
-                             float aBiuTo3DunitsScale )
+                             float aBiuTo3dUnitsScale )
 {
     aOutSegment.resize( aPath.size() );
 
     for( unsigned i = 0; i < aPath.size(); i++ )
     {
         aOutSegment[i].m_Start = SFVEC2F(
-                (float) aPath[i].X * aBiuTo3DunitsScale, (float) -aPath[i].Y * aBiuTo3DunitsScale );
+                (float) aPath[i].X * aBiuTo3dUnitsScale, (float) -aPath[i].Y * aBiuTo3dUnitsScale );
     }
 
     unsigned int i;

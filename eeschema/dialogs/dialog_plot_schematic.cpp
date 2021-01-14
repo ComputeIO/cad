@@ -96,8 +96,8 @@ void DIALOG_PLOT_SCHEMATIC::initDlg()
         // Set plot or not frame reference option
         setPlotFrameRef( cfg->m_PlotPanel.frame_reference );
 
-        // Set HPGL plot origin to center of paper of left bottom corner
-        SetPlotOriginCenter( cfg->m_PlotPanel.hpgl_origin );
+        // HPGL plot origin and unit system configuration
+        m_plotOriginOpt->SetSelection( cfg->m_PlotPanel.hpgl_origin );
 
         m_HPGLPaperSizeSelect = cfg->m_PlotPanel.hpgl_paper_size;
 
@@ -279,7 +279,7 @@ void DIALOG_PLOT_SCHEMATIC::getPlotOptions( RENDER_SETTINGS* aSettings )
         cfg->m_PlotPanel.color_theme      = colors->GetFilename();
         cfg->m_PlotPanel.frame_reference  = getPlotFrameRef();
         cfg->m_PlotPanel.format           = static_cast<int>( GetPlotFileFormat() );
-        cfg->m_PlotPanel.hpgl_origin      = GetPlotOriginCenter();
+        cfg->m_PlotPanel.hpgl_origin      = m_plotOriginOpt->GetSelection();
         cfg->m_PlotPanel.hpgl_paper_size  = m_HPGLPaperSizeSelect;
 
         // HPGL Pen Size is stored in mm in config
@@ -364,8 +364,12 @@ wxFileName DIALOG_PLOT_SCHEMATIC::createPlotFileName( const wxString& aPlotFileN
 {
     wxString   path = ExpandEnvVarSubstitutions( m_outputDirectoryName->GetValue(), &Prj() );
     wxFileName outputDir = wxFileName::DirName( path );
+    wxString plotFileName;
 
-    wxString plotFileName = Prj().AbsolutePath( aPlotFileName + wxT( "." ) + aExtension);
+    if( !aPlotFileName.IsEmpty() )
+        plotFileName = Prj().AbsolutePath( aPlotFileName + wxT( "." ) + aExtension );
+    else
+        plotFileName = Prj().AbsolutePath( _( "Schematic" ) + wxT( "." ) + aExtension );
 
     if( !EnsureFileDirectoryExists( &outputDir, plotFileName, aReporter ) )
     {

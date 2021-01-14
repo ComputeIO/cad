@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2012 Torsten Hueter, torstenhtr <at> gmx.de
  * Copyright (C) 2013 CERN
- * Copyright (C) 2013-2020 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 2013-2021 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * @author Tomasz Wlostowski <tomasz.wlostowski@cern.ch>
  *
@@ -26,29 +26,15 @@
  *
  */
 
-/**
- * @file view_controls.h
- * @brief VIEW_CONTROLS class definition.
- */
-
 #ifndef __VIEW_CONTROLS_H
 #define __VIEW_CONTROLS_H
 
 #include <math/box2.h>
+#include <settings/common_settings.h>
 
 namespace KIGFX
 {
 class VIEW;
-
-
-///< Action to perform when the mouse is dragged
-enum class MOUSE_DRAG_ACTION
-{
-    SELECT,
-    ZOOM,
-    PAN,
-    NONE
-};
 
 
 ///< Structure to keep VIEW_CONTROLS settings for easy store/restore operations
@@ -119,10 +105,8 @@ struct VC_SETTINGS
     ///< What modifier key to enable vertical with the (vertical) scroll wheel.
     int m_scrollModifierPanV;
 
-    ///< What drag action to perform when the middle button is pressed.
+    MOUSE_DRAG_ACTION m_dragLeft;
     MOUSE_DRAG_ACTION m_dragMiddle;
-
-    ///< What drag action to perform when the right button is pressed.
     MOUSE_DRAG_ACTION m_dragRight;
 
     ///< Is last cursor motion event coming from keyboard arrow cursor motion action.

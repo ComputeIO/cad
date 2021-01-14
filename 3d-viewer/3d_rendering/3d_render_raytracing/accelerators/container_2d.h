@@ -33,6 +33,8 @@
 #include <list>
 #include <mutex>
 
+struct RAYSEG2D;
+
 typedef std::list<OBJECT_2D*> LIST_OBJECT2D;
 typedef std::list<const OBJECT_2D*> CONST_LIST_OBJECT2D;
 
@@ -136,8 +138,8 @@ private:
                                 const RAYSEG2D& aSegRay ) const;
 
     bool m_isInitialized;
-    std::list<BVH_CONTAINER_NODE_2D*> m_elements_to_delete;
-    BVH_CONTAINER_NODE_2D* m_Tree;
+    std::list<BVH_CONTAINER_NODE_2D*> m_elementsToDelete;
+    BVH_CONTAINER_NODE_2D* m_tree;
 
 };
 

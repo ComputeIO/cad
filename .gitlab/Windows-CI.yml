@@ -8,6 +8,9 @@ build_win64:
   extends: .only_code
   interruptible: false
   image: registry.gitlab.com/kicad/kicad-ci/source_containers/win64:msvc1809
+  only:
+    - branches@kicad/code/kicad
+    - tags@kicad/code/kicad
   script:
     - mkdir -p build/windows -Force
     - cd build/windows

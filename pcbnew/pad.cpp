@@ -86,7 +86,7 @@ PAD::PAD( FOOTPRINT* parent ) :
 
     SetSubRatsnest( 0 );                       // used in ratsnest calculations
 
-    m_shapesDirty = true;
+    SetDirty();
     m_effectiveBoundingRadius = 0;
     m_removeUnconnectedLayer = false;
     m_keepTopBottomLayer = true;
@@ -133,13 +133,10 @@ PAD& PAD::operator=( const PAD &aOther )
 
 bool PAD::IsLocked() const
 {
-    if( GetParent() )
-    {
-        FOOTPRINT* fp = static_cast<FOOTPRINT*>( GetParent() );
-        return fp->IsLocked() || fp->PadsLocked();
-    }
+    if( GetParent() && static_cast<FOOTPRINT*>( GetParent() )->IsLocked() )
+        return true;
 
-    return false;
+    return BOARD_ITEM::IsLocked();
 };
 
 
@@ -262,7 +259,7 @@ void PAD::SetRoundRectRadiusRatio( double aRadiusScale )
 {
     m_roundedCornerScale = std::max( 0.0, std::min( aRadiusScale, 0.5 ) );
 
-    m_shapesDirty = true;
+    SetDirty();
 }
 
 
@@ -270,14 +267,14 @@ void PAD::SetChamferRectRatio( double aChamferScale )
 {
     m_chamferScale = std::max( 0.0, std::min( aChamferScale, 0.5 ) );
 
-    m_shapesDirty = true;
+    SetDirty();
 }
 
 
-const std::shared_ptr<SHAPE_POLY_SET>& PAD::GetEffectivePolygon( PCB_LAYER_ID aLayer ) const
+const std::shared_ptr<SHAPE_POLY_SET>& PAD::GetEffectivePolygon() const
 {
-    if( m_shapesDirty )
-        BuildEffectiveShapes( aLayer );
+    if( m_polyDirty )
+        BuildEffectivePolygon();
 
     return m_effectivePolygon;
 }
@@ -303,8 +300,8 @@ const SHAPE_SEGMENT* PAD::GetEffectiveHoleShape() const
 
 int PAD::GetBoundingRadius() const
 {
-    if( m_shapesDirty )
-        BuildEffectiveShapes( UNDEFINED_LAYER );
+    if( m_polyDirty )
+        BuildEffectivePolygon();
 
     return m_effectiveBoundingRadius;
 }
@@ -395,10 +392,18 @@ void PAD::BuildEffectiveShapes( PCB_LAYER_ID aLayer ) const
         // GAL renders rectangles faster than 4-point polygons so it's worth checking if our
         // body shape is a rectangle.
         if( corners.PointCount() == 4
-                && corners.CPoint( 0 ).y == corners.CPoint( 1 ).y
-                && corners.CPoint( 1 ).x == corners.CPoint( 2 ).x
-                && corners.CPoint( 2 ).y == corners.CPoint( 3 ).y
-                && corners.CPoint( 4 ).x == corners.CPoint( 0 ).x )
+                &&
+                ( ( corners.CPoint( 0 ).y == corners.CPoint( 1 ).y
+                    && corners.CPoint( 1 ).x == corners.CPoint( 2 ).x
+                    && corners.CPoint( 2 ).y == corners.CPoint( 3 ).y
+                    && corners.CPoint( 3 ).x == corners.CPoint( 0 ).x )
+                    ||
+                ( corners.CPoint( 0 ).x == corners.CPoint( 1 ).x
+                    && corners.CPoint( 1 ).y == corners.CPoint( 2 ).y
+                    && corners.CPoint( 2 ).x == corners.CPoint( 3 ).x
+                    && corners.CPoint( 3 ).y == corners.CPoint( 0 ).y )
+                )
+            )
         {
             int width  = std::abs( corners.CPoint( 2 ).x - corners.CPoint( 0 ).x );
             int height = std::abs( corners.CPoint( 2 ).y - corners.CPoint( 0 ).y );
@@ -453,31 +458,6 @@ void PAD::BuildEffectiveShapes( PCB_LAYER_ID aLayer ) const
         }
     }
 
-    // Polygon
-    //
-    m_effectivePolygon = std::make_shared<SHAPE_POLY_SET>();
-    TransformShapeWithClearanceToPolygon( *m_effectivePolygon, aLayer, 0, maxError, ERROR_INSIDE );
-
-    // Bounding box and radius
-    //
-    // PADSTACKS TODO: these will both need to cycle through all layers to get the largest
-    // values....
-    //
-    m_effectiveBoundingRadius = 0;
-
-    for( int cnt = 0; cnt < m_effectivePolygon->OutlineCount(); ++cnt )
-    {
-        const SHAPE_LINE_CHAIN& poly = m_effectivePolygon->COutline( cnt );
-
-        for( int ii = 0; ii < poly.PointCount(); ++ii )
-        {
-            int dist = KiROUND( ( poly.CPoint( ii ) - m_pos ).EuclideanNorm() );
-            m_effectiveBoundingRadius = std::max( m_effectiveBoundingRadius, dist );
-        }
-    }
-
-    m_effectiveBoundingRadius += 1;
-
     BOX2I bbox = m_effectiveShape->BBox();
     m_effectiveBoundingBox = EDA_RECT( (wxPoint) bbox.GetPosition(),
                                        wxSize( bbox.GetWidth(), bbox.GetHeight() ) );
@@ -496,6 +476,48 @@ void PAD::BuildEffectiveShapes( PCB_LAYER_ID aLayer ) const
     // All done
     //
     m_shapesDirty = false;
+}
+
+
+void PAD::BuildEffectivePolygon() const
+{
+    std::lock_guard<std::mutex> RAII_lock( m_polyBuildingLock );
+
+    // If we had to wait for the lock then we were probably waiting for someone else to
+    // finish rebuilding the shapes.  So check to see if they're clean now.
+    if( !m_polyDirty )
+        return;
+
+    BOARD* board = GetBoard();
+    int    maxError = board ? board->GetDesignSettings().m_MaxError : ARC_HIGH_DEF;
+
+    // Polygon
+    //
+    m_effectivePolygon = std::make_shared<SHAPE_POLY_SET>();
+    TransformShapeWithClearanceToPolygon( *m_effectivePolygon, UNDEFINED_LAYER, 0, maxError,
+                                          ERROR_INSIDE );
+
+    // Bounding radius
+    //
+    // PADSTACKS TODO: these will both need to cycle through all layers to get the largest
+    // values....
+    //
+    m_effectiveBoundingRadius = 0;
+
+    for( int cnt = 0; cnt < m_effectivePolygon->OutlineCount(); ++cnt )
+    {
+        const SHAPE_LINE_CHAIN& poly = m_effectivePolygon->COutline( cnt );
+
+        for( int ii = 0; ii < poly.PointCount(); ++ii )
+        {
+            int dist = KiROUND( ( poly.CPoint( ii ) - m_pos ).EuclideanNorm() );
+            m_effectiveBoundingRadius = std::max( m_effectiveBoundingRadius, dist );
+        }
+    }
+
+    // All done
+    //
+    m_polyDirty = false;
 }
 
 
@@ -522,7 +544,7 @@ void PAD::SetDrawCoord()
     RotatePoint( &m_pos.x, &m_pos.y, angle );
     m_pos += parentFootprint->GetPosition();
 
-    m_shapesDirty = true;
+    SetDirty();
 }
 
 
@@ -548,7 +570,7 @@ void PAD::SetAttribute( PAD_ATTR_T aAttribute )
     if( aAttribute == PAD_ATTRIB_SMD )
         m_drill = wxSize( 0, 0 );
 
-    m_shapesDirty = true;
+    SetDirty();
 }
 
 
@@ -556,7 +578,7 @@ void PAD::SetProperty( PAD_PROP_T aProperty )
 {
     m_property = aProperty;
 
-    m_shapesDirty = true;
+    SetDirty();
 }
 
 
@@ -565,7 +587,7 @@ void PAD::SetOrientation( double aAngle )
     NORMALIZE_ANGLE_POS( aAngle );
     m_orient = aAngle;
 
-    m_shapesDirty = true;
+    SetDirty();
 }
 
 
@@ -623,7 +645,7 @@ void PAD::Flip( const wxPoint& aCentre, bool aFlipLeftRight )
     // Flip the basic shapes, in custom pads
     FlipPrimitives( aFlipLeftRight );
 
-    m_shapesDirty = true;
+    SetDirty();
 }
 
 
@@ -633,7 +655,7 @@ void PAD::FlipPrimitives( bool aFlipLeftRight )
     for( std::shared_ptr<PCB_SHAPE>& primitive : m_editPrimitives )
         primitive->Flip( wxPoint( 0, 0 ), aFlipLeftRight );
 
-    m_shapesDirty = true;
+    SetDirty();
 }
 
 
@@ -903,13 +925,13 @@ void PAD::GetMsgPanelInfo( EDA_DRAW_FRAME* aFrame, std::vector<MSG_PANEL_ITEM>& 
     {
         if( GetDrillShape() == PAD_DRILL_SHAPE_CIRCLE )
         {
-            aList.emplace_back( _( "Drill" ),
+            aList.emplace_back( _( "Hole" ),
                                 wxString::Format( "%s",
                                                   MessageTextFromValue( units, m_drill.x ) ) );
         }
         else
         {
-            aList.emplace_back( _( "Drill X / Y" ),
+            aList.emplace_back( _( "Hole X / Y" ),
                                 wxString::Format( "%s / %s",
                                                   MessageTextFromValue( units, m_drill.x ),
                                                   MessageTextFromValue( units, m_drill.y ) ) );
@@ -1040,7 +1062,7 @@ void PAD::Rotate( const wxPoint& aRotCentre, double aAngle )
 
     SetLocalCoord();
 
-    m_shapesDirty = true;
+    SetDirty();
 }
 
 
@@ -1357,7 +1379,7 @@ void PAD::ImportSettingsFrom( const PAD& aMasterPad )
     ReplacePrimitives( aMasterPad.GetPrimitives() );
     SetAnchorPadShape( aMasterPad.GetAnchorPadShape() );
 
-    m_shapesDirty = true;
+    SetDirty();
 }
 
 
