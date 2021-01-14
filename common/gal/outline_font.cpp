@@ -1,8 +1,8 @@
 /*
  * This program source code file is part of KICAD, a free EDA CAD application.
  *
- * Copyright (C) 2021 Ola Rinta-Koski
- * Copyright (C) 2016 Kicad Developers, see change_log.txt for contributors.
+ * Copyright (C) 2021 Ola Rinta-Koski <gitlab@rinta-koski.net>
+ * Copyright (C) 2016-2021 Kicad Developers, see change_log.txt for contributors.
  *
  * Outline font class
  *
@@ -31,6 +31,7 @@
 #include FT_GLYPH_H
 #include FT_BBOX_H
 #include FT_OUTLINE_H
+#include <bezier_curves.h>
 
 using namespace KIGFX;
 
@@ -122,38 +123,50 @@ FT_Error OUTLINE_FONT::loadFace( const wxString& aFontFileName )
  * @param aRotationAngle is the text rotation angle in radians.
  */
 void OUTLINE_FONT::Draw( GAL* aGal, const UTF8& aText, const VECTOR2D& aPosition,
-                         double aRotationAngle ) const
+                         double aRotationAngle )
 {
     if( aText.empty() )
         return;
 
+#ifdef DEBUG
+    std::cerr << "OUTLINE_FONT::Draw(" << aText << ")" << std::endl;
+#endif
+
     hb_buffer_t* buf = hb_buffer_create();
     hb_buffer_add_utf8( buf, aText.c_str(), -1, 0, -1 );
 
-    hb_buffer_set_direction( buf, HB_DIRECTION_LTR );
-    hb_buffer_set_script( buf, HB_SCRIPT_LATIN );
-    hb_buffer_set_language( buf, hb_language_from_string( "en", -1 ) );
+    // guess direction, script, and language based on contents
+    hb_buffer_guess_segment_properties( buf );
 
     FT_Select_Charmap( mFace, FT_Encoding::FT_ENCODING_UNICODE );
-    FT_Set_Char_Size( mFace, 0, 1000, 0, 0 );
+    // FT_Set_Char_Size(
+    //   <handle to face object>,
+    //   <char_width in 1/64th of points>,
+    //   <char_height in 1/64th of points>,
+    //   <horizontal device resolution>,
+    //   <vertical device resolution>
+    // )
+    // handle == variable (reference)
+    // If only one of char_width/char_height == 0, it defaults to "same as the non-zero one"
+    // Ditto if only one of horizontal/vertical resolution == 0
+    // If both horizontal/vertical resolution == 0, 72 dpi is default
+    //
+    // 16 * 64 is chosen as an arbitrary default for width/height
+    // TODO: come up with a non-arbitrary default (and/or use a better
+    // value for H/V reso)
+    FT_Set_Char_Size( mFace, 0, 16 * 64, 0, 0 );
 
-#if 0
-    hb_blob_t* blob = hb_blob_create_from_file( m_fontFileName.c_str() );
-    hb_face_t* face = hb_face_create( blob, 0 );
-    hb_font_t* font = hb_font_create( face );
-#else
     hb_font_t* font = hb_ft_font_create_referenced( mFace );
     hb_ft_font_set_funcs( font );
-#endif
-
     hb_shape( font, buf, NULL, 0 );
 
     unsigned int         glyph_count;
     hb_glyph_info_t*     glyph_info = hb_buffer_get_glyph_infos( buf, &glyph_count );
     hb_glyph_position_t* glyph_pos = hb_buffer_get_glyph_positions( buf, &glyph_count );
-
-    hb_position_t cursor_x = 0;
-    hb_position_t cursor_y = 0;
+    hb_position_t        cursor_x = 0;
+    hb_position_t        cursor_y = 0;
+#ifdef DEBUG
+#ifdef FOOFAA
     for( unsigned int i = 0; i < glyph_count; i++ )
     {
         hb_codepoint_t glyphid = glyph_info[i].codepoint;
@@ -168,6 +181,8 @@ void OUTLINE_FONT::Draw( GAL* aGal, const UTF8& aText, const VECTOR2D& aPosition
         cursor_x += x_advance;
         cursor_y += y_advance;
     }
+#endif
+#endif
 
     // Context needs to be saved before any transformations
     aGal->Save();
@@ -176,9 +191,11 @@ void OUTLINE_FONT::Draw( GAL* aGal, const UTF8& aText, const VECTOR2D& aPosition
     aGal->Rotate( -aRotationAngle );
     const VECTOR2D& glyphSize = aGal->GetGlyphSize();
 
+#ifdef DEBUG
     std::cerr << "GAL glyphSize == " << glyphSize << std::endl;
+#endif
 
-#ifdef FOOFAA
+#ifdef FOOBAR
     // Single line height
     int lineHeight = KiROUND( GetInterline( m_gal->GetGlyphSize().y ) );
     int lineCount = linesCount( aText );
@@ -212,12 +229,14 @@ void OUTLINE_FONT::Draw( GAL* aGal, const UTF8& aText, const VECTOR2D& aPosition
         }
     }
 
-    m_gal->SetIsStroke( true );
-    //m_gal->SetIsFill( false );
+    m_gal->SetIsStroke( false );
+    m_gal->SetIsFill( true );
 
     if( m_gal->IsFontBold() )
     {
-        // TODO: figure out how to do real bold
+        // TODO: figure out how to do real bold - preferably by using
+        // bold font instead of normal (if this is normal, and there
+        // is a bold version)
         m_gal->SetLineWidth( m_gal->GetLineWidth() * 1.3 );
     }
 
@@ -240,16 +259,10 @@ void OUTLINE_FONT::Draw( GAL* aGal, const UTF8& aText, const VECTOR2D& aPosition
     if( !aText.empty() )
         drawSingleLineText( aText.substr( begin ) );
 
-#endif // FOOFAA
+#endif // FOOBAR
 
     drawSingleLineText( aGal, buf, font );
-
     hb_buffer_destroy( buf );
-#if 0
-    hb_font_destroy( font );
-    hb_face_destroy( face );
-    hb_blob_destroy( blob );
-#endif
     aGal->Restore();
 }
 
@@ -308,7 +321,7 @@ VECTOR2D OUTLINE_FONT::ComputeTextLineSize( const GAL* aGal, const UTF8& aText )
 }
 
 
-void OUTLINE_FONT::drawSingleLineText( GAL* aGal, hb_buffer_t* aText, hb_font_t* aFont ) const
+void OUTLINE_FONT::drawSingleLineText( GAL* aGal, hb_buffer_t* aText, hb_font_t* aFont )
 {
     const VECTOR2D& galGlyphSize = aGal->GetGlyphSize();
 
@@ -321,6 +334,11 @@ void OUTLINE_FONT::drawSingleLineText( GAL* aGal, hb_buffer_t* aText, hb_font_t*
 
     hb_position_t cursor_x = 0;
     hb_position_t cursor_y = 0;
+
+#ifdef DEBUG
+#ifdef FOOFAA
+    const int GLYPH_NAME_LEN = 256;
+    char      glyph_name[GLYPH_NAME_LEN];
     for( unsigned int i = 0; i < glyphCount; i++ )
     {
         hb_codepoint_t glyphid = glyphInfo[i].codepoint;
@@ -335,16 +353,30 @@ void OUTLINE_FONT::drawSingleLineText( GAL* aGal, hb_buffer_t* aText, hb_font_t*
         cursor_x += x_advance;
         cursor_y += y_advance;
     }
-
-    const int             GLYPH_NAME_LEN = 256;
-    char                  glyph_name[GLYPH_NAME_LEN];
-    std::vector<VECTOR2D> ptListScaled;
+#endif
+#endif
 
     const double mirror_factor = ( aGal->IsTextMirrored() ? 1 : -1 );
-    const double xyscaler = 3.0e2;
+    // TODO: xyscaler is determined with the Stetson method to make
+    // debugging easier; root cause for why scaling does not seem to
+    // work is unknown (but most likely trivial)
+    const double xyscaler = 2.0e3;
     const double x_scale_factor = mirror_factor * galGlyphSize.x / xyscaler;
     const double y_scale_factor = galGlyphSize.y / xyscaler;
-    const double advance_scale_factor = 1.5; // / 10.0;
+    // TODO: why 2x? not sure why this is needed, but without it
+    // advance (at least X advance, haven't yet witnessed non-zero Y
+    // advance) seems to be about 0.5x what is required
+    const double advance_scale_factor = 2;
+    const double advance_x_factor = advance_scale_factor;
+    const double advance_y_factor = advance_scale_factor;
+#ifdef DEBUG
+#ifdef FOOFAA
+    std::cerr << "mirror_factor " << mirror_factor << " xyscaler " << xyscaler << " x_scale_factor "
+              << x_scale_factor << " y_scale_factor " << y_scale_factor << " advance_scale_factor "
+              << advance_scale_factor << " advance_x_factor " << advance_x_factor
+              << " advance_y_factor " << advance_y_factor << std::endl;
+#endif
+#endif
 
     cursor_x = 0;
     cursor_y = 0;
@@ -353,47 +385,58 @@ void OUTLINE_FONT::drawSingleLineText( GAL* aGal, hb_buffer_t* aText, hb_font_t*
         int                  cluster = glyphInfo[i].cluster;
         int                  codepoint = glyphInfo[i].codepoint;
         hb_glyph_position_t& pos = glyphPos[i];
+#ifdef DEBUG
+#ifdef FOOFAA
         std::cerr << "ch[" << i << "] cluster " << cluster << " codepoint " << codepoint
                   << " advance " << pos.x_advance << "," << pos.y_advance << " offset "
                   << pos.x_offset << "," << pos.y_offset << std::endl;
+#endif
+#endif
 
         FT_Load_Glyph( mFace, codepoint, FT_LOAD_NO_BITMAP | FT_LOAD_NO_SCALE );
-        FT_Get_Glyph_Name( mFace, codepoint, glyph_name, GLYPH_NAME_LEN );
 
         FT_GlyphSlot glyph = mFace->glyph;
         unsigned int glyph_index = glyph->glyph_index;
 
 #ifdef DEBUG
+#ifdef FOOFAA
+        FT_Get_Glyph_Name( mFace, codepoint, glyph_name, GLYPH_NAME_LEN );
         std::cerr << "glyph name [" << glyph_name << "] " << glyph_index << std::endl;
 #endif
-
+#endif
+#ifdef CONTOUR_CACHE
+        if( !mContourCache.count( glyph_index ) )
+        {
+            mContourCache[glyph_index] = outlineToStraightSegments( glyph->outline );
+        }
+        POINTS_LIST contours = mContourCache[glyph_index];
+#else
         POINTS_LIST contours = outlineToStraightSegments( glyph->outline );
+#endif
+
+        std::vector<VECTOR2D> ptListScaled;
         for( POINTS points : contours )
         {
             int ptCount = 0;
             ptListScaled.clear();
-            VECTOR2D firstPoint;
-            for( VECTOR2D v : points )
+            for( const VECTOR2D& v : points )
             {
                 VECTOR2D pt( -( v.x + cursor_x ), -( v.y + cursor_y ) );
                 VECTOR2D scaledPt( pt.x * x_scale_factor, pt.y * y_scale_factor );
                 ptListScaled.push_back( scaledPt );
-                if( ptCount == 0 )
-                {
-                    // save 1st point as we need to draw a line back to it at the end
-                    firstPoint = scaledPt;
-                }
                 ptCount++;
             }
 
-            if( !ptListScaled.empty() )
-            {
-                aGal->DrawPolyline( &ptListScaled[0], ptCount );
-            }
+            // always fill outline
+            //
+            // TODO: stroke outline instead of fill when appropriate
+            //aGal->SetIsFill( true );
+            //aGal->DrawPolyline( &ptListScaled[0], ptCount );
+            aGal->FillPolyline( ptListScaled );
         }
 
-        cursor_x += ( pos.x_advance * advance_scale_factor );
-        cursor_y += ( pos.y_advance * advance_scale_factor );
+        cursor_x += ( pos.x_advance * advance_x_factor );
+        cursor_y += ( pos.y_advance * advance_y_factor );
     }
 
     // Restore context
@@ -427,6 +470,7 @@ POINTS_LIST OUTLINE_FONT::outlineToStraightSegments( FT_Outline aOutline ) const
             char      tags = aOutline.tags[p];
 
 #ifdef DEBUG
+#ifdef FOOFAA
             std::cerr << "Point [" << point.x << "," << point.y << "] "
                       << ( onCurve( tags ) ? "on curve " : "off curve " )
                       << ( onCurve( tags )
@@ -438,6 +482,7 @@ POINTS_LIST OUTLINE_FONT::outlineToStraightSegments( FT_Outline aOutline ) const
                 std::cerr << ", dropout " << dropoutMode( tags );
             }
             std::cerr << std::endl;
+#endif
 #endif
             if( thirdOrderBezierPoint( tags ) )
             {
@@ -476,53 +521,56 @@ POINTS
 OUTLINE_FONT::approximateContour( const POINTS&            contour_points,
                                   const std::vector<bool>& contour_point_on_curve ) const
 {
-    POINTS                            approximation;
-    POINTS                            bezier;
-    POINTS::const_iterator            point_it = contour_points.begin();
-    POINTS::const_iterator            prev_point_it;
-    POINTS::const_iterator            prev2_point_it;
-    std::vector<bool>::const_iterator on_curve_it = contour_point_on_curve.begin();
-    std::vector<bool>::const_iterator prev_on_curve_it;
-    std::vector<bool>::const_iterator prev2_on_curve_it;
-    int                               n = 0;
-    VECTOR2D                          first_point = *point_it;
-    while( point_it != contour_points.end() )
+    POINTS   approximation;
+    POINTS   bezier;
+    int      n = 0;
+    VECTOR2D first_point;
+    VECTOR2D prev_point;
+    VECTOR2D prev2_point;
+    bool     prev_on_curve;
+    bool     prev2_on_curve;
+
+    // note: we want to go past the end as end+1 will be a repeat of the 1st point!
+    for( unsigned int i = 0; i <= contour_points.size(); i++ )
     {
+        unsigned int nth = i < contour_points.size() ? i : 0;
+        VECTOR2D     p = contour_points.at( nth );
+        bool         on_curve = contour_point_on_curve.at( nth );
 #ifdef DEBUG
-        VECTOR2D p = *point_it;
-        std::cerr << "Point " << p << " " << ( *on_curve_it ? "on" : "off" ) << " curve"
-                  << std::endl;
+#ifdef FOOFAA
+        std::cerr << "Point " << p << " " << ( on_curve ? "on" : "off" ) << " curve" << std::endl;
 #endif
-        if( *on_curve_it )
+#endif
+        if( on_curve )
         {
             // This point is on curve
             if( n == 0 )
             {
                 // First point
-                approximation.push_back( *point_it );
+                approximation.push_back( p );
             }
             else
             {
-                if( n > 0 && *prev_on_curve_it )
+                if( n > 0 && prev_on_curve )
                 {
                     // Previous point is also on curve - straight line segment
-                    approximation.push_back( *point_it );
+                    approximation.push_back( p );
                 }
                 else
                 {
                     // Previous point is not on curve
                     if( n > 1 )
                     {
-                        if( *prev2_on_curve_it )
+                        if( prev2_on_curve )
                         {
                             // This point is on curve, previous is not, the one before that is
                             // == quadratic Bezier curve segment
                             //
                             // TODO: handle cubic curves
                             bezier.clear();
-                            bezier.push_back( *prev2_point_it );
-                            bezier.push_back( *prev_point_it );
-                            bezier.push_back( *point_it );
+                            bezier.push_back( prev2_point );
+                            bezier.push_back( prev_point );
+                            bezier.push_back( p );
                             bool success = approximateBezierCurve( approximation, bezier );
                             if( !success )
                             {
@@ -554,52 +602,35 @@ OUTLINE_FONT::approximateContour( const POINTS&            contour_points,
         }
 
         n++;
-        prev2_point_it = prev_point_it;
-        prev_point_it = point_it++;
-        prev2_on_curve_it = prev_on_curve_it;
-        prev_on_curve_it = on_curve_it++;
+        prev2_point = prev_point;
+        prev_point = p;
+        prev2_on_curve = prev_on_curve;
+        prev_on_curve = on_curve;
     }
 
-    // add a copy of 1st point to end to close the contour
-    approximation.push_back( first_point );
     return approximation;
 }
 
 
-VECTOR2D OUTLINE_FONT::approximateBezierPoint( const double aT, const double aOneMinusT,
-                                               const VECTOR2D& aPt1, const VECTOR2D& aPt2 ) const
-{
-    VECTOR2D pt1prime( aPt1.x * aOneMinusT, aPt1.y * aOneMinusT );
-    VECTOR2D pt2prime( aPt2.x * aT, aPt2.y * aT );
-    VECTOR2D r = pt1prime + pt2prime;
-    return r;
-}
-
-
+// use converter in kimath
 bool OUTLINE_FONT::approximateBezierCurve( POINTS& result, const POINTS& bezier ) const
 {
-    std::vector<VECTOR2D> approximatedPoints;
+    // cp0 = qp0, cp1 = qp0 + 2/3 * (qp1 - qp0), cp2 = qp2 + 2/3 * (qp1 - qp2), cp3 = qp2
+    POINTS cubic;
+    cubic.push_back( bezier.at( 0 ) );                                                     // cp0
+    cubic.push_back( bezier.at( 0 ) + ( 2 / 3.0 ) * ( bezier.at( 1 ) - bezier.at( 0 ) ) ); // cp1
+    cubic.push_back( bezier.at( 2 ) + ( 2 / 3.0 ) * ( bezier.at( 1 ) - bezier.at( 2 ) ) ); // cp2
+    cubic.push_back( bezier.at( 2 ) );                                                     // cp3
 
-    const double precision = 0.1;
-    for( double t = 0; t < 1; t += precision )
-    {
-        double oneMinusT = ( 1 - t );
-        approximatedPoints = bezier;
-        while( approximatedPoints.size() > 1 )
-        {
-            auto ptIter = approximatedPoints.begin();
-            auto ptIterEnd = std::prev( approximatedPoints.end() );
-            while( ptIter != ptIterEnd )
-            {
-                auto        updateThisIter = ptIter;
-                const auto& pt1 = *( ptIter++ );
-                const auto& pt2 = *( ptIter );
-                const auto  approximatedPoint = approximateBezierPoint( t, oneMinusT, pt1, pt2 );
-                *updateThisIter = approximatedPoint;
-                approximatedPoints.pop_back();
-            }
-            result.push_back( approximatedPoints[0] );
-        }
-    }
+    POINTS tmp;
+    // BEZIER_POLY only handles cubic Bezier curves, even though the
+    // comments say otherwise...
+    BEZIER_POLY converter( cubic );
+    // TODO: find out what the minimum segment length should really be!
+    converter.GetPoly( tmp, 50 );
+
+    for( unsigned int i = 0; i < tmp.size(); i++ )
+        result.push_back( tmp.at( i ) );
+
     return true;
 }
