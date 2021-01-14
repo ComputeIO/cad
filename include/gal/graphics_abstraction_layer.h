@@ -115,6 +115,13 @@ public:
     virtual void DrawPolyline( const SHAPE_LINE_CHAIN& aLineChain ){};
 
     /**
+     * Draw a filled polyline
+     *
+     * @param aPointList is a list of 2D-Vectors containing the polyline points.
+     */
+    virtual void FillPolyline( const std::vector<VECTOR2D>& aPointList ) = 0;
+
+    /**
      * Draw a circle using world coordinates.
      *
      * @param aCenterPoint is the center point of the circle.
@@ -294,7 +301,22 @@ public:
     // Text
     // ----
 
-    const FONT& GetStrokeFont( const wxString* fontSpecifier = nullptr );
+    FONT& GetFont( const wxString& fontSpecifier = "" ) const
+    {
+        return FONT::GetFont( fontSpecifier );
+    }
+    FONT& GetFont( const wxString* fontSpecifier ) const
+    {
+        if( fontSpecifier )
+        {
+            return GetFont( *fontSpecifier );
+        }
+        else
+        {
+            return GetFont();
+        }
+    }
+    FONT& DefaultFont() const { return GetFont(); }
 
     /**
      * Draws a vector type text.
@@ -889,10 +911,7 @@ public:
      * Checks the state of the context lock
      * @return True if the context is currently locked
      */
-    virtual bool IsContextLocked()
-    {
-        return false;
-    }
+    virtual bool IsContextLocked() { return false; }
 
 protected:
     /// Private: use GAL_CONTEXT_LOCKER RAII object
@@ -1006,12 +1025,6 @@ protected:
     COLOR4D  cursorColor;        ///< Cursor color
     bool     fullscreenCursor;   ///< Shape of the cursor (fullscreen or small cross)
     VECTOR2D cursorPosition;     ///< Current cursor position (world coordinates)
-
-    /// Instance of object that stores information about how to draw texts (default font)
-    FONT* defaultFont;
-
-    /// Alternate fonts
-    FONT_MAP fontMap;
 
 private:
     struct TEXT_PROPERTIES

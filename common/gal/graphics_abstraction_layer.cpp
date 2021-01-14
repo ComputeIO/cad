@@ -75,9 +75,6 @@ GAL::GAL( GAL_DISPLAY_OPTIONS& aDisplayOptions ) : options( aDisplayOptions )
     // Initialize text properties
     ResetTextAttributes();
 
-    // Load default font
-    defaultFont = FONT::GetFont();
-
     // subscribe for settings updates
     observerLink = options.Subscribe( this );
 }
@@ -170,46 +167,10 @@ void GAL::ResetTextAttributes()
 }
 
 
-const FONT& GAL::GetStrokeFont( const wxString* fontSpecifier )
-{
-    if( !fontSpecifier || fontSpecifier->empty() )
-    {
-        return *defaultFont;
-    }
-
-    FONT_MAP::iterator it = fontMap.find( *fontSpecifier );
-
-    if( it != fontMap.end() )
-    {
-        // already loaded
-        return *( it->second );
-    }
-    else
-    {
-        // try loading font
-        FONT* font = FONT::GetFont( *fontSpecifier );
-
-        if( font )
-        {
-            // save font for future use
-            fontMap[*fontSpecifier] = font;
-
-            // return the newly loaded font
-            return *font;
-        }
-        else
-        {
-            // font loading failed, default to Newstroke
-            return *defaultFont;
-        }
-    }
-}
-
-
 void GAL::StrokeText( const wxString& aText, const VECTOR2D& aPosition, double aRotationAngle,
                       wxString* aFontSpecifier )
 {
-    GetStrokeFont( aFontSpecifier ).Draw( this, aText, aPosition, aRotationAngle );
+    GetFont( aFontSpecifier ).Draw( this, aText, aPosition, aRotationAngle );
 }
 
 
@@ -220,7 +181,7 @@ VECTOR2D GAL::GetTextLineSize( const UTF8& aText ) const
     // aText is expected to be only one line text.
     //
     // TODO: use something other than defaultFont when appropriate
-    return defaultFont->ComputeTextLineSize( this, aText );
+    return DefaultFont().ComputeTextLineSize( this, aText );
 }
 
 
