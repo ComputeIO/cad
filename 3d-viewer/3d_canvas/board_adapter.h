@@ -50,10 +50,10 @@
 class COLOR_SETTINGS;
 
 /// A type that stores a container of 2d objects for each layer id
-typedef std::map< PCB_LAYER_ID, BVH_CONTAINER_2D *> MAP_CONTAINER_2D_BASE;
+typedef std::map<PCB_LAYER_ID, BVH_CONTAINER_2D*> MAP_CONTAINER_2D_BASE;
 
 /// A type that stores polysets for each layer id
-typedef std::map< PCB_LAYER_ID, SHAPE_POLY_SET *> MAP_POLY;
+typedef std::map<PCB_LAYER_ID, SHAPE_POLY_SET*> MAP_POLY;
 
 /// This defines the range that all coord will have to be rendered.
 /// It will use this value to convert to a normalized value between
@@ -84,10 +84,7 @@ public:
     /**
      * Return the 3D cache manager pointer.
      */
-    S3D_CACHE* Get3dCacheManager() const noexcept
-    {
-        return m_3dModelManager;
-    }
+    S3D_CACHE* Get3dCacheManager() const noexcept { return m_3dModelManager; }
 
     /**
      * Get a configuration status of a flag.
@@ -95,7 +92,7 @@ public:
      * @param aFlag the flag to get the status.
      * @return true if flag is set, false if not.
      */
-    bool GetFlag( DISPLAY3D_FLG aFlag ) const ;
+    bool GetFlag( DISPLAY3D_FLG aFlag ) const;
 
     /**
      * Set the status of a flag.
@@ -122,25 +119,16 @@ public:
      *
      * @param aBoard board to process.
      */
-    void SetBoard( BOARD* aBoard ) noexcept
-    {
-        m_board = aBoard;
-    }
+    void SetBoard( BOARD* aBoard ) noexcept { m_board = aBoard; }
 
     /**
      * Get current board to be rendered.
      *
      * @return BOARD pointer
      */
-    const BOARD* GetBoard() const noexcept
-    {
-        return m_board;
-    }
+    const BOARD* GetBoard() const noexcept { return m_board; }
 
-    void SetColorSettings( COLOR_SETTINGS* aSettings ) noexcept
-    {
-        m_colors = aSettings;
-    }
+    void SetColorSettings( COLOR_SETTINGS* aSettings ) noexcept { m_colors = aSettings; }
 
     /**
      * Function to be called by the render when it need to reload the settings for the board.
@@ -155,50 +143,35 @@ public:
      *
      * @return the conversion factor to transform a position from the board to 3D units.
      */
-    double BiuTo3dUnits() const noexcept
-    {
-        return m_biuTo3Dunits;
-    }
+    double BiuTo3dUnits() const noexcept { return m_biuTo3Dunits; }
 
     /**
      * Get the board outling bounding box.
      *
      * @return the board bounding box in 3D units.
      */
-    const BBOX_3D& GetBBox() const noexcept
-    {
-        return m_boardBoundingBox;
-    }
+    const BBOX_3D& GetBBox() const noexcept { return m_boardBoundingBox; }
 
     /**
      * Get the current epoxy thickness.
      *
      * @return epoxy thickness in 3D units.
      */
-    float GetEpoxyThickness() const noexcept
-    {
-        return m_epoxyThickness3DU;
-    }
+    float GetEpoxyThickness() const noexcept { return m_epoxyThickness3DU; }
 
     /**
      * Get the current non copper layers thickness.
      *
      * @return thickness in 3D units of non copper layers.
      */
-    float GetNonCopperLayerThickness() const noexcept
-    {
-        return m_nonCopperLayerThickness3DU;
-    }
+    float GetNonCopperLayerThickness() const noexcept { return m_nonCopperLayerThickness3DU; }
 
     /**
      * Get the current copper layer thickness.
      *
      * @return thickness in 3D units of copper layers.
      */
-    float GetCopperThickness() const noexcept
-    {
-        return m_copperThickness3DU;
-    }
+    float GetCopperThickness() const noexcept { return m_copperThickness3DU; }
 
     /**
      * Get the current copper layer thickness.
@@ -212,30 +185,21 @@ public:
      *
      * @return size in BIU units.
      */
-    wxSize GetBoardSize() const noexcept
-    {
-        return m_boardSize;
-    }
+    wxSize GetBoardSize() const noexcept { return m_boardSize; }
 
     /**
      * Get the board center.
      *
      * @return position in BIU units.
      */
-    wxPoint GetBoardPos() const noexcept
-    {
-        return m_boardPos;
-    }
+    wxPoint GetBoardPos() const noexcept { return m_boardPos; }
 
     /**
      * The board center position in 3D units.
      *
      * @return board center vector position in 3D units.
      */
-    const SFVEC3F& GetBoardCenter() const noexcept
-    {
-        return m_boardCenter;
-    }
+    const SFVEC3F& GetBoardCenter() const noexcept { return m_boardCenter; }
 
     /**
      * Get the position of the footprint in 3d integer units considering if it is flipped or not.
@@ -244,27 +208,21 @@ public:
      *                   if footprint is on back (bottom) layer.
      * @return the Z position of 3D shapes, in 3D integer units.
      */
-    float GetFootprintZPos( bool aIsFlipped ) const ;
+    float GetFootprintZPos( bool aIsFlipped ) const;
 
     /**
      * Get the current grid.
      *
      * @return space type of the grid.
      */
-    GRID3D_TYPE GetGridType() const noexcept
-    {
-        return m_gridType;
-    }
+    GRID3D_TYPE GetGridType() const noexcept { return m_gridType; }
 
     /**
      * Set the current grid.
      *
      * @param aGridType the type space of the grid.
      */
-    void SetGridType( GRID3D_TYPE aGridType ) noexcept
-    {
-        m_gridType = aGridType;
-    }
+    void SetGridType( GRID3D_TYPE aGridType ) noexcept { m_gridType = aGridType; }
 
     /**
      * Get the current antialiasing mode value.
@@ -283,44 +241,29 @@ public:
     /**
      * @param aRenderEngine the render engine mode selected.
      */
-    void SetRenderEngine( RENDER_ENGINE aRenderEngine ) noexcept
-    {
-        m_renderEngine = aRenderEngine;
-    }
+    void SetRenderEngine( RENDER_ENGINE aRenderEngine ) noexcept { m_renderEngine = aRenderEngine; }
 
     /**
      * @return render engine on use.
      */
-    RENDER_ENGINE GetRenderEngine() const noexcept
-    {
-        return m_renderEngine;
-    }
+    RENDER_ENGINE GetRenderEngine() const noexcept { return m_renderEngine; }
 
     /**
      * @param aMaterialMode the render material mode.
      */
-    void SetMaterialMode( MATERIAL_MODE aMaterialMode ) noexcept
-    {
-        m_materialMode = aMaterialMode;
-    }
+    void SetMaterialMode( MATERIAL_MODE aMaterialMode ) noexcept { m_materialMode = aMaterialMode; }
 
     /**
      * @return material rendering mode.
      */
-    MATERIAL_MODE GetMaterialMode() const noexcept
-    {
-        return m_materialMode;
-    }
+    MATERIAL_MODE GetMaterialMode() const noexcept { return m_materialMode; }
 
     /**
      * Get the current polygon of the epoxy board.
      *
      * @return the shape polygon
      */
-    const SHAPE_POLY_SET& GetBoardPoly() const noexcept
-    {
-        return m_board_poly;
-    }
+    const SHAPE_POLY_SET& GetBoardPoly() const noexcept { return m_board_poly; }
 
     /**
      * Get the technical color of a layer.
@@ -371,40 +314,25 @@ public:
      *
      * @return the map containers of this board.
      */
-    const MAP_CONTAINER_2D_BASE& GetLayerMap() const noexcept
-    {
-        return m_layerMap;
-    }
+    const MAP_CONTAINER_2D_BASE& GetLayerMap() const noexcept { return m_layerMap; }
 
-    const BVH_CONTAINER_2D* GetPlatedPadsFront() const noexcept
-    {
-        return m_platedPadsFront;
-    }
+    const BVH_CONTAINER_2D* GetPlatedPadsFront() const noexcept { return m_platedPadsFront; }
 
-    const BVH_CONTAINER_2D* GetPlatedPadsBack() const noexcept
-    {
-        return m_platedPadsBack;
-    }
+    const BVH_CONTAINER_2D* GetPlatedPadsBack() const noexcept { return m_platedPadsBack; }
 
     /**
      * Get the map of container that have the holes per layer.
      *
      * @return the map containers of holes from this board.
      */
-    const MAP_CONTAINER_2D_BASE& GetLayerHoleMap() const noexcept
-    {
-        return m_layerHoleMap;
-    }
+    const MAP_CONTAINER_2D_BASE& GetLayerHoleMap() const noexcept { return m_layerHoleMap; }
 
     /**
      * Get the inflated through hole outside diameters container.
      *
      * @return a container with holes.
      */
-    const BVH_CONTAINER_2D& GetThroughHoleOds() const noexcept
-    {
-        return m_throughHoleOds;
-    }
+    const BVH_CONTAINER_2D& GetThroughHoleOds() const noexcept { return m_throughHoleOds; }
 
     /**
      * Get the through hole annular rings container.
@@ -423,10 +351,7 @@ public:
      *
      * @return a container with through hold outside diameter 2D polygons.
      */
-    const SHAPE_POLY_SET& GetThroughHoleOdPolys() const noexcept
-    {
-        return m_throughHoleOdPolys;
-    }
+    const SHAPE_POLY_SET& GetThroughHoleOdPolys() const noexcept { return m_throughHoleOdPolys; }
 
     const SHAPE_POLY_SET& GetThroughHoleAnnularRingPolys() const noexcept
     {
@@ -441,10 +366,7 @@ public:
     /**
      * @return a container with through hole via hole outside diameters.
      */
-    const BVH_CONTAINER_2D& GetThroughHoleViaOds() const noexcept
-    {
-        return m_throughHoleViaOds;
-    }
+    const BVH_CONTAINER_2D& GetThroughHoleViaOds() const noexcept { return m_throughHoleViaOds; }
 
     const SHAPE_POLY_SET& GetThroughHoleViaOdPolys() const noexcept
     {
@@ -456,60 +378,42 @@ public:
      *
      * @return a container with holes inner diameters.
      */
-    const BVH_CONTAINER_2D& GetThroughHoleIds() const noexcept
-    {
-        return m_throughHoleIds;
-    }
+    const BVH_CONTAINER_2D& GetThroughHoleIds() const noexcept { return m_throughHoleIds; }
 
     /**
      * Get number of vias in this board.
      *
      * @return number of vias.
      */
-    unsigned int GetViaCount() const noexcept
-    {
-        return m_viaCount;
-    }
+    unsigned int GetViaCount() const noexcept { return m_viaCount; }
 
     /**
      * Get number of holes in this board.
      *
      * @return number of holes.
      */
-    unsigned int GetHoleCount() const noexcept
-    {
-        return m_holeCount;
-    }
+    unsigned int GetHoleCount() const noexcept { return m_holeCount; }
 
     /**
      * Thee average diameter of the via holes.
      *
      * @return via hole average diameter dimension in 3D units.
      */
-    float GetAverageViaHoleDiameter() const noexcept
-    {
-        return m_averageViaHoleDiameter;
-    }
+    float GetAverageViaHoleDiameter() const noexcept { return m_averageViaHoleDiameter; }
 
     /**
      * Average diameter of through holes.
      *
      * @return the average diameter of through holes in 3D units.
      */
-    float GetAverageHoleDiameter() const noexcept
-    {
-        return m_averageHoleDiameter;
-    }
+    float GetAverageHoleDiameter() const noexcept { return m_averageHoleDiameter; }
 
     /**
      * Average width of the tracks.
      *
      * @return average track width in 3D units.
      */
-    float GetAverageTrackWidth() const noexcept
-    {
-        return m_averageTrackWidth;
-    }
+    float GetAverageTrackWidth() const noexcept { return m_averageTrackWidth; }
 
     /**
      * @param aDiameter3DU diameter in 3DU.
@@ -528,30 +432,15 @@ public:
      *
      * @return the map with polygon's layers.
      */
-    const MAP_POLY& GetPolyMap() const noexcept
-    {
-        return m_layers_poly;
-    }
+    const MAP_POLY& GetPolyMap() const noexcept { return m_layers_poly; }
 
-    const SHAPE_POLY_SET* GetFrontPlatedPadPolys()
-    {
-        return m_frontPlatedPadPolys;
-    }
+    const SHAPE_POLY_SET* GetFrontPlatedPadPolys() { return m_frontPlatedPadPolys; }
 
-    const SHAPE_POLY_SET* GetBackPlatedPadPolys()
-    {
-        return m_backPlatedPadPolys;
-    }
+    const SHAPE_POLY_SET* GetBackPlatedPadPolys() { return m_backPlatedPadPolys; }
 
-    const MAP_POLY& GetHoleIdPolysMap() const noexcept
-    {
-        return m_layerHoleIdPolys;
-    }
+    const MAP_POLY& GetHoleIdPolysMap() const noexcept { return m_layerHoleIdPolys; }
 
-    const MAP_POLY& GetHoleOdPolysMap() const noexcept
-    {
-        return m_layerHoleOdPolys;
-    }
+    const MAP_POLY& GetHoleOdPolysMap() const noexcept { return m_layerHoleOdPolys; }
 
 private:
     /**
@@ -564,9 +453,9 @@ private:
     void destroyLayers();
 
     // Helper functions to create the board
-     void createTrack( const TRACK* aTrack, CONTAINER_2D_BASE* aDstContainer, int aClearanceValue );
+    void createTrack( const TRACK* aTrack, CONTAINER_2D_BASE* aDstContainer, int aClearanceValue );
 
-    void createPadWithClearance( const PAD *aPad, CONTAINER_2D_BASE* aDstContainer,
+    void createPadWithClearance( const PAD* aPad, CONTAINER_2D_BASE* aDstContainer,
                                  PCB_LAYER_ID aLayer, wxSize aClearanceValue ) const;
 
     OBJECT_2D* createPadWithDrill( const PAD* aPad, int aInflateValue );
@@ -576,9 +465,13 @@ private:
                                bool aSkipNPTHPadsWihNoCopper, bool aSkipPlatedPads,
                                bool aSkipNonPlatedPads );
 
-    void addFootprintShapesWithClearance( const FOOTPRINT* aFootprint,
-                                          CONTAINER_2D_BASE* aDstContainer,
-                                          PCB_LAYER_ID aLayerId, int aInflateValue );
+    void addFootprintShapesWithClearance( const FOOTPRINT*   aFootprint,
+                                          CONTAINER_2D_BASE* aDstContainer, PCB_LAYER_ID aLayerId,
+                                          int aInflateValue );
+
+    void drawTextFromAddShapeWithClearance( const PCB_TEXT* aText, const wxPoint aPosition,
+                                            const wxString& aString, const wxString& aFontName,
+                                            bool aForceBold, int aPenWidth );
 
     void addShapeWithClearance( const PCB_TEXT* aText, CONTAINER_2D_BASE* aDstContainer,
                                 PCB_LAYER_ID aLayerId, int aClearanceValue );
@@ -600,7 +493,7 @@ private:
 
     // Helper functions to create poly contours
     void buildPadOutlineAsPolygon( const PAD* aPad, SHAPE_POLY_SET& aCornerBuffer,
-                                   int aWidth) const;
+                                   int aWidth ) const;
 
     void transformFPShapesToPolygon( const FOOTPRINT* aFootprint, PCB_LAYER_ID aLayer,
                                      SHAPE_POLY_SET& aCornerBuffer ) const;
@@ -638,72 +531,72 @@ public:
     float m_RtSpreadRefractions;
 
 private:
-    BOARD*              m_board;
-    S3D_CACHE*          m_3dModelManager;
-    COLOR_SETTINGS*     m_colors;
+    BOARD*          m_board;
+    S3D_CACHE*      m_3dModelManager;
+    COLOR_SETTINGS* m_colors;
 
-    std::vector< bool > m_drawFlags;
-    GRID3D_TYPE         m_gridType;
-    RENDER_ENGINE       m_renderEngine;
-    MATERIAL_MODE       m_materialMode;
-    ANTIALIASING_MODE   m_antiAliasingMode;
+    std::vector<bool> m_drawFlags;
+    GRID3D_TYPE       m_gridType;
+    RENDER_ENGINE     m_renderEngine;
+    MATERIAL_MODE     m_materialMode;
+    ANTIALIASING_MODE m_antiAliasingMode;
 
 
-    wxPoint m_boardPos;          ///< Board center position in board internal units.
-    wxSize  m_boardSize;         ///< Board size in board internal units.
-    SFVEC3F m_boardCenter;       ///< 3D center position of the board in 3D units.
-    BBOX_3D m_boardBoundingBox;  ///< 3D bounding box of the board in 3D units.
+    wxPoint m_boardPos;         ///< Board center position in board internal units.
+    wxSize  m_boardSize;        ///< Board size in board internal units.
+    SFVEC3F m_boardCenter;      ///< 3D center position of the board in 3D units.
+    BBOX_3D m_boardBoundingBox; ///< 3D bounding box of the board in 3D units.
 
 
     ///< Polygon contours for each layer.
-    MAP_POLY          m_layers_poly;
+    MAP_POLY m_layers_poly;
 
-    SHAPE_POLY_SET*   m_frontPlatedPadPolys;
-    SHAPE_POLY_SET*   m_backPlatedPadPolys;
+    SHAPE_POLY_SET* m_frontPlatedPadPolys;
+    SHAPE_POLY_SET* m_backPlatedPadPolys;
 
     ///< Polygon contours for hole outer diameters for each layer.
-    MAP_POLY          m_layerHoleOdPolys;
+    MAP_POLY m_layerHoleOdPolys;
 
     ///< Polygon contours for hole inner diameters for each layer.
-    MAP_POLY          m_layerHoleIdPolys;
+    MAP_POLY m_layerHoleIdPolys;
 
     ///< Polygon contours for non plated through hole outer diameters.
-    SHAPE_POLY_SET    m_nonPlatedThroughHoleOdPolys;
+    SHAPE_POLY_SET m_nonPlatedThroughHoleOdPolys;
 
     ///< Polygon contours for through hole outer diameters.
-    SHAPE_POLY_SET    m_throughHoleOdPolys;
+    SHAPE_POLY_SET m_throughHoleOdPolys;
 
     ///< Polygon contours for through holes via outer diameters.
-    SHAPE_POLY_SET    m_throughHoleViaOdPolys;
+    SHAPE_POLY_SET m_throughHoleViaOdPolys;
 
     ///< Polygon contours for through hole via annular rings.
-    SHAPE_POLY_SET    m_throughHoleAnnularRingPolys;
+    SHAPE_POLY_SET m_throughHoleAnnularRingPolys;
 
-    SHAPE_POLY_SET    m_board_poly;       ///< Board outline polygon.
+    SHAPE_POLY_SET m_board_poly; ///< Board outline polygon.
 
-    MAP_CONTAINER_2D_BASE  m_layerMap;    ///< 2D elements for each layer.
+    MAP_CONTAINER_2D_BASE m_layerMap; ///< 2D elements for each layer.
 
 
     BVH_CONTAINER_2D* m_platedPadsFront;
     BVH_CONTAINER_2D* m_platedPadsBack;
 
     ///< The holes per each layer.
-    MAP_CONTAINER_2D_BASE  m_layerHoleMap;
+    MAP_CONTAINER_2D_BASE m_layerHoleMap;
 
     ///< List of through holes with the radius of the hole inflated with the copper thickness.
-    BVH_CONTAINER_2D   m_throughHoleOds;
+    BVH_CONTAINER_2D m_throughHoleOds;
 
     ///< List of plated through hole annular rings.
-    BVH_CONTAINER_2D   m_throughHoleAnnularRings;
+    BVH_CONTAINER_2D m_throughHoleAnnularRings;
 
     ///< List of through hole inner diameters.
-    BVH_CONTAINER_2D   m_throughHoleIds;
+    BVH_CONTAINER_2D m_throughHoleIds;
 
     ///< List of through hole vias with the radius of the hole inflated with the copper thickness.
-    BVH_CONTAINER_2D   m_throughHoleViaOds;
+    BVH_CONTAINER_2D m_throughHoleViaOds;
 
     ///< List of through hole via inner diameters.
-    BVH_CONTAINER_2D   m_throughHoleViaIds;
+    BVH_CONTAINER_2D m_throughHoleViaIds;
 
     ///< Number of copper layers actually used by the board.
     unsigned int m_copperLayersCount;
@@ -712,37 +605,37 @@ private:
     double m_biuTo3Dunits;
 
     ///< Top (End) Z position of each layer in 3D units.
-    std::array<float, PCB_LAYER_ID_COUNT>  m_layerZcoordTop;
+    std::array<float, PCB_LAYER_ID_COUNT> m_layerZcoordTop;
 
     ///< Bottom (Start) Z position of each layer in 3D units.
-    std::array<float, PCB_LAYER_ID_COUNT>  m_layerZcoordBottom;
+    std::array<float, PCB_LAYER_ID_COUNT> m_layerZcoordBottom;
 
     ///< Copper thickness in 3D units.
-    float  m_copperThickness3DU;
+    float m_copperThickness3DU;
 
     ///< Epoxy thickness in 3D units.
-    float  m_epoxyThickness3DU;
+    float m_epoxyThickness3DU;
 
     ///< Non copper layers thickness in 3D units.
-    float  m_nonCopperLayerThickness3DU;
+    float m_nonCopperLayerThickness3DU;
 
     ///< Number of tracks in the board.
     unsigned int m_trackCount;
 
     ///< Track average width.
-    float        m_averageTrackWidth;
+    float m_averageTrackWidth;
 
     ///< Number of through hole vias in the board.
     unsigned int m_viaCount;
 
     ///< Computed average diameter of the via holes in 3D units.
-    float        m_averageViaHoleDiameter;
+    float m_averageViaHoleDiameter;
 
     ///< Number of holes in the board.
     unsigned int m_holeCount;
 
     ///< Computed average diameter of the holes in 3D units.
-    float        m_averageHoleDiameter;
+    float m_averageHoleDiameter;
 
     /**
      *  Trace mask used to enable or disable the trace output of this class.
@@ -751,7 +644,6 @@ private:
      *  more information.
      */
     static const wxChar* m_logTrace;
-
 };
 
 
@@ -761,7 +653,7 @@ public:
     virtual BOARD_ADAPTER& GetAdapter() = 0;
     virtual CAMERA&        GetCurrentCamera() = 0;
 
-    virtual ~EDA_3D_BOARD_HOLDER() {};
+    virtual ~EDA_3D_BOARD_HOLDER(){};
 };
 
 #endif // BOARD_ADAPTER_H
