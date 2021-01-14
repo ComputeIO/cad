@@ -675,8 +675,8 @@ void BOARD_ADAPTER::addShapeWithClearance( const PCB_SHAPE*   aShape,
         {
             SHAPE_POLY_SET polyList;
 
-            aShape->TransformShapeWithClearanceToPolygon( polyList, aLayerId, 0,
-                                                          ARC_HIGH_DEF, ERROR_INSIDE );
+            aShape->TransformShapeWithClearanceToPolygon( polyList, aLayerId, 0, ARC_HIGH_DEF,
+                                                          ERROR_INSIDE );
 
             polyList.Simplify( SHAPE_POLY_SET::PM_FAST );
 

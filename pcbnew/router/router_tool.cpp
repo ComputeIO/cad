@@ -460,8 +460,8 @@ bool ROUTER_TOOL::Init()
             return m_router->Mode() == PNS::PNS_MODE_ROUTE_DIFF_PAIR;
         };
 
-    menu.AddMenu( m_trackViaMenu.get(),              SELECTION_CONDITIONS::ShowAlways );
-    menu.AddMenu( m_diffPairMenu.get(),              diffPairCond );
+    menu.AddMenu( m_trackViaMenu.get(), SELECTION_CONDITIONS::ShowAlways );
+    menu.AddMenu( m_diffPairMenu.get(), diffPairCond );
 
     menu.AddItem( PCB_ACTIONS::routerSettingsDialog, SELECTION_CONDITIONS::ShowAlways );
 
