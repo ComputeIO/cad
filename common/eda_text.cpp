@@ -212,7 +212,7 @@ wxString EDA_TEXT::ShortenedShownText() const
 int EDA_TEXT::GetInterline() const
 {
     // return KiROUND( KIGFX::STROKE_FONT::GetInterline( GetTextHeight() ) );
-    return KiROUND( basic_gal.GetStrokeFont().GetInterline( GetTextHeight() ) );
+    return KiROUND( basic_gal.GetFont().GetInterline( GetTextHeight() ) );
 }
 
 
@@ -252,7 +252,7 @@ EDA_RECT EDA_TEXT::GetTextBox( int aLine, bool aInvertY ) const
     }
 
     // calculate the H and V size
-    const auto& font = basic_gal.GetStrokeFont();
+    const auto& font = basic_gal.GetFont();
     VECTOR2D    fontSize( GetTextSize() );
     double      penWidth( thickness );
     int dx = KiROUND( font.ComputeStringBoundaryLimits( &basic_gal, text, fontSize, penWidth ).x );
