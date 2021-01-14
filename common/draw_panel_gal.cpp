@@ -39,7 +39,7 @@
 #include <gal/graphics_abstraction_layer.h>
 #include <gal/opengl/opengl_gal.h>
 #include <gal/cairo/cairo_gal.h>
-
+#include <gal/dummy_gal.h>
 
 #include <tool/tool_dispatcher.h>
 #include <tool/tool_manager.h>
@@ -440,16 +440,16 @@ bool EDA_DRAW_PANEL_GAL::SwitchBackend( GAL_TYPE aGalType )
             // warn about unhandled GAL canvas type, but continue with the fallback option
 
         case GAL_TYPE_NONE:
-            // KIGFX::GAL is a stub - it actually does cannot display anything,
+            // KIGFX::DUMMY_GAL is a stub - it actually does cannot display anything,
             // but prevents code relying on GAL canvas existence from crashing
-            new_gal = new KIGFX::GAL( m_options );
+            new_gal = new KIGFX::DUMMY_GAL( m_options );
             break;
         }
     }
     catch( std::runtime_error& err )
     {
         // Create a dummy GAL
-        new_gal = new KIGFX::GAL( m_options );
+        new_gal = new KIGFX::DUMMY_GAL( m_options );
         aGalType = GAL_TYPE_NONE;
         DisplayError( m_parent, wxString( err.what() ) );
         result = false;
