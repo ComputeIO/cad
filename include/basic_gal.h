@@ -47,7 +47,7 @@ class PLOTTER;
  * (or at least restricted to plotter and DRC "canvas")
  */
 
-struct TRANSFORM_PRM    // A helper class to transform coordinates in BASIC_GAL canvas
+struct TRANSFORM_PRM // A helper class to transform coordinates in BASIC_GAL canvas
 {
     VECTOR2D m_rotCenter;
     VECTOR2D m_moveOffset;
@@ -55,11 +55,10 @@ struct TRANSFORM_PRM    // A helper class to transform coordinates in BASIC_GAL 
 };
 
 
-class BASIC_GAL: public KIGFX::GAL
+class BASIC_GAL : public KIGFX::GAL
 {
 public:
-    BASIC_GAL( KIGFX::GAL_DISPLAY_OPTIONS& aDisplayOptions ) :
-        GAL( aDisplayOptions )
+    BASIC_GAL( KIGFX::GAL_DISPLAY_OPTIONS& aDisplayOptions ) : GAL( aDisplayOptions )
     {
         m_DC = nullptr;
         m_Color = RED;
@@ -69,16 +68,21 @@ public:
         m_isClipped = false;
     }
 
-    void SetPlotter( PLOTTER* aPlotter )
-    {
-        m_plotter = aPlotter;
-    }
+    void SetPlotter( PLOTTER* aPlotter ) { m_plotter = aPlotter; }
 
-    void SetCallback( void (* aCallback)( int x0, int y0, int xf, int yf, void* aData ),
-                      void* aData  )
+    void SetCallback( void ( *aCallback )( int x0, int y0, int xf, int yf, void* aData ),
+                      void* aData )
     {
         m_callback = aCallback;
         m_callbackData = aData;
+    }
+
+    void SetOutlineCallback( bool ( *aCallback )( const std::vector<wxPoint>& aOutline,
+                                                  void*                       aData ),
+                             void* aData )
+    {
+        m_outlineCallback = aCallback;
+        m_outlineCallbackData = aData;
     }
 
     /// Set a clip box for drawings
@@ -92,10 +96,7 @@ public:
     }
 
     /// Save the context.
-    virtual void Save() override
-    {
-        m_transformHistory.push( m_transform );
-    }
+    virtual void Save() override { m_transformHistory.push( m_transform ); }
 
     virtual void Restore() override
     {
@@ -111,6 +112,13 @@ public:
     virtual void DrawPolyline( const std::deque<VECTOR2D>& aPointList ) override;
 
     virtual void DrawPolyline( const VECTOR2D aPointList[], int aListSize ) override;
+
+    /**
+     * Draw a filled polyline
+     *
+     * @param aPointList is a list of 2D-Vectors containing the polyline points.
+     */
+    virtual void FillPolyline( const std::vector<VECTOR2D>& aPointList ) override;
 
     /**
      * Start and end points are defined as 2D-Vectors.
@@ -142,28 +150,33 @@ public:
     }
 
 private:
-    void doDrawPolyline( const std::vector<wxPoint>& aLocalPointList );
+    void doDrawPolyline( const std::vector<wxPoint>& aLocalPointList, bool aFill = false );
 
     // Apply the roation/translation transform to aPoint
     const VECTOR2D transform( const VECTOR2D& aPoint ) const;
 
 public:
-    wxDC* m_DC;
+    wxDC*   m_DC;
     COLOR4D m_Color;
 
 private:
-    TRANSFORM_PRM m_transform;
-    std::stack <TRANSFORM_PRM>  m_transformHistory;
+    TRANSFORM_PRM             m_transform;
+    std::stack<TRANSFORM_PRM> m_transformHistory;
 
     // A clip box, to clip drawings in a wxDC (mandatory to avoid draw issues)
-    EDA_RECT  m_clipBox;        // The clip box
-    bool      m_isClipped;      // Allows/disallows clipping
+    EDA_RECT m_clipBox;   // The clip box
+    bool     m_isClipped; // Allows/disallows clipping
 
     // When calling the draw functions outside a wxDC, to get the basic drawings
     // lines / polylines ..., a callback function (used in DRC) to store
     // coordinates of each segment:
-    void (* m_callback)( int x0, int y0, int xf, int yf, void* aData );
-    void* m_callbackData;       // a optional parameter for m_callback
+    void ( *m_callback )( int x0, int y0, int xf, int yf, void* aData );
+    void* m_callbackData; // a optional parameter for m_callback
+
+    // Same as above but for drawing outline fonts as polygons in a callback,
+    // returns true if m_callback should also be called
+    bool ( *m_outlineCallback )( const std::vector<wxPoint>& aOutline, void* aData );
+    void* m_outlineCallbackData; // optional parameter for m_outlineCallback
 
     // When calling the draw functions for plot, the plotter acts as a wxDC to plot basic items.
     PLOTTER* m_plotter;
@@ -172,4 +185,4 @@ private:
 
 extern BASIC_GAL basic_gal;
 
-#endif      // define BASIC_GAL_H
+#endif // define BASIC_GAL_H

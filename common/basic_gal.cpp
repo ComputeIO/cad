@@ -55,7 +55,7 @@ const VECTOR2D BASIC_GAL::transform( const VECTOR2D& aPoint ) const
 
 // Draws a polyline given a list of points already transformed into the local coordinate
 // system.
-void BASIC_GAL::doDrawPolyline( const std::vector<wxPoint>& aLocalPointList )
+void BASIC_GAL::doDrawPolyline( const std::vector<wxPoint>& aLocalPointList, bool aFill )
 {
     if( m_DC )
     {
@@ -68,28 +68,44 @@ void BASIC_GAL::doDrawPolyline( const std::vector<wxPoint>& aLocalPointList )
         {
             for( unsigned ii = 1; ii < aLocalPointList.size(); ++ii )
             {
-                GRCSegm( m_isClipped ? &m_clipBox : NULL, m_DC, aLocalPointList[ ii - 1],
+                GRCSegm( m_isClipped ? &m_clipBox : NULL, m_DC, aLocalPointList[ii - 1],
                          aLocalPointList[ii], GetLineWidth(), m_Color );
             }
         }
     }
     else if( m_plotter )
     {
-        m_plotter->MoveTo( aLocalPointList[0] );
-
-        for( unsigned ii = 1; ii < aLocalPointList.size(); ii++ )
+        if( aFill )
         {
-            m_plotter->LineTo( aLocalPointList[ii] );
+            m_plotter->PlotPoly( aLocalPointList, FILL_TYPE::FILLED_SHAPE );
         }
+        else
+        {
+            m_plotter->MoveTo( aLocalPointList[0] );
 
+            for( unsigned ii = 1; ii < aLocalPointList.size(); ii++ )
+            {
+                m_plotter->LineTo( aLocalPointList[ii] );
+            }
+        }
         m_plotter->PenFinish();
     }
-    else if( m_callback )
+    else if( m_callback || m_outlineCallback )
     {
-        for( unsigned ii = 1; ii < aLocalPointList.size(); ii++ )
+        bool callCallback = true;
+
+        if( aFill && m_outlineCallback )
         {
-            m_callback( aLocalPointList[ ii - 1].x, aLocalPointList[ ii - 1].y,
-                        aLocalPointList[ii].x, aLocalPointList[ii].y, m_callbackData );
+            callCallback = m_outlineCallback( aLocalPointList, m_outlineCallbackData );
+        }
+
+        if( callCallback && m_callback )
+        {
+            for( unsigned ii = 1; ii < aLocalPointList.size(); ii++ )
+            {
+                m_callback( aLocalPointList[ii - 1].x, aLocalPointList[ii - 1].y,
+                            aLocalPointList[ii].x, aLocalPointList[ii].y, m_callbackData );
+            }
         }
     }
 }
@@ -117,9 +133,23 @@ void BASIC_GAL::DrawPolyline( const VECTOR2D aPointList[], int aListSize )
     std::vector<wxPoint> polyline_corners;
 
     for( int ii = 0; ii < aListSize; ++ii )
-        polyline_corners.emplace_back( (wxPoint) transform( aPointList[ ii ] ) );
+        polyline_corners.emplace_back( (wxPoint) transform( aPointList[ii] ) );
 
     doDrawPolyline( polyline_corners );
+}
+
+
+void BASIC_GAL::FillPolyline( const std::vector<VECTOR2D>& aPointList )
+{
+    if( aPointList.size() < 2 )
+        return;
+
+    std::vector<wxPoint> polyline_corners;
+
+    for( const VECTOR2D& pt : aPointList )
+        polyline_corners.emplace_back( (wxPoint) transform( pt ) );
+
+    doDrawPolyline( polyline_corners, true );
 }
 
 
@@ -138,7 +168,7 @@ void BASIC_GAL::DrawLine( const VECTOR2D& aStartPoint, const VECTOR2D& aEndPoint
         else
         {
             GRCSegm( m_isClipped ? &m_clipBox : NULL, m_DC, startVector.x, startVector.y,
-                    endVector.x, endVector.y, GetLineWidth(), 0, m_Color );
+                     endVector.x, endVector.y, GetLineWidth(), 0, m_Color );
         }
     }
     else if( m_plotter )
@@ -149,7 +179,6 @@ void BASIC_GAL::DrawLine( const VECTOR2D& aStartPoint, const VECTOR2D& aEndPoint
     }
     else if( m_callback )
     {
-            m_callback( startVector.x, startVector.y,
-                        endVector.x, endVector.y, m_callbackData );
+        m_callback( startVector.x, startVector.y, endVector.x, endVector.y, m_callbackData );
     }
 }
