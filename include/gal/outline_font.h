@@ -43,6 +43,8 @@ class OUTLINE_FONT : public FONT
 public:
     OUTLINE_FONT();
 
+    bool IsOutline() const override { return true; }
+
     /**
      * Load an outline font. TrueType (.ttf) and OpenType (.otf)
      * are supported.
@@ -60,7 +62,7 @@ public:
      * @param aRotationAngle is the text rotation angle in radians.
      */
     void Draw( GAL* aGal, const UTF8& aText, const VECTOR2D& aPosition,
-               double aRotationAngle ) const override;
+               double aRotationAngle ) override;
 
     /**
      * Compute the boundary limits of aText (the bounding box of all shapes).
@@ -105,6 +107,10 @@ private:
     static FT_Library mFreeType;
     FT_Face           mFace;
 
+    // cache for glyphs converted to straight segments
+    // key is glyph index (FT_GlyphSlot field glyph_index)
+    std::map<unsigned int, POINTS_LIST> mContourCache;
+
     FT_Error loadFace( const wxString& aFontFileName );
 
     /**
@@ -113,7 +119,7 @@ private:
      *
      * @param aText is the text to be drawn.
      */
-    void drawSingleLineText( GAL* aGal, hb_buffer_t* aText, hb_font_t* aFont ) const;
+    void drawSingleLineText( GAL* aGal, hb_buffer_t* aText, hb_font_t* aFont );
 
     POINTS_LIST outlineToStraightSegments( FT_Outline aOutline ) const;
 
@@ -121,9 +127,6 @@ private:
                                const std::vector<bool>& contour_point_on_curve ) const;
 
     bool approximateBezierCurve( POINTS& result, const POINTS& bezier ) const;
-
-    VECTOR2D approximateBezierPoint( const double t, const double oneMinusT, const VECTOR2D& pt1,
-                                     const VECTOR2D& pt2 ) const;
 
     inline const unsigned int onCurve( char aTags ) const { return aTags & 0x1; }
 
