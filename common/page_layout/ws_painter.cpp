@@ -44,8 +44,8 @@ static const wxString productName = wxT( "KiCad E.D.A.  " );
 WS_RENDER_SETTINGS::WS_RENDER_SETTINGS()
 {
     m_backgroundColor = COLOR4D( 1.0, 1.0, 1.0, 1.0 );
-    m_normalColor =     RED;
-    m_selectedColor =   m_normalColor.Brightened( 0.5 );
+    m_normalColor = RED;
+    m_selectedColor = m_normalColor.Brightened( 0.5 );
     m_brightenedColor = COLOR4D( 0.0, 1.0, 0.0, 0.9 );
     m_pageBorderColor = COLOR4D( 0.4, 0.4, 0.4, 1.0 );
 
@@ -55,11 +55,11 @@ WS_RENDER_SETTINGS::WS_RENDER_SETTINGS()
 
 void WS_RENDER_SETTINGS::LoadColors( const COLOR_SETTINGS* aSettings )
 {
-    for( int layer = SCH_LAYER_ID_START; layer < SCH_LAYER_ID_END; layer ++)
-        m_layerColors[ layer ] = aSettings->GetColor( layer );
+    for( int layer = SCH_LAYER_ID_START; layer < SCH_LAYER_ID_END; layer++ )
+        m_layerColors[layer] = aSettings->GetColor( layer );
 
-    for( int layer = GAL_LAYER_ID_START; layer < GAL_LAYER_ID_END; layer ++)
-        m_layerColors[ layer ] = aSettings->GetColor( layer );
+    for( int layer = GAL_LAYER_ID_START; layer < GAL_LAYER_ID_END; layer++ )
+        m_layerColors[layer] = aSettings->GetColor( layer );
 
     m_backgroundColor = aSettings->GetColor( LAYER_SCHEMATIC_BACKGROUND );
     m_pageBorderColor = aSettings->GetColor( LAYER_SCHEMATIC_GRID );
@@ -115,103 +115,98 @@ void WS_DRAW_ITEM_LIST::GetTextVars( wxArrayString* aVars )
 // after replacing format symbols by the corresponding value
 wxString WS_DRAW_ITEM_LIST::BuildFullText( const wxString& aTextbase )
 {
-    std::function<bool( wxString* )> wsResolver =
-            [ this ]( wxString* token ) -> bool
+    std::function<bool( wxString* )> wsResolver = [this]( wxString* token ) -> bool {
+        bool tokenUpdated = false;
+
+        if( token->IsSameAs( wxT( "KICAD_VERSION" ) ) && PgmOrNull() )
+        {
+            // TODO: it'd be nice to get the Python script name/version here for when
+            // PgmOrNull() is null...
+
+            *token = wxString::Format( wxT( "%s%s %s" ), productName, Pgm().App().GetAppName(),
+                                       GetBuildVersion() );
+            tokenUpdated = true;
+        }
+        else if( token->IsSameAs( wxT( "#" ) ) )
+        {
+            *token = wxString::Format( wxT( "%s" ), m_pageNumber );
+            tokenUpdated = true;
+        }
+        else if( token->IsSameAs( wxT( "##" ) ) )
+        {
+            *token = wxString::Format( wxT( "%d" ), m_sheetCount );
+            tokenUpdated = true;
+        }
+        else if( token->IsSameAs( wxT( "SHEETNAME" ) ) )
+        {
+            *token = m_sheetFullName;
+            tokenUpdated = true;
+        }
+        else if( token->IsSameAs( wxT( "FILENAME" ) ) )
+        {
+            wxFileName fn( m_fileName );
+            *token = fn.GetFullName();
+            tokenUpdated = true;
+        }
+        else if( token->IsSameAs( wxT( "PAPER" ) ) )
+        {
+            *token = m_paperFormat ? *m_paperFormat : wxString( "" );
+            tokenUpdated = true;
+        }
+        else if( token->IsSameAs( wxT( "LAYER" ) ) )
+        {
+            *token = m_sheetLayer ? *m_sheetLayer : wxString( "" );
+            tokenUpdated = true;
+        }
+        else if( token->IsSameAs( wxT( "ISSUE_DATE" ) ) )
+        {
+            *token = m_titleBlock ? m_titleBlock->GetDate() : wxString( "" );
+            tokenUpdated = true;
+        }
+        else if( token->IsSameAs( wxT( "REVISION" ) ) )
+        {
+            *token = m_titleBlock ? m_titleBlock->GetRevision() : wxString( "" );
+            tokenUpdated = true;
+        }
+        else if( token->IsSameAs( wxT( "TITLE" ) ) )
+        {
+            *token = m_titleBlock ? m_titleBlock->GetTitle() : wxString( "" );
+            tokenUpdated = true;
+        }
+        else if( token->IsSameAs( wxT( "COMPANY" ) ) )
+        {
+            *token = m_titleBlock ? m_titleBlock->GetCompany() : wxString( "" );
+            tokenUpdated = true;
+        }
+        else if( token->Left( token->Len() - 1 ).IsSameAs( wxT( "COMMENT" ) ) )
+        {
+            wxChar c = token->Last();
+
+            switch( c )
             {
-                bool tokenUpdated = false;
+            case '0':
+            case '1':
+            case '2':
+            case '3':
+            case '4':
+            case '5':
+            case '6':
+            case '7':
+            case '8':
+            case '9':
+                *token = m_titleBlock ? m_titleBlock->GetComment( c - '0' ) : wxString( "" );
+                tokenUpdated = true;
+            }
+        }
 
-                if( token->IsSameAs( wxT( "KICAD_VERSION" ) ) && PgmOrNull() )
-                {
-                    // TODO: it'd be nice to get the Python script name/version here for when
-                    // PgmOrNull() is null...
+        if( tokenUpdated )
+        {
+            *token = ExpandTextVars( *token, nullptr, m_project );
+            return true;
+        }
 
-                    *token = wxString::Format( wxT( "%s%s %s" ),
-                                               productName,
-                                               Pgm().App().GetAppName(),
-                                               GetBuildVersion() );
-                    tokenUpdated = true;
-                }
-                else if( token->IsSameAs( wxT( "#" ) ) )
-                {
-                    *token = wxString::Format( wxT( "%s" ), m_pageNumber );
-                    tokenUpdated = true;
-                }
-                else if( token->IsSameAs( wxT( "##" ) ) )
-                {
-                    *token = wxString::Format( wxT( "%d" ), m_sheetCount );
-                    tokenUpdated = true;
-                }
-                else if( token->IsSameAs( wxT( "SHEETNAME" ) ) )
-                {
-                    *token = m_sheetFullName;
-                    tokenUpdated = true;
-                }
-                else if( token->IsSameAs( wxT( "FILENAME" ) ) )
-                {
-                    wxFileName fn( m_fileName );
-                    *token = fn.GetFullName();
-                    tokenUpdated = true;
-                }
-                else if( token->IsSameAs( wxT( "PAPER" ) ) )
-                {
-                    *token = m_paperFormat ? *m_paperFormat : wxString( "" );
-                    tokenUpdated = true;
-                }
-                else if( token->IsSameAs( wxT( "LAYER" ) ) )
-                {
-                    *token = m_sheetLayer ? *m_sheetLayer : wxString( "" );
-                    tokenUpdated = true;
-                }
-                else if( token->IsSameAs( wxT( "ISSUE_DATE" ) ) )
-                {
-                    *token = m_titleBlock ? m_titleBlock->GetDate() : wxString( "" );
-                    tokenUpdated = true;
-                }
-                else if( token->IsSameAs( wxT( "REVISION" ) ) )
-                {
-                    *token = m_titleBlock ? m_titleBlock->GetRevision() : wxString( "" );
-                    tokenUpdated = true;
-                }
-                else if( token->IsSameAs( wxT( "TITLE" ) ) )
-                {
-                    *token = m_titleBlock ? m_titleBlock->GetTitle() : wxString( "" );
-                    tokenUpdated = true;
-                }
-                else if( token->IsSameAs( wxT( "COMPANY" ) ) )
-                {
-                    *token = m_titleBlock ? m_titleBlock->GetCompany() : wxString( "" );
-                    tokenUpdated = true;
-                }
-                else if( token->Left( token->Len() - 1 ).IsSameAs( wxT( "COMMENT" ) ) )
-                {
-                    wxChar c = token->Last();
-
-                    switch( c )
-                    {
-                    case '0':
-                    case '1':
-                    case '2':
-                    case '3':
-                    case '4':
-                    case '5':
-                    case '6':
-                    case '7':
-                    case '8':
-                    case '9':
-                        *token = m_titleBlock ? m_titleBlock->GetComment( c - '0' )
-                                              : wxString( "" );
-                        tokenUpdated = true;
-                    }
-                }
-
-                if( tokenUpdated )
-                {
-                   *token = ExpandTextVars( *token, nullptr, m_project );
-                   return true;
-                }
-
-                return false;
-            };
+        return false;
+    };
 
     return ExpandTextVars( aTextbase, &wsResolver, m_project );
 }
@@ -226,13 +221,13 @@ bool KIGFX::WS_PAINTER::Draw( const VIEW_ITEM* aItem, int aLayer )
 
     switch( item->Type() )
     {
-    case WSG_LINE_T:   draw( (WS_DRAW_ITEM_LINE*) item, aLayer );         break;
-    case WSG_POLY_T:   draw( (WS_DRAW_ITEM_POLYPOLYGONS*) item, aLayer );      break;
-    case WSG_RECT_T:   draw( (WS_DRAW_ITEM_RECT*) item, aLayer );         break;
-    case WSG_TEXT_T:   draw( (WS_DRAW_ITEM_TEXT*) item, aLayer );         break;
-    case WSG_BITMAP_T: draw( (WS_DRAW_ITEM_BITMAP*) item, aLayer );       break;
-    case WSG_PAGE_T:   draw( (WS_DRAW_ITEM_PAGE*) item, aLayer );       break;
-    default:           return false;
+    case WSG_LINE_T: draw( (WS_DRAW_ITEM_LINE*) item, aLayer ); break;
+    case WSG_POLY_T: draw( (WS_DRAW_ITEM_POLYPOLYGONS*) item, aLayer ); break;
+    case WSG_RECT_T: draw( (WS_DRAW_ITEM_RECT*) item, aLayer ); break;
+    case WSG_TEXT_T: draw( (WS_DRAW_ITEM_TEXT*) item, aLayer ); break;
+    case WSG_BITMAP_T: draw( (WS_DRAW_ITEM_BITMAP*) item, aLayer ); break;
+    case WSG_PAGE_T: draw( (WS_DRAW_ITEM_PAGE*) item, aLayer ); break;
+    default: return false;
     }
 
     return true;
@@ -265,7 +260,7 @@ void KIGFX::WS_PAINTER::draw( const WS_DRAW_ITEM_POLYPOLYGONS* aItem, int aLayer
     m_gal->SetIsFill( true );
     m_gal->SetIsStroke( false );
 
-    WS_DRAW_ITEM_POLYPOLYGONS* item =  (WS_DRAW_ITEM_POLYPOLYGONS*)aItem;
+    WS_DRAW_ITEM_POLYPOLYGONS* item = (WS_DRAW_ITEM_POLYPOLYGONS*) aItem;
 
     for( int idx = 0; idx < item->GetPolygons().OutlineCount(); ++idx )
     {
@@ -278,8 +273,8 @@ void KIGFX::WS_PAINTER::draw( const WS_DRAW_ITEM_POLYPOLYGONS* aItem, int aLayer
 void KIGFX::WS_PAINTER::draw( const WS_DRAW_ITEM_TEXT* aItem, int aLayer ) const
 {
     VECTOR2D position( aItem->GetTextPos().x, aItem->GetTextPos().y );
-    int      penWidth = std::max( aItem->GetEffectiveTextPenWidth(),
-                                  m_renderSettings.GetDefaultPenWidth() );
+    int      penWidth =
+            std::max( aItem->GetEffectiveTextPenWidth(), m_renderSettings.GetDefaultPenWidth() );
 
     m_gal->Save();
     m_gal->Translate( position );
@@ -287,9 +282,16 @@ void KIGFX::WS_PAINTER::draw( const WS_DRAW_ITEM_TEXT* aItem, int aLayer ) const
     m_gal->SetStrokeColor( m_renderSettings.GetColor( aItem, aLayer ) );
     m_gal->SetLineWidth( penWidth );
     m_gal->SetTextAttributes( aItem );
+#ifdef FOOFAA
     m_gal->SetIsFill( false );
     m_gal->SetIsStroke( true );
-    m_gal->StrokeText( aItem->GetShownText(), VECTOR2D( 0, 0 ), 0.0 );
+#endif
+    wxString font;
+    wxString txt;
+    txt = aItem->GetShownText( 0, &font );
+    //m_gal->StrokeText( aItem->GetShownText(), VECTOR2D( 0, 0 ), 0.0 );
+    if( !txt.empty() )
+        m_gal->StrokeText( txt, VECTOR2D( 0, 0 ), 0.0, &font );
     m_gal->Restore();
 }
 
@@ -311,7 +313,7 @@ void KIGFX::WS_PAINTER::draw( const WS_DRAW_ITEM_BITMAP* aItem, int aLayer ) con
 
     m_gal->DrawBitmap( *bitmap->m_ImageBitmap );
 
-#if 0   // For bounding box debug purpose only
+#if 0 // For bounding box debug purpose only
     EDA_RECT bbox = aItem->GetBoundingBox();
     m_gal->SetIsFill( true );
     m_gal->SetIsStroke( true );
@@ -332,8 +334,7 @@ void KIGFX::WS_PAINTER::draw( const WS_DRAW_ITEM_BITMAP* aItem, int aLayer ) con
 void KIGFX::WS_PAINTER::draw( const WS_DRAW_ITEM_PAGE* aItem, int aLayer ) const
 {
     VECTOR2D origin = VECTOR2D( 0.0, 0.0 );
-    VECTOR2D end = VECTOR2D( aItem->GetPageSize().x,
-                             aItem->GetPageSize().y );
+    VECTOR2D end = VECTOR2D( aItem->GetPageSize().x, aItem->GetPageSize().y );
 
     m_gal->SetIsStroke( true );
 
@@ -350,9 +351,9 @@ void KIGFX::WS_PAINTER::draw( const WS_DRAW_ITEM_PAGE* aItem, int aLayer ) const
 
     // Draw a circle and a X
     m_gal->DrawCircle( pos, marker_size );
-    m_gal->DrawLine( VECTOR2D( pos.x - marker_size, pos.y - marker_size),
+    m_gal->DrawLine( VECTOR2D( pos.x - marker_size, pos.y - marker_size ),
                      VECTOR2D( pos.x + marker_size, pos.y + marker_size ) );
-    m_gal->DrawLine( VECTOR2D( pos.x + marker_size, pos.y - marker_size),
+    m_gal->DrawLine( VECTOR2D( pos.x + marker_size, pos.y - marker_size ),
                      VECTOR2D( pos.x - marker_size, pos.y + marker_size ) );
 }
 
