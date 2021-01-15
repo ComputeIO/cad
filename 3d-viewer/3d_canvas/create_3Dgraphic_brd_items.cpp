@@ -125,10 +125,9 @@ void BOARD_ADAPTER::drawTextFromAddShapeWithClearance( const PCB_TEXT* aText,
     }
 
     // COLOR4D::BLACK is not actually used, but is needed for GRText call
-    GRText( nullptr, aPosition, COLOR4D::BLACK, aString, aText->GetTextAngle(),
-            aText->GetTextSize(), aText->GetHorizJustify(), aText->GetVertJustify(), aPenWidth,
-            aText->IsItalic(), aBold, addTextSegmToContainer, &outlineFont, nullptr, &fontName,
-            outlineCallback );
+    GRText( nullptr, aPosition, COLOR4D::BLACK, aString, aText->GetTextAngle(), size,
+            aText->GetHorizJustify(), aText->GetVertJustify(), aPenWidth, aText->IsItalic(), aBold,
+            addTextSegmToContainer, &outlineFont, nullptr, &fontName, outlineCallback );
 }
 
 
