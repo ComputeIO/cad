@@ -125,6 +125,21 @@ void BASIC_GAL::DrawPolyline( const std::deque<VECTOR2D>& aPointList )
 }
 
 
+void BASIC_GAL::DrawPolyline( const std::vector<VECTOR2D>& aPointList )
+{
+    // should be combined with void BASIC_GAL::DrawPolyline( const std::deque<VECTOR2D>& )
+    if( aPointList.size() < 2 )
+        return;
+
+    std::vector<wxPoint> polyline_corners;
+
+    for( const VECTOR2D& pt : aPointList )
+        polyline_corners.emplace_back( (wxPoint) transform( pt ) );
+
+    doDrawPolyline( polyline_corners, true );
+}
+
+
 void BASIC_GAL::DrawPolyline( const VECTOR2D aPointList[], int aListSize )
 {
     if( aListSize < 2 )
@@ -136,20 +151,6 @@ void BASIC_GAL::DrawPolyline( const VECTOR2D aPointList[], int aListSize )
         polyline_corners.emplace_back( (wxPoint) transform( aPointList[ii] ) );
 
     doDrawPolyline( polyline_corners );
-}
-
-
-void BASIC_GAL::FillPolyline( const std::vector<VECTOR2D>& aPointList )
-{
-    if( aPointList.size() < 2 )
-        return;
-
-    std::vector<wxPoint> polyline_corners;
-
-    for( const VECTOR2D& pt : aPointList )
-        polyline_corners.emplace_back( (wxPoint) transform( pt ) );
-
-    doDrawPolyline( polyline_corners, true );
 }
 
 
