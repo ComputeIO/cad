@@ -82,19 +82,25 @@ void addTextSegmToContainer( int x0, int y0, int xf, int yf, void* aData )
 
 bool outlineTextCallback( const std::vector<wxPoint>& aPoints, void* aData )
 {
-#ifdef DEBUG
-    std::cerr << "outlineTextCallback() " << aPoints.size() << " points" << std::endl;
-#endif
+    const BOARD_ITEM* boardItem = s_boardItem;
+    SHAPE_POLY_SET    poly;
+    SHAPE_SIMPLE      shape;
 
-#ifdef FOOFAA
-    // TODO: typo in polygon_2d.h - SEGMENTS_WIDTH_NORMALS should be SEGMENTS_WITH_NORMALS
-    SEGMENTS_WIDTH_NORMALS swn;
-    OUTERS_AND_HOLES       oandh;
-    s_dstcontainer->Add( new POLYGON_2D(
-            // aopenSegmentList
-            // aOuterAndHoles
-            *s_boardItem ) );
-#endif
+    for( const wxPoint& wp : aPoints )
+    {
+        shape.Append( wp.x, wp.y );
+    }
+    poly.AddOutline( shape.Vertices() );
+    if( !poly.IsEmpty() )
+    {
+        // TODO: do we need this, and if so, where do we get aClearanceValue?
+        // passed in aData, or do we really need yet another static global?
+        // if( aClearanceValue.x )
+        //    poly.Inflate( aClearanceValue.x, 32 );
+
+        // Add polygon
+        ConvertPolygonToTriangles( poly, *s_dstcontainer, s_biuTo3Dunits, *boardItem );
+    }
 
     return true;
 }
@@ -112,12 +118,17 @@ void BOARD_ADAPTER::drawTextFromAddShapeWithClearance( const PCB_TEXT* aText,
     if( aText->IsMirrored() )
         size.x = -size.x;
 
-    //const COLOR4D dummy_color = COLOR4D::BLACK; // not actually used, but needed by GRText
+    KIGFX::OUTLINE_CALLBACK outlineCallback = nullptr;
+    if( outlineFont )
+    {
+        outlineCallback = outlineTextCallback;
+    }
 
+    // COLOR4D::BLACK is not actually used, but is needed for GRText call
     GRText( nullptr, aPosition, COLOR4D::BLACK, aString, aText->GetTextAngle(),
             aText->GetTextSize(), aText->GetHorizJustify(), aText->GetVertJustify(), aPenWidth,
             aText->IsItalic(), aBold, addTextSegmToContainer, &outlineFont, nullptr, &fontName,
-            outlineFont ? outlineTextCallback : nullptr, nullptr );
+            outlineCallback );
 }
 
 
