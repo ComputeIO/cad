@@ -30,11 +30,22 @@
 #include <gal/graphics_abstraction_layer.h>
 #include <freetype2/ft2build.h>
 #include FT_FREETYPE_H
+#include FT_OUTLINE_H
 #include <gal/font.h>
 #include <harfbuzz/hb.h>
 
 namespace KIGFX
 {
+typedef struct
+{
+    POINTS         points;
+    int            winding;
+    FT_Orientation orientation;
+} CONTOUR;
+
+typedef std::vector<CONTOUR> CONTOURS;
+
+
 /**
  * Class OUTLINE_FONT implements outline font drawing.
  */
@@ -121,10 +132,36 @@ private:
      */
     void drawSingleLineText( GAL* aGal, hb_buffer_t* aText, hb_font_t* aFont );
 
-    POINTS_LIST outlineToStraightSegments( FT_Outline aOutline ) const;
+    void outlineToStraightSegments( CONTOURS& aContours, FT_Outline& aOutline ) const;
 
-    POINTS approximateContour( const POINTS&            contour_points,
-                               const std::vector<bool>& contour_point_on_curve ) const;
+    /**
+     * @return 1 if aContour is in clockwise order, -1 if it is in
+     *     counterclockwise order, or 0 if the winding can't be
+     *     determined.
+     */
+    int winding( const POINTS& aContour ) const;
+
+    /**
+     * @return true if aContour is a clockwise contour, otherwise
+     *     false.
+     */
+    inline bool isClockwise( const POINTS& aContour ) const { return winding( aContour ) == 1; }
+
+    /**
+     * @return true if aContour is a counterclockwise contour,
+     *     otherwise false.
+     */
+    inline bool isCounterclockwise( const POINTS& aContour ) const
+    {
+        return winding( aContour ) == -1;
+    }
+
+    /**
+     * Approximate Bezier curve contour with straight segments.
+     * @return Winding (clockwise/counterclockwise) of the contour.
+     */
+    int approximateContour( const POINTS& aPoints, const std::vector<bool>& aPointOnCurve,
+                            POINTS& aResult ) const;
 
     bool approximateBezierCurve( POINTS& result, const POINTS& bezier ) const;
 
