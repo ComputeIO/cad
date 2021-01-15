@@ -77,9 +77,7 @@ public:
         m_callbackData = aData;
     }
 
-    void SetOutlineCallback( bool ( *aCallback )( const std::vector<wxPoint>& aOutline,
-                                                  void*                       aData ),
-                             void* aData )
+    void SetOutlineCallback( KIGFX::OUTLINE_CALLBACK aCallback, void* aData )
     {
         m_outlineCallback = aCallback;
         m_outlineCallbackData = aData;
@@ -175,8 +173,8 @@ private:
 
     // Same as above but for drawing outline fonts as polygons in a callback,
     // returns true if m_callback should also be called
-    bool ( *m_outlineCallback )( const std::vector<wxPoint>& aOutline, void* aData );
-    void* m_outlineCallbackData; // optional parameter for m_outlineCallback
+    KIGFX::OUTLINE_CALLBACK m_outlineCallback;
+    void*                   m_outlineCallbackData; // optional parameter for m_outlineCallback
 
     // When calling the draw functions for plot, the plotter acts as a wxDC to plot basic items.
     PLOTTER* m_plotter;

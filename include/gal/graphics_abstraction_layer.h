@@ -1075,6 +1075,8 @@ public:
 };
 
 
+typedef bool ( *OUTLINE_CALLBACK )( const std::vector<wxPoint>& aOutline, void* aData );
+
 }; // namespace KIGFX
 
 #endif /* GRAPHICSABSTRACTIONLAYER_H_ */
