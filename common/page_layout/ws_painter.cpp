@@ -115,66 +115,62 @@ void WS_DRAW_ITEM_LIST::GetTextVars( wxArrayString* aVars )
 // after replacing format symbols by the corresponding value
 wxString WS_DRAW_ITEM_LIST::BuildFullText( const wxString& aTextbase )
 {
-    std::function<bool( wxString* )> wsResolver =
-            [this]( wxString* token ) -> bool
-            {
-                bool tokenUpdated = false;
+    std::function<bool( wxString* )> wsResolver = [this]( wxString* token ) -> bool {
+        bool tokenUpdated = false;
 
-                if( token->IsSameAs( wxT( "KICAD_VERSION" ) ) && PgmOrNull() )
-                {
-                    // TODO: it'd be nice to get the Python script name/version here for when
-                    // PgmOrNull() is null...
+        if( token->IsSameAs( wxT( "KICAD_VERSION" ) ) && PgmOrNull() )
+        {
+            // TODO: it'd be nice to get the Python script name/version here for when
+            // PgmOrNull() is null...
 
-                    *token = wxString::Format( wxT( "%s%s %s" ),
-                                               productName,
-                                               Pgm().App().GetAppName(),
-                                               GetBuildVersion() );
-                    tokenUpdated = true;
-                }
-                else if( token->IsSameAs( wxT( "#" ) ) )
-                {
-                    *token = wxString::Format( wxT( "%s" ), m_pageNumber );
-                    tokenUpdated = true;
-                }
-                else if( token->IsSameAs( wxT( "##" ) ) )
-                {
-                    *token = wxString::Format( wxT( "%d" ), m_sheetCount );
-                    tokenUpdated = true;
-                }
-                else if( token->IsSameAs( wxT( "SHEETNAME" ) ) )
-                {
-                    *token = m_sheetFullName;
-                    tokenUpdated = true;
-                }
-                else if( token->IsSameAs( wxT( "FILENAME" ) ) )
-                {
-                    wxFileName fn( m_fileName );
-                    *token = fn.GetFullName();
-                    tokenUpdated = true;
-                }
-                else if( token->IsSameAs( wxT( "PAPER" ) ) )
-                {
-                    *token = m_paperFormat ? *m_paperFormat : wxString( "" );
-                    tokenUpdated = true;
-                }
-                else if( token->IsSameAs( wxT( "LAYER" ) ) )
-                {
-                    *token = m_sheetLayer ? *m_sheetLayer : wxString( "" );
-                    tokenUpdated = true;
-                }
-                else if( m_titleBlock )
-                {
-                    m_titleBlock->TextVarResolver( token, m_project );
-                }
+            *token = wxString::Format( wxT( "%s%s %s" ), productName, Pgm().App().GetAppName(),
+                                       GetBuildVersion() );
+            tokenUpdated = true;
+        }
+        else if( token->IsSameAs( wxT( "#" ) ) )
+        {
+            *token = wxString::Format( wxT( "%s" ), m_pageNumber );
+            tokenUpdated = true;
+        }
+        else if( token->IsSameAs( wxT( "##" ) ) )
+        {
+            *token = wxString::Format( wxT( "%d" ), m_sheetCount );
+            tokenUpdated = true;
+        }
+        else if( token->IsSameAs( wxT( "SHEETNAME" ) ) )
+        {
+            *token = m_sheetFullName;
+            tokenUpdated = true;
+        }
+        else if( token->IsSameAs( wxT( "FILENAME" ) ) )
+        {
+            wxFileName fn( m_fileName );
+            *token = fn.GetFullName();
+            tokenUpdated = true;
+        }
+        else if( token->IsSameAs( wxT( "PAPER" ) ) )
+        {
+            *token = m_paperFormat ? *m_paperFormat : wxString( "" );
+            tokenUpdated = true;
+        }
+        else if( token->IsSameAs( wxT( "LAYER" ) ) )
+        {
+            *token = m_sheetLayer ? *m_sheetLayer : wxString( "" );
+            tokenUpdated = true;
+        }
+        else if( m_titleBlock )
+        {
+            m_titleBlock->TextVarResolver( token, m_project );
+        }
 
-                if( tokenUpdated )
-                {
-                   *token = ExpandTextVars( *token, nullptr, m_project );
-                   return true;
-                }
+        if( tokenUpdated )
+        {
+            *token = ExpandTextVars( *token, nullptr, m_project );
+            return true;
+        }
 
-                return false;
-            };
+        return false;
+    };
 
     return ExpandTextVars( aTextbase, &wsResolver, m_project );
 }

@@ -110,19 +110,15 @@ bool TITLE_BLOCK::TextVarResolver( wxString* aToken, const PROJECT* aProject ) c
         case '6':
         case '7':
         case '8':
-        case '9':
-            *aToken = GetComment( c - '0' );
-            tokenUpdated = true;
+        case '9': *aToken = GetComment( c - '0' ); tokenUpdated = true;
         }
     }
 
     if( tokenUpdated )
     {
-       *aToken = ExpandTextVars( *aToken, nullptr, aProject );
-       return true;
+        *aToken = ExpandTextVars( *aToken, nullptr, aProject );
+        return true;
     }
 
     return false;
 }
-
-

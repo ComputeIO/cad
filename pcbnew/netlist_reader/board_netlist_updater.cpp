@@ -383,16 +383,14 @@ bool BOARD_NETLIST_UPDATER::updateComponentPadConnections( FOOTPRINT* aFootprint
         {
             if( !pad->GetNetname().IsEmpty() )
             {
-                msg.Printf( _( "Disconnect %s pin %s." ),
-                            aFootprint->GetReference(),
+                msg.Printf( _( "Disconnect %s pin %s." ), aFootprint->GetReference(),
                             pad->GetName() );
                 m_reporter->Report( msg, RPT_SEVERITY_ACTION );
             }
             else if( m_warnForNoNetPads && pad->IsOnCopperLayer() && !pad->GetName().IsEmpty() )
             {
                 // pad is connectable but has no net found in netlist
-                msg.Printf( _( "No net for symbol %s pin %s." ),
-                            aFootprint->GetReference(),
+                msg.Printf( _( "No net for symbol %s pin %s." ), aFootprint->GetReference(),
                             pad->GetName() );
                 m_reporter->Report( msg, RPT_SEVERITY_WARNING);
             }
@@ -449,18 +447,14 @@ bool BOARD_NETLIST_UPDATER::updateComponentPadConnections( FOOTPRINT* aFootprint
                 {
                     m_oldToNewNets[ pad->GetNetname() ] = netName;
 
-                    msg.Printf( _( "Reconnect %s pin %s from %s to %s."),
-                                aFootprint->GetReference(),
-                                pad->GetName(),
-                                UnescapeString( pad->GetNetname() ),
-                                UnescapeString( netName ) );
+                    msg.Printf( _( "Reconnect %s pin %s from %s to %s." ),
+                                aFootprint->GetReference(), pad->GetName(),
+                                UnescapeString( pad->GetNetname() ), UnescapeString( netName ) );
                 }
                 else
                 {
-                    msg.Printf( _( "Connect %s pin %s to %s."),
-                                aFootprint->GetReference(),
-                                pad->GetName(),
-                                UnescapeString( netName ) );
+                    msg.Printf( _( "Connect %s pin %s to %s." ), aFootprint->GetReference(),
+                                pad->GetName(), UnescapeString( netName ) );
                 }
                 m_reporter->Report( msg, RPT_SEVERITY_ACTION );
 
@@ -830,7 +824,7 @@ bool BOARD_NETLIST_UPDATER::UpdateNetlist( NETLIST& aNetlist )
 
             if( footprint )
             {
-                footprintMap[ component ] = footprint;
+                footprintMap[component] = footprint;
 
                 updateFootprintParameters( footprint, component );
                 updateComponentPadConnections( footprint, component );

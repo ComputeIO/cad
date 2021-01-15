@@ -200,9 +200,7 @@ public:
                                            ValueFromString( m_userUnits, aValue ) ) );
                 break;
 
-            case COL_VISIBLE:
-                pin->SetVisible(BoolFromString( aValue ));
-                break;
+            case COL_VISIBLE: pin->SetVisible( BoolFromString( aValue ) ); break;
 
             default:
                 wxFAIL;
