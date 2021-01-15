@@ -139,8 +139,7 @@ void GRText( wxDC* aDC, const wxPoint& aPos, COLOR4D aColor, const wxString& aTe
              enum EDA_TEXT_VJUSTIFY_T aV_justify, int aWidth, bool aItalic, bool aBold,
              void ( *aCallback )( int x0, int y0, int xf, int yf, void* aData ),
              void* aCallbackData, PLOTTER* aPlotter, wxString* aFont,
-             bool ( *aOutlineCallback )( const std::vector<wxPoint>& aOutline, void* aData ),
-             void* aOutlineCallbackData )
+             KIGFX::OUTLINE_CALLBACK aOutlineCallback, void* aOutlineCallbackData )
 {
     bool fill_mode = true;
 
