@@ -30,13 +30,11 @@
 #include <gal/outline_font.h>
 #include FT_GLYPH_H
 #include FT_BBOX_H
-#include FT_OUTLINE_H
 #include <bezier_curves.h>
 
 using namespace KIGFX;
 
 FT_Library OUTLINE_FONT::mFreeType = nullptr;
-
 
 OUTLINE_FONT::OUTLINE_FONT()
 {
@@ -213,6 +211,21 @@ VECTOR2D OUTLINE_FONT::ComputeTextLineSize( const GAL* aGal, const UTF8& aText )
 }
 
 
+static bool contourIsFilled( const CONTOUR& c )
+{
+    switch( c.orientation )
+    {
+    case FT_ORIENTATION_TRUETYPE: return c.winding == 1;
+
+    case FT_ORIENTATION_POSTSCRIPT: return c.winding == -1;
+
+    default: break;
+    }
+
+    return false;
+}
+
+
 void OUTLINE_FONT::drawSingleLineText( GAL* aGal, hb_buffer_t* aText, hb_font_t* aFont )
 {
     const VECTOR2D& galGlyphSize = aGal->GetGlyphSize();
@@ -256,11 +269,13 @@ void OUTLINE_FONT::drawSingleLineText( GAL* aGal, hb_buffer_t* aText, hb_font_t*
         //
         // might be a good idea to cache the contours,
         // in which case glyph->glyph_index can be used as a std::map key
-        POINTS_LIST contours = outlineToStraightSegments( glyph->outline );
+        CONTOURS contours;
+        outlineToStraightSegments( contours, glyph->outline );
 
         std::vector<VECTOR2D> ptListScaled;
-        for( POINTS points : contours )
+        for( CONTOUR c : contours )
         {
+            POINTS points = c.points;
             int ptCount = 0;
             ptListScaled.clear();
             for( const VECTOR2D& v : points )
@@ -271,8 +286,7 @@ void OUTLINE_FONT::drawSingleLineText( GAL* aGal, hb_buffer_t* aText, hb_font_t*
                 ptCount++;
             }
 
-            // always fill outline
-            aGal->SetIsFill( true );
+            aGal->SetIsFill( contourIsFilled( c ) );
             aGal->DrawPolyline( ptListScaled );
         }
 
@@ -285,9 +299,9 @@ void OUTLINE_FONT::drawSingleLineText( GAL* aGal, hb_buffer_t* aText, hb_font_t*
 }
 
 
-POINTS_LIST OUTLINE_FONT::outlineToStraightSegments( FT_Outline aOutline ) const
+void OUTLINE_FONT::outlineToStraightSegments( CONTOURS& aContours, FT_Outline& aOutline ) const
 {
-    POINTS_LIST contours;
+    FT_Orientation orientation = FT_Outline_Get_Orientation( &aOutline );
 
     for( unsigned int c = 0; c < (unsigned int) aOutline.n_contours; c++ )
     {
@@ -335,19 +349,72 @@ POINTS_LIST OUTLINE_FONT::outlineToStraightSegments( FT_Outline aOutline ) const
             prev_tags = tags;
         }
 
-        POINTS approximated_contour = approximateContour( contour_points, contour_point_on_curve );
-        contours.push_back( approximated_contour );
+        CONTOUR theContour;
+        theContour.winding =
+                approximateContour( contour_points, contour_point_on_curve, theContour.points );
+        theContour.orientation = orientation;
+        aContours.push_back( theContour );
     }
-
-    return contours;
 }
 
 
-POINTS
-OUTLINE_FONT::approximateContour( const POINTS&            contour_points,
-                                  const std::vector<bool>& contour_point_on_curve ) const
+int OUTLINE_FONT::winding( const POINTS& aContour ) const
 {
-    POINTS   approximation;
+    if( aContour.size() < 2 )
+    {
+        // zero or one points, so not a clockwise contour - in fact
+        // not a contour at all
+        //
+        // It could also be argued that a contour needs 3 extremum
+        // points at a minimum to be considered a proper contour
+        // (ie. a glyph (subpart) outline, or a hole)
+        return 0;
+    }
+
+    unsigned int i_lowest_vertex;
+    double       lowest_y = std::numeric_limits<double>::max();
+
+    for( unsigned int i = 0; i < aContour.size(); i++ )
+    {
+        VECTOR2D p = aContour[i];
+        if( p.y < lowest_y )
+        {
+            i_lowest_vertex = i;
+            lowest_y = p.y;
+
+            // note: we should also check for p.y == lowest_y and
+            // then choose the point with leftmost.x, but as p.x
+            // is a double, equality is a dubious concept; however
+            // this should suffice in the general case
+        }
+    }
+
+    unsigned int i_prev_vertex;
+    if( i_lowest_vertex == 0 )
+    {
+        i_prev_vertex = aContour.size() - 1;
+    }
+    else
+    {
+        i_prev_vertex = i_lowest_vertex - 1;
+    }
+
+    const VECTOR2D& lowest_vertex = aContour[i_lowest_vertex];
+    const VECTOR2D& prev_vertex = aContour[i_prev_vertex];
+    if( lowest_vertex.x > prev_vertex.x )
+    {
+        return -1; // counterclockwise
+    }
+    else
+    {
+        return 1; // clockwise
+    }
+}
+
+
+int OUTLINE_FONT::approximateContour( const POINTS& aPoints, const std::vector<bool>& aPointOnCurve,
+                                      POINTS& aResult ) const
+{
     POINTS   bezier;
     int      n = 0;
     VECTOR2D first_point;
@@ -357,26 +424,25 @@ OUTLINE_FONT::approximateContour( const POINTS&            contour_points,
     bool     prev2_on_curve;
 
     // note: we want to go past the end as end+1 will be a repeat of the 1st point!
-    for( unsigned int i = 0; i <= contour_points.size(); i++ )
+    for( unsigned int i = 0; i <= aPoints.size(); i++ )
     {
-        unsigned int nth = i < contour_points.size() ? i : 0;
-        VECTOR2D     p = contour_points.at( nth );
-        bool         on_curve = contour_point_on_curve.at( nth );
+        unsigned int nth = i < aPoints.size() ? i : 0;
+        VECTOR2D     p = aPoints.at( nth );
+        bool         on_curve = aPointOnCurve.at( nth );
 
         if( on_curve )
         {
-            // This point is on the curve, so it is not a control point
             if( n == 0 )
             {
                 // First point
-                approximation.push_back( p );
+                aResult.push_back( p );
             }
             else
             {
                 if( n > 0 && prev_on_curve )
                 {
                     // Previous point is also on curve - straight line segment
-                    approximation.push_back( p );
+                    aResult.push_back( p );
                 }
                 else
                 {
@@ -393,7 +459,7 @@ OUTLINE_FONT::approximateContour( const POINTS&            contour_points,
                             bezier.push_back( prev2_point );
                             bezier.push_back( prev_point );
                             bezier.push_back( p );
-                            bool success = approximateBezierCurve( approximation, bezier );
+                            bool success = approximateBezierCurve( aResult, bezier );
                             if( !success )
                             {
                                 std::cerr << "OUTLINE_FONT::approximateContour() Bezier curve "
@@ -428,7 +494,9 @@ OUTLINE_FONT::approximateContour( const POINTS&            contour_points,
         prev_on_curve = on_curve;
     }
 
-    return approximation;
+    // it's probably possible to figure out winding here without
+    // another traversal of all vertexes, doing that for now though
+    return winding( aResult );
 }
 
 
