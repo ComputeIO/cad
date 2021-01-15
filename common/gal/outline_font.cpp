@@ -51,10 +51,6 @@ OUTLINE_FONT::OUTLINE_FONT()
 
 bool OUTLINE_FONT::LoadFont( const wxString& aFontFileName )
 {
-#ifdef DEBUG
-    std::cerr << "OUTLINE_FONT::LoadFont( \"" << aFontFileName << "\" )" << std::endl;
-#endif
-
     wxFileName fontFile( aFontFileName );
     wxString   fileName = fontFile.GetFullPath();
     // TODO: handle ft_error properly (now we just return false if load does not succeed)
@@ -97,11 +93,6 @@ bool OUTLINE_FONT::LoadFont( const wxString& aFontFileName )
         m_fontFileName = fileName;
     }
 
-#ifdef DEBUG
-    std::cerr << aFontFileName << " loaded from " << fileName << std::endl;
-    std::cerr << "Family " << mFace->family_name << " Style " << mFace->style_name << " has "
-              << mFace->num_faces << " faces and " << mFace->num_glyphs << " glyphs." << std::endl;
-#endif
     return true;
 }
 
@@ -127,10 +118,6 @@ void OUTLINE_FONT::Draw( GAL* aGal, const UTF8& aText, const VECTOR2D& aPosition
 {
     if( aText.empty() )
         return;
-
-#ifdef DEBUG
-    std::cerr << "OUTLINE_FONT::Draw(" << aText << ")" << std::endl;
-#endif
 
     hb_buffer_t* buf = hb_buffer_create();
     hb_buffer_add_utf8( buf, aText.c_str(), -1, 0, -1 );
@@ -160,109 +147,14 @@ void OUTLINE_FONT::Draw( GAL* aGal, const UTF8& aText, const VECTOR2D& aPosition
     hb_ft_font_set_funcs( font );
     hb_shape( font, buf, NULL, 0 );
 
-    unsigned int         glyph_count;
-    hb_glyph_info_t*     glyph_info = hb_buffer_get_glyph_infos( buf, &glyph_count );
-    hb_glyph_position_t* glyph_pos = hb_buffer_get_glyph_positions( buf, &glyph_count );
-    hb_position_t        cursor_x = 0;
-    hb_position_t        cursor_y = 0;
-#ifdef DEBUG
-#ifdef FOOFAA
-    for( unsigned int i = 0; i < glyph_count; i++ )
-    {
-        hb_codepoint_t glyphid = glyph_info[i].codepoint;
-        hb_position_t  x_offset = glyph_pos[i].x_offset;
-        hb_position_t  y_offset = glyph_pos[i].y_offset;
-        hb_position_t  x_advance = glyph_pos[i].x_advance;
-        hb_position_t  y_advance = glyph_pos[i].y_advance;
-        /* draw_glyph(glyphid, cursor_x + x_offset, cursor_y + y_offset); */
-        std::cerr << "glyph #" << i << "/" << glyph_count << " id " << glyphid << " x " << cursor_x
-                  << "+" << x_advance << " offset " << x_offset << " y " << cursor_y << "+"
-                  << y_advance << " offset " << y_offset << std::endl;
-        cursor_x += x_advance;
-        cursor_y += y_advance;
-    }
-#endif
-#endif
-
     // Context needs to be saved before any transformations
     aGal->Save();
-
     aGal->Translate( aPosition );
     aGal->Rotate( -aRotationAngle );
-    const VECTOR2D& glyphSize = aGal->GetGlyphSize();
-
-#ifdef DEBUG
-    std::cerr << "GAL glyphSize == " << glyphSize << std::endl;
-#endif
-
-#ifdef FOOBAR
-    // Single line height
-    int lineHeight = KiROUND( GetInterline( m_gal->GetGlyphSize().y ) );
-    int lineCount = linesCount( aText );
-    //const VECTOR2D& glyphSize = m_gal->GetGlyphSize();
-
-    // align the 1st line of text
-    switch( m_gal->GetVerticalJustify() )
-    {
-    case GR_TEXT_VJUSTIFY_TOP: m_gal->Translate( VECTOR2D( 0, glyphSize.y ) ); break;
-
-    case GR_TEXT_VJUSTIFY_CENTER: m_gal->Translate( VECTOR2D( 0, glyphSize.y / 2.0 ) ); break;
-
-    case GR_TEXT_VJUSTIFY_BOTTOM: break;
-
-    default: break;
-    }
-
-    if( lineCount > 1 )
-    {
-        switch( m_gal->GetVerticalJustify() )
-        {
-        case GR_TEXT_VJUSTIFY_TOP: break;
-
-        case GR_TEXT_VJUSTIFY_CENTER:
-            m_gal->Translate( VECTOR2D( 0, -( lineCount - 1 ) * lineHeight / 2 ) );
-            break;
-
-        case GR_TEXT_VJUSTIFY_BOTTOM:
-            m_gal->Translate( VECTOR2D( 0, -( lineCount - 1 ) * lineHeight ) );
-            break;
-        }
-    }
-
-    m_gal->SetIsStroke( false );
-    m_gal->SetIsFill( true );
-
-    if( m_gal->IsFontBold() )
-    {
-        // TODO: figure out how to do real bold - preferably by using
-        // bold font instead of normal (if this is normal, and there
-        // is a bold version)
-        m_gal->SetLineWidth( m_gal->GetLineWidth() * 1.3 );
-    }
-
-    // Split multiline strings into separate ones and draw them line by line
-    size_t begin = 0;
-    size_t newlinePos = aText.find( '\n' );
-
-    while( newlinePos != aText.npos )
-    {
-        size_t length = newlinePos - begin;
-
-        drawSingleLineText( aText.substr( begin, length ) );
-        m_gal->Translate( VECTOR2D( 0.0, lineHeight ) );
-
-        begin = newlinePos + 1;
-        newlinePos = aText.find( '\n', begin );
-    }
-
-    // Draw the last (or the only one) line
-    if( !aText.empty() )
-        drawSingleLineText( aText.substr( begin ) );
-
-#endif // FOOBAR
 
     drawSingleLineText( aGal, buf, font );
     hb_buffer_destroy( buf );
+
     aGal->Restore();
 }
 
@@ -332,30 +224,6 @@ void OUTLINE_FONT::drawSingleLineText( GAL* aGal, hb_buffer_t* aText, hb_font_t*
     hb_glyph_info_t*     glyphInfo = hb_buffer_get_glyph_infos( aText, &glyphCount );
     hb_glyph_position_t* glyphPos = hb_buffer_get_glyph_positions( aText, &glyphCount );
 
-    hb_position_t cursor_x = 0;
-    hb_position_t cursor_y = 0;
-
-#ifdef DEBUG
-#ifdef FOOFAA
-    const int GLYPH_NAME_LEN = 256;
-    char      glyph_name[GLYPH_NAME_LEN];
-    for( unsigned int i = 0; i < glyphCount; i++ )
-    {
-        hb_codepoint_t glyphid = glyphInfo[i].codepoint;
-        hb_position_t  x_offset = glyphPos[i].x_offset;
-        hb_position_t  y_offset = glyphPos[i].y_offset;
-        hb_position_t  x_advance = glyphPos[i].x_advance;
-        hb_position_t  y_advance = glyphPos[i].y_advance;
-        /* draw_glyph(glyphid, cursor_x + x_offset, cursor_y + y_offset); */
-        std::cerr << "Glyph #" << i << "/" << glyphCount << " id " << glyphid << " x " << cursor_x
-                  << "+" << x_advance << " offset " << x_offset << " y " << cursor_y << "+"
-                  << y_advance << " offset " << y_offset << std::endl;
-        cursor_x += x_advance;
-        cursor_y += y_advance;
-    }
-#endif
-#endif
-
     const double mirror_factor = ( aGal->IsTextMirrored() ? 1 : -1 );
     // TODO: xyscaler is determined with the Stetson method to make
     // debugging easier; root cause for why scaling does not seem to
@@ -369,50 +237,26 @@ void OUTLINE_FONT::drawSingleLineText( GAL* aGal, hb_buffer_t* aText, hb_font_t*
     const double advance_scale_factor = 2;
     const double advance_x_factor = advance_scale_factor;
     const double advance_y_factor = advance_scale_factor;
-#ifdef DEBUG
-#ifdef FOOFAA
-    std::cerr << "mirror_factor " << mirror_factor << " xyscaler " << xyscaler << " x_scale_factor "
-              << x_scale_factor << " y_scale_factor " << y_scale_factor << " advance_scale_factor "
-              << advance_scale_factor << " advance_x_factor " << advance_x_factor
-              << " advance_y_factor " << advance_y_factor << std::endl;
-#endif
-#endif
 
-    cursor_x = 0;
-    cursor_y = 0;
+    hb_position_t cursor_x = 0;
+    hb_position_t cursor_y = 0;
+
     for( unsigned int i = 0; i < glyphCount; i++ )
     {
-        int                  cluster = glyphInfo[i].cluster;
-        int                  codepoint = glyphInfo[i].codepoint;
         hb_glyph_position_t& pos = glyphPos[i];
-#ifdef DEBUG
-#ifdef FOOFAA
-        std::cerr << "ch[" << i << "] cluster " << cluster << " codepoint " << codepoint
-                  << " advance " << pos.x_advance << "," << pos.y_advance << " offset "
-                  << pos.x_offset << "," << pos.y_offset << std::endl;
-#endif
-#endif
+        int                  codepoint = glyphInfo[i].codepoint;
 
         FT_Load_Glyph( mFace, codepoint, FT_LOAD_NO_BITMAP | FT_LOAD_NO_SCALE );
 
         FT_GlyphSlot glyph = mFace->glyph;
-        unsigned int glyph_index = glyph->glyph_index;
 
-#ifdef DEBUG
-#ifdef FOOFAA
-        FT_Get_Glyph_Name( mFace, codepoint, glyph_name, GLYPH_NAME_LEN );
-        std::cerr << "glyph name [" << glyph_name << "] " << glyph_index << std::endl;
-#endif
-#endif
-#ifdef CONTOUR_CACHE
-        if( !mContourCache.count( glyph_index ) )
-        {
-            mContourCache[glyph_index] = outlineToStraightSegments( glyph->outline );
-        }
-        POINTS_LIST contours = mContourCache[glyph_index];
-#else
+        // contours is a collection of all outlines in the glyph
+        // example: glyph for 'o' generally contains 2 contours,
+        // one for the glyph outline and one for the hole
+        //
+        // might be a good idea to cache the contours,
+        // in which case glyph->glyph_index can be used as a std::map key
         POINTS_LIST contours = outlineToStraightSegments( glyph->outline );
-#endif
 
         std::vector<VECTOR2D> ptListScaled;
         for( POINTS points : contours )
@@ -428,11 +272,8 @@ void OUTLINE_FONT::drawSingleLineText( GAL* aGal, hb_buffer_t* aText, hb_font_t*
             }
 
             // always fill outline
-            //
-            // TODO: stroke outline instead of fill when appropriate
-            //aGal->SetIsFill( true );
-            //aGal->DrawPolyline( &ptListScaled[0], ptCount );
-            aGal->FillPolyline( ptListScaled );
+            aGal->SetIsFill( true );
+            aGal->DrawPolyline( ptListScaled );
         }
 
         cursor_x += ( pos.x_advance * advance_x_factor );
@@ -469,24 +310,9 @@ POINTS_LIST OUTLINE_FONT::outlineToStraightSegments( FT_Outline aOutline ) const
             FT_Vector point = aOutline.points[p];
             char      tags = aOutline.tags[p];
 
-#ifdef DEBUG
-#ifdef FOOFAA
-            std::cerr << "Point [" << point.x << "," << point.y << "] "
-                      << ( onCurve( tags ) ? "on curve " : "off curve " )
-                      << ( onCurve( tags )
-                                   ? ""
-                                   : ( thirdOrderBezierPoint( tags ) ? "3rd order Bezier point"
-                                                                     : "2nd order Bezier point" ) );
-            if( hasDropout( tags ) )
-            {
-                std::cerr << ", dropout " << dropoutMode( tags );
-            }
-            std::cerr << std::endl;
-#endif
-#endif
             if( thirdOrderBezierPoint( tags ) )
             {
-                // TODO
+                // TODO! Some fonts contain cubic Beziers!
                 assert( 1 == 0 );
             }
 
@@ -536,14 +362,10 @@ OUTLINE_FONT::approximateContour( const POINTS&            contour_points,
         unsigned int nth = i < contour_points.size() ? i : 0;
         VECTOR2D     p = contour_points.at( nth );
         bool         on_curve = contour_point_on_curve.at( nth );
-#ifdef DEBUG
-#ifdef FOOFAA
-        std::cerr << "Point " << p << " " << ( on_curve ? "on" : "off" ) << " curve" << std::endl;
-#endif
-#endif
+
         if( on_curve )
         {
-            // This point is on curve
+            // This point is on the curve, so it is not a control point
             if( n == 0 )
             {
                 // First point
@@ -558,7 +380,7 @@ OUTLINE_FONT::approximateContour( const POINTS&            contour_points,
                 }
                 else
                 {
-                    // Previous point is not on curve
+                    // Previous point is a control point not on curve
                     if( n > 1 )
                     {
                         if( prev2_on_curve )
@@ -586,16 +408,14 @@ OUTLINE_FONT::approximateContour( const POINTS&            contour_points,
                             std::cerr << "OUTLINE_FONT::approximateContour() impossible point "
                                          "sequence"
                                       << std::endl;
-                            //assert( 1 == 0 );
                         }
                     }
                     else
                     {
-                        // TODO: how did we get here?
-                        std::cerr
-                                << "OUTLINE_FONT::approximateContour() TODO define state, handling "
-                                   "point #"
-                                << n << std::endl;
+                        // How did we get here?
+                        std::cerr << "OUTLINE_FONT::approximateContour() undefined state "
+                                     "processing point #"
+                                  << n << std::endl;
                     }
                 }
             }
@@ -615,6 +435,9 @@ OUTLINE_FONT::approximateContour( const POINTS&            contour_points,
 // use converter in kimath
 bool OUTLINE_FONT::approximateBezierCurve( POINTS& result, const POINTS& bezier ) const
 {
+    // Quadratic to cubic Bezier conversion:
+    // cpn = Cubic Bezier control points (n = 0..3, 4 in total)
+    // qpn = Quadratic Bezier control points (n = 0..2, 3 in total)
     // cp0 = qp0, cp1 = qp0 + 2/3 * (qp1 - qp0), cp2 = qp2 + 2/3 * (qp1 - qp2), cp3 = qp2
     POINTS cubic;
     cubic.push_back( bezier.at( 0 ) );                                                     // cp0
