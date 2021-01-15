@@ -268,7 +268,7 @@ wxString CONNECTION_SUBGRAPH::driverName( SCH_ITEM* aItem ) const
     {
     case SCH_PIN_T:
     {
-        bool forceNoConnect = m_no_connect != nullptr;
+        bool     forceNoConnect = m_no_connect != nullptr;
         SCH_PIN* pin = static_cast<SCH_PIN*>( aItem );
         return pin->GetDefaultNetName( m_sheet, forceNoConnect );
         break;
@@ -1481,23 +1481,18 @@ void CONNECTION_GRAPH::buildConnectionGraph()
         {
             CONNECTION_SUBGRAPH* subgraph = m_driver_subgraphs[subgraphId];
 
-<<<<<<< HEAD
+            // Make sure weakly-driven single-pin nets get the no_connect_ prefix
+            if( !subgraph->m_strong_driver && subgraph->m_drivers.size() == 1
+                && subgraph->m_driver->Type() == SCH_PIN_T )
+            {
+                SCH_PIN* pin = static_cast<SCH_PIN*>( subgraph->m_driver );
+                pin->ClearDefaultNetName( &subgraph->m_sheet );
+                subgraph->m_driver_connection->ConfigureFromLabel(
+                        pin->GetDefaultNetName( subgraph->m_sheet, true ) );
+            }
+
             subgraph->m_dirty = false;
             subgraph->UpdateItemConnections();
-=======
-                // Make sure weakly-driven single-pin nets get the no_connect_ prefix
-                if( !subgraph->m_strong_driver && subgraph->m_drivers.size() == 1 &&
-                    subgraph->m_driver->Type() == SCH_PIN_T )
-                {
-                    SCH_PIN* pin = static_cast<SCH_PIN*>( subgraph->m_driver );
-                    pin->ClearDefaultNetName( &subgraph->m_sheet );
-                    subgraph->m_driver_connection->ConfigureFromLabel(
-                            pin->GetDefaultNetName( subgraph->m_sheet, true ) );
-                }
-
-                subgraph->m_dirty = false;
-                subgraph->UpdateItemConnections();
->>>>>>> upstream/master
 
             // No other processing to do on buses
             if( subgraph->m_driver_connection->IsBus() )
@@ -1845,24 +1840,16 @@ void CONNECTION_GRAPH::propagateToNeighbors( CONNECTION_SUBGRAPH* aSubgraph )
             // c) meets or exceeds our priority, is a strong driver, and has a shorter path
             // d) is weak, we're week, and is alphabetically lower
 
-<<<<<<< HEAD
             if( ( priority >= CONNECTION_SUBGRAPH::PRIORITY::POWER_PIN )
                 || ( !originalStrong && candidateStrong )
                 || ( priority >= highest && candidateStrong
-                     && subgraph->m_sheet.size() < aSubgraph->m_sheet.size() )
-                || ( !originalStrong && !candidateStrong && candidateName < originalName ) )
-=======
-            if( ( priority >= CONNECTION_SUBGRAPH::PRIORITY::POWER_PIN ) ||
-                ( !originalStrong && candidateStrong ) ||
-                ( priority >= highest && candidateStrong &&
-                  subgraph->m_sheet.size() < original->m_sheet.size() ) ||
-                ( ( originalStrong == candidateStrong ) && candidateName < originalName ) )
->>>>>>> upstream/master
+                     && subgraph->m_sheet.size() < original->m_sheet.size() )
+                || ( ( originalStrong == candidateStrong ) && candidateName < originalName ) )
             {
                 original = subgraph;
                 highest = priority;
                 originalStrong = candidateStrong;
-                originalName   = subgraph->m_driver_connection->Name();
+                originalName = subgraph->m_driver_connection->Name();
             }
         }
     }
