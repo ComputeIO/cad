@@ -972,6 +972,17 @@ void OPENGL_GAL::DrawPolyline( const std::deque<VECTOR2D>& aPointList )
 }
 
 
+void OPENGL_GAL::DrawPolyline( const std::vector<VECTOR2D>& aPointList )
+{
+    // should be combined with DrawPolyline( const std::deque<VECTOR2D>& aPointList )
+    drawPolyline(
+            [&]( int idx ) {
+                return aPointList.at( idx );
+            },
+            aPointList.size() );
+}
+
+
 void OPENGL_GAL::DrawPolyline( const VECTOR2D aPointList[], int aListSize )
 {
     drawPolyline(
@@ -994,18 +1005,6 @@ void OPENGL_GAL::DrawPolyline( const SHAPE_LINE_CHAIN& aLineChain )
                 return aLineChain.CPoint( idx );
             },
             numPoints );
-}
-
-
-void OPENGL_GAL::FillPolyline( const std::vector<VECTOR2D>& aPointList )
-{
-    // TODO: implement fill!
-    std::cerr << "OPENGL_GAL::FillPolyline() fill not implemented, defaulting to draw" << std::endl;
-    drawPolyline(
-            [&]( int idx ) {
-                return aPointList.at( idx );
-            },
-            aPointList.size() );
 }
 
 
