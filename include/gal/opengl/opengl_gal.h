@@ -135,11 +135,9 @@ public:
 
     /// @copydoc GAL::DrawPolyline()
     void DrawPolyline( const std::deque<VECTOR2D>& aPointList ) override;
+    void DrawPolyline( const std::vector<VECTOR2D>& aPointList ) override;
     void DrawPolyline( const VECTOR2D aPointList[], int aListSize ) override;
     void DrawPolyline( const SHAPE_LINE_CHAIN& aLineChain ) override;
-
-    /// @copydoc GAL::FillPolyline()
-    void FillPolyline( const std::vector<VECTOR2D>& aPointList ) override;
 
     /// @copydoc GAL::DrawPolygon()
     void DrawPolygon( const std::deque<VECTOR2D>& aPointList ) override;
