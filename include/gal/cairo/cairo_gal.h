@@ -94,17 +94,11 @@ public:
     {
         drawPoly( aPointList, aListSize );
     }
-
-    void DrawPolyline( const SHAPE_LINE_CHAIN& aLineChain ) override { drawPoly( aLineChain ); }
-
-    /// @copydoc GAL::FillPolyline()
-    void FillPolyline( const std::vector<VECTOR2D>& aPointList ) override
+    void DrawPolyline( const std::vector<VECTOR2D>& aPointList ) override
     {
-        Save();
-        SetIsFill( true );
         DrawPolyline( &aPointList[0], aPointList.size() );
-        Restore();
     }
+    void DrawPolyline( const SHAPE_LINE_CHAIN& aLineChain ) override { drawPoly( aLineChain ); }
 
     /// @copydoc GAL::DrawPolygon()
     void DrawPolygon( const std::deque<VECTOR2D>& aPointList ) override { drawPoly( aPointList ); }
