@@ -36,8 +36,8 @@ class DUMMY_GAL : public GAL
 public:
     DUMMY_GAL( GAL_DISPLAY_OPTIONS& aOptions ) : GAL( aOptions ) {}
 
-    /// @copydoc GAL::FillPolyline()
-    void FillPolyline( const std::vector<VECTOR2D>& aPointList ) override {}
+    /// @copydoc GAL::DrawPolyline()
+    void DrawPolyline( const std::vector<VECTOR2D>& aPointList ) override {}
 };
 } // namespace KIGFX
 
