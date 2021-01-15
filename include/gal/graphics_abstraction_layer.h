@@ -113,13 +113,14 @@ public:
     virtual void DrawPolyline( const std::deque<VECTOR2D>& aPointList ){};
     virtual void DrawPolyline( const VECTOR2D aPointList[], int aListSize ){};
     virtual void DrawPolyline( const SHAPE_LINE_CHAIN& aLineChain ){};
+    virtual void DrawPolyline( const std::vector<VECTOR2D>& aPointList ) = 0;
 
     /**
      * Draw a filled polyline
      *
      * @param aPointList is a list of 2D-Vectors containing the polyline points.
      */
-    virtual void FillPolyline( const std::vector<VECTOR2D>& aPointList ) = 0;
+
 
     /**
      * Draw a circle using world coordinates.
