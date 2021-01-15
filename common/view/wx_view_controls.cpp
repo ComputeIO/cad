@@ -176,7 +176,9 @@ void WX_VIEW_CONTROLS::LoadSettings()
 void WX_VIEW_CONTROLS::onMotion( wxMouseEvent& aEvent )
 {
     bool isAutoPanning = false;
-    VECTOR2D mousePos( aEvent.GetX(), aEvent.GetY() );
+    int x = aEvent.GetX();
+    int y = aEvent.GetY();
+    VECTOR2D mousePos( x, y );
 
     if( m_settings.m_autoPanEnabled && m_settings.m_autoPanSettingEnabled )
         isAutoPanning = handleAutoPanning( aEvent );
@@ -188,8 +190,49 @@ void WX_VIEW_CONTROLS::onMotion( wxMouseEvent& aEvent )
             VECTOR2D d = m_dragStartPoint - mousePos;
             VECTOR2D delta = m_view->ToWorld( d, false );
 
-            m_view->SetCenter( m_lookStartPoint + delta );
-            aEvent.StopPropagation();
+            static bool justWarped = false;
+            int warpX = 0;
+            int warpY = 0;
+            wxSize parentSize = m_parentPanel->GetClientSize();
+
+            if( x <= 0 )
+            {
+                warpX = parentSize.x - 2;
+            }
+            else if(x >= parentSize.x - 1 )
+            {
+                warpX = 2 - parentSize.x;
+            }
+
+            if( y <= 0 )
+            {
+                warpY = parentSize.y - 2;
+            }
+            else if( y >= parentSize.y - 1 )
+            {
+                warpY = 2 - parentSize.y;
+            }
+
+            if( !justWarped )
+            {
+                m_view->SetCenter( m_lookStartPoint + delta );
+                aEvent.StopPropagation();
+            }
+
+            if( warpX || warpY )
+            {
+                if( !justWarped )
+                {
+                    m_parentPanel->WarpPointer( x + warpX, y + warpY );
+                    m_dragStartPoint += VECTOR2D( warpX, warpY );
+                    justWarped = true;
+                }
+                else
+                    justWarped = false;
+            }
+            else
+                justWarped = false;
+
         }
         else if( m_state == DRAG_ZOOMING )
         {
