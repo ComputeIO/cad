@@ -136,7 +136,7 @@ void BASIC_GAL::DrawPolyline( const std::vector<VECTOR2D>& aPointList )
     for( const VECTOR2D& pt : aPointList )
         polyline_corners.emplace_back( (wxPoint) transform( pt ) );
 
-    doDrawPolyline( polyline_corners, true );
+    doDrawPolyline( polyline_corners );
 }
 
 
