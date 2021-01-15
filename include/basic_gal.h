@@ -109,14 +109,9 @@ public:
      */
     virtual void DrawPolyline( const std::deque<VECTOR2D>& aPointList ) override;
 
-    virtual void DrawPolyline( const VECTOR2D aPointList[], int aListSize ) override;
+    virtual void DrawPolyline( const std::vector<VECTOR2D>& aPointList ) override;
 
-    /**
-     * Draw a filled polyline
-     *
-     * @param aPointList is a list of 2D-Vectors containing the polyline points.
-     */
-    virtual void FillPolyline( const std::vector<VECTOR2D>& aPointList ) override;
+    virtual void DrawPolyline( const VECTOR2D aPointList[], int aListSize ) override;
 
     /**
      * Start and end points are defined as 2D-Vectors.
