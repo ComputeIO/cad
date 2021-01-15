@@ -1,28 +1,5 @@
 {
   "board": {
-    "design_settings": {
-      "defaults": {
-        "board_outline_line_width": 0.1,
-        "copper_line_width": 0.2,
-        "copper_text_size_h": 1.5,
-        "copper_text_size_v": 1.5,
-        "copper_text_thickness": 0.3,
-        "other_line_width": 0.15,
-        "silk_line_width": 0.15,
-        "silk_text_size_h": 1.0,
-        "silk_text_size_v": 1.0,
-        "silk_text_thickness": 0.15
-      },
-      "diff_pair_dimensions": [],
-      "drc_exclusions": [],
-      "rules": {
-        "min_copper_edge_clearance": 0.0,
-        "solder_mask_clearance": 0.0,
-        "solder_mask_min_width": 0.0
-      },
-      "track_widths": [],
-      "via_dimensions": []
-    },
     "layer_presets": []
   },
   "boards": [],
@@ -209,13 +186,13 @@
     "pinned_symbol_libs": []
   },
   "meta": {
-    "filename": "test_global_promotion_2.kicad_pro",
+    "filename": "noconnects.kicad_pro",
     "version": 1
   },
   "net_settings": {
     "classes": [
       {
-        "bus_width": 6.0,
+        "bus_width": 12.0,
         "clearance": 0.2,
         "diff_pair_gap": 0.25,
         "diff_pair_via_gap": 0.25,
@@ -244,7 +221,6 @@
       "netlist": "",
       "specctra_dsn": "",
       "step": "",
-      "vmrl": "",
       "vrml": ""
     },
     "page_layout_descr_file": ""
@@ -280,16 +256,8 @@
   },
   "sheets": [
     [
-      "68004dfc-62ae-4bb2-9ef3-d0131842bcaa",
+      "6a2ced4c-1d9e-447a-9dae-95ef05d4ac0f",
       ""
-    ],
-    [
-      "00000000-0000-0000-0000-00005cc15ef9",
-      "Sheet5CC15EF8"
-    ],
-    [
-      "00000000-0000-0000-0000-00005cc165f1",
-      "sheet5CC165F1"
     ]
   ],
   "text_variables": {}

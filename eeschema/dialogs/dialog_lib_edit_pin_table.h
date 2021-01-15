@@ -38,8 +38,9 @@ enum COL_ORDER
     COL_LENGTH,
     COL_POSX,
     COL_POSY,
+    COL_VISIBLE,
 
-    COL_COUNT       // keep as last
+    COL_COUNT // keep as last
 };
 
 
