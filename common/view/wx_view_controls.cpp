@@ -352,6 +352,7 @@ void WX_VIEW_CONTROLS::onButton( wxMouseEvent& aEvent )
             m_dragStartPoint = VECTOR2D( aEvent.GetX(), aEvent.GetY() );
             m_lookStartPoint = m_view->GetCenter();
             m_state = DRAG_PANNING;
+            m_parentPanel->CaptureMouse();
         }
         else if( ( aEvent.MiddleDown() && m_settings.m_dragMiddle == MOUSE_DRAG_ACTION::ZOOM ) ||
                  ( aEvent.RightDown() && m_settings.m_dragRight == MOUSE_DRAG_ACTION::ZOOM ) )
@@ -359,6 +360,7 @@ void WX_VIEW_CONTROLS::onButton( wxMouseEvent& aEvent )
             m_dragStartPoint   = VECTOR2D( aEvent.GetX(), aEvent.GetY() );
             m_initialZoomScale = m_view->GetScale();
             m_state = DRAG_ZOOMING;
+            m_parentPanel->CaptureMouse();
         }
 
         if( aEvent.LeftUp() )
@@ -369,7 +371,10 @@ void WX_VIEW_CONTROLS::onButton( wxMouseEvent& aEvent )
     case DRAG_ZOOMING:
     case DRAG_PANNING:
         if( aEvent.MiddleUp() || aEvent.LeftUp() || aEvent.RightUp() )
+        {
             m_state = IDLE;
+            m_parentPanel->ReleaseMouse();
+        }
 
         break;
     }
