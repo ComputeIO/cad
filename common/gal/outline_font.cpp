@@ -31,6 +31,8 @@
 #include FT_GLYPH_H
 #include FT_BBOX_H
 #include <bezier_curves.h>
+#include <geometry/shape_simple.h>
+#include <geometry/shape_poly_set.h>
 
 using namespace KIGFX;
 
@@ -226,6 +228,12 @@ static bool contourIsFilled( const CONTOUR& c )
 }
 
 
+static bool contourIsHole( const CONTOUR& c )
+{
+    return !contourIsFilled( c );
+}
+
+
 void OUTLINE_FONT::drawSingleLineText( GAL* aGal, hb_buffer_t* aText, hb_font_t* aFont )
 {
     const VECTOR2D& galGlyphSize = aGal->GetGlyphSize();
@@ -272,12 +280,17 @@ void OUTLINE_FONT::drawSingleLineText( GAL* aGal, hb_buffer_t* aText, hb_font_t*
         CONTOURS contours;
         outlineToStraightSegments( contours, glyph->outline );
 
-        std::vector<VECTOR2D> ptListScaled;
+        SHAPE_POLY_SET             poly;
+        std::vector<SHAPE_SIMPLE*> holes;
+        std::vector<SHAPE_SIMPLE*> outlines;
+        std::vector<VECTOR2D>      ptListScaled;
+
         for( CONTOUR c : contours )
         {
             POINTS points = c.points;
             int ptCount = 0;
             ptListScaled.clear();
+
             for( const VECTOR2D& v : points )
             {
                 VECTOR2D pt( -( v.x + cursor_x ), -( v.y + cursor_y ) );
@@ -286,9 +299,63 @@ void OUTLINE_FONT::drawSingleLineText( GAL* aGal, hb_buffer_t* aText, hb_font_t*
                 ptCount++;
             }
 
-            aGal->SetIsFill( contourIsFilled( c ) );
-            aGal->DrawPolyline( ptListScaled );
+            SHAPE_SIMPLE* shape = new SHAPE_SIMPLE();
+            for( const VECTOR2D& p : ptListScaled )
+            {
+                shape->Append( p.x, p.y );
+            }
+
+            if( contourIsHole( c ) )
+            {
+                holes.push_back( shape );
+            }
+            else
+            {
+                outlines.push_back( shape );
+            }
         }
+
+        for( SHAPE_SIMPLE* outline : outlines )
+        {
+            if( outline->PointCount() )
+            {
+                poly.AddOutline( outline->Vertices() );
+            }
+        }
+
+        int nthHole = 0;
+        for( SHAPE_SIMPLE* hole : holes )
+        {
+            if( hole->PointCount() )
+            {
+                VECTOR2I firstPoint = hole->GetPoint( 0 );
+                //SHAPE_SIMPLE *outlineForHole = nullptr;
+                int nthOutline = -1;
+                int n = 0;
+                for( SHAPE_SIMPLE* outline : outlines )
+                {
+                    if( outline->PointInside( firstPoint ) )
+                    {
+                        //outlineForHole = outline;
+                        nthOutline = n;
+                        break;
+                    }
+                    n++;
+                }
+                if( nthOutline > -1 )
+                {
+                    poly.AddHole( hole->Vertices(), n );
+                }
+            }
+            delete hole;
+            nthHole++;
+        }
+
+        aGal->SetIsFill( true );
+        aGal->DrawGlyph( poly );
+
+        for( SHAPE_SIMPLE* outline : outlines )
+            delete outline;
 
         cursor_x += ( pos.x_advance * advance_x_factor );
         cursor_y += ( pos.y_advance * advance_y_factor );

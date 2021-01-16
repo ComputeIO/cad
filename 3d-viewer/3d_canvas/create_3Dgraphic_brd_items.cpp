@@ -82,6 +82,9 @@ void addTextSegmToContainer( int x0, int y0, int xf, int yf, void* aData )
 
 bool outlineTextCallback( const std::vector<wxPoint>& aPoints, void* aData )
 {
+#if 1 // FOOFAA
+    return true;
+#else
     const BOARD_ITEM* boardItem = s_boardItem;
     SHAPE_POLY_SET    poly;
     SHAPE_SIMPLE      shape;
@@ -103,6 +106,7 @@ bool outlineTextCallback( const std::vector<wxPoint>& aPoints, void* aData )
     }
 
     return true;
+#endif
 }
 
 

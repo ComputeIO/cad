@@ -1044,6 +1044,12 @@ void OPENGL_GAL::DrawPolygon( const VECTOR2D aPointList[], int aListSize )
 }
 
 
+void OPENGL_GAL::DrawGlyph( const SHAPE_POLY_SET& aPolySet )
+{
+    assert( 1 == 0 ); // TODO
+}
+
+
 void OPENGL_GAL::drawTriangulatedPolyset( const SHAPE_POLY_SET& aPolySet )
 {
     currentManager->Shader( SHADER_NONE );

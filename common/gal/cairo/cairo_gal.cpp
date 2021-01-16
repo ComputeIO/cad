@@ -433,6 +433,66 @@ void CAIRO_GAL_BASE::DrawPolygon( const SHAPE_LINE_CHAIN& aPolygon )
 }
 
 
+static inline void moveOrLineTo( cairo_t* ctx, const VECTOR2I& aPoint, bool aDoLine )
+{
+    if( aDoLine )
+    {
+        cairo_line_to( ctx, aPoint.x, aPoint.y );
+    }
+    else
+    {
+        cairo_move_to( ctx, aPoint.x, aPoint.y );
+    }
+}
+
+
+void CAIRO_GAL_BASE::DrawGlyph( const SHAPE_POLY_SET& aPolySet )
+{
+    for( int iOutline = 0; iOutline < aPolySet.OutlineCount(); ++iOutline )
+    {
+        const SHAPE_LINE_CHAIN& lineChain = aPolySet.COutline( iOutline );
+
+        if( lineChain.PointCount() < 2 )
+            continue;
+
+        syncLineWidth();
+
+        auto numPoints = lineChain.PointCount();
+
+        for( int i = 0; i < numPoints; ++i )
+        {
+            const VECTOR2I& pw = lineChain.CPoint( i );
+            const auto      ps = roundp( xform( pw.x, pw.y ) );
+            moveOrLineTo( currentContext, ps, i > 0 );
+        }
+
+        if( aPolySet.HoleCount( iOutline ) > 0 )
+        {
+            cairo_close_path( currentContext );
+
+            for( int iHole = 0; iHole < aPolySet.HoleCount( iOutline ); iHole++ )
+            {
+                const SHAPE_LINE_CHAIN& hole = aPolySet.CHole( iOutline, iHole );
+
+                for( int iP = 0; iP < hole.PointCount(); ++iP )
+                {
+                    const VECTOR2I& holePw = hole.CPoint( iP );
+                    const auto      holePs = roundp( xform( holePw.x, holePw.y ) );
+                    moveOrLineTo( currentContext, holePs, iP > 0 );
+                }
+
+                cairo_close_path( currentContext );
+            }
+            cairo_set_fill_rule( currentContext, CAIRO_FILL_RULE_EVEN_ODD );
+        }
+
+        flushPath();
+    }
+
+    isElementAdded = true;
+}
+
+
 void CAIRO_GAL_BASE::DrawCurve( const VECTOR2D& aStartPoint, const VECTOR2D& aControlPointA,
                                 const VECTOR2D& aControlPointB, const VECTOR2D& aEndPoint,
                                 double aFilterValue )

@@ -38,6 +38,9 @@ public:
 
     /// @copydoc GAL::DrawPolyline()
     void DrawPolyline( const std::vector<VECTOR2D>& aPointList ) override {}
+
+    /// @copydoc GAL::DrawGlyph()
+    void DrawGlyph( const SHAPE_POLY_SET& aPolySet ) override {}
 };
 } // namespace KIGFX
 

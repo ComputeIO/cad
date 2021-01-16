@@ -179,6 +179,13 @@ public:
     virtual void DrawPolygon( const SHAPE_LINE_CHAIN& aPolySet ){};
 
     /**
+     * Draw a polygon representing an outline font glyph.
+     *
+     * @param aPointList is the list of the polygon points.
+     */
+    virtual void DrawGlyph( const SHAPE_POLY_SET& aPolySet ) = 0;
+
+    /**
      * Draw a cubic bezier spline.
      *
      * @param startPoint    is the start point of the spline.

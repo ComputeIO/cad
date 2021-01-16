@@ -36,6 +36,7 @@
 #include <trigo.h>
 
 #include <basic_gal.h>
+#include <geometry/shape_poly_set.h>
 
 using namespace KIGFX;
 
@@ -181,5 +182,54 @@ void BASIC_GAL::DrawLine( const VECTOR2D& aStartPoint, const VECTOR2D& aEndPoint
     else if( m_callback )
     {
         m_callback( startVector.x, startVector.y, endVector.x, endVector.y, m_callbackData );
+    }
+}
+
+
+void BASIC_GAL::DrawGlyph( const SHAPE_POLY_SET& aPolySet )
+{
+    if( m_DC )
+    {
+        // 3d? TODO
+    }
+    else if( m_plotter )
+    {
+        std::vector<wxPoint> polygon_with_transform;
+        int                  i;
+
+        for( int iOutline = 0; iOutline < aPolySet.OutlineCount(); ++iOutline )
+        {
+            const SHAPE_LINE_CHAIN& outline = aPolySet.COutline( iOutline );
+
+            if( outline.PointCount() < 2 )
+                continue;
+
+            polygon_with_transform.clear();
+
+            for( i = 0; i < outline.PointCount(); i++ )
+                polygon_with_transform.emplace_back( (wxPoint) transform( outline.CPoint( i ) ) );
+
+            m_plotter->SetLayerPolarity( true );
+            m_plotter->PlotPoly( polygon_with_transform, FILL_TYPE::FILLED_SHAPE );
+
+            for( int iHole = 0; iHole < aPolySet.HoleCount( iOutline ); iHole++ )
+            {
+                const SHAPE_LINE_CHAIN& hole = aPolySet.CHole( iOutline, iHole );
+
+                if( hole.PointCount() < 2 )
+                    continue;
+
+                polygon_with_transform.clear();
+
+                for( i = 0; i < hole.PointCount(); i++ )
+                    polygon_with_transform.emplace_back( (wxPoint) transform( hole.CPoint( i ) ) );
+
+                m_plotter->SetLayerPolarity( false );
+                m_plotter->PlotPoly( polygon_with_transform, FILL_TYPE::FILLED_SHAPE );
+            }
+        }
+
+        m_plotter->SetLayerPolarity( true );
+        m_plotter->PenFinish();
     }
 }
