@@ -108,12 +108,19 @@ void GENDRILL_WRITER_BASE::buildHolesList( DRILL_LAYER_PAIR aLayerPair,
         {
             for( PAD* pad : footprint->Pads() )
             {
+                // first find out if it is a plated or non-plated hole
+                // so we can skip this pad if a PTH-only or NPTH-only list is requested
+                new_hole.m_Hole_NotPlated = ( pad->GetAttribute() == PAD_ATTRIB_NPTH );
+                // hack: a hole with only one copper layer needs no plating
+                if( ( pad->GetLayerSet() & LSET::AllCuMask() ).count() == 1 )
+                    new_hole.m_Hole_NotPlated = true; /* make it a NPTH */
+                // now check if we need to skip this pad
                 if( !m_merge_PTH_NPTH )
                 {
-                    if( !aGenerateNPTH_list && pad->GetAttribute() == PAD_ATTRIB_NPTH )
+                    if( !aGenerateNPTH_list && new_hole.m_Hole_NotPlated )
                         continue;
 
-                    if( aGenerateNPTH_list && pad->GetAttribute() != PAD_ATTRIB_NPTH )
+                    if( aGenerateNPTH_list && !new_hole.m_Hole_NotPlated )
                         continue;
                 }
 
@@ -121,7 +128,6 @@ void GENDRILL_WRITER_BASE::buildHolesList( DRILL_LAYER_PAIR aLayerPair,
                     continue;
 
                 new_hole.m_ItemParent     = pad;
-                new_hole.m_Hole_NotPlated = (pad->GetAttribute() == PAD_ATTRIB_NPTH);
                 new_hole.m_Tool_Reference = -1;         // Flag is: Not initialized
                 new_hole.m_Hole_Orient    = pad->GetOrientation();
                 new_hole.m_Hole_Shape     = 0;           // hole shape: round
