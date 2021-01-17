@@ -180,6 +180,38 @@ void WX_VIEW_CONTROLS::onMotion( wxMouseEvent& aEvent )
     int y = aEvent.GetY();
     VECTOR2D mousePos( x, y );
 
+    if( !aEvent.Dragging() &&
+        ( m_settings.m_cursorCaptured || m_settings.m_grabMouse || m_settings.m_autoPanEnabled ) )
+    {
+        bool warp = false;
+        wxSize parentSize = m_parentPanel->GetClientSize();
+
+        if( x < 0 )
+        {
+            x = 0;
+            warp = true;
+        }
+        else if( x >= parentSize.x )
+        {
+            x = parentSize.x - 1;
+            warp = true;
+        }
+
+        if( y < 0 )
+        {
+            y = 0;
+            warp = true;
+        }
+        else if( y >= parentSize.y )
+        {
+            y = parentSize.y - 1;
+            warp = true;
+        }
+
+        if( warp )
+            m_parentPanel->WarpPointer( x, y );
+    }
+
     if( m_settings.m_autoPanEnabled && m_settings.m_autoPanSettingEnabled )
         isAutoPanning = handleAutoPanning( aEvent );
 
@@ -440,38 +472,7 @@ void WX_VIEW_CONTROLS::onEnter( wxMouseEvent& aEvent )
 
 void WX_VIEW_CONTROLS::onLeave( wxMouseEvent& aEvent )
 {
-    if( m_settings.m_cursorCaptured )
-    {
-        bool warp = false;
-        int x = aEvent.GetX();
-        int y = aEvent.GetY();
-        wxSize parentSize = m_parentPanel->GetClientSize();
 
-        if( x < 0 )
-        {
-            x = 0;
-            warp = true;
-        }
-        else if( x >= parentSize.x )
-        {
-            x = parentSize.x - 1;
-            warp = true;
-        }
-
-        if( y < 0 )
-        {
-            y = 0;
-            warp = true;
-        }
-        else if( y >= parentSize.y )
-        {
-            y = parentSize.y - 1;
-            warp = true;
-        }
-
-        if( warp )
-            m_parentPanel->WarpPointer( x, y );
-    }
 }
 
 
@@ -587,6 +588,28 @@ void WX_VIEW_CONTROLS::SetGrabMouse( bool aEnabled )
         m_parentPanel->ReleaseMouse();
 
     VIEW_CONTROLS::SetGrabMouse( aEnabled );
+}
+
+
+void WX_VIEW_CONTROLS::CaptureCursor( bool aEnabled )
+{
+    if( aEnabled && !m_settings.m_cursorCaptured )
+        m_parentPanel->CaptureMouse();
+    else if( !aEnabled && m_settings.m_cursorCaptured )
+        m_parentPanel->ReleaseMouse();
+
+    VIEW_CONTROLS::CaptureCursor( aEnabled );
+}
+
+
+void WX_VIEW_CONTROLS::SetAutoPan( bool aEnabled )
+{
+    if( aEnabled && !m_settings.m_autoPanEnabled )
+        m_parentPanel->CaptureMouse();
+    else if( !aEnabled && m_settings.m_autoPanEnabled )
+        m_parentPanel->ReleaseMouse();
+
+    VIEW_CONTROLS::SetAutoPan( aEnabled );
 }
 
 
