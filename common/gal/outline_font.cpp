@@ -38,7 +38,7 @@ using namespace KIGFX;
 
 FT_Library OUTLINE_FONT::mFreeType = nullptr;
 
-OUTLINE_FONT::OUTLINE_FONT()
+OUTLINE_FONT::OUTLINE_FONT() : mReferencedFont( nullptr )
 {
     if( !mFreeType )
     {
@@ -119,12 +119,6 @@ void OUTLINE_FONT::Draw( GAL* aGal, const UTF8& aText, const VECTOR2D& aPosition
     if( aText.empty() )
         return;
 
-    hb_buffer_t* buf = hb_buffer_create();
-    hb_buffer_add_utf8( buf, aText.c_str(), -1, 0, -1 );
-
-    // guess direction, script, and language based on contents
-    hb_buffer_guess_segment_properties( buf );
-
     FT_Select_Charmap( mFace, FT_Encoding::FT_ENCODING_UNICODE );
     // FT_Set_Char_Size(
     //   <handle to face object>,
@@ -143,17 +137,18 @@ void OUTLINE_FONT::Draw( GAL* aGal, const UTF8& aText, const VECTOR2D& aPosition
     // value for H/V reso)
     FT_Set_Char_Size( mFace, 0, 16 * 64, 0, 0 );
 
-    hb_font_t* font = hb_ft_font_create_referenced( mFace );
-    hb_ft_font_set_funcs( font );
-    hb_shape( font, buf, NULL, 0 );
+    if( !mReferencedFont )
+    {
+        mReferencedFont = hb_ft_font_create_referenced( mFace );
+        hb_ft_font_set_funcs( mReferencedFont );
+    }
 
     // Context needs to be saved before any transformations
     aGal->Save();
     aGal->Translate( aPosition );
     aGal->Rotate( -aRotationAngle );
 
-    drawSingleLineText( aGal, buf, font );
-    hb_buffer_destroy( buf );
+    drawSingleLineText( aGal, aText );
 
     aGal->Restore();
 }
@@ -234,24 +229,46 @@ static bool contourIsHole( const CONTOUR& c )
 }
 
 
-void OUTLINE_FONT::drawSingleLineText( GAL* aGal, hb_buffer_t* aText, hb_font_t* aFont )
+void OUTLINE_FONT::drawSingleLineText( GAL* aGal, const UTF8& aText )
 {
-    const VECTOR2D& galGlyphSize = aGal->GetGlyphSize();
-
     // Context needs to be saved before any transformations
     aGal->Save();
 
-    unsigned int         glyphCount;
-    hb_glyph_info_t*     glyphInfo = hb_buffer_get_glyph_infos( aText, &glyphCount );
-    hb_glyph_position_t* glyphPos = hb_buffer_get_glyph_positions( aText, &glyphCount );
+    std::vector<SHAPE_POLY_SET> glyphs;
+    GetTextAsPolygon( glyphs, aText, aGal->GetGlyphSize(), aGal->IsTextMirrored() );
 
-    const double mirror_factor = ( aGal->IsTextMirrored() ? 1 : -1 );
+    aGal->SetIsFill( true );
+    for( SHAPE_POLY_SET& glyph : glyphs )
+    {
+        aGal->DrawGlyph( glyph );
+    }
+
+    aGal->Restore();
+}
+
+
+void OUTLINE_FONT::GetTextAsPolygon( std::vector<SHAPE_POLY_SET>& aGlyphs, const UTF8& aText,
+                                     const VECTOR2D& aGlyphSize, bool aIsMirrored ) const
+{
+    hb_buffer_t* buf = hb_buffer_create();
+    hb_buffer_add_utf8( buf, aText.c_str(), -1, 0, -1 );
+
+    // guess direction, script, and language based on contents
+    hb_buffer_guess_segment_properties( buf );
+
+    unsigned int         glyphCount;
+    hb_glyph_info_t*     glyphInfo = hb_buffer_get_glyph_infos( buf, &glyphCount );
+    hb_glyph_position_t* glyphPos = hb_buffer_get_glyph_positions( buf, &glyphCount );
+
+    hb_shape( mReferencedFont, buf, NULL, 0 );
+
+    const double mirror_factor = ( aIsMirrored ? 1 : -1 );
     // TODO: xyscaler is determined with the Stetson method to make
     // debugging easier; root cause for why scaling does not seem to
     // work is unknown (but most likely trivial)
     const double xyscaler = 2.0e3;
-    const double x_scale_factor = mirror_factor * galGlyphSize.x / xyscaler;
-    const double y_scale_factor = galGlyphSize.y / xyscaler;
+    const double x_scale_factor = mirror_factor * aGlyphSize.x / xyscaler;
+    const double y_scale_factor = aGlyphSize.y / xyscaler;
     // TODO: why 2x? not sure why this is needed, but without it
     // advance (at least X advance, haven't yet witnessed non-zero Y
     // advance) seems to be about 0.5x what is required
@@ -269,7 +286,10 @@ void OUTLINE_FONT::drawSingleLineText( GAL* aGal, hb_buffer_t* aText, hb_font_t*
 
         FT_Load_Glyph( mFace, codepoint, FT_LOAD_NO_BITMAP | FT_LOAD_NO_SCALE );
 
-        FT_GlyphSlot glyph = mFace->glyph;
+        FT_GlyphSlot       glyph = mFace->glyph;
+        const unsigned int bufsize = 512;
+        char               glyphName[bufsize];
+        FT_Get_Glyph_Name( mFace, glyph->glyph_index, &glyphName[0], bufsize );
 
         // contours is a collection of all outlines in the glyph
         // example: glyph for 'o' generally contains 2 contours,
@@ -315,6 +335,11 @@ void OUTLINE_FONT::drawSingleLineText( GAL* aGal, hb_buffer_t* aText, hb_font_t*
             }
         }
 
+        if( outlines.size() < 1 )
+        {
+            // std::cerr << "Error: no outlines for [" << glyphName << "]!" << std::endl;
+        }
+
         for( SHAPE_SIMPLE* outline : outlines )
         {
             if( outline->PointCount() )
@@ -351,8 +376,7 @@ void OUTLINE_FONT::drawSingleLineText( GAL* aGal, hb_buffer_t* aText, hb_font_t*
             nthHole++;
         }
 
-        aGal->SetIsFill( true );
-        aGal->DrawGlyph( poly );
+        aGlyphs.push_back( poly );
 
         for( SHAPE_SIMPLE* outline : outlines )
             delete outline;
@@ -361,8 +385,40 @@ void OUTLINE_FONT::drawSingleLineText( GAL* aGal, hb_buffer_t* aText, hb_font_t*
         cursor_y += ( pos.y_advance * advance_y_factor );
     }
 
-    // Restore context
-    aGal->Restore();
+    hb_buffer_destroy( buf );
+
+#ifdef FOO // DEBUG
+    std::cerr << "GetTextAsPolygon() \"" << aText << "\" glyph size {" << aGlyphSize.x << ","
+              << aGlyphSize.y << "}" << ( aIsMirrored ? " mirrored" : "" ) << " " << aGlyphs.size()
+              << " glyphs.";
+    for( unsigned int foo = 0; foo < aGlyphs.size(); foo++ )
+    {
+        const SHAPE_POLY_SET& glyph = aGlyphs[foo];
+        int                   codepoint = glyphInfo[foo].codepoint;
+
+        FT_Load_Glyph( mFace, codepoint, FT_LOAD_NO_BITMAP | FT_LOAD_NO_SCALE );
+
+        FT_GlyphSlot       glyphSlot = mFace->glyph;
+        const unsigned int bufsize = 512;
+        char               glyphName[bufsize];
+        FT_Get_Glyph_Name( mFace, glyphSlot->glyph_index, &glyphName[0], bufsize );
+
+        std::cerr << "Glyph " << foo << " [" << glyphSlot->glyph_index << " " << glyphName
+                  << "] has " << glyph.OutlineCount() << " outlines. ";
+        for( int bar = 0; bar < glyph.OutlineCount(); bar++ )
+        {
+            const SHAPE_LINE_CHAIN& outline = glyph.COutline( bar );
+            std::cerr << " O" << bar << "; " << outline.PointCount() << "p, "
+                      << glyph.HoleCount( bar ) << "h.";
+            for( int iHole = 0; iHole < glyph.HoleCount( bar ); iHole++ )
+            {
+                const SHAPE_LINE_CHAIN& hole = glyph.CHole( bar, iHole );
+                std::cerr << " H" << iHole << ": " << hole.PointCount() << "p.";
+            }
+        }
+        std::cerr << std::endl;
+    }
+#endif
 }
 
 
@@ -427,6 +483,11 @@ void OUTLINE_FONT::outlineToStraightSegments( CONTOURS& aContours, FT_Outline& a
 
 int OUTLINE_FONT::winding( const POINTS& aContour ) const
 {
+    // -1 == counterclockwise, 1 == clockwise
+
+    const int cw = 1;
+    const int ccw = -1;
+
     if( aContour.size() < 2 )
     {
         // zero or one points, so not a clockwise contour - in fact
@@ -457,6 +518,8 @@ int OUTLINE_FONT::winding( const POINTS& aContour ) const
     }
 
     unsigned int i_prev_vertex;
+    unsigned int i_next_vertex;
+    // TODO: this should be done with modulo arithmetic for clarity
     if( i_lowest_vertex == 0 )
     {
         i_prev_vertex = aContour.size() - 1;
@@ -465,17 +528,88 @@ int OUTLINE_FONT::winding( const POINTS& aContour ) const
     {
         i_prev_vertex = i_lowest_vertex - 1;
     }
-
-    const VECTOR2D& lowest_vertex = aContour[i_lowest_vertex];
-    const VECTOR2D& prev_vertex = aContour[i_prev_vertex];
-    if( lowest_vertex.x > prev_vertex.x )
+    if( i_lowest_vertex == aContour.size() - 1 )
     {
-        return -1; // counterclockwise
+        i_next_vertex = 0;
     }
     else
     {
-        return 1; // clockwise
+        i_next_vertex = i_lowest_vertex + 1;
     }
+
+    const VECTOR2D& lowest = aContour[i_lowest_vertex];
+    VECTOR2D        prev( aContour[i_prev_vertex] );
+    while( prev == lowest )
+    {
+        if( i_prev_vertex == 0 )
+        {
+            i_prev_vertex = aContour.size() - 1;
+        }
+        else
+        {
+            i_prev_vertex--;
+        }
+        if( i_prev_vertex == i_lowest_vertex )
+        {
+            // ERROR: degenerate contour (all points are equal)
+            // TODO: signal error
+            // for now let's just return something at random
+            return cw;
+        }
+        prev = aContour[i_prev_vertex];
+    }
+    VECTOR2D next( aContour[i_next_vertex] );
+    while( next == lowest )
+    {
+        if( i_next_vertex == aContour.size() - 1 )
+        {
+            i_next_vertex = 0;
+        }
+        else
+        {
+            i_next_vertex++;
+        }
+        if( i_next_vertex == i_lowest_vertex )
+        {
+            // ERROR: degenerate contour (all points are equal)
+            // TODO: signal error
+            // for now let's just return something at random
+            return cw;
+        }
+        next = aContour[i_next_vertex];
+    }
+
+    // winding is figured out based on the angle between the lowest
+    // vertex and its neighbours
+    //
+    // prev.x < lowest.x && next.x > lowest.x -> ccw
+    //
+    // prev.x > lowest.x && next.x < lowest.x -> cw
+    //
+    // prev.x < lowest.x && next.x < lowest.x:
+    // ?
+    //
+    // prev.x > lowest.x && next.x > lowest.x:
+    // ?
+    //
+    if( prev.x < lowest.x && next.x > lowest.x )
+        return ccw;
+
+    if( prev.x > lowest.x && next.x < lowest.x )
+        return cw;
+
+    double prev_deltaX = prev.x - lowest.x;
+    double prev_deltaY = prev.y - lowest.y;
+    double next_deltaX = next.x - lowest.x;
+    double next_deltaY = next.y - lowest.y;
+
+    double prev_atan = atan2( prev_deltaY, prev_deltaX );
+    double next_atan = atan2( next_deltaY, next_deltaX );
+
+    if( prev_atan > next_atan )
+        return ccw;
+    else
+        return cw;
 }
 
 
