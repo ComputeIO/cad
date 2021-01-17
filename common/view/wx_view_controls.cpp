@@ -187,34 +187,33 @@ void WX_VIEW_CONTROLS::onMotion( wxMouseEvent& aEvent )
     {
         if( m_state == DRAG_PANNING )
         {
-            VECTOR2D d = m_dragStartPoint - mousePos;
-            VECTOR2D delta = m_view->ToWorld( d, false );
-
             static bool justWarped = false;
             int warpX = 0;
             int warpY = 0;
             wxSize parentSize = m_parentPanel->GetClientSize();
 
-            if( x <= 0 )
+            if( x < 0 )
             {
-                warpX = parentSize.x - 2;
+                warpX = parentSize.x;
             }
-            else if(x >= parentSize.x - 1 )
+            else if(x >= parentSize.x )
             {
-                warpX = 2 - parentSize.x;
+                warpX = -parentSize.x;
             }
 
-            if( y <= 0 )
+            if( y < 0 )
             {
-                warpY = parentSize.y - 2;
+                warpY = parentSize.y;
             }
-            else if( y >= parentSize.y - 1 )
+            else if( y >= parentSize.y )
             {
-                warpY = 2 - parentSize.y;
+                warpY = -parentSize.y;
             }
 
             if( !justWarped )
             {
+                VECTOR2D d = m_dragStartPoint - mousePos;
+                VECTOR2D delta = m_view->ToWorld( d, false );
                 m_view->SetCenter( m_lookStartPoint + delta );
                 aEvent.StopPropagation();
             }
@@ -232,7 +231,6 @@ void WX_VIEW_CONTROLS::onMotion( wxMouseEvent& aEvent )
             }
             else
                 justWarped = false;
-
         }
         else if( m_state == DRAG_ZOOMING )
         {
