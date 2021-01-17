@@ -471,9 +471,9 @@ void RENDER_3D_RAYTRACE::Reload( REPORTER* aStatusReporter, REPORTER* aWarningRe
             for( int iOutlinePolyIdx = 0; iOutlinePolyIdx < antiboardPoly.OutlineCount();
                  iOutlinePolyIdx++ )
             {
-                CovertPolygonToBlocks( antiboardPoly,
-                        *m_antioutlineBoard2dObjects, m_boardAdapter.BiuTo3dUnits(), -1.0f,
-                        *dynamic_cast<const BOARD_ITEM*>( m_boardAdapter.GetBoard() ),
+                ConvertPolygonToBlocks(
+                        antiboardPoly, *m_antioutlineBoard2dObjects, m_boardAdapter.BiuTo3dUnits(),
+                        -1.0f, *dynamic_cast<const BOARD_ITEM*>( m_boardAdapter.GetBoard() ),
                         iOutlinePolyIdx );
             }
 
@@ -483,10 +483,10 @@ void RENDER_3D_RAYTRACE::Reload( REPORTER* aStatusReporter, REPORTER* aWarningRe
 
             for( int iOutlinePolyIdx = 0; iOutlinePolyIdx < outlineCount; iOutlinePolyIdx++ )
             {
-                CovertPolygonToBlocks( boardPolyCopy, *m_outlineBoard2dObjects,
-                                       m_boardAdapter.BiuTo3dUnits(), divFactor,
-                                       *dynamic_cast<const BOARD_ITEM*>( m_boardAdapter.GetBoard() ),
-                                       iOutlinePolyIdx );
+                ConvertPolygonToBlocks(
+                        boardPolyCopy, *m_outlineBoard2dObjects, m_boardAdapter.BiuTo3dUnits(),
+                        divFactor, *dynamic_cast<const BOARD_ITEM*>( m_boardAdapter.GetBoard() ),
+                        iOutlinePolyIdx );
             }
 
             if( m_boardAdapter.GetFlag( FL_SHOW_BOARD_BODY ) )
