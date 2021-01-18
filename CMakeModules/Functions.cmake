@@ -116,3 +116,83 @@ macro( add_conffiles )
         set( CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA ${CMAKE_CURRENT_BINARY_DIR}/conffiles )
     endif()
 endmacro( add_conffiles )
+
+
+# Function translate_language
+#
+# This is a function to add the targets and install step for translating a language
+#
+# Arguments:
+#  - LANG is the code for the language (which must be the same as the directory name)
+#  - OUT_FILE is the file (including directory) to save the translations to
+function( translate_language LANG OUT_FILE)
+    # Make the output directory (if it doesn't already exist)
+    get_filename_component( OUT_DIR ${OUT_FILE} DIRECTORY )
+
+    file( MAKE_DIRECTORY ${OUT_DIR} )
+
+    add_custom_command(
+        OUTPUT ${OUT_FILE}
+        COMMAND ${GETTEXT_MSGFMT_EXECUTABLE}
+                ${CMAKE_CURRENT_SOURCE_DIR}/pofiles/${LANG}.po
+                -o ${OUT_FILE}
+        COMMENT "Building translation library for ${LANG}"
+        )
+
+    if( UNIX AND KICAD_I18N_UNIX_STRICT_PATH )
+        install( FILES ${OUT_FILE}
+                DESTINATION ${KICAD_I18N_PATH}/${LANG}/LC_MESSAGES
+                COMPONENT resources )
+    else()
+        install( FILES ${OUT_FILE}
+                DESTINATION ${KICAD_I18N_PATH}/${LANG}
+                COMPONENT resources )
+    endif()
+endfunction()
+
+
+# Function linux_metadata_translation
+#
+# This is a macro to handle the translation of the linux metadata files using
+# the existing .po files.
+#
+# Arguments:
+#  - SRC_FILE is the file to use as the translation source
+#  - OUT_FILE is the file (including directory) to save the translations to
+#  - PO_DIR is the directory containing the raw po files
+macro( linux_metadata_translation SRC_FILE OUT_FILE PO_DIR )
+    get_filename_component( OUT_DIR ${OUT_FILE} DIRECTORY )
+    get_filename_component( OUT_FNAME ${OUT_FILE} NAME )
+
+    file( MAKE_DIRECTORY ${OUT_DIR} )
+
+    # Figure out the type of file we are translating
+    set( OPT_TYPE "" )
+    set( SED_CMD "" )
+
+    if( ${SRC_FILE} MATCHES ".*\.desktop\.in" )
+        set( OPT_TYPE "--desktop" )
+    elseif( ${SRC_FILE} MATCHES ".*\.xml\.in" )
+        set( OPT_TYPE "--xml" )
+    endif ()
+
+    # Add the command to translate the file
+    if( KICAD_BUILD_I18N )
+        add_custom_command(
+            OUTPUT ${OUT_FILE}
+            DEPENDS ${SRC_FILE}
+            COMMAND ${GETTEXT_MSGFMT_EXECUTABLE}
+                    ${OPT_TYPE} --template=${SRC_FILE}
+                    -d ${PO_DIR}
+                    -o ${OUT_FILE}
+            COMMENT "Translating file ${OUT_FNAME}"
+            )
+    else()
+        add_custom_command(
+            OUTPUT ${OUT_FILE}
+            DEPENDS ${SRC_FILE}
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different "${SRC_FILE}" "${OUT_FILE}"
+            COMMENT "Copying file ${OUT_FNAME}"
+            )
+    endif()
+endmacro()
