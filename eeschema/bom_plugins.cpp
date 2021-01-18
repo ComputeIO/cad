@@ -127,6 +127,7 @@ wxString BOM_GENERATOR_HANDLER::readHeader( const wxString& aEndSection )
     return data.SubString( strstart, strend - 1 );
 }
 
+
 wxString BOM_GENERATOR_HANDLER::getOutputExtension( const wxString& aHeader )
 {
     // search header for extension after %O (extension includes '.')
