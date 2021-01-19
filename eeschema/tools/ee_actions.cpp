@@ -436,8 +436,7 @@ TOOL_ACTION EE_ACTIONS::updateSymbol( "eeschema.InteractiveEdit.updateSymbol",
 
 TOOL_ACTION EE_ACTIONS::assignNetclass( "eeschema.InteractiveEdit.assignNetclass",
         AS_GLOBAL, 0, "",
-        _( "Assign Netclass..." ), _( "Assign a netclass to the net of the selected wire" ),
-        list_nets_xpm );
+        _( "Assign Netclass..." ), _( "Assign a netclass to the net of the selected wire" ) );
 
 TOOL_ACTION EE_ACTIONS::toggleDeMorgan( "eeschema.InteractiveEdit.toggleDeMorgan",
         AS_GLOBAL, 0, "",
@@ -483,7 +482,7 @@ TOOL_ACTION EE_ACTIONS::editTextAndGraphics( "eeschema.InteractiveEdit.editTextA
         AS_GLOBAL, 0, "",
         _( "Edit Text & Graphics Properties..." ),
         _( "Edit text and graphics properties globally across schematic" ),
-        text_edit_xpm );
+        text_xpm );
 
 TOOL_ACTION EE_ACTIONS::symbolProperties( "eeschema.InteractiveEdit.symbolProperties",
         AS_GLOBAL, 0, "",

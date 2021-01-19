@@ -116,7 +116,7 @@ set( BMAPS_SMALL
     )
 
 
-# image basenames that go into the toolbar sized destinations, i.e. 26x26
+# image basenames that go into the toolbar sized destinations, i.e. 24x24
 set( BMAPS_MID
     about
     add_aligned_dimension
@@ -426,12 +426,6 @@ set( BMAPS_MID
     sim_settings
     search_tree
     set_origin
-    setcolor_3d_bg
-    setcolor_silkscreen
-    setcolor_soldermask
-    setcolor_solderpaste
-    setcolor_copper
-    setcolor_board_body
     show_dcodenumber
     show_footprint
     show_mod_edge
@@ -453,7 +447,6 @@ set( BMAPS_MID
     swap_layer
     switch_corner_rounding_shape
     text
-    text_edit
     text_sketch
     three_d
     tool_ratsnest
