@@ -311,7 +311,7 @@ public:
 
     FONT& GetFont( const wxString& fontSpecifier = "" ) const
     {
-        return FONT::GetFont( fontSpecifier );
+        return *FONT::GetFont( fontSpecifier );
     }
     FONT& GetFont( const wxString* fontSpecifier ) const
     {

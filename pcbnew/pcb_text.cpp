@@ -23,6 +23,7 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
 
+#include <kicad_string.h>
 #include <eda_item.h>
 #include <pcb_edit_frame.h>
 #include <base_units.h>
@@ -32,6 +33,7 @@
 #include <pcb_text.h>
 #include <pcb_painter.h>
 #include <trigo.h>
+#include <gal/outline_font.h>
 
 using KIGFX::PCB_RENDER_SETTINGS;
 
@@ -69,8 +71,10 @@ wxString PCB_TEXT::GetShownText( int aDepth, wxString* fontSpecifier ) const
 
                     if( !ref.Cmp( "FONT" ) )
                     {
-                        // special case: handle "${FONT:futural}" in Text item
+                        // special case: handle FONT variable in Text item
                         // as font specifier
+                        //
+                        // example: "${FONT:futural}"
                         //
                         // remainder = font name
                         if( fontSpecifier )
@@ -113,6 +117,58 @@ wxString PCB_TEXT::GetShownText( int aDepth, wxString* fontSpecifier ) const
         text = ExpandTextVars( text, &pcbTextResolver, board->GetProject(), &boardTextResolver );
 
     return text;
+}
+
+
+void PCB_TEXT::DrawTextAsPolygon( std::vector<SHAPE_POLY_SET>& aResult, PCB_LAYER_ID aLayerId,
+                                  const wxPoint aPosition, const wxString& aString,
+                                  const KIGFX::FONT* aFont ) const
+{
+    VECTOR2D glyphSize;
+    glyphSize.x = 6.0e+06;
+    glyphSize.y = 6.0e+06;
+    if( aFont->IsOutline() )
+    {
+        const KIGFX::OUTLINE_FONT* outlineFont = dynamic_cast<const KIGFX::OUTLINE_FONT*>( aFont );
+        outlineFont->GetTextAsPolygon( aResult, aString, glyphSize, IsMirrored() );
+    }
+    else
+    {
+        std::cerr << "PCB_TEXT::DrawTextAsPolygon( ..., \"" << aString << "\", #<font "
+                  << aFont->Name() << "> )"
+                  << " TODO can't draw stroke font as polygon" << std::endl;
+    }
+}
+
+
+void PCB_TEXT::DrawTextAsPolygon( std::vector<SHAPE_POLY_SET>& aResult,
+                                  PCB_LAYER_ID                 aLayerId ) const
+{
+    wxString     fontName;
+    wxString     txt;
+    KIGFX::FONT* font;
+
+    if( IsMultilineAllowed() )
+    {
+        wxArrayString strings_list;
+        wxStringSplit( GetShownText( 0, &fontName ), strings_list, '\n' );
+        std::vector<wxPoint> positions;
+        positions.reserve( strings_list.Count() );
+        GetLinePositions( positions, strings_list.Count() );
+        font = KIGFX::FONT::GetFont( fontName );
+
+        for( unsigned ii = 0; ii < strings_list.Count(); ++ii )
+        {
+            txt = strings_list.Item( ii );
+            DrawTextAsPolygon( aResult, aLayerId, positions[ii], txt, font );
+        }
+    }
+    else
+    {
+        txt = GetShownText( 0, &fontName );
+        font = KIGFX::FONT::GetFont( fontName );
+        DrawTextAsPolygon( aResult, aLayerId, GetTextPos(), txt, font );
+    }
 }
 
 

@@ -124,6 +124,11 @@ public:
     }
 
     /**
+     * size() needed for polygon triangulation in earcut.hpp
+     */
+    inline unsigned int size() const { return 2; }
+
+    /**
      * (wxPoint)
      * implements the cast to wxPoint.
      * @return wxPoint - the vector cast to wxPoint.

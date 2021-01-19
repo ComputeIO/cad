@@ -188,11 +188,7 @@ void BASIC_GAL::DrawLine( const VECTOR2D& aStartPoint, const VECTOR2D& aEndPoint
 
 void BASIC_GAL::DrawGlyph( const SHAPE_POLY_SET& aPolySet )
 {
-    if( m_DC )
-    {
-        // 3d? TODO
-    }
-    else if( m_plotter )
+    if( m_plotter )
     {
         std::vector<wxPoint> polygon_with_transform;
         int                  i;
@@ -224,6 +220,7 @@ void BASIC_GAL::DrawGlyph( const SHAPE_POLY_SET& aPolySet )
                 for( i = 0; i < hole.PointCount(); i++ )
                     polygon_with_transform.emplace_back( (wxPoint) transform( hole.CPoint( i ) ) );
 
+                // Note: holes in glyphs are erased, they are not see-thru
                 m_plotter->SetLayerPolarity( false );
                 m_plotter->PlotPoly( polygon_with_transform, FILL_TYPE::FILLED_SHAPE );
             }
@@ -231,5 +228,37 @@ void BASIC_GAL::DrawGlyph( const SHAPE_POLY_SET& aPolySet )
 
         m_plotter->SetLayerPolarity( true );
         m_plotter->PenFinish();
+    }
+    else
+    {
+        std::cerr << "BASIC_GAL::DrawGlyph() " << aPolySet.OutlineCount() << " outlines.";
+
+        for( int iOutline = 0; iOutline < aPolySet.OutlineCount(); ++iOutline )
+        {
+            const SHAPE_LINE_CHAIN& outline = aPolySet.COutline( iOutline );
+            std::vector<wxPoint>    outline_with_transform;
+
+            std::cerr << " O" << iOutline << "; " << outline.PointCount() << "p, "
+                      << aPolySet.HoleCount( iOutline ) << "h.";
+
+            for( int i = 0; i < outline.PointCount(); i++ )
+                outline_with_transform.emplace_back( (wxPoint) transform( outline.CPoint( i ) ) );
+
+            doDrawPolyline( outline_with_transform, true );
+
+            for( int iHole = 0; iHole < aPolySet.HoleCount( iOutline ); iHole++ )
+            {
+                const SHAPE_LINE_CHAIN& hole = aPolySet.CHole( iOutline, iHole );
+                std::vector<wxPoint>    hole_with_transform;
+
+                std::cerr << " H" << iHole << ": " << hole.PointCount() << "p.";
+
+                for( int i = 0; i < hole.PointCount(); i++ )
+                    hole_with_transform.emplace_back( (wxPoint) transform( hole.CPoint( i ) ) );
+
+                doDrawPolyline( hole_with_transform, true );
+            }
+        }
+        std::cerr << std::endl;
     }
 }

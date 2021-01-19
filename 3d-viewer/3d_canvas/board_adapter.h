@@ -469,9 +469,10 @@ private:
                                           CONTAINER_2D_BASE* aDstContainer, PCB_LAYER_ID aLayerId,
                                           int aInflateValue );
 
-    void drawTextFromAddShapeWithClearance( const PCB_TEXT* aText, const wxPoint aPosition,
-                                            const wxString& aString, const wxString& aFontName,
-                                            bool aForceBold, int aPenWidth );
+    void drawTextFromAddShapeWithClearance( const PCB_TEXT* aText, PCB_LAYER_ID aLayerId,
+                                            const wxPoint aPosition, const wxString& aString,
+                                            const wxString& aFontName, bool aForceBold,
+                                            int aPenWidth );
 
     void addShapeWithClearance( const PCB_TEXT* aText, CONTAINER_2D_BASE* aDstContainer,
                                 PCB_LAYER_ID aLayerId, int aClearanceValue );

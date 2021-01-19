@@ -113,10 +113,16 @@ public:
      */
     VECTOR2D ComputeTextLineSize( const GAL* aGal, const UTF8& aText ) const override;
 
+    void GetTextAsPolygon( std::vector<SHAPE_POLY_SET>& aGlyphs, const UTF8& aText,
+                           const VECTOR2D& aGlyphSize, bool aIsMirrored ) const;
+
 private:
     // FreeType variables
     static FT_Library mFreeType;
     FT_Face           mFace;
+
+    // HarfBuzz variables
+    hb_font_t* mReferencedFont;
 
     // cache for glyphs converted to straight segments
     // key is glyph index (FT_GlyphSlot field glyph_index)
@@ -130,7 +136,7 @@ private:
      *
      * @param aText is the text to be drawn.
      */
-    void drawSingleLineText( GAL* aGal, hb_buffer_t* aText, hb_font_t* aFont );
+    void drawSingleLineText( GAL* aGal, const UTF8& aText );
 
     void outlineToStraightSegments( CONTOURS& aContours, FT_Outline& aOutline ) const;
 

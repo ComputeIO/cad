@@ -34,6 +34,7 @@
 #include "../3d_rendering/3d_render_raytracing/shapes2D/filled_circle_2d.h"
 #include "../3d_rendering/3d_render_raytracing/shapes2D/round_segment_2d.h"
 #include "../3d_rendering/3d_render_raytracing/shapes2D/triangle_2d.h"
+#include "../3d_rendering/3d_render_raytracing/shapes2D/polygon_2d.h"
 #include <board_adapter.h>
 #include <board.h>
 #include <footprint.h>
@@ -53,7 +54,7 @@
 #include <gr_text.h>
 #include <utility>
 #include <vector>
-#include <gal/font.h>
+#include <gal/outline_font.h>
 
 
 // These variables are parameters used in addTextSegmToContainer.
@@ -83,7 +84,7 @@ void addTextSegmToContainer( int x0, int y0, int xf, int yf, void* aData )
 bool outlineTextCallback( const std::vector<wxPoint>& aPoints, void* aData )
 {
 #if 1 // FOOFAA
-    return true;
+    return false;
 #else
     const BOARD_ITEM* boardItem = s_boardItem;
     SHAPE_POLY_SET    poly;
@@ -110,12 +111,102 @@ bool outlineTextCallback( const std::vector<wxPoint>& aPoints, void* aData )
 }
 
 
-void BOARD_ADAPTER::drawTextFromAddShapeWithClearance( const PCB_TEXT* aText,
+static void handleOnePolygon( const SHAPE_LINE_CHAIN& aPolygon, CONTAINER_2D_BASE* aDstContainer,
+                              const BOARD_ITEM& aBoardItem )
+{
+    float line_thickness = 10 * s_biuTo3Dunits;
+
+    for( int j = 0; j < aPolygon.PointCount(); ++j )
+    {
+        const VECTOR2I& a = aPolygon.CPoint( j );
+        const VECTOR2I& b = aPolygon.CPoint( j + 1 );
+
+        SFVEC2F start3DU( a.x * s_biuTo3Dunits, -a.y * s_biuTo3Dunits );
+        SFVEC2F end3DU( b.x * s_biuTo3Dunits, -b.y * s_biuTo3Dunits );
+
+        if( Is_segment_a_circle( start3DU, end3DU ) )
+        {
+            float radius = line_thickness / 2;
+
+            if( radius > 0.0 ) // degenerated circles crash 3D viewer
+                aDstContainer->Add( new FILLED_CIRCLE_2D( start3DU, radius, aBoardItem ) );
+        }
+        else
+        {
+            aDstContainer->Add(
+                    new ROUND_SEGMENT_2D( start3DU, end3DU, line_thickness, aBoardItem ) );
+        }
+    }
+}
+
+
+// Based on
+// TransformSolidAreasShapesToPolygonSet
+// board_items_to_polygon_shape_transform.cpp
+void addTextAsPolygon( const std::vector<SHAPE_POLY_SET>& aGlyphs, CONTAINER_2D_BASE* aDstContainer,
+                       PCB_LAYER_ID aLayerId, const BOARD_ITEM& aBoardItem )
+{
+#ifdef DEBUG
+    std::cerr << "addTextAsPolygon( #[";
+    for( const SHAPE_POLY_SET& g : aGlyphs )
+    {
+        std::cerr << g;
+    }
+    wxString txt = aBoardItem.GetClass();
+    std::cerr << "], (aDstContainer), " << aLayerId << ", #<" << txt << "> )" << std::endl;
+#endif
+
+    for( const SHAPE_POLY_SET& glyph : aGlyphs )
+    {
+        SHAPE_POLY_SET polyList = SHAPE_POLY_SET( glyph );
+
+        //       ConvertPolygonToTriangles( polyList, *aDstContainer, s_biuTo3Dunits, aBoardItem );
+
+        std::cerr << polyList << std::endl;
+#if 0
+
+        for( int i = 0; i < polyList.OutlineCount(); ++i )
+        {
+            handleOnePolygon( polyList.COutline( i ), aDstContainer, aBoardItem ); // outline
+
+            // Add holes (of the poly, ie: the open parts) for this outline
+            for( int h = 0; h < polyList.HoleCount( i ); ++h )
+            {
+                handleOnePolygon( polyList.CHole( i, h ), aDstContainer, aBoardItem ); // hole
+            }
+        }
+#else
+        // divFactor needed in ConvertPolygonToBlocks() call - no idea what it does
+        float divFactor = 1.0;
+        for( int i = 0; i < polyList.OutlineCount(); ++i )
+        {
+            if( polyList.COutline( i ).PointCount() > 2 )
+            {
+                SHAPE_POLY_SET thePolyList( polyList.COutline( i ) );
+                /*
+                aBoardItem.TransformShapeWithClearanceToPolygon( thePolyList, aLayerId, theLinewidth,
+                                                                 ARC_HIGH_DEF, ERROR_INSIDE );
+                */
+                //thePolyList.Simplify( SHAPE_POLY_SET::PM_FAST );
+                std::cerr << "Converting " << thePolyList << " to triangles" << std::endl;
+                ConvertPolygonToTriangles( thePolyList, *aDstContainer, s_biuTo3Dunits,
+                                           aBoardItem );
+            }
+        }
+
+        //POLYGON_2D poly2D( openSegmentList, outerAndHoles, aBoardItem );
+#endif
+    }
+}
+
+
+void BOARD_ADAPTER::drawTextFromAddShapeWithClearance( const PCB_TEXT* aText, PCB_LAYER_ID aLayerId,
                                                        const wxPoint   aPosition,
                                                        const wxString& aString,
                                                        const wxString& aFontName = "",
                                                        bool aBold = true, int aPenWidth = 0 )
 {
+#if 0
     bool     outlineFont = KIGFX::FONT::IsOutline( aFontName );
     wxString fontName( aFontName );
     wxSize   size = aText->GetTextSize();
@@ -132,6 +223,85 @@ void BOARD_ADAPTER::drawTextFromAddShapeWithClearance( const PCB_TEXT* aText,
     GRText( nullptr, aPosition, COLOR4D::BLACK, aString, aText->GetTextAngle(), size,
             aText->GetHorizJustify(), aText->GetVertJustify(), aPenWidth, aText->IsItalic(), aBold,
             addTextSegmToContainer, &outlineFont, nullptr, &fontName, outlineCallback );
+#else
+    KIGFX::FONT* font = KIGFX::FONT::GetFont( aFontName );
+    if( font->IsOutline() )
+    {
+        std::vector<SHAPE_POLY_SET> glyphs;
+        VECTOR2D                    glyphSize;
+        // glyphSize.x = 1.0;
+        // glyphSize.y = 1.0;
+        glyphSize.x = 6.0e+06;
+        glyphSize.y = 6.0e+06;
+        KIGFX::OUTLINE_FONT* outlineFont = dynamic_cast<KIGFX::OUTLINE_FONT*>( font );
+        outlineFont->GetTextAsPolygon( glyphs, aString, glyphSize, aText->IsMirrored() );
+        addTextAsPolygon( glyphs, s_dstcontainer, aLayerId, *aText );
+    }
+    else
+    {
+        // should not happen
+    }
+#endif
+}
+
+
+/*
+void PCB_SHAPE::TransformShapeWithClearanceToPolygon( SHAPE_POLY_SET& aCornerBuffer,
+                                                      PCB_LAYER_ID aLayer, int aClearanceValue,
+                                                      int aError, ERROR_LOC aErrorLoc,
+                                                      bool ignoreLineWidth ) const
+*/
+static void transformGlyph( SHAPE_POLY_SET& aCornerBuffer, const SHAPE_POLY_SET& polyList,
+                            PCB_LAYER_ID aLayer, int aClearanceValue, double aOrientation,
+                            wxPoint aPosition, int aError, ERROR_LOC aErrorLoc )
+{
+    // The polygon is expected to be a simple polygon; not self intersecting, no hole.
+    //
+    // This is of course not true for glyphs, which are generally not
+    // self-intersecting, but have holes. Let's just do the outline for now!
+
+    wxPoint offset = aPosition;
+
+    // Build the polygon with the actual position and orientation:
+    std::vector<wxPoint> poly;
+    // poly = BuildPolyPointsList();
+
+    if( polyList.OutlineCount() )
+    {
+        if( polyList.COutline( 0 ).PointCount() )
+        {
+            for( auto iter = polyList.CIterate(); iter; iter++ )
+                poly.emplace_back( iter->x, iter->y );
+        }
+    }
+    // end poly = BuildPolyPointsList();
+
+    for( wxPoint& point : poly )
+    {
+        RotatePoint( &point, aOrientation );
+        point += offset;
+    }
+
+    //if( IsFilled() ) - always filled
+    aCornerBuffer.NewOutline();
+
+    for( wxPoint& point : poly )
+        aCornerBuffer.Append( point.x, point.y );
+
+#ifdef WHATSGOINGON
+    if( width > 0 || !IsFilled() )
+    {
+        wxPoint pt1( poly[poly.size() - 1] );
+
+        for( wxPoint pt2 : poly )
+        {
+            if( pt2 != pt1 )
+                TransformOvalToPolygon( aCornerBuffer, pt1, pt2, width, aError, aErrorLoc );
+
+            pt1 = pt2;
+        }
+    }
+#endif
 }
 
 
@@ -141,11 +311,36 @@ void BOARD_ADAPTER::drawTextFromAddShapeWithClearance( const PCB_TEXT* aText,
 void BOARD_ADAPTER::addShapeWithClearance( const PCB_TEXT* aText, CONTAINER_2D_BASE* aDstContainer,
                                            PCB_LAYER_ID aLayerId, int aClearanceValue )
 {
+#ifdef DEBUG
+    std::cerr << "BOARD_ADAPTER::addShapeWithClearance( \"" << aText->GetShownText() << "\" "
+              << aText->GetPosition() << ", ..., " << aLayerId << ", " << aClearanceValue << " )"
+              << std::endl;
+#endif
     s_boardItem = (const BOARD_ITEM*) &aText;
     s_dstcontainer = aDstContainer;
     s_textWidth = aText->GetEffectiveTextPenWidth() + ( 2 * aClearanceValue );
     s_biuTo3Dunits = m_biuTo3Dunits;
 
+    //const int linewidth = aShape->GetWidth() + ( 2 * aClearanceValue ) + 1;
+    const int lineWidth = 10; // STETSON! can we get this from aText?
+
+    std::vector<SHAPE_POLY_SET> glyphs;
+    aText->DrawTextAsPolygon( glyphs, aLayerId );
+    //addTextAsPolygon( glyphs, s_dstcontainer, aLayerId, *aText );
+
+    SHAPE_POLY_SET polyList;
+    for( SHAPE_POLY_SET glyph : glyphs )
+    {
+        transformGlyph( polyList, glyph, aLayerId, lineWidth / 2, aText->GetTextAngle(),
+                        aText->GetTextPos(), ARC_HIGH_DEF, ERROR_INSIDE );
+    }
+
+    polyList.Simplify( SHAPE_POLY_SET::PM_FAST );
+
+    // ConvertPolygonToTriangles( polyList, *aDstContainer, m_biuTo3Dunits, *aShape );
+    ConvertPolygonToTriangles( polyList, *aDstContainer, m_biuTo3Dunits, *aText );
+
+#ifdef BARBAR
     // bool forceBold = true;
     // int penWidth = 0; // force max width for bold
     wxString font;
@@ -174,7 +369,7 @@ void BOARD_ADAPTER::addShapeWithClearance( const PCB_TEXT* aText, CONTAINER_2D_B
                     /* aCallbackData */ &outlineFont,
                     /* aPlotter */ nullptr, &font );
 #else
-            drawTextFromAddShapeWithClearance( aText, positions[ii], txt, font );
+            drawTextFromAddShapeWithClearance( aText, aLayerId, positions[ii], txt, font );
 #endif
         }
     }
@@ -187,9 +382,10 @@ void BOARD_ADAPTER::addShapeWithClearance( const PCB_TEXT* aText, CONTAINER_2D_B
                 aText->GetHorizJustify(), aText->GetVertJustify(), penWidth, aText->IsItalic(),
                 forceBold, addTextSegmToContainer, &outlineFont, nullptr, &font );
 #else
-        drawTextFromAddShapeWithClearance( aText, aText->GetTextPos(), txt, font );
+        drawTextFromAddShapeWithClearance( aText, aLayerId, aText->GetTextPos(), txt, font );
 #endif
     }
+#endif // BARBAR
 }
 
 
@@ -660,6 +856,11 @@ void BOARD_ADAPTER::addShapeWithClearance( const PCB_SHAPE*   aShape,
                                            CONTAINER_2D_BASE* aDstContainer, PCB_LAYER_ID aLayerId,
                                            int aClearanceValue )
 {
+#ifdef DEBUG
+    std::cerr << "BOARD_ADAPTER::addShapeWithClearance( "
+              << PCB_SHAPE_TYPE_T_asString( aShape->GetShape() ) << ", ..., " << aLayerId << ", "
+              << aClearanceValue << " )" << std::endl;
+#endif
     // The full width of the lines to create
     // The extra 1 protects the inner/outer radius values from degeneracy
     const int linewidth = aShape->GetWidth() + ( 2 * aClearanceValue ) + 1;

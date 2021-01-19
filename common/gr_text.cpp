@@ -223,7 +223,7 @@ void GRHaloText( wxDC* aDC, const wxPoint& aPos, COLOR4D aBgColor, COLOR4D aColo
  *  @param aMultilineAllowed = true to plot text as multiline, otherwise single line
  *  @param aData = a parameter used by some plotters in SetCurrentLineWidth(),
  * not directly used here.
- *  @param aFont = name of font (null for default)
+ *  @param aFont = name of font (nullptr for default)
  */
 void PLOTTER::Text( const wxPoint& aPos, const COLOR4D aColor, const wxString& aText,
                     double aOrient, const wxSize& aSize, enum EDA_TEXT_HJUSTIFY_T aH_justify,

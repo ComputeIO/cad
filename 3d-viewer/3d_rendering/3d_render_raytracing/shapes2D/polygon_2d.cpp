@@ -62,8 +62,8 @@ static bool polygon_IsPointInside( const SEGMENTS& aSegments, const SFVEC2F& aPo
 
 
 POLYGON_2D::POLYGON_2D( const SEGMENTS_WIDTH_NORMALS& aOpenSegmentList,
-                        const OUTERS_AND_HOLES& aOuterAndHoles, const BOARD_ITEM& aBoardItem )
-        : OBJECT_2D( OBJECT_2D_TYPE::POLYGON, aBoardItem )
+                        const OUTERS_AND_HOLES& aOuterAndHoles, const BOARD_ITEM& aBoardItem ) :
+        OBJECT_2D( OBJECT_2D_TYPE::POLYGON, aBoardItem )
 {
     m_open_segments.resize( aOpenSegmentList.size() );
 

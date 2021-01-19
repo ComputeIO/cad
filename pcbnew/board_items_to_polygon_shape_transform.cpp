@@ -37,7 +37,9 @@
 #include <convert_basic_shapes_to_polygon.h>
 #include <geometry/geometry_utils.h>
 #include <geometry/shape_segment.h>
+#include <gal/outline_font.h>
 
+#include "../3d-viewer/3d_rendering/3d_render_raytracing/accelerators/container_2d.h" //FOOFAA
 
 // A helper struct for the callback function
 // These variables are parameters used in addTextSegmToPoly.
@@ -374,6 +376,35 @@ void EDA_TEXT::TransformBoundingBoxWithClearanceToPolygon( SHAPE_POLY_SET* aCorn
 }
 
 
+static void polygonText( SHAPE_POLY_SET& aDestination, PCB_LAYER_ID aLayer, const wxPoint aPosition,
+                         const wxString& aString, const wxString& aFontName, const PCB_TEXT* aText )
+{
+    // copied from void BOARD_ADAPTER::drawTextFromAddShapeWithClearance( const PCB_TEXT* aText, ...
+    KIGFX::FONT* font = KIGFX::FONT::GetFont( aFontName );
+    if( font->IsOutline() )
+    {
+        std::vector<SHAPE_POLY_SET> glyphs;
+        VECTOR2D                    glyphSize;
+        // glyphSize.x = 1.0;
+        // glyphSize.y = 1.0;
+        glyphSize.x = 6.0e+06;
+        glyphSize.y = 6.0e+06;
+        KIGFX::OUTLINE_FONT* outlineFont = dynamic_cast<KIGFX::OUTLINE_FONT*>( font );
+        outlineFont->GetTextAsPolygon( glyphs, aString, glyphSize, aText->IsMirrored() );
+        for( SHAPE_POLY_SET& glyph : glyphs )
+        {
+            aDestination.Append( glyph );
+        }
+    }
+    else
+    {
+        std::cerr << "board_items_to_polygon_shape_transform.cpp: polygonText() - TODO not doing "
+                     "stroke fonts yet"
+                  << std::endl;
+    }
+}
+
+
 /**
  * Function TransformTextShapeWithClearanceToPolygon
  * Convert the text to a polygonSet describing the actual character strokes (one per segment).
@@ -396,8 +427,8 @@ void PCB_TEXT::TransformTextShapeWithClearanceToPolygon( SHAPE_POLY_SET& aCorner
     prms.m_cornerBuffer = &aCornerBuffer;
     prms.m_textWidth = GetEffectiveTextPenWidth() + ( 2 * aClearanceValue );
     prms.m_error = aError;
-    COLOR4D color = COLOR4D::BLACK; // not actually used, but needed by GRText
 
+    COLOR4D  color = COLOR4D::BLACK; // not actually used, but needed by GRText
     wxString font;
     wxString txt = GetShownText( 0, &font );
 
@@ -412,16 +443,24 @@ void PCB_TEXT::TransformTextShapeWithClearanceToPolygon( SHAPE_POLY_SET& aCorner
         for( unsigned ii = 0; ii < strings_list.Count(); ii++ )
         {
             wxString txtItem = strings_list.Item( ii );
+#ifdef FOOFAA
             GRText( NULL, positions[ii], color, txtItem, GetTextAngle(), size, GetHorizJustify(),
                     GetVertJustify(), penWidth, IsItalic(), forceBold, addTextSegmToPoly, &prms,
                     /* aPlotter */ nullptr, &font );
+#else
+            polygonText( aCornerBuffer, aLayer, positions[ii], txtItem, font, this );
+#endif
         }
     }
     else
     {
+#ifdef FOOFAA
         GRText( NULL, GetTextPos(), color, txt, GetTextAngle(), size, GetHorizJustify(),
                 GetVertJustify(), penWidth, IsItalic(), forceBold, addTextSegmToPoly, &prms,
                 /* aPlotter */ nullptr, &font );
+#else
+        polygonText( aCornerBuffer, aLayer, GetTextPos(), txt, font, this );
+#endif
     }
 }
 

@@ -37,6 +37,11 @@ FONT::FONT()
 }
 
 
+const wxString& FONT::Name() const
+{
+    return m_fontName;
+}
+
 #if 0
 FONT& GAL::GetFont( const wxString* fontSpecifier )
 {
@@ -74,7 +79,7 @@ FONT& GAL::GetFont( const wxString* fontSpecifier )
 }
 #endif
 
-FONT& FONT::GetFont( const wxString& aFontName )
+FONT* FONT::GetFont( const wxString& aFontName )
 {
     if( aFontName.empty() )
     {
@@ -84,7 +89,7 @@ FONT& FONT::GetFont( const wxString& aFontName )
             s_defaultFont->LoadFont(); // TODO: do something on failure
         }
 
-        return *s_defaultFont;
+        return s_defaultFont;
     }
 
     FONT* font = s_fontMap[aFontName];
@@ -114,11 +119,11 @@ FONT& FONT::GetFont( const wxString& aFontName )
         else
         {
             // TODO: signal error? font was not found
-            return *s_defaultFont;
+            return s_defaultFont;
         }
     }
 
-    return *font;
+    return font;
 }
 
 
@@ -130,5 +135,5 @@ bool FONT::IsOutline( const wxString& aFontName )
     //
     // TODO: figure out whether it would be a good idea to do
     // something else in case aFontName is not found
-    return GetFont( aFontName ).IsOutline();
+    return GetFont( aFontName )->IsOutline();
 }

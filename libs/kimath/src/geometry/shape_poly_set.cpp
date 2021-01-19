@@ -55,6 +55,23 @@
 #include <geometry/shape_simple.h>
 #include <geometry/shape_compound.h>
 
+std::ostream& operator<<( std::ostream& os, const SHAPE_POLY_SET& shapePolySet )
+{
+    unsigned int n_outlines = shapePolySet.OutlineCount();
+    os << "#<SHAPE_POLY_SET (" << n_outlines << " outline" << ( n_outlines != 1 ? "s" : "" ) << ")";
+    for( int i = 0; i < shapePolySet.OutlineCount(); i++ )
+    {
+        const int outlinePoints = shapePolySet.COutline( i ).PointCount();
+        os << " [O" << i << " " << outlinePoints << "p" << shapePolySet.HoleCount( i ) << "h";
+        for( int j = 0; j < shapePolySet.HoleCount( i ); ++j )
+        {
+            os << " [H" << i << "," << j << " " << shapePolySet.CHole( i, j ).PointCount() << "p]";
+        }
+        os << "]";
+    }
+    return os << ">";
+}
+
 using namespace ClipperLib;
 
 SHAPE_POLY_SET::SHAPE_POLY_SET() :

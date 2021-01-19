@@ -57,8 +57,10 @@ public:
     virtual bool IsStroke() const { return false; }
     virtual bool IsOutline() const { return false; }
 
-    static FONT& GetFont( const wxString& aFontName = "" );
+    static FONT* GetFont( const wxString& aFontName = "" );
     static bool  IsOutline( const wxString& aFontName );
+
+    const wxString& Name() const;
 
     /**
      * Load a font.

@@ -1409,4 +1409,6 @@ private:
     MD5_HASH m_hash;
 };
 
+std::ostream& operator<<( std::ostream& os, const SHAPE_POLY_SET& shapePolySet );
+
 #endif
