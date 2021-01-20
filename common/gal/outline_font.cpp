@@ -250,6 +250,10 @@ void OUTLINE_FONT::drawSingleLineText( GAL* aGal, const UTF8& aText )
 void OUTLINE_FONT::GetTextAsPolygon( std::vector<SHAPE_POLY_SET>& aGlyphs, const UTF8& aText,
                                      const VECTOR2D& aGlyphSize, bool aIsMirrored ) const
 {
+#ifdef DEBUG
+    std::cerr << "OUTLINE_FONT::GetTextAsPolygon( ..., \"" << aText.wx_str() << "\", " << aGlyphSize
+              << ", " << ( aIsMirrored ? "true" : "false" ) << " )\n";
+#endif
     hb_buffer_t* buf = hb_buffer_create();
     hb_buffer_add_utf8( buf, aText.c_str(), -1, 0, -1 );
 

@@ -124,9 +124,11 @@ void PCB_TEXT::DrawTextAsPolygon( std::vector<SHAPE_POLY_SET>& aResult, PCB_LAYE
                                   const wxPoint aPosition, const wxString& aString,
                                   const KIGFX::FONT* aFont ) const
 {
-    VECTOR2D glyphSize;
+    VECTOR2D glyphSize = GetTextSize();
+    /*
     glyphSize.x = 6.0e+06;
     glyphSize.y = 6.0e+06;
+    */
     if( aFont->IsOutline() )
     {
         const KIGFX::OUTLINE_FONT* outlineFont = dynamic_cast<const KIGFX::OUTLINE_FONT*>( aFont );
