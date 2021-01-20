@@ -35,8 +35,9 @@
 
 #include <gal/color4d.h>
 #include <gal/definitions.h>
-#include <gal/font.h>
 #include <gal/gal_display_options.h>
+
+#include <font/font.h>
 
 class SHAPE_LINE_CHAIN;
 class SHAPE_POLY_SET;
@@ -1081,9 +1082,6 @@ public:
 
     ~GAL_DRAWING_CONTEXT() { m_gal->endDrawing(); }
 };
-
-
-typedef bool ( *OUTLINE_CALLBACK )( const std::vector<wxPoint>& aOutline, void* aData );
 
 }; // namespace KIGFX
 

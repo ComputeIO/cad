@@ -31,11 +31,9 @@
 #include <freetype2/ft2build.h>
 #include FT_FREETYPE_H
 #include FT_OUTLINE_H
-#include <gal/font.h>
 #include <harfbuzz/hb.h>
+#include <font/font.h>
 
-namespace KIGFX
-{
 typedef struct
 {
     POINTS         points;
@@ -72,7 +70,7 @@ public:
      * @param aPosition is the text position in world coordinates.
      * @param aRotationAngle is the text rotation angle in radians.
      */
-    void Draw( GAL* aGal, const UTF8& aText, const VECTOR2D& aPosition,
+    void Draw( KIGFX::GAL* aGal, const UTF8& aText, const VECTOR2D& aPosition,
                double aRotationAngle ) override;
 
     /**
@@ -82,7 +80,7 @@ public:
      *
      * @return a VECTOR2D giving the width and height of text.
      */
-    VECTOR2D ComputeStringBoundaryLimits( const GAL* aGal, const UTF8& aText,
+    VECTOR2D ComputeStringBoundaryLimits( const KIGFX::GAL* aGal, const UTF8& aText,
                                           const VECTOR2D& aGlyphSize,
                                           double          aGlyphThickness ) const override;
 
@@ -111,7 +109,7 @@ public:
      * @param aText is the text string (one line).
      * @return the text size.
      */
-    VECTOR2D ComputeTextLineSize( const GAL* aGal, const UTF8& aText ) const override;
+    VECTOR2D ComputeTextLineSize( const KIGFX::GAL* aGal, const UTF8& aText ) const override;
 
     void GetTextAsPolygon( std::vector<SHAPE_POLY_SET>& aGlyphs, const UTF8& aText,
                            const VECTOR2D& aGlyphSize, bool aIsMirrored ) const;
@@ -133,7 +131,7 @@ private:
      *
      * @param aText is the text to be drawn.
      */
-    void drawSingleLineText( GAL* aGal, const UTF8& aText );
+    void drawSingleLineText( KIGFX::GAL* aGal, const UTF8& aText );
 
     void outlineToStraightSegments( CONTOURS& aContours, FT_Outline& aOutline ) const;
 
@@ -187,7 +185,5 @@ private:
         return hasDropout( aTags ) ? ( aTags & 0x38 ) : 0;
     }
 };
-
-} // namespace KIGFX
 
 #endif // OUTLINE_FONT_H_

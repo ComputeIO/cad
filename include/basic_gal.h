@@ -77,12 +77,6 @@ public:
         m_callbackData = aData;
     }
 
-    void SetOutlineCallback( KIGFX::OUTLINE_CALLBACK aCallback, void* aData )
-    {
-        m_outlineCallback = aCallback;
-        m_outlineCallbackData = aData;
-    }
-
     /// Set a clip box for drawings
     /// If NULL, no clip will be made
     void SetClipBox( EDA_RECT* aClipBox )
@@ -172,11 +166,6 @@ private:
     // coordinates of each segment:
     void ( *m_callback )( int x0, int y0, int xf, int yf, void* aData );
     void* m_callbackData; // a optional parameter for m_callback
-
-    // Same as above but for drawing outline fonts as polygons in a callback,
-    // returns true if m_callback should also be called
-    KIGFX::OUTLINE_CALLBACK m_outlineCallback;
-    void*                   m_outlineCallbackData; // optional parameter for m_outlineCallback
 
     // When calling the draw functions for plot, the plotter acts as a wxDC to plot basic items.
     PLOTTER* m_plotter;

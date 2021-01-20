@@ -34,11 +34,12 @@
 #include <algorithm>
 #include <utf8.h>
 #include <math/box2.h>
-#include <gal/font.h>
+#include <font/font.h>
 
 namespace KIGFX
 {
 class GAL;
+}
 
 /**
  * Class STROKE_FONT implements stroke font drawing.
@@ -69,7 +70,7 @@ public:
      * @param aPosition is the text position in world coordinates.
      * @param aRotationAngle is the text rotation angle in radians.
      */
-    void Draw( GAL* aGal, const UTF8& aText, const VECTOR2D& aPosition,
+    void Draw( KIGFX::GAL* aGal, const UTF8& aText, const VECTOR2D& aPosition,
                double aRotationAngle ) override;
 
     /**
@@ -79,7 +80,7 @@ public:
      *
      * @return a VECTOR2D giving the width and height of text.
      */
-    VECTOR2D ComputeStringBoundaryLimits( const GAL* aGal, const UTF8& aText,
+    VECTOR2D ComputeStringBoundaryLimits( const KIGFX::GAL* aGal, const UTF8& aText,
                                           const VECTOR2D& aGlyphSize,
                                           double          aGlyphThickness ) const override;
 
@@ -108,7 +109,7 @@ public:
      * @param aText is the text string (one line).
      * @return the text size.
      */
-    VECTOR2D ComputeTextLineSize( const GAL* aGal, const UTF8& aText ) const override;
+    VECTOR2D ComputeTextLineSize( const KIGFX::GAL* aGal, const UTF8& aText ) const override;
 
 private:
     /**
@@ -133,8 +134,8 @@ private:
      * This is the distance between the text base line and the overbar.
      * @return the relative position of the overbar axis.
      */
-    double computeOverbarVerticalPosition( const GAL* aGal ) const;
-    double computeUnderlineVerticalPosition( const GAL* aGal ) const;
+    double computeOverbarVerticalPosition( const KIGFX::GAL* aGal ) const;
+    double computeUnderlineVerticalPosition( const KIGFX::GAL* aGal ) const;
 
     /**
      * Compute the bounding box of a given glyph.
@@ -151,7 +152,7 @@ private:
      *
      * @param aText is the text to be drawn.
      */
-    void drawSingleLineText( GAL* aGal, const UTF8& aText ) const;
+    void drawSingleLineText( KIGFX::GAL* aGal, const UTF8& aText ) const;
 
     /**
      * Process a string representing a Hershey font glyph. Not used for Newstroke font
@@ -183,7 +184,5 @@ private:
     ///> Factor that determines the pitch between 2 lines.
     static const double INTERLINE_PITCH_RATIO;
 };
-
-} // namespace KIGFX
 
 #endif // STROKE_FONT_H_

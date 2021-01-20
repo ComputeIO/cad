@@ -26,15 +26,13 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
 
-#include <gal/stroke_font.h>
 #include <gal/graphics_abstraction_layer.h>
 #include <math/util.h> // for KiROUND
 #include <wx/string.h>
 #include <gr_text.h>
 #include <settings/settings_manager.h>
 #include <newstroke_font.h>
-
-using namespace KIGFX;
+#include <font/stroke_font.h>
 
 const double STROKE_FONT::INTERLINE_PITCH_RATIO = 1.61;
 const double STROKE_FONT::OVERBAR_POSITION_FACTOR = 1.33;
@@ -42,7 +40,6 @@ const double STROKE_FONT::UNDERLINE_POSITION_FACTOR = 0.41;
 const double STROKE_FONT::BOLD_FACTOR = 1.3;
 const double STROKE_FONT::STROKE_FONT_SCALE = 1.0 / 21.0;
 const double STROKE_FONT::ITALIC_TILT = 1.0 / 8;
-
 
 GLYPH_LIST*         g_newStrokeFontGlyphs = nullptr;   ///< Glyph list
 std::vector<BOX2D>* g_newStrokeFontGlyphBoundingBoxes; ///< Bounding boxes of the glyphs
@@ -384,7 +381,7 @@ BOX2D STROKE_FONT::computeBoundingBox( const GLYPH* aGLYPH, double aGlyphWidth )
 }
 
 
-void STROKE_FONT::Draw( GAL* aGal, const UTF8& aText, const VECTOR2D& aPosition,
+void STROKE_FONT::Draw( KIGFX::GAL* aGal, const UTF8& aText, const VECTOR2D& aPosition,
                         double aRotationAngle )
 {
     if( aText.empty() )
@@ -462,7 +459,7 @@ void STROKE_FONT::Draw( GAL* aGal, const UTF8& aText, const VECTOR2D& aPosition,
 }
 
 
-void STROKE_FONT::drawSingleLineText( GAL* aGal, const UTF8& aText ) const
+void STROKE_FONT::drawSingleLineText( KIGFX::GAL* aGal, const UTF8& aText ) const
 {
     double   xOffset;
     double   yOffset;
@@ -698,7 +695,7 @@ double STROKE_FONT::ComputeOverbarVerticalPosition( double aGlyphHeight ) const
 }
 
 
-double STROKE_FONT::computeOverbarVerticalPosition( const GAL* aGal ) const
+double STROKE_FONT::computeOverbarVerticalPosition( const KIGFX::GAL* aGal ) const
 {
     // Compute the Y position of the overbar. This is the distance between
     // the text base line and the overbar axis.
@@ -706,7 +703,7 @@ double STROKE_FONT::computeOverbarVerticalPosition( const GAL* aGal ) const
 }
 
 
-double STROKE_FONT::computeUnderlineVerticalPosition( const GAL* aGal ) const
+double STROKE_FONT::computeUnderlineVerticalPosition( const KIGFX::GAL* aGal ) const
 {
     // Compute the Y position of the underline. This is the distance between
     // the text base line and the underline axis.
@@ -714,13 +711,13 @@ double STROKE_FONT::computeUnderlineVerticalPosition( const GAL* aGal ) const
 }
 
 
-VECTOR2D STROKE_FONT::ComputeTextLineSize( const GAL* aGal, const UTF8& aText ) const
+VECTOR2D STROKE_FONT::ComputeTextLineSize( const KIGFX::GAL* aGal, const UTF8& aText ) const
 {
     return ComputeStringBoundaryLimits( aGal, aText, aGal->GetGlyphSize(), aGal->GetLineWidth() );
 }
 
 
-VECTOR2D STROKE_FONT::ComputeStringBoundaryLimits( const GAL* aGal, const UTF8& aText,
+VECTOR2D STROKE_FONT::ComputeStringBoundaryLimits( const KIGFX::GAL* aGal, const UTF8& aText,
                                                    const VECTOR2D& aGlyphSize,
                                                    double          aGlyphThickness ) const
 {

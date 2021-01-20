@@ -27,7 +27,7 @@
 
 #include <eda_text.h>
 #include <board_item.h>
-#include <gal/font.h>
+#include <font/font.h>
 
 class LINE_READER;
 class MSG_PANEL_ITEM;
@@ -131,7 +131,7 @@ public:
      */
     void DrawTextAsPolygon( std::vector<SHAPE_POLY_SET>& aResult, PCB_LAYER_ID aLayerId,
                             const wxPoint aPosition, const wxString& aString,
-                            const KIGFX::FONT* aFont ) const;
+                            const FONT* aFont ) const;
 
     void DrawTextAsPolygon( std::vector<SHAPE_POLY_SET>& aResult, PCB_LAYER_ID aLayerId ) const;
 

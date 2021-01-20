@@ -37,9 +37,10 @@ set( GAL_SRCS
     gal/gal_display_options.cpp
     gal/graphics_abstraction_layer.cpp
     gal/hidpi_gl_canvas.cpp
-    gal/font.cpp
-    gal/stroke_font.cpp
-    gal/outline_font.cpp
+
+    font/font.cpp
+    font/stroke_font.cpp
+    font/outline_font.cpp
 
     view/view_controls.cpp
     view/view_overlay.cpp

@@ -32,7 +32,6 @@
 #include <sch_edit_frame.h>
 #include <plotter.h>
 #include <widgets/msgpanel.h>
-#include <gal/font.h>
 #include <bitmaps.h>
 #include <kicad_string.h>
 #include <sch_text.h>
@@ -42,6 +41,7 @@
 #include <default_values.h>
 #include <wx/debug.h>
 #include <dialogs/html_messagebox.h>
+#include <font/font.h>
 #include <project/project_file.h>
 #include <project/net_settings.h>
 #include <core/mirror.h>

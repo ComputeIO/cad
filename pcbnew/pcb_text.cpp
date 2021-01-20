@@ -33,7 +33,7 @@
 #include <pcb_text.h>
 #include <pcb_painter.h>
 #include <trigo.h>
-#include <gal/outline_font.h>
+#include <font/outline_font.h>
 
 using KIGFX::PCB_RENDER_SETTINGS;
 
@@ -122,16 +122,12 @@ wxString PCB_TEXT::GetShownText( int aDepth, wxString* fontSpecifier ) const
 
 void PCB_TEXT::DrawTextAsPolygon( std::vector<SHAPE_POLY_SET>& aResult, PCB_LAYER_ID aLayerId,
                                   const wxPoint aPosition, const wxString& aString,
-                                  const KIGFX::FONT* aFont ) const
+                                  const FONT* aFont ) const
 {
     VECTOR2D glyphSize = GetTextSize();
-    /*
-    glyphSize.x = 6.0e+06;
-    glyphSize.y = 6.0e+06;
-    */
     if( aFont->IsOutline() )
     {
-        const KIGFX::OUTLINE_FONT* outlineFont = dynamic_cast<const KIGFX::OUTLINE_FONT*>( aFont );
+        const OUTLINE_FONT* outlineFont = dynamic_cast<const OUTLINE_FONT*>( aFont );
         outlineFont->GetTextAsPolygon( aResult, aString, glyphSize, IsMirrored() );
     }
     else
@@ -146,9 +142,9 @@ void PCB_TEXT::DrawTextAsPolygon( std::vector<SHAPE_POLY_SET>& aResult, PCB_LAYE
 void PCB_TEXT::DrawTextAsPolygon( std::vector<SHAPE_POLY_SET>& aResult,
                                   PCB_LAYER_ID                 aLayerId ) const
 {
-    wxString     fontName;
-    wxString     txt;
-    KIGFX::FONT* font;
+    wxString fontName;
+    wxString txt;
+    FONT*    font;
 
     if( IsMultilineAllowed() )
     {
@@ -157,7 +153,7 @@ void PCB_TEXT::DrawTextAsPolygon( std::vector<SHAPE_POLY_SET>& aResult,
         std::vector<wxPoint> positions;
         positions.reserve( strings_list.Count() );
         GetLinePositions( positions, strings_list.Count() );
-        font = KIGFX::FONT::GetFont( fontName );
+        font = FONT::GetFont( fontName );
 
         for( unsigned ii = 0; ii < strings_list.Count(); ++ii )
         {
@@ -168,7 +164,7 @@ void PCB_TEXT::DrawTextAsPolygon( std::vector<SHAPE_POLY_SET>& aResult,
     else
     {
         txt = GetShownText( 0, &fontName );
-        font = KIGFX::FONT::GetFont( fontName );
+        font = FONT::GetFont( fontName );
         DrawTextAsPolygon( aResult, aLayerId, GetTextPos(), txt, font );
     }
 }

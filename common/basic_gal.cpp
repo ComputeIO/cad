@@ -91,22 +91,12 @@ void BASIC_GAL::doDrawPolyline( const std::vector<wxPoint>& aLocalPointList, boo
         }
         m_plotter->PenFinish();
     }
-    else if( m_callback || m_outlineCallback )
+    else if( m_callback )
     {
-        bool callCallback = true;
-
-        if( aFill && m_outlineCallback )
+        for( unsigned ii = 1; ii < aLocalPointList.size(); ii++ )
         {
-            callCallback = m_outlineCallback( aLocalPointList, m_outlineCallbackData );
-        }
-
-        if( callCallback && m_callback )
-        {
-            for( unsigned ii = 1; ii < aLocalPointList.size(); ii++ )
-            {
-                m_callback( aLocalPointList[ii - 1].x, aLocalPointList[ii - 1].y,
-                            aLocalPointList[ii].x, aLocalPointList[ii].y, m_callbackData );
-            }
+            m_callback( aLocalPointList[ii - 1].x, aLocalPointList[ii - 1].y, aLocalPointList[ii].x,
+                        aLocalPointList[ii].y, m_callbackData );
         }
     }
 }

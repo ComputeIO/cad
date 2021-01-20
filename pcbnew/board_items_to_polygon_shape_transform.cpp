@@ -37,9 +37,9 @@
 #include <convert_basic_shapes_to_polygon.h>
 #include <geometry/geometry_utils.h>
 #include <geometry/shape_segment.h>
-#include <gal/outline_font.h>
+#include <font/outline_font.h>
 
-#include "../3d-viewer/3d_rendering/3d_render_raytracing/accelerators/container_2d.h" //FOOFAA
+// #include "../3d-viewer/3d_rendering/3d_render_raytracing/accelerators/container_2d.h" //FOOFAA
 
 // A helper struct for the callback function
 // These variables are parameters used in addTextSegmToPoly.
@@ -377,24 +377,22 @@ void EDA_TEXT::TransformBoundingBoxWithClearanceToPolygon( SHAPE_POLY_SET* aCorn
 
 
 static void polygonText( SHAPE_POLY_SET& aDestination, PCB_LAYER_ID aLayer, const wxPoint aPosition,
-                         const wxString& aString, const wxString& aFontName, const PCB_TEXT* aText )
+                         const wxString& aString, const FONT* aFont, const PCB_TEXT* aText )
 {
     // copied from void BOARD_ADAPTER::drawTextFromAddShapeWithClearance( const PCB_TEXT* aText, ...
-    KIGFX::FONT* font = KIGFX::FONT::GetFont( aFontName );
-    if( font->IsOutline() )
+    if( aFont->IsOutline() )
     {
         std::vector<SHAPE_POLY_SET> glyphs;
-        VECTOR2D                    glyphSize;
-        // glyphSize.x = 1.0;
-        // glyphSize.y = 1.0;
-        glyphSize.x = 6.0e+06;
-        glyphSize.y = 6.0e+06;
-        KIGFX::OUTLINE_FONT* outlineFont = dynamic_cast<KIGFX::OUTLINE_FONT*>( font );
-        outlineFont->GetTextAsPolygon( glyphs, aString, glyphSize, aText->IsMirrored() );
+        const OUTLINE_FONT*         outlineFont = dynamic_cast<const OUTLINE_FONT*>( aFont );
+        outlineFont->GetTextAsPolygon( glyphs, aString, aText->GetTextSize(), aText->IsMirrored() );
         for( SHAPE_POLY_SET& glyph : glyphs )
         {
             aDestination.Append( glyph );
         }
+#ifdef DEBUG
+        std::cerr << "polygonText() this fn does not handle glyphs with holes correctly!"
+                  << std::endl;
+#endif
     }
     else
     {
@@ -429,8 +427,9 @@ void PCB_TEXT::TransformTextShapeWithClearanceToPolygon( SHAPE_POLY_SET& aCorner
     prms.m_error = aError;
 
     COLOR4D  color = COLOR4D::BLACK; // not actually used, but needed by GRText
-    wxString font;
-    wxString txt = GetShownText( 0, &font );
+    wxString fontName;
+    wxString txt = GetShownText( 0, &fontName );
+    FONT*    font = FONT::GetFont( fontName );
 
     if( IsMultilineAllowed() )
     {
@@ -443,24 +442,30 @@ void PCB_TEXT::TransformTextShapeWithClearanceToPolygon( SHAPE_POLY_SET& aCorner
         for( unsigned ii = 0; ii < strings_list.Count(); ii++ )
         {
             wxString txtItem = strings_list.Item( ii );
-#ifdef FOOFAA
-            GRText( NULL, positions[ii], color, txtItem, GetTextAngle(), size, GetHorizJustify(),
-                    GetVertJustify(), penWidth, IsItalic(), forceBold, addTextSegmToPoly, &prms,
-                    /* aPlotter */ nullptr, &font );
-#else
-            polygonText( aCornerBuffer, aLayer, positions[ii], txtItem, font, this );
-#endif
+            if( font->IsOutline() )
+            {
+                polygonText( aCornerBuffer, aLayer, positions[ii], txtItem, font, this );
+            }
+            else
+            {
+                GRText( NULL, positions[ii], color, txtItem, GetTextAngle(), size,
+                        GetHorizJustify(), GetVertJustify(), penWidth, IsItalic(), forceBold,
+                        addTextSegmToPoly, &prms, nullptr, &fontName );
+            }
         }
     }
     else
     {
-#ifdef FOOFAA
-        GRText( NULL, GetTextPos(), color, txt, GetTextAngle(), size, GetHorizJustify(),
-                GetVertJustify(), penWidth, IsItalic(), forceBold, addTextSegmToPoly, &prms,
-                /* aPlotter */ nullptr, &font );
-#else
-        polygonText( aCornerBuffer, aLayer, GetTextPos(), txt, font, this );
-#endif
+        if( font->IsOutline() )
+        {
+            polygonText( aCornerBuffer, aLayer, GetTextPos(), txt, font, this );
+        }
+        else
+        {
+            GRText( NULL, GetTextPos(), color, txt, GetTextAngle(), size, GetHorizJustify(),
+                    GetVertJustify(), penWidth, IsItalic(), forceBold, addTextSegmToPoly, &prms,
+                    /* aPlotter */ nullptr, &fontName );
+        }
     }
 }
 

@@ -24,10 +24,8 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
 
-#include <gal/stroke_font.h>
-#include <gal/outline_font.h>
-
-using namespace KIGFX;
+#include <font/stroke_font.h>
+#include <font/outline_font.h>
 
 FONT*                     FONT::s_defaultFont = nullptr;
 std::map<wxString, FONT*> FONT::s_fontMap;

@@ -248,14 +248,8 @@ void KIGFX::WS_PAINTER::draw( const WS_DRAW_ITEM_TEXT* aItem, int aLayer ) const
     m_gal->SetStrokeColor( m_renderSettings.GetColor( aItem, aLayer ) );
     m_gal->SetLineWidth( penWidth );
     m_gal->SetTextAttributes( aItem );
-#ifdef FOOFAA
-    m_gal->SetIsFill( false );
-    m_gal->SetIsStroke( true );
-#endif
     wxString font;
-    wxString txt;
-    txt = aItem->GetShownText( 0, &font );
-    //m_gal->StrokeText( aItem->GetShownText(), VECTOR2D( 0, 0 ), 0.0 );
+    wxString txt = aItem->GetShownText( 0, &font );
     if( !txt.empty() )
         m_gal->StrokeText( txt, VECTOR2D( 0, 0 ), 0.0, &font );
     m_gal->Restore();

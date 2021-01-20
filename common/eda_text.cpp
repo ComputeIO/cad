@@ -38,8 +38,8 @@
 #include <convert_to_biu.h> // for Mils2iu
 #include <eda_rect.h>       // for EDA_RECT
 #include <eda_text.h>       // for EDA_TEXT, TEXT_EFFECTS, GR_TEXT_VJUSTIF...
+#include <font/font.h>      // for FONT
 #include <gal/color4d.h>    // for COLOR4D, COLOR4D::BLACK
-#include <gal/font.h>       // for FONT
 #include <gr_text.h>        // for GRText
 #include <kicad_string.h>   // for UnescapeString
 #include <math/util.h>      // for KiROUND

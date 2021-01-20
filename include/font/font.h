@@ -36,6 +36,7 @@
 namespace KIGFX
 {
 class GAL;
+}
 
 typedef std::vector<VECTOR2D> POINTS;
 typedef std::vector<POINTS>   POINTS_LIST;
@@ -78,7 +79,7 @@ public:
      * @param aPosition is the text position in world coordinates.
      * @param aRotationAngle is the text rotation angle in radians.
      */
-    virtual void Draw( GAL* aGal, const UTF8& aText, const VECTOR2D& aPosition,
+    virtual void Draw( KIGFX::GAL* aGal, const UTF8& aText, const VECTOR2D& aPosition,
                        double aRotationAngle ) = 0;
 
     /**
@@ -88,7 +89,7 @@ public:
      *
      * @return a VECTOR2D giving the width and height of text.
      */
-    virtual VECTOR2D ComputeStringBoundaryLimits( const GAL* aGal, const UTF8& aText,
+    virtual VECTOR2D ComputeStringBoundaryLimits( const KIGFX::GAL* aGal, const UTF8& aText,
                                                   const VECTOR2D& aGlyphSize,
                                                   double          aGlyphThickness ) const = 0;
 
@@ -117,7 +118,7 @@ public:
      * @param aText is the text string (one line).
      * @return the text size.
      */
-    virtual VECTOR2D ComputeTextLineSize( const GAL* aGal, const UTF8& aText ) const = 0;
+    virtual VECTOR2D ComputeTextLineSize( const KIGFX::GAL* aGal, const UTF8& aText ) const = 0;
 
 protected:
     wxString m_fontName;     ///< Font name
@@ -144,7 +145,5 @@ private:
 
     static FONT* getDefaultFont();
 };
-
-} // namespace KIGFX
 
 #endif // FONT_H_

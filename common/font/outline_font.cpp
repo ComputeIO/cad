@@ -2,7 +2,7 @@
  * This program source code file is part of KICAD, a free EDA CAD application.
  *
  * Copyright (C) 2021 Ola Rinta-Koski <gitlab@rinta-koski.net>
- * Copyright (C) 2016-2021 Kicad Developers, see change_log.txt for contributors.
+ * Copyright (C) 2021 Kicad Developers, see AUTHORS.txt for contributors.
  *
  * Outline font class
  *
@@ -27,14 +27,12 @@
 #include <wx/string.h>
 #include <settings/settings_manager.h>
 #include <harfbuzz/hb-ft.h>
-#include <gal/outline_font.h>
-#include FT_GLYPH_H
-#include FT_BBOX_H
 #include <bezier_curves.h>
 #include <geometry/shape_simple.h>
 #include <geometry/shape_poly_set.h>
-
-using namespace KIGFX;
+#include <font/outline_font.h>
+#include FT_GLYPH_H
+#include FT_BBOX_H
 
 FT_Library OUTLINE_FONT::mFreeType = nullptr;
 
@@ -101,14 +99,7 @@ FT_Error OUTLINE_FONT::loadFace( const wxString& aFontFileName )
 {
     // TODO: check that going from wxString to char* with UTF-8
     // conversion for filename makes sense on any/all platforms
-    FT_Error e = FT_New_Face( mFreeType, aFontFileName.mb_str( wxConvUTF8 ), 0, &mFace );
-
-    if( e )
-    {
-        std::cerr << "loadFace( " << aFontFileName << " ) failed with error " << e << std::endl;
-    }
-
-    return e;
+    return FT_New_Face( mFreeType, aFontFileName.mb_str( wxConvUTF8 ), 0, &mFace );
 }
 
 
@@ -120,7 +111,7 @@ FT_Error OUTLINE_FONT::loadFace( const wxString& aFontFileName )
  * @param aPosition is the text position in world coordinates.
  * @param aRotationAngle is the text rotation angle in radians.
  */
-void OUTLINE_FONT::Draw( GAL* aGal, const UTF8& aText, const VECTOR2D& aPosition,
+void OUTLINE_FONT::Draw( KIGFX::GAL* aGal, const UTF8& aText, const VECTOR2D& aPosition,
                          double aRotationAngle )
 {
     if( aText.empty() )
@@ -162,7 +153,7 @@ void OUTLINE_FONT::Draw( GAL* aGal, const UTF8& aText, const VECTOR2D& aPosition
  *
  * @return a VECTOR2D giving the width and height of text.
  */
-VECTOR2D OUTLINE_FONT::ComputeStringBoundaryLimits( const GAL* aGal, const UTF8& aText,
+VECTOR2D OUTLINE_FONT::ComputeStringBoundaryLimits( const KIGFX::GAL* aGal, const UTF8& aText,
                                                     const VECTOR2D& aGlyphSize,
                                                     double          aGlyphThickness ) const
 {
@@ -203,7 +194,7 @@ double OUTLINE_FONT::GetInterline( double aGlyphHeight ) const
  * @param aText is the text string (one line).
  * @return the text size.
  */
-VECTOR2D OUTLINE_FONT::ComputeTextLineSize( const GAL* aGal, const UTF8& aText ) const
+VECTOR2D OUTLINE_FONT::ComputeTextLineSize( const KIGFX::GAL* aGal, const UTF8& aText ) const
 {
     assert( 1 == 0 ); // TODO!!!
 }
@@ -230,7 +221,7 @@ static bool contourIsHole( const CONTOUR& c )
 }
 
 
-void OUTLINE_FONT::drawSingleLineText( GAL* aGal, const UTF8& aText )
+void OUTLINE_FONT::drawSingleLineText( KIGFX::GAL* aGal, const UTF8& aText )
 {
     // Context needs to be saved before any transformations
     aGal->Save();
