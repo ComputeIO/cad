@@ -141,6 +141,8 @@ protected:
 private:
     static FONT*                     s_defaultFont;
     static std::map<wxString, FONT*> s_fontMap;
+
+    static FONT* getDefaultFont();
 };
 
 } // namespace KIGFX
