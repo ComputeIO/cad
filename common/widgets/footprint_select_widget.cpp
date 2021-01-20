@@ -131,9 +131,9 @@ bool FOOTPRINT_SELECT_WIDGET::UpdateList()
     // Be careful adding items! "Default" must occupy POS_DEFAULT,
     // "Other" must occupy POS_OTHER, and the separator must occupy POS_SEPARATOR.
 
-    m_fp_sel_ctrl->Append( m_default_footprint.IsEmpty() ?
-                                   _( "No default footprint" ) :
-                                   "[" + _( "Default" ) + "] " + m_default_footprint,
+    m_fp_sel_ctrl->Append( m_default_footprint.IsEmpty()
+                                   ? _( "No default footprint" )
+                                   : "[" + _( "Default" ) + "] " + m_default_footprint,
                            new wxStringClientData( m_default_footprint ) );
 
     if( !m_zero_filter )

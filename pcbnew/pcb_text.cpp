@@ -258,18 +258,18 @@ void PCB_TEXT::Flip( const wxPoint& aCentre, bool aFlipLeftRight )
     // Now put the text back in its bounding box
     switch( GetHorizJustify() )
     {
-    case GR_TEXT_HJUSTIFY_LEFT:   SetTextX( IsMirrored() ? left : right ); break;
-    case GR_TEXT_HJUSTIFY_CENTER: SetTextX( ( left + right ) / 2 );        break;
-    case GR_TEXT_HJUSTIFY_RIGHT:  SetTextX( IsMirrored() ? right : left ); break;
+    case GR_TEXT_HJUSTIFY_LEFT: SetTextX( IsMirrored() ? left : right ); break;
+    case GR_TEXT_HJUSTIFY_CENTER: SetTextX( ( left + right ) / 2 ); break;
+    case GR_TEXT_HJUSTIFY_RIGHT: SetTextX( IsMirrored() ? right : left ); break;
     }
 
     if( !aFlipLeftRight )
     {
         switch( GetVertJustify() )
         {
-        case GR_TEXT_VJUSTIFY_TOP:    SetTextY( bottom );               break;
+        case GR_TEXT_VJUSTIFY_TOP: SetTextY( bottom ); break;
         case GR_TEXT_VJUSTIFY_CENTER: SetTextY( ( top + bottom ) / 2 ); break;
-        case GR_TEXT_VJUSTIFY_BOTTOM: SetTextY( top );                  break;
+        case GR_TEXT_VJUSTIFY_BOTTOM: SetTextY( top ); break;
         }
     }
 

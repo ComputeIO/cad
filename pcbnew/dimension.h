@@ -119,10 +119,10 @@ public:
      * @return the origin point of this dimension
      */
     virtual const wxPoint& GetStart() const { return m_start; }
-    virtual void SetStart( const wxPoint& aPoint ) { m_start = aPoint; }
+    virtual void           SetStart( const wxPoint& aPoint ) { m_start = aPoint; }
 
     virtual const wxPoint& GetEnd() const { return m_end; }
-    virtual void SetEnd( const wxPoint& aPoint ) { m_end = aPoint; }
+    virtual void           SetEnd( const wxPoint& aPoint ) { m_end = aPoint; }
 
     wxPoint GetPosition() const override { return m_start; }
     void SetPosition( const wxPoint& aPos ) override { m_start = aPos; }

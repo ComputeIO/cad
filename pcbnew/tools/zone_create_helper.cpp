@@ -211,12 +211,12 @@ void ZONE_CREATE_HELPER::commitZone( std::unique_ptr<ZONE> aZone )
             aZone->HatchBorder();
             bCommit.Add( aZone.get() );
 
-            BOARD* board = m_tool.getModel<BOARD>();
+            BOARD*                      board = m_tool.getModel<BOARD>();
             std::lock_guard<KISPINLOCK> lock( board->GetConnectivity()->GetLock() );
 
             if( !m_params.m_keepout )
             {
-                ZONE_FILLER filler( board, &bCommit );
+                ZONE_FILLER        filler( board, &bCommit );
                 std::vector<ZONE*> toFill = { aZone.get() };
 
                 if( !filler.Fill( toFill ) )

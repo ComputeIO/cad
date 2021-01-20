@@ -262,10 +262,7 @@ public:
         return m_connAlgo;
     }
 
-    KISPINLOCK& GetLock()
-    {
-        return m_lock;
-    }
+    KISPINLOCK& GetLock() { return m_lock; }
 
     void MarkItemNetAsDirty( BOARD_ITEM* aItem );
     void SetProgressReporter( PROGRESS_REPORTER* aReporter );

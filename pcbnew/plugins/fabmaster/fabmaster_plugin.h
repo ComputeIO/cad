@@ -36,16 +36,14 @@
 class FABMASTER_PLUGIN : public PLUGIN
 {
 public:
-
     // -----<PUBLIC PLUGIN API>--------------------------------------------------
 
-    const wxString  PluginName() const override;
+    const wxString PluginName() const override;
 
-    BOARD*          Load( const wxString&   aFileName,
-                          BOARD*            aAppendToMe,
-                          const PROPERTIES* aProperties = NULL, PROJECT* aProject = nullptr ) override;
+    BOARD* Load( const wxString& aFileName, BOARD* aAppendToMe,
+                 const PROPERTIES* aProperties = NULL, PROJECT* aProject = nullptr ) override;
 
-    const wxString  GetFileExtension() const override;
+    const wxString GetFileExtension() const override;
 
     long long GetLibraryTimestamp( const wxString& aLibraryPath ) const override
     {
@@ -59,10 +57,10 @@ public:
     ~FABMASTER_PLUGIN();
 
 private:
-    const PROPERTIES*   m_props;
-    BOARD*              m_board;
+    const PROPERTIES* m_props;
+    BOARD*            m_board;
 
-    FABMASTER           m_fabmaster;
+    FABMASTER m_fabmaster;
 };
 
-#endif    // PCAD_PLUGIN_H_
+#endif // PCAD_PLUGIN_H_

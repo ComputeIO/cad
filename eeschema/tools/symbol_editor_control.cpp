@@ -75,8 +75,8 @@ bool SYMBOL_EDITOR_CONTROL::Init()
         ctxMenu.AddItem( ACTIONS::unpinLibrary,          pinnedLibSelectedCondition );
 
         ctxMenu.AddSeparator();
-        ctxMenu.AddItem( ACTIONS::newLibrary,            SELECTION_CONDITIONS::ShowAlways );
-        ctxMenu.AddItem( ACTIONS::addLibrary,            SELECTION_CONDITIONS::ShowAlways );
+        ctxMenu.AddItem( ACTIONS::newLibrary, SELECTION_CONDITIONS::ShowAlways );
+        ctxMenu.AddItem( ACTIONS::addLibrary, SELECTION_CONDITIONS::ShowAlways );
         ctxMenu.AddItem( ACTIONS::save,                  libSelectedCondition );
         ctxMenu.AddItem( EE_ACTIONS::saveLibraryAs,      libSelectedCondition );
         ctxMenu.AddItem( ACTIONS::revert,                libSelectedCondition );
@@ -93,9 +93,9 @@ bool SYMBOL_EDITOR_CONTROL::Init()
         ctxMenu.AddSeparator();
         ctxMenu.AddItem( EE_ACTIONS::cutSymbol,          symbolSelectedCondition );
         ctxMenu.AddItem( EE_ACTIONS::copySymbol,         symbolSelectedCondition );
-        ctxMenu.AddItem( EE_ACTIONS::pasteSymbol,        SELECTION_CONDITIONS::ShowAlways );
-        ctxMenu.AddItem( EE_ACTIONS::duplicateSymbol,    symbolSelectedCondition );
-        ctxMenu.AddItem( EE_ACTIONS::deleteSymbol,       symbolSelectedCondition );
+        ctxMenu.AddItem( EE_ACTIONS::pasteSymbol, SELECTION_CONDITIONS::ShowAlways );
+        ctxMenu.AddItem( EE_ACTIONS::duplicateSymbol, symbolSelectedCondition );
+        ctxMenu.AddItem( EE_ACTIONS::deleteSymbol, symbolSelectedCondition );
 
         ctxMenu.AddSeparator();
         ctxMenu.AddItem( EE_ACTIONS::importSymbol,       libSelectedCondition );
@@ -450,8 +450,8 @@ int SYMBOL_EDITOR_CONTROL::AddSymbolToSchematic( const TOOL_EVENT& aEvent )
 
         wxCHECK( part->GetLibId().IsValid(), 0 );
 
-        SCH_COMPONENT* symbol = new SCH_COMPONENT( *part, libId, &schframe->GetCurrentSheet(),
-                                                   unit, convert );
+        SCH_COMPONENT* symbol =
+                new SCH_COMPONENT( *part, libId, &schframe->GetCurrentSheet(), unit, convert );
 
         symbol->SetParent( schframe->GetCurrentSheet().LastScreen() );
 

@@ -56,7 +56,6 @@
 
 bool FABMASTER::Read( const std::string& aFile )
 {
-
     std::ifstream ifs( aFile, std::ios::in | std::ios::binary );
 
     if( !ifs.is_open() )
@@ -64,16 +63,16 @@ bool FABMASTER::Read( const std::string& aFile )
 
     m_filename = aFile;
 
-    std::string buffer( std::istreambuf_iterator<char>{ ifs }, {} );
-    std::vector < std::string > row;
-    std::string cell;
-    bool quoted = false;
+    std::string              buffer( std::istreambuf_iterator<char>{ ifs }, {} );
+    std::vector<std::string> row;
+    std::string              cell;
+    bool                     quoted = false;
 
     for( auto ch : buffer )
     {
         switch( ch )
         {
-        case  '"':
+        case '"':
 
             if( cell.empty() || cell[0] == '"' )
                 quoted = !quoted;
@@ -104,11 +103,9 @@ bool FABMASTER::Read( const std::string& aFile )
             quoted = false;
             break;
 
-        case '\r':
-            break;
+        case '\r': break;
 
-        default:
-            cell += std::toupper( ch );
+        default: cell += std::toupper( ch );
         }
     }
 
@@ -144,16 +141,25 @@ FABMASTER::section_type FABMASTER::detectType( size_t aOffset )
     std::string row3{};
 
     /// We strip the underscores from all column names as some export variants use them and some do not
-    row1.erase( std::remove_if( row1.begin(), row1.end(), []( char c ){ return c == '_'; } ),
+    row1.erase( std::remove_if( row1.begin(), row1.end(),
+                                []( char c ) {
+                                    return c == '_';
+                                } ),
                 row1.end() );
-    row2.erase( std::remove_if( row2.begin(), row2.end(), []( char c ){ return c == '_'; } ),
+    row2.erase( std::remove_if( row2.begin(), row2.end(),
+                                []( char c ) {
+                                    return c == '_';
+                                } ),
                 row2.end() );
 
     if( row.size() > 3 )
     {
         row3 = row[3];
-        row3.erase( std::remove_if( row3.begin(), row3.end(), []( char c ){ return c == '_'; } ),
-                row3.end() );
+        row3.erase( std::remove_if( row3.begin(), row3.end(),
+                                    []( char c ) {
+                                        return c == '_';
+                                    } ),
+                    row3.end() );
     }
 
     if( row1 == "REFDES" && row2 == "COMPCLASS" )
@@ -191,7 +197,6 @@ FABMASTER::section_type FABMASTER::detectType( size_t aOffset )
 
     std::cout << "UNKNOWN Columns " << row1 << " : " << row2 << std::endl;
     return UNKNOWN_EXTRACT;
-
 }
 
 double FABMASTER::processScaleFactor( size_t aRow )
@@ -204,14 +209,15 @@ double FABMASTER::processScaleFactor( size_t aRow )
     if( rows[aRow].size() < 11 )
     {
         wxLogError( wxString::Format( _( "Invalid row size in J row %zu.  "
-                "Expecting 11 elements but found %zu" ), aRow, rows[aRow].size() ) );
+                                         "Expecting 11 elements but found %zu" ),
+                                      aRow, rows[aRow].size() ) );
         return -1.0;
     }
 
     for( int i = 7; i < 10 && retval < 1.0; ++i )
     {
         auto units = rows[aRow][i];
-        std::transform(units.begin(), units.end(),units.begin(), ::toupper);
+        std::transform( units.begin(), units.end(), units.begin(), ::toupper );
 
         if( units == "MILS" )
             retval = IU_PER_MILS;
@@ -244,7 +250,10 @@ int FABMASTER::getColFromName( size_t aRow, const std::string& aStr )
         /// Some Fabmaster headers include the underscores while others do not
         /// so we strip them uniformly before comparing
         header[i].erase( std::remove_if( header[i].begin(), header[i].end(),
-                []( const char c ){ return c == '_'; } ), header[i].end() );
+                                         []( const char c ) {
+                                             return c == '_';
+                                         } ),
+                         header[i].end() );
 
         if( header[i] == aStr )
             return i;
@@ -257,7 +266,7 @@ int FABMASTER::getColFromName( size_t aRow, const std::string& aStr )
 
 PCB_LAYER_ID FABMASTER::getLayer( const std::string& aLayerName )
 {
-    const auto& kicad_layer = layers.find( aLayerName);
+    const auto& kicad_layer = layers.find( aLayerName );
 
     if( kicad_layer == layers.end() )
         return UNDEFINED_LAYER;
@@ -275,18 +284,18 @@ size_t FABMASTER::processPadStackLayers( size_t aRow )
 
     const auto header = rows[aRow];
 
-    int pad_name_col        = getColFromName( aRow, "PADNAME" );
-    int pad_num_col         = getColFromName( aRow, "RECNUMBER" );
-    int pad_lay_col         = getColFromName( aRow, "LAYER" );
-    int pad_fix_col         = getColFromName( aRow, "FIXFLAG" );
-    int pad_via_col         = getColFromName( aRow, "VIAFLAG" );
-    int pad_shape_col       = getColFromName( aRow, "PADSHAPE1" );
-    int pad_width_col       = getColFromName( aRow, "PADWIDTH" );
-    int pad_height_col      = getColFromName( aRow, "PADHGHT" );
-    int pad_xoff_col        = getColFromName( aRow, "PADXOFF" );
-    int pad_yoff_col        = getColFromName( aRow, "PADYOFF" );
-    int pad_flash_col       = getColFromName( aRow, "PADFLASH" );
-    int pad_shape_name_col  = getColFromName( aRow, "PADSHAPENAME" );
+    int pad_name_col = getColFromName( aRow, "PADNAME" );
+    int pad_num_col = getColFromName( aRow, "RECNUMBER" );
+    int pad_lay_col = getColFromName( aRow, "LAYER" );
+    int pad_fix_col = getColFromName( aRow, "FIXFLAG" );
+    int pad_via_col = getColFromName( aRow, "VIAFLAG" );
+    int pad_shape_col = getColFromName( aRow, "PADSHAPE1" );
+    int pad_width_col = getColFromName( aRow, "PADWIDTH" );
+    int pad_height_col = getColFromName( aRow, "PADHGHT" );
+    int pad_xoff_col = getColFromName( aRow, "PADXOFF" );
+    int pad_yoff_col = getColFromName( aRow, "PADYOFF" );
+    int pad_flash_col = getColFromName( aRow, "PADFLASH" );
+    int pad_shape_name_col = getColFromName( aRow, "PADSHAPENAME" );
 
     for( ; rownum < rows.size() && rows[rownum].size() > 0 && rows[rownum][0] == "S"; ++rownum )
     {
@@ -295,7 +304,8 @@ size_t FABMASTER::processPadStackLayers( size_t aRow )
         if( row.size() != header.size() )
         {
             wxLogError( wxString::Format( _( "Invalid row size in row %zu.  "
-                    "Expecting %zu elements but found %zu" ), rownum, header.size(), row.size() ) );
+                                             "Expecting %zu elements but found %zu" ),
+                                          rownum, header.size(), row.size() ) );
             continue;
         }
 
@@ -320,7 +330,7 @@ size_t FABMASTER::processPadStackLayers( size_t aRow )
         if( pad_layer[0] == '~' )
             break;
 
-        auto result = layers.emplace( pad_layer, FABMASTER_LAYER{} );
+        auto             result = layers.emplace( pad_layer, FABMASTER_LAYER{} );
         FABMASTER_LAYER& layer = result.first->second;
 
         /// If the layer ids have not yet been assigned
@@ -350,33 +360,34 @@ size_t FABMASTER::processPadStacks( size_t aRow )
         return -1;
 
     const auto header = rows[aRow];
-    double scale_factor = processScaleFactor( aRow + 1 );
+    double     scale_factor = processScaleFactor( aRow + 1 );
 
     if( scale_factor <= 0.0 )
         return -1;
 
-    int pad_name_col        = getColFromName( aRow, "PADNAME" );
-    int pad_num_col         = getColFromName( aRow, "RECNUMBER" );
-    int pad_lay_col         = getColFromName( aRow, "LAYER" );
-    int pad_fix_col         = getColFromName( aRow, "FIXFLAG" );
-    int pad_via_col         = getColFromName( aRow, "VIAFLAG" );
-    int pad_shape_col       = getColFromName( aRow, "PADSHAPE1" );
-    int pad_width_col       = getColFromName( aRow, "PADWIDTH" );
-    int pad_height_col      = getColFromName( aRow, "PADHGHT" );
-    int pad_xoff_col        = getColFromName( aRow, "PADXOFF" );
-    int pad_yoff_col        = getColFromName( aRow, "PADYOFF" );
-    int pad_flash_col       = getColFromName( aRow, "PADFLASH" );
-    int pad_shape_name_col  = getColFromName( aRow, "PADSHAPENAME" );
+    int pad_name_col = getColFromName( aRow, "PADNAME" );
+    int pad_num_col = getColFromName( aRow, "RECNUMBER" );
+    int pad_lay_col = getColFromName( aRow, "LAYER" );
+    int pad_fix_col = getColFromName( aRow, "FIXFLAG" );
+    int pad_via_col = getColFromName( aRow, "VIAFLAG" );
+    int pad_shape_col = getColFromName( aRow, "PADSHAPE1" );
+    int pad_width_col = getColFromName( aRow, "PADWIDTH" );
+    int pad_height_col = getColFromName( aRow, "PADHGHT" );
+    int pad_xoff_col = getColFromName( aRow, "PADXOFF" );
+    int pad_yoff_col = getColFromName( aRow, "PADYOFF" );
+    int pad_flash_col = getColFromName( aRow, "PADFLASH" );
+    int pad_shape_name_col = getColFromName( aRow, "PADSHAPENAME" );
 
     for( ; rownum < rows.size() && rows[rownum].size() > 0 && rows[rownum][0] == "S"; ++rownum )
     {
-        auto row = rows[rownum];
+        auto    row = rows[rownum];
         FM_PAD* pad;
 
         if( row.size() != header.size() )
         {
             wxLogError( wxString::Format( _( "Invalid row size in row %zu.  "
-                    "Expecting %zu elements but found %zu" ), rownum, header.size(), row.size() ) );
+                                             "Expecting %zu elements but found %zu" ),
+                                          rownum, header.size(), row.size() ) );
             continue;
         }
 
@@ -426,8 +437,9 @@ size_t FABMASTER::processPadStacks( size_t aRow )
             catch( ... )
             {
                 wxLogError( wxString::Format( _( "Expecting drill size value "
-                        "but found %s!%s!%s at line %zu" ),
-                        pad_shape.c_str(), pad_width.c_str(), pad_height.c_str(), rownum ) );
+                                                 "but found %s!%s!%s at line %zu" ),
+                                              pad_shape.c_str(), pad_width.c_str(),
+                                              pad_height.c_str(), rownum ) );
                 continue;
             }
 
@@ -472,7 +484,8 @@ size_t FABMASTER::processPadStacks( size_t aRow )
         catch( ... )
         {
             wxLogError( wxString::Format( _( "Expecting pad size values "
-                    "but found %s : %s at line %zu" ), pad_width.c_str(), pad_height.c_str(), rownum ) );
+                                             "but found %s : %s at line %zu" ),
+                                          pad_width.c_str(), pad_height.c_str(), rownum ) );
             continue;
         }
 
@@ -527,7 +540,8 @@ size_t FABMASTER::processPadStacks( size_t aRow )
         catch( ... )
         {
             wxLogError( wxString::Format( _( "Expecting pad offset values "
-                    "but found %s : %s at line %zu" ), pad_xoff.c_str(), pad_yoff.c_str(), rownum ) );
+                                             "but found %s : %s at line %zu" ),
+                                          pad_xoff.c_str(), pad_yoff.c_str(), rownum ) );
             continue;
         }
 
@@ -566,7 +580,7 @@ size_t FABMASTER::processPadStacks( size_t aRow )
             else
             {
                 wxLogError( wxString::Format( _( "Unknown pad shape name %s at line %zu" ),
-                        pad_shapename.c_str(), rownum ) );
+                                              pad_shapename.c_str(), rownum ) );
                 continue;
             }
         }
@@ -580,59 +594,59 @@ size_t FABMASTER::processSimpleLayers( size_t aRow )
 {
     size_t rownum = aRow + 2;
 
-     if( rows.size() < rownum )
-         return 0;
+    if( rows.size() < rownum )
+        return 0;
 
-     auto header = rows[aRow];
-     double scale_factor = processScaleFactor( aRow + 1 );
+    auto   header = rows[aRow];
+    double scale_factor = processScaleFactor( aRow + 1 );
 
-     if( scale_factor <= 0.0 )
-         return 0;
+    if( scale_factor <= 0.0 )
+        return 0;
 
-     int layer_class_col     = getColFromName( aRow, "CLASS" );
-     int layer_subclass_col  = getColFromName( aRow, "SUBCLASS" );
+    int layer_class_col = getColFromName( aRow, "CLASS" );
+    int layer_subclass_col = getColFromName( aRow, "SUBCLASS" );
 
-     for( ; rownum < rows.size() && rows[rownum].size() > 0 && rows[rownum][0] == "S"; ++rownum )
-     {
-         auto row = rows[rownum];
+    for( ; rownum < rows.size() && rows[rownum].size() > 0 && rows[rownum][0] == "S"; ++rownum )
+    {
+        auto row = rows[rownum];
 
-         if( row.size() != header.size() )
-         {
-             wxLogError( wxString::Format( _( "Invalid row size in row %zu.  "
-                     "Expecting %zu elements but found %zu" ), rownum, header.size(), row.size() ) );
-             continue;
-         }
+        if( row.size() != header.size() )
+        {
+            wxLogError( wxString::Format( _( "Invalid row size in row %zu.  "
+                                             "Expecting %zu elements but found %zu" ),
+                                          rownum, header.size(), row.size() ) );
+            continue;
+        }
 
-         auto result = layers.emplace( row[layer_subclass_col], FABMASTER_LAYER{} );
-         FABMASTER_LAYER& layer = result.first->second;
+        auto             result = layers.emplace( row[layer_subclass_col], FABMASTER_LAYER{} );
+        FABMASTER_LAYER& layer = result.first->second;
 
-         layer.name = row[layer_subclass_col];
-         layer.positive = true;
-         layer.conductive = false;
+        layer.name = row[layer_subclass_col];
+        layer.positive = true;
+        layer.conductive = false;
 
-         if( row[layer_class_col] == "ANTI ETCH" )
-         {
-             layer.positive = false;
-             layer.conductive = true;
-         }
-         else if( row[layer_class_col] == "ETCH" )
-         {
-             layer.conductive = true;
-         }
-     }
+        if( row[layer_class_col] == "ANTI ETCH" )
+        {
+            layer.positive = false;
+            layer.conductive = true;
+        }
+        else if( row[layer_class_col] == "ETCH" )
+        {
+            layer.conductive = true;
+        }
+    }
 
-     return rownum - aRow;
+    return rownum - aRow;
 }
 
 
 bool FABMASTER::assignLayers()
 {
-    bool has_l1 = false;
-    int max_layer = 0;
+    bool        has_l1 = false;
+    int         max_layer = 0;
     std::string max_layer_name;
 
-    std::vector<std::pair<std::string, int>> extra_layers
-    {
+    std::vector<std::pair<std::string, int>> extra_layers{
         { "ASSEMBLY_TOP", F_Fab },
         { "ASSEMBLY_BOTTOM", B_Fab },
         { "PLACE_BOUND_TOP", F_CrtYd },
@@ -650,16 +664,16 @@ bool FABMASTER::assignLayers()
         {
             layer_order.push_back( &layer );
         }
-        else if( layer.name.find( "SILK" ) != std::string::npos &&
-                 layer.name.find( "AUTOSILK" ) == std::string::npos ) // Skip the autosilk layer
+        else if( layer.name.find( "SILK" ) != std::string::npos
+                 && layer.name.find( "AUTOSILK" ) == std::string::npos ) // Skip the autosilk layer
         {
             if( layer.name.find( "B" ) != std::string::npos )
                 layer.layerid = B_SilkS;
             else
                 layer.layerid = F_SilkS;
         }
-        else if( layer.name.find( "MASK" ) != std::string::npos ||
-                 layer.name.find( "MSK" ) != std::string::npos )
+        else if( layer.name.find( "MASK" ) != std::string::npos
+                 || layer.name.find( "MSK" ) != std::string::npos )
         {
             if( layer.name.find( "B" ) != std::string::npos )
                 layer.layerid = B_Mask;
@@ -722,20 +736,20 @@ size_t FABMASTER::processLayers( size_t aRow )
     if( rows.size() < rownum )
         return 0;
 
-    auto header = rows[aRow];
+    auto   header = rows[aRow];
     double scale_factor = processScaleFactor( aRow + 1 );
 
     if( scale_factor <= 0.0 )
         return 0;
 
-    int layer_sort_col      = getColFromName( aRow, "LAYERSORT" );
-    int layer_subclass_col  = getColFromName( aRow, "LAYERSUBCLASS" );
-    int layer_art_col       = getColFromName( aRow, "LAYERARTWORK" );
-    int layer_use_col       = getColFromName( aRow, "LAYERUSE" );
-    int layer_cond_col      = getColFromName( aRow, "LAYERCONDUCTOR" );
-    int layer_er_col        = getColFromName( aRow, "LAYERDIELECTRICCONSTANT" );
-    int layer_rho_col       = getColFromName( aRow, "LAYERELECTRICALCONDUCTIVITY" );
-    int layer_mat_col       = getColFromName( aRow, "LAYERMATERIAL" );
+    int layer_sort_col = getColFromName( aRow, "LAYERSORT" );
+    int layer_subclass_col = getColFromName( aRow, "LAYERSUBCLASS" );
+    int layer_art_col = getColFromName( aRow, "LAYERARTWORK" );
+    int layer_use_col = getColFromName( aRow, "LAYERUSE" );
+    int layer_cond_col = getColFromName( aRow, "LAYERCONDUCTOR" );
+    int layer_er_col = getColFromName( aRow, "LAYERDIELECTRICCONSTANT" );
+    int layer_rho_col = getColFromName( aRow, "LAYERELECTRICALCONDUCTIVITY" );
+    int layer_mat_col = getColFromName( aRow, "LAYERMATERIAL" );
 
     for( ; rownum < rows.size() && rows[rownum].size() > 0 && rows[rownum][0] == "S"; ++rownum )
     {
@@ -744,7 +758,8 @@ size_t FABMASTER::processLayers( size_t aRow )
         if( row.size() != header.size() )
         {
             wxLogError( wxString::Format( _( "Invalid row size in row %zu.  "
-                    "Expecting %zu elements but found %zu" ), rownum, header.size(), row.size() ) );
+                                             "Expecting %zu elements but found %zu" ),
+                                          rownum, header.size(), row.size() ) );
             continue;
         }
 
@@ -789,50 +804,51 @@ size_t FABMASTER::processCustomPads( size_t aRow )
     size_t rownum = aRow + 2;
     size_t offset = 2;
 
-    if( rows.size() < aRow + offset)
+    if( rows.size() < aRow + offset )
         return 0;
 
-    auto header = rows[aRow];
+    auto   header = rows[aRow];
     double scale_factor = processScaleFactor( aRow + 1 );
 
     if( scale_factor <= 0.0 )
         return 0;
 
-    int pad_subclass_col     = getColFromName( aRow, "SUBCLASS" );
-    int pad_shape_name_col   = getColFromName( aRow, "PADSHAPENAME" );
-    int pad_grdata_name_col  = getColFromName( aRow, "GRAPHICDATANAME" );
-    int pad_grdata_num_col   = getColFromName( aRow, "GRAPHICDATANUMBER" );
-    int pad_record_tag_col   = getColFromName( aRow, "RECORDTAG" );
-    int pad_grdata1_col      = getColFromName( aRow, "GRAPHICDATA1" );
-    int pad_grdata2_col      = getColFromName( aRow, "GRAPHICDATA2" );
-    int pad_grdata3_col      = getColFromName( aRow, "GRAPHICDATA3" );
-    int pad_grdata4_col      = getColFromName( aRow, "GRAPHICDATA4" );
-    int pad_grdata5_col      = getColFromName( aRow, "GRAPHICDATA5" );
-    int pad_grdata6_col      = getColFromName( aRow, "GRAPHICDATA6" );
-    int pad_grdata7_col      = getColFromName( aRow, "GRAPHICDATA7" );
-    int pad_grdata8_col      = getColFromName( aRow, "GRAPHICDATA8" );
-    int pad_grdata9_col      = getColFromName( aRow, "GRAPHICDATA9" );
-    int pad_stack_name_col   = getColFromName( aRow, "PADSTACKNAME" );
-    int pad_refdes_col       = getColFromName( aRow, "REFDES" );
-    int pad_pin_num_col      = getColFromName( aRow, "PINNUMBER" );
+    int pad_subclass_col = getColFromName( aRow, "SUBCLASS" );
+    int pad_shape_name_col = getColFromName( aRow, "PADSHAPENAME" );
+    int pad_grdata_name_col = getColFromName( aRow, "GRAPHICDATANAME" );
+    int pad_grdata_num_col = getColFromName( aRow, "GRAPHICDATANUMBER" );
+    int pad_record_tag_col = getColFromName( aRow, "RECORDTAG" );
+    int pad_grdata1_col = getColFromName( aRow, "GRAPHICDATA1" );
+    int pad_grdata2_col = getColFromName( aRow, "GRAPHICDATA2" );
+    int pad_grdata3_col = getColFromName( aRow, "GRAPHICDATA3" );
+    int pad_grdata4_col = getColFromName( aRow, "GRAPHICDATA4" );
+    int pad_grdata5_col = getColFromName( aRow, "GRAPHICDATA5" );
+    int pad_grdata6_col = getColFromName( aRow, "GRAPHICDATA6" );
+    int pad_grdata7_col = getColFromName( aRow, "GRAPHICDATA7" );
+    int pad_grdata8_col = getColFromName( aRow, "GRAPHICDATA8" );
+    int pad_grdata9_col = getColFromName( aRow, "GRAPHICDATA9" );
+    int pad_stack_name_col = getColFromName( aRow, "PADSTACKNAME" );
+    int pad_refdes_col = getColFromName( aRow, "REFDES" );
+    int pad_pin_num_col = getColFromName( aRow, "PINNUMBER" );
 
     for( ; rownum < rows.size() && rows[rownum].size() > 0 && rows[rownum][0] == "S"; ++rownum )
     {
         size_t rownum = aRow + offset;
-        auto row = rows[rownum];
+        auto   row = rows[rownum];
 
         if( row.size() != header.size() )
         {
             wxLogError( wxString::Format( _( "Invalid row size in row %zu.  "
-                    "Expecting %zu elements but found %zu" ), rownum, header.size(), row.size() ) );
+                                             "Expecting %zu elements but found %zu" ),
+                                          rownum, header.size(), row.size() ) );
 
             ++offset;
             continue;
         }
 
-        auto pad_layer          = row[pad_subclass_col];
-        auto pad_shape_name     = row[pad_shape_name_col];
-        auto pad_record_tag     = row[pad_record_tag_col];
+        auto pad_layer = row[pad_subclass_col];
+        auto pad_shape_name = row[pad_shape_name_col];
+        auto pad_record_tag = row[pad_record_tag_col];
 
         GRAPHIC_DATA gr_data;
         gr_data.graphic_dataname = row[pad_grdata_name_col];
@@ -847,9 +863,9 @@ size_t FABMASTER::processCustomPads( size_t aRow )
         gr_data.graphic_data8 = row[pad_grdata8_col];
         gr_data.graphic_data9 = row[pad_grdata9_col];
 
-        auto pad_stack_name     = row[pad_stack_name_col];
-        auto pad_refdes         = row[pad_refdes_col];
-        auto pad_pin_num        = row[pad_pin_num_col];
+        auto pad_stack_name = row[pad_stack_name_col];
+        auto pad_refdes = row[pad_refdes_col];
+        auto pad_pin_num = row[pad_pin_num_col];
 
         // N.B. We get the FIGSHAPE records as "FIG_SHAPE name".  We only want "name"
         // and we don't process other pad shape records
@@ -863,14 +879,14 @@ size_t FABMASTER::processCustomPads( size_t aRow )
 
         // Custom pads are a series of records with the same record ID but incrementing
         // Sequence numbers.
-        int id          = -1;
-        int seq         = -1;
+        int id = -1;
+        int seq = -1;
 
         if( std::sscanf( pad_record_tag.c_str(), "%d %d", &id, &seq ) != 2 )
         {
             wxLogError( wxString::Format( _( "Invalid format for id string \"%s\" "
                                              "in custom pad row %zu" ),
-                    pad_record_tag.c_str(), rownum ) );
+                                          pad_record_tag.c_str(), rownum ) );
             continue;
         }
 
@@ -901,12 +917,13 @@ size_t FABMASTER::processCustomPads( size_t aRow )
 
             /// emplace may fail here, in which case, it returns the correct position to use for the existing map
             auto pad_it = custom_pad.elements.emplace( id, graphic_element{} );
-            pad_it.first->second.emplace( std::move(gr_item ) );
+            pad_it.first->second.emplace( std::move( gr_item ) );
         }
         else
         {
-            wxLogError( wxString::Format( _( "Unrecognized pad shape primitive \"%s\" in line %zu." ),
-                gr_data.graphic_dataname, rownum  ) );
+            wxLogError(
+                    wxString::Format( _( "Unrecognized pad shape primitive \"%s\" in line %zu." ),
+                                      gr_data.graphic_dataname, rownum ) );
         }
     }
 
@@ -914,42 +931,41 @@ size_t FABMASTER::processCustomPads( size_t aRow )
 }
 
 
-FABMASTER::GRAPHIC_LINE* FABMASTER::processLine( const FABMASTER::GRAPHIC_DATA& aData, double aScale )
+FABMASTER::GRAPHIC_LINE* FABMASTER::processLine( const FABMASTER::GRAPHIC_DATA& aData,
+                                                 double                         aScale )
 {
-    GRAPHIC_LINE* new_line = new GRAPHIC_LINE ;
+    GRAPHIC_LINE* new_line = new GRAPHIC_LINE;
 
-    new_line->shape   = GR_SHAPE_LINE;
+    new_line->shape = GR_SHAPE_LINE;
     new_line->start_x = KiROUND( std::atof( aData.graphic_data1.c_str() ) * aScale );
     new_line->start_y = -KiROUND( std::atof( aData.graphic_data2.c_str() ) * aScale );
-    new_line->end_x   = KiROUND( std::atof( aData.graphic_data3.c_str() ) * aScale );
-    new_line->end_y   = -KiROUND( std::atof( aData.graphic_data4.c_str() ) * aScale );
-    new_line->width   = KiROUND( std::atof( aData.graphic_data5.c_str() ) * aScale );
+    new_line->end_x = KiROUND( std::atof( aData.graphic_data3.c_str() ) * aScale );
+    new_line->end_y = -KiROUND( std::atof( aData.graphic_data4.c_str() ) * aScale );
+    new_line->width = KiROUND( std::atof( aData.graphic_data5.c_str() ) * aScale );
 
     return new_line;
 }
 
 FABMASTER::GRAPHIC_ARC* FABMASTER::processArc( const FABMASTER::GRAPHIC_DATA& aData, double aScale )
 {
-    GRAPHIC_ARC* new_arc = new GRAPHIC_ARC ;
+    GRAPHIC_ARC* new_arc = new GRAPHIC_ARC;
 
-    new_arc->shape    = GR_SHAPE_ARC;
-    new_arc->start_x  = KiROUND( std::atof( aData.graphic_data1.c_str() ) * aScale );
-    new_arc->start_y  = -KiROUND( std::atof( aData.graphic_data2.c_str() ) * aScale );
-    new_arc->end_x    = KiROUND( std::atof( aData.graphic_data3.c_str() ) * aScale );
-    new_arc->end_y    = -KiROUND( std::atof( aData.graphic_data4.c_str() ) * aScale );
+    new_arc->shape = GR_SHAPE_ARC;
+    new_arc->start_x = KiROUND( std::atof( aData.graphic_data1.c_str() ) * aScale );
+    new_arc->start_y = -KiROUND( std::atof( aData.graphic_data2.c_str() ) * aScale );
+    new_arc->end_x = KiROUND( std::atof( aData.graphic_data3.c_str() ) * aScale );
+    new_arc->end_y = -KiROUND( std::atof( aData.graphic_data4.c_str() ) * aScale );
     new_arc->center_x = KiROUND( std::atof( aData.graphic_data5.c_str() ) * aScale );
     new_arc->center_y = -KiROUND( std::atof( aData.graphic_data6.c_str() ) * aScale );
-    new_arc->radius   = KiROUND( std::atof( aData.graphic_data7.c_str() ) * aScale );
-    new_arc->width    = KiROUND( std::atof( aData.graphic_data8.c_str() ) * aScale );
+    new_arc->radius = KiROUND( std::atof( aData.graphic_data7.c_str() ) * aScale );
+    new_arc->width = KiROUND( std::atof( aData.graphic_data8.c_str() ) * aScale );
 
     new_arc->clockwise = ( aData.graphic_data9 != "COUNTERCLOCKWISE" );
 
     double startangle = NormalizeAnglePos( RAD2DECIDEG(
-                    atan2( new_arc->start_y - new_arc->center_y,
-                           new_arc->start_x - new_arc->center_x ) ) );
+            atan2( new_arc->start_y - new_arc->center_y, new_arc->start_x - new_arc->center_x ) ) );
     double endangle = NormalizeAnglePos( RAD2DECIDEG(
-            atan2( new_arc->end_y - new_arc->center_y,
-                   new_arc->end_x - new_arc->center_x ) ) );
+            atan2( new_arc->end_y - new_arc->center_y, new_arc->end_x - new_arc->center_x ) ) );
     double angle;
 
     VECTOR2I center( new_arc->center_x, new_arc->center_y );
@@ -974,30 +990,32 @@ FABMASTER::GRAPHIC_ARC* FABMASTER::processArc( const FABMASTER::GRAPHIC_DATA& aD
     return new_arc;
 }
 
-FABMASTER::GRAPHIC_RECTANGLE* FABMASTER::processRectangle( const FABMASTER::GRAPHIC_DATA& aData, double aScale )
+FABMASTER::GRAPHIC_RECTANGLE* FABMASTER::processRectangle( const FABMASTER::GRAPHIC_DATA& aData,
+                                                           double                         aScale )
 {
     GRAPHIC_RECTANGLE* new_rect = new GRAPHIC_RECTANGLE;
 
-    new_rect->shape   = GR_SHAPE_RECTANGLE;
+    new_rect->shape = GR_SHAPE_RECTANGLE;
     new_rect->start_x = KiROUND( std::atof( aData.graphic_data1.c_str() ) * aScale );
     new_rect->start_y = -KiROUND( std::atof( aData.graphic_data2.c_str() ) * aScale );
-    new_rect->end_x   = KiROUND( std::atof( aData.graphic_data3.c_str() ) * aScale );
-    new_rect->end_y   = -KiROUND( std::atof( aData.graphic_data4.c_str() ) * aScale );
-    new_rect->fill    = aData.graphic_data5 == "1";
-    new_rect->width   = 0;
+    new_rect->end_x = KiROUND( std::atof( aData.graphic_data3.c_str() ) * aScale );
+    new_rect->end_y = -KiROUND( std::atof( aData.graphic_data4.c_str() ) * aScale );
+    new_rect->fill = aData.graphic_data5 == "1";
+    new_rect->width = 0;
 
     return new_rect;
 }
 
-FABMASTER::GRAPHIC_TEXT* FABMASTER::processText( const FABMASTER::GRAPHIC_DATA& aData, double aScale )
+FABMASTER::GRAPHIC_TEXT* FABMASTER::processText( const FABMASTER::GRAPHIC_DATA& aData,
+                                                 double                         aScale )
 {
     GRAPHIC_TEXT* new_text = new GRAPHIC_TEXT;
 
-    new_text->shape    = GR_SHAPE_TEXT;
-    new_text->start_x  = KiROUND( std::atof( aData.graphic_data1.c_str() ) * aScale );
-    new_text->start_y  = -KiROUND( std::atof( aData.graphic_data2.c_str() ) * aScale );
+    new_text->shape = GR_SHAPE_TEXT;
+    new_text->start_x = KiROUND( std::atof( aData.graphic_data1.c_str() ) * aScale );
+    new_text->start_y = -KiROUND( std::atof( aData.graphic_data2.c_str() ) * aScale );
     new_text->rotation = KiROUND( std::atof( aData.graphic_data3.c_str() ) );
-    new_text->mirror   = ( aData.graphic_data4 == "YES" );
+    new_text->mirror = ( aData.graphic_data4 == "YES" );
 
     if( aData.graphic_data5 == "RIGHT" )
         new_text->orient = GR_TEXT_HJUSTIFY_RIGHT;
@@ -1010,21 +1028,22 @@ FABMASTER::GRAPHIC_TEXT* FABMASTER::processText( const FABMASTER::GRAPHIC_DATA& 
 
     if( toks.size() < 8 )
     {
-            // We log the error here but continue in the case of too few tokens
-            wxLogError( wxString::Format( _( "Invalid token count."
-                                                " Expected 8 but found %zu" ), toks.size() ) );
-            new_text->height = 0;
-            new_text->width  = 0;
-            new_text->ital   = false;
-            new_text->thickness = 0;
+        // We log the error here but continue in the case of too few tokens
+        wxLogError( wxString::Format( _( "Invalid token count."
+                                         " Expected 8 but found %zu" ),
+                                      toks.size() ) );
+        new_text->height = 0;
+        new_text->width = 0;
+        new_text->ital = false;
+        new_text->thickness = 0;
     }
     else
     {
         // 0 = size
         // 1 = font
         new_text->height = KiROUND( std::atof( toks[2].c_str() ) * aScale );
-        new_text->width  = KiROUND( std::atof( toks[3].c_str() ) * aScale );
-        new_text->ital   = std::atof( toks[4].c_str() ) != 0.0;
+        new_text->width = KiROUND( std::atof( toks[3].c_str() ) * aScale );
+        new_text->ital = std::atof( toks[4].c_str() ) != 0.0;
         // 5 = character spacing
         // 6 = line spacing
         new_text->thickness = KiROUND( std::atof( toks[7].c_str() ) * aScale );
@@ -1081,7 +1100,7 @@ size_t FABMASTER::processGeometry( size_t aRow )
         return -1;
 
     const auto header = rows[aRow];
-    double scale_factor = processScaleFactor( aRow + 1 );
+    double     scale_factor = processScaleFactor( aRow + 1 );
 
     if( scale_factor <= 0.0 )
         return -1;
@@ -1109,7 +1128,8 @@ size_t FABMASTER::processGeometry( size_t aRow )
         if( row.size() != header.size() )
         {
             wxLogError( wxString::Format( _( "Invalid row size in row %zu.  "
-                    "Expecting %zu elements but found %zu" ), rownum, header.size(), row.size() ) );
+                                             "Expecting %zu elements but found %zu" ),
+                                          rownum, header.size(), row.size() ) );
             continue;
         }
 
@@ -1132,15 +1152,15 @@ size_t FABMASTER::processGeometry( size_t aRow )
 
         // Grouped graphics are a series of records with the same record ID but incrementing
         // Sequence numbers.
-        int id          = -1;
-        int seq         = -1;
-        int subseq      = 0;
+        int id = -1;
+        int seq = -1;
+        int subseq = 0;
 
         if( std::sscanf( geo_tag.c_str(), "%d %d %d", &id, &seq, &subseq ) < 2 )
         {
             wxLogError( wxString::Format( _( "Invalid format for record_tag string \"%s\" "
                                              "in Geometric definition row %zu" ),
-                    geo_tag.c_str(), rownum ) );
+                                          geo_tag.c_str(), rownum ) );
             continue;
         }
 
@@ -1150,7 +1170,8 @@ size_t FABMASTER::processGeometry( size_t aRow )
         {
             wxLogError( wxString::Format( _( "Unhandled graphic item '%s' "
                                              "in Geometric definition row %zu" ),
-                    gr_data.graphic_dataname.c_str(), geo_tag.c_str(), rownum ) );
+                                          gr_data.graphic_dataname.c_str(), geo_tag.c_str(),
+                                          rownum ) );
             continue;
         }
 
@@ -1164,9 +1185,9 @@ size_t FABMASTER::processGeometry( size_t aRow )
             {
                 GEOM_GRAPHIC new_gr;
                 new_gr.subclass = row[geo_subclass_col];
-                new_gr.refdes   = row[geo_refdes_col];
-                new_gr.name     = row[geo_sym_name_col];
-                new_gr.id       = id;
+                new_gr.refdes = row[geo_refdes_col];
+                new_gr.name = row[geo_sym_name_col];
+                new_gr.id = id;
                 new_gr.elements = std::make_unique<graphic_element>();
                 board_graphics.push_back( std::move( new_gr ) );
             }
@@ -1176,17 +1197,16 @@ size_t FABMASTER::processGeometry( size_t aRow )
         }
         else
         {
-            auto sym_gr_it = comp_graphics.emplace( geo_refdes,
-                    std::map<int, GEOM_GRAPHIC>{} );
-            auto map_it = sym_gr_it.first->second.emplace( id, GEOM_GRAPHIC{} );
+            auto  sym_gr_it = comp_graphics.emplace( geo_refdes, std::map<int, GEOM_GRAPHIC>{} );
+            auto  map_it = sym_gr_it.first->second.emplace( id, GEOM_GRAPHIC{} );
             auto& gr = map_it.first;
 
             if( map_it.second )
             {
                 gr->second.subclass = row[geo_subclass_col];
-                gr->second.refdes   = row[geo_refdes_col];
-                gr->second.name     = row[geo_sym_name_col];
-                gr->second.id       = id;
+                gr->second.refdes = row[geo_refdes_col];
+                gr->second.name = row[geo_sym_name_col];
+                gr->second.id = id;
                 gr->second.elements = std::make_unique<graphic_element>();
             }
 
@@ -1209,7 +1229,7 @@ size_t FABMASTER::processVias( size_t aRow )
         return -1;
 
     const auto header = rows[aRow];
-    double scale_factor = processScaleFactor( aRow + 1 );
+    double     scale_factor = processScaleFactor( aRow + 1 );
 
     if( scale_factor <= 0.0 )
         return -1;
@@ -1227,7 +1247,8 @@ size_t FABMASTER::processVias( size_t aRow )
         if( row.size() != header.size() )
         {
             wxLogError( wxString::Format( _( "Invalid row size in row %zu.  "
-                    "Expecting %zu elements but found %zu" ), rownum, header.size(), row.size() ) );
+                                             "Expecting %zu elements but found %zu" ),
+                                          rownum, header.size(), row.size() ) );
             continue;
         }
 
@@ -1258,7 +1279,7 @@ size_t FABMASTER::processTraces( size_t aRow )
         return -1;
 
     const auto header = rows[aRow];
-    double scale_factor = processScaleFactor( aRow + 1 );
+    double     scale_factor = processScaleFactor( aRow + 1 );
 
     if( scale_factor <= 0.0 )
         return -1;
@@ -1286,7 +1307,8 @@ size_t FABMASTER::processTraces( size_t aRow )
         if( row.size() != header.size() )
         {
             wxLogError( wxString::Format( _( "Invalid row size in row %zu.  "
-                    "Expecting %zu elements but found %zu" ), rownum, header.size(), row.size() ) );
+                                             "Expecting %zu elements but found %zu" ),
+                                          rownum, header.size(), row.size() ) );
             continue;
         }
 
@@ -1306,15 +1328,15 @@ size_t FABMASTER::processTraces( size_t aRow )
         auto geo_tag = row[tag_col];
         // Grouped graphics are a series of records with the same record ID but incrementing
         // Sequence numbers.
-        int id          = -1;
-        int seq         = -1;
-        int subseq      = 0;
+        int id = -1;
+        int seq = -1;
+        int subseq = 0;
 
         if( std::sscanf( geo_tag.c_str(), "%d %d %d", &id, &seq, &subseq ) < 2 )
         {
             wxLogError( wxString::Format( _( "Invalid format for record_tag string \"%s\" "
                                              "in Traces definition row %zu" ),
-                    geo_tag.c_str(), rownum ) );
+                                          geo_tag.c_str(), rownum ) );
             continue;
         }
 
@@ -1324,15 +1346,15 @@ size_t FABMASTER::processTraces( size_t aRow )
         {
             wxLogError( wxString::Format( _( "Unhandled graphic item '%s' "
                                              "in Traces definition row %zu" ),
-                    gr_data.graphic_dataname.c_str(), rownum ) );
+                                          gr_data.graphic_dataname.c_str(), rownum ) );
             continue;
         }
 
         auto new_trace = std::make_unique<TRACE>();
-        new_trace->id      = id;
-        new_trace->layer   = row[layer_col];
+        new_trace->id = id;
+        new_trace->layer = row[layer_col];
         new_trace->netname = row[netname_col];
-        new_trace->lclass  = row[class_col];
+        new_trace->lclass = row[class_col];
 
         gr_item->layer = row[layer_col];
         gr_item->seq = seq;
@@ -1340,27 +1362,28 @@ size_t FABMASTER::processTraces( size_t aRow )
 
         if( gr_item->width == 0 )
         {
-            auto result = zones.emplace( std::move( new_trace ) );
-            auto& zone  = *result.first;
-            auto gr_result = zone->segment.emplace( std::move( gr_item ) );
+            auto  result = zones.emplace( std::move( new_trace ) );
+            auto& zone = *result.first;
+            auto  gr_result = zone->segment.emplace( std::move( gr_item ) );
 
             if( !gr_result.second )
             {
                 wxLogError( wxString::Format( _( "Duplicate item for ID %d and sequence %d "
-                        "in Traces definition row %zu \n" ), id, seq, rownum ) );
+                                                 "in Traces definition row %zu \n" ),
+                                              id, seq, rownum ) );
             }
-
         }
         else
         {
-            auto result = traces.emplace( std::move( new_trace ) );
-            auto& trace  = *result.first;
-            auto gr_result = trace->segment.emplace( std::move( gr_item ) );
+            auto  result = traces.emplace( std::move( new_trace ) );
+            auto& trace = *result.first;
+            auto  gr_result = trace->segment.emplace( std::move( gr_item ) );
 
             if( !gr_result.second )
             {
                 wxLogError( wxString::Format( _( "Duplicate item for ID %d and sequence %d "
-                        "in Traces definition row %zu \n" ), id, seq, rownum ) );
+                                                 "in Traces definition row %zu \n" ),
+                                              id, seq, rownum ) );
             }
         }
     }
@@ -1373,7 +1396,7 @@ FABMASTER::SYMTYPE FABMASTER::parseSymType( const std::string& aSymType )
 {
     if( aSymType == "PACKAGE" )
         return SYMTYPE_PACKAGE;
-    else if( aSymType == "DRAFTING")
+    else if( aSymType == "DRAFTING" )
         return SYMTYPE_DRAFTING;
     else if( aSymType == "MECHANICAL" )
         return SYMTYPE_MECH;
@@ -1408,7 +1431,7 @@ size_t FABMASTER::processFootprints( size_t aRow )
         return -1;
 
     const auto header = rows[aRow];
-    double scale_factor = processScaleFactor( aRow + 1 );
+    double     scale_factor = processScaleFactor( aRow + 1 );
 
     if( scale_factor <= 0.0 )
         return -1;
@@ -1436,7 +1459,8 @@ size_t FABMASTER::processFootprints( size_t aRow )
         if( row.size() != header.size() )
         {
             wxLogError( wxString::Format( _( "Invalid row size in row %zu.  "
-                    "Expecting %zu elements but found %zu" ), rownum, header.size(), row.size() ) );
+                                             "Expecting %zu elements but found %zu" ),
+                                          rownum, header.size(), row.size() ) );
             continue;
         }
 
@@ -1462,7 +1486,8 @@ size_t FABMASTER::processFootprints( size_t aRow )
 
         if( vec == components.end() )
         {
-            auto retval = components.insert( std::make_pair( cmp->refdes, std::vector<std::unique_ptr<COMPONENT>>{} ) );
+            auto retval = components.insert(
+                    std::make_pair( cmp->refdes, std::vector<std::unique_ptr<COMPONENT>>{} ) );
 
             vec = retval.first;
         }
@@ -1485,7 +1510,7 @@ size_t FABMASTER::processPins( size_t aRow )
         return -1;
 
     const auto header = rows[aRow];
-    double scale_factor = processScaleFactor( aRow + 1 );
+    double     scale_factor = processScaleFactor( aRow + 1 );
 
     if( scale_factor <= 0.0 )
         return -1;
@@ -1508,7 +1533,8 @@ size_t FABMASTER::processPins( size_t aRow )
         if( row.size() != header.size() )
         {
             wxLogError( wxString::Format( _( "Invalid row size in row %zu.  "
-                    "Expecting %zu elements but found %zu" ), rownum, header.size(), row.size() ) );
+                                             "Expecting %zu elements but found %zu" ),
+                                          rownum, header.size(), row.size() ) );
             continue;
         }
 
@@ -1528,7 +1554,8 @@ size_t FABMASTER::processPins( size_t aRow )
 
         if( map_it == pins.end() )
         {
-            auto retval = pins.insert( std::make_pair( pin->refdes, std::set<std::unique_ptr<PIN>, PIN::BY_NUM>{} ) );
+            auto retval = pins.insert(
+                    std::make_pair( pin->refdes, std::set<std::unique_ptr<PIN>, PIN::BY_NUM>{} ) );
             map_it = retval.first;
         }
 
@@ -1550,7 +1577,7 @@ size_t FABMASTER::processNets( size_t aRow )
         return -1;
 
     const auto header = rows[aRow];
-    double scale_factor = processScaleFactor( aRow + 1 );
+    double     scale_factor = processScaleFactor( aRow + 1 );
 
     if( scale_factor <= 0.0 )
         return -1;
@@ -1569,7 +1596,8 @@ size_t FABMASTER::processNets( size_t aRow )
         if( row.size() != header.size() )
         {
             wxLogError( wxString::Format( _( "Invalid row size in row %zu.  "
-                    "Expecting %zu elements but found %zu" ), rownum, header.size(), row.size() ) );
+                                             "Expecting %zu elements but found %zu" ),
+                                          rownum, header.size(), row.size() ) );
             continue;
         }
 
@@ -1591,7 +1619,6 @@ size_t FABMASTER::processNets( size_t aRow )
 
 bool FABMASTER::Process()
 {
-
     for( size_t i = 0; i < rows.size(); )
     {
         auto type = detectType( i );
@@ -1682,11 +1709,8 @@ bool FABMASTER::Process()
             break;
         }
 
-        default:
-            ++i;
-            break;
+        default: ++i; break;
         }
-
     }
 
     return true;
@@ -1695,7 +1719,6 @@ bool FABMASTER::Process()
 
 bool FABMASTER::loadZones( BOARD* aBoard )
 {
-
     for( auto& zone : zones )
     {
         if( IsCopperLayer( getLayer( zone->layer ) ) )
@@ -1740,8 +1763,8 @@ bool FABMASTER::loadZones( BOARD* aBoard )
         if( zone1->GetNetCode() > 0 )
             continue;
 
-        SHAPE_LINE_CHAIN& outline1 = zone1->Outline()->Outline( 0 );
-        std::vector<size_t> overlaps( aBoard->GetNetInfo().GetNetCount() + 1, 0 );
+        SHAPE_LINE_CHAIN&               outline1 = zone1->Outline()->Outline( 0 );
+        std::vector<size_t>             overlaps( aBoard->GetNetInfo().GetNetCount() + 1, 0 );
         std::vector<std::vector<ZONE*>> possible_deletions( overlaps.size() );
 
         for( auto zone2 : aBoard->Zones() )
@@ -1763,7 +1786,7 @@ bool FABMASTER::loadZones( BOARD* aBoard )
                     continue;
 
                 /// We're looking for the netcode with the most overlaps to the un-netted zone
-                overlaps[ zone2->GetNetCode() ]++;
+                overlaps[zone2->GetNetCode()]++;
                 break;
             }
         }
@@ -1787,7 +1810,7 @@ bool FABMASTER::loadZones( BOARD* aBoard )
     for( auto zone : zones_to_delete )
     {
         aBoard->Remove( zone );
-        free(zone);
+        free( zone );
     }
 
     return true;
@@ -1797,7 +1820,7 @@ bool FABMASTER::loadZones( BOARD* aBoard )
 bool FABMASTER::loadFootprints( BOARD* aBoard )
 {
     const NETNAMES_MAP& netinfo = aBoard->GetNetInfo().NetsByName();
-    const auto& ds = aBoard->GetDesignSettings();
+    const auto&         ds = aBoard->GetDesignSettings();
 
     for( auto& mod : components )
     {
@@ -1832,7 +1855,7 @@ bool FABMASTER::loadFootprints( BOARD* aBoard )
             wxString reference = src->refdes;
 
             if( !std::isalpha( src->refdes[0] ) )
-             reference.Prepend( "UNK" );
+                reference.Prepend( "UNK" );
 
             fp->SetReference( reference );
             fp->SetValue( src->value );
@@ -1862,7 +1885,6 @@ bool FABMASTER::loadFootprints( BOARD* aBoard )
 
                     switch( seg->shape )
                     {
-
                     case GR_SHAPE_LINE:
                     {
                         const GRAPHIC_LINE* lsrc = static_cast<const GRAPHIC_LINE*>( seg.get() );
@@ -1900,7 +1922,8 @@ bool FABMASTER::loadFootprints( BOARD* aBoard )
                         if( src->mirror )
                         {
                             arc->SetLayer( FlipLayer( layer ) );
-                            arc->SetCenter( wxPoint( lsrc->center_x, 2 * src->y - lsrc->center_y ) );
+                            arc->SetCenter(
+                                    wxPoint( lsrc->center_x, 2 * src->y - lsrc->center_y ) );
                             arc->SetArcStart( wxPoint( lsrc->end_x, 2 * src->y - lsrc->end_y ) );
                             arc->SetAngle( lsrc->result.GetCentralAngle() * 10.0 );
                         }
@@ -1923,7 +1946,7 @@ bool FABMASTER::loadFootprints( BOARD* aBoard )
                     }
                     case GR_SHAPE_RECTANGLE:
                     {
-                        const GRAPHIC_RECTANGLE *lsrc =
+                        const GRAPHIC_RECTANGLE* lsrc =
                                 static_cast<const GRAPHIC_RECTANGLE*>( seg.get() );
 
                         FP_SHAPE* rect = new FP_SHAPE( fp, S_RECT );
@@ -1949,20 +1972,22 @@ bool FABMASTER::loadFootprints( BOARD* aBoard )
                     }
                     case GR_SHAPE_TEXT:
                     {
-                        const GRAPHIC_TEXT *lsrc =
-                                static_cast<const GRAPHIC_TEXT*>( seg.get() );
+                        const GRAPHIC_TEXT* lsrc = static_cast<const GRAPHIC_TEXT*>( seg.get() );
 
                         FP_TEXT* txt = new FP_TEXT( fp );
 
                         if( src->mirror )
                         {
                             txt->SetLayer( FlipLayer( layer ) );
-                            txt->SetTextPos( wxPoint( lsrc->start_x, 2 * src->y - ( lsrc->start_y - lsrc->height / 2 ) ) );
+                            txt->SetTextPos(
+                                    wxPoint( lsrc->start_x,
+                                             2 * src->y - ( lsrc->start_y - lsrc->height / 2 ) ) );
                         }
                         else
                         {
                             txt->SetLayer( layer );
-                            txt->SetTextPos( wxPoint( lsrc->start_x, lsrc->start_y - lsrc->height / 2 ) );
+                            txt->SetTextPos(
+                                    wxPoint( lsrc->start_x, lsrc->start_y - lsrc->height / 2 ) );
                         }
 
                         txt->SetText( lsrc->text );
@@ -1976,8 +2001,7 @@ bool FABMASTER::loadFootprints( BOARD* aBoard )
                         fp->Add( txt, ADD_MODE::APPEND );
                         break;
                     }
-                    default:
-                        continue;
+                    default: continue;
                     }
                 }
             }
@@ -1988,8 +2012,9 @@ bool FABMASTER::loadFootprints( BOARD* aBoard )
             {
                 for( auto& pin : pin_it->second )
                 {
-                    auto pin_net_it = pin_nets.find( std::make_pair( pin->refdes, pin->pin_number ) );
-                    auto padstack = pads.find( pin->padstack );
+                    auto pin_net_it =
+                            pin_nets.find( std::make_pair( pin->refdes, pin->pin_number ) );
+                    auto        padstack = pads.find( pin->padstack );
                     std::string netname = "";
 
                     if( pin_net_it != pin_nets.end() )
@@ -2033,38 +2058,42 @@ bool FABMASTER::loadFootprints( BOARD* aBoard )
 
                             if( custom_it != pad_shapes.end() )
                             {
-
                                 SHAPE_POLY_SET poly_outline;
-                                int last_subseq = 0;
-                                int hole_idx = 0;
+                                int            last_subseq = 0;
+                                int            hole_idx = 0;
 
                                 poly_outline.NewOutline();
 
                                 // Custom pad shapes have a group of elements
                                 // that are a list of graphical polygons
-                                for( const auto& el : (*custom_it).second.elements )
+                                for( const auto& el : ( *custom_it ).second.elements )
                                 {
                                     for( const auto& seg : el.second )
                                     {
                                         if( seg->subseq > 0 || seg->subseq != last_subseq )
                                         {
-                                            poly_outline.Polygon(0).back().SetClosed( true );
+                                            poly_outline.Polygon( 0 ).back().SetClosed( true );
                                             hole_idx = poly_outline.AddHole( SHAPE_LINE_CHAIN{} );
                                         }
 
                                         if( seg->shape == GR_SHAPE_LINE )
                                         {
-                                            const GRAPHIC_LINE* src = static_cast<const GRAPHIC_LINE*>( seg.get() );
+                                            const GRAPHIC_LINE* src =
+                                                    static_cast<const GRAPHIC_LINE*>( seg.get() );
 
                                             if( poly_outline.VertexCount( 0, hole_idx ) == 0 )
-                                                poly_outline.Append( src->start_x, src->start_y, 0, hole_idx );
+                                                poly_outline.Append( src->start_x, src->start_y, 0,
+                                                                     hole_idx );
 
-                                            poly_outline.Append( src->end_x, src->end_y, 0, hole_idx );
+                                            poly_outline.Append( src->end_x, src->end_y, 0,
+                                                                 hole_idx );
                                         }
                                         else if( seg->shape == GR_SHAPE_ARC )
                                         {
-                                            const GRAPHIC_ARC* src = static_cast<const GRAPHIC_ARC*>( seg.get() );
-                                            SHAPE_LINE_CHAIN&  chain = poly_outline.Hole( 0, hole_idx );
+                                            const GRAPHIC_ARC* src =
+                                                    static_cast<const GRAPHIC_ARC*>( seg.get() );
+                                            SHAPE_LINE_CHAIN& chain =
+                                                    poly_outline.Hole( 0, hole_idx );
 
                                             chain.Append( src->result );
                                         }
@@ -2073,7 +2102,6 @@ bool FABMASTER::loadFootprints( BOARD* aBoard )
                                 poly_outline.Fracture( SHAPE_POLY_SET::POLYGON_MODE::PM_FAST );
 
                                 newpad->AddPrimitivePoly( poly_outline, 0, true );
-
                             }
                         }
                         else
@@ -2157,7 +2185,7 @@ bool FABMASTER::loadLayers( BOARD* aBoard )
         if( layer.second.conductive )
         {
             aBoard->SetLayerName( static_cast<PCB_LAYER_ID>( layer.second.layerid ),
-                    layer.second.name );
+                                  layer.second.name );
         }
     }
 
@@ -2168,7 +2196,7 @@ bool FABMASTER::loadLayers( BOARD* aBoard )
 bool FABMASTER::loadVias( BOARD* aBoard )
 {
     const NETNAMES_MAP& netinfo = aBoard->GetNetInfo().NetsByName();
-    const auto& ds = aBoard->GetDesignSettings();
+    const auto&         ds = aBoard->GetDesignSettings();
 
     for( auto& via : vias )
     {
@@ -2214,7 +2242,7 @@ bool FABMASTER::loadNets( BOARD* aBoard )
 {
     for( auto& net : netnames )
     {
-        NETINFO_ITEM *newnet = new NETINFO_ITEM( aBoard, net );
+        NETINFO_ITEM* newnet = new NETINFO_ITEM( aBoard, net );
         aBoard->Add( newnet, ADD_MODE::APPEND );
     }
 
@@ -2222,12 +2250,12 @@ bool FABMASTER::loadNets( BOARD* aBoard )
 }
 
 
-bool FABMASTER::loadEtch( BOARD* aBoard, const std::unique_ptr<FABMASTER::TRACE>& aLine)
+bool FABMASTER::loadEtch( BOARD* aBoard, const std::unique_ptr<FABMASTER::TRACE>& aLine )
 {
     const NETNAMES_MAP& netinfo = aBoard->GetNetInfo().NetsByName();
-    auto net_it = netinfo.find( aLine->netname );
+    auto                net_it = netinfo.find( aLine->netname );
 
-    int  last_subseq = 0;
+    int   last_subseq = 0;
     ZONE* new_zone = nullptr;
 
     for( const auto& seg : aLine->segment )
@@ -2269,7 +2297,8 @@ bool FABMASTER::loadEtch( BOARD* aBoard, const std::unique_ptr<FABMASTER::TRACE>
         else
         {
             wxLogError( wxString::Format( _( "Expecting etch data to be on copper layer. "
-                    "Row found on layer '%s'" ), seg->layer.c_str() ) );
+                                             "Row found on layer '%s'" ),
+                                          seg->layer.c_str() ) );
         }
     }
 
@@ -2277,16 +2306,16 @@ bool FABMASTER::loadEtch( BOARD* aBoard, const std::unique_ptr<FABMASTER::TRACE>
 }
 
 
-bool FABMASTER::loadPolygon( BOARD* aBoard, const std::unique_ptr<FABMASTER::TRACE>& aLine)
+bool FABMASTER::loadPolygon( BOARD* aBoard, const std::unique_ptr<FABMASTER::TRACE>& aLine )
 {
     if( aLine->segment.size() < 3 )
         return false;
 
-    PCB_LAYER_ID layer = Cmts_User;
-    int last_subseq = 0;
-    int hole_idx = -1;
+    PCB_LAYER_ID   layer = Cmts_User;
+    int            last_subseq = 0;
+    int            hole_idx = -1;
     SHAPE_POLY_SET poly_outline;
-    PCB_SHAPE* new_poly = new PCB_SHAPE( aBoard );
+    PCB_SHAPE*     new_poly = new PCB_SHAPE( aBoard );
 
     new_poly->SetShape( S_POLYGON );
     poly_outline.NewOutline();
@@ -2326,30 +2355,28 @@ bool FABMASTER::loadPolygon( BOARD* aBoard, const std::unique_ptr<FABMASTER::TRA
     aBoard->Add( new_poly, ADD_MODE::APPEND );
 
     return true;
-
 }
 
 
-bool FABMASTER::loadZone( BOARD* aBoard, const std::unique_ptr<FABMASTER::TRACE>& aLine)
+bool FABMASTER::loadZone( BOARD* aBoard, const std::unique_ptr<FABMASTER::TRACE>& aLine )
 {
     if( aLine->segment.size() < 3 )
         return false;
 
-    int last_subseq = 0;
-    int hole_idx = -1;
+    int             last_subseq = 0;
+    int             hole_idx = -1;
     SHAPE_POLY_SET* zone_outline = nullptr;
-    ZONE* zone = nullptr;
+    ZONE*           zone = nullptr;
 
     const NETNAMES_MAP& netinfo = aBoard->GetNetInfo().NetsByName();
-    auto net_it = netinfo.find( aLine->netname );
-    PCB_LAYER_ID layer = Cmts_User;
-    auto new_layer = getLayer( aLine->layer );
+    auto                net_it = netinfo.find( aLine->netname );
+    PCB_LAYER_ID        layer = Cmts_User;
+    auto                new_layer = getLayer( aLine->layer );
 
     if( IsValidLayer( new_layer ) )
         layer = new_layer;
 
-    auto store_zone = [&]()
-    {
+    auto store_zone = [&]() {
         if( zone && zone_outline )
         {
             if( zone_outline->Outline( 0 ).PointCount() >= 3 )
@@ -2365,9 +2392,7 @@ bool FABMASTER::loadZone( BOARD* aBoard, const std::unique_ptr<FABMASTER::TRACE>
         }
     };
 
-    auto new_zone = [&]()
-    {
-
+    auto new_zone = [&]() {
         zone = new ZONE( aBoard );
         zone_outline = new SHAPE_POLY_SET;
 
@@ -2427,7 +2452,7 @@ bool FABMASTER::loadZone( BOARD* aBoard, const std::unique_ptr<FABMASTER::TRACE>
 }
 
 
-bool FABMASTER::loadOutline( BOARD* aBoard, const std::unique_ptr<FABMASTER::TRACE>& aLine)
+bool FABMASTER::loadOutline( BOARD* aBoard, const std::unique_ptr<FABMASTER::TRACE>& aLine )
 {
     PCB_LAYER_ID layer;
 
@@ -2442,12 +2467,11 @@ bool FABMASTER::loadOutline( BOARD* aBoard, const std::unique_ptr<FABMASTER::TRA
     {
         switch( seg->shape )
         {
-
         case GR_SHAPE_LINE:
         {
             const GRAPHIC_LINE* src = static_cast<const GRAPHIC_LINE*>( seg.get() );
 
-            PCB_SHAPE*     line = new PCB_SHAPE( aBoard );
+            PCB_SHAPE* line = new PCB_SHAPE( aBoard );
             line->SetShape( S_SEGMENT );
             line->SetLayer( layer );
             line->SetStart( wxPoint( src->start_x, src->start_y ) );
@@ -2474,8 +2498,7 @@ bool FABMASTER::loadOutline( BOARD* aBoard, const std::unique_ptr<FABMASTER::TRA
         }
         case GR_SHAPE_RECTANGLE:
         {
-            const GRAPHIC_RECTANGLE *src =
-                    static_cast<const GRAPHIC_RECTANGLE*>( seg.get() );
+            const GRAPHIC_RECTANGLE* src = static_cast<const GRAPHIC_RECTANGLE*>( seg.get() );
 
             PCB_SHAPE* rect = new PCB_SHAPE( aBoard );
             rect->SetShape( S_RECT );
@@ -2488,8 +2511,7 @@ bool FABMASTER::loadOutline( BOARD* aBoard, const std::unique_ptr<FABMASTER::TRA
         }
         case GR_SHAPE_TEXT:
         {
-            const GRAPHIC_TEXT *src =
-                    static_cast<const GRAPHIC_TEXT*>( seg.get() );
+            const GRAPHIC_TEXT* src = static_cast<const GRAPHIC_TEXT*>( seg.get() );
 
             PCB_TEXT* txt = new PCB_TEXT( aBoard );
             txt->SetLayer( layer );
@@ -2503,8 +2525,7 @@ bool FABMASTER::loadOutline( BOARD* aBoard, const std::unique_ptr<FABMASTER::TRA
             aBoard->Add( txt, ADD_MODE::APPEND );
             break;
         }
-        default:
-            return false;
+        default: return false;
         }
     }
 
@@ -2514,7 +2535,6 @@ bool FABMASTER::loadOutline( BOARD* aBoard, const std::unique_ptr<FABMASTER::TRA
 
 bool FABMASTER::loadGraphics( BOARD* aBoard )
 {
-
     for( auto& geom : board_graphics )
     {
         PCB_LAYER_ID layer;
@@ -2533,12 +2553,11 @@ bool FABMASTER::loadGraphics( BOARD* aBoard )
         {
             switch( seg->shape )
             {
-
             case GR_SHAPE_LINE:
             {
                 const GRAPHIC_LINE* src = static_cast<const GRAPHIC_LINE*>( seg.get() );
 
-                PCB_SHAPE*     line = new PCB_SHAPE( aBoard );
+                PCB_SHAPE* line = new PCB_SHAPE( aBoard );
                 line->SetShape( S_SEGMENT );
                 line->SetLayer( layer );
                 line->SetStart( wxPoint( src->start_x, src->start_y ) );
@@ -2565,8 +2584,7 @@ bool FABMASTER::loadGraphics( BOARD* aBoard )
             }
             case GR_SHAPE_RECTANGLE:
             {
-                const GRAPHIC_RECTANGLE *src =
-                        static_cast<const GRAPHIC_RECTANGLE*>( seg.get() );
+                const GRAPHIC_RECTANGLE* src = static_cast<const GRAPHIC_RECTANGLE*>( seg.get() );
 
                 PCB_SHAPE* rect = new PCB_SHAPE( aBoard );
                 rect->SetShape( S_RECT );
@@ -2579,8 +2597,7 @@ bool FABMASTER::loadGraphics( BOARD* aBoard )
             }
             case GR_SHAPE_TEXT:
             {
-                const GRAPHIC_TEXT *src =
-                        static_cast<const GRAPHIC_TEXT*>( seg.get() );
+                const GRAPHIC_TEXT* src = static_cast<const GRAPHIC_TEXT*>( seg.get() );
 
                 PCB_TEXT* txt = new PCB_TEXT( aBoard );
                 txt->SetLayer( layer );
@@ -2594,14 +2611,12 @@ bool FABMASTER::loadGraphics( BOARD* aBoard )
                 aBoard->Add( txt, ADD_MODE::APPEND );
                 break;
             }
-            default:
-                return false;
+            default: return false;
             }
         }
     }
 
     return true;
-
 }
 
 
@@ -2609,13 +2624,12 @@ bool FABMASTER::orderZones( BOARD* aBoard )
 {
     std::vector<ZONE*> zones = aBoard->Zones();
 
-    std::sort( zones.begin(), zones.end(),
-            [&]( const ZONE* a, const ZONE* b ) {
-                if( a->GetLayer() == b->GetLayer() )
-                    return a->GetBoundingBox().GetArea() > b->GetBoundingBox().GetArea();
+    std::sort( zones.begin(), zones.end(), [&]( const ZONE* a, const ZONE* b ) {
+        if( a->GetLayer() == b->GetLayer() )
+            return a->GetBoundingBox().GetArea() > b->GetBoundingBox().GetArea();
 
-                return a->GetLayer() < b->GetLayer();
-            } );
+        return a->GetLayer() < b->GetLayer();
+    } );
 
     PCB_LAYER_ID layer = UNDEFINED_LAYER;
     unsigned int priority = 0;
@@ -2651,7 +2665,7 @@ bool FABMASTER::LoadBoard( BOARD* aBoard )
     {
         if( track->lclass == "ETCH" )
         {
-            loadEtch( aBoard, track);
+            loadEtch( aBoard, track );
         }
         else if( track->layer == "OUTLINE" )
         {

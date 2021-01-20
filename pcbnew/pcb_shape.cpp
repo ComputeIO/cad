@@ -450,9 +450,9 @@ void PCB_SHAPE::SetArcGeometry( const wxPoint& aStart, const wxPoint& aMid, cons
     // those.
     wxPoint  center = GetArcCenter( aStart, aMid, aEnd );
     VECTOR2D startLine = aStart - center;
-    VECTOR2D endLine   = aEnd - center;
+    VECTOR2D endLine = aEnd - center;
     bool     clockwise = GetAngle() > 0;
-    double   angle  = RAD2DECIDEG( endLine.Angle() - startLine.Angle() );
+    double   angle = RAD2DECIDEG( endLine.Angle() - startLine.Angle() );
 
     if( clockwise && angle < 0.0 )
         angle += 3600.0;

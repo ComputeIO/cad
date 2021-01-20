@@ -1618,7 +1618,7 @@ PAD* BOARD::GetPad( std::vector<PAD*>& aPadList, const wxPoint& aPosition, LSET 
  *
  * This function is used to build ordered pads lists
  */
-bool sortPadsByXthenYCoord( PAD* const & aLH, PAD* const & aRH )
+bool sortPadsByXthenYCoord( PAD* const& aLH, PAD* const& aRH )
 {
     if( aLH->GetPosition().x == aRH->GetPosition().x )
         return aLH->GetPosition().y < aRH->GetPosition().y;

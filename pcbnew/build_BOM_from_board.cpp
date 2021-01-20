@@ -125,7 +125,7 @@ void PCB_EDIT_FRAME::RecreateBOMFileFromBoard( wxCommandEvent& aEvent )
             BOM_ENTRY* curEntry = *iter;
 
             if( curEntry->m_Val == footprint->GetValue()
-                    && curEntry->m_FPID == footprint->GetFPID() )
+                && curEntry->m_FPID == footprint->GetFPID() )
             {
                 curEntry->m_Ref.Append( wxT( ", " ), 1 );
                 curEntry->m_Ref.Append( footprint->Reference().GetShownText() );
@@ -140,7 +140,7 @@ void PCB_EDIT_FRAME::RecreateBOMFileFromBoard( wxCommandEvent& aEvent )
         if( valExist == false )
         {
             BOM_ENTRY* newEntry = new BOM_ENTRY();
-            newEntry->m_Id  = i++;
+            newEntry->m_Id = i++;
             newEntry->m_Val = footprint->Value().GetShownText();
             newEntry->m_Ref = footprint->Reference().GetShownText();
             newEntry->m_FPID = footprint->GetFPID();
@@ -152,8 +152,8 @@ void PCB_EDIT_FRAME::RecreateBOMFileFromBoard( wxCommandEvent& aEvent )
     // Print list. Also delete temporary created objects.
     for( size_t ii = list.GetCount(); ii > 0; ii-- )
     {
-        BOM_ENTRY* curEntry = *list.begin();   // Because the first object will be removed
-                                               // from list, all objects will be get here
+        BOM_ENTRY* curEntry = *list.begin(); // Because the first object will be removed
+                                             // from list, all objects will be get here
 
         msg.Empty();
 
@@ -166,7 +166,7 @@ void PCB_EDIT_FRAME::RecreateBOMFileFromBoard( wxCommandEvent& aEvent )
 
         // We do not need this object, now: remove it from list and delete it
         list.DeleteObject( curEntry );
-        delete (curEntry);
+        delete( curEntry );
     }
 
     fclose( fp_bom );

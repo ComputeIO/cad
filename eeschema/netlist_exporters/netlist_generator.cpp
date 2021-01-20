@@ -211,7 +211,7 @@ void SCH_EDIT_FRAME::sendNetlistToCvpcb()
         // @todo : trim GNL_ALL down to minimum for CVPCB
         exporter.Format( &formatter, GNL_ALL );
 
-        packet = formatter.GetString();  // an abbreviated "kicad" (s-expr) netlist
+        packet = formatter.GetString(); // an abbreviated "kicad" (s-expr) netlist
 
         // NETLIST_EXPORTER_KICAD must go out of scope so it can clean up things like the
         // current sheet setting before sending expressmail

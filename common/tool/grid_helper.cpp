@@ -25,15 +25,14 @@
 #include <functional>
 using namespace std::placeholders;
 
-#include <math/util.h>      // for KiROUND
+#include <math/util.h> // for KiROUND
 #include <math/vector2d.h>
 #include <tool/tool_manager.h>
 #include <view/view.h>
 #include <tool/grid_helper.h>
 
 
-GRID_HELPER::GRID_HELPER( TOOL_MANAGER* aToolMgr ) :
-    m_toolMgr( aToolMgr )
+GRID_HELPER::GRID_HELPER( TOOL_MANAGER* aToolMgr ) : m_toolMgr( aToolMgr )
 {
     m_enableSnap = true;
     m_enableSnapLine = true;
@@ -109,5 +108,3 @@ VECTOR2I GRID_HELPER::Align( const VECTOR2I& aPoint ) const
 
     return nearest;
 }
-
-

@@ -106,9 +106,9 @@ bool FOOTPRINT_EDITOR_CONTROL::Init()
     ctxMenu.AddItem( ACTIONS::revert,                libSelectedCondition );
 
     ctxMenu.AddSeparator();
-    ctxMenu.AddItem( PCB_ACTIONS::newFootprint,      libSelectedCondition );
+    ctxMenu.AddItem( PCB_ACTIONS::newFootprint, libSelectedCondition );
 #ifdef KICAD_SCRIPTING
-    ctxMenu.AddItem( PCB_ACTIONS::createFootprint,   libSelectedCondition );
+    ctxMenu.AddItem( PCB_ACTIONS::createFootprint, libSelectedCondition );
 #endif
     ctxMenu.AddItem( PCB_ACTIONS::editFootprint,     fpSelectedCondition );
 
@@ -121,10 +121,10 @@ bool FOOTPRINT_EDITOR_CONTROL::Init()
     ctxMenu.AddItem( PCB_ACTIONS::cutFootprint,      fpSelectedCondition );
     ctxMenu.AddItem( PCB_ACTIONS::copyFootprint,     fpSelectedCondition );
     ctxMenu.AddItem( PCB_ACTIONS::pasteFootprint,    SELECTION_CONDITIONS::ShowAlways );
-    ctxMenu.AddItem( PCB_ACTIONS::deleteFootprint,   fpSelectedCondition );
+    ctxMenu.AddItem( PCB_ACTIONS::deleteFootprint, fpSelectedCondition );
 
     ctxMenu.AddSeparator();
-    ctxMenu.AddItem( PCB_ACTIONS::importFootprint,   libSelectedCondition );
+    ctxMenu.AddItem( PCB_ACTIONS::importFootprint, libSelectedCondition );
     ctxMenu.AddItem( PCB_ACTIONS::exportFootprint,   fpSelectedCondition );
 
     return true;

@@ -997,7 +997,7 @@ int SCH_EDITOR_CONTROL::UpdateNetHighlighting( const TOOL_EVENT& aEvent )
     for( SCH_ITEM* item : screen->Items() )
     {
         SCH_CONNECTION* itemConn  = nullptr;
-        SCH_COMPONENT*  symbol    = nullptr;
+        SCH_COMPONENT*  symbol = nullptr;
         bool            redraw    = item->IsBrightened();
         bool            highlight = false;
 

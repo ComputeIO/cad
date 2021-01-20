@@ -67,10 +67,10 @@ bool PL_SELECTION_TOOL::Init()
     auto& menu = m_menu.GetMenu();
 
     menu.AddSeparator( 200 );
-    menu.AddItem( PL_ACTIONS::drawLine,      SELECTION_CONDITIONS::Empty, 200 );
+    menu.AddItem( PL_ACTIONS::drawLine, SELECTION_CONDITIONS::Empty, 200 );
     menu.AddItem( PL_ACTIONS::drawRectangle, SELECTION_CONDITIONS::Empty, 200 );
-    menu.AddItem( PL_ACTIONS::placeText,     SELECTION_CONDITIONS::Empty, 200 );
-    menu.AddItem( PL_ACTIONS::placeImage,    SELECTION_CONDITIONS::Empty, 200 );
+    menu.AddItem( PL_ACTIONS::placeText, SELECTION_CONDITIONS::Empty, 200 );
+    menu.AddItem( PL_ACTIONS::placeImage, SELECTION_CONDITIONS::Empty, 200 );
 
     menu.AddSeparator( 1000 );
     m_frame->AddStandardSubMenus( m_menu );

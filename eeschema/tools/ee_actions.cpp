@@ -434,9 +434,9 @@ TOOL_ACTION EE_ACTIONS::updateSymbol( "eeschema.InteractiveEdit.updateSymbol",
         _( "Update symbol to include any changes from the library" ),
         refresh_xpm );
 
-TOOL_ACTION EE_ACTIONS::assignNetclass( "eeschema.InteractiveEdit.assignNetclass",
-        AS_GLOBAL, 0, "",
-        _( "Assign Netclass..." ), _( "Assign a netclass to the net of the selected wire" ) );
+TOOL_ACTION EE_ACTIONS::assignNetclass( "eeschema.InteractiveEdit.assignNetclass", AS_GLOBAL, 0, "",
+                                        _( "Assign Netclass..." ),
+                                        _( "Assign a netclass to the net of the selected wire" ) );
 
 TOOL_ACTION EE_ACTIONS::toggleDeMorgan( "eeschema.InteractiveEdit.toggleDeMorgan",
         AS_GLOBAL, 0, "",
@@ -478,11 +478,10 @@ TOOL_ACTION EE_ACTIONS::cleanupSheetPins( "eeschema.InteractiveEdit.cleanupSheet
         _( "Cleanup Sheet Pins" ), _( "Delete unreferenced sheet pins" ),
         nullptr );
 
-TOOL_ACTION EE_ACTIONS::editTextAndGraphics( "eeschema.InteractiveEdit.editTextAndGraphics",
-        AS_GLOBAL, 0, "",
+TOOL_ACTION EE_ACTIONS::editTextAndGraphics(
+        "eeschema.InteractiveEdit.editTextAndGraphics", AS_GLOBAL, 0, "",
         _( "Edit Text & Graphics Properties..." ),
-        _( "Edit text and graphics properties globally across schematic" ),
-        text_xpm );
+        _( "Edit text and graphics properties globally across schematic" ), text_xpm );
 
 TOOL_ACTION EE_ACTIONS::symbolProperties( "eeschema.InteractiveEdit.symbolProperties",
         AS_GLOBAL, 0, "",

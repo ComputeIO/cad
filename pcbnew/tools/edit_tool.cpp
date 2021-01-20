@@ -1944,7 +1944,8 @@ int EDIT_TOOL::copyToClipboard( const TOOL_EVENT& aEvent )
 {
     std::string  tool = "pcbnew.InteractiveEdit.selectReferencePoint";
     CLIPBOARD_IO io;
-    PCB_GRID_HELPER grid( m_toolMgr, getEditFrame<PCB_BASE_EDIT_FRAME>()->GetMagneticItemsSettings() );
+    PCB_GRID_HELPER grid( m_toolMgr,
+                          getEditFrame<PCB_BASE_EDIT_FRAME>()->GetMagneticItemsSettings() );
 
     frame()->PushTool( tool );
     Activate();

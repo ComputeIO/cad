@@ -176,14 +176,15 @@ void WX_VIEW_CONTROLS::LoadSettings()
 void WX_VIEW_CONTROLS::onMotion( wxMouseEvent& aEvent )
 {
     bool isAutoPanning = false;
-    int x = aEvent.GetX();
-    int y = aEvent.GetY();
+    int      x = aEvent.GetX();
+    int      y = aEvent.GetY();
     VECTOR2D mousePos( x, y );
 
-    if( !aEvent.Dragging() &&
-        ( m_settings.m_cursorCaptured || m_settings.m_grabMouse || m_settings.m_autoPanEnabled ) )
+    if( !aEvent.Dragging()
+        && ( m_settings.m_cursorCaptured || m_settings.m_grabMouse
+             || m_settings.m_autoPanEnabled ) )
     {
-        bool warp = false;
+        bool   warp = false;
         wxSize parentSize = m_parentPanel->GetClientSize();
 
         if( x < 0 )
@@ -220,15 +221,15 @@ void WX_VIEW_CONTROLS::onMotion( wxMouseEvent& aEvent )
         if( m_state == DRAG_PANNING )
         {
             static bool justWarped = false;
-            int warpX = 0;
-            int warpY = 0;
-            wxSize parentSize = m_parentPanel->GetClientSize();
+            int         warpX = 0;
+            int         warpY = 0;
+            wxSize      parentSize = m_parentPanel->GetClientSize();
 
             if( x < 0 )
             {
                 warpX = parentSize.x;
             }
-            else if(x >= parentSize.x )
+            else if( x >= parentSize.x )
             {
                 warpX = -parentSize.x;
             }
@@ -267,8 +268,8 @@ void WX_VIEW_CONTROLS::onMotion( wxMouseEvent& aEvent )
         else if( m_state == DRAG_ZOOMING )
         {
             static bool justWarped = false;
-            int warpY = 0;
-            wxSize parentSize = m_parentPanel->GetClientSize();
+            int         warpY = 0;
+            wxSize      parentSize = m_parentPanel->GetClientSize();
 
             if( y < 0 )
             {
@@ -282,7 +283,7 @@ void WX_VIEW_CONTROLS::onMotion( wxMouseEvent& aEvent )
             if( !justWarped )
             {
                 VECTOR2D d = m_dragStartPoint - mousePos;
-                double scale = exp( d.y * m_settings.m_zoomSpeed * 0.001 );
+                double   scale = exp( d.y * m_settings.m_zoomSpeed * 0.001 );
 
                 wxLogTrace( traceZoomScroll, wxString::Format( "dy: %f  scale: %f", d.y, scale ) );
 
@@ -506,7 +507,7 @@ void WX_VIEW_CONTROLS::onTimer( wxTimerEvent& aEvent )
         // For a small mouse cursor dist to area, just use the distance.
         // But for a dist > borderSize / 2, use an accelerated pan value
 
-        if( dir.EuclideanNorm() >= borderSize )         // far from area limits
+        if( dir.EuclideanNorm() >= borderSize ) // far from area limits
             dir = dir.Resize( borderSize * accel );
         else if( dir.EuclideanNorm() > borderSize / 2 ) // Near from area limits
             dir = dir.Resize( borderSize );

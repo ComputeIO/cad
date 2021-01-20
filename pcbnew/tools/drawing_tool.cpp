@@ -644,7 +644,7 @@ int DRAWING_TOOL::DrawDimension( const TOOL_EVENT& aEvent )
     TOOL_EVENT      originalEvent = aEvent;
     DIMENSION_BASE* dimension     = nullptr;
     BOARD_COMMIT    commit( m_frame );
-    PCB_GRID_HELPER     grid( m_toolMgr, m_frame->GetMagneticItemsSettings() );
+    PCB_GRID_HELPER grid( m_toolMgr, m_frame->GetMagneticItemsSettings() );
 
     const BOARD_DESIGN_SETTINGS& boardSettings = m_board->GetDesignSettings();
 
@@ -1165,7 +1165,7 @@ int DRAWING_TOOL::SetAnchor( const TOOL_EVENT& aEvent )
         return 0;
 
     SCOPED_DRAW_MODE scopedDrawMode( m_mode, MODE::ANCHOR );
-    PCB_GRID_HELPER      grid( m_toolMgr, m_frame->GetMagneticItemsSettings() );
+    PCB_GRID_HELPER  grid( m_toolMgr, m_frame->GetMagneticItemsSettings() );
 
     std::string tool = aEvent.GetCommandStr().get();
     m_frame->PushTool( tool );
@@ -1254,7 +1254,7 @@ bool DRAWING_TOOL::drawSegment( const std::string& aTool, PCB_SHAPE** aGraphic,
     assert( shape == S_SEGMENT || shape == S_CIRCLE || shape == S_RECT );
 
     EDA_UNITS    userUnits = m_frame->GetUserUnits();
-    PCB_GRID_HELPER  grid( m_toolMgr, m_frame->GetMagneticItemsSettings() );
+    PCB_GRID_HELPER grid( m_toolMgr, m_frame->GetMagneticItemsSettings() );
     PCB_SHAPE*&  graphic = *aGraphic;
 
     m_lineWidth = getSegmentWidth( m_frame->GetActiveLayer() );
@@ -1866,7 +1866,7 @@ int DRAWING_TOOL::DrawZone( const TOOL_EVENT& aEvent )
     m_controls->ShowCursor( true );
 
     bool    started     = false;
-    PCB_GRID_HELPER grid( m_toolMgr, m_frame->GetMagneticItemsSettings() );
+    PCB_GRID_HELPER   grid( m_toolMgr, m_frame->GetMagneticItemsSettings() );
     STATUS_TEXT_POPUP status( m_frame );
     status.SetTextColor( wxColour( 255, 0, 0 ) );
     status.SetText( _( "Self-intersecting polygons are not allowed" ) );

@@ -34,7 +34,6 @@ class TOOL_MANAGER;
 class PCB_GRID_HELPER : public GRID_HELPER
 {
 public:
-
     PCB_GRID_HELPER( TOOL_MANAGER* aToolMgr, MAGNETIC_SETTINGS* aMagneticSettings );
 
     /**
@@ -54,18 +53,18 @@ public:
         return GRID_HELPER::Align( aPoint );
     }
 
-    VECTOR2I AlignToSegment ( const VECTOR2I& aPoint, const SEG& aSeg );
+    VECTOR2I AlignToSegment( const VECTOR2I& aPoint, const SEG& aSeg );
 
     VECTOR2I BestDragOrigin( const VECTOR2I& aMousePos, std::vector<BOARD_ITEM*>& aItem );
 
-    VECTOR2I AlignToArc ( const VECTOR2I& aPoint, const SHAPE_ARC& aSeg );
+    VECTOR2I AlignToArc( const VECTOR2I& aPoint, const SHAPE_ARC& aSeg );
 
     VECTOR2I BestSnapAnchor( const VECTOR2I& aOrigin, BOARD_ITEM* aDraggedItem );
     VECTOR2I BestSnapAnchor( const VECTOR2I& aOrigin, const LSET& aLayers,
                              const std::vector<BOARD_ITEM*>& aSkip = {} );
 
 private:
-    std::set<BOARD_ITEM*> queryVisible( const BOX2I& aArea,
+    std::set<BOARD_ITEM*> queryVisible( const BOX2I&                    aArea,
                                         const std::vector<BOARD_ITEM*>& aSkip ) const;
 
     ANCHOR* nearestAnchor( const VECTOR2I& aPos, int aFlags, LSET aMatchLayers );
@@ -81,7 +80,7 @@ private:
     void computeAnchors( BOARD_ITEM* aItem, const VECTOR2I& aRefPos, bool aFrom = false );
 
 private:
-    MAGNETIC_SETTINGS*     m_magneticSettings;
+    MAGNETIC_SETTINGS* m_magneticSettings;
 };
 
 #endif

@@ -276,7 +276,7 @@ static wxString& makeStringCompatX1( wxString& aText, bool aUseX1CompatibilityMo
 }
 
 
-void AddGerberX2Header( PLOTTER * aPlotter, const BOARD *aBoard, bool aUseX1CompatibilityMode )
+void AddGerberX2Header( PLOTTER* aPlotter, const BOARD* aBoard, bool aUseX1CompatibilityMode )
 {
     wxString text;
 

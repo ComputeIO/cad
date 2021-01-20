@@ -343,7 +343,7 @@ int EE_SELECTION_TOOL::Main( const TOOL_EVENT& aEvent )
             bool continueSelect = true;
 
             // Collect items at the clicked location (doesn't select them yet)
-            if( CollectHits( collector, evt->Position()) )
+            if( CollectHits( collector, evt->Position() ) )
             {
                 narrowSelection( collector, evt->Position(), false );
 
@@ -514,7 +514,7 @@ int EE_SELECTION_TOOL::Main( const TOOL_EVENT& aEvent )
 
             // We are checking if we should display a pencil when hovering over anchors
             // for "auto starting" wires when clicked
-            if( CollectHits( collector, evt->Position()) )
+            if( CollectHits( collector, evt->Position() ) )
             {
                 narrowSelection( collector, evt->Position(), false );
 

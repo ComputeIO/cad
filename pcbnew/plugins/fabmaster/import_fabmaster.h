@@ -49,12 +49,12 @@ class BOARD;
 class FABMASTER
 {
 public:
-
     using single_row = std::vector<std::string>;
     FABMASTER() :
-        has_pads( false ), has_comps( false ), has_graphic( false ),
-        has_nets( false ), has_pins( false )
-    {}
+            has_pads( false ), has_comps( false ), has_graphic( false ), has_nets( false ),
+            has_pins( false )
+    {
+    }
 
     bool Read( const std::string& aFile );
 
@@ -63,7 +63,6 @@ public:
     bool LoadBoard( BOARD* aBoard );
 
 private:
-
     wxFileName m_filename;
 
     enum section_type : int
@@ -94,32 +93,32 @@ private:
     struct FM_PAD
     {
         std::string name;
-        bool fixed;
-        bool via;
+        bool        fixed;
+        bool        via;
         PAD_SHAPE_T shape;
         std::string custom_name;
-        bool top;
-        bool bottom;
-        bool paste;
-        bool mask;
-        bool drill;
-        bool plated;
-        bool is_octogon;
-        int drill_size_x;
-        int drill_size_y;
-        int width;
-        int height;
-        int mask_width;
-        int mask_height;
-        int paste_width;
-        int paste_height;
-        int x_offset;
-        int y_offset;
-        int antipad_size;
+        bool        top;
+        bool        bottom;
+        bool        paste;
+        bool        mask;
+        bool        drill;
+        bool        plated;
+        bool        is_octogon;
+        int         drill_size_x;
+        int         drill_size_y;
+        int         width;
+        int         height;
+        int         mask_width;
+        int         mask_height;
+        int         paste_width;
+        int         paste_height;
+        int         x_offset;
+        int         y_offset;
+        int         antipad_size;
 
         struct HASH
         {
-            std::size_t operator()(  const FM_PAD& aPad ) const
+            std::size_t operator()( const FM_PAD& aPad ) const
             {
                 return std::hash<std::string>{}( aPad.name );
             }
@@ -148,16 +147,16 @@ private:
     // A!NET_NAME!REFDES!PIN_NUMBER!PIN_NAME!PIN_GROUND!PIN_POWER!
     struct NETNAME
     {
-        std::string name;           ///!< NET_NAME
-        std::string refdes;         ///!< REFDES
-        std::string pin_num;        ///!< PIN_NUMBER
-        std::string pin_name;       ///!< PIN_NAME
-        bool pin_gnd;               ///!< PIN_GND
-        bool pin_pwr;               ///!< PIN_PWR
+        std::string name;     ///!< NET_NAME
+        std::string refdes;   ///!< REFDES
+        std::string pin_num;  ///!< PIN_NUMBER
+        std::string pin_name; ///!< PIN_NAME
+        bool        pin_gnd;  ///!< PIN_GND
+        bool        pin_pwr;  ///!< PIN_PWR
 
         struct LESS
         {
-            bool operator()(const NETNAME& lhs, const NETNAME& rhs) const
+            bool operator()( const NETNAME& lhs, const NETNAME& rhs ) const
             {
                 if( lhs.refdes == rhs.refdes )
                     return lhs.pin_num < rhs.pin_num;
@@ -168,12 +167,12 @@ private:
     };
 
     std::map<std::pair<std::string, std::string>, NETNAME> pin_nets;
-    std::set<std::string> netnames;
+    std::set<std::string>                                  netnames;
 
     struct CLASS
     {
-        std::string name;           ///!< CLASS
-        std::string subclass;       ///!< SUBCLASS
+        std::string name;     ///!< CLASS
+        std::string subclass; ///!< SUBCLASS
     };
 
 
@@ -197,22 +196,22 @@ private:
 
     struct GRAPHIC_ITEM
     {
-        int           start_x;  ///<! GRAPHIC_DATA_1
-        int           start_y;  ///<! GRAPHIC_DATA_2
-        int           width;    ///<! Various sections depending on type
-        std::string   layer;    ///<! SUBCLASS
-        std::string   symbol;   ///<! SYMBOL
-        std::string   refdes;   ///<! REFDES
-        int           seq;      ///<! RECORD_TAG[0]
-        int           subseq;   ///<! RECORD_TAG[1]
-        GRAPHIC_TYPE  type;     ///<! Type of graphic item
-        GRAPHIC_SHAPE shape;    ///<! Shape of the graphic_item
+        int           start_x; ///<! GRAPHIC_DATA_1
+        int           start_y; ///<! GRAPHIC_DATA_2
+        int           width;   ///<! Various sections depending on type
+        std::string   layer;   ///<! SUBCLASS
+        std::string   symbol;  ///<! SYMBOL
+        std::string   refdes;  ///<! REFDES
+        int           seq;     ///<! RECORD_TAG[0]
+        int           subseq;  ///<! RECORD_TAG[1]
+        GRAPHIC_TYPE  type;    ///<! Type of graphic item
+        GRAPHIC_SHAPE shape;   ///<! Shape of the graphic_item
 
 
         struct SEQ_CMP
         {
-            bool operator()(const std::unique_ptr<GRAPHIC_ITEM>& lhs,
-                    const std::unique_ptr<GRAPHIC_ITEM>& rhs) const
+            bool operator()( const std::unique_ptr<GRAPHIC_ITEM>& lhs,
+                             const std::unique_ptr<GRAPHIC_ITEM>& rhs ) const
             {
                 return lhs->seq < rhs->seq;
             }
@@ -221,43 +220,43 @@ private:
 
     struct GRAPHIC_LINE : public GRAPHIC_ITEM
     {
-        int end_x;           ///<! GRAPHIC_DATA_3
-        int end_y;           ///<! GRAPHIC_DATA_4
-                             ///<! width is GRAPHIC_DATA_5
+        int end_x; ///<! GRAPHIC_DATA_3
+        int end_y; ///<! GRAPHIC_DATA_4
+                   ///<! width is GRAPHIC_DATA_5
     };
 
     struct GRAPHIC_ARC : public GRAPHIC_ITEM
     {
-        int end_x;           ///<! GRAPHIC_DATA_3
-        int end_y;           ///<! GRAPHIC_DATA_4
-        int center_x;        ///<! GRAPHIC_DATA_5
-        int center_y;        ///<! GRAPHIC_DATA_6
-        int radius;          ///<! GRAPHIC_DATA_7
-                             ///<! width is GRAPHIC_DATA_8
-        bool clockwise;      ///<! GRAPHIC_DATA_9
+        int end_x;      ///<! GRAPHIC_DATA_3
+        int end_y;      ///<! GRAPHIC_DATA_4
+        int center_x;   ///<! GRAPHIC_DATA_5
+        int center_y;   ///<! GRAPHIC_DATA_6
+        int radius;     ///<! GRAPHIC_DATA_7
+                        ///<! width is GRAPHIC_DATA_8
+        bool clockwise; ///<! GRAPHIC_DATA_9
 
-        SHAPE_ARC result;    ///<! KiCad-style arc representation
+        SHAPE_ARC result; ///<! KiCad-style arc representation
     };
 
     struct GRAPHIC_RECTANGLE : public GRAPHIC_ITEM
     {
-        int end_x;           ///<! GRAPHIC_DATA_3
-        int end_y;           ///<! GRAPHIC_DATA_4
-        bool fill;           ///<! GRAPHIC_DATA_5
+        int  end_x; ///<! GRAPHIC_DATA_3
+        int  end_y; ///<! GRAPHIC_DATA_4
+        bool fill;  ///<! GRAPHIC_DATA_5
     };
 
     struct GRAPHIC_TEXT : public GRAPHIC_ITEM
     {
-        double rotation;    ///<! GRAPHIC_DATA_3
-        bool mirror;        ///<! GRAPHIC_DATA_4
-        EDA_TEXT_HJUSTIFY_T orient; ///<! GRAPHIC_DATA_5
+        double              rotation; ///<! GRAPHIC_DATA_3
+        bool                mirror;   ///<! GRAPHIC_DATA_4
+        EDA_TEXT_HJUSTIFY_T orient;   ///<! GRAPHIC_DATA_5
         // GRAPHIC_DATA_6 is
         // SIZE FONT HEIGHT WIDTH ITAL LINESPACE THICKNESS
-        int height;         ///<! GRAPHIC_DATA_6[2]
-        int thickness;      ///<! GRAPHIC_DATA_6[6]
-        bool ital;          ///<! GRAPHIC_DATA_6[4] != 0.0
+        int  height;    ///<! GRAPHIC_DATA_6[2]
+        int  thickness; ///<! GRAPHIC_DATA_6[6]
+        bool ital;      ///<! GRAPHIC_DATA_6[4] != 0.0
 
-        std::string text;   ///<! GRAPHIC_DATA_7
+        std::string text; ///<! GRAPHIC_DATA_7
     };
 
     using graphic_element = std::set<std::unique_ptr<GRAPHIC_ITEM>, GRAPHIC_ITEM::SEQ_CMP>;
@@ -266,23 +265,23 @@ private:
     ///     !LAYER_ELECTRICAL_CONDUCTIVITY!LAYER_MATERIAL!LAYER_SHIELD_LAYER!LAYER_THERMAL_CONDUCTIVITY!LAYER_THICKNESS!
     struct FABMASTER_LAYER
     {
-        int id;                 ///<! LAYER_SORT
-        std::string name;       ///<! LAYER_SUBCLASS
-        bool positive;          ///<! LAYER_ARTWORK (either POSITIVE or NEGATIVE)
-        std::string use;        ///<! LAYER_USE
-        bool conductive;        ///<! LAYER_CONDUCTOR
-        double er;              ///<! LAYER_DIELECTRIC_CONSTANT
-        double conductivity;    ///<! LAYER_ELECTRICAL_CONDUCTIVITY
-        std::string material;   ///<! LAYER_MATERIAL
-        bool shield;            ///<! LAYER_SHIELD_LAYER
-        double thermal_cond;    ///<! LAYER_THERMAL_CONDUCTIVITY
-        double thickness;       ///<! LAYER_THICKNESS
-        int layerid;            ///<! pcbnew layer (assigned)
-        bool disable;           ///<! if true, prevent the layer elements from being used
+        int         id;           ///<! LAYER_SORT
+        std::string name;         ///<! LAYER_SUBCLASS
+        bool        positive;     ///<! LAYER_ARTWORK (either POSITIVE or NEGATIVE)
+        std::string use;          ///<! LAYER_USE
+        bool        conductive;   ///<! LAYER_CONDUCTOR
+        double      er;           ///<! LAYER_DIELECTRIC_CONSTANT
+        double      conductivity; ///<! LAYER_ELECTRICAL_CONDUCTIVITY
+        std::string material;     ///<! LAYER_MATERIAL
+        bool        shield;       ///<! LAYER_SHIELD_LAYER
+        double      thermal_cond; ///<! LAYER_THERMAL_CONDUCTIVITY
+        double      thickness;    ///<! LAYER_THICKNESS
+        int         layerid;      ///<! pcbnew layer (assigned)
+        bool        disable;      ///<! if true, prevent the layer elements from being used
 
         struct BY_ID
         {
-            bool operator()(const FABMASTER_LAYER* lhs, const FABMASTER_LAYER* rhs) const
+            bool operator()( const FABMASTER_LAYER* lhs, const FABMASTER_LAYER* rhs ) const
             {
                 return lhs->id < rhs->id;
             }
@@ -298,10 +297,10 @@ private:
      */
     struct PAD_SHAPE
     {
-        std::string name;       ///<! PAD_SHAPE_NAME
-        std::string padstack;   ///<! PAD_STACK_NAME
-        std::string refdes;     ///<! REFDES
-        std::string pinnum;     ///<! PIN_NUMBER
+        std::string                    name;     ///<! PAD_SHAPE_NAME
+        std::string                    padstack; ///<! PAD_STACK_NAME
+        std::string                    refdes;   ///<! REFDES
+        std::string                    pinnum;   ///<! PIN_NUMBER
         std::map<int, graphic_element> elements;
 
         struct HASH
@@ -321,14 +320,14 @@ private:
     // * COMP_PACKAGE!COMP_PART_NUMBER!COMP_VALUE!CLIP_DRAWING!
     struct SYMBOL
     {
-        int sym_id;             ///<! RECORD_TAG[0]
-        int seq_id;             ///<! RECORD_TAG[1] (RECORD_TAG is of the form "x y z")
-        int subseq_id;          ///<! RECORD_TAG[2] (RECORD_TAG is of the form "x y z")
-        std::string name;       ///<! SYM_NAME
-        std::string refdes;     ///<! REFDES
-        int x;                  ///<! SYM_X
-        int y;                  ///<! SYM_Y
-        std::map<int, graphic_element>  elements;
+        int         sym_id;    ///<! RECORD_TAG[0]
+        int         seq_id;    ///<! RECORD_TAG[1] (RECORD_TAG is of the form "x y z")
+        int         subseq_id; ///<! RECORD_TAG[2] (RECORD_TAG is of the form "x y z")
+        std::string name;      ///<! SYM_NAME
+        std::string refdes;    ///<! REFDES
+        int         x;         ///<! SYM_X
+        int         y;         ///<! SYM_Y
+        std::map<int, graphic_element> elements;
 
         struct HASH
         {
@@ -365,35 +364,35 @@ private:
 
     struct GEOM_GRAPHIC
     {
-        std::string     subclass;   ///<! SUBCLASS
-        std::string     name;       ///<! SYM_NAME
-        std::string     refdes;     ///<! REFDES
-        int             id;         ///<! RECORD_TAG[0]
+        std::string subclass; ///<! SUBCLASS
+        std::string name;     ///<! SYM_NAME
+        std::string refdes;   ///<! REFDES
+        int         id;       ///<! RECORD_TAG[0]
 
         std::unique_ptr<graphic_element> elements;
 
         struct BY_ID
         {
-            bool operator()(const GEOM_GRAPHIC& lhs, const GEOM_GRAPHIC& rhs) const
+            bool operator()( const GEOM_GRAPHIC& lhs, const GEOM_GRAPHIC& rhs ) const
             {
                 return lhs.id < rhs.id;
             }
         };
     };
 
-    std::vector<GEOM_GRAPHIC> board_graphics;
+    std::vector<GEOM_GRAPHIC>                          board_graphics;
     std::map<std::string, std::map<int, GEOM_GRAPHIC>> comp_graphics;
 
 
     // A!VIA_X!VIA_Y!PAD_STACK_NAME!NET_NAME!TEST_POINT!
     struct FM_VIA
     {
-        int x;                  ///<! VIA_X
-        int y;                  ///<! VIA_Y
+        int         x;          ///<! VIA_X
+        int         y;          ///<! VIA_Y
         std::string padstack;   ///<! PAD_STACK_NAME
         std::string net;        ///<! NET_NAME
-        bool test_point;        ///<! TEST_POINT
-        bool mirror;            ///<! VIA_MIRROR (VIA_MIRROR is an optional component)
+        bool        test_point; ///<! TEST_POINT
+        bool        mirror;     ///<! VIA_MIRROR (VIA_MIRROR is an optional component)
     };
 
     std::vector<std::unique_ptr<FM_VIA>> vias;
@@ -403,16 +402,17 @@ private:
     // GRAPHIC_DATA_8!GRAPHIC_DATA_9!NET_NAME!
     struct TRACE
     {
-        std::string     lclass;     ///<! CLASS
-        std::string     layer;      ///<! SUBCLASS
-        std::string     netname;    ///<! NET_NAME
-        int             id;         ///<! RECORD_TAG[0]
+        std::string lclass;  ///<! CLASS
+        std::string layer;   ///<! SUBCLASS
+        std::string netname; ///<! NET_NAME
+        int         id;      ///<! RECORD_TAG[0]
 
-        graphic_element segment;    ///<! GRAPHIC_DATA (can be either LINE or ARC)
+        graphic_element segment; ///<! GRAPHIC_DATA (can be either LINE or ARC)
 
         struct BY_ID
         {
-            bool operator()(const std::unique_ptr<TRACE>& lhs, const std::unique_ptr<TRACE>& rhs) const
+            bool operator()( const std::unique_ptr<TRACE>& lhs,
+                             const std::unique_ptr<TRACE>& rhs ) const
             {
                 return lhs->id < rhs->id;
             }
@@ -430,21 +430,21 @@ private:
     // SYM_NAME!SYM_MIRROR!SYM_ROTATE!SYM_X!SYM_Y!COMP_VALUE!COMP_TOL!COMP_VOLTAGE!
     struct COMPONENT
     {
-        std::string refdes;         ///<! REFDES
-        COMPCLASS cclass;           ///<! COMP_CLASS
-        std::string pn;             ///<! COMP_PART_NUMBER
-        std::string height;         ///<! COMP_HEIGHT
-        std::string dev_label;      ///<! COMP_DEVICE_LABEL
-        std::string insert_code;    ///<! COMP_INSERTION_CODE
-        SYMTYPE type;               ///<! SYM_TYPE
-        std::string name;           ///<! SYM_NAME
-        bool mirror;                ///<! SYM_MIRROR
-        double rotate;              ///<! SYM_ROTATE (degrees)
-        int x;                      ///<! SYM_X
-        int y;                      ///<! SYM_Y
-        std::string value;          ///<! COMP_VALUE
-        std::string tol;            ///<! COMP_TOL
-        std::string voltage;        ///<! COMP_VOLTAGE
+        std::string refdes;      ///<! REFDES
+        COMPCLASS   cclass;      ///<! COMP_CLASS
+        std::string pn;          ///<! COMP_PART_NUMBER
+        std::string height;      ///<! COMP_HEIGHT
+        std::string dev_label;   ///<! COMP_DEVICE_LABEL
+        std::string insert_code; ///<! COMP_INSERTION_CODE
+        SYMTYPE     type;        ///<! SYM_TYPE
+        std::string name;        ///<! SYM_NAME
+        bool        mirror;      ///<! SYM_MIRROR
+        double      rotate;      ///<! SYM_ROTATE (degrees)
+        int         x;           ///<! SYM_X
+        int         y;           ///<! SYM_Y
+        std::string value;       ///<! COMP_VALUE
+        std::string tol;         ///<! COMP_TOL
+        std::string voltage;     ///<! COMP_VOLTAGE
 
         struct HASH
         {
@@ -453,7 +453,6 @@ private:
                 return std::hash<std::string>{}( aCmp.refdes );
             }
         };
-
     };
 
     std::map<std::string, std::vector<std::unique_ptr<COMPONENT>>> components;
@@ -464,19 +463,19 @@ private:
     struct PIN
     {
         std::string name;       ///<! SYM_NAME
-        bool mirror;            ///<! SYM_MIRROR
+        bool        mirror;     ///<! SYM_MIRROR
         std::string pin_name;   ///<! PIN_NAME
         std::string pin_number; ///<! PIN_NUMBER
-        int pin_x;              ///<! PIN_X - Absolute board units
-        int pin_y;              ///<! PIN_Y - Absolute board units
+        int         pin_x;      ///<! PIN_X - Absolute board units
+        int         pin_y;      ///<! PIN_Y - Absolute board units
         std::string padstack;   ///<! PAD_STACK
         std::string refdes;     ///<! REFDES
-        double rotation;        ///<! PIN_ROTATION
+        double      rotation;   ///<! PIN_ROTATION
 
         struct BY_NUM
         {
-            bool operator()(const std::unique_ptr<PIN>& lhs,
-                    const std::unique_ptr<PIN>& rhs) const
+            bool operator()( const std::unique_ptr<PIN>& lhs,
+                             const std::unique_ptr<PIN>& rhs ) const
             {
                 return lhs->pin_number < rhs->pin_number;
             }
@@ -489,9 +488,9 @@ private:
 
     section_type detectType( size_t aOffset );
 
-    int execute_recordbuffer( int filetype );
-    int getColFromName( size_t aRow, const std::string& aStr );
-    SYMTYPE parseSymType( const std::string& aSymType );
+    int       execute_recordbuffer( int filetype );
+    int       getColFromName( size_t aRow, const std::string& aStr );
+    SYMTYPE   parseSymType( const std::string& aSymType );
     COMPCLASS parseCompClass( const std::string& aCompClass );
 
     /**
@@ -521,14 +520,14 @@ private:
      * @param aScale Prior loaded scale factor
      * @return Pointer to newly allocated graphical item or nullptr on failure
      */
-    GRAPHIC_ITEM* processGraphic( const GRAPHIC_DATA& aData, double aScale );
-    GRAPHIC_ARC*  processArc( const GRAPHIC_DATA& aData, double aScale );
-    GRAPHIC_LINE* processLine( const GRAPHIC_DATA& aData, double aScale );
-    GRAPHIC_TEXT* processText( const GRAPHIC_DATA& aData, double aScale );
+    GRAPHIC_ITEM*      processGraphic( const GRAPHIC_DATA& aData, double aScale );
+    GRAPHIC_ARC*       processArc( const GRAPHIC_DATA& aData, double aScale );
+    GRAPHIC_LINE*      processLine( const GRAPHIC_DATA& aData, double aScale );
+    GRAPHIC_TEXT*      processText( const GRAPHIC_DATA& aData, double aScale );
     GRAPHIC_RECTANGLE* processRectangle( const GRAPHIC_DATA& aData, double aScale );
 
     PCB_LAYER_ID getLayer( const std::string& aLayerName );
-    bool assignLayers();
+    bool         assignLayers();
 
     /**
      * Sets zone priorities based on zone BB size.  Larger bounding boxes get smaller priorities
@@ -544,19 +543,16 @@ private:
      * @return True if successful
      */
     bool loadZones( BOARD* aBoard );
-    bool loadOutline( BOARD* aBoard, const std::unique_ptr<TRACE>& aLine);
+    bool loadOutline( BOARD* aBoard, const std::unique_ptr<TRACE>& aLine );
     bool loadNets( BOARD* aBoard );
     bool loadLayers( BOARD* aBoard );
     bool loadGraphics( BOARD* aBoard );
     bool loadVias( BOARD* aBoard );
-    bool loadEtch( BOARD* aBoard, const std::unique_ptr<TRACE>& aLine);
-    bool loadZone( BOARD* aBoard, const std::unique_ptr<FABMASTER::TRACE>& aLine);
-    bool loadPolygon( BOARD* aBoard, const std::unique_ptr<FABMASTER::TRACE>& aLine);
+    bool loadEtch( BOARD* aBoard, const std::unique_ptr<TRACE>& aLine );
+    bool loadZone( BOARD* aBoard, const std::unique_ptr<FABMASTER::TRACE>& aLine );
+    bool loadPolygon( BOARD* aBoard, const std::unique_ptr<FABMASTER::TRACE>& aLine );
     bool loadFootprints( BOARD* aBoard );
-
 };
-
-
 
 
 #endif /* PCBNEW_IMPORTERS_IMPORT_FABMASTER_H_ */

@@ -151,35 +151,22 @@ void EDA_3D_VIEWER::CreateMenuBar()
     colorSubmenu->SetTitle( _( "Choose Colors" ) );
     colorSubmenu->SetIcon( color_materials_xpm );
 
-    colorSubmenu->Add( _( "Background Top Color..." ),
-                       ID_MENU3D_BGCOLOR_TOP,
-                       nullptr );
+    colorSubmenu->Add( _( "Background Top Color..." ), ID_MENU3D_BGCOLOR_TOP, nullptr );
 
-    colorSubmenu->Add( _( "Background Bottom Color..." ),
-                       ID_MENU3D_BGCOLOR_BOTTOM,
-                       nullptr );
+    colorSubmenu->Add( _( "Background Bottom Color..." ), ID_MENU3D_BGCOLOR_BOTTOM, nullptr );
 
-    colorSubmenu->Add( _( "Silkscreen Color..." ),
-                       ID_MENU3D_SILKSCREEN_COLOR,
-                       nullptr );
+    colorSubmenu->Add( _( "Silkscreen Color..." ), ID_MENU3D_SILKSCREEN_COLOR, nullptr );
 
-    colorSubmenu->Add( _( "Solder Mask Color..." ),
-                       ID_MENU3D_SOLDERMASK_COLOR,
-                       nullptr );
+    colorSubmenu->Add( _( "Solder Mask Color..." ), ID_MENU3D_SOLDERMASK_COLOR, nullptr );
 
-    colorSubmenu->Add( _( "Solder Paste Color..." ),
-                       ID_MENU3D_SOLDERPASTE_COLOR,
-                       nullptr );
+    colorSubmenu->Add( _( "Solder Paste Color..." ), ID_MENU3D_SOLDERPASTE_COLOR, nullptr );
 
-    colorSubmenu->Add( _( "Copper/Surface Finish Color..." ),
-                       ID_MENU3D_COPPER_COLOR,
-                       nullptr );
+    colorSubmenu->Add( _( "Copper/Surface Finish Color..." ), ID_MENU3D_COPPER_COLOR, nullptr );
 
-    colorSubmenu->Add( _( "Board Body Color..." ),
-                       ID_MENU3D_PCB_BODY_COLOR,
-                       nullptr );
+    colorSubmenu->Add( _( "Board Body Color..." ), ID_MENU3D_PCB_BODY_COLOR, nullptr );
 
-    // Only allow the stackup to be used in the PCB editor, since it isn't editable in the other frames
+    // Only allow the stackup to be used in the PCB editor, since it
+    // isn't editable in the other frames
     if( Parent()->IsType( FRAME_PCB_EDITOR ) )
     {
         colorSubmenu->Add( _( "Get colors from physical stackup" ),

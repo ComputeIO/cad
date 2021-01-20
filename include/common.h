@@ -111,10 +111,10 @@ const wxString ExpandEnvVarSubstitutions( const wxString& aString, PROJECT* aPro
  * Expand '${var-name}' templates in text.  The LocalResolver is given first crack at it,
  * after which the PROJECT's resolver is called.
  */
-wxString ExpandTextVars( const wxString& aSource,
+wxString ExpandTextVars( const wxString&                         aSource,
                          const std::function<bool( wxString* )>* aLocalResolver,
                          const std::function<bool( wxString* )>* aFallbackResolver,
-                         const PROJECT* aProject );
+                         const PROJECT*                          aProject );
 
 wxString ExpandTextVars( const wxString& aSource, const PROJECT* aProject );
 

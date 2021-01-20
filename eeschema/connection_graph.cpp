@@ -1835,9 +1835,9 @@ void CONNECTION_GRAPH::propagateToNeighbors( CONNECTION_SUBGRAPH* aSubgraph )
                     CONNECTION_SUBGRAPH::GetDriverPriority( subgraph->m_driver );
 
             bool     candidateStrong = ( priority >= CONNECTION_SUBGRAPH::PRIORITY::HIER_LABEL );
-            wxString candidateName   = subgraph->m_driver_connection->Name();
-            bool     shorterPath     = subgraph->m_sheet.size() < original->m_sheet.size();
-            bool     asGoodPath      = subgraph->m_sheet.size() <= original->m_sheet.size();
+            wxString candidateName = subgraph->m_driver_connection->Name();
+            bool     shorterPath = subgraph->m_sheet.size() < original->m_sheet.size();
+            bool     asGoodPath = subgraph->m_sheet.size() <= original->m_sheet.size();
 
             // Pick a better driving subgraph if it:
             // a) has a power pin or global driver
@@ -1845,11 +1845,11 @@ void CONNECTION_GRAPH::propagateToNeighbors( CONNECTION_SUBGRAPH* aSubgraph )
             // c) meets or exceeds our priority, is a strong driver, and has a shorter path
             // d) matches our strength and is at least as short, and is alphabetically lower
 
-            if( ( priority >= CONNECTION_SUBGRAPH::PRIORITY::POWER_PIN ) ||
-                ( !originalStrong && candidateStrong ) ||
-                ( priority >= highest && candidateStrong && shorterPath ) ||
-                ( ( originalStrong == candidateStrong ) && asGoodPath &&
-                  ( candidateName < originalName ) ) )
+            if( ( priority >= CONNECTION_SUBGRAPH::PRIORITY::POWER_PIN )
+                || ( !originalStrong && candidateStrong )
+                || ( priority >= highest && candidateStrong && shorterPath )
+                || ( ( originalStrong == candidateStrong ) && asGoodPath
+                     && ( candidateName < originalName ) ) )
             {
                 original = subgraph;
                 highest = priority;

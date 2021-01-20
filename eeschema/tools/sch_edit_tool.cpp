@@ -287,7 +287,7 @@ bool SCH_EDIT_TOOL::Init()
         moveMenu.AddSeparator();
         moveMenu.AddItem( ACTIONS::cut,                E_C::IdleSelection );
         moveMenu.AddItem( ACTIONS::copy,               E_C::IdleSelection );
-        moveMenu.AddItem( ACTIONS::doDelete,           E_C::NotEmpty );
+        moveMenu.AddItem( ACTIONS::doDelete, E_C::NotEmpty );
         moveMenu.AddItem( ACTIONS::duplicate,          duplicateCondition );
 
         moveMenu.AddSeparator();
@@ -361,7 +361,7 @@ bool SCH_EDIT_TOOL::Init()
     selToolMenu.AddItem( ACTIONS::copy,                E_C::IdleSelection, 300 );
     selToolMenu.AddItem( ACTIONS::paste,               E_C::Idle, 300 );
     selToolMenu.AddItem( ACTIONS::pasteSpecial,        E_C::Idle, 300 );
-    selToolMenu.AddItem( ACTIONS::doDelete,            E_C::NotEmpty, 300 );
+    selToolMenu.AddItem( ACTIONS::doDelete, E_C::NotEmpty, 300 );
     selToolMenu.AddItem( ACTIONS::duplicate,           duplicateCondition, 300 );
 
     selToolMenu.AddSeparator( 400 );

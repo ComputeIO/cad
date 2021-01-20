@@ -159,7 +159,7 @@ bool PCB_SELECTION_TOOL::Init()
 
     if( frame && frame->IsType( FRAME_PCB_EDITOR ) )
     {
-        menu.AddMenu( selectMenu.get(), SELECTION_CONDITIONS::NotEmpty  );
+        menu.AddMenu( selectMenu.get(), SELECTION_CONDITIONS::NotEmpty );
         menu.AddSeparator( 1000 );
     }
 

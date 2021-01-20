@@ -427,11 +427,10 @@ TOOL_ACTION PCB_ACTIONS::editTracksAndVias( "pcbnew.GlobalEdit.editTracksAndVias
         _( "Edit Track & Via Properties..." ), "",
         width_track_via_xpm );
 
-TOOL_ACTION PCB_ACTIONS::editTextAndGraphics( "pcbnew.GlobalEdit.editTextAndGraphics",
-        AS_GLOBAL, 0, "",
+TOOL_ACTION PCB_ACTIONS::editTextAndGraphics(
+        "pcbnew.GlobalEdit.editTextAndGraphics", AS_GLOBAL, 0, "",
         _( "Edit Text & Graphics Properties..." ),
-        _( "Edit Text and graphics properties globally across board" ),
-        text_xpm );
+        _( "Edit Text and graphics properties globally across board" ), text_xpm );
 
 TOOL_ACTION PCB_ACTIONS::globalDeletions( "pcbnew.GlobalEdit.globalDeletions",
         AS_GLOBAL, 0, "",

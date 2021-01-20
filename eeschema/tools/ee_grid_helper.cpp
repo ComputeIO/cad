@@ -31,8 +31,7 @@
 #include "ee_grid_helper.h"
 
 
-EE_GRID_HELPER::EE_GRID_HELPER( TOOL_MANAGER* aToolMgr ) :
-    GRID_HELPER( aToolMgr )
+EE_GRID_HELPER::EE_GRID_HELPER( TOOL_MANAGER* aToolMgr ) : GRID_HELPER( aToolMgr )
 {
     KIGFX::VIEW* view = m_toolMgr->GetView();
 
@@ -231,7 +230,7 @@ SCH_ITEM* EE_GRID_HELPER::GetSnapped() const
 }
 
 
-std::set<SCH_ITEM*> EE_GRID_HELPER::queryVisible( const BOX2I& aArea,
+std::set<SCH_ITEM*> EE_GRID_HELPER::queryVisible( const BOX2I&        aArea,
                                                   const EE_SELECTION& aSkipList ) const
 {
     std::set<SCH_ITEM*>                       items;
@@ -247,7 +246,7 @@ std::set<SCH_ITEM*> EE_GRID_HELPER::queryVisible( const BOX2I& aArea,
 
         // The item must be visible and on an active layer
         if( view->IsVisible( item ) && item->ViewGetLOD( it.second, view ) < view->GetScale() )
-            items.insert ( item );
+            items.insert( item );
     }
 
     for( EDA_ITEM* skipItem : aSkipList )

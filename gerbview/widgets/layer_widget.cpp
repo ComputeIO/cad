@@ -177,7 +177,7 @@ void LAYER_WIDGET::OnRightDownRender( wxMouseEvent& aEvent, COLOR_SWATCH* aColor
     wxMenu menu;
 
     AddMenuItem( &menu, ID_CHANGE_RENDER_COLOR,
-                 _( "Change Render Color for" ) + wxS( " " )+ aRenderName,
+                 _( "Change Render Color for" ) + wxS( " " ) + aRenderName,
                  KiBitmap( color_materials_xpm ) );
 
     menu.Bind( wxEVT_COMMAND_MENU_SELECTED,

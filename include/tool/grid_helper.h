@@ -47,10 +47,7 @@ public:
 
     VECTOR2I AlignGrid( const VECTOR2I& aPoint ) const;
 
-    void SetSkipPoint( const VECTOR2I& aPoint )
-    {
-        m_skipPoint = aPoint;
-    }
+    void SetSkipPoint( const VECTOR2I& aPoint ) { m_skipPoint = aPoint; }
 
     /**
      * We clear the skip point by setting it to an unreachable position, thereby preventing matching
@@ -69,7 +66,8 @@ public:
     void SetSnapLine( bool aSnap ) { m_enableSnapLine = aSnap; }
 
 protected:
-    enum ANCHOR_FLAGS {
+    enum ANCHOR_FLAGS
+    {
         CORNER = 1,
         OUTLINE = 2,
         SNAPPABLE = 4,
@@ -81,19 +79,13 @@ protected:
     struct ANCHOR
     {
         ANCHOR( VECTOR2I aPos, int aFlags = CORNER | SNAPPABLE, EDA_ITEM* aItem = NULL ) :
-            pos( aPos ),
-            flags( aFlags ),
-            item( aItem )
-        { };
+                pos( aPos ), flags( aFlags ), item( aItem ){};
 
         VECTOR2I  pos;
         int       flags;
         EDA_ITEM* item;
 
-        double Distance( const VECTOR2I& aP ) const
-        {
-            return ( aP - pos ).EuclideanNorm();
-        }
+        double Distance( const VECTOR2I& aP ) const { return ( aP - pos ).EuclideanNorm(); }
     };
 
     void addAnchor( const VECTOR2I& aPos, int aFlags, EDA_ITEM* aItem )
@@ -101,24 +93,21 @@ protected:
         m_anchors.emplace_back( ANCHOR( aPos, aFlags, aItem ) );
     }
 
-    void clearAnchors()
-    {
-        m_anchors.clear();
-    }
+    void clearAnchors() { m_anchors.clear(); }
 
 protected:
-    std::vector<ANCHOR>    m_anchors;
+    std::vector<ANCHOR> m_anchors;
 
-    TOOL_MANAGER*          m_toolMgr;
-    OPT<VECTOR2I>          m_auxAxis;
+    TOOL_MANAGER* m_toolMgr;
+    OPT<VECTOR2I> m_auxAxis;
 
-    bool                   m_enableSnap;     // Allow snapping to other items on the layers
-    bool                   m_enableGrid;     // If true, allow snapping to grid
-    bool                   m_enableSnapLine; // Allow drawing lines from snap points
-    ANCHOR*                m_snapItem;       // Pointer to the currently snapped item in m_anchors
-                                             //   (NULL if not snapped)
-    VECTOR2I               m_skipPoint;      // When drawing a line, we avoid snapping to the source
-                                             //   point
+    bool    m_enableSnap;     // Allow snapping to other items on the layers
+    bool    m_enableGrid;     // If true, allow snapping to grid
+    bool    m_enableSnapLine; // Allow drawing lines from snap points
+    ANCHOR* m_snapItem;       // Pointer to the currently snapped item in m_anchors
+                              //   (NULL if not snapped)
+    VECTOR2I m_skipPoint;     // When drawing a line, we avoid snapping to the source
+                              //   point
     KIGFX::ORIGIN_VIEWITEM m_viewSnapPoint;
     KIGFX::ORIGIN_VIEWITEM m_viewSnapLine;
     KIGFX::ORIGIN_VIEWITEM m_viewAxis;

@@ -91,7 +91,7 @@ bool SYMBOL_EDITOR_EDIT_TOOL::Init()
         moveMenu.AddItem( ACTIONS::cut,             EE_CONDITIONS::IdleSelection, 300 );
         moveMenu.AddItem( ACTIONS::copy,            EE_CONDITIONS::IdleSelection, 300 );
         moveMenu.AddItem( ACTIONS::duplicate,       canEdit && EE_CONDITIONS::NotEmpty, 300 );
-        moveMenu.AddItem( ACTIONS::doDelete,        canEdit && EE_CONDITIONS::NotEmpty, 200 );
+        moveMenu.AddItem( ACTIONS::doDelete, canEdit && EE_CONDITIONS::NotEmpty, 200 );
 
         moveMenu.AddSeparator( 400 );
         moveMenu.AddItem( ACTIONS::selectAll,       havePartCondition, 400 );
@@ -123,7 +123,7 @@ bool SYMBOL_EDITOR_EDIT_TOOL::Init()
     selToolMenu.AddItem( ACTIONS::copy,             EE_CONDITIONS::IdleSelection, 300 );
     selToolMenu.AddItem( ACTIONS::paste,            canEdit && EE_CONDITIONS::Idle, 300 );
     selToolMenu.AddItem( ACTIONS::duplicate,        canEdit && EE_CONDITIONS::NotEmpty, 300 );
-    selToolMenu.AddItem( ACTIONS::doDelete,         canEdit && EE_CONDITIONS::NotEmpty, 300 );
+    selToolMenu.AddItem( ACTIONS::doDelete, canEdit && EE_CONDITIONS::NotEmpty, 300 );
 
     selToolMenu.AddSeparator( 400 );
     selToolMenu.AddItem( ACTIONS::selectAll,        havePartCondition, 400 );
