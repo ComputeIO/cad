@@ -55,7 +55,7 @@
 #include <gr_text.h>
 #include <utility>
 #include <vector>
-#include <gal/outline_font.h>
+#include <font/outline_font.h>
 
 namespace mapbox
 {
@@ -95,71 +95,6 @@ void addTextSegmToContainer( int x0, int y0, int xf, int yf, void* aData )
     else
         s_dstcontainer->Add( new ROUND_SEGMENT_2D( start3DU, end3DU, s_textWidth * s_biuTo3Dunits,
                                                    *s_boardItem ) );
-}
-
-
-// Based on
-// TransformSolidAreasShapesToPolygonSet
-// board_items_to_polygon_shape_transform.cpp
-void addTextAsPolygon( const std::vector<SHAPE_POLY_SET>& aGlyphs, CONTAINER_2D_BASE* aDstContainer,
-                       PCB_LAYER_ID aLayerId, const BOARD_ITEM& aBoardItem )
-{
-#ifdef DEBUG
-    std::cerr << "addTextAsPolygon( #[";
-    for( const SHAPE_POLY_SET& g : aGlyphs )
-    {
-        std::cerr << g;
-    }
-    wxString txt = aBoardItem.GetClass();
-    std::cerr << "], (aDstContainer), " << aLayerId << ", #<" << txt << "> )" << std::endl;
-#endif
-
-    for( const SHAPE_POLY_SET& glyph : aGlyphs )
-    {
-        SHAPE_POLY_SET polyList = SHAPE_POLY_SET( glyph );
-
-        //       ConvertPolygonToTriangles( polyList, *aDstContainer, s_biuTo3Dunits, aBoardItem );
-
-        std::cerr << polyList << std::endl;
-        for( int i = 0; i < polyList.OutlineCount(); ++i )
-        {
-            if( polyList.COutline( i ).PointCount() > 2 )
-            {
-                SHAPE_POLY_SET thePolyList( polyList.COutline( i ) );
-                //thePolyList.Simplify( SHAPE_POLY_SET::PM_FAST );
-                std::cerr << "Converting " << thePolyList << " to triangles" << std::endl;
-                ConvertPolygonToTriangles( thePolyList, *aDstContainer, s_biuTo3Dunits,
-                                           aBoardItem );
-            }
-        }
-    }
-}
-
-
-void BOARD_ADAPTER::drawTextFromAddShapeWithClearance( const PCB_TEXT* aText, PCB_LAYER_ID aLayerId,
-                                                       const wxPoint   aPosition,
-                                                       const wxString& aString,
-                                                       const wxString& aFontName = "",
-                                                       bool aBold = true, int aPenWidth = 0 )
-{
-    KIGFX::FONT* font = KIGFX::FONT::GetFont( aFontName );
-    if( font->IsOutline() )
-    {
-        std::vector<SHAPE_POLY_SET> glyphs;
-        VECTOR2D                    glyphSize = aText->GetTextSize();
-#ifdef DEBUG
-        std::cerr << aString << " textSize" << aText->GetTextSize() << " position "
-                  << aText->GetPosition() << ( aText->GetPosition() == aPosition ? "==" : "!=" )
-                  << aPosition << std::endl;
-#endif
-        KIGFX::OUTLINE_FONT* outlineFont = dynamic_cast<KIGFX::OUTLINE_FONT*>( font );
-        outlineFont->GetTextAsPolygon( glyphs, aString, glyphSize, aText->IsMirrored() );
-        addTextAsPolygon( glyphs, s_dstcontainer, aLayerId, *aText );
-    }
-    else
-    {
-        std::cerr << "ERROR can't handle stroke fonts now! FIXME! " << std::endl;
-    }
 }
 
 
@@ -301,6 +236,7 @@ static void addPolygonAsTriangles( SHAPE_POLY_SET aPolylist, CONTAINER_2D_BASE& 
     }
 }
 
+
 // Based on
 // void PCB_TEXT::TransformTextShapeWithClearanceToPolygon
 // board_items_to_polygon_shape_transform.cpp
@@ -312,72 +248,66 @@ void BOARD_ADAPTER::addShapeWithClearance( const PCB_TEXT* aText, CONTAINER_2D_B
               << aText->GetPosition() << ", ..., " << aLayerId << ", " << aClearanceValue << " )"
               << std::endl;
 #endif
-    s_boardItem = (const BOARD_ITEM*) &aText;
-    s_dstcontainer = aDstContainer;
-    s_textWidth = aText->GetEffectiveTextPenWidth() + ( 2 * aClearanceValue );
-    s_biuTo3Dunits = m_biuTo3Dunits;
-
-    //const int linewidth = aShape->GetWidth() + ( 2 * aClearanceValue ) + 1;
-    const int lineWidth = 10; // STETSON! can we get this from aText?
-
-    std::vector<SHAPE_POLY_SET> glyphs;
-    aText->DrawTextAsPolygon( glyphs, aLayerId );
-
-    for( SHAPE_POLY_SET glyph : glyphs )
+    wxString fontName;
+    wxString txt = aText->GetShownText( 0, &fontName );
+    FONT*    font = FONT::GetFont( fontName );
+    if( font->IsOutline() )
     {
-        SHAPE_POLY_SET polyList;
-        transformGlyph( polyList, glyph, aText, aLayerId, lineWidth / 2, ARC_HIGH_DEF,
-                        ERROR_INSIDE );
-        addPolygonAsTriangles( polyList, *aDstContainer, m_biuTo3Dunits, *aText );
-    }
+        const int lineWidth = aText->GetEffectiveTextPenWidth() + ( 2 * aClearanceValue );
 
+        std::vector<SHAPE_POLY_SET> glyphs;
+        aText->DrawTextAsPolygon( glyphs, aLayerId );
 
-#ifdef BARBAR
-    // bool forceBold = true;
-    // int penWidth = 0; // force max width for bold
-    wxString font;
-    wxString txt;
-
-    if( aText->IsMultilineAllowed() )
-    {
-        wxArrayString strings_list;
-        wxStringSplit( aText->GetShownText( 0, &font ), strings_list, '\n' );
-        std::vector<wxPoint> positions;
-        positions.reserve( strings_list.Count() );
-        aText->GetLinePositions( positions, strings_list.Count() );
-
-        for( unsigned ii = 0; ii < strings_list.Count(); ++ii )
+        for( SHAPE_POLY_SET glyph : glyphs )
         {
-            txt = strings_list.Item( ii );
-            // TODO: we don't want to have addTextSegmToContainer as
-            // callback with an outline font, but what do we want?
-            //
-            // Passing ptr to outlineFont in aCallbackData for
-            // callback to use in figuring it out
-#ifdef FOOFAA
-            GRText( nullptr, positions[ii], dummy_color, txt, aText->GetTextAngle(), size,
-                    aText->GetHorizJustify(), aText->GetVertJustify(), penWidth, aText->IsItalic(),
-                    forceBold, addTextSegmToContainer,
-                    /* aCallbackData */ &outlineFont,
-                    /* aPlotter */ nullptr, &font );
-#else
-            drawTextFromAddShapeWithClearance( aText, aLayerId, positions[ii], txt, font );
-#endif
+            SHAPE_POLY_SET polyList;
+            transformGlyph( polyList, glyph, aText, aLayerId, lineWidth, ARC_HIGH_DEF,
+                            ERROR_INSIDE );
+            addPolygonAsTriangles( polyList, *aDstContainer, m_biuTo3Dunits, *aText );
         }
     }
     else
     {
-        txt = aText->GetShownText( 0, &font );
-#ifdef FOOFAA
-        bool outlineFont = KIGFX::FONT::IsOutline( font );
-        GRText( nullptr, aText->GetTextPos(), dummy_color, txt, aText->GetTextAngle(), size,
-                aText->GetHorizJustify(), aText->GetVertJustify(), penWidth, aText->IsItalic(),
-                forceBold, addTextSegmToContainer, &outlineFont, nullptr, &font );
-#else
-        drawTextFromAddShapeWithClearance( aText, aLayerId, aText->GetTextPos(), txt, font );
-#endif
+        wxSize size = aText->GetTextSize();
+
+        if( aText->IsMirrored() )
+            size.x = -size.x;
+
+        s_biuTo3Dunits = m_biuTo3Dunits;
+        s_boardItem = (const BOARD_ITEM*) &aText;
+        s_dstcontainer = aDstContainer;
+        s_textWidth = aText->GetEffectiveTextPenWidth() + ( 2 * aClearanceValue );
+
+        // not actually used, but needed by GRText
+        const COLOR4D dummy_color = COLOR4D::BLACK;
+        bool          forceBold = true;
+        int           penWidth = 0; // force max width for bold
+
+        if( aText->IsMultilineAllowed() )
+        {
+            wxArrayString strings_list;
+            wxStringSplit( aText->GetShownText( 0, &fontName ), strings_list, '\n' );
+            std::vector<wxPoint> positions;
+            positions.reserve( strings_list.Count() );
+            aText->GetLinePositions( positions, strings_list.Count() );
+
+            for( unsigned ii = 0; ii < strings_list.Count(); ++ii )
+            {
+                wxString txt = strings_list.Item( ii );
+
+                GRText( nullptr, positions[ii], dummy_color, txt, aText->GetTextAngle(), size,
+                        aText->GetHorizJustify(), aText->GetVertJustify(), penWidth,
+                        aText->IsItalic(), forceBold, addTextSegmToContainer, nullptr, nullptr,
+                        &fontName );
+            }
+        }
+        else
+        {
+            GRText( nullptr, aText->GetTextPos(), dummy_color, txt, aText->GetTextAngle(), size,
+                    aText->GetHorizJustify(), aText->GetVertJustify(), penWidth, aText->IsItalic(),
+                    forceBold, addTextSegmToContainer, nullptr, nullptr, &fontName );
+        }
     }
-#endif // BARBAR
 }
 
 
