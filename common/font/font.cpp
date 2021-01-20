@@ -42,55 +42,23 @@ const wxString& FONT::Name() const
     return m_fontName;
 }
 
-#if 0
-FONT& GAL::GetFont( const wxString* fontSpecifier )
+
+FONT* FONT::getDefaultFont()
 {
-
-    if( !fontSpecifier || fontSpecifier->empty() )
+    if( !s_defaultFont )
     {
-        return FONT::DefaultFont();
+        s_defaultFont = new STROKE_FONT();
+        s_defaultFont->LoadFont();
     }
 
-    FONT_MAP::iterator it = fontMap.find( *fontSpecifier );
-
-    if( it != fontMap.end() )
-    {
-        // already loaded
-        return *( it->second );
-    }
-    else
-    {
-        // try loading font
-        FONT* font = FONT::GetFont( *fontSpecifier );
-        if( font )
-        {
-            // save font for future use
-            fontMap[*fontSpecifier] = font;
-
-            // return the newly loaded font
-            return *font;
-        }
-        else
-        {
-            // font loading failed, default to Newstroke
-            return *defaultFont;
-        }
-    }
+    return s_defaultFont;
 }
-#endif
+
 
 FONT* FONT::GetFont( const wxString& aFontName )
 {
     if( aFontName.empty() )
-    {
-        if( !s_defaultFont )
-        {
-            s_defaultFont = new STROKE_FONT();
-            s_defaultFont->LoadFont(); // TODO: do something on failure
-        }
-
-        return s_defaultFont;
-    }
+        return getDefaultFont();
 
     FONT* font = s_fontMap[aFontName];
 
@@ -112,6 +80,7 @@ FONT* FONT::GetFont( const wxString& aFontName )
                 font = nullptr;
             }
         }
+
         if( font )
         {
             s_fontMap[aFontName] = font;
@@ -119,7 +88,7 @@ FONT* FONT::GetFont( const wxString& aFontName )
         else
         {
             // TODO: signal error? font was not found
-            return s_defaultFont;
+            return getDefaultFont();
         }
     }
 
