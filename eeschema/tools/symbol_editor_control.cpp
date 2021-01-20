@@ -73,8 +73,10 @@ bool SYMBOL_EDITOR_CONTROL::Init()
 
         ctxMenu.AddItem( ACTIONS::pinLibrary,            unpinnedLibSelectedCondition );
         ctxMenu.AddItem( ACTIONS::unpinLibrary,          pinnedLibSelectedCondition );
-        ctxMenu.AddSeparator();
 
+        ctxMenu.AddSeparator();
+        ctxMenu.AddItem( ACTIONS::newLibrary,            SELECTION_CONDITIONS::ShowAlways );
+        ctxMenu.AddItem( ACTIONS::addLibrary,            SELECTION_CONDITIONS::ShowAlways );
         ctxMenu.AddItem( ACTIONS::save,                  libSelectedCondition );
         ctxMenu.AddItem( EE_ACTIONS::saveLibraryAs,      libSelectedCondition );
         ctxMenu.AddItem( ACTIONS::revert,                libSelectedCondition );
@@ -86,14 +88,14 @@ bool SYMBOL_EDITOR_CONTROL::Init()
         ctxMenu.AddSeparator();
         ctxMenu.AddItem( ACTIONS::save,                  symbolSelectedCondition );
         ctxMenu.AddItem( EE_ACTIONS::saveSymbolAs,       symbolSelectedCondition );
-        ctxMenu.AddItem( EE_ACTIONS::duplicateSymbol,    symbolSelectedCondition );
-        ctxMenu.AddItem( EE_ACTIONS::deleteSymbol,       symbolSelectedCondition );
         ctxMenu.AddItem( ACTIONS::revert,                symbolSelectedCondition );
 
         ctxMenu.AddSeparator();
         ctxMenu.AddItem( EE_ACTIONS::cutSymbol,          symbolSelectedCondition );
         ctxMenu.AddItem( EE_ACTIONS::copySymbol,         symbolSelectedCondition );
-        ctxMenu.AddItem( EE_ACTIONS::pasteSymbol,        libSelectedCondition );
+        ctxMenu.AddItem( EE_ACTIONS::pasteSymbol,        SELECTION_CONDITIONS::ShowAlways );
+        ctxMenu.AddItem( EE_ACTIONS::duplicateSymbol,    symbolSelectedCondition );
+        ctxMenu.AddItem( EE_ACTIONS::deleteSymbol,       symbolSelectedCondition );
 
         ctxMenu.AddSeparator();
         ctxMenu.AddItem( EE_ACTIONS::importSymbol,       libSelectedCondition );
@@ -448,16 +450,16 @@ int SYMBOL_EDITOR_CONTROL::AddSymbolToSchematic( const TOOL_EVENT& aEvent )
 
         wxCHECK( part->GetLibId().IsValid(), 0 );
 
-        SCH_COMPONENT* comp = new SCH_COMPONENT( *part, libId, &schframe->GetCurrentSheet(), unit,
-                                                 convert );
+        SCH_COMPONENT* symbol = new SCH_COMPONENT( *part, libId, &schframe->GetCurrentSheet(),
+                                                   unit, convert );
 
-        comp->SetParent( schframe->GetCurrentSheet().LastScreen() );
+        symbol->SetParent( schframe->GetCurrentSheet().LastScreen() );
 
         if( schframe->eeconfig()->m_AutoplaceFields.enable )
-            comp->AutoplaceFields( /* aScreen */ nullptr, /* aManual */ false );
+            symbol->AutoplaceFields( /* aScreen */ nullptr, /* aManual */ false );
 
         schframe->Raise();
-        schframe->GetToolManager()->RunAction( EE_ACTIONS::placeSymbol, true, comp );
+        schframe->GetToolManager()->RunAction( EE_ACTIONS::placeSymbol, true, symbol );
     }
 
     return 0;

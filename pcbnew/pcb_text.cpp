@@ -114,7 +114,7 @@ wxString PCB_TEXT::GetShownText( int aDepth, wxString* fontSpecifier ) const
     wxString text = EDA_TEXT::GetShownText( &processTextVars );
 
     if( board && processTextVars && aDepth < 10 )
-        text = ExpandTextVars( text, &pcbTextResolver, board->GetProject(), &boardTextResolver );
+        text = ExpandTextVars( text, &pcbTextResolver, &boardTextResolver, board->GetProject() );
 
     return text;
 }
@@ -255,20 +255,22 @@ void PCB_TEXT::Flip( const wxPoint& aCentre, bool aFlipLeftRight )
         std::swap( top, bottom );
     }
 
-    // Now put the text back in it (these look backwards but remember that out text will
-    // be mirrored when all is said and done)
+    // Now put the text back in its bounding box
     switch( GetHorizJustify() )
     {
-    case GR_TEXT_HJUSTIFY_LEFT:   SetTextX( right );                break;
-    case GR_TEXT_HJUSTIFY_CENTER: SetTextX( ( left + right ) / 2 ); break;
-    case GR_TEXT_HJUSTIFY_RIGHT:  SetTextX( left );                 break;
+    case GR_TEXT_HJUSTIFY_LEFT:   SetTextX( IsMirrored() ? left : right ); break;
+    case GR_TEXT_HJUSTIFY_CENTER: SetTextX( ( left + right ) / 2 );        break;
+    case GR_TEXT_HJUSTIFY_RIGHT:  SetTextX( IsMirrored() ? right : left ); break;
     }
 
-    switch( GetVertJustify() )
+    if( !aFlipLeftRight )
     {
-    case GR_TEXT_VJUSTIFY_TOP:    SetTextY( bottom );               break;
-    case GR_TEXT_VJUSTIFY_CENTER: SetTextY( ( top + bottom ) / 2 ); break;
-    case GR_TEXT_VJUSTIFY_BOTTOM: SetTextY( top );                  break;
+        switch( GetVertJustify() )
+        {
+        case GR_TEXT_VJUSTIFY_TOP:    SetTextY( bottom );               break;
+        case GR_TEXT_VJUSTIFY_CENTER: SetTextY( ( top + bottom ) / 2 ); break;
+        case GR_TEXT_VJUSTIFY_BOTTOM: SetTextY( top );                  break;
+        }
     }
 
     // And restore orientation

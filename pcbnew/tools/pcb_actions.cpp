@@ -431,7 +431,7 @@ TOOL_ACTION PCB_ACTIONS::editTextAndGraphics( "pcbnew.GlobalEdit.editTextAndGrap
         AS_GLOBAL, 0, "",
         _( "Edit Text & Graphics Properties..." ),
         _( "Edit Text and graphics properties globally across board" ),
-        text_edit_xpm );
+        text_xpm );
 
 TOOL_ACTION PCB_ACTIONS::globalDeletions( "pcbnew.GlobalEdit.globalDeletions",
         AS_GLOBAL, 0, "",
@@ -1103,7 +1103,7 @@ TOOL_ACTION PCB_ACTIONS::distributeVertically( "pcbnew.AlignAndDistribute.distri
         _( "Distributes selected items along the vertical axis" ), distribute_vertical_xpm );
 
 
-// POINT_EDITOR
+// PCB_POINT_EDITOR
 //
 TOOL_ACTION PCB_ACTIONS::pointEditorAddCorner( "pcbnew.PointEditor.addCorner",
         AS_GLOBAL,

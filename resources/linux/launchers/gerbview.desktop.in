@@ -1,0 +1,11 @@
+[Desktop Entry]
+Version=1.0
+Terminal=false
+Icon=gerbview
+Type=Application
+Categories=Science;Electronics;
+Exec=gerbview
+MimeType=application/x-gerber;application/x-excellon
+Name=GerbView
+GenericName=Gerber File Viewer
+Comment=View Gerber files

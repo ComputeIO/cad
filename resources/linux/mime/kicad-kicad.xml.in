@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mime-info xmlns="http://www.freedesktop.org/standards/shared-mime-info">
+	<mime-type type="application/x-kicad-project">
+		<sub-class-of type="text/plain"/>
+		<comment>KiCad Project</comment>
+		<glob pattern="*.pro"/>
+		<glob pattern="*.kicad_pro"/>
+	</mime-type>
+	<mime-type type="application/x-kicad-schematic">
+		<sub-class-of type="text/plain"/>
+		<comment>KiCad Schematic</comment>
+		<glob pattern="*.sch"/>
+		<glob pattern="*.kicad_sch"/>
+	</mime-type>
+	<mime-type type="application/x-kicad-pcb">
+		<sub-class-of type="text/plain"/>
+		<comment>KiCad Printed Circuit Board</comment>
+		<glob pattern="*.kicad_pcb"/>
+	</mime-type>
+</mime-info>

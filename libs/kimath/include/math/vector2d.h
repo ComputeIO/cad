@@ -427,8 +427,8 @@ VECTOR2<T> VECTOR2<T>::Resize( T aNewLength ) const
             ( x < 0 ? -1 : 1 ) *
                 KiROUND( std::sqrt( rescale( l_sq_new, (extended_type) x * x, l_sq_current ) ) ),
             ( y < 0 ? -1 : 1 ) *
-                KiROUND( std::sqrt( rescale( l_sq_new, (extended_type) y * y, l_sq_current ) ) )
-                    * sign( aNewLength ) );
+                KiROUND( std::sqrt( rescale( l_sq_new, (extended_type) y * y, l_sq_current ) ) ) )
+                    * sign( aNewLength );
     }
     else
     {
@@ -506,8 +506,10 @@ VECTOR2<T> VECTOR2<T>::operator*( const T& aFactor ) const
 template <class T>
 VECTOR2<T> VECTOR2<T>::operator/( const T& aFactor ) const
 {
-    VECTOR2<T> vector( KiROUND( x / aFactor ), KiROUND( y / aFactor ) );
-    return vector;
+    if( std::is_integral<T>::value )
+        return VECTOR2<T>( KiROUND( x / aFactor ), KiROUND( y / aFactor ) );
+    else
+        return VECTOR2<T>( x / aFactor, y / aFactor );
 }
 
 

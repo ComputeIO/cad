@@ -265,7 +265,12 @@ public:
 class CONTEXT
 {
 public:
-    CONTEXT() : m_stackPtr( 0 ) { m_ownedValues.reserve( 20 ); }
+    CONTEXT() :
+        m_stack(),
+        m_stackPtr( 0 )
+    {
+        m_ownedValues.reserve( 20 );
+    }
 
     virtual ~CONTEXT()
     {

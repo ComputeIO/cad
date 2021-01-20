@@ -1828,23 +1828,28 @@ void CONNECTION_GRAPH::propagateToNeighbors( CONNECTION_SUBGRAPH* aSubgraph )
     {
         for( CONNECTION_SUBGRAPH* subgraph : visited )
         {
+            if( subgraph == original )
+                continue;
+
             CONNECTION_SUBGRAPH::PRIORITY priority =
                     CONNECTION_SUBGRAPH::GetDriverPriority( subgraph->m_driver );
 
             bool     candidateStrong = ( priority >= CONNECTION_SUBGRAPH::PRIORITY::HIER_LABEL );
-            wxString candidateName = subgraph->m_driver_connection->Name();
+            wxString candidateName   = subgraph->m_driver_connection->Name();
+            bool     shorterPath     = subgraph->m_sheet.size() < original->m_sheet.size();
+            bool     asGoodPath      = subgraph->m_sheet.size() <= original->m_sheet.size();
 
             // Pick a better driving subgraph if it:
             // a) has a power pin or global driver
             // b) is a strong driver and we're a weak driver
             // c) meets or exceeds our priority, is a strong driver, and has a shorter path
-            // d) is weak, we're week, and is alphabetically lower
+            // d) matches our strength and is at least as short, and is alphabetically lower
 
-            if( ( priority >= CONNECTION_SUBGRAPH::PRIORITY::POWER_PIN )
-                || ( !originalStrong && candidateStrong )
-                || ( priority >= highest && candidateStrong
-                     && subgraph->m_sheet.size() < original->m_sheet.size() )
-                || ( ( originalStrong == candidateStrong ) && candidateName < originalName ) )
+            if( ( priority >= CONNECTION_SUBGRAPH::PRIORITY::POWER_PIN ) ||
+                ( !originalStrong && candidateStrong ) ||
+                ( priority >= highest && candidateStrong && shorterPath ) ||
+                ( ( originalStrong == candidateStrong ) && asGoodPath &&
+                  ( candidateName < originalName ) ) )
             {
                 original = subgraph;
                 highest = priority;
@@ -2138,7 +2143,8 @@ int CONNECTION_GRAPH::RunERC()
         if( seenDriverInstances.count( subgraph->m_driver ) )
             continue;
 
-        seenDriverInstances.insert( subgraph->m_driver );
+        if( subgraph->m_driver )
+            seenDriverInstances.insert( subgraph->m_driver );
 
         /**
          * NOTE:
@@ -2368,6 +2374,12 @@ bool CONNECTION_GRAPH::ercCheckBusToBusEntryConflicts( const CONNECTION_SUBGRAPH
     SCH_BUS_WIRE_ENTRY* bus_entry = nullptr;
     SCH_ITEM* bus_wire = nullptr;
     wxString bus_name;
+
+    if( !aSubgraph->m_driver_connection )
+    {
+        // Incomplete bus entry.  Let the unconnected tests handle it.
+        return true;
+    }
 
     for( auto item : aSubgraph->m_items )
     {
@@ -2626,7 +2638,7 @@ bool CONNECTION_GRAPH::ercCheckFloatingWires( const CONNECTION_SUBGRAPH* aSubgra
     if( aSubgraph->m_driver )
         return true;
 
-    std::vector<SCH_LINE*> wires;
+    std::vector<SCH_ITEM*> wires;
 
     // We've gotten this far, so we know we have no valid driver.  All we need to do is check
     // for a wire that we can place the error on.
@@ -2634,7 +2646,9 @@ bool CONNECTION_GRAPH::ercCheckFloatingWires( const CONNECTION_SUBGRAPH* aSubgra
     for( SCH_ITEM* item : aSubgraph->m_items )
     {
         if( item->Type() == SCH_LINE_T && item->GetLayer() == LAYER_WIRE )
-            wires.emplace_back( static_cast<SCH_LINE*>( item ) );
+            wires.emplace_back( item );
+        else if( item->Type() == SCH_BUS_WIRE_ENTRY_T )
+            wires.emplace_back( item );
     }
 
     if( !wires.empty() )
@@ -2666,6 +2680,9 @@ bool CONNECTION_GRAPH::ercCheckLabels( const CONNECTION_SUBGRAPH* aSubgraph )
 
     // So, if there is a no-connect, we will never generate a warning here
     if( aSubgraph->m_no_connect )
+        return true;
+
+    if( !aSubgraph->m_driver_connection )
         return true;
 
     // Buses are excluded from this test: many users create buses with only a single instance

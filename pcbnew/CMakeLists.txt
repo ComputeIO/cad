@@ -35,6 +35,7 @@ include_directories(
     ${CMAKE_SOURCE_DIR}/common
     ${CMAKE_SOURCE_DIR}/common/dialogs
     ./exporters
+    ./importers
     ${CMAKE_SOURCE_DIR}/utils/idftools
     ./specctra_import_export
     ${INC_AFTER}
@@ -342,7 +343,7 @@ set( PCBNEW_CLASS_SRCS
     tools/pcb_selection_tool.cpp
     tools/pcb_tool_base.cpp
     tools/placement_tool.cpp
-    tools/point_editor.cpp
+    tools/pcb_point_editor.cpp
     tools/position_relative_tool.cpp
     tools/tool_event_utils.cpp
     tools/zone_create_helper.cpp
@@ -606,8 +607,9 @@ endif()
 add_subdirectory( plugins/pcad )
 add_subdirectory( plugins/altium )
 add_subdirectory( plugins/cadstar )
+add_subdirectory( plugins/fabmaster )
 
-set( PCBNEW_IO_LIBRARIES pcad2kicadpcb altium2pcbnew cadstar2pcbnew CACHE INTERNAL "")
+set( PCBNEW_IO_LIBRARIES pcad2kicadpcb altium2pcbnew cadstar2pcbnew fabmaster CACHE INTERNAL "")
 
 # a very small program launcher for pcbnew_kiface
 add_executable( pcbnew WIN32 MACOSX_BUNDLE

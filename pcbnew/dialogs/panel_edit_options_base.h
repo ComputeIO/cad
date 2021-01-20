@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////
-// C++ code generated with wxFormBuilder (version 3.9.0 Dec 30 2020)
+// C++ code generated with wxFormBuilder (version Oct 26 2018)
 // http://www.wxformbuilder.org/
 //
 // PLEASE DO *NOT* EDIT THIS FILE!
@@ -16,9 +16,9 @@
 #include <wx/font.h>
 #include <wx/colour.h>
 #include <wx/settings.h>
+#include <wx/sizer.h>
 #include <wx/stattext.h>
 #include <wx/textctrl.h>
-#include <wx/sizer.h>
 #include <wx/statbox.h>
 #include <wx/statline.h>
 #include <wx/panel.h>
@@ -43,9 +43,9 @@ class PANEL_EDIT_OPTIONS_BASE : public wxPanel
 
 		wxCheckBox* m_magneticPads;
 		wxCheckBox* m_magneticGraphics;
-		wxCheckBox* m_segments45OnlyCtrl;
+		wxCheckBox* m_autoLockPads;
 		wxCheckBox* m_flipLeftRight;
-		wxCheckBox* m_addUnlockedPads;
+		wxCheckBox* m_segments45OnlyCtrl;
 		wxStaticText* m_staticTextRotationAngle;
 		wxTextCtrl* m_rotationAngle;
 		wxStaticBoxSizer* m_mouseCmdsWinLin;

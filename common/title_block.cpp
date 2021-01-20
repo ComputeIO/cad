@@ -116,8 +116,8 @@ bool TITLE_BLOCK::TextVarResolver( wxString* aToken, const PROJECT* aProject ) c
 
     if( tokenUpdated )
     {
-        *aToken = ExpandTextVars( *aToken, nullptr, aProject );
-        return true;
+       *aToken = ExpandTextVars( *aToken, aProject );
+       return true;
     }
 
     return false;

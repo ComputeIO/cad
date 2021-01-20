@@ -1,0 +1,11 @@
+[Desktop Entry]
+Version=1.0
+Terminal=false
+Icon=pcbnew
+Type=Application
+Categories=Science;Electronics;
+Exec=pcbnew %f
+MimeType=application/x-kicad-pcb;
+Name=Pcbnew (Standalone)
+GenericName=PCB layout
+Comment=KiCad printed circuit board layout (standalone)

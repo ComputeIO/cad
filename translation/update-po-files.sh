@@ -61,11 +61,11 @@ POTDIRS=`cat $LOCALDIR/POTDIRS|grep -v '^#'|grep -v '^\s*$'` #Read file without 
 cd $SOURCEDIR
 
 #Generate/update template pot file
-find $POTDIRS -name '*.cpp' -or -name '*.h' |
+find $POTDIRS -name '*.cpp' -or -name '*.h' -or -name '*.xml.in' -or -name '*.desktop.in' |
   sort |
-  xgettext -f- -k_ -k_HKI -kwxPLURAL:1,2 --force-po --from-code utf-8 -o $LOCALDIR/kicad.pot
+  xgettext -f- -k_ -k_HKI -kwxPLURAL:1,2 --force-po --from-code utf-8 -o $LOCALDIR/pofiles/kicad.pot
 
-LINGUAS=`cat $LOCALDIR/LINGUAS|grep -v '^#'|grep -v '^\s*$'` #Read file without comment and empty lines
+LINGUAS=`cat $LOCALDIR/pofiles/LINGUAS|grep -v '^#'|grep -v '^\s*$'` #Read file without comment and empty lines
 
 #check if present in locale list
 validate() { echo $LINGUAS | grep -F -q -w "$1"; }
@@ -93,12 +93,12 @@ for i in $LINGUAS
 do
   echo "## $i"
   if [ "$i" = "en" ] ; then
-    msgmerge --no-location --no-fuzzy-matching --force-po $LOCALDIR/$i/kicad.po $LOCALDIR/kicad.pot -o $LOCALDIR/$i/kicad.po 2> /dev/null
-    msgen $LOCALDIR/$i/kicad.po -o $LOCALDIR/$i/kicad.po.tmp && mv $LOCALDIR/$i/kicad.po.tmp $LOCALDIR/$i/kicad.po
+    msgmerge --no-location --no-fuzzy-matching --force-po $LOCALDIR/pofiles/$i.po $LOCALDIR/pofiles/kicad.pot -o $LOCALDIR/pofiles/$i.po 2> /dev/null
+    msgen $LOCALDIR/pofiles/$i.po -o $LOCALDIR/pofiles/$i.po.tmp && mv $LOCALDIR/pofiles/$i.po.tmp $LOCALDIR/pofiles/$i.po
   else
-    msgmerge --force-po $LOCALDIR/$i/kicad.po $LOCALDIR/kicad.pot -o $LOCALDIR/$i/kicad.po 2> /dev/null
+    msgmerge --force-po $LOCALDIR/pofiles/$i.po $LOCALDIR/pofiles/kicad.pot -o $LOCALDIR/pofiles/$i.po 2> /dev/null
   fi
-  msgfmt --statistics $LOCALDIR/$i/kicad.po -o $LOCALDIR/messages.mo 2>&1 >>/dev/null |
+  msgfmt --statistics $LOCALDIR/pofiles/$i.po -o $LOCALDIR/pofiles/messages.mo 2>&1 >>/dev/null |
     while IFS=",." read A B C D ; do
       echo $A
       echo $B
@@ -127,7 +127,7 @@ do
       done
       echo "$i;${TRANSLATED};${FUZZY};${UNTRANSLATED}">>"${CSVFILE}"
     done
-    rm $LOCALDIR/messages.mo
+    rm $LOCALDIR/pofiles/messages.mo
 done
 
 if [ "$PLOT" = "1" ]; then
@@ -136,5 +136,5 @@ if [ "$PLOT" = "1" ]; then
 fi
 
 if [ ! "$KEEP" = "1" ]; then
-  rm $LOCALDIR/kicad.pot
+  rm $LOCALDIR/pofiles/kicad.pot
 fi

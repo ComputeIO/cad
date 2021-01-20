@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////
-// C++ code generated with wxFormBuilder (version 3.9.0 Dec 30 2020)
+// C++ code generated with wxFormBuilder (version Oct 26 2018)
 // http://www.wxformbuilder.org/
 //
 // PLEASE DO *NOT* EDIT THIS FILE!
@@ -23,33 +23,39 @@ PANEL_EDIT_OPTIONS_BASE::PANEL_EDIT_OPTIONS_BASE( wxWindow* parent, wxWindowID i
 	wxStaticBoxSizer* bOptionsSizer;
 	bOptionsSizer = new wxStaticBoxSizer( new wxStaticBox( this, wxID_ANY, _("Editing Options") ), wxVERTICAL );
 
+	wxBoxSizer* bSizeFPEdit;
+	bSizeFPEdit = new wxBoxSizer( wxVERTICAL );
+
 	m_magneticPads = new wxCheckBox( bOptionsSizer->GetStaticBox(), wxID_ANY, _("Magnetic pads"), wxDefaultPosition, wxDefaultSize, 0 );
-	bOptionsSizer->Add( m_magneticPads, 0, wxRIGHT|wxLEFT, 5 );
-
-
-	bOptionsSizer->Add( 0, 3, 0, wxEXPAND, 5 );
+	bSizeFPEdit->Add( m_magneticPads, 0, wxBOTTOM, 3 );
 
 	m_magneticGraphics = new wxCheckBox( bOptionsSizer->GetStaticBox(), wxID_ANY, _("Magnetic graphics"), wxDefaultPosition, wxDefaultSize, 0 );
-	bOptionsSizer->Add( m_magneticGraphics, 0, wxBOTTOM|wxRIGHT|wxLEFT, 5 );
+	bSizeFPEdit->Add( m_magneticGraphics, 0, wxBOTTOM, 15 );
 
 
-	bOptionsSizer->Add( 0, 6, 0, wxEXPAND, 5 );
+	bOptionsSizer->Add( bSizeFPEdit, 0, wxEXPAND|wxRIGHT|wxLEFT, 5 );
 
-	m_segments45OnlyCtrl = new wxCheckBox( bOptionsSizer->GetStaticBox(), wxID_SEGMENTS45, _("L&imit graphic lines to H, V and 45 degrees"), wxDefaultPosition, wxDefaultSize, 0 );
-	m_segments45OnlyCtrl->SetToolTip( _("Force line segment directions to H, V or 45 degrees when drawing on technical layers.") );
+	wxBoxSizer* bSizerBoardEdit;
+	bSizerBoardEdit = new wxBoxSizer( wxVERTICAL );
 
-	bOptionsSizer->Add( m_segments45OnlyCtrl, 0, wxALL, 5 );
+	m_autoLockPads = new wxCheckBox( bOptionsSizer->GetStaticBox(), wxID_ANY, _("Lock pads of newly added footprints"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_autoLockPads->SetToolTip( _("If checked, when a footprint is added to the board, the pads will be freely moveable.") );
 
-
-	bOptionsSizer->Add( 0, 6, 0, wxEXPAND, 5 );
+	bSizerBoardEdit->Add( m_autoLockPads, 0, wxBOTTOM, 15 );
 
 	m_flipLeftRight = new wxCheckBox( bOptionsSizer->GetStaticBox(), wxID_ANY, _("Flip board items L/R (default is T/B)"), wxDefaultPosition, wxDefaultSize, 0 );
-	bOptionsSizer->Add( m_flipLeftRight, 0, wxALL, 5 );
+	bSizerBoardEdit->Add( m_flipLeftRight, 0, wxBOTTOM, 15 );
 
-	m_addUnlockedPads = new wxCheckBox( bOptionsSizer->GetStaticBox(), wxID_ANY, _("Add footprints with pads unlocked"), wxDefaultPosition, wxDefaultSize, 0 );
-	m_addUnlockedPads->SetToolTip( _("If checked, when a footprint is added to the board, the pads will be freely moveable.") );
 
-	bOptionsSizer->Add( m_addUnlockedPads, 0, wxALL, 5 );
+	bOptionsSizer->Add( bSizerBoardEdit, 0, wxEXPAND|wxRIGHT|wxLEFT, 5 );
+
+	wxBoxSizer* bSizerUniversal;
+	bSizerUniversal = new wxBoxSizer( wxVERTICAL );
+
+	m_segments45OnlyCtrl = new wxCheckBox( bOptionsSizer->GetStaticBox(), wxID_SEGMENTS45, _("L&imit graphic lines to H, V and 45 degrees"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_segments45OnlyCtrl->SetToolTip( _("When drawing graphic lines force to horizontal, vertical, or 45 degrees.") );
+
+	bSizerUniversal->Add( m_segments45OnlyCtrl, 0, wxBOTTOM, 3 );
 
 	wxFlexGridSizer* fgSizer12;
 	fgSizer12 = new wxFlexGridSizer( 0, 2, 0, 0 );
@@ -59,7 +65,7 @@ PANEL_EDIT_OPTIONS_BASE::PANEL_EDIT_OPTIONS_BASE( wxWindow* parent, wxWindowID i
 
 	m_staticTextRotationAngle = new wxStaticText( bOptionsSizer->GetStaticBox(), wxID_ANY, _("&Rotation angle:"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_staticTextRotationAngle->Wrap( -1 );
-	fgSizer12->Add( m_staticTextRotationAngle, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
+	fgSizer12->Add( m_staticTextRotationAngle, 0, wxALIGN_CENTER_VERTICAL|wxTOP|wxBOTTOM|wxRIGHT, 5 );
 
 	m_rotationAngle = new wxTextCtrl( bOptionsSizer->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
 	m_rotationAngle->SetToolTip( _("Set increment (in degrees) for context menu and hotkey rotation.") );
@@ -67,7 +73,10 @@ PANEL_EDIT_OPTIONS_BASE::PANEL_EDIT_OPTIONS_BASE( wxWindow* parent, wxWindowID i
 	fgSizer12->Add( m_rotationAngle, 0, wxALIGN_CENTER_VERTICAL|wxALL|wxEXPAND, 5 );
 
 
-	bOptionsSizer->Add( fgSizer12, 0, wxEXPAND|wxTOP, 5 );
+	bSizerUniversal->Add( fgSizer12, 0, wxEXPAND, 5 );
+
+
+	bOptionsSizer->Add( bSizerUniversal, 0, wxEXPAND|wxRIGHT|wxLEFT, 5 );
 
 
 	bMiddleLeftSizer->Add( bOptionsSizer, 0, wxEXPAND|wxTOP|wxRIGHT|wxLEFT, 5 );
@@ -300,7 +309,7 @@ PANEL_EDIT_OPTIONS_BASE::PANEL_EDIT_OPTIONS_BASE( wxWindow* parent, wxWindowID i
 	sbMagnets->Add( fgSizer2, 1, wxEXPAND|wxBOTTOM, 5 );
 
 
-	pcbOptionsSizer->Add( sbMagnets, 1, wxEXPAND, 5 );
+	pcbOptionsSizer->Add( sbMagnets, 0, wxEXPAND, 5 );
 
 	wxStaticBoxSizer* sbSizer3;
 	sbSizer3 = new wxStaticBoxSizer( new wxStaticBox( pcbPage, wxID_ANY, _("Ratsnest") ), wxVERTICAL );
@@ -312,7 +321,7 @@ PANEL_EDIT_OPTIONS_BASE::PANEL_EDIT_OPTIONS_BASE( wxWindow* parent, wxWindowID i
 	sbSizer3->Add( m_OptDisplayCurvedRatsnestLines, 0, wxBOTTOM|wxRIGHT|wxLEFT, 5 );
 
 
-	pcbOptionsSizer->Add( sbSizer3, 1, wxEXPAND|wxTOP, 5 );
+	pcbOptionsSizer->Add( sbSizer3, 0, wxEXPAND|wxTOP, 5 );
 
 	wxStaticBoxSizer* sbSizer4;
 	sbSizer4 = new wxStaticBoxSizer( new wxStaticBox( pcbPage, wxID_ANY, _("Annotations") ), wxVERTICAL );
@@ -322,7 +331,7 @@ PANEL_EDIT_OPTIONS_BASE::PANEL_EDIT_OPTIONS_BASE( wxWindow* parent, wxWindowID i
 	sbSizer4->Add( m_Show_Page_Limits, 0, wxBOTTOM|wxRIGHT|wxLEFT, 5 );
 
 
-	pcbOptionsSizer->Add( sbSizer4, 0, wxEXPAND|wxTOP, 5 );
+	pcbOptionsSizer->Add( sbSizer4, 1, wxEXPAND|wxTOP, 5 );
 
 	wxStaticBoxSizer* sbSizer41;
 	sbSizer41 = new wxStaticBoxSizer( new wxStaticBox( pcbPage, wxID_ANY, _("Track Editing") ), wxVERTICAL );
@@ -333,29 +342,29 @@ PANEL_EDIT_OPTIONS_BASE::PANEL_EDIT_OPTIONS_BASE( wxWindow* parent, wxWindowID i
 
 	sbSizer41->Add( m_staticText5, 0, wxBOTTOM|wxRIGHT|wxLEFT, 3 );
 
+	wxBoxSizer* bSizer8;
+	bSizer8 = new wxBoxSizer( wxVERTICAL );
+
 	m_rbTrackDragMove = new wxRadioButton( sbSizer41->GetStaticBox(), wxID_ANY, _("Move"), wxDefaultPosition, wxDefaultSize, wxRB_GROUP );
 	m_rbTrackDragMove->SetToolTip( _("Moves the track segment without moving connected tracks") );
 
-	sbSizer41->Add( m_rbTrackDragMove, 0, wxRIGHT|wxLEFT, 5 );
-
-
-	sbSizer41->Add( 0, 5, 0, wxEXPAND, 5 );
+	bSizer8->Add( m_rbTrackDragMove, 0, wxBOTTOM, 3 );
 
 	m_rbTrackDrag45 = new wxRadioButton( sbSizer41->GetStaticBox(), wxID_ANY, _("Drag (45 degree mode)"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_rbTrackDrag45->SetToolTip( _("Drags the track segment while keeping connected tracks at 45 degrees.") );
 
-	sbSizer41->Add( m_rbTrackDrag45, 0, wxRIGHT|wxLEFT, 5 );
-
-
-	sbSizer41->Add( 0, 5, 0, wxEXPAND, 5 );
+	bSizer8->Add( m_rbTrackDrag45, 0, wxBOTTOM, 3 );
 
 	m_rbTrackDragFree = new wxRadioButton( sbSizer41->GetStaticBox(), wxID_ANY, _("Drag (free angle)"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_rbTrackDragFree->SetToolTip( _("Drags the nearest joint in the track without restricting the track angle.") );
 
-	sbSizer41->Add( m_rbTrackDragFree, 0, wxBOTTOM|wxRIGHT|wxLEFT, 5 );
+	bSizer8->Add( m_rbTrackDragFree, 0, 0, 3 );
 
 
-	pcbOptionsSizer->Add( sbSizer41, 1, wxEXPAND|wxTOP, 5 );
+	sbSizer41->Add( bSizer8, 0, wxEXPAND|wxBOTTOM|wxRIGHT|wxLEFT, 5 );
+
+
+	pcbOptionsSizer->Add( sbSizer41, 0, wxEXPAND|wxTOP, 5 );
 
 
 	pcbPage->SetSizer( pcbOptionsSizer );

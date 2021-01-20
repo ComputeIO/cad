@@ -106,6 +106,7 @@ set( BMAPS_SMALL
     small_refresh
     small_trash
     small_up
+    small_warning
     tree_nosel
     tree_sel
     triangle_down
@@ -116,7 +117,7 @@ set( BMAPS_SMALL
     )
 
 
-# image basenames that go into the toolbar sized destinations, i.e. 26x26
+# image basenames that go into the toolbar sized destinations, i.e. 24x24
 set( BMAPS_MID
     about
     add_aligned_dimension
@@ -426,12 +427,6 @@ set( BMAPS_MID
     sim_settings
     search_tree
     set_origin
-    setcolor_3d_bg
-    setcolor_silkscreen
-    setcolor_soldermask
-    setcolor_solderpaste
-    setcolor_copper
-    setcolor_board_body
     show_dcodenumber
     show_footprint
     show_mod_edge
@@ -453,7 +448,6 @@ set( BMAPS_MID
     swap_layer
     switch_corner_rounding_shape
     text
-    text_edit
     text_sketch
     three_d
     tool_ratsnest
@@ -610,7 +604,7 @@ function( svg2png inputFile outFile pngWidth pngHeight )
     add_custom_command(
         OUTPUT ${outFile}
         # this Inkscape command line is for old Inkscape version < 1.0
-        # COMMAND ${Inkscape_EXECUTABLE} --without-gui --export-area-snap -f ${inputFile} --export-png ${outFile}
+        # COMMAND ${Inkscape_EXECUTABLE} --without-gui --export-area-snap -f ${inputFile} --export-png ${outFile} -w ${pngWidth} -h ${pngHeight} > ${logfile}
 
         # this Inkscape command line is for Inkscape >= 1.0
         COMMAND ${Inkscape_EXECUTABLE} --export-area-snap --export-type="png" ${inputFile} --export-filename ${outFile}

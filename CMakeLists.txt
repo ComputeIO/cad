@@ -98,6 +98,14 @@ option( KICAD_SPICE
     "Build KiCad with internal Spice simulator."
     ON )
 
+option( KICAD_BUILD_I18N
+    "Build the translation libraries."
+    OFF )
+
+option( KICAD_I18N_UNIX_STRICT_PATH
+    "Use standard Unix locale lookup path (default OFF)."
+    OFF )
+
 # Not supported by all platforms (for instance mingw)
 option( KICAD_SANITIZE
     "Build KiCad with sanitizer options. WARNING: Not compatible with gold linker"
@@ -614,6 +622,10 @@ include( ExternalProject )
 #================================================
 include( CheckFindPackageResult )
 
+if( KICAD_BUILD_I18N )
+    find_package( Gettext REQUIRED )
+endif()
+
 #
 # Find OpenGL library, required
 #
@@ -969,16 +981,6 @@ add_custom_target( uninstall
     "${CMAKE_COMMAND}" -P "${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake" )
 
 
-#################################################
-# Generate platform metadata files
-#################################################
-if( APPLE )
-    include( ${CMAKE_MODULE_PATH}/WritePlatformMetadata_macos.cmake )
-elseif( UNIX )
-    include( ${CMAKE_MODULE_PATH}/WritePlatformMetadata_linux.cmake )
-endif()
-
-
 #================================================
 # Installation
 #================================================
@@ -994,45 +996,6 @@ if( UNIX AND NOT APPLE )
         )
 endif()
 
-###
-# FreeDesktop .desktop and MIME resources
-###
-if( UNIX AND NOT APPLE )
-
-    # Set paths
-    set( UNIX_MIME_DIR resources/linux/mime )
-    set( UNIX_MIME_FILES ${UNIX_MIME_DIR}/mime )
-    set( UNIX_ICON_FILES ${UNIX_MIME_DIR}/icons )
-    set( UNIX_APPLICATIONS_FILES ${UNIX_MIME_DIR}/applications )
-    set( UNIX_APPDATA_FILES ${PROJECT_BINARY_DIR}/resources/linux/appdata )
-
-    # Install Mime directory
-    install( DIRECTORY ${UNIX_ICON_FILES}
-        DESTINATION share
-        COMPONENT resources
-        )
-
-    # Install Icons
-    install( DIRECTORY ${UNIX_MIME_FILES}
-        DESTINATION share
-        COMPONENT resources
-        )
-
-    # Install Applications directory (.desktop files)
-    install( DIRECTORY ${UNIX_APPLICATIONS_FILES}
-        DESTINATION share
-        COMPONENT resources
-        )
-
-    # Install AppStream directory (app store entry)
-    install( DIRECTORY ${UNIX_APPDATA_FILES}
-        DESTINATION share
-        COMPONENT resources
-        FILES_MATCHING
-        PATTERN "*appdata.xml"
-        PATTERN "*.in" EXCLUDE
-        )
-endif()
 
 include( CTest )
 enable_testing()
@@ -1059,6 +1022,7 @@ endif()
 #================================================
 
 # Binaries ( CMake targets )
+add_subdirectory( resources )
 add_subdirectory( thirdparty )
 add_subdirectory( bitmaps_png )
 add_subdirectory( libs )
@@ -1077,8 +1041,14 @@ add_subdirectory( tools )
 add_subdirectory( utils )
 add_subdirectory( qa )
 
-# Resources
-if ( KICAD_INSTALL_DEMOS )
-add_subdirectory( demos )
+# Demos
+if( KICAD_INSTALL_DEMOS )
+    add_subdirectory( demos )
 endif ( KICAD_INSTALL_DEMOS )
+
+# I18n Translations
+if( KICAD_BUILD_I18N )
+    add_subdirectory( translation )
+endif()
+
 add_subdirectory( template )

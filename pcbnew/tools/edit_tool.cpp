@@ -42,7 +42,7 @@
 #include <tools/edit_tool.h>
 #include <tools/pcb_picker_tool.h>
 #include <tools/tool_event_utils.h>
-#include <tools/grid_helper.h>
+#include <tools/pcb_grid_helper.h>
 #include <tools/pad_tool.h>
 #include <pad_naming.h>
 #include <view/view_controls.h>
@@ -143,11 +143,14 @@ bool EDIT_TOOL::Init()
     menu.AddItem( PCB_ACTIONS::flip, SELECTION_CONDITIONS::NotEmpty );
     menu.AddItem( PCB_ACTIONS::mirror, inFootprintEditor && SELECTION_CONDITIONS::NotEmpty );
 
-    menu.AddItem( ACTIONS::doDelete, SELECTION_CONDITIONS::NotEmpty );
     menu.AddItem( PCB_ACTIONS::properties, SELECTION_CONDITIONS::Count( 1 )
                       || SELECTION_CONDITIONS::OnlyTypes( GENERAL_COLLECTOR::Tracks ) );
 
-    menu.AddItem( ACTIONS::duplicate, SELECTION_CONDITIONS::NotEmpty );
+    // Footprint actions
+    menu.AddSeparator();
+    menu.AddItem( PCB_ACTIONS::editFpInFpEditor, singleFootprintCondition );
+    menu.AddItem( PCB_ACTIONS::updateFootprint, singleFootprintCondition );
+    menu.AddItem( PCB_ACTIONS::changeFootprint, singleFootprintCondition );
 
     // Add the submenu for create array and special move
     auto specialToolsSubMenu = std::make_shared<SPECIAL_TOOLS_CONTEXT_MENU>( this );
@@ -161,13 +164,11 @@ bool EDIT_TOOL::Init()
     // Selection tool handles the context menu for some other tools, such as the Picker.
     // Don't add things like Paste when another tool is active.
     menu.AddItem( ACTIONS::paste, noActiveToolCondition, 150 );
-    menu.AddItem( ACTIONS::selectAll, noItemsCondition, 150 );
+    menu.AddItem( ACTIONS::duplicate, SELECTION_CONDITIONS::NotEmpty, 150 );
+    menu.AddItem( ACTIONS::doDelete, SELECTION_CONDITIONS::NotEmpty, 150 );
 
-    // Footprint actions
     menu.AddSeparator( 150 );
-    menu.AddItem( PCB_ACTIONS::editFpInFpEditor, singleFootprintCondition, 150 );
-    menu.AddItem( PCB_ACTIONS::updateFootprint, singleFootprintCondition, 150 );
-    menu.AddItem( PCB_ACTIONS::changeFootprint, singleFootprintCondition, 150 );
+    menu.AddItem( ACTIONS::selectAll, noItemsCondition, 150 );
 
     return true;
 }
@@ -396,7 +397,7 @@ int EDIT_TOOL::doMoveSelection( TOOL_EVENT aEvent, bool aPickReference )
 
     bool        restore_state = false;
     VECTOR2I    totalMovement;
-    GRID_HELPER grid( m_toolMgr, editFrame->GetMagneticItemsSettings() );
+    PCB_GRID_HELPER grid( m_toolMgr, editFrame->GetMagneticItemsSettings() );
     TOOL_EVENT* evt = const_cast<TOOL_EVENT*>( &aEvent );
     VECTOR2I    prevPos;
 
@@ -1943,7 +1944,7 @@ int EDIT_TOOL::copyToClipboard( const TOOL_EVENT& aEvent )
 {
     std::string  tool = "pcbnew.InteractiveEdit.selectReferencePoint";
     CLIPBOARD_IO io;
-    GRID_HELPER grid( m_toolMgr, getEditFrame<PCB_BASE_EDIT_FRAME>()->GetMagneticItemsSettings() );
+    PCB_GRID_HELPER grid( m_toolMgr, getEditFrame<PCB_BASE_EDIT_FRAME>()->GetMagneticItemsSettings() );
 
     frame()->PushTool( tool );
     Activate();
@@ -2030,5 +2031,3 @@ void EDIT_TOOL::setTransitions()
     Go( &EDIT_TOOL::copyToClipboard,     PCB_ACTIONS::copyWithReference.MakeEvent() );
     Go( &EDIT_TOOL::cutToClipboard,      ACTIONS::cut.MakeEvent() );
 }
-
-
