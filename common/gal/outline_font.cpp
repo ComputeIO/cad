@@ -38,7 +38,7 @@ using namespace KIGFX;
 
 FT_Library OUTLINE_FONT::mFreeType = nullptr;
 
-OUTLINE_FONT::OUTLINE_FONT() : mReferencedFont( nullptr )
+OUTLINE_FONT::OUTLINE_FONT()
 {
     if( !mFreeType )
     {
@@ -101,7 +101,14 @@ FT_Error OUTLINE_FONT::loadFace( const wxString& aFontFileName )
 {
     // TODO: check that going from wxString to char* with UTF-8
     // conversion for filename makes sense on any/all platforms
-    return FT_New_Face( mFreeType, aFontFileName.mb_str( wxConvUTF8 ), 0, &mFace );
+    FT_Error e = FT_New_Face( mFreeType, aFontFileName.mb_str( wxConvUTF8 ), 0, &mFace );
+
+    if( e )
+    {
+        std::cerr << "loadFace( " << aFontFileName << " ) failed with error " << e << std::endl;
+    }
+
+    return e;
 }
 
 
@@ -136,12 +143,6 @@ void OUTLINE_FONT::Draw( GAL* aGal, const UTF8& aText, const VECTOR2D& aPosition
     // TODO: come up with a non-arbitrary default (and/or use a better
     // value for H/V reso)
     FT_Set_Char_Size( mFace, 0, 16 * 64, 0, 0 );
-
-    if( !mReferencedFont )
-    {
-        mReferencedFont = hb_ft_font_create_referenced( mFace );
-        hb_ft_font_set_funcs( mReferencedFont );
-    }
 
     // Context needs to be saved before any transformations
     aGal->Save();
@@ -263,8 +264,10 @@ void OUTLINE_FONT::GetTextAsPolygon( std::vector<SHAPE_POLY_SET>& aGlyphs, const
     unsigned int         glyphCount;
     hb_glyph_info_t*     glyphInfo = hb_buffer_get_glyph_infos( buf, &glyphCount );
     hb_glyph_position_t* glyphPos = hb_buffer_get_glyph_positions( buf, &glyphCount );
+    hb_font_t*           referencedFont = hb_ft_font_create_referenced( mFace );
 
-    hb_shape( mReferencedFont, buf, NULL, 0 );
+    hb_ft_font_set_funcs( referencedFont );
+    hb_shape( referencedFont, buf, NULL, 0 );
 
     const double mirror_factor = ( aIsMirrored ? 1 : -1 );
     // TODO: xyscaler is determined with the Stetson method to make

@@ -121,9 +121,6 @@ private:
     static FT_Library mFreeType;
     FT_Face           mFace;
 
-    // HarfBuzz variables
-    hb_font_t* mReferencedFont;
-
     // cache for glyphs converted to straight segments
     // key is glyph index (FT_GlyphSlot field glyph_index)
     std::map<unsigned int, POINTS_LIST> mContourCache;

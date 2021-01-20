@@ -35,7 +35,7 @@
 #include "../3d_rendering/3d_render_raytracing/shapes2D/round_segment_2d.h"
 #include "../3d_rendering/3d_render_raytracing/shapes2D/triangle_2d.h"
 #include "../3d_rendering/3d_render_raytracing/shapes2D/polygon_2d.h"
-#include "../earcut.h"
+#include "earcut.hpp"
 #include <board_adapter.h>
 #include <board.h>
 #include <footprint.h>
@@ -56,6 +56,22 @@
 #include <utility>
 #include <vector>
 #include <gal/outline_font.h>
+
+namespace mapbox
+{
+template <>
+struct util::nth<0, VECTOR2I>
+{
+    inline static auto get( const VECTOR2I& t ) { return t.x; }
+};
+
+
+template <>
+struct util::nth<1, VECTOR2I>
+{
+    inline static auto get( const VECTOR2I& t ) { return t.y; }
+};
+} // namespace mapbox
 
 
 // These variables are parameters used in addTextSegmToContainer.
