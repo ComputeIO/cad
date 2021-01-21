@@ -41,6 +41,7 @@ set( GAL_SRCS
     font/font.cpp
     font/stroke_font.cpp
     font/outline_font.cpp
+    font/outline_decomposer.cpp
 
     view/view_controls.cpp
     view/view_overlay.cpp

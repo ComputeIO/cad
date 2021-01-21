@@ -33,15 +33,7 @@
 #include FT_OUTLINE_H
 #include <harfbuzz/hb.h>
 #include <font/font.h>
-
-typedef struct
-{
-    POINTS         points;
-    int            winding;
-    FT_Orientation orientation;
-} CONTOUR;
-
-typedef std::vector<CONTOUR> CONTOURS;
+#include <font/outline_decomposer.h>
 
 
 /**
@@ -166,21 +158,21 @@ private:
 
     bool approximateBezierCurve( POINTS& result, const POINTS& bezier ) const;
 
-    inline const unsigned int onCurve( char aTags ) const { return aTags & 0x1; }
+    inline static const unsigned int onCurve( char aTags ) { return aTags & 0x1; }
 
-    inline const unsigned int thirdOrderBezierPoint( char aTags ) const
+    inline static const unsigned int thirdOrderBezierPoint( char aTags )
     {
         return onCurve( aTags ) ? 0 : aTags & 0x2;
     }
 
-    inline const unsigned int secondOrderBezierPoint( char aTags ) const
+    inline static const unsigned int secondOrderBezierPoint( char aTags )
     {
         return onCurve( aTags ) ? 0 : !thirdOrderBezierPoint( aTags );
     }
 
-    inline const unsigned int hasDropout( char aTags ) const { return aTags & 0x4; }
+    inline static const unsigned int hasDropout( char aTags ) { return aTags & 0x4; }
 
-    inline const unsigned int dropoutMode( char aTags ) const
+    inline static const unsigned int dropoutMode( char aTags )
     {
         return hasDropout( aTags ) ? ( aTags & 0x38 ) : 0;
     }

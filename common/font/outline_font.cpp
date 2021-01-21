@@ -24,6 +24,7 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
 
+#include <limits>
 #include <wx/string.h>
 #include <settings/settings_manager.h>
 #include <harfbuzz/hb-ft.h>
@@ -267,10 +268,14 @@ void OUTLINE_FONT::GetTextAsPolygon( std::vector<SHAPE_POLY_SET>& aGlyphs, const
     const double xyscaler = 2.0e3;
     const double x_scale_factor = mirror_factor * aGlyphSize.x / xyscaler;
     const double y_scale_factor = aGlyphSize.y / xyscaler;
+#ifdef OLD
     // TODO: why 2x? not sure why this is needed, but without it
     // advance (at least X advance, haven't yet witnessed non-zero Y
     // advance) seems to be about 0.5x what is required
     const double advance_scale_factor = 2;
+#else
+    const double advance_scale_factor = 1;
+#endif
     const double advance_x_factor = advance_scale_factor;
     const double advance_y_factor = advance_scale_factor;
 
@@ -282,21 +287,46 @@ void OUTLINE_FONT::GetTextAsPolygon( std::vector<SHAPE_POLY_SET>& aGlyphs, const
         hb_glyph_position_t& pos = glyphPos[i];
         int                  codepoint = glyphInfo[i].codepoint;
 
-        FT_Load_Glyph( mFace, codepoint, FT_LOAD_NO_BITMAP | FT_LOAD_NO_SCALE );
+        FT_Load_Glyph( mFace, codepoint, FT_LOAD_NO_BITMAP );
 
         FT_GlyphSlot       glyph = mFace->glyph;
         const unsigned int bufsize = 512;
         char               glyphName[bufsize];
         FT_Get_Glyph_Name( mFace, glyph->glyph_index, &glyphName[0], bufsize );
 
-        // contours is a collection of all outlines in the glyph
+        // contours is a collection of all outlines in the glyph;
         // example: glyph for 'o' generally contains 2 contours,
         // one for the glyph outline and one for the hole
-        //
-        // might be a good idea to cache the contours,
-        // in which case glyph->glyph_index can be used as a std::map key
         CONTOURS contours;
+#ifdef OLD
         outlineToStraightSegments( contours, glyph->outline );
+#else
+        OUTLINE_DECOMPOSER decomposer( glyph->outline );
+        decomposer.OutlineToSegments( &contours );
+#endif
+#ifdef DEBUG
+        std::cerr << glyphName << " " << contours.size() << " contours\n";
+        int cn = 0;
+        for( CONTOUR c : contours )
+        {
+            std::cerr << "Contour #" << cn << ": " << c.points.size() << " points"
+                      << ", winding " << c.winding << ", orientation "
+                      << ( c.orientation == FT_ORIENTATION_TRUETYPE
+                                   ? "0 (TrueType)"
+                                   : ( c.orientation == FT_ORIENTATION_NONE ? "NONE"
+                                                                            : "1 (Postscript)" ) )
+                      << std::endl;
+            int cp = 0;
+            for( VECTOR2D p : c.points )
+            {
+                if( cp > 0 )
+                    std::cerr << ",";
+                std::cerr << p;
+                cp++;
+            }
+            cn++;
+        }
+#endif
 
         SHAPE_POLY_SET             poly;
         std::vector<SHAPE_SIMPLE*> holes;
@@ -306,7 +336,7 @@ void OUTLINE_FONT::GetTextAsPolygon( std::vector<SHAPE_POLY_SET>& aGlyphs, const
         for( CONTOUR c : contours )
         {
             POINTS points = c.points;
-            int ptCount = 0;
+            int    ptCount = 0;
             ptListScaled.clear();
 
             for( const VECTOR2D& v : points )
@@ -385,7 +415,7 @@ void OUTLINE_FONT::GetTextAsPolygon( std::vector<SHAPE_POLY_SET>& aGlyphs, const
 
     hb_buffer_destroy( buf );
 
-#ifdef FOO // DEBUG
+#ifdef DEBUG
     std::cerr << "GetTextAsPolygon() \"" << aText << "\" glyph size {" << aGlyphSize.x << ","
               << aGlyphSize.y << "}" << ( aIsMirrored ? " mirrored" : "" ) << " " << aGlyphs.size()
               << " glyphs.";
@@ -408,10 +438,50 @@ void OUTLINE_FONT::GetTextAsPolygon( std::vector<SHAPE_POLY_SET>& aGlyphs, const
             const SHAPE_LINE_CHAIN& outline = glyph.COutline( bar );
             std::cerr << " O" << bar << "; " << outline.PointCount() << "p, "
                       << glyph.HoleCount( bar ) << "h.";
+
+            double minPointX = std::numeric_limits<double>::max();
+            double maxPointX = std::numeric_limits<double>::min();
+            double minPointY = std::numeric_limits<double>::max();
+            double maxPointY = std::numeric_limits<double>::min();
+            for( int foofaa = 0; foofaa < outline.PointCount(); foofaa++ )
+            {
+                VECTOR2D p = outline.GetPoint( foofaa );
+                if( p.x < minPointX )
+                    minPointX = p.x;
+                if( p.x > maxPointX )
+                    maxPointX = p.x;
+                if( p.y < minPointY )
+                    minPointY = p.y;
+                if( p.y > maxPointY )
+                    maxPointY = p.y;
+            }
+            std::cerr << " X " << minPointX << ".." << maxPointX << ", Y " << minPointY << ".."
+                      << maxPointY;
+
             for( int iHole = 0; iHole < glyph.HoleCount( bar ); iHole++ )
             {
                 const SHAPE_LINE_CHAIN& hole = glyph.CHole( bar, iHole );
                 std::cerr << " H" << iHole << ": " << hole.PointCount() << "p.";
+
+                minPointX = std::numeric_limits<double>::max();
+                maxPointX = std::numeric_limits<double>::min();
+                minPointY = std::numeric_limits<double>::max();
+                maxPointY = std::numeric_limits<double>::min();
+
+                for( int faa = 0; faa < outline.PointCount(); faa++ )
+                {
+                    VECTOR2D p = hole.GetPoint( faa );
+                    if( p.x < minPointX )
+                        minPointX = p.x;
+                    if( p.x > maxPointX )
+                        maxPointX = p.x;
+                    if( p.y < minPointY )
+                        minPointY = p.y;
+                    if( p.y > maxPointY )
+                        maxPointY = p.y;
+                }
+                std::cerr << " X " << minPointX << ".." << maxPointX << ", Y " << minPointY << ".."
+                          << maxPointY;
             }
         }
         std::cerr << std::endl;
@@ -447,7 +517,7 @@ void OUTLINE_FONT::outlineToStraightSegments( CONTOURS& aContours, FT_Outline& a
 
             if( thirdOrderBezierPoint( tags ) )
             {
-                // TODO! Some fonts contain cubic Beziers!
+                // TODO! OpenType (Postscript) fonts can contain cubic Beziers!
                 assert( 1 == 0 );
             }
 
@@ -456,7 +526,19 @@ void OUTLINE_FONT::outlineToStraightSegments( CONTOURS& aContours, FT_Outline& a
                 // Two consecutive off-curve control points, add virtual midpoint
                 //
                 // Note: 1st point of contour is assumed to be on-curve;
-                // the font is malformed if this is not the case
+                // this may not be the case for all fonts!
+                //
+                // TODO: implement handling of first point as below
+                //
+                // From
+                // https://www.freetype.org/freetype2/docs/glyphs/glyphs-6.html#section-1
+                // :
+                // The first point in a contour can be a conic ‘off’
+                // point itself; in that case, use the last point of
+                // the contour as the contour's starting point. If the
+                // last point is a conic ‘off’ point itself, start the
+                // contour with the virtual ‘on’ point between the
+                // last and first point of the contour.
                 VECTOR2D midpoint( ( point.x + prev_point.x ) / 2.0,
                                    ( point.y + prev_point.y ) / 2.0 );
                 contour_points.push_back( midpoint );
@@ -702,22 +784,31 @@ int OUTLINE_FONT::approximateContour( const POINTS& aPoints, const std::vector<b
 // use converter in kimath
 bool OUTLINE_FONT::approximateBezierCurve( POINTS& result, const POINTS& bezier ) const
 {
-    // Quadratic to cubic Bezier conversion:
-    // cpn = Cubic Bezier control points (n = 0..3, 4 in total)
-    // qpn = Quadratic Bezier control points (n = 0..2, 3 in total)
-    // cp0 = qp0, cp1 = qp0 + 2/3 * (qp1 - qp0), cp2 = qp2 + 2/3 * (qp1 - qp2), cp3 = qp2
     POINTS cubic;
-    cubic.push_back( bezier.at( 0 ) );                                                     // cp0
-    cubic.push_back( bezier.at( 0 ) + ( 2 / 3.0 ) * ( bezier.at( 1 ) - bezier.at( 0 ) ) ); // cp1
-    cubic.push_back( bezier.at( 2 ) + ( 2 / 3.0 ) * ( bezier.at( 1 ) - bezier.at( 2 ) ) ); // cp2
-    cubic.push_back( bezier.at( 2 ) );                                                     // cp3
+    bool   bezierIsCubic = ( bezier.size() == 4 );
 
-    POINTS tmp;
-    // BEZIER_POLY only handles cubic Bezier curves, even though the
-    // comments say otherwise...
-    BEZIER_POLY converter( cubic );
+    if( !bezierIsCubic )
+    {
+        // BEZIER_POLY only handles cubic Bezier curves, even though the
+        // comments say otherwise...
+
+        // Quadratic to cubic Bezier conversion:
+        // cpn = Cubic Bezier control points (n = 0..3, 4 in total)
+        // qpn = Quadratic Bezier control points (n = 0..2, 3 in total)
+        // cp0 = qp0, cp1 = qp0 + 2/3 * (qp1 - qp0), cp2 = qp2 + 2/3 * (qp1 - qp2), cp3 = qp2
+        cubic.push_back( bezier.at( 0 ) ); // cp0
+        cubic.push_back( bezier.at( 0 )
+                         + ( 2 / 3.0 ) * ( bezier.at( 1 ) - bezier.at( 0 ) ) ); // cp1
+        cubic.push_back( bezier.at( 2 )
+                         + ( 2 / 3.0 ) * ( bezier.at( 1 ) - bezier.at( 2 ) ) ); // cp2
+        cubic.push_back( bezier.at( 2 ) );                                      // cp3
+    }
+
     // TODO: find out what the minimum segment length should really be!
-    converter.GetPoly( tmp, 50 );
+    static const int minimumSegmentLength = 50;
+    POINTS           tmp;
+    BEZIER_POLY      converter( bezierIsCubic ? bezier : cubic );
+    converter.GetPoly( tmp, minimumSegmentLength );
 
     for( unsigned int i = 0; i < tmp.size(); i++ )
         result.push_back( tmp.at( i ) );

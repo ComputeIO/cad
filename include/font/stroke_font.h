@@ -35,6 +35,7 @@
 #include <utf8.h>
 #include <math/box2.h>
 #include <font/font.h>
+#include <font/outline_decomposer.h>
 
 namespace KIGFX
 {

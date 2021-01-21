@@ -38,13 +38,6 @@ namespace KIGFX
 class GAL;
 }
 
-typedef std::vector<VECTOR2D> POINTS;
-typedef std::vector<POINTS>   POINTS_LIST;
-
-typedef std::vector<std::vector<VECTOR2D>*> GLYPH;
-typedef std::vector<GLYPH*>                 GLYPH_LIST;
-typedef std::vector<BOX2D>                  GLYPH_BOUNDING_BOX_LIST;
-
 class FONT
 {
 public:
