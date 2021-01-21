@@ -124,58 +124,6 @@ private:
      * @param aText is the text to be drawn.
      */
     void drawSingleLineText( KIGFX::GAL* aGal, const UTF8& aText );
-
-    void outlineToStraightSegments( CONTOURS& aContours, FT_Outline& aOutline ) const;
-
-    /**
-     * @return 1 if aContour is in clockwise order, -1 if it is in
-     *     counterclockwise order, or 0 if the winding can't be
-     *     determined.
-     */
-    int winding( const POINTS& aContour ) const;
-
-    /**
-     * @return true if aContour is a clockwise contour, otherwise
-     *     false.
-     */
-    inline bool isClockwise( const POINTS& aContour ) const { return winding( aContour ) == 1; }
-
-    /**
-     * @return true if aContour is a counterclockwise contour,
-     *     otherwise false.
-     */
-    inline bool isCounterclockwise( const POINTS& aContour ) const
-    {
-        return winding( aContour ) == -1;
-    }
-
-    /**
-     * Approximate Bezier curve contour with straight segments.
-     * @return Winding (clockwise/counterclockwise) of the contour.
-     */
-    int approximateContour( const POINTS& aPoints, const std::vector<bool>& aPointOnCurve,
-                            POINTS& aResult ) const;
-
-    bool approximateBezierCurve( POINTS& result, const POINTS& bezier ) const;
-
-    inline static const unsigned int onCurve( char aTags ) { return aTags & 0x1; }
-
-    inline static const unsigned int thirdOrderBezierPoint( char aTags )
-    {
-        return onCurve( aTags ) ? 0 : aTags & 0x2;
-    }
-
-    inline static const unsigned int secondOrderBezierPoint( char aTags )
-    {
-        return onCurve( aTags ) ? 0 : !thirdOrderBezierPoint( aTags );
-    }
-
-    inline static const unsigned int hasDropout( char aTags ) { return aTags & 0x4; }
-
-    inline static const unsigned int dropoutMode( char aTags )
-    {
-        return hasDropout( aTags ) ? ( aTags & 0x38 ) : 0;
-    }
 };
 
 #endif // OUTLINE_FONT_H_

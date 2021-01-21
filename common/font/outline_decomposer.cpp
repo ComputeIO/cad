@@ -29,142 +29,12 @@
 
 OUTLINE_DECOMPOSER::OUTLINE_DECOMPOSER( FT_Outline& aOutline ) : m_outline( aOutline )
 {
-#ifdef DEBUG
-    std::cerr << "[Cs n=" << aOutline.n_contours;
-    for( int c = 0; c < aOutline.n_contours; c++ )
-    {
-        int contour_start = 0;
-        if( c > 0 )
-        {
-            contour_start = aOutline.contours[c - 1] + 1;
-        }
-        int contour_end = aOutline.contours[c];
-
-        std::cerr << "[c" << c << " " << contour_start << ".." << contour_end;
-
-        for( int p = contour_start; p <= contour_end; p++ )
-        {
-            FT_Vector point = aOutline.points[p];
-            FT_Pos    px = point.x;
-            FT_Pos    py = point.y;
-            char      tags = aOutline.tags[p];
-            std::cerr << " [" << px << "," << py << "]";
-        }
-        std::cerr << " c" << c << "]\n";
-    }
-    std::cerr << "Cs]\n";
-#endif
 }
 
 
 static VECTOR2D toVector2D( const FT_Vector* aFreeTypeVector )
 {
-#ifdef DEBUG
-    std::cerr << "toVector2D() x " << aFreeTypeVector->x << " y " << aFreeTypeVector->y
-              << std::endl;
-#endif
     return VECTOR2D( aFreeTypeVector->x, aFreeTypeVector->y );
-}
-
-
-void OUTLINE_DECOMPOSER::contourToSegmentsAndArcs( CONTOUR&     aResult,
-                                                   unsigned int aContourIndex ) const
-{
-    /*
-      From https://www.freetype.org/freetype2/docs/glyphs/glyphs-6.html#section-1 :
-      (note: conic == quadratic)
-
-      The following rules are applied to decompose the contour's
-      points into segments and arcs:
-
-      Two successive ‘on’ points indicate a line segment joining them.
-
-      One conic ‘off’ point between two ‘on’ points indicates a conic
-      Bézier arc, the ‘off’ point being the control point, and the
-      ‘on’ ones the start and end points.
-
-      Two successive cubic ‘off’ points between two ‘on’ points
-      indicate a cubic Bézier arc. There must be exactly two cubic
-      control points and two ‘on’ points for each cubic arc (using a
-      single cubic ‘off’ point between two ‘on’ points is forbidden,
-      for example).
-
-      Two successive conic ‘off’ points force the rasterizer to create
-      (during the scan-line conversion process exclusively) a virtual
-      ‘on’ point inbetween, at their exact middle. This greatly
-      facilitates the definition of successive conic Bézier
-      arcs. Moreover, it is the way outlines are described in the
-      TrueType specification.
-
-      The last point in a contour uses the first as an end point to
-      create a closed contour. For example, if the last two points of
-      a contour were an ‘on’ point followed by a conic ‘off’ point,
-      the first point in the contour would be used as final point to
-      create an ‘on’ – ‘off’ – ‘on’ sequence as described above.
-
-      The first point in a contour can be a conic ‘off’ point itself;
-      in that case, use the last point of the contour as the contour's
-      starting point. If the last point is a conic ‘off’ point itself,
-      start the contour with the virtual ‘on’ point between the last
-      and first point of the contour.
-    */
-
-    POINTS            bezier;
-    POINTS            contour_points;
-    std::vector<bool> contour_point_on_curve;
-    char              prev_tags = 0;
-    unsigned int      contour_start = 0;
-    if( aContourIndex > 0 )
-    {
-        contour_start = (unsigned int) ( m_outline.contours[aContourIndex - 1] + 1 );
-    }
-    unsigned int contour_end = (unsigned int) m_outline.contours[aContourIndex];
-    FT_Vector    prev_point;
-    prev_point.x = 0;
-    prev_point.y = 0;
-
-    for( unsigned int p = contour_start; p <= contour_end; p++ )
-    {
-        FT_Vector point = m_outline.points[p];
-        char      tags = m_outline.tags[p];
-
-        if( thirdOrderBezierPoint( tags ) )
-        {
-            // TODO! OpenType (Postscript) fonts can contain cubic Beziers!
-            assert( 1 == 0 );
-        }
-
-        if( !onCurve( tags ) && !onCurve( prev_tags ) )
-        {
-            // Two consecutive off-curve control points, add virtual midpoint
-            //
-            // Note: 1st point of contour is assumed to be on-curve;
-            // this may not be the case for all fonts!
-            //
-            // TODO: implement handling of first point as below
-            //
-            // From
-            // https://www.freetype.org/freetype2/docs/glyphs/glyphs-6.html#section-1
-            // :
-            // The first point in a contour can be a conic ‘off’
-            // point itself; in that case, use the last point of
-            // the contour as the contour's starting point. If the
-            // last point is a conic ‘off’ point itself, start the
-            // contour with the virtual ‘on’ point between the
-            // last and first point of the contour.
-            VECTOR2D midpoint( ( point.x + prev_point.x ) / 2.0, ( point.y + prev_point.y ) / 2.0 );
-            contour_points.push_back( midpoint );
-            contour_point_on_curve.push_back( true );
-        }
-
-        VECTOR2D pt( point.x, point.y );
-        contour_points.push_back( pt );
-        contour_point_on_curve.push_back( onCurve( tags ) ? true : false );
-        prev_point = point;
-        prev_tags = tags;
-    }
-
-    aResult.winding = approximateContour( contour_points, contour_point_on_curve, aResult.points );
 }
 
 
@@ -181,9 +51,6 @@ void OUTLINE_DECOMPOSER::addContourPoint( const VECTOR2D& p )
     // don't add repeated points
     if( m_contours->back().points.empty() || m_contours->back().points.back() != p )
     {
-#ifdef DEBUG
-        std::cerr << "OUTLINE_DECOMPOSER::addContourPoint( " << p << " )\n";
-#endif
         m_contours->back().points.push_back( p );
     }
 }
@@ -192,12 +59,6 @@ void OUTLINE_DECOMPOSER::addContourPoint( const VECTOR2D& p )
 int OUTLINE_DECOMPOSER::moveTo( const FT_Vector* aEndPoint, void* aCallbackData )
 {
     OUTLINE_DECOMPOSER* decomposer = static_cast<OUTLINE_DECOMPOSER*>( aCallbackData );
-
-#ifdef DEBUG
-    FT_Pos x = aEndPoint->x;
-    FT_Pos y = aEndPoint->y;
-    std::cerr << "moveTo([ " << x << "," << y << " ]) ";
-#endif
 
     decomposer->m_lastEndPoint.x = aEndPoint->x;
     decomposer->m_lastEndPoint.y = aEndPoint->y;
@@ -212,12 +73,6 @@ int OUTLINE_DECOMPOSER::moveTo( const FT_Vector* aEndPoint, void* aCallbackData 
 int OUTLINE_DECOMPOSER::lineTo( const FT_Vector* aEndPoint, void* aCallbackData )
 {
     OUTLINE_DECOMPOSER* decomposer = static_cast<OUTLINE_DECOMPOSER*>( aCallbackData );
-
-#ifdef DEBUG
-    FT_Pos x = aEndPoint->x;
-    FT_Pos y = aEndPoint->y;
-    std::cerr << "lineTo([ " << x << "," << y << " ]) ";
-#endif
 
     decomposer->m_lastEndPoint.x = aEndPoint->x;
     decomposer->m_lastEndPoint.y = aEndPoint->y;
@@ -241,28 +96,6 @@ int OUTLINE_DECOMPOSER::cubicTo( const FT_Vector* aFirstControlPoint,
 {
     OUTLINE_DECOMPOSER* decomposer = static_cast<OUTLINE_DECOMPOSER*>( aCallbackData );
 
-#ifdef DEBUG
-    std::cerr << "cubicTo( ";
-    FT_Pos x = aFirstControlPoint->x;
-    FT_Pos y = aFirstControlPoint->y;
-    std::cerr << "[" << x << "," << y << "],";
-    if( aSecondControlPoint )
-    {
-        x = aSecondControlPoint->x;
-        y = aSecondControlPoint->y;
-        std::cerr << "[" << x << "," << y << "],";
-    }
-    else
-    {
-        std::cerr << "null,";
-    }
-    x = aEndPoint->x;
-    y = aEndPoint->y;
-    std::cerr << "[" << x << "," << y << "] ) ";
-#endif
-    /* ... figure out what we're starting from if lastEndPoint is not set */
-
-    POINTS result;
     POINTS bezier;
     bezier.push_back( decomposer->m_lastEndPoint );
     bezier.push_back( toVector2D( aFirstControlPoint ) );
@@ -272,6 +105,8 @@ int OUTLINE_DECOMPOSER::cubicTo( const FT_Vector* aFirstControlPoint,
         bezier.push_back( toVector2D( aSecondControlPoint ) );
     }
     bezier.push_back( toVector2D( aEndPoint ) );
+
+    POINTS result;
     decomposer->approximateBezierCurve( result, bezier );
 
     for( VECTOR2D p : result )
@@ -291,17 +126,6 @@ void OUTLINE_DECOMPOSER::OutlineToSegments( CONTOURS* aContours )
 {
     m_contours = aContours;
 
-#if 0
-    FT_Orientation orientation = FT_Outline_Get_Orientation( &m_outline );
-
-    for( unsigned int c = 0; c < (unsigned int) m_outline.n_contours; c++ )
-    {
-        CONTOUR contour;
-        contour.orientation = orientation;
-        contourToSegmentsAndArcs( contour, c );
-        m_contours->push_back( contour );
-    }
-#else
     FT_Outline_Funcs callbacks;
 
     callbacks.move_to = moveTo;
@@ -321,104 +145,14 @@ void OUTLINE_DECOMPOSER::OutlineToSegments( CONTOURS* aContours )
     {
         c.winding = winding( c.points );
     }
-#endif
-}
-
-
-int OUTLINE_DECOMPOSER::approximateContour( const POINTS&            aPoints,
-                                            const std::vector<bool>& aPointOnCurve,
-                                            POINTS&                  aResult ) const
-{
-    POINTS   bezier;
-    int      n = 0;
-    VECTOR2D first_point;
-    VECTOR2D prev_point;
-    VECTOR2D prev2_point;
-    bool     prev_on_curve;
-    bool     prev2_on_curve;
-
-    // note: we want to go past the end as end+1 will be a repeat of the 1st point!
-    for( unsigned int i = 0; i <= aPoints.size(); i++ )
-    {
-        unsigned int nth = i < aPoints.size() ? i : 0;
-        VECTOR2D     p = aPoints.at( nth );
-        bool         on_curve = aPointOnCurve.at( nth );
-
-        if( on_curve )
-        {
-            if( n == 0 )
-            {
-                // First point
-                aResult.push_back( p );
-            }
-            else
-            {
-                if( n > 0 && prev_on_curve )
-                {
-                    // Previous point is also on curve - straight line segment
-                    aResult.push_back( p );
-                }
-                else
-                {
-                    // Previous point is a control point not on curve
-                    if( n > 1 )
-                    {
-                        if( prev2_on_curve )
-                        {
-                            // This point is on curve, previous is not, the one before that is
-                            // == quadratic Bezier curve segment
-                            //
-                            // TODO: handle cubic curves
-                            bezier.clear();
-                            bezier.push_back( prev2_point );
-                            bezier.push_back( prev_point );
-                            bezier.push_back( p );
-                            bool success = approximateBezierCurve( aResult, bezier );
-                            if( !success )
-                            {
-                                std::cerr << "OUTLINE_FONT::approximateContour() Bezier curve "
-                                             "approximation failed"
-                                          << std::endl;
-                            }
-                        }
-                        else
-                        {
-                            // This should not happen as the points have been
-                            // preprocessed to insert implicit on-curve points!
-                            std::cerr << "OUTLINE_FONT::approximateContour() impossible point "
-                                         "sequence"
-                                      << std::endl;
-                        }
-                    }
-                    else
-                    {
-                        // How did we get here?
-                        std::cerr << "OUTLINE_FONT::approximateContour() undefined state "
-                                     "processing point #"
-                                  << n << std::endl;
-                    }
-                }
-            }
-        }
-
-        n++;
-        prev2_point = prev_point;
-        prev_point = p;
-        prev2_on_curve = prev_on_curve;
-        prev_on_curve = on_curve;
-    }
-
-    // it's probably possible to figure out winding here without
-    // another traversal of all vertexes, doing that for now though
-    return winding( aResult );
 }
 
 
 // use converter in kimath
 bool OUTLINE_DECOMPOSER::approximateQuadraticBezierCurve( POINTS&       aResult,
-                                                          const POINTS& aQuadraticBezier ) const
+                                                          const POINTS& aBezier ) const
 {
-    // TODO: assert aQuadraticBezier.size == 3
+    // TODO: assert aBezier.size == 3
 
     // BEZIER_POLY only handles cubic Bezier curves, even though the
     // comments say otherwise...
@@ -428,16 +162,13 @@ bool OUTLINE_DECOMPOSER::approximateQuadraticBezierCurve( POINTS&       aResult,
     // qpn = Quadratic Bezier control points (n = 0..2, 3 in total)
     // cp0 = qp0, cp1 = qp0 + 2/3 * (qp1 - qp0), cp2 = qp2 + 2/3 * (qp1 - qp2), cp3 = qp2
 
-    POINTS cubic;
+    static const double twoThirds = 2 / 3.0;
 
-    cubic.push_back( aQuadraticBezier.at( 0 ) ); // cp0
-    cubic.push_back( aQuadraticBezier.at( 0 )
-                     + ( 2 / 3.0 )
-                               * ( aQuadraticBezier.at( 1 ) - aQuadraticBezier.at( 0 ) ) ); // cp1
-    cubic.push_back( aQuadraticBezier.at( 2 )
-                     + ( 2 / 3.0 )
-                               * ( aQuadraticBezier.at( 1 ) - aQuadraticBezier.at( 2 ) ) ); // cp2
-    cubic.push_back( aQuadraticBezier.at( 2 ) );                                            // cp3
+    POINTS cubic;
+    cubic.push_back( aBezier.at( 0 ) );                                                     // cp0
+    cubic.push_back( aBezier.at( 0 ) + twoThirds * ( aBezier.at( 1 ) - aBezier.at( 0 ) ) ); // cp1
+    cubic.push_back( aBezier.at( 2 ) + twoThirds * ( aBezier.at( 1 ) - aBezier.at( 2 ) ) ); // cp2
+    cubic.push_back( aBezier.at( 2 ) );                                                     // cp3
 
     return approximateCubicBezierCurve( aResult, cubic );
 }
