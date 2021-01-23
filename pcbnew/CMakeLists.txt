@@ -204,8 +204,21 @@ set( PCBNEW_IMPORT_GFX
     import_gfx/graphics_importer_buffer.cpp
     import_gfx/dxf_import_plugin.cpp
     import_gfx/svg_import_plugin.cpp
+    import_gfx/svg_color.cpp
+    import_gfx/svg_doc.cpp
+    import_gfx/svg_geom.cpp
+    import_gfx/svg_import_plugin.cpp
+    import_gfx/svg_import_util.cpp
+    import_gfx/svg_path.cpp
+    import_gfx/svg_pattern.cpp
+    import_gfx/cairo_clipper.cpp
+    import_gfx/base64.cpp
+    import_gfx/vec_core.cpp
+    import_gfx/vec_grid.cpp
     )
 
+add_library( pcbnew_import_gfx OBJECT ${PCBNEW_IMPORT_GFX} )
+set_target_properties( pcbnew_import_gfx PROPERTIES CXX_STANDARD 20 )
 
 set( PCBNEW_EXPORTERS
     exporters/export_hyperlynx.cpp
@@ -260,7 +273,6 @@ set( PCBNEW_CLASS_SRCS
     ${PCBNEW_DIALOGS}
     ${PCBNEW_EXPORTERS}
     ${PCBNEW_DRC_SRCS}
-    ${PCBNEW_IMPORT_GFX}
     ${PCBNEW_NETLIST_SRCS}
     ${PCBNEW_BRDSTACKUP_MGR}
 
@@ -640,6 +652,7 @@ endif()
 add_library( pcbnew_kiface_objects OBJECT
     pcbnew.cpp
     ${PCBNEW_SRCS}
+    $<TARGET_OBJECTS:pcbnew_import_gfx>
     ${PCBNEW_COMMON_SRCS}
     ${PCBNEW_SCRIPTING_SRCS}
     )
@@ -657,10 +670,13 @@ make_lexer(
 # but we only need include directories, as we will link the kiface MODULE
 target_include_directories( pcbnew_kiface_objects PRIVATE
     $<TARGET_PROPERTY:common,INTERFACE_INCLUDE_DIRECTORIES>
+    )
+
+target_include_directories( pcbnew_import_gfx PRIVATE
+    $<TARGET_PROPERTY:common,INTERFACE_INCLUDE_DIRECTORIES>
     $<TARGET_PROPERTY:dxflib_qcad,INTERFACE_INCLUDE_DIRECTORIES>
-    $<TARGET_PROPERTY:nanosvg,INTERFACE_INCLUDE_DIRECTORIES>
-    $<TARGET_PROPERTY:tinyspline_lib,INTERFACE_INCLUDE_DIRECTORIES>
     $<TARGET_PROPERTY:nlohmann_json,INTERFACE_INCLUDE_DIRECTORIES>
+    $<TARGET_PROPERTY:tinyspline_lib,INTERFACE_INCLUDE_DIRECTORIES>
     )
 
 # Since we're not using target_link_libraries, we need to explicitly
@@ -670,7 +686,7 @@ add_dependencies( pcbnew_kiface_objects dxflib_qcad )
 add_dependencies( pcbnew_kiface_objects tinyspline_lib )
 add_dependencies( pcbnew_kiface_objects nanosvg )
 
-add_library( pcbnew_kiface MODULE $<TARGET_OBJECTS:pcbnew_kiface_objects> )
+add_library( pcbnew_kiface MODULE $<TARGET_OBJECTS:pcbnew_kiface_objects> $<TARGET_OBJECTS:pcbnew_import_gfx> )
 
 set_target_properties( pcbnew_kiface PROPERTIES
     # Decorate OUTPUT_NAME with PREFIX and SUFFIX, creating something like
