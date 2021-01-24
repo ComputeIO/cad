@@ -51,12 +51,10 @@ class COMPONENT_NET
 public:
     COMPONENT_NET() {}
 
-    COMPONENT_NET( const wxString& aPinName, const wxString& aNetName,
-                   const wxString& aPinFunction, const wxString& aPinType ) :
-        m_pinName( aPinName ),
-        m_netName( aNetName ),
-        m_pinFunction( aPinFunction ),
-        m_pinType( aPinType )
+    COMPONENT_NET( const wxString& aPinName, const wxString& aNetName, const wxString& aPinFunction,
+                   const wxString& aPinType ) :
+            m_pinName( aPinName ),
+            m_netName( aNetName ), m_pinFunction( aPinFunction ), m_pinType( aPinType )
     {
     }
 
@@ -67,16 +65,13 @@ public:
 
     bool IsValid() const { return !m_pinName.IsEmpty(); }
 
-    bool operator <( const COMPONENT_NET& aNet ) const
-    {
-        return m_pinName < aNet.m_pinName;
-    }
+    bool operator<( const COMPONENT_NET& aNet ) const { return m_pinName < aNet.m_pinName; }
 
     int Format( OUTPUTFORMATTER* aOut, int aNestLevel, int aCtl );
 };
 
 
-typedef std::vector< COMPONENT_NET > COMPONENT_NETS;
+typedef std::vector<COMPONENT_NET> COMPONENT_NETS;
 
 /**
  * COMPONENT
@@ -84,51 +79,49 @@ typedef std::vector< COMPONENT_NET > COMPONENT_NETS;
  */
 class COMPONENT
 {
-    COMPONENT_NETS m_nets;              ///< list of nets shared by the component pins
-    wxArrayString  m_footprintFilters;  ///< Footprint filters found in netlist.
-    int            m_pinCount;          ///< Number of pins found in netlist.
-    wxString       m_reference;         ///< The component reference designator found in netlist.
-    wxString       m_value;             ///< The component value found in netlist.
+    COMPONENT_NETS m_nets;             ///< list of nets shared by the component pins
+    wxArrayString  m_footprintFilters; ///< Footprint filters found in netlist.
+    int            m_pinCount;         ///< Number of pins found in netlist.
+    wxString       m_reference;        ///< The component reference designator found in netlist.
+    wxString       m_value;            ///< The component value found in netlist.
 
     /// A fully specified path to the component: [ sheetUUID, sheetUUID, .., componentUUID ]
-    KIID_PATH      m_path;
+    KIID_PATH m_path;
 
     /// The name of the component in #m_library used when it was placed on the schematic..
-    wxString       m_name;
+    wxString m_name;
 
     /// The name of the component library where #m_name was found.
-    wxString       m_library;
+    wxString m_library;
 
     /// The #LIB_ID of the footprint assigned to the component.
-    LIB_ID         m_fpid;
+    LIB_ID m_fpid;
 
     /// The alt LIB_ID of the footprint, when there are 2 different assigned footprints,
     /// One from the netlist, the other from the .cmp file.
     /// this one is a copy of the netlist footprint assignment
-    LIB_ID         m_altFpid;
+    LIB_ID m_altFpid;
 
     /// The #FOOTPRINT loaded for #m_FPID.
-    std::unique_ptr< FOOTPRINT > m_footprint;
+    std::unique_ptr<FOOTPRINT> m_footprint;
 
     /// Component-specific properties found in the netlist.
     std::map<wxString, wxString> m_properties;
 
-    static COMPONENT_NET    m_emptyNet;
+    static COMPONENT_NET m_emptyNet;
 
 public:
-    COMPONENT( const LIB_ID&    aFPID,
-               const wxString&  aReference,
-               const wxString&  aValue,
+    COMPONENT( const LIB_ID& aFPID, const wxString& aReference, const wxString& aValue,
                const KIID_PATH& aPath )
     {
-        m_fpid             = aFPID;
-        m_reference        = aReference;
-        m_value            = aValue;
-        m_pinCount         = 0;
-        m_path             = aPath;
+        m_fpid = aFPID;
+        m_reference = aReference;
+        m_value = aValue;
+        m_pinCount = 0;
+        m_path = aPath;
     }
 
-    virtual ~COMPONENT() { };
+    virtual ~COMPONENT(){};
 
     void AddNet( const wxString& aPinName, const wxString& aNetName, const wxString& aPinFunction,
                  const wxString& aPinType )
@@ -144,10 +137,10 @@ public:
 
     void SortPins() { sort( m_nets.begin(), m_nets.end() ); }
 
-    void SetName( const wxString& aName ) { m_name = aName;}
+    void            SetName( const wxString& aName ) { m_name = aName; }
     const wxString& GetName() const { return m_name; }
 
-    void SetLibrary( const wxString& aLibrary ) { m_library = aLibrary; }
+    void            SetLibrary( const wxString& aLibrary ) { m_library = aLibrary; }
     const wxString& GetLibrary() const { return m_library; }
 
     const wxString& GetReference() const { return m_reference; }
@@ -159,10 +152,10 @@ public:
     }
     const std::map<wxString, wxString>& GetProperties() const { return m_properties; }
 
-    void SetFPID( const LIB_ID& aFPID ) { m_fpid = aFPID;  }
+    void          SetFPID( const LIB_ID& aFPID ) { m_fpid = aFPID; }
     const LIB_ID& GetFPID() const { return m_fpid; }
 
-    void SetAltFPID( const LIB_ID& aFPID ) { m_altFpid = aFPID; }
+    void          SetAltFPID( const LIB_ID& aFPID ) { m_altFpid = aFPID; }
     const LIB_ID& GetAltFPID() const { return m_altFpid; }
 
     const KIID_PATH& GetPath() const { return m_path; }
@@ -171,7 +164,7 @@ public:
     const wxArrayString& GetFootprintFilters() const { return m_footprintFilters; }
 
     void SetPinCount( int aPinCount ) { m_pinCount = aPinCount; }
-    int GetPinCount() const { return m_pinCount; }
+    int  GetPinCount() const { return m_pinCount; }
 
     FOOTPRINT* GetFootprint( bool aRelease = false )
     {
@@ -189,7 +182,7 @@ public:
 };
 
 
-typedef boost::ptr_vector< COMPONENT > COMPONENTS;
+typedef boost::ptr_vector<COMPONENT> COMPONENTS;
 
 
 /**
@@ -199,17 +192,13 @@ typedef boost::ptr_vector< COMPONENT > COMPONENTS;
  */
 class NETLIST
 {
-    COMPONENTS m_components;          // Components found in the netlist.
+    COMPONENTS m_components; // Components found in the netlist.
 
-    bool       m_findByTimeStamp;     // Associate components by KIID (or refdes if false)
-    bool       m_replaceFootprints;   // Update footprints to match footprints defined in netlist
+    bool m_findByTimeStamp;   // Associate components by KIID (or refdes if false)
+    bool m_replaceFootprints; // Update footprints to match footprints defined in netlist
 
 public:
-    NETLIST() :
-        m_findByTimeStamp( false ),
-        m_replaceFootprints( false )
-    {
-    }
+    NETLIST() : m_findByTimeStamp( false ), m_replaceFootprints( false ) {}
 
     /**
      * Function IsEmpty()
@@ -236,7 +225,7 @@ public:
      * @param aIndex the index in #m_components to fetch.
      * @return a pointer to the #COMPONENT at \a Index.
      */
-    COMPONENT* GetComponent( unsigned aIndex ) { return &m_components[ aIndex ]; }
+    COMPONENT* GetComponent( unsigned aIndex ) { return &m_components[aIndex]; }
 
     /**
      * Function AddComponent
@@ -284,11 +273,11 @@ public:
 
     void Format( const char* aDocName, OUTPUTFORMATTER* aOut, int aNestLevel, int aCtl = 0 );
 
-#define CTL_OMIT_EXTRA      (1<<0)
-#define CTL_OMIT_NETS       (1<<1)
-#define CTL_OMIT_FILTERS    (1<<2)
+#define CTL_OMIT_EXTRA ( 1 << 0 )
+#define CTL_OMIT_NETS ( 1 << 1 )
+#define CTL_OMIT_FILTERS ( 1 << 2 )
 
-#define CTL_FOR_CVPCB    (CTL_OMIT_NETS | CTL_OMIT_FILTERS | CTL_OMIT_EXTRA)
+#define CTL_FOR_CVPCB ( CTL_OMIT_NETS | CTL_OMIT_FILTERS | CTL_OMIT_EXTRA )
 
     void FormatCvpcbNetlist( OUTPUTFORMATTER* aOut )
     {
@@ -297,4 +286,4 @@ public:
 };
 
 
-#endif   // PCB_NETLIST_H
+#endif // PCB_NETLIST_H

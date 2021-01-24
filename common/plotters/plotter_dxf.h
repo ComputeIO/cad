@@ -27,7 +27,7 @@
 
 #include <vector>
 #include <math/box2.h>
-#include <eda_item.h>       // FILL_TYPE
+#include <eda_item.h> // FILL_TYPE
 #include <plotter.h>
 
 class FONT;
@@ -43,15 +43,9 @@ public:
         SetUnits( DXF_UNITS::INCHES );
     }
 
-    virtual PLOT_FORMAT GetPlotterType() const override
-    {
-        return PLOT_FORMAT::DXF;
-    }
+    virtual PLOT_FORMAT GetPlotterType() const override { return PLOT_FORMAT::DXF; }
 
-    static wxString GetDefaultFileExtension()
-    {
-        return wxString( wxT( "dxf" ) );
-    }
+    static wxString GetDefaultFileExtension() { return wxString( wxT( "dxf" ) ); }
 
     /**
      * DXF handles NATIVE text emitting TEXT entities
@@ -75,36 +69,36 @@ public:
 
     virtual void SetColor( COLOR4D color ) override;
 
-    virtual void SetViewport( const wxPoint& aOffset, double aIusPerDecimil,
-                  double aScale, bool aMirror ) override;
+    virtual void SetViewport( const wxPoint& aOffset, double aIusPerDecimil, double aScale,
+                              bool aMirror ) override;
     virtual void Rect( const wxPoint& p1, const wxPoint& p2, FILL_TYPE fill,
                        int width = USE_DEFAULT_LINE_WIDTH ) override;
     virtual void Circle( const wxPoint& pos, int diametre, FILL_TYPE fill,
                          int width = USE_DEFAULT_LINE_WIDTH ) override;
-    virtual void PlotPoly( const std::vector< wxPoint >& aCornerList,
-                           FILL_TYPE aFill, int aWidth = USE_DEFAULT_LINE_WIDTH, void * aData = NULL ) override;
+    virtual void PlotPoly( const std::vector<wxPoint>& aCornerList, FILL_TYPE aFill,
+                           int aWidth = USE_DEFAULT_LINE_WIDTH, void* aData = NULL ) override;
     virtual void ThickSegment( const wxPoint& start, const wxPoint& end, int width,
                                OUTLINE_MODE tracemode, void* aData ) override;
-    virtual void Arc( const wxPoint& centre, double StAngle, double EndAngle,
-                      int rayon, FILL_TYPE fill, int width = USE_DEFAULT_LINE_WIDTH ) override;
+    virtual void Arc( const wxPoint& centre, double StAngle, double EndAngle, int rayon,
+                      FILL_TYPE fill, int width = USE_DEFAULT_LINE_WIDTH ) override;
     virtual void PenTo( const wxPoint& pos, char plume ) override;
 
-    virtual void FlashPadCircle( const wxPoint& pos, int diametre,
-                                 OUTLINE_MODE trace_mode, void* aData ) override;
+    virtual void FlashPadCircle( const wxPoint& pos, int diametre, OUTLINE_MODE trace_mode,
+                                 void* aData ) override;
     virtual void FlashPadOval( const wxPoint& pos, const wxSize& size, double orient,
                                OUTLINE_MODE trace_mode, void* aData ) override;
-    virtual void FlashPadRect( const wxPoint& pos, const wxSize& size,
-                               double orient, OUTLINE_MODE trace_mode, void* aData ) override;
-    virtual void FlashPadRoundRect( const wxPoint& aPadPos, const wxSize& aSize,
-                                    int aCornerRadius, double aOrient,
-                                    OUTLINE_MODE aTraceMode, void* aData ) override;
+    virtual void FlashPadRect( const wxPoint& pos, const wxSize& size, double orient,
+                               OUTLINE_MODE trace_mode, void* aData ) override;
+    virtual void FlashPadRoundRect( const wxPoint& aPadPos, const wxSize& aSize, int aCornerRadius,
+                                    double aOrient, OUTLINE_MODE aTraceMode, void* aData ) override;
     virtual void FlashPadCustom( const wxPoint& aPadPos, const wxSize& aSize, double aOrient,
-                                 SHAPE_POLY_SET* aPolygons,
+                                 SHAPE_POLY_SET* aPolygons, OUTLINE_MODE aTraceMode,
+                                 void* aData ) override;
+    virtual void FlashPadTrapez( const wxPoint& aPadPos, const wxPoint* aCorners, double aPadOrient,
                                  OUTLINE_MODE aTraceMode, void* aData ) override;
-    virtual void FlashPadTrapez( const wxPoint& aPadPos, const wxPoint *aCorners,
-                                 double aPadOrient, OUTLINE_MODE aTraceMode, void* aData ) override;
     virtual void FlashRegularPolygon( const wxPoint& aShapePos, int aDiameter, int aCornerCount,
-                            double aOrient, OUTLINE_MODE aTraceMode, void* aData ) override;
+                                      double aOrient, OUTLINE_MODE aTraceMode,
+                                      void* aData ) override;
 
     virtual void Text( const wxPoint& aPos, const COLOR4D aColor, const wxString& aText,
                        double aOrient, const wxSize& aSize, enum EDA_TEXT_HJUSTIFY_T aH_justify,
@@ -125,10 +119,7 @@ public:
      *
      * @return The currently configured units
      */
-    DXF_UNITS GetUnits() const
-    {
-        return m_plotUnits;
-    }
+    DXF_UNITS GetUnits() const { return m_plotUnits; }
 
     /**
      * Get the scale factor to apply to convert the device units to be in the
@@ -136,27 +127,21 @@ public:
      *
      * @return Scaling factor to apply for unit conversion
      */
-    double GetUnitScaling() const
-    {
-        return m_unitScalingFactor;
-    }
+    double GetUnitScaling() const { return m_unitScalingFactor; }
 
     /**
      * Get the correct value for the $MEASUREMENT field given the current units
      *
      * @return the $MEASUREMENT directive field value
      */
-    unsigned int GetMeasurementDirective() const
-    {
-        return m_measurementDirective;
-    }
+    unsigned int GetMeasurementDirective() const { return m_measurementDirective; }
 
 protected:
     bool           m_textAsLines;
     COLOR4D        m_currentColor;
     PLOT_DASH_TYPE m_currentLineType;
 
-    DXF_UNITS      m_plotUnits;
-    double         m_unitScalingFactor;
-    unsigned int   m_measurementDirective;
+    DXF_UNITS    m_plotUnits;
+    double       m_unitScalingFactor;
+    unsigned int m_measurementDirective;
 };

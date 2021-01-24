@@ -87,7 +87,7 @@ PGM_KICAD& PgmTop()
 
 bool PGM_KICAD::OnPgmInit()
 {
-#if defined(DEBUG)
+#if defined( DEBUG )
     wxString absoluteArgv0 = wxStandardPaths::Get().GetExecutablePath();
 
     if( !wxIsAbsolutePath( absoluteArgv0 ) )
@@ -138,8 +138,8 @@ bool PGM_KICAD::OnPgmInit()
             m_bm.m_search.Insert( it->second.GetValue(), 0 );
     }
 
-    KICAD_MANAGER_FRAME* frame = new KICAD_MANAGER_FRAME( NULL, wxT( "KiCad" ),
-                                                          wxDefaultPosition, wxSize( 775, -1 ) );
+    KICAD_MANAGER_FRAME* frame =
+            new KICAD_MANAGER_FRAME( NULL, wxT( "KiCad" ), wxDefaultPosition, wxSize( 775, -1 ) );
     App().SetTopWindow( frame );
 
     Kiway.SetTop( frame );
@@ -203,7 +203,7 @@ void PGM_KICAD::OnPgmExit()
 
 void PGM_KICAD::MacOpenFile( const wxString& aFileName )
 {
-#if defined(__WXMAC__)
+#if defined( __WXMAC__ )
 
     KICAD_MANAGER_FRAME* frame = (KICAD_MANAGER_FRAME*) App().GetTopWindow();
 
@@ -225,7 +225,7 @@ void PGM_KICAD::Destroy()
 }
 
 
-KIWAY  Kiway( &Pgm(), KFCTL_CPP_PROJECT_SUITE );
+KIWAY Kiway( &Pgm(), KFCTL_CPP_PROJECT_SUITE );
 
 
 /**
@@ -234,8 +234,8 @@ KIWAY  Kiway( &Pgm(), KFCTL_CPP_PROJECT_SUITE );
  */
 struct APP_KICAD : public wxApp
 {
-#if defined (__LINUX__)
-    APP_KICAD(): wxApp()
+#if defined( __LINUX__ )
+    APP_KICAD() : wxApp()
     {
         // Disable proxy menu in Unity window manager. Only usual menubar works with
         // wxWidgets (at least <= 3.1).  When the proxy menu menubar is enable, some
@@ -244,7 +244,7 @@ struct APP_KICAD : public wxApp
 
         if( wxGetEnv( wxT( "XDG_CURRENT_DESKTOP" ), &wm ) && wm.CmpNoCase( wxT( "Unity" ) ) == 0 )
         {
-            wxSetEnv ( wxT("UBUNTU_MENUPROXY" ), wxT( "0" ) );
+            wxSetEnv( wxT( "UBUNTU_MENUPROXY" ), wxT( "0" ) );
         }
 
         // Force the use of X11 backend (or wayland-x11 compatibilty layer).  This is required until wxWidgets
@@ -260,7 +260,7 @@ struct APP_KICAD : public wxApp
     }
 #endif
 
-    bool OnInit()           override
+    bool OnInit() override
     {
 #if defined( _MSC_VER ) && defined( DEBUG )
         // wxWidgets turns on leak dumping in debug but its "flawed" and will falsely dump for half a hour
@@ -276,7 +276,8 @@ struct APP_KICAD : public wxApp
         // Gracefully inform the user and refuse to start (because python will crash us if we continue)
         if( !IsWindows8OrGreater() )
         {
-            wxMessageBox( _( "Windows 7 and older is no longer supported by KiCad and its dependencies." ),
+            wxMessageBox( _( "Windows 7 and older is no longer supported by KiCad and its "
+                             "dependencies." ),
                           _( "Unsupported Operating System" ), wxOK | wxICON_ERROR );
             return false;
         }
@@ -291,11 +292,11 @@ struct APP_KICAD : public wxApp
         return true;
     }
 
-    int  OnExit()           override
+    int OnExit() override
     {
         program.OnPgmExit();
 
-#if defined(__FreeBSD__)
+#if defined( __FreeBSD__ )
         /* Avoid wxLog crashing when used in destructors. */
         wxLog::EnableLogging( false );
 #endif
@@ -303,7 +304,7 @@ struct APP_KICAD : public wxApp
         return wxApp::OnExit();
     }
 
-    int OnRun()             override
+    int OnRun() override
     {
         try
         {
@@ -312,13 +313,13 @@ struct APP_KICAD : public wxApp
         catch( const std::exception& e )
         {
             wxLogError( wxT( "Unhandled exception class: %s  what: %s" ),
-                    FROM_UTF8( typeid( e ).name() ), FROM_UTF8( e.what() ) );
+                        FROM_UTF8( typeid( e ).name() ), FROM_UTF8( e.what() ) );
         }
         catch( const IO_ERROR& ioe )
         {
             wxLogError( ioe.What() );
         }
-        catch(...)
+        catch( ... )
         {
             wxLogError( wxT( "Unhandled exception of unknown type" ) );
         }
@@ -346,10 +347,7 @@ struct APP_KICAD : public wxApp
      * @see http://wiki.wxwidgets.org/WxMac-specific_topics
      */
 #if defined( __WXMAC__ )
-    void MacOpenFile( const wxString& aFileName ) override
-    {
-        Pgm().MacOpenFile( aFileName );
-    }
+    void MacOpenFile( const wxString& aFileName ) override { Pgm().MacOpenFile( aFileName ); }
 #endif
 };
 
@@ -362,4 +360,3 @@ PROJECT& Prj()
 {
     return Kiway.Prj();
 }
-

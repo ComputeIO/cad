@@ -29,7 +29,6 @@
 const int ercSettingsSchemaVersion = 0;
 
 
-
 #define OK PIN_ERROR::OK
 #define ERR PIN_ERROR::PP_ERROR
 #define WAR PIN_ERROR::WARNING
@@ -37,21 +36,20 @@ const int ercSettingsSchemaVersion = 0;
 /**
  * Default Look up table which gives the ERC error level for a pair of connected pins
  */
-PIN_ERROR ERC_SETTINGS::m_defaultPinMap[ELECTRICAL_PINTYPES_TOTAL][ELECTRICAL_PINTYPES_TOTAL] =
-{
-/*         I,   O,    Bi,   3S,   Pas,  NIC,  UnS,  PwrI, PwrO, OC,   OE,   NC */
-/* I  */ { OK,  OK,   OK,   OK,   OK,   OK,   WAR,  OK,   OK,   OK,   OK,   ERR },
-/* O  */ { OK,  ERR,  OK,   WAR,  OK,   OK,   WAR,  OK,   ERR,  ERR,  ERR,  ERR },
-/* Bi */ { OK,  OK,   OK,   OK,   OK,   OK,   WAR,  OK,   WAR,  OK,   WAR,  ERR },
-/* 3S */ { OK,  WAR,  OK,   OK,   OK,   OK,   WAR,  WAR,  ERR,  WAR,  WAR,  ERR },
-/*Pas */ { OK,  OK,   OK,   OK,   OK,   OK,   WAR,  OK,   OK,   OK,   OK,   ERR },
-/*NIC */ { OK,  OK,   OK,   OK,   OK,   OK,   OK,   OK,   OK,   OK,   OK,   ERR },
-/*UnS */ { WAR, WAR,  WAR,  WAR,  WAR,  OK,   WAR,  WAR,  WAR,  WAR,  WAR,  ERR },
-/*PwrI*/ { OK,  OK,   OK,   WAR,  OK,   OK,   WAR,  OK,   OK,   OK,   OK,   ERR },
-/*PwrO*/ { OK,  ERR,  WAR,  ERR,  OK,   OK,   WAR,  OK,   ERR,  ERR,  ERR,  ERR },
-/* OC */ { OK,  ERR,  OK,   WAR,  OK,   OK,   WAR,  OK,   ERR,  OK,   OK,   ERR },
-/* OE */ { OK,  ERR,  WAR,  WAR,  OK,   OK,   WAR,  OK,   ERR,  OK,   OK,   ERR },
-/* NC */ { ERR, ERR,  ERR,  ERR,  ERR,  ERR,  ERR,  ERR,  ERR,  ERR,  ERR,  ERR }
+PIN_ERROR ERC_SETTINGS::m_defaultPinMap[ELECTRICAL_PINTYPES_TOTAL][ELECTRICAL_PINTYPES_TOTAL] = {
+    /*         I,   O,    Bi,   3S,   Pas,  NIC,  UnS,  PwrI, PwrO, OC,   OE,   NC */
+    /* I  */ { OK, OK, OK, OK, OK, OK, WAR, OK, OK, OK, OK, ERR },
+    /* O  */ { OK, ERR, OK, WAR, OK, OK, WAR, OK, ERR, ERR, ERR, ERR },
+    /* Bi */ { OK, OK, OK, OK, OK, OK, WAR, OK, WAR, OK, WAR, ERR },
+    /* 3S */ { OK, WAR, OK, OK, OK, OK, WAR, WAR, ERR, WAR, WAR, ERR },
+    /*Pas */ { OK, OK, OK, OK, OK, OK, WAR, OK, OK, OK, OK, ERR },
+    /*NIC */ { OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, OK, ERR },
+    /*UnS */ { WAR, WAR, WAR, WAR, WAR, OK, WAR, WAR, WAR, WAR, WAR, ERR },
+    /*PwrI*/ { OK, OK, OK, WAR, OK, OK, WAR, OK, OK, OK, OK, ERR },
+    /*PwrO*/ { OK, ERR, WAR, ERR, OK, OK, WAR, OK, ERR, ERR, ERR, ERR },
+    /* OC */ { OK, ERR, OK, WAR, OK, OK, WAR, OK, ERR, OK, OK, ERR },
+    /* OE */ { OK, ERR, WAR, WAR, OK, OK, WAR, OK, ERR, OK, OK, ERR },
+    /* NC */ { ERR, ERR, ERR, ERR, ERR, ERR, ERR, ERR, ERR, ERR, ERR, ERR }
 };
 
 
@@ -65,21 +63,20 @@ PIN_ERROR ERC_SETTINGS::m_defaultPinMap[ELECTRICAL_PINTYPES_TOTAL][ELECTRICAL_PI
  * in net.  Nets are OK when their final state is NET_NC or DRV.   Nets with the state
  * NOD have no valid source signal.
  */
-int ERC_SETTINGS::m_PinMinDrive[ELECTRICAL_PINTYPES_TOTAL][ELECTRICAL_PINTYPES_TOTAL] =
-{
-/*         I,    O,    Bi,   3S,   Pas,  NIC,  UnS,  PwrI, PwrO, OC,   OE,   NC */
-/* I  */ { NOD,  DRV,  DRV,  DRV,  DRV,  NOD,  DRV,  NOD,  DRV,  DRV,  DRV,  NPI },
-/* O  */ { DRV,  DRV,  DRV,  DRV,  DRV,  NOD,  DRV,  DRV,  DRV,  DRV,  DRV,  NPI },
-/* Bi */ { DRV,  DRV,  DRV,  DRV,  DRV,  NOD,  DRV,  NOD,  DRV,  DRV,  DRV,  NPI },
-/* 3S */ { DRV,  DRV,  DRV,  DRV,  DRV,  NOD,  DRV,  NOD,  DRV,  DRV,  DRV,  NPI },
-/*Pas */ { DRV,  DRV,  DRV,  DRV,  DRV,  NOD,  DRV,  NOD,  DRV,  DRV,  DRV,  NPI },
-/*NIC */ { NOD,  NOD,  NOD,  NOD,  NOD,  NOD,  NOD,  NOD,  NOD,  NOD,  NOD,  NPI },
-/*UnS */ { DRV,  DRV,  DRV,  DRV,  DRV,  NOD,  DRV,  NOD,  DRV,  DRV,  DRV,  NPI },
-/*PwrI*/ { NOD,  DRV,  NOD,  NOD,  NOD,  NOD,  NOD,  NOD,  DRV,  NOD,  NOD,  NPI },
-/*PwrO*/ { DRV,  DRV,  DRV,  DRV,  DRV,  NOD,  DRV,  DRV,  DRV,  DRV,  DRV,  NPI },
-/* OC */ { DRV,  DRV,  DRV,  DRV,  DRV,  NOD,  DRV,  NOD,  DRV,  DRV,  DRV,  NPI },
-/* OE */ { DRV,  DRV,  DRV,  DRV,  DRV,  NOD,  DRV,  NOD,  DRV,  DRV,  DRV,  NPI },
-/* NC */ { NPI,  NPI,  NPI,  NPI,  NPI,  NPI,  NPI,  NPI,  NPI,  NPI,  NPI,  NPI }
+int ERC_SETTINGS::m_PinMinDrive[ELECTRICAL_PINTYPES_TOTAL][ELECTRICAL_PINTYPES_TOTAL] = {
+    /*         I,    O,    Bi,   3S,   Pas,  NIC,  UnS,  PwrI, PwrO, OC,   OE,   NC */
+    /* I  */ { NOD, DRV, DRV, DRV, DRV, NOD, DRV, NOD, DRV, DRV, DRV, NPI },
+    /* O  */ { DRV, DRV, DRV, DRV, DRV, NOD, DRV, DRV, DRV, DRV, DRV, NPI },
+    /* Bi */ { DRV, DRV, DRV, DRV, DRV, NOD, DRV, NOD, DRV, DRV, DRV, NPI },
+    /* 3S */ { DRV, DRV, DRV, DRV, DRV, NOD, DRV, NOD, DRV, DRV, DRV, NPI },
+    /*Pas */ { DRV, DRV, DRV, DRV, DRV, NOD, DRV, NOD, DRV, DRV, DRV, NPI },
+    /*NIC */ { NOD, NOD, NOD, NOD, NOD, NOD, NOD, NOD, NOD, NOD, NOD, NPI },
+    /*UnS */ { DRV, DRV, DRV, DRV, DRV, NOD, DRV, NOD, DRV, DRV, DRV, NPI },
+    /*PwrI*/ { NOD, DRV, NOD, NOD, NOD, NOD, NOD, NOD, DRV, NOD, NOD, NPI },
+    /*PwrO*/ { DRV, DRV, DRV, DRV, DRV, NOD, DRV, DRV, DRV, DRV, DRV, NPI },
+    /* OC */ { DRV, DRV, DRV, DRV, DRV, NOD, DRV, NOD, DRV, DRV, DRV, NPI },
+    /* OE */ { DRV, DRV, DRV, DRV, DRV, NOD, DRV, NOD, DRV, DRV, DRV, NPI },
+    /* NC */ { NPI, NPI, NPI, NPI, NPI, NPI, NPI, NPI, NPI, NPI, NPI, NPI }
 };
 
 
@@ -89,20 +86,21 @@ ERC_SETTINGS::ERC_SETTINGS( JSON_SETTINGS* aParent, const std::string& aPath ) :
     ResetPinMap();
 
     for( int i = ERCE_FIRST; i <= ERCE_LAST; ++i )
-        m_Severities[ i ] = RPT_SEVERITY_ERROR;
+        m_Severities[i] = RPT_SEVERITY_ERROR;
 
     // Error is the default setting so set non-error priorities here.
-    m_Severities[ERCE_UNSPECIFIED]             = RPT_SEVERITY_UNDEFINED;
-    m_Severities[ERCE_PIN_TO_PIN_WARNING]      = RPT_SEVERITY_WARNING;
-    m_Severities[ERCE_SIMILAR_LABELS]          = RPT_SEVERITY_WARNING;
-    m_Severities[ERCE_GLOBLABEL]               = RPT_SEVERITY_WARNING;
-    m_Severities[ERCE_DRIVER_CONFLICT]         = RPT_SEVERITY_WARNING;
-    m_Severities[ERCE_BUS_ENTRY_CONFLICT]      = RPT_SEVERITY_WARNING;
-    m_Severities[ERCE_LIB_SYMBOL_ISSUES]       = RPT_SEVERITY_WARNING;
-    m_Severities[ERCE_NOCONNECT_CONNECTED]     = RPT_SEVERITY_WARNING;
+    m_Severities[ERCE_UNSPECIFIED] = RPT_SEVERITY_UNDEFINED;
+    m_Severities[ERCE_PIN_TO_PIN_WARNING] = RPT_SEVERITY_WARNING;
+    m_Severities[ERCE_SIMILAR_LABELS] = RPT_SEVERITY_WARNING;
+    m_Severities[ERCE_GLOBLABEL] = RPT_SEVERITY_WARNING;
+    m_Severities[ERCE_DRIVER_CONFLICT] = RPT_SEVERITY_WARNING;
+    m_Severities[ERCE_BUS_ENTRY_CONFLICT] = RPT_SEVERITY_WARNING;
+    m_Severities[ERCE_LIB_SYMBOL_ISSUES] = RPT_SEVERITY_WARNING;
+    m_Severities[ERCE_NOCONNECT_CONNECTED] = RPT_SEVERITY_WARNING;
     m_Severities[ERCE_NOCONNECT_NOT_CONNECTED] = RPT_SEVERITY_WARNING;
 
-    m_params.emplace_back( new PARAM_LAMBDA<nlohmann::json>( "rule_severities",
+    m_params.emplace_back( new PARAM_LAMBDA<nlohmann::json>(
+            "rule_severities",
             [&]() -> nlohmann::json
             {
                 nlohmann::json ret = {};
@@ -138,7 +136,8 @@ ERC_SETTINGS::ERC_SETTINGS( JSON_SETTINGS* aParent, const std::string& aPath ) :
             },
             {} ) );
 
-    m_params.emplace_back( new PARAM_LAMBDA<nlohmann::json>( "erc_exclusions",
+    m_params.emplace_back( new PARAM_LAMBDA<nlohmann::json>(
+            "erc_exclusions",
             [&]() -> nlohmann::json
             {
                 nlohmann::json js = nlohmann::json::array();
@@ -165,7 +164,8 @@ ERC_SETTINGS::ERC_SETTINGS( JSON_SETTINGS* aParent, const std::string& aPath ) :
             },
             {} ) );
 
-    m_params.emplace_back( new PARAM_LAMBDA<nlohmann::json>( "pin_map",
+    m_params.emplace_back( new PARAM_LAMBDA<nlohmann::json>(
+            "pin_map",
             [&]() -> nlohmann::json
             {
                 nlohmann::json ret = nlohmann::json::array();
@@ -248,7 +248,7 @@ SEVERITY ERC_SETTINGS::GetSeverity( int aErrorCode ) const
     }
 
     wxCHECK_MSG( m_Severities.count( aErrorCode ), RPT_SEVERITY_IGNORE,
-            "Missing severity from map in ERC_SETTINGS!" );
+                 "Missing severity from map in ERC_SETTINGS!" );
 
     return m_Severities.at( aErrorCode );
 }
@@ -256,7 +256,7 @@ SEVERITY ERC_SETTINGS::GetSeverity( int aErrorCode ) const
 
 void ERC_SETTINGS::SetSeverity( int aErrorCode, SEVERITY aSeverity )
 {
-    m_Severities[ aErrorCode ] = aSeverity;
+    m_Severities[aErrorCode] = aSeverity;
 }
 
 
@@ -307,17 +307,19 @@ void SHEETLIST_ERC_ITEMS_PROVIDER::SetSeverities( int aSeverities )
 
     ERC_SETTINGS& settings = m_schematic->ErcSettings();
 
-    visitMarkers( [&]( SCH_MARKER* aMarker ) {
-        SEVERITY markerSeverity;
+    visitMarkers(
+            [&]( SCH_MARKER* aMarker )
+            {
+                SEVERITY markerSeverity;
 
-        if( aMarker->IsExcluded() )
-            markerSeverity = RPT_SEVERITY_EXCLUSION;
-        else
-            markerSeverity = settings.GetSeverity( aMarker->GetRCItem()->GetErrorCode() );
+                if( aMarker->IsExcluded() )
+                    markerSeverity = RPT_SEVERITY_EXCLUSION;
+                else
+                    markerSeverity = settings.GetSeverity( aMarker->GetRCItem()->GetErrorCode() );
 
-        if( markerSeverity & m_severities )
-            m_filteredMarkers.push_back( aMarker );
-    } );
+                if( markerSeverity & m_severities )
+                    m_filteredMarkers.push_back( aMarker );
+            } );
 }
 
 
@@ -330,17 +332,19 @@ int SHEETLIST_ERC_ITEMS_PROVIDER::GetCount( int aSeverity )
 
     ERC_SETTINGS& settings = m_schematic->ErcSettings();
 
-    visitMarkers( [&]( SCH_MARKER* aMarker ) {
-        SEVERITY markerSeverity;
+    visitMarkers(
+            [&]( SCH_MARKER* aMarker )
+            {
+                SEVERITY markerSeverity;
 
-        if( aMarker->IsExcluded() )
-            markerSeverity = RPT_SEVERITY_EXCLUSION;
-        else
-            markerSeverity = settings.GetSeverity( aMarker->GetRCItem()->GetErrorCode() );
+                if( aMarker->IsExcluded() )
+                    markerSeverity = RPT_SEVERITY_EXCLUSION;
+                else
+                    markerSeverity = settings.GetSeverity( aMarker->GetRCItem()->GetErrorCode() );
 
-        if( markerSeverity == aSeverity )
-            count++;
-    } );
+                if( markerSeverity == aSeverity )
+                    count++;
+            } );
 
     return count;
 }
@@ -348,7 +352,7 @@ int SHEETLIST_ERC_ITEMS_PROVIDER::GetCount( int aSeverity )
 
 std::shared_ptr<ERC_ITEM> SHEETLIST_ERC_ITEMS_PROVIDER::GetERCItem( int aIndex )
 {
-    SCH_MARKER* marker = m_filteredMarkers[ aIndex ];
+    SCH_MARKER* marker = m_filteredMarkers[aIndex];
 
     return marker ? std::static_pointer_cast<ERC_ITEM>( marker->GetRCItem() ) : nullptr;
 }
@@ -362,7 +366,7 @@ std::shared_ptr<RC_ITEM> SHEETLIST_ERC_ITEMS_PROVIDER::GetItem( int aIndex )
 
 void SHEETLIST_ERC_ITEMS_PROVIDER::DeleteItem( int aIndex, bool aDeep )
 {
-    SCH_MARKER* marker = m_filteredMarkers[ aIndex ];
+    SCH_MARKER* marker = m_filteredMarkers[aIndex];
     m_filteredMarkers.erase( m_filteredMarkers.begin() + aIndex );
 
     if( aDeep )

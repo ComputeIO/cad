@@ -28,7 +28,7 @@
 #include <list>
 #include <vector>
 
-#include <eda_item.h>             // FILL_TYPE
+#include <eda_item.h> // FILL_TYPE
 #include <math/box2.h>
 #include <plotter.h>
 
@@ -38,15 +38,9 @@ class HPGL_PLOTTER : public PLOTTER
 public:
     HPGL_PLOTTER();
 
-    virtual PLOT_FORMAT GetPlotterType() const override
-    {
-        return PLOT_FORMAT::HPGL;
-    }
+    virtual PLOT_FORMAT GetPlotterType() const override { return PLOT_FORMAT::HPGL; }
 
-    static wxString GetDefaultFileExtension()
-    {
-        return wxString( wxT( "plt" ) );
-    }
+    static wxString GetDefaultFileExtension() { return wxString( wxT( "plt" ) ); }
 
     /// Set the target length of chords used to draw approximated circles and
     /// arcs.
@@ -74,15 +68,9 @@ public:
 
     virtual void SetColor( COLOR4D color ) override {}
 
-    virtual void SetPenSpeed( int speed )
-    {
-        penSpeed = speed;
-    }
+    virtual void SetPenSpeed( int speed ) { penSpeed = speed; }
 
-    virtual void SetPenNumber( int number )
-    {
-        penNumber = number;
-    }
+    virtual void SetPenNumber( int number ) { penNumber = number; }
 
     virtual void SetPenDiameter( double diameter );
 
@@ -97,24 +85,22 @@ public:
 
     virtual void ThickSegment( const wxPoint& start, const wxPoint& end, int width,
                                OUTLINE_MODE tracemode, void* aData ) override;
-    virtual void Arc( const wxPoint& centre, double StAngle, double EndAngle,
-                      int rayon, FILL_TYPE fill, int width = USE_DEFAULT_LINE_WIDTH ) override;
+    virtual void Arc( const wxPoint& centre, double StAngle, double EndAngle, int rayon,
+                      FILL_TYPE fill, int width = USE_DEFAULT_LINE_WIDTH ) override;
     virtual void PenTo( const wxPoint& pos, char plume ) override;
-    virtual void FlashPadCircle( const wxPoint& aPadPos, int aDiameter,
-                                 OUTLINE_MODE aTraceMode, void* aData ) override;
+    virtual void FlashPadCircle( const wxPoint& aPadPos, int aDiameter, OUTLINE_MODE aTraceMode,
+                                 void* aData ) override;
     virtual void FlashPadOval( const wxPoint& aPadPos, const wxSize& aSize, double aPadOrient,
                                OUTLINE_MODE aTraceMode, void* aData ) override;
-    virtual void FlashPadRect( const wxPoint& aPadPos, const wxSize& aSize,
-                               double aOrient, OUTLINE_MODE aTraceMode, void* aData ) override;
-    virtual void FlashPadRoundRect( const wxPoint& aPadPos, const wxSize& aSize,
-                                    int aCornerRadius, double aOrient,
-                                    OUTLINE_MODE aTraceMode, void* aData ) override;
+    virtual void FlashPadRect( const wxPoint& aPadPos, const wxSize& aSize, double aOrient,
+                               OUTLINE_MODE aTraceMode, void* aData ) override;
+    virtual void FlashPadRoundRect( const wxPoint& aPadPos, const wxSize& aSize, int aCornerRadius,
+                                    double aOrient, OUTLINE_MODE aTraceMode, void* aData ) override;
     virtual void FlashPadCustom( const wxPoint& aPadPos, const wxSize& aSize, double aOrient,
-                                 SHAPE_POLY_SET* aPolygons,
-                                 OUTLINE_MODE aTraceMode, void* aData ) override;
-    virtual void FlashPadTrapez( const wxPoint& aPadPos, const wxPoint *aCorners,
-                                 double aPadOrient, OUTLINE_MODE aTraceMode,
+                                 SHAPE_POLY_SET* aPolygons, OUTLINE_MODE aTraceMode,
                                  void* aData ) override;
+    virtual void FlashPadTrapez( const wxPoint& aPadPos, const wxPoint* aCorners, double aPadOrient,
+                                 OUTLINE_MODE aTraceMode, void* aData ) override;
     virtual void FlashRegularPolygon( const wxPoint& aShapePos, int aDiameter, int aCornerCount,
                                       double aOrient, OUTLINE_MODE aTraceMode,
                                       void* aData ) override;
@@ -157,35 +143,35 @@ protected:
         }
 
         /// Location the pen should start at
-        DPOINT         loc_start;
+        DPOINT loc_start;
 
         /// Location the pen will be at when it finishes. If this is not known,
         /// leave it equal to loc_start and set lift_after.
-        DPOINT         loc_end;
+        DPOINT loc_end;
 
         /// Bounding box of this item
-        BOX2D          bbox;
+        BOX2D bbox;
 
         /// Whether the command should be executed with the pen lifted
-        bool           lift_before;
+        bool lift_before;
 
         /// Whether the pen must be lifted after the command. If the location of the pen
         /// is not known, this must be set (so that another command starting at loc_end
         /// is not immediately executed with no lift).
-        bool           lift_after;
+        bool lift_after;
 
         /// Whether the pen returns to its original state after the command. Otherwise,
         /// the pen is assumed to be down following the command.
-        bool           pen_returns;
+        bool pen_returns;
 
         /// Pen number for this command
-        int            pen;
+        int pen;
 
         /// Line style for this command
         PLOT_DASH_TYPE dashType;
 
         /// Text of the command
-        wxString       content;
+        wxString content;
     };
 
     /// Sort a list of HPGL items to improve plotting speed on mechanical plotters.

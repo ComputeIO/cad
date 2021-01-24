@@ -33,22 +33,22 @@
  * Symbol library file version.
  */
 //#define SEXPR_SYMBOL_LIB_FILE_VERSION  20200126  // Initial version.  Add alternate pin
-                                                   // definitions.
+// definitions.
 
 //#define SEXPR_SYMBOL_LIB_FILE_VERSION  20200820
 
 //#define SEXPR_SYMBOL_LIB_FILE_VERSION  20200827  // Remove host tag
 //#define SEXPR_SYMBOL_LIB_FILE_VERSION  20200908  // Add include in BOM and on board support.
-#define SEXPR_SYMBOL_LIB_FILE_VERSION  20201005    // Separate ki_fp_filters by spaces
+#define SEXPR_SYMBOL_LIB_FILE_VERSION 20201005 // Separate ki_fp_filters by spaces
 
 
 /**
  * Symbol library file version.
  */
 //#define SEXPR_SCHEMATIC_FILE_VERSION 20200310  // Initial version.  Sheet fields were named
-                                                 // incorectly (using symbol field vocabulary).
+// incorectly (using symbol field vocabulary).
 //#define SEXPR_SCHEMATIC_FILE_VERSION 20200506  // Used "page" instead of "paper" for paper
-                                                 // sizes.
+// sizes.
 //#define SEXPR_SCHEMATIC_FILE_VERSION 20200512  // Add support for exclude from BOM.
 //#define SEXPR_SCHEMATIC_FILE_VERSION 20200602  // Add support for exclude from board.
 //#define SEXPR_SCHEMATIC_FILE_VERSION 20200608  // Add support for bus and junction properties.
@@ -58,4 +58,4 @@
 //#define SEXPR_SCHEMATIC_FILE_VERSION 20200827  // Remove host tag
 //#define SEXPR_SCHEMATIC_FILE_VERSION 20200828  // Add footprint to symbol_instances.
 //#define SEXPR_SCHEMATIC_FILE_VERSION 20201015  // Add sheet instance properties.
-#define SEXPR_SCHEMATIC_FILE_VERSION 20210123    // Rename "unconnected" pintype to "no_connect".
+#define SEXPR_SCHEMATIC_FILE_VERSION 20210123 // Rename "unconnected" pintype to "no_connect".

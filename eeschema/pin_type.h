@@ -33,12 +33,12 @@
  */
 enum class ELECTRICAL_PINTYPE
 {
-    PT_INPUT,         ///< usual pin input: must be connected
-    PT_OUTPUT,        ///< usual output
-    PT_BIDI,          ///< input or output (like port for a microprocessor)
-    PT_TRISTATE,      ///< tris state bus pin
-    PT_PASSIVE,       ///< pin for passive components: must be connected, and can be connected to any pin
-    PT_NIC,           ///< not internally connected (may be connected to anything)
+    PT_INPUT,    ///< usual pin input: must be connected
+    PT_OUTPUT,   ///< usual output
+    PT_BIDI,     ///< input or output (like port for a microprocessor)
+    PT_TRISTATE, ///< tris state bus pin
+    PT_PASSIVE,  ///< pin for passive components: must be connected, and can be connected to any pin
+    PT_NIC,      ///< not internally connected (may be connected to anything)
     PT_UNSPECIFIED,   ///< unknown electrical properties: creates always a warning when connected
     PT_POWER_IN,      ///< power input (GND, VCC for ICs). Must be connected to a power output.
     PT_POWER_OUT,     ///< output of a regulator: intended to be connected to power input pins
@@ -71,23 +71,23 @@ enum class GRAPHIC_PINSHAPE
 
 // UI
 
-wxString PinShapeGetText( GRAPHIC_PINSHAPE shape );
+wxString   PinShapeGetText( GRAPHIC_PINSHAPE shape );
 BITMAP_DEF PinShapeGetBitmap( GRAPHIC_PINSHAPE shape );
 
-wxString ElectricalPinTypeGetText( ELECTRICAL_PINTYPE );
+wxString   ElectricalPinTypeGetText( ELECTRICAL_PINTYPE );
 BITMAP_DEF ElectricalPinTypeGetBitmap( ELECTRICAL_PINTYPE );
 
 wxString PinOrientationName( unsigned aPinOrientationCode );
-int PinOrientationCode( int index );
-int PinOrientationIndex( int code );
+int      PinOrientationCode( int index );
+int      PinOrientationIndex( int code );
 
-const wxArrayString& PinTypeNames();
+const wxArrayString&           PinTypeNames();
 const std::vector<BITMAP_DEF>& PinTypeIcons();
 
-const wxArrayString& PinShapeNames();
+const wxArrayString&           PinShapeNames();
 const std::vector<BITMAP_DEF>& PinShapeIcons();
 
-const wxArrayString& PinOrientationNames();
+const wxArrayString&           PinOrientationNames();
 const std::vector<BITMAP_DEF>& PinOrientationIcons();
 
 #endif

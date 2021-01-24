@@ -56,41 +56,19 @@ static const double DXF_OBLIQUE_ANGLE = 15;
  */
 static const struct
 {
-    const char *name;
-    int color;
-} dxf_layer[NBCOLORS] =
-{
-    { "BLACK",      7 },    // In DXF, color 7 is *both* white and black!
-    { "GRAY1",      251 },
-    { "GRAY2",      8 },
-    { "GRAY3",      9 },
-    { "WHITE",      7 },
-    { "LYELLOW",    51 },
-    { "BLUE1",      178 },
-    { "GREEN1",     98 },
-    { "CYAN1",      138 },
-    { "RED1",       18 },
-    { "MAGENTA1",   228 },
-    { "BROWN1",     58 },
-    { "BLUE2",      5 },
-    { "GREEN2",     3 },
-    { "CYAN2",      4 },
-    { "RED2",       1 },
-    { "MAGENTA2",   6 },
-    { "BROWN2",     54 },
-    { "BLUE3",      171 },
-    { "GREEN3",     91 },
-    { "CYAN3",      131 },
-    { "RED3",       11 },
-    { "MAGENTA3",   221 },
-    { "YELLOW3",    2 },
-    { "BLUE4",      5 },
-    { "GREEN4",     3 },
-    { "CYAN4",      4 },
-    { "RED4",       1 },
-    { "MAGENTA4",   6 },
-    { "YELLOW4",    2 }
-};
+    const char* name;
+    int         color;
+} dxf_layer[NBCOLORS] = { { "BLACK", 7 }, // In DXF, color 7 is *both* white and black!
+                          { "GRAY1", 251 },    { "GRAY2", 8 },    { "GRAY3", 9 },
+                          { "WHITE", 7 },      { "LYELLOW", 51 }, { "BLUE1", 178 },
+                          { "GREEN1", 98 },    { "CYAN1", 138 },  { "RED1", 18 },
+                          { "MAGENTA1", 228 }, { "BROWN1", 58 },  { "BLUE2", 5 },
+                          { "GREEN2", 3 },     { "CYAN2", 4 },    { "RED2", 1 },
+                          { "MAGENTA2", 6 },   { "BROWN2", 54 },  { "BLUE3", 171 },
+                          { "GREEN3", 91 },    { "CYAN3", 131 },  { "RED3", 11 },
+                          { "MAGENTA3", 221 }, { "YELLOW3", 2 },  { "BLUE4", 5 },
+                          { "GREEN4", 3 },     { "CYAN4", 4 },    { "RED4", 1 },
+                          { "MAGENTA4", 6 },   { "YELLOW4", 2 } };
 
 
 static const char* getDXFLineType( PLOT_DASH_TYPE aType )
@@ -98,17 +76,11 @@ static const char* getDXFLineType( PLOT_DASH_TYPE aType )
     switch( aType )
     {
     case PLOT_DASH_TYPE::DEFAULT:
-    case PLOT_DASH_TYPE::SOLID:
-        return "CONTINUOUS";
-    case PLOT_DASH_TYPE::DASH:
-        return "DASHED";
-    case PLOT_DASH_TYPE::DOT:
-        return "DOTTED";
-    case PLOT_DASH_TYPE::DASHDOT:
-        return "DASHDOT";
-    default:
-        wxFAIL_MSG( "Unhandled PLOT_DASH_TYPE" );
-        return "CONTINUOUS";
+    case PLOT_DASH_TYPE::SOLID: return "CONTINUOUS";
+    case PLOT_DASH_TYPE::DASH: return "DASHED";
+    case PLOT_DASH_TYPE::DOT: return "DOTTED";
+    case PLOT_DASH_TYPE::DASHDOT: return "DASHDOT";
+    default: wxFAIL_MSG( "Unhandled PLOT_DASH_TYPE" ); return "CONTINUOUS";
     }
 }
 
@@ -117,9 +89,8 @@ static const char* getDXFLineType( PLOT_DASH_TYPE aType )
 // DXF files do not use a RGB definition
 static wxString getDXFColorName( COLOR4D aColor )
 {
-    EDA_COLOR_T color = COLOR4D::FindNearestLegacyColor( int( aColor.r * 255 ),
-                                                         int( aColor.g * 255 ),
-                                                         int( aColor.b * 255 ) );
+    EDA_COLOR_T color = COLOR4D::FindNearestLegacyColor(
+            int( aColor.r * 255 ), int( aColor.g * 255 ), int( aColor.b * 255 ) );
     wxString cname( dxf_layer[color].name );
     return cname;
 }
@@ -137,9 +108,7 @@ void DXF_PLOTTER::SetUnits( DXF_UNITS aUnit )
         break;
 
     case DXF_UNITS::INCHES:
-    default:
-        m_unitScalingFactor = 0.0001;
-        m_measurementDirective = 0;
+    default: m_unitScalingFactor = 0.0001; m_measurementDirective = 0;
     }
 }
 
@@ -149,11 +118,11 @@ void DXF_PLOTTER::SetUnits( DXF_UNITS aUnit )
  * The DXF engine doesn't support line widths and mirroring. The output
  * coordinate system is in the first quadrant (in mm)
  */
-void DXF_PLOTTER::SetViewport( const wxPoint& aOffset, double aIusPerDecimil,
-                               double aScale, bool aMirror )
+void DXF_PLOTTER::SetViewport( const wxPoint& aOffset, double aIusPerDecimil, double aScale,
+                               bool aMirror )
 {
-    m_plotOffset  = aOffset;
-    m_plotScale   = aScale;
+    m_plotOffset = aOffset;
+    m_plotScale = aScale;
 
     /* DXF paper is 'virtual' so there is no need of a paper size.
        Also this way we can handle the aux origin which can be useful
@@ -168,7 +137,7 @@ void DXF_PLOTTER::SetViewport( const wxPoint& aOffset, double aIusPerDecimil,
     m_iuPerDeviceUnit = 1.0 / aIusPerDecimil; // Gives a DXF in decimils
     m_iuPerDeviceUnit *= GetUnitScaling();    // Get the scaling factor for the current units
 
-    m_plotMirror = false;                     // No mirroring on DXF
+    m_plotMirror = false; // No mirroring on DXF
     m_currentColor = COLOR4D::BLACK;
 }
 
@@ -183,116 +152,116 @@ bool DXF_PLOTTER::StartPlot()
     // Defines the minimum for drawing i.e. the angle system and the
     // 4 linetypes (CONTINUOUS, DOTDASH, DASHED and DOTTED)
     fprintf( m_outputFile,
-            "  0\n"
-            "SECTION\n"
-            "  2\n"
-            "HEADER\n"
-            "  9\n"
-            "$ANGBASE\n"
-            "  50\n"
-            "0.0\n"
-            "  9\n"
-            "$ANGDIR\n"
-            "  70\n"
-            "1\n"
-            "  9\n"
-            "$MEASUREMENT\n"
-            "  70\n"
-            "%u\n"
-            "  0\n"
-            "ENDSEC\n"
-            "  0\n"
-            "SECTION\n"
-            "  2\n"
-            "TABLES\n"
-            "  0\n"
-            "TABLE\n"
-            "  2\n"
-            "LTYPE\n"
-            "  70\n"
-            "4\n"
-            "  0\n"
-            "LTYPE\n"
-            "  5\n"
-            "40F\n"
-            "  2\n"
-            "CONTINUOUS\n"
-            "  70\n"
-            "0\n"
-            "  3\n"
-            "Solid line\n"
-            "  72\n"
-            "65\n"
-            "  73\n"
-            "0\n"
-            "  40\n"
-            "0.0\n"
-            "  0\n"
-            "LTYPE\n"
-            "  5\n"
-            "410\n"
-            "  2\n"
-            "DASHDOT\n"
-            " 70\n"
-            "0\n"
-            "  3\n"
-            "Dash Dot ____ _ ____ _\n"
-            " 72\n"
-            "65\n"
-            " 73\n"
-            "4\n"
-            " 40\n"
-            "2.0\n"
-            " 49\n"
-            "1.25\n"
-            " 49\n"
-            "-0.25\n"
-            " 49\n"
-            "0.25\n"
-            " 49\n"
-            "-0.25\n"
-            "  0\n"
-            "LTYPE\n"
-            "  5\n"
-            "411\n"
-            "  2\n"
-            "DASHED\n"
-            " 70\n"
-            "0\n"
-            "  3\n"
-            "Dashed __ __ __ __ __\n"
-            " 72\n"
-            "65\n"
-            " 73\n"
-            "2\n"
-            " 40\n"
-            "0.75\n"
-            " 49\n"
-            "0.5\n"
-            " 49\n"
-            "-0.25\n"
-            "  0\n"
-            "LTYPE\n"
-            "  5\n"
-            "43B\n"
-            "  2\n"
-            "DOTTED\n"
-            " 70\n"
-            "0\n"
-            "  3\n"
-            "Dotted .  .  .  .\n"
-            " 72\n"
-            "65\n"
-            " 73\n"
-            "2\n"
-            " 40\n"
-            "0.2\n"
-            " 49\n"
-            "0.0\n"
-            " 49\n"
-            "-0.2\n"
-            "  0\n"
-            "ENDTAB\n",
+             "  0\n"
+             "SECTION\n"
+             "  2\n"
+             "HEADER\n"
+             "  9\n"
+             "$ANGBASE\n"
+             "  50\n"
+             "0.0\n"
+             "  9\n"
+             "$ANGDIR\n"
+             "  70\n"
+             "1\n"
+             "  9\n"
+             "$MEASUREMENT\n"
+             "  70\n"
+             "%u\n"
+             "  0\n"
+             "ENDSEC\n"
+             "  0\n"
+             "SECTION\n"
+             "  2\n"
+             "TABLES\n"
+             "  0\n"
+             "TABLE\n"
+             "  2\n"
+             "LTYPE\n"
+             "  70\n"
+             "4\n"
+             "  0\n"
+             "LTYPE\n"
+             "  5\n"
+             "40F\n"
+             "  2\n"
+             "CONTINUOUS\n"
+             "  70\n"
+             "0\n"
+             "  3\n"
+             "Solid line\n"
+             "  72\n"
+             "65\n"
+             "  73\n"
+             "0\n"
+             "  40\n"
+             "0.0\n"
+             "  0\n"
+             "LTYPE\n"
+             "  5\n"
+             "410\n"
+             "  2\n"
+             "DASHDOT\n"
+             " 70\n"
+             "0\n"
+             "  3\n"
+             "Dash Dot ____ _ ____ _\n"
+             " 72\n"
+             "65\n"
+             " 73\n"
+             "4\n"
+             " 40\n"
+             "2.0\n"
+             " 49\n"
+             "1.25\n"
+             " 49\n"
+             "-0.25\n"
+             " 49\n"
+             "0.25\n"
+             " 49\n"
+             "-0.25\n"
+             "  0\n"
+             "LTYPE\n"
+             "  5\n"
+             "411\n"
+             "  2\n"
+             "DASHED\n"
+             " 70\n"
+             "0\n"
+             "  3\n"
+             "Dashed __ __ __ __ __\n"
+             " 72\n"
+             "65\n"
+             " 73\n"
+             "2\n"
+             " 40\n"
+             "0.75\n"
+             " 49\n"
+             "0.5\n"
+             " 49\n"
+             "-0.25\n"
+             "  0\n"
+             "LTYPE\n"
+             "  5\n"
+             "43B\n"
+             "  2\n"
+             "DOTTED\n"
+             " 70\n"
+             "0\n"
+             "  3\n"
+             "Dotted .  .  .  .\n"
+             " 72\n"
+             "65\n"
+             " 73\n"
+             "2\n"
+             " 40\n"
+             "0.2\n"
+             " 49\n"
+             "0.0\n"
+             " 49\n"
+             "-0.2\n"
+             "  0\n"
+             "ENDTAB\n",
              GetMeasurementDirective() );
 
     // Text styles table
@@ -302,28 +271,29 @@ bool DXF_PLOTTER::StartPlot()
            "  2\n"
            "STYLE\n"
            "  70\n"
-           "4\n", m_outputFile );
+           "4\n",
+           m_outputFile );
 
-    static const char *style_name[4] = {"KICAD", "KICADB", "KICADI", "KICADBI"};
-    for(int i = 0; i < 4; i++ )
+    static const char* style_name[4] = { "KICAD", "KICADB", "KICADI", "KICADBI" };
+    for( int i = 0; i < 4; i++ )
     {
         fprintf( m_outputFile,
                  "  0\n"
                  "STYLE\n"
                  "  2\n"
-                 "%s\n"         // Style name
+                 "%s\n" // Style name
                  "  70\n"
-                 "0\n"          // Standard flags
+                 "0\n" // Standard flags
                  "  40\n"
-                 "0\n"          // Non-fixed height text
+                 "0\n" // Non-fixed height text
                  "  41\n"
-                 "1\n"          // Width factor (base)
+                 "1\n" // Width factor (base)
                  "  42\n"
-                 "1\n"          // Last height (mandatory)
+                 "1\n" // Last height (mandatory)
                  "  50\n"
-                 "%g\n"         // Oblique angle
+                 "%g\n" // Oblique angle
                  "  71\n"
-                 "0\n"          // Generation flags (default)
+                 "0\n" // Generation flags (default)
                  "  3\n"
                  // The standard ISO font (when kicad is build with it
                  // the dxf text in acad matches *perfectly*)
@@ -347,7 +317,8 @@ bool DXF_PLOTTER::StartPlot()
              "  2\n"
              "LAYER\n"
              "  70\n"
-             "%d\n", numLayers );
+             "%d\n",
+             numLayers );
 
     /* The layer/colors palette. The acad/DXF palette is divided in 3 zones:
 
@@ -358,19 +329,19 @@ bool DXF_PLOTTER::StartPlot()
 
     wxASSERT( numLayers < NBCOLORS );
 
-    for( EDA_COLOR_T i = BLACK; i < numLayers; i = static_cast<EDA_COLOR_T>( int( i ) + 1 )  )
+    for( EDA_COLOR_T i = BLACK; i < numLayers; i = static_cast<EDA_COLOR_T>( int( i ) + 1 ) )
     {
         fprintf( m_outputFile,
                  "  0\n"
                  "LAYER\n"
                  "  2\n"
-                 "%s\n"         // Layer name
+                 "%s\n" // Layer name
                  "  70\n"
-                 "0\n"          // Standard flags
+                 "0\n" // Standard flags
                  "  62\n"
-                 "%d\n"         // Color number
+                 "%d\n" // Color number
                  "  6\n"
-                 "CONTINUOUS\n",// Linetype name
+                 "CONTINUOUS\n", // Linetype name
                  dxf_layer[i].name, dxf_layer[i].color );
     }
 
@@ -382,7 +353,8 @@ bool DXF_PLOTTER::StartPlot()
            "  0\n"
            "SECTION\n"
            "  2\n"
-           "ENTITIES\n", m_outputFile );
+           "ENTITIES\n",
+           m_outputFile );
 
     return true;
 }
@@ -396,7 +368,8 @@ bool DXF_PLOTTER::EndPlot()
     fputs( "  0\n"
            "ENDSEC\n"
            "  0\n"
-           "EOF\n", m_outputFile );
+           "EOF\n",
+           m_outputFile );
     fclose( m_outputFile );
     m_outputFile = NULL;
 
@@ -409,9 +382,7 @@ bool DXF_PLOTTER::EndPlot()
  */
 void DXF_PLOTTER::SetColor( COLOR4D color )
 {
-    if( ( m_colorMode )
-       || ( color == COLOR4D::BLACK )
-       || ( color == COLOR4D::WHITE ) )
+    if( ( m_colorMode ) || ( color == COLOR4D::BLACK ) || ( color == COLOR4D::WHITE ) )
     {
         m_currentColor = color;
     }
@@ -452,24 +423,21 @@ void DXF_PLOTTER::Circle( const wxPoint& centre, int diameter, FILL_TYPE fill, i
 
         if( fill == FILL_TYPE::NO_FILL )
         {
-            fprintf( m_outputFile, "0\nCIRCLE\n8\n%s\n10\n%g\n20\n%g\n40\n%g\n",
-                     TO_UTF8( cname ),
+            fprintf( m_outputFile, "0\nCIRCLE\n8\n%s\n10\n%g\n20\n%g\n40\n%g\n", TO_UTF8( cname ),
                      centre_dev.x, centre_dev.y, radius );
         }
 
         if( fill == FILL_TYPE::FILLED_SHAPE )
         {
-            double r = radius*0.5;
-            fprintf( m_outputFile, "0\nPOLYLINE\n");
-            fprintf( m_outputFile, "8\n%s\n66\n1\n70\n1\n", TO_UTF8( cname ));
-            fprintf( m_outputFile, "40\n%g\n41\n%g\n", radius, radius);
-            fprintf( m_outputFile, "0\nVERTEX\n8\n%s\n", TO_UTF8( cname ));
-            fprintf( m_outputFile, "10\n%g\n 20\n%g\n42\n1.0\n",
-                    centre_dev.x-r, centre_dev.y );
-            fprintf( m_outputFile, "0\nVERTEX\n8\n%s\n", TO_UTF8( cname ));
-            fprintf( m_outputFile, "10\n%g\n 20\n%g\n42\n1.0\n",
-                    centre_dev.x+r, centre_dev.y );
-            fprintf( m_outputFile, "0\nSEQEND\n");
+            double r = radius * 0.5;
+            fprintf( m_outputFile, "0\nPOLYLINE\n" );
+            fprintf( m_outputFile, "8\n%s\n66\n1\n70\n1\n", TO_UTF8( cname ) );
+            fprintf( m_outputFile, "40\n%g\n41\n%g\n", radius, radius );
+            fprintf( m_outputFile, "0\nVERTEX\n8\n%s\n", TO_UTF8( cname ) );
+            fprintf( m_outputFile, "10\n%g\n 20\n%g\n42\n1.0\n", centre_dev.x - r, centre_dev.y );
+            fprintf( m_outputFile, "0\nVERTEX\n8\n%s\n", TO_UTF8( cname ) );
+            fprintf( m_outputFile, "10\n%g\n 20\n%g\n42\n1.0\n", centre_dev.x + r, centre_dev.y );
+            fprintf( m_outputFile, "0\nSEQEND\n" );
         }
     }
 }
@@ -481,8 +449,8 @@ void DXF_PLOTTER::Circle( const wxPoint& centre, int diameter, FILL_TYPE fill, i
  * It does not know thhick segments, therefore filled polygons with thick outline
  * are converted to inflated polygon by aWidth/2
  */
-void DXF_PLOTTER::PlotPoly( const std::vector<wxPoint>& aCornerList,
-                            FILL_TYPE aFill, int aWidth, void * aData )
+void DXF_PLOTTER::PlotPoly( const std::vector<wxPoint>& aCornerList, FILL_TYPE aFill, int aWidth,
+                            void* aData )
 {
     if( aCornerList.size() <= 1 )
         return;
@@ -490,7 +458,7 @@ void DXF_PLOTTER::PlotPoly( const std::vector<wxPoint>& aCornerList,
     unsigned last = aCornerList.size() - 1;
 
     // Plot outlines with lines (thickness = 0) to define the polygon
-    if( aWidth <= 0  )
+    if( aWidth <= 0 )
     {
         MoveTo( aCornerList[0] );
 
@@ -517,8 +485,7 @@ void DXF_PLOTTER::PlotPoly( const std::vector<wxPoint>& aCornerList,
         MoveTo( aCornerList[0] );
 
         for( unsigned ii = 1; ii < aCornerList.size(); ii++ )
-            ThickSegment( aCornerList[ii-1], aCornerList[ii],
-                          aWidth, FILLED, NULL );
+            ThickSegment( aCornerList[ii - 1], aCornerList[ii], aWidth, FILLED, NULL );
 
         return;
     }
@@ -526,16 +493,16 @@ void DXF_PLOTTER::PlotPoly( const std::vector<wxPoint>& aCornerList,
     // The polygon outline has thickness, and is filled
     // Build and plot the polygon which contains the initial
     // polygon and its thick outline
-    SHAPE_POLY_SET  bufferOutline;
-    SHAPE_POLY_SET  bufferPolybase;
+    SHAPE_POLY_SET bufferOutline;
+    SHAPE_POLY_SET bufferPolybase;
 
     bufferPolybase.NewOutline();
 
     // enter outline as polygon:
     for( unsigned ii = 1; ii < aCornerList.size(); ii++ )
     {
-        TransformOvalToPolygon( bufferOutline, aCornerList[ ii - 1 ], aCornerList[ ii ],
-                                aWidth, GetPlotterArcHighDef(), ERROR_INSIDE );
+        TransformOvalToPolygon( bufferOutline, aCornerList[ii - 1], aCornerList[ii], aWidth,
+                                GetPlotterArcHighDef(), ERROR_INSIDE );
     }
 
     // enter the initial polygon:
@@ -551,12 +518,12 @@ void DXF_PLOTTER::PlotPoly( const std::vector<wxPoint>& aCornerList,
     bufferPolybase.BooleanAdd( bufferOutline, SHAPE_POLY_SET::PM_FAST );
     bufferPolybase.Fracture( SHAPE_POLY_SET::PM_FAST );
 
-    if( bufferPolybase.OutlineCount() < 1 )      // should not happen
+    if( bufferPolybase.OutlineCount() < 1 ) // should not happen
         return;
 
     const SHAPE_LINE_CHAIN& path = bufferPolybase.COutline( 0 );
 
-    if( path.PointCount() < 2 )           // should not happen
+    if( path.PointCount() < 2 ) // should not happen
         return;
 
     // Now, output the final polygon to DXF file:
@@ -602,8 +569,8 @@ void DXF_PLOTTER::PenTo( const wxPoint& pos, char plume )
         wxString    cname = getDXFColorName( m_currentColor );
         const char* lname = getDXFLineType( static_cast<PLOT_DASH_TYPE>( m_currentLineType ) );
         fprintf( m_outputFile, "0\nLINE\n8\n%s\n6\n%s\n10\n%g\n20\n%g\n11\n%g\n21\n%g\n",
-                 TO_UTF8( cname ), lname,
-                 pen_lastpos_dev.x, pen_lastpos_dev.y, pos_dev.x, pos_dev.y );
+                 TO_UTF8( cname ), lname, pen_lastpos_dev.x, pen_lastpos_dev.y, pos_dev.x,
+                 pos_dev.y );
     }
     m_penLastpos = pos;
 }
@@ -622,7 +589,7 @@ void DXF_PLOTTER::ThickSegment( const wxPoint& aStart, const wxPoint& aEnd, int 
     if( aPlotMode == SKETCH )
     {
         std::vector<wxPoint> cornerList;
-        SHAPE_POLY_SET outlineBuffer;
+        SHAPE_POLY_SET       outlineBuffer;
         TransformOvalToPolygon( outlineBuffer, aStart, aEnd, aWidth, GetPlotterArcHighDef(),
                                 ERROR_INSIDE );
         const SHAPE_LINE_CHAIN& path = outlineBuffer.COutline( 0 );
@@ -668,11 +635,9 @@ void DXF_PLOTTER::Arc( const wxPoint& centre, double StAngle, double EndAngle, i
 
     // Emit a DXF ARC entity
     wxString cname = getDXFColorName( m_currentColor );
-    fprintf( m_outputFile,
-             "0\nARC\n8\n%s\n10\n%g\n20\n%g\n40\n%g\n50\n%g\n51\n%g\n",
-             TO_UTF8( cname ),
-             centre_dev.x, centre_dev.y, radius_dev,
-             StAngle / 10.0, EndAngle / 10.0 );
+    fprintf( m_outputFile, "0\nARC\n8\n%s\n10\n%g\n20\n%g\n40\n%g\n50\n%g\n51\n%g\n",
+             TO_UTF8( cname ), centre_dev.x, centre_dev.y, radius_dev, StAngle / 10.0,
+             EndAngle / 10.0 );
 }
 
 /**
@@ -700,8 +665,8 @@ void DXF_PLOTTER::FlashPadOval( const wxPoint& pos, const wxSize& aSize, double 
  * DXF round pad: always done in sketch mode; it could be filled but it isn't
  * pretty if other kinds of pad aren't...
  */
-void DXF_PLOTTER::FlashPadCircle( const wxPoint& pos, int diametre,
-                                    OUTLINE_MODE trace_mode, void* aData )
+void DXF_PLOTTER::FlashPadCircle( const wxPoint& pos, int diametre, OUTLINE_MODE trace_mode,
+                                  void* aData )
 {
     wxASSERT( m_outputFile );
     Circle( pos, diametre, FILL_TYPE::NO_FILL );
@@ -711,8 +676,8 @@ void DXF_PLOTTER::FlashPadCircle( const wxPoint& pos, int diametre,
 /**
  * DXF rectangular pad: alwayd done in sketch mode
  */
-void DXF_PLOTTER::FlashPadRect( const wxPoint& pos, const wxSize& padsize,
-                                double orient, OUTLINE_MODE trace_mode, void* aData )
+void DXF_PLOTTER::FlashPadRect( const wxPoint& pos, const wxSize& padsize, double orient,
+                                OUTLINE_MODE trace_mode, void* aData )
 {
     wxASSERT( m_outputFile );
     wxSize size;
@@ -775,13 +740,12 @@ void DXF_PLOTTER::FlashPadRect( const wxPoint& pos, const wxSize& padsize,
     FinishTo( wxPoint( ox, oy ) );
 }
 
-void DXF_PLOTTER::FlashPadRoundRect( const wxPoint& aPadPos, const wxSize& aSize,
-                                     int aCornerRadius, double aOrient,
-                                     OUTLINE_MODE aTraceMode, void* aData )
+void DXF_PLOTTER::FlashPadRoundRect( const wxPoint& aPadPos, const wxSize& aSize, int aCornerRadius,
+                                     double aOrient, OUTLINE_MODE aTraceMode, void* aData )
 {
     SHAPE_POLY_SET outline;
-    TransformRoundChamferedRectToPolygon( outline, aPadPos, aSize, aOrient,
-                                 aCornerRadius, 0.0, 0, GetPlotterArcHighDef(), ERROR_INSIDE );
+    TransformRoundChamferedRectToPolygon( outline, aPadPos, aSize, aOrient, aCornerRadius, 0.0, 0,
+                                          GetPlotterArcHighDef(), ERROR_INSIDE );
 
     // TransformRoundRectToPolygon creates only one convex polygon
     SHAPE_LINE_CHAIN& poly = outline.Outline( 0 );
@@ -794,9 +758,8 @@ void DXF_PLOTTER::FlashPadRoundRect( const wxPoint& aPadPos, const wxSize& aSize
     FinishTo( wxPoint( poly.CPoint( 0 ).x, poly.CPoint( 0 ).y ) );
 }
 
-void DXF_PLOTTER::FlashPadCustom( const wxPoint& aPadPos, const wxSize& aSize,
-                                  double aOrient, SHAPE_POLY_SET* aPolygons,
-                                  OUTLINE_MODE aTraceMode, void* aData )
+void DXF_PLOTTER::FlashPadCustom( const wxPoint& aPadPos, const wxSize& aSize, double aOrient,
+                                  SHAPE_POLY_SET* aPolygons, OUTLINE_MODE aTraceMode, void* aData )
 {
     for( int cnt = 0; cnt < aPolygons->OutlineCount(); ++cnt )
     {
@@ -815,11 +778,11 @@ void DXF_PLOTTER::FlashPadCustom( const wxPoint& aPadPos, const wxSize& aSize,
 /**
  * DXF trapezoidal pad: only sketch mode is supported
  */
-void DXF_PLOTTER::FlashPadTrapez( const wxPoint& aPadPos, const wxPoint *aCorners,
+void DXF_PLOTTER::FlashPadTrapez( const wxPoint& aPadPos, const wxPoint* aCorners,
                                   double aPadOrient, OUTLINE_MODE aTrace_Mode, void* aData )
 {
     wxASSERT( m_outputFile );
-    wxPoint coord[4];       /* coord actual corners of a trapezoidal trace */
+    wxPoint coord[4]; /* coord actual corners of a trapezoidal trace */
 
     for( int ii = 0; ii < 4; ii++ )
     {
@@ -837,9 +800,8 @@ void DXF_PLOTTER::FlashPadTrapez( const wxPoint& aPadPos, const wxPoint *aCorner
 }
 
 
-void DXF_PLOTTER::FlashRegularPolygon( const wxPoint& aShapePos,
-                            int aRadius, int aCornerCount,
-                            double aOrient, OUTLINE_MODE aTraceMode, void* aData )
+void DXF_PLOTTER::FlashRegularPolygon( const wxPoint& aShapePos, int aRadius, int aCornerCount,
+                                       double aOrient, OUTLINE_MODE aTraceMode, void* aData )
 {
     // Do nothing
     wxASSERT( 0 );
@@ -891,75 +853,59 @@ void DXF_PLOTTER::Text( const wxPoint& aPos, COLOR4D aColor, const wxString& aTe
         DPOINT origin_dev = userToDeviceCoordinates( aPos );
         SetColor( aColor );
         wxString cname = getDXFColorName( m_currentColor );
-        DPOINT size_dev = userToDeviceSize( aSize );
-        int h_code = 0, v_code = 0;
+        DPOINT   size_dev = userToDeviceSize( aSize );
+        int      h_code = 0, v_code = 0;
         switch( aH_justify )
         {
-        case GR_TEXT_HJUSTIFY_LEFT:
-            h_code = 0;
-            break;
-        case GR_TEXT_HJUSTIFY_CENTER:
-            h_code = 1;
-            break;
-        case GR_TEXT_HJUSTIFY_RIGHT:
-            h_code = 2;
-            break;
+        case GR_TEXT_HJUSTIFY_LEFT: h_code = 0; break;
+        case GR_TEXT_HJUSTIFY_CENTER: h_code = 1; break;
+        case GR_TEXT_HJUSTIFY_RIGHT: h_code = 2; break;
         }
         switch( aV_justify )
         {
-        case GR_TEXT_VJUSTIFY_TOP:
-            v_code = 3;
-            break;
-        case GR_TEXT_VJUSTIFY_CENTER:
-            v_code = 2;
-            break;
-        case GR_TEXT_VJUSTIFY_BOTTOM:
-            v_code = 1;
-            break;
+        case GR_TEXT_VJUSTIFY_TOP: v_code = 3; break;
+        case GR_TEXT_VJUSTIFY_CENTER: v_code = 2; break;
+        case GR_TEXT_VJUSTIFY_BOTTOM: v_code = 1; break;
         }
 
         // Position, size, rotation and alignment
         // The two alignment point usages is somewhat idiot (see the DXF ref)
         // Anyway since we don't use the fit/aligned options, they're the same
         fprintf( m_outputFile,
-                "  0\n"
-                "TEXT\n"
-                "  7\n"
-                "%s\n"          // Text style
-                "  8\n"
-                "%s\n"          // Layer name
-                "  10\n"
-                "%g\n"          // First point X
-                "  11\n"
-                "%g\n"          // Second point X
-                "  20\n"
-                "%g\n"          // First point Y
-                "  21\n"
-                "%g\n"          // Second point Y
-                "  40\n"
-                "%g\n"          // Text height
-                "  41\n"
-                "%g\n"          // Width factor
-                "  50\n"
-                "%g\n"          // Rotation
-                "  51\n"
-                "%g\n"          // Oblique angle
-                "  71\n"
-                "%d\n"          // Mirror flags
-                "  72\n"
-                "%d\n"          // H alignment
-                "  73\n"
-                "%d\n",         // V alignment
-                aBold ? (aItalic ? "KICADBI" : "KICADB")
-                      : (aItalic ? "KICADI" : "KICAD"),
-                 TO_UTF8( cname ),
-                 origin_dev.x, origin_dev.x,
-                 origin_dev.y, origin_dev.y,
-                 size_dev.y, fabs( size_dev.x / size_dev.y ),
-                 aOrient / 10.0,
+                 "  0\n"
+                 "TEXT\n"
+                 "  7\n"
+                 "%s\n" // Text style
+                 "  8\n"
+                 "%s\n" // Layer name
+                 "  10\n"
+                 "%g\n" // First point X
+                 "  11\n"
+                 "%g\n" // Second point X
+                 "  20\n"
+                 "%g\n" // First point Y
+                 "  21\n"
+                 "%g\n" // Second point Y
+                 "  40\n"
+                 "%g\n" // Text height
+                 "  41\n"
+                 "%g\n" // Width factor
+                 "  50\n"
+                 "%g\n" // Rotation
+                 "  51\n"
+                 "%g\n" // Oblique angle
+                 "  71\n"
+                 "%d\n" // Mirror flags
+                 "  72\n"
+                 "%d\n" // H alignment
+                 "  73\n"
+                 "%d\n", // V alignment
+                 aBold ? ( aItalic ? "KICADBI" : "KICADB" ) : ( aItalic ? "KICADI" : "KICAD" ),
+                 TO_UTF8( cname ), origin_dev.x, origin_dev.x, origin_dev.y, origin_dev.y,
+                 size_dev.y, fabs( size_dev.x / size_dev.y ), aOrient / 10.0,
                  aItalic ? DXF_OBLIQUE_ANGLE : 0,
                  size_dev.x < 0 ? 2 : 0, // X mirror flag
-                h_code, v_code );
+                 h_code, v_code );
 
         /* There are two issue in emitting the text:
            - Our overline character (~) must be converted to the appropriate

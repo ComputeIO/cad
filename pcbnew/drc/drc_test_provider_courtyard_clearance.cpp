@@ -40,21 +40,13 @@
 class DRC_TEST_PROVIDER_COURTYARD_CLEARANCE : public DRC_TEST_PROVIDER_CLEARANCE_BASE
 {
 public:
-    DRC_TEST_PROVIDER_COURTYARD_CLEARANCE ()
-    {
-        m_isRuleDriven = false;
-    }
+    DRC_TEST_PROVIDER_COURTYARD_CLEARANCE() { m_isRuleDriven = false; }
 
-    virtual ~DRC_TEST_PROVIDER_COURTYARD_CLEARANCE () 
-    {
-    }
+    virtual ~DRC_TEST_PROVIDER_COURTYARD_CLEARANCE() {}
 
     virtual bool Run() override;
 
-    virtual const wxString GetName() const override 
-    {
-        return "courtyard_clearance";
-    }
+    virtual const wxString GetName() const override { return "courtyard_clearance"; }
 
     virtual const wxString GetDescription() const override
     {
@@ -74,7 +66,7 @@ private:
 
 void DRC_TEST_PROVIDER_COURTYARD_CLEARANCE::testFootprintCourtyardDefinitions()
 {
-    const int delta = 100;  // This is the number of tests between 2 calls to the progress bar
+    const int delta = 100; // This is the number of tests between 2 calls to the progress bar
 
     // Detects missing (or malformed) footprint courtyards
     if( !reportPhase( _( "Checking footprint courtyard definitions..." ) ) )
@@ -89,23 +81,23 @@ void DRC_TEST_PROVIDER_COURTYARD_CLEARANCE::testFootprintCourtyardDefinitions()
 
         if( ( footprint->GetFlags() & MALFORMED_COURTYARDS ) != 0 )
         {
-            if( m_drcEngine->IsErrorLimitExceeded( DRCE_MALFORMED_COURTYARD) )
+            if( m_drcEngine->IsErrorLimitExceeded( DRCE_MALFORMED_COURTYARD ) )
                 continue;
 
             OUTLINE_ERROR_HANDLER errorHandler =
-                    [&]( const wxString& msg, BOARD_ITEM* , BOARD_ITEM* , const wxPoint& pt )
-                    {
-                        std::shared_ptr<DRC_ITEM> drcItem = DRC_ITEM::Create( DRCE_MALFORMED_COURTYARD );
-                        drcItem->SetErrorMessage( drcItem->GetErrorText() + wxS( " " ) + msg );
-                        drcItem->SetItems( footprint );
-                        reportViolation( drcItem, pt );
-                    };
+                    [&]( const wxString& msg, BOARD_ITEM*, BOARD_ITEM*, const wxPoint& pt )
+            {
+                std::shared_ptr<DRC_ITEM> drcItem = DRC_ITEM::Create( DRCE_MALFORMED_COURTYARD );
+                drcItem->SetErrorMessage( drcItem->GetErrorText() + wxS( " " ) + msg );
+                drcItem->SetItems( footprint );
+                reportViolation( drcItem, pt );
+            };
 
             // Re-run courtyard tests to generate DRC_ITEMs
             footprint->BuildPolyCourtyards( &errorHandler );
         }
         else if( footprint->GetPolyCourtyardFront().OutlineCount() == 0
-                && footprint->GetPolyCourtyardBack().OutlineCount() == 0 )
+                 && footprint->GetPolyCourtyardBack().OutlineCount() == 0 )
         {
             if( m_drcEngine->IsErrorLimitExceeded( DRCE_MISSING_COURTYARD ) )
                 continue;
@@ -125,7 +117,7 @@ void DRC_TEST_PROVIDER_COURTYARD_CLEARANCE::testFootprintCourtyardDefinitions()
 
 void DRC_TEST_PROVIDER_COURTYARD_CLEARANCE::testCourtyardClearances()
 {
-    const int delta = 100;  // This is the number of tests between 2 calls to the progress bar
+    const int delta = 100; // This is the number of tests between 2 calls to the progress bar
 
     if( !reportPhase( _( "Checking footprints for overlapping courtyards..." ) ) )
         return;
@@ -137,7 +129,7 @@ void DRC_TEST_PROVIDER_COURTYARD_CLEARANCE::testCourtyardClearances()
         if( !reportProgress( ii++, m_board->Footprints().size(), delta ) )
             break;
 
-        if( m_drcEngine->IsErrorLimitExceeded( DRCE_OVERLAPPING_FOOTPRINTS) )
+        if( m_drcEngine->IsErrorLimitExceeded( DRCE_OVERLAPPING_FOOTPRINTS ) )
             break;
 
         FOOTPRINT*      footprint = *it1;
@@ -164,20 +156,21 @@ void DRC_TEST_PROVIDER_COURTYARD_CLEARANCE::testCourtyardClearances()
             VECTOR2I        pos;
 
             if( footprintFront.OutlineCount() > 0 && testFront.OutlineCount() > 0
-                    && frontBBox.Intersects( testFront.BBoxFromCaches() ) )
+                && frontBBox.Intersects( testFront.BBoxFromCaches() ) )
             {
                 constraint = m_drcEngine->EvalRulesForItems( COURTYARD_CLEARANCE_CONSTRAINT,
                                                              footprint, test, F_Cu );
                 clearance = constraint.GetValue().Min();
 
-                if( clearance >= 0 && footprintFront.Collide( &testFront, clearance, &actual, &pos ) )
+                if( clearance >= 0
+                    && footprintFront.Collide( &testFront, clearance, &actual, &pos ) )
                 {
-                    std::shared_ptr<DRC_ITEM> drce = DRC_ITEM::Create( DRCE_OVERLAPPING_FOOTPRINTS );
+                    std::shared_ptr<DRC_ITEM> drce =
+                            DRC_ITEM::Create( DRCE_OVERLAPPING_FOOTPRINTS );
 
                     if( clearance > 0 )
                     {
-                        m_msg.Printf( _( "(%s clearance %s; actual %s)" ),
-                                      constraint.GetName(),
+                        m_msg.Printf( _( "(%s clearance %s; actual %s)" ), constraint.GetName(),
                                       MessageTextFromValue( userUnits(), clearance ),
                                       MessageTextFromValue( userUnits(), actual ) );
 
@@ -191,7 +184,7 @@ void DRC_TEST_PROVIDER_COURTYARD_CLEARANCE::testCourtyardClearances()
             }
 
             if( footprintBack.OutlineCount() > 0 && testBack.OutlineCount() > 0
-                    && backBBox.Intersects( testBack.BBoxFromCaches() ) )
+                && backBBox.Intersects( testBack.BBoxFromCaches() ) )
             {
                 constraint = m_drcEngine->EvalRulesForItems( COURTYARD_CLEARANCE_CONSTRAINT,
                                                              footprint, test, B_Cu );
@@ -199,12 +192,12 @@ void DRC_TEST_PROVIDER_COURTYARD_CLEARANCE::testCourtyardClearances()
 
                 if( clearance >= 0 && footprintBack.Collide( &testBack, clearance, &actual, &pos ) )
                 {
-                    std::shared_ptr<DRC_ITEM> drce = DRC_ITEM::Create( DRCE_OVERLAPPING_FOOTPRINTS );
+                    std::shared_ptr<DRC_ITEM> drce =
+                            DRC_ITEM::Create( DRCE_OVERLAPPING_FOOTPRINTS );
 
                     if( clearance > 0 )
                     {
-                        m_msg.Printf( _( "(%s clearance %s; actual %s)" ),
-                                      constraint.GetName(),
+                        m_msg.Printf( _( "(%s clearance %s; actual %s)" ), constraint.GetName(),
                                       MessageTextFromValue( userUnits(), clearance ),
                                       MessageTextFromValue( userUnits(), actual ) );
 
@@ -253,5 +246,5 @@ std::set<DRC_CONSTRAINT_T> DRC_TEST_PROVIDER_COURTYARD_CLEARANCE::GetConstraintT
 
 namespace detail
 {
-    static DRC_REGISTER_TEST_PROVIDER<DRC_TEST_PROVIDER_COURTYARD_CLEARANCE> dummy;
+static DRC_REGISTER_TEST_PROVIDER<DRC_TEST_PROVIDER_COURTYARD_CLEARANCE> dummy;
 }

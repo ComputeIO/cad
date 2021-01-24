@@ -368,9 +368,9 @@ public:
      * @param aTraceMode FILLED or SKETCH
      * @param aData an auxiliary info (mainly for gerber format attributes)
      */
-    virtual void FlashPadCustom( const wxPoint& aPadPos, const wxSize& aSize,
-                                 double aPadOrient, SHAPE_POLY_SET* aPolygons,
-                                 OUTLINE_MODE aTraceMode, void* aData ) = 0;
+    virtual void FlashPadCustom( const wxPoint& aPadPos, const wxSize& aSize, double aPadOrient,
+                                 SHAPE_POLY_SET* aPolygons, OUTLINE_MODE aTraceMode,
+                                 void* aData ) = 0;
 
     /**
      * Flash a trapezoidal pad

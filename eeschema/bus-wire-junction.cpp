@@ -57,10 +57,11 @@ std::vector<wxPoint> SCH_EDIT_FRAME::GetSchematicConnections()
 
     // We always have some overlapping connection points.  Drop duplicates here
     std::sort( retval.begin(), retval.end(),
-            []( const wxPoint& a, const wxPoint& b ) -> bool
-            { return a.x < b.x || (a.x == b.x && a.y < b.y); } );
-    retval.erase(
-            std::unique( retval.begin(), retval.end() ), retval.end() );
+               []( const wxPoint& a, const wxPoint& b ) -> bool
+               {
+                   return a.x < b.x || ( a.x == b.x && a.y < b.y );
+               } );
+    retval.erase( std::unique( retval.begin(), retval.end() ), retval.end() );
 
     return retval;
 }
@@ -68,11 +69,10 @@ std::vector<wxPoint> SCH_EDIT_FRAME::GetSchematicConnections()
 
 void SCH_EDIT_FRAME::TestDanglingEnds()
 {
-    std::function<void( SCH_ITEM* )> changeHandler =
-            [&]( SCH_ITEM* aChangedItem ) -> void
-            {
-                GetCanvas()->GetView()->Update( aChangedItem, KIGFX::REPAINT );
-            };
+    std::function<void( SCH_ITEM* )> changeHandler = [&]( SCH_ITEM* aChangedItem ) -> void
+    {
+        GetCanvas()->GetView()->Update( aChangedItem, KIGFX::REPAINT );
+    };
 
     GetScreen()->TestDanglingEnds( nullptr, &changeHandler );
 }
@@ -84,7 +84,7 @@ bool SCH_EDIT_FRAME::TrimWire( const wxPoint& aStart, const wxPoint& aEnd )
     bool        retval = false;
 
     std::vector<SCH_LINE*> wires;
-    EDA_RECT    bb( aStart, wxSize( 1, 1 ) );
+    EDA_RECT               bb( aStart, wxSize( 1, 1 ) );
 
     bb.Merge( aEnd );
 
@@ -107,8 +107,8 @@ bool SCH_EDIT_FRAME::TrimWire( const wxPoint& aStart, const wxPoint& aEnd )
         if( line->GetEditFlags() & ( STRUCT_DELETED | IS_DRAGGED | IS_MOVED | SKIP_STRUCT ) )
             continue;
 
-        if( !IsPointOnSegment( line->GetStartPoint(), line->GetEndPoint(), aStart ) ||
-                !IsPointOnSegment( line->GetStartPoint(), line->GetEndPoint(), aEnd ) )
+        if( !IsPointOnSegment( line->GetStartPoint(), line->GetEndPoint(), aStart )
+            || !IsPointOnSegment( line->GetStartPoint(), line->GetEndPoint(), aEnd ) )
         {
             continue;
         }
@@ -159,12 +159,12 @@ bool SCH_EDIT_FRAME::SchematicCleanUp( SCH_SCREEN* aScreen )
         aScreen = GetScreen();
 
     auto remove_item = [&]( SCH_ITEM* aItem ) -> void
-                       {
-                           changed = true;
-                           aItem->SetFlags( STRUCT_DELETED );
-                           itemList.PushItem( ITEM_PICKER( aScreen, aItem, UNDO_REDO::DELETED ) );
-                           deletedItems.push_back( aItem );
-                       };
+    {
+        changed = true;
+        aItem->SetFlags( STRUCT_DELETED );
+        itemList.PushItem( ITEM_PICKER( aScreen, aItem, UNDO_REDO::DELETED ) );
+        deletedItems.push_back( aItem );
+    };
 
     BreakSegmentsOnJunctions( aScreen );
 
@@ -182,30 +182,30 @@ bool SCH_EDIT_FRAME::SchematicCleanUp( SCH_SCREEN* aScreen )
     }
 
     alg::for_all_pairs( junctions.begin(), junctions.end(),
-            [&]( SCH_JUNCTION* aFirst, SCH_JUNCTION* aSecond )
-            {
-                if( ( aFirst->GetEditFlags() & STRUCT_DELETED )
-                        || ( aSecond->GetEditFlags() & STRUCT_DELETED ) )
-                {
-                    return;
-                }
+                        [&]( SCH_JUNCTION* aFirst, SCH_JUNCTION* aSecond )
+                        {
+                            if( ( aFirst->GetEditFlags() & STRUCT_DELETED )
+                                || ( aSecond->GetEditFlags() & STRUCT_DELETED ) )
+                            {
+                                return;
+                            }
 
-                if( aFirst->GetPosition() == aSecond->GetPosition() )
-                    remove_item( aSecond );
-            } );
+                            if( aFirst->GetPosition() == aSecond->GetPosition() )
+                                remove_item( aSecond );
+                        } );
 
     alg::for_all_pairs( ncs.begin(), ncs.end(),
-            [&]( SCH_NO_CONNECT* aFirst, SCH_NO_CONNECT* aSecond )
-            {
-                if( ( aFirst->GetEditFlags() & STRUCT_DELETED )
-                        || ( aSecond->GetEditFlags() & STRUCT_DELETED ) )
-                {
-                    return;
-                }
+                        [&]( SCH_NO_CONNECT* aFirst, SCH_NO_CONNECT* aSecond )
+                        {
+                            if( ( aFirst->GetEditFlags() & STRUCT_DELETED )
+                                || ( aSecond->GetEditFlags() & STRUCT_DELETED ) )
+                            {
+                                return;
+                            }
 
-                if( aFirst->GetPosition() == aSecond->GetPosition() )
-                    remove_item( aSecond );
-            } );
+                            if( aFirst->GetPosition() == aSecond->GetPosition() )
+                                remove_item( aSecond );
+                        } );
 
 
     while( changed )
@@ -242,15 +242,15 @@ bool SCH_EDIT_FRAME::SchematicCleanUp( SCH_SCREEN* aScreen )
                     continue;
 
                 if( !secondLine->IsParallel( firstLine )
-                        || !secondLine->IsStrokeEquivalent( firstLine )
-                        || secondLine->GetLayer() != firstLine->GetLayer() )
+                    || !secondLine->IsStrokeEquivalent( firstLine )
+                    || secondLine->GetLayer() != firstLine->GetLayer() )
                 {
                     continue;
                 }
 
                 // Remove identical lines
                 if( firstLine->IsEndPoint( secondLine->GetStartPoint() )
-                        && firstLine->IsEndPoint( secondLine->GetEndPoint() ) )
+                    && firstLine->IsEndPoint( secondLine->GetEndPoint() ) )
                 {
                     remove_item( secondLine );
                     continue;
@@ -296,7 +296,7 @@ bool SCH_EDIT_FRAME::BreakSegment( SCH_LINE* aSegment, const wxPoint& aPoint,
                                    SCH_LINE** aNewSegment, SCH_SCREEN* aScreen )
 {
     if( !IsPointOnSegment( aSegment->GetStartPoint(), aSegment->GetEndPoint(), aPoint )
-            || aSegment->IsEndPoint( aPoint ) )
+        || aSegment->IsEndPoint( aPoint ) )
     {
         return false;
     }
@@ -380,7 +380,7 @@ void SCH_EDIT_FRAME::DeleteJunction( SCH_ITEM* aJunction, bool aAppend )
     EE_SELECTION_TOOL* selectionTool = m_toolManager->GetTool<EE_SELECTION_TOOL>();
     KICAD_T            wiresAndBuses[] = { SCH_LINE_LOCATE_WIRE_T, SCH_LINE_LOCATE_BUS_T, EOT };
 
-    auto remove_item = [ & ]( SCH_ITEM* aItem ) -> void
+    auto remove_item = [&]( SCH_ITEM* aItem ) -> void
     {
         aItem->SetFlags( STRUCT_DELETED );
         undoList.PushItem( ITEM_PICKER( screen, aItem, UNDO_REDO::DELETED ) );
@@ -398,23 +398,24 @@ void SCH_EDIT_FRAME::DeleteJunction( SCH_ITEM* aJunction, bool aAppend )
         SCH_LINE* line = static_cast<SCH_LINE*>( item );
 
         if( line->IsType( wiresAndBuses ) && line->IsEndPoint( aJunction->GetPosition() )
-                && !( line->GetEditFlags() & STRUCT_DELETED ) )
+            && !( line->GetEditFlags() & STRUCT_DELETED ) )
             lines.push_back( line );
     }
 
-    alg::for_all_pairs( lines.begin(), lines.end(),
+    alg::for_all_pairs(
+            lines.begin(), lines.end(),
             [&]( SCH_LINE* firstLine, SCH_LINE* secondLine )
             {
                 if( ( firstLine->GetEditFlags() & STRUCT_DELETED )
-                        || ( secondLine->GetEditFlags() & STRUCT_DELETED )
-                        || !secondLine->IsParallel( firstLine ) )
+                    || ( secondLine->GetEditFlags() & STRUCT_DELETED )
+                    || !secondLine->IsParallel( firstLine ) )
                 {
                     return;
                 }
 
                 // Remove identical lines
                 if( firstLine->IsEndPoint( secondLine->GetStartPoint() )
-                        && firstLine->IsEndPoint( secondLine->GetEndPoint() ) )
+                    && firstLine->IsEndPoint( secondLine->GetEndPoint() ) )
                 {
                     remove_item( firstLine );
                     return;
@@ -475,5 +476,3 @@ SCH_JUNCTION* SCH_EDIT_FRAME::AddJunction( SCH_SCREEN* aScreen, const wxPoint& a
 
     return junction;
 }
-
-
