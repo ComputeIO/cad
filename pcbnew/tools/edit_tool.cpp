@@ -4,7 +4,7 @@
  * Copyright (C) 2013-2017 CERN
  * @author Maciej Suminski <maciej.suminski@cern.ch>
  * @author Tomasz Wlostowski <tomasz.wlostowski@cern.ch>
- * Copyright (C) 2017-2020 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 2017-2021 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -61,6 +61,7 @@ using namespace std::placeholders;
 #include <dialogs/dialog_track_via_properties.h>
 #include <dialogs/dialog_unit_entry.h>
 #include <board_commit.h>
+#include <pcb_target.h>
 #include <zone_filler.h>
 
 
@@ -269,7 +270,305 @@ int EDIT_TOOL::Drag( const TOOL_EVENT& aEvent )
     if( selection.Empty() )
         return 0;
 
-    invokeInlineRouter( mode );
+    if( selection.Size() == 1 && selection.Front()->Type() == PCB_ARC_T )
+    {
+        // TODO: This really should be done in PNS to ensure DRC is maintained, but for now
+        // it allows interactive editing of an arc track
+        return DragArcTrack( aEvent );
+    }
+    else
+    {
+        invokeInlineRouter( mode );
+    }
+
+    return 0;
+}
+
+
+int EDIT_TOOL::DragArcTrack( const TOOL_EVENT& aEvent )
+{
+    PCB_SELECTION& selection = m_selectionTool->GetSelection();
+
+    if( selection.Size() != 1 || selection.Front()->Type() != PCB_ARC_T )
+        return 0;
+
+    Activate();
+
+    ARC* theArc = static_cast<ARC*>( selection.Front() );
+
+    KIGFX::VIEW_CONTROLS* controls = getViewControls();
+
+    controls->ShowCursor( true );
+    controls->SetAutoPan( true );
+    bool restore_state = false;
+
+    VECTOR2I arcCenter = theArc->GetCenter();
+    SEG      tanStart = SEG( arcCenter, theArc->GetStart() ).PerpendicularSeg( theArc->GetStart() );
+    SEG      tanEnd = SEG( arcCenter, theArc->GetEnd() ).PerpendicularSeg( theArc->GetEnd() );
+
+    if( tanStart.ApproxParallel( tanEnd ) )
+        return 0; // don't bother with 180 degree arcs
+
+    //Ensure the tangent segments are in the correct orientation
+    VECTOR2I tanIntersect = tanStart.IntersectLines( tanEnd ).get();
+    tanStart.A = tanIntersect;
+    tanStart.B = theArc->GetStart();
+    tanEnd.A = tanIntersect;
+    tanEnd.B = theArc->GetEnd();
+
+    KICAD_T track_types[] = { PCB_PAD_T, PCB_VIA_T, PCB_TRACE_T, PCB_ARC_T, EOT };
+
+    auto getUniqueTrackAtAnchorCollinear =
+        [&]( const VECTOR2I& aAnchor, const SEG& aCollinearSeg ) -> TRACK*
+        {
+            auto conn = board()->GetConnectivity();
+            auto itemsOnAnchor = conn->GetConnectedItemsAtAnchor( theArc, aAnchor, track_types );
+            TRACK* retval = nullptr;
+
+            if( itemsOnAnchor.size() == 1 && itemsOnAnchor.front()->Type() == PCB_TRACE_T )
+            {
+                retval = static_cast<TRACK*>( itemsOnAnchor.front() );
+                SEG trackSeg( retval->GetStart(), retval->GetEnd() );
+
+                //Ensure it is collinear
+                if( !trackSeg.ApproxCollinear( aCollinearSeg ) )
+                    retval = nullptr;
+            }
+
+            if( !retval )
+            {
+                retval = new TRACK( theArc->GetParent() );
+                retval->SetStart( (wxPoint) aAnchor );
+                retval->SetEnd( (wxPoint) aAnchor );
+                retval->SetNet( theArc->GetNet() );
+                retval->SetLayer( theArc->GetLayer() );
+                retval->SetWidth( theArc->GetWidth() );
+                retval->SetFlags( IS_NEW );
+                getView()->Add( retval );
+            }
+
+            return retval;
+        };
+
+    TRACK* trackOnStart = getUniqueTrackAtAnchorCollinear( theArc->GetStart(), tanStart);
+    TRACK* trackOnEnd = getUniqueTrackAtAnchorCollinear( theArc->GetEnd(), tanEnd );
+
+    // Make copies of items to be edited
+    ARC*   theArcCopy = new ARC( *theArc );
+    TRACK* trackOnStartCopy = new TRACK( *trackOnStart );
+    TRACK* trackOnEndCopy = new TRACK( *trackOnEnd );
+
+    if( trackOnStart->GetLength() > tanStart.Length() )
+    {
+        tanStart.A = trackOnStart->GetStart();
+        tanStart.B = trackOnStart->GetEnd();
+    }
+
+    if( trackOnEnd->GetLength() > tanEnd.Length() )
+    {
+        tanEnd.A = trackOnEnd->GetStart();
+        tanEnd.B = trackOnEnd->GetEnd();
+    }
+
+    auto isTrackStartClosestToArcStart =
+        [&]( TRACK* aPointA ) -> bool
+        {
+            return GetLineLength( aPointA->GetStart(), theArc->GetStart() )
+                   < GetLineLength( aPointA->GetEnd(), theArc->GetStart() );
+        };
+
+    bool isStartTrackOnStartPt = isTrackStartClosestToArcStart( trackOnStart );
+    bool isEndTrackOnStartPt = isTrackStartClosestToArcStart( trackOnEnd );
+
+    // Calculate constraints
+    //======================
+    // maxTanCircle is the circle with maximum radius that is tangent to the two adjacent straight
+    // tracks and whose tangent points are constrained within the original tracks and their
+    // projected intersection points.
+    //
+    // The cursor will be constrained first within the isosceles triangle formed by the segments
+    // cSegTanStart, cSegTanEnd and cSegChord. After that it will be constratined to be outside
+    // maxTanCircle.
+    //
+    //
+    //                   ____________  <-cSegTanStart
+    //                  /     *   . '   *
+    //    cSegTanEnd-> /  *   . '           *
+    //                /*  . ' <-cSegChord     *
+    //               /. '
+    //              /*                           *
+    //
+    //              *             c               *  <-maxTanCircle
+    //
+    //               *                           *
+    //
+    //                  *                     *
+    //                    *                 *
+    //                        *        *
+    //
+
+    auto getFurthestPointToTanInterstect =
+        [&]( VECTOR2I& aPointA, VECTOR2I& aPointB ) -> VECTOR2I
+        {
+            if( ( aPointA - tanIntersect ).EuclideanNorm()
+                > ( aPointB - tanIntersect ).EuclideanNorm() )
+            {
+                return aPointA;
+            }
+            else
+            {
+                return aPointB;
+            }
+        };
+
+    CIRCLE   maxTanCircle;
+
+    VECTOR2I tanStartPoint = getFurthestPointToTanInterstect( tanStart.A, tanStart.B );
+    VECTOR2I tanEndPoint = getFurthestPointToTanInterstect( tanEnd.A, tanEnd.B );
+    VECTOR2I tempTangentPoint = tanEndPoint;
+
+    if( getFurthestPointToTanInterstect( tanStartPoint, tanEndPoint ) == tanEndPoint )
+        tempTangentPoint = tanStartPoint;
+
+    maxTanCircle.ConstructFromTanTanPt( tanStart, tanEnd, tempTangentPoint );
+    VECTOR2I maxTanPtStart = tanStart.LineProject( maxTanCircle.Center );
+    VECTOR2I maxTanPtEnd = tanEnd.LineProject( maxTanCircle.Center );
+
+    SEG cSegTanStart( maxTanPtStart, tanIntersect );
+    SEG cSegTanEnd( maxTanPtEnd, tanIntersect );
+    SEG cSegChord( maxTanPtStart, maxTanPtEnd );
+
+    int cSegTanStartSide = cSegTanStart.Side( theArc->GetMid() );
+    int cSegTanEndSide = cSegTanEnd.Side( theArc->GetMid() );
+    int cSegChordSide = cSegChord.Side( theArc->GetMid() );
+
+    // Start the tool loop
+    //====================
+    while( TOOL_EVENT* evt = Wait() )
+    {
+        m_cursor = controls->GetMousePosition();
+
+        // Constrain cursor within the isosceles triangle
+        if( cSegTanStartSide != cSegTanStart.Side( m_cursor )
+            || cSegTanEndSide != cSegTanEnd.Side( m_cursor )
+            || cSegChordSide != cSegChord.Side( m_cursor ) )
+        {
+            std::vector<VECTOR2I> possiblePoints;
+
+            possiblePoints.push_back( cSegTanEnd.NearestPoint( m_cursor ) );
+            possiblePoints.push_back( cSegChord.NearestPoint( m_cursor ) );
+
+            VECTOR2I closest = cSegTanStart.NearestPoint( m_cursor );
+
+            for( VECTOR2I candidate : possiblePoints )
+            {
+                if( ( candidate - m_cursor ).EuclideanNorm()
+                    < ( closest - m_cursor ).EuclideanNorm() )
+                {
+                    closest = candidate;
+                }
+            }
+
+            m_cursor = closest;
+        }
+
+        // Constrain cursor to be outside maxTanCircle
+        if( ( m_cursor - maxTanCircle.Center ).EuclideanNorm() < maxTanCircle.Radius )
+            m_cursor = maxTanCircle.NearestPoint( m_cursor );
+
+        controls->ForceCursorPosition( true, m_cursor );
+
+        // Calculate resulting object coordinates
+        CIRCLE circlehelper;
+        circlehelper.ConstructFromTanTanPt( cSegTanStart, cSegTanEnd, m_cursor );
+
+        VECTOR2I newCenter = circlehelper.Center;
+        VECTOR2I newStart = cSegTanStart.LineProject( newCenter );
+        VECTOR2I newEnd = cSegTanEnd.LineProject( newCenter );
+        VECTOR2I newMid = GetArcMid( newStart, newEnd, newCenter );
+
+        //Update objects
+        theArc->SetStart( (wxPoint) newStart );
+        theArc->SetEnd( (wxPoint) newEnd );
+        theArc->SetMid( (wxPoint) newMid );
+
+        if( isStartTrackOnStartPt )
+            trackOnStart->SetStart( (wxPoint) newStart );
+        else
+            trackOnStart->SetEnd( (wxPoint) newStart );
+
+        if( isEndTrackOnStartPt )
+            trackOnEnd->SetStart( (wxPoint) newEnd );
+        else
+            trackOnEnd->SetEnd( (wxPoint) newEnd );
+
+        //Update view
+        getView()->Update( trackOnStart );
+        getView()->Update( trackOnEnd );
+        getView()->Update( theArc );
+
+        //Handle events
+        if( evt->IsCancelInteractive() || evt->IsActivate() )
+        {
+            restore_state = true; // Canceling the tool means that items have to be restored
+            break;                // Finish
+        }
+        else if( evt->IsAction( &ACTIONS::undo ) )
+        {
+            restore_state = true; // Perform undo locally
+            break;                // Finish
+        }
+        else if( evt->IsMouseUp( BUT_LEFT ) || evt->IsClick( BUT_LEFT )
+                 || evt->IsDblClick( BUT_LEFT ) )
+        {
+            break; // Finish
+        }
+    }
+
+    // Ensure we only do one commit operation on each object
+    auto processTrack =
+        [&]( TRACK* aTrack, TRACK* aTrackCopy )
+        {
+            if( aTrack->IsNew() )
+            {
+                getView()->Remove( aTrack );
+
+                if( aTrack->GetStart() == aTrack->GetEnd() )
+                {
+                    delete aTrack;
+                    delete aTrackCopy;
+                    aTrack = nullptr;
+                    aTrackCopy = nullptr;
+                }
+                else
+                {
+                    m_commit->Add( aTrack );
+                    delete aTrackCopy;
+                    aTrackCopy = nullptr;
+                }
+            }
+            else  if( aTrack->GetStart() == aTrack->GetEnd() )
+            {
+                aTrack->SwapData( aTrackCopy ); //restore the original before notifying COMMIT
+                m_commit->Remove( aTrack );
+                delete aTrackCopy;
+                aTrackCopy = nullptr;
+            }
+            else
+            {
+                m_commit->Modified( aTrack, aTrackCopy );
+            }
+        };
+
+    processTrack( trackOnStart, trackOnStartCopy );
+    processTrack( trackOnEnd, trackOnEndCopy );
+    processTrack( theArc, theArcCopy );
+
+    // Should we commit?
+    if( restore_state )
+        m_commit->Revert();
+    else
+        m_commit->Push( _( "Drag Arc Track" ) );
 
     return 0;
 }

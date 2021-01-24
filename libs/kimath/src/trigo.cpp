@@ -2,7 +2,7 @@
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
  * Copyright (C) 2014 Jean-Pierre Charras, jp.charras at wanadoo.fr
- * Copyright (C) 2014-2019 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 2014-2021 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -156,6 +156,26 @@ bool TestSegmentHit( const wxPoint &aRefPoint, wxPoint aStart, wxPoint aEnd, int
 
     SEG segment( aStart, aEnd );
     return segment.SquaredDistance( aRefPoint ) < SEG::Square( aDist + 1 );
+}
+
+
+const VECTOR2I GetArcMid( const VECTOR2I& aStart, const VECTOR2I& aEnd, const VECTOR2I& aCenter,
+                          bool aMinArcAngle )
+{
+    VECTOR2I startVector = aStart - aCenter;
+    VECTOR2I endVector = aEnd - aCenter;
+
+    double startAngle = ArcTangente( startVector.y, startVector.x );
+    double endAngle = ArcTangente( endVector.y, endVector.x );
+    double midPointRotAngleDeciDeg = NormalizeAngle180( startAngle - endAngle ) / 2;
+
+    if( !aMinArcAngle )
+        midPointRotAngleDeciDeg += 1800.0;
+
+    VECTOR2I newMid = aStart;
+    RotatePoint( newMid, aCenter, midPointRotAngleDeciDeg );
+
+    return newMid;
 }
 
 
