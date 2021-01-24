@@ -35,7 +35,7 @@
 #include "../3d_rendering/3d_render_raytracing/shapes2D/round_segment_2d.h"
 #include "../3d_rendering/3d_render_raytracing/shapes2D/triangle_2d.h"
 #include "../3d_rendering/3d_render_raytracing/shapes2D/polygon_2d.h"
-#include "earcut.hpp"
+#include <triangulate.h>
 #include <board_adapter.h>
 #include <board.h>
 #include <footprint.h>
@@ -56,23 +56,6 @@
 #include <utility>
 #include <vector>
 #include <font/outline_font.h>
-
-namespace mapbox
-{
-template <>
-struct util::nth<0, VECTOR2I>
-{
-    inline static auto get( const VECTOR2I& t ) { return t.x; }
-};
-
-
-template <>
-struct util::nth<1, VECTOR2I>
-{
-    inline static auto get( const VECTOR2I& t ) { return t.y; }
-};
-} // namespace mapbox
-
 
 // These variables are parameters used in addTextSegmToContainer.
 // But addTextSegmToContainer is a call-back function,
@@ -248,9 +231,8 @@ void BOARD_ADAPTER::addShapeWithClearance( const PCB_TEXT* aText, CONTAINER_2D_B
               << aText->GetPosition() << ", ..., " << aLayerId << ", " << aClearanceValue << " )"
               << std::endl;
 #endif
-    wxString fontName;
-    wxString txt = aText->GetShownText( 0, &fontName );
-    FONT*    font = FONT::GetFont( fontName );
+    wxString txt = aText->GetShownText();
+    FONT*    font = aText->GetFont();
     if( font->IsOutline() )
     {
         const int lineWidth = aText->GetEffectiveTextPenWidth() + ( 2 * aClearanceValue );
@@ -286,7 +268,7 @@ void BOARD_ADAPTER::addShapeWithClearance( const PCB_TEXT* aText, CONTAINER_2D_B
         if( aText->IsMultilineAllowed() )
         {
             wxArrayString strings_list;
-            wxStringSplit( aText->GetShownText( 0, &fontName ), strings_list, '\n' );
+            wxStringSplit( aText->GetShownText(), strings_list, '\n' );
             std::vector<wxPoint> positions;
             positions.reserve( strings_list.Count() );
             aText->GetLinePositions( positions, strings_list.Count() );
@@ -298,14 +280,14 @@ void BOARD_ADAPTER::addShapeWithClearance( const PCB_TEXT* aText, CONTAINER_2D_B
                 GRText( nullptr, positions[ii], dummy_color, txt, aText->GetTextAngle(), size,
                         aText->GetHorizJustify(), aText->GetVertJustify(), penWidth,
                         aText->IsItalic(), forceBold, addTextSegmToContainer, nullptr, nullptr,
-                        &fontName );
+                        font );
             }
         }
         else
         {
             GRText( nullptr, aText->GetTextPos(), dummy_color, txt, aText->GetTextAngle(), size,
                     aText->GetHorizJustify(), aText->GetVertJustify(), penWidth, aText->IsItalic(),
-                    forceBold, addTextSegmToContainer, nullptr, nullptr, &fontName );
+                    forceBold, addTextSegmToContainer, nullptr, nullptr, font );
         }
     }
 }

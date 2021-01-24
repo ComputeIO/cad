@@ -168,9 +168,16 @@ void GAL::ResetTextAttributes()
 
 
 void GAL::StrokeText( const wxString& aText, const VECTOR2D& aPosition, double aRotationAngle,
-                      wxString* aFontSpecifier )
+                      FONT* aFont )
 {
-    GetFont( aFontSpecifier ).Draw( this, aText, aPosition, aRotationAngle );
+    FONT* font = aFont ? aFont : FONT::GetFont();
+    font->Draw( this, aText, aPosition, aRotationAngle );
+#ifdef DEBUG //STROKEFONT
+    if( !aFont )
+    {
+        std::cerr << "GAL::StrokeText( \"" << aText << "\", ... ) no font" << std::endl;
+    }
+#endif
 }
 
 

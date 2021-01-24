@@ -336,7 +336,7 @@ public:
      * @param aFontSpecifier is the font name (null or empty string = Newstroke)
      */
     virtual void StrokeText( const wxString& aText, const VECTOR2D& aPosition,
-                             double aRotationAngle, wxString* aFontSpecifier = nullptr );
+                             double aRotationAngle, FONT* aFont = nullptr );
 
     /**
      * Draws a text using a bitmap font. It should be faster than StrokeText(),

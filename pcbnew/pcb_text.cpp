@@ -38,9 +38,7 @@
 using KIGFX::PCB_RENDER_SETTINGS;
 
 
-PCB_TEXT::PCB_TEXT( BOARD_ITEM* parent ) :
-    BOARD_ITEM( parent, PCB_TEXT_T ),
-    EDA_TEXT()
+PCB_TEXT::PCB_TEXT( BOARD_ITEM* parent ) : BOARD_ITEM( parent, PCB_TEXT_T ), EDA_TEXT()
 {
     SetMultilineAllowed( true );
 }
@@ -51,70 +49,65 @@ PCB_TEXT::~PCB_TEXT()
 }
 
 
-wxString PCB_TEXT::GetShownText( int aDepth, wxString* fontSpecifier ) const
+wxString PCB_TEXT::GetShownText( int aDepth, FONT** aFontPtr ) const
 {
     BOARD* board = dynamic_cast<BOARD*>( GetParent() );
 
-    std::function<bool( wxString* )> pcbTextResolver =
-            [&]( wxString* token ) -> bool
+    std::function<bool( wxString* )> pcbTextResolver = [&]( wxString* token ) -> bool
+    {
+        if( token->IsSameAs( wxT( "LAYER" ) ) )
+        {
+            *token = GetLayerName();
+            return true;
+        }
+
+        if( token->Contains( ':' ) )
+        {
+            wxString remainder;
+            wxString ref = token->BeforeFirst( ':', &remainder );
+
+            if( !ref.Cmp( "FONT" ) )
             {
-                if( token->IsSameAs( wxT( "LAYER" ) ) )
-                {
-                    *token = GetLayerName();
-                    return true;
-                }
+                // special case: handle FONT variable in Text item
+                // as font specifier
+                //
+                // put "" in token as we don't want the font specifier
+                // to show
+                *token = "";
+                return true;
+            }
+            else
+            {
+                BOARD_ITEM* refItem = board->GetItem( KIID( ref ) );
 
-                if( token->Contains( ':' ) )
+                if( refItem && refItem->Type() == PCB_FOOTPRINT_T )
                 {
-                    wxString      remainder;
-                    wxString      ref = token->BeforeFirst( ':', &remainder );
+                    FOOTPRINT* refFP = static_cast<FOOTPRINT*>( refItem );
 
-                    if( !ref.Cmp( "FONT" ) )
+                    if( refFP->ResolveTextVar( &remainder, aDepth + 1 ) )
                     {
-                        // special case: handle FONT variable in Text item
-                        // as font specifier
-                        //
-                        // example: "${FONT:futural}"
-                        //
-                        // remainder = font name
-                        if( fontSpecifier )
-                            *fontSpecifier = remainder;
-
-                        // put "" in token as we don't want the font specifier
-                        // to show
-                        *token = "";
+                        *token = remainder;
                         return true;
                     }
-                    else
-                    {
-                        BOARD_ITEM* refItem = board->GetItem( KIID( ref ) );
-
-                        if( refItem && refItem->Type() == PCB_FOOTPRINT_T )
-                        {
-                            FOOTPRINT* refFP = static_cast<FOOTPRINT*>( refItem );
-
-                            if( refFP->ResolveTextVar( &remainder, aDepth + 1 ) )
-                            {
-                                *token = remainder;
-                                return true;
-                            }
-                        }
-                    }
                 }
-                return false;
-            };
+            }
+        }
+        return false;
+    };
 
-    std::function<bool( wxString* )> boardTextResolver =
-            [&]( wxString* token ) -> bool
-            {
-                return board->ResolveTextVar( token, aDepth + 1 );
-            };
+    std::function<bool( wxString* )> boardTextResolver = [&]( wxString* token ) -> bool
+    {
+        return board->ResolveTextVar( token, aDepth + 1 );
+    };
 
     bool     processTextVars = false;
     wxString text = EDA_TEXT::GetShownText( &processTextVars );
 
     if( board && processTextVars && aDepth < 10 )
         text = ExpandTextVars( text, &pcbTextResolver, &boardTextResolver, board->GetProject() );
+
+    if( aFontPtr )
+        *aFontPtr = GetFont();
 
     return text;
 }
@@ -142,30 +135,25 @@ void PCB_TEXT::DrawTextAsPolygon( std::vector<SHAPE_POLY_SET>& aResult, PCB_LAYE
 void PCB_TEXT::DrawTextAsPolygon( std::vector<SHAPE_POLY_SET>& aResult,
                                   PCB_LAYER_ID                 aLayerId ) const
 {
-    wxString fontName;
-    wxString txt;
-    FONT*    font;
+    FONT* font = GetFont();
 
     if( IsMultilineAllowed() )
     {
         wxArrayString strings_list;
-        wxStringSplit( GetShownText( 0, &fontName ), strings_list, '\n' );
+        wxStringSplit( GetShownText(), strings_list, '\n' );
         std::vector<wxPoint> positions;
         positions.reserve( strings_list.Count() );
         GetLinePositions( positions, strings_list.Count() );
-        font = FONT::GetFont( fontName );
 
         for( unsigned ii = 0; ii < strings_list.Count(); ++ii )
         {
-            txt = strings_list.Item( ii );
+            const wxString& txt = strings_list.Item( ii );
             DrawTextAsPolygon( aResult, aLayerId, positions[ii], txt, font );
         }
     }
     else
     {
-        txt = GetShownText( 0, &fontName );
-        font = FONT::GetFont( fontName );
-        DrawTextAsPolygon( aResult, aLayerId, GetTextPos(), txt, font );
+        DrawTextAsPolygon( aResult, aLayerId, GetTextPos(), GetShownText(), font );
     }
 }
 
@@ -280,7 +268,7 @@ void PCB_TEXT::Flip( const wxPoint& aCentre, bool aFlipLeftRight )
 
 wxString PCB_TEXT::GetSelectMenuText( EDA_UNITS aUnits ) const
 {
-    return wxString::Format( _( "PCB Text '%s' on %s"), ShortenedShownText(), GetLayerName() );
+    return wxString::Format( _( "PCB Text '%s' on %s" ), ShortenedShownText(), GetLayerName() );
 }
 
 
@@ -300,7 +288,7 @@ void PCB_TEXT::SwapData( BOARD_ITEM* aImage )
 {
     assert( aImage->Type() == PCB_TEXT_T );
 
-    std::swap( *((PCB_TEXT*) this), *((PCB_TEXT*) aImage) );
+    std::swap( *( (PCB_TEXT*) this ), *( (PCB_TEXT*) aImage ) );
 }
 
 

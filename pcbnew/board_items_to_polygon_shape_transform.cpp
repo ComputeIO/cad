@@ -295,13 +295,9 @@ void FP_TEXT::TransformTextShapeWithClearanceToPolygon( SHAPE_POLY_SET& aCornerB
     if( IsMirrored() )
         size.x = -size.x;
 
-    wxString font;
-    wxString txt;
-    txt = GetShownText( 0, &font );
-
-    GRText( NULL, GetTextPos(), BLACK, txt, GetDrawRotation(), size, GetHorizJustify(),
-            GetVertJustify(), penWidth, IsItalic(), forceBold, addTextSegmToPoly, &prms,
-            /* aPlotter */ nullptr, &font );
+    GRText( NULL, GetTextPos(), BLACK, GetShownText(), GetDrawRotation(), size, GetHorizJustify(),
+            GetVertJustify(), penWidth, IsItalic(), forceBold, addTextSegmToPoly, &prms, nullptr,
+            GetFont() );
 }
 
 
@@ -426,15 +422,13 @@ void PCB_TEXT::TransformTextShapeWithClearanceToPolygon( SHAPE_POLY_SET& aCorner
     prms.m_textWidth = GetEffectiveTextPenWidth() + ( 2 * aClearanceValue );
     prms.m_error = aError;
 
-    COLOR4D  color = COLOR4D::BLACK; // not actually used, but needed by GRText
-    wxString fontName;
-    wxString txt = GetShownText( 0, &fontName );
-    FONT*    font = FONT::GetFont( fontName );
+    COLOR4D color = COLOR4D::BLACK; // not actually used, but needed by GRText
+    FONT*   font = GetFont();
 
     if( IsMultilineAllowed() )
     {
         wxArrayString strings_list;
-        wxStringSplit( txt, strings_list, '\n' );
+        wxStringSplit( GetShownText(), strings_list, '\n' );
         std::vector<wxPoint> positions;
         positions.reserve( strings_list.Count() );
         GetLinePositions( positions, strings_list.Count() );
@@ -450,7 +444,7 @@ void PCB_TEXT::TransformTextShapeWithClearanceToPolygon( SHAPE_POLY_SET& aCorner
             {
                 GRText( NULL, positions[ii], color, txtItem, GetTextAngle(), size,
                         GetHorizJustify(), GetVertJustify(), penWidth, IsItalic(), forceBold,
-                        addTextSegmToPoly, &prms, nullptr, &fontName );
+                        addTextSegmToPoly, &prms, nullptr, font );
             }
         }
     }
@@ -458,13 +452,13 @@ void PCB_TEXT::TransformTextShapeWithClearanceToPolygon( SHAPE_POLY_SET& aCorner
     {
         if( font->IsOutline() )
         {
-            polygonText( aCornerBuffer, aLayer, GetTextPos(), txt, font, this );
+            polygonText( aCornerBuffer, aLayer, GetTextPos(), GetShownText(), font, this );
         }
         else
         {
-            GRText( NULL, GetTextPos(), color, txt, GetTextAngle(), size, GetHorizJustify(),
-                    GetVertJustify(), penWidth, IsItalic(), forceBold, addTextSegmToPoly, &prms,
-                    /* aPlotter */ nullptr, &fontName );
+            GRText( NULL, GetTextPos(), color, GetShownText(), GetTextAngle(), size,
+                    GetHorizJustify(), GetVertJustify(), penWidth, IsItalic(), forceBold,
+                    addTextSegmToPoly, &prms, nullptr, font );
         }
     }
 }

@@ -101,7 +101,7 @@ void SCH_FIELD::SetId( int aId )
 }
 
 
-wxString SCH_FIELD::GetShownText( int aDepth, wxString* fontSpecifier ) const
+wxString SCH_FIELD::GetShownText( int aDepth, FONT** fontSpecifier ) const
 {
     std::function<bool( wxString* )> symbolResolver =
             [&]( wxString* token ) -> bool
@@ -145,6 +145,9 @@ wxString SCH_FIELD::GetShownText( int aDepth, wxString* fontSpecifier ) const
     PROJECT*  project = nullptr;
     bool      processTextVars = false;
     wxString  text = EDA_TEXT::GetShownText( &processTextVars );
+#ifdef DEBUG //STROKETEXT
+    std::cerr << "SCH_FIELD::GetShownText() " << GetText() << " " << text << " \n";
+#endif
 
     if( processTextVars )
     {

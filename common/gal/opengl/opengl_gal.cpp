@@ -56,6 +56,9 @@
 #include <functional>
 #include <limits>
 #include <memory>
+
+#include <triangulate.h>
+
 using namespace std::placeholders;
 using namespace KIGFX;
 
@@ -965,7 +968,8 @@ void OPENGL_GAL::DrawRectangle( const VECTOR2D& aStartPoint, const VECTOR2D& aEn
 void OPENGL_GAL::DrawPolyline( const std::deque<VECTOR2D>& aPointList )
 {
     drawPolyline(
-            [&]( int idx ) {
+            [&]( int idx )
+            {
                 return aPointList[idx];
             },
             aPointList.size() );
@@ -976,7 +980,8 @@ void OPENGL_GAL::DrawPolyline( const std::vector<VECTOR2D>& aPointList )
 {
     // should be combined with DrawPolyline( const std::deque<VECTOR2D>& aPointList )
     drawPolyline(
-            [&]( int idx ) {
+            [&]( int idx )
+            {
                 return aPointList.at( idx );
             },
             aPointList.size() );
@@ -986,7 +991,8 @@ void OPENGL_GAL::DrawPolyline( const std::vector<VECTOR2D>& aPointList )
 void OPENGL_GAL::DrawPolyline( const VECTOR2D aPointList[], int aListSize )
 {
     drawPolyline(
-            [&]( int idx ) {
+            [&]( int idx )
+            {
                 return aPointList[idx];
             },
             aListSize );
@@ -1001,7 +1007,8 @@ void OPENGL_GAL::DrawPolyline( const SHAPE_LINE_CHAIN& aLineChain )
         numPoints += 1;
 
     drawPolyline(
-            [&]( int idx ) {
+            [&]( int idx )
+            {
                 return aLineChain.CPoint( idx );
             },
             numPoints );
@@ -1044,9 +1051,63 @@ void OPENGL_GAL::DrawPolygon( const VECTOR2D aPointList[], int aListSize )
 }
 
 
+void OPENGL_GAL::fillPolygonAsTriangles( const SHAPE_POLY_SET& aPolyList )
+{
+    for( int i = 0; i < aPolyList.OutlineCount(); i++ )
+    {
+        std::vector<std::vector<VECTOR2I>> polygon;
+        std::vector<VECTOR2I>              allPoints;
+        std::vector<VECTOR2I>              outline;
+        for( int j = 0; j < aPolyList.COutline( i ).PointCount(); j++ )
+        {
+            const VECTOR2I& p = aPolyList.COutline( i ).GetPoint( j );
+            outline.push_back( p );
+            allPoints.push_back( p );
+        }
+        polygon.push_back( outline );
+
+        std::vector<VECTOR2I> hole;
+        for( int k = 0; k < aPolyList.HoleCount( i ); k++ )
+        {
+            hole.clear();
+
+            for( int m = 0; m < aPolyList.CHole( i, k ).PointCount(); m++ )
+            {
+                const VECTOR2I& p = aPolyList.CHole( i, k ).GetPoint( m );
+                hole.push_back( p );
+                allPoints.push_back( p );
+            }
+            polygon.push_back( hole );
+        }
+
+        std::vector<uint32_t> indices = mapbox::earcut<uint32_t>( polygon );
+
+        //double xConversionFactor = 1.0; // aBiuTo3Dunits;
+        //double yConversionFactor = 1.0; // -aBiuTo3Dunits;
+        SHAPE_LINE_CHAIN triangulatedOutline;
+        for( int n = 0; n < (int) indices.size(); n += 3 )
+        {
+#if 0
+            outline.Add( new TRIANGLE_2D( allPoints[indices[n]], allPoints[indices[n + 1]],
+                                          allPoints[indices[n + 2]], xConversionFactor,
+                                          yConversionFactor, aText ) );
+#else
+            for( int m = 0; m < 3; m++ )
+                triangulatedOutline.Append( allPoints[indices[n + m]] );
+#endif
+        }
+
+        bool saveFill = isFillEnabled;
+        SetIsFill( true );
+        DrawPolygon( triangulatedOutline );
+        SetIsFill( saveFill );
+    }
+}
+
+
 void OPENGL_GAL::DrawGlyph( const SHAPE_POLY_SET& aPolySet )
 {
-    assert( 1 == 0 ); // TODO
+    fillPolygonAsTriangles( aPolySet );
 }
 
 
@@ -1876,7 +1937,8 @@ void OPENGL_GAL::drawPolygon( GLdouble* aPoints, int aPointCount )
     if( isStrokeEnabled )
     {
         drawPolyline(
-                [&]( int idx ) {
+                [&]( int idx )
+                {
                     return VECTOR2D( aPoints[idx * 3], aPoints[idx * 3 + 1] );
                 },
                 aPointCount );

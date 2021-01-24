@@ -38,7 +38,7 @@
 #include <page_info.h>
 #include <outline_mode.h>
 #include <gal/color4d.h>
-#include <eda_item.h>       // FILL_TYPE
+#include <eda_item.h> // FILL_TYPE
 #include <render_settings.h>
 
 class COLOR_SETTINGS;
@@ -46,6 +46,7 @@ class SHAPE_POLY_SET;
 class SHAPE_LINE_CHAIN;
 class GBR_NETLIST_METADATA;
 class PROJECT;
+class FONT;
 
 using KIGFX::RENDER_SETTINGS;
 
@@ -66,9 +67,9 @@ enum class DXF_UNITS
  */
 enum class PLOT_FORMAT
 {
-    UNDEFINED    = -1,
+    UNDEFINED = -1,
     FIRST_FORMAT = 0,
-    HPGL         = FIRST_FORMAT,
+    HPGL = FIRST_FORMAT,
     GERBER,
     POST,
     DXF,
@@ -103,8 +104,8 @@ enum class PLOT_TEXT_MODE
  */
 enum class PLOT_DASH_TYPE
 {
-    DEFAULT    = -1,
-    SOLID      = 0,
+    DEFAULT = -1,
+    SOLID = 0,
     FIRST_TYPE = SOLID,
     DASH,
     DOT,
@@ -132,8 +133,8 @@ class PLOTTER
 {
 public:
     // These values are used as flag for pen or aperture selection
-    static const int DO_NOT_SET_LINE_WIDTH = -2;    // Skip selection
-    static const int USE_DEFAULT_LINE_WIDTH = -1;   // use the default pen
+    static const int DO_NOT_SET_LINE_WIDTH = -2;  // Skip selection
+    static const int USE_DEFAULT_LINE_WIDTH = -1; // use the default pen
 
     PLOTTER();
 
@@ -149,23 +150,20 @@ public:
     virtual bool StartPlot() = 0;
     virtual bool EndPlot() = 0;
 
-    virtual void SetNegative( bool aNegative )
-    {
-        m_negativeMode = aNegative;
-    }
+    virtual void SetNegative( bool aNegative ) { m_negativeMode = aNegative; }
 
     /**
      * Plot in B/W or color.
      * @param aColorMode = true to plot in color, false to plot in black and white
      */
     virtual void SetColorMode( bool aColorMode ) { m_colorMode = aColorMode; }
-    bool GetColorMode() const { return m_colorMode; }
+    bool         GetColorMode() const { return m_colorMode; }
 
     void SetRenderSettings( RENDER_SETTINGS* aSettings ) { m_renderSettings = aSettings; }
     RENDER_SETTINGS* RenderSettings() { return m_renderSettings; }
 
     virtual void SetPageSettings( const PAGE_INFO& aPageSettings ) { m_pageInfo = aPageSettings; }
-    PAGE_INFO& PageSettings() { return m_pageInfo; }
+    PAGE_INFO&   PageSettings() { return m_pageInfo; }
 
     /**
      * Set the line width for the next drawing.
@@ -173,7 +171,7 @@ public:
      * @param aData is an auxiliary parameter, mainly used in gerber plotter
      */
     virtual void SetCurrentLineWidth( int width, void* aData = NULL ) = 0;
-    virtual int GetCurrentLineWidth() const  { return m_currentPenWidth; }
+    virtual int  GetCurrentLineWidth() const { return m_currentPenWidth; }
 
     virtual void SetColor( COLOR4D color ) = 0;
 
@@ -187,18 +185,12 @@ public:
      * Add a line to the list of free lines to print at the beginning of the file
      * @param aExtraString is the string to print
      */
-    void AddLineToHeader( const wxString& aExtraString )
-    {
-        m_headerExtraLines.Add( aExtraString );
-    }
+    void AddLineToHeader( const wxString& aExtraString ) { m_headerExtraLines.Add( aExtraString ); }
 
     /**
      * Remove all lines from the list of free lines to print at the beginning of the file
      */
-    void ClearHeaderLinesList()
-    {
-        m_headerExtraLines.Clear();
-    }
+    void ClearHeaderLinesList() { m_headerExtraLines.Clear(); }
 
     /**
      * Set the plot offset and scaling for the current plot
@@ -209,8 +201,8 @@ public:
      * @param aMirror flips the plot in the Y direction (useful for toner
      * 		transfers or some kind of film)
      */
-    virtual void SetViewport( const wxPoint& aOffset, double aIusPerDecimil,
-        double aScale, bool aMirror ) = 0;
+    virtual void SetViewport( const wxPoint& aOffset, double aIusPerDecimil, double aScale,
+                              bool aMirror ) = 0;
 
     /**
      * Open or create the plot file aFullFilename
@@ -241,8 +233,8 @@ public:
     /**
      * Generic fallback: arc rendered as a polyline
      */
-    virtual void Arc( const wxPoint& centre, double StAngle, double EndAngle,
-                      int rayon, FILL_TYPE fill, int width = USE_DEFAULT_LINE_WIDTH );
+    virtual void Arc( const wxPoint& centre, double StAngle, double EndAngle, int rayon,
+                      FILL_TYPE fill, int width = USE_DEFAULT_LINE_WIDTH );
 
     /**
      * Generic fallback: Cubic Bezier curve rendered as a polyline
@@ -250,8 +242,7 @@ public:
      * start ctrl1 ctrl2 end
      */
     virtual void BezierCurve( const wxPoint& aStart, const wxPoint& aControl1,
-                              const wxPoint& aControl2, const wxPoint& aEnd,
-                              int aTolerance,
+                              const wxPoint& aControl2, const wxPoint& aEnd, int aTolerance,
                               int aLineThickness = USE_DEFAULT_LINE_WIDTH );
 
     /**
@@ -264,15 +255,9 @@ public:
     virtual void PenTo( const wxPoint& pos, char plume ) = 0;
 
     // Convenience functions for PenTo
-    void MoveTo( const wxPoint& pos )
-    {
-        PenTo( pos, 'U' );
-    }
+    void MoveTo( const wxPoint& pos ) { PenTo( pos, 'U' ); }
 
-    void LineTo( const wxPoint& pos )
-    {
-        PenTo( pos, 'D' );
-    }
+    void LineTo( const wxPoint& pos ) { PenTo( pos, 'D' ); }
 
     void FinishTo( const wxPoint& pos )
     {
@@ -293,8 +278,8 @@ public:
      * @param aWidth = line width
      * @param aData an auxiliary info (mainly for gerber format)
      */
-    virtual void PlotPoly( const std::vector< wxPoint >& aCornerList, FILL_TYPE aFill,
-               int aWidth = USE_DEFAULT_LINE_WIDTH, void * aData = NULL ) = 0;
+    virtual void PlotPoly( const std::vector<wxPoint>& aCornerList, FILL_TYPE aFill,
+                           int aWidth = USE_DEFAULT_LINE_WIDTH, void* aData = NULL ) = 0;
 
     /**
      * Draw a polygon ( filled or not )
@@ -305,7 +290,7 @@ public:
      * @param aData an auxiliary info (mainly for gerber format)
      */
     virtual void PlotPoly( const SHAPE_LINE_CHAIN& aCornerList, FILL_TYPE aFill,
-               int aWidth = USE_DEFAULT_LINE_WIDTH, void * aData = NULL );
+                           int aWidth = USE_DEFAULT_LINE_WIDTH, void* aData = NULL );
 
     /**
      * Only PostScript plotters can plot bitmaps.
@@ -318,20 +303,19 @@ public:
      * @param aScaleFactor = the scale factor to apply to the bitmap size
      *                      (this is not the plot scale factor)
      */
-    virtual void PlotImage( const wxImage & aImage, const wxPoint& aPos,
-                            double aScaleFactor );
+    virtual void PlotImage( const wxImage& aImage, const wxPoint& aPos, double aScaleFactor );
 
     // Higher level primitives -- can be drawn as line, sketch or 'filled'
     virtual void ThickSegment( const wxPoint& start, const wxPoint& end, int width,
                                OUTLINE_MODE tracemode, void* aData );
-    virtual void ThickArc( const wxPoint& centre, double StAngle, double EndAngle,
-                           int rayon, int width, OUTLINE_MODE tracemode, void* aData );
-    virtual void ThickRect( const wxPoint& p1, const wxPoint& p2, int width,
-                            OUTLINE_MODE tracemode, void* aData );
-    virtual void ThickCircle( const wxPoint& pos, int diametre, int width,
-                              OUTLINE_MODE tracemode, void* aData );
-    virtual void FilledCircle( const wxPoint& pos, int diametre,
-                              OUTLINE_MODE tracemode, void* aData );
+    virtual void ThickArc( const wxPoint& centre, double StAngle, double EndAngle, int rayon,
+                           int width, OUTLINE_MODE tracemode, void* aData );
+    virtual void ThickRect( const wxPoint& p1, const wxPoint& p2, int width, OUTLINE_MODE tracemode,
+                            void* aData );
+    virtual void ThickCircle( const wxPoint& pos, int diametre, int width, OUTLINE_MODE tracemode,
+                              void* aData );
+    virtual void FilledCircle( const wxPoint& pos, int diametre, OUTLINE_MODE tracemode,
+                               void* aData );
 
 
     // Flash primitives
@@ -342,8 +326,8 @@ public:
      * @param aTraceMode FILLED or SKETCH
      * @param aData an auxiliary info (mainly for gerber format attributes)
      */
-    virtual void FlashPadCircle( const wxPoint& aPadPos, int aDiameter,
-                                 OUTLINE_MODE aTraceMode, void* aData ) = 0;
+    virtual void FlashPadCircle( const wxPoint& aPadPos, int aDiameter, OUTLINE_MODE aTraceMode,
+                                 void* aData ) = 0;
 
     /**
      * @param aPadPos Position of the shape (center of the rectangle
@@ -362,8 +346,8 @@ public:
      * @param aTraceMode FILLED or SKETCH
      * @param aData an auxiliary info (mainly for gerber format attributes)
      */
-    virtual void FlashPadRect( const wxPoint& aPadPos, const wxSize& aSize,
-                               double aPadOrient, OUTLINE_MODE aTraceMode, void* aData ) = 0;
+    virtual void FlashPadRect( const wxPoint& aPadPos, const wxSize& aSize, double aPadOrient,
+                               OUTLINE_MODE aTraceMode, void* aData ) = 0;
 
     /**
      * @param aPadPos Position of the shape (center of the rectangle
@@ -373,9 +357,8 @@ public:
      * @param aTraceMode FILLED or SKETCH
      * @param aData an auxiliary info (mainly for gerber format attributes)
      */
-    virtual void FlashPadRoundRect( const wxPoint& aPadPos, const wxSize& aSize,
-                                    int aCornerRadius, double aOrient,
-                                    OUTLINE_MODE aTraceMode, void* aData ) = 0;
+    virtual void FlashPadRoundRect( const wxPoint& aPadPos, const wxSize& aSize, int aCornerRadius,
+                                    double aOrient, OUTLINE_MODE aTraceMode, void* aData ) = 0;
 
     /**
      * @param aPadPos Position of the shape (center of the rectangle
@@ -385,8 +368,8 @@ public:
      * @param aData an auxiliary info (mainly for gerber format attributes)
      */
     virtual void FlashPadCustom( const wxPoint& aPadPos, const wxSize& aSize,
-                                 SHAPE_POLY_SET* aPolygons,
-                                 OUTLINE_MODE aTraceMode, void* aData ) = 0;
+                                 SHAPE_POLY_SET* aPolygons, OUTLINE_MODE aTraceMode,
+                                 void* aData ) = 0;
 
     /**
      * Flash a trapezoidal pad
@@ -397,9 +380,8 @@ public:
      * @param aTraceMode = FILLED or SKETCH
      * @param aData an auxiliary info (mainly for gerber format attributes)
      */
-    virtual void FlashPadTrapez( const wxPoint& aPadPos, const wxPoint *aCorners,
-                                 double aPadOrient, OUTLINE_MODE aTraceMode,
-                                 void* aData ) = 0;
+    virtual void FlashPadTrapez( const wxPoint& aPadPos, const wxPoint* aCorners, double aPadOrient,
+                                 OUTLINE_MODE aTraceMode, void* aData ) = 0;
 
     /**
      * Flash a regular polygon. Useful only in Gerber files to flash a regular polygon
@@ -411,7 +393,7 @@ public:
      * specific to the plotter
      */
     virtual void FlashRegularPolygon( const wxPoint& aShapePos, int aDiameter, int aCornerCount,
-                            double aOrient, OUTLINE_MODE aTraceMode, void* aData ) = 0 ;
+                                      double aOrient, OUTLINE_MODE aTraceMode, void* aData ) = 0;
 
     /**
      * Draws text with the plotter. For convenience it accept the color to use
@@ -420,8 +402,7 @@ public:
     virtual void Text( const wxPoint& aPos, const COLOR4D aColor, const wxString& aText,
                        double aOrient, const wxSize& aSize, enum EDA_TEXT_HJUSTIFY_T aH_justify,
                        enum EDA_TEXT_VJUSTIFY_T aV_justify, int aWidth, bool aItalic, bool aBold,
-                       bool aMultilineAllowed = false, void* aData = NULL,
-                       wxString* aFont = nullptr );
+                       bool aMultilineAllowed = false, void* aData = NULL, FONT* aFont = nullptr );
 
     /**
      * Draw a marker (used for the drill map)
@@ -560,41 +541,41 @@ protected:
 
     double GetDashGapLenIU() const;
 
-protected:      // variables used in most of plotters:
+protected: // variables used in most of plotters:
     /// Plot scale - chosen by the user (even implicitly with 'fit in a4')
-    double           m_plotScale;
+    double m_plotScale;
 
     /* Caller scale (how many IUs in a decimil - always); it's a double
      * because in Eeschema there are 0.1 IUs in a decimil (Eeschema
      * always works in mils internally) while PcbNew can work in decimil
      * or nanometers, so this value would be >= 1 */
-    double           m_IUsPerDecimil;
+    double m_IUsPerDecimil;
 
-    double           m_iuPerDeviceUnit;     // Device scale (from IUs to plotter device units;
-                                            // usually decimils)
-    wxPoint          m_plotOffset;          // Plot offset (in IUs)
-    bool             m_plotMirror;          // X axis orientation (SVG)
-                                            // and plot mirrored (only for PS, PDF HPGL and SVG)
-    bool             m_mirrorIsHorizontal;  // true to mirror horizontally (else vertically)
-    bool             m_yaxisReversed;       // true if the Y axis is top to bottom (SVG)
+    double m_iuPerDeviceUnit;  // Device scale (from IUs to plotter device units;
+                               // usually decimils)
+    wxPoint m_plotOffset;      // Plot offset (in IUs)
+    bool    m_plotMirror;      // X axis orientation (SVG)
+                               // and plot mirrored (only for PS, PDF HPGL and SVG)
+    bool m_mirrorIsHorizontal; // true to mirror horizontally (else vertically)
+    bool m_yaxisReversed;      // true if the Y axis is top to bottom (SVG)
 
     /// Output file
-    FILE*            m_outputFile;
+    FILE* m_outputFile;
 
     // Pen handling
-    bool             m_colorMode;           // true to plot in color, otherwise black & white
-    bool             m_negativeMode;        // true to generate a negative image (PS mode mainly)
-    int              m_currentPenWidth;
-    char             m_penState;            // current pen state: 'U', 'D' or 'Z' (see PenTo)
-    wxPoint          m_penLastpos;          // last pen position; -1,-1 when pen is at rest
+    bool    m_colorMode;    // true to plot in color, otherwise black & white
+    bool    m_negativeMode; // true to generate a negative image (PS mode mainly)
+    int     m_currentPenWidth;
+    char    m_penState;   // current pen state: 'U', 'D' or 'Z' (see PenTo)
+    wxPoint m_penLastpos; // last pen position; -1,-1 when pen is at rest
 
-    wxString         m_creator;
-    wxString         m_filename;
-    wxString         m_title;
-    PAGE_INFO        m_pageInfo;
-    wxSize           m_paperSize;           // Paper size in IU - not in mils
+    wxString  m_creator;
+    wxString  m_filename;
+    wxString  m_title;
+    PAGE_INFO m_pageInfo;
+    wxSize    m_paperSize; // Paper size in IU - not in mils
 
-    wxArrayString    m_headerExtraLines;    // a set of string to print in header file
+    wxArrayString m_headerExtraLines; // a set of string to print in header file
 
     RENDER_SETTINGS* m_renderSettings;
 };
@@ -612,4 +593,4 @@ void PlotWorkSheet( PLOTTER* plotter, const PROJECT* aProject, const TITLE_BLOCK
 wxString GetDefaultPlotExtension( PLOT_FORMAT aFormat );
 
 
-#endif  // PLOT_COMMON_H_
+#endif // PLOT_COMMON_H_

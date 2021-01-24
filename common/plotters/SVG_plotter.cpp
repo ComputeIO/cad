@@ -781,7 +781,7 @@ bool SVG_PLOTTER::EndPlot()
 void SVG_PLOTTER::Text( const wxPoint& aPos, const COLOR4D aColor, const wxString& aText,
                         double aOrient, const wxSize& aSize, enum EDA_TEXT_HJUSTIFY_T aH_justify,
                         enum EDA_TEXT_VJUSTIFY_T aV_justify, int aWidth, bool aItalic, bool aBold,
-                        bool aMultilineAllowed, void* aData, wxString* aFont )
+                        bool aMultilineAllowed, void* aData, FONT* aFont )
 {
     setFillMode( FILL_TYPE::NO_FILL );
     SetColor( aColor );
@@ -821,7 +821,7 @@ void SVG_PLOTTER::Text( const wxPoint& aPos, const COLOR4D aColor, const wxStrin
 
     wxSize text_size;
     // aSize.x or aSize.y is < 0 for mirrored texts.
-    // The actual text size value is the absolue value
+    // The actual text size value is the absolute value
     text_size.x = std::abs( GraphicTextWidth( aText, aSize, aItalic, aWidth ) );
     text_size.y = std::abs( aSize.x * 4/3 ); // Hershey font height to em size conversion
     DPOINT anchor_pos_dev = userToDeviceCoordinates( aPos );

@@ -115,7 +115,8 @@ void WS_DRAW_ITEM_LIST::GetTextVars( wxArrayString* aVars )
 // after replacing format symbols by the corresponding value
 wxString WS_DRAW_ITEM_LIST::BuildFullText( const wxString& aTextbase )
 {
-    std::function<bool( wxString* )> wsResolver = [this]( wxString* token ) -> bool {
+    std::function<bool( wxString* )> wsResolver = [this]( wxString* token ) -> bool
+    {
         bool tokenUpdated = false;
 
         if( token->IsSameAs( wxT( "KICAD_VERSION" ) ) && PgmOrNull() )
@@ -238,21 +239,22 @@ void KIGFX::WS_PAINTER::draw( const WS_DRAW_ITEM_POLYPOLYGONS* aItem, int aLayer
 
 void KIGFX::WS_PAINTER::draw( const WS_DRAW_ITEM_TEXT* aItem, int aLayer ) const
 {
-    VECTOR2D position( aItem->GetTextPos().x, aItem->GetTextPos().y );
-    int      penWidth =
-            std::max( aItem->GetEffectiveTextPenWidth(), m_renderSettings.GetDefaultPenWidth() );
-
-    m_gal->Save();
-    m_gal->Translate( position );
-    m_gal->Rotate( -aItem->GetTextAngle() * M_PI / 1800.0 );
-    m_gal->SetStrokeColor( m_renderSettings.GetColor( aItem, aLayer ) );
-    m_gal->SetLineWidth( penWidth );
-    m_gal->SetTextAttributes( aItem );
-    wxString font;
-    wxString txt = aItem->GetShownText( 0, &font );
+    wxString txt = aItem->GetShownText();
     if( !txt.empty() )
-        m_gal->StrokeText( txt, VECTOR2D( 0, 0 ), 0.0, &font );
-    m_gal->Restore();
+    {
+        VECTOR2D position( aItem->GetTextPos().x, aItem->GetTextPos().y );
+        int      penWidth = std::max( aItem->GetEffectiveTextPenWidth(),
+                                 m_renderSettings.GetDefaultPenWidth() );
+
+        m_gal->Save();
+        m_gal->Translate( position );
+        m_gal->Rotate( -aItem->GetTextAngle() * M_PI / 1800.0 );
+        m_gal->SetStrokeColor( m_renderSettings.GetColor( aItem, aLayer ) );
+        m_gal->SetLineWidth( penWidth );
+        m_gal->SetTextAttributes( aItem );
+        m_gal->StrokeText( txt, VECTOR2D( 0, 0 ), 0.0, aItem->GetFont() );
+        m_gal->Restore();
+    }
 }
 
 

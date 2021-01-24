@@ -491,6 +491,8 @@ private:
 
     VECTOR2D getScreenPixelSize() const;
 
+    void fillPolygonAsTriangles( const SHAPE_POLY_SET& aPolyList );
+
     /**
      * @brief Basic OpenGL initialization and feature checks
      * @throw std::runtime_error if any of the OpenGL feature checks failed

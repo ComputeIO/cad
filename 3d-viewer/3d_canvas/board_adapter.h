@@ -48,6 +48,7 @@
 #include <reporter.h>
 
 class COLOR_SETTINGS;
+class FONT;
 
 /// A type that stores a container of 2d objects for each layer id
 typedef std::map<PCB_LAYER_ID, BVH_CONTAINER_2D*> MAP_CONTAINER_2D_BASE;
@@ -471,8 +472,7 @@ private:
 
     void drawTextFromAddShapeWithClearance( const PCB_TEXT* aText, PCB_LAYER_ID aLayerId,
                                             const wxPoint aPosition, const wxString& aString,
-                                            const wxString& aFontName, bool aForceBold,
-                                            int aPenWidth );
+                                            FONT* aFont, bool aForceBold, int aPenWidth );
 
     void addShapeWithClearance( const PCB_TEXT* aText, CONTAINER_2D_BASE* aDstContainer,
                                 PCB_LAYER_ID aLayerId, int aClearanceValue );

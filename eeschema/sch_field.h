@@ -34,7 +34,7 @@
 class SCH_EDIT_FRAME;
 class SCH_COMPONENT;
 class LIB_FIELD;
-
+class FONT;
 
 /**
  * SCH_FIELD
@@ -121,7 +121,7 @@ public:
 
     void SetId( int aId );
 
-    wxString GetShownText( int aDepth = 0, wxString* fontSpecifier = nullptr ) const override;
+    wxString GetShownText( int aDepth = 0, FONT** aFont = nullptr ) const override;
 
     const EDA_RECT GetBoundingBox() const override;
 

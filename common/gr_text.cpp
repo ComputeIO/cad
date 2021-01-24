@@ -133,7 +133,7 @@ void GRText( wxDC* aDC, const wxPoint& aPos, COLOR4D aColor, const wxString& aTe
              const wxSize& aSize, enum EDA_TEXT_HJUSTIFY_T aH_justify,
              enum EDA_TEXT_VJUSTIFY_T aV_justify, int aWidth, bool aItalic, bool aBold,
              void ( *aCallback )( int x0, int y0, int xf, int yf, void* aData ),
-             void* aCallbackData, PLOTTER* aPlotter, wxString* aFont )
+             void* aCallbackData, PLOTTER* aPlotter, FONT* aFont )
 {
     bool fill_mode = true;
 
@@ -221,7 +221,7 @@ void GRHaloText( wxDC* aDC, const wxPoint& aPos, COLOR4D aBgColor, COLOR4D aColo
 void PLOTTER::Text( const wxPoint& aPos, const COLOR4D aColor, const wxString& aText,
                     double aOrient, const wxSize& aSize, enum EDA_TEXT_HJUSTIFY_T aH_justify,
                     enum EDA_TEXT_VJUSTIFY_T aV_justify, int aPenWidth, bool aItalic, bool aBold,
-                    bool aMultilineAllowed, void* aData, wxString* aFont )
+                    bool aMultilineAllowed, void* aData, FONT* aFont )
 {
     SetColor( aColor );
     SetCurrentLineWidth( aPenWidth );

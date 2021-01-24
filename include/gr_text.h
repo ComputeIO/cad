@@ -49,6 +49,7 @@
 #define MIN_DRAWABLE_TEXT_SIZE 3
 
 class PLOTTER;
+class FONT;
 
 /**
  * As a rule, pen width should not be >1/4em, otherwise the character will be cluttered up in
@@ -115,8 +116,7 @@ void GRText( wxDC* aDC, const wxPoint& aPos, COLOR4D aColor, const wxString& aTe
              const wxSize& aSize, enum EDA_TEXT_HJUSTIFY_T aH_justify,
              enum EDA_TEXT_VJUSTIFY_T aV_justify, int aWidth, bool aItalic, bool aBold,
              void ( *aCallback )( int x0, int y0, int xf, int yf, void* aData ) = nullptr,
-             void* aCallbackData = nullptr, PLOTTER* aPlotter = nullptr,
-             wxString* aFont = nullptr );
+             void* aCallbackData = nullptr, PLOTTER* aPlotter = nullptr, FONT* aFont = nullptr );
 
 /**
  * Draw graphic text with a border so that it can be read on different backgrounds.

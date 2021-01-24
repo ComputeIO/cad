@@ -33,6 +33,7 @@
 #include <plotter.h>
 #include "gbr_plotter_apertures.h"
 
+class FONT;
 
 class GERBER_PLOTTER : public PLOTTER
 {
@@ -103,7 +104,7 @@ public:
                        double aOrient, const wxSize& aSize, enum EDA_TEXT_HJUSTIFY_T aH_justify,
                        enum EDA_TEXT_VJUSTIFY_T aV_justify, int aWidth, bool aItalic, bool aBold,
                        bool aMultilineAllowed = false, void* aData = NULL,
-                       wxString* aFont = nullptr ) override;
+                       FONT* aFont = nullptr ) override;
 
     /**
      * Filled circular flashes are stored as apertures

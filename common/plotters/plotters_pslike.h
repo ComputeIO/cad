@@ -30,6 +30,7 @@
 #include <eda_item.h>       // FILL_TYPE
 #include <plotter.h>
 
+class FONT;
 
 /**
  * The PSLIKE_PLOTTER class is an intermediate class to handle common
@@ -180,7 +181,7 @@ public:
                        double aOrient, const wxSize& aSize, enum EDA_TEXT_HJUSTIFY_T aH_justify,
                        enum EDA_TEXT_VJUSTIFY_T aV_justify, int aWidth, bool aItalic, bool aBold,
                        bool aMultilineAllowed = false, void* aData = NULL,
-                       wxString* aFont = nullptr ) override;
+                       FONT* aFont = nullptr ) override;
 
 protected:
     virtual void emitSetRGBColor( double r, double g, double b ) override;
@@ -292,7 +293,7 @@ public:
                        double aOrient, const wxSize& aSize, enum EDA_TEXT_HJUSTIFY_T aH_justify,
                        enum EDA_TEXT_VJUSTIFY_T aV_justify, int aWidth, bool aItalic, bool aBold,
                        bool aMultilineAllowed = false, void* aData = NULL,
-                       wxString* aFont = nullptr ) override;
+                       FONT* aFont = nullptr ) override;
     /**
      * PDF images are handles as inline, not XObject streams...
      */
@@ -433,7 +434,7 @@ public:
                        double aOrient, const wxSize& aSize, enum EDA_TEXT_HJUSTIFY_T aH_justify,
                        enum EDA_TEXT_VJUSTIFY_T aV_justify, int aWidth, bool aItalic, bool aBold,
                        bool aMultilineAllowed = false, void* aData = NULL,
-                       wxString* aFont = nullptr ) override;
+                       FONT* aFont = nullptr ) override;
 
 protected:
     FILL_TYPE      m_fillMode;          // true if the current contour

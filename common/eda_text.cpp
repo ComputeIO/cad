@@ -33,6 +33,7 @@
 #include <vector>      // for vector
 
 #include <eda_item.h> // for EDA_ITEM
+#include <common.h>
 #include <base_units.h>
 #include <basic_gal.h>      // for BASIC_GAL, basic_gal
 #include <convert_to_biu.h> // for Mils2iu
@@ -87,24 +88,102 @@ EDA_TEXT_VJUSTIFY_T EDA_TEXT::MapVertJustify( int aVertJustify )
 }
 
 
-EDA_TEXT::EDA_TEXT( const wxString& text ) : m_text( text ), m_e( 1 << TE_VISIBLE )
+wxString EDA_TEXT::GetShownText( int aDepth, FONT** aFontPtr ) const
+{
+    if( aFontPtr )
+        *aFontPtr = GetFont();
+
+    return m_shown_text;
+}
+
+
+FONT* EDA_TEXT::getFontFromString( const wxString& aString ) const
+{
+    wxString fontName;
+#ifdef DEBUG //STROKEFONT
+    std::cerr << "EDA_TEXT::getFontFromString( \"" << aString << "\" )\n";
+#endif
+
+    std::function<bool( wxString* )> fontResolver = [&]( wxString* token ) -> bool
+    {
+#ifdef DEBUG //STROKEFONT
+        if( aString.Contains( wxT( "FONT" ) ) )
+        {
+            std::cerr << "token [" << *token << "]";
+        }
+#endif
+        if( token->Contains( ':' ) )
+        {
+            wxString remainder;
+            wxString ref = token->BeforeFirst( ':', &remainder );
+
+#ifdef DEBUG
+            std::cerr << " contains':' ";
+#endif
+            if( !ref.Cmp( "FONT" ) )
+            {
+                // handle FONT variable in aString as font specifier
+                //
+                // example: "${FONT:futural}"
+                fontName = remainder;
+#ifdef DEBUG
+                std::cerr << " fontName [" << fontName << "] remainder [" << remainder << "]\n";
+#endif
+                return true;
+            }
+            else
+            {
+#ifdef DEBUG
+                std::cerr << " nohit\n";
+#endif
+                return false;
+            }
+        }
+        return false;
+    };
+
+    std::function<bool( wxString* )> fallbackResolver = [&]( wxString* token ) -> bool
+    {
+        return false;
+    };
+
+    ExpandTextVars( aString, &fontResolver, &fallbackResolver, nullptr );
+    FONT* font = FONT::GetFont( fontName );
+#ifdef DEBUG //STROKEFONT
+    if( aString.Contains( wxT( "FONT" ) ) )
+    {
+        std::cerr << "EDA_TEXT::getFontFromString( \"" << aString << "\" ) font name \"" << fontName
+                  << "\" --> " << ( font ? font->Name() : "(null ptr)" ) << std::endl;
+    }
+#endif
+    return font;
+}
+
+
+void EDA_TEXT::setTextInternals()
+{
+    m_shown_text = UnescapeString( m_text );
+    m_shown_text_has_text_var_refs = m_shown_text.Contains( wxT( "${" ) );
+    m_font = getFontFromString( m_text );
+}
+
+
+EDA_TEXT::EDA_TEXT( const wxString& text ) :
+        m_text( text ), m_font( nullptr ), m_e( 1 << TE_VISIBLE )
 {
     int sz = Mils2iu( DEFAULT_SIZE_TEXT );
     SetTextSize( wxSize( sz, sz ) );
     m_shown_text_has_text_var_refs = false;
 
     if( !text.IsEmpty() )
-    {
-        m_shown_text = UnescapeString( text );
-        m_shown_text_has_text_var_refs = m_shown_text.Contains( wxT( "${" ) );
-    }
+        setTextInternals();
 }
 
 
-EDA_TEXT::EDA_TEXT( const EDA_TEXT& aText ) : m_text( aText.m_text ), m_e( aText.m_e )
+EDA_TEXT::EDA_TEXT( const EDA_TEXT& aText ) :
+        m_text( aText.m_text ), m_font( nullptr ), m_e( aText.m_e )
 {
-    m_shown_text = UnescapeString( m_text );
-    m_shown_text_has_text_var_refs = m_shown_text.Contains( wxT( "${" ) );
+    setTextInternals();
 }
 
 
@@ -116,8 +195,7 @@ EDA_TEXT::~EDA_TEXT()
 void EDA_TEXT::SetText( const wxString& aText )
 {
     m_text = aText;
-    m_shown_text = UnescapeString( aText );
-    m_shown_text_has_text_var_refs = m_shown_text.Contains( wxT( "${" ) );
+    setTextInternals();
 }
 
 
@@ -173,8 +251,7 @@ int EDA_TEXT::GetEffectiveTextPenWidth( int aDefaultWidth ) const
 bool EDA_TEXT::Replace( const wxFindReplaceData& aSearchData )
 {
     bool retval = EDA_ITEM::Replace( aSearchData, m_text );
-    m_shown_text = UnescapeString( m_text );
-    m_shown_text_has_text_var_refs = m_shown_text.Contains( wxT( "${" ) );
+    setTextInternals();
 
     return retval;
 }
@@ -390,14 +467,16 @@ bool EDA_TEXT::TextHitTest( const EDA_RECT& aRect, bool aContains, int aAccuracy
 void EDA_TEXT::Print( const RENDER_SETTINGS* aSettings, const wxPoint& aOffset, COLOR4D aColor,
                       OUTLINE_MODE aFillMode )
 {
+#ifdef DEBUG //STROKEFONT
+    std::cerr << "EDA_TEXT::Print() GetShownText \"" << GetShownText() << "\"\n";
+#endif
     if( IsMultilineAllowed() )
     {
         std::vector<wxPoint> positions;
         wxArrayString        strings;
+
         wxStringSplit( GetShownText(), strings, '\n' );
-
         positions.reserve( strings.Count() );
-
         GetLinePositions( positions, strings.Count() );
 
         for( unsigned ii = 0; ii < strings.Count(); ii++ )
@@ -461,8 +540,12 @@ void EDA_TEXT::printOneLineOfText( const RENDER_SETTINGS* aSettings, const wxPoi
     if( IsMirrored() )
         size.x = -size.x;
 
+#ifdef DEBUG //STROKEFONT
+    std::cerr << "printOneLineOfText() text \"" << aText << "\"\n";
+#endif
     GRText( DC, aOffset + aPos, aColor, aText, GetTextAngle(), size, GetHorizJustify(),
-            GetVertJustify(), penWidth, IsItalic(), IsBold() );
+            GetVertJustify(), penWidth, IsItalic(), IsBold(), nullptr, nullptr, nullptr,
+            GetFont() );
 }
 
 

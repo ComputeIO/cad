@@ -62,7 +62,7 @@ public:
         return false;
     }
 
-    wxString GetShownText( int aDepth = 0, wxString* fontSpecifier = nullptr ) const override;
+    wxString GetShownText( int aDepth = 0, FONT** aFontPtr = nullptr ) const override;
 
     bool Matches( const wxFindReplaceData& aSearchData, void* aAuxData ) const override
     {
@@ -135,6 +135,8 @@ public:
 
     void DrawTextAsPolygon( std::vector<SHAPE_POLY_SET>& aResult, PCB_LAYER_ID aLayerId ) const;
 
+    FONT* GetFont() const { return EDA_TEXT::GetFont(); }
+
     // @copydoc BOARD_ITEM::GetEffectiveShape
     virtual std::shared_ptr<SHAPE> GetEffectiveShape( PCB_LAYER_ID aLayer = UNDEFINED_LAYER ) const override;
 
@@ -151,6 +153,7 @@ public:
 
 #if defined(DEBUG)
     virtual void Show( int nestLevel, std::ostream& os ) const override { ShowDummy( os ); }
+
 #endif
 };
 

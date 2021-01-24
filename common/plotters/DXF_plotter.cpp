@@ -868,7 +868,7 @@ bool containsNonAsciiChars( const wxString& string )
 void DXF_PLOTTER::Text( const wxPoint& aPos, COLOR4D aColor, const wxString& aText, double aOrient,
                         const wxSize& aSize, enum EDA_TEXT_HJUSTIFY_T aH_justify,
                         enum EDA_TEXT_VJUSTIFY_T aV_justify, int aWidth, bool aItalic, bool aBold,
-                        bool aMultilineAllowed, void* aData, wxString* aFont )
+                        bool aMultilineAllowed, void* aData, FONT* aFont )
 {
     // Fix me: see how to use DXF text mode for multiline texts
     if( aMultilineAllowed && !aText.Contains( wxT( "\n" ) ) )
