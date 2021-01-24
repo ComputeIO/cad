@@ -136,8 +136,8 @@ bool EDIT_TOOL::Init()
     menu.AddItem( PCB_ACTIONS::move, SELECTION_CONDITIONS::NotEmpty && notMovingCondition );
     menu.AddItem( PCB_ACTIONS::inlineBreakTrack, SELECTION_CONDITIONS::Count( 1 )
                       && SELECTION_CONDITIONS::OnlyTypes( GENERAL_COLLECTOR::Tracks ) );
-    menu.AddItem( PCB_ACTIONS::drag45Degree, SELECTION_CONDITIONS::OnlyTypes( GENERAL_COLLECTOR::Tracks ) );
-    menu.AddItem( PCB_ACTIONS::dragFreeAngle, SELECTION_CONDITIONS::OnlyTypes( GENERAL_COLLECTOR::Tracks ) );
+    menu.AddItem( PCB_ACTIONS::drag45Degree, SELECTION_CONDITIONS::Count( 1 ) && notMovingCondition );
+    menu.AddItem( PCB_ACTIONS::dragFreeAngle, SELECTION_CONDITIONS::Count( 1 ) && notMovingCondition );
     menu.AddItem( PCB_ACTIONS::filletTracks, SELECTION_CONDITIONS::OnlyTypes( GENERAL_COLLECTOR::Tracks ) );
     menu.AddItem( PCB_ACTIONS::rotateCcw, SELECTION_CONDITIONS::NotEmpty );
     menu.AddItem( PCB_ACTIONS::rotateCw, SELECTION_CONDITIONS::NotEmpty );
