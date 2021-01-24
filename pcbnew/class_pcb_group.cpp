@@ -59,22 +59,6 @@ void PCB_GROUP::SetPosition( const wxPoint& newpos )
 }
 
 
-void PCB_GROUP::SetLayerRecursive( PCB_LAYER_ID aLayer, int aDepth )
-{
-    for( auto item : m_items )
-    {
-        if( ( item->Type() == PCB_GROUP_T ) && ( aDepth > 0 ) )
-        {
-            static_cast<PCB_GROUP*>( item )->SetLayerRecursive( aLayer, aDepth - 1 );
-        }
-        else
-        {
-            item->SetLayer( aLayer );
-        }
-    }
-}
-
-
 EDA_ITEM* PCB_GROUP::Clone() const
 {
     // Use copy constructor to get the same uuid and other fields

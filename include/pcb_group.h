@@ -124,7 +124,13 @@ public:
         wxFAIL_MSG( "groups don't support layer SetLayer" );
     }
 
-    ///< @copydoc EDA_ITEM::Clone
+    /** Set layer for all items within the group.
+     * 
+     * To avoid freezes with circular references, the maximum depth is 20 by default.
+     */
+    void SetLayerRecursive( PCB_LAYER_ID aLayer, int aDepth );
+
+    ///> @copydoc EDA_ITEM::Clone
     EDA_ITEM* Clone() const override;
 
     /*
