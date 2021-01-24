@@ -42,8 +42,8 @@ class SCH_PIN : public SCH_ITEM
     bool           m_isDangling;
 
     /// The name that this pin connection will drive onto a net
-    std::recursive_mutex                     m_netmap_mutex;
-    std::map<const SCH_SHEET_PATH, wxString> m_net_name_map;
+    std::recursive_mutex                                      m_netmap_mutex;
+    std::map<const SCH_SHEET_PATH, std::pair<wxString, bool>> m_net_name_map;
 
 public:
     SCH_PIN( LIB_PIN* aLibPin, SCH_COMPONENT* aParentSymbol );
@@ -117,6 +117,11 @@ public:
     void SetNumber( const wxString& aNumber ) { m_number = aNumber; }
 
     ELECTRICAL_PINTYPE GetType() const;
+
+    wxString GetCanonicalElectricalTypeName() const
+    {
+        return LIB_PIN::GetCanonicalElectricalTypeName( GetType() );
+    }
 
     GRAPHIC_PINSHAPE GetShape() const;
 

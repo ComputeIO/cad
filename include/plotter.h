@@ -361,15 +361,16 @@ public:
                                     double aOrient, OUTLINE_MODE aTraceMode, void* aData ) = 0;
 
     /**
-     * @param aPadPos Position of the shape (center of the rectangle
+     * @param aPadPos Position of the shape
      * @param aSize = size of round reference pad
+     * @param aPadOrient = pad rotation, used only with aperture macros (Gerber plotter)
      * @param aPolygons the shape as polygon set
      * @param aTraceMode FILLED or SKETCH
      * @param aData an auxiliary info (mainly for gerber format attributes)
      */
     virtual void FlashPadCustom( const wxPoint& aPadPos, const wxSize& aSize,
-                                 SHAPE_POLY_SET* aPolygons, OUTLINE_MODE aTraceMode,
-                                 void* aData ) = 0;
+                                 double aPadOrient, SHAPE_POLY_SET* aPolygons,
+                                 OUTLINE_MODE aTraceMode, void* aData ) = 0;
 
     /**
      * Flash a trapezoidal pad

@@ -283,8 +283,8 @@ void BRDITEMS_PLOTTER::PlotPad( PAD* aPad, COLOR4D aColor, OUTLINE_MODE aPlotMod
 
         if( polygons->OutlineCount() )
         {
-            m_plotter->FlashPadCustom( shape_pos, aPad->GetSize(), polygons.get(), aPlotMode,
-                                       &gbr_metadata );
+            m_plotter->FlashPadCustom( shape_pos, aPad->GetSize(), aPad->GetOrientation(),
+                                       polygons.get(), aPlotMode, &gbr_metadata );
         }
     }
     break;
