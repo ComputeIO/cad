@@ -47,58 +47,56 @@
 class SCH_REFERENCE
 {
     /// Symbol reference prefix, without number (for IC1, this is IC) )
-    UTF8            m_ref;               // it's private, use the accessors please
-    SCH_COMPONENT*  m_rootSymbol;        ///< The symbol associated the reference object.
-    LIB_PART*       m_libPart;           ///< The source symbol from a library.
-    wxPoint         m_symbolPos;         ///< The physical position of the symbol in schematic
-                                        ///< used to annotate by X or Y position
-    int             m_unit;              ///< The unit number for symbol with multiple parts
-                                        ///< per package.
-    wxString        m_value;             ///< The symbol value.
-    wxString        m_footprint;         ///< The footprint assigned.
-    SCH_SHEET_PATH  m_sheetPath;         ///< The sheet path for this reference.
-    bool            m_isNew;             ///< True if not yet annotated.
-    int             m_sheetNum;          ///< The sheet number for the reference.
-    KIID            m_symbolUuid;        ///< UUID of the symbol.
-    int             m_numRef;            ///< The numeric part of the reference designator.
-    int             m_flag;
+    UTF8           m_ref;        // it's private, use the accessors please
+    SCH_COMPONENT* m_rootSymbol; ///< The symbol associated the reference object.
+    LIB_PART*      m_libPart;    ///< The source symbol from a library.
+    wxPoint        m_symbolPos;  ///< The physical position of the symbol in schematic
+                                 ///< used to annotate by X or Y position
+    int m_unit;                  ///< The unit number for symbol with multiple parts
+                                 ///< per package.
+    wxString       m_value;      ///< The symbol value.
+    wxString       m_footprint;  ///< The footprint assigned.
+    SCH_SHEET_PATH m_sheetPath;  ///< The sheet path for this reference.
+    bool           m_isNew;      ///< True if not yet annotated.
+    int            m_sheetNum;   ///< The sheet number for the reference.
+    KIID           m_symbolUuid; ///< UUID of the symbol.
+    int            m_numRef;     ///< The numeric part of the reference designator.
+    int            m_flag;
 
     friend class SCH_REFERENCE_LIST;
 
 public:
-
-    SCH_REFERENCE() :
-            m_sheetPath()
+    SCH_REFERENCE() : m_sheetPath()
     {
-        m_rootSymbol      = NULL;
-        m_libPart         = NULL;
-        m_unit            = 0;
-        m_isNew           = false;
-        m_numRef          = 0;
-        m_flag            = 0;
-        m_sheetNum        = 0;
+        m_rootSymbol = NULL;
+        m_libPart = NULL;
+        m_unit = 0;
+        m_isNew = false;
+        m_numRef = 0;
+        m_flag = 0;
+        m_sheetNum = 0;
     }
 
     SCH_REFERENCE( SCH_COMPONENT* aSymbol, LIB_PART* aLibPart, const SCH_SHEET_PATH& aSheetPath );
 
-    SCH_COMPONENT* GetSymbol() const           { return m_rootSymbol; }
+    SCH_COMPONENT* GetSymbol() const { return m_rootSymbol; }
 
-    LIB_PART*      GetLibPart() const          { return m_libPart; }
+    LIB_PART* GetLibPart() const { return m_libPart; }
 
     const SCH_SHEET_PATH& GetSheetPath() const { return m_sheetPath; }
 
-    SCH_SHEET_PATH& GetSheetPath()             { return m_sheetPath; }
+    SCH_SHEET_PATH& GetSheetPath() { return m_sheetPath; }
 
-    int GetUnit() const                        { return m_unit; }
-    void SetUnit( int aUnit )                  { m_unit = aUnit; }
+    int  GetUnit() const { return m_unit; }
+    void SetUnit( int aUnit ) { m_unit = aUnit; }
 
-    const wxString GetValue() const            { return m_value; }
-    void SetValue( const wxString& aValue )    { m_value = aValue; }
+    const wxString GetValue() const { return m_value; }
+    void           SetValue( const wxString& aValue ) { m_value = aValue; }
 
-    const wxString GetFootprint() const        { return m_footprint; }
-    void SetFootprint( const wxString& aFP )   { m_footprint = aFP; }
+    const wxString GetFootprint() const { return m_footprint; }
+    void           SetFootprint( const wxString& aFP ) { m_footprint = aFP; }
 
-    void SetSheetNumber( int aSheetNumber )    { m_sheetNum = aSheetNumber; }
+    void SetSheetNumber( int aSheetNumber ) { m_sheetNum = aSheetNumber; }
 
     const wxString GetPath() const
     {
@@ -120,10 +118,10 @@ public:
      */
     void Split();
 
-    void SetRef( const wxString& aReference ) { m_ref = aReference; }
+    void     SetRef( const wxString& aReference ) { m_ref = aReference; }
     wxString GetRef() const { return m_ref; }
 
-    void SetRefStr( const std::string& aReference ) { m_ref = aReference; }
+    void        SetRefStr( const std::string& aReference ) { m_ref = aReference; }
     const char* GetRefStr() const { return m_ref.c_str(); }
 
     ///> Return reference name with unit altogether
@@ -150,20 +148,14 @@ public:
         return ref << m_numRef;
     }
 
-    int CompareValue( const SCH_REFERENCE& item ) const
-    {
-        return m_value.Cmp( item.m_value );
-    }
+    int CompareValue( const SCH_REFERENCE& item ) const { return m_value.Cmp( item.m_value ); }
 
-    int CompareRef( const SCH_REFERENCE& item ) const
-    {
-        return m_ref.compare( item.m_ref );
-    }
+    int CompareRef( const SCH_REFERENCE& item ) const { return m_ref.compare( item.m_ref ); }
 
     int CompareLibName( const SCH_REFERENCE& item ) const
     {
         return m_rootSymbol->GetLibId().GetLibItemName().compare(
-            item.m_rootSymbol->GetLibId().GetLibItemName() );
+                item.m_rootSymbol->GetLibId().GetLibItemName() );
     }
 
     /**
@@ -178,10 +170,7 @@ public:
                && GetSheetPath().Path() == other.GetSheetPath().Path();
     }
 
-    bool IsUnitsLocked()
-    {
-        return m_libPart->UnitsLocked();
-    }
+    bool IsUnitsLocked() { return m_libPart->UnitsLocked(); }
 };
 
 
@@ -189,7 +178,8 @@ public:
  * Defines a standard error handler for annotation errors.
  */
 typedef std::function<void( ERCE_T aType, const wxString& aMsg, SCH_REFERENCE* aItemA,
-                            SCH_REFERENCE* aItemB )> ANNOTATION_ERROR_HANDLER;
+                            SCH_REFERENCE* aItemB )>
+        ANNOTATION_ERROR_HANDLER;
 
 
 /**
@@ -201,26 +191,17 @@ typedef std::function<void( ERCE_T aType, const wxString& aMsg, SCH_REFERENCE* a
  */
 class SCH_REFERENCE_LIST
 {
-
 private:
     std::vector<SCH_REFERENCE> flatList;
 
 public:
     /** Constructor
      */
-    SCH_REFERENCE_LIST()
-    {
-    }
+    SCH_REFERENCE_LIST() {}
 
-    SCH_REFERENCE& operator[]( int aIndex )
-    {
-        return flatList[ aIndex ];
-    }
+    SCH_REFERENCE& operator[]( int aIndex ) { return flatList[aIndex]; }
 
-    void Clear()
-    {
-        flatList.clear();
-    }
+    void Clear() { flatList.clear(); }
 
     unsigned GetCount() const { return flatList.size(); }
 
@@ -324,10 +305,7 @@ public:
      * </ul>
      * </p>
      */
-    void SortByXCoordinate()
-    {
-        sort( flatList.begin(), flatList.end(), sortByXPosition );
-    }
+    void SortByXCoordinate() { sort( flatList.begin(), flatList.end(), sortByXPosition ); }
 
     /**
      * Function SortByYCoordinate
@@ -343,20 +321,14 @@ public:
      * </ul>
      * </p>
      */
-    void SortByYCoordinate()
-    {
-        sort( flatList.begin(), flatList.end(), sortByYPosition );
-    }
+    void SortByYCoordinate() { sort( flatList.begin(), flatList.end(), sortByYPosition ); }
 
     /**
      * Function SortByTimeStamp
      * sort the flat list by Time Stamp (sheet path + timestamp).
      * Useful to detect duplicate Time Stamps
      */
-    void SortByTimeStamp()
-    {
-        sort( flatList.begin(), flatList.end(), sortByTimeStamp );
-    }
+    void SortByTimeStamp() { sort( flatList.begin(), flatList.end(), sortByTimeStamp ); }
 
     /**
      * Function SortByRefAndValue
@@ -373,10 +345,7 @@ public:
      * </ul>
      * </p>
      */
-    void SortByRefAndValue()
-    {
-        sort( flatList.begin(), flatList.end(), sortByRefAndValue );
-    }
+    void SortByRefAndValue() { sort( flatList.begin(), flatList.end(), sortByRefAndValue ); }
 
     /**
      * Function SortByReferenceOnly
@@ -389,10 +358,7 @@ public:
      * </ul>
      * </p>
      */
-    void SortByReferenceOnly()
-    {
-        sort( flatList.begin(), flatList.end(), sortByReferenceOnly );
-    }
+    void SortByReferenceOnly() { sort( flatList.begin(), flatList.end(), sortByReferenceOnly ); }
 
     /**
      * searches the list for a symbol with a given reference.
@@ -425,7 +391,7 @@ public:
      * @param aIdList = the buffer to fill
      * @param aMinRefId = the min id value to store. all values < aMinRefId are ignored
      */
-    void GetRefsInUse( int aIndex, std::vector< int >& aIdList, int aMinRefId );
+    void GetRefsInUse( int aIndex, std::vector<int>& aIdList, int aMinRefId );
 
     /**
      * Function GetLastReference
@@ -437,20 +403,17 @@ public:
      */
     int GetLastReference( int aIndex, int aMinValue );
 
-#if defined(DEBUG)
+#if defined( DEBUG )
     void Show( const char* aPrefix = "" )
     {
         printf( "%s\n", aPrefix );
 
-        for( unsigned i=0; i < flatList.size(); ++i )
+        for( unsigned i = 0; i < flatList.size(); ++i )
         {
             SCH_REFERENCE& schref = flatList[i];
 
-            printf( " [%-2d] ref:%-8s num:%-3d lib_part:%s\n",
-                    i,
-                    schref.m_ref.c_str(),
-                    schref.m_numRef,
-                    TO_UTF8( schref.GetLibPart()->GetName() ) );
+            printf( " [%-2d] ref:%-8s num:%-3d lib_part:%s\n", i, schref.m_ref.c_str(),
+                    schref.m_numRef, TO_UTF8( schref.GetLibPart()->GetName() ) );
         }
     }
 #endif
@@ -496,4 +459,4 @@ private:
     friend class BACK_ANNOTATE;
 };
 
-#endif    // _SCH_REFERENCE_LIST_H_
+#endif // _SCH_REFERENCE_LIST_H_

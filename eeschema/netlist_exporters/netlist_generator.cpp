@@ -57,40 +57,32 @@ bool SCH_EDIT_FRAME::WriteNetListFile( int aFormat, const wxString& aFullFileNam
     bool res = true;
     bool executeCommandLine = false;
 
-    wxString    fileName = aFullFileName;
+    wxString fileName = aFullFileName;
 
-    NETLIST_EXPORTER_BASE *helper;
+    NETLIST_EXPORTER_BASE* helper;
 
     SCHEMATIC* sch = &Schematic();
 
     switch( aFormat )
     {
-    case NET_TYPE_PCBNEW:
-        helper = new NETLIST_EXPORTER_KICAD( sch );
-        break;
+    case NET_TYPE_PCBNEW: helper = new NETLIST_EXPORTER_KICAD( sch ); break;
 
-    case NET_TYPE_ORCADPCB2:
-        helper = new NETLIST_EXPORTER_ORCADPCB2( sch );
-        break;
+    case NET_TYPE_ORCADPCB2: helper = new NETLIST_EXPORTER_ORCADPCB2( sch ); break;
 
-    case NET_TYPE_CADSTAR:
-        helper = new NETLIST_EXPORTER_CADSTAR( sch );
-        break;
+    case NET_TYPE_CADSTAR: helper = new NETLIST_EXPORTER_CADSTAR( sch ); break;
 
-    case NET_TYPE_SPICE:
-        helper = new NETLIST_EXPORTER_PSPICE( sch );
-        break;
+    case NET_TYPE_SPICE: helper = new NETLIST_EXPORTER_PSPICE( sch ); break;
 
     default:
-        {
-            wxFileName  tmpFile = fileName;
-            tmpFile.SetExt( GENERIC_INTERMEDIATE_NETLIST_EXT );
-            fileName = tmpFile.GetFullPath();
+    {
+        wxFileName tmpFile = fileName;
+        tmpFile.SetExt( GENERIC_INTERMEDIATE_NETLIST_EXT );
+        fileName = tmpFile.GetFullPath();
 
-            helper = new NETLIST_EXPORTER_XML( sch );
-            executeCommandLine = true;
-        }
-        break;
+        helper = new NETLIST_EXPORTER_XML( sch );
+        executeCommandLine = true;
+    }
+    break;
     }
 
     res = helper->WriteNetlist( fileName, aNetlistOptions );
@@ -108,14 +100,13 @@ bool SCH_EDIT_FRAME::WriteNetListFile( int aFormat, const wxString& aFullFileNam
         // "xsltproc -o %O /usr/local/lib/kicad/plugins/netlist_form_pads-pcb.xsl %I"
         // becomes, after the user selects /tmp/s1.net as the output file from the file dialog:
         // "xsltproc -o /tmp/s1.net /usr/local/lib/kicad/plugins/netlist_form_pads-pcb.xsl /tmp/s1.xml"
-        wxString commandLine = NETLIST_EXPORTER_BASE::MakeCommandLine( m_netListerCommand,
-                                                                       fileName, aFullFileName,
-                                                                       prj_dir );
+        wxString commandLine = NETLIST_EXPORTER_BASE::MakeCommandLine( m_netListerCommand, fileName,
+                                                                       aFullFileName, prj_dir );
 
         if( aReporter )
         {
             wxArrayString output, errors;
-            int diag = wxExecute( commandLine, output, errors, m_exec_flags );
+            int           diag = wxExecute( commandLine, output, errors, m_exec_flags );
 
             wxString msg;
 
@@ -124,9 +115,9 @@ bool SCH_EDIT_FRAME::WriteNetListFile( int aFormat, const wxString& aFullFileNam
             aReporter->ReportHead( msg, RPT_SEVERITY_ACTION );
 
             if( diag != 0 )
-                aReporter->ReportTail( wxString::Format(
-                                       _("Command error. Return code %d" ), diag ),
-                                       RPT_SEVERITY_ERROR );
+                aReporter->ReportTail(
+                        wxString::Format( _( "Command error. Return code %d" ), diag ),
+                        RPT_SEVERITY_ERROR );
             else
                 aReporter->ReportTail( _( "Success" ), RPT_SEVERITY_INFO );
 
@@ -143,7 +134,7 @@ bool SCH_EDIT_FRAME::WriteNetListFile( int aFormat, const wxString& aFullFileNam
             if( errors.GetCount() )
             {
                 msg.Empty();
-                msg << wxT("\n") << _( "Error messages:" ) << wxT( "\n" );
+                msg << wxT( "\n" ) << _( "Error messages:" ) << wxT( "\n" );
                 aReporter->Report( msg, RPT_SEVERITY_INFO );
 
                 for( unsigned ii = 0; ii < errors.GetCount(); ii++ )
@@ -166,7 +157,10 @@ bool SCH_EDIT_FRAME::ReadyToNetlist( bool aSilent, bool aSilentAnnotate )
     Schematic().GetSheets().AnnotatePowerSymbols();
 
     // Components must be annotated
-    if( CheckAnnotate( []( ERCE_T, const wxString&, SCH_REFERENCE*, SCH_REFERENCE* ) {} ) )
+    if( CheckAnnotate(
+                []( ERCE_T, const wxString&, SCH_REFERENCE*, SCH_REFERENCE* )
+                {
+                } ) )
     {
         if( aSilentAnnotate )
         {
@@ -181,7 +175,10 @@ bool SCH_EDIT_FRAME::ReadyToNetlist( bool aSilent, bool aSilentAnnotate )
             // Schematic must be annotated: call Annotate dialog and tell the user why.
             ModalAnnotate( _( "Exporting netlist requires a completely annotated schematic." ) );
 
-            if( CheckAnnotate( []( ERCE_T, const wxString&, SCH_REFERENCE*, SCH_REFERENCE* ) {} ) )
+            if( CheckAnnotate(
+                        []( ERCE_T, const wxString&, SCH_REFERENCE*, SCH_REFERENCE* )
+                        {
+                        } ) )
             {
                 return false;
             }
@@ -220,4 +217,3 @@ void SCH_EDIT_FRAME::sendNetlistToCvpcb()
 
     Kiway().ExpressMail( FRAME_CVPCB, MAIL_EESCHEMA_NETLIST, packet, this );
 }
-

@@ -52,66 +52,38 @@
  */
 
 // Messages for matrix rows:
-const wxString CommentERC_H[] =
-{
-    _( "Input Pin" ),
-    _( "Output Pin" ),
-    _( "Bidirectional Pin" ),
-    _( "Tri-State Pin" ),
-    _( "Passive Pin" ),
-    _( "Free Pin" ),
-    _( "Unspecified Pin" ),
-    _( "Power Input Pin" ),
-    _( "Power Output Pin" ),
-    _( "Open Collector" ),
-    _( "Open Emitter" ),
-    _( "No Connection" )
-};
+const wxString CommentERC_H[] = { _( "Input Pin" ),         _( "Output Pin" ),
+                                  _( "Bidirectional Pin" ), _( "Tri-State Pin" ),
+                                  _( "Passive Pin" ),       _( "Free Pin" ),
+                                  _( "Unspecified Pin" ),   _( "Power Input Pin" ),
+                                  _( "Power Output Pin" ),  _( "Open Collector" ),
+                                  _( "Open Emitter" ),      _( "No Connection" ) };
 
 // Messages for matrix columns
-const wxString CommentERC_V[] =
-{
-    _( "Input Pin" ),
-    _( "Output Pin" ),
-    _( "Bidirectional Pin" ),
-    _( "Tri-State Pin" ),
-    _( "Passive Pin" ),
-    _( "Free Pin" ),
-    _( "Unspecified Pin" ),
-    _( "Power Input Pin" ),
-    _( "Power Output Pin" ),
-    _( "Open Collector" ),
-    _( "Open Emitter" ),
-    _( "No Connection" )
-};
+const wxString CommentERC_V[] = { _( "Input Pin" ),         _( "Output Pin" ),
+                                  _( "Bidirectional Pin" ), _( "Tri-State Pin" ),
+                                  _( "Passive Pin" ),       _( "Free Pin" ),
+                                  _( "Unspecified Pin" ),   _( "Power Input Pin" ),
+                                  _( "Power Output Pin" ),  _( "Open Collector" ),
+                                  _( "Open Emitter" ),      _( "No Connection" ) };
 
 
 // List of pin types that are considered drivers for usual input pins
 // i.e. pin type = ELECTRICAL_PINTYPE::PT_INPUT, but not PT_POWER_IN
 // that need only a PT_POWER_OUT pin type to be driven
-const std::set<ELECTRICAL_PINTYPE> DrivingPinTypes =
-        {
-            ELECTRICAL_PINTYPE::PT_OUTPUT,
-            ELECTRICAL_PINTYPE::PT_POWER_OUT,
-            ELECTRICAL_PINTYPE::PT_PASSIVE,
-            ELECTRICAL_PINTYPE::PT_TRISTATE,
-            ELECTRICAL_PINTYPE::PT_BIDI
-        };
+const std::set<ELECTRICAL_PINTYPE> DrivingPinTypes = {
+    ELECTRICAL_PINTYPE::PT_OUTPUT, ELECTRICAL_PINTYPE::PT_POWER_OUT, ELECTRICAL_PINTYPE::PT_PASSIVE,
+    ELECTRICAL_PINTYPE::PT_TRISTATE, ELECTRICAL_PINTYPE::PT_BIDI
+};
 
 // List of pin types that are considered drivers for power pins
 // In fact only a ELECTRICAL_PINTYPE::PT_POWER_OUT pin type can drive
 // power input pins
-const std::set<ELECTRICAL_PINTYPE> DrivingPowerPinTypes =
-        {
-            ELECTRICAL_PINTYPE::PT_POWER_OUT
-        };
+const std::set<ELECTRICAL_PINTYPE> DrivingPowerPinTypes = { ELECTRICAL_PINTYPE::PT_POWER_OUT };
 
 // List of pin types that require a driver elsewhere on the net
-const std::set<ELECTRICAL_PINTYPE> DrivenPinTypes =
-        {
-            ELECTRICAL_PINTYPE::PT_INPUT,
-            ELECTRICAL_PINTYPE::PT_POWER_IN
-        };
+const std::set<ELECTRICAL_PINTYPE> DrivenPinTypes = { ELECTRICAL_PINTYPE::PT_INPUT,
+                                                      ELECTRICAL_PINTYPE::PT_POWER_IN };
 
 int ERC_TESTER::TestDuplicateSheetNames( bool aCreateMarker )
 {
@@ -142,7 +114,8 @@ int ERC_TESTER::TestDuplicateSheetNames( bool aCreateMarker )
                 {
                     if( aCreateMarker )
                     {
-                        std::shared_ptr<ERC_ITEM> ercItem = ERC_ITEM::Create( ERCE_DUPLICATE_SHEET_NAME );
+                        std::shared_ptr<ERC_ITEM> ercItem =
+                                ERC_ITEM::Create( ERCE_DUPLICATE_SHEET_NAME );
                         ercItem->SetItems( sheet, test_item );
 
                         SCH_MARKER* marker = new SCH_MARKER( ercItem, sheet->GetPosition() );
@@ -181,8 +154,8 @@ void ERC_TESTER::TestTextVars( KIGFX::WS_PROXY_VIEW_ITEM* aWorksheet )
         wsItems.BuildWorkSheetGraphicList( aWorksheet->GetPageInfo(), aWorksheet->GetTitleBlock() );
     }
 
-    SCH_SHEET_PATH  savedCurrentSheet = m_schematic->CurrentSheet();
-    SCH_SHEET_LIST  sheets = m_schematic->GetSheets();
+    SCH_SHEET_PATH savedCurrentSheet = m_schematic->CurrentSheet();
+    SCH_SHEET_LIST sheets = m_schematic->GetSheets();
 
     for( SCH_SHEET_PATH& sheet : sheets )
     {
@@ -203,7 +176,8 @@ void ERC_TESTER::TestTextVars( KIGFX::WS_PROXY_VIEW_ITEM* aWorksheet )
                         pos = component->GetTransform().TransformCoordinate( pos );
                         pos += component->GetPosition();
 
-                        std::shared_ptr<ERC_ITEM> ercItem = ERC_ITEM::Create( ERCE_UNRESOLVED_VARIABLE );
+                        std::shared_ptr<ERC_ITEM> ercItem =
+                                ERC_ITEM::Create( ERCE_UNRESOLVED_VARIABLE );
                         ercItem->SetItems( &field );
 
                         SCH_MARKER* marker = new SCH_MARKER( ercItem, pos );
@@ -219,7 +193,8 @@ void ERC_TESTER::TestTextVars( KIGFX::WS_PROXY_VIEW_ITEM* aWorksheet )
                 {
                     if( unresolved( field.GetShownText() ) )
                     {
-                        std::shared_ptr<ERC_ITEM> ercItem = ERC_ITEM::Create( ERCE_UNRESOLVED_VARIABLE );
+                        std::shared_ptr<ERC_ITEM> ercItem =
+                                ERC_ITEM::Create( ERCE_UNRESOLVED_VARIABLE );
                         ercItem->SetItems( &field );
 
                         SCH_MARKER* marker = new SCH_MARKER( ercItem, field.GetPosition() );
@@ -231,7 +206,8 @@ void ERC_TESTER::TestTextVars( KIGFX::WS_PROXY_VIEW_ITEM* aWorksheet )
                 {
                     if( pin->GetShownText().Matches( wxT( "*${*}*" ) ) )
                     {
-                        std::shared_ptr<ERC_ITEM> ercItem = ERC_ITEM::Create( ERCE_UNRESOLVED_VARIABLE );
+                        std::shared_ptr<ERC_ITEM> ercItem =
+                                ERC_ITEM::Create( ERCE_UNRESOLVED_VARIABLE );
                         ercItem->SetItems( pin );
 
                         SCH_MARKER* marker = new SCH_MARKER( ercItem, pin->GetPosition() );
@@ -243,7 +219,8 @@ void ERC_TESTER::TestTextVars( KIGFX::WS_PROXY_VIEW_ITEM* aWorksheet )
             {
                 if( text->GetShownText().Matches( wxT( "*${*}*" ) ) )
                 {
-                    std::shared_ptr<ERC_ITEM> ercItem = ERC_ITEM::Create( ERCE_UNRESOLVED_VARIABLE );
+                    std::shared_ptr<ERC_ITEM> ercItem =
+                            ERC_ITEM::Create( ERCE_UNRESOLVED_VARIABLE );
                     ercItem->SetItems( text );
 
                     SCH_MARKER* marker = new SCH_MARKER( ercItem, text->GetPosition() );
@@ -258,7 +235,8 @@ void ERC_TESTER::TestTextVars( KIGFX::WS_PROXY_VIEW_ITEM* aWorksheet )
             {
                 if( text->GetShownText().Matches( wxT( "*${*}*" ) ) )
                 {
-                    std::shared_ptr<ERC_ITEM> ercItem = ERC_ITEM::Create( ERCE_UNRESOLVED_VARIABLE );
+                    std::shared_ptr<ERC_ITEM> ercItem =
+                            ERC_ITEM::Create( ERCE_UNRESOLVED_VARIABLE );
                     ercItem->SetErrorMessage( _( "Unresolved text variable in worksheet." ) );
 
                     SCH_MARKER* marker = new SCH_MARKER( ercItem, text->GetPosition() );
@@ -274,15 +252,15 @@ void ERC_TESTER::TestTextVars( KIGFX::WS_PROXY_VIEW_ITEM* aWorksheet )
 
 int ERC_TESTER::TestConflictingBusAliases()
 {
-    wxString    msg;
-    int         err_count = 0;
+    wxString msg;
+    int      err_count = 0;
 
-    SCH_SCREENS screens( m_schematic->Root() );
-    std::vector< std::shared_ptr<BUS_ALIAS> > aliases;
+    SCH_SCREENS                             screens( m_schematic->Root() );
+    std::vector<std::shared_ptr<BUS_ALIAS>> aliases;
 
     for( SCH_SCREEN* screen = screens.GetFirst(); screen != NULL; screen = screens.GetNext() )
     {
-        std::unordered_set< std::shared_ptr<BUS_ALIAS> > screen_aliases = screen->GetBusAliases();
+        std::unordered_set<std::shared_ptr<BUS_ALIAS>> screen_aliases = screen->GetBusAliases();
 
         for( const std::shared_ptr<BUS_ALIAS>& alias : screen_aliases )
         {
@@ -291,8 +269,7 @@ int ERC_TESTER::TestConflictingBusAliases()
                 if( alias->GetName() == test->GetName() && alias->Members() != test->Members() )
                 {
                     msg.Printf( _( "Bus alias %s has conflicting definitions on %s and %s" ),
-                                alias->GetName(),
-                                alias->GetParent()->GetFileName(),
+                                alias->GetName(), alias->GetParent()->GetFileName(),
                                 test->GetParent()->GetFileName() );
 
                     std::shared_ptr<ERC_ITEM> ercItem = ERC_ITEM::Create( ERCE_BUS_ALIAS_CONFLICT );
@@ -317,8 +294,8 @@ int ERC_TESTER::TestMultiunitFootprints()
 {
     SCH_SHEET_LIST sheets = m_schematic->GetSheets();
 
-    int errors = 0;
-    std::map<wxString, LIB_ID> footprints;
+    int                          errors = 0;
+    std::map<wxString, LIB_ID>   footprints;
     SCH_MULTI_UNIT_REFERENCE_MAP refMap;
     sheets.GetMultiUnitSymbols( refMap, true );
 
@@ -328,7 +305,7 @@ int ERC_TESTER::TestMultiunitFootprints()
 
         if( refList.GetCount() == 0 )
         {
-            wxFAIL;   // it should not happen
+            wxFAIL; // it should not happen
             continue;
         }
 
@@ -360,8 +337,8 @@ int ERC_TESTER::TestMultiunitFootprints()
 
             if( unit && !secondFp.IsEmpty() && unitFP != secondFp )
             {
-                msg.Printf( _( "Different footprints assigned to %s and %s" ),
-                            unitName, secondName );
+                msg.Printf( _( "Different footprints assigned to %s and %s" ), unitName,
+                            secondName );
 
                 std::shared_ptr<ERC_ITEM> ercItem = ERC_ITEM::Create( ERCE_DIFFERENT_UNIT_FP );
                 ercItem->SetErrorMessage( msg );
@@ -424,16 +401,16 @@ int ERC_TESTER::TestNoConnectPins()
 int ERC_TESTER::TestPinToPin()
 {
     ERC_SETTINGS&  settings = m_schematic->ErcSettings();
-    const NET_MAP& nets     = m_schematic->ConnectionGraph()->GetNetMap();
+    const NET_MAP& nets = m_schematic->ConnectionGraph()->GetNetMap();
 
     int errors = 0;
 
     for( const std::pair<NET_NAME_CODE, std::vector<CONNECTION_SUBGRAPH*>> net : nets )
     {
-        std::vector<SCH_PIN*> pins;
+        std::vector<SCH_PIN*>                      pins;
         std::unordered_map<EDA_ITEM*, SCH_SCREEN*> pinToScreenMap;
 
-        for( CONNECTION_SUBGRAPH* subgraph: net.second )
+        for( CONNECTION_SUBGRAPH* subgraph : net.second )
         {
             for( EDA_ITEM* item : subgraph->m_items )
             {
@@ -452,12 +429,12 @@ int ERC_TESTER::TestPinToPin()
         std::set<std::pair<SCH_PIN*, SCH_PIN*>> tested;
 
         SCH_PIN* needsDriver = nullptr;
-        bool     hasDriver   = false;
+        bool     hasDriver = false;
 
         // We need different drivers for power nets and normal nets.
         // A power net has at least one pin having the ELECTRICAL_PINTYPE::PT_POWER_IN
         // and power nets can be driven only by ELECTRICAL_PINTYPE::PT_POWER_OUT pins
-        bool     ispowerNet  = false;
+        bool ispowerNet = false;
 
         for( SCH_PIN* refPin : pins )
         {
@@ -477,10 +454,9 @@ int ERC_TESTER::TestPinToPin()
                 // needsDriver will be the pin shown in the error report eventually, so try to
                 // upgrade to a "better" pin if possible: something visible and only a power symbol
                 // if this net needs a power driver
-                if( !needsDriver ||
-                    ( !needsDriver->IsVisible() && refPin->IsVisible() ) ||
-                    ( ispowerNet != needsDriver->IsPowerConnection() &&
-                      ispowerNet == refPin->IsPowerConnection() ) )
+                if( !needsDriver || ( !needsDriver->IsVisible() && refPin->IsVisible() )
+                    || ( ispowerNet != needsDriver->IsPowerConnection()
+                         && ispowerNet == refPin->IsPowerConnection() ) )
                 {
                     needsDriver = refPin;
                 }
@@ -517,15 +493,15 @@ int ERC_TESTER::TestPinToPin()
                 if( erc != PIN_ERROR::OK )
                 {
                     std::shared_ptr<ERC_ITEM> ercItem =
-                            ERC_ITEM::Create( erc == PIN_ERROR::WARNING ? ERCE_PIN_TO_PIN_WARNING :
-                                                                          ERCE_PIN_TO_PIN_ERROR );
+                            ERC_ITEM::Create( erc == PIN_ERROR::WARNING ? ERCE_PIN_TO_PIN_WARNING
+                                                                        : ERCE_PIN_TO_PIN_ERROR );
                     ercItem->SetItems( refPin, testPin );
                     ercItem->SetIsSheetSpecific();
 
                     ercItem->SetErrorMessage(
                             wxString::Format( _( "Pins of type %s and %s are connected" ),
-                                    ElectricalPinTypeGetText( refType ),
-                                    ElectricalPinTypeGetText( testType ) ) );
+                                              ElectricalPinTypeGetText( refType ),
+                                              ElectricalPinTypeGetText( testType ) ) );
 
                     SCH_MARKER* marker =
                             new SCH_MARKER( ercItem, refPin->GetTransformedPosition() );
@@ -562,7 +538,7 @@ int ERC_TESTER::TestMultUnitPinConflicts()
 
     for( const std::pair<NET_NAME_CODE, std::vector<CONNECTION_SUBGRAPH*>> net : nets )
     {
-        const wxString& netName = net.first.first;
+        const wxString&       netName = net.first.first;
         std::vector<SCH_PIN*> pins;
 
         for( CONNECTION_SUBGRAPH* subgraph : net.second )
@@ -576,8 +552,8 @@ int ERC_TESTER::TestMultUnitPinConflicts()
                     if( !pin->GetLibPin()->GetParent()->IsMulti() )
                         continue;
 
-                    wxString name = pin->GetParentSymbol()->GetRef( &subgraph->m_sheet ) +
-                                      + ":" + pin->GetNumber();
+                    wxString name = pin->GetParentSymbol()->GetRef( &subgraph->m_sheet ) + +":"
+                                    + pin->GetNumber();
 
                     if( !pinToNetMap.count( name ) )
                     {
@@ -589,14 +565,14 @@ int ERC_TESTER::TestMultUnitPinConflicts()
                                 ERC_ITEM::Create( ERCE_DIFFERENT_UNIT_NET );
 
                         ercItem->SetErrorMessage( wxString::Format(
-                                _( "Pin %s is connected to both %s and %s" ),
-                                pin->GetNumber(), netName, pinToNetMap[name].first ) );
+                                _( "Pin %s is connected to both %s and %s" ), pin->GetNumber(),
+                                netName, pinToNetMap[name].first ) );
 
                         ercItem->SetItems( pin, pinToNetMap[name].second );
                         ercItem->SetIsSheetSpecific();
 
-                        SCH_MARKER* marker = new SCH_MARKER( ercItem,
-                                                             pin->GetTransformedPosition() );
+                        SCH_MARKER* marker =
+                                new SCH_MARKER( ercItem, pin->GetTransformedPosition() );
                         subgraph->m_sheet.LastScreen()->Append( marker );
                         errors += 1;
                     }
@@ -652,8 +628,7 @@ int ERC_TESTER::TestSimilarLabels()
                     break;
                 }
 
-                default:
-                    break;
+                default: break;
                 }
             }
         }
@@ -684,7 +659,7 @@ int ERC_TESTER::TestLibSymbolIssues()
             wxCHECK2( symbol, continue );
 
             wxString  libIdStr = symbol->GetLibId().GetUniStringLibId();
-            LIB_PART* libSymbolInSchematic = screen->GetLibSymbols()[ libIdStr ];
+            LIB_PART* libSymbolInSchematic = screen->GetLibSymbols()[libIdStr];
 
             wxCHECK2( libSymbolInSchematic, continue );
 
@@ -721,9 +696,7 @@ int ERC_TESTER::TestLibSymbolIssues()
             {
                 std::shared_ptr<ERC_ITEM> ercItem = ERC_ITEM::Create( ERCE_LIB_SYMBOL_ISSUES );
                 ercItem->SetItems( symbol );
-                msg.Printf( "Symbol '%s' not found in symbol library '%s'.",
-                            symbolName,
-                            libName );
+                msg.Printf( "Symbol '%s' not found in symbol library '%s'.", symbolName, libName );
                 ercItem->SetErrorMessage( msg );
 
                 markers.emplace_back( new SCH_MARKER( ercItem, symbol->GetPosition() ) );
@@ -736,9 +709,7 @@ int ERC_TESTER::TestLibSymbolIssues()
             {
                 std::shared_ptr<ERC_ITEM> ercItem = ERC_ITEM::Create( ERCE_LIB_SYMBOL_ISSUES );
                 ercItem->SetItems( symbol );
-                msg.Printf( "Symbol '%s' has been modified in library '%s'.",
-                            symbolName,
-                            libName );
+                msg.Printf( "Symbol '%s' has been modified in library '%s'.", symbolName, libName );
                 ercItem->SetErrorMessage( msg );
 
                 markers.emplace_back( new SCH_MARKER( ercItem, symbol->GetPosition() ) );

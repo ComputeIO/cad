@@ -37,8 +37,8 @@ enum ERCE_T
 {
     ERCE_UNSPECIFIED = 0,
     ERCE_FIRST,
-    ERCE_DUPLICATE_SHEET_NAME = ERCE_FIRST,  ///< Duplicate sheet names within a given sheet.
-    ERCE_PIN_NOT_CONNECTED,       ///< Pin not connected and not no connect symbol.
+    ERCE_DUPLICATE_SHEET_NAME = ERCE_FIRST, ///< Duplicate sheet names within a given sheet.
+    ERCE_PIN_NOT_CONNECTED,                 ///< Pin not connected and not no connect symbol.
     ERCE_PIN_NOT_DRIVEN,          ///< Pin connected to some others pins but no pin to drive it.
                                   ///< pins to drive it can be output, passive, 3sttae, I/O
     ERCE_POWERPIN_NOT_DRIVEN,     ///< Power input pin connected to some others pins but no
@@ -74,10 +74,10 @@ enum ERCE_T
 
     // Errors after this point will not automatically appear in the Severities Panel
 
-    ERCE_PIN_TO_PIN_WARNING,    // pin connected to an other pin: warning level
-    ERCE_PIN_TO_PIN_ERROR,      // pin connected to an other pin: error level
-    ERCE_ANNOTATION_ACTION      // Not actually an error; just an action performed during
-                                // annotation which is passed back through the error handler.
+    ERCE_PIN_TO_PIN_WARNING, // pin connected to an other pin: warning level
+    ERCE_PIN_TO_PIN_ERROR,   // pin connected to an other pin: error level
+    ERCE_ANNOTATION_ACTION   // Not actually an error; just an action performed during
+                             // annotation which is passed back through the error handler.
 };
 
 /// The values a pin-to-pin entry in the pin matrix can take on
@@ -90,11 +90,11 @@ enum class PIN_ERROR
 };
 
 /// Types of drive on a net (used for legacy ERC)
-#define NPI    4  // Net with Pin isolated, this pin has type Not Connected and must be left N.C.
-#define DRV    3  // Net driven by a signal (a pin output for instance)
-#define NET_NC 2  // Net "connected" to a "NoConnect symbol"
-#define NOD    1  // Net not driven ( Such as 2 or more connected inputs )
-#define NOC    0  // initial state of a net: no connection
+#define NPI 4    // Net with Pin isolated, this pin has type Not Connected and must be left N.C.
+#define DRV 3    // Net driven by a signal (a pin output for instance)
+#define NET_NC 2 // Net "connected" to a "NoConnect symbol"
+#define NOD 1    // Net not driven ( Such as 2 or more connected inputs )
+#define NOC 0    // initial state of a net: no connection
 
 /**
  * Container for ERC settings
@@ -114,10 +114,7 @@ public:
         return ( other.m_Severities == m_Severities );
     }
 
-    bool operator!=( const ERC_SETTINGS& other ) const
-    {
-        return !( other == *this );
-    }
+    bool operator!=( const ERC_SETTINGS& other ) const { return !( other == *this ); }
 
     bool IsTestEnabled( int aErrorCode ) const
     {
@@ -161,7 +158,6 @@ public:
     }
 
 public:
-
     std::map<int, SEVERITY> m_Severities;
     std::set<wxString>      m_ErcExclusions;
 
@@ -170,7 +166,6 @@ public:
     static int m_PinMinDrive[ELECTRICAL_PINTYPES_TOTAL][ELECTRICAL_PINTYPES_TOTAL];
 
 private:
-
     static PIN_ERROR m_defaultPinMap[ELECTRICAL_PINTYPES_TOTAL][ELECTRICAL_PINTYPES_TOTAL];
 };
 
@@ -188,9 +183,9 @@ private:
 
 public:
     SHEETLIST_ERC_ITEMS_PROVIDER( SCHEMATIC* aSchematic ) :
-            m_schematic( aSchematic ),
-            m_severities( 0 )
-    { }
+            m_schematic( aSchematic ), m_severities( 0 )
+    {
+    }
 
     void SetSeverities( int aSeverities ) override;
 

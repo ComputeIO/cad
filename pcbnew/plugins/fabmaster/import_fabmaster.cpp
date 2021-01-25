@@ -142,12 +142,14 @@ FABMASTER::section_type FABMASTER::detectType( size_t aOffset )
 
     /// We strip the underscores from all column names as some export variants use them and some do not
     row1.erase( std::remove_if( row1.begin(), row1.end(),
-                                []( char c ) {
+                                []( char c )
+                                {
                                     return c == '_';
                                 } ),
                 row1.end() );
     row2.erase( std::remove_if( row2.begin(), row2.end(),
-                                []( char c ) {
+                                []( char c )
+                                {
                                     return c == '_';
                                 } ),
                 row2.end() );
@@ -156,7 +158,8 @@ FABMASTER::section_type FABMASTER::detectType( size_t aOffset )
     {
         row3 = row[3];
         row3.erase( std::remove_if( row3.begin(), row3.end(),
-                                    []( char c ) {
+                                    []( char c )
+                                    {
                                         return c == '_';
                                     } ),
                     row3.end() );
@@ -250,7 +253,8 @@ int FABMASTER::getColFromName( size_t aRow, const std::string& aStr )
         /// Some Fabmaster headers include the underscores while others do not
         /// so we strip them uniformly before comparing
         header[i].erase( std::remove_if( header[i].begin(), header[i].end(),
-                                         []( const char c ) {
+                                         []( const char c )
+                                         {
                                              return c == '_';
                                          } ),
                          header[i].end() );
@@ -594,24 +598,24 @@ size_t FABMASTER::processSimpleLayers( size_t aRow )
 {
     size_t rownum = aRow + 2;
 
-     if( rows.size() < rownum )
-         return -1;
+    if( rows.size() < rownum )
+        return -1;
 
     auto   header = rows[aRow];
     double scale_factor = processScaleFactor( aRow + 1 );
 
-     if( scale_factor <= 0.0 )
-         return -1;
+    if( scale_factor <= 0.0 )
+        return -1;
 
     int layer_class_col = getColFromName( aRow, "CLASS" );
     int layer_subclass_col = getColFromName( aRow, "SUBCLASS" );
 
-     if( layer_class_col < 0 || layer_subclass_col < 0 )
-         return -1;
+    if( layer_class_col < 0 || layer_subclass_col < 0 )
+        return -1;
 
-     for( ; rownum < rows.size() && rows[rownum].size() > 0 && rows[rownum][0] == "S"; ++rownum )
-     {
-         auto row = rows[rownum];
+    for( ; rownum < rows.size() && rows[rownum].size() > 0 && rows[rownum][0] == "S"; ++rownum )
+    {
+        auto row = rows[rownum];
 
         if( row.size() != header.size() )
         {
@@ -755,7 +759,7 @@ size_t FABMASTER::processLayers( size_t aRow )
     int layer_mat_col = getColFromName( aRow, "LAYERMATERIAL" );
 
     if( layer_sort_col < 0 || layer_subclass_col < 0 || layer_art_col < 0 || layer_use_col < 0
-            || layer_cond_col < 0 || layer_er_col < 0 || layer_rho_col < 0 || layer_mat_col < 0 )
+        || layer_cond_col < 0 || layer_er_col < 0 || layer_rho_col < 0 || layer_mat_col < 0 )
         return -1;
 
     for( ; rownum < rows.size() && rows[rownum].size() > 0 && rows[rownum][0] == "S"; ++rownum )
@@ -811,7 +815,7 @@ size_t FABMASTER::processCustomPads( size_t aRow )
     size_t rownum = aRow + 2;
     size_t offset = 2;
 
-    if( rows.size() < aRow + offset)
+    if( rows.size() < aRow + offset )
         return -1;
 
     auto   header = rows[aRow];
@@ -839,10 +843,9 @@ size_t FABMASTER::processCustomPads( size_t aRow )
     int pad_pin_num_col = getColFromName( aRow, "PINNUMBER" );
 
     if( pad_subclass_col < 0 || pad_shape_name_col < 0 || pad_grdata1_col < 0 || pad_grdata2_col < 0
-            || pad_grdata3_col < 0 || pad_grdata4_col < 0 || pad_grdata5_col < 0
-            || pad_grdata6_col < 0 || pad_grdata7_col < 0 || pad_grdata8_col < 0
-            || pad_grdata9_col < 0 || pad_stack_name_col < 0 || pad_refdes_col < 0
-            || pad_pin_num_col < 0 )
+        || pad_grdata3_col < 0 || pad_grdata4_col < 0 || pad_grdata5_col < 0 || pad_grdata6_col < 0
+        || pad_grdata7_col < 0 || pad_grdata8_col < 0 || pad_grdata9_col < 0
+        || pad_stack_name_col < 0 || pad_refdes_col < 0 || pad_pin_num_col < 0 )
         return -1;
 
     for( ; rownum < rows.size() && rows[rownum].size() > 0 && rows[rownum][0] == "S"; ++rownum )
@@ -1136,10 +1139,9 @@ size_t FABMASTER::processGeometry( size_t aRow )
     int geo_refdes_col = getColFromName( aRow, "REFDES" );
 
     if( geo_name_col < 0 || geo_num_col < 0 || geo_grdata1_col < 0 || geo_grdata2_col < 0
-            || geo_grdata3_col < 0 || geo_grdata4_col < 0 || geo_grdata5_col < 0
-            || geo_grdata6_col < 0 || geo_grdata7_col < 0 || geo_grdata8_col < 0
-            || geo_grdata9_col < 0 || geo_subclass_col < 0 || geo_sym_name_col < 0
-            || geo_refdes_col < 0 )
+        || geo_grdata3_col < 0 || geo_grdata4_col < 0 || geo_grdata5_col < 0 || geo_grdata6_col < 0
+        || geo_grdata7_col < 0 || geo_grdata8_col < 0 || geo_grdata9_col < 0 || geo_subclass_col < 0
+        || geo_sym_name_col < 0 || geo_refdes_col < 0 )
         return -1;
 
     for( ; rownum < rows.size() && rows[rownum].size() > 0 && rows[rownum][0] == "S"; ++rownum )
@@ -1262,7 +1264,7 @@ size_t FABMASTER::processVias( size_t aRow )
     int test_point_col = getColFromName( aRow, "TESTPOINT" );
 
     if( viax_col < 0 || viay_col < 0 || padstack_name_col < 0 || net_name_col < 0
-            || test_point_col < 0 )
+        || test_point_col < 0 )
         return -1;
 
     for( ; rownum < rows.size() && rows[rownum].size() > 0 && rows[rownum][0] == "S"; ++rownum )
@@ -1325,10 +1327,10 @@ size_t FABMASTER::processTraces( size_t aRow )
     int grdata9_col = getColFromName( aRow, "GRAPHICDATA9" );
     int netname_col = getColFromName( aRow, "NETNAME" );
 
-    if( class_col < 0 || layer_col < 0 || grdata_name_col < 0 || grdata_num_col < 0
-            || tag_col < 0 || grdata1_col < 0 || grdata2_col < 0 || grdata3_col < 0
-            || grdata4_col < 0 || grdata5_col < 0 || grdata6_col < 0 || grdata7_col < 0
-            || grdata8_col < 0 || grdata9_col < 0 || netname_col < 0 )
+    if( class_col < 0 || layer_col < 0 || grdata_name_col < 0 || grdata_num_col < 0 || tag_col < 0
+        || grdata1_col < 0 || grdata2_col < 0 || grdata3_col < 0 || grdata4_col < 0
+        || grdata5_col < 0 || grdata6_col < 0 || grdata7_col < 0 || grdata8_col < 0
+        || grdata9_col < 0 || netname_col < 0 )
         return -1;
 
     for( ; rownum < rows.size() && rows[rownum].size() > 0 && rows[rownum][0] == "S"; ++rownum )
@@ -1484,9 +1486,9 @@ size_t FABMASTER::processFootprints( size_t aRow )
     int compvolt_col = getColFromName( aRow, "COMPVOLTAGE" );
 
     if( refdes_col < 0 || compclass_col < 0 || comppartnum_col < 0 || compheight_col < 0
-            || compdevlabelcol < 0 || compinscode_col < 0 || symtype_col < 0 || symname_col < 0
-            || symmirror_col < 0 || symrotate_col < 0 || symx_col < 0 || symy_col < 0
-            || compvalue_col < 0 || comptol_col < 0 || compvolt_col < 0 )
+        || compdevlabelcol < 0 || compinscode_col < 0 || symtype_col < 0 || symname_col < 0
+        || symmirror_col < 0 || symrotate_col < 0 || symx_col < 0 || symy_col < 0
+        || compvalue_col < 0 || comptol_col < 0 || compvolt_col < 0 )
         return -1;
 
     for( ; rownum < rows.size() && rows[rownum].size() > 0 && rows[rownum][0] == "S"; ++rownum )
@@ -1563,9 +1565,9 @@ size_t FABMASTER::processPins( size_t aRow )
     int pinrot_col = getColFromName( aRow, "PINROTATION" );
     int testpoint_col = getColFromName( aRow, "TESTPOINT" );
 
-    if( symname_col < 0 ||symmirror_col < 0 || pinname_col < 0 || pinnum_col < 0 || pinx_col < 0
-            || piny_col < 0 || padstack_col < 0 || refdes_col < 0 || pinrot_col < 0
-            || testpoint_col < 0 )
+    if( symname_col < 0 || symmirror_col < 0 || pinname_col < 0 || pinnum_col < 0 || pinx_col < 0
+        || piny_col < 0 || padstack_col < 0 || refdes_col < 0 || pinrot_col < 0
+        || testpoint_col < 0 )
         return -1;
 
     for( ; rownum < rows.size() && rows[rownum].size() > 0 && rows[rownum][0] == "S"; ++rownum )
@@ -1632,7 +1634,7 @@ size_t FABMASTER::processNets( size_t aRow )
     int pinpwr_col = getColFromName( aRow, "PINPOWER" );
 
     if( netname_col < 0 || refdes_col < 0 || pinnum_col < 0 || pinname_col < 0 || pingnd_col < 0
-            || pinpwr_col < 0 )
+        || pinpwr_col < 0 )
         return -1;
 
     for( ; rownum < rows.size() && rows[rownum].size() > 0 && rows[rownum][0] == "S"; ++rownum )
@@ -2422,7 +2424,8 @@ bool FABMASTER::loadZone( BOARD* aBoard, const std::unique_ptr<FABMASTER::TRACE>
     if( IsValidLayer( new_layer ) )
         layer = new_layer;
 
-    auto store_zone = [&]() {
+    auto store_zone = [&]()
+    {
         if( zone && zone_outline )
         {
             if( zone_outline->Outline( 0 ).PointCount() >= 3 )
@@ -2438,7 +2441,8 @@ bool FABMASTER::loadZone( BOARD* aBoard, const std::unique_ptr<FABMASTER::TRACE>
         }
     };
 
-    auto new_zone = [&]() {
+    auto new_zone = [&]()
+    {
         zone = new ZONE( aBoard );
         zone_outline = new SHAPE_POLY_SET;
 
@@ -2670,12 +2674,14 @@ bool FABMASTER::orderZones( BOARD* aBoard )
 {
     std::vector<ZONE*> zones = aBoard->Zones();
 
-    std::sort( zones.begin(), zones.end(), [&]( const ZONE* a, const ZONE* b ) {
-        if( a->GetLayer() == b->GetLayer() )
-            return a->GetBoundingBox().GetArea() > b->GetBoundingBox().GetArea();
+    std::sort( zones.begin(), zones.end(),
+               [&]( const ZONE* a, const ZONE* b )
+               {
+                   if( a->GetLayer() == b->GetLayer() )
+                       return a->GetBoundingBox().GetArea() > b->GetBoundingBox().GetArea();
 
-        return a->GetLayer() < b->GetLayer();
-    } );
+                   return a->GetLayer() < b->GetLayer();
+               } );
 
     PCB_LAYER_ID layer = UNDEFINED_LAYER;
     unsigned int priority = 0;

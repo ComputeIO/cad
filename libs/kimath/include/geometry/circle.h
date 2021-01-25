@@ -99,4 +99,3 @@ public:
 };
 
 #endif // __CIRCLE_H
-

@@ -20,11 +20,11 @@
 
 #include <geometry/circle.h>
 #include <geometry/seg.h>
-#include <geometry/shape.h>     // for MIN_PRECISION_IU
-#include <math/util.h>          // for KiROUND
-#include <math/vector2d.h>      // for VECTOR2I
-#include <math.h>               // for sqrt
-#include <trigo.h>              // for GetArcMid
+#include <geometry/shape.h> // for MIN_PRECISION_IU
+#include <math/util.h>      // for KiROUND
+#include <math/vector2d.h>  // for VECTOR2I
+#include <math.h>           // for sqrt
+#include <trigo.h>          // for GetArcMid
 
 
 CIRCLE::CIRCLE()
@@ -52,36 +52,32 @@ CIRCLE& CIRCLE::ConstructFromTanTanPt( const SEG& aLineA, const SEG& aLineB, con
 {
     //fixme: There might be more efficient / accurate solution than using geometrical constructs
 
-    SEG anglebisector;
+    SEG      anglebisector;
     VECTOR2I intersectPoint;
 
-    auto furthestFromIntersect =
-        [&]( VECTOR2I aPt1, VECTOR2I aPt2 ) -> VECTOR2I
+    auto furthestFromIntersect = [&]( VECTOR2I aPt1, VECTOR2I aPt2 ) -> VECTOR2I
+    {
+        if( ( aPt1 - intersectPoint ).EuclideanNorm() > ( aPt2 - intersectPoint ).EuclideanNorm() )
         {
-            if( ( aPt1 - intersectPoint ).EuclideanNorm()
-                > ( aPt2 - intersectPoint ).EuclideanNorm() )
-            {
-                return aPt1;
-            }
-            else
-            {
-                return aPt2;
-            }
-        };
+            return aPt1;
+        }
+        else
+        {
+            return aPt2;
+        }
+    };
 
-    auto closestToIntersect =
-        [&]( VECTOR2I aPt1, VECTOR2I aPt2 ) -> VECTOR2I
+    auto closestToIntersect = [&]( VECTOR2I aPt1, VECTOR2I aPt2 ) -> VECTOR2I
+    {
+        if( ( aPt1 - intersectPoint ).EuclideanNorm() <= ( aPt2 - intersectPoint ).EuclideanNorm() )
         {
-            if( ( aPt1 - intersectPoint ).EuclideanNorm()
-                <= ( aPt2 - intersectPoint ).EuclideanNorm() )
-            {
-                return aPt1;
-            }
-            else
-            {
-                return aPt2;
-            }
-        };
+            return aPt1;
+        }
+        else
+        {
+            return aPt2;
+        }
+    };
 
     if( aLineA.ApproxParallel( aLineB ) )
     {
@@ -300,7 +296,7 @@ std::vector<VECTOR2I> CIRCLE::Intersect( const SEG& aLine ) const
     int64_t radiusSquared = (int64_t) Radius * (int64_t) Radius;
     int64_t omSquared = om * om;
 
-    int     mTo1 = sqrt( radiusSquared - omSquared );
+    int mTo1 = sqrt( radiusSquared - omSquared );
 
     VECTOR2I mTo1vec = ( aLine.B - aLine.A ).Resize( mTo1 );
     VECTOR2I mTo2vec = -mTo1vec;
@@ -310,4 +306,3 @@ std::vector<VECTOR2I> CIRCLE::Intersect( const SEG& aLine ) const
 
     return retval;
 }
-

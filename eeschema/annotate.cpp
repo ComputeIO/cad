@@ -41,7 +41,7 @@ void SCH_EDIT_FRAME::mapExistingAnnotation( std::map<wxString, wxString>& aMap )
     for( size_t i = 0; i < references.GetCount(); i++ )
     {
         SCH_COMPONENT*  symbol = references[i].GetSymbol();
-        SCH_SHEET_PATH* curr_sheetpath = &references[ i ].GetSheetPath();
+        SCH_SHEET_PATH* curr_sheetpath = &references[i].GetSheetPath();
         KIID_PATH       curr_full_uuid = curr_sheetpath->Path();
 
         curr_full_uuid.push_back( symbol->m_Uuid );
@@ -52,25 +52,24 @@ void SCH_EDIT_FRAME::mapExistingAnnotation( std::map<wxString, wxString>& aMap )
             ref << LIB_PART::SubReference( symbol->GetUnitSelection( curr_sheetpath ) );
 
         if( symbol->IsAnnotated( curr_sheetpath ) )
-            aMap[ curr_full_uuid.AsString() ] = ref;
+            aMap[curr_full_uuid.AsString()] = ref;
     }
 }
 
 
 void SCH_EDIT_FRAME::DeleteAnnotation( bool aCurrentSheetOnly, bool* aAppendUndo )
 {
-    auto clearAnnotation =
-            [&]( SCH_SCREEN* aScreen, SCH_SHEET_PATH* aSheet )
-            {
-                for( SCH_ITEM* item : aScreen->Items().OfType( SCH_COMPONENT_T ) )
-                {
-                    SCH_COMPONENT* component = static_cast<SCH_COMPONENT*>( item );
+    auto clearAnnotation = [&]( SCH_SCREEN* aScreen, SCH_SHEET_PATH* aSheet )
+    {
+        for( SCH_ITEM* item : aScreen->Items().OfType( SCH_COMPONENT_T ) )
+        {
+            SCH_COMPONENT* component = static_cast<SCH_COMPONENT*>( item );
 
-                    SaveCopyInUndoList( aScreen, component, UNDO_REDO::CHANGED, *aAppendUndo );
-                    *aAppendUndo = true;
-                    component->ClearAnnotation( aSheet );
-                }
-            };
+            SaveCopyInUndoList( aScreen, component, UNDO_REDO::CHANGED, *aAppendUndo );
+            *aAppendUndo = true;
+            component->ClearAnnotation( aSheet );
+        }
+    };
 
     if( aCurrentSheetOnly )
     {
@@ -94,14 +93,10 @@ void SCH_EDIT_FRAME::DeleteAnnotation( bool aCurrentSheetOnly, bool* aAppendUndo
 }
 
 
-void SCH_EDIT_FRAME::AnnotateComponents( bool              aAnnotateSchematic,
-                                         ANNOTATE_ORDER_T  aSortOption,
-                                         ANNOTATE_OPTION_T aAlgoOption,
-                                         int               aStartNumber,
-                                         bool              aResetAnnotation,
-                                         bool              aRepairTimestamps,
-                                         bool              aLockUnits,
-                                         REPORTER&         aReporter )
+void SCH_EDIT_FRAME::AnnotateComponents( bool aAnnotateSchematic, ANNOTATE_ORDER_T aSortOption,
+                                         ANNOTATE_OPTION_T aAlgoOption, int aStartNumber,
+                                         bool aResetAnnotation, bool aRepairTimestamps,
+                                         bool aLockUnits, REPORTER& aReporter )
 {
     SCH_REFERENCE_LIST references;
     SCH_SCREENS        screens( Schematic().Root() );
@@ -166,17 +161,14 @@ void SCH_EDIT_FRAME::AnnotateComponents( bool              aAnnotateSchematic,
     }
 
     bool useSheetNum = false;
-    int idStep = 100;
+    int  idStep = 100;
 
     switch( aAlgoOption )
     {
     default:
-    case INCREMENTAL_BY_REF:
-        break;
+    case INCREMENTAL_BY_REF: break;
 
-    case SHEET_NUMBER_X_100:
-        useSheetNum = true;
-        break;
+    case SHEET_NUMBER_X_100: useSheetNum = true; break;
 
     case SHEET_NUMBER_X_1000:
         useSheetNum = true;
@@ -200,8 +192,8 @@ void SCH_EDIT_FRAME::AnnotateComponents( bool              aAnnotateSchematic,
         KIID_PATH full_uuid = sheet->Path();
         full_uuid.push_back( symbol->m_Uuid );
 
-        wxString  prevRef = previousAnnotation[ full_uuid.AsString() ];
-        wxString  newRef  = symbol->GetRef( sheet );
+        wxString prevRef = previousAnnotation[full_uuid.AsString()];
+        wxString newRef = symbol->GetRef( sheet );
 
         if( symbol->GetUnitCount() > 1 )
             newRef << LIB_PART::SubReference( symbol->GetUnitSelection( sheet ) );
@@ -216,26 +208,18 @@ void SCH_EDIT_FRAME::AnnotateComponents( bool              aAnnotateSchematic,
             if( symbol->GetUnitCount() > 1 )
                 msg.Printf( _( "Updated %s (unit %s) from %s to %s" ),
                             symbol->GetValue( sheet, true ),
-                            LIB_PART::SubReference( symbol->GetUnit(), false ),
-                            prevRef,
-                            newRef );
+                            LIB_PART::SubReference( symbol->GetUnit(), false ), prevRef, newRef );
             else
-                msg.Printf( _( "Updated %s from %s to %s" ),
-                            symbol->GetValue( sheet, true ),
-                            prevRef,
-                            newRef );
+                msg.Printf( _( "Updated %s from %s to %s" ), symbol->GetValue( sheet, true ),
+                            prevRef, newRef );
         }
         else
         {
             if( symbol->GetUnitCount() > 1 )
-                msg.Printf( _( "Annotated %s (unit %s) as %s" ),
-                            symbol->GetValue( sheet, true ),
-                            LIB_PART::SubReference( symbol->GetUnit(), false ),
-                            newRef );
+                msg.Printf( _( "Annotated %s (unit %s) as %s" ), symbol->GetValue( sheet, true ),
+                            LIB_PART::SubReference( symbol->GetUnit(), false ), newRef );
             else
-                msg.Printf( _( "Annotated %s as %s" ),
-                            symbol->GetValue( sheet, true ),
-                            newRef );
+                msg.Printf( _( "Annotated %s as %s" ), symbol->GetValue( sheet, true ), newRef );
         }
 
         aReporter.Report( msg, RPT_SEVERITY_ACTION );
@@ -243,11 +227,11 @@ void SCH_EDIT_FRAME::AnnotateComponents( bool              aAnnotateSchematic,
 
     // Final control (just in case ... ).
     if( !CheckAnnotate(
-            [ &aReporter ]( ERCE_T , const wxString& aMsg, SCH_REFERENCE* , SCH_REFERENCE* )
-            {
-                aReporter.Report( aMsg, RPT_SEVERITY_ERROR );
-            },
-            !aAnnotateSchematic ) )
+                [&aReporter]( ERCE_T, const wxString& aMsg, SCH_REFERENCE*, SCH_REFERENCE* )
+                {
+                    aReporter.Report( aMsg, RPT_SEVERITY_ERROR );
+                },
+                !aAnnotateSchematic ) )
     {
         aReporter.ReportTail( _( "Annotation complete." ), RPT_SEVERITY_ACTION );
     }
@@ -267,8 +251,8 @@ void SCH_EDIT_FRAME::AnnotateComponents( bool              aAnnotateSchematic,
 
 int SCH_EDIT_FRAME::CheckAnnotate( ANNOTATION_ERROR_HANDLER aErrorHandler, bool aOneSheetOnly )
 {
-    SCH_REFERENCE_LIST  referenceList;
-    constexpr bool      includePowerSymbols = false;
+    SCH_REFERENCE_LIST referenceList;
+    constexpr bool     includePowerSymbols = false;
 
     // Build the list of symbols
     if( !aOneSheetOnly )
