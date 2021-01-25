@@ -2,7 +2,7 @@
  * This program source code file is part of KICAD, a free EDA CAD application.
  *
  * Copyright (C) 2012 Torsten Hueter, torstenhtr <at> gmx.de
- * Copyright (C) 2016-2020 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 2016-2021 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * Graphics Abstraction Layer (GAL) - base class
  *
@@ -46,10 +46,10 @@ class BITMAP_BASE;
 namespace KIGFX
 {
 /**
- * Class GAL is the abstract interface for drawing on a 2D-surface.
+ * Abstract interface for drawing on a 2D-surface.
  *
  * The functions are optimized for drawing shapes of an EDA-program such as KiCad. Most methods
- * are abstract and need to be implemented by a lower layer, for example by a cairo or OpenGL
+ * are abstract and need to be implemented by a lower layer, for example by a Cairo or OpenGL
  * implementation.  Almost all methods use world coordinates as arguments. The board design is
  * defined in world space units for drawing purposes these are transformed to screen units with
  * this layer. So zooming is handled here as well.
@@ -68,16 +68,16 @@ public:
     GAL( GAL_DISPLAY_OPTIONS& aOptions );
     virtual ~GAL();
 
-    /// Returns the initialization status for the canvas.
+    /// Return the initialization status for the canvas.
     virtual bool IsInitialized() const { return true; }
 
-    /// Returns true if the GAL canvas is visible on the screen.
+    /// Return true if the GAL canvas is visible on the screen.
     virtual bool IsVisible() const { return true; }
 
-    /// Returns true if the GAL engine is a cairo based type.
+    /// Return true if the GAL engine is a Cairo based type.
     virtual bool IsCairoEngine() { return false; }
 
-    /// Returns true if the GAL engine is a OpenGL based type.
+    /// Return true if the GAL engine is a OpenGL based type.
     virtual bool IsOpenGlEngine() { return false; }
 
     // ---------------
@@ -210,14 +210,17 @@ public:
     // Screen methods
     // --------------
 
-    /// Resizes the canvas.
-    virtual void ResizeScreen( int aWidth, int aHeight ){};
+    /// Resize the canvas.
+    virtual void ResizeScreen( int aWidth, int aHeight ) {};
 
-    /// Shows/hides the GAL canvas
+    /// Show/hide the GAL canvas
     virtual bool Show( bool aShow ) { return true; };
 
-    /// Returns GAL canvas size in pixels
-    const VECTOR2I& GetScreenPixelSize() const { return screenSize; }
+    /// Return GAL canvas size in pixels
+    const VECTOR2I& GetScreenPixelSize() const
+    {
+        return screenSize;
+    }
 
     /// Force all remaining objects to be drawn.
     virtual void Flush(){};
@@ -328,7 +331,7 @@ public:
     FONT& DefaultFont() const { return GetFont(); }
 
     /**
-     * Draws a vector type text.
+     * Draw text.
      *
      * @param aText is the text to be drawn.
      * @param aPosition is the text position in world coordinates.
@@ -339,7 +342,7 @@ public:
                              double aRotationAngle, FONT* aFont = nullptr );
 
     /**
-     * Draws a text using a bitmap font. It should be faster than StrokeText(),
+     * Draw a text using a bitmap font. It should be faster than StrokeText(),
      * but can be used only for non-Gerber elements.
      *
      * @param aText is the text to be drawn.
@@ -362,8 +365,7 @@ public:
     }
 
     /**
-     * Compute the X and Y size of a given text. The text is expected to be
-     * a only one line text.
+     * Compute the X and Y size of a given text. The text is expected to be a only one line text.
      *
      * @param aText is the text string (one line).
      * @return is the text size.
@@ -378,7 +380,7 @@ public:
     virtual void SetTextAttributes( const EDA_TEXT* aText );
 
     /**
-     * Reset text attributes to default styling
+     * Reset text attributes to default styling.
      *
      * Normally, custom attributes will be set individually after this,
      * otherwise you can use SetTextAttributes()
@@ -431,7 +433,7 @@ public:
     }
 
     /**
-     * Returns current text horizontal justification setting.
+     * Return current text horizontal justification setting.
      */
     inline EDA_TEXT_HJUSTIFY_T GetHorizontalJustify() const
     {
@@ -520,7 +522,7 @@ public:
     virtual void DrawGroup( int aGroupNumber ){};
 
     /**
-     * Changes the color used to draw the group.
+     * Change the color used to draw the group.
      *
      * @param aGroupNumber is the group number.
      * @param aNewColor is the new color.
@@ -528,7 +530,7 @@ public:
     virtual void ChangeGroupColor( int aGroupNumber, const COLOR4D& aNewColor ){};
 
     /**
-     * Changes the depth (Z-axis position) of the group.
+     * Change the depth (Z-axis position) of the group.
      *
      * @param aGroupNumber is the group number.
      * @param aDepth is the new depth.
@@ -656,12 +658,12 @@ public:
     inline void SetDepthRange( const VECTOR2D& aDepthRange ) { depthRange = aDepthRange; }
 
     /**
-     * Returns the minimum depth in the currently used range (the top).
+     * Return the minimum depth in the currently used range (the top).
      */
     inline double GetMinDepth() const { return depthRange.x; }
 
     /**
-     * Returns the maximum depth in the currently used range (the bottom).
+     * Return the maximum depth in the currently used range (the bottom).
      */
     inline double GetMaxDepth() const { return depthRange.y; }
 
@@ -699,35 +701,35 @@ public:
     // ---------------------------
 
     /**
-     * Sets the target for rendering.
+     * Set the target for rendering.
      *
      * @param aTarget is the new target for rendering.
      */
     virtual void SetTarget( RENDER_TARGET aTarget ){};
 
     /**
-     * Gets the currently used target for rendering.
+     * Get the currently used target for rendering.
      *
      * @return The current rendering target.
      */
     virtual RENDER_TARGET GetTarget() const { return TARGET_CACHED; };
 
     /**
-     * Clears the target for rendering.
+     * Clear the target for rendering.
      *
      * @param aTarget is the target to be cleared.
      */
     virtual void ClearTarget( RENDER_TARGET aTarget ){};
 
     /**
-     * Returns true if the target exists.
+     * Return true if the target exists.
      *
      * @param aTarget is the target to be checked.
      */
     virtual bool HasTarget( RENDER_TARGET aTarget ) { return true; };
 
     /**
-     * Sets negative draw mode in the renderer
+     * Set negative draw mode in the renderer.
      *
      * When negative mode is enabled, drawn items will subtract from
      * previously drawn items.  This is mainly needed for Gerber
@@ -744,7 +746,7 @@ public:
     // -------------
 
     /**
-     * Sets the visibility setting of the grid.
+     * Set the visibility setting of the grid.
      *
      * @param aVisibility is the new visibility setting of the grid.
      */
@@ -794,7 +796,7 @@ public:
     }
 
     /**
-     * Returns the grid size.
+     * Return the grid size.
      *
      * @return A vector containing the grid size in x and y direction.
      */
@@ -815,7 +817,7 @@ public:
     inline void SetAxesColor( const COLOR4D& aAxesColor ) { axesColor = aAxesColor; }
 
     /**
-     * Enables drawing the axes.
+     * Enable drawing the axes.
      */
     inline void SetAxesEnabled( bool aAxesEnabled ) { axesEnabled = aAxesEnabled; }
 
@@ -833,8 +835,8 @@ public:
      */
     inline float GetGridLineWidth() const { return gridLineWidth; }
 
-    ///> Draw the grid
-    virtual void DrawGrid(){};
+    ///< Draw the grid
+    virtual void DrawGrid() {};
 
     /**
      * For a given point it returns the nearest point belonging to the grid in world coordinates.
@@ -874,7 +876,7 @@ public:
     inline void SetCursorEnabled( bool aCursorEnabled ) { isCursorEnabled = aCursorEnabled; }
 
     /**
-     * Returns information about cursor visibility.
+     * Return information about cursor visibility.
      *
      * @return True if cursor is visible.
      */
@@ -895,18 +897,18 @@ public:
     virtual void DrawCursor( const VECTOR2D& aCursorPosition ){};
 
     /**
-     * Changes the current depth to deeper, so it is possible to draw objects right beneath
+     * Change the current depth to deeper, so it is possible to draw objects right beneath
      * other.
      */
     inline void AdvanceDepth() { layerDepth -= 0.05; }
 
     /**
-     * Stores current drawing depth on the depth stack.
+     * Store current drawing depth on the depth stack.
      */
     inline void PushDepth() { depthStack.push( layerDepth ); }
 
     /**
-     * Restores previously stored drawing depth for the depth stack.
+     * Restore previously stored drawing depth for the depth stack.
      */
     inline void PopDepth()
     {
@@ -923,16 +925,16 @@ public:
     virtual bool IsContextLocked() { return false; }
 
 protected:
-    /// Private: use GAL_CONTEXT_LOCKER RAII object
+    /// Use GAL_CONTEXT_LOCKER RAII object
     virtual void lockContext( int aClientCookie ) {}
 
     virtual void unlockContext( int aClientCookie ) {}
 
-    /// Enables item update mode.
+    /// Enable item update mode.
     /// Private: use GAL_UPDATE_CONTEXT RAII object
     virtual void beginUpdate() {}
 
-    /// Disables item update mode.
+    /// Disable item update mode.
     virtual void endUpdate() {}
 
     /// Begin the drawing, needs to be called for every new frame.
@@ -961,7 +963,7 @@ protected:
     static const int GRID_DEPTH;
 
     /**
-     * Gets the actual cursor color to draw
+     * Get the actual cursor color to draw
      */
     COLOR4D getCursorColor() const;
 
@@ -969,7 +971,7 @@ protected:
     // Settings observer interface
     // ---------------
     /**
-     * Handler for observer settings changes
+     * Handler for observer settings changes.
      */
     void OnGalDisplayOptionsChanged( const GAL_DISPLAY_OPTIONS& aOptions ) override;
 
