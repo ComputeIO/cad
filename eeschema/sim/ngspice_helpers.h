@@ -115,7 +115,7 @@ public:
     /**
      * Return simulation command directives placed in schematic sheets (if any).
      */
-    wxString GetSheetSimCommand();
+    virtual wxString GetSheetSimCommand();
 
     /**
      * Parse a two-source .dc command directive into its symbols.
