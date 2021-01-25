@@ -36,7 +36,6 @@
 class DIRECTION_45
 {
 public:
-
     /**
      * Available directions, there are 8 of them, as on a rectilinear map (north = up) +
      * an extra undefined direction, reserved for traces that don't respect 45-degree routing
@@ -295,7 +294,6 @@ public:
     }
 
 private:
-
     /**
      * Calculate the direction from a vector. If the vector's angle is not a multiple of 45
      * degrees, the direction is rounded to the nearest octant.

@@ -33,110 +33,83 @@ class GAL;
 
 namespace PREVIEW
 {
-
-/**
+    /**
  * Represent a very simple geometry manager for items that have a start and end point.
  */
-class TWO_POINT_GEOMETRY_MANAGER
-{
-public:
-
-    ///< Set the origin of the ruler (the fixed end)
-    void SetOrigin( const VECTOR2I& aOrigin )
+    class TWO_POINT_GEOMETRY_MANAGER
     {
-        m_origin = aOrigin;
-        m_originSet = true;
-        setGeometryChanged();
-    }
+    public:
+        ///< Set the origin of the ruler (the fixed end)
+        void SetOrigin( const VECTOR2I& aOrigin )
+        {
+            m_origin = aOrigin;
+            m_originSet = true;
+            setGeometryChanged();
+        }
 
-    VECTOR2I GetOrigin() const
-    {
-        return m_origin;
-    }
+        VECTOR2I GetOrigin() const { return m_origin; }
 
-    /**
+        /**
      * Set the current end of the rectangle (the end that moves with the cursor.
      */
-    void SetEnd( const VECTOR2I& aEnd )
-    {
-        if( m_angleSnap )
+        void SetEnd( const VECTOR2I& aEnd )
         {
-            m_end = GetVectorSnapped45( aEnd - m_origin ) + m_origin;
+            if( m_angleSnap )
+            {
+                m_end = GetVectorSnapped45( aEnd - m_origin ) + m_origin;
+            }
+            else
+            {
+                m_end = aEnd;
+            }
+            setGeometryChanged();
         }
-        else
-        {
-            m_end = aEnd;
-        }
-        setGeometryChanged();
-    }
 
-    VECTOR2I GetEnd() const
-    {
-        return m_end;
-    }
+        VECTOR2I GetEnd() const { return m_end; }
 
-    void SetAngleSnap( bool aSnap )
-    {
-        m_angleSnap = aSnap;
-    }
+        void SetAngleSnap( bool aSnap ) { m_angleSnap = aSnap; }
 
-    bool GetAngleSnap() const
-    {
-        return m_angleSnap;
-    }
+        bool GetAngleSnap() const { return m_angleSnap; }
 
-    /**
+        /**
      * @return true if the manager is in the initial state
      */
-    bool IsReset() const
-    {
-        return !m_originSet;
-    }
+        bool IsReset() const { return !m_originSet; }
 
-    /**
+        /**
      * Reset the manager to the initial state
      */
-    void Reset()
-    {
-        m_originSet = false;
-        setGeometryChanged();
-    }
+        void Reset()
+        {
+            m_originSet = false;
+            setGeometryChanged();
+        }
 
-    /**
+        /**
      * @return true if the geometry has changed, eg such that a client should redraw.
      */
-    bool HasGeometryChanged() const
-    {
-        return m_changed;
-    }
+        bool HasGeometryChanged() const { return m_changed; }
 
-    /**
+        /**
      * Clear the geometry changed flag, call after the client code has updated everything as
      * needed.
      */
-    void ClearGeometryChanged()
-    {
-        m_changed = false;
-    }
+        void ClearGeometryChanged() { m_changed = false; }
 
-protected:
-    ///< Mark the geometry as changed for clients to notice
-    void setGeometryChanged()
-    {
-        m_changed = true;
-    }
+    protected:
+        ///< Mark the geometry as changed for clients to notice
+        void setGeometryChanged() { m_changed = true; }
 
-private:
+    private:
+        VECTOR2I m_origin, m_end;
+        bool     m_angleSnap = false;
 
-    VECTOR2I m_origin, m_end;
-    bool m_angleSnap = false;
+        ///< Has the geometry changed such that a client should redraw?
+        bool m_changed = false;
+        bool m_originSet = false;
+    };
 
-    ///< Has the geometry changed such that a client should redraw?
-    bool m_changed   = false;
-    bool m_originSet = false;
-};
-
-} // PREVIEW
-} // KIGFX
+} // namespace PREVIEW
+} // namespace KIGFX
 
 #endif // PREVIEW_ITEMS_TWO_POINT_GEOMETRY_MANAGER_H

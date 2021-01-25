@@ -31,7 +31,7 @@
 
 using namespace KIGFX::PREVIEW;
 
-static const double maxTickDensity = 10.0;       // min pixels between tick marks
+static const double maxTickDensity = 10.0; // min pixels between tick marks
 static const double midTickLengthFactor = 1.5;
 static const double majorTickLengthFactor = 2.5;
 
@@ -65,8 +65,8 @@ static void drawCursorStrings( KIGFX::VIEW* aView, const VECTOR2D& aCursor,
     cursorStrings.push_back( DimensionLabel( "r", aRulerVec.EuclideanNorm(), aUnits ) );
 
     double degs = RAD2DECIDEG( -aRulerVec.Angle() );
-    cursorStrings.push_back( DimensionLabel( wxString::FromUTF8( "θ" ), degs,
-                                             EDA_UNITS::DEGREES ) );
+    cursorStrings.push_back(
+            DimensionLabel( wxString::FromUTF8( "θ" ), degs, EDA_UNITS::DEGREES ) );
 
     auto temp = aRulerVec;
     DrawTextNextToCursor( aView, aCursor, -temp, cursorStrings, aDrawingDropShadows );
@@ -90,20 +90,19 @@ static double getTickLineWidth( const TEXT_DIMS& textDims, bool aDrawingDropShad
  */
 struct TICK_FORMAT
 {
-    double divisionBase;    ///< multiple from the last scale
-    int majorStep;          ///< ticks between major ticks
-    int midStep;            ///< ticks between medium ticks (0 if no medium ticks)
+    double divisionBase; ///< multiple from the last scale
+    int    majorStep;    ///< ticks between major ticks
+    int    midStep;      ///< ticks between medium ticks (0 if no medium ticks)
 };
 
 
 static TICK_FORMAT getTickFormatForScale( double aScale, double& aTickSpace, EDA_UNITS aUnits )
 {
     // simple 1/2/5 scales per decade
-    static std::vector<TICK_FORMAT> tickFormats =
-    {
-        { 2,    10,     5 },    // |....:....|
-        { 2,     5,     0 },    // |....|
-        { 2.5,   2,     0 },    // |.|.|
+    static std::vector<TICK_FORMAT> tickFormats = {
+        { 2, 10, 5 },  // |....:....|
+        { 2, 5, 0 },   // |....|
+        { 2.5, 2, 0 }, // |.|.|
     };
 
     // could start at a set number of MM, but that's not available in common
@@ -148,13 +147,13 @@ void drawTicksAlongLine( KIGFX::VIEW* aView, const VECTOR2D& aOrigin, const VECT
     TICK_FORMAT tickF = getTickFormatForScale( gal->GetWorldScale(), tickSpace, aUnits );
 
     // number of ticks in whole ruler
-    int         numTicks = (int) std::ceil( aLine.EuclideanNorm() / tickSpace );
+    int numTicks = (int) std::ceil( aLine.EuclideanNorm() / tickSpace );
 
     // work out which way up the tick labels go
-    TEXT_DIMS   textDims = SetConstantGlyphHeight( gal, -1 );
-    double      textThickness = textDims.StrokeWidth;
-    double      labelAngle = -tickLine.Angle();
-    double      textOffset = 0;
+    TEXT_DIMS textDims = SetConstantGlyphHeight( gal, -1 );
+    double    textThickness = textDims.StrokeWidth;
+    double    labelAngle = -tickLine.Angle();
+    double    textOffset = 0;
 
     if( aDrawingDropShadows )
     {
@@ -162,7 +161,7 @@ void drawTicksAlongLine( KIGFX::VIEW* aView, const VECTOR2D& aOrigin, const VECT
         textThickness += 2 * textDims.ShadowWidth;
     }
 
-    double majorTickLen = aMinorTickLen * ( majorTickLengthFactor + 1 );
+    double   majorTickLen = aMinorTickLen * ( majorTickLengthFactor + 1 );
     VECTOR2D labelOffset = tickLine.Resize( majorTickLen - textOffset );
 
     if( aView->IsMirroredX() )
@@ -184,8 +183,8 @@ void drawTicksAlongLine( KIGFX::VIEW* aView, const VECTOR2D& aOrigin, const VECT
     BOX2D viewportD = aView->GetViewport();
     BOX2I viewport( VECTOR2I( viewportD.GetPosition() ), VECTOR2I( viewportD.GetSize() ) );
 
-    viewport.Inflate( majorTickLen * 2 );   // Doesn't have to be accurate, just big enough not
-                                            // to exclude anything that should be partially drawn
+    viewport.Inflate( majorTickLen * 2 ); // Doesn't have to be accurate, just big enough not
+                                          // to exclude anything that should be partially drawn
 
     for( int i = 0; i < numTicks; ++i )
     {
@@ -195,7 +194,7 @@ void drawTicksAlongLine( KIGFX::VIEW* aView, const VECTOR2D& aOrigin, const VECT
             continue;
 
         double length = aMinorTickLen;
-        bool drawLabel = false;
+        bool   drawLabel = false;
 
         if( i % tickF.majorStep == 0 )
         {
@@ -242,8 +241,8 @@ void drawBacksideTicks( KIGFX::VIEW* aView, const VECTOR2D& aOrigin, const VECTO
     BOX2D viewportD = aView->GetViewport();
     BOX2I viewport( VECTOR2I( viewportD.GetPosition() ), VECTOR2I( viewportD.GetSize() ) );
 
-    viewport.Inflate( aTickLen * 4 );   // Doesn't have to be accurate, just big enough not to
-                                        // exclude anything that should be partially drawn
+    viewport.Inflate( aTickLen * 4 ); // Doesn't have to be accurate, just big enough not to
+                                      // exclude anything that should be partially drawn
 
     for( int i = 0; i < aNumDivisions + 1; ++i )
     {
@@ -258,10 +257,9 @@ void drawBacksideTicks( KIGFX::VIEW* aView, const VECTOR2D& aOrigin, const VECTO
 }
 
 
-RULER_ITEM::RULER_ITEM( const TWO_POINT_GEOMETRY_MANAGER& aGeomMgr, EDA_UNITS userUnits )
-        : EDA_ITEM( NOT_USED ), // Never added to anything - just a preview
-          m_geomMgr( aGeomMgr ),
-          m_userUnits( userUnits )
+RULER_ITEM::RULER_ITEM( const TWO_POINT_GEOMETRY_MANAGER& aGeomMgr, EDA_UNITS userUnits ) :
+        EDA_ITEM( NOT_USED ), // Never added to anything - just a preview
+        m_geomMgr( aGeomMgr ), m_userUnits( userUnits )
 {
 }
 

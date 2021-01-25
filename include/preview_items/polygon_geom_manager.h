@@ -35,7 +35,6 @@
 class POLYGON_GEOM_MANAGER
 {
 public:
-
     /**
      * "Listener" interface for a class that wants to be updated about
      * polygon geometry changes
@@ -58,9 +57,7 @@ public:
         ///< Called when the polygon is complete
         virtual void OnComplete( const POLYGON_GEOM_MANAGER& aMgr ) = 0;
 
-        virtual ~CLIENT()
-        {
-        }
+        virtual ~CLIENT() {}
     };
 
     /**
@@ -68,8 +65,8 @@ public:
      */
     enum class LEADER_MODE
     {
-        DIRECT,     ///< Unconstrained point-to-point
-        DEG45,      ///< 45 Degree only
+        DIRECT, ///< Unconstrained point-to-point
+        DEG45,  ///< 45 Degree only
     };
 
     /**
@@ -97,30 +94,21 @@ public:
      */
     void SetLeaderMode( LEADER_MODE aMode );
 
-    LEADER_MODE GetLeaderMode() const
-    {
-        return m_leaderMode;
-    }
+    LEADER_MODE GetLeaderMode() const { return m_leaderMode; }
 
     /**
      * Enables/disables self-intersecting polygons.
      *
      * @param aEnabled true if self-intersecting polygons are enabled.
      */
-    void AllowIntersections( bool aEnabled )
-    {
-        m_intersectionsAllowed = true;
-    }
+    void AllowIntersections( bool aEnabled ) { m_intersectionsAllowed = true; }
 
     /**
      * Check whether self-intersecting polygons are enabled.
      *
      * @return true if self-intersecting polygons are enabled.
      */
-    bool IntersectionsAllowed() const
-    {
-        return m_intersectionsAllowed;
-    }
+    bool IntersectionsAllowed() const { return m_intersectionsAllowed; }
 
     /**
      * Check whether the locked points constitute a self-intersecting outline.
@@ -158,10 +146,7 @@ public:
     /**
      * Get the "locked-in" points that describe the polygon itself
      */
-    const SHAPE_LINE_CHAIN& GetLockedInPoints() const
-    {
-        return m_lockedPoints;
-    }
+    const SHAPE_LINE_CHAIN& GetLockedInPoints() const { return m_lockedPoints; }
 
     /**
      * Get the points comprising the leader line (the line from the
@@ -169,19 +154,15 @@ public:
      *
      * How this is drawn will depend on the LEADER_MODE
      */
-    const SHAPE_LINE_CHAIN& GetLeaderLinePoints() const
-    {
-        return m_leaderPts;
-    }
+    const SHAPE_LINE_CHAIN& GetLeaderLinePoints() const { return m_leaderPts; }
 
 private:
-
     /**
      * Update the leader line points based on a new endpoint (probably
      * a cursor position)
      */
     void updateLeaderPoints( const VECTOR2I& aEndPoint,
-                             LEADER_MODE aModifier = LEADER_MODE::DIRECT );
+                             LEADER_MODE     aModifier = LEADER_MODE::DIRECT );
 
     ///< The "user" of the polygon data that is informed when the geometry changes
     CLIENT& m_client;

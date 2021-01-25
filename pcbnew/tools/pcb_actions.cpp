@@ -308,11 +308,9 @@ TOOL_ACTION PCB_ACTIONS::deleteFull( "pcbnew.InteractiveEdit.deleteFull",
         _( "Delete Full Track" ), _( "Deletes selected item(s) and copper connections" ),
         delete_xpm, AF_NONE, (void*) REMOVE_FLAGS::ALT );
 
-TOOL_ACTION PCB_ACTIONS::properties( "pcbnew.InteractiveEdit.properties",
-        AS_GLOBAL,
-        'E', LEGACY_HK_NAME( "Edit Item" ),
-        _( "Properties..." ), _( "Displays item properties dialog" ),
-        edit_xpm );
+TOOL_ACTION PCB_ACTIONS::properties( "pcbnew.InteractiveEdit.properties", AS_GLOBAL, 'E',
+                                     LEGACY_HK_NAME( "Edit Item" ), _( "Properties..." ),
+                                     _( "Displays item properties dialog" ), edit_xpm );
 
 
 // FOOTPRINT_EDITOR_CONTROL
@@ -1029,9 +1027,9 @@ TOOL_ACTION PCB_ACTIONS::layerChanged( "pcbnew.Control.layerChanged",
         nullptr, AF_NOTIFY );
 
 //Show board statistics tool
-TOOL_ACTION PCB_ACTIONS::boardStatistics( "pcbnew.InspectionTool.ShowStatisticsDialog",
-        AS_GLOBAL, 0, "",
-        _( "Show Board Statistics" ), _( "Shows board statistics" ) );
+TOOL_ACTION PCB_ACTIONS::boardStatistics( "pcbnew.InspectionTool.ShowStatisticsDialog", AS_GLOBAL,
+                                          0, "", _( "Show Board Statistics" ),
+                                          _( "Shows board statistics" ) );
 
 TOOL_ACTION PCB_ACTIONS::inspectClearance( "pcbnew.InspectionTool.InspectClearance",
         AS_GLOBAL, 0, "",

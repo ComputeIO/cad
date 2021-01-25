@@ -280,7 +280,7 @@ private:
     const wxString                    m_name;
     const PROPERTY_DISPLAY            m_display;
 
-    std::function<bool(INSPECTABLE*)> m_availFunc;   ///< Eval to determine if prop is available
+    std::function<bool( INSPECTABLE* )> m_availFunc; ///< Eval to determine if prop is available
 
     friend class INSPECTABLE;
 };

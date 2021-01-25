@@ -37,38 +37,36 @@ class VIEW;
 
 namespace PREVIEW
 {
-class TWO_POINT_GEOMETRY_MANAGER;
+    class TWO_POINT_GEOMETRY_MANAGER;
 
-/**
+    /**
  * Represent an area drawn by drawing a rectangle of a given aspect along a vector, with the
  * midpoint of one side on the start point and the mid point of the opposite side on the end.
  *
  * The center line does not have to horizontal or vertical, it can be at any angle.
  */
-class CENTRELINE_RECT_ITEM : public SIMPLE_OVERLAY_ITEM
-{
-public:
+    class CENTRELINE_RECT_ITEM : public SIMPLE_OVERLAY_ITEM
+    {
+    public:
+        CENTRELINE_RECT_ITEM( const TWO_POINT_GEOMETRY_MANAGER& aGeomMgr, double aAspect );
 
-    CENTRELINE_RECT_ITEM( const TWO_POINT_GEOMETRY_MANAGER& aGeomMgr, double aAspect );
+        ///< Gets the bounding box of the rectangle
+        virtual const BOX2I ViewBBox() const override;
 
-    ///< Gets the bounding box of the rectangle
-    virtual const BOX2I ViewBBox() const override;
+    private:
+        ///< Get the rectangular outline
+        SHAPE_POLY_SET getOutline() const;
 
-private:
+        ///< Draw rectangle and center line onto GAL
+        void drawPreviewShape( KIGFX::VIEW* aView ) const override;
 
-    ///< Get the rectangular outline
-    SHAPE_POLY_SET getOutline() const;
+        const TWO_POINT_GEOMETRY_MANAGER& m_geomMgr;
 
-    ///< Draw rectangle and center line onto GAL
-    void drawPreviewShape( KIGFX::VIEW* aView ) const override;
+        ///< The aspect ratio of the rectangle to draw
+        double m_aspect;
+    };
 
-    const TWO_POINT_GEOMETRY_MANAGER& m_geomMgr;
-
-    ///< The aspect ratio of the rectangle to draw
-    double m_aspect;
-};
-
-} // PREVIEW
-} // KIGFX
+} // namespace PREVIEW
+} // namespace KIGFX
 
 #endif // PREVIEW_ITEMS_CENTERLINE_RECT_ITEM_H

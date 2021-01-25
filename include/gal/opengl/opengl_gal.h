@@ -102,10 +102,7 @@ public:
     }
 
     ///< @copydoc GAL::IsVisible()
-    bool IsVisible() const override
-    {
-        return IsShownOnScreen() && !GetClientRect().IsEmpty();
-    }
+    bool IsVisible() const override { return IsShownOnScreen() && !GetClientRect().IsEmpty(); }
 
     // ---------------
     // Drawing methods
@@ -116,18 +113,18 @@ public:
 
     /// @copydoc GAL::DrawSegment()
     void DrawSegment( const VECTOR2D& aStartPoint, const VECTOR2D& aEndPoint,
-                              double aWidth ) override;
+                      double aWidth ) override;
 
     /// @copydoc GAL::DrawCircle()
     void DrawCircle( const VECTOR2D& aCenterPoint, double aRadius ) override;
 
     /// @copydoc GAL::DrawArc()
-    void DrawArc( const VECTOR2D& aCenterPoint, double aRadius,
-                          double aStartAngle, double aEndAngle ) override;
+    void DrawArc( const VECTOR2D& aCenterPoint, double aRadius, double aStartAngle,
+                  double aEndAngle ) override;
 
     /// @copydoc GAL::DrawArcSegment()
-    void DrawArcSegment( const VECTOR2D& aCenterPoint, double aRadius,
-                                 double aStartAngle, double aEndAngle, double aWidth ) override;
+    void DrawArcSegment( const VECTOR2D& aCenterPoint, double aRadius, double aStartAngle,
+                         double aEndAngle, double aWidth ) override;
 
     /// @copydoc GAL::DrawRectangle()
     void DrawRectangle( const VECTOR2D& aStartPoint, const VECTOR2D& aEndPoint ) override;
@@ -149,15 +146,15 @@ public:
 
     /// @copydoc GAL::DrawCurve()
     void DrawCurve( const VECTOR2D& startPoint, const VECTOR2D& controlPointA,
-                            const VECTOR2D& controlPointB, const VECTOR2D& endPoint,
-                            double aFilterValue = 0.0 ) override;
+                    const VECTOR2D& controlPointB, const VECTOR2D& endPoint,
+                    double aFilterValue = 0.0 ) override;
 
     /// @copydoc GAL::DrawBitmap()
     void DrawBitmap( const BITMAP_BASE& aBitmap ) override;
 
     /// @copydoc GAL::BitmapText()
     void BitmapText( const wxString& aText, const VECTOR2D& aPosition,
-                             double aRotationAngle ) override;
+                     double aRotationAngle ) override;
 
     /// @copydoc GAL::DrawGrid()
     void DrawGrid() override;
@@ -176,7 +173,7 @@ public:
     void Flush() override;
 
     /// @copydoc GAL::ClearScreen()
-    void ClearScreen( ) override;
+    void ClearScreen() override;
 
     // --------------
     // Transformation
@@ -261,22 +258,13 @@ public:
      */
     void PostPaint( wxPaintEvent& aEvent );
 
-    void SetMouseListener( wxEvtHandler* aMouseListener )
-    {
-        mouseListener = aMouseListener;
-    }
+    void SetMouseListener( wxEvtHandler* aMouseListener ) { mouseListener = aMouseListener; }
 
-    void SetPaintListener( wxEvtHandler* aPaintListener )
-    {
-        paintListener = aPaintListener;
-    }
+    void SetPaintListener( wxEvtHandler* aPaintListener ) { paintListener = aPaintListener; }
 
     void EnableDepthTest( bool aEnabled = false ) override;
 
-    bool IsContextLocked() override
-    {
-        return m_isContextLocked;
-    }
+    bool IsContextLocked() override { return m_isContextLocked; }
 
     ///< Parameters passed to the GLU tesselator
     typedef struct
@@ -285,58 +273,58 @@ public:
         VERTEX_MANAGER* vboManager;
 
         /// Intersect points, that have to be freed after tessellation
-        std::deque< boost::shared_array<GLdouble> >& intersectPoints;
+        std::deque<boost::shared_array<GLdouble>>& intersectPoints;
     } TessParams;
 
 private:
     /// Super class definition
     typedef GAL super;
 
-    static const int    CIRCLE_POINTS   = 64;   ///< The number of points for circle approximation
-    static const int    CURVE_POINTS    = 32;   ///< The number of points for curve approximation
+    static const int CIRCLE_POINTS = 64; ///< The number of points for circle approximation
+    static const int CURVE_POINTS = 32;  ///< The number of points for curve approximation
 
-    static wxGLContext*     glMainContext;      ///< Parent OpenGL context
-    wxGLContext*            glPrivContext;      ///< Canvas-specific OpenGL context
-    static int              instanceCounter;    ///< GL GAL instance counter
-    wxEvtHandler*           mouseListener;
-    wxEvtHandler*           paintListener;
+    static wxGLContext* glMainContext;   ///< Parent OpenGL context
+    wxGLContext*        glPrivContext;   ///< Canvas-specific OpenGL context
+    static int          instanceCounter; ///< GL GAL instance counter
+    wxEvtHandler*       mouseListener;
+    wxEvtHandler*       paintListener;
 
-    static GLuint fontTexture;                  ///< Bitmap font texture handle (shared)
+    static GLuint fontTexture; ///< Bitmap font texture handle (shared)
 
     // Vertex buffer objects related fields
-    typedef std::unordered_map< unsigned int, std::shared_ptr<VERTEX_ITEM> > GROUPS_MAP;
-    GROUPS_MAP              groups;             ///< Stores information about VBO objects (groups)
-    unsigned int            groupCounter;       ///< Counter used for generating keys for groups
-    VERTEX_MANAGER*         currentManager;     ///< Currently used VERTEX_MANAGER (for storing
-                                                ///< VERTEX_ITEMs).
-    VERTEX_MANAGER*         cachedManager;      ///< Container for storing cached VERTEX_ITEMs
-    VERTEX_MANAGER*         nonCachedManager;   ///< Container for storing non-cached VERTEX_ITEMs
-    VERTEX_MANAGER*         overlayManager;     ///< Container for storing overlaid VERTEX_ITEMs
+    typedef std::unordered_map<unsigned int, std::shared_ptr<VERTEX_ITEM>> GROUPS_MAP;
+    GROUPS_MAP      groups;           ///< Stores information about VBO objects (groups)
+    unsigned int    groupCounter;     ///< Counter used for generating keys for groups
+    VERTEX_MANAGER* currentManager;   ///< Currently used VERTEX_MANAGER (for storing
+                                      ///< VERTEX_ITEMs).
+    VERTEX_MANAGER* cachedManager;    ///< Container for storing cached VERTEX_ITEMs
+    VERTEX_MANAGER* nonCachedManager; ///< Container for storing non-cached VERTEX_ITEMs
+    VERTEX_MANAGER* overlayManager;   ///< Container for storing overlaid VERTEX_ITEMs
 
     // Framebuffer & compositing
-    OPENGL_COMPOSITOR*      compositor;         ///< Handles multiple rendering targets
-    unsigned int            mainBuffer;         ///< Main rendering target
-    unsigned int            overlayBuffer;      ///< Auxiliary rendering target (for menus etc.)
-    RENDER_TARGET           currentTarget;      ///< Current rendering target
+    OPENGL_COMPOSITOR* compositor;    ///< Handles multiple rendering targets
+    unsigned int       mainBuffer;    ///< Main rendering target
+    unsigned int       overlayBuffer; ///< Auxiliary rendering target (for menus etc.)
+    RENDER_TARGET      currentTarget; ///< Current rendering target
 
     // Shader
-    SHADER*                 shader;             ///< There is only one shader used for different
-                                                ///< objects.
+    SHADER* shader; ///< There is only one shader used for different
+                    ///< objects.
 
     // Internal flags
-    bool                    isFramebufferInitialized;   ///< Are the framebuffers initialized?
-    static bool             isBitmapFontLoaded;         ///< Is the bitmap font texture loaded?
-    bool                    isBitmapFontInitialized;    ///< Is the shader set to use bitmap fonts?
-    bool                    isInitialized;       ///< Basic initialization flag, has to be done
-                                                 ///< when the window is visible
-    bool                    isGrouping;          ///< Was a group started?
-    bool                    m_isContextLocked;   ///< Used for assertion checking
-    int                     lockClientCookie;
-    GLint                   ufm_worldPixelSize;
-    GLint                   ufm_screenPixelSize;
-    GLint                   ufm_pixelSizeMultiplier;
+    bool        isFramebufferInitialized; ///< Are the framebuffers initialized?
+    static bool isBitmapFontLoaded;       ///< Is the bitmap font texture loaded?
+    bool        isBitmapFontInitialized;  ///< Is the shader set to use bitmap fonts?
+    bool        isInitialized;            ///< Basic initialization flag, has to be done
+                                          ///< when the window is visible
+    bool  isGrouping;                     ///< Was a group started?
+    bool  m_isContextLocked;              ///< Used for assertion checking
+    int   lockClientCookie;
+    GLint ufm_worldPixelSize;
+    GLint ufm_screenPixelSize;
+    GLint ufm_pixelSizeMultiplier;
 
-    std::unique_ptr<GL_BITMAP_CACHE>         bitmapCache;
+    std::unique_ptr<GL_BITMAP_CACHE> bitmapCache;
 
     void lockContext( int aClientCookie ) override;
 
@@ -359,9 +347,9 @@ private:
 
     // Polygon tesselation
     /// The tessellator
-    GLUtesselator*          tesselator;
+    GLUtesselator* tesselator;
     /// Storage for intersecting points
-    std::deque< boost::shared_array<GLdouble> > tessIntersects;
+    std::deque<boost::shared_array<GLdouble>> tessIntersects;
 
     /**
      * @brief Draw a quad for the line.
@@ -410,7 +398,7 @@ private:
      * @param aPointGetter is a function to obtain coordinates of n-th vertex.
      * @param aPointCount is the number of points to be drawn.
      */
-    void drawPolyline( const std::function<VECTOR2D (int)>& aPointGetter, int aPointCount );
+    void drawPolyline( const std::function<VECTOR2D( int )>& aPointGetter, int aPointCount );
 
     /**
      * Draw a filled polygon. It does not need the last point to have the same coordinates
@@ -509,4 +497,4 @@ private:
 };
 } // namespace KIGFX
 
-#endif  // OPENGLGAL_H_
+#endif // OPENGLGAL_H_

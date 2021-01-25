@@ -95,7 +95,6 @@ public:
     ICON_ID GetIndicatorState() const;
 
 private:
-
     ///< An class that delivers icons for the indicator (currently just
     ///< uses a default implementation).
     ICON_PROVIDER& m_iconProvider;
@@ -114,7 +113,6 @@ private:
 class ROW_ICON_PROVIDER: public INDICATOR_ICON::ICON_PROVIDER
 {
 public:
-
     ///< State constants to select the right icons
     enum STATE
     {

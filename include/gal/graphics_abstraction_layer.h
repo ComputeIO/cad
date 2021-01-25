@@ -211,16 +211,13 @@ public:
     // --------------
 
     /// Resize the canvas.
-    virtual void ResizeScreen( int aWidth, int aHeight ) {};
+    virtual void ResizeScreen( int aWidth, int aHeight ){};
 
     /// Show/hide the GAL canvas
     virtual bool Show( bool aShow ) { return true; };
 
     /// Return GAL canvas size in pixels
-    const VECTOR2I& GetScreenPixelSize() const
-    {
-        return screenSize;
-    }
+    const VECTOR2I& GetScreenPixelSize() const { return screenSize; }
 
     /// Force all remaining objects to be drawn.
     virtual void Flush(){};
@@ -836,7 +833,7 @@ public:
     inline float GetGridLineWidth() const { return gridLineWidth; }
 
     ///< Draw the grid
-    virtual void DrawGrid() {};
+    virtual void DrawGrid(){};
 
     /**
      * For a given point it returns the nearest point belonging to the grid in world coordinates.
