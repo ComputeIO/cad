@@ -53,7 +53,7 @@ wxString PCB_TEXT::GetShownText( int aDepth, FONT** aFontPtr ) const
 {
     BOARD* board = dynamic_cast<BOARD*>( GetParent() );
 
-    std::function<bool( wxString* )> pcbTextResolver = [&]( wxString* token ) -> bool
+    RESOLVER_FN pcbTextResolver = [&]( wxString* token ) -> bool
     {
         if( token->IsSameAs( wxT( "LAYER" ) ) )
         {
@@ -95,7 +95,7 @@ wxString PCB_TEXT::GetShownText( int aDepth, FONT** aFontPtr ) const
         return false;
     };
 
-    std::function<bool( wxString* )> boardTextResolver = [&]( wxString* token ) -> bool
+    RESOLVER_FN boardTextResolver = [&]( wxString* token ) -> bool
     {
         return board->ResolveTextVar( token, aDepth + 1 );
     };

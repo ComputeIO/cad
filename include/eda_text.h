@@ -28,6 +28,7 @@
 #include <memory>
 #include <vector>
 
+#include <common.h>
 #include <outline_mode.h>
 #include <eda_rect.h>
 
@@ -143,6 +144,23 @@ public:
      *     Only used for actual text objects (PCB and schematic) for now.
      */
     virtual wxString GetShownText( int aDepth = 0, FONT** aFontPtr = nullptr ) const;
+
+    /**
+     * Set resolver function to be used by GetProcessedText().
+     *
+     * @param aResolver Resolver function.
+     */
+    virtual void SetResolver( RESOLVER aResolver ) { m_resolver = aResolver; }
+
+    /**
+     * Get text with GetShownText(), process text variables using m_resolver (if set),
+     * and return the processed text.
+     *
+     * See GetShownText() for parameter definitions.
+     *
+     * @return Processed string with text variables substituted.
+     */
+    virtual wxString GetProcessedText( int aDepth = 0, FONT** aFontPtr = nullptr ) const;
 
     /**
      * Return the font associated with this text item.
@@ -427,6 +445,8 @@ private:
         TE_MULTILINE,
         TE_VISIBLE,
     };
+
+    RESOLVER m_resolver;
 };
 
 

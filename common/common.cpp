@@ -61,10 +61,8 @@ wxString ExpandTextVars( const wxString& aSource, const PROJECT* aProject )
 }
 
 
-wxString ExpandTextVars( const wxString&                         aSource,
-                         const std::function<bool( wxString* )>* aLocalResolver,
-                         const std::function<bool( wxString* )>* aFallbackResolver,
-                         const PROJECT*                          aProject )
+wxString ExpandTextVars( const wxString& aSource, RESOLVER aLocalResolver,
+                         RESOLVER aFallbackResolver, const PROJECT* aProject )
 {
     wxString newbuf;
     size_t   sourceLen = aSource.length();

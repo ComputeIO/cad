@@ -698,7 +698,7 @@ void SCH_PAINTER::draw( const LIB_TEXT* aText, int aLayer )
     m_gal->SetFontBold( aText->IsBold() );
     m_gal->SetFontItalic( aText->IsItalic() );
     m_gal->SetFontUnderlined( false );
-    strokeText( aText->GetText(), pos, orient );
+    strokeText( aText->GetShownText(), pos, orient );
 }
 
 

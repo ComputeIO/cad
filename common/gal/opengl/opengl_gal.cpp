@@ -1084,7 +1084,11 @@ void OPENGL_GAL::fillPolygonAsTriangles( const SHAPE_POLY_SET& aPolyList )
 
         //double xConversionFactor = 1.0; // aBiuTo3Dunits;
         //double yConversionFactor = 1.0; // -aBiuTo3Dunits;
-        SHAPE_LINE_CHAIN triangulatedOutline;
+
+        currentManager->Shader( SHADER_NONE );
+        currentManager->Color( fillColor.r, fillColor.g, fillColor.b, fillColor.a );
+
+
         for( int n = 0; n < (int) indices.size(); n += 3 )
         {
 #if 0
@@ -1093,14 +1097,12 @@ void OPENGL_GAL::fillPolygonAsTriangles( const SHAPE_POLY_SET& aPolyList )
                                           yConversionFactor, aText ) );
 #else
             for( int m = 0; m < 3; m++ )
-                triangulatedOutline.Append( allPoints[indices[n + m]] );
+            {
+                const VECTOR2I& p = allPoints[indices[n + m]];
+                currentManager->Vertex( p.x, p.y, layerDepth );
+            }
 #endif
         }
-
-        bool saveFill = isFillEnabled;
-        SetIsFill( true );
-        DrawPolygon( triangulatedOutline );
-        SetIsFill( saveFill );
     }
 }
 
@@ -1108,6 +1110,9 @@ void OPENGL_GAL::fillPolygonAsTriangles( const SHAPE_POLY_SET& aPolyList )
 void OPENGL_GAL::DrawGlyph( const SHAPE_POLY_SET& aPolySet )
 {
     fillPolygonAsTriangles( aPolySet );
+    //SHAPE_POLY_SET polyCopy( aPolySet );
+    //polyCopy.CacheTriangulation();
+    //drawTriangulatedPolyset( polyCopy );
 }
 
 

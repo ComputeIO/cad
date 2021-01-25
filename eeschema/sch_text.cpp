@@ -492,7 +492,7 @@ void SCH_TEXT::GetContextualTextVars( wxArrayString* aVars ) const
 
 wxString SCH_TEXT::GetShownText( int aDepth, FONT** aFontPtr ) const
 {
-    std::function<bool( wxString* )> textResolver = [&]( wxString* token ) -> bool
+    RESOLVER_FN textResolver = [&]( wxString* token ) -> bool
     {
         if( ( Type() == SCH_GLOBAL_LABEL_T || Type() == SCH_HIER_LABEL_T
               || Type() == SCH_SHEET_PIN_T )
@@ -514,25 +514,17 @@ wxString SCH_TEXT::GetShownText( int aDepth, FONT** aFontPtr ) const
         {
             if( token->Contains( ':' ) )
             {
-                // TODO combine with PCB_TEXT::GetShownText()
                 wxString remainder;
                 wxString ref = token->BeforeFirst( ':', &remainder );
 
-                if( !ref.Cmp( "FONT" ) )
+                if( !ref.Cmp( "FONT" ) ) // ignore
                 {
-                    // special case: handle FONT variable in Text item
-                    // as font specifier
-                    //
-                    // put "" in token as we don't want the font specifier
-                    // to show
                     *token = "";
                     return true;
                 }
-                else
-                {
-                    if( Schematic()->ResolveCrossReference( token, aDepth ) )
-                        return true;
-                }
+
+                if( Schematic()->ResolveCrossReference( token, aDepth ) )
+                    return true;
             }
             else
             {

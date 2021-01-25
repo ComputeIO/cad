@@ -97,66 +97,57 @@ wxString EDA_TEXT::GetShownText( int aDepth, FONT** aFontPtr ) const
 }
 
 
+wxString EDA_TEXT::GetProcessedText( int aDepth, FONT** aFontPtr ) const
+{
+    if( aFontPtr )
+        *aFontPtr = GetFont();
+
+    wxString ret = GetShownText();
+    if( m_shown_text_has_text_var_refs && m_resolver )
+    {
+        ExpandTextVars( ret, m_resolver, static_cast<RESOLVER>( nullptr ), nullptr );
+    }
+
+    return ret;
+}
+
+
 FONT* EDA_TEXT::getFontFromString( const wxString& aString ) const
 {
     wxString fontName;
-#ifdef DEBUG //STROKEFONT
-    std::cerr << "EDA_TEXT::getFontFromString( \"" << aString << "\" )\n";
-#endif
 
-    std::function<bool( wxString* )> fontResolver = [&]( wxString* token ) -> bool
+    RESOLVER_FN fontResolver = [&]( wxString* token ) -> bool
     {
-#ifdef DEBUG //STROKEFONT
-        if( aString.Contains( wxT( "FONT" ) ) )
-        {
-            std::cerr << "token [" << *token << "]";
-        }
-#endif
         if( token->Contains( ':' ) )
         {
             wxString remainder;
             wxString ref = token->BeforeFirst( ':', &remainder );
 
-#ifdef DEBUG
-            std::cerr << " contains':' ";
-#endif
             if( !ref.Cmp( "FONT" ) )
             {
                 // handle FONT variable in aString as font specifier
                 //
                 // example: "${FONT:futural}"
                 fontName = remainder;
-#ifdef DEBUG
-                std::cerr << " fontName [" << fontName << "] remainder [" << remainder << "]\n";
-#endif
                 return true;
             }
             else
             {
-#ifdef DEBUG
-                std::cerr << " nohit\n";
-#endif
                 return false;
             }
         }
         return false;
     };
 
-    std::function<bool( wxString* )> fallbackResolver = [&]( wxString* token ) -> bool
+    RESOLVER_FN fallbackResolver = [&]( wxString* token ) -> bool
     {
         return false;
     };
 
+    // this is done for side effects (fontName is set in fontResolver)
     ExpandTextVars( aString, &fontResolver, &fallbackResolver, nullptr );
-    FONT* font = FONT::GetFont( fontName );
-#ifdef DEBUG //STROKEFONT
-    if( aString.Contains( wxT( "FONT" ) ) )
-    {
-        std::cerr << "EDA_TEXT::getFontFromString( \"" << aString << "\" ) font name \"" << fontName
-                  << "\" --> " << ( font ? font->Name() : "(null ptr)" ) << std::endl;
-    }
-#endif
-    return font;
+
+    return FONT::GetFont( fontName );
 }
 
 
@@ -169,7 +160,7 @@ void EDA_TEXT::setTextInternals()
 
 
 EDA_TEXT::EDA_TEXT( const wxString& text ) :
-        m_text( text ), m_font( nullptr ), m_e( 1 << TE_VISIBLE )
+        m_text( text ), m_font( nullptr ), m_e( 1 << TE_VISIBLE ), m_resolver( nullptr )
 {
     int sz = Mils2iu( DEFAULT_SIZE_TEXT );
     SetTextSize( wxSize( sz, sz ) );
@@ -181,7 +172,7 @@ EDA_TEXT::EDA_TEXT( const wxString& text ) :
 
 
 EDA_TEXT::EDA_TEXT( const EDA_TEXT& aText ) :
-        m_text( aText.m_text ), m_font( nullptr ), m_e( aText.m_e )
+        m_text( aText.m_text ), m_font( nullptr ), m_e( aText.m_e ), m_resolver( nullptr )
 {
     setTextInternals();
 }

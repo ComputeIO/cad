@@ -89,6 +89,7 @@ bool OUTLINE_FONT::LoadFont( const wxString& aFontFileName )
     }
     else
     {
+        m_fontName = aFontFileName;
         m_fontFileName = fileName;
     }
 
@@ -243,10 +244,6 @@ void OUTLINE_FONT::drawSingleLineText( KIGFX::GAL* aGal, const UTF8& aText )
 void OUTLINE_FONT::GetTextAsPolygon( std::vector<SHAPE_POLY_SET>& aGlyphs, const UTF8& aText,
                                      const VECTOR2D& aGlyphSize, bool aIsMirrored ) const
 {
-#ifdef DEBUG
-    std::cerr << "OUTLINE_FONT::GetTextAsPolygon( ..., \"" << aText.wx_str() << "\", " << aGlyphSize
-              << ", " << ( aIsMirrored ? "true" : "false" ) << " )\n";
-#endif
     hb_buffer_t* buf = hb_buffer_create();
     hb_buffer_add_utf8( buf, aText.c_str(), -1, 0, -1 );
 
@@ -265,12 +262,16 @@ void OUTLINE_FONT::GetTextAsPolygon( std::vector<SHAPE_POLY_SET>& aGlyphs, const
     // TODO: xyscaler is determined with the Stetson method to make
     // debugging easier; root cause for why scaling does not seem to
     // work is unknown (but most likely trivial)
-    const double xyscaler = 2.0e3;
+    const double xyscaler = 1.0e3;
     const double x_scale_factor = mirror_factor * aGlyphSize.x / xyscaler;
     const double y_scale_factor = aGlyphSize.y / xyscaler;
     const double advance_scale_factor = 1;
     const double advance_x_factor = advance_scale_factor;
     const double advance_y_factor = advance_scale_factor;
+
+#ifdef DEBUG //STROKEFONT
+    std::cerr << "GetTextAsPolygon " << aText << " glyphSize " << aGlyphSize << std::endl;
+#endif
 
     hb_position_t cursor_x = 0;
     hb_position_t cursor_y = 0;

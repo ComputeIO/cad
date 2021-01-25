@@ -54,11 +54,17 @@ bool STROKE_FONT::LoadFont( const wxString& aFontName )
 {
     if( aFontName.empty() )
     {
+        m_fontName = "";
         return loadNewStrokeFont( newstroke_font, newstroke_font_bufsize );
     }
     else
     {
         bool success = loadHersheyFont( aFontName );
+
+        if( success )
+        {
+            m_fontName = aFontName;
+        }
 
         return success;
     }

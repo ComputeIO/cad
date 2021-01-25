@@ -146,7 +146,7 @@ wxString SCH_FIELD::GetShownText( int aDepth, FONT** fontSpecifier ) const
     bool      processTextVars = false;
     wxString  text = EDA_TEXT::GetShownText( &processTextVars );
 #ifdef DEBUG //STROKETEXT
-    std::cerr << "SCH_FIELD::GetShownText() " << GetText() << " " << text << " \n";
+    //std::cerr << "SCH_FIELD::GetShownText() " << GetText() << " " << text << " \n";
 #endif
 
     if( processTextVars )

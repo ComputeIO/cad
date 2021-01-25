@@ -214,7 +214,7 @@ public:
      */
     void GetContextualTextVars( wxArrayString* aVars ) const;
 
-    wxString GetShownText( int aDepth = 0, FONT** fontSpecifier = nullptr ) const override;
+    wxString GetShownText( int aDepth = 0, FONT** aFontPtr = nullptr ) const override;
 
     FONT* GetFont() const { return EDA_TEXT::GetFont(); }
 

@@ -172,11 +172,8 @@ void GAL::StrokeText( const wxString& aText, const VECTOR2D& aPosition, double a
 {
     FONT* font = aFont ? aFont : FONT::GetFont();
     font->Draw( this, aText, aPosition, aRotationAngle );
-#ifdef DEBUG //STROKEFONT
-    if( !aFont )
-    {
-        std::cerr << "GAL::StrokeText( \"" << aText << "\", ... ) no font" << std::endl;
-    }
+#if 0 //STROKEFONT
+    std::cerr << "GAL::StrokeText( \"" << aText << "\", ... ) font " << font->Name() << std::endl;
 #endif
 }
 
