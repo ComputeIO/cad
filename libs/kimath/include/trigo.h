@@ -1,7 +1,7 @@
 /*
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
- * Copyright (C) 2018-2020 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 2018-2021 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -117,6 +117,20 @@ const wxPoint GetArcCenter( VECTOR2I aStart, VECTOR2I aEnd, double aAngle );
  * Returns the subtended angle for a given arc
  */
 double GetArcAngle( const VECTOR2I& aStart, const VECTOR2I& aMid, const VECTOR2I& aEnd );
+
+/**
+ * Returns the middle point of an arc, half-way between aStart and aEnd. There are two possible
+ * solutions which can be found by toggling aMinArcAngle. The behaviour is undefined for
+ * semicircles (i.e. 180 degree arcs).
+ *
+ * @param aStart The starting point of the arc (for calculating the radius)
+ * @param aEnd The end point of the arc (for determining the arc angle)
+ * @param aCenter The center point of the arc
+ * @param aMinArcAngle If true, returns the point that results in the smallest arc angle.
+ * @return The middle point of the arc
+*/
+const VECTOR2I GetArcMid( const VECTOR2I& aStart, const VECTOR2I& aEnd, const VECTOR2I& aCenter,
+                          bool aMinArcAngle = true );
 
 /* Return the arc tangent of 0.1 degrees coord vector dx, dy
  * between -1800 and 1800

@@ -3,6 +3,7 @@
  *
  * Copyright (C) 2013 CERN
  * @author Tomasz Wlostowski <tomasz.wlostowski@cern.ch>
+ * Copyright (C) 2021 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -200,6 +201,24 @@ public:
         return Intersect( aSeg, false, true );
     }
 
+    /**
+     * Function PerpendicularSeg()
+     * 
+     * Computes a segment perpendicular to this one, passing through point aP
+     * @param aP Point through which the new segment will pass
+     * @return SEG perpendicular to this passing through point aP
+     */
+    SEG PerpendicularSeg( const VECTOR2I& aP ) const;
+
+    /**
+     * Function ParallelSeg()
+     * 
+     * Computes a segment parallel to this one, passing through point aP
+     * @param aP Point through which the new segment will pass
+     * @return SEG parallel to this passing through point aP
+     */
+    SEG ParallelSeg( const VECTOR2I& aP ) const;
+
     bool Collide( const SEG& aSeg, int aClearance, int* aActual = nullptr ) const;
 
     ecoord SquaredDistance( const SEG& aSeg ) const;
@@ -280,6 +299,13 @@ public:
         return std::abs( dist1 - dist2 ) <= 1;
     }
 
+
+    bool ApproxPerpendicular( const SEG& aSeg ) const
+    {
+        SEG perp = PerpendicularSeg( A );
+
+        return aSeg.ApproxParallel( perp );
+    }
 
     bool Overlaps( const SEG& aSeg ) const
     {

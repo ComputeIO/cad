@@ -3,6 +3,7 @@
  *
  * Copyright (C) 2013 CERN
  * @author Tomasz Wlostowski <tomasz.wlostowski@cern.ch>
+ * Copyright (C) 2021 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -127,6 +128,24 @@ OPT_VECTOR2I SEG::Intersect( const SEG& aSeg, bool aIgnoreEndpoints, bool aLines
                  aSeg.A.y + rescale( q, (ecoord) f.y, d ) );
 
      return ip;
+}
+
+
+SEG SEG::PerpendicularSeg( const VECTOR2I& aP ) const
+{
+    VECTOR2I slope( B - A );
+    VECTOR2I endPoint = slope.Perpendicular() + aP;
+
+    return SEG( aP, endPoint );
+}
+
+
+SEG SEG::ParallelSeg( const VECTOR2I& aP ) const
+{
+    VECTOR2I slope( B - A );
+    VECTOR2I endPoint = slope + aP;
+
+    return SEG( aP, endPoint );
 }
 
 
