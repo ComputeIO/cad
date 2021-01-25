@@ -312,7 +312,7 @@ TOOL_ACTION PCB_ACTIONS::properties( "pcbnew.InteractiveEdit.properties",
         AS_GLOBAL,
         'E', LEGACY_HK_NAME( "Edit Item" ),
         _( "Properties..." ), _( "Displays item properties dialog" ),
-        config_xpm );
+        edit_xpm );
 
 
 // FOOTPRINT_EDITOR_CONTROL
@@ -1033,8 +1033,7 @@ TOOL_ACTION PCB_ACTIONS::layerChanged( "pcbnew.Control.layerChanged",
 //Show board statistics tool
 TOOL_ACTION PCB_ACTIONS::boardStatistics( "pcbnew.InspectionTool.ShowStatisticsDialog",
         AS_GLOBAL, 0, "",
-        _( "Show Board Statistics" ), _( "Shows board statistics" ),
-        icon_pcbnew_24_xpm );
+        _( "Show Board Statistics" ), _( "Shows board statistics" ) );
 
 TOOL_ACTION PCB_ACTIONS::inspectClearance( "pcbnew.InspectionTool.InspectClearance",
         AS_GLOBAL, 0, "",
