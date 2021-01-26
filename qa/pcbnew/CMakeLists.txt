@@ -50,6 +50,7 @@ add_executable( qa_pcbnew
     # Older CMakes cannot link OBJECT libraries
     # https://cmake.org/pipermail/cmake/2013-November/056263.html
     $<TARGET_OBJECTS:pcbnew_kiface_objects>
+    $<TARGET_OBJECTS:pcbnew_import_gfx>
 )
 
 # Pcbnew tests, so pretend to be pcbnew (for units, etc)

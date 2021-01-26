@@ -33,6 +33,7 @@ add_executable( qa_pcbnew_tools
     # Older CMakes cannot link OBJECT libraries
     # https://cmake.org/pipermail/cmake/2013-November/056263.html
     $<TARGET_OBJECTS:pcbnew_kiface_objects>
+    $<TARGET_OBJECTS:pcbnew_import_gfx>
 )
 
 # Anytime we link to the kiface_objects, we have to add a dependency on the last object

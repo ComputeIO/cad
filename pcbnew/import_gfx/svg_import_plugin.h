@@ -26,18 +26,18 @@
 #ifndef SVG_IMPORT_PLUGIN_H
 #define SVG_IMPORT_PLUGIN_H
 
-#include "nanosvg.h"
-
 #include "graphics_import_plugin.h"
 #include <math/vector2d.h>
 #include <wildcards_and_files_ext.h>
 
 #include <vector>
 
+#include "svg_doc.h"
 
 class SVG_IMPORT_PLUGIN : public GRAPHICS_IMPORT_PLUGIN
 {
 public:
+    SVG_IMPORT_PLUGIN();
     const wxString GetName() const override
     {
         return "Scalable Vector Graphics";
@@ -64,19 +64,9 @@ public:
     virtual double GetImageWidth() const override;
 
 private:
-    void DrawPath( const float* aPoints, int aNumPoints, bool aClosedPath, bool aFilled, double aLineWidth );
-
-    void DrawCubicBezierPath( const float* aPoints, int aNumPoints,
-            std::vector< VECTOR2D >& aGeneratedPoints );
-
-    void DrawCubicBezierCurve( const float* aPoints,
-            std::vector< VECTOR2D >& aGeneratedPoints );
-
     void DrawPolygon( const std::vector< VECTOR2D >& aPoints, double aWidth );
-    void DrawLineSegments( const std::vector< VECTOR2D >& aPoints, double aWidth );
 
-    struct NSVGimage* m_parsedImage;
-
+    svg_plugin::SVGDocument doc;
     std::string m_messages;     // messages generated during svg file parsing.
                                 // Each message ends by '\n'
 };

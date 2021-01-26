@@ -1,0 +1,7 @@
+* vendor cairo_clipper along with rest of clipper in /thirdparty
+* decide whether to factor out svg/image foo into library
+* Group imported primitives
+* Allow scaling of imported primitives
+* Add more bitmap vectorizers
+* Integrate bitmap vectorizers also as standalone tools instead of only as part of svg import
+
