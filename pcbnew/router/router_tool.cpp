@@ -1468,9 +1468,9 @@ bool ROUTER_TOOL::CanInlineDrag()
     {
         const BOARD_ITEM* item = static_cast<const BOARD_ITEM*>( selection.Front() );
 
-        if( item->Type() == PCB_TRACE_T
-             || item->Type() == PCB_VIA_T
-             || item->Type() == PCB_FOOTPRINT_T )
+        // Note: EDIT_TOOL::Drag temporarily handles items of type PCB_ARC_T on its own using
+        // DragArcTrack(), so PCB_ARC_T should never occur here.
+        if( item->IsType( GENERAL_COLLECTOR::DraggableItems ) )
         {
             return true;
         }
