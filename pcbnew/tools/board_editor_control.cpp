@@ -1383,15 +1383,9 @@ void BOARD_EDITOR_CONTROL::setTransitions()
     Go( &BOARD_EDITOR_CONTROL::ZoneDuplicate, PCB_ACTIONS::zoneDuplicate.MakeEvent() );
 
     // Placing tools
-<<<<<<< HEAD
-    Go( &BOARD_EDITOR_CONTROL::PlaceTarget, PCB_ACTIONS::placeTarget.MakeEvent() );
-    Go( &BOARD_EDITOR_CONTROL::PlaceModule, PCB_ACTIONS::placeModule.MakeEvent() );
-    Go( &BOARD_EDITOR_CONTROL::DrillOrigin, PCB_ACTIONS::drillOrigin.MakeEvent() );
-=======
     Go( &BOARD_EDITOR_CONTROL::PlaceTarget, PCB_ACTIONS::placeTarget.MakeEvent() );
     Go( &BOARD_EDITOR_CONTROL::PlaceFootprint, PCB_ACTIONS::placeFootprint.MakeEvent() );
     Go( &BOARD_EDITOR_CONTROL::DrillOrigin, PCB_ACTIONS::drillOrigin.MakeEvent() );
->>>>>>> upstream/master
 
     Go( &BOARD_EDITOR_CONTROL::EditFpInFpEditor, PCB_ACTIONS::editFpInFpEditor.MakeEvent() );
 
