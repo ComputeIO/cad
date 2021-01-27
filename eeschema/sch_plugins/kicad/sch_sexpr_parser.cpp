@@ -1717,9 +1717,6 @@ SCH_SHEET_PIN* SCH_SEXPR_PARSER::parseSchSheetPin( SCH_SHEET* aSheet )
 
         case T_effects: parseEDA_TEXT( static_cast<EDA_TEXT*>( sheetPin.get() ) ); break;
 
-<<<<<<< HEAD
-        default: Expecting( "at or effects" );
-=======
         case T_uuid:
             NeedSYMBOL();
             const_cast<KIID&>( sheetPin->m_Uuid ) = KIID( FromUTF8() );
@@ -1727,7 +1724,6 @@ SCH_SHEET_PIN* SCH_SEXPR_PARSER::parseSchSheetPin( SCH_SHEET* aSheet )
             break;
 
         default: Expecting( "at, uuid or effects" );
->>>>>>> upstream/master
         }
     }
 
@@ -2259,15 +2255,8 @@ SCH_COMPONENT* SCH_SEXPR_PARSER::parseSchematicSymbol()
                 }
             }
 
-<<<<<<< HEAD
-            // Create a proxy pin to hold the alternate designation until the parent
-            // component resolves its pins.
             symbol->GetRawPins().emplace_back(
                     std::make_unique<SCH_PIN>( symbol.get(), number, alt ) );
-=======
-            symbol->GetRawPins().emplace_back(
-                    std::make_unique<SCH_PIN>( symbol.get(), number, alt ) );
->>>>>>> upstream/master
 
             const_cast<KIID&>( symbol->GetRawPins().back()->m_Uuid ) = uuid;
         }
@@ -2353,11 +2342,7 @@ SCH_BITMAP* SCH_SEXPR_PARSER::parseImage()
             break;
         }
 
-<<<<<<< HEAD
-        default: Expecting( "at, scale, or data" );
-=======
         default: Expecting( "at, scale, uuid or data" );
->>>>>>> upstream/master
         }
     }
 
@@ -2532,9 +2517,6 @@ SCH_NO_CONNECT* SCH_SEXPR_PARSER::parseNoConnect()
             NeedRIGHT();
             break;
 
-<<<<<<< HEAD
-        default: Expecting( "at" );
-=======
         case T_uuid:
             NeedSYMBOL();
             const_cast<KIID&>( no_connect->m_Uuid ) = KIID( FromUTF8() );
@@ -2542,7 +2524,6 @@ SCH_NO_CONNECT* SCH_SEXPR_PARSER::parseNoConnect()
             break;
 
         default: Expecting( "at or uuid" );
->>>>>>> upstream/master
         }
     }
 
@@ -2589,9 +2570,6 @@ SCH_BUS_WIRE_ENTRY* SCH_SEXPR_PARSER::parseBusEntry()
             busEntry->SetStroke( stroke );
             break;
 
-<<<<<<< HEAD
-        default: Expecting( "at, size, or stroke" );
-=======
         case T_uuid:
             NeedSYMBOL();
             const_cast<KIID&>( busEntry->m_Uuid ) = KIID( FromUTF8() );
@@ -2599,7 +2577,6 @@ SCH_BUS_WIRE_ENTRY* SCH_SEXPR_PARSER::parseBusEntry()
             break;
 
         default: Expecting( "at, size, uuid or stroke" );
->>>>>>> upstream/master
         }
     }
 
@@ -2657,9 +2634,6 @@ SCH_LINE* SCH_SEXPR_PARSER::parseLine()
             line->SetStroke( stroke );
             break;
 
-<<<<<<< HEAD
-        default: Expecting( "at or stroke" );
-=======
         case T_uuid:
             NeedSYMBOL();
             const_cast<KIID&>( line->m_Uuid ) = KIID( FromUTF8() );
@@ -2667,7 +2641,6 @@ SCH_LINE* SCH_SEXPR_PARSER::parseLine()
             break;
 
         default: Expecting( "at, uuid or stroke" );
->>>>>>> upstream/master
         }
     }
 
@@ -2774,11 +2747,7 @@ SCH_TEXT* SCH_SEXPR_PARSER::parseSchText()
             }
             break;
 
-<<<<<<< HEAD
-        default: Expecting( "at, shape, iref or effects" );
-=======
         default: Expecting( "at, shape, iref, uuid or effects" );
->>>>>>> upstream/master
         }
     }
 
