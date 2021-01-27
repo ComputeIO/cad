@@ -38,6 +38,7 @@
 #include <gal/opengl/cached_container.h>
 #include <gal/opengl/noncached_container.h>
 #include <gal/opengl/opengl_compositor.h>
+#include <gal/opengl/opengl_freetype.h>
 #include <gal/hidpi_gl_canvas.h>
 
 #include <unordered_map>
@@ -276,6 +277,11 @@ public:
         std::deque<boost::shared_array<GLdouble>>& intersectPoints;
     } TessParams;
 
+    // ---
+    // FreeType
+    // ---
+    OPENGL_FREETYPE* GetFreeType() const;
+
 private:
     /// Super class definition
     typedef GAL super;
@@ -325,6 +331,8 @@ private:
     GLint ufm_pixelSizeMultiplier;
 
     std::unique_ptr<GL_BITMAP_CACHE> bitmapCache;
+
+    OPENGL_FREETYPE* m_freeType;
 
     void lockContext( int aClientCookie ) override;
 

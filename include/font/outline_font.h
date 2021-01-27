@@ -63,7 +63,7 @@ public:
      * @param aRotationAngle is the text rotation angle in radians.
      */
     void Draw( KIGFX::GAL* aGal, const UTF8& aText, const VECTOR2D& aPosition,
-               double aRotationAngle ) override;
+               double aRotationAngle ) const override;
 
     /**
      * Compute the boundary limits of aText (the bounding box of all shapes).
@@ -104,12 +104,17 @@ public:
     VECTOR2D ComputeTextLineSize( const KIGFX::GAL* aGal, const UTF8& aText ) const override;
 
     void GetTextAsPolygon( std::vector<SHAPE_POLY_SET>& aGlyphs, const UTF8& aText,
-                           const VECTOR2D& aGlyphSize, bool aIsMirrored ) const;
+                           const VECTOR2D& aGlyphSize, const wxPoint& aPosition,
+                           bool aIsMirrored ) const;
 
 private:
     // FreeType variables
     static FT_Library mFreeType;
     FT_Face           mFace;
+
+    // TODO: mScaler is determined with the Stetson method
+    // - can probably be fetched from some obscure header
+    const double mScaler = 1.0e3;
 
     // cache for glyphs converted to straight segments
     // key is glyph index (FT_GlyphSlot field glyph_index)
@@ -118,12 +123,15 @@ private:
     FT_Error loadFace( const wxString& aFontFileName );
 
     /**
-     * Draws a single line of text. Multiline texts should be split before using the
+     * Draw a single line of text. Multiline texts should be split before using the
      * function.
      *
      * @param aText is the text to be drawn.
+     * @param aPosition is text position.
+     * @param aAngle is text angle.
      */
-    void drawSingleLineText( KIGFX::GAL* aGal, const UTF8& aText );
+    void drawSingleLineText( KIGFX::GAL* aGal, const UTF8& aText, const VECTOR2D& aPosition,
+                             double aAngle ) const override;
 };
 
 #endif // OUTLINE_FONT_H_

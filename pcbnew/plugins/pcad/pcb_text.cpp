@@ -29,10 +29,9 @@
 #include <pcb_text.h>
 #include <plugins/pcad/pcb_text.h>
 
-namespace PCAD2KICAD {
-
-PCB_TEXT::PCB_TEXT( PCB_CALLBACKS* aCallbacks, BOARD* aBoard ) :
-        PCB_COMPONENT( aCallbacks, aBoard )
+namespace PCAD2KICAD
+{
+PCB_TEXT::PCB_TEXT( PCB_CALLBACKS* aCallbacks, BOARD* aBoard ) : PCB_COMPONENT( aCallbacks, aBoard )
 {
     m_objType = wxT( 'T' );
 }
@@ -46,14 +45,14 @@ PCB_TEXT::~PCB_TEXT()
 void PCB_TEXT::Parse( XNODE* aNode, int aLayer, const wxString& aDefaultMeasurementUnit,
                       const wxString& aActualConversion )
 {
-    XNODE*      lNode;
-    wxString    str;
+    XNODE*   lNode;
+    wxString str;
 
-    m_PCadLayer     = aLayer;
-    m_KiCadLayer    = GetKiCadLayer();
-    m_positionX     = 0;
-    m_positionY     = 0;
-    m_name.mirror   = 0;    // Normal, not mirrored
+    m_PCadLayer = aLayer;
+    m_KiCadLayer = GetKiCadLayer();
+    m_positionX = 0;
+    m_positionY = 0;
+    m_name.mirror = 0; // Normal, not mirrored
     lNode = FindNode( aNode, wxT( "pt" ) );
 
     if( lNode )

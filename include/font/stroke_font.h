@@ -73,7 +73,7 @@ public:
      * @param aRotationAngle is the text rotation angle in radians.
      */
     void Draw( KIGFX::GAL* aGal, const UTF8& aText, const VECTOR2D& aPosition,
-               double aRotationAngle ) override;
+               double aRotationAngle ) const override;
 
     /**
      * Compute the boundary limits of aText (the bounding box of all shapes).
@@ -153,8 +153,17 @@ private:
      * function.
      *
      * @param aText is the text to be drawn.
+     * @param aPosition is ignored; always draws at (0,0)
+     * @param aAngle is text angle.
      */
-    void drawSingleLineText( KIGFX::GAL* aGal, const UTF8& aText ) const;
+    void drawSingleLineText( KIGFX::GAL* aGal, const UTF8& aText, const VECTOR2D& aPosition,
+                             double aAngle ) const override;
+
+    void drawSingleLineText( KIGFX::GAL* aGal, const UTF8& aText ) const
+    {
+        VECTOR2D p( 0, 0 );
+        drawSingleLineText( aGal, aText, p, 0.0 );
+    }
 
     /**
      * Process a string representing a Hershey font glyph. Not used for Newstroke font

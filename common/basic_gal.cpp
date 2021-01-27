@@ -221,16 +221,18 @@ void BASIC_GAL::DrawGlyph( const SHAPE_POLY_SET& aPolySet )
     }
     else
     {
+#ifdef DEBUG //STROKEFONT
         std::cerr << "BASIC_GAL::DrawGlyph() " << aPolySet.OutlineCount() << " outlines.";
-
+#endif
         for( int iOutline = 0; iOutline < aPolySet.OutlineCount(); ++iOutline )
         {
             const SHAPE_LINE_CHAIN& outline = aPolySet.COutline( iOutline );
             std::vector<wxPoint>    outline_with_transform;
 
+#ifdef DEBUG //STROKEFONT
             std::cerr << " O" << iOutline << "; " << outline.PointCount() << "p, "
                       << aPolySet.HoleCount( iOutline ) << "h.";
-
+#endif
             for( int i = 0; i < outline.PointCount(); i++ )
                 outline_with_transform.emplace_back( (wxPoint) transform( outline.CPoint( i ) ) );
 
@@ -240,15 +242,17 @@ void BASIC_GAL::DrawGlyph( const SHAPE_POLY_SET& aPolySet )
             {
                 const SHAPE_LINE_CHAIN& hole = aPolySet.CHole( iOutline, iHole );
                 std::vector<wxPoint>    hole_with_transform;
-
+#ifdef DEBUG //STROKEFONT
                 std::cerr << " H" << iHole << ": " << hole.PointCount() << "p.";
-
+#endif
                 for( int i = 0; i < hole.PointCount(); i++ )
                     hole_with_transform.emplace_back( (wxPoint) transform( hole.CPoint( i ) ) );
 
                 doDrawPolyline( hole_with_transform, true );
             }
         }
+#ifdef DEBUG //STROKEFONT
         std::cerr << std::endl;
+#endif
     }
 }

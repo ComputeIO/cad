@@ -120,8 +120,12 @@ void PCB_TEXT::DrawTextAsPolygon( std::vector<SHAPE_POLY_SET>& aResult, PCB_LAYE
     VECTOR2D glyphSize = GetTextSize();
     if( aFont->IsOutline() )
     {
+#ifdef DEBUG
+        std::cerr << "DrawTextAsPolygon " << GetText() << " -> " << GetShownText() << ", "
+                  << aString << " " << aPosition << std::endl;
+#endif
         const OUTLINE_FONT* outlineFont = dynamic_cast<const OUTLINE_FONT*>( aFont );
-        outlineFont->GetTextAsPolygon( aResult, aString, glyphSize, IsMirrored() );
+        outlineFont->GetTextAsPolygon( aResult, aString, glyphSize, aPosition, IsMirrored() );
     }
     else
     {
@@ -139,6 +143,9 @@ void PCB_TEXT::DrawTextAsPolygon( std::vector<SHAPE_POLY_SET>& aResult,
 
     if( IsMultilineAllowed() )
     {
+#ifdef DEBUG
+        std::cerr << "MULTILINE " << GetShownText() << std::endl;
+#endif
         wxArrayString strings_list;
         wxStringSplit( GetShownText(), strings_list, '\n' );
         std::vector<wxPoint> positions;
@@ -153,6 +160,9 @@ void PCB_TEXT::DrawTextAsPolygon( std::vector<SHAPE_POLY_SET>& aResult,
     }
     else
     {
+#ifdef DEBUG
+        std::cerr << "SINGLE LINE " << GetShownText() << std::endl;
+#endif
         DrawTextAsPolygon( aResult, aLayerId, GetTextPos(), GetShownText(), font );
     }
 }

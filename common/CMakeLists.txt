@@ -38,18 +38,19 @@ set( GAL_SRCS
     gal/graphics_abstraction_layer.cpp
     gal/hidpi_gl_canvas.cpp
 
-    font/font.cpp
-    font/stroke_font.cpp
-    font/outline_font.cpp
-    font/outline_decomposer.cpp
-
     view/view_controls.cpp
     view/view_overlay.cpp
     view/wx_view_controls.cpp
     view/zoom_controller.cpp
 
+    font/font.cpp
+    font/stroke_font.cpp
+    font/outline_font.cpp
+    font/outline_decomposer.cpp
+
     # OpenGL GAL
     gal/opengl/opengl_gal.cpp
+    gal/opengl/opengl_freetype.cpp
     gal/opengl/gl_resources.cpp
     gal/opengl/gl_builtin_shaders.cpp
     gal/opengl/shader.cpp

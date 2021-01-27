@@ -375,20 +375,20 @@ void EDA_TEXT::TransformBoundingBoxWithClearanceToPolygon( SHAPE_POLY_SET* aCorn
 static void polygonText( SHAPE_POLY_SET& aDestination, PCB_LAYER_ID aLayer, const wxPoint aPosition,
                          const wxString& aString, const FONT* aFont, const PCB_TEXT* aText )
 {
-    // copied from void BOARD_ADAPTER::drawTextFromAddShapeWithClearance( const PCB_TEXT* aText, ...
     if( aFont->IsOutline() )
     {
         std::vector<SHAPE_POLY_SET> glyphs;
         const OUTLINE_FONT*         outlineFont = dynamic_cast<const OUTLINE_FONT*>( aFont );
-        outlineFont->GetTextAsPolygon( glyphs, aString, aText->GetTextSize(), aText->IsMirrored() );
+#ifdef DEBUG
+        std::cerr << "polygonText( ..., " << aPosition << ", \"" << aString << "\", "
+                  << aFont->Name() << ", " << aText->GetText() << std::endl;
+#endif
+        outlineFont->GetTextAsPolygon( glyphs, aString, aText->GetTextSize(), aPosition,
+                                       aText->IsMirrored() );
         for( SHAPE_POLY_SET& glyph : glyphs )
         {
             aDestination.Append( glyph );
         }
-#ifdef DEBUG
-        std::cerr << "polygonText() this fn does not handle glyphs with holes correctly!"
-                  << std::endl;
-#endif
     }
     else
     {

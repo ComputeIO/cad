@@ -333,10 +333,13 @@ public:
      * @param aText is the text to be drawn.
      * @param aPosition is the text position in world coordinates.
      * @param aRotationAngle is the text rotation angle.
-     * @param aFontSpecifier is the font name (null or empty string = Newstroke)
+     * @param aFont is the font (null = Newstroke)
+     * @param aMultilineAllowed is true if text can be rendered on multiple lines,
+     *     otherwise false
      */
     virtual void StrokeText( const wxString& aText, const VECTOR2D& aPosition,
-                             double aRotationAngle, FONT* aFont = nullptr );
+                             double aRotationAngle, const FONT* aFont = nullptr,
+                             bool aMultilineAllowed = false );
 
     /**
      * Draw a text using a bitmap font. It should be faster than StrokeText(),

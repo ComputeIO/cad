@@ -224,6 +224,8 @@ OPENGL_GAL::OPENGL_GAL( GAL_DISPLAY_OPTIONS& aDisplayOptions, wxWindow* aParent,
     compositor = new OPENGL_COMPOSITOR;
     compositor->SetAntialiasingMode( options.gl_antialiasing_mode );
 
+    m_freeType = new OPENGL_FREETYPE( this );
+
     // Initialize the flags
     isFramebufferInitialized = false;
     isBitmapFontInitialized = false;
@@ -1091,17 +1093,11 @@ void OPENGL_GAL::fillPolygonAsTriangles( const SHAPE_POLY_SET& aPolyList )
 
         for( int n = 0; n < (int) indices.size(); n += 3 )
         {
-#if 0
-            outline.Add( new TRIANGLE_2D( allPoints[indices[n]], allPoints[indices[n + 1]],
-                                          allPoints[indices[n + 2]], xConversionFactor,
-                                          yConversionFactor, aText ) );
-#else
             for( int m = 0; m < 3; m++ )
             {
                 const VECTOR2I& p = allPoints[indices[n + m]];
                 currentManager->Vertex( p.x, p.y, layerDepth );
             }
-#endif
         }
     }
 }
@@ -2328,4 +2324,10 @@ void OPENGL_GAL::ComputeWorldScreenMatrix()
     lookAtPoint.y = roundr( lookAtPoint.y, pixelSize );
 
     GAL::ComputeWorldScreenMatrix();
+}
+
+
+OPENGL_FREETYPE* OPENGL_GAL::GetFreeType() const
+{
+    return m_freeType;
 }

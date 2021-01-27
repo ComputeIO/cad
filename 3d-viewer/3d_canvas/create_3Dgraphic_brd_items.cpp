@@ -146,6 +146,7 @@ static void transformGlyph( SHAPE_POLY_SET& aBuffer, const SHAPE_POLY_SET& polyL
 }
 
 
+#define DEBUG_TRIANGULATION
 static void addPolygonAsTriangles( SHAPE_POLY_SET aPolylist, CONTAINER_2D_BASE& aDstContainer,
                                    double aBiuTo3Dunits, const PCB_TEXT& aText )
 {
@@ -180,7 +181,7 @@ static void addPolygonAsTriangles( SHAPE_POLY_SET aPolylist, CONTAINER_2D_BASE& 
 
         std::vector<VECTOR2I> hole;
 #ifdef DEBUG_TRIANGULATION
-        std::cerr << "// " << aPolylist.HoleCount( i ) << " holes" << std::endl;
+        std::cerr << "// " << aPolylist.HoleCount( i ) << " holes "; // << std::endl;
 #endif
         for( int k = 0; k < aPolylist.HoleCount( i ); k++ )
         {
@@ -195,14 +196,14 @@ static void addPolygonAsTriangles( SHAPE_POLY_SET aPolylist, CONTAINER_2D_BASE& 
             polygon.push_back( hole );
 
 #ifdef DEBUG_TRIANGULATION
-            std::cerr << "{ // hole " << k << std::endl;
+            std::cerr << "{ // hole " << k << " "; //std::endl;
             bar = false;
             for( const VECTOR2I& foo : hole )
             {
                 std::cerr << ( bar ? "," : "" ) << "{" << foo.x << "," << foo.y << "}";
                 bar = true;
             }
-            std::cerr << "}," << std::endl;
+            std::cerr << "},"; // << std::endl;
 #endif
         }
 
@@ -260,10 +261,15 @@ void BOARD_ADAPTER::addShapeWithClearance( const PCB_TEXT* aText, CONTAINER_2D_B
         s_dstcontainer = aDstContainer;
         s_textWidth = aText->GetEffectiveTextPenWidth() + ( 2 * aClearanceValue );
 
+#if 1
+        // force bold
+        GRShowText( aText, COLOR4D::BLACK, true, 0, addTextSegmToContainer );
+#else
         // not actually used, but needed by GRText
         const COLOR4D dummy_color = COLOR4D::BLACK;
         bool          forceBold = true;
         int           penWidth = 0; // force max width for bold
+
 
         if( aText->IsMultilineAllowed() )
         {
@@ -289,6 +295,7 @@ void BOARD_ADAPTER::addShapeWithClearance( const PCB_TEXT* aText, CONTAINER_2D_B
                     aText->GetHorizJustify(), aText->GetVertJustify(), penWidth, aText->IsItalic(),
                     forceBold, addTextSegmToContainer, nullptr, nullptr, font );
         }
+#endif
     }
 }
 

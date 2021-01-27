@@ -34,6 +34,8 @@
 #include <eda_item.h>
 #include <eda_text.h> // EDA_TEXT_HJUSTIFY_T and EDA_TEXT_VJUSTIFY_T
 
+typedef std::function<void( int x0, int y0, int xf, int yf, void* aData )> TEXT_SEGMENT_CALLBACK;
+
 /**
  * Minimum dimension in pixel for drawing/no drawing a text used in Pcbnew to decide to
  * draw (or not) some texts ( like net names on pads/tracks ).
@@ -115,8 +117,16 @@ int GraphicTextWidth( const wxString& aText, const wxSize& aSize, bool italic, b
 void GRText( wxDC* aDC, const wxPoint& aPos, COLOR4D aColor, const wxString& aText, double aOrient,
              const wxSize& aSize, enum EDA_TEXT_HJUSTIFY_T aH_justify,
              enum EDA_TEXT_VJUSTIFY_T aV_justify, int aWidth, bool aItalic, bool aBold,
-             void ( *aCallback )( int x0, int y0, int xf, int yf, void* aData ) = nullptr,
-             void* aCallbackData = nullptr, PLOTTER* aPlotter = nullptr, FONT* aFont = nullptr );
+             TEXT_SEGMENT_CALLBACK aCallback = nullptr, void* aCallbackData = nullptr,
+             PLOTTER* aPlotter = nullptr, FONT* aFont = nullptr, bool aMultilineAllowed = false );
+
+
+/*
+ * @param aPenWidth stroke width, ignored if aForceBold is true
+ */
+void GRShowText( const EDA_TEXT* aTextItem, COLOR4D aColor, bool aForceBold = true,
+                 int aPenWidth = 0, TEXT_SEGMENT_CALLBACK aCallback = nullptr,
+                 void* aCallbackData = nullptr, wxDC* aDC = nullptr );
 
 /**
  * Draw graphic text with a border so that it can be read on different backgrounds.
@@ -127,8 +137,7 @@ void GRText( wxDC* aDC, const wxPoint& aPos, COLOR4D aColor, const wxString& aTe
 void GRHaloText( wxDC* aDC, const wxPoint& aPos, COLOR4D aBgColor, COLOR4D aColor1, COLOR4D aColor2,
                  const wxString& aText, double aOrient, const wxSize& aSize,
                  enum EDA_TEXT_HJUSTIFY_T aH_justify, enum EDA_TEXT_VJUSTIFY_T aV_justify,
-                 int aWidth, bool aItalic, bool aBold,
-                 void ( *aCallback )( int x0, int y0, int xf, int yf, void* aData ) = nullptr,
+                 int aWidth, bool aItalic, bool aBold, TEXT_SEGMENT_CALLBACK aCallback = nullptr,
                  void* aCallbackData = nullptr, PLOTTER* aPlotter = nullptr );
 
 #endif /* __INCLUDE__DRAWTXT_H__ */

@@ -73,7 +73,21 @@ public:
      * @param aRotationAngle is the text rotation angle in radians.
      */
     virtual void Draw( KIGFX::GAL* aGal, const UTF8& aText, const VECTOR2D& aPosition,
-                       double aRotationAngle ) = 0;
+                       double aRotationAngle ) const = 0;
+
+    /**
+     * Draw a string.
+     *
+     * @param aGal is the graphics context
+     * @param aText is the text string
+     * @param aPosition is the text position in world coordinates
+     * @param aMultiLine is true if the text can be rendered on multiple lines, otherwise false
+     */
+    virtual void DrawString( KIGFX::GAL* aGal, const UTF8& aText, const VECTOR2D& aPosition,
+                             double aRotationAngle = 0.0, bool aMultiLine = false,
+                             int aTextWidth = 0, int aTextHeight = 0,
+                             EDA_TEXT_HJUSTIFY_T aHorizJustify = GR_TEXT_HJUSTIFY_CENTER,
+                             EDA_TEXT_VJUSTIFY_T aVertJustify = GR_TEXT_VJUSTIFY_CENTER ) const;
 
     /**
      * Compute the boundary limits of aText (the bounding box of all shapes).
@@ -131,6 +145,26 @@ protected:
             // aText.end() - 1 is to skip a newline character that is potentially at the end
             return std::count( aText.begin(), aText.end() - 1, '\n' ) + 1;
     }
+
+    /**
+     * Draws a single line of text. Multiline texts should be split before using the
+     * function.
+     *
+     * @param aText is the text to be drawn.
+     * @param aPosition is text position.
+     * @param aAngle is text angle.
+     */
+    virtual void drawSingleLineText( KIGFX::GAL* aGal, const UTF8& aText, const VECTOR2D& aPosition,
+                                     double aAngle ) const = 0;
+
+    void getLinePositions( std::vector<wxPoint>& aPositions, int aLineCount,
+                           const VECTOR2D& aPosition, int aLineSpacing,
+                           EDA_TEXT_HJUSTIFY_T aHorizJustify, EDA_TEXT_VJUSTIFY_T aVertJustify,
+                           double aRotationAngle ) const;
+
+#ifdef DEBUG
+    bool debugMe( const UTF8& aText ) const;
+#endif
 
 private:
     static FONT*                     s_defaultFont;

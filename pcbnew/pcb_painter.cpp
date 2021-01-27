@@ -1353,7 +1353,8 @@ void PCB_PAINTER::draw( const PCB_TEXT* aText, int aLayer )
     m_gal->SetIsFill( false );
     m_gal->SetIsStroke( true );
     m_gal->SetTextAttributes( aText );
-    m_gal->StrokeText( shownText, position, aText->GetTextAngleRadians(), font );
+    m_gal->StrokeText( shownText, position, aText->GetTextAngleRadians(), font,
+                       aText->IsMultilineAllowed() );
 }
 
 

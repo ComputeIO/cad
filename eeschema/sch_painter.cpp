@@ -698,7 +698,8 @@ void SCH_PAINTER::draw( const LIB_TEXT* aText, int aLayer )
     m_gal->SetFontBold( aText->IsBold() );
     m_gal->SetFontItalic( aText->IsItalic() );
     m_gal->SetFontUnderlined( false );
-    strokeText( aText->GetShownText(), pos, orient );
+    m_gal->StrokeText( aText->GetShownText(), pos, orient, aText->GetFont(),
+                       aText->IsMultilineAllowed() );
 }
 
 
@@ -1334,7 +1335,8 @@ void SCH_PAINTER::draw( const SCH_TEXT* aText, int aLayer )
 
     if( !shownText.IsEmpty() )
     {
-        strokeText( shownText, text_offset, aText->GetTextAngleRadians(), aText->GetFont() );
+        m_gal->StrokeText( shownText, text_offset, aText->GetTextAngleRadians(), aText->GetFont(),
+                           aText->IsMultilineAllowed() );
     }
 
     if( aText->IsDangling() )

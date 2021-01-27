@@ -70,8 +70,7 @@ public:
 
     void SetPlotter( PLOTTER* aPlotter ) { m_plotter = aPlotter; }
 
-    void SetCallback( void ( *aCallback )( int x0, int y0, int xf, int yf, void* aData ),
-                      void* aData )
+    void SetCallback( TEXT_SEGMENT_CALLBACK aCallback, void* aData )
     {
         m_callback = aCallback;
         m_callbackData = aData;
@@ -164,8 +163,8 @@ private:
     // When calling the draw functions outside a wxDC, to get the basic drawings
     // lines / polylines ..., a callback function (used in DRC) to store
     // coordinates of each segment:
-    void ( *m_callback )( int x0, int y0, int xf, int yf, void* aData );
-    void* m_callbackData; // a optional parameter for m_callback
+    TEXT_SEGMENT_CALLBACK m_callback;
+    void*                 m_callbackData; // a optional parameter for m_callback
 
     // When calling the draw functions for plot, the plotter acts as a wxDC to plot basic items.
     PLOTTER* m_plotter;

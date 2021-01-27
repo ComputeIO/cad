@@ -25,11 +25,11 @@
  */
 
 #include <limits>
-#include <wx/string.h>
+#include <kicad_string.h>
+#include <pgm_base.h>
 #include <settings/settings_manager.h>
 #include <harfbuzz/hb-ft.h>
 #include <bezier_curves.h>
-#include <geometry/shape_simple.h>
 #include <geometry/shape_poly_set.h>
 #include <font/outline_font.h>
 #include FT_GLYPH_H
@@ -59,7 +59,7 @@ bool OUTLINE_FONT::LoadFont( const wxString& aFontFileName )
     {
         // Try user dir
         fontFile.SetExt( "otf" );
-        fontFile.SetPath( SETTINGS_MANAGER::GetUserSettingsPath() + wxT( "/fonts" ) );
+        fontFile.SetPath( Pgm().GetSettingsManager().GetUserSettingsPath() + wxT( "/fonts" ) );
         fileName = fontFile.GetFullPath();
 
         if( wxFile::Exists( fileName ) )
@@ -114,8 +114,13 @@ FT_Error OUTLINE_FONT::loadFace( const wxString& aFontFileName )
  * @param aRotationAngle is the text rotation angle in radians.
  */
 void OUTLINE_FONT::Draw( KIGFX::GAL* aGal, const UTF8& aText, const VECTOR2D& aPosition,
-                         double aRotationAngle )
+                         double aRotationAngle ) const
 {
+#ifdef DEBUG
+    if( debugMe( aText ) )
+        std::cerr << "OUTLINE_FONT::Draw( aGal, \"" << aText << "\", " << aPosition << ", "
+                  << aRotationAngle << " ) const\n";
+#endif
     if( aText.empty() )
         return;
 
@@ -142,7 +147,8 @@ void OUTLINE_FONT::Draw( KIGFX::GAL* aGal, const UTF8& aText, const VECTOR2D& aP
     aGal->Translate( aPosition );
     aGal->Rotate( -aRotationAngle );
 
-    drawSingleLineText( aGal, aText );
+    wxPoint pt( 0, 0 );
+    drawSingleLineText( aGal, aText, pt, 0.0 );
 
     aGal->Restore();
 }
@@ -185,7 +191,16 @@ double OUTLINE_FONT::ComputeOverbarVerticalPosition( double aGlyphHeight ) const
  */
 double OUTLINE_FONT::GetInterline( double aGlyphHeight ) const
 {
-    assert( 1 == 0 ); // TODO!!!
+    static const double interlinePitchRatio = 1.61; //INTERLINE_PITCH_RATIO in stroke_font.cpp
+    const int lineHeight = ( mFace->size->metrics.ascender - mFace->size->metrics.descender ) >> 6;
+
+    double ret = aGlyphHeight * interlinePitchRatio;
+    //lineHeight; // aGlyphHeight * lineHeight; // * mScaler;
+#ifdef DEBUG
+    std::cerr << "OUTLINE_FONT::GetInterline( " << aGlyphHeight << " ) const returns " << ret
+              << " (lineHeight " << lineHeight << ")" << std::endl;
+#endif
+    return ret;
 }
 
 
@@ -223,26 +238,55 @@ static bool contourIsHole( const CONTOUR& c )
 }
 
 
-void OUTLINE_FONT::drawSingleLineText( KIGFX::GAL* aGal, const UTF8& aText )
+void OUTLINE_FONT::drawSingleLineText( KIGFX::GAL* aGal, const UTF8& aText,
+                                       const VECTOR2D& aPosition, double aAngle ) const
 {
-    // Context needs to be saved before any transformations
-    aGal->Save();
-
-    std::vector<SHAPE_POLY_SET> glyphs;
-    GetTextAsPolygon( glyphs, aText, aGal->GetGlyphSize(), aGal->IsTextMirrored() );
-
-    aGal->SetIsFill( true );
-    for( SHAPE_POLY_SET& glyph : glyphs )
+#ifdef DEBUG
+    if( debugMe( aText ) )
+        std::cerr << "OUTLINE_FONT::drawSingleLineText( aGal, \"" << aText << "\", " << aPosition
+                  << " )";
+#endif
+    if( aGal->IsOpenGlEngine() )
     {
-        aGal->DrawGlyph( glyph );
+        // draw with OpenGL routines to get antialiased pixmaps
+        // TODO!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        //aGal->GetFreeType()->Render( this, aText );
+#ifdef DEBUG
+        std::cerr << " OpenGL TODO!\n";
+#endif
     }
+    else
+    {
+#ifdef DEBUG
+        if( debugMe( aText ) )
+            std::cerr << std::endl;
+#endif
+        // transform glyph outlines to straight segments, then fill
+        std::vector<SHAPE_POLY_SET> glyphs;
+        wxPoint                     pt( aPosition.x, aPosition.y );
+        GetTextAsPolygon( glyphs, aText, aGal->GetGlyphSize(), pt, aGal->IsTextMirrored() );
 
-    aGal->Restore();
+        //aGal->SetIsFill( true );
+        for( SHAPE_POLY_SET& glyph : glyphs )
+        {
+            aGal->DrawGlyph( glyph );
+        }
+    }
+}
+
+
+static inline int getp2( int a )
+{
+    int rval = 1;
+    while( rval < a )
+        rval <<= 1;
+    return rval;
 }
 
 
 void OUTLINE_FONT::GetTextAsPolygon( std::vector<SHAPE_POLY_SET>& aGlyphs, const UTF8& aText,
-                                     const VECTOR2D& aGlyphSize, bool aIsMirrored ) const
+                                     const VECTOR2D& aGlyphSize, const wxPoint& aPosition,
+                                     bool aIsMirrored ) const
 {
     hb_buffer_t* buf = hb_buffer_create();
     hb_buffer_add_utf8( buf, aText.c_str(), -1, 0, -1 );
@@ -259,22 +303,19 @@ void OUTLINE_FONT::GetTextAsPolygon( std::vector<SHAPE_POLY_SET>& aGlyphs, const
     hb_shape( referencedFont, buf, NULL, 0 );
 
     const double mirror_factor = ( aIsMirrored ? 1 : -1 );
-    // TODO: xyscaler is determined with the Stetson method to make
-    // debugging easier; root cause for why scaling does not seem to
-    // work is unknown (but most likely trivial)
-    const double xyscaler = 1.0e3;
-    const double x_scale_factor = mirror_factor * aGlyphSize.x / xyscaler;
-    const double y_scale_factor = aGlyphSize.y / xyscaler;
+    const double x_scale_factor = mirror_factor * aGlyphSize.x / mScaler;
+    const double y_scale_factor = aGlyphSize.y / mScaler;
     const double advance_scale_factor = 1;
     const double advance_x_factor = advance_scale_factor;
     const double advance_y_factor = advance_scale_factor;
 
 #ifdef DEBUG //STROKEFONT
-    std::cerr << "GetTextAsPolygon " << aText << " glyphSize " << aGlyphSize << std::endl;
+    if( debugMe( aText ) )
+        std::cerr << "GetTextAsPolygon " << aText << " glyphSize " << aGlyphSize << std::endl;
 #endif
 
-    hb_position_t cursor_x = 0;
-    hb_position_t cursor_y = 0;
+    hb_position_t cursor_x = aPosition.x;
+    hb_position_t cursor_y = aPosition.y;
 
     for( unsigned int i = 0; i < glyphCount; i++ )
     {
@@ -283,10 +324,7 @@ void OUTLINE_FONT::GetTextAsPolygon( std::vector<SHAPE_POLY_SET>& aGlyphs, const
 
         FT_Load_Glyph( mFace, codepoint, FT_LOAD_NO_BITMAP );
 
-        FT_GlyphSlot       glyph = mFace->glyph;
-        const unsigned int bufsize = 512;
-        char               glyphName[bufsize];
-        FT_Get_Glyph_Name( mFace, glyph->glyph_index, &glyphName[0], bufsize );
+        FT_GlyphSlot glyph = mFace->glyph;
 
         // contours is a collection of all outlines in the glyph;
         // example: glyph for 'o' generally contains 2 contours,
@@ -295,18 +333,41 @@ void OUTLINE_FONT::GetTextAsPolygon( std::vector<SHAPE_POLY_SET>& aGlyphs, const
 
         OUTLINE_DECOMPOSER decomposer( glyph->outline );
         decomposer.OutlineToSegments( &contours );
+#ifdef DEBUG
+        static const unsigned int bufsize = 512;
+        char                      glyphName[bufsize];
+        FT_Get_Glyph_Name( mFace, glyph->glyph_index, &glyphName[0], bufsize );
+        std::cerr << "[Glyph '" << glyphName << "' pos ";
+        std::cerr << pos.x_advance << "," << pos.y_advance << "," << pos.x_offset << ","
+                  << pos.y_offset;
+        std::cerr << " codepoint " << codepoint << ", " << glyph->outline.n_contours << " contours "
+                  << glyph->outline.n_points << " points]->";
+        std::cerr << "{" << contours.size() << " contours ";
+        for( int foofaa = 0; foofaa < (int) contours.size(); foofaa++ )
+        {
+            if( foofaa > 0 )
+                std::cerr << "/";
+            std::cerr << contours[foofaa].points.size();
+        }
+        if( contours.size() > 0 )
+            std::cerr << " pts";
+        std::cerr << "}";
+#endif
 
-        SHAPE_POLY_SET             poly;
-        std::vector<SHAPE_SIMPLE*> holes;
-        std::vector<SHAPE_SIMPLE*> outlines;
-        std::vector<VECTOR2D>      ptListScaled;
+        SHAPE_POLY_SET                poly;
+        std::vector<SHAPE_LINE_CHAIN> holes;
+        std::vector<SHAPE_LINE_CHAIN> outlines;
+        POINTS                        ptListScaled;
 
-        for( CONTOUR c : contours )
+        for( CONTOUR& c : contours )
         {
             POINTS points = c.points;
             int    ptCount = 0;
             ptListScaled.clear();
 
+#ifdef DEBUG
+            std::cerr << "c.points.size()==" << c.points.size() << " ";
+#endif
             for( const VECTOR2D& v : points )
             {
                 VECTOR2D pt( -( v.x + cursor_x ), -( v.y + cursor_y ) );
@@ -315,47 +376,65 @@ void OUTLINE_FONT::GetTextAsPolygon( std::vector<SHAPE_POLY_SET>& aGlyphs, const
                 ptCount++;
             }
 
-            SHAPE_SIMPLE* shape = new SHAPE_SIMPLE();
+            SHAPE_LINE_CHAIN shape;
+#ifdef DEBUG
+            std::cerr << "ptListScaled.size()==" << ptListScaled.size() << " ptCount==" << ptCount
+                      << " ";
+#endif
             for( const VECTOR2D& p : ptListScaled )
             {
-                shape->Append( p.x, p.y );
+#ifdef DEBUG
+                std::cerr << "(appending " << p;
+#endif
+                shape.Append( p.x, p.y );
+#ifdef DEBUG
+                std::cerr << ", shape has " << shape.PointCount() << " pts)";
+#endif
             }
+#ifdef DEBUG
+            std::cerr << "(" << ( contourIsHole( c ) ? "hole" : "outline" ) << " shape has "
+                      << shape.PointCount() << " pts)";
+#endif
 
             if( contourIsHole( c ) )
             {
-                holes.push_back( shape );
+                holes.push_back( std::move( shape ) );
             }
             else
             {
-                outlines.push_back( shape );
+                outlines.push_back( std::move( shape ) );
             }
         }
 
+#ifdef DEBUG
         if( outlines.size() < 1 )
         {
-            // std::cerr << "Error: no outlines for [" << glyphName << "]!" << std::endl;
+            std::cerr << "Error: no outlines for [" << glyphName << "]!" << std::endl;
         }
+#endif
 
-        for( SHAPE_SIMPLE* outline : outlines )
+        for( SHAPE_LINE_CHAIN& outline : outlines )
         {
-            if( outline->PointCount() )
+            if( outline.PointCount() )
             {
-                poly.AddOutline( outline->Vertices() );
+                outline.SetClosed( true );
+                poly.AddOutline( outline );
             }
         }
 
         int nthHole = 0;
-        for( SHAPE_SIMPLE* hole : holes )
+        for( SHAPE_LINE_CHAIN& hole : holes )
         {
-            if( hole->PointCount() )
+            if( hole.PointCount() )
             {
-                VECTOR2I firstPoint = hole->GetPoint( 0 );
+                hole.SetClosed( true );
+                VECTOR2I firstPoint = hole.GetPoint( 0 );
                 //SHAPE_SIMPLE *outlineForHole = nullptr;
                 int nthOutline = -1;
                 int n = 0;
-                for( SHAPE_SIMPLE* outline : outlines )
+                for( SHAPE_LINE_CHAIN& outline : outlines )
                 {
-                    if( outline->PointInside( firstPoint ) )
+                    if( outline.PointInside( firstPoint ) )
                     {
                         //outlineForHole = outline;
                         nthOutline = n;
@@ -365,21 +444,44 @@ void OUTLINE_FONT::GetTextAsPolygon( std::vector<SHAPE_POLY_SET>& aGlyphs, const
                 }
                 if( nthOutline > -1 )
                 {
-                    poly.AddHole( hole->Vertices(), n );
+                    poly.AddHole( hole, n );
                 }
+#ifdef DEBUG
+                else
+                {
+                    std::cerr << "Could not find outline for hole " << nthHole << "! ";
+                }
+#endif
             }
-            delete hole;
             nthHole++;
         }
 
         aGlyphs.push_back( poly );
 
-        for( SHAPE_SIMPLE* outline : outlines )
-            delete outline;
-
         cursor_x += ( pos.x_advance * advance_x_factor );
         cursor_y += ( pos.y_advance * advance_y_factor );
     }
+#ifdef DEBUG
+    {
+        std::cerr << aGlyphs.size() << " glyphs; ";
+        for( int g = 0; g < (int) aGlyphs.size(); g++ )
+        {
+            if( g > 0 )
+                std::cerr << " ";
+            const SHAPE_POLY_SET& theGlyph = aGlyphs.at( g );
+            std::cerr << "G" << g << " " << theGlyph.OutlineCount() << " outlines; ";
+            for( int i = 0; i < theGlyph.OutlineCount(); i++ )
+            {
+                std::cerr << "outline " << i << " " << theGlyph.COutline( i ).PointCount()
+                          << " points " << theGlyph.HoleCount( i ) << " holes ";
+                for( int j = 0; j < theGlyph.HoleCount( i ); j++ )
+                    std::cerr << "hole " << i << " " << theGlyph.CHole( i, j ).PointCount()
+                              << " points ";
+            }
+        }
+        std::cerr << std::endl;
+    }
+#endif
 
     hb_buffer_destroy( buf );
 }

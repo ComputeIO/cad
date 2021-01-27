@@ -24,11 +24,20 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
 
+#include <kicad_string.h>
 #include <font/stroke_font.h>
 #include <font/outline_font.h>
+#include <trigo.h>
 
 FONT*                     FONT::s_defaultFont = nullptr;
 std::map<wxString, FONT*> FONT::s_fontMap;
+
+#ifdef DEBUG
+bool FONT::debugMe( const UTF8& aText ) const
+{
+    return ( !aText.substr( 0, 3 ).compare( "Foo" ) || !aText.substr( 0, 6 ).compare( "${FONT" ) );
+}
+#endif
 
 FONT::FONT()
 {
@@ -103,4 +112,127 @@ bool FONT::IsOutline( const wxString& aFontName )
     // TODO: figure out whether it would be a good idea to do
     // something else in case aFontName is not found
     return GetFont( aFontName )->IsOutline();
+}
+
+
+/**
+ * Draw a string.
+ *
+ * @param aGal
+ * @param aTextItem is the underlying text item
+ * @param aPosition is the text position
+ */
+void FONT::DrawString( KIGFX::GAL* aGal, const UTF8& aText, const VECTOR2D& aPosition,
+                       double aRotationAngle, bool aMultiLine, int aTextWidth, int aTextHeight,
+                       EDA_TEXT_HJUSTIFY_T aHorizJustify, EDA_TEXT_VJUSTIFY_T aVertJustify ) const
+{
+    int textHeight = ( aTextHeight > 0 ? aTextHeight : aGal->GetGlyphSize().y );
+#ifdef DEBUG
+    if( debugMe( aText ) )
+        std::cerr << "FONT::DrawString( aGal, \"" << aText << "\", " << aPosition << ", "
+                  << aRotationAngle << ", " << ( aMultiLine ? "true" : "false" ) << ", "
+                  << aTextWidth << ", " << aTextHeight << ", " << aVertJustify
+                  << " ) const; textHeight " << textHeight << std::endl;
+#endif
+    if( aText.empty() )
+        return;
+
+    wxArrayString        strings_list;
+    std::vector<wxPoint> positions;
+    int                  n = 1;
+
+    if( aMultiLine )
+    {
+        wxStringSplit( aText, strings_list, '\n' );
+        n = strings_list.Count();
+    }
+    else
+    {
+        strings_list.Add( aText );
+    }
+
+    positions.reserve( n );
+
+    if( aMultiLine )
+    {
+#ifdef DEBUG
+        if( debugMe( aText ) )
+            std::cerr << "getLinePositions( positions, " << n << ", " << aPosition << ", "
+                      << textHeight << ", " << aVertJustify << ", " << aRotationAngle
+                      << " ) returns ";
+#endif
+        getLinePositions( positions, n, aPosition, textHeight, aHorizJustify, aVertJustify,
+                          aRotationAngle );
+#ifdef DEBUG
+        if( debugMe( aText ) )
+        {
+            for( int foo = 0; foo < n; foo++ )
+            {
+                if( foo > 0 )
+                    std::cerr << ", ";
+                std::cerr << positions[foo];
+            }
+            std::cerr << std::endl;
+        }
+#endif
+    }
+    else
+    {
+        wxPoint pt( aPosition.x, aPosition.y );
+        positions[0] = pt;
+    }
+
+    for( int i = 0; i < n; i++ )
+    {
+#ifdef DEBUG
+        if( debugMe( aText ) )
+            std::cerr << "Draw( aGal, \"" << strings_list.Item( i ) << "\", " << positions[i]
+                      << ", " << aRotationAngle << " ) i==" << i << std::endl;
+#endif
+        //drawSingleLineText( aGal, strings_list.Item( i ), positions[i], aRotationAngle );
+        Draw( aGal, strings_list.Item( i ), positions[i], aRotationAngle );
+    }
+}
+
+
+void FONT::getLinePositions( std::vector<wxPoint>& aPositions, int aLineCount,
+                             const VECTOR2D& aPosition, int aTextHeight,
+                             EDA_TEXT_HJUSTIFY_T aHorizJustify, EDA_TEXT_VJUSTIFY_T aVertJustify,
+                             double aRotationAngle ) const
+{
+    // Position of first line of the multiline text according to the
+    // center of the multiline text block
+    wxPoint pos( aPosition.x, aPosition.y );
+    // Offset to next line.
+    wxPoint offset;
+
+    offset.y = GetInterline( aTextHeight ? aTextHeight : 1 );
+
+    //VECTOR2D textSize = ComputeTextLineSize( aGal, a
+
+    if( aLineCount > 1 )
+    {
+        switch( aVertJustify )
+        {
+        case GR_TEXT_VJUSTIFY_TOP: break;
+
+        case GR_TEXT_VJUSTIFY_CENTER: pos.y -= ( aLineCount - 1 ) * offset.y / 2; break;
+
+        case GR_TEXT_VJUSTIFY_BOTTOM: pos.y -= ( aLineCount - 1 ) * offset.y; break;
+        }
+    }
+
+    // Rotate the position of the first line
+    // around the center of the multiline text block
+    wxPoint origin( aPosition.x, aPosition.y );
+    RotatePoint( &pos, origin, aRotationAngle );
+
+    // Rotate the offset lines to increase happened in the right direction
+    RotatePoint( &offset, aRotationAngle );
+
+    for( int i = 0; i < aLineCount; i++ )
+    {
+        aPositions.push_back( pos );
+        pos += offset;
+    }
 }

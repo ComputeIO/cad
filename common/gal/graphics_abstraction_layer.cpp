@@ -168,13 +168,23 @@ void GAL::ResetTextAttributes()
 
 
 void GAL::StrokeText( const wxString& aText, const VECTOR2D& aPosition, double aRotationAngle,
-                      FONT* aFont )
+                      const FONT* aFont, bool aMultilineAllowed )
 {
-    FONT* font = aFont ? aFont : FONT::GetFont();
-    font->Draw( this, aText, aPosition, aRotationAngle );
-#if 0 //STROKEFONT
-    std::cerr << "GAL::StrokeText( \"" << aText << "\", ... ) font " << font->Name() << std::endl;
+    const FONT* font = aFont ? aFont : FONT::GetFont();
+#ifdef DEBUG //STROKEFONT
+    if( !aText.substr( 0, 3 ).compare( "Foo" ) || !aText.substr( 0, 6 ).compare( "${FONT" ) )
+        std::cerr << "GAL::StrokeText( \"" << aText << "\", " << aPosition << ", " << aRotationAngle
+                  << ", ${FONT:" << font->Name() << "}, "
+                  << ( aMultilineAllowed ? "true" : "false" ) << " ) " << std::endl;
 #endif
+#ifdef FOOBAR
+    if( aEdaText )
+        font->DrawString( this, aEdaText->GetShownText(), aPosition, aRotationAngle,
+                          aEdaText->IsMultilineAllowed(), aEdaText->GetTextWidth(),
+                          aEdaText->GetTextHeight(), aEdaText->GetVertJustify() );
+    else
+#endif
+        font->DrawString( this, aText, aPosition, aRotationAngle, aMultilineAllowed );
 }
 
 

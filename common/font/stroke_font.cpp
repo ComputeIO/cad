@@ -276,6 +276,8 @@ GLYPH* STROKE_FONT::processGlyph( std::string aGlyphString, double& aGlyphWidth 
 
 bool STROKE_FONT::loadHersheyFont( const wxString& aFontName )
 {
+    // TODO combine with loadNewStrokeFont()
+
     if( aFontName.IsEmpty() )
     {
         return false;
@@ -365,7 +367,12 @@ double STROKE_FONT::GetInterline( double aGlyphHeight ) const
 {
     // Do not add the glyph thickness to the interline.  This makes bold text line-spacing
     // different from normal text, which is poor typography.
-    return ( aGlyphHeight * INTERLINE_PITCH_RATIO );
+    double ret = aGlyphHeight * INTERLINE_PITCH_RATIO;
+#ifdef DEBUG
+    std::cerr << "STROKE_FONT::GetInterline( " << aGlyphHeight << " ) const --> " << ret
+              << std::endl;
+#endif
+    return ret;
 }
 
 
@@ -388,13 +395,15 @@ BOX2D STROKE_FONT::computeBoundingBox( const GLYPH* aGLYPH, double aGlyphWidth )
 
 
 void STROKE_FONT::Draw( KIGFX::GAL* aGal, const UTF8& aText, const VECTOR2D& aPosition,
-                        double aRotationAngle )
+                        double aRotationAngle ) const
 {
     if( aText.empty() )
         return;
 
-#ifdef STROKEFONT_DEBUG
-    std::cerr << "STROKE_FONT::Draw(" << aText << ")" << std::endl;
+#ifdef DEBUG
+    if( debugMe( aText ) )
+        std::cerr << "STROKE_FONT::Draw( " << aText << ", " << aPosition << ", " << aRotationAngle
+                  << " )" << std::endl;
 #endif
 
     // Context needs to be saved before any transformations
@@ -442,6 +451,7 @@ void STROKE_FONT::Draw( KIGFX::GAL* aGal, const UTF8& aText, const VECTOR2D& aPo
     if( aGal->IsFontBold() )
         aGal->SetLineWidth( aGal->GetLineWidth() * BOLD_FACTOR );
 
+#ifdef ORIGINAL_BUT_WE_DONT_NEED_TO_SPLIT_HERE_ANYMORE
     // Split multiline strings into separate ones and draw them line by line
     size_t begin = 0;
     size_t newlinePos = aText.find( '\n' );
@@ -460,13 +470,29 @@ void STROKE_FONT::Draw( KIGFX::GAL* aGal, const UTF8& aText, const VECTOR2D& aPo
     // Draw the last (or the only one) line
     if( !aText.empty() )
         drawSingleLineText( aGal, aText.substr( begin ) );
+#else
+    drawSingleLineText( aGal, aText );
+#endif
 
     aGal->Restore();
 }
 
 
-void STROKE_FONT::drawSingleLineText( KIGFX::GAL* aGal, const UTF8& aText ) const
+#if 0
+void STROKE_FONT::DrawString( KIGFX::GAL* aGal, const EDA_TEXT* aEdaText )
 {
+}
+#endif
+
+
+void STROKE_FONT::drawSingleLineText( KIGFX::GAL* aGal, const UTF8& aText,
+                                      const VECTOR2D& aPosition, double aAngle ) const
+{
+#ifdef DEBUG
+    if( debugMe( aText ) )
+        std::cerr << "STROKE_FONT::drawSingleLineText( ..., \"" << aText << "\", " << aPosition
+                  << ", " << aAngle << " )\n";
+#endif
     double   xOffset;
     double   yOffset;
     VECTOR2D baseGlyphSize( aGal->GetGlyphSize() );

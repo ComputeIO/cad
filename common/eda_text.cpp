@@ -35,13 +35,13 @@
 #include <eda_item.h> // for EDA_ITEM
 #include <common.h>
 #include <base_units.h>
+#include <gr_text.h>
 #include <basic_gal.h>      // for BASIC_GAL, basic_gal
 #include <convert_to_biu.h> // for Mils2iu
 #include <eda_rect.h>       // for EDA_RECT
 #include <eda_text.h>       // for EDA_TEXT, TEXT_EFFECTS, GR_TEXT_VJUSTIF...
 #include <font/font.h>      // for FONT
 #include <gal/color4d.h>    // for COLOR4D, COLOR4D::BLACK
-#include <gr_text.h>        // for GRText
 #include <kicad_string.h>   // for UnescapeString
 #include <math/util.h>      // for KiROUND
 #include <math/vector2d.h>  // for VECTOR2D
@@ -280,7 +280,7 @@ wxString EDA_TEXT::ShortenedShownText() const
 int EDA_TEXT::GetInterline() const
 {
     // return KiROUND( KIGFX::STROKE_FONT::GetInterline( GetTextHeight() ) );
-    return KiROUND( basic_gal.GetFont().GetInterline( GetTextHeight() ) );
+    return KiROUND( GetFont()->GetInterline( GetTextHeight() ) );
 }
 
 
@@ -515,6 +515,7 @@ void EDA_TEXT::GetLinePositions( std::vector<wxPoint>& aPositions, int aLineCoun
         pos += offset;
     }
 }
+
 
 void EDA_TEXT::printOneLineOfText( const RENDER_SETTINGS* aSettings, const wxPoint& aOffset,
                                    COLOR4D aColor, OUTLINE_MODE aFillMode, const wxString& aText,
