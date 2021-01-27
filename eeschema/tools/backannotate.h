@@ -129,14 +129,14 @@ private:
                                const SCH_CONNECTION* aConnection, const wxString& aOldName,
                                const wxString& aNewName );
 
-    REPORTER&                    m_reporter;
+    REPORTER& m_reporter;
 
-    bool                         m_matchByReference;
-    bool                         m_processFootprints;
-    bool                         m_processValues;
-    bool                         m_processReferences;
-    bool                         m_processNetNames;
-    bool                         m_dryRun;
+    bool m_matchByReference;
+    bool m_processFootprints;
+    bool m_processValues;
+    bool m_processReferences;
+    bool m_processNetNames;
+    bool m_dryRun;
 
     PCB_FOOTPRINTS_MAP           m_pcbFootprints;
     SCH_REFERENCE_LIST           m_refs;
@@ -144,8 +144,8 @@ private:
     std::deque<CHANGELIST_ITEM>  m_changelist;
     SCH_EDIT_FRAME*              m_frame;
 
-    int                          m_changesCount;    // Number of user-level changes
-    bool                         m_appendUndo;
+    int  m_changesCount; // Number of user-level changes
+    bool m_appendUndo;
 };
 
 #endif

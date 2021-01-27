@@ -38,26 +38,26 @@ class wxCommandEvent;
 class PANEL_SETUP_CONSTRAINTS : public PANEL_SETUP_CONSTRAINTS_BASE
 {
 private:
-    PCB_EDIT_FRAME*         m_Frame;
-    BOARD_DESIGN_SETTINGS*  m_BrdSettings;
+    PCB_EDIT_FRAME*        m_Frame;
+    BOARD_DESIGN_SETTINGS* m_BrdSettings;
 
 public:
-    UNIT_BINDER             m_minClearance;
-    UNIT_BINDER             m_trackMinWidth;
-    UNIT_BINDER             m_viaMinAnnulus;
-    UNIT_BINDER             m_viaMinSize;
-    UNIT_BINDER             m_throughHoleMin;
-    UNIT_BINDER             m_uviaMinSize;
-    UNIT_BINDER             m_uviaMinDrill;
-    UNIT_BINDER             m_holeToHoleMin;
-    UNIT_BINDER             m_holeClearance;
-    UNIT_BINDER             m_edgeClearance;
-    UNIT_BINDER             m_silkClearance;
-    UNIT_BINDER             m_maxError;
+    UNIT_BINDER m_minClearance;
+    UNIT_BINDER m_trackMinWidth;
+    UNIT_BINDER m_viaMinAnnulus;
+    UNIT_BINDER m_viaMinSize;
+    UNIT_BINDER m_throughHoleMin;
+    UNIT_BINDER m_uviaMinSize;
+    UNIT_BINDER m_uviaMinDrill;
+    UNIT_BINDER m_holeToHoleMin;
+    UNIT_BINDER m_holeClearance;
+    UNIT_BINDER m_edgeClearance;
+    UNIT_BINDER m_silkClearance;
+    UNIT_BINDER m_maxError;
 
 public:
     PANEL_SETUP_CONSTRAINTS( PAGED_DIALOG* aParent, PCB_EDIT_FRAME* aFrame );
-    ~PANEL_SETUP_CONSTRAINTS( ) override { };
+    ~PANEL_SETUP_CONSTRAINTS() override{};
 
     void ImportSettingsFrom( BOARD* aBoard );
 

@@ -36,16 +36,22 @@
 PANEL_SETUP_CONSTRAINTS::PANEL_SETUP_CONSTRAINTS( PAGED_DIALOG* aParent, PCB_EDIT_FRAME* aFrame ) :
         PANEL_SETUP_CONSTRAINTS_BASE( aParent->GetTreebook() ),
         m_minClearance( aFrame, m_clearanceTitle, m_clearanceCtrl, m_clearanceUnits, true ),
-        m_trackMinWidth( aFrame, m_TrackMinWidthTitle, m_TrackMinWidthCtrl, m_TrackMinWidthUnits, true ),
-        m_viaMinAnnulus( aFrame, m_ViaMinAnnulusTitle, m_ViaMinAnnulusCtrl, m_ViaMinAnnulusUnits, true ),
+        m_trackMinWidth( aFrame, m_TrackMinWidthTitle, m_TrackMinWidthCtrl, m_TrackMinWidthUnits,
+                         true ),
+        m_viaMinAnnulus( aFrame, m_ViaMinAnnulusTitle, m_ViaMinAnnulusCtrl, m_ViaMinAnnulusUnits,
+                         true ),
         m_viaMinSize( aFrame, m_ViaMinTitle, m_SetViasMinSizeCtrl, m_ViaMinUnits, true ),
         m_throughHoleMin( aFrame, m_MinDrillTitle, m_MinDrillCtrl, m_MinDrillUnits, true ),
         m_uviaMinSize( aFrame, m_uviaMinSizeLabel, m_uviaMinSizeCtrl, m_uviaMinSizeUnits, true ),
-        m_uviaMinDrill( aFrame, m_uviaMinDrillLabel, m_uviaMinDrillCtrl, m_uviaMinDrillUnits, true ),
+        m_uviaMinDrill( aFrame, m_uviaMinDrillLabel, m_uviaMinDrillCtrl, m_uviaMinDrillUnits,
+                        true ),
         m_holeToHoleMin( aFrame, m_HoleToHoleTitle, m_SetHoleToHoleCtrl, m_HoleToHoleUnits, true ),
-        m_holeClearance( aFrame, m_HoleClearanceLabel, m_HoleClearanceCtrl, m_HoleClearanceUnits, true ),
-        m_edgeClearance( aFrame, m_EdgeClearanceLabel, m_EdgeClearanceCtrl, m_EdgeClearanceUnits, true ),
-        m_silkClearance( aFrame, m_silkClearanceLabel, m_silkClearanceCtrl, m_silkClearanceUnits, true ),
+        m_holeClearance( aFrame, m_HoleClearanceLabel, m_HoleClearanceCtrl, m_HoleClearanceUnits,
+                         true ),
+        m_edgeClearance( aFrame, m_EdgeClearanceLabel, m_EdgeClearanceCtrl, m_EdgeClearanceUnits,
+                         true ),
+        m_silkClearance( aFrame, m_silkClearanceLabel, m_silkClearanceCtrl, m_silkClearanceUnits,
+                         true ),
         m_maxError( aFrame, m_maxErrorTitle, m_maxErrorCtrl, m_maxErrorUnits, true )
 {
     m_Frame = aFrame;
@@ -76,7 +82,7 @@ bool PANEL_SETUP_CONSTRAINTS::TransferDataToWindow()
     m_minClearance.SetValue( m_BrdSettings->m_MinClearance );
     m_trackMinWidth.SetValue( m_BrdSettings->m_TrackMinWidth );
     m_viaMinAnnulus.SetValue( m_BrdSettings->m_ViasMinAnnulus );
-    m_viaMinSize.SetValue(m_BrdSettings->m_ViasMinSize );
+    m_viaMinSize.SetValue( m_BrdSettings->m_ViasMinSize );
     m_holeClearance.SetValue( m_BrdSettings->m_HoleClearance );
     m_edgeClearance.SetValue( m_BrdSettings->m_CopperEdgeClearance );
 
@@ -112,7 +118,7 @@ bool PANEL_SETUP_CONSTRAINTS::TransferDataFromWindow()
     if( !m_edgeClearance.Validate( 0, 10, EDA_UNITS::INCHES ) )
         return false;
 
-    if( !m_throughHoleMin.Validate( 2, 1000, EDA_UNITS::MILS ) )   // #107 to 1 inch
+    if( !m_throughHoleMin.Validate( 2, 1000, EDA_UNITS::MILS ) ) // #107 to 1 inch
         return false;
 
     if( !m_holeToHoleMin.Validate( 0, 10, EDA_UNITS::INCHES ) )
@@ -123,9 +129,9 @@ bool PANEL_SETUP_CONSTRAINTS::TransferDataFromWindow()
     m_BrdSettings->m_BlindBuriedViaAllowed = m_OptAllowBlindBuriedVias->GetValue();
     m_BrdSettings->m_MicroViasAllowed = m_OptAllowMicroVias->GetValue();
 
-    m_BrdSettings->m_MaxError = Clamp<int>( IU_PER_MM * MINIMUM_ERROR_SIZE_MM,
-                                            m_maxError.GetValue(),
-                                            IU_PER_MM * MAXIMUM_ERROR_SIZE_MM );
+    m_BrdSettings->m_MaxError =
+            Clamp<int>( IU_PER_MM * MINIMUM_ERROR_SIZE_MM, m_maxError.GetValue(),
+                        IU_PER_MM * MAXIMUM_ERROR_SIZE_MM );
 
     m_BrdSettings->m_ZoneFillVersion = m_rbOutlinePolygonFastest->GetValue() ? 6 : 5;
     m_BrdSettings->m_ZoneKeepExternalFillets = m_allowExternalFilletsOpt->GetValue();
@@ -193,7 +199,7 @@ void PANEL_SETUP_CONSTRAINTS::ImportSettingsFrom( BOARD* aBoard )
 
 void PANEL_SETUP_CONSTRAINTS::onChangeOutlineOpt( wxCommandEvent& event )
 {
-    wxObject* item =event.GetEventObject();
+    wxObject* item = event.GetEventObject();
 
     if( item == m_rbOutlinePolygonBestQ )
         m_rbOutlinePolygonFastest->SetValue( not m_rbOutlinePolygonBestQ->GetValue() );

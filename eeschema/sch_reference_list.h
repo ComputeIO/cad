@@ -192,9 +192,7 @@ private:
     std::vector<SCH_REFERENCE> flatList;
 
 public:
-    SCH_REFERENCE_LIST()
-    {
-    }
+    SCH_REFERENCE_LIST() {}
 
     SCH_REFERENCE& operator[]( int aIndex ) { return flatList[aIndex]; }
 

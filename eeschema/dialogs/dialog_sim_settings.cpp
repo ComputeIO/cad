@@ -314,10 +314,10 @@ void DIALOG_SIM_SETTINGS::updateDCSources( wxChar aType, wxChoice* aSource )
         }
 
         std::sort( sourcesList.begin(), sourcesList.end(),
-                [](wxString& a, wxString& b) -> bool 
-                {
-                    return a.Len() < b.Len() || b.Cmp( a ) > 0;
-                } );
+                   []( wxString& a, wxString& b ) -> bool
+                   {
+                       return a.Len() < b.Len() || b.Cmp( a ) > 0;
+                   } );
 
         if( aSource == m_dcSource2 && !m_dcEnable2->IsChecked() )
             enableSrcSelection = false;

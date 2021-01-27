@@ -1310,7 +1310,7 @@ void SCH_EDITOR_CONTROL::updatePastedInstances( const SCH_SHEET_PATH& aPastePath
 
             if( ii >= 0 )
             {
-                SCH_REFERENCE instance = m_supplementaryClipboardInstances[ ii ];
+                SCH_REFERENCE instance = m_supplementaryClipboardInstances[ii];
 
                 symbol->SetUnitSelection( &aPastePath, instance.GetUnit() );
                 symbol->SetUnit( instance.GetUnit() );

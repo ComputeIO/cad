@@ -136,7 +136,7 @@ public:
         double maxVis = parent::AbsVisibleMaxValue();
 
         wxString suffix;
-        int power, digits = 0;
+        int      power, digits = 0;
         int constexpr DIGITS = 3;
 
         getSISuffix( maxVis, m_unit, power, suffix );
@@ -287,14 +287,11 @@ void CURSOR::UpdateReference()
 
 
 SIM_PLOT_PANEL::SIM_PLOT_PANEL( wxString aCommand, wxWindow* parent, SIM_PLOT_FRAME* aMainFrame,
-        wxWindowID id, const wxPoint& pos, const wxSize& size, long style, const wxString& name )
-        : SIM_PANEL_BASE( aCommand, parent, id, pos, size, style, name ),
-          m_colorIdx( 0 ),
-          m_axis_x( nullptr ),
-          m_axis_y1( nullptr ),
-          m_axis_y2( nullptr ),
-          m_dotted_cp( false ),
-          m_masterFrame( aMainFrame )
+                                wxWindowID id, const wxPoint& pos, const wxSize& size, long style,
+                                const wxString& name ) :
+        SIM_PANEL_BASE( aCommand, parent, id, pos, size, style, name ),
+        m_colorIdx( 0 ), m_axis_x( nullptr ), m_axis_y1( nullptr ), m_axis_y2( nullptr ),
+        m_dotted_cp( false ), m_masterFrame( aMainFrame )
 {
     m_sizer   = new wxBoxSizer( wxVERTICAL );
     m_plotWin = new mpWindow( this, wxID_ANY, pos, size, style );
@@ -315,9 +312,7 @@ SIM_PLOT_PANEL::SIM_PLOT_PANEL( wxString aCommand, wxWindow* parent, SIM_PLOT_FR
             m_axis_y2->SetMasterScale( m_axis_y1 );
             break;
 
-        case ST_DC:
-            prepareDCAxes();
-            break;
+        case ST_DC: prepareDCAxes(); break;
 
         case ST_NOISE:
             m_axis_x = new LOG_SCALE<mpScaleXLog>( _( "Frequency" ), wxT( "Hz" ), mpALIGN_BOTTOM );

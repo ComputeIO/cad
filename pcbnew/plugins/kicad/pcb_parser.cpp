@@ -1607,19 +1607,19 @@ void PCB_PARSER::parseSetup()
             break;
 
         case T_user_via:
-            {
-                int viaSize = parseBoardUnits( "user via size" );
-                int viaDrill = parseBoardUnits( "user via drill" );
+        {
+            int viaSize = parseBoardUnits( "user via size" );
+            int viaDrill = parseBoardUnits( "user via drill" );
 
-                // Make room for the netclass value
-                if( designSettings.m_ViasDimensionsList.empty() )
-                    designSettings.m_ViasDimensionsList.emplace_back( VIA_DIMENSION( 0, 0 ) );
+            // Make room for the netclass value
+            if( designSettings.m_ViasDimensionsList.empty() )
+                designSettings.m_ViasDimensionsList.emplace_back( VIA_DIMENSION( 0, 0 ) );
 
-                designSettings.m_ViasDimensionsList.emplace_back( VIA_DIMENSION( viaSize, viaDrill ) );
-                m_board->m_LegacyDesignSettingsLoaded = true;
-                NeedRIGHT();
-            }
-            break;
+            designSettings.m_ViasDimensionsList.emplace_back( VIA_DIMENSION( viaSize, viaDrill ) );
+            m_board->m_LegacyDesignSettingsLoaded = true;
+            NeedRIGHT();
+        }
+        break;
 
         case T_uvia_size:
             defaultNetClass->SetuViaDiameter( parseBoardUnits( T_uvia_size ) );

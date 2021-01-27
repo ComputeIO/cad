@@ -543,8 +543,8 @@ void LIB_PART::Plot( PLOTTER* aPlotter, int aUnit, int aConvert, const wxPoint& 
         if( aConvert && item.m_convert && ( item.m_convert != aConvert ) )
             continue;
 
-        item.Plot( aPlotter, aOffset, fill && ( item.m_fill != FILL_TYPE::FILLED_WITH_BG_BODYCOLOR ),
-                   aTransform );
+        item.Plot( aPlotter, aOffset,
+                   fill && ( item.m_fill != FILL_TYPE::FILLED_WITH_BG_BODYCOLOR ), aTransform );
     }
 }
 
@@ -662,7 +662,7 @@ void LIB_PART::GetPins( LIB_PINS& aList, int aUnit, int aConvert )
     {
         // Unit filtering:
         if( aUnit && item.m_unit && ( item.m_unit != aUnit ) )
-             continue;
+            continue;
 
         // Shape filtering:
         if( aConvert && item.m_convert && ( item.m_convert != aConvert ) )
@@ -765,10 +765,7 @@ const EDA_RECT LIB_PART::GetUnitBoundingBox( int aUnit, int aConvert ) const
 
     for( const LIB_ITEM& item : m_drawings )
     {
-        if( item.m_unit > 0
-                && m_unitCount > 1
-                && aUnit > 0
-                && aUnit != item.m_unit )
+        if( item.m_unit > 0 && m_unitCount > 1 && aUnit > 0 && aUnit != item.m_unit )
         {
             continue;
         }
@@ -810,10 +807,7 @@ const EDA_RECT LIB_PART::GetBodyBoundingBox( int aUnit, int aConvert ) const
 
     for( const LIB_ITEM& item : m_drawings )
     {
-        if( item.m_unit > 0
-                && m_unitCount > 1
-                && aUnit > 0
-                && aUnit != item.m_unit )
+        if( item.m_unit > 0 && m_unitCount > 1 && aUnit > 0 && aUnit != item.m_unit )
         {
             continue;
         }
@@ -1016,8 +1010,8 @@ LIB_ITEM* LIB_PART::LocateDrawItem( int aUnit, int aConvert,
     for( LIB_ITEM& item : m_drawings )
     {
         if( ( aUnit && item.m_unit && aUnit != item.m_unit )
-                || ( aConvert && item.m_convert && aConvert != item.m_convert )
-                || ( item.Type() != aType && aType != TYPE_NOT_INIT ) )
+            || ( aConvert && item.m_convert && aConvert != item.m_convert )
+            || ( item.Type() != aType && aType != TYPE_NOT_INIT ) )
         {
             continue;
         }

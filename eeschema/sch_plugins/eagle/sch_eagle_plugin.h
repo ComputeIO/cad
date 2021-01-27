@@ -128,20 +128,19 @@ private:
     SCH_JUNCTION*       loadJunction( wxXmlNode* aJunction );
     SCH_TEXT*           loadPlainText( wxXmlNode* aSchText );
 
-    bool            loadSymbol( wxXmlNode* aSymbolNode, std::unique_ptr<LIB_PART>& aPart,
-                                EDEVICE* aDevice, int aGateNumber, const wxString& aGateName );
-    LIB_CIRCLE*     loadSymbolCircle( std::unique_ptr<LIB_PART>& aPart, wxXmlNode* aCircleNode,
-                                      int aGateNumber );
-    LIB_RECTANGLE*  loadSymbolRectangle( std::unique_ptr<LIB_PART>& aPart, wxXmlNode* aRectNode,
-                                         int aGateNumber );
-    LIB_POLYLINE*   loadSymbolPolyLine( std::unique_ptr<LIB_PART>& aPart, wxXmlNode* aPolygonNode,
+    bool loadSymbol( wxXmlNode* aSymbolNode, std::unique_ptr<LIB_PART>& aPart, EDEVICE* aDevice,
+                     int aGateNumber, const wxString& aGateName );
+    LIB_CIRCLE*    loadSymbolCircle( std::unique_ptr<LIB_PART>& aPart, wxXmlNode* aCircleNode,
+                                     int aGateNumber );
+    LIB_RECTANGLE* loadSymbolRectangle( std::unique_ptr<LIB_PART>& aPart, wxXmlNode* aRectNode,
                                         int aGateNumber );
-    LIB_ITEM*       loadSymbolWire( std::unique_ptr<LIB_PART>& aPart, wxXmlNode* aWireNode,
-                                    int aGateNumber );
-    LIB_PIN*        loadPin( std::unique_ptr<LIB_PART>& aPart, wxXmlNode*, EPIN* epin,
-                             int aGateNumber );
-    LIB_TEXT*       loadSymbolText( std::unique_ptr<LIB_PART>& aPart, wxXmlNode* aLibText,
-                                    int aGateNumber );
+    LIB_POLYLINE*  loadSymbolPolyLine( std::unique_ptr<LIB_PART>& aPart, wxXmlNode* aPolygonNode,
+                                       int aGateNumber );
+    LIB_ITEM*      loadSymbolWire( std::unique_ptr<LIB_PART>& aPart, wxXmlNode* aWireNode,
+                                   int aGateNumber );
+    LIB_PIN*  loadPin( std::unique_ptr<LIB_PART>& aPart, wxXmlNode*, EPIN* epin, int aGateNumber );
+    LIB_TEXT* loadSymbolText( std::unique_ptr<LIB_PART>& aPart, wxXmlNode* aLibText,
+                              int aGateNumber );
 
     void            loadTextAttributes( EDA_TEXT* aText, const ETEXT& aAttribs ) const;
     void            loadFieldAttributes( LIB_FIELD* aField, const LIB_TEXT* aText ) const;
@@ -193,10 +192,7 @@ private:
     // (named power pins in Eagle).
     struct EAGLE_MISSING_CMP
     {
-        EAGLE_MISSING_CMP( const SCH_COMPONENT* aComponent = nullptr )
-            : cmp( aComponent )
-        {
-        }
+        EAGLE_MISSING_CMP( const SCH_COMPONENT* aComponent = nullptr ) : cmp( aComponent ) {}
 
         ///< Link to the parent component
         const SCH_COMPONENT* cmp;

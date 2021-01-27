@@ -190,8 +190,8 @@ void DIALOG_PRINT_GERBVIEW::createLeftPanel()
 
     // Select/Unselect all buttons
     m_buttonSelectAll = new wxButton( sbLayersSizer->GetStaticBox(), wxID_ANY, _( "Select all" ) );
-    m_buttonDeselectAll = new wxButton( sbLayersSizer->GetStaticBox(), wxID_ANY,
-                                        _( "Deselect all" ) );
+    m_buttonDeselectAll =
+            new wxButton( sbLayersSizer->GetStaticBox(), wxID_ANY, _( "Deselect all" ) );
 
     m_buttonSelectAll->Connect( wxEVT_COMMAND_BUTTON_CLICKED,
             wxCommandEventHandler( DIALOG_PRINT_GERBVIEW::onSelectAllClick ), NULL, this );

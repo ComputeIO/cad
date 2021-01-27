@@ -621,11 +621,9 @@ TOOL_ACTION PCB_ACTIONS::placeTarget( "pcbnew.EditorControl.placeTarget",
         _( "Add Layer Alignment Target" ), _( "Add a layer alignment target" ),
         add_pcb_target_xpm, AF_ACTIVATE );
 
-TOOL_ACTION PCB_ACTIONS::placeFootprint( "pcbnew.EditorControl.placeFootprint",
-        AS_GLOBAL,
-        'O', LEGACY_HK_NAME( "Add Footprint" ),
-        _( "Add Footprint" ), _( "Add a footprint" ),
-        module_xpm, AF_ACTIVATE );
+TOOL_ACTION PCB_ACTIONS::placeFootprint( "pcbnew.EditorControl.placeFootprint", AS_GLOBAL, 'O',
+                                         LEGACY_HK_NAME( "Add Footprint" ), _( "Add Footprint" ),
+                                         _( "Add a footprint" ), module_xpm, AF_ACTIVATE );
 
 TOOL_ACTION PCB_ACTIONS::drillOrigin( "pcbnew.EditorControl.drillOrigin",
         AS_GLOBAL, 0, "",
@@ -1189,10 +1187,10 @@ TOOL_ACTION PCB_ACTIONS::selectSameSheet( "pcbnew.InteractiveSelection.SelectSam
         _( "Selects all footprints and tracks in the same schematic sheet" ),
         select_same_sheet_xpm );
 
-TOOL_ACTION PCB_ACTIONS::filterSelection( "pcbnew.InteractiveSelection.FilterSelection",
-        AS_GLOBAL, 0, "",
-        _( "Filter Selected Items..." ), _( "Remove items from the selection by type" ),
-        filter_xpm );
+TOOL_ACTION PCB_ACTIONS::filterSelection( "pcbnew.InteractiveSelection.FilterSelection", AS_GLOBAL,
+                                          0, "", _( "Filter Selected Items..." ),
+                                          _( "Remove items from the selection by type" ),
+                                          filter_xpm );
 
 
 // ZONE_FILLER_TOOL

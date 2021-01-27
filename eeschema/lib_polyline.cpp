@@ -39,7 +39,7 @@
 LIB_POLYLINE::LIB_POLYLINE( LIB_PART* aParent ) :
     LIB_ITEM( LIB_POLYLINE_T, aParent )
 {
-    m_fill  = FILL_TYPE::NO_FILL;
+    m_fill = FILL_TYPE::NO_FILL;
     m_Width = 0;
     m_isFillable = true;
 }

@@ -272,7 +272,7 @@ void SCH_COMPONENT::UpdatePins()
 
     for( const std::unique_ptr<SCH_PIN>& pin : m_pins )
     {
-        pinUuidMap[ pin->GetNumber() ] = pin->m_Uuid;
+        pinUuidMap[pin->GetNumber()] = pin->m_Uuid;
 
         if( !pin->GetAlt().IsEmpty() )
             altPinMap[ pin->GetNumber() ] = pin->GetAlt();

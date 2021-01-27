@@ -1324,8 +1324,7 @@ void SIM_PLOT_FRAME::onSettings( wxCommandEvent& event )
 
         // If it is a new simulation type, open a new plot
         // For the DC sim, check if sweep source type has changed (char 4 will contain 'v', 'i', 'r' or 't'
-        if( !plotPanelWindow 
-            || ( plotPanelWindow && plotPanelWindow->GetType() != newSimType )
+        if( !plotPanelWindow || ( plotPanelWindow && plotPanelWindow->GetType() != newSimType )
             || ( newSimType == ST_DC
                  && oldCommand.Lower().GetChar( 4 ) != newCommand.Lower().GetChar( 4 ) ) )
         {

@@ -50,7 +50,7 @@ LIB_ARC::LIB_ARC( LIB_PART*      aParent ) : LIB_ITEM( LIB_ARC_T, aParent )
     m_t1            = 0;
     m_t2            = 0;
     m_Width         = 0;
-    m_fill          = FILL_TYPE::NO_FILL;
+    m_fill = FILL_TYPE::NO_FILL;
     m_isFillable    = true;
     m_editState     = 0;
 }

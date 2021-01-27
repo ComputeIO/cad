@@ -36,7 +36,6 @@
 #include <kiid.h>
 
 
-
 enum class SEARCH_RESULT
 {
     QUIT,
@@ -50,15 +49,15 @@ enum class SEARCH_RESULT
 enum FIND_REPLACE_FLAGS
 {
     // The last wxFindReplaceFlag enum is wxFR_MATCHCASE = 0x4.
-    FR_CURRENT_SHEET_ONLY = wxFR_MATCHCASE << 1,   // Search the current sheet only.
-    FR_SEARCH_ALL_FIELDS  = wxFR_MATCHCASE << 2,   // Search hidden fields too.
-    FR_SEARCH_ALL_PINS    = wxFR_MATCHCASE << 3,   // Search pin name and number.
-    FR_MATCH_WILDCARD     = wxFR_MATCHCASE << 4,   // Use simple wild card matching (* & ?).
-    FR_SEARCH_WRAP        = wxFR_MATCHCASE << 5,   // Wrap around the start or end of search.
-    FR_SEARCH_REPLACE     = wxFR_MATCHCASE << 7,   // Search for a item that has replaceable text.
-    FR_REPLACE_ITEM_FOUND = wxFR_MATCHCASE << 8,   // Indicates an item with replaceable text has
-                                                   // been found.
-    FR_REPLACE_REFERENCES = wxFR_MATCHCASE << 9    // Don't replace in references.
+    FR_CURRENT_SHEET_ONLY = wxFR_MATCHCASE << 1, // Search the current sheet only.
+    FR_SEARCH_ALL_FIELDS = wxFR_MATCHCASE << 2,  // Search hidden fields too.
+    FR_SEARCH_ALL_PINS = wxFR_MATCHCASE << 3,    // Search pin name and number.
+    FR_MATCH_WILDCARD = wxFR_MATCHCASE << 4,     // Use simple wild card matching (* & ?).
+    FR_SEARCH_WRAP = wxFR_MATCHCASE << 5,        // Wrap around the start or end of search.
+    FR_SEARCH_REPLACE = wxFR_MATCHCASE << 7,     // Search for a item that has replaceable text.
+    FR_REPLACE_ITEM_FOUND = wxFR_MATCHCASE << 8, // Indicates an item with replaceable text has
+                                                 // been found.
+    FR_REPLACE_REFERENCES = wxFR_MATCHCASE << 9  // Don't replace in references.
 };
 
 
@@ -88,7 +87,7 @@ class MSG_PANEL_ITEM;
  * @return A #SEARCH_RESULT type #SEARCH_QUIT if the iterator function is to
  *          stop the scan, else #SEARCH_CONTINUE;
  */
-typedef std::function< SEARCH_RESULT ( EDA_ITEM* aItem, void* aTestData ) > INSPECTOR_FUNC;
+typedef std::function<SEARCH_RESULT( EDA_ITEM* aItem, void* aTestData )> INSPECTOR_FUNC;
 
 ///< std::function passed to nested users by ref, avoids copying std::function.
 typedef const INSPECTOR_FUNC& INSPECTOR;
@@ -99,42 +98,45 @@ typedef const INSPECTOR_FUNC& INSPECTOR;
 //
 // NB: DO NOT ADD FLAGS ANYWHERE BUT AT THE END: THE FLAG-SET IS STORED AS AN INTEGER IN FILES.
 //
-#define IS_CHANGED     (1 << 0)    ///< Item was edited, and modified
-#define IS_LINKED      (1 << 1)    ///< Used in calculation to mark linked items (temporary use)
-#define IN_EDIT        (1 << 2)    ///< Item currently edited
-#define IS_MOVED       (1 << 3)    ///< Item being moved
-#define IS_NEW         (1 << 4)    ///< New item, just created
-#define IS_RESIZED     (1 << 5)    ///< Item being resized
-#define IS_DRAGGED     (1 << 6)    ///< Item being dragged
-#define IS_DELETED     (1 << 7)
-#define IS_WIRE_IMAGE  (1 << 8)    ///< Item to be drawn as wireframe while editing
-#define STARTPOINT     (1 << 9)    ///< When a line is selected, these flags indicate which
-#define ENDPOINT       (1 << 10)   ///< ends.  (Used to support dragging.)
-#define SELECTED       (1 << 11)
-#define TEMP_SELECTED  (1 << 12)   ///< flag indicating that the structure has already selected
-#define STRUCT_DELETED (1 << 13)   ///< flag indication structures to be erased
-#define CANDIDATE      (1 << 14)   ///< flag indicating that the structure is connected
-#define SKIP_STRUCT    (1 << 15)   ///< flag indicating that the structure should be ignored
-#define DO_NOT_DRAW    (1 << 16)   ///< Used to disable draw function
-#define IS_PASTED      (1 << 17)   ///< Modifier on IS_NEW which indicates it came from clipboard
-#define LOCKED         (1 << 18)   ///< Pcbnew: locked from movement and deletion
-                                   ///< NB: stored in m_status flags, NOT m_flags.
-#define UNUSED         (1 << 19)
-#define MALFORMED_F_COURTYARD (1 << 20)
-#define MALFORMED_B_COURTYARD (1 << 21)
+#define IS_CHANGED ( 1 << 0 ) ///< Item was edited, and modified
+#define IS_LINKED ( 1 << 1 )  ///< Used in calculation to mark linked items (temporary use)
+#define IN_EDIT ( 1 << 2 )    ///< Item currently edited
+#define IS_MOVED ( 1 << 3 )   ///< Item being moved
+#define IS_NEW ( 1 << 4 )     ///< New item, just created
+#define IS_RESIZED ( 1 << 5 ) ///< Item being resized
+#define IS_DRAGGED ( 1 << 6 ) ///< Item being dragged
+#define IS_DELETED ( 1 << 7 )
+#define IS_WIRE_IMAGE ( 1 << 8 ) ///< Item to be drawn as wireframe while editing
+#define STARTPOINT ( 1 << 9 )    ///< When a line is selected, these flags indicate which
+#define ENDPOINT ( 1 << 10 )     ///< ends.  (Used to support dragging.)
+#define SELECTED ( 1 << 11 )
+#define TEMP_SELECTED ( 1 << 12 )  ///< flag indicating that the structure has already selected
+#define STRUCT_DELETED ( 1 << 13 ) ///< flag indication structures to be erased
+#define CANDIDATE ( 1 << 14 )      ///< flag indicating that the structure is connected
+#define SKIP_STRUCT ( 1 << 15 )    ///< flag indicating that the structure should be ignored
+#define DO_NOT_DRAW ( 1 << 16 )    ///< Used to disable draw function
+#define IS_PASTED ( 1 << 17 )      ///< Modifier on IS_NEW which indicates it came from clipboard
+#define LOCKED                                                                                     \
+    ( 1                                                                                            \
+      << 18 ) ///< Pcbnew: locked from movement and deletion                                     \
+                ///< NB: stored in m_status flags, NOT m_flags.
+#define UNUSED ( 1 << 19 )
+#define MALFORMED_F_COURTYARD ( 1 << 20 )
+#define MALFORMED_B_COURTYARD ( 1 << 21 )
 #define MALFORMED_COURTYARDS ( MALFORMED_F_COURTYARD | MALFORMED_B_COURTYARD )
-#define BEGIN_ONPAD    (1 << 22)   ///< Pcbnew: flag set for track segment starting on a pad
-#define END_ONPAD      (1 << 23)   ///< Pcbnew: flag set for track segment ending on a pad
-#define HOLE_PROXY     (1 << 24)   ///< Indicates the BOARD_ITEM is a proxy for its hole
-#define IS_ROLLOVER    (1 << 25)   ///< Rollover active.  Used for hyperlink highlighting.
-#define BRIGHTENED     (1 << 26)   ///< item is drawn with a bright contour
+#define BEGIN_ONPAD ( 1 << 22 ) ///< Pcbnew: flag set for track segment starting on a pad
+#define END_ONPAD ( 1 << 23 )   ///< Pcbnew: flag set for track segment ending on a pad
+#define HOLE_PROXY ( 1 << 24 )  ///< Indicates the BOARD_ITEM is a proxy for its hole
+#define IS_ROLLOVER ( 1 << 25 ) ///< Rollover active.  Used for hyperlink highlighting.
+#define BRIGHTENED ( 1 << 26 )  ///< item is drawn with a bright contour
 
-#define DP_COUPLED     (1 << 27)   ///< item is coupled with another item making a differential pair
-                                   ///< (applies to segments only)
-#define UR_TRANSIENT   (1 << 28)   ///< indicates the item is owned by the undo/redo stack
+#define DP_COUPLED                                                                                 \
+    ( 1 << 27 )                  ///< item is coupled with another item making a differential pair \
+                                 ///< (applies to segments only)
+#define UR_TRANSIENT ( 1 << 28 ) ///< indicates the item is owned by the undo/redo stack
 
-#define IS_DANGLING    (1 << 29)   ///< indicates a pin is dangling
-#define ENTERED        (1 << 30)   ///< indicates a group has been entered
+#define IS_DANGLING ( 1 << 29 ) ///< indicates a pin is dangling
+#define ENTERED ( 1 << 30 )     ///< indicates a group has been entered
 
 // WARNING: if you add flags, you'll probably need to adjust the masks in GetEditFlags() and
 // ClearTempFlags().
@@ -149,7 +151,7 @@ typedef unsigned STATUS_FLAGS;
 class EDA_ITEM : public KIGFX::VIEW_ITEM
 {
 public:
-    virtual ~EDA_ITEM() { };
+    virtual ~EDA_ITEM(){};
 
     /**
      * Returns the type of object.
@@ -161,8 +163,8 @@ public:
      */
     inline KICAD_T Type() const { return m_structType; }
 
-    EDA_ITEM* GetParent() const { return m_parent; }
-    virtual void SetParent( EDA_ITEM* aParent )   { m_parent = aParent; }
+    EDA_ITEM*    GetParent() const { return m_parent; }
+    virtual void SetParent( EDA_ITEM* aParent ) { m_parent = aParent; }
 
     inline bool IsModified() const { return m_flags & IS_CHANGED; }
     inline bool IsNew() const { return m_flags & IS_NEW; }
@@ -183,10 +185,7 @@ public:
 
     void SetModified();
 
-    int GetState( int type ) const
-    {
-        return m_status & type;
-    }
+    int GetState( int type ) const { return m_status & type; }
 
     void SetState( int type, int state )
     {
@@ -196,32 +195,29 @@ public:
             m_status &= ~type;
     }
 
-    STATUS_FLAGS GetStatus() const           { return m_status; }
-    void SetStatus( STATUS_FLAGS aStatus )   { m_status = aStatus; }
+    STATUS_FLAGS GetStatus() const { return m_status; }
+    void         SetStatus( STATUS_FLAGS aStatus ) { m_status = aStatus; }
 
-    void SetFlags( STATUS_FLAGS aMask ) { m_flags |= aMask; }
-    void ClearFlags( STATUS_FLAGS aMask = EDA_ITEM_ALL_FLAGS ) { m_flags &= ~aMask; }
+    void         SetFlags( STATUS_FLAGS aMask ) { m_flags |= aMask; }
+    void         ClearFlags( STATUS_FLAGS aMask = EDA_ITEM_ALL_FLAGS ) { m_flags &= ~aMask; }
     STATUS_FLAGS GetFlags() const { return m_flags; }
     bool         HasFlag( STATUS_FLAGS aFlag ) const { return ( m_flags & aFlag ) == aFlag; }
 
     STATUS_FLAGS GetEditFlags() const
     {
-        constexpr int mask = ( IS_NEW | IS_PASTED | IS_MOVED | IS_RESIZED | IS_DRAGGED |
-                               IS_WIRE_IMAGE | STRUCT_DELETED );
+        constexpr int mask = ( IS_NEW | IS_PASTED | IS_MOVED | IS_RESIZED | IS_DRAGGED
+                               | IS_WIRE_IMAGE | STRUCT_DELETED );
 
         return m_flags & mask;
     }
 
     void ClearTempFlags()
     {
-        ClearFlags( STARTPOINT | ENDPOINT | CANDIDATE | TEMP_SELECTED | IS_LINKED | SKIP_STRUCT |
-                    DO_NOT_DRAW );
+        ClearFlags( STARTPOINT | ENDPOINT | CANDIDATE | TEMP_SELECTED | IS_LINKED | SKIP_STRUCT
+                    | DO_NOT_DRAW );
     }
 
-    void ClearEditFlags()
-    {
-        ClearFlags( GetEditFlags() );
-    }
+    void ClearEditFlags() { ClearFlags( GetEditFlags() ); }
 
     /**
      * Check whether the item is one of the listed types.
@@ -260,9 +256,7 @@ public:
      *
      * @param aList is the list to populate.
      */
-    virtual void GetMsgPanelInfo( EDA_DRAW_FRAME* aFrame, std::vector<MSG_PANEL_ITEM>& aList )
-    {
-    }
+    virtual void GetMsgPanelInfo( EDA_DRAW_FRAME* aFrame, std::vector<MSG_PANEL_ITEM>& aList ) {}
 
     /**
      * Test if \a aPosition is contained within or on the bounding box of an item.
@@ -273,7 +267,7 @@ public:
      */
     virtual bool HitTest( const wxPoint& aPosition, int aAccuracy = 0 ) const
     {
-        return false;   // derived classes should override this function
+        return false; // derived classes should override this function
     }
 
     /**
@@ -286,7 +280,7 @@ public:
      */
     virtual bool HitTest( const EDA_RECT& aRect, bool aContained, int aAccuracy = 0 ) const
     {
-        return false;   // derived classes should override this function
+        return false; // derived classes should override this function
     }
 
     /**
@@ -299,7 +293,7 @@ public:
     virtual const EDA_RECT GetBoundingBox() const;
 
     virtual wxPoint GetPosition() const { return wxPoint(); }
-    virtual void SetPosition( const wxPoint& aPos ) {};
+    virtual void    SetPosition( const wxPoint& aPos ){};
 
     /**
      * Similar to GetPosition, but allows items to return their visual center rather
@@ -340,16 +334,14 @@ public:
     /**
      * This changes first parameter to avoid the DList and use the main queue instead.
      */
-    template< class T >
-    static SEARCH_RESULT IterateForward( std::deque<T>&  aList,
-                                         INSPECTOR       inspector,
-                                         void*           testData,
-                                         const KICAD_T   scanTypes[] )
+    template <class T>
+    static SEARCH_RESULT IterateForward( std::deque<T>& aList, INSPECTOR inspector, void* testData,
+                                         const KICAD_T scanTypes[] )
     {
         for( auto it : aList )
         {
             if( static_cast<EDA_ITEM*>( it )->Visit( inspector, testData, scanTypes )
-                    == SEARCH_RESULT::QUIT )
+                == SEARCH_RESULT::QUIT )
                 return SEARCH_RESULT::QUIT;
         }
 
@@ -360,13 +352,13 @@ public:
      * Change first parameter to avoid the DList and use std::vector instead.
      */
     template <class T>
-    static SEARCH_RESULT IterateForward(
-            std::vector<T>& aList, INSPECTOR inspector, void* testData, const KICAD_T scanTypes[] )
+    static SEARCH_RESULT IterateForward( std::vector<T>& aList, INSPECTOR inspector, void* testData,
+                                         const KICAD_T scanTypes[] )
     {
         for( auto it : aList )
         {
             if( static_cast<EDA_ITEM*>( it )->Visit( inspector, testData, scanTypes )
-                    == SEARCH_RESULT::QUIT )
+                == SEARCH_RESULT::QUIT )
                 return SEARCH_RESULT::QUIT;
         }
 
@@ -478,7 +470,7 @@ public:
 
     virtual void ViewGetLayers( int aLayers[], int& aCount ) const override;
 
-#if defined(DEBUG)
+#if defined( DEBUG )
 
     /**
      * Output the object tree, currently for debugging only.
@@ -491,7 +483,7 @@ public:
      */
     virtual void Show( int nestLevel, std::ostream& os ) const = 0;
 
-    void ShowDummy( std::ostream& os ) const;  ///< call this if you are a lazy developer
+    void ShowDummy( std::ostream& os ) const; ///< call this if you are a lazy developer
 
     /**
      * Output nested space for pretty indenting.
@@ -521,20 +513,20 @@ protected:
     bool Matches( const wxString& aText, const wxFindReplaceData& aSearchData ) const;
 
 public:
-    const KIID  m_Uuid;
+    const KIID m_Uuid;
 
 protected:
-    STATUS_FLAGS  m_status;
-    EDA_ITEM*     m_parent;       ///< Linked list: Link (parent struct)
-    bool          m_forceVisible;
-    STATUS_FLAGS  m_flags;
+    STATUS_FLAGS m_status;
+    EDA_ITEM*    m_parent; ///< Linked list: Link (parent struct)
+    bool         m_forceVisible;
+    STATUS_FLAGS m_flags;
 
 private:
     /**
      * Run time identification, _keep private_ so it can never be changed after a ctor
      * sets it.  See comment near SetType() regarding virtual functions.
      */
-    KICAD_T       m_structType;
+    KICAD_T m_structType;
 };
 
 
@@ -544,7 +536,10 @@ private:
  * @param aItem EDA_ITEM to clone.
  * @return Clone of \a aItem.
  */
-inline EDA_ITEM* new_clone( const EDA_ITEM& aItem ) { return aItem.Clone(); }
+inline EDA_ITEM* new_clone( const EDA_ITEM& aItem )
+{
+    return aItem.Clone();
+}
 
 
 /**
@@ -553,6 +548,6 @@ inline EDA_ITEM* new_clone( const EDA_ITEM& aItem ) { return aItem.Clone(); }
  * The standard C++ container was chosen so the pointer can be removed  from a list without
  * it being destroyed.
  */
-typedef std::vector< EDA_ITEM* > EDA_ITEMS;
+typedef std::vector<EDA_ITEM*> EDA_ITEMS;
 
 #endif // EDA_ITEM_H

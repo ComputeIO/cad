@@ -1284,9 +1284,7 @@ void PCB_IO::format( const PAD* aPad, int aNestLevel ) const
         THROW_IO_ERROR( wxString::Format( "unknown pad property: %d", aPad->GetProperty() ) );
     }
 
-    m_out->Print( aNestLevel, "(pad %s %s %s",
-                  m_out->Quotew( aPad->GetName() ).c_str(),
-                  type,
+    m_out->Print( aNestLevel, "(pad %s %s %s", m_out->Quotew( aPad->GetName() ).c_str(), type,
                   shape );
     m_out->Print( 0, " (at %s", FormatInternalUnits( aPad->GetPos0() ).c_str() );
 
@@ -1382,7 +1380,7 @@ void PCB_IO::format( const PAD* aPad, int aNestLevel ) const
     {
         StrPrintf( &output, " (net %d %s)", m_mapping->Translate( aPad->GetNetCode() ),
                    m_out->Quotew( aPad->GetNetname() ).c_str() );
-        }
+    }
 
     // Pin functions and types are closely related to nets, so if CTL_OMIT_NETS is set, omit
     // them as well (for instance when saved from library editor).
@@ -1396,8 +1394,7 @@ void PCB_IO::format( const PAD* aPad, int aNestLevel ) const
 
         if( !aPad->GetPinType().IsEmpty() )
         {
-            StrPrintf( &output, " (pintype %s)",
-                       m_out->Quotew( aPad->GetPinType() ).c_str() );
+            StrPrintf( &output, " (pintype %s)", m_out->Quotew( aPad->GetPinType() ).c_str() );
         }
     }
 

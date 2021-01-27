@@ -126,7 +126,7 @@ public:
      */
     void MoveAB( const wxPoint& aMoveVector );
 
-     /**
+    /**
       * Move this object.
       *
       * @param aMoveVector the move vector for this object, in XY gerber axis.
@@ -248,28 +248,28 @@ public:
     ///< @copydoc EDA_ITEM::GetMenuImage()
     BITMAP_DEF GetMenuImage() const override;
 
-    bool               m_UnitsMetric;       // store here the gerber units (inch/mm).  Used
-                                            // only to calculate aperture macros shapes sizes
-    int                m_Shape;             // Shape and type of this gerber item
-    wxPoint            m_Start;             // Line or arc start point or position of the shape
-                                            // for flashed items
-    wxPoint            m_End;               // Line or arc end point
-    wxPoint            m_ArcCentre;         // for arcs only: Center of arc
-    SHAPE_POLY_SET     m_Polygon;           // Polygon shape data (G36 to G37 coordinates)
-                                            // or for complex shapes which are converted to polygon
-    wxSize             m_Size;              // Flashed shapes: size of the shape
-                                            // Lines : m_Size.x = m_Size.y = line width
-    bool               m_Flashed;           // True for flashed items
-    int                m_DCode;             // DCode used to draw this item.
-                                            // Allowed values are >= 10. 0 when unknown
-                                            // values 0 to 9 can be used for special purposes
-                                            // Regions (polygons) do not use DCode,
-                                            // so it is set to 0
-    wxString           m_AperFunction;      // the aperture function set by a %TA.AperFunction, xxx
-                                            // (stores the xxx value). Used for regions that do
-                                            // not have a attached DCode, but
-                                            // have a TA.AperFunction defined
-    GERBER_FILE_IMAGE* m_GerberImageFile;   /* Gerber file image source of this item
+    bool m_UnitsMetric;                   // store here the gerber units (inch/mm).  Used
+                                          // only to calculate aperture macros shapes sizes
+    int     m_Shape;                      // Shape and type of this gerber item
+    wxPoint m_Start;                      // Line or arc start point or position of the shape
+                                          // for flashed items
+    wxPoint        m_End;                 // Line or arc end point
+    wxPoint        m_ArcCentre;           // for arcs only: Center of arc
+    SHAPE_POLY_SET m_Polygon;             // Polygon shape data (G36 to G37 coordinates)
+                                          // or for complex shapes which are converted to polygon
+    wxSize m_Size;                        // Flashed shapes: size of the shape
+                                          // Lines : m_Size.x = m_Size.y = line width
+    bool m_Flashed;                       // True for flashed items
+    int  m_DCode;                         // DCode used to draw this item.
+                                          // Allowed values are >= 10. 0 when unknown
+                                          // values 0 to 9 can be used for special purposes
+                                          // Regions (polygons) do not use DCode,
+                                          // so it is set to 0
+    wxString m_AperFunction;              // the aperture function set by a %TA.AperFunction, xxx
+                                          // (stores the xxx value). Used for regions that do
+                                          // not have a attached DCode, but
+                                          // have a TA.AperFunction defined
+    GERBER_FILE_IMAGE* m_GerberImageFile; /* Gerber file image source of this item
                                              * Note: some params stored in this class are common
                                              * to the whole gerber file (i.e) the whole graphic
                                              * layer and some can change when reading the file,
@@ -281,16 +281,16 @@ private:
     // These values are used to draw this item, according to gerber layers parameters
     // Because they can change inside a gerber image, they are stored here
     // for each item
-    bool        m_LayerNegative;            // true = item in negative Layer
-    bool        m_swapAxis;                 // false if A = X, B = Y; true if A =Y, B = Y
-    bool        m_mirrorA;                  // true: mirror / axis A
-    bool        m_mirrorB;                  // true: mirror / ax's B
-    wxRealPoint m_drawScale;                // A and B scaling factor
-    wxPoint     m_layerOffset;              // Offset for A and B axis, from OF parameter
-    double      m_lyrRotation;              // Fine rotation, from OR parameter, in degrees
-    GBR_NETLIST_METADATA m_netAttributes;   ///< the string given by a %TO attribute set in aperture
-                                            ///< (dcode). Stored in each item, because %TO is
-                                            ///< a dynamic object attribute
+    bool                 m_LayerNegative; // true = item in negative Layer
+    bool                 m_swapAxis;      // false if A = X, B = Y; true if A =Y, B = Y
+    bool                 m_mirrorA;       // true: mirror / axis A
+    bool                 m_mirrorB;       // true: mirror / ax's B
+    wxRealPoint          m_drawScale;     // A and B scaling factor
+    wxPoint              m_layerOffset;   // Offset for A and B axis, from OF parameter
+    double               m_lyrRotation;   // Fine rotation, from OR parameter, in degrees
+    GBR_NETLIST_METADATA m_netAttributes; ///< the string given by a %TO attribute set in aperture
+                                          ///< (dcode). Stored in each item, because %TO is
+                                          ///< a dynamic object attribute
 };
 
 

@@ -51,10 +51,10 @@ enum DIFF_VAR_GRID_COLUMNS
 };
 
 
-PANEL_SETUP_TRACKS_AND_VIAS::PANEL_SETUP_TRACKS_AND_VIAS( PAGED_DIALOG* aParent,
-                                                          PCB_EDIT_FRAME* aFrame,
-                                                          PANEL_SETUP_CONSTRAINTS* aConstraintsPanel ) :
-    PANEL_SETUP_TRACKS_AND_VIAS_BASE( aParent->GetTreebook() )
+PANEL_SETUP_TRACKS_AND_VIAS::PANEL_SETUP_TRACKS_AND_VIAS(
+        PAGED_DIALOG* aParent, PCB_EDIT_FRAME* aFrame,
+        PANEL_SETUP_CONSTRAINTS* aConstraintsPanel ) :
+        PANEL_SETUP_TRACKS_AND_VIAS_BASE( aParent->GetTreebook() )
 {
     m_Parent = aParent;
     m_Frame = aFrame;

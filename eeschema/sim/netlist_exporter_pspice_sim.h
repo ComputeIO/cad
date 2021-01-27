@@ -148,7 +148,6 @@ protected:
     void writeDirectives( OUTPUTFORMATTER* aFormatter, unsigned aCtl ) const override;
 
 private:
-
     ///< Custom simulation command (has priority over the schematic sheet simulation commands)
     wxString m_simCommand;
 };
