@@ -613,7 +613,7 @@ void SCH_SEXPR_PLUGIN::Format( SCH_SHEET* aSheet )
         {
         case SCH_COMPONENT_T:
             m_out->Print( 0, "\n" );
-            saveSymbol( static_cast<SCH_COMPONENT*>( item ), 1 );
+            saveSymbol( static_cast<SCH_COMPONENT*>( item ), nullptr, 1 );
             break;
 
         case SCH_BITMAP_T: saveBitmap( static_cast<SCH_BITMAP*>( item ), 1 ); break;
@@ -742,7 +742,8 @@ void SCH_SEXPR_PLUGIN::Format( SCH_SHEET* aSheet )
 }
 
 
-void SCH_SEXPR_PLUGIN::Format( EE_SELECTION* aSelection, OUTPUTFORMATTER* aFormatter )
+void SCH_SEXPR_PLUGIN::Format( EE_SELECTION* aSelection, SCH_SHEET_PATH* aSheetPath,
+                               OUTPUTFORMATTER* aFormatter )
 {
     wxCHECK( aSelection && aFormatter, /* void */ );
 
@@ -795,7 +796,9 @@ void SCH_SEXPR_PLUGIN::Format( EE_SELECTION* aSelection, OUTPUTFORMATTER* aForma
 
         switch( item->Type() )
         {
-        case SCH_COMPONENT_T: saveSymbol( static_cast<SCH_COMPONENT*>( item ), 0 ); break;
+        case SCH_COMPONENT_T:
+            saveSymbol( static_cast<SCH_COMPONENT*>( item ), aSheetPath, 0 );
+            break;
 
         case SCH_BITMAP_T: saveBitmap( static_cast<SCH_BITMAP*>( item ), 0 ); break;
 
@@ -823,7 +826,8 @@ void SCH_SEXPR_PLUGIN::Format( EE_SELECTION* aSelection, OUTPUTFORMATTER* aForma
 }
 
 
-void SCH_SEXPR_PLUGIN::saveSymbol( SCH_COMPONENT* aSymbol, int aNestLevel )
+void SCH_SEXPR_PLUGIN::saveSymbol( SCH_COMPONENT* aSymbol, SCH_SHEET_PATH* aSheetPath,
+                                   int aNestLevel )
 {
     wxCHECK_RET( aSymbol != nullptr && m_out != nullptr, "" );
 
@@ -858,8 +862,10 @@ void SCH_SEXPR_PLUGIN::saveSymbol( SCH_COMPONENT* aSymbol, int aNestLevel )
     m_out->Print( aNestLevel, "(symbol" );
 
     if( !aSymbol->UseLibIdLookup() )
+    {
         m_out->Print( 0, " (lib_name %s)",
                       m_out->Quotew( aSymbol->GetSchSymbolLibraryName() ).c_str() );
+    }
 
     m_out->Print( 0, " (lib_id %s) (at %s %s %s)",
                   m_out->Quotew( aSymbol->GetLibId().Format().wx_str() ).c_str(),
@@ -883,8 +889,14 @@ void SCH_SEXPR_PLUGIN::saveSymbol( SCH_COMPONENT* aSymbol, int aNestLevel )
         m_out->Print( 0, ")" );
     }
 
+    int unit = -1;
+
     if( !( aSymbol->GetInstanceReferences().size() > 1 ) )
-        m_out->Print( 0, " (unit %d)", aSymbol->GetUnit() );
+        unit = aSymbol->GetUnit();
+    else if( aSheetPath != nullptr )
+        unit = aSymbol->GetUnitSelection( aSheetPath );
+    if( unit >= 0 )
+        m_out->Print( 0, " (unit %d)", unit );
 
     if( aSymbol->GetConvert() == LIB_ITEM::LIB_CONVERT::DEMORGAN )
         m_out->Print( 0, " (convert %d)", aSymbol->GetConvert() );
@@ -896,9 +908,7 @@ void SCH_SEXPR_PLUGIN::saveSymbol( SCH_COMPONENT* aSymbol, int aNestLevel )
 
     m_out->Print( 0, "\n" );
 
-    // @todo Convert to full UUID if current UUID is a legacy time stamp.
-    m_out->Print( aNestLevel + 1, "(uuid %s)\n",
-                  m_out->Quotew( aSymbol->m_Uuid.AsString() ).c_str() );
+    m_out->Print( aNestLevel + 1, "(uuid %s)\n", TO_UTF8( aSymbol->m_Uuid.AsString() ) );
 
     m_fieldId = MANDATORY_FIELDS;
 
@@ -909,10 +919,17 @@ void SCH_SEXPR_PLUGIN::saveSymbol( SCH_COMPONENT* aSymbol, int aNestLevel )
 
     for( const SCH_PIN* pin : aSymbol->GetPins() )
     {
-        if( !pin->GetAlt().IsEmpty() )
+        if( pin->GetAlt().IsEmpty() )
         {
-            m_out->Print( aNestLevel + 1, "(pin %s (alternate %s))\n",
+            m_out->Print( aNestLevel + 1, "(pin %s (uuid %s))\n",
                           m_out->Quotew( pin->GetNumber() ).c_str(),
+                          TO_UTF8( pin->m_Uuid.AsString() ) );
+        }
+        else
+        {
+            m_out->Print( aNestLevel + 1, "(pin %s (uuid %s) (alternate %s))\n",
+                          m_out->Quotew( pin->GetNumber() ).c_str(),
+                          TO_UTF8( pin->m_Uuid.AsString() ),
                           m_out->Quotew( pin->GetAlt() ).c_str() );
         }
     }
@@ -982,6 +999,9 @@ void SCH_SEXPR_PLUGIN::saveBitmap( SCH_BITMAP* aBitmap, int aNestLevel )
         m_out->Print( 0, " (scale %g)", aBitmap->GetImage()->GetScale() );
 
     m_out->Print( 0, "\n" );
+
+    m_out->Print( aNestLevel + 1, "(uuid %s)\n", TO_UTF8( aBitmap->m_Uuid.AsString() ) );
+
     m_out->Print( aNestLevel + 1, "(data" );
 
     wxMemoryOutputStream stream;
@@ -1054,7 +1074,14 @@ void SCH_SEXPR_PLUGIN::saveSheet( SCH_SHEET* aSheet, int aNestLevel )
                       FormatAngle( getSheetPinAngle( pin->GetEdge() ) * 10.0 ).c_str() );
 
         pin->Format( m_out, aNestLevel + 1, 0 );
+<<<<<<< HEAD
         m_out->Print( aNestLevel + 1, ")\n" ); // Closes pin token with font effects.
+=======
+
+        m_out->Print( aNestLevel + 2, "(uuid %s)\n", TO_UTF8( pin->m_Uuid.AsString() ) );
+
+        m_out->Print( aNestLevel + 1, ")\n" ); // Closes pin token.
+>>>>>>> upstream/master
     }
 
     m_out->Print( aNestLevel, ")\n" ); // Closes sheet token.
@@ -1080,9 +1107,10 @@ void SCH_SEXPR_PLUGIN::saveNoConnect( SCH_NO_CONNECT* aNoConnect, int aNestLevel
 {
     wxCHECK_RET( aNoConnect != nullptr && m_out != nullptr, "" );
 
-    m_out->Print( aNestLevel, "(no_connect (at %s %s))\n",
+    m_out->Print( aNestLevel, "(no_connect (at %s %s) (uuid %s))\n",
                   FormatInternalUnits( aNoConnect->GetPosition().x ).c_str(),
-                  FormatInternalUnits( aNoConnect->GetPosition().y ).c_str() );
+                  FormatInternalUnits( aNoConnect->GetPosition().y ).c_str(),
+                  TO_UTF8( aNoConnect->m_Uuid.AsString() ) );
 }
 
 
@@ -1109,6 +1137,9 @@ void SCH_SEXPR_PLUGIN::saveBusEntry( SCH_BUS_ENTRY_BASE* aBusEntry, int aNestLev
         formatStroke( m_out, aNestLevel + 1, aBusEntry->GetStroke() );
 
         m_out->Print( 0, "\n" );
+
+        m_out->Print( aNestLevel + 1, "(uuid %s)\n", TO_UTF8( aBusEntry->m_Uuid.AsString() ) );
+
         m_out->Print( aNestLevel, ")\n" );
     }
 }
@@ -1146,6 +1177,9 @@ void SCH_SEXPR_PLUGIN::saveLine( SCH_LINE* aLine, int aNestLevel )
 
     formatStroke( m_out, aNestLevel + 1, line_stroke );
     m_out->Print( 0, "\n" );
+
+    m_out->Print( aNestLevel + 1, "(uuid %s)\n", TO_UTF8( aLine->m_Uuid.AsString() ) );
+
     m_out->Print( aNestLevel, ")\n" );
 }
 
@@ -1189,15 +1223,24 @@ void SCH_SEXPR_PLUGIN::saveText( SCH_TEXT* aText, int aNestLevel )
                       FormatAngle( aText->GetTextAngle() ).c_str() );
     }
 
+    m_out->Print( 0, "\n" );
+    aText->Format( m_out, aNestLevel, 0 );
+
+    m_out->Print( aNestLevel + 1, "(uuid %s)\n", TO_UTF8( aText->m_Uuid.AsString() ) );
+
     if( ( aText->Type() == SCH_GLOBAL_LABEL_T ) )
     {
         SCH_GLOBALLABEL* label = static_cast<SCH_GLOBALLABEL*>( aText );
         saveField( label->GetIntersheetRefs(), aNestLevel + 1 );
     }
 
+<<<<<<< HEAD
     m_out->Print( 0, "\n" );
     aText->Format( m_out, aNestLevel, 0 );
     m_out->Print( aNestLevel, ")\n" ); // Closes text token.
+=======
+    m_out->Print( aNestLevel, ")\n" );         // Closes text token.
+>>>>>>> upstream/master
 }
 
 

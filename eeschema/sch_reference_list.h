@@ -38,11 +38,11 @@
 #include <map>
 
 /**
- * SCH_REFERENCE
- * is used as a helper to define a symbol's reference designator in a schematic.  This helper
- * is required in a complex hierarchy because a symbol can be used more than once and its
- * reference depends on the sheet path.  This class is used to flatten the schematic hierarchy
- * for annotation, net list generation, and bill of material generation.
+ * A helper to define a symbol's reference designator in a schematic.
+ *
+ * This helper is required in a complex hierarchy because a symbol can be used more than once
+ * and its reference depends on the sheet path.  This class is used to flatten the schematic
+ * hierarchy for annotation, net list generation, and bill of material generation.
  */
 class SCH_REFERENCE
 {
@@ -104,17 +104,16 @@ public:
     }
 
     /**
-     * Function Annotate
-     * updates the annotation of the symbol according the the current object state.
+     * Update the annotation of the symbol according the the current object state.
      */
     void Annotate();
 
     /**
-     * Function Split
-     * attempts to split the reference designator into a name (U) and number (1).  If the
-     * last character is '?' or not a digit, the reference is tagged as not annotated.  For
-     * sybmols with multiple parts per package that are not already annotated, sets m_unit to
-     * a max value (0x7FFFFFFF).
+     * Attempt to split the reference designator into a name (U) and number (1).
+     *
+     * If the last character is '?' or not a digit, the reference is tagged as not annotated.
+     * For symbols with multiple parts per package that are not already annotated, sets m_unit
+     * to a max value (0x7FFFFFFF).
      */
     void Split();
 
@@ -124,7 +123,7 @@ public:
     void        SetRefStr( const std::string& aReference ) { m_ref = aReference; }
     const char* GetRefStr() const { return m_ref.c_str(); }
 
-    ///> Return reference name with unit altogether
+    ///< Return reference name with unit altogether
     wxString GetFullRef()
     {
         if( GetSymbol()->GetUnitCount() > 1 )
@@ -159,8 +158,7 @@ public:
     }
 
     /**
-     * Function IsSameInstance
-     * returns whether this reference refers to the same symbol instance (symbol and sheet) as
+     * Return whether this reference refers to the same symbol instance (symbol and sheet) as
      * another.
      */
     bool IsSameInstance( const SCH_REFERENCE& other ) const
@@ -175,7 +173,7 @@ public:
 
 
 /**
- * Defines a standard error handler for annotation errors.
+ * Define a standard error handler for annotation errors.
  */
 typedef std::function<void( ERCE_T aType, const wxString& aMsg, SCH_REFERENCE* aItemA,
                             SCH_REFERENCE* aItemB )>
@@ -183,8 +181,7 @@ typedef std::function<void( ERCE_T aType, const wxString& aMsg, SCH_REFERENCE* a
 
 
 /**
- * SCH_REFERENCE_LIST
- * is used to create a flattened list of symbols because in a complex hierarchy, a symbol
+ * Container to create a flattened list of symbols because in a complex hierarchy, a symbol
  * can be used more than once and its reference designator is dependent on the sheet path for
  * the same symbol.  This flattened list is used for netlist generation, BOM generation, and
  * schematic annotation.
@@ -195,9 +192,9 @@ private:
     std::vector<SCH_REFERENCE> flatList;
 
 public:
-    /** Constructor
-     */
-    SCH_REFERENCE_LIST() {}
+    SCH_REFERENCE_LIST()
+    {
+    }
 
     SCH_REFERENCE& operator[]( int aIndex ) { return flatList[aIndex]; }
 
@@ -210,8 +207,7 @@ public:
     void AddItem( SCH_REFERENCE& aItem ) { flatList.push_back( aItem ); }
 
     /**
-     * Function RemoveItem
-     * removes an item from the list of references.
+     * Remove an item from the list of references.
      *
      * @param aIndex is the index of the item to be removed.
      */
@@ -222,13 +218,12 @@ public:
      * sorting depends on what we want to do, there are many sort functions.
      * Note:
      *    When creating BOM, symbols are fully annotated.  References are something like U3,
-     *    U5 or R4, R8.  When annotating,  some or all suymbols are not annotated, i.e. ref is
+     *    U5 or R4, R8.  When annotating,  some or all symbols are not annotated, i.e. ref is
      *    only U or R, with no number.
      */
 
     /**
-     * Function SplitReferences
-     * attempts to split all reference designators into a name (U) and number (1).  If the
+     * Attempt to split all reference designators into a name (U) and number (1).  If the
      * last character is '?' or not a digit, the reference is tagged as not annotated.  For
      * symbols with multiple parts per package that are not already annotated, set m_unit to
      * a max value (0x7FFFFFFF).
@@ -241,10 +236,11 @@ public:
     }
 
     /**
-     * function UpdateAnnotation
-     * Updates the symbol references for the schematic project (or the current sheet).
-     * Note: this function does not calculate the reference numbers stored in m_numRef so it
-     * must be called after calculation of new reference numbers
+     * Update the symbol references for the schematic project (or the current sheet).
+     *
+     * @note This function does not calculate the reference numbers stored in m_numRef so it
+     *       must be called after calculation of new reference numbers.
+     *
      * @see SCH_REFERENCE::Annotate()
      */
     void UpdateAnnotation()
@@ -255,8 +251,8 @@ public:
     }
 
     /**
-     * Function Annotate
-     * set the reference designators in the list that have not been annotated.
+     * Set the reference designators in the list that have not been annotated.
+     *
      * @param aUseSheetNum Set to true to start annotation for each sheet at the sheet number
      *                     times \a aSheetIntervalId.  Otherwise annotate incrementally.
      * @param aSheetIntervalId The per sheet reference designator multiplier.
@@ -275,8 +271,7 @@ public:
                    SCH_MULTI_UNIT_REFERENCE_MAP aLockedUnitMap );
 
     /**
-     * Function CheckAnnotation
-     * check for annotations errors.
+     * Check for annotations errors.
      * <p>
      * The following annotation error conditions are tested:
      * <ul>
@@ -292,8 +287,7 @@ public:
     int CheckAnnotation( ANNOTATION_ERROR_HANDLER aErrorHandler );
 
     /**
-     * Function SortByXCoordinate
-     * sorts the list of references by X position.
+     * Sort the list of references by X position.
      * <p>
      * Symbols are sorted as follows:
      * <ul>
@@ -308,8 +302,7 @@ public:
     void SortByXCoordinate() { sort( flatList.begin(), flatList.end(), sortByXPosition ); }
 
     /**
-     * Function SortByYCoordinate
-     * sorts the list of references by Y position.
+     * Sort the list of references by Y position.
      * <p>
      * Symbols are sorted as follows:
      * <ul>
@@ -324,15 +317,14 @@ public:
     void SortByYCoordinate() { sort( flatList.begin(), flatList.end(), sortByYPosition ); }
 
     /**
-     * Function SortByTimeStamp
-     * sort the flat list by Time Stamp (sheet path + timestamp).
+     * Sort the flat list by Time Stamp (sheet path + timestamp).
+     *
      * Useful to detect duplicate Time Stamps
      */
     void SortByTimeStamp() { sort( flatList.begin(), flatList.end(), sortByTimeStamp ); }
 
     /**
-     * Function SortByRefAndValue
-     * sorts the list of references by value.
+     * Sort the list of references by value.
      * <p>
      * Symbols are sorted in the following order:
      * <ul>
@@ -348,8 +340,7 @@ public:
     void SortByRefAndValue() { sort( flatList.begin(), flatList.end(), sortByRefAndValue ); }
 
     /**
-     * Function SortByReferenceOnly
-     * sorts the list of references by reference.
+     * Sort the list of references by reference.
      * <p>
      * Symbols are sorted in the following order:
      * <ul>
@@ -361,15 +352,14 @@ public:
     void SortByReferenceOnly() { sort( flatList.begin(), flatList.end(), sortByReferenceOnly ); }
 
     /**
-     * searches the list for a symbol with a given reference.
-     * @param aPath
-     * @return
+     * Search the list for a symbol with a given reference.
      */
     int FindRef( const wxString& aPath ) const;
 
     /**
-     * searches the sorted list of symbols for a another symbol with the same reference and a
+     * Search the sorted list of symbols for a another symbol with the same reference and a
      * given part unit.  Use this method to manage symbols with multiple parts per package.
+     *
      * @param aIndex = index in aSymbolsList for of given SCH_REFERENCE item to test.
      * @param aUnit = the given unit number to search
      * @return index in aSymbolsList if found or -1 if not found
@@ -377,16 +367,17 @@ public:
     int FindUnit( size_t aIndex, int aUnit );
 
     /**
-     * searches the list for a symbol with the given KIID path
+     * Search the list for a symbol with the given KIID path.
+     *
      * @param aPath path to search
      * @return index in aSymbolsList if found or -1 if not found
      */
     int FindRefByPath( const wxString& aPath ) const;
 
     /**
-     * Function GetRefsInUse
-     * adds all the reference designator numbers greater than \a aMinRefId to \a aIdList
+     * Add all the reference designator numbers greater than \a aMinRefId to \a aIdList
      * skipping the reference at \a aIndex.
+     *
      * @param aIndex = the current symbol's index to use for reference prefix filtering.
      * @param aIdList = the buffer to fill
      * @param aMinRefId = the min id value to store. all values < aMinRefId are ignored
@@ -394,8 +385,7 @@ public:
     void GetRefsInUse( int aIndex, std::vector<int>& aIdList, int aMinRefId );
 
     /**
-     * Function GetLastReference
-     * returns the last used (greatest) reference number in the reference list for the prefix
+     * Return the last used (greatest) reference number in the reference list for the prefix
      * used by the symbol pointed to by \a aIndex.  The symbol list must be sorted.
      *
      * @param aIndex The index of the reference item used for the search pattern.
@@ -419,19 +409,14 @@ public:
 #endif
 
     /**
-     * Function Shorthand
-     * Returns a shorthand string representing all the references in the list.  For instance,
+     * Return a shorthand string representing all the references in the list.  For instance,
      * "R1, R2, R4 - R7, U1"
-     * @param aList
      */
     static wxString Shorthand( std::vector<SCH_REFERENCE> aList );
 
     friend class BACK_ANNOTATION;
 
 private:
-    /* sort functions used to sort flatList
-    */
-
     static bool sortByRefAndValue( const SCH_REFERENCE& item1, const SCH_REFERENCE& item2 );
 
     static bool sortByXPosition( const SCH_REFERENCE& item1, const SCH_REFERENCE& item2 );
@@ -443,11 +428,12 @@ private:
     static bool sortByReferenceOnly( const SCH_REFERENCE& item1, const SCH_REFERENCE& item2 );
 
     /**
-     * Function CreateFirstFreeRefId
-     * searches for the first free reference number in \a aListId of reference numbers in use.
+     * Search for the first free reference number in \a aListId of reference numbers in use.
+     *
      * This function just searches for a hole in a list of incremented numbers, this list must
      * be sorted by increasing values and each value can be stored only once.  The new value
      * is added to the list.
+     *
      * @see BuildRefIdInUseList to prepare this list
      * @param aIdList The buffer that contains the reference numbers in use.
      * @param aFirstValue The first expected free value

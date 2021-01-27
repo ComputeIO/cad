@@ -5,11 +5,11 @@
 // PLEASE DO *NOT* EDIT THIS FILE!
 ///////////////////////////////////////////////////////////////////////////
 
-#include "panel_setup_feature_constraints_base.h"
+#include "panel_setup_constraints_base.h"
 
 ///////////////////////////////////////////////////////////////////////////
 
-PANEL_SETUP_FEATURE_CONSTRAINTS_BASE::PANEL_SETUP_FEATURE_CONSTRAINTS_BASE( wxWindow* parent, wxWindowID id, const wxPoint& pos, const wxSize& size, long style, const wxString& name ) : wxPanel( parent, id, pos, size, style, name )
+PANEL_SETUP_CONSTRAINTS_BASE::PANEL_SETUP_CONSTRAINTS_BASE( wxWindow* parent, wxWindowID id, const wxPoint& pos, const wxSize& size, long style, const wxString& name ) : wxPanel( parent, id, pos, size, style, name )
 {
 	wxBoxSizer* bMainSizer;
 	bMainSizer = new wxBoxSizer( wxHORIZONTAL );
@@ -41,19 +41,14 @@ PANEL_SETUP_FEATURE_CONSTRAINTS_BASE::PANEL_SETUP_FEATURE_CONSTRAINTS_BASE( wxWi
 
 	sbFeatureRules->Add( fgSizerViaOpt, 0, wxEXPAND|wxTOP, 5 );
 
-
-	sbFeatureRules->Add( 0, 5, 0, wxEXPAND|wxTOP|wxBOTTOM, 5 );
-
 	wxBoxSizer* bSizerArcToPoly;
 	bSizerArcToPoly = new wxBoxSizer( wxVERTICAL );
 
 	m_staticline2 = new wxStaticLine( this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxLI_HORIZONTAL );
-	bSizerArcToPoly->Add( m_staticline2, 0, wxEXPAND | wxALL, 2 );
+	bSizerArcToPoly->Add( m_staticline2, 0, wxEXPAND|wxTOP|wxBOTTOM, 15 );
 
 	m_stCircleToPolyOpt = new wxStaticText( this, wxID_ANY, _("Arc/circle approximated by segments"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_stCircleToPolyOpt->Wrap( -1 );
-	m_stCircleToPolyOpt->SetFont( wxFont( wxNORMAL_FONT->GetPointSize(), wxFONTFAMILY_DEFAULT, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL, false, wxEmptyString ) );
-
 	bSizerArcToPoly->Add( m_stCircleToPolyOpt, 0, wxTOP|wxRIGHT|wxLEFT, 5 );
 
 	wxFlexGridSizer* fgSizer2;
@@ -65,7 +60,7 @@ PANEL_SETUP_FEATURE_CONSTRAINTS_BASE::PANEL_SETUP_FEATURE_CONSTRAINTS_BASE( wxWi
 
 	fgSizer2->Add( 15, 0, 0, 0, 5 );
 
-	m_maxErrorTitle = new wxStaticText( this, wxID_ANY, _("Maximum deviation:"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_maxErrorTitle = new wxStaticText( this, wxID_ANY, _("Max allowed deviation:"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_maxErrorTitle->Wrap( -1 );
 	m_maxErrorTitle->SetToolTip( _("This is the maximum distance between a circle and the polygonal shape that approximate it.\nThe error max defines the number of segments of this polygon.") );
 
@@ -81,20 +76,9 @@ PANEL_SETUP_FEATURE_CONSTRAINTS_BASE::PANEL_SETUP_FEATURE_CONSTRAINTS_BASE( wxWi
 
 	bSizerArcToPoly->Add( fgSizer2, 0, wxEXPAND|wxBOTTOM, 5 );
 
-	wxBoxSizer* bSizer8;
-	bSizer8 = new wxBoxSizer( wxHORIZONTAL );
-
-	m_bitmapInfo = new wxStaticBitmap( this, wxID_ANY, wxArtProvider::GetBitmap( wxART_INFORMATION, wxART_OTHER ), wxDefaultPosition, wxDefaultSize, 0 );
-	bSizer8->Add( m_bitmapInfo, 0, wxALIGN_CENTER_VERTICAL|wxRIGHT|wxLEFT, 5 );
-
-	m_stCircleToPolyWarning = new wxStaticText( this, wxID_ANY, _("Value < %s  can be time consuming when \nfilling zones."), wxDefaultPosition, wxDefaultSize, 0 );
+	m_stCircleToPolyWarning = new wxStaticText( this, wxID_ANY, _("Note: zone filling can be slow when < %s."), wxDefaultPosition, wxDefaultSize, 0 );
 	m_stCircleToPolyWarning->Wrap( -1 );
-	m_stCircleToPolyWarning->SetFont( wxFont( wxNORMAL_FONT->GetPointSize(), wxFONTFAMILY_DEFAULT, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL, false, wxEmptyString ) );
-
-	bSizer8->Add( m_stCircleToPolyWarning, 0, wxALL|wxALIGN_CENTER_VERTICAL, 5 );
-
-
-	bSizerArcToPoly->Add( bSizer8, 1, wxEXPAND, 5 );
+	bSizerArcToPoly->Add( m_stCircleToPolyWarning, 0, wxALIGN_CENTER_VERTICAL|wxRIGHT|wxLEFT, 5 );
 
 
 	sbFeatureRules->Add( bSizerArcToPoly, 0, wxEXPAND|wxTOP, 5 );
@@ -102,12 +86,10 @@ PANEL_SETUP_FEATURE_CONSTRAINTS_BASE::PANEL_SETUP_FEATURE_CONSTRAINTS_BASE( wxWi
 	m_bSizerPolygonFillOption = new wxBoxSizer( wxVERTICAL );
 
 	m_staticline1 = new wxStaticLine( this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxLI_HORIZONTAL );
-	m_bSizerPolygonFillOption->Add( m_staticline1, 0, wxEXPAND | wxALL, 2 );
+	m_bSizerPolygonFillOption->Add( m_staticline1, 0, wxEXPAND|wxTOP|wxBOTTOM, 15 );
 
 	m_stZoneFilledPolysOpt = new wxStaticText( this, wxID_ANY, _("Zone fill strategy"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_stZoneFilledPolysOpt->Wrap( -1 );
-	m_stZoneFilledPolysOpt->SetFont( wxFont( wxNORMAL_FONT->GetPointSize(), wxFONTFAMILY_DEFAULT, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL, false, wxEmptyString ) );
-
 	m_bSizerPolygonFillOption->Add( m_stZoneFilledPolysOpt, 0, wxALL, 5 );
 
 	wxBoxSizer* bSizer5;
@@ -128,7 +110,7 @@ PANEL_SETUP_FEATURE_CONSTRAINTS_BASE::PANEL_SETUP_FEATURE_CONSTRAINTS_BASE( wxWi
 	m_rbOutlinePolygonFastest->SetValue( true );
 	m_rbOutlinePolygonFastest->SetToolTip( _("Better performance, exact export fidelity, and more complete filling near higher-priority zones.") );
 
-	bSizerOutlinesOpts->Add( m_rbOutlinePolygonFastest, 0, wxALL, 4 );
+	bSizerOutlinesOpts->Add( m_rbOutlinePolygonFastest, 0, wxBOTTOM|wxRIGHT|wxLEFT, 4 );
 
 
 	bSizer5->Add( bSizerOutlinesOpts, 1, wxEXPAND, 5 );
@@ -421,14 +403,14 @@ PANEL_SETUP_FEATURE_CONSTRAINTS_BASE::PANEL_SETUP_FEATURE_CONSTRAINTS_BASE( wxWi
 	bMainSizer->Fit( this );
 
 	// Connect Events
-	m_rbOutlinePolygonBestQ->Connect( wxEVT_COMMAND_RADIOBUTTON_SELECTED, wxCommandEventHandler( PANEL_SETUP_FEATURE_CONSTRAINTS_BASE::onChangeOutlineOpt ), NULL, this );
-	m_rbOutlinePolygonFastest->Connect( wxEVT_COMMAND_RADIOBUTTON_SELECTED, wxCommandEventHandler( PANEL_SETUP_FEATURE_CONSTRAINTS_BASE::onChangeOutlineOpt ), NULL, this );
+	m_rbOutlinePolygonBestQ->Connect( wxEVT_COMMAND_RADIOBUTTON_SELECTED, wxCommandEventHandler( PANEL_SETUP_CONSTRAINTS_BASE::onChangeOutlineOpt ), NULL, this );
+	m_rbOutlinePolygonFastest->Connect( wxEVT_COMMAND_RADIOBUTTON_SELECTED, wxCommandEventHandler( PANEL_SETUP_CONSTRAINTS_BASE::onChangeOutlineOpt ), NULL, this );
 }
 
-PANEL_SETUP_FEATURE_CONSTRAINTS_BASE::~PANEL_SETUP_FEATURE_CONSTRAINTS_BASE()
+PANEL_SETUP_CONSTRAINTS_BASE::~PANEL_SETUP_CONSTRAINTS_BASE()
 {
 	// Disconnect Events
-	m_rbOutlinePolygonBestQ->Disconnect( wxEVT_COMMAND_RADIOBUTTON_SELECTED, wxCommandEventHandler( PANEL_SETUP_FEATURE_CONSTRAINTS_BASE::onChangeOutlineOpt ), NULL, this );
-	m_rbOutlinePolygonFastest->Disconnect( wxEVT_COMMAND_RADIOBUTTON_SELECTED, wxCommandEventHandler( PANEL_SETUP_FEATURE_CONSTRAINTS_BASE::onChangeOutlineOpt ), NULL, this );
+	m_rbOutlinePolygonBestQ->Disconnect( wxEVT_COMMAND_RADIOBUTTON_SELECTED, wxCommandEventHandler( PANEL_SETUP_CONSTRAINTS_BASE::onChangeOutlineOpt ), NULL, this );
+	m_rbOutlinePolygonFastest->Disconnect( wxEVT_COMMAND_RADIOBUTTON_SELECTED, wxCommandEventHandler( PANEL_SETUP_CONSTRAINTS_BASE::onChangeOutlineOpt ), NULL, this );
 
 }

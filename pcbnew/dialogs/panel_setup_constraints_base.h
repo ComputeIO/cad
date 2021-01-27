@@ -31,9 +31,9 @@
 ///////////////////////////////////////////////////////////////////////////
 
 ///////////////////////////////////////////////////////////////////////////////
-/// Class PANEL_SETUP_FEATURE_CONSTRAINTS_BASE
+/// Class PANEL_SETUP_CONSTRAINTS_BASE
 ///////////////////////////////////////////////////////////////////////////////
-class PANEL_SETUP_FEATURE_CONSTRAINTS_BASE : public wxPanel
+class PANEL_SETUP_CONSTRAINTS_BASE : public wxPanel
 {
 	private:
 
@@ -48,7 +48,6 @@ class PANEL_SETUP_FEATURE_CONSTRAINTS_BASE : public wxPanel
 		wxStaticText* m_maxErrorTitle;
 		wxTextCtrl* m_maxErrorCtrl;
 		wxStaticText* m_maxErrorUnits;
-		wxStaticBitmap* m_bitmapInfo;
 		wxStaticText* m_stCircleToPolyWarning;
 		wxBoxSizer* m_bSizerPolygonFillOption;
 		wxStaticLine* m_staticline1;
@@ -124,8 +123,8 @@ class PANEL_SETUP_FEATURE_CONSTRAINTS_BASE : public wxPanel
 
 	public:
 
-		PANEL_SETUP_FEATURE_CONSTRAINTS_BASE( wxWindow* parent, wxWindowID id = wxID_ANY, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( -1,-1 ), long style = wxTAB_TRAVERSAL, const wxString& name = wxEmptyString );
-		~PANEL_SETUP_FEATURE_CONSTRAINTS_BASE();
+		PANEL_SETUP_CONSTRAINTS_BASE( wxWindow* parent, wxWindowID id = wxID_ANY, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( -1,-1 ), long style = wxTAB_TRAVERSAL, const wxString& name = wxEmptyString );
+		~PANEL_SETUP_CONSTRAINTS_BASE();
 
 };
 

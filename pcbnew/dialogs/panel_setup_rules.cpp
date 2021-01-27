@@ -22,6 +22,7 @@
  */
 
 #include <bitmaps.h>
+#include <confirm.h>
 #include <widgets/paged_dialog.h>
 #include <pcb_edit_frame.h>
 #include <pcb_expr_evaluator.h>
@@ -56,8 +57,8 @@ PANEL_SETUP_RULES::PANEL_SETUP_RULES( PAGED_DIALOG* aParent, PCB_EDIT_FRAME* aFr
     m_compileButton->SetBitmap( KiBitmap( drc_xpm ) );
 
     m_textEditor->Bind( wxEVT_STC_CHARADDED, &PANEL_SETUP_RULES::onScintillaCharAdded, this );
-    m_textEditor->Bind( wxEVT_STC_AUTOCOMP_CHAR_DELETED, &PANEL_SETUP_RULES::onScintillaCharAdded,
-                        this );
+    m_textEditor->Bind( wxEVT_STC_AUTOCOMP_CHAR_DELETED, &PANEL_SETUP_RULES::onScintillaCharAdded, this );
+    m_textEditor->Bind( wxEVT_CHAR_HOOK, &PANEL_SETUP_RULES::onCharHook, this );
 }
 
 
@@ -70,7 +71,22 @@ PANEL_SETUP_RULES::~PANEL_SETUP_RULES()
 };
 
 
-void PANEL_SETUP_RULES::onScintillaCharAdded( wxStyledTextEvent& aEvent )
+void PANEL_SETUP_RULES::onCharHook( wxKeyEvent& aEvent )
+{
+    if( aEvent.GetKeyCode() == WXK_ESCAPE && !m_textEditor->AutoCompActive() )
+    {
+        if( m_originalText != m_textEditor->GetText() )
+        {
+            if( !IsOK( this, _( "Cancel Changes?" ) ) )
+                return;
+        }
+    }
+
+    aEvent.Skip();
+}
+
+
+void PANEL_SETUP_RULES::onScintillaCharAdded( wxStyledTextEvent &aEvent )
 {
     m_Parent->SetModified();
     m_textEditor->SearchAnchor();

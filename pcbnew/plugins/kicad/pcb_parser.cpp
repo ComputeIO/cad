@@ -2,7 +2,7 @@
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
  * Copyright (C) 2012 CERN
- * Copyright (C) 2012-2020 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 2012-2021 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -1522,10 +1522,16 @@ void PCB_PARSER::parseSetup()
             break;
 
         case T_user_trace_width:
+        {
+            // Make room for the netclass value
+            if( designSettings.m_TrackWidthList.empty() )
+                designSettings.m_TrackWidthList.emplace_back( 0 );
+
             designSettings.m_TrackWidthList.push_back( parseBoardUnits( T_user_trace_width ) );
             m_board->m_LegacyDesignSettingsLoaded = true;
             NeedRIGHT();
             break;
+        }
 
         case T_trace_clearance:
             defaultNetClass->SetClearance( parseBoardUnits( T_trace_clearance ) );
@@ -1601,14 +1607,19 @@ void PCB_PARSER::parseSetup()
             break;
 
         case T_user_via:
-        {
-            int viaSize = parseBoardUnits( "user via size" );
-            int viaDrill = parseBoardUnits( "user via drill" );
-            designSettings.m_ViasDimensionsList.emplace_back( VIA_DIMENSION( viaSize, viaDrill ) );
-            m_board->m_LegacyDesignSettingsLoaded = true;
-            NeedRIGHT();
-        }
-        break;
+            {
+                int viaSize = parseBoardUnits( "user via size" );
+                int viaDrill = parseBoardUnits( "user via drill" );
+
+                // Make room for the netclass value
+                if( designSettings.m_ViasDimensionsList.empty() )
+                    designSettings.m_ViasDimensionsList.emplace_back( VIA_DIMENSION( 0, 0 ) );
+
+                designSettings.m_ViasDimensionsList.emplace_back( VIA_DIMENSION( viaSize, viaDrill ) );
+                m_board->m_LegacyDesignSettingsLoaded = true;
+                NeedRIGHT();
+            }
+            break;
 
         case T_uvia_size:
             defaultNetClass->SetuViaDiameter( parseBoardUnits( T_uvia_size ) );
@@ -3616,6 +3627,12 @@ PAD* PCB_PARSER::parsePAD( FOOTPRINT* aParent )
             NeedRIGHT();
             break;
 
+        case T_pintype:
+            NeedSYMBOLorNUMBER();
+            pad->SetPinType( FromUTF8() );
+            NeedRIGHT();
+            break;
+
         case T_die_length:
             pad->SetPadToDieLength( parseBoardUnits( T_die_length ) );
             NeedRIGHT();
@@ -3828,7 +3845,7 @@ PAD* PCB_PARSER::parsePAD( FOOTPRINT* aParent )
             Expecting( "at, locked, drill, layers, net, die_length, roundrect_rratio, "
                        "solder_mask_margin, solder_paste_margin, solder_paste_margin_ratio, "
                        "clearance, tstamp, primitives, remove_unused_layers, keep_end_layers, "
-                       "zone_connect, thermal_width, or thermal_gap" );
+                       "pinfunction, pintype, zone_connect, thermal_width, or thermal_gap" );
         }
     }
 

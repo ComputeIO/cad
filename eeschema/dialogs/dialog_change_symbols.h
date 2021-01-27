@@ -5,6 +5,7 @@
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
  * Copyright (C) 2020 CERN
+ * Copyright (C) 2021 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * @author Wayne Stambaugh <stambaughw@gmail.com>
  *
@@ -67,7 +68,7 @@ protected:
         checkAll( false );
     }
 
-    ///> Selects or deselects all fields in the listbox widget
+    ///< Select or deselect all fields in the listbox widget
     void checkAll( bool aCheck );
 
 private:
@@ -81,7 +82,7 @@ private:
     SCH_COMPONENT* m_symbol;
     MODE           m_mode;
 
-    ///> Set of field names that should have values updated
+    ///< Set of field names that should have values updated
     std::set<wxString> m_updateFields;
 };
 

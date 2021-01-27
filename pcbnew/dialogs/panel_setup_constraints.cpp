@@ -22,20 +22,19 @@
  */
 
 #include <board_design_settings.h>
-#include <board.h>                           // for BOARD
-#include <convert_to_biu.h>                        // for IU_PER_MM
+#include <board.h>
+#include <convert_to_biu.h>
 #include <math/util.h>
-#include <panel_setup_feature_constraints.h>
-#include <panel_setup_feature_constraints_base.h>  // for PANEL_SETUP_FEATUR...
+#include <panel_setup_constraints.h>
+#include <panel_setup_constraints_base.h>
 #include <pcb_edit_frame.h>
-#include <widgets/paged_dialog.h>                  // for PAGED_DIALOG
+#include <widgets/paged_dialog.h>
 #include <wx/treebook.h>
 #include <bitmaps.h>
 
 
-PANEL_SETUP_FEATURE_CONSTRAINTS::PANEL_SETUP_FEATURE_CONSTRAINTS( PAGED_DIALOG* aParent,
-                                                                  PCB_EDIT_FRAME* aFrame ) :
-        PANEL_SETUP_FEATURE_CONSTRAINTS_BASE( aParent->GetTreebook() ),
+PANEL_SETUP_CONSTRAINTS::PANEL_SETUP_CONSTRAINTS( PAGED_DIALOG* aParent, PCB_EDIT_FRAME* aFrame ) :
+        PANEL_SETUP_CONSTRAINTS_BASE( aParent->GetTreebook() ),
         m_minClearance( aFrame, m_clearanceTitle, m_clearanceCtrl, m_clearanceUnits, true ),
         m_trackMinWidth( aFrame, m_TrackMinWidthTitle, m_TrackMinWidthCtrl, m_TrackMinWidthUnits, true ),
         m_viaMinAnnulus( aFrame, m_ViaMinAnnulusTitle, m_ViaMinAnnulusCtrl, m_ViaMinAnnulusUnits, true ),
@@ -51,15 +50,19 @@ PANEL_SETUP_FEATURE_CONSTRAINTS::PANEL_SETUP_FEATURE_CONSTRAINTS( PAGED_DIALOG* 
 {
     m_Frame = aFrame;
     m_BrdSettings = &m_Frame->GetBoard()->GetDesignSettings();
+
+    wxFont infoFont = wxSystemSettings::GetFont( wxSYS_DEFAULT_GUI_FONT );
+    infoFont.SetSymbolicSize( wxFONTSIZE_SMALL );
+    m_stCircleToPolyWarning->SetFont( infoFont );
 }
 
 
-bool PANEL_SETUP_FEATURE_CONSTRAINTS::TransferDataToWindow()
+bool PANEL_SETUP_CONSTRAINTS::TransferDataToWindow()
 {
-    wxString fmt = m_stCircleToPolyWarning->GetLabel();
-    m_stCircleToPolyWarning->SetLabel( wxString::Format( fmt,
-                                       StringFromValue( m_Frame->GetUserUnits(),
-                                       ARC_HIGH_DEF, true ) ) );
+    wxString msg;
+    msg.Printf( m_stCircleToPolyWarning->GetLabel(),
+                StringFromValue( m_Frame->GetUserUnits(), ARC_HIGH_DEF, true ) );
+    m_stCircleToPolyWarning->SetLabel( msg );
 
     m_OptAllowBlindBuriedVias->SetValue( m_BrdSettings->m_BlindBuriedViaAllowed );
     m_OptAllowMicroVias->SetValue( m_BrdSettings->m_MicroViasAllowed );
@@ -89,7 +92,7 @@ bool PANEL_SETUP_FEATURE_CONSTRAINTS::TransferDataToWindow()
 }
 
 
-bool PANEL_SETUP_FEATURE_CONSTRAINTS::TransferDataFromWindow()
+bool PANEL_SETUP_CONSTRAINTS::TransferDataFromWindow()
 {
     if( !m_minClearance.Validate( 0, 10, EDA_UNITS::INCHES ) )
         return false;
@@ -146,7 +149,7 @@ bool PANEL_SETUP_FEATURE_CONSTRAINTS::TransferDataFromWindow()
 }
 
 
-bool PANEL_SETUP_FEATURE_CONSTRAINTS::Show( bool aShow )
+bool PANEL_SETUP_CONSTRAINTS::Show( bool aShow )
 {
     bool retVal = wxPanel::Show( aShow );
 
@@ -177,7 +180,7 @@ bool PANEL_SETUP_FEATURE_CONSTRAINTS::Show( bool aShow )
 }
 
 
-void PANEL_SETUP_FEATURE_CONSTRAINTS::ImportSettingsFrom( BOARD* aBoard )
+void PANEL_SETUP_CONSTRAINTS::ImportSettingsFrom( BOARD* aBoard )
 {
     BOARD_DESIGN_SETTINGS* savedSettings = m_BrdSettings;
 
@@ -188,7 +191,7 @@ void PANEL_SETUP_FEATURE_CONSTRAINTS::ImportSettingsFrom( BOARD* aBoard )
 }
 
 
-void PANEL_SETUP_FEATURE_CONSTRAINTS::onChangeOutlineOpt( wxCommandEvent& event )
+void PANEL_SETUP_CONSTRAINTS::onChangeOutlineOpt( wxCommandEvent& event )
 {
     wxObject* item =event.GetEventObject();
 
