@@ -1074,14 +1074,10 @@ void SCH_SEXPR_PLUGIN::saveSheet( SCH_SHEET* aSheet, int aNestLevel )
                       FormatAngle( getSheetPinAngle( pin->GetEdge() ) * 10.0 ).c_str() );
 
         pin->Format( m_out, aNestLevel + 1, 0 );
-<<<<<<< HEAD
-        m_out->Print( aNestLevel + 1, ")\n" ); // Closes pin token with font effects.
-=======
 
         m_out->Print( aNestLevel + 2, "(uuid %s)\n", TO_UTF8( pin->m_Uuid.AsString() ) );
 
         m_out->Print( aNestLevel + 1, ")\n" ); // Closes pin token.
->>>>>>> upstream/master
     }
 
     m_out->Print( aNestLevel, ")\n" ); // Closes sheet token.
@@ -1234,13 +1230,7 @@ void SCH_SEXPR_PLUGIN::saveText( SCH_TEXT* aText, int aNestLevel )
         saveField( label->GetIntersheetRefs(), aNestLevel + 1 );
     }
 
-<<<<<<< HEAD
-    m_out->Print( 0, "\n" );
-    aText->Format( m_out, aNestLevel, 0 );
-    m_out->Print( aNestLevel, ")\n" ); // Closes text token.
-=======
     m_out->Print( aNestLevel, ")\n" );         // Closes text token.
->>>>>>> upstream/master
 }
 
 
