@@ -37,8 +37,11 @@
 #include <trace_helpers.h>
 #include <kicad_string.h>
 
+#include <paths.h>
 #include <pgm_base.h>
 #include <settings/settings_manager.h>
+
+#include <kiplatform/environment.h>
 
 #include <wx/app.h>
 
@@ -669,26 +672,11 @@ wxString PyScriptingPath( bool aUserPath )
     //@todo This should this be a user configurable variable eg KISCRIPT?
     if( aUserPath )
     {
-        path = SETTINGS_MANAGER::GetUserSettingsPath() + wxT( "/scripting" );
+        path = PATHS::GetUserScriptingPath();
     }
     else
     {
-        if( wxGetEnv( wxT( "KICAD_RUN_FROM_BUILD_DIR" ), nullptr ) )
-        {
-            // Allow debugging from build dir by placing a "scripting" folder in the build root
-            path = Pgm().GetExecutablePath() + wxT( "../scripting" );
-        }
-        else
-        {
-            //TODO(snh) break out the directory functions into KIPLATFORM
-#if defined( __WXMAC__ )
-            path = GetOSXKicadDataDir() + wxT( "/scripting" );
-#elif defined( __WXMSW__ )
-            path = Pgm().GetExecutablePath() + wxT( "../share/kicad/scripting" );
-#else
-            path = wxString( KICAD_DATA ) + wxS( "/scripting" );
-#endif
-        }
+        path = PATHS::GetStockScriptingPath();
     }
 
     wxFileName scriptPath( path );

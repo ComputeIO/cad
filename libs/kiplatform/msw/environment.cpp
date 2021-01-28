@@ -20,6 +20,8 @@
 
 #include <kiplatform/environment.h>
 #include <wx/intl.h>
+#include <wx/filename.h>
+#include <wx/stdpaths.h>
 #include <wx/string.h>
 
 #include <Windows.h>
@@ -55,4 +57,27 @@ bool KIPLATFORM::ENV::MoveToTrash( const wxString& aPath, wxString& aError )
 bool KIPLATFORM::ENV::IsNetworkPath( const wxString& aPath )
 {
     return ::PathIsNetworkPathW( aPath.wc_str() );
+}
+
+
+wxString KIPLATFORM::ENV::GetDocumentsPath()
+{
+    return wxStandardPaths::Get().GetDocumentsDir();
+}
+
+
+wxString KIPLATFORM::ENV::GetUserConfigPath()
+{
+    return wxStandardPaths::Get().GetUserConfigDir();
+}
+
+
+wxString KIPLATFORM::ENV::GetUserCachePath()
+{
+    // Unforunately AppData/Local is the closest analog to "Cache" directories of other platforms
+
+    // Make sure we dont include the "appinfo" (appended app name)
+    wxStandardPaths::Get().UseAppInfo( wxStandardPaths::AppInfo_None );
+
+    return wxStandardPaths::Get().GetUserLocalDataDir();
 }
