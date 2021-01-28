@@ -30,8 +30,9 @@
 #include <tools/pcb_tool_base.h>
 #include <tool/tool_menu.h>
 
-namespace KIGFX {
-    class ORIGIN_VIEWITEM;
+namespace KIGFX
+{
+class ORIGIN_VIEWITEM;
 }
 
 class PCB_EDIT_FRAME;
@@ -111,23 +112,28 @@ public:
     int DrillOrigin( const TOOL_EVENT& aEvent );
 
     ///< Low-level access (below undo) to setting the drill origin.
-    static void DoSetDrillOrigin( KIGFX::VIEW* aView, PCB_BASE_FRAME* aFrame,
-                                  EDA_ITEM* aItem, const VECTOR2D& aPoint );
+    static void DoSetDrillOrigin( KIGFX::VIEW* aView, PCB_BASE_FRAME* aFrame, EDA_ITEM* aItem,
+                                  const VECTOR2D& aPoint );
 
     int FlipPcbView( const TOOL_EVENT& aEvent );
 
 private:
     ///< How to modify a property for selected items.
-    enum MODIFY_MODE { ON, OFF, TOGGLE };
+    enum MODIFY_MODE
+    {
+        ON,
+        OFF,
+        TOGGLE
+    };
 
     int modifyLockSelected( MODIFY_MODE aMode );
 
     ///< Set up handlers for various events.
     void setTransitions() override;
 
-    PCB_EDIT_FRAME* m_frame;     ///< Pointer to the currently used edit frame.
+    PCB_EDIT_FRAME* m_frame; ///< Pointer to the currently used edit frame.
 
-    std::unique_ptr<KIGFX::ORIGIN_VIEWITEM> m_placeOrigin;    ///< Place & drill origin marker
+    std::unique_ptr<KIGFX::ORIGIN_VIEWITEM> m_placeOrigin; ///< Place & drill origin marker
 
     static const int WIDTH_STEP; ///< How does line width change after one -/+ key press.
 };

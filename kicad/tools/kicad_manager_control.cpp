@@ -38,11 +38,10 @@
 class DIR_CHECKBOX : public wxPanel
 {
 public:
-    DIR_CHECKBOX( wxWindow* aParent )
-            : wxPanel( aParent )
+    DIR_CHECKBOX( wxWindow* aParent ) : wxPanel( aParent )
     {
-        m_cbCreateDir = new wxCheckBox( this, wxID_ANY,
-                                        _( "Create a new directory for the project" ) );
+        m_cbCreateDir =
+                new wxCheckBox( this, wxID_ANY, _( "Create a new directory for the project" ) );
         m_cbCreateDir->SetValue( true );
 
         wxBoxSizer* sizer = new wxBoxSizer( wxHORIZONTAL );
@@ -51,15 +50,9 @@ public:
         SetSizerAndFit( sizer );
     }
 
-    bool CreateNewDir() const
-    {
-        return m_cbCreateDir->GetValue();
-    }
+    bool CreateNewDir() const { return m_cbCreateDir->GetValue(); }
 
-    static wxWindow* Create( wxWindow* aParent )
-    {
-        return new DIR_CHECKBOX( aParent );
-    }
+    static wxWindow* Create( wxWindow* aParent ) { return new DIR_CHECKBOX( aParent ); }
 
 protected:
     wxCheckBox* m_cbCreateDir;
@@ -67,8 +60,7 @@ protected:
 
 
 KICAD_MANAGER_CONTROL::KICAD_MANAGER_CONTROL() :
-        TOOL_INTERACTIVE( "kicad.Control" ),
-        m_frame( nullptr )
+        TOOL_INTERACTIVE( "kicad.Control" ), m_frame( nullptr )
 {
 }
 
@@ -81,9 +73,9 @@ void KICAD_MANAGER_CONTROL::Reset( RESET_REASON aReason )
 
 int KICAD_MANAGER_CONTROL::NewProject( const TOOL_EVENT& aEvent )
 {
-    wxString        default_dir = m_frame->GetMruPath();
-    wxFileDialog    dlg( m_frame, _( "Create New Project" ), default_dir, wxEmptyString,
-                         ProjectFileWildcard(), wxFD_SAVE | wxFD_OVERWRITE_PROMPT );
+    wxString     default_dir = m_frame->GetMruPath();
+    wxFileDialog dlg( m_frame, _( "Create New Project" ), default_dir, wxEmptyString,
+                      ProjectFileWildcard(), wxFD_SAVE | wxFD_OVERWRITE_PROMPT );
 
     // Add a "Create a new directory" checkbox
     dlg.SetExtraControlCreator( &DIR_CHECKBOX::Create );
@@ -98,7 +90,7 @@ int KICAD_MANAGER_CONTROL::NewProject( const TOOL_EVENT& aEvent )
     if( !pro.GetExt().IsEmpty() && pro.GetExt().ToStdString() != ProjectFileExtension )
         pro.SetName( pro.GetName() + wxT( "." ) + pro.GetExt() );
 
-    pro.SetExt( ProjectFileExtension );     // enforce extension
+    pro.SetExt( ProjectFileExtension ); // enforce extension
 
     if( !pro.IsAbsolute() )
         pro.MakeAbsolute();
@@ -143,11 +135,11 @@ int KICAD_MANAGER_CONTROL::NewFromTemplate( const TOOL_EVENT& aEvent )
 {
     DIALOG_TEMPLATE_SELECTOR* ps = new DIALOG_TEMPLATE_SELECTOR( m_frame );
 
-    wxFileName  templatePath;
-    wxString    envStr;
+    wxFileName templatePath;
+    wxString   envStr;
 
     // KiCad system template path.
-    ENV_VAR_MAP_CITER it =  Pgm().GetLocalEnvVariables().find( "KICAD6_TEMPLATE_DIR" );
+    ENV_VAR_MAP_CITER it = Pgm().GetLocalEnvVariables().find( "KICAD6_TEMPLATE_DIR" );
 
     if( it != Pgm().GetLocalEnvVariables().end() && it->second.GetValue() != wxEmptyString )
     {
@@ -177,10 +169,10 @@ int KICAD_MANAGER_CONTROL::NewFromTemplate( const TOOL_EVENT& aEvent )
     }
 
     // Get project destination folder and project file name.
-    wxString        default_dir = wxFileName( Prj().GetProjectFullName() ).GetPathWithSep();
-    wxString        title = _( "New Project Folder" );
-    wxFileDialog    dlg( m_frame, title, default_dir, wxEmptyString, ProjectFileWildcard(),
-                         wxFD_SAVE | wxFD_OVERWRITE_PROMPT );
+    wxString     default_dir = wxFileName( Prj().GetProjectFullName() ).GetPathWithSep();
+    wxString     title = _( "New Project Folder" );
+    wxFileDialog dlg( m_frame, title, default_dir, wxEmptyString, ProjectFileWildcard(),
+                      wxFD_SAVE | wxFD_OVERWRITE_PROMPT );
 
     // Add a "Create a new directory" checkbox
     dlg.SetExtraControlCreator( &DIR_CHECKBOX::Create );
@@ -235,11 +227,11 @@ int KICAD_MANAGER_CONTROL::NewFromTemplate( const TOOL_EVENT& aEvent )
     m_frame->ClearMsg();
 
     // Make sure we are not overwriting anything in the destination folder.
-    std::vector< wxFileName > destFiles;
+    std::vector<wxFileName> destFiles;
 
     if( ps->GetSelectedTemplate()->GetDestinationFiles( fn, destFiles ) )
     {
-        std::vector< wxFileName > overwrittenFiles;
+        std::vector<wxFileName> overwrittenFiles;
 
         for( const auto& file : destFiles )
         {
@@ -273,8 +265,7 @@ int KICAD_MANAGER_CONTROL::NewFromTemplate( const TOOL_EVENT& aEvent )
     {
         wxMessageDialog createDlg( m_frame,
                                    _( "A problem occurred creating new project from template!" ),
-                                   _( "Template Error" ),
-                                   wxOK | wxICON_ERROR );
+                                   _( "Template Error" ), wxOK | wxICON_ERROR );
 
         if( !errorMsg.empty() )
             createDlg.SetExtendedMessage( errorMsg );
@@ -295,8 +286,8 @@ int KICAD_MANAGER_CONTROL::OpenProject( const TOOL_EVENT& aEvent )
                         + LegacyProjectFileWildcard();
 
     wxString     default_dir = m_frame->GetMruPath();
-    wxFileDialog dlg( m_frame, _( "Open Existing Project" ), default_dir, wxEmptyString,
-                      wildcard, wxFD_OPEN | wxFD_FILE_MUST_EXIST );
+    wxFileDialog dlg( m_frame, _( "Open Existing Project" ), default_dir, wxEmptyString, wildcard,
+                      wxFD_OPEN | wxFD_FILE_MUST_EXIST );
 
     if( dlg.ShowModal() == wxID_CANCEL )
         return -1;
@@ -323,16 +314,12 @@ int KICAD_MANAGER_CONTROL::CloseProject( const TOOL_EVENT& aEvent )
 class SAVE_AS_TRAVERSER : public wxDirTraverser
 {
 public:
-    SAVE_AS_TRAVERSER( KICAD_MANAGER_FRAME* aFrame,
-                       const wxString& aSrcProjectDirPath,
-                       const wxString& aSrcProjectName,
-                       const wxString& aNewProjectDirPath,
+    SAVE_AS_TRAVERSER( KICAD_MANAGER_FRAME* aFrame, const wxString& aSrcProjectDirPath,
+                       const wxString& aSrcProjectName, const wxString& aNewProjectDirPath,
                        const wxString& aNewProjectName ) :
             m_frame( aFrame ),
-            m_projectDirPath( aSrcProjectDirPath ),
-            m_projectName( aSrcProjectName ),
-            m_newProjectDirPath( aNewProjectDirPath ),
-            m_newProjectName( aNewProjectName )
+            m_projectDirPath( aSrcProjectDirPath ), m_projectName( aSrcProjectName ),
+            m_newProjectDirPath( aNewProjectDirPath ), m_newProjectName( aNewProjectName )
     {
     }
 
@@ -368,28 +355,16 @@ public:
             // straight copy
             KiCopyFile( aSrcFilePath, destFile.GetFullPath(), m_errors );
         }
-        else if( ext == "kicad_sch"
-               || ext == "kicad_sch-bak"
-               || ext == "sch"
-               || ext == "sch-bak"
-               || ext == "sym"
-               || ext == "lib"
-               || ext == "dcm"
-               || ext == "kicad_sym"
-               || ext == "net"
-               || destFile.GetName() == "sym-lib-table" )
+        else if( ext == "kicad_sch" || ext == "kicad_sch-bak" || ext == "sch" || ext == "sch-bak"
+                 || ext == "sym" || ext == "lib" || ext == "dcm" || ext == "kicad_sym"
+                 || ext == "net" || destFile.GetName() == "sym-lib-table" )
         {
             KIFACE* eeschema = m_frame->Kiway().KiFACE( KIWAY::FACE_SCH );
             eeschema->SaveFileAs( m_projectDirPath, m_projectName, m_newProjectDirPath,
                                   m_newProjectName, aSrcFilePath, m_errors );
         }
-        else if( ext == "kicad_pcb"
-               || ext == "kicad_pcb-bak"
-               || ext == "brd"
-               || ext == "kicad_mod"
-               || ext == "mod"
-               || ext == "cmp"
-               || destFile.GetName() == "fp-lib-table" )
+        else if( ext == "kicad_pcb" || ext == "kicad_pcb-bak" || ext == "brd" || ext == "kicad_mod"
+                 || ext == "mod" || ext == "cmp" || destFile.GetName() == "fp-lib-table" )
         {
             KIFACE* pcbnew = m_frame->Kiway().KiFACE( KIWAY::FACE_PCB );
             pcbnew->SaveFileAs( m_projectDirPath, m_projectName, m_newProjectDirPath,
@@ -401,10 +376,7 @@ public:
             pleditor->SaveFileAs( m_projectDirPath, m_projectName, m_newProjectDirPath,
                                   m_newProjectName, aSrcFilePath, m_errors );
         }
-        else if( ext == "gbr"
-               || ext == "gbrjob"
-               || ext == "drl"
-               || IsProtelExtension( ext ) )
+        else if( ext == "gbr" || ext == "gbrjob" || ext == "drl" || IsProtelExtension( ext ) )
         {
             KIFACE* gerbview = m_frame->Kiway().KiFACE( KIWAY::FACE_GERBVIEW );
             gerbview->SaveFileAs( m_projectDirPath, m_projectName, m_newProjectDirPath,
@@ -480,28 +452,28 @@ public:
 private:
     KICAD_MANAGER_FRAME* m_frame;
 
-    wxString             m_projectDirPath;
-    wxString             m_projectName;
-    wxString             m_newProjectDirPath;
-    wxString             m_newProjectName;
+    wxString m_projectDirPath;
+    wxString m_projectName;
+    wxString m_newProjectDirPath;
+    wxString m_newProjectName;
 
-    wxFileName           m_newProjectFile;
-    wxString             m_errors;
+    wxFileName m_newProjectFile;
+    wxString   m_errors;
 };
 
 
 int KICAD_MANAGER_CONTROL::SaveProjectAs( const TOOL_EVENT& aEvent )
 {
-    wxString     msg;
+    wxString msg;
 
-    wxFileName   currentProjectFile( Prj().GetProjectFullName() );
-    wxString     currentProjectDirPath = currentProjectFile.GetPath();
-    wxString     currentProjectName = Prj().GetProjectName();
+    wxFileName currentProjectFile( Prj().GetProjectFullName() );
+    wxString   currentProjectDirPath = currentProjectFile.GetPath();
+    wxString   currentProjectName = Prj().GetProjectName();
 
-    wxString     default_dir = m_frame->GetMruPath();
+    wxString default_dir = m_frame->GetMruPath();
 
     if( default_dir == currentProjectDirPath
-            || default_dir == currentProjectDirPath + wxFileName::GetPathSeparator() )
+        || default_dir == currentProjectDirPath + wxFileName::GetPathSeparator() )
     {
         // Don't start within the current project
         wxFileName default_dir_fn( default_dir );
@@ -546,9 +518,9 @@ int KICAD_MANAGER_CONTROL::SaveProjectAs( const TOOL_EVENT& aEvent )
         return -1;
     }
 
-    const wxString&   newProjectDirPath = newProjectDir.GetFullPath();
-    const wxString&   newProjectName = newProjectDir.GetName();
-    wxDir             currentProjectDir( currentProjectDirPath );
+    const wxString& newProjectDirPath = newProjectDir.GetFullPath();
+    const wxString& newProjectName = newProjectDir.GetName();
+    wxDir           currentProjectDir( currentProjectDirPath );
 
     SAVE_AS_TRAVERSER traverser( m_frame, currentProjectDirPath, currentProjectName,
                                  newProjectDirPath, newProjectName );
@@ -613,21 +585,21 @@ int KICAD_MANAGER_CONTROL::ShowPlayer( const TOOL_EVENT& aEvent )
         return -1;
     }
 
-    if ( !player )
+    if( !player )
     {
-        wxMessageBox( _( "Application failed to load." ), _( "KiCad Error" ),
-                      wxOK | wxICON_ERROR, m_frame );
+        wxMessageBox( _( "Application failed to load." ), _( "KiCad Error" ), wxOK | wxICON_ERROR,
+                      m_frame );
         return -1;
     }
 
-    if( !player->IsVisible() )   // A hidden frame might not have the document loaded.
+    if( !player->IsVisible() ) // A hidden frame might not have the document loaded.
     {
         wxString filepath;
 
         if( playerType == FRAME_SCH )
         {
-            wxFileName  kicad_schematic( m_frame->SchFileName() );
-            wxFileName  legacy_schematic( m_frame->SchLegacyFileName() );
+            wxFileName kicad_schematic( m_frame->SchFileName() );
+            wxFileName legacy_schematic( m_frame->SchLegacyFileName() );
 
             if( !legacy_schematic.FileExists() || kicad_schematic.FileExists() )
                 filepath = kicad_schematic.GetFullPath();
@@ -636,8 +608,8 @@ int KICAD_MANAGER_CONTROL::ShowPlayer( const TOOL_EVENT& aEvent )
         }
         else if( playerType == FRAME_PCB_EDITOR )
         {
-            wxFileName  kicad_board( m_frame->PcbFileName() );
-            wxFileName  legacy_board( m_frame->PcbLegacyFileName() );
+            wxFileName kicad_board( m_frame->PcbFileName() );
+            wxFileName legacy_board( m_frame->PcbLegacyFileName() );
 
             if( !legacy_board.FileExists() || kicad_board.FileExists() )
                 filepath = kicad_board.GetFullPath();
@@ -677,9 +649,7 @@ int KICAD_MANAGER_CONTROL::ShowPlayer( const TOOL_EVENT& aEvent )
 class TERMINATE_HANDLER : public wxProcess
 {
 public:
-    TERMINATE_HANDLER( const wxString& appName ) :
-            m_appName( appName )
-    { }
+    TERMINATE_HANDLER( const wxString& appName ) : m_appName( appName ) {}
 
     void OnTerminate( int pid, int status ) override
     {
@@ -687,7 +657,7 @@ public:
 
         wxWindow* window = wxWindow::FindWindowByName( KICAD_MANAGER_FRAME_NAME );
 
-        if( window )    // Should always happen.
+        if( window ) // Should always happen.
         {
             // Be sure the kicad frame manager is found
             // This dynamic cast is not really mandatory, but ...
@@ -733,7 +703,7 @@ int KICAD_MANAGER_CONTROL::Execute( const TOOL_EVENT& aEvent )
     if( aEvent.Parameter<wxString*>() )
         params = *aEvent.Parameter<wxString*>();
     else if( ( aEvent.IsAction( &KICAD_MANAGER_ACTIONS::viewGerbers ) )
-           && m_frame->IsProjectActive() )
+             && m_frame->IsProjectActive() )
         params = m_frame->Prj().GetProjectPath();
 
     if( !params.empty() )
@@ -764,29 +734,26 @@ int KICAD_MANAGER_CONTROL::Execute( const TOOL_EVENT& aEvent )
 
 void KICAD_MANAGER_CONTROL::setTransitions()
 {
-    Go( &KICAD_MANAGER_CONTROL::NewProject,      KICAD_MANAGER_ACTIONS::newProject.MakeEvent() );
+    Go( &KICAD_MANAGER_CONTROL::NewProject, KICAD_MANAGER_ACTIONS::newProject.MakeEvent() );
     Go( &KICAD_MANAGER_CONTROL::NewFromTemplate,
         KICAD_MANAGER_ACTIONS::newFromTemplate.MakeEvent() );
-    Go( &KICAD_MANAGER_CONTROL::OpenProject,     KICAD_MANAGER_ACTIONS::openProject.MakeEvent() );
-    Go( &KICAD_MANAGER_CONTROL::CloseProject,    KICAD_MANAGER_ACTIONS::closeProject.MakeEvent() );
-    Go( &KICAD_MANAGER_CONTROL::SaveProjectAs,   ACTIONS::saveAs.MakeEvent() );
+    Go( &KICAD_MANAGER_CONTROL::OpenProject, KICAD_MANAGER_ACTIONS::openProject.MakeEvent() );
+    Go( &KICAD_MANAGER_CONTROL::CloseProject, KICAD_MANAGER_ACTIONS::closeProject.MakeEvent() );
+    Go( &KICAD_MANAGER_CONTROL::SaveProjectAs, ACTIONS::saveAs.MakeEvent() );
 
-    Go( &KICAD_MANAGER_CONTROL::Refresh,         ACTIONS::zoomRedraw.MakeEvent() );
-    Go( &KICAD_MANAGER_CONTROL::UpdateMenu,      ACTIONS::updateMenu.MakeEvent() );
+    Go( &KICAD_MANAGER_CONTROL::Refresh, ACTIONS::zoomRedraw.MakeEvent() );
+    Go( &KICAD_MANAGER_CONTROL::UpdateMenu, ACTIONS::updateMenu.MakeEvent() );
 
-    Go( &KICAD_MANAGER_CONTROL::ShowPlayer,      KICAD_MANAGER_ACTIONS::editSchematic.MakeEvent() );
-    Go( &KICAD_MANAGER_CONTROL::ShowPlayer,      KICAD_MANAGER_ACTIONS::editSymbols.MakeEvent() );
-    Go( &KICAD_MANAGER_CONTROL::ShowPlayer,      KICAD_MANAGER_ACTIONS::editPCB.MakeEvent() );
-    Go( &KICAD_MANAGER_CONTROL::ShowPlayer,
-        KICAD_MANAGER_ACTIONS::editFootprints.MakeEvent() );
-    Go( &KICAD_MANAGER_CONTROL::Execute,         KICAD_MANAGER_ACTIONS::viewGerbers.MakeEvent() );
-    Go( &KICAD_MANAGER_CONTROL::Execute,         KICAD_MANAGER_ACTIONS::convertImage.MakeEvent() );
-    Go( &KICAD_MANAGER_CONTROL::Execute,
-        KICAD_MANAGER_ACTIONS::showCalculator.MakeEvent() );
-    Go( &KICAD_MANAGER_CONTROL::Execute,         KICAD_MANAGER_ACTIONS::editWorksheet.MakeEvent() );
-    Go( &KICAD_MANAGER_CONTROL::Execute,
-        KICAD_MANAGER_ACTIONS::openTextEditor.MakeEvent() );
+    Go( &KICAD_MANAGER_CONTROL::ShowPlayer, KICAD_MANAGER_ACTIONS::editSchematic.MakeEvent() );
+    Go( &KICAD_MANAGER_CONTROL::ShowPlayer, KICAD_MANAGER_ACTIONS::editSymbols.MakeEvent() );
+    Go( &KICAD_MANAGER_CONTROL::ShowPlayer, KICAD_MANAGER_ACTIONS::editPCB.MakeEvent() );
+    Go( &KICAD_MANAGER_CONTROL::ShowPlayer, KICAD_MANAGER_ACTIONS::editFootprints.MakeEvent() );
+    Go( &KICAD_MANAGER_CONTROL::Execute, KICAD_MANAGER_ACTIONS::viewGerbers.MakeEvent() );
+    Go( &KICAD_MANAGER_CONTROL::Execute, KICAD_MANAGER_ACTIONS::convertImage.MakeEvent() );
+    Go( &KICAD_MANAGER_CONTROL::Execute, KICAD_MANAGER_ACTIONS::showCalculator.MakeEvent() );
+    Go( &KICAD_MANAGER_CONTROL::Execute, KICAD_MANAGER_ACTIONS::editWorksheet.MakeEvent() );
+    Go( &KICAD_MANAGER_CONTROL::Execute, KICAD_MANAGER_ACTIONS::openTextEditor.MakeEvent() );
 
-    Go( &KICAD_MANAGER_CONTROL::Execute,         KICAD_MANAGER_ACTIONS::editOtherSch.MakeEvent() );
-    Go( &KICAD_MANAGER_CONTROL::Execute,         KICAD_MANAGER_ACTIONS::editOtherPCB.MakeEvent() );
+    Go( &KICAD_MANAGER_CONTROL::Execute, KICAD_MANAGER_ACTIONS::editOtherSch.MakeEvent() );
+    Go( &KICAD_MANAGER_CONTROL::Execute, KICAD_MANAGER_ACTIONS::editOtherPCB.MakeEvent() );
 }

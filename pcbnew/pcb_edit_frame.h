@@ -18,8 +18,8 @@
  * with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef  WXPCB_STRUCT_H_
-#define  WXPCB_STRUCT_H_
+#ifndef WXPCB_STRUCT_H_
+#define WXPCB_STRUCT_H_
 
 #include <unordered_map>
 #include <map>
@@ -61,7 +61,10 @@ class BOARD_NETLIST_UPDATER;
 class ACTION_MENU;
 enum LAST_PATH_TYPE : unsigned int;
 
-namespace PCB { struct IFACE; }     // KIFACE_I is in pcbnew.cpp
+namespace PCB
+{
+struct IFACE;
+} // namespace PCB
 
 /**
  * The main frame for Pcbnew.
@@ -76,7 +79,6 @@ class PCB_EDIT_FRAME : public PCB_BASE_EDIT_FRAME
     friend class APPEARANCE_CONTROLS;
 
 protected:
-
     /**
      * Store the previous layer toolbar icon state information
      */
@@ -87,11 +89,11 @@ protected:
         COLOR4D previous_Route_Layer_BOTTOM_color;
         COLOR4D previous_background_color;
 
-        LAYER_TOOLBAR_ICON_VALUES()
-                : previous_requested_scale( 0 ),
-                  previous_Route_Layer_TOP_color( COLOR4D::UNSPECIFIED ),
-                  previous_Route_Layer_BOTTOM_color( COLOR4D::UNSPECIFIED ),
-                  previous_background_color( COLOR4D::UNSPECIFIED )
+        LAYER_TOOLBAR_ICON_VALUES() :
+                previous_requested_scale( 0 ),
+                previous_Route_Layer_TOP_color( COLOR4D::UNSPECIFIED ),
+                previous_Route_Layer_BOTTOM_color( COLOR4D::UNSPECIFIED ),
+                previous_background_color( COLOR4D::UNSPECIFIED )
         {
         }
     };
@@ -109,7 +111,7 @@ protected:
      */
     void SwitchCanvas( EDA_DRAW_PANEL_GAL::GAL_TYPE aCanvasType ) override;
 
-#if defined(KICAD_SCRIPTING) && defined(KICAD_SCRIPTING_ACTION_MENU)
+#if defined( KICAD_SCRIPTING ) && defined( KICAD_SCRIPTING_ACTION_MENU )
     /**
      * Fill action menu with all registered action plugins
      */
@@ -120,19 +122,19 @@ protected:
      */
     void AddActionPluginTools();
 
-	/**
+    /**
 	 * Execute action plugin's Run() method and updates undo buffer.
      *
 	 * @param aActionPlugin action plugin
 	 */
-	void RunActionPlugin( ACTION_PLUGIN* aActionPlugin );
+    void RunActionPlugin( ACTION_PLUGIN* aActionPlugin );
 
     /**
      * Launched by the menu when an action is called.
      *
      * @param aEvent sent by wx
      */
-    void OnActionPluginMenu( wxCommandEvent& aEvent);
+    void OnActionPluginMenu( wxCommandEvent& aEvent );
 
     /**
      * Launched by the button when an action is called.
@@ -146,20 +148,14 @@ protected:
      *
      * @param aEvent sent by wx
      */
-    void OnActionPluginRefresh( wxCommandEvent& aEvent)
-    {
-       PythonPluginsReload();
-    }
+    void OnActionPluginRefresh( wxCommandEvent& aEvent ) { PythonPluginsReload(); }
 
     /**
      * Refresh plugin list (reload Python plugins).
      *
      * @param aEvent sent by wx
      */
-    void OnActionPluginShowFolder( wxCommandEvent& aEvent)
-    {
-       PythonPluginsShowFolder();
-    }
+    void OnActionPluginShowFolder( wxCommandEvent& aEvent ) { PythonPluginsShowFolder(); }
 #endif
 
     /**
@@ -167,18 +163,12 @@ protected:
      *
      * @return the frame name identifier for the python console frame.
      */
-    static const wxChar * pythonConsoleNameId()
-    {
-        return wxT( "PythonConsole" );
-    }
+    static const wxChar* pythonConsoleNameId() { return wxT( "PythonConsole" ); }
 
     /**
      * @return a pointer to the python console frame, or NULL if not exist
      */
-    static wxWindow * findPythonConsole()
-    {
-       return FindWindowByName( pythonConsoleNameId() );
-    }
+    static wxWindow* findPythonConsole() { return FindWindowByName( pythonConsoleNameId() ); }
 
     /**
      * Update the state of the GUI after a new board is loaded or created.
@@ -217,14 +207,14 @@ protected:
     int inferLegacyEdgeClearance( BOARD* aBoard );
 
 public:
-    PCB_LAYER_BOX_SELECTOR* m_SelLayerBox;  // a combo box to display and select active layer
+    PCB_LAYER_BOX_SELECTOR* m_SelLayerBox; // a combo box to display and select active layer
 
-    wxChoice* m_SelTrackWidthBox;        // a choice box to display and select current track width
-    wxChoice* m_SelViaSizeBox;           // a choice box to display and select current via diameter
+    wxChoice* m_SelTrackWidthBox; // a choice box to display and select current track width
+    wxChoice* m_SelViaSizeBox;    // a choice box to display and select current via diameter
 
     bool m_show_layer_manager_tools;
 
-    bool m_ZoneFillsDirty;               // Board has been modified since last zone fill.
+    bool m_ZoneFillsDirty; // Board has been modified since last zone fill.
 
     virtual ~PCB_EDIT_FRAME();
 
@@ -325,7 +315,7 @@ public:
     // Configurations:
     void Process_Config( wxCommandEvent& event );
 
-#if defined(KICAD_SCRIPTING) && defined(KICAD_SCRIPTING_ACTION_MENU)
+#if defined( KICAD_SCRIPTING ) && defined( KICAD_SCRIPTING_ACTION_MENU )
 
     /**
      * Return true if button visibility action plugin setting was set to true
@@ -636,9 +626,9 @@ public:
      * @param aYRef Y value of PCB (0,0) reference point.
      * @return true if Ok.
      */
-    bool ExportVRML_File( const wxString& aFullFileName, double aMMtoWRMLunit,
-                          bool aExport3DFiles, bool aUseRelativePaths, bool aUsePlainPCB,
-                          const wxString& a3D_Subdir, double aXRef, double aYRef );
+    bool ExportVRML_File( const wxString& aFullFileName, double aMMtoWRMLunit, bool aExport3DFiles,
+                          bool aUseRelativePaths, bool aUsePlainPCB, const wxString& a3D_Subdir,
+                          double aXRef, double aYRef );
 
     /**
      * Will export the current BOARD to a IDFv3 board and lib files.
@@ -660,8 +650,8 @@ public:
      * @param aYRef the board Reference Point in mm, Y value.
      * @return true if OK.
      */
-    bool Export_IDF3( BOARD* aPcb, const wxString& aFullFileName,
-                      bool aUseThou, double aXRef, double aYRef );
+    bool Export_IDF3( BOARD* aPcb, const wxString& aFullFileName, bool aUseThou, double aXRef,
+                      double aYRef );
 
     /**
      * Export the current BOARD to a STEP assembly.
@@ -745,7 +735,12 @@ public:
      * @param aNetlist a #NETLIST owned by the caller.  This function fills it in.
      * @return true if a netlist was fetched.
      */
-    enum FETCH_NETLIST_MODE { NO_ANNOTATION, QUIET_ANNOTATION, ANNOTATION_DIALOG };
+    enum FETCH_NETLIST_MODE
+    {
+        NO_ANNOTATION,
+        QUIET_ANNOTATION,
+        ANNOTATION_DIALOG
+    };
     bool FetchNetlistFromSchematic( NETLIST& aNetlist, FETCH_NETLIST_MODE aMode );
 
     /**
@@ -776,7 +771,7 @@ public:
      * @param aReporter is a #REPORTER object to display messages.
      * @return true if the netlist was read successfully.
      */
-    bool ReadNetlistFromFile( const wxString &aFilename, NETLIST& aNetlist, REPORTER& aReporter );
+    bool ReadNetlistFromFile( const wxString& aFilename, NETLIST& aNetlist, REPORTER& aReporter );
 
     /**
      * Called after netlist is updated.
@@ -840,4 +835,4 @@ public:
     DECLARE_EVENT_TABLE()
 };
 
-#endif  // WXPCB_STRUCT_H_
+#endif // WXPCB_STRUCT_H_

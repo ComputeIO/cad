@@ -35,8 +35,8 @@
 #include "pns_via.h"
 #include "pns_link_holder.h"
 
-namespace PNS {
-
+namespace PNS
+{
 class LINKED_ITEM;
 class NODE;
 class VIA;
@@ -63,12 +63,10 @@ public:
     /**
      * Makes an empty line.
      */
-    LINE() :
-        LINK_HOLDER( LINE_T ),
-        m_blockingObstacle( nullptr )
+    LINE() : LINK_HOLDER( LINE_T ), m_blockingObstacle( nullptr )
     {
         m_hasVia = false;
-        m_width = 1;        // Dummy value
+        m_width = 1; // Dummy value
         m_snapThreshhold = 0;
     }
 
@@ -78,11 +76,8 @@ public:
      * Copy properties (net, layers, etc.) from a base line and replaces the shape by another.
      */
     LINE( const LINE& aBase, const SHAPE_LINE_CHAIN& aLine ) :
-        LINK_HOLDER( aBase ),
-        m_line( aLine ),
-        m_width( aBase.m_width ),
-        m_snapThreshhold( aBase.m_snapThreshhold ),
-        m_blockingObstacle( nullptr )
+            LINK_HOLDER( aBase ), m_line( aLine ), m_width( aBase.m_width ),
+            m_snapThreshhold( aBase.m_snapThreshhold ), m_blockingObstacle( nullptr )
     {
         m_net = aBase.m_net;
         m_layers = aBase.m_layers;
@@ -92,9 +87,7 @@ public:
     /**
      * Construct a LINE for a lone VIA (ie a stitching via).
      */
-    LINE( const VIA& aVia ) :
-        LINK_HOLDER( LINE_T ),
-        m_blockingObstacle( nullptr )
+    LINE( const VIA& aVia ) : LINK_HOLDER( LINE_T ), m_blockingObstacle( nullptr )
     {
         m_hasVia = true;
         m_via = aVia;
@@ -107,20 +100,14 @@ public:
 
     ~LINE();
 
-    static inline bool ClassOf( const ITEM* aItem )
-    {
-        return aItem && LINE_T == aItem->Kind();
-    }
+    static inline bool ClassOf( const ITEM* aItem ) { return aItem && LINE_T == aItem->Kind(); }
 
     /// @copydoc ITEM::Clone()
     virtual LINE* Clone() const override;
 
     LINE& operator=( const LINE& aOther );
 
-    bool IsLinkedChecked() const
-    {
-        return IsLinked() && LinkCount() == SegmentCount();
-    }
+    bool IsLinkedChecked() const { return IsLinked() && LinkCount() == SegmentCount(); }
 
     ///< Assign a shape to the line (a polyline/line chain).
     void SetShape( const SHAPE_LINE_CHAIN& aLine )
@@ -133,7 +120,7 @@ public:
     const SHAPE* Shape() const override { return &m_line; }
 
     ///< Modifiable accessor to the underlying shape.
-    SHAPE_LINE_CHAIN& Line() { return m_line; }
+    SHAPE_LINE_CHAIN&       Line() { return m_line; }
     const SHAPE_LINE_CHAIN& CLine() const { return m_line; }
 
     int SegmentCount() const { return m_line.SegmentCount(); }
@@ -143,7 +130,7 @@ public:
 
     ///< Return the \a aIdx-th point of the line.
     const VECTOR2I& CPoint( int aIdx ) const { return m_line.CPoint( aIdx ); }
-    const SEG CSegment( int aIdx ) const { return m_line.CSegment( aIdx ); }
+    const SEG       CSegment( int aIdx ) const { return m_line.CSegment( aIdx ); }
 
     ///< Set line width.
     void SetWidth( int aWidth )
@@ -166,7 +153,7 @@ public:
     const LINE ClipToNearestObstacle( NODE* aNode ) const;
 
     ///< Clip the line to a given range of vertices.
-    void ClipVertexRange ( int aStart, int aEnd );
+    void ClipVertexRange( int aStart, int aEnd );
 
     ///< Return the number of corners of angles specified by mask aAngles.
     int CountCorners( int aAngles ) const;
@@ -200,16 +187,16 @@ public:
 
     virtual void Mark( int aMarker ) const override;
     virtual void Unmark( int aMarker = -1 ) const override;
-    virtual int Marker() const override;
+    virtual int  Marker() const override;
 
-    void SetBlockingObstacle( ITEM* aObstacle ) { m_blockingObstacle = aObstacle; }
+    void  SetBlockingObstacle( ITEM* aObstacle ) { m_blockingObstacle = aObstacle; }
     ITEM* GetBlockingObstacle() const { return m_blockingObstacle; }
 
     void DragSegment( const VECTOR2I& aP, int aIndex, bool aFreeAngle = false );
     void DragCorner( const VECTOR2I& aP, int aIndex, bool aFreeAngle = false );
 
     void SetRank( int aRank ) override;
-    int Rank() const override;
+    int  Rank() const override;
 
     bool HasLoops() const;
     bool HasLockedSegments() const;
@@ -218,15 +205,9 @@ public:
 
     OPT_BOX2I ChangedArea( const LINE* aOther ) const;
 
-    void SetSnapThreshhold( int aThreshhold )
-    {
-        m_snapThreshhold = aThreshhold;
-    }
+    void SetSnapThreshhold( int aThreshhold ) { m_snapThreshhold = aThreshhold; }
 
-    int GetSnapThreshhold() const
-    {
-        return m_snapThreshhold;
-    }
+    int GetSnapThreshhold() const { return m_snapThreshhold; }
 
 private:
     void dragSegment45( const VECTOR2I& aP, int aIndex );
@@ -240,18 +221,18 @@ private:
     VECTOR2I snapDraggedCorner( const SHAPE_LINE_CHAIN& aPath, const VECTOR2I& aP,
                                 int aIndex ) const;
 
-    SHAPE_LINE_CHAIN m_line;                ///< The actual shape of the line.
-    int              m_width;               ///< Our width.
+    SHAPE_LINE_CHAIN m_line;  ///< The actual shape of the line.
+    int              m_width; ///< Our width.
 
 
-    int              m_snapThreshhold;      ///< Width to smooth out jagged segments.
+    int m_snapThreshhold; ///< Width to smooth out jagged segments.
 
-    bool             m_hasVia;              ///< Optional via at the end point.
-    VIA              m_via;
+    bool m_hasVia; ///< Optional via at the end point.
+    VIA  m_via;
 
-    ITEM*            m_blockingObstacle;    ///< For mark obstacle mode.
+    ITEM* m_blockingObstacle; ///< For mark obstacle mode.
 };
 
-}
+} // namespace PNS
 
-#endif    // __PNS_LINE_H
+#endif // __PNS_LINE_H

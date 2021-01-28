@@ -44,11 +44,12 @@ class GENERAL_COLLECTOR;
 
 namespace KIGFX
 {
-    class GAL;
+class GAL;
 }
 
 
-typedef void (*CLIENT_SELECTION_FILTER)( const VECTOR2I&, GENERAL_COLLECTOR&, PCB_SELECTION_TOOL* );
+typedef void ( *CLIENT_SELECTION_FILTER )( const VECTOR2I&, GENERAL_COLLECTOR&,
+                                           PCB_SELECTION_TOOL* );
 
 
 /**
@@ -91,17 +92,17 @@ public:
      *                            items from the selection or override the locks.
      */
     PCB_SELECTION& RequestSelection( CLIENT_SELECTION_FILTER aClientFilter,
-                                     bool aConfirmLockedItems = false );
+                                     bool                    aConfirmLockedItems = false );
 
     ///< Select a single item under cursor event handler.
     int CursorSelection( const TOOL_EVENT& aEvent );
 
     ///< Clear current selection event handler.
-    int ClearSelection( const TOOL_EVENT& aEvent );
+    int  ClearSelection( const TOOL_EVENT& aEvent );
     void ClearSelection( bool aQuietMode = false );
 
     ///< Item selection event handler.
-    int SelectItem( const TOOL_EVENT& aEvent );
+    int  SelectItem( const TOOL_EVENT& aEvent );
     void AddItemToSel( BOARD_ITEM* aItem, bool aQuietMode = false );
 
     ///< Select all items on the board
@@ -111,7 +112,7 @@ public:
     int SelectItems( const TOOL_EVENT& aEvent );
 
     ///< Item unselection event handler.
-    int UnselectItem( const TOOL_EVENT& aEvent );
+    int  UnselectItem( const TOOL_EVENT& aEvent );
     void RemoveItemFromSel( BOARD_ITEM* aItem, bool aQuietMode = false );
 
     ///< Multiple item unselection event handler
@@ -159,10 +160,7 @@ public:
      */
     void RebuildSelection();
 
-    SELECTION_FILTER_OPTIONS& GetFilter()
-    {
-        return m_filter;
-    }
+    SELECTION_FILTER_OPTIONS& GetFilter() { return m_filter; }
 
     ///< Set up handlers for various events.
     void setTransitions() override;
@@ -170,10 +168,7 @@ public:
     ///< Zoom the screen to center and fit the current selection.
     void zoomFitSelection();
 
-    BOARD* GetBoard() const
-    {
-        return board();
-    }
+    BOARD* GetBoard() const { return board(); }
 
     void EnterGroup();
 
@@ -192,7 +187,6 @@ public:
     void FilterCollectedItems( GENERAL_COLLECTOR& aCollector );
 
 private:
-
     /**
      * Select an item pointed by the parameter \a aWhere.
      *
@@ -208,7 +202,7 @@ private:
      * @return True if an item was selected, false otherwise.
      */
     bool selectPoint( const VECTOR2I& aWhere, bool aOnDrag = false,
-                      bool* aSelectionCancelledFlag = NULL,
+                      bool*                   aSelectionCancelledFlag = NULL,
                       CLIENT_SELECTION_FILTER aClientFilter = NULL );
 
     /**
@@ -219,8 +213,7 @@ private:
      * @param aClientFilter allows the client to perform tool- or action-specific filtering.
      * @return true if eventually there is an item selected, false otherwise.
      */
-    bool selectCursor( bool aForceSelect = false,
-                       CLIENT_SELECTION_FILTER aClientFilter = NULL );
+    bool selectCursor( bool aForceSelect = false, CLIENT_SELECTION_FILTER aClientFilter = NULL );
 
     /**
      * Handle drawing a selection box that allows one to select many items at the same time.
@@ -354,20 +347,20 @@ private:
 
     void unhighlightInternal( BOARD_ITEM* aItem, int aHighlightMode, bool aUsingOverlay );
 
-    PCB_BASE_FRAME*  m_frame;     // Pointer to the parent frame
-    PCB_SELECTION    m_selection; // Current state of selection
+    PCB_BASE_FRAME* m_frame;     // Pointer to the parent frame
+    PCB_SELECTION   m_selection; // Current state of selection
 
     SELECTION_FILTER_OPTIONS m_filter;
 
-    bool m_additive;              // Items should be added to selection (instead of replacing)
-    bool m_subtractive;           // Items should be removed from selection
-    bool m_exclusive_or;          // Items' selection state should be toggled
-    bool m_multiple;              // Multiple selection mode is active
-    bool m_skip_heuristics;       // Heuristics are not allowed when choosing item under cursor
+    bool m_additive;        // Items should be added to selection (instead of replacing)
+    bool m_subtractive;     // Items should be removed from selection
+    bool m_exclusive_or;    // Items' selection state should be toggled
+    bool m_multiple;        // Multiple selection mode is active
+    bool m_skip_heuristics; // Heuristics are not allowed when choosing item under cursor
 
-    PCB_GROUP*        m_enteredGroup;          // If non-null, selections are limited to
-                                               // members of this group
-    KIGFX::VIEW_GROUP m_enteredGroupOverlay;   // Overlay for the entered group's frame.
+    PCB_GROUP* m_enteredGroup;               // If non-null, selections are limited to
+                                             // members of this group
+    KIGFX::VIEW_GROUP m_enteredGroupOverlay; // Overlay for the entered group's frame.
 
 
     /// Private state (opaque pointer/compilation firewall)

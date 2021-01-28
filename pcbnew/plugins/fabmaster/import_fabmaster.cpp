@@ -937,12 +937,13 @@ size_t FABMASTER::processCustomPads( size_t aRow )
 
             /// emplace may fail here, in which case, it returns the correct position to use for the existing map
             auto pad_it = custom_pad.elements.emplace( id, graphic_element{} );
-            auto retval = pad_it.first->second.insert( std::move(gr_item ) );
+            auto retval = pad_it.first->second.insert( std::move( gr_item ) );
 
             if( !retval.second )
             {
-                wxLogError( wxString::Format( _( "Could not insert graphical item %d into padstack \"%s\"" ),
-                        seq, pad_stack_name.c_str() ) );
+                wxLogError( wxString::Format(
+                        _( "Could not insert graphical item %d into padstack \"%s\"" ), seq,
+                        pad_stack_name.c_str() ) );
             }
         }
         else
@@ -2116,14 +2117,15 @@ bool FABMASTER::loadFootprints( BOARD* aBoard )
                         {
                             newpad->SetSize( wxSize( pad.width / 2, pad.height / 2 ) );
 
-                            std::string custom_name = pad.custom_name + "_" + pin->refdes + "_" + pin->pin_number;
+                            std::string custom_name =
+                                    pad.custom_name + "_" + pin->refdes + "_" + pin->pin_number;
                             auto custom_it = pad_shapes.find( custom_name );
 
                             if( custom_it != pad_shapes.end() )
                             {
                                 SHAPE_POLY_SET poly_outline;
-                                int last_subseq = 0;
-                                int hole_idx = -1;
+                                int            last_subseq = 0;
+                                int            hole_idx = -1;
 
                                 poly_outline.NewOutline();
 
@@ -2172,9 +2174,11 @@ bool FABMASTER::loadFootprints( BOARD* aBoard )
                                 poly_outline.Move( -newpad->GetPosition() );
 
                                 if( src->mirror )
-                                    poly_outline.Rotate( ( -src->rotate + pin->rotation ) * M_PI / 180.0 );
+                                    poly_outline.Rotate( ( -src->rotate + pin->rotation ) * M_PI
+                                                         / 180.0 );
                                 else
-                                    poly_outline.Rotate( ( src->rotate - pin->rotation ) * M_PI / 180.0 );
+                                    poly_outline.Rotate( ( src->rotate - pin->rotation ) * M_PI
+                                                         / 180.0 );
 
                                 newpad->AddPrimitivePoly( poly_outline, 0, true );
                             }

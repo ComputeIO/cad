@@ -41,8 +41,8 @@
 #include "pns_router.h"
 
 
-namespace PNS {
-
+namespace PNS
+{
 #ifdef DEBUG
 static std::unordered_set<NODE*> allocNodes;
 #endif
@@ -52,7 +52,7 @@ NODE::NODE()
     m_depth = 0;
     m_root = this;
     m_parent = NULL;
-    m_maxClearance = 800000;    // fixme: depends on how thick traces are.
+    m_maxClearance = 800000; // fixme: depends on how thick traces are.
     m_ruleResolver = NULL;
     m_index = new INDEX;
 
@@ -96,28 +96,28 @@ NODE::~NODE()
 
 int NODE::GetClearance( const ITEM* aA, const ITEM* aB ) const
 {
-   if( !m_ruleResolver )
+    if( !m_ruleResolver )
         return 100000;
 
-   return m_ruleResolver->Clearance( aA, aB );
+    return m_ruleResolver->Clearance( aA, aB );
 }
 
 
 int NODE::GetHoleClearance( const ITEM* aA, const ITEM* aB ) const
-   {
-      if( !m_ruleResolver )
-           return 0;
+{
+    if( !m_ruleResolver )
+        return 0;
 
-      return m_ruleResolver->HoleClearance( aA, aB );
-   }
+    return m_ruleResolver->HoleClearance( aA, aB );
+}
 
 
 int NODE::GetHoleToHoleClearance( const ITEM* aA, const ITEM* aB ) const
 {
-   if( !m_ruleResolver )
+    if( !m_ruleResolver )
         return 0;
 
-   return m_ruleResolver->HoleToHoleClearance( aA, aB );
+    return m_ruleResolver->HoleToHoleClearance( aA, aB );
 }
 
 
@@ -167,10 +167,7 @@ void NODE::unlinkParent()
 
 
 OBSTACLE_VISITOR::OBSTACLE_VISITOR( const ITEM* aItem ) :
-    m_item( aItem ),
-    m_node( NULL ),
-    m_override( NULL ),
-    m_extraClearance( 0 )
+        m_item( aItem ), m_node( NULL ), m_override( NULL ), m_extraClearance( 0 )
 {
 }
 
@@ -198,36 +195,27 @@ struct NODE::DEFAULT_OBSTACLE_VISITOR : public OBSTACLE_VISITOR
 {
     OBSTACLES& m_tab;
 
-    int        m_kindMask;          ///<  (solids, vias, segments, etc...)
-    int        m_limitCount;
-    int        m_matchCount;
-    int        m_extraClearance;
-    bool       m_differentNetsOnly;
+    int  m_kindMask; ///<  (solids, vias, segments, etc...)
+    int  m_limitCount;
+    int  m_matchCount;
+    int  m_extraClearance;
+    bool m_differentNetsOnly;
 
     DEFAULT_OBSTACLE_VISITOR( NODE::OBSTACLES& aTab, const ITEM* aItem, int aKindMask,
                               bool aDifferentNetsOnly ) :
-        OBSTACLE_VISITOR( aItem ),
-        m_tab( aTab ),
-        m_kindMask( aKindMask ),
-        m_limitCount( -1 ),
-        m_matchCount( 0 ),
-        m_extraClearance( 0 ),
-        m_differentNetsOnly( aDifferentNetsOnly )
+            OBSTACLE_VISITOR( aItem ),
+            m_tab( aTab ), m_kindMask( aKindMask ), m_limitCount( -1 ), m_matchCount( 0 ),
+            m_extraClearance( 0 ), m_differentNetsOnly( aDifferentNetsOnly )
     {
         if( aItem && aItem->Kind() == ITEM::LINE_T )
         {
-             m_extraClearance += static_cast<const LINE*>( aItem )->Width() / 2;
+            m_extraClearance += static_cast<const LINE*>( aItem )->Width() / 2;
         }
     }
 
-    virtual ~DEFAULT_OBSTACLE_VISITOR()
-    {
-    }
+    virtual ~DEFAULT_OBSTACLE_VISITOR() {}
 
-    void SetCountLimit( int aLimit )
-    {
-        m_limitCount = aLimit;
-    }
+    void SetCountLimit( int aLimit ) { m_limitCount = aLimit; }
 
     bool operator()( ITEM* aCandidate ) override
     {
@@ -306,25 +294,24 @@ NODE::OPT_OBSTACLE NODE::NearestObstacle( const LINE* aLine, int aKindMask,
 
     auto updateNearest =
             [&]( VECTOR2I pt, ITEM* obstacle, const SHAPE_LINE_CHAIN& hull, bool isHole )
-            {
-                int dist = aLine->CLine().PathLength( pt );
+    {
+        int dist = aLine->CLine().PathLength( pt );
 
-                if( dist < nearest.m_distFirst )
-                {
-                    nearest.m_distFirst = dist;
-                    nearest.m_ipFirst = pt;
-                    nearest.m_item = obstacle;
-                    nearest.m_hull = hull;
+        if( dist < nearest.m_distFirst )
+        {
+            nearest.m_distFirst = dist;
+            nearest.m_ipFirst = pt;
+            nearest.m_item = obstacle;
+            nearest.m_hull = hull;
 
-                    obstacle->Mark( isHole ? obstacle->Marker() | MK_HOLE
-                                           : obstacle->Marker() & ~MK_HOLE );
-                }
-            };
+            obstacle->Mark( isHole ? obstacle->Marker() | MK_HOLE : obstacle->Marker() & ~MK_HOLE );
+        }
+    };
 
     SHAPE_LINE_CHAIN obstacleHull;
     DEBUG_DECORATOR* debugDecorator = ROUTER::GetInstance()->GetInterface()->GetDebugDecorator();
     std::vector<SHAPE_LINE_CHAIN::INTERSECTION> intersectingPts;
-    int layer = aLine->Layer();
+    int                                         layer = aLine->Layer();
 
     for( const OBSTACLE& obstacle : obstacleList )
     {
@@ -417,7 +404,7 @@ NODE::OPT_OBSTACLE NODE::CheckColliding( const ITEM_SET& aSet, int aKindMask )
         OPT_OBSTACLE obs = CheckColliding( item, aKindMask );
 
         if( obs )
-            return  obs;
+            return obs;
     }
 
     return OPT_OBSTACLE();
@@ -432,8 +419,8 @@ NODE::OPT_OBSTACLE NODE::CheckColliding( const ITEM* aItemA, int aKindMask )
 
     if( aItemA->Kind() == ITEM::LINE_T )
     {
-        int n = 0;
-        const LINE* line = static_cast<const LINE*>( aItemA );
+        int                     n = 0;
+        const LINE*             line = static_cast<const LINE*>( aItemA );
         const SHAPE_LINE_CHAIN& l = line->CLine();
 
         for( int i = 0; i < l.SegmentCount(); i++ )
@@ -464,18 +451,15 @@ NODE::OPT_OBSTACLE NODE::CheckColliding( const ITEM* aItemA, int aKindMask )
 
 struct HIT_VISITOR : public OBSTACLE_VISITOR
 {
-    ITEM_SET& m_items;
+    ITEM_SET&       m_items;
     const VECTOR2I& m_point;
 
     HIT_VISITOR( ITEM_SET& aTab, const VECTOR2I& aPoint ) :
-        OBSTACLE_VISITOR( NULL ),
-        m_items( aTab ),
-        m_point( aPoint )
-    {}
-
-    virtual ~HIT_VISITOR()
+            OBSTACLE_VISITOR( NULL ), m_items( aTab ), m_point( aPoint )
     {
     }
+
+    virtual ~HIT_VISITOR() {}
 
     bool operator()( ITEM* aItem ) override
     {
@@ -497,16 +481,16 @@ const ITEM_SET NODE::HitTest( const VECTOR2I& aPoint ) const
 
     // fixme: we treat a point as an infinitely small circle - this is inefficient.
     SHAPE_CIRCLE s( aPoint, 0 );
-    HIT_VISITOR visitor( items, aPoint );
+    HIT_VISITOR  visitor( items, aPoint );
     visitor.SetWorld( this, NULL );
 
     m_index->Query( &s, m_maxClearance, visitor );
 
-    if( !isRoot() )    // fixme: could be made cleaner
+    if( !isRoot() ) // fixme: could be made cleaner
     {
         ITEM_SET items_root;
         visitor.SetWorld( m_root, NULL );
-        HIT_VISITOR  visitor_root( items_root, aPoint );
+        HIT_VISITOR visitor_root( items_root, aPoint );
         m_root->m_index->Query( &s, m_maxClearance, visitor_root );
 
         for( ITEM* item : items_root.Items() )
@@ -529,7 +513,7 @@ void NODE::addSolid( SOLID* aSolid )
 }
 
 
-void NODE::Add( std::unique_ptr< SOLID > aSolid )
+void NODE::Add( std::unique_ptr<SOLID> aSolid )
 {
     aSolid->SetOwner( this );
     addSolid( aSolid.release() );
@@ -544,7 +528,7 @@ void NODE::addVia( VIA* aVia )
 }
 
 
-void NODE::Add( std::unique_ptr< VIA > aVia )
+void NODE::Add( std::unique_ptr<VIA> aVia )
 {
     aVia->SetOwner( this );
     addVia( aVia.release() );
@@ -562,14 +546,14 @@ void NODE::Add( LINE& aLine, bool aAllowRedundant )
         auto s = l.Arc( i );
         ARC* rarc;
 
-        if( !aAllowRedundant && ( rarc = findRedundantArc( s.GetP0(), s.GetP1(), aLine.Layers(),
-                                                           aLine.Net() ) ) )
+        if( !aAllowRedundant
+            && ( rarc = findRedundantArc( s.GetP0(), s.GetP1(), aLine.Layers(), aLine.Net() ) ) )
         {
             aLine.Link( rarc );
         }
         else
         {
-            auto newarc = std::make_unique< ARC >( aLine, s );
+            auto newarc = std::make_unique<ARC>( aLine, s );
             aLine.Link( newarc.get() );
             Add( std::move( newarc ), true );
         }
@@ -586,8 +570,8 @@ void NODE::Add( LINE& aLine, bool aAllowRedundant )
         {
             SEGMENT* rseg;
 
-            if( !aAllowRedundant && ( rseg = findRedundantSegment( s.A, s.B, aLine.Layers(),
-                                                                   aLine.Net() ) ) )
+            if( !aAllowRedundant
+                && ( rseg = findRedundantSegment( s.A, s.B, aLine.Layers(), aLine.Net() ) ) )
             {
                 // another line could be referencing this segment too :(
                 aLine.Link( rseg );
@@ -612,7 +596,7 @@ void NODE::addSegment( SEGMENT* aSeg )
 }
 
 
-bool NODE::Add( std::unique_ptr< SEGMENT > aSegment, bool aAllowRedundant )
+bool NODE::Add( std::unique_ptr<SEGMENT> aSegment, bool aAllowRedundant )
 {
     if( aSegment->Seg().A == aSegment->Seg().B )
     {
@@ -639,20 +623,20 @@ void NODE::addArc( ARC* aArc )
 }
 
 
-void NODE::Add( std::unique_ptr< ARC > aArc )
+void NODE::Add( std::unique_ptr<ARC> aArc )
 {
     aArc->SetOwner( this );
     addArc( aArc.release() );
 }
 
 
-void NODE::Add( std::unique_ptr< ITEM > aItem, bool aAllowRedundant )
+void NODE::Add( std::unique_ptr<ITEM> aItem, bool aAllowRedundant )
 {
     switch( aItem->Kind() )
     {
-    case ITEM::SOLID_T:   Add( ItemCast<SOLID>( std::move( aItem ) ) );                    break;
+    case ITEM::SOLID_T: Add( ItemCast<SOLID>( std::move( aItem ) ) ); break;
     case ITEM::SEGMENT_T: Add( ItemCast<SEGMENT>( std::move( aItem ) ), aAllowRedundant ); break;
-    case ITEM::VIA_T:     Add( ItemCast<VIA>( std::move( aItem ) ) );                      break;
+    case ITEM::VIA_T: Add( ItemCast<VIA>( std::move( aItem ) ) ); break;
 
     case ITEM::ARC_T:
         //todo(snh): Add redundant search
@@ -660,8 +644,7 @@ void NODE::Add( std::unique_ptr< ITEM > aItem, bool aAllowRedundant )
         break;
 
     case ITEM::LINE_T:
-    default:
-        assert( false );
+    default: assert( false );
     }
 }
 
@@ -708,8 +691,8 @@ void NODE::rebuildJoint( JOINT* aJoint, ITEM* aItem )
     // via/solid and all its links and re-insert them.
 
     JOINT::LINKED_ITEMS links( aJoint->LinkList() );
-    JOINT::HASH_TAG tag;
-    int net = aItem->Net();
+    JOINT::HASH_TAG     tag;
+    int                 net = aItem->Net();
 
     tag.net = net;
     tag.pos = aJoint->Pos();
@@ -766,7 +749,7 @@ void NODE::removeSolidIndex( SOLID* aSolid )
 }
 
 
-void NODE::Replace( ITEM* aOldItem, std::unique_ptr< ITEM > aNewItem )
+void NODE::Replace( ITEM* aOldItem, std::unique_ptr<ITEM> aNewItem )
 {
     Remove( aOldItem );
     Add( std::move( aNewItem ) );
@@ -812,34 +795,25 @@ void NODE::Remove( ITEM* aItem )
 {
     switch( aItem->Kind() )
     {
-    case ITEM::ARC_T:
-        Remove( static_cast<ARC*>( aItem ) );
-        break;
+    case ITEM::ARC_T: Remove( static_cast<ARC*>( aItem ) ); break;
 
-    case ITEM::SOLID_T:
-        Remove( static_cast<SOLID*>( aItem ) );
-        break;
+    case ITEM::SOLID_T: Remove( static_cast<SOLID*>( aItem ) ); break;
 
-    case ITEM::SEGMENT_T:
-        Remove( static_cast<SEGMENT*>( aItem ) );
-        break;
+    case ITEM::SEGMENT_T: Remove( static_cast<SEGMENT*>( aItem ) ); break;
 
     case ITEM::LINE_T:
     {
         LINE* l = static_cast<LINE*>( aItem );
 
-        for ( LINKED_ITEM* s : l->Links() )
+        for( LINKED_ITEM* s : l->Links() )
             Remove( s );
 
         break;
     }
 
-    case ITEM::VIA_T:
-        Remove( static_cast<VIA*>( aItem ) );
-        break;
+    case ITEM::VIA_T: Remove( static_cast<VIA*>( aItem ) ); break;
 
-    default:
-        break;
+    default: break;
     }
 }
 
@@ -870,10 +844,10 @@ void NODE::followLine( LINKED_ITEM* aCurrent, int aScanDirection, int& aPos, int
 
     const VECTOR2I guard = aCurrent->Anchor( aScanDirection );
 
-    for( int count = 0 ; ; ++count )
+    for( int count = 0;; ++count )
     {
         const VECTOR2I p = aCurrent->Anchor( aScanDirection ^ prevReversed );
-        const JOINT* jt = FindJoint( p, aCurrent );
+        const JOINT*   jt = FindJoint( p, aCurrent );
 
         assert( jt );
 
@@ -883,8 +857,8 @@ void NODE::followLine( LINKED_ITEM* aCurrent, int aScanDirection, int& aPos, int
 
         if( aCurrent->Kind() == ITEM::ARC_T )
         {
-            if( ( aScanDirection && jt->Pos() == aCurrent->Anchor( 0 ) ) ||
-                ( !aScanDirection && jt->Pos() == aCurrent->Anchor( 1 ) ) )
+            if( ( aScanDirection && jt->Pos() == aCurrent->Anchor( 0 ) )
+                || ( !aScanDirection && jt->Pos() == aCurrent->Anchor( 1 ) ) )
                 aArcReversed[aPos] = true;
         }
 
@@ -914,9 +888,9 @@ const LINE NODE::AssembleLine( LINKED_ITEM* aSeg, int* aOriginSegmentIndex,
 {
     const int MaxVerts = 1024 * 16;
 
-    VECTOR2I corners[MaxVerts + 1];
+    VECTOR2I     corners[MaxVerts + 1];
     LINKED_ITEM* segs[MaxVerts + 1];
-    bool arcReversed[MaxVerts + 1];
+    bool         arcReversed[MaxVerts + 1];
 
     LINE pl;
     bool guardHit = false;
@@ -928,8 +902,8 @@ const LINE NODE::AssembleLine( LINKED_ITEM* aSeg, int* aOriginSegmentIndex,
     pl.SetNet( aSeg->Net() );
     pl.SetOwner( this );
 
-    followLine( aSeg, false, i_start, MaxVerts, corners, segs, arcReversed,
-                guardHit, aStopAtLockedJoints );
+    followLine( aSeg, false, i_start, MaxVerts, corners, segs, arcReversed, guardHit,
+                aStopAtLockedJoints );
 
     if( !guardHit )
     {
@@ -940,11 +914,11 @@ const LINE NODE::AssembleLine( LINKED_ITEM* aSeg, int* aOriginSegmentIndex,
     int n = 0;
 
     LINKED_ITEM* prev_seg = NULL;
-    bool originSet = false;
+    bool         originSet = false;
 
     for( int i = i_start + 1; i < i_end; i++ )
     {
-        const VECTOR2I& p  = corners[i];
+        const VECTOR2I& p = corners[i];
         LINKED_ITEM*    li = segs[i];
 
         if( !li || li->Kind() != ITEM::ARC_T )
@@ -955,7 +929,7 @@ const LINE NODE::AssembleLine( LINKED_ITEM* aSeg, int* aOriginSegmentIndex,
             if( li->Kind() == ITEM::ARC_T )
             {
                 const ARC*       arc = static_cast<const ARC*>( li );
-                const SHAPE_ARC* sa  = static_cast<const SHAPE_ARC*>( arc->Shape() );
+                const SHAPE_ARC* sa = static_cast<const SHAPE_ARC*>( arc->Shape() );
                 pl.Line().Append( arcReversed[i] ? sa->Reversed() : *sa );
             }
 
@@ -997,7 +971,7 @@ int NODE::FindLinesBetweenJoints( const JOINT& aA, const JOINT& aB, std::vector<
         if( item->Kind() == ITEM::SEGMENT_T || item->Kind() == ITEM::ARC_T )
         {
             LINKED_ITEM* li = static_cast<LINKED_ITEM*>( item );
-            LINE line = AssembleLine( li );
+            LINE         line = AssembleLine( li );
 
             if( !line.Layers().Overlaps( aB.Layers() ) )
                 continue;
@@ -1007,7 +981,7 @@ int NODE::FindLinesBetweenJoints( const JOINT& aA, const JOINT& aB, std::vector<
             FindLineEnds( line, j_start, j_end );
 
             int id_start = line.CLine().Find( aA.Pos() );
-            int id_end   = line.CLine().Find( aB.Pos() );
+            int id_end = line.CLine().Find( aB.Pos() );
 
             if( id_end < id_start )
                 std::swap( id_end, id_start );
@@ -1036,7 +1010,7 @@ JOINT* NODE::FindJoint( const VECTOR2I& aPos, int aLayer, int aNet )
     if( f == end && !isRoot() )
     {
         end = m_root->m_joints.end();
-        f = m_root->m_joints.find( tag );    // m_root->FindJoint(aPos, aLayer, aNet);
+        f = m_root->m_joints.find( tag ); // m_root->FindJoint(aPos, aLayer, aNet);
     }
 
     if( f == end )
@@ -1089,8 +1063,8 @@ JOINT& NODE::touchJoint( const VECTOR2I& aPos, const LAYER_RANGE& aLayers, int a
 
     do
     {
-        merged  = false;
-        range   = m_joints.equal_range( tag );
+        merged = false;
+        range = m_joints.equal_range( tag );
 
         if( range.first == m_joints.end() )
             break;
@@ -1105,8 +1079,7 @@ JOINT& NODE::touchJoint( const VECTOR2I& aPos, const LAYER_RANGE& aLayers, int a
                 break;
             }
         }
-    }
-    while( merged );
+    } while( merged );
 
     return m_joints.insert( TagJointPair( tag, jt ) )->second;
 }
@@ -1114,12 +1087,8 @@ JOINT& NODE::touchJoint( const VECTOR2I& aPos, const LAYER_RANGE& aLayers, int a
 
 void JOINT::Dump() const
 {
-    wxLogTrace( "PNS", "joint layers %d-%d, net %d, pos %s, links: %d",
-                m_layers.Start(),
-                m_layers.End(),
-                m_tag.net,
-                m_tag.pos.Format().c_str(),
-                LinkCount() );
+    wxLogTrace( "PNS", "joint layers %d-%d, net %d, pos %s, links: %d", m_layers.Start(),
+                m_layers.End(), m_tag.net, m_tag.pos.Format().c_str(), LinkCount() );
 }
 
 
@@ -1295,7 +1264,7 @@ void NODE::KillChildren()
 }
 
 
-void NODE::AllItemsInNet( int aNet, std::set<ITEM*>& aItems, int aKindMask)
+void NODE::AllItemsInNet( int aNet, std::set<ITEM*>& aItems, int aKindMask )
 {
     INDEX::NET_ITEMS_LIST* l_cur = m_index->GetItemsForNet( aNet );
 
@@ -1361,13 +1330,13 @@ SEGMENT* NODE::findRedundantSegment( const VECTOR2I& A, const VECTOR2I& B, const
     {
         if( item->OfKind( ITEM::SEGMENT_T ) )
         {
-            SEGMENT* seg2 = (SEGMENT*)item;
+            SEGMENT* seg2 = (SEGMENT*) item;
 
             const VECTOR2I a2( seg2->Seg().A );
             const VECTOR2I b2( seg2->Seg().B );
 
             if( seg2->Layers().Start() == lr.Start()
-                    && ( ( A == a2 && B == b2 ) || ( A == b2 && B == a2 ) ) )
+                && ( ( A == a2 && B == b2 ) || ( A == b2 && B == a2 ) ) )
             {
                 return seg2;
             }
@@ -1384,8 +1353,7 @@ SEGMENT* NODE::findRedundantSegment( SEGMENT* aSeg )
 }
 
 
-ARC* NODE::findRedundantArc( const VECTOR2I& A, const VECTOR2I& B, const LAYER_RANGE& lr,
-                             int aNet )
+ARC* NODE::findRedundantArc( const VECTOR2I& A, const VECTOR2I& B, const LAYER_RANGE& lr, int aNet )
 {
     JOINT* jtStart = FindJoint( A, lr.Start(), aNet );
 
@@ -1402,7 +1370,7 @@ ARC* NODE::findRedundantArc( const VECTOR2I& A, const VECTOR2I& B, const LAYER_R
             const VECTOR2I b2( seg2->Anchor( 1 ) );
 
             if( seg2->Layers().Start() == lr.Start()
-                    && ( ( A == a2 && B == b2 ) || ( A == b2 && B == a2 ) ) )
+                && ( ( A == a2 && B == b2 ) || ( A == b2 && B == a2 ) ) )
             {
                 return seg2;
             }
@@ -1457,7 +1425,7 @@ int NODE::QueryJoints( const BOX2I& aBox, std::vector<JOINT*>& aJoints, LAYER_RA
 }
 
 
-ITEM *NODE::FindItemByParent( const BOARD_ITEM* aParent )
+ITEM* NODE::FindItemByParent( const BOARD_ITEM* aParent )
 {
     if( aParent->IsConnected() )
     {
@@ -1478,4 +1446,4 @@ ITEM *NODE::FindItemByParent( const BOARD_ITEM* aParent )
     return NULL;
 }
 
-}
+} // namespace PNS

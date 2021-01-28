@@ -110,16 +110,16 @@ private:
 
     EDA_UNITS userUnits() const { return m_editFrame->GetUserUnits(); }
 
-    PCB_EDIT_FRAME*  m_editFrame;        // The pcb frame editor which owns the board
-    BOARD*           m_pcb;
-    DIALOG_DRC*      m_drcDialog;
-    bool             m_drcRunning;
+    PCB_EDIT_FRAME* m_editFrame; // The pcb frame editor which owns the board
+    BOARD*          m_pcb;
+    DIALOG_DRC*     m_drcDialog;
+    bool            m_drcRunning;
 
-    std::shared_ptr<DRC_ENGINE>            m_drcEngine;
+    std::shared_ptr<DRC_ENGINE> m_drcEngine;
 
-    std::vector<std::shared_ptr<DRC_ITEM>> m_unconnected;      // list of unconnected pads
-    std::vector<std::shared_ptr<DRC_ITEM>> m_footprints;       // list of footprint warnings
+    std::vector<std::shared_ptr<DRC_ITEM>> m_unconnected; // list of unconnected pads
+    std::vector<std::shared_ptr<DRC_ITEM>> m_footprints;  // list of footprint warnings
 };
 
 
-#endif  // DRC_TOOL_H
+#endif // DRC_TOOL_H

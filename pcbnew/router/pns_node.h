@@ -39,8 +39,8 @@
 #include "pns_joint.h"
 #include "pns_itemset.h"
 
-namespace PNS {
-
+namespace PNS
+{
 class ARC;
 class SEGMENT;
 class LINE;
@@ -87,8 +87,8 @@ public:
     virtual int HoleClearance( const ITEM* aA, const ITEM* aB ) = 0;
     virtual int HoleToHoleClearance( const ITEM* aA, const ITEM* aB ) = 0;
 
-    virtual int DpCoupledNet( int aNet ) = 0;
-    virtual int DpNetPolarity( int aNet ) = 0;
+    virtual int  DpCoupledNet( int aNet ) = 0;
+    virtual int  DpNetPolarity( int aNet ) = 0;
     virtual bool DpNetPair( const ITEM* aItem, int& aNetP, int& aNetN ) = 0;
 
     virtual bool IsDiffPair( const ITEM* aA, const ITEM* aB ) = 0;
@@ -105,12 +105,12 @@ public:
  */
 struct OBSTACLE
 {
-    const ITEM*      m_head;        ///< Item we search collisions with
+    const ITEM* m_head; ///< Item we search collisions with
 
-    ITEM*            m_item;        ///< Item found to be colliding with m_head
-    SHAPE_LINE_CHAIN m_hull;        ///< Hull of the colliding m_item
-    VECTOR2I         m_ipFirst;     ///< First intersection between m_head and m_hull
-    int              m_distFirst;   ///< ... and the distance thereof
+    ITEM*            m_item;      ///< Item found to be colliding with m_head
+    SHAPE_LINE_CHAIN m_hull;      ///< Hull of the colliding m_item
+    VECTOR2I         m_ipFirst;   ///< First intersection between m_head and m_hull
+    int              m_distFirst; ///< ... and the distance thereof
 };
 
 class OBSTACLE_VISITOR
@@ -118,9 +118,7 @@ class OBSTACLE_VISITOR
 public:
     OBSTACLE_VISITOR( const ITEM* aItem );
 
-    virtual ~OBSTACLE_VISITOR()
-    {
-    }
+    virtual ~OBSTACLE_VISITOR() {}
 
     void SetWorld( const NODE* aNode, const NODE* aOverride = NULL );
 
@@ -130,11 +128,11 @@ protected:
     bool visit( ITEM* aCandidate );
 
 protected:
-    const ITEM* m_item;             ///< the item we are looking for collisions with
+    const ITEM* m_item; ///< the item we are looking for collisions with
 
-    const NODE* m_node;             ///< node we are searching in (either root or a branch)
-    const NODE* m_override;         ///< node that overrides root entries
-    int         m_extraClearance;   ///< additional clearance
+    const NODE* m_node;           ///< node we are searching in (either root or a branch)
+    const NODE* m_override;       ///< node that overrides root entries
+    int         m_extraClearance; ///< additional clearance
 };
 
 /**
@@ -162,39 +160,21 @@ public:
     int GetHoleToHoleClearance( const ITEM* aA, const ITEM* aB ) const;
 
     ///< Return the pre-set worst case clearance between any pair of items.
-    int GetMaxClearance() const
-    {
-        return m_maxClearance;
-    }
+    int GetMaxClearance() const { return m_maxClearance; }
 
     ///< Set the worst-case clearance between any pair of items.
-    void SetMaxClearance( int aClearance )
-    {
-        m_maxClearance = aClearance;
-    }
+    void SetMaxClearance( int aClearance ) { m_maxClearance = aClearance; }
 
     ///< Assign a clearance resolution function object.
-    void SetRuleResolver( RULE_RESOLVER* aFunc )
-    {
-        m_ruleResolver = aFunc;
-    }
+    void SetRuleResolver( RULE_RESOLVER* aFunc ) { m_ruleResolver = aFunc; }
 
-    RULE_RESOLVER* GetRuleResolver() const
-    {
-        return m_ruleResolver;
-    }
+    RULE_RESOLVER* GetRuleResolver() const { return m_ruleResolver; }
 
     ///< Return the number of joints.
-    int JointCount() const
-    {
-        return m_joints.size();
-    }
+    int JointCount() const { return m_joints.size(); }
 
     ///< Return the number of nodes in the inheritance chain (wrs to the root node).
-    int Depth() const
-    {
-        return m_depth;
-    }
+    int Depth() const { return m_depth; }
 
     /**
      * Find items colliding (closer than clearance) with the item \a aItem.
@@ -241,7 +221,7 @@ public:
      * @param aKindMask mask of obstacle types to take into account.
      * @return the obstacle, if found, otherwise empty.
      */
-    OPT_OBSTACLE CheckColliding( const ITEM_SET&  aSet, int aKindMask = ITEM::ANY_T );
+    OPT_OBSTACLE CheckColliding( const ITEM_SET& aSet, int aKindMask = ITEM::ANY_T );
 
     /**
      * Find all items that contain the point \a aPoint.
@@ -259,10 +239,10 @@ public:
      *                        at the same coordinates as an existing one).
      * @return true if added
      */
-    bool Add( std::unique_ptr< SEGMENT > aSegment, bool aAllowRedundant = false );
-    void Add( std::unique_ptr< SOLID >   aSolid );
-    void Add( std::unique_ptr< VIA >     aVia );
-    void Add( std::unique_ptr< ARC >     aArc );
+    bool Add( std::unique_ptr<SEGMENT> aSegment, bool aAllowRedundant = false );
+    void Add( std::unique_ptr<SOLID> aSolid );
+    void Add( std::unique_ptr<VIA> aVia );
+    void Add( std::unique_ptr<ARC> aArc );
 
     void Add( LINE& aLine, bool aAllowRedundant = false );
 
@@ -288,7 +268,7 @@ public:
      * @param aOldItem item to be removed
      * @param aNewItem item add instead
      */
-    void Replace( ITEM* aOldItem, std::unique_ptr< ITEM > aNewItem );
+    void Replace( ITEM* aOldItem, std::unique_ptr<ITEM> aNewItem );
     void Replace( LINE& aOldLine, LINE& aNewLine );
 
     /**
@@ -369,24 +349,15 @@ public:
 
     ITEM* FindItemByParent( const BOARD_ITEM* aParent );
 
-    bool HasChildren() const
-    {
-        return !m_children.empty();
-    }
+    bool HasChildren() const { return !m_children.empty(); }
 
-    NODE* GetParent() const
-    {
-        return m_parent;
-    }
+    NODE* GetParent() const { return m_parent; }
 
     ///< Check if this branch contains an updated version of the m_item from the root branch.
-    bool Overrides( ITEM* aItem ) const
-    {
-        return m_override.find( aItem ) != m_override.end();
-    }
+    bool Overrides( ITEM* aItem ) const { return m_override.find( aItem ) != m_override.end(); }
 
 private:
-    void Add( std::unique_ptr< ITEM > aItem, bool aAllowRedundant = false );
+    void Add( std::unique_ptr<ITEM> aItem, bool aAllowRedundant = false );
 
     /// nodes are not copyable
     NODE( const NODE& aB );
@@ -418,10 +389,7 @@ private:
     void releaseGarbage();
     void rebuildJoint( JOINT* aJoint, ITEM* aItem );
 
-    bool isRoot() const
-    {
-        return m_parent == NULL;
-    }
+    bool isRoot() const { return m_parent == NULL; }
 
     SEGMENT* findRedundantSegment( const VECTOR2I& A, const VECTOR2I& B, const LAYER_RANGE& lr,
                                    int aNet );
@@ -438,27 +406,27 @@ private:
 private:
     struct DEFAULT_OBSTACLE_VISITOR;
     typedef std::unordered_multimap<JOINT::HASH_TAG, JOINT, JOINT::JOINT_TAG_HASH> JOINT_MAP;
-    typedef JOINT_MAP::value_type TagJointPair;
+    typedef JOINT_MAP::value_type                                                  TagJointPair;
 
-    JOINT_MAP       m_joints;           ///< hash table with the joints, linking the items. Joints
-                                        ///< are hashed by their position, layer set and net.
+    JOINT_MAP m_joints; ///< hash table with the joints, linking the items. Joints
+                        ///< are hashed by their position, layer set and net.
 
-    NODE*           m_parent;           ///< node this node was branched from
-    NODE*           m_root;             ///< root node of the whole hierarchy
-    std::set<NODE*> m_children;         ///< list of nodes branched from this one
+    NODE*           m_parent;   ///< node this node was branched from
+    NODE*           m_root;     ///< root node of the whole hierarchy
+    std::set<NODE*> m_children; ///< list of nodes branched from this one
 
-    std::unordered_set<ITEM*> m_override;   ///< hash of root's items that have been changed
-                                            ///< in this node
+    std::unordered_set<ITEM*> m_override; ///< hash of root's items that have been changed
+                                          ///< in this node
 
-    int             m_maxClearance;     ///< worst case item-item clearance
-    RULE_RESOLVER*  m_ruleResolver;     ///< Design rules resolver
-    INDEX*          m_index;            ///< Geometric/Net index of the items
-    int             m_depth;            ///< depth of the node (number of parent nodes in the
-                                        ///< inheritance chain)
+    int            m_maxClearance; ///< worst case item-item clearance
+    RULE_RESOLVER* m_ruleResolver; ///< Design rules resolver
+    INDEX*         m_index;        ///< Geometric/Net index of the items
+    int            m_depth;        ///< depth of the node (number of parent nodes in the
+                                   ///< inheritance chain)
 
     std::unordered_set<ITEM*> m_garbageItems;
 };
 
-}
+} // namespace PNS
 
 #endif

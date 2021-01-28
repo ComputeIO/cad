@@ -106,10 +106,7 @@ private:
     }
 
     ///< Return true if aPoint is the currently modified point.
-    inline bool isModified( const EDIT_POINT& aPoint ) const
-    {
-        return m_editedPoint == &aPoint;
-    }
+    inline bool isModified( const EDIT_POINT& aPoint ) const { return m_editedPoint == &aPoint; }
 
     ///< Set up an alternative constraint (typically enabled upon a modifier key being pressed).
     void setAltConstraint( bool aEnabled );
@@ -165,7 +162,7 @@ private:
     EDIT_POINT* m_editedPoint;
     EDIT_POINT* m_hoveredPoint;
 
-    EDIT_POINT          m_original;        ///< Original position for the current drag point.
+    EDIT_POINT m_original; ///< Original position for the current drag point.
 
     bool m_refill;
     bool m_altEditMethod;

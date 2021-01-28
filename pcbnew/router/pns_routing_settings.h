@@ -32,15 +32,15 @@
 class DIRECTION_45;
 class TOOL_SETTINGS;
 
-namespace PNS {
-
+namespace PNS
+{
 ///< Routing modes
 enum PNS_MODE
 {
-    RM_MarkObstacles = 0,   ///< Ignore collisions, mark obstacles
-    RM_Shove,               ///< Only shove
-    RM_Walkaround,          ///< Only walk around
-    RM_Smart                ///< Guess what's better, try to make least mess on the PCB
+    RM_MarkObstacles = 0, ///< Ignore collisions, mark obstacles
+    RM_Shove,             ///< Only shove
+    RM_Walkaround,        ///< Only walk around
+    RM_Smart              ///< Guess what's better, try to make least mess on the PCB
 };
 
 ///< Optimization effort.
@@ -54,10 +54,10 @@ enum PNS_OPTIMIZATION_EFFORT
 ///< What kind of corners to create in the line placers.
 enum class CORNER_MODE
 {
-    MITERED_90,     ///< H/V only (90-degree corners) (not yet implemented)
-    MITERED_45,     ///< H/V/45 with mitered corners (default)
-    ROUNDED_90,     ///< H/V with filleted corners (not yet implemented)
-    ROUNDED_45      ///< H/V/45 with filleted corners
+    MITERED_90, ///< H/V only (90-degree corners) (not yet implemented)
+    MITERED_45, ///< H/V/45 with mitered corners (default)
+    ROUNDED_90, ///< H/V with filleted corners (not yet implemented)
+    ROUNDED_45  ///< H/V/45 with filleted corners
 };
 
 /**
@@ -106,10 +106,7 @@ public:
     void SetSmartPads( bool aSmartPads ) { m_smartPads = aSmartPads; }
 
     ///< Return true if follow mouse mode is active (permanently on for the moment).
-    bool FollowMouse() const
-    {
-        return m_followMouse && !( Mode() == RM_MarkObstacles );
-    }
+    bool FollowMouse() const { return m_followMouse && !( Mode() == RM_MarkObstacles ); }
 
     ///< Return true if smoothing segments during dragging is enabled.
     bool SmoothDraggedSegments() const { return m_smoothDraggedSegments; }
@@ -137,13 +134,13 @@ public:
 
     const DIRECTION_45 InitialDirection() const;
 
-    int ShoveIterationLimit() const;
+    int        ShoveIterationLimit() const;
     TIME_LIMIT ShoveTimeLimit() const;
 
-    int WalkaroundIterationLimit() const { return m_walkaroundIterationLimit; };
+    int        WalkaroundIterationLimit() const { return m_walkaroundIterationLimit; };
     TIME_LIMIT WalkaroundTimeLimit() const;
 
-    void SetInlineDragEnabled ( bool aEnable ) { m_inlineDragEnabled = aEnable; }
+    void SetInlineDragEnabled( bool aEnable ) { m_inlineDragEnabled = aEnable; }
     bool InlineDragEnabled() const { return m_inlineDragEnabled; }
 
     void SetSnapToTracks( bool aSnap ) { m_snapToTracks = aSnap; }
@@ -153,7 +150,7 @@ public:
     bool GetSnapToPads() const { return m_snapToPads; }
 
     CORNER_MODE GetCornerMode() const { return m_cornerMode; }
-    void SetCornerMode( CORNER_MODE aMode ) { m_cornerMode = aMode; }
+    void        SetCornerMode( CORNER_MODE aMode ) { m_cornerMode = aMode; }
 
     bool GetOptimizeDraggedTrack() const { return m_optimizeDraggedTrack; }
     void SetOptimizeDraggedTrack( bool aEnable ) { m_optimizeDraggedTrack = aEnable; }
@@ -184,15 +181,15 @@ private:
 
     CORNER_MODE m_cornerMode;
 
-    PNS_MODE m_routingMode;
+    PNS_MODE                m_routingMode;
     PNS_OPTIMIZATION_EFFORT m_optimizerEffort;
 
-    int m_walkaroundIterationLimit;
-    int m_shoveIterationLimit;
+    int        m_walkaroundIterationLimit;
+    int        m_shoveIterationLimit;
     TIME_LIMIT m_shoveTimeLimit;
     TIME_LIMIT m_walkaroundTimeLimit;
 };
 
-}
+} // namespace PNS
 
 #endif

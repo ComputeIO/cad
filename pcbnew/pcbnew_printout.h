@@ -30,19 +30,21 @@ struct PCBNEW_PRINTOUT_SETTINGS : BOARD_PRINTOUT_SETTINGS
 {
     PCBNEW_PRINTOUT_SETTINGS( const PAGE_INFO& aPageInfo );
 
-    enum DRILL_MARK_SHAPE_T {
+    enum DRILL_MARK_SHAPE_T
+    {
         NO_DRILL_SHAPE,
         SMALL_DRILL_SHAPE,
         FULL_DRILL_SHAPE
     } m_drillMarks;
 
-    enum PAGINATION_T {
+    enum PAGINATION_T
+    {
         LAYER_PER_PAGE,
         ALL_LAYERS
     } m_pagination;
 
-    bool m_noEdgeLayer;         ///< Disable board outline on each page
-    bool m_asItemCheckboxes;    ///< Honor checkboxes in the Items tab of the Layers Manager
+    bool m_noEdgeLayer;      ///< Disable board outline on each page
+    bool m_asItemCheckboxes; ///< Honor checkboxes in the Items tab of the Layers Manager
 
     void Load( APP_SETTINGS_BASE* aConfig ) override;
     void Save( APP_SETTINGS_BASE* aConfig ) override;
@@ -53,7 +55,7 @@ class PCBNEW_PRINTOUT : public BOARD_PRINTOUT
 {
 public:
     PCBNEW_PRINTOUT( BOARD* aBoard, const PCBNEW_PRINTOUT_SETTINGS& aParams,
-            const KIGFX::VIEW* aView, const wxString& aTitle );
+                     const KIGFX::VIEW* aView, const wxString& aTitle );
 
     bool OnPrintPage( int aPage ) override;
 
@@ -77,8 +79,8 @@ private:
 };
 
 
-namespace KIGFX {
-
+namespace KIGFX
+{
 /**
  * Special flavor of PCB_PAINTER that contains modifications to handle printing options.
  */

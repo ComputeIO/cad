@@ -171,7 +171,7 @@ wxString PATHS::GetStockPluginsPath()
     // corresponding to the install path used for constructing KICAD_USER_PLUGIN
     wxString tfname = wxString::FromUTF8Unchecked( KICAD_PLUGINDIR );
     fn.Assign( tfname, "" );
-    fn.AppendDir( "kicad" );    // linux use lowercase
+    fn.AppendDir( "kicad" ); // linux use lowercase
     fn.AppendDir( wxT( "plugins" ) );
 #endif
 

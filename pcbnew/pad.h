@@ -400,10 +400,7 @@ public:
 
     // We don't currently have an attribute for APERTURE, and adding one will change the file
     // format, so for now just infer a copper-less pad to be an APERTURE pad.
-    bool IsAperturePad() const
-    {
-        return ( m_layerMask & LSET::AllCuMask() ).none();
-    }
+    bool IsAperturePad() const { return ( m_layerMask & LSET::AllCuMask() ).none(); }
 
     void SetPadToDieLength( int aLength ) { m_lengthPadToDie = aLength; }
     int  GetPadToDieLength() const { return m_lengthPadToDie; }
@@ -735,11 +732,11 @@ private:
 
     PAD_DRILL_SHAPE_T m_drillShape; // PAD_DRILL_SHAPE_CIRCLE, PAD_DRILL_SHAPE_OBLONG
 
-    double            m_roundedCornerScale; // Scaling factor of min(width, height) to corner
-                                            //   radius, default 0.25
-    double            m_chamferScale;       // Scaling factor of min(width, height) to chamfer
-                                            //   size, default 0.25
-    int               m_chamferPositions;   // The positions of the chamfers (at orient 0)
+    double m_roundedCornerScale; // Scaling factor of min(width, height) to corner
+                                 //   radius, default 0.25
+    double m_chamferScale;       // Scaling factor of min(width, height) to chamfer
+                                 //   size, default 0.25
+    int m_chamferPositions;      // The positions of the chamfers (at orient 0)
 
     PAD_SHAPE_T m_anchorPadShape; // For custom shaped pads: shape of pad anchor,
                                   //   PAD_SHAPE_RECT, PAD_SHAPE_CIRCLE
@@ -772,10 +769,10 @@ private:
     int m_lengthPadToDie; // Length net from pad to die, inside the package
 
     ///< If true, the pad copper is removed for layers that are not connected.
-    bool        m_removeUnconnectedLayer;
+    bool m_removeUnconnectedLayer;
 
     ///< When removing unconnected pads, keep the top and bottom pads.
-    bool        m_keepTopBottomLayer;
+    bool m_keepTopBottomLayer;
 
     /*
      * Pad clearances, margins, etc. exist in a hierarchy.  If a given level is specified then

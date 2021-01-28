@@ -25,8 +25,8 @@
 
 #include "pns_routing_settings.h"
 
-namespace PNS {
-
+namespace PNS
+{
 class ROUTER;
 class LOGGER;
 class DEBUG_DECORATOR;
@@ -41,18 +41,14 @@ class ALGO_BASE
 {
 public:
     ALGO_BASE( ROUTER* aRouter ) :
-        m_debugDecorator( nullptr ),
-        m_router( aRouter ),
-        m_logger( nullptr )
-    {}
+            m_debugDecorator( nullptr ), m_router( aRouter ), m_logger( nullptr )
+    {
+    }
 
     virtual ~ALGO_BASE() {}
 
     ///< Return the instance of our router
-    ROUTER* Router() const
-    {
-        return m_router;
-    }
+    ROUTER* Router() const { return m_router; }
 
     ///< Return current router settings
     ROUTING_SETTINGS& Settings() const;
@@ -60,30 +56,21 @@ public:
     ///< Return the logger object, allowing to dump geometry to a file.
     virtual LOGGER* Logger();
 
-    void SetLogger( LOGGER* aLogger )
-    {
-        m_logger = aLogger;
-    }
+    void SetLogger( LOGGER* aLogger ) { m_logger = aLogger; }
 
     /**
      * Assign a debug decorator allowing this algo to draw extra graphics for visual debugging.
      */
-    void SetDebugDecorator( DEBUG_DECORATOR* aDecorator )
-    {
-        m_debugDecorator = aDecorator;
-    }
+    void SetDebugDecorator( DEBUG_DECORATOR* aDecorator ) { m_debugDecorator = aDecorator; }
 
-    DEBUG_DECORATOR* Dbg() const
-    {
-        return m_debugDecorator;
-    }
+    DEBUG_DECORATOR* Dbg() const { return m_debugDecorator; }
 
 protected:
-    DEBUG_DECORATOR *m_debugDecorator;
-    ROUTER* m_router;
-    LOGGER* m_logger;
+    DEBUG_DECORATOR* m_debugDecorator;
+    ROUTER*          m_router;
+    LOGGER*          m_logger;
 };
 
-}
+} // namespace PNS
 
 #endif

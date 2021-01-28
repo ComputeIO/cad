@@ -104,11 +104,11 @@ private:
      *
      * Returns the size of aItemsToAlign()
      */
-    template< typename T >
+    template <typename T>
     size_t GetSelections( ALIGNMENT_RECTS& aItemsToAlign, ALIGNMENT_RECTS& aLockedItems,
                           T aCompare );
 
-    template< typename T >
+    template <typename T>
     int selectTarget( ALIGNMENT_RECTS& aItems, ALIGNMENT_RECTS& aLocked, T aGetValue );
 
     /**
@@ -137,7 +137,7 @@ private:
      * items overlap.
      */
     void doDistributeCentersHorizontally( ALIGNMENT_RECTS& itemsToDistribute,
-                                          BOARD_COMMIT& aCommit ) const;
+                                          BOARD_COMMIT&    aCommit ) const;
 
     /**
      * Distribute selected items using an even spacing between the centers of their bounding
@@ -148,7 +148,7 @@ private:
      *       if items overlap
      */
     void doDistributeCentersVertically( ALIGNMENT_RECTS& itemsToDistribute,
-                                        BOARD_COMMIT& aCommit ) const;
+                                        BOARD_COMMIT&    aCommit ) const;
 
     /**
      * Distributes selected items using an even spacing between their bounding boxes
@@ -169,9 +169,9 @@ private:
                                      const BOARD_ITEM* lastItem, int totalGap ) const;
 
 private:
-    PCB_SELECTION_TOOL*  m_selectionTool;
-    ACTION_MENU*         m_placementMenu;
-    PCB_BASE_FRAME*      m_frame;
+    PCB_SELECTION_TOOL* m_selectionTool;
+    ACTION_MENU*        m_placementMenu;
+    PCB_BASE_FRAME*     m_frame;
 };
 
 #endif /* ALIGN_DISTRIBUTE_TOOL_H_ */

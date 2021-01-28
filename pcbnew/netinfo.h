@@ -35,7 +35,6 @@
 #include <board_item.h>
 
 
-
 class wxDC;
 class wxPoint;
 class LINE_READER;
@@ -50,11 +49,11 @@ class PCB_BASE_FRAME;
 /*****************************/
 /* flags for a RATSNEST_ITEM */
 /*****************************/
-#define CH_VISIBLE          1        /* Visible */
-#define CH_UNROUTABLE       2        /* Don't use autorouter. */
-#define CH_ROUTE_REQ        4        /* Must be routed by the autorouter. */
-#define CH_ACTIF            8        /* Not routed. */
-#define LOCAL_RATSNEST_ITEM 0x8000   /* Line between two pads of a single footprint. */
+#define CH_VISIBLE 1               /* Visible */
+#define CH_UNROUTABLE 2            /* Don't use autorouter. */
+#define CH_ROUTE_REQ 4             /* Must be routed by the autorouter. */
+#define CH_ACTIF 8                 /* Not routed. */
+#define LOCAL_RATSNEST_ITEM 0x8000 /* Line between two pads of a single footprint. */
 
 DECL_VEC_FOR_SWIG( PADS_VEC, PAD* )
 
@@ -64,7 +63,6 @@ DECL_VEC_FOR_SWIG( PADS_VEC, PAD* )
 class NETINFO_ITEM : public BOARD_ITEM
 {
 public:
-
     NETINFO_ITEM( BOARD* aParent, const wxString& aNetName = wxEmptyString, int aNetCode = -1 );
     ~NETINFO_ITEM();
 
@@ -73,26 +71,19 @@ public:
         return aItem && PCB_NETINFO_T == aItem->Type();
     }
 
-    wxString GetClass() const override
-    {
-        return wxT( "NETINFO_ITEM" );
-    }
+    wxString GetClass() const override { return wxT( "NETINFO_ITEM" ); }
 
-#if defined(DEBUG)
-    void Show( int nestLevel, std::ostream& os ) const override
-    {
-    }
+#if defined( DEBUG )
+    void Show( int nestLevel, std::ostream& os ) const override {}
 #endif
 
     wxPoint GetPosition() const override
     {
-        static wxPoint dummy(0, 0);
+        static wxPoint dummy( 0, 0 );
         return dummy;
     }
 
-    void SetPosition( const wxPoint& aPos ) override
-    {
-    }
+    void SetPosition( const wxPoint& aPos ) override {}
 
     void SetNetClass( const NETCLASSPTR& aNetClass );
 
@@ -100,17 +91,14 @@ public:
      * @note Do **not** return a std::shared_ptr from this.  It is used heavily in DRC, and the
      *       std::shared_ptr stuff shows up large in performance profiling.
      */
-    NETCLASS* GetNetClass()
-    {
-        return m_netClass.get();
-    }
+    NETCLASS* GetNetClass() { return m_netClass.get(); }
 
     wxString GetNetClassName() const
     {
         return m_netClass ? m_netClass->GetName() : NETCLASS::Default;
     }
 
-    int GetNetCode() const { return m_netCode; }
+    int  GetNetCode() const { return m_netCode; }
     void SetNetCode( int aNetCode ) { m_netCode = aNetCode; }
 
     /**
@@ -151,40 +139,31 @@ public:
     /**
      * Set all fields to their default values.
      */
-    void Clear()
-    {
-        SetNetClass( NETCLASSPTR());
-    }
+    void Clear() { SetNetClass( NETCLASSPTR() ); }
 
-    BOARD* GetParent() const
-    {
-        return m_parent;
-    }
+    BOARD* GetParent() const { return m_parent; }
 
 private:
     friend class NETINFO_LIST;
 
-    int         m_netCode;         ///< A number equivalent to the net name.
-    wxString    m_netname;         ///< Full net name like /sheet/subsheet/vout used by Eeschema.
-    wxString    m_shortNetname;    ///< short net name, like vout from /sheet/subsheet/vout.
+    int      m_netCode;      ///< A number equivalent to the net name.
+    wxString m_netname;      ///< Full net name like /sheet/subsheet/vout used by Eeschema.
+    wxString m_shortNetname; ///< short net name, like vout from /sheet/subsheet/vout.
 
     NETCLASSPTR m_netClass;
 
-    bool        m_isCurrent;       ///< Indicates the net is currently in use.  We still store
-                                   ///< those that are not during a session for undo/redo and to
-                                   ///< keep netclass membership information.
+    bool m_isCurrent; ///< Indicates the net is currently in use.  We still store
+                      ///< those that are not during a session for undo/redo and to
+                      ///< keep netclass membership information.
 
-    BOARD*      m_parent;          ///< The parent board the net belongs to.
+    BOARD* m_parent; ///< The parent board the net belongs to.
 };
 
 
 class NETINFO_MAPPING
 {
 public:
-    NETINFO_MAPPING()
-    {
-        m_board = NULL;
-    }
+    NETINFO_MAPPING() { m_board = NULL; }
 
 
     /**
@@ -219,7 +198,7 @@ public:
     {
     public:
         iterator( std::map<int, int>::const_iterator aIter, const NETINFO_MAPPING* aMapping ) :
-            m_iterator( aIter ), m_mapping( aMapping )
+                m_iterator( aIter ), m_mapping( aMapping )
         {
         }
 
@@ -244,15 +223,9 @@ public:
 
         NETINFO_ITEM* operator->() const;
 
-        bool operator!=( const iterator& aOther ) const
-        {
-            return m_iterator != aOther.m_iterator;
-        }
+        bool operator!=( const iterator& aOther ) const { return m_iterator != aOther.m_iterator; }
 
-        bool operator==( const iterator& aOther ) const
-        {
-            return m_iterator == aOther.m_iterator;
-        }
+        bool operator==( const iterator& aOther ) const { return m_iterator == aOther.m_iterator; }
 
     private:
         std::map<int, int>::const_iterator m_iterator;
@@ -265,10 +238,7 @@ public:
      * @note The entry is a pointer to the original NETINFO_ITEM object, this it contains
      *       not mapped net code.
      */
-    iterator begin() const
-    {
-        return iterator( m_netMapping.begin(), this );
-    }
+    iterator begin() const { return iterator( m_netMapping.begin(), this ); }
 
     /**
      * Return iterator to the last entry in the mapping.
@@ -276,23 +246,17 @@ public:
      * @note The entry is a pointer to the original NETINFO_ITEM object, this it contains
      *       not mapped net code.
      */
-    iterator end() const
-    {
-        return iterator( m_netMapping.end(), this );
-    }
+    iterator end() const { return iterator( m_netMapping.end(), this ); }
 
     /**
      * @return Number of mapped nets (i.e. not empty nets for a given BOARD object).
      */
-    int GetSize() const
-    {
-        return m_netMapping.size();
-    }
+    int GetSize() const { return m_netMapping.size(); }
 
 private:
-    const BOARD*       m_board;         ///< Board for which mapping is prepared
-    std::map<int, int> m_netMapping;    ///< Map that allows saving net codes with consecutive
-                                        ///< numbers (for compatibility reasons)
+    const BOARD*       m_board;      ///< Board for which mapping is prepared
+    std::map<int, int> m_netMapping; ///< Map that allows saving net codes with consecutive
+                                     ///< numbers (for compatibility reasons)
 };
 
 
@@ -305,8 +269,8 @@ DECL_HASH_FOR_SWIG( NETNAMES_MAP, wxString,  NETINFO_ITEM* )
 DECL_HASH_FOR_SWIG( NETCODES_MAP, int,       NETINFO_ITEM* )
 #else
 // use std::map for now
-DECL_MAP_FOR_SWIG( NETNAMES_MAP, wxString,  NETINFO_ITEM* )
-DECL_MAP_FOR_SWIG( NETCODES_MAP, int,       NETINFO_ITEM* )
+DECL_MAP_FOR_SWIG( NETNAMES_MAP, wxString, NETINFO_ITEM* )
+DECL_MAP_FOR_SWIG( NETCODES_MAP, int, NETINFO_ITEM* )
 #endif
 
 /**
@@ -355,10 +319,10 @@ public:
      */
 
     /// Return the name map, at least for python.
-    const NETNAMES_MAP& NetsByName() const      { return  m_netNames; }
+    const NETNAMES_MAP& NetsByName() const { return m_netNames; }
 
     /// Return the netcode map, at least for python.
-    const NETCODES_MAP& NetsByNetcode() const   { return m_netCodes; }
+    const NETCODES_MAP& NetsByNetcode() const { return m_netCodes; }
 
     ///< Constant that holds the "unconnected net" number (typically 0)
     ///< all items "connected" to this net are actually not connected items
@@ -380,7 +344,7 @@ public:
         return g_orphanedItem;
     }
 
-#if defined(DEBUG)
+#if defined( DEBUG )
     void Show() const;
 #endif
 
@@ -390,9 +354,7 @@ public:
     class iterator
     {
     public:
-        iterator( NETNAMES_MAP::const_iterator aIter ) : m_iterator( aIter )
-        {
-        }
+        iterator( NETNAMES_MAP::const_iterator aIter ) : m_iterator( aIter ) {}
 
         /// pre-increment operator
         const iterator& operator++()
@@ -409,45 +371,24 @@ public:
             return ret;
         }
 
-        NETINFO_ITEM* operator*() const
-        {
-            return m_iterator->second;
-        }
+        NETINFO_ITEM* operator*() const { return m_iterator->second; }
 
-        NETINFO_ITEM* operator->() const
-        {
-            return m_iterator->second;
-        }
+        NETINFO_ITEM* operator->() const { return m_iterator->second; }
 
-        bool operator!=( const iterator& aOther ) const
-        {
-            return m_iterator != aOther.m_iterator;
-        }
+        bool operator!=( const iterator& aOther ) const { return m_iterator != aOther.m_iterator; }
 
-        bool operator==( const iterator& aOther ) const
-        {
-            return m_iterator == aOther.m_iterator;
-        }
+        bool operator==( const iterator& aOther ) const { return m_iterator == aOther.m_iterator; }
 
     private:
         NETNAMES_MAP::const_iterator m_iterator;
     };
 
-    iterator begin() const
-    {
-        return iterator( m_netNames.begin() );
-    }
+    iterator begin() const { return iterator( m_netNames.begin() ); }
 
-    iterator end() const
-    {
-        return iterator( m_netNames.end() );
-    }
+    iterator end() const { return iterator( m_netNames.end() ); }
 #endif
 
-    BOARD* GetParent() const
-    {
-        return m_parent;
-    }
+    BOARD* GetParent() const { return m_parent; }
 
 private:
     /**
@@ -467,12 +408,12 @@ private:
      */
     int getFreeNetCode();
 
-    BOARD*       m_parent;
+    BOARD* m_parent;
 
-    NETNAMES_MAP m_netNames;        ///< map of <wxString, NETINFO_ITEM*>, is NETINFO_ITEM owner
-    NETCODES_MAP m_netCodes;        ///< map of <int, NETINFO_ITEM*> is NOT owner
+    NETNAMES_MAP m_netNames; ///< map of <wxString, NETINFO_ITEM*>, is NETINFO_ITEM owner
+    NETCODES_MAP m_netCodes; ///< map of <int, NETINFO_ITEM*> is NOT owner
 
-    int          m_newNetCode;      ///< possible value for new net code assignment
+    int m_newNetCode; ///< possible value for new net code assignment
 };
 
-#endif  // CLASS_NETINFO_
+#endif // CLASS_NETINFO_

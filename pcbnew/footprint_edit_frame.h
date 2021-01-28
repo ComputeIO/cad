@@ -32,7 +32,10 @@ class FOOTPRINT_TREE_PANE;
 class SYMBOL_LIBRARY_MANAGER;
 class FOOTPRINT_EDITOR_SETTINGS;
 
-namespace PCB { struct IFACE; }     // A KIFACE_I coded in pcbnew.c
+namespace PCB
+{
+struct IFACE;
+} // namespace PCB
 
 
 class FOOTPRINT_EDIT_FRAME : public PCB_BASE_EDIT_FRAME
@@ -66,7 +69,7 @@ public:
     BOARD_DESIGN_SETTINGS& GetDesignSettings() const override;
 
     const PCB_PLOT_PARAMS& GetPlotSettings() const override;
-    void SetPlotSettings( const PCB_PLOT_PARAMS& aSettings ) override;
+    void                   SetPlotSettings( const PCB_PLOT_PARAMS& aSettings ) override;
 
     MAGNETIC_SETTINGS* GetMagneticItemsSettings() override;
 
@@ -315,7 +318,7 @@ protected:
     /// protected so only friend PCB::IFACE::CreateWindow() can act as sole factory.
     FOOTPRINT_EDIT_FRAME( KIWAY* aKiway, wxWindow* aParent, EDA_DRAW_PANEL_GAL::GAL_TYPE aBackend );
 
-    PCB_LAYER_BOX_SELECTOR* m_selLayerBox;  // a combo box to display and select active layer
+    PCB_LAYER_BOX_SELECTOR* m_selLayerBox; // a combo box to display and select active layer
 
     FOOTPRINT_EDITOR_SETTINGS* m_settings;
 
@@ -343,15 +346,14 @@ protected:
 private:
     friend struct PCB::IFACE;
 
-    FOOTPRINT_TREE_PANE*        m_treePane;
+    FOOTPRINT_TREE_PANE* m_treePane;
 
     wxObjectDataPtr<LIB_TREE_MODEL_ADAPTER> m_adapter;
 
-    std::unique_ptr<FOOTPRINT>  m_revertModule;
-    wxString                    m_footprintNameWhenLoaded;
+    std::unique_ptr<FOOTPRINT> m_revertModule;
+    wxString                   m_footprintNameWhenLoaded;
 
-    int                         m_defaultLibWidth;
-
+    int m_defaultLibWidth;
 };
 
-#endif      // FOOTPRINT_EDIT_FRAME_H
+#endif // FOOTPRINT_EDIT_FRAME_H

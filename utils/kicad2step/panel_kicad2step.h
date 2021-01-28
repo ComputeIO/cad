@@ -34,7 +34,7 @@
 #include <wx/textctrl.h>
 #include <wx/panel.h>
 
-class KICAD2MCAD_PRMS       // A small class to handle parameters of conversion
+class KICAD2MCAD_PRMS // A small class to handle parameters of conversion
 {
 public:
     KICAD2MCAD_PRMS();
@@ -43,7 +43,7 @@ public:
     wxString getOutputExt() const;
 
 #ifdef SUPPORTS_IGES
-    bool     m_fmtIGES;
+    bool m_fmtIGES;
 #endif
     bool     m_overwrite;
     bool     m_useGridOrigin;
@@ -54,16 +54,14 @@ public:
     double   m_xOrigin;
     double   m_yOrigin;
     double   m_minDistance;
-
 };
 
-class PANEL_KICAD2STEP: public wxPanel
+class PANEL_KICAD2STEP : public wxPanel
 {
 public:
-	PANEL_KICAD2STEP( wxWindow* parent, wxWindowID id = wxID_ANY,
+    PANEL_KICAD2STEP( wxWindow* parent, wxWindowID id = wxID_ANY,
                       const wxPoint& pos = wxDefaultPosition,
-                      const wxSize& size = wxSize( 500,300 ),
-                      long style = wxTAB_TRAVERSAL );
+                      const wxSize& size = wxSize( 500, 300 ), long style = wxTAB_TRAVERSAL );
 
     /**
      * Run the KiCad to STEP converter.
@@ -81,4 +79,4 @@ private:
     wxTextCtrl* m_tcMessages;
 };
 
-#endif      // #ifndef PANEL_KICAD2STEP_H
+#endif // #ifndef PANEL_KICAD2STEP_H

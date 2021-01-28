@@ -50,16 +50,14 @@ public:
     template <typename T>
     struct typeContainer_t
     {
-        typeContainer_t<T>( T aAttribute, wxString aTitle )
-                : attribute( aAttribute ),
-                  title( aTitle ),
-                  qty( 0 )
+        typeContainer_t<T>( T aAttribute, wxString aTitle ) :
+                attribute( aAttribute ), title( aTitle ), qty( 0 )
         {
         }
 
-        T          attribute;
-        wxString   title;
-        int        qty;
+        T        attribute;
+        wxString title;
+        int      qty;
     };
 
     using padsType_t = typeContainer_t<PAD_ATTR_T>;
@@ -71,11 +69,8 @@ public:
      */
     struct componentsType_t
     {
-        componentsType_t( FOOTPRINT_ATTR_T aAttribute, wxString aTitle )
-                : attribute( aAttribute ),
-                  title( aTitle ),
-                  frontSideQty( 0 ),
-                  backSideQty( 0 )
+        componentsType_t( FOOTPRINT_ATTR_T aAttribute, wxString aTitle ) :
+                attribute( aAttribute ), title( aTitle ), frontSideQty( 0 ), backSideQty( 0 )
         {
         }
 
@@ -100,15 +95,10 @@ public:
         };
 
         drillType_t( int aXSize, int aYSize, PAD_DRILL_SHAPE_T aShape, bool aIsPlated, bool aIsPad,
-                PCB_LAYER_ID aStartLayer, PCB_LAYER_ID aStopLayer, int aQty = 0 )
-                : xSize( aXSize ),
-                  ySize( aYSize ),
-                  shape( aShape ),
-                  isPlated( aIsPlated ),
-                  isPad( aIsPad ),
-                  startLayer( aStartLayer ),
-                  stopLayer( aStopLayer ),
-                  qty( aQty )
+                     PCB_LAYER_ID aStartLayer, PCB_LAYER_ID aStopLayer, int aQty = 0 ) :
+                xSize( aXSize ),
+                ySize( aYSize ), shape( aShape ), isPlated( aIsPlated ), isPad( aIsPad ),
+                startLayer( aStartLayer ), stopLayer( aStopLayer ), qty( aQty )
         {
         }
 
@@ -121,25 +111,17 @@ public:
 
         struct COMPARE
         {
-            COMPARE( COL_ID aColId, bool aAscending ) : colId( aColId ), ascending( aAscending )
-            {
-            }
+            COMPARE( COL_ID aColId, bool aAscending ) : colId( aColId ), ascending( aAscending ) {}
             bool operator()( const drillType_t& aLeft, const drillType_t& aRight )
             {
                 switch( colId )
                 {
-                case COL_COUNT:
-                    return compareDrillParameters( aLeft.qty, aRight.qty );
-                case COL_SHAPE:
-                    return compareDrillParameters( aLeft.shape, aRight.shape );
-                case COL_X_SIZE:
-                    return compareDrillParameters( aLeft.xSize, aRight.xSize );
-                case COL_Y_SIZE:
-                    return compareDrillParameters( aLeft.ySize, aRight.ySize );
-                case COL_PLATED:
-                    return ascending ? aLeft.isPlated : aRight.isPlated;
-                case COL_VIA_PAD:
-                    return ascending ? aLeft.isPad : aRight.isPad;
+                case COL_COUNT: return compareDrillParameters( aLeft.qty, aRight.qty );
+                case COL_SHAPE: return compareDrillParameters( aLeft.shape, aRight.shape );
+                case COL_X_SIZE: return compareDrillParameters( aLeft.xSize, aRight.xSize );
+                case COL_Y_SIZE: return compareDrillParameters( aLeft.ySize, aRight.ySize );
+                case COL_PLATED: return ascending ? aLeft.isPlated : aRight.isPlated;
+                case COL_VIA_PAD: return ascending ? aLeft.isPad : aRight.isPad;
                 case COL_START_LAYER:
                     return compareDrillParameters( aLeft.startLayer, aRight.startLayer );
                 case COL_STOP_LAYER:
@@ -180,7 +162,6 @@ public:
     bool TransferDataToWindow() override;
 
 private:
-
     ///< Function to fill up all items types to be shown in the dialog.
     void refreshItemsTypes();
 
@@ -195,7 +176,7 @@ private:
 
     ///< Print grid to string in tabular format.
     void printGridToStringAsTable( wxGrid* aGrid, wxString& aStr, bool aUseRowLabels,
-            bool aUseColLabels, bool aUseFirstColAsLabel );
+                                   bool aUseColLabels, bool aUseFirstColAsLabel );
 
     void adjustDrillGridColumns();
 
@@ -210,9 +191,9 @@ private:
 
     PCB_EDIT_FRAME* m_parentFrame;
 
-    int             m_boardWidth;
-    int             m_boardHeight;
-    double          m_boardArea;
+    int    m_boardWidth;
+    int    m_boardHeight;
+    double m_boardArea;
 
     ///< Show if board outline properly defined.
     bool m_hasOutline;
@@ -221,7 +202,7 @@ private:
     componentsTypeList_t m_componentsTypes;
 
     ///< Hold all pads types to be shown in the dialog.
-    padsTypeList_t  m_padsTypes;
+    padsTypeList_t m_padsTypes;
 
     ///< Hold all vias types to be shown in the dialog.
     viasTypeList_t m_viasTypes;

@@ -151,8 +151,12 @@ public:
     }
 
     // The Pos0 accessors are for footprint-relative coordinates.
-    void SetPos0( const wxPoint& aPos ) { m_Pos0 = aPos; SetDrawCoord(); }
-    const wxPoint& GetPos0() const      { return m_Pos0; }
+    void SetPos0( const wxPoint& aPos )
+    {
+        m_Pos0 = aPos;
+        SetDrawCoord();
+    }
+    const wxPoint& GetPos0() const { return m_Pos0; }
 
     int GetLength() const; // text length
 

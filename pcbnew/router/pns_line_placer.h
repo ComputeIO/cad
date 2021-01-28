@@ -34,8 +34,8 @@
 #include "pns_line.h"
 #include "pns_placement_algo.h"
 
-namespace PNS {
-
+namespace PNS
+{
 class ROUTER;
 class SHOVE;
 class OPTIMIZER;
@@ -46,7 +46,7 @@ class NODE;
 class FIXED_TAIL
 {
 public:
-    FIXED_TAIL( int aLineCount = 1);
+    FIXED_TAIL( int aLineCount = 1 );
     ~FIXED_TAIL();
 
     struct FIX_POINT
@@ -65,9 +65,9 @@ public:
 
     void Clear();
     void AddStage( VECTOR2I aStart, int aLayer, bool placingVias, DIRECTION_45 direction,
-                   NODE *aNode );
+                   NODE* aNode );
     bool PopStage( STAGE& aStage );
-    int StageCount() const;
+    int  StageCount() const;
 
 private:
     std::vector<STAGE> m_stages;
@@ -88,7 +88,7 @@ public:
 
     void SetDefaultDirections( DIRECTION_45 aInitDirection, DIRECTION_45 aLastSegDir )
     {
-        m_direction        = aInitDirection;
+        m_direction = aInitDirection;
         m_lastSegDirection = aLastSegDir;
     }
 
@@ -191,10 +191,7 @@ public:
      * Return the current end of the line being placed. It may not be equal to the cursor
      * position due to collisions.
      */
-    const VECTOR2I& CurrentEnd() const override
-    {
-        return m_currentEnd;
-    }
+    const VECTOR2I& CurrentEnd() const override { return m_currentEnd; }
 
     /**
      * Return the net code of currently routed track.
@@ -207,10 +204,7 @@ public:
     /**
      * Return the layer of currently routed track.
      */
-    int CurrentLayer() const override
-    {
-        return m_currentLayer;
-    }
+    int CurrentLayer() const override { return m_currentLayer; }
 
     /**
      * Return the most recent world state.
@@ -360,47 +354,47 @@ private:
     bool buildInitialLine( const VECTOR2I& aP, LINE& aHead );
 
 
-    DIRECTION_45   m_direction;         ///< current routing direction
-    DIRECTION_45   m_initial_direction; ///< routing direction for new traces
+    DIRECTION_45 m_direction;         ///< current routing direction
+    DIRECTION_45 m_initial_direction; ///< routing direction for new traces
 
-    LINE           m_head;          ///< the volatile part of the track from the previously
-                                    ///< analyzed point to the current routing destination
+    LINE m_head; ///< the volatile part of the track from the previously
+                 ///< analyzed point to the current routing destination
 
-    LINE           m_tail;          ///< routing "tail": part of the track that has been already
-                                    ///< fixed due to collisions with obstacles
+    LINE m_tail; ///< routing "tail": part of the track that has been already
+                 ///< fixed due to collisions with obstacles
 
-    NODE*          m_world;         ///< pointer to world to search colliding items
-    VECTOR2I       m_p_start;       ///< current routing start (end of tail, beginning of head)
+    NODE*    m_world;   ///< pointer to world to search colliding items
+    VECTOR2I m_p_start; ///< current routing start (end of tail, beginning of head)
 
     std::unique_ptr<SHOVE> m_shove; ///< The shove engine
 
-    NODE*          m_currentNode;   ///< Current world state
-    NODE*          m_lastNode;      ///< Postprocessed world state (including marked collisions &
-                                    ///< removed loops)
+    NODE* m_currentNode; ///< Current world state
+    NODE* m_lastNode;    ///< Postprocessed world state (including marked collisions &
+                         ///< removed loops)
 
     SIZES_SETTINGS m_sizes;
 
-    bool           m_placingVia;
+    bool m_placingVia;
 
-    int            m_currentNet;
-    int            m_currentLayer;
+    int m_currentNet;
+    int m_currentLayer;
 
-    VECTOR2I       m_currentEnd;
-    VECTOR2I       m_currentStart;
-    LINE           m_currentTrace;
+    VECTOR2I m_currentEnd;
+    VECTOR2I m_currentStart;
+    LINE     m_currentTrace;
 
-    PNS_MODE       m_currentMode;
-    ITEM*          m_startItem;
+    PNS_MODE m_currentMode;
+    ITEM*    m_startItem;
 
-    bool           m_idle;
-    bool           m_chainedPlacement;
-    bool           m_orthoMode;
-    bool           m_placementCorrect;
+    bool m_idle;
+    bool m_chainedPlacement;
+    bool m_orthoMode;
+    bool m_placementCorrect;
 
     FIXED_TAIL     m_fixedTail;
     POSTURE_SOLVER m_postureSolver;
 };
 
-}
+} // namespace PNS
 
-#endif    // __PNS_LINE_PLACER_H
+#endif // __PNS_LINE_PLACER_H
