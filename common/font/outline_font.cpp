@@ -34,6 +34,7 @@
 #include <font/outline_font.h>
 #include FT_GLYPH_H
 #include FT_BBOX_H
+#include <trigo.h>
 
 FT_Library OUTLINE_FONT::mFreeType = nullptr;
 
@@ -165,7 +166,44 @@ VECTOR2D OUTLINE_FONT::ComputeStringBoundaryLimits( const KIGFX::GAL* aGal, cons
                                                     const VECTOR2D& aGlyphSize,
                                                     double          aGlyphThickness ) const
 {
-    assert( 1 == 0 ); // TODO!!!
+    hb_buffer_t* buf = hb_buffer_create();
+    hb_buffer_add_utf8( buf, aText.c_str(), -1, 0, -1 );
+
+    // guess direction, script, and language based on contents
+    hb_buffer_guess_segment_properties( buf );
+
+    unsigned int     glyphCount;
+    hb_glyph_info_t* glyphInfo = hb_buffer_get_glyph_infos( buf, &glyphCount );
+    hb_font_t*       referencedFont = hb_ft_font_create_referenced( mFace );
+    //hb_glyph_position_t* glyphPos = hb_buffer_get_glyph_positions( buf, &glyphCount );
+
+    hb_ft_font_set_funcs( referencedFont );
+    hb_shape( referencedFont, buf, NULL, 0 );
+
+    int width = 0;
+    int height = mFace->size->metrics.height;
+
+    FT_UInt previous;
+    for( int i = 0; i < (int) glyphCount; i++ )
+    {
+        //hb_glyph_position_t& pos = glyphPos[i];
+        int codepoint = glyphInfo[i].codepoint;
+
+        if( i > 0 )
+        {
+            FT_Vector delta;
+            FT_Get_Kerning( mFace, previous, codepoint, FT_KERNING_DEFAULT, &delta );
+            width += delta.x >> 6;
+        }
+
+        FT_Load_Glyph( mFace, codepoint, FT_LOAD_NO_BITMAP );
+        FT_GlyphSlot glyph = mFace->glyph;
+
+        width += glyph->advance.x >> 6;
+        previous = codepoint;
+    }
+
+    return VECTOR2D( width, height );
 }
 
 
@@ -264,7 +302,7 @@ void OUTLINE_FONT::drawSingleLineText( KIGFX::GAL* aGal, const UTF8& aText,
         // transform glyph outlines to straight segments, then fill
         std::vector<SHAPE_POLY_SET> glyphs;
         wxPoint                     pt( aPosition.x, aPosition.y );
-        GetTextAsPolygon( glyphs, aText, aGal->GetGlyphSize(), pt, aGal->IsTextMirrored() );
+        GetTextAsPolygon( glyphs, aText, aGal->GetGlyphSize(), pt, aAngle, aGal->IsTextMirrored() );
 
         //aGal->SetIsFill( true );
         for( SHAPE_POLY_SET& glyph : glyphs )
@@ -286,7 +324,7 @@ static inline int getp2( int a )
 
 void OUTLINE_FONT::GetTextAsPolygon( std::vector<SHAPE_POLY_SET>& aGlyphs, const UTF8& aText,
                                      const VECTOR2D& aGlyphSize, const wxPoint& aPosition,
-                                     bool aIsMirrored ) const
+                                     double aOrientation, bool aIsMirrored ) const
 {
     hb_buffer_t* buf = hb_buffer_create();
     hb_buffer_add_utf8( buf, aText.c_str(), -1, 0, -1 );
@@ -311,11 +349,21 @@ void OUTLINE_FONT::GetTextAsPolygon( std::vector<SHAPE_POLY_SET>& aGlyphs, const
 
 #ifdef DEBUG //STROKEFONT
     if( debugMe( aText ) )
-        std::cerr << "GetTextAsPolygon " << aText << " glyphSize " << aGlyphSize << std::endl;
+        std::cerr << "[OUTLINE_FONT::GetTextAsPolygon( &aGlyphs, \"" << aText << "\", "
+                  << aGlyphSize << ", " << aPosition << ", " << aOrientation << ", "
+                  << ( aIsMirrored ? "true" : "false" ) << " ) const; glyphCount " << glyphCount
+                  << " mirror_factor " << mirror_factor << " mScaler " << mScaler
+                  << " scale_factor x" << x_scale_factor << " y" << y_scale_factor << "]"
+                  << std::endl;
 #endif
 
+#if 0
     hb_position_t cursor_x = aPosition.x;
     hb_position_t cursor_y = aPosition.y;
+#else
+    hb_position_t cursor_x = 0;
+    hb_position_t cursor_y = 0;
+#endif
 
     for( unsigned int i = 0; i < glyphCount; i++ )
     {
@@ -333,7 +381,7 @@ void OUTLINE_FONT::GetTextAsPolygon( std::vector<SHAPE_POLY_SET>& aGlyphs, const
 
         OUTLINE_DECOMPOSER decomposer( glyph->outline );
         decomposer.OutlineToSegments( &contours );
-#ifdef DEBUG
+#ifdef FOOBAR //DEBUG
         static const unsigned int bufsize = 512;
         char                      glyphName[bufsize];
         FT_Get_Glyph_Name( mFace, glyph->glyph_index, &glyphName[0], bufsize );
@@ -357,40 +405,42 @@ void OUTLINE_FONT::GetTextAsPolygon( std::vector<SHAPE_POLY_SET>& aGlyphs, const
         SHAPE_POLY_SET                poly;
         std::vector<SHAPE_LINE_CHAIN> holes;
         std::vector<SHAPE_LINE_CHAIN> outlines;
-        POINTS                        ptListScaled;
+
+        VECTOR2D offset( aPosition );
 
         for( CONTOUR& c : contours )
         {
             POINTS points = c.points;
-            int    ptCount = 0;
-            ptListScaled.clear();
-
 #ifdef DEBUG
+            int ptCount = 0;
             std::cerr << "c.points.size()==" << c.points.size() << " ";
 #endif
+            SHAPE_LINE_CHAIN shape;
+
             for( const VECTOR2D& v : points )
             {
                 VECTOR2D pt( -( v.x + cursor_x ), -( v.y + cursor_y ) );
-                VECTOR2D scaledPt( pt.x * x_scale_factor, pt.y * y_scale_factor );
-                ptListScaled.push_back( scaledPt );
+#if 0
+                VECTOR2D scaledPt( pt );
+#else
+                wxPoint scaledPt( pt.x * x_scale_factor, pt.y * y_scale_factor );
+                RotatePoint( &scaledPt, aOrientation );
+                scaledPt.x += offset.x;
+                scaledPt.y += offset.y;
+#endif
+#ifdef FOOBAR //DEBUG
+                std::cerr << "(p#" << ptCount << " " << scaledPt;
+#endif
+                shape.Append( scaledPt.x, scaledPt.y );
+                //ptListScaled.push_back( scaledPt );
+#ifdef FOOBAR //DEBUG
+                std::cerr << "->n " << shape.PointCount() << ")";
+#endif
+#ifdef DEBUG
                 ptCount++;
+#endif
             }
 
-            SHAPE_LINE_CHAIN shape;
-#ifdef DEBUG
-            std::cerr << "ptListScaled.size()==" << ptListScaled.size() << " ptCount==" << ptCount
-                      << " ";
-#endif
-            for( const VECTOR2D& p : ptListScaled )
-            {
-#ifdef DEBUG
-                std::cerr << "(appending " << p;
-#endif
-                shape.Append( p.x, p.y );
-#ifdef DEBUG
-                std::cerr << ", shape has " << shape.PointCount() << " pts)";
-#endif
-            }
 #ifdef DEBUG
             std::cerr << "(" << ( contourIsHole( c ) ? "hole" : "outline" ) << " shape has "
                       << shape.PointCount() << " pts)";
@@ -409,7 +459,11 @@ void OUTLINE_FONT::GetTextAsPolygon( std::vector<SHAPE_POLY_SET>& aGlyphs, const
 #ifdef DEBUG
         if( outlines.size() < 1 )
         {
-            std::cerr << "Error: no outlines for [" << glyphName << "]!" << std::endl;
+            std::cerr << "Error: no outlines for [codepoint " << codepoint;
+#ifdef FOOBAR //DEBUG
+            std::cerr << " " << glyphName;
+#endif
+            std::cerr << "]!" << std::endl;
         }
 #endif
 

@@ -116,10 +116,8 @@ typedef const INSPECTOR_FUNC& INSPECTOR;
 #define SKIP_STRUCT ( 1 << 15 )    ///< flag indicating that the structure should be ignored
 #define DO_NOT_DRAW ( 1 << 16 )    ///< Used to disable draw function
 #define IS_PASTED ( 1 << 17 )      ///< Modifier on IS_NEW which indicates it came from clipboard
-#define LOCKED                                                                                     \
-    ( 1                                                                                            \
-      << 18 ) ///< Pcbnew: locked from movement and deletion                                     \
-                ///< NB: stored in m_status flags, NOT m_flags.
+// Pcbnew: locked from movement and deletion
+#define LOCKED ( 1 << 18 ) ///< NB: stored in m_status flags, NOT m_flags.
 #define UNUSED ( 1 << 19 )
 #define MALFORMED_F_COURTYARD ( 1 << 20 )
 #define MALFORMED_B_COURTYARD ( 1 << 21 )
@@ -129,14 +127,11 @@ typedef const INSPECTOR_FUNC& INSPECTOR;
 #define HOLE_PROXY ( 1 << 24 )  ///< Indicates the BOARD_ITEM is a proxy for its hole
 #define IS_ROLLOVER ( 1 << 25 ) ///< Rollover active.  Used for hyperlink highlighting.
 #define BRIGHTENED ( 1 << 26 )  ///< item is drawn with a bright contour
-
-#define DP_COUPLED                                                                                 \
-    ( 1 << 27 )                  ///< item is coupled with another item making a differential pair \
-                                 ///< (applies to segments only)
+// item is coupled with another item making a differential pair (applies to segments only)
+#define DP_COUPLED ( 1 << 27 )
 #define UR_TRANSIENT ( 1 << 28 ) ///< indicates the item is owned by the undo/redo stack
-
-#define IS_DANGLING ( 1 << 29 ) ///< indicates a pin is dangling
-#define ENTERED ( 1 << 30 )     ///< indicates a group has been entered
+#define IS_DANGLING ( 1 << 29 )  ///< indicates a pin is dangling
+#define ENTERED ( 1 << 30 )      ///< indicates a group has been entered
 
 // WARNING: if you add flags, you'll probably need to adjust the masks in GetEditFlags() and
 // ClearTempFlags().

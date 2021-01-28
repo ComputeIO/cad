@@ -121,11 +121,12 @@ void PCB_TEXT::DrawTextAsPolygon( std::vector<SHAPE_POLY_SET>& aResult, PCB_LAYE
     if( aFont->IsOutline() )
     {
 #ifdef DEBUG
-        std::cerr << "DrawTextAsPolygon " << GetText() << " -> " << GetShownText() << ", "
-                  << aString << " " << aPosition << std::endl;
+        std::cerr << "DrawTextAsPolygon \"" << GetText() << "\" glyphSize " << glyphSize << " -> \""
+                  << GetShownText() << "\", " << aString << " " << aPosition << std::endl;
 #endif
         const OUTLINE_FONT* outlineFont = dynamic_cast<const OUTLINE_FONT*>( aFont );
-        outlineFont->GetTextAsPolygon( aResult, aString, glyphSize, aPosition, IsMirrored() );
+        outlineFont->GetTextAsPolygon( aResult, aString, glyphSize, aPosition, GetTextAngle(),
+                                       IsMirrored() );
     }
     else
     {

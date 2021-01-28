@@ -105,7 +105,7 @@ public:
 
     void GetTextAsPolygon( std::vector<SHAPE_POLY_SET>& aGlyphs, const UTF8& aText,
                            const VECTOR2D& aGlyphSize, const wxPoint& aPosition,
-                           bool aIsMirrored ) const;
+                           double aOrientation, bool aIsMirrored ) const;
 
 private:
     // FreeType variables

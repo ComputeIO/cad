@@ -47,6 +47,7 @@ set( GAL_SRCS
     font/stroke_font.cpp
     font/outline_font.cpp
     font/outline_decomposer.cpp
+    font/triangulate.cpp
 
     # OpenGL GAL
     gal/opengl/opengl_gal.cpp

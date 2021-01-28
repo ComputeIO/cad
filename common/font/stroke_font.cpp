@@ -368,7 +368,7 @@ double STROKE_FONT::GetInterline( double aGlyphHeight ) const
     // Do not add the glyph thickness to the interline.  This makes bold text line-spacing
     // different from normal text, which is poor typography.
     double ret = aGlyphHeight * INTERLINE_PITCH_RATIO;
-#ifdef DEBUG
+#ifdef FOOBAR //DEBUG
     std::cerr << "STROKE_FONT::GetInterline( " << aGlyphHeight << " ) const --> " << ret
               << std::endl;
 #endif

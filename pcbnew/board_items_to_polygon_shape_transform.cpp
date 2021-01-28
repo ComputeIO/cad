@@ -384,17 +384,25 @@ static void polygonText( SHAPE_POLY_SET& aDestination, PCB_LAYER_ID aLayer, cons
                   << aFont->Name() << ", " << aText->GetText() << std::endl;
 #endif
         outlineFont->GetTextAsPolygon( glyphs, aString, aText->GetTextSize(), aPosition,
-                                       aText->IsMirrored() );
+                                       aText->GetTextAngle(), aText->IsMirrored() );
         for( SHAPE_POLY_SET& glyph : glyphs )
         {
+#if 0
+            assert (1==0);
+#else
             aDestination.Append( glyph );
+#endif
         }
     }
     else
     {
+#ifdef DEBUG
         std::cerr << "board_items_to_polygon_shape_transform.cpp: polygonText() - TODO not doing "
                      "stroke fonts yet"
                   << std::endl;
+#else
+        assert( 1 == 0 ); // this whole else branch should probably go away
+#endif
     }
 }
 
@@ -469,7 +477,19 @@ void PCB_TEXT::TransformShapeWithClearanceToPolygon( SHAPE_POLY_SET& aCornerBuff
                                                      int aError, ERROR_LOC aErrorLoc,
                                                      bool aIgnoreLineWidth ) const
 {
-    EDA_TEXT::TransformBoundingBoxWithClearanceToPolygon( &aCornerBuffer, aClearance );
+    if( GetFont()->IsOutline() )
+    {
+#ifdef DEBUG
+        std::cerr << "calling polygonText( " << GetShownText() << " )" << std::endl;
+        // TODO!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        // just a guess, let's see what this does
+#endif
+        polygonText( aCornerBuffer, aLayer, GetPosition(), GetShownText(), GetFont(), this );
+    }
+    else
+    {
+        EDA_TEXT::TransformBoundingBoxWithClearanceToPolygon( &aCornerBuffer, aClearance );
+    }
 }
 
 

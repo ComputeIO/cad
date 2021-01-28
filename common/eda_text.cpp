@@ -88,6 +88,12 @@ EDA_TEXT_VJUSTIFY_T EDA_TEXT::MapVertJustify( int aVertJustify )
 }
 
 
+FONT* EDA_TEXT::GetFont() const
+{
+    return m_font ? m_font : FONT::GetFont();
+}
+
+
 wxString EDA_TEXT::GetShownText( int aDepth, FONT** aFontPtr ) const
 {
     if( aFontPtr )
@@ -320,10 +326,10 @@ EDA_RECT EDA_TEXT::GetTextBox( int aLine, bool aInvertY ) const
     }
 
     // calculate the H and V size
-    const auto& font = basic_gal.GetFont();
-    VECTOR2D    fontSize( GetTextSize() );
-    double      penWidth( thickness );
-    int dx = KiROUND( font.ComputeStringBoundaryLimits( &basic_gal, text, fontSize, penWidth ).x );
+    VECTOR2D fontSize( GetTextSize() );
+    double   penWidth( thickness );
+    int      dx = KiROUND(
+            GetFont()->ComputeStringBoundaryLimits( &basic_gal, text, fontSize, penWidth ).x );
     int dy = GetInterline();
 
     // Creates bounding box (rectangle) for horizontal, left and top justified text. The
@@ -347,7 +353,7 @@ EDA_RECT EDA_TEXT::GetTextBox( int aLine, bool aInvertY ) const
     { // A overbar adds an extra size to the text
         // Height from the base line text of chars like [ or {
         double curr_height = GetTextHeight() * 1.15;
-        double overbarPosition = font.ComputeOverbarVerticalPosition( fontSize.y );
+        double overbarPosition = GetFont()->ComputeOverbarVerticalPosition( fontSize.y );
         int    extra_height = KiROUND( overbarPosition - curr_height );
 
         extra_height += thickness / 2;
@@ -363,7 +369,9 @@ EDA_RECT EDA_TEXT::GetTextBox( int aLine, bool aInvertY ) const
         {
             text = strings.Item( ii );
             dx = KiROUND(
-                    font.ComputeStringBoundaryLimits( &basic_gal, text, fontSize, penWidth ).x );
+                    GetFont()
+                            ->ComputeStringBoundaryLimits( &basic_gal, text, fontSize, penWidth )
+                            .x );
             textsize.x = std::max( textsize.x, dx );
             textsize.y += dy;
         }

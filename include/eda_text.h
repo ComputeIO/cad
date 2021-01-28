@@ -167,7 +167,7 @@ public:
      *
      * @return pointer to FONT instance.
      */
-    FONT* GetFont() const { return m_font; }
+    FONT* GetFont() const;
 
     /**
      * A version of GetShownText() which also indicates whether or not the text needs

@@ -57,7 +57,7 @@
 #include <limits>
 #include <memory>
 
-#include <triangulate.h>
+#include <font/triangulate.h>
 
 using namespace std::placeholders;
 using namespace KIGFX;

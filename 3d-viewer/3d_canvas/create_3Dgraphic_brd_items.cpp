@@ -35,7 +35,6 @@
 #include "../3d_rendering/3d_render_raytracing/shapes2D/round_segment_2d.h"
 #include "../3d_rendering/3d_render_raytracing/shapes2D/triangle_2d.h"
 #include "../3d_rendering/3d_render_raytracing/shapes2D/polygon_2d.h"
-#include <triangulate.h>
 #include <board_adapter.h>
 #include <board.h>
 #include <footprint.h>
@@ -56,6 +55,7 @@
 #include <utility>
 #include <vector>
 #include <font/outline_font.h>
+#include <font/triangulate.h>
 
 // These variables are parameters used in addTextSegmToContainer.
 // But addTextSegmToContainer is a call-back function,
@@ -81,14 +81,49 @@ void addTextSegmToContainer( int x0, int y0, int xf, int yf, void* aData )
 }
 
 
+#ifdef DEBUG
+static void dumpShapePolySet( const SHAPE_POLY_SET& polyList )
+{
+    std::cerr << "[SHAPE_POLY_SET ";
+    // Build the polygon with the actual position and orientation:
+    for( int i = 0; i < polyList.OutlineCount(); i++ )
+    {
+        if( i > 0 )
+            std::cerr << " ";
+        int n_points = polyList.COutline( i ).PointCount();
+        std::cerr << "(Outline " << i << " " << n_points << " pts ";
+        for( int j = 0; j < n_points; j++ )
+        {
+            const VECTOR2I& p = polyList.COutline( i ).GetPoint( j );
+            if( j > 0 )
+                std::cerr << ",";
+            std::cerr << p;
+        }
+
+        for( int k = 0; k < polyList.HoleCount( i ); k++ )
+        {
+            int h_points = polyList.CHole( i, k ).PointCount();
+            std::cerr << "{Hole " << k << " " << h_points << " pts ";
+            for( int m = 0; m < h_points; m++ )
+            {
+                const VECTOR2I& p = polyList.CHole( i, k ).GetPoint( m );
+                if( m > 0 )
+                    std::cerr << ",";
+                std::cerr << p;
+            }
+            std::cerr << "} ";
+        }
+        std::cerr << ") ";
+    }
+    std::cerr << "] ";
+}
+#endif
+
 static void transformGlyph( SHAPE_POLY_SET& aBuffer, const SHAPE_POLY_SET& polyList,
                             const PCB_TEXT* aText, PCB_LAYER_ID aLayer, int aClearanceValue,
                             int aError, ERROR_LOC aErrorLoc )
 {
-    // The polygon is expected to be a simple polygon; not self intersecting, no hole.
-    //
-    // This is of course not true for glyphs, which are generally not
-    // self-intersecting, but have holes. Let's just do the outline for now!
+    // The polygon is expected to be a non-self-intersecting polygon with zero or more holes.
 
     double  orientation = aText->GetTextAngle();
     wxPoint offset = aText->GetTextPos();
@@ -146,81 +181,6 @@ static void transformGlyph( SHAPE_POLY_SET& aBuffer, const SHAPE_POLY_SET& polyL
 }
 
 
-#define DEBUG_TRIANGULATION
-static void addPolygonAsTriangles( SHAPE_POLY_SET aPolylist, CONTAINER_2D_BASE& aDstContainer,
-                                   double aBiuTo3Dunits, const PCB_TEXT& aText )
-{
-#ifdef DEBUG_TRIANGULATION
-    std::cerr << "addPolygonAsTriangles " << aText.GetShownText() << " size " << aText.GetTextSize()
-              << " w " << aText.GetTextWidth() << " h " << aText.GetTextHeight() << " pos "
-              << aText.GetTextPos() << std::endl;
-#endif
-    for( int i = 0; i < aPolylist.OutlineCount(); i++ )
-    {
-        std::vector<std::vector<VECTOR2I>> polygon;
-        std::vector<VECTOR2I>              allPoints;
-        std::vector<VECTOR2I>              outline;
-        for( int j = 0; j < aPolylist.COutline( i ).PointCount(); j++ )
-        {
-            const VECTOR2I& p = aPolylist.COutline( i ).GetPoint( j );
-            outline.push_back( p );
-            allPoints.push_back( p );
-        }
-        polygon.push_back( outline );
-
-#ifdef DEBUG_TRIANGULATION
-        std::cerr << "{ // outline " << i << std::endl;
-        bool bar = false;
-        for( const VECTOR2I& foo : outline )
-        {
-            std::cerr << ( bar ? "," : "" ) << "{" << foo.x << "," << foo.y << "}";
-            bar = true;
-        }
-        std::cerr << "}," << std::endl;
-#endif
-
-        std::vector<VECTOR2I> hole;
-#ifdef DEBUG_TRIANGULATION
-        std::cerr << "// " << aPolylist.HoleCount( i ) << " holes "; // << std::endl;
-#endif
-        for( int k = 0; k < aPolylist.HoleCount( i ); k++ )
-        {
-            hole.clear();
-
-            for( int m = 0; m < aPolylist.CHole( i, k ).PointCount(); m++ )
-            {
-                const VECTOR2I& p = aPolylist.CHole( i, k ).GetPoint( m );
-                hole.push_back( p );
-                allPoints.push_back( p );
-            }
-            polygon.push_back( hole );
-
-#ifdef DEBUG_TRIANGULATION
-            std::cerr << "{ // hole " << k << " "; //std::endl;
-            bar = false;
-            for( const VECTOR2I& foo : hole )
-            {
-                std::cerr << ( bar ? "," : "" ) << "{" << foo.x << "," << foo.y << "}";
-                bar = true;
-            }
-            std::cerr << "},"; // << std::endl;
-#endif
-        }
-
-        std::vector<uint32_t> indices = mapbox::earcut<uint32_t>( polygon );
-
-        double xConversionFactor = aBiuTo3Dunits;
-        double yConversionFactor = -aBiuTo3Dunits;
-        for( int n = 0; n < indices.size(); n += 3 )
-        {
-            aDstContainer.Add( new TRIANGLE_2D( allPoints[indices[n]], allPoints[indices[n + 1]],
-                                                allPoints[indices[n + 2]], xConversionFactor,
-                                                yConversionFactor, aText ) );
-        }
-    }
-}
-
-
 // Based on
 // void PCB_TEXT::TransformTextShapeWithClearanceToPolygon
 // board_items_to_polygon_shape_transform.cpp
@@ -228,9 +188,9 @@ void BOARD_ADAPTER::addShapeWithClearance( const PCB_TEXT* aText, CONTAINER_2D_B
                                            PCB_LAYER_ID aLayerId, int aClearanceValue )
 {
 #ifdef DEBUG
-    std::cerr << "BOARD_ADAPTER::addShapeWithClearance( \"" << aText->GetShownText() << "\" "
-              << aText->GetPosition() << ", ..., " << aLayerId << ", " << aClearanceValue << " )"
-              << std::endl;
+    std::cerr << "BOARD_ADAPTER::addShapeWithClearance( PCB text \"" << aText->GetShownText()
+              << "\" " << aText->GetPosition() << ", ..., " << aLayerId << ", " << aClearanceValue
+              << " ) font " << aText->GetFont()->Name() << std::endl;
 #endif
     wxString txt = aText->GetShownText();
     FONT*    font = aText->GetFont();
@@ -241,12 +201,62 @@ void BOARD_ADAPTER::addShapeWithClearance( const PCB_TEXT* aText, CONTAINER_2D_B
         std::vector<SHAPE_POLY_SET> glyphs;
         aText->DrawTextAsPolygon( glyphs, aLayerId );
 
-        for( SHAPE_POLY_SET glyph : glyphs )
+        const double xConversionFactor = m_biuTo3Dunits;
+        const double yConversionFactor = -m_biuTo3Dunits;
+        auto         triangleCallback = [&]( int aPolygonIndex, const VECTOR2D& aVertex1,
+                                     const VECTOR2D& aVertex2, const VECTOR2D& aVertex3,
+                                     void* aCallbackData )
+        {
+            aDstContainer->Add( new TRIANGLE_2D( aVertex1, aVertex2, aVertex3, xConversionFactor,
+                                                 yConversionFactor, *aText ) );
+        };
+
+
+#ifdef DEBUG
+#define TRIANGULATE_WITH_EARCUT
+        std::cerr << "Triangulating with ";
+#ifdef TRIANGULATE_WITH_EARCUT
+        std::cerr << "earcut";
+#else
+        std::cerr << "triangle_2d";
+#endif
+        std::cerr << std::endl;
+#endif
+
+        for( SHAPE_POLY_SET& glyph : glyphs )
         {
             SHAPE_POLY_SET polyList;
+#ifdef FOO // DEBUG
+            std::cerr << "transformGlyph<-";
+            dumpShapePolySet( glyph );
+#endif
+            /*
             transformGlyph( polyList, glyph, aText, aLayerId, lineWidth, ARC_HIGH_DEF,
                             ERROR_INSIDE );
-            addPolygonAsTriangles( polyList, *aDstContainer, m_biuTo3Dunits, *aText );
+            */
+
+#ifdef FOO // DEBUG
+            std::cerr << "got->";
+            dumpShapePolySet( polyList );
+#endif
+
+#if 0
+            polyList.Simplify( SHAPE_POLY_SET::PM_FAST );
+
+            if( polyList.IsEmpty() ) // Just for caution
+            break;
+#endif
+            //ConvertPolygonToTriangles( polyList, *aDstContainer, m_biuTo3Dunits, *aText );
+
+            //polyList.Simplify( SHAPE_POLY_SET::PM_FAST );
+#ifdef TRIANGULATE_WITH_EARCUT
+            // using mapbox::earcut
+            //Triangulate( polyList, triangleCallback );
+            Triangulate( glyph, triangleCallback );
+#else
+            // using triangle_2d
+            ConvertPolygonToTriangles( polyList, *aDstContainer, m_biuTo3Dunits, *aText );
+#endif // TRIANGULATE_WITH_EARCUT
         }
     }
     else
@@ -261,41 +271,8 @@ void BOARD_ADAPTER::addShapeWithClearance( const PCB_TEXT* aText, CONTAINER_2D_B
         s_dstcontainer = aDstContainer;
         s_textWidth = aText->GetEffectiveTextPenWidth() + ( 2 * aClearanceValue );
 
-#if 1
         // force bold
         GRShowText( aText, COLOR4D::BLACK, true, 0, addTextSegmToContainer );
-#else
-        // not actually used, but needed by GRText
-        const COLOR4D dummy_color = COLOR4D::BLACK;
-        bool          forceBold = true;
-        int           penWidth = 0; // force max width for bold
-
-
-        if( aText->IsMultilineAllowed() )
-        {
-            wxArrayString strings_list;
-            wxStringSplit( aText->GetShownText(), strings_list, '\n' );
-            std::vector<wxPoint> positions;
-            positions.reserve( strings_list.Count() );
-            aText->GetLinePositions( positions, strings_list.Count() );
-
-            for( unsigned ii = 0; ii < strings_list.Count(); ++ii )
-            {
-                wxString txt = strings_list.Item( ii );
-
-                GRText( nullptr, positions[ii], dummy_color, txt, aText->GetTextAngle(), size,
-                        aText->GetHorizJustify(), aText->GetVertJustify(), penWidth,
-                        aText->IsItalic(), forceBold, addTextSegmToContainer, nullptr, nullptr,
-                        font );
-            }
-        }
-        else
-        {
-            GRText( nullptr, aText->GetTextPos(), dummy_color, txt, aText->GetTextAngle(), size,
-                    aText->GetHorizJustify(), aText->GetVertJustify(), penWidth, aText->IsItalic(),
-                    forceBold, addTextSegmToContainer, nullptr, nullptr, font );
-        }
-#endif
     }
 }
 
@@ -304,6 +281,11 @@ void BOARD_ADAPTER::addShapeWithClearance( const DIMENSION_BASE* aDimension,
                                            CONTAINER_2D_BASE* aDstContainer, PCB_LAYER_ID aLayerId,
                                            int aClearanceValue )
 {
+#ifdef DEBUG
+    std::cerr << "BOARD_ADAPTER::addShapeWithClearance( aDimension \""
+              << aDimension->Text().GetText() << "\" "
+              << ", ..., " << aLayerId << ", " << aClearanceValue << " )" << std::endl;
+#endif
     addShapeWithClearance( &aDimension->Text(), aDstContainer, aLayerId, aClearanceValue );
 
     const int linewidth = aDimension->GetLineThickness() + ( 2 * aClearanceValue );
@@ -768,7 +750,7 @@ void BOARD_ADAPTER::addShapeWithClearance( const PCB_SHAPE*   aShape,
                                            int aClearanceValue )
 {
 #ifdef DEBUG
-    std::cerr << "BOARD_ADAPTER::addShapeWithClearance( "
+    std::cerr << "BOARD_ADAPTER::addShapeWithClearance( shape "
               << PCB_SHAPE_TYPE_T_asString( aShape->GetShape() ) << ", ..., " << aLayerId << ", "
               << aClearanceValue << " )" << std::endl;
 #endif
@@ -866,6 +848,10 @@ void BOARD_ADAPTER::addShapeWithClearance( const PCB_SHAPE*   aShape,
         aShape->TransformShapeWithClearanceToPolygon( polyList, aLayerId, 0, ARC_HIGH_DEF,
                                                       ERROR_INSIDE );
 
+#ifdef DEBUG
+        std::cerr << "ADDING POLYGON ";
+        dumpShapePolySet( polyList );
+#endif
         polyList.Simplify( SHAPE_POLY_SET::PM_FAST );
 
         if( polyList.IsEmpty() ) // Just for caution
