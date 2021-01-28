@@ -162,7 +162,7 @@ set( EESCHEMA_SRCS
     autoplace_fields.cpp
     bus_alias.cpp
     bus-wire-junction.cpp
-    class_libentry.cpp
+    lib_part.cpp
     class_library.cpp
     cmp_library_lexer.cpp
     component_references_lister.cpp
@@ -315,8 +315,8 @@ add_custom_command(
     COMMAND ${CMAKE_COMMAND}
         -DinputFile=${CMAKE_CURRENT_SOURCE_DIR}/dialogs/dialog_bom_help.md
         -DoutputFile=${CMAKE_CURRENT_SOURCE_DIR}/dialogs/dialog_bom_help_md.h
-        -P ${CMAKE_MODULE_PATH}/markdown2C.cmake
-    DEPENDS ${CMAKE_MODULE_PATH}/markdown2C.cmake ${CMAKE_CURRENT_SOURCE_DIR}/dialogs/dialog_bom_help.md
+        -P ${CMAKE_MODULE_PATH}/BuildSteps/markdown2C.cmake
+    DEPENDS ${CMAKE_MODULE_PATH}/BuildSteps/markdown2C.cmake ${CMAKE_CURRENT_SOURCE_DIR}/dialogs/dialog_bom_help.md
     COMMENT "creating ${CMAKE_CURRENT_SOURCE_DIR}/dialogs/dialog_bom_help_md.h
        from ${CMAKE_CURRENT_SOURCE_DIR}/dialogs/dialog_bom_help.md"
     )
@@ -332,8 +332,8 @@ add_custom_command(
     COMMAND ${CMAKE_COMMAND}
         -DinputFile=${CMAKE_CURRENT_SOURCE_DIR}/sch_text_help.md
         -DoutputFile=${CMAKE_CURRENT_SOURCE_DIR}/sch_text_help_md.h
-        -P ${CMAKE_MODULE_PATH}/markdown2C.cmake
-    DEPENDS ${CMAKE_MODULE_PATH}/markdown2C.cmake ${CMAKE_CURRENT_SOURCE_DIR}/sch_text_help.md
+        -P ${CMAKE_MODULE_PATH}/BuildSteps/markdown2C.cmake
+    DEPENDS ${CMAKE_MODULE_PATH}/BuildSteps/markdown2C.cmake ${CMAKE_CURRENT_SOURCE_DIR}/sch_text_help.md
     COMMENT "creating ${CMAKE_CURRENT_SOURCE_DIR}/sch_text_help_md.h
        from ${CMAKE_CURRENT_SOURCE_DIR}/sch_text_help.md"
     )

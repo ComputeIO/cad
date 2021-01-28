@@ -154,9 +154,10 @@ add_custom_target(
         -DTEXT_OUTPUT_FILE=${CMAKE_BINARY_DIR}/kicad_build_version.txt
         -DSRC_PATH=${PROJECT_SOURCE_DIR}
         -DCMAKE_MODULE_PATH=${CMAKE_MODULE_PATH}
-        -P ${CMAKE_MODULE_PATH}/WriteVersionHeader.cmake
+        -P ${CMAKE_MODULE_PATH}/BuildSteps/WriteVersionHeader.cmake
     WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
     BYPRODUCTS ${CMAKE_BINARY_DIR}/kicad_build_version.h
+    DEPENDS ${CMAKE_MODULE_PATH}/BuildSteps/WriteVersionHeader.cmake
     COMMENT "Generating version string header"
     )
 
@@ -375,6 +376,7 @@ set( COMMON_SRCS
     netclass.cpp
     observable.cpp
     origin_transforms.cpp
+    paths.cpp
     printout.cpp
     project.cpp
     properties.cpp

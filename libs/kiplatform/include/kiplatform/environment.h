@@ -43,5 +43,27 @@ namespace KIPLATFORM
          * @return true if given path is on a network location
          */
         bool IsNetworkPath( const wxString& aPath );
+
+
+        /**
+         * Retrieves the operating system specific path for a user's documents
+         *
+         * @return User documents path
+         */
+        wxString GetDocumentsPath();
+
+        /**
+         * Retrieves the operating system specific path for a user's configuration store
+         *
+         * @return User config path
+         */
+        wxString GetUserConfigPath();
+
+        /**
+         * Retrieves the operating system specific path for user's application cache
+         *
+         * @return User cache path
+         */
+        wxString GetUserCachePath();
     }
 }

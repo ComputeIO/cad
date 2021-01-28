@@ -18,6 +18,7 @@
  * with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <glib.h>
 #include <gio/gio.h>
 #include <kiplatform/environment.h>
 
@@ -44,4 +45,22 @@ bool KIPLATFORM::ENV::IsNetworkPath( const wxString& aPath )
 {
     // placeholder, we "nerf" behavior if its a network path so return false by default
     return false;
+}
+
+
+wxString KIPLATFORM::ENV::GetDocumentsPath()
+{
+    return g_get_user_special_dir( G_USER_DIRECTORY_DOCUMENTS );
+}
+
+
+wxString KIPLATFORM::ENV::GetUserConfigPath()
+{
+    return g_get_user_config_dir();
+}
+
+
+wxString KIPLATFORM::ENV::GetUserCachePath()
+{
+    return g_get_user_cache_dir();
 }

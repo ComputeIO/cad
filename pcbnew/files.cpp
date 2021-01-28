@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2004-2015 Jean-Pierre Charras, jp.charras at wanadoo.fr
  * Copyright (C) 2011 Wayne Stambaugh <stambaughw@gmail.com>
- * Copyright (C) 2016-2020 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 2016-2021 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -49,6 +49,7 @@
 #include <wx/wupdlock.h>
 #include <settings/common_settings.h>
 #include <settings/settings_manager.h>
+#include <paths.h>
 #include <project/project_file.h>
 #include <project/project_local_settings.h>
 #include <project/net_settings.h>
@@ -64,16 +65,13 @@
 
 
 /**
- * Function AskLoadBoardFileName
- * puts up a wxFileDialog asking for a BOARD filename to open.
+ * Show a wxFileDialog asking for a #BOARD filename to open.
  *
  * @param aParent is a wxFrame passed to wxFileDialog.
  * @param aCtl is where to put the OpenProjectFiles() control bits.
- *
  * @param aFileName on entry is a probable choice, on return is the chosen filename.
- * @param aKicadFilesOnly true to list kiacad pcb files plugins only, false to list import plugins.
- *
- * @return bool - true if chosen, else false if user aborted.
+ * @param aKicadFilesOnly true to list KiCad pcb files plugins only, false to list import plugins.
+ * @return  true if chosen, else false if user aborted.
  */
 bool AskLoadBoardFileName( wxWindow* aParent, int* aCtl, wxString* aFileName, bool aKicadFilesOnly )
 {
@@ -89,15 +87,32 @@ bool AskLoadBoardFileName( wxWindow* aParent, int* aCtl, wxString* aFileName, bo
         IO_MGR::PCB_FILE_T  pluginType;
     } loaders[] =
     {
-        { PcbFileWildcard(),                    IO_MGR::KICAD_SEXP },            // Current Kicad board files
-        { LegacyPcbFileWildcard(),              IO_MGR::LEGACY },                // Old Kicad board files
-        { AltiumCircuitMakerPcbFileWildcard(),  IO_MGR::ALTIUM_CIRCUIT_MAKER },  // Import Altium Circuit Maker board files
-        { AltiumCircuitStudioPcbFileWildcard(), IO_MGR::ALTIUM_CIRCUIT_STUDIO }, // Import Altium Circuit Studio board files
-        { AltiumDesignerPcbFileWildcard(),      IO_MGR::ALTIUM_DESIGNER },       // Import Altium Designer board files
-        { CadstarPcbArchiveFileWildcard(),      IO_MGR::CADSTAR_PCB_ARCHIVE },   // Import Cadstar PCB Archive board files
-        { EaglePcbFileWildcard(),               IO_MGR::EAGLE },                 // Import Eagle board files
-        { PCadPcbFileWildcard(),                IO_MGR::PCAD },                  // Import PCAD board files
-        { FabmasterPcbFileWildcard(),           IO_MGR::FABMASTER },             // Import Fabmaster board files
+        // Current Kicad board files.
+        { PcbFileWildcard(),                    IO_MGR::KICAD_SEXP },
+
+        // Old Kicad board files.
+        { LegacyPcbFileWildcard(),              IO_MGR::LEGACY },
+
+        // Import Altium Circuit Maker board files.
+        { AltiumCircuitMakerPcbFileWildcard(),  IO_MGR::ALTIUM_CIRCUIT_MAKER },
+
+        // Import Altium Circuit Studio board files.
+        { AltiumCircuitStudioPcbFileWildcard(), IO_MGR::ALTIUM_CIRCUIT_STUDIO },
+
+        // Import Altium Designer board files.
+        { AltiumDesignerPcbFileWildcard(),      IO_MGR::ALTIUM_DESIGNER },
+
+        // Import Cadstar PCB Archive board files.
+        { CadstarPcbArchiveFileWildcard(),      IO_MGR::CADSTAR_PCB_ARCHIVE },
+
+        // Import Eagle board files.
+        { EaglePcbFileWildcard(),               IO_MGR::EAGLE },
+
+        // Import PCAD board files.
+        { PCadPcbFileWildcard(),                IO_MGR::PCAD },
+
+        // Import Fabmaster board files.
+        { FabmasterPcbFileWildcard(),           IO_MGR::FABMASTER },
     };
     // clang-format on
 
@@ -153,7 +168,7 @@ bool AskLoadBoardFileName( wxWindow* aParent, int* aCtl, wxString* aFileName, bo
     }
     else
     {
-        path = wxStandardPaths::Get().GetDocumentsDir();
+        path = PATHS::GetDefaultUserProjectsPath();
         // leave name empty
     }
 
@@ -176,7 +191,7 @@ bool AskLoadBoardFileName( wxWindow* aParent, int* aCtl, wxString* aFileName, bo
 }
 
 
-///> Helper widget to select whether a new project should be created for a file when saving
+///< Helper widget to select whether a new project should be created for a file when saving
 class CREATE_PROJECT_CHECKBOX : public wxPanel
 {
 public:
@@ -211,14 +226,13 @@ protected:
 
 
 /**
- * Puts up a wxFileDialog asking for a BOARD filename to save.
+ * Put up a wxFileDialog asking for a BOARD filename to save.
  *
  * @param aParent is a wxFrame passed to wxFileDialog.
- * @param aFileName on entry is a probable choice, on return is the
- *  chosen full filename (includes path).
- * @param aCreateProject will be filled with the state of the Create Project? checkbox if relevant
- *
- * @return bool - true if chosen, else false if user aborted.
+ * @param aFileName on entry is a probable choice, on return is the chosen full filename
+ *                  (includes path).
+ * @param aCreateProject will be filled with the state of the Create Project? checkbox if relevant.
+ * @return true if chosen, else false if user aborted.
  */
 bool AskSaveBoardFileName( PCB_EDIT_FRAME* aParent, wxString* aFileName, bool* aCreateProject )
 {
@@ -227,13 +241,8 @@ bool AskSaveBoardFileName( PCB_EDIT_FRAME* aParent, wxString* aFileName, bool* a
 
     fn.SetExt( KiCadPcbFileExtension );
 
-    wxFileDialog dlg( aParent,
-            _( "Save Board File As" ),
-            fn.GetPath(),
-            fn.GetFullName(),
-            wildcard,
-            wxFD_SAVE | wxFD_OVERWRITE_PROMPT
-            );
+    wxFileDialog dlg( aParent, _( "Save Board File As" ), fn.GetPath(), fn.GetFullName(), wildcard,
+                      wxFD_SAVE | wxFD_OVERWRITE_PROMPT );
 
     // Add a "Create a project" checkbox in standalone mode and one isn't loaded
     if( Kiface().IsSingle() && aParent->Prj().IsNullProject() )
@@ -411,7 +420,7 @@ bool PCB_EDIT_FRAME::Files_io_from_id( int id )
                 savePath = GetMruPath();
 
                 if( !savePath.IsOk() || !savePath.IsDirWritable() )
-                    savePath = wxStandardPaths::Get().GetDocumentsDir();
+                    savePath = PATHS::GetDefaultUserProjectsPath();
             }
 
             wxFileName  fn( savePath.GetPath(), orig_name, KiCadPcbFileExtension );
@@ -517,12 +526,12 @@ int PCB_EDIT_FRAME::inferLegacyEdgeClearance( BOARD* aBoard )
     if( mixed )
     {
         // If they had different widths then we can't ensure that fills will be the same.
-        wxMessageBox(
-                _( "If the zones on this board are refilled the Copper Edge Clearance "
-                   "setting will be used (see Board Setup > Design Rules > Constraints).\n"
-                   "This may result in different fills from previous Kicad versions which "
-                   "used the line thicknesses of the board boundary on the Edge Cuts layer." ),
-                _( "Edge Clearance Warning" ), wxOK | wxICON_WARNING, this );
+        wxMessageBox( _( "If the zones on this board are refilled the Copper Edge Clearance "
+                         "setting will be used (see Board Setup > Design Rules > Constraints).\n"
+                         "This may result in different fills from previous Kicad versions which "
+                         "used the line thicknesses of the board boundary on the Edge Cuts "
+                          "layer." ),
+                      _( "Edge Clearance Warning" ), wxOK | wxICON_WARNING, this );
     }
 
     return std::max( 0, edgeWidth / 2 );
@@ -579,14 +588,15 @@ bool PCB_EDIT_FRAME::OpenProjectFiles( const std::vector<wxString>& aFileSet, in
     if( is_new && !( aCtl & KICTL_CREATE ) )
     {
         // notify user that fullFileName does not exist, ask if user wants to create it.
-        wxString ask = wxString::Format( _( "PCB \"%s\" does not exist.  Do you wish to create it?" ),
+        wxString ask = wxString::Format( _( "PCB \"%s\" does not exist.  Do you wish to "
+                                             "create it?" ),
                                          fullFileName );
         if( !IsOK( this, ask ) )
             return false;
     }
 
     // Loading a complex project and build data can be time
-    // consumming, so display a busy cursor
+    // consuming, so display a busy cursor
     wxBusyCursor dummy;
 
     // No save prompt (we already prompted above), and only reset to a new blank board if new
@@ -812,7 +822,6 @@ bool PCB_EDIT_FRAME::SavePcbFile( const wxString& aFileName, bool addToHistory,
                                   bool aChangeProject )
 {
     // please, keep it simple.  prompting goes elsewhere.
-
     wxFileName pcbFileName = aFileName;
 
     if( pcbFileName.GetExt() == LegacyPcbFileExtension )
@@ -982,10 +991,8 @@ bool PCB_EDIT_FRAME::SavePcbCopy( const wxString& aFileName, bool aCreateProject
     }
     catch( const IO_ERROR& ioe )
     {
-        wxString msg = wxString::Format( _(
-                "Error saving board file \"%s\".\n%s" ),
-                pcbFileName.GetFullPath(), ioe.What()
-                );
+        wxString msg = wxString::Format( _( "Error saving board file \"%s\".\n%s" ),
+                                         pcbFileName.GetFullPath(), ioe.What() );
         DisplayError( this, msg );
 
         return false;
@@ -1034,7 +1041,7 @@ bool PCB_EDIT_FRAME::doAutoSave()
 
     if( GetBoard()->GetFileName().IsEmpty() )
     {
-        tmpFileName = wxFileName( wxStandardPaths::Get().GetDocumentsDir(), wxT( "noname" ),
+        tmpFileName = wxFileName( PATHS::GetDefaultUserProjectsPath(), wxT( "noname" ),
                                   KiCadPcbFileExtension );
         GetBoard()->SetFileName( tmpFileName.GetFullPath() );
     }
@@ -1052,7 +1059,7 @@ bool PCB_EDIT_FRAME::doAutoSave()
         return false;
 
     // If the board file path is not writable, try writing to a platform specific temp file
-    // path.  If that path isn't writabe, give up.
+    // path.  If that path isn't writable, give up.
     if( !autoSaveFileName.IsDirWritable() )
     {
         autoSaveFileName.SetPath( wxFileName::GetTempDir() );
@@ -1144,7 +1151,6 @@ bool PCB_EDIT_FRAME::importFile( const wxString& aFileName, int aFileType )
                     wxMessageBox( msg, _( "File Save Error" ), wxOK | wxICON_ERROR );
                 }
             }
-
 
             // Update footprint LIB_IDs to point to the just imported library
             for( FOOTPRINT* footprint : GetBoard()->Footprints() )

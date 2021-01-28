@@ -40,13 +40,13 @@ function( make_lexer outputTarget inputFile outHeaderFile outCppFile enum )
             -DinputFile=${CMAKE_CURRENT_SOURCE_DIR}/${inputFile}
             -DoutHeaderFile=${CMAKE_CURRENT_BINARY_DIR}/${outHeaderFile}
             -DoutCppFile=${CMAKE_CURRENT_BINARY_DIR}/${outCppFile}
-            -P ${CMAKE_MODULE_PATH}/TokenList2DsnLexer.cmake
+            -P ${CMAKE_MODULE_PATH}/BuildSteps/TokenList2DsnLexer.cmake
         COMMENT "TokenList2DsnLexer.cmake creating:
            ${outHeaderFile} and
            ${outCppFile} from
            ${inputFile}"
         DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/${inputFile}
-                ${CMAKE_MODULE_PATH}/TokenList2DsnLexer.cmake
+                ${CMAKE_MODULE_PATH}/BuildSteps/TokenList2DsnLexer.cmake
         )
 
     target_sources( ${outputTarget} PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/${outCppFile} )
@@ -84,10 +84,11 @@ function( generate_lemon_grammar TGT GRAMMAR_DIR CONSUMING_FILE GRAMMAR_FILE )
             -DLEMON_TEMPLATE=${LEMON_TEMPLATE}
             -DGRAMMAR_FILE=${CMAKE_CURRENT_SOURCE_DIR}/${GRAMMAR_FILE}
             -DGRAMMAR_DIR=${CMAKE_CURRENT_BINARY_DIR}/${GRAMMAR_DIR}
-            -P ${CMAKE_MODULE_PATH}/LemonParserGenerator.cmake
+            -P ${CMAKE_MODULE_PATH}/BuildSteps/LemonParserGenerator.cmake
         COMMENT "Running Lemon on ${GRAMMAR_FILE} to generate ${GRAMMAR_DIR}/${GRAMMAR_BASE}.c"
         DEPENDS lemon
                 ${CMAKE_CURRENT_SOURCE_DIR}/${GRAMMAR_FILE}
+                ${CMAKE_MODULE_PATH}/BuildSteps/LemonParserGenerator.cmake
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/${GRAMMAR_DIR}
     )
 
@@ -133,6 +134,7 @@ function( translate_language LANG OUT_FILE)
 
     add_custom_command(
         OUTPUT ${OUT_FILE}
+        DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/pofiles/${LANG}.po
         COMMAND ${GETTEXT_MSGFMT_EXECUTABLE}
                 ${CMAKE_CURRENT_SOURCE_DIR}/pofiles/${LANG}.po
                 -o ${OUT_FILE}
@@ -166,25 +168,31 @@ macro( linux_metadata_translation SRC_FILE OUT_FILE PO_DIR )
 
     file( MAKE_DIRECTORY ${OUT_DIR} )
 
-    # Figure out the type of file we are translating
-    set( OPT_TYPE "" )
-    set( SED_CMD "" )
 
-    if( ${SRC_FILE} MATCHES ".*\.desktop\.in" )
-        set( OPT_TYPE "--desktop" )
-    elseif( ${SRC_FILE} MATCHES ".*\.xml\.in" )
-        set( OPT_TYPE "--xml" )
-    endif ()
+    # Find all the po files to setup the dependency chain
+    file( STRINGS ${PO_DIR}/LINGUAS LANG_ARRAY REGEX "^[^#].*" )
+
+    set( LANG_FILES "" )
+
+    foreach( LANG ${LANG_ARRAY} )
+        # Keep a list of the language files that are created to add to the target
+        list( APPEND LANG_FILES "${PO_DIR}/${LANG}.po" )
+    endforeach()
+
 
     # Add the command to translate the file
     if( KICAD_BUILD_I18N )
         add_custom_command(
             OUTPUT ${OUT_FILE}
             DEPENDS ${SRC_FILE}
-            COMMAND ${GETTEXT_MSGFMT_EXECUTABLE}
-                    ${OPT_TYPE} --template=${SRC_FILE}
-                    -d ${PO_DIR}
-                    -o ${OUT_FILE}
+                    ${LANG_FILES}
+                    ${CMAKE_MODULE_PATH}/BuildSteps/TranslatePlatformMetadata_linux.cmake
+            COMMAND ${CMAKE_COMMAND}
+                    -DMSGFMT_EXE="${GETTEXT_MSGFMT_EXECUTABLE}"
+                    -DPO_DIR="${PO_DIR}"
+                    -DSRC_FILE="${SRC_FILE}"
+                    -DDEST_FILE="${OUT_FILE}"
+                    -P ${CMAKE_MODULE_PATH}/BuildSteps/TranslatePlatformMetadata_linux.cmake
             COMMENT "Translating file ${OUT_FNAME}"
             )
     else()

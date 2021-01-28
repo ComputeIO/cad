@@ -23,6 +23,7 @@
 #import <Cocoa/Cocoa.h>
 #include <wx/osx/core/cfstring.h>
 #include <wx/filefn.h>
+#include <wx/stdpaths.h>
 
 bool KIPLATFORM::ENV::MoveToTrash( const wxString& aPath, wxString& aError )
 {
@@ -49,4 +50,27 @@ bool KIPLATFORM::ENV::IsNetworkPath( const wxString& aPath )
 {
     // placeholder, we "nerf" behavior if its a network path so return false by default
     return false;
+}
+
+
+wxString KIPLATFORM::ENV::GetDocumentsPath()
+{
+    return wxStandardPaths::Get().GetDocumentsDir();
+}
+
+
+wxString KIPLATFORM::ENV::GetUserConfigPath()
+{
+    return wxStandardPaths::Get().GetUserConfigDir();
+}
+
+
+wxString KIPLATFORM::ENV::GetUserCachePath()
+{
+    NSURL* url = [[NSFileManager defaultManager] URLForDirectory:NSCachesDirectory
+                                                 inDomain:NSUserDomainMask
+                                                 appropriateForURL:nil
+                                                 create:NO error:nil];
+
+    return wxCFStringRef::AsString((CFStringRef)url.path);
 }
