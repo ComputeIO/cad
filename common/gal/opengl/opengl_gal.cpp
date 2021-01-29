@@ -1055,56 +1055,27 @@ void OPENGL_GAL::DrawPolygon( const VECTOR2D aPointList[], int aListSize )
 
 void OPENGL_GAL::fillPolygonAsTriangles( const SHAPE_POLY_SET& aPolyList )
 {
-    for( int i = 0; i < aPolyList.OutlineCount(); i++ )
+    currentManager->Shader( SHADER_NONE );
+    currentManager->Color( fillColor.r, fillColor.g, fillColor.b, fillColor.a );
+
+    auto triangleCallback = [&]( int aPolygonIndex, const VECTOR2D& aVertex1,
+                                 const VECTOR2D& aVertex2, const VECTOR2D& aVertex3,
+                                 void* aCallbackData )
     {
-        std::vector<std::vector<VECTOR2I>> polygon;
-        std::vector<VECTOR2I>              allPoints;
-        std::vector<VECTOR2I>              outline;
-        for( int j = 0; j < aPolyList.COutline( i ).PointCount(); j++ )
-        {
-            const VECTOR2I& p = aPolyList.COutline( i ).GetPoint( j );
-            outline.push_back( p );
-            allPoints.push_back( p );
-        }
-        polygon.push_back( outline );
+        currentManager->Vertex( aVertex1.x, aVertex1.y, layerDepth );
+        currentManager->Vertex( aVertex2.x, aVertex2.y, layerDepth );
+        currentManager->Vertex( aVertex3.x, aVertex3.y, layerDepth );
+    };
 
-        std::vector<VECTOR2I> hole;
-        for( int k = 0; k < aPolyList.HoleCount( i ); k++ )
-        {
-            hole.clear();
-
-            for( int m = 0; m < aPolyList.CHole( i, k ).PointCount(); m++ )
-            {
-                const VECTOR2I& p = aPolyList.CHole( i, k ).GetPoint( m );
-                hole.push_back( p );
-                allPoints.push_back( p );
-            }
-            polygon.push_back( hole );
-        }
-
-        std::vector<uint32_t> indices = mapbox::earcut<uint32_t>( polygon );
-
-        //double xConversionFactor = 1.0; // aBiuTo3Dunits;
-        //double yConversionFactor = 1.0; // -aBiuTo3Dunits;
-
-        currentManager->Shader( SHADER_NONE );
-        currentManager->Color( fillColor.r, fillColor.g, fillColor.b, fillColor.a );
-
-
-        for( int n = 0; n < (int) indices.size(); n += 3 )
-        {
-            for( int m = 0; m < 3; m++ )
-            {
-                const VECTOR2I& p = allPoints[indices[n + m]];
-                currentManager->Vertex( p.x, p.y, layerDepth );
-            }
-        }
-    }
+    Triangulate( aPolyList, triangleCallback );
 }
 
 
-void OPENGL_GAL::DrawGlyph( const SHAPE_POLY_SET& aPolySet )
+void OPENGL_GAL::DrawGlyph( const SHAPE_POLY_SET& aPolySet, int aNth, int aTotal )
 {
+#ifdef DEBUG
+    std::cerr << "OPENGL_GAL::DrawGlyph( ..., " << aNth << ", " << aTotal << " )\n";
+#endif
     fillPolygonAsTriangles( aPolySet );
     //SHAPE_POLY_SET polyCopy( aPolySet );
     //polyCopy.CacheTriangulation();

@@ -176,7 +176,7 @@ void BASIC_GAL::DrawLine( const VECTOR2D& aStartPoint, const VECTOR2D& aEndPoint
 }
 
 
-void BASIC_GAL::DrawGlyph( const SHAPE_POLY_SET& aPolySet )
+void BASIC_GAL::DrawGlyph( const SHAPE_POLY_SET& aPolySet, int aNth, int aTotal )
 {
     if( m_plotter )
     {

@@ -28,10 +28,12 @@
 
 #include <gal/graphics_abstraction_layer.h>
 #include <gal/definitions.h>
+#include <geometry/shape_poly_set.h>
 
 #include <math/util.h> // for KiROUND
 
 #include <cmath>
+
 
 using namespace KIGFX;
 
@@ -272,4 +274,16 @@ COLOR4D GAL::getCursorColor() const
     }
 
     return color;
+}
+
+
+void GAL::DrawGlyphs( const std::vector<SHAPE_POLY_SET> aGlyphs )
+{
+    int nth = 0;
+    int total = aGlyphs.size();
+    for( const SHAPE_POLY_SET& glyph : aGlyphs )
+    {
+        DrawGlyph( glyph, nth, total );
+        nth++;
+    }
 }

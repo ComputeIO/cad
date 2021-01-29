@@ -184,7 +184,9 @@ public:
      *
      * @param aPointList is the list of the polygon points.
      */
-    virtual void DrawGlyph( const SHAPE_POLY_SET& aPolySet ) = 0;
+    virtual void DrawGlyph( const SHAPE_POLY_SET& aPolySet, int aNth = 0, int aTotal = 1 ) = 0;
+
+    void DrawGlyphs( const std::vector<SHAPE_POLY_SET> aGlyphs );
 
     /**
      * Draw a cubic bezier spline.

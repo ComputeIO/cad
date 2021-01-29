@@ -33,8 +33,9 @@
 #include <gal/cairo/cairo_compositor.h>
 #include <gal/definitions.h>
 #include <geometry/shape_poly_set.h>
-#include <math/util.h>      // for KiROUND
+#include <math/util.h> // for KiROUND
 #include <bitmap_base.h>
+#include <font/triangulate.h>
 
 #include <algorithm>
 #include <cmath>
@@ -45,15 +46,13 @@
 using namespace KIGFX;
 
 
-
-CAIRO_GAL_BASE::CAIRO_GAL_BASE( GAL_DISPLAY_OPTIONS& aDisplayOptions ) :
-    GAL( aDisplayOptions )
+CAIRO_GAL_BASE::CAIRO_GAL_BASE( GAL_DISPLAY_OPTIONS& aDisplayOptions ) : GAL( aDisplayOptions )
 {
     // Initialise grouping
-    isGrouping          = false;
-    isElementAdded      = false;
-    groupCounter        = 0;
-    currentGroup        = nullptr;
+    isGrouping = false;
+    isElementAdded = false;
+    groupCounter = 0;
+    currentGroup = nullptr;
 
     lineWidth = 1.0;
     linePixelWidth = 1.0;
@@ -62,9 +61,9 @@ CAIRO_GAL_BASE::CAIRO_GAL_BASE( GAL_DISPLAY_OPTIONS& aDisplayOptions ) :
 
     // Initialise Cairo state
     cairo_matrix_init_identity( &cairoWorldScreenMatrix );
-    currentContext      = nullptr;
-    context             = nullptr;
-    surface             = nullptr;
+    currentContext = nullptr;
+    context = nullptr;
+    surface = nullptr;
 
     // Grid color settings are different in Cairo and OpenGL
     SetGridColor( COLOR4D( 0.1, 0.1, 0.1, 0.8 ) );
@@ -164,8 +163,8 @@ void CAIRO_GAL_BASE::arc_angles_xform_and_normalize( double& aStartAngle, double
     // So, if this is the case, force the aEndAngle value to draw a circle.
     aStartAngle = angle_xform( startAngle );
 
-    if( std::abs( aEndAngle - aStartAngle ) >= 2*M_PI )     // arc is a full circle
-        aEndAngle = aStartAngle + 2*M_PI;
+    if( std::abs( aEndAngle - aStartAngle ) >= 2 * M_PI ) // arc is a full circle
+        aEndAngle = aStartAngle + 2 * M_PI;
     else
         aEndAngle = angle_xform( endAngle );
 }
@@ -210,9 +209,9 @@ void CAIRO_GAL_BASE::DrawLine( const VECTOR2D& aStartPoint, const VECTOR2D& aEnd
 
 void CAIRO_GAL_BASE::syncLineWidth( bool aForceWidth, double aWidth )
 {
-    auto w =  floor( xform( aForceWidth ? aWidth : lineWidth ) + 0.5 );
+    auto w = floor( xform( aForceWidth ? aWidth : lineWidth ) + 0.5 );
 
-    if (w <= 1.0)
+    if( w <= 1.0 )
     {
         w = 1.0;
         cairo_set_line_join( currentContext, CAIRO_LINE_JOIN_MITER );
@@ -225,7 +224,7 @@ void CAIRO_GAL_BASE::syncLineWidth( bool aForceWidth, double aWidth )
         cairo_set_line_join( currentContext, CAIRO_LINE_JOIN_ROUND );
         cairo_set_line_cap( currentContext, CAIRO_LINE_CAP_ROUND );
         cairo_set_line_width( currentContext, w );
-        lineWidthIsOdd = ((int)w % 2) == 1;
+        lineWidthIsOdd = ( (int) w % 2 ) == 1;
     }
 
     lineWidthInPixels = w;
@@ -233,7 +232,7 @@ void CAIRO_GAL_BASE::syncLineWidth( bool aForceWidth, double aWidth )
 
 
 void CAIRO_GAL_BASE::DrawSegment( const VECTOR2D& aStartPoint, const VECTOR2D& aEndPoint,
-                             double aWidth )
+                                  double aWidth )
 {
     if( isFillEnabled )
     {
@@ -255,20 +254,21 @@ void CAIRO_GAL_BASE::DrawSegment( const VECTOR2D& aStartPoint, const VECTOR2D& a
 
         // Outline mode for tracks
         VECTOR2D startEndVector = aEndPoint - aStartPoint;
-        double   lineAngle      = atan2( startEndVector.y, startEndVector.x );
+        double   lineAngle = atan2( startEndVector.y, startEndVector.x );
 
         double sa = sin( lineAngle + M_PI / 2.0 );
         double ca = cos( lineAngle + M_PI / 2.0 );
 
-        auto pa0 = xform ( aStartPoint + VECTOR2D(aWidth * ca, aWidth * sa ) );
-        auto pa1 = xform ( aStartPoint - VECTOR2D(aWidth * ca, aWidth * sa ) );
-        auto pb0 = xform ( aEndPoint + VECTOR2D(aWidth * ca, aWidth * sa ) );
-        auto pb1 = xform ( aEndPoint - VECTOR2D(aWidth * ca, aWidth * sa ) );
+        auto pa0 = xform( aStartPoint + VECTOR2D( aWidth * ca, aWidth * sa ) );
+        auto pa1 = xform( aStartPoint - VECTOR2D( aWidth * ca, aWidth * sa ) );
+        auto pb0 = xform( aEndPoint + VECTOR2D( aWidth * ca, aWidth * sa ) );
+        auto pb1 = xform( aEndPoint - VECTOR2D( aWidth * ca, aWidth * sa ) );
         auto pa = xform( aStartPoint );
         auto pb = xform( aEndPoint );
-        auto rb = (pa0 - pa).EuclideanNorm();
+        auto rb = ( pa0 - pa ).EuclideanNorm();
 
-        cairo_set_source_rgba( currentContext, strokeColor.r, strokeColor.g, strokeColor.b, strokeColor.a );
+        cairo_set_source_rgba( currentContext, strokeColor.r, strokeColor.g, strokeColor.b,
+                               strokeColor.a );
 
         cairo_move_to( currentContext, pa0.x, pa0.y );
         cairo_line_to( currentContext, pb0.x, pb0.y );
@@ -277,7 +277,8 @@ void CAIRO_GAL_BASE::DrawSegment( const VECTOR2D& aStartPoint, const VECTOR2D& a
         cairo_line_to( currentContext, pb1.x, pb1.y );
 
         cairo_arc( currentContext, pb.x, pb.y, rb, lineAngle - M_PI / 2.0, lineAngle + M_PI / 2.0 );
-        cairo_arc( currentContext, pa.x, pa.y, rb, lineAngle + M_PI / 2.0, lineAngle + 3.0 * M_PI / 2.0 );
+        cairo_arc( currentContext, pa.x, pa.y, rb, lineAngle + M_PI / 2.0,
+                   lineAngle + 3.0 * M_PI / 2.0 );
 
         flushPath();
     }
@@ -303,7 +304,7 @@ void CAIRO_GAL_BASE::DrawCircle( const VECTOR2D& aCenterPoint, double aRadius )
 
 
 void CAIRO_GAL_BASE::DrawArc( const VECTOR2D& aCenterPoint, double aRadius, double aStartAngle,
-                         double aEndAngle )
+                              double aEndAngle )
 {
     syncLineWidth();
 
@@ -338,8 +339,8 @@ void CAIRO_GAL_BASE::DrawArc( const VECTOR2D& aCenterPoint, double aRadius, doub
 }
 
 
-void CAIRO_GAL_BASE::DrawArcSegment( const VECTOR2D& aCenterPoint, double aRadius, double aStartAngle,
-                                double aEndAngle, double aWidth )
+void CAIRO_GAL_BASE::DrawArcSegment( const VECTOR2D& aCenterPoint, double aRadius,
+                                     double aStartAngle, double aEndAngle, double aWidth )
 {
     if( isFillEnabled )
     {
@@ -368,14 +369,15 @@ void CAIRO_GAL_BASE::DrawArcSegment( const VECTOR2D& aCenterPoint, double aRadiu
     // whole arc to change position/size
     lineWidthIsOdd = !( static_cast<int>( aRadius ) % 1 );
 
-    auto mid = roundp( xform( aCenterPoint ) );
+    auto   mid = roundp( xform( aCenterPoint ) );
     double width = xform( aWidth / 2.0 );
-    auto startPointS = VECTOR2D( r, 0.0 ).Rotate( startAngleS );
-    auto endPointS = VECTOR2D( r, 0.0 ).Rotate( endAngleS );
+    auto   startPointS = VECTOR2D( r, 0.0 ).Rotate( startAngleS );
+    auto   endPointS = VECTOR2D( r, 0.0 ).Rotate( endAngleS );
 
     cairo_save( currentContext );
 
-    cairo_set_source_rgba( currentContext, strokeColor.r, strokeColor.g, strokeColor.b, strokeColor.a );
+    cairo_set_source_rgba( currentContext, strokeColor.r, strokeColor.g, strokeColor.b,
+                           strokeColor.a );
 
     cairo_translate( currentContext, mid.x, mid.y );
 
@@ -386,7 +388,8 @@ void CAIRO_GAL_BASE::DrawArcSegment( const VECTOR2D& aCenterPoint, double aRadiu
     cairo_arc( currentContext, 0, 0, r + width, startAngleS, endAngleS );
 
     cairo_new_sub_path( currentContext );
-    cairo_arc_negative( currentContext, startPointS.x, startPointS.y, width, startAngleS, startAngleS + M_PI );
+    cairo_arc_negative( currentContext, startPointS.x, startPointS.y, width, startAngleS,
+                        startAngleS + M_PI );
 
     cairo_new_sub_path( currentContext );
     cairo_arc( currentContext, endPointS.x, endPointS.y, width, endAngleS, endAngleS + M_PI );
@@ -396,6 +399,28 @@ void CAIRO_GAL_BASE::DrawArcSegment( const VECTOR2D& aCenterPoint, double aRadiu
 
     isElementAdded = true;
 }
+
+
+#ifdef DEBUG
+void CAIRO_GAL_BASE::DrawTriangle( const VECTOR2D& aVertex1, const VECTOR2D& aVertex2,
+                                   const VECTOR2D& aVertex3 )
+{
+    syncLineWidth();
+
+    const auto p0 = roundp( xform( aVertex1 ) );
+    const auto p1 = roundp( xform( aVertex2 ) );
+    const auto p2 = roundp( xform( aVertex3 ) );
+
+    // The path is composed from 3 segments
+    cairo_move_to( currentContext, p0.x, p0.y );
+    cairo_line_to( currentContext, p1.x, p1.y );
+    cairo_line_to( currentContext, p2.x, p2.y );
+    cairo_close_path( currentContext );
+    flushPath();
+
+    isElementAdded = true;
+}
+#endif
 
 
 void CAIRO_GAL_BASE::DrawRectangle( const VECTOR2D& aStartPoint, const VECTOR2D& aEndPoint )
@@ -446,50 +471,83 @@ static inline void moveOrLineTo( cairo_t* ctx, const VECTOR2I& aPoint, bool aDoL
 }
 
 
-void CAIRO_GAL_BASE::DrawGlyph( const SHAPE_POLY_SET& aPolySet )
+static inline void setSourceRgba( cairo_t* ctx, const COLOR4D& aColor )
 {
-    for( int iOutline = 0; iOutline < aPolySet.OutlineCount(); ++iOutline )
+    cairo_set_source_rgba( ctx, aColor.r, aColor.g, aColor.b, aColor.a );
+}
+
+
+void CAIRO_GAL_BASE::DrawGlyph( const SHAPE_POLY_SET& aPolySet, int aNth, int aTotal )
+{
+    std::cerr << "CAIRO_GAL_BASE::DrawGlyph( ..., " << aNth << ", " << aTotal << " )\n";
+
+    if( aNth == 0 )
     {
-        const SHAPE_LINE_CHAIN& lineChain = aPolySet.COutline( iOutline );
-
-        if( lineChain.PointCount() < 2 )
-            continue;
-
-        syncLineWidth();
-
-        auto numPoints = lineChain.PointCount();
-
-        for( int i = 0; i < numPoints; ++i )
-        {
-            const VECTOR2I& pw = lineChain.CPoint( i );
-            const auto      ps = roundp( xform( pw.x, pw.y ) );
-            moveOrLineTo( currentContext, ps, i > 0 );
-        }
-
-        if( aPolySet.HoleCount( iOutline ) > 0 )
-        {
-            cairo_close_path( currentContext );
-
-            for( int iHole = 0; iHole < aPolySet.HoleCount( iOutline ); iHole++ )
-            {
-                const SHAPE_LINE_CHAIN& hole = aPolySet.CHole( iOutline, iHole );
-
-                for( int iP = 0; iP < hole.PointCount(); ++iP )
-                {
-                    const VECTOR2I& holePw = hole.CPoint( iP );
-                    const auto      holePs = roundp( xform( holePw.x, holePw.y ) );
-                    moveOrLineTo( currentContext, holePs, iP > 0 );
-                }
-
-                cairo_close_path( currentContext );
-            }
-            cairo_set_fill_rule( currentContext, CAIRO_FILL_RULE_EVEN_ODD );
-        }
-
+        cairo_close_path( currentContext );
         flushPath();
+
+        cairo_new_path( currentContext );
+        SetIsFill( true );
+        SetIsStroke( false );
     }
 
-    isElementAdded = true;
+    // eventually glyphs should not be drawn as polygons at all,
+    // but as bitmaps with antialiasing, this is just a stopgap measure
+    // of getting some form of outline font display
+    auto triangleCallback = [&]( int aPolygonIndex, const VECTOR2D& aVertex1,
+                                 const VECTOR2D& aVertex2, const VECTOR2D& aVertex3,
+                                 void* aCallbackData )
+    {
+#if 1
+        syncLineWidth();
+
+        const auto p0 = roundp( xform( aVertex1 ) );
+        const auto p1 = roundp( xform( aVertex2 ) );
+        const auto p2 = roundp( xform( aVertex3 ) );
+
+        /*
+        cairo_move_to( currentContext, aVertex1.x, aVertex1.y );
+        cairo_line_to( currentContext, aVertex2.x, aVertex2.y );
+        cairo_line_to( currentContext, aVertex3.x, aVertex3.y );
+        cairo_line_to( currentContext, aVertex1.x, aVertex1.y );
+    */
+        cairo_move_to( currentContext, p0.x, p0.y );
+        cairo_line_to( currentContext, p1.x, p1.y );
+        cairo_line_to( currentContext, p2.x, p2.y );
+        cairo_close_path( currentContext );
+        /*
+        setSourceRgba( currentContext, fillColor );
+        SetIsFill( true );
+        cairo_set_fill_rule( currentContext, CAIRO_FILL_RULE_EVEN_ODD );
+        flushPath();
+        */
+        //cairo_fill( currentContext );
+#else
+        // just a silly test
+        /*
+        DrawRectangle(aVertex1, aVertex2);
+        DrawRectangle(aVertex2, aVertex3);
+        DrawRectangle(aVertex3, aVertex1);
+        */
+        DrawTriangle( aVertex1, aVertex2, aVertex3 );
+#endif
+    };
+
+    Triangulate( aPolySet, triangleCallback );
+
+    if( aNth == aTotal - 1 )
+    {
+        /*
+        cairo_close_path( currentContext );
+        setSourceRgba( currentContext, fillColor );
+        cairo_set_fill_rule( currentContext, CAIRO_FILL_RULE_EVEN_ODD );
+        cairo_fill_preserve( currentContext );
+        setSourceRgba( currentContext, strokeColor );
+        cairo_stroke( currentContext );
+        */
+        flushPath();
+        isElementAdded = true;
+    }
 }
 
 
@@ -540,9 +598,8 @@ void CAIRO_GAL_BASE::DrawBitmap( const BITMAP_BASE& aBitmap )
     // The pixel buffer of the initial bitmap:
     const wxImage& bm_pix_buffer = *aBitmap.GetImageData();
 
-    uint32_t mask_color = ( bm_pix_buffer.GetMaskRed() << 16 ) +
-            ( bm_pix_buffer.GetMaskGreen() << 8 ) +
-            ( bm_pix_buffer.GetMaskBlue() );
+    uint32_t mask_color = ( bm_pix_buffer.GetMaskRed() << 16 )
+                          + ( bm_pix_buffer.GetMaskGreen() << 8 ) + ( bm_pix_buffer.GetMaskBlue() );
 
     // Copy the source bitmap to the cairo bitmap buffer.
     // In cairo bitmap buffer, a ARGB32 bitmap is an ARGB pixel packed into a uint_32
@@ -699,12 +756,9 @@ void CAIRO_GAL_BASE::Transform( const MATRIX3x3D& aTransformation )
 {
     cairo_matrix_t cairoTransformation, newXform;
 
-    cairo_matrix_init( &cairoTransformation,
-                       aTransformation.m_data[0][0],
-                       aTransformation.m_data[1][0],
-                       aTransformation.m_data[0][1],
-                       aTransformation.m_data[1][1],
-                       aTransformation.m_data[0][2],
+    cairo_matrix_init( &cairoTransformation, aTransformation.m_data[0][0],
+                       aTransformation.m_data[1][0], aTransformation.m_data[0][1],
+                       aTransformation.m_data[1][1], aTransformation.m_data[0][2],
                        aTransformation.m_data[1][2] );
 
     cairo_matrix_multiply( &newXform, &currentXform, &cairoTransformation );
@@ -746,7 +800,7 @@ void CAIRO_GAL_BASE::Translate( const VECTOR2D& aTranslation )
     }
     else
     {
-        cairo_matrix_translate ( &currentXform, aTranslation.x, aTranslation.y );
+        cairo_matrix_translate( &currentXform, aTranslation.x, aTranslation.y );
         updateWorldScreenMatrix();
     }
 }
@@ -819,10 +873,10 @@ int CAIRO_GAL_BASE::BeginGroup()
     storePath();
 
     GROUP group;
-    int groupNumber = getNewGroupNumber();
+    int   groupNumber = getNewGroupNumber();
     groups.insert( std::make_pair( groupNumber, group ) );
     currentGroup = &groups[groupNumber];
-    isGrouping   = true;
+    isGrouping = true;
 
     return groupNumber;
 }
@@ -842,48 +896,45 @@ void CAIRO_GAL_BASE::DrawGroup( int aGroupNumber )
 
     storePath();
 
-    for( GROUP::iterator it = groups[aGroupNumber].begin();
-         it != groups[aGroupNumber].end(); ++it )
+    for( GROUP::iterator it = groups[aGroupNumber].begin(); it != groups[aGroupNumber].end(); ++it )
     {
         switch( it->command )
         {
-        case CMD_SET_FILL:
-            isFillEnabled = it->argument.boolArg;
-            break;
+        case CMD_SET_FILL: isFillEnabled = it->argument.boolArg; break;
 
-        case CMD_SET_STROKE:
-            isStrokeEnabled = it->argument.boolArg;
-            break;
+        case CMD_SET_STROKE: isStrokeEnabled = it->argument.boolArg; break;
 
         case CMD_SET_FILLCOLOR:
-            fillColor = COLOR4D( it->argument.dblArg[0], it->argument.dblArg[1], it->argument.dblArg[2],
-                                 it->argument.dblArg[3] );
+            fillColor = COLOR4D( it->argument.dblArg[0], it->argument.dblArg[1],
+                                 it->argument.dblArg[2], it->argument.dblArg[3] );
             break;
 
         case CMD_SET_STROKECOLOR:
-            strokeColor = COLOR4D( it->argument.dblArg[0], it->argument.dblArg[1], it->argument.dblArg[2],
-                                   it->argument.dblArg[3] );
+            strokeColor = COLOR4D( it->argument.dblArg[0], it->argument.dblArg[1],
+                                   it->argument.dblArg[2], it->argument.dblArg[3] );
             break;
 
         case CMD_SET_LINE_WIDTH:
-            {
-                // Make lines appear at least 1 pixel wide, no matter of zoom
-                double x = 1.0, y = 1.0;
-                cairo_device_to_user_distance( currentContext, &x, &y );
-                double minWidth = std::min( fabs( x ), fabs( y ) );
-                cairo_set_line_width( currentContext, std::max( it->argument.dblArg[0], minWidth ) );
-            }
-            break;
+        {
+            // Make lines appear at least 1 pixel wide, no matter of zoom
+            double x = 1.0, y = 1.0;
+            cairo_device_to_user_distance( currentContext, &x, &y );
+            double minWidth = std::min( fabs( x ), fabs( y ) );
+            cairo_set_line_width( currentContext, std::max( it->argument.dblArg[0], minWidth ) );
+        }
+        break;
 
 
         case CMD_STROKE_PATH:
-            cairo_set_source_rgba( currentContext, strokeColor.r, strokeColor.g, strokeColor.b, strokeColor.a );
+            cairo_set_source_rgba( currentContext, strokeColor.r, strokeColor.g, strokeColor.b,
+                                   strokeColor.a );
             cairo_append_path( currentContext, it->cairoPath );
             cairo_stroke( currentContext );
             break;
 
         case CMD_FILL_PATH:
-            cairo_set_source_rgba( currentContext, fillColor.r, fillColor.g, fillColor.b, strokeColor.a );
+            cairo_set_source_rgba( currentContext, fillColor.r, fillColor.g, fillColor.b,
+                                   strokeColor.a );
             cairo_append_path( currentContext, it->cairoPath );
             cairo_fill( currentContext );
             break;
@@ -897,9 +948,7 @@ void CAIRO_GAL_BASE::DrawGroup( int aGroupNumber )
             break;
             */
 
-        case CMD_ROTATE:
-            cairo_rotate( currentContext, it->argument.dblArg[0] );
-            break;
+        case CMD_ROTATE: cairo_rotate( currentContext, it->argument.dblArg[0] ); break;
 
         case CMD_TRANSLATE:
             cairo_translate( currentContext, it->argument.dblArg[0], it->argument.dblArg[1] );
@@ -909,17 +958,11 @@ void CAIRO_GAL_BASE::DrawGroup( int aGroupNumber )
             cairo_scale( currentContext, it->argument.dblArg[0], it->argument.dblArg[1] );
             break;
 
-        case CMD_SAVE:
-            cairo_save( currentContext );
-            break;
+        case CMD_SAVE: cairo_save( currentContext ); break;
 
-        case CMD_RESTORE:
-            cairo_restore( currentContext );
-            break;
+        case CMD_RESTORE: cairo_restore( currentContext ); break;
 
-        case CMD_CALL_GROUP:
-            DrawGroup( it->argument.intArg );
-            break;
+        case CMD_CALL_GROUP: DrawGroup( it->argument.intArg ); break;
         }
     }
 }
@@ -929,8 +972,7 @@ void CAIRO_GAL_BASE::ChangeGroupColor( int aGroupNumber, const COLOR4D& aNewColo
 {
     storePath();
 
-    for( GROUP::iterator it = groups[aGroupNumber].begin();
-         it != groups[aGroupNumber].end(); ++it )
+    for( GROUP::iterator it = groups[aGroupNumber].begin(); it != groups[aGroupNumber].end(); ++it )
     {
         if( it->command == CMD_SET_FILLCOLOR || it->command == CMD_SET_STROKECOLOR )
         {
@@ -1032,10 +1074,10 @@ void CAIRO_GAL_BASE::drawAxes( const VECTOR2D& aStartPoint, const VECTOR2D& aEnd
 
     auto p0 = roundp( xform( aStartPoint ) );
     auto p1 = roundp( xform( aEndPoint ) );
-    auto org = roundp( xform( VECTOR2D( 0.0, 0.0 ) ) );     // Axis origin = 0,0 coord
+    auto org = roundp( xform( VECTOR2D( 0.0, 0.0 ) ) ); // Axis origin = 0,0 coord
 
     cairo_set_source_rgba( currentContext, axesColor.r, axesColor.g, axesColor.b, axesColor.a );
-    cairo_move_to( currentContext, p0.x, org.y);
+    cairo_move_to( currentContext, p0.x, org.y );
     cairo_line_to( currentContext, p1.x, org.y );
     cairo_move_to( currentContext, org.x, p0.y );
     cairo_line_to( currentContext, org.x, p1.y );
@@ -1060,7 +1102,7 @@ void CAIRO_GAL_BASE::drawGridCross( const VECTOR2D& aPoint )
 {
     syncLineWidth();
     VECTOR2D offset( 0, 0 );
-    double size = 2.0 * lineWidthInPixels + 0.5;
+    double   size = 2.0 * lineWidthInPixels + 0.5;
 
     VECTOR2D p0 = roundp( xform( aPoint ) ) - VECTOR2D( size, 0 ) + offset;
     VECTOR2D p1 = roundp( xform( aPoint ) ) + VECTOR2D( size, 0 ) + offset;
@@ -1085,30 +1127,29 @@ void CAIRO_GAL_BASE::drawGridPoint( const VECTOR2D& aPoint, double aWidth, doubl
 
     cairo_set_source_rgba( currentContext, gridColor.r, gridColor.g, gridColor.b, gridColor.a );
     cairo_rectangle( currentContext, p.x - std::floor( sw / 2 ) - 0.5,
-            p.y - std::floor( sh / 2 ) - 0.5, sw, sh );
+                     p.y - std::floor( sh / 2 ) - 0.5, sw, sh );
 
     cairo_fill( currentContext );
 }
 
 void CAIRO_GAL_BASE::flushPath()
 {
-   if( isFillEnabled )
-   {
-       cairo_set_source_rgba( currentContext,
-               fillColor.r, fillColor.g, fillColor.b, fillColor.a );
+    if( isFillEnabled )
+    {
+        cairo_set_source_rgba( currentContext, fillColor.r, fillColor.g, fillColor.b, fillColor.a );
 
-       if( isStrokeEnabled )
-           cairo_fill_preserve( currentContext );
-       else
-           cairo_fill( currentContext );
-   }
+        if( isStrokeEnabled )
+            cairo_fill_preserve( currentContext );
+        else
+            cairo_fill( currentContext );
+    }
 
-   if( isStrokeEnabled )
-   {
-       cairo_set_source_rgba( currentContext,
-               strokeColor.r, strokeColor.g, strokeColor.b, strokeColor.a );
-       cairo_stroke( currentContext );
-   }
+    if( isStrokeEnabled )
+    {
+        cairo_set_source_rgba( currentContext, strokeColor.r, strokeColor.g, strokeColor.b,
+                               strokeColor.a );
+        cairo_stroke( currentContext );
+    }
 }
 
 
@@ -1122,14 +1163,15 @@ void CAIRO_GAL_BASE::storePath()
         {
             if( isFillEnabled )
             {
-                cairo_set_source_rgba( currentContext, fillColor.r, fillColor.g, fillColor.b, fillColor.a );
+                cairo_set_source_rgba( currentContext, fillColor.r, fillColor.g, fillColor.b,
+                                       fillColor.a );
                 cairo_fill_preserve( currentContext );
             }
 
             if( isStrokeEnabled )
             {
-                cairo_set_source_rgba( currentContext, strokeColor.r, strokeColor.g,
-                                      strokeColor.b, strokeColor.a );
+                cairo_set_source_rgba( currentContext, strokeColor.r, strokeColor.g, strokeColor.b,
+                                       strokeColor.a );
                 cairo_stroke_preserve( currentContext );
             }
         }
@@ -1142,7 +1184,7 @@ void CAIRO_GAL_BASE::storePath()
             {
                 GROUP_ELEMENT groupElement;
                 groupElement.cairoPath = cairo_copy_path( currentContext );
-                groupElement.command   = CMD_STROKE_PATH;
+                groupElement.command = CMD_STROKE_PATH;
                 currentGroup->push_back( groupElement );
             }
 
@@ -1150,7 +1192,7 @@ void CAIRO_GAL_BASE::storePath()
             {
                 GROUP_ELEMENT groupElement;
                 groupElement.cairoPath = cairo_copy_path( currentContext );
-                groupElement.command   = CMD_FILL_PATH;
+                groupElement.command = CMD_FILL_PATH;
                 currentGroup->push_back( groupElement );
             }
         }
@@ -1168,10 +1210,10 @@ void CAIRO_GAL_BASE::blitCursor( wxMemoryDC& clientDC )
     auto p = ToScreen( cursorPosition );
 
     const auto cColor = getCursorColor();
-    const int cursorSize = fullscreenCursor ? 8000 : 80;
+    const int  cursorSize = fullscreenCursor ? 8000 : 80;
 
-    wxColour color( cColor.r * cColor.a * 255, cColor.g * cColor.a * 255,
-                    cColor.b * cColor.a * 255, 255 );
+    wxColour color( cColor.r * cColor.a * 255, cColor.g * cColor.a * 255, cColor.b * cColor.a * 255,
+                    255 );
     clientDC.SetPen( wxPen( color ) );
     clientDC.DrawLine( p.x - cursorSize / 2, p.y, p.x + cursorSize / 2, p.y );
     clientDC.DrawLine( p.x, p.y - cursorSize / 2, p.x, p.y + cursorSize / 2 );
@@ -1239,13 +1281,13 @@ void CAIRO_GAL_BASE::drawPoly( const SHAPE_LINE_CHAIN& aLineChain )
         numPoints += 1;
 
     const VECTOR2I start = aLineChain.CPoint( 0 );
-    const auto p = roundp( xform( start.x, start.y ) );
+    const auto     p = roundp( xform( start.x, start.y ) );
     cairo_move_to( currentContext, p.x, p.y );
 
     for( int i = 1; i < numPoints; ++i )
     {
         const VECTOR2I& pw = aLineChain.CPoint( i );
-        const auto ps = roundp( xform( pw.x, pw.y ) );
+        const auto      ps = roundp( xform( pw.x, pw.y ) );
         cairo_line_to( currentContext, ps.x, ps.y );
     }
 
@@ -1266,42 +1308,42 @@ unsigned int CAIRO_GAL_BASE::getNewGroupNumber()
 }
 
 
-CAIRO_GAL::CAIRO_GAL( GAL_DISPLAY_OPTIONS& aDisplayOptions,
-        wxWindow* aParent, wxEvtHandler* aMouseListener,
-        wxEvtHandler* aPaintListener, const wxString& aName ) :
-    CAIRO_GAL_BASE( aDisplayOptions ),
-    wxWindow( aParent, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxEXPAND, aName )
+CAIRO_GAL::CAIRO_GAL( GAL_DISPLAY_OPTIONS& aDisplayOptions, wxWindow* aParent,
+                      wxEvtHandler* aMouseListener, wxEvtHandler* aPaintListener,
+                      const wxString& aName ) :
+        CAIRO_GAL_BASE( aDisplayOptions ),
+        wxWindow( aParent, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxEXPAND, aName )
 {
     // Initialise compositing state
-    mainBuffer          = 0;
-    overlayBuffer       = 0;
-    validCompositor     = false;
+    mainBuffer = 0;
+    overlayBuffer = 0;
+    validCompositor = false;
     SetTarget( TARGET_NONCACHED );
 
-    bitmapBuffer  = nullptr;
-    wxOutput      = nullptr;
+    bitmapBuffer = nullptr;
+    wxOutput = nullptr;
 
-    parentWindow  = aParent;
+    parentWindow = aParent;
     mouseListener = aMouseListener;
     paintListener = aPaintListener;
 
     // Connecting the event handlers
-    Connect( wxEVT_PAINT,           wxPaintEventHandler( CAIRO_GAL::onPaint ) );
+    Connect( wxEVT_PAINT, wxPaintEventHandler( CAIRO_GAL::onPaint ) );
 
     // Mouse events are skipped to the parent
-    Connect( wxEVT_MOTION,          wxMouseEventHandler( CAIRO_GAL::skipMouseEvent ) );
-    Connect( wxEVT_LEFT_DOWN,       wxMouseEventHandler( CAIRO_GAL::skipMouseEvent ) );
-    Connect( wxEVT_LEFT_UP,         wxMouseEventHandler( CAIRO_GAL::skipMouseEvent ) );
-    Connect( wxEVT_LEFT_DCLICK,     wxMouseEventHandler( CAIRO_GAL::skipMouseEvent ) );
-    Connect( wxEVT_MIDDLE_DOWN,     wxMouseEventHandler( CAIRO_GAL::skipMouseEvent ) );
-    Connect( wxEVT_MIDDLE_UP,       wxMouseEventHandler( CAIRO_GAL::skipMouseEvent ) );
-    Connect( wxEVT_MIDDLE_DCLICK,   wxMouseEventHandler( CAIRO_GAL::skipMouseEvent ) );
-    Connect( wxEVT_RIGHT_DOWN,      wxMouseEventHandler( CAIRO_GAL::skipMouseEvent ) );
-    Connect( wxEVT_RIGHT_UP,        wxMouseEventHandler( CAIRO_GAL::skipMouseEvent ) );
-    Connect( wxEVT_RIGHT_DCLICK,    wxMouseEventHandler( CAIRO_GAL::skipMouseEvent ) );
-    Connect( wxEVT_MOUSEWHEEL,      wxMouseEventHandler( CAIRO_GAL::skipMouseEvent ) );
+    Connect( wxEVT_MOTION, wxMouseEventHandler( CAIRO_GAL::skipMouseEvent ) );
+    Connect( wxEVT_LEFT_DOWN, wxMouseEventHandler( CAIRO_GAL::skipMouseEvent ) );
+    Connect( wxEVT_LEFT_UP, wxMouseEventHandler( CAIRO_GAL::skipMouseEvent ) );
+    Connect( wxEVT_LEFT_DCLICK, wxMouseEventHandler( CAIRO_GAL::skipMouseEvent ) );
+    Connect( wxEVT_MIDDLE_DOWN, wxMouseEventHandler( CAIRO_GAL::skipMouseEvent ) );
+    Connect( wxEVT_MIDDLE_UP, wxMouseEventHandler( CAIRO_GAL::skipMouseEvent ) );
+    Connect( wxEVT_MIDDLE_DCLICK, wxMouseEventHandler( CAIRO_GAL::skipMouseEvent ) );
+    Connect( wxEVT_RIGHT_DOWN, wxMouseEventHandler( CAIRO_GAL::skipMouseEvent ) );
+    Connect( wxEVT_RIGHT_UP, wxMouseEventHandler( CAIRO_GAL::skipMouseEvent ) );
+    Connect( wxEVT_RIGHT_DCLICK, wxMouseEventHandler( CAIRO_GAL::skipMouseEvent ) );
+    Connect( wxEVT_MOUSEWHEEL, wxMouseEventHandler( CAIRO_GAL::skipMouseEvent ) );
 #if defined _WIN32 || defined _WIN64
-    Connect( wxEVT_ENTER_WINDOW,    wxMouseEventHandler( CAIRO_GAL::skipMouseEvent ) );
+    Connect( wxEVT_ENTER_WINDOW, wxMouseEventHandler( CAIRO_GAL::skipMouseEvent ) );
 #endif
 
     SetSize( aParent->GetClientSize() );
@@ -1346,21 +1388,22 @@ void CAIRO_GAL::endDrawing()
     // by cairo into a format understood by wxImage.
 
     pixman_image_t* dstImg = pixman_image_create_bits(
-            wxPlatformInfo::Get().GetEndianness() == wxENDIAN_LITTLE ? PIXMAN_b8g8r8 :
-                                                                       PIXMAN_r8g8b8,
+            wxPlatformInfo::Get().GetEndianness() == wxENDIAN_LITTLE ? PIXMAN_b8g8r8
+                                                                     : PIXMAN_r8g8b8,
             screenSize.x, screenSize.y, (uint32_t*) wxOutput, wxBufferWidth * 3 );
-    pixman_image_t* srcImg = pixman_image_create_bits( PIXMAN_a8r8g8b8, screenSize.x, screenSize.y,
-            (uint32_t*) bitmapBuffer, wxBufferWidth * 4 );
+    pixman_image_t* srcImg =
+            pixman_image_create_bits( PIXMAN_a8r8g8b8, screenSize.x, screenSize.y,
+                                      (uint32_t*) bitmapBuffer, wxBufferWidth * 4 );
 
-    pixman_image_composite( PIXMAN_OP_SRC, srcImg, NULL, dstImg,
-            0, 0, 0, 0, 0, 0, screenSize.x, screenSize.y );
+    pixman_image_composite( PIXMAN_OP_SRC, srcImg, NULL, dstImg, 0, 0, 0, 0, 0, 0, screenSize.x,
+                            screenSize.y );
 
     // Free allocated memory
     pixman_image_unref( srcImg );
     pixman_image_unref( dstImg );
 
-    wxImage img( wxBufferWidth, screenSize.y, wxOutput, true );
-    wxBitmap bmp( img );
+    wxImage    img( wxBufferWidth, screenSize.y, wxOutput, true );
+    wxBitmap   bmp( img );
     wxMemoryDC mdc( bmp );
     wxClientDC clientDC( this );
 
@@ -1439,13 +1482,9 @@ void CAIRO_GAL::SetTarget( RENDER_TARGET aTarget )
     {
     default:
     case TARGET_CACHED:
-    case TARGET_NONCACHED:
-        compositor->SetBuffer( mainBuffer );
-        break;
+    case TARGET_NONCACHED: compositor->SetBuffer( mainBuffer ); break;
 
-    case TARGET_OVERLAY:
-        compositor->SetBuffer( overlayBuffer );
-        break;
+    case TARGET_OVERLAY: compositor->SetBuffer( overlayBuffer ); break;
     }
 
     currentTarget = aTarget;
@@ -1468,13 +1507,9 @@ void CAIRO_GAL::ClearTarget( RENDER_TARGET aTarget )
     // Cached and noncached items are rendered to the same buffer
     default:
     case TARGET_CACHED:
-    case TARGET_NONCACHED:
-        compositor->SetBuffer( mainBuffer );
-        break;
+    case TARGET_NONCACHED: compositor->SetBuffer( mainBuffer ); break;
 
-    case TARGET_OVERLAY:
-        compositor->SetBuffer( overlayBuffer );
-        break;
+    case TARGET_OVERLAY: compositor->SetBuffer( overlayBuffer ); break;
     }
 
     compositor->ClearBuffer( COLOR4D::BLACK );
@@ -1489,8 +1524,8 @@ void CAIRO_GAL::initSurface()
     if( isInitialized )
         return;
 
-    surface = cairo_image_surface_create_for_data( bitmapBuffer, GAL_FORMAT,
-                                                wxBufferWidth, screenSize.y, stride );
+    surface = cairo_image_surface_create_for_data( bitmapBuffer, GAL_FORMAT, wxBufferWidth,
+                                                   screenSize.y, stride );
 
     context = cairo_create( surface );
 
@@ -1521,10 +1556,11 @@ void CAIRO_GAL::deinitSurface()
 void CAIRO_GAL::allocateBitmaps()
 {
     wxBufferWidth = screenSize.x;
-    while( ( ( wxBufferWidth * 3 ) % 4 ) != 0 ) wxBufferWidth++;
+    while( ( ( wxBufferWidth * 3 ) % 4 ) != 0 )
+        wxBufferWidth++;
 
     // Create buffer, use the system independent Cairo context backend
-    stride     = cairo_format_stride_for_width( GAL_FORMAT, wxBufferWidth );
+    stride = cairo_format_stride_for_width( GAL_FORMAT, wxBufferWidth );
     bufferSize = stride * screenSize.y;
 
     wxASSERT( bitmapBuffer == nullptr );
@@ -1580,7 +1616,6 @@ bool CAIRO_GAL::updatedGalDisplayOptions( const GAL_DISPLAY_OPTIONS& aOptions )
 
     if( validCompositor && aOptions.cairo_antialiasing_mode != compositor->GetAntialiasingMode() )
     {
-
         compositor->SetAntialiasingMode( options.cairo_antialiasing_mode );
         validCompositor = false;
         deinitSurface();
@@ -1606,7 +1641,7 @@ void CAIRO_GAL_BASE::DrawGrid()
     // For the drawing the start points, end points and increments have
     // to be calculated in world coordinates
     VECTOR2D worldStartPoint = screenWorldMatrix * VECTOR2D( 0.0, 0.0 );
-    VECTOR2D worldEndPoint   = screenWorldMatrix * VECTOR2D( screenSize );
+    VECTOR2D worldEndPoint = screenWorldMatrix * VECTOR2D( screenSize );
 
     // Compute the line marker or point radius of the grid
     // Note: generic grids can't handle sub-pixel lines without
@@ -1634,7 +1669,7 @@ void CAIRO_GAL_BASE::DrawGrid()
 
     // If we cannot display the grid density, scale down by a tick size and
     // try again.  Eventually, we get some representation of the grid
-    while( std::min( gridScreenSize.x,  gridScreenSize.y ) <= gridThreshold )
+    while( std::min( gridScreenSize.x, gridScreenSize.y ) <= gridThreshold )
     {
         gridScreenSize = gridScreenSize * static_cast<double>( gridTick );
     }
@@ -1643,9 +1678,9 @@ void CAIRO_GAL_BASE::DrawGrid()
     // visible screen area
     // Note: later any point coordinate will be offsetted by gridOrigin
     int gridStartX = KiROUND( ( worldStartPoint.x - gridOrigin.x ) / gridScreenSize.x );
-    int gridEndX   = KiROUND( ( worldEndPoint.x - gridOrigin.x ) / gridScreenSize.x );
+    int gridEndX = KiROUND( ( worldEndPoint.x - gridOrigin.x ) / gridScreenSize.x );
     int gridStartY = KiROUND( ( worldStartPoint.y - gridOrigin.y ) / gridScreenSize.y );
-    int gridEndY   = KiROUND( ( worldEndPoint.y - gridOrigin.y ) / gridScreenSize.y );
+    int gridEndY = KiROUND( ( worldEndPoint.y - gridOrigin.y ) / gridScreenSize.y );
 
     // Ensure start coordinate > end coordinate
 
@@ -1653,8 +1688,10 @@ void CAIRO_GAL_BASE::DrawGrid()
     SWAP( gridStartY, >, gridEndY );
 
     // Ensure the grid fills the screen
-    --gridStartX; ++gridEndX;
-    --gridStartY; ++gridEndY;
+    --gridStartX;
+    ++gridEndX;
+    --gridStartY;
+    ++gridEndY;
 
     // Draw the grid behind all other layers
     SetLayerDepth( depthRange.y * 0.75 );
@@ -1687,10 +1724,9 @@ void CAIRO_GAL_BASE::DrawGrid()
             SetLineWidth( ( i % gridTick ) ? marker : doubleMarker );
             drawGridLine( VECTOR2D( x, gridStartY * gridScreenSize.y + gridOrigin.y ),
                           VECTOR2D( x, gridEndY * gridScreenSize.y + gridOrigin.y ) );
-
         }
     }
-    else    // Dots or Crosses grid
+    else // Dots or Crosses grid
     {
         lineWidthIsOdd = true;
         isStrokeEnabled = true;
@@ -1700,7 +1736,7 @@ void CAIRO_GAL_BASE::DrawGrid()
 
             for( int i = gridStartX; i <= gridEndX; i++ )
             {
-                bool tickX = ( i % gridTick == 0 );
+                bool     tickX = ( i % gridTick == 0 );
                 VECTOR2D pos{ i * gridScreenSize.x + gridOrigin.x,
                               j * gridScreenSize.y + gridOrigin.y };
 
@@ -1713,10 +1749,9 @@ void CAIRO_GAL_BASE::DrawGrid()
                 {
                     double doubleGridLineWidth = gridLineWidth * 2.0f;
                     drawGridPoint( pos, ( tickX ) ? doubleGridLineWidth : gridLineWidth,
-                                        ( tickY ) ? doubleGridLineWidth : gridLineWidth );
+                                   ( tickY ) ? doubleGridLineWidth : gridLineWidth );
                 }
             }
         }
     }
 }
-

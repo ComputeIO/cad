@@ -40,7 +40,7 @@ public:
     void DrawPolyline( const std::vector<VECTOR2D>& aPointList ) override {}
 
     /// @copydoc GAL::DrawGlyph()
-    void DrawGlyph( const SHAPE_POLY_SET& aPolySet ) override {}
+    void DrawGlyph( const SHAPE_POLY_SET& aPolySet, int aNth, int aTotal ) override {}
 };
 } // namespace KIGFX
 

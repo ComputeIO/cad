@@ -234,7 +234,7 @@ double OUTLINE_FONT::GetInterline( double aGlyphHeight ) const
 
     double ret = aGlyphHeight * interlinePitchRatio;
     //lineHeight; // aGlyphHeight * lineHeight; // * mScaler;
-#ifdef DEBUG
+#ifdef FOOBAR //DEBUG
     std::cerr << "OUTLINE_FONT::GetInterline( " << aGlyphHeight << " ) const returns " << ret
               << " (lineHeight " << lineHeight << ")" << std::endl;
 #endif
@@ -284,32 +284,22 @@ void OUTLINE_FONT::drawSingleLineText( KIGFX::GAL* aGal, const UTF8& aText,
         std::cerr << "OUTLINE_FONT::drawSingleLineText( aGal, \"" << aText << "\", " << aPosition
                   << " )";
 #endif
+#if 0
     if( aGal->IsOpenGlEngine() )
     {
         // draw with OpenGL routines to get antialiased pixmaps
         // TODO!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         //aGal->GetFreeType()->Render( this, aText );
-#ifdef DEBUG
-        std::cerr << " OpenGL TODO!\n";
-#endif
     }
-    else
-    {
-#ifdef DEBUG
-        if( debugMe( aText ) )
-            std::cerr << std::endl;
+    // for now let's just do what we do for all GAL types
 #endif
-        // transform glyph outlines to straight segments, then fill
-        std::vector<SHAPE_POLY_SET> glyphs;
-        wxPoint                     pt( aPosition.x, aPosition.y );
-        GetTextAsPolygon( glyphs, aText, aGal->GetGlyphSize(), pt, aAngle, aGal->IsTextMirrored() );
+    // transform glyph outlines to straight segments, then fill
+    std::vector<SHAPE_POLY_SET> glyphs;
+    wxPoint                     pt( aPosition.x, aPosition.y );
+    GetTextAsPolygon( glyphs, aText, aGal->GetGlyphSize(), pt, aAngle, aGal->IsTextMirrored() );
 
-        //aGal->SetIsFill( true );
-        for( SHAPE_POLY_SET& glyph : glyphs )
-        {
-            aGal->DrawGlyph( glyph );
-        }
-    }
+    //aGal->SetIsFill( true );
+    aGal->DrawGlyphs( glyphs );
 }
 
 
@@ -349,12 +339,31 @@ void OUTLINE_FONT::GetTextAsPolygon( std::vector<SHAPE_POLY_SET>& aGlyphs, const
 
 #ifdef DEBUG //STROKEFONT
     if( debugMe( aText ) )
+    {
         std::cerr << "[OUTLINE_FONT::GetTextAsPolygon( &aGlyphs, \"" << aText << "\", "
                   << aGlyphSize << ", " << aPosition << ", " << aOrientation << ", "
                   << ( aIsMirrored ? "true" : "false" ) << " ) const; glyphCount " << glyphCount
                   << " mirror_factor " << mirror_factor << " mScaler " << mScaler
-                  << " scale_factor x" << x_scale_factor << " y" << y_scale_factor << "]"
-                  << std::endl;
+                  << " scale_factor x" << x_scale_factor << " y" << y_scale_factor << " font "
+                  << Name() << " c_str " << aText.c_str() << " ";
+
+        for( unsigned int i = 0; i < glyphCount; i++ )
+        {
+            hb_glyph_position_t& pos = glyphPos[i];
+            int                  codepoint = glyphInfo[i].codepoint;
+
+            FT_Load_Glyph( mFace, codepoint, FT_LOAD_NO_BITMAP );
+
+            FT_GlyphSlot              glyph = mFace->glyph;
+            static const unsigned int bufsize = 512;
+            char                      glyphName[bufsize];
+            FT_Get_Glyph_Name( mFace, glyph->glyph_index, &glyphName[0], bufsize );
+            std::cerr << "<glyph " << codepoint << " '" << glyphName << "' pos ";
+            std::cerr << pos.x_advance << "," << pos.y_advance << "," << pos.x_offset << ","
+                      << pos.y_offset << ">";
+        }
+        std::cerr << "]" << std::endl;
+    }
 #endif
 
 #if 0
@@ -381,7 +390,7 @@ void OUTLINE_FONT::GetTextAsPolygon( std::vector<SHAPE_POLY_SET>& aGlyphs, const
 
         OUTLINE_DECOMPOSER decomposer( glyph->outline );
         decomposer.OutlineToSegments( &contours );
-#ifdef FOOBAR //DEBUG
+#ifdef DEBUG
         static const unsigned int bufsize = 512;
         char                      glyphName[bufsize];
         FT_Get_Glyph_Name( mFace, glyph->glyph_index, &glyphName[0], bufsize );
@@ -539,3 +548,61 @@ void OUTLINE_FONT::GetTextAsPolygon( std::vector<SHAPE_POLY_SET>& aGlyphs, const
 
     hb_buffer_destroy( buf );
 }
+
+
+#ifdef FOF
+void OUTLINE_FONT::RenderToOpenGLCanvas( KIGFX::OPENGL_GAL& aGal, const UTF8& aString,
+                                         const VECTOR2D& aGlyphSize, const wxPoint& aPosition,
+                                         double aOrientation, bool aIsMirrored ) const
+{
+    hb_buffer_t* buf = hb_buffer_create();
+    hb_buffer_add_utf8( buf, aString.c_str(), -1, 0, -1 );
+
+    // guess direction, script, and language based on contents
+    hb_buffer_guess_segment_properties( buf );
+
+    unsigned int         glyphCount;
+    hb_glyph_info_t*     glyphInfo = hb_buffer_get_glyph_infos( buf, &glyphCount );
+    hb_glyph_position_t* glyphPos = hb_buffer_get_glyph_positions( buf, &glyphCount );
+    hb_font_t*           referencedFont = hb_ft_font_create_referenced( mFace );
+
+    hb_ft_font_set_funcs( referencedFont );
+    hb_shape( referencedFont, buf, NULL, 0 );
+
+    const double mirror_factor = ( aIsMirrored ? 1 : -1 );
+    const double x_scale_factor = mirror_factor * aGlyphSize.x / mScaler;
+    const double y_scale_factor = aGlyphSize.y / mScaler;
+    const double advance_scale_factor = 1;
+    const double advance_x_factor = advance_scale_factor;
+    const double advance_y_factor = advance_scale_factor;
+
+    hb_position_t cursor_x = 0;
+    hb_position_t cursor_y = 0;
+
+    for( unsigned int i = 0; i < glyphCount; i++ )
+    {
+        hb_glyph_position_t& pos = glyphPos[i];
+        int                  codepoint = glyphInfo[i].codepoint;
+
+        FT_Error e = FT_Load_Glyph( mFace, codepoint, FT_LOAD_DEFAULT );
+        // TODO handle FT_Load_Glyph error
+
+        FT_Glyph glyph;
+        e = FT_Get_Glyph( mFace->glyph, &glyph );
+        // TODO handle FT_Get_Glyph error
+
+        wxPoint pt( aPosition );
+        pt.x += ( cursor_x >> 6 ) * x_scale_factor;
+        pt.y += ( cursor_y >> 6 ) * y_scale_factor;
+
+#if 0
+        aGal.DrawGlyph();
+#endif
+
+        cursor_x += ( pos.x_advance * advance_x_factor );
+        cursor_y += ( pos.y_advance * advance_y_factor );
+    }
+
+    hb_buffer_destroy( buf );
+}
+#endif

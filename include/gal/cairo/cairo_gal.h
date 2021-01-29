@@ -88,6 +88,10 @@ public:
     /// @copydoc GAL::DrawRectangle()
     void DrawRectangle( const VECTOR2D& aStartPoint, const VECTOR2D& aEndPoint ) override;
 
+#ifdef DEBUG
+    // TODO: remove after debugging
+    void DrawTriangle( const VECTOR2D& a1, const VECTOR2D& a2, const VECTOR2D& a3 );
+#endif
     /// @copydoc GAL::DrawPolyline()
     void DrawPolyline( const std::deque<VECTOR2D>& aPointList ) override { drawPoly( aPointList ); }
     void DrawPolyline( const VECTOR2D aPointList[], int aListSize ) override
@@ -111,7 +115,7 @@ public:
     void DrawPolygon( const SHAPE_LINE_CHAIN& aPolySet ) override;
 
     /// @copydoc GAL::DrawGlyph()
-    virtual void DrawGlyph( const SHAPE_POLY_SET& aPolySet ) override;
+    virtual void DrawGlyph( const SHAPE_POLY_SET& aPolySet, int aNth, int aTotal ) override;
 
     /// @copydoc GAL::DrawCurve()
     void DrawCurve( const VECTOR2D& startPoint, const VECTOR2D& controlPointA,

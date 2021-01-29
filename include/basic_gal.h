@@ -111,7 +111,7 @@ public:
      *
      * @param aPointList is the list of the polygon points.
      */
-    virtual void DrawGlyph( const SHAPE_POLY_SET& aPolySet ) override;
+    virtual void DrawGlyph( const SHAPE_POLY_SET& aPolySet, int aNth, int aTotal ) override;
 
     /**
      * Start and end points are defined as 2D-Vectors.

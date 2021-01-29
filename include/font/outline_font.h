@@ -31,6 +31,7 @@
 #include <freetype2/ft2build.h>
 #include FT_FREETYPE_H
 #include FT_OUTLINE_H
+#include <gal/opengl/opengl_freetype.h>
 #include <harfbuzz/hb.h>
 #include <font/font.h>
 #include <font/outline_decomposer.h>
@@ -106,6 +107,14 @@ public:
     void GetTextAsPolygon( std::vector<SHAPE_POLY_SET>& aGlyphs, const UTF8& aText,
                            const VECTOR2D& aGlyphSize, const wxPoint& aPosition,
                            double aOrientation, bool aIsMirrored ) const;
+
+    const FT_Face& GetFace() const { return mFace; }
+
+#if 0
+    void RenderToOpenGLCanvas( KIGFX::OPENGL_FREETYPE& aTarget, const UTF8& aString,
+                               const VECTOR2D& aGlyphSize, const wxPoint& aPosition,
+                               double aOrientation, bool aIsMirrored ) const;
+#endif
 
 private:
     // FreeType variables
