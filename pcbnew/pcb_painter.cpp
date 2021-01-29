@@ -1389,7 +1389,7 @@ void PCB_PAINTER::draw( const PCB_TEXT* aText, int aLayer )
     if( shownText.Length() == 0 )
         return;
 
-    const COLOR4D& color = m_pcbSettings.GetColor( aText, aText->GetLayer() );
+    const COLOR4D& color = m_pcbSettings.GetColor( aText, aLayer );
     VECTOR2D       position( aText->GetTextPos().x, aText->GetTextPos().y );
 
     if( m_pcbSettings.m_sketchText || m_pcbSettings.m_sketchMode[aLayer] )
