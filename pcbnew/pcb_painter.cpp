@@ -233,9 +233,8 @@ COLOR4D PCB_RENDER_SETTINGS::GetColor( const VIEW_ITEM* aItem, int aLayer ) cons
     if( !item )
         return m_layerColors[aLayer];
 
-    if( aLayer == LAYER_PADS_PLATEDHOLES
-            || aLayer == LAYER_NON_PLATEDHOLES
-            || aLayer == LAYER_VIAS_HOLES )
+    if( aLayer == LAYER_PADS_PLATEDHOLES || aLayer == LAYER_NON_PLATEDHOLES
+        || aLayer == LAYER_VIAS_HOLES )
     {
         // Careful that we don't end up with the same colour for the annular ring and the hole
         // when printing in B&W.
@@ -253,7 +252,7 @@ COLOR4D PCB_RENDER_SETTINGS::GetColor( const VIEW_ITEM* aItem, int aLayer ) cons
         else
             annularRingLayer = LAYER_VIA_THROUGH;
 
-        if( m_layerColors[ holeLayer ] == m_layerColors[ annularRingLayer ] )
+        if( m_layerColors[holeLayer] == m_layerColors[annularRingLayer] )
             aLayer = LAYER_PCB_BACKGROUND;
     }
 
@@ -688,8 +687,9 @@ void PCB_PAINTER::draw( const VIA* aVia, int aLayer )
     {
         m_gal->DrawCircle( center, radius );
     }
-    else if( ( aVia->GetViaType() == VIATYPE::BLIND_BURIED || aVia->GetViaType() == VIATYPE::MICROVIA )
-            && !m_pcbSettings.GetDrawIndividualViaLayers() )
+    else if( ( aVia->GetViaType() == VIATYPE::BLIND_BURIED
+               || aVia->GetViaType() == VIATYPE::MICROVIA )
+             && !m_pcbSettings.GetDrawIndividualViaLayers() )
     {
         // Outer circles of blind/buried and micro-vias are drawn in a special way to indicate the
         // top and bottom layers
@@ -739,7 +739,7 @@ void PCB_PAINTER::draw( const VIA* aVia, int aLayer )
             m_gal->SetIsStroke( true );
             m_gal->SetStrokeColor( color );
             m_gal->SetLineWidth( bds.GetHolePlatingThickness() * 2 );
-            radius = getDrillSize( aVia ) / 2.0 ;
+            radius = getDrillSize( aVia ) / 2.0;
         }
 
         m_gal->DrawCircle( center, radius );
@@ -904,29 +904,27 @@ void PCB_PAINTER::draw( const PAD* aPad, int aLayer )
         m_gal->SetFillColor( color );
     }
 
-    auto drawHoleWallCylinder =
-            [&]( const PAD* aPad )
-            {
-                if( aPad->GetAttribute() != PAD_ATTRIB_PTH )
-                    return false;
+    auto drawHoleWallCylinder = [&]( const PAD* aPad )
+    {
+        if( aPad->GetAttribute() != PAD_ATTRIB_PTH )
+            return false;
 
-                if( m_pcbSettings.m_hiContrastEnabled && !aPad->IsSelected() )
-                {
-                    if( !aPad->FlashLayer( m_pcbSettings.GetPrimaryHighContrastLayer() ) )
-                        return true;
-                }
-                else
-                {
-                    LSET visible = board->GetVisibleLayers() & board->GetEnabledLayers();
+        if( m_pcbSettings.m_hiContrastEnabled && !aPad->IsSelected() )
+        {
+            if( !aPad->FlashLayer( m_pcbSettings.GetPrimaryHighContrastLayer() ) )
+                return true;
+        }
+        else
+        {
+            LSET visible = board->GetVisibleLayers() & board->GetEnabledLayers();
 
-                    if( !aPad->FlashLayer( visible ) )
-                        return true;
-                }
+            if( !aPad->FlashLayer( visible ) )
+                return true;
+        }
 
-                return aPad->GetShape() != PAD_SHAPE_CUSTOM
-                        && aPad->GetSizeX() <= aPad->GetDrillSizeX()
-                        && aPad->GetSizeY() <= aPad->GetDrillSizeY();
-            };
+        return aPad->GetShape() != PAD_SHAPE_CUSTOM && aPad->GetSizeX() <= aPad->GetDrillSizeX()
+               && aPad->GetSizeY() <= aPad->GetDrillSizeY();
+    };
 
     if( aLayer == LAYER_PADS_PLATEDHOLES || aLayer == LAYER_NON_PLATEDHOLES )
     {
@@ -951,7 +949,8 @@ void PCB_PAINTER::draw( const PAD* aPad, int aLayer )
         if( aLayer == LAYER_PADS_TH )
             m_gal->SetLineWidth( bds.GetHolePlatingThickness() * 2 );
         else if( aLayer == F_Mask || aLayer == B_Mask )
-            m_gal->SetLineWidth( ( bds.GetHolePlatingThickness() + aPad->GetSolderMaskMargin() ) * 2 );
+            m_gal->SetLineWidth( ( bds.GetHolePlatingThickness() + aPad->GetSolderMaskMargin() )
+                                 * 2 );
         else
             draw = false;
 
@@ -959,7 +958,7 @@ void PCB_PAINTER::draw( const PAD* aPad, int aLayer )
         {
             const SHAPE_SEGMENT* seg = aPad->GetEffectiveHoleShape();
 
-            if( seg->GetSeg().A == seg->GetSeg().B )    // Circular hole
+            if( seg->GetSeg().A == seg->GetSeg().B ) // Circular hole
                 m_gal->DrawCircle( seg->GetSeg().A, getDrillSize( aPad ).x / 2 );
             else
                 m_gal->DrawSegment( seg->GetSeg().A, seg->GetSeg().B, seg->GetWidth() );

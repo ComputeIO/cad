@@ -388,8 +388,7 @@ bool DIALOG_GEN_FOOTPRINT_POSITION::CreateAsciiFiles()
     if( singleFile  )
         msg.Printf( _( "Placement file: \"%s\"." ), fn.GetFullPath() );
     else
-        msg.Printf( _( "Front (top side) placement file: \"%s\"." ),
-                    fn.GetFullPath() );
+        msg.Printf( _( "Front (top side) placement file: \"%s\"." ), fn.GetFullPath() );
     m_reporter->Report( msg, RPT_SEVERITY_INFO );
 
     msg.Printf( _( "Component count: %d." ), fpcount );

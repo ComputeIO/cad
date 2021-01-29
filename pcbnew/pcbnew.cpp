@@ -287,7 +287,8 @@ static bool scriptingSetup()
     if( !path.DirExists() && !path.Mkdir( wxS_DIR_DEFAULT, wxPATH_MKDIR_FULL ) )
         wxLogError( "Warning: could not create user scripting path %s", path.GetPath() );
 
-    if( !pcbnewInitPythonScripting( TO_UTF8( PyScriptingPath() ), TO_UTF8( PyScriptingPath( true ) ) ) )
+    if( !pcbnewInitPythonScripting( TO_UTF8( PyScriptingPath() ),
+                                    TO_UTF8( PyScriptingPath( true ) ) ) )
     {
         wxLogError( "pcbnewInitPythonScripting() failed." );
         return false;
@@ -305,8 +306,8 @@ void PythonPluginsReloadBase()
     // and load new plugins
     char cmd[1024];
 
-    snprintf( cmd, sizeof( cmd ), "pcbnew.LoadPlugins(\"%s\", \"%s\")", TO_UTF8( PyScriptingPath() ),
-              TO_UTF8( PyScriptingPath( true ) ) );
+    snprintf( cmd, sizeof( cmd ), "pcbnew.LoadPlugins(\"%s\", \"%s\")",
+              TO_UTF8( PyScriptingPath() ), TO_UTF8( PyScriptingPath( true ) ) );
 
     PyLOCK lock;
 

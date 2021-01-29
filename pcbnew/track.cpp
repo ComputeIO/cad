@@ -481,8 +481,7 @@ bool VIA::FlashLayer( LSET aLayers ) const
 
 bool VIA::FlashLayer( int aLayer ) const
 {
-    std::vector<KICAD_T> types
-    { PCB_TRACE_T, PCB_ARC_T, PCB_PAD_T, PCB_ZONE_T, PCB_FP_ZONE_T };
+    std::vector<KICAD_T> types{ PCB_TRACE_T, PCB_ARC_T, PCB_PAD_T, PCB_ZONE_T, PCB_FP_ZONE_T };
 
     // Return the "normal" shape if the caller doesn't specify a particular layer
     if( aLayer == UNDEFINED_LAYER )

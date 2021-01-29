@@ -559,11 +559,10 @@ TOOL_ACTION PCB_ACTIONS::generateDrillFiles( "pcbnew.EditorControl.generateDrill
         _( "Drill Files (.drl)..." ), _( "Generate Excellon drill file(s)" ),
         post_drill_xpm );
 
-TOOL_ACTION PCB_ACTIONS::generatePosFile( "pcbnew.EditorControl.generatePosFile",
-        AS_GLOBAL, 0, "",
+TOOL_ACTION PCB_ACTIONS::generatePosFile(
+        "pcbnew.EditorControl.generatePosFile", AS_GLOBAL, 0, "",
         _( "Component Placement (.pos)..." ),
-        _( "Generate component placement file(s) for pick and place" ),
-        post_compo_xpm );
+        _( "Generate component placement file(s) for pick and place" ), post_compo_xpm );
 
 TOOL_ACTION PCB_ACTIONS::generateReportFile( "pcbnew.EditorControl.generateReportFile",
         AS_GLOBAL, 0, "",
@@ -625,11 +624,10 @@ TOOL_ACTION PCB_ACTIONS::placeFootprint( "pcbnew.EditorControl.placeFootprint", 
                                          LEGACY_HK_NAME( "Add Footprint" ), _( "Add Footprint" ),
                                          _( "Add a footprint" ), module_xpm, AF_ACTIVATE );
 
-TOOL_ACTION PCB_ACTIONS::drillOrigin( "pcbnew.EditorControl.drillOrigin",
-        AS_GLOBAL, 0, "",
-        _( "Drill/Place File Origin" ),
-        _( "Place origin point for drill files and component placement files" ),
-        set_origin_xpm, AF_ACTIVATE );
+TOOL_ACTION PCB_ACTIONS::drillOrigin(
+        "pcbnew.EditorControl.drillOrigin", AS_GLOBAL, 0, "", _( "Drill/Place File Origin" ),
+        _( "Place origin point for drill files and component placement files" ), set_origin_xpm,
+        AF_ACTIVATE );
 
 TOOL_ACTION PCB_ACTIONS::toggleLock( "pcbnew.EditorControl.toggleLock",
         AS_GLOBAL,

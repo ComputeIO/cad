@@ -276,16 +276,27 @@ void PCB_DRAW_PANEL_GAL::SetHighContrastLayer( PCB_LAYER_ID aLayer )
         // Bring some other layers to the front in case of copper layers and make them colored
         // fixme do not like the idea of storing the list of layers here,
         // should be done in some other way I guess..
-        LAYER_NUM layers[] = {
-                GetNetnameLayer( aLayer ), LAYER_VIAS_NETNAMES,
-                LAYER_PAD_FR_NETNAMES, LAYER_PAD_BK_NETNAMES, LAYER_PADS_NETNAMES,
-                ZONE_LAYER_FOR( aLayer ),
-                LAYER_PADS_TH, LAYER_PADS_PLATEDHOLES, LAYER_NON_PLATEDHOLES,
-                LAYER_VIA_THROUGH, LAYER_VIA_BBLIND, LAYER_VIA_MICROVIA,
-                LAYER_DRC_ERROR, LAYER_DRC_WARNING, LAYER_DRC_EXCLUSION, LAYER_MARKER_SHADOWS,
-                LAYER_SELECT_OVERLAY, LAYER_GP_OVERLAY,
-                LAYER_RATSNEST, LAYER_CURSOR, LAYER_ANCHOR
-        };
+        LAYER_NUM layers[] = { GetNetnameLayer( aLayer ),
+                               LAYER_VIAS_NETNAMES,
+                               LAYER_PAD_FR_NETNAMES,
+                               LAYER_PAD_BK_NETNAMES,
+                               LAYER_PADS_NETNAMES,
+                               ZONE_LAYER_FOR( aLayer ),
+                               LAYER_PADS_TH,
+                               LAYER_PADS_PLATEDHOLES,
+                               LAYER_NON_PLATEDHOLES,
+                               LAYER_VIA_THROUGH,
+                               LAYER_VIA_BBLIND,
+                               LAYER_VIA_MICROVIA,
+                               LAYER_DRC_ERROR,
+                               LAYER_DRC_WARNING,
+                               LAYER_DRC_EXCLUSION,
+                               LAYER_MARKER_SHADOWS,
+                               LAYER_SELECT_OVERLAY,
+                               LAYER_GP_OVERLAY,
+                               LAYER_RATSNEST,
+                               LAYER_CURSOR,
+                               LAYER_ANCHOR };
 
         for( unsigned int i : layers )
             rSettings->SetLayerIsHighContrast( i );

@@ -888,7 +888,8 @@ wxString EDA_DRAW_FRAME::GetScreenDesc() const
 
 bool EDA_DRAW_FRAME::LibraryFileBrowser( bool doOpen, wxFileName& aFilename,
                                          const wxString& wildcard, const wxString& ext,
-                                         bool isDirectory, bool aIsGlobal, const wxString& aGlobalPath )
+                                         bool isDirectory, bool aIsGlobal,
+                                         const wxString& aGlobalPath )
 {
     wxString prompt = doOpen ? _( "Select Library" ) : _( "New Library" );
     aFilename.SetExt( ext );
@@ -903,8 +904,7 @@ bool EDA_DRAW_FRAME::LibraryFileBrowser( bool doOpen, wxFileName& aFilename,
             dir = Prj().GetProjectPath();
         }
 
-        wxDirDialog dlg( this, prompt, dir,
-                         wxDD_DEFAULT_STYLE | wxDD_DIR_MUST_EXIST );
+        wxDirDialog dlg( this, prompt, dir, wxDD_DEFAULT_STYLE | wxDD_DIR_MUST_EXIST );
 
         if( dlg.ShowModal() == wxID_CANCEL )
             return false;
