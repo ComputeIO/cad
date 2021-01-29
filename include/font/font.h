@@ -157,8 +157,9 @@ protected:
     virtual void drawSingleLineText( KIGFX::GAL* aGal, const UTF8& aText, const VECTOR2D& aPosition,
                                      double aAngle ) const = 0;
 
-    void getLinePositions( std::vector<wxPoint>& aPositions, int aLineCount,
-                           const VECTOR2D& aPosition, int aLineSpacing,
+    void getLinePositions( KIGFX::GAL* aGal, const UTF8& aText, const VECTOR2D& aPosition,
+                           wxArrayString& aStringList, std::vector<wxPoint>& aPositions,
+                           int& aLineCount, int aTextHeight, bool aMultiLine,
                            EDA_TEXT_HJUSTIFY_T aHorizJustify, EDA_TEXT_VJUSTIFY_T aVertJustify,
                            double aRotationAngle ) const;
 

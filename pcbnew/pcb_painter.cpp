@@ -1403,8 +1403,17 @@ void PCB_PAINTER::draw( const PCB_TEXT* aText, int aLayer )
         m_gal->SetLineWidth( getLineThickness( aText->GetEffectiveTextPenWidth() ) );
     }
 
+    //m_gal->SetFillColor( color );
+    if( font->IsOutline() )
+    {
+        m_gal->SetFillColor( color );
+        m_gal->SetIsFill( true );
+    }
+    else
+    {
+        m_gal->SetIsFill( false );
+    }
     m_gal->SetStrokeColor( color );
-    m_gal->SetIsFill( false );
     m_gal->SetIsStroke( true );
     m_gal->SetTextAttributes( aText );
     m_gal->StrokeText( shownText, position, aText->GetTextAngleRadians(), font,

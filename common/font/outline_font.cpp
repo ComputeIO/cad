@@ -229,12 +229,12 @@ double OUTLINE_FONT::ComputeOverbarVerticalPosition( double aGlyphHeight ) const
  */
 double OUTLINE_FONT::GetInterline( double aGlyphHeight ) const
 {
-    static const double interlinePitchRatio = 1.61; //INTERLINE_PITCH_RATIO in stroke_font.cpp
     const int lineHeight = ( mFace->size->metrics.ascender - mFace->size->metrics.descender ) >> 6;
 
-    double ret = aGlyphHeight * interlinePitchRatio;
+    // aGlyphHeight is in 1/10000ths of a mm
+    double ret = aGlyphHeight; // / 1000 * lineHeight;
     //lineHeight; // aGlyphHeight * lineHeight; // * mScaler;
-#ifdef FOOBAR //DEBUG
+#ifdef DEBUG
     std::cerr << "OUTLINE_FONT::GetInterline( " << aGlyphHeight << " ) const returns " << ret
               << " (lineHeight " << lineHeight << ")" << std::endl;
 #endif
@@ -251,7 +251,7 @@ double OUTLINE_FONT::GetInterline( double aGlyphHeight ) const
  */
 VECTOR2D OUTLINE_FONT::ComputeTextLineSize( const KIGFX::GAL* aGal, const UTF8& aText ) const
 {
-    assert( 1 == 0 ); // TODO!!!
+    return ComputeStringBoundaryLimits( aGal, aText, aGal->GetGlyphSize(), 0.0 );
 }
 
 
