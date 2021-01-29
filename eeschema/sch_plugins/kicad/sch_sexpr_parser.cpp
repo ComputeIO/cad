@@ -1963,7 +1963,9 @@ void SCH_SEXPR_PARSER::ParseSchematic( SCH_SHEET* aSheet, bool aIsCopyableOnly, 
 
                 switch( token )
                 {
-                case T_symbol: screen->AddLibSymbol( ParseSymbol( symbolLibMap ) ); break;
+                case T_symbol:
+                    screen->AddLibSymbol( ParseSymbol( symbolLibMap, m_requiredVersion ) );
+                    break;
 
                 default: Expecting( "symbol" );
                 }
