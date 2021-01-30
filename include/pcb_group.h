@@ -130,7 +130,7 @@ public:
      */
     void SetLayerRecursive( PCB_LAYER_ID aLayer, int aDepth );
 
-    ///> @copydoc EDA_ITEM::Clone
+    ///< @copydoc EDA_ITEM::Clone
     EDA_ITEM* Clone() const override;
 
     /*
