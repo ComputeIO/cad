@@ -238,7 +238,7 @@ DRAWING_TOOL::MODE DRAWING_TOOL::GetDrawingMode() const
     return m_mode;
 }
 
-std::vector<BOARD_ITEM*> initTextTable( std::vector<std::vector<TEXTE_PCB*>> aContent,
+std::vector<BOARD_ITEM*> initTextTable( std::vector<std::vector<PCB_TEXT*>> aContent,
                                         wxPoint origin, PCB_LAYER_ID aLayer, wxPoint* aTableSize,
                                         bool aDrawFrame = true )
 {
@@ -322,11 +322,11 @@ std::vector<BOARD_ITEM*> initTextTable( std::vector<std::vector<TEXTE_PCB*>> aCo
     if( aDrawFrame )
     {
         int          y = origin.y;
-        DRAWSEGMENT* line;
+        PCB_SHAPE*   line;
 
         for( i = 0; i < nbRows; i++ )
         {
-            line = new DRAWSEGMENT;
+            line = new PCB_SHAPE;
             line->SetLayer( aLayer );
             line->SetStartX( origin.x );
             line->SetStartY( y );
@@ -336,7 +336,7 @@ std::vector<BOARD_ITEM*> initTextTable( std::vector<std::vector<TEXTE_PCB*>> aCo
             table.push_back( line );
         }
 
-        line = new DRAWSEGMENT;
+        line = new PCB_SHAPE;
         line->SetLayer( aLayer );
         line->SetStartX( origin.x );
         line->SetStartY( y );
@@ -347,7 +347,7 @@ std::vector<BOARD_ITEM*> initTextTable( std::vector<std::vector<TEXTE_PCB*>> aCo
 
         for( i = 0; i < nbCols; i++ )
         {
-            line = new DRAWSEGMENT;
+            line = new PCB_SHAPE;
             line->SetLayer( aLayer );
             line->SetStartX( x );
             line->SetStartY( origin.y );
@@ -357,7 +357,7 @@ std::vector<BOARD_ITEM*> initTextTable( std::vector<std::vector<TEXTE_PCB*>> aCo
             table.push_back( line );
         }
 
-        line = new DRAWSEGMENT;
+        line = new PCB_SHAPE;
         line->SetLayer( aLayer );
         line->SetStartX( x );
         line->SetStartY( origin.y );
@@ -402,10 +402,10 @@ std::vector<BOARD_ITEM*> DRAWING_TOOL::DrawSpecificationStackup(
         wxPoint aOrigin, PCB_LAYER_ID aLayer, bool aDrawNow, wxPoint* tableSize )
 {
     BOARD_COMMIT               commit( m_frame );
-    std::vector<std::vector<TEXTE_PCB*>> texts;
+    std::vector<std::vector<PCB_TEXT*>> texts;
 
     // Style : Header
-    TEXTE_PCB* headStyle = new TEXTE_PCB( static_cast<MODULE*>( m_frame->GetModel() ) );
+    PCB_TEXT* headStyle = new PCB_TEXT( static_cast<FOOTPRINT*>( m_frame->GetModel() ) );
     headStyle->SetLayer( Eco1_User );
     headStyle->SetTextSize( wxSize( 1500000, 1500000 ) );
     headStyle->SetTextThickness( 300000 );
@@ -416,7 +416,7 @@ std::vector<BOARD_ITEM*> DRAWING_TOOL::DrawSpecificationStackup(
     headStyle->SetVertJustify( GR_TEXT_VJUSTIFY_TOP );
 
     // Style : data
-    TEXTE_PCB* dataStyle = new TEXTE_PCB( static_cast<MODULE*>( m_frame->GetModel() ) );
+    PCB_TEXT* dataStyle = new PCB_TEXT( static_cast<FOOTPRINT*>( m_frame->GetModel() ) );
     dataStyle->SetLayer( Eco1_User );
     dataStyle->SetTextSize( wxSize( 1500000, 1500000 ) );
     dataStyle->SetTextThickness( 100000 );
@@ -431,28 +431,28 @@ std::vector<BOARD_ITEM*> DRAWING_TOOL::DrawSpecificationStackup(
     BOARD_STACKUP&                   stackup     = dsnSettings.GetStackupDescriptor();
     std::vector<BOARD_STACKUP_ITEM*> layers      = stackup.GetList();
 
-    std::vector<TEXTE_PCB*> colLayer;
-    std::vector<TEXTE_PCB*> colType;
-    std::vector<TEXTE_PCB*> colMaterial;
-    std::vector<TEXTE_PCB*> colThickness;
-    std::vector<TEXTE_PCB*> colColor;
-    std::vector<TEXTE_PCB*> colEpsilon;
-    std::vector<TEXTE_PCB*> colTanD;
-    TEXTE_PCB*         t;
+    std::vector<PCB_TEXT*> colLayer;
+    std::vector<PCB_TEXT*> colType;
+    std::vector<PCB_TEXT*> colMaterial;
+    std::vector<PCB_TEXT*> colThickness;
+    std::vector<PCB_TEXT*> colColor;
+    std::vector<PCB_TEXT*> colEpsilon;
+    std::vector<PCB_TEXT*> colTanD;
+    PCB_TEXT*              t;
 
-    t = static_cast<TEXTE_PCB*>( headStyle->Duplicate() );
+    t = static_cast<PCB_TEXT*>( headStyle->Duplicate() );
     t->SetText( _( "Layer Name" ) );
     colLayer.push_back( t );
 
-    t = static_cast<TEXTE_PCB*>( headStyle->Duplicate() );
+    t = static_cast<PCB_TEXT*>( headStyle->Duplicate() );
     t->SetText( _( "Type" ) );
     colType.push_back( t );
 
-    t = static_cast<TEXTE_PCB*>( headStyle->Duplicate() );
+    t = static_cast<PCB_TEXT*>( headStyle->Duplicate() );
     t->SetText( _( "Material" ) );
     colMaterial.push_back( t );
 
-    t = static_cast<TEXTE_PCB*>( headStyle->Duplicate() );
+    t = static_cast<PCB_TEXT*>( headStyle->Duplicate() );
 
     if( m_frame->GetUserUnits() == EDA_UNITS::MILLIMETRES )
         t->SetText( _( "Thickness (mm)" ) );
@@ -462,15 +462,15 @@ std::vector<BOARD_ITEM*> DRAWING_TOOL::DrawSpecificationStackup(
 
     colThickness.push_back( t );
 
-    t = static_cast<TEXTE_PCB*>( headStyle->Duplicate() );
+    t = static_cast<PCB_TEXT*>( headStyle->Duplicate() );
     t->SetText( _( "Color" ) );
     colColor.push_back( t );
 
-    t = static_cast<TEXTE_PCB*>( headStyle->Duplicate() );
+    t = static_cast<PCB_TEXT*>( headStyle->Duplicate() );
     t->SetText( _( "Epsilon R" ) );
     colEpsilon.push_back( t );
 
-    t = static_cast<TEXTE_PCB*>( headStyle->Duplicate() );
+    t = static_cast<PCB_TEXT*>( headStyle->Duplicate() );
     t->SetText( _( "Loss Tangent" ) );
     colTanD.push_back( t );
 
@@ -478,35 +478,34 @@ std::vector<BOARD_ITEM*> DRAWING_TOOL::DrawSpecificationStackup(
 
     for( i = 0; i < stackup.GetCount(); i++ )
     {
-        t = static_cast<TEXTE_PCB*>( dataStyle->Duplicate() );
+        t = static_cast<PCB_TEXT*>( dataStyle->Duplicate() );
         t->SetText( layers.at( i )->GetLayerName() );
         colLayer.push_back( t );
 
-        t = static_cast<TEXTE_PCB*>( dataStyle->Duplicate() );
+        t = static_cast<PCB_TEXT*>( dataStyle->Duplicate() );
         t->SetText( layers.at( i )->GetTypeName() );
         colType.push_back( t );
 
-        t = static_cast<TEXTE_PCB*>( dataStyle->Duplicate() );
+        t = static_cast<PCB_TEXT*>( dataStyle->Duplicate() );
         t->SetText( layers.at( i )->GetMaterial() );
         colMaterial.push_back( t );
 
-        t = static_cast<TEXTE_PCB*>( dataStyle->Duplicate() );
-        t->SetText( StringFromValue( m_frame->GetUserUnits(), layers.at( i )->GetThickness(),
-                                     false, true ) );
+        t = static_cast<PCB_TEXT*>( dataStyle->Duplicate() );
+        t->SetText(
+                StringFromValue( m_frame->GetUserUnits(), layers.at( i )->GetThickness(), true ) );
         colThickness.push_back( t );
 
-        t = static_cast<TEXTE_PCB*>( dataStyle->Duplicate() );
+        t = static_cast<PCB_TEXT*>( dataStyle->Duplicate() );
         t->SetText( layers.at( i )->GetColor() );
         colColor.push_back( t );
 
-        t = static_cast<TEXTE_PCB*>( dataStyle->Duplicate() );
-        t->SetText( StringFromValue( EDA_UNITS::UNSCALED, layers.at( i )->GetEpsilonR(),
-                                     false, false ) );
+        t = static_cast<PCB_TEXT*>( dataStyle->Duplicate() );
+        t->SetText( StringFromValue( EDA_UNITS::UNSCALED, layers.at( i )->GetEpsilonR(), false ) );
         colEpsilon.push_back( t );
 
-        t = static_cast<TEXTE_PCB*>( dataStyle->Duplicate() );
-        t->SetText( StringFromValue( EDA_UNITS::UNSCALED, layers.at( i )->GetLossTangent(),
-                                     false, false ) );
+        t = static_cast<PCB_TEXT*>( dataStyle->Duplicate() );
+        t->SetText(
+                StringFromValue( EDA_UNITS::UNSCALED, layers.at( i )->GetLossTangent(), false ) );
         colTanD.push_back( t );
     }
 
@@ -543,7 +542,7 @@ std::vector<BOARD_ITEM*> DRAWING_TOOL::DrawBoardCharacteristics(
     wxPoint cursorPos = aOrigin;
 
     // Style : Section header
-    TEXTE_PCB* headStyle = new TEXTE_PCB( static_cast<MODULE*>( m_frame->GetModel() ) );
+    PCB_TEXT* headStyle = new PCB_TEXT( static_cast<FOOTPRINT*>( m_frame->GetModel() ) );
     headStyle->SetLayer( Eco1_User );
     headStyle->SetTextSize( wxSize( 2000000, 2000000 ) );
     headStyle->SetTextThickness( 4000000 );
@@ -553,7 +552,7 @@ std::vector<BOARD_ITEM*> DRAWING_TOOL::DrawBoardCharacteristics(
     headStyle->SetVertJustify( GR_TEXT_VJUSTIFY_TOP );
 
     // Style : Data
-    TEXTE_PCB* dataStyle = new TEXTE_PCB( static_cast<MODULE*>( m_frame->GetModel() ) );
+    PCB_TEXT* dataStyle = new PCB_TEXT( static_cast<FOOTPRINT*>( m_frame->GetModel() ) );
     dataStyle->SetLayer( Eco1_User );
     dataStyle->SetTextSize( wxSize( 1500000, 1500000 ) );
     dataStyle->SetTextThickness( 200000 );
@@ -562,9 +561,9 @@ std::vector<BOARD_ITEM*> DRAWING_TOOL::DrawBoardCharacteristics(
     dataStyle->SetHorizJustify( GR_TEXT_HJUSTIFY_LEFT );
     dataStyle->SetVertJustify( GR_TEXT_VJUSTIFY_TOP );
 
-    TEXTE_PCB* t;
+    PCB_TEXT* t;
 
-    t = static_cast<TEXTE_PCB*>( headStyle->Duplicate() );
+    t = static_cast<PCB_TEXT*>( headStyle->Duplicate() );
     t->SetText( _( "BOARD CHARACTERISTICS" ) );
     t->SetPosition( cursorPos );
     objects.push_back( t );
@@ -572,98 +571,97 @@ std::vector<BOARD_ITEM*> DRAWING_TOOL::DrawBoardCharacteristics(
     cursorPos.y = cursorPos.y + t->GetBoundingBox().GetHeight()
                   + From_User_Unit( EDA_UNITS::MILLIMETRES, 1.0 );
 
-    std::vector<std::vector<TEXTE_PCB*>> texts;
-    std::vector<TEXTE_PCB*>         colLabel1;
-    std::vector<TEXTE_PCB*>         colData1;
-    std::vector<TEXTE_PCB*>         colbreak;
-    std::vector<TEXTE_PCB*>         colLabel2;
-    std::vector<TEXTE_PCB*>         colData2;
+    std::vector<std::vector<PCB_TEXT*>> texts;
+    std::vector<PCB_TEXT*>              colLabel1;
+    std::vector<PCB_TEXT*>              colData1;
+    std::vector<PCB_TEXT*>              colbreak;
+    std::vector<PCB_TEXT*>              colLabel2;
+    std::vector<PCB_TEXT*>              colData2;
     wxString                   text = wxString( "" );
 
-    t = static_cast<TEXTE_PCB*>( dataStyle->Duplicate() );
+    t = static_cast<PCB_TEXT*>( dataStyle->Duplicate() );
     t->SetText( _( "Copper Layer Count: " ) );
     colLabel1.push_back( t );
 
-    t = static_cast<TEXTE_PCB*>( dataStyle->Duplicate() );
-    t->SetText(
-            StringFromValue( EDA_UNITS::UNSCALED, settings.GetCopperLayerCount(), false, false ) );
+    t = static_cast<PCB_TEXT*>( dataStyle->Duplicate() );
+    t->SetText( StringFromValue( EDA_UNITS::UNSCALED, settings.GetCopperLayerCount(), false ) );
     colData1.push_back( t );
 
     EDA_RECT size = m_frame->GetBoard()->ComputeBoundingBox( true );
-    t             = static_cast<TEXTE_PCB*>( dataStyle->Duplicate() );
+    t = static_cast<PCB_TEXT*>( dataStyle->Duplicate() );
     t->SetText( _( "Board overall dimensions: " ) );
     colLabel1.push_back( t );
 
-    t = static_cast<TEXTE_PCB*>( dataStyle->Duplicate() );
+    t = static_cast<PCB_TEXT*>( dataStyle->Duplicate() );
     t->SetText( wxString::Format( "%s x %s",
                 MessageTextFromValue( m_frame->GetUserUnits(), size.GetWidth(), true ),
                 MessageTextFromValue( m_frame->GetUserUnits(), size.GetHeight(), true ) ) );
     colData1.push_back( t );
 
-    t = static_cast<TEXTE_PCB*>( dataStyle->Duplicate() );
+    t = static_cast<PCB_TEXT*>( dataStyle->Duplicate() );
     t->SetText( _( "Min track/spacing: " ) );
     colLabel1.push_back( t );
 
-    t = static_cast<TEXTE_PCB*>( dataStyle->Duplicate() );
+    t = static_cast<PCB_TEXT*>( dataStyle->Duplicate() );
     t->SetText( wxString::Format( "%s / %s",
                 MessageTextFromValue( m_frame->GetUserUnits(), settings.m_TrackMinWidth, true ),
                 MessageTextFromValue( m_frame->GetUserUnits(), settings.m_MinClearance, true ) ) );
     colData1.push_back( t );
 
-    t = static_cast<TEXTE_PCB*>( dataStyle->Duplicate() );
+    t = static_cast<PCB_TEXT*>( dataStyle->Duplicate() );
     t->SetText( _( "Copper Finish: " ) );
     colLabel1.push_back( t );
 
-    t = static_cast<TEXTE_PCB*>( dataStyle->Duplicate() );
+    t = static_cast<PCB_TEXT*>( dataStyle->Duplicate() );
     t->SetText( stackup.m_FinishType );
     colData1.push_back( t );
 
-    t = static_cast<TEXTE_PCB*>( dataStyle->Duplicate() );
+    t = static_cast<PCB_TEXT*>( dataStyle->Duplicate() );
     t->SetText( _( "Castellated pads: " ) );
     colLabel1.push_back( t );
 
-    t = static_cast<TEXTE_PCB*>( dataStyle->Duplicate() );
+    t = static_cast<PCB_TEXT*>( dataStyle->Duplicate() );
     t->SetText( stackup.m_CastellatedPads ? _( "Yes" ) : _( "No" ) );
     colData1.push_back( t );
 
-    t = static_cast<TEXTE_PCB*>( dataStyle->Duplicate() );
+    t = static_cast<PCB_TEXT*>( dataStyle->Duplicate() );
     t->SetText( _( "Board Thickness: " ) );
     colLabel2.push_back( t );
 
-    t = static_cast<TEXTE_PCB*>( dataStyle->Duplicate() );
+    t = static_cast<PCB_TEXT*>( dataStyle->Duplicate() );
     text = MessageTextFromValue( m_frame->GetUserUnits(), settings.GetBoardThickness(), true );
 
     t->SetText( text );
     colData2.push_back( t );
 
     // some empty cells
-    t = static_cast<TEXTE_PCB*>( dataStyle->Duplicate() );
+    t = static_cast<PCB_TEXT*>( dataStyle->Duplicate() );
     colLabel2.push_back( t );
-    t = static_cast<TEXTE_PCB*>( dataStyle->Duplicate() );
+    t = static_cast<PCB_TEXT*>( dataStyle->Duplicate() );
     colData2.push_back( t );
 
-    t = static_cast<TEXTE_PCB*>( dataStyle->Duplicate() );
+    t = static_cast<PCB_TEXT*>( dataStyle->Duplicate() );
     t->SetText( _( "Min hole diameter: " ) );
     colLabel2.push_back( t );
-    t = static_cast<TEXTE_PCB*>( dataStyle->Duplicate() );
+    t = static_cast<PCB_TEXT*>( dataStyle->Duplicate() );
 
     double holeSize = std::min( settings.m_MinThroughDrill, settings.m_ViasMinSize );
     text            = MessageTextFromValue( m_frame->GetUserUnits(), holeSize, true );
     t->SetText( text );
     colData2.push_back( t );
 
-    t = static_cast<TEXTE_PCB*>( dataStyle->Duplicate() );
+    t = static_cast<PCB_TEXT*>( dataStyle->Duplicate() );
     t->SetText( _( "Impedance Control: " ) );
     colLabel2.push_back( t );
 
-    t = static_cast<TEXTE_PCB*>( dataStyle->Duplicate() );
+    t = static_cast<PCB_TEXT*>( dataStyle->Duplicate() );
     t->SetText( stackup.m_CastellatedPads ? _( "Yes" ) : _( "No" ) );
     colData2.push_back( t );
 
-    t = static_cast<TEXTE_PCB*>( dataStyle->Duplicate() );
+    t = static_cast<PCB_TEXT*>( dataStyle->Duplicate() );
     t->SetText( _( "Plated Board Edge: " ) );
     colLabel2.push_back( t );
-    t = static_cast<TEXTE_PCB*>( dataStyle->Duplicate() );
+    t = static_cast<PCB_TEXT*>( dataStyle->Duplicate() );
     t->SetText( stackup.m_HasDielectricConstrains ? _( "Yes" ) : _( "No" ) );
     colData2.push_back( t );
 
@@ -697,7 +695,7 @@ std::vector<BOARD_ITEM*> DRAWING_TOOL::DrawBoardCharacteristics(
 int DRAWING_TOOL::InteractivePlaceWithPreview( const TOOL_EVENT& aEvent, std::vector<BOARD_ITEM*> aItems,
         std::vector<BOARD_ITEM*> aPreview, LSET* aLayers )
 {
-    if( m_editModules && !m_frame->GetModel() )
+    if( m_isFootprintEditor && !m_frame->GetModel() )
         return -1;
 
     bool cancelled = false;
@@ -706,7 +704,6 @@ int DRAWING_TOOL::InteractivePlaceWithPreview( const TOOL_EVENT& aEvent, std::ve
 
     m_toolMgr->RunAction( PCB_ACTIONS::selectionClear, true );
     m_controls->ShowCursor( true );
-    m_controls->SetSnapping( true );
     // do not capture or auto-pan until we start placing the table
 
     SCOPED_DRAW_MODE scopedDrawMode( m_mode, MODE::TEXT );
@@ -734,7 +731,7 @@ int DRAWING_TOOL::InteractivePlaceWithPreview( const TOOL_EVENT& aEvent, std::ve
 
     while( TOOL_EVENT* evt = Wait() )
     {
-        m_frame->GetCanvas()->SetCurrentCursor( wxCURSOR_PENCIL );
+        m_frame->GetCanvas()->SetCurrentCursor( KICURSOR::PENCIL );
         VECTOR2D pos       = m_controls->GetCursorPosition();
         wxCursorPosition.x = pos.x;
         wxCursorPosition.y = pos.y;
@@ -862,10 +859,10 @@ int DRAWING_TOOL::PlaceCharacteristics( const TOOL_EVENT& aEvent )
     std::vector<BOARD_ITEM*>* preview = new std::vector<BOARD_ITEM*>;
     std::vector<BOARD_ITEM*>* items   = new std::vector<BOARD_ITEM*>;
 
-    DRAWSEGMENT* line1 = new DRAWSEGMENT;
-    DRAWSEGMENT* line2 = new DRAWSEGMENT;
-    DRAWSEGMENT* line3 = new DRAWSEGMENT;
-    DRAWSEGMENT* line4 = new DRAWSEGMENT;
+    PCB_SHAPE* line1 = new PCB_SHAPE;
+    PCB_SHAPE* line2 = new PCB_SHAPE;
+    PCB_SHAPE* line3 = new PCB_SHAPE;
+    PCB_SHAPE* line4 = new PCB_SHAPE;
 
     line1->SetStartX( 0 );
     line1->SetStartY( 0 );
@@ -933,10 +930,10 @@ int DRAWING_TOOL::PlaceStackup( const TOOL_EVENT& aEvent )
     std::vector<BOARD_ITEM*>* preview = new std::vector<BOARD_ITEM*>;
     std::vector<BOARD_ITEM*>* items   = new std::vector<BOARD_ITEM*>;
 
-    DRAWSEGMENT* line1 = new DRAWSEGMENT;
-    DRAWSEGMENT* line2 = new DRAWSEGMENT;
-    DRAWSEGMENT* line3 = new DRAWSEGMENT;
-    DRAWSEGMENT* line4 = new DRAWSEGMENT;
+    PCB_SHAPE* line1 = new PCB_SHAPE;
+    PCB_SHAPE* line2 = new PCB_SHAPE;
+    PCB_SHAPE* line3 = new PCB_SHAPE;
+    PCB_SHAPE* line4 = new PCB_SHAPE;
 
     line1->SetStartX( 0 );
     line1->SetStartY( 0 );

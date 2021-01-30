@@ -183,6 +183,22 @@ public:
     ///< @copydoc EDA_ITEM::GetMenuImage
     BITMAPS GetMenuImage() const override;
 
+
+    /**
+     * Add all the immediate children of this group to the board commit. This function does not
+     * enter any subgroups of this group, or add the group itself.
+     *
+     * @param aCommit is the commit to add the children to.
+     */
+    void AddChildrenToCommit( BOARD_COMMIT& aCommit )
+    {
+        RunOnChildren( [&]( BOARD_ITEM* bItem )
+                       {
+                           aCommit.Add( bItem );
+                       } );
+    }
+
+
     ///< @copydoc EDA_ITEM::GetMsgPanelInfo
     void GetMsgPanelInfo( EDA_DRAW_FRAME* aFrame, std::vector<MSG_PANEL_ITEM>& aList ) override;
 
