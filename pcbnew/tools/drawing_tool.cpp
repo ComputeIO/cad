@@ -844,6 +844,7 @@ int DRAWING_TOOL::PlaceCharacteristics( const TOOL_EVENT& aEvent )
 
     LSET layerSet = ( layerSet.AllCuMask() | layerSet.AllTechMask() );
     layerSet      = static_cast<LSET>( layerSet.set( Edge_Cuts ).set( Margin ) );
+    layerSet      = static_cast<LSET>( layerSet.reset( F_Fab ).reset( B_Fab ) );
 
     PCB_LAYER_ID layer      = m_frame->GetActiveLayer();
     PCB_LAYER_ID savedLayer = layer;
@@ -916,7 +917,8 @@ int DRAWING_TOOL::PlaceStackup( const TOOL_EVENT& aEvent )
 
     LSET layerSet = ( layerSet.AllCuMask() | layerSet.AllTechMask() );
     layerSet      = static_cast<LSET>( layerSet.set( Edge_Cuts ).set( Margin ) );
-
+    layerSet      = static_cast<LSET>( layerSet.reset( F_Fab ).reset( B_Fab ) );
+    
     PCB_LAYER_ID layer      = m_frame->GetActiveLayer();
     PCB_LAYER_ID savedLayer = layer;
 
