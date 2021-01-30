@@ -895,6 +895,7 @@ int DRAWING_TOOL::PlaceCharacteristics( const TOOL_EVENT& aEvent )
     preview->push_back( line4 );
 
     PCB_GROUP* group = new PCB_GROUP( m_board );
+    group->SetName("group-boardCharacteristics");
 
     for( auto item : table )
         group->AddItem( static_cast<BOARD_ITEM*>( item ) );
@@ -966,6 +967,7 @@ int DRAWING_TOOL::PlaceStackup( const TOOL_EVENT& aEvent )
     preview->push_back( line4 );
 
     PCB_GROUP* group = new PCB_GROUP( m_board );
+    group->SetName("group-boardStackUp");
 
     for( auto item : table )
         group->AddItem( item );
