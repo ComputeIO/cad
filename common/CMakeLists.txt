@@ -468,6 +468,8 @@ set( COMMON_SRCS
     project/project_archiver.cpp
     project/project_file.cpp
     project/project_local_settings.cpp
+
+    markup/markup_parser.cpp
     )
 
 add_library( common STATIC
@@ -502,6 +504,14 @@ target_include_directories( common PUBLIC
 target_include_directories( common PUBLIC
     $<TARGET_PROPERTY:compoundfilereader,INTERFACE_INCLUDE_DIRECTORIES>
     )  # used by altium_parser.cpp
+
+target_include_directories( common PUBLIC
+    $<TARGET_PROPERTY:earcut,INTERFACE_INCLUDE_DIRECTORIES>
+    )
+
+target_include_directories( common PUBLIC
+    $<TARGET_PROPERTY:pegtl,INTERFACE_INCLUDE_DIRECTORIES>
+    )
 
 set( PCB_COMMON_SRCS
     base_screen.cpp
