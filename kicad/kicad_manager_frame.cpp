@@ -74,7 +74,6 @@ BEGIN_EVENT_TABLE( KICAD_MANAGER_FRAME, EDA_BASE_FRAME )
 
     // Menu events
     EVT_MENU( wxID_EXIT, KICAD_MANAGER_FRAME::OnExit )
-    EVT_MENU( ID_EDIT_LOCAL_FILE_IN_TEXT_EDITOR, KICAD_MANAGER_FRAME::OnOpenFileInTextEditor )
     EVT_MENU( ID_BROWSE_IN_FILE_EXPLORER, KICAD_MANAGER_FRAME::OnBrowseInFileExplorer )
     EVT_MENU( ID_SAVE_AND_ZIP_FILES, KICAD_MANAGER_FRAME::OnArchiveFiles )
     EVT_MENU( ID_READ_ZIP_ARCHIVE, KICAD_MANAGER_FRAME::OnUnarchiveFiles )
@@ -537,27 +536,6 @@ void KICAD_MANAGER_FRAME::CreateNewProject( const wxFileName& aProjectFileName, 
     UpdateFileHistory( aProjectFileName.GetFullPath() );
 
     m_openSavedWindows = true;
-}
-
-
-void KICAD_MANAGER_FRAME::OnOpenFileInTextEditor( wxCommandEvent& event )
-{
-    // show all files in file dialog (in Kicad all files are editable texts):
-    wxString wildcard = AllFilesWildcard();
-
-    wxString default_dir = Prj().GetProjectPath();
-
-    wxFileDialog dlg( this, _( "Load File to Edit" ), default_dir,
-                      wxEmptyString, wildcard, wxFD_OPEN );
-
-    if( dlg.ShowModal() == wxID_CANCEL )
-        return;
-
-    wxString filename = wxT( "\"" );
-    filename += dlg.GetPath() + wxT( "\"" );
-
-    if( !dlg.GetPath().IsEmpty() &&  !Pgm().GetEditorName().IsEmpty() )
-        m_toolManager->RunAction( KICAD_MANAGER_ACTIONS::openTextEditor, true, &filename );
 }
 
 

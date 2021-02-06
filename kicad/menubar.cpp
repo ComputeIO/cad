@@ -150,12 +150,6 @@ void KICAD_MANAGER_FRAME::ReCreateMenuBar()
     toolsMenu->Add( KICAD_MANAGER_ACTIONS::showCalculator );
     toolsMenu->Add( KICAD_MANAGER_ACTIONS::editWorksheet );
 
-    toolsMenu->AppendSeparator();
-    toolsMenu->Add( _( "Edit Local File..." ),
-                    _( "Edit local file in text editor" ),
-                    ID_EDIT_LOCAL_FILE_IN_TEXT_EDITOR,
-                    editor_xpm );
-
     //-- Preferences menu -----------------------------------------------
     //
     ACTION_MENU* prefsMenu = new ACTION_MENU( false, controlTool );
