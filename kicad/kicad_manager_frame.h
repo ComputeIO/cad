@@ -55,7 +55,6 @@ public:
     void OnArchiveFiles( wxCommandEvent& event );
     void OnUnarchiveFiles( wxCommandEvent& event );
 
-    void OnOpenFileInTextEditor( wxCommandEvent& event );
     void OnBrowseInFileExplorer( wxCommandEvent& event );
 
     void OnFileHistory( wxCommandEvent& event );
