@@ -482,7 +482,7 @@ VECTOR2I OUTLINE_FONT::GetLinesAsPolygon( std::vector<SHAPE_POLY_SET>& aGlyphs, 
     for( int i = 0; i < n; i++ )
     {
 #if 1
-        MARKUP::MARKUP_PARSER markupParser( aText );
+        MARKUP::MARKUP_PARSER markupParser( UTF8( strings.Item( i ) ) );
         auto                  markupRoot = markupParser.parse();
 
         //VECTOR2D position( 0, 0 ); //position(aPosition);
@@ -624,9 +624,9 @@ VECTOR2I OUTLINE_FONT::GetTextAsPolygon( std::vector<SHAPE_POLY_SET>& aGlyphs, c
             VECTOR2D offset( aPosition );
 
             if( IsSubscript( aTextStyle ) )
-                offset.y += glyphSize.y * 0.15;
+                offset.y += glyphSize.y * 0.1;
             else if( IsSuperscript( aTextStyle ) )
-                offset.y -= glyphSize.y * 0.5;
+                offset.y -= glyphSize.y * 0.45;
 
             for( const VECTOR2D& v : points )
             {
