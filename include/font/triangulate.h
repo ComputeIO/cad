@@ -50,4 +50,7 @@ typedef std::function<void( int, const VECTOR2I& aPoint1, const VECTOR2I& aPoint
 void Triangulate( const SHAPE_POLY_SET& aPolylist, TRIANGULATE_CALLBACK aCallback,
                   void* aCallbackData = nullptr );
 
+void TriangulateWithBackground( const SHAPE_POLY_SET& aPolylist, const SHAPE_POLY_SET& aBackground,
+                                TRIANGULATE_CALLBACK aCallback, void* aCallbackData = nullptr );
+
 #endif // TRIANGULATE_H
