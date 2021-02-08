@@ -186,7 +186,7 @@ void GAL::StrokeText( const wxString& aText, const VECTOR2D& aPosition, double a
                           aEdaText->GetTextHeight(), aEdaText->GetVertJustify() );
     else
 #endif
-        font->DrawString( this, aText, aPosition, aRotationAngle, aMultilineAllowed );
+        font->DrawString( this, aText, aPosition, aRotationAngle, true, aMultilineAllowed );
 }
 
 
