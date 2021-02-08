@@ -81,44 +81,6 @@ void addTextSegmToContainer( int x0, int y0, int xf, int yf, void* aData )
 }
 
 
-#ifdef DEBUG
-static void dumpShapePolySet( const SHAPE_POLY_SET& polyList )
-{
-    std::cerr << "[SHAPE_POLY_SET ";
-    // Build the polygon with the actual position and orientation:
-    for( int i = 0; i < polyList.OutlineCount(); i++ )
-    {
-        if( i > 0 )
-            std::cerr << " ";
-        int n_points = polyList.COutline( i ).PointCount();
-        std::cerr << "(Outline " << i << " " << n_points << " pts ";
-        for( int j = 0; j < n_points; j++ )
-        {
-            const VECTOR2I& p = polyList.COutline( i ).GetPoint( j );
-            if( j > 0 )
-                std::cerr << ",";
-            std::cerr << p;
-        }
-
-        for( int k = 0; k < polyList.HoleCount( i ); k++ )
-        {
-            int h_points = polyList.CHole( i, k ).PointCount();
-            std::cerr << "{Hole " << k << " " << h_points << " pts ";
-            for( int m = 0; m < h_points; m++ )
-            {
-                const VECTOR2I& p = polyList.CHole( i, k ).GetPoint( m );
-                if( m > 0 )
-                    std::cerr << ",";
-                std::cerr << p;
-            }
-            std::cerr << "} ";
-        }
-        std::cerr << ") ";
-    }
-    std::cerr << "] ";
-}
-#endif
-
 static void transformGlyph( SHAPE_POLY_SET& aBuffer, const SHAPE_POLY_SET& polyList,
                             const PCB_TEXT* aText, PCB_LAYER_ID aLayer, int aClearanceValue,
                             int aError, ERROR_LOC aErrorLoc )
@@ -187,11 +149,6 @@ static void transformGlyph( SHAPE_POLY_SET& aBuffer, const SHAPE_POLY_SET& polyL
 void BOARD_ADAPTER::addShapeWithClearance( const PCB_TEXT* aText, CONTAINER_2D_BASE* aDstContainer,
                                            PCB_LAYER_ID aLayerId, int aClearanceValue )
 {
-#ifdef DEBUG
-    std::cerr << "BOARD_ADAPTER::addShapeWithClearance( PCB text \"" << aText->GetShownText()
-              << "\" " << aText->GetPosition() << ", ..., " << aLayerId << ", " << aClearanceValue
-              << " ) font " << aText->GetFont()->Name() << std::endl;
-#endif
     wxString txt = aText->GetShownText();
     FONT*    font = aText->GetFont();
     if( font->IsOutline() )
@@ -201,62 +158,25 @@ void BOARD_ADAPTER::addShapeWithClearance( const PCB_TEXT* aText, CONTAINER_2D_B
         std::vector<SHAPE_POLY_SET> glyphs;
         aText->DrawTextAsPolygon( glyphs, aLayerId );
 
-        const double xConversionFactor = m_biuTo3Dunits;
-        const double yConversionFactor = -m_biuTo3Dunits;
-        auto         triangleCallback = [&]( int aPolygonIndex, const VECTOR2D& aVertex1,
+        const VECTOR2D conversionFactor( m_biuTo3Dunits, -m_biuTo3Dunits );
+
+        auto triangleCallback = [&]( int aPolygonIndex, const VECTOR2D& aVertex1,
                                      const VECTOR2D& aVertex2, const VECTOR2D& aVertex3,
                                      void* aCallbackData )
         {
-            aDstContainer->Add( new TRIANGLE_2D( aVertex1, aVertex2, aVertex3, xConversionFactor,
-                                                 yConversionFactor, *aText ) );
+            aDstContainer->Add( new TRIANGLE_2D( aVertex1, aVertex2, aVertex3, conversionFactor.x,
+                                                 conversionFactor.y, *aText ) );
         };
-
-
-#ifdef DEBUG
-#define TRIANGULATE_WITH_EARCUT
-        std::cerr << "Triangulating with ";
-#ifdef TRIANGULATE_WITH_EARCUT
-        std::cerr << "earcut";
-#else
-        std::cerr << "triangle_2d";
-#endif
-        std::cerr << std::endl;
-#endif
 
         for( SHAPE_POLY_SET& glyph : glyphs )
         {
             SHAPE_POLY_SET polyList;
-#ifdef FOO // DEBUG
-            std::cerr << "transformGlyph<-";
-            dumpShapePolySet( glyph );
-#endif
-            /*
-            transformGlyph( polyList, glyph, aText, aLayerId, lineWidth, ARC_HIGH_DEF,
-                            ERROR_INSIDE );
-            */
-
-#ifdef FOO // DEBUG
-            std::cerr << "got->";
-            dumpShapePolySet( polyList );
-#endif
-
-#if 0
-            polyList.Simplify( SHAPE_POLY_SET::PM_FAST );
-
-            if( polyList.IsEmpty() ) // Just for caution
-            break;
-#endif
-            //ConvertPolygonToTriangles( polyList, *aDstContainer, m_biuTo3Dunits, *aText );
 
             //polyList.Simplify( SHAPE_POLY_SET::PM_FAST );
-#ifdef TRIANGULATE_WITH_EARCUT
-            // using mapbox::earcut
+
+            // TODO: triangulate all glyphs in one go - needed for adding a label background rect
             //Triangulate( polyList, triangleCallback );
             Triangulate( glyph, triangleCallback );
-#else
-            // using triangle_2d
-            ConvertPolygonToTriangles( polyList, *aDstContainer, m_biuTo3Dunits, *aText );
-#endif // TRIANGULATE_WITH_EARCUT
         }
     }
     else
@@ -281,11 +201,6 @@ void BOARD_ADAPTER::addShapeWithClearance( const DIMENSION_BASE* aDimension,
                                            CONTAINER_2D_BASE* aDstContainer, PCB_LAYER_ID aLayerId,
                                            int aClearanceValue )
 {
-#ifdef DEBUG
-    std::cerr << "BOARD_ADAPTER::addShapeWithClearance( aDimension \""
-              << aDimension->Text().GetText() << "\" "
-              << ", ..., " << aLayerId << ", " << aClearanceValue << " )" << std::endl;
-#endif
     addShapeWithClearance( &aDimension->Text(), aDstContainer, aLayerId, aClearanceValue );
 
     const int linewidth = aDimension->GetLineThickness() + ( 2 * aClearanceValue );
@@ -749,11 +664,6 @@ void BOARD_ADAPTER::addShapeWithClearance( const PCB_SHAPE*   aShape,
                                            CONTAINER_2D_BASE* aDstContainer, PCB_LAYER_ID aLayerId,
                                            int aClearanceValue )
 {
-#ifdef DEBUG
-    std::cerr << "BOARD_ADAPTER::addShapeWithClearance( shape "
-              << PCB_SHAPE_TYPE_T_asString( aShape->GetShape() ) << ", ..., " << aLayerId << ", "
-              << aClearanceValue << " )" << std::endl;
-#endif
     // The full width of the lines to create
     // The extra 1 protects the inner/outer radius values from degeneracy
     const int linewidth = aShape->GetWidth() + ( 2 * aClearanceValue ) + 1;
@@ -848,10 +758,6 @@ void BOARD_ADAPTER::addShapeWithClearance( const PCB_SHAPE*   aShape,
         aShape->TransformShapeWithClearanceToPolygon( polyList, aLayerId, 0, ARC_HIGH_DEF,
                                                       ERROR_INSIDE );
 
-#ifdef DEBUG
-        std::cerr << "ADDING POLYGON ";
-        dumpShapePolySet( polyList );
-#endif
         polyList.Simplify( SHAPE_POLY_SET::PM_FAST );
 
         if( polyList.IsEmpty() ) // Just for caution
