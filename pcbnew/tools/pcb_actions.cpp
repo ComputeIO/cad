@@ -212,10 +212,10 @@ TOOL_ACTION PCB_ACTIONS::closeOutline( "pcbnew.InteractiveDrawing.closeOutline",
         _( "Close Outline" ), _( "Close the in progress outline" ),
         checked_ok_xpm );
 
-TOOL_ACTION PCB_ACTIONS::toggleLine45degMode( "pcbnew.InteractiveDrawing.line45degMode",
-        AS_GLOBAL, 0, "",
-        _( "Limit Lines to 45 deg" ), _( "Limit graphic lines to H, V and 45 degrees" ),
-        nullptr, AF_NONE );
+TOOL_ACTION PCB_ACTIONS::toggleLine45degMode( "pcbnew.InteractiveDrawing.line45degMode", AS_GLOBAL,
+                                              0, "", _( "Limit Lines to 45 deg" ),
+                                              _( "Limit graphic lines to H, V and 45 degrees" ),
+                                              nullptr, AF_NONE );
 
 // DRC
 //
