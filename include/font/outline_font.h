@@ -35,7 +35,7 @@
 #include <harfbuzz/hb.h>
 #include <font/font.h>
 #include <font/outline_decomposer.h>
-
+#include <markup/markup_parser.h>
 
 /**
  * Class OUTLINE_FONT implements outline font drawing.
@@ -104,9 +104,33 @@ public:
      */
     VECTOR2D ComputeTextLineSize( const KIGFX::GAL* aGal, const UTF8& aText ) const override;
 
-    void GetTextAsPolygon( std::vector<SHAPE_POLY_SET>& aGlyphs, const UTF8& aText,
-                           const VECTOR2D& aGlyphSize, const wxPoint& aPosition,
-                           double aOrientation, bool aIsMirrored ) const;
+
+    VECTOR2I GetTextAsPolygon( std::vector<SHAPE_POLY_SET>& aGlyphs, const UTF8& aText,
+                               const VECTOR2D& aGlyphSize, const wxPoint& aPosition,
+                               double aOrientation, bool aIsMirrored,
+                               const VECTOR2D&  aConversionFactor,
+                               TEXT_STYLE_FLAGS aTextStyle = 0 ) const;
+
+    VECTOR2I GetTextAsPolygon( std::vector<SHAPE_POLY_SET>& aGlyphs, const UTF8& aText,
+                               const VECTOR2D& aGlyphSize, const wxPoint& aPosition,
+                               double aOrientation, bool aIsMirrored,
+                               TEXT_STYLE_FLAGS aTextStyle = 0 ) const
+    {
+        return GetTextAsPolygon( aGlyphs, aText, aGlyphSize, aPosition, aOrientation, aIsMirrored,
+                                 VECTOR2D( 1.0, 1.0 ), aTextStyle );
+    }
+
+    /**
+     * Like GetTextAsPolygon, but handles multiple lines.
+     * TODO: Combine with GetTextAsPolygon, maybe with a boolean parameter,
+     * but it's possible a non-line-breaking version isn't even needed
+     */
+    VECTOR2I GetLinesAsPolygon( std::vector<SHAPE_POLY_SET>& aGlyphs, const UTF8& aText,
+                                const VECTOR2D& aGlyphSize, const wxPoint& aPosition,
+                                double aOrientation, bool aIsMirrored,
+                                EDA_TEXT_HJUSTIFY_T aHorizJustify, EDA_TEXT_VJUSTIFY_T aVertJustify,
+                                const VECTOR2D&  aConversionFactor,
+                                TEXT_STYLE_FLAGS aTextStyle = 0 ) const;
 
     const FT_Face& GetFace() const { return mFace; }
 
@@ -120,10 +144,10 @@ private:
     // FreeType variables
     static FT_Library mFreeType;
     FT_Face           mFace;
+    FT_Face           mSubscriptFace;
 
-    // TODO: mScaler is determined with the Stetson method
-    // - can probably be fetched from some obscure header
-    const double mScaler = 1.0e3;
+    int mFaceScaler;
+    int mSubscriptFaceScaler;
 
     // cache for glyphs converted to straight segments
     // key is glyph index (FT_GlyphSlot field glyph_index)
@@ -141,6 +165,13 @@ private:
      */
     void drawSingleLineText( KIGFX::GAL* aGal, const UTF8& aText, const VECTOR2D& aPosition,
                              double aAngle ) const override;
+
+    VECTOR2D drawMarkup( KIGFX::GAL* aGal, const MARKUP::MARKUP_NODE& aNode,
+                         const VECTOR2D& aPosition, double aAngle, TEXT_STYLE_FLAGS aTextStyle = 0,
+                         int aLevel = 0 ) const;
+    VECTOR2D drawMarkup( std::vector<SHAPE_POLY_SET>& aGlyphs, const MARKUP::MARKUP_NODE& aNode,
+                         const VECTOR2D& aPosition, const VECTOR2D& aGlyphSize, bool aIsMirrored,
+                         double aAngle, TEXT_STYLE_FLAGS aTextStyle = 0, int aLevel = 0 ) const;
 };
 
 #endif // OUTLINE_FONT_H_
