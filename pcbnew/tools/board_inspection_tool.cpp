@@ -243,7 +243,7 @@ void BOARD_INSPECTION_TOOL::reportClearance( DRC_CONSTRAINT_T aClearanceType, PC
         footprint->BuildPolyCourtyards();
     }
 
-    auto constraint = drcEngine.EvalRulesForItems( aClearanceType, aA, aB, aLayer, r );
+    auto constraint = drcEngine.EvalRules( aClearanceType, aA, aB, aLayer, r );
     int  clearance = constraint.m_Value.Min();
 
     wxString clearanceStr = StringFromValue( r->GetUnits(), clearance, true );
@@ -526,8 +526,8 @@ int BOARD_INSPECTION_TOOL::InspectConstraints( const TOOL_EVENT& aEvent )
         }
         else
         {
-            auto constraint = drcEngine.EvalRulesForItems( TRACK_WIDTH_CONSTRAINT, item, nullptr,
-                                                           UNDEFINED_LAYER, r );
+            auto constraint = drcEngine.EvalRules( TRACK_WIDTH_CONSTRAINT, item, nullptr,
+                                                   item->GetLayer(), r );
 
             wxString min = _( "undefined" );
             wxString max = _( "undefined" );
@@ -563,8 +563,9 @@ int BOARD_INSPECTION_TOOL::InspectConstraints( const TOOL_EVENT& aEvent )
         }
         else
         {
-            auto constraint = drcEngine.EvalRulesForItems( VIA_DIAMETER_CONSTRAINT, item, nullptr,
-                                                           UNDEFINED_LAYER, r );
+            // PADSTACKS TODO: once we have padstacks we'll need to run this per-layer....
+            auto constraint = drcEngine.EvalRules( VIA_DIAMETER_CONSTRAINT, item, nullptr,
+                                                   UNDEFINED_LAYER, r );
 
             wxString min = _( "undefined" );
             wxString max = _( "undefined" );
@@ -597,8 +598,9 @@ int BOARD_INSPECTION_TOOL::InspectConstraints( const TOOL_EVENT& aEvent )
         }
         else
         {
-            auto constraint = drcEngine.EvalRulesForItems( ANNULAR_WIDTH_CONSTRAINT, item, nullptr,
-                                                           UNDEFINED_LAYER, r );
+            // PADSTACKS TODO: once we have padstacks we'll need to run this per-layer....
+            auto constraint = drcEngine.EvalRules( ANNULAR_WIDTH_CONSTRAINT, item, nullptr,
+                                                   UNDEFINED_LAYER, r );
 
             wxString min = _( "undefined" );
             wxString max = _( "undefined" );
@@ -635,8 +637,9 @@ int BOARD_INSPECTION_TOOL::InspectConstraints( const TOOL_EVENT& aEvent )
         }
         else
         {
-            auto constraint = drcEngine.EvalRulesForItems( HOLE_SIZE_CONSTRAINT, item, nullptr,
-                                                           UNDEFINED_LAYER, r );
+            // PADSTACKS TODO: once we have padstacks we'll need to run this per-layer....
+            auto constraint =
+                    drcEngine.EvalRules( HOLE_SIZE_CONSTRAINT, item, nullptr, UNDEFINED_LAYER, r );
 
             wxString min = _( "undefined" );
 
@@ -671,8 +674,8 @@ int BOARD_INSPECTION_TOOL::InspectConstraints( const TOOL_EVENT& aEvent )
                        + "  <a href='drc'>" + _( "Run DRC for a full analysis." ) + "</a>" );
         }
 
-        auto constraint = drcEngine.EvalRulesForItems( DISALLOW_CONSTRAINT, item, nullptr,
-                                                       UNDEFINED_LAYER, r );
+        auto constraint =
+                drcEngine.EvalRules( DISALLOW_CONSTRAINT, item, nullptr, item->GetLayer(), r );
 
         r->Report( "" );
 

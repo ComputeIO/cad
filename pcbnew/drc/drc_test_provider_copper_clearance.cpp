@@ -238,7 +238,7 @@ bool DRC_TEST_PROVIDER_COPPER_CLEARANCE::testTrackAgainstItem( TRACK* track, SHA
 
     if( testClearance )
     {
-        constraint = m_drcEngine->EvalRulesForItems( CLEARANCE_CONSTRAINT, track, other, layer );
+        constraint = m_drcEngine->EvalRules( CLEARANCE_CONSTRAINT, track, other, layer );
         clearance = constraint.GetValue().Min();
     }
 
@@ -305,7 +305,8 @@ bool DRC_TEST_PROVIDER_COPPER_CLEARANCE::testTrackAgainstItem( TRACK* track, SHA
 
         if( holeShape )
         {
-            constraint = m_drcEngine->EvalRulesForItems( HOLE_CLEARANCE_CONSTRAINT, other, track );
+            constraint = m_drcEngine->EvalRules( HOLE_CLEARANCE_CONSTRAINT, other, track,
+                                                 track->GetLayer() );
             clearance = constraint.GetValue().Min();
 
             if( clearance >= 0
@@ -353,8 +354,7 @@ void DRC_TEST_PROVIDER_COPPER_CLEARANCE::testItemAgainstZones( BOARD_ITEM*  aIte
 
         if( aItem->GetBoundingBox().Intersects( zone->GetCachedBoundingBox() ) )
         {
-            auto constraint =
-                    m_drcEngine->EvalRulesForItems( CLEARANCE_CONSTRAINT, aItem, zone, aLayer );
+            auto constraint = m_drcEngine->EvalRules( CLEARANCE_CONSTRAINT, aItem, zone, aLayer );
             int clearance = constraint.GetValue().Min();
 
             if( clearance < 0 )
@@ -535,7 +535,7 @@ bool DRC_TEST_PROVIDER_COPPER_CLEARANCE::testPadAgainstItem( PAD* pad, SHAPE* pa
 
         if( testHoles && pad->FlashLayer( layer ) && otherPad->GetDrillSize().x )
         {
-            constraint = m_drcEngine->EvalRulesForItems( HOLE_CLEARANCE_CONSTRAINT, pad, otherPad );
+            constraint = m_drcEngine->EvalRules( HOLE_CLEARANCE_CONSTRAINT, pad, otherPad, layer );
             clearance = constraint.GetValue().Min();
 
             if( clearance >= 0
@@ -558,7 +558,7 @@ bool DRC_TEST_PROVIDER_COPPER_CLEARANCE::testPadAgainstItem( PAD* pad, SHAPE* pa
 
         if( testHoles && otherPad->FlashLayer( layer ) && pad->GetDrillSize().x )
         {
-            constraint = m_drcEngine->EvalRulesForItems( HOLE_CLEARANCE_CONSTRAINT, pad, otherPad );
+            constraint = m_drcEngine->EvalRules( HOLE_CLEARANCE_CONSTRAINT, pad, otherPad, layer );
             clearance = constraint.GetValue().Min();
 
             if( clearance >= 0
@@ -589,7 +589,7 @@ bool DRC_TEST_PROVIDER_COPPER_CLEARANCE::testPadAgainstItem( PAD* pad, SHAPE* pa
 
     if( testClearance )
     {
-        constraint = m_drcEngine->EvalRulesForItems( CLEARANCE_CONSTRAINT, pad, other, layer );
+        constraint = m_drcEngine->EvalRules( CLEARANCE_CONSTRAINT, pad, other, layer );
         clearance = constraint.GetValue().Min();
 
         if( clearance > 0
@@ -743,7 +743,7 @@ void DRC_TEST_PROVIDER_COPPER_CLEARANCE::testZones()
 
                 // Get clearance used in zone to zone test.
                 auto constraint =
-                        m_drcEngine->EvalRulesForItems( CLEARANCE_CONSTRAINT, zoneRef, zoneToTest );
+                        m_drcEngine->EvalRules( CLEARANCE_CONSTRAINT, zoneRef, zoneToTest, layer );
                 int zone2zoneClearance = constraint.GetValue().Min();
 
                 // test for some corners of zoneRef inside zoneToTest

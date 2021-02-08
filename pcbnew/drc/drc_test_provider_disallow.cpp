@@ -73,25 +73,24 @@ bool DRC_TEST_PROVIDER_DISALLOW::Run()
     if( !reportPhase( _( "Checking keepouts & disallow constraints..." ) ) )
         return false;
 
-    auto doCheckItem =
-            [&]( BOARD_ITEM* item )
-            {
-                auto constraint = m_drcEngine->EvalRulesForItems( DISALLOW_CONSTRAINT, item );
+    auto doCheckItem = [&]( BOARD_ITEM* item )
+    {
+        auto constraint =
+                m_drcEngine->EvalRules( DISALLOW_CONSTRAINT, item, nullptr, item->GetLayer() );
 
-                if( constraint.m_DisallowFlags )
-                {
-                    std::shared_ptr<DRC_ITEM> drcItem = DRC_ITEM::Create( DRCE_ALLOWED_ITEMS );
+        if( constraint.m_DisallowFlags )
+        {
+            std::shared_ptr<DRC_ITEM> drcItem = DRC_ITEM::Create( DRCE_ALLOWED_ITEMS );
 
-                    m_msg.Printf( drcItem->GetErrorText() + wxS( " (%s)" ),
-                                  constraint.GetName() );
+            m_msg.Printf( drcItem->GetErrorText() + wxS( " (%s)" ), constraint.GetName() );
 
-                    drcItem->SetErrorMessage( m_msg );
-                    drcItem->SetItems( item );
-                    drcItem->SetViolatingRule( constraint.GetParentRule() );
+            drcItem->SetErrorMessage( m_msg );
+            drcItem->SetItems( item );
+            drcItem->SetViolatingRule( constraint.GetParentRule() );
 
-                    reportViolation( drcItem, item->GetPosition() );
-                }
-            };
+            reportViolation( drcItem, item->GetPosition() );
+        }
+    };
 
     auto checkItem =
             [&]( BOARD_ITEM* item ) -> bool
