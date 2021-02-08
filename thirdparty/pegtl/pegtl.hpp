@@ -1,9 +1,9 @@
--e /*
+/*
 
 Welcome to the Parsing Expression Grammar Template Library (PEGTL).
--e See https://github.com/taocpp/PEGTL/ for more information, documentation, etc.
+See https://github.com/taocpp/PEGTL/ for more information, documentation, etc.
 
--e The library is licensed as follows:
+The library is licensed as follows:
 
 The MIT License (MIT)
 
@@ -26,7 +26,7 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
--e 
+
 */
 
 #line 1 "amalgamated.hpp"
