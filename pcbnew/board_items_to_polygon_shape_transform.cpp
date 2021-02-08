@@ -379,30 +379,22 @@ static void polygonText( SHAPE_POLY_SET& aDestination, PCB_LAYER_ID aLayer, cons
     {
         std::vector<SHAPE_POLY_SET> glyphs;
         const OUTLINE_FONT*         outlineFont = dynamic_cast<const OUTLINE_FONT*>( aFont );
-#ifdef DEBUG
-        std::cerr << "polygonText( ..., " << aPosition << ", \"" << aString << "\", "
-                  << aFont->Name() << ", " << aText->GetText() << std::endl;
-#endif
-        outlineFont->GetTextAsPolygon( glyphs, aString, aText->GetTextSize(), aPosition,
-                                       aText->GetTextAngle(), aText->IsMirrored() );
+
+        outlineFont->GetLinesAsPolygon( glyphs, aString, aText->GetTextSize(), aPosition,
+                                        aText->GetTextAngle(), aText->IsMirrored(),
+                                        aText->GetHorizJustify(), aText->GetVertJustify(),
+                                        VECTOR2D( 1.0, 1.0 ) );
+
         for( SHAPE_POLY_SET& glyph : glyphs )
         {
-#if 0
-            assert (1==0);
-#else
             aDestination.Append( glyph );
-#endif
         }
     }
     else
     {
-#ifdef DEBUG
-        std::cerr << "board_items_to_polygon_shape_transform.cpp: polygonText() - TODO not doing "
-                     "stroke fonts yet"
-                  << std::endl;
-#else
-        assert( 1 == 0 ); // this whole else branch should probably go away
-#endif
+        // TODO this whole else branch should probably go away
+        // what do we do with stroke fonts anyway?
+        assert( 1 == 0 );
     }
 }
 
@@ -479,11 +471,8 @@ void PCB_TEXT::TransformShapeWithClearanceToPolygon( SHAPE_POLY_SET& aCornerBuff
 {
     if( GetFont()->IsOutline() )
     {
-#ifdef DEBUG
-        std::cerr << "calling polygonText( " << GetShownText() << " )" << std::endl;
-        // TODO!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        // just a guess, let's see what this does
-#endif
+        // TODO: add clearance!
+        // for now outline text items should only go on silkscreen layer
         polygonText( aCornerBuffer, aLayer, GetPosition(), GetShownText(), GetFont(), this );
     }
     else
