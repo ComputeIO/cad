@@ -708,7 +708,7 @@ void GERBER_PLOTTER::writeApertureList()
 
         case APERTURE::AM_ROTATED_OVAL: // Aperture macro for rotated oval pads
                                         // (not rotated is a primitive)
-            // m_Size.x = full lenght; m_Size.y = width, and the macro aperure expects
+            // m_Size.x = full lenght; m_Size.y = width, and the macro aperture expects
             // the position of ends
             {
                 // the seg_len is the distance between the 2 circle centers
@@ -740,15 +740,30 @@ void GERBER_PLOTTER::writeApertureList()
 
             for( size_t ii = 0; ii <= tool.m_Corners.size(); ii++ )
             {
-                // Find the aperture macro name in the list of aperture macro
-                // created on the fly for this polygon:
-                int idx = m_am_freepoly_list.FindAm( tool.m_Corners );
+                int jj = ii;
 
-                // Write DCODE id ( "%ADDxx" is already in buffer) and rotation
-                // the full line is something like :%ADD12FreePoly1,45.000000*%
-                sprintf( cbuf, "%s%d,%#f*%%\n", AM_FREEPOLY_BASENAME, idx, tool.m_Rotation );
+                if( ii >= tool.m_Corners.size() )
+                    jj = 0;
+
+                fprintf( m_outputFile, "%#f,%#f,", tool.m_Corners[jj].x * fscale,
+                         -tool.m_Corners[jj].y * fscale );
+                if( curr_line_count_max >= 0 && ++curr_line_corner_count >= curr_line_count_max )
+                {
+                    fprintf( m_outputFile, "\n" );
+                    curr_line_corner_count = 0;
+                }
             }
-            break;
+            // output rotation parameter
+            fputs( "$1*%\n", m_outputFile );
+
+            // Create specialized macro
+            sprintf( cbuf, "%s%d,", "Fp", tool.m_DCode );
+            buffer += cbuf;
+
+            // close outline and output rotation
+            sprintf( cbuf, "%#f*%%\n", tool.m_Rotation );
+        }
+        break;
         }
 
         buffer += cbuf;
@@ -1779,7 +1794,7 @@ bool APER_MACRO_FREEPOLY::IsSamePoly( const std::vector<wxPoint>& aPolygon ) con
 }
 
 
-void APER_MACRO_FREEPOLY::Format( FILE * aOutput, double aIu2GbrMacroUnit )
+void APER_MACRO_FREEPOLY::Format( FILE* aOutput, double aIu2GbrMacroUnit )
 {
     // Write aperture header
     fprintf( aOutput, "%%AM%s%d*\n", AM_FREEPOLY_BASENAME, m_Id );
@@ -1812,7 +1827,7 @@ void APER_MACRO_FREEPOLY::Format( FILE * aOutput, double aIu2GbrMacroUnit )
 }
 
 
-void APER_MACRO_FREEPOLY_LIST::Format( FILE * aOutput, double aIu2GbrMacroUnit )
+void APER_MACRO_FREEPOLY_LIST::Format( FILE* aOutput, double aIu2GbrMacroUnit )
 {
     for( int idx = 0; idx < AmCount(); idx++ )
         m_AMList[idx].Format( aOutput, aIu2GbrMacroUnit );
