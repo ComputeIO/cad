@@ -451,7 +451,7 @@ void STROKE_FONT::Draw( KIGFX::GAL* aGal, const UTF8& aText, const VECTOR2D& aPo
     if( aGal->IsFontBold() )
         aGal->SetLineWidth( aGal->GetLineWidth() * BOLD_FACTOR );
 
-#ifdef ORIGINAL_BUT_WE_DONT_NEED_TO_SPLIT_HERE_ANYMORE
+#if 1
     // Split multiline strings into separate ones and draw them line by line
     size_t begin = 0;
     size_t newlinePos = aText.find( '\n' );
