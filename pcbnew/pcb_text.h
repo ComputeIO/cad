@@ -131,9 +131,15 @@ public:
      */
     void DrawTextAsPolygon( std::vector<SHAPE_POLY_SET>& aResult, PCB_LAYER_ID aLayerId,
                             const wxPoint aPosition, const wxString& aString,
-                            const FONT* aFont ) const;
+                            const VECTOR2D& aConversionFactor, const FONT* aFont ) const;
 
-    void DrawTextAsPolygon( std::vector<SHAPE_POLY_SET>& aResult, PCB_LAYER_ID aLayerId ) const;
+    void DrawTextAsPolygon( std::vector<SHAPE_POLY_SET>& aResult, PCB_LAYER_ID aLayerId,
+                            const VECTOR2D& aConversionFactor ) const;
+
+    void DrawTextAsPolygon( std::vector<SHAPE_POLY_SET>& aResult, PCB_LAYER_ID aLayerId ) const
+    {
+        DrawTextAsPolygon( aResult, aLayerId, VECTOR2D( 1.0, 1.0 ) );
+    }
 
     FONT* GetFont() const { return EDA_TEXT::GetFont(); }
 

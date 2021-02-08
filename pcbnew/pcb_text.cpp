@@ -115,18 +115,15 @@ wxString PCB_TEXT::GetShownText( int aDepth, FONT** aFontPtr ) const
 
 void PCB_TEXT::DrawTextAsPolygon( std::vector<SHAPE_POLY_SET>& aResult, PCB_LAYER_ID aLayerId,
                                   const wxPoint aPosition, const wxString& aString,
-                                  const FONT* aFont ) const
+                                  const VECTOR2D& aConversionFactor, const FONT* aFont ) const
 {
     VECTOR2D glyphSize = GetTextSize();
     if( aFont->IsOutline() )
     {
-#ifdef DEBUG
-        std::cerr << "DrawTextAsPolygon \"" << GetText() << "\" glyphSize " << glyphSize << " -> \""
-                  << GetShownText() << "\", " << aString << " " << aPosition << std::endl;
-#endif
         const OUTLINE_FONT* outlineFont = dynamic_cast<const OUTLINE_FONT*>( aFont );
-        outlineFont->GetTextAsPolygon( aResult, aString, glyphSize, aPosition, GetTextAngle(),
-                                       IsMirrored() );
+        outlineFont->GetLinesAsPolygon( aResult, aString, glyphSize, aPosition, GetTextAngle(),
+                                        IsMirrored(), GetHorizJustify(), GetVertJustify(),
+                                        aConversionFactor );
     }
     else
     {
@@ -137,35 +134,12 @@ void PCB_TEXT::DrawTextAsPolygon( std::vector<SHAPE_POLY_SET>& aResult, PCB_LAYE
 }
 
 
-void PCB_TEXT::DrawTextAsPolygon( std::vector<SHAPE_POLY_SET>& aResult,
-                                  PCB_LAYER_ID                 aLayerId ) const
+void PCB_TEXT::DrawTextAsPolygon( std::vector<SHAPE_POLY_SET>& aResult, PCB_LAYER_ID aLayerId,
+                                  const VECTOR2D& aConversionFactor ) const
 {
     FONT* font = GetFont();
 
-    if( IsMultilineAllowed() )
-    {
-#ifdef DEBUG
-        std::cerr << "MULTILINE " << GetShownText() << std::endl;
-#endif
-        wxArrayString strings_list;
-        wxStringSplit( GetShownText(), strings_list, '\n' );
-        std::vector<wxPoint> positions;
-        positions.reserve( strings_list.Count() );
-        GetLinePositions( positions, strings_list.Count() );
-
-        for( unsigned ii = 0; ii < strings_list.Count(); ++ii )
-        {
-            const wxString& txt = strings_list.Item( ii );
-            DrawTextAsPolygon( aResult, aLayerId, positions[ii], txt, font );
-        }
-    }
-    else
-    {
-#ifdef DEBUG
-        std::cerr << "SINGLE LINE " << GetShownText() << std::endl;
-#endif
-        DrawTextAsPolygon( aResult, aLayerId, GetTextPos(), GetShownText(), font );
-    }
+    DrawTextAsPolygon( aResult, aLayerId, GetTextPos(), GetShownText(), aConversionFactor, font );
 }
 
 
