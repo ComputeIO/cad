@@ -383,10 +383,6 @@ float SCH_PAINTER::getTextThickness( const LIB_TEXT* aItem, bool aDrawingShadows
 void SCH_PAINTER::strokeText( const wxString& aText, const VECTOR2D& aPosition, double aAngle,
                               FONT* aFont )
 {
-#ifdef DEBUG
-    std::cerr << "SCH_PAINTER::strokeText( \"" << aText << "\", " << aPosition << ", " << aAngle
-              << ", " << ( aFont ? aFont->Name() : "*NOFONT*" ) << " )" << std::endl;
-#endif
     m_gal->StrokeText( aText, aPosition, aAngle, aFont );
 }
 
@@ -1341,40 +1337,31 @@ void SCH_PAINTER::draw( const SCH_TEXT* aText, int aLayer )
     {
         if( aText->GetFont()->IsOutline() ) // && m_gal->IsOpenGlEngine() )
         {
-#ifdef DEBUG
-            std::cerr << "<OUTLINE " << aText->GetFont()->Name() << ">";
-#endif
-#if 0
+            /*
+              // TODO: text should be rendered with full bitmap resolution (including anti-alias)
+              // on OpenGL canvas
             aText->GetFont()->RenderToOpenGLCanvas( m_gal->GetFreeType(), shownText,
                                                     m_gal->GetGlyphSize(), aText->GetTextPos(),
                                                     aText->GetTextAngle(), aText->IsMirrored() );
-#else
+            */
+
             OUTLINE_FONT* f = static_cast<OUTLINE_FONT*>( aText->GetFont() );
-#if 0
-            std::vector<SHAPE_POLY_SET> glyphs;
-            f->GetTextAsPolygon( glyphs, shownText, m_gal->GetGlyphSize(), aText->GetTextPos(),
-                                 aText->GetTextAngle(), aText->IsMirrored() );
-            for( const SHAPE_POLY_SET& glyph : glyphs )
-            {
-                m_gal->DrawGlyph( glyph );
-            }
-#else
             m_gal->SetIsFill( true );
             m_gal->SetFillColor( color );
-#ifdef FOOFAA
-            f->DrawString( m_gal, shownText, aText->GetTextPos(), aText->GetTextAngle(), true, 0, 0,
-                           aText->GetHorizJustify(), aText->GetVertJustify() );
-#else  //FOOFAA
-            f->DrawString( m_gal, shownText, aText->GetTextPos(), aText->GetTextAngle(), true );
-#endif //FOOFAA
-#endif
-#endif
+            f->DrawString( m_gal, shownText, aText->GetTextPos(), aText->GetTextAngle(), true,
+                           true );
+
+            if( drawingShadows && aText->IsSelected() )
+            {
+                m_gal->SetIsStroke( true );
+                m_gal->SetIsFill( false );
+                m_gal->SetStrokeColor( getRenderColor( aText, aLayer, drawingShadows ) );
+                f->DrawString( m_gal, shownText, aText->GetTextPos(), aText->GetTextAngle(), true,
+                               true );
+            }
         }
         else
         {
-#ifdef DEBUG
-            std::cerr << "<STROKE>";
-#endif
             m_gal->StrokeText( shownText, text_offset, aText->GetTextAngleRadians(),
                                aText->GetFont(), aText->IsMultilineAllowed() );
         }
