@@ -276,6 +276,7 @@ set( EESCHEMA_COMMON_SRCS
     ${CMAKE_SOURCE_DIR}/common/base_units.cpp
     ${CMAKE_SOURCE_DIR}/common/eda_text.cpp
     ${CMAKE_SOURCE_DIR}/common/page_info.cpp
+    ${CMAKE_SOURCE_DIR}/common/markup/markup_parser.cpp
     )
 
 
