@@ -134,6 +134,7 @@ SYMBOL_EDIT_FRAME::SYMBOL_EDIT_FRAME( KIWAY* aKiway, wxWindow* aParent ) :
     GetCanvas()->GetViewControls()->SetCrossHairCursorPosition( VECTOR2D( 0, 0 ), false );
 
     GetRenderSettings()->LoadColors( GetColorSettings() );
+    GetCanvas()->GetGAL()->SetAxesColor( m_colorSettings->GetColor( LAYER_SCHEMATIC_GRID_AXES ) );
 
     setupTools();
     setupUIConditions();
@@ -351,20 +352,38 @@ void SYMBOL_EDIT_FRAME::setupUIConditions()
             return m_libMgr->HasModifications();
         };
 
-    auto libSelectedCondition =
-        [this] ( const SELECTION& sel )
-        {
-            return !getTargetLibId().GetLibNickname().empty();
-        };
+    auto libSelectedCondition = [this]( const SELECTION& sel )
+    {
+        return !GetTargetLibId().GetLibNickname().empty();
+    };
+
+    auto canEditLib = [this]( const SELECTION& sel )
+    {
+        const wxString libName = GetTargetLibId().GetLibNickname();
+
+        return !libName.empty() && m_libMgr->LibraryExists( libName )
+               && !m_libMgr->IsLibraryReadOnly( libName );
+    };
+
+    auto canEditProperties = [this]( const SELECTION& sel )
+    {
+        return m_my_part && ( !IsSymbolFromLegacyLibrary() || IsSymbolFromSchematic() );
+    };
+
+    auto saveSymbolAsCondition = [this]( const SELECTION& aSel )
+    {
+        LIB_ID sel = GetTargetLibId();
+        return !sel.GetLibNickname().empty() && !sel.GetLibItemName().empty();
+    };
 
     mgr->SetConditions( ACTIONS::saveAll,
                         ENABLE( schematicModifiedCond || libModifiedCondition ) );
     mgr->SetConditions( ACTIONS::save,
                         ENABLE( schematicModifiedCond || libModifiedCondition ) );
-    mgr->SetConditions( EE_ACTIONS::saveInSchematic,
-                        ENABLE( schematicModifiedCond ) );
     mgr->SetConditions( EE_ACTIONS::saveLibraryAs, ENABLE( libSelectedCondition ) );
-    mgr->SetConditions( EE_ACTIONS::saveSymbolAs, ENABLE( haveSymbolCond ) );
+    mgr->SetConditions( EE_ACTIONS::saveSymbolAs, ENABLE( saveSymbolAsCondition ) );
+    mgr->SetConditions( EE_ACTIONS::newSymbol, ENABLE( !libSelectedCondition || canEditLib ) );
+    mgr->SetConditions( EE_ACTIONS::importSymbol, ENABLE( !libSelectedCondition || canEditLib ) );
 
     mgr->SetConditions( ACTIONS::undo,
                         ENABLE( haveSymbolCond && cond.UndoAvailable() ) );
@@ -458,7 +477,8 @@ void SYMBOL_EDIT_FRAME::setupUIConditions()
         };
 
     mgr->SetConditions( EE_ACTIONS::showDatasheet,    ENABLE( haveDatasheetCond ) );
-    mgr->SetConditions( EE_ACTIONS::symbolProperties, ENABLE( isEditableCond && haveSymbolCond ) );
+    mgr->SetConditions( EE_ACTIONS::symbolProperties,
+                        ENABLE( canEditProperties && haveSymbolCond ) );
     mgr->SetConditions( EE_ACTIONS::runERC,           ENABLE( haveSymbolCond ) );
     mgr->SetConditions( EE_ACTIONS::pinTable,         ENABLE( isEditableCond && haveSymbolCond ) );
 
@@ -867,7 +887,7 @@ LIB_PART* SYMBOL_EDIT_FRAME::getTargetPart() const
 }
 
 
-LIB_ID SYMBOL_EDIT_FRAME::getTargetLibId() const
+LIB_ID SYMBOL_EDIT_FRAME::GetTargetLibId() const
 {
     LIB_ID id = GetTreeLIBID();
 
@@ -886,11 +906,11 @@ LIB_TREE_NODE* SYMBOL_EDIT_FRAME::GetCurrentTreeNode() const
 
 wxString SYMBOL_EDIT_FRAME::getTargetLib() const
 {
-    return getTargetLibId().GetLibNickname();
+    return GetTargetLibId().GetLibNickname();
 }
 
 
-void SYMBOL_EDIT_FRAME::SyncLibraries( bool aShowProgress )
+void SYMBOL_EDIT_FRAME::SyncLibraries( bool aShowProgress, const wxString& aForceRefresh )
 {
     LIB_ID selected;
 
@@ -902,15 +922,20 @@ void SYMBOL_EDIT_FRAME::SyncLibraries( bool aShowProgress )
         APP_PROGRESS_DIALOG progressDlg( _( "Loading Symbol Libraries" ), wxEmptyString,
                                          m_libMgr->GetAdapter()->GetLibrariesCount(), this );
 
-        m_libMgr->Sync( true, [&]( int progress, int max, const wxString& libName )
-        {
-            progressDlg.Update( progress, wxString::Format( _( "Loading library \"%s\"" ),
-                                                            libName ) );
-        } );
+        m_libMgr->Sync( aForceRefresh,
+                        [&]( int progress, int max, const wxString& libName )
+                        {
+                            progressDlg.Update(
+                                    progress,
+                                    wxString::Format( _( "Loading library '%s'" ), libName ) );
+                        } );
     }
     else
     {
-        m_libMgr->Sync( true );
+        m_libMgr->Sync( aForceRefresh,
+                        [&]( int progress, int max, const wxString& libName )
+                        {
+                        } );
     }
 
     if( m_treePane )
@@ -951,7 +976,7 @@ void SYMBOL_EDIT_FRAME::SyncLibraries( bool aShowProgress )
 
 void SYMBOL_EDIT_FRAME::RegenerateLibraryTree()
 {
-    LIB_ID target = getTargetLibId();
+    LIB_ID target = GetTargetLibId();
 
     m_treePane->GetLibTree()->Regenerate( true );
 
@@ -1059,6 +1084,7 @@ void SYMBOL_EDIT_FRAME::CommonSettingsChanged( bool aEnvVarsChanged, bool aTextV
     SCH_BASE_FRAME::CommonSettingsChanged( aEnvVarsChanged, aTextVarsChanged );
 
     GetCanvas()->GetGAL()->SetAxesColor( m_colorSettings->GetColor( LAYER_SCHEMATIC_GRID_AXES ) );
+    GetCanvas()->GetGAL()->DrawGrid();
 
     RecreateToolbars();
 
@@ -1344,9 +1370,8 @@ bool SYMBOL_EDIT_FRAME::addLibTableEntry( const wxString& aLibFile, TABLE_SCOPE 
     }
     catch( const IO_ERROR& ioe )
     {
-        wxString msg;
-        msg.Printf( _( "Error saving %s symbol library table." ),
-                    ( aScope == GLOBAL_LIB_TABLE ) ? _( "global" ) : _( "project" ) );
+        wxString msg = aScope == GLOBAL_LIB_TABLE ? _( "Error saving global library table." )
+                                                  : _( "Error saving project library table." );
 
         wxMessageDialog dlg( this, msg, _( "File Save Error" ), wxOK | wxICON_ERROR );
         dlg.SetExtendedMessage( ioe.What() );
@@ -1400,9 +1425,8 @@ bool SYMBOL_EDIT_FRAME::replaceLibTableEntry( const wxString& aLibNickname,
     }
     catch( const IO_ERROR& ioe )
     {
-        wxString msg;
-        msg.Printf( _( "Error saving %s symbol library table." ),
-                    ( isGlobalTable ) ? _( "global" ) : _( "project" ) );
+        wxString msg = isGlobalTable ? _( "Error saving global library table." )
+                                     : _( "Error saving project library table." );
 
         wxMessageDialog dlg( this, msg, _( "File Save Error" ), wxOK | wxICON_ERROR );
         dlg.SetExtendedMessage( ioe.What() );

@@ -190,15 +190,15 @@ VECTOR2I PCB_GRID_HELPER::BestDragOrigin( const VECTOR2I&           aMousePos,
 }
 
 
-VECTOR2I PCB_GRID_HELPER::BestSnapAnchor( const VECTOR2I& aOrigin, BOARD_ITEM* aDraggedItem )
+VECTOR2I PCB_GRID_HELPER::BestSnapAnchor( const VECTOR2I& aOrigin, BOARD_ITEM* aReferenceItem )
 {
     LSET                     layers;
     std::vector<BOARD_ITEM*> item;
 
-    if( aDraggedItem )
+    if( aReferenceItem )
     {
-        layers = aDraggedItem->GetLayerSet();
-        item.push_back( aDraggedItem );
+        layers = aReferenceItem->GetLayerSet();
+        item.push_back( aReferenceItem );
     }
     else
         layers = LSET::AllLayersMask();
@@ -409,7 +409,24 @@ void PCB_GRID_HELPER::computeAnchors( BOARD_ITEM* aItem, const VECTOR2I& aRefPos
                 break;
             }
 
-            case SH_CIRCLE:
+                // if the cursor is not over a pad, then drag the footprint by its origin
+                VECTOR2I position = footprint->GetPosition();
+                addAnchor( position, ORIGIN | SNAPPABLE, footprint );
+
+                // Add the footprint center point if it is markedly different from the origin
+                VECTOR2I center = footprint->GetFootprintRect().Centre();
+                VECTOR2I grid( GetGrid() );
+
+                if( ( center - position ).SquaredEuclideanNorm() > grid.SquaredEuclideanNorm() )
+                    addAnchor( footprint->GetFootprintRect().Centre(), ORIGIN | SNAPPABLE,
+                               footprint );
+
+                break;
+            }
+
+        case PCB_PAD_T:
+        {
+            if( aFrom || m_magneticSettings->pads == MAGNETIC_OPTIONS::CAPTURE_ALWAYS )
             {
                 const SHAPE_CIRCLE* circle = static_cast<const SHAPE_CIRCLE*>( shape );
 

@@ -312,7 +312,7 @@ set( PCBNEW_CLASS_SRCS
     specctra_import_export/specctra.cpp
     specctra_import_export/specctra_export.cpp
     specctra_import_export/specctra_import.cpp
-    text_mod_grid_table.cpp
+    fp_text_grid_table.cpp
     toolbars_footprint_editor.cpp
     toolbars_footprint_viewer.cpp
     toolbars_pcb_editor.cpp
@@ -826,7 +826,7 @@ if( KICAD_SCRIPTING_MODULES )
     # Here is built the _pcbnew.{so,pyd} which is the native part of the pcbnew Python library
     # when Python is used from the command line.
 
-    if( MINGW )
+    if( MINGW OR VCPKG_TOOLCHAIN )
         install( FILES ${CMAKE_BINARY_DIR}/pcbnew/_pcbnew.pyd DESTINATION ${PYTHON_DEST} )
         set( PYMOD_EXT "pyd" )
     elseif( APPLE )

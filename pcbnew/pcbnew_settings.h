@@ -288,8 +288,6 @@ public:
 
     int m_RotationAngle;
 
-    double m_PlotLineWidth;
-
     bool m_ShowPageLimits;
 
     wxString m_FootprintTextShownColumns;

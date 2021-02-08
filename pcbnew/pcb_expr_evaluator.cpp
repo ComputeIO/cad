@@ -235,101 +235,108 @@ static void insideArea( LIBEVAL::CONTEXT* aCtx, void* self )
     else
         itemBBox = item->GetBoundingBox();
 
-    auto insideZone =
-            [&]( ZONE* zone ) -> bool
+    auto insideZone = [&]( ZONE* zone ) -> bool
+    {
+        if( !zone || zone == item )
+            return false;
+
+        if( !zone->GetCachedBoundingBox().Intersects( itemBBox ) )
+            return false;
+
+        // Collisions include touching, so we need to deflate outline by enough to
+        // exclude touching.  This is particularly important for detecting copper fills
+        // as they will be exactly touching along the entire border.
+        SHAPE_POLY_SET zoneOutline = *zone->Outline();
+        zoneOutline.Deflate( Millimeter2iu( 0.001 ), 4 );
+
+        if( item->GetFlags() & HOLE_PROXY )
+        {
+            if( item->Type() == PCB_PAD_T )
             {
-                if( !zone )
-                    return false;
+                PAD*                 pad = static_cast<PAD*>( item );
+                const SHAPE_SEGMENT* holeShape = pad->GetEffectiveHoleShape();
 
-                if( !zone->GetCachedBoundingBox().Intersects( itemBBox ) )
-                    return false;
+                return zoneOutline.Collide( holeShape );
+            }
+            else if( item->Type() == PCB_VIA_T )
+            {
+                VIA*               via = static_cast<VIA*>( item );
+                const SHAPE_CIRCLE holeShape( via->GetPosition(), via->GetDrillValue() );
 
-                if( item->GetFlags() & HOLE_PROXY )
+                return zoneOutline.Collide( &holeShape );
+            }
+
+            return false;
+        }
+
+        if( item->Type() == PCB_FOOTPRINT_T )
+        {
+            FOOTPRINT* footprint = static_cast<FOOTPRINT*>( item );
+
+            if( ( footprint->GetFlags() & MALFORMED_COURTYARDS ) != 0 )
+            {
+                aCtx->ReportError( _( "Footprint's courtyard is not a single, closed shape." ) );
+                return false;
+            }
+
+            if( ( zone->GetLayerSet() & LSET::FrontMask() ).any() )
+            {
+                SHAPE_POLY_SET courtyard = footprint->GetPolyCourtyardFront();
+
+                if( courtyard.OutlineCount() == 0 )
                 {
-                    if( item->Type() == PCB_PAD_T )
-                    {
-                        PAD*                 pad = static_cast<PAD*>( item );
-                        const SHAPE_SEGMENT* holeShape = pad->GetEffectiveHoleShape();
-
-                        return zone->Outline()->Collide( holeShape );
-                    }
-                    else if( item->Type() == PCB_VIA_T )
-                    {
-                        VIA*               via = static_cast<VIA*>( item );
-                        const SHAPE_CIRCLE holeShape( via->GetPosition(), via->GetDrillValue() );
-
-                        return zone->Outline()->Collide( &holeShape );
-                    }
-
+                    aCtx->ReportError( _( "Footprint has no front courtyard." ) );
                     return false;
-                }
-
-                if( item->Type() == PCB_FOOTPRINT_T )
-                {
-                    FOOTPRINT* footprint = static_cast<FOOTPRINT*>( item );
-
-                    if( ( footprint->GetFlags() & MALFORMED_COURTYARDS ) != 0 )
-                    {
-                        aCtx->ReportError( _( "Footprint's courtyard is not a single, closed shape." ) );
-                        return false;
-                    }
-
-                    if( ( zone->GetLayerSet() & LSET::FrontMask() ).any() )
-                    {
-                        SHAPE_POLY_SET courtyard = footprint->GetPolyCourtyardFront();
-
-                        if( courtyard.OutlineCount() == 0 )
-                        {
-                            aCtx->ReportError( _( "Footprint has no front courtyard." ) );
-                            return false;
-                        }
-                        else
-                        {
-                            return zone->Outline()->Collide( &courtyard.Outline( 0 ) );
-                        }
-                    }
-
-                    if( ( zone->GetLayerSet() & LSET::BackMask() ).any() )
-                    {
-                        SHAPE_POLY_SET courtyard = footprint->GetPolyCourtyardBack();
-
-                        if( courtyard.OutlineCount() == 0 )
-                        {
-                            aCtx->ReportError( _( "Footprint has no back courtyard." ) );
-                            return false;
-                        }
-                        else
-                        {
-                            return zone->Outline()->Collide( &courtyard.Outline( 0 ) );
-                        }
-                    }
-
-                    return false;
-                }
-
-                if( item->Type() == PCB_ZONE_T || item->Type() == PCB_FP_ZONE_T )
-                {
-                    ZONE* testZone = static_cast<ZONE*>( item );
-
-                    if( !zone->GetCachedBoundingBox().Contains( itemBBox ) )
-                        return false;
-
-                    for( auto i = testZone->Outline()->CIterate( 0 ); i; i++ )
-                    {
-                        if( !zone->Outline()->Contains( *i ) )
-                            return false;
-                    }
-
-                    return true;
                 }
                 else
                 {
-                    if( !shape )
-                        shape = item->GetEffectiveShape( context->GetLayer() );
-
-                    return zone->Outline()->Collide( shape.get() );
+                    return zoneOutline.Collide( &courtyard.Outline( 0 ) );
                 }
-            };
+            }
+
+            if( ( zone->GetLayerSet() & LSET::BackMask() ).any() )
+            {
+                SHAPE_POLY_SET courtyard = footprint->GetPolyCourtyardBack();
+
+                if( courtyard.OutlineCount() == 0 )
+                {
+                    aCtx->ReportError( _( "Footprint has no back courtyard." ) );
+                    return false;
+                }
+                else
+                {
+                    return zoneOutline.Collide( &courtyard.Outline( 0 ) );
+                }
+            }
+
+            return false;
+        }
+
+        if( item->Type() == PCB_ZONE_T || item->Type() == PCB_FP_ZONE_T )
+        {
+            ZONE* testZone = static_cast<ZONE*>( item );
+
+            for( PCB_LAYER_ID layer : zone->GetLayerSet().Seq() )
+            {
+                if( testZone->IsOnLayer( layer ) )
+                {
+                    const SHAPE_POLY_SET& fill = testZone->GetFilledPolysList( layer );
+
+                    if( zoneOutline.Collide( &fill ) )
+                        return true;
+                }
+            }
+
+            return false;
+        }
+        else
+        {
+            if( !shape )
+                shape = item->GetEffectiveShape( context->GetLayer() );
+
+            return zoneOutline.Collide( shape.get() );
+        }
+    };
 
     if( arg->AsString() == "A" )
     {

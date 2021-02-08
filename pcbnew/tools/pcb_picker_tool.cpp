@@ -31,10 +31,8 @@
 #include "pcb_selection_tool.h"
 
 
-PCB_PICKER_TOOL::PCB_PICKER_TOOL()
-    : PCB_TOOL_BASE( "pcbnew.InteractivePicker" )
+PCB_PICKER_TOOL::PCB_PICKER_TOOL() : PCB_TOOL_BASE( "pcbnew.InteractivePicker" ), PICKER_TOOL_BASE()
 {
-    reset();
 }
 
 
@@ -185,14 +183,7 @@ void PCB_PICKER_TOOL::setTransitions()
 void PCB_PICKER_TOOL::reset()
 {
     m_layerMask = LSET::AllLayersMask();
-    m_cursor    = KICURSOR::ARROW;
-    m_snap      = true;
-
-    m_picked = NULLOPT;
-    m_clickHandler = NULLOPT;
-    m_motionHandler = NULLOPT;
-    m_cancelHandler = NULLOPT;
-    m_finalizeHandler = NULLOPT;
+    PICKER_TOOL_BASE::reset();
 }
 
 

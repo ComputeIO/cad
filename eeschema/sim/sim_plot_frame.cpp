@@ -189,8 +189,8 @@ SIM_PLOT_FRAME::SIM_PLOT_FRAME( KIWAY* aKiway, wxWindow* aParent )
             KiBitmap( sim_probe_xpm ), _( "Probe signals on the schematic" ), wxITEM_NORMAL );
     m_toolTune = m_toolBar->AddTool( ID_SIM_TUNE, _( "Tune" ),
             KiBitmap( sim_tune_xpm ), _( "Tune component values" ), wxITEM_NORMAL );
-    m_toolSettings = m_toolBar->AddTool( wxID_ANY, _( "Settings" ),
-            KiBitmap( sim_settings_xpm ), _( "Simulation settings" ), wxITEM_NORMAL );
+    m_toolSettings = m_toolBar->AddTool( wxID_ANY, _( "Sim Parameters" ), KiBitmap( config_xpm ),
+                                         _( "Simulation parameters and settings" ), wxITEM_NORMAL );
 
     Connect( m_toolSimulate->GetId(), wxEVT_COMMAND_TOOL_CLICKED,
              wxCommandEventHandler( SIM_PLOT_FRAME::onSimulate ), NULL, this );
@@ -297,34 +297,33 @@ struct BM_MENU_INIT_ITEM
 void SIM_PLOT_FRAME::setIconsForMenuItems()
 {
     // Give icons to menuitems of the main menubar
-    BM_MENU_INIT_ITEM bm_list[]
-    {
+    BM_MENU_INIT_ITEM bm_list[]{
         // File menu:
         { wxID_NEW, simulator_xpm },
         { wxID_OPEN, directory_open_xpm },
-        { wxID_SAVE, save_xpm},
-        { ID_SAVE_AS_IMAGE, export_xpm},
-        { ID_SAVE_AS_CSV, export_xpm},
-        { wxID_CLOSE, exit_xpm},
+        { wxID_SAVE, save_xpm },
+        { ID_SAVE_AS_IMAGE, export_xpm },
+        { ID_SAVE_AS_CSV, export_xpm },
+        { wxID_CLOSE, exit_xpm },
 
         // simulator menu:
-        { ID_MENU_RUN_SIM, sim_run_xpm},
-        { ID_MENU_ADD_SIGNAL, sim_add_signal_xpm},
-        { ID_MENU_PROBE_SIGNALS, sim_probe_xpm},
-        { ID_MENU_TUNE_SIGNALS, sim_tune_xpm},
-        { ID_MENU_SHOW_NETLIST, netlist_xpm},
-        { ID_MENU_SET_SIMUL, sim_settings_xpm},
+        { ID_MENU_RUN_SIM, sim_run_xpm },
+        { ID_MENU_ADD_SIGNAL, sim_add_signal_xpm },
+        { ID_MENU_PROBE_SIGNALS, sim_probe_xpm },
+        { ID_MENU_TUNE_SIGNALS, sim_tune_xpm },
+        { ID_MENU_SHOW_NETLIST, netlist_xpm },
+        { ID_MENU_SET_SIMUL, config_xpm },
 
         // View menu
-        { wxID_ZOOM_IN, zoom_in_xpm},
-        { wxID_ZOOM_OUT, zoom_out_xpm},
-        { wxID_ZOOM_FIT, zoom_fit_in_page_xpm},
-        { ID_MENU_SHOW_GRID, grid_xpm},
-        { ID_MENU_SHOW_LEGEND, text_xpm},
-        { ID_MENU_DOTTED, add_dashed_line_xpm},
-        { ID_MENU_WHITE_BG, swap_layer_xpm},
+        { wxID_ZOOM_IN, zoom_in_xpm },
+        { wxID_ZOOM_OUT, zoom_out_xpm },
+        { wxID_ZOOM_FIT, zoom_fit_in_page_xpm },
+        { ID_MENU_SHOW_GRID, grid_xpm },
+        { ID_MENU_SHOW_LEGEND, text_xpm },
+        { ID_MENU_DOTTED, add_dashed_line_xpm },
+        { ID_MENU_WHITE_BG, swap_layer_xpm },
 
-        { 0, nullptr }  // Sentinel
+        { 0, nullptr } // Sentinel
     };
 
     // wxMenuItems are already created and attached to the m_mainMenu wxMenuBar.
@@ -437,7 +436,8 @@ void SIM_PLOT_FRAME::StartSimulation( const wxString& aSimCommand )
     if( aSimCommand.IsEmpty() )
     {
         SIM_PANEL_BASE* plotPanel = currentPlotWindow();
-        if( plotPanel )
+
+        if( plotPanel && m_plots.count( plotPanel ) != 0 )
             m_exporter->SetSimCommand( m_plots[plotPanel].m_simCommand );
     }
     else

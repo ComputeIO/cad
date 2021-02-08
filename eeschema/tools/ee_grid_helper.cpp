@@ -25,8 +25,10 @@
 
 #include <functional>
 #include <sch_item.h>
+#include <sch_line.h>
 #include <sch_painter.h>
 #include <tool/tool_manager.h>
+#include <trigo.h>
 #include <view/view.h>
 #include "ee_grid_helper.h"
 
@@ -261,9 +263,7 @@ void EE_GRID_HELPER::computeAnchors( SCH_ITEM* aItem, const VECTOR2I& aRefPos, b
     switch( aItem->Type() )
     {
     case SCH_COMPONENT_T:
-    case SCH_SHEET_T:
-        addAnchor( aItem->GetPosition(), ORIGIN, aItem );
-        KI_FALLTHROUGH;
+    case SCH_SHEET_T: addAnchor( aItem->GetPosition(), ORIGIN, aItem ); KI_FALLTHROUGH;
     case SCH_JUNCTION_T:
     case SCH_NO_CONNECT_T:
     case SCH_LINE_T:
@@ -282,7 +282,29 @@ void EE_GRID_HELPER::computeAnchors( SCH_ITEM* aItem, const VECTOR2I& aRefPos, b
 
     default:
         break;
-   }
+    }
+
+    if( SCH_LINE* line = dyn_cast<SCH_LINE*>( aItem ) )
+    {
+        VECTOR2I pt = m_enableGrid ? Align( aRefPos ) : aRefPos;
+
+        if( line->GetStartPoint().x == line->GetEndPoint().x )
+        {
+            VECTOR2I possible( line->GetStartPoint().x, pt.y );
+
+            if( TestSegmentHit( wxPoint( possible ), line->GetStartPoint(), line->GetEndPoint(),
+                                0 ) )
+                addAnchor( possible, SNAPPABLE | VERTICAL, aItem );
+        }
+        else if( line->GetStartPoint().y == line->GetEndPoint().y )
+        {
+            VECTOR2I possible( pt.x, line->GetStartPoint().y );
+
+            if( TestSegmentHit( wxPoint( possible ), line->GetStartPoint(), line->GetEndPoint(),
+                                0 ) )
+                addAnchor( possible, SNAPPABLE | HORIZONTAL, aItem );
+        }
+    }
 }
 
 

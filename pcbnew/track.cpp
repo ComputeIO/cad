@@ -39,6 +39,10 @@
 #include <geometry/shape_circle.h>
 #include <geometry/shape_arc.h>
 #include <drc/drc_engine.h>
+#include <pcb_painter.h>
+
+using KIGFX::PCB_PAINTER;
+using KIGFX::PCB_RENDER_SETTINGS;
 
 TRACK::TRACK( BOARD_ITEM* aParent, KICAD_T idtype ) :
     BOARD_CONNECTED_ITEM( aParent, idtype )
@@ -228,6 +232,16 @@ const EDA_RECT TRACK::GetBoundingBox() const
 
         ymin = m_Start.y;
         xmin = m_Start.x;
+    }
+    else if( Type() == PCB_ARC_T )
+    {
+        std::shared_ptr<SHAPE> arc = GetEffectiveShape();
+        auto                   bbox = arc->BBox();
+
+        xmin = bbox.GetLeft();
+        xmax = bbox.GetRight();
+        ymin = bbox.GetTop();
+        ymax = bbox.GetBottom();
     }
     else
     {
@@ -519,12 +533,22 @@ double TRACK::ViewGetLOD( int aLayer, KIGFX::VIEW* aView ) const
 {
     constexpr double HIDE = std::numeric_limits<double>::max();
 
+    PCB_PAINTER*         painter = static_cast<PCB_PAINTER*>( aView->GetPainter() );
+    PCB_RENDER_SETTINGS* renderSettings = painter->GetSettings();
+
     if( !aView->IsLayerVisible( LAYER_TRACKS ) )
         return HIDE;
 
-    // Netnames will be shown only if zoom is appropriate
     if( IsNetnameLayer( aLayer ) )
     {
+        // Hide netnames on dimmed tracks
+        if( renderSettings->GetHighContrast() )
+        {
+            if( m_layer != renderSettings->GetPrimaryHighContrastLayer() )
+                return HIDE;
+        }
+
+        // Netnames will be shown only if zoom is appropriate
         return ( double ) Millimeter2iu( 4 ) / ( m_Width + 1 );
     }
 
@@ -548,18 +572,20 @@ const BOX2I TRACK::ViewBBox() const
 
 void VIA::ViewGetLayers( int aLayers[], int& aCount ) const
 {
-    aLayers[0] = LAYER_VIAS_HOLES;
-    aLayers[1] = LAYER_VIAS_NETNAMES;
-    aCount = 3;
+    aLayers[0] = LAYER_VIA_HOLES;
+    aLayers[1] = LAYER_VIA_HOLEWALLS;
+    aLayers[2] = LAYER_VIA_NETNAMES;
 
     // Just show it on common via & via holes layers
     switch( GetViaType() )
     {
-    case VIATYPE::THROUGH:      aLayers[2] = LAYER_VIA_THROUGH;  break;
-    case VIATYPE::BLIND_BURIED: aLayers[2] = LAYER_VIA_BBLIND;   break;
-    case VIATYPE::MICROVIA:     aLayers[2] = LAYER_VIA_MICROVIA; break;
-    default:                    aLayers[2] = LAYER_GP_OVERLAY;   break;
+    case VIATYPE::THROUGH: aLayers[3] = LAYER_VIA_THROUGH; break;
+    case VIATYPE::BLIND_BURIED: aLayers[3] = LAYER_VIA_BBLIND; break;
+    case VIATYPE::MICROVIA: aLayers[3] = LAYER_VIA_MICROVIA; break;
+    default: aLayers[3] = LAYER_GP_OVERLAY; break;
     }
+
+    aCount = 4;
 }
 
 
@@ -567,36 +593,50 @@ double VIA::ViewGetLOD( int aLayer, KIGFX::VIEW* aView ) const
 {
     constexpr double HIDE = (double)std::numeric_limits<double>::max();
 
-    // Netnames will be shown only if zoom is appropriate
-    if( IsNetnameLayer( aLayer ) )
-        return m_Width == 0 ? HIDE : ( (double)Millimeter2iu( 10 ) / m_Width );
+    PCB_PAINTER*         painter = static_cast<PCB_PAINTER*>( aView->GetPainter() );
+    PCB_RENDER_SETTINGS* renderSettings = painter->GetSettings();
+    BOARD*               board = GetBoard();
+    LSET                 visible = LSET::AllLayersMask();
 
-    bool onVisibleLayer = false;
+    // Meta control for hiding all vias
+    if( !aView->IsLayerVisible( LAYER_VIAS ) )
+        return HIDE;
 
-    PCB_LAYER_ID top;
-    PCB_LAYER_ID bottom;
-    LayerPair( &top, &bottom );
+    // Handle board visibility (unless printing)
+    if( board && !aView->GetPrintMode() )
+        visible = board->GetVisibleLayers() & board->GetEnabledLayers();
 
-    for( int layer = top; layer <= bottom; ++layer )
+    if( IsViaPadLayer( aLayer ) )
     {
-        if( aView->IsLayerVisible( layer ) )
-        {
-            onVisibleLayer = true;
-            break;
-        }
-    }
-
-    // Draw through vias unconditionally if the vias control is turned on.
-    // Draw blind/buried/microvias only if at least one of the layers crossed is enabeld.
-    if( aView->IsLayerVisible( LAYER_VIAS ) )
-    {
-        if( !onVisibleLayer && m_viaType != VIATYPE::THROUGH )
+        if( !FlashLayer( visible ) )
             return HIDE;
+    }
+    else if( IsHoleLayer( aLayer ) )
+    {
+        if( !( visible & LSET::PhysicalLayersMask() ).any() )
+            return HIDE;
+    }
+    else if( IsNetnameLayer( aLayer ) )
+    {
+        if( renderSettings->GetHighContrast() )
+        {
+            // Hide netnames unless via is flashed to a high-contrast layer
+            if( !FlashLayer( renderSettings->GetPrimaryHighContrastLayer() ) )
+                return HIDE;
+        }
+        else
+        {
+            // Hide netnames unless pad is flashed to a visible layer
+            if( !FlashLayer( visible ) )
+                return HIDE;
+        }
 
-        return aView->IsLayerVisible( LAYER_VIAS ) ? 0.0 : HIDE;
+        // Netnames will be shown only if zoom is appropriate
+        return m_Width == 0 ? HIDE : ( (double) Millimeter2iu( 10 ) / m_Width );
     }
 
-    return HIDE;
+    // Passed all tests; show.
+    return 0.0;
 }
 
 

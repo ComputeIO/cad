@@ -846,6 +846,13 @@ LSET LSET::UserMask()
 }
 
 
+LSET LSET::PhysicalLayersMask()
+{
+    static const LSET saved = AllBoardTechMask() | AllCuMask();
+    return saved;
+}
+
+
 LSET LSET::UserDefinedLayers()
 {
     static const LSET saved( 9,
@@ -947,11 +954,13 @@ GAL_SET GAL_SET::DefaultVisible()
         LAYER_MOD_REFERENCES,
         LAYER_TRACKS,
         LAYER_PADS_TH,
-        LAYER_PADS_PLATEDHOLES,
-        LAYER_VIAS_HOLES,
+        LAYER_PAD_PLATEDHOLES,
+        LAYER_PAD_HOLEWALLS,
+        LAYER_VIA_HOLES,
+        LAYER_VIA_HOLEWALLS,
         LAYER_DRC_ERROR,
         LAYER_DRC_WARNING,
-       // LAYER_DRC_EXCLUSION,      // DRC exclusions hidden by default
+        // LAYER_DRC_EXCLUSION,      // DRC exclusions hidden by default
         LAYER_WORKSHEET,
         LAYER_GP_OVERLAY,
         LAYER_SELECT_OVERLAY,

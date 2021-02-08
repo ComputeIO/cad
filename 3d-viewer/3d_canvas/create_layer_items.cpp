@@ -955,7 +955,7 @@ void BOARD_ADAPTER::createLayers( REPORTER* aStatusReporter )
         {
             if( ( curr_layer_id == F_SilkS ) || ( curr_layer_id == B_SilkS ) )
             {
-                int linewidth = g_DrawDefaultLineThickness;
+                int linewidth = m_board->GetDesignSettings().m_LineThickness[LAYER_CLASS_SILK];
 
                 for( PAD* pad : footprint->Pads() )
                 {
@@ -980,7 +980,7 @@ void BOARD_ADAPTER::createLayers( REPORTER* aStatusReporter )
         {
             if( ( curr_layer_id == F_SilkS ) || ( curr_layer_id == B_SilkS ) )
             {
-                const int linewidth = g_DrawDefaultLineThickness;
+                int linewidth = m_board->GetDesignSettings().m_LineThickness[LAYER_CLASS_SILK];
 
                 for( PAD* pad : footprint->Pads() )
                 {

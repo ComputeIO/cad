@@ -609,13 +609,17 @@ void PCB_POINT_EDITOR::editArcEndpointKeepTangent( PCB_SHAPE* aArc, VECTOR2I aCe
         p3 = &aMid;
         movingStart = true;
     }
-    else
+    else if( aEnd != aArc->GetArcEnd() )
     {
         aEnd = aCursor;
         p1 = &aStart;
         p2 = &aEnd;
         p3 = &aMid;
         movingStart = false;
+    }
+    else
+    {
+        return;
     }
 
     VECTOR2D v1, v2, v3, v4;
@@ -1228,17 +1232,17 @@ void PCB_POINT_EDITOR::updateItem() const
                 if( isModified( m_editPoints->Point( RECT_TOP_LEFT ) )
                     || isModified( m_editPoints->Point( RECT_BOT_RIGHT ) ) )
                 {
-                    dist[0] = center.x - m_editPoints->Point( RECT_TOP_LEFT ).GetPosition().x;
-                    dist[1] = center.y - m_editPoints->Point( RECT_TOP_LEFT ).GetPosition().y;
-                    dist[2] = m_editPoints->Point( RECT_BOT_RIGHT ).GetPosition().x - center.x;
-                    dist[3] = m_editPoints->Point( RECT_BOT_RIGHT ).GetPosition().y - center.y;
+                    dist[0] = center.x - topLeft.x;
+                    dist[1] = center.y - topLeft.y;
+                    dist[2] = botRight.x - center.x;
+                    dist[3] = botRight.y - center.y;
                 }
                 else
                 {
-                    dist[0] = center.x - m_editPoints->Point( RECT_BOT_LEFT ).GetPosition().x;
-                    dist[1] = center.y - m_editPoints->Point( RECT_TOP_RIGHT ).GetPosition().y;
-                    dist[2] = m_editPoints->Point( RECT_TOP_RIGHT ).GetPosition().x - center.x;
-                    dist[3] = m_editPoints->Point( RECT_BOT_LEFT ).GetPosition().y - center.y;
+                    dist[0] = center.x - botLeft.x;
+                    dist[1] = center.y - topRight.y;
+                    dist[2] = topRight.x - center.x;
+                    dist[3] = botLeft.y - center.y;
                 }
 
                 wxSize  padSize( dist[0] + dist[2], dist[1] + dist[3] );
@@ -1261,17 +1265,17 @@ void PCB_POINT_EDITOR::updateItem() const
                 if( isModified( m_editPoints->Point( RECT_TOP_LEFT ) )
                     || isModified( m_editPoints->Point( RECT_BOT_RIGHT ) ) )
                 {
-                    left = m_editPoints->Point( RECT_TOP_LEFT ).GetPosition().x;
-                    top = m_editPoints->Point( RECT_TOP_LEFT ).GetPosition().y;
-                    right = m_editPoints->Point( RECT_BOT_RIGHT ).GetPosition().x;
-                    bottom = m_editPoints->Point( RECT_BOT_RIGHT ).GetPosition().y;
+                    left = topLeft.x;
+                    top = topLeft.y;
+                    right = botRight.x;
+                    bottom = botRight.y;
                 }
                 else
                 {
-                    left = m_editPoints->Point( RECT_BOT_LEFT ).GetPosition().x;
-                    top = m_editPoints->Point( RECT_TOP_RIGHT ).GetPosition().y;
-                    right = m_editPoints->Point( RECT_TOP_RIGHT ).GetPosition().x;
-                    bottom = m_editPoints->Point( RECT_BOT_LEFT ).GetPosition().y;
+                    left = botLeft.x;
+                    top = topRight.y;
+                    right = topRight.x;
+                    bottom = botLeft.y;
                 }
 
                 wxSize padSize( abs( right - left ), abs( bottom - top ) );

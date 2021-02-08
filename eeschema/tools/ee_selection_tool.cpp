@@ -37,6 +37,7 @@
 #include <preview_items/selection_area.h>
 #include <sch_base_frame.h>
 #include <sch_component.h>
+#include <sch_field.h>
 #include <sch_edit_frame.h>
 #include <sch_item.h>
 #include <sch_line.h>
@@ -363,8 +364,12 @@ int EE_SELECTION_TOOL::Main( const TOOL_EVENT& aEvent )
                         newParams->quitOnDraw = true;
                         newEvt->SetParameter( newParams );
 
+
+                        getViewControls()->ForceCursorPosition( true, snappedCursorPos );
                         newEvt->SetMousePosition( snappedCursorPos );
+                        newEvt->SetHasPosition( true );
                         m_toolMgr->ProcessEvent( *newEvt );
+
                         continueSelect = false;
                     }
                     else if( collector[0]->IsHypertext() )
@@ -388,13 +393,41 @@ int EE_SELECTION_TOOL::Main( const TOOL_EVENT& aEvent )
             // right click? if there is any object - show the context menu
             bool selectionCancelled = false;
 
-            if( m_selection.Empty() ||
-                    !m_selection.GetBoundingBox().Contains( (wxPoint) evt->Position() ) )
+            if( m_selection.Empty() )
             {
                 ClearSelection();
                 SelectPoint( evt->Position(), EE_COLLECTOR::AllItems, nullptr,
                              &selectionCancelled );
                 m_selection.SetIsHover( true );
+            }
+            // If the cursor has moved off the bounding box of the selection by more than
+            // a grid square, check to see if there is another item available for selection
+            // under the cursor.  If there is, the user likely meant to get the context menu
+            // for that item.  If there is no new item, then keep the original selection and
+            // show the context menu for it.
+            else if( !m_selection.GetBoundingBox()
+                              .Inflate( grid.GetGrid().x, grid.GetGrid().y )
+                              .Contains( (wxPoint) evt->Position() ) )
+            {
+                EE_SELECTION saved_selection = m_selection;
+
+                for( auto item : m_selection )
+                    RemoveItemFromSel( item, true );
+
+                SelectPoint( evt->Position(), EE_COLLECTOR::AllItems, nullptr,
+                             &selectionCancelled );
+
+                if( m_selection.Empty() )
+                {
+                    m_selection.SetIsHover( false );
+
+                    for( auto item : saved_selection )
+                        AddItemToSel( item, true );
+                }
+                else
+                {
+                    m_selection.SetIsHover( true );
+                }
             }
 
             if( !selectionCancelled )
@@ -526,6 +559,7 @@ int EE_SELECTION_TOOL::Main( const TOOL_EVENT& aEvent )
                             && collector[0]->IsPointClickableAnchor( (wxPoint) snappedCursorPos ) )
                     {
                         displayWireCursor = true;
+                        getViewControls()->ForceCursorPosition( true, snappedCursorPos );
                     }
                     else if( collector[0]->IsHypertext()
                                 && !collector[0]->IsSelected()
@@ -534,6 +568,10 @@ int EE_SELECTION_TOOL::Main( const TOOL_EVENT& aEvent )
                         rolloverItem = collector[0]->m_Uuid;
                     }
                 }
+            }
+            else
+            {
+                getViewControls()->ForceCursorPosition( false );
             }
         }
         else
@@ -1067,13 +1105,15 @@ bool EE_SELECTION_TOOL::selectMultiple()
 
             // Mark items within the selection box as selected
             std::vector<KIGFX::VIEW::LAYER_ITEM_PAIR> selectedItems;
-            std::vector<KIGFX::VIEW::LAYER_ITEM_PAIR> sheetPins;
+            std::vector<KIGFX::VIEW::LAYER_ITEM_PAIR> children;
 
             // Filter the view items based on the selection box
             BOX2I selectionBox = area.ViewBBox();
             view->Query( selectionBox, selectedItems );         // Get the list of selected items
 
-            // Sheet pins aren't in the view; add them by hand
+            // Some children aren't in the view; add them by hand.
+            // DO NOT add them directly to selectedItems.  If we add enough to cause the vector
+            // to grow it will re-allocate and invalidate the top-level for-loop iterator.
             for( KIGFX::VIEW::LAYER_ITEM_PAIR& pair : selectedItems )
             {
                 SCH_SHEET* sheet = dynamic_cast<SCH_SHEET*>( pair.first );
@@ -1083,11 +1123,21 @@ bool EE_SELECTION_TOOL::selectMultiple()
                     int layer = pair.second;
 
                     for( SCH_SHEET_PIN* pin : sheet->GetPins() )
-                        sheetPins.emplace_back( KIGFX::VIEW::LAYER_ITEM_PAIR( pin, layer ) );
+                        children.emplace_back( KIGFX::VIEW::LAYER_ITEM_PAIR( pin, layer ) );
+                }
+
+                SCH_COMPONENT* symbol = dynamic_cast<SCH_COMPONENT*>( pair.first );
+
+                if( symbol )
+                {
+                    int layer = pair.second;
+
+                    for( SCH_FIELD& field : symbol->GetFields() )
+                        children.emplace_back( KIGFX::VIEW::LAYER_ITEM_PAIR( &field, layer ) );
                 }
             }
 
-            selectedItems.insert( selectedItems.end(), sheetPins.begin(), sheetPins.end() );
+            selectedItems.insert( selectedItems.end(), children.begin(), children.end() );
 
             int height = area.GetEnd().y - area.GetOrigin().y;
 
@@ -1167,7 +1217,7 @@ EDA_ITEM* EE_SELECTION_TOOL::GetNode( VECTOR2I aPosition )
     EE_COLLECTOR collector;
 
     //TODO(snh): Reimplement after exposing KNN interface
-    int thresholdMax = KiROUND( getView()->ToWorld( HITTEST_THRESHOLD_PIXELS ) );
+    int thresholdMax = KiROUND( m_toolMgr->GetView()->GetGAL()->GetGridSize().EuclideanNorm() );
 
     for( int threshold : { 0, thresholdMax/2, thresholdMax } )
     {

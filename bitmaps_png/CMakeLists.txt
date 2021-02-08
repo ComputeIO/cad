@@ -74,6 +74,8 @@ set( BMAPS_SMALL
     icon_pagelayout_editor_16
     icon_pcbcalculator_16
     icon_pcbnew_16
+    list_nets_16
+    options_generic_16
     pinorient_right
     pinorient_left
     pinorient_up
@@ -338,8 +340,8 @@ set( BMAPS_MID
     new_component
     new_footprint
     new_generic
+    new_library
     new_project
-    new_project_with_template
     noconn
     normal
     open_project
@@ -410,8 +412,6 @@ set( BMAPS_MID
     rotate_ccw_z
     rotate_cw_z
     save_as
-    save_symbol_to_schematic
-    save_fp_to_board
     save
     select_layer_pair
     select_w_layer
@@ -425,7 +425,6 @@ set( BMAPS_MID
     sim_tune
     sim_probe
     sim_add_signal
-    sim_settings
     search_tree
     set_origin
     show_dcodenumber
@@ -492,6 +491,8 @@ set( BMAPS_24
     icon_bitmap2component_24
     icon_eeschema_24
     icon_gerbview_24
+    icon_libedit_24
+    icon_modedit_24
     icon_pagelayout_editor_24
     icon_pcbcalculator_24
     icon_pcbnew_24

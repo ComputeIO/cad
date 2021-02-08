@@ -520,7 +520,6 @@ void FOOTPRINT_EDIT_FRAME::LoadSettings( APP_SETTINGS_BASE* aCfg )
     GetDesignSettings() = cfg->m_DesignSettings;
 
     m_displayOptions  = cfg->m_Display;
-    m_defaultLibWidth = cfg->m_LibWidth;
 
     GetToolManager()->GetTool<PCB_SELECTION_TOOL>()->GetFilter() = cfg->m_SelectionFilter;
     m_selectionFilterPanel->SetCheckboxesFromFilter( cfg->m_SelectionFilter );
@@ -987,8 +986,7 @@ void FOOTPRINT_EDIT_FRAME::setupUIConditions()
 
     mgr->SetConditions( ACTIONS::saveAs,                 ENABLE( footprintTargettedCond ) );
     mgr->SetConditions( ACTIONS::revert,                 ENABLE( cond.ContentModified() ) );
-    mgr->SetConditions( PCB_ACTIONS::saveToBoard,        ENABLE( cond.ContentModified() ) );
-    mgr->SetConditions( PCB_ACTIONS::saveToLibrary,      ENABLE( cond.ContentModified() ) );
+    mgr->SetConditions( ACTIONS::save, ENABLE( cond.ContentModified() ) );
 
     mgr->SetConditions( ACTIONS::undo,                   ENABLE( cond.UndoAvailable() ) );
     mgr->SetConditions( ACTIONS::redo,                   ENABLE( cond.RedoAvailable() ) );

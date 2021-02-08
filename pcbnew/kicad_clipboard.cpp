@@ -37,10 +37,7 @@
 #include <plugins/kicad/kicad_plugin.h>
 #include <kicad_clipboard.h>
 
-CLIPBOARD_IO::CLIPBOARD_IO():
-    PCB_IO( CTL_FOR_CLIPBOARD ),
-    m_formatter(),
-    m_parser( new PCB_PARSER() )
+CLIPBOARD_IO::CLIPBOARD_IO() : PCB_IO( CTL_FOR_CLIPBOARD ), m_formatter()
 {
     m_out = &m_formatter;
 }
@@ -48,7 +45,6 @@ CLIPBOARD_IO::CLIPBOARD_IO():
 
 CLIPBOARD_IO::~CLIPBOARD_IO()
 {
-    delete m_parser;
 }
 
 
@@ -242,6 +238,7 @@ void CLIPBOARD_IO::SaveSelection( const PCB_SELECTION& aSelected, bool isFootpri
     }
 
     // These are placed at the end to minimize the open time of the clipboard
+    wxLogNull         doNotLog; // disable logging of failed clipboard actions
     auto clipboard = wxTheClipboard;
     wxClipboardLocker clipboardLock( clipboard );
 
@@ -261,6 +258,7 @@ void CLIPBOARD_IO::SaveSelection( const PCB_SELECTION& aSelected, bool isFootpri
     // clipboard is closed seems to cause an ASAN error (heap-buffer-overflow)
     // since it uses the cached version of the clipboard data and not the system
     // clipboard data.
+    if( clipboard->IsSupported( wxDF_TEXT ) )
     {
         wxTextDataObject data;
         clipboard->GetData( data );
@@ -275,12 +273,13 @@ BOARD_ITEM* CLIPBOARD_IO::Parse()
     BOARD_ITEM* item;
     wxString result;
 
+    wxLogNull doNotLog; // disable logging of failed clipboard actions
+
     auto clipboard = wxTheClipboard;
     wxClipboardLocker clipboardLock( clipboard );
 
     if( !clipboardLock )
         return nullptr;
-
 
     if( clipboard->IsSupported( wxDF_TEXT ) )
     {
@@ -322,6 +321,8 @@ void CLIPBOARD_IO::Save( const wxString& aFileName, BOARD* aBoard,
 
     m_out->Print( 0, ")\n" );
 
+    wxLogNull doNotLog; // disable logging of failed clipboard actions
+
     auto clipboard = wxTheClipboard;
     wxClipboardLocker clipboardLock( clipboard );
 
@@ -336,6 +337,7 @@ void CLIPBOARD_IO::Save( const wxString& aFileName, BOARD* aBoard,
     // been processed by the system clipboard.  This appears to be needed for
     // extremely large clipboard copies on asynchronous linux clipboard managers
     // such as KDE's Klipper
+    if( clipboard->IsSupported( wxDF_TEXT ) )
     {
         wxTextDataObject data;
         clipboard->GetData( data );
@@ -348,6 +350,8 @@ BOARD* CLIPBOARD_IO::Load( const wxString& aFileName, BOARD* aAppendToMe,
                            const PROPERTIES* aProperties, PROJECT* aProject )
 {
     std::string result;
+
+    wxLogNull doNotLog; // disable logging of failed clipboard actions
 
     auto clipboard = wxTheClipboard;
     wxClipboardLocker clipboardLock( clipboard );

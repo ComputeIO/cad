@@ -616,10 +616,17 @@ void ZONE_FILLER::knockoutThermalReliefs( const ZONE* aZone, PCB_LAYER_ID aLayer
 
             int gap = aZone->GetThermalReliefGap( pad );
 
-            // If the pad isn't on the current layer but has a hole, knock out a thermal relief
-            // for the hole.
-            if( !pad->FlashLayer( aLayer ) && pad->GetNetCode() != aZone->GetNetCode() )
+            // If the pad is flashed to the current layer, or is on the same layer and shares a netcode, then
+            // we need to knock out the thermal relief.
+            if( pad->FlashLayer( aLayer )
+                || ( pad->IsOnLayer( aLayer ) && pad->GetNetCode() == aZone->GetNetCode() ) )
             {
+                addKnockout( pad, aLayer, gap, holes );
+            }
+            else
+            {
+                // If the pad isn't on the current layer but has a hole, knock out a thermal relief
+                // for the hole.
                 if( pad->GetDrillSize().x == 0 && pad->GetDrillSize().y == 0 )
                     continue;
 
@@ -629,10 +636,6 @@ void ZONE_FILLER::knockoutThermalReliefs( const ZONE* aZone, PCB_LAYER_ID aLayer
                     gap += pad->GetBoard()->GetDesignSettings().GetHolePlatingThickness();
 
                 pad->TransformHoleWithClearanceToPolygon( holes, gap, m_maxError, ERROR_OUTSIDE );
-            }
-            else
-            {
-                addKnockout( pad, aLayer, gap, holes );
             }
         }
     }
@@ -695,9 +698,8 @@ void ZONE_FILLER::buildCopperItemClearances( const ZONE* aZone, PCB_LAYER_ID aLa
 
                     gap += extra_margin;
 
-                    // If the pad isn't on the current layer but has a hole, knock out the
-                    // hole.  If the zone and the pad are the same layer, we still need the annular ring knockout
-                    if( !aPad->FlashLayer( aLayer ) && aPad->GetNetCode() != aZone->GetNetCode() )
+                    // If the pad isn't on the current layer but has a hole, knock out the hole.
+                    if( !aPad->FlashLayer( aLayer ) )
                     {
                         if( aPad->GetDrillSize().x == 0 && aPad->GetDrillSize().y == 0 )
                             return;
@@ -816,8 +818,27 @@ void ZONE_FILLER::buildCopperItemClearances( const ZONE* aZone, PCB_LAYER_ID aLa
 
     for( FOOTPRINT* footprint : m_board->Footprints() )
     {
+        bool skipFootprint = false;
+
         knockoutGraphicClearance( &footprint->Reference() );
         knockoutGraphicClearance( &footprint->Value() );
+
+        // Don't knock out holes in zones that share a net
+        // with a nettie footprint
+        if( footprint->IsNetTie() )
+        {
+            for( PAD* pad : footprint->Pads() )
+            {
+                if( aZone->GetNetCode() == pad->GetNetCode() )
+                {
+                    skipFootprint = true;
+                    break;
+                }
+            }
+        }
+
+        if( skipFootprint )
+            continue;
 
         for( BOARD_ITEM* item : footprint->GraphicalItems() )
         {
@@ -1173,11 +1194,6 @@ bool ZONE_FILLER::fillSingleZone( ZONE* aZone, PCB_LAYER_ID aLayer, SHAPE_POLY_S
         aLayer = F_Cu;
     }
 
-    /*
-     * convert outlines + holes to outlines without holes (adding extra segments if necessary)
-     * m_Poly data is expected normalized, i.e. NormalizeAreaOutlines was used after building
-     * this zone
-     */
     if ( !aZone->BuildSmoothedPoly( maxExtents, aLayer, boardOutline, &smoothedPoly ) )
         return false;
 
@@ -1214,7 +1230,7 @@ bool ZONE_FILLER::fillSingleZone( ZONE* aZone, PCB_LAYER_ID aLayer, SHAPE_POLY_S
         }
         else if( half_min_width - epsilon > epsilon )
         {
-            smoothedPoly.Deflate( -( half_min_width - epsilon ), numSegs );
+            smoothedPoly.Inflate( half_min_width - epsilon, numSegs );
         }
 
         aRawPolys = smoothedPoly;

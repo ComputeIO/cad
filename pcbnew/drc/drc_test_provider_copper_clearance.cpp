@@ -217,39 +217,6 @@ bool DRC_TEST_PROVIDER_COPPER_CLEARANCE::Run()
 }
 
 
-static std::shared_ptr<SHAPE> getShape( BOARD_ITEM* aItem, PCB_LAYER_ID aLayer )
-{
-    if( aItem->Type() == PCB_PAD_T && !static_cast<PAD*>( aItem )->FlashLayer( aLayer ) )
-    {
-        PAD* aPad = static_cast<PAD*>( aItem );
-
-        if( aPad->GetAttribute() == PAD_ATTRIB_PTH )
-        {
-            BOARD_DESIGN_SETTINGS& bds = aPad->GetBoard()->GetDesignSettings();
-
-            // Note: drill size represents finish size, which means the actual holes size is the
-            // plating thickness larger.
-            auto hole = static_cast<SHAPE_SEGMENT*>( aPad->GetEffectiveHoleShape()->Clone() );
-            hole->SetWidth( hole->GetWidth() + bds.GetHolePlatingThickness() );
-            return std::make_shared<SHAPE_SEGMENT>( *hole );
-        }
-
-        return std::make_shared<SHAPE_NULL>();
-    }
-
-    return aItem->GetEffectiveShape( aLayer );
-}
-
-
-static bool isNetTie( BOARD_ITEM* aItem )
-{
-    if( aItem->GetParent() && aItem->GetParent()->Type() == PCB_FOOTPRINT_T )
-        return static_cast<FOOTPRINT*>( aItem->GetParent() )->IsNetTie();
-
-    return false;
-}
-
-
 bool DRC_TEST_PROVIDER_COPPER_CLEARANCE::testTrackAgainstItem( TRACK* track, SHAPE* trackShape,
                                                                PCB_LAYER_ID layer,
                                                                BOARD_ITEM*  other )
@@ -294,27 +261,25 @@ bool DRC_TEST_PROVIDER_COPPER_CLEARANCE::testTrackAgainstItem( TRACK* track, SHA
                 return m_drcEngine->GetReportAllTrackErrors();
             }
         }
-        else
+
+        std::shared_ptr<SHAPE> otherShape = DRC_ENGINE::GetShape( other, layer );
+
+        if( trackShape->Collide( otherShape.get(), clearance - m_drcEpsilon, &actual, &pos ) )
         {
-            std::shared_ptr<SHAPE> otherShape = getShape( other, layer );
+            std::shared_ptr<DRC_ITEM> drce = DRC_ITEM::Create( DRCE_CLEARANCE );
 
-            if( trackShape->Collide( otherShape.get(), clearance - m_drcEpsilon, &actual, &pos ) )
-            {
-                std::shared_ptr<DRC_ITEM> drce = DRC_ITEM::Create( DRCE_CLEARANCE );
+            m_msg.Printf( _( "(%s clearance %s; actual %s)" ), constraint.GetName(),
+                          MessageTextFromValue( userUnits(), clearance ),
+                          MessageTextFromValue( userUnits(), actual ) );
 
-                m_msg.Printf( _( "(%s clearance %s; actual %s)" ), constraint.GetName(),
-                              MessageTextFromValue( userUnits(), clearance ),
-                              MessageTextFromValue( userUnits(), actual ) );
+            drce->SetErrorMessage( drce->GetErrorText() + wxS( " " ) + m_msg );
+            drce->SetItems( track, other );
+            drce->SetViolatingRule( constraint.GetParentRule() );
 
-                drce->SetErrorMessage( drce->GetErrorText() + wxS( " " ) + m_msg );
-                drce->SetItems( track, other );
-                drce->SetViolatingRule( constraint.GetParentRule() );
+            reportViolation( drce, (wxPoint) pos );
 
-                reportViolation( drce, (wxPoint) pos );
-
-                if( !m_drcEngine->GetReportAllTrackErrors() )
-                    return false;
-            }
+            if( !m_drcEngine->GetReportAllTrackErrors() )
+                return false;
         }
     }
 
@@ -469,7 +434,7 @@ void DRC_TEST_PROVIDER_COPPER_CLEARANCE::testTrackClearances()
                     {
                         // It would really be better to know what particular nets a nettie
                         // should allow, but for now it is what it is.
-                        if( isNetTie( other ) )
+                        if( DRC_ENGINE::IsNetTie( other ) )
                             return false;
 
                         auto otherCItem = dynamic_cast<BOARD_CONNECTED_ITEM*>( other );
@@ -538,7 +503,7 @@ bool DRC_TEST_PROVIDER_COPPER_CLEARANCE::testPadAgainstItem( PAD* pad, SHAPE* pa
     if( !testClearance && !testShorting && !testHoles )
         return false;
 
-    std::shared_ptr<SHAPE> otherShape = getShape( other, layer );
+    std::shared_ptr<SHAPE> otherShape = DRC_ENGINE::GetShape( other, layer );
     DRC_CONSTRAINT         constraint;
     int                    clearance;
     int                    actual;
@@ -672,7 +637,7 @@ void DRC_TEST_PROVIDER_COPPER_CLEARANCE::testPadClearances()
 
             for( PCB_LAYER_ID layer : pad->GetLayerSet().Seq() )
             {
-                std::shared_ptr<SHAPE> padShape = getShape( pad, layer );
+                std::shared_ptr<SHAPE> padShape = DRC_ENGINE::GetShape( pad, layer );
 
                 m_copperTree.QueryColliding(
                         pad, layer, layer,

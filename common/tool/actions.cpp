@@ -41,11 +41,9 @@ TOOL_ACTION ACTIONS::doNew( "common.Control.new",
         _( "New..." ), _( "Create a new document in the editor" ),
         new_generic_xpm );
 
-TOOL_ACTION ACTIONS::newLibrary( "common.Control.newLibrary",
-        AS_GLOBAL,
-        0, "",
-        _( "New Library..." ), _( "Create a new library folder" ),
-        new_generic_xpm );
+TOOL_ACTION ACTIONS::newLibrary( "common.Control.newLibrary", AS_GLOBAL, 0, "",
+                                 _( "New Library..." ), _( "Create a new library folder" ),
+                                 new_library_xpm );
 
 TOOL_ACTION ACTIONS::addLibrary( "common.Control.addLibrary",
         AS_GLOBAL,
@@ -521,14 +519,15 @@ TOOL_ACTION ACTIONS::toggleCursorStyle( "common.Control.toggleCursorStyle",
         _( "Full-Window Crosshairs" ), _( "Switch display of full-window crosshairs" ),
         cursor_shape_xpm );
 
-TOOL_ACTION ACTIONS::highContrastMode( "common.Control.highContrastMode",
-        AS_GLOBAL,
-        MD_CTRL + 'H', LEGACY_HK_NAME( "Toggle High Contrast Mode" ),
-        _( "Single Layer View Mode" ), _( "Toggle inactive layers between normal and dimmed" ),
-        contrast_mode_xpm );
+TOOL_ACTION ACTIONS::highContrastMode( "common.Control.highContrastMode", AS_GLOBAL, 0,
+                                       LEGACY_HK_NAME( "Toggle High Contrast Mode" ),
+                                       _( "Single Layer View Mode" ),
+                                       _( "Toggle inactive layers between normal and dimmed" ),
+                                       contrast_mode_xpm );
 
-TOOL_ACTION ACTIONS::highContrastModeCycle( "common.Control.highContrastModeCycle",
-        AS_GLOBAL, 0, "",  _( "Single Layer View Mode (3-state)" ),
+TOOL_ACTION ACTIONS::highContrastModeCycle(
+        "common.Control.highContrastModeCycle", AS_GLOBAL, MD_CTRL + 'H', "",
+        _( "Single Layer View Mode (3-state)" ),
         _( "Toggle inactive layers between normal, dimmed, and hidden" ), contrast_mode_xpm );
 
 TOOL_ACTION ACTIONS::selectionTool( "common.InteractiveSelection.selectionTool",

@@ -29,9 +29,7 @@
 
 using namespace KIGFX;
 
-PAINTER::PAINTER( GAL* aGal ) :
-    m_gal( aGal ),
-    m_brightenedColor( 0.0, 1.0, 0.0, 0.9 )
+PAINTER::PAINTER( GAL* aGal ) : m_gal( aGal )
 {
 }
 

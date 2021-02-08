@@ -151,7 +151,7 @@ enum PCB_LAYER_ID: int
 #define MAX_CU_LAYERS       (B_Cu - F_Cu + 1)
 
 /// Dedicated layers for net names used in Pcbnew
-enum NETNAMES_LAYER_ID: int
+enum NETNAMES_LAYER_ID : int
 {
 
     NETNAMES_LAYER_ID_START = PCB_LAYER_ID_COUNT,
@@ -164,8 +164,8 @@ enum NETNAMES_LAYER_ID: int
 
     LAYER_PAD_FR_NETNAMES,
     LAYER_PAD_BK_NETNAMES,
-    LAYER_PADS_NETNAMES,
-    LAYER_VIAS_NETNAMES,
+    LAYER_PAD_NETNAMES,
+    LAYER_VIA_NETNAMES,
 
     NETNAMES_LAYER_ID_END
 };
@@ -175,54 +175,55 @@ enum NETNAMES_LAYER_ID: int
 
 /// GAL layers are "virtual" layers, i.e. not tied into design data.
 /// Some layers here are shared between applications.
-enum GAL_LAYER_ID: int
+enum GAL_LAYER_ID : int
 {
     GAL_LAYER_ID_START = NETNAMES_LAYER_ID_END,
 
     LAYER_VIAS = GAL_LAYER_ID_START, ///< Meta control for all vias opacity/visibility
-    LAYER_VIA_MICROVIA,         ///< to draw micro vias
-    LAYER_VIA_BBLIND,           ///< to draw blind/buried vias
-    LAYER_VIA_THROUGH,          ///< to draw usual through hole vias
-    LAYER_NON_PLATEDHOLES,      ///< handle color for not plated holes (holes, not pads)
+    LAYER_VIA_MICROVIA,              ///< to draw micro vias
+    LAYER_VIA_BBLIND,                ///< to draw blind/buried vias
+    LAYER_VIA_THROUGH,               ///< to draw usual through hole vias
+    LAYER_NON_PLATEDHOLES,           ///< handle color for not plated holes (holes, not pads)
     LAYER_MOD_TEXT_FR,
     LAYER_MOD_TEXT_BK,
-    LAYER_MOD_TEXT_INVISIBLE,   ///< text marked as invisible
-    LAYER_ANCHOR,               ///< anchor of items having an anchor point (texts, footprints)
-    LAYER_PAD_FR,               ///< smd pads, front layer
-    LAYER_PAD_BK,               ///< smd pads, back layer
+    LAYER_MOD_TEXT_INVISIBLE, ///< text marked as invisible
+    LAYER_ANCHOR,             ///< anchor of items having an anchor point (texts, footprints)
+    LAYER_PAD_FR,             ///< smd pads, front layer
+    LAYER_PAD_BK,             ///< smd pads, back layer
     LAYER_RATSNEST,
     LAYER_GRID,
     LAYER_GRID_AXES,
-    LAYER_NO_CONNECTS,          ///< show a marker on pads with no nets
-    LAYER_MOD_FR,               ///< show footprints on front
-    LAYER_MOD_BK,               ///< show footprints on back
-    LAYER_MOD_VALUES,           ///< show footprints values (when texts are visibles)
-    LAYER_MOD_REFERENCES,       ///< show footprints references (when texts are visibles)
+    LAYER_NO_CONNECTS,    ///< show a marker on pads with no nets
+    LAYER_MOD_FR,         ///< show footprints on front
+    LAYER_MOD_BK,         ///< show footprints on back
+    LAYER_MOD_VALUES,     ///< show footprints values (when texts are visibles)
+    LAYER_MOD_REFERENCES, ///< show footprints references (when texts are visibles)
     LAYER_TRACKS,
-    LAYER_PADS_TH,              ///< multilayer pads, usually with holes
-    LAYER_PADS_PLATEDHOLES,     ///< to draw pad holes (plated)
-    LAYER_VIAS_HOLES,           ///< to draw via holes (pad holes do not use this layer)
-    LAYER_DRC_ERROR,            ///< layer for drc markers with SEVERITY_ERROR
-    LAYER_DRC_WARNING,          ///< layer for drc markers with SEVERITY_WARNING
-    LAYER_DRC_EXCLUSION,        ///< layer for drc markers which have been individually excluded
-    LAYER_MARKER_SHADOWS,       ///< shadows for drc markers
-    LAYER_WORKSHEET,            ///< worksheet frame
-    LAYER_GP_OVERLAY,           ///< general purpose overlay
-    LAYER_SELECT_OVERLAY,       ///< currently selected items overlay
-    LAYER_PCB_BACKGROUND,       ///< PCB background color
-    LAYER_CURSOR,               ///< PCB cursor
-    LAYER_AUX_ITEMS,            ///< Auxiliary items (guides, rule, etc)
-    LAYER_DRAW_BITMAPS,         ///< to handle and draw images bitmaps
+    LAYER_PADS_TH,         ///< multilayer pads, usually with holes
+    LAYER_PAD_PLATEDHOLES, ///< to draw pad holes (plated)
+    LAYER_PAD_HOLEWALLS,
+    LAYER_VIA_HOLES, ///< to draw via holes (pad holes do not use this layer)
+    LAYER_VIA_HOLEWALLS,
+    LAYER_DRC_ERROR,      ///< layer for drc markers with SEVERITY_ERROR
+    LAYER_DRC_WARNING,    ///< layer for drc markers with SEVERITY_WARNING
+    LAYER_DRC_EXCLUSION,  ///< layer for drc markers which have been individually excluded
+    LAYER_MARKER_SHADOWS, ///< shadows for drc markers
+    LAYER_WORKSHEET,      ///< worksheet frame
+    LAYER_GP_OVERLAY,     ///< general purpose overlay
+    LAYER_SELECT_OVERLAY, ///< currently selected items overlay
+    LAYER_PCB_BACKGROUND, ///< PCB background color
+    LAYER_CURSOR,         ///< PCB cursor
+    LAYER_AUX_ITEMS,      ///< Auxiliary items (guides, rule, etc)
+    LAYER_DRAW_BITMAPS,   ///< to handle and draw images bitmaps
 
     /// This is the end of the layers used for visibility bit masks in Pcbnew
-    /// There can be at most 32 layers above here.
     GAL_LAYER_ID_BITMASK_END,
 
-    LAYER_WORKSHEET_PAGE1,      ///< for pageLayout editor previewing
-    LAYER_WORKSHEET_PAGEn,      ///< for pageLayout editor previewing
+    LAYER_WORKSHEET_PAGE1, ///< for pageLayout editor previewing
+    LAYER_WORKSHEET_PAGEn, ///< for pageLayout editor previewing
 
-    LAYER_PADS,                 ///< Meta control for all pads opacity/visibility (color ignored)
-    LAYER_ZONES,                ///< Control for copper zone opacity/visibility (color ignored)
+    LAYER_PADS,  ///< Meta control for all pads opacity/visibility (color ignored)
+    LAYER_ZONES, ///< Control for copper zone opacity/visibility (color ignored)
 
     /// Virtual layers for stacking zones and tracks on a given copper layer
     LAYER_ZONE_START,
@@ -422,11 +423,14 @@ wxString LayerName( int aLayer );
 // from a dialog, but have a visibility control flag.
 // Here is a mask to set them visible, to be sure they are displayed
 // after loading a board for instance
-#define MIN_VISIBILITY_MASK int( ( 1 << GAL_LAYER_INDEX( LAYER_PADS_PLATEDHOLES ) ) +\
-                 ( 1 << GAL_LAYER_INDEX( LAYER_VIAS_HOLES ) ) +\
-                 ( 1 << GAL_LAYER_INDEX( LAYER_SELECT_OVERLAY ) ) +\
-                 ( 1 << GAL_LAYER_INDEX( LAYER_GP_OVERLAY ) ) +\
-                 ( 1 << GAL_LAYER_INDEX( LAYER_RATSNEST ) ) )
+#define MIN_VISIBILITY_MASK                                                                        \
+    int( ( 1 << GAL_LAYER_INDEX( LAYER_PAD_PLATEDHOLES ) )                                         \
+         + ( 1 << GAL_LAYER_INDEX( LAYER_PAD_HOLEWALLS ) )                                         \
+         + ( 1 << GAL_LAYER_INDEX( LAYER_VIA_HOLES ) )                                             \
+         + ( 1 << GAL_LAYER_INDEX( LAYER_VIA_HOLEWALLS ) )                                         \
+         + ( 1 << GAL_LAYER_INDEX( LAYER_SELECT_OVERLAY ) )                                        \
+         + ( 1 << GAL_LAYER_INDEX( LAYER_GP_OVERLAY ) )                                            \
+         + ( 1 << GAL_LAYER_INDEX( LAYER_RATSNEST ) ) )
 
 
 /// A sequence of layers, a sequence provides a certain order.
@@ -647,6 +651,12 @@ public:
     static LSET UserMask();
 
     /**
+     * Return a mask holding all layers which are physically realized.  Equivalent to the copper
+     * layers + the board tech mask.
+     */
+    static LSET PhysicalLayersMask();
+
+    /**
      * Return a mask with all of the allowable user defined layers.
      */
     static LSET UserDefinedLayers();
@@ -799,6 +809,19 @@ inline bool IsCopperLayer( LAYER_NUM aLayerId, bool aIncludeSyntheticCopperLayer
         return IsCopperLayer( aLayerId );
 }
 
+inline bool IsViaPadLayer( LAYER_NUM aLayer )
+{
+    return aLayer == LAYER_VIA_THROUGH || aLayer == LAYER_VIA_MICROVIA
+           || aLayer == LAYER_VIA_BBLIND;
+}
+
+inline bool IsHoleLayer( LAYER_NUM aLayer )
+{
+    return aLayer == LAYER_VIA_HOLES || aLayer == LAYER_VIA_HOLEWALLS
+           || aLayer == LAYER_PAD_PLATEDHOLES || aLayer == LAYER_PAD_HOLEWALLS
+           || aLayer == LAYER_NON_PLATEDHOLES;
+}
+
 /**
  * Test whether a layer is a non copper and a non tech layer.
  *
@@ -901,13 +924,13 @@ inline int GetNetnameLayer( int aLayer )
     if( IsCopperLayer( aLayer ) )
         return NETNAMES_LAYER_INDEX( aLayer );
     else if( aLayer == LAYER_PADS_TH )
-        return LAYER_PADS_NETNAMES;
+        return LAYER_PAD_NETNAMES;
     else if( aLayer == LAYER_PAD_FR )
         return LAYER_PAD_FR_NETNAMES;
     else if( aLayer == LAYER_PAD_BK )
         return LAYER_PAD_BK_NETNAMES;
-    else if( aLayer >= LAYER_VIA_MICROVIA && aLayer <= LAYER_VIA_THROUGH )
-        return LAYER_VIAS_NETNAMES;
+    else if( IsViaPadLayer( aLayer ) )
+        return LAYER_VIA_NETNAMES;
 
     // Fallback
     return Cmts_User;
@@ -947,15 +970,10 @@ inline bool IsDCodeLayer( int aLayer )
  */
 inline bool IsNetCopperLayer( LAYER_NUM aLayer )
 {
-    static std::set<LAYER_NUM> netCopperLayers =
-            {
-                LAYER_PAD_FR,
-                LAYER_PAD_BK,
-                LAYER_PADS_TH,
-                LAYER_VIA_THROUGH,
-                LAYER_VIA_BBLIND,
-                LAYER_VIA_MICROVIA
-            };
+    static std::set<LAYER_NUM> netCopperLayers = { LAYER_PAD_FR,       LAYER_PAD_BK,
+                                                   LAYER_PADS_TH,      LAYER_PAD_HOLEWALLS,
+                                                   LAYER_VIA_THROUGH,  LAYER_VIA_BBLIND,
+                                                   LAYER_VIA_MICROVIA, LAYER_VIA_HOLEWALLS };
 
     return IsCopperLayer( aLayer ) || netCopperLayers.count( aLayer );
 }

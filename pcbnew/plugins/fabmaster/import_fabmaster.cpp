@@ -54,6 +54,28 @@
 #include <wx/filename.h>
 
 
+double FABMASTER::readDouble( const std::string aStr ) const
+{
+    std::istringstream istr( aStr );
+    istr.imbue( std::locale( "C" ) );
+
+    double doubleValue;
+    istr >> doubleValue;
+    return doubleValue;
+}
+
+
+int FABMASTER::readInt( const std::string aStr ) const
+{
+    std::istringstream istr( aStr );
+    istr.imbue( std::locale( "C" ) );
+
+    int intValue;
+    istr >> intValue;
+    return intValue;
+}
+
+
 bool FABMASTER::Read( const std::string& aFile )
 {
     std::ifstream ifs( aFile, std::ios::in | std::ios::binary );
@@ -198,7 +220,8 @@ FABMASTER::section_type FABMASTER::detectType( size_t aOffset )
     if( row1 == "LAYERSORT" )
         return EXTRACT_FULL_LAYERS;
 
-    std::cout << "UNKNOWN Columns " << row1 << " : " << row2 << std::endl;
+    wxLogError( wxString::Format( _( "Unknown FABMASTER section %s:%s at row %zu." ), row1.c_str(),
+                                  row2.c_str(), aOffset ) );
     return UNKNOWN_EXTRACT;
 }
 
@@ -206,7 +229,7 @@ double FABMASTER::processScaleFactor( size_t aRow )
 {
     double retval = 0.0;
 
-    if( rows.size() < aRow )
+    if( aRow >= rows.size() )
         return -1.0;
 
     if( rows[aRow].size() < 11 )
@@ -283,7 +306,7 @@ size_t FABMASTER::processPadStackLayers( size_t aRow )
 {
     size_t rownum = aRow + 2;
 
-    if( rows.size() < rownum )
+    if( rownum >= rows.size() )
         return -1;
 
     const auto header = rows[aRow];
@@ -341,7 +364,7 @@ size_t FABMASTER::processPadStackLayers( size_t aRow )
         if( layer.id == 0 )
         {
             layer.name = pad_layer;
-            layer.id = std::stoi( pad_num );
+            layer.id = readInt( pad_num );
             layer.conductive = true;
         }
     }
@@ -360,7 +383,7 @@ size_t FABMASTER::processPadStacks( size_t aRow )
 {
     size_t rownum = aRow + 2;
 
-    if( rows.size() < rownum )
+    if( rownum >= rows.size() )
         return -1;
 
     const auto header = rows[aRow];
@@ -412,7 +435,7 @@ size_t FABMASTER::processPadStacks( size_t aRow )
         if( pad_layer == "INTERNAL_PAD_DEF" || pad_layer == "internal_pad_def" )
             continue;
 
-        int recnum = KiROUND( stod( pad_num ) );
+        int recnum = KiROUND( readDouble( pad_num ) );
 
         auto new_pad = pads.find( pad_name );
 
@@ -434,9 +457,9 @@ size_t FABMASTER::processPadStacks( size_t aRow )
 
             try
             {
-                drill_hit = KiROUND( std::fabs( stod( pad_shape ) * scale_factor ) );
-                drill_x = KiROUND( std::fabs( stod( pad_width ) * scale_factor ) );
-                drill_y = KiROUND( std::fabs( stod( pad_height ) * scale_factor ) );
+                drill_hit = KiROUND( std::fabs( readDouble( pad_shape ) * scale_factor ) );
+                drill_x = KiROUND( std::fabs( readDouble( pad_width ) * scale_factor ) );
+                drill_y = KiROUND( std::fabs( readDouble( pad_height ) * scale_factor ) );
             }
             catch( ... )
             {
@@ -482,8 +505,8 @@ size_t FABMASTER::processPadStacks( size_t aRow )
 
         try
         {
-            w = std::stod( pad_width ) * scale_factor;
-            h = std::stod( pad_height ) * scale_factor;
+            w = readDouble( pad_width ) * scale_factor;
+            h = readDouble( pad_height ) * scale_factor;
         }
         catch( ... )
         {
@@ -538,8 +561,8 @@ size_t FABMASTER::processPadStacks( size_t aRow )
 
         try
         {
-            pad->x_offset = KiROUND( std::stod( pad_xoff ) * scale_factor );
-            pad->y_offset = -KiROUND( std::stod( pad_yoff ) * scale_factor );
+            pad->x_offset = KiROUND( readDouble( pad_xoff ) * scale_factor );
+            pad->y_offset = -KiROUND( readDouble( pad_yoff ) * scale_factor );
         }
         catch( ... )
         {
@@ -564,6 +587,10 @@ size_t FABMASTER::processPadStacks( size_t aRow )
             {
                 pad->shape = PAD_SHAPE_RECT;
             }
+            else if( pad_shape == "ROUNDED_RECT" )
+            {
+                pad->shape = PAD_SHAPE_ROUNDRECT;
+            }
             else if( pad_shape == "SQUARE" )
             {
                 pad->shape = PAD_SHAPE_RECT;
@@ -583,8 +610,9 @@ size_t FABMASTER::processPadStacks( size_t aRow )
             }
             else
             {
-                wxLogError( wxString::Format( _( "Unknown pad shape name %s at line %zu" ),
-                                              pad_shapename.c_str(), rownum ) );
+                wxLogError( wxString::Format(
+                        _( "Unknown pad shape name '%s' on layer '%s' at line %zu" ),
+                        pad_shape.c_str(), pad_layer.c_str(), rownum ) );
                 continue;
             }
         }
@@ -598,7 +626,7 @@ size_t FABMASTER::processSimpleLayers( size_t aRow )
 {
     size_t rownum = aRow + 2;
 
-    if( rows.size() < rownum )
+    if( rownum >= rows.size() )
         return -1;
 
     auto   header = rows[aRow];
@@ -740,7 +768,7 @@ size_t FABMASTER::processLayers( size_t aRow )
 {
     size_t rownum = aRow + 2;
 
-    if( rows.size() < rownum )
+    if( rownum >= rows.size() )
         return -1;
 
     auto   header = rows[aRow];
@@ -813,9 +841,8 @@ size_t FABMASTER::processLayers( size_t aRow )
 size_t FABMASTER::processCustomPads( size_t aRow )
 {
     size_t rownum = aRow + 2;
-    size_t offset = 2;
 
-    if( rows.size() < aRow + offset )
+    if( rownum >= rows.size() )
         return -1;
 
     auto   header = rows[aRow];
@@ -858,7 +885,6 @@ size_t FABMASTER::processCustomPads( size_t aRow )
                                              "Expecting %zu elements but found %zu" ),
                                           rownum, header.size(), row.size() ) );
 
-            ++offset;
             continue;
         }
 
@@ -889,7 +915,6 @@ size_t FABMASTER::processCustomPads( size_t aRow )
 
         if( !std::equal( prefix.begin(), prefix.end(), pad_shape_name.begin() ) )
         {
-            ++offset;
             continue;
         }
 
@@ -964,11 +989,11 @@ FABMASTER::GRAPHIC_LINE* FABMASTER::processLine( const FABMASTER::GRAPHIC_DATA& 
     GRAPHIC_LINE* new_line = new GRAPHIC_LINE;
 
     new_line->shape = GR_SHAPE_LINE;
-    new_line->start_x = KiROUND( std::atof( aData.graphic_data1.c_str() ) * aScale );
-    new_line->start_y = -KiROUND( std::atof( aData.graphic_data2.c_str() ) * aScale );
-    new_line->end_x = KiROUND( std::atof( aData.graphic_data3.c_str() ) * aScale );
-    new_line->end_y = -KiROUND( std::atof( aData.graphic_data4.c_str() ) * aScale );
-    new_line->width = KiROUND( std::atof( aData.graphic_data5.c_str() ) * aScale );
+    new_line->start_x = KiROUND( readDouble( aData.graphic_data1.c_str() ) * aScale );
+    new_line->start_y = -KiROUND( readDouble( aData.graphic_data2.c_str() ) * aScale );
+    new_line->end_x = KiROUND( readDouble( aData.graphic_data3.c_str() ) * aScale );
+    new_line->end_y = -KiROUND( readDouble( aData.graphic_data4.c_str() ) * aScale );
+    new_line->width = KiROUND( readDouble( aData.graphic_data5.c_str() ) * aScale );
 
     return new_line;
 }
@@ -978,14 +1003,14 @@ FABMASTER::GRAPHIC_ARC* FABMASTER::processArc( const FABMASTER::GRAPHIC_DATA& aD
     GRAPHIC_ARC* new_arc = new GRAPHIC_ARC;
 
     new_arc->shape = GR_SHAPE_ARC;
-    new_arc->start_x = KiROUND( std::atof( aData.graphic_data1.c_str() ) * aScale );
-    new_arc->start_y = -KiROUND( std::atof( aData.graphic_data2.c_str() ) * aScale );
-    new_arc->end_x = KiROUND( std::atof( aData.graphic_data3.c_str() ) * aScale );
-    new_arc->end_y = -KiROUND( std::atof( aData.graphic_data4.c_str() ) * aScale );
-    new_arc->center_x = KiROUND( std::atof( aData.graphic_data5.c_str() ) * aScale );
-    new_arc->center_y = -KiROUND( std::atof( aData.graphic_data6.c_str() ) * aScale );
-    new_arc->radius = KiROUND( std::atof( aData.graphic_data7.c_str() ) * aScale );
-    new_arc->width = KiROUND( std::atof( aData.graphic_data8.c_str() ) * aScale );
+    new_arc->start_x = KiROUND( readDouble( aData.graphic_data1.c_str() ) * aScale );
+    new_arc->start_y = -KiROUND( readDouble( aData.graphic_data2.c_str() ) * aScale );
+    new_arc->end_x = KiROUND( readDouble( aData.graphic_data3.c_str() ) * aScale );
+    new_arc->end_y = -KiROUND( readDouble( aData.graphic_data4.c_str() ) * aScale );
+    new_arc->center_x = KiROUND( readDouble( aData.graphic_data5.c_str() ) * aScale );
+    new_arc->center_y = -KiROUND( readDouble( aData.graphic_data6.c_str() ) * aScale );
+    new_arc->radius = KiROUND( readDouble( aData.graphic_data7.c_str() ) * aScale );
+    new_arc->width = KiROUND( readDouble( aData.graphic_data8.c_str() ) * aScale );
 
     new_arc->clockwise = ( aData.graphic_data9 != "COUNTERCLOCKWISE" );
 
@@ -1023,10 +1048,10 @@ FABMASTER::GRAPHIC_RECTANGLE* FABMASTER::processRectangle( const FABMASTER::GRAP
     GRAPHIC_RECTANGLE* new_rect = new GRAPHIC_RECTANGLE;
 
     new_rect->shape = GR_SHAPE_RECTANGLE;
-    new_rect->start_x = KiROUND( std::atof( aData.graphic_data1.c_str() ) * aScale );
-    new_rect->start_y = -KiROUND( std::atof( aData.graphic_data2.c_str() ) * aScale );
-    new_rect->end_x = KiROUND( std::atof( aData.graphic_data3.c_str() ) * aScale );
-    new_rect->end_y = -KiROUND( std::atof( aData.graphic_data4.c_str() ) * aScale );
+    new_rect->start_x = KiROUND( readDouble( aData.graphic_data1.c_str() ) * aScale );
+    new_rect->start_y = -KiROUND( readDouble( aData.graphic_data2.c_str() ) * aScale );
+    new_rect->end_x = KiROUND( readDouble( aData.graphic_data3.c_str() ) * aScale );
+    new_rect->end_y = -KiROUND( readDouble( aData.graphic_data4.c_str() ) * aScale );
     new_rect->fill = aData.graphic_data5 == "1";
     new_rect->width = 0;
 
@@ -1039,9 +1064,9 @@ FABMASTER::GRAPHIC_TEXT* FABMASTER::processText( const FABMASTER::GRAPHIC_DATA& 
     GRAPHIC_TEXT* new_text = new GRAPHIC_TEXT;
 
     new_text->shape = GR_SHAPE_TEXT;
-    new_text->start_x = KiROUND( std::atof( aData.graphic_data1.c_str() ) * aScale );
-    new_text->start_y = -KiROUND( std::atof( aData.graphic_data2.c_str() ) * aScale );
-    new_text->rotation = KiROUND( std::atof( aData.graphic_data3.c_str() ) );
+    new_text->start_x = KiROUND( readDouble( aData.graphic_data1.c_str() ) * aScale );
+    new_text->start_y = -KiROUND( readDouble( aData.graphic_data2.c_str() ) * aScale );
+    new_text->rotation = KiROUND( readDouble( aData.graphic_data3.c_str() ) );
     new_text->mirror = ( aData.graphic_data4 == "YES" );
 
     if( aData.graphic_data5 == "RIGHT" )
@@ -1068,12 +1093,12 @@ FABMASTER::GRAPHIC_TEXT* FABMASTER::processText( const FABMASTER::GRAPHIC_DATA& 
     {
         // 0 = size
         // 1 = font
-        new_text->height = KiROUND( std::atof( toks[2].c_str() ) * aScale );
-        new_text->width = KiROUND( std::atof( toks[3].c_str() ) * aScale );
-        new_text->ital = std::atof( toks[4].c_str() ) != 0.0;
+        new_text->height = KiROUND( readDouble( toks[2].c_str() ) * aScale );
+        new_text->width = KiROUND( readDouble( toks[3].c_str() ) * aScale );
+        new_text->ital = readDouble( toks[4].c_str() ) != 0.0;
         // 5 = character spacing
         // 6 = line spacing
-        new_text->thickness = KiROUND( std::atof( toks[7].c_str() ) * aScale );
+        new_text->thickness = KiROUND( readDouble( toks[7].c_str() ) * aScale );
     }
 
     new_text->text = aData.graphic_data7;
@@ -1123,7 +1148,7 @@ size_t FABMASTER::processGeometry( size_t aRow )
 {
     size_t rownum = aRow + 2;
 
-    if( rows.size() < rownum )
+    if( rownum >= rows.size() )
         return -1;
 
     const auto header = rows[aRow];
@@ -1258,7 +1283,7 @@ size_t FABMASTER::processVias( size_t aRow )
 {
     size_t rownum = aRow + 2;
 
-    if( rows.size() < rownum )
+    if( rownum >= rows.size() )
         return -1;
 
     const auto header = rows[aRow];
@@ -1292,8 +1317,8 @@ size_t FABMASTER::processVias( size_t aRow )
         vias.emplace_back( std::make_unique<FM_VIA>() );
         auto& via = vias.back();
 
-        via->x = KiROUND( std::stod( row[viax_col] ) * scale_factor );
-        via->y = -KiROUND( std::stod( row[viay_col] ) * scale_factor );
+        via->x = KiROUND( readDouble( row[viax_col] ) * scale_factor );
+        via->y = -KiROUND( readDouble( row[viay_col] ) * scale_factor );
         via->padstack = row[padstack_name_col];
         via->net = row[net_name_col];
         via->test_point = ( row[test_point_col] == "YES" );
@@ -1312,7 +1337,7 @@ size_t FABMASTER::processTraces( size_t aRow )
 {
     size_t rownum = aRow + 2;
 
-    if( rows.size() < rownum )
+    if( rownum >= rows.size() )
         return -1;
 
     const auto header = rows[aRow];
@@ -1470,7 +1495,7 @@ size_t FABMASTER::processFootprints( size_t aRow )
 {
     size_t rownum = aRow + 2;
 
-    if( rows.size() < rownum )
+    if( rownum >= rows.size() )
         return -1;
 
     const auto header = rows[aRow];
@@ -1524,9 +1549,9 @@ size_t FABMASTER::processFootprints( size_t aRow )
         cmp->type = parseSymType( row[symtype_col] );
         cmp->name = row[symname_col];
         cmp->mirror = ( row[symmirror_col] == "YES" );
-        cmp->rotate = std::stod( row[symrotate_col] );
-        cmp->x = KiROUND( std::stod( row[symx_col] ) * scale_factor );
-        cmp->y = -KiROUND( std::stod( row[symy_col] ) * scale_factor );
+        cmp->rotate = readDouble( row[symrotate_col] );
+        cmp->x = KiROUND( readDouble( row[symx_col] ) * scale_factor );
+        cmp->y = -KiROUND( readDouble( row[symy_col] ) * scale_factor );
         cmp->value = row[compvalue_col];
         cmp->tol = row[comptol_col];
         cmp->voltage = row[compvolt_col];
@@ -1555,7 +1580,7 @@ size_t FABMASTER::processPins( size_t aRow )
 {
     size_t rownum = aRow + 2;
 
-    if( rows.size() < rownum )
+    if( rownum >= rows.size() )
         return -1;
 
     const auto header = rows[aRow];
@@ -1598,11 +1623,11 @@ size_t FABMASTER::processPins( size_t aRow )
         pin->mirror = ( row[symmirror_col] == "YES" );
         pin->pin_name = row[pinname_col];
         pin->pin_number = row[pinnum_col];
-        pin->pin_x = KiROUND( std::stod( row[pinx_col] ) * scale_factor );
-        pin->pin_y = -KiROUND( std::stod( row[piny_col] ) * scale_factor );
+        pin->pin_x = KiROUND( readDouble( row[pinx_col] ) * scale_factor );
+        pin->pin_y = -KiROUND( readDouble( row[piny_col] ) * scale_factor );
         pin->padstack = row[padstack_col];
         pin->refdes = row[refdes_col];
-        pin->rotation = std::stod( row[pinrot_col] );
+        pin->rotation = readDouble( row[pinrot_col] );
 
         auto map_it = pins.find( pin->refdes );
 
@@ -1627,7 +1652,7 @@ size_t FABMASTER::processNets( size_t aRow )
 {
     size_t rownum = aRow + 2;
 
-    if( rows.size() < rownum )
+    if( rownum >= rows.size() )
         return -1;
 
     const auto header = rows[aRow];
@@ -2115,7 +2140,11 @@ bool FABMASTER::loadFootprints( BOARD* aBoard )
 
                         if( pad.shape == PAD_SHAPE_CUSTOM )
                         {
-                            newpad->SetSize( wxSize( pad.width / 2, pad.height / 2 ) );
+                            // Choose the smaller dimension to ensure the base pad
+                            // is fully hidden by the custom pad
+                            int pad_size = std::min( pad.width, pad.height );
+
+                            newpad->SetSize( wxSize( pad_size / 2, pad_size / 2 ) );
 
                             std::string custom_name =
                                     pad.custom_name + "_" + pin->refdes + "_" + pin->pin_number;
@@ -2135,7 +2164,10 @@ bool FABMASTER::loadFootprints( BOARD* aBoard )
                                 {
                                     // For now, we are only processing the custom pad for the top layer
                                     // TODO: Use full padstacks when implementing in KiCad
-                                    if( getLayer( ( *( el.second.begin() ) )->layer ) != F_Cu )
+                                    PCB_LAYER_ID primary_layer = src->mirror ? B_Cu : F_Cu;
+
+                                    if( getLayer( ( *( el.second.begin() ) )->layer )
+                                        != primary_layer )
                                         continue;
 
                                     for( const auto& seg : el.second )
@@ -2169,18 +2201,37 @@ bool FABMASTER::loadFootprints( BOARD* aBoard )
                                         }
                                     }
                                 }
-                                poly_outline.Fracture( SHAPE_POLY_SET::POLYGON_MODE::PM_FAST );
 
-                                poly_outline.Move( -newpad->GetPosition() );
-
-                                if( src->mirror )
-                                    poly_outline.Rotate( ( -src->rotate + pin->rotation ) * M_PI
-                                                         / 180.0 );
+                                if( poly_outline.OutlineCount() < 1
+                                    || poly_outline.Outline( 0 ).PointCount() < 3 )
+                                {
+                                    wxLogError(
+                                            wxString::Format( _( "Invalid custom pad named '%s'. "
+                                                                 "Replacing with circular pad." ),
+                                                              custom_name.c_str() ) );
+                                    newpad->SetShape( PAD_SHAPE_CIRCLE );
+                                }
                                 else
-                                    poly_outline.Rotate( ( src->rotate - pin->rotation ) * M_PI
-                                                         / 180.0 );
+                                {
+                                    poly_outline.Fracture( SHAPE_POLY_SET::POLYGON_MODE::PM_FAST );
 
-                                newpad->AddPrimitivePoly( poly_outline, 0, true );
+                                    poly_outline.Move( -newpad->GetPosition() );
+
+                                    if( src->mirror )
+                                        poly_outline.Rotate( ( -src->rotate + pin->rotation ) * M_PI
+                                                             / 180.0 );
+                                    else
+                                        poly_outline.Rotate( ( src->rotate - pin->rotation ) * M_PI
+                                                             / 180.0 );
+
+                                    newpad->AddPrimitivePoly( poly_outline, 0, true );
+                                }
+                            }
+                            else
+                            {
+                                wxLogError(
+                                        wxString::Format( _( "Could not find custom pad named %s" ),
+                                                          custom_name.c_str() ) );
                             }
                         }
                         else
@@ -2234,7 +2285,8 @@ bool FABMASTER::loadFootprints( BOARD* aBoard )
                 fp->Flip( fp->GetPosition(), true );
             }
 
-            fp->BuildPolyCourtyards();
+            fp->CalculateBoundingBox();
+            fp->UpdateBoundingHull();
 
             aBoard->Add( fp, ADD_MODE::APPEND );
         }

@@ -4,7 +4,7 @@
  * Copyright (C) 2018 Jean-Pierre Charras, jp.charras at wanadoo.fr
  * Copyright (C) 2013 SoftPLC Corporation, Dick Hollenbeck <dick@softplc.com>
  * Copyright (C) 2013 Wayne Stambaugh <stambaughw@gmail.com>
- * Copyright (C) 2013-2020 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 2013-2021 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * This program is free software: you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -657,8 +657,6 @@ void PCB_EDIT_FRAME::setupUIConditions()
                         ENABLE( SELECTION_CONDITIONS::OnlyTypes( GENERAL_COLLECTOR::Tracks ) ) );
     mgr->SetConditions( PCB_ACTIONS::deselectNet,
                         ENABLE( SELECTION_CONDITIONS::OnlyTypes( GENERAL_COLLECTOR::Tracks ) ) );
-    mgr->SetConditions( PCB_ACTIONS::selectConnection,
-                        ENABLE( SELECTION_CONDITIONS::OnlyTypes( GENERAL_COLLECTOR::Tracks ) ) );
     mgr->SetConditions( PCB_ACTIONS::selectSameSheet,
                         ENABLE( SELECTION_CONDITIONS::OnlyType( PCB_FOOTPRINT_T ) ) );
 
@@ -920,7 +918,6 @@ void PCB_EDIT_FRAME::LoadSettings( APP_SETTINGS_BASE* aCfg )
     if( cfg )
     {
         m_rotationAngle            = cfg->m_RotationAngle;
-        g_DrawDefaultLineThickness = Millimeter2iu( cfg->m_PlotLineWidth );
         m_show_layer_manager_tools = cfg->m_AuiPanels.show_layer_manager;
         m_showPageLimits           = cfg->m_ShowPageLimits;
     }
@@ -937,7 +934,6 @@ void PCB_EDIT_FRAME::SaveSettings( APP_SETTINGS_BASE* aCfg )
     if( cfg )
     {
         cfg->m_RotationAngle                  = m_rotationAngle;
-        cfg->m_PlotLineWidth                  = Iu2Millimeter( g_DrawDefaultLineThickness );
         cfg->m_AuiPanels.show_layer_manager   = m_show_layer_manager_tools;
         cfg->m_AuiPanels.right_panel_width    = m_appearancePanel->GetSize().x;
         cfg->m_AuiPanels.appearance_panel_tab = m_appearancePanel->GetTabIndex();
@@ -977,33 +973,22 @@ void PCB_EDIT_FRAME::SetActiveLayer( PCB_LAYER_ID aLayer )
     GetCanvas()->SetFocus();                                // allow capture of hotkeys
     GetCanvas()->SetHighContrastLayer( aLayer );
 
-    // Pads and vias on a restricted layer set must be redrawn when the active layer is changed
-    GetCanvas()->GetView()->UpdateAllItemsConditionally( KIGFX::REPAINT,
-            []( KIGFX::VIEW_ITEM* aItem ) -> bool
+    GetCanvas()->GetView()->UpdateAllItemsConditionally(
+            KIGFX::REPAINT,
+            [&]( KIGFX::VIEW_ITEM* aItem ) -> bool
             {
                 if( VIA* via = dynamic_cast<VIA*>( aItem ) )
                 {
+                    // Vias on a restricted layer set must be redrawn when the active layer
+                    // is changed
                     return ( via->GetViaType() == VIATYPE::BLIND_BURIED ||
                              via->GetViaType() == VIATYPE::MICROVIA );
                 }
                 else if( PAD* pad = dynamic_cast<PAD*>( aItem ) )
                 {
-                    // TODO: this could be optimized if the pad painter is changed
-                    // See https://gitlab.com/kicad/code/kicad/-/issues/6912
-                    return !!pad;
-                }
-
-                return false;
-            } );
-
-    // Clearances could be layer-dependent so redraw them when the active layer is changed
-
-    if( GetDisplayOptions().m_DisplayPadIsol )
-    {
-        GetCanvas()->GetView()->UpdateAllItemsConditionally( KIGFX::REPAINT,
-                [&]( KIGFX::VIEW_ITEM* aItem ) -> bool
-                {
-                    if( PAD* pad = dynamic_cast<PAD*>( aItem ) )
+                    // Clearances could be layer-dependent so redraw them when the active layer
+                    // is changed
+                    if( GetDisplayOptions().m_DisplayPadIsol )
                     {
                         // Round-corner rects are expensive to draw, but are mostly found on
                         // SMD pads which only need redrawing on an active-to-not-active
@@ -1019,26 +1004,20 @@ void PCB_EDIT_FRAME::SetActiveLayer( PCB_LAYER_ID aLayer )
 
                         return true;
                     }
-
-                    return false;
-                } );
-    }
-
-    if( GetDisplayOptions().m_ShowTrackClearanceMode )
-    {
-        GetCanvas()->GetView()->UpdateAllItemsConditionally( KIGFX::REPAINT,
-                [&]( KIGFX::VIEW_ITEM* aItem ) -> bool
+                }
+                else if( TRACK* track = dynamic_cast<TRACK*>( aItem ) )
                 {
-                    if( TRACK* track = dynamic_cast<TRACK*>( aItem ) )
+                    // Clearances could be layer-dependent so redraw them when the active layer
+                    // is changed
+                    if( GetDisplayOptions().m_ShowTrackClearanceMode )
                     {
-                        // Tracks aren't particularly expensive to draw, but it's an easy
-                        // check.
+                        // Tracks aren't particularly expensive to draw, but it's an easy check.
                         return track->IsOnLayer( oldLayer ) || track->IsOnLayer( aLayer );
                     }
+                }
 
-                    return false;
-                } );
-    }
+                return false;
+            } );
 
     GetCanvas()->Refresh();
 }
@@ -1373,7 +1352,8 @@ bool PCB_EDIT_FRAME::ReannotateSchematic( std::string& aNetlist )
 }
 
 
-bool PCB_EDIT_FRAME::FetchNetlistFromSchematic( NETLIST& aNetlist, FETCH_NETLIST_MODE aMode )
+bool PCB_EDIT_FRAME::FetchNetlistFromSchematic( NETLIST&        aNetlist,
+                                                const wxString& aAnnotateMessage )
 {
     if( !TestStandalone() )
     {
@@ -1384,12 +1364,8 @@ bool PCB_EDIT_FRAME::FetchNetlistFromSchematic( NETLIST& aNetlist, FETCH_NETLIST
     }
 
     Raise();                //Show
-    std::string payload;
 
-    if( aMode == NO_ANNOTATION )
-        payload = "no-annotate";
-    else if( aMode == QUIET_ANNOTATION )
-        payload = "quiet-annotate";
+    std::string payload( aAnnotateMessage );
 
     Kiway().ExpressMail( FRAME_SCH, MAIL_SCH_GET_NETLIST, payload, this );
 

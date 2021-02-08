@@ -357,6 +357,8 @@ int FOOTPRINT_EDITOR_CONTROL::DeleteFootprint( const TOOL_EVENT& aEvent )
 
 int FOOTPRINT_EDITOR_CONTROL::ImportFootprint( const TOOL_EVENT& aEvent )
 {
+    bool is_last_fp_from_brd = m_frame->IsCurrentFPFromBoard();
+
     if( !m_frame->Clear_Pcb( true ) )
         return -1;                  // this command is aborted
 
@@ -367,6 +369,13 @@ int FOOTPRINT_EDITOR_CONTROL::ImportFootprint( const TOOL_EVENT& aEvent )
         m_frame->GetBoard()->GetFirstFootprint()->ClearFlags();
 
     frame()->ClearUndoRedoList();
+
+    // Update the save items if needed.
+    if( is_last_fp_from_brd )
+    {
+        m_frame->ReCreateMenuBar();
+        m_frame->ReCreateHToolbar();
+    }
 
     m_toolMgr->RunAction( ACTIONS::zoomFitScreen, true );
     m_frame->OnModify();
@@ -493,8 +502,6 @@ void FOOTPRINT_EDITOR_CONTROL::setTransitions()
     Go( &FOOTPRINT_EDITOR_CONTROL::NewFootprint,         PCB_ACTIONS::newFootprint.MakeEvent() );
     Go( &FOOTPRINT_EDITOR_CONTROL::CreateFootprint,      PCB_ACTIONS::createFootprint.MakeEvent() );
     Go( &FOOTPRINT_EDITOR_CONTROL::Save,                 ACTIONS::save.MakeEvent() );
-    Go( &FOOTPRINT_EDITOR_CONTROL::Save,                 PCB_ACTIONS::saveToBoard.MakeEvent() );
-    Go( &FOOTPRINT_EDITOR_CONTROL::Save,                 PCB_ACTIONS::saveToLibrary.MakeEvent() );
     Go( &FOOTPRINT_EDITOR_CONTROL::SaveAs,               ACTIONS::saveAs.MakeEvent() );
     Go( &FOOTPRINT_EDITOR_CONTROL::SaveAs,               ACTIONS::saveCopyAs.MakeEvent() );
     Go( &FOOTPRINT_EDITOR_CONTROL::Revert,               ACTIONS::revert.MakeEvent() );

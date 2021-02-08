@@ -274,7 +274,7 @@ SCH_EDIT_FRAME::SCH_EDIT_FRAME( KIWAY* aKiway, wxWindow* aParent ) :
     resolveCanvasType();
     SwitchCanvas( m_canvasType );
 
-    GetToolManager()->RunAction( ACTIONS::zoomFitScreen, true );
+    initScreenZoom();
 
     // This is used temporarily to fix a client size issue on GTK that causes zoom to fit
     // to calculate the wrong zoom size.  See SCH_EDIT_FRAME::onSize().
@@ -389,12 +389,12 @@ void SCH_EDIT_FRAME::setupUIConditions()
     mgr->SetConditions( ACTIONS::acceleratedGraphics, CHECK( cond.CanvasType( EDA_DRAW_PANEL_GAL::GAL_TYPE_OPENGL ) ) );
     mgr->SetConditions( ACTIONS::standardGraphics,    CHECK( cond.CanvasType( EDA_DRAW_PANEL_GAL::GAL_TYPE_CAIRO ) ) );
 
-    mgr->SetConditions( ACTIONS::cut,                 ENABLE( SELECTION_CONDITIONS::NotEmpty ) );
-    mgr->SetConditions( ACTIONS::copy,                ENABLE( SELECTION_CONDITIONS::NotEmpty ) );
+    mgr->SetConditions( ACTIONS::cut, ENABLE( hasElements ) );
+    mgr->SetConditions( ACTIONS::copy, ENABLE( hasElements ) );
     mgr->SetConditions( ACTIONS::paste,               ENABLE( SELECTION_CONDITIONS::Idle ) );
     mgr->SetConditions( ACTIONS::pasteSpecial,        ENABLE( SELECTION_CONDITIONS::Idle ) );
-    mgr->SetConditions( ACTIONS::doDelete,            ENABLE( SELECTION_CONDITIONS::NotEmpty ) );
-    mgr->SetConditions( ACTIONS::duplicate,           ENABLE( SELECTION_CONDITIONS::NotEmpty ) );
+    mgr->SetConditions( ACTIONS::doDelete, ENABLE( hasElements ) );
+    mgr->SetConditions( ACTIONS::duplicate, ENABLE( hasElements ) );
     mgr->SetConditions( ACTIONS::selectAll,           ENABLE( hasElements ) );
 
     mgr->SetConditions( ACTIONS::zoomTool,            CHECK( cond.CurrentTool( ACTIONS::zoomTool ) ) );
@@ -1027,7 +1027,7 @@ void SCH_EDIT_FRAME::OnOpenCvpcb( wxCommandEvent& event )
     wxFileName fn = Prj().AbsolutePath( Schematic().GetFileName() );
     fn.SetExt( NetlistFileExtension );
 
-    if( !ReadyToNetlist() )
+    if( !ReadyToNetlist( _( "Assigning footprints requires a fully annotated schematic." ) ) )
         return;
 
     try
@@ -1260,6 +1260,13 @@ void SCH_EDIT_FRAME::UpdateTitle()
     }
 
     SetTitle( title );
+}
+
+
+void SCH_EDIT_FRAME::initScreenZoom()
+{
+    m_toolManager->RunAction( ACTIONS::zoomFitScreen, true );
+    GetScreen()->m_zoomInitialized = true;
 }
 
 

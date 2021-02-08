@@ -491,12 +491,7 @@ SGNODE* WRL1FACESET::TranslateToSG( SGNODE* aParent, WRL1STATUS* sp )
 
                 if( matIndex.empty() )
                 {
-                    int ic = coordIndex[iCoord];
-
-                    if( ic >= (int)matSize )
-                        m_current.mat->GetColor( &pc1, matIndex.back() );
-                    else
-                        m_current.mat->GetColor( &pc1, matIndex[ic] );
+                    m_current.mat->GetColor( &pc1, idx );
                 }
                 else
                 {

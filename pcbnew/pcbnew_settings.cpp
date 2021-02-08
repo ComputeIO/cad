@@ -51,9 +51,8 @@ PCBNEW_SETTINGS::PCBNEW_SETTINGS() :
         m_Plot(), m_FootprintChooser(), m_Zones(), m_FootprintViewer(), m_FootprintWizard(),
         m_Display(), m_TrackDragAction( TRACK_DRAG_ACTION::DRAG ),
         m_Use45DegreeGraphicSegments( false ), m_FlipLeftRight( false ), m_AddUnlockedPads( false ),
-        m_PolarCoords( false ), m_RotationAngle( 900 ), m_PlotLineWidth( 0.1 ),
-        m_ShowPageLimits( true ), m_PnsSettings( nullptr ), m_FootprintViewerAutoZoom( false ),
-        m_FootprintViewerZoom( 1.0 )
+        m_PolarCoords( false ), m_RotationAngle( 900 ), m_ShowPageLimits( true ),
+        m_PnsSettings( nullptr ), m_FootprintViewerAutoZoom( false ), m_FootprintViewerZoom( 1.0 )
 {
     m_MagneticItems.pads     = MAGNETIC_OPTIONS::CAPTURE_CURSOR_IN_TRACK_TOOL;
     m_MagneticItems.tracks   = MAGNETIC_OPTIONS::CAPTURE_CURSOR_IN_TRACK_TOOL;
@@ -166,9 +165,6 @@ PCBNEW_SETTINGS::PCBNEW_SETTINGS() :
 
     m_params.emplace_back( new PARAM<bool>( "pcb_display.origin_invert_y_axis",
             &m_Display.m_DisplayInvertYAxis, false ) );
-
-    m_params.emplace_back( new PARAM<double>( "plot.line_width",
-            &m_PlotLineWidth, 0.1, 0.01, 5.0 ) );
 
     m_params.emplace_back( new PARAM<bool>( "cleanup.cleanup_vias",
             &m_Cleanup.cleanup_vias, true ) );

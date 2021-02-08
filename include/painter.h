@@ -78,13 +78,6 @@ public:
     }
 
     /**
-     * Loads colors and display modes settings that are going to be used when drawing items.
-     *
-     * @param aSettings are settings to be applied.
-     */
-    virtual void ApplySettings( const RENDER_SETTINGS* aSettings ) = 0;
-
-    /**
      * Return a pointer to current settings that are going to be used when drawing items.
      *
      * @return Current rendering settings.
@@ -106,9 +99,6 @@ protected:
     /// Instance of graphic abstraction layer that gives an interface to call
     /// commands used to draw (eg. DrawLine, DrawCircle, etc.)
     GAL* m_gal;
-
-    /// Color of brightened item frame
-    COLOR4D m_brightenedColor;
 };
 
 } // namespace KIGFX

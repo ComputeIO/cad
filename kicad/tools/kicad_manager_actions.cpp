@@ -41,11 +41,11 @@ TOOL_ACTION KICAD_MANAGER_ACTIONS::newProject( "kicad.Control.newProject",
         _( "New Project..." ), _( "Create new blank project" ),
         new_project_xpm );
 
-TOOL_ACTION KICAD_MANAGER_ACTIONS::newFromTemplate( "kicad.Control.newFromTemplate",
-        AS_GLOBAL,
-        MD_CTRL + 'T', LEGACY_HK_NAME( "New Project From Template" ),
-        _( "New Project from Template..." ), _( "Create new project from template" ),
-        new_project_with_template_xpm );
+TOOL_ACTION KICAD_MANAGER_ACTIONS::newFromTemplate( "kicad.Control.newFromTemplate", AS_GLOBAL,
+                                                    MD_CTRL + 'T',
+                                                    LEGACY_HK_NAME( "New Project From Template" ),
+                                                    _( "New Project from Template..." ),
+                                                    _( "Create new project from template" ) );
 
 TOOL_ACTION KICAD_MANAGER_ACTIONS::openProject( "kicad.Control.openProject",
         AS_GLOBAL,
@@ -65,11 +65,11 @@ TOOL_ACTION KICAD_MANAGER_ACTIONS::editSchematic( "kicad.Control.editSchematic",
         _( "Edit Schematic" ), _( "Edit Schematic" ),
         icon_eeschema_24_xpm, AF_NONE, (void*) FRAME_SCH );
 
-TOOL_ACTION KICAD_MANAGER_ACTIONS::editSymbols( "kicad.Control.editSymbols",
-        AS_GLOBAL,
-        MD_CTRL + 'L', LEGACY_HK_NAME( "Run LibEdit" ),
-        _( "Edit Schematic Symbols" ), _( "Edit Schematic Symbols" ),
-        libedit_xpm, AF_NONE, (void*) FRAME_SCH_SYMBOL_EDITOR );
+TOOL_ACTION KICAD_MANAGER_ACTIONS::editSymbols( "kicad.Control.editSymbols", AS_GLOBAL,
+                                                MD_CTRL + 'L', LEGACY_HK_NAME( "Run LibEdit" ),
+                                                _( "Edit Schematic Symbols" ),
+                                                _( "Edit Schematic Symbols" ), icon_libedit_24_xpm,
+                                                AF_NONE, (void*) FRAME_SCH_SYMBOL_EDITOR );
 
 TOOL_ACTION KICAD_MANAGER_ACTIONS::editPCB( "kicad.Control.editPCB",
         AS_GLOBAL,
@@ -77,11 +77,11 @@ TOOL_ACTION KICAD_MANAGER_ACTIONS::editPCB( "kicad.Control.editPCB",
         _( "Edit PCB" ), _( "Edit PCB" ),
         icon_pcbnew_24_xpm, AF_NONE, (void*) FRAME_PCB_EDITOR );
 
-TOOL_ACTION KICAD_MANAGER_ACTIONS::editFootprints( "kicad.Control.editFootprints",
-        AS_GLOBAL,
-        MD_CTRL + 'F', LEGACY_HK_NAME( "Run FpEditor" ),
-        _( "Edit PCB Footprints" ), _( "Edit PCB Footprints" ),
-        module_editor_xpm, AF_NONE, (void*) FRAME_FOOTPRINT_EDITOR );
+TOOL_ACTION KICAD_MANAGER_ACTIONS::editFootprints( "kicad.Control.editFootprints", AS_GLOBAL,
+                                                   MD_CTRL + 'F', LEGACY_HK_NAME( "Run FpEditor" ),
+                                                   _( "Edit PCB Footprints" ),
+                                                   _( "Edit PCB Footprints" ), icon_modedit_24_xpm,
+                                                   AF_NONE, (void*) FRAME_FOOTPRINT_EDITOR );
 
 TOOL_ACTION KICAD_MANAGER_ACTIONS::viewGerbers( "kicad.Control.viewGerbers",
         AS_GLOBAL,

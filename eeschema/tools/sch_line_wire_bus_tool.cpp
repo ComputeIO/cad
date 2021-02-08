@@ -282,16 +282,17 @@ int SCH_LINE_WIRE_BUS_TOOL::DrawSegments( const TOOL_EVENT& aEvent )
 {
     DRAW_SEGMENT_EVENT_PARAMS* params = aEvent.Parameter<DRAW_SEGMENT_EVENT_PARAMS*>();
 
-    if( aEvent.HasPosition() )
-        getViewControls()->WarpCursor( aEvent.Position(), true );
-
     std::string tool = aEvent.GetCommandStr().get();
     m_frame->PushTool( tool );
     m_toolMgr->RunAction( EE_ACTIONS::clearSelection, true );
 
     if( aEvent.HasPosition() )
     {
-        VECTOR2D cursorPos = getViewControls()->GetCursorPosition( !aEvent.Modifier( MD_ALT ) );
+        EE_GRID_HELPER grid( m_toolMgr );
+        grid.SetSnap( !aEvent.Modifier( MD_SHIFT ) );
+        grid.SetUseGrid( getView()->GetGAL()->GetGridSnapping() && !aEvent.Modifier( MD_ALT ) );
+
+        VECTOR2D cursorPos = grid.BestSnapAnchor( aEvent.Position(), LAYER_CONNECTABLE, nullptr );
         startSegments( params->layer, cursorPos );
     }
 
@@ -507,13 +508,23 @@ int SCH_LINE_WIRE_BUS_TOOL::doDrawSegments( const std::string& aTool, int aType,
     while( TOOL_EVENT* evt = Wait() )
     {
         setCursor();
+        grid.SetMask( GRID_HELPER::ALL );
         grid.SetSnap( !evt->Modifier( MD_SHIFT ) );
         grid.SetUseGrid( getView()->GetGAL()->GetGridSnapping() && !evt->Modifier( MD_ALT ) );
+
+        if( segment )
+        {
+            if( segment->GetStartPoint().x == segment->GetEndPoint().x )
+                grid.ClearMaskFlag( GRID_HELPER::VERTICAL );
+
+            if( segment->GetStartPoint().y == segment->GetEndPoint().y )
+                grid.ClearMaskFlag( GRID_HELPER::HORIZONTAL );
+        }
 
         wxPoint cursorPos = evt->IsPrime() ? (wxPoint) evt->Position()
                                            : (wxPoint) controls->GetMousePosition();
 
-        cursorPos = (wxPoint) grid.BestSnapAnchor( cursorPos, LAYER_CONNECTABLE, nullptr );
+        cursorPos = (wxPoint) grid.BestSnapAnchor( cursorPos, LAYER_CONNECTABLE, segment );
         controls->ForceCursorPosition( true, cursorPos );
 
         bool forceHV = m_frame->eeconfig()->m_Drawing.hv_lines_only;
@@ -617,10 +628,9 @@ int SCH_LINE_WIRE_BUS_TOOL::doDrawSegments( const std::string& aTool, int aType,
             // Create a new segment if we're out of previously-created ones
             else if( !segment->IsNull() || ( forceHV && !m_wires[ m_wires.size() - 2 ]->IsNull() ) )
             {
-                // Terminate the command if the end point is on a pin, junction, or another
+                // Terminate the command if the end point is on a pin, junction, label, or another
                 // wire or bus.
-                if( !m_busUnfold.in_progress
-                        && screen->IsTerminalPoint( cursorPos, segment->GetLayer() ) )
+                if( screen->IsTerminalPoint( cursorPos, segment->GetLayer() ) )
                 {
                     finishSegments();
                     segment = nullptr;
@@ -905,7 +915,12 @@ void SCH_LINE_WIRE_BUS_TOOL::finishSegments()
     // Correct and remove segments that need to be merged.
     m_frame->SchematicCleanUp();
 
+    std::vector<SCH_ITEM*> components;
+
     for( SCH_ITEM* item : m_frame->GetScreen()->Items().OfType( SCH_COMPONENT_T ) )
+        components.push_back( item );
+
+    for( SCH_ITEM* item : components )
     {
         std::vector<wxPoint> pts = item->GetConnectionPoints();
 

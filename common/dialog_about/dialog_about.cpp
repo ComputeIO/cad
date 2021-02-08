@@ -471,6 +471,8 @@ void DIALOG_ABOUT::onHtmlLinkClicked( wxHtmlLinkEvent& event )
 
 void DIALOG_ABOUT::onCopyVersionInfo( wxCommandEvent& event )
 {
+    wxLogNull doNotLog; // disable logging of failed clipboard actions
+
     if( !wxTheClipboard->Open() )
     {
         wxMessageBox( _( "Could not open clipboard to write version information." ),
@@ -481,6 +483,7 @@ void DIALOG_ABOUT::onCopyVersionInfo( wxCommandEvent& event )
     wxString msg_version = GetVersionInfoData( m_titleName );
 
     wxTheClipboard->SetData( new wxTextDataObject( msg_version ) );
+    wxTheClipboard->Flush(); // Allow clipboard data to be available after KiCad closes
     wxTheClipboard->Close();
     m_btCopyVersionInfo->SetLabel( _( "Copied..." ) );
 }

@@ -77,9 +77,7 @@ PCB_RENDER_SETTINGS::PCB_RENDER_SETTINGS()
 
     // By default everything should be displayed as filled
     for( unsigned int i = 0; i < arrayDim( m_sketchMode ); ++i )
-    {
         m_sketchMode[i] = false;
-    }
 
     update();
 }
@@ -95,7 +93,6 @@ void PCB_RENDER_SETTINGS::LoadColors( const COLOR_SETTINGS* aSettings )
         m_layerColors[i] = aSettings->GetColor( i );
 
         // Guard: if the alpah channel is too small, the layer is not visible.
-        // clamp it to 0.2
         if( m_layerColors[i].a < 0.2 )
             m_layerColors[i].a = 0.2;
     }
@@ -104,16 +101,12 @@ void PCB_RENDER_SETTINGS::LoadColors( const COLOR_SETTINGS* aSettings )
     for( int i = GAL_LAYER_ID_START; i < GAL_LAYER_ID_END; i++ )
         m_layerColors[i] = aSettings->GetColor( i );
 
-    // Default colors for specific layers (not really board layers).
-    m_layerColors[LAYER_PADS_PLATEDHOLES] = aSettings->GetColor( LAYER_PCB_BACKGROUND );
-    m_layerColors[LAYER_VIAS_NETNAMES] = COLOR4D( 0.2, 0.2, 0.2, 0.9 );
-    m_layerColors[LAYER_PADS_NETNAMES] = COLOR4D( 1.0, 1.0, 1.0, 0.9 );
+    // Colors for layers that aren't theme-able
+    m_layerColors[LAYER_PAD_PLATEDHOLES] = aSettings->GetColor( LAYER_PCB_BACKGROUND );
+    m_layerColors[LAYER_VIA_NETNAMES] = COLOR4D( 0.2, 0.2, 0.2, 0.9 );
+    m_layerColors[LAYER_PAD_NETNAMES] = COLOR4D( 1.0, 1.0, 1.0, 0.9 );
     m_layerColors[LAYER_PAD_FR_NETNAMES] = COLOR4D( 1.0, 1.0, 1.0, 0.9 );
     m_layerColors[LAYER_PAD_BK_NETNAMES] = COLOR4D( 1.0, 1.0, 1.0, 0.9 );
-
-    // LAYER_PADS_TH, LAYER_NON_PLATEDHOLES, LAYER_ANCHOR ,LAYER_RATSNEST,
-    // LAYER_VIA_THROUGH, LAYER_VIA_BBLIND, LAYER_VIA_MICROVIA
-    // are initialized from aSettings
 
     // Netnames for copper layers
     for( LSEQ cu = LSET::AllCuMask().CuStack(); cu; ++cu )
@@ -222,19 +215,16 @@ void PCB_RENDER_SETTINGS::LoadDisplayOptions( const PCB_DISPLAY_OPTIONS& aOption
 
 COLOR4D PCB_RENDER_SETTINGS::GetColor( const VIEW_ITEM* aItem, int aLayer ) const
 {
-    int                         netCode = -1;
     const EDA_ITEM*             item = dynamic_cast<const EDA_ITEM*>( aItem );
     const BOARD_CONNECTED_ITEM* conItem = dynamic_cast<const BOARD_CONNECTED_ITEM*>( aItem );
+    int                         netCode = -1;
+    int                         originalLayer = aLayer;
 
     // Marker shadows
     if( aLayer == LAYER_MARKER_SHADOWS )
         return m_backgroundColor.WithAlpha( 0.6 );
 
-    if( !item )
-        return m_layerColors[aLayer];
-
-    if( aLayer == LAYER_PADS_PLATEDHOLES || aLayer == LAYER_NON_PLATEDHOLES
-        || aLayer == LAYER_VIAS_HOLES )
+    if( IsHoleLayer( aLayer ) && m_isPrinting )
     {
         // Careful that we don't end up with the same colour for the annular ring and the hole
         // when printing in B&W.
@@ -245,9 +235,9 @@ COLOR4D PCB_RENDER_SETTINGS::GetColor( const VIEW_ITEM* aItem, int aLayer ) cons
 
         if( pad )
             annularRingLayer = LAYER_PADS_TH;
-        else if( via->GetViaType() == VIATYPE::MICROVIA )
+        else if( via && via->GetViaType() == VIATYPE::MICROVIA )
             annularRingLayer = LAYER_VIA_MICROVIA;
-        else if( via->GetViaType() == VIATYPE::BLIND_BURIED )
+        else if( via && via->GetViaType() == VIATYPE::BLIND_BURIED )
             annularRingLayer = LAYER_VIA_BBLIND;
         else
             annularRingLayer = LAYER_VIA_THROUGH;
@@ -260,8 +250,17 @@ COLOR4D PCB_RENDER_SETTINGS::GetColor( const VIEW_ITEM* aItem, int aLayer ) cons
     if( item && item->Type() == PCB_ZONE_T && IsZoneLayer( aLayer ) )
         aLayer = aLayer - LAYER_ZONE_START;
 
+    // Hole walls should pull from the copper layer
+    if( aLayer == LAYER_PAD_HOLEWALLS )
+        aLayer = LAYER_PADS_TH;
+    else if( aLayer == LAYER_VIA_HOLEWALLS )
+        aLayer = LAYER_VIA_THROUGH;
+
     // Normal path: get the layer base color
     COLOR4D color = m_layerColors[aLayer];
+
+    if( !item )
+        return m_layerColors[aLayer];
 
     // Selection disambiguation
     if( item->IsBrightened() )
@@ -328,16 +327,14 @@ COLOR4D PCB_RENDER_SETTINGS::GetColor( const VIEW_ITEM* aItem, int aLayer ) cons
         PCB_LAYER_ID primary = GetPrimaryHighContrastLayer();
         bool         isActive = m_highContrastLayers.count( aLayer );
 
-        // Track annotations are drawn on synthetic layers, but we only want them drawn if the
-        // track itself is on the primary layer.
-        if( item->Type() == PCB_TRACE_T || item->Type() == PCB_ARC_T )
-        {
-            if( !static_cast<const TRACK*>( item )->IsOnLayer( primary ) )
-                isActive = false;
-        }
-        else if( item->Type() == PCB_PAD_T )
+        if( originalLayer == LAYER_PADS_TH )
         {
             if( !static_cast<const PAD*>( item )->FlashLayer( primary ) )
+                isActive = false;
+        }
+        else if( originalLayer == LAYER_VIA_THROUGH )
+        {
+            if( !static_cast<const VIA*>( item )->FlashLayer( primary ) )
                 isActive = false;
         }
 
@@ -456,52 +453,56 @@ void PCB_PAINTER::draw( const TRACK* aTrack, int aLayer )
     VECTOR2D start( aTrack->GetStart() );
     VECTOR2D end( aTrack->GetEnd() );
     int      width = aTrack->GetWidth();
+    COLOR4D  color = m_pcbSettings.GetColor( aTrack, aLayer );
 
-    if( m_pcbSettings.m_netNamesOnTracks && IsNetnameLayer( aLayer ) )
+    if( IsNetnameLayer( aLayer ) )
     {
-        // If there is a net name - display it on the track
-        if( aTrack->GetNetCode() > NETINFO_LIST::UNCONNECTED )
-        {
-            VECTOR2D line = ( end - start );
-            double   length = line.EuclideanNorm();
+        if( !m_pcbSettings.m_netNamesOnTracks )
+            return;
 
-            // Check if the track is long enough to have a netname displayed
-            if( length < 10 * width )
-                return;
+        if( aTrack->GetNetCode() <= NETINFO_LIST::UNCONNECTED )
+            return;
 
-            const wxString& netName = UnescapeString( aTrack->GetShortNetname() );
-            VECTOR2D        textPosition = start + line / 2.0; // center of the track
+        VECTOR2D line = ( end - start );
+        double   length = line.EuclideanNorm();
 
-            double textOrientation;
+        // Check if the track is long enough to have a netname displayed
+        if( length < 10 * width )
+            return;
 
-            if( end.y == start.y ) // horizontal
-                textOrientation = 0;
-            else if( end.x == start.x ) // vertical
-                textOrientation = M_PI / 2;
-            else
-                textOrientation = -atan( line.y / line.x );
+        const wxString& netName = UnescapeString( aTrack->GetShortNetname() );
+        VECTOR2D        textPosition = start + line / 2.0; // center of the track
 
-            double textSize = width;
+        double textOrientation;
 
-            m_gal->SetIsStroke( true );
-            m_gal->SetIsFill( false );
-            m_gal->SetStrokeColor( m_pcbSettings.GetColor( aTrack, aLayer ) );
-            m_gal->SetLineWidth( width / 10.0 );
-            m_gal->SetFontBold( false );
-            m_gal->SetFontItalic( false );
-            m_gal->SetFontUnderlined( false );
-            m_gal->SetTextMirrored( false );
-            m_gal->SetGlyphSize( VECTOR2D( textSize * 0.7, textSize * 0.7 ) );
-            m_gal->SetHorizontalJustify( GR_TEXT_HJUSTIFY_CENTER );
-            m_gal->SetVerticalJustify( GR_TEXT_VJUSTIFY_CENTER );
-            m_gal->BitmapText( netName, textPosition, textOrientation );
-        }
+        if( end.y == start.y ) // horizontal
+            textOrientation = 0;
+        else if( end.x == start.x ) // vertical
+            textOrientation = M_PI / 2;
+        else
+            textOrientation = -atan( line.y / line.x );
+
+        double textSize = width;
+
+        m_gal->SetIsStroke( true );
+        m_gal->SetIsFill( false );
+        m_gal->SetStrokeColor( color );
+        m_gal->SetLineWidth( width / 10.0 );
+        m_gal->SetFontBold( false );
+        m_gal->SetFontItalic( false );
+        m_gal->SetFontUnderlined( false );
+        m_gal->SetTextMirrored( false );
+        m_gal->SetGlyphSize( VECTOR2D( textSize * 0.7, textSize * 0.7 ) );
+        m_gal->SetHorizontalJustify( GR_TEXT_HJUSTIFY_CENTER );
+        m_gal->SetVerticalJustify( GR_TEXT_VJUSTIFY_CENTER );
+        m_gal->BitmapText( netName, textPosition, textOrientation );
+
+        return;
     }
     else if( IsCopperLayer( aLayer ) )
     {
         // Draw a regular track
-        COLOR4D color = m_pcbSettings.GetColor( aTrack, aLayer );
-        bool    outline_mode = m_pcbSettings.m_sketchMode[LAYER_TRACKS];
+        bool outline_mode = m_pcbSettings.m_sketchMode[LAYER_TRACKS];
         m_gal->SetStrokeColor( color );
         m_gal->SetFillColor( color );
         m_gal->SetIsStroke( outline_mode );
@@ -509,21 +510,21 @@ void PCB_PAINTER::draw( const TRACK* aTrack, int aLayer )
         m_gal->SetLineWidth( m_pcbSettings.m_outlineWidth );
 
         m_gal->DrawSegment( start, end, width );
+    }
 
-        // Clearance lines
-        constexpr int clearanceFlags =
-                PCB_RENDER_SETTINGS::CL_EXISTING | PCB_RENDER_SETTINGS::CL_TRACKS;
+    // Clearance lines
+    constexpr int clearanceFlags =
+            PCB_RENDER_SETTINGS::CL_EXISTING | PCB_RENDER_SETTINGS::CL_TRACKS;
 
-        if( ( m_pcbSettings.m_clearanceDisplayFlags & clearanceFlags ) == clearanceFlags )
-        {
-            int clearance = aTrack->GetOwnClearance( m_pcbSettings.GetActiveLayer() );
+    if( ( m_pcbSettings.m_clearanceDisplayFlags & clearanceFlags ) == clearanceFlags )
+    {
+        int clearance = aTrack->GetOwnClearance( m_pcbSettings.GetActiveLayer() );
 
-            m_gal->SetLineWidth( m_pcbSettings.m_outlineWidth );
-            m_gal->SetIsFill( false );
-            m_gal->SetIsStroke( true );
-            m_gal->SetStrokeColor( color );
-            m_gal->DrawSegment( start, end, width + clearance * 2 );
-        }
+        m_gal->SetLineWidth( m_pcbSettings.m_outlineWidth );
+        m_gal->SetIsFill( false );
+        m_gal->SetIsStroke( true );
+        m_gal->SetStrokeColor( color );
+        m_gal->DrawSegment( start, end, width + clearance * 2 );
     }
 }
 
@@ -532,48 +533,57 @@ void PCB_PAINTER::draw( const ARC* aArc, int aLayer )
 {
     VECTOR2D center( aArc->GetCenter() );
     int      width = aArc->GetWidth();
+    COLOR4D  color = m_pcbSettings.GetColor( aArc, aLayer );
+    double   radius = aArc->GetRadius();
+    double   start_angle = DECIDEG2RAD( aArc->GetArcAngleStart() );
+    double   angle = DECIDEG2RAD( aArc->GetAngle() );
 
-    if( IsCopperLayer( aLayer ) )
+    if( IsNetnameLayer( aLayer ) )
+    {
+        // Ummm, yeah.  Anyone fancy implementing text on a path?
+        return;
+    }
+    else if( IsCopperLayer( aLayer ) )
     {
         // Draw a regular track
-        COLOR4D color = m_pcbSettings.GetColor( aArc, aLayer );
-        bool    outline_mode = m_pcbSettings.m_sketchMode[LAYER_TRACKS];
+        bool outline_mode = m_pcbSettings.m_sketchMode[LAYER_TRACKS];
         m_gal->SetStrokeColor( color );
         m_gal->SetFillColor( color );
         m_gal->SetIsStroke( outline_mode );
         m_gal->SetIsFill( not outline_mode );
         m_gal->SetLineWidth( m_pcbSettings.m_outlineWidth );
 
-        auto radius = aArc->GetRadius();
-        auto start_angle = DECIDEG2RAD( aArc->GetArcAngleStart() );
-        auto angle = DECIDEG2RAD( aArc->GetAngle() );
-
         m_gal->DrawArcSegment( center, radius, start_angle, start_angle + angle, width );
+    }
 
-        // Clearance lines
-        constexpr int clearanceFlags =
-                PCB_RENDER_SETTINGS::CL_EXISTING | PCB_RENDER_SETTINGS::CL_TRACKS;
+    // Clearance lines
+    constexpr int clearanceFlags =
+            PCB_RENDER_SETTINGS::CL_EXISTING | PCB_RENDER_SETTINGS::CL_TRACKS;
 
-        if( ( m_pcbSettings.m_clearanceDisplayFlags & clearanceFlags ) == clearanceFlags )
-        {
-            int clearance = aArc->GetOwnClearance( m_pcbSettings.GetActiveLayer() );
+    if( ( m_pcbSettings.m_clearanceDisplayFlags & clearanceFlags ) == clearanceFlags )
+    {
+        int clearance = aArc->GetOwnClearance( m_pcbSettings.GetActiveLayer() );
 
-            m_gal->SetLineWidth( m_pcbSettings.m_outlineWidth );
-            m_gal->SetIsFill( false );
-            m_gal->SetIsStroke( true );
-            m_gal->SetStrokeColor( color );
+        m_gal->SetLineWidth( m_pcbSettings.m_outlineWidth );
+        m_gal->SetIsFill( false );
+        m_gal->SetIsStroke( true );
+        m_gal->SetStrokeColor( color );
 
-            m_gal->DrawArcSegment( center, radius, start_angle, start_angle + angle,
-                                   width + clearance * 2 );
-        }
+        m_gal->DrawArcSegment( center, radius, start_angle, start_angle + angle,
+                               width + clearance * 2 );
     }
 }
 
 
 void PCB_PAINTER::draw( const VIA* aVia, int aLayer )
 {
-    VECTOR2D center( aVia->GetStart() );
-    double   radius = 0.0;
+    BOARD*                 board = aVia->GetBoard();
+    BOARD_DESIGN_SETTINGS& bds = board->GetDesignSettings();
+    COLOR4D                color = m_pcbSettings.GetColor( aVia, aLayer );
+    VECTOR2D               center( aVia->GetStart() );
+
+    if( color == COLOR4D::CLEAR )
+        return;
 
     // Draw description layer
     if( IsNetnameLayer( aLayer ) )
@@ -583,26 +593,6 @@ void PCB_PAINTER::draw( const VIA* aVia, int aLayer )
         // Is anything that we can display enabled?
         if( !m_pcbSettings.m_netNamesOnVias || aVia->GetNetname().empty() )
             return;
-
-        // We won't get CLEAR from GetColor below for a non-through via on an inactive layer in
-        // high contrast mode because LAYER_VIAS_NETNAMES will always be part of the high-contrast
-        // set.  So we do another check here to prevent drawing netnames for these vias.
-        if( m_pcbSettings.GetHighContrast() )
-        {
-            bool draw = false;
-
-            for( unsigned int layer : m_pcbSettings.GetHighContrastLayers() )
-            {
-                if( aVia->FlashLayer( static_cast<PCB_LAYER_ID>( layer ) ) )
-                {
-                    draw = true;
-                    break;
-                }
-            }
-
-            if( !draw )
-                return;
-        }
 
         double maxSize = PCB_RENDER_SETTINGS::MAX_FONT_SIZE;
         double size = aVia->GetWidth();
@@ -637,28 +627,21 @@ void PCB_PAINTER::draw( const VIA* aVia, int aLayer )
 
         return;
     }
-    else if( aLayer == LAYER_VIAS_HOLES )
+    else if( aLayer == LAYER_VIA_HOLEWALLS )
     {
-        radius = getDrillSize( aVia ) / 2.0;
-    }
-    else if( ( aLayer == LAYER_VIA_THROUGH && aVia->GetViaType() == VIATYPE::THROUGH )
-             || ( aLayer == LAYER_VIA_BBLIND && aVia->GetViaType() == VIATYPE::BLIND_BURIED )
-             || ( aLayer == LAYER_VIA_MICROVIA && aVia->GetViaType() == VIATYPE::MICROVIA ) )
-    {
-        radius = aVia->GetWidth() / 2.0;
-    }
-    else
-    {
+        int platingThickness = bds.GetHolePlatingThickness();
+
+        m_gal->SetIsFill( false );
+        m_gal->SetIsStroke( true );
+        m_gal->SetStrokeColor( color );
+        m_gal->SetLineWidth( platingThickness );
+
+        m_gal->DrawCircle( center, ( getDrillSize( aVia ) + platingThickness ) / 2.0 );
+
         return;
     }
 
-    bool                   sketchMode = false;
-    BOARD*                 board = aVia->GetBoard();
-    BOARD_DESIGN_SETTINGS& bds = board->GetDesignSettings();
-    COLOR4D                color = m_pcbSettings.GetColor( aVia, aLayer );
-
-    if( color == COLOR4D::CLEAR )
-        return;
+    bool sketchMode = false;
 
     switch( aVia->GetViaType() )
     {
@@ -668,33 +651,38 @@ void PCB_PAINTER::draw( const VIA* aVia, int aLayer )
     default: wxASSERT( false ); break;
     }
 
-    m_gal->SetIsFill( !sketchMode );
-    m_gal->SetIsStroke( sketchMode );
-
     if( sketchMode )
     {
         // Outline mode
+        m_gal->SetIsStroke( true );
+        m_gal->SetIsFill( false );
         m_gal->SetLineWidth( m_pcbSettings.m_outlineWidth );
         m_gal->SetStrokeColor( color );
     }
     else
     {
         // Filled mode
+        m_gal->SetIsFill( true );
+        m_gal->SetIsStroke( false );
         m_gal->SetFillColor( color );
     }
 
-    if( aLayer == LAYER_VIAS_HOLES )
+    if( aLayer == LAYER_VIA_HOLES )
     {
-        m_gal->DrawCircle( center, radius );
+        m_gal->DrawCircle( center, getDrillSize( aVia ) / 2.0 );
     }
-    else if( ( aVia->GetViaType() == VIATYPE::BLIND_BURIED
-               || aVia->GetViaType() == VIATYPE::MICROVIA )
-             && !m_pcbSettings.GetDrawIndividualViaLayers() )
+    else if( aLayer == LAYER_VIA_THROUGH || m_pcbSettings.GetDrawIndividualViaLayers() )
+    {
+        m_gal->DrawCircle( center, aVia->GetWidth() / 2.0 );
+    }
+    else if( aLayer == LAYER_VIA_BBLIND || aLayer == LAYER_VIA_MICROVIA )
     {
         // Outer circles of blind/buried and micro-vias are drawn in a special way to indicate the
         // top and bottom layers
         PCB_LAYER_ID layerTop, layerBottom;
         aVia->LayerPair( &layerTop, &layerBottom );
+
+        double radius = aVia->GetWidth() / 2.0;
 
         if( !sketchMode )
             m_gal->SetLineWidth( ( aVia->GetWidth() - aVia->GetDrillValue() ) / 2.0 );
@@ -716,48 +704,20 @@ void PCB_PAINTER::draw( const VIA* aVia, int aLayer )
 
         m_gal->DrawArc( center, radius, M_PI, 3.0 * M_PI / 2.0 );
     }
-    else
-    {
-        bool drawHoleWallOnly = false;
-
-        if( m_pcbSettings.m_hiContrastEnabled && !aVia->IsSelected() )
-        {
-            if( !aVia->FlashLayer( m_pcbSettings.GetPrimaryHighContrastLayer() ) )
-                drawHoleWallOnly = true;
-        }
-        else
-        {
-            LSET visible = board->GetVisibleLayers() & board->GetEnabledLayers();
-
-            if( !aVia->FlashLayer( visible ) )
-                drawHoleWallOnly = true;
-        }
-
-        if( drawHoleWallOnly )
-        {
-            m_gal->SetIsFill( false );
-            m_gal->SetIsStroke( true );
-            m_gal->SetStrokeColor( color );
-            m_gal->SetLineWidth( bds.GetHolePlatingThickness() * 2 );
-            radius = getDrillSize( aVia ) / 2.0;
-        }
-
-        m_gal->DrawCircle( center, radius );
-    }
 
     // Clearance lines
     constexpr int clearanceFlags = PCB_RENDER_SETTINGS::CL_EXISTING | PCB_RENDER_SETTINGS::CL_VIAS;
 
     if( ( m_pcbSettings.m_clearanceDisplayFlags & clearanceFlags ) == clearanceFlags
-        && aLayer != LAYER_VIAS_HOLES )
+        && aLayer != LAYER_VIA_HOLES )
     {
         PCB_LAYER_ID activeLayer = m_pcbSettings.GetActiveLayer();
+        double       radius;
 
-        if( !aVia->FlashLayer( activeLayer ) )
-        {
-            radius = getDrillSize( aVia ) / 2.0
-                     + aVia->GetBoard()->GetDesignSettings().GetHolePlatingThickness();
-        }
+        if( aVia->FlashLayer( activeLayer ) )
+            radius = aVia->GetWidth() / 2.0;
+        else
+            radius = getDrillSize( aVia ) / 2.0 + bds.GetHolePlatingThickness();
 
         m_gal->SetLineWidth( m_pcbSettings.m_outlineWidth );
         m_gal->SetIsFill( false );
@@ -776,7 +736,10 @@ bool isImplicitNet( const wxString& aNetName )
 
 void PCB_PAINTER::draw( const PAD* aPad, int aLayer )
 {
-    // Draw description layer
+    BOARD*                 board = aPad->GetBoard();
+    BOARD_DESIGN_SETTINGS& bds = board->GetDesignSettings();
+    COLOR4D                color = m_pcbSettings.GetColor( aPad, aLayer );
+
     if( IsNetnameLayer( aLayer ) )
     {
         // Is anything that we can display enabled?
@@ -882,11 +845,25 @@ void PCB_PAINTER::draw( const PAD* aPad, int aLayer )
         }
         return;
     }
+    else if( aLayer == LAYER_PAD_HOLEWALLS )
+    {
+        int platingThickness = bds.GetHolePlatingThickness();
 
-    // Pad drawing
-    BOARD*                 board = aPad->GetBoard();
-    BOARD_DESIGN_SETTINGS& bds = board->GetDesignSettings();
-    COLOR4D                color = m_pcbSettings.GetColor( aPad, aLayer );
+        m_gal->SetIsFill( false );
+        m_gal->SetIsStroke( true );
+        m_gal->SetLineWidth( platingThickness );
+        m_gal->SetStrokeColor( color );
+
+        const SHAPE_SEGMENT* seg = aPad->GetEffectiveHoleShape();
+        int                  holeSize = seg->GetWidth() + platingThickness;
+
+        if( seg->GetSeg().A == seg->GetSeg().B ) // Circular hole
+            m_gal->DrawCircle( seg->GetSeg().A, holeSize / 2 );
+        else
+            m_gal->DrawSegment( seg->GetSeg().A, seg->GetSeg().B, holeSize );
+
+        return;
+    }
 
     if( m_pcbSettings.m_sketchMode[LAYER_PADS_TH] )
     {
@@ -904,32 +881,8 @@ void PCB_PAINTER::draw( const PAD* aPad, int aLayer )
         m_gal->SetFillColor( color );
     }
 
-    auto drawHoleWallCylinder = [&]( const PAD* aPad )
+    if( aLayer == LAYER_PAD_PLATEDHOLES || aLayer == LAYER_NON_PLATEDHOLES )
     {
-        if( aPad->GetAttribute() != PAD_ATTRIB_PTH )
-            return false;
-
-        if( m_pcbSettings.m_hiContrastEnabled && !aPad->IsSelected() )
-        {
-            if( !aPad->FlashLayer( m_pcbSettings.GetPrimaryHighContrastLayer() ) )
-                return true;
-        }
-        else
-        {
-            LSET visible = board->GetVisibleLayers() & board->GetEnabledLayers();
-
-            if( !aPad->FlashLayer( visible ) )
-                return true;
-        }
-
-        return aPad->GetShape() != PAD_SHAPE_CUSTOM && aPad->GetSizeX() <= aPad->GetDrillSizeX()
-               && aPad->GetSizeY() <= aPad->GetDrillSizeY();
-    };
-
-    if( aLayer == LAYER_PADS_PLATEDHOLES || aLayer == LAYER_NON_PLATEDHOLES )
-    {
-        // Drawing the hole ------------------------------------------------------
-
         const SHAPE_SEGMENT* seg = aPad->GetEffectiveHoleShape();
 
         if( seg->GetSeg().A == seg->GetSeg().B ) // Circular hole
@@ -937,37 +890,8 @@ void PCB_PAINTER::draw( const PAD* aPad, int aLayer )
         else
             m_gal->DrawSegment( seg->GetSeg().A, seg->GetSeg().B, seg->GetWidth() );
     }
-    else if( drawHoleWallCylinder( aPad ) )
-    {
-        // Drawing only the hole wall --------------------------------------------
-
-        bool draw = true;
-        m_gal->SetIsFill( false );
-        m_gal->SetIsStroke( true );
-        m_gal->SetStrokeColor( color );
-
-        if( aLayer == LAYER_PADS_TH )
-            m_gal->SetLineWidth( bds.GetHolePlatingThickness() * 2 );
-        else if( aLayer == F_Mask || aLayer == B_Mask )
-            m_gal->SetLineWidth( ( bds.GetHolePlatingThickness() + aPad->GetSolderMaskMargin() )
-                                 * 2 );
-        else
-            draw = false;
-
-        if( draw )
-        {
-            const SHAPE_SEGMENT* seg = aPad->GetEffectiveHoleShape();
-
-            if( seg->GetSeg().A == seg->GetSeg().B ) // Circular hole
-                m_gal->DrawCircle( seg->GetSeg().A, getDrillSize( aPad ).x / 2 );
-            else
-                m_gal->DrawSegment( seg->GetSeg().A, seg->GetSeg().B, seg->GetWidth() );
-        }
-    }
     else
     {
-        // Drawing the pad -------------------------------------------------------
-
         wxSize pad_size = aPad->GetSize();
         wxSize margin;
 
@@ -1126,7 +1050,6 @@ void PCB_PAINTER::draw( const PAD* aPad, int aLayer )
         }
     }
 
-    // Draw clearance outlines
     constexpr int clearanceFlags = PCB_RENDER_SETTINGS::CL_PADS;
 
     if( ( m_pcbSettings.m_clearanceDisplayFlags & clearanceFlags ) == clearanceFlags
@@ -1485,6 +1408,12 @@ void PCB_PAINTER::draw( const FOOTPRINT* aFootprint, int aLayer )
         m_gal->SetLineWidth( bboxThickness );
         EDA_RECT rect = aFootprint->GetBoundingBoxBase();
         m_gal->DrawRectangle( VECTOR2D( rect.GetOrigin() ), VECTOR2D( rect.GetEnd() ) );
+
+        double bboxThickness = 3.0 / m_gal->GetWorldScale();
+        m_gal->SetLineWidth( bboxThickness );
+        SHAPE_POLY_SET convex = aFootprint->GetBoundingHull();
+
+        m_gal->DrawPolyline( convex.COutline( 0 ) );
 #endif
     }
 }
@@ -1747,11 +1676,12 @@ void PCB_PAINTER::draw( const PCB_MARKER* aMarker, int aLayer )
     // It would be nice to do this through layer dependencies but we can't do an "or" there today
     if( isShadow && aMarker->GetBoard()
         && !aMarker->GetBoard()->IsElementVisible( aMarker->GetColorLayer() ) )
+    {
         return;
+    }
 
     SHAPE_LINE_CHAIN polygon;
     aMarker->ShapeToPolygon( polygon );
-
 
     COLOR4D color = m_pcbSettings.GetColor( aMarker, isShadow ? LAYER_MARKER_SHADOWS
                                                               : aMarker->GetColorLayer() );

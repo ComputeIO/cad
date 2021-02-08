@@ -369,11 +369,10 @@ public:
      *
      * - Test for some issues (missing or duplicate references and sheet names)
      *
-     * @param aSilent is true if annotation error dialog should be skipped
-     * @param aSilentAnnotate is true if components should be reannotated silently
+     * @param aAnnotateMessage a message to put up in case annotation needs to be performed
      * @returns true if all is well (i.e. you can call WriteNetListFile next)
      */
-    bool ReadyToNetlist( bool aSilent = false, bool aSilentAnnotate = false );
+    bool ReadyToNetlist( const wxString& aAnnotateMessage );
 
     /**
      * Create a netlist file.
@@ -609,6 +608,11 @@ private:
      * read only is appended to the title if the user does not have write access to the file.
      */
     void UpdateTitle();
+
+    /**
+     * Initialize the zoom value of the current screen and mark the screen as zoom-initialized.
+     */
+    void initScreenZoom();
 
     /**
      * Verify that the symbol library links \a aSheet and all of it's child sheets have

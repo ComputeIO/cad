@@ -111,7 +111,10 @@ static IO_MGR::PCB_FILE_T detect_file_type( FILE* aFile, const wxFileName& aFile
     reader.ReadLine();
     char* line = reader.Line();
 
-    if( !strncasecmp( line, "(module", strlen( "(module" ) ) )
+    // first .kicad_mod file versions starts by "(module"
+    // recent .kicad_mod file versions starts by "(footprint"
+    if( strncasecmp( line, "(module", strlen( "(module" ) ) == 0
+        || strncasecmp( line, "(footprint", strlen( "(footprint" ) ) == 0 )
     {
         file_type = IO_MGR::KICAD_SEXP;
         *aName = aFileName.GetName();
@@ -862,12 +865,26 @@ bool FOOTPRINT_EDIT_FRAME::SaveFootprintToBoard( bool aAddNew )
     pcbframe->GetToolManager()->RunAction( PCB_ACTIONS::selectionClear, true );
     BOARD_COMMIT commit( pcbframe );
 
-    // Create the "new" footprint
-    FOOTPRINT* newFootprint = new FOOTPRINT( *editorFootprint );
-    const_cast<KIID&>( newFootprint->m_Uuid ) = KIID();
-
+    // Create a copy for the board, first using Clone() to keep existing Uuids, and then either
+    // resetting the uuids to the board values or assigning new Uuids.
+    FOOTPRINT* newFootprint = static_cast<FOOTPRINT*>( editorFootprint->Clone() );
     newFootprint->SetParent( mainpcb );
     newFootprint->SetLink( niluuid );
+
+    auto fixUuid = [&]( KIID& aUuid )
+    {
+        if( editorFootprint->GetLink() != niluuid && m_boardFootprintUuids.count( aUuid ) )
+            aUuid = m_boardFootprintUuids[aUuid];
+        else
+            aUuid = KIID();
+    };
+
+    fixUuid( const_cast<KIID&>( newFootprint->m_Uuid ) );
+    newFootprint->RunOnChildren(
+            [&]( BOARD_ITEM* aChild )
+            {
+                fixUuid( const_cast<KIID&>( aChild->m_Uuid ) );
+            } );
 
     if( sourceFootprint )         // this is an update command
     {
@@ -875,7 +892,6 @@ bool FOOTPRINT_EDIT_FRAME::SaveFootprintToBoard( bool aAddNew )
         // connections and properties are kept) and the sourceFootprint (old footprint) is
         // deleted
         pcbframe->ExchangeFootprint( sourceFootprint, newFootprint, commit );
-        const_cast<KIID&>( newFootprint->m_Uuid ) = editorFootprint->GetLink();
         commit.Push( wxT( "Update footprint" ) );
     }
     else        // This is an insert command
@@ -929,7 +945,7 @@ bool FOOTPRINT_EDIT_FRAME::SaveFootprintAs( FOOTPRINT* aFootprint )
         itemsToDisplay.push_back( item );
     }
 
-    EDA_LIST_DIALOG dlg( this, _( "Save Footprint" ), headers, itemsToDisplay, libraryName );
+    EDA_LIST_DIALOG dlg( this, _( "Save Footprint As" ), headers, itemsToDisplay, libraryName );
     dlg.SetListLabel( _( "Save in library:" ) );
     dlg.SetOKLabel( _( "Save" ) );
 

@@ -213,7 +213,7 @@ PCB_LAYER_ID ALTIUM_PCB::GetKicadLayer( ALTIUM_LAYER aAltiumLayer ) const
     case ALTIUM_LAYER::UNKNOWN:           return UNDEFINED_LAYER;
 
     case ALTIUM_LAYER::TOP_LAYER:         return F_Cu;
-    case ALTIUM_LAYER::MID_LAYER_1:       return In1_Cu; // TODO: stackup same as in KiCad?
+    case ALTIUM_LAYER::MID_LAYER_1: return In1_Cu;
     case ALTIUM_LAYER::MID_LAYER_2:       return In2_Cu;
     case ALTIUM_LAYER::MID_LAYER_3:       return In3_Cu;
     case ALTIUM_LAYER::MID_LAYER_4:       return In4_Cu;
@@ -272,18 +272,18 @@ PCB_LAYER_ID ALTIUM_PCB::GetKicadLayer( ALTIUM_LAYER aAltiumLayer ) const
     case ALTIUM_LAYER::DRILL_GUIDE:       return Dwgs_User;
     case ALTIUM_LAYER::KEEP_OUT_LAYER:    return Margin;
 
-    case ALTIUM_LAYER::MECHANICAL_1:      return Dwgs_User; //Edge_Cuts;
-    case ALTIUM_LAYER::MECHANICAL_2:      return Dwgs_User;
-    case ALTIUM_LAYER::MECHANICAL_3:      return Dwgs_User;
-    case ALTIUM_LAYER::MECHANICAL_4:      return Dwgs_User;
-    case ALTIUM_LAYER::MECHANICAL_5:      return Dwgs_User;
-    case ALTIUM_LAYER::MECHANICAL_6:      return Dwgs_User;
-    case ALTIUM_LAYER::MECHANICAL_7:      return Dwgs_User;
-    case ALTIUM_LAYER::MECHANICAL_8:      return Dwgs_User;
-    case ALTIUM_LAYER::MECHANICAL_9:      return Dwgs_User;
+    case ALTIUM_LAYER::MECHANICAL_1: return User_1; //Edge_Cuts;
+    case ALTIUM_LAYER::MECHANICAL_2: return User_2;
+    case ALTIUM_LAYER::MECHANICAL_3: return User_3;
+    case ALTIUM_LAYER::MECHANICAL_4: return User_4;
+    case ALTIUM_LAYER::MECHANICAL_5: return User_5;
+    case ALTIUM_LAYER::MECHANICAL_6: return User_6;
+    case ALTIUM_LAYER::MECHANICAL_7: return User_7;
+    case ALTIUM_LAYER::MECHANICAL_8: return User_8;
+    case ALTIUM_LAYER::MECHANICAL_9: return User_9;
     case ALTIUM_LAYER::MECHANICAL_10:     return Dwgs_User;
-    case ALTIUM_LAYER::MECHANICAL_11:     return Dwgs_User;
-    case ALTIUM_LAYER::MECHANICAL_12:     return Dwgs_User;
+    case ALTIUM_LAYER::MECHANICAL_11: return Eco1_User;
+    case ALTIUM_LAYER::MECHANICAL_12: return Eco2_User;
     case ALTIUM_LAYER::MECHANICAL_13:     return F_Fab;
     case ALTIUM_LAYER::MECHANICAL_14:     return B_Fab;
     case ALTIUM_LAYER::MECHANICAL_15:     return F_CrtYd;
@@ -457,10 +457,26 @@ void ALTIUM_PCB::Parse( const CFB::CompoundFileReader& aReader,
         zone.second->SetPriority( 0 );
     }
 
+    // center board
+    EDA_RECT bbbox = m_board->GetBoardEdgesBoundingBox();
+
+    int w = m_board->GetPageSettings().GetWidthIU();
+    int h = m_board->GetPageSettings().GetHeightIU();
+
+    int desired_x = ( w - bbbox.GetWidth() ) / 2;
+    int desired_y = ( h - bbbox.GetHeight() ) / 2;
+
+    wxPoint movementVector( desired_x - bbbox.GetX(), desired_y - bbbox.GetY() );
+    m_board->Move( movementVector );
+    m_board->GetDesignSettings().m_AuxOrigin += movementVector;
+    m_board->GetDesignSettings().m_GridOrigin += movementVector;
+
     // Finish Board by recalculating footprint boundingboxes
     for( FOOTPRINT* footprint : m_board->Footprints() )
+    {
         footprint->CalculateBoundingBox();
-
+        footprint->UpdateBoundingHull();
+    }
     // Otherwise we cannot save the imported board
     m_board->SetModified();
 }
@@ -645,6 +661,31 @@ void ALTIUM_PCB::ParseBoard6Data( const CFB::CompoundFileReader& aReader,
         ( *it )->SetEpsilonR( layer.dielectricconst, 0 );
 
         ++it;
+    }
+
+    // Set name of all non-cu layers
+    for( size_t altiumLayerId = static_cast<size_t>( ALTIUM_LAYER::TOP_OVERLAY );
+         altiumLayerId <= static_cast<size_t>( ALTIUM_LAYER::BOTTOM_SOLDER ); altiumLayerId++ )
+    {
+        // array starts with 0, but stackup with 1
+        ABOARD6_LAYER_STACKUP& layer = elem.stackup.at( altiumLayerId - 1 );
+
+        ALTIUM_LAYER alayer = static_cast<ALTIUM_LAYER>( altiumLayerId );
+        PCB_LAYER_ID klayer = GetKicadLayer( alayer );
+
+        m_board->SetLayerName( klayer, layer.name );
+    }
+
+    for( size_t altiumLayerId = static_cast<size_t>( ALTIUM_LAYER::MECHANICAL_1 );
+         altiumLayerId <= static_cast<size_t>( ALTIUM_LAYER::MECHANICAL_16 ); altiumLayerId++ )
+    {
+        // array starts with 0, but stackup with 1
+        ABOARD6_LAYER_STACKUP& layer = elem.stackup.at( altiumLayerId - 1 );
+
+        ALTIUM_LAYER alayer = static_cast<ALTIUM_LAYER>( altiumLayerId );
+        PCB_LAYER_ID klayer = GetKicadLayer( alayer );
+
+        m_board->SetLayerName( klayer, layer.name );
     }
 
     HelperCreateBoardOutline( elem.board_vertices );
@@ -1242,6 +1283,7 @@ void ALTIUM_PCB::ParsePolygons6Data( const CFB::CompoundFileReader& aReader,
         m_board->Add( zone, ADD_MODE::APPEND );
         m_polygons.emplace_back( zone );
 
+        zone->SetFillVersion( 6 );
         zone->SetNetCode( GetNetCode( elem.net ) );
         zone->SetLayer( klayer );
         zone->SetPosition( elem.vertices.at( 0 ).position );
@@ -1391,24 +1433,26 @@ void ALTIUM_PCB::ParseShapeBasedRegions6Data( const CFB::CompoundFileReader& aRe
 
         if( elem.kind == ALTIUM_REGION_KIND::BOARD_CUTOUT )
         {
-            HelperCreateBoardOutline( elem.vertices );
+            HelperCreateBoardOutline( elem.outline );
         }
         else if( elem.kind == ALTIUM_REGION_KIND::POLYGON_CUTOUT || elem.is_keepout )
         {
             SHAPE_LINE_CHAIN linechain;
-            HelperShapeLineChainFromAltiumVertices( linechain, elem.vertices );
+            HelperShapeLineChainFromAltiumVertices( linechain, elem.outline );
 
             if( linechain.PointCount() < 2 )
             {
-                wxLogError( wxString::Format(
-                        _( "ShapeBasedRegion has only %d point extracted from %ld vertices. At least 2 points are required." ),
-                        linechain.PointCount(), elem.vertices.size() ) );
+                wxLogError(
+                        wxString::Format( _( "ShapeBasedRegion has only %d point extracted from "
+                                             "%ld vertices. At least 2 points are required." ),
+                                          linechain.PointCount(), elem.outline.size() ) );
                 continue;
             }
 
             ZONE* zone = new ZONE( m_board );
             m_board->Add( zone, ADD_MODE::APPEND );
 
+            zone->SetFillVersion( 6 );
             zone->SetIsRuleArea( true );
             zone->SetDoNotAllowTracks( false );
             zone->SetDoNotAllowVias( false );
@@ -1416,7 +1460,7 @@ void ALTIUM_PCB::ParseShapeBasedRegions6Data( const CFB::CompoundFileReader& aRe
             zone->SetDoNotAllowFootprints( false );
             zone->SetDoNotAllowCopperPour( true );
 
-            zone->SetPosition( elem.vertices.at( 0 ).position );
+            zone->SetPosition( elem.outline.at( 0 ).position );
             zone->Outline()->AddOutline( linechain );
 
             if( elem.layer == ALTIUM_LAYER::MULTI_LAYER )
@@ -1454,14 +1498,13 @@ void ALTIUM_PCB::ParseShapeBasedRegions6Data( const CFB::CompoundFileReader& aRe
                 }
 
                 SHAPE_LINE_CHAIN linechain;
-                HelperShapeLineChainFromAltiumVertices( linechain, elem.vertices );
+                HelperShapeLineChainFromAltiumVertices( linechain, elem.outline );
 
                 if( linechain.PointCount() < 2 )
                 {
                     wxLogError( wxString::Format( _( "Polygon has only %d point extracted from %ld "
                                                      "vertices. At least 2 points are required." ),
-                                                  linechain.PointCount(),
-                                                  elem.vertices.size() ) );
+                                                  linechain.PointCount(), elem.outline.size() ) );
                     continue;
                 }
 
@@ -1505,7 +1548,6 @@ void ALTIUM_PCB::ParseRegions6Data( const CFB::CompoundFileReader& aReader,
     {
         AREGION6 elem( reader, false );
 
-#if 0 // TODO: it seems this code has multiple issues right now, and we can manually fill anyways
         if( elem.subpolyindex != ALTIUM_POLYGON_NONE )
         {
             if( m_polygons.size() <= elem.subpolyindex )
@@ -1522,22 +1564,50 @@ void ALTIUM_PCB::ParseRegions6Data( const CFB::CompoundFileReader& aReader,
                 continue; // we know the zone id, but because we do not know the layer we did not add it!
             }
 
+            PCB_LAYER_ID klayer = GetKicadLayer( elem.layer );
+            if( klayer == UNDEFINED_LAYER )
+            {
+                continue; // Just skip it for now. Users cann fill it themself.
+            }
+
             SHAPE_LINE_CHAIN linechain;
-            for( auto& vertice : elem.vertices )
+            for( const ALTIUM_VERTICE& vertice : elem.outline )
             {
                 linechain.Append( vertice.position );
             }
-            linechain.Append( elem.vertices.at( 0 ).position );
+            linechain.Append( elem.outline.at( 0 ).position );
             linechain.SetClosed( true );
 
-            SHAPE_POLY_SET polyset;
-            polyset.AddOutline( linechain );
-            polyset.BooleanAdd( zone->GetFilledPolysList(), SHAPE_POLY_SET::POLYGON_MODE::PM_STRICTLY_SIMPLE );
+            SHAPE_POLY_SET rawPolys;
+            rawPolys.AddOutline( linechain );
 
-            zone->SetFilledPolysList( polyset );
+            for( const std::vector<ALTIUM_VERTICE>& hole : elem.holes )
+            {
+                SHAPE_LINE_CHAIN hole_linechain;
+                for( const ALTIUM_VERTICE& vertice : hole )
+                {
+                    hole_linechain.Append( vertice.position );
+                }
+                hole_linechain.Append( hole.at( 0 ).position );
+                hole_linechain.SetClosed( true );
+                rawPolys.AddHole( hole_linechain );
+            }
+
+            if( zone->GetFilledPolysUseThickness() )
+                rawPolys.Deflate( zone->GetMinThickness() / 2, 32 );
+
+            if( zone->HasFilledPolysForLayer( klayer ) )
+                rawPolys.BooleanAdd( zone->RawPolysList( klayer ),
+                                     SHAPE_POLY_SET::PM_STRICTLY_SIMPLE );
+
+            SHAPE_POLY_SET finalPolys = rawPolys;
+            finalPolys.Fracture( SHAPE_POLY_SET::PM_STRICTLY_SIMPLE );
+
+            zone->SetRawPolysList( klayer, rawPolys );
+            zone->SetFilledPolysList( klayer, finalPolys );
             zone->SetIsFilled( true );
+            zone->SetNeedRefill( false );
         }
-#endif
     }
 
     if( reader.GetRemainingBytes() != 0 )
@@ -1590,6 +1660,7 @@ void ALTIUM_PCB::ParseArcs6Data( const CFB::CompoundFileReader& aReader,
             ZONE* zone = new ZONE( m_board );
             m_board->Add( zone, ADD_MODE::APPEND );
 
+            zone->SetFillVersion( 6 );
             zone->SetIsRuleArea( true );
             zone->SetDoNotAllowTracks( false );
             zone->SetDoNotAllowVias( false );
@@ -2175,6 +2246,7 @@ void ALTIUM_PCB::ParseTracks6Data( const CFB::CompoundFileReader& aReader,
             ZONE* zone = new ZONE( m_board );
             m_board->Add( zone, ADD_MODE::APPEND );
 
+            zone->SetFillVersion( 6 );
             zone->SetIsRuleArea( true );
             zone->SetDoNotAllowTracks( false );
             zone->SetDoNotAllowVias( false );
@@ -2459,6 +2531,7 @@ void ALTIUM_PCB::ParseFills6Data( const CFB::CompoundFileReader& aReader,
             ZONE* zone = new ZONE( m_board );
             m_board->Add( zone, ADD_MODE::APPEND );
 
+            zone->SetFillVersion( 6 );
             zone->SetNetCode( GetNetCode( elem.net ) );
             zone->SetLayer( klayer );
             zone->SetPosition( elem.pos1 );

@@ -963,7 +963,7 @@ std::unique_ptr<PNS::VIA> PNS_KICAD_IFACE_BASE::syncVia( VIA* aVia )
 
 bool PNS_KICAD_IFACE_BASE::syncZone( PNS::NODE* aWorld, ZONE* aZone, SHAPE_POLY_SET* aBoardOutline )
 {
-    SHAPE_POLY_SET poly;
+    SHAPE_POLY_SET* poly;
 
     if( !aZone->GetIsRuleArea() && aZone->GetZoneName().IsEmpty() )
         return false;
@@ -979,32 +979,33 @@ bool PNS_KICAD_IFACE_BASE::syncZone( PNS::NODE* aWorld, ZONE* aZone, SHAPE_POLY_
     LSET      layers = aZone->GetLayerSet();
     EDA_UNITS units = EDA_UNITS::MILLIMETRES;       // TODO: get real units
 
+    poly = aZone->Outline();
+    poly->CacheTriangulation( false );
+
+    if( !poly->IsTriangulationUpToDate() )
+    {
+        KIDIALOG dlg(
+                nullptr,
+                wxString::Format( _( "%s is malformed." ), aZone->GetSelectMenuText( units ) ),
+                KIDIALOG::KD_WARNING );
+        dlg.ShowDetailedText( wxString::Format( _( "This zone cannot be handled by the track "
+                                                   "layout tool.\n"
+                                                   "Please verify it is not a "
+                                                   "self-intersecting polygon." ) ) );
+        dlg.DoNotShowCheckbox( __FILE__, __LINE__ );
+        dlg.ShowModal();
+
+        return false;
+    }
+
     for( int layer = F_Cu; layer <= B_Cu; layer++ )
     {
-        if( ! layers[ layer ] )
+        if( !layers[layer] )
             continue;
 
-        aZone->BuildSmoothedPoly( poly, ToLAYER_ID( layer ), aBoardOutline );
-        poly.CacheTriangulation();
-
-        if( !poly.IsTriangulationUpToDate() )
+        for( int outline = 0; outline < poly->OutlineCount(); outline++ )
         {
-            KIDIALOG dlg( nullptr, wxString::Format( _( "%s is malformed." ),
-                                                     aZone->GetSelectMenuText( units ) ),
-                          KIDIALOG::KD_WARNING );
-            dlg.ShowDetailedText( wxString::Format( _( "This zone cannot be handled by the track "
-                                                       "layout tool.\n"
-                                                       "Please verify it is not a "
-                                                       "self-intersecting polygon." ) ) );
-            dlg.DoNotShowCheckbox( __FILE__, __LINE__ );
-            dlg.ShowModal();
-
-            return false;
-        }
-
-        for( int outline = 0; outline < poly.OutlineCount(); outline++ )
-        {
-            const SHAPE_POLY_SET::TRIANGULATED_POLYGON* tri = poly.TriangulatedPolygon( outline );
+            const SHAPE_POLY_SET::TRIANGULATED_POLYGON* tri = poly->TriangulatedPolygon( outline );
 
             for( size_t i = 0; i < tri->GetTriangleCount(); i++)
             {
@@ -1211,15 +1212,15 @@ bool PNS_KICAD_IFACE::IsItemVisible( const PNS::ITEM* aItem ) const
 
 void PNS_KICAD_IFACE_BASE::SyncWorld( PNS::NODE *aWorld )
 {
-    int worstClearance = m_board->GetDesignSettings().GetBiggestClearanceValue();
-
-    m_world = aWorld;
-
     if( !m_board )
     {
         wxLogTrace( "PNS", "No board attached, aborting sync." );
         return;
     }
+
+    int worstClearance = m_board->GetDesignSettings().GetBiggestClearanceValue();
+
+    m_world = aWorld;
 
     for( BOARD_ITEM* gitem : m_board->Drawings() )
     {
@@ -1413,6 +1414,71 @@ void PNS_KICAD_IFACE::RemoveItem( PNS::ITEM* aItem )
     if( parent )
     {
         m_commit->Remove( parent );
+    }
+}
+
+
+void PNS_KICAD_IFACE_BASE::UpdateItem( PNS::ITEM* aItem )
+{
+}
+
+
+void PNS_KICAD_IFACE::UpdateItem( PNS::ITEM* aItem )
+{
+    BOARD_ITEM* board_item = aItem->Parent();
+
+    m_commit->Modify( board_item );
+
+    switch( aItem->Kind() )
+    {
+    case PNS::ITEM::ARC_T:
+    {
+        PNS::ARC*        arc = static_cast<PNS::ARC*>( aItem );
+        ARC*             arc_board = static_cast<ARC*>( board_item );
+        const SHAPE_ARC* arc_shape = static_cast<const SHAPE_ARC*>( arc->Shape() );
+        arc_board->SetStart( wxPoint( arc_shape->GetP0() ) );
+        arc_board->SetEnd( wxPoint( arc_shape->GetP1() ) );
+        arc_board->SetMid( wxPoint( arc_shape->GetArcMid() ) );
+        arc_board->SetWidth( arc->Width() );
+        break;
+    }
+
+    case PNS::ITEM::SEGMENT_T:
+    {
+        PNS::SEGMENT* seg = static_cast<PNS::SEGMENT*>( aItem );
+        TRACK*        track = static_cast<TRACK*>( board_item );
+        const SEG&    s = seg->Seg();
+        track->SetStart( wxPoint( s.A.x, s.A.y ) );
+        track->SetEnd( wxPoint( s.B.x, s.B.y ) );
+        track->SetWidth( seg->Width() );
+        break;
+    }
+
+    case PNS::ITEM::VIA_T:
+    {
+        VIA*      via_board = static_cast<VIA*>( board_item );
+        PNS::VIA* via = static_cast<PNS::VIA*>( aItem );
+        via_board->SetPosition( wxPoint( via->Pos().x, via->Pos().y ) );
+        via_board->SetWidth( via->Diameter() );
+        via_board->SetDrill( via->Drill() );
+        via_board->SetNetCode( via->Net() > 0 ? via->Net() : 0 );
+        via_board->SetViaType( via->ViaType() ); // MUST be before SetLayerPair()
+        via_board->SetIsFree( via->IsFree() );
+        via_board->SetLayerPair( ToLAYER_ID( via->Layers().Start() ),
+                                 ToLAYER_ID( via->Layers().End() ) );
+        break;
+    }
+
+    case PNS::ITEM::SOLID_T:
+    {
+        PAD*     pad = static_cast<PAD*>( aItem->Parent() );
+        VECTOR2I pos = static_cast<PNS::SOLID*>( aItem )->Pos();
+
+        m_fpOffsets[pad].p_new = pos;
+        break;
+    }
+
+    default: break;
     }
 }
 

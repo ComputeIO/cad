@@ -32,6 +32,9 @@
 #include <drc/drc_rule_condition.h>
 #include <drc/drc_test_provider.h>
 #include <track.h>
+#include <geometry/shape.h>
+#include <geometry/shape_segment.h>
+#include <geometry/shape_null.h>
 
 void drcPrintDebugMessage( int level, const wxString& msg, const char *function, int line )
 {
@@ -729,7 +732,7 @@ DRC_CONSTRAINT DRC_ENGINE::EvalRulesForItems( DRC_CONSTRAINT_T aConstraintId,
     bool                  implicit = false;
 
     // Local overrides take precedence
-    if( aConstraintId == CLEARANCE_CONSTRAINT )
+    if( aConstraintId == CLEARANCE_CONSTRAINT || aConstraintId == HOLE_CLEARANCE_CONSTRAINT )
     {
         int overrideA = 0;
         int overrideB = 0;
@@ -756,7 +759,7 @@ DRC_CONSTRAINT DRC_ENGINE::EvalRulesForItems( DRC_CONSTRAINT_T aConstraintId,
 
         if( overrideA || overrideB )
         {
-            DRC_CONSTRAINT constraint( CLEARANCE_CONSTRAINT, m_msg );
+            DRC_CONSTRAINT constraint( aConstraintId, m_msg );
             constraint.m_Value.SetMin( std::max( overrideA, overrideB ) );
             return constraint;
         }
@@ -1174,7 +1177,7 @@ static int matchDpSuffix( const wxString& aNetName, wxString& aComplementNet,
 }
 
 
-int DRC_ENGINE::IsNetADiffPair( BOARD* aBoard, NETINFO_ITEM* aNet, int& aNetP, int& aNetN )
+bool DRC_ENGINE::IsNetADiffPair( BOARD* aBoard, NETINFO_ITEM* aNet, int& aNetP, int& aNetN )
 {
     wxString refName = aNet->GetNetname();
     wxString dummy, coupledNetName;
@@ -1199,6 +1202,39 @@ int DRC_ENGINE::IsNetADiffPair( BOARD* aBoard, NETINFO_ITEM* aNet, int& aNetP, i
 
         return true;
     }
+
+    return false;
+}
+
+
+std::shared_ptr<SHAPE> DRC_ENGINE::GetShape( BOARD_ITEM* aItem, PCB_LAYER_ID aLayer )
+{
+    if( aItem->Type() == PCB_PAD_T && !static_cast<PAD*>( aItem )->FlashLayer( aLayer ) )
+    {
+        PAD* aPad = static_cast<PAD*>( aItem );
+
+        if( aPad->GetAttribute() == PAD_ATTRIB_PTH )
+        {
+            BOARD_DESIGN_SETTINGS& bds = aPad->GetBoard()->GetDesignSettings();
+
+            // Note: drill size represents finish size, which means the actual holes size is the
+            // plating thickness larger.
+            auto hole = static_cast<SHAPE_SEGMENT*>( aPad->GetEffectiveHoleShape()->Clone() );
+            hole->SetWidth( hole->GetWidth() + bds.GetHolePlatingThickness() );
+            return std::make_shared<SHAPE_SEGMENT>( *hole );
+        }
+
+        return std::make_shared<SHAPE_NULL>();
+    }
+
+    return aItem->GetEffectiveShape( aLayer );
+}
+
+
+bool DRC_ENGINE::IsNetTie( BOARD_ITEM* aItem )
+{
+    if( aItem->GetParent() && aItem->GetParent()->Type() == PCB_FOOTPRINT_T )
+        return static_cast<FOOTPRINT*>( aItem->GetParent() )->IsNetTie();
 
     return false;
 }

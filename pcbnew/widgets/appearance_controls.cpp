@@ -423,10 +423,10 @@ APPEARANCE_CONTROLS::APPEARANCE_CONTROLS( PCB_BASE_FRAME* aParent, wxWindow* aFo
 
     createControls();
 
-    m_btnNetInspector->SetBitmap( KiBitmap( list_nets_xpm ) );
+    m_btnNetInspector->SetBitmap( KiBitmap( list_nets_16_xpm ) );
     m_btnNetInspector->SetPadding( 2 );
 
-    m_btnConfigureNetClasses->SetBitmap( KiBitmap( options_generic_xpm ) );
+    m_btnConfigureNetClasses->SetBitmap( KiBitmap( options_generic_16_xpm ) );
     m_btnConfigureNetClasses->SetPadding( 2 );
 
     m_txtNetFilter->SetHint( _( "Filter nets" ) );
@@ -1100,6 +1100,8 @@ void APPEARANCE_CONTROLS::SetObjectVisible( GAL_LAYER_ID aLayer, bool isVisible 
         APPEARANCE_SETTING* setting = m_objectSettingsMap.at( aLayer );
         setting->ctl_visibility->SetValue( isVisible );
     }
+
+    m_frame->GetBoard()->SetElementVisibility( aLayer, isVisible );
 
     m_frame->GetCanvas()->GetView()->SetLayerVisible( aLayer, isVisible );
     m_frame->GetCanvas()->Refresh();

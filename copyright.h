@@ -1,19 +1,20 @@
 Copyright template
 
 
-A copyright message which may be added to all source files at their top.
-There is one line that represents the main copyright holder which is its
-original author.
+        A copyright message which may be added to all source files at their
+                top.There is one line that represents the main copyright holder which is its
+                        original
+                                author.
 
-Workers who earn partial copyright holder status of a source module may
-choose to document this corresponding work in the AUTHORS.txt file.
+        Workers who earn partial copyright holder status of a source module may choose to
+                document this corresponding work in the AUTHORS.txt file.
 
 
-/*
+        /*
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
- * Copyright (C) 2020 <author>
- * Copyright (C) 2020 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 2021 <author>
+ * Copyright (C) 2021 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * This program is free software: you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the

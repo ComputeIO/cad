@@ -2,7 +2,7 @@
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
  * Copyright (C) 2019 CERN
- * Copyright (C) 2019-2020 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 2019-2021 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -28,6 +28,7 @@
 #include <tools/ee_actions.h>
 #include <tools/symbol_editor_control.h>
 #include <symbol_edit_frame.h>
+#include <symbol_library_manager.h>
 #include <symbol_viewer_frame.h>
 #include <symbol_tree_model_adapter.h>
 #include <wildcards_and_files_ext.h>
@@ -46,12 +47,19 @@ bool SYMBOL_EDITOR_CONTROL::Init()
         CONDITIONAL_MENU& ctxMenu = m_menu.GetMenu();
         SYMBOL_EDIT_FRAME* editFrame = getEditFrame<SYMBOL_EDIT_FRAME>();
 
+        wxCHECK( editFrame, false );
+
         auto libSelectedCondition =
                 [ editFrame ]( const SELECTION& aSel )
                 {
                     LIB_ID sel = editFrame->GetTreeLIBID();
                     return !sel.GetLibNickname().empty() && sel.GetLibItemName().empty();
                 };
+        auto canEditLibrary = [editFrame]( const SELECTION& aSel )
+        {
+            LIB_ID sel = editFrame->GetTreeLIBID();
+            return !editFrame->GetLibManager().IsLibraryReadOnly( sel.GetLibNickname() );
+        };
         auto pinnedLibSelectedCondition =
                 [ editFrame ]( const SELECTION& aSel )
                 {
@@ -70,6 +78,11 @@ bool SYMBOL_EDITOR_CONTROL::Init()
                     LIB_ID sel = editFrame->GetTreeLIBID();
                     return !sel.GetLibNickname().empty() && !sel.GetLibItemName().empty();
                 };
+        auto saveSymbolAsCondition = [editFrame]( const SELECTION& aSel )
+        {
+            LIB_ID sel = editFrame->GetTargetLibId();
+            return !sel.GetLibNickname().empty() && !sel.GetLibItemName().empty();
+        };
 
         ctxMenu.AddItem( ACTIONS::pinLibrary,            unpinnedLibSelectedCondition );
         ctxMenu.AddItem( ACTIONS::unpinLibrary,          pinnedLibSelectedCondition );
@@ -82,23 +95,24 @@ bool SYMBOL_EDITOR_CONTROL::Init()
         ctxMenu.AddItem( ACTIONS::revert,                libSelectedCondition );
 
         ctxMenu.AddSeparator();
-        ctxMenu.AddItem( EE_ACTIONS::newSymbol,          libSelectedCondition );
-        ctxMenu.AddItem( EE_ACTIONS::editSymbol,         symbolSelectedCondition );
+        ctxMenu.AddItem( EE_ACTIONS::newSymbol, libSelectedCondition && canEditLibrary );
+        ctxMenu.AddItem( EE_ACTIONS::editSymbol, symbolSelectedCondition && canEditLibrary );
 
         ctxMenu.AddSeparator();
         ctxMenu.AddItem( ACTIONS::save,                  symbolSelectedCondition );
-        ctxMenu.AddItem( EE_ACTIONS::saveSymbolAs,       symbolSelectedCondition );
+        ctxMenu.AddItem( EE_ACTIONS::saveSymbolAs, saveSymbolAsCondition );
         ctxMenu.AddItem( ACTIONS::revert,                symbolSelectedCondition );
 
         ctxMenu.AddSeparator();
-        ctxMenu.AddItem( EE_ACTIONS::cutSymbol,          symbolSelectedCondition );
+        ctxMenu.AddItem( EE_ACTIONS::cutSymbol, symbolSelectedCondition && canEditLibrary );
         ctxMenu.AddItem( EE_ACTIONS::copySymbol,         symbolSelectedCondition );
-        ctxMenu.AddItem( EE_ACTIONS::pasteSymbol, SELECTION_CONDITIONS::ShowAlways );
-        ctxMenu.AddItem( EE_ACTIONS::duplicateSymbol, symbolSelectedCondition );
-        ctxMenu.AddItem( EE_ACTIONS::deleteSymbol, symbolSelectedCondition );
+        ctxMenu.AddItem( EE_ACTIONS::pasteSymbol,
+                         SELECTION_CONDITIONS::ShowAlways && canEditLibrary );
+        ctxMenu.AddItem( EE_ACTIONS::duplicateSymbol, symbolSelectedCondition && canEditLibrary );
+        ctxMenu.AddItem( EE_ACTIONS::deleteSymbol, symbolSelectedCondition && canEditLibrary );
 
         ctxMenu.AddSeparator();
-        ctxMenu.AddItem( EE_ACTIONS::importSymbol,       libSelectedCondition );
+        ctxMenu.AddItem( EE_ACTIONS::importSymbol, libSelectedCondition && canEditLibrary );
         ctxMenu.AddItem( EE_ACTIONS::exportSymbol,       symbolSelectedCondition );
     }
 
@@ -466,38 +480,6 @@ int SYMBOL_EDITOR_CONTROL::AddSymbolToSchematic( const TOOL_EVENT& aEvent )
 }
 
 
-int SYMBOL_EDITOR_CONTROL::UpdateSymbolInSchematic( const TOOL_EVENT& aEvent )
-{
-    wxCHECK( m_isSymbolEditor, 0 );
-
-    SYMBOL_EDIT_FRAME* editFrame = getEditFrame<SYMBOL_EDIT_FRAME>();
-
-    wxCHECK( editFrame, 0 );
-
-    LIB_PART* currentPart = editFrame->GetCurPart();
-
-    wxCHECK( currentPart, 0 );
-
-    SCH_EDIT_FRAME* schframe = (SCH_EDIT_FRAME*) m_frame->Kiway().Player( FRAME_SCH, false );
-
-    if( !schframe )      // happens when the schematic editor is not active (or closed)
-    {
-        DisplayErrorMessage( m_frame, _( "No schematic currently open." ) );
-        return 0;
-    }
-
-    schframe->UpdateSymbolFromEditor( *currentPart );
-
-    SCH_SCREEN* currentScreen = editFrame->GetScreen();
-
-    wxCHECK( currentScreen, 0 );
-
-    currentScreen->ClrModify();
-
-    return 0;
-}
-
-
 void SYMBOL_EDITOR_CONTROL::setTransitions()
 {
     Go( &SYMBOL_EDITOR_CONTROL::AddLibrary,            ACTIONS::newLibrary.MakeEvent() );
@@ -511,7 +493,6 @@ void SYMBOL_EDITOR_CONTROL::setTransitions()
     Go( &SYMBOL_EDITOR_CONTROL::Save,                  EE_ACTIONS::saveSymbolAs.MakeEvent() );
     Go( &SYMBOL_EDITOR_CONTROL::Save,                  ACTIONS::saveAll.MakeEvent() );
     Go( &SYMBOL_EDITOR_CONTROL::Revert,                ACTIONS::revert.MakeEvent() );
-    Go( &SYMBOL_EDITOR_CONTROL::UpdateSymbolInSchematic, EE_ACTIONS::saveInSchematic.MakeEvent() );
 
     Go( &SYMBOL_EDITOR_CONTROL::DuplicateSymbol,       EE_ACTIONS::duplicateSymbol.MakeEvent() );
     Go( &SYMBOL_EDITOR_CONTROL::CutCopyDelete,         EE_ACTIONS::deleteSymbol.MakeEvent() );
