@@ -1075,13 +1075,7 @@ void OPENGL_GAL::fillPolygonAsTriangles( const SHAPE_POLY_SET& aPolyList )
 
 void OPENGL_GAL::DrawGlyph( const SHAPE_POLY_SET& aPolySet, int aNth, int aTotal )
 {
-#ifdef DEBUG
-    std::cerr << "OPENGL_GAL::DrawGlyph( ..., " << aNth << ", " << aTotal << " )\n";
-#endif
     fillPolygonAsTriangles( aPolySet );
-    //SHAPE_POLY_SET polyCopy( aPolySet );
-    //polyCopy.CacheTriangulation();
-    //drawTriangulatedPolyset( polyCopy );
 }
 
 
