@@ -38,6 +38,44 @@ namespace KIGFX
 class GAL;
 }
 
+enum TEXT_STYLE
+{
+    BOLD = 1,
+    ITALIC = 1 << 1,
+    SUBSCRIPT = 1 << 2,
+    SUPERSCRIPT = 1 << 3,
+    OVERBAR = 1 << 4
+};
+
+using TEXT_STYLE_FLAGS = unsigned int;
+
+inline bool IsBold( TEXT_STYLE_FLAGS aFlags )
+{
+    return aFlags & TEXT_STYLE::BOLD;
+}
+
+inline bool IsItalic( TEXT_STYLE_FLAGS aFlags )
+{
+    return aFlags & TEXT_STYLE::ITALIC;
+}
+
+inline bool IsSuperscript( TEXT_STYLE_FLAGS aFlags )
+{
+    return aFlags & TEXT_STYLE::SUPERSCRIPT;
+}
+
+inline bool IsSubscript( TEXT_STYLE_FLAGS aFlags )
+{
+    return aFlags & TEXT_STYLE::SUBSCRIPT;
+}
+
+inline bool IsOverbar( TEXT_STYLE_FLAGS aFlags )
+{
+    return aFlags & TEXT_STYLE::OVERBAR;
+}
+
+std::string TextStyleAsString( TEXT_STYLE_FLAGS aFlags );
+
 class FONT
 {
 public:
@@ -81,11 +119,13 @@ public:
      * @param aGal is the graphics context
      * @param aText is the text string
      * @param aPosition is the text position in world coordinates
+     * @param aParse is true is aText should first be parsed for variable substition etc.,
+     *     otherwise false (default is false)
      * @param aMultiLine is true if the text can be rendered on multiple lines, otherwise false
      */
     virtual void DrawString( KIGFX::GAL* aGal, const UTF8& aText, const VECTOR2D& aPosition,
-                             double aRotationAngle = 0.0, bool aMultiLine = false,
-                             int aTextWidth = 0, int aTextHeight = 0,
+                             double aRotationAngle = 0.0, bool aParse = false,
+                             bool aMultiLine = false, int aTextWidth = 0, int aTextHeight = 0,
                              EDA_TEXT_HJUSTIFY_T aHorizJustify = GR_TEXT_HJUSTIFY_CENTER,
                              EDA_TEXT_VJUSTIFY_T aVertJustify = GR_TEXT_VJUSTIFY_CENTER ) const;
 

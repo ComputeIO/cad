@@ -28,6 +28,27 @@
 #include <font/stroke_font.h>
 #include <font/outline_font.h>
 #include <trigo.h>
+#include <markup/markup_parser.h>
+#include <sstream>
+
+std::string TextStyleAsString( TEXT_STYLE_FLAGS aFlags )
+{
+    std::stringstream s;
+
+    s << "|";
+    if( IsBold( aFlags ) )
+        s << "BOLD|";
+    if( IsItalic( aFlags ) )
+        s << "ITALIC|";
+    if( IsSuperscript( aFlags ) )
+        s << "SUPERSCRIPT|";
+    if( IsSubscript( aFlags ) )
+        s << "SUBSCRIPT|";
+    if( IsOverbar( aFlags ) )
+        s << "OVERBAR|";
+
+    return s.str();
+}
 
 FONT*                     FONT::s_defaultFont = nullptr;
 std::map<wxString, FONT*> FONT::s_fontMap;
@@ -123,19 +144,30 @@ bool FONT::IsOutline( const wxString& aFontName )
  * @param aPosition is the text position
  */
 void FONT::DrawString( KIGFX::GAL* aGal, const UTF8& aText, const VECTOR2D& aPosition,
-                       double aRotationAngle, bool aMultiLine, int aTextWidth, int aTextHeight,
-                       EDA_TEXT_HJUSTIFY_T aHorizJustify, EDA_TEXT_VJUSTIFY_T aVertJustify ) const
+                       double aRotationAngle, bool aParse, bool aMultiLine, int aTextWidth,
+                       int aTextHeight, EDA_TEXT_HJUSTIFY_T aHorizJustify,
+                       EDA_TEXT_VJUSTIFY_T aVertJustify ) const
 {
     int textHeight = ( aTextHeight > 0 ? aTextHeight : aGal->GetGlyphSize().y );
 #ifdef DEBUG
     if( debugMe( aText ) )
         std::cerr << "FONT::DrawString( aGal, \"" << aText << "\", " << aPosition << ", "
-                  << aRotationAngle << ", " << ( aMultiLine ? "true" : "false" ) << ", "
-                  << aTextWidth << ", " << aTextHeight << ", " << aVertJustify
-                  << " ) const; textHeight " << textHeight << std::endl;
+                  << aRotationAngle << ", " << ( aParse ? "true" : "false" ) << ", "
+                  << ( aMultiLine ? "true" : "false" ) << ", " << aTextWidth << ", " << aTextHeight
+                  << ", " << aVertJustify << " ) const; textHeight " << textHeight << std::endl;
 #endif
     if( aText.empty() )
         return;
+
+    if( aParse )
+    {
+        MARKUP::MARKUP_PARSER markupParser( aText );
+        auto                  parse_result = markupParser.parse();
+#ifdef DEBUG
+        std::cerr << "[[[" << parse_result << "]]]" << std::endl;
+#endif
+        /* ... */
+    }
 
     wxArrayString        strings;
     std::vector<wxPoint> positions;
@@ -200,11 +232,11 @@ void FONT::getLinePositions( KIGFX::GAL* aGal, const UTF8& aText, const VECTOR2D
 
             switch( aHorizJustify )
             {
-            case GR_TEXT_HJUSTIFY_LEFT: break;
+            case GR_TEXT_HJUSTIFY_LEFT: pos.x += textSize.x / 2;
 
-            case GR_TEXT_HJUSTIFY_CENTER: pos.x -= textSize.x / 2;
+            case GR_TEXT_HJUSTIFY_CENTER: break;
 
-            case GR_TEXT_HJUSTIFY_RIGHT: pos.x -= textSize.x;
+            case GR_TEXT_HJUSTIFY_RIGHT: pos.x -= textSize.x / 2;
             }
         }
 
