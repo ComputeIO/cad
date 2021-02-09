@@ -51,7 +51,7 @@ set( GAL_SRCS
 
     # OpenGL GAL
     gal/opengl/opengl_gal.cpp
-    gal/opengl/opengl_freetype.cpp
+    # gal/opengl/opengl_freetype.cpp
     gal/opengl/gl_resources.cpp
     gal/opengl/gl_builtin_shaders.cpp
     gal/opengl/shader.cpp
