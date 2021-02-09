@@ -83,10 +83,10 @@ target_link_libraries( gal
     ${GLEW_LIBRARIES}
     ${CAIRO_LIBRARIES}
     ${PIXMAN_LIBRARIES}
-	${FREETYPE_LIBRARIES}
-	${HARFBUZZ_LIBRARIES}
     ${OPENGL_LIBRARIES}
     ${GDI_PLUS_LIBRARIES}
+	${FREETYPE_LIBRARIES}
+	${HARFBUZZ_LIBRARIES}
 )
 
 
@@ -419,6 +419,10 @@ list( APPEND COMMON_SRCS
     kicad_curl/kicad_curl_easy.cpp
 )
 
+if( KICAD_USE_FONTCONFIG )
+    list( APPEND COMMON_SRCS font/fontconfig.cpp )
+endif()
+
 set( COMMON_SRCS
     ${COMMON_SRCS}
 
@@ -488,6 +492,7 @@ target_link_libraries( common
     ${OPENSSL_LIBRARIES}        # empty on Apple
     ${wxWidgets_LIBRARIES}
     ${EXTRA_LIBS}
+	${Fontconfig_LIBRARIES}
     )
 
 target_include_directories( common

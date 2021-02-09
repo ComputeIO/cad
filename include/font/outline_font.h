@@ -155,6 +155,8 @@ private:
 
     FT_Error loadFace( const wxString& aFontFileName );
 
+    bool loadFontSimple( const wxString& aFontFileName );
+
     /**
      * Draw a single line of text. Multiline texts should be split before using the
      * function.

@@ -144,6 +144,10 @@ cmake_dependent_option( KICAD_USE_BUNDLED_GLEW
     ON "KICAD_USE_EGL"
     OFF )
 
+option( KICAD_USE_FONTCONFIG
+    "Build KiCad with Fontconfig support."
+    ON )
+
 # when option KICAD_SCRIPTING OR KICAD_SCRIPTING_MODULES is enabled:
 # PYTHON_EXECUTABLE can be defined when invoking cmake
 # ( use -DPYTHON_EXECUTABLE=<python path>/python.exe or python2 )
@@ -454,6 +458,10 @@ if( KICAD_USE_EGL AND UNIX AND NOT APPLE )
     add_definitions( -DKICAD_USE_EGL )
 elseif( KICAD_USE_EGL )
     message( STATUS "Ignoring KICAD_USE_EGL since not on Linux" )
+endif()
+
+if( KICAD_USE_FONTCONFIG )
+    add_definitions( -DKICAD_USE_FONTCONFIG )
 endif()
 
 # KIFACE_SUFFIX is the file extension used for top level program modules which
@@ -840,6 +848,10 @@ if( KICAD_SCRIPTING_WXPYTHON )
         "(wxWidgets ${WXPYTHON_WXVERSION})" )
 endif()
 
+
+if( KICAD_USE_FONTCONFIG )
+    find_package( Fontconfig REQUIRED )
+endif()
 
 #
 # Find wxWidgets library, required

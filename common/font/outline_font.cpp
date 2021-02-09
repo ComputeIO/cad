@@ -35,6 +35,9 @@
 #include FT_GLYPH_H
 #include FT_BBOX_H
 #include <trigo.h>
+#ifdef KICAD_USE_FONTCONFIG
+#include <font/fontconfig.h>
+#endif
 
 FT_Library OUTLINE_FONT::mFreeType = nullptr;
 
@@ -49,7 +52,42 @@ OUTLINE_FONT::OUTLINE_FONT()
 }
 
 
-bool OUTLINE_FONT::LoadFont( const wxString& aFontFileName )
+bool OUTLINE_FONT::LoadFont( const wxString& aFontName )
+{
+#ifdef KICAD_USE_FONTCONFIG
+    wxString fontFile;
+    bool     r = Fontconfig().FindFont( aFontName, fontFile );
+#ifdef DEBUG
+    if( r )
+    {
+        std::cerr << "Fontconfig found [" << fontFile << "] for [" << aFontName << "]" << std::endl;
+    }
+    else
+    {
+        std::cerr << "Fontconfig did not find font for [" << aFontName << "]" << std::endl;
+    }
+#endif
+    if( r )
+    {
+        FT_Error e = loadFace( fontFile );
+        if( e )
+        {
+#ifdef DEBUG
+            std::cerr << "Could not load [" << fontFile << "]" << std::endl;
+#endif
+            return false;
+        }
+        return true;
+    }
+
+    return false;
+#else
+    return loadFontSimple( aFontName );
+#endif
+}
+
+
+bool OUTLINE_FONT::loadFontSimple( const wxString& aFontFileName )
 {
     wxFileName fontFile( aFontFileName );
     wxString   fileName = fontFile.GetFullPath();
