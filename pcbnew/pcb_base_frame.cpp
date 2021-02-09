@@ -776,7 +776,7 @@ void PCB_BASE_FRAME::SetDisplayOptions( const PCB_DISPLAY_OPTIONS& aOptions )
                     if( VIA* via = dynamic_cast<VIA*>( aItem ) )
                     {
                         return via->GetViaType() == VIATYPE::BLIND_BURIED
-                                || via->GetViaType() == VIATYPE::MICROVIA;
+                               || via->GetViaType() == VIATYPE::MICROVIA;
                     }
 
                     return false;

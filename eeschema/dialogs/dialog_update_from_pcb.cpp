@@ -75,13 +75,9 @@ void DIALOG_UPDATE_FROM_PCB::updateData()
 {
     bool successfulRun = false;
     m_messagePanel->Clear();
-    BACK_ANNOTATE backAnno( m_frame,
-                            m_messagePanel->Reporter(),
-                            m_cbRelinkFootprints->GetValue(),
-                            m_cbUpdateFootprints->GetValue(),
-                            m_cbUpdateValues->GetValue(),
-                            m_cbUpdateReferences->GetValue(),
-                            m_cbUpdateNetNames->GetValue(),
+    BACK_ANNOTATE backAnno( m_frame, m_messagePanel->Reporter(), m_cbRelinkFootprints->GetValue(),
+                            m_cbUpdateFootprints->GetValue(), m_cbUpdateValues->GetValue(),
+                            m_cbUpdateReferences->GetValue(), m_cbUpdateNetNames->GetValue(),
                             true );
     std::string   netlist;
 

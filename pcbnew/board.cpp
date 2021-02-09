@@ -868,7 +868,7 @@ BOARD_ITEM* BOARD::GetItem( const KIID& aID ) const
 void BOARD::FillItemMap( std::map<KIID, EDA_ITEM*>& aMap )
 {
     // the board itself
-    aMap[ m_Uuid ] = this;
+    aMap[m_Uuid] = this;
 
     for( TRACK* track : Tracks() )
         aMap[ track->m_Uuid ] = track;

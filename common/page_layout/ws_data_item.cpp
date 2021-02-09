@@ -715,7 +715,7 @@ void WS_DATA_ITEM_TEXT::SetConstrainedTextSize()
         size_micron.x = KiROUND( m_ConstrainedTextSize.x * FSCALE );
         size_micron.y = KiROUND( m_ConstrainedTextSize.y * FSCALE );
         WS_DRAW_ITEM_TEXT dummy( WS_DRAW_ITEM_TEXT( this, 0, m_FullText, wxPoint( 0, 0 ),
-                                 size_micron, linewidth, m_Italic, m_Bold ) );
+                                                    size_micron, linewidth, m_Italic, m_Bold ) );
         dummy.SetMultilineAllowed( true );
         dummy.SetHorizJustify( m_Hjustify ) ;
         dummy.SetVertJustify( m_Vjustify );
