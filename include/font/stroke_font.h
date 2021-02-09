@@ -177,6 +177,7 @@ private:
 
     const GLYPH_LIST*              m_glyphs;             ///< Glyph list
     const GLYPH_BOUNDING_BOX_LIST* m_glyphBoundingBoxes; ///< Bounding boxes of the glyphs
+    double                         m_maxGlyphWidth;
 
     ///< Factor that determines relative vertical position of the overbar.
     static const double OVERBAR_POSITION_FACTOR;
