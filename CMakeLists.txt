@@ -194,6 +194,7 @@ endif()
 # change to add_compile_definitions() after minimum required CMake version is 3.12
 set_property( DIRECTORY APPEND PROPERTY COMPILE_DEFINITIONS $<$<CONFIG:Debug>:DEBUG> )
 
+
 # Add option to add user directories for linker, if any
 LINK_DIRECTORIES( ${LINK_DIRECTORIES_PATH} )
 
@@ -221,7 +222,6 @@ perform_feature_checks()
 
 # Setup the compiler warnings
 include( ${CMAKE_MODULE_PATH}/Warnings.cmake )
-
 
 if( WIN32 )
     # define UNICODE and_UNICODE definition on Windows. KiCad uses unicode.

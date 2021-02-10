@@ -153,23 +153,20 @@ private:
  * - Name
  *
  * Each contributor can have optional information assigned like:
- * - EMail address
+ * - Extra identifying information
  * - A category
  * - A category specific icon
  */
 class CONTRIBUTOR
 {
 public:
-    CONTRIBUTOR( const wxString& aName,
-                 const wxString& aEmail = wxEmptyString,
-                 const wxString& aUrl = wxEmptyString,
-                 const wxString& aCategory = wxEmptyString,
-                 wxBitmap*       aIcon = NULL )
+    CONTRIBUTOR( const wxString& aName, const wxString& aExtra = wxEmptyString,
+                 const wxString& aUrl = wxEmptyString, const wxString& aCategory = wxEmptyString,
+                 wxBitmap* aIcon = NULL )
     {
         m_checked = false;
         m_name = aName;
-        m_url = aUrl,
-        m_email = aEmail;
+        m_url = aUrl, m_extra = aExtra;
         m_category = aCategory;
         m_icon = aIcon;
     }
@@ -180,8 +177,7 @@ public:
     {
         m_checked = false;
         m_name = aName;
-        m_url = wxEmptyString,
-        m_email = wxEmptyString;
+        m_url = wxEmptyString, m_extra = wxEmptyString;
         m_category = aCategory;
         m_icon = aIcon;
     }
@@ -189,7 +185,7 @@ public:
     virtual ~CONTRIBUTOR() {}
 
     wxString& GetName()     { return m_name; }
-    wxString& GetEMail()    { return m_email; }
+    wxString& GetExtra() { return m_extra; }
     wxString& GetUrl()      { return m_url; }
     wxString& GetCategory() { return m_category; }
     wxBitmap* GetIcon()     { return m_icon; }
@@ -198,7 +194,7 @@ public:
 
 private:
     wxString  m_name;
-    wxString  m_email;
+    wxString  m_extra;
     wxString  m_url;
     wxString  m_category;
     wxBitmap* m_icon;

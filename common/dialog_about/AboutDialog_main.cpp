@@ -539,8 +539,6 @@ static void buildKicadAboutBanner( EDA_BASE_FRAME* aParent, ABOUT_APP_INFO& aInf
                                           OTHERS_IN_TRANSLATION ) );
     aInfo.AddTranslator( new CONTRIBUTOR( "Dominique Laigle", wxEmptyString, wxEmptyString,
                                           OTHERS_IN_TRANSLATION ) );
-    aInfo.AddTranslator(
-            new CONTRIBUTOR( "Paul Burke", wxEmptyString, wxEmptyString, OTHERS_IN_TRANSLATION ) );
 
 
 // Program credits for 3d models
@@ -574,7 +572,7 @@ static void buildKicadAboutBanner( EDA_BASE_FRAME* aParent, ABOUT_APP_INFO& aInf
 
 #define MODELS_3D_CONTRIBUTION _( "3D models by" )
     aInfo.AddLibrarian(
-            new CONTRIBUTOR( "Scripts by Maui", wxEmptyString,
+            new CONTRIBUTOR( "Scripts by Maui", "https://github.com/easyw",
                              "https://gitlab.com/kicad/libraries/kicad-packages3D-generator",
                              MODELS_3D_CONTRIBUTION, aInfo.CreateKiBitmap( three_d_xpm ) ) );
     aInfo.AddLibrarian(
