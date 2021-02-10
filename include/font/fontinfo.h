@@ -18,33 +18,36 @@
  * with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef KICAD_FONTCONFIG_H
-#define KICAD_FONTCONFIG_H
+#ifndef FONT_FONTINFO_H
+#define FONT_FONTINFO_H
 
-#include <fontconfig/fontconfig.h>
-#include <wx/string.h>
+#include <string>
 #include <vector>
-#include <map>
-#include <font/fontinfo.h>
-
 namespace fontconfig
 {
-class FONTCONFIG
+class FONTINFO
 {
 public:
-    FONTCONFIG();
+    FONTINFO( std::string aFile, std::string aStyle, std::string aFamily ) :
+            mFile( aFile ), mStyle( aStyle ), mFamily( aFamily )
+    {
+    }
 
-    bool FindFont( const wxString& aFontName, wxString& aFontFile );
+    const std::string& File() { return mFile; }
 
-    bool ListFonts( std::vector<std::string>& aFonts );
+    const std::string& Style() { return mStyle; }
+
+    const std::string& Family() { return mFamily; }
+
+    std::vector<FONTINFO>& Children() { return children; }
 
 private:
-    FcConfig* mConfig;
+    std::string mFile;
+    std::string mStyle;
+    std::string mFamily;
 
-    std::map<std::string, FONTINFO> mFonts;
+    std::vector<FONTINFO> children;
 };
 } // namespace fontconfig
 
-fontconfig::FONTCONFIG& Fontconfig();
-
-#endif //KICAD_FONTCONFIG_H
+#endif //FONT_FONTINFO_H

@@ -27,7 +27,11 @@
 #include <widgets/unit_binder.h>
 #include <wx/valnum.h>
 
+#ifdef KICAD_USE_FONTCONFIG
+#include <dialog_text_font_properties_base.h>
+#else
 #include <dialog_text_properties_base.h>
+#endif
 
 
 class PCB_BASE_EDIT_FRAME;
@@ -52,23 +56,28 @@ public:
 
 private:
     PCB_BASE_EDIT_FRAME* m_Parent;
-    BOARD_ITEM*          m_item;        // FP_TEXT or PCB_TEXT
-    EDA_TEXT*            m_edaText;     // always non-null
-    FP_TEXT*             m_fpText;      // only non-null for FP_TEXTs
-    PCB_TEXT*            m_pcbText;     // only non-null for PCB_TEXTs
+    BOARD_ITEM*          m_item;    // FP_TEXT or PCB_TEXT
+    EDA_TEXT*            m_edaText; // always non-null
+    FP_TEXT*             m_fpText;  // only non-null for FP_TEXTs
+    PCB_TEXT*            m_pcbText; // only non-null for PCB_TEXTs
 
-    UNIT_BINDER          m_textWidth;
-    UNIT_BINDER          m_textHeight;
-    UNIT_BINDER          m_thickness;
-    UNIT_BINDER          m_posX;
-    UNIT_BINDER          m_posY;
-    UNIT_BINDER          m_orientation;     // rotation in degrees
-    double               m_OrientValue;
+    UNIT_BINDER m_textWidth;
+    UNIT_BINDER m_textHeight;
+    UNIT_BINDER m_thickness;
+    UNIT_BINDER m_posX;
+    UNIT_BINDER m_posY;
+    UNIT_BINDER m_orientation; // rotation in degrees
+    double      m_OrientValue;
 
     bool TransferDataToWindow() override;
     bool TransferDataFromWindow() override;
 
     void OnCharHook( wxKeyEvent& aEvent ) override;
+
+    void setupFontMenu();
+#ifdef KICAD_USE_FONTCONFIG
+    void onShowFontDialog( wxCommandEvent& aEvent ) override;
+#endif
 };
 
 

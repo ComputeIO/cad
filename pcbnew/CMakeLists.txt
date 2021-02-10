@@ -140,7 +140,6 @@ set( PCBNEW_DIALOGS
     dialogs/dialog_target_properties.cpp
     dialogs/dialog_target_properties_base.cpp
     dialogs/dialog_text_properties.cpp
-    dialogs/dialog_text_properties_base.cpp
     dialogs/dialog_track_via_properties.cpp
     dialogs/dialog_track_via_properties_base.cpp
     dialogs/dialog_track_via_size.cpp
@@ -177,6 +176,16 @@ set( PCBNEW_DIALOGS
     footprint_wizard_frame.cpp
     footprint_wizard_frame_functions.cpp
     )
+
+if( KICAD_USE_FONTCONFIG )
+    set( PCBNEW_DIALOGS ${PCBNEW_DIALOGS}
+      dialogs/dialog_text_font_properties_base.cpp
+    )
+else()
+    set( PCBNEW_DIALOGS ${PCBNEW_DIALOGS}
+      dialogs/dialog_text_properties_base.cpp
+    )
+endif()
 
 if( KICAD_SCRIPTING AND KICAD_SCRIPTING_ACTION_MENU )
     set( PCBNEW_DIALOGS ${PCBNEW_DIALOGS}

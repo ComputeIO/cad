@@ -423,7 +423,10 @@ list( APPEND COMMON_SRCS
 )
 
 if( KICAD_USE_FONTCONFIG )
-    list( APPEND COMMON_SRCS font/fontconfig.cpp )
+  list( APPEND COMMON_SRCS
+	font/fontconfig.cpp
+	font/fontinfo.cpp
+	)
 endif()
 
 set( COMMON_SRCS

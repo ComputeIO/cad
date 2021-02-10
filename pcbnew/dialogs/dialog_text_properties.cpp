@@ -34,22 +34,21 @@
 #include <pcb_edit_frame.h>
 #include <pcb_layer_box_selector.h>
 #include <wx/valnum.h>
-#include <math/util.h>      // for KiROUND
-
+#include <math/util.h> // for KiROUND
+#ifdef KICAD_USE_FONTCONFIG
+#include <wx/fontdlg.h>
+#include <font/fontconfig.h>
+#endif
 
 DIALOG_TEXT_PROPERTIES::DIALOG_TEXT_PROPERTIES( PCB_BASE_EDIT_FRAME* aParent, BOARD_ITEM* aItem ) :
-    DIALOG_TEXT_PROPERTIES_BASE( aParent ),
-    m_Parent( aParent ),
-    m_item( aItem ),
-    m_edaText( nullptr ),
-    m_fpText( nullptr ),
-    m_pcbText( nullptr ),
-    m_textWidth( aParent, m_SizeXLabel, m_SizeXCtrl, m_SizeXUnits, true ),
-    m_textHeight( aParent, m_SizeYLabel, m_SizeYCtrl, m_SizeYUnits, true ),
-    m_thickness( aParent, m_ThicknessLabel, m_ThicknessCtrl, m_ThicknessUnits, true ),
-    m_posX( aParent, m_PositionXLabel, m_PositionXCtrl, m_PositionXUnits ),
-    m_posY( aParent, m_PositionYLabel, m_PositionYCtrl, m_PositionYUnits ),
-    m_orientation( aParent, m_OrientLabel, m_OrientCtrl, nullptr, false )
+        DIALOG_TEXT_PROPERTIES_BASE( aParent ), m_Parent( aParent ), m_item( aItem ),
+        m_edaText( nullptr ), m_fpText( nullptr ), m_pcbText( nullptr ),
+        m_textWidth( aParent, m_SizeXLabel, m_SizeXCtrl, m_SizeXUnits, true ),
+        m_textHeight( aParent, m_SizeYLabel, m_SizeYCtrl, m_SizeYUnits, true ),
+        m_thickness( aParent, m_ThicknessLabel, m_ThicknessCtrl, m_ThicknessUnits, true ),
+        m_posX( aParent, m_PositionXLabel, m_PositionXCtrl, m_PositionXUnits ),
+        m_posY( aParent, m_PositionYLabel, m_PositionYCtrl, m_PositionYUnits ),
+        m_orientation( aParent, m_OrientLabel, m_OrientCtrl, nullptr, false )
 {
     wxString title;
 
@@ -74,8 +73,8 @@ DIALOG_TEXT_PROPERTIES::DIALOG_TEXT_PROPERTIES( PCB_BASE_EDIT_FRAME* aParent, BO
         switch( m_fpText->GetType() )
         {
         case FP_TEXT::TEXT_is_REFERENCE: m_TextLabel->SetLabel( _( "Reference:" ) ); break;
-        case FP_TEXT::TEXT_is_VALUE:     m_TextLabel->SetLabel( _( "Value:" ) );     break;
-        case FP_TEXT::TEXT_is_DIVERS:    m_TextLabel->SetLabel( _( "Text:" ) );      break;
+        case FP_TEXT::TEXT_is_VALUE: m_TextLabel->SetLabel( _( "Value:" ) ); break;
+        case FP_TEXT::TEXT_is_DIVERS: m_TextLabel->SetLabel( _( "Text:" ) ); break;
         }
 
         SetInitialFocus( m_SingleLineText );
@@ -140,23 +139,21 @@ DIALOG_TEXT_PROPERTIES::DIALOG_TEXT_PROPERTIES( PCB_BASE_EDIT_FRAME* aParent, BO
 
     // We can't set the tab order through wxWidgets due to shortcomings in their mnemonics
     // implementation on MSW
-    m_tabOrder = {
-            m_LayerLabel,
-            m_LayerSelectionCtrl,
-            m_SizeXCtrl,
-            m_SizeYCtrl,
-            m_ThicknessCtrl,
-            m_PositionXCtrl,
-            m_PositionYCtrl,
-            m_Visible,
-            m_Italic,
-            m_JustifyChoice,
-            m_OrientCtrl,
-            m_Mirrored,
-            m_KeepUpright,
-            m_sdbSizerOK,
-            m_sdbSizerCancel
-    };
+    m_tabOrder = { m_LayerLabel,    m_LayerSelectionCtrl,
+#ifdef KICAD_USE_FONTCONFIG
+                   m_FontLabel,     m_Font,
+#endif
+                   m_SizeXCtrl,     m_SizeYCtrl,
+                   m_ThicknessCtrl, m_PositionXCtrl,
+                   m_PositionYCtrl, m_Visible,
+                   m_Italic,        m_JustifyChoice,
+                   m_OrientCtrl,    m_Mirrored,
+                   m_KeepUpright,   m_sdbSizerOK,
+                   m_sdbSizerCancel };
+
+#ifdef KICAD_USE_FONTCONFIG
+    setupFontMenu();
+#endif
 
     // wxTextCtrls fail to generate wxEVT_CHAR events when the wxTE_MULTILINE flag is set,
     // so we have to listen to wxEVT_CHAR_HOOK events instead.
@@ -166,9 +163,76 @@ DIALOG_TEXT_PROPERTIES::DIALOG_TEXT_PROPERTIES( PCB_BASE_EDIT_FRAME* aParent, BO
 }
 
 
+void DIALOG_TEXT_PROPERTIES::setupFontMenu()
+{
+#ifdef KICAD_USE_FONTCONFIG
+    std::vector<std::string> fonts;
+
+    Fontconfig().ListFonts( fonts );
+
+    for( const std::string& font : fonts )
+    {
+#ifdef DEBUG
+        std::cerr << "Adding " << font << " to font menu" << std::endl;
+#endif
+        // TODO: m_Font->Append( wxString( font ) );
+    }
+#endif
+}
+
+
+#ifdef KICAD_USE_FONTCONFIG
+void DIALOG_TEXT_PROPERTIES::onShowFontDialog( wxCommandEvent& aEvent )
+{
+    wxFontData fontData;
+    wxFont     theFont;
+    wxColour   colour;
+
+    //theFont = theText->GetFont();
+    //fontData.SetInitialFont(theFont);
+    //colour = theText->GetForegroundColour();
+    //fontData.SetColour(colour);
+    fontData.SetShowHelp( true );
+
+    wxFontDialog* dialog = new wxFontDialog( this, fontData );
+    if( dialog->ShowModal() == wxID_OK )
+    {
+        fontData = dialog->GetFontData();
+        theFont = fontData.GetChosenFont();
+#ifdef DEBUG
+        wxFontStyle  style = theFont.GetStyle();
+        wxFontWeight weight = theFont.GetWeight();
+        std::cerr << "chosen font is " << theFont.GetFaceName() << " desc ["
+                  << theFont.GetNativeFontInfoDesc() << "]"
+                  << " userDesc [" << theFont.GetNativeFontInfoUserDesc() << "]"
+                  << " style "
+                  << ( style == wxFONTSTYLE_NORMAL
+                               ? "NORMAL"
+                               : ( style == wxFONTSTYLE_ITALIC
+                                           ? "ITALIC"
+                                           : ( style == wxFONTSTYLE_SLANT ? "SLANT" : "?" ) ) )
+                  << " weight "
+                  << ( weight == wxFONTWEIGHT_NORMAL
+                               ? "NORMAL"
+                               : ( weight == wxFONTWEIGHT_LIGHT
+                                           ? "LIGHT"
+                                           : ( weight == wxFONTWEIGHT_BOLD ? "BOLD" : "?" ) ) )
+                  << ( theFont.GetUnderlined() ? " underlined" : "" )
+                  << ( theFont.IsFixedWidth() ? " fixed-width" : "" )
+                  << ( theFont.IsOk() ? " OK" : " (not ok)" ) << std::endl;
+
+#endif
+        //theText->SetFont(theFont);
+        //theText->SetForegroundColour(fontData.GetColour());
+    }
+}
+#endif
+
+
 DIALOG_TEXT_PROPERTIES::~DIALOG_TEXT_PROPERTIES()
 {
-    Disconnect( wxEVT_CHAR_HOOK, wxKeyEventHandler( DIALOG_TEXT_PROPERTIES::OnCharHook ), NULL, this );
+    Disconnect( wxEVT_CHAR_HOOK, wxKeyEventHandler( DIALOG_TEXT_PROPERTIES::OnCharHook ), NULL,
+                this );
 }
 
 
@@ -280,8 +344,7 @@ bool DIALOG_TEXT_PROPERTIES::TransferDataToWindow()
 
         if( footprint )
         {
-            msg.Printf( _( "Footprint %s (%s), %s, rotated %.1f deg"),
-                        footprint->GetReference(),
+            msg.Printf( _( "Footprint %s (%s), %s, rotated %.1f deg" ), footprint->GetReference(),
                         footprint->GetValue(),
                         footprint->IsFlipped() ? _( "back side (mirrored)" ) : _( "front side" ),
                         footprint->GetOrientation() / 10.0 );
@@ -396,9 +459,9 @@ bool DIALOG_TEXT_PROPERTIES::TransferDataFromWindow()
 
     switch( m_JustifyChoice->GetSelection() )
     {
-    case 0: m_edaText->SetHorizJustify( GR_TEXT_HJUSTIFY_LEFT );   break;
+    case 0: m_edaText->SetHorizJustify( GR_TEXT_HJUSTIFY_LEFT ); break;
     case 1: m_edaText->SetHorizJustify( GR_TEXT_HJUSTIFY_CENTER ); break;
-    case 2: m_edaText->SetHorizJustify( GR_TEXT_HJUSTIFY_RIGHT );  break;
+    case 2: m_edaText->SetHorizJustify( GR_TEXT_HJUSTIFY_RIGHT ); break;
     default: break;
     }
 

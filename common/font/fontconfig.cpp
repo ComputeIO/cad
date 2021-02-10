@@ -18,6 +18,8 @@
  * with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <iostream>
+#include <sstream>
 #include <font/fontconfig.h>
 #include <pgm_base.h>
 #include <settings/settings_manager.h>
@@ -25,7 +27,6 @@
 using namespace fontconfig;
 
 static FONTCONFIG* fc = nullptr;
-
 
 inline static FcChar8* wxStringToFcChar8( const wxString& str )
 {
@@ -36,8 +37,7 @@ inline static FcChar8* wxStringToFcChar8( const wxString& str )
 
 FONTCONFIG::FONTCONFIG()
 {
-    //fontconfig = FcInitLoadConfig();
-    fontconfig = FcInitLoadConfigAndFonts();
+    mConfig = FcInitLoadConfigAndFonts();
 
     wxString configDirPath( Pgm().GetSettingsManager().GetUserSettingsPath() + wxT( "/fonts" ) );
     FcConfigAppFontAddDir( nullptr, wxStringToFcChar8( configDirPath ) );
@@ -61,7 +61,7 @@ bool FONTCONFIG::FindFont( const wxString& aFontName, wxString& aFontFile )
     FcConfigSubstitute( nullptr, pat, FcMatchPattern );
     FcDefaultSubstitute( pat );
 
-    FcResult   r;
+    FcResult   r = FcResultNoMatch;
     FcPattern* font = FcFontMatch( nullptr, pat, &r );
 
     bool ok = false;
@@ -73,9 +73,62 @@ bool FONTCONFIG::FindFont( const wxString& aFontName, wxString& aFontFile )
             aFontFile = wxString::FromUTF8( (char*) file );
             ok = true;
         }
+        FcPatternDestroy( font );
     }
 
-    FcPatternDestroy( font );
     FcPatternDestroy( pat );
     return ok;
+}
+
+
+bool FONTCONFIG::ListFonts( std::vector<std::string>& aFonts )
+{
+    FcPattern*   pat = FcPatternCreate();
+    FcObjectSet* os = FcObjectSetBuild( FC_FAMILY, FC_STYLE, FC_LANG, FC_FILE, nullptr );
+    FcFontSet*   fs = FcFontList( nullptr, pat, os );
+
+    if( !fs )
+        return false;
+
+#ifdef DEBUG
+    std::cerr << "ListFonts() Total matching: " << fs->nfont << " fonts" << std::endl;
+#endif
+    for( int i = 0; fs && i < fs->nfont; ++i )
+    {
+        FcPattern* font = fs->fonts[i];
+        FcChar8*   file;
+        FcChar8*   style;
+        FcChar8*   family;
+        if( FcPatternGetString( font, FC_FILE, 0, &file ) == FcResultMatch
+            && FcPatternGetString( font, FC_FAMILY, 0, &family ) == FcResultMatch
+            && FcPatternGetString( font, FC_STYLE, 0, &style ) == FcResultMatch )
+        {
+            std::ostringstream s;
+            s << family;
+
+            std::string theFile( (char*) file );
+            std::string theFamily( (char*) family );
+            std::string theStyle( (char*) style );
+#ifdef DEBUG
+            std::cerr << "family [" << family << "] style [" << style << "] file [" << file << "]"
+                      << std::endl;
+#endif
+            auto it = mFonts.find( s.str() );
+            if( it == mFonts.end() )
+            {
+                mFonts.insert( std::pair<std::string, FONTINFO>(
+                        theFamily, FONTINFO( theFile, theStyle, theFamily ) ) );
+
+                aFonts.push_back( s.str() );
+            }
+            else
+            {
+                it->second.Children().push_back( FONTINFO( theFile, theStyle, theFamily ) );
+            }
+        }
+    }
+
+    FcFontSetDestroy( fs );
+
+    return true;
 }
