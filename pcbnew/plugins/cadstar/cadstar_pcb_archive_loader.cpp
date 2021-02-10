@@ -1,8 +1,8 @@
 /*
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
- * Copyright (C) 2020 Roberto Fernandez Bautista <roberto.fer.bau@gmail.com>
- * Copyright (C) 2020 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 2020-2021 Roberto Fernandez Bautista <roberto.fer.bau@gmail.com>
+ * Copyright (C) 2020-2021 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * This program is free software: you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -98,8 +98,9 @@ void CADSTAR_PCB_ARCHIVE_LOADER::Load( ::BOARD* aBoard, ::PROJECT* aProject )
     loadDocumentationSymbols();
     loadTemplates();
     loadCoppers();
+    calculateZonePriorities();
     loadNets();
-    loadTextVariables();    
+    loadTextVariables();
 
     if( Layout.Trunks.size() > 0 )
     {
@@ -126,6 +127,18 @@ void CADSTAR_PCB_ARCHIVE_LOADER::Load( ::BOARD* aBoard, ::PROJECT* aProject )
     wxLogMessage(
             _( "The CADSTAR design has been imported successfully.\n"
                "Please review the import errors and warnings (if any)." ) );
+}
+
+std::vector<FOOTPRINT*> CADSTAR_PCB_ARCHIVE_LOADER::GetLoadedLibraryFootpints() const
+{
+    std::vector<FOOTPRINT*> retval;
+
+    for( std::pair<SYMDEF_ID, FOOTPRINT*> fpPair : mLibraryMap )
+    {
+        retval.push_back( static_cast<FOOTPRINT*>( fpPair.second->Clone() ) );
+    }
+
+    return retval;
 }
 
 
@@ -200,7 +213,7 @@ void CADSTAR_PCB_ARCHIVE_LOADER::loadBoardStackup()
     {
         LAYER cadstarLayer = Assignments.Layerdefs.Layers.at( cadstarLayerID );
 
-        if( cadstarLayer.Type == LAYER_TYPE::JUMPERLAYER || 
+        if( cadstarLayer.Type == LAYER_TYPE::JUMPERLAYER ||
             cadstarLayer.Type == LAYER_TYPE::POWER ||
             cadstarLayer.Type == LAYER_TYPE::ELEC )
         {
@@ -275,7 +288,7 @@ void CADSTAR_PCB_ARCHIVE_LOADER::loadBoardStackup()
     stackup.BuildDefaultStackupList( &mBoard->GetDesignSettings(), totalCopperLayers );
 
     size_t stackIndex = 0;
-    
+
     for( BOARD_STACKUP_ITEM* item : stackup.GetList() )
     {
         if( item->GetType() == BOARD_STACKUP_ITEM_TYPE::BS_ITEM_TYPE_COPPER )
@@ -349,7 +362,7 @@ void CADSTAR_PCB_ARCHIVE_LOADER::loadBoardStackup()
 
                     if( copperLayer.Embedding == EMBEDDING::ABOVE )
                         item->SetTypeName( KEY_CORE );
-                    else 
+                    else
                         item->SetTypeName( KEY_PREPREG );
                 }
                 else
@@ -377,10 +390,10 @@ void CADSTAR_PCB_ARCHIVE_LOADER::loadBoardStackup()
             for( LAYER_ID constructionLaID : layerBlock.ConstructionLayers )
             {
                 LAYER dielectricLayer = Assignments.Layerdefs.Layers.at( constructionLaID );
-                
+
                 if( dielectricSublayer )
                     item->AddDielectricPrms( dielectricSublayer );
-                
+
                 initStackupItem( dielectricLayer, item, dielectricSublayer );
                 mBoard->SetLayerName( item->GetBrdLayerId(), item->GetLayerName() );
                 mLayermap.insert( { dielectricLayer.ID, item->GetBrdLayerId() } );
@@ -406,8 +419,8 @@ void CADSTAR_PCB_ARCHIVE_LOADER::loadBoardStackup()
             WARN
         };
 
-        auto selectLayerID = 
-            [&]( PCB_LAYER_ID aFront, PCB_LAYER_ID aBack, LOG_LEVEL aLogType ) 
+        auto selectLayerID =
+            [&]( PCB_LAYER_ID aFront, PCB_LAYER_ID aBack, LOG_LEVEL aLogType )
             {
                 if( numElecAndPowerLayers > 0 )
                     kicadLayerID = aBack;
@@ -443,7 +456,7 @@ void CADSTAR_PCB_ARCHIVE_LOADER::loadBoardStackup()
 
         case LAYER_TYPE::JUMPERLAYER:
         case LAYER_TYPE::ELEC:
-        case LAYER_TYPE::POWER: 
+        case LAYER_TYPE::POWER:
             ++numElecAndPowerLayers;
             KI_FALLTHROUGH;
         case LAYER_TYPE::CONSTRUCTION:
@@ -467,7 +480,7 @@ void CADSTAR_PCB_ARCHIVE_LOADER::loadBoardStackup()
 
             case LAYER_SUBTYPE::LAYERSUBTYPE_NONE:
                 // Generic Non-electrical layer (older CADSTAR versions).
-                // Attempt to detect technical layers by string matching.                
+                // Attempt to detect technical layers by string matching.
                 if( layerName.Contains( "glue" ) || layerName.Contains( "adhesive" ) )
                 {
                     selectLayerID( PCB_LAYER_ID::F_Adhes, PCB_LAYER_ID::B_Adhes, LOG_LEVEL::MSG );
@@ -606,7 +619,11 @@ void CADSTAR_PCB_ARCHIVE_LOADER::loadDesignRules()
     applyRule( "C_B", &ds.m_CopperEdgeClearance );
     applyRule( "H_H", &ds.m_HoleToHoleMin );
 
-    ds.m_TrackMinWidth = Assignments.Technology.MinRouteWidth;
+    ds.m_TrackMinWidth = getKiCadLength( Assignments.Technology.MinRouteWidth );
+    ds.m_ViasMinSize = ds.m_TrackMinWidth; // Not specified, assumed same as track width
+    ds.m_ViasMinAnnulus = ds.m_TrackMinWidth / 2; // Not specified, assumed half track width
+    ds.m_MinThroughDrill = 0; // CADSTAR does not specify a minimum hole size
+    ds.m_HoleClearance = ds.m_CopperEdgeClearance; // Not specified, assumed same as edge
 
     auto applyNetClassRule = [&]( wxString aID, ::NETCLASS* aNetClassPtr,
                                      void ( ::NETCLASS::*aFunc )( int ) ) {
@@ -763,7 +780,6 @@ PAD* CADSTAR_PCB_ARCHIVE_LOADER::getKiCadPad( const COMPONENT_PAD& aCadstarPad, 
         break;
 
     case PAD_SIDE::THROUGH_HOLE:
-
         if( csPadcode.Plated )
             pad->SetAttribute( PAD_ATTR_T::PAD_ATTRIB_PTH );
         else
@@ -782,8 +798,20 @@ PAD* CADSTAR_PCB_ARCHIVE_LOADER::getKiCadPad( const COMPONENT_PAD& aCadstarPad, 
                           aCadstarPad.Identifier );
 
     if( csPadcode.Shape.Size == 0 )
+    {
+        if( csPadcode.DrillDiameter == UNDEFINED_VALUE
+            && aCadstarPad.Side == PAD_SIDE::THROUGH_HOLE )
+        {
+            // Through-hole, zero sized pad?. Lets load this just on the F_Mask for now to
+            // prevent DRC errors.
+            // TODO: This could be a custom padstack, update when KiCad supports padstacks
+            pad->SetAttribute( PAD_ATTR_T::PAD_ATTRIB_SMD );
+            pad->SetLayerSet( LSET( 1, F_Mask ) );
+        }
+
         // zero sized pads seems to break KiCad so lets make it very small instead
         csPadcode.Shape.Size = 1;
+    }
 
     wxPoint padOffset = { 0, 0 }; // offset of the pad origin (before rotating)
     wxPoint drillOffset = { 0, 0 }; // offset of the drill origin w.r.t. the pad (before rotating)
@@ -910,6 +938,10 @@ PAD* CADSTAR_PCB_ARCHIVE_LOADER::getKiCadPad( const COMPONENT_PAD& aCadstarPad, 
 
         drillOffset.x = -getKiCadLength( csPadcode.DrillXoffset );
         drillOffset.y = getKiCadLength( csPadcode.DrillYoffset );
+    }
+    else
+    {
+        pad->SetDrillSize( { 0, 0 } );
     }
 
 
@@ -1135,7 +1167,7 @@ void CADSTAR_PCB_ARCHIVE_LOADER::loadDimensions()
 
                 mBoard->Add( dimension, ADD_MODE::APPEND );
                 applyDimensionSettings( csDim, dimension );
-                
+
                 dimension->SetExtensionHeight(
                         getKiCadLength( csDim.ExtensionLineParams.Overshoot ) );
 
@@ -1203,21 +1235,21 @@ void CADSTAR_PCB_ARCHIVE_LOADER::loadDimensions()
 
                 /*
                  * In CADSTAR, the resulting shape orientation of the leader dimension depends on
-                 * on the positions of the #Start (S) and #End (E) points as shown below. In the 
+                 * on the positions of the #Start (S) and #End (E) points as shown below. In the
                  * diagrams below, the leader angle (angRad) is represented by HEV
-                 * 
-                 * Orientation 1: (orientX = -1,  |     Orientation 2: (orientX = 1, 
+                 *
+                 * Orientation 1: (orientX = -1,  |     Orientation 2: (orientX = 1,
                  *                 orientY = 1)   |                     orientY = 1)
                  *                                |
                  * --------V                      |               V----------
-                 *          \                     |              / 
-                 *           \                    |             / 
+                 *          \                     |              /
+                 *           \                    |             /
                  * H         _E/                  |           \E_           H
-                 *                                | 
+                 *                                |
                  *                     S          |     S
                  *                                |
-                 *                               
-                 * Orientation 3: (orientX = -1,  |     Orientation 4: (orientX = 1, 
+                 *
+                 * Orientation 3: (orientX = -1,  |     Orientation 4: (orientX = 1,
                  *                 orientY = -1)  |                     orientY = -1)
                  *                                |
                  *                     S          |     S
@@ -1227,16 +1259,16 @@ void CADSTAR_PCB_ARCHIVE_LOADER::loadDimensions()
                  *            /                   |             \
                  * ----------V                    |              V-----------
                  *                                |
-                 * 
+                 *
                  * Corner cases:
-                 * 
+                 *
                  * It is not possible to generate a leader object with start and end point being
                  * identical. Assume Orientation 2 if start and end points are identical.
-                 * 
+                 *
                  * If start and end points are aligned vertically (i.e. S.x == E.x):
                  * - If E.y > S.y - Orientation 2
                  * - If E.y < S.y - Orientation 4
-                 * 
+                 *
                  * If start and end points are aligned horitontally (i.e. S.y == E.y):
                  * - If E.x > S.x - Orientation 2
                  * - If E.x < S.x - Orientation 1
@@ -1546,62 +1578,101 @@ void CADSTAR_PCB_ARCHIVE_LOADER::loadTemplates()
     {
         TEMPLATE& csTemplate = tempPair.second;
 
-        ZONE* zone = getZoneFromCadstarShape( csTemplate.Shape,
-                                              getLineThickness( csTemplate.LineCodeID ), mBoard );
+        int zonelinethickness = 0; // The line thickness in CADSTAR is only for display purposes but
+                                   // does not affect the end copper result.
+        ZONE* zone = getZoneFromCadstarShape( csTemplate.Shape, zonelinethickness, mBoard );
 
         mBoard->Add( zone, ADD_MODE::APPEND );
 
         zone->SetZoneName( csTemplate.Name );
         zone->SetLayer( getKiCadLayer( csTemplate.LayerID ) );
+        zone->SetPriority( 1 ); // initially 1, we will increase in calculateZonePriorities
 
         if( !( csTemplate.NetID.IsEmpty() || csTemplate.NetID == wxT( "NONE" ) ) )
             zone->SetNet( getKiCadNet( csTemplate.NetID ) );
 
         if( csTemplate.Pouring.AllowInNoRouting )
-            wxLogError( wxString::Format(
+        {
+            wxLogWarning( wxString::Format(
                     _( "The CADSTAR template '%s' has the setting 'Allow in No Routing Areas' "
                        "enabled. This setting has no KiCad equivalent, so it has been ignored." ),
                     csTemplate.Name ) );
+        }
 
         if( csTemplate.Pouring.BoxIsolatedPins )
-            wxLogError( wxString::Format(
+        {
+            wxLogWarning( wxString::Format(
                     _( "The CADSTAR template '%s' has the setting 'Box Isolated Pins' "
                        "enabled. This setting has no KiCad equivalent, so it has been ignored." ),
                     csTemplate.Name ) );
+        }
 
         if( csTemplate.Pouring.AutomaticRepour )
+        {
             wxLogWarning( wxString::Format(
                     _( "The CADSTAR template '%s' has the setting 'Automatic Repour' "
                        "enabled. This setting has no KiCad equivalent, so it has been ignored." ),
                     csTemplate.Name ) );
+        }
 
         // Sliver width has different behaviour to KiCad Zone's minimum thickness
         // In Cadstar 'Sliver width' has to be greater than the Copper thickness, whereas in
         // Kicad it is the opposite.
         if( csTemplate.Pouring.SliverWidth != 0 )
-            wxLogError( wxString::Format(
+        {
+            wxLogWarning( wxString::Format(
                     _( "The CADSTAR template '%s' has a non-zero value defined for the "
                        "'Sliver Width' setting. There is no KiCad equivalent for "
                        "this, so this setting was ignored." ),
                     csTemplate.Name ) );
+        }
 
 
         if( csTemplate.Pouring.MinIsolatedCopper != csTemplate.Pouring.MinDisjointCopper )
-            wxLogError( wxString::Format(
+        {
+            wxLogWarning( wxString::Format(
                     _( "The CADSTAR template '%s' has different settings for 'Retain Poured Copper "
                        "- Disjoint' and 'Retain Poured Copper - Isolated'. KiCad does not "
                        "distinguish between these two settings. The setting for disjoint copper "
                        "has been applied as the minimum island area of the KiCad Zone." ),
                     csTemplate.Name ) );
+        }
 
-        if( csTemplate.Pouring.MinDisjointCopper < 0 )
-            zone->SetMinIslandArea( -1 );
+        long long minIslandArea = -1;
+
+        if( csTemplate.Pouring.MinDisjointCopper != UNDEFINED_VALUE )
+        {
+            minIslandArea = (long long) getKiCadLength( csTemplate.Pouring.MinDisjointCopper )
+                            * (long long) getKiCadLength( csTemplate.Pouring.MinDisjointCopper );
+
+            zone->SetIslandRemovalMode( ISLAND_REMOVAL_MODE::AREA );
+        }
         else
-            zone->SetMinIslandArea(
-                    (long long) getKiCadLength( csTemplate.Pouring.MinDisjointCopper )
-                    * (long long) getKiCadLength( csTemplate.Pouring.MinDisjointCopper ) );
+        {
+            zone->SetIslandRemovalMode( ISLAND_REMOVAL_MODE::ALWAYS );
+        }
 
-        zone->SetLocalClearance( getKiCadLength( csTemplate.Pouring.AdditionalIsolation ) );
+        zone->SetMinIslandArea( minIslandArea );
+
+        // In cadstar zone clearance is in addition to the design rule "copper to copper"
+        int clearance = getKiCadLength( csTemplate.Pouring.AdditionalIsolation );
+
+        if( Assignments.Codedefs.SpacingCodes.find( wxT( "C_C" ) )
+            != Assignments.Codedefs.SpacingCodes.end() )
+        {
+            int copperToCopper = Assignments.Codedefs.SpacingCodes.at( wxT( "C_C" ) ).Spacing;
+            clearance += getKiCadLength( copperToCopper );
+        }
+        else
+        {
+            clearance += mBoard->GetDesignSettings().m_MinClearance;
+        }
+
+        zone->SetLocalClearance( clearance );
+
+        COPPERCODE pouringCopperCode = getCopperCode( csTemplate.Pouring.CopperCodeID );
+        int        minThickness = getKiCadLength( pouringCopperCode.CopperWidth );
+        zone->SetMinThickness( minThickness );
 
         if( csTemplate.Pouring.FillType == TEMPLATE::POURING::COPPER_FILL_TYPE::HATCHED )
         {
@@ -1616,23 +1687,44 @@ void CADSTAR_PCB_ARCHIVE_LOADER::loadTemplates()
         }
 
         if( csTemplate.Pouring.ThermalReliefOnPads != csTemplate.Pouring.ThermalReliefOnVias
-                || csTemplate.Pouring.ThermalReliefPadsAngle
-                           != csTemplate.Pouring.ThermalReliefViasAngle )
+            || csTemplate.Pouring.ThermalReliefPadsAngle
+                       != csTemplate.Pouring.ThermalReliefViasAngle )
+        {
             wxLogWarning( wxString::Format(
                     _( "The CADSTAR template '%s' has different settings for thermal relief "
                        "in pads and vias. KiCad only supports one single setting for both. The "
                        "setting for pads has been applied." ),
                     csTemplate.Name ) );
+        }
 
-        if( csTemplate.Pouring.ThermalReliefOnPads )
+        COPPERCODE reliefCopperCode = getCopperCode( csTemplate.Pouring.ReliefCopperCodeID );
+        int        spokeWidth = getKiCadLength( reliefCopperCode.CopperWidth );
+        int        reliefWidth = getKiCadLength( csTemplate.Pouring.ClearanceWidth );
+
+        // Cadstar supports having a spoke width thinner than the minimum thickness of the zone, but
+        // this is not permitted in KiCad. We load it as solid fill instead.
+        if( csTemplate.Pouring.ThermalReliefOnPads && reliefWidth > 0 && spokeWidth > minThickness )
         {
-            zone->SetThermalReliefGap( getKiCadLength( csTemplate.Pouring.ClearanceWidth ) );
-            zone->SetThermalReliefSpokeWidth( getKiCadLength(
-                    getCopperCode( csTemplate.Pouring.ReliefCopperCodeID ).CopperWidth ) );
+            zone->SetThermalReliefGap( reliefWidth );
+            zone->SetThermalReliefSpokeWidth( spokeWidth );
             zone->SetPadConnection( ZONE_CONNECTION::THERMAL );
         }
         else
+        {
+            if( csTemplate.Pouring.ThermalReliefOnPads && spokeWidth > minThickness )
+            {
+                wxLogWarning( wxString::Format(
+                        _( "The CADSTAR template '%s' has thermal reliefs in the original design "
+                           "but there is no KiCad equivalent to the original CADSTAR settings. "
+                           "Solid fill has been applied instead. When the template is re-filled "
+                           "the thermal reliefs will be removed." ),
+                        csTemplate.Name ) );
+            }
+
             zone->SetPadConnection( ZONE_CONNECTION::FULL );
+        }
+
+        mLoadedTemplates.insert( { csTemplate.ID, zone } );
     }
 
     //Now create power plane layers:
@@ -1681,6 +1773,7 @@ void CADSTAR_PCB_ARCHIVE_LOADER::loadTemplates()
                 zone->SetFillMode( ZONE_FILL_MODE::POLYGONS );
                 zone->SetPadConnection( ZONE_CONNECTION::FULL );
                 zone->SetMinIslandArea( -1 );
+                zone->SetPriority( 0 ); // Priority always 0 (lowest priority) for implied power planes.
                 zone->SetNet( getKiCadNet( netid ) );
             }
         }
@@ -1695,7 +1788,64 @@ void CADSTAR_PCB_ARCHIVE_LOADER::loadCoppers()
         COPPER& csCopper = copPair.second;
 
         if( !csCopper.PouredTemplateID.IsEmpty() )
-            continue; //ignore copper related to a template as we've already loaded it!
+        {
+            ZONE* pouredZone = mLoadedTemplates.at( csCopper.PouredTemplateID );
+            SHAPE_POLY_SET rawPolys;
+
+            int copperWidth = getKiCadLength( getCopperCode( csCopper.CopperCodeID ).CopperWidth );
+
+            if( csCopper.Shape.Type == SHAPE_TYPE::OPENSHAPE )
+            {
+                // This is usually for themal reliefs. They are lines of copper with a thickness.
+                // We convert them to an oval in most cases, but handle also the possibility of
+                // encountering arcs in here.
+
+                std::vector<PCB_SHAPE*> outlineSegments =
+                        getDrawSegmentsFromVertices( csCopper.Shape.Vertices );
+
+                for( auto& seg : outlineSegments )
+                {
+                    SHAPE_POLY_SET segment;
+
+                    if( seg->GetShape() == PCB_SHAPE_TYPE_T::S_ARC )
+                    {
+                        TransformArcToPolygon( segment, seg->GetStart(), seg->GetArcMid(),
+                                               seg->GetEnd(), copperWidth, ARC_HIGH_DEF,
+                                               ERROR_LOC::ERROR_INSIDE );
+                    }
+                    else
+                    {
+                        TransformOvalToPolygon( segment, seg->GetStart(), seg->GetEnd(),
+                                                copperWidth, ARC_HIGH_DEF, ERROR_LOC::ERROR_INSIDE );
+                    }
+
+                    rawPolys.BooleanAdd( segment, SHAPE_POLY_SET::PM_STRICTLY_SIMPLE );
+                }
+
+            }
+            else
+            {
+                rawPolys = getPolySetFromCadstarShape( csCopper.Shape, -1 );
+                rawPolys.Inflate( copperWidth / 2, 32 );
+            }
+
+
+            if( pouredZone->HasFilledPolysForLayer( getKiCadLayer( csCopper.LayerID ) ) )
+            {
+                rawPolys.BooleanAdd( pouredZone->RawPolysList( getKiCadLayer( csCopper.LayerID )),
+                                     SHAPE_POLY_SET::PM_STRICTLY_SIMPLE );
+            }
+
+            SHAPE_POLY_SET finalPolys = rawPolys;
+            finalPolys.Fracture( SHAPE_POLY_SET::PM_STRICTLY_SIMPLE );
+
+            pouredZone->SetFillVersion( 6 );
+            pouredZone->SetRawPolysList( getKiCadLayer( csCopper.LayerID ), rawPolys );
+            pouredZone->SetFilledPolysList( getKiCadLayer( csCopper.LayerID ), finalPolys );
+            pouredZone->SetIsFilled( true );
+            pouredZone->SetNeedRefill( false );
+            continue;
+        }
 
         // For now we are going to load coppers to a KiCad zone however this isn't perfect
         //TODO: Load onto a graphical polygon with a net (when KiCad has this feature)
@@ -1749,6 +1899,7 @@ void CADSTAR_PCB_ARCHIVE_LOADER::loadCoppers()
 
             zone->SetZoneName( csCopper.ID );
             zone->SetLayer( getKiCadLayer( csCopper.LayerID ) );
+            zone->SetHatchStyle( ZONE_BORDER_DISPLAY_STYLE::NO_HATCH );
 
             if( csCopper.Shape.Type == SHAPE_TYPE::HATCHED )
             {
@@ -1762,8 +1913,17 @@ void CADSTAR_PCB_ARCHIVE_LOADER::loadCoppers()
                 zone->SetFillMode( ZONE_FILL_MODE::POLYGONS );
             }
 
+            zone->SetIslandRemovalMode( ISLAND_REMOVAL_MODE::NEVER );
             zone->SetPadConnection( ZONE_CONNECTION::FULL );
             zone->SetNet( getKiCadNet( csCopper.NetRef.NetID ) );
+            zone->SetPriority( mLoadedTemplates.size() + 1 ); // Highest priority (always fill first)
+            zone->SetRawPolysList( getKiCadLayer( csCopper.LayerID ), *zone->Outline() );
+
+            SHAPE_POLY_SET fillePolys( *zone->Outline() );
+            fillePolys.Fracture( SHAPE_POLY_SET::POLYGON_MODE::PM_STRICTLY_SIMPLE );
+
+            zone->SetFillVersion( 6 );
+            zone->SetFilledPolysList( getKiCadLayer( csCopper.LayerID ), fillePolys );
         }
     }
 }
@@ -1826,10 +1986,10 @@ void CADSTAR_PCB_ARCHIVE_LOADER::loadNets()
 
 void CADSTAR_PCB_ARCHIVE_LOADER::loadTextVariables()
 {
-    auto findAndReplaceTextField = 
-        [&]( TEXT_FIELD_NAME aField, wxString aValue ) 
+    auto findAndReplaceTextField =
+        [&]( TEXT_FIELD_NAME aField, wxString aValue )
         {
-            if( mContext.TextFieldToValuesMap.find( aField ) != 
+            if( mContext.TextFieldToValuesMap.find( aField ) !=
                 mContext.TextFieldToValuesMap.end() )
             {
                 if( mContext.TextFieldToValuesMap.at( aField ) != aValue )
@@ -1841,7 +2001,7 @@ void CADSTAR_PCB_ARCHIVE_LOADER::loadTextVariables()
             }
             else
             {
-                mContext.TextFieldToValuesMap.insert( { aField, aValue } );                
+                mContext.TextFieldToValuesMap.insert( { aField, aValue } );
             }
 
             return true;
@@ -2033,6 +2193,12 @@ void CADSTAR_PCB_ARCHIVE_LOADER::drawCadstarText( const TEXT& aCadstarText,
 
     wxSize unscaledTextSize;
     unscaledTextSize.x = getKiCadLength( tc.Width );
+
+    // The width is zero for all non-cadstar fonts. Using a width equal to the height seems
+    // to work well for most fonts.
+    if( unscaledTextSize.x == 0 )
+        unscaledTextSize.x = getKiCadLength( tc.Height );
+
     unscaledTextSize.y = KiROUND( TXT_HEIGHT_RATIO * (double) getKiCadLength( tc.Height ) );
     txt->SetTextSize( unscaledTextSize );
 
@@ -2097,8 +2263,8 @@ void CADSTAR_PCB_ARCHIVE_LOADER::drawCadstarText( const TEXT& aCadstarText,
     if( aScalingFactor != 1.0 )
     {
         wxSize scaledTextSize;
-        scaledTextSize.x = KiROUND( (double) getKiCadLength( tc.Width ) * aScalingFactor );
-        scaledTextSize.y = KiROUND( (double) getKiCadLength( tc.Height ) * aScalingFactor );
+        scaledTextSize.x = KiROUND( (double) unscaledTextSize.x * aScalingFactor );
+        scaledTextSize.y = KiROUND( (double) unscaledTextSize.y * aScalingFactor );
         txt->SetTextSize( scaledTextSize );
         txt->SetTextThickness(
                 KiROUND( (double) getKiCadLength( tc.LineWidth ) * aScalingFactor ) );
@@ -2192,8 +2358,14 @@ void CADSTAR_PCB_ARCHIVE_LOADER::drawCadstarShape( const SHAPE& aCadstarShape,
         }
 
         shape->SetFilled( true );
-        shape->SetPolyShape( getPolySetFromCadstarShape( aCadstarShape, -1, aContainer, aMoveVector,
-                             aRotationAngle, aScalingFactor, aTransformCentre, aMirrorInvert ) );
+
+        SHAPE_POLY_SET shapePolys = getPolySetFromCadstarShape(
+                aCadstarShape, -1, aContainer, aMoveVector, aRotationAngle, aScalingFactor,
+                aTransformCentre, aMirrorInvert );
+
+        shapePolys.Fracture( SHAPE_POLY_SET::POLYGON_MODE::PM_STRICTLY_SIMPLE );
+
+        shape->SetPolyShape( shapePolys );
         shape->SetWidth( aLineThickness );
         shape->SetLayer( aKiCadLayer );
         aContainer->Add( shape, ADD_MODE::APPEND );
@@ -2450,10 +2622,6 @@ SHAPE_POLY_SET CADSTAR_PCB_ARCHIVE_LOADER::getPolySetFromCadstarShape( const SHA
     if( aLineThickness > 0 )
         polySet.Inflate( aLineThickness / 2, 32, SHAPE_POLY_SET::CORNER_STRATEGY::ROUND_ALL_CORNERS );
 
-    //Make a new polyset with no holes
-    //TODO: Using strictly simple to be safe, but need to find out if PM_FAST works okay
-    polySet.Fracture( SHAPE_POLY_SET::POLYGON_MODE::PM_STRICTLY_SIMPLE );
-
 #ifdef DEBUG
     for( int i = 0; i < polySet.OutlineCount(); ++i )
     {
@@ -2512,9 +2680,16 @@ SHAPE_LINE_CHAIN CADSTAR_PCB_ARCHIVE_LOADER::getLineChainFromDrawsegments( const
         }
     }
 
-    lineChain.SetClosed( true ); //todo check if it is closed
-
+    // Shouldn't have less than 3 points to make a closed shape!
     wxASSERT( lineChain.PointCount() > 2 );
+
+    // Check if it is closed
+    if( lineChain.GetPoint( 0 ) != lineChain.GetPoint( lineChain.PointCount() - 1 ) )
+    {
+        lineChain.Append( lineChain.GetPoint( 0 ) );
+    }
+
+    lineChain.SetClosed( true );
 
     return lineChain;
 }
@@ -2657,6 +2832,12 @@ void CADSTAR_PCB_ARCHIVE_LOADER::addAttribute( const ATTRIBUTE_LOCATION& aCadsta
 
     wxSize txtSize;
     txtSize.x = getKiCadLength( tc.Width );
+
+    // The width is zero for all non-cadstar fonts. Using a width equal to the height seems
+    // to work well for most fonts.
+    if( txtSize.x == 0 )
+        txtSize.x = getKiCadLength( tc.Height );
+
     txtSize.y = KiROUND( TXT_HEIGHT_RATIO * (double) getKiCadLength( tc.Height ) );
     txt->SetTextSize( txtSize );
     txt->SetKeepUpright( false ); //Keeping it upright seems to result in incorrect orientation
@@ -3007,7 +3188,7 @@ void CADSTAR_PCB_ARCHIVE_LOADER::applyDimensionSettings( const DIMENSION&  aCads
                                            "applied instead." ),
                                         aCadstarDim.ID ) );
         KI_FALLTHROUGH;
-    case UNITS::MM: 
+    case UNITS::MM:
         aKiCadDim->SetUnitsMode( DIM_UNITS_MODE::MILLIMETRES );
         break;
 
@@ -3023,6 +3204,130 @@ void CADSTAR_PCB_ARCHIVE_LOADER::applyDimensionSettings( const DIMENSION&  aCads
         wxFAIL_MSG( "We should have handled design units before coming here!" );
         break;
     }
+}
+
+
+void CADSTAR_PCB_ARCHIVE_LOADER::calculateZonePriorities()
+{
+    std::map<TEMPLATE_ID, std::set<TEMPLATE_ID>> winningOverlaps;
+    std::set<std::pair<TEMPLATE_ID, TEMPLATE_ID>> scheduleInferPriorityFromOutline;
+
+    // Calculate the intesection between aPolygon and the outline of aZone
+    auto intersectionArea = [&]( SHAPE_POLY_SET aPolygon, ZONE* aZone ) -> double
+                            {
+                                SHAPE_POLY_SET intersectShape( *aZone->Outline() );
+
+                                intersectShape.BooleanIntersection( aPolygon,
+                                                                    SHAPE_POLY_SET::PM_FAST );
+                                return intersectShape.Area();
+                            };
+
+    // Lambda to determine if the zone with template ID 'a' is lower priority than 'b'
+    auto isLowerPriority =  [&]( const TEMPLATE_ID& a, const TEMPLATE_ID& b ) -> bool
+                            {
+                                return winningOverlaps[b].count( a ) > 0;
+                            };
+
+    for( std::map<TEMPLATE_ID, ZONE*>::iterator it1 = mLoadedTemplates.begin();
+         it1 != mLoadedTemplates.end(); ++it1 )
+    {
+        TEMPLATE     thisTemplate = Layout.Templates.at( it1->first );
+        PCB_LAYER_ID thisLayer = getKiCadLayer( thisTemplate.LayerID );
+        ZONE*        thisZone = it1->second;
+
+        for( std::map<TEMPLATE_ID, ZONE*>::iterator it2 = it1;
+            it2 != mLoadedTemplates.end(); ++it2 )
+        {
+            TEMPLATE     otherTemplate = Layout.Templates.at( it2->first );
+            PCB_LAYER_ID otherLayer = getKiCadLayer( otherTemplate.LayerID );
+            ZONE*        otherZone = it2->second;
+
+            if( thisTemplate.ID == otherTemplate.ID )
+                continue;
+
+            if( thisLayer != otherLayer )
+                continue;
+
+            SHAPE_POLY_SET thisZonePolyFill = thisZone->GetFilledPolysList( thisLayer );
+            SHAPE_POLY_SET otherZonePolyFill = otherZone->GetFilledPolysList( otherLayer );
+
+            if( thisZonePolyFill.Area() > 0.0 && otherZonePolyFill.Area() > 0.0 )
+            {
+                // Intersect the filled polygons of thisZone with the *outline* of otherZone
+                double areaThis = intersectionArea( thisZonePolyFill, otherZone );
+                // Viceversa
+                double areaOther = intersectionArea( otherZonePolyFill, thisZone );
+
+                // Best effort: Compare Areas
+                // If thisZone's fill polygons overlap otherZone's outline *and* the opposite
+                // is true: otherZone's fill polygons overlap thisZone's outline then compare the
+                // intersection areas to decide which of the two zones should have higher priority
+                // There are some edge cases where this might not work, but it is in the minority.
+                if( areaThis > areaOther )
+                {
+                    winningOverlaps[thisTemplate.ID].insert( otherTemplate.ID );
+                }
+                else if( areaOther > 0.0 )
+                {
+                    winningOverlaps[otherTemplate.ID].insert( thisTemplate.ID );
+                }
+                else
+                {
+                    scheduleInferPriorityFromOutline.insert(
+                            { thisTemplate.ID, otherTemplate.ID } );
+                }
+            }
+            else
+            {
+                // One of the templates is not poured in the original CADSTAR design.
+                // Lets infer the priority based of the outlines instead
+                scheduleInferPriorityFromOutline.insert( { thisTemplate.ID, otherTemplate.ID } );
+            }
+        }
+    }
+
+    // Build a set of unique TEMPLATE_IDs of all the zones that intersect with another one
+    std::set<TEMPLATE_ID> intersectingIDs;
+
+    for( const std::pair<TEMPLATE_ID, std::set<TEMPLATE_ID>>& idPair : winningOverlaps )
+    {
+        intersectingIDs.insert( idPair.first );
+        intersectingIDs.insert( idPair.second.begin(), idPair.second.end() );
+    }
+
+    // Now store them in a vector
+    std::vector<TEMPLATE_ID> sortedIDs;
+
+    for( const TEMPLATE_ID& id : intersectingIDs )
+    {
+        sortedIDs.push_back( id );
+    }
+
+    // sort by priority
+    std::sort( sortedIDs.begin(), sortedIDs.end(), isLowerPriority );
+
+    TEMPLATE_ID prevID = wxEmptyString;
+
+    for( const TEMPLATE_ID& id : sortedIDs )
+    {
+        if( prevID.IsEmpty() )
+        {
+            prevID = id;
+            continue;
+        }
+
+        wxASSERT( !isLowerPriority( id, prevID ) );
+
+        int newPriority = mLoadedTemplates.at( prevID )->GetPriority();
+
+        // Only increase priority of the current zone
+        if( isLowerPriority( prevID, id ) )
+            newPriority++;
+
+        mLoadedTemplates.at( id )->SetPriority( newPriority );
+        prevID = id;
+    }
+
 }
 
 

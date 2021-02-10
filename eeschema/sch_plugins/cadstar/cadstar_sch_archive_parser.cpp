@@ -1,8 +1,8 @@
 /*
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
- * Copyright (C) 2020 Roberto Fernandez Bautista <roberto.fer.bau@gmail.com>
- * Copyright (C) 2020 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 2020-2021 Roberto Fernandez Bautista <roberto.fer.bau@gmail.com>
+ * Copyright (C) 2020-2021 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * This program is free software: you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -82,9 +82,42 @@ void CADSTAR_SCH_ARCHIVE_PARSER::Parse()
         }
         else if( cNode->GetName() == wxT( "DISPLAY" ) )
         {
-            // No design information here (no need to parse)
-            // Contains CADSTAR Display settings such as layer/element colours and visibility.
-            // In the future these settings could be converted to KiCad
+            // For now only interested in Attribute visibilities, in order to set field visibilities
+            // in the imported design
+            XNODE* subNode = cNode->GetChildren();
+
+            for( ; subNode; subNode = subNode->GetNext() )
+            {
+                if( subNode->GetName() == wxT( "ATTRCOLORS" ) )
+                {
+                    AttrColors.Parse( subNode, &mContext );
+                }
+                else if( subNode->GetName() == wxT( "SCMITEMCOLORS" ) )
+                {
+                    XNODE* sub2Node = subNode->GetChildren();
+
+                    for( ; sub2Node; sub2Node = sub2Node->GetNext() )
+                    {
+                        if( sub2Node->GetName() == wxT( "SYMCOL" ) )
+                        {
+                            XNODE* sub3Node = sub2Node->GetChildren();
+
+                            for( ; sub3Node; sub3Node = sub3Node->GetNext() )
+                            {
+                                if( sub3Node->GetName() == wxT( "PARTNAMECOL" ) )
+                                    SymbolPartNameColor.Parse( sub3Node, &mContext );
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    // No design information here
+                    // Contains CADSTAR Display settings such as layer/element colours and visibility.
+                    // In the future these settings could be converted to KiCad
+                }
+            }
+
         }
         else
         {
@@ -166,7 +199,7 @@ void CADSTAR_SCH_ARCHIVE_PARSER::TERMINAL_SHAPE::Parse( XNODE* aNode, PARSER_CON
     case TERMINAL_SHAPE_TYPE::POINTER:
     case TERMINAL_SHAPE_TYPE::RECTANGLE:
     case TERMINAL_SHAPE_TYPE::TRIANGLE:
-        RightLength = GetXmlAttributeIDLong( aNode, 2 );
+        RightLength = GetXmlAttributeIDLong( aNode, 2, false ); // Optional
         LeftLength  = GetXmlAttributeIDLong( aNode, 1 );
         break;
 
@@ -1171,7 +1204,7 @@ void CADSTAR_SCH_ARCHIVE_PARSER::NET_SCH::JUNCTION_SCH::Parse( XNODE* aNode, PAR
             THROW_UNKNOWN_NODE_IO_ERROR( cNode->GetName(), aNode->GetName() );
         }
     }
-    
+
 }
 
 
