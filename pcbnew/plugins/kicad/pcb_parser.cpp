@@ -299,7 +299,13 @@ void PCB_PARSER::parseEDA_TEXT( EDA_TEXT* aText )
 
                 case T_italic: aText->SetItalic( true ); break;
 
-                default: Expecting( "size, bold, or italic" );
+                case T_face:
+                    NeedSYMBOL();
+                    aText->SetFontFromProperty( FromUTF8() );
+                    NeedRIGHT();
+                    break;
+
+                default: Expecting( "size, thickness, bold, italic, or face" );
                 }
             }
             break;
