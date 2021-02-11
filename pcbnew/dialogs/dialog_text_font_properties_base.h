@@ -24,12 +24,12 @@ class PCB_LAYER_BOX_SELECTOR;
 #include <wx/textctrl.h>
 #include <wx/checkbox.h>
 #include <wx/bmpcbox.h>
-#include <wx/combobox.h>
 #include <wx/button.h>
 #include <wx/bitmap.h>
 #include <wx/image.h>
 #include <wx/icon.h>
 #include <wx/choice.h>
+#include <wx/combobox.h>
 #include <wx/statline.h>
 #include <wx/menu.h>
 #include <wx/dialog.h>
@@ -55,9 +55,9 @@ class DIALOG_TEXT_PROPERTIES_BASE : public DIALOG_SHIM
 		PCB_LAYER_BOX_SELECTOR* m_LayerSelectionCtrl;
 		wxCheckBox* m_Visible;
 		wxStaticText* m_FontLabel;
-		wxComboBox* m_Font;
-		wxButton* m_FontDialogButton;
+		wxTextCtrl* m_Font;
 		wxCheckBox* m_Italic;
+		wxButton* m_FontDialogButton;
 		wxStaticText* m_SizeXLabel;
 		wxTextCtrl* m_SizeXCtrl;
 		wxStaticText* m_SizeXUnits;

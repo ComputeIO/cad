@@ -112,17 +112,17 @@ DIALOG_TEXT_PROPERTIES_BASE::DIALOG_TEXT_PROPERTIES_BASE( wxWindow* parent, wxWi
 
 	fgSizerSetup->Add( m_FontLabel, 0, wxALIGN_CENTER_VERTICAL|wxRIGHT, 5 );
 
-	m_Font = new wxComboBox( this, wxID_ANY, _("Combo!"), wxDefaultPosition, wxSize( -1,-1 ), 0, NULL, 0 );
+	m_Font = new wxTextCtrl( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxSize( -1,-1 ), 0 );
 	fgSizerSetup->Add( m_Font, 0, wxALL, 5 );
 
-	m_FontDialogButton = new wxButton( this, wxID_ANY, _("Choose font..."), wxDefaultPosition, wxDefaultSize, 0 );
-	fgSizerSetup->Add( m_FontDialogButton, 0, wxALL, 5 );
+
+	fgSizerSetup->Add( 0, 0, 1, wxEXPAND, 5 );
 
 	m_Italic = new wxCheckBox( this, wxID_ANY, _("Italic"), wxDefaultPosition, wxDefaultSize, 0 );
 	fgSizerSetup->Add( m_Italic, 0, wxALIGN_CENTER_VERTICAL|wxLEFT|wxRIGHT, 5 );
 
-
-	fgSizerSetup->Add( 0, 0, 1, wxEXPAND, 5 );
+	m_FontDialogButton = new wxButton( this, wxID_ANY, _("Choose font..."), wxDefaultPosition, wxDefaultSize, 0 );
+	fgSizerSetup->Add( m_FontDialogButton, 0, wxALL, 5 );
 
 	m_SizeXLabel = new wxStaticText( this, wxID_ANY, _("Width:"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_SizeXLabel->Wrap( -1 );
