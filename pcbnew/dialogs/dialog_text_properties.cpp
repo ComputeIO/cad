@@ -222,6 +222,7 @@ void DIALOG_TEXT_PROPERTIES::onShowFontDialog( wxCommandEvent& aEvent )
                   << ( theFont.IsOk() ? " OK" : " (not ok)" ) << std::endl;
 
 #endif
+        m_Font->SetValue( theFont.GetFaceName() );
         //theText->SetFont(theFont);
         //theText->SetForegroundColour(fontData.GetColour());
     }
@@ -361,6 +362,10 @@ bool DIALOG_TEXT_PROPERTIES::TransferDataToWindow()
 
     m_LayerSelectionCtrl->SetLayerSelection( m_item->GetLayer() );
 
+#ifdef KICAD_USE_FONTCONFIG
+    if( m_edaText->GetFont() )
+        m_Font->SetValue( m_edaText->GetFont()->Name() );
+#endif
     m_textWidth.SetValue( m_edaText->GetTextSize().x );
     m_textHeight.SetValue( m_edaText->GetTextSize().y );
     m_thickness.SetValue( m_edaText->GetTextThickness() );
@@ -431,6 +436,14 @@ bool DIALOG_TEXT_PROPERTIES::TransferDataFromWindow()
 
     m_item->SetLayer( ToLAYER_ID( m_LayerSelectionCtrl->GetLayerSelection() ) );
 
+#ifdef KICAD_USE_FONTCONFIG
+    if( !m_Font->IsEmpty() )
+    {
+        wxString    fontNameFromField = m_Font->GetValue();
+        std::string fontName( fontNameFromField );
+        m_edaText->SetFont( fontName );
+    }
+#endif
     m_edaText->SetTextSize( wxSize( m_textWidth.GetValue(), m_textHeight.GetValue() ) );
     m_edaText->SetTextThickness( m_thickness.GetValue() );
     m_edaText->SetTextPos( wxPoint( m_posX.GetValue(), m_posY.GetValue() ) );
