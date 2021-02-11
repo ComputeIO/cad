@@ -1,8 +1,8 @@
 /*
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
- * Copyright (C) 2020 Roberto Fernandez Bautista <roberto.fer.bau@gmail.com>
- * Copyright (C) 2020 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 2020-2021 Roberto Fernandez Bautista <roberto.fer.bau@gmail.com>
+ * Copyright (C) 2020-2021 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * This program is free software: you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -2163,6 +2163,107 @@ void CADSTAR_ARCHIVE_PARSER::DOCUMENTATION_SYMBOL::Parse( XNODE* aNode, PARSER_C
 
     if( !originParsed )
         THROW_MISSING_PARAMETER_IO_ERROR( wxT( "PT" ), aNode->GetName() );
+}
+
+
+void CADSTAR_ARCHIVE_PARSER::DFLTSETTINGS::Parse( XNODE* aNode, PARSER_CONTEXT* aContext )
+{
+    wxASSERT( aNode->GetName() == wxT( "DFLTSETTINGS" ) );
+
+    Color = GetXmlAttributeIDString( aNode, 0 );
+
+    XNODE* cNode = aNode->GetChildren();
+
+    for( ; cNode; cNode = cNode->GetNext() )
+    {
+        wxString cNodeName = cNode->GetName();
+
+        if( cNodeName == wxT( "INVISIBLE" ) )
+        {
+            IsVisible = false;
+        }
+        else
+        {
+            THROW_UNKNOWN_NODE_IO_ERROR( cNodeName, aNode->GetName() );
+        }
+    }
+}
+
+
+void CADSTAR_ARCHIVE_PARSER::ATTRCOL::Parse( XNODE* aNode, PARSER_CONTEXT* aContext )
+{
+    wxASSERT( aNode->GetName() == wxT( "ATTRCOL" ) );
+
+    AttributeID = GetXmlAttributeIDString( aNode, 0 );
+    Color = GetXmlAttributeIDString( aNode, 1 );
+
+    XNODE* cNode = aNode->GetChildren();
+
+    for( ; cNode; cNode = cNode->GetNext() )
+    {
+        wxString cNodeName = cNode->GetName();
+
+        if( cNodeName == wxT( "INVISIBLE" ) )
+        {
+            IsVisible = false;
+        }
+        else
+        {
+            THROW_UNKNOWN_NODE_IO_ERROR( cNodeName, aNode->GetName() );
+        }
+    }
+}
+
+
+void CADSTAR_ARCHIVE_PARSER::ATTRCOLORS::Parse( XNODE* aNode, PARSER_CONTEXT* aContext )
+{
+    wxASSERT( aNode->GetName() == wxT( "ATTRCOLORS" ) );
+
+    XNODE* cNode = aNode->GetChildren();
+
+    for( ; cNode; cNode = cNode->GetNext() )
+    {
+        wxString cNodeName = cNode->GetName();
+
+        if( cNodeName == wxT( "DFLTSETTINGS" ) )
+        {
+            DefaultSettings.Parse( cNode, aContext );
+        }
+        else if( cNodeName == wxT( "ATTRCOL" ) )
+        {
+            ATTRCOL attrcol;
+            attrcol.Parse( cNode, aContext );
+            AttributeColors.insert( { attrcol.AttributeID, attrcol } );
+        }
+        else
+        {
+            THROW_UNKNOWN_NODE_IO_ERROR( cNodeName, aNode->GetName() );
+        }
+    }
+}
+
+
+void CADSTAR_ARCHIVE_PARSER::PARTNAMECOL::Parse( XNODE* aNode, PARSER_CONTEXT* aContext )
+{
+    wxASSERT( aNode->GetName() == wxT( "PARTNAMECOL" ) );
+
+    Color = GetXmlAttributeIDString( aNode, 0 );
+
+    XNODE* cNode = aNode->GetChildren();
+
+    for( ; cNode; cNode = cNode->GetNext() )
+    {
+        wxString cNodeName = cNode->GetName();
+
+        if( cNodeName == wxT( "INVISIBLE" ) )
+        {
+            IsVisible = false;
+        }
+        else
+        {
+            THROW_UNKNOWN_NODE_IO_ERROR( cNodeName, aNode->GetName() );
+        }
+    }
 }
 
 

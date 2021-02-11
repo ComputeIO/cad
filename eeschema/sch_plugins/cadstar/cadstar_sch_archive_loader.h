@@ -1,8 +1,8 @@
 /*
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
- * Copyright (C) 2020 Roberto Fernandez Bautista <roberto.fer.bau@gmail.com>
- * Copyright (C) 2020 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 2020-2021 Roberto Fernandez Bautista <roberto.fer.bau@gmail.com>
+ * Copyright (C) 2020-2021 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * This program is free software: you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -30,6 +30,7 @@
 
 #include <layers_id_colors_and_visibility.h> // SCH_LAYER_ID
 #include <plotter.h>                         // PLOT_DASH_TYPE
+#include <pin_type.h>                        // ELECTRICAL_PINTYPE
 #include <sch_io_mgr.h>
 #include <wx/filename.h>
 
@@ -77,6 +78,7 @@ public:
 
 private:
     typedef std::pair<BLOCK_ID, TERMINAL_ID> BLOCK_PIN_ID;
+    typedef std::map<TERMINAL_ID, wxString>  TERMINAL_TO_PINNUM_MAP;
 
     ::SCHEMATIC*                     mSchematic;
     ::SCH_SHEET*                     mRootSheet;
@@ -91,6 +93,7 @@ private:
     std::map<BLOCK_PIN_ID, SCH_HIERLABEL*>
                                  mSheetPinMap; ///< Map between Cadstar and KiCad Sheets Pins
     std::map<PART_ID, LIB_PART*> mPartMap;     ///< Map between Cadstar and KiCad Parts
+    std::map<PART_ID, TERMINAL_TO_PINNUM_MAP> mPinNumsMap; ///< Map of pin numbers
     std::map<SYMDEF_ID, LIB_PART*>
             mPowerSymLibMap; ///< Map between Cadstar and KiCad Power Symbol Library items
     std::map<SYMBOL_ID, SCH_COMPONENT*>
@@ -129,15 +132,16 @@ private:
     void loadLibrarySymbolShapeVertices( const std::vector<VERTEX>& aCadstarVertices,
             wxPoint aSymbolOrigin, LIB_PART* aPart, int aGateNumber );
 
-    void loadLibraryFieldAttribute( const ATTRIBUTE_LOCATION& aCadstarAttrLoc,
-            wxPoint aSymbolOrigin, LIB_FIELD* aKiCadField );
+    void applyToLibraryFieldAttribute( const ATTRIBUTE_LOCATION& aCadstarAttrLoc,
+                                       wxPoint aSymbolOrigin, LIB_FIELD* aKiCadField );
 
     //Helper Functions for loading symbols in schematic
-    SCH_COMPONENT* loadSchematicSymbol( const SYMBOL& aCadstarSymbol, LIB_PART* aKiCadPart,
-            double& aComponentOrientationDeciDeg );
+    SCH_COMPONENT* loadSchematicSymbol( const SYMBOL& aCadstarSymbol, const LIB_PART& aKiCadPart,
+                                        double& aComponentOrientationDeciDeg );
 
     void loadSymbolFieldAttribute( const ATTRIBUTE_LOCATION& aCadstarAttrLoc,
-            const double& aComponentOrientationDeciDeg, SCH_FIELD* aKiCadField );
+                                   const double& aComponentOrientationDeciDeg, bool aIsMirrored,
+                                   SCH_FIELD* aKiCadField );
 
     int getComponentOrientation( double aOrientAngleDeciDeg, double& aReturnedOrientationDeciDeg );
 
@@ -173,8 +177,8 @@ private:
 
     //Helper Functions for obtaining CADSTAR elements from the parsed structures
     SYMDEF_ID getSymDefFromName( const wxString& aSymdefName, const wxString& aSymDefAlternate );
+    bool      isAttributeVisible( const ATTRIBUTE_ID& aCadstarAttributeID );
 
-    wxString       generateSymDefName( const SYMDEF_ID& aSymdefID );
     int            getLineThickness( const LINECODE_ID& aCadstarLineCodeID );
     PLOT_DASH_TYPE getLineStyle( const LINECODE_ID& aCadstarLineCodeID );
     PART           getPart( const PART_ID& aCadstarPartID );
@@ -188,10 +192,12 @@ private:
             const PART& aCadstarPart, const GATE_ID& aGateID, const TERMINAL_ID& aTerminalID );
 
     //Helper Functions for obtaining individual elements as KiCad elements:
+    ELECTRICAL_PINTYPE getKiCadPinType( const PART::PIN_TYPE& aPinType );
+
     int              getKiCadUnitNumberFromGate( const GATE_ID& aCadstarGateID );
     LABEL_SPIN_STYLE getSpinStyle( const long long& aCadstarOrientation, bool aMirror );
     LABEL_SPIN_STYLE getSpinStyleDeciDeg( const double& aOrientationDeciDeg );
-
+    SCH_FIELD*       getFieldByName( SCH_COMPONENT* aComponent );
 
     //General Graphical manipulation functions
     std::pair<wxPoint, wxSize> getFigureExtentsKiCad( const FIGURE& aCadstarFigure );

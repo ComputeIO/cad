@@ -69,8 +69,8 @@ namespace KIGFX
 {
 SCH_RENDER_SETTINGS::SCH_RENDER_SETTINGS() :
         m_ShowUnit( 0 ), m_ShowConvert( 0 ), m_ShowHiddenText( true ), m_ShowHiddenPins( true ),
-        m_ShowPinsElectricalType( true ), m_ShowDisabled( false ), m_ShowUmbilicals( true ),
-        m_OverrideItemColors( false ), m_TextOffsetRatio( 0.08 ),
+        m_ShowPinsElectricalType( true ), m_ShowDisabled( false ), m_ShowGraphicsDisabled( false ),
+        m_ShowUmbilicals( true ), m_OverrideItemColors( false ), m_TextOffsetRatio( 0.08 ),
         m_DefaultWireThickness( DEFAULT_WIRE_THICKNESS * IU_PER_MILS ),
         m_DefaultBusThickness( DEFAULT_BUS_THICKNESS * IU_PER_MILS ),
         m_PinSymbolSize( DEFAULT_TEXT_SIZE * IU_PER_MILS / 2 ),
@@ -303,8 +303,11 @@ COLOR4D SCH_PAINTER::getRenderColor( const EDA_ITEM* aItem, int aLayer, bool aDr
             color = m_schSettings.GetLayerColor( LAYER_SELECTION_SHADOWS ).WithAlpha( 0.8 );
     }
 
-    if( m_schSettings.m_ShowDisabled )
+    if( m_schSettings.m_ShowDisabled
+        || ( m_schSettings.m_ShowGraphicsDisabled && aItem->Type() != LIB_FIELD_T ) )
+    {
         color = color.Darken( 0.5f );
+    }
 
     return color;
 }

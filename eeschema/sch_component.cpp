@@ -99,9 +99,10 @@ SCH_COMPONENT::SCH_COMPONENT( const wxPoint& aPos, SCH_ITEM* aParent ) :
 }
 
 
-SCH_COMPONENT::SCH_COMPONENT( LIB_PART& aPart, LIB_ID aLibId, SCH_SHEET_PATH* sheet,
-                              int unit, int convert, const wxPoint& pos ) :
-    SCH_ITEM( NULL, SCH_COMPONENT_T )
+SCH_COMPONENT::SCH_COMPONENT( const LIB_PART& aPart, const LIB_ID& aLibId,
+                              const SCH_SHEET_PATH* aSheet, int unit, int convert,
+                              const wxPoint& pos ) :
+        SCH_ITEM( NULL, SCH_COMPONENT_T )
 {
     Init( pos );
 
@@ -119,8 +120,8 @@ SCH_COMPONENT::SCH_COMPONENT( LIB_PART& aPart, LIB_ID aLibId, SCH_SHEET_PATH* sh
     UpdateFields( true, true );
 
     // Update the reference -- just the prefix for now.
-    if( sheet )
-        SetRef( sheet, m_part->GetReferenceField().GetText() + wxT( "?" ) );
+    if( aSheet )
+        SetRef( aSheet, m_part->GetReferenceField().GetText() + wxT( "?" ) );
     else
         m_prefix = m_part->GetReferenceField().GetText() + wxT( "?" );
 
@@ -130,9 +131,9 @@ SCH_COMPONENT::SCH_COMPONENT( LIB_PART& aPart, LIB_ID aLibId, SCH_SHEET_PATH* sh
 }
 
 
-SCH_COMPONENT::SCH_COMPONENT( LIB_PART& aPart, SCH_SHEET_PATH* aSheet, PICKED_SYMBOL& aSel,
-                              const wxPoint& pos ) :
-    SCH_COMPONENT( aPart, aSel.LibId, aSheet, aSel.Unit, aSel.Convert, pos )
+SCH_COMPONENT::SCH_COMPONENT( const LIB_PART& aPart, const SCH_SHEET_PATH* aSheet,
+                              const PICKED_SYMBOL& aSel, const wxPoint& pos ) :
+        SCH_COMPONENT( aPart, aSel.LibId, aSheet, aSel.Unit, aSel.Convert, pos )
 {
     // Set any fields that were modified as part of the component selection
     for( auto const& i : aSel.Fields )

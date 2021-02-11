@@ -122,6 +122,8 @@ public:
     BOARD* Load( const wxString& aFileName, BOARD* aAppendToMe,
                  const PROPERTIES* aProperties = nullptr, PROJECT* aProject = nullptr ) override;
 
+    std::vector<FOOTPRINT*> GetImportedCachedLibraryFootprints() override;
+
     const wxString GetFileExtension() const override;
 
     void FootprintEnumerate( wxArrayString& aFootprintNames, const wxString& aLibraryPath,

@@ -336,7 +336,7 @@ void SYMBOL_EDIT_FRAME::setupUIConditions()
         {
             // Only root symbols from the new s-expression libraries or the schematic
             // are editable.
-            return IsSymbolEditable();
+            return IsSymbolEditable() && !IsSymbolAlias();
         };
 
     auto schematicModifiedCond =
@@ -706,8 +706,6 @@ void SYMBOL_EDIT_FRAME::SetCurPart( LIB_PART* aPart, bool aUpdateZoom )
         m_treePane->GetLibTree()->Unselect();
 
     wxString partName = m_my_part ? m_my_part->GetName() : wxString();
-    bool     isAlias = !IsSymbolFromSchematic() && m_my_part && m_my_part->IsAlias();
-    bool     isLegacy = IsSymbolFromLegacyLibrary();
 
     // retain in case this wxFrame is re-opened later on the same PROJECT
     Prj().SetRString( PROJECT::SCH_LIBEDIT_CUR_PART, partName );
@@ -719,7 +717,8 @@ void SYMBOL_EDIT_FRAME::SetCurPart( LIB_PART* aPart, bool aUpdateZoom )
 
     GetRenderSettings()->m_ShowUnit = m_unit;
     GetRenderSettings()->m_ShowConvert = m_convert;
-    GetRenderSettings()->m_ShowDisabled = ( isAlias || isLegacy ) && !IsSymbolFromSchematic();
+    GetRenderSettings()->m_ShowDisabled = IsSymbolFromLegacyLibrary() && !IsSymbolFromSchematic();
+    GetRenderSettings()->m_ShowGraphicsDisabled = IsSymbolAlias() && !IsSymbolFromSchematic();
     GetCanvas()->DisplayComponent( m_my_part );
     GetCanvas()->GetView()->HideWorksheet();
     GetCanvas()->GetView()->ClearHiddenFlags();
@@ -740,7 +739,7 @@ void SYMBOL_EDIT_FRAME::SetCurPart( LIB_PART* aPart, bool aUpdateZoom )
         infobar->RemoveAllButtons();
         infobar->ShowMessage( msg, wxICON_INFORMATION );
     }
-    else if( isLegacy )
+    else if( IsSymbolFromLegacyLibrary() )
     {
         wxHyperlinkCtrl* button = new wxHyperlinkCtrl( infobar, wxID_ANY,
                                                        _( "Manage symbol libraries" ),
@@ -758,7 +757,7 @@ void SYMBOL_EDIT_FRAME::SetCurPart( LIB_PART* aPart, bool aUpdateZoom )
                                  "Symbol Libraries to migrate to current format." ),
                               wxICON_INFORMATION );
     }
-    else if( isAlias )
+    else if( IsSymbolAlias() )
     {
         wxString parentPartName = m_my_part->GetParent().lock()->GetName();
         wxString msg;
@@ -1118,8 +1117,8 @@ void SYMBOL_EDIT_FRAME::RebuildView()
 {
     GetRenderSettings()->m_ShowUnit = m_unit;
     GetRenderSettings()->m_ShowConvert = m_convert;
-    GetRenderSettings()->m_ShowDisabled =
-            m_my_part && m_my_part->IsAlias() && !IsSymbolFromSchematic();
+    GetRenderSettings()->m_ShowDisabled = IsSymbolFromLegacyLibrary() && !IsSymbolFromSchematic();
+    GetRenderSettings()->m_ShowGraphicsDisabled = IsSymbolAlias() && !IsSymbolFromSchematic();
     GetCanvas()->DisplayComponent( m_my_part );
     GetCanvas()->GetView()->HideWorksheet();
     GetCanvas()->GetView()->ClearHiddenFlags();
@@ -1438,8 +1437,13 @@ bool SYMBOL_EDIT_FRAME::replaceLibTableEntry( const wxString& aLibNickname,
 }
 
 
+bool SYMBOL_EDIT_FRAME::IsSymbolAlias() const
+{
+    return m_my_part && !m_my_part->IsRoot();
+}
+
+
 bool SYMBOL_EDIT_FRAME::IsSymbolEditable() const
 {
-    return m_my_part && m_my_part->IsRoot() &&
-            ( !IsSymbolFromLegacyLibrary() || IsSymbolFromSchematic() );
+    return m_my_part && ( !IsSymbolFromLegacyLibrary() || IsSymbolFromSchematic() );
 }

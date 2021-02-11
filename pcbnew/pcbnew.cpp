@@ -214,8 +214,7 @@ PGM_BASE* PgmOrNull()
 #if defined( KICAD_SCRIPTING )
 static bool scriptingSetup()
 {
-
-#if defined( __WINDOWS__ ) && !defined( _MSC_VER )
+#if defined( __WINDOWS__ )
     // If our python.exe (in kicad/bin) exists, force our kicad python environment
     wxString kipython = FindKicadFile( "python.exe" );
 
