@@ -169,6 +169,15 @@ public:
      */
     FONT* GetFont() const;
 
+    virtual const wxString& GetFontName() const;
+
+    void SetFont( const std::string& aFontName );
+
+    /**
+     * Needed to resolve ambiguity with overloaded function for properties
+     */
+    void SetFontFromProperty( const wxString& aFontName );
+
     /**
      * A version of GetShownText() which also indicates whether or not the text needs
      * to be processed for text variables.

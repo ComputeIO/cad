@@ -94,6 +94,33 @@ FONT* EDA_TEXT::GetFont() const
 }
 
 
+const wxString& EDA_TEXT::GetFontName() const
+{
+    return GetFont()->Name();
+}
+
+
+void EDA_TEXT::SetFont( const std::string& aFontName )
+{
+    FONT* font = FONT::GetFont( aFontName );
+    if( font )
+    {
+#ifdef DEBUG
+        std::cerr << "EDA_TEXT::SetFont(" << aFontName << ") setting font to " << font->Name()
+                  << std::endl;
+#endif
+        m_font = font;
+    }
+}
+
+
+void EDA_TEXT::SetFontFromProperty( const wxString& aFontName )
+{
+    std::string s( aFontName );
+    SetFont( s );
+}
+
+
 wxString EDA_TEXT::GetShownText( int aDepth, FONT** aFontPtr ) const
 {
     if( aFontPtr )
@@ -597,6 +624,11 @@ void EDA_TEXT::Format( OUTPUTFORMATTER* aFormatter, int aNestLevel, int aControl
     if( IsItalic() )
         aFormatter->Print( 0, " italic" );
 
+    if( GetFont() && !GetFont()->Name().empty() )
+    {
+        aFormatter->Print( 0, " (face \"%s\")", GetFont()->Name().utf8_str().data() );
+    }
+
     aFormatter->Print( 0, ")" ); // (font
 
     if( IsMirrored() || GetHorizJustify() != GR_TEXT_HJUSTIFY_CENTER
@@ -721,6 +753,8 @@ static struct EDA_TEXT_DESC
                                                            &EDA_TEXT::IsItalic ) );
         propMgr.AddProperty( new PROPERTY<EDA_TEXT, bool>( _HKI( "Bold" ), &EDA_TEXT::SetBold,
                                                            &EDA_TEXT::IsBold ) );
+        propMgr.AddProperty( new PROPERTY<EDA_TEXT, wxString>(
+                _HKI( "Font" ), &EDA_TEXT::SetFontFromProperty, &EDA_TEXT::GetFontName ) );
         propMgr.AddProperty( new PROPERTY<EDA_TEXT, bool>(
                 _HKI( "Mirrored" ), &EDA_TEXT::SetMirrored, &EDA_TEXT::IsMirrored ) );
         propMgr.AddProperty( new PROPERTY<EDA_TEXT, bool>( _HKI( "Visible" ), &EDA_TEXT::SetVisible,
