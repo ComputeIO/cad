@@ -157,8 +157,14 @@ FT_Error OUTLINE_FONT::loadFace( const wxString& aFontFileName )
         {
             FT_Select_Charmap( mSubscriptFace, FT_Encoding::FT_ENCODING_UNICODE );
             FT_Set_Char_Size( mSubscriptFace, 0, mSubscriptFaceScaler, 0, 0 );
+
+            m_fontName = wxString( mFace->family_name );
         }
     }
+#ifdef DEBUG
+    std::cerr << "OUTLINE_FONT::loadFace( " << aFontFileName << " ) "
+              << ( e ? "did not load" : "loaded" ) << std::endl;
+#endif
     return e;
 }
 
