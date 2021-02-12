@@ -503,11 +503,9 @@ void CONNECTION_GRAPH::updateItemConnectivity( const SCH_SHEET_PATH&         aSh
         {
             for( SCH_SHEET_PIN* pin : static_cast<SCH_SHEET*>( item )->GetPins() )
             {
-                if( !pin->Connection( &aSheet ) )
-                    pin->InitializeConnection( aSheet, this );
+                pin->InitializeConnection( aSheet, this );
 
                 pin->ConnectedItems( aSheet ).clear();
-                pin->Connection( &aSheet )->Reset();
 
                 connection_map[pin->GetTextPos()].push_back( pin );
                 m_items.emplace_back( pin );
@@ -1839,12 +1837,14 @@ void CONNECTION_GRAPH::propagateToNeighbors( CONNECTION_SUBGRAPH* aSubgraph )
             // Pick a better driving subgraph if it:
             // a) has a power pin or global driver
             // b) is a strong driver and we're a weak driver
-            // c) meets or exceeds our priority, is a strong driver, and has a shorter path
-            // d) matches our strength and is at least as short, and is alphabetically lower
+            // c) is a higher priority strong driver
+            // d) matches our priority, is a strong driver, and has a shorter path
+            // e) matches our strength and is at least as short, and is alphabetically lower
 
             if( ( priority >= CONNECTION_SUBGRAPH::PRIORITY::POWER_PIN )
                 || ( !originalStrong && candidateStrong )
-                || ( priority >= highest && candidateStrong && shorterPath )
+                || ( priority > highest && candidateStrong )
+                || ( priority == highest && candidateStrong && shorterPath )
                 || ( ( originalStrong == candidateStrong ) && asGoodPath
                      && ( candidateName < originalName ) ) )
             {
