@@ -38,28 +38,30 @@
 #include <kicad_string.h>
 #include <tool/actions.h>
 #include <scintilla_tricks.h>
+#ifdef KICAD_USE_FONTCONFIG
+#include <wx/fontdlg.h>
+#include <font/fontconfig.h>
+#endif
 
 class SCH_EDIT_FRAME;
 class SCH_TEXT;
 
 
 DIALOG_LABEL_EDITOR::DIALOG_LABEL_EDITOR( SCH_EDIT_FRAME* aParent, SCH_TEXT* aTextItem ) :
-    DIALOG_LABEL_EDITOR_BASE( aParent ),
-    m_textSize( aParent, m_textSizeLabel, m_textSizeCtrl, m_textSizeUnits, false ),
-    m_netNameValidator( true ),
-    m_scintillaTricks( nullptr ),
-    m_helpWindow( nullptr )
+        DIALOG_LABEL_EDITOR_BASE( aParent ),
+        m_textSize( aParent, m_textSizeLabel, m_textSizeCtrl, m_textSizeUnits, false ),
+        m_netNameValidator( true ), m_scintillaTricks( nullptr ), m_helpWindow( nullptr )
 {
     m_Parent = aParent;
     m_CurrentText = aTextItem;
 
     switch( m_CurrentText->Type() )
     {
-    case SCH_GLOBAL_LABEL_T:       SetTitle( _( "Global Label Properties" ) );           break;
-    case SCH_HIER_LABEL_T:         SetTitle( _( "Hierarchical Label Properties" ) );     break;
-    case SCH_LABEL_T:              SetTitle( _( "Label Properties" ) );                  break;
-    case SCH_SHEET_PIN_T:          SetTitle( _( "Hierarchical Sheet Pin Properties" ) ); break;
-    default:                       SetTitle( _( "Text Properties" ) );                   break;
+    case SCH_GLOBAL_LABEL_T: SetTitle( _( "Global Label Properties" ) ); break;
+    case SCH_HIER_LABEL_T: SetTitle( _( "Hierarchical Label Properties" ) ); break;
+    case SCH_LABEL_T: SetTitle( _( "Label Properties" ) ); break;
+    case SCH_SHEET_PIN_T: SetTitle( _( "Hierarchical Sheet Pin Properties" ) ); break;
+    default: SetTitle( _( "Text Properties" ) ); break;
     }
 
     m_valueMultiLine->SetEOLMode( wxSTC_EOL_LF );
@@ -83,8 +85,10 @@ DIALOG_LABEL_EDITOR::DIALOG_LABEL_EDITOR( SCH_EDIT_FRAME* aParent, SCH_TEXT* aTe
         m_activeTextCtrl = m_valueCombo;
         m_activeTextEntry = m_valueCombo;
 
-        m_labelSingleLine->Show( false );  m_valueSingleLine->Show( false );
-        m_labelMultiLine->Show( false );   m_valueMultiLine->Show( false );
+        m_labelSingleLine->Show( false );
+        m_valueSingleLine->Show( false );
+        m_labelMultiLine->Show( false );
+        m_valueMultiLine->Show( false );
 
         m_valueCombo->SetValidator( m_netNameValidator );
     }
@@ -104,10 +108,17 @@ DIALOG_LABEL_EDITOR::DIALOG_LABEL_EDITOR( SCH_EDIT_FRAME* aParent, SCH_TEXT* aTe
         m_valueCombo->SetValidator( m_netNameValidator );
     }
 
+#ifdef KICAD_USE_FONTCONFIG
+    // font selection only enabled for schematic text items for now
+    const bool showFontChoice = ( m_CurrentText->Type() == SCH_TEXT_T );
+    m_fontFace->Show( showFontChoice );
+    m_fontChooserButton->Show( showFontChoice );
+#endif
+
     SetInitialFocus( m_activeTextCtrl );
 
-    m_TextShape->Show( m_CurrentText->Type() == SCH_GLOBAL_LABEL_T ||
-                       m_CurrentText->Type() == SCH_HIER_LABEL_T );
+    m_TextShape->Show( m_CurrentText->Type() == SCH_GLOBAL_LABEL_T
+                       || m_CurrentText->Type() == SCH_HIER_LABEL_T );
 
     if( m_CurrentText->Type() == SCH_GLOBAL_LABEL_T )
     {
@@ -214,6 +225,17 @@ bool DIALOG_LABEL_EDITOR::TransferDataToWindow()
 
     m_textSize.SetValue( m_CurrentText->GetTextWidth() );
 
+#ifdef KICAD_USE_FONTCONFIG
+    if( m_CurrentText->GetFont() )
+    {
+        wxString fontName( m_CurrentText->GetFont()->Name() );
+#ifdef DEBUG
+        std::cerr << "font name [" << fontName << "]" << std::endl;
+#endif
+        m_fontFace->SetValue( fontName );
+    }
+#endif
+
     return true;
 }
 
@@ -227,7 +249,7 @@ void DIALOG_LABEL_EDITOR::OnEnterKey( wxCommandEvent& aEvent )
 }
 
 
-void DIALOG_LABEL_EDITOR::onScintillaCharAdded( wxStyledTextEvent &aEvent )
+void DIALOG_LABEL_EDITOR::onScintillaCharAdded( wxStyledTextEvent& aEvent )
 {
     wxStyledTextCtrl* te = m_valueMultiLine;
     wxArrayString     autocompleteTokens;
@@ -235,22 +257,21 @@ void DIALOG_LABEL_EDITOR::onScintillaCharAdded( wxStyledTextEvent &aEvent )
     int               start = te->WordStartPosition( text_pos, true );
     wxString          partial;
 
-    auto textVarRef =
-            [&]( int pos )
-            {
-                return pos >= 2 && te->GetCharAt( pos-2 ) == '$' && te->GetCharAt( pos-1 ) == '{';
-            };
+    auto textVarRef = [&]( int pos )
+    {
+        return pos >= 2 && te->GetCharAt( pos - 2 ) == '$' && te->GetCharAt( pos - 1 ) == '{';
+    };
 
     // Check for cross-reference
-    if( start > 1 && te->GetCharAt( start-1 ) == ':' )
+    if( start > 1 && te->GetCharAt( start - 1 ) == ':' )
     {
-        int refStart = te->WordStartPosition( start-1, true );
+        int refStart = te->WordStartPosition( start - 1, true );
 
         if( textVarRef( refStart ) )
         {
-            partial = te->GetRange( start+1, text_pos );
+            partial = te->GetRange( start + 1, text_pos );
 
-            wxString           ref = te->GetRange( refStart, start-1 );
+            wxString           ref = te->GetRange( refStart, start - 1 );
             SCH_SHEET_LIST     sheets = m_Parent->Schematic().GetSheets();
             SCH_REFERENCE_LIST refs;
             SCH_COMPONENT*     refSymbol = nullptr;
@@ -259,9 +280,9 @@ void DIALOG_LABEL_EDITOR::onScintillaCharAdded( wxStyledTextEvent &aEvent )
 
             for( size_t jj = 0; jj < refs.GetCount(); jj++ )
             {
-                if( refs[ jj ].GetSymbol()->GetRef( &refs[ jj ].GetSheetPath(), true ) == ref )
+                if( refs[jj].GetSymbol()->GetRef( &refs[jj].GetSheetPath(), true ) == ref )
                 {
-                    refSymbol = refs[ jj ].GetSymbol();
+                    refSymbol = refs[jj].GetSymbol();
                     break;
                 }
             }
@@ -290,6 +311,55 @@ void DIALOG_LABEL_EDITOR::onScintillaCharAdded( wxStyledTextEvent &aEvent )
 }
 
 
+#ifdef KICAD_USE_FONTCONFIG
+void DIALOG_LABEL_EDITOR::onShowFontDialog( wxCommandEvent& aEvent )
+{
+    wxFontData fontData;
+    wxFont     theFont;
+    wxColour   colour;
+
+    //theFont = theText->GetFont();
+    //fontData.SetInitialFont(theFont);
+    //colour = theText->GetForegroundColour();
+    //fontData.SetColour(colour);
+    fontData.SetShowHelp( true );
+
+    wxFontDialog* dialog = new wxFontDialog( this, fontData );
+    if( dialog->ShowModal() == wxID_OK )
+    {
+        fontData = dialog->GetFontData();
+        theFont = fontData.GetChosenFont();
+#ifdef DEBUG
+        wxFontStyle  style = theFont.GetStyle();
+        wxFontWeight weight = theFont.GetWeight();
+        std::cerr << "chosen font is " << theFont.GetFaceName() << " desc ["
+                  << theFont.GetNativeFontInfoDesc() << "]"
+                  << " userDesc [" << theFont.GetNativeFontInfoUserDesc() << "]"
+                  << " style "
+                  << ( style == wxFONTSTYLE_NORMAL
+                               ? "NORMAL"
+                               : ( style == wxFONTSTYLE_ITALIC
+                                           ? "ITALIC"
+                                           : ( style == wxFONTSTYLE_SLANT ? "SLANT" : "?" ) ) )
+                  << " weight "
+                  << ( weight == wxFONTWEIGHT_NORMAL
+                               ? "NORMAL"
+                               : ( weight == wxFONTWEIGHT_LIGHT
+                                           ? "LIGHT"
+                                           : ( weight == wxFONTWEIGHT_BOLD ? "BOLD" : "?" ) ) )
+                  << ( theFont.GetUnderlined() ? " underlined" : "" )
+                  << ( theFont.IsFixedWidth() ? " fixed-width" : "" )
+                  << ( theFont.IsOk() ? " OK" : " (not ok)" ) << std::endl;
+
+#endif
+        m_fontFace->SetValue( theFont.GetFaceName() );
+        //theText->SetFont(theFont);
+        //theText->SetForegroundColour(fontData.GetColour());
+    }
+}
+#endif
+
+
 bool DIALOG_LABEL_EDITOR::TransferDataFromWindow()
 {
     if( !wxDialog::TransferDataFromWindow() )
@@ -303,7 +373,8 @@ bool DIALOG_LABEL_EDITOR::TransferDataFromWindow()
 
     /* save old text in undo list if not already in edit */
     if( m_CurrentText->GetEditFlags() == 0 )
-        m_Parent->SaveCopyInUndoList( m_Parent->GetScreen(), m_CurrentText, UNDO_REDO::CHANGED, false );
+        m_Parent->SaveCopyInUndoList( m_Parent->GetScreen(), m_CurrentText, UNDO_REDO::CHANGED,
+                                      false );
 
     m_Parent->GetCanvas()->Refresh();
 
@@ -332,6 +403,15 @@ bool DIALOG_LABEL_EDITOR::TransferDataFromWindow()
 
     m_CurrentText->SetTextSize( wxSize( m_textSize.GetValue(), m_textSize.GetValue() ) );
 
+#ifdef KICAD_USE_FONTCONFIG
+    if( !m_fontFace->IsEmpty() )
+    {
+        wxString    fontNameFromField = m_fontFace->GetValue();
+        std::string fontName( fontNameFromField );
+        m_CurrentText->SetFont( fontName );
+    }
+#endif
+
     if( m_TextShape )
         m_CurrentText->SetShape( (PINSHEETLABEL_SHAPE) m_TextShape->GetSelection() );
 
@@ -347,7 +427,7 @@ bool DIALOG_LABEL_EDITOR::TransferDataFromWindow()
     else
     {
         m_CurrentText->SetBold( false );
-        m_CurrentText->SetTextThickness( 0 );    // Use default pen width
+        m_CurrentText->SetTextThickness( 0 ); // Use default pen width
     }
 
     m_Parent->UpdateItem( m_CurrentText );

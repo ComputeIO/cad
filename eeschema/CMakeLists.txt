@@ -61,7 +61,7 @@ set( EESCHEMA_DLGS
     dialogs/dialog_edit_components_libid.cpp
     dialogs/dialog_edit_components_libid_base.cpp
     dialogs/dialog_edit_label.cpp
-    dialogs/dialog_edit_label_base.cpp
+    # dialogs/dialog_edit_label_base.cpp
     dialogs/dialog_edit_line_style.cpp
     dialogs/dialog_edit_line_style_base.cpp
     dialogs/dialog_edit_one_field.cpp
@@ -128,6 +128,16 @@ set( EESCHEMA_DLGS
     dialogs/panel_sym_lib_table.cpp
     dialogs/panel_sym_lib_table_base.cpp
     )
+
+if( KICAD_USE_FONTCONFIG )
+    set( EESCHEMA_DLGS ${EESCHEMA_DLGS}
+      dialogs/dialog_edit_label_font_base.cpp
+    )
+else()
+    set( EESCHEMA_DLGS ${EESCHEMA_DLGS}
+      dialogs/dialog_edit_label_base.cpp
+    )
+endif()
 
 set( EESCHEMA_WIDGETS
     widgets/pin_shape_combobox.cpp
