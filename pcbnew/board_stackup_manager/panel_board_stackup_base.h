@@ -67,18 +67,18 @@ class PANEL_SETUP_BOARD_STACKUP_BASE : public wxPanel
 		wxChoice* m_choiceEdgeConn;
         wxStaticText*     m_staticTextCT;
         wxTextCtrl*       m_tcCTValue;
-        wxButton* m_buttonExport;
+        wxButton*         m_buttonExport;
 
         // Virtual event handlers, override them in your derived class
         virtual void OnUpdateUI( wxUpdateUIEvent& event ) { event.Skip(); }
-		virtual void onAddDielectricLayer( wxCommandEvent& event ) { event.Skip(); }
+        virtual void onAddDielectricLayer( wxCommandEvent& event ) { event.Skip(); }
 		virtual void onRemoveDielectricLayer( wxCommandEvent& event ) { event.Skip(); }
 		virtual void onRemoveDielUI( wxUpdateUIEvent& event ) { event.Skip(); }
         virtual void onUpdateThicknessValue( wxUpdateUIEvent& event ) { event.Skip(); }
         virtual void onExportToClipboard( wxCommandEvent& event ) { event.Skip(); }
 
 
-	public:
+    public:
 
 		PANEL_SETUP_BOARD_STACKUP_BASE( wxWindow* parent, wxWindowID id = wxID_ANY, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( -1,-1 ), long style = wxTAB_TRAVERSAL, const wxString& name = wxEmptyString );
 		~PANEL_SETUP_BOARD_STACKUP_BASE();

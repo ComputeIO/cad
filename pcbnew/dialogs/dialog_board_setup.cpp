@@ -96,7 +96,7 @@ DIALOG_BOARD_SETUP::DIALOG_BOARD_SETUP( PCB_EDIT_FRAME* aFrame ) :
                         std::bind( &DIALOG_BOARD_SETUP::OnValidate, this, _1 ) );
 
     // Connect Events
-	m_treebook->Connect( wxEVT_TREEBOOK_PAGE_CHANGED,
+    m_treebook->Connect( wxEVT_TREEBOOK_PAGE_CHANGED,
                          wxBookCtrlEventHandler( DIALOG_BOARD_SETUP::OnPageChange ), NULL, this );
 
     if( Prj().IsReadOnly() )
