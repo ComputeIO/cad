@@ -268,7 +268,11 @@ VECTOR2D OUTLINE_FONT::ComputeStringBoundaryLimits( const KIGFX::GAL* aGal, cons
         previous = codepoint;
     }
 
-    return VECTOR2D( width, height );
+    VECTOR2D r = VECTOR2D( width * mFaceScaler, height * mFaceScaler );
+#ifdef DEBUG
+    std::cerr << "outline string boundary limits " << r << std::endl;
+#endif
+    return r;
 }
 
 
@@ -295,16 +299,15 @@ double OUTLINE_FONT::ComputeOverbarVerticalPosition( double aGlyphHeight ) const
  */
 double OUTLINE_FONT::GetInterline( double aGlyphHeight ) const
 {
-    //const int lineHeight = ( mFace->size->metrics.ascender - mFace->size->metrics.descender ) >> 6;
-
-    // aGlyphHeight is in 1/10000ths of a mm
-    double ret = aGlyphHeight; // / 1000 * lineHeight;
-    //lineHeight; // aGlyphHeight * lineHeight; // * mScaler;
-#ifdef FOO // DEBUG
-    std::cerr << "OUTLINE_FONT::GetInterline( " << aGlyphHeight << " ) const returns " << ret
-              << " (lineHeight " << lineHeight << ")" << std::endl;
-#endif
-    return ret;
+    if( aGlyphHeight < 0 )
+    {
+        return ( mFace->size->metrics.ascender - mFace->size->metrics.descender ) >> 6;
+    }
+    else
+    {
+        // TODO
+        return aGlyphHeight;
+    }
 }
 
 
