@@ -127,7 +127,7 @@ public:
                              double aRotationAngle = 0.0, bool aParse = false,
                              bool aMultiLine = false, int aTextWidth = 0, int aTextHeight = 0,
                              EDA_TEXT_HJUSTIFY_T aHorizJustify = GR_TEXT_HJUSTIFY_CENTER,
-                             EDA_TEXT_VJUSTIFY_T aVertJustify = GR_TEXT_VJUSTIFY_CENTER ) const;
+                             EDA_TEXT_VJUSTIFY_T aVertJustify = GR_TEXT_VJUSTIFY_BOTTOM ) const;
 
     /**
      * Compute the boundary limits of aText (the bounding box of all shapes).
