@@ -151,8 +151,8 @@ private:
      * Displays the results of a calculation (including resulting values such
      * as the resistance and power loss).
      */
-    void TWDisplayValues( double aCurrent, double aExtWidth, double aIntWidth,
-                          double aExtThickness, double aIntThickness );
+    void TWDisplayValues( double aCurrent, double aExtWidth, double aIntWidth, double aExtThickness,
+                          double aIntThickness );
 
     /**
      * Function TWUpdateModeDisplay
@@ -199,9 +199,8 @@ private:
      * Displays the results of the calculation.
      */
     void VSDisplayValues( double aViaResistance, double aVoltageDrop, double aPowerLoss,
-                          double aEstimatedAmpacity, double aThermalResistance,
-                          double aCapacitance, double aTimeDegradation, double aInductance,
-                          double aReactance );
+                          double aEstimatedAmpacity, double aThermalResistance, double aCapacitance,
+                          double aTimeDegradation, double aInductance, double aReactance );
 
     // Electrical spacing panel:
     void OnElectricalSpacingUnitsSelection( wxCommandEvent& event ) override;
@@ -367,30 +366,30 @@ private:
     bool m_RegulatorListChanged; // Set when m_RegulatorList is modified and the corresponging file
                                  // must be rewritten
 
-    enum                         // Which dimension is controlling the track width / current
-    {                            // calculations:
-        TW_MASTER_CURRENT,       //   the maximum current,
-        TW_MASTER_EXT_WIDTH,     //   the external trace width,
-        TW_MASTER_INT_WIDTH      //   or the internal trace width?
+    enum                     // Which dimension is controlling the track width / current
+    {                        // calculations:
+        TW_MASTER_CURRENT,   //   the maximum current,
+        TW_MASTER_EXT_WIDTH, //   the external trace width,
+        TW_MASTER_INT_WIDTH  //   or the internal trace width?
     } m_TWMode;
 
-    bool                          m_TWNested; // Used to stop events caused by setting the answers.
+    bool m_TWNested; // Used to stop events caused by setting the answers.
 
     enum TRANSLINE_TYPE_ID        m_currTransLineType;
     TRANSLINE*                    m_currTransLine;
     std::vector<TRANSLINE_IDENT*> m_transline_list;
 
-    ATTENUATOR*                   m_currAttenuator;
-    std::vector<ATTENUATOR*>      m_attenuator_list;
+    ATTENUATOR*              m_currAttenuator;
+    std::vector<ATTENUATOR*> m_attenuator_list;
 
-    wxString                      m_lastSelectedRegulatorName;
+    wxString m_lastSelectedRegulatorName;
 
-    wxBitmap*                     m_ccValueNamesBitmap;
-    wxBitmap*                     m_ccValuesBitmap;
-    wxBitmap*                     m_ccMultipliersBitmap;
-    wxBitmap*                     m_ccTolerancesBitmap;
+    wxBitmap* m_ccValueNamesBitmap;
+    wxBitmap* m_ccValuesBitmap;
+    wxBitmap* m_ccMultipliersBitmap;
+    wxBitmap* m_ccTolerancesBitmap;
 
-    int                           m_lastNotebookPage;
+    int m_lastNotebookPage;
 };
 
 

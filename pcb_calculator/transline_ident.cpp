@@ -109,10 +109,10 @@ double TRANSLINE_PRM::FromUserUnit()
 
 TRANSLINE_IDENT::TRANSLINE_IDENT( enum TRANSLINE_TYPE_ID aType )
 {
-    m_Type = aType;               // The type of transline handled
-    m_Icon = NULL;                // An xpm icon to display in dialogs
-    m_TLine = NULL;               // The TRANSLINE itself
-    m_HasPrmSelection = false;    // true if selection of parameters must be enabled in dialog menu
+    m_Type = aType;            // The type of transline handled
+    m_Icon = NULL;             // An xpm icon to display in dialogs
+    m_TLine = NULL;            // The TRANSLINE itself
+    m_HasPrmSelection = false; // true if selection of parameters must be enabled in dialog menu
 
     // Add common prms:
     // Default values are for FR4
@@ -479,7 +479,7 @@ void TRANSLINE_IDENT::ReadConfig()
             try
             {
                 p->m_Value = cfg->m_TransLine.param_values.at( name ).at( p->m_KeyWord );
-                p->m_UnitSelection =  cfg->m_TransLine.param_units.at( name ).at( p->m_KeyWord );
+                p->m_UnitSelection = cfg->m_TransLine.param_units.at( name ).at( p->m_KeyWord );
             }
             catch( ... )
             {}

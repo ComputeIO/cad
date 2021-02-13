@@ -97,15 +97,13 @@
 
 void SCH_EDIT_FRAME::StartNewUndo()
 {
-	PICKED_ITEMS_LIST* blank = new PICKED_ITEMS_LIST();
-	PushCommandToUndoList( blank );
+    PICKED_ITEMS_LIST* blank = new PICKED_ITEMS_LIST();
+    PushCommandToUndoList( blank );
 }
 
 
-void SCH_EDIT_FRAME::SaveCopyInUndoList( SCH_SCREEN*    aScreen,
-                                         SCH_ITEM*      aItem,
-                                         UNDO_REDO      aCommandType,
-                                         bool           aAppend )
+void SCH_EDIT_FRAME::SaveCopyInUndoList( SCH_SCREEN* aScreen, SCH_ITEM* aItem,
+                                         UNDO_REDO aCommandType, bool aAppend )
 {
     PICKED_ITEMS_LIST* commandToUndo = nullptr;
 
@@ -114,13 +112,13 @@ void SCH_EDIT_FRAME::SaveCopyInUndoList( SCH_SCREEN*    aScreen,
     // Connectivity may change
     aItem->SetConnectivityDirty();
 
-	PICKED_ITEMS_LIST* lastUndo = PopCommandFromUndoList();
+    PICKED_ITEMS_LIST* lastUndo = PopCommandFromUndoList();
 
-	// If the last stack was empty, use that one instead of creating a new stack
+    // If the last stack was empty, use that one instead of creating a new stack
     if( aAppend || !lastUndo->GetCount() )
         commandToUndo = lastUndo;
     else
-    	PushCommandToUndoList( lastUndo );
+        PushCommandToUndoList( lastUndo );
 
     if( !commandToUndo )
     {
@@ -164,8 +162,7 @@ void SCH_EDIT_FRAME::SaveCopyInUndoList( SCH_SCREEN*    aScreen,
 
 
 void SCH_EDIT_FRAME::SaveCopyInUndoList( const PICKED_ITEMS_LIST& aItemsList,
-                                         UNDO_REDO                aTypeCommand,
-                                         bool                     aAppend )
+                                         UNDO_REDO aTypeCommand, bool aAppend )
 {
     PICKED_ITEMS_LIST* commandToUndo = nullptr;
 
@@ -264,7 +261,7 @@ void SCH_EDIT_FRAME::PutDataInPreviousState( PICKED_ITEMS_LIST* aList, bool aRed
 
         if( status == UNDO_REDO::NOP )
         {
-        	continue;
+            continue;
         }
         if( status == UNDO_REDO::NEWITEM )
         {
@@ -341,7 +338,7 @@ void SCH_EDIT_FRAME::RollbackSchematicFromUndo()
 
     // Skip empty frames
     while( undo && undo->GetCount() == 1 && undo->GetPickedItemStatus( 0 ) == UNDO_REDO::NOP )
-    	undo = PopCommandFromUndoList();
+        undo = PopCommandFromUndoList();
 
     if( undo )
     {

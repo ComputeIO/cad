@@ -33,8 +33,7 @@
 const wxString DataFileNameExt( wxT("pcbcalc") );
 
 PCB_CALCULATOR_FRAME::PCB_CALCULATOR_FRAME( KIWAY* aKiway, wxWindow* aParent ) :
-    PCB_CALCULATOR_FRAME_BASE( aParent ),
-    m_lastNotebookPage( -1 )
+        PCB_CALCULATOR_FRAME_BASE( aParent ), m_lastNotebookPage( -1 )
 {
     m_bpButtonCalcAtt->SetBitmap( KiBitmap( small_down_xpm ) );
     m_bpButtonAnalyze->SetBitmap( KiBitmap( small_down_xpm ) );
@@ -55,17 +54,10 @@ PCB_CALCULATOR_FRAME::PCB_CALCULATOR_FRAME( KIWAY* aKiway, wxWindow* aParent ) :
                             // some methods in code and avoid link errors
 
     // Populate transline list ordered like in dialog menu list
-    const static TRANSLINE_TYPE_ID tltype_list[8] =
-            {
-                MICROSTRIP_TYPE,
-                CPW_TYPE,
-                GROUNDED_CPW_TYPE,
-                RECTWAVEGUIDE_TYPE,
-                COAX_TYPE,
-                C_MICROSTRIP_TYPE,
-                STRIPLINE_TYPE,
-                TWISTEDPAIR_TYPE
-            };
+    const static TRANSLINE_TYPE_ID tltype_list[8] = { MICROSTRIP_TYPE,   CPW_TYPE,
+                                                      GROUNDED_CPW_TYPE, RECTWAVEGUIDE_TYPE,
+                                                      COAX_TYPE,         C_MICROSTRIP_TYPE,
+                                                      STRIPLINE_TYPE,    TWISTEDPAIR_TYPE };
 
     for( int ii = 0; ii < 8; ii++ )
         m_transline_list.push_back( new TRANSLINE_IDENT( tltype_list[ii] ) );
@@ -170,7 +162,7 @@ void PCB_CALCULATOR_FRAME::OnUpdateUI( wxUpdateUIEvent& event )
 
         ToleranceSelection( m_rbToleranceSelection->GetSelection() );
 
-       	m_viaBitmap->SetBitmap( KiBitmap( viacalc_xpm ) );
+        m_viaBitmap->SetBitmap( KiBitmap( viacalc_xpm ) );
 
         m_panelESeriesHelp->Refresh();
         m_htmlWinFormulas->Refresh();
@@ -203,7 +195,7 @@ void PCB_CALCULATOR_FRAME::OnClosePcbCalc( wxCloseEvent& event )
             if( !WriteDataFile() )
             {
                 msg.Printf( _( "Unable to write file '%s'\n"
-                               "Do you want to exit and abandon your changes?"),
+                               "Do you want to exit and abandon your changes?" ),
                             GetDataFilename() );
 
                 if( wxMessageBox( msg, title, wxYES_NO | wxICON_ERROR ) == wxNO )

@@ -730,7 +730,7 @@ void SCH_MOVE_TOOL::moveItem( EDA_ITEM* aItem, const VECTOR2I& aDelta )
 int SCH_MOVE_TOOL::AlignElements( const TOOL_EVENT& aEvent )
 {
     EE_GRID_HELPER grid( m_toolMgr);
-    EE_SELECTION& selection = m_selectionTool->RequestSelection( EE_COLLECTOR::MovableItems );
+    EE_SELECTION&  selection = m_selectionTool->RequestSelection( EE_COLLECTOR::MovableItems );
     bool append_undo = false;
 
     for( SCH_ITEM* it : m_frame->GetScreen()->Items() )

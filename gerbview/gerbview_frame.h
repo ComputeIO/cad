@@ -356,7 +356,9 @@ public:
      * Do nothing in GerbView.
      */
     void SaveCopyInUndoList( GERBER_DRAW_ITEM* aItemToCopy,
-                             UNDO_REDO aTypeCommand = UNDO_REDO::UNSPECIFIED ) { }
+                             UNDO_REDO         aTypeCommand = UNDO_REDO::UNSPECIFIED )
+    {
+    }
 
     /**
      * Create a new entry in undo list of commands and add a list of pickers to handle a list
@@ -367,8 +369,7 @@ public:
      * @param aTransformPoint = the reference point of the transformation,
      *                          for commands like move
      */
-    void SaveCopyInUndoList( const PICKED_ITEMS_LIST& aItemsList,
-                             UNDO_REDO aTypeCommand )
+    void SaveCopyInUndoList( const PICKED_ITEMS_LIST& aItemsList, UNDO_REDO aTypeCommand )
     {
         // currently: do nothing in GerbView.
     }

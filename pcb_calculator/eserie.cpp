@@ -39,7 +39,7 @@
 wxString eseries_help =
 #include "eserie_help.h"
 
-eserie r;
+        eserie r;
 
 
 void eserie::Exclude( double aValue )
@@ -48,8 +48,8 @@ void eserie::Exclude( double aValue )
     {
         for( r_data& i : luts[m_series] ) // then search it in the selected E-Serie lookup table
         {
-            if( i.e_value == aValue )     // if value to exclude found
-                i.e_use = false;          // disable its use
+            if( i.e_value == aValue ) // if value to exclude found
+                i.e_use = false;      // disable its use
         }
     }
 }
@@ -59,15 +59,17 @@ void eserie::simple_solution( uint32_t aSize )
 {
     uint32_t i;
 
-    m_results[S2R].e_value = std::numeric_limits<double>::max(); // assume no 2R solution or max deviation
+    m_results[S2R].e_value =
+            std::numeric_limits<double>::max(); // assume no 2R solution or max deviation
 
     for( i = 0; i < aSize; i++ )
     {
         if( abs( m_cmb_lut[i].e_value - m_required_value ) < abs( m_results[S2R].e_value ) )
         {
-            m_results[S2R].e_value = m_cmb_lut[i].e_value - m_required_value; // save signed deviation in Ohms
-            m_results[S2R].e_name  = m_cmb_lut[i].e_name;         // save combination text
-            m_results[S2R].e_use   = true;                      // this is a possible solution
+            m_results[S2R].e_value =
+                    m_cmb_lut[i].e_value - m_required_value; // save signed deviation in Ohms
+            m_results[S2R].e_name = m_cmb_lut[i].e_name;     // save combination text
+            m_results[S2R].e_use = true;                     // this is a possible solution
         }
     }
 }
@@ -75,77 +77,77 @@ void eserie::simple_solution( uint32_t aSize )
 
 void eserie::combine4( uint32_t aSize )
 {
-    uint32_t    i,j;
+    uint32_t    i, j;
     double      tmp;
     std::string s;
 
-    m_results[S4R].e_use = false;                          // disable 4R solution, until
-    m_results[S4R].e_value = m_results[S3R].e_value;         // 4R becomes better than 3R solution
+    m_results[S4R].e_use = false;                    // disable 4R solution, until
+    m_results[S4R].e_value = m_results[S3R].e_value; // 4R becomes better than 3R solution
 
-    #ifdef BENCHMARK
-        PROF_COUNTER combine4_timer;                     // start timer to count execution time
-    #endif
+#ifdef BENCHMARK
+    PROF_COUNTER combine4_timer; // start timer to count execution time
+#endif
 
-    for( i = 0; i < aSize; i++ )                         // 4R search outer loop
-    {                                                    // scan valid intermediate 2R solutions
-        for( j = 0; j < aSize; j++ )                     // inner loop combines all with itself
+    for( i = 0; i < aSize; i++ )     // 4R search outer loop
+    {                                // scan valid intermediate 2R solutions
+        for( j = 0; j < aSize; j++ ) // inner loop combines all with itself
         {
-            tmp = m_cmb_lut[i].e_value + m_cmb_lut[j].e_value;       // calculate 2R+2R serial
-            tmp -= m_required_value;                                         // calculate 4R deviation
+            tmp = m_cmb_lut[i].e_value + m_cmb_lut[j].e_value; // calculate 2R+2R serial
+            tmp -= m_required_value;                           // calculate 4R deviation
 
-            if( abs( tmp ) < abs( m_results[S4R].e_value ) )       // if new 4R is better
+            if( abs( tmp ) < abs( m_results[S4R].e_value ) ) // if new 4R is better
             {
-                m_results[S4R].e_value = tmp;                      // save amount of benefit
+                m_results[S4R].e_value = tmp; // save amount of benefit
                 std::string s = "( ";
-                s.append( m_cmb_lut[i].e_name );                   // mention 1st 2 component
-                s.append( " ) + ( " );                           // in series
-                s.append( m_cmb_lut[j].e_name );                   // with 2nd 2 components
+                s.append( m_cmb_lut[i].e_name ); // mention 1st 2 component
+                s.append( " ) + ( " );           // in series
+                s.append( m_cmb_lut[j].e_name ); // with 2nd 2 components
                 s.append( " )" );
-                m_results[S4R].e_name = s;                         // save the result and
-                m_results[S4R].e_use = true;                       // enable for later use
+                m_results[S4R].e_name = s;   // save the result and
+                m_results[S4R].e_use = true; // enable for later use
             }
 
-            tmp = ( m_cmb_lut[i].e_value * m_cmb_lut[j].e_value ) /
-                  ( m_cmb_lut[i].e_value + m_cmb_lut[j].e_value );   // calculate 2R|2R parallel
-            tmp -= m_required_value;                                         // calculate 4R deviation
+            tmp = ( m_cmb_lut[i].e_value * m_cmb_lut[j].e_value )
+                  / ( m_cmb_lut[i].e_value + m_cmb_lut[j].e_value ); // calculate 2R|2R parallel
+            tmp -= m_required_value;                                 // calculate 4R deviation
 
-            if( abs( tmp ) < abs( m_results[S4R].e_value ) )       // if new 4R is better
+            if( abs( tmp ) < abs( m_results[S4R].e_value ) ) // if new 4R is better
             {
-                m_results[S4R].e_value = tmp;                      // save amount of benefit
+                m_results[S4R].e_value = tmp; // save amount of benefit
                 std::string s = "( ";
-                s.append( m_cmb_lut[i].e_name );                   // mention 1st 2 component
-                s.append( " ) | ( " );                           // in parallel
-                s.append( m_cmb_lut[j].e_name );                   // with 2nd 2 components
+                s.append( m_cmb_lut[i].e_name ); // mention 1st 2 component
+                s.append( " ) | ( " );           // in parallel
+                s.append( m_cmb_lut[j].e_name ); // with 2nd 2 components
                 s.append( " )" );
-                m_results[S4R].e_name = s;                         // save the result
-                m_results[S4R].e_use  = true;                      // enable later use
+                m_results[S4R].e_name = s;   // save the result
+                m_results[S4R].e_use = true; // enable later use
             }
         }
     }
 
-    #ifdef BENCHMARK
-        if( m_series == E12 )
-             std::cout<<"4R Time = "<<combine4_timer.msecs()<<" mSec"<<std::endl;
-    #endif
+#ifdef BENCHMARK
+    if( m_series == E12 )
+        std::cout << "4R Time = " << combine4_timer.msecs() << " mSec" << std::endl;
+#endif
 }
 
 
 void eserie::NewCalc( void )
 {
     for( r_data& i : m_cmb_lut )
-        i.e_use = false;                // before any calculation is done, assume that
+        i.e_use = false; // before any calculation is done, assume that
 
     for( r_data& i : m_results )
-        i.e_use = false;                // no combinations and no results are available
+        i.e_use = false; // no combinations and no results are available
 
-    for( r_data& i : luts[m_series])
-        i.e_use = true;                 // all selecte E-values available
+    for( r_data& i : luts[m_series] )
+        i.e_use = true; // all selecte E-values available
 }
 
 
 uint32_t eserie::combine2( void )
 {
-    uint32_t    combi2R = 0;                // target index counts calculated 2R combinations
+    uint32_t    combi2R = 0; // target index counts calculated 2R combinations
     std::string s;
 
     for( const r_data& i : luts[m_series] ) // outer loop to sweep selected source lookup table
@@ -156,19 +158,18 @@ uint32_t eserie::combine2( void )
             {
                 if( j.e_use )
                 {
-                    m_cmb_lut[combi2R].e_use    = true;
-                    m_cmb_lut[combi2R].e_value  = i.e_value + j.e_value; // calculate 2R serial
+                    m_cmb_lut[combi2R].e_use = true;
+                    m_cmb_lut[combi2R].e_value = i.e_value + j.e_value; // calculate 2R serial
                     s = i.e_name;
                     s.append( " + " );
-                    m_cmb_lut[combi2R].e_name = s.append( j.e_name);
-                    combi2R++;                                         // next destination
-                    m_cmb_lut[combi2R].e_use    = true;                  // calculate 2R parallel
-                    m_cmb_lut[combi2R].e_value = i.e_value * j.e_value /
-                                                 ( i.e_value + j.e_value );
+                    m_cmb_lut[combi2R].e_name = s.append( j.e_name );
+                    combi2R++;                       // next destination
+                    m_cmb_lut[combi2R].e_use = true; // calculate 2R parallel
+                    m_cmb_lut[combi2R].e_value = i.e_value * j.e_value / ( i.e_value + j.e_value );
                     s = i.e_name;
                     s.append( " | " );
                     m_cmb_lut[combi2R].e_name = s.append( j.e_name );
-                    combi2R++;                                         // next destination
+                    combi2R++; // next destination
                 }
             }
         }
@@ -179,54 +180,54 @@ uint32_t eserie::combine2( void )
 
 void eserie::combine3( uint32_t aSize )
 {
-    uint32_t    j   = 0;
+    uint32_t    j = 0;
     double      tmp = 0; // avoid warning for being uninitialized
     std::string s;
 
-    m_results[S3R].e_use   = false;                // disable 3R solution, until
+    m_results[S3R].e_use = false;                    // disable 3R solution, until
     m_results[S3R].e_value = m_results[S2R].e_value; // 3R becomes better than 2R solution
 
-    for( const r_data& i : luts[m_series] )      // 3R  Outer loop to selected primary E serie LUT
+    for( const r_data& i : luts[m_series] ) // 3R  Outer loop to selected primary E serie LUT
     {
-        if( i.e_use )                            // skip all excluded values
+        if( i.e_use ) // skip all excluded values
         {
-            for( j = 0; j < aSize; j++ )  // inner loop combines with all 2R intermediate results
-            {                                                  //  R+2R serial combi
-                tmp  = m_cmb_lut[j].e_value + i.e_value;
-                tmp -= m_required_value;                                   // calculate deviation
+            for( j = 0; j < aSize; j++ ) // inner loop combines with all 2R intermediate results
+            {                            //  R+2R serial combi
+                tmp = m_cmb_lut[j].e_value + i.e_value;
+                tmp -= m_required_value; // calculate deviation
 
                 if( abs( tmp ) < abs( m_results[S3R].e_value ) ) // compare if better
-                {                                              // then take it
-                    s = i.e_name;                              // mention 3rd component
-                    s.append( " + ( " );                       // in series
+                {                                                // then take it
+                    s = i.e_name;                                // mention 3rd component
+                    s.append( " + ( " );                         // in series
                     s.append( m_cmb_lut[j].e_name );             // with 2R combination
                     s.append( " )" );
-                    m_results[S3R].e_name = s;                   // save S3R result
-                    m_results[S3R].e_value = tmp;                // save amount of benefit
-                    m_results[S3R].e_use = true;                 // enable later use
+                    m_results[S3R].e_name = s;    // save S3R result
+                    m_results[S3R].e_value = tmp; // save amount of benefit
+                    m_results[S3R].e_use = true;  // enable later use
                 }
 
-                tmp = i.e_value * m_cmb_lut[j].e_value /
-                      ( i.e_value + m_cmb_lut[j].e_value );      // calculate R + 2R parallel
-                tmp -= m_required_value;                                   // calculate deviation
+                tmp = i.e_value * m_cmb_lut[j].e_value
+                      / ( i.e_value + m_cmb_lut[j].e_value ); // calculate R + 2R parallel
+                tmp -= m_required_value;                      // calculate deviation
 
                 if( abs( tmp ) < abs( m_results[S3R].e_value ) ) // compare if better
-                {                                              // then take it
-                    s = i.e_name;                              // mention 3rd component
-                    s.append( " | ( " );                       // in parallel
+                {                                                // then take it
+                    s = i.e_name;                                // mention 3rd component
+                    s.append( " | ( " );                         // in parallel
                     s.append( m_cmb_lut[j].e_name );             // with 2R combination
                     s.append( " )" );
-                    m_results[S3R].e_name  = s;
-                    m_results[S3R].e_value = tmp;                // save amount of benefit
-                    m_results[S3R].e_use   = true;               // enable later use
+                    m_results[S3R].e_name = s;
+                    m_results[S3R].e_value = tmp; // save amount of benefit
+                    m_results[S3R].e_use = true;  // enable later use
                 }
             }
         }
     }
-                                                 // if there is a 3R result with remaining deviation
-    if(( m_results[S3R].e_use == true ) && tmp )
-    {                                            // consider to search a possibly better 4R solution
-        combine4( aSize );                       // calculate 4R for small series always
+    // if there is a 3R result with remaining deviation
+    if( ( m_results[S3R].e_use == true ) && tmp )
+    {                      // consider to search a possibly better 4R solution
+        combine4( aSize ); // calculate 4R for small series always
     }
 }
 
@@ -238,8 +239,8 @@ void eserie::Calculate( void )
     no_of_2Rcombi = combine2();       // combine all 2R combinations for selected E serie
     simple_solution( no_of_2Rcombi ); // search for simple 2 component solution
 
-    if( m_results[S2R].e_value )        // if simple 2R result is not exact
-        combine3( no_of_2Rcombi );    // continiue searching for a possibly better solution
+    if( m_results[S2R].e_value )   // if simple 2R result is not exact
+        combine3( no_of_2Rcombi ); // continiue searching for a possibly better solution
 
     strip3();
     strip4();
@@ -250,16 +251,16 @@ void eserie::strip3( void )
 {
     std::string s;
 
-    if( m_results[S3R].e_use )     // if there is a 3 term result available
-    {                            // what is connected either by two "|" or by 3 plus
+    if( m_results[S3R].e_use ) // if there is a 3 term result available
+    {                          // what is connected either by two "|" or by 3 plus
         s = m_results[S3R].e_name;
 
         if( ( std::count( s.begin(), s.end(), '+' ) == 2 )
-                || ( std::count( s.begin(), s.end(), '|' ) == 2 ) )
+            || ( std::count( s.begin(), s.end(), '|' ) == 2 ) )
         {                                // then strip one pair of braces
             s.erase( s.find( "(" ), 1 ); // it is known sure, this is available
             s.erase( s.find( ")" ), 1 ); // in any unstripped 3R result term
-            m_results[S3R].e_name = s;     // use stripped result
+            m_results[S3R].e_name = s;   // use stripped result
         }
     }
 }
@@ -269,18 +270,18 @@ void eserie::strip4( void )
 {
     std::string s;
 
-    if( m_results[S4R].e_use )      // if there is a 4 term result available
-    {                             // what are connected either by 3 "+" or by 3 "|"
+    if( m_results[S4R].e_use ) // if there is a 4 term result available
+    {                          // what are connected either by 3 "+" or by 3 "|"
         s = m_results[S4R].e_name;
 
         if( ( std::count( s.begin(), s.end(), '+' ) == 3 )
-                || ( std::count( s.begin(), s.end(), '|' ) == 3 ) )
+            || ( std::count( s.begin(), s.end(), '|' ) == 3 ) )
         {                                // then strip two pair of braces
             s.erase( s.find( "(" ), 1 ); // it is known sure, they are available
             s.erase( s.find( ")" ), 1 ); // in any unstripped 4R result term
             s.erase( s.find( "(" ), 1 );
             s.erase( s.find( ")" ), 1 );
-            m_results[S4R].e_name = s;     // use stripped result
+            m_results[S4R].e_name = s; // use stripped result
         }
     }
 }
@@ -288,44 +289,44 @@ void eserie::strip4( void )
 
 void PCB_CALCULATOR_FRAME::OnCalculateESeries( wxCommandEvent& event )
 {
-    double   reqr;            // required resistor stored in local copy
+    double   reqr; // required resistor stored in local copy
     double   error, err3 = 0;
-    wxString es, fs;          // error and formula strings
+    wxString es, fs; // error and formula strings
 
     reqr = ( 1000 * DoubleFromString( m_ResRequired->GetValue() ) );
     r.SetRequiredValue( reqr ); // keep a local copy of requred resistor value
-    r.NewCalc();     // assume all values available
+    r.NewCalc();                // assume all values available
     /*
      * Exclude itself. For the case, a value from the available series is found as required value,
      * the calculator assumes this value needs a replacement for the reason of being not available.
      * Two further exclude values can be entered to exclude and are skipped as not being availabe.
      * All values entered in KiloOhms are converted to Ohm for internal calculation
      */
-    r.Exclude( 1000 * DoubleFromString( m_ResRequired->GetValue()));
-    r.Exclude( 1000 * DoubleFromString( m_ResExclude1->GetValue()));
-    r.Exclude( 1000 * DoubleFromString( m_ResExclude2->GetValue()));
+    r.Exclude( 1000 * DoubleFromString( m_ResRequired->GetValue() ) );
+    r.Exclude( 1000 * DoubleFromString( m_ResExclude1->GetValue() ) );
+    r.Exclude( 1000 * DoubleFromString( m_ResExclude2->GetValue() ) );
     r.Calculate();
 
-    fs = r.get_rslt()[S2R].e_name;               // show 2R solution formula string
+    fs = r.get_rslt()[S2R].e_name; // show 2R solution formula string
     m_ESeries_Sol2R->SetValue( fs );
-    error = reqr + r.get_rslt()[S2R].e_value;    // absolute value of solution
-    error = ( reqr / error - 1 ) * 100;          // error in percent
+    error = reqr + r.get_rslt()[S2R].e_value; // absolute value of solution
+    error = ( reqr / error - 1 ) * 100;       // error in percent
 
     if( error )
     {
         if( std::abs( error ) < 0.01 )
             es.Printf( "<%.2f", 0.01 );
         else
-            es.Printf( "%+.2f",error);
+            es.Printf( "%+.2f", error );
     }
     else
     {
         es = _( "Exact" );
     }
 
-    m_ESeriesError2R->SetValue( es );            // anyway show 2R error string
+    m_ESeriesError2R->SetValue( es ); // anyway show 2R error string
 
-    if( r.get_rslt()[S3R].e_use )                // if 3R solution available
+    if( r.get_rslt()[S3R].e_use ) // if 3R solution available
     {
         err3 = reqr + r.get_rslt()[S3R].e_value; // calculate the 3R
         err3 = ( reqr / err3 - 1 ) * 100;        // error in percent
@@ -335,18 +336,18 @@ void PCB_CALCULATOR_FRAME::OnCalculateESeries( wxCommandEvent& event )
             if( std::abs( err3 ) < 0.01 )
                 es.Printf( "<%.2f", 0.01 );
             else
-                es.Printf( "%+.2f",err3);
+                es.Printf( "%+.2f", err3 );
         }
         else
         {
             es = _( "Exact" );
         }
 
-        m_ESeriesError3R->SetValue( es );         // show 3R error string
+        m_ESeriesError3R->SetValue( es ); // show 3R error string
         fs = r.get_rslt()[S3R].e_name;
-        m_ESeries_Sol3R->SetValue( fs );         // show 3R formula string
+        m_ESeries_Sol3R->SetValue( fs ); // show 3R formula string
     }
-    else                                         // nothing better than 2R found
+    else // nothing better than 2R found
     {
         fs = _( "Not worth using" );
         m_ESeries_Sol3R->SetValue( fs );
@@ -355,7 +356,7 @@ void PCB_CALCULATOR_FRAME::OnCalculateESeries( wxCommandEvent& event )
 
     fs = wxEmptyString;
 
-    if( r.get_rslt()[S4R].e_use )                 // show 4R solution if available
+    if( r.get_rslt()[S4R].e_use ) // show 4R solution if available
     {
         fs = r.get_rslt()[S4R].e_name;
 
@@ -363,13 +364,13 @@ void PCB_CALCULATOR_FRAME::OnCalculateESeries( wxCommandEvent& event )
         error = ( reqr / error - 1 ) * 100;       // error in percent
 
         if( error )
-            es.Printf( "%+.2f",error );
+            es.Printf( "%+.2f", error );
         else
             es = _( "Exact" );
 
         m_ESeriesError4R->SetValue( es );
     }
-    else                                          // no 4R solution
+    else // no 4R solution
     {
         fs = _( "Not worth using" );
         es = wxEmptyString;
@@ -391,7 +392,7 @@ void PCB_CALCULATOR_FRAME::OnESeriesSelection( wxCommandEvent& event )
         r.SetSeries( E6 );
 }
 
-void PCB_CALCULATOR_FRAME::initESeriesPanel()    // initialize ESeries tab at each pcb-calculator start
+void PCB_CALCULATOR_FRAME::initESeriesPanel() // initialize ESeries tab at each pcb-calculator start
 {
     wxString msg;
 

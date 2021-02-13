@@ -42,52 +42,49 @@ void PANEL_KICAD_LAUNCHER::CreateLaunchers()
         m_toolsSizer->SetRows( 0 );
     }
 
-    auto addLauncher =
-        [&]( const TOOL_ACTION& aAction, const wxBitmap& aBitmap,
-             const wxString& aHelpText = wxEmptyString )
+    auto addLauncher = [&]( const TOOL_ACTION& aAction, const wxBitmap& aBitmap,
+                            const wxString& aHelpText = wxEmptyString )
+    {
+        BITMAP_BUTTON* btn = new BITMAP_BUTTON( this, wxID_ANY );
+        btn->SetBitmap( aBitmap );
+        btn->SetPadding( 5 );
+        btn->SetToolTip( aAction.GetDescription() );
+
+        auto handler = [&]( wxEvent& aEvent )
         {
-            BITMAP_BUTTON* btn = new BITMAP_BUTTON( this, wxID_ANY );
-            btn->SetBitmap( aBitmap );
-            btn->SetPadding( 5 );
-            btn->SetToolTip( aAction.GetDescription() );
-
-            auto handler =
-                    [&]( wxEvent& aEvent )
-                    {
-                        OPT_TOOL_EVENT evt = aAction.MakeEvent();
-                        evt->SetHasPosition( false );
-                        m_toolManager->ProcessEvent( *evt );
-                    };
-
-            bool createHelp = !aHelpText.IsEmpty();
-
-            wxStaticText* label = new wxStaticText( this, wxID_ANY, aAction.GetLabel() );
-            wxStaticText* help;
-
-            label->SetToolTip( aAction.GetDescription() );
-
-            if( createHelp )
-            {
-                help = new wxStaticText( this, wxID_ANY, aHelpText );
-                help->SetForegroundColour( wxSystemSettings::GetColour( wxSYS_COLOUR_GRAYTEXT ) );
-            }
-
-            btn->Bind( wxEVT_BUTTON, handler );
-            label->Bind( wxEVT_LEFT_UP, handler );
-
-            int row     = m_toolsSizer->GetRows();
-            int rowSpan = createHelp ? 2 : 1;
-            int flags   = createHelp ? wxALIGN_BOTTOM : wxALIGN_CENTER_VERTICAL;
-
-            m_toolsSizer->Add( btn,   wxGBPosition( row, 0 ), wxGBSpan( rowSpan, 1 ), 0, 0 );
-            m_toolsSizer->Add( label, wxGBPosition( row, 1 ), wxGBSpan( 1, 1 ), flags, 0 );
-
-            if( createHelp )
-            {
-                m_toolsSizer->Add( help, wxGBPosition( row + 1, 1 ), wxGBSpan( 1, 1 ),
-                                   wxALIGN_TOP, 0 );
-            }
+            OPT_TOOL_EVENT evt = aAction.MakeEvent();
+            evt->SetHasPosition( false );
+            m_toolManager->ProcessEvent( *evt );
         };
+
+        bool createHelp = !aHelpText.IsEmpty();
+
+        wxStaticText* label = new wxStaticText( this, wxID_ANY, aAction.GetLabel() );
+        wxStaticText* help;
+
+        label->SetToolTip( aAction.GetDescription() );
+
+        if( createHelp )
+        {
+            help = new wxStaticText( this, wxID_ANY, aHelpText );
+            help->SetForegroundColour( wxSystemSettings::GetColour( wxSYS_COLOUR_GRAYTEXT ) );
+        }
+
+        btn->Bind( wxEVT_BUTTON, handler );
+        label->Bind( wxEVT_LEFT_UP, handler );
+
+        int row = m_toolsSizer->GetRows();
+        int rowSpan = createHelp ? 2 : 1;
+        int flags = createHelp ? wxALIGN_BOTTOM : wxALIGN_CENTER_VERTICAL;
+
+        m_toolsSizer->Add( btn, wxGBPosition( row, 0 ), wxGBSpan( rowSpan, 1 ), 0, 0 );
+        m_toolsSizer->Add( label, wxGBPosition( row, 1 ), wxGBSpan( 1, 1 ), flags, 0 );
+
+        if( createHelp )
+        {
+            m_toolsSizer->Add( help, wxGBPosition( row + 1, 1 ), wxGBSpan( 1, 1 ), wxALIGN_TOP, 0 );
+        }
+    };
 
     addLauncher( KICAD_MANAGER_ACTIONS::editSchematic, KiScaledBitmap( icon_eeschema_xpm, this ) );
 

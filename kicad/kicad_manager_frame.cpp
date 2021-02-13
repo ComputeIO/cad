@@ -93,12 +93,10 @@ END_EVENT_TABLE()
 
 
 KICAD_MANAGER_FRAME::KICAD_MANAGER_FRAME( wxWindow* parent, const wxString& title,
-                                          const wxPoint& pos, const wxSize&   size ) :
-        EDA_BASE_FRAME( parent, KICAD_MAIN_FRAME_T, title, pos, size,
-                        KICAD_DEFAULT_DRAWFRAME_STYLE, KICAD_MANAGER_FRAME_NAME, &::Kiway ),
-        m_leftWin( nullptr ),
-        m_launcher( nullptr ),
-        m_mainToolBar( nullptr )
+                                          const wxPoint& pos, const wxSize& size ) :
+        EDA_BASE_FRAME( parent, KICAD_MAIN_FRAME_T, title, pos, size, KICAD_DEFAULT_DRAWFRAME_STYLE,
+                        KICAD_MANAGER_FRAME_NAME, &::Kiway ),
+        m_leftWin( nullptr ), m_launcher( nullptr ), m_mainToolBar( nullptr )
 {
     m_active_project = false;
     m_leftWinWidth = 250; // Default value
@@ -146,9 +144,15 @@ KICAD_MANAGER_FRAME::KICAD_MANAGER_FRAME( wxWindow* parent, const wxString& titl
     // (Well, BestSize() sets the best size... not the window size)
     // A trick is to use MinSize() to set the required pane width,
     // and after give a reasonable MinSize value
-    m_auimgr.AddPane( m_leftWin, EDA_PANE().Palette().Name( "ProjectTree" ).Left().Layer(3)
-                      .CaptionVisible( false ).PaneBorder( false )
-                      .MinSize( m_leftWinWidth, -1 ).BestSize( m_leftWinWidth, -1 ) );
+    m_auimgr.AddPane( m_leftWin, EDA_PANE()
+                                         .Palette()
+                                         .Name( "ProjectTree" )
+                                         .Left()
+                                         .Layer( 3 )
+                                         .CaptionVisible( false )
+                                         .PaneBorder( false )
+                                         .MinSize( m_leftWinWidth, -1 )
+                                         .BestSize( m_leftWinWidth, -1 ) );
 
     m_auimgr.AddPane( m_launcher,
                       EDA_PANE().Canvas().PaneBorder( false ).Name( "Launcher" ).Center() );

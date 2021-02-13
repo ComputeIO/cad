@@ -48,8 +48,8 @@ void PCB_CALCULATOR_FRAME::ToleranceSelection( int aSelection )
      */
     bool show4thBand = aSelection != 0;
 
-    m_Band4bitmap->Show(show4thBand);
-    m_Band4Label->Show(show4thBand);
+    m_Band4bitmap->Show( show4thBand );
+    m_Band4Label->Show( show4thBand );
 
     // m_Band4Label visibility has changed:
     // The new size must be taken in account
@@ -57,11 +57,11 @@ void PCB_CALCULATOR_FRAME::ToleranceSelection( int aSelection )
 
     // All this shouldn't be necessary but if you want the bitmaps to show up on OSX it is.
     m_Band1bitmap->SetBitmap( *m_ccValueNamesBitmap );
-   	m_Band2bitmap->SetBitmap( *m_ccValuesBitmap );
-   	m_Band3bitmap->SetBitmap( *m_ccValuesBitmap );
-   	m_Band4bitmap->SetBitmap( *m_ccValuesBitmap );
-   	m_Band_mult_bitmap->SetBitmap( *m_ccMultipliersBitmap );
-   	m_Band_tol_bitmap->SetBitmap( *m_ccTolerancesBitmap );
+    m_Band2bitmap->SetBitmap( *m_ccValuesBitmap );
+    m_Band3bitmap->SetBitmap( *m_ccValuesBitmap );
+    m_Band4bitmap->SetBitmap( *m_ccValuesBitmap );
+    m_Band_mult_bitmap->SetBitmap( *m_ccMultipliersBitmap );
+    m_Band_tol_bitmap->SetBitmap( *m_ccTolerancesBitmap );
 
     m_panelColorCode->Refresh();
 }

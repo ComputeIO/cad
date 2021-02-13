@@ -776,9 +776,7 @@ public:
      * @param aTypeCommand = command type (see enum UNDO_REDO)
      * @param aAppend = add the item to the previous undo list
      */
-    void SaveCopyInUndoList( SCH_SCREEN* aScreen,
-                             SCH_ITEM* aItemToCopy,
-                             UNDO_REDO aTypeCommand,
+    void SaveCopyInUndoList( SCH_SCREEN* aScreen, SCH_ITEM* aItemToCopy, UNDO_REDO aTypeCommand,
                              bool aAppend );
 
     /**
@@ -788,8 +786,7 @@ public:
      * @param aTypeCommand = command type (see enum UNDO_REDO)
      * @param aAppend = add the item to the previous undo list
      */
-    void SaveCopyInUndoList( const PICKED_ITEMS_LIST& aItemsList,
-                             UNDO_REDO aTypeCommand,
+    void SaveCopyInUndoList( const PICKED_ITEMS_LIST& aItemsList, UNDO_REDO aTypeCommand,
                              bool aAppend );
 
     /**
