@@ -95,11 +95,17 @@
  * swapped data is data modified by editing, so not all values are swapped
  */
 
+void SCH_EDIT_FRAME::StartNewUndo()
+{
+	PICKED_ITEMS_LIST* blank = new PICKED_ITEMS_LIST();
+	PushCommandToUndoList( blank );
+}
+
+
 void SCH_EDIT_FRAME::SaveCopyInUndoList( SCH_SCREEN*    aScreen,
                                          SCH_ITEM*      aItem,
                                          UNDO_REDO      aCommandType,
-                                         bool           aAppend,
-                                         const wxPoint& aTransformPoint )
+                                         bool           aAppend )
 {
     PICKED_ITEMS_LIST* commandToUndo = nullptr;
 
@@ -108,13 +114,17 @@ void SCH_EDIT_FRAME::SaveCopyInUndoList( SCH_SCREEN*    aScreen,
     // Connectivity may change
     aItem->SetConnectivityDirty();
 
-    if( aAppend )
-        commandToUndo = PopCommandFromUndoList();
+	PICKED_ITEMS_LIST* lastUndo = PopCommandFromUndoList();
+
+	// If the last stack was empty, use that one instead of creating a new stack
+    if( aAppend || !lastUndo->GetCount() )
+        commandToUndo = lastUndo;
+    else
+    	PushCommandToUndoList( lastUndo );
 
     if( !commandToUndo )
     {
         commandToUndo = new PICKED_ITEMS_LIST();
-        commandToUndo->m_TransformPoint = aTransformPoint;
     }
 
     ITEM_PICKER itemWrapper( aScreen, aItem, aCommandType );
@@ -129,8 +139,6 @@ void SCH_EDIT_FRAME::SaveCopyInUndoList( SCH_SCREEN*    aScreen,
 
     case UNDO_REDO::NEWITEM:
     case UNDO_REDO::DELETED:
-    case UNDO_REDO::ROTATED:
-    case UNDO_REDO::MOVED:
         commandToUndo->PushItem( itemWrapper );
         break;
 
@@ -157,24 +165,18 @@ void SCH_EDIT_FRAME::SaveCopyInUndoList( SCH_SCREEN*    aScreen,
 
 void SCH_EDIT_FRAME::SaveCopyInUndoList( const PICKED_ITEMS_LIST& aItemsList,
                                          UNDO_REDO                aTypeCommand,
-                                         bool                     aAppend,
-                                         const wxPoint&           aTransformPoint )
+                                         bool                     aAppend )
 {
     PICKED_ITEMS_LIST* commandToUndo = nullptr;
 
     if( !aItemsList.GetCount() )
         return;
 
-    // Can't append a WIRE IMAGE, so fail to a new undo point
     if( aAppend )
         commandToUndo = PopCommandFromUndoList();
 
     if( !commandToUndo )
-    {
         commandToUndo = new PICKED_ITEMS_LIST();
-        commandToUndo->m_TransformPoint = aTransformPoint;
-        commandToUndo->m_Status = aTypeCommand;
-    }
 
     // Copy picker list:
     if( !commandToUndo->GetCount() )
@@ -220,10 +222,6 @@ void SCH_EDIT_FRAME::SaveCopyInUndoList( const PICKED_ITEMS_LIST& aItemsList,
             wxASSERT( commandToUndo->GetPickedItemLink( ii ) );
             break;
 
-        case UNDO_REDO::MOVED:
-        case UNDO_REDO::MIRRORED_Y:
-        case UNDO_REDO::MIRRORED_X:
-        case UNDO_REDO::ROTATED:
         case UNDO_REDO::NEWITEM:
         case UNDO_REDO::DELETED:
         case UNDO_REDO::EXCHANGE_T:
@@ -264,6 +262,10 @@ void SCH_EDIT_FRAME::PutDataInPreviousState( PICKED_ITEMS_LIST* aList, bool aRed
         eda_item->ClearEditFlags();
         eda_item->ClearTempFlags();
 
+        if( status == UNDO_REDO::NOP )
+        {
+        	continue;
+        }
         if( status == UNDO_REDO::NEWITEM )
         {
             // new items are deleted on undo
@@ -306,30 +308,6 @@ void SCH_EDIT_FRAME::PutDataInPreviousState( PICKED_ITEMS_LIST* aList, bool aRed
 
                 break;
 
-            case UNDO_REDO::MOVED:
-                item->Move( aRedoCommand ? aList->m_TransformPoint : -aList->m_TransformPoint );
-                break;
-
-            case UNDO_REDO::MIRRORED_Y:
-                item->MirrorY( aList->m_TransformPoint.x );
-                break;
-
-            case UNDO_REDO::MIRRORED_X:
-                item->MirrorX( aList->m_TransformPoint.y );
-                break;
-
-            case UNDO_REDO::ROTATED:
-                if( aRedoCommand )
-                    item->Rotate( aList->m_TransformPoint );
-                else
-                {
-                    // Rotate 270 deg to undo 90-deg rotate
-                    item->Rotate( aList->m_TransformPoint );
-                    item->Rotate( aList->m_TransformPoint );
-                    item->Rotate( aList->m_TransformPoint );
-                }
-                break;
-
             case UNDO_REDO::EXCHANGE_T:
                 aList->SetPickedItem( alt_item, (unsigned) ii );
                 aList->SetPickedItemLink( item, (unsigned) ii );
@@ -360,6 +338,10 @@ void SCH_EDIT_FRAME::PutDataInPreviousState( PICKED_ITEMS_LIST* aList, bool aRed
 void SCH_EDIT_FRAME::RollbackSchematicFromUndo()
 {
     PICKED_ITEMS_LIST* undo = PopCommandFromUndoList();
+
+    // Skip empty frames
+    while( undo && undo->GetCount() == 1 && undo->GetPickedItemStatus( 0 ) == UNDO_REDO::NOP )
+    	undo = PopCommandFromUndoList();
 
     if( undo )
     {

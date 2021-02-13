@@ -757,34 +757,29 @@ public:
     /* Undo - redo */
 
     /**
+     * Create a new, blank stack for future Undo commands to be pushed to
+     */
+    void StartNewUndo();
+
+    /**
      * Create a copy of the current schematic item, and put it in the undo list.
      *
      *  aTypeCommand =
      *      CHANGED
      *      NEWITEM
      *      DELETED
-     *      UR_WIRE_IMAGE
-     *      MOVED
      *
      * If it is a delete command, items are put on list with the .Flags member
      * set to DELETED.
      *
-     * @note
-     * Edit wires and buses is a bit complex.
-     * When a new wire is added, a lot of modifications are made in the wire list (merging,
-     * junctions, etc.).  We therefore set the aTypeCommand to UR_WIRE_IMAGE and save the whole
-     * schebang.
-     *
      * @param aItemToCopy = the schematic item modified by the command to undo
      * @param aTypeCommand = command type (see enum UNDO_REDO)
      * @param aAppend = add the item to the previous undo list
-     * @param aTransformPoint = the reference point of the transformation for commands like move
      */
     void SaveCopyInUndoList( SCH_SCREEN* aScreen,
                              SCH_ITEM* aItemToCopy,
                              UNDO_REDO aTypeCommand,
-                             bool aAppend,
-                             const wxPoint& aTransformPoint = wxPoint( 0, 0 ) );
+                             bool aAppend );
 
     /**
      * Create a new entry in undo list of commands.
@@ -792,12 +787,10 @@ public:
      * @param aItemsList = the list of items modified by the command to undo
      * @param aTypeCommand = command type (see enum UNDO_REDO)
      * @param aAppend = add the item to the previous undo list
-     * @param aTransformPoint = the reference point of the transformation for commands like move
      */
     void SaveCopyInUndoList( const PICKED_ITEMS_LIST& aItemsList,
                              UNDO_REDO aTypeCommand,
-                             bool aAppend,
-                             const wxPoint& aTransformPoint = wxPoint( 0, 0 ) );
+                             bool aAppend );
 
     /**
      * Restore an undo or redo command to put data pointed by \a aList in the previous state.

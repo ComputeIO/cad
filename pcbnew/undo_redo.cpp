@@ -176,22 +176,18 @@ static void SwapItemData( BOARD_ITEM* aItem, BOARD_ITEM* aImage )
 }
 
 
-void PCB_BASE_EDIT_FRAME::SaveCopyInUndoList( EDA_ITEM* aItem, UNDO_REDO aCommandType,
-                                              const wxPoint& aTransformPoint )
+void PCB_BASE_EDIT_FRAME::SaveCopyInUndoList( EDA_ITEM* aItem, UNDO_REDO aCommandType )
 {
     PICKED_ITEMS_LIST commandToUndo;
     commandToUndo.PushItem( ITEM_PICKER( nullptr, aItem, aCommandType ) );
-    SaveCopyInUndoList( commandToUndo, aCommandType, aTransformPoint );
+    SaveCopyInUndoList( commandToUndo, aCommandType );
 }
 
 
 void PCB_BASE_EDIT_FRAME::SaveCopyInUndoList( const PICKED_ITEMS_LIST& aItemsList,
-                                              UNDO_REDO aTypeCommand,
-                                              const wxPoint& aTransformPoint )
+                                              UNDO_REDO aTypeCommand )
 {
     PICKED_ITEMS_LIST* commandToUndo = new PICKED_ITEMS_LIST();
-
-    commandToUndo->m_TransformPoint = aTransformPoint;
 
     // First, filter unnecessary stuff from the list (i.e. for multiple pads / labels modified),
     // take the first occurence of the footprint (we save copies of footprints when one of its
@@ -284,10 +280,6 @@ void PCB_BASE_EDIT_FRAME::SaveCopyInUndoList( const PICKED_ITEMS_LIST& aItemsLis
             }
             break;
 
-        case UNDO_REDO::MOVED:
-        case UNDO_REDO::ROTATED:
-        case UNDO_REDO::ROTATED_CLOCKWISE:
-        case UNDO_REDO::FLIPPED:
         case UNDO_REDO::NEWITEM:
         case UNDO_REDO::DELETED:
         case UNDO_REDO::PAGESETTINGS:
@@ -506,48 +498,6 @@ void PCB_BASE_EDIT_FRAME::PutDataInPreviousState( PICKED_ITEMS_LIST* aList, bool
             if( group )
                 group->AddItem( static_cast<BOARD_ITEM*>( eda_item ) );
 
-            break;
-
-        case UNDO_REDO::MOVED:
-        {
-            BOARD_ITEM* item = (BOARD_ITEM*) eda_item;
-            item->Move( aRedoCommand ? aList->m_TransformPoint : -aList->m_TransformPoint );
-            view->Update( item, KIGFX::GEOMETRY );
-            connectivity->Update( item );
-            item->GetBoard()->OnItemChanged( item );
-        }
-            break;
-
-        case UNDO_REDO::ROTATED:
-        {
-            BOARD_ITEM* item = (BOARD_ITEM*) eda_item;
-            item->Rotate( aList->m_TransformPoint,
-                          aRedoCommand ? m_rotationAngle : -m_rotationAngle );
-            view->Update( item, KIGFX::GEOMETRY );
-            connectivity->Update( item );
-            item->GetBoard()->OnItemChanged( item );
-        }
-            break;
-
-        case UNDO_REDO::ROTATED_CLOCKWISE:
-        {
-            BOARD_ITEM* item = (BOARD_ITEM*) eda_item;
-            item->Rotate( aList->m_TransformPoint,
-                          aRedoCommand ? -m_rotationAngle : m_rotationAngle );
-            view->Update( item, KIGFX::GEOMETRY );
-            connectivity->Update( item );
-            item->GetBoard()->OnItemChanged( item );
-        }
-            break;
-
-        case UNDO_REDO::FLIPPED:
-        {
-            BOARD_ITEM* item = (BOARD_ITEM*) eda_item;
-            item->Flip( aList->m_TransformPoint, m_settings->m_FlipLeftRight );
-            view->Update( item, KIGFX::LAYERS );
-            connectivity->Update( item );
-            item->GetBoard()->OnItemChanged( item );
-        }
             break;
 
         case UNDO_REDO::DRILLORIGIN:

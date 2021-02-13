@@ -54,16 +54,11 @@ class BASE_SCREEN;
  */
 enum class UNDO_REDO {
     UNSPECIFIED = 0,     // illegal
+    NOP,				 // Undo/redo will ignore this entry.  Only forces the start of a new stack
     CHANGED,             // params of items have a value changed: undo is made by exchange
                          // values with a copy of these values
     NEWITEM,             // new item, undo by changing in deleted
     DELETED,             // deleted item, undo by changing in deleted
-    MOVED,               // moved item, undo by move it
-    MIRRORED_X,          // mirrored item, undo by mirror X
-    MIRRORED_Y,          // mirrored item, undo by mirror Y
-    ROTATED,             // Rotated item (counterclockwise), undo by rotating it
-    ROTATED_CLOCKWISE,   // Rotated item (clockwise), undo by rotating it
-    FLIPPED,             // flipped (board items only), undo by flipping it
     LIBEDIT,             // Specific to the component editor (symbol_editor creates a full copy
                          // of the current component when changed)
     LIB_RENAME,          // As LIBEDIT, but old copy should be removed from library
@@ -138,12 +133,6 @@ private:
  */
 class PICKED_ITEMS_LIST
 {
-public:
-    UNDO_REDO m_Status;             /* info about operation to undo/redo for this item. can be
-                                     * UNSPECIFIED */
-    wxPoint     m_TransformPoint;   /* used to undo redo command by the same command: usually
-                                     * need to know the rotate point or the move vector */
-
 private:
     std::vector <ITEM_PICKER> m_ItemsList;
 
