@@ -848,5 +848,8 @@ VECTOR2D STROKE_FONT::ComputeStringBoundaryLimits( const KIGFX::GAL* aGal, const
     if( aGal->IsFontItalic() )
         string_bbox.x += string_bbox.y * STROKE_FONT::ITALIC_TILT;
 
+#ifdef DEBUG
+        // std::cerr << "stroke string boundary limits " << string_bbox << std::endl;
+#endif
     return string_bbox;
 }
