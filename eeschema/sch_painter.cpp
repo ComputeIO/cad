@@ -688,6 +688,15 @@ void SCH_PAINTER::draw( const LIB_TEXT* aText, int aLayer )
 
     EDA_RECT bBox = aText->GetBoundingBox();
     bBox.RevertYAxis();
+#if DEBUG
+    // For bounding box debug purpose only
+    //EDA_RECT bbox = aText->GetBoundingBox();
+    m_gal->SetIsFill( true );
+    m_gal->SetIsStroke( true );
+    m_gal->SetFillColor( COLOR4D( 1, .6, 0.4, 0.4 ) );
+    m_gal->SetStrokeColor( COLOR4D( .75, 1, .5, .8 ) );
+    m_gal->DrawRectangle( VECTOR2D( bBox.GetOrigin() ), VECTOR2D( bBox.GetEnd() ) );
+#endif
     VECTOR2D pos = mapCoords( bBox.Centre() );
     double   orient = aText->GetTextAngleRadians();
 
@@ -1302,6 +1311,17 @@ void SCH_PAINTER::draw( const SCH_TEXT* aText, int aLayer )
             return;
     }
 
+#if DEBUG
+    // For bounding box debug purpose only
+    EDA_RECT theBoundingBox = aText->GetBoundingBox();
+    m_gal->SetIsFill( false );
+    m_gal->SetIsStroke( true );
+    m_gal->SetFillColor( COLOR4D( 1, .6, 0.4, 0.4 ) );
+    m_gal->SetStrokeColor( COLOR4D( .5, 1, .75, .8 ) );
+    m_gal->DrawRectangle( VECTOR2D( theBoundingBox.GetOrigin() ),
+                          VECTOR2D( theBoundingBox.GetEnd() ) );
+#endif
+
     m_gal->SetIsFill( false );
     m_gal->SetIsStroke( true );
     m_gal->SetLineWidth( getTextThickness( aText, drawingShadows ) );
@@ -1349,19 +1369,25 @@ void SCH_PAINTER::draw( const SCH_TEXT* aText, int aLayer )
             */
 
             OUTLINE_FONT* f = static_cast<OUTLINE_FONT*>( aText->GetFont() );
+
+            /* Temporary selection indicator: bounding box rectangle
+               TODO: indicate selection for outline font items just like for default font
+            */
+            if( drawingShadows && aText->IsSelected() )
+            {
+                EDA_RECT bBox = aText->GetBoundingBox();
+
+                m_gal->SetIsStroke( true );
+                m_gal->SetIsFill( false );
+                m_gal->SetStrokeColor( getRenderColor( aText, aLayer, drawingShadows ) );
+                m_gal->DrawRectangle( bBox.GetOrigin(), bBox.GetEnd() );
+            }
+
+            m_gal->SetIsStroke( false );
             m_gal->SetIsFill( true );
             m_gal->SetFillColor( color );
             f->DrawString( m_gal, shownText, aText->GetTextPos(), aText->GetTextAngle(), true,
                            true );
-
-            if( drawingShadows && aText->IsSelected() )
-            {
-                m_gal->SetIsStroke( true );
-                m_gal->SetIsFill( false );
-                m_gal->SetStrokeColor( getRenderColor( aText, aLayer, drawingShadows ) );
-                f->DrawString( m_gal, shownText, aText->GetTextPos(), aText->GetTextAngle(), true,
-                               true );
-            }
         }
         else
         {
