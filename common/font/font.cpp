@@ -214,7 +214,7 @@ void FONT::getLinePositions( KIGFX::GAL* aGal, const UTF8& aText, const VECTOR2D
         // Offset to next line.
         wxPoint offset;
 
-        int interline = GetInterline( aTextHeight ? aTextHeight : 1 );
+        int interline = GetInterline( aTextHeight ? aTextHeight : -1 );
         offset.y = i * interline;
 
         switch( aVertJustify )
