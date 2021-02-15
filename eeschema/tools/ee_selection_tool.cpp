@@ -359,6 +359,7 @@ int EE_SELECTION_TOOL::Main( const TOOL_EVENT& aEvent )
                     {
                         OPT_TOOL_EVENT newEvt;
                         SCH_CONNECTION* connection = collector[0]->Connection();
+
                         if( connection && connection->IsBus() )
                         {
                             newEvt = EE_ACTIONS::drawBus.MakeEvent();
@@ -570,6 +571,7 @@ int EE_SELECTION_TOOL::Main( const TOOL_EVENT& aEvent )
                             && collector[0]->IsPointClickableAnchor( (wxPoint) snappedCursorPos ) )
                     {
                         SCH_CONNECTION* connection = collector[0]->Connection();
+
                         if( connection && connection->IsBus() )
                         {
                             displayBusCursor = true;
@@ -578,6 +580,7 @@ int EE_SELECTION_TOOL::Main( const TOOL_EVENT& aEvent )
                         {
                             displayWireCursor = true;
                         }
+
                         getViewControls()->ForceCursorPosition( true, snappedCursorPos );
                     }
                     else if( collector[0]->IsHypertext()
