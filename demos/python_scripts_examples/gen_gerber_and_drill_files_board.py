@@ -5,19 +5,19 @@
     Map dril files
 
     Important note:
-        this python script does not plot frame references (page layout).
+        this python script does not plot frame references (worksheet).
         the reason is it is not yet possible from a python script because plotting
-        plot frame references needs loading the corresponding page layout file
+        plot frame references needs loading the corresponding worksheet file
         (.wks file) or the default template.
 
-        This info (the page layout template) is not stored in the board, and therefore
+        This info (the worksheet template) is not stored in the board, and therefore
         not available.
 
         Do not try to change SetPlotFrameRef(False) to SetPlotFrameRef(true)
         the result is the pcbnew lib will crash if you try to plot
         the unknown frame references template.
 
-        Anyway, in gerber and drill files the page layout is not plot
+        Anyway, in gerber and drill files the worksheet is not plot
 '''
 
 import sys

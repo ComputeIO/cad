@@ -30,9 +30,9 @@
 #include <tool/tool_event.h>
 #include <tool/tool_manager.h>
 #include <tool/selection.h>
-#include <page_layout/ws_data_item.h>
-#include <page_layout/ws_data_model.h>
-#include <page_layout/ws_draw_item.h>
+#include <worksheet/ws_data_item.h>
+#include <worksheet/ws_data_model.h>
+#include <worksheet/ws_draw_item.h>
 #include <collector.h>
 #include <math/util.h>      // for KiROUND
 

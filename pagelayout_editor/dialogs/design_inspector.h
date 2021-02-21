@@ -43,7 +43,7 @@ private:
     wxGrid* GetGridList() const { return m_gridListItems; }
 	void onCellClicked( wxGridEvent& event ) override;
 
-    // The list of WS_DATA_ITEM found in page layout
+    // The list of WS_DATA_ITEM found in worksheet
     std::vector<WS_DATA_ITEM*> m_itemsList;
     PL_EDITOR_FRAME* m_editorFrame;
 
@@ -57,7 +57,7 @@ public:
      */
     WS_DATA_ITEM* GetWsDataItem( int aRow ) const;
 
-    /** @return the page layout item managed by the selected row (or NULL)
+    /** @return the worksheet item managed by the selected row (or NULL)
      */
     WS_DATA_ITEM* GetSelectedWsDataItem() const;
 

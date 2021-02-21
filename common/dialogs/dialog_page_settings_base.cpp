@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////
-// C++ code generated with wxFormBuilder (version 3.9.0 Nov  1 2020)
+// C++ code generated with wxFormBuilder (version Oct 26 2018)
 // http://www.wxformbuilder.org/
 //
 // PLEASE DO *NOT* EDIT THIS FILE!
@@ -119,11 +119,11 @@ DIALOG_PAGES_SETTINGS_BASE::DIALOG_PAGES_SETTINGS_BASE( wxWindow* parent, wxWind
 	m_staticTextPreview->Wrap( -1 );
 	bleftSizer->Add( m_staticTextPreview, 0, wxALIGN_CENTER_HORIZONTAL|wxRIGHT|wxLEFT, 10 );
 
-	m_PageLayoutExampleBitmap = new wxStaticBitmap( this, wxID_ANY, wxNullBitmap, wxDefaultPosition, wxSize( -1,-1 ), wxFULL_REPAINT_ON_RESIZE|wxBORDER_SIMPLE );
-	m_PageLayoutExampleBitmap->SetForegroundColour( wxSystemSettings::GetColour( wxSYS_COLOUR_WINDOW ) );
-	m_PageLayoutExampleBitmap->SetBackgroundColour( wxSystemSettings::GetColour( wxSYS_COLOUR_WINDOW ) );
+	m_WorksheetExampleBitmap = new wxStaticBitmap( this, wxID_ANY, wxNullBitmap, wxDefaultPosition, wxSize( -1,-1 ), wxFULL_REPAINT_ON_RESIZE|wxBORDER_SIMPLE );
+	m_WorksheetExampleBitmap->SetForegroundColour( wxSystemSettings::GetColour( wxSYS_COLOUR_WINDOW ) );
+	m_WorksheetExampleBitmap->SetBackgroundColour( wxSystemSettings::GetColour( wxSYS_COLOUR_WINDOW ) );
 
-	bleftSizer->Add( m_PageLayoutExampleBitmap, 1, wxALL|wxEXPAND, 5 );
+	bleftSizer->Add( m_WorksheetExampleBitmap, 1, wxALL|wxEXPAND, 5 );
 
 
 	bUpperSizerH->Add( bleftSizer, 0, wxEXPAND|wxRIGHT|wxLEFT, 5 );
@@ -335,7 +335,7 @@ DIALOG_PAGES_SETTINGS_BASE::DIALOG_PAGES_SETTINGS_BASE( wxWindow* parent, wxWind
 	wxBoxSizer* bSizerFilename;
 	bSizerFilename = new wxBoxSizer( wxVERTICAL );
 
-	m_staticTextfilename = new wxStaticText( this, wxID_ANY, _("Page layout description file"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_staticTextfilename = new wxStaticText( this, wxID_ANY, _("Worksheet file"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_staticTextfilename->Wrap( -1 );
 	bSizerFilename->Add( m_staticTextfilename, 0, wxRIGHT|wxLEFT, 5 );
 

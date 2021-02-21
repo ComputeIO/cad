@@ -7,10 +7,10 @@
     Important note:
         this python script does not plot frame references.
         the reason is it is not yet possible from a python script because plotting
-        plot frame references needs loading the corresponding page layout file
+        plot frame references needs loading the corresponding worksheet file
         (.wks file) or the default template.
 
-        This info (the page layout template) is not stored in the board, and therefore
+        This info (the worksheet template) is not stored in the board, and therefore
         not available.
 
         Do not try to change SetPlotFrameRef(False) to SetPlotFrameRef(true)

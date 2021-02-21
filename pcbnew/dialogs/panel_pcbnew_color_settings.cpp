@@ -30,7 +30,7 @@
 #include <settings/settings_manager.h>
 #include <footprint_preview_panel.h>
 #include <widgets/appearance_controls.h>
-#include <page_layout/ws_proxy_view_item.h>
+#include <worksheet/ws_proxy_view_item.h>
 #include <pcb_painter.h>
 #include <track.h>
 #include <plugins/kicad/kicad_plugin.h>

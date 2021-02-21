@@ -26,7 +26,7 @@
 #include <pcb_view.h>
 #include <view/wx_view_controls.h>
 #include <pcb_painter.h>
-#include <page_layout/ws_proxy_view_item.h>
+#include <worksheet/ws_proxy_view_item.h>
 #include <connectivity/connectivity_data.h>
 
 #include <board.h>

@@ -72,7 +72,7 @@ namespace KIGFX
 class SCH_VIEW : public KIGFX::VIEW
 {
 public:
-    // Note: aFrame is used to know the sheet path name when drawing the page layout.
+    // Note: aFrame is used to know the sheet path name when drawing the worksheet.
     // It can be null.
     SCH_VIEW( bool aIsDynamic, SCH_BASE_FRAME* aFrame );
     ~SCH_VIEW();
@@ -98,7 +98,7 @@ public:
 
 private:
     SCH_BASE_FRAME* m_frame;    // The frame using this view. Can be null. Used mainly
-                                // to know the sheet path name when drawing the page layout
+                                // to know the sheet path name when drawing the worksheet
 
     std::unique_ptr<WS_PROXY_VIEW_ITEM> m_drawingSheet;
 };

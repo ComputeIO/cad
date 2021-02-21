@@ -28,8 +28,8 @@
 #include <bitmaps.h>
 #include <core/arraydim.h>
 #include <eda_item.h>
-#include <page_layout/ws_data_item.h>
-#include <page_layout/ws_data_model.h>
+#include <worksheet/ws_data_item.h>
+#include <worksheet/ws_data_model.h>
 #include <widgets/paged_dialog.h>
 #include <dialogs/panel_gal_display_options.h>
 #include <panel_hotkeys_editor.h>
@@ -85,7 +85,7 @@ PL_EDITOR_FRAME::PL_EDITOR_FRAME( KIWAY* aKiway, wxWindow* aParent ) :
         m_originSelectBox( nullptr ),
         m_originSelectChoice( 0 ),
         m_pageSelectBox( nullptr ),
-        m_propertiesPagelayout( nullptr )
+        m_propertiesWorksheet( nullptr )
 {
     m_maximizeByDefault = true;
     m_userUnits = EDA_UNITS::MILLIMETRES;
@@ -116,7 +116,7 @@ PL_EDITOR_FRAME::PL_EDITOR_FRAME( KIWAY* aKiway, wxWindow* aParent ) :
 
     LoadSettings( config() );
 
-    wxSize pageSizeIU = GetPageLayout().GetPageSettings().GetSizeIU();
+    wxSize pageSizeIU = GetWorksheet().GetPageSettings().GetSizeIU();
     SetScreen( new BASE_SCREEN( pageSizeIU ) );
 
     setupTools();
@@ -159,7 +159,7 @@ PL_EDITOR_FRAME::PL_EDITOR_FRAME( KIWAY* aKiway, wxWindow* aParent ) :
     m_auimgr.SetManagedWindow( this );
 
     CreateInfoBar();
-    m_propertiesPagelayout = new PROPERTIES_FRAME( this );
+    m_propertiesWorksheet = new PROPERTIES_FRAME( this );
 
     // Rows; layers 4 - 6
     m_auimgr.AddPane( m_mainToolBar, EDA_PANE().HToolbar().Name( "MainToolbar" )
@@ -173,10 +173,10 @@ PL_EDITOR_FRAME::PL_EDITOR_FRAME( KIWAY* aKiway, wxWindow* aParent ) :
     m_auimgr.AddPane( m_drawToolBar, EDA_PANE().VToolbar().Name( "ToolsToolbar" )
                       .Right().Layer( 2 ) );
 
-    m_auimgr.AddPane( m_propertiesPagelayout, EDA_PANE().Palette().Name( "Props" )
+    m_auimgr.AddPane( m_propertiesWorksheet, EDA_PANE().Palette().Name( "Props" )
                       .Right().Layer( 3 )
                       .Caption( _( "Properties" ) )
-                      .MinSize( m_propertiesPagelayout->GetMinSize() )
+                      .MinSize( m_propertiesWorksheet->GetMinSize() )
                       .BestSize( m_propertiesFrameWidth, -1 ) );
 
     // Center
@@ -194,15 +194,15 @@ PL_EDITOR_FRAME::PL_EDITOR_FRAME( KIWAY* aKiway, wxWindow* aParent ) :
     wxPoint originCoord = ReturnCoordOriginCorner();
     SetGridOrigin( originCoord );
 
-    // Initialize the current page layout
+    // Initialize the current worksheet
     WS_DATA_MODEL& pglayout = WS_DATA_MODEL::GetTheInstance();
 #if 0       //start with empty layout
     pglayout.AllowVoidList( true );
     pglayout.ClearList();
 #else       // start with the default Kicad layout
-    pglayout.SetPageLayout();
+    pglayout.SetWorksheet();
 #endif
-    OnNewPageLayout();
+    OnNewWorksheet();
 
     // Ensure the window is on top
     Raise();
@@ -308,14 +308,14 @@ bool PL_EDITOR_FRAME::OpenProjectFiles( const std::vector<wxString>& aFileSet, i
 {
     wxString fn = aFileSet[0];
 
-    if( !LoadPageLayoutDescrFile( fn ) )
+    if( !LoadWorksheetFile( fn ) )
     {
         wxMessageBox( wxString::Format( _( "Error when loading file \"%s\"" ), fn ) );
         return false;
     }
     else
     {
-        OnNewPageLayout();
+        OnNewWorksheet();
         return true;
     }
 }
@@ -355,7 +355,7 @@ bool PL_EDITOR_FRAME::canCloseWindow( wxCloseEvent& aEvent )
         if( !HandleUnsavedChanges( this, wxString::Format( msg, filename.GetFullName() ),
                                    [&]() -> bool
                                    {
-                                       return saveCurrentPageLayout();
+                                       return saveCurrentWorksheet();
                                    } ) )
         {
             return false;
@@ -374,9 +374,9 @@ void PL_EDITOR_FRAME::doCloseWindow()
     // clean up the data before the view is destroyed
     WS_DATA_MODEL::GetTheInstance().ClearList();
 
-    // On Linux, m_propertiesPagelayout must be destroyed
+    // On Linux, m_propertiesWorksheet must be destroyed
     // before deleting the main frame to avoid a crash when closing
-    m_propertiesPagelayout->Destroy();
+    m_propertiesWorksheet->Destroy();
     Destroy();
 }
 
@@ -451,7 +451,7 @@ void PL_EDITOR_FRAME::ToPrinter( bool doPreview )
 
 const BOX2I PL_EDITOR_FRAME::GetDocumentExtents( bool aIncludeAllVisible ) const
 {
-    BOX2I rv( VECTOR2I( 0, 0 ), GetPageLayout().GetPageSettings().GetSizeIU() );
+    BOX2I rv( VECTOR2I( 0, 0 ), GetWorksheet().GetPageSettings().GetSizeIU() );
     return rv;
 }
 
@@ -512,7 +512,7 @@ void PL_EDITOR_FRAME::SaveSettings( APP_SETTINGS_BASE* aCfg )
 
     auto cfg = static_cast<PL_EDITOR_SETTINGS*>( aCfg );
 
-    m_propertiesFrameWidth = m_propertiesPagelayout->GetSize().x;
+    m_propertiesFrameWidth = m_propertiesWorksheet->GetSize().x;
 
     cfg->m_PropertiesFrameWidth = m_propertiesFrameWidth;
     cfg->m_CornerOrigin         = m_originSelectChoice;
@@ -537,19 +537,19 @@ void PL_EDITOR_FRAME::UpdateTitleAndInfo()
 
 wxString PL_EDITOR_FRAME::GetCurrentFileName() const
 {
-    return BASE_SCREEN::m_PageLayoutDescrFileName;
+    return BASE_SCREEN::m_WorksheetFileName;
 }
 
 
 void PL_EDITOR_FRAME::SetCurrentFileName( const wxString& aName )
 {
-    BASE_SCREEN::m_PageLayoutDescrFileName = aName;
+    BASE_SCREEN::m_WorksheetFileName = aName;
 }
 
 
 void PL_EDITOR_FRAME::SetPageSettings( const PAGE_INFO& aPageSettings )
 {
-    m_pageLayout.SetPageSettings( aPageSettings );
+    m_worksheet.SetPageSettings( aPageSettings );
 
     if( GetScreen() )
         GetScreen()->InitDataPoints( aPageSettings.GetSizeIU() );
@@ -558,7 +558,7 @@ void PL_EDITOR_FRAME::SetPageSettings( const PAGE_INFO& aPageSettings )
 
 const PAGE_INFO& PL_EDITOR_FRAME::GetPageSettings() const
 {
-    return m_pageLayout.GetPageSettings();
+    return m_worksheet.GetPageSettings();
 }
 
 
@@ -567,19 +567,19 @@ const wxSize PL_EDITOR_FRAME::GetPageSizeIU() const
     // this function is only needed because EDA_DRAW_FRAME is not compiled
     // with either -DPCBNEW or -DEESCHEMA, so the virtual is used to route
     // into an application specific source file.
-    return m_pageLayout.GetPageSettings().GetSizeIU();
+    return m_worksheet.GetPageSettings().GetSizeIU();
 }
 
 
 const TITLE_BLOCK& PL_EDITOR_FRAME::GetTitleBlock() const
 {
-    return GetPageLayout().GetTitleBlock();
+    return GetWorksheet().GetTitleBlock();
 }
 
 
 void PL_EDITOR_FRAME::SetTitleBlock( const TITLE_BLOCK& aTitleBlock )
 {
-    m_pageLayout.SetTitleBlock( aTitleBlock );
+    m_worksheet.SetTitleBlock( aTitleBlock );
 }
 
 
@@ -791,13 +791,13 @@ void PL_EDITOR_FRAME::HardRedraw()
     if( selection.GetSize() == 1 )
         item = static_cast<WS_DRAW_ITEM_BASE*>( selection.Front() )->GetPeer();
 
-    m_propertiesPagelayout->CopyPrmsFromItemToPanel( item );
-    m_propertiesPagelayout->CopyPrmsFromGeneralToPanel();
+    m_propertiesWorksheet->CopyPrmsFromItemToPanel( item );
+    m_propertiesWorksheet->CopyPrmsFromGeneralToPanel();
     GetCanvas()->Refresh();
 }
 
 
-WS_DATA_ITEM* PL_EDITOR_FRAME::AddPageLayoutItem( int aType )
+WS_DATA_ITEM* PL_EDITOR_FRAME::AddWorksheetItem( int aType )
 {
     WS_DATA_ITEM * item = NULL;
 
@@ -862,14 +862,14 @@ WS_DATA_ITEM* PL_EDITOR_FRAME::AddPageLayoutItem( int aType )
 }
 
 
-void PL_EDITOR_FRAME::OnNewPageLayout()
+void PL_EDITOR_FRAME::OnNewWorksheet()
 {
     ClearUndoRedoList();
     GetScreen()->ClrModify();
     GetCanvas()->DisplayWorksheet();
 
-    m_propertiesPagelayout->CopyPrmsFromItemToPanel( nullptr );
-    m_propertiesPagelayout->CopyPrmsFromGeneralToPanel();
+    m_propertiesWorksheet->CopyPrmsFromItemToPanel( nullptr );
+    m_propertiesWorksheet->CopyPrmsFromGeneralToPanel();
 
     UpdateTitleAndInfo();
 
@@ -878,11 +878,11 @@ void PL_EDITOR_FRAME::OnNewPageLayout()
     if( GetCurrentFileName().IsEmpty() )
     {
         // Default shutdown reason until a file is loaded
-        KIPLATFORM::APP::SetShutdownBlockReason( this, _( "New page layout file is unsaved" ) );
+        KIPLATFORM::APP::SetShutdownBlockReason( this, _( "New worksheet file is unsaved" ) );
     }
     else
     {
-        KIPLATFORM::APP::SetShutdownBlockReason( this, _( "Page layout changes are unsaved" ) );
+        KIPLATFORM::APP::SetShutdownBlockReason( this, _( "Worksheet changes are unsaved" ) );
     }
 }
 

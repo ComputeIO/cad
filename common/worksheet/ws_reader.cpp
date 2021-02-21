@@ -1,41 +1,30 @@
-/**
- * @file common/page_layout/page_layout_reader.cpp
- * @brief read an S expression of description of graphic items and texts
- * to build a title block and page layout
- */
-
 /*
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
  * Copyright (C) 1992-2013 Jean-Pierre Charras <jp.charras at wanadoo.fr>.
- * Copyright (C) 1992-2018 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 2021 KiCad Developers, see AUTHORS.txt for contributors.
  *
+ * This program is free software: you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the
+ * Free Software Foundation, either version 3 of the License, or (at your
+ * option) any later version.
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, you may find one here:
- * http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
- * or you may search the http://www.gnu.org website for the version 2 license,
- * or you may write to the Free Software Foundation, Inc.,
- * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
+ * You should have received a copy of the GNU General Public License along
+ * with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include <eda_item.h>
 #include <locale_io.h>
-#include <page_layout/ws_data_item.h>
-#include <page_layout/ws_data_model.h>
-#include <page_layout/ws_draw_item.h>
-#include <page_layout/ws_painter.h>
-#include <page_layout/page_layout_reader_lexer.h>
+#include <worksheet/ws_data_item.h>
+#include <worksheet/ws_data_model.h>
+#include <worksheet/ws_draw_item.h>
+#include <worksheet/ws_painter.h>
+#include <worksheet/ws_lexer.h>
 #include <wx/ffile.h>
 
 #include <wx/file.h>
@@ -45,14 +34,14 @@
 using namespace TB_READER_T;
 
 /**
- * PAGE_LAYOUT_READER_PARSER
+ * WORKSHEET_PARSER
  * holds data and functions pertinent to parsing a S-expression file
  * for a WS_DATA_MODEL.
  */
-class PAGE_LAYOUT_READER_PARSER : public PAGE_LAYOUT_READER_LEXER
+class WORKSHEET_PARSER : public WORKSHEET_LEXER
 {
 public:
-    PAGE_LAYOUT_READER_PARSER( const char* aLine, const wxString& aSource );
+    WORKSHEET_PARSER( const char* aLine, const wxString& aSource );
     void Parse( WS_DATA_MODEL* aLayout );
 
 private:
@@ -109,8 +98,8 @@ private:
 
 // PCB_PLOT_PARAMS_PARSER
 
-PAGE_LAYOUT_READER_PARSER::PAGE_LAYOUT_READER_PARSER( const char* aLine, const wxString& aSource ) :
-    PAGE_LAYOUT_READER_LEXER( aLine, aSource )
+WORKSHEET_PARSER::WORKSHEET_PARSER( const char* aLine, const wxString& aSource ) :
+    WORKSHEET_LEXER( aLine, aSource )
 {
 }
 
@@ -189,7 +178,7 @@ wxString convertLegacyVariableRefs( const wxString& aTextbase )
 }
 
 
-void PAGE_LAYOUT_READER_PARSER::Parse( WS_DATA_MODEL* aLayout )
+void WORKSHEET_PARSER::Parse( WS_DATA_MODEL* aLayout )
 {
     WS_DATA_ITEM* item;
     LOCALE_IO     toggle;
@@ -247,7 +236,7 @@ void PAGE_LAYOUT_READER_PARSER::Parse( WS_DATA_MODEL* aLayout )
 }
 
 
-void PAGE_LAYOUT_READER_PARSER::parseSetup( WS_DATA_MODEL* aLayout )
+void WORKSHEET_PARSER::parseSetup( WS_DATA_MODEL* aLayout )
 {
     for( T token = NextTok(); token != T_RIGHT && token != EOF; token = NextTok() )
     {
@@ -304,7 +293,7 @@ void PAGE_LAYOUT_READER_PARSER::parseSetup( WS_DATA_MODEL* aLayout )
 }
 
 
-void PAGE_LAYOUT_READER_PARSER::parsePolygon( WS_DATA_ITEM_POLYGONS * aItem )
+void WORKSHEET_PARSER::parsePolygon( WS_DATA_ITEM_POLYGONS * aItem )
 {
     for( T token = NextTok(); token != T_RIGHT && token != EOF; token = NextTok() )
     {
@@ -372,7 +361,7 @@ void PAGE_LAYOUT_READER_PARSER::parsePolygon( WS_DATA_ITEM_POLYGONS * aItem )
     aItem->SetBoundingBox();
 }
 
-void PAGE_LAYOUT_READER_PARSER::parsePolyOutline( WS_DATA_ITEM_POLYGONS * aItem )
+void WORKSHEET_PARSER::parsePolyOutline( WS_DATA_ITEM_POLYGONS * aItem )
 {
     DPOINT corner;
 
@@ -398,7 +387,7 @@ void PAGE_LAYOUT_READER_PARSER::parsePolyOutline( WS_DATA_ITEM_POLYGONS * aItem 
 }
 
 
-void PAGE_LAYOUT_READER_PARSER::parseBitmap( WS_DATA_ITEM_BITMAP * aItem )
+void WORKSHEET_PARSER::parseBitmap( WS_DATA_ITEM_BITMAP * aItem )
 {
     BITMAP_BASE* image = new BITMAP_BASE;
     aItem->m_ImageBitmap = image;
@@ -460,7 +449,7 @@ void PAGE_LAYOUT_READER_PARSER::parseBitmap( WS_DATA_ITEM_BITMAP * aItem )
     }
 }
 
-void PAGE_LAYOUT_READER_PARSER::readPngdata( WS_DATA_ITEM_BITMAP * aItem )
+void WORKSHEET_PARSER::readPngdata( WS_DATA_ITEM_BITMAP * aItem )
 {
     std::string tmp;
 
@@ -494,7 +483,7 @@ void PAGE_LAYOUT_READER_PARSER::readPngdata( WS_DATA_ITEM_BITMAP * aItem )
 }
 
 
-void PAGE_LAYOUT_READER_PARSER::readOption( WS_DATA_ITEM * aItem )
+void WORKSHEET_PARSER::readOption( WS_DATA_ITEM * aItem )
 {
     for( T token = NextTok(); token != T_RIGHT && token != EOF; token = NextTok() )
     {
@@ -508,7 +497,7 @@ void PAGE_LAYOUT_READER_PARSER::readOption( WS_DATA_ITEM * aItem )
 }
 
 
-void PAGE_LAYOUT_READER_PARSER::parseGraphic( WS_DATA_ITEM * aItem )
+void WORKSHEET_PARSER::parseGraphic( WS_DATA_ITEM * aItem )
 {
     for( T token = NextTok(); token != T_RIGHT && token != EOF; token = NextTok() )
     {
@@ -578,7 +567,7 @@ void PAGE_LAYOUT_READER_PARSER::parseGraphic( WS_DATA_ITEM * aItem )
 }
 
 
-void PAGE_LAYOUT_READER_PARSER::parseText( WS_DATA_ITEM_TEXT* aItem )
+void WORKSHEET_PARSER::parseText( WS_DATA_ITEM_TEXT* aItem )
 {
     for( T token = NextTok(); token != T_RIGHT && token != EOF; token = NextTok() )
     {
@@ -717,7 +706,7 @@ void PAGE_LAYOUT_READER_PARSER::parseText( WS_DATA_ITEM_TEXT* aItem )
 }
 
 // parse an expression like " 25 1 ltcorner)"
-void PAGE_LAYOUT_READER_PARSER::parseCoordinate( POINT_COORD& aCoord)
+void WORKSHEET_PARSER::parseCoordinate( POINT_COORD& aCoord)
 {
     aCoord.m_Pos.x = parseDouble();
     aCoord.m_Pos.y = parseDouble();
@@ -735,7 +724,7 @@ void PAGE_LAYOUT_READER_PARSER::parseCoordinate( POINT_COORD& aCoord)
     }
 }
 
-int PAGE_LAYOUT_READER_PARSER::parseInt( int aMin, int aMax )
+int WORKSHEET_PARSER::parseInt( int aMin, int aMax )
 {
     T token = NextTok();
 
@@ -753,7 +742,7 @@ int PAGE_LAYOUT_READER_PARSER::parseInt( int aMin, int aMax )
 }
 
 
-double PAGE_LAYOUT_READER_PARSER::parseDouble()
+double WORKSHEET_PARSER::parseDouble()
 {
     T token = NextTok();
 
@@ -765,46 +754,42 @@ double PAGE_LAYOUT_READER_PARSER::parseDouble()
     return val;
 }
 
-// defaultPageLayout is the default page layout description
-// using the S expr.
-// see page_layout_default_shape.cpp
-extern const char defaultPageLayout[];
+// defaultWorksheet is the default worksheet description
+extern const char defaultWorksheet[];
 
-void WS_DATA_MODEL::SetDefaultLayout()
+void WS_DATA_MODEL::SetDefaultWorksheet()
 {
-    SetPageLayout( defaultPageLayout, false, wxT( "default page" ) );
+    SetWorksheet( defaultWorksheet, false, wxT( "default page" ) );
 }
 
-// Returns defaultPageLayout as a string;
-wxString WS_DATA_MODEL::DefaultLayout()
+// Returns defaultWorksheet as a string;
+wxString WS_DATA_MODEL::DefaultWorksheet()
 {
-    return wxString( defaultPageLayout );
+    return wxString( defaultWorksheet );
 }
 
-// emptyPageLayout is a "empty" page layout description
+// emptyWorksheet is a "empty" worksheet description
 // there is a 0 length line to fool something somewhere.
-// using the S expr.
-// see page_layout_empty_description.cpp
-extern const char emptyPageLayout[];
+extern const char emptyWorksheet[];
 
-void WS_DATA_MODEL::SetEmptyLayout()
+void WS_DATA_MODEL::SetEmptyWorksheet()
 {
-    SetPageLayout( emptyPageLayout, false, wxT( "empty page" ) );
+    SetWorksheet( emptyWorksheet, false, wxT( "empty page" ) );
 }
 
 
 wxString WS_DATA_MODEL::EmptyLayout()
 {
-    return wxString( emptyPageLayout );
+    return wxString( emptyWorksheet );
 }
 
 
-void WS_DATA_MODEL::SetPageLayout( const char* aPageLayout, bool Append, const wxString& aSource )
+void WS_DATA_MODEL::SetWorksheet( const char* aWorksheet, bool Append, const wxString& aSource )
 {
     if( ! Append )
         ClearList();
 
-    PAGE_LAYOUT_READER_PARSER lp_parser( aPageLayout, wxT( "Sexpr_string" ) );
+    WORKSHEET_PARSER lp_parser( aWorksheet, wxT( "Sexpr_string" ) );
 
     try
     {
@@ -817,7 +802,7 @@ void WS_DATA_MODEL::SetPageLayout( const char* aPageLayout, bool Append, const w
 }
 
 
-void WS_DATA_MODEL::SetPageLayout( const wxString& aFullFileName, bool Append )
+void WS_DATA_MODEL::SetWorksheet( const wxString& aFullFileName, bool Append )
 {
     wxString fullFileName = aFullFileName;
 
@@ -830,9 +815,9 @@ void WS_DATA_MODEL::SetPageLayout( const wxString& aFullFileName, bool Append )
         {
             #if 0
             if( !fullFileName.IsEmpty() )
-                wxLogMessage( wxT( "Page layout file <%s> not found" ), fullFileName.GetData() );
+                wxLogMessage( wxT( "Worksheet file <%s> not found" ), fullFileName.GetData() );
             #endif
-            SetDefaultLayout();
+            SetDefaultWorksheet();
             return;
         }
     }
@@ -842,7 +827,7 @@ void WS_DATA_MODEL::SetPageLayout( const wxString& aFullFileName, bool Append )
     if( ! wksFile.IsOpened() )
     {
         if( !Append )
-            SetDefaultLayout();
+            SetDefaultWorksheet();
         return;
     }
 
@@ -858,7 +843,7 @@ void WS_DATA_MODEL::SetPageLayout( const wxString& aFullFileName, bool Append )
         if( ! Append )
             ClearList();
 
-        PAGE_LAYOUT_READER_PARSER pl_parser( buffer, fullFileName );
+        WORKSHEET_PARSER pl_parser( buffer, fullFileName );
 
         try
         {

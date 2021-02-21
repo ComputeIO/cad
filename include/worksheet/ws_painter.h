@@ -29,7 +29,7 @@
 #include <gal/color4d.h>
 #include <painter.h>
 #include <page_info.h>
-#include <page_layout/ws_draw_item.h>
+#include <worksheet/ws_draw_item.h>
 
 // Forward declarations:
 class EDA_RECT;
@@ -140,14 +140,14 @@ private:
  * @param aIsFirstPage True when this is the first page.  This only has meaning for schematics.
  *
  * Parameters used in aPageInfo
- * - the size of the page layout.
- * - the LTmargin The left top margin of the page layout.
- * - the RBmargin The right bottom margin of the page layout.
+ * - the size of the worksheet.
+ * - the LTmargin The left top margin of the worksheet.
+ * - the RBmargin The right bottom margin of the worksheet.
  */
-void PrintPageLayout( const RENDER_SETTINGS* aSettings, const PAGE_INFO& aPageInfo,
-                      const wxString& aFullSheetName, const wxString& aFileName,
-                      const TITLE_BLOCK& aTitleBlock, int aSheetCount, const wxString& aPageNumber,
-                      double aScalar, const PROJECT* aProject,
-                      const wxString& aSheetLayer = wxEmptyString, bool aIsFirstPage = true );
+void PrintWorksheet( const RENDER_SETTINGS* aSettings, const PAGE_INFO& aPageInfo,
+                     const wxString& aFullSheetName, const wxString& aFileName,
+                     const TITLE_BLOCK& aTitleBlock, int aSheetCount, const wxString& aPageNumber,
+                     double aScalar, const PROJECT* aProject,
+                     const wxString& aSheetLayer = wxEmptyString, bool aIsFirstPage = true );
 
 #endif // WS_PAINTER_H

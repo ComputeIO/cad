@@ -52,7 +52,7 @@ public:
     /**
      * Set an alternate instance of WS_DATA_MODEL.
      *
-     * @param aLayout the alternate page layout; if null restore the basic page layout
+     * @param aLayout the alternate worksheet; if null restore the basic worksheet
      */
     static void SetAltInstance( WS_DATA_MODEL* aLayout = NULL );
 
@@ -71,9 +71,9 @@ public:
     void SetupDrawEnvironment( const PAGE_INFO& aPageInfo, double aMilsToIU );
 
     /**
-     * In KiCad applications, a page layout description is needed
+     * In KiCad applications, a worksheet description is needed
      * So if the list is empty, a default description is loaded,
-     * the first time a page layout is drawn.
+     * the first time a worksheet is drawn.
      * However, in drawing sheet editor an empty list is acceptable.
      * AllowVoidList allows or not the empty list
      */
@@ -131,8 +131,8 @@ public:
      */
     unsigned GetCount() const { return m_list.size(); }
 
-    void SetDefaultLayout();
-    void SetEmptyLayout();
+    void SetDefaultWorksheet();
+    void SetEmptyWorksheet();
 
     /**
      * Return a string containing the empty layout shape.
@@ -142,29 +142,29 @@ public:
     /**
      * Return a string containing the empty layout shape.
      */
-    static wxString DefaultLayout();
+    static wxString DefaultWorksheet();
 
     /**
      * Populates the list with a custom layout or the default layout if no custom layout
      * is  available.
      *
-     * @param aFullFileName is the custom page layout description file. If empty, load the
+     * @param aFullFileName is the custom worksheet file. If empty, load the
      *                      file defined by KICAD_WKSFILE and if its is not defined use the
      *                      default internal description.
      * @param Append if true: do not delete old layout, and load only \a aFullFileName.
      */
-    void SetPageLayout( const wxString& aFullFileName = wxEmptyString, bool Append = false );
+    void SetWorksheet( const wxString& aFullFileName = wxEmptyString, bool Append = false );
 
     /**
      * Populate the list from a S expr description stored in a string.
      *
-     * @param aPageLayout is the S expr string.
-     * @param aAppend Do not delete old layout if true and append \a aPageLayout the existing
+     * @param aWorksheet is the S expr string.
+     * @param aAppend Do not delete old layout if true and append \a aWorksheet the existing
      *                one.
        @param aSource is the layout source description.
      */
-    void SetPageLayout( const char* aPageLayout, bool aAppend = false,
-                        const wxString& aSource = wxT( "Sexpr_string" )  );
+    void SetWorksheet( const char* aWorksheet, bool aAppend = false,
+                       const wxString& aSource = wxT( "Sexpr_string" )  );
 
     /**
      * @param aFullFileName is the full filename, which can be a relative.
@@ -205,7 +205,7 @@ public:
 
 private:
     std::vector <WS_DATA_ITEM*> m_list;
-    bool   m_allowVoidList;         // If false, the default page layout will be loaded the
+    bool   m_allowVoidList;         // If false, the default worksheet will be loaded the
                                     // first time WS_DRAW_ITEM_LIST::BuildDrawItemsList
                                     // is run (useful mainly for drawing sheet editor)
     double m_leftMargin;            // the left page margin in mm

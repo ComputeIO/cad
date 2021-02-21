@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////
-// C++ code generated with wxFormBuilder (version 3.9.0 Nov  1 2020)
+// C++ code generated with wxFormBuilder (version Oct 26 2018)
 // http://www.wxformbuilder.org/
 //
 // PLEASE DO *NOT* EDIT THIS FILE!
@@ -59,7 +59,7 @@ class DIALOG_PAGES_SETTINGS_BASE : public DIALOG_SHIM
 		wxCheckBox* m_PaperExport;
 		wxStaticLine* m_staticline31;
 		wxStaticText* m_staticTextPreview;
-		wxStaticBitmap* m_PageLayoutExampleBitmap;
+		wxStaticBitmap* m_WorksheetExampleBitmap;
 		wxStaticText* m_staticTextTitleBlock;
 		wxStaticLine* m_staticline3;
 		wxStaticText* m_TextSheetCount;

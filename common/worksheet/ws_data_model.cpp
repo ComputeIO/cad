@@ -40,7 +40,7 @@
  * they're needed for drawing by the clients (Eeschema, Pcbnew, etc.)
  *
  * The WS_DATA_MODEL instance is created from a S expression which describes the page
- * layout (can be the default page layout or a custom file).  This format is also used
+ * layout (can be the default worksheet or a custom file).  This format is also used
  * for undo/redo storage (wrapped in a WS_PROXY_UNDO_ITEM).
  */
 
@@ -48,10 +48,10 @@
 #include <title_block.h>
 #include <common.h>
 #include <eda_item.h>
-#include <page_layout/ws_data_item.h>
-#include <page_layout/ws_data_model.h>
-#include <page_layout/ws_draw_item.h>
-#include <page_layout/ws_painter.h>
+#include <worksheet/ws_data_item.h>
+#include <worksheet/ws_data_model.h>
+#include <worksheet/ws_draw_item.h>
+#include <worksheet/ws_painter.h>
 
 
 // The layout shape used in the application
@@ -87,8 +87,8 @@ WS_DATA_MODEL& WS_DATA_MODEL::GetTheInstance()
 /**
  * static function: Set an alternate instance of WS_DATA_MODEL
  * mainly used in page setting dialog
- * @param aLayout = the alternate page layout.
- * if null, restore the basic page layout
+ * @param aLayout = the alternate worksheet.
+ * if null, restore the basic worksheet
  */
 void WS_DATA_MODEL::SetAltInstance( WS_DATA_MODEL* aLayout )
 {

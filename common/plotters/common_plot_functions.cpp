@@ -24,9 +24,9 @@
 
 #include <eda_item.h>
 #include <plotters_specific.h>
-#include <page_layout/ws_data_item.h>
-#include <page_layout/ws_draw_item.h>
-#include <page_layout/ws_painter.h>
+#include <worksheet/ws_data_item.h>
+#include <worksheet/ws_draw_item.h>
+#include <worksheet/ws_painter.h>
 #include <title_block.h>
 #include <wx/filename.h>
 

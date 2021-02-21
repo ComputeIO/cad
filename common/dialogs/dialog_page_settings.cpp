@@ -31,8 +31,8 @@
 #include <tool/actions.h>
 #include <tool/tool_manager.h>
 #include <wildcards_and_files_ext.h>
-#include <page_layout/ws_data_model.h>
-#include <page_layout/ws_painter.h>
+#include <worksheet/ws_data_model.h>
+#include <worksheet/ws_painter.h>
 #include <wx/valgen.h>
 #include <wx/tokenzr.h>
 
@@ -83,10 +83,10 @@ DIALOG_PAGES_SETTINGS::DIALOG_PAGES_SETTINGS( EDA_DRAW_FRAME* aParent, double aI
     m_customFmt = false;
     m_localPrjConfigChanged = false;
 
-    m_pagelayout = new WS_DATA_MODEL;
+    m_worksheet = new WS_DATA_MODEL;
     wxString serialization;
     WS_DATA_MODEL::GetTheInstance().SaveInString( serialization );
-    m_pagelayout->SetPageLayout( TO_UTF8( serialization ) );
+    m_worksheet->SetWorksheet( TO_UTF8( serialization ) );
 
     m_PickDate->SetValue( wxDateTime::Now() );
 
@@ -110,7 +110,7 @@ DIALOG_PAGES_SETTINGS::DIALOG_PAGES_SETTINGS( EDA_DRAW_FRAME* aParent, double aI
 DIALOG_PAGES_SETTINGS::~DIALOG_PAGES_SETTINGS()
 {
     delete m_pageBitmap;
-    delete m_pagelayout;
+    delete m_worksheet;
 }
 
 
@@ -128,8 +128,8 @@ bool DIALOG_PAGES_SETTINGS::TransferDataToWindow()
         m_paperSizeComboBox->Append( wxGetTranslation( pageFmt ) );
     }
 
-    // initialize the page layout descr filename
-    SetWksFileName( BASE_SCREEN::m_PageLayoutDescrFileName );
+    // initialize the worksheet filename
+    SetWksFileName( BASE_SCREEN::m_WorksheetFileName );
 
     m_pageInfo = m_parent->GetPageSettings();
     SetCurrentPageSizeSelection( m_pageInfo.GetType() );
@@ -184,8 +184,8 @@ bool DIALOG_PAGES_SETTINGS::TransferDataToWindow()
 
     onTransferDataToWindow();
 
-    GetPageLayoutInfoFromDialog();
-    UpdatePageLayoutExample();
+    GetWorksheetInfoFromDialog();
+    UpdateWorksheetExample();
 
     GetSizer()->SetSizeHints( this );
 
@@ -254,8 +254,8 @@ void DIALOG_PAGES_SETTINGS::OnPaperSizeChoice( wxCommandEvent& event )
         m_customFmt = false;
     }
 
-    GetPageLayoutInfoFromDialog();
-    UpdatePageLayoutExample();
+    GetWorksheetInfoFromDialog();
+    UpdateWorksheetExample();
 }
 
 
@@ -263,8 +263,8 @@ void DIALOG_PAGES_SETTINGS::OnUserPageSizeXTextUpdated( wxCommandEvent& event )
 {
     if( m_initialized )
     {
-        GetPageLayoutInfoFromDialog();
-        UpdatePageLayoutExample();
+        GetWorksheetInfoFromDialog();
+        UpdateWorksheetExample();
     }
 }
 
@@ -273,8 +273,8 @@ void DIALOG_PAGES_SETTINGS::OnUserPageSizeYTextUpdated( wxCommandEvent& event )
 {
     if( m_initialized )
     {
-        GetPageLayoutInfoFromDialog();
-        UpdatePageLayoutExample();
+        GetWorksheetInfoFromDialog();
+        UpdateWorksheetExample();
     }
 }
 
@@ -283,8 +283,8 @@ void DIALOG_PAGES_SETTINGS::OnPageOrientationChoice( wxCommandEvent& event )
 {
     if( m_initialized )
     {
-        GetPageLayoutInfoFromDialog();
-        UpdatePageLayoutExample();
+        GetWorksheetInfoFromDialog();
+        UpdateWorksheetExample();
     }
 }
 
@@ -293,9 +293,9 @@ void DIALOG_PAGES_SETTINGS::OnRevisionTextUpdated( wxCommandEvent& event )
 {
     if( m_initialized && m_TextRevision->IsModified() )
     {
-        GetPageLayoutInfoFromDialog();
+        GetWorksheetInfoFromDialog();
         m_tb.SetRevision( m_TextRevision->GetValue() );
-        UpdatePageLayoutExample();
+        UpdateWorksheetExample();
     }
 }
 
@@ -304,9 +304,9 @@ void DIALOG_PAGES_SETTINGS::OnDateTextUpdated( wxCommandEvent& event )
 {
     if( m_initialized && m_TextDate->IsModified() )
     {
-        GetPageLayoutInfoFromDialog();
+        GetWorksheetInfoFromDialog();
         m_tb.SetDate( m_TextDate->GetValue() );
-        UpdatePageLayoutExample();
+        UpdateWorksheetExample();
     }
 }
 
@@ -315,9 +315,9 @@ void DIALOG_PAGES_SETTINGS::OnTitleTextUpdated( wxCommandEvent& event )
 {
     if( m_initialized && m_TextTitle->IsModified() )
     {
-        GetPageLayoutInfoFromDialog();
+        GetWorksheetInfoFromDialog();
         m_tb.SetTitle( m_TextTitle->GetValue() );
-        UpdatePageLayoutExample();
+        UpdateWorksheetExample();
     }
 }
 
@@ -326,9 +326,9 @@ void DIALOG_PAGES_SETTINGS::OnCompanyTextUpdated( wxCommandEvent& event )
 {
     if( m_initialized && m_TextCompany->IsModified() )
     {
-        GetPageLayoutInfoFromDialog();
+        GetWorksheetInfoFromDialog();
         m_tb.SetCompany( m_TextCompany->GetValue() );
-        UpdatePageLayoutExample();
+        UpdateWorksheetExample();
     }
 }
 
@@ -337,9 +337,9 @@ void DIALOG_PAGES_SETTINGS::OnComment1TextUpdated( wxCommandEvent& event )
 {
     if( m_initialized && m_TextComment1->IsModified() )
     {
-        GetPageLayoutInfoFromDialog();
+        GetWorksheetInfoFromDialog();
         m_tb.SetComment( 0, m_TextComment1->GetValue() );
-        UpdatePageLayoutExample();
+        UpdateWorksheetExample();
     }
 }
 
@@ -348,9 +348,9 @@ void DIALOG_PAGES_SETTINGS::OnComment2TextUpdated( wxCommandEvent& event )
 {
     if( m_initialized && m_TextComment2->IsModified() )
     {
-        GetPageLayoutInfoFromDialog();
+        GetWorksheetInfoFromDialog();
         m_tb.SetComment( 1, m_TextComment2->GetValue() );
-        UpdatePageLayoutExample();
+        UpdateWorksheetExample();
     }
 }
 
@@ -359,9 +359,9 @@ void DIALOG_PAGES_SETTINGS::OnComment3TextUpdated( wxCommandEvent& event )
 {
     if( m_initialized && m_TextComment3->IsModified() )
     {
-        GetPageLayoutInfoFromDialog();
+        GetWorksheetInfoFromDialog();
         m_tb.SetComment( 2, m_TextComment3->GetValue() );
-        UpdatePageLayoutExample();
+        UpdateWorksheetExample();
     }
 }
 
@@ -370,9 +370,9 @@ void DIALOG_PAGES_SETTINGS::OnComment4TextUpdated( wxCommandEvent& event )
 {
     if( m_initialized && m_TextComment4->IsModified() )
     {
-        GetPageLayoutInfoFromDialog();
+        GetWorksheetInfoFromDialog();
         m_tb.SetComment( 3, m_TextComment4->GetValue() );
-        UpdatePageLayoutExample();
+        UpdateWorksheetExample();
     }
 }
 
@@ -381,9 +381,9 @@ void DIALOG_PAGES_SETTINGS::OnComment5TextUpdated( wxCommandEvent& event )
 {
     if( m_initialized && m_TextComment5->IsModified() )
     {
-        GetPageLayoutInfoFromDialog();
+        GetWorksheetInfoFromDialog();
         m_tb.SetComment( 4, m_TextComment5->GetValue() );
-        UpdatePageLayoutExample();
+        UpdateWorksheetExample();
     }
 }
 
@@ -392,9 +392,9 @@ void DIALOG_PAGES_SETTINGS::OnComment6TextUpdated( wxCommandEvent& event )
 {
     if( m_initialized && m_TextComment6->IsModified() )
     {
-        GetPageLayoutInfoFromDialog();
+        GetWorksheetInfoFromDialog();
         m_tb.SetComment( 5, m_TextComment6->GetValue() );
-        UpdatePageLayoutExample();
+        UpdateWorksheetExample();
     }
 }
 
@@ -403,9 +403,9 @@ void DIALOG_PAGES_SETTINGS::OnComment7TextUpdated( wxCommandEvent& event )
 {
     if( m_initialized && m_TextComment7->IsModified() )
     {
-        GetPageLayoutInfoFromDialog();
+        GetWorksheetInfoFromDialog();
         m_tb.SetComment( 6, m_TextComment7->GetValue() );
-        UpdatePageLayoutExample();
+        UpdateWorksheetExample();
     }
 }
 
@@ -414,9 +414,9 @@ void DIALOG_PAGES_SETTINGS::OnComment8TextUpdated( wxCommandEvent& event )
 {
     if( m_initialized && m_TextComment8->IsModified() )
     {
-        GetPageLayoutInfoFromDialog();
+        GetWorksheetInfoFromDialog();
         m_tb.SetComment( 7, m_TextComment8->GetValue() );
-        UpdatePageLayoutExample();
+        UpdateWorksheetExample();
     }
 }
 
@@ -425,9 +425,9 @@ void DIALOG_PAGES_SETTINGS::OnComment9TextUpdated( wxCommandEvent& event )
 {
     if( m_initialized && m_TextComment9->IsModified() )
     {
-        GetPageLayoutInfoFromDialog();
+        GetWorksheetInfoFromDialog();
         m_tb.SetComment( 8, m_TextComment9->GetValue() );
-        UpdatePageLayoutExample();
+        UpdateWorksheetExample();
     }
 }
 
@@ -453,21 +453,21 @@ bool DIALOG_PAGES_SETTINGS::SavePageSettings()
 
     wxString fileName = GetWksFileName();
 
-    if( fileName != BASE_SCREEN::m_PageLayoutDescrFileName )
+    if( fileName != BASE_SCREEN::m_WorksheetFileName )
     {
         wxString fullFileName = WS_DATA_MODEL::MakeFullFileName( fileName, m_projectPath );
 
         if( !fullFileName.IsEmpty() && !wxFileExists( fullFileName ) )
         {
             wxString msg;
-            msg.Printf( _( "Page layout description file \"%s\" not found." ), fullFileName );
+            msg.Printf( _( "Worksheet file \"%s\" not found." ), fullFileName );
             wxMessageBox( msg );
             return false;
         }
 
-        BASE_SCREEN::m_PageLayoutDescrFileName = fileName;
+        BASE_SCREEN::m_WorksheetFileName = fileName;
         WS_DATA_MODEL& pglayout = WS_DATA_MODEL::GetTheInstance();
-        pglayout.SetPageLayout( fullFileName );
+        pglayout.SetWorksheet( fullFileName );
         m_localPrjConfigChanged = true;
     }
 
@@ -578,7 +578,7 @@ void DIALOG_PAGES_SETTINGS::SetCurrentPageSizeSelection( const wxString& aPaperS
 }
 
 
-void DIALOG_PAGES_SETTINGS::UpdatePageLayoutExample()
+void DIALOG_PAGES_SETTINGS::UpdateWorksheetExample()
 {
     int lyWidth, lyHeight;
 
@@ -602,7 +602,7 @@ void DIALOG_PAGES_SETTINGS::UpdatePageLayoutExample()
 
     if( m_pageBitmap )
     {
-        m_PageLayoutExampleBitmap->SetBitmap( wxNullBitmap );
+        m_WorksheetExampleBitmap->SetBitmap( wxNullBitmap );
         delete m_pageBitmap;
     }
 
@@ -646,7 +646,7 @@ void DIALOG_PAGES_SETTINGS::UpdatePageLayoutExample()
         COLOR4D                   bgColor = m_parent->GetDrawBgColor();
         wxString                  emptyString;
 
-        WS_DATA_MODEL::SetAltInstance( m_pagelayout );
+        WS_DATA_MODEL::SetAltInstance( m_worksheet );
         {
             GRResetPenAndBrush( &memDC );
             renderSettings.SetDefaultPenWidth( 1 );
@@ -664,12 +664,12 @@ void DIALOG_PAGES_SETTINGS::UpdatePageLayoutExample()
 
             GRFilledRect( NULL, &memDC, 0, 0, m_layout_size.x, m_layout_size.y, bgColor, bgColor );
 
-            PrintPageLayout( &renderSettings, pageDUMMY, emptyString, emptyString, m_tb,
+            PrintWorksheet( &renderSettings, pageDUMMY, emptyString, emptyString, m_tb,
                              m_screen->GetPageCount(), m_screen->GetPageNumber(), 1, &Prj(),
                              wxEmptyString, m_screen->GetVirtualPageNumber() ==  1 );
 
             memDC.SelectObject( wxNullBitmap );
-            m_PageLayoutExampleBitmap->SetBitmap( *m_pageBitmap );
+            m_WorksheetExampleBitmap->SetBitmap( *m_pageBitmap );
         }
         WS_DATA_MODEL::SetAltInstance( NULL );
 
@@ -680,7 +680,7 @@ void DIALOG_PAGES_SETTINGS::UpdatePageLayoutExample()
 }
 
 
-void DIALOG_PAGES_SETTINGS::GetPageLayoutInfoFromDialog()
+void DIALOG_PAGES_SETTINGS::GetWorksheetInfoFromDialog()
 {
     int idx = std::max( m_paperSizeComboBox->GetSelection(), 0 );
     const wxString paperType = m_pageFmt[idx];
@@ -776,8 +776,8 @@ void DIALOG_PAGES_SETTINGS::OnWksFileSelection( wxCommandEvent& event )
     }
 
     // Display a file picker dialog
-    wxFileDialog fileDialog( this, _( "Select Page Layout Description File" ),
-                             path, name, PageLayoutDescrFileWildcard(),
+    wxFileDialog fileDialog( this, _( "Select Worksheet File" ),
+                             path, name, WorksheetFileWildcard(),
                              wxFD_DEFAULT_STYLE | wxFD_FILE_MUST_EXIST );
 
     if( fileDialog.ShowModal() != wxID_OK )
@@ -792,7 +792,7 @@ void DIALOG_PAGES_SETTINGS::OnWksFileSelection( wxCommandEvent& event )
     // For Win/Linux/macOS compatibility, a relative path is a good idea
     if( shortFileName != GetWksFileName() && shortFileName != fileName )
     {
-        wxString msg = wxString::Format( _( "The page layout description file name has changed.\n"
+        wxString msg = wxString::Format( _( "The worksheet file name has changed.\n"
                                             "Do you want to use the relative path:\n"
                                             "\"%s\"\n"
                                             "instead of\n"
@@ -806,11 +806,11 @@ void DIALOG_PAGES_SETTINGS::OnWksFileSelection( wxCommandEvent& event )
 
     SetWksFileName( shortFileName );
 
-    if( m_pagelayout == NULL )
-        m_pagelayout = new WS_DATA_MODEL;
+    if( m_worksheet == NULL )
+        m_worksheet = new WS_DATA_MODEL;
 
-    m_pagelayout->SetPageLayout( fileName );
+    m_worksheet->SetWorksheet( fileName );
 
-    GetPageLayoutInfoFromDialog();
-    UpdatePageLayoutExample();
+    GetWorksheetInfoFromDialog();
+    UpdateWorksheetExample();
 }

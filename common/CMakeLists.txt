@@ -246,15 +246,15 @@ set( COMMON_WIDGET_SRCS
     widgets/wx_aui_dock_art.cpp
     )
 
-set( COMMON_PAGE_LAYOUT_SRCS
-    page_layout/ws_data_item.cpp
-    page_layout/ws_data_model.cpp
-    page_layout/ws_data_model_io.cpp
-    page_layout/page_layout_default_description.cpp
-    page_layout/ws_draw_item.cpp
-    page_layout/ws_proxy_undo_item.cpp
-    page_layout/ws_proxy_view_item.cpp
-    page_layout/page_layout_reader.cpp
+set( COMMON_WORKSHEET_SRCS
+    worksheet/ws_data_item.cpp
+    worksheet/ws_data_model.cpp
+    worksheet/ws_data_model_io.cpp
+    worksheet/ws_default.cpp
+    worksheet/ws_draw_item.cpp
+    worksheet/ws_proxy_undo_item.cpp
+    worksheet/ws_proxy_view_item.cpp
+    worksheet/ws_reader.cpp
     )
 
 set( COMMON_PREVIEW_ITEMS_SRCS
@@ -300,7 +300,7 @@ set( COMMON_SRCS
     ${COMMON_ABOUT_DLG_SRCS}
     ${COMMON_DLG_SRCS}
     ${COMMON_WIDGET_SRCS}
-    ${COMMON_PAGE_LAYOUT_SRCS}
+    ${COMMON_WORKSHEET_SRCS}
     ${COMMON_PREVIEW_ITEMS_SRCS}
     ${PLOTTERS_CONTROL_SRCS}
     ${PLUGINS_ALTIUM_SRCS}
@@ -392,7 +392,7 @@ set( COMMON_SRCS
     utf8.cpp
     validators.cpp
     wildcards_and_files_ext.cpp
-    page_layout/ws_painter.cpp
+    worksheet/ws_painter.cpp
     wxdataviewctrl_helpers.cpp
     wx_filename.cpp
     xnode.cpp
@@ -663,13 +663,12 @@ make_lexer(
     TFIELD_T
     )
 
-# auto-generate page layout reader s-expression page_layout_reader_lexer.h
-# and title_block_reader_keywords.cpp.
+# auto-generate worksheet reader s-expression ws_lexer.h and ws_keywords.cpp.
 make_lexer(
     common
-    page_layout/page_layout_reader.keywords
-    page_layout/page_layout_reader_lexer.h
-    page_layout/page_layout_reader_keywords.cpp
+    worksheet/worksheet.keywords
+    worksheet/ws_lexer.h
+    worksheet/ws_keywords.cpp
     TB_READER_T
     )
 

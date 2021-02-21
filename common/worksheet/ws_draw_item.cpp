@@ -25,7 +25,7 @@
 
 /*
  * the class WS_DATA_ITEM (and WS_DATA_ITEM_TEXT) defines
- * a basic shape of a page layout ( frame references and title block )
+ * a basic shape of a worksheet ( frame references and title block )
  * Basic shapes are line, rect and texts
  * the WS_DATA_ITEM coordinates units is the mm, and are relative to
  * one of 4 page corners.
@@ -42,18 +42,18 @@
  *  Items with m_RepeatCount > 1 are created m_RepeatCount times
  *
  * the WS_DATA_MODEL is created only once.
- * the WS_DRAW_ITEM_LIST is created each time the page layout is plotted/drawn
+ * the WS_DRAW_ITEM_LIST is created each time the worksheet is plotted/drawn
  *
  * the WS_DATA_MODEL instance is created from a S expression which
- * describes the page layout (can be the default page layout or a custom file).
+ * describes the worksheet (can be the default worksheet or a custom file).
  */
 
 #include <eda_rect.h>
 #include <eda_draw_frame.h>
 #include <fill_type.h>
-#include <page_layout/ws_draw_item.h>
-#include <page_layout/ws_data_item.h>
-#include <page_layout/ws_data_model.h>
+#include <worksheet/ws_draw_item.h>
+#include <worksheet/ws_data_item.h>
+#include <worksheet/ws_data_model.h>
 #include <base_units.h>
 #include <page_info.h>
 #include <layers_id_colors_and_visibility.h>
@@ -506,7 +506,7 @@ void WS_DRAW_ITEM_LIST::BuildDrawItemsList( const PAGE_INFO& aPageInfo,
 
     // Build the basic layout shape, if the layout list is empty
     if( model.GetCount() == 0 && !model.VoidListAllowed() )
-        model.SetPageLayout();
+        model.SetWorksheet();
 
     model.SetupDrawEnvironment( aPageInfo, m_milsToIu );
 

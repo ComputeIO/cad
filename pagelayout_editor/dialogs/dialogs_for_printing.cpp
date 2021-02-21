@@ -32,10 +32,10 @@
 #include <dialog_helpers.h>
 #include <eda_item.h>
 #include <gr_basic.h>
-#include <page_layout/ws_draw_item.h>
-#include <page_layout/ws_data_item.h>
-#include <page_layout/ws_data_model.h>
-#include <page_layout/ws_painter.h>
+#include <worksheet/ws_draw_item.h>
+#include <worksheet/ws_data_item.h>
+#include <worksheet/ws_data_model.h>
+#include <worksheet/ws_painter.h>
 #include <dialogs/dialog_page_settings.h>
 
 #include "invoke_pl_editor_dialog.h"
@@ -232,12 +232,12 @@ int InvokeDialogPrint( PL_EDITOR_FRAME* aCaller, wxPrintData* aPrintData,
         printDialogData.EnablePageNumbers( true );
 
     wxPrinter printer( &printDialogData );
-    PLEDITOR_PRINTOUT printout( aCaller, _( "Print Page Layout" ) );
+    PLEDITOR_PRINTOUT printout( aCaller, _( "Print Worksheet" ) );
 
     if( !printer.Print( aCaller, &printout, true ) )
     {
         if( wxPrinter::GetLastError() == wxPRINTER_ERROR )
-            wxMessageBox( _( "An error occurred attempting to print the page layout." ),
+            wxMessageBox( _( "An error occurred attempting to print the worksheet." ),
                           _( "Printing" ), wxOK );
         return 0;
     }

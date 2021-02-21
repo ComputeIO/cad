@@ -1078,7 +1078,7 @@ PLOTTER* StartPlotBoard( BOARD *aBoard, PCB_PLOT_PARAMS *aPlotOpts, int aLayer,
 
     // Compute the viewport and set the other options
 
-    // page layout is not mirrored, so temporarily change mirror option for the page layout
+    // worksheet is not mirrored, so temporarily change mirror option for the worksheet
     PCB_PLOT_PARAMS plotOpts = *aPlotOpts;
 
     if( plotOpts.GetPlotFrameRef() && plotOpts.GetMirror() )

@@ -29,11 +29,11 @@
 #include <title_block.h>
 #include <build_version.h>
 #include <settings/color_settings.h>
-#include <page_layout/ws_draw_item.h>
+#include <worksheet/ws_draw_item.h>
 #include <gal/graphics_abstraction_layer.h>
 
-#include <page_layout/ws_painter.h>
-#include <page_layout/ws_data_item.h>
+#include <worksheet/ws_painter.h>
+#include <worksheet/ws_data_item.h>
 
 #include <wx/app.h>
 

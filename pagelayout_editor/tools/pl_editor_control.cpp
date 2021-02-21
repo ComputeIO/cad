@@ -28,8 +28,8 @@
 #include <confirm.h>
 #include <bitmaps.h>
 #include <dialogs/dialog_page_settings.h>
-#include <page_layout/ws_data_model.h>
-#include <page_layout/ws_painter.h>
+#include <worksheet/ws_data_model.h>
+#include <worksheet/ws_painter.h>
 
 #include "pl_editor_frame.h"
 #include "pl_editor_id.h"
@@ -161,7 +161,7 @@ int PL_EDITOR_CONTROL::UpdateMessagePanel( const TOOL_EVENT& aEvent )
     else
     {
         MSG_PANEL_ITEMS msgItems;
-        m_frame->GetPageLayout().GetMsgPanelInfo( m_frame, msgItems );
+        m_frame->GetWorksheet().GetMsgPanelInfo( m_frame, msgItems );
         m_frame->SetMsgPanel( msgItems );
 
         m_frame->GetPropertiesFrame()->CopyPrmsFromItemToPanel( nullptr );

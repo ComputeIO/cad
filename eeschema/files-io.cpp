@@ -57,7 +57,7 @@
 #include <trace_helpers.h>
 #include <widgets/infobar.h>
 #include <wildcards_and_files_ext.h>
-#include <page_layout/ws_data_model.h>
+#include <worksheet/ws_data_model.h>
 #include <wx/ffile.h>
 #include <wx/stdpaths.h>
 #include <tools/ee_inspection_tool.h>
@@ -922,10 +922,10 @@ bool SCH_EDIT_FRAME::importFile( const wxString& aFileName, int aFileType )
 
             // Eagle sheets do not use a drawing sheet frame by default, so set it to an empty one
             WS_DATA_MODEL& pglayout = WS_DATA_MODEL::GetTheInstance();
-            pglayout.SetEmptyLayout();
+            pglayout.SetEmptyWorksheet();
 
-            BASE_SCREEN::m_PageLayoutDescrFileName = "empty.kicad_wks";
-            wxFileName layoutfn( Prj().GetProjectPath(), BASE_SCREEN::m_PageLayoutDescrFileName );
+            BASE_SCREEN::m_WorksheetFileName = "empty.kicad_wks";
+            wxFileName layoutfn( Prj().GetProjectPath(), BASE_SCREEN::m_WorksheetFileName );
             wxFFile layoutfile;
 
             if( layoutfile.Open( layoutfn.GetFullPath(), "wb" ) )
