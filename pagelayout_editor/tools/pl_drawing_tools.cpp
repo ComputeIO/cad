@@ -29,8 +29,8 @@
 #include <view/view.h>
 #include <tool/tool_manager.h>
 #include <bitmaps.h>
-#include <page_layout/ws_draw_item.h>
-#include <page_layout/ws_data_item.h>
+#include <worksheet/ws_draw_item.h>
+#include <worksheet/ws_data_item.h>
 
 #include "invoke_pl_editor_dialog.h"
 #include "pl_editor_frame.h"
@@ -151,7 +151,7 @@ int PL_DRAWING_TOOLS::PlaceItem( const TOOL_EVENT& aEvent )
             // First click creates...
             if( !item )
             {
-                WS_DATA_ITEM* dataItem = m_frame->AddPageLayoutItem( type );
+                WS_DATA_ITEM* dataItem = m_frame->AddWorksheetItem( type );
 
                 if( dataItem )  // dataItem = nullptr can happens if the command was cancelled
                 {
@@ -279,7 +279,7 @@ int PL_DRAWING_TOOLS::DrawShape( const TOOL_EVENT& aEvent )
                 m_frame->SaveCopyInUndoList();
                 m_toolMgr->RunAction( PL_ACTIONS::clearSelection, true );
 
-                WS_DATA_ITEM* dataItem = m_frame->AddPageLayoutItem( type );
+                WS_DATA_ITEM* dataItem = m_frame->AddWorksheetItem( type );
                 dataItem->MoveToUi( (wxPoint) cursorPos );
 
                 item = dataItem->GetDrawItems()[0];

@@ -26,9 +26,9 @@
 #include <wx/wupdlock.h>
 
 #include <eda_item.h>
-#include <page_layout/ws_draw_item.h>
-#include <page_layout/ws_data_item.h>
-#include <page_layout/ws_data_model.h>
+#include <worksheet/ws_draw_item.h>
+#include <worksheet/ws_data_item.h>
+#include <worksheet/ws_data_model.h>
 #include <tool/tool_manager.h>
 
 #include "dialogs/dialog_design_inspector_base.h"
@@ -202,7 +202,7 @@ DIALOG_INSPECTOR::~DIALOG_INSPECTOR()
 void DIALOG_INSPECTOR::ReCreateDesignList()
 {
     wxWindowUpdateLocker dummy( this );   // Avoid flicker when rebuilding the tree
-    const PAGE_INFO& page_info = m_editorFrame->GetPageLayout().GetPageSettings();
+    const PAGE_INFO& page_info = m_editorFrame->GetWorksheet().GetPageSettings();
 
     if( m_gridListItems->GetNumberRows() > 1 )
         m_gridListItems->DeleteRows( 1, m_gridListItems->GetNumberRows() - 1 );
@@ -213,7 +213,7 @@ void DIALOG_INSPECTOR::ReCreateDesignList()
     wxFileName     fn( static_cast<PL_EDITOR_FRAME*>( GetParent() )->GetCurrentFileName() );
 
     if( fn.GetName().IsEmpty() )
-        SetTitle( "<default page layout>" );
+        SetTitle( "<default worksheet>" );
     else
         SetTitle( fn.GetName() );
 
@@ -318,14 +318,14 @@ void DIALOG_INSPECTOR::SelectRow( WS_DATA_ITEM* aItem )
     }
 }
 
-//return the page layout item managed by the cell
+//return the worksheet item managed by the cell
 WS_DATA_ITEM* DIALOG_INSPECTOR::GetWsDataItem( int aRow ) const
 {
         return ( aRow >= 0 && aRow < (int)m_itemsList.size() ) ? m_itemsList[aRow]: nullptr;
 }
 
 
-/* return the page layout item managed by the selected cell (or NULL)
+/* return the worksheet item managed by the selected cell (or NULL)
  */
 WS_DATA_ITEM* DIALOG_INSPECTOR::GetSelectedWsDataItem() const
 {

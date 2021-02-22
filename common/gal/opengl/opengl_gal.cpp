@@ -61,7 +61,7 @@ using namespace KIGFX;
 
 // A ugly workaround to avoid serious issues (crashes) when using bitmaps cache
 // to speedup redraw.
-// issues arise when using bitmaps in page layout, when the page layout containd bitmaps,
+// issues arise when using bitmaps in worksheet, when the worksheet contains bitmaps,
 // and is common to schematic and board editor,
 // and the schematic is a hierarchy and when using cross-probing
 // When the cross probing from pcbnew to eeschema switches to a sheet, the bitmaps cache

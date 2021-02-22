@@ -71,7 +71,7 @@ static const wxChar* s_allowedExtensionsToList[] = {
     wxT( "^[^$].*\\.brd$" ),       // Legacy Pcbnew files
     wxT( "^[^$].*\\.kicad_pcb$" ), // S format Pcbnew board files
     wxT( "^[^$].*\\.kicad_dru$" ), // Design rule files
-    wxT( "^[^$].*\\.kicad_wks$" ), // S format kicad page layout help_textr files
+    wxT( "^[^$].*\\.kicad_wks$" ), // S format kicad worksheet files
     wxT( "^[^$].*\\.kicad_mod$" ), // S format kicad footprint files, currently not listed
     wxT( "^.*\\.net$" ),           // pcbnew netlist file
     wxT( "^.*\\.cir$" ),           // Spice netlist file
@@ -281,7 +281,7 @@ wxString PROJECT_TREE_PANE::GetFileExt( TREE_FILE_TYPE type )
     case TREE_FILE_TYPE::DRILL_NC:              return "nc";
     case TREE_FILE_TYPE::DRILL_XNC:             return "xnc";
     case TREE_FILE_TYPE::SVG:                   return SVGFileExtension;
-    case TREE_FILE_TYPE::PAGE_LAYOUT_DESCR:     return PageLayoutDescrFileExtension;
+    case TREE_FILE_TYPE::WORKSHEET:             return WorksheetFileExtension;
     case TREE_FILE_TYPE::FOOTPRINT_FILE:        return KiCadFootprintFileExtension;
     case TREE_FILE_TYPE::SCHEMATIC_LIBFILE:     return LegacySymbolLibFileExtension;
     case TREE_FILE_TYPE::SEXPR_SYMBOL_LIB_FILE: return KiCadSymbolLibFileExtension;

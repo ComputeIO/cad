@@ -26,7 +26,7 @@
 
 #include <confirm.h>
 #include <gestfich.h>
-#include <page_layout/ws_data_model.h>
+#include <worksheet/ws_data_model.h>
 #include <paths.h>
 #include <widgets/infobar.h>
 #include <wildcards_and_files_ext.h>
@@ -35,7 +35,7 @@
 #include "pl_editor_id.h"
 #include "properties_frame.h"
 
-bool PL_EDITOR_FRAME::saveCurrentPageLayout()
+bool PL_EDITOR_FRAME::saveCurrentWorksheet()
 {
     wxCommandEvent saveEvent;
     saveEvent.SetId( wxID_SAVE );
@@ -49,15 +49,15 @@ void PL_EDITOR_FRAME::OnFileHistory( wxCommandEvent& event )
 {
     wxString filename;
 
-    filename = GetFileFromHistory( event.GetId(), _( "Page Layout Description File" ) );
+    filename = GetFileFromHistory( event.GetId(), _( "Worksheet File" ) );
 
     if( filename != wxEmptyString )
     {
         if( IsContentModified() )
         {
-            if( !HandleUnsavedChanges( this, _( "The current page layout has been modified. "
+            if( !HandleUnsavedChanges( this, _( "The current worksheet has been modified. "
                                                 "Save changes?" ),
-                                       [&]()->bool { return saveCurrentPageLayout(); } ) )
+                                       [&]()->bool { return saveCurrentWorksheet(); } ) )
             {
                 return;
             }
@@ -65,14 +65,14 @@ void PL_EDITOR_FRAME::OnFileHistory( wxCommandEvent& event )
 
         ::wxSetWorkingDirectory( ::wxPathOnly( filename ) );
 
-        if( LoadPageLayoutDescrFile( filename ) )
+        if( LoadWorksheetFile( filename ) )
         {
             wxString msg;
             msg.Printf( _( "File \"%s\" loaded"), filename );
             SetStatusText( msg );
         }
 
-        OnNewPageLayout();
+        OnNewWorksheet();
     }
 }
 
@@ -96,9 +96,9 @@ void PL_EDITOR_FRAME::Files_io( wxCommandEvent& event )
 
     if( ( id == wxID_NEW || id == wxID_OPEN ) && IsContentModified() )
     {
-        if( !HandleUnsavedChanges( this, _( "The current page layout has been modified.  "
+        if( !HandleUnsavedChanges( this, _( "The current Worksheet has been modified.  "
                                             "Save changes?" ),
-                                   [&]()->bool { return saveCurrentPageLayout(); } ) )
+                                   [&]()->bool { return saveCurrentWorksheet(); } ) )
         {
             return;
         }
@@ -110,21 +110,21 @@ void PL_EDITOR_FRAME::Files_io( wxCommandEvent& event )
         pglayout.AllowVoidList( true );
         SetCurrentFileName( wxEmptyString );
         pglayout.ClearList();
-        OnNewPageLayout();
+        OnNewWorksheet();
         break;
 
     case ID_APPEND_DESCR_FILE:
     {
          wxFileDialog openFileDialog( this, _( "Append Existing Drawing Sheet" ),
                                       wxEmptyString, wxEmptyString,
-                                      PageLayoutDescrFileWildcard(), wxFD_OPEN );
+                                      WorksheetFileWildcard(), wxFD_OPEN );
 
         if( openFileDialog.ShowModal() == wxID_CANCEL )
             return;
 
         filename = openFileDialog.GetPath();
 
-        if( ! InsertPageLayoutDescrFile( filename ) )
+        if( ! InsertWorksheetFile( filename ) )
         {
             msg.Printf( _( "Unable to load %s file" ), filename );
             DisplayErrorMessage( this, msg );
@@ -142,21 +142,21 @@ void PL_EDITOR_FRAME::Files_io( wxCommandEvent& event )
     case wxID_OPEN:
     {
          wxFileDialog openFileDialog( this, _( "Open" ), wxEmptyString, wxEmptyString,
-                                      PageLayoutDescrFileWildcard(), wxFD_OPEN );
+                                      WorksheetFileWildcard(), wxFD_OPEN );
 
         if( openFileDialog.ShowModal() == wxID_CANCEL )
             return;
 
         filename = openFileDialog.GetPath();
 
-        if( ! LoadPageLayoutDescrFile( filename ) )
+        if( ! LoadWorksheetFile( filename ) )
         {
             msg.Printf( _( "Unable to load %s file" ), filename );
             DisplayErrorMessage( this, msg );
         }
         else
         {
-            OnNewPageLayout();
+            OnNewWorksheet();
             msg.Printf( _( "File \"%s\" saved." ), filename );
             SetStatusText( msg );
         }
@@ -164,7 +164,7 @@ void PL_EDITOR_FRAME::Files_io( wxCommandEvent& event )
         break;
 
     case wxID_SAVE:
-        if( !SavePageLayoutDescrFile( filename ) )
+        if( !SaveWorksheetFile( filename ) )
         {
             msg.Printf( _( "Unable to write \"%s\"" ), filename );
             DisplayErrorMessage( this, msg );
@@ -180,7 +180,7 @@ void PL_EDITOR_FRAME::Files_io( wxCommandEvent& event )
     {
         wxString dir = PATHS::GetUserTemplatesPath();
         wxFileDialog openFileDialog( this, _( "Save As" ), dir, wxEmptyString,
-                                     PageLayoutDescrFileWildcard(),
+                                     WorksheetFileWildcard(),
                                      wxFD_SAVE | wxFD_OVERWRITE_PROMPT );
 
         if( openFileDialog.ShowModal() == wxID_CANCEL )
@@ -193,10 +193,10 @@ void PL_EDITOR_FRAME::Files_io( wxCommandEvent& event )
         // extension
         wxFileName fn(filename);
 
-        if( fn.GetExt() != PageLayoutDescrFileExtension )
-            filename << wxT(".") << PageLayoutDescrFileExtension;
+        if( fn.GetExt() != WorksheetFileExtension )
+            filename << wxT(".") << WorksheetFileExtension;
 
-        if( !SavePageLayoutDescrFile( filename ) )
+        if( !SaveWorksheetFile( filename ) )
         {
             msg.Printf( _( "Unable to create \"%s\"" ), filename );
             DisplayErrorMessage( this, msg );
@@ -219,11 +219,11 @@ void PL_EDITOR_FRAME::Files_io( wxCommandEvent& event )
 }
 
 
-bool PL_EDITOR_FRAME::LoadPageLayoutDescrFile( const wxString& aFullFileName )
+bool PL_EDITOR_FRAME::LoadWorksheetFile( const wxString& aFullFileName )
 {
     if( wxFileExists( aFullFileName ) )
     {
-        WS_DATA_MODEL::GetTheInstance().SetPageLayout( aFullFileName );
+        WS_DATA_MODEL::GetTheInstance().SetWorksheet( aFullFileName );
         SetCurrentFileName( aFullFileName );
         UpdateFileHistory( aFullFileName );
         GetScreen()->ClrModify();
@@ -245,13 +245,13 @@ bool PL_EDITOR_FRAME::LoadPageLayoutDescrFile( const wxString& aFullFileName )
 }
 
 
-bool PL_EDITOR_FRAME::InsertPageLayoutDescrFile( const wxString& aFullFileName )
+bool PL_EDITOR_FRAME::InsertWorksheetFile( const wxString& aFullFileName )
 {
     if( wxFileExists( aFullFileName ) )
     {
         const bool append = true;
         SaveCopyInUndoList();
-        WS_DATA_MODEL::GetTheInstance().SetPageLayout( aFullFileName, append );
+        WS_DATA_MODEL::GetTheInstance().SetWorksheet( aFullFileName, append );
         return true;
     }
 
@@ -259,7 +259,7 @@ bool PL_EDITOR_FRAME::InsertPageLayoutDescrFile( const wxString& aFullFileName )
 }
 
 
-bool PL_EDITOR_FRAME::SavePageLayoutDescrFile( const wxString& aFullFileName )
+bool PL_EDITOR_FRAME::SaveWorksheetFile( const wxString& aFullFileName )
 {
     if( !aFullFileName.IsEmpty() )
     {

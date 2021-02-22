@@ -512,7 +512,7 @@ public:
     void Print( const RENDER_SETTINGS* aSettings );
 
     /**
-     * Drawing or plot the page layout.
+     * Drawing or plot the worksheet.
      *
      * Before calling this function, some parameters should be initialized by calling:
      *   SetPenSize( aPenWidth );

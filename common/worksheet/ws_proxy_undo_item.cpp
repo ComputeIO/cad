@@ -21,9 +21,9 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
 
-#include <page_layout/ws_proxy_undo_item.h>
-#include <page_layout/ws_data_item.h>
-#include <page_layout/ws_data_model.h>
+#include <worksheet/ws_proxy_undo_item.h>
+#include <worksheet/ws_data_item.h>
+#include <worksheet/ws_data_model.h>
 #include <view/view.h>
 #include <eda_draw_frame.h>
 #include <macros.h>
@@ -71,7 +71,7 @@ void WS_PROXY_UNDO_ITEM::Restore( EDA_DRAW_FRAME* aFrame, KIGFX::VIEW* aView )
         aFrame->SetTitleBlock( m_titleBlock );
     }
 
-    WS_DATA_MODEL::GetTheInstance().SetPageLayout( TO_UTF8( m_layoutSerialization ) );
+    WS_DATA_MODEL::GetTheInstance().SetWorksheet( TO_UTF8( m_layoutSerialization ) );
 
     if( aView )
     {

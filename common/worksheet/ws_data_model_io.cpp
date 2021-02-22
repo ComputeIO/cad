@@ -1,44 +1,32 @@
-/**
- * @file page_layout_writer.cpp
- * @brief write an S expression of description of graphic items and texts
- * to build a title block and page layout
- */
-
 /*
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
  * Copyright (C) 2013-2016 CERN
- * Copyright (C) 2019 Kicad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 2021 KiCad Developers, see AUTHORS.txt for contributors.
  *
- * @author Jean-Pierre Charras, jp.charras at wanadoo.fr
+ * This program is free software: you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the
+ * Free Software Foundation, either version 3 of the License, or (at your
+ * option) any later version.
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, you may find one here:
- * http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
- * or you may search the http://www.gnu.org website for the version 2 license,
- * or you may write to the Free Software Foundation, Inc.,
- * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
+ * You should have received a copy of the GNU General Public License along
+ * with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include <eda_item.h>
 #include <locale_io.h>
 #include <macros.h>
-#include <page_layout/ws_painter.h>
-#include <page_layout/ws_draw_item.h>
-#include <page_layout/ws_data_item.h>
-#include <page_layout/ws_data_model.h>
+#include <worksheet/ws_painter.h>
+#include <worksheet/ws_draw_item.h>
+#include <worksheet/ws_data_item.h>
+#include <worksheet/ws_data_model.h>
 #include <math/vector2d.h>
-#include <page_layout/page_layout_reader_lexer.h>
+#include <worksheet/ws_lexer.h>
 #include <convert_to_biu.h>
 
 #include <wx/msgdlg.h>
@@ -50,10 +38,10 @@ using namespace TB_READER_T;
 // A helper function to write tokens:
 static const char* getTokenName( T aTok )
 {
-    return PAGE_LAYOUT_READER_LEXER::TokenName( aTok );
+    return WORKSHEET_LEXER::TokenName( aTok );
 }
 
-// A basic helper class to write a page layout description
+// A basic helper class to write a worksheet description
 // Not used alone, a file writer or a string writer should be
 // derived to use it
 // Therefore the constructor is protected
@@ -82,7 +70,7 @@ private:
 };
 
 
-// A helper class to write a page layout description to a file
+// A helper class to write a worksheet to a file
 class WS_DATA_MODEL_FILEIO: public WS_DATA_MODEL_IO
 {
     FILE_OUTPUTFORMATTER * m_fileout;
@@ -98,7 +86,7 @@ public:
         }
         catch( const IO_ERROR& ioe )
         {
-            wxMessageBox( ioe.What(), _( "Error writing page layout design file" ) );
+            wxMessageBox( ioe.What(), _( "Error writing worksheet file" ) );
         }
     }
 
@@ -109,7 +97,7 @@ public:
 };
 
 
-// A helper class to write a page layout description to a string
+// A helper class to write a worksheet to a string
 class WS_DATA_MODEL_STRINGIO: public WS_DATA_MODEL_IO
 {
     STRING_FORMATTER * m_writer;
@@ -126,7 +114,7 @@ public:
         }
         catch( const IO_ERROR& ioe )
         {
-            wxMessageBox( ioe.What(), _( "Error writing page layout design file" ) );
+            wxMessageBox( ioe.What(), _( "Error writing worksheet file" ) );
         }
     }
 
@@ -195,7 +183,7 @@ void WS_DATA_MODEL_IO::Format( WS_DATA_MODEL* aModel, WS_DATA_ITEM* aItem, int a
 }
 
 
-void WS_DATA_MODEL_IO::Format( WS_DATA_MODEL* aPageLayout ) const
+void WS_DATA_MODEL_IO::Format( WS_DATA_MODEL* aWorksheet ) const
 {
     LOCALE_IO   toggle;     // switch on/off the locale "C" notation
 
@@ -206,30 +194,30 @@ void WS_DATA_MODEL_IO::Format( WS_DATA_MODEL* aPageLayout ) const
     // Write default values:
     m_out->Print( nestLevel, "(%s ", getTokenName( T_setup ) );
     m_out->Print( 0, "(textsize %s %s)",
-                  double2Str( aPageLayout->m_DefaultTextSize.x ).c_str(),
-                  double2Str( aPageLayout->m_DefaultTextSize.y ).c_str() );
+                  double2Str( aWorksheet->m_DefaultTextSize.x ).c_str(),
+                  double2Str( aWorksheet->m_DefaultTextSize.y ).c_str() );
     m_out->Print( 0, "(linewidth %s)",
-                  double2Str( aPageLayout->m_DefaultLineWidth ).c_str() );
+                  double2Str( aWorksheet->m_DefaultLineWidth ).c_str() );
     m_out->Print( 0, "(textlinewidth %s)",
-                  double2Str( aPageLayout->m_DefaultTextThickness ).c_str() );
+                  double2Str( aWorksheet->m_DefaultTextThickness ).c_str() );
     m_out->Print( 0, "\n" );
 
     // Write margin values
     m_out->Print( nestLevel, "(%s %s)", getTokenName( T_left_margin ),
-                  double2Str( aPageLayout->GetLeftMargin() ).c_str() );
+                  double2Str( aWorksheet->GetLeftMargin() ).c_str() );
     m_out->Print( 0, "(%s %s)", getTokenName( T_right_margin ),
-                  double2Str( aPageLayout->GetRightMargin() ).c_str() );
+                  double2Str( aWorksheet->GetRightMargin() ).c_str() );
     m_out->Print( 0, "(%s %s)", getTokenName( T_top_margin ),
-                  double2Str( aPageLayout->GetTopMargin() ).c_str() );
+                  double2Str( aWorksheet->GetTopMargin() ).c_str() );
     m_out->Print( 0, "(%s %s)", getTokenName( T_bottom_margin ),
-                  double2Str( aPageLayout->GetBottomMargin() ).c_str() );
+                  double2Str( aWorksheet->GetBottomMargin() ).c_str() );
     m_out->Print( 0, ")\n" );
 
-    // Save the graphical items on the page layout
-    for( unsigned ii = 0; ii < aPageLayout->GetCount(); ii++ )
+    // Save the graphical items on the worksheet
+    for( unsigned ii = 0; ii < aWorksheet->GetCount(); ii++ )
     {
-        WS_DATA_ITEM* item = aPageLayout->GetItem( ii );
-        Format( aPageLayout, item, nestLevel );
+        WS_DATA_ITEM* item = aWorksheet->GetItem( ii );
+        Format( aWorksheet, item, nestLevel );
     }
 
     m_out->Print( 0, ")\n" );

@@ -24,9 +24,9 @@
 
 #include <tool/tool_manager.h>
 #include <tool/picker_tool.h>
-#include <page_layout/ws_data_item.h>
-#include <page_layout/ws_data_model.h>
-#include <page_layout/ws_draw_item.h>
+#include <worksheet/ws_data_item.h>
+#include <worksheet/ws_data_model.h>
+#include <worksheet/ws_draw_item.h>
 #include <bitmaps.h>
 #include <confirm.h>
 #include <eda_item.h>
@@ -488,7 +488,7 @@ int PL_EDIT_TOOL::Paste( const TOOL_EVENT& aEvent )
 
     m_selectionTool->ClearSelection();
 
-    model.SetPageLayout( sexpr.c_str(), true, wxT( "clipboard" ) );
+    model.SetWorksheet( sexpr.c_str(), true, wxT( "clipboard" ) );
 
     // Build out draw items and select the first of each data item
     for( WS_DATA_ITEM* dataItem : WS_DATA_MODEL::GetTheInstance().GetItems() )

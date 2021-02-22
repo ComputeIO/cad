@@ -57,7 +57,7 @@ public:
     wxString  m_IntersheetRefsPrefix;
     wxString  m_IntersheetRefsSuffix;
 
-    wxString  m_PageLayoutDescrFile;
+    wxString  m_WorksheetFile;
 
     wxString  m_PlotDirectoryName;
 

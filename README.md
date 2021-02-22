@@ -43,7 +43,7 @@ our [Forum](https://forum.kicad.info/).
 * [include](include)           - Interfaces to the common library
 * [kicad](kicad)             - Sourcecode of the project manager
 * [libs](libs)           - Sourcecode of kicad utilities (geometry and others)
-* [pagelayout_editor](pagelayout_editor) - Sourcecode of the pagelayout editor
+* [pagelayout_editor](pagelayout_editor) - Sourcecode of the worksheet editor
 * [patches](patches)           - Collection of patches for external dependencies
 * [pcbnew](pcbnew)           - Sourcecode of the printed circuit board editor
 * [plugins](plugins)           - Sourcecode for the 3d viewer plugins

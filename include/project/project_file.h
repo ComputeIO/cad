@@ -153,8 +153,8 @@ public:
      * PcbNew params
      */
 
-    /// Page layout description file
-    wxString m_BoardPageLayoutDescrFile;
+    /// Worksheet file
+    wxString m_BoardWorksheetFile;
 
     /// MRU path storage
     wxString m_PcbLastPath[LAST_PATH_SIZE];

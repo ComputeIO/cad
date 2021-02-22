@@ -33,7 +33,7 @@
 #include <panel_pcbnew_display_origin.h>
 #include <tool/tool_manager.h>
 #include <tools/pcb_selection_tool.h>
-#include <page_layout/ws_data_model.h>
+#include <worksheet/ws_data_model.h>
 #include <pcbplot.h>
 #include <pcb_painter.h>
 #include <invoke_pcb_dialog.h>
@@ -69,16 +69,16 @@ bool PCB_EDIT_FRAME::LoadProjectSettings()
     PROJECT_FILE&           project       = Prj().GetProjectFile();
     PROJECT_LOCAL_SETTINGS& localSettings = Prj().GetLocalSettings();
 
-    BASE_SCREEN::m_PageLayoutDescrFileName = project.m_BoardPageLayoutDescrFile;
+    BASE_SCREEN::m_WorksheetFileName = project.m_BoardWorksheetFile;
 
-    // Load the page layout decr file, from the filename stored in
-    // BASE_SCREEN::m_PageLayoutDescrFileName, read in config project file
+    // Load the worksheet file, from the filename stored in
+    // BASE_SCREEN::m_WorksheetFileName, read in config project file
     // If empty, or not existing, the default descr is loaded
     WS_DATA_MODEL& pglayout = WS_DATA_MODEL::GetTheInstance();
-    wxString filename = WS_DATA_MODEL::MakeFullFileName( BASE_SCREEN::m_PageLayoutDescrFileName,
+    wxString filename = WS_DATA_MODEL::MakeFullFileName( BASE_SCREEN::m_WorksheetFileName,
                                                          Prj().GetProjectPath() );
 
-    pglayout.SetPageLayout( filename );
+    pglayout.SetWorksheet( filename );
 
     // Load render settings that aren't stored in PCB_DISPLAY_OPTIONS
 
@@ -162,7 +162,7 @@ void PCB_EDIT_FRAME::SaveProjectSettings()
     PROJECT_LOCAL_SETTINGS& localSettings = Prj().GetLocalSettings();
 
     // TODO: Can this be pulled out of BASE_SCREEN?
-    project.m_BoardPageLayoutDescrFile = BASE_SCREEN::m_PageLayoutDescrFileName;
+    project.m_BoardWorksheetFile = BASE_SCREEN::m_WorksheetFileName;
 
     project.m_LayerPresets = m_appearancePanel->GetUserLayerPresets();
 

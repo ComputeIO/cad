@@ -56,7 +56,7 @@
 #include <tools/ee_selection.h>
 #include <tools/ee_selection_tool.h>
 #include <tools/sch_editor_control.h>
-#include <page_layout/ws_proxy_undo_item.h>
+#include <worksheet/ws_proxy_undo_item.h>
 #include <dialog_update_from_pcb.h>
 #include <dialog_helpers.h>
 
@@ -106,7 +106,7 @@ int SCH_EDITOR_CONTROL::PageSetup( const TOOL_EVENT& aEvent )
     m_frame->SaveCopyInUndoList( undoCmd, UNDO_REDO::PAGESETTINGS, false );
 
     DIALOG_EESCHEMA_PAGE_SETTINGS dlg( m_frame, wxSize( MAX_PAGE_SIZE_MILS, MAX_PAGE_SIZE_MILS ) );
-    dlg.SetWksFileName( BASE_SCREEN::m_PageLayoutDescrFileName );
+    dlg.SetWksFileName( BASE_SCREEN::m_WorksheetFileName );
 
     if( dlg.ShowModal() != wxID_OK )
         m_frame->RollbackSchematicFromUndo();

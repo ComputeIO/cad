@@ -24,10 +24,10 @@
 
 #include <layers_id_colors_and_visibility.h>
 #include <page_info.h>
-#include <page_layout/ws_proxy_view_item.h>
-#include <page_layout/ws_draw_item.h>
-#include <page_layout/ws_data_item.h>
-#include <page_layout/ws_painter.h>
+#include <worksheet/ws_proxy_view_item.h>
+#include <worksheet/ws_draw_item.h>
+#include <worksheet/ws_data_item.h>
+#include <worksheet/ws_painter.h>
 #include <project.h>
 #include <view/view.h>
 
@@ -115,7 +115,7 @@ void WS_PROXY_VIEW_ITEM::ViewDraw( int aLayer, VIEW* aView ) const
     ws_settings->SetBrightenedColor( settings->GetLayerColor( LAYER_BRIGHTENED ) );
     ws_settings->SetPageBorderColor( settings->GetLayerColor( m_pageBorderColorLayer ) );
 
-    // Draw all the components that make the page layout
+    // Draw all the components that make the worksheet
     for( WS_DRAW_ITEM_BASE* item = drawList.GetFirst(); item; item = drawList.GetNext() )
         ws_painter.Draw( item, LAYER_DRAWINGSHEET );
 

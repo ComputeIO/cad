@@ -45,9 +45,9 @@ class WS_DATA_ITEM;
 
 class PL_EDITOR_FRAME : public EDA_DRAW_FRAME
 {
-    PL_EDITOR_LAYOUT m_pageLayout;
+    PL_EDITOR_LAYOUT m_worksheet;
 
-    int         m_propertiesFrameWidth; // the last width (in pixels) of m_propertiesPagelayout
+    int         m_propertiesFrameWidth; // the last width (in pixels) of m_propertiesWorksheet
 
     wxChoice*   m_originSelectBox;      // Corner origin choice for coordinates
     int         m_originSelectChoice;   // the last choice for m_originSelectBox
@@ -58,7 +58,7 @@ class PL_EDITOR_FRAME : public EDA_DRAW_FRAME
 
 protected:
     /// The last filename chosen to be proposed to the user
-    PROPERTIES_FRAME*       m_propertiesPagelayout;
+    PROPERTIES_FRAME*       m_propertiesWorksheet;
 
     void setupUIConditions() override;
 
@@ -66,38 +66,38 @@ public:
     PL_EDITOR_FRAME( KIWAY* aKiway, wxWindow* aParent );
     ~PL_EDITOR_FRAME();
 
-    PROPERTIES_FRAME* GetPropertiesFrame() { return m_propertiesPagelayout; }
+    PROPERTIES_FRAME* GetPropertiesFrame() { return m_propertiesWorksheet; }
 
     /**
-     * Show the dialog displaying the list of WS_DATA_ITEM items in the page layout
+     * Show the dialog displaying the list of WS_DATA_ITEM items in the worksheet
      */
     void ShowDesignInspector();
 
     bool OpenProjectFiles( const std::vector<wxString>& aFileSet, int aCtl ) override;
 
     /**
-     * Function LoadPageLayoutDescrFile
-     * Loads a .kicad_wks page layout descr file
+     * Function LoadWorksheetFile
+     * Loads a .kicad_wks worksheet file
      * @param aFullFileName = the filename.
      */
-    bool LoadPageLayoutDescrFile( const wxString& aFullFileName );
+    bool LoadWorksheetFile( const wxString& aFullFileName );
 
     /**
-     * Function SavePageLayoutDescrFile
-     * Save the current layout in a .kicad_wks page layout descr file
+     * Function SaveWorksheetFile
+     * Save the current layout in a .kicad_wks worksheet file
      * @param aFullFileName = the filename.
      */
-    bool SavePageLayoutDescrFile( const wxString& aFullFileName );
+    bool SaveWorksheetFile( const wxString& aFullFileName );
 
     /**
-     * Function InsertPageLayoutDescrFile
-     * Loads a .kicad_wks page layout descr file, and add items to the current layout list
+     * Function InsertWorksheetFile
+     * Loads a .kicad_wks worksheet file, and add items to the current layout list
      * @param aFullFileName = the filename.
      */
-    bool InsertPageLayoutDescrFile( const wxString& aFullFileName );
+    bool InsertWorksheetFile( const wxString& aFullFileName );
 
     /**
-     * Get if the page layout has been modified but not saved.
+     * Get if the worksheet has been modified but not saved.
      *
      * @return true if the any changes have not been saved
      */
@@ -144,9 +144,9 @@ public:
     void UpdateStatusBar() override;
 
     /**
-     * Must be called to initialize parameters when a new page layout description is loaded
+     * Must be called to initialize parameters when a new worksheet is loaded
      */
-    void OnNewPageLayout();
+    void OnNewWorksheet();
 
     /**
      * creates or updates the right vertical toolbar.
@@ -161,8 +161,8 @@ public:
 
     void    ReCreateMenuBar() override;
 
-    const PL_EDITOR_LAYOUT& GetPageLayout() const { return m_pageLayout; }
-    PL_EDITOR_LAYOUT& GetPageLayout() { return m_pageLayout; }
+    const PL_EDITOR_LAYOUT& GetWorksheet() const { return m_worksheet; }
+    PL_EDITOR_LAYOUT& GetWorksheet() { return m_worksheet; }
 
     const BOX2I GetDocumentExtents( bool aIncludeAllVisible = true ) const override;
 
@@ -240,14 +240,14 @@ public:
     void HardRedraw() override;
 
     /**
-     * Function AddPageLayoutItem
-     * Add a new item to the page layout item list.
+     * Function AddWorksheetItem
+     * Add a new item to the worksheet item list.
      * @param aType = the type of item:
      *  WS_TEXT, WS_SEGMENT, WS_RECT, WS_POLYPOLYGON
      * @param aIdx = the position in list to insert the new item.
      * @return a reference to the new item
      */
-    WS_DATA_ITEM* AddPageLayoutItem( int aType );
+    WS_DATA_ITEM* AddWorksheetItem( int aType );
 
     /**
      * Must be called after a change in order to set the "modify" flag
@@ -286,7 +286,7 @@ public:
     void ClearUndoORRedoList( UNDO_REDO_LIST whichList, int aItemCount = -1 ) override;
 
 protected:
-    bool saveCurrentPageLayout();
+    bool saveCurrentWorksheet();
 
     DECLARE_EVENT_TABLE()
 };

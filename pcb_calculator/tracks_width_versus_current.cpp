@@ -362,7 +362,7 @@ void PCB_CALCULATOR_FRAME::TWUpdateModeDisplay()
     m_IntTrackWidthValue->SetFont( controlfont );
 
     // Text sizes have changed when the font weight was changes
-    // So, run the page layout to reflect the changes
+    // So, run the worksheet to reflect the changes
     wxWindow* page = m_Notebook->GetPage ( 1 );
     page->GetSizer()->Layout();
 }

@@ -730,7 +730,7 @@ void BM2CMP_FRAME::OnExportLogo()
         path = ::wxGetCwd();
 
     wxFileDialog fileDlg( this, _( "Create Logo File" ), path, wxEmptyString,
-                          PageLayoutDescrFileWildcard(),
+                          WorksheetFileWildcard(),
                           wxFD_SAVE | wxFD_OVERWRITE_PROMPT );
     int          diag = fileDlg.ShowModal();
 
@@ -738,7 +738,7 @@ void BM2CMP_FRAME::OnExportLogo()
         return;
 
     fn = fileDlg.GetPath();
-    fn.SetExt( PageLayoutDescrFileExtension );
+    fn.SetExt( WorksheetFileExtension );
     m_ConvertedFileName = fn.GetFullPath();
 
     FILE*    outfile;

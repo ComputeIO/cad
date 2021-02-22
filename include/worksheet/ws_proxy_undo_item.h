@@ -38,7 +38,7 @@ public:
     /*
      * Restores the saved worksheet layout to the global worksheet record, and the saved
      * page info and title blocks to the given frame.  The WS_DRAW_ITEMs are rehydrated
-     * and installed in aView if it is not null (ie: if we're in the PageLayout Editor).
+     * and installed in aView if it is not null (ie: if we're in the Worksheet Editor).
      */
     void Restore( EDA_DRAW_FRAME* aFrame, KIGFX::VIEW* aView = nullptr );
 

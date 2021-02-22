@@ -53,7 +53,7 @@
 #include <tool/zoom_menu.h>
 #include <trace_helpers.h>
 #include <view/view.h>
-#include <page_layout/ws_draw_item.h>
+#include <worksheet/ws_draw_item.h>
 #include <widgets/msgpanel.h>
 #include <wx/snglinst.h>
 #include <dialogs/dialog_grid_settings.h>
@@ -831,11 +831,11 @@ void EDA_DRAW_FRAME::FocusOnLocation( const wxPoint& aPos )
 
 static const wxString productName = wxT( "KiCad E.D.A.  " );
 
-void PrintPageLayout( const RENDER_SETTINGS* aSettings, const PAGE_INFO& aPageInfo,
-                      const wxString& aFullSheetName, const wxString& aFileName,
-                      const TITLE_BLOCK& aTitleBlock, int aSheetCount, const wxString& aPageNumber,
-                      double aMils2Iu, const PROJECT* aProject, const wxString& aSheetLayer,
-                      bool aIsFirstPage )
+void PrintWorksheet( const RENDER_SETTINGS* aSettings, const PAGE_INFO& aPageInfo,
+                     const wxString& aFullSheetName, const wxString& aFileName,
+                     const TITLE_BLOCK& aTitleBlock, int aSheetCount, const wxString& aPageNumber,
+                     double aMils2Iu, const PROJECT* aProject, const wxString& aSheetLayer,
+                     bool aIsFirstPage )
 {
     WS_DRAW_ITEM_LIST drawList;
 
@@ -872,7 +872,7 @@ void EDA_DRAW_FRAME::PrintDrawingSheet( const RENDER_SETTINGS* aSettings, BASE_S
         DC->SetAxisOrientation( true, false );
     }
 
-    PrintPageLayout( aSettings, GetPageSettings(), GetScreenDesc(), aFilename, GetTitleBlock(),
+    PrintWorksheet( aSettings, GetPageSettings(), GetScreenDesc(), aFilename, GetTitleBlock(),
                      aScreen->GetPageCount(), aScreen->GetPageNumber(), aMils2Iu, &Prj(),
                      aSheetLayer, aScreen->GetVirtualPageNumber() == 1 );
 
