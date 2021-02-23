@@ -32,7 +32,7 @@
 #include <wx/debug.h>            // for wxASSERT
 #include <wx/wx.h>               // for wxString, operator!=, operator==
 #if defined( __WXGTK__ )
-    #include <kiplatform/ui.h>   // include on GTK systems
+#include <kiplatform/ui.h> // include on GTK systems
 #endif
 
 void wxConfigLoadParams( wxConfigBase* aCfg, const std::vector<PARAM_CFG*>& aList,
@@ -59,10 +59,9 @@ void wxConfigLoadSetups( wxConfigBase* aCfg, const std::vector<PARAM_CFG*>& aLis
 {
     wxASSERT( aCfg );
 
-    // set GTK menu image flag TRUE on GTK systems
-    #if defined( __WXGTK__ )
-        KIPLATFORM::UI::SetMenuImages(TRUE);
-    #endif
+#if defined( __WXGTK__ )
+    KIPLATFORM::UI::SetMenuImages( TRUE ); // set GTK menu image flag TRUE on GTK systems
+#endif
 
     for( PARAM_CFG* param : aList )
     {
