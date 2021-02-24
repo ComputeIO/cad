@@ -738,3 +738,26 @@ if( false ) # future
     endif()
 
 endif()
+
+if( UNIX AND NOT APPLE ) # GTK3 dependant import for toggling menu icons
+    find_package(PkgConfig REQUIRED)
+    pkg_check_modules(GTK3 REQUIRED gtk+-3.0)
+
+    # Detect GTK3 and configure it
+    set( PLATFORM_LIBS
+        ${GTK3_LIBRARIES}
+        )
+
+    include_directories( ${GTK3_INCLUDE_DIRS} )
+    link_directories( ${GTK3_LIBRARY_DIRS} )
+    add_definitions( ${GTK3_CFLAGS_OTHER} )
+
+    add_library( gtkfix STATIC EXCLUDE_FROM_ALL
+        settings/common_settings.cpp
+        eda_base_frame.cpp
+        )
+
+    target_link_libraries( gtkfix
+        ${GTK3_LIBRARIES}
+        )
+endif()

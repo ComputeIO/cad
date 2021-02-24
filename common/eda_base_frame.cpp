@@ -53,6 +53,9 @@
 #include <wx/stdpaths.h>
 #include <wx/string.h>
 #include <kiplatform/app.h>
+#if defined( __WXGTK__ )
+#include <gtk/gtk.h>
+#endif
 
 #include <functional>
 
@@ -446,6 +449,11 @@ void EDA_BASE_FRAME::CommonSettingsChanged( bool aEnvVarsChanged, bool aTextVars
         m_fileHistory->SetMaxFiles( (unsigned) std::max( 0, historySize ) );
     }
 
+#if defined( __WXGTK__ )
+    // set menu icons setting on GTK systems
+    g_object_set( gtk_settings_get_default(), "gtk-menu-images", settings->m_Appearance.use_icons_in_menus, NULL );
+#endif
+
     if( GetMenuBar() )
     {
         // For icons in menus, icon scaling & hotkeys
@@ -634,6 +642,11 @@ void EDA_BASE_FRAME::SaveWindowSettings( WINDOW_SETTINGS* aCfg )
 void EDA_BASE_FRAME::LoadSettings( APP_SETTINGS_BASE* aCfg )
 {
     LoadWindowSettings( GetWindowSettings( aCfg ) );
+
+#if defined( __WXGTK__ )
+    // set menu icons setting on GTK systems
+    g_object_set( gtk_settings_get_default(), "gtk-menu-images", Pgm().GetCommonSettings()->m_Appearance.use_icons_in_menus, NULL );
+#endif
 
     // Get file history size from common settings
     int fileHistorySize = Pgm().GetCommonSettings()->m_System.file_history_size;

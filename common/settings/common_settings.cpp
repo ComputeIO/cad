@@ -23,6 +23,9 @@
 #include <settings/parameters.h>
 #include <wx/config.h>
 #include <wx/log.h>
+#if defined( __WXGTK__ )
+#include <gtk/gtk.h>
+#endif
 
 
 ///! The following environment variables will never be migrated from a previous version
@@ -55,6 +58,10 @@ COMMON_SETTINGS::COMMON_SETTINGS() :
 #if defined( __WXMAC__ )
     bool   defaultUseIconsInMenus = false;
     double canvasScale = 0.0;
+#elif defined( __UNIX__ )
+    bool   defaultUseIconsInMenus = false; 
+    g_object_get( gtk_settings_get_default(), "gtk-menu-images", &defaultUseIconsInMenus, NULL ); // get menu icons setting on GTK systems
+    double canvasScale = 1.0;
 #else
     bool   defaultUseIconsInMenus = true;
     double canvasScale = 1.0;
