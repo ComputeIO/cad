@@ -91,3 +91,9 @@ void KIPLATFORM::UI::EllipsizeChoiceBox( wxChoice* aChoice )
     // Only the list of cells must be freed, the renderer isn't ours to free
     g_list_free( cells );
 }
+
+void KIPLATFORM::UI::SetMenuImages( bool Set )
+{
+    // overrides GTK gtk-menu-images setting to input Boolean
+    g_object_set( gtk_settings_get_default(), "gtk-menu-images", Set, NULL );
+}

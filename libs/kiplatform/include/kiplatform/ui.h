@@ -85,6 +85,13 @@ namespace KIPLATFORM
          * @param aChoice is the choice box to ellipsize
          */
         void EllipsizeChoiceBox( wxChoice* aChoice );
+
+        /**
+         * Sets the setting to enable menu images on the GTK UI
+         *
+         * @param Set is a boolean for toggling GTK Menu Images
+         */
+        void SetMenuImages( bool Set );
     }
 }
 
