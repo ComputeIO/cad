@@ -682,9 +682,14 @@ int EDIT_TOOL::doMoveSelection( TOOL_EVENT aEvent, bool aPickReference )
         return 0;
     }
 
-    std::vector<BOARD_ITEM*> sel_items;
+    std::set<EDA_ITEM*> unique_items;
 
     for( EDA_ITEM* item : selection )
+        unique_items.insert( item );
+
+    std::vector<BOARD_ITEM*> sel_items;
+
+    for( EDA_ITEM* item : unique_items )
     {
         BOARD_ITEM* boardItem = dynamic_cast<BOARD_ITEM*>( item );
         FOOTPRINT*  footprint = dynamic_cast<FOOTPRINT*>( item );
@@ -746,14 +751,9 @@ int EDIT_TOOL::doMoveSelection( TOOL_EVENT aEvent, bool aPickReference )
                 totalMovement += movement;
 
                 // Drag items to the current cursor position
-                for( EDA_ITEM* item : sel_items )
+                for( BOARD_ITEM* item : sel_items )
                 {
-                    // Don't double move footprint pads, fields, etc.
-                    //
-                    // For PCB_GROUP_T, we make sure the selection includes only the top level
-                    // group and not its descendants.
-                    if( !item->GetParent() || !item->GetParent()->IsSelected() )
-                        static_cast<BOARD_ITEM*>( item )->Move( movement );
+                    static_cast<BOARD_ITEM*>( item )->Move( movement );
                 }
 
                 m_toolMgr->PostEvent( EVENTS::SelectedItemsMoved );
@@ -779,14 +779,8 @@ int EDIT_TOOL::doMoveSelection( TOOL_EVENT aEvent, bool aPickReference )
                 else
                 {
                     // Save items, so changes can be undone
-                    for( EDA_ITEM* item : selection )
+                    for( EDA_ITEM* item : unique_items )
                     {
-                        // Don't double move footprint pads, fields, etc.
-                        //
-                        // For PCB_GROUP_T, the parent is the board.
-                        if( item->GetParent() && item->GetParent()->IsSelected() )
-                            continue;
-
                         m_commit->Modify( item );
 
                         // If moving a group, record position of all the descendants for undo
@@ -812,14 +806,8 @@ int EDIT_TOOL::doMoveSelection( TOOL_EVENT aEvent, bool aPickReference )
                     movement = m_cursor - selection.GetReferencePoint();
 
                     // Drag items to the current cursor position
-                    for( EDA_ITEM* item : selection )
-                    {
-                        // Don't double move footprint pads, fields, etc.
-                        if( item->GetParent() && item->GetParent()->IsSelected() )
-                            continue;
-
+                    for( EDA_ITEM* item : unique_items )
                         static_cast<BOARD_ITEM*>( item )->Move( movement );
-                    }
 
                     selection.SetReferencePoint( m_cursor );
                 }
@@ -827,7 +815,7 @@ int EDIT_TOOL::doMoveSelection( TOOL_EVENT aEvent, bool aPickReference )
                 {
                     std::vector<BOARD_ITEM*> items;
 
-                    for( EDA_ITEM* item : selection )
+                    for( EDA_ITEM* item : unique_items )
                         items.push_back( static_cast<BOARD_ITEM*>( item ) );
 
                     m_cursor = grid.BestDragOrigin( originalCursorPos, items );
@@ -889,7 +877,7 @@ int EDIT_TOOL::doMoveSelection( TOOL_EVENT aEvent, bool aPickReference )
         else if( evt->IsAction( &PCB_ACTIONS::moveExact ) )
         {
             // Reset positions so the Move Exactly is from the start.
-            for( EDA_ITEM* item : selection )
+            for( EDA_ITEM* item : unique_items )
             {
                 BOARD_ITEM* i = static_cast<BOARD_ITEM*>( item );
                 i->Move( -totalMovement );
