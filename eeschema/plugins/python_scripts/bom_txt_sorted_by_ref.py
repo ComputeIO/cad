@@ -10,7 +10,7 @@
     Fields: Ref, Value, Part, Footprint, Description, Vendor
 
     Command line:
-    python "pathToFile/bom_sorted_by_ref.py" "%I" "%O.txt"
+    python "pathToFile/bom_txt_sorted_by_ref.py" "%I" "%O.txt"
 """
 
 from __future__ import print_function
