@@ -2079,7 +2079,7 @@ void SCH_ALTIUM_PLUGIN::ParseParameter( const std::map<wxString, wxString>& aPro
         const wxPoint position = elem.location + m_sheetOffset;
 
         SCH_FIELD* field = nullptr;
-        if( elem.name == "Value" )
+        if( elem.name == "Comment" )
         {
             field = component->GetField( VALUE_FIELD );
             field->SetPosition( position );
