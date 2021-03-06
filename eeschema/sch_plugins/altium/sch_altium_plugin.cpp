@@ -2088,7 +2088,9 @@ void SCH_ALTIUM_PLUGIN::ParseParameter( const std::map<wxString, wxString>& aPro
         const wxPoint position = elem.location + m_sheetOffset;
 
         SCH_FIELD* field = nullptr;
-        if( elem.name == "Value" )
+
+        // Symbol "Value" field is called "Comment" inside Altium:
+        if( elem.name == "Comment" )
         {
             field = component->GetField( VALUE_FIELD );
             field->SetPosition( position );
@@ -2100,10 +2102,11 @@ void SCH_ALTIUM_PLUGIN::ParseParameter( const std::map<wxString, wxString>& aPro
         }
 
         // TODO: improve text replacement (https://gitlab.com/kicad/code/kicad/-/issues/6256)
-        if( elem.text == "=Value" && field->GetId() != VALUE_FIELD )
-            field->SetText( "${VALUE}" );
-        else
-            field->SetText( elem.text );
+        // See https://gitlab.com/kicad/code/kicad/-/merge_requests/698 why this is commented out
+        //if( elem.text == "=Value" && field->GetId() != VALUE_FIELD )
+        //    field->SetText( "${VALUE}" );
+        //else
+        field->SetText( elem.text );
 
         field->SetVisible( !elem.isHidden );
         field->SetHorizJustify( EDA_TEXT_HJUSTIFY_T::GR_TEXT_HJUSTIFY_LEFT );
