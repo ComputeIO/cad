@@ -69,7 +69,7 @@ public:
     double GetBottomMargin() { return m_bottomMargin; }
     void SetBottomMargin( double aMargin ) { m_bottomMargin = aMargin; }
 
-    void SetupDrawEnvironment( const PAGE_INFO& aPageInfo, double aMilsToIU );
+    void SetupDrawEnvironment( const PAGE_INFO& aPageInfo );
 
     /**
      * In KiCad applications, a page layout description is needed

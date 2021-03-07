@@ -95,11 +95,11 @@ void DS_DATA_MODEL::SetAltInstance( DS_DATA_MODEL* aLayout )
 }
 
 
-void DS_DATA_MODEL::SetupDrawEnvironment( const PAGE_INFO& aPageInfo, double aMilsToIU )
+void DS_DATA_MODEL::SetupDrawEnvironment( const PAGE_INFO& aPageInfo )
 {
 #define MILS_TO_MM (25.4/1000)
 
-    m_WSunits2Iu = aMilsToIU / MILS_TO_MM;
+    m_WSunits2Iu = PL_IU_PER_MM;
 
     // Left top corner position
     DPOINT lt_corner;
