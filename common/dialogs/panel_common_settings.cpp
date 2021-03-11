@@ -23,7 +23,7 @@
 
 #include <dialogs/panel_common_settings.h>
 
-#include <bitmap_types.h>
+#include <advanced_config.h>
 #include <bitmaps.h>
 #include <dialog_shim.h>
 #include <gal/dpi_scaling.h>
@@ -72,8 +72,16 @@ PANEL_COMMON_SETTINGS::PANEL_COMMON_SETTINGS( DIALOG_SHIM* aDialog, wxWindow* aP
     m_antialiasingFallbackLabel->Show( false );
 #endif
 
-    m_textEditorBtn->SetBitmap( KiBitmap( small_folder_xpm ) );
-    m_pdfViewerBtn->SetBitmap( KiBitmap( small_folder_xpm ) );
+    if( !ADVANCED_CFG::GetCfg().m_AllowDarkMode )
+    {
+        m_rbIconThemeLight->Hide();
+        m_rbIconThemeDark->Hide();
+        m_rbIconThemeAuto->Hide();
+        m_stIconTheme->Hide();
+    }
+
+    m_textEditorBtn->SetBitmap( KiBitmap( BITMAPS::small_folder ) );
+    m_pdfViewerBtn->SetBitmap( KiBitmap( BITMAPS::small_folder ) );
 
     m_canvasScaleCtrl->Connect( wxEVT_COMMAND_TEXT_UPDATED,
                                 wxCommandEventHandler( PANEL_COMMON_SETTINGS::OnCanvasScaleChange ),
@@ -123,6 +131,13 @@ bool PANEL_COMMON_SETTINGS::TransferDataFromWindow()
         DPI_SCALING dpi( commonSettings, this );
         dpi.SetDpiConfig( m_canvasScaleAuto->GetValue(), m_canvasScaleCtrl->GetValue() );
     }
+
+    if( m_rbIconThemeLight->GetValue() )
+        commonSettings->m_Appearance.icon_theme = ICON_THEME::LIGHT;
+    else if( m_rbIconThemeDark->GetValue() )
+        commonSettings->m_Appearance.icon_theme = ICON_THEME::DARK;
+    else if( m_rbIconThemeAuto->GetValue() )
+        commonSettings->m_Appearance.icon_theme = ICON_THEME::AUTO;
 
     commonSettings->m_Appearance.use_icons_in_menus = m_checkBoxIconsInMenus->GetValue();
 
@@ -198,6 +213,13 @@ void PANEL_COMMON_SETTINGS::applySettingsToPanel( COMMON_SETTINGS& aSettings )
         const DPI_SCALING dpi( &aSettings, this );
         m_canvasScaleCtrl->SetValue( dpi.GetScaleFactor() );
         m_canvasScaleAuto->SetValue( dpi.GetCanvasIsAutoScaled() );
+    }
+
+    switch( aSettings.m_Appearance.icon_theme )
+    {
+    case ICON_THEME::LIGHT: m_rbIconThemeLight->SetValue( true );   break;
+    case ICON_THEME::DARK:  m_rbIconThemeDark->SetValue( true );    break;
+    case ICON_THEME::AUTO:  m_rbIconThemeAuto->SetValue( true );    break;
     }
 
     m_checkBoxIconsInMenus->SetValue( aSettings.m_Appearance.use_icons_in_menus );
