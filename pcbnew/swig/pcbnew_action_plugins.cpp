@@ -355,8 +355,7 @@ void PCB_EDIT_FRAME::RunActionPlugin( ACTION_PLUGIN* aActionPlugin )
     }
     else
     {
-        if( fromEmpty )
-            delete oldBuffer;
+        delete oldBuffer;
     }
 
     commit.Push( _( "Apply action script" ) );
