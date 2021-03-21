@@ -1737,19 +1737,8 @@ int EDIT_TOOL::Remove( const TOOL_EVENT& aEvent )
                         // Remove the cutout
                         m_commit->Modify( zone );
                         zone->RemoveCutout( outlineIdx, holeIdx );
-
-                        std::vector<ZONE*> toFill;
-                        toFill.emplace_back( zone );
-
-                        // Fill the modified zone
-                        ZONE_FILLER  filler( board(), m_commit.get() );
-                        filler.InstallNewProgressReporter( frame(), _( "Fill Zone" ), 4 );
-
-                        if( !filler.Fill( toFill ) )
-                        {
-                            m_commit->Revert();
-                            return 1;
-                        }
+                        zone->UnFill();
+                        // TODO Refill zone when KiCad supports auto re-fill
 
                         // Update the display
                         zone->HatchBorder();

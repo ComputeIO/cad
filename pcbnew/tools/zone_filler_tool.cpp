@@ -132,7 +132,7 @@ void ZONE_FILLER_TOOL::FillAllZones( wxWindow* aCaller, PROGRESS_REPORTER* aRepo
 
     if( filler.Fill( toFill ) )
     {
-        commit.Push( _( "Fill Zone(s)" ), false );
+        commit.Push( _( "Fill Zone(s)" ), true ); // Allow undoing zone fill
         getEditFrame<PCB_EDIT_FRAME>()->m_ZoneFillsDirty = false;
     }
     else
@@ -176,7 +176,7 @@ int ZONE_FILLER_TOOL::ZoneFill( const TOOL_EVENT& aEvent )
     std::lock_guard<KISPINLOCK> lock( board()->GetConnectivity()->GetLock() );
 
     if( filler.Fill( toFill ) )
-        commit.Push( _( "Fill Zone(s)" ), false );
+        commit.Push( _( "Fill Zone(s)" ), true );  // Allow undoing zone fill
     else
         commit.Revert();
 
@@ -204,8 +204,7 @@ int ZONE_FILLER_TOOL::ZoneUnfill( const TOOL_EVENT& aEvent )
 
         commit.Modify( zone );
 
-        zone->SetIsFilled( false );
-        zone->ClearFilledPolysList();
+        zone->UnFill();
     }
 
     commit.Push( _( "Unfill Zone" ) );
@@ -223,8 +222,7 @@ int ZONE_FILLER_TOOL::ZoneUnfillAll( const TOOL_EVENT& aEvent )
     {
         commit.Modify( zone );
 
-        zone->SetIsFilled( false );
-        zone->ClearFilledPolysList();
+        zone->UnFill();
     }
 
     commit.Push( _( "Unfill All Zones" ) );

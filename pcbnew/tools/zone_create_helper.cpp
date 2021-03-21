@@ -30,6 +30,7 @@
 #include <fp_shape.h>
 #include <board_commit.h>
 #include <pcb_painter.h>
+#include <pcbnew_settings.h>
 #include <tools/pcb_actions.h>
 #include <tools/pcb_selection_tool.h>
 #include <zone_filler.h>
@@ -162,21 +163,14 @@ void ZONE_CREATE_HELPER::performZoneCutout( ZONE& aZone, const ZONE& aCutout )
         newZone->SetOutline( newZoneOutline );
         newZone->SetLocalFlags( 1 );
         newZone->HatchBorder();
+        newZone->UnFill();
         newZones.push_back( newZone );
         commit.Add( newZone );
     }
 
     commit.Remove( &aZone );
 
-    ZONE_FILLER filler( board, &commit );
-
-    std::lock_guard<KISPINLOCK> lock( board->GetConnectivity()->GetLock() );
-
-    if( !filler.Fill( newZones ) )
-    {
-        commit.Revert();
-        return;
-    }
+    // TODO Refill zones when KiCad supports auto re-fill
 
     commit.Push( _( "Add a zone cutout" ) );
 
@@ -210,21 +204,12 @@ void ZONE_CREATE_HELPER::commitZone( std::unique_ptr<ZONE> aZone )
             BOARD*       board = m_tool.getModel<BOARD>();
 
             aZone->HatchBorder();
+
+            // TODO Refill zones when KiCad supports auto re-fill
+
             commit.Add( aZone.get() );
 
             std::lock_guard<KISPINLOCK> lock( board->GetConnectivity()->GetLock() );
-
-            if( !m_params.m_keepout )
-            {
-                ZONE_FILLER        filler( board, &commit );
-                std::vector<ZONE*> toFill = { aZone.get() };
-
-                if( !filler.Fill( toFill ) )
-                {
-                    commit.Revert();
-                    break;
-                }
-            }
 
             commit.Push( _( "Add a zone" ) );
             m_tool.GetManager()->RunAction( PCB_ACTIONS::selectItem, true, aZone.release() );

@@ -663,8 +663,8 @@ void SCH_EDIT_FRAME::OnImportProject( wxCommandEvent& aEvent )
     if( !AskToSaveChanges() )
         return;
 
-    // Set the project location if none is set
-    bool setProject = Prj().GetProjectFullName().IsEmpty();
+    // Set the project location if none is set or if we are running in standalone mode
+    bool     setProject = Prj().GetProjectFullName().IsEmpty() || Kiface().IsSingle();
     wxString path = wxPathOnly( Prj().GetProjectFullName() );
 
     std::list<std::pair<const wxString, const SCH_IO_MGR::SCH_FILE_T>> loaders;
@@ -955,7 +955,8 @@ bool SCH_EDIT_FRAME::importFile( const wxString& aFileName, int aFileType )
                     SCH_IO_MGR::FindPlugin( (SCH_IO_MGR::SCH_FILE_T) aFileType ) );
             Schematic().SetRoot( pi->Load( aFileName, &Schematic() ) );
 
-            // Eagle sheets do not use a drawing-sheet frame by default, so set it to an empty one
+            // Non-KiCad schematics do not use a drawing-sheet (or if they do, it works differently
+            // to KiCad), so set it to an empty one
             DS_DATA_MODEL& drawingSheet = DS_DATA_MODEL::GetTheInstance();
             drawingSheet.SetEmptyLayout();
 
@@ -978,10 +979,6 @@ bool SCH_EDIT_FRAME::importFile( const wxString& aFileName, int aFileType )
             Schematic().Root().SetFileName( newfilename.GetFullPath() );
             GetScreen()->SetFileName( newfilename.GetFullPath() );
             GetScreen()->SetModify();
-
-            SaveProjectSettings();
-
-            UpdateFileHistory( aFileName );
 
             // Only perform the dangling end test on root sheet.
             GetScreen()->TestDanglingEnds();
