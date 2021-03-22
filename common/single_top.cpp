@@ -130,11 +130,16 @@ wxIMPLEMENT_DYNAMIC_CLASS(HtmlModule, wxModule);
  */
 struct APP_SINGLE_TOP : public wxApp
 {
-    bool OnInit() override
-    {
+    bool Initialize( int& argc, wxChar** argv ) override {
         // Init the platform-specific parts
         if( !KIPLATFORM::APP::PlatformInit() )
             return false;
+
+        return wxApp::Initialize( argc, argv );
+    }
+
+    bool OnInit() override
+    {
 
         // Force wxHtmlWinParser initialization when a wxHtmlWindow is used only
         // in a shared library (.so or .dll file)
