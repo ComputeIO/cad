@@ -130,7 +130,8 @@ wxIMPLEMENT_DYNAMIC_CLASS(HtmlModule, wxModule);
  */
 struct APP_SINGLE_TOP : public wxApp
 {
-    bool Initialize( int& argc, wxChar** argv ) override {
+    bool Initialize( int& argc, wxChar** argv ) override 
+    {
         // Init the platform-specific parts
         if( !KIPLATFORM::APP::PlatformInit() )
             return false;
