@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////
-// C++ code generated with wxFormBuilder (version Oct 26 2018)
+// C++ code generated with wxFormBuilder (version 3.9.0 Feb 10 2021)
 // http://www.wxformbuilder.org/
 //
 // PLEASE DO *NOT* EDIT THIS FILE!
@@ -35,6 +35,7 @@ DIALOG_TEXT_PROPERTIES_BASE::DIALOG_TEXT_PROPERTIES_BASE( wxWindow* parent, wxWi
 	m_MultiLineText->SetViewWhiteSpace( false );
 	m_MultiLineText->SetMarginWidth( 2, 0 );
 	m_MultiLineText->SetIndentationGuides( true );
+	m_MultiLineText->SetReadOnly( false );
 	m_MultiLineText->SetMarginWidth( 1, 0 );
 	m_MultiLineText->SetMarginWidth( 0, 0 );
 	m_MultiLineText->MarkerDefine( wxSTC_MARKNUM_FOLDER, wxSTC_MARK_BOXPLUS );
@@ -220,6 +221,25 @@ DIALOG_TEXT_PROPERTIES_BASE::DIALOG_TEXT_PROPERTIES_BASE( wxWindow* parent, wxWi
 
 
 	bMainSizer->Add( 0, 0, 0, wxTOP, 5 );
+
+	wxBoxSizer* bFont;
+	bFont = new wxBoxSizer( wxHORIZONTAL );
+
+	m_FontNameLabel = new wxStaticText( this, wxID_ANY, _("Font:"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_FontNameLabel->Wrap( -1 );
+	bFont->Add( m_FontNameLabel, 0, wxALIGN_CENTER_VERTICAL|wxALL|wxRIGHT, 5 );
+
+	m_FontName = new wxTextCtrl( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
+	bFont->Add( m_FontName, 7, wxALL|wxEXPAND|wxFIXED_MINSIZE, 5 );
+
+
+	bFont->Add( 0, 0, 1, wxEXPAND, 5 );
+
+	m_FontSelectionButton = new wxButton( this, wxID_ANY, _("Select font..."), wxDefaultPosition, wxDefaultSize, 0 );
+	bFont->Add( m_FontSelectionButton, 0, wxALIGN_CENTER|wxALIGN_RIGHT|wxRIGHT, 5 );
+
+
+	bMainSizer->Add( bFont, 1, wxEXPAND|wxLEFT|wxRIGHT|wxTOP, 10 );
 
 	wxBoxSizer* bMargins;
 	bMargins = new wxBoxSizer( wxVERTICAL );

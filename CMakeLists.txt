@@ -734,6 +734,13 @@ include_directories( SYSTEM ${PIXMAN_INCLUDE_DIR} )
 find_package( Boost 1.59.0 REQUIRED )
 include_directories( SYSTEM ${Boost_INCLUDE_DIR} )
 
+#
+# Libraries required for outline font support.
+find_package( Freetype REQUIRED )
+include_directories( SYSTEM ${FREETYPE_INCLUDE_DIRS} )
+
+find_package( HarfBuzz REQUIRED )
+include_directories( SYSTEM ${HARFBUZZ_INCLUDE_DIRS} )
 
 # Include MinGW resource compiler.
 include( MinGWResourceCompiler )

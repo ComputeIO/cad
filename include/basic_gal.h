@@ -115,6 +115,13 @@ public:
     virtual void DrawPolyline( const VECTOR2D aPointList[], int aListSize ) override;
 
     /**
+     * Draw a polygon representing an outline font glyph.
+     *
+     * @param aPointList is the list of the polygon points.
+     */
+    virtual void DrawGlyph( const SHAPE_POLY_SET& aPolySet, int aNth, int aTotal ) override;
+
+    /**
      * Start and end points are defined as 2D-Vectors.
      *
      * @param aStartPoint   is the start point of the line.
@@ -144,7 +151,7 @@ public:
     }
 
 private:
-    void doDrawPolyline( const std::vector<wxPoint>& aLocalPointList );
+    void doDrawPolyline( const std::vector<wxPoint>& aLocalPointList, bool aFill = false );
 
     // Apply the roation/translation transform to aPoint
     const VECTOR2D transform( const VECTOR2D& aPoint ) const;

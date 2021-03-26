@@ -34,6 +34,8 @@
 #include <gr_basic.h>
 #include <plotter.h>
 #include <trigo.h>
+#include <geometry/shape_poly_set.h>
+#include <font/triangulate.h>
 
 #include <basic_gal.h>
 
@@ -55,7 +57,7 @@ const VECTOR2D BASIC_GAL::transform( const VECTOR2D& aPoint ) const
 
 // Draws a polyline given a list of points already transformed into the local coordinate
 // system.
-void BASIC_GAL::doDrawPolyline( const std::vector<wxPoint>& aLocalPointList )
+void BASIC_GAL::doDrawPolyline( const std::vector<wxPoint>& aLocalPointList, bool aFill )
 {
     if( m_DC )
     {
@@ -68,28 +70,34 @@ void BASIC_GAL::doDrawPolyline( const std::vector<wxPoint>& aLocalPointList )
         {
             for( unsigned ii = 1; ii < aLocalPointList.size(); ++ii )
             {
-                GRCSegm( m_isClipped ? &m_clipBox : NULL, m_DC, aLocalPointList[ ii - 1],
+                GRCSegm( m_isClipped ? &m_clipBox : NULL, m_DC, aLocalPointList[ii - 1],
                          aLocalPointList[ii], GetLineWidth(), m_Color );
             }
         }
     }
     else if( m_plotter )
     {
-        m_plotter->MoveTo( aLocalPointList[0] );
-
-        for( unsigned ii = 1; ii < aLocalPointList.size(); ii++ )
+        if( aFill )
         {
-            m_plotter->LineTo( aLocalPointList[ii] );
+            m_plotter->PlotPoly( aLocalPointList, FILL_TYPE::FILLED_SHAPE );
         }
+        else
+        {
+            m_plotter->MoveTo( aLocalPointList[0] );
 
+            for( unsigned ii = 1; ii < aLocalPointList.size(); ii++ )
+            {
+                m_plotter->LineTo( aLocalPointList[ii] );
+            }
+        }
         m_plotter->PenFinish();
     }
     else if( m_callback )
     {
         for( unsigned ii = 1; ii < aLocalPointList.size(); ii++ )
         {
-            m_callback( aLocalPointList[ ii - 1].x, aLocalPointList[ ii - 1].y,
-                        aLocalPointList[ii].x, aLocalPointList[ii].y, m_callbackData );
+            m_callback( aLocalPointList[ii - 1].x, aLocalPointList[ii - 1].y, aLocalPointList[ii].x,
+                        aLocalPointList[ii].y, m_callbackData );
         }
     }
 }
@@ -117,7 +125,7 @@ void BASIC_GAL::DrawPolyline( const VECTOR2D aPointList[], int aListSize )
     std::vector<wxPoint> polyline_corners;
 
     for( int ii = 0; ii < aListSize; ++ii )
-        polyline_corners.emplace_back( (wxPoint) transform( aPointList[ ii ] ) );
+        polyline_corners.emplace_back( (wxPoint) transform( aPointList[ii] ) );
 
     doDrawPolyline( polyline_corners );
 }
@@ -138,7 +146,7 @@ void BASIC_GAL::DrawLine( const VECTOR2D& aStartPoint, const VECTOR2D& aEndPoint
         else
         {
             GRCSegm( m_isClipped ? &m_clipBox : NULL, m_DC, startVector.x, startVector.y,
-                    endVector.x, endVector.y, GetLineWidth(), 0, m_Color );
+                     endVector.x, endVector.y, GetLineWidth(), 0, m_Color );
         }
     }
     else if( m_plotter )
@@ -149,7 +157,113 @@ void BASIC_GAL::DrawLine( const VECTOR2D& aStartPoint, const VECTOR2D& aEndPoint
     }
     else if( m_callback )
     {
-            m_callback( startVector.x, startVector.y,
-                        endVector.x, endVector.y, m_callbackData );
+        m_callback( startVector.x, startVector.y, endVector.x, endVector.y, m_callbackData );
+    }
+}
+
+
+void BASIC_GAL::DrawGlyph( const SHAPE_POLY_SET& aPolySet, int aNth, int aTotal )
+{
+    if( m_plotter )
+    {
+        switch( m_plotter->GetPlotterType() )
+        {
+        case PLOT_FORMAT::GERBER:
+        {
+            // TODO move this to GERBER_plotter.cpp
+            std::vector<wxPoint> polygon_with_transform;
+            int                  i;
+
+            for( int iOutline = 0; iOutline < aPolySet.OutlineCount(); ++iOutline )
+            {
+                const SHAPE_LINE_CHAIN& outline = aPolySet.COutline( iOutline );
+
+                if( outline.PointCount() < 2 )
+                    continue;
+
+                polygon_with_transform.clear();
+
+                for( i = 0; i < outline.PointCount(); i++ )
+                    polygon_with_transform.emplace_back(
+                            (wxPoint) transform( outline.CPoint( i ) ) );
+
+                m_plotter->SetLayerPolarity( true );
+                m_plotter->PlotPoly( polygon_with_transform, FILL_TYPE::FILLED_SHAPE );
+
+                for( int iHole = 0; iHole < aPolySet.HoleCount( iOutline ); iHole++ )
+                {
+                    const SHAPE_LINE_CHAIN& hole = aPolySet.CHole( iOutline, iHole );
+
+                    if( hole.PointCount() < 2 )
+                        continue;
+
+                    polygon_with_transform.clear();
+
+                    for( i = 0; i < hole.PointCount(); i++ )
+                        polygon_with_transform.emplace_back(
+                                (wxPoint) transform( hole.CPoint( i ) ) );
+
+                    // Note: holes in glyphs are erased, they are not see-thru
+                    m_plotter->SetLayerPolarity( false );
+                    m_plotter->PlotPoly( polygon_with_transform, FILL_TYPE::FILLED_SHAPE );
+                }
+
+                m_plotter->SetLayerPolarity( true );
+                m_plotter->PenFinish();
+            }
+        }
+        break;
+
+        case PLOT_FORMAT::POST:
+        case PLOT_FORMAT::PDF:
+        case PLOT_FORMAT::DXF:
+        case PLOT_FORMAT::HPGL:
+        case PLOT_FORMAT::SVG:
+        {
+            // TODO move this to the appropriate plotter (PDF?) class
+            auto triangleCallback = [&]( int aPolygonIndex, const VECTOR2D& aVertex1,
+                                         const VECTOR2D& aVertex2, const VECTOR2D& aVertex3,
+                                         void* aCallbackData )
+            {
+                std::vector<wxPoint> corners;
+                corners.emplace_back( (wxPoint) transform( aVertex1 ) );
+                corners.emplace_back( (wxPoint) transform( aVertex2 ) );
+                corners.emplace_back( (wxPoint) transform( aVertex3 ) );
+                m_plotter->PlotPoly( corners, FILL_TYPE::FILLED_SHAPE, 0 );
+            };
+
+            // foo
+            Triangulate( aPolySet, triangleCallback );
+            m_plotter->PenFinish();
+        }
+        break;
+
+        default:
+            // TODO: some sort of error notification might be handy
+            break;
+        }
+    }
+    else
+    {
+        for( int iOutline = 0; iOutline < aPolySet.OutlineCount(); ++iOutline )
+        {
+            const SHAPE_LINE_CHAIN& outline = aPolySet.COutline( iOutline );
+            std::vector<wxPoint>    outline_with_transform;
+
+            for( int i = 0; i < outline.PointCount(); i++ )
+                outline_with_transform.emplace_back( (wxPoint) transform( outline.CPoint( i ) ) );
+
+            doDrawPolyline( outline_with_transform, true );
+
+            for( int iHole = 0; iHole < aPolySet.HoleCount( iOutline ); iHole++ )
+            {
+                const SHAPE_LINE_CHAIN& hole = aPolySet.CHole( iOutline, iHole );
+                std::vector<wxPoint>    hole_with_transform;
+                for( int i = 0; i < hole.PointCount(); i++ )
+                    hole_with_transform.emplace_back( (wxPoint) transform( hole.CPoint( i ) ) );
+
+                doDrawPolyline( hole_with_transform, true );
+            }
+        }
     }
 }

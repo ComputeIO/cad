@@ -28,17 +28,17 @@
 
 #include <gal/graphics_abstraction_layer.h>
 #include <gal/definitions.h>
+#include <font/font.h>
+#include <geometry/shape_poly_set.h>
 
-#include <math/util.h>      // for KiROUND
+#include <math/util.h> // for KiROUND
 
 #include <cmath>
 
 using namespace KIGFX;
 
 
-GAL::GAL( GAL_DISPLAY_OPTIONS& aDisplayOptions ) :
-        m_options( aDisplayOptions ),
-        m_strokeFont( this )
+GAL::GAL( GAL_DISPLAY_OPTIONS& aDisplayOptions ) : m_options( aDisplayOptions )
 {
     // Set the default values for the internal variables
     SetIsFill( false );
@@ -77,7 +77,7 @@ GAL::GAL( GAL_DISPLAY_OPTIONS& aDisplayOptions ) :
     // Initialize text properties
     ResetTextAttributes();
 
-    m_strokeFont.LoadNewStrokeFont( newstroke_font, newstroke_font_bufsize );
+    //m_strokeFont.LoadNewStrokeFont( newstroke_font, newstroke_font_bufsize );
 
     // subscribe for settings updates
     m_observerLink = m_options.Subscribe( this );
@@ -104,7 +104,7 @@ bool GAL::updatedGalDisplayOptions( const GAL_DISPLAY_OPTIONS& aOptions )
 
     if( m_options.m_gridStyle != m_gridStyle )
     {
-        m_gridStyle = m_options.m_gridStyle ;
+        m_gridStyle = m_options.m_gridStyle;
         refresh = true;
     }
 
@@ -157,8 +157,8 @@ void GAL::SetTextAttributes( const EDA_TEXT* aText )
 
 void GAL::ResetTextAttributes()
 {
-     // Tiny but non-zero - this will always need setting
-     // there is no built-in default
+    // Tiny but non-zero - this will always need setting
+    // there is no built-in default
     SetGlyphSize( { 1.0, 1.0 } );
 
     SetHorizontalJustify( GR_TEXT_HJUSTIFY_CENTER );
@@ -176,7 +176,7 @@ VECTOR2D GAL::GetTextLineSize( const UTF8& aText ) const
     // Compute the X and Y size of a given text.
     // Because computeTextLineSize expects a one line text,
     // aText is expected to be only one line text.
-    return m_strokeFont.computeTextLineSize( aText );
+    return KIFONT::FONT::GetFont()->ComputeTextLineSize( this, aText );
 }
 
 
@@ -225,10 +225,14 @@ VECTOR2D GAL::GetGridPoint( const VECTOR2D& aPoint ) const
                      KiROUND( ( aPoint.y - m_gridOffset.y ) / m_gridSize.y ) * m_gridSize.y + m_gridOffset.y );
 #else
     // if grid size == 0.0 there is no grid, so use aPoint as grid reference position
-    double cx = m_gridSize.x > 0.0 ? KiROUND( ( aPoint.x - m_gridOffset.x ) / m_gridSize.x ) * m_gridSize.x + m_gridOffset.x
-                                   : aPoint.x;
-    double cy = m_gridSize.y > 0.0 ? KiROUND( ( aPoint.y - m_gridOffset.y ) / m_gridSize.y ) * m_gridSize.y + m_gridOffset.y
-                                   : aPoint.y;
+    double cx = m_gridSize.x > 0.0
+                        ? KiROUND( ( aPoint.x - m_gridOffset.x ) / m_gridSize.x ) * m_gridSize.x
+                                  + m_gridOffset.x
+                        : aPoint.x;
+    double cy = m_gridSize.y > 0.0
+                        ? KiROUND( ( aPoint.y - m_gridOffset.y ) / m_gridSize.y ) * m_gridSize.y
+                                  + m_gridOffset.y
+                        : aPoint.y;
 
     return VECTOR2D( cx, cy );
 #endif
@@ -249,4 +253,22 @@ COLOR4D GAL::getCursorColor() const
         color.a = color.a * 0.5;
 
     return color;
+}
+
+
+void GAL::StrokeText( const wxString& aText, const VECTOR2D& aPosition, double aRotationAngle )
+{
+    KIFONT::FONT::GetFont()->Draw( this, aText, aPosition, aRotationAngle );
+}
+
+
+void GAL::DrawGlyphs( const std::vector<SHAPE_POLY_SET> aGlyphs )
+{
+    int nth = 0;
+    int total = aGlyphs.size();
+    for( const SHAPE_POLY_SET& glyph : aGlyphs )
+    {
+        DrawGlyph( glyph, nth, total );
+        nth++;
+    }
 }

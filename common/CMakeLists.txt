@@ -77,6 +77,8 @@ target_link_libraries( gal
     ${PIXMAN_LIBRARIES}
     ${OPENGL_LIBRARIES}
     ${GDI_PLUS_LIBRARIES}
+	${FREETYPE_LIBRARIES}
+	${HARFBUZZ_LIBRARIES}
 )
 
 target_include_directories( gal PRIVATE
@@ -294,6 +296,16 @@ set( PLUGINS_EAGLE_SRCS
     plugins/eagle/eagle_parser.cpp
     )
 
+set( FONT_SRCS
+    parser/markup_parser.cpp
+    font/font.cpp
+    font/stroke_font.cpp
+	font/outline_font.cpp
+	font/outline_decomposer.cpp
+	font/text_attributes.cpp
+	font/triangulate.cpp
+	)
+
 set( COMMON_SRCS
     ${LIB_KICAD_SRCS}
     ${COMMON_ABOUT_DLG_SRCS}
@@ -305,6 +317,7 @@ set( COMMON_SRCS
     ${PLUGINS_ALTIUM_SRCS}
     ${PLUGINS_CADSTAR_SRCS}
     ${PLUGINS_EAGLE_SRCS}
+	${FONT_SRCS}
     advanced_config.cpp
     array_axis.cpp
     array_options.cpp
@@ -324,6 +337,7 @@ set( COMMON_SRCS
     dialog_shim.cpp
     gr_text.cpp
     dsnlexer.cpp
+    eda_angle.cpp
     eda_base_frame.cpp
     eda_dde.cpp
     eda_doc.cpp
@@ -471,7 +485,7 @@ add_library( common STATIC
 
 target_include_directories( common PRIVATE
     $<TARGET_PROPERTY:libcontext,INTERFACE_INCLUDE_DIRECTORIES>
-    )
+)
 
 add_dependencies( common libcontext )
 add_dependencies( common version_header )
@@ -495,6 +509,15 @@ target_include_directories( common PUBLIC
 target_include_directories( common PUBLIC
     $<TARGET_PROPERTY:compoundfilereader,INTERFACE_INCLUDE_DIRECTORIES>
     )  # used by altium_parser.cpp
+
+# outline font support
+add_dependencies( common earcut )
+add_dependencies( common pegtl )
+target_include_directories( common PUBLIC
+    $<TARGET_PROPERTY:earcut,INTERFACE_INCLUDE_DIRECTORIES>
+    $<TARGET_PROPERTY:pegtl,INTERFACE_INCLUDE_DIRECTORIES>
+    )
+
 
 set( PCB_COMMON_SRCS
     base_screen.cpp

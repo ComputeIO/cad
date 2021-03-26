@@ -44,6 +44,7 @@
 #include <bezier_curves.h>
 #include <math/util.h> // for KiROUND
 #include <trace_helpers.h>
+#include <font/triangulate.h>
 
 #include <wx/frame.h>
 
@@ -2304,4 +2305,28 @@ void OPENGL_GAL::ComputeWorldScreenMatrix()
     m_lookAtPoint.y = roundr( m_lookAtPoint.y, pixelSize );
 
     GAL::ComputeWorldScreenMatrix();
+}
+
+
+void OPENGL_GAL::DrawGlyph( const SHAPE_POLY_SET& aPolySet, int aNth, int aTotal )
+{
+    fillPolygonAsTriangles( aPolySet );
+}
+
+
+void OPENGL_GAL::fillPolygonAsTriangles( const SHAPE_POLY_SET& aPolyList )
+{
+    m_currentManager->Shader( SHADER_NONE );
+    m_currentManager->Color( m_fillColor );
+
+    auto triangleCallback = [&]( int aPolygonIndex, const VECTOR2D& aVertex1,
+                                 const VECTOR2D& aVertex2, const VECTOR2D& aVertex3,
+                                 void* aCallbackData )
+    {
+        m_currentManager->Vertex( aVertex1.x, aVertex1.y, m_layerDepth );
+        m_currentManager->Vertex( aVertex2.x, aVertex2.y, m_layerDepth );
+        m_currentManager->Vertex( aVertex3.x, aVertex3.y, m_layerDepth );
+    };
+
+    Triangulate( aPolyList, triangleCallback );
 }

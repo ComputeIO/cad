@@ -50,7 +50,7 @@
 #include <i18n_utility.h>
 #include <geometry/shape_segment.h>
 #include <geometry/shape_compound.h>
-
+#include <font/font.h>
 
 #include <wx/debug.h>           // for wxASSERT
 #include <wx/string.h>          // wxString, wxArrayString
@@ -256,10 +256,10 @@ EDA_RECT EDA_TEXT::GetTextBox( int aLine, bool aInvertY ) const
     }
 
     // calculate the H and V size
-    const auto& font = basic_gal.GetStrokeFont();
+    KIFONT::FONT* font = KIFONT::FONT::GetFont();
     VECTOR2D    fontSize( GetTextSize() );
     double      penWidth( thickness );
-    int         dx = KiROUND( font.ComputeStringBoundaryLimits( text, fontSize, penWidth ).x );
+    int         dx = KiROUND( font->StringBoundaryLimits( text, fontSize, penWidth ).x );
     int         dy = GetInterline();
 
     // Creates bounding box (rectangle) for horizontal, left and top justified text. The
@@ -276,7 +276,7 @@ EDA_RECT EDA_TEXT::GetTextBox( int aLine, bool aInvertY ) const
     {   // A overbar adds an extra size to the text
         // Height from the base line text of chars like [ or {
         double curr_height = GetTextHeight() * 1.15;
-        double overbarPosition = font.ComputeOverbarVerticalPosition( fontSize.y );
+        double overbarPosition = font->ComputeOverbarVerticalPosition( fontSize.y );
         int    extra_height = KiROUND( overbarPosition - curr_height );
 
         extra_height += thickness / 2;
@@ -291,7 +291,7 @@ EDA_RECT EDA_TEXT::GetTextBox( int aLine, bool aInvertY ) const
         for( unsigned ii = 1; ii < strings.GetCount(); ii++ )
         {
             text = strings.Item( ii );
-            dx = KiROUND( font.ComputeStringBoundaryLimits( text, fontSize, penWidth ).x );
+            dx = KiROUND( font->StringBoundaryLimits( text, fontSize, penWidth ).x );
             textsize.x = std::max( textsize.x, dx );
             textsize.y += dy;
         }

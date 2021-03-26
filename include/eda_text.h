@@ -45,6 +45,13 @@ namespace KIGFX
 using KIGFX::RENDER_SETTINGS;
 using KIGFX::COLOR4D;
 
+namespace KIFONT
+{
+    class FONT;
+    class OUTLINE_FONT;
+    class STROKE_FONT;
+}
+
 /// Frequent text rotations, used with {Set,Get}TextAngle(),
 /// in 0.1 degrees for now, hoping to migrate to degrees eventually.
 #define TEXT_ANGLE_HORIZ 0
