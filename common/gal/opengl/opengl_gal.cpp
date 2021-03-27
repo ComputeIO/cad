@@ -1901,7 +1901,7 @@ void OPENGL_GAL::drawPolyline( const std::function<VECTOR2D( int )>& aPointGette
 {
     wxCHECK( aPointCount >= 2, /* return */ );
 
-    m_currentManager->Color( m_strokeColor.r, m_strokeColor.g, m_strokeColor.b, m_strokeColor.a );
+    m_currentManager->Color( m_strokeColor );
     int i;
 
     for( i = 1; i < aPointCount; ++i )

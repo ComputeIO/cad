@@ -23,13 +23,13 @@ class PCB_LAYER_BOX_SELECTOR;
 #include <wx/sizer.h>
 #include <wx/textctrl.h>
 #include <wx/checkbox.h>
-#include <wx/bmpcbox.h>
-#include <wx/choice.h>
-#include <wx/combobox.h>
 #include <wx/button.h>
 #include <wx/bitmap.h>
 #include <wx/image.h>
 #include <wx/icon.h>
+#include <wx/bmpcbox.h>
+#include <wx/choice.h>
+#include <wx/combobox.h>
 #include <wx/statline.h>
 #include <wx/dialog.h>
 
@@ -50,6 +50,9 @@ class DIALOG_TEXT_PROPERTIES_BASE : public DIALOG_SHIM
 		wxStaticText* m_TextLabel;
 		wxTextCtrl* m_SingleLineText;
 		wxCheckBox* m_cbLocked;
+		wxStaticText* m_FontLabel;
+		wxTextCtrl* m_FontCtrl;
+		wxButton* m_FontSelectionButton;
 		wxStaticText* m_LayerLabel;
 		PCB_LAYER_BOX_SELECTOR* m_LayerSelectionCtrl;
 		wxCheckBox* m_Visible;
@@ -75,9 +78,6 @@ class DIALOG_TEXT_PROPERTIES_BASE : public DIALOG_SHIM
 		wxTextCtrl* m_PositionYCtrl;
 		wxStaticText* m_PositionYUnits;
 		wxCheckBox* m_KeepUpright;
-		wxStaticText* m_FontNameLabel;
-		wxTextCtrl* m_FontName;
-		wxButton* m_FontSelectionButton;
 		wxStaticText* m_statusLine;
 		wxStaticLine* m_staticline;
 		wxStdDialogButtonSizer* m_sdbSizer;

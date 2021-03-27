@@ -399,45 +399,50 @@ VECTOR2D STROKE_FONT::Draw( KIGFX::GAL* aGal, const UTF8& aText, const VECTOR2D&
 
 #ifdef DEBUG
     std::cerr << "STROKE_FONT::Draw( " << ( aGal ? "[aGal]" : "nullptr" ) << ", \"" << aText
-              << "\", " << aPosition << ", " << aRotationAngle << " )" << std::endl;
+              << "\", " << aPosition << ", " << aRotationAngle << " )"
+              << " aGal line width " << (aGal ? aGal->GetLineWidth() : 0.0f)
+              << std::endl;
+    // debug circle width
+    double dbg = 100000;
 #endif
 
     if( aGal )
     {
-#ifdef DEBUG
-        std::cerr << aGal << std::endl;
-#endif
         // Context needs to be saved before any transformations
         aGal->Save();
 
 #ifdef DEBUG
+        double lw = aGal->GetLineWidth();
+        aGal->SetLineWidth( 10.0 );
         //aGal->SetIsStroke( true );
         COLOR4D oldColor = aGal->GetStrokeColor();
         aGal->SetStrokeColor( COLOR4D( 0, 0, 0.6, 0.5 ) );
-        aGal->DrawCircle( aOrigin, 10000 );
+        aGal->DrawCircle( aOrigin, dbg );
 #endif
         aGal->Translate( aOrigin );
 #ifdef DEBUG
         aGal->SetStrokeColor( COLOR4D( 0.7, 0.8, 0.6, 0.5 ) );
-        aGal->DrawCircle( VECTOR2D( 0, 0 ), 13500 );
+        aGal->DrawCircle( VECTOR2D( 0, 0 ), 1.35 * dbg );
 #endif
         aGal->Rotate( aRotationAngle.Invert().AsRadians() );
 #ifdef DEBUG
         aGal->SetStrokeColor( COLOR4D( 0.2, 0.3, 0.4, 0.5 ) );
-        aGal->DrawCircle( VECTOR2D( 0, 0 ), 13000 );
+        aGal->DrawCircle( VECTOR2D( 0, 0 ), 1.3 * dbg );
 
         aGal->SetStrokeColor( COLOR4D( 0.4, 0.5, 0.6, 0.5 ) );
-        aGal->DrawSegment( VECTOR2D( 0, 0 ), VECTOR2D( 13000, 0 ), 10.0 );
+
+        aGal->DrawSegment( VECTOR2D( 0, 0 ), VECTOR2D( 1.3 * dbg, 0 ), 10.0 );
 #endif
         aGal->Translate( aPosition - aOrigin );
 #ifdef DEBUG
         aGal->SetStrokeColor( COLOR4D( 0.8, 0.6, 0.4, 0.5 ) );
-        aGal->DrawCircle( VECTOR2D( 0, 0 ), 12000 );
+        aGal->DrawCircle( VECTOR2D( 0, 0 ), 1.2 * dbg );
 
         aGal->SetStrokeColor( COLOR4D( 0.4, 0.3, 0.2, 0.5 ) );
-        aGal->DrawSegment( VECTOR2D( 0, 0 ), VECTOR2D( 12000, 0 ), 10.0 );
+        aGal->DrawSegment( VECTOR2D( 0, 0 ), VECTOR2D( 1.2 * dbg, 0 ), 10.0 );
 
         aGal->SetStrokeColor( oldColor );
+        aGal->SetLineWidth( lw );
 #endif
     }
 
@@ -464,8 +469,15 @@ VECTOR2D STROKE_FONT::Draw( KIGFX::GAL* aGal, const UTF8& aText, const VECTOR2D&
         aGal->SetIsStroke( true );
         //aGal->SetIsFill( false );
 
-        if( aGal->IsFontBold() )
+        if( aGal->IsFontBold() ) {
+#ifdef DEBUG
+            std::cerr << "[line width was " << aGal->GetLineWidth() << ", ";
+#endif
             aGal->SetLineWidth( aGal->GetLineWidth() * BOLD_FACTOR );
+#ifdef DEBUG
+            std::cerr << "is " << aGal->GetLineWidth() << "]\n";
+#endif
+        }
     }
 
 #if 0
@@ -498,6 +510,9 @@ VECTOR2D STROKE_FONT::Draw( KIGFX::GAL* aGal, const UTF8& aText, const VECTOR2D&
         boundingBox.y += lineBoundingBox.y;
     }
 #else
+#ifdef DEBUG
+    std::cerr << "[aGal line width " << (aGal ? aGal->GetLineWidth() : 0.0f) << "]\n";
+#endif
     VECTOR2D boundingBox = drawSingleLineText( aGal, aText );
 #endif
 
@@ -511,6 +526,10 @@ VECTOR2D STROKE_FONT::Draw( KIGFX::GAL* aGal, const UTF8& aText, const VECTOR2D&
 VECTOR2D STROKE_FONT::drawSingleLineText( KIGFX::GAL* aGal, const UTF8& aText,
                                           const VECTOR2D& aPosition, const EDA_ANGLE& aAngle ) const
 {
+#ifdef DEBUG
+    std::cerr << "drawSingleLineText(...," << aText << ",...) aGal line width "
+              << (aGal ? aGal->GetLineWidth() : 0.0f) << std::endl;
+#endif
     // TODO default for baseGlyphSize just a guess
     VECTOR2D baseGlyphSize( aGal ? aGal->GetGlyphSize() : VECTOR2D( 16.0, 16.0 ) );
     bool     underlined = aGal && aGal->IsFontUnderlined();
@@ -539,23 +558,27 @@ VECTOR2D STROKE_FONT::drawSingleLineText( KIGFX::GAL* aGal, const UTF8& aText,
               << half_thickness << " overbar_italic_comp " << overbar_italic_comp
               << ( italic ? " " : " !" ) << "italic" << ( underlined ? " " : " !" ) << "underlined"
               << ( mirrored ? " " : " !" ) << "mirrored"
-              << " xOffset " << xOffset;
+              << " xOffset " << xOffset
+              << " aGal line width " << (aGal ? aGal->GetLineWidth() : 0.0f);
     //if( aGal )
     //    std::cerr << " aGal " << *aGal;
     std::cerr << std::endl;
+    int dbg = 20000;
 #endif
 
 #ifdef DEBUG
     if( aGal )
     {
         COLOR4D oldColor = aGal->GetStrokeColor();
+        double lw = aGal->GetLineWidth();
+        aGal->SetLineWidth( 10.0 );
         if( mirrored )
             aGal->SetStrokeColor( COLOR4D( 1, 1, 0, 0.08 ) );
         else
             aGal->SetStrokeColor( COLOR4D( 1, 0, 1, 0.08 ) );
-        aGal->DrawCircle( VECTOR2D( xOffset, yOffset ), 22500 );
-        aGal->DrawRectangle( VECTOR2D( -5000, -5000 ), VECTOR2D( 10000, 10000 ) );
-        aGal->DrawRectangle( VECTOR2D( -4500 + xOffset, -4500 + yOffset ), VECTOR2D( 9000, 9000 ) );
+        aGal->DrawCircle( VECTOR2D( xOffset, yOffset ), 1.1 * dbg );
+        aGal->DrawRectangle( VECTOR2D( -dbg / 2, -dbg / 2 ), VECTOR2D( dbg, dbg ) );
+        aGal->SetLineWidth( lw );
         aGal->SetStrokeColor( oldColor );
     }
 #endif
@@ -570,13 +593,14 @@ VECTOR2D STROKE_FONT::drawSingleLineText( KIGFX::GAL* aGal, const UTF8& aText,
         // so we must translate the coordinates by half_thickness on the X axis
         // to place the text inside the 0 to textSize X area.
         aGal->Translate( VECTOR2D( half_thickness, 0 ) );
-#if 1
+#if 0
         // TODO mirrored!
 
         // Adjust the text position to the given horizontal justification
         switch( aGal->GetHorizontalJustify() )
         {
-            //case GR_TEXT_HJUSTIFY_CENTER: aGal->Translate( VECTOR2D( -textSize.x / 2.0, 0 ) ); break;
+            //case GR_TEXT_HJUSTIFY_CENTER:
+            //  aGal->Translate( VECTOR2D( -textSize.x / 2.0, 0 ) ); break;
 
         case GR_TEXT_HJUSTIFY_RIGHT:
             aGal->Translate( VECTOR2D( -textSize.x / 2, 0 ) );
@@ -594,6 +618,24 @@ VECTOR2D STROKE_FONT::drawSingleLineText( KIGFX::GAL* aGal, const UTF8& aText,
 
         default: break;
         }
+#endif
+
+        // center horizontally
+        VECTOR2D hv( -textSize.x / 2, textSize.y / 4 );
+#ifdef DEBUG
+        std::cerr << "Translating with " << hv << "!" << std::endl;
+        double lw = aGal->GetLineWidth();
+        aGal->SetLineWidth( 10.0 );
+        aGal->DrawRectangle( VECTOR2D(0,0), hv);
+        aGal->DrawRectangle( VECTOR2D(-textSize.x / 2, -textSize.y / 2), textSize );
+#endif
+        aGal->Translate( hv );
+#ifdef DEBUG
+        COLOR4D oldColor = aGal->GetStrokeColor();
+        aGal->SetStrokeColor( COLOR4D( 0, 1, 0, 0.2 ) );
+        aGal->DrawRectangle( VECTOR2D(-textSize.x / 2, -textSize.y / 2), textSize );
+        aGal->SetStrokeColor( oldColor );
+        aGal->SetLineWidth( lw );
 #endif
     }
 
@@ -764,8 +806,9 @@ VECTOR2D STROKE_FONT::drawSingleLineText( KIGFX::GAL* aGal, const UTF8& aText,
                 ptCount++;
             }
 
-            if( aGal )
+            if( aGal ) {
                 aGal->DrawPolyline( &ptListScaled[0], ptCount );
+            }
         }
 
         char_count++;

@@ -57,7 +57,7 @@ DIALOG_TEXT_PROPERTIES_BASE::DIALOG_TEXT_PROPERTIES_BASE( wxWindow* parent, wxWi
 	m_MultiLineText->SetSelForeground( true, wxSystemSettings::GetColour( wxSYS_COLOUR_HIGHLIGHTTEXT ) );
 	m_MultiLineText->SetToolTip( _("Enter the text placed on selected layer.") );
 
-	m_MultiLineSizer->Add( m_MultiLineText, 1, wxEXPAND|wxBOTTOM|wxRIGHT|wxLEFT, 5 );
+	m_MultiLineSizer->Add( m_MultiLineText, 1, wxBOTTOM|wxEXPAND|wxLEFT|wxRIGHT, 5 );
 
 
 	bMainSizer->Add( m_MultiLineSizer, 20, wxEXPAND|wxALL, 10 );
@@ -75,10 +75,26 @@ DIALOG_TEXT_PROPERTIES_BASE::DIALOG_TEXT_PROPERTIES_BASE( wxWindow* parent, wxWi
 	bMainSizer->Add( m_SingleLineSizer, 0, wxEXPAND|wxBOTTOM|wxRIGHT|wxLEFT, 10 );
 
 	wxBoxSizer* bSizerLocked;
-	bSizerLocked = new wxBoxSizer( wxHORIZONTAL );
+	bSizerLocked = new wxBoxSizer( wxVERTICAL );
 
 	m_cbLocked = new wxCheckBox( this, wxID_ANY, _("Locked"), wxDefaultPosition, wxDefaultSize, 0 );
 	bSizerLocked->Add( m_cbLocked, 0, wxBOTTOM|wxRIGHT|wxLEFT, 5 );
+
+	wxBoxSizer* bFont;
+	bFont = new wxBoxSizer( wxHORIZONTAL );
+
+	m_FontLabel = new wxStaticText( this, wxID_ANY, _("Font:"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_FontLabel->Wrap( -1 );
+	bFont->Add( m_FontLabel, 0, wxALL, 5 );
+
+	m_FontCtrl = new wxTextCtrl( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
+	bFont->Add( m_FontCtrl, 7, wxALL, 5 );
+
+	m_FontSelectionButton = new wxButton( this, wxID_ANY, _("Select font..."), wxDefaultPosition, wxDefaultSize, 0 );
+	bFont->Add( m_FontSelectionButton, 0, wxALL, 5 );
+
+
+	bSizerLocked->Add( bFont, 1, wxEXPAND, 10 );
 
 
 	bMainSizer->Add( bSizerLocked, 0, wxEXPAND|wxBOTTOM|wxRIGHT|wxLEFT, 10 );
@@ -221,25 +237,6 @@ DIALOG_TEXT_PROPERTIES_BASE::DIALOG_TEXT_PROPERTIES_BASE( wxWindow* parent, wxWi
 
 
 	bMainSizer->Add( 0, 0, 0, wxTOP, 5 );
-
-	wxBoxSizer* bFont;
-	bFont = new wxBoxSizer( wxHORIZONTAL );
-
-	m_FontNameLabel = new wxStaticText( this, wxID_ANY, _("Font:"), wxDefaultPosition, wxDefaultSize, 0 );
-	m_FontNameLabel->Wrap( -1 );
-	bFont->Add( m_FontNameLabel, 0, wxALIGN_CENTER_VERTICAL|wxALL|wxRIGHT, 5 );
-
-	m_FontName = new wxTextCtrl( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
-	bFont->Add( m_FontName, 7, wxALL|wxEXPAND|wxFIXED_MINSIZE, 5 );
-
-
-	bFont->Add( 0, 0, 1, wxEXPAND, 5 );
-
-	m_FontSelectionButton = new wxButton( this, wxID_ANY, _("Select font..."), wxDefaultPosition, wxDefaultSize, 0 );
-	bFont->Add( m_FontSelectionButton, 0, wxALIGN_CENTER|wxALIGN_RIGHT|wxRIGHT, 5 );
-
-
-	bMainSizer->Add( bFont, 1, wxEXPAND|wxLEFT|wxRIGHT|wxTOP, 10 );
 
 	wxBoxSizer* bMargins;
 	bMargins = new wxBoxSizer( wxVERTICAL );
