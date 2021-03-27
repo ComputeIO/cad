@@ -53,26 +53,29 @@
 #include <gr_text.h>
 #include <utility>
 #include <vector>
-
+#include <font/font.h>
+#include <font/outline_font.h>
+#include <font/text_attributes.h>
+#include <font/triangulate.h>
 
 // These variables are parameters used in addTextSegmToContainer.
 // But addTextSegmToContainer is a call-back function,
 // so we cannot send them as arguments.
-static int s_textWidth;
+static int                s_textWidth;
 static CONTAINER_2D_BASE* s_dstcontainer = nullptr;
-static float s_biuTo3Dunits;
-static const BOARD_ITEM* s_boardItem = nullptr;
+static float              s_biuTo3Dunits;
+static const BOARD_ITEM*  s_boardItem = nullptr;
 
 
 // This is a call back function, used by GRText to draw the 3D text shape:
 void addTextSegmToContainer( int x0, int y0, int xf, int yf, void* aData )
 {
     const SFVEC2F start3DU( x0 * s_biuTo3Dunits, -y0 * s_biuTo3Dunits );
-    const SFVEC2F end3DU  ( xf * s_biuTo3Dunits, -yf * s_biuTo3Dunits );
+    const SFVEC2F end3DU( xf * s_biuTo3Dunits, -yf * s_biuTo3Dunits );
 
     if( Is_segment_a_circle( start3DU, end3DU ) )
         s_dstcontainer->Add( new FILLED_CIRCLE_2D( start3DU, ( s_textWidth / 2 ) * s_biuTo3Dunits,
-                                                   *s_boardItem) );
+                                                   *s_boardItem ) );
     else
         s_dstcontainer->Add( new ROUND_SEGMENT_2D( start3DU, end3DU, s_textWidth * s_biuTo3Dunits,
                                                    *s_boardItem ) );
@@ -90,45 +93,82 @@ void BOARD_ADAPTER::addShapeWithClearance( const PCB_TEXT* aText, CONTAINER_2D_B
     if( aText->IsMirrored() )
         size.x = -size.x;
 
-    s_boardItem    = (const BOARD_ITEM *) &aText;
+    s_boardItem = (const BOARD_ITEM*) &aText;
     s_dstcontainer = aDstContainer;
-    s_textWidth    = aText->GetEffectiveTextPenWidth() + ( 2 * aClearanceValue );
+    s_textWidth = aText->GetEffectiveTextPenWidth() + ( 2 * aClearanceValue );
     s_biuTo3Dunits = m_biuTo3Dunits;
 
     // not actually used, but needed by GRText
-    const COLOR4D dummy_color = COLOR4D::BLACK;
-    bool          forceBold = true;
-    int           penWidth = 0;         // force max width for bold
+    const COLOR4D        dummy_color = COLOR4D::BLACK;
+    bool                 forceBold = true;
+    int                  penWidth = 0; // force max width for bold
+    wxArrayString        strings_list;
+    std::vector<wxPoint> positions;
 
     if( aText->IsMultilineAllowed() )
     {
-        wxArrayString strings_list;
         wxStringSplit( aText->GetShownText(), strings_list, '\n' );
-        std::vector<wxPoint> positions;
-        positions.reserve( strings_list.Count() );
-        aText->GetLinePositions( positions, strings_list.Count() );
-
-        for( unsigned ii = 0; ii < strings_list.Count(); ++ii )
-        {
-            wxString txt = strings_list.Item( ii );
-
-            GRText( nullptr, positions[ii], dummy_color, txt, aText->GetTextAngle(), size,
-                    aText->GetHorizJustify(), aText->GetVertJustify(), penWidth,
-                    aText->IsItalic(), forceBold, addTextSegmToContainer );
-        }
     }
     else
     {
-        GRText( nullptr, aText->GetTextPos(), dummy_color, aText->GetShownText(),
-                aText->GetTextAngle(), size, aText->GetHorizJustify(), aText->GetVertJustify(),
-                penWidth, aText->IsItalic(), forceBold, addTextSegmToContainer );
+        strings_list.Add( aText->GetShownText() );
+    }
+
+    positions.reserve( strings_list.Count() );
+    aText->GetLinePositions( positions, strings_list.Count() );
+
+    KIFONT::FONT*               font = aText->GetFont();
+    const KIFONT::OUTLINE_FONT* outlineFont = dynamic_cast<const KIFONT::OUTLINE_FONT*>( font );
+    TEXT_ATTRIBUTES             attributes;
+    TEXT_STYLE_FLAGS            textStyleFlags;
+
+    for( unsigned ii = 0; ii < strings_list.Count(); ++ii )
+    {
+        wxString txt = strings_list.Item( ii );
+
+        if( font->IsOutline() )
+        {
+            const int lineWidth = aText->GetEffectiveTextPenWidth() + ( 2 * aClearanceValue );
+
+            std::vector<SHAPE_POLY_SET> glyphs;
+            // aText->DrawTextAsPolygon( glyphs, aLayerId );
+            outlineFont->GetLinesAsPolygon( glyphs, txt, aText->GetTextSize(), positions[ii],
+                                            attributes, aText->IsMirrored(), textStyleFlags );
+
+            const VECTOR2D conversionFactor( m_biuTo3Dunits, -m_biuTo3Dunits );
+
+            auto triangleCallback = [&]( int aPolygonIndex, const VECTOR2D& aVertex1,
+                                         const VECTOR2D& aVertex2, const VECTOR2D& aVertex3,
+                                         void* aCallbackData )
+            {
+                SFVEC2F v1( aVertex1.x * conversionFactor.x, aVertex1.y * conversionFactor.y );
+                SFVEC2F v2( aVertex2.x * conversionFactor.x, aVertex2.y * conversionFactor.y );
+                SFVEC2F v3( aVertex3.x * conversionFactor.x, aVertex3.y * conversionFactor.y );
+
+                aDstContainer->Add( new TRIANGLE_2D( v1, v2, v3, *aText ) );
+            };
+
+            for( SHAPE_POLY_SET& glyph : glyphs )
+            {
+                SHAPE_POLY_SET polyList;
+
+                // TODO: triangulate all glyphs in one go - needed for adding a label background rect
+                Triangulate( glyph, triangleCallback );
+            }
+        }
+        else
+        {
+            GRText( nullptr, positions[ii], dummy_color, txt, aText->GetTextAngle(), size,
+                    aText->GetHorizJustify(), aText->GetVertJustify(), penWidth, aText->IsItalic(),
+                    forceBold, addTextSegmToContainer );
+        }
     }
 }
 
 
 void BOARD_ADAPTER::addShapeWithClearance( const DIMENSION_BASE* aDimension,
-                                           CONTAINER_2D_BASE* aDstContainer,
-                                           PCB_LAYER_ID aLayerId, int aClearanceValue )
+                                           CONTAINER_2D_BASE* aDstContainer, PCB_LAYER_ID aLayerId,
+                                           int aClearanceValue )
 {
     addShapeWithClearance( &aDimension->Text(), aDstContainer, aLayerId, aClearanceValue );
 
@@ -165,24 +205,21 @@ void BOARD_ADAPTER::addShapeWithClearance( const DIMENSION_BASE* aDimension,
             break;
         }
 
-        default:
-            break;
+        default: break;
         }
-
     }
-
 }
 
 
 // Based on
 // void FOOTPRINT::TransformFPShapesWithClearanceToPolygonSet
 // board_items_to_polygon_shape_transform.cpp#L204
-void BOARD_ADAPTER::addFootprintShapesWithClearance( const FOOTPRINT* aFootprint,
+void BOARD_ADAPTER::addFootprintShapesWithClearance( const FOOTPRINT*   aFootprint,
                                                      CONTAINER_2D_BASE* aDstContainer,
                                                      PCB_LAYER_ID aLayerId, int aInflateValue )
 {
-    std::vector<FP_TEXT*> texts;  // List of FP_TEXT to convert
-    FP_SHAPE* outline;
+    std::vector<FP_TEXT*> texts; // List of FP_TEXT to convert
+    FP_SHAPE*             outline;
 
     for( BOARD_ITEM* item : aFootprint->GraphicalItems() )
     {
@@ -209,8 +246,7 @@ void BOARD_ADAPTER::addFootprintShapesWithClearance( const FOOTPRINT* aFootprint
         }
         break;
 
-        default:
-            break;
+        default: break;
         }
     }
 
@@ -221,7 +257,7 @@ void BOARD_ADAPTER::addFootprintShapesWithClearance( const FOOTPRINT* aFootprint
     if( aFootprint->Value().GetLayer() == aLayerId && aFootprint->Value().IsVisible() )
         texts.push_back( &aFootprint->Value() );
 
-    s_boardItem    = (const BOARD_ITEM *)&aFootprint->Value();
+    s_boardItem = (const BOARD_ITEM*) &aFootprint->Value();
     s_dstcontainer = aDstContainer;
     s_biuTo3Dunits = m_biuTo3Dunits;
 
@@ -230,7 +266,7 @@ void BOARD_ADAPTER::addFootprintShapesWithClearance( const FOOTPRINT* aFootprint
         s_textWidth = text->GetEffectiveTextPenWidth() + ( 2 * aInflateValue );
         wxSize size = text->GetTextSize();
         bool   forceBold = true;
-        int    penWidth = 0;        // force max width for bold
+        int    penWidth = 0; // force max width for bold
 
         if( text->IsMirrored() )
             size.x = -size.x;
@@ -260,24 +296,24 @@ void BOARD_ADAPTER::createTrack( const TRACK* aTrack, CONTAINER_2D_BASE* aDstCon
     case PCB_ARC_T:
     {
         const ARC* arc = static_cast<const ARC*>( aTrack );
-        VECTOR2D center( arc->GetCenter() );
-        double arc_angle = arc->GetAngle();
-        double radius = arc->GetRadius();
-        int arcsegcount = GetArcToSegmentCount( radius, Millimeter2iu( 0.005), arc_angle/10 );
+        VECTOR2D   center( arc->GetCenter() );
+        double     arc_angle = arc->GetAngle();
+        double     radius = arc->GetRadius();
+        int arcsegcount = GetArcToSegmentCount( radius, Millimeter2iu( 0.005 ), arc_angle / 10 );
         int circlesegcount;
 
         // We need a circle to segment count. However, the arc angle can be small, and the
         // radius very big. so we calculate a reasonable value for circlesegcount.
-        if( arcsegcount <= 1 )  // The arc will be approximated by a segment
+        if( arcsegcount <= 1 ) // The arc will be approximated by a segment
             circlesegcount = 1;
         else
         {
-            double cnt = arcsegcount * 3600/std::abs( arc_angle );
+            double cnt = arcsegcount * 3600 / std::abs( arc_angle );
 
 #define SEG_CNT_MAX 128
             if( cnt < SEG_CNT_MAX )
             {
-                circlesegcount = (int)cnt;
+                circlesegcount = (int) cnt;
 
                 if( circlesegcount == 0 )
                     circlesegcount = 1;
@@ -288,26 +324,26 @@ void BOARD_ADAPTER::createTrack( const TRACK* aTrack, CONTAINER_2D_BASE* aDstCon
             }
         }
 
-        transformArcToSegments( wxPoint( center.x, center.y ), arc->GetStart(),
-                                arc_angle, circlesegcount,
-                                arc->GetWidth() + 2 * aClearanceValue, aDstContainer, *arc );
+        transformArcToSegments( wxPoint( center.x, center.y ), arc->GetStart(), arc_angle,
+                                circlesegcount, arc->GetWidth() + 2 * aClearanceValue,
+                                aDstContainer, *arc );
         break;
     }
 
-    case PCB_TRACE_T:    // Track is a usual straight segment
+    case PCB_TRACE_T: // Track is a usual straight segment
     {
         SFVEC2F end3DU( aTrack->GetEnd().x * m_biuTo3Dunits, -aTrack->GetEnd().y * m_biuTo3Dunits );
 
         // Cannot add segments that have the same start and end point
         if( Is_segment_a_circle( start3DU, end3DU ) )
         {
-            const float radius = ((aTrack->GetWidth() / 2) + aClearanceValue) * m_biuTo3Dunits;
+            const float radius = ( ( aTrack->GetWidth() / 2 ) + aClearanceValue ) * m_biuTo3Dunits;
 
             aDstContainer->Add( new FILLED_CIRCLE_2D( start3DU, radius, *aTrack ) );
         }
         else
         {
-            const float width = (aTrack->GetWidth() + 2 * aClearanceValue ) * m_biuTo3Dunits;
+            const float width = ( aTrack->GetWidth() + 2 * aClearanceValue ) * m_biuTo3Dunits;
 
             aDstContainer->Add( new ROUND_SEGMENT_2D( start3DU, end3DU, width, *aTrack ) );
         }
@@ -315,14 +351,13 @@ void BOARD_ADAPTER::createTrack( const TRACK* aTrack, CONTAINER_2D_BASE* aDstCon
         break;
     }
 
-    default:
-        break;
+    default: break;
     }
 }
 
 
 void BOARD_ADAPTER::createPadWithClearance( const PAD* aPad, CONTAINER_2D_BASE* aDstContainer,
-                                               PCB_LAYER_ID aLayer, wxSize aClearanceValue ) const
+                                            PCB_LAYER_ID aLayer, wxSize aClearanceValue ) const
 {
     SHAPE_POLY_SET poly;
 
@@ -334,7 +369,7 @@ void BOARD_ADAPTER::createPadWithClearance( const PAD* aPad, CONTAINER_2D_BASE* 
     // is only the size of the anchor), so for those we punt and just use aClearanceValue.x.
 
     if( ( aClearanceValue.x < 0 || aClearanceValue.x != aClearanceValue.y )
-            && aPad->GetShape() != PAD_SHAPE_CUSTOM )
+        && aPad->GetShape() != PAD_SHAPE_CUSTOM )
     {
         PAD dummy( *aPad );
         dummy.SetSize( aPad->GetSize() + aClearanceValue + aClearanceValue );
@@ -352,39 +387,37 @@ void BOARD_ADAPTER::createPadWithClearance( const PAD* aPad, CONTAINER_2D_BASE* 
             case SH_SEGMENT:
             {
                 const SHAPE_SEGMENT* seg = (SHAPE_SEGMENT*) shape;
-                const SFVEC2F        start3DU(  seg->GetSeg().A.x * m_biuTo3Dunits,
-                                               -seg->GetSeg().A.y * m_biuTo3Dunits );
-                const SFVEC2F        end3DU  (  seg->GetSeg().B.x * m_biuTo3Dunits,
-                                               -seg->GetSeg().B.y * m_biuTo3Dunits );
+                const SFVEC2F        start3DU( seg->GetSeg().A.x * m_biuTo3Dunits,
+                                        -seg->GetSeg().A.y * m_biuTo3Dunits );
+                const SFVEC2F        end3DU( seg->GetSeg().B.x * m_biuTo3Dunits,
+                                      -seg->GetSeg().B.y * m_biuTo3Dunits );
                 const int            width = seg->GetWidth() + aClearanceValue.x * 2;
 
-                 // Cannot add segments that have the same start and end point
+                // Cannot add segments that have the same start and end point
                 if( Is_segment_a_circle( start3DU, end3DU ) )
                 {
-                    aDstContainer->Add( new FILLED_CIRCLE_2D( start3DU,
-                                                             ( width / 2) * m_biuTo3Dunits,
-                                                             *aPad ) );
+                    aDstContainer->Add( new FILLED_CIRCLE_2D(
+                            start3DU, ( width / 2 ) * m_biuTo3Dunits, *aPad ) );
                 }
                 else
                 {
                     aDstContainer->Add( new ROUND_SEGMENT_2D( start3DU, end3DU,
-                                                              width * m_biuTo3Dunits,
-                                                              *aPad ) );
+                                                              width * m_biuTo3Dunits, *aPad ) );
                 }
             }
-                break;
+            break;
 
             case SH_CIRCLE:
             {
                 const SHAPE_CIRCLE* circle = (SHAPE_CIRCLE*) shape;
                 const int           radius = circle->GetRadius() + aClearanceValue.x;
-                const SFVEC2F       center(  circle->GetCenter().x * m_biuTo3Dunits,
-                                             -circle->GetCenter().y * m_biuTo3Dunits );
+                const SFVEC2F       center( circle->GetCenter().x * m_biuTo3Dunits,
+                                      -circle->GetCenter().y * m_biuTo3Dunits );
 
-                aDstContainer->Add( new FILLED_CIRCLE_2D( center, radius * m_biuTo3Dunits,
-                                                          *aPad ) );
+                aDstContainer->Add(
+                        new FILLED_CIRCLE_2D( center, radius * m_biuTo3Dunits, *aPad ) );
             }
-                break;
+            break;
 
             case SH_RECT:
             {
@@ -396,46 +429,42 @@ void BOARD_ADAPTER::createPadWithClearance( const PAD* aPad, CONTAINER_2D_BASE* 
                 poly.Append( rect->GetPosition() + rect->GetSize() );
                 poly.Append( rect->GetPosition().x, rect->GetPosition().y + rect->GetSize().y );
             }
-                break;
+            break;
 
             case SH_SIMPLE:
                 poly.AddOutline( static_cast<const SHAPE_SIMPLE*>( shape )->Vertices() );
                 break;
 
-            case SH_POLY_SET:
-                poly = *(SHAPE_POLY_SET*) shape;
-                break;
+            case SH_POLY_SET: poly = *(SHAPE_POLY_SET*) shape; break;
 
             case SH_ARC:
             {
-                SHAPE_ARC* arc = (SHAPE_ARC*) shape;
+                SHAPE_ARC*       arc = (SHAPE_ARC*) shape;
                 SHAPE_LINE_CHAIN l = arc->ConvertToPolyline();
 
                 for( int i = 0; i < l.SegmentCount(); i++ )
                 {
                     SHAPE_SEGMENT seg( l.Segment( i ).A, l.Segment( i ).B, arc->GetWidth() );
-                    const SFVEC2F start3DU(  seg.GetSeg().A.x * m_biuTo3Dunits,
-                                             -seg.GetSeg().A.y * m_biuTo3Dunits );
+                    const SFVEC2F start3DU( seg.GetSeg().A.x * m_biuTo3Dunits,
+                                            -seg.GetSeg().A.y * m_biuTo3Dunits );
                     const SFVEC2F end3DU( seg.GetSeg().B.x * m_biuTo3Dunits,
                                           -seg.GetSeg().B.y * m_biuTo3Dunits );
-                    const int width = arc->GetWidth() + aClearanceValue.x * 2;
+                    const int     width = arc->GetWidth() + aClearanceValue.x * 2;
 
-                     // Cannot add segments that have the same start and end point
+                    // Cannot add segments that have the same start and end point
                     if( Is_segment_a_circle( start3DU, end3DU ) )
                     {
-                        aDstContainer->Add( new FILLED_CIRCLE_2D( start3DU,
-                                                                 ( width / 2) * m_biuTo3Dunits,
-                                                                 *aPad ) );
+                        aDstContainer->Add( new FILLED_CIRCLE_2D(
+                                start3DU, ( width / 2 ) * m_biuTo3Dunits, *aPad ) );
                     }
                     else
                     {
                         aDstContainer->Add( new ROUND_SEGMENT_2D( start3DU, end3DU,
-                                                                  width * m_biuTo3Dunits,
-                                                                  *aPad ) );
+                                                                  width * m_biuTo3Dunits, *aPad ) );
                     }
                 }
             }
-                break;
+            break;
 
             default:
                 wxFAIL_MSG( "BOARD_ADAPTER::createPadWithClearance no implementation for "
@@ -466,26 +495,23 @@ OBJECT_2D* BOARD_ADAPTER::createPadWithDrill( const PAD* aPad, int aInflateValue
         return nullptr;
     }
 
-    if( drillSize.x == drillSize.y )    // usual round hole
+    if( drillSize.x == drillSize.y ) // usual round hole
     {
         const int radius = ( drillSize.x / 2 ) + aInflateValue;
 
-        const SFVEC2F center(  aPad->GetPosition().x * m_biuTo3Dunits,
+        const SFVEC2F center( aPad->GetPosition().x * m_biuTo3Dunits,
                               -aPad->GetPosition().y * m_biuTo3Dunits );
 
         return new FILLED_CIRCLE_2D( center, radius * m_biuTo3Dunits, *aPad );
-
     }
-    else                                // Oblong hole
+    else // Oblong hole
     {
         const SHAPE_SEGMENT* seg = aPad->GetEffectiveHoleShape();
-        float width = seg->GetWidth() + aInflateValue * 2;
+        float                width = seg->GetWidth() + aInflateValue * 2;
 
-        SFVEC2F start3DU(  seg->GetSeg().A.x * m_biuTo3Dunits,
-                          -seg->GetSeg().A.y * m_biuTo3Dunits );
+        SFVEC2F start3DU( seg->GetSeg().A.x * m_biuTo3Dunits, -seg->GetSeg().A.y * m_biuTo3Dunits );
 
-        SFVEC2F end3DU (  seg->GetSeg().B.x * m_biuTo3Dunits,
-                         -seg->GetSeg().B.y * m_biuTo3Dunits );
+        SFVEC2F end3DU( seg->GetSeg().B.x * m_biuTo3Dunits, -seg->GetSeg().B.y * m_biuTo3Dunits );
 
         return new ROUND_SEGMENT_2D( start3DU, end3DU, width * m_biuTo3Dunits, *aPad );
     }
@@ -494,11 +520,10 @@ OBJECT_2D* BOARD_ADAPTER::createPadWithDrill( const PAD* aPad, int aInflateValue
 }
 
 
-void BOARD_ADAPTER::addPadsWithClearance( const FOOTPRINT* aFootprint,
-                                          CONTAINER_2D_BASE* aDstContainer,
-                                          PCB_LAYER_ID aLayerId, int aInflateValue,
-                                          bool aSkipNPTHPadsWihNoCopper, bool aSkipPlatedPads,
-                                          bool aSkipNonPlatedPads )
+void BOARD_ADAPTER::addPadsWithClearance( const FOOTPRINT*   aFootprint,
+                                          CONTAINER_2D_BASE* aDstContainer, PCB_LAYER_ID aLayerId,
+                                          int aInflateValue, bool aSkipNPTHPadsWihNoCopper,
+                                          bool aSkipPlatedPads, bool aSkipNonPlatedPads )
 {
     for( PAD* pad : aFootprint->Pads() )
     {
@@ -527,14 +552,13 @@ void BOARD_ADAPTER::addPadsWithClearance( const FOOTPRINT* aFootprint,
                         continue;
                     break;
 
-                default:
-                    break;
+                default: break;
                 }
             }
         }
 
-        const bool isPlated = ( ( aLayerId == F_Cu ) && pad->FlashLayer( F_Mask ) ) ||
-                              ( ( aLayerId == B_Cu ) && pad->FlashLayer( B_Mask ) );
+        const bool isPlated = ( ( aLayerId == F_Cu ) && pad->FlashLayer( F_Mask ) )
+                              || ( ( aLayerId == B_Cu ) && pad->FlashLayer( B_Mask ) );
 
         if( aSkipPlatedPads && isPlated )
             continue;
@@ -553,12 +577,9 @@ void BOARD_ADAPTER::addPadsWithClearance( const FOOTPRINT* aFootprint,
             break;
 
         case F_Paste:
-        case B_Paste:
-            margin += pad->GetSolderPasteMargin();
-            break;
+        case B_Paste: margin += pad->GetSolderPasteMargin(); break;
 
-        default:
-            break;
+        default: break;
         }
 
         createPadWithClearance( pad, aDstContainer, aLayerId, margin );
@@ -574,7 +595,7 @@ void BOARD_ADAPTER::transformArcToSegments( const wxPoint& aCentre, const wxPoin
                                             const BOARD_ITEM& aBoardItem )
 {
     wxPoint arc_start, arc_end;
-    int     delta = 3600 / aCircleToSegmentsCount;   // rotate angle in 0.1 degree
+    int     delta = 3600 / aCircleToSegmentsCount; // rotate angle in 0.1 degree
 
     arc_end = arc_start = aStart;
 
@@ -590,8 +611,8 @@ void BOARD_ADAPTER::transformArcToSegments( const wxPoint& aCentre, const wxPoin
     }
 
     // Compute the ends of segments and creates poly
-    wxPoint curr_end    = arc_start;
-    wxPoint curr_start  = arc_start;
+    wxPoint curr_end = arc_start;
+    wxPoint curr_start = arc_start;
 
     for( int ii = delta; ii < aArcAngle; ii += delta )
     {
@@ -599,17 +620,17 @@ void BOARD_ADAPTER::transformArcToSegments( const wxPoint& aCentre, const wxPoin
         RotatePoint( &curr_end, aCentre, -ii );
 
         const SFVEC2F start3DU( curr_start.x * m_biuTo3Dunits, -curr_start.y * m_biuTo3Dunits );
-        const SFVEC2F end3DU  ( curr_end.x   * m_biuTo3Dunits, -curr_end.y   * m_biuTo3Dunits );
+        const SFVEC2F end3DU( curr_end.x * m_biuTo3Dunits, -curr_end.y * m_biuTo3Dunits );
 
         if( Is_segment_a_circle( start3DU, end3DU ) )
         {
-            aDstContainer->Add( new FILLED_CIRCLE_2D( start3DU, ( aWidth / 2 ) * m_biuTo3Dunits,
-                                                      aBoardItem ) );
+            aDstContainer->Add(
+                    new FILLED_CIRCLE_2D( start3DU, ( aWidth / 2 ) * m_biuTo3Dunits, aBoardItem ) );
         }
         else
         {
-            aDstContainer->Add( new ROUND_SEGMENT_2D( start3DU, end3DU, aWidth * m_biuTo3Dunits,
-                                                      aBoardItem ) );
+            aDstContainer->Add(
+                    new ROUND_SEGMENT_2D( start3DU, end3DU, aWidth * m_biuTo3Dunits, aBoardItem ) );
         }
 
         curr_start = curr_end;
@@ -618,17 +639,17 @@ void BOARD_ADAPTER::transformArcToSegments( const wxPoint& aCentre, const wxPoin
     if( curr_end != arc_end )
     {
         const SFVEC2F start3DU( curr_end.x * m_biuTo3Dunits, -curr_end.y * m_biuTo3Dunits );
-        const SFVEC2F end3DU  ( arc_end.x  * m_biuTo3Dunits, -arc_end.y  * m_biuTo3Dunits );
+        const SFVEC2F end3DU( arc_end.x * m_biuTo3Dunits, -arc_end.y * m_biuTo3Dunits );
 
         if( Is_segment_a_circle( start3DU, end3DU ) )
         {
-            aDstContainer->Add( new FILLED_CIRCLE_2D( start3DU, ( aWidth / 2 ) * m_biuTo3Dunits,
-                                                      aBoardItem ) );
+            aDstContainer->Add(
+                    new FILLED_CIRCLE_2D( start3DU, ( aWidth / 2 ) * m_biuTo3Dunits, aBoardItem ) );
         }
         else
         {
-            aDstContainer->Add( new ROUND_SEGMENT_2D( start3DU, end3DU, aWidth * m_biuTo3Dunits,
-                                                      aBoardItem ) );
+            aDstContainer->Add(
+                    new ROUND_SEGMENT_2D( start3DU, end3DU, aWidth * m_biuTo3Dunits, aBoardItem ) );
         }
     }
 }
@@ -637,7 +658,7 @@ void BOARD_ADAPTER::transformArcToSegments( const wxPoint& aCentre, const wxPoin
 // Based on
 // TransformShapeWithClearanceToPolygon
 // board_items_to_polygon_shape_transform.cpp#L431
-void BOARD_ADAPTER::addShapeWithClearance( const PCB_SHAPE* aShape,
+void BOARD_ADAPTER::addShapeWithClearance( const PCB_SHAPE*   aShape,
                                            CONTAINER_2D_BASE* aDstContainer, PCB_LAYER_ID aLayerId,
                                            int aClearanceValue )
 {
@@ -663,15 +684,15 @@ void BOARD_ADAPTER::addShapeWithClearance( const PCB_SHAPE* aShape,
         else
             aDstContainer->Add( new RING_2D( center3DU, inner_radius, outer_radius, *aShape ) );
     }
-        break;
+    break;
 
     case S_RECT:
         if( aShape->IsFilled() )
         {
             SHAPE_POLY_SET polyList;
 
-            aShape->TransformShapeWithClearanceToPolygon( polyList, aLayerId, 0,
-                                                          ARC_HIGH_DEF, ERROR_INSIDE );
+            aShape->TransformShapeWithClearanceToPolygon( polyList, aLayerId, 0, ARC_HIGH_DEF,
+                                                          ERROR_INSIDE );
 
             polyList.Simplify( SHAPE_POLY_SET::PM_FAST );
 
@@ -681,10 +702,10 @@ void BOARD_ADAPTER::addShapeWithClearance( const PCB_SHAPE* aShape,
         {
             std::vector<wxPoint> pts = aShape->GetRectCorners();
 
-            const SFVEC2F topLeft3DU(  pts[0].x * m_biuTo3Dunits, -pts[0].y * m_biuTo3Dunits );
+            const SFVEC2F topLeft3DU( pts[0].x * m_biuTo3Dunits, -pts[0].y * m_biuTo3Dunits );
             const SFVEC2F topRight3DU( pts[1].x * m_biuTo3Dunits, -pts[1].y * m_biuTo3Dunits );
             const SFVEC2F botRight3DU( pts[2].x * m_biuTo3Dunits, -pts[2].y * m_biuTo3Dunits );
-            const SFVEC2F botLeft3DU(  pts[3].x * m_biuTo3Dunits, -pts[3].y * m_biuTo3Dunits );
+            const SFVEC2F botLeft3DU( pts[3].x * m_biuTo3Dunits, -pts[3].y * m_biuTo3Dunits );
 
             aDstContainer->Add( new ROUND_SEGMENT_2D( topLeft3DU, topRight3DU,
                                                       linewidth * m_biuTo3Dunits, *aShape ) );
@@ -711,18 +732,18 @@ void BOARD_ADAPTER::addShapeWithClearance( const PCB_SHAPE* aShape,
         const SFVEC2F start3DU( aShape->GetStart().x * m_biuTo3Dunits,
                                 -aShape->GetStart().y * m_biuTo3Dunits );
 
-        const SFVEC2F end3DU  ( aShape->GetEnd().x * m_biuTo3Dunits,
-                                -aShape->GetEnd().y * m_biuTo3Dunits );
+        const SFVEC2F end3DU( aShape->GetEnd().x * m_biuTo3Dunits,
+                              -aShape->GetEnd().y * m_biuTo3Dunits );
 
         if( Is_segment_a_circle( start3DU, end3DU ) )
         {
-            aDstContainer->Add( new FILLED_CIRCLE_2D( start3DU, ( linewidth / 2 ) * m_biuTo3Dunits,
-                                                     *aShape ) );
+            aDstContainer->Add(
+                    new FILLED_CIRCLE_2D( start3DU, ( linewidth / 2 ) * m_biuTo3Dunits, *aShape ) );
         }
         else
         {
-            aDstContainer->Add( new ROUND_SEGMENT_2D( start3DU, end3DU, linewidth * m_biuTo3Dunits,
-                                                      *aShape ) );
+            aDstContainer->Add(
+                    new ROUND_SEGMENT_2D( start3DU, end3DU, linewidth * m_biuTo3Dunits, *aShape ) );
         }
     }
     break;
@@ -732,8 +753,8 @@ void BOARD_ADAPTER::addShapeWithClearance( const PCB_SHAPE* aShape,
     {
         SHAPE_POLY_SET polyList;
 
-        aShape->TransformShapeWithClearanceToPolygon( polyList, aLayerId, 0,
-                                                      ARC_HIGH_DEF, ERROR_INSIDE );
+        aShape->TransformShapeWithClearanceToPolygon( polyList, aLayerId, 0, ARC_HIGH_DEF,
+                                                      ERROR_INSIDE );
 
         polyList.Simplify( SHAPE_POLY_SET::PM_FAST );
 
@@ -755,7 +776,7 @@ void BOARD_ADAPTER::addShapeWithClearance( const PCB_SHAPE* aShape,
 // Based on
 // TransformSolidAreasShapesToPolygonSet
 // board_items_to_polygon_shape_transform.cpp
-void BOARD_ADAPTER::addSolidAreasShapes( const ZONE* aZoneContainer,
+void BOARD_ADAPTER::addSolidAreasShapes( const ZONE*        aZoneContainer,
                                          CONTAINER_2D_BASE* aDstContainer, PCB_LAYER_ID aLayerId )
 {
     // Copy the polys list because we have to simplify it
@@ -782,19 +803,19 @@ void BOARD_ADAPTER::addSolidAreasShapes( const ZONE* aZoneContainer,
             const VECTOR2I& b = pathOutline.CPoint( j + 1 );
 
             SFVEC2F start3DU( a.x * m_biuTo3Dunits, -a.y * m_biuTo3Dunits );
-            SFVEC2F end3DU  ( b.x * m_biuTo3Dunits, -b.y * m_biuTo3Dunits );
+            SFVEC2F end3DU( b.x * m_biuTo3Dunits, -b.y * m_biuTo3Dunits );
 
             if( Is_segment_a_circle( start3DU, end3DU ) )
             {
-                float radius = line_thickness/2;
+                float radius = line_thickness / 2;
 
-                if( radius > 0.0 )  // degenerated circles crash 3D viewer
+                if( radius > 0.0 ) // degenerated circles crash 3D viewer
                     aDstContainer->Add( new FILLED_CIRCLE_2D( start3DU, radius, *aZoneContainer ) );
             }
             else
             {
-                aDstContainer->Add( new ROUND_SEGMENT_2D( start3DU, end3DU, line_thickness,
-                                                          *aZoneContainer ) );
+                aDstContainer->Add(
+                        new ROUND_SEGMENT_2D( start3DU, end3DU, line_thickness, *aZoneContainer ) );
             }
         }
 
@@ -809,15 +830,15 @@ void BOARD_ADAPTER::addSolidAreasShapes( const ZONE* aZoneContainer,
                 const VECTOR2I& b = pathHole.CPoint( j + 1 );
 
                 SFVEC2F start3DU( a.x * m_biuTo3Dunits, -a.y * m_biuTo3Dunits );
-                SFVEC2F end3DU  ( b.x * m_biuTo3Dunits, -b.y * m_biuTo3Dunits );
+                SFVEC2F end3DU( b.x * m_biuTo3Dunits, -b.y * m_biuTo3Dunits );
 
                 if( Is_segment_a_circle( start3DU, end3DU ) )
                 {
-                    float radius = line_thickness/2;
+                    float radius = line_thickness / 2;
 
-                    if( radius > 0.0 )  // degenerated circles crash 3D viewer
-                        aDstContainer->Add( new FILLED_CIRCLE_2D( start3DU, radius,
-                                                                  *aZoneContainer ) );
+                    if( radius > 0.0 ) // degenerated circles crash 3D viewer
+                        aDstContainer->Add(
+                                new FILLED_CIRCLE_2D( start3DU, radius, *aZoneContainer ) );
                 }
                 else
                 {
@@ -833,12 +854,12 @@ void BOARD_ADAPTER::addSolidAreasShapes( const ZONE* aZoneContainer,
 void BOARD_ADAPTER::buildPadOutlineAsSegments( const PAD* aPad, CONTAINER_2D_BASE* aDstContainer,
                                                int aWidth )
 {
-    if( aPad->GetShape() == PAD_SHAPE_CIRCLE )    // Draw a ring
+    if( aPad->GetShape() == PAD_SHAPE_CIRCLE ) // Draw a ring
     {
         const SFVEC2F center3DU( aPad->ShapePos().x * m_biuTo3Dunits,
                                  -aPad->ShapePos().y * m_biuTo3Dunits );
 
-        const int radius = aPad->GetSize().x / 2;
+        const int   radius = aPad->GetSize().x / 2;
         const float inner_radius = ( radius - aWidth / 2 ) * m_biuTo3Dunits;
         const float outer_radius = ( radius + aWidth / 2 ) * m_biuTo3Dunits;
 
@@ -857,17 +878,17 @@ void BOARD_ADAPTER::buildPadOutlineAsSegments( const PAD* aPad, CONTAINER_2D_BAS
         const VECTOR2I& b = path.CPoint( j + 1 );
 
         SFVEC2F start3DU( a.x * m_biuTo3Dunits, -a.y * m_biuTo3Dunits );
-        SFVEC2F end3DU  ( b.x * m_biuTo3Dunits, -b.y * m_biuTo3Dunits );
+        SFVEC2F end3DU( b.x * m_biuTo3Dunits, -b.y * m_biuTo3Dunits );
 
         if( Is_segment_a_circle( start3DU, end3DU ) )
         {
-            aDstContainer->Add( new FILLED_CIRCLE_2D( start3DU, ( aWidth / 2 ) * m_biuTo3Dunits,
-                                                      *aPad ) );
+            aDstContainer->Add(
+                    new FILLED_CIRCLE_2D( start3DU, ( aWidth / 2 ) * m_biuTo3Dunits, *aPad ) );
         }
         else
         {
-            aDstContainer->Add( new ROUND_SEGMENT_2D( start3DU, end3DU, aWidth * m_biuTo3Dunits,
-                                                      *aPad ) );
+            aDstContainer->Add(
+                    new ROUND_SEGMENT_2D( start3DU, end3DU, aWidth * m_biuTo3Dunits, *aPad ) );
         }
     }
 }
