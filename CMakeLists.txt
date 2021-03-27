@@ -742,6 +742,8 @@ include_directories( SYSTEM ${FREETYPE_INCLUDE_DIRS} )
 find_package( HarfBuzz REQUIRED )
 include_directories( SYSTEM ${HARFBUZZ_INCLUDE_DIRS} )
 
+find_package( Fontconfig REQUIRED )
+
 # Include MinGW resource compiler.
 include( MinGWResourceCompiler )
 

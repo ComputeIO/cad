@@ -35,9 +35,7 @@
 #include FT_GLYPH_H
 #include FT_BBOX_H
 #include <trigo.h>
-#ifdef KICAD_USE_FONTCONFIG
 #include <font/fontconfig.h>
-#endif
 
 using namespace KIFONT;
 
@@ -56,18 +54,15 @@ OUTLINE_FONT::OUTLINE_FONT() : mFaceSize( 16 ), mSubscriptSize( 10 )
 
 bool OUTLINE_FONT::LoadFont( const wxString& aFontName )
 {
-#ifdef KICAD_USE_FONTCONFIG
     wxString fontFile;
     bool     r = Fontconfig().FindFont( aFontName, fontFile );
 #ifdef DEBUG
-    if( r )
-    {
-        std::cerr << "Fontconfig found [" << fontFile << "] for [" << aFontName << "]" << std::endl;
-    }
+    std::cerr << "Fontconfig ";
+    if (r)
+        std::cerr << "found  [" << fontFile << "]";
     else
-    {
-        std::cerr << "Fontconfig did not find font for [" << aFontName << "]" << std::endl;
-    }
+        std::cerr << "did not find font";
+    std::cerr << " for [" << aFontName << "]" << std::endl;
 #endif
     if( r )
     {
@@ -82,10 +77,7 @@ bool OUTLINE_FONT::LoadFont( const wxString& aFontName )
         return true;
     }
 
-    return false;
-#else
     return loadFontSimple( aFontName );
-#endif
 }
 
 
@@ -394,7 +386,8 @@ VECTOR2D OUTLINE_FONT::drawMarkup( KIGFX::GAL* aGal, const MARKUP::MARKUP_NODE& 
 
             if( aGal )
             {
-                aGal->DrawGlyphs( glyphs );
+                for( auto glyph : glyphs )
+                    aGal->DrawGlyph( glyph );
             }
         }
     }

@@ -380,13 +380,7 @@ public:
 
     virtual double GetDrawRotation() const;
 
-    KIFONT::FONT* GetFont() const {
-        if (m_font)
-            return m_font;
-
-        // default to newstroke
-        return KIFONT::FONT::GetFont();
-    }
+    KIFONT::FONT* GetFont() const;
 
     void SetFont( KIFONT::FONT* aFont ) { m_font = aFont; }
 
@@ -408,7 +402,7 @@ private:
     wxString m_shown_text; // Cache of unescaped text for efficient access
     bool     m_shown_text_has_text_var_refs;
 
-    KIFONT::FONT* m_font;
+    KIFONT::FONT* m_font = nullptr;
 
     TEXT_EFFECTS m_e; // Private bitflags for text styling.  API above
                       // provides accessor funcs.

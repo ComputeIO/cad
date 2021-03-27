@@ -77,8 +77,10 @@ target_link_libraries( gal
     ${PIXMAN_LIBRARIES}
     ${OPENGL_LIBRARIES}
     ${GDI_PLUS_LIBRARIES}
+	# outline font support
 	${FREETYPE_LIBRARIES}
 	${HARFBUZZ_LIBRARIES}
+	${Fontconfig_LIBRARIES}
 )
 
 target_include_directories( gal PRIVATE
@@ -305,6 +307,7 @@ set( FONT_SRCS
 	font/outline_decomposer.cpp
 	font/text_attributes.cpp
 	font/triangulate.cpp
+	font/fontconfig.cpp
 	)
 
 set( COMMON_SRCS

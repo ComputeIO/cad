@@ -1385,7 +1385,7 @@ void PCB_PAINTER::draw( const PCB_TEXT* aText, int aLayer )
         return;
 
     const COLOR4D& color = m_pcbSettings.GetColor( aText, aText->GetLayer() );
-    VECTOR2D position( aText->GetTextPos().x, aText->GetTextPos().y );
+    //VECTOR2D position( aText->GetTextPos().x, aText->GetTextPos().y );
 
     if( m_pcbSettings.m_sketchText || m_pcbSettings.m_sketchMode[aLayer] )
     {
@@ -1402,7 +1402,10 @@ void PCB_PAINTER::draw( const PCB_TEXT* aText, int aLayer )
     m_gal->SetIsFill( false );
     m_gal->SetIsStroke( true );
     m_gal->SetTextAttributes( aText );
-    m_gal->StrokeText( shownText, position, aText->GetTextAngleRadians() );
+
+    //m_gal->StrokeText( shownText, position, aText->GetTextAngleRadians() );
+    aText->GetFont()->Draw( m_gal, shownText, aText->GetTextPos(), VECTOR2D(0,0),
+                            EDA_ANGLE( aText->GetTextAngleRadians(), EDA_ANGLE::RADIANS ) );
 }
 
 

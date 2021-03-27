@@ -50,6 +50,8 @@ public:
      */
     virtual void OnSetFocusText( wxFocusEvent& event ) override;
 
+    void OnShowFontDialog( wxCommandEvent& aEvent) override;
+
 private:
     PCB_BASE_EDIT_FRAME* m_Parent;
     BOARD_ITEM*          m_item;        // FP_TEXT or PCB_TEXT

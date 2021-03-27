@@ -631,6 +631,15 @@ double EDA_TEXT::GetDrawRotation() const
 }
 
 
+KIFONT::FONT* EDA_TEXT::GetFont() const {
+    if (m_font)
+        return m_font;
+
+    // default to newstroke
+    return KIFONT::FONT::GetFont();
+}
+
+
 static struct EDA_TEXT_DESC
 {
     EDA_TEXT_DESC()

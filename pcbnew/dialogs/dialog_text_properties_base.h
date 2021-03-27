@@ -88,6 +88,7 @@ class DIALOG_TEXT_PROPERTIES_BASE : public DIALOG_SHIM
 		virtual void OnInitDlg( wxInitDialogEvent& event ) { event.Skip(); }
 		virtual void OnSetFocusText( wxFocusEvent& event ) { event.Skip(); }
 		virtual void OnOkClick( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnShowFontDialog( wxCommandEvent& event ) { event.Skip(); }
 
 
 	public:
