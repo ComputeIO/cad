@@ -310,9 +310,10 @@ public:
      * @param aText is the text to be drawn.
      * @param aPosition is the text position in world coordinates.
      * @param aRotationAngle is the text rotation angle.
+     * @param aFont is the text font, or nullptr (defaults to newstroke)
      */
     virtual void StrokeText( const wxString& aText, const VECTOR2D& aPosition,
-                             double aRotationAngle );
+                             double aRotationAngle, KIFONT::FONT* aFont = nullptr );
 
     /**
      * Draw a text using a bitmap font. It should be faster than StrokeText(),

@@ -876,6 +876,7 @@ void DXF_PLOTTER::Text( const wxPoint&              aPos,
                         bool                        aItalic,
                         bool                        aBold,
                         bool                        aMultilineAllowed,
+                        KIFONT::FONT*               aFont,
                         void*                       aData )
 {
     // Fix me: see how to use DXF text mode for multiline texts
@@ -890,7 +891,7 @@ void DXF_PLOTTER::Text( const wxPoint&              aPos,
         // Perhaps multiline texts could be handled as DXF text entity
         // but I do not want spend time about this (JPC)
         PLOTTER::Text( aPos, aColor, aText, aOrient, aSize, aH_justify, aV_justify,
-                       aWidth, aItalic, aBold, aMultilineAllowed );
+                       aWidth, aItalic, aBold, aMultilineAllowed, aFont, aData );
     }
     else
     {

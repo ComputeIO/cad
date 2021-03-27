@@ -407,7 +407,7 @@ void BRDITEMS_PLOTTER::PlotFootprintTextItem( const FP_TEXT* aTextMod, COLOR4D a
 
     m_plotter->Text( pos, aColor, aTextMod->GetShownText(), orient, size,
                      aTextMod->GetHorizJustify(), aTextMod->GetVertJustify(), thickness,
-                     aTextMod->IsItalic(), allow_bold, false, &gbr_metadata );
+                     aTextMod->IsItalic(), allow_bold, false, nullptr, &gbr_metadata );
 }
 
 
@@ -743,14 +743,14 @@ void BRDITEMS_PLOTTER::PlotPcbText( const PCB_TEXT* aText )
             wxString& txt =  strings_list.Item( ii );
             m_plotter->Text( positions[ii], color, txt, orient, size, aText->GetHorizJustify(),
                              aText->GetVertJustify(), thickness, aText->IsItalic(),
-                             allow_bold, false, &gbr_metadata );
+                             allow_bold, false, aText->GetFont(), &gbr_metadata );
         }
     }
     else
     {
         m_plotter->Text( pos, color, shownText, orient, size, aText->GetHorizJustify(),
                          aText->GetVertJustify(), thickness, aText->IsItalic(), allow_bold,
-                         false, &gbr_metadata );
+                         false, aText->GetFont(), &gbr_metadata );
     }
 }
 

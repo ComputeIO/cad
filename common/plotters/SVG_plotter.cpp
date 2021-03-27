@@ -789,6 +789,7 @@ void SVG_PLOTTER::Text( const wxPoint&              aPos,
                         bool                        aItalic,
                         bool                        aBold,
                         bool                        aMultilineAllowed,
+                        KIFONT::FONT*               aFont,
                         void*                       aData )
 {
     setFillMode( FILL_TYPE::NO_FILL );
@@ -862,6 +863,6 @@ void SVG_PLOTTER::Text( const wxPoint&              aPos,
              "<g class=\"stroked-text\"><desc>%s</desc>\n",
              TO_UTF8( XmlEsc( aText ) ) );
     PLOTTER::Text( aPos, aColor, aText, aOrient, aSize, aH_justify, aV_justify,
-                   aWidth, aItalic, aBold, aMultilineAllowed );
+                   aWidth, aItalic, aBold, aMultilineAllowed, aFont, aData );
     fputs( "</g>", m_outputFile );
 }

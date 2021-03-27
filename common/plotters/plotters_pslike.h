@@ -187,6 +187,7 @@ public:
                        bool                        aItalic,
                        bool                        aBold,
                        bool                        aMultilineAllowed = false,
+                       KIFONT::FONT*               aFont = nullptr,
                        void* aData = NULL ) override;
 protected:
     virtual void emitSetRGBColor( double r, double g, double b ) override;
@@ -305,6 +306,7 @@ public:
                        bool                        aItalic,
                        bool                        aBold,
                        bool                        aMultilineAllowed = false,
+                       KIFONT::FONT*               aFont = nullptr,
                        void* aData = NULL ) override;
     /**
      * PDF images are handles as inline, not XObject streams...
@@ -453,6 +455,7 @@ public:
                        bool                        aItalic,
                        bool                        aBold,
                        bool                        aMultilineAllowed = false,
+                       KIFONT::FONT*               aFont = nullptr,
                        void* aData = NULL ) override;
 
 protected:

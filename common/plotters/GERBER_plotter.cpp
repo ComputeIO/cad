@@ -1758,7 +1758,7 @@ void GERBER_PLOTTER::Text( const wxPoint& aPos, const COLOR4D aColor,
                            const wxString& aText, double aOrient, const wxSize& aSize,
                            enum EDA_TEXT_HJUSTIFY_T aH_justify,
                            enum EDA_TEXT_VJUSTIFY_T aV_justify, int aWidth, bool aItalic,
-                           bool aBold, bool aMultilineAllowed, void* aData )
+                           bool aBold, bool aMultilineAllowed, KIFONT::FONT* aFont, void* aData )
 {
     GBR_METADATA* gbr_metadata = static_cast<GBR_METADATA*>( aData );
 
@@ -1766,7 +1766,7 @@ void GERBER_PLOTTER::Text( const wxPoint& aPos, const COLOR4D aColor,
         formatNetAttribute( &gbr_metadata->m_NetlistMetadata );
 
     PLOTTER::Text( aPos, aColor, aText, aOrient, aSize, aH_justify, aV_justify, aWidth, aItalic,
-                   aBold, aMultilineAllowed, aData );
+                   aBold, aMultilineAllowed, aFont, aData );
 }
 
 

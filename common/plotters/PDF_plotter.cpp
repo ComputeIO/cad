@@ -834,6 +834,7 @@ void PDF_PLOTTER::Text( const wxPoint&              aPos,
                         bool                        aItalic,
                         bool                        aBold,
                         bool                        aMultilineAllowed,
+                        KIFONT::FONT*               aFont,
                         void*                       aData )
 {
     // PDF files do not like 0 sized texts which create broken files.
@@ -876,6 +877,6 @@ void PDF_PLOTTER::Text( const wxPoint&              aPos,
 
     // Plot the stroked text (if requested)
     PLOTTER::Text( aPos, aColor, aText, aOrient, aSize, aH_justify, aV_justify, aWidth,
-                   aItalic, aBold, aMultilineAllowed );
+                   aItalic, aBold, aMultilineAllowed, aFont, aData );
 }
 

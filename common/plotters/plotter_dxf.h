@@ -116,6 +116,7 @@ public:
                        bool                        aItalic,
                        bool                        aBold,
                        bool                        aMultilineAllowed = false,
+                       KIFONT::FONT*               aFont = nullptr,
                        void* aData = NULL ) override;
 
 
