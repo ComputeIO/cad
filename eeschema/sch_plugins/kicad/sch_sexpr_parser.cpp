@@ -594,6 +594,7 @@ void SCH_SEXPR_PARSER::parseEDA_TEXT( EDA_TEXT* aText )
                 {
                 case T_face:
                 {
+                    NeedSYMBOL();
                     wxString faceName = FromUTF8();
                     KIFONT::FONT* font = KIFONT::FONT::GetFont( faceName );
                     if( font )

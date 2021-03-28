@@ -280,6 +280,8 @@ void PCB_PARSER::parseEDA_TEXT( EDA_TEXT* aText )
                 {
                 case T_face:
                     {
+                        // parser treats double-quoted strings as symbols
+                        NeedSYMBOL();
                         wxString faceName = FromUTF8();
                         KIFONT::FONT* font = KIFONT::FONT::GetFont( faceName );
                         if( font )

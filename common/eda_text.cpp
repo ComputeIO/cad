@@ -519,7 +519,7 @@ void EDA_TEXT::Format( OUTPUTFORMATTER* aFormatter, int aNestLevel, int aControl
 
     if( GetFont() && !GetFont()->Name().IsEmpty() )
     {
-        aFormatter->Print( 0, " (face \"%s\")", GetFont()->Name() );
+        aFormatter->Print( 0, " (face \"%s\")", GetFont()->NameAsToken() );
     }
 
     // Text size
