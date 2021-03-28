@@ -58,7 +58,7 @@ bool OUTLINE_FONT::LoadFont( const wxString& aFontName )
     bool     r = Fontconfig().FindFont( aFontName, fontFile );
 #ifdef DEBUG
     std::cerr << "Fontconfig ";
-    if (r)
+    if( r )
         std::cerr << "found  [" << fontFile << "]";
     else
         std::cerr << "did not find font";
@@ -386,6 +386,28 @@ VECTOR2D OUTLINE_FONT::drawMarkup( KIGFX::GAL* aGal, const MARKUP::MARKUP_NODE& 
 
             if( aGal )
             {
+                VECTOR2I textSize = nextPosition;
+                double   lineHeight = textSize.y;
+                double   xAdjust = 0.0;
+                double   yAdjust = 0.0;
+                switch( aGal->GetHorizontalJustify() )
+                {
+                case GR_TEXT_HJUSTIFY_LEFT: break;
+                case GR_TEXT_HJUSTIFY_RIGHT: xAdjust = -textSize.x; break;
+                case GR_TEXT_HJUSTIFY_CENTER:
+                default: xAdjust = -textSize.x / 2.0;
+                }
+
+                switch( aGal->GetVerticalJustify() )
+                {
+                case GR_TEXT_VJUSTIFY_TOP: yAdjust = lineHeight / 2; break;
+                case GR_TEXT_VJUSTIFY_BOTTOM: yAdjust = -lineHeight / 2; break;
+                case GR_TEXT_VJUSTIFY_CENTER:
+                default: break;
+                }
+
+                aGal->Translate( VECTOR2D( xAdjust, yAdjust ) );
+
                 for( auto glyph : glyphs )
                     aGal->DrawGlyph( glyph );
             }
@@ -445,7 +467,6 @@ VECTOR2D OUTLINE_FONT::drawMarkup( std::vector<SHAPE_POLY_SET>& aGlyphs,
             //std::vector<SHAPE_POLY_SET> glyphs;
             wxPoint pt( aPosition.x, aPosition.y );
 
-
             nextPosition = GetTextAsPolygon( aGlyphs, txt, aGlyphSize, pt, aAngle, aIsMirrored,
                                              textStyle );
         }
@@ -496,7 +517,29 @@ VECTOR2D OUTLINE_FONT::drawSingleLineText( KIGFX::GAL* aGal, const UTF8& aText,
     // transform glyph outlines to straight segments, then fill
     std::vector<SHAPE_POLY_SET> glyphs;
     wxPoint                     pt( aPosition.x, aPosition.y );
-    GetTextAsPolygon( glyphs, aText, aGal->GetGlyphSize(), pt, aAngle, aGal->IsTextMirrored() );
+
+    VECTOR2I textSize = GetTextAsPolygon( glyphs, aText, aGal->GetGlyphSize(), pt, aAngle,
+                                          aGal->IsTextMirrored() );
+    double   lineHeight = textSize.y;
+    double   xAdjust = 0.0;
+    double   yAdjust = 0.0;
+    switch( aGal->GetHorizontalJustify() )
+    {
+    case GR_TEXT_HJUSTIFY_LEFT: break;
+    case GR_TEXT_HJUSTIFY_RIGHT: xAdjust = -textSize.x; break;
+    case GR_TEXT_HJUSTIFY_CENTER:
+    default: xAdjust = -textSize.x / 2.0;
+    }
+
+    switch( aGal->GetVerticalJustify() )
+    {
+    case GR_TEXT_VJUSTIFY_TOP: yAdjust = lineHeight / 2; break;
+    case GR_TEXT_VJUSTIFY_BOTTOM: yAdjust = -lineHeight / 2; break;
+    case GR_TEXT_VJUSTIFY_CENTER:
+    default: break;
+    }
+
+    aGal->Translate( VECTOR2D( xAdjust, yAdjust ) );
 
     //aGal->SetIsFill( true );
     aGal->DrawGlyphs( glyphs );
@@ -883,7 +926,10 @@ VECTOR2I OUTLINE_FONT::GetTextAsPolygon( std::vector<SHAPE_POLY_SET>& aGlyphs, c
         aGlyphs.push_back( overbarGlyph );
     }
 
+    VECTOR2I cursorDisplacement( -cursorEnd.x * scaleFactor.x, cursorEnd.y * scaleFactor.y );
 #ifdef DEBUG //_GETTEXTASPOLYGON
+    std::cerr << "pos " << aPosition.x << "," << aPosition.y << " displacement "
+              << cursorDisplacement.x << "," << cursorDisplacement.y << std::endl;
     {
         std::cerr << aGlyphs.size() << " glyphs; ";
         for( int g = 0; g < (int) aGlyphs.size(); g++ )
@@ -906,7 +952,6 @@ VECTOR2I OUTLINE_FONT::GetTextAsPolygon( std::vector<SHAPE_POLY_SET>& aGlyphs, c
 #endif
     hb_buffer_destroy( buf );
 
-    VECTOR2I cursorDisplacement( -cursorEnd.x * scaleFactor.x, cursorEnd.y * scaleFactor.y );
     return VECTOR2I( aPosition.x + cursorDisplacement.x, aPosition.y + cursorDisplacement.y );
 }
 

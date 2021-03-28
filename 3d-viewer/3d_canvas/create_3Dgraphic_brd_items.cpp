@@ -128,14 +128,58 @@ void BOARD_ADAPTER::addShapeWithClearance( const PCB_TEXT* aText, CONTAINER_2D_B
 
         if( font->IsOutline() )
         {
-            const int lineWidth = aText->GetEffectiveTextPenWidth() + ( 2 * aClearanceValue );
-
             std::vector<SHAPE_POLY_SET> glyphs;
             // aText->DrawTextAsPolygon( glyphs, aLayerId );
-            outlineFont->GetLinesAsPolygon( glyphs, txt, aText->GetTextSize(), positions[ii],
-                                            attributes, aText->IsMirrored(), textStyleFlags );
+            VECTOR2I textSize = outlineFont->GetLinesAsPolygon(
+                    glyphs, txt, aText->GetTextSize(), positions[ii], attributes,
+                    aText->IsMirrored(), textStyleFlags );
+
+            int lastX = 0;
+            int bboxY = 0;
+            int lastWidth = 0;
+            int firstX = 0;
+            bool first = true;
+            for( auto glyph : glyphs )
+            {
+                BOX2I boundingBox = glyph.BBox( 0 );
+                lastX = boundingBox.GetX();
+                bboxY = std::max( bboxY, boundingBox.GetY() );
+                lastWidth = boundingBox.GetWidth();
+                if( first )
+                {
+                    firstX = lastX;
+                    first = false;
+                }
+            }
+
+            double textWidth = (lastX - firstX) + lastWidth;
+            double textHeight = bboxY;
+            double xAdjust = 0.0;
+            double yAdjust = 0.0;
+            switch( aText->GetHorizJustify() )
+            {
+            case GR_TEXT_HJUSTIFY_LEFT: break;
+            case GR_TEXT_HJUSTIFY_RIGHT: xAdjust = -textWidth; break;
+            case GR_TEXT_HJUSTIFY_CENTER:
+            default: xAdjust = -textWidth / 2.0;
+            }
+
+            switch( aText->GetVertJustify() )
+            {
+            case GR_TEXT_VJUSTIFY_TOP: yAdjust = textHeight / 2; break;
+            case GR_TEXT_VJUSTIFY_BOTTOM: yAdjust = -textHeight / 2; break;
+            case GR_TEXT_VJUSTIFY_CENTER:
+            default: break;
+            }
 
             const VECTOR2D conversionFactor( m_biuTo3Dunits, -m_biuTo3Dunits );
+            const SFVEC2F  adjustOffset( xAdjust * conversionFactor.x,
+                                         yAdjust * conversionFactor.y );
+#ifdef DEBUG
+            std::cerr << "adjustOffset " << xAdjust << "," << yAdjust << "->" << adjustOffset.x
+                      << "," << adjustOffset.y << " justify " << aText->GetHorizJustify() << " "
+                      << aText->GetVertJustify() << std::endl;
+#endif
 
             auto triangleCallback = [&]( int aPolygonIndex, const VECTOR2D& aVertex1,
                                          const VECTOR2D& aVertex2, const VECTOR2D& aVertex3,
@@ -145,7 +189,15 @@ void BOARD_ADAPTER::addShapeWithClearance( const PCB_TEXT* aText, CONTAINER_2D_B
                 SFVEC2F v2( aVertex2.x * conversionFactor.x, aVertex2.y * conversionFactor.y );
                 SFVEC2F v3( aVertex3.x * conversionFactor.x, aVertex3.y * conversionFactor.y );
 
+#ifdef DEBUG
+                std::cerr << "#" << v1.x << "," << v1.y;
+#endif
+#if 1
+                aDstContainer->Add( new TRIANGLE_2D( v1 + adjustOffset, v2 + adjustOffset,
+                                                     v3 + adjustOffset, *aText ) );
+#else
                 aDstContainer->Add( new TRIANGLE_2D( v1, v2, v3, *aText ) );
+#endif
             };
 
             for( SHAPE_POLY_SET& glyph : glyphs )

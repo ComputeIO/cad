@@ -35,6 +35,7 @@
 #include <font/stroke_font.h>
 #include <parser/markup_parser.h>
 #include <cmath>
+#include <kicad_string.h>
 
 using namespace KIFONT;
 
@@ -487,39 +488,26 @@ VECTOR2D STROKE_FONT::Draw( KIGFX::GAL* aGal, const UTF8& aText, const VECTOR2D&
         }
     }
 
-#if 0
+#if 1
     VECTOR2D boundingBox( 0.0, 0.0 );
     // Split multiline strings into separate ones and draw them line by line
-    size_t begin = 0;
-    size_t newlinePos = aText.find( '\n' );
+    wxArrayString strings_list;
+    std::vector<wxPoint> positions;
 
-    VECTOR2D lineBoundingBox;
-    while( newlinePos != aText.npos )
+    wxStringSplit( aText, strings_list, '\n' );
+
+    int n = strings_list.Count();
+    double lineHeight = aGal->GetGlyphSize().y + GetInterline( aGal->GetGlyphSize().y );
+    for( int i = 0; i < n; i++ )
     {
-        size_t length = newlinePos - begin;
-
-        lineBoundingBox = drawSingleLineText( aGal, aText.substr( begin, length ) );
+        VECTOR2D lineBoundingBox = drawSingleLineText( aGal, strings_list[i] );
         boundingBox.x = fmax( boundingBox.x, lineBoundingBox.x );
         boundingBox.y += lineBoundingBox.y;
 
         if( aGal )
             aGal->Translate( VECTOR2D( 0.0, lineHeight ) );
-
-        begin = newlinePos + 1;
-        newlinePos = aText.find( '\n', begin );
-    }
-
-    // Draw the last (or the only one) line
-    if( !aText.empty() )
-    {
-        drawSingleLineText( aGal, aText.substr( begin ) );
-        boundingBox.x = fmax( boundingBox.x, lineBoundingBox.x );
-        boundingBox.y += lineBoundingBox.y;
     }
 #else
-#ifdef DEBUG
-    std::cerr << "[aGal line width " << ( aGal ? aGal->GetLineWidth() : 0.0f ) << "]\n";
-#endif
     VECTOR2D boundingBox = drawSingleLineText( aGal, aText );
 #endif
 
@@ -626,8 +614,10 @@ VECTOR2D STROKE_FONT::drawSingleLineText( KIGFX::GAL* aGal, const UTF8& aText,
         }
         // there's a weird 1/4 line height offset coming from somewhere;
         // let's compensate it - TODO: find out where it comes from
-        //yAdjust = yAdjust + 6 * lineHeight;
-
+        yAdjust += GetInterline( baseGlyphSize.y ) / 4;
+#ifdef DEBUG
+        std::cerr << "Compensating for vertical placement bug by " << yAdjust << std::endl;
+#endif
         VECTOR2D hv( xAdjust, yAdjust );
 #ifdef DEBUG
         std::cerr << "Adjusting by " << hv << std::endl;
