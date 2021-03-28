@@ -278,6 +278,26 @@ void PCB_PARSER::parseEDA_TEXT( EDA_TEXT* aText )
 
                 switch( token )
                 {
+                case T_face:
+                    {
+                        wxString faceName = FromUTF8();
+                        KIFONT::FONT* font = KIFONT::FONT::GetFont( faceName );
+                        if( font )
+                        {
+                            aText->SetFont( font );
+                        }
+                        else
+                        {
+                            // TODO: notify user about missing font
+#ifdef DEBUG
+                            std::cerr << "parseEDA_TEXT: could not find font face \""
+                                      << faceName << "\"" << std::endl;
+#endif
+                        }
+                        NeedRIGHT();
+                    }
+                    break;
+
                 case T_size:
                     {
                         wxSize sz;
@@ -304,7 +324,7 @@ void PCB_PARSER::parseEDA_TEXT( EDA_TEXT* aText )
                     break;
 
                 default:
-                    Expecting( "size, bold, or italic" );
+                    Expecting( "face, size, thickness, bold, or italic" );
                 }
             }
             break;

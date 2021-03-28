@@ -515,9 +515,14 @@ void EDA_TEXT::Format( OUTPUTFORMATTER* aFormatter, int aNestLevel, int aControl
 
     aFormatter->Print( aNestLevel + 1, "(effects" );
 
-    // Text size
     aFormatter->Print( 0, " (font" );
 
+    if( GetFont() && !GetFont()->Name().IsEmpty() )
+    {
+        aFormatter->Print( 0, " (face \"%s\")", GetFont()->Name() );
+    }
+
+    // Text size
     aFormatter->Print( 0, " (size %s %s)",
                        FormatInternalUnits( GetTextHeight() ).c_str(),
                        FormatInternalUnits( GetTextWidth() ).c_str() );
