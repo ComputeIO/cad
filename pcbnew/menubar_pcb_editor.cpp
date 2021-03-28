@@ -61,8 +61,7 @@ void PCB_EDIT_FRAME::ReCreateMenuBar()
         // will automatically refresh the menu.
         if( !openRecentMenu )
         {
-            openRecentMenu = new ACTION_MENU( false );
-            openRecentMenu->SetTool( selTool );
+            openRecentMenu = new ACTION_MENU( false, selTool );
             openRecentMenu->SetTitle( _( "Open Recent" ) );
             openRecentMenu->SetIcon( BITMAPS::recent );
 
@@ -102,15 +101,13 @@ void PCB_EDIT_FRAME::ReCreateMenuBar()
                    BITMAPS::rescue );
 
     // Import submenu
-    ACTION_MENU* submenuImport = new ACTION_MENU( false );
-    submenuImport->SetTool( selTool );
+    ACTION_MENU* submenuImport = new ACTION_MENU( false, selTool );
     submenuImport->SetTitle( _( "Import" ) );
     submenuImport->SetIcon( BITMAPS::import );
 
-    submenuImport->Add( PCB_ACTIONS::importNetlist );
-    submenuImport->Add( PCB_ACTIONS::importSpecctraSession );
-    submenuImport->Add( _( "Graphics..." ), _( "Import 2D drawing file" ),
-                        ID_GEN_IMPORT_GRAPHICS_FILE, BITMAPS::import_vector );
+    submenuImport->Add( PCB_ACTIONS::importNetlist,          ACTION_MENU::NORMAL, _( "Netlist..." ) );
+    submenuImport->Add( PCB_ACTIONS::importSpecctraSession,  ACTION_MENU::NORMAL, _( "Specctra Session..." ) );
+    submenuImport->Add( PCB_ACTIONS::placeImportedGraphics,  ACTION_MENU::NORMAL, _( "Graphics..." ) );
 
     if( Kiface().IsSingle() )
     {
@@ -123,12 +120,11 @@ void PCB_EDIT_FRAME::ReCreateMenuBar()
     fileMenu->Add( submenuImport );
 
     // Export submenu
-    ACTION_MENU* submenuExport = new ACTION_MENU( false );
-    submenuExport->SetTool( selTool );
+    ACTION_MENU* submenuExport = new ACTION_MENU( false, selTool );
     submenuExport->SetTitle( _( "Export" ) );
     submenuExport->SetIcon( BITMAPS::export_file );
 
-    submenuExport->Add( PCB_ACTIONS::exportSpecctraDSN );
+    submenuExport->Add( PCB_ACTIONS::exportSpecctraDSN, ACTION_MENU::NORMAL, _( "Specctra DSN..." ) );
     submenuExport->Add( _( "GenCAD..." ), _( "Export GenCAD board representation" ),
                         ID_GEN_EXPORT_FILE_GENCADFORMAT, BITMAPS::post_gencad );
     submenuExport->Add( _( "VRML..." ), _( "Export VRML 3D board representation" ),
@@ -146,12 +142,12 @@ void PCB_EDIT_FRAME::ReCreateMenuBar()
                         ID_GEN_EXPORT_FILE_HYPERLYNX, BITMAPS::export_step );
 
     submenuExport->AppendSeparator();
-    submenuExport->Add( _( "Export Footprints to Library..." ),
+    submenuExport->Add( _( "Footprints to Library..." ),
                         _( "Add footprints used on board to an existing footprint library\n"
                            "(does not remove other footprints from this library)" ),
                         ID_MENU_EXPORT_FOOTPRINTS_TO_LIBRARY, BITMAPS::library_archive );
 
-    submenuExport->Add( _( "Export Footprints to New Library..." ),
+    submenuExport->Add( _( "Footprints to New Library..." ),
                         _( "Create a new footprint library containing the footprints used on board\n"
                            "(if the library already exists it will be replaced)" ),
                         ID_MENU_EXPORT_FOOTPRINTS_TO_NEW_LIBRARY, BITMAPS::library_archive_as );
@@ -159,8 +155,7 @@ void PCB_EDIT_FRAME::ReCreateMenuBar()
     fileMenu->Add( submenuExport );
 
     // Fabrication Outputs submenu
-    ACTION_MENU* submenuFabOutputs = new ACTION_MENU( false );
-    submenuFabOutputs->SetTool( selTool );
+    ACTION_MENU* submenuFabOutputs = new ACTION_MENU( false, selTool );
     submenuFabOutputs->SetTitle( _( "Fabrication Outputs" ) );
     submenuFabOutputs->SetIcon( BITMAPS::fabrication );
 
@@ -322,9 +317,8 @@ void PCB_EDIT_FRAME::ReCreateMenuBar()
 
     placeMenu->AppendSeparator();
 
-    ACTION_MENU* autoplaceSubmenu = new ACTION_MENU( false );
+    ACTION_MENU* autoplaceSubmenu = new ACTION_MENU( false, selTool );
     autoplaceSubmenu->SetTitle( _( "Auto-Place Footprints" ) );
-    autoplaceSubmenu->SetTool( selTool );
     autoplaceSubmenu->SetIcon( BITMAPS::mode_module );
 
     autoplaceSubmenu->Add( PCB_ACTIONS::autoplaceOffboardComponents );
@@ -402,8 +396,7 @@ void PCB_EDIT_FRAME::ReCreateMenuBar()
 #endif
 
 #if defined(KICAD_SCRIPTING) && defined(KICAD_SCRIPTING_ACTION_MENU)
-    ACTION_MENU* submenuActionPlugins = new ACTION_MENU( false );
-    submenuActionPlugins->SetTool( selTool );
+    ACTION_MENU* submenuActionPlugins = new ACTION_MENU( false, selTool );
     submenuActionPlugins->SetTitle( _( "External Plugins" ) );
     submenuActionPlugins->SetIcon( BITMAPS::puzzle_piece );
 

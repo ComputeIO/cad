@@ -60,8 +60,7 @@ void SCH_EDIT_FRAME::ReCreateMenuBar()
         // (the file history will be updated when adding/removing files in history)
         if( !openRecentMenu )
         {
-            openRecentMenu = new ACTION_MENU( false );
-            openRecentMenu->SetTool( selTool );
+            openRecentMenu = new ACTION_MENU( false, selTool );
             openRecentMenu->SetTitle( _( "Open Recent" ) );
             openRecentMenu->SetIcon( BITMAPS::recent );
 
@@ -94,26 +93,24 @@ void SCH_EDIT_FRAME::ReCreateMenuBar()
     fileMenu->AppendSeparator();
 
     // Import submenu
-    ACTION_MENU* submenuImport = new ACTION_MENU( false );
-    submenuImport->SetTool( selTool );
+    ACTION_MENU* submenuImport = new ACTION_MENU( false, selTool );
     submenuImport->SetTitle( _( "Import" ) );
     submenuImport->SetIcon( BITMAPS::import );
-    submenuImport->Add( _( "Import Non KiCad Schematic..." ),
+    submenuImport->Add( _( "Non-KiCad Schematic..." ),
                         _( "Replace current schematic sheet with one imported from another application" ),
                         ID_IMPORT_NON_KICAD_SCH,
                         BITMAPS::import_document );
 
-    submenuImport->Add( EE_ACTIONS::importFPAssignments );
+    submenuImport->Add( EE_ACTIONS::importFPAssignments, ACTION_MENU::NORMAL, _( "Footprint Assignments..." ) );
     fileMenu->Add( submenuImport );
 
 
     // Export submenu
-    ACTION_MENU* submenuExport = new ACTION_MENU( false );
-    submenuExport->SetTool( selTool );
+    ACTION_MENU* submenuExport = new ACTION_MENU( false, selTool );
     submenuExport->SetTitle( _( "Export" ) );
     submenuExport->SetIcon( BITMAPS::export_file );
-    submenuExport->Add( EE_ACTIONS::drawSheetOnClipboard );
-    submenuExport->Add( EE_ACTIONS::exportNetlist );
+    submenuExport->Add( EE_ACTIONS::drawSheetOnClipboard, ACTION_MENU::NORMAL, _( "Drawing to Clipboard" ) );
+    submenuExport->Add( EE_ACTIONS::exportNetlist,        ACTION_MENU::NORMAL, _( "Netlist..." ) );
     fileMenu->Add( submenuExport );
 
     fileMenu->AppendSeparator();
