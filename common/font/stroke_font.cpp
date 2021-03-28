@@ -567,12 +567,10 @@ VECTOR2D STROKE_FONT::drawSingleLineText( KIGFX::GAL* aGal, const UTF8& aText,
               << ( italic ? " " : " !" ) << "italic" << ( underlined ? " " : " !" ) << "underlined"
               << ( mirrored ? " " : " !" ) << "mirrored"
               << " xOffset " << xOffset;
-    if (aGal)
+    if( aGal )
     {
-        std::cerr << " aGal line width "
-                  <<  aGal->GetLineWidth()
-                  << " hjustify " << aGal->GetHorizontalJustify()
-                  << " vjustify " << aGal->GetVerticalJustify();
+        std::cerr << " aGal line width " << aGal->GetLineWidth() << " hjustify "
+                  << aGal->GetHorizontalJustify() << " vjustify " << aGal->GetVerticalJustify();
     }
     std::cerr << std::endl;
     int dbg = 20000;
@@ -604,41 +602,35 @@ VECTOR2D STROKE_FONT::drawSingleLineText( KIGFX::GAL* aGal, const UTF8& aText,
         // but the position of lines is half_thickness to textSize - half_thickness
         // so we must translate the coordinates by half_thickness on the X axis
         // to place the text inside the 0 to textSize X area.
+        //
         aGal->Translate( VECTOR2D( half_thickness, 0 ) );
-#if 0
-        // TODO mirrored!
 
-        // Adjust the text position to the given horizontal justification
+        double xAdjust = 0.0;
+
         switch( aGal->GetHorizontalJustify() )
         {
-            //case GR_TEXT_HJUSTIFY_CENTER:
-            //  aGal->Translate( VECTOR2D( -textSize.x / 2.0, 0 ) ); break;
+        case GR_TEXT_HJUSTIFY_LEFT: break;
+        case GR_TEXT_HJUSTIFY_RIGHT: xAdjust = -textSize.x; break;
+        case GR_TEXT_HJUSTIFY_CENTER:
+        default: xAdjust = -textSize.x / 2.0;
+        }
 
-        case GR_TEXT_HJUSTIFY_RIGHT:
-            aGal->Translate( VECTOR2D( -textSize.x / 2, 0 ) );
-
-            if( !mirrored )
-                aGal->Translate( VECTOR2D( -textSize.x, 0 ) );
-            break;
-
-        case GR_TEXT_HJUSTIFY_LEFT:
-            aGal->Translate( VECTOR2D( textSize.x / 2, 0 ) );
-
-            if( mirrored )
-                aGal->Translate( VECTOR2D( -textSize.x, 0 ) );
-            break;
-
+        double lineHeight = textSize.y - GetInterline( baseGlyphSize.y );
+        double yAdjust = 0.0;
+        switch( aGal->GetVerticalJustify() )
+        {
+        case GR_TEXT_VJUSTIFY_TOP: yAdjust = lineHeight / 2; break;
+        case GR_TEXT_VJUSTIFY_BOTTOM: yAdjust = -lineHeight / 2; break;
+        case GR_TEXT_VJUSTIFY_CENTER:
         default: break;
         }
-#endif
+        // there's a weird 1/4 line height offset coming from somewhere;
+        // let's compensate it - TODO: find out where it comes from
+        //yAdjust = yAdjust + 6 * lineHeight;
 
-        // center horizontally - do this only for PCB_TEXT -
-        // should be done somewhere else, probably EDA_TEXT::GetTextBox()
-        // - time to dig into that code
-        //VECTOR2D hv( -textSize.x / 2, textSize.y / 4 );
-        VECTOR2D hv( 0, 0 );
+        VECTOR2D hv( xAdjust, yAdjust );
 #ifdef DEBUG
-        //std::cerr << "Translating with " << hv << "!" << std::endl;
+        std::cerr << "Adjusting by " << hv << std::endl;
         double lw = aGal->GetLineWidth();
         if( drawDebugShapes )
         {
