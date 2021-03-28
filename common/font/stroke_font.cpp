@@ -400,10 +400,10 @@ VECTOR2D STROKE_FONT::Draw( KIGFX::GAL* aGal, const UTF8& aText, const VECTOR2D&
 #ifdef DEBUG
     std::cerr << "STROKE_FONT::Draw( " << ( aGal ? "[aGal]" : "nullptr" ) << ", \"" << aText
               << "\", " << aPosition << ", " << aRotationAngle << " )"
-              << " aGal line width " << (aGal ? aGal->GetLineWidth() : 0.0f)
-              << std::endl;
+              << " aGal line width " << ( aGal ? aGal->GetLineWidth() : 0.0f ) << std::endl;
     // debug circle width
     double dbg = 100000;
+    bool   drawDebugShapes = false;
 #endif
 
     if( aGal )
@@ -412,37 +412,49 @@ VECTOR2D STROKE_FONT::Draw( KIGFX::GAL* aGal, const UTF8& aText, const VECTOR2D&
         aGal->Save();
 
 #ifdef DEBUG
-        double lw = aGal->GetLineWidth();
-        aGal->SetLineWidth( 10.0 );
-        //aGal->SetIsStroke( true );
+        double  lw = aGal->GetLineWidth();
         COLOR4D oldColor = aGal->GetStrokeColor();
-        aGal->SetStrokeColor( COLOR4D( 0, 0, 0.6, 0.5 ) );
-        aGal->DrawCircle( aOrigin, dbg );
+        if( drawDebugShapes )
+        {
+            aGal->SetLineWidth( 10.0 );
+            //aGal->SetIsStroke( true );
+            aGal->SetStrokeColor( COLOR4D( 0, 0, 0.6, 0.5 ) );
+            aGal->DrawCircle( aOrigin, dbg );
+        }
 #endif
         aGal->Translate( aOrigin );
 #ifdef DEBUG
-        aGal->SetStrokeColor( COLOR4D( 0.7, 0.8, 0.6, 0.5 ) );
-        aGal->DrawCircle( VECTOR2D( 0, 0 ), 1.35 * dbg );
+        if( drawDebugShapes )
+        {
+            aGal->SetStrokeColor( COLOR4D( 0.7, 0.8, 0.6, 0.5 ) );
+            aGal->DrawCircle( VECTOR2D( 0, 0 ), 1.35 * dbg );
+        }
 #endif
         aGal->Rotate( aRotationAngle.Invert().AsRadians() );
 #ifdef DEBUG
-        aGal->SetStrokeColor( COLOR4D( 0.2, 0.3, 0.4, 0.5 ) );
-        aGal->DrawCircle( VECTOR2D( 0, 0 ), 1.3 * dbg );
+        if( drawDebugShapes )
+        {
+            aGal->SetStrokeColor( COLOR4D( 0.2, 0.3, 0.4, 0.5 ) );
+            aGal->DrawCircle( VECTOR2D( 0, 0 ), 1.3 * dbg );
 
-        aGal->SetStrokeColor( COLOR4D( 0.4, 0.5, 0.6, 0.5 ) );
+            aGal->SetStrokeColor( COLOR4D( 0.4, 0.5, 0.6, 0.5 ) );
 
-        aGal->DrawSegment( VECTOR2D( 0, 0 ), VECTOR2D( 1.3 * dbg, 0 ), 10.0 );
+            aGal->DrawSegment( VECTOR2D( 0, 0 ), VECTOR2D( 1.3 * dbg, 0 ), 10.0 );
+        }
 #endif
         aGal->Translate( aPosition - aOrigin );
 #ifdef DEBUG
-        aGal->SetStrokeColor( COLOR4D( 0.8, 0.6, 0.4, 0.5 ) );
-        aGal->DrawCircle( VECTOR2D( 0, 0 ), 1.2 * dbg );
+        if( drawDebugShapes )
+        {
+            aGal->SetStrokeColor( COLOR4D( 0.8, 0.6, 0.4, 0.5 ) );
+            aGal->DrawCircle( VECTOR2D( 0, 0 ), 1.2 * dbg );
 
-        aGal->SetStrokeColor( COLOR4D( 0.4, 0.3, 0.2, 0.5 ) );
-        aGal->DrawSegment( VECTOR2D( 0, 0 ), VECTOR2D( 1.2 * dbg, 0 ), 10.0 );
+            aGal->SetStrokeColor( COLOR4D( 0.4, 0.3, 0.2, 0.5 ) );
+            aGal->DrawSegment( VECTOR2D( 0, 0 ), VECTOR2D( 1.2 * dbg, 0 ), 10.0 );
 
-        aGal->SetStrokeColor( oldColor );
-        aGal->SetLineWidth( lw );
+            aGal->SetStrokeColor( oldColor );
+            aGal->SetLineWidth( lw );
+        }
 #endif
     }
 
@@ -469,14 +481,9 @@ VECTOR2D STROKE_FONT::Draw( KIGFX::GAL* aGal, const UTF8& aText, const VECTOR2D&
         aGal->SetIsStroke( true );
         //aGal->SetIsFill( false );
 
-        if( aGal->IsFontBold() ) {
-#ifdef DEBUG
-            std::cerr << "[line width was " << aGal->GetLineWidth() << ", ";
-#endif
+        if( aGal->IsFontBold() )
+        {
             aGal->SetLineWidth( aGal->GetLineWidth() * BOLD_FACTOR );
-#ifdef DEBUG
-            std::cerr << "is " << aGal->GetLineWidth() << "]\n";
-#endif
         }
     }
 
@@ -511,7 +518,7 @@ VECTOR2D STROKE_FONT::Draw( KIGFX::GAL* aGal, const UTF8& aText, const VECTOR2D&
     }
 #else
 #ifdef DEBUG
-    std::cerr << "[aGal line width " << (aGal ? aGal->GetLineWidth() : 0.0f) << "]\n";
+    std::cerr << "[aGal line width " << ( aGal ? aGal->GetLineWidth() : 0.0f ) << "]\n";
 #endif
     VECTOR2D boundingBox = drawSingleLineText( aGal, aText );
 #endif
@@ -528,7 +535,8 @@ VECTOR2D STROKE_FONT::drawSingleLineText( KIGFX::GAL* aGal, const UTF8& aText,
 {
 #ifdef DEBUG
     std::cerr << "drawSingleLineText(...," << aText << ",...) aGal line width "
-              << (aGal ? aGal->GetLineWidth() : 0.0f) << std::endl;
+              << ( aGal ? aGal->GetLineWidth() : 0.0f ) << std::endl;
+    bool drawDebugShapes = false;
 #endif
     // TODO default for baseGlyphSize just a guess
     VECTOR2D baseGlyphSize( aGal ? aGal->GetGlyphSize() : VECTOR2D( 16.0, 16.0 ) );
@@ -558,19 +566,23 @@ VECTOR2D STROKE_FONT::drawSingleLineText( KIGFX::GAL* aGal, const UTF8& aText,
               << half_thickness << " overbar_italic_comp " << overbar_italic_comp
               << ( italic ? " " : " !" ) << "italic" << ( underlined ? " " : " !" ) << "underlined"
               << ( mirrored ? " " : " !" ) << "mirrored"
-              << " xOffset " << xOffset
-              << " aGal line width " << (aGal ? aGal->GetLineWidth() : 0.0f);
-    //if( aGal )
-    //    std::cerr << " aGal " << *aGal;
+              << " xOffset " << xOffset;
+    if (aGal)
+    {
+        std::cerr << " aGal line width "
+                  <<  aGal->GetLineWidth()
+                  << " hjustify " << aGal->GetHorizontalJustify()
+                  << " vjustify " << aGal->GetVerticalJustify();
+    }
     std::cerr << std::endl;
     int dbg = 20000;
 #endif
 
 #ifdef DEBUG
-    if( aGal )
+    if( aGal && drawDebugShapes )
     {
         COLOR4D oldColor = aGal->GetStrokeColor();
-        double lw = aGal->GetLineWidth();
+        double  lw = aGal->GetLineWidth();
         aGal->SetLineWidth( 10.0 );
         if( mirrored )
             aGal->SetStrokeColor( COLOR4D( 1, 1, 0, 0.08 ) );
@@ -620,22 +632,31 @@ VECTOR2D STROKE_FONT::drawSingleLineText( KIGFX::GAL* aGal, const UTF8& aText,
         }
 #endif
 
-        // center horizontally
-        VECTOR2D hv( -textSize.x / 2, textSize.y / 4 );
+        // center horizontally - do this only for PCB_TEXT -
+        // should be done somewhere else, probably EDA_TEXT::GetTextBox()
+        // - time to dig into that code
+        //VECTOR2D hv( -textSize.x / 2, textSize.y / 4 );
+        VECTOR2D hv( 0, 0 );
 #ifdef DEBUG
-        std::cerr << "Translating with " << hv << "!" << std::endl;
+        //std::cerr << "Translating with " << hv << "!" << std::endl;
         double lw = aGal->GetLineWidth();
-        aGal->SetLineWidth( 10.0 );
-        aGal->DrawRectangle( VECTOR2D(0,0), hv);
-        aGal->DrawRectangle( VECTOR2D(-textSize.x / 2, -textSize.y / 2), textSize );
+        if( drawDebugShapes )
+        {
+            aGal->SetLineWidth( 10.0 );
+            aGal->DrawRectangle( VECTOR2D( 0, 0 ), hv );
+            aGal->DrawRectangle( VECTOR2D( -textSize.x / 2, -textSize.y / 2 ), textSize );
+        }
 #endif
         aGal->Translate( hv );
 #ifdef DEBUG
-        COLOR4D oldColor = aGal->GetStrokeColor();
-        aGal->SetStrokeColor( COLOR4D( 0, 1, 0, 0.2 ) );
-        aGal->DrawRectangle( VECTOR2D(-textSize.x / 2, -textSize.y / 2), textSize );
-        aGal->SetStrokeColor( oldColor );
-        aGal->SetLineWidth( lw );
+        if( drawDebugShapes )
+        {
+            COLOR4D oldColor = aGal->GetStrokeColor();
+            aGal->SetStrokeColor( COLOR4D( 0, 1, 0, 0.2 ) );
+            aGal->DrawRectangle( VECTOR2D( -textSize.x / 2, -textSize.y / 2 ), textSize );
+            aGal->SetStrokeColor( oldColor );
+            aGal->SetLineWidth( lw );
+        }
 #endif
     }
 
@@ -785,7 +806,7 @@ VECTOR2D STROKE_FONT::drawSingleLineText( KIGFX::GAL* aGal, const UTF8& aText,
             ptListScaled.clear();
 
 #ifdef DEBUG
-            if( aGal )
+            if( aGal && drawDebugShapes )
             {
                 COLOR4D oldColor = aGal->GetStrokeColor();
                 if( mirrored )
@@ -806,7 +827,8 @@ VECTOR2D STROKE_FONT::drawSingleLineText( KIGFX::GAL* aGal, const UTF8& aText,
                 ptCount++;
             }
 
-            if( aGal ) {
+            if( aGal )
+            {
                 aGal->DrawPolyline( &ptListScaled[0], ptCount );
             }
         }
