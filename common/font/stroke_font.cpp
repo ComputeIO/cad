@@ -400,11 +400,12 @@ VECTOR2D STROKE_FONT::Draw( KIGFX::GAL* aGal, const UTF8& aText, const VECTOR2D&
 
 #ifdef DEBUG
     std::cerr << "STROKE_FONT::Draw( " << ( aGal ? "[aGal]" : "nullptr" ) << ", \"" << aText
-              << "\", " << aPosition << ", " << aRotationAngle << " )"
+              << "\", " << aPosition << ", " << aOrigin << ", " << aRotationAngle << " )"
               << " aGal line width " << ( aGal ? aGal->GetLineWidth() : 0.0f ) << std::endl;
     // debug circle width
-    double dbg = 100000;
-    bool   drawDebugShapes = false;
+    double dbg = 200000;
+    bool   drawDebugShapes = true;
+    double debugLineWidth = 1000.0;
 #endif
 
     if( aGal )
@@ -417,13 +418,14 @@ VECTOR2D STROKE_FONT::Draw( KIGFX::GAL* aGal, const UTF8& aText, const VECTOR2D&
         COLOR4D oldColor = aGal->GetStrokeColor();
         if( drawDebugShapes )
         {
-            aGal->SetLineWidth( 10.0 );
+            aGal->SetLineWidth( debugLineWidth );
             //aGal->SetIsStroke( true );
-            aGal->SetStrokeColor( COLOR4D( 0, 0, 0.6, 0.5 ) );
+            aGal->SetStrokeColor( COLOR4D( 0, 1, 0.6, 0.5 ) );
             aGal->DrawCircle( aOrigin, dbg );
         }
 #endif
-        aGal->Translate( aOrigin );
+        //aGal->Translate( aOrigin );
+        aGal->Translate( aPosition - aOrigin );
 #ifdef DEBUG
         if( drawDebugShapes )
         {
@@ -443,7 +445,7 @@ VECTOR2D STROKE_FONT::Draw( KIGFX::GAL* aGal, const UTF8& aText, const VECTOR2D&
             aGal->DrawSegment( VECTOR2D( 0, 0 ), VECTOR2D( 1.3 * dbg, 0 ), 10.0 );
         }
 #endif
-        aGal->Translate( aPosition - aOrigin );
+
 #ifdef DEBUG
         if( drawDebugShapes )
         {
@@ -524,7 +526,8 @@ VECTOR2D STROKE_FONT::drawSingleLineText( KIGFX::GAL* aGal, const UTF8& aText,
 #ifdef DEBUG
     std::cerr << "drawSingleLineText(...," << aText << ",...) aGal line width "
               << ( aGal ? aGal->GetLineWidth() : 0.0f ) << std::endl;
-    bool drawDebugShapes = false;
+    bool drawDebugShapes = true;
+    double debugLineWidth = 15000.0;
 #endif
     // TODO default for baseGlyphSize just a guess
     VECTOR2D baseGlyphSize( aGal ? aGal->GetGlyphSize() : VECTOR2D( 16.0, 16.0 ) );
@@ -569,7 +572,7 @@ VECTOR2D STROKE_FONT::drawSingleLineText( KIGFX::GAL* aGal, const UTF8& aText,
     {
         COLOR4D oldColor = aGal->GetStrokeColor();
         double  lw = aGal->GetLineWidth();
-        aGal->SetLineWidth( 10.0 );
+        aGal->SetLineWidth( debugLineWidth );
         if( mirrored )
             aGal->SetStrokeColor( COLOR4D( 1, 1, 0, 0.08 ) );
         else
@@ -624,7 +627,7 @@ VECTOR2D STROKE_FONT::drawSingleLineText( KIGFX::GAL* aGal, const UTF8& aText,
         double lw = aGal->GetLineWidth();
         if( drawDebugShapes )
         {
-            aGal->SetLineWidth( 10.0 );
+            aGal->SetLineWidth( debugLineWidth * 1.1 );
             aGal->DrawRectangle( VECTOR2D( 0, 0 ), hv );
             aGal->DrawRectangle( VECTOR2D( -textSize.x / 2, -textSize.y / 2 ), textSize );
         }

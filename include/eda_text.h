@@ -398,10 +398,9 @@ private:
                              COLOR4D aColor, OUTLINE_MODE aFillMode, const wxString& aText,
                              const wxPoint& aPos );
 
-    wxString m_text;
-    wxString m_shown_text; // Cache of unescaped text for efficient access
-    bool     m_shown_text_has_text_var_refs;
-
+    wxString      m_text;
+    wxString      m_shown_text; // Cache of unescaped text for efficient access
+    bool          m_shown_text_has_text_var_refs;
     KIFONT::FONT* m_font = nullptr;
 
     TEXT_EFFECTS m_e; // Private bitflags for text styling.  API above

@@ -100,12 +100,12 @@ struct subscript;
 struct superscript;
 
 /**
-   * anyString =
-   * a run of characters that do not start a command sequence,
-   * or if they do, they do not start a complete command prefix
-   * (command char + open brace) - note that '$' is considered
-   * special even if it is not followed by an open brace
-   */
+ * anyString =
+ * a run of characters that do not start a command sequence,
+ * or if they do, they do not start a complete command prefix
+ * (command char + open brace) - note that '$' is considered
+ * special even if it is not followed by an open brace
+ */
 struct anyString : plus<sor<utf8::not_one<'~', '$', '_', '^'>, seq<not_at<subPrefix>, string<'_'>>,
                             seq<not_at<supPrefix>, string<'^'>>>>
 {
@@ -143,9 +143,9 @@ struct tildeString : plus<seq<not_at<subPrefix>, identifier_other>>
 };
 
 /**
-   * Finally, the full grammar
-   *
-   */
+ * Finally, the full grammar
+ *
+ */
 struct grammar : star<sor<quotedDollar, quotedTilde, variable, prefixedSubscript,
                           prefixedSuperscript, seq<string<'~'>, tildeString>, anyString>>
 {

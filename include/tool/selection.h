@@ -263,6 +263,9 @@ public:
 
     void SetReferencePoint( const VECTOR2I& aP )
     {
+#ifdef DEBUG
+        std::cerr << "SetReferencePoint(#[" << aP.x << "," << aP.y << "])\n";
+#endif
         m_referencePoint = aP;
     }
 

@@ -136,6 +136,7 @@ void EDA_TEXT::CopyText( const EDA_TEXT& aSrc )
 void EDA_TEXT::SetEffects( const EDA_TEXT& aSrc )
 {
     m_e = aSrc.m_e;
+    m_font = aSrc.m_font;
 }
 
 
@@ -150,6 +151,7 @@ void EDA_TEXT::SwapText( EDA_TEXT& aTradingPartner )
 void EDA_TEXT::SwapEffects( EDA_TEXT& aTradingPartner )
 {
     std::swap( m_e, aTradingPartner.m_e );
+    std::swap( m_font, aTradingPartner.m_font );
 }
 
 

@@ -95,6 +95,18 @@ public:
         }
     }
 
+    inline std::string AngleType( ANGLE_TYPE aType ) const
+    {
+        switch( aType )
+        {
+        case TENTHS_OF_A_DEGREE: return "tenths-of-a-degree";
+        case DEGREES: return "degrees";
+        case RADIANS: return "radians";
+        default: return "unknown-angle-type" ; // assert( 1 == 0 );
+        }
+    }
+    inline std::string AngleType() const { return AngleType( m_initial_type ); }
+
     static constexpr double TENTHS_OF_A_DEGREE_TO_RADIANS = M_PI / 1800;
 
     /**
@@ -284,12 +296,13 @@ inline bool operator>( const EDA_ANGLE& aAngleA, const EDA_ANGLE& aAngleB )
 inline std::ostream& operator<<( std::ostream& os, const EDA_ANGLE& aAngle )
 {
     EDA_ANGLE::ANGLE_TYPE initialType = aAngle.GetInitialAngleType();
-    os << "(angle " << aAngle.AsAngleType( initialType ) << " " << initialType << ")";
+    os << "(angle " << aAngle.AsAngleType( initialType ) << " " << aAngle.AngleType() << ")";
 
     return os;
 }
 
 
+#if 0
 inline std::ostream& operator<<( std::ostream& os, const EDA_ANGLE::ANGLE_TYPE& aAngleType )
 {
     switch( aAngleType )
@@ -300,5 +313,6 @@ inline std::ostream& operator<<( std::ostream& os, const EDA_ANGLE::ANGLE_TYPE& 
     default: os << "unknown angle type?"; return os;
     }
 }
+#endif
 
 #endif // EDA_ANGLE_H
