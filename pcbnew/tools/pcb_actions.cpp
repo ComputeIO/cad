@@ -335,9 +335,14 @@ TOOL_ACTION PCB_ACTIONS::properties( "pcbnew.InteractiveEdit.properties",
 
 // FOOTPRINT_EDITOR_CONTROL
 //
-TOOL_ACTION PCB_ACTIONS::toggleFootprintTree( "pcbnew.ModuleEditor.toggleFootprintTree",
+TOOL_ACTION PCB_ACTIONS::showFootprintTree( "pcbnew.ModuleEditor.showFootprintTree",
         AS_GLOBAL, 0, "",
-        _( "Show Footprint Tree" ), _( "Toggles the footprint tree visibility" ),
+        _( "Show Footprint Tree" ), "",
+        BITMAPS::search_tree );
+
+TOOL_ACTION PCB_ACTIONS::hideFootprintTree( "pcbnew.ModuleEditor.hideFootprintTree",
+        AS_GLOBAL, 0, "",
+        _( "Hide Footprint Tree" ), "",
         BITMAPS::search_tree );
 
 TOOL_ACTION PCB_ACTIONS::newFootprint( "pcbnew.ModuleEditor.newFootprint",
@@ -561,10 +566,6 @@ TOOL_ACTION PCB_ACTIONS::exportSpecctraDSN( "pcbnew.EditorControl.exportSpecctra
         AS_GLOBAL, 0, "",
         _( "Export Specctra DSN..." ), _( "Export Specctra DSN routing info" ),
         BITMAPS::export_dsn );
-
-TOOL_ACTION PCB_ACTIONS::exportNetlist( "pcbnew.EditorControl.exportNetlist", AS_GLOBAL, 0, "",
-                                        _( "Netlist..." ),
-                                        _( "Export netlist used to update schematics" ) );
 
 TOOL_ACTION PCB_ACTIONS::generateGerbers( "pcbnew.EditorControl.generateGerbers",
         AS_GLOBAL, 0, "",

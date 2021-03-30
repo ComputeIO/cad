@@ -91,6 +91,7 @@ private:
     TRACK              m_dummyTrack;
     ARC                m_dummyArc;
     VIA                m_dummyVia;
+    int                m_clearanceEpsilon;
 
     std::map<std::pair<const PNS::ITEM*, const PNS::ITEM*>, int> m_clearanceCache;
     std::map<std::pair<const PNS::ITEM*, const PNS::ITEM*>, int> m_holeClearanceCache;
@@ -106,6 +107,10 @@ PNS_PCBNEW_RULE_RESOLVER::PNS_PCBNEW_RULE_RESOLVER( BOARD* aBoard,
     m_dummyArc( aBoard ),
     m_dummyVia( aBoard )
 {
+    if( aBoard )
+        m_clearanceEpsilon = aBoard->GetDesignSettings().GetDRCEpsilon();
+    else
+        m_clearanceEpsilon = 0;
 }
 
 
@@ -291,7 +296,7 @@ int PNS_PCBNEW_RULE_RESOLVER::Clearance( const PNS::ITEM* aA, const PNS::ITEM* a
     if( isCopper( aA ) && ( !aB || isCopper( aB ) ) )
     {
         if( QueryConstraint( PNS::CONSTRAINT_TYPE::CT_CLEARANCE, aA, aB, layer, &constraint ) )
-            rv = constraint.m_Value.Min();
+            rv = constraint.m_Value.Min() - m_clearanceEpsilon;
     }
 
     if( isEdge( aA ) || ( aB && isEdge( aB ) ) )
@@ -299,7 +304,7 @@ int PNS_PCBNEW_RULE_RESOLVER::Clearance( const PNS::ITEM* aA, const PNS::ITEM* a
         if( QueryConstraint( PNS::CONSTRAINT_TYPE::CT_EDGE_CLEARANCE, aA, aB, layer, &constraint ) )
         {
             if( constraint.m_Value.Min() > rv )
-                rv = constraint.m_Value.Min();
+                rv = constraint.m_Value.Min() - m_clearanceEpsilon;
         }
     }
 
@@ -326,7 +331,7 @@ int PNS_PCBNEW_RULE_RESOLVER::HoleClearance( const PNS::ITEM* aA, const PNS::ITE
         layer = aB->Layer();
 
     if( QueryConstraint( PNS::CONSTRAINT_TYPE::CT_HOLE_CLEARANCE, aA, aB, layer, &constraint ) )
-        rv = constraint.m_Value.Min();
+        rv = constraint.m_Value.Min() - m_clearanceEpsilon;
 
     m_holeClearanceCache[ key ] = rv;
     return rv;
@@ -351,7 +356,7 @@ int PNS_PCBNEW_RULE_RESOLVER::HoleToHoleClearance( const PNS::ITEM* aA, const PN
         layer = aB->Layer();
 
     if( QueryConstraint( PNS::CONSTRAINT_TYPE::CT_HOLE_TO_HOLE, aA, aB, layer, &constraint ) )
-        rv = constraint.m_Value.Min();
+        rv = constraint.m_Value.Min() - m_clearanceEpsilon;
 
     m_holeToHoleClearanceCache[ key ] = rv;
     return rv;
@@ -900,13 +905,19 @@ std::unique_ptr<PNS::SOLID> PNS_KICAD_IFACE_BASE::syncPad( PAD* aPad )
         // router, otherwise it won't know how to correctly build walkaround 'hulls' for the pad
         // primitives - it can recognize only simple shapes, but not COMPOUNDs made of multiple shapes.
         // The proper way to fix this would be to implement SHAPE_COMPOUND::ConvertToSimplePolygon(),
-        // but the complexity of pad polygonization code (see PAD::GetEffectivePolygon), including approximation
-        // error handling makes me slightly scared to do it right now.
+        // but the complexity of pad polygonization code (see PAD::GetEffectivePolygon), including
+        // approximation error handling makes me slightly scared to do it right now.
 
-        const std::shared_ptr<SHAPE_POLY_SET>& outline = aPad->GetEffectivePolygon();
-        SHAPE_SIMPLE*                          shape = new SHAPE_SIMPLE();
+        // NOTE: PAD::GetEffectivePolygon puts the error on the inside, but we want the error on
+        // the outside so that the collision hull is larger than the pad
 
-        for( auto iter = outline->CIterate( 0 ); iter; iter++ )
+        SHAPE_POLY_SET outline;
+        aPad->TransformShapeWithClearanceToPolygon( outline, UNDEFINED_LAYER, 0, ARC_HIGH_DEF,
+                                                    ERROR_OUTSIDE );
+
+        SHAPE_SIMPLE* shape = new SHAPE_SIMPLE();
+
+        for( auto iter = outline.CIterate( 0 ); iter; iter++ )
             shape->Append( *iter );
 
         solid->SetShape( shape );

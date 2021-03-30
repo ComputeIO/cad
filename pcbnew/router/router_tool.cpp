@@ -994,7 +994,7 @@ bool ROUTER_TOOL::prepareInteractive()
 
     editFrame->SetActiveLayer( ToLAYER_ID( routingLayer ) );
 
-    if( m_startItem && m_startItem->Net() >= 0 )
+    if( m_startItem && m_startItem->Net() > 0 )
         highlightNet( true, m_startItem->Net() );
 
     controls()->ForceCursorPosition( false );
@@ -1389,7 +1389,7 @@ void ROUTER_TOOL::performDragging( int aMode )
     if( !dragStarted )
         return;
 
-    if( m_startItem && m_startItem->Net() >= 0 )
+    if( m_startItem && m_startItem->Net() > 0 )
         highlightNet( true, m_startItem->Net() );
 
     ctls->SetAutoPan( true );
@@ -1635,6 +1635,9 @@ int ROUTER_TOOL::InlineDrag( const TOOL_EVENT& aEvent )
 
     // Set initial cursor
     setCursor();
+
+    // Send an initial movement to prime the collision detection
+    m_router->Move( p, nullptr );
 
     while( TOOL_EVENT* evt = Wait() )
     {
