@@ -78,6 +78,7 @@ public:
 
 private:
     typedef std::pair<BLOCK_ID, TERMINAL_ID> BLOCK_PIN_ID;
+    typedef std::pair<PART_ID, GATE_ID> PART_GATE_ID;
 
     /**
      * Map between a terminal ID in a symbol definition to the pin number that should
@@ -96,6 +97,8 @@ private:
     std::map<BLOCK_PIN_ID, SCH_HIERLABEL*>
                                  m_sheetPinMap; ///< Map between Cadstar and KiCad Sheets Pins
     std::map<PART_ID, LIB_PART*> m_partMap;     ///< Map between Cadstar and KiCad Parts
+    std::map<PART_GATE_ID, SYMDEF_ID> m_partSymbolsMap; ///< Map holding the symbols loaded so far
+                                                        ///  for a particular PART_ID and GATE_ID
     std::map<PART_ID, TERMINAL_TO_PINNUM_MAP> m_pinNumsMap; ///< Map of pin numbers in CADSTAR parts
     std::map<wxString, LIB_PART*> m_powerSymLibMap; ///< Map of KiCad Power Symbol Library items
     std::map<SYMBOL_ID, SCH_COMPONENT*>
@@ -187,8 +190,6 @@ private:
     ROUTECODE      getRouteCode( const ROUTECODE_ID& aCadstarRouteCodeID );
     TEXTCODE       getTextCode( const TEXTCODE_ID& aCadstarTextCodeID );
     wxString       getAttributeName( const ATTRIBUTE_ID& aCadstarAttributeID );
-    wxString       getAttributeValue( const ATTRIBUTE_ID&        aCadstarAttributeID,
-                  const std::map<ATTRIBUTE_ID, ATTRIBUTE_VALUE>& aCadstarAttributeMap );
 
     PART::DEFINITION::PIN getPartDefinitionPin(
             const PART& aCadstarPart, const GATE_ID& aGateID, const TERMINAL_ID& aTerminalID );

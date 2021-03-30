@@ -583,7 +583,8 @@ bool SCH_EDIT_FRAME::OpenProjectFiles( const std::vector<wxString>& aFileSet, in
     // colinear segments. If a schematic is saved without a valid
     // cache library or missing installed libraries, this can cause connectivity errors
     // unless junctions are added.
-    FixupJunctions();
+    if( schFileType == SCH_IO_MGR::SCH_LEGACY )
+        FixupJunctions();
 
     SyncView();
     GetScreen()->ClearDrawingState();
@@ -931,8 +932,9 @@ bool SCH_EDIT_FRAME::importFile( const wxString& aFileName, int aFileType )
 {
     wxFileName newfilename;
     SCH_SHEET_LIST sheetList = Schematic().GetSheets();
+    SCH_IO_MGR::SCH_FILE_T fileType = (SCH_IO_MGR::SCH_FILE_T) aFileType;
 
-    switch( (SCH_IO_MGR::SCH_FILE_T) aFileType )
+    switch( fileType )
     {
     case SCH_IO_MGR::SCH_ALTIUM:
     case SCH_IO_MGR::SCH_CADSTAR_ARCHIVE:
@@ -979,6 +981,11 @@ bool SCH_EDIT_FRAME::importFile( const wxString& aFileName, int aFileType )
             Schematic().Root().SetFileName( newfilename.GetFullPath() );
             GetScreen()->SetFileName( newfilename.GetFullPath() );
             GetScreen()->SetModify();
+
+            // Only fix junctions for CADSTAR importer for now as it may cause issues with
+            // other importers
+            if( fileType == SCH_IO_MGR::SCH_CADSTAR_ARCHIVE )
+                FixupJunctions();
 
             // Only perform the dangling end test on root sheet.
             GetScreen()->TestDanglingEnds();
