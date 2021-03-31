@@ -47,7 +47,7 @@
 #include <wildcards_and_files_ext.h>
 
 
-constexpr int PART_NAME = MANDATORY_FIELDS; // First field after mandatory ones
+const wxString PartNameFieldName = "Part Name";
 
 
 void CADSTAR_SCH_ARCHIVE_LOADER::Load( SCHEMATIC* aSchematic, SCH_SHEET* aRootSheet,
@@ -328,7 +328,7 @@ void CADSTAR_SCH_ARCHIVE_LOADER::loadPartsLibrary()
 {
     for( std::pair<PART_ID, PART> partPair : Parts.PartDefinitions )
     {
-        PART_ID key  = partPair.first;
+        PART_ID partID  = partPair.first;
         PART    part = partPair.second;
 
         if( part.Definition.GateSymbols.size() == 0 )
@@ -337,12 +337,14 @@ void CADSTAR_SCH_ARCHIVE_LOADER::loadPartsLibrary()
         LIB_PART* kiPart = new LIB_PART( part.Name );
 
         kiPart->SetUnitCount( part.Definition.GateSymbols.size() );
+        bool ok = true;
 
         for( std::pair<GATE_ID, PART::DEFINITION::GATE> gatePair : part.Definition.GateSymbols )
         {
             GATE_ID                gateID   = gatePair.first;
             PART::DEFINITION::GATE gate     = gatePair.second;
             SYMDEF_ID              symbolID = getSymDefFromName( gate.Name, gate.Alternate );
+            m_partSymbolsMap.insert( { { partID, gateID }, symbolID } );
 
             if( symbolID.IsEmpty() )
             {
@@ -352,18 +354,28 @@ void CADSTAR_SCH_ARCHIVE_LOADER::loadPartsLibrary()
                            "been loaded into the KiCad library." ),
                         part.Name, gate.Name, gate.Alternate ) );
 
-                continue;
+                ok = false;
+                break;
             }
 
             loadSymDefIntoLibrary( symbolID, &part, gateID, kiPart );
         }
 
-        ( *m_plugin )->SaveSymbol( m_libraryFileName.GetFullPath(), kiPart );
+        if( ok )
+        {
+            ( *m_plugin )->SaveSymbol( m_libraryFileName.GetFullPath(), kiPart );
 
-        LIB_PART* loadedPart =
-                ( *m_plugin )->LoadSymbol( m_libraryFileName.GetFullPath(), kiPart->GetName() );
+            LIB_PART* loadedPart =
+                    ( *m_plugin )->LoadSymbol( m_libraryFileName.GetFullPath(), kiPart->GetName() );
 
-        m_partMap.insert( { key, loadedPart } );
+            m_partMap.insert( { partID, loadedPart } );
+        }
+        else
+        {
+            // Don't save in the library, but still keep it cached as some of the units might have
+            // been loaded correctly (saving us time later on)
+            m_partMap.insert( { partID, kiPart } );
+        }
     }
 }
 
@@ -389,10 +401,29 @@ void CADSTAR_SCH_ARCHIVE_LOADER::loadSchematicSymbolInstances()
                 continue;
             }
 
-            LIB_PART* kiPart = m_partMap.at( sym.PartRef.RefID );
-            double    symOrientDeciDeg = 0.0;
+            if( sym.GateID.IsEmpty() )
+                sym.GateID = wxT( "A" ); // Assume Gate "A" if unspecified
 
+            PART_GATE_ID partSymbolID = { sym.PartRef.RefID, sym.GateID };
+            LIB_PART*    kiPart = m_partMap.at( sym.PartRef.RefID );
+            bool         copy = false;
+
+            // The symbol definition in the part either does not exist for this gate number
+            // or is different to the symbol instance. We need to load a new symbol
+            if( m_partSymbolsMap.find( partSymbolID ) == m_partSymbolsMap.end()
+                || m_partSymbolsMap.at( partSymbolID ) != sym.SymdefID )
+            {
+                kiPart = new LIB_PART( *kiPart ); // Make a copy
+                copy = true;
+                const PART& part = Parts.PartDefinitions.at( sym.PartRef.RefID );
+                loadSymDefIntoLibrary( sym.SymdefID, &part, sym.GateID, kiPart );
+            }
+
+            double         symOrientDeciDeg = 0.0;
             SCH_COMPONENT* component = loadSchematicSymbol( sym, *kiPart, symOrientDeciDeg );
+
+            if( copy )
+                delete kiPart;
 
             SCH_FIELD* refField = component->GetField( REFERENCE_FIELD );
 
@@ -407,15 +438,16 @@ void CADSTAR_SCH_ARCHIVE_LOADER::loadSchematicSymbolInstances()
 
             if( sym.HasPartRef )
             {
-                SCH_FIELD* partField = component->GetFieldById( PART_NAME );
+                SCH_FIELD* partField = component->FindField( PartNameFieldName );
 
                 if( !partField )
                 {
-                    component->AddField( SCH_FIELD( wxPoint(), PART_NAME, component,
-                                                    wxT( "Part Name" ) ) );
-
-                    partField = component->GetFieldById( PART_NAME );
+                    int fieldID = component->GetFieldCount();
+                    partField = component->AddField( SCH_FIELD( wxPoint(), fieldID, component,
+                                                                PartNameFieldName ) );
                 }
+
+                wxASSERT( partField->GetName() == PartNameFieldName );
 
                 wxString partname = getPart( sym.PartRef.RefID ).Name;
                 partname.Replace( wxT( "\n" ), wxT( "\\n" ) );
@@ -429,26 +461,23 @@ void CADSTAR_SCH_ARCHIVE_LOADER::loadSchematicSymbolInstances()
                 partField->SetVisible( SymbolPartNameColor.IsVisible );
             }
 
-            int fieldId = PART_NAME;
-
             for( auto attr : sym.AttributeValues )
             {
                 ATTRIBUTE_VALUE attrVal = attr.second;
 
                 if( attrVal.HasLocation )
                 {
-                    //SCH_FIELD* attrField = getFieldByName( component );
                     wxString attrName = getAttributeName( attrVal.AttributeID );
-
                     SCH_FIELD* attrField = component->FindField( attrName );
 
                     if( !attrField )
                     {
-                        component->AddField( SCH_FIELD( wxPoint(), ++fieldId, component,
-                                                        attrName ) );
-
-                        attrField = component->GetFieldById( fieldId );
+                        int fieldID = component->GetFieldCount();
+                        attrField = component->AddField( SCH_FIELD( wxPoint(), fieldID,
+                                                                    component, attrName ) );
                     }
+
+                    wxASSERT( attrField->GetName() == attrName );
 
                     attrVal.Value.Replace( wxT( "\n" ), wxT( "\\n" ) );
                     attrVal.Value.Replace( wxT( "\r" ), wxT( "\\r" ) );
@@ -1232,6 +1261,7 @@ void CADSTAR_SCH_ARCHIVE_LOADER::loadSymDefIntoLibrary( const SYMDEF_ID& aSymdef
         LIB_TEXT* libtext = new LIB_TEXT( aPart );
         libtext->SetText( csText.Text );
         libtext->SetUnit( gateNumber );
+        libtext->SetTextAngle( getAngleTenthDegree( csText.OrientAngle ) );
         libtext->SetPosition( getKiCadLibraryPoint( csText.Position, symbol.Origin ) );
         applyTextSettings( csText.TextCodeID, csText.Alignment, csText.Justification, libtext );
         aPart->AddDrawItem( libtext );
@@ -1252,15 +1282,17 @@ void CADSTAR_SCH_ARCHIVE_LOADER::loadSymDefIntoLibrary( const SYMDEF_ID& aSymdef
     if( symbol.TextLocations.find( PART_NAME_ATTRID ) != symbol.TextLocations.end() )
     {
         TEXT_LOCATION textLoc = symbol.TextLocations.at( PART_NAME_ATTRID );
-        LIB_FIELD*    field   = aPart->GetFieldById( PART_NAME );
+        LIB_FIELD*    field = aPart->FindField( PartNameFieldName );
 
         if( !field )
         {
-            field = new LIB_FIELD( aPart, PART_NAME );
+            int fieldID = aPart->GetFieldCount();
+            field = new LIB_FIELD( aPart, fieldID );
+            field->SetName( PartNameFieldName );
             aPart->AddField( field );
         }
 
-        field->SetName( "Part Name" );
+        wxASSERT( field->GetName() == PartNameFieldName );
         applyToLibraryFieldAttribute( textLoc, symbol.Origin, field );
 
         if( aCadstarPart )
@@ -1278,15 +1310,13 @@ void CADSTAR_SCH_ARCHIVE_LOADER::loadSymDefIntoLibrary( const SYMDEF_ID& aSymdef
 
     if( aCadstarPart )
     {
-        int      fieldId = PART_NAME;
         wxString footprintRefName = wxEmptyString;
         wxString footprintAlternateName = wxEmptyString;
 
         auto loadLibraryField =
             [&]( ATTRIBUTE_VALUE& aAttributeVal )
             {
-                wxString   attrName = getAttributeName( aAttributeVal.AttributeID );
-                LIB_FIELD* attrField = nullptr;
+                wxString attrName = getAttributeName( aAttributeVal.AttributeID );
 
                 //Remove invalid field characters
                 aAttributeVal.Value.Replace( wxT( "\n" ), wxT( "\\n" ) );
@@ -1318,18 +1348,18 @@ void CADSTAR_SCH_ARCHIVE_LOADER::loadSymDefIntoLibrary( const SYMDEF_ID& aSymdef
                     footprintAlternateName = aAttributeVal.Value;
                     return;
                 }
-                else
-                {
-                    attrField = aPart->FindField( attrName );
-                }
+
+                LIB_FIELD* attrField = aPart->FindField( attrName );
 
                 if( !attrField )
                 {
-                    aPart->AddField( new LIB_FIELD( aPart, ++fieldId ) );
-                    attrField = aPart->GetFieldById( fieldId );
+                    int fieldID = aPart->GetFieldCount();
+                    attrField = new LIB_FIELD( aPart, fieldID );
                     attrField->SetName( attrName );
+                    aPart->AddField( attrField );
                 }
 
+                wxASSERT( attrField->GetName() == attrName );
                 attrField->SetText( aAttributeVal.Value );
                 attrField->SetUnit( gateNumber );
 
@@ -2212,16 +2242,6 @@ CADSTAR_SCH_ARCHIVE_LOADER::ROUTECODE CADSTAR_SCH_ARCHIVE_LOADER::getRouteCode(
 }
 
 
-wxString CADSTAR_SCH_ARCHIVE_LOADER::getAttributeValue( const ATTRIBUTE_ID& aCadstarAttributeID,
-        const std::map<ATTRIBUTE_ID, ATTRIBUTE_VALUE>&                      aCadstarAttributeMap )
-{
-    wxCHECK( aCadstarAttributeMap.find( aCadstarAttributeID ) != aCadstarAttributeMap.end(),
-            wxEmptyString );
-
-    return aCadstarAttributeMap.at( aCadstarAttributeID ).Value;
-}
-
-
 CADSTAR_SCH_ARCHIVE_LOADER::PART::DEFINITION::PIN CADSTAR_SCH_ARCHIVE_LOADER::getPartDefinitionPin(
         const PART& aCadstarPart, const GATE_ID& aGateID, const TERMINAL_ID& aTerminalID )
 {
@@ -2310,10 +2330,16 @@ void CADSTAR_SCH_ARCHIVE_LOADER::applyTextSettings( const TEXTCODE_ID& aCadstarT
     int      textHeight = KiROUND( (double) getKiCadLength( textCode.Height ) * TXT_HEIGHT_RATIO );
     int      textWidth = getKiCadLength( textCode.Width );
 
-    // The width is zero for all non-cadstar fonts. Using a width equal to the height seems
+    // In Cadstar the overbar token is "'" whereas in KiCad it is "~"
+    wxString escapedText = aKiCadTextItem->GetText();
+    escapedText.Replace( wxT( "~" ), wxT( "~~" ) );
+    escapedText.Replace( wxT( "'" ), wxT( "~" ) );
+    aKiCadTextItem->SetText( escapedText );
+
+    // The width is zero for all non-cadstar fonts. Using a width equal to 2/3 the height seems
     // to work well for most fonts.
     if( textWidth == 0 )
-        textWidth = getKiCadLength( textCode.Height );
+        textWidth = getKiCadLength( 2 * textCode.Height / 3 );
 
     aKiCadTextItem->SetTextWidth( textWidth );
     aKiCadTextItem->SetTextHeight( textHeight );
