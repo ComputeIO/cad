@@ -1,9 +1,12 @@
 ##########################################################################
-# Build KiCad on Fedora and save the results
+# Build KiCad on Ubuntu 20.04 and save the results
 ##########################################################################
-build_linux:
+build_ubuntu20.04:
   stage: build
+  tags:
+    - kicad-ubuntu20.04
   extends: .only_code
+  image: registry.gitlab.com/kicad/kicad-ci/source_containers/master/ubuntu:20.04
   interruptible: false
   cache:
     key: "cache-linux"
@@ -18,6 +21,7 @@ build_linux:
     - mkdir -p build/linux
     - cd build/linux
     - cmake
+      -G Ninja
       -DCMAKE_C_COMPILER_LAUNCHER=ccache
       -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
       -DCMAKE_BUILD_TYPE=Debug
@@ -33,7 +37,7 @@ build_linux:
       -DKICAD_SPICE=ON
       -DKICAD_BUILD_I18N=ON
       ../../
-    - make 2>&1 | tee compilation_log.txt
+    - ninja 2>&1 | tee compilation_log.txt
     - cd ../../
   artifacts:
     # Only save the artifacts that are needed for running the tests in the next stage
@@ -49,12 +53,12 @@ build_linux:
       - build/linux/compilation_log.txt
 
 # Upload the compilation log in an easily downloadable form
-report_build_warn:
+report_build_warn_ubuntu20.04:
   stage: report
   extends: .only_code
   when: always
   needs:
-    - job: build_linux
+    - job: build_ubuntu20.04
       artifacts: true
   script:
     - echo "Uploading compilation log"
@@ -67,12 +71,12 @@ report_build_warn:
       - compilation_log.txt
 
 # Report on the metrics of the code
-report_metrics:
+report_metrics_ubuntu20.04:
   stage: report
   extends: .only_code
   when: always
   needs:
-    - job: build_linux
+    - job: build_ubuntu20.04
       artifacts: true
   script:
     - cat build/linux/compilation_log.txt | { grep "warning:" || test $? = 1; } | awk 'END{print "number_of_warnings "NR}' > metrics.txt
@@ -81,70 +85,72 @@ report_metrics:
     reports:
       metrics: metrics.txt
 
-
 ##########################################################################
 # Run the code unit tests. Each QA executable is split into a separate job so that the display
 # gives the test results broken down by the test executable.
 ##########################################################################
-.unit_test_fedora:
+.unit_test_ubuntu20.04:
   extends:
     - .unit_test
   needs:
-    - job: build_linux
+    - job: build_ubuntu20.04
       artifacts: true
+  tags:
+    - kicad-ubuntu20.04
+  image: registry.gitlab.com/kicad/kicad-ci/source_containers/master/ubuntu:20.04
 
-qa_python:
+qa_python_ubuntu20.04:
   extends:
-    - .unit_test_fedora
+    - .unit_test_ubuntu20.04
     - .only_code
   variables:
     TEST: 'qa_python'
 
-qa_common:
+qa_common_ubuntu20.04:
   extends:
-    - .unit_test_fedora
+    - .unit_test_ubuntu20.04
     - .only_code
   variables:
     TEST: 'qa_common'
 
-qa_gerbview:
+qa_gerbview_ubuntu20.04:
   extends:
-    - .unit_test_fedora
+    - .unit_test_ubuntu20.04
     - .only_code
   variables:
     TEST: 'qa_gerbview'
 
-qa_pcbnew:
+qa_pcbnew_ubuntu20.04:
   extends:
-    - .unit_test_fedora
+    - .unit_test_ubuntu20.04
     - .only_code
   variables:
     TEST: 'qa_pcbnew'
 
-qa_eeschema:
+qa_eeschema_ubuntu20.04:
   extends:
-    - .unit_test_fedora
+    - .unit_test_ubuntu20.04
     - .only_code
   variables:
     TEST: 'qa_eeschema'
 
-qa_kimath:
+qa_kimath_ubuntu20.04:
   extends:
-    - .unit_test_fedora
+    - .unit_test_ubuntu20.04
     - .only_code
   variables:
     TEST: 'qa_kimath'
 
-qa_sexpr:
+qa_sexpr_ubuntu20.04:
   extends:
-    - .unit_test_fedora
+    - .unit_test_ubuntu20.04
     - .only_code
   variables:
     TEST: 'qa_sexpr'
 
-qa_kicad2step:
+qa_kicad2step_ubuntu20.04:
   extends:
-    - .unit_test_fedora
+    - .unit_test_ubuntu20.04
     - .only_code
   variables:
     TEST: 'qa_kicad2step'
