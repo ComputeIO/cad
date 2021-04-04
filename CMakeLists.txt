@@ -726,16 +726,6 @@ find_package( Pixman 0.30 REQUIRED )
 include_directories( SYSTEM ${PIXMAN_INCLUDE_DIR} )
 
 #
-# Find Freetype library, required
-find_package( Freetype REQUIRED )
-include_directories( SYSTEM ${FREETYPE_INCLUDE_DIRS} )
-
-#
-# Find HarfBuzz library, required
-find_package( HarfBuzz REQUIRED )
-include_directories( SYSTEM ${HARFBUZZ_INCLUDE_DIRS} )
-
-#
 # Find Boost headers, required.
 find_package( Boost 1.59.0 REQUIRED )
 include_directories( SYSTEM ${Boost_INCLUDE_DIR} )
