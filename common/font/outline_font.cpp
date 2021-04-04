@@ -174,6 +174,8 @@ VECTOR2D OUTLINE_FONT::Draw( KIGFX::GAL* aGal, const UTF8& aText, const VECTOR2D
 #ifdef DEBUG
     std::cerr << "OUTLINE_FONT::Draw( aGal, \"" << aText << "\", " << aPosition << ", " << aAngle
               << " ) const\n";
+    bool   drawDebugShapes = false;
+    double dbg = 200000;
 #endif
     if( aText.empty() )
         return VECTOR2D( 0, 0 );
@@ -200,6 +202,15 @@ VECTOR2D OUTLINE_FONT::Draw( KIGFX::GAL* aGal, const UTF8& aText, const VECTOR2D
 
     if( aGal )
     {
+#ifdef DEBUG
+        COLOR4D oldColor = aGal->GetStrokeColor();
+        if( drawDebugShapes )
+        {
+            aGal->SetStrokeColor( COLOR4D( 1, 1, 0, 1 ) );
+            aGal->DrawCircle( aPosition, dbg );
+            aGal->SetStrokeColor( oldColor );
+        }
+#endif
         // Context needs to be saved before any transformations
         aGal->Save();
         aGal->Translate( aPosition );
@@ -385,10 +396,12 @@ VECTOR2D OUTLINE_FONT::drawMarkup( KIGFX::GAL* aGal, const MARKUP::MARKUP_NODE& 
             nextPosition =
                     GetTextAsPolygon( glyphs, txt, glyphSize, pt, aAngle, mirrored, textStyle );
 
+            BOX2I stringBoundingBox = getBoundingBox( glyphs );
+
             if( aGal )
             {
                 VECTOR2I textSize = nextPosition;
-                double   lineHeight = textSize.y;
+                double   lineHeight = stringBoundingBox.GetHeight();
                 double   xAdjust = 0.0;
                 double   yAdjust = 0.0;
                 switch( aGal->GetHorizontalJustify() )
@@ -401,12 +414,19 @@ VECTOR2D OUTLINE_FONT::drawMarkup( KIGFX::GAL* aGal, const MARKUP::MARKUP_NODE& 
 
                 switch( aGal->GetVerticalJustify() )
                 {
-                case GR_TEXT_VJUSTIFY_TOP: yAdjust = lineHeight / 2; break;
-                case GR_TEXT_VJUSTIFY_BOTTOM: yAdjust = -lineHeight / 2; break;
+                case GR_TEXT_VJUSTIFY_TOP: yAdjust = -lineHeight / 2; break;
+                case GR_TEXT_VJUSTIFY_BOTTOM: break;
                 case GR_TEXT_VJUSTIFY_CENTER:
-                default: break;
+                default: yAdjust = lineHeight / 2; break;
                 }
 
+                VECTOR2D adjustVector( xAdjust, yAdjust );
+#ifdef DEBUG
+                std::cerr << "Adjusting position by " << adjustVector << " H"
+                          << aGal->GetHorizontalJustify() << " V" << aGal->GetVerticalJustify()
+                          << " lineheight " << lineHeight
+                          << std::endl;
+#endif
                 aGal->Translate( VECTOR2D( xAdjust, yAdjust ) );
 
                 for( auto glyph : glyphs )
@@ -534,9 +554,9 @@ VECTOR2D OUTLINE_FONT::drawSingleLineText( KIGFX::GAL* aGal, const UTF8& aText,
     switch( aGal->GetVerticalJustify() )
     {
     case GR_TEXT_VJUSTIFY_TOP: yAdjust = lineHeight / 2; break;
-    case GR_TEXT_VJUSTIFY_BOTTOM: yAdjust = -lineHeight / 2; break;
+    case GR_TEXT_VJUSTIFY_BOTTOM: break;
     case GR_TEXT_VJUSTIFY_CENTER:
-    default: break;
+    default: yAdjust = -lineHeight / 2; break;
     }
 
     aGal->Translate( VECTOR2D( xAdjust, yAdjust ) );
@@ -621,9 +641,9 @@ VECTOR2I OUTLINE_FONT::GetLinesAsPolygon( std::vector<SHAPE_POLY_SET>& aGlyphs, 
         switch( aAttributes.GetVerticalAlignment() )
         {
         case TEXT_ATTRIBUTES::V_TOP: yAdjust = textHeight / 2; break;
-        case TEXT_ATTRIBUTES::V_BOTTOM: yAdjust = -textHeight / 2; break;
+        case TEXT_ATTRIBUTES::V_BOTTOM: break;
         case TEXT_ATTRIBUTES::V_CENTER:
-        default: break;
+        default: yAdjust = -textHeight / 2; break;
         }
 
         int xMirrorFactor = aIsMirrored ? 1 : -1;
@@ -633,7 +653,7 @@ VECTOR2I OUTLINE_FONT::GetLinesAsPolygon( std::vector<SHAPE_POLY_SET>& aGlyphs, 
         VECTOR2I adjustVector( 0, 0 );
 #endif
 #ifdef DEBUG
-        std::cerr << "adjusting " << aAttributes.GetHorizontalAlignment() << " "
+        std::cerr << "adjusting H" << aAttributes.GetHorizontalAlignment() << " V"
                   << aAttributes.GetVerticalAlignment() << " by " << adjustVector << std::endl;
 #endif
         for( auto glyph : lineGlyphs )

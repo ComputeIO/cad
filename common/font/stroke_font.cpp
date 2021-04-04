@@ -502,7 +502,10 @@ VECTOR2D STROKE_FONT::Draw( KIGFX::GAL* aGal, const UTF8& aText, const VECTOR2D&
     int n = strings_list.Count();
     //double lineHeight = aGal->GetGlyphSize().y + GetInterline( aGal->GetGlyphSize().y );
     double lineHeight = GetInterline( aGal->GetGlyphSize().y );
+#ifdef SOMETHING_IS_FISHY_HERE
+    // multiline text alignment needs a lot more work
     double xAdjust = 0.0;
+#endif
     //
     EDA_TEXT_HJUSTIFY_T hjustify = GR_TEXT_HJUSTIFY_LEFT; //aGal->GetHorizontalJustify();
 #ifdef DEBUG
@@ -546,7 +549,7 @@ VECTOR2D STROKE_FONT::drawSingleLineText( KIGFX::GAL* aGal, const UTF8& aText,
 #ifdef DEBUG
     std::cerr << "drawSingleLineText(...," << aText << ",...) aGal line width "
               << ( aGal ? aGal->GetLineWidth() : 0.0f ) << std::endl;
-    bool   drawDebugShapes = true;
+    bool   drawDebugShapes = false;
     double debugLineWidth = 15000.0;
 #endif
     // TODO default for baseGlyphSize just a guess
