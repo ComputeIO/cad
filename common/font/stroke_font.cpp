@@ -502,10 +502,10 @@ VECTOR2D STROKE_FONT::Draw( KIGFX::GAL* aGal, const UTF8& aText, const VECTOR2D&
     int n = strings_list.Count();
     //double lineHeight = aGal->GetGlyphSize().y + GetInterline( aGal->GetGlyphSize().y );
     double lineHeight = GetInterline( aGal->GetGlyphSize().y );
-#ifdef SOMETHING_IS_FISHY_HERE
+
     // multiline text alignment needs a lot more work
     double xAdjust = 0.0;
-#endif
+
     //
     EDA_TEXT_HJUSTIFY_T hjustify = GR_TEXT_HJUSTIFY_LEFT; //aGal->GetHorizontalJustify();
 #ifdef DEBUG
@@ -524,6 +524,9 @@ VECTOR2D STROKE_FONT::Draw( KIGFX::GAL* aGal, const UTF8& aText, const VECTOR2D&
         default: xAdjust = -lineBoundingBox.x / 2.0;
         }
 
+#ifdef DEBUG
+        std::cerr << "xAdjust = " << xAdjust << ", lineHeight = " << lineHeight << std::endl;
+#endif
 #ifdef SOMETHING_IS_FISHY_HERE
         if( aGal )
             aGal->Translate( VECTOR2D( xAdjust, lineHeight ) );
