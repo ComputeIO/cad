@@ -604,7 +604,7 @@ void SCH_SEXPR_PARSER::parseEDA_TEXT( EDA_TEXT* aText )
                     else
                     {
                         // TODO: notify user about missing font
-#ifdef DEBUG
+#ifdef OUTLINEFONT_DEBUG
                         std::cerr << "parseEDA_TEXT: could not find font face \""
                                   << faceName << "\"" << std::endl;
 #endif

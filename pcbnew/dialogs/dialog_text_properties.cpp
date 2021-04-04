@@ -222,7 +222,7 @@ void DIALOG_TEXT_PROPERTIES::OnCharHook( wxKeyEvent& aEvent )
 }
 
 
-#ifdef DEBUG
+#ifdef OUTLINEFONT_DEBUG
 std::ostream& operator<<( std::ostream& os, const wxFont& aFont )
 {
     os << "(font " << aFont.GetFaceName() << " [" << aFont.GetNativeFontInfoDesc() << ","
@@ -278,12 +278,12 @@ void DIALOG_TEXT_PROPERTIES::OnOkClick( wxCommandEvent& aEvent )
 
 void DIALOG_TEXT_PROPERTIES::SetFontByName( const wxString& aFontName )
 {
-#ifdef DEBUG
+#ifdef OUTLINEFONT_DEBUG
     std::cerr << "chosen font is \"" << aFontName << "\", ";
 #endif
     m_edaText->SetFont( KIFONT::FONT::GetFont( aFontName ) );
     m_FontCtrl->SetValue( m_edaText->GetFont()->Name() );
-#ifdef DEBUG
+#ifdef OUTLINEFONT_DEBUG
     std::cerr << "font is now \"" << m_edaText->GetFont()->Name() << "\"" << std::endl;
 #endif
 }

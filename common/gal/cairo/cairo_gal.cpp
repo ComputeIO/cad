@@ -1661,10 +1661,6 @@ void CAIRO_GAL_BASE::DrawGrid()
 
 void CAIRO_GAL_BASE::DrawGlyph( const SHAPE_POLY_SET& aPolySet, int aNth, int aTotal )
 {
-#ifdef DEBUG
-    std::cerr << "CAIRO_GAL_BASE::DrawGlyph( ..., " << aNth << ", " << aTotal << " )\n";
-#endif
-
     if( aNth == 0 )
     {
         cairo_close_path( m_currentContext );

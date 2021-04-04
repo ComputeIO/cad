@@ -153,7 +153,7 @@ TEXT_ATTRIBUTES& TEXT_ATTRIBUTES::SpinCW()
 
 TEXT_ATTRIBUTES& TEXT_ATTRIBUTES::Align( HORIZONTAL_ALIGNMENT aHorizontalAlignment )
 {
-#ifdef DEBUG
+#ifdef OUTLINEFONT_DEBUG
     std::cerr << "TEXT_ATTRIBUTES::Align( " << aHorizontalAlignment << " )" << std::endl;
 #endif
     m_horizontal_alignment = aHorizontalAlignment;
@@ -163,7 +163,7 @@ TEXT_ATTRIBUTES& TEXT_ATTRIBUTES::Align( HORIZONTAL_ALIGNMENT aHorizontalAlignme
 
 TEXT_ATTRIBUTES& TEXT_ATTRIBUTES::Align( VERTICAL_ALIGNMENT aVerticalAlignment )
 {
-#ifdef DEBUG
+#ifdef OUTLINEFONT_DEBUG
     std::cerr << "TEXT_ATTRIBUTES::Align( " << aVerticalAlignment << " )" << std::endl;
 #endif
     m_vertical_alignment = aVerticalAlignment;
@@ -209,7 +209,7 @@ EDA_TEXT_VJUSTIFY_T TEXT_ATTRIBUTES::GetVertJustify() const
 
 void TEXT_ATTRIBUTES::SetHorizJustify( EDA_TEXT_HJUSTIFY_T aHorizJustify )
 {
-#ifdef DEBUG
+#ifdef OUTLINEFONT_DEBUG
     std::cerr << "TEXT_ATTRIBUTES::SetHorizJustify( " << int( aHorizJustify ) << " )" << std::endl;
 #endif
     switch( aHorizJustify )
@@ -224,7 +224,7 @@ void TEXT_ATTRIBUTES::SetHorizJustify( EDA_TEXT_HJUSTIFY_T aHorizJustify )
 
 void TEXT_ATTRIBUTES::SetVertJustify( EDA_TEXT_VJUSTIFY_T aVertJustify )
 {
-#ifdef DEBUG
+#ifdef OUTLINEFONT_DEBUG
     std::cerr << "TEXT_ATTRIBUTES::SetVertJustify( " << int( aVertJustify ) << " )" << std::endl;
 #endif
     switch( aVertJustify )

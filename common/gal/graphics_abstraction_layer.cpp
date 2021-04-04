@@ -259,12 +259,14 @@ COLOR4D GAL::getCursorColor() const
 void GAL::StrokeText( const wxString& aText, const VECTOR2D& aPosition, double aRotationAngle,
                       KIFONT::FONT* aFont )
 {
-#ifdef DEBUG
+#ifdef OUTLINEFONT_DEBUG
     std::cerr << "GAL::StrokeText( " << aText << ", " << aPosition << ", " << aRotationAngle
               << " ) m_lineWidth " << GetLineWidth() << std::endl;
 #endif
     if( !aFont )
+    {
         aFont = KIFONT::FONT::GetFont();
+    }
     aFont->Draw( this, aText, aPosition, aRotationAngle );
 }
 

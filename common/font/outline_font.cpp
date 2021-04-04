@@ -56,7 +56,7 @@ bool OUTLINE_FONT::LoadFont( const wxString& aFontName )
 {
     wxString fontFile;
     bool     r = Fontconfig().FindFont( aFontName, fontFile );
-#ifdef DEBUG
+#ifdef OUTLINEFONT_DEBUG
     std::cerr << "Fontconfig ";
     if( r )
         std::cerr << "found  [" << fontFile << "]";
@@ -69,7 +69,7 @@ bool OUTLINE_FONT::LoadFont( const wxString& aFontName )
         FT_Error e = loadFace( fontFile );
         if( e )
         {
-#ifdef DEBUG
+#ifdef OUTLINEFONT_DEBUG
             std::cerr << "Could not load [" << fontFile << "]" << std::endl;
 #endif
             return false;
@@ -152,7 +152,7 @@ FT_Error OUTLINE_FONT::loadFace( const wxString& aFontFileName )
             m_fontName = wxString( mFace->family_name );
         }
     }
-#ifdef DEBUG
+#ifdef OUTLINEFONT_DEBUG
     std::cerr << "OUTLINE_FONT::loadFace( " << aFontFileName << " ) "
               << ( e ? "did not load" : "loaded" ) << std::endl;
 #endif
@@ -171,7 +171,7 @@ FT_Error OUTLINE_FONT::loadFace( const wxString& aFontFileName )
 VECTOR2D OUTLINE_FONT::Draw( KIGFX::GAL* aGal, const UTF8& aText, const VECTOR2D& aPosition,
                              const VECTOR2D& aOrigin, const EDA_ANGLE& aAngle ) const
 {
-#ifdef DEBUG
+#ifdef OUTLINEFONT_DEBUG
     std::cerr << "OUTLINE_FONT::Draw( aGal, \"" << aText << "\", " << aPosition << ", " << aAngle
               << " ) const\n";
     bool   drawDebugShapes = false;
@@ -202,7 +202,7 @@ VECTOR2D OUTLINE_FONT::Draw( KIGFX::GAL* aGal, const UTF8& aText, const VECTOR2D
 
     if( aGal )
     {
-#ifdef DEBUG
+#ifdef OUTLINEFONT_DEBUG
         COLOR4D oldColor = aGal->GetStrokeColor();
         if( drawDebugShapes )
         {
@@ -276,7 +276,7 @@ VECTOR2D OUTLINE_FONT::StringBoundaryLimits( const KIGFX::GAL* aGal, const UTF8&
     }
 
     VECTOR2D r = VECTOR2D( width * mFaceScaler, height * mFaceScaler );
-#ifdef DEBUG
+#ifdef OUTLINEFONT_DEBUG
     std::cerr << "outline string boundary limits " << r << std::endl;
 #endif
     return r;
@@ -379,7 +379,7 @@ VECTOR2D OUTLINE_FONT::drawMarkup( KIGFX::GAL* aGal, const MARKUP::MARKUP_NODE& 
             textStyle |= TEXT_STYLE::OVERBAR;
         }
 
-#ifdef DEBUG
+#ifdef OUTLINEFONT_DEBUG
         std::cerr << "OUTLINE_FONT::drawMarkup( [aGal], " << aNode->asString() << ", " << aPosition
                   << ", " << aAngle << ", " << TextStyleAsString( aTextStyle ) << ", " << aLevel
                   << " ) const; textStyle " << TextStyleAsString( textStyle ) << std::endl;
@@ -421,7 +421,7 @@ VECTOR2D OUTLINE_FONT::drawMarkup( KIGFX::GAL* aGal, const MARKUP::MARKUP_NODE& 
                 }
 
                 VECTOR2D adjustVector( xAdjust, yAdjust );
-#ifdef DEBUG
+#ifdef OUTLINEFONT_DEBUG
                 std::cerr << "Adjusting position by " << adjustVector << " H"
                           << aGal->GetHorizontalJustify() << " V" << aGal->GetVerticalJustify()
                           << " lineheight " << lineHeight
@@ -440,7 +440,7 @@ VECTOR2D OUTLINE_FONT::drawMarkup( KIGFX::GAL* aGal, const MARKUP::MARKUP_NODE& 
         nextPosition = drawMarkup( aGal, child, nextPosition, aAngle, textStyle, aLevel + 1 );
     }
 
-#ifdef DEBUG
+#ifdef OUTLINEFONT_DEBUG
     std::cerr << " returns " << nextPosition << std::endl;
 #endif
     return nextPosition;
@@ -476,7 +476,7 @@ VECTOR2D OUTLINE_FONT::drawMarkup( std::vector<SHAPE_POLY_SET>& aGlyphs,
             textStyle |= TEXT_STYLE::OVERBAR;
         }
 
-#ifdef DEBUG
+#ifdef OUTLINEFONT_DEBUG
         std::cerr << "OUTLINE_FONT::drawMarkup( [aGlyphs], " << aNode->asString() << ", "
                   << aPosition << ", " << aGlyphSize << ", " << aAngle << ", "
                   << TextStyleAsString( aTextStyle ) << ", " << aLevel << " ) const; textStyle "
@@ -499,7 +499,7 @@ VECTOR2D OUTLINE_FONT::drawMarkup( std::vector<SHAPE_POLY_SET>& aGlyphs,
                                    textStyle, aLevel + 1 );
     }
 
-#ifdef DEBUG
+#ifdef OUTLINEFONT_DEBUG
     std::cerr << " returns " << nextPosition << std::endl;
 #endif
     return nextPosition;
@@ -510,7 +510,7 @@ VECTOR2D OUTLINE_FONT::drawSingleLineText( KIGFX::GAL* aGal, const UTF8& aText,
                                            const VECTOR2D&  aPosition,
                                            const EDA_ANGLE& aAngle ) const
 {
-#ifdef DEBUG
+#ifdef OUTLINEFONT_DEBUG
     std::cerr << "OUTLINE_FONT::drawSingleLineText( aGal, \"" << aText << "\", " << aPosition
               << " )";
 #endif
@@ -652,7 +652,7 @@ VECTOR2I OUTLINE_FONT::GetLinesAsPolygon( std::vector<SHAPE_POLY_SET>& aGlyphs, 
 #else
         VECTOR2I adjustVector( 0, 0 );
 #endif
-#ifdef DEBUG
+#ifdef OUTLINEFONT_DEBUG
         std::cerr << "adjusting H" << aAttributes.GetHorizontalAlignment() << " V"
                   << aAttributes.GetVerticalAlignment() << " by " << adjustVector << std::endl;
 #endif
@@ -703,7 +703,7 @@ VECTOR2I OUTLINE_FONT::GetTextAsPolygon( std::vector<SHAPE_POLY_SET>& aGlyphs, c
     const double   mirror_factor = ( aIsMirrored ? 1 : -1 );
     const VECTOR2D scaleFactor( glyphSize.x * mirror_factor / scaler, glyphSize.y / scaler );
 
-#ifdef DEBUG //_GETTEXTASPOLYGON //STROKEFONT
+#ifdef OUTLINEFONT_DEBUG //_GETTEXTASPOLYGON //STROKEFONT
     std::cerr << "[OUTLINE_FONT::GetTextAsPolygon( &aGlyphs, \"" << aText << "\", " << aGlyphSize
               << ", " << aPosition << ", " << aOrientation << ", "
               << ( aIsMirrored ? "true" : "false" ) << ", " << TextStyleAsString( aTextStyle )
@@ -933,7 +933,7 @@ VECTOR2I OUTLINE_FONT::GetTextAsPolygon( std::vector<SHAPE_POLY_SET>& aGlyphs, c
         cursor.y += pos.y_advance;
     }
 
-#ifdef DEBUG
+#ifdef OUTLINEFONT_DEBUG
     std::cerr << "Extents " << extentBottomLeft << ", " << extentTopRight;
     std::cerr << " v " << vBottomLeft << ", " << vTopRight << std::endl;
 #endif
@@ -983,7 +983,7 @@ VECTOR2I OUTLINE_FONT::GetTextAsPolygon( std::vector<SHAPE_POLY_SET>& aGlyphs, c
 #else
             overbar.Append( pt );
 #endif
-#ifdef DEBUG
+#ifdef OUTLINEFONT_DEBUG
             std::cerr << overbar.PointCount() << " pts" << std::endl;
 #endif
         }
@@ -991,7 +991,7 @@ VECTOR2I OUTLINE_FONT::GetTextAsPolygon( std::vector<SHAPE_POLY_SET>& aGlyphs, c
         overbar.SetClosed( true );
         overbarGlyph.AddOutline( overbar );
 
-#ifdef DEBUG
+#ifdef OUTLINEFONT_DEBUG
         std::cerr << "overbar has " << overbarGlyph.COutline( 0 ).PointCount() << " ("
                   << overbar.PointCount() << ") pts" << std::endl;
 #endif
@@ -1000,7 +1000,7 @@ VECTOR2I OUTLINE_FONT::GetTextAsPolygon( std::vector<SHAPE_POLY_SET>& aGlyphs, c
     }
 
     VECTOR2I cursorDisplacement( -cursorEnd.x * scaleFactor.x, cursorEnd.y * scaleFactor.y );
-#ifdef DEBUG //_GETTEXTASPOLYGON
+#ifdef OUTLINEFONT_DEBUG //_GETTEXTASPOLYGON
     std::cerr << "pos " << aPosition.x << "," << aPosition.y << " displacement "
               << cursorDisplacement.x << "," << cursorDisplacement.y << std::endl;
     {
@@ -1079,7 +1079,7 @@ VECTOR2D OUTLINE_FONT::getBoundingBox( const UTF8& aString, const VECTOR2D& aGly
         if( height > maxHeight )
             maxHeight = height;
 
-#ifdef DEBUG
+#ifdef OUTLINEFONT_DEBUG
         std::cerr << "#" << i << "/" << glyphCount << " codepoint " << codepoint << " boundingBox "
                   << boundingBox << " controlBox " << controlBox.xMax << "," << controlBox.yMax
                   << " aGlyphSize " << aGlyphSize << " scaler " << scaler << " width " << width
@@ -1091,7 +1091,7 @@ VECTOR2D OUTLINE_FONT::getBoundingBox( const UTF8& aString, const VECTOR2D& aGly
 
     hb_buffer_destroy( buf );
 
-#ifdef DEBUG
+#ifdef OUTLINEFONT_DEBUG
     std::cerr << "OUTLINE_FONT::getBoundingBox( \"" << aString << "\", " << aGlyphSize << ", "
               << aTextStyle << " ) returns " << boundingBox << std::endl;
 #endif

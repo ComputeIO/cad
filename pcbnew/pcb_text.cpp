@@ -137,14 +137,14 @@ const EDA_RECT PCB_TEXT::GetBoundingBox() const
 void PCB_TEXT::Rotate( const wxPoint& aRotCentre, double aAngle )
 {
     wxPoint pt = GetTextPos();
-#ifdef DEBUG
+#ifdef OUTLINEFONT_DEBUG
     std::cerr << "PCB_TEXT::Rotate( {" << aRotCentre.x << "," << aRotCentre.y << "}, " << aAngle
               << " ) " << GetShownText() << "@" << pt << " angle " << GetTextAngle();
 #endif
     RotatePoint( &pt, aRotCentre, aAngle );
     SetTextPos( pt );
     double angle = GetTextAngle() + aAngle;
-#ifdef DEBUG
+#ifdef OUTLINEFONT_DEBUG
     std::cerr << "->" << pt << " angle " << angle << std::endl;
 #endif
     SetTextAngle( angle );

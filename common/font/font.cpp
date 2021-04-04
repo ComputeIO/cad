@@ -145,7 +145,7 @@ VECTOR2D FONT::doDrawString( KIGFX::GAL* aGal, const UTF8& aText, const VECTOR2D
                              bool aParse, const VECTOR2D& aGlyphSize,
                              const TEXT_ATTRIBUTES& aAttributes, const EDA_ANGLE& aAngle ) const
 {
-#ifdef DEBUG
+#ifdef OUTLINEFONT_DEBUG
     std::cerr << "FONT::doDrawString( aGal, \"" << aText << "\", " << aPosition << ", "
               << ", " << ( aParse ? "true" : "false" ) << ", "
               << ", " << aGlyphSize << ", " << aAttributes << ", " << aAngle << " ) const"
@@ -162,7 +162,7 @@ VECTOR2D FONT::doDrawString( KIGFX::GAL* aGal, const UTF8& aText, const VECTOR2D
 
     getLinePositions( aText, aPosition, strings, positions, n_lines, lineBoundingBoxes, aGlyphSize,
                       aAttributes, aAngle );
-#ifdef DEBUG
+#ifdef OUTLINEFONT_DEBUG
     std::cerr << "FONT::doDrawString getLinePositions(\"" << aText << "\"): " << n_lines
               << " lines, ";
     for( int i = 0; i < n_lines; i++ )
@@ -175,7 +175,7 @@ VECTOR2D FONT::doDrawString( KIGFX::GAL* aGal, const UTF8& aText, const VECTOR2D
 
     for( int i = 0; i < n_lines; i++ )
     {
-#ifdef DEBUG
+#ifdef OUTLINEFONT_DEBUG
         std::cerr << "FONT::doDrawString calling Draw( aGal, \"" << strings.Item( i ) << "\", "
                   << positions[i].x << "," << positions[i].y << ", " << aAngle.AsDegrees()
                   << " ) i==" << i << std::endl;
@@ -192,7 +192,7 @@ VECTOR2D FONT::doDrawString( KIGFX::GAL* aGal, const UTF8& aText, const VECTOR2D
             {
                 if( !aNode->is_root() && aNode->has_content() )
                 {
-#ifdef DEBUG
+#ifdef OUTLINEFONT_DEBUG
                     std::cerr << "drawing " << aNode->asString() << " at " << cursor << std::endl;
 #endif
                     VECTOR2D itemBoundingBox =
@@ -214,7 +214,7 @@ VECTOR2D FONT::doDrawString( KIGFX::GAL* aGal, const UTF8& aText, const VECTOR2D
 
         boundingBox.x = fmax( boundingBox.x, lineBoundingBox.x );
         //boundingBox.y += positions[i].y;
-#if 0 //def DEBUG
+#if 0 //def OUTLINEFONT_DEBUG
         std::cerr << "lineBoundingBox " << lineBoundingBox << " -> boundingBox " << boundingBox
                   << std::endl;
 #endif
@@ -232,7 +232,7 @@ void FONT::getLinePositions( const UTF8& aText, const VECTOR2D& aPosition,
                              const VECTOR2D& aGlyphSize, const TEXT_ATTRIBUTES& aAttributes,
                              const EDA_ANGLE& aAngle ) const
 {
-#ifdef DEBUG
+#ifdef OUTLINEFONT_DEBUG
     std::cerr << "FONT::getLinePositions( \"" << aText << "\", ..., " << aGlyphSize << ", "
               << aAttributes << ", " << aAngle << " )" << std::endl;
 #endif
@@ -285,7 +285,7 @@ void FONT::getLinePositions( const UTF8& aText, const VECTOR2D& aPosition,
         aPositions.push_back( pos );
     }
 
-#ifdef DEBUG
+#ifdef OUTLINEFONT_DEBUG
     std::cerr << "FONT::getLinePositions( \"" << aText << "\", " << aPosition << ", ..., "
               << aGlyphSize << ", " << aAttributes << ", " << aAngle << " ) returns " << aLineCount
               << " lines:" << std::endl;
@@ -313,7 +313,7 @@ VECTOR2D FONT::getBoundingBox( const UTF8& aText, const VECTOR2D& aGlyphSize,
         /* ... */
     }
 
-#ifdef DEBUG
+#ifdef OUTLINEFONT_DEBUG
     std::cerr << "FONT::getBoundingBox( \"" << aText << "\", " << aGlyphSize << ", " << aTextStyle
               << ", " << aAttributes << ", " << aAngle << " )" << std::endl;
 #endif
@@ -329,7 +329,7 @@ VECTOR2D FONT::getBoundingBox( const UTF8& aText, const VECTOR2D& aGlyphSize,
     int i = 1;
     for( VECTOR2D lineBoundingBox : boundingBoxes )
     {
-#ifdef DEBUG
+#ifdef OUTLINEFONT_DEBUG
         std::cerr << i << "/" << n_lines << ": boundingBox " << boundingBox << " lineBoundingBox "
                   << lineBoundingBox << std::endl;
 #endif
@@ -338,7 +338,7 @@ VECTOR2D FONT::getBoundingBox( const UTF8& aText, const VECTOR2D& aGlyphSize,
         i++;
     }
 
-#ifdef DEBUG
+#ifdef OUTLINEFONT_DEBUG
     std::cerr << "FONT::getBoundingBox( \"" << aText << "\", ... ) returns " << boundingBox
               << std::endl;
 #endif
@@ -349,7 +349,7 @@ VECTOR2D FONT::getBoundingBox( const UTF8& aText, const VECTOR2D& aGlyphSize,
 void FONT::DrawText( KIGFX::GAL* aGal, const UTF8& aText, const VECTOR2D& aPosition,
                      const TEXT_ATTRIBUTES& aAttributes ) const
 {
-#ifdef DEBUG
+#ifdef OUTLINEFONT_DEBUG
     std::cerr << "FONT::DrawText( " << ( aGal ? "[aGal]" : "nullptr" ) << ", \"" << aText << "\", "
               << aPosition << ", " << aAttributes << " )" << std::endl;
 #endif
