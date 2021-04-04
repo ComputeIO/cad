@@ -10,6 +10,7 @@ build_ubuntu20.04:
   only:
     - branches@kicad/code/kicad
     - tags@kicad/code/kicad
+    - merge_requests@kicad/code/kicad
   interruptible: false
   cache:
     key: "cache-linux"
