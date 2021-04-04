@@ -95,6 +95,7 @@ static const std::vector<SPECIAL_STRINGS_TO_KICAD> special_string_to_kicad_prope
     { "=aB", "C", { { "Ab", "C" } } },
     { "=Ab", "C", { { "aB", "C" } } },
     { "=ab", "C", { { "AB", "C" } } },
+    { "'f'+test+'F/'+voltage",{ { "f${Test}F/${Voltage}" } } },
     // Special strings with text
     { "='A'", "A", {} },
     { "='This is a long text with spaces'", "This is a long text with spaces", {} },
