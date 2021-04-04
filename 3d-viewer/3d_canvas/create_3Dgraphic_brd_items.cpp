@@ -119,8 +119,18 @@ void BOARD_ADAPTER::addShapeWithClearance( const PCB_TEXT* aText, CONTAINER_2D_B
 
     KIFONT::FONT*               font = aText->GetFont();
     const KIFONT::OUTLINE_FONT* outlineFont = dynamic_cast<const KIFONT::OUTLINE_FONT*>( font );
-    TEXT_ATTRIBUTES             attributes;
-    TEXT_STYLE_FLAGS            textStyleFlags;
+
+    TEXT_STYLE_FLAGS textStyleFlags;
+#ifdef ADJUST_HERE
+    // GetLinesAsPolygon() does not actually respect attributes, so
+    // let's pass a dummy instance
+    TEXT_ATTRIBUTES attributes( TEXT_ATTRIBUTES::ANGLE_0, TEXT_ATTRIBUTES::H_LEFT,
+                                TEXT_ATTRIBUTES::V_BOTTOM );
+#else
+    EDA_ANGLE textAngle( aText->GetTextAngle(), EDA_ANGLE::TENTHS_OF_A_DEGREE );
+    TEXT_ATTRIBUTES attributes( textAngle, aText->GetHorizJustify(),
+                                aText->GetVertJustify() );
+#endif
 
     for( unsigned ii = 0; ii < strings_list.Count(); ++ii )
     {
@@ -133,52 +143,58 @@ void BOARD_ADAPTER::addShapeWithClearance( const PCB_TEXT* aText, CONTAINER_2D_B
             VECTOR2I textSize = outlineFont->GetLinesAsPolygon(
                     glyphs, txt, aText->GetTextSize(), positions[ii], attributes,
                     aText->IsMirrored(), textStyleFlags );
+#ifdef DEBUG
+            std::cerr << "positions[" << ii << "] = " << positions[ii]
+                      << ", attributes = " << attributes << ", textSize = " << textSize;
+#endif
 
-            int lastX = 0;
-            int bboxY = 0;
-            int lastWidth = 0;
-            int firstX = 0;
-            bool first = true;
+            int    textHeight = 0;
+            double textWidth = 0;
+            bool   rotateGlyphs = aText->GetTextAngle() != 0;
+            double glyphRotationAngle = -aText->GetTextAngleRadians();
             for( auto glyph : glyphs )
             {
                 BOX2I boundingBox = glyph.BBox( 0 );
-                lastX = boundingBox.GetX();
-                bboxY = std::max( bboxY, boundingBox.GetY() );
-                lastWidth = boundingBox.GetWidth();
-                if( first )
-                {
-                    firstX = lastX;
-                    first = false;
-                }
+                textHeight = std::max( textHeight, boundingBox.GetY() );
+                textWidth += boundingBox.GetWidth();
             }
 
-            double textWidth = (lastX - firstX) + lastWidth;
-            double textHeight = bboxY;
             double xAdjust = 0.0;
             double yAdjust = 0.0;
             switch( aText->GetHorizJustify() )
             {
             case GR_TEXT_HJUSTIFY_LEFT: break;
-            case GR_TEXT_HJUSTIFY_RIGHT: xAdjust = -textWidth; break;
+            case GR_TEXT_HJUSTIFY_RIGHT: xAdjust = textWidth; break;
             case GR_TEXT_HJUSTIFY_CENTER:
-            default: xAdjust = -textWidth / 2.0;
+            default: xAdjust = textWidth / 2.0;
             }
 
             switch( aText->GetVertJustify() )
             {
+#if 0
             case GR_TEXT_VJUSTIFY_TOP: yAdjust = textHeight / 2; break;
             case GR_TEXT_VJUSTIFY_BOTTOM: yAdjust = -textHeight / 2; break;
             case GR_TEXT_VJUSTIFY_CENTER:
             default: break;
+#else
+            case GR_TEXT_VJUSTIFY_TOP: yAdjust = textHeight / 2; break;
+            case GR_TEXT_VJUSTIFY_BOTTOM: break;
+            case GR_TEXT_VJUSTIFY_CENTER:
+            default: yAdjust = -textHeight / 2; break;
+#endif
             }
 
+            VECTOR2I adjustVector( xAdjust, yAdjust );
+            VECTOR2I rotatedAdjustVector = adjustVector.Rotate( glyphRotationAngle );
+
             const VECTOR2D conversionFactor( m_biuTo3Dunits, -m_biuTo3Dunits );
-            const SFVEC2F  adjustOffset( xAdjust * conversionFactor.x,
-                                         yAdjust * conversionFactor.y );
+            const SFVEC2F  adjustOffset( rotatedAdjustVector.x * conversionFactor.x,
+                                        rotatedAdjustVector.y * conversionFactor.y );
 #ifdef DEBUG
-            std::cerr << "adjustOffset " << xAdjust << "," << yAdjust << "->" << adjustOffset.x
-                      << "," << adjustOffset.y << " justify " << aText->GetHorizJustify() << " "
-                      << aText->GetVertJustify() << std::endl;
+            std::cerr << ", adjustOffset " << xAdjust << "," << yAdjust << "->" << adjustVector
+                      << "->" << rotatedAdjustVector << "->" << adjustOffset.x << ","
+                      << adjustOffset.y << " justify " << aText->GetHorizJustify() << " "
+                      << aText->GetVertJustify() << " angle " << glyphRotationAngle << std::endl;
 #endif
 
             auto triangleCallback = [&]( int aPolygonIndex, const VECTOR2D& aVertex1,
@@ -192,7 +208,7 @@ void BOARD_ADAPTER::addShapeWithClearance( const PCB_TEXT* aText, CONTAINER_2D_B
 #ifdef DEBUG
                 std::cerr << "#" << v1.x << "," << v1.y;
 #endif
-#if 1
+#ifdef ADJUST_HERE
                 aDstContainer->Add( new TRIANGLE_2D( v1 + adjustOffset, v2 + adjustOffset,
                                                      v3 + adjustOffset, *aText ) );
 #else
@@ -202,10 +218,27 @@ void BOARD_ADAPTER::addShapeWithClearance( const PCB_TEXT* aText, CONTAINER_2D_B
 
             for( SHAPE_POLY_SET& glyph : glyphs )
             {
-                SHAPE_POLY_SET polyList;
+                SHAPE_POLY_SET theGlyph( glyph );
+#ifdef ADJUST_HERE
+                if( rotateGlyphs )
+                {
+#ifdef DEBUG
+                    std::cerr << "rotating " << glyph.BBox().GetX() << glyph.BBox().GetX() << " "
+                              << glyph.BBox().GetY() << " " << glyph.BBox().GetWidth() << " "
+                              << glyph.BBox().GetHeight();
+#endif
+                    theGlyph.Rotate( glyphRotationAngle, positions[ii] );
+#ifdef DEBUG
+                    std::cerr << " by " << glyphRotationAngle << " into " << theGlyph.BBox().GetX()
+                              << theGlyph.BBox().GetX() << " " << theGlyph.BBox().GetY() << " "
+                              << theGlyph.BBox().GetWidth() << " " << theGlyph.BBox().GetHeight()
+                              << std::endl;
+#endif
+                }
+#endif //ADJUST_HERE
 
                 // TODO: triangulate all glyphs in one go - needed for adding a label background rect
-                Triangulate( glyph, triangleCallback );
+                Triangulate( theGlyph, triangleCallback );
             }
         }
         else

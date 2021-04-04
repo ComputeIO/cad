@@ -175,6 +175,8 @@ private:
                          const VECTOR2D& aPosition, const VECTOR2D& aGlyphSize, bool aIsMirrored,
                          const EDA_ANGLE& aAngle, TEXT_STYLE_FLAGS aTextStyle = 0,
                          int aLevel = 0 ) const;
+
+    BOX2I getBoundingBox( const std::vector<SHAPE_POLY_SET>& aGlyphs ) const;
 };
 } //namespace KIFONT
 

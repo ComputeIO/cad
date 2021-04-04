@@ -667,12 +667,12 @@ private:
     HORIZONTAL_ALIGNMENT m_horizontal_alignment;
     VERTICAL_ALIGNMENT   m_vertical_alignment;
     EDA_ANGLE            m_angle;
-    int                  m_stroke_width;
-    bool                 m_italic;
-    bool                 m_bold;
-    bool                 m_mirrored;
+    int                  m_stroke_width = 0;
+    bool                 m_italic = false;
+    bool                 m_bold = false;
+    bool                 m_mirrored = false;
     VECTOR2D             m_size;
-    bool                 m_flip_y;
+    bool                 m_flip_y = false;
 };
 
 
@@ -697,7 +697,7 @@ inline std::ostream& operator<<( std::ostream&                              os,
 inline std::ostream& operator<<( std::ostream& os, const TEXT_ATTRIBUTES& attr )
 {
     os << "(attributes " << attr.GetHorizontalAlignment() << " " << attr.GetVerticalAlignment()
-       << " " << attr.GetAngle() << "(size " << attr.GetSize() << ") "
+       << " " << attr.GetAngle() << " (size " << attr.GetSize() << ") "
        << "(stroke_width " << attr.GetStrokeWidth() << ")" << ( attr.IsBold() ? " bold" : "" )
        << ( attr.IsItalic() ? " italic" : "" ) << ( attr.IsMirrored() ? " mirrored" : "" )
        << ( attr.IsFlipY() ? " flipY" : "" ) << ")";

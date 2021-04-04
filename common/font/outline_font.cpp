@@ -206,6 +206,7 @@ VECTOR2D OUTLINE_FONT::Draw( KIGFX::GAL* aGal, const UTF8& aText, const VECTOR2D
         aGal->Rotate( aAngle.Invert().AsRadians() );
     }
 
+    // angle is 0 as we have already rotated by -aAngle
     VECTOR2D bbox = drawSingleLineText( aGal, aText, wxPoint( 0, 0 ), EDA_ANGLE() );
 
     if( aGal )
@@ -490,9 +491,8 @@ VECTOR2D OUTLINE_FONT::drawSingleLineText( KIGFX::GAL* aGal, const UTF8& aText,
                                            const EDA_ANGLE& aAngle ) const
 {
 #ifdef DEBUG
-    if( debugMe( aText ) )
-        std::cerr << "OUTLINE_FONT::drawSingleLineText( aGal, \"" << aText << "\", " << aPosition
-                  << " )";
+    std::cerr << "OUTLINE_FONT::drawSingleLineText( aGal, \"" << aText << "\", " << aPosition
+              << " )";
 #endif
 #if 0
     if( agal && aGal->IsOpenGlEngine() )
@@ -548,15 +548,31 @@ VECTOR2D OUTLINE_FONT::drawSingleLineText( KIGFX::GAL* aGal, const UTF8& aText,
 }
 
 
-#if 0
-static inline int getp2( int a )
+BOX2I OUTLINE_FONT::getBoundingBox( const std::vector<SHAPE_POLY_SET>& aGlyphs ) const
 {
-    int rval = 1;
-    while( rval < a )
-        rval <<= 1;
-    return rval;
+    int minX = INT_MAX;
+    int minY = INT_MAX;
+    int maxX = INT_MIN;
+    int maxY = INT_MIN;
+
+    for( auto glyph : aGlyphs )
+    {
+        BOX2I bbox = glyph.BBox();
+        bbox.Normalize();
+        if( minX > bbox.GetX() )
+            minX = bbox.GetX();
+        if( minY > bbox.GetY() )
+            minY = bbox.GetY();
+        if( maxX < bbox.GetRight() )
+            maxX = bbox.GetRight();
+        if( maxY < bbox.GetBottom() )
+            maxY = bbox.GetBottom();
+    }
+    BOX2I ret;
+    ret.SetOrigin( minX, minY );
+    ret.SetEnd( maxX, maxY );
+    return ret;
 }
-#endif
 
 
 VECTOR2I OUTLINE_FONT::GetLinesAsPolygon( std::vector<SHAPE_POLY_SET>& aGlyphs, const UTF8& aText,
@@ -578,13 +594,53 @@ VECTOR2I OUTLINE_FONT::GetLinesAsPolygon( std::vector<SHAPE_POLY_SET>& aGlyphs, 
     for( int i = 0; i < n; i++ )
     {
 #if 1
-        MARKUP::MARKUP_PARSER markupParser( UTF8( strings.Item( i ) ) );
-        auto                  markupRoot = markupParser.Parse();
+        MARKUP::MARKUP_PARSER       markupParser( UTF8( strings.Item( i ) ) );
+        auto                        markupRoot = markupParser.Parse();
+        std::vector<SHAPE_POLY_SET> lineGlyphs;
 
         //VECTOR2D position( 0, 0 ); //position(aPosition);
         //drawMarkup( aGal, markupRoot, position, aAngle );
-        drawMarkup( aGlyphs, markupRoot, positions[i], aGlyphSize, aIsMirrored,
-                    aAttributes.GetAngle() );
+
+        ret = drawMarkup( lineGlyphs, markupRoot, positions[i], aGlyphSize, aIsMirrored,
+                          aAttributes.GetAngle() );
+
+        BOX2I lineBoundingBox = getBoundingBox( lineGlyphs );
+        int   textWidth = lineBoundingBox.GetWidth();
+
+        int xAdjust = 0;
+        int yAdjust = 0;
+        switch( aAttributes.GetHorizontalAlignment() )
+        {
+        case TEXT_ATTRIBUTES::H_LEFT: break;
+        case TEXT_ATTRIBUTES::H_RIGHT: xAdjust = textWidth; break;
+        case TEXT_ATTRIBUTES::H_CENTER:
+        default: xAdjust = textWidth; // / 2;
+        }
+
+        int textHeight = lineBoundingBox.GetHeight();
+        switch( aAttributes.GetVerticalAlignment() )
+        {
+        case TEXT_ATTRIBUTES::V_TOP: yAdjust = textHeight / 2; break;
+        case TEXT_ATTRIBUTES::V_BOTTOM: yAdjust = -textHeight / 2; break;
+        case TEXT_ATTRIBUTES::V_CENTER:
+        default: break;
+        }
+
+        int xMirrorFactor = aIsMirrored ? 1 : -1;
+#if 1
+        VECTOR2I adjustVector( xMirrorFactor * xAdjust, yAdjust );
+#else
+        VECTOR2I adjustVector( 0, 0 );
+#endif
+#ifdef DEBUG
+        std::cerr << "adjusting " << aAttributes.GetHorizontalAlignment() << " "
+                  << aAttributes.GetVerticalAlignment() << " by " << adjustVector << std::endl;
+#endif
+        for( auto glyph : lineGlyphs )
+        {
+            glyph.Move( adjustVector );
+            aGlyphs.push_back( glyph );
+        }
 #else
         ret = GetTextAsPolygon( aGlyphs, strings.Item( i ), aGlyphSize, positions[i],
                                 aAttributes.GetAngle(), aIsMirrored, aTextStyle );
@@ -628,32 +684,29 @@ VECTOR2I OUTLINE_FONT::GetTextAsPolygon( std::vector<SHAPE_POLY_SET>& aGlyphs, c
     const VECTOR2D scaleFactor( glyphSize.x * mirror_factor / scaler, glyphSize.y / scaler );
 
 #ifdef DEBUG //_GETTEXTASPOLYGON //STROKEFONT
-    if( debugMe( aText ) )
+    std::cerr << "[OUTLINE_FONT::GetTextAsPolygon( &aGlyphs, \"" << aText << "\", " << aGlyphSize
+              << ", " << aPosition << ", " << aOrientation << ", "
+              << ( aIsMirrored ? "true" : "false" ) << ", " << TextStyleAsString( aTextStyle )
+              << " ) const; glyphCount " << glyphCount << " mirror_factor " << mirror_factor
+              << " scaler " << scaler << " scaleFactor " << scaleFactor << " font " << Name()
+              << " c_str " << aText.c_str() << " ";
+
+    for( unsigned int i = 0; i < glyphCount; i++ )
     {
-        std::cerr << "[OUTLINE_FONT::GetTextAsPolygon( &aGlyphs, \"" << aText << "\", "
-                  << aGlyphSize << ", " << aPosition << ", " << aOrientation << ", "
-                  << ( aIsMirrored ? "true" : "false" ) << ", " << TextStyleAsString( aTextStyle )
-                  << " ) const; glyphCount " << glyphCount << " mirror_factor " << mirror_factor
-                  << " scaler " << scaler << " scaleFactor " << scaleFactor << " font " << Name()
-                  << " c_str " << aText.c_str() << " ";
+        hb_glyph_position_t& pos = glyphPos[i];
+        int                  codepoint = glyphInfo[i].codepoint;
 
-        for( unsigned int i = 0; i < glyphCount; i++ )
-        {
-            hb_glyph_position_t& pos = glyphPos[i];
-            int                  codepoint = glyphInfo[i].codepoint;
+        FT_Load_Glyph( face, codepoint, FT_LOAD_NO_BITMAP );
 
-            FT_Load_Glyph( face, codepoint, FT_LOAD_NO_BITMAP );
-
-            FT_GlyphSlot              glyph = face->glyph;
-            static const unsigned int bufsize = 512;
-            char                      glyphName[bufsize];
-            FT_Get_Glyph_Name( face, glyph->glyph_index, &glyphName[0], bufsize );
-            std::cerr << "<glyph " << codepoint << " '" << glyphName << "' pos ";
-            std::cerr << pos.x_advance << "," << pos.y_advance << "," << pos.x_offset << ","
-                      << pos.y_offset << ">";
-        }
-        std::cerr << "]" << std::endl;
+        FT_GlyphSlot              glyph = face->glyph;
+        static const unsigned int bufsize = 512;
+        char                      glyphName[bufsize];
+        FT_Get_Glyph_Name( face, glyph->glyph_index, &glyphName[0], bufsize );
+        std::cerr << "<glyph " << codepoint << " '" << glyphName << "' pos ";
+        std::cerr << pos.x_advance << "," << pos.y_advance << "," << pos.x_offset << ","
+                  << pos.y_offset << ">";
     }
+    std::cerr << "]" << std::endl;
 #endif
 
     VECTOR2I cursor( 0, 0 );

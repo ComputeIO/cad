@@ -272,9 +272,6 @@ protected:
 
     virtual VECTOR2D getBoundingBox( const UTF8& aString, const VECTOR2D& aGlyphSize,
                                      TEXT_STYLE_FLAGS aTextStyle = 0 ) const = 0;
-#ifdef DEBUG
-    bool debugMe( const UTF8& aText ) const;
-#endif
 
 private:
     static FONT*                     s_defaultFont;

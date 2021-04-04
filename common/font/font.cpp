@@ -56,12 +56,6 @@ using namespace KIFONT;
 FONT*                     FONT::s_defaultFont = nullptr;
 std::map<wxString, FONT*> FONT::s_fontMap;
 
-#ifdef DEBUG
-bool FONT::debugMe( const UTF8& aText ) const
-{
-    return ( !aText.substr( 0, 3 ).compare( "Foo" ) || !aText.substr( 0, 6 ).compare( "${FONT" ) );
-}
-#endif
 
 FONT::FONT()
 {
