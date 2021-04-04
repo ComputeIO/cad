@@ -262,14 +262,30 @@ void DIALOG_TEXT_PROPERTIES::OnShowFontDialog( wxCommandEvent& aEvent )
     wxFontDialog* fontDialog = new wxFontDialog( this, fontData );
     if( fontDialog->ShowModal() == wxID_OK )
     {
-        fontData = fontDialog->GetFontData();
-        wxFont theFont = fontData.GetChosenFont();
-#ifdef DEBUG
-        std::cerr << "chosen font is " << theFont << std::endl;
-#endif
-        m_edaText->SetFont( KIFONT::FONT::GetFont( theFont.GetFaceName() ) );
-        m_FontCtrl->SetValue( m_edaText->GetFont()->Name() );
+        wxFont theFont = fontDialog->GetFontData().GetChosenFont();
+        KIFONT::FONT* font = KIFONT::FONT::GetFont( theFont.GetFaceName() );
+        m_FontCtrl->SetValue( font->Name() );
     }
+}
+
+
+void DIALOG_TEXT_PROPERTIES::OnOkClick( wxCommandEvent& aEvent )
+{
+    SetFontByName( m_FontCtrl->GetValue() );
+    aEvent.Skip();
+}
+
+
+void DIALOG_TEXT_PROPERTIES::SetFontByName( const wxString& aFontName )
+{
+#ifdef DEBUG
+    std::cerr << "chosen font is \"" << aFontName << "\", ";
+#endif
+    m_edaText->SetFont( KIFONT::FONT::GetFont( aFontName ) );
+    m_FontCtrl->SetValue( m_edaText->GetFont()->Name() );
+#ifdef DEBUG
+    std::cerr << "font is now \"" << m_edaText->GetFont()->Name() << "\"" << std::endl;
+#endif
 }
 
 

@@ -29,6 +29,7 @@
 #include <gal/graphics_abstraction_layer.h>
 #include <math/util.h> // for KiROUND
 #include <wx/string.h>
+#include <wx/textfile.h>
 #include <gr_text.h>
 #include <settings/settings_manager.h>
 #include <newstroke_font.h>
