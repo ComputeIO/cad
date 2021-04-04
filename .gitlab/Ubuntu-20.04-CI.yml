@@ -112,6 +112,9 @@ report_metrics_ubuntu20.04:
     - tags@kicad/code/kicad
 
 qa_python_ubuntu20.04:
+  only:
+    - branches@kicad/code/kicad
+    - tags@kicad/code/kicad
   extends:
     - .unit_test_ubuntu20.04
     - .only_code
