@@ -139,8 +139,8 @@ public:
      *              pass reference to the lib component for pins.
      * @param aTransform Transform Matrix (rotation, mirror ..)
      */
-    virtual void Print( const RENDER_SETTINGS* aSettings, const wxPoint& aOffset, void* aData,
-                        const TRANSFORM& aTransform );
+    virtual void Print( const RENDER_SETTINGS* aSettings, const wxPoint &aOffset,
+                        void* aData, const TRANSFORM& aTransform );
 
     virtual int GetPenWidth() const = 0;
 
@@ -257,12 +257,12 @@ public:
     bool IsFillable() const { return m_isFillable; }
 
     void SetUnit( int aUnit ) { m_unit = aUnit; }
-    int  GetUnit() const { return m_unit; }
+    int GetUnit() const { return m_unit; }
 
     void SetConvert( int aConvert ) { m_convert = aConvert; }
-    int  GetConvert() const { return m_convert; }
+    int GetConvert() const { return m_convert; }
 
-    void      SetFillMode( FILL_TYPE aFillMode ) { m_fill = aFillMode; }
+    void SetFillMode( FILL_TYPE aFillMode ) { m_fill = aFillMode; }
     FILL_TYPE GetFillMode() const { return m_fill; }
 
 #if defined(DEBUG)
@@ -312,20 +312,20 @@ protected:
      * Unit identification for multiple parts per package.  Set to 0 if the item is common
      * to all units.
      */
-    int m_unit;
+    int         m_unit;
 
     /**
      * Shape identification for alternate body styles.  Set 0 if the item is common to all
      * body styles.  This is typially used for representing DeMorgan variants in KiCad.
      */
-    int m_convert;
+    int         m_convert;
 
     /**
      * The body fill type.  This has meaning only for some items.  For a list of fill types
      * see #FILL_TYPE.
      */
-    FILL_TYPE m_fill;
-    bool      m_isFillable;
+    FILL_TYPE   m_fill;
+    bool        m_isFillable;
 };
 
 

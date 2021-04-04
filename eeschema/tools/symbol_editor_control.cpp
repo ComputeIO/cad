@@ -83,11 +83,12 @@ bool SYMBOL_EDITOR_CONTROL::Init()
                     LIB_ID sel = editFrame->GetTreeLIBID();
                     return !sel.GetLibNickname().empty() && !sel.GetLibItemName().empty();
                 };
-        auto saveSymbolAsCondition = [editFrame]( const SELECTION& aSel )
-        {
-            LIB_ID sel = editFrame->GetTargetLibId();
-            return !sel.GetLibNickname().empty() && !sel.GetLibItemName().empty();
-        };
+        auto saveSymbolAsCondition =
+                [ editFrame ]( const SELECTION& aSel )
+                {
+                    LIB_ID sel = editFrame->GetTargetLibId();
+                    return !sel.GetLibNickname().empty() && !sel.GetLibItemName().empty();
+                };
 
         ctxMenu.AddItem( ACTIONS::pinLibrary,            unpinnedLibSelectedCondition );
         ctxMenu.AddItem( ACTIONS::unpinLibrary,          pinnedLibSelectedCondition );
@@ -507,8 +508,8 @@ int SYMBOL_EDITOR_CONTROL::AddSymbolToSchematic( const TOOL_EVENT& aEvent )
 
         wxCHECK( part->GetLibId().IsValid(), 0 );
 
-        SCH_COMPONENT* symbol =
-                new SCH_COMPONENT( *part, libId, &schframe->GetCurrentSheet(), unit, convert );
+        SCH_COMPONENT* symbol = new SCH_COMPONENT( *part, libId, &schframe->GetCurrentSheet(),
+                                                   unit, convert );
 
         symbol->SetParent( schframe->GetScreen() );
 

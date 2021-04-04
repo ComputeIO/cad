@@ -89,7 +89,7 @@ void SCH_VIEW::ResizeSheetWorkingArea( const SCH_SCREEN* aScreen )
 }
 
 
-void SCH_VIEW::DisplaySheet( const SCH_SCREEN* aScreen )
+void SCH_VIEW::DisplaySheet( const SCH_SCREEN *aScreen )
 {
     for( SCH_ITEM* item : aScreen->Items() )
         Add( item );

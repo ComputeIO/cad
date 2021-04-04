@@ -357,9 +357,7 @@ public:
      * Do nothing in GerbView.
      */
     void SaveCopyInUndoList( GERBER_DRAW_ITEM* aItemToCopy,
-                             UNDO_REDO         aTypeCommand = UNDO_REDO::UNSPECIFIED )
-    {
-    }
+                             UNDO_REDO aTypeCommand = UNDO_REDO::UNSPECIFIED ) { }
 
     /**
      * Create a new entry in undo list of commands and add a list of pickers to handle a list
@@ -370,7 +368,8 @@ public:
      * @param aTransformPoint = the reference point of the transformation,
      *                          for commands like move
      */
-    void SaveCopyInUndoList( const PICKED_ITEMS_LIST& aItemsList, UNDO_REDO aTypeCommand )
+    void SaveCopyInUndoList( const PICKED_ITEMS_LIST& aItemsList,
+                             UNDO_REDO aTypeCommand )
     {
         // currently: do nothing in GerbView.
     }
@@ -413,22 +412,25 @@ public:
     /**
      * Accessors to GERBER_FILE_IMAGE_LIST and GERBER_FILE_IMAGE data
      */
-    GERBER_FILE_IMAGE_LIST* GetImagesList() const { return m_gerberLayout->GetImagesList(); }
+    GERBER_FILE_IMAGE_LIST* GetImagesList() const
+    {
+        return m_gerberLayout->GetImagesList();
+    }
 
     GERBER_FILE_IMAGE* GetGbrImage( int aIdx ) const;
 
-    unsigned ImagesMaxCount() const; ///< The max number of file images
+    unsigned ImagesMaxCount() const;    ///< The max number of file images
 
 
-    void             SetPageSettings( const PAGE_INFO& aPageSettings ) override;
+    void SetPageSettings( const PAGE_INFO& aPageSettings ) override;
     const PAGE_INFO& GetPageSettings() const override;
-    const wxSize     GetPageSizeIU() const override;
+    const wxSize GetPageSizeIU() const override;
 
     const wxPoint& GetGridOrigin() const override { return m_grid_origin; }
-    void           SetGridOrigin( const wxPoint& aPoint ) override { m_grid_origin = aPoint; }
+    void SetGridOrigin( const wxPoint& aPoint ) override { m_grid_origin = aPoint; }
 
-    const TITLE_BLOCK& GetTitleBlock() const override;
-    void               SetTitleBlock( const TITLE_BLOCK& aTitleBlock ) override;
+    const TITLE_BLOCK&  GetTitleBlock() const override;
+    void SetTitleBlock( const TITLE_BLOCK& aTitleBlock ) override;
 
     /**
      * Show the dialog box for layer selection.
@@ -469,11 +471,11 @@ protected:
     void setupUIConditions() override;
 
 private:
-    void updateComponentListSelectBox();
-    void updateNetnameListSelectBox();
-    void updateAperAttributesSelectBox();
-    void updateDCodeSelectBox();
-    void unitsChangeRefresh() override; // See class EDA_DRAW_FRAME
+    void            updateComponentListSelectBox();
+    void            updateNetnameListSelectBox();
+    void            updateAperAttributesSelectBox();
+    void            updateDCodeSelectBox();
+    void            unitsChangeRefresh() override;      // See class EDA_DRAW_FRAME
 
     void OnClearJobFileHistory( wxCommandEvent& aEvent );
     void OnClearZipFileHistory( wxCommandEvent& aEvent );
@@ -487,55 +489,55 @@ private:
     void applyDisplaySettingsToGAL();
 
 public:
-    wxChoice* m_SelComponentBox;           // a choice box to display and highlight component
-                                           // graphic items
-    wxChoice* m_SelNetnameBox;             // a choice box to display and highlight netlist
-                                           // graphic items
-    wxChoice* m_SelAperAttributesBox;      // a choice box to display aperture attributes and
-                                           // highlight items
-    GBR_LAYER_BOX_SELECTOR* m_SelLayerBox; // The combobox to select the current active
-                                           // graphic layer
-                                           // (which is drawn on top on the other layers
-    DCODE_SELECTION_BOX* m_DCodeSelector;  // a list box to select the dcode Id to highlight.
-    wxTextCtrl*          m_TextInfo;       // a wxTextCtrl used to display some info about
-                                           // gerber data (format..)
+    wxChoice* m_SelComponentBox;                // a choice box to display and highlight component
+                                                // graphic items
+    wxChoice* m_SelNetnameBox;                  // a choice box to display and highlight netlist
+                                                // graphic items
+    wxChoice* m_SelAperAttributesBox;           // a choice box to display aperture attributes and
+                                                // highlight items
+    GBR_LAYER_BOX_SELECTOR* m_SelLayerBox;      // The combobox to select the current active
+                                                // graphic layer
+                                                // (which is drawn on top on the other layers
+    DCODE_SELECTION_BOX*    m_DCodeSelector;    // a list box to select the dcode Id to highlight.
+    wxTextCtrl*             m_TextInfo;         // a wxTextCtrl used to display some info about
+                                                // gerber data (format..)
 
 protected:
-    GERBER_LAYER_WIDGET* m_LayersManager;
+    GERBER_LAYER_WIDGET*    m_LayersManager;
 
-    FILE_HISTORY m_zipFileHistory;
-    FILE_HISTORY m_drillFileHistory;
-    FILE_HISTORY m_jobFileHistory;
+    FILE_HISTORY            m_zipFileHistory;
+    FILE_HISTORY            m_drillFileHistory;
+    FILE_HISTORY            m_jobFileHistory;
 
-    wxString m_lastFileName; // The last filename chosen to be proposed to the
-                             // user.
+    wxString                m_lastFileName;     // The last filename chosen to be proposed to the
+                                                // user.
 
 private:
-    int m_displayMode; // Gerber images ("layers" in Gerbview) can be drawn:
-                       // - in fast mode (write mode) but if there are negative
-                       // items only the last image is correctly drawn (no
-                       // problem to see only one image or when no negative items)
-                       // - in "exact" mode (but slower) in write mode:
-                       // last image covers previous images
-                       // - in "exact" mode (also slower) in OR mode
-                       // (transparency mode)
-                       // m_displayMode = 0, 1 or 2
+    int             m_displayMode;      // Gerber images ("layers" in Gerbview) can be drawn:
+                                        // - in fast mode (write mode) but if there are negative
+                                        // items only the last image is correctly drawn (no
+                                        // problem to see only one image or when no negative items)
+                                        // - in "exact" mode (but slower) in write mode:
+                                        // last image covers previous images
+                                        // - in "exact" mode (also slower) in OR mode
+                                        // (transparency mode)
+                                        // m_displayMode = 0, 1 or 2
 
-    bool m_show_layer_manager_tools;
+    bool                m_show_layer_manager_tools;
 
     GBR_LAYOUT*         m_gerberLayout;
     int                 m_activeLayer;
     wxPoint             m_grid_origin;
-    PAGE_INFO           m_paper; // used only to show paper limits to screen
+    PAGE_INFO           m_paper;            // used only to show paper limits to screen
     GBR_DISPLAY_OPTIONS m_DisplayOptions;
-    wxStaticText*       m_cmpText; // a message on the auxiliary toolbar,
-                                   // relative to the m_SelComponentBox
-    wxStaticText* m_netText;       // a message on the auxiliary toolbar,
-                                   // relative to the m_SelNetnameBox
-    wxStaticText* m_apertText;     // a message on the auxiliary toolbar,
-                                   // relative to the m_SelAperAttributesBox
-    wxStaticText* m_dcodeText;     // a message on the auxiliary toolbar,
-                                   // relative to the m_DCodeSelector
+    wxStaticText*       m_cmpText;          // a message on the auxiliary toolbar,
+                                            // relative to the m_SelComponentBox
+    wxStaticText*       m_netText;          // a message on the auxiliary toolbar,
+                                            // relative to the m_SelNetnameBox
+    wxStaticText*       m_apertText;        // a message on the auxiliary toolbar,
+                                            // relative to the m_SelAperAttributesBox
+    wxStaticText*       m_dcodeText;        // a message on the auxiliary toolbar,
+                                            // relative to the m_DCodeSelector
 };
 
 #endif /* WX_GERBER_STRUCT_H */

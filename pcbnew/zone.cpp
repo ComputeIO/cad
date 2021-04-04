@@ -1009,19 +1009,21 @@ void ZONE::HatchBorder()
         // Iterate through all vertices
         for( auto iterator = m_Poly->IterateSegmentsWithHoles(); iterator; iterator++ )
         {
-            double x, y;
-            bool   ok;
+            double  x, y;
+            bool    ok;
 
             SEG segment = *iterator;
 
-            ok = FindLineSegmentIntersection( a, slope, segment.A.x, segment.A.y, segment.B.x,
-                                              segment.B.y, x, y );
+            ok = FindLineSegmentIntersection( a, slope,
+                                              segment.A.x, segment.A.y,
+                                              segment.B.x, segment.B.y,
+                                              x, y );
 
-            if( ok )
-            {
-                VECTOR2I point( KiROUND( x ), KiROUND( y ) );
-                pointbuffer.push_back( point );
-            }
+              if( ok )
+              {
+                  VECTOR2I point( KiROUND( x ), KiROUND( y ) );
+                  pointbuffer.push_back( point );
+              }
 
               if( pointbuffer.size() >= MAXPTS )    // overflow
               {
@@ -1189,8 +1191,8 @@ bool ZONE::BuildSmoothedPoly( SHAPE_POLY_SET& aSmoothedPoly, PCB_LAYER_ID aLayer
     {
         BOARD_DESIGN_SETTINGS& bds = board->GetDesignSettings();
 
-        DRC_CONSTRAINT c =
-                bds.m_DRCEngine->EvalRules( EDGE_CLEARANCE_CONSTRAINT, this, nullptr, aLayer );
+        DRC_CONSTRAINT c = bds.m_DRCEngine->EvalRules( EDGE_CLEARANCE_CONSTRAINT, this, nullptr,
+                                                       aLayer );
         edgeClearance = c.Value().Min();
         maxError = bds.m_MaxError;
         keepExternalFillets = bds.m_ZoneKeepExternalFillets;

@@ -169,9 +169,9 @@ TOOL_ACTION ACTIONS::selectAll( "common.Interactive.selectAll",
         MD_CTRL + 'A', "",
         _( "Select All" ), _( "Select all items on screen" ) );
 
-TOOL_ACTION ACTIONS::pasteSpecial( "common.Interactive.pasteSpecial", AS_GLOBAL, 0, "",
-                                   _( "Paste Special..." ),
-                                   _( "Paste item(s) from clipboard with options" ) );
+TOOL_ACTION ACTIONS::pasteSpecial( "common.Interactive.pasteSpecial",
+        AS_GLOBAL, 0, "",
+        _( "Paste Special..." ), _( "Paste item(s) from clipboard with options" ) );
 
 TOOL_ACTION ACTIONS::duplicate( "common.Interactive.duplicate",
         AS_GLOBAL,

@@ -46,8 +46,8 @@ DRC_ITEM DRC_ITEM::heading_signal_integrity( 0, _( "Signal Integrity" ), "" );
 DRC_ITEM DRC_ITEM::heading_misc( 0, _( "Miscellaneous" ), "" );
 
 DRC_ITEM DRC_ITEM::unconnectedItems( DRCE_UNCONNECTED_ITEMS,
-                                     _( "Missing connection between items" ),
-                                     wxT( "unconnected_items" ) );
+        _( "Missing connection between items" ),
+        wxT( "unconnected_items" ) );
 
 DRC_ITEM DRC_ITEM::shortingItems( DRCE_SHORTING_ITEMS,
         _( "Items shorting two nets" ),

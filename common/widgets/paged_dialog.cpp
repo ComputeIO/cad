@@ -86,7 +86,7 @@ PAGED_DIALOG::PAGED_DIALOG( wxWindow* aParent, const wxString& aTitle, bool aSho
     sdbSizer->Realize();
 
     m_buttonsSizer->Add( sdbSizer, 1, 0, 5 );
-    mainSizer->Add( m_buttonsSizer, 0, wxALL | wxEXPAND, 5 );
+    mainSizer->Add( m_buttonsSizer, 0, wxALL|wxEXPAND, 5 );
 
     sdbSizerOK->SetDefault();
 

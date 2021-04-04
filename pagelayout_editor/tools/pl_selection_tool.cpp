@@ -67,10 +67,10 @@ bool PL_SELECTION_TOOL::Init()
     auto& menu = m_menu.GetMenu();
 
     menu.AddSeparator( 200 );
-    menu.AddItem( PL_ACTIONS::drawLine, SELECTION_CONDITIONS::Empty, 200 );
+    menu.AddItem( PL_ACTIONS::drawLine,      SELECTION_CONDITIONS::Empty, 200 );
     menu.AddItem( PL_ACTIONS::drawRectangle, SELECTION_CONDITIONS::Empty, 200 );
-    menu.AddItem( PL_ACTIONS::placeText, SELECTION_CONDITIONS::Empty, 200 );
-    menu.AddItem( PL_ACTIONS::placeImage, SELECTION_CONDITIONS::Empty, 200 );
+    menu.AddItem( PL_ACTIONS::placeText,     SELECTION_CONDITIONS::Empty, 200 );
+    menu.AddItem( PL_ACTIONS::placeImage,    SELECTION_CONDITIONS::Empty, 200 );
 
     menu.AddSeparator( 1000 );
     m_frame->AddStandardSubMenus( m_menu );
@@ -243,9 +243,11 @@ int PL_SELECTION_TOOL::Main( const TOOL_EVENT& aEvent )
 
         if( m_frame->ToolStackIsEmpty() )
         {
-            if( !modifier_enabled && !m_selection.Empty()
-                && m_frame->GetDragAction() == MOUSE_DRAG_ACTION::DRAG_SELECTED
-                && evt->HasPosition() && selectionContains( evt->Position() ) )
+            if( !modifier_enabled
+                    && !m_selection.Empty()
+                    && m_frame->GetDragAction() == MOUSE_DRAG_ACTION::DRAG_SELECTED
+                    && evt->HasPosition()
+                    && selectionContains( evt->Position() ) )
             {
                 m_frame->GetCanvas()->SetCurrentCursor( KICURSOR::MOVING );
             }

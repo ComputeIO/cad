@@ -41,11 +41,10 @@ TOOL_ACTION KICAD_MANAGER_ACTIONS::newProject( "kicad.Control.newProject",
         _( "New Project..." ), _( "Create new blank project" ),
         BITMAPS::new_project );
 
-TOOL_ACTION KICAD_MANAGER_ACTIONS::newFromTemplate( "kicad.Control.newFromTemplate", AS_GLOBAL,
-                                                    MD_CTRL + 'T',
-                                                    LEGACY_HK_NAME( "New Project From Template" ),
-                                                    _( "New Project from Template..." ),
-                                                    _( "Create new project from template" ) );
+TOOL_ACTION KICAD_MANAGER_ACTIONS::newFromTemplate( "kicad.Control.newFromTemplate",
+        AS_GLOBAL,
+        MD_CTRL + 'T', LEGACY_HK_NAME( "New Project From Template" ),
+        _( "New Project from Template..." ), _( "Create new project from template" ) );
 
 TOOL_ACTION KICAD_MANAGER_ACTIONS::openProject( "kicad.Control.openProject",
         AS_GLOBAL,

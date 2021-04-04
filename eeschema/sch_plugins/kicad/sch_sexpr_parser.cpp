@@ -57,8 +57,11 @@ using namespace TSCHEMATIC_T;
 
 
 SCH_SEXPR_PARSER::SCH_SEXPR_PARSER( LINE_READER* aLineReader ) :
-        SCHEMATIC_LEXER( aLineReader ), m_requiredVersion( 0 ), m_fieldId( 0 ), m_unit( 1 ),
-        m_convert( 1 )
+    SCHEMATIC_LEXER( aLineReader ),
+    m_requiredVersion( 0 ),
+    m_fieldId( 0 ),
+    m_unit( 1 ),
+    m_convert( 1 )
 {
 }
 
@@ -92,7 +95,7 @@ void SCH_SEXPR_PARSER::ParseLib( LIB_PART_MAP& aSymbolLibMap )
     NextTok();
     parseHeader( T_kicad_symbol_lib, SEXPR_SYMBOL_LIB_FILE_VERSION );
 
-    for( token = NextTok(); token != T_RIGHT; token = NextTok() )
+    for( token = NextTok();  token != T_RIGHT;  token = NextTok() )
     {
         if( token != T_LEFT )
             Expecting( T_LEFT );
@@ -157,7 +160,7 @@ LIB_PART* SCH_SEXPR_PARSER::ParseSymbol( LIB_PART_MAP& aSymbolLibMap, int aFileV
     symbol->SetName( m_symbolName );
     symbol->SetLibId( id );
 
-    for( token = NextTok(); token != T_RIGHT; token = NextTok() )
+    for( token = NextTok();  token != T_RIGHT;  token = NextTok() )
     {
         if( token != T_LEFT )
             Expecting( T_LEFT );
@@ -171,7 +174,9 @@ LIB_PART* SCH_SEXPR_PARSER::ParseSymbol( LIB_PART_MAP& aSymbolLibMap, int aFileV
             NeedRIGHT();
             break;
 
-        case T_pin_names: parsePinNames( symbol ); break;
+        case T_pin_names:
+            parsePinNames( symbol );
+            break;
 
         case T_pin_numbers:
             token = NextTok();
@@ -220,8 +225,8 @@ LIB_PART* SCH_SEXPR_PARSER::ParseSymbol( LIB_PART_MAP& aSymbolLibMap, int aFileV
             if( !IsSymbol( token ) )
             {
                 error.Printf(
-                        _( "Invalid symbol extends name in\nfile: \"%s\"\nline: %d\noffset: %d" ),
-                        CurSource().c_str(), CurLineNumber(), CurOffset() );
+                    _( "Invalid symbol extends name in\nfile: \"%s\"\nline: %d\noffset: %d" ),
+                    CurSource().c_str(), CurLineNumber(), CurOffset() );
                 THROW_IO_ERROR( error );
             }
 
@@ -230,9 +235,9 @@ LIB_PART* SCH_SEXPR_PARSER::ParseSymbol( LIB_PART_MAP& aSymbolLibMap, int aFileV
 
             if( it == aSymbolLibMap.end() )
             {
-                error.Printf( _( "No parent for extended symbol %s in\nfile: \"%s\"\nline: "
-                                 "%d\noffset: %d" ),
-                              name.c_str(), CurSource().c_str(), CurLineNumber(), CurOffset() );
+                error.Printf(
+                    _( "No parent for extended symbol %s in\nfile: \"%s\"\nline: %d\noffset: %d" ),
+                    name.c_str(), CurSource().c_str(), CurLineNumber(), CurOffset() );
                 THROW_IO_ERROR( error );
             }
 
@@ -248,8 +253,8 @@ LIB_PART* SCH_SEXPR_PARSER::ParseSymbol( LIB_PART_MAP& aSymbolLibMap, int aFileV
             if( !IsSymbol( token ) )
             {
                 error.Printf(
-                        _( "Invalid symbol unit name in\nfile: \"%s\"\nline: %d\noffset: %d" ),
-                        CurSource().c_str(), CurLineNumber(), CurOffset() );
+                    _( "Invalid symbol unit name in\nfile: \"%s\"\nline: %d\noffset: %d" ),
+                    CurSource().c_str(), CurLineNumber(), CurOffset() );
                 THROW_IO_ERROR( error );
             }
 
@@ -257,9 +262,10 @@ LIB_PART* SCH_SEXPR_PARSER::ParseSymbol( LIB_PART_MAP& aSymbolLibMap, int aFileV
 
             if( !name.StartsWith( m_symbolName ) )
             {
-                error.Printf( _( "Invalid symbol unit name prefix %s in\nfile: \"%s\"\n"
-                                 "line: %d\noffset: %d" ),
-                              name.c_str(), CurSource().c_str(), CurLineNumber(), CurOffset() );
+                error.Printf(
+                    _( "Invalid symbol unit name prefix %s in\nfile: \"%s\"\n"
+                       "line: %d\noffset: %d" ),
+                    name.c_str(), CurSource().c_str(), CurLineNumber(), CurOffset() );
                 THROW_IO_ERROR( error );
             }
 
@@ -269,17 +275,18 @@ LIB_PART* SCH_SEXPR_PARSER::ParseSymbol( LIB_PART_MAP& aSymbolLibMap, int aFileV
 
             if( tokenizer.CountTokens() != 2 )
             {
-                error.Printf( _( "Invalid symbol unit name suffix %s in\nfile: \"%s\"\n"
-                                 "line: %d\noffset: %d" ),
-                              name.c_str(), CurSource().c_str(), CurLineNumber(), CurOffset() );
+                error.Printf(
+                    _( "Invalid symbol unit name suffix %s in\nfile: \"%s\"\n"
+                       "line: %d\noffset: %d" ),
+                    name.c_str(), CurSource().c_str(), CurLineNumber(), CurOffset() );
                 THROW_IO_ERROR( error );
             }
 
             if( !tokenizer.GetNextToken().ToLong( &tmp ) )
             {
                 error.Printf(
-                        _( "Invalid symbol unit number %s in\nfile: \"%s\"\nline: %d\noffset: %d" ),
-                        name.c_str(), CurSource().c_str(), CurLineNumber(), CurOffset() );
+                    _( "Invalid symbol unit number %s in\nfile: \"%s\"\nline: %d\noffset: %d" ),
+                    name.c_str(), CurSource().c_str(), CurLineNumber(), CurOffset() );
                 THROW_IO_ERROR( error );
             }
 
@@ -287,9 +294,9 @@ LIB_PART* SCH_SEXPR_PARSER::ParseSymbol( LIB_PART_MAP& aSymbolLibMap, int aFileV
 
             if( !tokenizer.GetNextToken().ToLong( &tmp ) )
             {
-                error.Printf( _( "Invalid symbol convert number %s in\nfile: \"%s\"\nline: "
-                                 "%d\noffset: %d" ),
-                              name.c_str(), CurSource().c_str(), CurLineNumber(), CurOffset() );
+                error.Printf(
+                    _( "Invalid symbol convert number %s in\nfile: \"%s\"\nline: %d\noffset: %d" ),
+                    name.c_str(), CurSource().c_str(), CurLineNumber(), CurOffset() );
                 THROW_IO_ERROR( error );
             }
 
@@ -301,7 +308,7 @@ LIB_PART* SCH_SEXPR_PARSER::ParseSymbol( LIB_PART_MAP& aSymbolLibMap, int aFileV
             if( m_unit > symbol->GetUnitCount() )
                 symbol->SetUnitCount( m_unit, false );
 
-            for( token = NextTok(); token != T_RIGHT; token = NextTok() )
+            for( token = NextTok();  token != T_RIGHT;  token = NextTok() )
             {
                 if( token != T_LEFT )
                     Expecting( T_LEFT );
@@ -325,7 +332,8 @@ LIB_PART* SCH_SEXPR_PARSER::ParseSymbol( LIB_PART_MAP& aSymbolLibMap, int aFileV
                     symbol->AddDrawItem( item, false );
                     break;
 
-                default: Expecting( "arc, bezier, circle, pin, polyline, rectangle, or text" );
+                default:
+                    Expecting( "arc, bezier, circle, pin, polyline, rectangle, or text" );
                 };
             }
 
@@ -366,21 +374,36 @@ LIB_ITEM* SCH_SEXPR_PARSER::ParseDrawItem()
 {
     switch( CurTok() )
     {
-    case T_arc: return static_cast<LIB_ITEM*>( parseArc() ); break;
+    case T_arc:
+        return static_cast<LIB_ITEM*>( parseArc() );
+        break;
 
-    case T_bezier: return static_cast<LIB_ITEM*>( parseBezier() ); break;
+    case T_bezier:
+        return static_cast<LIB_ITEM*>( parseBezier() );
+        break;
 
-    case T_circle: return static_cast<LIB_ITEM*>( parseCircle() ); break;
+    case T_circle:
+        return static_cast<LIB_ITEM*>( parseCircle() );
+        break;
 
-    case T_pin: return static_cast<LIB_ITEM*>( parsePin() ); break;
+    case T_pin:
+        return static_cast<LIB_ITEM*>( parsePin() );
+        break;
 
-    case T_polyline: return static_cast<LIB_ITEM*>( parsePolyLine() ); break;
+    case T_polyline:
+        return static_cast<LIB_ITEM*>( parsePolyLine() );
+        break;
 
-    case T_rectangle: return static_cast<LIB_ITEM*>( parseRectangle() ); break;
+    case T_rectangle:
+        return static_cast<LIB_ITEM*>( parseRectangle() );
+        break;
 
-    case T_text: return static_cast<LIB_TEXT*>( parseText() ); break;
+    case T_text:
+        return static_cast<LIB_TEXT*>( parseText() );
+        break;
 
-    default: Expecting( "arc, bezier, circle, pin, polyline, rectangle, or text" );
+    default:
+        Expecting( "arc, bezier, circle, pin, polyline, rectangle, or text" );
     }
 
     return nullptr;
@@ -437,7 +460,7 @@ void SCH_SEXPR_PARSER::parseStroke( STROKE_PARAMS& aStroke )
 
     T token;
 
-    for( token = NextTok(); token != T_RIGHT; token = NextTok() )
+    for( token = NextTok();  token != T_RIGHT;  token = NextTok() )
     {
         if( token != T_LEFT )
             Expecting( T_LEFT );
@@ -457,12 +480,13 @@ void SCH_SEXPR_PARSER::parseStroke( STROKE_PARAMS& aStroke )
 
             switch( token )
             {
-            case T_dash: aStroke.SetPlotStyle( PLOT_DASH_TYPE::DASH ); break;
-            case T_dot: aStroke.SetPlotStyle( PLOT_DASH_TYPE::DOT ); break;
-            case T_dash_dot: aStroke.SetPlotStyle( PLOT_DASH_TYPE::DASHDOT ); break;
-            case T_solid: aStroke.SetPlotStyle( PLOT_DASH_TYPE::SOLID ); break;
-            case T_default: aStroke.SetPlotStyle( PLOT_DASH_TYPE::DEFAULT ); break;
-            default: Expecting( "solid, dash, dash_dot, dot or default" );
+            case T_dash:      aStroke.SetPlotStyle( PLOT_DASH_TYPE::DASH );      break;
+            case T_dot:       aStroke.SetPlotStyle( PLOT_DASH_TYPE::DOT );       break;
+            case T_dash_dot:  aStroke.SetPlotStyle( PLOT_DASH_TYPE::DASHDOT );   break;
+            case T_solid:     aStroke.SetPlotStyle( PLOT_DASH_TYPE::SOLID );     break;
+            case T_default:   aStroke.SetPlotStyle( PLOT_DASH_TYPE::DEFAULT );   break;
+            default:
+                Expecting( "solid, dash, dash_dot, dot or default" );
             }
 
             NeedRIGHT();
@@ -483,8 +507,10 @@ void SCH_SEXPR_PARSER::parseStroke( STROKE_PARAMS& aStroke )
             break;
         }
 
-        default: Expecting( "width, type, or color" );
+        default:
+            Expecting( "width, type, or color" );
         }
+
     }
 }
 
@@ -499,7 +525,7 @@ void SCH_SEXPR_PARSER::parseFill( FILL_PARAMS& aFill )
 
     T token;
 
-    for( token = NextTok(); token != T_RIGHT; token = NextTok() )
+    for( token = NextTok();  token != T_RIGHT;  token = NextTok() )
     {
         if( token != T_LEFT )
             Expecting( T_LEFT );
@@ -514,10 +540,10 @@ void SCH_SEXPR_PARSER::parseFill( FILL_PARAMS& aFill )
 
             switch( token )
             {
-            case T_none: aFill.m_FillType = FILL_TYPE::NO_FILL; break;
-            case T_outline: aFill.m_FillType = FILL_TYPE::FILLED_SHAPE; break;
+            case T_none:       aFill.m_FillType = FILL_TYPE::NO_FILL;                  break;
+            case T_outline:    aFill.m_FillType = FILL_TYPE::FILLED_SHAPE;             break;
             case T_background: aFill.m_FillType = FILL_TYPE::FILLED_WITH_BG_BODYCOLOR; break;
-            default: Expecting( "none, outline, or background" );
+            default:           Expecting( "none, outline, or background" );
             }
 
             NeedRIGHT();
@@ -537,7 +563,8 @@ void SCH_SEXPR_PARSER::parseFill( FILL_PARAMS& aFill )
             break;
         }
 
-        default: Expecting( "type or color" );
+        default:
+            Expecting( "type or color" );
         }
     }
 }
@@ -550,7 +577,7 @@ void SCH_SEXPR_PARSER::parseEDA_TEXT( EDA_TEXT* aText )
 
     T token;
 
-    for( token = NextTok(); token != T_RIGHT; token = NextTok() )
+    for( token = NextTok();  token != T_RIGHT;  token = NextTok() )
     {
         if( token == T_LEFT )
             token = NextTok();
@@ -558,7 +585,7 @@ void SCH_SEXPR_PARSER::parseEDA_TEXT( EDA_TEXT* aText )
         switch( token )
         {
         case T_font:
-            for( token = NextTok(); token != T_RIGHT; token = NextTok() )
+            for( token = NextTok();  token != T_RIGHT;  token = NextTok() )
             {
                 if( token == T_LEFT )
                     token = NextTok();
@@ -601,14 +628,12 @@ void SCH_SEXPR_PARSER::parseEDA_TEXT( EDA_TEXT* aText )
                     NeedRIGHT();
                     break;
 
-                case T_bold: aText->SetBold( true ); break;
+                case T_bold:
+                    aText->SetBold( true );
+                    break;
 
-                case T_italic: aText->SetItalic( true ); break;
-
-                case T_face:
-                    NeedSYMBOL();
-                    aText->SetFontFromProperty( FromUTF8() );
-                    NeedRIGHT();
+                case T_italic:
+                    aText->SetItalic( true );
                     break;
 
                 default:
@@ -619,7 +644,7 @@ void SCH_SEXPR_PARSER::parseEDA_TEXT( EDA_TEXT* aText )
             break;
 
         case T_justify:
-            for( token = NextTok(); token != T_RIGHT; token = NextTok() )
+            for( token = NextTok();  token != T_RIGHT;  token = NextTok() )
             {
                 switch( token )
                 {
@@ -634,9 +659,12 @@ void SCH_SEXPR_PARSER::parseEDA_TEXT( EDA_TEXT* aText )
 
             break;
 
-        case T_hide: aText->SetVisible( false ); break;
+        case T_hide:
+            aText->SetVisible( false );
+            break;
 
-        default: Expecting( "font, justify, or hide" );
+        default:
+            Expecting( "font, justify, or hide" );
         }
     }
 }
@@ -680,8 +708,9 @@ void SCH_SEXPR_PARSER::parseHeader( TSCHEMATIC_T::T aHeaderType, int aFileVersio
 
 void SCH_SEXPR_PARSER::parsePinNames( std::unique_ptr<LIB_PART>& aSymbol )
 {
-    wxCHECK_RET( CurTok() == T_pin_names, wxT( "Cannot parse " ) + GetTokenString( CurTok() )
-                                                  + wxT( " as a pin_name token." ) );
+    wxCHECK_RET( CurTok() == T_pin_names,
+                 wxT( "Cannot parse " ) + GetTokenString( CurTok() ) +
+                 wxT( " as a pin_name token." ) );
 
     wxString error;
 
@@ -696,7 +725,7 @@ void SCH_SEXPR_PARSER::parsePinNames( std::unique_ptr<LIB_PART>& aSymbol )
 
         aSymbol->SetPinNameOffset( parseInternalUnits( "pin name offset" ) );
         NeedRIGHT();
-        token = NextTok(); // Either ) or hide
+        token = NextTok();  // Either ) or hide
     }
 
     if( token == T_hide )
@@ -721,11 +750,10 @@ LIB_FIELD* SCH_SEXPR_PARSER::parseProperty( std::unique_ptr<LIB_PART>& aSymbol )
                  wxT( "Cannot parse " ) + GetTokenString( CurTok() ) + wxT( " as a property." ) );
     wxCHECK( aSymbol, nullptr );
 
-    wxString                   error;
-    wxString                   name;
-    wxString                   value;
-    std::unique_ptr<LIB_FIELD> field =
-            std::make_unique<LIB_FIELD>( aSymbol.get(), MANDATORY_FIELDS );
+    wxString error;
+    wxString name;
+    wxString value;
+    std::unique_ptr<LIB_FIELD> field = std::make_unique<LIB_FIELD>( aSymbol.get(), MANDATORY_FIELDS );
 
     T token = NextTok();
 
@@ -766,7 +794,7 @@ LIB_FIELD* SCH_SEXPR_PARSER::parseProperty( std::unique_ptr<LIB_PART>& aSymbol )
 
     field->SetText( value );
 
-    for( token = NextTok(); token != T_RIGHT; token = NextTok() )
+    for( token = NextTok();  token != T_RIGHT;  token = NextTok() )
     {
         if( token != T_LEFT )
             Expecting( T_LEFT );
@@ -786,9 +814,12 @@ LIB_FIELD* SCH_SEXPR_PARSER::parseProperty( std::unique_ptr<LIB_PART>& aSymbol )
             NeedRIGHT();
             break;
 
-        case T_effects: parseEDA_TEXT( static_cast<EDA_TEXT*>( field.get() ) ); break;
+        case T_effects:
+            parseEDA_TEXT( static_cast<EDA_TEXT*>( field.get() ) );
+            break;
 
-        default: Expecting( "id, at or effects" );
+        default:
+            Expecting( "id, at or effects" );
         }
     }
 
@@ -816,7 +847,7 @@ LIB_FIELD* SCH_SEXPR_PARSER::parseProperty( std::unique_ptr<LIB_PART>& aSymbol )
     else if( name == "ki_fp_filters" )
     {
         // Not a LIB_FIELD object yet.
-        wxArrayString     filters;
+        wxArrayString filters;
         wxStringTokenizer tokenizer( value );
 
         while( tokenizer.HasMoreTokens() )
@@ -877,19 +908,19 @@ LIB_ARC* SCH_SEXPR_PARSER::parseArc()
     wxCHECK_MSG( CurTok() == T_arc, nullptr,
                  wxT( "Cannot parse " ) + GetTokenString( CurTok() ) + wxT( " as an arc token." ) );
 
-    T                        token;
-    wxPoint                  startPoint;
-    wxPoint                  midPoint;
-    wxPoint                  endPoint;
-    wxPoint                  pos;
-    FILL_PARAMS              fill;
-    bool                     hasMidPoint = false;
+    T token;
+    wxPoint startPoint;
+    wxPoint midPoint;
+    wxPoint endPoint;
+    wxPoint pos;
+    FILL_PARAMS fill;
+    bool hasMidPoint = false;
     std::unique_ptr<LIB_ARC> arc = std::make_unique<LIB_ARC>( nullptr );
 
     arc->SetUnit( m_unit );
     arc->SetConvert( m_convert );
 
-    for( token = NextTok(); token != T_RIGHT; token = NextTok() )
+    for( token = NextTok();  token != T_RIGHT;  token = NextTok() )
     {
         if( token != T_LEFT )
             Expecting( T_LEFT );
@@ -915,7 +946,7 @@ LIB_ARC* SCH_SEXPR_PARSER::parseArc()
             break;
 
         case T_radius:
-            for( token = NextTok(); token != T_RIGHT; token = NextTok() )
+            for( token = NextTok();  token != T_RIGHT;  token = NextTok() )
             {
                 if( token != T_LEFT )
                     Expecting( T_LEFT );
@@ -947,7 +978,8 @@ LIB_ARC* SCH_SEXPR_PARSER::parseArc()
                     break;
                 }
 
-                default: Expecting( "at, length, or angle" );
+                default:
+                    Expecting( "at, length, or angle" );
                 }
             }
 
@@ -961,8 +993,8 @@ LIB_ARC* SCH_SEXPR_PARSER::parseArc()
                 Expecting( "width" );
 
             arc->SetWidth( parseInternalUnits( "stroke width" ) );
-            NeedRIGHT(); // Closes width token;
-            NeedRIGHT(); // Closes stroke token;
+            NeedRIGHT();   // Closes width token;
+            NeedRIGHT();   // Closes stroke token;
             break;
 
         case T_fill:
@@ -970,7 +1002,8 @@ LIB_ARC* SCH_SEXPR_PARSER::parseArc()
             arc->SetFillMode( fill.m_FillType );
             break;
 
-        default: Expecting( "start, end, radius, stroke, or fill" );
+        default:
+            Expecting( "start, end, radius, stroke, or fill" );
         }
     }
 
@@ -998,14 +1031,14 @@ LIB_BEZIER* SCH_SEXPR_PARSER::parseBezier()
     wxCHECK_MSG( CurTok() == T_bezier, nullptr,
                  wxT( "Cannot parse " ) + GetTokenString( CurTok() ) + wxT( " as a bezier." ) );
 
-    T                           token;
-    FILL_PARAMS                 fill;
+    T token;
+    FILL_PARAMS fill;
     std::unique_ptr<LIB_BEZIER> bezier = std::make_unique<LIB_BEZIER>( nullptr );
 
     bezier->SetUnit( m_unit );
     bezier->SetConvert( m_convert );
 
-    for( token = NextTok(); token != T_RIGHT; token = NextTok() )
+    for( token = NextTok();  token != T_RIGHT;  token = NextTok() )
     {
         if( token != T_LEFT )
             Expecting( T_LEFT );
@@ -1015,7 +1048,7 @@ LIB_BEZIER* SCH_SEXPR_PARSER::parseBezier()
         switch( token )
         {
         case T_pts:
-            for( token = NextTok(); token != T_RIGHT; token = NextTok() )
+            for( token = NextTok();  token != T_RIGHT;  token = NextTok() )
             {
                 if( token != T_LEFT )
                     Expecting( T_LEFT );
@@ -1040,8 +1073,8 @@ LIB_BEZIER* SCH_SEXPR_PARSER::parseBezier()
                 Expecting( "width" );
 
             bezier->SetWidth( parseInternalUnits( "stroke width" ) );
-            NeedRIGHT(); // Closes width token;
-            NeedRIGHT(); // Closes stroke token;
+            NeedRIGHT();   // Closes width token;
+            NeedRIGHT();   // Closes stroke token;
             break;
 
         case T_fill:
@@ -1049,7 +1082,8 @@ LIB_BEZIER* SCH_SEXPR_PARSER::parseBezier()
             bezier->SetFillMode( fill.m_FillType );
             break;
 
-        default: Expecting( "pts, stroke, or fill" );
+        default:
+            Expecting( "pts, stroke, or fill" );
         }
     }
 
@@ -1060,17 +1094,16 @@ LIB_BEZIER* SCH_SEXPR_PARSER::parseBezier()
 LIB_CIRCLE* SCH_SEXPR_PARSER::parseCircle()
 {
     wxCHECK_MSG( CurTok() == T_circle, nullptr,
-                 wxT( "Cannot parse " ) + GetTokenString( CurTok() )
-                         + wxT( " as a circle token." ) );
+                 wxT( "Cannot parse " ) + GetTokenString( CurTok() ) + wxT( " as a circle token." ) );
 
-    T                           token;
-    FILL_PARAMS                 fill;
+    T token;
+    FILL_PARAMS fill;
     std::unique_ptr<LIB_CIRCLE> circle = std::make_unique<LIB_CIRCLE>( nullptr );
 
     circle->SetUnit( m_unit );
     circle->SetConvert( m_convert );
 
-    for( token = NextTok(); token != T_RIGHT; token = NextTok() )
+    for( token = NextTok();  token != T_RIGHT;  token = NextTok() )
     {
         if( token != T_LEFT )
             Expecting( T_LEFT );
@@ -1097,8 +1130,8 @@ LIB_CIRCLE* SCH_SEXPR_PARSER::parseCircle()
                 Expecting( "width" );
 
             circle->SetWidth( parseInternalUnits( "stroke width" ) );
-            NeedRIGHT(); // Closes width token;
-            NeedRIGHT(); // Closes stroke token;
+            NeedRIGHT();   // Closes width token;
+            NeedRIGHT();   // Closes stroke token;
             break;
 
         case T_fill:
@@ -1106,7 +1139,8 @@ LIB_CIRCLE* SCH_SEXPR_PARSER::parseCircle()
             circle->SetFillMode( fill.m_FillType );
             break;
 
-        default: Expecting( "start, end, radius, stroke, or fill" );
+        default:
+            Expecting( "start, end, radius, stroke, or fill" );
         }
     }
 
@@ -1117,58 +1151,58 @@ LIB_CIRCLE* SCH_SEXPR_PARSER::parseCircle()
 LIB_PIN* SCH_SEXPR_PARSER::parsePin()
 {
     auto parseType = [&]( T token ) -> ELECTRICAL_PINTYPE
-    {
-        switch( token )
-        {
-        case T_input: return ELECTRICAL_PINTYPE::PT_INPUT;
-        case T_output: return ELECTRICAL_PINTYPE::PT_OUTPUT;
-        case T_bidirectional: return ELECTRICAL_PINTYPE::PT_BIDI;
-        case T_tri_state: return ELECTRICAL_PINTYPE::PT_TRISTATE;
-        case T_passive: return ELECTRICAL_PINTYPE::PT_PASSIVE;
-        case T_unspecified: return ELECTRICAL_PINTYPE::PT_UNSPECIFIED;
-        case T_power_in: return ELECTRICAL_PINTYPE::PT_POWER_IN;
-        case T_power_out: return ELECTRICAL_PINTYPE::PT_POWER_OUT;
-        case T_open_collector: return ELECTRICAL_PINTYPE::PT_OPENCOLLECTOR;
-        case T_open_emitter: return ELECTRICAL_PINTYPE::PT_OPENEMITTER;
-        case T_unconnected:
-        case T_no_connect: return ELECTRICAL_PINTYPE::PT_NC;
-        case T_free: return ELECTRICAL_PINTYPE::PT_NIC;
+                     {
+                         switch( token )
+                         {
+                         case T_input:          return ELECTRICAL_PINTYPE::PT_INPUT;
+                         case T_output:         return ELECTRICAL_PINTYPE::PT_OUTPUT;
+                         case T_bidirectional:  return ELECTRICAL_PINTYPE::PT_BIDI;
+                         case T_tri_state:      return ELECTRICAL_PINTYPE::PT_TRISTATE;
+                         case T_passive:        return ELECTRICAL_PINTYPE::PT_PASSIVE;
+                         case T_unspecified:    return ELECTRICAL_PINTYPE::PT_UNSPECIFIED;
+                         case T_power_in:       return ELECTRICAL_PINTYPE::PT_POWER_IN;
+                         case T_power_out:      return ELECTRICAL_PINTYPE::PT_POWER_OUT;
+                         case T_open_collector: return ELECTRICAL_PINTYPE::PT_OPENCOLLECTOR;
+                         case T_open_emitter:   return ELECTRICAL_PINTYPE::PT_OPENEMITTER;
+                         case T_unconnected:
+                         case T_no_connect:     return ELECTRICAL_PINTYPE::PT_NC;
+                         case T_free:           return ELECTRICAL_PINTYPE::PT_NIC;
 
-        default:
-            Expecting( "input, output, bidirectional, tri_state, passive, "
-                       "unspecified, power_in, power_out, open_collector, "
-                       "open_emitter, free or no_connect" );
-            return ELECTRICAL_PINTYPE::PT_UNSPECIFIED;
-        }
-    };
+                         default:
+                             Expecting( "input, output, bidirectional, tri_state, passive, "
+                                        "unspecified, power_in, power_out, open_collector, "
+                                        "open_emitter, free or no_connect" );
+                             return ELECTRICAL_PINTYPE::PT_UNSPECIFIED;
+                         }
+                     };
 
     auto parseShape = [&]( T token ) -> GRAPHIC_PINSHAPE
-    {
-        switch( token )
-        {
-        case T_line: return GRAPHIC_PINSHAPE::LINE;
-        case T_inverted: return GRAPHIC_PINSHAPE::INVERTED;
-        case T_clock: return GRAPHIC_PINSHAPE::CLOCK;
-        case T_inverted_clock: return GRAPHIC_PINSHAPE::INVERTED_CLOCK;
-        case T_input_low: return GRAPHIC_PINSHAPE::INPUT_LOW;
-        case T_clock_low: return GRAPHIC_PINSHAPE::CLOCK_LOW;
-        case T_output_low: return GRAPHIC_PINSHAPE::OUTPUT_LOW;
-        case T_edge_clock_high: return GRAPHIC_PINSHAPE::FALLING_EDGE_CLOCK;
-        case T_non_logic: return GRAPHIC_PINSHAPE::NONLOGIC;
+                      {
+                          switch( token )
+                          {
+                          case T_line:            return GRAPHIC_PINSHAPE::LINE;
+                          case T_inverted:        return GRAPHIC_PINSHAPE::INVERTED;
+                          case T_clock:           return GRAPHIC_PINSHAPE::CLOCK;
+                          case T_inverted_clock:  return GRAPHIC_PINSHAPE::INVERTED_CLOCK;
+                          case T_input_low:       return GRAPHIC_PINSHAPE::INPUT_LOW;
+                          case T_clock_low:       return GRAPHIC_PINSHAPE::CLOCK_LOW;
+                          case T_output_low:      return GRAPHIC_PINSHAPE::OUTPUT_LOW;
+                          case T_edge_clock_high: return GRAPHIC_PINSHAPE::FALLING_EDGE_CLOCK;
+                          case T_non_logic:       return GRAPHIC_PINSHAPE::NONLOGIC;
 
-        default:
-            Expecting( "line, inverted, clock, inverted_clock, input_low, "
-                       "clock_low, output_low, edge_clock_high, non_logic" );
-            return GRAPHIC_PINSHAPE::LINE;
-        }
-    };
+                          default:
+                              Expecting( "line, inverted, clock, inverted_clock, input_low, "
+                                         "clock_low, output_low, edge_clock_high, non_logic" );
+                              return GRAPHIC_PINSHAPE::LINE;
+                          }
+                      };
 
     wxCHECK_MSG( CurTok() == T_pin, nullptr,
                  wxT( "Cannot parse " ) + GetTokenString( CurTok() ) + wxT( " as a pin token." ) );
 
-    T                        token;
-    wxString                 tmp;
-    wxString                 error;
+    T token;
+    wxString tmp;
+    wxString error;
     std::unique_ptr<LIB_PIN> pin = std::make_unique<LIB_PIN>( nullptr );
 
     pin->SetUnit( m_unit );
@@ -1182,7 +1216,7 @@ LIB_PIN* SCH_SEXPR_PARSER::parsePin()
     token = NextTok();
     pin->SetShape( parseShape( token ) );
 
-    for( token = NextTok(); token != T_RIGHT; token = NextTok() )
+    for( token = NextTok();  token != T_RIGHT;  token = NextTok() )
     {
         if( token == T_hide )
         {
@@ -1202,15 +1236,24 @@ LIB_PIN* SCH_SEXPR_PARSER::parsePin()
 
             switch( parseInt( "pin orientation" ) )
             {
-            case 0: pin->SetOrientation( PIN_RIGHT ); break;
+            case 0:
+                pin->SetOrientation( PIN_RIGHT );
+                break;
 
-            case 90: pin->SetOrientation( PIN_UP ); break;
+            case 90:
+                pin->SetOrientation( PIN_UP );
+                break;
 
-            case 180: pin->SetOrientation( PIN_LEFT ); break;
+            case 180:
+                pin->SetOrientation( PIN_LEFT );
+                break;
 
-            case 270: pin->SetOrientation( PIN_DOWN ); break;
+            case 270:
+                pin->SetOrientation( PIN_DOWN );
+                break;
 
-            default: Expecting( "0, 90, 180, or 270" );
+            default:
+                Expecting( "0, 90, 180, or 270" );
             }
 
             NeedRIGHT();
@@ -1299,9 +1342,8 @@ LIB_PIN* SCH_SEXPR_PARSER::parsePin()
 
             if( !IsSymbol( token ) )
             {
-                error.Printf(
-                        _( "Invalid alternate pin name in\nfile: \"%s\"\nline: %d\noffset: %d" ),
-                        CurSource().c_str(), CurLineNumber(), CurOffset() );
+                error.Printf( _( "Invalid alternate pin name in\nfile: \"%s\"\nline: %d\noffset: %d" ),
+                              CurSource().c_str(), CurLineNumber(), CurOffset() );
                 THROW_IO_ERROR( error );
             }
 
@@ -1313,13 +1355,14 @@ LIB_PIN* SCH_SEXPR_PARSER::parsePin()
             token = NextTok();
             alt.m_Shape = parseShape( token );
 
-            pin->GetAlternates()[alt.m_Name] = alt;
+            pin->GetAlternates()[ alt.m_Name ] = alt;
 
             NeedRIGHT();
         }
-        break;
+            break;
 
-        default: Expecting( "at, name, number, length, or alternate" );
+        default:
+            Expecting( "at, name, number, length, or alternate" );
         }
     }
 
@@ -1332,14 +1375,14 @@ LIB_POLYLINE* SCH_SEXPR_PARSER::parsePolyLine()
     wxCHECK_MSG( CurTok() == T_polyline, nullptr,
                  wxT( "Cannot parse " ) + GetTokenString( CurTok() ) + wxT( " as a polyline." ) );
 
-    T                             token;
-    FILL_PARAMS                   fill;
+    T token;
+    FILL_PARAMS fill;
     std::unique_ptr<LIB_POLYLINE> polyLine = std::make_unique<LIB_POLYLINE>( nullptr );
 
     polyLine->SetUnit( m_unit );
     polyLine->SetConvert( m_convert );
 
-    for( token = NextTok(); token != T_RIGHT; token = NextTok() )
+    for( token = NextTok();  token != T_RIGHT;  token = NextTok() )
     {
         if( token != T_LEFT )
             Expecting( T_LEFT );
@@ -1349,7 +1392,7 @@ LIB_POLYLINE* SCH_SEXPR_PARSER::parsePolyLine()
         switch( token )
         {
         case T_pts:
-            for( token = NextTok(); token != T_RIGHT; token = NextTok() )
+            for( token = NextTok();  token != T_RIGHT;  token = NextTok() )
             {
                 if( token != T_LEFT )
                     Expecting( T_LEFT );
@@ -1374,8 +1417,8 @@ LIB_POLYLINE* SCH_SEXPR_PARSER::parsePolyLine()
                 Expecting( "width" );
 
             polyLine->SetWidth( parseInternalUnits( "stroke width" ) );
-            NeedRIGHT(); // Closes width token;
-            NeedRIGHT(); // Closes stroke token;
+            NeedRIGHT();   // Closes width token;
+            NeedRIGHT();   // Closes stroke token;
             break;
 
         case T_fill:
@@ -1383,7 +1426,8 @@ LIB_POLYLINE* SCH_SEXPR_PARSER::parsePolyLine()
             polyLine->SetFillMode( fill.m_FillType );
             break;
 
-        default: Expecting( "pts, stroke, or fill" );
+        default:
+            Expecting( "pts, stroke, or fill" );
         }
     }
 
@@ -1394,17 +1438,16 @@ LIB_POLYLINE* SCH_SEXPR_PARSER::parsePolyLine()
 LIB_RECTANGLE* SCH_SEXPR_PARSER::parseRectangle()
 {
     wxCHECK_MSG( CurTok() == T_rectangle, nullptr,
-                 wxT( "Cannot parse " ) + GetTokenString( CurTok() )
-                         + wxT( " as a rectangle token." ) );
+                 wxT( "Cannot parse " ) + GetTokenString( CurTok() ) + wxT( " as a rectangle token." ) );
 
-    T                              token;
-    FILL_PARAMS                    fill;
+    T token;
+    FILL_PARAMS fill;
     std::unique_ptr<LIB_RECTANGLE> rectangle = std::make_unique<LIB_RECTANGLE>( nullptr );
 
     rectangle->SetUnit( m_unit );
     rectangle->SetConvert( m_convert );
 
-    for( token = NextTok(); token != T_RIGHT; token = NextTok() )
+    for( token = NextTok();  token != T_RIGHT;  token = NextTok() )
     {
         if( token != T_LEFT )
             Expecting( T_LEFT );
@@ -1431,8 +1474,8 @@ LIB_RECTANGLE* SCH_SEXPR_PARSER::parseRectangle()
                 Expecting( "width" );
 
             rectangle->SetWidth( parseInternalUnits( "stroke width" ) );
-            NeedRIGHT(); // Closes width token;
-            NeedRIGHT(); // Closes stroke token;
+            NeedRIGHT();   // Closes width token;
+            NeedRIGHT();   // Closes stroke token;
             break;
 
         case T_fill:
@@ -1440,7 +1483,8 @@ LIB_RECTANGLE* SCH_SEXPR_PARSER::parseRectangle()
             rectangle->SetFillMode( fill.m_FillType );
             break;
 
-        default: Expecting( "start, end, stroke, or fill" );
+        default:
+            Expecting( "start, end, stroke, or fill" );
         }
     }
 
@@ -1453,9 +1497,9 @@ LIB_TEXT* SCH_SEXPR_PARSER::parseText()
     wxCHECK_MSG( CurTok() == T_text, nullptr,
                  wxT( "Cannot parse " ) + GetTokenString( CurTok() ) + wxT( " as a text token." ) );
 
-    T                         token;
-    wxString                  tmp;
-    wxString                  error;
+    T token;
+    wxString tmp;
+    wxString error;
     std::unique_ptr<LIB_TEXT> text = std::make_unique<LIB_TEXT>( nullptr );
 
     text->SetUnit( m_unit );
@@ -1471,7 +1515,7 @@ LIB_TEXT* SCH_SEXPR_PARSER::parseText()
 
     text->SetText( FromUTF8() );
 
-    for( token = NextTok(); token != T_RIGHT; token = NextTok() )
+    for( token = NextTok();  token != T_RIGHT;  token = NextTok() )
     {
         if( token != T_LEFT )
             Expecting( T_LEFT );
@@ -1486,9 +1530,12 @@ LIB_TEXT* SCH_SEXPR_PARSER::parseText()
             NeedRIGHT();
             break;
 
-        case T_effects: parseEDA_TEXT( static_cast<EDA_TEXT*>( text.get() ) ); break;
+        case T_effects:
+            parseEDA_TEXT( static_cast<EDA_TEXT*>( text.get() ) );
+            break;
 
-        default: Expecting( "at or effects" );
+        default:
+            Expecting( "at or effects" );
         }
     }
 
@@ -1516,7 +1563,7 @@ void SCH_SEXPR_PARSER::parsePAGE_INFO( PAGE_INFO& aPageInfo )
 
     if( pageType == PAGE_INFO::Custom )
     {
-        double width = parseDouble( "width" ); // width in mm
+        double width = parseDouble( "width" );      // width in mm
 
         // Perform some controls to avoid crashes if the size is edited by hands
         if( width < 100.0 )
@@ -1524,7 +1571,7 @@ void SCH_SEXPR_PARSER::parsePAGE_INFO( PAGE_INFO& aPageInfo )
         else if( width > 1200.0 )
             width = 1200.0;
 
-        double height = parseDouble( "height" ); // height in mm
+        double height = parseDouble( "height" );    // height in mm
 
         if( height < 100.0 )
             height = 100.0;
@@ -1552,11 +1599,12 @@ void SCH_SEXPR_PARSER::parsePAGE_INFO( PAGE_INFO& aPageInfo )
 void SCH_SEXPR_PARSER::parseTITLE_BLOCK( TITLE_BLOCK& aTitleBlock )
 {
     wxCHECK_RET( CurTok() == T_title_block,
-                 wxT( "Cannot parse " ) + GetTokenString( CurTok() ) + wxT( " as TITLE_BLOCK." ) );
+                 wxT( "Cannot parse " ) + GetTokenString( CurTok() ) +
+                 wxT( " as TITLE_BLOCK." ) );
 
     T token;
 
-    for( token = NextTok(); token != T_RIGHT; token = NextTok() )
+    for( token = NextTok();  token != T_RIGHT;  token = NextTok() )
     {
         if( token != T_LEFT )
             Expecting( T_LEFT );
@@ -1645,7 +1693,8 @@ void SCH_SEXPR_PARSER::parseTITLE_BLOCK( TITLE_BLOCK& aTitleBlock )
             break;
         }
 
-        default: Expecting( "title, date, rev, company, or comment" );
+        default:
+            Expecting( "title, date, rev, company, or comment" );
         }
 
         NeedRIGHT();
@@ -1656,8 +1705,8 @@ void SCH_SEXPR_PARSER::parseTITLE_BLOCK( TITLE_BLOCK& aTitleBlock )
 SCH_FIELD* SCH_SEXPR_PARSER::parseSchField( SCH_ITEM* aParent )
 {
     wxCHECK_MSG( CurTok() == T_property, nullptr,
-                 wxT( "Cannot parse " ) + GetTokenString( CurTok() )
-                         + wxT( " as a property token." ) );
+                 wxT( "Cannot parse " ) + GetTokenString( CurTok() ) +
+                 wxT( " as a property token." ) );
 
     wxString error;
     wxString name;
@@ -1693,13 +1742,12 @@ SCH_FIELD* SCH_SEXPR_PARSER::parseSchField( SCH_ITEM* aParent )
     // Empty property values are valid.
     value = FromUTF8();
 
-    std::unique_ptr<SCH_FIELD> field =
-            std::make_unique<SCH_FIELD>( wxDefaultPosition, -1, aParent, name );
+    std::unique_ptr<SCH_FIELD> field = std::make_unique<SCH_FIELD>( wxDefaultPosition, -1, aParent, name );
 
     field->SetText( value );
     field->SetVisible( true );
 
-    for( token = NextTok(); token != T_RIGHT; token = NextTok() )
+    for( token = NextTok();  token != T_RIGHT;  token = NextTok() )
     {
         if( token != T_LEFT )
             Expecting( T_LEFT );
@@ -1719,9 +1767,12 @@ SCH_FIELD* SCH_SEXPR_PARSER::parseSchField( SCH_ITEM* aParent )
             NeedRIGHT();
             break;
 
-        case T_effects: parseEDA_TEXT( static_cast<EDA_TEXT*>( field.get() ) ); break;
+        case T_effects:
+            parseEDA_TEXT( static_cast<EDA_TEXT*>( field.get() ) );
+            break;
 
-        default: Expecting( "at or effects" );
+        default:
+            Expecting( "at or effects" );
         }
     }
 
@@ -1733,8 +1784,8 @@ SCH_SHEET_PIN* SCH_SEXPR_PARSER::parseSchSheetPin( SCH_SHEET* aSheet )
 {
     wxCHECK_MSG( aSheet != nullptr, nullptr, "" );
     wxCHECK_MSG( CurTok() == T_pin, nullptr,
-                 wxT( "Cannot parse " ) + GetTokenString( CurTok() )
-                         + wxT( " as a sheet pin token." ) );
+                 wxT( "Cannot parse " ) + GetTokenString( CurTok() ) +
+                 wxT( " as a sheet pin token." ) );
 
     wxString error;
     wxString name;
@@ -1758,22 +1809,22 @@ SCH_SHEET_PIN* SCH_SEXPR_PARSER::parseSchSheetPin( SCH_SHEET* aSheet )
         THROW_IO_ERROR( error );
     }
 
-    std::unique_ptr<SCH_SHEET_PIN> sheetPin =
-            std::make_unique<SCH_SHEET_PIN>( aSheet, wxPoint( 0, 0 ), name );
+    std::unique_ptr<SCH_SHEET_PIN> sheetPin = std::make_unique<SCH_SHEET_PIN>( aSheet, wxPoint( 0, 0 ), name );
 
     token = NextTok();
 
     switch( token )
     {
-    case T_input: sheetPin->SetShape( PINSHEETLABEL_SHAPE::PS_INPUT ); break;
-    case T_output: sheetPin->SetShape( PINSHEETLABEL_SHAPE::PS_OUTPUT ); break;
-    case T_bidirectional: sheetPin->SetShape( PINSHEETLABEL_SHAPE::PS_BIDI ); break;
-    case T_tri_state: sheetPin->SetShape( PINSHEETLABEL_SHAPE::PS_TRISTATE ); break;
-    case T_passive: sheetPin->SetShape( PINSHEETLABEL_SHAPE::PS_UNSPECIFIED ); break;
-    default: Expecting( "input, output, bidirectional, tri_state, or passive" );
+    case T_input:          sheetPin->SetShape( PINSHEETLABEL_SHAPE::PS_INPUT );        break;
+    case T_output:         sheetPin->SetShape( PINSHEETLABEL_SHAPE::PS_OUTPUT );       break;
+    case T_bidirectional:  sheetPin->SetShape( PINSHEETLABEL_SHAPE::PS_BIDI );         break;
+    case T_tri_state:      sheetPin->SetShape( PINSHEETLABEL_SHAPE::PS_TRISTATE );     break;
+    case T_passive:        sheetPin->SetShape( PINSHEETLABEL_SHAPE::PS_UNSPECIFIED );  break;
+    default:
+        Expecting( "input, output, bidirectional, tri_state, or passive" );
     }
 
-    for( token = NextTok(); token != T_RIGHT; token = NextTok() )
+    for( token = NextTok();  token != T_RIGHT;  token = NextTok() )
     {
         if( token != T_LEFT )
             Expecting( T_LEFT );
@@ -1803,7 +1854,9 @@ SCH_SHEET_PIN* SCH_SEXPR_PARSER::parseSchSheetPin( SCH_SHEET* aSheet )
             break;
         }
 
-        case T_effects: parseEDA_TEXT( static_cast<EDA_TEXT*>( sheetPin.get() ) ); break;
+        case T_effects:
+            parseEDA_TEXT( static_cast<EDA_TEXT*>( sheetPin.get() ) );
+            break;
 
         case T_uuid:
             NeedSYMBOL();
@@ -1811,7 +1864,8 @@ SCH_SHEET_PIN* SCH_SEXPR_PARSER::parseSchSheetPin( SCH_SHEET* aSheet )
             NeedRIGHT();
             break;
 
-        default: Expecting( "at, uuid or effects" );
+        default:
+            Expecting( "at, uuid or effects" );
         }
     }
 
@@ -1821,13 +1875,14 @@ SCH_SHEET_PIN* SCH_SEXPR_PARSER::parseSchSheetPin( SCH_SHEET* aSheet )
 
 void SCH_SEXPR_PARSER::parseSchSheetInstances( SCH_SHEET* aRootSheet, SCH_SCREEN* aScreen )
 {
-    wxCHECK_RET( CurTok() == T_sheet_instances, wxT( "Cannot parse " ) + GetTokenString( CurTok() )
-                                                        + wxT( " as a instances token." ) );
+    wxCHECK_RET( CurTok() == T_sheet_instances,
+                 wxT( "Cannot parse " ) + GetTokenString( CurTok() ) +
+                 wxT( " as a instances token." ) );
     wxCHECK( aScreen, /* void */ );
 
     T token;
 
-    for( token = NextTok(); token != T_RIGHT; token = NextTok() )
+    for( token = NextTok();  token != T_RIGHT;  token = NextTok() )
     {
         if( token != T_LEFT )
             Expecting( T_LEFT );
@@ -1844,7 +1899,7 @@ void SCH_SEXPR_PARSER::parseSchSheetInstances( SCH_SHEET* aRootSheet, SCH_SCREEN
 
             instance.m_Path = KIID_PATH( FromUTF8() );
 
-            for( token = NextTok(); token != T_RIGHT; token = NextTok() )
+            for( token = NextTok();  token != T_RIGHT;  token = NextTok() )
             {
                 if( token != T_LEFT )
                     Expecting( T_LEFT );
@@ -1870,7 +1925,8 @@ void SCH_SEXPR_PARSER::parseSchSheetInstances( SCH_SHEET* aRootSheet, SCH_SCREEN
                     NeedRIGHT();
                     break;
 
-                default: Expecting( "path or page" );
+                default:
+                    Expecting( "path or page" );
                 }
             }
 
@@ -1878,7 +1934,8 @@ void SCH_SEXPR_PARSER::parseSchSheetInstances( SCH_SHEET* aRootSheet, SCH_SCREEN
             break;
         }
 
-        default: Expecting( "path" );
+        default:
+            Expecting( "path" );
         }
     }
 
@@ -1897,13 +1954,14 @@ void SCH_SEXPR_PARSER::parseSchSheetInstances( SCH_SHEET* aRootSheet, SCH_SCREEN
 
 void SCH_SEXPR_PARSER::parseSchSymbolInstances( SCH_SCREEN* aScreen )
 {
-    wxCHECK_RET( CurTok() == T_symbol_instances, wxT( "Cannot parse " ) + GetTokenString( CurTok() )
-                                                         + wxT( " as a instances token." ) );
+    wxCHECK_RET( CurTok() == T_symbol_instances,
+                 wxT( "Cannot parse " ) + GetTokenString( CurTok() ) +
+                 wxT( " as a instances token." ) );
     wxCHECK( aScreen, /* void */ );
 
     T token;
 
-    for( token = NextTok(); token != T_RIGHT; token = NextTok() )
+    for( token = NextTok();  token != T_RIGHT;  token = NextTok() )
     {
         if( token != T_LEFT )
             Expecting( T_LEFT );
@@ -1920,7 +1978,7 @@ void SCH_SEXPR_PARSER::parseSchSymbolInstances( SCH_SCREEN* aScreen )
 
             instance.m_Path = KIID_PATH( FromUTF8() );
 
-            for( token = NextTok(); token != T_RIGHT; token = NextTok() )
+            for( token = NextTok();  token != T_RIGHT;  token = NextTok() )
             {
                 if( token != T_LEFT )
                     Expecting( T_LEFT );
@@ -1952,7 +2010,8 @@ void SCH_SEXPR_PARSER::parseSchSymbolInstances( SCH_SCREEN* aScreen )
                     NeedRIGHT();
                     break;
 
-                default: Expecting( "path, unit, value or footprint" );
+                default:
+                    Expecting( "path, unit, value or footprint" );
                 }
             }
 
@@ -1960,7 +2019,8 @@ void SCH_SEXPR_PARSER::parseSchSymbolInstances( SCH_SCREEN* aScreen )
             break;
         }
 
-        default: Expecting( "path" );
+        default:
+            Expecting( "path" );
         }
     }
 }
@@ -1992,7 +2052,7 @@ void SCH_SEXPR_PARSER::ParseSchematic( SCH_SHEET* aSheet, bool aIsCopyableOnly, 
 
     screen->SetFileFormatVersionAtLoad( m_requiredVersion );
 
-    for( token = NextTok(); token != T_RIGHT; token = NextTok() )
+    for( token = NextTok();  token != T_RIGHT;  token = NextTok() )
     {
         if( aIsCopyableOnly && token == T_EOF )
             break;
@@ -2047,7 +2107,7 @@ void SCH_SEXPR_PARSER::ParseSchematic( SCH_SHEET* aSheet, bool aIsCopyableOnly, 
             // Dummy map.  No derived symbols are allowed in the library cache.
             LIB_PART_MAP symbolLibMap;
 
-            for( token = NextTok(); token != T_RIGHT; token = NextTok() )
+            for( token = NextTok();  token != T_RIGHT;  token = NextTok() )
             {
                 if( token != T_LEFT )
                     Expecting( T_LEFT );
@@ -2060,16 +2120,21 @@ void SCH_SEXPR_PARSER::ParseSchematic( SCH_SHEET* aSheet, bool aIsCopyableOnly, 
                     screen->AddLibSymbol( ParseSymbol( symbolLibMap, m_requiredVersion ) );
                     break;
 
-                default: Expecting( "symbol" );
+                default:
+                    Expecting( "symbol" );
                 }
             }
 
             break;
         }
 
-        case T_symbol: screen->Append( static_cast<SCH_ITEM*>( parseSchematicSymbol() ) ); break;
+        case T_symbol:
+            screen->Append( static_cast<SCH_ITEM*>( parseSchematicSymbol() ) );
+            break;
 
-        case T_image: screen->Append( static_cast<SCH_ITEM*>( parseImage() ) ); break;
+        case T_image:
+            screen->Append( static_cast<SCH_ITEM*>( parseImage() ) );
+            break;
 
         case T_sheet:
         {
@@ -2085,15 +2150,23 @@ void SCH_SEXPR_PARSER::ParseSchematic( SCH_SHEET* aSheet, bool aIsCopyableOnly, 
             break;
         }
 
-        case T_junction: screen->Append( static_cast<SCH_ITEM*>( parseJunction() ) ); break;
+        case T_junction:
+            screen->Append( static_cast<SCH_ITEM*>( parseJunction() ) );
+            break;
 
-        case T_no_connect: screen->Append( static_cast<SCH_ITEM*>( parseNoConnect() ) ); break;
+        case T_no_connect:
+            screen->Append( static_cast<SCH_ITEM*>( parseNoConnect() ) );
+            break;
 
-        case T_bus_entry: screen->Append( static_cast<SCH_ITEM*>( parseBusEntry() ) ); break;
+        case T_bus_entry:
+            screen->Append( static_cast<SCH_ITEM*>( parseBusEntry() ) );
+            break;
 
         case T_polyline:
         case T_bus:
-        case T_wire: screen->Append( static_cast<SCH_ITEM*>( parseLine() ) ); break;
+        case T_wire:
+            screen->Append( static_cast<SCH_ITEM*>( parseLine() ) );
+            break;
 
         case T_text:
         case T_label:
@@ -2139,21 +2212,21 @@ SCH_COMPONENT* SCH_SEXPR_PARSER::parseSchematicSymbol()
     wxCHECK_MSG( CurTok() == T_symbol, nullptr,
                  wxT( "Cannot parse " ) + GetTokenString( CurTok() ) + wxT( " as a symbol." ) );
 
-    T                              token;
-    wxString                       tmp;
-    wxString                       error;
-    wxString                       libName;
-    SCH_FIELD*                     field;
+    T token;
+    wxString tmp;
+    wxString error;
+    wxString libName;
+    SCH_FIELD* field;
     std::unique_ptr<SCH_COMPONENT> symbol = std::make_unique<SCH_COMPONENT>();
-    TRANSFORM                      transform;
-    std::set<int>                  fieldIDsRead;
+    TRANSFORM transform;
+    std::set<int> fieldIDsRead;
 
     // We'll reset this if we find a fields_autoplaced token
     symbol->ClearFieldsAutoplaced();
 
     m_fieldId = MANDATORY_FIELDS;
 
-    for( token = NextTok(); token != T_RIGHT; token = NextTok() )
+    for( token = NextTok();  token != T_RIGHT;  token = NextTok() )
     {
         if( token != T_LEFT )
             Expecting( T_LEFT );
@@ -2194,7 +2267,7 @@ SCH_COMPONENT* SCH_SEXPR_PARSER::parseSchematicSymbol()
             {
                 error.Printf( _( "Invalid symbol library ID in\nfile: \"%s\"\nline: %d\n"
                                  "offset: %d" ),
-                              CurSource(), CurLineNumber(), CurOffset() );
+                        CurSource(), CurLineNumber(), CurOffset() );
                 THROW_IO_ERROR( error );
             }
 
@@ -2208,11 +2281,11 @@ SCH_COMPONENT* SCH_SEXPR_PARSER::parseSchematicSymbol()
 
             switch( static_cast<int>( parseDouble( "symbol orientation" ) ) )
             {
-            case 0: transform = TRANSFORM(); break;
-            case 90: transform = TRANSFORM( 0, -1, -1, 0 ); break;
-            case 180: transform = TRANSFORM( -1, 0, 0, 1 ); break;
-            case 270: transform = TRANSFORM( 0, 1, 1, 0 ); break;
-            default: Expecting( "0, 90, 180, or 270" );
+            case 0:    transform = TRANSFORM();                 break;
+            case 90:   transform = TRANSFORM( 0, -1, -1, 0 );   break;
+            case 180:  transform = TRANSFORM( -1, 0, 0, 1 );    break;
+            case 270:  transform = TRANSFORM( 0, 1, 1, 0 );     break;
+            default:   Expecting( "0, 90, 180, or 270" );
             }
 
             symbol->SetTransform( transform );
@@ -2291,7 +2364,7 @@ SCH_COMPONENT* SCH_SEXPR_PARSER::parseSchematicSymbol()
 
                 while( prefix.Length() )
                 {
-                    if( ( prefix.Last() < '0' || prefix.Last() > '9' ) && prefix.Last() != '?' )
+                    if( ( prefix.Last() < '0' || prefix.Last() > '9') && prefix.Last() != '?' )
                         break;
 
                     prefix.RemoveLast();
@@ -2325,7 +2398,7 @@ SCH_COMPONENT* SCH_SEXPR_PARSER::parseSchematicSymbol()
             NeedSYMBOL();
             number = FromUTF8();
 
-            for( token = NextTok(); token != T_RIGHT; token = NextTok() )
+            for( token = NextTok();  token != T_RIGHT;  token = NextTok() )
             {
                 if( token != T_LEFT )
                     Expecting( T_LEFT );
@@ -2351,18 +2424,20 @@ SCH_COMPONENT* SCH_SEXPR_PARSER::parseSchematicSymbol()
                     NeedRIGHT();
                     break;
 
-                default: Expecting( "alternate or uuid" );
+                default:
+                    Expecting( "alternate or uuid" );
                 }
             }
 
-            symbol->GetRawPins().emplace_back(
-                    std::make_unique<SCH_PIN>( symbol.get(), number, alt ) );
+            symbol->GetRawPins().emplace_back( std::make_unique<SCH_PIN>( symbol.get(),
+                                                                          number, alt ) );
 
             const_cast<KIID&>( symbol->GetRawPins().back()->m_Uuid ) = uuid;
         }
-        break;
+            break;
 
-        default: Expecting( "lib_id, lib_name, at, mirror, uuid, property, pin, or instances" );
+        default:
+            Expecting( "lib_id, lib_name, at, mirror, uuid, property, pin, or instances" );
         }
     }
 
@@ -2381,10 +2456,10 @@ SCH_BITMAP* SCH_SEXPR_PARSER::parseImage()
     wxCHECK_MSG( CurTok() == T_image, nullptr,
                  wxT( "Cannot parse " ) + GetTokenString( CurTok() ) + wxT( " as an image." ) );
 
-    T                           token;
+    T token;
     std::unique_ptr<SCH_BITMAP> bitmap = std::make_unique<SCH_BITMAP>();
 
-    for( token = NextTok(); token != T_RIGHT; token = NextTok() )
+    for( token = NextTok();  token != T_RIGHT;  token = NextTok() )
     {
         if( token != T_LEFT )
             Expecting( T_LEFT );
@@ -2432,17 +2507,18 @@ SCH_BITMAP* SCH_SEXPR_PARSER::parseImage()
                 token = NextTok();
             }
 
-            wxMemoryBuffer       buffer = wxBase64Decode( data );
+            wxMemoryBuffer buffer = wxBase64Decode( data );
             wxMemoryOutputStream stream( buffer.GetData(), buffer.GetBufSize() );
-            wxImage*             image = new wxImage();
-            wxMemoryInputStream  istream( stream );
+            wxImage* image = new wxImage();
+            wxMemoryInputStream istream( stream );
             image->LoadFile( istream, wxBITMAP_TYPE_PNG );
             bitmap->GetImage()->SetImage( image );
             bitmap->GetImage()->SetBitmap( new wxBitmap( *image ) );
             break;
         }
 
-        default: Expecting( "at, scale, uuid or data" );
+        default:
+            Expecting( "at, scale, uuid or data" );
         }
     }
 
@@ -2455,13 +2531,13 @@ SCH_SHEET* SCH_SEXPR_PARSER::parseSheet()
     wxCHECK_MSG( CurTok() == T_sheet, nullptr,
                  wxT( "Cannot parse " ) + GetTokenString( CurTok() ) + wxT( " as a sheet." ) );
 
-    T                          token;
-    STROKE_PARAMS              stroke;
-    FILL_PARAMS                fill;
-    SCH_FIELD*                 field;
-    std::vector<SCH_FIELD>     fields;
+    T token;
+    STROKE_PARAMS stroke;
+    FILL_PARAMS fill;
+    SCH_FIELD* field;
+    std::vector<SCH_FIELD> fields;
     std::unique_ptr<SCH_SHEET> sheet = std::make_unique<SCH_SHEET>();
-    std::set<int>              fieldIDsRead;
+    std::set<int> fieldIDsRead;
 
     // We'll reset this if we find a fields_autoplaced token
     sheet->ClearFieldsAutoplaced();
@@ -2542,9 +2618,12 @@ SCH_SHEET* SCH_SEXPR_PARSER::parseSheet()
             delete field;
             break;
 
-        case T_pin: sheet->AddPin( parseSchSheetPin( sheet.get() ) ); break;
+        case T_pin:
+            sheet->AddPin( parseSchSheetPin( sheet.get() ) );
+            break;
 
-        default: Expecting( "at, size, stroke, background, uuid, property, or pin" );
+        default:
+            Expecting( "at, size, stroke, background, uuid, property, or pin" );
         }
     }
 
@@ -2559,10 +2638,10 @@ SCH_JUNCTION* SCH_SEXPR_PARSER::parseJunction()
     wxCHECK_MSG( CurTok() == T_junction, nullptr,
                  wxT( "Cannot parse " ) + GetTokenString( CurTok() ) + wxT( " as a junction." ) );
 
-    T                             token;
+    T token;
     std::unique_ptr<SCH_JUNCTION> junction = std::make_unique<SCH_JUNCTION>();
 
-    for( token = NextTok(); token != T_RIGHT; token = NextTok() )
+    for( token = NextTok();  token != T_RIGHT;  token = NextTok() )
     {
         if( token != T_LEFT )
             Expecting( T_LEFT );
@@ -2595,7 +2674,8 @@ SCH_JUNCTION* SCH_SEXPR_PARSER::parseJunction()
             break;
         }
 
-        default: Expecting( "at" );
+        default:
+            Expecting( "at" );
         }
     }
 
@@ -2608,10 +2688,10 @@ SCH_NO_CONNECT* SCH_SEXPR_PARSER::parseNoConnect()
     wxCHECK_MSG( CurTok() == T_no_connect, nullptr,
                  wxT( "Cannot parse " ) + GetTokenString( CurTok() ) + wxT( " as a no connect." ) );
 
-    T                               token;
+    T token;
     std::unique_ptr<SCH_NO_CONNECT> no_connect = std::make_unique<SCH_NO_CONNECT>();
 
-    for( token = NextTok(); token != T_RIGHT; token = NextTok() )
+    for( token = NextTok();  token != T_RIGHT;  token = NextTok() )
     {
         if( token != T_LEFT )
             Expecting( T_LEFT );
@@ -2631,7 +2711,8 @@ SCH_NO_CONNECT* SCH_SEXPR_PARSER::parseNoConnect()
             NeedRIGHT();
             break;
 
-        default: Expecting( "at or uuid" );
+        default:
+            Expecting( "at or uuid" );
         }
     }
 
@@ -2644,11 +2725,11 @@ SCH_BUS_WIRE_ENTRY* SCH_SEXPR_PARSER::parseBusEntry()
     wxCHECK_MSG( CurTok() == T_bus_entry, nullptr,
                  wxT( "Cannot parse " ) + GetTokenString( CurTok() ) + wxT( " as a bus entry." ) );
 
-    T                                   token;
-    STROKE_PARAMS                       stroke;
+    T token;
+    STROKE_PARAMS stroke;
     std::unique_ptr<SCH_BUS_WIRE_ENTRY> busEntry = std::make_unique<SCH_BUS_WIRE_ENTRY>();
 
-    for( token = NextTok(); token != T_RIGHT; token = NextTok() )
+    for( token = NextTok();  token != T_RIGHT;  token = NextTok() )
     {
         if( token != T_LEFT )
             Expecting( T_LEFT );
@@ -2684,7 +2765,8 @@ SCH_BUS_WIRE_ENTRY* SCH_SEXPR_PARSER::parseBusEntry()
             NeedRIGHT();
             break;
 
-        default: Expecting( "at, size, uuid or stroke" );
+        default:
+            Expecting( "at, size, uuid or stroke" );
         }
     }
 
@@ -2694,21 +2776,21 @@ SCH_BUS_WIRE_ENTRY* SCH_SEXPR_PARSER::parseBusEntry()
 
 SCH_LINE* SCH_SEXPR_PARSER::parseLine()
 {
-    T                         token;
-    STROKE_PARAMS             stroke;
+    T token;
+    STROKE_PARAMS stroke;
     std::unique_ptr<SCH_LINE> line = std::make_unique<SCH_LINE>();
 
     switch( CurTok() )
     {
-    case T_polyline: line->SetLayer( LAYER_NOTES ); break;
-    case T_wire: line->SetLayer( LAYER_WIRE ); break;
-    case T_bus: line->SetLayer( LAYER_BUS ); break;
+    case T_polyline:   line->SetLayer( LAYER_NOTES );   break;
+    case T_wire:       line->SetLayer( LAYER_WIRE );    break;
+    case T_bus:        line->SetLayer( LAYER_BUS );     break;
     default:
         wxCHECK_MSG( false, nullptr,
                      wxT( "Cannot parse " ) + GetTokenString( CurTok() ) + wxT( " as a line." ) );
     }
 
-    for( token = NextTok(); token != T_RIGHT; token = NextTok() )
+    for( token = NextTok();  token != T_RIGHT;  token = NextTok() )
     {
         if( token != T_LEFT )
             Expecting( T_LEFT );
@@ -2748,7 +2830,8 @@ SCH_LINE* SCH_SEXPR_PARSER::parseLine()
             NeedRIGHT();
             break;
 
-        default: Expecting( "at, uuid or stroke" );
+        default:
+            Expecting( "at, uuid or stroke" );
         }
     }
 
@@ -2758,15 +2841,15 @@ SCH_LINE* SCH_SEXPR_PARSER::parseLine()
 
 SCH_TEXT* SCH_SEXPR_PARSER::parseSchText()
 {
-    T                         token;
+    T token;
     std::unique_ptr<SCH_TEXT> text;
 
     switch( CurTok() )
     {
-    case T_text: text = std::make_unique<SCH_TEXT>(); break;
-    case T_label: text = std::make_unique<SCH_LABEL>(); break;
-    case T_global_label: text = std::make_unique<SCH_GLOBALLABEL>(); break;
-    case T_hierarchical_label: text = std::make_unique<SCH_HIERLABEL>(); break;
+    case T_text:                text = std::make_unique<SCH_TEXT>();          break;
+    case T_label:               text = std::make_unique<SCH_LABEL>();         break;
+    case T_global_label:        text = std::make_unique<SCH_GLOBALLABEL>();   break;
+    case T_hierarchical_label:  text = std::make_unique<SCH_HIERLABEL>();     break;
     default:
         wxCHECK_MSG( false, nullptr, "Cannot parse " + GetTokenString( CurTok() ) + " as text." );
     }
@@ -2778,7 +2861,7 @@ SCH_TEXT* SCH_SEXPR_PARSER::parseSchText()
 
     text->SetText( FromUTF8() );
 
-    for( token = NextTok(); token != T_RIGHT; token = NextTok() )
+    for( token = NextTok();  token != T_RIGHT;  token = NextTok() )
     {
         if( token != T_LEFT )
             Expecting( T_LEFT );
@@ -2792,10 +2875,10 @@ SCH_TEXT* SCH_SEXPR_PARSER::parseSchText()
 
             switch( static_cast<int>( parseDouble( "text angle" ) ) )
             {
-            case 0: text->SetLabelSpinStyle( LABEL_SPIN_STYLE::RIGHT ); break;
-            case 90: text->SetLabelSpinStyle( LABEL_SPIN_STYLE::UP ); break;
-            case 180: text->SetLabelSpinStyle( LABEL_SPIN_STYLE::LEFT ); break;
-            case 270: text->SetLabelSpinStyle( LABEL_SPIN_STYLE::BOTTOM ); break;
+            case 0:    text->SetLabelSpinStyle( LABEL_SPIN_STYLE::RIGHT );    break;
+            case 90:   text->SetLabelSpinStyle( LABEL_SPIN_STYLE::UP );       break;
+            case 180:  text->SetLabelSpinStyle( LABEL_SPIN_STYLE::LEFT );     break;
+            case 270:  text->SetLabelSpinStyle( LABEL_SPIN_STYLE::BOTTOM );   break;
             default:
                 wxFAIL;
                 text->SetLabelSpinStyle( LABEL_SPIN_STYLE::RIGHT );
@@ -2813,12 +2896,13 @@ SCH_TEXT* SCH_SEXPR_PARSER::parseSchText()
 
             switch( token )
             {
-            case T_input: text->SetShape( PINSHEETLABEL_SHAPE::PS_INPUT ); break;
-            case T_output: text->SetShape( PINSHEETLABEL_SHAPE::PS_OUTPUT ); break;
-            case T_bidirectional: text->SetShape( PINSHEETLABEL_SHAPE::PS_BIDI ); break;
-            case T_tri_state: text->SetShape( PINSHEETLABEL_SHAPE::PS_TRISTATE ); break;
-            case T_passive: text->SetShape( PINSHEETLABEL_SHAPE::PS_UNSPECIFIED ); break;
-            default: Expecting( "input, output, bidirectional, tri_state, or passive" );
+            case T_input:          text->SetShape( PINSHEETLABEL_SHAPE::PS_INPUT );        break;
+            case T_output:         text->SetShape( PINSHEETLABEL_SHAPE::PS_OUTPUT );       break;
+            case T_bidirectional:  text->SetShape( PINSHEETLABEL_SHAPE::PS_BIDI );         break;
+            case T_tri_state:      text->SetShape( PINSHEETLABEL_SHAPE::PS_TRISTATE );     break;
+            case T_passive:        text->SetShape( PINSHEETLABEL_SHAPE::PS_UNSPECIFIED );  break;
+            default:
+                Expecting( "input, output, bidirectional, tri_state, or passive" );
             }
 
             NeedRIGHT();
@@ -2833,7 +2917,7 @@ SCH_TEXT* SCH_SEXPR_PARSER::parseSchText()
             parseEDA_TEXT( static_cast<EDA_TEXT*>( text.get() ) );
             break;
 
-        case T_iref: // legacy format; current is a T_property (aka SCH_FIELD)
+        case T_iref:    // legacy format; current is a T_property (aka SCH_FIELD)
             if( text->Type() == SCH_GLOBAL_LABEL_T )
             {
                 SCH_GLOBALLABEL* label = static_cast<SCH_GLOBALLABEL*>( text.get() );
@@ -2865,7 +2949,8 @@ SCH_TEXT* SCH_SEXPR_PARSER::parseSchText()
             }
             break;
 
-        default: Expecting( "at, shape, iref, uuid or effects" );
+        default:
+            Expecting( "at, shape, iref, uuid or effects" );
         }
     }
 
@@ -2879,7 +2964,7 @@ void SCH_SEXPR_PARSER::parseBusAlias( SCH_SCREEN* aScreen )
                  wxT( "Cannot parse " ) + GetTokenString( CurTok() ) + wxT( " as a bus alias." ) );
     wxCHECK( aScreen, /* void */ );
 
-    T    token;
+    T token;
     auto busAlias = std::make_shared<BUS_ALIAS>( aScreen );
 
     NeedSYMBOL();

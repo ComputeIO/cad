@@ -41,8 +41,8 @@ public:
 
     bool IsContainer( const wxDataViewItem& aItem ) const override;
 
-    void Sync( const wxString&                                  aForceRefresh,
-               std::function<void( int, int, const wxString& )> aProgressCallback );
+    void Sync( const wxString& aForceRefresh,
+               std::function<void( int, int, const wxString&)> aProgressCallback );
 
     int GetLibrariesCount() const override;
 
@@ -58,7 +58,7 @@ protected:
     bool GetAttr( wxDataViewItem const& aItem, unsigned int aCol,
                   wxDataViewItemAttr& aAttr ) const override;
 
-    SYMBOL_TREE_SYNCHRONIZING_ADAPTER( SYMBOL_EDIT_FRAME*      aParent,
+    SYMBOL_TREE_SYNCHRONIZING_ADAPTER( SYMBOL_EDIT_FRAME* aParent,
                                        SYMBOL_LIBRARY_MANAGER* aLibMgr );
 
 protected:

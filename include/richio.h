@@ -389,9 +389,9 @@ public:
      *
      * @throw IO_ERROR, if there is any kind of problem with the input string.
      */
-    virtual std::string Quotes( const std::string& aWrapee ) const;
+     virtual std::string Quotes( const std::string& aWrapee ) const;
 
-    std::string Quotew( const wxString& aWrapee ) const;
+     std::string Quotew( const wxString& aWrapee ) const;
 
 private:
     std::vector<char>   m_buffer;
@@ -399,6 +399,7 @@ private:
 
     int sprint( const char* fmt, ... );
     int vprint( const char* fmt, va_list ap );
+
 };
 
 

@@ -387,12 +387,12 @@ void SCH_EDIT_FRAME::setupUIConditions()
     mgr->SetConditions( ACTIONS::inchesUnits,         CHECK( cond.Units( EDA_UNITS::INCHES ) ) );
     mgr->SetConditions( ACTIONS::milsUnits,           CHECK( cond.Units( EDA_UNITS::MILS ) ) );
 
-    mgr->SetConditions( ACTIONS::cut, ENABLE( hasElements ) );
-    mgr->SetConditions( ACTIONS::copy, ENABLE( hasElements ) );
+    mgr->SetConditions( ACTIONS::cut,                 ENABLE( hasElements ) );
+    mgr->SetConditions( ACTIONS::copy,                ENABLE( hasElements ) );
     mgr->SetConditions( ACTIONS::paste,               ENABLE( SELECTION_CONDITIONS::Idle ) );
     mgr->SetConditions( ACTIONS::pasteSpecial,        ENABLE( SELECTION_CONDITIONS::Idle ) );
-    mgr->SetConditions( ACTIONS::doDelete, ENABLE( hasElements ) );
-    mgr->SetConditions( ACTIONS::duplicate, ENABLE( hasElements ) );
+    mgr->SetConditions( ACTIONS::doDelete,            ENABLE( hasElements ) );
+    mgr->SetConditions( ACTIONS::duplicate,           ENABLE( hasElements ) );
     mgr->SetConditions( ACTIONS::selectAll,           ENABLE( hasElements ) );
 
     mgr->SetConditions( EE_ACTIONS::rotateCW,         ENABLE( hasElements ) );

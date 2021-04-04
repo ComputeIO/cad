@@ -33,8 +33,7 @@
 class PROJECT;
 
 /// Flags for Spice netlist generation (can be combined)
-enum SPICE_NETLIST_OPTIONS
-{
+enum SPICE_NETLIST_OPTIONS {
     NET_ADJUST_INCLUDE_PATHS = 8, // use full paths for included files (if they are in search path)
     NET_ADJUST_PASSIVE_VALS = 16, // reformat passive component values (e.g. 1M -> 1Meg)
     NET_ALL_FLAGS = 0xffff
@@ -157,7 +156,7 @@ public:
      *
      * @param aNetName is the net name to modify.
      */
-    static void ReplaceForbiddenChars( wxString& aNetName );
+     static void ReplaceForbiddenChars( wxString& aNetName );
 
     /**
      * Return a map of circuit nodes to net names.

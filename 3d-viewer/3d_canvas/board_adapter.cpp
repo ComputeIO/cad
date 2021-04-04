@@ -160,16 +160,20 @@ bool BOARD_ADAPTER::Is3dLayerEnabled( PCB_LAYER_ID aLayer ) const
     switch( aLayer )
     {
     case B_Adhes:
-    case F_Adhes: return GetFlag( FL_ADHESIVE );
+    case F_Adhes:
+        return GetFlag( FL_ADHESIVE );
 
     case B_Paste:
-    case F_Paste: return GetFlag( FL_SOLDERPASTE );
+    case F_Paste:
+        return GetFlag( FL_SOLDERPASTE );
 
     case B_SilkS:
-    case F_SilkS: return GetFlag( FL_SILKSCREEN );
+    case F_SilkS:
+        return GetFlag( FL_SILKSCREEN );
 
     case B_Mask:
-    case F_Mask: return GetFlag( FL_SOLDERMASK );
+    case F_Mask:
+        return GetFlag( FL_SOLDERMASK );
 
     case Dwgs_User:
     case Cmts_User:

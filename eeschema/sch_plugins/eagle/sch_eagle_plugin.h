@@ -131,11 +131,13 @@ private:
     SCH_TEXT*           loadPlainText( wxXmlNode* aSchText );
     void                loadFrame( wxXmlNode* aFrameNode, std::vector<SCH_LINE*>& aLines );
 
-    bool loadSymbol( wxXmlNode* aSymbolNode, std::unique_ptr<LIB_PART>& aPart, EDEVICE* aDevice,
-                     int aGateNumber, const wxString& aGateName );
-    LIB_CIRCLE*    loadSymbolCircle( std::unique_ptr<LIB_PART>& aPart, wxXmlNode* aCircleNode,
-                                     int aGateNumber );
-    LIB_RECTANGLE* loadSymbolRectangle( std::unique_ptr<LIB_PART>& aPart, wxXmlNode* aRectNode,
+    bool            loadSymbol( wxXmlNode* aSymbolNode, std::unique_ptr<LIB_PART>& aPart,
+                                EDEVICE* aDevice, int aGateNumber, const wxString& aGateName );
+    LIB_CIRCLE*     loadSymbolCircle( std::unique_ptr<LIB_PART>& aPart, wxXmlNode* aCircleNode,
+                                      int aGateNumber );
+    LIB_RECTANGLE*  loadSymbolRectangle( std::unique_ptr<LIB_PART>& aPart, wxXmlNode* aRectNode,
+                                         int aGateNumber );
+    LIB_POLYLINE*   loadSymbolPolyLine( std::unique_ptr<LIB_PART>& aPart, wxXmlNode* aPolygonNode,
                                         int aGateNumber );
     LIB_ITEM*       loadSymbolWire( std::unique_ptr<LIB_PART>& aPart, wxXmlNode* aWireNode,
                                     int aGateNumber );
@@ -197,7 +199,10 @@ private:
     // (named power pins in Eagle).
     struct EAGLE_MISSING_CMP
     {
-        EAGLE_MISSING_CMP( const SCH_COMPONENT* aComponent = nullptr ) : cmp( aComponent ) {}
+        EAGLE_MISSING_CMP( const SCH_COMPONENT* aComponent = nullptr )
+            : cmp( aComponent )
+        {
+        }
 
         ///< Link to the parent component
         const SCH_COMPONENT* cmp;

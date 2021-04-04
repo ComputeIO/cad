@@ -46,14 +46,7 @@ class KIDIALOG : public wxRichMessageDialog
 {
 public:
     ///< Dialog type. Selects appropriate icon and default dialog title
-    enum KD_TYPE
-    {
-        KD_NONE,
-        KD_INFO,
-        KD_QUESTION,
-        KD_WARNING,
-        KD_ERROR
-    };
+    enum KD_TYPE { KD_NONE, KD_INFO, KD_QUESTION, KD_WARNING, KD_ERROR };
 
     KIDIALOG( wxWindow* aParent, const wxString& aMessage, const wxString& aCaption,
               long aStyle = wxOK );
@@ -74,18 +67,18 @@ public:
     void ForceShowAgain();
 
     bool Show( bool aShow = true ) override;
-    int  ShowModal() override;
+    int ShowModal() override;
 
 protected:
     // Helper functions for wxRichMessageDialog constructor
     static wxString getCaption( KD_TYPE aType, const wxString& aCaption );
-    static long     getStyle( KD_TYPE aType );
+    static long getStyle( KD_TYPE aType );
 
 protected:
-    unsigned long m_hash;              // Unique id
-    bool          m_cancelMeansCancel; // If the Cancel button is renamed then it should be
-                                       // saved by the DoNotShowAgain checkbox.  If it's really
-                                       // a cancel then it should not.
+    unsigned long m_hash;               // Unique id
+    bool          m_cancelMeansCancel;  // If the Cancel button is renamed then it should be
+                                        // saved by the DoNotShowAgain checkbox.  If it's really
+                                        // a cancel then it should not.
 };
 
 
@@ -178,6 +171,7 @@ bool IsOK( wxWindow* aParent, const wxString& aMessage );
 int OKOrCancelDialog( wxWindow* aParent, const wxString& aWarning, const wxString& aMessage,
                       wxString aDetailedMessage = wxEmptyString, wxString aOKLabel = wxEmptyString,
                       wxString aCancelLabel = wxEmptyString, bool* aApplyToAll = nullptr );
+
 
 
 /**

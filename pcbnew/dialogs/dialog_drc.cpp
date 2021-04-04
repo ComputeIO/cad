@@ -214,7 +214,8 @@ void DIALOG_DRC::OnRunDRCClick( wxCommandEvent& aEvent )
 
         m_messages->Clear();
         m_messages->Report( _( "DRC incomplete: could not compile custom design rules.  " )
-                            + wxT( "<a href='boardsetup'>" ) + _( "Show design rules." )
+                            + wxT( "<a href='boardsetup'>" )
+                            + _( "Show design rules." )
                             + wxT( "</a>" ) );
         m_messages->Flush();
 

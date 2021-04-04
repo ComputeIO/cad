@@ -31,45 +31,49 @@
 
 namespace KIGFX
 {
+
 class GAL;
 class VIEW;
 
 namespace PREVIEW
 {
+
+/**
+ * A preview item which shows an in-progress polygon, which can be used for zone outlines, etc.
+ */
+class POLYGON_ITEM : public SIMPLE_OVERLAY_ITEM
+{
+
+public:
+    POLYGON_ITEM();
+
+    ///< Gets the bounding box of the polygon
+    virtual const BOX2I ViewBBox() const override;
+
     /**
-     * A preview item which shows an in-progress polygon, which can be used for zone outlines, etc.
+     * Set the polygon points
+     *
+     * @param aLockedInPts - the "fixed points" of the outline
+     * @param aLeaderPts - the lines from the last fixed point to
+     *        another point, eg the cursor.
      */
-    class POLYGON_ITEM : public SIMPLE_OVERLAY_ITEM
-    {
-    public:
-        POLYGON_ITEM();
+    void SetPoints( const SHAPE_LINE_CHAIN& aLockedInPts,
+                    const SHAPE_LINE_CHAIN& aLeaderPts );
 
-        ///< Gets the bounding box of the polygon
-        virtual const BOX2I ViewBBox() const override;
+private:
+    ///< Draw rectangle and center line onto GAL
+    void drawPreviewShape( KIGFX::VIEW* aView ) const override;
 
-        /**
-         * Set the polygon points
-         *
-         * @param aLockedInPts - the "fixed points" of the outline
-         * @param aLeaderPts - the lines from the last fixed point to
-         *        another point, eg the cursor.
-         */
-        void SetPoints( const SHAPE_LINE_CHAIN& aLockedInPts, const SHAPE_LINE_CHAIN& aLeaderPts );
+    ///< complete polyline of locked in and leader points
+    SHAPE_LINE_CHAIN m_lockedChain, m_leaderChain;
 
-    private:
-        ///< Draw rectangle and center line onto GAL
-        void drawPreviewShape( KIGFX::VIEW* aView ) const override;
+    ///< polygon fill
+    SHAPE_POLY_SET m_polyfill;
 
-        ///< complete polyline of locked in and leader points
-        SHAPE_LINE_CHAIN m_lockedChain, m_leaderChain;
+    static const double POLY_LINE_WIDTH;
+};
 
-        ///< polygon fill
-        SHAPE_POLY_SET m_polyfill;
-
-        static const double POLY_LINE_WIDTH;
-    };
-
-} // namespace PREVIEW
-} // namespace KIGFX
+} // PREVIEW
+} // KIGFX
 
 #endif // PREVIEW_POLYGON_ITEM__H_

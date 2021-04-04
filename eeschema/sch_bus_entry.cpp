@@ -199,9 +199,8 @@ void SCH_BUS_BUS_ENTRY::GetEndPoints( std::vector< DANGLING_END_ITEM >& aItemLis
 void SCH_BUS_ENTRY_BASE::Print( const RENDER_SETTINGS* aSettings, const wxPoint& aOffset )
 {
     wxDC*   DC = aSettings->GetPrintDC();
-    COLOR4D color = ( GetStrokeColor() == COLOR4D::UNSPECIFIED )
-                            ? aSettings->GetLayerColor( m_layer )
-                            : GetStrokeColor();
+    COLOR4D color = ( GetStrokeColor() == COLOR4D::UNSPECIFIED ) ?
+                    aSettings->GetLayerColor( m_layer ) : GetStrokeColor();
     wxPoint start = m_pos + aOffset;
     wxPoint end = GetEnd() + aOffset;
     int     penWidth = ( GetPenWidth() == 0 ) ? aSettings->GetDefaultPenWidth() : GetPenWidth();
@@ -221,8 +220,12 @@ void SCH_BUS_ENTRY_BASE::Print( const RENDER_SETTINGS* aSettings, const wxPoint&
         switch( GetStrokeStyle() )
         {
         default:
-        case PLOT_DASH_TYPE::DASH: strokes[0] = strokes[2] = DASH_MARK_LEN( penWidth ); break;
-        case PLOT_DASH_TYPE::DOT: strokes[0] = strokes[2] = DOT_MARK_LEN( penWidth ); break;
+        case PLOT_DASH_TYPE::DASH:
+            strokes[0] = strokes[2] = DASH_MARK_LEN( penWidth );
+            break;
+        case PLOT_DASH_TYPE::DOT:
+            strokes[0] = strokes[2] = DOT_MARK_LEN( penWidth );
+            break;
         case PLOT_DASH_TYPE::DASHDOT:
             strokes[0] = DASH_MARK_LEN( penWidth );
             strokes[2] = DOT_MARK_LEN( penWidth );
@@ -233,8 +236,8 @@ void SCH_BUS_ENTRY_BASE::Print( const RENDER_SETTINGS* aSettings, const wxPoint&
         {
             // Calculations MUST be done in doubles to keep from accumulating rounding
             // errors as we go.
-            wxPoint next( start.x + strokes[i % 4] * cos( theta ),
-                          start.y + strokes[i % 4] * sin( theta ) );
+            wxPoint next( start.x + strokes[ i % 4 ] * cos( theta ),
+                          start.y + strokes[ i % 4 ] * sin( theta ) );
 
             // Drawing each segment can be done rounded to ints.
             wxPoint segStart( KiROUND( start.x ), KiROUND( start.y ) );

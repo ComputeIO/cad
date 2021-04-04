@@ -104,19 +104,20 @@ bool PAD_TOOL::Init()
     auto& ctxMenu = m_menu.GetMenu();
 
     // cancel current tool goes in main context menu at the top if present
-    ctxMenu.AddItem( ACTIONS::cancelInteractive, SELECTION_CONDITIONS::ShowAlways, 1 );
+    ctxMenu.AddItem( ACTIONS::cancelInteractive,           SELECTION_CONDITIONS::ShowAlways, 1 );
     ctxMenu.AddSeparator( 1 );
 
-    ctxMenu.AddItem( PCB_ACTIONS::rotateCcw, SELECTION_CONDITIONS::ShowAlways );
-    ctxMenu.AddItem( PCB_ACTIONS::rotateCw, SELECTION_CONDITIONS::ShowAlways );
-    ctxMenu.AddItem( PCB_ACTIONS::flip, SELECTION_CONDITIONS::ShowAlways );
-    ctxMenu.AddItem( PCB_ACTIONS::mirror, SELECTION_CONDITIONS::ShowAlways );
-    ctxMenu.AddItem( PCB_ACTIONS::properties, SELECTION_CONDITIONS::ShowAlways );
+    ctxMenu.AddItem( PCB_ACTIONS::rotateCcw,               SELECTION_CONDITIONS::ShowAlways );
+    ctxMenu.AddItem( PCB_ACTIONS::rotateCw,                SELECTION_CONDITIONS::ShowAlways );
+    ctxMenu.AddItem( PCB_ACTIONS::flip,                    SELECTION_CONDITIONS::ShowAlways );
+    ctxMenu.AddItem( PCB_ACTIONS::mirror,                  SELECTION_CONDITIONS::ShowAlways );
+    ctxMenu.AddItem( PCB_ACTIONS::properties,              SELECTION_CONDITIONS::ShowAlways );
 
     // Finally, add the standard zoom/grid items
     getEditFrame<PCB_BASE_FRAME>()->AddStandardSubMenus( m_menu );
 
     return true;
+
 }
 
 
@@ -550,8 +551,7 @@ int PAD_TOOL::EditPad( const TOOL_EVENT& aEvent )
         if( PCB_ACTIONS::explodePad.GetHotKey() == PCB_ACTIONS::recombinePad.GetHotKey() )
         {
             msg.Printf( _( "Pad Edit Mode.  Press %s again to exit." ),
-                        KeyNameFromKeyCode( PCB_ACTIONS::recombinePad.GetHotKey() ) );
-        }
+                        KeyNameFromKeyCode( PCB_ACTIONS::recombinePad.GetHotKey() ) );}
 
         else
         {

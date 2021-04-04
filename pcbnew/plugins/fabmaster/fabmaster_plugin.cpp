@@ -58,8 +58,8 @@ const wxString FABMASTER_PLUGIN::GetFileExtension() const
 }
 
 
-BOARD* FABMASTER_PLUGIN::Load( const wxString& aFileName, BOARD* aAppendToMe,
-                               const PROPERTIES* aProperties, PROJECT* aProject )
+BOARD* FABMASTER_PLUGIN::Load( const wxString &aFileName, BOARD *aAppendToMe,
+                               const PROPERTIES *aProperties, PROJECT *aProject )
 {
     m_props = aProperties;
 

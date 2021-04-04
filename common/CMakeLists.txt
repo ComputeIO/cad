@@ -43,15 +43,8 @@ set( GAL_SRCS
     view/wx_view_controls.cpp
     view/zoom_controller.cpp
 
-    font/font.cpp
-    font/stroke_font.cpp
-    font/outline_font.cpp
-    font/outline_decomposer.cpp
-    font/triangulate.cpp
-
     # OpenGL GAL
     gal/opengl/opengl_gal.cpp
-    gal/opengl/opengl_freetype.cpp
     gal/opengl/gl_resources.cpp
     gal/opengl/gl_builtin_shaders.cpp
     gal/opengl/shader.cpp
@@ -440,13 +433,6 @@ list( APPEND COMMON_SRCS
     kicad_curl/kicad_curl_easy.cpp
 )
 
-if( KICAD_USE_FONTCONFIG )
-  list( APPEND COMMON_SRCS
-	font/fontconfig.cpp
-	font/fontinfo.cpp
-	)
-endif()
-
 set( COMMON_SRCS
     ${COMMON_SRCS}
 
@@ -493,8 +479,6 @@ set( COMMON_SRCS
     project/project_archiver.cpp
     project/project_file.cpp
     project/project_local_settings.cpp
-
-    markup/markup_parser.cpp
     )
 
 add_library( common STATIC
@@ -519,7 +503,6 @@ target_link_libraries( common
     ${OPENSSL_LIBRARIES}        # empty on Apple
     ${wxWidgets_LIBRARIES}
     ${EXTRA_LIBS}
-	${Fontconfig_LIBRARIES}
     )
 
 target_include_directories( common PUBLIC

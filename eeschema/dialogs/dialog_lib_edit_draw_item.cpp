@@ -32,10 +32,11 @@
 
 
 DIALOG_LIB_EDIT_DRAW_ITEM::DIALOG_LIB_EDIT_DRAW_ITEM( SYMBOL_EDIT_FRAME* aParent,
-                                                      LIB_ITEM*          aItem ) :
-        DIALOG_LIB_EDIT_DRAW_ITEM_BASE( aParent ),
-        m_frame( aParent ), m_item( aItem ),
-        m_lineWidth( aParent, m_widthLabel, m_widthCtrl, m_widthUnits, true )
+                                                      LIB_ITEM* aItem ) :
+    DIALOG_LIB_EDIT_DRAW_ITEM_BASE( aParent ),
+    m_frame( aParent ),
+    m_item( aItem ),
+    m_lineWidth( aParent, m_widthLabel, m_widthCtrl, m_widthUnits, true )
 {
     SetTitle( aItem->GetTypeName() + wxT( " " ) + GetTitle() );
 

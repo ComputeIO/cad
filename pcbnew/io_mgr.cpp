@@ -194,9 +194,7 @@ static IO_MGR::REGISTER_PLUGIN registerKicadPlugin( IO_MGR::KICAD_SEXP,
 static IO_MGR::REGISTER_PLUGIN registerPcadPlugin( IO_MGR::PCAD, wxT("P-Cad"),
                                                    []() -> PLUGIN* { return new PCAD_PLUGIN; } );
 static IO_MGR::REGISTER_PLUGIN registerFabmasterPlugin( IO_MGR::FABMASTER, wxT( "Fabmaster" ),
-                                                        []() -> PLUGIN* {
-                                                            return new FABMASTER_PLUGIN;
-                                                        } );
+                                                   []() -> PLUGIN* { return new FABMASTER_PLUGIN; } );
 static IO_MGR::REGISTER_PLUGIN registerAltiumDesignerPlugin( IO_MGR::ALTIUM_DESIGNER,
         wxT( "Altium Designer" ), []() -> PLUGIN* { return new ALTIUM_DESIGNER_PLUGIN; } );
 static IO_MGR::REGISTER_PLUGIN registerAltiumCircuitStudioPlugin( IO_MGR::ALTIUM_CIRCUIT_STUDIO,

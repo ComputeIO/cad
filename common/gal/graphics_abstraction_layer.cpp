@@ -35,7 +35,6 @@
 
 #include <cmath>
 
-
 using namespace KIGFX;
 
 
@@ -172,31 +171,10 @@ void GAL::ResetTextAttributes()
 }
 
 
-void GAL::StrokeText( const wxString& aText, const VECTOR2D& aPosition, double aRotationAngle,
-                      const FONT* aFont, bool aMultilineAllowed )
-{
-    const FONT* font = aFont ? aFont : FONT::GetFont();
-#ifdef DEBUG //STROKEFONT
-    if( !aText.substr( 0, 3 ).compare( "Foo" ) || !aText.substr( 0, 6 ).compare( "${FONT" ) )
-        std::cerr << "GAL::StrokeText( \"" << aText << "\", " << aPosition << ", " << aRotationAngle
-                  << ", ${FONT:" << font->Name() << "}, "
-                  << ( aMultilineAllowed ? "true" : "false" ) << " ) " << std::endl;
-#endif
-#ifdef FOOBAR
-    if( aEdaText )
-        font->DrawString( this, aEdaText->GetShownText(), aPosition, aRotationAngle,
-                          aEdaText->IsMultilineAllowed(), aEdaText->GetTextWidth(),
-                          aEdaText->GetTextHeight(), aEdaText->GetVertJustify() );
-    else
-#endif
-        font->DrawString( this, aText, aPosition, aRotationAngle, true, aMultilineAllowed );
-}
-
-
 VECTOR2D GAL::GetTextLineSize( const UTF8& aText ) const
 {
     // Compute the X and Y size of a given text.
-    // Because ComputeTextLineSize expects a one line text,
+    // Because computeTextLineSize expects a one line text,
     // aText is expected to be only one line text.
     return KIFONT::FONT::GetFont()->ComputeTextLineSize( this, aText );
 }

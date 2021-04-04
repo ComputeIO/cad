@@ -26,6 +26,7 @@
 class PATHS
 {
 public:
+
     /**
      * Gets the user path for python scripts
      */

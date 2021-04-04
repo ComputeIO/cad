@@ -55,10 +55,22 @@ const nlohmann::json defaultBomPlugins = {
 
 
 EESCHEMA_SETTINGS::EESCHEMA_SETTINGS() :
-        APP_SETTINGS_BASE( "eeschema", eeschemaSchemaVersion ), m_Appearance(), m_AutoplaceFields(),
-        m_Drawing(), m_Input(), m_PageSettings(), m_AnnotatePanel(), m_BomPanel(),
-        m_FieldEditorPanel(), m_LibViewPanel(), m_NetlistPanel(), m_PlotPanel(),
-        m_SymChooserPanel(), m_Selection(), m_Simulator(), m_RescueNeverShow( false )
+        APP_SETTINGS_BASE( "eeschema", eeschemaSchemaVersion ),
+        m_Appearance(),
+        m_AutoplaceFields(),
+        m_Drawing(),
+        m_Input(),
+        m_PageSettings(),
+        m_AnnotatePanel(),
+        m_BomPanel(),
+        m_FieldEditorPanel(),
+        m_LibViewPanel(),
+        m_NetlistPanel(),
+        m_PlotPanel(),
+        m_SymChooserPanel(),
+        m_Selection(),
+        m_Simulator(),
+        m_RescueNeverShow( false )
 {
     m_params.emplace_back( new PARAM<wxString>( "appearance.edit_component_visible_columns",
             &m_Appearance.edit_component_visible_columns, "0 1 2 3 4 5 6 7" ) );
@@ -146,12 +158,10 @@ EESCHEMA_SETTINGS::EESCHEMA_SETTINGS() :
             &m_Drawing.repeat_label_increment, 1, -10, 10 ) );
 
     m_params.emplace_back( new PARAM<COLOR4D>( "drawing.default_sheet_border_color",
-                                               &m_Drawing.default_sheet_border_color,
-                                               COLOR4D::UNSPECIFIED ) );
+            &m_Drawing.default_sheet_border_color, COLOR4D::UNSPECIFIED ) );
 
     m_params.emplace_back( new PARAM<COLOR4D>( "drawing.default_sheet_background_color",
-                                               &m_Drawing.default_sheet_background_color,
-                                               COLOR4D::UNSPECIFIED ) );
+            &m_Drawing.default_sheet_background_color, COLOR4D::UNSPECIFIED ) );
 
     m_params.emplace_back( new PARAM_LIST<double>( "drawing.junction_size_mult_list",
             &m_Drawing.junction_size_mult_list, { 0.0, 1.7, 4.0, 6.0, 9.0, 12.0 } ) );

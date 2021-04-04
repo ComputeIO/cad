@@ -168,7 +168,7 @@ void FOOTPRINT_EDIT_FRAME::ReCreateMenuBar()
     contrastModeSubMenu->Add( PCB_ACTIONS::layerAlphaInc );
     viewMenu->Add( contrastModeSubMenu );
 
-    viewMenu->Add( PCB_ACTIONS::flipBoard, ACTION_MENU::CHECK );
+    viewMenu->Add( PCB_ACTIONS::flipBoard,                  ACTION_MENU::CHECK );
 
     viewMenu->AppendSeparator();
     viewMenu->Add( PCB_ACTIONS::showFootprintTree,          ACTION_MENU::CHECK );

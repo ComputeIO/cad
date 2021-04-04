@@ -73,7 +73,7 @@ protected:
     ITEM*            m_endItem;
     VECTOR2I         m_endSnapPoint;
 
-    PCB_GRID_HELPER* m_gridHelper;
+    PCB_GRID_HELPER*     m_gridHelper;
     PNS_KICAD_IFACE* m_iface;
     ROUTER*          m_router;
 

@@ -40,16 +40,16 @@ class EDA_ITEM;
 ///< The properties might be combined using the bitwise 'or' operator.
 enum HASH_FLAGS
 {
-    HASH_POS = 0x01,
+    HASH_POS    = 0x01,
 
     ///< use coordinates relative to the parent object
-    REL_COORD = 0x02,
-    HASH_ROT = 0x04,
-    HASH_LAYER = 0x08,
-    HASH_NET = 0x10,
-    HASH_REF = 0x20,
-    HASH_VALUE = 0x40,
-    HASH_ALL = 0xff
+    REL_COORD   = 0x02,
+    HASH_ROT    = 0x04,
+    HASH_LAYER  = 0x08,
+    HASH_NET    = 0x10,
+    HASH_REF    = 0x20,
+    HASH_VALUE  = 0x40,
+    HASH_ALL    = 0xff
 };
 
 /**
@@ -64,9 +64,7 @@ std::size_t hash_fp_item( const EDA_ITEM* aItem, int aFlags = HASH_FLAGS::HASH_A
  * This is a dummy function to take the final case of hash_combine below
  * @param seed
  */
-static inline void hash_combine( std::size_t& seed )
-{
-}
+static inline void hash_combine( std::size_t &seed ) {}
 
 /**
  * Combine multiple hashes utilizing previous hash result.
@@ -75,15 +73,15 @@ static inline void hash_combine( std::size_t& seed )
  * @param seed    A seed value input and output for the result.
  * @param val     A hashable object of type T
  */
-template <typename T, typename... Types>
-static inline void hash_combine( std::size_t& seed, const T& val, const Types&... args )
+template< typename T, typename ... Types >
+static inline void hash_combine( std::size_t &seed, const T &val, const Types &... args )
 {
     seed ^= std::hash<T>()( val ) + 0x9e3779b9 + ( seed << 6 ) + ( seed >> 2 );
     hash_combine( seed, args... );
 }
 
 template <typename... Types>
-static inline std::size_t hash_val( const Types&... args )
+static inline std::size_t hash_val( const Types &... args )
 {
     std::size_t seed = 0xa82de1c0;
     hash_combine( seed, args... );

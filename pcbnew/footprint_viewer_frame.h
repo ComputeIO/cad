@@ -36,10 +36,7 @@ class FP_LIB_TABLE;
 class BOARD_ITEM;
 class SELECTION;
 
-namespace PCB
-{
-struct IFACE;
-}
+namespace PCB { struct IFACE; }
 
 /**
  * Component library viewer main window.
@@ -59,7 +56,10 @@ public:
     bool GetAutoZoom() override;
     void SetAutoZoom( bool aAutoZoom ) override;
 
-    MAGNETIC_SETTINGS* GetMagneticItemsSettings() override { return &m_magneticItems; }
+    MAGNETIC_SETTINGS* GetMagneticItemsSettings() override
+    {
+        return &m_magneticItems;
+    }
 
     /**
      * Create or recreate the list of current loaded libraries.
@@ -71,7 +71,7 @@ public:
     /**
      * Update the ID_ADD_FOOTPRINT_TO_BOARD tool state in main toolbar.
      */
-    void OnUpdateFootprintButton( wxUpdateUIEvent& aEvent );
+    void OnUpdateFootprintButton(  wxUpdateUIEvent& aEvent );
 
     /**
      * Run the footprint viewer as a modal dialog.
@@ -91,11 +91,11 @@ protected:
     void setupUIConditions() override;
 
 private:
-    const wxString getCurNickname();
-    void           setCurNickname( const wxString& aNickname );
+    const wxString      getCurNickname();
+    void                setCurNickname( const wxString& aNickname );
 
-    const wxString getCurFootprintName();
-    void           setCurFootprintName( const wxString& aName );
+    const wxString      getCurFootprintName();
+    void                setCurFootprintName( const wxString& aName );
 
     void OnSize( wxSizeEvent& event ) override;
 
@@ -170,15 +170,15 @@ private:
 
     DECLARE_EVENT_TABLE()
 
-    friend struct PCB::IFACE; // constructor called from here only
+    friend struct PCB::IFACE;       // constructor called from here only
 
-    wxTextCtrl* m_libFilter;
-    wxListBox*  m_libList; // The list of library names.
-    wxTextCtrl* m_fpFilter;
-    wxListBox*  m_fpList; // The list of footprint names.
+    wxTextCtrl*         m_libFilter;
+    wxListBox*          m_libList;        // The list of library names.
+    wxTextCtrl*         m_fpFilter;
+    wxListBox*          m_fpList;         // The list of footprint names.
 
-    bool   m_autoZoom;
-    double m_lastZoom;
+    bool                m_autoZoom;
+    double              m_lastZoom;
 };
 
-#endif // FOOTPRINT_VIEWER_FRAME_H
+#endif  // FOOTPRINT_VIEWER_FRAME_H

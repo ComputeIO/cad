@@ -45,7 +45,7 @@ class SCH_DRAWING_TOOLS : public EE_TOOL_BASE<SCH_EDIT_FRAME>
 {
 public:
     SCH_DRAWING_TOOLS();
-    ~SCH_DRAWING_TOOLS() override {}
+    ~SCH_DRAWING_TOOLS() override { }
 
     /// @copydoc TOOL_INTERACTIVE::Init()
     bool Init() override;
@@ -76,11 +76,11 @@ private:
     std::vector<PICKED_SYMBOL> m_symbolHistoryList;
     std::vector<PICKED_SYMBOL> m_powerHistoryList;
 
-    PINSHEETLABEL_SHAPE m_lastSheetPinType;
-    PINSHEETLABEL_SHAPE m_lastGlobalLabelShape;
-    LABEL_SPIN_STYLE    m_lastTextOrientation;
-    bool                m_lastTextBold;
-    bool                m_lastTextItalic;
+    PINSHEETLABEL_SHAPE        m_lastSheetPinType;
+    PINSHEETLABEL_SHAPE        m_lastGlobalLabelShape;
+    LABEL_SPIN_STYLE           m_lastTextOrientation;
+    bool                       m_lastTextBold;
+    bool                       m_lastTextItalic;
 
     ///< Re-entrancy guards
     bool                       m_inPlaceSymbol;

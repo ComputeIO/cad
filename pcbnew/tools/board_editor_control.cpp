@@ -72,7 +72,8 @@ using namespace std::placeholders;
 class ZONE_CONTEXT_MENU : public ACTION_MENU
 {
 public:
-    ZONE_CONTEXT_MENU() : ACTION_MENU( true )
+    ZONE_CONTEXT_MENU() :
+        ACTION_MENU( true )
     {
         SetIcon( BITMAPS::add_zone );
         SetTitle( _( "Zones" ) );
@@ -92,14 +93,18 @@ public:
 
 
 protected:
-    ACTION_MENU* create() const override { return new ZONE_CONTEXT_MENU(); }
+    ACTION_MENU* create() const override
+    {
+        return new ZONE_CONTEXT_MENU();
+    }
 };
 
 
 class LOCK_CONTEXT_MENU : public ACTION_MENU
 {
 public:
-    LOCK_CONTEXT_MENU() : ACTION_MENU( true )
+    LOCK_CONTEXT_MENU() :
+        ACTION_MENU( true )
     {
         SetIcon( BITMAPS::locked );
         SetTitle( _( "Locking" ) );
@@ -109,7 +114,10 @@ public:
         Add( PCB_ACTIONS::toggleLock );
     }
 
-    ACTION_MENU* create() const override { return new LOCK_CONTEXT_MENU(); }
+    ACTION_MENU* create() const override
+    {
+        return new LOCK_CONTEXT_MENU();
+    }
 };
 
 
@@ -164,7 +172,8 @@ protected:
 
 
 BOARD_EDITOR_CONTROL::BOARD_EDITOR_CONTROL() :
-        PCB_TOOL_BASE( "pcbnew.EditorControl" ), m_frame( nullptr )
+    PCB_TOOL_BASE( "pcbnew.EditorControl" ),
+    m_frame( nullptr )
 {
     m_placeOrigin = std::make_unique<KIGFX::ORIGIN_VIEWITEM>(
             KIGFX::COLOR4D( 0.8, 0.0, 0.0, 1.0 ),
@@ -192,20 +201,23 @@ void BOARD_EDITOR_CONTROL::Reset( RESET_REASON aReason )
 
 bool BOARD_EDITOR_CONTROL::Init()
 {
-    auto activeToolCondition = [this]( const SELECTION& aSel )
-    {
-        return ( !m_frame->ToolStackIsEmpty() );
-    };
+    auto activeToolCondition =
+            [ this ] ( const SELECTION& aSel )
+            {
+                return ( !m_frame->ToolStackIsEmpty() );
+            };
 
-    auto inactiveStateCondition = [this]( const SELECTION& aSel )
-    {
-        return ( m_frame->ToolStackIsEmpty() && aSel.Size() == 0 );
-    };
+    auto inactiveStateCondition =
+            [ this ] ( const SELECTION& aSel )
+            {
+                return ( m_frame->ToolStackIsEmpty() && aSel.Size() == 0 );
+            };
 
-    auto placeModuleCondition = [this]( const SELECTION& aSel )
-    {
-        return m_frame->IsCurrentTool( PCB_ACTIONS::placeFootprint ) && aSel.GetSize() == 0;
-    };
+    auto placeModuleCondition =
+            [ this ] ( const SELECTION& aSel )
+            {
+                return m_frame->IsCurrentTool( PCB_ACTIONS::placeFootprint ) && aSel.GetSize() == 0;
+            };
 
     auto& ctxMenu = m_menu.GetMenu();
 
@@ -371,8 +383,8 @@ int BOARD_EDITOR_CONTROL::ImportSpecctraSession( const TOOL_EVENT& aEvent )
 
 int BOARD_EDITOR_CONTROL::ExportSpecctraDSN( const TOOL_EVENT& aEvent )
 {
-    wxString   fullFileName = m_frame->GetLastPath( LAST_PATH_SPECCTRADSN );
-    wxFileName fn;
+    wxString    fullFileName = m_frame->GetLastPath( LAST_PATH_SPECCTRADSN );
+    wxFileName  fn;
 
     if( fullFileName.IsEmpty() )
     {
@@ -383,8 +395,8 @@ int BOARD_EDITOR_CONTROL::ExportSpecctraDSN( const TOOL_EVENT& aEvent )
         fn = fullFileName;
 
     fullFileName = EDA_FILE_SELECTOR( _( "Specctra DSN File" ), fn.GetPath(), fn.GetFullName(),
-                                      SpecctraDsnFileExtension, SpecctraDsnFileWildcard(), frame(),
-                                      wxFD_SAVE | wxFD_OVERWRITE_PROMPT, false );
+                                      SpecctraDsnFileExtension, SpecctraDsnFileWildcard(),
+                                      frame(), wxFD_SAVE | wxFD_OVERWRITE_PROMPT, false );
 
     if( !fullFileName.IsEmpty() )
     {
@@ -491,32 +503,33 @@ int BOARD_EDITOR_CONTROL::RepairBoard( const TOOL_EVENT& aEvent )
     std::set<KIID> ids;
     int            duplicates = 0;
 
-    auto processItem = [&]( EDA_ITEM* aItem )
-    {
-        if( ids.count( aItem->m_Uuid ) )
-        {
-            duplicates++;
-            const_cast<KIID&>( aItem->m_Uuid ) = KIID();
-        }
-
-        ids.insert( aItem->m_Uuid );
-
-        BOARD_CONNECTED_ITEM* cItem = dynamic_cast<BOARD_CONNECTED_ITEM*>( aItem );
-
-        if( cItem && cItem->GetNetCode() )
-        {
-            NETINFO_ITEM* netinfo = cItem->GetNet();
-
-            if( netinfo && !board()->FindNet( netinfo->GetNetname() ) )
+    auto processItem =
+            [&]( EDA_ITEM* aItem )
             {
-                board()->Add( netinfo );
+                if( ids.count( aItem->m_Uuid ) )
+                {
+                    duplicates++;
+                    const_cast<KIID&>( aItem->m_Uuid ) = KIID();
+                }
 
-                details += wxString::Format( _( "Orphaned net %s re-parented.\n" ),
-                                             netinfo->GetNetname() );
-                errors++;
-            }
-        }
-    };
+                ids.insert( aItem->m_Uuid );
+
+                BOARD_CONNECTED_ITEM* cItem = dynamic_cast<BOARD_CONNECTED_ITEM*>( aItem );
+
+                if( cItem && cItem->GetNetCode() )
+                {
+                    NETINFO_ITEM* netinfo = cItem->GetNet();
+
+                    if( netinfo && !board()->FindNet( netinfo->GetNetname() ) )
+                    {
+                        board()->Add( netinfo );
+
+                        details += wxString::Format( _( "Orphaned net %s re-parented.\n" ),
+                                                     netinfo->GetNetname() );
+                        errors++;
+                    }
+                }
+            };
 
     // Footprint IDs are the most important, so give them the first crack at "claiming" a
     // particular KIID.
@@ -613,10 +626,10 @@ int BOARD_EDITOR_CONTROL::UpdateSchematicFromPCB( const TOOL_EVENT& aEvent )
 {
     if( Kiface().IsSingle() )
     {
-        DisplayErrorMessage( m_frame,
-                             _( "Cannot update schematic because Pcbnew is opened in stand-alone "
-                                "mode. In order to create or update PCBs from schematics, you "
-                                "must launch the KiCad project manager and create a project." ) );
+        DisplayErrorMessage(
+                m_frame, _( "Cannot update schematic because Pcbnew is opened in stand-alone "
+                            "mode. In order to create or update PCBs from schematics, you "
+                            "must launch the KiCad project manager and create a project." ) );
         return 0;
     }
 
@@ -691,7 +704,7 @@ int BOARD_EDITOR_CONTROL::TrackWidthInc( const TOOL_EVENT& aEvent )
     ROUTER_TOOL* routerTool = m_toolMgr->GetTool<ROUTER_TOOL>();
 
     if( routerTool && routerTool->IsToolActive()
-        && routerTool->Router()->Mode() == PNS::PNS_MODE_ROUTE_DIFF_PAIR )
+            && routerTool->Router()->Mode() == PNS::PNS_MODE_ROUTE_DIFF_PAIR )
     {
         int widthIndex = designSettings.GetDiffPairIndex() + 1;
 
@@ -740,7 +753,7 @@ int BOARD_EDITOR_CONTROL::TrackWidthDec( const TOOL_EVENT& aEvent )
 
                 for( int i = designSettings.m_TrackWidthList.size() - 1; i >= 0; --i )
                 {
-                    int candidate = designSettings.m_TrackWidthList[i];
+                    int candidate = designSettings.m_TrackWidthList[ i ];
 
                     if( candidate < track->GetWidth() )
                     {
@@ -759,7 +772,7 @@ int BOARD_EDITOR_CONTROL::TrackWidthDec( const TOOL_EVENT& aEvent )
     ROUTER_TOOL* routerTool = m_toolMgr->GetTool<ROUTER_TOOL>();
 
     if( routerTool && routerTool->IsToolActive()
-        && routerTool->Router()->Mode() == PNS::PNS_MODE_ROUTE_DIFF_PAIR )
+            && routerTool->Router()->Mode() == PNS::PNS_MODE_ROUTE_DIFF_PAIR )
     {
         int widthIndex = designSettings.GetDiffPairIndex() - 1;
 
@@ -857,7 +870,7 @@ int BOARD_EDITOR_CONTROL::ViaSizeDec( const TOOL_EVENT& aEvent )
 
                 for( int i = designSettings.m_ViasDimensionsList.size() - 1; i >= 0; --i )
                 {
-                    VIA_DIMENSION candidate = designSettings.m_ViasDimensionsList[i];
+                    VIA_DIMENSION candidate = designSettings.m_ViasDimensionsList[ i ];
 
                     if( candidate.m_Diameter < via->GetWidth() )
                     {
@@ -924,10 +937,11 @@ int BOARD_EDITOR_CONTROL::PlaceFootprint( const TOOL_EVENT& aEvent )
     else if( !aEvent.IsReactivate() )
         m_toolMgr->RunAction( PCB_ACTIONS::cursorClick );
 
-    auto setCursor = [&]()
-    {
-        m_frame->GetCanvas()->SetCurrentCursor( KICURSOR::PENCIL );
-    };
+    auto setCursor =
+            [&]()
+            {
+                m_frame->GetCanvas()->SetCurrentCursor( KICURSOR::PENCIL );
+            };
 
     // Set initial cursor
     setCursor();
@@ -941,10 +955,11 @@ int BOARD_EDITOR_CONTROL::PlaceFootprint( const TOOL_EVENT& aEvent )
         if( reselect && fp )
             m_toolMgr->RunAction( PCB_ACTIONS::selectItem, true, fp );
 
-        auto cleanup = [&]()
-        {
-            m_toolMgr->RunAction( PCB_ACTIONS::selectionClear, true );
-            commit.Revert();
+        auto cleanup =
+                [&] ()
+                {
+                    m_toolMgr->RunAction( PCB_ACTIONS::selectionClear, true );
+                    commit.Revert();
 
                     if( fromOtherCommand )
                     {
@@ -958,8 +973,8 @@ int BOARD_EDITOR_CONTROL::PlaceFootprint( const TOOL_EVENT& aEvent )
                         }
                     }
 
-            fp = NULL;
-        };
+                    fp = NULL;
+                };
 
         if( evt->IsCancelInteractive() )
         {
@@ -999,7 +1014,7 @@ int BOARD_EDITOR_CONTROL::PlaceFootprint( const TOOL_EVENT& aEvent )
 
                 fp->SetLink( niluuid );
 
-                fp->SetFlags( IS_NEW ); // whatever
+                fp->SetFlags(IS_NEW ); // whatever
 
                 // Set parent so that clearance can be loaded
                 fp->SetParent( board );
@@ -1028,12 +1043,12 @@ int BOARD_EDITOR_CONTROL::PlaceFootprint( const TOOL_EVENT& aEvent )
             {
                 m_toolMgr->RunAction( PCB_ACTIONS::selectionClear, true );
                 commit.Push( _( "Place a footprint" ) );
-                fp = NULL; // to indicate that there is no footprint that we currently modify
+                fp = NULL;  // to indicate that there is no footprint that we currently modify
             }
         }
         else if( evt->IsClick( BUT_RIGHT ) )
         {
-            m_menu.ShowContextMenu( selection() );
+            m_menu.ShowContextMenu(  selection()  );
         }
         else if( fp && ( evt->IsMotion() || evt->IsAction( &ACTIONS::refreshPreview ) ) )
         {
@@ -1139,10 +1154,10 @@ int BOARD_EDITOR_CONTROL::modifyLockSelected( MODIFY_MODE aMode )
 
 int BOARD_EDITOR_CONTROL::PlaceTarget( const TOOL_EVENT& aEvent )
 {
-    KIGFX::VIEW*          view = getView();
+    KIGFX::VIEW* view = getView();
     KIGFX::VIEW_CONTROLS* controls = getViewControls();
-    BOARD*                board = getModel<BOARD>();
-    PCB_TARGET*           target = new PCB_TARGET( board );
+    BOARD* board = getModel<BOARD>();
+    PCB_TARGET* target = new PCB_TARGET( board );
 
     // Init the new item attributes
     target->SetLayer( Edge_Cuts );
@@ -1162,10 +1177,11 @@ int BOARD_EDITOR_CONTROL::PlaceTarget( const TOOL_EVENT& aEvent )
     m_frame->PushTool( tool );
     Activate();
 
-    auto setCursor = [&]()
-    {
-        m_frame->GetCanvas()->SetCurrentCursor( KICURSOR::ARROW );
-    };
+    auto setCursor =
+            [&]()
+            {
+                m_frame->GetCanvas()->SetCurrentCursor( KICURSOR::ARROW );
+            };
 
     // Set initial cursor
     setCursor();
@@ -1297,7 +1313,7 @@ int BOARD_EDITOR_CONTROL::ZoneMerge( const TOOL_EVENT& aEvent )
 
     int netcode = -1;
 
-    ZONE*              firstZone = nullptr;
+    ZONE* firstZone = nullptr;
     std::vector<ZONE*> toMerge, merged;
 
     for( auto item : selection )
@@ -1415,7 +1431,7 @@ int BOARD_EDITOR_CONTROL::EditFpInFpEditor( const TOOL_EVENT& aEvent )
     editor->LoadFootprintFromBoard( fp );
 
     editor->Show( true );
-    editor->Raise(); // Iconize( false );
+    editor->Raise();        // Iconize( false );
 
     if( selection.IsHover() )
         m_toolMgr->RunAction( PCB_ACTIONS::selectionClear, true );
@@ -1443,12 +1459,12 @@ int BOARD_EDITOR_CONTROL::DrillOrigin( const TOOL_EVENT& aEvent )
     Activate();
 
     picker->SetClickHandler(
-            [this]( const VECTOR2D& pt ) -> bool
-            {
-                m_frame->SaveCopyInUndoList( m_placeOrigin.get(), UNDO_REDO::DRILLORIGIN );
-                DoSetDrillOrigin( getView(), m_frame, m_placeOrigin.get(), pt );
-                return false; // drill origin is a one-shot; don't continue with tool
-            } );
+        [this] ( const VECTOR2D& pt ) -> bool
+        {
+            m_frame->SaveCopyInUndoList( m_placeOrigin.get(), UNDO_REDO::DRILLORIGIN );
+            DoSetDrillOrigin( getView(), m_frame, m_placeOrigin.get(), pt );
+            return false;   // drill origin is a one-shot; don't continue with tool
+        } );
 
     m_toolMgr->RunAction( ACTIONS::pickerTool, true, &tool );
 
@@ -1483,34 +1499,33 @@ void BOARD_EDITOR_CONTROL::setTransitions()
     Go( &BOARD_EDITOR_CONTROL::GenerateFabFiles,       PCB_ACTIONS::generateBOM.MakeEvent() );
 
     // Track & via size control
-    Go( &BOARD_EDITOR_CONTROL::TrackWidthInc, PCB_ACTIONS::trackWidthInc.MakeEvent() );
-    Go( &BOARD_EDITOR_CONTROL::TrackWidthDec, PCB_ACTIONS::trackWidthDec.MakeEvent() );
-    Go( &BOARD_EDITOR_CONTROL::ViaSizeInc, PCB_ACTIONS::viaSizeInc.MakeEvent() );
-    Go( &BOARD_EDITOR_CONTROL::ViaSizeDec, PCB_ACTIONS::viaSizeDec.MakeEvent() );
+    Go( &BOARD_EDITOR_CONTROL::TrackWidthInc,          PCB_ACTIONS::trackWidthInc.MakeEvent() );
+    Go( &BOARD_EDITOR_CONTROL::TrackWidthDec,          PCB_ACTIONS::trackWidthDec.MakeEvent() );
+    Go( &BOARD_EDITOR_CONTROL::ViaSizeInc,             PCB_ACTIONS::viaSizeInc.MakeEvent() );
+    Go( &BOARD_EDITOR_CONTROL::ViaSizeDec,             PCB_ACTIONS::viaSizeDec.MakeEvent() );
 
     // Zone actions
-    Go( &BOARD_EDITOR_CONTROL::ZoneMerge, PCB_ACTIONS::zoneMerge.MakeEvent() );
-    Go( &BOARD_EDITOR_CONTROL::ZoneDuplicate, PCB_ACTIONS::zoneDuplicate.MakeEvent() );
+    Go( &BOARD_EDITOR_CONTROL::ZoneMerge,              PCB_ACTIONS::zoneMerge.MakeEvent() );
+    Go( &BOARD_EDITOR_CONTROL::ZoneDuplicate,          PCB_ACTIONS::zoneDuplicate.MakeEvent() );
 
     // Placing tools
-    Go( &BOARD_EDITOR_CONTROL::PlaceTarget, PCB_ACTIONS::placeTarget.MakeEvent() );
-    Go( &BOARD_EDITOR_CONTROL::PlaceFootprint, PCB_ACTIONS::placeFootprint.MakeEvent() );
-    Go( &BOARD_EDITOR_CONTROL::DrillOrigin, PCB_ACTIONS::drillOrigin.MakeEvent() );
-    Go( &BOARD_EDITOR_CONTROL::EditFpInFpEditor, PCB_ACTIONS::editFpInFpEditor.MakeEvent() );
+    Go( &BOARD_EDITOR_CONTROL::PlaceTarget,            PCB_ACTIONS::placeTarget.MakeEvent() );
+    Go( &BOARD_EDITOR_CONTROL::PlaceFootprint,         PCB_ACTIONS::placeFootprint.MakeEvent() );
+    Go( &BOARD_EDITOR_CONTROL::DrillOrigin,            PCB_ACTIONS::drillOrigin.MakeEvent() );
+
+    Go( &BOARD_EDITOR_CONTROL::EditFpInFpEditor,       PCB_ACTIONS::editFpInFpEditor.MakeEvent() );
 
     // Other
-    Go( &BOARD_EDITOR_CONTROL::ToggleLockSelected, PCB_ACTIONS::toggleLock.MakeEvent() );
-    Go( &BOARD_EDITOR_CONTROL::LockSelected, PCB_ACTIONS::lock.MakeEvent() );
-    Go( &BOARD_EDITOR_CONTROL::UnlockSelected, PCB_ACTIONS::unlock.MakeEvent() );
+    Go( &BOARD_EDITOR_CONTROL::ToggleLockSelected,     PCB_ACTIONS::toggleLock.MakeEvent() );
+    Go( &BOARD_EDITOR_CONTROL::LockSelected,           PCB_ACTIONS::lock.MakeEvent() );
+    Go( &BOARD_EDITOR_CONTROL::UnlockSelected,         PCB_ACTIONS::unlock.MakeEvent() );
 
-    Go( &BOARD_EDITOR_CONTROL::UpdatePCBFromSchematic,
-        ACTIONS::updatePcbFromSchematic.MakeEvent() );
-    Go( &BOARD_EDITOR_CONTROL::UpdateSchematicFromPCB,
-        ACTIONS::updateSchematicFromPcb.MakeEvent() );
-    Go( &BOARD_EDITOR_CONTROL::ShowEeschema, PCB_ACTIONS::showEeschema.MakeEvent() );
-    Go( &BOARD_EDITOR_CONTROL::ToggleLayersManager, PCB_ACTIONS::showLayersManager.MakeEvent() );
-    Go( &BOARD_EDITOR_CONTROL::TogglePythonConsole, PCB_ACTIONS::showPythonConsole.MakeEvent() );
-    Go( &BOARD_EDITOR_CONTROL::RepairBoard, PCB_ACTIONS::repairBoard.MakeEvent() );
+    Go( &BOARD_EDITOR_CONTROL::UpdatePCBFromSchematic, ACTIONS::updatePcbFromSchematic.MakeEvent() );
+    Go( &BOARD_EDITOR_CONTROL::UpdateSchematicFromPCB, ACTIONS::updateSchematicFromPcb.MakeEvent() );
+    Go( &BOARD_EDITOR_CONTROL::ShowEeschema,           PCB_ACTIONS::showEeschema.MakeEvent() );
+    Go( &BOARD_EDITOR_CONTROL::ToggleLayersManager,    PCB_ACTIONS::showLayersManager.MakeEvent() );
+    Go( &BOARD_EDITOR_CONTROL::TogglePythonConsole,    PCB_ACTIONS::showPythonConsole.MakeEvent() );
+    Go( &BOARD_EDITOR_CONTROL::RepairBoard,            PCB_ACTIONS::repairBoard.MakeEvent() );
 }
 
 

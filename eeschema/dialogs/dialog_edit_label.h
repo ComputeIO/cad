@@ -27,11 +27,7 @@
 #include <widgets/unit_binder.h>
 #include <sch_text.h>
 #include <sch_validators.h>
-#ifdef KICAD_USE_FONTCONFIG
-#include <dialog_edit_label_font_base.h>
-#else
 #include <dialog_edit_label_base.h>
-#endif
 
 
 class SCH_EDIT_FRAME;
@@ -85,10 +81,6 @@ private:
     SCINTILLA_TRICKS*     m_scintillaTricks;
 
     HTML_MESSAGE_BOX*     m_helpWindow;
-
-#ifdef KICAD_USE_FONTCONFIG
-    void onShowFontDialog( wxCommandEvent& aEvent ) override;
-#endif
 };
 
 

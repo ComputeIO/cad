@@ -265,7 +265,12 @@ public:
 class CONTEXT
 {
 public:
-    CONTEXT() : m_stack(), m_stackPtr( 0 ) { m_ownedValues.reserve( 20 ); }
+    CONTEXT() :
+        m_stack(),
+        m_stackPtr( 0 )
+    {
+        m_ownedValues.reserve( 20 );
+    }
 
     virtual ~CONTEXT()
     {
@@ -280,7 +285,10 @@ public:
         return value;
     }
 
-    void Push( VALUE* v ) { m_stack[m_stackPtr++] = v; }
+    void Push( VALUE* v )
+    {
+        m_stack[ m_stackPtr++ ] = v;
+    }
 
     VALUE* Pop()
     {
@@ -290,10 +298,13 @@ public:
             return AllocValue();
         }
 
-        return m_stack[--m_stackPtr];
+        return m_stack[ --m_stackPtr ];
     }
 
-    int SP() const { return m_stackPtr; };
+    int SP() const
+    {
+        return m_stackPtr;
+    };
 
     void SetErrorCallback( std::function<void( const wxString& aMessage, int aOffset )> aCallback )
     {
@@ -306,7 +317,7 @@ public:
 
 private:
     std::vector<VALUE*> m_ownedValues;
-    VALUE*              m_stack[100]; // std::stack not performant enough
+    VALUE*              m_stack[100];       // std::stack not performant enough
     int                 m_stackPtr;
     ERROR_STATUS        m_errorStatus;
 

@@ -380,7 +380,7 @@ wxString PCB_BASE_EDIT_FRAME::CreateNewLibrary( const wxString& aLibName,
     // because the legacy format cannot handle current features.
     // The footprint library is actually a directory
 
-    FP_LIB_TABLE* table = selectLibTable();
+    FP_LIB_TABLE* table  = selectLibTable();
 
     if( table == nullptr )
     {
@@ -521,7 +521,7 @@ FP_LIB_TABLE* PCB_BASE_EDIT_FRAME::selectLibTable( bool aOptional )
 
 bool PCB_BASE_EDIT_FRAME::AddLibrary( const wxString& aFilename, FP_LIB_TABLE* aTable )
 {
-    if( aTable == nullptr )
+    if( aTable  == nullptr )
     {
         aTable = selectLibTable();
 
@@ -876,13 +876,14 @@ bool FOOTPRINT_EDIT_FRAME::SaveFootprintToBoard( bool aAddNew )
     newFootprint->SetParent( mainpcb );
     newFootprint->SetLink( niluuid );
 
-    auto fixUuid = [&]( KIID& aUuid )
-    {
-        if( editorFootprint->GetLink() != niluuid && m_boardFootprintUuids.count( aUuid ) )
-            aUuid = m_boardFootprintUuids[aUuid];
-        else
-            aUuid = KIID();
-    };
+    auto fixUuid =
+            [&]( KIID& aUuid )
+            {
+                if( editorFootprint->GetLink() != niluuid && m_boardFootprintUuids.count( aUuid ) )
+                    aUuid = m_boardFootprintUuids[ aUuid ];
+                else
+                    aUuid = KIID();
+            };
 
     fixUuid( const_cast<KIID&>( newFootprint->m_Uuid ) );
     newFootprint->RunOnChildren(

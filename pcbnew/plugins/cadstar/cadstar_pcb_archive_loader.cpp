@@ -214,8 +214,9 @@ void CADSTAR_PCB_ARCHIVE_LOADER::loadBoardStackup()
     {
         LAYER cadstarLayer = Assignments.Layerdefs.Layers.at( cadstarLayerID );
 
-        if( cadstarLayer.Type == LAYER_TYPE::JUMPERLAYER || cadstarLayer.Type == LAYER_TYPE::POWER
-            || cadstarLayer.Type == LAYER_TYPE::ELEC )
+        if( cadstarLayer.Type == LAYER_TYPE::JUMPERLAYER ||
+            cadstarLayer.Type == LAYER_TYPE::POWER ||
+            cadstarLayer.Type == LAYER_TYPE::ELEC )
         {
             if( currentBlock.IsInitialised() )
             {
@@ -418,22 +419,28 @@ void CADSTAR_PCB_ARCHIVE_LOADER::loadBoardStackup()
             WARN
         };
 
-        auto selectLayerID = [&]( PCB_LAYER_ID aFront, PCB_LAYER_ID aBack, LOG_LEVEL aLogType )
-        {
-            if( numElecAndPowerLayers > 0 )
-                kicadLayerID = aBack;
-            else
-                kicadLayerID = aFront;
-
-            switch( aLogType )
+        auto selectLayerID =
+            [&]( PCB_LAYER_ID aFront, PCB_LAYER_ID aBack, LOG_LEVEL aLogType )
             {
-            case LOG_LEVEL::NONE: break;
+                if( numElecAndPowerLayers > 0 )
+                    kicadLayerID = aBack;
+                else
+                    kicadLayerID = aFront;
 
-            case LOG_LEVEL::MSG: logBoardStackupMessage( curLayer.Name, kicadLayerID ); break;
+                switch( aLogType )
+                {
+                case LOG_LEVEL::NONE:
+                    break;
 
-            case LOG_LEVEL::WARN: logBoardStackupMessage( curLayer.Name, kicadLayerID ); break;
-            }
-        };
+                case LOG_LEVEL::MSG:
+                    logBoardStackupMessage( curLayer.Name, kicadLayerID );
+                    break;
+
+                case LOG_LEVEL::WARN:
+                    logBoardStackupMessage( curLayer.Name, kicadLayerID );
+                    break;
+                }
+            };
 
         switch( curLayer.Type )
         {
@@ -449,7 +456,9 @@ void CADSTAR_PCB_ARCHIVE_LOADER::loadBoardStackup()
 
         case LAYER_TYPE::JUMPERLAYER:
         case LAYER_TYPE::ELEC:
-        case LAYER_TYPE::POWER: ++numElecAndPowerLayers; KI_FALLTHROUGH;
+        case LAYER_TYPE::POWER:
+            ++numElecAndPowerLayers;
+            KI_FALLTHROUGH;
         case LAYER_TYPE::CONSTRUCTION:
             //Already dealt with these when loading board stackup
             break;
@@ -611,9 +620,9 @@ void CADSTAR_PCB_ARCHIVE_LOADER::loadDesignRules()
     applyRule( "H_H", &ds.m_HoleToHoleMin );
 
     ds.m_TrackMinWidth = getKiCadLength( Assignments.Technology.MinRouteWidth );
-    ds.m_ViasMinSize = ds.m_TrackMinWidth;         // Not specified, assumed same as track width
-    ds.m_ViasMinAnnulus = ds.m_TrackMinWidth / 2;  // Not specified, assumed half track width
-    ds.m_MinThroughDrill = 0;                      // CADSTAR does not specify a minimum hole size
+    ds.m_ViasMinSize = ds.m_TrackMinWidth; // Not specified, assumed same as track width
+    ds.m_ViasMinAnnulus = ds.m_TrackMinWidth / 2; // Not specified, assumed half track width
+    ds.m_MinThroughDrill = 0; // CADSTAR does not specify a minimum hole size
     ds.m_HoleClearance = ds.m_CopperEdgeClearance; // Not specified, assumed same as edge
 
     auto applyNetClassRule = [&]( wxString aID, NETCLASS* aNetClassPtr,
@@ -1824,8 +1833,7 @@ void CADSTAR_PCB_ARCHIVE_LOADER::loadTemplates()
                 zone->SetFillMode( ZONE_FILL_MODE::POLYGONS );
                 zone->SetPadConnection( ZONE_CONNECTION::FULL );
                 zone->SetMinIslandArea( -1 );
-                zone->SetPriority(
-                        0 ); // Priority always 0 (lowest priority) for implied power planes.
+                zone->SetPriority( 0 ); // Priority always 0 (lowest priority) for implied power planes.
                 zone->SetNet( getKiCadNet( netid ) );
             }
         }
@@ -1868,12 +1876,12 @@ void CADSTAR_PCB_ARCHIVE_LOADER::loadCoppers()
                     else
                     {
                         TransformOvalToPolygon( segment, seg->GetStart(), seg->GetEnd(),
-                                                copperWidth, ARC_HIGH_DEF,
-                                                ERROR_LOC::ERROR_INSIDE );
+                                                copperWidth, ARC_HIGH_DEF, ERROR_LOC::ERROR_INSIDE );
                     }
 
                     rawPolys.BooleanAdd( segment, SHAPE_POLY_SET::PM_STRICTLY_SIMPLE );
                 }
+
             }
             else
             {
@@ -1884,7 +1892,7 @@ void CADSTAR_PCB_ARCHIVE_LOADER::loadCoppers()
 
             if( pouredZone->HasFilledPolysForLayer( getKiCadLayer( csCopper.LayerID ) ) )
             {
-                rawPolys.BooleanAdd( pouredZone->RawPolysList( getKiCadLayer( csCopper.LayerID ) ),
+                rawPolys.BooleanAdd( pouredZone->RawPolysList( getKiCadLayer( csCopper.LayerID )),
                                      SHAPE_POLY_SET::PM_STRICTLY_SIMPLE );
             }
 
@@ -2094,9 +2102,8 @@ void CADSTAR_PCB_ARCHIVE_LOADER::loadNets()
 
 void CADSTAR_PCB_ARCHIVE_LOADER::loadTextVariables()
 {
-    auto findAndReplaceTextField = [&]( TEXT_FIELD_NAME aField, wxString aValue )
-    {
-        if( mContext.TextFieldToValuesMap.find( aField ) != mContext.TextFieldToValuesMap.end() )
+    auto findAndReplaceTextField =
+        [&]( TEXT_FIELD_NAME aField, wxString aValue )
         {
             if( m_context.TextFieldToValuesMap.find( aField ) !=
                 m_context.TextFieldToValuesMap.end() )
@@ -2112,14 +2119,9 @@ void CADSTAR_PCB_ARCHIVE_LOADER::loadTextVariables()
             {
                 m_context.TextFieldToValuesMap.insert( { aField, aValue } );
             }
-        }
-        else
-        {
-            mContext.TextFieldToValuesMap.insert( { aField, aValue } );
-        }
 
-        return true;
-    };
+            return true;
+        };
 
     if( m_project )
     {
@@ -3385,7 +3387,9 @@ void CADSTAR_PCB_ARCHIVE_LOADER::applyDimensionSettings( const DIMENSION&  aCads
                                            "applied instead." ),
                                         aCadstarDim.ID ) );
         KI_FALLTHROUGH;
-    case UNITS::MM: aKiCadDim->SetUnitsMode( DIM_UNITS_MODE::MILLIMETRES ); break;
+    case UNITS::MM:
+        aKiCadDim->SetUnitsMode( DIM_UNITS_MODE::MILLIMETRES );
+        break;
 
     case UNITS::INCH:
         aKiCadDim->SetUnitsMode( DIM_UNITS_MODE::INCHES );
@@ -3404,7 +3408,7 @@ void CADSTAR_PCB_ARCHIVE_LOADER::applyDimensionSettings( const DIMENSION&  aCads
 
 void CADSTAR_PCB_ARCHIVE_LOADER::calculateZonePriorities()
 {
-    std::map<TEMPLATE_ID, std::set<TEMPLATE_ID>>  winningOverlaps;
+    std::map<TEMPLATE_ID, std::set<TEMPLATE_ID>> winningOverlaps;
     std::set<std::pair<TEMPLATE_ID, TEMPLATE_ID>> scheduleInferPriorityFromOutline;
 
     // Calculate the intersection between aPolygon and the outline of aZone
@@ -3412,15 +3416,16 @@ void CADSTAR_PCB_ARCHIVE_LOADER::calculateZonePriorities()
                             {
                                 SHAPE_POLY_SET intersectShape( *aZone->Outline() );
 
-        intersectShape.BooleanIntersection( aPolygon, SHAPE_POLY_SET::PM_FAST );
-        return intersectShape.Area();
-    };
+                                intersectShape.BooleanIntersection( aPolygon,
+                                                                    SHAPE_POLY_SET::PM_FAST );
+                                return intersectShape.Area();
+                            };
 
     // Lambda to determine if the zone with template ID 'a' is lower priority than 'b'
-    auto isLowerPriority = [&]( const TEMPLATE_ID& a, const TEMPLATE_ID& b ) -> bool
-    {
-        return winningOverlaps[b].count( a ) > 0;
-    };
+    auto isLowerPriority =  [&]( const TEMPLATE_ID& a, const TEMPLATE_ID& b ) -> bool
+                            {
+                                return winningOverlaps[b].count( a ) > 0;
+                            };
 
     for( std::map<TEMPLATE_ID, ZONE*>::iterator it1 = m_zonesMap.begin();
          it1 != m_zonesMap.end(); ++it1 )
@@ -3521,6 +3526,7 @@ void CADSTAR_PCB_ARCHIVE_LOADER::calculateZonePriorities()
         m_zonesMap.at( id )->SetPriority( newPriority );
         prevID = id;
     }
+
 }
 
 

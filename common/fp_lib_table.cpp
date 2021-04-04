@@ -252,8 +252,8 @@ long long FP_LIB_TABLE::GenerateTimestamp( const wxString* aNickname )
 
         wxCHECK( row && row->plugin, hash );
 
-        return row->plugin->GetLibraryTimestamp( row->GetFullURI( true ) )
-               + wxHashTable::MakeKey( *aNickname );
+        return row->plugin->GetLibraryTimestamp( row->GetFullURI( true ) ) +
+                wxHashTable::MakeKey( *aNickname );
     }
 
     for( const wxString& nickname : GetLogicalLibs() )
@@ -262,8 +262,8 @@ long long FP_LIB_TABLE::GenerateTimestamp( const wxString* aNickname )
 
         wxCHECK2( row && row->plugin, continue );
 
-        hash += row->plugin->GetLibraryTimestamp( row->GetFullURI( true ) )
-                + wxHashTable::MakeKey( nickname );
+        hash += row->plugin->GetLibraryTimestamp( row->GetFullURI( true ) ) +
+                wxHashTable::MakeKey( nickname );
     }
 
     return hash;
@@ -292,7 +292,7 @@ const FP_LIB_TABLE_ROW* FP_LIB_TABLE::FindRow( const wxString& aNickname, bool a
 {
     // Do not optimize this code.  Is done this way specifically to fix a runtime
     // error with clang 4.0.1.
-    LIB_TABLE_ROW*    ltrow = findRow( aNickname, aCheckIfEnabled );
+    LIB_TABLE_ROW* ltrow = findRow( aNickname, aCheckIfEnabled );
     FP_LIB_TABLE_ROW* row = dynamic_cast< FP_LIB_TABLE_ROW* >( ltrow );
 
     if( !row )

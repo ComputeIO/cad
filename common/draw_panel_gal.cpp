@@ -432,7 +432,7 @@ bool EDA_DRAW_PANEL_GAL::SwitchBackend( GAL_TYPE aGalType )
             // warn about unhandled GAL canvas type, but continue with the fallback option
 
         case GAL_TYPE_NONE:
-            // KIGFX::DUMMY_GAL is a stub - it actually does cannot display anything,
+            // KIGFX::GAL is a stub - it actually does cannot display anything,
             // but prevents code relying on GAL canvas existence from crashing
             //
             // Since KIGFX::GAL is now pure virtual, we use BASIC_GAL

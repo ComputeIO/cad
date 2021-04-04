@@ -110,8 +110,9 @@ void RENDER_3D_LEGACY::generateRing( const SFVEC2F& aCenter, float aInnerRadius,
 }
 
 
-void RENDER_3D_LEGACY::addObjectTriangles( const RING_2D* aRing, TRIANGLE_DISPLAY_LIST* aDstLayer,
-                                           float aZtop, float aZbot )
+void RENDER_3D_LEGACY::addObjectTriangles( const RING_2D* aRing,
+                                                     TRIANGLE_DISPLAY_LIST* aDstLayer,
+                                                     float aZtop, float aZbot )
 {
     const SFVEC2F& center = aRing->GetCenter();
     const float inner = aRing->GetInnerRadius();
@@ -171,9 +172,6 @@ void RENDER_3D_LEGACY::addObjectTriangles( const ROUND_SEGMENT_2D* aSeg,
 
     const SFVEC2F& start       = aSeg->GetStart();
     const SFVEC2F& end         = aSeg->GetEnd();
-
-    const float radius = aSeg->GetRadius();
-
 
     const float texture_factor  = ( 12.0f / (float) SIZE_OF_CIRCLE_TEXTURE ) + 1.0f;
     const float texture_factorF = ( 6.0f / (float) SIZE_OF_CIRCLE_TEXTURE ) + 1.0f;
@@ -358,18 +356,8 @@ OPENGL_RENDER_LIST* RENDER_3D_LEGACY::generateLayerList( const BVH_CONTAINER_2D*
                                 layerTriangles, layer_z_top, layer_z_bot );
             break;
 
-            /*
-        case OBJECT_2D_TYPE::POLYGON:
-            addObjectTriangles( (const POLYGON_2D*) object2d_A, layerTriangles,
-                                layer_z_top, layer_z_bot );
-            break;
-            */
-
         default:
-            std::ostringstream s;
-            s << "RENDER_3D_LEGACY::generateLayerList - Object type " << objType
-              << " is not implemented";
-            wxFAIL_MSG( s.str() );
+            wxFAIL_MSG( "RENDER_3D_LEGACY: Object type is not implemented" );
             break;
         }
     }

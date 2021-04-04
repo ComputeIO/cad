@@ -86,8 +86,8 @@ public:
         // Note in the CADSTAR GUI, it only talks about "length", but the file seems to
         // split it in "left length" and "right length" (similar to PADCODE in the PCB)
         // for some terminal shapes such as RECTANGLE but not for others, such as TRIANGLE
-        long                LeftLength = UNDEFINED_VALUE;  ///< Might also be total length
-        long                RightLength = UNDEFINED_VALUE; ///< Could be blank
+        long                LeftLength      = UNDEFINED_VALUE; ///< Might also be total length
+        long                RightLength     = UNDEFINED_VALUE; ///< Could be blank
         long                InternalFeature = UNDEFINED_VALUE;
         long                OrientAngle     = 0; ///< 1/1000 of a Degree
 

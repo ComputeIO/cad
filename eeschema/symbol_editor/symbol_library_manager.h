@@ -106,7 +106,7 @@ public:
     /**
      * Updates the #SYMBOL_LIBRARY_MANAGER data to synchronize with Symbol Library Table.
      */
-    void Sync( const wxString&                                  aForceRefresh,
+    void Sync( const wxString& aForceRefresh,
                std::function<void( int, int, const wxString& )> aProgressCallback );
 
     /**

@@ -107,9 +107,9 @@ bool SYMBOL_EDITOR_PIN_TOOL::Init()
     CONDITIONAL_MENU& selToolMenu = m_selectionTool->GetToolMenu().GetMenu();
 
     selToolMenu.AddSeparator( 250 );
-    selToolMenu.AddItem( EE_ACTIONS::pushPinLength, canEdit && singlePinCondition, 250 );
-    selToolMenu.AddItem( EE_ACTIONS::pushPinNameSize, canEdit && singlePinCondition, 250 );
-    selToolMenu.AddItem( EE_ACTIONS::pushPinNumSize, canEdit && singlePinCondition, 250 );
+    selToolMenu.AddItem( EE_ACTIONS::pushPinLength,    canEdit && singlePinCondition, 250 );
+    selToolMenu.AddItem( EE_ACTIONS::pushPinNameSize,  canEdit && singlePinCondition, 250 );
+    selToolMenu.AddItem( EE_ACTIONS::pushPinNumSize,   canEdit && singlePinCondition, 250 );
 
     return true;
 }

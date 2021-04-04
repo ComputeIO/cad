@@ -204,14 +204,15 @@ public:
     class ITERATOR_TEMPLATE
     {
     public:
+
         /**
          * @return true if the current vertex is the last one of the current contour
          *         (outline or hole); false otherwise.
          */
         bool IsEndContour() const
         {
-            return m_currentVertex + 1
-                   == m_poly->CPolygon( m_currentPolygon )[m_currentContour].PointCount();
+            return m_currentVertex + 1 ==
+                    m_poly->CPolygon( m_currentPolygon )[m_currentContour].PointCount();
         }
 
         /**
@@ -250,8 +251,8 @@ public:
             if( m_iterateHoles )
             {
                 // If the last vertex of the contour was reached, advance the contour index
-                if( m_currentVertex
-                    >= m_poly->CPolygon( m_currentPolygon )[m_currentContour].PointCount() )
+                if( m_currentVertex >=
+                    m_poly->CPolygon( m_currentPolygon )[m_currentContour].PointCount() )
                 {
                     m_currentVertex = 0;
                     m_currentContour++;
@@ -631,7 +632,7 @@ public:
     int HoleCount( int aOutline ) const
     {
         if( ( aOutline < 0 ) || ( aOutline >= (int) m_polys.size() )
-            || ( m_polys[aOutline].size() < 2 ) )
+          || ( m_polys[aOutline].size() < 2 ) )
             return 0;
 
         // the first polygon in m_polys[aOutline] is the main contour,
@@ -645,7 +646,10 @@ public:
         return m_polys[aIndex][0];
     }
 
-    const SHAPE_LINE_CHAIN& Outline( int aIndex ) const { return m_polys[aIndex][0]; }
+    const SHAPE_LINE_CHAIN& Outline( int aIndex ) const
+    {
+        return m_polys[aIndex][0];
+    }
 
     /**
      * Return a subset of the polygons in this set, the ones between \a aFirstPolygon and
@@ -938,16 +942,16 @@ public:
     void BooleanIntersection( const SHAPE_POLY_SET& a, const SHAPE_POLY_SET& b,
                               POLYGON_MODE aFastMode );
 
-    enum CORNER_STRATEGY ///< define how inflate transform build inflated polygon
+    enum CORNER_STRATEGY        ///< define how inflate transform build inflated polygon
     {
-        ALLOW_ACUTE_CORNERS,   ///< just inflate the polygon. Acute angles create spikes
-        CHAMFER_ACUTE_CORNERS, ///< Acute angles are chamfered
-        ROUND_ACUTE_CORNERS,   ///< Acute angles are rounded
-        CHAMFER_ALL_CORNERS,   ///< All angles are chamfered.
-                               ///< The distance between new and old polygon edges is not
-                               ///< constant, but do not change a lot
-        ROUND_ALL_CORNERS      ///< All angles are rounded.
-                               ///< The distance between new and old polygon edges is constant
+        ALLOW_ACUTE_CORNERS,    ///< just inflate the polygon. Acute angles create spikes
+        CHAMFER_ACUTE_CORNERS,  ///< Acute angles are chamfered
+        ROUND_ACUTE_CORNERS,    ///< Acute angles are rounded
+        CHAMFER_ALL_CORNERS,    ///< All angles are chamfered.
+                                ///< The distance between new and old polygon edges is not
+                                ///< constant, but do not change a lot
+        ROUND_ALL_CORNERS       ///< All angles are rounded.
+                                ///< The distance between new and old polygon edges is constant
     };
 
     /**

@@ -36,7 +36,6 @@
 #include <geometry/shape_poly_set.h>
 #include <math/util.h> // for KiROUND
 #include <bitmap_base.h>
-#include <font/triangulate.h>
 
 #include <algorithm>
 #include <cmath>
@@ -404,28 +403,6 @@ void CAIRO_GAL_BASE::DrawArcSegment( const VECTOR2D& aCenterPoint, double aRadiu
 }
 
 
-#ifdef DEBUG
-void CAIRO_GAL_BASE::DrawTriangle( const VECTOR2D& aVertex1, const VECTOR2D& aVertex2,
-                                   const VECTOR2D& aVertex3 )
-{
-    syncLineWidth();
-
-    const auto p0 = roundp( xform( aVertex1 ) );
-    const auto p1 = roundp( xform( aVertex2 ) );
-    const auto p2 = roundp( xform( aVertex3 ) );
-
-    // The path is composed from 3 segments
-    cairo_move_to( currentContext, p0.x, p0.y );
-    cairo_line_to( currentContext, p1.x, p1.y );
-    cairo_line_to( currentContext, p2.x, p2.y );
-    cairo_close_path( currentContext );
-    flushPath();
-
-    isElementAdded = true;
-}
-#endif
-
-
 void CAIRO_GAL_BASE::DrawRectangle( const VECTOR2D& aStartPoint, const VECTOR2D& aEndPoint )
 {
     // Calculate the diagonal points
@@ -458,99 +435,6 @@ void CAIRO_GAL_BASE::DrawPolygon( const SHAPE_POLY_SET& aPolySet )
 void CAIRO_GAL_BASE::DrawPolygon( const SHAPE_LINE_CHAIN& aPolygon )
 {
     drawPoly( aPolygon );
-}
-
-
-static inline void moveOrLineTo( cairo_t* ctx, const VECTOR2I& aPoint, bool aDoLine )
-{
-    if( aDoLine )
-    {
-        cairo_line_to( ctx, aPoint.x, aPoint.y );
-    }
-    else
-    {
-        cairo_move_to( ctx, aPoint.x, aPoint.y );
-    }
-}
-
-
-static inline void setSourceRgba( cairo_t* ctx, const COLOR4D& aColor )
-{
-    cairo_set_source_rgba( ctx, aColor.r, aColor.g, aColor.b, aColor.a );
-}
-
-
-void CAIRO_GAL_BASE::DrawGlyph( const SHAPE_POLY_SET& aPolySet, int aNth, int aTotal )
-{
-    std::cerr << "CAIRO_GAL_BASE::DrawGlyph( ..., " << aNth << ", " << aTotal << " )\n";
-
-    if( aNth == 0 )
-    {
-        cairo_close_path( currentContext );
-        flushPath();
-
-        cairo_new_path( currentContext );
-        SetIsFill( true );
-        SetIsStroke( false );
-    }
-
-    // eventually glyphs should not be drawn as polygons at all,
-    // but as bitmaps with antialiasing, this is just a stopgap measure
-    // of getting some form of outline font display
-    auto triangleCallback = [&]( int aPolygonIndex, const VECTOR2D& aVertex1,
-                                 const VECTOR2D& aVertex2, const VECTOR2D& aVertex3,
-                                 void* aCallbackData )
-    {
-#if 1
-        syncLineWidth();
-
-        const auto p0 = roundp( xform( aVertex1 ) );
-        const auto p1 = roundp( xform( aVertex2 ) );
-        const auto p2 = roundp( xform( aVertex3 ) );
-
-        /*
-        cairo_move_to( currentContext, aVertex1.x, aVertex1.y );
-        cairo_line_to( currentContext, aVertex2.x, aVertex2.y );
-        cairo_line_to( currentContext, aVertex3.x, aVertex3.y );
-        cairo_line_to( currentContext, aVertex1.x, aVertex1.y );
-    */
-        cairo_move_to( currentContext, p0.x, p0.y );
-        cairo_line_to( currentContext, p1.x, p1.y );
-        cairo_line_to( currentContext, p2.x, p2.y );
-        cairo_close_path( currentContext );
-        /*
-        setSourceRgba( currentContext, fillColor );
-        SetIsFill( true );
-        cairo_set_fill_rule( currentContext, CAIRO_FILL_RULE_EVEN_ODD );
-        flushPath();
-        */
-        //cairo_fill( currentContext );
-#else
-        // just a silly test
-        /*
-        DrawRectangle(aVertex1, aVertex2);
-        DrawRectangle(aVertex2, aVertex3);
-        DrawRectangle(aVertex3, aVertex1);
-        */
-        DrawTriangle( aVertex1, aVertex2, aVertex3 );
-#endif
-    };
-
-    Triangulate( aPolySet, triangleCallback );
-
-    if( aNth == aTotal - 1 )
-    {
-        /*
-        cairo_close_path( currentContext );
-        setSourceRgba( currentContext, fillColor );
-        cairo_set_fill_rule( currentContext, CAIRO_FILL_RULE_EVEN_ODD );
-        cairo_fill_preserve( currentContext );
-        setSourceRgba( currentContext, strokeColor );
-        cairo_stroke( currentContext );
-        */
-        flushPath();
-        isElementAdded = true;
-    }
 }
 
 

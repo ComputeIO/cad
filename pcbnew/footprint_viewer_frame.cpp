@@ -747,7 +747,7 @@ void FOOTPRINT_VIEWER_FRAME::AddFootprintToPCB( wxCommandEvent& aEvent )
         FOOTPRINT* newFootprint = (FOOTPRINT*) GetBoard()->GetFirstFootprint()->Duplicate();
         newFootprint->SetParent( pcbframe->GetBoard() );
         newFootprint->SetLink( niluuid );
-        newFootprint->SetFlags( IS_NEW ); // whatever
+        newFootprint->SetFlags(IS_NEW ); // whatever
 
         for( PAD* pad : newFootprint->Pads() )
         {
@@ -761,7 +761,8 @@ void FOOTPRINT_VIEWER_FRAME::AddFootprintToPCB( wxCommandEvent& aEvent )
         // Put it on FRONT layer,
         // (Can be stored flipped if the lib is an archive built from a board)
         if( newFootprint->IsFlipped() )
-            newFootprint->Flip( newFootprint->GetPosition(), pcbframe->Settings().m_FlipLeftRight );
+            newFootprint->Flip( newFootprint->GetPosition(),
+                    pcbframe->Settings().m_FlipLeftRight );
 
         KIGFX::VIEW_CONTROLS* viewControls = pcbframe->GetCanvas()->GetViewControls();
         VECTOR2D              cursorPos = viewControls->GetCursorPosition();

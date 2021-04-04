@@ -153,73 +153,6 @@ DIALOG_TEXT_PROPERTIES::DIALOG_TEXT_PROPERTIES( PCB_BASE_EDIT_FRAME* aParent, BO
 }
 
 
-void DIALOG_TEXT_PROPERTIES::setupFontMenu()
-{
-#ifdef KICAD_USE_FONTCONFIG
-    std::vector<std::string> fonts;
-
-    Fontconfig().ListFonts( fonts );
-
-    for( const std::string& font : fonts )
-    {
-#ifdef DEBUG
-        std::cerr << "Adding " << font << " to font menu" << std::endl;
-#endif
-        // TODO: m_Font->Append( wxString( font ) );
-    }
-#endif
-}
-
-
-#ifdef KICAD_USE_FONTCONFIG
-void DIALOG_TEXT_PROPERTIES::onShowFontDialog( wxCommandEvent& aEvent )
-{
-    wxFontData fontData;
-    wxFont     theFont;
-    wxColour   colour;
-
-    //theFont = theText->GetFont();
-    //fontData.SetInitialFont(theFont);
-    //colour = theText->GetForegroundColour();
-    //fontData.SetColour(colour);
-    fontData.SetShowHelp( true );
-
-    wxFontDialog* dialog = new wxFontDialog( this, fontData );
-    if( dialog->ShowModal() == wxID_OK )
-    {
-        fontData = dialog->GetFontData();
-        theFont = fontData.GetChosenFont();
-#ifdef DEBUG
-        wxFontStyle  style = theFont.GetStyle();
-        wxFontWeight weight = theFont.GetWeight();
-        std::cerr << "chosen font is " << theFont.GetFaceName() << " desc ["
-                  << theFont.GetNativeFontInfoDesc() << "]"
-                  << " userDesc [" << theFont.GetNativeFontInfoUserDesc() << "]"
-                  << " style "
-                  << ( style == wxFONTSTYLE_NORMAL
-                               ? "NORMAL"
-                               : ( style == wxFONTSTYLE_ITALIC
-                                           ? "ITALIC"
-                                           : ( style == wxFONTSTYLE_SLANT ? "SLANT" : "?" ) ) )
-                  << " weight "
-                  << ( weight == wxFONTWEIGHT_NORMAL
-                               ? "NORMAL"
-                               : ( weight == wxFONTWEIGHT_LIGHT
-                                           ? "LIGHT"
-                                           : ( weight == wxFONTWEIGHT_BOLD ? "BOLD" : "?" ) ) )
-                  << ( theFont.GetUnderlined() ? " underlined" : "" )
-                  << ( theFont.IsFixedWidth() ? " fixed-width" : "" )
-                  << ( theFont.IsOk() ? " OK" : " (not ok)" ) << std::endl;
-
-#endif
-        m_Font->SetValue( theFont.GetFaceName() );
-        //theText->SetFont(theFont);
-        //theText->SetForegroundColour(fontData.GetColour());
-    }
-}
-#endif
-
-
 DIALOG_TEXT_PROPERTIES::~DIALOG_TEXT_PROPERTIES()
 {
     Disconnect( wxEVT_CHAR_HOOK, wxKeyEventHandler( DIALOG_TEXT_PROPERTIES::OnCharHook ), NULL,
@@ -422,10 +355,6 @@ bool DIALOG_TEXT_PROPERTIES::TransferDataToWindow()
 
     m_LayerSelectionCtrl->SetLayerSelection( m_item->GetLayer() );
 
-#ifdef KICAD_USE_FONTCONFIG
-    if( m_edaText->GetFont() )
-        m_Font->SetValue( m_edaText->GetFont()->Name() );
-#endif
     m_textWidth.SetValue( m_edaText->GetTextSize().x );
     m_textHeight.SetValue( m_edaText->GetTextSize().y );
     m_thickness.SetValue( m_edaText->GetTextThickness() );
@@ -496,14 +425,6 @@ bool DIALOG_TEXT_PROPERTIES::TransferDataFromWindow()
 
     m_item->SetLayer( ToLAYER_ID( m_LayerSelectionCtrl->GetLayerSelection() ) );
 
-#ifdef KICAD_USE_FONTCONFIG
-    if( !m_Font->IsEmpty() )
-    {
-        wxString    fontNameFromField = m_Font->GetValue();
-        std::string fontName( fontNameFromField );
-        m_edaText->SetFont( fontName );
-    }
-#endif
     m_edaText->SetTextSize( wxSize( m_textWidth.GetValue(), m_textHeight.GetValue() ) );
     m_edaText->SetTextThickness( m_thickness.GetValue() );
     m_edaText->SetTextPos( wxPoint( m_posX.GetValue(), m_posY.GetValue() ) );

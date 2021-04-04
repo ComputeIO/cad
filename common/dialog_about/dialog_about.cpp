@@ -184,9 +184,10 @@ void DIALOG_ABOUT::createNotebookPage( wxNotebook* aParent, const wxString& aCap
         }
 
         // Email address of contributor at third column
-        if( contributor->GetExtra() != wxEmptyString )
+        if ( contributor->GetExtra() != wxEmptyString )
         {
-            wxStaticText* hyperlink = wxStaticTextRef( m_scrolledWindow1, contributor->GetExtra() );
+            wxStaticText* hyperlink = wxStaticTextRef( m_scrolledWindow1,
+                                                        contributor->GetExtra() );
             fgSizer1->Add( hyperlink, 0, wxALIGN_LEFT|wxBOTTOM, 2 );
         }
         else
@@ -308,8 +309,8 @@ void DIALOG_ABOUT::createNotebookPageByCategory( wxNotebook* aParent, const wxSt
                     // Email address of contributor at third column
                     if( sub_contributor->GetExtra() != wxEmptyString )
                     {
-                        wxStaticText* mail =
-                                wxStaticTextRef( m_scrolledWindow1, sub_contributor->GetExtra() );
+                        wxStaticText* mail = wxStaticTextRef( m_scrolledWindow1,
+                                                               sub_contributor->GetExtra() );
                         fgSizer1->Add( mail, 0, wxALIGN_LEFT|wxBOTTOM, 2 );
                     }
                     else
@@ -359,9 +360,10 @@ void DIALOG_ABOUT::createNotebookPageByCategory( wxNotebook* aParent, const wxSt
         }
 
         // Email address of contributor at third column
-        if( contributor->GetExtra() != wxEmptyString )
+        if ( contributor->GetExtra() != wxEmptyString )
         {
-            wxStaticText* mail = wxStaticTextRef( m_scrolledWindow1, contributor->GetExtra() );
+            wxStaticText* mail = wxStaticTextRef( m_scrolledWindow1,
+                                                   contributor->GetExtra() );
             fgSizer1->Add( mail, 0, wxALIGN_LEFT|wxBOTTOM, 2 );
         }
         else
@@ -436,8 +438,8 @@ void DIALOG_ABOUT::createNotebookHtmlPage( wxNotebook* aParent, const wxString& 
 
 wxStaticText* DIALOG_ABOUT::wxStaticTextRef( wxScrolledWindow* aParent, const wxString& aReference )
 {
-    wxStaticText* text =
-            new wxStaticText( aParent, wxID_ANY, wxT( "(" ) + aReference + wxT( ")" ) );
+    wxStaticText* text = new wxStaticText( aParent, wxID_ANY,
+                                           wxT( "(" ) + aReference + wxT( ")" ) );
 
     return text;
 }

@@ -30,7 +30,7 @@
 #include <eda_base_frame.h>
 #include <convert_basic_shapes_to_polygon.h>
 #include <macros.h>
-#include <math/util.h> // for KiROUND
+#include <math/util.h>      // for KiROUND
 #include <render_settings.h>
 #include <trigo.h>
 
@@ -88,11 +88,11 @@ void PSLIKE_PLOTTER::SetColor( COLOR4D color )
 }
 
 
-void PSLIKE_PLOTTER::FlashPadOval( const wxPoint& aPadPos, const wxSize& aSize, double aPadOrient,
-                                   OUTLINE_MODE aTraceMode, void* aData )
+void PSLIKE_PLOTTER::FlashPadOval( const wxPoint& aPadPos, const wxSize& aSize,
+                                   double aPadOrient, OUTLINE_MODE aTraceMode, void* aData )
 {
     wxASSERT( m_outputFile );
-    int    x0, y0, x1, y1, delta;
+    int x0, y0, x1, y1, delta;
     wxSize size( aSize );
 
     // The pad is reduced to an oval by dy > dx
@@ -103,10 +103,10 @@ void PSLIKE_PLOTTER::FlashPadOval( const wxPoint& aPadPos, const wxSize& aSize, 
     }
 
     delta = size.y - size.x;
-    x0 = 0;
-    y0 = -delta / 2;
-    x1 = 0;
-    y1 = delta / 2;
+    x0    = 0;
+    y0    = -delta / 2;
+    x1    = 0;
+    y1    = delta / 2;
     RotatePoint( &x0, &y0, aPadOrient );
     RotatePoint( &x1, &y1, aPadOrient );
 
@@ -118,19 +118,19 @@ void PSLIKE_PLOTTER::FlashPadOval( const wxPoint& aPadPos, const wxSize& aSize, 
 }
 
 
-void PSLIKE_PLOTTER::FlashPadCircle( const wxPoint& aPadPos, int aDiameter, OUTLINE_MODE aTraceMode,
-                                     void* aData )
+void PSLIKE_PLOTTER::FlashPadCircle( const wxPoint& aPadPos, int aDiameter,
+                                     OUTLINE_MODE aTraceMode, void* aData )
 {
     if( aTraceMode == FILLED )
         Circle( aPadPos, aDiameter, FILL_TYPE::FILLED_SHAPE, 0 );
-    else // Plot a ring:
+    else    // Plot a ring:
     {
         SetCurrentLineWidth( USE_DEFAULT_LINE_WIDTH );
         int linewidth = GetCurrentLineWidth();
 
         // avoid aDiameter <= 1 )
-        if( linewidth > aDiameter - 2 )
-            linewidth = aDiameter - 2;
+        if( linewidth > aDiameter-2 )
+            linewidth = aDiameter-2;
 
         Circle( aPadPos, aDiameter - linewidth, FILL_TYPE::NO_FILL, linewidth );
     }
@@ -139,11 +139,11 @@ void PSLIKE_PLOTTER::FlashPadCircle( const wxPoint& aPadPos, int aDiameter, OUTL
 }
 
 
-void PSLIKE_PLOTTER::FlashPadRect( const wxPoint& aPadPos, const wxSize& aSize, double aPadOrient,
-                                   OUTLINE_MODE aTraceMode, void* aData )
+void PSLIKE_PLOTTER::FlashPadRect( const wxPoint& aPadPos, const wxSize& aSize,
+                                   double aPadOrient, OUTLINE_MODE aTraceMode, void* aData )
 {
-    static std::vector<wxPoint> cornerList;
-    wxSize                      size( aSize );
+    static std::vector< wxPoint > cornerList;
+    wxSize size( aSize );
     cornerList.clear();
 
     if( aTraceMode == FILLED )
@@ -174,7 +174,8 @@ void PSLIKE_PLOTTER::FlashPadRect( const wxPoint& aPadPos, const wxSize& aSize, 
     corner.y = aPadPos.y - dy;
     cornerList.push_back( corner );
     corner.x = aPadPos.x + dx;
-    corner.y = aPadPos.y + dy, cornerList.push_back( corner );
+    corner.y = aPadPos.y + dy,
+    cornerList.push_back( corner );
 
     for( unsigned ii = 0; ii < cornerList.size(); ii++ )
     {
@@ -188,8 +189,8 @@ void PSLIKE_PLOTTER::FlashPadRect( const wxPoint& aPadPos, const wxSize& aSize, 
 }
 
 void PSLIKE_PLOTTER::FlashPadRoundRect( const wxPoint& aPadPos, const wxSize& aSize,
-                                        int aCornerRadius, double aOrient, OUTLINE_MODE aTraceMode,
-                                        void* aData )
+                                        int aCornerRadius, double aOrient,
+                                        OUTLINE_MODE aTraceMode, void* aData )
 {
     wxSize size( aSize );
 
@@ -200,15 +201,15 @@ void PSLIKE_PLOTTER::FlashPadRoundRect( const wxPoint& aPadPos, const wxSize& aS
         SetCurrentLineWidth( USE_DEFAULT_LINE_WIDTH );
         size.x -= GetCurrentLineWidth();
         size.y -= GetCurrentLineWidth();
-        aCornerRadius -= GetCurrentLineWidth() / 2;
+        aCornerRadius -= GetCurrentLineWidth()/2;
     }
 
 
     SHAPE_POLY_SET outline;
-    TransformRoundChamferedRectToPolygon( outline, aPadPos, size, aOrient, aCornerRadius, 0.0, 0,
-                                          GetPlotterArcHighDef(), ERROR_INSIDE );
+    TransformRoundChamferedRectToPolygon( outline, aPadPos, size, aOrient, aCornerRadius,
+                                          0.0, 0, GetPlotterArcHighDef(), ERROR_INSIDE );
 
-    std::vector<wxPoint> cornerList;
+    std::vector< wxPoint > cornerList;
     // TransformRoundRectToPolygon creates only one convex polygon
     SHAPE_LINE_CHAIN& poly = outline.Outline( 0 );
     cornerList.reserve( poly.PointCount() );
@@ -223,9 +224,9 @@ void PSLIKE_PLOTTER::FlashPadRoundRect( const wxPoint& aPadPos, const wxSize& aS
               GetCurrentLineWidth() );
 }
 
-void PSLIKE_PLOTTER::FlashPadCustom( const wxPoint& aPadPos, const wxSize& aSize, double aOrient,
-                                     SHAPE_POLY_SET* aPolygons, OUTLINE_MODE aTraceMode,
-                                     void* aData )
+void PSLIKE_PLOTTER::FlashPadCustom( const wxPoint& aPadPos, const wxSize& aSize,
+                                     double aOrient, SHAPE_POLY_SET* aPolygons,
+                                     OUTLINE_MODE aTraceMode, void* aData )
 {
     wxSize size( aSize );
 
@@ -239,7 +240,7 @@ void PSLIKE_PLOTTER::FlashPadCustom( const wxPoint& aPadPos, const wxSize& aSize
     }
 
 
-    std::vector<wxPoint> cornerList;
+    std::vector< wxPoint > cornerList;
 
     for( int cnt = 0; cnt < aPolygons->OutlineCount(); ++cnt )
     {
@@ -252,16 +253,15 @@ void PSLIKE_PLOTTER::FlashPadCustom( const wxPoint& aPadPos, const wxSize& aSize
         // Close polygon
         cornerList.push_back( cornerList[0] );
 
-        PlotPoly( cornerList,
-                  ( aTraceMode == FILLED ) ? FILL_TYPE::FILLED_SHAPE : FILL_TYPE::NO_FILL,
+        PlotPoly( cornerList, ( aTraceMode == FILLED ) ? FILL_TYPE::FILLED_SHAPE : FILL_TYPE::NO_FILL,
                   GetCurrentLineWidth() );
     }
 }
 
-void PSLIKE_PLOTTER::FlashPadTrapez( const wxPoint& aPadPos, const wxPoint* aCorners,
+void PSLIKE_PLOTTER::FlashPadTrapez( const wxPoint& aPadPos, const wxPoint *aCorners,
                                      double aPadOrient, OUTLINE_MODE aTraceMode, void* aData )
 {
-    static std::vector<wxPoint> cornerList;
+    static std::vector< wxPoint > cornerList;
     cornerList.clear();
 
     for( int ii = 0; ii < 4; ii++ )
@@ -304,8 +304,9 @@ void PSLIKE_PLOTTER::FlashPadTrapez( const wxPoint& aPadPos, const wxPoint* aCor
 }
 
 
-void PSLIKE_PLOTTER::FlashRegularPolygon( const wxPoint& aShapePos, int aRadius, int aCornerCount,
-                                          double aOrient, OUTLINE_MODE aTraceMode, void* aData )
+void PSLIKE_PLOTTER::FlashRegularPolygon( const wxPoint& aShapePos,
+                            int aRadius, int aCornerCount,
+                            double aOrient, OUTLINE_MODE aTraceMode, void* aData )
 {
     // Do nothing
     wxASSERT( 0 );
@@ -326,7 +327,7 @@ std::string PSLIKE_PLOTTER::encodeStringForPlotter( const wxString& aUnicode )
 
         if( ch < 256 )
         {
-            switch( ch )
+            switch (ch)
             {
                 // The ~ shouldn't reach the outside
             case '~':
@@ -334,9 +335,13 @@ std::string PSLIKE_PLOTTER::encodeStringForPlotter( const wxString& aUnicode )
                 // These characters must be escaped
             case '(':
             case ')':
-            case '\\': converted += '\\'; KI_FALLTHROUGH;
+            case '\\':
+                converted += '\\';
+                KI_FALLTHROUGH;
 
-            default: converted += ch; break;
+            default:
+                converted += ch;
+                break;
             }
         }
     }
@@ -353,11 +358,11 @@ std::string PSLIKE_PLOTTER::encodeStringForPlotter( const wxString& aUnicode )
  * using postscript metrics for the Helvetica font (optionally used for
  * PS and PDF plotting
  */
-int PSLIKE_PLOTTER::returnPostscriptTextWidth( const wxString& aText, int aXSize, bool aItalic,
-                                               bool aBold )
+int PSLIKE_PLOTTER::returnPostscriptTextWidth( const wxString& aText, int aXSize,
+                                               bool aItalic, bool aBold )
 {
-    const double* width_table =
-            aBold ? ( aItalic ? hvbo_widths : hvb_widths ) : ( aItalic ? hvo_widths : hv_widths );
+    const double *width_table = aBold ? ( aItalic ? hvbo_widths : hvb_widths )
+                                      : ( aItalic ? hvo_widths : hv_widths );
     double tally = 0;
 
     for( unsigned i = 0; i < aText.length(); i++ )
@@ -382,13 +387,14 @@ int PSLIKE_PLOTTER::returnPostscriptTextWidth( const wxString& aText, int aXSize
  * used in the text coordinate system (use computeTextParameters to
  * obtain the parameters to establish such a system)
  */
-void PSLIKE_PLOTTER::postscriptOverlinePositions( const wxString& aText, int aXSize, bool aItalic,
-                                                  bool aBold, std::vector<int>* pos_pairs )
+void PSLIKE_PLOTTER::postscriptOverlinePositions( const wxString& aText, int aXSize,
+                                                  bool aItalic, bool aBold,
+                                                  std::vector<int> *pos_pairs )
 {
     /* XXX This function is *too* similar to returnPostscriptTextWidth.
        Consider merging them... */
-    const double* width_table =
-            aBold ? ( aItalic ? hvbo_widths : hvb_widths ) : ( aItalic ? hvo_widths : hv_widths );
+    const double *width_table = aBold ? ( aItalic ? hvbo_widths : hvb_widths )
+                                      : ( aItalic ? hvo_widths : hv_widths );
     double tally = 0;
 
     for( unsigned i = 0; i < aText.length(); i++ )
@@ -411,8 +417,8 @@ void PSLIKE_PLOTTER::postscriptOverlinePositions( const wxString& aText, int aXS
         pos_pairs->push_back( KiROUND( aXSize * tally / postscriptTextAscent ) );
 }
 
-void PS_PLOTTER::SetViewport( const wxPoint& aOffset, double aIusPerDecimil, double aScale,
-                              bool aMirror )
+void PS_PLOTTER::SetViewport( const wxPoint& aOffset, double aIusPerDecimil,
+                  double aScale, bool aMirror )
 {
     wxASSERT( !m_outputFile );
     m_plotMirror = aMirror;
@@ -433,11 +439,24 @@ void PS_PLOTTER::SetViewport( const wxPoint& aOffset, double aIusPerDecimil, dou
  * operator to simplify PDF generation (concat is everything PDF
  * has to modify the CTM. Lots of parameters, both in and out.
  */
-void PSLIKE_PLOTTER::computeTextParameters(
-        const wxPoint& aPos, const wxString& aText, int aOrient, const wxSize& aSize, bool aMirror,
-        enum EDA_TEXT_HJUSTIFY_T aH_justify, enum EDA_TEXT_VJUSTIFY_T aV_justify, int aWidth,
-        bool aItalic, bool aBold, double* wideningFactor, double* ctm_a, double* ctm_b,
-        double* ctm_c, double* ctm_d, double* ctm_e, double* ctm_f, double* heightFactor )
+void PSLIKE_PLOTTER::computeTextParameters( const wxPoint&           aPos,
+                                            const wxString&          aText,
+                                            int                      aOrient,
+                                            const wxSize&            aSize,
+                                            bool                     aMirror,
+                                            enum EDA_TEXT_HJUSTIFY_T aH_justify,
+                                            enum EDA_TEXT_VJUSTIFY_T aV_justify,
+                                            int                      aWidth,
+                                            bool                     aItalic,
+                                            bool                     aBold,
+                                            double                   *wideningFactor,
+                                            double                   *ctm_a,
+                                            double                   *ctm_b,
+                                            double                   *ctm_c,
+                                            double                   *ctm_d,
+                                            double                   *ctm_e,
+                                            double                   *ctm_f,
+                                            double                   *heightFactor )
 {
     // Compute the starting position (compensated for alignment)
     wxPoint start_pos = aPos;
@@ -449,20 +468,32 @@ void PSLIKE_PLOTTER::computeTextParameters(
 
     switch( aH_justify )
     {
-    case GR_TEXT_HJUSTIFY_CENTER: dx = -tw / 2; break;
+    case GR_TEXT_HJUSTIFY_CENTER:
+        dx = -tw / 2;
+        break;
 
-    case GR_TEXT_HJUSTIFY_RIGHT: dx = -tw; break;
+    case GR_TEXT_HJUSTIFY_RIGHT:
+        dx = -tw;
+        break;
 
-    case GR_TEXT_HJUSTIFY_LEFT: dx = 0; break;
+    case GR_TEXT_HJUSTIFY_LEFT:
+        dx = 0;
+        break;
     }
 
     switch( aV_justify )
     {
-    case GR_TEXT_VJUSTIFY_CENTER: dy = th / 2; break;
+    case GR_TEXT_VJUSTIFY_CENTER:
+        dy = th / 2;
+        break;
 
-    case GR_TEXT_VJUSTIFY_TOP: dy = th; break;
+    case GR_TEXT_VJUSTIFY_TOP:
+        dy = th;
+        break;
 
-    case GR_TEXT_VJUSTIFY_BOTTOM: dy = 0; break;
+    case GR_TEXT_VJUSTIFY_BOTTOM:
+        dy = 0;
+        break;
     }
 
     RotatePoint( &dx, &dy, aOrient );
@@ -538,18 +569,20 @@ void PS_PLOTTER::SetDash( PLOT_DASH_TYPE dashed )
     switch( dashed )
     {
     case PLOT_DASH_TYPE::DASH:
-        fprintf( m_outputFile, "[%d %d] 0 setdash\n", (int) GetDashMarkLenIU(),
-                 (int) GetDashGapLenIU() );
+        fprintf( m_outputFile, "[%d %d] 0 setdash\n",
+                 (int) GetDashMarkLenIU(), (int) GetDashGapLenIU() );
         break;
     case PLOT_DASH_TYPE::DOT:
-        fprintf( m_outputFile, "[%d %d] 0 setdash\n", (int) GetDotMarkLenIU(),
-                 (int) GetDashGapLenIU() );
+        fprintf( m_outputFile, "[%d %d] 0 setdash\n",
+                 (int) GetDotMarkLenIU(), (int) GetDashGapLenIU() );
         break;
     case PLOT_DASH_TYPE::DASHDOT:
-        fprintf( m_outputFile, "[%d %d %d %d] 0 setdash\n", (int) GetDashMarkLenIU(),
-                 (int) GetDashGapLenIU(), (int) GetDotMarkLenIU(), (int) GetDashGapLenIU() );
+        fprintf( m_outputFile, "[%d %d %d %d] 0 setdash\n",
+                 (int) GetDashMarkLenIU(), (int) GetDashGapLenIU(),
+                 (int) GetDotMarkLenIU(), (int) GetDashGapLenIU() );
         break;
-    default: fputs( "solidline\n", m_outputFile );
+    default:
+        fputs( "solidline\n", m_outputFile );
     }
 }
 
@@ -560,8 +593,8 @@ void PS_PLOTTER::Rect( const wxPoint& p1, const wxPoint& p2, FILL_TYPE fill, int
     DPOINT p2_dev = userToDeviceCoordinates( p2 );
 
     SetCurrentLineWidth( width );
-    fprintf( m_outputFile, "%g %g %g %g rect%d\n", p1_dev.x, p1_dev.y, p2_dev.x - p1_dev.x,
-             p2_dev.y - p1_dev.y, getFillId( fill ) );
+    fprintf( m_outputFile, "%g %g %g %g rect%d\n", p1_dev.x, p1_dev.y,
+             p2_dev.x - p1_dev.x, p2_dev.y - p1_dev.y, getFillId( fill ) );
 }
 
 
@@ -576,8 +609,8 @@ void PS_PLOTTER::Circle( const wxPoint& pos, int diametre, FILL_TYPE fill, int w
 }
 
 
-void PS_PLOTTER::Arc( const wxPoint& centre, double StAngle, double EndAngle, int radius,
-                      FILL_TYPE fill, int width )
+void PS_PLOTTER::Arc( const wxPoint& centre, double StAngle, double EndAngle,
+                      int radius, FILL_TYPE fill, int width )
 {
     wxASSERT( m_outputFile );
 
@@ -597,8 +630,8 @@ void PS_PLOTTER::Arc( const wxPoint& centre, double StAngle, double EndAngle, in
     {
         if( m_mirrorIsHorizontal )
         {
-            StAngle = 1800.0 - StAngle;
-            EndAngle = 1800.0 - EndAngle;
+            StAngle = 1800.0 -StAngle;
+            EndAngle = 1800.0 -EndAngle;
             std::swap( StAngle, EndAngle );
         }
         else
@@ -608,13 +641,13 @@ void PS_PLOTTER::Arc( const wxPoint& centre, double StAngle, double EndAngle, in
         }
     }
 
-    fprintf( m_outputFile, "%g %g %g %g %g arc%d\n", centre_dev.x, centre_dev.y, radius_dev,
-             StAngle / 10.0, EndAngle / 10.0, getFillId( fill ) );
+    fprintf( m_outputFile, "%g %g %g %g %g arc%d\n", centre_dev.x, centre_dev.y,
+             radius_dev, StAngle / 10.0, EndAngle / 10.0, getFillId( fill ) );
 }
 
 
-void PS_PLOTTER::PlotPoly( const std::vector<wxPoint>& aCornerList, FILL_TYPE aFill, int aWidth,
-                           void* aData )
+void PS_PLOTTER::PlotPoly( const std::vector< wxPoint >& aCornerList,
+                           FILL_TYPE aFill, int aWidth, void * aData )
 {
     if( aCornerList.size() <= 1 )
         return;
@@ -638,9 +671,10 @@ void PS_PLOTTER::PlotPoly( const std::vector<wxPoint>& aCornerList, FILL_TYPE aF
 /**
  * PostScript-likes at the moment are the only plot engines supporting bitmaps...
  */
-void PS_PLOTTER::PlotImage( const wxImage& aImage, const wxPoint& aPos, double aScaleFactor )
+void PS_PLOTTER::PlotImage( const wxImage & aImage, const wxPoint& aPos,
+                            double aScaleFactor )
 {
-    wxSize pix_size; // size of the bitmap in pixels
+    wxSize pix_size;                // size of the bitmap in pixels
     pix_size.x = aImage.GetWidth();
     pix_size.y = aImage.GetHeight();
     DPOINT drawsize( aScaleFactor * pix_size.x,
@@ -648,8 +682,8 @@ void PS_PLOTTER::PlotImage( const wxImage& aImage, const wxPoint& aPos, double a
 
     // calculate the bottom left corner position of bitmap
     wxPoint start = aPos;
-    start.x -= drawsize.x / 2; // left
-    start.y += drawsize.y / 2; // bottom (Y axis reversed)
+    start.x -= drawsize.x / 2;    // left
+    start.y += drawsize.y / 2;    // bottom (Y axis reversed)
 
     // calculate the top right corner position of bitmap
     wxPoint end;
@@ -664,13 +698,13 @@ void PS_PLOTTER::PlotImage( const wxImage& aImage, const wxPoint& aPos, double a
     fprintf( m_outputFile, "%g %g translate\n", start_dev.x, start_dev.y );
     // Map image size to device
     DPOINT end_dev = userToDeviceCoordinates( end );
-    fprintf( m_outputFile, "%g %g scale\n", std::abs( end_dev.x - start_dev.x ),
-             std::abs( end_dev.y - start_dev.y ) );
+    fprintf( m_outputFile, "%g %g scale\n",
+             std::abs(end_dev.x - start_dev.x), std::abs(end_dev.y - start_dev.y));
 
     // Dimensions of source image (in pixels
     fprintf( m_outputFile, "%d %d 8", pix_size.x, pix_size.y );
     //  Map unit square to source
-    fprintf( m_outputFile, " [%d 0 0 %d 0 %d]\n", pix_size.x, -pix_size.y, pix_size.y );
+    fprintf( m_outputFile, " [%d 0 0 %d 0 %d]\n", pix_size.x, -pix_size.y , pix_size.y);
     // include image data in ps file
     fprintf( m_outputFile, "{currentfile pix readhexstring pop}\n" );
 
@@ -682,20 +716,20 @@ void PS_PLOTTER::PlotImage( const wxImage& aImage, const wxPoint& aPos, double a
     // (or the same downscaled to gray)
     int jj = 0;
 
-    for( int yy = 0; yy < pix_size.y; yy++ )
+    for( int yy = 0; yy < pix_size.y; yy ++ )
     {
         for( int xx = 0; xx < pix_size.x; xx++, jj++ )
         {
             if( jj >= 16 )
             {
                 jj = 0;
-                fprintf( m_outputFile, "\n" );
+                fprintf( m_outputFile, "\n");
             }
 
             int red, green, blue;
-            red = aImage.GetRed( xx, yy ) & 0xFF;
-            green = aImage.GetGreen( xx, yy ) & 0xFF;
-            blue = aImage.GetBlue( xx, yy ) & 0xFF;
+            red = aImage.GetRed( xx, yy) & 0xFF;
+            green = aImage.GetGreen( xx, yy) & 0xFF;
+            blue = aImage.GetBlue( xx, yy) & 0xFF;
 
             // PS doesn't support alpha, so premultiply against white background
             if( aImage.HasAlpha() )
@@ -705,16 +739,16 @@ void PS_PLOTTER::PlotImage( const wxImage& aImage, const wxPoint& aPos, double a
                 if( alpha < 0xFF )
                 {
                     float a = 1.0 - ( (float) alpha / 255.0 );
-                    red = (int) ( red + ( a * 0xFF ) ) & 0xFF;
-                    green = (int) ( green + ( a * 0xFF ) ) & 0xFF;
-                    blue = (int) ( blue + ( a * 0xFF ) ) & 0xFF;
+                    red =   ( int )( red   + ( a * 0xFF ) ) & 0xFF;
+                    green = ( int )( green + ( a * 0xFF ) ) & 0xFF;
+                    blue =  ( int )( blue  + ( a * 0xFF ) ) & 0xFF;
                 }
             }
 
             if( aImage.HasMask() )
             {
                 if( red == aImage.GetMaskRed() && green == aImage.GetMaskGreen()
-                    && blue == aImage.GetMaskBlue() )
+                        && blue == aImage.GetMaskBlue() )
                 {
                     red = 0xFF;
                     green = 0xFF;
@@ -736,7 +770,7 @@ void PS_PLOTTER::PlotImage( const wxImage& aImage, const wxPoint& aPos, double a
         }
     }
 
-    fprintf( m_outputFile, "\n" );
+    fprintf( m_outputFile, "\n");
     fprintf( m_outputFile, "origstate restore\n" );
 }
 
@@ -750,7 +784,7 @@ void PS_PLOTTER::PenTo( const wxPoint& pos, char plume )
         if( m_penState != 'Z' )
         {
             fputs( "stroke\n", m_outputFile );
-            m_penState = 'Z';
+            m_penState     = 'Z';
             m_penLastpos.x = -1;
             m_penLastpos.y = -1;
         }
@@ -766,11 +800,12 @@ void PS_PLOTTER::PenTo( const wxPoint& pos, char plume )
     if( m_penState != plume || pos != m_penLastpos )
     {
         DPOINT pos_dev = userToDeviceCoordinates( pos );
-        fprintf( m_outputFile, "%g %g %sto\n", pos_dev.x, pos_dev.y,
-                 ( plume == 'D' ) ? "line" : "move" );
+        fprintf( m_outputFile, "%g %g %sto\n",
+                 pos_dev.x, pos_dev.y,
+                 ( plume=='D' ) ? "line" : "move" );
     }
 
-    m_penState = plume;
+    m_penState   = plume;
     m_penLastpos = pos;
 }
 
@@ -791,51 +826,64 @@ void PS_PLOTTER::PenTo( const wxPoint& pos, char plume )
 bool PS_PLOTTER::StartPlot()
 {
     wxASSERT( m_outputFile );
-    wxString msg;
+    wxString           msg;
 
-    static const char* PSMacro[] = {
-        "%%BeginProlog\n", "/line { newpath moveto lineto stroke } bind def\n",
-        "/cir0 { newpath 0 360 arc stroke } bind def\n",
-        "/cir1 { newpath 0 360 arc gsave fill grestore stroke } bind def\n",
-        "/cir2 { newpath 0 360 arc gsave fill grestore stroke } bind def\n",
-        "/arc0 { newpath arc stroke } bind def\n",
-        "/arc1 { newpath 4 index 4 index moveto arc closepath gsave fill\n",
-        "    grestore stroke } bind def\n",
-        "/arc2 { newpath 4 index 4 index moveto arc closepath gsave fill\n",
-        "    grestore stroke } bind def\n", "/poly0 { stroke } bind def\n",
-        "/poly1 { closepath gsave fill grestore stroke } bind def\n",
-        "/poly2 { closepath gsave fill grestore stroke } bind def\n",
-        "/rect0 { rectstroke } bind def\n", "/rect1 { rectfill } bind def\n",
-        "/rect2 { rectfill } bind def\n",
-        "/linemode0 { 0 setlinecap 0 setlinejoin 0 setlinewidth } bind def\n",
-        "/linemode1 { 1 setlinecap 1 setlinejoin } bind def\n",
-        "/dashedline { [200] 100 setdash } bind def\n", "/solidline { [] 0 setdash } bind def\n",
+    static const char* PSMacro[] =
+    {
+    "%%BeginProlog\n",
+    "/line { newpath moveto lineto stroke } bind def\n",
+    "/cir0 { newpath 0 360 arc stroke } bind def\n",
+    "/cir1 { newpath 0 360 arc gsave fill grestore stroke } bind def\n",
+    "/cir2 { newpath 0 360 arc gsave fill grestore stroke } bind def\n",
+    "/arc0 { newpath arc stroke } bind def\n",
+    "/arc1 { newpath 4 index 4 index moveto arc closepath gsave fill\n",
+    "    grestore stroke } bind def\n",
+    "/arc2 { newpath 4 index 4 index moveto arc closepath gsave fill\n",
+    "    grestore stroke } bind def\n",
+    "/poly0 { stroke } bind def\n",
+    "/poly1 { closepath gsave fill grestore stroke } bind def\n",
+    "/poly2 { closepath gsave fill grestore stroke } bind def\n",
+    "/rect0 { rectstroke } bind def\n",
+    "/rect1 { rectfill } bind def\n",
+    "/rect2 { rectfill } bind def\n",
+    "/linemode0 { 0 setlinecap 0 setlinejoin 0 setlinewidth } bind def\n",
+    "/linemode1 { 1 setlinecap 1 setlinejoin } bind def\n",
+    "/dashedline { [200] 100 setdash } bind def\n",
+    "/solidline { [] 0 setdash } bind def\n",
 
-        // This is for 'hidden' text (search anchors for PDF)
-        "/phantomshow { moveto\n", "    /KicadFont findfont 0.000001 scalefont setfont\n",
-        "    show } bind def\n",
+    // This is for 'hidden' text (search anchors for PDF)
+    "/phantomshow { moveto\n",
+    "    /KicadFont findfont 0.000001 scalefont setfont\n",
+    "    show } bind def\n",
 
-        // This is for regular postscript text
-        "/textshow { gsave\n",
-        "    findfont exch scalefont setfont concat 1 scale 0 0 moveto show\n", "    } bind def\n",
+    // This is for regular postscript text
+    "/textshow { gsave\n",
+    "    findfont exch scalefont setfont concat 1 scale 0 0 moveto show\n",
+    "    } bind def\n",
 
-        // Utility for getting Latin1 encoded fonts
-        "/reencodefont {\n", "  findfont dup length dict begin\n", "  { 1 index /FID ne\n",
-        "    { def }\n", "    { pop pop } ifelse\n", "  } forall\n",
-        "  /Encoding ISOLatin1Encoding def\n", "  currentdict\n",
-        "  end } bind def\n"
+    // Utility for getting Latin1 encoded fonts
+    "/reencodefont {\n",
+    "  findfont dup length dict begin\n",
+    "  { 1 index /FID ne\n",
+    "    { def }\n",
+    "    { pop pop } ifelse\n",
+    "  } forall\n",
+    "  /Encoding ISOLatin1Encoding def\n",
+    "  currentdict\n",
+    "  end } bind def\n"
 
-        // Remap AdobeStandard fonts to Latin1
-        "/KicadFont /Helvetica reencodefont definefont pop\n",
-        "/KicadFont-Bold /Helvetica-Bold reencodefont definefont pop\n",
-        "/KicadFont-Oblique /Helvetica-Oblique reencodefont definefont pop\n",
-        "/KicadFont-BoldOblique /Helvetica-BoldOblique reencodefont definefont pop\n",
-        "%%EndProlog\n", NULL
+    // Remap AdobeStandard fonts to Latin1
+    "/KicadFont /Helvetica reencodefont definefont pop\n",
+    "/KicadFont-Bold /Helvetica-Bold reencodefont definefont pop\n",
+    "/KicadFont-Oblique /Helvetica-Oblique reencodefont definefont pop\n",
+    "/KicadFont-BoldOblique /Helvetica-BoldOblique reencodefont definefont pop\n",
+    "%%EndProlog\n",
+    NULL
     };
 
     time_t time1970 = time( NULL );
 
-    fputs( "%!PS-Adobe-3.0\n", m_outputFile ); // Print header
+    fputs( "%!PS-Adobe-3.0\n", m_outputFile );    // Print header
 
     fprintf( m_outputFile, "%%%%Creator: %s\n", TO_UTF8( m_creator ) );
 
@@ -879,12 +927,14 @@ bool PS_PLOTTER::StartPlot()
     if( m_pageInfo.IsCustom() )
     {
         fprintf( m_outputFile, "%%%%DocumentMedia: Custom %d %d 0 () ()\n",
-                 KiROUND( psPaperSize.x * BIGPTsPERMIL ), KiROUND( psPaperSize.y * BIGPTsPERMIL ) );
+                 KiROUND( psPaperSize.x * BIGPTsPERMIL ),
+                 KiROUND( psPaperSize.y * BIGPTsPERMIL ) );
     }
-    else // a standard paper size
+    else  // a standard paper size
     {
         fprintf( m_outputFile, "%%%%DocumentMedia: %s %d %d 0 () ()\n",
-                 TO_UTF8( m_pageInfo.GetType() ), KiROUND( psPaperSize.x * BIGPTsPERMIL ),
+                 TO_UTF8( m_pageInfo.GetType() ),
+                 KiROUND( psPaperSize.x * BIGPTsPERMIL ),
                  KiROUND( psPaperSize.y * BIGPTsPERMIL ) );
     }
 
@@ -909,9 +959,8 @@ bool PS_PLOTTER::StartPlot()
     fputs( "%%Page: 1 1\n"
            "%%BeginPageSetup\n"
            "gsave\n"
-           "0.0072 0.0072 scale\n" // Configure postscript for decimils coordinates
-           "linemode1\n",
-           m_outputFile );
+           "0.0072 0.0072 scale\n"    // Configure postscript for decimils coordinates
+           "linemode1\n", m_outputFile );
 
 
     // Rototranslate the coordinate to achieve the landscape layout
@@ -936,8 +985,7 @@ bool PS_PLOTTER::EndPlot()
     wxASSERT( m_outputFile );
     fputs( "showpage\n"
            "grestore\n"
-           "%%EOF\n",
-           m_outputFile );
+           "%%EOF\n", m_outputFile );
     fclose( m_outputFile );
     m_outputFile = NULL;
 
@@ -967,7 +1015,7 @@ void PS_PLOTTER::Text( const wxPoint&              aPos,
     if( m_textMode == PLOT_TEXT_MODE::PHANTOM )
     {
         std::string ps_test = encodeStringForPlotter( aText );
-        DPOINT      pos_dev = userToDeviceCoordinates( aPos );
+        DPOINT pos_dev = userToDeviceCoordinates( aPos );
         fprintf( m_outputFile, "%s %g %g phantomshow\n", ps_test.c_str(), pos_dev.x, pos_dev.y );
     }
 
@@ -980,102 +1028,150 @@ void PS_PLOTTER::Text( const wxPoint&              aPos,
  * Character widths for Helvetica
  */
 const double hv_widths[256] = {
-    0.278, 0.278, 0.278, 0.278, 0.278, 0.278, 0.278, 0.278, 0.278, 0.278, 0.278, 0.278, 0.278,
-    0.278, 0.278, 0.278, 0.278, 0.278, 0.278, 0.278, 0.278, 0.278, 0.278, 0.278, 0.278, 0.278,
-    0.278, 0.278, 0.278, 0.278, 0.278, 0.278, 0.278, 0.278, 0.355, 0.556, 0.556, 0.889, 0.667,
-    0.191, 0.333, 0.333, 0.389, 0.584, 0.278, 0.333, 0.278, 0.278, 0.556, 0.556, 0.556, 0.556,
-    0.556, 0.556, 0.556, 0.556, 0.556, 0.556, 0.278, 0.278, 0.584, 0.584, 0.584, 0.556, 1.015,
-    0.667, 0.667, 0.722, 0.722, 0.667, 0.611, 0.778, 0.722, 0.278, 0.500, 0.667, 0.556, 0.833,
-    0.722, 0.778, 0.667, 0.778, 0.722, 0.667, 0.611, 0.722, 0.667, 0.944, 0.667, 0.667, 0.611,
-    0.278, 0.278, 0.278, 0.469, 0.556, 0.333, 0.556, 0.556, 0.500, 0.556, 0.556, 0.278, 0.556,
-    0.556, 0.222, 0.222, 0.500, 0.222, 0.833, 0.556, 0.556, 0.556, 0.556, 0.333, 0.500, 0.278,
-    0.556, 0.500, 0.722, 0.500, 0.500, 0.500, 0.334, 0.260, 0.334, 0.584, 0.278, 0.278, 0.278,
-    0.222, 0.556, 0.333, 1.000, 0.556, 0.556, 0.333, 1.000, 0.667, 0.333, 1.000, 0.278, 0.278,
-    0.278, 0.278, 0.222, 0.222, 0.333, 0.333, 0.350, 0.556, 1.000, 0.333, 1.000, 0.500, 0.333,
-    0.944, 0.278, 0.278, 0.667, 0.278, 0.333, 0.556, 0.556, 0.556, 0.556, 0.260, 0.556, 0.333,
-    0.737, 0.370, 0.556, 0.584, 0.333, 0.737, 0.333, 0.400, 0.584, 0.333, 0.333, 0.333, 0.556,
-    0.537, 0.278, 0.333, 0.333, 0.365, 0.556, 0.834, 0.834, 0.834, 0.611, 0.667, 0.667, 0.667,
-    0.667, 0.667, 0.667, 1.000, 0.722, 0.667, 0.667, 0.667, 0.667, 0.278, 0.278, 0.278, 0.278,
-    0.722, 0.722, 0.778, 0.778, 0.778, 0.778, 0.778, 0.584, 0.778, 0.722, 0.722, 0.722, 0.722,
-    0.667, 0.667, 0.611, 0.556, 0.556, 0.556, 0.556, 0.556, 0.556, 0.889, 0.500, 0.556, 0.556,
-    0.556, 0.556, 0.278, 0.278, 0.278, 0.278, 0.556, 0.556, 0.556, 0.556, 0.556, 0.556, 0.556,
-    0.584, 0.611, 0.556, 0.556, 0.556, 0.556, 0.500, 0.556, 0.500
+    0.278, 0.278, 0.278, 0.278, 0.278, 0.278, 0.278, 0.278,
+    0.278, 0.278, 0.278, 0.278, 0.278, 0.278, 0.278, 0.278,
+    0.278, 0.278, 0.278, 0.278, 0.278, 0.278, 0.278, 0.278,
+    0.278, 0.278, 0.278, 0.278, 0.278, 0.278, 0.278, 0.278,
+    0.278, 0.278, 0.355, 0.556, 0.556, 0.889, 0.667, 0.191,
+    0.333, 0.333, 0.389, 0.584, 0.278, 0.333, 0.278, 0.278,
+    0.556, 0.556, 0.556, 0.556, 0.556, 0.556, 0.556, 0.556,
+    0.556, 0.556, 0.278, 0.278, 0.584, 0.584, 0.584, 0.556,
+    1.015, 0.667, 0.667, 0.722, 0.722, 0.667, 0.611, 0.778,
+    0.722, 0.278, 0.500, 0.667, 0.556, 0.833, 0.722, 0.778,
+    0.667, 0.778, 0.722, 0.667, 0.611, 0.722, 0.667, 0.944,
+    0.667, 0.667, 0.611, 0.278, 0.278, 0.278, 0.469, 0.556,
+    0.333, 0.556, 0.556, 0.500, 0.556, 0.556, 0.278, 0.556,
+    0.556, 0.222, 0.222, 0.500, 0.222, 0.833, 0.556, 0.556,
+    0.556, 0.556, 0.333, 0.500, 0.278, 0.556, 0.500, 0.722,
+    0.500, 0.500, 0.500, 0.334, 0.260, 0.334, 0.584, 0.278,
+    0.278, 0.278, 0.222, 0.556, 0.333, 1.000, 0.556, 0.556,
+    0.333, 1.000, 0.667, 0.333, 1.000, 0.278, 0.278, 0.278,
+    0.278, 0.222, 0.222, 0.333, 0.333, 0.350, 0.556, 1.000,
+    0.333, 1.000, 0.500, 0.333, 0.944, 0.278, 0.278, 0.667,
+    0.278, 0.333, 0.556, 0.556, 0.556, 0.556, 0.260, 0.556,
+    0.333, 0.737, 0.370, 0.556, 0.584, 0.333, 0.737, 0.333,
+    0.400, 0.584, 0.333, 0.333, 0.333, 0.556, 0.537, 0.278,
+    0.333, 0.333, 0.365, 0.556, 0.834, 0.834, 0.834, 0.611,
+    0.667, 0.667, 0.667, 0.667, 0.667, 0.667, 1.000, 0.722,
+    0.667, 0.667, 0.667, 0.667, 0.278, 0.278, 0.278, 0.278,
+    0.722, 0.722, 0.778, 0.778, 0.778, 0.778, 0.778, 0.584,
+    0.778, 0.722, 0.722, 0.722, 0.722, 0.667, 0.667, 0.611,
+    0.556, 0.556, 0.556, 0.556, 0.556, 0.556, 0.889, 0.500,
+    0.556, 0.556, 0.556, 0.556, 0.278, 0.278, 0.278, 0.278,
+    0.556, 0.556, 0.556, 0.556, 0.556, 0.556, 0.556, 0.584,
+    0.611, 0.556, 0.556, 0.556, 0.556, 0.500, 0.556, 0.500
 };
 
 /**
  * Character widths for Helvetica-Bold
  */
 const double hvb_widths[256] = {
-    0.278, 0.278, 0.278, 0.278, 0.278, 0.278, 0.278, 0.278, 0.278, 0.278, 0.278, 0.278, 0.278,
-    0.278, 0.278, 0.278, 0.278, 0.278, 0.278, 0.278, 0.278, 0.278, 0.278, 0.278, 0.278, 0.278,
-    0.278, 0.278, 0.278, 0.278, 0.278, 0.278, 0.278, 0.333, 0.474, 0.556, 0.556, 0.889, 0.722,
-    0.238, 0.333, 0.333, 0.389, 0.584, 0.278, 0.333, 0.278, 0.278, 0.556, 0.556, 0.556, 0.556,
-    0.556, 0.556, 0.556, 0.556, 0.556, 0.556, 0.333, 0.333, 0.584, 0.584, 0.584, 0.611, 0.975,
-    0.722, 0.722, 0.722, 0.722, 0.667, 0.611, 0.778, 0.722, 0.278, 0.556, 0.722, 0.611, 0.833,
-    0.722, 0.778, 0.667, 0.778, 0.722, 0.667, 0.611, 0.722, 0.667, 0.944, 0.667, 0.667, 0.611,
-    0.333, 0.278, 0.333, 0.584, 0.556, 0.333, 0.556, 0.611, 0.556, 0.611, 0.556, 0.333, 0.611,
-    0.611, 0.278, 0.278, 0.556, 0.278, 0.889, 0.611, 0.611, 0.611, 0.611, 0.389, 0.556, 0.333,
-    0.611, 0.556, 0.778, 0.556, 0.556, 0.500, 0.389, 0.280, 0.389, 0.584, 0.278, 0.278, 0.278,
-    0.278, 0.556, 0.500, 1.000, 0.556, 0.556, 0.333, 1.000, 0.667, 0.333, 1.000, 0.278, 0.278,
-    0.278, 0.278, 0.278, 0.278, 0.500, 0.500, 0.350, 0.556, 1.000, 0.333, 1.000, 0.556, 0.333,
-    0.944, 0.278, 0.278, 0.667, 0.278, 0.333, 0.556, 0.556, 0.556, 0.556, 0.280, 0.556, 0.333,
-    0.737, 0.370, 0.556, 0.584, 0.333, 0.737, 0.333, 0.400, 0.584, 0.333, 0.333, 0.333, 0.611,
-    0.556, 0.278, 0.333, 0.333, 0.365, 0.556, 0.834, 0.834, 0.834, 0.611, 0.722, 0.722, 0.722,
-    0.722, 0.722, 0.722, 1.000, 0.722, 0.667, 0.667, 0.667, 0.667, 0.278, 0.278, 0.278, 0.278,
-    0.722, 0.722, 0.778, 0.778, 0.778, 0.778, 0.778, 0.584, 0.778, 0.722, 0.722, 0.722, 0.722,
-    0.667, 0.667, 0.611, 0.556, 0.556, 0.556, 0.556, 0.556, 0.556, 0.889, 0.556, 0.556, 0.556,
-    0.556, 0.556, 0.278, 0.278, 0.278, 0.278, 0.611, 0.611, 0.611, 0.611, 0.611, 0.611, 0.611,
-    0.584, 0.611, 0.611, 0.611, 0.611, 0.611, 0.556, 0.611, 0.556
+    0.278, 0.278, 0.278, 0.278, 0.278, 0.278, 0.278, 0.278,
+    0.278, 0.278, 0.278, 0.278, 0.278, 0.278, 0.278, 0.278,
+    0.278, 0.278, 0.278, 0.278, 0.278, 0.278, 0.278, 0.278,
+    0.278, 0.278, 0.278, 0.278, 0.278, 0.278, 0.278, 0.278,
+    0.278, 0.333, 0.474, 0.556, 0.556, 0.889, 0.722, 0.238,
+    0.333, 0.333, 0.389, 0.584, 0.278, 0.333, 0.278, 0.278,
+    0.556, 0.556, 0.556, 0.556, 0.556, 0.556, 0.556, 0.556,
+    0.556, 0.556, 0.333, 0.333, 0.584, 0.584, 0.584, 0.611,
+    0.975, 0.722, 0.722, 0.722, 0.722, 0.667, 0.611, 0.778,
+    0.722, 0.278, 0.556, 0.722, 0.611, 0.833, 0.722, 0.778,
+    0.667, 0.778, 0.722, 0.667, 0.611, 0.722, 0.667, 0.944,
+    0.667, 0.667, 0.611, 0.333, 0.278, 0.333, 0.584, 0.556,
+    0.333, 0.556, 0.611, 0.556, 0.611, 0.556, 0.333, 0.611,
+    0.611, 0.278, 0.278, 0.556, 0.278, 0.889, 0.611, 0.611,
+    0.611, 0.611, 0.389, 0.556, 0.333, 0.611, 0.556, 0.778,
+    0.556, 0.556, 0.500, 0.389, 0.280, 0.389, 0.584, 0.278,
+    0.278, 0.278, 0.278, 0.556, 0.500, 1.000, 0.556, 0.556,
+    0.333, 1.000, 0.667, 0.333, 1.000, 0.278, 0.278, 0.278,
+    0.278, 0.278, 0.278, 0.500, 0.500, 0.350, 0.556, 1.000,
+    0.333, 1.000, 0.556, 0.333, 0.944, 0.278, 0.278, 0.667,
+    0.278, 0.333, 0.556, 0.556, 0.556, 0.556, 0.280, 0.556,
+    0.333, 0.737, 0.370, 0.556, 0.584, 0.333, 0.737, 0.333,
+    0.400, 0.584, 0.333, 0.333, 0.333, 0.611, 0.556, 0.278,
+    0.333, 0.333, 0.365, 0.556, 0.834, 0.834, 0.834, 0.611,
+    0.722, 0.722, 0.722, 0.722, 0.722, 0.722, 1.000, 0.722,
+    0.667, 0.667, 0.667, 0.667, 0.278, 0.278, 0.278, 0.278,
+    0.722, 0.722, 0.778, 0.778, 0.778, 0.778, 0.778, 0.584,
+    0.778, 0.722, 0.722, 0.722, 0.722, 0.667, 0.667, 0.611,
+    0.556, 0.556, 0.556, 0.556, 0.556, 0.556, 0.889, 0.556,
+    0.556, 0.556, 0.556, 0.556, 0.278, 0.278, 0.278, 0.278,
+    0.611, 0.611, 0.611, 0.611, 0.611, 0.611, 0.611, 0.584,
+    0.611, 0.611, 0.611, 0.611, 0.611, 0.556, 0.611, 0.556
 };
 
 /**
  * Character widths for Helvetica-Oblique
  */
 const double hvo_widths[256] = {
-    0.278, 0.278, 0.278, 0.278, 0.278, 0.278, 0.278, 0.278, 0.278, 0.278, 0.278, 0.278, 0.278,
-    0.278, 0.278, 0.278, 0.278, 0.278, 0.278, 0.278, 0.278, 0.278, 0.278, 0.278, 0.278, 0.278,
-    0.278, 0.278, 0.278, 0.278, 0.278, 0.278, 0.278, 0.278, 0.355, 0.556, 0.556, 0.889, 0.667,
-    0.191, 0.333, 0.333, 0.389, 0.584, 0.278, 0.333, 0.278, 0.278, 0.556, 0.556, 0.556, 0.556,
-    0.556, 0.556, 0.556, 0.556, 0.556, 0.556, 0.278, 0.278, 0.584, 0.584, 0.584, 0.556, 1.015,
-    0.667, 0.667, 0.722, 0.722, 0.667, 0.611, 0.778, 0.722, 0.278, 0.500, 0.667, 0.556, 0.833,
-    0.722, 0.778, 0.667, 0.778, 0.722, 0.667, 0.611, 0.722, 0.667, 0.944, 0.667, 0.667, 0.611,
-    0.278, 0.278, 0.278, 0.469, 0.556, 0.333, 0.556, 0.556, 0.500, 0.556, 0.556, 0.278, 0.556,
-    0.556, 0.222, 0.222, 0.500, 0.222, 0.833, 0.556, 0.556, 0.556, 0.556, 0.333, 0.500, 0.278,
-    0.556, 0.500, 0.722, 0.500, 0.500, 0.500, 0.334, 0.260, 0.334, 0.584, 0.278, 0.278, 0.278,
-    0.222, 0.556, 0.333, 1.000, 0.556, 0.556, 0.333, 1.000, 0.667, 0.333, 1.000, 0.278, 0.278,
-    0.278, 0.278, 0.222, 0.222, 0.333, 0.333, 0.350, 0.556, 1.000, 0.333, 1.000, 0.500, 0.333,
-    0.944, 0.278, 0.278, 0.667, 0.278, 0.333, 0.556, 0.556, 0.556, 0.556, 0.260, 0.556, 0.333,
-    0.737, 0.370, 0.556, 0.584, 0.333, 0.737, 0.333, 0.400, 0.584, 0.333, 0.333, 0.333, 0.556,
-    0.537, 0.278, 0.333, 0.333, 0.365, 0.556, 0.834, 0.834, 0.834, 0.611, 0.667, 0.667, 0.667,
-    0.667, 0.667, 0.667, 1.000, 0.722, 0.667, 0.667, 0.667, 0.667, 0.278, 0.278, 0.278, 0.278,
-    0.722, 0.722, 0.778, 0.778, 0.778, 0.778, 0.778, 0.584, 0.778, 0.722, 0.722, 0.722, 0.722,
-    0.667, 0.667, 0.611, 0.556, 0.556, 0.556, 0.556, 0.556, 0.556, 0.889, 0.500, 0.556, 0.556,
-    0.556, 0.556, 0.278, 0.278, 0.278, 0.278, 0.556, 0.556, 0.556, 0.556, 0.556, 0.556, 0.556,
-    0.584, 0.611, 0.556, 0.556, 0.556, 0.556, 0.500, 0.556, 0.500
+    0.278, 0.278, 0.278, 0.278, 0.278, 0.278, 0.278, 0.278,
+    0.278, 0.278, 0.278, 0.278, 0.278, 0.278, 0.278, 0.278,
+    0.278, 0.278, 0.278, 0.278, 0.278, 0.278, 0.278, 0.278,
+    0.278, 0.278, 0.278, 0.278, 0.278, 0.278, 0.278, 0.278,
+    0.278, 0.278, 0.355, 0.556, 0.556, 0.889, 0.667, 0.191,
+    0.333, 0.333, 0.389, 0.584, 0.278, 0.333, 0.278, 0.278,
+    0.556, 0.556, 0.556, 0.556, 0.556, 0.556, 0.556, 0.556,
+    0.556, 0.556, 0.278, 0.278, 0.584, 0.584, 0.584, 0.556,
+    1.015, 0.667, 0.667, 0.722, 0.722, 0.667, 0.611, 0.778,
+    0.722, 0.278, 0.500, 0.667, 0.556, 0.833, 0.722, 0.778,
+    0.667, 0.778, 0.722, 0.667, 0.611, 0.722, 0.667, 0.944,
+    0.667, 0.667, 0.611, 0.278, 0.278, 0.278, 0.469, 0.556,
+    0.333, 0.556, 0.556, 0.500, 0.556, 0.556, 0.278, 0.556,
+    0.556, 0.222, 0.222, 0.500, 0.222, 0.833, 0.556, 0.556,
+    0.556, 0.556, 0.333, 0.500, 0.278, 0.556, 0.500, 0.722,
+    0.500, 0.500, 0.500, 0.334, 0.260, 0.334, 0.584, 0.278,
+    0.278, 0.278, 0.222, 0.556, 0.333, 1.000, 0.556, 0.556,
+    0.333, 1.000, 0.667, 0.333, 1.000, 0.278, 0.278, 0.278,
+    0.278, 0.222, 0.222, 0.333, 0.333, 0.350, 0.556, 1.000,
+    0.333, 1.000, 0.500, 0.333, 0.944, 0.278, 0.278, 0.667,
+    0.278, 0.333, 0.556, 0.556, 0.556, 0.556, 0.260, 0.556,
+    0.333, 0.737, 0.370, 0.556, 0.584, 0.333, 0.737, 0.333,
+    0.400, 0.584, 0.333, 0.333, 0.333, 0.556, 0.537, 0.278,
+    0.333, 0.333, 0.365, 0.556, 0.834, 0.834, 0.834, 0.611,
+    0.667, 0.667, 0.667, 0.667, 0.667, 0.667, 1.000, 0.722,
+    0.667, 0.667, 0.667, 0.667, 0.278, 0.278, 0.278, 0.278,
+    0.722, 0.722, 0.778, 0.778, 0.778, 0.778, 0.778, 0.584,
+    0.778, 0.722, 0.722, 0.722, 0.722, 0.667, 0.667, 0.611,
+    0.556, 0.556, 0.556, 0.556, 0.556, 0.556, 0.889, 0.500,
+    0.556, 0.556, 0.556, 0.556, 0.278, 0.278, 0.278, 0.278,
+    0.556, 0.556, 0.556, 0.556, 0.556, 0.556, 0.556, 0.584,
+    0.611, 0.556, 0.556, 0.556, 0.556, 0.500, 0.556, 0.500
 };
 
 /**
  * Character widths for Helvetica-BoldOblique
  */
 const double hvbo_widths[256] = {
-    0.278, 0.278, 0.278, 0.278, 0.278, 0.278, 0.278, 0.278, 0.278, 0.278, 0.278, 0.278, 0.278,
-    0.278, 0.278, 0.278, 0.278, 0.278, 0.278, 0.278, 0.278, 0.278, 0.278, 0.278, 0.278, 0.278,
-    0.278, 0.278, 0.278, 0.278, 0.278, 0.278, 0.278, 0.333, 0.474, 0.556, 0.556, 0.889, 0.722,
-    0.238, 0.333, 0.333, 0.389, 0.584, 0.278, 0.333, 0.278, 0.278, 0.556, 0.556, 0.556, 0.556,
-    0.556, 0.556, 0.556, 0.556, 0.556, 0.556, 0.333, 0.333, 0.584, 0.584, 0.584, 0.611, 0.975,
-    0.722, 0.722, 0.722, 0.722, 0.667, 0.611, 0.778, 0.722, 0.278, 0.556, 0.722, 0.611, 0.833,
-    0.722, 0.778, 0.667, 0.778, 0.722, 0.667, 0.611, 0.722, 0.667, 0.944, 0.667, 0.667, 0.611,
-    0.333, 0.278, 0.333, 0.584, 0.556, 0.333, 0.556, 0.611, 0.556, 0.611, 0.556, 0.333, 0.611,
-    0.611, 0.278, 0.278, 0.556, 0.278, 0.889, 0.611, 0.611, 0.611, 0.611, 0.389, 0.556, 0.333,
-    0.611, 0.556, 0.778, 0.556, 0.556, 0.500, 0.389, 0.280, 0.389, 0.584, 0.278, 0.278, 0.278,
-    0.278, 0.556, 0.500, 1.000, 0.556, 0.556, 0.333, 1.000, 0.667, 0.333, 1.000, 0.278, 0.278,
-    0.278, 0.278, 0.278, 0.278, 0.500, 0.500, 0.350, 0.556, 1.000, 0.333, 1.000, 0.556, 0.333,
-    0.944, 0.278, 0.278, 0.667, 0.278, 0.333, 0.556, 0.556, 0.556, 0.556, 0.280, 0.556, 0.333,
-    0.737, 0.370, 0.556, 0.584, 0.333, 0.737, 0.333, 0.400, 0.584, 0.333, 0.333, 0.333, 0.611,
-    0.556, 0.278, 0.333, 0.333, 0.365, 0.556, 0.834, 0.834, 0.834, 0.611, 0.722, 0.722, 0.722,
-    0.722, 0.722, 0.722, 1.000, 0.722, 0.667, 0.667, 0.667, 0.667, 0.278, 0.278, 0.278, 0.278,
-    0.722, 0.722, 0.778, 0.778, 0.778, 0.778, 0.778, 0.584, 0.778, 0.722, 0.722, 0.722, 0.722,
-    0.667, 0.667, 0.611, 0.556, 0.556, 0.556, 0.556, 0.556, 0.556, 0.889, 0.556, 0.556, 0.556,
-    0.556, 0.556, 0.278, 0.278, 0.278, 0.278, 0.611, 0.611, 0.611, 0.611, 0.611, 0.611, 0.611,
-    0.584, 0.611, 0.611, 0.611, 0.611, 0.611, 0.556, 0.611, 0.556
+    0.278, 0.278, 0.278, 0.278, 0.278, 0.278, 0.278, 0.278,
+    0.278, 0.278, 0.278, 0.278, 0.278, 0.278, 0.278, 0.278,
+    0.278, 0.278, 0.278, 0.278, 0.278, 0.278, 0.278, 0.278,
+    0.278, 0.278, 0.278, 0.278, 0.278, 0.278, 0.278, 0.278,
+    0.278, 0.333, 0.474, 0.556, 0.556, 0.889, 0.722, 0.238,
+    0.333, 0.333, 0.389, 0.584, 0.278, 0.333, 0.278, 0.278,
+    0.556, 0.556, 0.556, 0.556, 0.556, 0.556, 0.556, 0.556,
+    0.556, 0.556, 0.333, 0.333, 0.584, 0.584, 0.584, 0.611,
+    0.975, 0.722, 0.722, 0.722, 0.722, 0.667, 0.611, 0.778,
+    0.722, 0.278, 0.556, 0.722, 0.611, 0.833, 0.722, 0.778,
+    0.667, 0.778, 0.722, 0.667, 0.611, 0.722, 0.667, 0.944,
+    0.667, 0.667, 0.611, 0.333, 0.278, 0.333, 0.584, 0.556,
+    0.333, 0.556, 0.611, 0.556, 0.611, 0.556, 0.333, 0.611,
+    0.611, 0.278, 0.278, 0.556, 0.278, 0.889, 0.611, 0.611,
+    0.611, 0.611, 0.389, 0.556, 0.333, 0.611, 0.556, 0.778,
+    0.556, 0.556, 0.500, 0.389, 0.280, 0.389, 0.584, 0.278,
+    0.278, 0.278, 0.278, 0.556, 0.500, 1.000, 0.556, 0.556,
+    0.333, 1.000, 0.667, 0.333, 1.000, 0.278, 0.278, 0.278,
+    0.278, 0.278, 0.278, 0.500, 0.500, 0.350, 0.556, 1.000,
+    0.333, 1.000, 0.556, 0.333, 0.944, 0.278, 0.278, 0.667,
+    0.278, 0.333, 0.556, 0.556, 0.556, 0.556, 0.280, 0.556,
+    0.333, 0.737, 0.370, 0.556, 0.584, 0.333, 0.737, 0.333,
+    0.400, 0.584, 0.333, 0.333, 0.333, 0.611, 0.556, 0.278,
+    0.333, 0.333, 0.365, 0.556, 0.834, 0.834, 0.834, 0.611,
+    0.722, 0.722, 0.722, 0.722, 0.722, 0.722, 1.000, 0.722,
+    0.667, 0.667, 0.667, 0.667, 0.278, 0.278, 0.278, 0.278,
+    0.722, 0.722, 0.778, 0.778, 0.778, 0.778, 0.778, 0.584,
+    0.778, 0.722, 0.722, 0.722, 0.722, 0.667, 0.667, 0.611,
+    0.556, 0.556, 0.556, 0.556, 0.556, 0.556, 0.889, 0.556,
+    0.556, 0.556, 0.556, 0.556, 0.278, 0.278, 0.278, 0.278,
+    0.611, 0.611, 0.611, 0.611, 0.611, 0.611, 0.611, 0.584,
+    0.611, 0.611, 0.611, 0.611, 0.611, 0.556, 0.611, 0.556
 };

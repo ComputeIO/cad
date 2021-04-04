@@ -140,11 +140,11 @@ private:
             wxPoint aSymbolOrigin, LIB_PART* aPart, int aGateNumber );
 
     void applyToLibraryFieldAttribute( const ATTRIBUTE_LOCATION& aCadstarAttrLoc,
-                                       wxPoint aSymbolOrigin, LIB_FIELD* aKiCadField );
+            wxPoint aSymbolOrigin, LIB_FIELD* aKiCadField );
 
     //Helper Functions for loading symbols in schematic
     SCH_COMPONENT* loadSchematicSymbol( const SYMBOL& aCadstarSymbol, const LIB_PART& aKiCadPart,
-                                        double& aComponentOrientationDeciDeg );
+            double& aComponentOrientationDeciDeg );
 
     void loadSymbolFieldAttribute( const ATTRIBUTE_LOCATION& aCadstarAttrLoc,
                                    const double& aComponentOrientationDeciDeg, bool aIsMirrored,

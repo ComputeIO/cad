@@ -52,22 +52,21 @@ class BASE_SCREEN;
  *
  * Each type must be redo/undone by a specific operation.
  */
-enum class UNDO_REDO
-{
-    UNSPECIFIED = 0, // illegal
-    NOP,             // Undo/redo will ignore this entry.  Only forces the start of a new stack
-    CHANGED,         // params of items have a value changed: undo is made by exchange
-                     // values with a copy of these values
-    NEWITEM,         // new item, undo by changing in deleted
-    DELETED,         // deleted item, undo by changing in deleted
-    LIBEDIT,         // Specific to the component editor (symbol_editor creates a full copy
-                     // of the current component when changed)
-    LIB_RENAME,      // As LIBEDIT, but old copy should be removed from library
-    EXCHANGE_T,      // Use for changing the schematic text type where swapping
-                     // data structure is insufficient to restore the change.
-    DRILLORIGIN,     // origin changed (like CHANGED, contains the origin and a copy)
-    GRIDORIGIN,      // origin changed (like CHANGED, contains the origin and a copy)
-    PAGESETTINGS,    // page settings or title block changes
+enum class UNDO_REDO {
+    UNSPECIFIED = 0,     // illegal
+    NOP,				 // Undo/redo will ignore this entry.  Only forces the start of a new stack
+    CHANGED,             // params of items have a value changed: undo is made by exchange
+                         // values with a copy of these values
+    NEWITEM,             // new item, undo by changing in deleted
+    DELETED,             // deleted item, undo by changing in deleted
+    LIBEDIT,             // Specific to the component editor (symbol_editor creates a full copy
+                         // of the current component when changed)
+    LIB_RENAME,          // As LIBEDIT, but old copy should be removed from library
+    EXCHANGE_T,          // Use for changing the schematic text type where swapping
+                         // data structure is insufficient to restore the change.
+    DRILLORIGIN,         // origin changed (like CHANGED, contains the origin and a copy)
+    GRIDORIGIN,          // origin changed (like CHANGED, contains the origin and a copy)
+    PAGESETTINGS,        // page settings or title block changes
     GROUP,
     UNGROUP
 };

@@ -32,13 +32,16 @@
 const int fill_tab[3] = { 'N', 'F', 'f' };
 
 
-LIB_ITEM::LIB_ITEM( KICAD_T aType, LIB_PART* aComponent, int aUnit, int aConvert,
-                    FILL_TYPE aFillType ) :
-        EDA_ITEM( aType )
+LIB_ITEM::LIB_ITEM( KICAD_T        aType,
+                    LIB_PART*      aComponent,
+                    int            aUnit,
+                    int            aConvert,
+                    FILL_TYPE      aFillType ) :
+    EDA_ITEM( aType )
 {
-    m_unit = aUnit;
-    m_convert = aConvert;
-    m_fill = aFillType;
+    m_unit              = aUnit;
+    m_convert           = aConvert;
+    m_fill              = aFillType;
     m_parent            = (EDA_ITEM*) aComponent;
     m_isFillable        = false;
 }
@@ -116,8 +119,8 @@ bool LIB_ITEM::HitTest( const EDA_RECT& aRect, bool aContained, int aAccuracy ) 
 }
 
 
-void LIB_ITEM::Print( const RENDER_SETTINGS* aSettings, const wxPoint& aOffset, void* aData,
-                      const TRANSFORM& aTransform )
+void LIB_ITEM::Print( const RENDER_SETTINGS* aSettings, const wxPoint& aOffset,
+                      void* aData, const TRANSFORM& aTransform )
 {
     print( aSettings, aOffset, aData, aTransform );
 }

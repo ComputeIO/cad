@@ -410,8 +410,9 @@ TOOL_ACTION PCB_ACTIONS::updateFootprints( "pcbnew.GlobalEdit.updateFootprints",
         _( "Update footprints to include any changes from the library" ),
         BITMAPS::refresh );
 
-TOOL_ACTION PCB_ACTIONS::removeUnusedPads(
-        "pcbnew.GlobalEdit.removeUnusedPads", AS_GLOBAL, 0, "", _( "Remove Unused Pads..." ),
+TOOL_ACTION PCB_ACTIONS::removeUnusedPads( "pcbnew.GlobalEdit.removeUnusedPads",
+        AS_GLOBAL, 0, "",
+        _( "Remove Unused Pads..." ),
         _( "Remove or restore the unconnected inner layers on through hole pads and vias" ),
         BITMAPS::pads_remove );
 
@@ -436,8 +437,8 @@ TOOL_ACTION PCB_ACTIONS::editTracksAndVias( "pcbnew.GlobalEdit.editTracksAndVias
         _( "Edit track and via properties globally across board" ),
         BITMAPS::width_track_via );
 
-TOOL_ACTION PCB_ACTIONS::editTextAndGraphics(
-        "pcbnew.GlobalEdit.editTextAndGraphics", AS_GLOBAL, 0, "",
+TOOL_ACTION PCB_ACTIONS::editTextAndGraphics( "pcbnew.GlobalEdit.editTextAndGraphics",
+        AS_GLOBAL, 0, "",
         _( "Edit Text & Graphics Properties..." ),
         _( "Edit Text and graphics properties globally across board" ),
         BITMAPS::text );
@@ -571,8 +572,8 @@ TOOL_ACTION PCB_ACTIONS::generateDrillFiles( "pcbnew.EditorControl.generateDrill
         _( "Drill Files (.drl)..." ), _( "Generate Excellon drill file(s)" ),
         BITMAPS::post_drill );
 
-TOOL_ACTION PCB_ACTIONS::generatePosFile(
-        "pcbnew.EditorControl.generatePosFile", AS_GLOBAL, 0, "",
+TOOL_ACTION PCB_ACTIONS::generatePosFile( "pcbnew.EditorControl.generatePosFile",
+        AS_GLOBAL, 0, "",
         _( "Component Placement (.pos)..." ),
         _( "Generate component placement file(s) for pick and place" ),
         BITMAPS::post_compo );
@@ -1043,9 +1044,9 @@ TOOL_ACTION PCB_ACTIONS::layerChanged( "pcbnew.Control.layerChanged",
         BITMAPS::INVALID_BITMAP, AF_NOTIFY );
 
 //Show board statistics tool
-TOOL_ACTION PCB_ACTIONS::boardStatistics( "pcbnew.InspectionTool.ShowStatisticsDialog", AS_GLOBAL,
-                                          0, "", _( "Show Board Statistics" ),
-                                          _( "Shows board statistics" ) );
+TOOL_ACTION PCB_ACTIONS::boardStatistics( "pcbnew.InspectionTool.ShowStatisticsDialog",
+        AS_GLOBAL, 0, "",
+        _( "Show Board Statistics" ), _( "Shows board statistics" ) );
 
 TOOL_ACTION PCB_ACTIONS::inspectClearance( "pcbnew.InspectionTool.InspectClearance",
         AS_GLOBAL, 0, "",
@@ -1245,12 +1246,14 @@ TOOL_ACTION PCB_ACTIONS::zoneUnfillAll( "pcbnew.ZoneFiller.zoneUnfillAll",
 
 // AUTOPLACER_TOOL
 //
-TOOL_ACTION PCB_ACTIONS::autoplaceSelectedComponents(
-        "pcbnew.Autoplacer.autoplaceSelected", AS_GLOBAL, 0, "", _( "Place Selected Footprints" ),
+TOOL_ACTION PCB_ACTIONS::autoplaceSelectedComponents( "pcbnew.Autoplacer.autoplaceSelected",
+        AS_GLOBAL, 0, "",
+        _( "Place Selected Footprints" ),
         _( "Performs automatic placement of selected components" ) );
 
-TOOL_ACTION PCB_ACTIONS::autoplaceOffboardComponents(
-        "pcbnew.Autoplacer.autoplaceOffboard", AS_GLOBAL, 0, "", _( "Place Off-Board Footprints" ),
+TOOL_ACTION PCB_ACTIONS::autoplaceOffboardComponents( "pcbnew.Autoplacer.autoplaceOffboard",
+        AS_GLOBAL, 0, "",
+        _( "Place Off-Board Footprints" ),
         _( "Performs automatic placement of components outside board area" ) );
 
 

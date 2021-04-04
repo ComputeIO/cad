@@ -41,73 +41,83 @@ class ZONE;
 
 typedef std::map<wxString, FOOTPRINT*> FOOTPRINT_MAP;
 typedef std::vector<ZONE*>             ZONES;
-typedef std::map<wxString, ENET>       NET_MAP;
-typedef NET_MAP::const_iterator        NET_MAP_CITER;
+typedef std::map<wxString, ENET>        NET_MAP;
+typedef NET_MAP::const_iterator         NET_MAP_CITER;
 
 
 /// subset of eagle.drawing.board.designrules in the XML document
 struct ERULES
 {
     ERULES() :
-            psElongationLong( 100 ), psElongationOffset( 0 ),
+        psElongationLong    ( 100 ),
+        psElongationOffset  ( 0 ),
 
-            mvStopFrame( 1.0 ), mvCreamFrame( 0.0 ), mlMinStopFrame( Mils2iu( 4.0 ) ),
-            mlMaxStopFrame( Mils2iu( 4.0 ) ), mlMinCreamFrame( Mils2iu( 0.0 ) ),
-            mlMaxCreamFrame( Mils2iu( 0.0 ) ),
+        mvStopFrame         ( 1.0 ),
+        mvCreamFrame        ( 0.0 ),
+        mlMinStopFrame      ( Mils2iu( 4.0 ) ),
+        mlMaxStopFrame      ( Mils2iu( 4.0 ) ),
+        mlMinCreamFrame     ( Mils2iu( 0.0 ) ),
+        mlMaxCreamFrame     ( Mils2iu( 0.0 ) ),
 
-            psTop( EPAD::UNDEF ), psBottom( EPAD::UNDEF ), psFirst( EPAD::UNDEF ),
+        psTop               ( EPAD::UNDEF ),
+        psBottom            ( EPAD::UNDEF ),
+        psFirst             ( EPAD::UNDEF ),
 
-            srRoundness( 0.0 ), srMinRoundness( Mils2iu( 0.0 ) ), srMaxRoundness( Mils2iu( 0.0 ) ),
+        srRoundness         ( 0.0 ),
+        srMinRoundness      ( Mils2iu( 0.0 ) ),
+        srMaxRoundness      ( Mils2iu( 0.0 ) ),
 
-            rvPadTop( 0.25 ),
-            // rvPadBottom      ( 0.25 ),
-            rlMinPadTop( Mils2iu( 10 ) ), rlMaxPadTop( Mils2iu( 20 ) ),
+        rvPadTop            ( 0.25 ),
+        // rvPadBottom      ( 0.25 ),
+        rlMinPadTop         ( Mils2iu( 10 ) ),
+        rlMaxPadTop         ( Mils2iu( 20 ) ),
 
-            rvViaOuter( 0.25 ), rlMinViaOuter( Mils2iu( 10 ) ), rlMaxViaOuter( Mils2iu( 20 ) ),
-            mdWireWire( 0 )
-    {
-    }
+        rvViaOuter          ( 0.25 ),
+        rlMinViaOuter       ( Mils2iu( 10 ) ),
+        rlMaxViaOuter       ( Mils2iu( 20 ) ),
+        mdWireWire          ( 0 )
+    {}
 
     void parse( wxXmlNode* aRules );
 
     ///< percent over 100%.  0-> not elongated, 100->twice as wide as is tall
     ///< Goes into making a scaling factor for "long" pads.
-    int psElongationLong;
+    int    psElongationLong;
 
-    int psElongationOffset; ///< the offset of the hole within the "long" pad.
+    int    psElongationOffset;  ///< the offset of the hole within the "long" pad.
 
     ///< solder mask, expressed as percentage of the smaller pad/via dimension
     double mvStopFrame;
 
     ///< solderpaste mask, expressed as percentage of the smaller pad/via dimension
     double mvCreamFrame;
-    int    mlMinStopFrame;  ///< solder mask, minimum size (Eagle mils, here nanometers)
-    int    mlMaxStopFrame;  ///< solder mask, maximum size (Eagle mils, here nanometers)
-    int    mlMinCreamFrame; ///< solder paste mask, minimum size (Eagle mils, here nanometers)
-    int    mlMaxCreamFrame; ///< solder paste mask, maximum size (Eagle mils, here nanometers)
+    int    mlMinStopFrame;      ///< solder mask, minimum size (Eagle mils, here nanometers)
+    int    mlMaxStopFrame;      ///< solder mask, maximum size (Eagle mils, here nanometers)
+    int    mlMinCreamFrame;     ///< solder paste mask, minimum size (Eagle mils, here nanometers)
+    int    mlMaxCreamFrame;     ///< solder paste mask, maximum size (Eagle mils, here nanometers)
 
-    int psTop;    ///< Shape of the top pads
-    int psBottom; ///< Shape of the bottom pads
-    int psFirst;  ///< Shape of the first pads
+    int    psTop;               ///< Shape of the top pads
+    int    psBottom;            ///< Shape of the bottom pads
+    int    psFirst;             ///< Shape of the first pads
 
-    double srRoundness; ///< corner rounding ratio for SMD pads (percentage)
+    double srRoundness;         ///< corner rounding ratio for SMD pads (percentage)
 
     ///< corner rounding radius, minimum size (Eagle mils, here nanometers)
-    int srMinRoundness;
+    int    srMinRoundness;
 
     ///< corner rounding radius, maximum size (Eagle mils, here nanometers)
-    int srMaxRoundness;
+    int    srMaxRoundness;
 
-    double rvPadTop; ///< top pad size as percent of drill size
+    double rvPadTop;            ///< top pad size as percent of drill size
     // double   rvPadBottom;    ///< bottom pad size as percent of drill size
 
-    double rlMinPadTop; ///< minimum copper annulus on through hole pads
-    double rlMaxPadTop; ///< maximum copper annulus on through hole pads
+    double rlMinPadTop;         ///< minimum copper annulus on through hole pads
+    double rlMaxPadTop;         ///< maximum copper annulus on through hole pads
 
-    double rvViaOuter;    ///< copper annulus is this percent of via hole
-    double rlMinViaOuter; ///< minimum copper annulus on via
-    double rlMaxViaOuter; ///< maximum copper annulus on via
-    double mdWireWire;    ///< wire to wire spacing I presume.
+    double rvViaOuter;          ///< copper annulus is this percent of via hole
+    double rlMinViaOuter;       ///< minimum copper annulus on via
+    double rlMaxViaOuter;       ///< maximum copper annulus on via
+    double mdWireWire;          ///< wire to wire spacing I presume.
 };
 
 
@@ -128,7 +138,7 @@ public:
     const wxString GetFileExtension() const override;
 
     void FootprintEnumerate( wxArrayString& aFootprintNames, const wxString& aLibraryPath,
-                             bool aBestEfforts, const PROPERTIES* aProperties = nullptr ) override;
+                             bool aBestEfforts, const PROPERTIES* aProperties = nullptr) override;
 
     FOOTPRINT* FootprintLoad( const wxString& aLibraryPath, const wxString& aFootprintName,
                               bool  aKeepUUID = false,
@@ -141,7 +151,7 @@ public:
 
     bool IsFootprintLibWritable( const wxString& aLibraryPath ) override
     {
-        return false; // until someone writes others like FootprintSave(), etc.
+        return false;   // until someone writes others like FootprintSave(), etc.
     }
 
     void FootprintLibOptions( PROPERTIES* aProperties ) const override;
@@ -166,16 +176,16 @@ public:
 
 private:
     /// initialize PLUGIN like a constructor would, and futz with fresh BOARD if needed.
-    void init( const PROPERTIES* aProperties );
+    void    init( const PROPERTIES* aProperties );
 
-    void clear_cu_map();
+    void    clear_cu_map();
 
     /// Convert an Eagle distance to a KiCad distance.
     int kicad_y( const ECOORD& y ) const { return -y.ToPcbUnits(); }
     int kicad_x( const ECOORD& x ) const { return x.ToPcbUnits(); }
 
     /// create a font size (fontz) from an eagle font size scalar and KiCad font thickness
-    wxSize kicad_fontz( const ECOORD& d, int aTextThickness ) const;
+    wxSize  kicad_fontz( const ECOORD& d, int aTextThickness ) const;
 
     /// Generate mapping between Eagle na KiCad layers
     void mapEagleLayersToKicad();
@@ -194,7 +204,7 @@ private:
     int eagle_layer_id( const wxString& aLayerName ) const;
 
     /// This PLUGIN only caches one footprint library, this determines which one.
-    void cacheLib( const wxString& aLibraryPath );
+    void    cacheLib( const wxString& aLibraryPath );
 
     /// get a file's  or dir's modification time.
     static wxDateTime getModificationTime( const wxString& aPath );
@@ -273,29 +283,29 @@ private:
     std::map<wxString, int>          m_eagleLayersIds; ///< Eagle layer ids stored by layer name
     std::map<wxString, PCB_LAYER_ID> m_layer_map;      ///< Map of Eagle layers to KiCad layers
 
-    ERULES* m_rules; ///< Eagle design rules.
-    XPATH*  m_xpath; ///< keeps track of what we are working on within
-                     ///< XML document during a Load().
+    ERULES*       m_rules;          ///< Eagle design rules.
+    XPATH*        m_xpath;          ///< keeps track of what we are working on within
+                                    ///< XML document during a Load().
 
-    int m_hole_count; ///< generates unique footprint names from eagle "hole"s.
+    int           m_hole_count;     ///< generates unique footprint names from eagle "hole"s.
 
-    NET_MAP m_pads_to_nets; ///< net list
+    NET_MAP       m_pads_to_nets;   ///< net list
 
-    FOOTPRINT_MAP m_templates; ///< is part of a FOOTPRINT factory that operates using copy
-                               ///< construction.
-                               ///< lookup key is either libname.packagename or simply
-                               ///< packagename if FootprintLoad() or FootprintEnumberate()
+    FOOTPRINT_MAP m_templates;      ///< is part of a FOOTPRINT factory that operates using copy
+                                    ///< construction.
+                                    ///< lookup key is either libname.packagename or simply
+                                    ///< packagename if FootprintLoad() or FootprintEnumberate()
 
-    const PROPERTIES* m_props; ///< passed via Save() or Load(), no ownership, may be NULL.
-    BOARD*            m_board; ///< which BOARD is being worked on, no ownership here
+    const PROPERTIES* m_props;      ///< passed via Save() or Load(), no ownership, may be NULL.
+    BOARD*      m_board;            ///< which BOARD is being worked on, no ownership here
 
-    int m_min_trace;   ///< smallest trace we find on Load(), in BIU.
-    int m_min_hole;    ///< smallest diameter hole we find on Load(), in BIU.
-    int m_min_via;     ///< smallest via we find on Load(), in BIU.
-    int m_min_annulus; ///< smallest via annulus we find on Load(), in BIU.
+    int         m_min_trace;        ///< smallest trace we find on Load(), in BIU.
+    int         m_min_hole;         ///< smallest diameter hole we find on Load(), in BIU.
+    int         m_min_via;          ///< smallest via we find on Load(), in BIU.
+    int         m_min_annulus;      ///< smallest via annulus we find on Load(), in BIU.
 
-    wxString   m_lib_path;
-    wxDateTime m_mod_time;
+    wxString    m_lib_path;
+    wxDateTime  m_mod_time;
 };
 
-#endif // EAGLE_PLUGIN_H_
+#endif  // EAGLE_PLUGIN_H_

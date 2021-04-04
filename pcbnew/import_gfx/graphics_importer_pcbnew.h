@@ -47,12 +47,18 @@ public:
      *
      * @param aLayer is the layer to be used by the imported shapes.
      */
-    void SetLayer( PCB_LAYER_ID aLayer ) { m_layer = aLayer; }
+    void SetLayer( PCB_LAYER_ID aLayer )
+    {
+        m_layer = aLayer;
+    }
 
     /**
      * Return the target layer for the imported shapes.
      */
-    PCB_LAYER_ID GetLayer() const { return m_layer; }
+    PCB_LAYER_ID GetLayer() const
+    {
+        return m_layer;
+    }
 
     void AddLine( const VECTOR2D& aOrigin, const VECTOR2D& aEnd, double aWidth ) override;
 
@@ -61,14 +67,15 @@ public:
     void AddArc( const VECTOR2D& aCenter, const VECTOR2D& aStart, double aAngle,
                  double aWidth ) override;
 
-    void AddPolygon( const std::vector<VECTOR2D>& aVertices, double aWidth ) override;
+    void AddPolygon( const std::vector< VECTOR2D >& aVertices, double aWidth ) override;
 
-    void AddText( const VECTOR2D& aOrigin, const wxString& aText, double aHeight, double aWidth,
-                  double aThickness, double aOrientation, EDA_TEXT_HJUSTIFY_T aHJustify,
-                  EDA_TEXT_VJUSTIFY_T aVJustify ) override;
+    void AddText( const VECTOR2D& aOrigin, const wxString& aText,
+            double aHeight, double aWidth, double aThickness, double aOrientation,
+            EDA_TEXT_HJUSTIFY_T aHJustify, EDA_TEXT_VJUSTIFY_T aVJustify ) override;
 
     void AddSpline( const VECTOR2D& aStart, const VECTOR2D& aBezierControl1,
-                    const VECTOR2D& aBezierControl2, const VECTOR2D& aEnd, double aWidth ) override;
+                    const VECTOR2D& aBezierControl2, const VECTOR2D& aEnd,
+                    double aWidth ) override;
 
     /**
      * Convert an imported coordinate to a board coordinate, according to the internal units,
@@ -102,10 +109,13 @@ protected:
 class GRAPHICS_IMPORTER_BOARD : public GRAPHICS_IMPORTER_PCBNEW
 {
 public:
-    GRAPHICS_IMPORTER_BOARD( BOARD* aBoard ) : m_board( aBoard ) {}
+    GRAPHICS_IMPORTER_BOARD( BOARD* aBoard )
+        : m_board( aBoard )
+    {
+    }
 
 protected:
-    std::unique_ptr<PCB_SHAPE>                        createDrawing() override;
+    std::unique_ptr<PCB_SHAPE> createDrawing() override;
     std::pair<std::unique_ptr<BOARD_ITEM>, EDA_TEXT*> createText() override;
 
     BOARD* m_board;
@@ -115,10 +125,13 @@ protected:
 class GRAPHICS_IMPORTER_FOOTPRINT : public GRAPHICS_IMPORTER_PCBNEW
 {
 public:
-    GRAPHICS_IMPORTER_FOOTPRINT( FOOTPRINT* aFootprint ) : m_footprint( aFootprint ) {}
+    GRAPHICS_IMPORTER_FOOTPRINT( FOOTPRINT* aFootprint )
+        : m_footprint( aFootprint )
+    {
+    }
 
 protected:
-    std::unique_ptr<PCB_SHAPE>                        createDrawing() override;
+    std::unique_ptr<PCB_SHAPE> createDrawing() override;
     std::pair<std::unique_ptr<BOARD_ITEM>, EDA_TEXT*> createText() override;
 
     FOOTPRINT* m_footprint;

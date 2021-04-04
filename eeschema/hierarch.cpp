@@ -148,7 +148,7 @@ HIERARCHY_NAVIG_DLG::~HIERARCHY_NAVIG_DLG()
     Unbind( wxEVT_TREE_ITEM_ACTIVATED, &HIERARCHY_NAVIG_DLG::onSelectSheetPath, this );
     Unbind( wxEVT_TREE_SEL_CHANGED, &HIERARCHY_NAVIG_DLG::onSelectSheetPath, this );
     m_Tree->Disconnect( wxEVT_CHAR, wxKeyEventHandler( HIERARCHY_TREE::onChar ) );
-    Disconnect( wxEVT_CLOSE_WINDOW, wxCloseEventHandler( HIERARCHY_NAVIG_DLG::OnCloseNav ) );
+	Disconnect( wxEVT_CLOSE_WINDOW, wxCloseEventHandler( HIERARCHY_NAVIG_DLG::OnCloseNav ) );
 }
 
 
@@ -252,7 +252,7 @@ void HIERARCHY_NAVIG_DLG::onSelectSheetPath( wxTreeEvent& event )
 
     // Store the current zoom level into the current screen before switching
     m_SchFrameEditor->GetScreen()->m_LastZoomLevel =
-            m_SchFrameEditor->GetCanvas()->GetView()->GetScale();
+                m_SchFrameEditor->GetCanvas()->GetView()->GetScale();
 
     m_SchFrameEditor->SetCurrentSheet( itemData->m_SheetPath );
     m_SchFrameEditor->DisplayCurrentSheet();

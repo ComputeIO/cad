@@ -155,27 +155,40 @@ bool PROJECT_ARCHIVER::Archive( const wxString& aSrcDir, const wxString& aDestFi
                                 REPORTER& aReporter, bool aVerbose, bool aIncludeExtraFiles )
 {
     // List of file extensions that are always archived
-    static const wxChar* extensionList[] = { wxT( "*.kicad_pro" ),  wxT( "*.kicad_prl" ),
-                                             wxT( "*.kicad_sch" ),  wxT( "*.kicad_sym" ),
-                                             wxT( "*.kicad_pcb" ),  wxT( "*.kicad_mod" ),
-                                             wxT( "*.kicad_dru" ),  wxT( "*.kicad_wks" ),
-                                             wxT( "fp-lib-table" ), wxT( "sym-lib-table" ) };
+    static const wxChar* extensionList[] = {
+            wxT( "*.kicad_pro" ),
+            wxT( "*.kicad_prl" ),
+            wxT( "*.kicad_sch" ),
+            wxT( "*.kicad_sym" ),
+            wxT( "*.kicad_pcb" ),
+            wxT( "*.kicad_mod" ),
+            wxT( "*.kicad_dru" ),
+            wxT( "*.kicad_wks" ),
+            wxT( "fp-lib-table" ),
+            wxT( "sym-lib-table" )
+        };
 
     // List of additional file extensions that are only archived when aIncludeExtraFiles is true
     static const wxChar* extraExtensionList[] = {
-        wxT( "*.pro" ),
-        wxT( "*.sch" ),                  // Legacy schematic files
-        wxT( "*.lib" ),  wxT( "*.dcm" ), // Legacy schematic library files
-        wxT( "*.cmp" ),  wxT( "*.brd" ), wxT( "*.mod" ),    wxT( "*.stp" ),
-        wxT( "*.step" ),                                    // 3d files
-        wxT( "*.wrl" ),  wxT( "*.gb?" ), wxT( "*.gbrjob" ), // Gerber files
-        wxT( "*.gko" ),  wxT( "*.gm1" ), wxT( "*.gm2" ),    wxT( "*.g?" ),
-        wxT( "*.gp1" ),  wxT( "*.gp2" ), wxT( "*.gpb" ),    wxT( "*.gpt" ),
-        wxT( "*.gt?" ),  wxT( "*.pos" ), wxT( "*.drl" ),    wxT( "*.nc" ),
-        wxT( "*.xnc" ), // Fab files
-        wxT( "*.d356" ), wxT( "*.rpt" ), wxT( "*.net" ),    wxT( "*.py" ),
-        wxT( "*.pdf" ),  wxT( "*.txt" )
-    };
+            wxT( "*.pro" ),
+            wxT( "*.sch" ),                         // Legacy schematic files
+            wxT( "*.lib" ), wxT( "*.dcm" ),         // Legacy schematic library files
+            wxT( "*.cmp" ),
+            wxT( "*.brd" ),
+            wxT( "*.mod" ),
+            wxT( "*.stp" ), wxT( "*.step" ),        // 3d files
+            wxT( "*.wrl" ),
+            wxT( "*.gb?" ), wxT( "*.gbrjob" ),      // Gerber files
+            wxT( "*.gko" ), wxT( "*.gm1" ),
+            wxT( "*.gm2" ), wxT( "*.g?" ),
+            wxT( "*.gp1" ), wxT( "*.gp2" ),
+            wxT( "*.gpb" ), wxT( "*.gpt" ),
+            wxT( "*.gt?" ),
+            wxT( "*.pos" ), wxT( "*.drl" ), wxT( "*.nc" ), wxT( "*.xnc" ),  // Fab files
+            wxT( "*.d356" ), wxT( "*.rpt" ),
+            wxT( "*.net" ), wxT( "*.py" ),
+            wxT( "*.pdf" ), wxT( "*.txt" )
+        };
 
     bool     success = true;
     wxString msg;

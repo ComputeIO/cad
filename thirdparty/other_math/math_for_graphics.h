@@ -9,8 +9,8 @@
  * return coords of intersections in x1, y1
  * if no intersection, returns min distance in dist
  */
-bool FindLineSegmentIntersection( double a, double b, int xi, int yi, int xf, int yf, double& x1,
-                                  double& y1, double* dist = NULL );
+bool FindLineSegmentIntersection( double a, double b, int xi, int yi, int xf, int yf,
+                double& x1, double& y1, double * dist=NULL );
 
 /* Function FindSegmentIntersections
  * find intersections between line segment (xi,yi) to (xf,yf)

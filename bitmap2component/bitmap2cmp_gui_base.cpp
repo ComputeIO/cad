@@ -211,13 +211,9 @@ BM2CMP_FRAME_BASE::BM2CMP_FRAME_BASE( wxWindow* parent, wxWindowID id, const wxS
 	m_buttonExportFile->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( BM2CMP_FRAME_BASE::OnExportToFile ), NULL, this );
 	m_buttonExportClipboard->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( BM2CMP_FRAME_BASE::OnExportToClipboard ), NULL, this );
 	m_rbOutputFormat->Connect( wxEVT_COMMAND_RADIOBOX_SELECTED, wxCommandEventHandler( BM2CMP_FRAME_BASE::OnFormatChange ), NULL, this );
-    m_sliderThreshold->Connect( wxEVT_SCROLL_CHANGED,
-                                wxScrollEventHandler( BM2CMP_FRAME_BASE::OnThresholdChange ), NULL,
-                                this );
-    m_sliderThreshold->Connect( wxEVT_SCROLL_THUMBTRACK,
-                                wxScrollEventHandler( BM2CMP_FRAME_BASE::OnThresholdChange ), NULL,
-                                this );
-    m_checkNegative->Connect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( BM2CMP_FRAME_BASE::OnNegativeClicked ), NULL, this );
+	m_sliderThreshold->Connect( wxEVT_SCROLL_CHANGED, wxScrollEventHandler( BM2CMP_FRAME_BASE::OnThresholdChange ), NULL, this );
+	m_sliderThreshold->Connect( wxEVT_SCROLL_THUMBTRACK, wxScrollEventHandler( BM2CMP_FRAME_BASE::OnThresholdChange ), NULL, this );
+	m_checkNegative->Connect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( BM2CMP_FRAME_BASE::OnNegativeClicked ), NULL, this );
 }
 
 BM2CMP_FRAME_BASE::~BM2CMP_FRAME_BASE()
@@ -234,12 +230,8 @@ BM2CMP_FRAME_BASE::~BM2CMP_FRAME_BASE()
 	m_buttonExportFile->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( BM2CMP_FRAME_BASE::OnExportToFile ), NULL, this );
 	m_buttonExportClipboard->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( BM2CMP_FRAME_BASE::OnExportToClipboard ), NULL, this );
 	m_rbOutputFormat->Disconnect( wxEVT_COMMAND_RADIOBOX_SELECTED, wxCommandEventHandler( BM2CMP_FRAME_BASE::OnFormatChange ), NULL, this );
-    m_sliderThreshold->Disconnect( wxEVT_SCROLL_CHANGED,
-                                   wxScrollEventHandler( BM2CMP_FRAME_BASE::OnThresholdChange ),
-                                   NULL, this );
-    m_sliderThreshold->Disconnect( wxEVT_SCROLL_THUMBTRACK,
-                                   wxScrollEventHandler( BM2CMP_FRAME_BASE::OnThresholdChange ),
-                                   NULL, this );
-    m_checkNegative->Disconnect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( BM2CMP_FRAME_BASE::OnNegativeClicked ), NULL, this );
+	m_sliderThreshold->Disconnect( wxEVT_SCROLL_CHANGED, wxScrollEventHandler( BM2CMP_FRAME_BASE::OnThresholdChange ), NULL, this );
+	m_sliderThreshold->Disconnect( wxEVT_SCROLL_THUMBTRACK, wxScrollEventHandler( BM2CMP_FRAME_BASE::OnThresholdChange ), NULL, this );
+	m_checkNegative->Disconnect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( BM2CMP_FRAME_BASE::OnNegativeClicked ), NULL, this );
 
 }

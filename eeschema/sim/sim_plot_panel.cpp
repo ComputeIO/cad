@@ -142,7 +142,7 @@ public:
         double maxVis = parent::AbsVisibleMaxValue();
 
         wxString suffix;
-        int      power, digits = 0;
+        int power, digits = 0;
         int constexpr DIGITS = 3;
 
         getSISuffix( maxVis, m_unit, power, suffix );
@@ -320,7 +320,9 @@ SIM_PLOT_PANEL::SIM_PLOT_PANEL( wxString aCommand, wxWindow* parent, SIM_PLOT_FR
             m_axis_y2->SetMasterScale( m_axis_y1 );
             break;
 
-        case ST_DC: prepareDCAxes(); break;
+        case ST_DC:
+            prepareDCAxes();
+            break;
 
         case ST_NOISE:
             m_axis_x = new LOG_SCALE<mpScaleXLog>( _( "Frequency" ), wxT( "Hz" ), mpALIGN_BOTTOM );

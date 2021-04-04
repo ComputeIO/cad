@@ -344,8 +344,12 @@ void SCH_LINE::Print( const RENDER_SETTINGS* aSettings, const wxPoint& offset )
         switch( lineStyle )
         {
         default:
-        case PLOT_DASH_TYPE::DASH: strokes[0] = strokes[2] = DASH_MARK_LEN( penWidth ); break;
-        case PLOT_DASH_TYPE::DOT: strokes[0] = strokes[2] = DOT_MARK_LEN( penWidth ); break;
+        case PLOT_DASH_TYPE::DASH:
+            strokes[0] = strokes[2] = DASH_MARK_LEN( penWidth );
+            break;
+        case PLOT_DASH_TYPE::DOT:
+            strokes[0] = strokes[2] = DOT_MARK_LEN( penWidth );
+            break;
         case PLOT_DASH_TYPE::DASHDOT:
             strokes[0] = DASH_MARK_LEN( penWidth );
             strokes[2] = DOT_MARK_LEN( penWidth );
@@ -356,8 +360,8 @@ void SCH_LINE::Print( const RENDER_SETTINGS* aSettings, const wxPoint& offset )
         {
             // Calculations MUST be done in doubles to keep from accumulating rounding
             // errors as we go.
-            wxPoint next( start.x + strokes[i % 4] * cos( theta ),
-                          start.y + strokes[i % 4] * sin( theta ) );
+            wxPoint next( start.x + strokes[ i % 4 ] * cos( theta ),
+                          start.y + strokes[ i % 4 ] * sin( theta ) );
 
             // Drawing each segment can be done rounded to ints.
             wxPoint segStart( KiROUND( start.x ), KiROUND( start.y ) );

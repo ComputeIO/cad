@@ -78,7 +78,7 @@ int CVPCB_ASSOCIATION_TOOL::CutAssoc( const TOOL_EVENT& aEvent )
 {
     // If using the keyboard, only cut in the component frame
     if( m_frame->GetFocusedControl()
-        && m_frame->GetFocusedControl() != CVPCB_MAINFRAME::CONTROL_COMPONENT )
+            && m_frame->GetFocusedControl() != CVPCB_MAINFRAME::CONTROL_COMPONENT )
     {
         return 0;
     }

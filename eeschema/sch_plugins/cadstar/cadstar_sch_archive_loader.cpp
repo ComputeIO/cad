@@ -187,7 +187,7 @@ void CADSTAR_SCH_ARCHIVE_LOADER::Load( SCHEMATIC* aSchematic, SCH_SHEET* aRootSh
         targetSheetSize.IncBy( margin * 2, margin * 2 );
 
         // Update page size always
-        PAGE_INFO pageInfo = sheet->GetScreen()->GetPageSettings();
+        PAGE_INFO pageInfo   = sheet->GetScreen()->GetPageSettings();
         pageInfo.SetWidthMils( Iu2Mils( targetSheetSize.x ) );
         pageInfo.SetHeightMils( Iu2Mils( targetSheetSize.y ) );
 
@@ -439,8 +439,8 @@ void CADSTAR_SCH_ARCHIVE_LOADER::loadSchematicSymbolInstances()
             sym.ComponentRef.Designator.Replace( wxT( " " ), wxT( "_" ) );
 
             refField->SetText( sym.ComponentRef.Designator );
-            loadSymbolFieldAttribute( sym.ComponentRef.AttrLoc, symOrientDeciDeg, sym.Mirror,
-                                      refField );
+            loadSymbolFieldAttribute( sym.ComponentRef.AttrLoc, symOrientDeciDeg,
+                                      sym.Mirror, refField );
 
             if( sym.HasPartRef )
             {
@@ -461,8 +461,8 @@ void CADSTAR_SCH_ARCHIVE_LOADER::loadSchematicSymbolInstances()
                 partname.Replace( wxT( "\t" ), wxT( "\\t" ) );
                 partField->SetText( partname );
 
-                loadSymbolFieldAttribute( sym.PartRef.AttrLoc, symOrientDeciDeg, sym.Mirror,
-                                          partField );
+                loadSymbolFieldAttribute( sym.PartRef.AttrLoc, symOrientDeciDeg,
+                                          sym.Mirror, partField );
 
                 partField->SetVisible( SymbolPartNameColor.IsVisible );
             }
@@ -1329,13 +1329,13 @@ void CADSTAR_SCH_ARCHIVE_LOADER::loadSymDefIntoLibrary( const SYMDEF_ID& aSymdef
             {
                 wxString attrName = getAttributeName( aAttributeVal.AttributeID );
 
-            //Remove invalid field characters
-            aAttributeVal.Value.Replace( wxT( "\n" ), wxT( "\\n" ) );
-            aAttributeVal.Value.Replace( wxT( "\r" ), wxT( "\\r" ) );
-            aAttributeVal.Value.Replace( wxT( "\t" ), wxT( "\\t" ) );
+                //Remove invalid field characters
+                aAttributeVal.Value.Replace( wxT( "\n" ), wxT( "\\n" ) );
+                aAttributeVal.Value.Replace( wxT( "\r" ), wxT( "\\r" ) );
+                aAttributeVal.Value.Replace( wxT( "\t" ), wxT( "\\t" ) );
 
-            //TODO: Handle "links": In cadstar a field can be a "link" if its name starts with the
-            //characters "Link ". Need to figure out how to convert them to equivalent in KiCad
+                //TODO: Handle "links": In cadstar a field can be a "link" if its name starts with the
+                //characters "Link ". Need to figure out how to convert them to equivalent in KiCad
 
                 if( attrName == wxT( "(PartDefinitionNameStem)" ) )
                 {
@@ -1374,52 +1374,52 @@ void CADSTAR_SCH_ARCHIVE_LOADER::loadSymDefIntoLibrary( const SYMDEF_ID& aSymdef
                 attrField->SetText( aAttributeVal.Value );
                 attrField->SetUnit( gateNumber );
 
-            if( aAttributeVal.HasLocation )
-            {
-                // #1 Check if the part itself defined a location for the field
-                applyToLibraryFieldAttribute( aAttributeVal.AttributeLocation, symbol.Origin,
-                                              attrField );
-                attrField->SetVisible( isAttributeVisible( aAttributeVal.AttributeID ) );
-            }
-            else if( symbol.TextLocations.find( aAttributeVal.AttributeID )
-                     != symbol.TextLocations.end() )
-            {
-                // #2 Look in the symbol definition: Text locations
-                TEXT_LOCATION symTxtLoc = symbol.TextLocations.at( aAttributeVal.AttributeID );
-
-                applyToLibraryFieldAttribute( symTxtLoc, symbol.Origin, attrField );
-                attrField->SetVisible( isAttributeVisible( symTxtLoc.AttributeID ) );
-            }
-            else if( symbol.AttributeValues.find( aAttributeVal.AttributeID )
-                     != symbol.AttributeValues.end() )
-            {
-                // #3 Look in the symbol definition: Attribute values
-                ATTRIBUTE_VALUE symAttrVal = symbol.AttributeValues.at( aAttributeVal.AttributeID );
-
-                if( symAttrVal.HasLocation )
+                if( aAttributeVal.HasLocation )
                 {
-                    applyToLibraryFieldAttribute( symAttrVal.AttributeLocation, symbol.Origin,
+                    // #1 Check if the part itself defined a location for the field
+                    applyToLibraryFieldAttribute( aAttributeVal.AttributeLocation, symbol.Origin,
                                                   attrField );
-                    attrField->SetVisible( isAttributeVisible( symAttrVal.AttributeID ) );
+                    attrField->SetVisible( isAttributeVisible( aAttributeVal.AttributeID ) );
+                }
+                else if( symbol.TextLocations.find( aAttributeVal.AttributeID )
+                         != symbol.TextLocations.end() )
+                {
+                    // #2 Look in the symbol definition: Text locations
+                    TEXT_LOCATION symTxtLoc = symbol.TextLocations.at( aAttributeVal.AttributeID );
+
+                    applyToLibraryFieldAttribute( symTxtLoc, symbol.Origin, attrField );
+                    attrField->SetVisible( isAttributeVisible( symTxtLoc.AttributeID ) );
+                }
+                else if( symbol.AttributeValues.find( aAttributeVal.AttributeID )
+                         != symbol.AttributeValues.end() )
+                {
+                    // #3 Look in the symbol definition: Attribute values
+                    ATTRIBUTE_VALUE symAttrVal =
+                            symbol.AttributeValues.at( aAttributeVal.AttributeID );
+
+                    if( symAttrVal.HasLocation )
+                    {
+                        applyToLibraryFieldAttribute( symAttrVal.AttributeLocation, symbol.Origin,
+                                                      attrField );
+                        attrField->SetVisible( isAttributeVisible( symAttrVal.AttributeID ) );
+                    }
+                    else
+                    {
+                        attrField->SetVisible( false );
+                        applyTextSettings( wxT( "TC1" ), ALIGNMENT::NO_ALIGNMENT,
+                                           JUSTIFICATION::LEFT, attrField );
+                    }
                 }
                 else
                 {
                     attrField->SetVisible( false );
-                    applyTextSettings( wxT( "TC1" ), ALIGNMENT::NO_ALIGNMENT, JUSTIFICATION::LEFT,
-                                       attrField );
+                    applyTextSettings( wxT( "TC1" ), ALIGNMENT::NO_ALIGNMENT,
+                                       JUSTIFICATION::LEFT, attrField );
                 }
-            }
-            else
-            {
-                attrField->SetVisible( false );
-                applyTextSettings( wxT( "TC1" ), ALIGNMENT::NO_ALIGNMENT, JUSTIFICATION::LEFT,
-                                   attrField );
-            }
-        };
+            };
 
         // Load all attributes in the Part Definition
-        for( std::pair<ATTRIBUTE_ID, ATTRIBUTE_VALUE> attr :
-             aCadstarPart->Definition.AttributeValues )
+        for( std::pair<ATTRIBUTE_ID, ATTRIBUTE_VALUE> attr : aCadstarPart->Definition.AttributeValues )
         {
             ATTRIBUTE_VALUE attrVal = attr.second;
             loadLibraryField( attrVal );
@@ -1539,10 +1539,8 @@ void CADSTAR_SCH_ARCHIVE_LOADER::applyToLibraryFieldAttribute(
 }
 
 
-SCH_COMPONENT*
-CADSTAR_SCH_ARCHIVE_LOADER::loadSchematicSymbol( const SYMBOL&   aCadstarSymbol,
-                                                 const LIB_PART& aKiCadPart,
-                                                 double&         aComponentOrientationDeciDeg )
+SCH_COMPONENT* CADSTAR_SCH_ARCHIVE_LOADER::loadSchematicSymbol(
+        const SYMBOL& aCadstarSymbol, const LIB_PART& aKiCadPart, double& aComponentOrientationDeciDeg )
 {
     LIB_ID  libId( m_libraryFileName.GetName(), aKiCadPart.GetName() );
     int     unit = getKiCadUnitNumberFromGate( aCadstarSymbol.GateID );
@@ -1615,13 +1613,13 @@ CADSTAR_SCH_ARCHIVE_LOADER::loadSchematicSymbol( const SYMBOL&   aCadstarSymbol,
         }
 
         auto replacePinNumber = [&]( wxString aOldPinNum, wxString aNewPinNum )
-        {
-            if( aOldPinNum == aNewPinNum )
-                return;
+                                {
+                                    if( aOldPinNum == aNewPinNum )
+                                        return;
 
-            LIB_PIN* libpin = pinNumToLibPinMap.at( aOldPinNum );
-            libpin->SetNumber( aNewPinNum );
-        };
+                                    LIB_PIN* libpin = pinNumToLibPinMap.at( aOldPinNum );
+                                    libpin->SetNumber( aNewPinNum );
+                                };
 
         //Older versions of Cadstar used pin numbers
         for( auto& pinPair : aCadstarSymbol.PinNumbers )
@@ -1658,7 +1656,7 @@ void CADSTAR_SCH_ARCHIVE_LOADER::loadSymbolFieldAttribute(
     aKiCadField->SetBold( false );
     aKiCadField->SetVisible( true );
 
-    ALIGNMENT     fieldAlignment = aCadstarAttrLoc.Alignment;
+    ALIGNMENT fieldAlignment = aCadstarAttrLoc.Alignment;
     JUSTIFICATION fieldJustification = aCadstarAttrLoc.Justification;
 
     // KiCad mirrors the justification and alignment when the component is mirrored but CADSTAR
@@ -1669,9 +1667,9 @@ void CADSTAR_SCH_ARCHIVE_LOADER::loadSymbolFieldAttribute(
         {
         // Change left to right:
         case ALIGNMENT::NO_ALIGNMENT:
-        case ALIGNMENT::BOTTOMLEFT: fieldAlignment = ALIGNMENT::BOTTOMRIGHT; break;
-        case ALIGNMENT::CENTERLEFT: fieldAlignment = ALIGNMENT::CENTERRIGHT; break;
-        case ALIGNMENT::TOPLEFT: fieldAlignment = ALIGNMENT::TOPRIGHT; break;
+        case ALIGNMENT::BOTTOMLEFT:   fieldAlignment = ALIGNMENT::BOTTOMRIGHT;   break;
+        case ALIGNMENT::CENTERLEFT:   fieldAlignment = ALIGNMENT::CENTERRIGHT;   break;
+        case ALIGNMENT::TOPLEFT:      fieldAlignment = ALIGNMENT::TOPRIGHT;      break;
         //Change right to left:
         case ALIGNMENT::BOTTOMRIGHT:  fieldAlignment = ALIGNMENT::BOTTOMLEFT;    break;
         case ALIGNMENT::CENTERRIGHT:  fieldAlignment = ALIGNMENT::CENTERLEFT;    break;
@@ -1679,14 +1677,14 @@ void CADSTAR_SCH_ARCHIVE_LOADER::loadSymbolFieldAttribute(
         // Center alignment does not mirror:
         case ALIGNMENT::BOTTOMCENTER:
         case ALIGNMENT::CENTERCENTER:
-        case ALIGNMENT::TOPCENTER: break;
+        case ALIGNMENT::TOPCENTER:                                               break;
         }
 
         switch( fieldJustification )
         {
-        case JUSTIFICATION::LEFT: fieldJustification = JUSTIFICATION::RIGHT; break;
-        case JUSTIFICATION::RIGHT: fieldJustification = JUSTIFICATION::LEFT; break;
-        case JUSTIFICATION::CENTER: break;
+        case JUSTIFICATION::LEFT:    fieldJustification = JUSTIFICATION::RIGHT;  break;
+        case JUSTIFICATION::RIGHT:   fieldJustification = JUSTIFICATION::LEFT;   break;
+        case JUSTIFICATION::CENTER:                                              break;
         }
     }
 
@@ -2284,16 +2282,16 @@ ELECTRICAL_PINTYPE CADSTAR_SCH_ARCHIVE_LOADER::getKiCadPinType( const PART::PIN_
 {
     switch( aPinType )
     {
-    case PART::PIN_TYPE::UNCOMMITTED: return ELECTRICAL_PINTYPE::PT_PASSIVE;
-    case PART::PIN_TYPE::INPUT: return ELECTRICAL_PINTYPE::PT_INPUT;
-    case PART::PIN_TYPE::OUTPUT_OR: return ELECTRICAL_PINTYPE::PT_OPENCOLLECTOR;
-    case PART::PIN_TYPE::OUTPUT_NOT_OR: return ELECTRICAL_PINTYPE::PT_OUTPUT;
+    case PART::PIN_TYPE::UNCOMMITTED:        return ELECTRICAL_PINTYPE::PT_PASSIVE;
+    case PART::PIN_TYPE::INPUT:              return ELECTRICAL_PINTYPE::PT_INPUT;
+    case PART::PIN_TYPE::OUTPUT_OR:          return ELECTRICAL_PINTYPE::PT_OPENCOLLECTOR;
+    case PART::PIN_TYPE::OUTPUT_NOT_OR:      return ELECTRICAL_PINTYPE::PT_OUTPUT;
     case PART::PIN_TYPE::OUTPUT_NOT_NORM_OR: return ELECTRICAL_PINTYPE::PT_OUTPUT;
-    case PART::PIN_TYPE::POWER: return ELECTRICAL_PINTYPE::PT_POWER_IN;
-    case PART::PIN_TYPE::GROUND: return ELECTRICAL_PINTYPE::PT_POWER_IN;
-    case PART::PIN_TYPE::TRISTATE_BIDIR: return ELECTRICAL_PINTYPE::PT_BIDI;
-    case PART::PIN_TYPE::TRISTATE_INPUT: return ELECTRICAL_PINTYPE::PT_INPUT;
-    case PART::PIN_TYPE::TRISTATE_DRIVER: return ELECTRICAL_PINTYPE::PT_OUTPUT;
+    case PART::PIN_TYPE::POWER:              return ELECTRICAL_PINTYPE::PT_POWER_IN;
+    case PART::PIN_TYPE::GROUND:             return ELECTRICAL_PINTYPE::PT_POWER_IN;
+    case PART::PIN_TYPE::TRISTATE_BIDIR:     return ELECTRICAL_PINTYPE::PT_BIDI;
+    case PART::PIN_TYPE::TRISTATE_INPUT:     return ELECTRICAL_PINTYPE::PT_INPUT;
+    case PART::PIN_TYPE::TRISTATE_DRIVER:    return ELECTRICAL_PINTYPE::PT_OUTPUT;
     }
 
     return ELECTRICAL_PINTYPE::PT_UNSPECIFIED;

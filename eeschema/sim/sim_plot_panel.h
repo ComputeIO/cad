@@ -198,8 +198,8 @@ public:
         return m_axis_y2 ? m_axis_y2->GetName() : "";
     }
 
-    bool AddTrace( const wxString& aName, int aPoints, const double* aX, const double* aY,
-                   SIM_PLOT_TYPE aFlags );
+    bool AddTrace( const wxString& aName, int aPoints, const double* aX,
+                   const double* aY, SIM_PLOT_TYPE aFlags );
 
     bool DeleteTrace( const wxString& aName );
 

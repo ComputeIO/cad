@@ -295,7 +295,7 @@ BOOST_AUTO_TEST_CASE( SegSegDistance )
     {
         BOOST_TEST_CONTEXT( c.m_case_name )
         {
-            BOOST_CHECK_PREDICATE( SegDistanceCorrect, (c.m_seg_a) (c.m_seg_b) ( c.m_exp_dist ) );
+            BOOST_CHECK_PREDICATE( SegDistanceCorrect, ( c.m_seg_a )( c.m_seg_b )( c.m_exp_dist ) );
         }
     }
 }
@@ -352,7 +352,7 @@ BOOST_AUTO_TEST_CASE( SegVecDistance )
     {
         BOOST_TEST_CONTEXT( c.m_case_name )
         {
-            BOOST_CHECK_PREDICATE( SegVecDistanceCorrect, (c.m_seg) (c.m_vec) ( c.m_exp_dist ) );
+            BOOST_CHECK_PREDICATE( SegVecDistanceCorrect, ( c.m_seg )( c.m_vec )( c.m_exp_dist ) );
         }
     }
 }
@@ -420,7 +420,7 @@ BOOST_AUTO_TEST_CASE( SegSegCollision )
         BOOST_TEST_CONTEXT( c.m_case_name )
         {
             BOOST_CHECK_PREDICATE( SegCollideCorrect,
-                                   (c.m_seg_a) (c.m_seg_b) (c.m_clearance) ( c.m_exp_coll ) );
+                    ( c.m_seg_a )( c.m_seg_b )( c.m_clearance )( c.m_exp_coll ) );
         }
     }
 }
@@ -483,7 +483,7 @@ BOOST_AUTO_TEST_CASE( SegSegCollinear )
         BOOST_TEST_CONTEXT( c.m_case_name )
         {
             BOOST_CHECK_PREDICATE( SegCollinearCorrect,
-                                   (c.m_seg_a) (c.m_seg_b) ( c.m_exp_result ) );
+                                   ( c.m_seg_a )( c.m_seg_b )( c.m_exp_result ) );
         }
     }
 }
@@ -534,7 +534,8 @@ BOOST_AUTO_TEST_CASE( SegSegParallel )
     {
         BOOST_TEST_CONTEXT( c.m_case_name )
         {
-            BOOST_CHECK_PREDICATE( SegParallelCorrect, (c.m_seg_a) (c.m_seg_b) ( c.m_exp_result ) );
+            BOOST_CHECK_PREDICATE( SegParallelCorrect,
+                                   ( c.m_seg_a )( c.m_seg_b )( c.m_exp_result ) );
         }
     }
 }
@@ -610,7 +611,7 @@ BOOST_AUTO_TEST_CASE( SegSegPerpendicular )
         BOOST_TEST_CONTEXT( c.m_case_name )
         {
             BOOST_CHECK_PREDICATE( SegPerpendicularCorrect,
-                                   (c.m_seg_a) (c.m_seg_b) ( c.m_exp_result ) );
+                                   ( c.m_seg_a )( c.m_seg_b )( c.m_exp_result ) );
         }
     }
 }
@@ -674,8 +675,8 @@ BOOST_AUTO_TEST_CASE( SegCreateParallel )
         {
             SEG perpendicular = c.m_seg.ParallelSeg( c.m_vec );
 
-            BOOST_CHECK_PREDICATE( SegParallelCorrect, (perpendicular) (c.m_seg) ( true ) );
-            BOOST_CHECK_PREDICATE( SegVecDistanceCorrect, (perpendicular) (c.m_vec) ( 0 ) );
+            BOOST_CHECK_PREDICATE( SegParallelCorrect, ( perpendicular )( c.m_seg )( true ) );
+            BOOST_CHECK_PREDICATE( SegVecDistanceCorrect, ( perpendicular )( c.m_vec )( 0 ) );
         }
     }
 }
@@ -688,8 +689,8 @@ BOOST_AUTO_TEST_CASE( SegCreatePerpendicular )
         {
             SEG perpendicular = c.m_seg.PerpendicularSeg( c.m_vec );
 
-            BOOST_CHECK_PREDICATE( SegPerpendicularCorrect, (perpendicular) (c.m_seg) ( true ) );
-            BOOST_CHECK_PREDICATE( SegVecDistanceCorrect, (perpendicular) (c.m_vec) ( 0 ) );
+            BOOST_CHECK_PREDICATE( SegPerpendicularCorrect, ( perpendicular )( c.m_seg )( true ) );
+            BOOST_CHECK_PREDICATE( SegVecDistanceCorrect, ( perpendicular )( c.m_vec )( 0 ) );
         }
     }
 }

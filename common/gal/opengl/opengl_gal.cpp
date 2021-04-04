@@ -58,9 +58,6 @@
 #include <functional>
 #include <limits>
 #include <memory>
-
-#include <font/triangulate.h>
-
 using namespace std::placeholders;
 using namespace KIGFX;
 
@@ -232,8 +229,6 @@ OPENGL_GAL::OPENGL_GAL( GAL_DISPLAY_OPTIONS& aDisplayOptions, wxWindow* aParent,
 
     m_compositor = new OPENGL_COMPOSITOR;
     m_compositor->SetAntialiasingMode( m_options.gl_antialiasing_mode );
-
-    m_freeType = new OPENGL_FREETYPE( this );
 
     // Initialize the flags
     m_isFramebufferInitialized = false;
@@ -1061,30 +1056,6 @@ void OPENGL_GAL::DrawPolygon( const VECTOR2D aPointList[], int aListSize )
 }
 
 
-void OPENGL_GAL::fillPolygonAsTriangles( const SHAPE_POLY_SET& aPolyList )
-{
-    currentManager->Shader( SHADER_NONE );
-    currentManager->Color( fillColor.r, fillColor.g, fillColor.b, fillColor.a );
-
-    auto triangleCallback = [&]( int aPolygonIndex, const VECTOR2D& aVertex1,
-                                 const VECTOR2D& aVertex2, const VECTOR2D& aVertex3,
-                                 void* aCallbackData )
-    {
-        currentManager->Vertex( aVertex1.x, aVertex1.y, layerDepth );
-        currentManager->Vertex( aVertex2.x, aVertex2.y, layerDepth );
-        currentManager->Vertex( aVertex3.x, aVertex3.y, layerDepth );
-    };
-
-    Triangulate( aPolyList, triangleCallback );
-}
-
-
-void OPENGL_GAL::DrawGlyph( const SHAPE_POLY_SET& aPolySet, int aNth, int aTotal )
-{
-    fillPolygonAsTriangles( aPolySet );
-}
-
-
 void OPENGL_GAL::drawTriangulatedPolyset( const SHAPE_POLY_SET& aPolySet )
 {
     m_currentManager->Shader( SHADER_NONE );
@@ -1291,7 +1262,9 @@ void OPENGL_GAL::BitmapText( const wxString& aText, const VECTOR2D& aPosition,
 
     switch( GetHorizontalJustify() )
     {
-    case GR_TEXT_HJUSTIFY_CENTER: Translate( VECTOR2D( -textSize.x / 2.0, 0 ) ); break;
+    case GR_TEXT_HJUSTIFY_CENTER:
+        Translate( VECTOR2D( -textSize.x / 2.0, 0 ) );
+        break;
 
     case GR_TEXT_HJUSTIFY_RIGHT:
         //if( !IsTextMirrored() )
@@ -1316,7 +1289,8 @@ void OPENGL_GAL::BitmapText( const wxString& aText, const VECTOR2D& aPosition,
         overbarHeight = 0;
         break;
 
-    case GR_TEXT_VJUSTIFY_BOTTOM: break;
+    case GR_TEXT_VJUSTIFY_BOTTOM:
+        break;
     }
 
     int i = 0;

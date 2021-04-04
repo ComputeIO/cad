@@ -37,7 +37,9 @@
 #include <plugins/kicad/kicad_plugin.h>
 #include <kicad_clipboard.h>
 
-CLIPBOARD_IO::CLIPBOARD_IO() : PCB_IO( CTL_FOR_CLIPBOARD ), m_formatter()
+CLIPBOARD_IO::CLIPBOARD_IO():
+    PCB_IO( CTL_FOR_CLIPBOARD ),
+    m_formatter()
 {
     m_out = &m_formatter;
 }

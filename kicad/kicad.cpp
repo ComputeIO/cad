@@ -146,8 +146,8 @@ bool PGM_KICAD::OnPgmInit()
             m_bm.m_search.Insert( it->second.GetValue(), 0 );
     }
 
-    KICAD_MANAGER_FRAME* frame =
-            new KICAD_MANAGER_FRAME( NULL, wxT( "KiCad" ), wxDefaultPosition, wxSize( 775, -1 ) );
+    KICAD_MANAGER_FRAME* frame = new KICAD_MANAGER_FRAME( NULL, wxT( "KiCad" ),
+                                                          wxDefaultPosition, wxSize( 775, -1 ) );
     App().SetTopWindow( frame );
 
     Kiway.SetTop( frame );
@@ -227,7 +227,7 @@ void PGM_KICAD::OnPgmExit()
 
 void PGM_KICAD::MacOpenFile( const wxString& aFileName )
 {
-#if defined( __WXMAC__ )
+#if defined(__WXMAC__)
 
     KICAD_MANAGER_FRAME* frame = (KICAD_MANAGER_FRAME*) App().GetTopWindow();
 
@@ -249,7 +249,7 @@ void PGM_KICAD::Destroy()
 }
 
 
-KIWAY Kiway( &Pgm(), KFCTL_CPP_PROJECT_SUITE );
+KIWAY  Kiway( &Pgm(), KFCTL_CPP_PROJECT_SUITE );
 
 
 /**
@@ -264,7 +264,7 @@ struct APP_KICAD : public wxApp
     }
 
 
-    bool OnInit() override
+    bool OnInit()           override
     {
         // Perform platform-specific init tasks
         if( !KIPLATFORM::APP::Init() )
@@ -279,11 +279,11 @@ struct APP_KICAD : public wxApp
         return true;
     }
 
-    int OnExit() override
+    int  OnExit()           override
     {
         program.OnPgmExit();
 
-#if defined( __FreeBSD__ )
+#if defined(__FreeBSD__)
         // Avoid wxLog crashing when used in destructors.
         wxLog::EnableLogging( false );
 #endif
@@ -291,7 +291,7 @@ struct APP_KICAD : public wxApp
         return wxApp::OnExit();
     }
 
-    int OnRun() override
+    int OnRun()             override
     {
         try
         {
@@ -306,7 +306,7 @@ struct APP_KICAD : public wxApp
         {
             wxLogError( ioe.What() );
         }
-        catch( ... )
+        catch(...)
         {
             wxLogError( wxT( "Unhandled exception of unknown type" ) );
         }
@@ -334,7 +334,10 @@ struct APP_KICAD : public wxApp
      * @see http://wiki.wxwidgets.org/WxMac-specific_topics
      */
 #if defined( __WXMAC__ )
-    void MacOpenFile( const wxString& aFileName ) override { Pgm().MacOpenFile( aFileName ); }
+    void MacOpenFile( const wxString& aFileName ) override
+    {
+        Pgm().MacOpenFile( aFileName );
+    }
 #endif
 };
 
@@ -347,3 +350,4 @@ PROJECT& Prj()
 {
     return Kiway.Prj();
 }
+

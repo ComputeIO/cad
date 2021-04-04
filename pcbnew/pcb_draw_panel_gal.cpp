@@ -286,30 +286,16 @@ void PCB_DRAW_PANEL_GAL::SetHighContrastLayer( PCB_LAYER_ID aLayer )
         // Bring some other layers to the front in case of copper layers and make them colored
         // fixme do not like the idea of storing the list of layers here,
         // should be done in some other way I guess..
-        LAYER_NUM layers[] = { GetNetnameLayer( aLayer ),
-                               LAYER_VIA_NETNAMES,
-                               LAYER_PAD_FR_NETNAMES,
-                               LAYER_PAD_BK_NETNAMES,
-                               LAYER_PAD_NETNAMES,
-                               ZONE_LAYER_FOR( aLayer ),
-                               LAYER_PADS_TH,
-                               LAYER_PAD_PLATEDHOLES,
-                               LAYER_PAD_HOLEWALLS,
-                               LAYER_NON_PLATEDHOLES,
-                               LAYER_VIA_THROUGH,
-                               LAYER_VIA_BBLIND,
-                               LAYER_VIA_MICROVIA,
-                               LAYER_VIA_HOLES,
-                               LAYER_VIA_HOLEWALLS,
-                               LAYER_DRC_ERROR,
-                               LAYER_DRC_WARNING,
-                               LAYER_DRC_EXCLUSION,
-                               LAYER_MARKER_SHADOWS,
-                               LAYER_SELECT_OVERLAY,
-                               LAYER_GP_OVERLAY,
-                               LAYER_RATSNEST,
-                               LAYER_CURSOR,
-                               LAYER_ANCHOR };
+        LAYER_NUM layers[] = {
+                GetNetnameLayer( aLayer ), LAYER_VIA_NETNAMES,
+                LAYER_PAD_FR_NETNAMES, LAYER_PAD_BK_NETNAMES, LAYER_PAD_NETNAMES,
+                ZONE_LAYER_FOR( aLayer ),
+                LAYER_PADS_TH, LAYER_PAD_PLATEDHOLES, LAYER_PAD_HOLEWALLS, LAYER_NON_PLATEDHOLES,
+                LAYER_VIA_THROUGH, LAYER_VIA_BBLIND, LAYER_VIA_MICROVIA, LAYER_VIA_HOLES, LAYER_VIA_HOLEWALLS,
+                LAYER_DRC_ERROR, LAYER_DRC_WARNING, LAYER_DRC_EXCLUSION, LAYER_MARKER_SHADOWS,
+                LAYER_SELECT_OVERLAY, LAYER_GP_OVERLAY,
+                LAYER_RATSNEST, LAYER_CURSOR, LAYER_ANCHOR
+        };
 
         for( unsigned int i : layers )
             rSettings->SetLayerIsHighContrast( i );
@@ -339,11 +325,13 @@ void PCB_DRAW_PANEL_GAL::SetTopLayer( PCB_LAYER_ID aLayer )
 
     // Layers that should always have on-top attribute enabled
     const std::vector<LAYER_NUM> layers = {
-        LAYER_VIA_THROUGH,   LAYER_VIA_BBLIND,      LAYER_VIA_MICROVIA, LAYER_VIA_HOLES,
-        LAYER_VIA_HOLEWALLS, LAYER_VIA_NETNAMES,    LAYER_PADS_TH,      LAYER_PAD_PLATEDHOLES,
-        LAYER_PAD_HOLEWALLS, LAYER_NON_PLATEDHOLES, LAYER_PAD_NETNAMES, LAYER_SELECT_OVERLAY,
-        LAYER_GP_OVERLAY,    LAYER_RATSNEST,        LAYER_DRC_ERROR,    LAYER_DRC_WARNING,
-        LAYER_DRC_EXCLUSION, LAYER_MARKER_SHADOWS
+            LAYER_VIA_THROUGH, LAYER_VIA_BBLIND, LAYER_VIA_MICROVIA, LAYER_VIA_HOLES, LAYER_VIA_HOLEWALLS,
+            LAYER_VIA_NETNAMES,
+            LAYER_PADS_TH, LAYER_PAD_PLATEDHOLES, LAYER_PAD_HOLEWALLS, LAYER_NON_PLATEDHOLES,
+            LAYER_PAD_NETNAMES,
+            LAYER_SELECT_OVERLAY, LAYER_GP_OVERLAY,
+            LAYER_RATSNEST,
+            LAYER_DRC_ERROR, LAYER_DRC_WARNING, LAYER_DRC_EXCLUSION, LAYER_MARKER_SHADOWS
     };
 
     for( auto layer : layers )

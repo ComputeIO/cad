@@ -62,8 +62,8 @@ static bool polygon_IsPointInside( const SEGMENTS& aSegments, const SFVEC2F& aPo
 
 
 POLYGON_2D::POLYGON_2D( const SEGMENTS_WIDTH_NORMALS& aOpenSegmentList,
-                        const OUTERS_AND_HOLES& aOuterAndHoles, const BOARD_ITEM& aBoardItem ) :
-        OBJECT_2D( OBJECT_2D_TYPE::POLYGON, aBoardItem )
+                        const OUTERS_AND_HOLES& aOuterAndHoles, const BOARD_ITEM& aBoardItem )
+        : OBJECT_2D( OBJECT_2D_TYPE::POLYGON, aBoardItem )
 {
     m_open_segments.resize( aOpenSegmentList.size() );
 
@@ -375,9 +375,9 @@ static void polygon_Convert( const SHAPE_LINE_CHAIN& aPath, SEGMENTS& aOutSegmen
 }
 
 
-void ConvertPolygonToBlocks( const SHAPE_POLY_SET& aMainPath, CONTAINER_2D_BASE& aDstContainer,
-                             float aBiuTo3dUnitsScale, float aDivFactor,
-                             const BOARD_ITEM& aBoardItem, int aPolyIndex )
+void CovertPolygonToBlocks( const SHAPE_POLY_SET& aMainPath, CONTAINER_2D_BASE& aDstContainer,
+                            float aBiuTo3dUnitsScale, float aDivFactor,
+                            const BOARD_ITEM& aBoardItem, int aPolyIndex )
 {
     // Get the path
     wxASSERT( aPolyIndex < aMainPath.OutlineCount() );

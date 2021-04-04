@@ -180,8 +180,7 @@ void EDA_3D_VIEWER::CreateMenuBar()
                        ID_MENU3D_PCB_BODY_COLOR,
                        BITMAPS::INVALID_BITMAP );
 
-    // Only allow the stackup to be used in the PCB editor, since it
-    // isn't editable in the other frames
+    // Only allow the stackup to be used in the PCB editor, since it isn't editable in the other frames
     if( Parent()->IsType( FRAME_PCB_EDITOR ) )
     {
         colorSubmenu->Add( _( "Get colors from physical stackup" ),

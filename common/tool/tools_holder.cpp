@@ -30,8 +30,11 @@
 
 
 TOOLS_HOLDER::TOOLS_HOLDER() :
-        m_toolManager( nullptr ), m_actions( nullptr ), m_toolDispatcher( nullptr ),
-        m_immediateActions( true ), m_dragAction( MOUSE_DRAG_ACTION::SELECT ),
+        m_toolManager( nullptr ),
+        m_actions( nullptr ),
+        m_toolDispatcher( nullptr ),
+        m_immediateActions( true ),
+        m_dragAction( MOUSE_DRAG_ACTION::SELECT ),
         m_moveWarpsCursor( true )
 { }
 

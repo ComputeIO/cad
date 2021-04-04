@@ -305,7 +305,7 @@ public:
     // ----
 
     /**
-     * Draw text.
+     * Draw a vector type text using preloaded Newstroke font.
      *
      * @param aText is the text to be drawn.
      * @param aPosition is the text position in world coordinates.

@@ -29,7 +29,6 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
 
-#include <kicad_string.h>
 #include <gr_basic.h>
 #include <plotter.h>
 #include <eda_text.h> // EDA_TEXT_HJUSTIFY_T and EDA_TEXT_VJUSTIFY_T
@@ -128,7 +127,6 @@ int GraphicTextWidth( const wxString& aText, const wxSize& aSize, bool aItalic, 
  *                         can be nullptr if no auxiliary parameter is needed
  *  @param aPlotter = a pointer to a PLOTTER instance, when this function is used to plot
  *                  the text. NULL to draw this text.
- *  @param aFont name of font to use (NULL for Newstroke)
  */
 void GRText( wxDC* aDC, const wxPoint& aPos, COLOR4D aColor, const wxString& aText, double aOrient,
              const wxSize& aSize, enum EDA_TEXT_HJUSTIFY_T aH_justify,

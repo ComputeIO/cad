@@ -208,7 +208,7 @@ void LIB_TREE_MODEL_ADAPTER::UpdateSearchString( wxString const& aSearch, bool a
         // and crash https://gitlab.com/kicad/code/kicad/-/issues/6910
         if( !aState && !aSearch.IsNull() && m_tree.m_Children.size() )
         {
-            for( std::unique_ptr<LIB_TREE_NODE>& child : m_tree.m_Children )
+            for( std::unique_ptr<LIB_TREE_NODE>& child: m_tree.m_Children )
                 m_widget->Collapse( wxDataViewItem( &*child ) );
         }
 

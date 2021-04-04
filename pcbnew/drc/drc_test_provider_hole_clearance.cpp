@@ -42,15 +42,27 @@
 class DRC_TEST_PROVIDER_HOLE_CLEARANCE : public DRC_TEST_PROVIDER_CLEARANCE_BASE
 {
 public:
-    DRC_TEST_PROVIDER_HOLE_CLEARANCE() : DRC_TEST_PROVIDER_CLEARANCE_BASE(), m_board( nullptr ) {}
+    DRC_TEST_PROVIDER_HOLE_CLEARANCE () :
+        DRC_TEST_PROVIDER_CLEARANCE_BASE(),
+        m_board( nullptr )
+    {
+    }
 
-    virtual ~DRC_TEST_PROVIDER_HOLE_CLEARANCE() {}
+    virtual ~DRC_TEST_PROVIDER_HOLE_CLEARANCE()
+    {
+    }
 
     virtual bool Run() override;
 
-    virtual const wxString GetName() const override { return "hole_clearance"; };
+    virtual const wxString GetName() const override
+    {
+        return "hole_clearance";
+    };
 
-    virtual const wxString GetDescription() const override { return "Tests hole to hole spacing"; }
+    virtual const wxString GetDescription() const override
+    {
+        return "Tests hole to hole spacing";
+    }
 
     virtual std::set<DRC_CONSTRAINT_T> GetConstraintTypes() const override;
 
@@ -114,48 +126,50 @@ bool DRC_TEST_PROVIDER_HOLE_CLEARANCE::Run()
 
     m_holeTree.clear();
 
-    auto countItems = [&]( BOARD_ITEM* item ) -> bool
-    {
-        if( item->Type() == PCB_PAD_T )
-            ++count;
-        else if( item->Type() == PCB_VIA_T )
-            ++count;
+    auto countItems =
+            [&]( BOARD_ITEM* item ) -> bool
+            {
+                if( item->Type() == PCB_PAD_T )
+                    ++count;
+                else if( item->Type() == PCB_VIA_T )
+                    ++count;
 
-        return true;
-    };
+                return true;
+            };
 
-    auto addToHoleTree = [&]( BOARD_ITEM* item ) -> bool
-    {
-        if( !reportProgress( ii++, count, delta ) )
-            return false;
+    auto addToHoleTree =
+            [&]( BOARD_ITEM* item ) -> bool
+            {
+                if( !reportProgress( ii++, count, delta ) )
+                    return false;
 
-        if( item->Type() == PCB_PAD_T )
-        {
-            PAD* pad = static_cast<PAD*>( item );
+                if( item->Type() == PCB_PAD_T )
+                {
+                    PAD* pad = static_cast<PAD*>( item );
 
-            // We only care about drilled (ie: round) holes
-            if( pad->GetDrillSize().x && pad->GetDrillSize().x == pad->GetDrillSize().y )
-                m_holeTree.Insert( item, m_largestClearance, F_Cu );
-        }
-        else if( item->Type() == PCB_VIA_T )
-        {
-            VIA* via = static_cast<VIA*>( item );
+                    // We only care about drilled (ie: round) holes
+                    if( pad->GetDrillSize().x && pad->GetDrillSize().x == pad->GetDrillSize().y )
+                        m_holeTree.Insert( item, m_largestClearance, F_Cu );
+                }
+                else if( item->Type() == PCB_VIA_T )
+                {
+                    VIA* via = static_cast<VIA*>( item );
 
-            // We only care about mechanically drilled (ie: non-laser) holes
-            if( via->GetViaType() == VIATYPE::THROUGH )
-                m_holeTree.Insert( item, m_largestClearance, F_Cu );
-        }
+                    // We only care about mechanically drilled (ie: non-laser) holes
+                    if( via->GetViaType() == VIATYPE::THROUGH )
+                        m_holeTree.Insert( item, m_largestClearance, F_Cu );
+                }
 
-        return true;
-    };
+                return true;
+            };
 
     forEachGeometryItem( { PCB_PAD_T, PCB_VIA_T }, LSET::AllLayersMask(), countItems );
 
-    count *= 2; // One for adding to tree; one for checking
+    count *= 2;  // One for adding to tree; one for checking
 
     forEachGeometryItem( { PCB_PAD_T, PCB_VIA_T }, LSET::AllLayersMask(), addToHoleTree );
 
-    std::map<std::pair<BOARD_ITEM*, BOARD_ITEM*>, int> checkedPairs;
+    std::map< std::pair<BOARD_ITEM*, BOARD_ITEM*>, int> checkedPairs;
 
     for( TRACK* track : m_board->Tracks() )
     {
@@ -172,8 +186,7 @@ bool DRC_TEST_PROVIDER_HOLE_CLEARANCE::Run()
         {
             std::shared_ptr<SHAPE_CIRCLE> holeShape = getDrilledHoleShape( via );
 
-            m_holeTree.QueryColliding(
-                    via, F_Cu, F_Cu,
+            m_holeTree.QueryColliding( via, F_Cu, F_Cu,
                     // Filter:
                     [&]( BOARD_ITEM* other ) -> bool
                     {
@@ -191,7 +204,7 @@ bool DRC_TEST_PROVIDER_HOLE_CLEARANCE::Run()
                         }
                         else
                         {
-                            checkedPairs[{ a, b }] = 1;
+                            checkedPairs[ { a, b } ] = 1;
                             return true;
                         }
                     },
@@ -218,8 +231,7 @@ bool DRC_TEST_PROVIDER_HOLE_CLEARANCE::Run()
             {
                 std::shared_ptr<SHAPE_CIRCLE> holeShape = getDrilledHoleShape( pad );
 
-                m_holeTree.QueryColliding(
-                        pad, F_Cu, F_Cu,
+                m_holeTree.QueryColliding( pad, F_Cu, F_Cu,
                         // Filter:
                         [&]( BOARD_ITEM* other ) -> bool
                         {
@@ -237,7 +249,7 @@ bool DRC_TEST_PROVIDER_HOLE_CLEARANCE::Run()
                             }
                             else
                             {
-                                checkedPairs[{ a, b }] = 1;
+                                checkedPairs[ { a, b } ] = 1;
                                 return true;
                             }
                         },
@@ -280,7 +292,8 @@ bool DRC_TEST_PROVIDER_HOLE_CLEARANCE::testHoleAgainstHole( BOARD_ITEM* aItem, S
     {
         std::shared_ptr<DRC_ITEM> drce = DRC_ITEM::Create( DRCE_DRILLED_HOLES_TOO_CLOSE );
 
-        m_msg.Printf( _( "(%s min %s; actual %s)" ), constraint.GetName(),
+        m_msg.Printf( _( "(%s min %s; actual %s)" ),
+                      constraint.GetName(),
                       MessageTextFromValue( userUnits(), minClearance ),
                       MessageTextFromValue( userUnits(), actual ) );
 
@@ -309,5 +322,5 @@ std::set<DRC_CONSTRAINT_T> DRC_TEST_PROVIDER_HOLE_CLEARANCE::GetConstraintTypes(
 
 namespace detail
 {
-static DRC_REGISTER_TEST_PROVIDER<DRC_TEST_PROVIDER_HOLE_CLEARANCE> dummy;
+    static DRC_REGISTER_TEST_PROVIDER<DRC_TEST_PROVIDER_HOLE_CLEARANCE> dummy;
 }

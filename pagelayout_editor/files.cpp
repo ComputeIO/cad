@@ -178,7 +178,7 @@ void PL_EDITOR_FRAME::Files_io( wxCommandEvent& event )
 
     case wxID_SAVEAS:
     {
-        wxString     dir = PATHS::GetUserTemplatesPath();
+        wxString dir = PATHS::GetUserTemplatesPath();
         wxFileDialog openFileDialog( this, _( "Save As" ), dir, wxEmptyString,
                                      PageLayoutDescrFileWildcard(),
                                      wxFD_SAVE | wxFD_OVERWRITE_PROMPT );

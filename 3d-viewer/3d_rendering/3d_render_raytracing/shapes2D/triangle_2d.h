@@ -41,10 +41,6 @@ public:
     TRIANGLE_2D( const SFVEC2F& aV1, const SFVEC2F& aV2, const SFVEC2F& aV3,
                  const BOARD_ITEM& aBoardItem );
 
-    TRIANGLE_2D( const VECTOR2I& aV1, const VECTOR2I& aV2, const VECTOR2I& aV3,
-                 const double aXmultiplier, const double aYmultiplier,
-                 const BOARD_ITEM& aBoardItem );
-
     const SFVEC2F& GetP1() const { return p1; }
     const SFVEC2F& GetP2() const { return p2; }
     const SFVEC2F& GetP3() const { return p3; }
@@ -70,5 +66,4 @@ private:
 
 void ConvertPolygonToTriangles( SHAPE_POLY_SET& aPolyList, CONTAINER_2D_BASE& aDstContainer,
                                 float aBiuTo3dUnitsScale, const BOARD_ITEM& aBoardItem );
-
 #endif // _TRIANGLE_2D_H_

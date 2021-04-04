@@ -37,7 +37,7 @@ class COLOR_SWATCH;
 struct CUSTOM_COLOR_ITEM
 {
     KIGFX::COLOR4D m_Color;
-    wxString       m_ColorName;
+    wxString m_ColorName;
 
     CUSTOM_COLOR_ITEM( double red, double green, double blue, const wxString& aName )
     {
@@ -56,10 +56,9 @@ struct CUSTOM_COLOR_ITEM
         m_ColorName = aName;
     }
 
-    CUSTOM_COLOR_ITEM( const KIGFX::COLOR4D& aColor, const wxString& aName ) :
-            m_Color( aColor ), m_ColorName( aName )
-    {
-    }
+    CUSTOM_COLOR_ITEM( const KIGFX::COLOR4D& aColor, const wxString& aName )
+        : m_Color( aColor ), m_ColorName( aName)
+    {}
 };
 
 
@@ -90,12 +89,12 @@ public:
      * @param aUserColors if not null is a list of defined colors replacing the dialog
      *                    predefined colors
      */
-    DIALOG_COLOR_PICKER( wxWindow* aParent, const KIGFX::COLOR4D& aCurrentColor,
+	DIALOG_COLOR_PICKER( wxWindow* aParent, const KIGFX::COLOR4D& aCurrentColor,
                          bool aAllowOpacityControl, CUSTOM_COLORS_LIST* aUserColors = nullptr,
                          const KIGFX::COLOR4D& aDefaultColor = KIGFX::COLOR4D::UNSPECIFIED );
-    ~DIALOG_COLOR_PICKER();
+	~DIALOG_COLOR_PICKER();
 
-    KIGFX::COLOR4D GetColor() { return m_newColor4D; };
+	KIGFX::COLOR4D GetColor() { return m_newColor4D; };
 
 private:
     /* When the dialog is created, the mouse cursor can be on the RGB or HSV palette selector
@@ -105,44 +104,44 @@ private:
      * clicking inside this dialog to prevent not wanted mouse drag event
      */
     bool m_allowMouseEvents;
-    bool m_allowOpacityCtrl;          ///< true to show the widget,
-                                      ///< false to keep alpha channel = 1.0
-    KIGFX::COLOR4D m_previousColor4D; ///< the initial color4d
-    KIGFX::COLOR4D m_newColor4D;      ///< the current color4d
-    KIGFX::COLOR4D m_defaultColor;    ///< The default color4d
+    bool m_allowOpacityCtrl;            ///< true to show the widget,
+                                        ///< false to keep alpha channel = 1.0
+    KIGFX::COLOR4D m_previousColor4D;   ///< the initial color4d
+    KIGFX::COLOR4D m_newColor4D;        ///< the current color4d
+    KIGFX::COLOR4D m_defaultColor;      ///< The default color4d
 
     /// the list of color4d ordered by button ID, for predefined colors
     std::vector<KIGFX::COLOR4D> m_Color4DList;
-    int                         m_cursorsSize;
+    int m_cursorsSize;
 
-    wxPoint  m_cursorBitmapRed;   ///< the red cursor on the RGB bitmap palette.
-    wxPoint  m_cursorBitmapGreen; ///< the green cursor on the RGB bitmap palette.
-    wxPoint  m_cursorBitmapBlue;  ///< the blue cursor on the RGB bitmap palette.
-    wxPoint  m_cursorBitmapHSV;   ///< the cursor on the HSV bitmap palette.
-    wxPoint* m_selectedCursor;    ///< the ref cursor to the selected cursor, if any, or null.
+    wxPoint m_cursorBitmapRed;          ///< the red cursor on the RGB bitmap palette.
+    wxPoint m_cursorBitmapGreen;        ///< the green cursor on the RGB bitmap palette.
+    wxPoint m_cursorBitmapBlue;         ///< the blue cursor on the RGB bitmap palette.
+    wxPoint m_cursorBitmapHSV;          ///< the cursor on the HSV bitmap palette.
+    wxPoint* m_selectedCursor;          ///< the ref cursor to the selected cursor, if any, or null.
 
-    double m_hue; ///< the current hue, in degrees (0 ... 360)
-    double m_sat; ///< the current saturation (0 ... 1.0)
-    double m_val; ///< the current value (0 ... 1.0)
+    double m_hue;                       ///< the current hue, in degrees (0 ... 360)
+    double m_sat;                       ///< the current saturation (0 ... 1.0)
+    double m_val;                       ///< the current value (0 ... 1.0)
 
-    wxBitmap* m_bitmapRGB; ///< the basic RGB palette
-    wxBitmap* m_bitmapHSV; ///< the basic HUV palette
+    wxBitmap* m_bitmapRGB;              ///< the basic RGB palette
+    wxBitmap* m_bitmapHSV;              ///< the basic HUV palette
 
-    std::vector<wxStaticBitmap*> m_colorSwatches; ///< list of defined colors buttons
+    std::vector<wxStaticBitmap*> m_colorSwatches;    ///< list of defined colors buttons
 
     void SetEditVals( CHANGED_COLOR aChanged, bool aCheckTransparency );
-    void drawAll();
+	void drawAll();
 
-    void createHSVBitmap(); ///< generate the bitmap that shows the HSV color circle
-    void drawHSVPalette();  ///< draws the HSV color circle
-    void createRGBBitmap(); ///< generate the bitmap that shows the RVB color space
-    void drawRGBPalette();  ///< draws the RVB color space
+	void createHSVBitmap();             ///< generate the bitmap that shows the HSV color circle
+	void drawHSVPalette();              ///< draws the HSV color circle
+    void createRGBBitmap();             ///< generate the bitmap that shows the RVB color space
+    void drawRGBPalette();              ///< draws the RVB color space
 
     ///< repaint a static bitmap with the aColor4D color
     void updatePreview( wxStaticBitmap* aStaticBitmap, KIGFX::COLOR4D& aColor4D );
 
     ///< Event handler from wxSlider: brightness (value) control
-    void OnChangeBrightness( wxScrollEvent& event ) override;
+	void OnChangeBrightness( wxScrollEvent& event ) override;
 
     ///< Event handler from wxSlider: alpha (transparency) control
     void OnChangeAlpha( wxScrollEvent& event ) override;
@@ -155,10 +154,10 @@ private:
     void OnChangeEditSat( wxSpinEvent& event ) override;
 
     ///< mouse handlers, when clicking on a palette bitmap
-    void onRGBMouseClick( wxMouseEvent& event ) override;
-    void onRGBMouseDrag( wxMouseEvent& event ) override;
-    void onHSVMouseClick( wxMouseEvent& event ) override;
-    void onHSVMouseDrag( wxMouseEvent& event ) override;
+	void onRGBMouseClick( wxMouseEvent& event ) override;
+	void onRGBMouseDrag( wxMouseEvent& event ) override;
+	void onHSVMouseClick( wxMouseEvent& event ) override;
+	void onHSVMouseDrag( wxMouseEvent& event ) override;
 
     void OnColorValueText( wxCommandEvent& event ) override;
 
@@ -173,7 +172,7 @@ private:
      * if Saturation value computed from aMouseCursor is <= 1.0,
      * and false if aMouseCursor is outside this area.
      */
-    bool setHSvaluesFromCursor( wxPoint aMouseCursor );
+	bool setHSvaluesFromCursor( wxPoint aMouseCursor );
 
     ///< Event handler for defined color buttons
     void buttColorClick( wxMouseEvent& event );
@@ -189,7 +188,11 @@ private:
     void initDefinedColors( CUSTOM_COLORS_LIST* aPredefinedColors );
 
     // convert double value 0 ... 1 to int 0 ... aValMax
-    int normalizeToInt( double aValue, int aValMax = 255 ) { return ( aValue * aValMax ) + 0.5; }
+    int normalizeToInt( double aValue, int aValMax = 255 )
+    {
+        return ( aValue * aValMax ) + 0.5;
+    }
+
 };
 
-#endif // #define DIALOG_COLOR_PICKER_H
+#endif  // #define DIALOG_COLOR_PICKER_H

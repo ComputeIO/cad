@@ -57,7 +57,6 @@ class SCH_LINE;
 class SCH_BUS_ENTRY_BASE;
 class SCH_BITMAP;
 class SCHEMATIC;
-class FONT;
 
 namespace KIGFX
 {
@@ -82,46 +81,49 @@ public:
 
     bool IsBackgroundDark() const override
     {
-        auto luma = m_layerColors[LAYER_SCHEMATIC_BACKGROUND].GetBrightness();
+        auto luma = m_layerColors[ LAYER_SCHEMATIC_BACKGROUND ].GetBrightness();
 
         return luma < 0.5;
     }
 
     const COLOR4D& GetBackgroundColor() override
     {
-        return m_layerColors[LAYER_SCHEMATIC_BACKGROUND];
+        return m_layerColors[ LAYER_SCHEMATIC_BACKGROUND ];
     }
 
     void SetBackgroundColor( const COLOR4D& aColor ) override
     {
-        m_layerColors[LAYER_SCHEMATIC_BACKGROUND] = aColor;
+        m_layerColors[ LAYER_SCHEMATIC_BACKGROUND ] = aColor;
     }
 
-    float GetDanglineSymbolThickness() const { return (float) m_defaultPenWidth / 3.0F; }
+    float GetDanglineSymbolThickness() const
+    {
+        return (float) m_defaultPenWidth / 3.0F;
+    }
 
-    const COLOR4D& GetGridColor() override { return m_layerColors[LAYER_SCHEMATIC_GRID]; }
+    const COLOR4D& GetGridColor() override { return m_layerColors[ LAYER_SCHEMATIC_GRID ]; }
 
-    const COLOR4D& GetCursorColor() override { return m_layerColors[LAYER_SCHEMATIC_CURSOR]; }
+    const COLOR4D& GetCursorColor() override { return m_layerColors[ LAYER_SCHEMATIC_CURSOR ]; }
 
-    int m_ShowUnit;    // Show all units if 0
-    int m_ShowConvert; // Show all conversions if 0
+    int    m_ShowUnit;                // Show all units if 0
+    int    m_ShowConvert;             // Show all conversions if 0
 
-    bool m_ShowHiddenText;
-    bool m_ShowHiddenPins;
-    bool m_ShowPinsElectricalType;
-    bool m_ShowDisabled;
-    bool m_ShowGraphicsDisabled;
-    bool m_ShowUmbilicals;
+    bool   m_ShowHiddenText;
+    bool   m_ShowHiddenPins;
+    bool   m_ShowPinsElectricalType;
+    bool   m_ShowDisabled;
+    bool   m_ShowGraphicsDisabled;
+    bool   m_ShowUmbilicals;
 
-    bool m_OverrideItemColors;
+    bool   m_OverrideItemColors;
 
-    double m_TextOffsetRatio; // Proportion of font size to offset text above/below
-                              // wires, buses, etc.
+    double m_TextOffsetRatio;        // Proportion of font size to offset text above/below
+                                     // wires, buses, etc.
 
-    int m_DefaultWireThickness;
-    int m_DefaultBusThickness;
-    int m_PinSymbolSize;
-    int m_JunctionSize;
+    int    m_DefaultWireThickness;
+    int    m_DefaultBusThickness;
+    int    m_PinSymbolSize;
+    int    m_JunctionSize;
 };
 
 
@@ -137,9 +139,15 @@ public:
     virtual bool Draw( const VIEW_ITEM*, int ) override;
 
     /// @copydoc PAINTER::GetSettings()
-    virtual SCH_RENDER_SETTINGS* GetSettings() override { return &m_schSettings; }
+    virtual SCH_RENDER_SETTINGS* GetSettings() override
+    {
+        return &m_schSettings;
+    }
 
-    void SetSchematic( SCHEMATIC* aSchematic ) { m_schematic = aSchematic; }
+    void SetSchematic( SCHEMATIC* aSchematic )
+    {
+        m_schematic = aSchematic;
+    }
 
 private:
     void draw( const LIB_RECTANGLE* aRect, int aLayer );
@@ -168,26 +176,25 @@ private:
     void drawPinDanglingSymbol( const VECTOR2I& aPos, bool aDrawingShadows );
     void drawDanglingSymbol( const wxPoint& aPos, int aWidth, bool aDrawingShadows );
 
-    int internalPinDecoSize( const LIB_PIN& aPin );
-    int externalPinDecoSize( const LIB_PIN& aPin );
+    int internalPinDecoSize( const LIB_PIN &aPin );
+    int externalPinDecoSize( const LIB_PIN &aPin );
 
     bool isUnitAndConversionShown( const LIB_ITEM* aItem ) const;
 
-    float   getShadowWidth() const;
+    float getShadowWidth() const;
     COLOR4D getRenderColor( const EDA_ITEM* aItem, int aLayer, bool aDrawingShadows ) const;
-    float   getLineWidth( const LIB_ITEM* aItem, bool aDrawingShadows ) const;
-    float   getLineWidth( const SCH_ITEM* aItem, bool aDrawingShadows ) const;
-    float   getTextThickness( const SCH_TEXT* aItem, bool aDrawingShadows ) const;
-    float   getTextThickness( const SCH_FIELD* aItem, bool aDrawingShadows ) const;
-    float   getTextThickness( const LIB_FIELD* aItem, bool aDrawingShadows ) const;
-    float   getTextThickness( const LIB_TEXT* aItem, bool aDrawingShadows ) const;
+    float getLineWidth( const LIB_ITEM* aItem, bool aDrawingShadows ) const;
+    float getLineWidth( const SCH_ITEM* aItem, bool aDrawingShadows ) const;
+    float getTextThickness( const SCH_TEXT* aItem, bool aDrawingShadows ) const;
+    float getTextThickness( const SCH_FIELD* aItem, bool aDrawingShadows ) const;
+    float getTextThickness( const LIB_FIELD* aItem, bool aDrawingShadows ) const;
+    float getTextThickness( const LIB_TEXT* aItem, bool aDrawingShadows ) const;
 
     bool setDeviceColors( const LIB_ITEM* aItem, int aLayer );
     void fillIfSelection( int aLayer );
 
-    void triLine( const VECTOR2D& a, const VECTOR2D& b, const VECTOR2D& c );
-    void strokeText( const wxString& aText, const VECTOR2D& aPosition, double aRotationAngle,
-                     FONT* aFont = nullptr );
+    void triLine ( const VECTOR2D &a, const VECTOR2D &b, const VECTOR2D &c );
+    void strokeText( const wxString& aText, const VECTOR2D& aPosition, double aRotationAngle );
 
     SCH_RENDER_SETTINGS m_schSettings;
 

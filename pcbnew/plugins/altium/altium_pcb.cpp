@@ -213,7 +213,7 @@ PCB_LAYER_ID ALTIUM_PCB::GetKicadLayer( ALTIUM_LAYER aAltiumLayer ) const
     case ALTIUM_LAYER::UNKNOWN:           return UNDEFINED_LAYER;
 
     case ALTIUM_LAYER::TOP_LAYER:         return F_Cu;
-    case ALTIUM_LAYER::MID_LAYER_1: return In1_Cu;
+    case ALTIUM_LAYER::MID_LAYER_1:       return In1_Cu;
     case ALTIUM_LAYER::MID_LAYER_2:       return In2_Cu;
     case ALTIUM_LAYER::MID_LAYER_3:       return In3_Cu;
     case ALTIUM_LAYER::MID_LAYER_4:       return In4_Cu;
@@ -272,18 +272,18 @@ PCB_LAYER_ID ALTIUM_PCB::GetKicadLayer( ALTIUM_LAYER aAltiumLayer ) const
     case ALTIUM_LAYER::DRILL_GUIDE:       return Dwgs_User;
     case ALTIUM_LAYER::KEEP_OUT_LAYER:    return Margin;
 
-    case ALTIUM_LAYER::MECHANICAL_1: return User_1; //Edge_Cuts;
-    case ALTIUM_LAYER::MECHANICAL_2: return User_2;
-    case ALTIUM_LAYER::MECHANICAL_3: return User_3;
-    case ALTIUM_LAYER::MECHANICAL_4: return User_4;
-    case ALTIUM_LAYER::MECHANICAL_5: return User_5;
-    case ALTIUM_LAYER::MECHANICAL_6: return User_6;
-    case ALTIUM_LAYER::MECHANICAL_7: return User_7;
-    case ALTIUM_LAYER::MECHANICAL_8: return User_8;
-    case ALTIUM_LAYER::MECHANICAL_9: return User_9;
+    case ALTIUM_LAYER::MECHANICAL_1:      return User_1; //Edge_Cuts;
+    case ALTIUM_LAYER::MECHANICAL_2:      return User_2;
+    case ALTIUM_LAYER::MECHANICAL_3:      return User_3;
+    case ALTIUM_LAYER::MECHANICAL_4:      return User_4;
+    case ALTIUM_LAYER::MECHANICAL_5:      return User_5;
+    case ALTIUM_LAYER::MECHANICAL_6:      return User_6;
+    case ALTIUM_LAYER::MECHANICAL_7:      return User_7;
+    case ALTIUM_LAYER::MECHANICAL_8:      return User_8;
+    case ALTIUM_LAYER::MECHANICAL_9:      return User_9;
     case ALTIUM_LAYER::MECHANICAL_10:     return Dwgs_User;
-    case ALTIUM_LAYER::MECHANICAL_11: return Eco1_User;
-    case ALTIUM_LAYER::MECHANICAL_12: return Eco2_User;
+    case ALTIUM_LAYER::MECHANICAL_11:     return Eco1_User;
+    case ALTIUM_LAYER::MECHANICAL_12:     return Eco2_User;
     case ALTIUM_LAYER::MECHANICAL_13:     return F_Fab;
     case ALTIUM_LAYER::MECHANICAL_14:     return B_Fab;
     case ALTIUM_LAYER::MECHANICAL_15:     return F_CrtYd;
@@ -1435,10 +1435,9 @@ void ALTIUM_PCB::ParseShapeBasedRegions6Data( const CFB::CompoundFileReader& aRe
 
             if( linechain.PointCount() < 2 )
             {
-                wxLogError(
-                        wxString::Format( _( "ShapeBasedRegion has only %d point extracted from "
-                                             "%ld vertices. At least 2 points are required." ),
-                                          linechain.PointCount(), elem.outline.size() ) );
+                wxLogError( wxString::Format(
+                        _( "ShapeBasedRegion has only %d point extracted from %ld vertices. At least 2 points are required." ),
+                        linechain.PointCount(), elem.outline.size() ) );
                 continue;
             }
 

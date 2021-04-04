@@ -38,8 +38,6 @@
 #include <font/triangulate.h>
 
 #include <basic_gal.h>
-#include <geometry/shape_poly_set.h>
-#include <font/triangulate.h>
 
 using namespace KIGFX;
 
@@ -107,21 +105,6 @@ void BASIC_GAL::doDrawPolyline( const std::vector<wxPoint>& aLocalPointList, boo
 
 void BASIC_GAL::DrawPolyline( const std::deque<VECTOR2D>& aPointList )
 {
-    if( aPointList.size() < 2 )
-        return;
-
-    std::vector<wxPoint> polyline_corners;
-
-    for( const VECTOR2D& pt : aPointList )
-        polyline_corners.emplace_back( (wxPoint) transform( pt ) );
-
-    doDrawPolyline( polyline_corners );
-}
-
-
-void BASIC_GAL::DrawPolyline( const std::vector<VECTOR2D>& aPointList )
-{
-    // should be combined with void BASIC_GAL::DrawPolyline( const std::deque<VECTOR2D>& )
     if( aPointList.size() < 2 )
         return;
 

@@ -29,7 +29,8 @@
 
 using namespace KIGFX;
 
-PAINTER::PAINTER( GAL* aGal ) : m_gal( aGal )
+PAINTER::PAINTER( GAL* aGal ) :
+    m_gal( aGal )
 {
 }
 

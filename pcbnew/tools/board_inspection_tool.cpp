@@ -282,11 +282,12 @@ int BOARD_INSPECTION_TOOL::InspectClearance( const TOOL_EVENT& aEvent )
     BOARD_ITEM* a = static_cast<BOARD_ITEM*>( selection.GetItem( 0 ) );
     BOARD_ITEM* b = static_cast<BOARD_ITEM*>( selection.GetItem( 1 ) );
 
-    auto hasHole = []( BOARD_ITEM* aItem )
-    {
-        PAD* pad = dynamic_cast<PAD*>( aItem );
-        return pad && pad->GetDrillSizeX() > 0 && pad->GetDrillSizeY() > 0;
-    };
+    auto hasHole =
+            []( BOARD_ITEM* aItem )
+            {
+                PAD* pad = dynamic_cast<PAD*>( aItem );
+                return pad && pad->GetDrillSizeX() > 0 && pad->GetDrillSizeY() > 0;
+            };
 
     wxCHECK( a && b, 0 );
 
@@ -642,8 +643,8 @@ int BOARD_INSPECTION_TOOL::InspectConstraints( const TOOL_EVENT& aEvent )
         else
         {
             // PADSTACKS TODO: once we have padstacks we'll need to run this per-layer....
-            auto constraint =
-                    drcEngine.EvalRules( HOLE_SIZE_CONSTRAINT, item, nullptr, UNDEFINED_LAYER, r );
+            auto constraint = drcEngine.EvalRules( HOLE_SIZE_CONSTRAINT, item, nullptr,
+                                                   UNDEFINED_LAYER, r );
 
             wxString min = _( "undefined" );
 
@@ -678,8 +679,8 @@ int BOARD_INSPECTION_TOOL::InspectConstraints( const TOOL_EVENT& aEvent )
                        + "  <a href='drc'>" + _( "Run DRC for a full analysis." ) + "</a>" );
         }
 
-        auto constraint =
-                drcEngine.EvalRules( DISALLOW_CONSTRAINT, item, nullptr, item->GetLayer(), r );
+        auto constraint = drcEngine.EvalRules( DISALLOW_CONSTRAINT, item, nullptr, item->GetLayer(),
+                                               r );
 
         r->Report( "" );
 

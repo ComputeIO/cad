@@ -59,7 +59,7 @@ public:
         case COL_LENGTH:       return _( "Length" );
         case COL_POSX:         return _( "X Position" );
         case COL_POSY:         return _( "Y Position" );
-        case COL_VISIBLE: return _( "Visible" );
+        case COL_VISIBLE:      return _( "Visible" );
         default:               wxFAIL; return wxEmptyString;
         }
     }
@@ -118,7 +118,9 @@ public:
             case COL_POSY:
                 val = StringFromValue( aUserUnits, pin->GetPosition().y );
                 break;
-            case COL_VISIBLE: val = StringFromBool( pin->IsVisible() ); break;
+            case COL_VISIBLE:
+                val = StringFromBool( pin->IsVisible() );
+                break;
             default:
                 wxFAIL;
                 break;
@@ -200,8 +202,9 @@ public:
                                            ValueFromString( m_userUnits, aValue ) ) );
                 break;
 
-            case COL_VISIBLE: pin->SetVisible( BoolFromString( aValue ) ); break;
-
+            case COL_VISIBLE:
+                pin->SetVisible(BoolFromString( aValue ));
+                break;
             default:
                 wxFAIL;
                 break;
@@ -457,8 +460,8 @@ DIALOG_LIB_EDIT_PIN_TABLE::DIALOG_LIB_EDIT_PIN_TABLE( SYMBOL_EDIT_FRAME* parent,
     attr = new wxGridCellAttr;
     wxArrayString orientationNames = PinOrientationNames();
     orientationNames.push_back( INDETERMINATE_STATE );
-    attr->SetRenderer(
-            new GRID_CELL_ICON_TEXT_RENDERER( PinOrientationIcons(), orientationNames ) );
+    attr->SetRenderer( new GRID_CELL_ICON_TEXT_RENDERER( PinOrientationIcons(),
+                                                         orientationNames ) );
     attr->SetEditor( new GRID_CELL_ICON_TEXT_POPUP( PinOrientationIcons(), orientationNames ) );
     m_grid->SetColAttr( COL_ORIENTATION, attr );
 

@@ -62,10 +62,7 @@ class TOOL_ACTION;
 
 enum LAST_PATH_TYPE : unsigned int;
 
-namespace PCB
-{
-struct IFACE;
-} // namespace PCB
+namespace PCB { struct IFACE; }     // KIFACE_I is in pcbnew.cpp
 
 /**
  * The main frame for Pcbnew.
@@ -174,7 +171,7 @@ public:
     // Configurations:
     void Process_Config( wxCommandEvent& event );
 
-#if defined( KICAD_SCRIPTING ) && defined( KICAD_SCRIPTING_ACTION_MENU )
+#if defined(KICAD_SCRIPTING) && defined(KICAD_SCRIPTING_ACTION_MENU)
 
     /**
      * Return true if button visibility action plugin setting was set to true
@@ -507,8 +504,8 @@ public:
      * @param aYRef the board Reference Point in mm, Y value.
      * @return true if OK.
      */
-    bool Export_IDF3( BOARD* aPcb, const wxString& aFullFileName, bool aUseThou, double aXRef,
-                      double aYRef );
+    bool Export_IDF3( BOARD* aPcb, const wxString& aFullFileName,
+                      bool aUseThou, double aXRef, double aYRef );
 
     /**
      * Export the current BOARD to a STEP assembly.
@@ -619,7 +616,7 @@ public:
      * @param aReporter is a #REPORTER object to display messages.
      * @return true if the netlist was read successfully.
      */
-    bool ReadNetlistFromFile( const wxString& aFilename, NETLIST& aNetlist, REPORTER& aReporter );
+    bool ReadNetlistFromFile( const wxString &aFilename, NETLIST& aNetlist, REPORTER& aReporter );
 
     /**
      * Called after netlist is updated.

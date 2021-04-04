@@ -38,7 +38,7 @@ class PLOTTER;
  * A minimal GAL implementation to draw, plot and convert stroke texts to a set of segments
  * for DRC tests, and to calculate text sizes.
  *
- * Currently it allows one to use GAL and FONT methods in legacy draw mode
+ * Currently it allows one to use GAL and STROKE_FONT methods in legacy draw mode
  * (using wxDC functions) in plot functions only for texts.
  * It is used also to calculate the text bounding boxes
  *
@@ -49,7 +49,7 @@ class PLOTTER;
  * (or at least restricted to plotter and DRC "canvas")
  */
 
-struct TRANSFORM_PRM // A helper class to transform coordinates in BASIC_GAL canvas
+struct TRANSFORM_PRM    // A helper class to transform coordinates in BASIC_GAL canvas
 {
     VECTOR2D m_rotCenter;
     VECTOR2D m_moveOffset;
@@ -57,10 +57,11 @@ struct TRANSFORM_PRM // A helper class to transform coordinates in BASIC_GAL can
 };
 
 
-class BASIC_GAL : public KIGFX::GAL
+class BASIC_GAL: public KIGFX::GAL
 {
 public:
-    BASIC_GAL( KIGFX::GAL_DISPLAY_OPTIONS& aDisplayOptions ) : GAL( aDisplayOptions )
+    BASIC_GAL( KIGFX::GAL_DISPLAY_OPTIONS& aDisplayOptions ) :
+        GAL( aDisplayOptions )
     {
         m_DC = nullptr;
         m_Color = RED;
@@ -70,9 +71,13 @@ public:
         m_isClipped = false;
     }
 
-    void SetPlotter( PLOTTER* aPlotter ) { m_plotter = aPlotter; }
+    void SetPlotter( PLOTTER* aPlotter )
+    {
+        m_plotter = aPlotter;
+    }
 
-    void SetCallback( TEXT_SEGMENT_CALLBACK aCallback, void* aData )
+    void SetCallback( void (* aCallback)( int x0, int y0, int xf, int yf, void* aData ),
+                      void* aData  )
     {
         m_callback = aCallback;
         m_callbackData = aData;
@@ -89,7 +94,10 @@ public:
     }
 
     /// Save the context.
-    virtual void Save() override { m_transformHistory.push( m_transform ); }
+    virtual void Save() override
+    {
+        m_transformHistory.push( m_transform );
+    }
 
     virtual void Restore() override
     {
@@ -103,8 +111,6 @@ public:
      * @param aPointList is a list of 2D-Vectors containing the polyline points.
      */
     virtual void DrawPolyline( const std::deque<VECTOR2D>& aPointList ) override;
-
-    virtual void DrawPolyline( const std::vector<VECTOR2D>& aPointList ) override;
 
     virtual void DrawPolyline( const VECTOR2D aPointList[], int aListSize ) override;
 
@@ -151,22 +157,22 @@ private:
     const VECTOR2D transform( const VECTOR2D& aPoint ) const;
 
 public:
-    wxDC*   m_DC;
+    wxDC* m_DC;
     COLOR4D m_Color;
 
 private:
-    TRANSFORM_PRM             m_transform;
-    std::stack<TRANSFORM_PRM> m_transformHistory;
+    TRANSFORM_PRM m_transform;
+    std::stack <TRANSFORM_PRM>  m_transformHistory;
 
     // A clip box, to clip drawings in a wxDC (mandatory to avoid draw issues)
-    EDA_RECT m_clipBox;   // The clip box
-    bool     m_isClipped; // Allows/disallows clipping
+    EDA_RECT  m_clipBox;        // The clip box
+    bool      m_isClipped;      // Allows/disallows clipping
 
     // When calling the draw functions outside a wxDC, to get the basic drawings
     // lines / polylines ..., a callback function (used in DRC) to store
     // coordinates of each segment:
-    TEXT_SEGMENT_CALLBACK m_callback;
-    void*                 m_callbackData; // a optional parameter for m_callback
+    void (* m_callback)( int x0, int y0, int xf, int yf, void* aData );
+    void* m_callbackData;       // a optional parameter for m_callback
 
     // When calling the draw functions for plot, the plotter acts as a wxDC to plot basic items.
     PLOTTER* m_plotter;
@@ -175,4 +181,4 @@ private:
 
 extern BASIC_GAL basic_gal;
 
-#endif // define BASIC_GAL_H
+#endif      // define BASIC_GAL_H

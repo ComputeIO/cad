@@ -213,7 +213,10 @@ public:
         }
     };
 
-    EE_TYPE OfType( KICAD_T aType ) const { return EE_TYPE( m_tree, aType ); }
+    EE_TYPE OfType( KICAD_T aType ) const
+    {
+        return EE_TYPE( m_tree, aType );
+    }
 
     EE_TYPE Overlapping( const EDA_RECT& aRect ) const
     {

@@ -143,9 +143,9 @@ bool DRC_TEST_PROVIDER_SILK_CLEARANCE::Run()
                 if( isInvisibleText( aRefItem->parent ) || isInvisibleText( aTestItem->parent ) )
                     return true;
 
-                auto constraint =
-                        m_drcEngine->EvalRules( SILK_CLEARANCE_CONSTRAINT, aRefItem->parent,
-                                                aTestItem->parent, aLayers.second );
+                auto constraint = m_drcEngine->EvalRules( SILK_CLEARANCE_CONSTRAINT,
+                                                          aRefItem->parent, aTestItem->parent,
+                                                          aLayers.second );
 
                 if( constraint.IsNull() )
                     return true;

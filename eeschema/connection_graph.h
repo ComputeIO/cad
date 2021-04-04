@@ -73,11 +73,21 @@ public:
     };
 
     explicit CONNECTION_SUBGRAPH( CONNECTION_GRAPH* aGraph ) :
-            m_graph( aGraph ), m_dirty( false ), m_absorbed( false ), m_absorbed_by( nullptr ),
-            m_code( -1 ), m_multiple_drivers( false ), m_strong_driver( false ),
-            m_local_driver( false ), m_no_connect( nullptr ), m_bus_entry( nullptr ),
-            m_driver( nullptr ), m_driver_connection( nullptr ), m_hier_parent( nullptr ),
-            m_first_driver( nullptr ), m_second_driver( nullptr )
+              m_graph( aGraph ),
+              m_dirty( false ),
+              m_absorbed( false ),
+              m_absorbed_by( nullptr ),
+              m_code( -1 ),
+              m_multiple_drivers( false ),
+              m_strong_driver( false ),
+              m_local_driver( false ),
+              m_no_connect( nullptr ),
+              m_bus_entry( nullptr ),
+              m_driver( nullptr ),
+              m_driver_connection( nullptr ),
+              m_hier_parent( nullptr ),
+              m_first_driver( nullptr ),
+              m_second_driver( nullptr )
     {}
 
     ~CONNECTION_SUBGRAPH() = default;

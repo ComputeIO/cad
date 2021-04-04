@@ -871,7 +871,7 @@ BOARD_ITEM* BOARD::GetItem( const KIID& aID ) const
 void BOARD::FillItemMap( std::map<KIID, EDA_ITEM*>& aMap )
 {
     // the board itself
-    aMap[m_Uuid] = this;
+    aMap[ m_Uuid ] = this;
 
     for( TRACK* track : Tracks() )
         aMap[ track->m_Uuid ] = track;
@@ -1625,7 +1625,7 @@ PAD* BOARD::GetPad( std::vector<PAD*>& aPadList, const wxPoint& aPosition, LSET 
  *
  * This function is used to build ordered pads lists
  */
-bool sortPadsByXthenYCoord( PAD* const& aLH, PAD* const& aRH )
+bool sortPadsByXthenYCoord( PAD* const & aLH, PAD* const & aRH )
 {
     if( aLH->GetPosition().x == aRH->GetPosition().x )
         return aLH->GetPosition().y < aRH->GetPosition().y;
@@ -2018,8 +2018,7 @@ wxString BOARD::GroupsSanityCheck( bool repair )
     if( repair )
     {
         while( GroupsSanityCheckInternal( repair ) != wxEmptyString )
-        {
-        };
+        {};
 
         return wxEmptyString;
     }

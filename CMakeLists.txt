@@ -507,10 +507,6 @@ elseif( KICAD_USE_EGL )
     message( STATUS "Ignoring KICAD_USE_EGL since not on Linux" )
 endif()
 
-if( KICAD_USE_FONTCONFIG )
-    add_definitions( -DKICAD_USE_FONTCONFIG )
-endif()
-
 # KIFACE_SUFFIX is the file extension used for top level program modules which
 # implement the KIFACE interface.  A valid suffix starts with a period '.'.
 
@@ -894,10 +890,6 @@ if( KICAD_SCRIPTING_WXPYTHON )
         "(wxWidgets ${WXPYTHON_WXVERSION})" )
 endif()
 
-
-if( KICAD_USE_FONTCONFIG )
-    find_package( Fontconfig REQUIRED )
-endif()
 
 #
 # Find wxWidgets library, required

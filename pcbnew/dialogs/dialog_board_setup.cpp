@@ -89,8 +89,8 @@ DIALOG_BOARD_SETUP::DIALOG_BOARD_SETUP( PCB_EDIT_FRAME* aFrame ) :
     m_treebook->AddSubPage( m_boardFinish, _( "Board Finish" ) );
     m_treebook->AddSubPage( m_maskAndPaste,  _( "Solder Mask/Paste" ) );
 
-    m_treebook->AddPage( new wxPanel( this ), _( "Text & Graphics" ) );
-    m_treebook->AddSubPage( m_textAndGraphics, _( "Defaults" ) );
+    m_treebook->AddPage( new wxPanel( this ),  _( "Text & Graphics" ) );
+    m_treebook->AddSubPage( m_textAndGraphics,  _( "Defaults" ) );
     m_treebook->AddSubPage( m_textVars, _( "Text Variables" ) );
 
     m_treebook->AddPage( new wxPanel( this ),  _( "Design Rules" ) );

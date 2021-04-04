@@ -23,7 +23,7 @@
  */
 
 #include <collectors.h>
-#include <board_item.h> // class BOARD_ITEM
+#include <board_item.h>             // class BOARD_ITEM
 
 #include <footprint.h>
 #include <fp_shape.h>
@@ -35,7 +35,7 @@
 #include <pcb_shape.h>
 #include <pcb_group.h>
 #include <macros.h>
-#include <math/util.h> // for KiROUND
+#include <math/util.h>      // for KiROUND
 
 /*
  * This module contains out of line member functions for classes given in
@@ -47,77 +47,127 @@ const KICAD_T GENERAL_COLLECTOR::AllBoardItems[] = {
     // there are some restrictions on the order of items in the general case.
     // all items in m_Drawings for instance should be contiguous.
     //  *** all items in a same list (shown here) must be contiguous ****
-    PCB_MARKER_T,         // in m_markers
-    PCB_TEXT_T,           // in m_drawings
-    PCB_SHAPE_T,          // in m_drawings
-    PCB_DIM_ALIGNED_T,    // in m_drawings
-    PCB_DIM_CENTER_T,     // in m_drawings
-    PCB_DIM_ORTHOGONAL_T, // in m_drawings
-    PCB_DIM_LEADER_T,     // in m_drawings
-    PCB_TARGET_T,         // in m_drawings
-    PCB_VIA_T,            // in m_tracks
-    PCB_TRACE_T,          // in m_tracks
-    PCB_ARC_T,            // in m_tracks
-    PCB_PAD_T,            // in footprints
-    PCB_FP_TEXT_T,        // in footprints
-    PCB_FOOTPRINT_T,      // in m_footprints
-    PCB_GROUP_T,          // in m_groups
-    PCB_ZONE_T,           // in m_zones
+    PCB_MARKER_T,           // in m_markers
+    PCB_TEXT_T,             // in m_drawings
+    PCB_SHAPE_T,            // in m_drawings
+    PCB_DIM_ALIGNED_T,      // in m_drawings
+    PCB_DIM_CENTER_T,       // in m_drawings
+    PCB_DIM_ORTHOGONAL_T,   // in m_drawings
+    PCB_DIM_LEADER_T,       // in m_drawings
+    PCB_TARGET_T,           // in m_drawings
+    PCB_VIA_T,              // in m_tracks
+    PCB_TRACE_T,            // in m_tracks
+    PCB_ARC_T,              // in m_tracks
+    PCB_PAD_T,              // in footprints
+    PCB_FP_TEXT_T,          // in footprints
+    PCB_FOOTPRINT_T,        // in m_footprints
+    PCB_GROUP_T,            // in m_groups
+    PCB_ZONE_T,             // in m_zones
     EOT
 };
 
 
 const KICAD_T GENERAL_COLLECTOR::BoardLevelItems[] = {
-    PCB_MARKER_T,     PCB_TEXT_T,       PCB_SHAPE_T,  PCB_DIM_ALIGNED_T, PCB_DIM_ORTHOGONAL_T,
-    PCB_DIM_CENTER_T, PCB_DIM_LEADER_T, PCB_TARGET_T, PCB_VIA_T,         PCB_ARC_T,
-    PCB_TRACE_T,      PCB_FOOTPRINT_T,  PCB_GROUP_T,  PCB_ZONE_T,        EOT
+    PCB_MARKER_T,
+    PCB_TEXT_T,
+    PCB_SHAPE_T,
+    PCB_DIM_ALIGNED_T,
+    PCB_DIM_ORTHOGONAL_T,
+    PCB_DIM_CENTER_T,
+    PCB_DIM_LEADER_T,
+    PCB_TARGET_T,
+    PCB_VIA_T,
+    PCB_ARC_T,
+    PCB_TRACE_T,
+    PCB_FOOTPRINT_T,
+    PCB_GROUP_T,
+    PCB_ZONE_T,
+    EOT
 };
 
 
-const KICAD_T GENERAL_COLLECTOR::Footprints[] = { PCB_FOOTPRINT_T, EOT };
+const KICAD_T GENERAL_COLLECTOR::Footprints[] = {
+    PCB_FOOTPRINT_T,
+    EOT
+};
 
 
-const KICAD_T GENERAL_COLLECTOR::PadsOrTracks[] = { PCB_PAD_T, PCB_VIA_T, PCB_TRACE_T, PCB_ARC_T,
-                                                    EOT };
+const KICAD_T GENERAL_COLLECTOR::PadsOrTracks[] = {
+    PCB_PAD_T,
+    PCB_VIA_T,
+    PCB_TRACE_T,
+    PCB_ARC_T,
+    EOT
+};
 
 
-const KICAD_T GENERAL_COLLECTOR::FootprintItems[] = { PCB_FP_TEXT_T, PCB_FP_SHAPE_T, PCB_PAD_T,
-                                                      PCB_FP_ZONE_T, PCB_GROUP_T,    EOT };
+const KICAD_T GENERAL_COLLECTOR::FootprintItems[] = {
+    PCB_FP_TEXT_T,
+    PCB_FP_SHAPE_T,
+    PCB_PAD_T,
+    PCB_FP_ZONE_T,
+    PCB_GROUP_T,
+    EOT
+    };
 
 
-const KICAD_T GENERAL_COLLECTOR::Tracks[] = { PCB_TRACE_T, PCB_ARC_T, PCB_VIA_T, EOT };
+const KICAD_T GENERAL_COLLECTOR::Tracks[] = {
+    PCB_TRACE_T,
+    PCB_ARC_T,
+    PCB_VIA_T,
+    EOT
+};
 
 
-const KICAD_T GENERAL_COLLECTOR::LockableItems[] = { PCB_FOOTPRINT_T,
-                                                     PCB_GROUP_T, // Can a group be locked?
-                                                     PCB_TRACE_T,     PCB_ARC_T, PCB_VIA_T, EOT };
+const KICAD_T GENERAL_COLLECTOR::LockableItems[] = {
+    PCB_FOOTPRINT_T,
+    PCB_GROUP_T,  // Can a group be locked?
+    PCB_TRACE_T,
+    PCB_ARC_T,
+    PCB_VIA_T,
+    EOT
+};
 
 
-const KICAD_T GENERAL_COLLECTOR::Zones[] = { PCB_ZONE_T, PCB_FP_ZONE_T, EOT };
+const KICAD_T GENERAL_COLLECTOR::Zones[] = {
+    PCB_ZONE_T,
+    PCB_FP_ZONE_T,
+    EOT
+};
 
 
-const KICAD_T GENERAL_COLLECTOR::Dimensions[] = { PCB_DIM_ALIGNED_T, PCB_DIM_LEADER_T,
-                                                  PCB_DIM_ORTHOGONAL_T, PCB_DIM_CENTER_T, EOT };
+const KICAD_T GENERAL_COLLECTOR::Dimensions[] = {
+    PCB_DIM_ALIGNED_T,
+    PCB_DIM_LEADER_T,
+    PCB_DIM_ORTHOGONAL_T,
+    PCB_DIM_CENTER_T,
+    EOT
+};
 
 
-const KICAD_T GENERAL_COLLECTOR::DraggableItems[] = { PCB_TRACE_T, PCB_VIA_T, PCB_FOOTPRINT_T,
-                                                      PCB_ARC_T, EOT };
+const KICAD_T GENERAL_COLLECTOR::DraggableItems[] = {
+    PCB_TRACE_T,
+    PCB_VIA_T,
+    PCB_FOOTPRINT_T,
+    PCB_ARC_T,
+    EOT
+};
 
 
 SEARCH_RESULT GENERAL_COLLECTOR::Inspect( EDA_ITEM* testItem, void* testData )
 {
-    BOARD_ITEM*     item = (BOARD_ITEM*) testItem;
-    FOOTPRINT*      footprint = nullptr;
-    PCB_GROUP*      group = nullptr;
-    PAD*            pad = nullptr;
+    BOARD_ITEM*     item        = (BOARD_ITEM*) testItem;
+    FOOTPRINT*      footprint   = nullptr;
+    PCB_GROUP*      group       = nullptr;
+    PAD*            pad         = nullptr;
     bool            pad_through = false;
-    VIA*            via = nullptr;
-    PCB_MARKER*     marker = nullptr;
-    ZONE*           zone = nullptr;
-    PCB_SHAPE*      shape = nullptr;
-    DIMENSION_BASE* dimension = nullptr;
+    VIA*            via         = nullptr;
+    PCB_MARKER*     marker      = nullptr;
+    ZONE*           zone        = nullptr;
+    PCB_SHAPE*      shape       = nullptr;
+    DIMENSION_BASE* dimension   = nullptr;
 
-#if 0 // debugging
+#if 0   // debugging
     static int  breakhere = 0;
 
     switch( item->Type() )
@@ -193,21 +243,21 @@ SEARCH_RESULT GENERAL_COLLECTOR::Inspect( EDA_ITEM* testItem, void* testData )
         // for through pads: pads on Front or Back board sides must be visible
         pad = static_cast<PAD*>( item );
 
-        if( ( pad->GetAttribute() != PAD_ATTRIB_SMD )
-            && ( pad->GetAttribute() != PAD_ATTRIB_CONN ) ) // a hole is present, so multiple layers
+        if( (pad->GetAttribute() != PAD_ATTRIB_SMD) &&
+            (pad->GetAttribute() != PAD_ATTRIB_CONN) )   // a hole is present, so multiple layers
         {
             // proceed to the common tests below, but without the parent footprint test,
             // by leaving footprint==NULL, but having pad != null
             pad_through = true;
         }
-        else // smd, so use pads test after footprint test
+        else  // smd, so use pads test after footprint test
         {
             footprint = static_cast<FOOTPRINT*>( item->GetParent() );
         }
 
         break;
 
-    case PCB_VIA_T: // vias are on many layers, so layer test is specific
+    case PCB_VIA_T:     // vias are on many layers, so layer test is specific
         via = static_cast<VIA*>( item );
         break;
 
@@ -223,79 +273,97 @@ SEARCH_RESULT GENERAL_COLLECTOR::Inspect( EDA_ITEM* testItem, void* testData )
         // Fallthrough to get the zone as well
         KI_FALLTHROUGH;
 
-    case PCB_ZONE_T: zone = static_cast<ZONE*>( item ); break;
+    case PCB_ZONE_T:
+        zone = static_cast<ZONE*>( item );
+        break;
 
-    case PCB_TEXT_T: break;
+    case PCB_TEXT_T:
+        break;
 
-    case PCB_SHAPE_T: shape = static_cast<PCB_SHAPE*>( item ); break;
+    case PCB_SHAPE_T:
+        shape = static_cast<PCB_SHAPE*>( item );
+        break;
 
     case PCB_DIM_ALIGNED_T:
     case PCB_DIM_CENTER_T:
     case PCB_DIM_ORTHOGONAL_T:
-    case PCB_DIM_LEADER_T: dimension = static_cast<DIMENSION_BASE*>( item ); break;
+    case PCB_DIM_LEADER_T:
+        dimension = static_cast<DIMENSION_BASE*>( item );
+        break;
 
-    case PCB_TARGET_T: break;
+    case PCB_TARGET_T:
+        break;
 
     case PCB_FP_TEXT_T:
-    {
-        FP_TEXT* text = static_cast<FP_TEXT*>( item );
-        if( m_Guide->IgnoreHiddenFPText() && !text->IsVisible() )
-            goto exit;
+        {
+            FP_TEXT *text = static_cast<FP_TEXT*>( item );
+            if( m_Guide->IgnoreHiddenFPText() && !text->IsVisible() )
+                goto exit;
 
-        if( m_Guide->IgnoreFPTextOnBack() && IsBackLayer( text->GetLayer() ) )
-            goto exit;
+            if( m_Guide->IgnoreFPTextOnBack() && IsBackLayer( text->GetLayer() ) )
+                goto exit;
 
-        if( m_Guide->IgnoreFPTextOnFront() && IsFrontLayer( text->GetLayer() ) )
-            goto exit;
+            if( m_Guide->IgnoreFPTextOnFront() && IsFrontLayer( text->GetLayer() ) )
+                goto exit;
 
-        /* The three text types have different criteria: reference
+            /* The three text types have different criteria: reference
              * and value have their own ignore flags; user text instead
              * follows their layer visibility. Checking this here is
              * simpler than later (when layer visibility is checked for
              * other entities) */
 
-        switch( text->GetType() )
-        {
-        case FP_TEXT::TEXT_is_REFERENCE:
-            if( m_Guide->IgnoreFPReferences() )
-                goto exit;
-            break;
+            switch( text->GetType() )
+            {
+            case FP_TEXT::TEXT_is_REFERENCE:
+                if( m_Guide->IgnoreFPReferences() )
+                    goto exit;
+                break;
 
-        case FP_TEXT::TEXT_is_VALUE:
-            if( m_Guide->IgnoreFPValues() )
-                goto exit;
-            break;
+            case FP_TEXT::TEXT_is_VALUE:
+                if( m_Guide->IgnoreFPValues() )
+                    goto exit;
+                break;
 
-        case FP_TEXT::TEXT_is_DIVERS:
-            if( !m_Guide->IsLayerVisible( text->GetLayer() ) && m_Guide->IgnoreNonVisibleLayers() )
-                goto exit;
-            break;
+            case FP_TEXT::TEXT_is_DIVERS:
+                if( !m_Guide->IsLayerVisible( text->GetLayer() )
+                        && m_Guide->IgnoreNonVisibleLayers() )
+                    goto exit;
+                break;
+            }
+
+            // Extract the footprint since it could be hidden
+            footprint = static_cast<FOOTPRINT*>( item->GetParent() );
         }
+        break;
 
-        // Extract the footprint since it could be hidden
-        footprint = static_cast<FOOTPRINT*>( item->GetParent() );
-    }
-    break;
+    case PCB_FP_SHAPE_T:
+        shape = static_cast<FP_SHAPE*>( item );
+        break;
 
-    case PCB_FP_SHAPE_T: shape = static_cast<FP_SHAPE*>( item ); break;
+    case PCB_FOOTPRINT_T:
+        footprint = static_cast<FOOTPRINT*>( item );
+        break;
 
-    case PCB_FOOTPRINT_T: footprint = static_cast<FOOTPRINT*>( item ); break;
+    case PCB_GROUP_T:
+        group = static_cast<PCB_GROUP*>( item );
+        break;
 
-    case PCB_GROUP_T: group = static_cast<PCB_GROUP*>( item ); break;
+    case PCB_MARKER_T:
+        marker = static_cast<PCB_MARKER*>( item );
+        break;
 
-    case PCB_MARKER_T: marker = static_cast<PCB_MARKER*>( item ); break;
-
-    default: break;
+    default:
+        break;
     }
 
     // common tests:
 
-    if( footprint ) // true from case PCB_PAD_T, PCB_FP_TEXT_T, or PCB_FOOTPRINT_T
+    if( footprint )    // true from case PCB_PAD_T, PCB_FP_TEXT_T, or PCB_FOOTPRINT_T
     {
-        if( m_Guide->IgnoreFootprintsOnBack() && ( footprint->GetLayer() == B_Cu ) )
+        if( m_Guide->IgnoreFootprintsOnBack() && ( footprint->GetLayer() == B_Cu) )
             goto exit;
 
-        if( m_Guide->IgnoreFootprintsOnFront() && ( footprint->GetLayer() == F_Cu ) )
+        if( m_Guide->IgnoreFootprintsOnFront() && ( footprint->GetLayer() == F_Cu) )
             goto exit;
     }
 
@@ -307,12 +375,12 @@ SEARCH_RESULT GENERAL_COLLECTOR::Inspect( EDA_ITEM* testItem, void* testData )
         if( m_Guide->IgnorePads() )
             goto exit;
 
-        if( !pad_through )
+        if( ! pad_through )
         {
-            if( m_Guide->IgnorePadsOnFront() && pad->IsOnLayer( F_Cu ) )
+            if( m_Guide->IgnorePadsOnFront() && pad->IsOnLayer(F_Cu ) )
                 goto exit;
 
-            if( m_Guide->IgnorePadsOnBack() && pad->IsOnLayer( B_Cu ) )
+            if( m_Guide->IgnorePadsOnBack() && pad->IsOnLayer(B_Cu ) )
                 goto exit;
         }
     }
@@ -340,8 +408,8 @@ SEARCH_RESULT GENERAL_COLLECTOR::Inspect( EDA_ITEM* testItem, void* testData )
         auto type = via->GetViaType();
 
         if( ( m_Guide->IgnoreThroughVias() && type == VIATYPE::THROUGH )
-            || ( m_Guide->IgnoreBlindBuriedVias() && type == VIATYPE::BLIND_BURIED )
-            || ( m_Guide->IgnoreMicroVias() && type == VIATYPE::MICROVIA ) )
+                || ( m_Guide->IgnoreBlindBuriedVias() && type == VIATYPE::BLIND_BURIED )
+                || ( m_Guide->IgnoreMicroVias() && type == VIATYPE::MICROVIA ) )
         {
             goto exit;
         }
@@ -363,7 +431,7 @@ SEARCH_RESULT GENERAL_COLLECTOR::Inspect( EDA_ITEM* testItem, void* testData )
             {
                 if( !item->IsLocked() || !m_Guide->IgnoreLockedItems() )
                 {
-                    int accuracy = KiROUND( 5 * m_Guide->OnePixelInIU() );
+                    int  accuracy = KiROUND( 5 * m_Guide->OnePixelInIU() );
 
                     if( zone )
                     {
@@ -437,7 +505,7 @@ SEARCH_RESULT GENERAL_COLLECTOR::Inspect( EDA_ITEM* testItem, void* testData )
             {
                 if( !item->IsLocked() || !m_Guide->IgnoreLockedItems() )
                 {
-                    int accuracy = KiROUND( 5 * m_Guide->OnePixelInIU() );
+                    int  accuracy = KiROUND( 5 * m_Guide->OnePixelInIU() );
 
                     if( zone )
                     {
@@ -499,8 +567,8 @@ exit:
 void GENERAL_COLLECTOR::Collect( BOARD_ITEM* aItem, const KICAD_T aScanList[],
                                  const wxPoint& aRefPos, const COLLECTORS_GUIDE& aGuide )
 {
-    Empty();    // empty the collection, primary criteria list
-    Empty2nd(); // empty the collection, secondary criteria list
+    Empty();        // empty the collection, primary criteria list
+    Empty2nd();     // empty the collection, secondary criteria list
 
     // remember guide, pass it to Inspect()
     SetGuide( &aGuide );
@@ -517,7 +585,7 @@ void GENERAL_COLLECTOR::Collect( BOARD_ITEM* aItem, const KICAD_T aScanList[],
     m_PrimaryLength = m_list.size();
 
     // append 2nd list onto end of the first list
-    for( unsigned i = 0; i < m_List2nd.size(); ++i )
+    for( unsigned i = 0;  i<m_List2nd.size();  ++i )
         Append( m_List2nd[i] );
 
     Empty2nd();
@@ -536,7 +604,7 @@ SEARCH_RESULT PCB_TYPE_COLLECTOR::Inspect( EDA_ITEM* testItem, void* testData )
 
 void PCB_TYPE_COLLECTOR::Collect( BOARD_ITEM* aBoard, const KICAD_T aScanList[] )
 {
-    Empty(); // empty any existing collection
+    Empty();        // empty any existing collection
 
     aBoard->Visit( m_inspector, NULL, aScanList );
 }

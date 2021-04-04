@@ -77,32 +77,32 @@ COMMON_SETTINGS::COMMON_SETTINGS() :
     m_params.emplace_back( new PARAM<bool>( "auto_backup.enabled", &m_Backup.enabled, true ) );
 
     m_params.emplace_back( new PARAM<bool>( "auto_backup.backup_on_autosave",
-                                            &m_Backup.backup_on_autosave, false ) );
+            &m_Backup.backup_on_autosave, false ) );
 
-    m_params.emplace_back(
-            new PARAM<int>( "auto_backup.limit_total_files", &m_Backup.limit_total_files, 25 ) );
+    m_params.emplace_back( new PARAM<int>( "auto_backup.limit_total_files",
+            &m_Backup.limit_total_files, 25 ) );
 
     m_params.emplace_back( new PARAM<unsigned long long>( "auto_backup.limit_total_size",
-                                                          &m_Backup.limit_total_size, 104857600 ) );
+            &m_Backup.limit_total_size, 104857600 ) );
 
-    m_params.emplace_back(
-            new PARAM<int>( "auto_backup.limit_daily_files", &m_Backup.limit_daily_files, 5 ) );
+    m_params.emplace_back( new PARAM<int>( "auto_backup.limit_daily_files",
+            &m_Backup.limit_daily_files, 5 ) );
 
-    m_params.emplace_back(
-            new PARAM<int>( "auto_backup.min_interval", &m_Backup.min_interval, 300 ) );
+    m_params.emplace_back( new PARAM<int>( "auto_backup.min_interval",
+            &m_Backup.min_interval, 300 ) );
 
     m_params.emplace_back( new PARAM<bool>( "environment.show_warning_dialog",
-                                            &m_Env.show_warning_dialog, false ) );
+            &m_Env.show_warning_dialog, false ) );
 
     m_params.emplace_back( new PARAM_MAP<wxString>( "environment.vars", &m_Env.vars, {} ) );
 
     m_params.emplace_back( new PARAM<bool>( "input.auto_pan", &m_Input.auto_pan, false ) );
 
-    m_params.emplace_back(
-            new PARAM<int>( "input.auto_pan_acceleration", &m_Input.auto_pan_acceleration, 5 ) );
+    m_params.emplace_back( new PARAM<int>( "input.auto_pan_acceleration",
+            &m_Input.auto_pan_acceleration, 5 ) );
 
-    m_params.emplace_back(
-            new PARAM<bool>( "input.center_on_zoom", &m_Input.center_on_zoom, true ) );
+    m_params.emplace_back( new PARAM<bool>( "input.center_on_zoom",
+            &m_Input.center_on_zoom, true ) );
 
     m_params.emplace_back( new PARAM<bool>( "input.immediate_actions",
             &m_Input.immediate_actions, true ) );
@@ -110,8 +110,8 @@ COMMON_SETTINGS::COMMON_SETTINGS() :
     m_params.emplace_back( new PARAM<bool>( "input.warp_mouse_on_move",
             &m_Input.warp_mouse_on_move, true ) );
 
-    m_params.emplace_back(
-            new PARAM<bool>( "input.horizontal_pan", &m_Input.horizontal_pan, false ) );
+    m_params.emplace_back( new PARAM<bool>( "input.horizontal_pan",
+            &m_Input.horizontal_pan, false ) );
 
     m_params.emplace_back( new PARAM<bool>( "input.zoom_acceleration",
             &m_Input.zoom_acceleration, false ) );
@@ -122,38 +122,38 @@ COMMON_SETTINGS::COMMON_SETTINGS() :
     int default_zoom_speed = 1;
 #endif
 
-    m_params.emplace_back(
-            new PARAM<int>( "input.zoom_speed", &m_Input.zoom_speed, default_zoom_speed ) );
+    m_params.emplace_back( new PARAM<int>( "input.zoom_speed",
+            &m_Input.zoom_speed, default_zoom_speed ) );
 
-    m_params.emplace_back(
-            new PARAM<bool>( "input.zoom_speed_auto", &m_Input.zoom_speed_auto, true ) );
+    m_params.emplace_back( new PARAM<bool>( "input.zoom_speed_auto",
+            &m_Input.zoom_speed_auto, true ) );
 
-    m_params.emplace_back(
-            new PARAM<int>( "input.scroll_modifier_zoom", &m_Input.scroll_modifier_zoom, 0 ) );
+    m_params.emplace_back( new PARAM<int>( "input.scroll_modifier_zoom",
+            &m_Input.scroll_modifier_zoom, 0 ) );
 
     m_params.emplace_back( new PARAM<int>( "input.scroll_modifier_pan_h",
-                                           &m_Input.scroll_modifier_pan_h, WXK_CONTROL ) );
+            &m_Input.scroll_modifier_pan_h, WXK_CONTROL ) );
 
     m_params.emplace_back( new PARAM<int>( "input.scroll_modifier_pan_v",
-                                           &m_Input.scroll_modifier_pan_v, WXK_SHIFT ) );
+            &m_Input.scroll_modifier_pan_v, WXK_SHIFT ) );
 
-    m_params.emplace_back( new PARAM_ENUM<MOUSE_DRAG_ACTION>(
-            "input.mouse_left", &m_Input.drag_left, MOUSE_DRAG_ACTION::DRAG_SELECTED,
-            MOUSE_DRAG_ACTION::DRAG_ANY, MOUSE_DRAG_ACTION::SELECT ) );
+    m_params.emplace_back( new PARAM_ENUM<MOUSE_DRAG_ACTION>( "input.mouse_left",
+            &m_Input.drag_left, MOUSE_DRAG_ACTION::DRAG_SELECTED, MOUSE_DRAG_ACTION::DRAG_ANY,
+            MOUSE_DRAG_ACTION::SELECT ) );
 
-    m_params.emplace_back( new PARAM_ENUM<MOUSE_DRAG_ACTION>(
-            "input.mouse_middle", &m_Input.drag_middle, MOUSE_DRAG_ACTION::PAN,
-            MOUSE_DRAG_ACTION::SELECT, MOUSE_DRAG_ACTION::NONE ) );
+    m_params.emplace_back( new PARAM_ENUM<MOUSE_DRAG_ACTION>( "input.mouse_middle",
+            &m_Input.drag_middle, MOUSE_DRAG_ACTION::PAN, MOUSE_DRAG_ACTION::SELECT,
+            MOUSE_DRAG_ACTION::NONE ) );
 
-    m_params.emplace_back( new PARAM_ENUM<MOUSE_DRAG_ACTION>(
-            "input.mouse_right", &m_Input.drag_right, MOUSE_DRAG_ACTION::PAN,
-            MOUSE_DRAG_ACTION::SELECT, MOUSE_DRAG_ACTION::NONE ) );
+    m_params.emplace_back( new PARAM_ENUM<MOUSE_DRAG_ACTION>( "input.mouse_right",
+            &m_Input.drag_right, MOUSE_DRAG_ACTION::PAN, MOUSE_DRAG_ACTION::SELECT,
+            MOUSE_DRAG_ACTION::NONE ) );
 
     m_params.emplace_back( new PARAM<int>( "graphics.opengl_antialiasing_mode",
-                                           &m_Graphics.opengl_aa_mode, 0, 0, 4 ) );
+            &m_Graphics.opengl_aa_mode, 0, 0, 4 ) );
 
     m_params.emplace_back( new PARAM<int>( "graphics.cairo_antialiasing_mode",
-                                           &m_Graphics.cairo_aa_mode, 0, 0, 3 ) );
+            &m_Graphics.cairo_aa_mode, 0, 0, 3 ) );
 
     m_params.emplace_back( new PARAM<int>( "system.autosave_interval",
             &m_System.autosave_interval, 600 ) );
@@ -242,20 +242,17 @@ bool COMMON_SETTINGS::migrateSchema1to2()
     try
     {
         prefer_selection = at( v1_pointer );
-        at( nlohmann::json::json_pointer( "/input"_json_pointer ) )
-                .erase( "prefer_select_to_drag" );
+        at( nlohmann::json::json_pointer( "/input"_json_pointer ) ).erase( "prefer_select_to_drag" );
     }
     catch( ... )
     {
-        wxLogTrace( traceSettings,
-                    "COMMON_SETTINGS::Migrate 1->2: prefer_select_to_drag not found" );
+        wxLogTrace( traceSettings, "COMMON_SETTINGS::Migrate 1->2: prefer_select_to_drag not found" );
     }
 
     if( prefer_selection )
         ( *this )[nlohmann::json::json_pointer( "/input/mouse_left" )] = MOUSE_DRAG_ACTION::SELECT;
     else
-        ( *this )[nlohmann::json::json_pointer( "/input/mouse_left" )] =
-                MOUSE_DRAG_ACTION::DRAG_ANY;
+        ( *this )[nlohmann::json::json_pointer( "/input/mouse_left" )] = MOUSE_DRAG_ACTION::DRAG_ANY;
 
     return true;
 }

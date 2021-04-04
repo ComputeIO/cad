@@ -710,7 +710,7 @@ void mpFXY::Plot( wxDC& dc, mpWindow& w )
                 // Store only points on the drawing area, to speed up the drawing time
                 // Note: x1 is a value truncated from px by w.x2p(). So to be sure the
                 // first point is drawn, the x1 low limit is startPx-1 in plot coordinates
-                if( x1 >= startPx - 1 && x1 <= endPx )
+                if( x1 >= startPx-1 && x1 <= endPx )
                 {
                     if( !count || line_start.x != x1 )
                     {

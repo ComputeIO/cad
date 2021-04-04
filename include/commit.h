@@ -36,26 +36,25 @@
 class EDA_ITEM;
 
 ///< Types of changes
-enum CHANGE_TYPE
-{
-    CHT_ADD = 1,
-    CHT_REMOVE = 2,
-    CHT_MODIFY = 4,
-    CHT_TYPE = CHT_ADD | CHT_REMOVE | CHT_MODIFY,
+enum CHANGE_TYPE {
+    CHT_ADD     = 1,
+    CHT_REMOVE  = 2,
+    CHT_MODIFY  = 4,
+    CHT_TYPE    = CHT_ADD | CHT_REMOVE | CHT_MODIFY,
 
     ///< Flag to indicate the change is already applied,
     ///< just notify observers (not compatible with CHT_MODIFY)
-    CHT_DONE = 8,
-    CHT_FLAGS = CHT_DONE
+    CHT_DONE    = 8,
+    CHT_FLAGS   = CHT_DONE
 };
 
-template <typename T>
+template<typename T>
 CHANGE_TYPE operator|( CHANGE_TYPE aTypeA, T aTypeB )
 {
     return CHANGE_TYPE( (int) aTypeA | (int) aTypeB );
 }
 
-template <typename T>
+template<typename T>
 CHANGE_TYPE operator&( CHANGE_TYPE aTypeA, T aTypeB )
 {
     return CHANGE_TYPE( (int) aTypeA & (int) aTypeB );
@@ -76,26 +75,44 @@ public:
     virtual ~COMMIT();
 
     ///< Add a new item to the model
-    COMMIT& Add( EDA_ITEM* aItem ) { return Stage( aItem, CHT_ADD ); }
+    COMMIT& Add( EDA_ITEM* aItem )
+    {
+        return Stage( aItem, CHT_ADD );
+    }
 
     ///< Notify observers that aItem has been added
-    COMMIT& Added( EDA_ITEM* aItem ) { return Stage( aItem, CHT_ADD | CHT_DONE ); }
+    COMMIT& Added( EDA_ITEM* aItem )
+    {
+        return Stage( aItem, CHT_ADD | CHT_DONE );
+    }
 
     ///< Remove a new item from the model
-    COMMIT& Remove( EDA_ITEM* aItem ) { return Stage( aItem, CHT_REMOVE ); }
+    COMMIT& Remove( EDA_ITEM* aItem )
+    {
+        return Stage( aItem, CHT_REMOVE );
+    }
 
     ///< Notify observers that aItem has been removed
-    COMMIT& Removed( EDA_ITEM* aItem ) { return Stage( aItem, CHT_REMOVE | CHT_DONE ); }
+    COMMIT& Removed( EDA_ITEM* aItem )
+    {
+        return Stage( aItem, CHT_REMOVE | CHT_DONE );
+    }
 
     ///< Modify a given item in the model.
     ///< Must be called before modification is performed.
-    COMMIT& Modify( EDA_ITEM* aItem ) { return Stage( aItem, CHT_MODIFY ); }
+    COMMIT& Modify( EDA_ITEM* aItem )
+    {
+        return Stage( aItem, CHT_MODIFY );
+    }
 
     ///< Create an undo entry for an item that has been already modified. Requires a copy done
     ///< before the modification.
-    COMMIT& Modified( EDA_ITEM* aItem, EDA_ITEM* aCopy ) { return createModified( aItem, aCopy ); }
+    COMMIT& Modified( EDA_ITEM* aItem, EDA_ITEM* aCopy )
+    {
+        return createModified( aItem, aCopy );
+    }
 
-    template <class Range>
+    template<class Range>
 
     COMMIT& StageItems( const Range& aRange, CHANGE_TYPE aChangeType )
     {
@@ -111,16 +128,19 @@ public:
     virtual COMMIT& Stage( std::vector<EDA_ITEM*>& container, CHANGE_TYPE aChangeType );
 
     virtual COMMIT& Stage( const PICKED_ITEMS_LIST& aItems,
-                           UNDO_REDO                aModFlag = UNDO_REDO::UNSPECIFIED );
+                           UNDO_REDO aModFlag = UNDO_REDO::UNSPECIFIED );
 
     ///< Execute the changes.
-    virtual void Push( const wxString& aMessage = wxT( "A commit" ), bool aCreateUndoEntry = true,
-                       bool aSetDirtyBit = true ) = 0;
+    virtual void Push( const wxString& aMessage = wxT( "A commit" ),
+                       bool aCreateUndoEntry = true, bool aSetDirtyBit = true ) = 0;
 
     ///< Revert the commit by restoring the modified items state.
     virtual void Revert() = 0;
 
-    bool Empty() const { return m_changes.empty(); }
+    bool Empty() const
+    {
+        return m_changes.empty();
+    }
 
     ///< Returns status of an item.
     int GetStatus( EDA_ITEM* aItem );
@@ -128,9 +148,9 @@ public:
 protected:
     struct COMMIT_LINE
     {
-        EDA_ITEM*   m_item; ///< Main item that is added/deleted/modified
-        EDA_ITEM*   m_copy; ///< Optional copy of the item
-        CHANGE_TYPE m_type; ///< Modification type
+        EDA_ITEM*   m_item;       ///< Main item that is added/deleted/modified
+        EDA_ITEM*   m_copy;       ///< Optional copy of the item
+        CHANGE_TYPE m_type;       ///< Modification type
     };
 
     // Should be called in Push() & Revert() methods
@@ -155,7 +175,7 @@ protected:
 
     CHANGE_TYPE convert( UNDO_REDO aType ) const;
 
-    std::set<EDA_ITEM*>      m_changedItems;
+    std::set<EDA_ITEM*> m_changedItems;
     std::vector<COMMIT_LINE> m_changes;
 };
 

@@ -63,9 +63,8 @@ bool SYMBOL_TREE_SYNCHRONIZING_ADAPTER::IsContainer( const wxDataViewItem& aItem
 
 #define PROGRESS_INTERVAL_MILLIS 120
 
-void SYMBOL_TREE_SYNCHRONIZING_ADAPTER::Sync(
-        const wxString&                                  aForceRefresh,
-        std::function<void( int, int, const wxString& )> aProgressCallback )
+void SYMBOL_TREE_SYNCHRONIZING_ADAPTER::Sync( const wxString& aForceRefresh,
+                                              std::function<void( int, int, const wxString& )> aProgressCallback )
 {
     wxLongLong nextUpdate = wxGetUTCTimeMillis() + (PROGRESS_INTERVAL_MILLIS / 2);
 
@@ -87,10 +86,10 @@ void SYMBOL_TREE_SYNCHRONIZING_ADAPTER::Sync(
         // modified libraries before the symbol library table which prevents the library from
         // being removed from the tree control.
         if( !m_libMgr->LibraryExists( name, true )
-            || !m_frame->Prj().SchSymbolLibTable()->HasLibrary( name, true )
-            || m_frame->Prj().SchSymbolLibTable()->FindRow( name, true )
-                       != m_frame->Prj().SchSymbolLibTable()->FindRow( name, false )
-            || name == aForceRefresh )
+              || !m_frame->Prj().SchSymbolLibTable()->HasLibrary( name, true )
+              || m_frame->Prj().SchSymbolLibTable()->FindRow( name, true ) !=
+                                    m_frame->Prj().SchSymbolLibTable()->FindRow( name, false )
+              || name == aForceRefresh )
         {
             it = deleteLibrary( it );
             continue;

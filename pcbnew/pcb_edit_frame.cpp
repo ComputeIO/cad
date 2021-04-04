@@ -1020,8 +1020,7 @@ void PCB_EDIT_FRAME::SetActiveLayer( PCB_LAYER_ID aLayer )
     GetCanvas()->SetFocus();                                // allow capture of hotkeys
     GetCanvas()->SetHighContrastLayer( aLayer );
 
-    GetCanvas()->GetView()->UpdateAllItemsConditionally(
-            KIGFX::REPAINT,
+    GetCanvas()->GetView()->UpdateAllItemsConditionally( KIGFX::REPAINT,
             [&]( KIGFX::VIEW_ITEM* aItem ) -> bool
             {
                 if( VIA* via = dynamic_cast<VIA*>( aItem ) )
@@ -1682,12 +1681,12 @@ void PCB_EDIT_FRAME::CommonSettingsChanged( bool aEnvVarsChanged, bool aTextVars
     }
     catch( PARSE_ERROR& )
     {
-        wxHyperlinkCtrl* button =
-                new wxHyperlinkCtrl( infobar, wxID_ANY, _( "Edit design rules" ), wxEmptyString );
+        wxHyperlinkCtrl* button = new wxHyperlinkCtrl( infobar, wxID_ANY, _( "Edit design rules" ),
+                                                       wxEmptyString );
 
-        button->Bind(
-                wxEVT_COMMAND_HYPERLINK,
-                std::function<void( wxHyperlinkEvent & aEvent )>( [&]( wxHyperlinkEvent& aEvent ) {
+        button->Bind( wxEVT_COMMAND_HYPERLINK, std::function<void( wxHyperlinkEvent& aEvent )>(
+                [&]( wxHyperlinkEvent& aEvent )
+                {
                     ShowBoardSetupDialog( _( "Custom Rules" ) );
                 } ) );
 

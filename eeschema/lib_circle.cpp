@@ -40,7 +40,7 @@ LIB_CIRCLE::LIB_CIRCLE( LIB_PART* aParent ) :
     LIB_ITEM( LIB_CIRCLE_T, aParent )
 {
     m_Width      = 0;
-    m_fill = FILL_TYPE::NO_FILL;
+    m_fill       = FILL_TYPE::NO_FILL;
     m_isFillable = true;
 }
 
@@ -197,8 +197,8 @@ int LIB_CIRCLE::GetPenWidth() const
 }
 
 
-void LIB_CIRCLE::print( const RENDER_SETTINGS* aSettings, const wxPoint& aOffset, void* aData,
-                        const TRANSFORM& aTransform )
+void LIB_CIRCLE::print( const RENDER_SETTINGS* aSettings, const wxPoint& aOffset,
+                        void* aData, const TRANSFORM& aTransform )
 {
     bool forceNoFill = static_cast<bool>( aData );
     int  penWidth = GetPenWidth();

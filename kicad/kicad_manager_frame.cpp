@@ -53,7 +53,7 @@
 #include <atomic>
 
 
-#include <../pcbnew/plugins/kicad/kicad_plugin.h> // for SEXPR_BOARD_FILE_VERSION def
+#include <../pcbnew/plugins/kicad/kicad_plugin.h>   // for SEXPR_BOARD_FILE_VERSION def
 
 
 #ifdef __WXMAC__
@@ -65,43 +65,46 @@
 #include "kicad_settings.h"
 
 
-#define SEP() wxFileName::GetPathSeparator()
+#define SEP()   wxFileName::GetPathSeparator()
 
 
 // Menubar and toolbar event table
 BEGIN_EVENT_TABLE( KICAD_MANAGER_FRAME, EDA_BASE_FRAME )
-// Window events
-EVT_SIZE( KICAD_MANAGER_FRAME::OnSize )
-EVT_IDLE( KICAD_MANAGER_FRAME::OnIdle )
+    // Window events
+    EVT_SIZE( KICAD_MANAGER_FRAME::OnSize )
+    EVT_IDLE( KICAD_MANAGER_FRAME::OnIdle )
 
-// Menu events
-EVT_MENU( wxID_EXIT, KICAD_MANAGER_FRAME::OnExit )
-EVT_MENU( ID_EDIT_LOCAL_FILE_IN_TEXT_EDITOR, KICAD_MANAGER_FRAME::OnOpenFileInTextEditor )
-EVT_MENU( ID_BROWSE_IN_FILE_EXPLORER, KICAD_MANAGER_FRAME::OnBrowseInFileExplorer )
-EVT_MENU( ID_SAVE_AND_ZIP_FILES, KICAD_MANAGER_FRAME::OnArchiveFiles )
-EVT_MENU( ID_READ_ZIP_ARCHIVE, KICAD_MANAGER_FRAME::OnUnarchiveFiles )
-EVT_MENU( ID_IMPORT_CADSTAR_ARCHIVE_PROJECT, KICAD_MANAGER_FRAME::OnImportCadstarArchiveFiles )
-EVT_MENU( ID_IMPORT_EAGLE_PROJECT, KICAD_MANAGER_FRAME::OnImportEagleFiles )
+    // Menu events
+    EVT_MENU( wxID_EXIT, KICAD_MANAGER_FRAME::OnExit )
+    EVT_MENU( ID_EDIT_LOCAL_FILE_IN_TEXT_EDITOR, KICAD_MANAGER_FRAME::OnOpenFileInTextEditor )
+    EVT_MENU( ID_BROWSE_IN_FILE_EXPLORER, KICAD_MANAGER_FRAME::OnBrowseInFileExplorer )
+    EVT_MENU( ID_SAVE_AND_ZIP_FILES, KICAD_MANAGER_FRAME::OnArchiveFiles )
+    EVT_MENU( ID_READ_ZIP_ARCHIVE, KICAD_MANAGER_FRAME::OnUnarchiveFiles )
+    EVT_MENU( ID_IMPORT_CADSTAR_ARCHIVE_PROJECT, KICAD_MANAGER_FRAME::OnImportCadstarArchiveFiles )
+    EVT_MENU( ID_IMPORT_EAGLE_PROJECT, KICAD_MANAGER_FRAME::OnImportEagleFiles )
 
-// Range menu events
-EVT_MENU_RANGE( ID_LANGUAGE_CHOICE, ID_LANGUAGE_CHOICE_END, KICAD_MANAGER_FRAME::language_change )
+    // Range menu events
+    EVT_MENU_RANGE( ID_LANGUAGE_CHOICE, ID_LANGUAGE_CHOICE_END,
+                    KICAD_MANAGER_FRAME::language_change )
 
-EVT_MENU_RANGE( ID_FILE1, ID_FILEMAX, KICAD_MANAGER_FRAME::OnFileHistory )
-EVT_MENU( ID_FILE_LIST_CLEAR, KICAD_MANAGER_FRAME::OnClearFileHistory )
+    EVT_MENU_RANGE( ID_FILE1, ID_FILEMAX, KICAD_MANAGER_FRAME::OnFileHistory )
+    EVT_MENU( ID_FILE_LIST_CLEAR, KICAD_MANAGER_FRAME::OnClearFileHistory )
 
-// Special functions
-EVT_MENU( ID_INIT_WATCHED_PATHS, KICAD_MANAGER_FRAME::OnChangeWatchedPaths )
+    // Special functions
+    EVT_MENU( ID_INIT_WATCHED_PATHS, KICAD_MANAGER_FRAME::OnChangeWatchedPaths )
 END_EVENT_TABLE()
 
 
 KICAD_MANAGER_FRAME::KICAD_MANAGER_FRAME( wxWindow* parent, const wxString& title,
-                                          const wxPoint& pos, const wxSize& size ) :
-        EDA_BASE_FRAME( parent, KICAD_MAIN_FRAME_T, title, pos, size, KICAD_DEFAULT_DRAWFRAME_STYLE,
-                        KICAD_MANAGER_FRAME_NAME, &::Kiway ),
-        m_leftWin( nullptr ), m_launcher( nullptr ), m_mainToolBar( nullptr )
+                                          const wxPoint& pos, const wxSize&   size ) :
+        EDA_BASE_FRAME( parent, KICAD_MAIN_FRAME_T, title, pos, size,
+                        KICAD_DEFAULT_DRAWFRAME_STYLE, KICAD_MANAGER_FRAME_NAME, &::Kiway ),
+        m_leftWin( nullptr ),
+        m_launcher( nullptr ),
+        m_mainToolBar( nullptr )
 {
     m_active_project = false;
-    m_leftWinWidth = 250; // Default value
+    m_leftWinWidth = 250;       // Default value
     m_aboutTitle = "KiCad";
 
     // Create the status line (bottom of the frame)
@@ -112,7 +115,7 @@ KICAD_MANAGER_FRAME::KICAD_MANAGER_FRAME( wxWindow* parent, const wxString& titl
     SetStatusWidths( 2, dims );
 
     // Give an icon
-    wxIcon       icon;
+    wxIcon icon;
     wxIconBundle icon_bundle;
 
     icon.CopyFromBitmap( KiBitmap( BITMAPS::icon_kicad ) );
@@ -219,16 +222,17 @@ void KICAD_MANAGER_FRAME::setupUIConditions()
 
     wxASSERT( manager );
 
-    auto activeProject = [this]( const SELECTION& )
-    {
-        return m_active_project;
-    };
+    auto activeProject =
+        [this] ( const SELECTION& )
+        {
+            return m_active_project;
+        };
 
     ACTION_CONDITIONS activeProjectCond;
     activeProjectCond.Enable( activeProject );
 
-    manager->SetConditions( ACTIONS::saveAs, activeProjectCond );
-    manager->SetConditions( KICAD_MANAGER_ACTIONS::closeProject, activeProjectCond );
+    manager->SetConditions( ACTIONS::saveAs,                       activeProjectCond );
+    manager->SetConditions( KICAD_MANAGER_ACTIONS::closeProject,   activeProjectCond );
 
     // TODO: Switch this to an action
     RegisterUIUpdateHandler( ID_SAVE_AND_ZIP_FILES, activeProjectCond );
@@ -259,44 +263,43 @@ KICAD_SETTINGS* KICAD_MANAGER_FRAME::kicadSettings() const
 
 const wxString KICAD_MANAGER_FRAME::GetProjectFileName() const
 {
-    return Pgm().GetSettingsManager().IsProjectOpen() ? Prj().GetProjectFullName()
-                                                      : wxString( wxEmptyString );
+    return Pgm().GetSettingsManager().IsProjectOpen() ? Prj().GetProjectFullName() : wxString( wxEmptyString );
 }
 
 
 const wxString KICAD_MANAGER_FRAME::SchFileName()
 {
-    wxFileName fn( GetProjectFileName() );
+   wxFileName   fn( GetProjectFileName() );
 
-    fn.SetExt( KiCadSchematicFileExtension );
-    return fn.GetFullPath();
+   fn.SetExt( KiCadSchematicFileExtension );
+   return fn.GetFullPath();
 }
 
 
 const wxString KICAD_MANAGER_FRAME::SchLegacyFileName()
 {
-    wxFileName fn( GetProjectFileName() );
+   wxFileName   fn( GetProjectFileName() );
 
-    fn.SetExt( LegacySchematicFileExtension );
-    return fn.GetFullPath();
+   fn.SetExt( LegacySchematicFileExtension );
+   return fn.GetFullPath();
 }
 
 
 const wxString KICAD_MANAGER_FRAME::PcbFileName()
 {
-    wxFileName fn( GetProjectFileName() );
+   wxFileName   fn( GetProjectFileName() );
 
-    fn.SetExt( PcbFileExtension );
-    return fn.GetFullPath();
+   fn.SetExt( PcbFileExtension );
+   return fn.GetFullPath();
 }
 
 
 const wxString KICAD_MANAGER_FRAME::PcbLegacyFileName()
 {
-    wxFileName fn( GetProjectFileName() );
+   wxFileName   fn( GetProjectFileName() );
 
-    fn.SetExt( LegacyPcbFileExtension );
-    return fn.GetFullPath();
+   fn.SetExt( LegacyPcbFileExtension );
+   return fn.GetFullPath();
 }
 
 
@@ -360,7 +363,7 @@ void KICAD_MANAGER_FRAME::doCloseWindow()
     // Note also if there is no change made in editors, this behavior does not happen.
     static std::atomic<unsigned int> lock_close_event( 0 );
 
-    if( ++lock_close_event > 1 ) // Skip extra calls
+    if( ++lock_close_event > 1 )    // Skip extra calls
     {
         return;
     }
@@ -371,7 +374,7 @@ void KICAD_MANAGER_FRAME::doCloseWindow()
     Destroy();
 
 #ifdef _WINDOWS_
-    lock_close_event = 0; // Reenable event management
+    lock_close_event = 0;   // Reenable event management
 #endif
 }
 
@@ -450,8 +453,7 @@ void KICAD_MANAGER_FRAME::LoadProject( const wxFileName& aProjectFileName )
 }
 
 
-void KICAD_MANAGER_FRAME::CreateNewProject( const wxFileName& aProjectFileName,
-                                            bool              aCreateStubFiles )
+void KICAD_MANAGER_FRAME::CreateNewProject( const wxFileName& aProjectFileName, bool aCreateStubFiles )
 {
     wxCHECK_RET( aProjectFileName.DirExists() && aProjectFileName.IsDirWritable(),
                  "Project folder must exist and be writable to create a new project." );
@@ -484,7 +486,7 @@ void KICAD_MANAGER_FRAME::CreateNewProject( const wxFileName& aProjectFileName,
                 wxFFile file( destFileName.GetFullPath(), "wb" );
 
                 if( file.IsOpened() )
-                    file.Write( wxT( "{\n}\n" ) );
+                    file.Write( wxT( "{\n}\n") );
                 // wxFFile dtor will close the file
             }
         }
@@ -545,8 +547,8 @@ void KICAD_MANAGER_FRAME::OnOpenFileInTextEditor( wxCommandEvent& event )
 
     wxString default_dir = Prj().GetProjectPath();
 
-    wxFileDialog dlg( this, _( "Load File to Edit" ), default_dir, wxEmptyString, wildcard,
-                      wxFD_OPEN );
+    wxFileDialog dlg( this, _( "Load File to Edit" ), default_dir,
+                      wxEmptyString, wildcard, wxFD_OPEN );
 
     if( dlg.ShowModal() == wxID_CANCEL )
         return;
@@ -554,7 +556,7 @@ void KICAD_MANAGER_FRAME::OnOpenFileInTextEditor( wxCommandEvent& event )
     wxString filename = wxT( "\"" );
     filename += dlg.GetPath() + wxT( "\"" );
 
-    if( !dlg.GetPath().IsEmpty() && !Pgm().GetEditorName().IsEmpty() )
+    if( !dlg.GetPath().IsEmpty() &&  !Pgm().GetEditorName().IsEmpty() )
         m_toolManager->RunAction( KICAD_MANAGER_ACTIONS::openTextEditor, true, &filename );
 }
 
@@ -601,7 +603,7 @@ void KICAD_MANAGER_FRAME::CommonSettingsChanged( bool aEnvVarsChanged, bool aTex
 void KICAD_MANAGER_FRAME::ProjectChanged()
 {
     wxString app = wxS( "KiCad " ) + GetMajorMinorVersion();
-    wxString file = GetProjectFileName();
+    wxString file  = GetProjectFileName();
     wxString title;
 
     if( !file.IsEmpty() )
@@ -613,7 +615,7 @@ void KICAD_MANAGER_FRAME::ProjectChanged()
         if( !fn.IsDirWritable() )
             title += wxS( " " ) + _( "[Read Only]" );
 
-        title += wxS( " \u2014 " );
+        title += wxS(" \u2014 ");
     }
 
     title += app;
@@ -628,7 +630,7 @@ void KICAD_MANAGER_FRAME::LoadSettings( APP_SETTINGS_BASE* aCfg )
 
     auto settings = dynamic_cast<KICAD_SETTINGS*>( aCfg );
 
-    wxCHECK( settings, /*void*/ );
+    wxCHECK( settings, /*void*/);
 
     m_leftWinWidth = settings->m_LeftWinWidth;
 }
@@ -640,14 +642,14 @@ void KICAD_MANAGER_FRAME::SaveSettings( APP_SETTINGS_BASE* aCfg )
 
     auto settings = dynamic_cast<KICAD_SETTINGS*>( aCfg );
 
-    wxCHECK( settings, /*void*/ );
+    wxCHECK( settings, /*void*/);
 
     settings->m_LeftWinWidth = m_leftWin->GetSize().x;
 }
 
 
-void KICAD_MANAGER_FRAME::InstallPreferences( PAGED_DIALOG*         aParent,
-                                              PANEL_HOTKEYS_EDITOR* aHotkeysPanel )
+void KICAD_MANAGER_FRAME::InstallPreferences( PAGED_DIALOG* aParent,
+                                              PANEL_HOTKEYS_EDITOR* aHotkeysPanel  )
 {
     aHotkeysPanel->AddHotKeys( GetToolManager() );
 }
@@ -680,12 +682,13 @@ void KICAD_MANAGER_FRAME::OnIdle( wxIdleEvent& aEvent )
 
     if( Pgm().GetCommonSettings()->m_Session.remember_open_files )
     {
-        int previousOpenCount = std::count_if(
-                Prj().GetLocalSettings().m_files.begin(), Prj().GetLocalSettings().m_files.end(),
-                [&]( const PROJECT_FILE_STATE& f )
-                {
-                    return !f.fileName.EndsWith( ProjectFileExtension ) && f.open;
-                } );
+        int previousOpenCount =
+                std::count_if( Prj().GetLocalSettings().m_files.begin(),
+                               Prj().GetLocalSettings().m_files.end(),
+                               [&]( const PROJECT_FILE_STATE& f )
+                               {
+                                   return !f.fileName.EndsWith( ProjectFileExtension ) && f.open;
+                               } );
 
         if( previousOpenCount > 0 )
         {
@@ -698,13 +701,13 @@ void KICAD_MANAGER_FRAME::OnIdle( wxIdleEvent& aEvent )
             {
                 if( file.open )
                 {
-                    progressReporter.Update(
-                            i++, wxString::Format( _( "Restoring \"%s\"" ), file.fileName ) );
+                    progressReporter.Update( i++,
+                            wxString::Format( _( "Restoring \"%s\"" ), file.fileName ) );
 
                     wxFileName fn( file.fileName );
 
                     if( fn.GetExt() == LegacySchematicFileExtension
-                        || fn.GetExt() == KiCadSchematicFileExtension )
+                            || fn.GetExt() == KiCadSchematicFileExtension )
                     {
                         GetToolManager()->RunAction( KICAD_MANAGER_ACTIONS::editSchematic, true );
                     }

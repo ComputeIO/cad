@@ -108,14 +108,15 @@ bool FOOTPRINT_EDIT_FRAME::LoadFootprintFromBoard( FOOTPRINT* aFootprint )
 
     m_boardFootprintUuids.clear();
 
-    auto recordAndUpdateUuid = [&]( BOARD_ITEM* aItem )
-    {
-        KIID newId;
-        m_boardFootprintUuids[newId] = aItem->m_Uuid;
-        const_cast<KIID&>( aItem->m_Uuid ) = newId;
-    };
+    auto recordAndUpdateUuid =
+            [&]( BOARD_ITEM* aItem )
+            {
+                KIID newId;
+                m_boardFootprintUuids[ newId ] = aItem->m_Uuid;
+                const_cast<KIID&>( aItem->m_Uuid ) = newId;
+            };
 
-    newFootprint = (FOOTPRINT*) aFootprint->Clone(); // Keep existing uuids
+    newFootprint = (FOOTPRINT*) aFootprint->Clone();    // Keep existing uuids
     newFootprint->SetParent( GetBoard() );
     newFootprint->SetLink( aFootprint->m_Uuid );
 

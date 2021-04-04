@@ -122,8 +122,7 @@ void TRACK::GetWidthConstraints( int* aMin, int* aMax, wxString* aSource ) const
     {
         BOARD_DESIGN_SETTINGS& bds = GetBoard()->GetDesignSettings();
 
-        constraint =
-                bds.m_DRCEngine->EvalRules( TRACK_WIDTH_CONSTRAINT, this, nullptr, GetLayer() );
+        constraint = bds.m_DRCEngine->EvalRules( TRACK_WIDTH_CONSTRAINT, this, nullptr, GetLayer() );
     }
 
     if( constraint.Value().HasMin() || constraint.Value().HasMax() )
@@ -235,7 +234,7 @@ const EDA_RECT TRACK::GetBoundingBox() const
     else if( Type() == PCB_ARC_T )
     {
         std::shared_ptr<SHAPE> arc = GetEffectiveShape();
-        auto                   bbox = arc->BBox();
+        auto bbox = arc->BBox();
 
         xmin = bbox.GetLeft();
         xmax = bbox.GetRight();
@@ -494,7 +493,8 @@ bool VIA::FlashLayer( LSET aLayers ) const
 
 bool VIA::FlashLayer( int aLayer ) const
 {
-    std::vector<KICAD_T> types{ PCB_TRACE_T, PCB_ARC_T, PCB_PAD_T, PCB_ZONE_T, PCB_FP_ZONE_T };
+    std::vector<KICAD_T> types
+    { PCB_TRACE_T, PCB_ARC_T, PCB_PAD_T, PCB_ZONE_T, PCB_FP_ZONE_T };
 
     // Return the "normal" shape if the caller doesn't specify a particular layer
     if( aLayer == UNDEFINED_LAYER )
@@ -578,10 +578,10 @@ void VIA::ViewGetLayers( int aLayers[], int& aCount ) const
     // Just show it on common via & via holes layers
     switch( GetViaType() )
     {
-    case VIATYPE::THROUGH: aLayers[3] = LAYER_VIA_THROUGH; break;
-    case VIATYPE::BLIND_BURIED: aLayers[3] = LAYER_VIA_BBLIND; break;
-    case VIATYPE::MICROVIA: aLayers[3] = LAYER_VIA_MICROVIA; break;
-    default: aLayers[3] = LAYER_GP_OVERLAY; break;
+    case VIATYPE::THROUGH:      aLayers[3] = LAYER_VIA_THROUGH;  break;
+    case VIATYPE::BLIND_BURIED: aLayers[3] = LAYER_VIA_BBLIND;   break;
+    case VIATYPE::MICROVIA:     aLayers[3] = LAYER_VIA_MICROVIA; break;
+    default:                    aLayers[3] = LAYER_GP_OVERLAY;   break;
     }
 
     aCount = 4;
@@ -631,7 +631,7 @@ double VIA::ViewGetLOD( int aLayer, KIGFX::VIEW* aView ) const
         }
 
         // Netnames will be shown only if zoom is appropriate
-        return m_Width == 0 ? HIDE : ( (double) Millimeter2iu( 10 ) / m_Width );
+        return m_Width == 0 ? HIDE : ( (double)Millimeter2iu( 10 ) / m_Width );
     }
 
     // Passed all tests; show.

@@ -73,7 +73,8 @@ int POSITION_RELATIVE_TOOL::PositionRelative( const TOOL_EVENT& aEvent )
     g_PositionRelativePadAnchor = nullptr;
 
     const auto& selection = m_selectionTool->RequestSelection(
-            []( const VECTOR2I& aPt, GENERAL_COLLECTOR& aCollector, PCB_SELECTION_TOOL* sTool ) {
+            []( const VECTOR2I& aPt, GENERAL_COLLECTOR& aCollector, PCB_SELECTION_TOOL* sTool )
+            {
                 std::set<BOARD_ITEM*> to_add;
 
                 // Iterate from the back so we don't have to worry about removals.

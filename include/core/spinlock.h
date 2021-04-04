@@ -29,19 +29,29 @@
 class KISPINLOCK
 {
 public:
-    KISPINLOCK() : m_lock( false ) {}
+    KISPINLOCK() :
+        m_lock( false )
+    {}
 
     void lock()
     {
-        while( m_lock.exchange( true, std::memory_order_acquire ) )
-            ;
+        while( m_lock.exchange( true, std::memory_order_acquire ) );
     }
 
-    bool try_lock() { return !m_lock.exchange( true, std::memory_order_acquire ); }
+    bool try_lock()
+    {
+        return !m_lock.exchange( true, std::memory_order_acquire );
+    }
 
-    void unlock() { m_lock.store( false, std::memory_order_release ); }
+    void unlock()
+    {
+        m_lock.store( false, std::memory_order_release );
+    }
 
-    bool test() { return m_lock.load( std::memory_order_acquire ); }
+    bool test()
+    {
+        return m_lock.load( std::memory_order_acquire );
+    }
 
 private:
     std::atomic<bool> m_lock;

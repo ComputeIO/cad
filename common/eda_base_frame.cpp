@@ -103,15 +103,24 @@ BEGIN_EVENT_TABLE( EDA_BASE_FRAME, wxFrame )
     EVT_SYS_COLOUR_CHANGED( EDA_BASE_FRAME::onSystemColorChange )
 END_EVENT_TABLE()
 
-EDA_BASE_FRAME::EDA_BASE_FRAME( wxWindow* aParent, FRAME_T aFrameType, const wxString& aTitle,
-                                const wxPoint& aPos, const wxSize& aSize, long aStyle,
-                                const wxString& aFrameName, KIWAY* aKiway ) :
+EDA_BASE_FRAME::EDA_BASE_FRAME( wxWindow* aParent, FRAME_T aFrameType,
+                                const wxString& aTitle, const wxPoint& aPos, const wxSize& aSize,
+                                long aStyle, const wxString& aFrameName, KIWAY* aKiway ) :
         wxFrame( aParent, wxID_ANY, aTitle, aPos, aSize, aStyle, aFrameName ),
-        TOOLS_HOLDER(), KIWAY_HOLDER( aKiway, KIWAY_HOLDER::FRAME ), m_ident( aFrameType ),
-        m_maximizeByDefault( false ), m_infoBar( nullptr ), m_settingsManager( nullptr ),
-        m_fileHistory( nullptr ), m_hasAutoSave( false ), m_autoSaveState( false ),
-        m_autoSaveInterval( -1 ), m_undoRedoCountMax( DEFAULT_MAX_UNDO_ITEMS ),
-        m_userUnits( EDA_UNITS::MILLIMETRES ), m_isClosing( false ), m_isNonUserClose( false )
+        TOOLS_HOLDER(),
+        KIWAY_HOLDER( aKiway, KIWAY_HOLDER::FRAME ),
+        m_ident( aFrameType ),
+        m_maximizeByDefault( false ),
+        m_infoBar( nullptr ),
+        m_settingsManager( nullptr ),
+        m_fileHistory( nullptr ),
+        m_hasAutoSave( false ),
+        m_autoSaveState( false ),
+        m_autoSaveInterval(-1 ),
+        m_undoRedoCountMax( DEFAULT_MAX_UNDO_ITEMS ),
+        m_userUnits( EDA_UNITS::MILLIMETRES ),
+        m_isClosing( false ),
+        m_isNonUserClose( false )
 {
     m_autoSaveTimer = new wxTimer( this, ID_AUTO_SAVE_TIMER );
     m_mruPath       = PATHS::GetDefaultUserProjectsPath();
@@ -181,7 +190,8 @@ void EDA_BASE_FRAME::windowClosing( wxCloseEvent& event )
     }
 
 
-    if( event.GetId() == wxEVT_QUERY_END_SESSION || event.GetId() == wxEVT_END_SESSION )
+    if( event.GetId() == wxEVT_QUERY_END_SESSION
+        || event.GetId() == wxEVT_END_SESSION )
     {
         // End session means the OS is going to terminate us
         m_isNonUserClose = true;
@@ -193,7 +203,7 @@ void EDA_BASE_FRAME::windowClosing( wxCloseEvent& event )
         APP_SETTINGS_BASE* cfg = config();
 
         if( cfg )
-            SaveSettings( cfg ); // virtual, wxFrame specific
+            SaveSettings( cfg );    // virtual, wxFrame specific
 
         doCloseWindow();
 
@@ -225,7 +235,7 @@ EDA_BASE_FRAME::~EDA_BASE_FRAME()
 
 bool EDA_BASE_FRAME::ProcessEvent( wxEvent& aEvent )
 {
-#ifdef __WXMAC__
+#ifdef  __WXMAC__
     // Apple in its infinite wisdom will raise a disabled window before even passing
     // us the event, so we have no way to stop it.  Instead, we have to catch an
     // improperly ordered disabled window and quasi-modal dialog here and reorder
@@ -241,8 +251,8 @@ bool EDA_BASE_FRAME::ProcessEvent( wxEvent& aEvent )
     if( !wxFrame::ProcessEvent( aEvent ) )
         return false;
 
-    if( IsShown() && m_hasAutoSave && IsActive() && ( m_autoSaveState != isAutoSaveRequired() )
-        && ( m_autoSaveInterval > 0 ) )
+    if( IsShown() && m_hasAutoSave && IsActive() &&
+        (m_autoSaveState != isAutoSaveRequired()) && (m_autoSaveInterval > 0) )
     {
         if( !m_autoSaveState )
         {
@@ -315,7 +325,9 @@ void EDA_BASE_FRAME::OnMenuEvent( wxMenuEvent& aEvent )
 void EDA_BASE_FRAME::RegisterUIUpdateHandler( int aID, const ACTION_CONDITIONS& aConditions )
 {
     UIUpdateHandler evtFunc = std::bind( &EDA_BASE_FRAME::HandleUpdateUIEvent,
-                                         std::placeholders::_1, this, aConditions );
+                                         std::placeholders::_1,
+                                         this,
+                                         aConditions );
 
     m_uiUpdateMap[aID] = evtFunc;
 
@@ -337,16 +349,16 @@ void EDA_BASE_FRAME::UnregisterUIUpdateHandler( int aID )
 void EDA_BASE_FRAME::HandleUpdateUIEvent( wxUpdateUIEvent& aEvent, EDA_BASE_FRAME* aFrame,
                                           ACTION_CONDITIONS aCond )
 {
-    bool       checkRes = false;
+    bool       checkRes  = false;
     bool       enableRes = true;
-    bool       showRes = true;
+    bool       showRes   = true;
     SELECTION& selection = aFrame->GetCurrentSelection();
 
     try
     {
-        checkRes = aCond.checkCondition( selection );
+        checkRes  = aCond.checkCondition( selection );
         enableRes = aCond.enableCondition( selection );
-        showRes = aCond.showCondition( selection );
+        showRes   = aCond.showCondition( selection );
     }
     catch( std::exception& )
     {
@@ -380,12 +392,13 @@ void EDA_BASE_FRAME::HandleUpdateUIEvent( wxUpdateUIEvent& aEvent, EDA_BASE_FRAM
 void EDA_BASE_FRAME::setupUIConditions()
 {
     // Setup the conditions to check a language menu item
-    auto isCurrentLang = []( const SELECTION& aSel, int aLangIdentifier )
-    {
-        return Pgm().GetSelectedLanguageIdentifier() == aLangIdentifier;
-    };
+    auto isCurrentLang =
+        [] ( const SELECTION& aSel, int aLangIdentifier )
+        {
+            return Pgm().GetSelectedLanguageIdentifier() == aLangIdentifier;
+        };
 
-    for( unsigned ii = 0; LanguagesList[ii].m_KI_Lang_Identifier != 0; ii++ )
+    for( unsigned ii = 0;  LanguagesList[ii].m_KI_Lang_Identifier != 0; ii++ )
     {
         ACTION_CONDITIONS cond;
         cond.Check( std::bind( isCurrentLang, std::placeholders::_1,
@@ -488,13 +501,13 @@ void EDA_BASE_FRAME::LoadWindowState( const WINDOW_STATE& aState )
 {
     bool wasDefault = false;
 
-    m_framePos.x = aState.pos_x;
-    m_framePos.y = aState.pos_y;
+    m_framePos.x  = aState.pos_x;
+    m_framePos.y  = aState.pos_y;
     m_frameSize.x = aState.size_x;
     m_frameSize.y = aState.size_y;
 
-    wxLogTrace( traceDisplayLocation, "Config position (%d, %d) with size (%d, %d)", m_framePos.x,
-                m_framePos.y, m_frameSize.x, m_frameSize.y );
+    wxLogTrace( traceDisplayLocation, "Config position (%d, %d) with size (%d, %d)",
+                m_framePos.x, m_framePos.y, m_frameSize.x, m_frameSize.y );
 
     // Ensure minimum size is set if the stored config was zero-initialized
     if( m_frameSize.x < minSize( m_ident ).x || m_frameSize.y < minSize( m_ident ).y )
@@ -502,8 +515,7 @@ void EDA_BASE_FRAME::LoadWindowState( const WINDOW_STATE& aState )
         m_frameSize = defaultSize( m_ident );
         wasDefault  = true;
 
-        wxLogTrace( traceDisplayLocation, "Using minimum size (%d, %d)", m_frameSize.x,
-                    m_frameSize.y );
+        wxLogTrace( traceDisplayLocation, "Using minimum size (%d, %d)", m_frameSize.x, m_frameSize.y );
     }
 
     wxLogTrace( traceDisplayLocation, "Number of displays: %d", wxDisplay::GetCount() );
@@ -515,8 +527,8 @@ void EDA_BASE_FRAME::LoadWindowState( const WINDOW_STATE& aState )
         // If it isn't attached, use the first display
         // Warning wxDisplay has 2 ctor variants. the parameter needs a type:
         const unsigned int index = 0;
-        wxDisplay          display( index );
-        wxRect             clientSize = display.GetGeometry();
+        wxDisplay display( index );
+        wxRect    clientSize = display.GetGeometry();
 
         m_framePos = wxDefaultPosition;
 
@@ -533,19 +545,19 @@ void EDA_BASE_FRAME::LoadWindowState( const WINDOW_STATE& aState )
         wxPoint upperLeft( m_framePos.x, m_framePos.y );
 
         wxDisplay display( aState.display );
-        wxRect    clientSize = display.GetClientArea();
+        wxRect clientSize = display.GetClientArea();
 
         // The percentage size (represented in decimal) of the region around the screen's border where
         // an upper corner is not allowed
 #define SCREEN_BORDER_REGION 0.10
 
-        int yLim = clientSize.y + ( clientSize.height * ( 1.0 - SCREEN_BORDER_REGION ) );
-        int xLimLeft = clientSize.x + ( clientSize.width * SCREEN_BORDER_REGION );
-        int xLimRight = clientSize.x + ( clientSize.width * ( 1.0 - SCREEN_BORDER_REGION ) );
+        int yLim      = clientSize.y + ( clientSize.height * ( 1.0 - SCREEN_BORDER_REGION ) );
+        int xLimLeft  = clientSize.x + ( clientSize.width  * SCREEN_BORDER_REGION );
+        int xLimRight = clientSize.x + ( clientSize.width  * ( 1.0 - SCREEN_BORDER_REGION ) );
 
-        if( upperLeft.x > xLimRight || // Upper left corner too close to right edge of screen
-            upperRight.x < xLimLeft || // Upper right corner too close to left edge of screen
-            upperRight.y > yLim )      // Upper corner too close to the bottom of the screen
+        if( upperLeft.x  > xLimRight ||  // Upper left corner too close to right edge of screen
+            upperRight.x < xLimLeft  ||  // Upper right corner too close to left edge of screen
+            upperRight.y > yLim )        // Upper corner too close to the bottom of the screen
         {
             m_framePos = wxDefaultPosition;
             wxLogTrace( traceDisplayLocation, "Resetting to default position" );
@@ -577,7 +589,7 @@ void EDA_BASE_FRAME::LoadWindowState( const WINDOW_STATE& aState )
 
     // Record the frame sizes in an un-maximized state
     m_normalFrameSize = m_frameSize;
-    m_normalFramePos = m_framePos;
+    m_normalFramePos  = m_framePos;
 
     // Maximize if we were maximized before
     if( aState.maximized || ( wasDefault && m_maximizeByDefault ) )
@@ -604,7 +616,7 @@ void EDA_BASE_FRAME::LoadWindowSettings( const WINDOW_SETTINGS* aCfg )
 
 void EDA_BASE_FRAME::SaveWindowSettings( WINDOW_SETTINGS* aCfg )
 {
-    wxString text;
+    wxString        text;
 
     if( IsIconized() )
         return;
@@ -614,24 +626,23 @@ void EDA_BASE_FRAME::SaveWindowSettings( WINDOW_SETTINGS* aCfg )
     // If the window is maximized, we use the saved window size from before it was maximized
     if( IsMaximized() )
     {
-        m_framePos = m_normalFramePos;
+        m_framePos  = m_normalFramePos;
         m_frameSize = m_normalFrameSize;
     }
     else
     {
         m_frameSize = GetWindowSize();
-        m_framePos = GetPosition();
+        m_framePos  = GetPosition();
     }
 
-    aCfg->state.pos_x = m_framePos.x;
-    aCfg->state.pos_y = m_framePos.y;
-    aCfg->state.size_x = m_frameSize.x;
-    aCfg->state.size_y = m_frameSize.y;
+    aCfg->state.pos_x     = m_framePos.x;
+    aCfg->state.pos_y     = m_framePos.y;
+    aCfg->state.size_x    = m_frameSize.x;
+    aCfg->state.size_y    = m_frameSize.y;
     aCfg->state.maximized = IsMaximized();
-    aCfg->state.display = wxDisplay::GetFromWindow( this );
+    aCfg->state.display   = wxDisplay::GetFromWindow( this );
 
-    wxLogTrace( traceDisplayLocation, "Saving window maximized: %s",
-                IsMaximized() ? "true" : "false" );
+    wxLogTrace( traceDisplayLocation, "Saving window maximized: %s", IsMaximized() ? "true" : "false" );
     wxLogTrace( traceDisplayLocation, "Saving config position (%d, %d) with size (%d, %d)",
                 m_framePos.x, m_framePos.y, m_frameSize.x, m_frameSize.y );
 
@@ -656,8 +667,8 @@ void EDA_BASE_FRAME::LoadSettings( APP_SETTINGS_BASE* aCfg )
     int fileHistorySize = Pgm().GetCommonSettings()->m_System.file_history_size;
 
     // Load the recently used files into the history menu
-    m_fileHistory = new FILE_HISTORY( (unsigned) std::max( 0, fileHistorySize ), ID_FILE1,
-                                      ID_FILE_LIST_CLEAR );
+    m_fileHistory = new FILE_HISTORY( (unsigned) std::max( 0, fileHistorySize ),
+                                      ID_FILE1, ID_FILE_LIST_CLEAR );
     m_fileHistory->Load( *aCfg );
 }
 
@@ -727,7 +738,7 @@ void EDA_BASE_FRAME::CreateInfoBar()
 #else
     m_infoBar = new WX_INFOBAR( this, &m_auimgr );
 
-    m_auimgr.AddPane( m_infoBar, EDA_PANE().InfoBar().Name( "InfoBar" ).Top().Layer( 1 ) );
+    m_auimgr.AddPane( m_infoBar, EDA_PANE().InfoBar().Name( "InfoBar" ).Top().Layer(1) );
 #endif
 }
 
@@ -760,7 +771,7 @@ void EDA_BASE_FRAME::ShowInfoBarError( const wxString& aErrorMsg, bool aShowClos
 
 
 void EDA_BASE_FRAME::ShowInfoBarError( const wxString& aErrorMsg, bool aShowCloseButton,
-                                       std::function<void( void )> aCallback )
+                                       std::function<void(void)> aCallback )
 {
     m_infoBar->RemoveAllButtons();
 
@@ -874,7 +885,7 @@ void EDA_BASE_FRAME::ClearFileHistory( FILE_HISTORY* aFileHistory )
 
 void EDA_BASE_FRAME::OnKicadAbout( wxCommandEvent& event )
 {
-    void ShowAboutDialog( EDA_BASE_FRAME * aParent ); // See AboutDialog_main.cpp
+    void ShowAboutDialog(EDA_BASE_FRAME * aParent); // See AboutDialog_main.cpp
     ShowAboutDialog( this );
 }
 
@@ -882,7 +893,7 @@ void EDA_BASE_FRAME::OnKicadAbout( wxCommandEvent& event )
 void EDA_BASE_FRAME::OnPreferences( wxCommandEvent& event )
 {
     PAGED_DIALOG dlg( this, _( "Preferences" ), true );
-    wxTreebook*  book = dlg.GetTreebook();
+    wxTreebook* book = dlg.GetTreebook();
 
     book->AddPage( new PANEL_COMMON_SETTINGS( &dlg, book ), _( "Common" ) );
 
@@ -891,7 +902,7 @@ void EDA_BASE_FRAME::OnPreferences( wxCommandEvent& event )
     PANEL_HOTKEYS_EDITOR* hotkeysPanel = new PANEL_HOTKEYS_EDITOR( this, book, false );
     book->AddPage( hotkeysPanel, _( "Hotkeys" ) );
 
-    for( unsigned i = 0; i < KIWAY_PLAYER_COUNT; ++i )
+    for( unsigned i = 0; i < KIWAY_PLAYER_COUNT;  ++i )
     {
         KIWAY_PLAYER* frame = dlg.Kiway().Player( (FRAME_T) i, false );
 
@@ -915,7 +926,7 @@ void EDA_BASE_FRAME::OnPreferences( wxCommandEvent& event )
 
 bool EDA_BASE_FRAME::IsWritable( const wxFileName& aFileName )
 {
-    wxString   msg;
+    wxString msg;
     wxFileName fn = aFileName;
 
     // Check for absence of a file path with a file name.  Unfortunately KiCad
@@ -925,14 +936,16 @@ bool EDA_BASE_FRAME::IsWritable( const wxFileName& aFileName )
     if( fn.GetPath().IsEmpty() && fn.HasName() )
         fn.MakeAbsolute();
 
-    wxCHECK_MSG( fn.IsOk(), false, wxT( "File name object is invalid.  Bad programmer!" ) );
+    wxCHECK_MSG( fn.IsOk(), false,
+                 wxT( "File name object is invalid.  Bad programmer!" ) );
     wxCHECK_MSG( !fn.GetPath().IsEmpty(), false,
-                 wxT( "File name object path <" ) + fn.GetFullPath()
-                         + wxT( "> is not set.  Bad programmer!" ) );
+                 wxT( "File name object path <" ) + fn.GetFullPath() +
+                 wxT( "> is not set.  Bad programmer!" ) );
 
     if( fn.IsDir() && !fn.IsDirWritable() )
     {
-        msg.Printf( _( "You do not have write permissions to folder \"%s\"." ), fn.GetPath() );
+        msg.Printf( _( "You do not have write permissions to folder \"%s\"." ),
+                    fn.GetPath() );
     }
     else if( !fn.FileExists() && !fn.IsDirWritable() )
     {
@@ -970,12 +983,13 @@ void EDA_BASE_FRAME::CheckForAutoSaveFile( const wxFileName& aFileName )
     if( !autoSaveFileName.FileExists() )
         return;
 
-    wxString msg = wxString::Format( _( "Well this is potentially embarrassing!\n"
-                                        "It appears that the last time you were editing the file\n"
-                                        "\"%s\"\n"
-                                        "it was not saved properly.  Do you wish to restore the "
-                                        "last saved edits you made?" ),
-                                     aFileName.GetFullName() );
+    wxString msg = wxString::Format( _(
+            "Well this is potentially embarrassing!\n"
+            "It appears that the last time you were editing the file\n"
+            "\"%s\"\n"
+            "it was not saved properly.  Do you wish to restore the last saved edits you made?" ),
+            aFileName.GetFullName()
+        );
 
     int response = wxMessageBox( msg, Pgm().App().GetAppDisplayName(), wxYES_NO | wxICON_QUESTION,
                                  this );
@@ -1054,13 +1068,13 @@ void EDA_BASE_FRAME::PushCommandToRedoList( PICKED_ITEMS_LIST* aNewitem )
 }
 
 
-PICKED_ITEMS_LIST* EDA_BASE_FRAME::PopCommandFromUndoList()
+PICKED_ITEMS_LIST* EDA_BASE_FRAME::PopCommandFromUndoList( )
 {
     return m_undoList.PopCommand();
 }
 
 
-PICKED_ITEMS_LIST* EDA_BASE_FRAME::PopCommandFromRedoList()
+PICKED_ITEMS_LIST* EDA_BASE_FRAME::PopCommandFromRedoList( )
 {
     return m_redoList.PopCommand();
 }
@@ -1088,11 +1102,9 @@ void EDA_BASE_FRAME::OnMaximize( wxMaximizeEvent& aEvent )
 #endif
     {
         m_normalFrameSize = GetWindowSize();
-        m_normalFramePos = GetPosition();
-        wxLogTrace( traceDisplayLocation,
-                    "Maximizing window - Saving position (%d, %d) with size (%d, %d)",
-                    m_normalFramePos.x, m_normalFramePos.y, m_normalFrameSize.x,
-                    m_normalFrameSize.y );
+        m_normalFramePos  = GetPosition();
+        wxLogTrace( traceDisplayLocation, "Maximizing window - Saving position (%d, %d) with size (%d, %d)",
+                    m_normalFramePos.x, m_normalFramePos.y, m_normalFrameSize.x, m_normalFrameSize.y );
     }
 
     // Skip event to actually maximize the window
@@ -1106,7 +1118,7 @@ wxSize EDA_BASE_FRAME::GetWindowSize()
     // GTK includes the window decorations in the normal GetSize call,
     // so we have to use a GTK-specific sizing call that returns the
     // non-decorated window size.
-    int width = 0;
+    int width  = 0;
     int height = 0;
     GTKDoGetSize( &width, &height );
 

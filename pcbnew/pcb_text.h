@@ -27,7 +27,7 @@
 
 #include <eda_text.h>
 #include <board_item.h>
-#include <font/font.h>
+
 
 class LINE_READER;
 class MSG_PANEL_ITEM;
@@ -62,7 +62,7 @@ public:
         return false;
     }
 
-    wxString GetShownText( int aDepth = 0, FONT** aFontPtr = nullptr ) const override;
+    wxString GetShownText( int aDepth = 0 ) const override;
 
     bool Matches( const wxFindReplaceData& aSearchData, void* aAuxData ) const override
     {
@@ -127,22 +127,6 @@ public:
                                                int aClearanceValue, int aError, ERROR_LOC aErrorLoc,
                                                bool aIgnoreLineWidth = false ) const override;
 
-    /**
-     */
-    void DrawTextAsPolygon( std::vector<SHAPE_POLY_SET>& aResult, PCB_LAYER_ID aLayerId,
-                            const wxPoint aPosition, const wxString& aString,
-                            const VECTOR2D& aConversionFactor, const FONT* aFont ) const;
-
-    void DrawTextAsPolygon( std::vector<SHAPE_POLY_SET>& aResult, PCB_LAYER_ID aLayerId,
-                            const VECTOR2D& aConversionFactor ) const;
-
-    void DrawTextAsPolygon( std::vector<SHAPE_POLY_SET>& aResult, PCB_LAYER_ID aLayerId ) const
-    {
-        DrawTextAsPolygon( aResult, aLayerId, VECTOR2D( 1.0, 1.0 ) );
-    }
-
-    FONT* GetFont() const { return EDA_TEXT::GetFont(); }
-
     // @copydoc BOARD_ITEM::GetEffectiveShape
     virtual std::shared_ptr<SHAPE> GetEffectiveShape( PCB_LAYER_ID aLayer = UNDEFINED_LAYER ) const override;
 
@@ -159,7 +143,6 @@ public:
 
 #if defined(DEBUG)
     virtual void Show( int nestLevel, std::ostream& os ) const override { ShowDummy( os ); }
-
 #endif
 };
 

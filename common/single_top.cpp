@@ -54,7 +54,7 @@
 
 // Only a single KIWAY is supported in this single_top top level component,
 // which is dedicated to loading only a single DSO.
-KIWAY Kiway( &Pgm(), KFCTL_STANDALONE );
+KIWAY    Kiway( &Pgm(), KFCTL_STANDALONE );
 
 
 // implement a PGM_BASE and a wxApp side by side:
@@ -82,19 +82,19 @@ static struct PGM_SINGLE_TOP : public PGM_BASE
         PGM_BASE::Destroy();
     }
 
-    void MacOpenFile( const wxString& aFileName ) override
+    void MacOpenFile( const wxString& aFileName )   override
     {
-        wxFileName filename( aFileName );
+        wxFileName  filename( aFileName );
 
         if( filename.FileExists() )
         {
-#if 0
+    #if 0
             // this pulls in EDA_DRAW_FRAME type info, which we don't want in
             // the single_top link image.
             KIWAY_PLAYER* frame = dynamic_cast<KIWAY_PLAYER*>( App().GetTopWindow() );
-#else
+    #else
             KIWAY_PLAYER* frame = (KIWAY_PLAYER*) App().GetTopWindow();
-#endif
+    #endif
             if( frame )
                 frame->OpenProjectFiles( std::vector<wxString>( 1, aFileName ) );
         }
@@ -113,21 +113,16 @@ PGM_BASE& Pgm()
 // as plain text.
 // This helper class is just used to force wxHtmlWinParser initialization
 // see https://groups.google.com/forum/#!topic/wx-users/FF0zv5qGAT0
-class HtmlModule : public wxModule
+class HtmlModule: public wxModule
 {
 public:
-    HtmlModule() {}
-    virtual bool OnInit() override
-    {
-        AddDependency( CLASSINFO( wxHtmlWinParser ) );
-        return true;
-    };
-    virtual void OnExit() override{};
-
+    HtmlModule() { }
+    virtual bool OnInit() override { AddDependency( CLASSINFO( wxHtmlWinParser ) ); return true; };
+    virtual void OnExit() override {};
 private:
     wxDECLARE_DYNAMIC_CLASS( HtmlModule );
 };
-wxIMPLEMENT_DYNAMIC_CLASS( HtmlModule, wxModule );
+wxIMPLEMENT_DYNAMIC_CLASS(HtmlModule, wxModule);
 
 /**
  * Struct APP_SINGLE_TOP
@@ -161,13 +156,13 @@ struct APP_SINGLE_TOP : public wxApp
         catch( const std::exception& e )
         {
             wxLogError( wxT( "Unhandled exception class: %s  what: %s" ),
-                        FROM_UTF8( typeid( e ).name() ), FROM_UTF8( e.what() ) );
+                    FROM_UTF8( typeid( e ).name() ), FROM_UTF8( e.what() ) );
         }
         catch( const IO_ERROR& ioe )
         {
             wxLogError( ioe.What() );
         }
-        catch( ... )
+        catch(...)
         {
             wxLogError( wxT( "Unhandled exception of unknown type" ) );
         }
@@ -177,7 +172,7 @@ struct APP_SINGLE_TOP : public wxApp
         return false;
     }
 
-    int OnExit() override
+    int  OnExit() override
     {
         // Fixes segfault when wxPython scripting is enabled.
 #if defined( KICAD_SCRIPTING_WXPYTHON )
@@ -197,13 +192,13 @@ struct APP_SINGLE_TOP : public wxApp
         catch( const std::exception& e )
         {
             wxLogError( wxT( "Unhandled exception class: %s  what: %s" ),
-                        FROM_UTF8( typeid( e ).name() ), FROM_UTF8( e.what() ) );
+                    FROM_UTF8( typeid( e ).name() ), FROM_UTF8( e.what() ) );
         }
         catch( const IO_ERROR& ioe )
         {
             wxLogError( ioe.What() );
         }
-        catch( ... )
+        catch(...)
         {
             wxLogError( wxT( "Unhandled exception of unknown type" ) );
         }
@@ -245,19 +240,20 @@ struct APP_SINGLE_TOP : public wxApp
         }
         catch( const std::exception& e )
         {
-            wxLogError( "Unhandled exception class: %s  what: %s", FROM_UTF8( typeid( e ).name() ),
+            wxLogError( "Unhandled exception class: %s  what: %s",
+                        FROM_UTF8( typeid(e).name() ),
                         FROM_UTF8( e.what() ) );
         }
         catch( const IO_ERROR& ioe )
         {
             wxLogError( ioe.What() );
         }
-        catch( ... )
+        catch(...)
         {
             wxLogError( "Unhandled exception of unknown type" );
         }
 
-        return false; // continue on. Return false to abort program
+        return false;   // continue on. Return false to abort program
     }
 #endif
 
@@ -269,7 +265,10 @@ struct APP_SINGLE_TOP : public wxApp
      * MacOSX requires it for file association.
      * @see http://wiki.wxwidgets.org/WxMac-specific_topics
      */
-    void MacOpenFile( const wxString& aFileName ) override { Pgm().MacOpenFile( aFileName ); }
+    void MacOpenFile( const wxString& aFileName ) override
+    {
+        Pgm().MacOpenFile( aFileName );
+    }
 
 #endif
 };
@@ -279,7 +278,7 @@ IMPLEMENT_APP( APP_SINGLE_TOP )
 
 bool PGM_SINGLE_TOP::OnPgmInit()
 {
-#if defined( DEBUG )
+#if defined(DEBUG)
     wxString absoluteArgv0 = wxStandardPaths::Get().GetExecutablePath();
 
     if( !wxIsAbsolutePath( absoluteArgv0 ) )
@@ -296,7 +295,7 @@ bool PGM_SINGLE_TOP::OnPgmInit()
         return false;
     }
 
-#if !defined( BUILD_KIWAY_DLL )
+#if !defined(BUILD_KIWAY_DLL)
 
     // Only bitmap2component and pcb_calculator use this code currently, as they
     // are not split to use single_top as a link image separate from a *.kiface.
@@ -305,7 +304,7 @@ bool PGM_SINGLE_TOP::OnPgmInit()
     // Get the getter, it is statically linked into this binary image.
     KIFACE_GETTER_FUNC* getter = &KIFACE_GETTER;
 
-    int kiface_version;
+    int  kiface_version;
 
     // Get the KIFACE.
     KIFACE* kiface = getter( &kiface_version, KIFACE_VERSION, this );
@@ -318,7 +317,7 @@ bool PGM_SINGLE_TOP::OnPgmInit()
     static const wxCmdLineEntryDesc desc[] = {
         { wxCMD_LINE_OPTION, "f", "frame", "Frame to load", wxCMD_LINE_VAL_STRING, 0 },
         { wxCMD_LINE_PARAM, nullptr, nullptr, "File to load", wxCMD_LINE_VAL_STRING,
-          wxCMD_LINE_PARAM_MULTIPLE | wxCMD_LINE_PARAM_OPTIONAL },
+                wxCMD_LINE_PARAM_MULTIPLE | wxCMD_LINE_PARAM_OPTIONAL },
         { wxCMD_LINE_NONE, nullptr, nullptr, nullptr, wxCMD_LINE_VAL_NONE, 0 }
     };
 
@@ -331,10 +330,12 @@ bool PGM_SINGLE_TOP::OnPgmInit()
     const struct
     {
         wxString name;
-        FRAME_T  type;
-    } frameTypes[] = { { wxT( "pcb" ), FRAME_PCB_EDITOR },
-                       { wxT( "fpedit" ), FRAME_FOOTPRINT_EDITOR },
-                       { wxT( "" ), FRAME_T_COUNT } };
+        FRAME_T type;
+    } frameTypes[] = {
+        { wxT( "pcb" ),    FRAME_PCB_EDITOR },
+        { wxT( "fpedit" ), FRAME_FOOTPRINT_EDITOR },
+        { wxT( "" ),       FRAME_T_COUNT }
+    };
 
     wxString frameName;
 
@@ -409,7 +410,7 @@ bool PGM_SINGLE_TOP::OnPgmInit()
         {
             wxFileName argv1( fileArgs[0] );
 
-#if defined( PGM_DATA_FILE_EXT )
+#if defined(PGM_DATA_FILE_EXT)
             // PGM_DATA_FILE_EXT, if present, may be different for each compile,
             // it may come from CMake on the compiler command line, but often does not.
             // This facility is mostly useful for those program footprints

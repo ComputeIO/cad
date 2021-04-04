@@ -354,10 +354,11 @@ void SYMBOL_EDIT_FRAME::setupUIConditions()
             return m_libMgr->HasModifications();
         };
 
-    auto libSelectedCondition = [this]( const SELECTION& sel )
-    {
-        return !GetTargetLibId().GetLibNickname().empty();
-    };
+    auto libSelectedCondition =
+        [this] ( const SELECTION& sel )
+        {
+            return !GetTargetLibId().GetLibNickname().empty();
+        };
 
     auto canEditProperties =
         [this] ( const SELECTION& sel )
@@ -365,11 +366,12 @@ void SYMBOL_EDIT_FRAME::setupUIConditions()
             return m_my_part && ( !IsSymbolFromLegacyLibrary() || IsSymbolFromSchematic() );
         };
 
-    auto saveSymbolAsCondition = [this]( const SELECTION& aSel )
-    {
-        LIB_ID sel = GetTargetLibId();
-        return !sel.GetLibNickname().empty() && !sel.GetLibItemName().empty();
-    };
+    auto saveSymbolAsCondition =
+        [ this ]( const SELECTION& aSel )
+        {
+            LIB_ID sel = GetTargetLibId();
+            return !sel.GetLibNickname().empty() && !sel.GetLibItemName().empty();
+        };
 
     mgr->SetConditions( ACTIONS::saveAll,           ENABLE( SELECTION_CONDITIONS::ShowAlways ) );
     mgr->SetConditions( ACTIONS::save,              ENABLE( SELECTION_CONDITIONS::ShowAlways ) );
@@ -899,19 +901,18 @@ void SYMBOL_EDIT_FRAME::SyncLibraries( bool aShowProgress, const wxString& aForc
                                          m_libMgr->GetAdapter()->GetLibrariesCount(), this );
 
         m_libMgr->Sync( aForceRefresh,
-                        [&]( int progress, int max, const wxString& libName )
-                        {
-                            progressDlg.Update(
-                                    progress,
-                                    wxString::Format( _( "Loading library '%s'" ), libName ) );
-                        } );
+                [&]( int progress, int max, const wxString& libName )
+                {
+                    progressDlg.Update( progress,
+                                        wxString::Format( _( "Loading library '%s'" ), libName ) );
+                } );
     }
     else
     {
         m_libMgr->Sync( aForceRefresh,
-                        [&]( int progress, int max, const wxString& libName )
-                        {
-                        } );
+                [&]( int progress, int max, const wxString& libName )
+                {
+                } );
     }
 
     if( m_treePane )

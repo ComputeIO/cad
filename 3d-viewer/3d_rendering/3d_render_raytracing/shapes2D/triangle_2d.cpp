@@ -60,16 +60,6 @@ TRIANGLE_2D::TRIANGLE_2D( const SFVEC2F& aV1, const SFVEC2F& aV2, const SFVEC2F&
 }
 
 
-TRIANGLE_2D::TRIANGLE_2D( const VECTOR2I& aV1, const VECTOR2I& aV2, const VECTOR2I& aV3,
-                          const double aXmultiplier, const double aYmultiplier,
-                          const BOARD_ITEM& aBoardItem ) :
-        TRIANGLE_2D( SFVEC2F( aV1.x * aXmultiplier, aV1.y * aYmultiplier ),
-                     SFVEC2F( aV2.x * aXmultiplier, aV2.y * aYmultiplier ),
-                     SFVEC2F( aV3.x * aXmultiplier, aV3.y * aYmultiplier ), aBoardItem )
-{
-}
-
-
 bool TRIANGLE_2D::Intersects( const BBOX_2D& aBBox ) const
 {
     if( !m_bbox.Intersects( aBBox ) )

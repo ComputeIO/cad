@@ -236,10 +236,10 @@ int EE_INSPECTION_TOOL::CheckSymbol( const TOOL_EVENT& aEvent )
         wxString pinName;
         wxString nextName;
 
-        if( pin->GetName() != "~" && !pin->GetName().IsEmpty() )
+        if( pin->GetName() != "~"  && !pin->GetName().IsEmpty() )
             pinName = " '" + pin->GetName() + "'";
 
-        if( next->GetName() != "~" && !next->GetName().IsEmpty() )
+        if( next->GetName() != "~"  && !next->GetName().IsEmpty() )
             nextName = " '" + next->GetName() + "'";
 
         if( part->HasConversion() && next->GetConvert() )
@@ -249,8 +249,11 @@ int EE_INSPECTION_TOOL::CheckSymbol( const TOOL_EVENT& aEvent )
                 msg.Printf( _( "<b>Duplicate pin %s</b> %s at location <b>(%.3f, %.3f)</b>"
                                " conflicts with pin %s%s at location <b>(%.3f, %.3f)</b>"
                                " of converted." ),
-                            next->GetNumber(), nextName, next->GetPosition().x / 1000.0,
-                            -next->GetPosition().y / 1000.0, pin->GetNumber(), pin->GetName(),
+                            next->GetNumber(),
+                            nextName,
+                            next->GetPosition().x / 1000.0, -next->GetPosition().y / 1000.0,
+                            pin->GetNumber(),
+                            pin->GetName(),
                             pin->GetPosition().x / 1000.0, -pin->GetPosition().y / 1000.0 );
             }
             else
@@ -258,10 +261,14 @@ int EE_INSPECTION_TOOL::CheckSymbol( const TOOL_EVENT& aEvent )
                 msg.Printf( _( "<b>Duplicate pin %s</b> %s at location <b>(%.3f, %.3f)</b>"
                                " conflicts with pin %s%s at location <b>(%.3f, %.3f)</b>"
                                " in units %c and %c of converted." ),
-                            next->GetNumber(), nextName, next->GetPosition().x / 1000.0,
-                            -next->GetPosition().y / 1000.0, pin->GetNumber(), pinName,
+                            next->GetNumber(),
+                            nextName,
+                            next->GetPosition().x / 1000.0, -next->GetPosition().y / 1000.0,
+                            pin->GetNumber(),
+                            pinName,
                             pin->GetPosition().x / 1000.0, -pin->GetPosition().y / 1000.0,
-                            'A' + next->GetUnit() - 1, 'A' + pin->GetUnit() - 1 );
+                            'A' + next->GetUnit() - 1,
+                            'A' + pin->GetUnit() - 1 );
             }
         }
         else
@@ -270,8 +277,11 @@ int EE_INSPECTION_TOOL::CheckSymbol( const TOOL_EVENT& aEvent )
             {
                 msg.Printf( _( "<b>Duplicate pin %s</b> %s at location <b>(%.3f, %.3f)</b>"
                                " conflicts with pin %s%s at location <b>(%.3f, %.3f)</b>." ),
-                            next->GetNumber(), nextName, next->GetPosition().x / 1000.0,
-                            -next->GetPosition().y / 1000.0, pin->GetNumber(), pinName,
+                            next->GetNumber(),
+                            nextName,
+                            next->GetPosition().x / 1000.0, -next->GetPosition().y / 1000.0,
+                            pin->GetNumber(),
+                            pinName,
                             pin->GetPosition().x / 1000.0, -pin->GetPosition().y / 1000.0 );
             }
             else
@@ -279,10 +289,14 @@ int EE_INSPECTION_TOOL::CheckSymbol( const TOOL_EVENT& aEvent )
                 msg.Printf( _( "<b>Duplicate pin %s</b> %s at location <b>(%.3f, %.3f)</b>"
                                " conflicts with pin %s%s at location <b>(%.3f, %.3f)</b>"
                                " in units %c and %c." ),
-                            next->GetNumber(), nextName, next->GetPosition().x / 1000.0,
-                            -next->GetPosition().y / 1000.0, pin->GetNumber(), pinName,
+                            next->GetNumber(),
+                            nextName,
+                            next->GetPosition().x / 1000.0, -next->GetPosition().y / 1000.0,
+                            pin->GetNumber(),
+                            pinName,
                             pin->GetPosition().x / 1000.0, -pin->GetPosition().y / 1000.0,
-                            'A' + next->GetUnit() - 1, 'A' + pin->GetUnit() - 1 );
+                            'A' + next->GetUnit() - 1,
+                            'A' + pin->GetUnit() - 1 );
             }
         }
 
@@ -299,8 +313,9 @@ int EE_INSPECTION_TOOL::CheckSymbol( const TOOL_EVENT& aEvent )
         else
             pinName = "'" + pinName + "'";
 
-        if( !part->IsPower() && pin->GetType() == ELECTRICAL_PINTYPE::PT_POWER_IN
-            && !pin->IsVisible() )
+        if( !part->IsPower()
+                && pin->GetType() == ELECTRICAL_PINTYPE::PT_POWER_IN
+                && !pin->IsVisible() )
         {
             // hidden power pin
             if( part->HasConversion() && pin->GetConvert() )
@@ -309,32 +324,37 @@ int EE_INSPECTION_TOOL::CheckSymbol( const TOOL_EVENT& aEvent )
                 {
                     msg.Printf( _( "<b>Hidden power pin %s</b> %s at location <b>(%.3f, %.3f)</b>"
                                    " of converted." ),
-                                pin->GetNumber(), pinName, pin->GetPosition().x / 1000.0,
-                                -pin->GetPosition().y / 1000.0 );
+                                pin->GetNumber(),
+                                pinName,
+                                pin->GetPosition().x / 1000.0, -pin->GetPosition().y / 1000.0 );
                 }
                 else
                 {
                     msg.Printf( _( "<b>Hidden power pin %s</b> %s at location <b>(%.3f, %.3f)</b>"
                                    " in unit %c of converted." ),
-                                pin->GetNumber(), pinName, pin->GetPosition().x / 1000.0,
-                                -pin->GetPosition().y / 1000.0, 'A' + pin->GetUnit() - 1 );
+                                pin->GetNumber(),
+                                pinName,
+                                pin->GetPosition().x / 1000.0, -pin->GetPosition().y / 1000.0,
+                                'A' + pin->GetUnit() - 1 );
                 }
             }
             else
             {
                 if( part->GetUnitCount() <= 1 )
                 {
-                    msg.Printf(
-                            _( "<b>Hidden power pin %s</b> %s at location <b>(%.3f, %.3f)</b>." ),
-                            pin->GetNumber(), pinName, pin->GetPosition().x / 1000.0,
-                            -pin->GetPosition().y / 1000.0 );
+                    msg.Printf( _( "<b>Hidden power pin %s</b> %s at location <b>(%.3f, %.3f)</b>." ),
+                                pin->GetNumber(),
+                                pinName,
+                                pin->GetPosition().x / 1000.0, -pin->GetPosition().y / 1000.0 );
                 }
                 else
                 {
                     msg.Printf( _( "<b>Hidden power pin %s</b> %s at location <b>(%.3f, %.3f)</b>"
                                    " in unit %c." ),
-                                pin->GetNumber(), pinName, pin->GetPosition().x / 1000.0,
-                                -pin->GetPosition().y / 1000.0, 'A' + pin->GetUnit() - 1 );
+                                pin->GetNumber(),
+                                pinName,
+                                pin->GetPosition().x / 1000.0, -pin->GetPosition().y / 1000.0,
+                                'A' + pin->GetUnit() - 1 );
                 }
             }
 
@@ -344,8 +364,8 @@ int EE_INSPECTION_TOOL::CheckSymbol( const TOOL_EVENT& aEvent )
             messages.push_back( msg );
         }
 
-        if( ( ( pin->GetPosition().x % clamped_grid_size ) != 0 )
-            || ( ( pin->GetPosition().y % clamped_grid_size ) != 0 ) )
+        if( ( (pin->GetPosition().x % clamped_grid_size) != 0 )
+                || ( (pin->GetPosition().y % clamped_grid_size) != 0 ) )
         {
             // pin is off grid
             if( part->HasConversion() && pin->GetConvert() )
@@ -354,15 +374,18 @@ int EE_INSPECTION_TOOL::CheckSymbol( const TOOL_EVENT& aEvent )
                 {
                     msg.Printf( _( "<b>Off grid pin %s</b> %s at location <b>(%.3f, %.3f)</b>"
                                    " of converted." ),
-                                pin->GetNumber(), pinName, pin->GetPosition().x / 1000.0,
-                                -pin->GetPosition().y / 1000.0 );
+                                pin->GetNumber(),
+                                pinName,
+                                pin->GetPosition().x / 1000.0, -pin->GetPosition().y / 1000.0 );
                 }
                 else
                 {
                     msg.Printf( _( "<b>Off grid pin %s</b> %s at location <b>(%.3f, %.3f)</b>"
                                    " in unit %c of converted." ),
-                                pin->GetNumber(), pinName, pin->GetPosition().x / 1000.0,
-                                -pin->GetPosition().y / 1000.0, 'A' + pin->GetUnit() - 1 );
+                                pin->GetNumber(),
+                                pinName,
+                                pin->GetPosition().x / 1000.0, -pin->GetPosition().y / 1000.0,
+                                'A' + pin->GetUnit() - 1 );
                 }
             }
             else
@@ -370,15 +393,18 @@ int EE_INSPECTION_TOOL::CheckSymbol( const TOOL_EVENT& aEvent )
                 if( part->GetUnitCount() <= 1 )
                 {
                     msg.Printf( _( "<b>Off grid pin %s</b> %s at location <b>(%.3f, %.3f)</b>." ),
-                                pin->GetNumber(), pinName, pin->GetPosition().x / 1000.0,
-                                -pin->GetPosition().y / 1000.0 );
+                                pin->GetNumber(),
+                                pinName,
+                                pin->GetPosition().x / 1000.0, -pin->GetPosition().y / 1000.0 );
                 }
                 else
                 {
                     msg.Printf( _( "<b>Off grid pin %s</b> %s at location <b>(%.3f, %.3f)</b>"
                                    " in unit %c." ),
-                                pin->GetNumber(), pinName, pin->GetPosition().x / 1000.0,
-                                -pin->GetPosition().y / 1000.0, 'A' + pin->GetUnit() - 1 );
+                                pin->GetNumber(),
+                                pinName,
+                                pin->GetPosition().x / 1000.0, -pin->GetPosition().y / 1000.0,
+                                'A' + pin->GetUnit() - 1 );
                 }
             }
 

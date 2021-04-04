@@ -240,8 +240,7 @@ bool pcbnewInitPythonScripting( const char* aStockScriptingPath, const char* aUs
         PyLOCK lock;
 
         // Load os so that we can modify the environment variables through python
-        snprintf( cmd, sizeof( cmd ),
-                  "import sys, os, traceback\n"
+        snprintf( cmd, sizeof( cmd ), "import sys, os, traceback\n"
                   "sys.path.append(\".\")\n"
                   "import pcbnew\n"
                   "pcbnew.LoadPlugins(\"%s\", \"%s\")",

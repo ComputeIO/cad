@@ -27,8 +27,9 @@
 #include "dialog_dimension_properties.h"
 
 
+
 DIALOG_DIMENSION_PROPERTIES::DIALOG_DIMENSION_PROPERTIES( PCB_BASE_EDIT_FRAME* aParent,
-                                                          BOARD_ITEM*          aItem ) :
+                                                          BOARD_ITEM* aItem ) :
         DIALOG_DIMENSION_PROPERTIES_BASE( aParent ),
         m_frame( aParent ),
         m_cbLayerActual( m_cbLayer ),

@@ -139,15 +139,15 @@ void BOARD_ADAPTER::createLayers( REPORTER* aStatusReporter )
     PCB_LAYER_ID cu_seq[MAX_CU_LAYERS];
     LSET         cu_set = LSET::AllCuMask( m_copperLayersCount );
 
-    m_trackCount = 0;
-    m_averageTrackWidth = 0;
-    m_viaCount = 0;
-    m_averageViaHoleDiameter = 0;
-    m_holeCount = 0;
-    m_averageHoleDiameter = 0;
+    m_trackCount               = 0;
+    m_averageTrackWidth        = 0;
+    m_viaCount                 = 0;
+    m_averageViaHoleDiameter   = 0;
+    m_holeCount                = 0;
+    m_averageHoleDiameter      = 0;
 
     // Prepare track list, convert in a vector. Calc statistic for the holes
-    std::vector<const TRACK*> trackList;
+    std::vector< const TRACK *> trackList;
     trackList.clear();
     trackList.reserve( m_board->Tracks().size() );
 
@@ -162,7 +162,7 @@ void BOARD_ADAPTER::createLayers( REPORTER* aStatusReporter )
 
         if( track->Type() == PCB_VIA_T )
         {
-            const VIA* via = static_cast<const VIA*>( track );
+            const VIA *via = static_cast< const VIA*>( track );
             m_viaCount++;
             m_averageViaHoleDiameter += via->GetDrillValue() * m_biuTo3Dunits;
         }
@@ -175,13 +175,13 @@ void BOARD_ADAPTER::createLayers( REPORTER* aStatusReporter )
     }
 
     if( m_trackCount )
-        m_averageTrackWidth /= (float) m_trackCount;
+        m_averageTrackWidth /= (float)m_trackCount;
 
     if( m_viaCount )
-        m_averageViaHoleDiameter /= (float) m_viaCount;
+        m_averageViaHoleDiameter /= (float)m_viaCount;
 
     // Prepare copper layers index and containers
-    std::vector<PCB_LAYER_ID> layer_id;
+    std::vector< PCB_LAYER_ID > layer_id;
     layer_id.clear();
     layer_id.reserve( m_copperLayersCount );
 
@@ -197,13 +197,13 @@ void BOARD_ADAPTER::createLayers( REPORTER* aStatusReporter )
 
         layer_id.push_back( curr_layer_id );
 
-        BVH_CONTAINER_2D* layerContainer = new BVH_CONTAINER_2D;
+        BVH_CONTAINER_2D *layerContainer = new BVH_CONTAINER_2D;
         m_layerMap[curr_layer_id] = layerContainer;
 
         if( GetFlag( FL_RENDER_OPENGL_COPPER_THICKNESS )
-            && ( m_renderEngine == RENDER_ENGINE::OPENGL_LEGACY ) )
+          && ( m_renderEngine == RENDER_ENGINE::OPENGL_LEGACY ) )
         {
-            SHAPE_POLY_SET* layerPoly = new SHAPE_POLY_SET;
+            SHAPE_POLY_SET* layerPoly    = new SHAPE_POLY_SET;
             m_layers_poly[curr_layer_id] = layerPoly;
         }
     }
@@ -215,6 +215,7 @@ void BOARD_ADAPTER::createLayers( REPORTER* aStatusReporter )
 
         m_platedPadsFront = new BVH_CONTAINER_2D;
         m_platedPadsBack = new BVH_CONTAINER_2D;
+
     }
 
     if( aStatusReporter )
@@ -225,21 +226,21 @@ void BOARD_ADAPTER::createLayers( REPORTER* aStatusReporter )
     {
         wxASSERT( m_layerMap.find( curr_layer_id ) != m_layerMap.end() );
 
-        BVH_CONTAINER_2D* layerContainer = m_layerMap[curr_layer_id];
+        BVH_CONTAINER_2D *layerContainer = m_layerMap[curr_layer_id];
 
         // Add track segments shapes and via annulus shapes
         unsigned int nTracks = trackList.size();
 
         for( unsigned int trackIdx = 0; trackIdx < nTracks; ++trackIdx )
         {
-            const TRACK* track = trackList[trackIdx];
+            const TRACK *track = trackList[trackIdx];
 
             // NOTE: Vias can be on multiple layers
             if( !track->IsOnLayer( curr_layer_id ) )
                 continue;
 
             // Skip vias annulus when not connected on this layer (if removing is enabled)
-            const VIA* via = dyn_cast<const VIA*>( track );
+            const VIA *via = dyn_cast< const VIA*>( track );
 
             if( via && !via->FlashLayer( curr_layer_id ) && IsCopperLayer( curr_layer_id ) )
                 continue;
@@ -257,7 +258,7 @@ void BOARD_ADAPTER::createLayers( REPORTER* aStatusReporter )
 
         for( unsigned int trackIdx = 0; trackIdx < nTracks; ++trackIdx )
         {
-            const TRACK* track = trackList[trackIdx];
+            const TRACK *track = trackList[trackIdx];
 
             if( !track->IsOnLayer( curr_layer_id ) )
                 continue;
@@ -265,20 +266,21 @@ void BOARD_ADAPTER::createLayers( REPORTER* aStatusReporter )
             // ADD VIAS and THT
             if( track->Type() == PCB_VIA_T )
             {
-                const VIA*    via = static_cast<const VIA*>( track );
-                const VIATYPE viatype = via->GetViaType();
-                const float   holediameter = via->GetDrillValue() * BiuTo3dUnits();
-                const float   thickness = GetCopperThickness();
+                const VIA*    via               = static_cast<const VIA*>( track );
+                const VIATYPE viatype           = via->GetViaType();
+                const float   holediameter      = via->GetDrillValue() * BiuTo3dUnits();
+                const float   thickness         = GetCopperThickness();
                 const float   hole_inner_radius = ( holediameter / 2.0f );
-                const float   ring_radius = via->GetWidth() * BiuTo3dUnits() / 2.0f;
+                const float   ring_radius       = via->GetWidth() * BiuTo3dUnits() / 2.0f;
 
                 const SFVEC2F via_center( via->GetStart().x * m_biuTo3Dunits,
                                           -via->GetStart().y * m_biuTo3Dunits );
 
                 if( viatype != VIATYPE::THROUGH )
                 {
+
                     // Add hole objects
-                    BVH_CONTAINER_2D* layerHoleContainer = nullptr;
+                    BVH_CONTAINER_2D *layerHoleContainer = nullptr;
 
                     // Check if the layer is already created
                     if( m_layerHoleMap.find( curr_layer_id ) == m_layerHoleMap.end() )
@@ -294,25 +296,30 @@ void BOARD_ADAPTER::createLayers( REPORTER* aStatusReporter )
                     }
 
                     // Add a hole for this layer
-                    layerHoleContainer->Add( new FILLED_CIRCLE_2D(
-                            via_center, hole_inner_radius + thickness, *track ) );
+                    layerHoleContainer->Add( new FILLED_CIRCLE_2D( via_center,
+                                                                   hole_inner_radius + thickness,
+                                                                   *track ) );
                 }
                 else if( curr_layer_id == layer_id[0] ) // it only adds once the THT holes
                 {
                     // Add through hole object
-                    m_throughHoleOds.Add( new FILLED_CIRCLE_2D(
-                            via_center, hole_inner_radius + thickness, *track ) );
-                    m_throughHoleViaOds.Add( new FILLED_CIRCLE_2D(
-                            via_center, hole_inner_radius + thickness, *track ) );
+                    m_throughHoleOds.Add( new FILLED_CIRCLE_2D( via_center,
+                                                                     hole_inner_radius + thickness,
+                                                                     *track ) );
+                    m_throughHoleViaOds.Add( new FILLED_CIRCLE_2D( via_center,
+                                                                   hole_inner_radius + thickness,
+                                                                   *track ) );
 
-                    if( GetFlag( FL_CLIP_SILK_ON_VIA_ANNULUS ) && GetFlag( FL_USE_REALISTIC_MODE ) )
+                    if( GetFlag( FL_CLIP_SILK_ON_VIA_ANNULUS ) &&
+                        GetFlag( FL_USE_REALISTIC_MODE ) )
                     {
-                        m_throughHoleAnnularRings.Add(
-                                new FILLED_CIRCLE_2D( via_center, ring_radius, *track ) );
+                        m_throughHoleAnnularRings.Add( new FILLED_CIRCLE_2D( via_center,
+                                                                              ring_radius,
+                                                                              *track ) );
                     }
 
-                    m_throughHoleIds.Add(
-                            new FILLED_CIRCLE_2D( via_center, hole_inner_radius, *track ) );
+                    m_throughHoleIds.Add( new FILLED_CIRCLE_2D( via_center, hole_inner_radius,
+                                                                     *track ) );
                 }
             }
         }
@@ -326,7 +333,7 @@ void BOARD_ADAPTER::createLayers( REPORTER* aStatusReporter )
 
         for( unsigned int trackIdx = 0; trackIdx < nTracks; ++trackIdx )
         {
-            const TRACK* track = trackList[trackIdx];
+            const TRACK *track = trackList[trackIdx];
 
             if( !track->IsOnLayer( curr_layer_id ) )
                 continue;
@@ -334,7 +341,7 @@ void BOARD_ADAPTER::createLayers( REPORTER* aStatusReporter )
             // ADD VIAS and THT
             if( track->Type() == PCB_VIA_T )
             {
-                const VIA*    via = static_cast<const VIA*>( track );
+                const VIA *via = static_cast< const VIA*>( track );
                 const VIATYPE viatype = via->GetViaType();
 
                 if( viatype != VIATYPE::THROUGH )
@@ -342,18 +349,19 @@ void BOARD_ADAPTER::createLayers( REPORTER* aStatusReporter )
                     // Add VIA hole contours
 
                     // Add outer holes of VIAs
-                    SHAPE_POLY_SET* layerOuterHolesPoly = nullptr;
-                    SHAPE_POLY_SET* layerInnerHolesPoly = nullptr;
+                    SHAPE_POLY_SET *layerOuterHolesPoly = nullptr;
+                    SHAPE_POLY_SET *layerInnerHolesPoly = nullptr;
 
                     // Check if the layer is already created
-                    if( m_layerHoleOdPolys.find( curr_layer_id ) == m_layerHoleOdPolys.end() )
+                    if( m_layerHoleOdPolys.find( curr_layer_id ) ==
+                        m_layerHoleOdPolys.end() )
                     {
                         // not found, create a new container
                         layerOuterHolesPoly = new SHAPE_POLY_SET;
                         m_layerHoleOdPolys[curr_layer_id] = layerOuterHolesPoly;
 
-                        wxASSERT( m_layerHoleIdPolys.find( curr_layer_id )
-                                  == m_layerHoleIdPolys.end() );
+                        wxASSERT( m_layerHoleIdPolys.find( curr_layer_id ) ==
+                                  m_layerHoleIdPolys.end() );
 
                         layerInnerHolesPoly = new SHAPE_POLY_SET;
                         m_layerHoleIdPolys[curr_layer_id] = layerInnerHolesPoly;
@@ -363,14 +371,14 @@ void BOARD_ADAPTER::createLayers( REPORTER* aStatusReporter )
                         // found
                         layerOuterHolesPoly = m_layerHoleOdPolys[curr_layer_id];
 
-                        wxASSERT( m_layerHoleIdPolys.find( curr_layer_id )
-                                  != m_layerHoleIdPolys.end() );
+                        wxASSERT( m_layerHoleIdPolys.find( curr_layer_id ) !=
+                                  m_layerHoleIdPolys.end() );
 
                         layerInnerHolesPoly = m_layerHoleIdPolys[curr_layer_id];
                     }
 
                     const int holediameter = via->GetDrillValue();
-                    const int hole_outer_radius = ( holediameter / 2 ) + GetHolePlatingThickness();
+                    const int hole_outer_radius = (holediameter / 2) + GetHolePlatingThickness();
 
                     TransformCircleToPolygon( *layerOuterHolesPoly, via->GetStart(),
                                               hole_outer_radius, ARC_HIGH_DEF, ERROR_INSIDE );
@@ -381,7 +389,7 @@ void BOARD_ADAPTER::createLayers( REPORTER* aStatusReporter )
                 else if( curr_layer_id == layer_id[0] ) // it only adds once the THT holes
                 {
                     const int holediameter = via->GetDrillValue();
-                    const int hole_outer_radius = ( holediameter / 2 ) + GetHolePlatingThickness();
+                    const int hole_outer_radius = (holediameter / 2) + GetHolePlatingThickness();
                     const int hole_outer_ring_radius = via->GetWidth() / 2.0f;
 
                     // Add through hole contours
@@ -394,9 +402,9 @@ void BOARD_ADAPTER::createLayers( REPORTER* aStatusReporter )
 
                     if( GetFlag( FL_CLIP_SILK_ON_VIA_ANNULUS ) && GetFlag( FL_USE_REALISTIC_MODE ) )
                     {
-                        TransformCircleToPolygon( m_throughHoleAnnularRingPolys, via->GetStart(),
-                                                  hole_outer_ring_radius, ARC_HIGH_DEF,
-                                                  ERROR_INSIDE );
+                        TransformCircleToPolygon( m_throughHoleAnnularRingPolys,
+                                                  via->GetStart(), hole_outer_ring_radius,
+                                                  ARC_HIGH_DEF, ERROR_INSIDE );
                     }
                 }
             }
@@ -405,26 +413,26 @@ void BOARD_ADAPTER::createLayers( REPORTER* aStatusReporter )
 
     // Creates vertical outline contours of the tracks and add it to the poly of the layer
     if( GetFlag( FL_RENDER_OPENGL_COPPER_THICKNESS )
-        && ( m_renderEngine == RENDER_ENGINE::OPENGL_LEGACY ) )
+      && ( m_renderEngine == RENDER_ENGINE::OPENGL_LEGACY ) )
     {
         for( PCB_LAYER_ID curr_layer_id : layer_id )
         {
             wxASSERT( m_layers_poly.find( curr_layer_id ) != m_layers_poly.end() );
 
-            SHAPE_POLY_SET* layerPoly = m_layers_poly[curr_layer_id];
+            SHAPE_POLY_SET *layerPoly = m_layers_poly[curr_layer_id];
 
             // ADD TRACKS
             unsigned int nTracks = trackList.size();
 
             for( unsigned int trackIdx = 0; trackIdx < nTracks; ++trackIdx )
             {
-                const TRACK* track = trackList[trackIdx];
+                const TRACK *track = trackList[trackIdx];
 
                 if( !track->IsOnLayer( curr_layer_id ) )
                     continue;
 
                 // Skip vias annulus when not connected on this layer (if removing is enabled)
-                const VIA* via = dyn_cast<const VIA*>( track );
+                const VIA *via = dyn_cast< const VIA*>( track );
 
                 if( via && !via->FlashLayer( curr_layer_id ) && IsCopperLayer( curr_layer_id ) )
                     continue;
@@ -443,16 +451,16 @@ void BOARD_ADAPTER::createLayers( REPORTER* aStatusReporter )
         {
             const wxSize padHole = pad->GetDrillSize();
 
-            if( !padHole.x ) // Not drilled pad like SMD pad
+            if( !padHole.x )    // Not drilled pad like SMD pad
                 continue;
 
             // The hole in the body is inflated by copper thickness, if not plated, no copper
-            const int inflate =
-                    ( pad->GetAttribute() != PAD_ATTRIB_NPTH ) ? GetHolePlatingThickness() : 0;
+            const int inflate = ( pad->GetAttribute () != PAD_ATTRIB_NPTH ) ?
+                                GetHolePlatingThickness() : 0;
 
             m_holeCount++;
-            m_averageHoleDiameter +=
-                    ( ( pad->GetDrillSize().x + pad->GetDrillSize().y ) / 2.0f ) * m_biuTo3Dunits;
+            m_averageHoleDiameter += ( ( pad->GetDrillSize().x +
+                                             pad->GetDrillSize().y ) / 2.0f ) * m_biuTo3Dunits;
 
             m_throughHoleOds.Add( createPadWithDrill( pad, inflate ) );
 
@@ -466,7 +474,7 @@ void BOARD_ADAPTER::createLayers( REPORTER* aStatusReporter )
     }
 
     if( m_holeCount )
-        m_averageHoleDiameter /= (float) m_holeCount;
+        m_averageHoleDiameter /= (float)m_holeCount;
 
     // Add contours of the pad holes (pads can be Circle or Segment holes)
     for( FOOTPRINT* footprint : m_board->Footprints() )
@@ -481,7 +489,7 @@ void BOARD_ADAPTER::createLayers( REPORTER* aStatusReporter )
             // The hole in the body is inflated by copper thickness.
             const int inflate = GetHolePlatingThickness();
 
-            if( pad->GetAttribute() != PAD_ATTRIB_NPTH )
+            if( pad->GetAttribute () != PAD_ATTRIB_NPTH )
             {
                 if( GetFlag( FL_CLIP_SILK_ON_VIA_ANNULUS ) && GetFlag( FL_USE_REALISTIC_MODE ) )
                 {
@@ -507,23 +515,23 @@ void BOARD_ADAPTER::createLayers( REPORTER* aStatusReporter )
         }
     }
 
-    const bool renderPlatedPadsAsPlated =
-            GetFlag( FL_RENDER_PLATED_PADS_AS_PLATED ) && GetFlag( FL_USE_REALISTIC_MODE );
+    const bool renderPlatedPadsAsPlated = GetFlag( FL_RENDER_PLATED_PADS_AS_PLATED ) &&
+                                          GetFlag( FL_USE_REALISTIC_MODE );
 
     // Add footprints PADs objects to containers
     for( PCB_LAYER_ID curr_layer_id : layer_id )
     {
         wxASSERT( m_layerMap.find( curr_layer_id ) != m_layerMap.end() );
 
-        BVH_CONTAINER_2D* layerContainer = m_layerMap[curr_layer_id];
+        BVH_CONTAINER_2D *layerContainer = m_layerMap[curr_layer_id];
 
         // ADD PADS
         for( FOOTPRINT* footprint : m_board->Footprints() )
         {
             // Note: NPTH pads are not drawn on copper layers when the pad
             // has same shape as its hole
-            addPadsWithClearance( footprint, layerContainer, curr_layer_id, 0, true,
-                                  renderPlatedPadsAsPlated, false );
+            addPadsWithClearance( footprint, layerContainer, curr_layer_id, 0,
+                                  true, renderPlatedPadsAsPlated, false );
 
             // Micro-wave footprints may have items on copper layers
             addFootprintShapesWithClearance( footprint, layerContainer, curr_layer_id, 0 );
@@ -546,22 +554,23 @@ void BOARD_ADAPTER::createLayers( REPORTER* aStatusReporter )
 
     // Add footprints PADs poly contours (vertical outlines)
     if( GetFlag( FL_RENDER_OPENGL_COPPER_THICKNESS )
-        && ( m_renderEngine == RENDER_ENGINE::OPENGL_LEGACY ) )
+      && ( m_renderEngine == RENDER_ENGINE::OPENGL_LEGACY ) )
     {
         for( PCB_LAYER_ID curr_layer_id : layer_id )
         {
             wxASSERT( m_layers_poly.find( curr_layer_id ) != m_layers_poly.end() );
 
-            SHAPE_POLY_SET* layerPoly = m_layers_poly[curr_layer_id];
+            SHAPE_POLY_SET *layerPoly = m_layers_poly[curr_layer_id];
 
             // Add pads to polygon list
             for( FOOTPRINT* footprint : m_board->Footprints() )
             {
                 // Note: NPTH pads are not drawn on copper layers when the pad
                 // has same shape as its hole
-                footprint->TransformPadsWithClearanceToPolygon( *layerPoly, curr_layer_id, 0,
-                                                                ARC_HIGH_DEF, ERROR_INSIDE, true,
-                                                                renderPlatedPadsAsPlated, false );
+                footprint->TransformPadsWithClearanceToPolygon( *layerPoly, curr_layer_id,
+                                                                0, ARC_HIGH_DEF, ERROR_INSIDE,
+                                                                true, renderPlatedPadsAsPlated,
+                                                                false );
 
                 transformFPShapesToPolygon( footprint, curr_layer_id, *layerPoly );
             }
@@ -572,13 +581,13 @@ void BOARD_ADAPTER::createLayers( REPORTER* aStatusReporter )
             // ADD PLATED PADS contours
             for( FOOTPRINT* footprint : m_board->Footprints() )
             {
-                footprint->TransformPadsWithClearanceToPolygon( *m_frontPlatedPadPolys, F_Cu, 0,
-                                                                ARC_HIGH_DEF, ERROR_INSIDE, true,
-                                                                false, true );
+                footprint->TransformPadsWithClearanceToPolygon( *m_frontPlatedPadPolys, F_Cu,
+                                                                0, ARC_HIGH_DEF, ERROR_INSIDE,
+                                                                true, false, true );
 
-                footprint->TransformPadsWithClearanceToPolygon( *m_backPlatedPadPolys, B_Cu, 0,
-                                                                ARC_HIGH_DEF, ERROR_INSIDE, true,
-                                                                false, true );
+                footprint->TransformPadsWithClearanceToPolygon( *m_backPlatedPadPolys, B_Cu,
+                                                                0, ARC_HIGH_DEF, ERROR_INSIDE,
+                                                                true, false, true );
             }
         }
     }
@@ -588,7 +597,7 @@ void BOARD_ADAPTER::createLayers( REPORTER* aStatusReporter )
     {
         wxASSERT( m_layerMap.find( curr_layer_id ) != m_layerMap.end() );
 
-        BVH_CONTAINER_2D* layerContainer = m_layerMap[curr_layer_id];
+        BVH_CONTAINER_2D *layerContainer = m_layerMap[curr_layer_id];
 
         // Add graphic items on copper layers (texts and other graphics)
         for( BOARD_ITEM* item : m_board->Drawings() )
@@ -601,42 +610,38 @@ void BOARD_ADAPTER::createLayers( REPORTER* aStatusReporter )
             case PCB_SHAPE_T:
                 addShapeWithClearance( static_cast<PCB_SHAPE*>( item ), layerContainer,
                                        curr_layer_id, 0 );
-                break;
+            break;
 
             case PCB_TEXT_T:
-#ifdef DEBUG
-                std::cerr << "[Adding copper layer text \""
-                          << static_cast<PCB_TEXT*>( item )->GetText() << "\"]\n";
-#endif
                 addShapeWithClearance( static_cast<PCB_TEXT*>( item ), layerContainer,
                                        curr_layer_id, 0 );
-                break;
+            break;
 
             case PCB_DIM_ALIGNED_T:
             case PCB_DIM_CENTER_T:
             case PCB_DIM_ORTHOGONAL_T:
             case PCB_DIM_LEADER_T:
-                addShapeWithClearance( static_cast<DIMENSION_BASE*>( item ), layerContainer,
-                                       curr_layer_id, 0 );
-                break;
+                addShapeWithClearance( static_cast<DIMENSION_BASE*>( item ),
+                                       layerContainer, curr_layer_id, 0 );
+            break;
 
             default:
                 wxLogTrace( m_logTrace, wxT( "createLayers: item type: %d not implemented" ),
                             item->Type() );
-                break;
+            break;
             }
         }
     }
 
     // Add graphic item on copper layers to poly contours (vertical outlines)
     if( GetFlag( FL_RENDER_OPENGL_COPPER_THICKNESS )
-        && ( m_renderEngine == RENDER_ENGINE::OPENGL_LEGACY ) )
+      && ( m_renderEngine == RENDER_ENGINE::OPENGL_LEGACY ) )
     {
         for( PCB_LAYER_ID cur_layer_id : layer_id )
         {
             wxASSERT( m_layers_poly.find( cur_layer_id ) != m_layers_poly.end() );
 
-            SHAPE_POLY_SET* layerPoly = m_layers_poly[cur_layer_id];
+            SHAPE_POLY_SET *layerPoly = m_layers_poly[cur_layer_id];
 
             // Add graphic items on copper layers (texts and other )
             for( BOARD_ITEM* item : m_board->Drawings() )
@@ -658,7 +663,7 @@ void BOARD_ADAPTER::createLayers( REPORTER* aStatusReporter )
                     text->TransformTextShapeWithClearanceToPolygon( *layerPoly, cur_layer_id, 0,
                                                                     ARC_HIGH_DEF, ERROR_INSIDE );
                 }
-                break;
+                    break;
 
                 default:
                     wxLogTrace( m_logTrace, wxT( "createLayers: item type: %d not implemented" ),
@@ -690,37 +695,38 @@ void BOARD_ADAPTER::createLayers( REPORTER* aStatusReporter )
 
         for( size_t ii = 0; ii < parallelThreadCount; ++ii )
         {
-            std::thread t = std::thread(
-                    [&]()
-                    {
-                        for( size_t areaId = nextZone.fetch_add( 1 ); areaId < zones.size();
-                             areaId = nextZone.fetch_add( 1 ) )
-                        {
-                            const ZONE* zone = zones[areaId].first;
+            std::thread t = std::thread( [&]()
+            {
+                for( size_t areaId = nextZone.fetch_add( 1 );
+                            areaId < zones.size();
+                            areaId = nextZone.fetch_add( 1 ) )
+                {
+                    const ZONE* zone = zones[areaId].first;
 
-                            if( zone == nullptr )
-                                break;
+                    if( zone == nullptr )
+                        break;
 
-                            PCB_LAYER_ID layer = zones[areaId].second;
+                    PCB_LAYER_ID layer = zones[areaId].second;
 
-                            auto layerContainer = m_layerMap.find( layer );
+                    auto layerContainer = m_layerMap.find( layer );
 
-                            if( layerContainer != m_layerMap.end() )
-                                addSolidAreasShapes( zone, layerContainer->second, layer );
-                        }
+                    if( layerContainer != m_layerMap.end() )
+                        addSolidAreasShapes( zone, layerContainer->second, layer );
+                }
 
-                        threadsFinished++;
-                    } );
+                threadsFinished++;
+            } );
 
             t.detach();
         }
 
         while( threadsFinished < parallelThreadCount )
             std::this_thread::sleep_for( std::chrono::milliseconds( 10 ) );
+
     }
 
     if( GetFlag( FL_ZONE ) && GetFlag( FL_RENDER_OPENGL_COPPER_THICKNESS )
-        && ( m_renderEngine == RENDER_ENGINE::OPENGL_LEGACY ) )
+      && ( m_renderEngine == RENDER_ENGINE::OPENGL_LEGACY ) )
     {
         // Add copper zones
         for( ZONE* zone : m_board->Zones() )
@@ -744,13 +750,13 @@ void BOARD_ADAPTER::createLayers( REPORTER* aStatusReporter )
         aStatusReporter->Report( _( "Simplifying copper layers polygons" ) );
 
     if( GetFlag( FL_RENDER_OPENGL_COPPER_THICKNESS )
-        && ( m_renderEngine == RENDER_ENGINE::OPENGL_LEGACY ) )
+      && ( m_renderEngine == RENDER_ENGINE::OPENGL_LEGACY ) )
     {
         if( GetFlag( FL_RENDER_PLATED_PADS_AS_PLATED ) && GetFlag( FL_USE_REALISTIC_MODE ) )
         {
             if( m_frontPlatedPadPolys && ( m_layers_poly.find( F_Cu ) != m_layers_poly.end() ) )
             {
-                SHAPE_POLY_SET* layerPoly_F_Cu = m_layers_poly[F_Cu];
+                SHAPE_POLY_SET *layerPoly_F_Cu = m_layers_poly[F_Cu];
                 layerPoly_F_Cu->BooleanSubtract( *m_frontPlatedPadPolys, SHAPE_POLY_SET::PM_FAST );
 
                 m_frontPlatedPadPolys->Simplify( SHAPE_POLY_SET::PM_FAST );
@@ -758,15 +764,15 @@ void BOARD_ADAPTER::createLayers( REPORTER* aStatusReporter )
 
             if( m_backPlatedPadPolys && ( m_layers_poly.find( B_Cu ) != m_layers_poly.end() ) )
             {
-                SHAPE_POLY_SET* layerPoly_B_Cu = m_layers_poly[B_Cu];
+                SHAPE_POLY_SET *layerPoly_B_Cu = m_layers_poly[B_Cu];
                 layerPoly_B_Cu->BooleanSubtract( *m_backPlatedPadPolys, SHAPE_POLY_SET::PM_FAST );
 
                 m_backPlatedPadPolys->Simplify( SHAPE_POLY_SET::PM_FAST );
             }
         }
 
-        std::vector<PCB_LAYER_ID>& selected_layer_id = layer_id;
-        std::vector<PCB_LAYER_ID>  layer_id_without_F_and_B;
+        std::vector< PCB_LAYER_ID > &selected_layer_id = layer_id;
+        std::vector< PCB_LAYER_ID > layer_id_without_F_and_B;
 
         if( GetFlag( FL_RENDER_PLATED_PADS_AS_PLATED ) && GetFlag( FL_USE_REALISTIC_MODE ) )
         {
@@ -787,17 +793,18 @@ void BOARD_ADAPTER::createLayers( REPORTER* aStatusReporter )
             std::atomic<size_t> nextItem( 0 );
             std::atomic<size_t> threadsFinished( 0 );
 
-            size_t parallelThreadCount =
-                    std::min<size_t>( std::max<size_t>( std::thread::hardware_concurrency(), 2 ),
-                                      selected_layer_id.size() );
+            size_t parallelThreadCount = std::min<size_t>(
+                    std::max<size_t>( std::thread::hardware_concurrency(), 2 ),
+                    selected_layer_id.size() );
 
             for( size_t ii = 0; ii < parallelThreadCount; ++ii )
             {
                 std::thread t = std::thread(
                         [&nextItem, &threadsFinished, &selected_layer_id, this]()
                         {
-                            for( size_t i = nextItem.fetch_add( 1 ); i < selected_layer_id.size();
-                                 i = nextItem.fetch_add( 1 ) )
+                            for( size_t i = nextItem.fetch_add( 1 );
+                                        i < selected_layer_id.size();
+                                        i = nextItem.fetch_add( 1 ) )
                             {
                                 auto layerPoly = m_layers_poly.find( selected_layer_id[i] );
 
@@ -826,7 +833,7 @@ void BOARD_ADAPTER::createLayers( REPORTER* aStatusReporter )
         if( m_layerHoleOdPolys.find( layer ) != m_layerHoleOdPolys.end() )
         {
             // found
-            SHAPE_POLY_SET* polyLayer = m_layerHoleOdPolys[layer];
+            SHAPE_POLY_SET *polyLayer = m_layerHoleOdPolys[layer];
             polyLayer->Simplify( SHAPE_POLY_SET::PM_FAST );
 
             wxASSERT( m_layerHoleIdPolys.find( layer ) != m_layerHoleIdPolys.end() );
@@ -851,15 +858,28 @@ void BOARD_ADAPTER::createLayers( REPORTER* aStatusReporter )
         aStatusReporter->Report( _( "Build Tech layers" ) );
 
     // draw graphic items, on technical layers
-    static const PCB_LAYER_ID teckLayerList[] = { B_Adhes, F_Adhes, B_Paste, F_Paste, B_SilkS,
-                                                  F_SilkS, B_Mask, F_Mask,
+    static const PCB_LAYER_ID teckLayerList[] = {
+            B_Adhes,
+            F_Adhes,
+            B_Paste,
+            F_Paste,
+            B_SilkS,
+            F_SilkS,
+            B_Mask,
+            F_Mask,
 
-                                                  // Aux Layers
-                                                  Dwgs_User, Cmts_User, Eco1_User, Eco2_User,
-                                                  Edge_Cuts, Margin };
+            // Aux Layers
+            Dwgs_User,
+            Cmts_User,
+            Eco1_User,
+            Eco2_User,
+            Edge_Cuts,
+            Margin
+        };
 
     // User layers are not drawn here, only technical layers
-    for( LSEQ seq = LSET::AllNonCuMask().Seq( teckLayerList, arrayDim( teckLayerList ) ); seq;
+    for( LSEQ seq = LSET::AllNonCuMask().Seq( teckLayerList, arrayDim( teckLayerList ) );
+         seq;
          ++seq )
     {
         const PCB_LAYER_ID curr_layer_id = *seq;
@@ -867,10 +887,10 @@ void BOARD_ADAPTER::createLayers( REPORTER* aStatusReporter )
         if( !Is3dLayerEnabled( curr_layer_id ) )
             continue;
 
-        BVH_CONTAINER_2D* layerContainer = new BVH_CONTAINER_2D;
+        BVH_CONTAINER_2D *layerContainer = new BVH_CONTAINER_2D;
         m_layerMap[curr_layer_id] = layerContainer;
 
-        SHAPE_POLY_SET* layerPoly = new SHAPE_POLY_SET;
+        SHAPE_POLY_SET *layerPoly = new SHAPE_POLY_SET;
         m_layers_poly[curr_layer_id] = layerPoly;
 
         // Add drawing objects
@@ -887,9 +907,6 @@ void BOARD_ADAPTER::createLayers( REPORTER* aStatusReporter )
                 break;
 
             case PCB_TEXT_T:
-#ifdef DEBUG
-                std::cerr << "[PCB text \"" << static_cast<PCB_TEXT*>( item )->GetText() << "\"]";
-#endif
                 addShapeWithClearance( static_cast<PCB_TEXT*>( item ), layerContainer,
                                        curr_layer_id, 0 );
                 break;
@@ -902,7 +919,8 @@ void BOARD_ADAPTER::createLayers( REPORTER* aStatusReporter )
                                        curr_layer_id, 0 );
                 break;
 
-            default: break;
+            default:
+                break;
             }
         }
 
@@ -923,30 +941,13 @@ void BOARD_ADAPTER::createLayers( REPORTER* aStatusReporter )
             {
                 PCB_TEXT* text = static_cast<PCB_TEXT*>( item );
 
-                if( text->GetFont()->IsOutline() )
-                {
-#ifdef DEBUG
-                    std::cerr << "[PCB text \"" << text->GetText()
-                              << "\" drawing as polygon on layer " << curr_layer_id << "]";
-#endif
-                    // outline text
-                    std::vector<SHAPE_POLY_SET> glyphs;
-                    text->DrawTextAsPolygon( glyphs, curr_layer_id );
-                    for( const SHAPE_POLY_SET& glyph : glyphs )
-                    {
-                        layerPoly->Append( glyph );
-                    }
-                }
-                else
-                {
-                    // stroke text
-                    text->TransformTextShapeWithClearanceToPolygon( *layerPoly, curr_layer_id, 0,
-                                                                    ARC_HIGH_DEF, ERROR_INSIDE );
-                }
+                text->TransformTextShapeWithClearanceToPolygon( *layerPoly, curr_layer_id, 0,
+                                                                ARC_HIGH_DEF, ERROR_INSIDE );
             }
-            break;
+                break;
 
-            default: break;
+            default:
+                break;
             }
         }
 
@@ -955,7 +956,7 @@ void BOARD_ADAPTER::createLayers( REPORTER* aStatusReporter )
         {
             if( ( curr_layer_id == F_SilkS ) || ( curr_layer_id == B_SilkS ) )
             {
-                int linewidth = m_board->GetDesignSettings().m_LineThickness[LAYER_CLASS_SILK];
+                int linewidth = m_board->GetDesignSettings().m_LineThickness[ LAYER_CLASS_SILK ];
 
                 for( PAD* pad : footprint->Pads() )
                 {
@@ -967,8 +968,8 @@ void BOARD_ADAPTER::createLayers( REPORTER* aStatusReporter )
             }
             else
             {
-                addPadsWithClearance( footprint, layerContainer, curr_layer_id, 0, false, false,
-                                      false );
+                addPadsWithClearance( footprint, layerContainer, curr_layer_id, 0,
+                                      false, false, false );
             }
 
             addFootprintShapesWithClearance( footprint, layerContainer, curr_layer_id, 0 );
@@ -980,7 +981,7 @@ void BOARD_ADAPTER::createLayers( REPORTER* aStatusReporter )
         {
             if( ( curr_layer_id == F_SilkS ) || ( curr_layer_id == B_SilkS ) )
             {
-                int linewidth = m_board->GetDesignSettings().m_LineThickness[LAYER_CLASS_SILK];
+                int linewidth = m_board->GetDesignSettings().m_LineThickness[ LAYER_CLASS_SILK ];
 
                 for( PAD* pad : footprint->Pads() )
                 {

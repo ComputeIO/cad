@@ -20,13 +20,13 @@
 
 #include <unit_test_utils/unit_test_utils.h>
 #include <geometry/circle.h>
-#include <geometry/seg.h>   // for SEG
-#include <geometry/shape.h> // for MIN_PRECISION_IU
+#include <geometry/seg.h>    // for SEG
+#include <geometry/shape.h>  // for MIN_PRECISION_IU
 
 
 bool CompareLength( int aLengthA, int aLengthB )
 {
-    if( aLengthA > ( aLengthB + SHAPE::MIN_PRECISION_IU ) )
+   if( aLengthA > ( aLengthB + SHAPE::MIN_PRECISION_IU ) )
         return false;
     else if( aLengthA < ( aLengthB - SHAPE::MIN_PRECISION_IU ) )
         return false;
@@ -36,7 +36,7 @@ bool CompareLength( int aLengthA, int aLengthB )
 
 bool CompareVector2I( const VECTOR2I& aVecA, const VECTOR2I& aVecB )
 {
-    if( !CompareLength( aVecA.x, aVecB.x ) )
+    if( !CompareLength(aVecA.x, aVecB.x) )
         return false;
     else if( !CompareLength( aVecA.y, aVecB.y ) )
         return false;
@@ -353,12 +353,12 @@ BOOST_AUTO_TEST_CASE( ConstructFromTanTanPt )
             CIRCLE circle;
             circle.ConstructFromTanTanPt( c.m_segA, c.m_segB, c.m_pt );
             BOOST_CHECK_MESSAGE( CompareVector2I( c.m_exp_result.Center, circle.Center ),
-                                 "\nCenter point mismatch: "
+                                            "\nCenter point mismatch: "
                                          << "\n    Got: " << circle.Center
                                          << "\n    Expected: " << c.m_exp_result.Center );
 
             BOOST_CHECK_MESSAGE( CompareLength( c.m_exp_result.Radius, circle.Radius ),
-                                 "\nRadius mismatch: "
+                                            "\nRadius mismatch: "
                                          << "\n    Got: " << circle.Radius
                                          << "\n    Expected: " << c.m_exp_result.Radius );
         }

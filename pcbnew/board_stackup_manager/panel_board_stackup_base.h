@@ -64,11 +64,11 @@ class PANEL_SETUP_BOARD_STACKUP_BASE : public wxPanel
 		virtual void onAddDielectricLayer( wxCommandEvent& event ) { event.Skip(); }
 		virtual void onRemoveDielectricLayer( wxCommandEvent& event ) { event.Skip(); }
 		virtual void onRemoveDielUI( wxUpdateUIEvent& event ) { event.Skip(); }
-        virtual void onUpdateThicknessValue( wxUpdateUIEvent& event ) { event.Skip(); }
-        virtual void onExportToClipboard( wxCommandEvent& event ) { event.Skip(); }
+		virtual void onUpdateThicknessValue( wxUpdateUIEvent& event ) { event.Skip(); }
+		virtual void onExportToClipboard( wxCommandEvent& event ) { event.Skip(); }
 
 
-    public:
+	public:
 
 		PANEL_SETUP_BOARD_STACKUP_BASE( wxWindow* parent, wxWindowID id = wxID_ANY, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( -1,-1 ), long style = wxTAB_TRAVERSAL, const wxString& name = wxEmptyString );
 		~PANEL_SETUP_BOARD_STACKUP_BASE();

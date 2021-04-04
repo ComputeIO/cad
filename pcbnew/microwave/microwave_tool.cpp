@@ -37,14 +37,14 @@
 #include <view/view.h>
 
 
-MICROWAVE_TOOL::MICROWAVE_TOOL() : PCB_TOOL_BASE( "pcbnew.MicrowaveTool" )
+MICROWAVE_TOOL::MICROWAVE_TOOL() :
+        PCB_TOOL_BASE( "pcbnew.MicrowaveTool" )
 {
 }
 
 
 MICROWAVE_TOOL::~MICROWAVE_TOOL()
-{
-}
+{}
 
 
 void MICROWAVE_TOOL::Reset( RESET_REASON aReason )
@@ -57,9 +57,13 @@ int MICROWAVE_TOOL::addMicrowaveFootprint( const TOOL_EVENT& aEvent )
     struct MICROWAVE_PLACER : public INTERACTIVE_PLACER_BASE
     {
         MICROWAVE_PLACER( MICROWAVE_TOOL* aTool, MICROWAVE_FOOTPRINT_SHAPE aType ) :
-                m_tool( aTool ), m_itemType( aType ){};
+                m_tool( aTool ),
+                m_itemType( aType )
+        { };
 
-        virtual ~MICROWAVE_PLACER() {}
+        virtual ~MICROWAVE_PLACER()
+        {
+        }
 
         std::unique_ptr<BOARD_ITEM> CreateItem() override
         {
@@ -73,7 +77,8 @@ int MICROWAVE_TOOL::addMicrowaveFootprint( const TOOL_EVENT& aEvent )
             case MICROWAVE_FOOTPRINT_SHAPE::FUNCTION_SHAPE:
                 return std::unique_ptr<FOOTPRINT>( m_tool->createPolygonShape() );
 
-            default: return std::unique_ptr<FOOTPRINT>();
+            default:
+                return std::unique_ptr<FOOTPRINT>();
             };
         }
 
@@ -98,7 +103,7 @@ static const double  inductorAreaStrokeWidth = 1.0;
 
 ///< Aspect of the preview rectangle - this is hardcoded in the
 ///< microwave backend for now
-static const double inductorAreaAspect = 0.5;
+static const double  inductorAreaAspect = 0.5;
 
 
 int MICROWAVE_TOOL::drawMicrowaveInductor( const TOOL_EVENT& aEvent )
@@ -129,10 +134,11 @@ int MICROWAVE_TOOL::drawMicrowaveInductor( const TOOL_EVENT& aEvent )
 
     view.Add( &previewRect );
 
-    auto setCursor = [&]()
-    {
-        frame.GetCanvas()->SetCurrentCursor( KICURSOR::PENCIL );
-    };
+    auto setCursor =
+            [&]()
+            {
+                frame.GetCanvas()->SetCurrentCursor( KICURSOR::PENCIL );
+            };
 
     // Set initial cursor
     setCursor();
@@ -142,14 +148,15 @@ int MICROWAVE_TOOL::drawMicrowaveInductor( const TOOL_EVENT& aEvent )
         setCursor();
         VECTOR2I cursorPos = controls.GetCursorPosition();
 
-        auto cleanup = [&]()
-        {
-            originSet = false;
-            controls.CaptureCursor( false );
-            controls.SetAutoPan( false );
-            view.SetVisible( &previewRect, false );
-            view.Update( &previewRect, KIGFX::GEOMETRY );
-        };
+        auto cleanup =
+                [&] ()
+                {
+                    originSet = false;
+                    controls.CaptureCursor( false );
+                    controls.SetAutoPan( false );
+                    view.SetVisible( &previewRect, false );
+                    view.Update( &previewRect, KIGFX::GEOMETRY );
+                };
 
         if( evt->IsCancelInteractive() )
         {
@@ -230,6 +237,7 @@ int MICROWAVE_TOOL::drawMicrowaveInductor( const TOOL_EVENT& aEvent )
     controls.SetAutoPan( false );
     return 0;
 }
+
 
 
 void MICROWAVE_TOOL::setTransitions()

@@ -43,11 +43,11 @@ enum FP_TEXT_COL_ORDER
     FPT_ITALIC,
     FPT_LAYER,
     FPT_ORIENTATION,
-    FPT_UPRIGHT, // keep text upright when viewed from bottom or right of board
+    FPT_UPRIGHT,       // keep text upright when viewed from bottom or right of board
     FPT_XOFFSET,
     FPT_YOFFSET,
 
-    FPT_COUNT // keep as last
+    FPT_COUNT          // keep as last
 };
 
 
@@ -65,18 +65,18 @@ public:
 
     bool IsEmptyCell( int row, int col ) override
     {
-        return false; // don't allow adjacent cell overflow, even if we are actually empty
+        return false;   // don't allow adjacent cell overflow, even if we are actually empty
     }
 
-    bool            CanGetValueAs( int aRow, int aCol, const wxString& aTypeName ) override;
-    bool            CanSetValueAs( int aRow, int aCol, const wxString& aTypeName ) override;
+    bool CanGetValueAs( int aRow, int aCol, const wxString& aTypeName ) override;
+    bool CanSetValueAs( int aRow, int aCol, const wxString& aTypeName ) override;
     wxGridCellAttr* GetAttr( int row, int col, wxGridCellAttr::wxAttrKind kind ) override;
 
     wxString GetValue( int aRow, int aCol ) override;
-    bool     GetValueAsBool( int aRow, int aCol ) override;
-    long     GetValueAsLong( int aRow, int aCol ) override;
+    bool GetValueAsBool( int aRow, int aCol ) override;
+    long GetValueAsLong( int aRow, int aCol ) override;
 
-    void SetValue( int aRow, int aCol, const wxString& aValue ) override;
+    void SetValue( int aRow, int aCol, const wxString &aValue ) override;
     void SetValueAsBool( int aRow, int aCol, bool aValue ) override;
     void SetValueAsLong( int aRow, int aCol, long aValue ) override;
 
@@ -91,4 +91,4 @@ private:
 };
 
 
-#endif // FP_TEXT_GRID_TABLE_H
+#endif  // FP_TEXT_GRID_TABLE_H

@@ -44,8 +44,8 @@ public:
 
     ~SCH_DRAW_PANEL();
 
-    void DisplayComponent( LIB_PART* aComponent );
-    void DisplaySheet( SCH_SCREEN* aScreen );
+    void DisplayComponent( LIB_PART *aComponent );
+    void DisplaySheet( SCH_SCREEN *aScreen );
 
     bool SwitchBackend( GAL_TYPE aGalType ) override;
 
@@ -57,8 +57,8 @@ protected:
     ///< @copydoc EDA_DRAW_PANEL_GAL::OnShow()
     void OnShow() override;
 
-    void setDefaultLayerOrder(); ///< Reassign layer order to the initial settings.
-    void setDefaultLayerDeps();  ///< Set rendering targets & dependencies for layers.
+    void setDefaultLayerOrder();    ///< Reassign layer order to the initial settings.
+    void setDefaultLayerDeps();     ///< Set rendering targets & dependencies for layers.
 };
 
 #endif // __SCH_DRAW_PANEL_H

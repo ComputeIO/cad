@@ -34,7 +34,6 @@
 #include "../3d_rendering/3d_render_raytracing/shapes2D/filled_circle_2d.h"
 #include "../3d_rendering/3d_render_raytracing/shapes2D/round_segment_2d.h"
 #include "../3d_rendering/3d_render_raytracing/shapes2D/triangle_2d.h"
-#include "../3d_rendering/3d_render_raytracing/shapes2D/polygon_2d.h"
 #include <board_adapter.h>
 #include <board.h>
 #include <footprint.h>
@@ -83,79 +82,16 @@ void addTextSegmToContainer( int x0, int y0, int xf, int yf, void* aData )
 }
 
 
-static void transformGlyph( SHAPE_POLY_SET& aBuffer, const SHAPE_POLY_SET& polyList,
-                            const PCB_TEXT* aText, PCB_LAYER_ID aLayer, int aClearanceValue,
-                            int aError, ERROR_LOC aErrorLoc )
-{
-    // The polygon is expected to be a non-self-intersecting polygon with zero or more holes.
-
-    double  orientation = aText->GetTextAngle();
-    wxPoint offset = aText->GetTextPos();
-    /*
-    wxSize  textSize = aText->GetTextSize();
-    if ( aText->IsMirrored )
-        textSize.x = -textSize.x;
-    */
-
-    // Build the polygon with the actual position and orientation:
-    for( int i = 0; i < polyList.OutlineCount(); i++ )
-    {
-        std::vector<wxPoint> poly;
-
-        int n_points = polyList.COutline( i ).PointCount();
-        for( int j = 0; j < n_points; j++ )
-        {
-            const VECTOR2I& p = polyList.COutline( i ).GetPoint( j );
-            poly.emplace_back( p.x, p.y );
-        }
-
-        for( wxPoint& point : poly )
-        {
-            RotatePoint( &point, orientation );
-            point += offset;
-        }
-
-        aBuffer.NewOutline();
-
-        for( wxPoint& point : poly )
-            aBuffer.Append( point.x, point.y );
-
-        for( int k = 0; k < polyList.HoleCount( i ); k++ )
-        {
-            poly.clear();
-
-            for( int m = 0; m < polyList.CHole( i, k ).PointCount(); m++ )
-            {
-                const VECTOR2I& p = polyList.CHole( i, k ).GetPoint( m );
-                poly.emplace_back( p.x, p.y );
-            }
-
-            for( wxPoint& point : poly )
-            {
-                RotatePoint( &point, orientation );
-                point += offset;
-            }
-
-            aBuffer.NewHole();
-
-            for( wxPoint& point : poly )
-                aBuffer.Append( point.x, point.y, -1, k );
-        }
-    }
-}
-
-
 // Based on
 // void PCB_TEXT::TransformTextShapeWithClearanceToPolygon
 // board_items_to_polygon_shape_transform.cpp
 void BOARD_ADAPTER::addShapeWithClearance( const PCB_TEXT* aText, CONTAINER_2D_BASE* aDstContainer,
                                            PCB_LAYER_ID aLayerId, int aClearanceValue )
 {
-    wxString txt = aText->GetShownText();
-    FONT*    font = aText->GetFont();
-    if( font->IsOutline() )
-    {
-        const int lineWidth = aText->GetEffectiveTextPenWidth() + ( 2 * aClearanceValue );
+    wxSize size = aText->GetTextSize();
+
+    if( aText->IsMirrored() )
+        size.x = -size.x;
 
     s_boardItem = (const BOARD_ITEM*) &aText;
     s_dstcontainer = aDstContainer;

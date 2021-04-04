@@ -673,7 +673,7 @@ void ALIGNED_DIMENSION::updateText()
 }
 
 
-void ALIGNED_DIMENSION::GetMsgPanelInfo( EDA_DRAW_FRAME*              aFrame,
+void ALIGNED_DIMENSION::GetMsgPanelInfo( EDA_DRAW_FRAME* aFrame,
                                          std::vector<MSG_PANEL_ITEM>& aList )
 {
     DIMENSION_BASE::GetMsgPanelInfo( aFrame, aList );

@@ -30,7 +30,6 @@
 #define _OBJECT_2D_H_
 
 #include "bbox_2d.h"
-#include <ostream>
 
 class BOARD_ITEM;
 
@@ -56,29 +55,6 @@ enum class OBJECT_2D_TYPE
     BVHCONTAINER,
     MAX
 };
-
-
-inline std::ostream& operator<<( std::ostream& os, OBJECT_2D_TYPE& object2Dtype )
-{
-    switch( object2Dtype )
-    {
-    case OBJECT_2D_TYPE::FILLED_CIRCLE: return os << "FILLED_CIRCLE";
-    case OBJECT_2D_TYPE::CSG: return os << "CSG";
-    case OBJECT_2D_TYPE::POLYGON: return os << "POLYGON";
-    case OBJECT_2D_TYPE::DUMMYBLOCK: return os << "DUMMYBLOCK";
-    case OBJECT_2D_TYPE::POLYGON4PT: return os << "POLYGON4PT";
-    case OBJECT_2D_TYPE::RING: return os << "RING";
-    case OBJECT_2D_TYPE::ROUNDSEG: return os << "ROUNDSEG";
-    case OBJECT_2D_TYPE::TRIANGLE: return os << "TRIANGLE";
-    case OBJECT_2D_TYPE::CONTAINER: return os << "CONTAINER";
-    case OBJECT_2D_TYPE::BVHCONTAINER: return os << "BVHCONTAINER";
-    case OBJECT_2D_TYPE::MAX: return os << "MAX";
-    default:
-        // only triggered if OBJECT_2D_TYPE is modified and this
-        // function is not updated accordingly
-        return os << "*UNKNOWN*";
-    }
-}
 
 
 class OBJECT_2D

@@ -257,7 +257,7 @@ bool GENDRILL_WRITER_BASE::genDrillMapFile( const wxString& aFullFileName, PLOT_
     // For some formats (PS, PDF SVG) we plot the drill size list on more than one column
     // because the list must be contained inside the printed page
     // (others formats do not have a defined page size)
-    int max_line_len = 0; // The max line len in iu of the currently plotted column
+    int max_line_len = 0;   // The max line len in iu of the currently plotted column
 
     for( unsigned ii = 0; ii < m_toolListBuffer.size(); ii++ )
     {
@@ -269,7 +269,7 @@ bool GENDRILL_WRITER_BASE::genDrillMapFile( const wxString& aFullFileName, PLOT_
         plotY += intervalle;
 
         // Ensure there are room to plot the line
-        if( bottom_limit && ( plotY + intervalle > bottom_limit ) )
+        if( bottom_limit && ( plotY+intervalle > bottom_limit ) )
         {
             plotY = bbbox.GetBottom() + intervalle;
             plotX += max_line_len + Millimeter2iu( 10 );//column_width;

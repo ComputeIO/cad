@@ -195,9 +195,7 @@ public:
      */
     void GetContextualTextVars( wxArrayString* aVars ) const;
 
-    wxString GetShownText( int aDepth = 0, FONT** aFontPtr = nullptr ) const override;
-
-    FONT* GetFont() const { return EDA_TEXT::GetFont(); }
+    wxString GetShownText( int aDepth = 0 ) const override;
 
     /**
      * Increment the label text, if it ends with a number.

@@ -28,21 +28,26 @@
 
 #include <vector>
 #include <math/box2.h>
-#include <eda_item.h> // FILL_TYPE
+#include <eda_item.h>       // FILL_TYPE
 
 #include <plotter.h>
 #include "gbr_plotter_apertures.h"
 
-class FONT;
 
 class GERBER_PLOTTER : public PLOTTER
 {
 public:
     GERBER_PLOTTER();
 
-    virtual PLOT_FORMAT GetPlotterType() const override { return PLOT_FORMAT::GERBER; }
+    virtual PLOT_FORMAT GetPlotterType() const override
+    {
+        return PLOT_FORMAT::GERBER;
+    }
 
-    static wxString GetDefaultFileExtension() { return wxString( wxT( "gbr" ) ); }
+    static wxString GetDefaultFileExtension()
+    {
+        return wxString( wxT( "gbr" ) );
+    }
 
     /**
      * Function StartPlot
@@ -54,40 +59,43 @@ public:
     virtual void SetCurrentLineWidth( int width, void* aData = NULL ) override;
 
     // RS274X has no dashing, nor colours
-    virtual void SetDash( PLOT_DASH_TYPE dashed ) override {}
+    virtual void SetDash( PLOT_DASH_TYPE dashed ) override
+    {
+    }
 
     virtual void SetColor( COLOR4D color ) override {}
     // Currently, aScale and aMirror are not used in gerber plotter
-    virtual void SetViewport( const wxPoint& aOffset, double aIusPerDecimil, double aScale,
-                              bool aMirror ) override;
+    virtual void SetViewport( const wxPoint& aOffset, double aIusPerDecimil,
+                          double aScale, bool aMirror ) override;
 
     // Basic plot primitives
     virtual void Rect( const wxPoint& p1, const wxPoint& p2, FILL_TYPE fill,
                        int width = USE_DEFAULT_LINE_WIDTH ) override;
     virtual void Circle( const wxPoint& pos, int diametre, FILL_TYPE fill,
                          int width = USE_DEFAULT_LINE_WIDTH ) override;
-    virtual void Arc( const wxPoint& aCenter, double aStAngle, double aEndAngle, int aRadius,
-                      FILL_TYPE aFill, int aWidth = USE_DEFAULT_LINE_WIDTH ) override;
+    virtual void Arc( const wxPoint& aCenter, double aStAngle, double aEndAngle,
+                      int aRadius, FILL_TYPE aFill, int aWidth = USE_DEFAULT_LINE_WIDTH ) override;
 
     // These functions plot an item and manage X2 gerber attributes
     virtual void ThickSegment( const wxPoint& start, const wxPoint& end, int width,
                                OUTLINE_MODE tracemode, void* aData ) override;
 
-    virtual void ThickArc( const wxPoint& centre, double StAngle, double EndAngle, int rayon,
-                           int width, OUTLINE_MODE tracemode, void* aData ) override;
-    virtual void ThickRect( const wxPoint& p1, const wxPoint& p2, int width, OUTLINE_MODE tracemode,
-                            void* aData ) override;
-    virtual void ThickCircle( const wxPoint& pos, int diametre, int width, OUTLINE_MODE tracemode,
-                              void* aData ) override;
-    virtual void FilledCircle( const wxPoint& pos, int diametre, OUTLINE_MODE tracemode,
-                               void* aData ) override;
+    virtual void ThickArc( const wxPoint& centre, double StAngle, double EndAngle,
+                           int rayon, int width, OUTLINE_MODE tracemode, void* aData ) override;
+    virtual void ThickRect( const wxPoint& p1, const wxPoint& p2, int width,
+                            OUTLINE_MODE tracemode, void* aData ) override;
+    virtual void ThickCircle( const wxPoint& pos, int diametre, int width,
+                              OUTLINE_MODE tracemode, void* aData ) override;
+    virtual void FilledCircle( const wxPoint& pos, int diametre,
+                              OUTLINE_MODE tracemode, void* aData ) override;
 
     /**
      * Gerber polygon: they can (and *should*) be filled with the
      * appropriate G36/G37 sequence
      */
-    virtual void PlotPoly( const std::vector<wxPoint>& aCornerList, FILL_TYPE aFill,
-                           int aWidth = USE_DEFAULT_LINE_WIDTH, void* aData = nullptr ) override;
+    virtual void PlotPoly( const std::vector< wxPoint >& aCornerList,
+                           FILL_TYPE aFill, int aWidth = USE_DEFAULT_LINE_WIDTH,
+                           void* aData = nullptr ) override;
 
     virtual void PenTo( const wxPoint& pos, char plume ) override;
 
@@ -108,27 +116,27 @@ public:
     /**
      * Filled circular flashes are stored as apertures
      */
-    virtual void FlashPadCircle( const wxPoint& pos, int diametre, OUTLINE_MODE trace_mode,
-                                 void* aData ) override;
+    virtual void FlashPadCircle( const wxPoint& pos, int diametre,
+                                 OUTLINE_MODE trace_mode, void* aData ) override;
 
     virtual void FlashPadOval( const wxPoint& aPadPos, const wxSize& size, double orient,
                                OUTLINE_MODE trace_mode, void* aData ) override;
 
-    virtual void FlashPadRect( const wxPoint& aPadPos, const wxSize& size, double orient,
-                               OUTLINE_MODE trace_mode, void* aData ) override;
+    virtual void FlashPadRect( const wxPoint& aPadPos, const wxSize& size,
+                               double orient, OUTLINE_MODE trace_mode, void* aData ) override;
 
-    virtual void FlashPadRoundRect( const wxPoint& aPadPos, const wxSize& aSize, int aCornerRadius,
-                                    double aOrient, OUTLINE_MODE aTraceMode, void* aData ) override;
-    virtual void FlashPadCustom( const wxPoint& aPadPos, const wxSize& aSize, double aPadOrient,
-                                 SHAPE_POLY_SET* aPolygons, OUTLINE_MODE aTraceMode,
-                                 void* aData ) override;
-
-    virtual void FlashPadTrapez( const wxPoint& aPadPos, const wxPoint* aCorners, double aPadOrient,
+    virtual void FlashPadRoundRect( const wxPoint& aPadPos, const wxSize& aSize,
+                                    int aCornerRadius, double aOrient,
+                                    OUTLINE_MODE aTraceMode, void* aData ) override;
+    virtual void FlashPadCustom( const wxPoint& aPadPos, const wxSize& aSize,
+                                 double aPadOrient, SHAPE_POLY_SET* aPolygons,
                                  OUTLINE_MODE aTraceMode, void* aData ) override;
 
+    virtual void FlashPadTrapez( const wxPoint& aPadPos, const wxPoint *aCorners,
+                            double aPadOrient, OUTLINE_MODE aTraceMode, void* aData ) override;
+
     virtual void FlashRegularPolygon( const wxPoint& aShapePos, int aDiameter, int aCornerCount,
-                                      double aOrient, OUTLINE_MODE aTraceMode,
-                                      void* aData ) override;
+                            double aOrient, OUTLINE_MODE aTraceMode, void* aData ) override;
 
     /**
      * flash a chamfered round rect pad.
@@ -147,7 +155,8 @@ public:
      * @param aData = a reference to Gerber attributes descr
      */
     void FlashPadChamferRoundRect( const wxPoint& aShapePos, const wxSize& aPadSize,
-                                   int aCornerRadius, double aChamferRatio, int aChamferPositions,
+                                   int aCornerRadius, double aChamferRatio,
+                                   int aChamferPositions,
                                    double aPadOrient, OUTLINE_MODE aPlotMode, void* aData );
 
     /**
@@ -155,7 +164,8 @@ public:
      * and add the TA.AperFunction if aData contains this attribute, and clear it
      * after plotting
      */
-    void PlotGerberRegion( const std::vector<wxPoint>& aCornerList, void* aData = NULL );
+    void PlotGerberRegion( const std::vector< wxPoint >& aCornerList,
+                           void * aData = NULL );
 
     /**
      * Change the plot polarity and begin a new layer
@@ -215,7 +225,7 @@ public:
      * 0 = no specific attribute
      */
     int GetOrCreateAperture( const wxSize& aSize, int aRadius, double aRotDegree,
-                             APERTURE::APERTURE_TYPE aType, int aApertureAttribute );
+                    APERTURE::APERTURE_TYPE aType, int aApertureAttribute );
 
     /**
      * @return a index to the aperture in aperture list which meets the data and type of tool
@@ -227,7 +237,7 @@ public:
      * 0 = no specific attribute
      */
     int GetOrCreateAperture( const std::vector<wxPoint>& aCorners, double aRotDegree,
-                             APERTURE::APERTURE_TYPE aType, int aApertureAttribute );
+                    APERTURE::APERTURE_TYPE aType, int aApertureAttribute );
 
 protected:
     /** Plot a round rect (a round rect shape in fact) as a Gerber region
@@ -238,8 +248,8 @@ protected:
      * @param aOrient is the rotation of the rectangle
      * Note: only the G36 ... G37 region is created.
      */
-    void plotRoundRectAsRegion( const wxPoint& aRectCenter, const wxSize& aSize, int aCornerRadius,
-                                double aOrient );
+    void plotRoundRectAsRegion( const wxPoint& aRectCenter, const wxSize& aSize,
+                                int aCornerRadius, double aOrient );
     /**
      * Plot a Gerber arc.
      * if aPlotInRegion = true, the current pen position will not be
@@ -251,8 +261,8 @@ protected:
      * The line thickness is not initialized in plotArc, and must be initialized
      * before calling it if needed.
      */
-    void plotArc( const wxPoint& aCenter, double aStAngle, double aEndAngle, int aRadius,
-                  bool aPlotInRegion );
+    void plotArc( const wxPoint& aCenter, double aStAngle, double aEndAngle,
+                      int aRadius, bool aPlotInRegion );
 
     /**
      * Pick an existing aperture or create a new one, matching the
@@ -260,7 +270,8 @@ protected:
      * write the DCode selection on gerber file
      */
     void selectAperture( const wxSize& aSize, int aRadius, double aRotDegree,
-                         APERTURE::APERTURE_TYPE aType, int aApertureAttribute );
+                         APERTURE::APERTURE_TYPE aType,
+                         int aApertureAttribute );
     /**
      * Pick an existing aperture or create a new one, matching the
      * aDiameter, aPolygonRotation, type and attributes.
@@ -277,8 +288,8 @@ protected:
      * to AT_REGULAR_POLY12 (for instance APER_MACRO_TRAPEZOID )
      * write the DCode selection on gerber file
      */
-    void selectAperture( int aDiameter, double aRotDegree, APERTURE::APERTURE_TYPE aType,
-                         int aApertureAttribute );
+    void selectAperture( int aDiameter, double aRotDegree,
+                         APERTURE::APERTURE_TYPE aType, int aApertureAttribute );
 
     /**
      * Emit a D-Code record, using proper conversions
@@ -310,13 +321,13 @@ protected:
     // Note: m_objectAttributesDictionnary can store more than one attribute
     // the string stores the line(s) actually written to the gerber file
     // it can store a .P, .C or .N attribute, or 2 or 3 attributes, separated by a \n char (EOL)
-    std::string m_objectAttributesDictionnary;
+    std::string   m_objectAttributesDictionnary;
 
     // The last aperture attribute generated (only one aperture attribute can be set)
-    int m_apertureAttribute;
+    int           m_apertureAttribute;
 
-    FILE*    workFile;
-    FILE*    finalFile;
+    FILE* workFile;
+    FILE* finalFile;
     wxString m_workFilename;
 
     /**
@@ -324,27 +335,27 @@ protected:
      */
     void writeApertureList();
 
-    std::vector<APERTURE> m_apertures;          // The list of available apertures
-    int                   m_currentApertureIdx; // The index of the current aperture in m_apertures
-    bool m_hasApertureRoundRect;     // true is at least one round rect aperture is in use
-    bool m_hasApertureRotOval;       // true is at least one oval rotated aperture is in use
-    bool m_hasApertureRotRect;       // true is at least one rect. rotated aperture is in use
-    bool m_hasApertureOutline4P;     // true is at least one 4 corners outline (free polygon
-                                     // with 4 corners) aperture is in use
-    bool m_hasApertureChamferedRect; // true is at least one chamfered rect is in use
-                                     // (with no rounded corner)
+    std::vector<APERTURE> m_apertures;  // The list of available apertures
+    int     m_currentApertureIdx;       // The index of the current aperture in m_apertures
+    bool    m_hasApertureRoundRect;     // true is at least one round rect aperture is in use
+    bool    m_hasApertureRotOval;       // true is at least one oval rotated aperture is in use
+    bool    m_hasApertureRotRect;       // true is at least one rect. rotated aperture is in use
+    bool    m_hasApertureOutline4P;     // true is at least one 4 corners outline (free polygon
+                                        // with 4 corners) aperture is in use
+    bool    m_hasApertureChamferedRect; // true is at least one chamfered rect is in use
+                                        // (with no rounded corner)
 
-    bool m_gerberUnitInch;           // true if the gerber units are inches, false for mm
-    int  m_gerberUnitFmt;            // number of digits in mantissa.
-                                     // usually 6 in Inches and 5 or 6  in mm
-    bool m_gerberDisableApertMacros; // True to disable Aperture Macro (AM) command,
-                                     // for broken Gerber Readers
-                                     // Regions will be used instead of AM shapes
-    bool m_useX2format;              // Add X2 file header attributes.  If false, attributes
-                                     // will be added as comments.
-    bool m_useNetAttributes;         // In recent gerber files, netlist info can be added.
-                                     // It will be added if this param is true, using X2 or
-                                     // X1 format
+    bool    m_gerberUnitInch;          // true if the gerber units are inches, false for mm
+    int     m_gerberUnitFmt;           // number of digits in mantissa.
+                                       // usually 6 in Inches and 5 or 6  in mm
+    bool    m_gerberDisableApertMacros; // True to disable Aperture Macro (AM) command,
+                                       // for broken Gerber Readers
+                                       // Regions will be used instead of AM shapes
+    bool    m_useX2format;             // Add X2 file header attributes.  If false, attributes
+                                       // will be added as comments.
+    bool    m_useNetAttributes;        // In recent gerber files, netlist info can be added.
+                                       // It will be added if this param is true, using X2 or
+                                       // X1 format
 
     // A list of aperture macros defined "on the fly" because the number of parameters is not
     // defined: this is the case of the macro using the primitive 4 to create a polygon.

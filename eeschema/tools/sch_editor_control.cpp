@@ -832,7 +832,7 @@ static bool highlightNet( TOOL_MANAGER* aToolMgr, const VECTOR2D& aPosition )
         }
         else
         {
-            SCH_ITEM*      item = static_cast<SCH_ITEM*>( selTool->GetNode( aPosition ) );
+            SCH_ITEM*      item   = static_cast<SCH_ITEM*>( selTool->GetNode( aPosition ) );
             SCH_COMPONENT* symbol = dynamic_cast<SCH_COMPONENT*>( item );
 
             if( item )
@@ -999,7 +999,7 @@ int SCH_EDITOR_CONTROL::UpdateNetHighlighting( const TOOL_EVENT& aEvent )
     for( SCH_ITEM* item : screen->Items() )
     {
         SCH_CONNECTION* itemConn  = nullptr;
-        SCH_COMPONENT*  symbol = nullptr;
+        SCH_COMPONENT*  symbol    = nullptr;
         bool            redraw    = item->IsBrightened();
         bool            highlight = false;
 
@@ -1313,7 +1313,7 @@ void SCH_EDITOR_CONTROL::updatePastedInstances( const SCH_SHEET_PATH& aPastePath
 
             if( ii >= 0 )
             {
-                SCH_REFERENCE instance = m_supplementaryClipboardInstances[ii];
+                SCH_REFERENCE instance = m_supplementaryClipboardInstances[ ii ];
 
                 symbol->SetUnitSelection( &aPastePath, instance.GetUnit() );
                 symbol->SetUnit( instance.GetUnit() );

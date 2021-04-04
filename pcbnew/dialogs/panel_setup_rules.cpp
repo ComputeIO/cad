@@ -40,8 +40,11 @@
 #include <dialog_helpers.h>
 
 PANEL_SETUP_RULES::PANEL_SETUP_RULES( PAGED_DIALOG* aParent, PCB_EDIT_FRAME* aFrame ) :
-        PANEL_SETUP_RULES_BASE( aParent->GetTreebook() ), m_Parent( aParent ), m_frame( aFrame ),
-        m_scintillaTricks( nullptr ), m_helpWindow( nullptr )
+        PANEL_SETUP_RULES_BASE( aParent->GetTreebook() ),
+        m_Parent( aParent ),
+        m_frame( aFrame ),
+        m_scintillaTricks( nullptr ),
+        m_helpWindow( nullptr )
 {
     m_scintillaTricks = new SCINTILLA_TRICKS( m_textEditor, wxT( "()" ) );
 
@@ -57,13 +60,12 @@ PANEL_SETUP_RULES::PANEL_SETUP_RULES( PAGED_DIALOG* aParent, PCB_EDIT_FRAME* aFr
     m_compileButton->SetBitmap( KiBitmap( BITMAPS::drc ) );
 
     m_textEditor->Bind( wxEVT_STC_CHARADDED, &PANEL_SETUP_RULES::onScintillaCharAdded, this );
-    m_textEditor->Bind( wxEVT_STC_AUTOCOMP_CHAR_DELETED, &PANEL_SETUP_RULES::onScintillaCharAdded,
-                        this );
+    m_textEditor->Bind( wxEVT_STC_AUTOCOMP_CHAR_DELETED, &PANEL_SETUP_RULES::onScintillaCharAdded, this );
     m_textEditor->Bind( wxEVT_CHAR_HOOK, &PANEL_SETUP_RULES::onCharHook, this );
 }
 
 
-PANEL_SETUP_RULES::~PANEL_SETUP_RULES()
+PANEL_SETUP_RULES::~PANEL_SETUP_RULES( )
 {
     delete m_scintillaTricks;
 
@@ -87,14 +89,14 @@ void PANEL_SETUP_RULES::onCharHook( wxKeyEvent& aEvent )
 }
 
 
-void PANEL_SETUP_RULES::onScintillaCharAdded( wxStyledTextEvent& aEvent )
+void PANEL_SETUP_RULES::onScintillaCharAdded( wxStyledTextEvent &aEvent )
 {
     m_Parent->SetModified();
     m_textEditor->SearchAnchor();
 
     wxString rules = m_textEditor->GetText();
-    int      currentPos = m_textEditor->GetCurrentPos();
-    int      startPos = 0;
+    int currentPos = m_textEditor->GetCurrentPos();
+    int startPos = 0;
 
     for( int line = m_textEditor->LineFromPosition( currentPos ); line > 0; line-- )
     {
@@ -129,7 +131,7 @@ void PANEL_SETUP_RULES::onScintillaCharAdded( wxStyledTextEvent& aEvent )
 
         if( c == '\\' )
         {
-            i++; // skip escaped char
+            i++;  // skip escaped char
         }
         else if( context == STRING )
         {
@@ -194,9 +196,9 @@ void PANEL_SETUP_RULES::onScintillaCharAdded( wxStyledTextEvent& aEvent )
                 m_textEditor->AutoCompCancel();
                 sexprs.push( partial );
 
-                if( sexprs.size()
-                    && ( sexprs.top() == "constraint" || sexprs.top() == "disallow"
-                         || sexprs.top() == "layer" ) )
+                if( sexprs.size() && ( sexprs.top() == "constraint"
+                                    || sexprs.top() == "disallow"
+                                    || sexprs.top() == "layer" ) )
                 {
                     partial = wxEmptyString;
                     context = SEXPR_TOKEN;
@@ -258,10 +260,16 @@ void PANEL_SETUP_RULES::onScintillaCharAdded( wxStyledTextEvent& aEvent )
                      "track_width "
                      "via_count ";
         }
-        else if( sexprs.top() == "disallow" || sexprs.top() == "buried_via"
-                 || sexprs.top() == "graphic" || sexprs.top() == "hole"
-                 || sexprs.top() == "micro_via" || sexprs.top() == "pad" || sexprs.top() == "text"
-                 || sexprs.top() == "track" || sexprs.top() == "via" || sexprs.top() == "zone" )
+        else if( sexprs.top() == "disallow"
+              || sexprs.top() == "buried_via"
+              || sexprs.top() == "graphic"
+              || sexprs.top() == "hole"
+              || sexprs.top() == "micro_via"
+              || sexprs.top() == "pad"
+              || sexprs.top() == "text"
+              || sexprs.top() == "track"
+              || sexprs.top() == "via"
+              || sexprs.top() == "zone" )
         {
             tokens = "buried_via "
                      "graphic "
@@ -328,7 +336,7 @@ void PANEL_SETUP_RULES::onScintillaCharAdded( wxStyledTextEvent& aEvent )
     }
 
     if( !tokens.IsEmpty() )
-        m_scintillaTricks->DoAutocomplete( partial, wxSplit( tokens, ' ' ) );
+        m_scintillaTricks-> DoAutocomplete( partial, wxSplit( tokens, ' ' ) );
 }
 
 
@@ -346,9 +354,12 @@ void PANEL_SETUP_RULES::OnCompile( wxCommandEvent& event )
     }
     catch( PARSE_ERROR& pe )
     {
-        wxString msg =
-                wxString::Format( "%s <a href='%d:%d'>%s</a>%s", _( "ERROR:" ), pe.lineNumber,
-                                  pe.byteIndex, pe.ParseProblem(), wxEmptyString );
+        wxString msg = wxString::Format( "%s <a href='%d:%d'>%s</a>%s",
+                                         _( "ERROR:" ),
+                                         pe.lineNumber,
+                                         pe.byteIndex,
+                                         pe.ParseProblem(),
+                                         wxEmptyString );
 
         m_errorsReport->Report( msg, RPT_SEVERITY_ERROR );
     }
@@ -389,7 +400,7 @@ bool PANEL_SETUP_RULES::TransferDataToWindow()
 
         if( file.Open() )
         {
-            for( wxString str = file.GetFirstLine(); !file.Eof(); str = file.GetNextLine() )
+            for ( wxString str = file.GetFirstLine(); !file.Eof(); str = file.GetNextLine() )
             {
                 ConvertSmartQuotesAndDashes( &str );
                 m_textEditor->AddText( str << '\n' );
@@ -452,7 +463,7 @@ void PANEL_SETUP_RULES::OnSyntaxHelp( wxHyperlinkEvent& aEvent )
 
     wxString msg =
 #include "dialogs/panel_setup_rules_help_md.h"
-            ;
+    ;
 
 #ifdef __WXMAC__
     msg.Replace( "Ctrl+", "Cmd+" );

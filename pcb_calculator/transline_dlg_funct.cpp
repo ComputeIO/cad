@@ -36,7 +36,7 @@ extern double DoubleFromString( const wxString& TextValue );
 
 // A helper function to find the choice in a list of values
 // return true if a index in aList that matches aValue is found.
-static bool findMatch( wxArrayString& aList, const wxString& aValue, int& aIdx )
+static bool findMatch(wxArrayString& aList, const wxString& aValue, int& aIdx )
 {
     bool success = false;
     // Find the previous choice index:
@@ -49,9 +49,9 @@ static bool findMatch( wxArrayString& aList, const wxString& aValue, int& aIdx )
     cvalue.Replace( ',', '.' );
 
     // First compare strings:
-    for( wxString& text : aList )
+    for( wxString& text: aList )
     {
-        if( text.IsEmpty() ) // No match found: select the empty line choice
+        if( text.IsEmpty() )    // No match found: select the empty line choice
             break;
 
         wxString val_str = text.BeforeFirst( ' ' );
@@ -72,7 +72,7 @@ static bool findMatch( wxArrayString& aList, const wxString& aValue, int& aIdx )
     if( !success )
     {
         struct lconv* lc = localeconv();
-        char          localeDecimalSeparator = *lc->decimal_point;
+        char localeDecimalSeparator = *lc->decimal_point;
 
         if( localeDecimalSeparator == ',' )
             cvalue.Replace( '.', ',' );
@@ -82,19 +82,18 @@ static bool findMatch( wxArrayString& aList, const wxString& aValue, int& aIdx )
 
         aIdx = 0;
 
-        for( wxString& text : aList )
+        for( wxString& text: aList )
         {
-            if( text.IsEmpty() ) // No match found: select the empty line choice
+            if( text.IsEmpty() )    // No match found: select the empty line choice
                 break;
 
-            double   val;
+            double val;
             wxString val_str = text.BeforeFirst( ' ' );
 
             if( localeDecimalSeparator == ',' )
                 val_str.Replace( '.', ',' );
 
-            val_str.ToDouble( &val );
-            ;
+            val_str.ToDouble( &val );;
 
             if( curr_value == val )
             {
@@ -118,17 +117,17 @@ static bool findMatch( wxArrayString& aList, const wxString& aValue, int& aIdx )
 void PCB_CALCULATOR_FRAME::OnTranslineEpsilonR_Button( wxCommandEvent& event )
 {
     wxArrayString list = StandardRelativeDielectricConstantList();
-    list.Add( "" ); // Add an empty line for no selection
+    list.Add( "" );  // Add an empty line for no selection
 
     // Find the previous choice index:
     wxString prevChoiceStr = m_Value_EpsilonR->GetValue();
-    int      prevChoice = 0;
+    int prevChoice = 0;
     findMatch( list, prevChoiceStr, prevChoice );
 
-    int index = wxGetSingleChoiceIndex( wxEmptyString, _( "Relative Dielectric Constants" ), list,
-                                        prevChoice );
+    int index = wxGetSingleChoiceIndex( wxEmptyString, _( "Relative Dielectric Constants" ),
+                                        list, prevChoice );
 
-    if( index >= 0 && !list.Item( index ).IsEmpty() ) // i.e. non canceled.
+    if( index >= 0 && !list.Item( index ).IsEmpty() )   // i.e. non canceled.
         m_Value_EpsilonR->SetValue( list.Item( index ).BeforeFirst( ' ' ) );
 }
 
@@ -141,17 +140,17 @@ void PCB_CALCULATOR_FRAME::OnTranslineEpsilonR_Button( wxCommandEvent& event )
 void PCB_CALCULATOR_FRAME::OnTranslineTanD_Button( wxCommandEvent& event )
 {
     wxArrayString list = StandardLossTangentList();
-    list.Add( "" ); // Add an empty line for no selection
+    list.Add( "" );  // Add an empty line for no selection
 
     // Find the previous choice index:
     wxString prevChoiceStr = m_Value_TanD->GetValue();
-    int      prevChoice = 0;
+    int prevChoice = 0;
     findMatch( list, prevChoiceStr, prevChoice );
 
     int index = wxGetSingleChoiceIndex( wxEmptyString, _( "Dielectric Loss Factor" ), list,
                                         prevChoice, NULL );
 
-    if( index >= 0 && !list.Item( index ).IsEmpty() ) // i.e. non canceled.
+    if( index >= 0 && !list.Item( index ).IsEmpty() )   // i.e. non canceled.
         m_Value_TanD->SetValue( list.Item( index ).BeforeFirst( ' ' ) );
 }
 
@@ -164,17 +163,17 @@ void PCB_CALCULATOR_FRAME::OnTranslineTanD_Button( wxCommandEvent& event )
 void PCB_CALCULATOR_FRAME::OnTranslineRho_Button( wxCommandEvent& event )
 {
     wxArrayString list = StandardResistivityList();
-    list.Add( "" ); // Add an empty line for no selection
+    list.Add( "" );  // Add an empty line for no selection
 
     // Find the previous choice index:
     wxString prevChoiceStr = m_Value_Rho->GetValue();
-    int      prevChoice = 0;
+    int prevChoice = 0;
     findMatch( list, prevChoiceStr, prevChoice );
 
-    int index = wxGetSingleChoiceIndex( wxEmptyString, _( "Specific Resistance" ), list, prevChoice,
-                                        NULL );
+    int index = wxGetSingleChoiceIndex( wxEmptyString, _( "Specific Resistance" ), list,
+                                        prevChoice, NULL );
 
-    if( index >= 0 && !list.Item( index ).IsEmpty() ) // i.e. non canceled.
+    if( index >= 0 && !list.Item( index ).IsEmpty() )   // i.e. non canceled.
         m_Value_Rho->SetValue( list.Item( index ).BeforeFirst( ' ' ) );
 }
 
@@ -200,8 +199,8 @@ void PCB_CALCULATOR_FRAME::TranslineTypeSelection( enum TRANSLINE_TYPE_ID aType 
 {
     m_currTransLineType = aType;
 
-    if( ( m_currTransLineType < START_OF_LIST_TYPE )
-        || ( m_currTransLineType >= END_OF_LIST_TYPE ) )
+    if( (m_currTransLineType < START_OF_LIST_TYPE )
+            || ( m_currTransLineType >= END_OF_LIST_TYPE ) )
     {
         m_currTransLineType = DEFAULT_TYPE;
     }
@@ -279,9 +278,11 @@ void PCB_CALCULATOR_FRAME::TranslineTypeSelection( enum TRANSLINE_TYPE_ID aType 
             };
     #define elecprms_cnt (sizeof(elecprms)/sizeof(elecprms[0]))
 
-    struct DLG_PRM_DATA frequencyprms[] = { { m_Frequency_label, m_Value_Frequency_Ctrl,
-                                              m_choiceUnit_Frequency } };
-#define frequencyprms_cnt ( sizeof( frequencyprms ) / sizeof( frequencyprms[0] ) )
+    struct DLG_PRM_DATA frequencyprms[] =
+    {
+        { m_Frequency_label,m_Value_Frequency_Ctrl, m_choiceUnit_Frequency }
+    };
+    #define frequencyprms_cnt (sizeof(frequencyprms)/sizeof(frequencyprms[0]))
 
     unsigned idxsubs = 0;
     unsigned idxphys = 0;
@@ -290,8 +291,8 @@ void PCB_CALCULATOR_FRAME::TranslineTypeSelection( enum TRANSLINE_TYPE_ID aType 
 
     for( unsigned ii = 0; ii < tr_ident->GetPrmsCount(); ii++ )
     {
-        TRANSLINE_PRM*       prm = tr_ident->GetPrm( ii );
-        struct DLG_PRM_DATA* data = NULL;
+        TRANSLINE_PRM* prm = tr_ident->GetPrm( ii );
+        struct DLG_PRM_DATA * data = NULL;
         switch( prm->m_Type )
         {
         case PRM_TYPE_SUBS:
@@ -319,7 +320,7 @@ void PCB_CALCULATOR_FRAME::TranslineTypeSelection( enum TRANSLINE_TYPE_ID aType 
             break;
         }
 
-        wxASSERT( data );
+        wxASSERT ( data );
         data->name->SetToolTip( prm->m_ToolTip );
         data->name->SetLabel( prm->m_DlgLabel != "" ? prm->m_DlgLabel + ':' : "" );
         prm->m_ValueCtrl = data->value;
@@ -349,12 +350,12 @@ void PCB_CALCULATOR_FRAME::TranslineTypeSelection( enum TRANSLINE_TYPE_ID aType 
     // Clear all unused params
     for( ; idxsubs < substrateprms_cnt; idxsubs++ )
     {
-        substrateprms[idxsubs].name->SetLabel( wxEmptyString );
-        substrateprms[idxsubs].name->SetToolTip( wxEmptyString );
-        substrateprms[idxsubs].value->SetValue( wxEmptyString );
+        substrateprms[idxsubs].name->SetLabel(wxEmptyString);
+        substrateprms[idxsubs].name->SetToolTip(wxEmptyString);
+        substrateprms[idxsubs].value->SetValue(wxEmptyString);
         substrateprms[idxsubs].value->Enable( false );
 
-        if( substrateprms[idxsubs].unit )
+        if( substrateprms[idxsubs].unit)
         {
             substrateprms[idxsubs].unit->Show( false );
             substrateprms[idxsubs].unit->Enable( false );
@@ -364,12 +365,12 @@ void PCB_CALCULATOR_FRAME::TranslineTypeSelection( enum TRANSLINE_TYPE_ID aType 
 
     for( ; idxphys < physprms_cnt; idxphys++ )
     {
-        physprms[idxphys].name->SetLabel( wxEmptyString );
-        physprms[idxphys].name->SetToolTip( wxEmptyString );
-        physprms[idxphys].value->SetValue( wxEmptyString );
+        physprms[idxphys].name->SetLabel(wxEmptyString);
+        physprms[idxphys].name->SetToolTip(wxEmptyString);
+        physprms[idxphys].value->SetValue(wxEmptyString);
         physprms[idxphys].value->Enable( false );
 
-        if( physprms[idxphys].unit )
+        if( physprms[idxphys].unit)
         {
             physprms[idxphys].unit->Show( false );
             physprms[idxphys].unit->Enable( false );
@@ -377,14 +378,14 @@ void PCB_CALCULATOR_FRAME::TranslineTypeSelection( enum TRANSLINE_TYPE_ID aType 
         }
     }
 
-    for( ; idxelec < elecprms_cnt; idxelec++ )
+    for( ; idxelec < elecprms_cnt; idxelec++)
     {
-        elecprms[idxelec].name->SetLabel( wxEmptyString );
-        elecprms[idxelec].name->SetToolTip( wxEmptyString );
-        elecprms[idxelec].value->SetValue( wxEmptyString );
+        elecprms[idxelec].name->SetLabel(wxEmptyString);
+        elecprms[idxelec].name->SetToolTip(wxEmptyString);
+        elecprms[idxelec].value->SetValue(wxEmptyString);
         elecprms[idxelec].value->Enable( false );
 
-        if( elecprms[idxelec].unit )
+        if( elecprms[idxelec].unit)
         {
             elecprms[idxelec].unit->Show( false );
             elecprms[idxelec].unit->Enable( false );
@@ -394,9 +395,9 @@ void PCB_CALCULATOR_FRAME::TranslineTypeSelection( enum TRANSLINE_TYPE_ID aType 
 
     for( ; idxfreq < frequencyprms_cnt; idxfreq++ )
     {
-        frequencyprms[idxfreq].name->SetLabel( wxEmptyString );
-        frequencyprms[idxfreq].name->SetToolTip( wxEmptyString );
-        frequencyprms[idxfreq].value->SetValue( wxEmptyString );
+        frequencyprms[idxfreq].name->SetLabel(wxEmptyString);
+        frequencyprms[idxfreq].name->SetToolTip(wxEmptyString);
+        frequencyprms[idxfreq].value->SetValue(wxEmptyString);
         frequencyprms[idxfreq].value->Enable( false );
 
         if( frequencyprms[idxfreq].unit )
@@ -405,7 +406,7 @@ void PCB_CALCULATOR_FRAME::TranslineTypeSelection( enum TRANSLINE_TYPE_ID aType 
             frequencyprms[idxfreq].unit->Enable( false );
             frequencyprms[idxfreq].unit->SetSelection( 0 );
         }
-    }
+   }
 }
 
 /**
@@ -420,11 +421,11 @@ void PCB_CALCULATOR_FRAME::TransfDlgDataToTranslineParams()
     for( unsigned ii = 0; ii < tr_ident->GetPrmsCount(); ii++ )
     {
         TRANSLINE_PRM* prm = tr_ident->GetPrm( ii );
-        wxTextCtrl*    value_ctrl = (wxTextCtrl*) prm->m_ValueCtrl;
-        wxString       value_txt = value_ctrl->GetValue();
-        double         value = DoubleFromString( value_txt );
+        wxTextCtrl * value_ctrl = (wxTextCtrl * ) prm->m_ValueCtrl;
+        wxString value_txt = value_ctrl->GetValue();
+        double value = DoubleFromString(value_txt);
         prm->m_Value = value;
-        UNIT_SELECTOR* unit_ctrl = (UNIT_SELECTOR*) prm->m_UnitCtrl;
+        UNIT_SELECTOR * unit_ctrl = (UNIT_SELECTOR * ) prm->m_UnitCtrl;
 
         if( unit_ctrl )
         {

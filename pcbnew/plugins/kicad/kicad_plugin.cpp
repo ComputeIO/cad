@@ -391,35 +391,59 @@ void PCB_IO::Format( const BOARD_ITEM* aItem, int aNestLevel ) const
 
     switch( aItem->Type() )
     {
-    case PCB_T: format( static_cast<const BOARD*>( aItem ), aNestLevel ); break;
+    case PCB_T:
+        format( static_cast<const BOARD*>( aItem ), aNestLevel );
+        break;
 
     case PCB_DIM_ALIGNED_T:
     case PCB_DIM_CENTER_T:
     case PCB_DIM_ORTHOGONAL_T:
-    case PCB_DIM_LEADER_T: format( static_cast<const DIMENSION_BASE*>( aItem ), aNestLevel ); break;
+    case PCB_DIM_LEADER_T:
+        format( static_cast<const DIMENSION_BASE*>( aItem ), aNestLevel );
+        break;
 
-    case PCB_SHAPE_T: format( static_cast<const PCB_SHAPE*>( aItem ), aNestLevel ); break;
+    case PCB_SHAPE_T:
+        format( static_cast<const PCB_SHAPE*>( aItem ), aNestLevel );
+        break;
 
-    case PCB_FP_SHAPE_T: format( static_cast<const FP_SHAPE*>( aItem ), aNestLevel ); break;
+    case PCB_FP_SHAPE_T:
+        format( static_cast<const FP_SHAPE*>( aItem ), aNestLevel );
+        break;
 
-    case PCB_TARGET_T: format( static_cast<const PCB_TARGET*>( aItem ), aNestLevel ); break;
+    case PCB_TARGET_T:
+        format( static_cast<const PCB_TARGET*>( aItem ), aNestLevel );
+        break;
 
-    case PCB_FOOTPRINT_T: format( static_cast<const FOOTPRINT*>( aItem ), aNestLevel ); break;
+    case PCB_FOOTPRINT_T:
+        format( static_cast<const FOOTPRINT*>( aItem ), aNestLevel );
+        break;
 
-    case PCB_PAD_T: format( static_cast<const PAD*>( aItem ), aNestLevel ); break;
+    case PCB_PAD_T:
+        format( static_cast<const PAD*>( aItem ), aNestLevel );
+        break;
 
-    case PCB_TEXT_T: format( static_cast<const PCB_TEXT*>( aItem ), aNestLevel ); break;
+    case PCB_TEXT_T:
+        format( static_cast<const PCB_TEXT*>( aItem ), aNestLevel );
+        break;
 
-    case PCB_FP_TEXT_T: format( static_cast<const FP_TEXT*>( aItem ), aNestLevel ); break;
+    case PCB_FP_TEXT_T:
+        format( static_cast<const FP_TEXT*>( aItem ), aNestLevel );
+        break;
 
-    case PCB_GROUP_T: format( static_cast<const PCB_GROUP*>( aItem ), aNestLevel ); break;
+    case PCB_GROUP_T:
+        format( static_cast<const PCB_GROUP*>( aItem ), aNestLevel );
+        break;
 
     case PCB_TRACE_T:
     case PCB_ARC_T:
-    case PCB_VIA_T: format( static_cast<const TRACK*>( aItem ), aNestLevel ); break;
+    case PCB_VIA_T:
+        format( static_cast<const TRACK*>( aItem ), aNestLevel );
+        break;
 
     case PCB_FP_ZONE_T:
-    case PCB_ZONE_T: format( static_cast<const ZONE*>( aItem ), aNestLevel ); break;
+    case PCB_ZONE_T:
+        format( static_cast<const ZONE*>( aItem ), aNestLevel );
+        break;
 
     default:
         wxFAIL_MSG( wxT( "Cannot format item " ) + aItem->GetClass() );
@@ -662,9 +686,9 @@ void PCB_IO::format( const BOARD* aBoard, int aNestLevel ) const
 void PCB_IO::format( const DIMENSION_BASE* aDimension, int aNestLevel ) const
 {
     const ALIGNED_DIMENSION*    aligned = dynamic_cast<const ALIGNED_DIMENSION*>( aDimension );
-    const ORTHOGONAL_DIMENSION* ortho = dynamic_cast<const ORTHOGONAL_DIMENSION*>( aDimension );
-    const CENTER_DIMENSION*     center = dynamic_cast<const CENTER_DIMENSION*>( aDimension );
-    const LEADER*               leader = dynamic_cast<const LEADER*>( aDimension );
+    const ORTHOGONAL_DIMENSION* ortho   = dynamic_cast<const ORTHOGONAL_DIMENSION*>( aDimension );
+    const CENTER_DIMENSION*     center  = dynamic_cast<const CENTER_DIMENSION*>( aDimension );
+    const LEADER*               leader  = dynamic_cast<const LEADER*>( aDimension );
 
     m_out->Print( aNestLevel, "(dimension" );
 
@@ -787,9 +811,9 @@ void PCB_IO::format( const PCB_SHAPE* aShape, int aNestLevel ) const
     case S_POLYGON: // Polygon
         if( aShape->IsPolyShapeValid() )
         {
-            const SHAPE_POLY_SET&   poly = aShape->GetPolyShape();
+            const SHAPE_POLY_SET& poly = aShape->GetPolyShape();
             const SHAPE_LINE_CHAIN& outline = poly.Outline( 0 );
-            const int               pointsCount = outline.PointCount();
+            const int pointsCount = outline.PointCount();
 
             m_out->Print( aNestLevel, "(gr_poly (pts\n" );
 
@@ -886,7 +910,7 @@ void PCB_IO::format( const FP_SHAPE* aFPShape, int aNestLevel ) const
     case S_POLYGON: // Polygonal segment
         if( aFPShape->IsPolyShapeValid() )
         {
-            const SHAPE_POLY_SET&   poly = aFPShape->GetPolyShape();
+            const SHAPE_POLY_SET& poly = aFPShape->GetPolyShape();
             const SHAPE_LINE_CHAIN& outline = poly.Outline( 0 );
             int pointsCount = outline.PointCount();
 
@@ -979,7 +1003,7 @@ void PCB_IO::format( const FOOTPRINT* aFootprint, int aNestLevel ) const
         if( initial_comments )
         {
             for( unsigned i = 0; i < initial_comments->GetCount(); ++i )
-                m_out->Print( aNestLevel, "%s\n", TO_UTF8( ( *initial_comments )[i] ) );
+                m_out->Print( aNestLevel, "%s\n", TO_UTF8( (*initial_comments)[i] ) );
 
             m_out->Print( 0, "\n" );    // improve readability?
         }
@@ -1301,7 +1325,9 @@ void PCB_IO::format( const PAD* aPad, int aNestLevel ) const
         THROW_IO_ERROR( wxString::Format( "unknown pad property: %d", aPad->GetProperty() ) );
     }
 
-    m_out->Print( aNestLevel, "(pad %s %s %s", m_out->Quotew( aPad->GetName() ).c_str(), type,
+    m_out->Print( aNestLevel, "(pad %s %s %s",
+                  m_out->Quotew( aPad->GetName() ).c_str(),
+                  type,
                   shape );
     m_out->Print( 0, " (at %s", FormatInternalUnits( aPad->GetPos0() ).c_str() );
 
@@ -1397,7 +1423,7 @@ void PCB_IO::format( const PAD* aPad, int aNestLevel ) const
     {
         StrPrintf( &output, " (net %d %s)", m_mapping->Translate( aPad->GetNetCode() ),
                    m_out->Quotew( aPad->GetNetname() ).c_str() );
-    }
+        }
 
     // Pin functions and types are closely related to nets, so if CTL_OMIT_NETS is set, omit
     // them as well (for instance when saved from library editor).
@@ -1411,7 +1437,8 @@ void PCB_IO::format( const PAD* aPad, int aNestLevel ) const
 
         if( !aPad->GetPinType().IsEmpty() )
         {
-            StrPrintf( &output, " (pintype %s)", m_out->Quotew( aPad->GetPinType() ).c_str() );
+            StrPrintf( &output, " (pintype %s)",
+                       m_out->Quotew( aPad->GetPinType() ).c_str() );
         }
     }
 
@@ -1957,7 +1984,7 @@ void PCB_IO::format( const ZONE* aZone, int aNestLevel ) const
     if( aZone->GetNumCorners() )
     {
         bool new_polygon = true;
-        bool is_closed = false;
+        bool is_closed   = false;
 
         for( auto iterator = aZone->CIterateWithHoles(); iterator; ++iterator )
         {

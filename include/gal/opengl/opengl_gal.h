@@ -38,7 +38,6 @@
 #include <gal/opengl/cached_container.h>
 #include <gal/opengl/noncached_container.h>
 #include <gal/opengl/opengl_compositor.h>
-#include <gal/opengl/opengl_freetype.h>
 #include <gal/hidpi_gl_canvas.h>
 
 #include <unordered_map>
@@ -103,7 +102,10 @@ public:
     }
 
     ///< @copydoc GAL::IsVisible()
-    bool IsVisible() const override { return IsShownOnScreen() && !GetClientRect().IsEmpty(); }
+    bool IsVisible() const override
+    {
+        return IsShownOnScreen() && !GetClientRect().IsEmpty();
+    }
 
     // ---------------
     // Drawing methods
@@ -114,25 +116,24 @@ public:
 
     /// @copydoc GAL::DrawSegment()
     void DrawSegment( const VECTOR2D& aStartPoint, const VECTOR2D& aEndPoint,
-                      double aWidth ) override;
+                              double aWidth ) override;
 
     /// @copydoc GAL::DrawCircle()
     void DrawCircle( const VECTOR2D& aCenterPoint, double aRadius ) override;
 
     /// @copydoc GAL::DrawArc()
-    void DrawArc( const VECTOR2D& aCenterPoint, double aRadius, double aStartAngle,
-                  double aEndAngle ) override;
+    void DrawArc( const VECTOR2D& aCenterPoint, double aRadius,
+                          double aStartAngle, double aEndAngle ) override;
 
     /// @copydoc GAL::DrawArcSegment()
-    void DrawArcSegment( const VECTOR2D& aCenterPoint, double aRadius, double aStartAngle,
-                         double aEndAngle, double aWidth ) override;
+    void DrawArcSegment( const VECTOR2D& aCenterPoint, double aRadius,
+                                 double aStartAngle, double aEndAngle, double aWidth ) override;
 
     /// @copydoc GAL::DrawRectangle()
     void DrawRectangle( const VECTOR2D& aStartPoint, const VECTOR2D& aEndPoint ) override;
 
     /// @copydoc GAL::DrawPolyline()
     void DrawPolyline( const std::deque<VECTOR2D>& aPointList ) override;
-    void DrawPolyline( const std::vector<VECTOR2D>& aPointList ) override;
     void DrawPolyline( const VECTOR2D aPointList[], int aListSize ) override;
     void DrawPolyline( const SHAPE_LINE_CHAIN& aLineChain ) override;
 
@@ -147,15 +148,15 @@ public:
 
     /// @copydoc GAL::DrawCurve()
     void DrawCurve( const VECTOR2D& startPoint, const VECTOR2D& controlPointA,
-                    const VECTOR2D& controlPointB, const VECTOR2D& endPoint,
-                    double aFilterValue = 0.0 ) override;
+                            const VECTOR2D& controlPointB, const VECTOR2D& endPoint,
+                            double aFilterValue = 0.0 ) override;
 
     /// @copydoc GAL::DrawBitmap()
     void DrawBitmap( const BITMAP_BASE& aBitmap ) override;
 
     /// @copydoc GAL::BitmapText()
     void BitmapText( const wxString& aText, const VECTOR2D& aPosition,
-                     double aRotationAngle ) override;
+                             double aRotationAngle ) override;
 
     /// @copydoc GAL::DrawGrid()
     void DrawGrid() override;
@@ -174,7 +175,7 @@ public:
     void Flush() override;
 
     /// @copydoc GAL::ClearScreen()
-    void ClearScreen() override;
+    void ClearScreen( ) override;
 
     // --------------
     // Transformation
@@ -271,7 +272,10 @@ public:
 
     void EnableDepthTest( bool aEnabled = false ) override;
 
-    bool IsContextLocked() override { return m_isContextLocked; }
+    bool IsContextLocked() override
+    {
+        return m_isContextLocked;
+    }
 
     ///< Parameters passed to the GLU tesselator
     typedef struct
@@ -280,20 +284,15 @@ public:
         VERTEX_MANAGER* vboManager;
 
         /// Intersect points, that have to be freed after tessellation
-        std::deque<boost::shared_array<GLdouble>>& intersectPoints;
+        std::deque< boost::shared_array<GLdouble> >& intersectPoints;
     } TessParams;
-
-    // ---
-    // FreeType
-    // ---
-    OPENGL_FREETYPE* GetFreeType() const;
 
 private:
     /// Super class definition
     typedef GAL super;
 
-    static const int CIRCLE_POINTS = 64; ///< The number of points for circle approximation
-    static const int CURVE_POINTS = 32;  ///< The number of points for curve approximation
+    static const int    CIRCLE_POINTS   = 64;   ///< The number of points for circle approximation
+    static const int    CURVE_POINTS    = 32;   ///< The number of points for curve approximation
 
     static wxGLContext*     m_glMainContext;    ///< Parent OpenGL context
     wxGLContext*            m_glPrivContext;    ///< Canvas-specific OpenGL context
@@ -409,7 +408,7 @@ private:
      * @param aPointGetter is a function to obtain coordinates of n-th vertex.
      * @param aPointCount is the number of points to be drawn.
      */
-    void drawPolyline( const std::function<VECTOR2D( int )>& aPointGetter, int aPointCount );
+    void drawPolyline( const std::function<VECTOR2D (int)>& aPointGetter, int aPointCount );
 
     /**
      * Draw a filled polygon. It does not need the last point to have the same coordinates
@@ -508,4 +507,4 @@ private:
 };
 } // namespace KIGFX
 
-#endif // OPENGLGAL_H_
+#endif  // OPENGLGAL_H_

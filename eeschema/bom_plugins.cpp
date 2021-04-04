@@ -66,8 +66,9 @@ BOM_GENERATOR_HANDLER::BOM_GENERATOR_HANDLER( const wxString& aFile )
     {
         m_info = readHeader( "\"\"\"" );
 #ifdef __WINDOWS__
-        m_cmd = wxString::Format( "python \"%s/%s\" \"%%I\" \"%%O%s\"", m_file.GetPath(),
-                                  m_file.GetFullName(), getOutputExtension( m_info ) );
+        m_cmd = wxString::Format( "python \"%s/%s\" \"%%I\" \"%%O%s\"",
+                                  m_file.GetPath(), m_file.GetFullName(),
+                                  getOutputExtension( m_info ) );
 #else
         m_cmd = wxString::Format( "python \"%s\" \"%%I\" \"%%O%s\"", m_file.GetFullPath(),
                                   getOutputExtension( m_info ) );
@@ -77,8 +78,9 @@ BOM_GENERATOR_HANDLER::BOM_GENERATOR_HANDLER( const wxString& aFile )
     else if( extension == "pyw" )
     {
         m_info = readHeader( "\"\"\"" );
-        m_cmd = wxString::Format( "pythonw \"%s/%s\" \"%%I\" \"%%O%s\"", m_file.GetPath(),
-                                  m_file.GetFullName(), getOutputExtension( m_info ) );
+        m_cmd = wxString::Format( "pythonw \"%s/%s\" \"%%I\" \"%%O%s\"",
+                                  m_file.GetPath(), m_file.GetFullName(),
+                                  getOutputExtension( m_info ) );
     }
 #endif /* __WINDOWS__ */
     else // fallback

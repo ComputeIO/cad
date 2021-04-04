@@ -199,7 +199,7 @@ public:
     {
         virtual void Parse( XNODE* aNode, PARSER_CONTEXT* aContext ) = 0;
 
-        virtual ~PARSER(){};
+        virtual ~PARSER() {};
     };
 
 
@@ -970,31 +970,31 @@ public:
 
                 PART_DEFINITION_PIN_ID ID = UNDEFINED_VALUE;
 
-                wxString Identifier = wxEmptyString; ///< This should match a pad identifier
-                                                     ///< in the component footprint
-                                                     ///< subnode="PINIDENTIFIER". It is assumed
-                                                     ///< that this could be empty in earlier
-                                                     ///< versions of CADSTAR
-                wxString Name = wxEmptyString;       ///< Can be empty. If empty the pin name
-                                                     ///< displayed wil be Identifier
-                                                     ///< (subnode="PINNAME")
-                                                     ///< This seems to be equivalent to "Pin
-                                                     ///< Number" in KiCad.
-                wxString Label = wxEmptyString;      ///< This Can be empty (subnode=
-                                                     ///< "PINLABEL")
-                                                     ///< From CADSTAR Help: "Pin
-                                                     ///< Labels are an optional replacement
-                                                     ///< for the free text sometimes placed
-                                                     ///< in schematic symbols. Using Pin
-                                                     ///< Labels instead has the advantage of
-                                                     ///< associating each piece of label
-                                                     ///< text with a particular pin. This
-                                                     ///< means that the text remains
-                                                     ///< correctly placed after any Gate and
-                                                     ///< Pin Swaps are Back Annotated to the
-                                                     ///< Schematic design."
-                                                     ///< This seems to be equivalent to "Pin
-                                                     ///< Name" in KiCad.
+                wxString Identifier = wxEmptyString;      ///< This should match a pad identifier
+                                                          ///< in the component footprint
+                                                          ///< subnode="PINIDENTIFIER". It is assumed
+                                                          ///< that this could be empty in earlier
+                                                          ///< versions of CADSTAR
+                wxString Name = wxEmptyString;            ///< Can be empty. If empty the pin name
+                                                          ///< displayed wil be Identifier
+                                                          ///< (subnode="PINNAME")
+                                                          ///< This seems to be equivalent to "Pin
+                                                          ///< Number" in KiCad.
+                wxString Label = wxEmptyString;           ///< This Can be empty (subnode=
+                                                          ///< "PINLABEL")
+                                                          ///< From CADSTAR Help: "Pin
+                                                          ///< Labels are an optional replacement
+                                                          ///< for the free text sometimes placed
+                                                          ///< in schematic symbols. Using Pin
+                                                          ///< Labels instead has the advantage of
+                                                          ///< associating each piece of label
+                                                          ///< text with a particular pin. This
+                                                          ///< means that the text remains
+                                                          ///< correctly placed after any Gate and
+                                                          ///< Pin Swaps are Back Annotated to the
+                                                          ///< Schematic design."
+                                                          ///< This seems to be equivalent to "Pin
+                                                          ///< Name" in KiCad.
                 wxString Signal = wxEmptyString;          ///< Usually for Power/Ground pins,
                                                           ///< (subnode="PINSIGNAL")
                 GATE_ID     TerminalGate;                 ///< (subnode="PINTERM", param0)
@@ -1221,7 +1221,7 @@ public:
         COLOR_ID Color;
         bool     IsVisible = true;
 
-        void Parse( XNODE* aNode, PARSER_CONTEXT* aContext ) override;
+        void     Parse( XNODE* aNode, PARSER_CONTEXT* aContext ) override;
     };
 
 
@@ -1237,7 +1237,7 @@ public:
 
     struct ATTRCOLORS : PARSER
     {
-        DFLTSETTINGS                    DefaultSettings;
+        DFLTSETTINGS DefaultSettings;
         std::map<ATTRIBUTE_ID, ATTRCOL> AttributeColors;
 
         void Parse( XNODE* aNode, PARSER_CONTEXT* aContext ) override;
@@ -1246,8 +1246,8 @@ public:
 
     struct PARTNAMECOL : PARSER
     {
-        COLOR_ID Color;
-        bool     IsVisible = true;
+        COLOR_ID     Color;
+        bool         IsVisible = true;
 
         void Parse( XNODE* aNode, PARSER_CONTEXT* aContext ) override;
     };

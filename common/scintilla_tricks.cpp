@@ -32,7 +32,9 @@
 #include <confirm.h>
 
 SCINTILLA_TRICKS::SCINTILLA_TRICKS( wxStyledTextCtrl* aScintilla, const wxString& aBraces ) :
-        m_te( aScintilla ), m_braces( aBraces ), m_lastCaretPos( -1 ),
+        m_te( aScintilla ),
+        m_braces( aBraces ),
+        m_lastCaretPos( -1 ),
         m_suppressAutocomplete( false )
 {
     // A hack which causes Scintilla to auto-size the text editor canvas
@@ -42,13 +44,13 @@ SCINTILLA_TRICKS::SCINTILLA_TRICKS( wxStyledTextCtrl* aScintilla, const wxString
 
     // Set up the brace highlighting
     wxColour highlight = wxSystemSettings::GetColour( wxSYS_COLOUR_HIGHLIGHT );
-    wxColour highlightText = wxSystemSettings::GetColour( wxSYS_COLOUR_WINDOWTEXT );
+   	wxColour highlightText = wxSystemSettings::GetColour( wxSYS_COLOUR_WINDOWTEXT );
 
-    unsigned char r = highlight.Red();
+   	unsigned char r = highlight.Red();
     unsigned char g = highlight.Green();
     unsigned char b = highlight.Blue();
-    wxColour::MakeGrey( &r, &g, &b );
-    highlight.Set( r, g, b );
+   	wxColour::MakeGrey( &r, &g, &b );
+   	highlight.Set( r, g, b );
 
     m_te->StyleSetForeground( wxSTC_STYLE_BRACELIGHT, highlightText );
     m_te->StyleSetBackground( wxSTC_STYLE_BRACELIGHT, highlight );
@@ -138,8 +140,8 @@ void SCINTILLA_TRICKS::onCharHook( wxKeyEvent& aEvent )
     {
         m_te->Undo();
     }
-    else if( ( aEvent.GetModifiers() == wxMOD_SHIFT + wxMOD_CONTROL && aEvent.GetKeyCode() == 'Z' )
-             || ( aEvent.GetModifiers() == wxMOD_CONTROL && aEvent.GetKeyCode() == 'Y' ) )
+    else if( ( aEvent.GetModifiers() == wxMOD_SHIFT+wxMOD_CONTROL && aEvent.GetKeyCode() == 'Z' )
+            || ( aEvent.GetModifiers() == wxMOD_CONTROL && aEvent.GetKeyCode() == 'Y' ) )
     {
         m_te->Redo();
     }
@@ -262,9 +264,9 @@ int SCINTILLA_TRICKS::firstNonWhitespace( int aLine, int* aWhitespaceCharCount )
 void SCINTILLA_TRICKS::onScintillaUpdateUI( wxStyledTextEvent& aEvent )
 {
     auto isBrace = [this]( int c ) -> bool
-    {
-        return m_braces.Find( (wxChar) c ) >= 0;
-    };
+                   {
+                       return m_braces.Find( (wxChar) c ) >= 0;
+                   };
 
     // Has the caret changed position?
     int caretPos = m_te->GetCurrentPos();
@@ -276,7 +278,7 @@ void SCINTILLA_TRICKS::onScintillaUpdateUI( wxStyledTextEvent& aEvent )
         int bracePos2 = -1;
 
         // Is there a brace to the left or right?
-        if( caretPos > 0 && isBrace( m_te->GetCharAt( caretPos - 1 ) ) )
+        if( caretPos > 0 && isBrace( m_te->GetCharAt( caretPos-1 ) ) )
             bracePos1 = ( caretPos - 1 );
         else if( isBrace( m_te->GetCharAt( caretPos ) ) )
             bracePos1 = caretPos;
@@ -326,12 +328,13 @@ void SCINTILLA_TRICKS::DoAutocomplete( const wxString& aPartial, const wxArraySt
     {
         // NB: tokens MUST be in alphabetical order because the Scintilla engine is going
         // to do a binary search on them
-        matchedTokens.Sort(
-                []( const wxString& first, const wxString& second ) -> int
-                {
-                    return first.CmpNoCase( second );
-                } );
+        matchedTokens.Sort( []( const wxString& first, const wxString& second ) -> int
+                            {
+                                return first.CmpNoCase( second );
+                            });
 
         m_te->AutoCompShow( aPartial.size(), wxJoin( matchedTokens, ' ' ) );
     }
 }
+
+

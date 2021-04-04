@@ -455,7 +455,10 @@ public:
      */
     const std::string& GetDrillHoleType();
 
-    IDF3::KEY_OWNER GetDrillOwner() const { return owner; }
+    IDF3::KEY_OWNER GetDrillOwner() const
+    {
+        return owner;
+    }
 };
 
 
@@ -491,7 +494,7 @@ public:
      *
      * @return bool: true if this point matches the given point
      */
-    bool Matches( const IDF_POINT& aPoint, double aRadius = 1e-5 ) const;
+    bool    Matches( const IDF_POINT& aPoint, double aRadius = 1e-5 ) const;
 
     /**
      * Function CalcDistance()

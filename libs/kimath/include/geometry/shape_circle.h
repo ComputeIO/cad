@@ -36,12 +36,15 @@
 class SHAPE_CIRCLE : public SHAPE
 {
 public:
-    SHAPE_CIRCLE() : SHAPE( SH_CIRCLE ), m_circle() {}
+    SHAPE_CIRCLE() :
+        SHAPE( SH_CIRCLE ),
+        m_circle()
+    {}
 
     SHAPE_CIRCLE( const VECTOR2I& aCenter, int aRadius ) :
-            SHAPE( SH_CIRCLE ), m_circle( aCenter, aRadius )
-    {
-    }
+        SHAPE( SH_CIRCLE ),
+        m_circle( aCenter, aRadius )
+    {}
 
     SHAPE_CIRCLE( const CIRCLE& aCircle ) :
         SHAPE( SH_CIRCLE ),
@@ -53,9 +56,13 @@ public:
         m_circle( aOther.m_circle )
     {};
 
-    ~SHAPE_CIRCLE() {}
+    ~SHAPE_CIRCLE()
+    {}
 
-    SHAPE* Clone() const override { return new SHAPE_CIRCLE( *this ); }
+    SHAPE* Clone() const override
+    {
+        return new SHAPE_CIRCLE( *this );
+    }
 
     SHAPE_CIRCLE& operator=( const SHAPE_CIRCLE& ) = default;
 
@@ -87,17 +94,35 @@ public:
         return false;
     }
 
-    void SetRadius( int aRadius ) { m_circle.Radius = aRadius; }
+    void SetRadius( int aRadius )
+    {
+        m_circle.Radius = aRadius;
+    }
 
-    void SetCenter( const VECTOR2I& aCenter ) { m_circle.Center = aCenter; }
+    void SetCenter( const VECTOR2I& aCenter )
+    {
+        m_circle.Center = aCenter;
+    }
 
-    int GetRadius() const { return m_circle.Radius; }
+    int GetRadius() const
+    {
+        return m_circle.Radius;
+    }
 
-    const VECTOR2I GetCenter() const { return m_circle.Center; }
+    const VECTOR2I GetCenter() const
+    {
+        return m_circle.Center;
+    }
 
-    const CIRCLE GetCircle() const { return m_circle; }
+    const CIRCLE GetCircle() const
+    {
+        return m_circle;
+    }
 
-    void Move( const VECTOR2I& aVector ) override { m_circle.Center += aVector; }
+    void Move( const VECTOR2I& aVector ) override
+    {
+        m_circle.Center += aVector;
+    }
 
     void Rotate( double aAngle, const VECTOR2I& aCenter = { 0, 0 } ) override
     {
@@ -106,7 +131,10 @@ public:
         m_circle.Center += aCenter;
     }
 
-    bool IsSolid() const override { return true; }
+    bool IsSolid() const override
+    {
+        return true;
+    }
 
 private:
     CIRCLE m_circle;

@@ -133,10 +133,13 @@ public:
         switch( iu % 1000 )
         {
         case 1:
-        case -999: return iu - 1;
+        case -999:
+            return iu - 1;
         case 999:
-        case -1: return iu + 1;
-        default: return iu;
+        case -1:
+            return iu + 1;
+        default:
+            return iu;
         }
     }
 

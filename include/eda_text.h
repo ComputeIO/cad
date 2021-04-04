@@ -28,14 +28,12 @@
 #include <memory>
 #include <vector>
 
-#include <common.h>
 #include <outline_mode.h>
 #include <eda_rect.h>
 
 class OUTPUTFORMATTER;
 class SHAPE_COMPOUND;
 class SHAPE_POLY_SET;
-class FONT;
 class wxFindReplaceData;
 
 namespace KIGFX
@@ -145,45 +143,9 @@ public:
      * Return the string actually shown after processing of the base text.
      *
      * @param aDepth is used to prevent infinite recursions and loops when expanding
-     *     text variables.
-     * @param aFontPtr if not null, variable pointed to by aFontPtr
-     *     will be set to point to the FONT instance used by this text item.
-     *     Only used for actual text objects (PCB and schematic) for now.
+     * text variables.
      */
-    virtual wxString GetShownText( int aDepth = 0, FONT** aFontPtr = nullptr ) const;
-
-    /**
-     * Set resolver function to be used by GetProcessedText().
-     *
-     * @param aResolver Resolver function.
-     */
-    virtual void SetResolver( RESOLVER aResolver ) { m_resolver = aResolver; }
-
-    /**
-     * Get text with GetShownText(), process text variables using m_resolver (if set),
-     * and return the processed text.
-     *
-     * See GetShownText() for parameter definitions.
-     *
-     * @return Processed string with text variables substituted.
-     */
-    virtual wxString GetProcessedText( int aDepth = 0, FONT** aFontPtr = nullptr ) const;
-
-    /**
-     * Return the font associated with this text item.
-     *
-     * @return pointer to FONT instance.
-     */
-    FONT* GetFont() const;
-
-    virtual const wxString& GetFontName() const;
-
-    void SetFont( const std::string& aFontName );
-
-    /**
-     * Needed to resolve ambiguity with overloaded function for properties
-     */
-    void SetFontFromProperty( const wxString& aFontName );
+    virtual wxString GetShownText( int aDepth = 0 ) const { return m_shown_text; }
 
     /**
      * A version of GetShownText() which also indicates whether or not the text needs
@@ -451,8 +413,6 @@ private:
         TE_MULTILINE,
         TE_VISIBLE,
     };
-
-    RESOLVER m_resolver;
 };
 
 

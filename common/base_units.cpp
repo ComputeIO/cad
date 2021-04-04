@@ -359,7 +359,7 @@ double DoubleValueFromString( EDA_UNITS aUnits, const wxString& aTextValue, EDA_
     wxString unit( buf.Mid( brk_point ).Strip( wxString::leading ).Left( 2 ).Lower() );
 
     if( aUnits == EDA_UNITS::MILLIMETRES || aUnits == EDA_UNITS::MILS
-        || aUnits == EDA_UNITS::INCHES )
+      || aUnits == EDA_UNITS::INCHES )
     {
         if( unit == wxT( "mm" ) )
         {
@@ -544,7 +544,7 @@ std::string FormatInternalUnits( int aValue )
         len = snprintf( buf, sizeof(buf), "%.10g", engUnits );
 
         // Make sure snprintf() didn't fail and the locale numeric separator is correct.
-        wxCHECK( len >= 0 && len < 50 && strchr( buf, ',' ) == NULL, std::string( "" ) );
+        wxCHECK( len >= 0 && len < 50 && strchr( buf, ',' ) == NULL , std::string( "" ) );
     }
 
     return std::string( buf, len );

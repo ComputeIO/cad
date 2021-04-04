@@ -62,10 +62,10 @@ PCB_BASE_EDIT_FRAME::~PCB_BASE_EDIT_FRAME()
 void PCB_BASE_EDIT_FRAME::doCloseWindow()
 {
     SETTINGS_MANAGER* mgr = GetSettingsManager();
-    wxFileName        projectName( Prj().GetProjectFullName() );
+    wxFileName projectName( Prj().GetProjectFullName() );
 
     if( mgr->IsProjectOpen() && wxFileName::IsDirWritable( projectName.GetPath() )
-        && projectName.Exists() )
+            && projectName.Exists() )
     {
         GFootprintList.WriteCacheToFile( Prj().GetProjectPath() + "fp-info-cache" );
     }

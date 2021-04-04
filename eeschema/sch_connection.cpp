@@ -62,14 +62,20 @@
  */
 
 SCH_CONNECTION::SCH_CONNECTION( SCH_ITEM* aParent, SCH_SHEET_PATH aPath ) :
-        m_sheet( aPath ), m_parent( aParent ), m_driver( nullptr ), m_graph( nullptr )
+        m_sheet( aPath ),
+        m_parent( aParent ),
+        m_driver( nullptr ),
+        m_graph( nullptr )
 {
     Reset();
 }
 
 
 SCH_CONNECTION::SCH_CONNECTION( CONNECTION_GRAPH* aGraph ) :
-        m_sheet( SCH_SHEET_PATH() ), m_parent( nullptr ), m_driver( nullptr ), m_graph( aGraph )
+        m_sheet( SCH_SHEET_PATH() ),
+        m_parent( nullptr ),
+        m_driver( nullptr ),
+        m_graph( aGraph )
 {
     Reset();
 }
@@ -78,8 +84,10 @@ SCH_CONNECTION::SCH_CONNECTION( CONNECTION_GRAPH* aGraph ) :
 bool SCH_CONNECTION::operator==( const SCH_CONNECTION& aOther ) const
 {
     // NOTE: Not comparing m_dirty or net/bus/subgraph codes
-    if( ( aOther.m_driver == m_driver ) && ( aOther.m_type == m_type )
-        && ( aOther.m_name == m_name ) && ( aOther.m_sheet == m_sheet ) )
+    if( ( aOther.m_driver == m_driver ) &&
+        ( aOther.m_type == m_type ) &&
+        ( aOther.m_name == m_name ) &&
+        ( aOther.m_sheet == m_sheet ) )
     {
         return true;
     }
@@ -124,7 +132,7 @@ void SCH_CONNECTION::ConfigureFromLabel( const wxString& aLabel )
     m_local_name   = aLabel;
     m_local_prefix = m_prefix;
 
-    wxString              prefix;
+    wxString prefix;
     std::vector<wxString> members;
 
     wxString unescaped = UnescapeString( aLabel );
@@ -151,7 +159,7 @@ void SCH_CONNECTION::ConfigureFromLabel( const wxString& aLabel )
     }
     else if( NET_SETTINGS::ParseBusGroup( unescaped, &prefix, &members ) )
     {
-        m_type = CONNECTION_TYPE::BUS_GROUP;
+        m_type       = CONNECTION_TYPE::BUS_GROUP;
         m_bus_prefix = prefix;
 
         // Named bus groups generate a net prefix, unnamed ones don't
@@ -165,7 +173,7 @@ void SCH_CONNECTION::ConfigureFromLabel( const wxString& aLabel )
             {
                 for( const wxString& alias_member : alias->Members() )
                 {
-                    auto member = std::make_shared<SCH_CONNECTION>( m_parent, m_sheet );
+                    auto member = std::make_shared< SCH_CONNECTION >( m_parent, m_sheet );
                     member->SetPrefix( prefix );
                     member->SetGraph( m_graph );
                     member->ConfigureFromLabel( alias_member );
@@ -174,7 +182,7 @@ void SCH_CONNECTION::ConfigureFromLabel( const wxString& aLabel )
             }
             else
             {
-                auto member = std::make_shared<SCH_CONNECTION>( m_parent, m_sheet );
+                auto member = std::make_shared< SCH_CONNECTION >( m_parent, m_sheet );
                 member->SetPrefix( prefix );
                 member->SetGraph( m_graph );
                 member->ConfigureFromLabel( group_member );
@@ -201,7 +209,7 @@ void SCH_CONNECTION::Reset()
     m_cached_name_with_path.Empty();
     m_prefix.Empty();
     m_bus_prefix.Empty();
-    m_suffix.Empty();
+    m_suffix .Empty();
     m_lastDriver = m_driver;
     m_driver = nullptr;
     m_members.clear();
@@ -221,8 +229,8 @@ void SCH_CONNECTION::Clone( const SCH_CONNECTION& aOther )
     m_graph = aOther.m_graph;
     // Note: m_lastDriver is not cloned as it needs to be the last driver of *this* connection
     m_driver = aOther.Driver();
-    m_sheet = aOther.Sheet();
-    m_name = aOther.m_name;
+    m_sheet  = aOther.Sheet();
+    m_name   = aOther.m_name;
     // Note: m_local_name is not cloned if not set yet
     if( m_local_name.IsEmpty() )
     {
@@ -236,7 +244,7 @@ void SCH_CONNECTION::Clone( const SCH_CONNECTION& aOther )
     m_net_code     = aOther.NetCode();
     m_bus_code     = aOther.BusCode();
     m_vector_start = aOther.VectorStart();
-    m_vector_end = aOther.VectorEnd();
+    m_vector_end   = aOther.VectorEnd();
     // Note: m_vector_index is not cloned
     m_vector_prefix = aOther.VectorPrefix();
 
@@ -299,7 +307,8 @@ bool SCH_CONNECTION::IsDriver() const
     case SCH_HIER_LABEL_T:
     case SCH_SHEET_PIN_T:
     case SCH_SHEET_T:
-    case LIB_PIN_T: return true;
+    case LIB_PIN_T:
+        return true;
 
     case SCH_PIN_T:
     {
@@ -309,7 +318,8 @@ bool SCH_CONNECTION::IsDriver() const
         return pin->IsPowerConnection() || pin->GetParentSymbol()->IsAnnotated( &m_sheet );
     }
 
-    default: return false;
+    default:
+        return false;
     }
 }
 
@@ -324,6 +334,7 @@ void SCH_CONNECTION::ClearDriverChanged()
 {
     m_lastDriver = m_driver;
 }
+
 
 
 wxString SCH_CONNECTION::Name( bool aIgnoreSheet ) const
@@ -353,7 +364,8 @@ void SCH_CONNECTION::recacheName()
             prepend_path = false;
             break;
 
-        default: break;
+        default:
+            break;
         }
     }
 
@@ -386,7 +398,7 @@ void SCH_CONNECTION::SetSuffix( const wxString& aSuffix )
 
 void SCH_CONNECTION::AppendInfoToMsgPanel( MSG_PANEL_ITEMS& aList ) const
 {
-    wxString              msg, group_name;
+    wxString msg, group_name;
     std::vector<wxString> group_members;
 
     aList.push_back( MSG_PANEL_ITEM( _( "Connection Name" ), UnescapeString( Name() ) ) );
@@ -431,7 +443,7 @@ void SCH_CONNECTION::AppendInfoToMsgPanel( MSG_PANEL_ITEMS& aList ) const
         }
     }
 
-#if defined( DEBUG )
+#if defined(DEBUG)
     // These messages are not flagged as translatable, because they are only debug messages
 
     if( !ADVANCED_CFG::GetCfg().m_RealTimeConnectivity || !CONNECTION_GRAPH::m_allowRealTime )
@@ -460,7 +472,7 @@ bool SCH_CONNECTION::IsBusLabel( const wxString& aLabel )
     const wxString& unescaped = UnescapeString( aLabel );
 
     return NET_SETTINGS::ParseBusVector( unescaped, nullptr, nullptr )
-           || NET_SETTINGS::ParseBusGroup( unescaped, nullptr, nullptr );
+                || NET_SETTINGS::ParseBusGroup( unescaped, nullptr, nullptr );
 }
 
 
@@ -473,9 +485,9 @@ bool SCH_CONNECTION::MightBeBusLabel( const wxString& aLabel )
 }
 
 
-const std::vector<std::shared_ptr<SCH_CONNECTION>> SCH_CONNECTION::AllMembers() const
+const std::vector< std::shared_ptr< SCH_CONNECTION > > SCH_CONNECTION::AllMembers() const
 {
-    std::vector<std::shared_ptr<SCH_CONNECTION>> ret( m_members );
+    std::vector< std::shared_ptr< SCH_CONNECTION > > ret( m_members );
 
     for( const auto& member : m_members )
         if( member->IsBus() )
@@ -503,7 +515,7 @@ wxString SCH_CONNECTION::PrintBusForUI( const wxString& aGroup )
     //
     for( ; i < groupLen; ++i )
     {
-        if( isSuperSub( aGroup[i] ) && i + 1 < groupLen && aGroup[i + 1] == '{' )
+        if( isSuperSub( aGroup[i] ) && i + 1 < groupLen && aGroup[i+1] == '{' )
         {
             braceNesting++;
             i++;
@@ -535,11 +547,11 @@ wxString SCH_CONNECTION::PrintBusForUI( const wxString& aGroup )
 
     // Parse members
     //
-    i++; // '{' character
+    i++;  // '{' character
 
     for( ; i < groupLen; ++i )
     {
-        if( isSuperSub( aGroup[i] ) && i + 1 < groupLen && aGroup[i + 1] == '{' )
+        if( isSuperSub( aGroup[i] ) && i + 1 < groupLen && aGroup[i+1] == '{' )
         {
             braceNesting++;
             i++;

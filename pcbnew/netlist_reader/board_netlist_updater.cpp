@@ -996,7 +996,7 @@ bool BOARD_NETLIST_UPDATER::UpdateNetlist( NETLIST& aNetlist )
 
             if( footprint )
             {
-                footprintMap[component] = footprint;
+                footprintMap[ component ] = footprint;
 
                 updateFootprintParameters( footprint, component );
                 updateComponentPadConnections( footprint, component );

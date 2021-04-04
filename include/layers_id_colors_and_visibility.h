@@ -151,7 +151,7 @@ enum PCB_LAYER_ID: int
 #define MAX_CU_LAYERS       (B_Cu - F_Cu + 1)
 
 /// Dedicated layers for net names used in Pcbnew
-enum NETNAMES_LAYER_ID : int
+enum NETNAMES_LAYER_ID: int
 {
 
     NETNAMES_LAYER_ID_START = PCB_LAYER_ID_COUNT,
@@ -822,15 +822,18 @@ inline bool IsCopperLayer( LAYER_NUM aLayerId, bool aIncludeSyntheticCopperLayer
 
 inline bool IsViaPadLayer( LAYER_NUM aLayer )
 {
-    return aLayer == LAYER_VIA_THROUGH || aLayer == LAYER_VIA_MICROVIA
-           || aLayer == LAYER_VIA_BBLIND;
+    return aLayer == LAYER_VIA_THROUGH
+            || aLayer == LAYER_VIA_MICROVIA
+            || aLayer == LAYER_VIA_BBLIND;
 }
 
 inline bool IsHoleLayer( LAYER_NUM aLayer )
 {
-    return aLayer == LAYER_VIA_HOLES || aLayer == LAYER_VIA_HOLEWALLS
-           || aLayer == LAYER_PAD_PLATEDHOLES || aLayer == LAYER_PAD_HOLEWALLS
-           || aLayer == LAYER_NON_PLATEDHOLES;
+    return aLayer == LAYER_VIA_HOLES
+            || aLayer == LAYER_VIA_HOLEWALLS
+            || aLayer == LAYER_PAD_PLATEDHOLES
+            || aLayer == LAYER_PAD_HOLEWALLS
+            || aLayer == LAYER_NON_PLATEDHOLES;
 }
 
 /**
@@ -981,10 +984,17 @@ inline bool IsDCodeLayer( int aLayer )
  */
 inline bool IsNetCopperLayer( LAYER_NUM aLayer )
 {
-    static std::set<LAYER_NUM> netCopperLayers = { LAYER_PAD_FR,       LAYER_PAD_BK,
-                                                   LAYER_PADS_TH,      LAYER_PAD_HOLEWALLS,
-                                                   LAYER_VIA_THROUGH,  LAYER_VIA_BBLIND,
-                                                   LAYER_VIA_MICROVIA, LAYER_VIA_HOLEWALLS };
+    static std::set<LAYER_NUM> netCopperLayers =
+            {
+                    LAYER_PAD_FR,
+                    LAYER_PAD_BK,
+                    LAYER_PADS_TH,
+                    LAYER_PAD_HOLEWALLS,
+                    LAYER_VIA_THROUGH,
+                    LAYER_VIA_BBLIND,
+                    LAYER_VIA_MICROVIA,
+                    LAYER_VIA_HOLEWALLS
+            };
 
     return IsCopperLayer( aLayer ) || netCopperLayers.count( aLayer );
 }

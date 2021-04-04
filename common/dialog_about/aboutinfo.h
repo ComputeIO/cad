@@ -160,13 +160,16 @@ private:
 class CONTRIBUTOR
 {
 public:
-    CONTRIBUTOR( const wxString& aName, const wxString& aExtra = wxEmptyString,
-                 const wxString& aUrl = wxEmptyString, const wxString& aCategory = wxEmptyString,
-                 wxBitmap* aIcon = NULL )
+    CONTRIBUTOR( const wxString& aName,
+                 const wxString& aExtra = wxEmptyString,
+                 const wxString& aUrl = wxEmptyString,
+                 const wxString& aCategory = wxEmptyString,
+                 wxBitmap*       aIcon = NULL )
     {
         m_checked = false;
         m_name = aName;
-        m_url = aUrl, m_extra = aExtra;
+        m_url = aUrl,
+        m_extra = aExtra;
         m_category = aCategory;
         m_icon = aIcon;
     }
@@ -177,7 +180,8 @@ public:
     {
         m_checked = false;
         m_name = aName;
-        m_url = wxEmptyString, m_extra = wxEmptyString;
+        m_url = wxEmptyString,
+        m_extra = wxEmptyString;
         m_category = aCategory;
         m_icon = aIcon;
     }
@@ -185,7 +189,7 @@ public:
     virtual ~CONTRIBUTOR() {}
 
     wxString& GetName()     { return m_name; }
-    wxString& GetExtra() { return m_extra; }
+    wxString& GetExtra()    { return m_extra; }
     wxString& GetUrl()      { return m_url; }
     wxString& GetCategory() { return m_category; }
     wxBitmap* GetIcon()     { return m_icon; }

@@ -31,8 +31,8 @@
 #include "pns_segment.h"
 #include "pns_itemset.h"
 
-namespace PNS
-{
+namespace PNS {
+
 /**
  * Represents a 2D point on a given set of layers and belonging to a certain net, that links
  * together a number of board items.
@@ -49,25 +49,28 @@ public:
     struct HASH_TAG
     {
         VECTOR2I pos;
-        int      net;
+        int net;
     };
 
     struct JOINT_TAG_HASH
     {
         std::size_t operator()( const JOINT::HASH_TAG& aP ) const
         {
-            using std::hash;
             using std::size_t;
+            using std::hash;
             using std::string;
 
-            return ( ( hash<int>()( aP.pos.x ) ^ ( hash<int>()( aP.pos.y ) << 1 ) ) >> 1 )
-                   ^ ( hash<int>()( aP.net ) << 1 );
+            return ( (hash<int>()( aP.pos.x )
+                      ^ (hash<int>()( aP.pos.y ) << 1) ) >> 1 )
+                   ^ (hash<int>()( aP.net ) << 1);
         }
     };
 
-    JOINT() : ITEM( JOINT_T ), m_locked( false ) {}
+    JOINT() :
+        ITEM( JOINT_T ), m_locked( false ) {}
 
-    JOINT( const VECTOR2I& aPos, const LAYER_RANGE& aLayers, int aNet = -1 ) : ITEM( JOINT_T )
+    JOINT( const VECTOR2I& aPos, const LAYER_RANGE& aLayers, int aNet = -1 ) :
+        ITEM( JOINT_T )
     {
         m_tag.pos = aPos;
         m_tag.net = aNet;
@@ -75,7 +78,8 @@ public:
         m_locked = false;
     }
 
-    JOINT( const JOINT& aB ) : ITEM( JOINT_T )
+    JOINT( const JOINT& aB ) :
+        ITEM( JOINT_T )
     {
         m_layers = aB.m_layers;
         m_tag.pos = aB.m_tag.pos;
@@ -85,7 +89,7 @@ public:
         m_locked = aB.m_locked;
     }
 
-    ITEM* Clone() const override
+    ITEM* Clone( ) const override
     {
         assert( false );
         return NULL;
@@ -124,7 +128,7 @@ public:
         if( m_linkedItems.Size() != 2 )
             return false;
 
-        if( m_linkedItems.Count( SEGMENT_T ) != 2 )
+        if( m_linkedItems.Count( SEGMENT_T ) != 2)
             return false;
 
         SEGMENT* seg1 = static_cast<SEGMENT*>( m_linkedItems[0] );
@@ -173,23 +177,44 @@ public:
 
 
     /// trivial accessors
-    const HASH_TAG& Tag() const { return m_tag; }
+    const HASH_TAG& Tag() const
+    {
+        return m_tag;
+    }
 
-    const VECTOR2I& Pos() const { return m_tag.pos; }
+    const VECTOR2I& Pos() const
+    {
+        return m_tag.pos;
+    }
 
-    int Net() const { return m_tag.net; }
+    int Net() const
+    {
+        return m_tag.net;
+    }
 
-    const LINKED_ITEMS& LinkList() const { return m_linkedItems.CItems(); }
+    const LINKED_ITEMS& LinkList() const
+    {
+        return m_linkedItems.CItems();
+    }
 
-    const ITEM_SET& CLinks() const { return m_linkedItems; }
+    const ITEM_SET& CLinks() const
+    {
+        return m_linkedItems;
+    }
 
-    ITEM_SET& Links() { return m_linkedItems; }
+    ITEM_SET& Links()
+    {
+        return m_linkedItems;
+    }
 
-    int LinkCount( int aMask = -1 ) const { return m_linkedItems.Count( aMask ); }
+    int LinkCount( int aMask = -1 ) const
+    {
+        return m_linkedItems.Count( aMask );
+    }
 
     void Dump() const;
 
-    bool operator==( const JOINT& rhs ) const
+    bool operator==( const JOINT& rhs )  const
     {
         return m_tag.pos == rhs.m_tag.pos && m_tag.net == rhs.m_tag.net;
     }
@@ -212,13 +237,19 @@ public:
 
     bool Overlaps( const JOINT& rhs ) const
     {
-        return m_tag.pos == rhs.m_tag.pos && m_tag.net == rhs.m_tag.net
-               && m_layers.Overlaps( rhs.m_layers );
+        return m_tag.pos == rhs.m_tag.pos &&
+            m_tag.net == rhs.m_tag.net && m_layers.Overlaps( rhs.m_layers );
     }
 
-    void Lock( bool aLock = true ) { m_locked = aLock; }
+    void Lock( bool aLock = true )
+    {
+        m_locked = aLock;
+    }
 
-    bool IsLocked() const { return m_locked; }
+    bool IsLocked() const
+    {
+        return m_locked;
+    }
 
 private:
     ///< hash tag for unordered_multimap
@@ -236,6 +267,6 @@ inline bool operator==( JOINT::HASH_TAG const& aP1, JOINT::HASH_TAG const& aP2 )
     return aP1.pos == aP2.pos && aP1.net == aP2.net;
 }
 
-} // namespace PNS
+}
 
-#endif // __PNS_JOINT_H
+#endif    // __PNS_JOINT_H

@@ -70,9 +70,11 @@ wxArrayString        g_lineStyleNames;
 
 PANEL_SETUP_NETCLASSES::PANEL_SETUP_NETCLASSES( PAGED_DIALOG* aParent, NETCLASSES* aNetclasses,
                                                 const std::vector<wxString>& aNetNames,
-                                                bool                         aIsEEschema ) :
+                                                bool aIsEEschema ) :
         PANEL_SETUP_NETCLASSES_BASE( aParent->GetTreebook() ),
-        m_Parent( aParent ), m_netclasses( aNetclasses ), m_netNames( aNetNames ),
+        m_Parent( aParent ),
+        m_netclasses( aNetclasses ),
+        m_netNames( aNetNames ),
         m_hoveredCol( -1 )
 {
     if( g_lineStyleIcons.empty() )
@@ -173,8 +175,9 @@ PANEL_SETUP_NETCLASSES::PANEL_SETUP_NETCLASSES( PAGED_DIALOG* aParent, NETCLASSE
                              NULL, this );
 
     // Handle tooltips for grid
-    m_netclassGrid->GetGridColLabelWindow()->Bind(
-            wxEVT_MOTION, &PANEL_SETUP_NETCLASSES::OnNetclassGridMouseEvent, this );
+    m_netclassGrid->GetGridColLabelWindow()->Bind( wxEVT_MOTION,
+                                                   &PANEL_SETUP_NETCLASSES::OnNetclassGridMouseEvent,
+                                                   this );
 
     m_netclassGrid->EndBatch();
     m_membershipGrid->EndBatch();
@@ -466,18 +469,18 @@ void PANEL_SETUP_NETCLASSES::OnNetclassGridMouseEvent( wxMouseEvent& aEvent )
 
         switch( col )
         {
-        case GRID_CLEARANCE: tip = _( "Minimum copper clearance" ); break;
-        case GRID_TRACKSIZE: tip = _( "Minimum track width" ); break;
-        case GRID_VIASIZE: tip = _( "Via pad diameter" ); break;
-        case GRID_VIADRILL: tip = _( "Via plated hole diameter" ); break;
-        case GRID_uVIASIZE: tip = _( "Microvia pad diameter" ); break;
-        case GRID_uVIADRILL: tip = _( "Microvia plated hole diameter" ); break;
-        case GRID_DIFF_PAIR_WIDTH: tip = _( "Differential pair track width" ); break;
-        case GRID_DIFF_PAIR_GAP: tip = _( "Differential pair gap" ); break;
-        case GRID_WIREWIDTH: tip = _( "Schematic wire thickness" ); break;
-        case GRID_BUSWIDTH: tip = _( "Bus wire thickness" ); break;
-        case GRID_SCHEMATIC_COLOR: tip = _( "Schematic wire color" ); break;
-        case GRID_LINESTYLE: tip = _( "Schematic wire line style" ); break;
+        case GRID_CLEARANCE:        tip = _( "Minimum copper clearance" );      break;
+        case GRID_TRACKSIZE:        tip = _( "Minimum track width" );           break;
+        case GRID_VIASIZE:          tip = _( "Via pad diameter" );              break;
+        case GRID_VIADRILL:         tip = _( "Via plated hole diameter" );      break;
+        case GRID_uVIASIZE:         tip = _( "Microvia pad diameter" );         break;
+        case GRID_uVIADRILL:        tip = _( "Microvia plated hole diameter" ); break;
+        case GRID_DIFF_PAIR_WIDTH:  tip = _( "Differential pair track width" ); break;
+        case GRID_DIFF_PAIR_GAP:    tip = _( "Differential pair gap" );         break;
+        case GRID_WIREWIDTH:        tip = _( "Schematic wire thickness" );      break;
+        case GRID_BUSWIDTH:         tip = _( "Bus wire thickness" );            break;
+        case GRID_SCHEMATIC_COLOR:  tip = _( "Schematic wire color" );          break;
+        case GRID_LINESTYLE:        tip = _( "Schematic wire line style" );     break;
         }
 
         m_netclassGrid->GetGridColLabelWindow()->UnsetToolTip();

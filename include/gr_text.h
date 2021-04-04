@@ -32,9 +32,7 @@
 #define __INCLUDE__DRAWTXT_H__ 1
 
 #include <eda_item.h>
-#include <eda_text.h> // EDA_TEXT_HJUSTIFY_T and EDA_TEXT_VJUSTIFY_T
-
-typedef std::function<void( int x0, int y0, int xf, int yf, void* aData )> TEXT_SEGMENT_CALLBACK;
+#include <eda_text.h>               // EDA_TEXT_HJUSTIFY_T and EDA_TEXT_VJUSTIFY_T
 
 /**
  * Minimum dimension in pixel for drawing/no drawing a text used in Pcbnew to decide to
@@ -42,7 +40,7 @@ typedef std::function<void( int x0, int y0, int xf, int yf, void* aData )> TEXT_
  *
  * When a text height is smaller than MIN_TEXT_SIZE, it is not drawn by Pcbnew.
  */
-#define MIN_TEXT_SIZE 5
+#define MIN_TEXT_SIZE   5
 
 /* Absolute minimum dimension in pixel to draw a text as text or a line
  * When a text height is smaller than MIN_DRAWABLE_TEXT_SIZE,
@@ -51,7 +49,6 @@ typedef std::function<void( int x0, int y0, int xf, int yf, void* aData )> TEXT_
 #define MIN_DRAWABLE_TEXT_SIZE 3
 
 class PLOTTER;
-class FONT;
 
 /**
  * As a rule, pen width should not be >1/4em, otherwise the character will be cluttered up in
@@ -65,9 +62,9 @@ class FONT;
  * @param aBold true if text accept bold pen size.
  * @return the max pen size allowed.
  */
-int   Clamp_Text_PenSize( int aPenSize, int aSize, bool aBold = true );
+int Clamp_Text_PenSize( int aPenSize, int aSize, bool aBold = true );
 float Clamp_Text_PenSize( float aPenSize, int aSize, bool aBold = true );
-int   Clamp_Text_PenSize( int aPenSize, wxSize aSize, bool aBold = true );
+int Clamp_Text_PenSize( int aPenSize, wxSize aSize, bool aBold = true );
 
 /**
  * @param aTextSize the char size (height or width).
@@ -112,21 +109,13 @@ int GraphicTextWidth( const wxString& aText, const wxSize& aSize, bool italic, b
  *                       This can be nullptr if no auxiliary parameter is needed.
  *  @param aPlotter = a pointer to a PLOTTER instance, when this function is used to plot
  *                    the text. NULL to draw this text.
- *  @param aFont name of font to use (nullptr for Newstroke)
  */
-void GRText( wxDC* aDC, const wxPoint& aPos, COLOR4D aColor, const wxString& aText, double aOrient,
-             const wxSize& aSize, enum EDA_TEXT_HJUSTIFY_T aH_justify,
+void GRText( wxDC* aDC, const wxPoint& aPos, COLOR4D aColor, const wxString& aText,
+             double aOrient, const wxSize& aSize, enum EDA_TEXT_HJUSTIFY_T aH_justify,
              enum EDA_TEXT_VJUSTIFY_T aV_justify, int aWidth, bool aItalic, bool aBold,
-             TEXT_SEGMENT_CALLBACK aCallback = nullptr, void* aCallbackData = nullptr,
-             PLOTTER* aPlotter = nullptr, FONT* aFont = nullptr, bool aMultilineAllowed = false );
+             void (*aCallback)( int x0, int y0, int xf, int yf, void* aData ) = nullptr,
+             void* aCallbackData = nullptr, PLOTTER* aPlotter = nullptr );
 
-
-/*
- * @param aPenWidth stroke width, ignored if aForceBold is true
- */
-void GRShowText( const EDA_TEXT* aTextItem, COLOR4D aColor, bool aForceBold = true,
-                 int aPenWidth = 0, TEXT_SEGMENT_CALLBACK aCallback = nullptr,
-                 void* aCallbackData = nullptr, wxDC* aDC = nullptr );
 
 /**
  * Draw graphic text with a border so that it can be read on different backgrounds.
@@ -134,10 +123,11 @@ void GRShowText( const EDA_TEXT* aTextItem, COLOR4D aColor, bool aForceBold = tr
  * See GRText for most of the parameters.  If \a aBgColor is a dark color text is drawn
  * in \a aColor2 with \a aColor1 border.  Otherwise colors are swapped.
  */
-void GRHaloText( wxDC* aDC, const wxPoint& aPos, COLOR4D aBgColor, COLOR4D aColor1, COLOR4D aColor2,
-                 const wxString& aText, double aOrient, const wxSize& aSize,
+void GRHaloText( wxDC* aDC, const wxPoint& aPos, COLOR4D aBgColor, COLOR4D aColor1,
+                 COLOR4D aColor2, const wxString& aText, double aOrient, const wxSize &aSize,
                  enum EDA_TEXT_HJUSTIFY_T aH_justify, enum EDA_TEXT_VJUSTIFY_T aV_justify,
-                 int aWidth, bool aItalic, bool aBold, TEXT_SEGMENT_CALLBACK aCallback = nullptr,
+                 int aWidth, bool aItalic, bool aBold,
+                 void (*aCallback)( int x0, int y0, int xf, int yf, void* aData ) = nullptr,
                  void* aCallbackData = nullptr, PLOTTER* aPlotter = nullptr );
 
 #endif /* __INCLUDE__DRAWTXT_H__ */

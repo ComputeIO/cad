@@ -27,7 +27,7 @@
 
 
 SCH_PIN::SCH_PIN( LIB_PIN* aLibPin, SCH_COMPONENT* aParentSymbol ) :
-        SCH_ITEM( aParentSymbol, SCH_PIN_T )
+    SCH_ITEM( aParentSymbol, SCH_PIN_T )
 {
     m_alt = wxEmptyString;
     m_number = aLibPin->GetNumber();
@@ -42,7 +42,7 @@ SCH_PIN::SCH_PIN( LIB_PIN* aLibPin, SCH_COMPONENT* aParentSymbol ) :
  * The LIB_PIN data will be filled in when the pin is resolved (see SCH_COMPONENT::UpdatePins).
  */
 SCH_PIN::SCH_PIN( SCH_COMPONENT* aParentSymbol, const wxString& aNumber, const wxString& aAlt ) :
-        SCH_ITEM( aParentSymbol, SCH_PIN_T )
+    SCH_ITEM( aParentSymbol, SCH_PIN_T )
 {
     m_alt = aAlt;
     m_number = aNumber;
@@ -51,7 +51,8 @@ SCH_PIN::SCH_PIN( SCH_COMPONENT* aParentSymbol, const wxString& aNumber, const w
 }
 
 
-SCH_PIN::SCH_PIN( const SCH_PIN& aPin ) : SCH_ITEM( aPin )
+SCH_PIN::SCH_PIN( const SCH_PIN& aPin ) :
+        SCH_ITEM( aPin )
 {
     m_alt = aPin.m_alt;
     m_number = aPin.m_number;
@@ -120,7 +121,7 @@ bool SCH_PIN::Matches( const wxFindReplaceData& aSearchData, void* aAuxDat ) con
         return false;
 
     return EDA_ITEM::Matches( GetName(), aSearchData )
-           || EDA_ITEM::Matches( GetNumber(), aSearchData );
+                || EDA_ITEM::Matches( GetNumber(), aSearchData );
 }
 
 
@@ -145,7 +146,8 @@ SCH_COMPONENT* SCH_PIN::GetParentSymbol() const
 
 wxString SCH_PIN::GetSelectMenuText( EDA_UNITS aUnits ) const
 {
-    return wxString::Format( "%s %s", GetParentSymbol()->GetSelectMenuText( aUnits ),
+    return wxString::Format( "%s %s",
+                             GetParentSymbol()->GetSelectMenuText( aUnits ),
                              m_libPin->GetSelectMenuText( aUnits ) );
 }
 
@@ -202,7 +204,7 @@ void SCH_PIN::GetMsgPanelInfo( EDA_DRAW_FRAME* aFrame, MSG_PANEL_ITEMS& aList )
 
     aList.emplace_back( symbol->GetRef( currentSheet ), symbol->GetValue( currentSheet, true ) );
 
-#if defined( DEBUG )
+#if defined(DEBUG)
 
     SCH_EDIT_FRAME* frame = dynamic_cast<SCH_EDIT_FRAME*>( aFrame );
 
@@ -215,6 +217,7 @@ void SCH_PIN::GetMsgPanelInfo( EDA_DRAW_FRAME* aFrame, MSG_PANEL_ITEMS& aList )
         conn->AppendInfoToMsgPanel( aList );
 
 #endif
+
 }
 
 
@@ -263,7 +266,7 @@ wxString SCH_PIN::GetDefaultNetName( const SCH_SHEET_PATH& aPath, bool aForceNoC
     name << "-Pad" << m_libPin->GetNumber() << ")";
 
     if( annotated )
-        m_net_name_map[aPath] = std::make_pair( name, aForceNoConnect );
+        m_net_name_map[ aPath ] = std::make_pair( name, aForceNoConnect );
 
     return name;
 }

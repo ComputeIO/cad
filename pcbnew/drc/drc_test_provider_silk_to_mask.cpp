@@ -42,26 +42,39 @@
 class DRC_TEST_PROVIDER_SILK_TO_MASK : public ::DRC_TEST_PROVIDER
 {
 public:
-    DRC_TEST_PROVIDER_SILK_TO_MASK() : m_board( nullptr ), m_largestClearance( 0 ) {}
+    DRC_TEST_PROVIDER_SILK_TO_MASK ():
+            m_board( nullptr ),
+            m_largestClearance( 0 )
+    {
+    }
 
-    virtual ~DRC_TEST_PROVIDER_SILK_TO_MASK() {}
+    virtual ~DRC_TEST_PROVIDER_SILK_TO_MASK()
+    {
+    }
 
     virtual bool Run() override;
 
-    virtual const wxString GetName() const override { return "silk_to_mask"; };
+    virtual const wxString GetName() const override
+    {
+        return "silk_to_mask";
+    };
 
     virtual const wxString GetDescription() const override
     {
         return "Tests for silkscreen being clipped by solder mask";
     }
 
-    virtual int GetNumPhases() const override { return 1; }
+    virtual int GetNumPhases() const override
+    {
+        return 1;
+    }
 
     virtual std::set<DRC_CONSTRAINT_T> GetConstraintTypes() const override;
 
 private:
+
     BOARD* m_board;
-    int    m_largestClearance;
+    int m_largestClearance;
 };
 
 
@@ -88,74 +101,79 @@ bool DRC_TEST_PROVIDER_SILK_TO_MASK::Run()
 
     DRC_RTREE maskTree, silkTree;
 
-    auto addMaskToTree = [&maskTree]( BOARD_ITEM* item ) -> bool
-    {
-        maskTree.Insert( item );
-        return true;
-    };
+    auto addMaskToTree =
+            [&maskTree]( BOARD_ITEM *item ) -> bool
+            {
+                maskTree.Insert( item );
+                return true;
+            };
 
-    auto addSilkToTree = [&silkTree]( BOARD_ITEM* item ) -> bool
-    {
-        silkTree.Insert( item );
-        return true;
-    };
+    auto addSilkToTree =
+            [&silkTree]( BOARD_ITEM *item ) -> bool
+            {
+                silkTree.Insert( item );
+                return true;
+            };
 
     auto checkClearance =
             [&]( const DRC_RTREE::LAYER_PAIR& aLayers, DRC_RTREE::ITEM_WITH_SHAPE* aRefItem,
                  DRC_RTREE::ITEM_WITH_SHAPE* aTestItem, bool* aCollisionDetected ) -> bool
-    {
-        if( m_drcEngine->IsErrorLimitExceeded( DRCE_SILK_MASK_CLEARANCE ) )
-            return false;
-
-        if( isInvisibleText( aRefItem->parent ) )
-            return true;
-
-        if( isInvisibleText( aTestItem->parent ) )
-            return true;
-
-        auto constraint = m_drcEngine->EvalRules( SILK_CLEARANCE_CONSTRAINT, aRefItem->parent,
-                                                  aTestItem->parent, aLayers.first );
-
-        int minClearance = constraint.GetValue().Min();
-
-        if( minClearance < 0 )
-            return true;
-
-        int      actual;
-        VECTOR2I pos;
-
-        if( aRefItem->shape->Collide( aTestItem->shape, minClearance, &actual, &pos ) )
-        {
-            std::shared_ptr<DRC_ITEM> drce = DRC_ITEM::Create( DRCE_SILK_MASK_CLEARANCE );
-
-            if( minClearance > 0 )
             {
-                m_msg.Printf( _( "(%s clearance %s; actual %s)" ), constraint.GetName(),
-                              MessageTextFromValue( userUnits(), minClearance ),
-                              MessageTextFromValue( userUnits(), actual ) );
+                if( m_drcEngine->IsErrorLimitExceeded( DRCE_SILK_MASK_CLEARANCE ) )
+                    return false;
 
-                drce->SetErrorMessage( drce->GetErrorText() + wxS( " " ) + m_msg );
-            }
+                if( isInvisibleText( aRefItem->parent ) )
+                    return true;
 
-            drce->SetItems( aRefItem->parent, aTestItem->parent );
-            drce->SetViolatingRule( constraint.GetParentRule() );
+                if( isInvisibleText( aTestItem->parent ) )
+                    return true;
 
-            reportViolation( drce, (wxPoint) pos );
+                auto constraint = m_drcEngine->EvalRules( SILK_CLEARANCE_CONSTRAINT,
+                                                          aRefItem->parent, aTestItem->parent,
+                                                          aLayers.first );
 
-            *aCollisionDetected = true;
-        }
+                int minClearance = constraint.GetValue().Min();
 
-        return true;
-    };
+                if( minClearance < 0 )
+                    return true;
+
+                int      actual;
+                VECTOR2I pos;
+
+                if( aRefItem->shape->Collide( aTestItem->shape, minClearance, &actual, &pos ) )
+                {
+                    std::shared_ptr<DRC_ITEM> drce = DRC_ITEM::Create( DRCE_SILK_MASK_CLEARANCE );
+
+                    if( minClearance > 0 )
+                    {
+                        m_msg.Printf( _( "(%s clearance %s; actual %s)" ),
+                                      constraint.GetName(),
+                                      MessageTextFromValue( userUnits(), minClearance ),
+                                      MessageTextFromValue( userUnits(), actual ) );
+
+                        drce->SetErrorMessage( drce->GetErrorText() + wxS( " " ) + m_msg );
+                    }
+
+                    drce->SetItems( aRefItem->parent, aTestItem->parent );
+                    drce->SetViolatingRule( constraint.GetParentRule() );
+
+                    reportViolation( drce, (wxPoint) pos );
+
+                    *aCollisionDetected = true;
+                }
+
+                return true;
+            };
 
     int numMask = forEachGeometryItem( s_allBasicItems, LSET( 2, F_Mask, B_Mask ), addMaskToTree );
-    int numSilk =
-            forEachGeometryItem( s_allBasicItems, LSET( 2, F_SilkS, B_SilkS ), addSilkToTree );
+    int numSilk = forEachGeometryItem( s_allBasicItems, LSET( 2, F_SilkS, B_SilkS ), addSilkToTree );
 
-    reportAux( _( "Testing %d mask apertures against %d silkscreen features." ), numMask, numSilk );
+    reportAux( _("Testing %d mask apertures against %d silkscreen features."), numMask, numSilk );
 
-    const std::vector<DRC_RTREE::LAYER_PAIR> layerPairs = {
-        DRC_RTREE::LAYER_PAIR( F_SilkS, F_Mask ), DRC_RTREE::LAYER_PAIR( B_SilkS, B_Mask )
+    const std::vector<DRC_RTREE::LAYER_PAIR> layerPairs =
+    {
+        DRC_RTREE::LAYER_PAIR( F_SilkS, F_Mask ),
+        DRC_RTREE::LAYER_PAIR( B_SilkS, B_Mask )
     };
 
     // This is the number of tests between 2 calls to the progress bar
@@ -181,5 +199,5 @@ std::set<DRC_CONSTRAINT_T> DRC_TEST_PROVIDER_SILK_TO_MASK::GetConstraintTypes() 
 
 namespace detail
 {
-static DRC_REGISTER_TEST_PROVIDER<DRC_TEST_PROVIDER_SILK_TO_MASK> dummy;
+    static DRC_REGISTER_TEST_PROVIDER<DRC_TEST_PROVIDER_SILK_TO_MASK> dummy;
 }

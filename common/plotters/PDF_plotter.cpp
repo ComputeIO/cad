@@ -879,3 +879,4 @@ void PDF_PLOTTER::Text( const wxPoint&              aPos,
     PLOTTER::Text( aPos, aColor, aText, aOrient, aSize, aH_justify, aV_justify, aWidth,
                    aItalic, aBold, aMultilineAllowed, aFont, aData );
 }
+

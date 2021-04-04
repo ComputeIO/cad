@@ -85,34 +85,58 @@ public:
     bool UpdateNetlist( NETLIST& aNetlist );
 
     ///< Set the reporter object.
-    void SetReporter( REPORTER* aReporter ) { m_reporter = aReporter; }
+    void SetReporter( REPORTER* aReporter )
+    {
+        m_reporter = aReporter;
+    }
 
     ///< Enable "delete single pad nets" option.
-    void SetDeleteSinglePadNets( bool aEnabled ) { m_deleteSinglePadNets = aEnabled; }
+    void SetDeleteSinglePadNets( bool aEnabled )
+    {
+        m_deleteSinglePadNets = aEnabled;
+    }
 
     ///< Enable warning option if a connectable pad is not found in netlist
     ///< connectable = pad with a name and on a copper layer.
-    void SetWarnPadNoNetInNetlist( bool aEnabled ) { m_warnForNoNetPads = aEnabled; }
+    void SetWarnPadNoNetInNetlist( bool aEnabled )
+    {
+        m_warnForNoNetPads = aEnabled;
+    }
 
     ///< Enable dry run mode (just report, no changes to PCB).
-    void SetIsDryRun( bool aEnabled ) { m_isDryRun = aEnabled; }
+    void SetIsDryRun( bool aEnabled )
+    {
+        m_isDryRun = aEnabled;
+    }
 
     ///< Enable replacing footprints with new ones.
-    void SetReplaceFootprints( bool aEnabled ) { m_replaceFootprints = aEnabled; }
+    void SetReplaceFootprints( bool aEnabled )
+    {
+        m_replaceFootprints = aEnabled;
+    }
 
     ///< Enable removing unused components.
-    void SetDeleteUnusedComponents( bool aEnabled ) { m_deleteUnusedComponents = aEnabled; }
+    void SetDeleteUnusedComponents( bool aEnabled )
+    {
+        m_deleteUnusedComponents = aEnabled;
+    }
 
     ///< Enable component lookup by timestamp instead of reference.
-    void SetLookupByTimestamp( bool aEnabled ) { m_lookupByTimestamp = aEnabled; }
+    void SetLookupByTimestamp( bool aEnabled )
+    {
+        m_lookupByTimestamp = aEnabled;
+    }
 
-    std::vector<FOOTPRINT*> GetAddedComponents() const { return m_addedComponents; }
+    std::vector<FOOTPRINT*> GetAddedComponents() const
+    {
+        return m_addedComponents;
+    }
 
 private:
-    void     cacheNetname( PAD* aPad, const wxString& aNetname );
+    void cacheNetname( PAD* aPad, const wxString& aNetname );
     wxString getNetname( PAD* aPad );
 
-    void     cachePinFunction( PAD* aPad, const wxString& aPinFunction );
+    void cachePinFunction( PAD* aPad, const wxString& aPinFunction );
     wxString getPinFunction( PAD* aPad );
 
     wxPoint estimateComponentInsertionPosition();
@@ -153,12 +177,12 @@ private:
     bool m_isDryRun;
     bool m_replaceFootprints;
     bool m_lookupByTimestamp;
-    bool m_warnForNoNetPads; // Warn if a connectable pad has no net in netlist (not found).
+    bool m_warnForNoNetPads;    // Warn if a connectable pad has no net in netlist (not found).
 
     int m_warningCount;
     int m_errorCount;
-    int m_newFootprintsCount; // the count of new footprints
-                              // either really new or replaced by new fp.
+    int m_newFootprintsCount;   // the count of new footprints
+                                // either really new or replaced by new fp.
 };
 
 #endif

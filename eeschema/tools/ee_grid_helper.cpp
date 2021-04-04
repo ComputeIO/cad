@@ -34,7 +34,8 @@
 #include "ee_grid_helper.h"
 
 
-EE_GRID_HELPER::EE_GRID_HELPER( TOOL_MANAGER* aToolMgr ) : GRID_HELPER( aToolMgr )
+EE_GRID_HELPER::EE_GRID_HELPER( TOOL_MANAGER* aToolMgr ) :
+    GRID_HELPER( aToolMgr )
 {
     KIGFX::VIEW* view = m_toolMgr->GetView();
 
@@ -172,6 +173,7 @@ VECTOR2I EE_GRID_HELPER::BestSnapAnchor( const VECTOR2I& aOrigin, int aLayer,
 
     if( m_enableSnap && nearest && nearest->Distance( aOrigin ) < snapDist.EuclideanNorm() )
     {
+
         if( canUseGrid() && ( nearestGrid - aOrigin ).EuclideanNorm() < snapDist.EuclideanNorm() )
         {
             pt = nearestGrid;
@@ -234,7 +236,7 @@ SCH_ITEM* EE_GRID_HELPER::GetSnapped() const
 }
 
 
-std::set<SCH_ITEM*> EE_GRID_HELPER::queryVisible( const BOX2I&        aArea,
+std::set<SCH_ITEM*> EE_GRID_HELPER::queryVisible( const BOX2I& aArea,
                                                   const EE_SELECTION& aSkipList ) const
 {
     std::set<SCH_ITEM*>                       items;
@@ -250,7 +252,7 @@ std::set<SCH_ITEM*> EE_GRID_HELPER::queryVisible( const BOX2I&        aArea,
 
         // The item must be visible and on an active layer
         if( view->IsVisible( item ) && item->ViewGetLOD( it.second, view ) < view->GetScale() )
-            items.insert( item );
+            items.insert ( item );
     }
 
     for( EDA_ITEM* skipItem : aSkipList )
@@ -260,23 +262,25 @@ std::set<SCH_ITEM*> EE_GRID_HELPER::queryVisible( const BOX2I&        aArea,
 }
 
 
-void EE_GRID_HELPER::computeAnchors( SCH_ITEM* aItem, const VECTOR2I& aRefPos, bool aFrom )
+void EE_GRID_HELPER::computeAnchors( SCH_ITEM *aItem, const VECTOR2I &aRefPos, bool aFrom )
 {
-    switch( aItem->Type() )
+    switch ( aItem->Type() )
     {
     case SCH_COMPONENT_T:
-    case SCH_SHEET_T: addAnchor( aItem->GetPosition(), ORIGIN, aItem ); KI_FALLTHROUGH;
+        case SCH_SHEET_T:
+        addAnchor( aItem->GetPosition(), ORIGIN, aItem );
+        KI_FALLTHROUGH;
     case SCH_JUNCTION_T:
-    case SCH_NO_CONNECT_T:
-    case SCH_LINE_T:
-    case SCH_GLOBAL_LABEL_T:
-    case SCH_HIER_LABEL_T:
-    case SCH_LABEL_T:
-    case SCH_BUS_WIRE_ENTRY_T:
-    {
+        case SCH_NO_CONNECT_T:
+        case SCH_LINE_T:
+        case SCH_GLOBAL_LABEL_T:
+        case SCH_HIER_LABEL_T:
+        case SCH_LABEL_T:
+        case SCH_BUS_WIRE_ENTRY_T:
+        {
         std::vector<wxPoint> pts = aItem->GetConnectionPoints();
 
-        for( const wxPoint& pt : pts )
+        for( const wxPoint &pt : pts )
             addAnchor( VECTOR2I( pt ), SNAPPABLE | CORNER, aItem );
 
         break;
@@ -294,18 +298,17 @@ void EE_GRID_HELPER::computeAnchors( SCH_ITEM* aItem, const VECTOR2I& aRefPos, b
         {
             VECTOR2I possible( line->GetStartPoint().x, pt.y );
 
-            if( TestSegmentHit( wxPoint( possible ), line->GetStartPoint(), line->GetEndPoint(),
-                                0 ) )
+            if( TestSegmentHit( wxPoint( possible ), line->GetStartPoint(), line->GetEndPoint(), 0 ) )
                 addAnchor( possible, SNAPPABLE | VERTICAL, aItem );
         }
         else if( line->GetStartPoint().y == line->GetEndPoint().y )
         {
             VECTOR2I possible( pt.x, line->GetStartPoint().y );
 
-            if( TestSegmentHit( wxPoint( possible ), line->GetStartPoint(), line->GetEndPoint(),
-                                0 ) )
+            if( TestSegmentHit( wxPoint( possible ), line->GetStartPoint(), line->GetEndPoint(), 0 ) )
                 addAnchor( possible, SNAPPABLE | HORIZONTAL, aItem );
         }
+
     }
 }
 

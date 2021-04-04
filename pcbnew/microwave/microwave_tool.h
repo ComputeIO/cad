@@ -45,8 +45,8 @@ struct MICROWAVE_INDUCTOR_PATTERN
 public:
     wxPoint m_Start;
     wxPoint m_End;
-    int     m_Length; // full length trace.
-    int     m_Width;  // Trace width.
+    int     m_Length;       // full length trace.
+    int     m_Width;        // Trace width.
 };
 
 
@@ -93,7 +93,7 @@ private:
      * Create an S-shaped coil footprint for microwave applications.
      */
     FOOTPRINT* createMicrowaveInductor( MICROWAVE_INDUCTOR_PATTERN& aPattern,
-                                        wxString&                   aErrorMessage );
+                                        wxString& aErrorMessage );
 
     /**
      * Create a basic footprint for micro wave applications.

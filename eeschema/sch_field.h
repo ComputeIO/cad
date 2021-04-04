@@ -34,7 +34,7 @@
 class SCH_EDIT_FRAME;
 class SCH_COMPONENT;
 class LIB_FIELD;
-class FONT;
+
 
 /**
  * Instances are attached to a symbol or sheet and provide a place for the component's value,
@@ -115,7 +115,7 @@ public:
 
     void SetId( int aId );
 
-    wxString GetShownText( int aDepth = 0, FONT** aFont = nullptr ) const override;
+    wxString GetShownText( int aDepth = 0 ) const override;
 
     const EDA_RECT GetBoundingBox() const override;
 

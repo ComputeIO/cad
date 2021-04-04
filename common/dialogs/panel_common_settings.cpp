@@ -141,8 +141,8 @@ bool PANEL_COMMON_SETTINGS::TransferDataFromWindow()
 
     commonSettings->m_Appearance.use_icons_in_menus = m_checkBoxIconsInMenus->GetValue();
 
-    commonSettings->m_Input.immediate_actions = !m_NonImmediateActions->GetValue();
-    commonSettings->m_Input.warp_mouse_on_move = m_warpMouseOnMove->GetValue();
+    commonSettings->m_Input.immediate_actions   = !m_NonImmediateActions->GetValue();
+    commonSettings->m_Input.warp_mouse_on_move  = m_warpMouseOnMove->GetValue();
 
     commonSettings->m_Backup.enabled            = m_cbBackupEnabled->GetValue();
     commonSettings->m_Backup.backup_on_autosave = m_cbBackupAutosave->GetValue();

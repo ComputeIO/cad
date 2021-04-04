@@ -296,7 +296,7 @@ bool test::DRC_TEST_PROVIDER_DIFF_PAIR_COUPLING::Run()
 
                     for( int i = 0; i < 2; i++ )
                     {
-                        auto constraint = m_drcEngine->EvalRules( constraintsToCheck[i], item,
+                        auto constraint = m_drcEngine->EvalRules( constraintsToCheck[ i ], item,
                                                                   nullptr, item->GetLayer() );
 
                         if( constraint.IsNull() )

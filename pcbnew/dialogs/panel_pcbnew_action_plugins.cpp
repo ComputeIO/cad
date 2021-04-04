@@ -34,9 +34,7 @@
 #include <python_scripting.h>
 #else
 // Dummy functions, actually defined in python_scripting.h when KICAD_SCRIPTING is enabled
-static void pcbnewGetWizardsBackTrace( wxString& aText )
-{
-}
+static void pcbnewGetWizardsBackTrace( wxString& aText ) {}
 #endif
 
 #define GRID_CELL_MARGIN 4

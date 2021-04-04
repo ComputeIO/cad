@@ -53,8 +53,12 @@
 #include <kiplatform/ui.h>
 
 DIALOG_ERC::DIALOG_ERC( SCH_EDIT_FRAME* parent ) :
-        DIALOG_ERC_BASE( parent ), PROGRESS_REPORTER( 1 ), m_parent( parent ), m_running( false ),
-        m_ercRun( false ), m_severities( RPT_SEVERITY_ERROR | RPT_SEVERITY_WARNING )
+        DIALOG_ERC_BASE( parent ),
+        PROGRESS_REPORTER( 1 ),
+        m_parent( parent ),
+        m_running( false ),
+        m_ercRun( false ),
+        m_severities( RPT_SEVERITY_ERROR | RPT_SEVERITY_WARNING )
 {
     EESCHEMA_SETTINGS* settings = dynamic_cast<EESCHEMA_SETTINGS*>( Kiface().KifaceSettings() );
     m_severities = settings->m_Appearance.erc_severities;
@@ -85,17 +89,17 @@ DIALOG_ERC::DIALOG_ERC( SCH_EDIT_FRAME* parent ) :
     if( m_parent->CheckAnnotate( []( ERCE_T, const wxString&, SCH_REFERENCE*,
                                      SCH_REFERENCE* ) {} ) )
     {
-        wxHyperlinkCtrl* button = new wxHyperlinkCtrl(
-                m_infoBar, wxID_ANY, _( "Show Annotation dialog" ), wxEmptyString );
+        wxHyperlinkCtrl* button = new wxHyperlinkCtrl( m_infoBar, wxID_ANY,
+                                                       _("Show Annotation dialog"),
+                                                       wxEmptyString );
 
-        button->Bind( wxEVT_COMMAND_HYPERLINK,
-                      std::function<void( wxHyperlinkEvent & aEvent )>(
-                              [&]( wxHyperlinkEvent& aEvent )
-                              {
-                                  wxHtmlLinkEvent htmlEvent( aEvent.GetId(),
-                                                             wxHtmlLinkInfo( aEvent.GetURL() ) );
-                                  OnLinkClicked( htmlEvent );
-                              } ) );
+        button->Bind( wxEVT_COMMAND_HYPERLINK, std::function<void( wxHyperlinkEvent& aEvent )>(
+                      [&]( wxHyperlinkEvent& aEvent )
+                      {
+                          wxHtmlLinkEvent htmlEvent( aEvent.GetId(),
+                                                     wxHtmlLinkInfo( aEvent.GetURL() ) );
+                          OnLinkClicked( htmlEvent );
+                      } ) );
 
         m_infoBar->RemoveAllButtons();
         m_infoBar->AddButton( button );
@@ -189,8 +193,7 @@ void DIALOG_ERC::OnEraseDrcMarkersClick( wxCommandEvent& event )
     {
         wxMessageDialog dlg( this, _( "Delete exclusions too?" ), _( "Delete All Markers" ),
                              wxYES_NO | wxCANCEL | wxCENTER | wxICON_QUESTION );
-        dlg.SetYesNoLabels( _( "Errors and Warnings Only" ),
-                            _( "Errors, Warnings and Exclusions" ) );
+        dlg.SetYesNoLabels( _( "Errors and Warnings Only" ) , _( "Errors, Warnings and Exclusions" ) );
 
         int ret = dlg.ShowModal();
 
@@ -266,9 +269,9 @@ void DIALOG_ERC::OnRunERCClick( wxCommandEvent& event )
     m_parent->RecordERCExclusions();
     deleteAllMarkers( true );
 
-    m_notebook->ChangeSelection( 0 ); // Display the "Tests Running..." tab
+    m_notebook->ChangeSelection( 0 );   // Display the "Tests Running..." tab
     m_messages->Clear();
-    wxYield(); // Allow time slice to refresh Messages
+    wxYield();                          // Allow time slice to refresh Messages
 
     m_running = true;
     m_sdbSizer1Cancel->SetLabel( _( "Cancel" ) );
@@ -305,7 +308,7 @@ void DIALOG_ERC::OnRunERCClick( wxCommandEvent& event )
         m_messages->Report( _( "ERC completed.<br><br>" ), RPT_SEVERITY_INFO );
 
     Raise();
-    wxYield(); // Allow time slice to refresh Messages
+    wxYield();                                    // Allow time slice to refresh Messages
 
     m_running = false;
     m_sdbSizer1Cancel->SetLabel( _( "Close" ) );
@@ -342,9 +345,9 @@ void DIALOG_ERC::testErc()
     // Build the whole sheet list in hierarchy (sheet, not screen)
     sch->GetSheets().AnnotatePowerSymbols();
 
-    SCH_SCREENS   screens( sch->Root() );
+    SCH_SCREENS screens( sch->Root() );
     ERC_SETTINGS& settings = sch->ErcSettings();
-    ERC_TESTER    tester( sch );
+    ERC_TESTER tester( sch );
 
     // Test duplicate sheet names inside a given sheet.  While one can have multiple references
     // to the same file, each must have a unique name.
@@ -425,9 +428,9 @@ void DIALOG_ERC::testErc()
 
 void DIALOG_ERC::OnERCItemSelected( wxDataViewEvent& aEvent )
 {
-    const KIID&    itemID = RC_TREE_MODEL::ToUUID( aEvent.GetItem() );
-    SCH_SHEET_PATH sheet;
-    SCH_ITEM*      item = m_parent->Schematic().GetSheets().GetItem( itemID, &sheet );
+    const KIID&     itemID = RC_TREE_MODEL::ToUUID( aEvent.GetItem() );
+    SCH_SHEET_PATH  sheet;
+    SCH_ITEM*       item = m_parent->Schematic().GetSheets().GetItem( itemID, &sheet );
 
     if( item && item->GetClass() != wxT( "DELETED_SHEET_ITEM" ) )
     {
@@ -474,16 +477,16 @@ void DIALOG_ERC::OnERCItemRClick( wxDataViewEvent& aEvent )
 
     ERC_SETTINGS& settings = m_parent->Schematic().ErcSettings();
 
-    std::shared_ptr<RC_ITEM> rcItem = node->m_RcItem;
-    wxString                 listName;
-    wxMenu                   menu;
-    wxString                 msg;
+    std::shared_ptr<RC_ITEM>  rcItem = node->m_RcItem;
+    wxString  listName;
+    wxMenu    menu;
+    wxString  msg;
 
     switch( settings.GetSeverity( rcItem->GetErrorCode() ) )
     {
-    case RPT_SEVERITY_ERROR: listName = _( "errors" ); break;
-    case RPT_SEVERITY_WARNING: listName = _( "warnings" ); break;
-    default: listName = _( "appropriate" ); break;
+    case RPT_SEVERITY_ERROR:   listName = _( "errors" );      break;
+    case RPT_SEVERITY_WARNING: listName = _( "warnings" );    break;
+    default:                   listName = _( "appropriate" ); break;
     }
 
     if( rcItem->GetParent()->IsExcluded() )
@@ -506,16 +509,14 @@ void DIALOG_ERC::OnERCItemRClick( wxDataViewEvent& aEvent )
     }
     else if( settings.GetSeverity( rcItem->GetErrorCode() ) == RPT_SEVERITY_WARNING )
     {
-        menu.Append( 4,
-                     wxString::Format( _( "Change severity to Error for all '%s' violations" ),
-                                       rcItem->GetErrorText() ),
+        menu.Append( 4, wxString::Format( _( "Change severity to Error for all '%s' violations" ),
+                                          rcItem->GetErrorText() ),
                      _( "Violation severities can also be edited in the Board Setup... dialog" ) );
     }
     else
     {
-        menu.Append( 5,
-                     wxString::Format( _( "Change severity to Warning for all '%s' violations" ),
-                                       rcItem->GetErrorText() ),
+        menu.Append( 5, wxString::Format( _( "Change severity to Warning for all '%s' violations" ),
+                                          rcItem->GetErrorText() ),
                      _( "Violation severities can also be edited in the Board Setup... dialog" ) );
     }
 
@@ -553,7 +554,7 @@ void DIALOG_ERC::OnERCItemRClick( wxDataViewEvent& aEvent )
             modified = true;
         }
     }
-    break;
+        break;
 
     case 2:
     {
@@ -573,7 +574,7 @@ void DIALOG_ERC::OnERCItemRClick( wxDataViewEvent& aEvent )
             modified = true;
         }
     }
-    break;
+        break;
 
     case 4:
         settings.SetSeverity( rcItem->GetErrorCode(), RPT_SEVERITY_ERROR );
@@ -621,11 +622,15 @@ void DIALOG_ERC::OnERCItemRClick( wxDataViewEvent& aEvent )
         static_cast<RC_TREE_MODEL*>( aEvent.GetModel() )->SetProvider( m_markerProvider );
         modified = true;
     }
-    break;
+        break;
 
-    case 7: m_parent->ShowSchematicSetupDialog( _( "Pin Conflicts Map" ) ); break;
+    case 7:
+        m_parent->ShowSchematicSetupDialog( _( "Pin Conflicts Map" ) );
+        break;
 
-    case 8: m_parent->ShowSchematicSetupDialog( _( "Violation Severity" ) ); break;
+    case 8:
+        m_parent->ShowSchematicSetupDialog( _( "Violation Severity" ) );
+        break;
     }
 
     if( modified )
@@ -747,8 +752,8 @@ void DIALOG_ERC::OnSaveReport( wxCommandEvent& aEvent )
 
     if( writeReport( fn.GetFullPath() ) )
     {
-        m_messages->Report(
-                wxString::Format( _( "Report file '%s' created\n" ), fn.GetFullPath() ) );
+        m_messages->Report( wxString::Format( _( "Report file '%s' created\n" ),
+                                              fn.GetFullPath() ) );
     }
     else
     {
@@ -778,7 +783,7 @@ bool DIALOG_ERC::writeReport( const wxString& aFullFileName )
 
     ERC_SETTINGS& settings = m_parent->Schematic().ErcSettings();
 
-    for( unsigned i = 0; i < sheetList.size(); i++ )
+    for( unsigned i = 0;  i < sheetList.size(); i++ )
     {
         msg << wxString::Format( _( "\n***** Sheet %s\n" ), sheetList[i].PathHumanReadable() );
 
@@ -795,17 +800,17 @@ bool DIALOG_ERC::writeReport( const wxString& aFullFileName )
 
             switch( severity )
             {
-            case RPT_SEVERITY_ERROR: err_count++; break;
+            case RPT_SEVERITY_ERROR:   err_count++;  break;
             case RPT_SEVERITY_WARNING: warn_count++; break;
-            default: break;
+            default:                                 break;
             }
 
             msg << marker->GetRCItem()->ShowReport( GetUserUnits(), severity, itemMap );
         }
     }
 
-    msg << wxString::Format( _( "\n ** ERC messages: %d  Errors %d  Warnings %d\n" ), total_count,
-                             err_count, warn_count );
+    msg << wxString::Format( _( "\n ** ERC messages: %d  Errors %d  Warnings %d\n" ),
+                             total_count, err_count, warn_count );
 
     // Currently: write report using UTF8 (as usual in Kicad).
     // TODO: see if we can use the current encoding page (mainly for Windows users),
@@ -816,3 +821,5 @@ bool DIALOG_ERC::writeReport( const wxString& aFullFileName )
 
     return true;
 }
+
+

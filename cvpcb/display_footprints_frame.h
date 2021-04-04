@@ -90,8 +90,7 @@ public:
     /**
      * Does nothing in CvPcb but defined because it is a pure virtual in #PCB_BASE_FRAME.
      */
-    void SaveCopyInUndoList( EDA_ITEM* aItemToCopy,
-                             UNDO_REDO aTypeCommand = UNDO_REDO::UNSPECIFIED ) override
+    void SaveCopyInUndoList( EDA_ITEM* aItemToCopy, UNDO_REDO aTypeCommand = UNDO_REDO::UNSPECIFIED ) override
     {
     }
 

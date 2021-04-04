@@ -48,7 +48,9 @@ class IMPORTED_LINE : public IMPORTED_SHAPE
 {
 public:
     IMPORTED_LINE( const VECTOR2D& aStart, const VECTOR2D& aEnd, double aWidth ) :
-            m_start( aStart ), m_end( aEnd ), m_width( aWidth )
+            m_start( aStart ),
+            m_end( aEnd ),
+            m_width( aWidth )
     {
     }
 
@@ -87,7 +89,10 @@ class IMPORTED_CIRCLE : public IMPORTED_SHAPE
 {
 public:
     IMPORTED_CIRCLE( const VECTOR2D& aCenter, double aRadius, double aWidth, bool aFilled ) :
-            m_center( aCenter ), m_radius( aRadius ), m_width( aWidth ), m_filled( aFilled )
+            m_center( aCenter ),
+            m_radius( aRadius ),
+            m_width( aWidth ),
+            m_filled( aFilled )
     {
     }
 
@@ -101,7 +106,10 @@ public:
         return std::make_unique<IMPORTED_CIRCLE>( *this );
     }
 
-    void Translate( const VECTOR2D& aVec ) override { m_center += aVec; }
+    void Translate( const VECTOR2D& aVec ) override
+    {
+        m_center += aVec;
+    }
 
     void Scale( double scaleX, double scaleY ) override
     {
@@ -123,8 +131,11 @@ private:
 class IMPORTED_ARC : public IMPORTED_SHAPE
 {
 public:
-    IMPORTED_ARC( const VECTOR2D& aCenter, const VECTOR2D& aStart, double aAngle, double aWidth ) :
-            m_center( aCenter ), m_start( aStart ), m_angle( aAngle ), m_width( aWidth )
+    IMPORTED_ARC( const VECTOR2D& aCenter, const VECTOR2D& aStart, double aAngle, double aWidth )  :
+            m_center( aCenter ),
+            m_start( aStart ),
+            m_angle( aAngle ),
+            m_width( aWidth )
     {
     }
 
@@ -164,8 +175,9 @@ private:
 class IMPORTED_POLYGON : public IMPORTED_SHAPE
 {
 public:
-    IMPORTED_POLYGON( const std::vector<VECTOR2D>& aVertices, double aWidth ) :
-            m_vertices( aVertices ), m_width( aWidth )
+    IMPORTED_POLYGON( const std::vector< VECTOR2D >& aVertices, double aWidth ) :
+            m_vertices( aVertices ),
+            m_width( aWidth )
     {
     }
 
@@ -198,7 +210,7 @@ public:
 
 private:
     std::vector<VECTOR2D> m_vertices;
-    double                m_width;
+    double                      m_width;
 };
 
 
@@ -208,16 +220,21 @@ public:
     IMPORTED_TEXT( const VECTOR2D& aOrigin, const wxString& aText, double aHeight, double aWidth,
                    double aThickness, double aOrientation, EDA_TEXT_HJUSTIFY_T aHJustify,
                    EDA_TEXT_VJUSTIFY_T aVJustify ) :
-            m_origin( aOrigin ),
-            m_text( aText ), m_height( aHeight ), m_width( aWidth ), m_thickness( aThickness ),
-            m_orientation( aOrientation ), m_hJustify( aHJustify ), m_vJustify( aVJustify )
+        m_origin( aOrigin ),
+        m_text( aText ),
+        m_height( aHeight ),
+        m_width( aWidth ),
+        m_thickness( aThickness ),
+        m_orientation( aOrientation ),
+        m_hJustify( aHJustify ),
+        m_vJustify( aVJustify )
     {
     }
 
     void ImportTo( GRAPHICS_IMPORTER& aImporter ) const override
     {
-        aImporter.AddText( m_origin, m_text, m_height, m_width, m_thickness, m_orientation,
-                           m_hJustify, m_vJustify );
+        aImporter.AddText( m_origin, m_text, m_height, m_width,
+                    m_thickness, m_orientation, m_hJustify, m_vJustify );
     }
 
     virtual std::unique_ptr<IMPORTED_SHAPE> clone() const override
@@ -225,7 +242,10 @@ public:
         return std::make_unique<IMPORTED_TEXT>( *this );
     }
 
-    void Translate( const VECTOR2D& aVec ) override { m_origin += aVec; }
+    void Translate( const VECTOR2D& aVec ) override
+    {
+        m_origin += aVec;
+    }
 
     void Scale( double scaleX, double scaleY ) override
     {
@@ -250,9 +270,11 @@ class IMPORTED_SPLINE : public IMPORTED_SHAPE
 public:
     IMPORTED_SPLINE( const VECTOR2D& aStart, const VECTOR2D& aBezierControl1,
                      const VECTOR2D& aBezierControl2, const VECTOR2D& aEnd, double aWidth ) :
-            m_start( aStart ),
-            m_bezierControl1( aBezierControl1 ), m_bezierControl2( aBezierControl2 ), m_end( aEnd ),
-            m_width( aWidth )
+        m_start( aStart ),
+        m_bezierControl1( aBezierControl1 ),
+        m_bezierControl2( aBezierControl2 ),
+        m_end( aEnd ),
+        m_width( aWidth )
     {
     }
 
@@ -305,23 +327,26 @@ public:
     void AddArc( const VECTOR2D& aCenter, const VECTOR2D& aStart, double aAngle,
                  double aWidth ) override;
 
-    void AddPolygon( const std::vector<VECTOR2D>& aVertices, double aWidth ) override;
+    void AddPolygon( const std::vector< VECTOR2D >& aVertices, double aWidth ) override;
 
-    void AddText( const VECTOR2D& aOrigin, const wxString& aText, double aHeight, double aWidth,
-                  double aThickness, double aOrientation, EDA_TEXT_HJUSTIFY_T aHJustify,
-                  EDA_TEXT_VJUSTIFY_T aVJustify ) override;
+    void AddText( const VECTOR2D& aOrigin, const wxString& aText,
+                  double aHeight, double aWidth, double aThickness, double aOrientation,
+                  EDA_TEXT_HJUSTIFY_T aHJustify, EDA_TEXT_VJUSTIFY_T aVJustify ) override;
 
     void AddSpline( const VECTOR2D& aStart, const VECTOR2D& BezierControl1,
-                    const VECTOR2D& BezierControl2, const VECTOR2D& aEnd, double aWidth ) override;
+                    const VECTOR2D& BezierControl2, const VECTOR2D& aEnd , double aWidth ) override;
 
     void ImportTo( GRAPHICS_IMPORTER& aImporter );
     void AddShape( std::unique_ptr<IMPORTED_SHAPE>& aShape );
 
-    std::list<std::unique_ptr<IMPORTED_SHAPE>>& GetShapes() { return m_shapes; }
+    std::list<std::unique_ptr<IMPORTED_SHAPE>>& GetShapes()
+    {
+        return m_shapes;
+    }
 
 protected:
     ///< List of imported shapes
-    std::list<std::unique_ptr<IMPORTED_SHAPE>> m_shapes;
+    std::list< std::unique_ptr< IMPORTED_SHAPE > > m_shapes;
 };
 
 #endif /* GRAPHICS_IMPORTER_BUFFER */

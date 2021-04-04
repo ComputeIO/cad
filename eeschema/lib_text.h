@@ -61,7 +61,7 @@ public:
 
     bool HitTest( const EDA_RECT& aRect, bool aContained, int aAccuracy = 0 ) const override
     {
-        if( m_flags & ( STRUCT_DELETED | SKIP_STRUCT ) )
+        if( m_flags & (STRUCT_DELETED | SKIP_STRUCT ) )
             return false;
 
         EDA_RECT rect = aRect;

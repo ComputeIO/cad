@@ -178,12 +178,12 @@ public:
      * @param aIu2GbrMacroUnit is the scaling factor from coordinates value to
      * the Gerber file macros units (always mm or inches)
      */
-    void Format( FILE* aOutput, double aIu2GbrMacroUnit );
+    void Format( FILE * aOutput, double aIu2GbrMacroUnit );
 
-    int CornersCount() const { return (int) m_Corners.size(); }
+    int CornersCount() const { return (int)m_Corners.size(); }
 
     std::vector<wxPoint> m_Corners;
-    int                  m_Id;
+    int m_Id;
 };
 
 
@@ -194,7 +194,7 @@ public:
 
     void ClearList() { m_AMList.clear(); }
 
-    int AmCount() const { return (int) m_AMList.size(); }
+    int AmCount() const { return (int)m_AMList.size(); }
 
     /**
      * append a new APER_MACRO_FREEPOLY containing the polygon aPolygon to the current list
@@ -214,7 +214,7 @@ public:
      * @param aIu2GbrMacroUnit is the scaling factor from coordinates value to
      * the Gerber file macros units (always mm or inches)
      */
-    void Format( FILE* aOutput, double aIu2GbrMacroUnit );
+    void Format( FILE * aOutput, double aIu2GbrMacroUnit );
 
     std::vector<APER_MACRO_FREEPOLY> m_AMList;
 };

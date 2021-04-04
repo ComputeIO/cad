@@ -1074,7 +1074,7 @@ bool PANEL_SETUP_BOARD_STACKUP::TransferDataFromWindow()
     brd_stackup.FormatBoardStackup( &new_stackup, m_board, 0 );
 
     bool modified = old_stackup.GetString() != new_stackup.GetString();
-    int  thickness = brd_stackup.BuildBoardThicknessFromStackup();
+    int thickness = brd_stackup.BuildBoardThicknessFromStackup();
 
     if( m_brdSettings->GetBoardThickness() != thickness )
     {

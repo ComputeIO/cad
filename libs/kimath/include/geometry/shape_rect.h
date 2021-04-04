@@ -129,7 +129,10 @@ public:
     /**
      * @return the width of the rectangle.
      */
-    const int GetWidth() const { return m_w; }
+     const int GetWidth() const
+     {
+         return m_w;
+     }
 
     /**
      * @return the height of the rectangle.
@@ -179,9 +182,9 @@ public:
     virtual const std::string Format( ) const override;
 
 private:
-    VECTOR2I m_p0; ///< Top-left corner
-    int      m_w;  ///< Width
-    int      m_h;  ///< Height
+    VECTOR2I m_p0;      ///< Top-left corner
+    int      m_w;       ///< Width
+    int      m_h;       ///< Height
 };
 
 #endif // __SHAPE_RECT_H

@@ -34,7 +34,7 @@ class FOOTPRINT;
 class MSG_PANEL_ITEM;
 class PCB_BASE_FRAME;
 class SHAPE;
-class FONT;
+
 
 class FP_TEXT : public BOARD_ITEM, public EDA_TEXT
 {
@@ -48,8 +48,8 @@ public:
     enum TEXT_TYPE
     {
         TEXT_is_REFERENCE = 0,
-        TEXT_is_VALUE = 1,
-        TEXT_is_DIVERS = 2
+        TEXT_is_VALUE     = 1,
+        TEXT_is_DIVERS    = 2
     };
 
     FP_TEXT( FOOTPRINT* aParentFootprint, TEXT_TYPE text_type = TEXT_is_DIVERS );
@@ -85,7 +85,10 @@ public:
         return BOARD_ITEM::Matches( GetShownText(), aSearchData );
     }
 
-    virtual wxPoint GetPosition() const override { return EDA_TEXT::GetTextPos(); }
+    virtual wxPoint GetPosition() const override
+    {
+        return EDA_TEXT::GetTextPos();
+    }
 
     virtual void SetPosition( const wxPoint& aPos ) override
     {
@@ -104,9 +107,15 @@ public:
      * @return force the text rotation to be always between -90 .. 90 deg. Otherwise the text
      *         is not easy to read if false, the text rotation is free.
      */
-    bool IsKeepUpright() const { return m_keepUpright; }
+    bool IsKeepUpright() const
+    {
+        return m_keepUpright;
+    }
 
-    void SetKeepUpright( bool aKeepUpright ) { m_keepUpright = aKeepUpright; }
+    void SetKeepUpright( bool aKeepUpright )
+    {
+        m_keepUpright = aKeepUpright;
+    }
 
     /// Rotate text, in footprint editor
     /// (for instance in footprint rotation transform)
@@ -128,8 +137,8 @@ public:
 
     /// @deprecated it seems (but the type is used to 'protect'
     //  reference and value from deletion, and for identification)
-    void      SetType( TEXT_TYPE aType ) { m_Type = aType; }
-    TEXT_TYPE GetType() const { return m_Type; }
+    void SetType( TEXT_TYPE aType )     { m_Type = aType; }
+    TEXT_TYPE GetType() const           { return m_Type; }
 
     /**
      * Set the text effects from another instance.
@@ -153,21 +162,17 @@ public:
     }
 
     // The Pos0 accessors are for footprint-relative coordinates.
-    void SetPos0( const wxPoint& aPos )
-    {
-        m_Pos0 = aPos;
-        SetDrawCoord();
-    }
-    const wxPoint& GetPos0() const { return m_Pos0; }
+    void SetPos0( const wxPoint& aPos ) { m_Pos0 = aPos; SetDrawCoord(); }
+    const wxPoint& GetPos0() const      { return m_Pos0; }
 
-    int GetLength() const; // text length
+    int GetLength() const;        // text length
 
     /**
      * @return the text rotation for drawings and plotting the footprint rotation is taken
      *         in account.
      */
     virtual double GetDrawRotation() const override;
-    double         GetDrawRotationRadians() const { return GetDrawRotation() * M_PI / 1800; }
+    double GetDrawRotationRadians() const { return GetDrawRotation() * M_PI/1800; }
 
     // Virtual function
     const EDA_RECT GetBoundingBox() const override;
@@ -202,10 +207,12 @@ public:
                                                    int aError, ERROR_LOC aErrorLoc ) const;
 
     // @copydoc BOARD_ITEM::GetEffectiveShape
-    virtual std::shared_ptr<SHAPE>
-    GetEffectiveShape( PCB_LAYER_ID aLayer = UNDEFINED_LAYER ) const override;
+    virtual std::shared_ptr<SHAPE> GetEffectiveShape( PCB_LAYER_ID aLayer = UNDEFINED_LAYER ) const override;
 
-    wxString GetClass() const override { return wxT( "MTEXT" ); }
+    wxString GetClass() const override
+    {
+        return wxT( "MTEXT" );
+    }
 
     wxString GetSelectMenuText( EDA_UNITS aUnits ) const override;
 
@@ -213,7 +220,7 @@ public:
 
     EDA_ITEM* Clone() const override;
 
-    virtual wxString GetShownText( int aDepth = 0, FONT** aFontPtr = nullptr ) const override;
+    virtual wxString GetShownText( int aDepth = 0 ) const override;
 
     virtual const BOX2I ViewBBox() const override;
 
@@ -221,7 +228,7 @@ public:
 
     double ViewGetLOD( int aLayer, KIGFX::VIEW* aView ) const override;
 
-#if defined( DEBUG )
+#if defined(DEBUG)
     virtual void Show( int nestLevel, std::ostream& os ) const override { ShowDummy( os ); }
 #endif
 
@@ -230,13 +237,14 @@ private:
      * Physical orient is m_Orient + m_Parent->m_Orient
      */
 
-    TEXT_TYPE m_Type; ///< 0=ref, 1=val, etc.
+    TEXT_TYPE m_Type;       ///< 0=ref, 1=val, etc.
 
-    wxPoint m_Pos0; ///< text coordinates relative to the footprint anchor, orient 0.
-                    ///< text coordinate ref point is the text center
+    wxPoint   m_Pos0;       ///< text coordinates relative to the footprint anchor, orient 0.
+                            ///< text coordinate ref point is the text center
 
-    bool m_keepUpright; ///< if true, keep rotation angle between -90 .. 90 deg.
-                        ///< to keep the text more easy to read
+    bool      m_keepUpright;    ///< if true, keep rotation angle between -90 .. 90 deg.
+                                ///< to keep the text more easy to read
+
 };
 
 #endif // FP_TEXT_H

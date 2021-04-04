@@ -1333,7 +1333,7 @@ typename RTREE_QUAL::Rect RTREE_QUAL::NodeCover( Node* a_node ) const
 {
     ASSERT( a_node );
 
-    bool    firstTime = true;
+    bool     firstTime = true;
     Rect    rect;
     InitRect( &rect );
 

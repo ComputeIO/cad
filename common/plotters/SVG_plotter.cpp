@@ -830,7 +830,7 @@ void SVG_PLOTTER::Text( const wxPoint&              aPos,
 
     wxSize text_size;
     // aSize.x or aSize.y is < 0 for mirrored texts.
-    // The actual text size value is the absolute value
+    // The actual text size value is the absolue value
     text_size.x = std::abs( GraphicTextWidth( aText, aSize, aItalic, aWidth ) );
     text_size.y = std::abs( aSize.x * 4/3 ); // Hershey font height to em size conversion
     DPOINT anchor_pos_dev = userToDeviceCoordinates( aPos );

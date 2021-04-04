@@ -76,8 +76,8 @@ KIID::KIID()
     }
     catch( const boost::uuids::entropy_error& )
     {
-        wxLogFatalError( "A Boost UUID entropy exception was thrown in %s:%s.", __FILE__,
-                         __FUNCTION__ );
+        wxLogFatalError( "A Boost UUID entropy exception was thrown in %s:%s.",
+                         __FILE__, __FUNCTION__ );
     }
 #endif
 }
@@ -128,8 +128,8 @@ KIID::KIID( const wxString& aString ) : m_uuid(), m_cached_timestamp( 0 )
             }
             catch( const boost::uuids::entropy_error& )
             {
-                wxLogFatalError( "A Boost UUID entropy exception was thrown in %s:%s.", __FILE__,
-                                 __FUNCTION__ );
+                wxLogFatalError( "A Boost UUID entropy exception was thrown in %s:%s.",
+                                 __FILE__, __FUNCTION__ );
             }
 #endif
         }

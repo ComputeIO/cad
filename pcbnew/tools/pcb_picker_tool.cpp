@@ -31,7 +31,9 @@
 #include "pcb_selection_tool.h"
 
 
-PCB_PICKER_TOOL::PCB_PICKER_TOOL() : PCB_TOOL_BASE( "pcbnew.InteractivePicker" ), PICKER_TOOL_BASE()
+PCB_PICKER_TOOL::PCB_PICKER_TOOL() :
+        PCB_TOOL_BASE( "pcbnew.InteractivePicker" ),
+        PICKER_TOOL_BASE()
 {
 }
 
@@ -39,7 +41,7 @@ PCB_PICKER_TOOL::PCB_PICKER_TOOL() : PCB_TOOL_BASE( "pcbnew.InteractivePicker" )
 int PCB_PICKER_TOOL::Main( const TOOL_EVENT& aEvent )
 {
     KIGFX::VIEW_CONTROLS* controls = getViewControls();
-    PCB_BASE_FRAME*       frame = getEditFrame<PCB_BASE_FRAME>();
+    PCB_BASE_FRAME*       frame    = getEditFrame<PCB_BASE_FRAME>();
     PCB_GRID_HELPER       grid( m_toolMgr, frame->GetMagneticItemsSettings() );
     int                   finalize_state = WAIT_CANCEL;
 

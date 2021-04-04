@@ -51,7 +51,11 @@ public:
         EXCEPTION_CANCEL
     };
 
-    PICKER_TOOL_BASE() : m_frame( nullptr ) { reset(); }
+    PICKER_TOOL_BASE() :
+            m_frame( nullptr )
+    {
+        reset();
+    }
 
     inline void SetCursor( KICURSOR aCursor ) { m_cursor = aCursor; }
 
@@ -129,7 +133,7 @@ public:
     bool Init() override;
 
     /// @copydoc TOOL_INTERACTIVE::Reset()
-    void Reset( RESET_REASON aReason ) override {}
+    void Reset( RESET_REASON aReason ) override { }
 
     ///< Main event loop.
     int Main( const TOOL_EVENT& aEvent );

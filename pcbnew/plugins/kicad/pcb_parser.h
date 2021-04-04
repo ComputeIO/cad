@@ -30,10 +30,10 @@
 #ifndef _PCBNEW_PARSER_H_
 #define _PCBNEW_PARSER_H_
 
-#include <convert_to_biu.h> // IU_PER_MM
+#include <convert_to_biu.h>                      // IU_PER_MM
 #include <hashtables.h>
-#include <layers_id_colors_and_visibility.h> // PCB_LAYER_ID
-#include <math/util.h>                       // KiROUND, Clamp
+#include <layers_id_colors_and_visibility.h>     // PCB_LAYER_ID
+#include <math/util.h>                           // KiROUND, Clamp
 #include <pcb_lexer.h>
 
 #include <unordered_map>
@@ -69,7 +69,9 @@ class PCB_PARSER : public PCB_LEXER
 {
 public:
     PCB_PARSER( LINE_READER* aReader = NULL ) :
-            PCB_LEXER( aReader ), m_board( nullptr ), m_resetKIIDs( false )
+        PCB_LEXER( aReader ),
+        m_board( nullptr ),
+        m_resetKIIDs( false )
     {
         init();
     }
@@ -111,7 +113,10 @@ public:
     /**
      * Return whether a version number, if any was parsed, was too recent
      */
-    bool IsTooRecent() { return m_tooRecent; }
+    bool IsTooRecent()
+    {
+        return m_tooRecent;
+    }
 
     /**
      * Return a string representing the version of KiCad required to open this
@@ -155,7 +160,7 @@ private:
      *
      * @param aMap string mapping from translated to English layer names.
      */
-    void createOldLayerMapping( std::unordered_map<std::string, std::string>& aMap );
+    void createOldLayerMapping( std::unordered_map< std::string, std::string >& aMap );
 
     /**
      * Skip the current token level, i.e search for the RIGHT parenthesis which closes the
@@ -184,25 +189,25 @@ private:
     DIMENSION_BASE* parseDIMENSION();
 
     // Parse a footprint, but do not replace PARSE_ERROR with FUTURE_FORMAT_ERROR automatically.
-    FOOTPRINT* parseFOOTPRINT_unchecked( wxArrayString* aInitialComments = 0 );
+    FOOTPRINT*      parseFOOTPRINT_unchecked( wxArrayString* aInitialComments = 0 );
 
-    FP_TEXT*  parseFP_TEXT();
-    FP_SHAPE* parseFP_SHAPE();
-    PAD*      parsePAD( FOOTPRINT* aParent = NULL );
+    FP_TEXT*        parseFP_TEXT();
+    FP_SHAPE*       parseFP_SHAPE();
+    PAD*            parsePAD( FOOTPRINT* aParent = NULL );
 
     // Parse only the (option ...) inside a pad description
-    bool parsePAD_option( PAD* aPad );
+    bool            parsePAD_option( PAD* aPad );
 
-    ARC*        parseARC();
-    TRACK*      parseTRACK();
-    VIA*        parseVIA();
-    ZONE*       parseZONE( BOARD_ITEM_CONTAINER* aParent );
-    PCB_TARGET* parsePCB_TARGET();
-    BOARD*      parseBOARD();
-    void        parseGROUP( BOARD_ITEM* aParent );
+    ARC*            parseARC();
+    TRACK*          parseTRACK();
+    VIA*            parseVIA();
+    ZONE*           parseZONE( BOARD_ITEM_CONTAINER* aParent );
+    PCB_TARGET*     parsePCB_TARGET();
+    BOARD*          parseBOARD();
+    void            parseGROUP( BOARD_ITEM* aParent );
 
     // Parse a board, but do not replace PARSE_ERROR with FUTURE_FORMAT_ERROR automatically.
-    BOARD* parseBOARD_unchecked();
+    BOARD*          parseBOARD_unchecked();
 
     /**
      * Parse the current token for the layer definition of a #BOARD_ITEM object.
@@ -212,7 +217,7 @@ private:
      * @throw IO_ERROR if the layer is not valid.
      * @throw PARSE_ERROR if the layer syntax is incorrect.
      */
-    template <class T, class M>
+    template<class T, class M>
     T lookUpLayer( const M& aMap );
 
     /**
@@ -293,7 +298,7 @@ private:
         // larger or smaller than those board units represent undefined behavior for
         // the system.  We limit values to the largest that is visible on the screen
         // This is the diagonal distance of the full screen ~1.5m
-        double int_limit = std::numeric_limits<int>::max() * 0.7071; // 0.7071 = roughly 1/sqrt(2)
+        double int_limit = std::numeric_limits<int>::max() * 0.7071;  // 0.7071 = roughly 1/sqrt(2)
         return KiROUND( Clamp<double>( -int_limit, retval, int_limit ) );
     }
 
@@ -316,7 +321,10 @@ private:
         return parseBoardUnits( GetTokenText( aToken ) );
     }
 
-    inline int parseInt() { return (int) strtol( CurText(), NULL, 10 ); }
+    inline int parseInt()
+    {
+        return (int)strtol( CurText(), NULL, 10 );
+    }
 
     inline int parseInt( const char* aExpected )
     {
@@ -343,23 +351,23 @@ private:
      */
     void resolveGroups( BOARD_ITEM* aParent );
 
-    typedef std::unordered_map<std::string, PCB_LAYER_ID> LAYER_ID_MAP;
-    typedef std::unordered_map<std::string, LSET>         LSET_MAP;
-    typedef std::unordered_map<wxString, KIID>            KIID_MAP;
+    typedef std::unordered_map< std::string, PCB_LAYER_ID > LAYER_ID_MAP;
+    typedef std::unordered_map< std::string, LSET >         LSET_MAP;
+    typedef std::unordered_map< wxString, KIID >            KIID_MAP;
 
-    BOARD*             m_board;
-    LAYER_ID_MAP       m_layerIndices;    ///< map layer name to it's index
-    LSET_MAP           m_layerMasks;      ///< map layer names to their masks
-    std::set<wxString> m_undefinedLayers; ///< set of layers not defined in layers section
-    std::vector<int>   m_netCodes;        ///< net codes mapping for boards being loaded
-    bool               m_tooRecent;       ///< true if version parses as later than supported
-    int                m_requiredVersion; ///< set to the KiCad format version this board requires
-    bool               m_resetKIIDs;      ///< reading into an existing board; reset UUIDs
+    BOARD*              m_board;
+    LAYER_ID_MAP        m_layerIndices;     ///< map layer name to it's index
+    LSET_MAP            m_layerMasks;       ///< map layer names to their masks
+    std::set<wxString>  m_undefinedLayers;  ///< set of layers not defined in layers section
+    std::vector<int>    m_netCodes;         ///< net codes mapping for boards being loaded
+    bool                m_tooRecent;        ///< true if version parses as later than supported
+    int                 m_requiredVersion;  ///< set to the KiCad format version this board requires
+    bool                m_resetKIIDs;       ///< reading into an existing board; reset UUIDs
 
     ///< if resetting UUIDs, record new ones to update groups with.
-    KIID_MAP m_resetKIIDMap;
+    KIID_MAP            m_resetKIIDMap;
 
-    bool m_showLegacyZoneWarning;
+    bool                m_showLegacyZoneWarning;
 
     // Group membership info refers to other Uuids in the file.
     // We don't want to rely on group declarations being last in the file, so
@@ -377,4 +385,4 @@ private:
 };
 
 
-#endif // _PCBNEW_PARSER_H_
+#endif    // _PCBNEW_PARSER_H_

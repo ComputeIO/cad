@@ -40,7 +40,7 @@ enum COL_ORDER
     COL_POSY,
     COL_VISIBLE,
 
-    COL_COUNT // keep as last
+    COL_COUNT       // keep as last
 };
 
 

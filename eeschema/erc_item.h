@@ -58,9 +58,9 @@ public:
 private:
     ERC_ITEM( int aErrorCode = 0, const wxString& aTitle = "", const wxString& aSettingsKey = "" )
     {
-        m_errorCode = aErrorCode;
-        m_errorTitle = aTitle;
-        m_settingsKey = aSettingsKey;
+        m_errorCode     = aErrorCode;
+        m_errorTitle    = aTitle;
+        m_settingsKey   = aSettingsKey;
         m_sheetSpecific = false;
     }
 

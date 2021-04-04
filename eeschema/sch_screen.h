@@ -122,7 +122,7 @@ public:
     }
 
     void SetFileFormatVersionAtLoad( int aVersion ) { m_fileFormatVersionAtLoad = aVersion; }
-    int  GetFileFormatVersionAtLoad() const { return m_fileFormatVersionAtLoad; }
+    int GetFileFormatVersionAtLoad()  const { return m_fileFormatVersionAtLoad; }
 
     const PAGE_INFO& GetPageSettings() const                { return m_paper; }
     void SetPageSettings( const PAGE_INFO& aPageSettings )  { m_paper = aPageSettings; }

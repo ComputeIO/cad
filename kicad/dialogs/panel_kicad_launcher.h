@@ -34,7 +34,9 @@ public:
     void CreateLaunchers();
 
 private:
+
     TOOL_MANAGER* m_toolManager;
+
 };
 
 

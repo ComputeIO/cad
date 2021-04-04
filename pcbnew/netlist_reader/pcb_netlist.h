@@ -50,10 +50,12 @@ class COMPONENT_NET
 public:
     COMPONENT_NET() {}
 
-    COMPONENT_NET( const wxString& aPinName, const wxString& aNetName, const wxString& aPinFunction,
-                   const wxString& aPinType ) :
-            m_pinName( aPinName ),
-            m_netName( aNetName ), m_pinFunction( aPinFunction ), m_pinType( aPinType )
+    COMPONENT_NET( const wxString& aPinName, const wxString& aNetName,
+                   const wxString& aPinFunction, const wxString& aPinType ) :
+        m_pinName( aPinName ),
+        m_netName( aNetName ),
+        m_pinFunction( aPinFunction ),
+        m_pinType( aPinType )
     {
     }
 
@@ -64,13 +66,16 @@ public:
 
     bool IsValid() const { return !m_pinName.IsEmpty(); }
 
-    bool operator<( const COMPONENT_NET& aNet ) const { return m_pinName < aNet.m_pinName; }
+    bool operator <( const COMPONENT_NET& aNet ) const
+    {
+        return m_pinName < aNet.m_pinName;
+    }
 
     int Format( OUTPUTFORMATTER* aOut, int aNestLevel, int aCtl );
 };
 
 
-typedef std::vector<COMPONENT_NET> COMPONENT_NETS;
+typedef std::vector< COMPONENT_NET > COMPONENT_NETS;
 
 /**
  * Store all of the related footprint information found in a netlist.
@@ -92,7 +97,7 @@ public:
         m_kiids            = aKiids;
     }
 
-    virtual ~COMPONENT(){};
+    virtual ~COMPONENT() { };
 
     void AddNet( const wxString& aPinName, const wxString& aNetName, const wxString& aPinFunction,
                  const wxString& aPinType )
@@ -108,10 +113,10 @@ public:
 
     void SortPins() { sort( m_nets.begin(), m_nets.end() ); }
 
-    void            SetName( const wxString& aName ) { m_name = aName; }
+    void SetName( const wxString& aName ) { m_name = aName;}
     const wxString& GetName() const { return m_name; }
 
-    void            SetLibrary( const wxString& aLibrary ) { m_library = aLibrary; }
+    void SetLibrary( const wxString& aLibrary ) { m_library = aLibrary; }
     const wxString& GetLibrary() const { return m_library; }
 
     const wxString& GetReference() const { return m_reference; }
@@ -123,10 +128,10 @@ public:
     }
     const std::map<wxString, wxString>& GetProperties() const { return m_properties; }
 
-    void          SetFPID( const LIB_ID& aFPID ) { m_fpid = aFPID; }
+    void SetFPID( const LIB_ID& aFPID ) { m_fpid = aFPID;  }
     const LIB_ID& GetFPID() const { return m_fpid; }
 
-    void          SetAltFPID( const LIB_ID& aFPID ) { m_altFpid = aFPID; }
+    void SetAltFPID( const LIB_ID& aFPID ) { m_altFpid = aFPID; }
     const LIB_ID& GetAltFPID() const { return m_altFpid; }
 
     const KIID_PATH& GetPath() const { return m_path; }
@@ -137,7 +142,7 @@ public:
     const wxArrayString& GetFootprintFilters() const { return m_footprintFilters; }
 
     void SetPinCount( int aPinCount ) { m_pinCount = aPinCount; }
-    int  GetPinCount() const { return m_pinCount; }
+    int GetPinCount() const { return m_pinCount; }
 
     FOOTPRINT* GetFootprint( bool aRelease = false )
     {
@@ -190,7 +195,7 @@ private:
 };
 
 
-typedef boost::ptr_vector<COMPONENT> COMPONENTS;
+typedef boost::ptr_vector< COMPONENT > COMPONENTS;
 
 
 /**
@@ -200,7 +205,11 @@ typedef boost::ptr_vector<COMPONENT> COMPONENTS;
 class NETLIST
 {
 public:
-    NETLIST() : m_findByTimeStamp( false ), m_replaceFootprints( false ) {}
+    NETLIST() :
+        m_findByTimeStamp( false ),
+        m_replaceFootprints( false )
+    {
+    }
 
     /**
      * @return true if there are no components in the netlist.
@@ -223,7 +232,7 @@ public:
      * @param aIndex the index in #m_components to fetch.
      * @return a pointer to the #COMPONENT at \a Index.
      */
-    COMPONENT* GetComponent( unsigned aIndex ) { return &m_components[aIndex]; }
+    COMPONENT* GetComponent( unsigned aIndex ) { return &m_components[ aIndex ]; }
 
     /**
      * Add \a aComponent to the NETLIST.
@@ -272,7 +281,7 @@ public:
 #define CTL_OMIT_FILTERS    (1<<2)
 #define CTL_OMIT_FP_UUID    (1<<3)  ///< Don't prefix the footprint UUID to the sheet path.
 
-#define CTL_FOR_CVPCB ( CTL_OMIT_NETS | CTL_OMIT_FILTERS | CTL_OMIT_EXTRA )
+#define CTL_FOR_CVPCB    (CTL_OMIT_NETS | CTL_OMIT_FILTERS | CTL_OMIT_EXTRA)
 
     void FormatCvpcbNetlist( OUTPUTFORMATTER* aOut )
     {
@@ -287,4 +296,4 @@ private:
 };
 
 
-#endif // PCB_NETLIST_H
+#endif   // PCB_NETLIST_H

@@ -31,7 +31,7 @@
 void PICKER_TOOL_BASE::reset()
 {
     m_cursor = KICURSOR::ARROW;
-    m_snap = true;
+    m_snap   = true;
 
     m_picked = NULLOPT;
     m_clickHandler = NULLOPT;
@@ -41,12 +41,16 @@ void PICKER_TOOL_BASE::reset()
 }
 
 
-PICKER_TOOL::PICKER_TOOL( const std::string& aName ) : TOOL_INTERACTIVE( aName ), PICKER_TOOL_BASE()
+PICKER_TOOL::PICKER_TOOL( const std::string& aName ) :
+        TOOL_INTERACTIVE( aName ),
+        PICKER_TOOL_BASE()
 {
 }
 
 
-PICKER_TOOL::PICKER_TOOL() : TOOL_INTERACTIVE( "common.InteractivePicker" ), PICKER_TOOL_BASE()
+PICKER_TOOL::PICKER_TOOL() :
+        TOOL_INTERACTIVE( "common.InteractivePicker" ),
+        PICKER_TOOL_BASE()
 {
 }
 

@@ -50,7 +50,10 @@ public:
         m_schematic.SetProject( &m_manager.Prj() );
     }
 
-    virtual ~TEST_NETLIST_EXPORTER_PSPICE_SIM() { m_schematic.Reset(); }
+    virtual ~TEST_NETLIST_EXPORTER_PSPICE_SIM()
+    {
+        m_schematic.Reset();
+    }
 
     SETTINGS_MANAGER m_manager;
 

@@ -117,6 +117,7 @@ void CADSTAR_SCH_ARCHIVE_PARSER::Parse()
                     // In the future these settings could be converted to KiCad
                 }
             }
+
         }
         else
         {
@@ -1208,6 +1209,7 @@ void CADSTAR_SCH_ARCHIVE_PARSER::NET_SCH::JUNCTION_SCH::Parse( XNODE* aNode, PAR
             THROW_UNKNOWN_NODE_IO_ERROR( cNode->GetName(), aNode->GetName() );
         }
     }
+
 }
 
 

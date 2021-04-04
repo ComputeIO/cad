@@ -38,7 +38,10 @@ class PCB_BASE_FRAME;
 class PCB_VIEWER_TOOLS : public TOOL_INTERACTIVE
 {
 public:
-    PCB_VIEWER_TOOLS() : TOOL_INTERACTIVE( "pcbnew.PCBViewerTools" ), m_footprintFrame( false ) {}
+    PCB_VIEWER_TOOLS() :
+        TOOL_INTERACTIVE( "pcbnew.PCBViewerTools" ),
+        m_footprintFrame( false )
+    {}
 
     ~PCB_VIEWER_TOOLS() override {}
 
@@ -71,27 +74,48 @@ public:
      *
      * @param aEnabled decides if the mode should be enabled.
      */
-    void SetFootprintFrame( bool aIsFrame ) { m_footprintFrame = aIsFrame; }
+    void SetFootprintFrame( bool aIsFrame )
+    {
+        m_footprintFrame = aIsFrame;
+    }
 
-    bool IsFootprintFrame() const { return m_footprintFrame; }
+    bool IsFootprintFrame() const
+    {
+        return m_footprintFrame;
+    }
 
 protected:
-    PCB_BASE_FRAME* frame() const { return getEditFrame<PCB_BASE_FRAME>(); }
+    PCB_BASE_FRAME* frame() const
+    {
+        return getEditFrame<PCB_BASE_FRAME>();
+    }
 
-    KIGFX::PCB_VIEW* view() const { return static_cast<KIGFX::PCB_VIEW*>( getView() ); }
+    KIGFX::PCB_VIEW* view() const
+    {
+        return static_cast<KIGFX::PCB_VIEW*>( getView() );
+    }
 
-    const PCB_DISPLAY_OPTIONS& displayOptions() const { return frame()->GetDisplayOptions(); }
+    const PCB_DISPLAY_OPTIONS& displayOptions() const
+    {
+        return frame()->GetDisplayOptions();
+    }
 
     PCB_DRAW_PANEL_GAL* canvas() const
     {
         return static_cast<PCB_DRAW_PANEL_GAL*>( frame()->GetCanvas() );
     }
 
-    BOARD* board() const { return getModel<BOARD>(); }
+    BOARD* board() const
+    {
+        return getModel<BOARD>();
+    }
 
-    FOOTPRINT* footprint() const { return board()->GetFirstFootprint(); }
+    FOOTPRINT* footprint() const
+    {
+        return board()->GetFirstFootprint();
+    }
 
-    bool m_footprintFrame; ///< Is this tool associated with a footprint frame
+    bool m_footprintFrame;  ///< Is this tool associated with a footprint frame
 };
 
 #endif

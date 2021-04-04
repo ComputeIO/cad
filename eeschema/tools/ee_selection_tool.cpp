@@ -393,7 +393,7 @@ int EE_SELECTION_TOOL::Main( const TOOL_EVENT& aEvent )
             bool continueSelect = true;
 
             // Collect items at the clicked location (doesn't select them yet)
-            if( CollectHits( collector, evt->Position() ) )
+            if( CollectHits( collector, evt->Position()) )
             {
                 narrowSelection( collector, evt->Position(), false );
 
@@ -472,9 +472,9 @@ int EE_SELECTION_TOOL::Main( const TOOL_EVENT& aEvent )
             // under the cursor.  If there is, the user likely meant to get the context menu
             // for that item.  If there is no new item, then keep the original selection and
             // show the context menu for it.
-            else if( !m_selection.GetBoundingBox()
-                              .Inflate( grid.GetGrid().x, grid.GetGrid().y )
-                              .Contains( (wxPoint) evt->Position() ) )
+            else if( !m_selection.GetBoundingBox().Inflate(
+                        grid.GetGrid().x, grid.GetGrid().y ).Contains(
+                                (wxPoint) evt->Position() ) )
             {
                 EE_SELECTION saved_selection = m_selection;
 
@@ -620,7 +620,7 @@ int EE_SELECTION_TOOL::Main( const TOOL_EVENT& aEvent )
 
             // We are checking if we should display a pencil when hovering over anchors
             // for "auto starting" wires when clicked
-            if( CollectHits( collector, evt->Position() ) )
+            if( CollectHits( collector, evt->Position()) )
             {
                 narrowSelection( collector, evt->Position(), false );
 
@@ -716,9 +716,10 @@ int EE_SELECTION_TOOL::Main( const TOOL_EVENT& aEvent )
             {
                 m_nonModifiedCursor = KICURSOR::HAND;
             }
-            else if( !m_selection.Empty() && drag_action == MOUSE_DRAG_ACTION::DRAG_SELECTED
-                     && evt->HasPosition()
-                     && selectionContains( evt->Position() ) ) //move/drag option prediction
+            else if( !m_selection.Empty()
+                        && drag_action == MOUSE_DRAG_ACTION::DRAG_SELECTED
+                        && evt->HasPosition()
+                        && selectionContains( evt->Position() ) ) //move/drag option prediction
             {
                 m_nonModifiedCursor = KICURSOR::MOVING;
             }
@@ -1024,8 +1025,15 @@ void EE_SELECTION_TOOL::GuessSelectionCandidates( EE_COLLECTOR& collector, const
     }
 
     // Prefer things that are generally smaller than a symbol to a symbol
-    const std::set<KICAD_T> preferred = { SCH_FIELD_T,      SCH_LINE_T,     SCH_BUS_WIRE_ENTRY_T,
-                                          SCH_NO_CONNECT_T, SCH_JUNCTION_T, SCH_MARKER_T };
+    const std::set<KICAD_T> preferred =
+            {
+                SCH_FIELD_T,
+                SCH_LINE_T,
+                SCH_BUS_WIRE_ENTRY_T,
+                SCH_NO_CONNECT_T,
+                SCH_JUNCTION_T,
+                SCH_MARKER_T
+            };
 
     for( int i = 0; collector.GetCount() == 2 && i < 2; ++i )
     {
@@ -1322,7 +1330,8 @@ EDA_ITEM* EE_SELECTION_TOOL::GetNode( VECTOR2I aPosition )
     EE_COLLECTOR collector;
 
     //TODO(snh): Reimplement after exposing KNN interface
-    int thresholdMax = KiROUND( m_toolMgr->GetView()->GetGAL()->GetGridSize().EuclideanNorm() );
+    int thresholdMax = KiROUND(
+            m_toolMgr->GetView()->GetGAL()->GetGridSize().EuclideanNorm() );
 
     for( int threshold : { 0, thresholdMax/2, thresholdMax } )
     {

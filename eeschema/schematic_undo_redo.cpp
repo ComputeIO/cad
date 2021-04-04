@@ -102,8 +102,10 @@ void SCH_EDIT_FRAME::StartNewUndo()
 }
 
 
-void SCH_EDIT_FRAME::SaveCopyInUndoList( SCH_SCREEN* aScreen, SCH_ITEM* aItem,
-                                         UNDO_REDO aCommandType, bool aAppend )
+void SCH_EDIT_FRAME::SaveCopyInUndoList( SCH_SCREEN*    aScreen,
+                                         SCH_ITEM*      aItem,
+                                         UNDO_REDO      aCommandType,
+                                         bool           aAppend )
 {
     PICKED_ITEMS_LIST* commandToUndo = nullptr;
 
@@ -165,7 +167,8 @@ void SCH_EDIT_FRAME::SaveCopyInUndoList( SCH_SCREEN* aScreen, SCH_ITEM* aItem,
 
 
 void SCH_EDIT_FRAME::SaveCopyInUndoList( const PICKED_ITEMS_LIST& aItemsList,
-                                         UNDO_REDO aTypeCommand, bool aAppend )
+                                         UNDO_REDO                aTypeCommand,
+                                         bool                     aAppend )
 {
     PICKED_ITEMS_LIST* commandToUndo = nullptr;
 

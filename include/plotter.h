@@ -46,7 +46,6 @@ class SHAPE_POLY_SET;
 class SHAPE_LINE_CHAIN;
 class GBR_NETLIST_METADATA;
 class PROJECT;
-class FONT;
 
 namespace KIFONT
 {

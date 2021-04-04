@@ -285,7 +285,7 @@ int SCH_LINE_WIRE_BUS_TOOL::DrawSegments( const TOOL_EVENT& aEvent )
 
     if( aEvent.HasPosition() )
     {
-        EE_GRID_HELPER grid( m_toolMgr );
+        EE_GRID_HELPER   grid( m_toolMgr );
         grid.SetSnap( !aEvent.Modifier( MD_SHIFT ) );
         grid.SetUseGrid( getView()->GetGAL()->GetGridSnapping() && !aEvent.Modifier( MD_ALT ) );
 

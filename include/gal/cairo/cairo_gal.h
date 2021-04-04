@@ -78,30 +78,23 @@ public:
     void DrawCircle( const VECTOR2D& aCenterPoint, double aRadius ) override;
 
     /// @copydoc GAL::DrawArc()
-    void DrawArc( const VECTOR2D& aCenterPoint, double aRadius, double aStartAngle,
-                  double aEndAngle ) override;
+    void DrawArc( const VECTOR2D& aCenterPoint, double aRadius,
+                          double aStartAngle, double aEndAngle ) override;
 
     /// @copydoc GAL::DrawArcSegment()
-    void DrawArcSegment( const VECTOR2D& aCenterPoint, double aRadius, double aStartAngle,
-                         double aEndAngle, double aWidth ) override;
+    void DrawArcSegment( const VECTOR2D& aCenterPoint, double aRadius,
+                                 double aStartAngle, double aEndAngle, double aWidth ) override;
 
     /// @copydoc GAL::DrawRectangle()
     void DrawRectangle( const VECTOR2D& aStartPoint, const VECTOR2D& aEndPoint ) override;
 
-#ifdef DEBUG
-    // TODO: remove after debugging
-    void DrawTriangle( const VECTOR2D& a1, const VECTOR2D& a2, const VECTOR2D& a3 );
-#endif
     /// @copydoc GAL::DrawPolyline()
     void DrawPolyline( const std::deque<VECTOR2D>& aPointList ) override { drawPoly( aPointList ); }
     void DrawPolyline( const VECTOR2D aPointList[], int aListSize ) override
     {
         drawPoly( aPointList, aListSize );
     }
-    void DrawPolyline( const std::vector<VECTOR2D>& aPointList ) override
-    {
-        DrawPolyline( &aPointList[0], aPointList.size() );
-    }
+
     void DrawPolyline( const SHAPE_LINE_CHAIN& aLineChain ) override { drawPoly( aLineChain ); }
 
     /// @copydoc GAL::DrawPolygon()
@@ -271,7 +264,7 @@ protected:
 
 
     void flushPath();
-    void storePath(); ///< Store the actual path
+    void storePath();                           ///< Store the actual path
 
     /**
      * Blit cursor into the current screen.
@@ -290,8 +283,8 @@ protected:
      */
     unsigned int getNewGroupNumber();
 
-    void           syncLineWidth( bool aForceWidth = false, double aWidth = 0.0 );
-    void           updateWorldScreenMatrix();
+    void syncLineWidth( bool aForceWidth = false, double aWidth = 0.0 );
+    void updateWorldScreenMatrix();
     const VECTOR2D roundp( const VECTOR2D& v );
 
     /// Super class definition
@@ -303,20 +296,20 @@ protected:
     /// Definitions for the command recorder
     enum GRAPHICS_COMMAND
     {
-        CMD_SET_FILL,        ///< Enable/disable filling
-        CMD_SET_STROKE,      ///< Enable/disable stroking
-        CMD_SET_FILLCOLOR,   ///< Set the fill color
-        CMD_SET_STROKECOLOR, ///< Set the stroke color
-        CMD_SET_LINE_WIDTH,  ///< Set the line width
-        CMD_STROKE_PATH,     ///< Set the stroke path
-        CMD_FILL_PATH,       ///< Set the fill path
+        CMD_SET_FILL,                               ///< Enable/disable filling
+        CMD_SET_STROKE,                             ///< Enable/disable stroking
+        CMD_SET_FILLCOLOR,                          ///< Set the fill color
+        CMD_SET_STROKECOLOR,                        ///< Set the stroke color
+        CMD_SET_LINE_WIDTH,                         ///< Set the line width
+        CMD_STROKE_PATH,                            ///< Set the stroke path
+        CMD_FILL_PATH,                              ///< Set the fill path
         //CMD_TRANSFORM,                              ///< Transform the actual context
-        CMD_ROTATE,    ///< Rotate the context
-        CMD_TRANSLATE, ///< Translate the context
-        CMD_SCALE,     ///< Scale the context
-        CMD_SAVE,      ///< Save the transformation matrix
-        CMD_RESTORE,   ///< Restore the transformation matrix
-        CMD_CALL_GROUP ///< Call a group
+        CMD_ROTATE,                                 ///< Rotate the context
+        CMD_TRANSLATE,                              ///< Translate the context
+        CMD_SCALE,                                  ///< Scale the context
+        CMD_SAVE,                                   ///< Save the transformation matrix
+        CMD_RESTORE,                                ///< Restore the transformation matrix
+        CMD_CALL_GROUP                              ///< Call a group
     };
 
     /// Type definition for an graphics group element
@@ -380,7 +373,10 @@ public:
     ~CAIRO_GAL();
 
     ///< @copydoc GAL::IsVisible()
-    bool IsVisible() const override { return IsShownOnScreen() && !GetClientRect().IsEmpty(); }
+    bool IsVisible() const override
+    {
+        return IsShownOnScreen() && !GetClientRect().IsEmpty();
+    }
 
     void ResizeScreen( int aWidth, int aHeight ) override;
 
@@ -478,4 +474,4 @@ protected:
 
 } // namespace KIGFX
 
-#endif // CAIROGAL_H_
+#endif  // CAIROGAL_H_

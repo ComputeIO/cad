@@ -52,11 +52,11 @@
 #include <lib_polyline.h>
 #include <lib_rectangle.h>
 #include <lib_text.h>
-#include <eeschema_id.h> // for MAX_UNIT_COUNT_PER_PACKAGE definition
+#include <eeschema_id.h>       // for MAX_UNIT_COUNT_PER_PACKAGE definition
 #include <sch_file_versions.h>
 #include <schematic_lexer.h>
 #include <sch_plugins/kicad/sch_sexpr_parser.h>
-#include <symbol_lib_table.h> // for PropPowerSymsOnly definintion.
+#include <symbol_lib_table.h>  // for PropPowerSymsOnly definintion.
 #include <ee_selection.h>
 #include <kicad_string.h>
 
@@ -64,9 +64,9 @@
 using namespace TSCHEMATIC_T;
 
 
-#define SCH_PARSE_ERROR( text, reader, pos )                                                       \
-    THROW_PARSE_ERROR( text, reader.GetSource(), reader.Line(), reader.LineNumber(),               \
-                       pos - reader.Line() )
+#define SCH_PARSE_ERROR( text, reader, pos )                         \
+    THROW_PARSE_ERROR( text, reader.GetSource(), reader.Line(),      \
+                       reader.LineNumber(), pos - reader.Line() )
 
 
 static const char* emptyString = "";
@@ -82,10 +82,10 @@ static void formatFill( const LIB_ITEM* aItem, OUTPUTFORMATTER& aFormatter, int 
 
     switch( aItem->GetFillMode() )
     {
-    case FILL_TYPE::FILLED_SHAPE: fillType = "outline"; break;
+    case FILL_TYPE::FILLED_SHAPE:             fillType = "outline";    break;
     case FILL_TYPE::FILLED_WITH_BG_BODYCOLOR: fillType = "background"; break;
-    case FILL_TYPE::NO_FILL: KI_FALLTHROUGH;
-    default: fillType = "none";
+    case FILL_TYPE::NO_FILL:                                           KI_FALLTHROUGH;
+    default:                                  fillType = "none";
     }
 
     aFormatter.Print( aNestLevel, "(fill (type %s))", fillType );
@@ -96,32 +96,44 @@ static const char* getPinElectricalTypeToken( ELECTRICAL_PINTYPE aType )
 {
     switch( aType )
     {
-    case ELECTRICAL_PINTYPE::PT_INPUT: return SCHEMATIC_LEXER::TokenName( T_input );
+    case ELECTRICAL_PINTYPE::PT_INPUT:
+        return SCHEMATIC_LEXER::TokenName( T_input );
 
-    case ELECTRICAL_PINTYPE::PT_OUTPUT: return SCHEMATIC_LEXER::TokenName( T_output );
+    case ELECTRICAL_PINTYPE::PT_OUTPUT:
+        return SCHEMATIC_LEXER::TokenName( T_output );
 
-    case ELECTRICAL_PINTYPE::PT_BIDI: return SCHEMATIC_LEXER::TokenName( T_bidirectional );
+    case ELECTRICAL_PINTYPE::PT_BIDI:
+        return SCHEMATIC_LEXER::TokenName( T_bidirectional );
 
-    case ELECTRICAL_PINTYPE::PT_TRISTATE: return SCHEMATIC_LEXER::TokenName( T_tri_state );
+    case ELECTRICAL_PINTYPE::PT_TRISTATE:
+        return SCHEMATIC_LEXER::TokenName( T_tri_state );
 
-    case ELECTRICAL_PINTYPE::PT_PASSIVE: return SCHEMATIC_LEXER::TokenName( T_passive );
+    case ELECTRICAL_PINTYPE::PT_PASSIVE:
+        return SCHEMATIC_LEXER::TokenName( T_passive );
 
-    case ELECTRICAL_PINTYPE::PT_NIC: return SCHEMATIC_LEXER::TokenName( T_free );
+    case ELECTRICAL_PINTYPE::PT_NIC:
+        return SCHEMATIC_LEXER::TokenName( T_free );
 
-    case ELECTRICAL_PINTYPE::PT_UNSPECIFIED: return SCHEMATIC_LEXER::TokenName( T_unspecified );
+    case ELECTRICAL_PINTYPE::PT_UNSPECIFIED:
+        return SCHEMATIC_LEXER::TokenName( T_unspecified );
 
-    case ELECTRICAL_PINTYPE::PT_POWER_IN: return SCHEMATIC_LEXER::TokenName( T_power_in );
+    case ELECTRICAL_PINTYPE::PT_POWER_IN:
+        return SCHEMATIC_LEXER::TokenName( T_power_in );
 
-    case ELECTRICAL_PINTYPE::PT_POWER_OUT: return SCHEMATIC_LEXER::TokenName( T_power_out );
+    case ELECTRICAL_PINTYPE::PT_POWER_OUT:
+        return SCHEMATIC_LEXER::TokenName( T_power_out );
 
     case ELECTRICAL_PINTYPE::PT_OPENCOLLECTOR:
         return SCHEMATIC_LEXER::TokenName( T_open_collector );
 
-    case ELECTRICAL_PINTYPE::PT_OPENEMITTER: return SCHEMATIC_LEXER::TokenName( T_open_emitter );
+    case ELECTRICAL_PINTYPE::PT_OPENEMITTER:
+        return SCHEMATIC_LEXER::TokenName( T_open_emitter );
 
-    case ELECTRICAL_PINTYPE::PT_NC: return SCHEMATIC_LEXER::TokenName( T_no_connect );
+    case ELECTRICAL_PINTYPE::PT_NC:
+        return SCHEMATIC_LEXER::TokenName( T_no_connect );
 
-    default: wxFAIL_MSG( "Missing symbol library pin connection type" );
+    default:
+        wxFAIL_MSG( "Missing symbol library pin connection type" );
     }
 
     return emptyString;
@@ -132,26 +144,35 @@ static const char* getPinShapeToken( GRAPHIC_PINSHAPE aShape )
 {
     switch( aShape )
     {
-    case GRAPHIC_PINSHAPE::LINE: return SCHEMATIC_LEXER::TokenName( T_line );
+    case GRAPHIC_PINSHAPE::LINE:
+        return SCHEMATIC_LEXER::TokenName( T_line );
 
-    case GRAPHIC_PINSHAPE::INVERTED: return SCHEMATIC_LEXER::TokenName( T_inverted );
+    case GRAPHIC_PINSHAPE::INVERTED:
+        return SCHEMATIC_LEXER::TokenName( T_inverted );
 
-    case GRAPHIC_PINSHAPE::CLOCK: return SCHEMATIC_LEXER::TokenName( T_clock );
+    case GRAPHIC_PINSHAPE::CLOCK:
+        return SCHEMATIC_LEXER::TokenName( T_clock );
 
-    case GRAPHIC_PINSHAPE::INVERTED_CLOCK: return SCHEMATIC_LEXER::TokenName( T_inverted_clock );
+    case GRAPHIC_PINSHAPE::INVERTED_CLOCK:
+        return SCHEMATIC_LEXER::TokenName( T_inverted_clock );
 
-    case GRAPHIC_PINSHAPE::INPUT_LOW: return SCHEMATIC_LEXER::TokenName( T_input_low );
+    case GRAPHIC_PINSHAPE::INPUT_LOW:
+        return SCHEMATIC_LEXER::TokenName( T_input_low );
 
-    case GRAPHIC_PINSHAPE::CLOCK_LOW: return SCHEMATIC_LEXER::TokenName( T_clock_low );
+    case GRAPHIC_PINSHAPE::CLOCK_LOW:
+        return SCHEMATIC_LEXER::TokenName( T_clock_low );
 
-    case GRAPHIC_PINSHAPE::OUTPUT_LOW: return SCHEMATIC_LEXER::TokenName( T_output_low );
+    case GRAPHIC_PINSHAPE::OUTPUT_LOW:
+        return SCHEMATIC_LEXER::TokenName( T_output_low );
 
     case GRAPHIC_PINSHAPE::FALLING_EDGE_CLOCK:
         return SCHEMATIC_LEXER::TokenName( T_edge_clock_high );
 
-    case GRAPHIC_PINSHAPE::NONLOGIC: return SCHEMATIC_LEXER::TokenName( T_non_logic );
+    case GRAPHIC_PINSHAPE::NONLOGIC:
+        return SCHEMATIC_LEXER::TokenName( T_non_logic );
 
-    default: wxFAIL_MSG( "Missing symbol library pin shape type" );
+    default:
+        wxFAIL_MSG( "Missing symbol library pin shape type" );
     }
 
     return emptyString;
@@ -163,10 +184,10 @@ static float getPinAngle( int aOrientation )
     switch( aOrientation )
     {
     case PIN_RIGHT: return 0.0;
-    case PIN_LEFT: return 180.0;
-    case PIN_UP: return 90.0;
-    case PIN_DOWN: return 270.0;
-    default: wxFAIL_MSG( "Missing symbol library pin orientation type" ); return 0.0;
+    case PIN_LEFT:  return 180.0;
+    case PIN_UP:    return 90.0;
+    case PIN_DOWN:  return 270.0;
+    default:        wxFAIL_MSG( "Missing symbol library pin orientation type" ); return 0.0;
     }
 }
 
@@ -175,12 +196,12 @@ static const char* getSheetPinShapeToken( PINSHEETLABEL_SHAPE aShape )
 {
     switch( aShape )
     {
-    case PINSHEETLABEL_SHAPE::PS_INPUT: return SCHEMATIC_LEXER::TokenName( T_input );
-    case PINSHEETLABEL_SHAPE::PS_OUTPUT: return SCHEMATIC_LEXER::TokenName( T_output );
-    case PINSHEETLABEL_SHAPE::PS_BIDI: return SCHEMATIC_LEXER::TokenName( T_bidirectional );
-    case PINSHEETLABEL_SHAPE::PS_TRISTATE: return SCHEMATIC_LEXER::TokenName( T_tri_state );
+    case PINSHEETLABEL_SHAPE::PS_INPUT:       return SCHEMATIC_LEXER::TokenName( T_input );
+    case PINSHEETLABEL_SHAPE::PS_OUTPUT:      return SCHEMATIC_LEXER::TokenName( T_output );
+    case PINSHEETLABEL_SHAPE::PS_BIDI:        return SCHEMATIC_LEXER::TokenName( T_bidirectional );
+    case PINSHEETLABEL_SHAPE::PS_TRISTATE:    return SCHEMATIC_LEXER::TokenName( T_tri_state );
     case PINSHEETLABEL_SHAPE::PS_UNSPECIFIED: return SCHEMATIC_LEXER::TokenName( T_passive );
-    default: wxFAIL; return SCHEMATIC_LEXER::TokenName( T_passive );
+    default:         wxFAIL;                  return SCHEMATIC_LEXER::TokenName( T_passive );
     }
 }
 
@@ -192,14 +213,11 @@ static double getSheetPinAngle( SHEET_SIDE aSide )
     switch( aSide )
     {
     case SHEET_UNDEFINED_SIDE:
-    case SHEET_LEFT_SIDE: retv = 180.0; break;
-    case SHEET_RIGHT_SIDE: retv = 0.0; break;
-    case SHEET_TOP_SIDE: retv = 90.0; break;
-    case SHEET_BOTTOM_SIDE: retv = 270.0; break;
-    default:
-        wxFAIL;
-        retv = 0.0;
-        break;
+    case SHEET_LEFT_SIDE:       retv = 180.0;  break;
+    case SHEET_RIGHT_SIDE:      retv = 0.0;    break;
+    case SHEET_TOP_SIDE:        retv = 90.0;   break;
+    case SHEET_BOTTOM_SIDE:     retv = 270.0;  break;
+    default:   wxFAIL;          retv = 0.0;    break;
     }
 
     return retv;
@@ -212,11 +230,11 @@ static wxString getLineStyleToken( PLOT_DASH_TYPE aStyle )
 
     switch( aStyle )
     {
-    case PLOT_DASH_TYPE::DASH: token = "dash"; break;
-    case PLOT_DASH_TYPE::DOT: token = "dot"; break;
-    case PLOT_DASH_TYPE::DASHDOT: token = "dash_dot"; break;
+    case PLOT_DASH_TYPE::DASH:     token = "dash";      break;
+    case PLOT_DASH_TYPE::DOT:      token = "dot";       break;
+    case PLOT_DASH_TYPE::DASHDOT:  token = "dash_dot";  break;
     case PLOT_DASH_TYPE::SOLID:
-    default: token = "solid"; break;
+    default:                       token = "solid";     break;
     }
 
     return token;
@@ -227,11 +245,11 @@ static const char* getTextTypeToken( KICAD_T aType )
 {
     switch( aType )
     {
-    case SCH_TEXT_T: return SCHEMATIC_LEXER::TokenName( T_text );
-    case SCH_LABEL_T: return SCHEMATIC_LEXER::TokenName( T_label );
-    case SCH_GLOBAL_LABEL_T: return SCHEMATIC_LEXER::TokenName( T_global_label );
-    case SCH_HIER_LABEL_T: return SCHEMATIC_LEXER::TokenName( T_hierarchical_label );
-    default: wxFAIL; return SCHEMATIC_LEXER::TokenName( T_text );
+    case SCH_TEXT_T:          return SCHEMATIC_LEXER::TokenName( T_text );
+    case SCH_LABEL_T:         return SCHEMATIC_LEXER::TokenName( T_label );
+    case SCH_GLOBAL_LABEL_T:  return SCHEMATIC_LEXER::TokenName( T_global_label );
+    case SCH_HIER_LABEL_T:    return SCHEMATIC_LEXER::TokenName( T_hierarchical_label );
+    default:     wxFAIL;      return SCHEMATIC_LEXER::TokenName( T_text );
     }
 }
 
@@ -253,12 +271,13 @@ static void formatStroke( OUTPUTFORMATTER* aFormatter, int aNestLevel,
 {
     wxASSERT( aFormatter != nullptr );
 
-    aFormatter->Print(
-            aNestLevel, "(stroke (width %s) (type %s) (color %d %d %d %s))",
-            FormatInternalUnits( aStroke.GetWidth() ).c_str(),
-            TO_UTF8( getLineStyleToken( aStroke.GetPlotStyle() ) ),
-            KiROUND( aStroke.GetColor().r * 255.0 ), KiROUND( aStroke.GetColor().g * 255.0 ),
-            KiROUND( aStroke.GetColor().b * 255.0 ), Double2Str( aStroke.GetColor().a ).c_str() );
+    aFormatter->Print( aNestLevel, "(stroke (width %s) (type %s) (color %d %d %d %s))",
+                       FormatInternalUnits( aStroke.GetWidth() ).c_str(),
+                       TO_UTF8( getLineStyleToken( aStroke.GetPlotStyle() ) ),
+                       KiROUND( aStroke.GetColor().r * 255.0 ),
+                       KiROUND( aStroke.GetColor().g * 255.0 ),
+                       KiROUND( aStroke.GetColor().b * 255.0 ),
+                       Double2Str( aStroke.GetColor().a ).c_str() );
 }
 
 
@@ -339,8 +358,8 @@ public:
 
     wxString GetFileName() const { return m_libFileName.GetFullPath(); }
 
-    static void SaveSymbol( LIB_PART* aSymbol, OUTPUTFORMATTER& aFormatter, int aNestLevel = 0,
-                            const wxString& aLibName = wxEmptyString );
+    static void SaveSymbol( LIB_PART* aSymbol, OUTPUTFORMATTER& aFormatter,
+                            int aNestLevel = 0, const wxString& aLibName = wxEmptyString );
 };
 
 
@@ -371,8 +390,8 @@ SCH_SHEET* SCH_SEXPR_PLUGIN::Load( const wxString& aFileName, SCHEMATIC* aSchema
 {
     wxASSERT( !aFileName || aSchematic != nullptr );
 
-    LOCALE_IO  toggle; // toggles on, then off, the C locale.
-    SCH_SHEET* sheet;
+    LOCALE_IO   toggle;     // toggles on, then off, the C locale.
+    SCH_SHEET*  sheet;
 
     wxFileName fn = aFileName;
 
@@ -383,8 +402,8 @@ SCH_SHEET* SCH_SEXPR_PLUGIN::Load( const wxString& aFileName, SCHEMATIC* aSchema
 
     if( aAppendToMe )
     {
-        wxLogTrace( traceSchLegacyPlugin, "Append \"%s\" to sheet \"%s\".", aFileName,
-                    aAppendToMe->GetFileName() );
+        wxLogTrace( traceSchLegacyPlugin, "Append \"%s\" to sheet \"%s\".",
+                    aFileName, aAppendToMe->GetFileName() );
 
         wxFileName normedFn = aAppendToMe->GetFileName();
 
@@ -423,7 +442,7 @@ SCH_SHEET* SCH_SEXPR_PLUGIN::Load( const wxString& aFileName, SCHEMATIC* aSchema
 
         // If we got here, the schematic loaded successfully.
         sheet = newSheet.release();
-        m_rootSheet = nullptr; // Quiet Coverity warning.
+        m_rootSheet = nullptr;         // Quiet Coverity warning.
     }
     else
     {
@@ -433,7 +452,7 @@ SCH_SHEET* SCH_SEXPR_PLUGIN::Load( const wxString& aFileName, SCHEMATIC* aSchema
         loadHierarchy( sheet );
     }
 
-    wxASSERT( m_currentPath.size() == 1 ); // only the project path should remain
+    wxASSERT( m_currentPath.size() == 1 );  // only the project path should remain
 
     return sheet;
 }
@@ -525,7 +544,7 @@ void SCH_SEXPR_PLUGIN::LoadContent( LINE_READER& aReader, SCH_SHEET* aSheet, int
 {
     wxCHECK( aSheet, /* void */ );
 
-    LOCALE_IO        toggle;
+    LOCALE_IO toggle;
     SCH_SEXPR_PARSER parser( &aReader );
 
     parser.ParseSchematic( aSheet, true, aFileVersion );
@@ -538,7 +557,7 @@ void SCH_SEXPR_PLUGIN::Save( const wxString& aFileName, SCH_SHEET* aSheet, SCHEM
     wxCHECK_RET( aSheet != NULL, "NULL SCH_SHEET object." );
     wxCHECK_RET( !aFileName.IsEmpty(), "No schematic file name defined." );
 
-    LOCALE_IO toggle; // toggles on, then off, the C locale, to write floating point values.
+    LOCALE_IO   toggle;     // toggles on, then off, the C locale, to write floating point values.
 
     init( aSchematic, aProperties );
 
@@ -550,7 +569,7 @@ void SCH_SEXPR_PLUGIN::Save( const wxString& aFileName, SCH_SHEET* aSheet, SCHEM
 
     FILE_OUTPUTFORMATTER formatter( fn.GetFullPath() );
 
-    m_out = &formatter; // no ownership
+    m_out = &formatter;     // no ownership
 
     Format( aSheet );
 }
@@ -587,16 +606,16 @@ void SCH_SEXPR_PLUGIN::Format( SCH_SHEET* aSheet )
 
     // Enforce item ordering
     auto cmp = []( const SCH_ITEM* a, const SCH_ITEM* b )
-    {
-        return *a < *b;
-    };
+               {
+                   return *a < *b;
+               };
 
     std::multiset<SCH_ITEM*, decltype( cmp )> save_map( cmp );
 
     for( SCH_ITEM* item : screen->Items() )
         save_map.insert( item );
 
-    KICAD_T      itemType = TYPE_NOT_INIT;
+    KICAD_T itemType = TYPE_NOT_INIT;
     SCH_LAYER_ID layer = SCH_LAYER_ID_START;
 
     for( SCH_ITEM* item : save_map )
@@ -605,8 +624,9 @@ void SCH_SEXPR_PLUGIN::Format( SCH_SHEET* aSheet )
         {
             itemType = item->Type();
 
-            if( itemType != SCH_COMPONENT_T && itemType != SCH_JUNCTION_T
-                && itemType != SCH_SHEET_T )
+            if( itemType != SCH_COMPONENT_T
+              && itemType != SCH_JUNCTION_T
+              && itemType != SCH_SHEET_T )
                 m_out->Print( 0, "\n" );
         }
 
@@ -617,16 +637,22 @@ void SCH_SEXPR_PLUGIN::Format( SCH_SHEET* aSheet )
             saveSymbol( static_cast<SCH_COMPONENT*>( item ), nullptr, 1 );
             break;
 
-        case SCH_BITMAP_T: saveBitmap( static_cast<SCH_BITMAP*>( item ), 1 ); break;
+        case SCH_BITMAP_T:
+            saveBitmap( static_cast<SCH_BITMAP*>( item ), 1 );
+            break;
 
         case SCH_SHEET_T:
             m_out->Print( 0, "\n" );
             saveSheet( static_cast<SCH_SHEET*>( item ), 1 );
             break;
 
-        case SCH_JUNCTION_T: saveJunction( static_cast<SCH_JUNCTION*>( item ), 1 ); break;
+        case SCH_JUNCTION_T:
+            saveJunction( static_cast<SCH_JUNCTION*>( item ), 1 );
+            break;
 
-        case SCH_NO_CONNECT_T: saveNoConnect( static_cast<SCH_NO_CONNECT*>( item ), 1 ); break;
+        case SCH_NO_CONNECT_T:
+            saveNoConnect( static_cast<SCH_NO_CONNECT*>( item ), 1 );
+            break;
 
         case SCH_BUS_WIRE_ENTRY_T:
         case SCH_BUS_BUS_ENTRY_T:
@@ -653,9 +679,12 @@ void SCH_SEXPR_PLUGIN::Format( SCH_SHEET* aSheet )
         case SCH_TEXT_T:
         case SCH_LABEL_T:
         case SCH_GLOBAL_LABEL_T:
-        case SCH_HIER_LABEL_T: saveText( static_cast<SCH_TEXT*>( item ), 1 ); break;
+        case SCH_HIER_LABEL_T:
+            saveText( static_cast<SCH_TEXT*>( item ), 1 );
+            break;
 
-        default: wxASSERT( "Unexpected schematic object type in SCH_SEXPR_PLUGIN::Format()" );
+        default:
+            wxASSERT( "Unexpected schematic object type in SCH_SEXPR_PLUGIN::Format()" );
         }
     }
 
@@ -678,7 +707,7 @@ void SCH_SEXPR_PLUGIN::Format( SCH_SHEET* aSheet )
                           m_out->Quotew( sheet->GetPageNumber( sheetPath ) ).c_str() );
         }
 
-        m_out->Print( 1, ")\n" ); // Close sheet instances token.
+        m_out->Print( 1, ")\n" );  // Close sheet instances token.
         m_out->Print( 0, "\n" );
         m_out->Print( 1, "(symbol_instances\n" );
 
@@ -691,7 +720,8 @@ void SCH_SEXPR_PLUGIN::Format( SCH_SHEET* aSheet )
 
             for( size_t i = 0; i < instances.GetCount(); i++ )
             {
-                m_out->Print( 2, "(path %s\n", m_out->Quotew( instances[i].GetPath() ).c_str() );
+                m_out->Print( 2, "(path %s\n",
+                              m_out->Quotew( instances[i].GetPath() ).c_str() );
                 m_out->Print( 3, "(reference %s) (unit %d) (value %s) (footprint %s)\n",
                               m_out->Quotew( instances[i].GetRef() ).c_str(),
                               instances[i].GetUnit(),
@@ -701,7 +731,7 @@ void SCH_SEXPR_PLUGIN::Format( SCH_SHEET* aSheet )
             }
         }
 
-        m_out->Print( 1, ")\n" ); // Close symbol instances token.
+        m_out->Print( 1, ")\n" );  // Close symbol instances token.
     }
     else
     {
@@ -720,7 +750,7 @@ void SCH_SEXPR_PLUGIN::Format( SCH_SHEET* aSheet )
                               m_out->Quotew( instance.m_PageNumber ).c_str() );
             }
 
-            m_out->Print( 1, ")\n" ); // Close sheet instances token.
+            m_out->Print( 1, ")\n" );  // Close sheet instances token.
         }
 
         if( screen->m_symbolInstances.size() )
@@ -732,10 +762,11 @@ void SCH_SEXPR_PLUGIN::Format( SCH_SHEET* aSheet )
             {
                 m_out->Print( 2, "(path %s (reference %s) (unit %d))\n",
                               m_out->Quotew( instance.m_Path.AsString() ).c_str(),
-                              m_out->Quotew( instance.m_Reference ).c_str(), instance.m_Unit );
+                              m_out->Quotew( instance.m_Reference ).c_str(),
+                              instance.m_Unit );
             }
 
-            m_out->Print( 1, ")\n" ); // Close instances token.
+            m_out->Print( 1, ")\n" );  // Close instances token.
         }
     }
 
@@ -743,7 +774,7 @@ void SCH_SEXPR_PLUGIN::Format( SCH_SHEET* aSheet )
 }
 
 
-void SCH_SEXPR_PLUGIN::Format( EE_SELECTION* aSelection, SCH_SHEET_PATH* aSheetPath,
+void SCH_SEXPR_PLUGIN::Format( EE_SELECTION* aSelection, SCH_SHEET_PATH* aSheetPath, 
                                OUTPUTFORMATTER* aFormatter )
 {
     wxCHECK( aSelection && aFormatter, /* void */ );
@@ -752,10 +783,10 @@ void SCH_SEXPR_PLUGIN::Format( EE_SELECTION* aSelection, SCH_SHEET_PATH* aSheetP
 
     m_out = aFormatter;
 
-    size_t                        i;
-    SCH_ITEM*                     item;
+    size_t i;
+    SCH_ITEM* item;
     std::map<wxString, LIB_PART*> libSymbols;
-    SCH_SCREEN*                   screen = aSelection->GetScreen();
+    SCH_SCREEN* screen = aSelection->GetScreen();
 
     for( i = 0; i < aSelection->GetSize(); ++i )
     {
@@ -778,7 +809,7 @@ void SCH_SEXPR_PLUGIN::Format( EE_SELECTION* aSelection, SCH_SHEET_PATH* aSheetP
         auto it = screen->GetLibSymbols().find( libSymbolLookup );
 
         if( it != screen->GetLibSymbols().end() )
-            libSymbols[libSymbolLookup] = it->second;
+            libSymbols[ libSymbolLookup ] = it->second;
     }
 
     if( !libSymbols.empty() )
@@ -801,27 +832,40 @@ void SCH_SEXPR_PLUGIN::Format( EE_SELECTION* aSelection, SCH_SHEET_PATH* aSheetP
             saveSymbol( static_cast<SCH_COMPONENT*>( item ), aSheetPath, 0 );
             break;
 
-        case SCH_BITMAP_T: saveBitmap( static_cast<SCH_BITMAP*>( item ), 0 ); break;
+        case SCH_BITMAP_T:
+            saveBitmap( static_cast< SCH_BITMAP* >( item ), 0 );
+            break;
 
-        case SCH_SHEET_T: saveSheet( static_cast<SCH_SHEET*>( item ), 0 ); break;
+        case SCH_SHEET_T:
+            saveSheet( static_cast< SCH_SHEET* >( item ), 0 );
+            break;
 
-        case SCH_JUNCTION_T: saveJunction( static_cast<SCH_JUNCTION*>( item ), 0 ); break;
+        case SCH_JUNCTION_T:
+            saveJunction( static_cast< SCH_JUNCTION* >( item ), 0 );
+            break;
 
-        case SCH_NO_CONNECT_T: saveNoConnect( static_cast<SCH_NO_CONNECT*>( item ), 0 ); break;
+        case SCH_NO_CONNECT_T:
+            saveNoConnect( static_cast< SCH_NO_CONNECT* >( item ), 0 );
+            break;
 
         case SCH_BUS_WIRE_ENTRY_T:
         case SCH_BUS_BUS_ENTRY_T:
-            saveBusEntry( static_cast<SCH_BUS_ENTRY_BASE*>( item ), 0 );
+            saveBusEntry( static_cast< SCH_BUS_ENTRY_BASE* >( item ), 0 );
             break;
 
-        case SCH_LINE_T: saveLine( static_cast<SCH_LINE*>( item ), 0 ); break;
+        case SCH_LINE_T:
+            saveLine( static_cast< SCH_LINE* >( item ), 0 );
+            break;
 
         case SCH_TEXT_T:
         case SCH_LABEL_T:
         case SCH_GLOBAL_LABEL_T:
-        case SCH_HIER_LABEL_T: saveText( static_cast<SCH_TEXT*>( item ), 0 ); break;
+        case SCH_HIER_LABEL_T:
+            saveText( static_cast< SCH_TEXT* >( item ), 0 );
+            break;
 
-        default: wxASSERT( "Unexpected schematic object type in SCH_SEXPR_PLUGIN::Format()" );
+        default:
+            wxASSERT( "Unexpected schematic object type in SCH_SEXPR_PLUGIN::Format()" );
         }
     }
 }
@@ -832,8 +876,8 @@ void SCH_SEXPR_PLUGIN::saveSymbol( SCH_COMPONENT* aSymbol, SCH_SHEET_PATH* aShee
 {
     wxCHECK_RET( aSymbol != nullptr && m_out != nullptr, "" );
 
-    std::string   libName;
-    wxArrayString reference_fields;
+    std::string     libName;
+    wxArrayString   reference_fields;
 
     static wxString delimiters( wxT( " " ) );
 
@@ -849,7 +893,7 @@ void SCH_SEXPR_PLUGIN::saveSymbol( SCH_COMPONENT* aSymbol, SCH_SHEET_PATH* aShee
     }
 
     double angle;
-    int    orientation = aSymbol->GetOrientation() & ~( CMP_MIRROR_X | CMP_MIRROR_Y );
+    int orientation = aSymbol->GetOrientation() & ~( CMP_MIRROR_X | CMP_MIRROR_Y );
 
     if( orientation == CMP_ORIENT_90 )
         angle = 90.0;
@@ -896,7 +940,7 @@ void SCH_SEXPR_PLUGIN::saveSymbol( SCH_COMPONENT* aSymbol, SCH_SHEET_PATH* aShee
         unit = aSymbol->GetUnit();
     else if( aSheetPath != nullptr )
         unit = aSymbol->GetUnitSelection( aSheetPath );
-    if( unit >= 0 )
+    if ( unit >= 0 )
         m_out->Print( 0, " (unit %d)", unit );
 
     if( aSymbol->GetConvert() == LIB_ITEM::LIB_CONVERT::DEMORGAN )
@@ -972,21 +1016,23 @@ void SCH_SEXPR_PLUGIN::saveField( SCH_FIELD* aField, int aNestLevel )
     }
 
     m_out->Print( aNestLevel, "(property %s %s (id %d) (at %s %s %s)",
-                  m_out->Quotew( fieldName ).c_str(), m_out->Quotew( aField->GetText() ).c_str(),
-                  aField->GetId(), FormatInternalUnits( aField->GetPosition().x ).c_str(),
+                  m_out->Quotew( fieldName ).c_str(),
+                  m_out->Quotew( aField->GetText() ).c_str(),
+                  aField->GetId(),
+                  FormatInternalUnits( aField->GetPosition().x ).c_str(),
                   FormatInternalUnits( aField->GetPosition().y ).c_str(),
                   FormatAngle( aField->GetTextAngleDegrees() * 10.0 ).c_str() );
 
     if( !aField->IsDefaultFormatting()
-        || ( aField->GetTextHeight() != Mils2iu( DEFAULT_SIZE_TEXT ) ) )
+      || ( aField->GetTextHeight() != Mils2iu( DEFAULT_SIZE_TEXT ) ) )
     {
         m_out->Print( 0, "\n" );
         aField->Format( m_out, aNestLevel, 0 );
-        m_out->Print( aNestLevel, ")\n" ); // Closes property token with font effects.
+        m_out->Print( aNestLevel, ")\n" );   // Closes property token with font effects.
     }
     else
     {
-        m_out->Print( 0, ")\n" ); // Closes property token without font effects.
+        m_out->Print( 0, ")\n" );            // Closes property token without font effects.
     }
 }
 
@@ -1018,7 +1064,7 @@ void SCH_SEXPR_PLUGIN::saveBitmap( SCH_BITMAP* aBitmap, int aNestLevel )
 
     // Write binary data in hexadecimal form (ASCII)
     wxStreamBuffer* buffer = stream.GetOutputStreamBuffer();
-    wxString        out = wxBase64Encode( buffer->GetBufferStart(), buffer->GetBufferSize() );
+    wxString out = wxBase64Encode( buffer->GetBufferStart(), buffer->GetBufferSize() );
 
     // Apparently the MIME standard character width for base64 encoding is 76 (unconfirmed)
     // so use it in a vein attempt to be standard like.
@@ -1034,8 +1080,8 @@ void SCH_SEXPR_PLUGIN::saveBitmap( SCH_BITMAP* aBitmap, int aNestLevel )
     }
 
     m_out->Print( 0, "\n" );
-    m_out->Print( aNestLevel + 1, ")\n" ); // Closes data token.
-    m_out->Print( aNestLevel, ")\n" );     // Closes image token.
+    m_out->Print( aNestLevel + 1, ")\n" );  // Closes data token.
+    m_out->Print( aNestLevel, ")\n" );      // Closes image token.
 }
 
 
@@ -1090,10 +1136,10 @@ void SCH_SEXPR_PLUGIN::saveSheet( SCH_SHEET* aSheet, int aNestLevel )
 
         m_out->Print( aNestLevel + 2, "(uuid %s)\n", TO_UTF8( pin->m_Uuid.AsString() ) );
 
-        m_out->Print( aNestLevel + 1, ")\n" ); // Closes pin token.
+        m_out->Print( aNestLevel + 1, ")\n" );  // Closes pin token.
     }
 
-    m_out->Print( aNestLevel, ")\n" ); // Closes sheet token.
+    m_out->Print( aNestLevel, ")\n" );          // Closes sheet token.
 }
 
 
@@ -1172,13 +1218,14 @@ void SCH_SEXPR_PLUGIN::saveLine( SCH_LINE* aLine, int aNestLevel )
 
     switch( aLine->GetLayer() )
     {
-    case LAYER_BUS: lineType = "bus"; break;
-    case LAYER_WIRE: lineType = "wire"; break;
+    case LAYER_BUS:     lineType = "bus";       break;
+    case LAYER_WIRE:    lineType = "wire";      break;
     case LAYER_NOTES:
-    default: lineType = "polyline"; break;
+    default:            lineType = "polyline";  break;
     }
 
-    m_out->Print( aNestLevel, "(%s (pts (xy %s %s) (xy %s %s))\n", TO_UTF8( lineType ),
+    m_out->Print( aNestLevel, "(%s (pts (xy %s %s) (xy %s %s))\n",
+                  TO_UTF8( lineType ),
                   FormatInternalUnits( aLine->GetStartPoint().x ).c_str(),
                   FormatInternalUnits( aLine->GetStartPoint().y ).c_str(),
                   FormatInternalUnits( aLine->GetEndPoint().x ).c_str(),
@@ -1201,17 +1248,15 @@ void SCH_SEXPR_PLUGIN::saveText( SCH_TEXT* aText, int aNestLevel )
 
     switch( aText->GetLabelSpinStyle() )
     {
-    case LABEL_SPIN_STYLE::RIGHT: angle = 0.0; break;
-    case LABEL_SPIN_STYLE::UP: angle = 90.0; break;
-    case LABEL_SPIN_STYLE::LEFT: angle = 180.0; break;
-    case LABEL_SPIN_STYLE::BOTTOM: angle = 270.0; break;
-    default:
-        wxFAIL;
-        angle = 0.0;
-        break;
+    case LABEL_SPIN_STYLE::RIGHT:    angle = 0.0;    break;
+    case LABEL_SPIN_STYLE::UP:       angle = 90.0;   break;
+    case LABEL_SPIN_STYLE::LEFT:     angle = 180.0;  break;
+    case LABEL_SPIN_STYLE::BOTTOM:   angle = 270.0;  break;
+    default:      wxFAIL;            angle = 0.0;    break;
     }
 
-    m_out->Print( aNestLevel, "(%s %s", getTextTypeToken( aText->Type() ),
+    m_out->Print( aNestLevel, "(%s %s",
+                  getTextTypeToken( aText->Type() ),
                   m_out->Quotew( aText->GetText() ).c_str() );
 
     if( ( aText->Type() == SCH_GLOBAL_LABEL_T ) || ( aText->Type() == SCH_HIER_LABEL_T ) )
@@ -1219,7 +1264,8 @@ void SCH_SEXPR_PLUGIN::saveText( SCH_TEXT* aText, int aNestLevel )
 
     if( aText->GetText().Length() < 50 )
     {
-        m_out->Print( 0, " (at %s %s %s)", FormatInternalUnits( aText->GetPosition().x ).c_str(),
+        m_out->Print( 0, " (at %s %s %s)",
+                      FormatInternalUnits( aText->GetPosition().x ).c_str(),
                       FormatInternalUnits( aText->GetPosition().y ).c_str(),
                       FormatAngle( angle * 10.0 ).c_str() );
     }
@@ -1246,7 +1292,7 @@ void SCH_SEXPR_PLUGIN::saveText( SCH_TEXT* aText, int aNestLevel )
         saveField( label->GetIntersheetRefs(), aNestLevel + 1 );
     }
 
-    m_out->Print( aNestLevel, ")\n" );         // Closes text token.
+    m_out->Print( aNestLevel, ")\n" );   // Closes text token.
 }
 
 
@@ -1265,16 +1311,19 @@ void SCH_SEXPR_PLUGIN::saveBusAlias( std::shared_ptr<BUS_ALIAS> aAlias, int aNes
     }
 
     m_out->Print( aNestLevel, "(bus_alias %s (members %s))\n",
-                  m_out->Quotew( aAlias->GetName() ).c_str(), TO_UTF8( members ) );
+                  m_out->Quotew( aAlias->GetName() ).c_str(),
+                  TO_UTF8( members ) );
 }
 
 
-int SCH_SEXPR_PLUGIN_CACHE::m_modHash = 1; // starts at 1 and goes up
+int SCH_SEXPR_PLUGIN_CACHE::m_modHash = 1;     // starts at 1 and goes up
 
 
 SCH_SEXPR_PLUGIN_CACHE::SCH_SEXPR_PLUGIN_CACHE( const wxString& aFullPathAndFileName ) :
-        m_fileName( aFullPathAndFileName ), m_libFileName( aFullPathAndFileName ),
-        m_isWritable( true ), m_isModified( false )
+    m_fileName( aFullPathAndFileName ),
+    m_libFileName( aFullPathAndFileName ),
+    m_isWritable( true ),
+    m_isModified( false )
 {
     m_versionMajor = -1;
     m_libType      = SCH_LIB_TYPE::LT_EESCHEMA;
@@ -1284,7 +1333,7 @@ SCH_SEXPR_PLUGIN_CACHE::SCH_SEXPR_PLUGIN_CACHE( const wxString& aFullPathAndFile
 SCH_SEXPR_PLUGIN_CACHE::~SCH_SEXPR_PLUGIN_CACHE()
 {
     // When the cache is destroyed, all of the alias objects on the heap should be deleted.
-    for( LIB_PART_MAP::iterator it = m_symbols.begin(); it != m_symbols.end(); ++it )
+    for( LIB_PART_MAP::iterator it = m_symbols.begin();  it != m_symbols.end();  ++it )
         delete it->second;
 
     m_symbols.clear();
@@ -1299,12 +1348,12 @@ wxFileName SCH_SEXPR_PLUGIN_CACHE::GetRealFile() const
 #ifndef __WINDOWS__
     if( fn.Exists( wxFILE_EXISTS_SYMLINK ) )
     {
-        char    buffer[PATH_MAX + 1];
+        char buffer[ PATH_MAX + 1 ];
         ssize_t pathLen = readlink( TO_UTF8( fn.GetFullPath() ), buffer, PATH_MAX );
 
         if( pathLen > 0 )
         {
-            buffer[pathLen] = '\0';
+            buffer[ pathLen ] = '\0';
             fn.Assign( fn.GetPath() + wxT( "/" ) + wxString::FromUTF8( buffer ) );
             fn.Normalize();
         }
@@ -1348,7 +1397,7 @@ LIB_PART* SCH_SEXPR_PLUGIN_CACHE::removeSymbol( LIB_PART* aPart )
 {
     wxCHECK_MSG( aPart != NULL, NULL, "NULL pointer cannot be removed from library." );
 
-    LIB_PART*              firstChild = NULL;
+    LIB_PART* firstChild = NULL;
     LIB_PART_MAP::iterator it = m_symbols.find( aPart->GetName() );
 
     if( it == m_symbols.end() )
@@ -1357,8 +1406,8 @@ LIB_PART* SCH_SEXPR_PLUGIN_CACHE::removeSymbol( LIB_PART* aPart )
     // If the entry pointer doesn't match the name it is mapped to in the library, we
     // have done something terribly wrong.
     wxCHECK_MSG( *it->second == aPart, NULL,
-                 "Pointer mismatch while attempting to remove alias entry <" + aPart->GetName()
-                         + "> from library cache <" + m_libFileName.GetName() + ">." );
+                 "Pointer mismatch while attempting to remove alias entry <" + aPart->GetName() +
+                 "> from library cache <" + m_libFileName.GetName() + ">." );
 
     // If the symbol is a root symbol used by other symbols find the first alias that uses
     // the root part and make it the new root.
@@ -1366,7 +1415,8 @@ LIB_PART* SCH_SEXPR_PLUGIN_CACHE::removeSymbol( LIB_PART* aPart )
     {
         for( auto entry : m_symbols )
         {
-            if( entry.second->IsAlias() && entry.second->GetParent().lock() == aPart->SharedPtr() )
+            if( entry.second->IsAlias()
+              && entry.second->GetParent().lock() == aPart->SharedPtr() )
             {
                 firstChild = entry.second;
                 break;
@@ -1394,7 +1444,7 @@ LIB_PART* SCH_SEXPR_PLUGIN_CACHE::removeSymbol( LIB_PART* aPart )
             for( auto entry : m_symbols )
             {
                 if( entry.second->IsAlias()
-                    && entry.second->GetParent().lock() == aPart->SharedPtr() )
+                  && entry.second->GetParent().lock() == aPart->SharedPtr() )
                     entry.second->SetParent( firstChild );
             }
         }
@@ -1411,7 +1461,7 @@ LIB_PART* SCH_SEXPR_PLUGIN_CACHE::removeSymbol( LIB_PART* aPart )
 void SCH_SEXPR_PLUGIN_CACHE::AddSymbol( const LIB_PART* aPart )
 {
     // aPart is cloned in PART_LIB::AddPart().  The cache takes ownership of aPart.
-    wxString               name = aPart->GetName();
+    wxString name = aPart->GetName();
     LIB_PART_MAP::iterator it = m_symbols.find( name );
 
     if( it != m_symbols.end() )
@@ -1419,7 +1469,7 @@ void SCH_SEXPR_PLUGIN_CACHE::AddSymbol( const LIB_PART* aPart )
         removeSymbol( it->second );
     }
 
-    m_symbols[name] = const_cast<LIB_PART*>( aPart );
+    m_symbols[ name ] = const_cast< LIB_PART* >( aPart );
     m_isModified = true;
     ++m_modHash;
 }
@@ -1435,8 +1485,7 @@ void SCH_SEXPR_PLUGIN_CACHE::Load()
 
     wxCHECK_RET( m_libFileName.IsAbsolute(),
                  wxString::Format( "Cannot use relative file paths in sexpr plugin to "
-                                   "open library \"%s\".",
-                                   m_libFileName.GetFullPath() ) );
+                                   "open library \"%s\".", m_libFileName.GetFullPath() ) );
 
     // The current locale must use period as the decimal point.
     wxCHECK2( wxLocale::GetInfo( wxLOCALE_DECIMAL_POINT, wxLOCALE_CAT_NUMBER ) == ".",
@@ -1464,7 +1513,7 @@ void SCH_SEXPR_PLUGIN_CACHE::Save()
     if( !m_isModified )
         return;
 
-    LOCALE_IO toggle; // toggles on, then off, the C locale.
+    LOCALE_IO   toggle;     // toggles on, then off, the C locale.
 
     // Write through symlinks, don't replace them.
     wxFileName fn = GetRealFile();
@@ -1517,8 +1566,8 @@ void SCH_SEXPR_PLUGIN_CACHE::SaveSymbol( LIB_PART* aSymbol, OUTPUTFORMATTER& aFo
 
     int nextFreeFieldId = MANDATORY_FIELDS;
     std::vector<LIB_FIELD*> fields;
-    std::string             name = aFormatter.Quotew( aSymbol->GetLibId().Format().wx_str() );
-    std::string             unitName = aSymbol->GetLibId().GetLibItemName();
+    std::string name = aFormatter.Quotew( aSymbol->GetLibId().Format().wx_str() );
+    std::string unitName = aSymbol->GetLibId().GetLibItemName();
 
     if( !aLibName.IsEmpty() )
     {
@@ -1546,7 +1595,7 @@ void SCH_SEXPR_PLUGIN_CACHE::SaveSymbol( LIB_PART* aSymbol, OUTPUTFORMATTER& aFo
             aFormatter.Print( 0, " (pin_numbers hide)" );
 
         if( aSymbol->GetPinNameOffset() != Mils2iu( DEFAULT_PIN_NAME_OFFSET )
-            || !aSymbol->ShowPinNames() )
+          || !aSymbol->ShowPinNames() )
         {
             aFormatter.Print( 0, " (pin_names" );
 
@@ -1590,20 +1639,20 @@ void SCH_SEXPR_PLUGIN_CACHE::SaveSymbol( LIB_PART* aSymbol, OUTPUTFORMATTER& aFo
         std::sort( units.begin(), units.end(),
                    []( const PART_UNITS& a, const PART_UNITS& b )
                    {
-                       if( a.m_unit == b.m_unit )
-                           return a.m_convert < b.m_convert;
+                        if( a.m_unit == b.m_unit )
+                            return a.m_convert < b.m_convert;
 
-                       return a.m_unit < b.m_unit;
+                        return a.m_unit < b.m_unit;
                    } );
 
         for( auto unit : units )
         {
             // Add quotes and escape chars like ") to the UTF8 unitName string
             name = aFormatter.Quotes( unitName );
-            name.pop_back(); // Remove last char: the quote ending the string.
+            name.pop_back();    // Remove last char: the quote ending the string.
 
-            aFormatter.Print( aNestLevel + 1, "(symbol %s_%d_%d\"\n", name.c_str(), unit.m_unit,
-                              unit.m_convert );
+            aFormatter.Print( aNestLevel + 1, "(symbol %s_%d_%d\"\n",
+                              name.c_str(), unit.m_unit, unit.m_convert );
 
             for( auto item : unit.m_items )
                 saveSymbolDrawItem( item, aFormatter, aNestLevel + 2 );
@@ -1617,7 +1666,8 @@ void SCH_SEXPR_PLUGIN_CACHE::SaveSymbol( LIB_PART* aSymbol, OUTPUTFORMATTER& aFo
 
         wxASSERT( parent );
 
-        aFormatter.Print( aNestLevel, "(symbol %s (extends %s)\n", name.c_str(),
+        aFormatter.Print( aNestLevel, "(symbol %s (extends %s)\n",
+                          name.c_str(),
                           aFormatter.Quotew( parent->GetName() ).c_str() );
 
         aSymbol->GetFields( fields );
@@ -1682,26 +1732,42 @@ void SCH_SEXPR_PLUGIN_CACHE::saveSymbolDrawItem( LIB_ITEM* aItem, OUTPUTFORMATTE
 
     switch( aItem->Type() )
     {
-    case LIB_ARC_T: saveArc( (LIB_ARC*) aItem, aFormatter, aNestLevel ); break;
+    case LIB_ARC_T:
+        saveArc( (LIB_ARC*) aItem, aFormatter, aNestLevel );
+        break;
 
-    case LIB_BEZIER_T: saveBezier( (LIB_BEZIER*) aItem, aFormatter, aNestLevel ); break;
+    case LIB_BEZIER_T:
+        saveBezier( (LIB_BEZIER*) aItem, aFormatter, aNestLevel );
+        break;
 
-    case LIB_CIRCLE_T: saveCircle( (LIB_CIRCLE*) aItem, aFormatter, aNestLevel ); break;
+    case LIB_CIRCLE_T:
+        saveCircle( ( LIB_CIRCLE* ) aItem, aFormatter, aNestLevel );
+        break;
 
-    case LIB_PIN_T: savePin( (LIB_PIN*) aItem, aFormatter, aNestLevel ); break;
+    case LIB_PIN_T:
+        savePin( (LIB_PIN* ) aItem, aFormatter, aNestLevel );
+        break;
 
-    case LIB_POLYLINE_T: savePolyLine( (LIB_POLYLINE*) aItem, aFormatter, aNestLevel ); break;
+    case LIB_POLYLINE_T:
+        savePolyLine( ( LIB_POLYLINE* ) aItem, aFormatter, aNestLevel );
+        break;
 
-    case LIB_RECTANGLE_T: saveRectangle( (LIB_RECTANGLE*) aItem, aFormatter, aNestLevel ); break;
+    case LIB_RECTANGLE_T:
+        saveRectangle( ( LIB_RECTANGLE* ) aItem, aFormatter, aNestLevel );
+        break;
 
-    case LIB_TEXT_T: saveText( (LIB_TEXT*) aItem, aFormatter, aNestLevel ); break;
+    case LIB_TEXT_T:
+        saveText( ( LIB_TEXT* ) aItem, aFormatter, aNestLevel );
+        break;
 
-    default:;
+    default:
+        ;
     }
 }
 
 
-void SCH_SEXPR_PLUGIN_CACHE::saveArc( LIB_ARC* aArc, OUTPUTFORMATTER& aFormatter, int aNestLevel )
+void SCH_SEXPR_PLUGIN_CACHE::saveArc( LIB_ARC* aArc, OUTPUTFORMATTER& aFormatter,
+                                      int aNestLevel )
 {
     wxCHECK_RET( aArc && aArc->Type() == LIB_ARC_T, "Invalid LIB_ARC object." );
 
@@ -1725,19 +1791,21 @@ void SCH_SEXPR_PLUGIN_CACHE::saveArc( LIB_ARC* aArc, OUTPUTFORMATTER& aFormatter
                       FormatInternalUnits( aArc->GetPosition().x ).c_str(),
                       FormatInternalUnits( aArc->GetPosition().y ).c_str(),
                       FormatInternalUnits( aArc->GetRadius() ).c_str(),
-                      static_cast<double>( x1 ) / 10.0, static_cast<double>( x2 ) / 10.0 );
+                      static_cast<double>( x1 ) / 10.0,
+                      static_cast<double>( x2 ) / 10.0 );
 
     aFormatter.Print( 0, "\n" );
     aFormatter.Print( aNestLevel + 1, "(stroke (width %s)) ",
                       FormatInternalUnits( aArc->GetWidth() ).c_str() );
 
-    formatFill( static_cast<LIB_ITEM*>( aArc ), aFormatter, 0 );
+    formatFill( static_cast< LIB_ITEM* >( aArc ), aFormatter, 0 );
     aFormatter.Print( 0, "\n" );
     aFormatter.Print( aNestLevel, ")\n" );
 }
 
 
-void SCH_SEXPR_PLUGIN_CACHE::saveBezier( LIB_BEZIER* aBezier, OUTPUTFORMATTER& aFormatter,
+void SCH_SEXPR_PLUGIN_CACHE::saveBezier( LIB_BEZIER* aBezier,
+                                         OUTPUTFORMATTER& aFormatter,
                                          int aNestLevel )
 {
     wxCHECK_RET( aBezier && aBezier->Type() == LIB_BEZIER_T, "Invalid LIB_BEZIER object." );
@@ -1752,14 +1820,16 @@ void SCH_SEXPR_PLUGIN_CACHE::saveBezier( LIB_BEZIER* aBezier, OUTPUTFORMATTER& a
         if( newLine == 4 )
         {
             aFormatter.Print( 0, "\n" );
-            aFormatter.Print( aNestLevel + 3, " (xy %s %s)", FormatInternalUnits( pt.x ).c_str(),
+            aFormatter.Print( aNestLevel + 3, " (xy %s %s)",
+                              FormatInternalUnits( pt.x ).c_str(),
                               FormatInternalUnits( pt.y ).c_str() );
             newLine = 0;
             lineCount += 1;
         }
         else
         {
-            aFormatter.Print( 0, " (xy %s %s)", FormatInternalUnits( pt.x ).c_str(),
+            aFormatter.Print( 0, " (xy %s %s)",
+                              FormatInternalUnits( pt.x ).c_str(),
                               FormatInternalUnits( pt.y ).c_str() );
         }
 
@@ -1768,24 +1838,25 @@ void SCH_SEXPR_PLUGIN_CACHE::saveBezier( LIB_BEZIER* aBezier, OUTPUTFORMATTER& a
 
     if( lineCount == 1 )
     {
-        aFormatter.Print( 0, ")\n" ); // Closes pts token on same line.
+        aFormatter.Print( 0, ")\n" );  // Closes pts token on same line.
     }
     else
     {
         aFormatter.Print( 0, "\n" );
-        aFormatter.Print( aNestLevel + 1, ")\n" ); // Closes pts token with multiple lines.
+        aFormatter.Print( aNestLevel + 1, ")\n" );  // Closes pts token with multiple lines.
     }
 
     aFormatter.Print( aNestLevel + 1, "(stroke (width %s)) ",
                       FormatInternalUnits( aBezier->GetWidth() ).c_str() );
 
-    formatFill( static_cast<LIB_ITEM*>( aBezier ), aFormatter, 0 );
+    formatFill( static_cast< LIB_ITEM* >( aBezier ), aFormatter, 0 );
     aFormatter.Print( 0, "\n" );
     aFormatter.Print( aNestLevel, ")\n" );
 }
 
 
-void SCH_SEXPR_PLUGIN_CACHE::saveCircle( LIB_CIRCLE* aCircle, OUTPUTFORMATTER& aFormatter,
+void SCH_SEXPR_PLUGIN_CACHE::saveCircle( LIB_CIRCLE* aCircle,
+                                         OUTPUTFORMATTER& aFormatter,
                                          int aNestLevel )
 {
     wxCHECK_RET( aCircle && aCircle->Type() == LIB_CIRCLE_T, "Invalid LIB_CIRCLE object." );
@@ -1796,7 +1867,7 @@ void SCH_SEXPR_PLUGIN_CACHE::saveCircle( LIB_CIRCLE* aCircle, OUTPUTFORMATTER& a
                       FormatInternalUnits( aCircle->GetRadius() ).c_str(),
                       FormatInternalUnits( aCircle->GetWidth() ).c_str() );
 
-    formatFill( static_cast<LIB_ITEM*>( aCircle ), aFormatter, 0 );
+    formatFill( static_cast< LIB_ITEM* >( aCircle ), aFormatter, 0 );
     aFormatter.Print( 0, ")\n" );
 }
 
@@ -1823,7 +1894,8 @@ void SCH_SEXPR_PLUGIN_CACHE::saveField( LIB_FIELD* aField, OUTPUTFORMATTER& aFor
 
     aFormatter.Print( aNestLevel, "(property %s %s (id %d) (at %s %s %g)\n",
                       aFormatter.Quotew( fieldName ).c_str(),
-                      aFormatter.Quotew( aField->GetText() ).c_str(), aField->GetId(),
+                      aFormatter.Quotew( aField->GetText() ).c_str(),
+                      aField->GetId(),
                       FormatInternalUnits( aField->GetPosition().x ).c_str(),
                       FormatInternalUnits( aField->GetPosition().y ).c_str(),
                       static_cast<double>( aField->GetTextAngle() ) / 10.0 );
@@ -1833,7 +1905,9 @@ void SCH_SEXPR_PLUGIN_CACHE::saveField( LIB_FIELD* aField, OUTPUTFORMATTER& aFor
 }
 
 
-void SCH_SEXPR_PLUGIN_CACHE::savePin( LIB_PIN* aPin, OUTPUTFORMATTER& aFormatter, int aNestLevel )
+void SCH_SEXPR_PLUGIN_CACHE::savePin( LIB_PIN* aPin,
+                                      OUTPUTFORMATTER& aFormatter,
+                                      int aNestLevel )
 {
     wxCHECK_RET( aPin && aPin->Type() == LIB_PIN_T, "Invalid LIB_PIN object." );
 
@@ -1876,7 +1950,8 @@ void SCH_SEXPR_PLUGIN_CACHE::savePin( LIB_PIN* aPin, OUTPUTFORMATTER& aFormatter
 }
 
 
-void SCH_SEXPR_PLUGIN_CACHE::savePolyLine( LIB_POLYLINE* aPolyLine, OUTPUTFORMATTER& aFormatter,
+void SCH_SEXPR_PLUGIN_CACHE::savePolyLine( LIB_POLYLINE* aPolyLine,
+                                           OUTPUTFORMATTER& aFormatter,
                                            int aNestLevel )
 {
     wxCHECK_RET( aPolyLine && aPolyLine->Type() == LIB_POLYLINE_T, "Invalid LIB_POLYLINE object." );
@@ -1891,14 +1966,16 @@ void SCH_SEXPR_PLUGIN_CACHE::savePolyLine( LIB_POLYLINE* aPolyLine, OUTPUTFORMAT
         if( newLine == 4 || !ADVANCED_CFG::GetCfg().m_CompactSave )
         {
             aFormatter.Print( 0, "\n" );
-            aFormatter.Print( aNestLevel + 2, "(xy %s %s)", FormatInternalUnits( pt.x ).c_str(),
+            aFormatter.Print( aNestLevel + 2, "(xy %s %s)",
+                              FormatInternalUnits( pt.x ).c_str(),
                               FormatInternalUnits( pt.y ).c_str() );
             newLine = 0;
             lineCount += 1;
         }
         else
         {
-            aFormatter.Print( 0, " (xy %s %s)", FormatInternalUnits( pt.x ).c_str(),
+            aFormatter.Print( 0, " (xy %s %s)",
+                              FormatInternalUnits( pt.x ).c_str(),
                               FormatInternalUnits( pt.y ).c_str() );
         }
 
@@ -1907,17 +1984,17 @@ void SCH_SEXPR_PLUGIN_CACHE::savePolyLine( LIB_POLYLINE* aPolyLine, OUTPUTFORMAT
 
     if( lineCount == 1 )
     {
-        aFormatter.Print( 0, ")\n" ); // Closes pts token on same line.
+        aFormatter.Print( 0, ")\n" );  // Closes pts token on same line.
     }
     else
     {
         aFormatter.Print( 0, "\n" );
-        aFormatter.Print( aNestLevel + 1, ")\n" ); // Closes pts token with multiple lines.
+        aFormatter.Print( aNestLevel + 1, ")\n" );  // Closes pts token with multiple lines.
     }
 
     aFormatter.Print( aNestLevel + 1, "(stroke (width %s)) ",
                       FormatInternalUnits( aPolyLine->GetWidth() ).c_str() );
-    formatFill( static_cast<LIB_ITEM*>( aPolyLine ), aFormatter, 0 );
+    formatFill( static_cast< LIB_ITEM* >( aPolyLine ), aFormatter, 0 );
     aFormatter.Print( 0, "\n" );
     aFormatter.Print( aNestLevel, ")\n" );
 }
@@ -1936,7 +2013,7 @@ void SCH_SEXPR_PLUGIN_CACHE::saveRectangle( LIB_RECTANGLE* aRectangle, OUTPUTFOR
                       FormatInternalUnits( aRectangle->GetEnd().y ).c_str() );
     aFormatter.Print( aNestLevel + 1, "(stroke (width %s)) ",
                       FormatInternalUnits( aRectangle->GetWidth() ).c_str() );
-    formatFill( static_cast<LIB_ITEM*>( aRectangle ), aFormatter, 0 );
+    formatFill( static_cast< LIB_ITEM* >( aRectangle ), aFormatter, 0 );
     aFormatter.Print( 0, "\n" );
     aFormatter.Print( aNestLevel, ")\n" );
 }
@@ -1947,10 +2024,11 @@ void SCH_SEXPR_PLUGIN_CACHE::saveText( LIB_TEXT* aText, OUTPUTFORMATTER& aFormat
 {
     wxCHECK_RET( aText && aText->Type() == LIB_TEXT_T, "Invalid LIB_TEXT object." );
 
-    aFormatter.Print(
-            aNestLevel, "(text %s (at %s %s %g)\n", aFormatter.Quotew( aText->GetText() ).c_str(),
-            FormatInternalUnits( aText->GetPosition().x ).c_str(),
-            FormatInternalUnits( aText->GetPosition().y ).c_str(), aText->GetTextAngle() );
+    aFormatter.Print( aNestLevel, "(text %s (at %s %s %g)\n",
+                      aFormatter.Quotew( aText->GetText() ).c_str(),
+                      FormatInternalUnits( aText->GetPosition().x ).c_str(),
+                      FormatInternalUnits( aText->GetPosition().y ).c_str(),
+                      aText->GetTextAngle() );
     aText->Format( &aFormatter, aNestLevel, 0 );
     aFormatter.Print( aNestLevel, ")\n" );
 }
@@ -2041,7 +2119,7 @@ void SCH_SEXPR_PLUGIN::EnumerateSymbolLib( wxArrayString&    aSymbolNameList,
                                            const wxString&   aLibraryPath,
                                            const PROPERTIES* aProperties )
 {
-    LOCALE_IO toggle; // toggles on, then off, the C locale.
+    LOCALE_IO   toggle;     // toggles on, then off, the C locale.
 
     bool powerSymbolsOnly = ( aProperties &&
                               aProperties->find( SYMBOL_LIB_TABLE::PropPowerSymsOnly ) != aProperties->end() );
@@ -2050,7 +2128,7 @@ void SCH_SEXPR_PLUGIN::EnumerateSymbolLib( wxArrayString&    aSymbolNameList,
 
     const LIB_PART_MAP& symbols = m_cache->m_symbols;
 
-    for( LIB_PART_MAP::const_iterator it = symbols.begin(); it != symbols.end(); ++it )
+    for( LIB_PART_MAP::const_iterator it = symbols.begin();  it != symbols.end();  ++it )
     {
         if( !powerSymbolsOnly || it->second->IsPower() )
             aSymbolNameList.Add( it->first );
@@ -2059,10 +2137,10 @@ void SCH_SEXPR_PLUGIN::EnumerateSymbolLib( wxArrayString&    aSymbolNameList,
 
 
 void SCH_SEXPR_PLUGIN::EnumerateSymbolLib( std::vector<LIB_PART*>& aSymbolList,
-                                           const wxString&         aLibraryPath,
-                                           const PROPERTIES*       aProperties )
+                                           const wxString&   aLibraryPath,
+                                           const PROPERTIES* aProperties )
 {
-    LOCALE_IO toggle; // toggles on, then off, the C locale.
+    LOCALE_IO   toggle;     // toggles on, then off, the C locale.
 
     bool powerSymbolsOnly = ( aProperties &&
                               aProperties->find( SYMBOL_LIB_TABLE::PropPowerSymsOnly ) != aProperties->end() );
@@ -2071,7 +2149,7 @@ void SCH_SEXPR_PLUGIN::EnumerateSymbolLib( std::vector<LIB_PART*>& aSymbolList,
 
     const LIB_PART_MAP& symbols = m_cache->m_symbols;
 
-    for( LIB_PART_MAP::const_iterator it = symbols.begin(); it != symbols.end(); ++it )
+    for( LIB_PART_MAP::const_iterator it = symbols.begin();  it != symbols.end();  ++it )
     {
         if( !powerSymbolsOnly || it->second->IsPower() )
             aSymbolList.push_back( it->second );
@@ -2082,7 +2160,7 @@ void SCH_SEXPR_PLUGIN::EnumerateSymbolLib( std::vector<LIB_PART*>& aSymbolList,
 LIB_PART* SCH_SEXPR_PLUGIN::LoadSymbol( const wxString& aLibraryPath, const wxString& aSymbolName,
                                         const PROPERTIES* aProperties )
 {
-    LOCALE_IO toggle; // toggles on, then off, the C locale.
+    LOCALE_IO toggle;     // toggles on, then off, the C locale.
 
     cacheLib( aLibraryPath, aProperties );
 
@@ -2123,14 +2201,14 @@ void SCH_SEXPR_PLUGIN::DeleteSymbol( const wxString& aLibraryPath, const wxStrin
 }
 
 
-void SCH_SEXPR_PLUGIN::CreateSymbolLib( const wxString&   aLibraryPath,
+void SCH_SEXPR_PLUGIN::CreateSymbolLib( const wxString& aLibraryPath,
                                         const PROPERTIES* aProperties )
 {
     if( wxFileExists( aLibraryPath ) )
     {
         THROW_IO_ERROR( wxString::Format(
-                _( "symbol library \"%s\" already exists, cannot create a new library" ),
-                aLibraryPath.GetData() ) );
+            _( "symbol library \"%s\" already exists, cannot create a new library" ),
+            aLibraryPath.GetData() ) );
     }
 
     LOCALE_IO toggle;
@@ -2139,11 +2217,11 @@ void SCH_SEXPR_PLUGIN::CreateSymbolLib( const wxString&   aLibraryPath,
     m_cache = new SCH_SEXPR_PLUGIN_CACHE( aLibraryPath );
     m_cache->SetModified();
     m_cache->Save();
-    m_cache->Load(); // update m_writable and m_mod_time
+    m_cache->Load();    // update m_writable and m_mod_time
 }
 
 
-bool SCH_SEXPR_PLUGIN::DeleteSymbolLib( const wxString&   aLibraryPath,
+bool SCH_SEXPR_PLUGIN::DeleteSymbolLib( const wxString& aLibraryPath,
                                         const PROPERTIES* aProperties )
 {
     wxFileName fn = aLibraryPath;
@@ -2213,8 +2291,8 @@ bool SCH_SEXPR_PLUGIN::IsSymbolLibWritable( const wxString& aLibraryPath )
 
 LIB_PART* SCH_SEXPR_PLUGIN::ParsePart( LINE_READER& aReader, int aFileVersion )
 {
-    LOCALE_IO        toggle; // toggles on, then off, the C locale.
-    LIB_PART_MAP     map;
+    LOCALE_IO toggle;     // toggles on, then off, the C locale.
+    LIB_PART_MAP map;
     SCH_SEXPR_PARSER parser( &aReader );
 
     parser.NeedLEFT();
@@ -2224,9 +2302,10 @@ LIB_PART* SCH_SEXPR_PLUGIN::ParsePart( LINE_READER& aReader, int aFileVersion )
 }
 
 
-void SCH_SEXPR_PLUGIN::FormatPart( LIB_PART* part, OUTPUTFORMATTER& formatter )
+void SCH_SEXPR_PLUGIN::FormatPart( LIB_PART* part, OUTPUTFORMATTER & formatter )
 {
-    LOCALE_IO toggle; // toggles on, then off, the C locale.
+
+    LOCALE_IO toggle;     // toggles on, then off, the C locale.
     SCH_SEXPR_PLUGIN_CACHE::SaveSymbol( part, formatter );
 }
 

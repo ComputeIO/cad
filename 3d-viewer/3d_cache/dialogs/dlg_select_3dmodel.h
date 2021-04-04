@@ -53,9 +53,9 @@ public:
 private:
     void updateDirChoiceList( void );
 
-    FP_3DMODEL*        m_model;    // data for the selected model
-    S3D_CACHE*         m_cache;    // cache manager
-    FILENAME_RESOLVER* m_resolver; // 3D filename resolver
+    FP_3DMODEL*        m_model;       // data for the selected model
+    S3D_CACHE*         m_cache;       // cache manager
+    FILENAME_RESOLVER* m_resolver;    // 3D filename resolver
 
     wxString& m_previousDir;
     int&      m_previousFilterIndex;

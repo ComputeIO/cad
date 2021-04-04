@@ -300,7 +300,7 @@ FOOTPRINT& FOOTPRINT::operator=( FOOTPRINT&& aOther )
     m_3D_Drawings.clear();
     m_3D_Drawings = aOther.m_3D_Drawings;
     m_doc         = aOther.m_doc;
-    m_keywords = aOther.m_keywords;
+    m_keywords    = aOther.m_keywords;
     m_properties  = aOther.m_properties;
 
     m_initial_comments = aOther.m_initial_comments;

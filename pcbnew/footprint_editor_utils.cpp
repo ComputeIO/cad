@@ -244,7 +244,7 @@ void FOOTPRINT_EDIT_FRAME::SetActiveLayer( PCB_LAYER_ID aLayer )
 bool FOOTPRINT_EDIT_FRAME::OpenProjectFiles( const std::vector<wxString>& aFileSet, int aCtl )
 {
     if( !Clear_Pcb( true ) )
-        return false; // this command is aborted
+        return false;                  // this command is aborted
 
     GetCanvas()->GetViewControls()->SetCrossHairCursorPosition( VECTOR2D( 0, 0 ), false );
     ImportFootprint( aFileSet[ 0 ] );

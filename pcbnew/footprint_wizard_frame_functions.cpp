@@ -49,7 +49,7 @@ void FOOTPRINT_WIZARD_FRAME::Process_Special_Functions( wxCommandEvent& event )
     case ID_FOOTPRINT_WIZARD_NEXT:
         page = m_pageList->GetSelection() + 1;
 
-        if( (int) m_pageList->GetCount() <= page )
+        if( (int)m_pageList->GetCount() <= page )
             page = m_pageList->GetCount() - 1;
 
         m_pageList->SetSelection( page, true );

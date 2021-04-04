@@ -21,8 +21,8 @@ static bool InRange( double x, double xi, double xf );
  * return coords of intersections in *x1, *y1, *x2, *y2
  * if no intersection, returns min distance in dist
  */
-bool FindLineSegmentIntersection( double a, double b, int xi, int yi, int xf, int yf, double& x1,
-                                  double& y1, double* dist )
+bool FindLineSegmentIntersection( double a, double b, int xi, int yi, int xf, int yf,
+                                 double& x1, double& y1, double* dist )
 {
     double  xx = 0, yy = 0; // Init made to avoid C compil "uninitialized" warning
     bool    bVert = false;
@@ -169,8 +169,9 @@ bool TestForIntersectionOfStraightLineSegments( int x1i, int y1i, int x1f, int y
         b   = double( y2f - y2i ) / (x2f - x2i);
         a   = (double) y2i - b * x2i;
 
-        double x1, y1;
-        bool   test = FindLineSegmentIntersection( a, b, x1i, y1i, x1f, y1f, x1, y1 );
+        double  x1, y1;
+        bool    test = FindLineSegmentIntersection( a, b, x1i, y1i, x1f, y1f,
+                                                    x1, y1 );
 
         if( test )
         {
@@ -196,8 +197,8 @@ bool TestForIntersectionOfStraightLineSegments( int x1i, int y1i, int x1f, int y
         b   = double( y2f - y2i ) / (x2f - x2i);
         a   = (double) y2i - b * x2i;
 
-        double x1, y1;
-        bool   test = FindLineSegmentIntersection( a, b, x1i, y1i, x1f, y1f, x1, y1 );
+        double  x1, y1;
+        bool    test = FindLineSegmentIntersection( a, b, x1i, y1i, x1f, y1f, x1, y1 );
 
         if( test )
         {
@@ -250,8 +251,8 @@ bool TestForIntersectionOfStraightLineSegments( int x1i, int y1i, int x1f, int y
         b   = double( y1f - y1i ) / (x1f - x1i);
         a   = (double) y1i - b * x1i;
 
-        double x1, y1;
-        bool   test = FindLineSegmentIntersection( a, b, x2i, y2i, x2f, y2f, x1, y1 );
+        double  x1, y1;
+        bool    test = FindLineSegmentIntersection( a, b, x2i, y2i, x2f, y2f, x1, y1 );
 
         if( test )
         {
@@ -279,8 +280,8 @@ bool TestForIntersectionOfStraightLineSegments( int x1i, int y1i, int x1f, int y
             b   = double( y1f - y1i ) / (x1f - x1i);
             a   = (double) y1i - b * x1i;
 
-            double x1, y1;
-            bool   test = FindLineSegmentIntersection( a, b, x2i, y2i, x2f, y2f, x1, y1 );
+            double  x1, y1;
+            bool    test = FindLineSegmentIntersection( a, b, x2i, y2i, x2f, y2f, x1, y1 );
 
             // both segments oblique
             if( test )

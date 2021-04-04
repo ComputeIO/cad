@@ -97,15 +97,14 @@ bool EnsureFileDirectoryExists( wxFileName*     aTargetFullFileName,
  */
 const wxString ExpandEnvVarSubstitutions( const wxString& aString, PROJECT* aProject );
 
-typedef std::function<bool( wxString* )> RESOLVER_FN;
-typedef RESOLVER_FN*                     RESOLVER;
-
 /**
  * Expand '${var-name}' templates in text.  The LocalResolver is given first crack at it,
  * after which the PROJECT's resolver is called.
  */
-wxString ExpandTextVars( const wxString& aSource, const RESOLVER aLocalResolver,
-                         const RESOLVER aFallbackResolver, const PROJECT* aProject );
+wxString ExpandTextVars( const wxString& aSource,
+                         const std::function<bool( wxString* )>* aLocalResolver,
+                         const std::function<bool( wxString* )>* aFallbackResolver,
+                         const PROJECT* aProject );
 
 wxString ExpandTextVars( const wxString& aSource, const PROJECT* aProject );
 

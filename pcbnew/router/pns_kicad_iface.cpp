@@ -1025,7 +1025,7 @@ bool PNS_KICAD_IFACE_BASE::syncZone( PNS::NODE* aWorld, ZONE* aZone, SHAPE_POLY_
 
     for( int layer = F_Cu; layer <= B_Cu; layer++ )
     {
-        if( !layers[layer] )
+        if( !layers[ layer ] )
             continue;
 
         for( int outline = 0; outline < poly->OutlineCount(); outline++ )
@@ -1445,6 +1445,7 @@ void PNS_KICAD_IFACE::RemoveItem( PNS::ITEM* aItem )
 
 void PNS_KICAD_IFACE_BASE::UpdateItem( PNS::ITEM* aItem )
 {
+
 }
 
 
@@ -1458,8 +1459,8 @@ void PNS_KICAD_IFACE::UpdateItem( PNS::ITEM* aItem )
     {
     case PNS::ITEM::ARC_T:
     {
-        PNS::ARC*        arc = static_cast<PNS::ARC*>( aItem );
-        ARC*             arc_board = static_cast<ARC*>( board_item );
+        PNS::ARC* arc = static_cast<PNS::ARC*>( aItem );
+        ARC* arc_board = static_cast<ARC*>( board_item );
         const SHAPE_ARC* arc_shape = static_cast<const SHAPE_ARC*>( arc->Shape() );
         arc_board->SetStart( wxPoint( arc_shape->GetP0() ) );
         arc_board->SetEnd( wxPoint( arc_shape->GetP1() ) );
@@ -1471,8 +1472,8 @@ void PNS_KICAD_IFACE::UpdateItem( PNS::ITEM* aItem )
     case PNS::ITEM::SEGMENT_T:
     {
         PNS::SEGMENT* seg = static_cast<PNS::SEGMENT*>( aItem );
-        TRACK*        track = static_cast<TRACK*>( board_item );
-        const SEG&    s = seg->Seg();
+        TRACK* track = static_cast<TRACK*>( board_item );
+        const SEG& s = seg->Seg();
         track->SetStart( wxPoint( s.A.x, s.A.y ) );
         track->SetEnd( wxPoint( s.B.x, s.B.y ) );
         track->SetWidth( seg->Width() );
@@ -1481,7 +1482,7 @@ void PNS_KICAD_IFACE::UpdateItem( PNS::ITEM* aItem )
 
     case PNS::ITEM::VIA_T:
     {
-        VIA*      via_board = static_cast<VIA*>( board_item );
+        VIA* via_board = static_cast<VIA*>( board_item );
         PNS::VIA* via = static_cast<PNS::VIA*>( aItem );
         via_board->SetPosition( wxPoint( via->Pos().x, via->Pos().y ) );
         via_board->SetWidth( via->Diameter() );
@@ -1496,7 +1497,7 @@ void PNS_KICAD_IFACE::UpdateItem( PNS::ITEM* aItem )
 
     case PNS::ITEM::SOLID_T:
     {
-        PAD*     pad = static_cast<PAD*>( aItem->Parent() );
+        PAD*   pad = static_cast<PAD*>( aItem->Parent() );
         VECTOR2I pos = static_cast<PNS::SOLID*>( aItem )->Pos();
 
         m_fpOffsets[ pad ].p_old = pad->GetPosition();
@@ -1504,7 +1505,8 @@ void PNS_KICAD_IFACE::UpdateItem( PNS::ITEM* aItem )
         break;
     }
 
-    default: break;
+    default:
+        break;
     }
 }
 

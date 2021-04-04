@@ -72,10 +72,11 @@ bool SCH_DRAWING_TOOLS::Init()
 {
     EE_TOOL_BASE::Init();
 
-    auto belowRootSheetCondition = [&]( const SELECTION& aSel )
-    {
-        return m_frame->GetCurrentSheet().Last() != &m_frame->Schematic().Root();
-    };
+    auto belowRootSheetCondition =
+            [&]( const SELECTION& aSel )
+            {
+                return m_frame->GetCurrentSheet().Last() != &m_frame->Schematic().Root();
+            };
 
     CONDITIONAL_MENU& ctxMenu = m_menu.GetMenu();
     ctxMenu.AddItem( EE_ACTIONS::leaveSheet, belowRootSheetCondition, 2 );
@@ -99,7 +100,7 @@ int SCH_DRAWING_TOOLS::PlaceSymbol( const TOOL_EVENT& aEvent )
     {
         historyList = &m_symbolHistoryList;
     }
-    else if( aEvent.IsAction( &EE_ACTIONS::placePower ) )
+    else if (aEvent.IsAction( &EE_ACTIONS::placePower ) )
     {
         historyList = &m_powerHistoryList;
         filter.FilterPowerParts( true );
@@ -209,8 +210,8 @@ int SCH_DRAWING_TOOLS::PlaceSymbol( const TOOL_EVENT& aEvent )
 
                 // Pick the footprint to be placed
                 bool footprintPreviews = m_frame->eeconfig()->m_Appearance.footprint_preview;
-                PICKED_SYMBOL sel = m_frame->PickSymbolFromLibTree( &filter, *historyList, true, 1,
-                                                                    1, footprintPreviews );
+                PICKED_SYMBOL sel = m_frame->PickSymbolFromLibTree( &filter, *historyList, true,
+                                                                    1, 1, footprintPreviews );
 
                 // Restore cursor after dialog
                 getViewControls()->WarpCursor( getViewControls()->GetCursorPosition(), true );
@@ -243,7 +244,7 @@ int SCH_DRAWING_TOOLS::PlaceSymbol( const TOOL_EVENT& aEvent )
                 SCH_COMPONENT* nextSymbol = nullptr;
 
                 if( m_frame->eeconfig()->m_SymChooserPanel.place_all_units
-                    || m_frame->eeconfig()->m_SymChooserPanel.keep_symbol )
+                        || m_frame->eeconfig()->m_SymChooserPanel.keep_symbol )
                 {
                     int new_unit = symbol->GetUnit();
 
@@ -335,7 +336,7 @@ int SCH_DRAWING_TOOLS::PlaceImage( const TOOL_EVENT& aEvent )
     // Add all the drawable parts to preview
     if( image )
     {
-        image->SetPosition( (wxPoint) cursorPos );
+        image->SetPosition( (wxPoint)cursorPos );
         m_view->ClearPreview();
         m_view->AddToPreview( image->Clone() );
     }
@@ -436,7 +437,7 @@ int SCH_DRAWING_TOOLS::PlaceImage( const TOOL_EVENT& aEvent )
                 wxString fullFilename = dlg.GetPath();
 
                 if( wxFileExists( fullFilename ) )
-                    image = new SCH_BITMAP( (wxPoint) cursorPos );
+                    image = new SCH_BITMAP( (wxPoint)cursorPos );
 
                 if( !image || !image->ReadImageFile( fullFilename ) )
                 {
@@ -452,7 +453,7 @@ int SCH_DRAWING_TOOLS::PlaceImage( const TOOL_EVENT& aEvent )
 
                 m_view->ClearPreview();
                 m_view->AddToPreview( image->Clone() );
-                m_view->RecacheAllItems(); // Bitmaps are cached in Opengl
+                m_view->RecacheAllItems();  // Bitmaps are cached in Opengl
 
                 m_selectionTool->AddItemToSel( image );
 
@@ -484,10 +485,10 @@ int SCH_DRAWING_TOOLS::PlaceImage( const TOOL_EVENT& aEvent )
         }
         else if( image && ( evt->IsAction( &ACTIONS::refreshPreview ) || evt->IsMotion() ) )
         {
-            image->SetPosition( (wxPoint) cursorPos );
+            image->SetPosition( (wxPoint)cursorPos );
             m_view->ClearPreview();
             m_view->AddToPreview( image->Clone() );
-            m_view->RecacheAllItems(); // Bitmaps are cached in Opengl
+            m_view->RecacheAllItems();  // Bitmaps are cached in Opengl
         }
         else if( image && evt->IsAction( &ACTIONS::doDelete ) )
         {
@@ -528,7 +529,7 @@ int SCH_DRAWING_TOOLS::SingleClickPlace( const TOOL_EVENT& aEvent )
 
         if( wire )
         {
-            SEG      seg( wire->GetStartPoint(), wire->GetEndPoint() );
+            SEG seg( wire->GetStartPoint(), wire->GetEndPoint() );
             VECTOR2I nearest = seg.NearestPoint( getViewControls()->GetCursorPosition() );
             getViewControls()->SetCrossHairCursorPosition( nearest, false );
             getViewControls()->WarpCursor( getViewControls()->GetCursorPosition(), true );
@@ -602,10 +603,11 @@ int SCH_DRAWING_TOOLS::SingleClickPlace( const TOOL_EVENT& aEvent )
     else
         m_toolMgr->RunAction( ACTIONS::refreshPreview );
 
-    auto setCursor = [&]()
-    {
-        m_frame->GetCanvas()->SetCurrentCursor( KICURSOR::PLACE );
-    };
+    auto setCursor =
+            [&]()
+            {
+                m_frame->GetCanvas()->SetCurrentCursor( KICURSOR::PLACE );
+            };
 
     // Set initial cursor
     setCursor();
@@ -617,8 +619,8 @@ int SCH_DRAWING_TOOLS::SingleClickPlace( const TOOL_EVENT& aEvent )
         grid.SetSnap( !evt->Modifier( MD_SHIFT ) );
         grid.SetUseGrid( getView()->GetGAL()->GetGridSnapping() && !evt->Modifier( MD_ALT ) );
 
-        cursorPos =
-                evt->IsPrime() ? (wxPoint) evt->Position() : (wxPoint) controls->GetMousePosition();
+        cursorPos = evt->IsPrime() ? (wxPoint) evt->Position()
+                                   : (wxPoint) controls->GetMousePosition();
 
         cursorPos = wxPoint( grid.BestSnapAnchor( cursorPos, LAYER_CONNECTABLE, nullptr ) );
         controls->ForceCursorPosition( true, cursorPos );
@@ -686,7 +688,7 @@ int SCH_DRAWING_TOOLS::SingleClickPlace( const TOOL_EVENT& aEvent )
         }
         else if( evt->IsAction( &ACTIONS::refreshPreview ) || evt->IsMotion() )
         {
-            previewItem->SetPosition( (wxPoint) cursorPos );
+            previewItem->SetPosition( (wxPoint)cursorPos );
             m_view->ClearPreview();
             m_view->AddToPreview( previewItem->Clone() );
         }
@@ -702,7 +704,7 @@ int SCH_DRAWING_TOOLS::SingleClickPlace( const TOOL_EVENT& aEvent )
 
                 // The bus entries only rotate in one direction
                 if( evt->IsAction( &EE_ACTIONS::rotateCW )
-                    || evt->IsAction( &EE_ACTIONS::rotateCCW ) )
+                        || evt->IsAction( &EE_ACTIONS::rotateCCW ) )
                 {
                     busItem->Rotate( busItem->GetPosition() );
                 }
@@ -735,7 +737,7 @@ int SCH_DRAWING_TOOLS::SingleClickPlace( const TOOL_EVENT& aEvent )
                         m_frame->OnModify();
                     }
                 }
-                break;
+                    break;
 
                 case SCH_JUNCTION_T:
                 {
@@ -750,7 +752,7 @@ int SCH_DRAWING_TOOLS::SingleClickPlace( const TOOL_EVENT& aEvent )
                         m_frame->OnModify();
                     }
                 }
-                break;
+                    break;
                 default:
                     // Do nothing
                     break;
@@ -788,9 +790,13 @@ SCH_TEXT* SCH_DRAWING_TOOLS::createNewText( const VECTOR2I& aPosition, int aType
 
     switch( aType )
     {
-    case LAYER_NOTES: textItem = new SCH_TEXT( (wxPoint) aPosition ); break;
+    case LAYER_NOTES:
+        textItem = new SCH_TEXT( (wxPoint) aPosition );
+        break;
 
-    case LAYER_LOCLABEL: textItem = new SCH_LABEL( (wxPoint) aPosition ); break;
+    case LAYER_LOCLABEL:
+        textItem = new SCH_LABEL( (wxPoint) aPosition );
+        break;
 
     case LAYER_HIERLABEL:
         textItem = new SCH_HIERLABEL( (wxPoint) aPosition );
@@ -805,7 +811,9 @@ SCH_TEXT* SCH_DRAWING_TOOLS::createNewText( const VECTOR2I& aPosition, int aType
             static_cast<SCH_GLOBALLABEL*>( textItem )->GetIntersheetRefs()->SetVisible( true );
         break;
 
-    default: wxFAIL_MSG( "SCH_EDIT_FRAME::CreateNewText() unknown layer type" ); return nullptr;
+    default:
+        wxFAIL_MSG( "SCH_EDIT_FRAME::CreateNewText() unknown layer type" );
+        return nullptr;
     }
 
     textItem->SetParent( schematic );
@@ -874,7 +882,7 @@ SCH_SHEET_PIN* SCH_DRAWING_TOOLS::createSheetPin( SCH_SHEET* aSheet, SCH_HIERLAB
     {
         DIALOG_SHEET_PIN_PROPERTIES dlg( m_frame, sheetPin );
 
-        if( dlg.ShowModal() != wxID_OK || NoPrintableChars( sheetPin->GetText() ) )
+        if( dlg.ShowModal() != wxID_OK || NoPrintableChars( sheetPin->GetText() )  )
         {
             delete sheetPin;
             return nullptr;
@@ -1254,9 +1262,9 @@ int SCH_DRAWING_TOOLS::DrawSheet( const TOOL_EVENT& aEvent )
             m_view->ClearPreview();
             m_view->AddToPreview( sheet->Clone() );
         }
-        else if( sheet
-                 && ( evt->IsClick( BUT_LEFT ) || evt->IsDblClick( BUT_LEFT )
-                      || evt->IsAction( &EE_ACTIONS::finishSheet ) ) )
+        else if( sheet && ( evt->IsClick( BUT_LEFT )
+                         || evt->IsDblClick( BUT_LEFT )
+                         || evt->IsAction( &EE_ACTIONS::finishSheet ) ) )
         {
             m_view->ClearPreview();
             getViewControls()->SetAutoPan( false );

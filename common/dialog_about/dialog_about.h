@@ -89,7 +89,7 @@ private:
                                              const wxString& aHtmlMessage,
                                              bool aSelection = false );
 
-    wxStaticText*    wxStaticTextRef( wxScrolledWindow* aParent, const wxString& aReference );
+    wxStaticText* wxStaticTextRef( wxScrolledWindow* aParent, const wxString& aReference );
     wxStaticBitmap*  createStaticBitmap( wxScrolledWindow* aParent, wxBitmap* icon );
 };
 

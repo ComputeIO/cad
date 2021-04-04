@@ -36,76 +36,89 @@ extern double DoubleFromString( const wxString& TextValue );
  * also used to lookup non calculatable but readable BOM value strings. Supported E-series are:
  */
 
-enum
-{
-    E1,
-    E3,
-    E6,
-    E12
-};
+enum             { E1, E3, E6, E12 };
 
 /**
  * This calculator suggests solutions for 2R, 3R and 4R replacement combinations
  */
 
-enum
-{
-    S2R,
-    S3R,
-    S4R
-};
+enum             { S2R, S3R, S4R };
 
 /**
  * 6 decade E-series values from 10 Ohms to 1M and its associated BOM strings.
  * Series E3,E6,E12 are defined by additional values for cumulative use with previous series
  */
 
-#define E1_VAL                                                                                     \
-    { true, "1K", 1000 }, { true, "10K", 10000 }, { true, "100K", 100000 }, { true, "10R", 10 },   \
-            { true, "100R", 100 },                                                                 \
-    {                                                                                              \
-        true, "1M", 1000000                                                                        \
-    }
+#define E1_VAL   { true, "1K", 1000 },\
+                 { true, "10K", 10000 },\
+                 { true, "100K", 100000 },\
+                 { true, "10R", 10 },\
+                 { true, "100R", 100 },\
+                 { true, "1M", 1000000 }
 
-#define E3_ADD                                                                                     \
-    { true, "22R", 22 }, { true, "47R", 47 }, { true, "220R", 220 }, { true, "470R", 470 },        \
-            { true, "2K2", 2200 }, { true, "4K7", 4700 }, { true, "22K", 22000 },                  \
-            { true, "47K", 47000 }, { true, "220K", 220000 },                                      \
-    {                                                                                              \
-        true, "470K", 470000                                                                       \
-    }
+#define E3_ADD   { true, "22R", 22 },\
+                 { true, "47R", 47 },\
+                 { true, "220R", 220 },\
+                 { true, "470R", 470 },\
+                 { true, "2K2", 2200 },\
+                 { true, "4K7", 4700 },\
+                 { true, "22K", 22000 },\
+                 { true, "47K", 47000 },\
+                 { true, "220K", 220000 },\
+                 { true, "470K", 470000 }
 
-#define E6_ADD                                                                                     \
-    { true, "15R", 15 }, { true, "33R", 33 }, { true, "68R", 68 }, { true, "150R", 150 },          \
-            { true, "330R", 330 }, { true, "680R", 680 }, { true, "1K5", 1500 },                   \
-            { true, "3K3", 3300 }, { true, "6K8", 6800 }, { true, "15K", 15000 },                  \
-            { true, "33K", 33000 }, { true, "68K", 68000 }, { true, "150K", 150000 },              \
-            { true, "330K", 330000 },                                                              \
-    {                                                                                              \
-        true, "680K", 680000                                                                       \
-    }
+#define E6_ADD   { true, "15R", 15 },\
+                 { true, "33R", 33 },\
+                 { true, "68R", 68 },\
+                 { true, "150R", 150 },\
+                 { true, "330R", 330 },\
+                 { true, "680R", 680 },\
+                 { true, "1K5", 1500 },\
+                 { true, "3K3", 3300 },\
+                 { true, "6K8", 6800 },\
+                 { true, "15K", 15000 },\
+                 { true, "33K", 33000 },\
+                 { true, "68K", 68000 },\
+                 { true, "150K", 150000 },\
+                 { true, "330K", 330000 },\
+                 { true, "680K", 680000 }
 
-#define E12_ADD                                                                                    \
-    { true, "12R", 12 }, { true, "18R", 18 }, { true, "27R", 27 }, { true, "39R", 39 },            \
-            { true, "56R", 56 }, { true, "82R", 82 }, { true, "120R", 120 },                       \
-            { true, "180R", 180 }, { true, "270R", 270 }, { true, "390R", 390 },                   \
-            { true, "560R", 560 }, { true, "820R", 820 }, { true, "1K2", 1200 },                   \
-            { true, "1K8", 1800 }, { true, "2K7", 2700 }, { true, "3K9", 3900 },                   \
-            { true, "5K6", 5600 }, { true, "8K2", 8200 }, { true, "12K", 12000 },                  \
-            { true, "18K", 18000 }, { true, "27K", 27000 }, { true, "39K", 39000 },                \
-            { true, "56K", 56000 }, { true, "82K", 82000 }, { true, "120K", 120000 },              \
-            { true, "180K", 180000 }, { true, "270K", 270000 }, { true, "390K", 390000 },          \
-            { true, "560K", 560000 },                                                              \
-    {                                                                                              \
-        true, "820K", 820000                                                                       \
-    }
+#define E12_ADD  { true, "12R", 12 },\
+                 { true, "18R", 18 },\
+                 { true, "27R", 27 },\
+                 { true, "39R", 39 },\
+                 { true, "56R", 56 },\
+                 { true, "82R", 82 },\
+                 { true, "120R", 120 },\
+                 { true, "180R", 180 },\
+                 { true, "270R", 270 },\
+                 { true, "390R", 390 },\
+                 { true, "560R", 560 },\
+                 { true, "820R", 820 },\
+                 { true, "1K2", 1200 },\
+                 { true, "1K8", 1800 },\
+                 { true, "2K7", 2700 },\
+                 { true, "3K9", 3900 },\
+                 { true, "5K6", 5600 },\
+                 { true, "8K2", 8200 },\
+                 { true, "12K", 12000 },\
+                 { true, "18K", 18000 },\
+                 { true, "27K", 27000 },\
+                 { true, "39K", 39000 },\
+                 { true, "56K", 56000 },\
+                 { true, "82K", 82000 },\
+                 { true, "120K", 120000 },\
+                 { true, "180K", 180000 },\
+                 { true, "270K", 270000 },\
+                 { true, "390K", 390000 },\
+                 { true, "560K", 560000 },\
+                 { true, "820K", 820000 }
 
-struct r_data
-{
-    bool        e_use;
-    std::string e_name;
-    double      e_value;
-};
+struct r_data {
+                  bool        e_use;
+                  std::string e_name;
+                  double      e_value;
+              };
 
 class eserie
 {
@@ -134,7 +147,7 @@ public:
     void SetSeries( uint32_t aSeries ) { m_series = aSeries; }
     void SetRequiredValue( double aValue ) { m_required_value = aValue; }
 
-    std::array<r_data, S4R + 1> get_rslt( void ) { return m_results; }
+    std::array<r_data,S4R+1> get_rslt( void ) { return m_results; }
 
 private:
     /**
@@ -191,10 +204,12 @@ private:
     void strip4( void );
 
 private:
-    std::vector<std::vector<r_data>> luts{ { E1_VAL },
-                                           { E1_VAL, E3_ADD },
-                                           { E1_VAL, E3_ADD, E6_ADD },
-                                           { E1_VAL, E3_ADD, E6_ADD, E12_ADD } };
+    std::vector<std::vector<r_data>> luts {
+                                              { E1_VAL },
+                                              { E1_VAL, E3_ADD },
+                                              { E1_VAL, E3_ADD, E6_ADD },
+                                              { E1_VAL, E3_ADD, E6_ADD, E12_ADD }
+                                          };
     /*
      * TODO: Manual array size calculation is dangerous. Unlike legacy ANSI-C Arrays
      * std::array can not drop length param by providing aggregate init list up
@@ -210,11 +225,11 @@ private:
      * 7442 combinations for E12
      */
 
-#define MAX_CMB 7442 // maximum combinations for E12
+#define MAX_CMB 7442			// maximum combinations for E12
 
-    std::array<r_data, MAX_CMB> m_cmb_lut;           // intermediate 2R combinations
-    std::array<r_data, S4R + 1> m_results;           // 2R, 3R and 4R results
-    uint32_t                    m_series = E6;       // Radio Button State
-    uint32_t                    m_enable_4R = false; // Check Box 4R enable
-    double                      m_required_value;    // required Resistor
+    std::array<r_data, MAX_CMB> m_cmb_lut;	            // intermediate 2R combinations
+    std::array<r_data, S4R+1>   m_results;	            // 2R, 3R and 4R results
+    uint32_t                    m_series = E6;		    // Radio Button State
+    uint32_t                    m_enable_4R = false;    // Check Box 4R enable
+    double                      m_required_value;	    // required Resistor
 };

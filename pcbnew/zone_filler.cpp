@@ -618,8 +618,7 @@ void ZONE_FILLER::knockoutThermalReliefs( const ZONE* aZone, PCB_LAYER_ID aLayer
 
             // If the pad is flashed to the current layer, or is on the same layer and shares a netcode, then
             // we need to knock out the thermal relief.
-            if( pad->FlashLayer( aLayer )
-                || ( pad->IsOnLayer( aLayer ) && pad->GetNetCode() == aZone->GetNetCode() ) )
+            if( pad->FlashLayer( aLayer ) || ( pad->IsOnLayer( aLayer ) && pad->GetNetCode() == aZone->GetNetCode() ) )
             {
                 addKnockout( pad, aLayer, gap, holes );
             }
@@ -672,12 +671,13 @@ void ZONE_FILLER::buildCopperItemClearances( const ZONE* aZone, PCB_LAYER_ID aLa
     // largest clearance value found in the netclasses and rules
     zone_boundingbox.Inflate( m_worstClearance + extra_margin );
 
-    auto evalRulesForItems = [&bds]( DRC_CONSTRAINT_T aConstraint, const BOARD_ITEM* a,
-                                     const BOARD_ITEM* b, PCB_LAYER_ID aEvalLayer ) -> int
-    {
-        auto c = bds.m_DRCEngine->EvalRules( aConstraint, a, b, aEvalLayer );
-        return c.Value().Min();
-    };
+    auto evalRulesForItems =
+            [&bds]( DRC_CONSTRAINT_T aConstraint, const BOARD_ITEM* a, const BOARD_ITEM* b,
+                    PCB_LAYER_ID aEvalLayer ) -> int
+            {
+                auto c = bds.m_DRCEngine->EvalRules( aConstraint, a, b, aEvalLayer );
+                return c.Value().Min();
+            };
 
     // Add non-connected pad clearances
     //

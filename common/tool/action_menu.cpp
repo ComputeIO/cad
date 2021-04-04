@@ -505,7 +505,7 @@ void ACTION_MENU::OnMenuEvent( wxMenuEvent& aEvent )
             //   between 0 and ID_CONTEXT_MENU_ID_MAX
             //   between ID_POPUP_MENU_START and ID_POPUP_MENU_END
 
-#define ID_CONTEXT_MENU_ID_MAX wxID_LOWEST /* = 100 should be plenty */
+            #define ID_CONTEXT_MENU_ID_MAX wxID_LOWEST  /* = 100 should be plenty */
 
             if( !evt &&
                     ( ( m_selected >= 0 && m_selected < ID_CONTEXT_MENU_ID_MAX ) ||

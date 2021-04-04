@@ -23,7 +23,6 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
 
-#include <kicad_string.h>
 #include <eda_item.h>
 #include <pcb_edit_frame.h>
 #include <base_units.h>
@@ -49,7 +48,7 @@ PCB_TEXT::~PCB_TEXT()
 }
 
 
-wxString PCB_TEXT::GetShownText( int aDepth, FONT** aFontPtr ) const
+wxString PCB_TEXT::GetShownText( int aDepth ) const
 {
     BOARD* board = dynamic_cast<BOARD*>( GetParent() );
 
@@ -92,40 +91,7 @@ wxString PCB_TEXT::GetShownText( int aDepth, FONT** aFontPtr ) const
     if( board && processTextVars && aDepth < 10 )
         text = ExpandTextVars( text, &pcbTextResolver, &boardTextResolver, board->GetProject() );
 
-    if( aFontPtr )
-        *aFontPtr = GetFont();
-
     return text;
-}
-
-
-void PCB_TEXT::DrawTextAsPolygon( std::vector<SHAPE_POLY_SET>& aResult, PCB_LAYER_ID aLayerId,
-                                  const wxPoint aPosition, const wxString& aString,
-                                  const VECTOR2D& aConversionFactor, const FONT* aFont ) const
-{
-    VECTOR2D glyphSize = GetTextSize();
-    if( aFont->IsOutline() )
-    {
-        const OUTLINE_FONT* outlineFont = dynamic_cast<const OUTLINE_FONT*>( aFont );
-        outlineFont->GetLinesAsPolygon( aResult, aString, glyphSize, aPosition, GetTextAngle(),
-                                        IsMirrored(), GetHorizJustify(), GetVertJustify(),
-                                        aConversionFactor );
-    }
-    else
-    {
-        std::cerr << "PCB_TEXT::DrawTextAsPolygon( ..., \"" << aString << "\", #<font "
-                  << aFont->Name() << "> )"
-                  << " TODO can't draw stroke font as polygon" << std::endl;
-    }
-}
-
-
-void PCB_TEXT::DrawTextAsPolygon( std::vector<SHAPE_POLY_SET>& aResult, PCB_LAYER_ID aLayerId,
-                                  const VECTOR2D& aConversionFactor ) const
-{
-    FONT* font = GetFont();
-
-    DrawTextAsPolygon( aResult, aLayerId, GetTextPos(), GetShownText(), aConversionFactor, font );
 }
 
 

@@ -599,8 +599,8 @@ void ROUTER::CommitRouting( NODE* aNode )
         // We move them to the updated vector to preserve attributes such as UUID and pad data
         if( item->Parent() )
         {
-            for( NODE::ITEM_VECTOR::iterator added_it = added.begin(); added_it != added.end();
-                 ++added_it )
+            for( NODE::ITEM_VECTOR::iterator added_it = added.begin();
+                    added_it != added.end(); ++added_it )
             {
                 if( ( *added_it )->Parent() && ( *added_it )->Parent() == item->Parent() )
                 {

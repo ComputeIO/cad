@@ -50,25 +50,26 @@
 class SAVE_AS_HELPER : public wxPanel
 {
 public:
-    SAVE_AS_HELPER( wxWindow* aParent ) : wxPanel( aParent )
+    SAVE_AS_HELPER( wxWindow* aParent ) :
+        wxPanel( aParent )
     {
         m_simpleSaveAs = new wxRadioButton( this, wxID_ANY, _( "Normal save as operation" ),
                                             wxDefaultPosition, wxDefaultSize, wxRB_GROUP );
         m_simpleSaveAs->SetToolTip( _( "Do not perform any additional operations after saving "
                                        "library." ) );
-        m_replaceTableEntry =
-                new wxRadioButton( this, wxID_ANY, _( "Replace library table entry" ) );
+        m_replaceTableEntry = new wxRadioButton( this, wxID_ANY,
+                                                 _( "Replace library table entry" ) );
         m_replaceTableEntry->SetToolTip( _( "Replace symbol library table entry with new library."
                                             "\n\nThe original library will no longer be available "
                                             "for use." ) );
-        m_addGlobalTableEntry =
-                new wxRadioButton( this, wxID_ANY, _( "Add new global library table entry" ) );
+        m_addGlobalTableEntry = new wxRadioButton( this, wxID_ANY,
+                                                   _( "Add new global library table entry" ) );
         m_addGlobalTableEntry->SetToolTip( _( "Add new entry to the global symbol library table."
                                               "\n\nThe symbol library table nickname is suffixed "
                                               "with\nan integer to ensure no duplicate table "
                                               "entries." ) );
-        m_addProjectTableEntry =
-                new wxRadioButton( this, wxID_ANY, _( "Add new project library table entry" ) );
+        m_addProjectTableEntry = new wxRadioButton( this, wxID_ANY,
+                                                    _( "Add new project library table entry" ) );
         m_addProjectTableEntry->SetToolTip( _( "Add new entry to the project symbol library table."
                                                "\n\nThe symbol library table nickname is suffixed "
                                                "with\nan integer to ensure no duplicate table "
@@ -186,8 +187,8 @@ wxString SYMBOL_EDIT_FRAME::SelectLibraryFromList()
 
     headers.Add( _( "Library" ) );
 
-    std::vector<wxArrayString> itemsToDisplay;
-    std::vector<wxString>      libNicknames = prj.SchSymbolLibTable()->GetLogicalLibs();
+    std::vector< wxArrayString > itemsToDisplay;
+    std::vector< wxString > libNicknames = prj.SchSymbolLibTable()->GetLogicalLibs();
 
     // Conversion from wxArrayString to vector of ArrayString
     for( const wxString& name : libNicknames )
@@ -227,7 +228,7 @@ bool SYMBOL_EDIT_FRAME::saveCurrentPart()
 {
     if( GetCurPart() )
     {
-        LIB_ID          libId = GetCurPart()->GetLibId();
+        LIB_ID libId = GetCurPart()->GetLibId();
         const wxString& libName = libId.GetLibNickname();
         const wxString& partName = libId.GetLibItemName();
 
@@ -244,21 +245,17 @@ bool SYMBOL_EDIT_FRAME::saveCurrentPart()
 
 bool SYMBOL_EDIT_FRAME::LoadSymbol( const LIB_ID& aLibId, int aUnit, int aConvert )
 {
-    if( GetCurPart() && GetCurPart()->GetLibId() == aLibId && GetUnit() == aUnit
-        && GetConvert() == aConvert )
+    if( GetCurPart() && GetCurPart()->GetLibId() == aLibId
+            && GetUnit() == aUnit && GetConvert() == aConvert )
     {
         return true;
     }
 
     if( GetScreen()->IsModify() && GetCurPart() )
     {
-        if( !HandleUnsavedChanges( this,
-                                   _( "The current symbol has been modified.  "
-                                      "Save changes?" ),
-                                   [&]() -> bool
-                                   {
-                                       return saveCurrentPart();
-                                   } ) )
+        if( !HandleUnsavedChanges( this, _( "The current symbol has been modified.  "
+                                            "Save changes?" ),
+                                   [&]()->bool { return saveCurrentPart(); } ) )
         {
             return false;
         }
@@ -282,8 +279,8 @@ bool SYMBOL_EDIT_FRAME::LoadSymbolFromCurrentLib( const wxString& aAliasName, in
     {
         wxString msg;
 
-        msg.Printf( _( "Error occurred loading symbol \"%s\" from library \"%s\"." ), aAliasName,
-                    GetCurLib() );
+        msg.Printf( _( "Error occurred loading symbol \"%s\" from library \"%s\"." ),
+                    aAliasName, GetCurLib() );
         DisplayErrorMessage( this, msg, ioe.What() );
         return false;
     }
@@ -309,7 +306,7 @@ bool SYMBOL_EDIT_FRAME::LoadOneLibraryPartAux( LIB_PART* aEntry, const wxString&
                                                int aUnit, int aConvert )
 {
     wxString msg, rootName;
-    bool     rebuildMenuAndToolbar = false;
+    bool rebuildMenuAndToolbar = false;
 
     if( !aEntry || aLibrary.empty() )
         return false;
@@ -380,7 +377,7 @@ void SYMBOL_EDIT_FRAME::CreateNewPart()
     m_toolManager->RunAction( ACTIONS::cancelInteractive, true );
 
     wxArrayString rootSymbols;
-    wxString      lib = getTargetLib();
+    wxString lib = getTargetLib();
 
     if( !m_libMgr->LibraryExists( lib ) )
     {
@@ -419,7 +416,7 @@ void SYMBOL_EDIT_FRAME::CreateNewPart()
         return;
     }
 
-    LIB_PART new_part( name ); // do not create part on the heap, it will be buffered soon
+    LIB_PART new_part( name );      // do not create part on the heap, it will be buffered soon
 
     wxString parentSymbolName = dlg.GetParentSymbolName();
 
@@ -485,7 +482,9 @@ void SYMBOL_EDIT_FRAME::CreateNewPart()
                 // parent's reference already copied
                 break;
 
-            case VALUE_FIELD: field->SetText( name ); break;
+            case VALUE_FIELD:
+                field->SetText( name );
+                break;
 
             case FOOTPRINT_FIELD:
             case DATASHEET_FIELD:
@@ -514,7 +513,7 @@ void SYMBOL_EDIT_FRAME::Save()
         {
             SCH_EDIT_FRAME* schframe = (SCH_EDIT_FRAME*) Kiway().Player( FRAME_SCH, false );
 
-            if( !schframe ) // happens when the schematic editor is not active (or closed)
+            if( !schframe )      // happens when the schematic editor is not active (or closed)
             {
                 DisplayErrorMessage( this, _( "No schematic currently open." ) );
             }
@@ -531,13 +530,13 @@ void SYMBOL_EDIT_FRAME::Save()
     }
     else if( !GetTargetLibId().GetLibNickname().empty() )
     {
-        LIB_ID          libId = GetTargetLibId();
+        LIB_ID          libId   = GetTargetLibId();
         const wxString& libName = libId.GetLibNickname();
 
         if( m_libMgr->IsLibraryReadOnly( libName ) )
         {
-            wxString msg =
-                    wxString::Format( _( "Symbol library '%s' is not writeable." ), libName );
+            wxString msg = wxString::Format( _( "Symbol library '%s' is not writeable." ),
+                                             libName );
             wxString msg2 = _( "You must save to a different location." );
 
             if( OKOrCancelDialog( this, _( "Warning" ), msg, msg2 ) == wxID_OK )
@@ -585,10 +584,10 @@ void SYMBOL_EDIT_FRAME::savePartAs()
         wxString old_name = old_lib_id.GetLibItemName();
         wxString old_lib = old_lib_id.GetLibNickname();
 
-        SYMBOL_LIB_TABLE*          tbl = Prj().SchSymbolLibTable();
-        wxArrayString              headers;
-        std::vector<wxArrayString> itemsToDisplay;
-        std::vector<wxString>      libNicknames = tbl->GetLogicalLibs();
+        SYMBOL_LIB_TABLE*            tbl = Prj().SchSymbolLibTable();
+        wxArrayString                headers;
+        std::vector< wxArrayString > itemsToDisplay;
+        std::vector< wxString >      libNicknames = tbl->GetLogicalLibs();
 
         headers.Add( _( "Nickname" ) );
         headers.Add( _( "Description" ) );
@@ -607,16 +606,16 @@ void SYMBOL_EDIT_FRAME::savePartAs()
 
         wxBoxSizer* bNameSizer = new wxBoxSizer( wxHORIZONTAL );
 
-        wxStaticText* label = new wxStaticText( &dlg, wxID_ANY, _( "Name:" ), wxDefaultPosition,
-                                                wxDefaultSize, 0 );
-        bNameSizer->Add( label, 0, wxALIGN_CENTER_VERTICAL | wxTOP | wxBOTTOM | wxLEFT, 5 );
+        wxStaticText* label = new wxStaticText( &dlg, wxID_ANY, _( "Name:" ),
+                                                wxDefaultPosition, wxDefaultSize, 0 );
+        bNameSizer->Add( label, 0, wxALIGN_CENTER_VERTICAL|wxTOP|wxBOTTOM|wxLEFT, 5 );
 
-        wxTextCtrl* nameTextCtrl =
-                new wxTextCtrl( &dlg, wxID_ANY, old_name, wxDefaultPosition, wxDefaultSize, 0 );
-        bNameSizer->Add( nameTextCtrl, 1, wxALIGN_CENTER_VERTICAL | wxALL, 5 );
+        wxTextCtrl* nameTextCtrl = new wxTextCtrl( &dlg, wxID_ANY, old_name,
+                                                   wxDefaultPosition, wxDefaultSize, 0 );
+        bNameSizer->Add( nameTextCtrl, 1, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 
         wxSizer* mainSizer = dlg.GetSizer();
-        mainSizer->Prepend( bNameSizer, 0, wxEXPAND | wxTOP | wxLEFT | wxRIGHT, 5 );
+        mainSizer->Prepend( bNameSizer, 0, wxEXPAND|wxTOP|wxLEFT|wxRIGHT, 5 );
 
         // Move nameTextCtrl to the head of the tab-order
         if( dlg.GetChildren().DeleteObject( nameTextCtrl ) )
@@ -628,7 +627,7 @@ void SYMBOL_EDIT_FRAME::savePartAs()
         mainSizer->Fit( &dlg );
 
         if( dlg.ShowModal() != wxID_OK )
-            return; // canceled by user
+            return;                   // canceled by user
 
         wxString new_lib = dlg.GetTextSelection();
 
@@ -663,7 +662,8 @@ void SYMBOL_EDIT_FRAME::savePartAs()
         if( m_libMgr->PartExists( new_name, new_lib ) )
         {
             wxString msg = wxString::Format( _( "Symbol '%s' already exists in library '%s'" ),
-                                             new_name, new_lib );
+                                             new_name,
+                                             new_lib );
             DisplayError( this, msg );
             return;
         }
@@ -683,8 +683,8 @@ void SYMBOL_EDIT_FRAME::UpdateAfterSymbolProperties( wxString* aOldName )
 {
     wxCHECK( m_my_part, /* void */ );
 
-    wxString msg;
-    wxString lib = GetCurLib();
+    wxString  msg;
+    wxString  lib = GetCurLib();
 
     if( !lib.IsEmpty() && aOldName && *aOldName != m_my_part->GetName() )
     {
@@ -692,7 +692,8 @@ void SYMBOL_EDIT_FRAME::UpdateAfterSymbolProperties( wxString* aOldName )
         if( m_libMgr->PartExists( m_my_part->GetName(), lib ) )
         {
             msg.Printf( _( "The name '%s' conflicts with an existing entry in the library '%s'." ),
-                        m_my_part->GetName(), lib );
+                        m_my_part->GetName(),
+                        lib );
 
             DisplayErrorMessage( this, msg );
             m_my_part->SetName( *aOldName );
@@ -759,20 +760,20 @@ void SYMBOL_EDIT_FRAME::DeletePartFromLibrary()
 
 void SYMBOL_EDIT_FRAME::CopyPartToClipboard()
 {
-    int       dummyUnit;
-    LIB_ID    libId = m_treePane->GetLibTree()->GetSelectedLibId( &dummyUnit );
+    int dummyUnit;
+    LIB_ID libId = m_treePane->GetLibTree()->GetSelectedLibId( &dummyUnit );
     LIB_PART* part = m_libMgr->GetBufferedPart( libId.GetLibItemName(), libId.GetLibNickname() );
 
     if( !part )
         return;
 
-    std::unique_ptr<LIB_PART> tmp = part->Flatten();
-    STRING_FORMATTER          formatter;
+    std::unique_ptr< LIB_PART> tmp = part->Flatten();
+    STRING_FORMATTER formatter;
     SCH_SEXPR_PLUGIN::FormatPart( tmp.get(), formatter );
 
     wxLogNull doNotLog; // disable logging of failed clipboard actions
 
-    auto              clipboard = wxTheClipboard;
+    auto clipboard = wxTheClipboard;
     wxClipboardLocker clipboardLock( clipboard );
 
     if( !clipboardLock || !clipboard->IsOpened() )
@@ -787,8 +788,8 @@ void SYMBOL_EDIT_FRAME::CopyPartToClipboard()
 
 void SYMBOL_EDIT_FRAME::DuplicatePart( bool aFromClipboard )
 {
-    int      dummyUnit;
-    LIB_ID   libId = m_treePane->GetLibTree()->GetSelectedLibId( &dummyUnit );
+    int dummyUnit;
+    LIB_ID libId = m_treePane->GetLibTree()->GetSelectedLibId( &dummyUnit );
     wxString lib = libId.GetLibNickname();
 
     if( !m_libMgr->LibraryExists( lib ) )
@@ -801,10 +802,10 @@ void SYMBOL_EDIT_FRAME::DuplicatePart( bool aFromClipboard )
     {
         wxLogNull doNotLog; // disable logging of failed clipboard actions
 
-        auto              clipboard = wxTheClipboard;
+        auto clipboard = wxTheClipboard;
         wxClipboardLocker clipboardLock( clipboard );
 
-        if( !clipboardLock || !clipboard->IsSupported( wxDF_TEXT ) )
+        if( !clipboardLock || ! clipboard->IsSupported( wxDF_TEXT ) )
             return;
 
         wxTextDataObject data;
@@ -834,7 +835,7 @@ void SYMBOL_EDIT_FRAME::DuplicatePart( bool aFromClipboard )
         // Derive from same parent.
         if( srcPart->IsAlias() )
         {
-            std::shared_ptr<LIB_PART> srcParent = srcPart->GetParent().lock();
+            std::shared_ptr< LIB_PART > srcParent = srcPart->GetParent().lock();
 
             wxCHECK( srcParent, /* void */ );
 
@@ -874,7 +875,7 @@ void SYMBOL_EDIT_FRAME::ensureUniqueName( LIB_PART* aPart, const wxString& aLibr
 
 void SYMBOL_EDIT_FRAME::Revert( bool aConfirm )
 {
-    LIB_ID          libId = GetTargetLibId();
+    LIB_ID libId = GetTargetLibId();
     const wxString& libName = libId.GetLibNickname();
 
     // Empty if this is the library itself that is selected.
@@ -886,7 +887,7 @@ void SYMBOL_EDIT_FRAME::Revert( bool aConfirm )
     if( aConfirm && !ConfirmRevertDialog( this, msg ) )
         return;
 
-    bool     reload_currentPart = false;
+    bool reload_currentPart = false;
     wxString curr_partName = partName;
 
     if( GetCurPart() )
@@ -965,11 +966,11 @@ void SYMBOL_EDIT_FRAME::LoadPart( const wxString& aAlias, const wxString& aLibra
 
 bool SYMBOL_EDIT_FRAME::saveLibrary( const wxString& aLibrary, bool aNewFile )
 {
-    wxFileName               fn;
-    wxString                 msg;
+    wxFileName fn;
+    wxString   msg;
     SAVE_AS_HELPER::SAH_TYPE type = SAVE_AS_HELPER::SAH_TYPE::UNDEFINED;
-    SCH_IO_MGR::SCH_FILE_T   fileType = SCH_IO_MGR::SCH_FILE_T::SCH_KICAD;
-    PROJECT&                 prj = Prj();
+    SCH_IO_MGR::SCH_FILE_T fileType = SCH_IO_MGR::SCH_FILE_T::SCH_KICAD;
+    PROJECT&   prj = Prj();
 
     m_toolManager->RunAction( ACTIONS::cancelInteractive, true );
 
@@ -1033,7 +1034,8 @@ bool SYMBOL_EDIT_FRAME::saveLibrary( const wxString& aLibrary, bool aNewFile )
 
     if( !m_libMgr->SaveLibrary( aLibrary, fn.GetFullPath(), fileType ) )
     {
-        msg.Printf( _( "Failed to save changes to symbol library file \"%s\"" ), fn.GetFullPath() );
+        msg.Printf( _( "Failed to save changes to symbol library file \"%s\"" ),
+                    fn.GetFullPath() );
         DisplayErrorMessage( this, _( "Error saving library" ), msg );
         return false;
     }
@@ -1044,7 +1046,7 @@ bool SYMBOL_EDIT_FRAME::saveLibrary( const wxString& aLibrary, bool aNewFile )
     }
     else
     {
-        bool     resyncLibTree = false;
+        bool resyncLibTree = false;
         wxString originalLibNickname = getTargetLib();
         wxString forceRefresh;
 
@@ -1064,7 +1066,8 @@ bool SYMBOL_EDIT_FRAME::saveLibrary( const wxString& aLibrary, bool aNewFile )
             break;
 
         case SAVE_AS_HELPER::SAH_TYPE::NORMAL_SAVE_AS:
-        default: break;
+        default:
+            break;
         }
 
         if( resyncLibTree )
@@ -1107,8 +1110,8 @@ bool SYMBOL_EDIT_FRAME::saveAllLibraries( bool aRequireConfirmation )
 
                 switch( UnsavedChangesDialog( this, msg, dirtyCount > 1 ? &applyToAll : nullptr ) )
                 {
-                case wxID_YES: doSave = true; break;
-                case wxID_NO: doSave = false; break;
+                case wxID_YES: doSave = true;  break;
+                case wxID_NO:  doSave = false; break;
                 default:
                 case wxID_CANCEL: return false;
                 }
@@ -1140,8 +1143,8 @@ bool SYMBOL_EDIT_FRAME::saveAllLibraries( bool aRequireConfirmation )
                     else
                     {
                         m_infoBar->Dismiss();
-                        m_infoBar->ShowMessageFor( msg + wxS( "  " ) + msg2, 2000,
-                                                   wxICON_EXCLAMATION );
+                        m_infoBar->ShowMessageFor( msg + wxS( "  " ) + msg2,
+                                                   2000, wxICON_EXCLAMATION );
 
                         while( m_infoBar->IsShown() )
                             wxSafeYield();
