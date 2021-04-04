@@ -561,9 +561,6 @@ void PCB_EDIT_FRAME::UpdateToolbarControlSizes()
     {
         // Update the item widths
         m_mainToolBar->UpdateControlWidth( ID_TOOLBARH_PCB_SELECT_LAYER );
-
-        // Update the toolbar with the new widths
-        m_mainToolBar->KiRealize();
     }
 
     if( m_auxiliaryToolBar )
@@ -573,9 +570,6 @@ void PCB_EDIT_FRAME::UpdateToolbarControlSizes()
         m_auxiliaryToolBar->UpdateControlWidth( ID_AUX_TOOLBAR_PCB_VIA_SIZE );
         m_auxiliaryToolBar->UpdateControlWidth( ID_ON_ZOOM_SELECT );
         m_auxiliaryToolBar->UpdateControlWidth( ID_ON_GRID_SELECT );
-
-        // Update the toolbar with the new widths
-        m_auxiliaryToolBar->KiRealize();
     }
 }
 
@@ -722,11 +716,7 @@ void PCB_EDIT_FRAME::ReCreateLayerBox( bool aForceResizeToolbar )
     m_SelLayerBox->Resync();
 
     if( aForceResizeToolbar )
-    {
-        // the layer box can have its size changed
-        // Update the aui manager, to take in account the new size
-        m_auimgr.Update();
-    }
+        UpdateToolbarControlSizes();
 }
 
 

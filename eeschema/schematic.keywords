@@ -33,6 +33,7 @@ effects
 end
 extends
 face
+fields_autoplaced
 fill
 font
 footprint

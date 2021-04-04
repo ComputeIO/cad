@@ -18,6 +18,8 @@
  * with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <windows.h>
+
 #include <kiplatform/ui.h>
 
 #include <wx/cursor.h>
@@ -68,6 +70,12 @@ bool KIPLATFORM::UI::IsDarkTheme()
 void KIPLATFORM::UI::ForceFocus( wxWindow* aWindow )
 {
     aWindow->SetFocus();
+}
+
+
+bool KIPLATFORM::UI::IsWindowActive( wxWindow* aWindow )
+{
+    return ( aWindow->GetHWND() == GetForegroundWindow() );
 }
 
 

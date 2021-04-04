@@ -806,6 +806,9 @@ SCH_TEXT* SCH_DRAWING_TOOLS::createNewText( const VECTOR2I& aPosition, int aType
     case LAYER_GLOBLABEL:
         textItem = new SCH_GLOBALLABEL( (wxPoint) aPosition );
         textItem->SetShape( m_lastGlobalLabelShape );
+
+        if( settings.m_IntersheetRefsShow )
+            static_cast<SCH_GLOBALLABEL*>( textItem )->GetIntersheetRefs()->SetVisible( true );
         break;
 
     default:
@@ -936,8 +939,19 @@ int SCH_DRAWING_TOOLS::TwoClickPlace( const TOOL_EVENT& aEvent )
                     m_frame->GetCanvas()->SetCurrentCursor( KICURSOR::PENCIL );
             };
 
+    auto updatePreview =
+            [&]()
+            {
+                m_view->ClearPreview();
+                m_view->AddToPreview( item->Clone() );
+                item->RunOnChildren( [&]( SCH_ITEM* aChild )
+                                     {
+                                         m_view->AddToPreview( aChild->Clone() );
+                                     } );
+            };
+
     auto cleanup =
-            [&] ()
+            [&]()
             {
                 m_toolMgr->RunAction( EE_ACTIONS::clearSelection, true );
                 m_view->ClearPreview();
@@ -1037,6 +1051,8 @@ int SCH_DRAWING_TOOLS::TwoClickPlace( const TOOL_EVENT& aEvent )
                     if( m_selectionTool->SelectPoint( cursorPos, EE_COLLECTOR::SheetsOnly, &i ) )
                         sheet = dynamic_cast<SCH_SHEET*>( i );
 
+                    m_selectionTool->ClearSelection();
+
                     if( !sheet )
                     {
                         m_statusPopup.reset( new STATUS_TEXT_POPUP( m_frame ) );
@@ -1070,8 +1086,9 @@ int SCH_DRAWING_TOOLS::TwoClickPlace( const TOOL_EVENT& aEvent )
                 if( item )
                 {
                     item->SetFlags( IS_NEW | IS_MOVED );
-                    m_view->ClearPreview();
-                    m_view->AddToPreview( item->Clone() );
+                    item->AutoplaceFields( /* aScreen */ nullptr, /* aManual */ false );
+                    updatePreview();
+
                     m_selectionTool->AddItemToSel( item );
 
                     // update the cursor so it looks correct before another event
@@ -1085,8 +1102,6 @@ int SCH_DRAWING_TOOLS::TwoClickPlace( const TOOL_EVENT& aEvent )
             else
             {
                 item->ClearFlags( IS_MOVED );
-                item->AutoplaceFields( /* aScreen */ nullptr, /* aManual */ false );
-
                 m_frame->AddItemToScreenAndUndoList( m_frame->GetScreen(), (SCH_ITEM*) item, false );
                 item = nullptr;
 
@@ -1109,8 +1124,7 @@ int SCH_DRAWING_TOOLS::TwoClickPlace( const TOOL_EVENT& aEvent )
             if( selection.GetSize() == 1 )
             {
                 item = (SCH_ITEM*) selection.Front();
-                m_view->ClearPreview();
-                m_view->AddToPreview( item->Clone() );
+                updatePreview();
             }
             else
             {
@@ -1119,9 +1133,9 @@ int SCH_DRAWING_TOOLS::TwoClickPlace( const TOOL_EVENT& aEvent )
         }
         else if( item && ( evt->IsAction( &ACTIONS::refreshPreview ) || evt->IsMotion() ) )
         {
-            static_cast<SCH_ITEM*>( item )->SetPosition( (wxPoint) cursorPos );
-            m_view->ClearPreview();
-            m_view->AddToPreview( item->Clone() );
+            item->SetPosition( (wxPoint) cursorPos );
+            item->AutoplaceFields( /* aScreen */ nullptr, /* aManual */ false );
+            updatePreview();
         }
         else if( item && evt->IsAction( &ACTIONS::doDelete ) )
         {

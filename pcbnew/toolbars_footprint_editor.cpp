@@ -226,9 +226,6 @@ void FOOTPRINT_EDIT_FRAME::UpdateToolbarControlSizes()
         m_mainToolBar->UpdateControlWidth( ID_TOOLBARH_PCB_SELECT_LAYER );
         m_mainToolBar->UpdateControlWidth( ID_ON_ZOOM_SELECT );
         m_mainToolBar->UpdateControlWidth( ID_ON_GRID_SELECT );
-
-        // Update the toolbar with the new widths
-        m_mainToolBar->KiRealize();
     }
 }
 
@@ -242,11 +239,7 @@ void FOOTPRINT_EDIT_FRAME::ReCreateLayerBox( bool aForceResizeToolbar )
     m_selLayerBox->Resync();
 
     if( aForceResizeToolbar )
-    {
-        // the layer box can have its size changed
-        // Update the aui manager, to take in account the new size
-        m_auimgr.Update();
-    }
+        UpdateToolbarControlSizes();
 }
 
 
