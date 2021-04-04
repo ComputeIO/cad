@@ -22,30 +22,32 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
 
-#include <wildcards_and_files_ext.h>
 #include <advanced_config.h>
 #include <base_units.h>
-#include <trace_helpers.h>
 #include <board.h>
-#include <footprint.h>
-#include <pcb_text.h>
+#include <boost/ptr_container/ptr_map.hpp>
+#include <confirm.h>
+#include <convert_basic_shapes_to_polygon.h> // for enum RECT_CHAMFER_POSITIONS definition
+#include <core/arraydim.h>
 #include <dimension.h>
-#include <track.h>
-#include <zone.h>
+#include <footprint.h>
+#include <fp_shape.h>
+#include <kiface_i.h>
+#include <locale_io.h>
+#include <macros.h>
 #include <pcb_shape.h>
 #include <pcb_target.h>
-#include <fp_shape.h>
-#include <confirm.h>
-#include <core/arraydim.h>
-#include <locale_io.h>
-#include <zones.h>
+#include <pcb_text.h>
+#include <pcbnew_settings.h>
 #include <plugins/kicad/kicad_plugin.h>
 #include <plugins/kicad/pcb_parser.h>
-#include <pcbnew_settings.h>
-#include <boost/ptr_container/ptr_map.hpp>
-#include <convert_basic_shapes_to_polygon.h>    // for enum RECT_CHAMFER_POSITIONS definition
-#include <kiface_i.h>
+#include <trace_helpers.h>
+#include <track.h>
+#include <wildcards_and_files_ext.h>
+#include <wx/dir.h>
 #include <wx_filename.h>
+#include <zone.h>
+#include <zones.h>
 
 using namespace PCB_KEYS_T;
 
@@ -264,8 +266,6 @@ void FP_CACHE::Load()
 
                 footprint->SetFPID( LIB_ID( wxEmptyString, fpName ) );
                 m_footprints.insert( fpName, new FP_CACHE_ITEM( footprint, fn ) );
-
-                m_cache_timestamp += fn.GetTimestamp();
             }
             catch( const IO_ERROR& ioe )
             {
@@ -275,6 +275,8 @@ void FP_CACHE::Load()
                 cacheError += ioe.What();
             }
         } while( dir.GetNext( &fullName ) );
+
+        m_cache_timestamp = GetTimestamp( m_lib_raw_path );
 
         if( !cacheError.IsEmpty() )
             THROW_IO_ERROR( cacheError );
@@ -445,6 +447,21 @@ void PCB_IO::formatSetup( const BOARD* aBoard, int aNestLevel ) const
         stackup.FormatBoardStackup( m_out, aBoard, aNestLevel+1 );
 
     BOARD_DESIGN_SETTINGS& dsnSettings = aBoard->GetDesignSettings();
+
+    m_out->Print( aNestLevel+1, "(pad_to_mask_clearance %s)\n",
+                  FormatInternalUnits( dsnSettings.m_SolderMaskMargin ).c_str() );
+
+    if( dsnSettings.m_SolderMaskMinWidth )
+        m_out->Print( aNestLevel+1, "(solder_mask_min_width %s)\n",
+                      FormatInternalUnits( dsnSettings.m_SolderMaskMinWidth ).c_str() );
+
+    if( dsnSettings.m_SolderPasteMargin != 0 )
+        m_out->Print( aNestLevel+1, "(pad_to_paste_clearance %s)\n",
+                      FormatInternalUnits( dsnSettings.m_SolderPasteMargin ).c_str() );
+
+    if( dsnSettings.m_SolderPasteMarginRatio != 0 )
+        m_out->Print( aNestLevel+1, "(pad_to_paste_clearance_ratio %s)\n",
+                      Double2Str( dsnSettings.m_SolderPasteMarginRatio ).c_str() );
 
     if( dsnSettings.m_AuxOrigin != wxPoint( 0, 0 ) )
         m_out->Print( aNestLevel+1, "(aux_axis_origin %s %s)\n",
@@ -1722,8 +1739,15 @@ void PCB_IO::format( const TRACK* aTrack, int aNestLevel ) const
                       FormatInternalUnits( aTrack->GetStart() ).c_str(),
                       FormatInternalUnits( aTrack->GetWidth() ).c_str() );
 
+        // Old boards were using UNDEFINED_DRILL_DIAMETER value in file for via drill when
+        // via drill was the netclass value.
+        // recent boards always set the via drill to the actual value, but now we need to
+        // always store the drill value, because netclass value is not stored in the board file.
+        // Otherwise the drill value of some (old) vias can be unknown
         if( via->GetDrill() != UNDEFINED_DRILL_DIAMETER )
             m_out->Print( 0, " (drill %s)", FormatInternalUnits( via->GetDrill() ).c_str() );
+        else    // Probably old board!
+            m_out->Print( 0, " (drill %s)", FormatInternalUnits( via->GetDrillValue() ).c_str() );
 
         m_out->Print( 0, " (layers %s %s)",
                       m_out->Quotew( LSET::Name( layer1 ) ).c_str(),
@@ -2250,14 +2274,22 @@ bool PCB_IO::FootprintExists( const wxString& aLibraryPath, const wxString& aFoo
 }
 
 
-FOOTPRINT* PCB_IO::FootprintLoad( const wxString& aLibraryPath, const wxString& aFootprintName,
+FOOTPRINT* PCB_IO::FootprintLoad( const wxString& aLibraryPath,
+                                  const wxString& aFootprintName,
+                                  bool  aKeepUUID,
                                   const PROPERTIES* aProperties )
 {
     const FOOTPRINT* footprint = getFootprint( aLibraryPath, aFootprintName, aProperties, true );
 
     if( footprint )
     {
-        FOOTPRINT* copy = (FOOTPRINT*) footprint->Duplicate();
+        FOOTPRINT* copy;
+
+        if( aKeepUUID )
+            copy = static_cast<FOOTPRINT*>( footprint->Clone() );
+        else
+            copy = static_cast<FOOTPRINT*>( footprint->Duplicate() );
+
         copy->SetParent( nullptr );
         return copy;
     }
@@ -2350,8 +2382,7 @@ void PCB_IO::FootprintSave( const wxString& aLibraryPath, const FOOTPRINT* aFoot
     // I need my own copy for the cache
     FOOTPRINT* footprint = static_cast<FOOTPRINT*>( aFootprint->Clone() );
 
-    // It should have no parent, orientation should be zero, and it should be on the front layer.
-    footprint->SetParent( nullptr );
+    // It's orientation should be zero and it should be on the front layer.
     footprint->SetOrientation( 0 );
 
     if( footprint->GetLayer() != F_Cu )
@@ -2363,6 +2394,9 @@ void PCB_IO::FootprintSave( const wxString& aLibraryPath, const FOOTPRINT* aFoot
         else
             footprint->Flip( footprint->GetPosition(), false );
     }
+
+    // Detach it from the board
+    footprint->SetParent( nullptr );
 
     wxLogTrace( traceKicadPcbPlugin, wxT( "Creating s-expr footprint file '%s'." ), fullPath );
     footprints.insert( footprintName, new FP_CACHE_ITEM( footprint, WX_FILENAME( fn.GetPath(), fullName ) ) );

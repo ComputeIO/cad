@@ -42,8 +42,8 @@
 #include <lib_text.h>
 #include <sch_bitmap.h>
 #include <sch_bus_entry.h>
-#include <sch_component.h>
-#include <sch_edit_frame.h> // CMP_ORIENT_XXX
+#include <sch_symbol.h>
+#include <sch_edit_frame.h>          // CMP_ORIENT_XXX
 #include <sch_field.h>
 #include <sch_line.h>
 #include <sch_junction.h>
@@ -119,12 +119,14 @@ LIB_PART* SCH_SEXPR_PARSER::ParseSymbol( LIB_PART_MAP& aSymbolLibMap, int aFileV
     wxCHECK_MSG( CurTok() == T_symbol, nullptr,
                  wxT( "Cannot parse " ) + GetTokenString( CurTok() ) + wxT( " as a symbol." ) );
 
-    T                         token;
-    long                      tmp;
-    wxString                  name;
-    wxString                  error;
-    LIB_ITEM*                 item;
+    T token;
+    long tmp;
+    wxString name;
+    wxString error;
+    LIB_ITEM* item;
+    LIB_FIELD* field;
     std::unique_ptr<LIB_PART> symbol = std::make_unique<LIB_PART>( wxEmptyString );
+    std::set<int> fieldIDsRead;
 
     m_requiredVersion = aFileVersion;
     symbol->SetUnitCount( 1 );
@@ -191,7 +193,25 @@ LIB_PART* SCH_SEXPR_PARSER::ParseSymbol( LIB_PART_MAP& aSymbolLibMap, int aFileV
             NeedRIGHT();
             break;
 
-        case T_property: parseProperty( symbol ); break;
+        case T_property:
+            field = parseProperty( symbol );
+
+            if( field )
+            {
+                // It would appear that at some point we allowed duplicate ids to slip through
+                // when writing files.  The easiest (and most complete) solution is to disallow
+                // multiple instances of the same id (for all files since the source of the error
+                // *might* in fact be hand-edited files).
+                //
+                // While no longer used, -1 is still a valid id for user field.  It gets converted
+                // to the next unused number on save.
+                if( fieldIDsRead.count( field->GetId() ) )
+                    field->SetId( -1 );
+                else if( field )
+                    fieldIDsRead.insert( field->GetId() );
+            }
+
+            break;
 
         case T_extends:
         {
@@ -302,7 +322,7 @@ LIB_PART* SCH_SEXPR_PARSER::ParseSymbol( LIB_PART_MAP& aSymbolLibMap, int aFileV
                     wxCHECK_MSG( item, nullptr, "Invalid draw item pointer." );
 
                     item->SetParent( symbol.get() );
-                    symbol->AddDrawItem( item );
+                    symbol->AddDrawItem( item, false );
                     break;
 
                 default: Expecting( "arc, bezier, circle, pin, polyline, rectangle, or text" );
@@ -326,7 +346,7 @@ LIB_PART* SCH_SEXPR_PARSER::ParseSymbol( LIB_PART_MAP& aSymbolLibMap, int aFileV
             wxCHECK_MSG( item, nullptr, "Invalid draw item pointer." );
 
             item->SetParent( symbol.get() );
-            symbol->AddDrawItem( item );
+            symbol->AddDrawItem( item, false );
             break;
 
         default:
@@ -335,6 +355,7 @@ LIB_PART* SCH_SEXPR_PARSER::ParseSymbol( LIB_PART_MAP& aSymbolLibMap, int aFileV
         }
     }
 
+    symbol->GetDrawItems().sort();
     m_symbolName.clear();
 
     return symbol.release();
@@ -544,6 +565,27 @@ void SCH_SEXPR_PARSER::parseEDA_TEXT( EDA_TEXT* aText )
 
                 switch( token )
                 {
+                case T_face:
+                {
+                    NeedSYMBOL();
+                    wxString faceName = FromUTF8();
+                    KIFONT::FONT* font = KIFONT::FONT::GetFont( faceName );
+                    if( font )
+                    {
+                        aText->SetFont( font );
+                    }
+                    else
+                    {
+                        // TODO: notify user about missing font
+#ifdef DEBUG
+                        std::cerr << "parseEDA_TEXT: could not find font face \""
+                                  << faceName << "\"" << std::endl;
+#endif
+                    }
+                    NeedRIGHT();
+                    break;
+                }
+
                 case T_size:
                 {
                     wxSize sz;
@@ -569,7 +611,8 @@ void SCH_SEXPR_PARSER::parseEDA_TEXT( EDA_TEXT* aText )
                     NeedRIGHT();
                     break;
 
-                default: Expecting( "size, thickness, bold, italic, or face" );
+                default:
+                    Expecting( "face, size, thickness, bold, or italic" );
                 }
             }
 
@@ -580,17 +623,12 @@ void SCH_SEXPR_PARSER::parseEDA_TEXT( EDA_TEXT* aText )
             {
                 switch( token )
                 {
-                case T_left: aText->SetHorizJustify( GR_TEXT_HJUSTIFY_LEFT ); break;
-
-                case T_right: aText->SetHorizJustify( GR_TEXT_HJUSTIFY_RIGHT ); break;
-
-                case T_top: aText->SetVertJustify( GR_TEXT_VJUSTIFY_TOP ); break;
-
+                case T_left:   aText->SetHorizJustify( GR_TEXT_HJUSTIFY_LEFT );  break;
+                case T_right:  aText->SetHorizJustify( GR_TEXT_HJUSTIFY_RIGHT ); break;
+                case T_top:    aText->SetVertJustify( GR_TEXT_VJUSTIFY_TOP );    break;
                 case T_bottom: aText->SetVertJustify( GR_TEXT_VJUSTIFY_BOTTOM ); break;
-
-                case T_mirror: aText->SetMirrored( true ); break;
-
-                default: Expecting( "left, right, top, bottom, or mirror" );
+                case T_mirror: aText->SetMirrored( true );                       break;
+                default:       Expecting( "left, right, top, bottom, or mirror" );
                 }
             }
 
@@ -668,18 +706,20 @@ void SCH_SEXPR_PARSER::parsePinNames( std::unique_ptr<LIB_PART>& aSymbol )
     }
     else if( token != T_RIGHT )
     {
-        error.Printf( _( "Invalid symbol names definition in\nfile: \"%s\"\nline: %d\noffset: %d" ),
-                      CurSource().c_str(), CurLineNumber(), CurOffset() );
+        error.Printf( _( "Invalid symbol names definition in\nfile: '%s'\nline: %d\noffset: %d" ),
+                      CurSource().c_str(),
+                      CurLineNumber(),
+                      CurOffset() );
         THROW_IO_ERROR( error );
     }
 }
 
 
-void SCH_SEXPR_PARSER::parseProperty( std::unique_ptr<LIB_PART>& aSymbol )
+LIB_FIELD* SCH_SEXPR_PARSER::parseProperty( std::unique_ptr<LIB_PART>& aSymbol )
 {
-    wxCHECK_RET( CurTok() == T_property, wxT( "Cannot parse " ) + GetTokenString( CurTok() )
-                                                 + wxT( " as a property token." ) );
-    wxCHECK( aSymbol, /* void */ );
+    wxCHECK_MSG( CurTok() == T_property, nullptr,
+                 wxT( "Cannot parse " ) + GetTokenString( CurTok() ) + wxT( " as a property." ) );
+    wxCHECK( aSymbol, nullptr );
 
     wxString                   error;
     wxString                   name;
@@ -691,8 +731,10 @@ void SCH_SEXPR_PARSER::parseProperty( std::unique_ptr<LIB_PART>& aSymbol )
 
     if( !IsSymbol( token ) )
     {
-        error.Printf( _( "Invalid property name in\nfile: \"%s\"\nline: %d\noffset: %d" ),
-                      CurSource().c_str(), CurLineNumber(), CurOffset() );
+        error.Printf( _( "Invalid property name in\nfile: '%s'\nline: %d\noffset: %d" ),
+                      CurSource().c_str(),
+                      CurLineNumber(),
+                      CurOffset() );
         THROW_IO_ERROR( error );
     }
 
@@ -700,8 +742,10 @@ void SCH_SEXPR_PARSER::parseProperty( std::unique_ptr<LIB_PART>& aSymbol )
 
     if( name.IsEmpty() )
     {
-        error.Printf( _( "Empty property name in\nfile: \"%s\"\nline: %d\noffset: %d" ),
-                      CurSource().c_str(), CurLineNumber(), CurOffset() );
+        error.Printf( _( "Empty property name in\nfile: '%s'\nline: %d\noffset: %d" ),
+                      CurSource().c_str(),
+                      CurLineNumber(),
+                      CurOffset() );
         THROW_IO_ERROR( error );
     }
 
@@ -710,8 +754,10 @@ void SCH_SEXPR_PARSER::parseProperty( std::unique_ptr<LIB_PART>& aSymbol )
 
     if( !IsSymbol( token ) )
     {
-        error.Printf( _( "Invalid property value in\nfile: \"%s\"\nline: %d\noffset: %d" ),
-                      CurSource().c_str(), CurLineNumber(), CurOffset() );
+        error.Printf( _( "Invalid property value in\nfile: '%s'\nline: %d\noffset: %d" ),
+                      CurSource().c_str(),
+                      CurLineNumber(),
+                      CurOffset() );
         THROW_IO_ERROR( error );
     }
 
@@ -750,19 +796,22 @@ void SCH_SEXPR_PARSER::parseProperty( std::unique_ptr<LIB_PART>& aSymbol )
 
     if( field->GetId() < MANDATORY_FIELDS )
     {
-        existingField = aSymbol->GetField( field->GetId() );
+        existingField = aSymbol->GetFieldById( field->GetId() );
 
         *existingField = *field;
+        return existingField;
     }
     else if( name == "ki_keywords" )
     {
         // Not a LIB_FIELD object yet.
         aSymbol->SetKeyWords( value );
+        return nullptr;
     }
     else if( name == "ki_description" )
     {
         // Not a LIB_FIELD object yet.
         aSymbol->SetDescription( value );
+        return nullptr;
     }
     else if( name == "ki_fp_filters" )
     {
@@ -774,24 +823,50 @@ void SCH_SEXPR_PARSER::parseProperty( std::unique_ptr<LIB_PART>& aSymbol )
             filters.Add( tokenizer.GetNextToken() );
 
         aSymbol->SetFPFilters( filters );
+        return nullptr;
     }
     else if( name == "ki_locked" )
     {
         // This is a temporary LIB_FIELD object until interchangeable units are determined on
         // the fly.
         aSymbol->LockUnits( true );
+        return nullptr;
     }
     else
     {
-        existingField = aSymbol->GetField( field->GetId() );
+        // At this point, a user field is read.
+        existingField = aSymbol->FindField( field->GetCanonicalName() );
 
+#if 1   // Enable it to modify the name of the field to add if already existing
+        // Disable it to skip the field having the same name as previous field
+        if( existingField )
+        {
+            // We cannot handle 2 fields with the same name, so because the field name
+            // is already in use, try to build a new name (oldname_x)
+            wxString base_name = field->GetCanonicalName();
+
+            // Arbitrary limit 10 attempts to find a new name
+            for( int ii = 1; ii < 10 && existingField ; ii++ )
+            {
+                wxString newname = base_name;
+                newname << '_' << ii;
+
+                existingField = aSymbol->FindField( newname );
+
+                if( !existingField )    // the modified name is not found, use it
+                    field->SetName( newname );
+            }
+        }
+#endif
         if( !existingField )
         {
-            aSymbol->AddDrawItem( field.release() );
+            aSymbol->AddDrawItem( field.get(), false );
+            return field.release();
         }
         else
         {
-            *existingField = *field;
+            // We cannot handle 2 fields with the same name, so skip this one
+            return nullptr;
         }
     }
 }
@@ -2073,6 +2148,9 @@ SCH_COMPONENT* SCH_SEXPR_PARSER::parseSchematicSymbol()
     TRANSFORM                      transform;
     std::set<int>                  fieldIDsRead;
 
+    // We'll reset this if we find a fields_autoplaced token
+    symbol->ClearFieldsAutoplaced();
+
     m_fieldId = MANDATORY_FIELDS;
 
     for( token = NextTok(); token != T_RIGHT; token = NextTok() )
@@ -2174,6 +2252,11 @@ SCH_COMPONENT* SCH_SEXPR_PARSER::parseSchematicSymbol()
             NeedRIGHT();
             break;
 
+        case T_fields_autoplaced:
+            symbol->SetFieldsAutoplaced();
+            NeedRIGHT();
+            break;
+
         case T_uuid:
             NeedSYMBOL();
             const_cast<KIID&>( symbol->m_Uuid ) = KIID( FromUTF8() );
@@ -2190,8 +2273,8 @@ SCH_COMPONENT* SCH_SEXPR_PARSER::parseSchematicSymbol()
             // multiple instances of the same id (for all files since the source of the error
             // *might* in fact be hand-edited files).
             //
-            // While no longer used, -1 is still a valid id for user fields and will
-            // get written out as the next unused number on save.
+            // While no longer used, -1 is still a valid id for user field.  It gets converted
+            // to the next unused number on save.
             if( fieldIDsRead.count( field->GetId() ) )
                 field->SetId( -1 );
             else
@@ -2224,8 +2307,8 @@ SCH_COMPONENT* SCH_SEXPR_PARSER::parseSchematicSymbol()
                     symbol->SetPrefix( prefix );
             }
 
-            if( symbol->GetField( field->GetId() ) )
-                *symbol->GetField( field->GetId() ) = *field;
+            if( symbol->GetFieldById( field->GetId() ) )
+                *symbol->GetFieldById( field->GetId() ) = *field;
             else
                 symbol->AddField( *field );
 
@@ -2380,7 +2463,10 @@ SCH_SHEET* SCH_SEXPR_PARSER::parseSheet()
     std::unique_ptr<SCH_SHEET> sheet = std::make_unique<SCH_SHEET>();
     std::set<int>              fieldIDsRead;
 
-    for( token = NextTok(); token != T_RIGHT; token = NextTok() )
+    // We'll reset this if we find a fields_autoplaced token
+    sheet->ClearFieldsAutoplaced();
+
+    for( token = NextTok();  token != T_RIGHT;  token = NextTok() )
     {
         if( token != T_LEFT )
             Expecting( T_LEFT );
@@ -2403,6 +2489,11 @@ SCH_SHEET* SCH_SEXPR_PARSER::parseSheet()
             NeedRIGHT();
             break;
         }
+
+        case T_fields_autoplaced:
+            sheet->SetFieldsAutoplaced();
+            NeedRIGHT();
+            break;
 
         case T_stroke:
             parseStroke( stroke );
@@ -2440,8 +2531,8 @@ SCH_SHEET* SCH_SEXPR_PARSER::parseSheet()
             // complete) solution is to disallow multiple instances of the same id (for all
             // files since the source of the error *might* in fact be hand-edited files).
             //
-            // While no longer used, -1 is still a valid id for user fields and will
-            // get written out as the next unused number on save.
+            // While no longer used, -1 is still a valid id for user field.  It gets converted
+            // to the next unused number on save.
             if( fieldIDsRead.count( field->GetId() ) )
                 field->SetId( -1 );
             else
@@ -2680,6 +2771,9 @@ SCH_TEXT* SCH_SEXPR_PARSER::parseSchText()
         wxCHECK_MSG( false, nullptr, "Cannot parse " + GetTokenString( CurTok() ) + " as text." );
     }
 
+    // We'll reset this if we find a fields_autoplaced token
+    text->ClearFieldsAutoplaced();
+
     NeedSYMBOL();
 
     text->SetText( FromUTF8() );
@@ -2730,7 +2824,14 @@ SCH_TEXT* SCH_SEXPR_PARSER::parseSchText()
             NeedRIGHT();
             break;
 
-        case T_effects: parseEDA_TEXT( static_cast<EDA_TEXT*>( text.get() ) ); break;
+        case T_fields_autoplaced:
+            text->SetFieldsAutoplaced();
+            NeedRIGHT();
+            break;
+
+        case T_effects:
+            parseEDA_TEXT( static_cast<EDA_TEXT*>( text.get() ) );
+            break;
 
         case T_iref: // legacy format; current is a T_property (aka SCH_FIELD)
             if( text->Type() == SCH_GLOBAL_LABEL_T )

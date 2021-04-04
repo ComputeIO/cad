@@ -1,7 +1,3 @@
-/**
- * @file dialog_export_vrml.cpp
- */
-
 /*
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
@@ -26,6 +22,10 @@
  * or you may write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
+/**
+ * @file dialog_export_vrml.cpp
+ */
+
 #include <wx/dir.h>
 
 #include <board.h>
@@ -49,10 +49,11 @@ private:
     int             m_unitsOpt;             // Remember last units option
     bool            m_copy3DFilesOpt;       // Remember last copy model files option
     bool            m_useRelativePathsOpt;  // Remember last use absolute paths option
-    bool            m_usePlainPCBOpt;       // Remember last Plain Board option
     int             m_RefUnits;             // Remember last units for Reference Point
     double          m_XRef;                 // Remember last X Reference Point
     double          m_YRef;                 // Remember last Y Reference Point
+    int             m_originMode;           // Origin selection option
+                                            // (0 = user, 1 = board center)
 
 public:
     DIALOG_EXPORT_3DFILE( PCB_EDIT_FRAME* parent ) :
@@ -60,20 +61,21 @@ public:
     {
         m_filePicker->SetFocus();
 
-        auto cfg = m_parent->GetPcbNewSettings();
+        PCBNEW_SETTINGS* cfg = m_parent->GetPcbNewSettings();
 
         m_unitsOpt            = cfg->m_ExportVrml.units;
         m_copy3DFilesOpt      = cfg->m_ExportVrml.copy_3d_models;
         m_useRelativePathsOpt = cfg->m_ExportVrml.use_relative_paths;
-        m_usePlainPCBOpt      = cfg->m_ExportVrml.use_plain_pcb;
         m_RefUnits            = cfg->m_ExportVrml.ref_units;
         m_XRef                = cfg->m_ExportVrml.ref_x;
         m_YRef                = cfg->m_ExportVrml.ref_y;
+        m_originMode          = cfg->m_ExportVrml.origin_mode;
 
+
+        m_rbCoordOrigin->SetSelection( m_originMode );
         m_rbSelectUnits->SetSelection( m_unitsOpt );
         m_cbCopyFiles->SetValue( m_copy3DFilesOpt );
         m_cbUseRelativePaths->SetValue( m_useRelativePathsOpt );
-        m_cbPlainPCB->SetValue( m_usePlainPCBOpt );
         m_VRML_RefUnitChoice->SetSelection( m_RefUnits );
         wxString tmpStr;
         tmpStr << m_XRef;
@@ -81,13 +83,10 @@ public:
         tmpStr = wxT( "" );
         tmpStr << m_YRef;
         m_VRML_Yref->SetValue( tmpStr );
-        m_sdbSizer1OK->SetDefault();
+        m_sdbSizerOK->SetDefault();
 
         // Now all widgets have the size fixed, call FinishDialogSettings
         finishDialogSettings();
-
-        Connect( ID_USE_ABS_PATH, wxEVT_UPDATE_UI,
-                 wxUpdateUIEventHandler( DIALOG_EXPORT_3DFILE::OnUpdateUseRelativePath ) );
     }
 
     ~DIALOG_EXPORT_3DFILE()
@@ -95,13 +94,13 @@ public:
         m_unitsOpt = GetUnits();
         m_copy3DFilesOpt = GetCopyFilesOption();
 
-        auto cfg = m_parent->GetPcbNewSettings();
+        PCBNEW_SETTINGS* cfg = m_parent->GetPcbNewSettings();
 
         cfg->m_ExportVrml.units              = m_unitsOpt;
         cfg->m_ExportVrml.copy_3d_models     = m_copy3DFilesOpt;
         cfg->m_ExportVrml.use_relative_paths = m_useRelativePathsOpt;
-        cfg->m_ExportVrml.use_plain_pcb      = m_usePlainPCBOpt;
         cfg->m_ExportVrml.ref_units          = m_VRML_RefUnitChoice->GetSelection();
+        cfg->m_ExportVrml.origin_mode        = m_rbCoordOrigin->GetSelection();
 
         double val = 0.0;
         m_VRML_Xref->GetValue().ToDouble( &val );
@@ -131,6 +130,11 @@ public:
         return m_VRML_RefUnitChoice->GetSelection();
     }
 
+    int GetOriginChoice()
+    {
+        return m_rbCoordOrigin->GetSelection();
+    }
+
     double GetXRef()
     {
         return DoubleValueFromString( EDA_UNITS::UNSCALED, m_VRML_Xref->GetValue() );
@@ -156,12 +160,7 @@ public:
         return m_useRelativePathsOpt = m_cbUseRelativePaths->GetValue();
     }
 
-    bool GetUsePlainPCBOption()
-    {
-        return m_usePlainPCBOpt = m_cbPlainPCB->GetValue();
-    }
-
-    void OnUpdateUseRelativePath( wxUpdateUIEvent& event )
+    void OnUpdateUseRelativePath( wxUpdateUIEvent& event ) override
     {
         // Making path relative or absolute has no meaning when VRML files are not copied.
         event.Enable( m_cbCopyFiles->GetValue() );
@@ -226,10 +225,18 @@ void PCB_EDIT_FRAME::OnExportVRML( wxCommandEvent& event )
         aYRef *= 25.4;
     }
 
+    if( dlg.GetOriginChoice() == 1 )
+    {
+        // Origin = board center:
+        BOARD* pcb = GetBoard();
+        wxPoint center = pcb->GetBoundingBox().GetCenter();
+        aXRef = Iu2Millimeter( center.x );
+        aYRef = Iu2Millimeter( center.y );
+    }
+
     double scale = scaleList[dlg.GetUnits()];     // final scale export
     bool export3DFiles = dlg.GetCopyFilesOption();
     bool useRelativePaths = dlg.GetUseRelativePathsOption();
-    bool usePlainPCB = dlg.GetUsePlainPCBOption();
 
     path = dlg.FilePicker()->GetPath();
     SetLastPath( LAST_PATH_VRML, path );
@@ -252,7 +259,7 @@ void PCB_EDIT_FRAME::OnExportVRML( wxCommandEvent& event )
     }
 
     if( !ExportVRML_File( path, scale, export3DFiles, useRelativePaths,
-                          usePlainPCB, modelPath.GetPath(), aXRef, aYRef ) )
+                          modelPath.GetPath(), aXRef, aYRef ) )
     {
         wxString msg = wxString::Format( _( "Unable to create file \"%s\"" ), path );
         DisplayErrorMessage( this, msg );

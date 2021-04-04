@@ -92,6 +92,7 @@ LANGUAGE_DESCR LanguagesList[] =
     { wxLANGUAGE_POLISH,     ID_LANGUAGE_POLISH,     wxT( "Polski" ),   true },
     { wxLANGUAGE_PORTUGUESE, ID_LANGUAGE_PORTUGUESE, wxT( "Português" ),true },
     { wxLANGUAGE_RUSSIAN,    ID_LANGUAGE_RUSSIAN,    wxT( "Русский" ),  true },
+    { wxLANGUAGE_SERBIAN,    ID_LANGUAGE_SERBIAN,    wxT( "Српски"),    true },
     { wxLANGUAGE_FINNISH,    ID_LANGUAGE_FINNISH,    wxT( "Suomalainen" ),  true },
     { wxLANGUAGE_VIETNAMESE, ID_LANGUAGE_VIETNAMESE, wxT( "Tiếng việt" ), true },
     { wxLANGUAGE_TURKISH,    ID_LANGUAGE_TURKISH,    wxT( "Türk" ),     true },
@@ -172,8 +173,7 @@ const wxString& PGM_BASE::GetEditorName( bool aCanShowFileChooser )
     // If we still don't have an editor name show a dialog asking the user to select one
     if( !editorname && aCanShowFileChooser )
     {
-        DisplayInfoMessage( NULL,
-                            _( "No default editor found, you must choose it" ) );
+        DisplayInfoMessage( NULL, _( "No default editor found, you must choose it" ) );
 
         editorname = AskUserForPreferredEditor();
     }
@@ -205,10 +205,8 @@ const wxString PGM_BASE::AskUserForPreferredEditor( const wxString& aDefaultEdit
 
     // Show the modal editor and return the file chosen (may be empty if the user cancels
     // the dialog).
-    return EDA_FILE_SELECTOR( _( "Select Preferred Editor" ), path,
-                              name, ext, mask,
-                              NULL, wxFD_OPEN | wxFD_FILE_MUST_EXIST,
-                              true );
+    return EDA_FILE_SELECTOR( _( "Select Preferred Editor" ), path, name, ext, mask, NULL,
+                              wxFD_OPEN | wxFD_FILE_MUST_EXIST, true );
 }
 
 
@@ -221,7 +219,8 @@ bool PGM_BASE::InitPgm()
 #ifndef __WINDOWS__
     if( wxString( wxGetenv( "HOME" ) ).IsEmpty() )
     {
-        DisplayErrorMessage( nullptr, _( "Environmental variable HOME is empty.  Unable to continue." ) );
+        DisplayErrorMessage( nullptr, _( "Environment variable HOME is empty.  "
+                                         "Unable to continue." ) );
         return false;
     }
 #endif
@@ -231,11 +230,11 @@ bool PGM_BASE::InitPgm()
 
     if( m_pgm_checker->IsAnotherRunning() )
     {
-        wxString quiz =
-                wxString::Format( _( "%s is already running. Continue?" ), pgm_name.GetName() );
-
-        if( !IsOK( NULL, quiz ) )
+        if( !IsOK( NULL, wxString::Format( _( "%s is already running. Continue?" ),
+                                           App().GetAppDisplayName() ) ) )
+        {
             return false;
+        }
     }
 
     // Init KiCad environment
@@ -280,19 +279,10 @@ bool PGM_BASE::InitPgm()
         return false;
 
     wxFileName baseSharePath;
-#if defined( __WXMSW__ )
-    // Make the paths relative to the executable dir as KiCad might be installed anywhere
-    // It follows the Windows installer paths scheme, where binaries are installed in
-    // PATH/bin and extra files in PATH/share/kicad
-    baseSharePath.AssignDir( m_bin_dir + "\\.." );
-    baseSharePath.Normalize();
+#ifdef __WXMAC__
+    baseSharePath.AssignDir( PATHS::GetOSXKicadMachineDataDir() );
 #else
-    baseSharePath.AssignDir( wxString( wxT( DEFAULT_INSTALL_PATH ) ) );
-#endif
-
-#if !defined( __WXMAC__ )
-    baseSharePath.AppendDir( "share" );
-    baseSharePath.AppendDir( "kicad" );
+    baseSharePath.AssignDir( PATHS::GetStockDataPath( false ) );
 #endif
 
     // KICAD6_FOOTPRINT_DIR
@@ -582,7 +572,7 @@ void PGM_BASE::SaveCommonSettings()
 
 COMMON_SETTINGS* PGM_BASE::GetCommonSettings() const
 {
-    return GetSettingsManager().GetCommonSettings();
+    return m_settings_manager ? GetSettingsManager().GetCommonSettings() : nullptr;
 }
 
 
@@ -759,6 +749,18 @@ void PGM_BASE::SetLanguagePath()
         // Append path for unix standard install
         fn.RemoveLastDir();
         fn.AppendDir( "kicad" );
+        fn.AppendDir( "internat" );
+
+        if( fn.IsDirReadable() )
+        {
+            wxLogTrace( traceLocale, "Adding locale lookup path: " + fn.GetPath() );
+            wxLocale::AddCatalogLookupPathPrefix( fn.GetPath() );
+        }
+
+	// Append path for macOS install
+        fn.RemoveLastDir();
+        fn.RemoveLastDir();
+        fn.RemoveLastDir();
         fn.AppendDir( "internat" );
 
         if( fn.IsDirReadable() )

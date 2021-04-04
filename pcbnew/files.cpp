@@ -33,6 +33,7 @@
 #include <widgets/msgpanel.h>
 #include <fp_lib_table.h>
 #include <kiface_i.h>
+#include <macros.h>
 #include <trace_helpers.h>
 #include <lockfile.cpp>
 #include <netlist_reader/pcb_netlist.h>
@@ -47,7 +48,6 @@
 #include <widgets/appearance_controls.h>
 #include <widgets/infobar.h>
 #include <wx/wupdlock.h>
-#include <settings/common_settings.h>
 #include <settings/settings_manager.h>
 #include <paths.h>
 #include <project/project_file.h>
@@ -73,7 +73,8 @@
  * @param aKicadFilesOnly true to list KiCad pcb files plugins only, false to list import plugins.
  * @return  true if chosen, else false if user aborted.
  */
-bool AskLoadBoardFileName( wxWindow* aParent, int* aCtl, wxString* aFileName, bool aKicadFilesOnly )
+bool AskLoadBoardFileName( PCB_EDIT_FRAME* aParent, int* aCtl, wxString* aFileName,
+                           bool aKicadFilesOnly )
 {
     // This is a subset of all PLUGINs which are trusted to be able to
     // load a BOARD. User may occasionally use the wrong plugin to load a
@@ -168,7 +169,10 @@ bool AskLoadBoardFileName( wxWindow* aParent, int* aCtl, wxString* aFileName, bo
     }
     else
     {
-        path = PATHS::GetDefaultUserProjectsPath();
+        path = aParent->GetMruPath();
+
+        if( path.IsEmpty() )
+            path = PATHS::GetDefaultUserProjectsPath();
         // leave name empty
     }
 
@@ -183,6 +187,7 @@ bool AskLoadBoardFileName( wxWindow* aParent, int* aCtl, wxString* aFileName, bo
         // Other cases are clear because of unique file extensions.
         *aCtl = aKicadFilesOnly ? 0 : KICTL_EAGLE_BRD;
         *aFileName = dlg.GetPath();
+        aParent->SetMruPath( wxFileName( dlg.GetPath() ).GetPath() );
         return true;
     }
     else
@@ -299,20 +304,20 @@ bool PCB_EDIT_FRAME::Files_io_from_id( int id )
     {
     case ID_LOAD_FILE:
     {
-        int      open_ctl = 0;
-        wxString fileName = Prj().AbsolutePath( GetBoard()->GetFileName() );
+        int         open_ctl = 0;
+        wxString    fileName = Prj().AbsolutePath( GetBoard()->GetFileName() );
 
         return AskLoadBoardFileName( this, &open_ctl, &fileName, true )
-               && OpenProjectFiles( std::vector<wxString>( 1, fileName ), open_ctl );
+                   && OpenProjectFiles( std::vector<wxString>( 1, fileName ), open_ctl );
     }
 
     case ID_IMPORT_NON_KICAD_BOARD:
     {
-        int      open_ctl = 1;
-        wxString fileName; // = Prj().AbsolutePath( GetBoard()->GetFileName() );
+        int         open_ctl = 1;
+        wxString    fileName; // = Prj().AbsolutePath( GetBoard()->GetFileName() );
 
         return AskLoadBoardFileName( this, &open_ctl, &fileName, false )
-               && OpenProjectFiles( std::vector<wxString>( 1, fileName ), open_ctl );
+                   && OpenProjectFiles( std::vector<wxString>( 1, fileName ), open_ctl );
     }
 
     case ID_MENU_RECOVER_BOARD_AUTOSAVE:
@@ -335,7 +340,7 @@ bool PCB_EDIT_FRAME::Files_io_from_id( int id )
         if( !IsOK( this, msg ) )
             return false;
 
-        GetScreen()->ClrModify(); // do not prompt the user for changes
+        GetScreen()->ClrModify();    // do not prompt the user for changes
 
         if( OpenProjectFiles( std::vector<wxString>( 1, fn.GetFullPath() ) ) )
         {
@@ -347,20 +352,25 @@ bool PCB_EDIT_FRAME::Files_io_from_id( int id )
         return false;
     }
 
+        return false;
+    }
+
     case ID_NEW_BOARD:
     {
         if( IsContentModified() )
         {
             wxFileName fileName = GetBoard()->GetFileName();
-            wxString   saveMsg =
-                    _( "Current board will be closed, save changes to \"%s\" before continuing?" );
+            wxString   saveMsg = _( "Current board will be closed, save changes to '%s' before "
+                                    "continuing?" );
 
             if( !HandleUnsavedChanges( this, wxString::Format( saveMsg, fileName.GetFullName() ),
-                                       [&]() -> bool
+                                       [&]()->bool
                                        {
                                            return Files_io_from_id( ID_SAVE_BOARD );
                                        } ) )
+            {
                 return false;
+            }
         }
         else if( !GetBoard()->IsEmpty() )
         {
@@ -380,9 +390,9 @@ bool PCB_EDIT_FRAME::Files_io_from_id( int id )
         if( !Clear_Pcb( false ) )
             return false;
 
-        onBoardLoaded();
-
         LoadProjectSettings();
+
+        onBoardLoaded();
 
         OnModify();
         return true;
@@ -397,7 +407,7 @@ bool PCB_EDIT_FRAME::Files_io_from_id( int id )
     case ID_COPY_BOARD_AS:
     case ID_SAVE_BOARD_AS:
     {
-        bool     addToHistory = false;
+        bool addToHistory = false;
         wxString orig_name;
         wxFileName::SplitPath( GetBoard()->GetFileName(), nullptr, nullptr, &orig_name, nullptr );
 
@@ -417,8 +427,8 @@ bool PCB_EDIT_FRAME::Files_io_from_id( int id )
                 savePath = PATHS::GetDefaultUserProjectsPath();
         }
 
-        wxFileName fn( savePath.GetPath(), orig_name, KiCadPcbFileExtension );
-        wxString   filename = fn.GetFullPath();
+        wxFileName  fn( savePath.GetPath(), orig_name, KiCadPcbFileExtension );
+        wxString    filename = fn.GetFullPath();
 
         bool createProject = false;
 
@@ -429,6 +439,11 @@ bool PCB_EDIT_FRAME::Files_io_from_id( int id )
             else
                 return SavePcbFile( filename, addToHistory, createProject );
         }
+
+        return false;
+    }
+
+    default:
         return false;
     }
 
@@ -523,7 +538,7 @@ int PCB_EDIT_FRAME::inferLegacyEdgeClearance( BOARD* aBoard )
         // If they had different widths then we can't ensure that fills will be the same.
         wxMessageBox( _( "If the zones on this board are refilled the Copper Edge Clearance "
                          "setting will be used (see Board Setup > Design Rules > Constraints).\n"
-                         "This may result in different fills from previous Kicad versions which "
+                         "This may result in different fills from previous KiCad versions which "
                          "used the line thicknesses of the board boundary on the Edge Cuts "
                          "layer." ),
                       _( "Edge Clearance Warning" ), wxOK | wxICON_WARNING, this );
@@ -628,8 +643,7 @@ bool PCB_EDIT_FRAME::OpenProjectFiles( const std::vector<wxString>& aFileSet, in
         // standalone and opening a board that has been moved from its project folder.
         // For converted projects, we don't want to set the read-only flag because we want a project
         // to be saved for the new file in case things like netclasses got migrated.
-        if( !pro.Exists() && !converted )
-            Prj().SetReadOnly();
+        Prj().SetReadOnly( !pro.Exists() && !converted );
     }
 
     // Clear the cache footprint list which may be project specific
@@ -711,6 +725,8 @@ bool PCB_EDIT_FRAME::OpenProjectFiles( const std::vector<wxString>& aFileSet, in
 
         if( loadedBoard->m_LegacyDesignSettingsLoaded )
         {
+            Prj().SetReadOnly( false );
+
             Prj().GetProjectFile().NetSettings().ResolveNetClassAssignments( true );
 
             // Before we had a copper edge clearance setting, the edge line widths could be used
@@ -757,7 +773,7 @@ bool PCB_EDIT_FRAME::OpenProjectFiles( const std::vector<wxString>& aFileSet, in
             m_infoBar->AddCloseButton();
             m_infoBar->ShowMessage( _( "This file was created by an older version of KiCad. "
                                        "It will be converted to the new format when saved." ),
-                                    wxICON_WARNING );
+                                    wxICON_WARNING, WX_INFOBAR::MESSAGE_TYPE::OUTDATED_SAVE );
         }
 
         // Import footprints into a project-specific library
@@ -977,11 +993,12 @@ bool PCB_EDIT_FRAME::SavePcbFile( const wxString& aFileName, bool addToHistory,
     }
     catch( const IO_ERROR& ioe )
     {
-        wxString msg = wxString::Format( _( "Error saving board file \"%s\".\n%s" ),
-                                         pcbFileName.GetFullPath(), ioe.What() );
+        wxString msg = wxString::Format( _( "Error saving board file '%s'.\n%s" ),
+                                         pcbFileName.GetFullPath(),
+                                         ioe.What() );
         DisplayError( this, msg );
 
-        lowerTxt.Printf( _( "Failed to create temporary file \"%s\"" ), tempFile.GetFullPath() );
+        lowerTxt.Printf( _( "Failed to create temporary file '%s'." ), tempFile.GetFullPath() );
 
         SetMsgPanel( upperTxt, lowerTxt );
 
@@ -994,12 +1011,14 @@ bool PCB_EDIT_FRAME::SavePcbFile( const wxString& aFileName, bool addToHistory,
     // If save succeeded, replace the original with what we just wrote
     if( !wxRenameFile( tempFile.GetFullPath(), pcbFileName.GetFullPath() ) )
     {
-        wxString msg = wxString::Format(
-                _( "Error saving board file \"%s\".\nFailed to rename temporary file \"%s\"" ),
-                pcbFileName.GetFullPath(), tempFile.GetFullPath() );
+        wxString msg = wxString::Format( _( "Error saving board file \"%s\".\n"
+                                            "Failed to rename temporary file \"%s\"" ),
+                                         pcbFileName.GetFullPath(),
+                                         tempFile.GetFullPath() );
         DisplayError( this, msg );
 
-        lowerTxt.Printf( _( "Failed to rename temporary file \"%s\"" ), tempFile.GetFullPath() );
+        lowerTxt.Printf( _( "Failed to rename temporary file \"%s\"" ),
+                         tempFile.GetFullPath() );
 
         SetMsgPanel( upperTxt, lowerTxt );
 
@@ -1015,7 +1034,6 @@ bool PCB_EDIT_FRAME::SavePcbFile( const wxString& aFileName, bool addToHistory,
     }
 
     GetBoard()->SetFileName( pcbFileName.GetFullPath() );
-    UpdateTitle();
 
     // Put the saved file in File History if requested
     if( addToHistory )
@@ -1029,16 +1047,19 @@ bool PCB_EDIT_FRAME::SavePcbFile( const wxString& aFileName, bool addToHistory,
     if( autoSaveFileName.FileExists() )
         wxRemoveFile( autoSaveFileName.GetFullPath() );
 
-    lowerTxt.Printf( _( "File \"%s\" saved." ), pcbFileName.GetFullPath() );
+    lowerTxt.Printf( _( "File '%s' saved." ), pcbFileName.GetFullPath() );
 
     SetStatusText( lowerTxt, 0 );
 
     // Get rid of the old version conversion warning, or any other dismissable warning :)
+    m_infoBar->DismissOutdatedSave();
+
     if( m_infoBar->IsShown() && m_infoBar->HasCloseButton() )
         m_infoBar->Dismiss();
 
     GetScreen()->ClrModify();
     GetScreen()->ClrSave();
+    UpdateTitle();
     return true;
 }
 
@@ -1052,7 +1073,7 @@ bool PCB_EDIT_FRAME::SavePcbCopy( const wxString& aFileName, bool aCreateProject
 
     if( !IsWritable( pcbFileName ) )
     {
-        wxString msg = wxString::Format( _( "No access rights to write to file \"%s\"" ),
+        wxString msg = wxString::Format( _( "No access rights to write to file '%s'." ),
                                          pcbFileName.GetFullPath() );
 
         DisplayError( this, msg );
@@ -1071,8 +1092,9 @@ bool PCB_EDIT_FRAME::SavePcbCopy( const wxString& aFileName, bool aCreateProject
     }
     catch( const IO_ERROR& ioe )
     {
-        wxString msg = wxString::Format( _( "Error saving board file \"%s\".\n%s" ),
-                                         pcbFileName.GetFullPath(), ioe.What() );
+        wxString msg = wxString::Format( _( "Error saving board file '%s'.\n%s" ),
+                                         pcbFileName.GetFullPath(),
+                                         ioe.What() );
         DisplayError( this, msg );
 
         return false;

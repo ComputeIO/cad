@@ -64,19 +64,26 @@ public:
 
 bool DRC_TEST_PROVIDER_DISALLOW::Run()
 {
+    if( m_drcEngine->IsErrorLimitExceeded( DRCE_ALLOWED_ITEMS ) )
+    {
+        reportAux( "Disallow violations ignored. Tests not run." );
+        return true;    // continue with other tests
+    }
+
     if( !m_drcEngine->HasRulesForConstraintType( DISALLOW_CONSTRAINT ) )
     {
         reportAux( "No disallow constraints found. Skipping check." );
-        return false;
+        return true;    // continue with other tests
     }
 
     if( !reportPhase( _( "Checking keepouts & disallow constraints..." ) ) )
-        return false;
+        return false;   // DRC cancelled
 
-    auto doCheckItem = [&]( BOARD_ITEM* item )
-    {
-        auto constraint =
-                m_drcEngine->EvalRules( DISALLOW_CONSTRAINT, item, nullptr, item->GetLayer() );
+    auto doCheckItem =
+            [&]( BOARD_ITEM* item )
+            {
+                auto constraint = m_drcEngine->EvalRules( DISALLOW_CONSTRAINT, item, nullptr,
+                                                          UNDEFINED_LAYER );
 
         if( constraint.m_DisallowFlags )
         {
@@ -98,10 +105,27 @@ bool DRC_TEST_PROVIDER_DISALLOW::Run()
                 if( m_drcEngine->IsErrorLimitExceeded( DRCE_ALLOWED_ITEMS ) )
                     return false;
 
+                if( item->Type() == PCB_ZONE_T || item->Type() == PCB_FP_ZONE_T )
+                {
+                    ZONE* zone = static_cast<ZONE*>( item );
+
+                    if( zone->GetIsRuleArea() )
+                        return true;
+                }
+
                 item->ClearFlags( HOLE_PROXY );
                 doCheckItem( item );
 
-                if( item->Type() == PCB_VIA_T || item->Type() == PCB_PAD_T )
+                bool hasHole;
+
+                switch( item->Type() )
+                {
+                case PCB_VIA_T: hasHole = true;                                           break;
+                case PCB_PAD_T: hasHole = static_cast<PAD*>( item )->GetDrillSizeX() > 0; break;
+                default:        hasHole = false;                                          break;
+                }
+
+                if( hasHole )
                 {
                     item->SetFlags( HOLE_PROXY );
                     doCheckItem( item );

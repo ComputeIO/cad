@@ -119,7 +119,7 @@ void LIB_POLYLINE::Rotate( const wxPoint& aCenter, bool aRotateCCW )
 
 
 void LIB_POLYLINE::Plot( PLOTTER* aPlotter, const wxPoint& aOffset, bool aFill,
-                         const TRANSFORM& aTransform )
+                         const TRANSFORM& aTransform ) const
 {
     wxASSERT( aPlotter != NULL );
 
@@ -353,9 +353,9 @@ wxString LIB_POLYLINE::GetSelectMenuText( EDA_UNITS aUnits ) const
 }
 
 
-BITMAP_DEF LIB_POLYLINE::GetMenuImage() const
+BITMAPS LIB_POLYLINE::GetMenuImage() const
 {
-    return add_graphical_segments_xpm;
+    return BITMAPS::add_graphical_segments;
 }
 
 

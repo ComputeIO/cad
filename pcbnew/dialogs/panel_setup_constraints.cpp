@@ -35,24 +35,18 @@
 
 PANEL_SETUP_CONSTRAINTS::PANEL_SETUP_CONSTRAINTS( PAGED_DIALOG* aParent, PCB_EDIT_FRAME* aFrame ) :
         PANEL_SETUP_CONSTRAINTS_BASE( aParent->GetTreebook() ),
-        m_minClearance( aFrame, m_clearanceTitle, m_clearanceCtrl, m_clearanceUnits, true ),
-        m_trackMinWidth( aFrame, m_TrackMinWidthTitle, m_TrackMinWidthCtrl, m_TrackMinWidthUnits,
-                         true ),
-        m_viaMinAnnulus( aFrame, m_ViaMinAnnulusTitle, m_ViaMinAnnulusCtrl, m_ViaMinAnnulusUnits,
-                         true ),
-        m_viaMinSize( aFrame, m_ViaMinTitle, m_SetViasMinSizeCtrl, m_ViaMinUnits, true ),
-        m_throughHoleMin( aFrame, m_MinDrillTitle, m_MinDrillCtrl, m_MinDrillUnits, true ),
-        m_uviaMinSize( aFrame, m_uviaMinSizeLabel, m_uviaMinSizeCtrl, m_uviaMinSizeUnits, true ),
-        m_uviaMinDrill( aFrame, m_uviaMinDrillLabel, m_uviaMinDrillCtrl, m_uviaMinDrillUnits,
-                        true ),
-        m_holeToHoleMin( aFrame, m_HoleToHoleTitle, m_SetHoleToHoleCtrl, m_HoleToHoleUnits, true ),
-        m_holeClearance( aFrame, m_HoleClearanceLabel, m_HoleClearanceCtrl, m_HoleClearanceUnits,
-                         true ),
-        m_edgeClearance( aFrame, m_EdgeClearanceLabel, m_EdgeClearanceCtrl, m_EdgeClearanceUnits,
-                         true ),
-        m_silkClearance( aFrame, m_silkClearanceLabel, m_silkClearanceCtrl, m_silkClearanceUnits,
-                         true ),
-        m_maxError( aFrame, m_maxErrorTitle, m_maxErrorCtrl, m_maxErrorUnits, true )
+        m_minClearance( aFrame, m_clearanceTitle, m_clearanceCtrl, m_clearanceUnits ),
+        m_trackMinWidth( aFrame, m_TrackMinWidthTitle, m_TrackMinWidthCtrl, m_TrackMinWidthUnits ),
+        m_viaMinAnnulus( aFrame, m_ViaMinAnnulusTitle, m_ViaMinAnnulusCtrl, m_ViaMinAnnulusUnits ),
+        m_viaMinSize( aFrame, m_ViaMinTitle, m_SetViasMinSizeCtrl, m_ViaMinUnits ),
+        m_throughHoleMin( aFrame, m_MinDrillTitle, m_MinDrillCtrl, m_MinDrillUnits ),
+        m_uviaMinSize( aFrame, m_uviaMinSizeLabel, m_uviaMinSizeCtrl, m_uviaMinSizeUnits ),
+        m_uviaMinDrill( aFrame, m_uviaMinDrillLabel, m_uviaMinDrillCtrl, m_uviaMinDrillUnits ),
+        m_holeToHoleMin( aFrame, m_HoleToHoleTitle, m_SetHoleToHoleCtrl, m_HoleToHoleUnits ),
+        m_holeClearance( aFrame, m_HoleClearanceLabel, m_HoleClearanceCtrl, m_HoleClearanceUnits ),
+        m_edgeClearance( aFrame, m_EdgeClearanceLabel, m_EdgeClearanceCtrl, m_EdgeClearanceUnits ),
+        m_silkClearance( aFrame, m_silkClearanceLabel, m_silkClearanceCtrl, m_silkClearanceUnits ),
+        m_maxError( aFrame, m_maxErrorTitle, m_maxErrorCtrl, m_maxErrorUnits )
 {
     m_Frame = aFrame;
     m_BrdSettings = &m_Frame->GetBoard()->GetDesignSettings();
@@ -164,20 +158,20 @@ bool PANEL_SETUP_CONSTRAINTS::Show( bool aShow )
         // These *should* work in the constructor, and indeed they do if this panel is the
         // first displayed.  However, on OSX 3.0.5 (at least), if another panel is displayed
         // first then the icons will be blank unless they're set here.
-        m_bitmapZoneFillOpt->SetBitmap( KiBitmap( show_zone_xpm ) );
-        m_filletBitmap->SetBitmap( KiBitmap( zone_fillet_xpm ) );
-        m_bitmapClearance->SetBitmap( KiBitmap( ps_diff_pair_gap_xpm ) );
-        m_bitmapMinTrackWidth->SetBitmap( KiBitmap( width_track_xpm ) );
-        m_bitmapMinViaAnnulus->SetBitmap( KiBitmap( via_annulus_xpm ) );
-        m_bitmapMinViaDiameter->SetBitmap( KiBitmap( via_diameter_xpm ) );
-        m_bitmapMinViaDrill->SetBitmap( KiBitmap( via_hole_diameter_xpm ) );
-        m_bitmapMinuViaDiameter->SetBitmap( KiBitmap( via_diameter_xpm ) );
-        m_bitmapMinuViaDrill->SetBitmap( KiBitmap( via_hole_diameter_xpm ) );
-        m_bitmapHoleClearance->SetBitmap( KiBitmap( hole_to_copper_clearance_xpm ) );
-        m_bitmapMinHoleClearance->SetBitmap( KiBitmap( hole_to_hole_clearance_xpm ) );
-        m_bitmapEdgeClearance->SetBitmap( KiBitmap( edge_to_copper_clearance_xpm ) );
-        m_bitmapBlindBuried->SetBitmap( KiBitmap( via_buried_xpm ) );
-        m_bitmap_uVia->SetBitmap( KiBitmap( via_microvia_xpm ) );
+        m_bitmapZoneFillOpt->SetBitmap( KiBitmap( BITMAPS::show_zone ) );
+        m_filletBitmap->SetBitmap( KiBitmap( BITMAPS::zone_fillet ) );
+        m_bitmapClearance->SetBitmap( KiBitmap( BITMAPS::ps_diff_pair_gap ) );
+        m_bitmapMinTrackWidth->SetBitmap( KiBitmap( BITMAPS::width_track ) );
+        m_bitmapMinViaAnnulus->SetBitmap( KiBitmap( BITMAPS::via_annulus ) );
+        m_bitmapMinViaDiameter->SetBitmap( KiBitmap( BITMAPS::via_diameter ) );
+        m_bitmapMinViaDrill->SetBitmap( KiBitmap( BITMAPS::via_hole_diameter ) );
+        m_bitmapMinuViaDiameter->SetBitmap( KiBitmap( BITMAPS::via_diameter ) );
+        m_bitmapMinuViaDrill->SetBitmap( KiBitmap( BITMAPS::via_hole_diameter ) );
+        m_bitmapHoleClearance->SetBitmap( KiBitmap( BITMAPS::hole_to_copper_clearance ) );
+        m_bitmapMinHoleClearance->SetBitmap( KiBitmap( BITMAPS::hole_to_hole_clearance ) );
+        m_bitmapEdgeClearance->SetBitmap( KiBitmap( BITMAPS::edge_to_copper_clearance ) );
+        m_bitmapBlindBuried->SetBitmap( KiBitmap( BITMAPS::via_buried ) );
+        m_bitmap_uVia->SetBitmap( KiBitmap( BITMAPS::via_microvia ) );
 
         Layout();
     }

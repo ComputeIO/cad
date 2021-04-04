@@ -242,14 +242,6 @@ wxString StringFromValue( EDA_UNITS aUnits, double aValue, bool aAddUnitSymbol,
     }
 
 
-#if defined( EESCHEMA )
-    wxString    stringValue = wxString::Format( wxT( "%.3f" ), value_to_print );
-
-    // Strip trailing zeros. However, keep at least 3 digits in mantissa for readability.
-    StripTrailingZeros( stringValue, 3 );
-
-#else
-
     char    buf[50];
     int     len;
 
@@ -274,8 +266,6 @@ wxString StringFromValue( EDA_UNITS aUnits, double aValue, bool aAddUnitSymbol,
     }
 
     wxString    stringValue( buf, wxConvUTF8 );
-
-#endif
 
     if( aAddUnitSymbol )
     {
@@ -357,17 +347,13 @@ double DoubleValueFromString( EDA_UNITS aUnits, const wxString& aTextValue, EDA_
         wxChar ch = buf[brk_point];
 
         if( !( (ch >= '0' && ch <= '9') || (ch == decimal_point) || (ch == '-') || (ch == '+') ) )
-        {
             break;
-        }
 
         ++brk_point;
     }
 
     // Extract the numeric part
-    buf.Left( brk_point );
-
-    buf.ToDouble( &dtmp );
+    buf.Left( brk_point ).ToDouble( &dtmp );
 
     // Check the optional unit designator (2 ch significant)
     wxString unit( buf.Mid( brk_point ).Strip( wxString::leading ).Left( 2 ).Lower() );

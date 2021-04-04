@@ -2,7 +2,7 @@
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
  * Copyright (C) 2011 jean-pierre.charras
- * Copyright (C) 2011-2019 KiCad Developers, see change_log.txt for contributors.
+ * Copyright (C) 2011-2021 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -24,7 +24,6 @@
 
 /**
  * @file sch_bitmap.h
- *
  */
 
 #ifndef _SCH_BITMAP_H_
@@ -38,12 +37,8 @@
 /**
  * Object to handle a bitmap image that can be inserted in a schematic.
  */
-
 class SCH_BITMAP : public SCH_ITEM
 {
-    wxPoint      m_pos;                 // XY coordinates of center of the bitmap
-    BITMAP_BASE* m_image;               // the BITMAP_BASE item
-
 public:
     SCH_BITMAP( const wxPoint& pos = wxPoint( 0, 0 ) );
 
@@ -63,7 +58,7 @@ public:
     }
 
     /**
-     * @return the image "zoom" value
+     * @return the image "zoom" value.
      *  scale = 1.0 = original size of bitmap.
      *  scale < 1.0 = the bitmap is drawn smaller than its original size.
      *  scale > 1.0 = the bitmap is drawn bigger than its original size.
@@ -89,7 +84,7 @@ public:
     }
 
     /**
-     * @return the actual size (in user units, not in pixels) of the image
+     * @return the actual size (in user units, not in pixels) of the image.
      */
     wxSize GetSize() const;
 
@@ -103,11 +98,12 @@ public:
     virtual void ViewGetLayers( int aLayers[], int& aCount ) const override;
 
    /**
-     * Reads and stores an image file. Init the bitmap used to draw this item
-     * format.
+     * Read and store an image file.
      *
-     * @param aFullFilename The full filename of the image file to read.
-     * @return bool - true if success reading else false.
+     * Initialize the bitmap used to draw this item format.
+     *
+     * @param aFullFilename is the full filename of the image file to read.
+     * @return true if success reading else false.
      */
     bool ReadImageFile( const wxString& aFullFilename );
 
@@ -117,23 +113,23 @@ public:
     }
 
     /**
-     * Virtual function IsMovableFromAnchorPoint
-     * Return true for items which are moved with the anchor point at mouse cursor
-     *  and false for items moved with no reference to anchor
-     * @return false for a bus entry
+     * Return true for items which are moved with the anchor point at mouse cursor and false
+     * for items moved with no reference to anchor.
+     *
+     * @return false for a bus entry.
      */
     bool IsMovableFromAnchorPoint() const override { return false; }
 
-    void MirrorY( int aYaxis_position ) override;
-    void MirrorX( int aXaxis_position ) override;
-    void Rotate( wxPoint aPosition ) override;
+    void MirrorHorizontally( int aCenter ) override;
+    void MirrorVertically( int aCenter ) override;
+    void Rotate( wxPoint aCenter ) override;
 
     wxString GetSelectMenuText( EDA_UNITS aUnits ) const override
     {
         return wxString( _( "Image" ) );
     }
 
-    BITMAP_DEF GetMenuImage() const override;
+    BITMAPS GetMenuImage() const override;
 
     void GetMsgPanelInfo( EDA_DRAW_FRAME* aFrame, std::vector<MSG_PANEL_ITEM>& aList ) override;
 
@@ -143,13 +139,17 @@ public:
     bool HitTest( const wxPoint& aPosition, int aAccuracy = 0 ) const override;
     bool HitTest( const EDA_RECT& aRect, bool aContained, int aAccuracy = 0 ) const override;
 
-    void Plot( PLOTTER* aPlotter ) override;
+    void Plot( PLOTTER* aPlotter ) const override;
 
     EDA_ITEM* Clone() const override;
 
 #if defined(DEBUG)
     void Show( int nestLevel, std::ostream& os ) const override;
 #endif
+
+private:
+    wxPoint      m_pos;                 // XY coordinates of center of the bitmap
+    BITMAP_BASE* m_image;               // the BITMAP_BASE item
 };
 
 

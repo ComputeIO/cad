@@ -30,7 +30,7 @@
 #include <tool/tool_menu.h>
 #include <tools/ee_selection.h>
 #include <ee_collectors.h>
-#include <sch_component.h>
+#include <sch_symbol.h>
 #include <cursors.h>
 
 class SCH_BASE_FRAME;
@@ -46,6 +46,7 @@ class EE_CONDITIONS : public SELECTION_CONDITIONS
 {
 public:
     static SELECTION_CONDITION SingleSymbol;
+    static SELECTION_CONDITION SingleSymbolOrPower;
     static SELECTION_CONDITION SingleDeMorganSymbol;
     static SELECTION_CONDITION SingleMultiUnitSymbol;
 };
@@ -112,6 +113,12 @@ public:
     void RemoveItemFromSel( EDA_ITEM* aItem, bool aQuietMode = false );
     int RemoveItemsFromSel( const TOOL_EVENT& aEvent );
     void RemoveItemsFromSel( EDA_ITEMS* aList, bool aQuietMode = false );
+
+    /**
+     * A safer version of RemoveItemsFromSel( EDA_ITEMS ) which doesn't require the items to
+     * still exist.
+     */
+    void RemoveItemsFromSel( std::vector<KIID>* aList, bool aQuietMode = false );
 
     void BrightenItem( EDA_ITEM* aItem );
     void UnbrightenItem( EDA_ITEM* aItem );
@@ -265,6 +272,12 @@ private:
     void setTransitions() override;
 
 private:
+    /**
+     * Set the configuration of m_additive, m_subtractive, m_exclusive_or, m_skip_heuristics
+     * from the state of modifier keys SHIFT, CTRL, ALT and depending on the OS
+     */
+    void setModifiersState( bool aShiftState, bool aCtrlState, bool aAltState );
+
     SCH_BASE_FRAME* m_frame;             // Pointer to the parent frame
     EE_SELECTION    m_selection;         // Current state of selection
 

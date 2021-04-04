@@ -39,6 +39,7 @@
 
 class LIB_PART;
 class PART_LIB;
+class PROGRESS_REPORTER;
 class SCH_PLUGIN;
 class SYMBOL_EDIT_FRAME;
 class SYMBOL_LIB_TABLE;
@@ -107,6 +108,13 @@ public:
      */
     void Sync( const wxString&                                  aForceRefresh,
                std::function<void( int, int, const wxString& )> aProgressCallback );
+
+    /**
+     * Preloads all symbol libraries in the symbol library table using SYMBOL_ASYNC_LOADER.
+     * Call before the first call to Sync() to get better performance.
+     * @param aReporter is used to report progress of the load
+     */
+    void Preload( PROGRESS_REPORTER& aReporter );
 
     int GetHash() const;
 
@@ -292,6 +300,8 @@ public:
      */
     bool HasDerivedSymbols( const wxString& aSymbolName, const wxString& aLibraryName );
 
+    size_t GetLibraryCount() const;
+
 private:
     ///< Extract library name basing on the file name.
     static wxString getLibraryName( const wxString& aFilePath );
@@ -394,7 +404,8 @@ private:
 
         ///< Save stored modifications using a plugin. aBuffer decides whether the changes
         ///< should be cached or stored directly to the disk (for SCH_LEGACY_PLUGIN).
-        bool SaveBuffer( PART_BUFFER::PTR aPartBuf, SCH_PLUGIN* aPlugin, bool aBuffer );
+        bool SaveBuffer( PART_BUFFER::PTR aPartBuf, const wxString& aFileName,
+                         SCH_PLUGIN* aPlugin, bool aBuffer );
 
         ///< Return a part buffer with LIB_PART holding a particular alias
         PART_BUFFER::PTR GetBuffer( const wxString& aAlias ) const;

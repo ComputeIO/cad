@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2015 Jean-Pierre Charras, jaen-pierre.charras at wanadoo.fr
  * Copyright (C) 2015 Wayne Stambaugh <stambaughw@gmail.com>
- * Copyright (C) 2004-2020 KiCad Developers, see change_log.txt for contributors.
+ * Copyright (C) 2004-2021 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -32,7 +32,7 @@ class SCH_COMPONENT;
 #include <eda_rect.h>
 #include <lib_item.h>
 #include <pin_type.h>
-#include <lib_part.h>
+#include <lib_symbol.h>
 
 // Circle diameter drawn at the active end of pins:
 #define TARGET_PIN_RADIUS   Mils2iu( 15 )
@@ -62,54 +62,6 @@ public:
         ELECTRICAL_PINTYPE  m_Type;          // Electrical type of the pin.
     };
 
-protected:
-    wxPoint                 m_position;      // Position of the pin.
-    int                     m_length;        // Length of the pin.
-    int                     m_orientation;   // Pin orientation (Up, Down, Left, Right)
-    GRAPHIC_PINSHAPE        m_shape;         // Shape drawn around pin
-    ELECTRICAL_PINTYPE      m_type;          // Electrical type of the pin.
-    int                     m_attributes;    // Set bit 0 to indicate pin is invisible.
-    wxString                m_name;
-    wxString                m_number;
-    int                     m_numTextSize;   // Pin num and Pin name sizes
-    int                     m_nameTextSize;
-
-    std::map<wxString, ALT> m_alternates;    // Map of alternate name to ALT structure
-
-protected:
-    /**
-     * Print the pin symbol without text.
-     * If \a aColor != 0, draw with \a aColor, else with the normal pin color.
-     */
-    void printPinSymbol( const RENDER_SETTINGS* aSettings, const wxPoint& aPos, int aOrientation );
-
-    /**
-     * Put the pin number and pin text info, given the pin line coordinates.
-     * The line must be vertical or horizontal.
-     * If aDrawPinName == false the pin name is not printed.
-     * If aDrawPinNum = false the pin number is not printed.
-     * If aTextInside then the text is been put inside,otherwise all is drawn outside.
-     * Pin Name:    substring between '~' is negated
-     */
-    void printPinTexts( const RENDER_SETTINGS* aSettings, wxPoint& aPinPos, int aPinOrient,
-                        int aTextInside, bool aDrawPinNum, bool aDrawPinName );
-
-    /**
-     * Draw the electrical type text of the pin (only for the footprint editor)
-     */
-    void printPinElectricalTypeName( const RENDER_SETTINGS* aSettings, wxPoint& aPosition,
-                                     int aOrientation );
-
-public:
-    /**
-     * return a string giving the electrical type of a pin.
-     * Can be used when a known, not translated name is needed (for instance in net lists)
-     * @param aType is the electrical type (see enum ELECTRICAL_PINTYPE )
-     * @return The electrical name for a pin type (see enun MsgPinElectricType for names).
-     */
-    static const wxString GetCanonicalElectricalTypeName( ELECTRICAL_PINTYPE aType );
-
-public:
     ~LIB_PIN() { }
 
     wxString GetClass() const override
@@ -246,10 +198,10 @@ public:
      * If TextInside then the text is been put inside (moving from x1, y1 in
      * the opposite direction to x2,y2), otherwise all is drawn outside.
      */
-    void PlotPinTexts( PLOTTER *aPlotter, wxPoint& aPinPos, int aPinOrient,
-                       int aTextInside, bool aDrawPinNum, bool aDrawPinName );
+    void PlotPinTexts( PLOTTER *aPlotter, const wxPoint& aPinPos, int aPinOrient,
+                       int aTextInside, bool aDrawPinNum, bool aDrawPinName ) const;
 
-    void PlotSymbol( PLOTTER* aPlotter, const wxPoint& aPosition, int aOrientation );
+    void PlotSymbol( PLOTTER* aPlotter, const wxPoint& aPosition, int aOrientation ) const;
 
     void Offset( const wxPoint& aOffset ) override;
 
@@ -263,19 +215,53 @@ public:
     void Rotate( const wxPoint& aCenter, bool aRotateCCW = true ) override;
 
     void Plot( PLOTTER* aPlotter, const wxPoint& aPffset, bool aFill,
-               const TRANSFORM& aTransform ) override;
+               const TRANSFORM& aTransform ) const override;
 
     // Get/SetWidth() not used for pins.  Use GetPenWidth() for drawing.
     int GetWidth() const override { return 1; }
     void SetWidth( int aWidth ) override { };
 
-    BITMAP_DEF GetMenuImage() const override;
+    BITMAPS GetMenuImage() const override;
 
     wxString GetSelectMenuText( EDA_UNITS aUnits ) const override;
 
     EDA_ITEM* Clone() const override;
 
     void CalcEdit( const wxPoint& aPosition ) override;
+
+    /**
+     * Return a string giving the electrical type of a pin.
+     *
+     * Can be used when a known, not translated name is needed (for instance in net lists)
+     *
+     * @param aType is the electrical type (see enum ELECTRICAL_PINTYPE )
+     * @return The electrical name for a pin type (see enun MsgPinElectricType for names).
+     */
+    static const wxString GetCanonicalElectricalTypeName( ELECTRICAL_PINTYPE aType );
+
+protected:
+    /**
+     * Print the pin symbol without text.
+     * If \a aColor != 0, draw with \a aColor, else with the normal pin color.
+     */
+    void printPinSymbol( const RENDER_SETTINGS* aSettings, const wxPoint& aPos, int aOrientation );
+
+    /**
+     * Put the pin number and pin text info, given the pin line coordinates.
+     * The line must be vertical or horizontal.
+     * If aDrawPinName == false the pin name is not printed.
+     * If aDrawPinNum = false the pin number is not printed.
+     * If aTextInside then the text is been put inside,otherwise all is drawn outside.
+     * Pin Name:    substring between '~' is negated
+     */
+    void printPinTexts( const RENDER_SETTINGS* aSettings, wxPoint& aPinPos, int aPinOrient,
+                        int aTextInside, bool aDrawPinNum, bool aDrawPinName );
+
+    /**
+     * Draw the electrical type text of the pin (only for the footprint editor)
+     */
+    void printPinElectricalTypeName( const RENDER_SETTINGS* aSettings, wxPoint& aPosition,
+                                     int aOrientation );
 
 private:
     /**
@@ -289,6 +275,20 @@ private:
      */
     int compare( const LIB_ITEM& aOther,
             LIB_ITEM::COMPARE_FLAGS aCompareFlags = LIB_ITEM::COMPARE_FLAGS::NORMAL ) const override;
+
+protected:
+    wxPoint                 m_position;      // Position of the pin.
+    int                     m_length;        // Length of the pin.
+    int                     m_orientation;   // Pin orientation (Up, Down, Left, Right)
+    GRAPHIC_PINSHAPE        m_shape;         // Shape drawn around pin
+    ELECTRICAL_PINTYPE      m_type;          // Electrical type of the pin.
+    int                     m_attributes;    // Set bit 0 to indicate pin is invisible.
+    wxString                m_name;
+    wxString                m_number;
+    int                     m_numTextSize;   // Pin num and Pin name sizes
+    int                     m_nameTextSize;
+
+    std::map<wxString, ALT> m_alternates;    // Map of alternate name to ALT structure
 };
 
 

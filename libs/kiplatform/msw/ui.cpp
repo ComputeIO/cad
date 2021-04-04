@@ -18,6 +18,8 @@
  * with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <windows.h>
+
 #include <kiplatform/ui.h>
 
 #include <wx/cursor.h>
@@ -53,7 +55,14 @@ bool KIPLATFORM::UI::IsDarkTheme()
 
     return ( val == 0 );
 #else
-    return false;
+    wxColour bg = wxSystemSettings::GetColour( wxSYS_COLOUR_WINDOW );
+
+    // Weighted W3C formula
+    double brightness = ( bg.Red() / 255.0 ) * 0.299 +
+        ( bg.Green() / 255.0 ) * 0.587 +
+        ( bg.Blue() / 255.0 ) * 0.117;
+
+    return brightness < 0.5;
 #endif
 }
 
@@ -61,6 +70,12 @@ bool KIPLATFORM::UI::IsDarkTheme()
 void KIPLATFORM::UI::ForceFocus( wxWindow* aWindow )
 {
     aWindow->SetFocus();
+}
+
+
+bool KIPLATFORM::UI::IsWindowActive( wxWindow* aWindow )
+{
+    return ( aWindow->GetHWND() == GetForegroundWindow() );
 }
 
 
@@ -94,4 +109,10 @@ bool KIPLATFORM::UI::IsStockCursorOk( wxStockCursor aCursor )
 void KIPLATFORM::UI::EllipsizeChoiceBox( wxChoice* aChoice )
 {
     // Not implemented
+}
+
+
+double KIPLATFORM::UI::GetSystemScaleFactor( const wxWindow* aWindow )
+{
+    return aWindow->GetContentScaleFactor();
 }

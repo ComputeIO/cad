@@ -54,7 +54,9 @@
 #include <gr_text.h>
 #include <utility>
 #include <vector>
+#include <font/font.h>
 #include <font/outline_font.h>
+#include <font/text_attributes.h>
 #include <font/triangulate.h>
 
 // These variables are parameters used in addTextSegmToContainer.
@@ -155,44 +157,160 @@ void BOARD_ADAPTER::addShapeWithClearance( const PCB_TEXT* aText, CONTAINER_2D_B
     {
         const int lineWidth = aText->GetEffectiveTextPenWidth() + ( 2 * aClearanceValue );
 
-        std::vector<SHAPE_POLY_SET> glyphs;
-        aText->DrawTextAsPolygon( glyphs, aLayerId );
+    s_boardItem = (const BOARD_ITEM*) &aText;
+    s_dstcontainer = aDstContainer;
+    s_textWidth = aText->GetEffectiveTextPenWidth() + ( 2 * aClearanceValue );
+    s_biuTo3Dunits = m_biuTo3Dunits;
 
-        const VECTOR2D conversionFactor( m_biuTo3Dunits, -m_biuTo3Dunits );
+    // not actually used, but needed by GRText
+    const COLOR4D        dummy_color = COLOR4D::BLACK;
+    bool                 forceBold = true;
+    int                  penWidth = 0; // force max width for bold
+    wxArrayString        strings_list;
+    std::vector<wxPoint> positions;
 
-        auto triangleCallback = [&]( int aPolygonIndex, const VECTOR2D& aVertex1,
-                                     const VECTOR2D& aVertex2, const VECTOR2D& aVertex3,
-                                     void* aCallbackData )
-        {
-            aDstContainer->Add( new TRIANGLE_2D( aVertex1, aVertex2, aVertex3, conversionFactor.x,
-                                                 conversionFactor.y, *aText ) );
-        };
-
-        for( SHAPE_POLY_SET& glyph : glyphs )
-        {
-            SHAPE_POLY_SET polyList;
-
-            //polyList.Simplify( SHAPE_POLY_SET::PM_FAST );
-
-            // TODO: triangulate all glyphs in one go - needed for adding a label background rect
-            //Triangulate( polyList, triangleCallback );
-            Triangulate( glyph, triangleCallback );
-        }
+    if( aText->IsMultilineAllowed() )
+    {
+        wxStringSplit( aText->GetShownText(), strings_list, '\n' );
     }
     else
     {
-        wxSize size = aText->GetTextSize();
+        strings_list.Add( aText->GetShownText() );
+    }
 
-        if( aText->IsMirrored() )
-            size.x = -size.x;
+    positions.reserve( strings_list.Count() );
+    aText->GetLinePositions( positions, strings_list.Count() );
 
-        s_biuTo3Dunits = m_biuTo3Dunits;
-        s_boardItem = (const BOARD_ITEM*) &aText;
-        s_dstcontainer = aDstContainer;
-        s_textWidth = aText->GetEffectiveTextPenWidth() + ( 2 * aClearanceValue );
+    KIFONT::FONT*               font = aText->GetFont();
+    const KIFONT::OUTLINE_FONT* outlineFont = dynamic_cast<const KIFONT::OUTLINE_FONT*>( font );
 
-        // force bold
-        GRShowText( aText, COLOR4D::BLACK, true, 0, addTextSegmToContainer );
+    TEXT_STYLE_FLAGS textStyleFlags;
+#ifdef ADJUST_HERE
+    // GetLinesAsPolygon() does not actually respect attributes, so
+    // let's pass a dummy instance
+    TEXT_ATTRIBUTES attributes( TEXT_ATTRIBUTES::ANGLE_0, TEXT_ATTRIBUTES::H_LEFT,
+                                TEXT_ATTRIBUTES::V_BOTTOM );
+#else
+    EDA_ANGLE textAngle( aText->GetTextAngle(), EDA_ANGLE::TENTHS_OF_A_DEGREE );
+    TEXT_ATTRIBUTES attributes( textAngle, aText->GetHorizJustify(),
+                                aText->GetVertJustify() );
+#endif
+
+    for( unsigned ii = 0; ii < strings_list.Count(); ++ii )
+    {
+        wxString txt = strings_list.Item( ii );
+
+        if( font->IsOutline() )
+        {
+            std::vector<SHAPE_POLY_SET> glyphs;
+            // aText->DrawTextAsPolygon( glyphs, aLayerId );
+            VECTOR2I textSize = outlineFont->GetLinesAsPolygon(
+                    glyphs, txt, aText->GetTextSize(), positions[ii], attributes,
+                    aText->IsMirrored(), textStyleFlags );
+#ifdef DEBUG
+            std::cerr << "positions[" << ii << "] = " << positions[ii]
+                      << ", attributes = " << attributes << ", textSize = " << textSize;
+#endif
+
+            int    textHeight = 0;
+            double textWidth = 0;
+            bool   rotateGlyphs = aText->GetTextAngle() != 0;
+            double glyphRotationAngle = -aText->GetTextAngleRadians();
+            for( auto glyph : glyphs )
+            {
+                BOX2I boundingBox = glyph.BBox( 0 );
+                textHeight = std::max( textHeight, boundingBox.GetY() );
+                textWidth += boundingBox.GetWidth();
+            }
+
+            double xAdjust = 0.0;
+            double yAdjust = 0.0;
+            switch( aText->GetHorizJustify() )
+            {
+            case GR_TEXT_HJUSTIFY_LEFT: break;
+            case GR_TEXT_HJUSTIFY_RIGHT: xAdjust = textWidth; break;
+            case GR_TEXT_HJUSTIFY_CENTER:
+            default: xAdjust = textWidth / 2.0;
+            }
+
+            switch( aText->GetVertJustify() )
+            {
+#if 0
+            case GR_TEXT_VJUSTIFY_TOP: yAdjust = textHeight / 2; break;
+            case GR_TEXT_VJUSTIFY_BOTTOM: yAdjust = -textHeight / 2; break;
+            case GR_TEXT_VJUSTIFY_CENTER:
+            default: break;
+#else
+            case GR_TEXT_VJUSTIFY_TOP: yAdjust = textHeight / 2; break;
+            case GR_TEXT_VJUSTIFY_BOTTOM: break;
+            case GR_TEXT_VJUSTIFY_CENTER:
+            default: yAdjust = -textHeight / 2; break;
+#endif
+            }
+
+            VECTOR2I adjustVector( xAdjust, yAdjust );
+            VECTOR2I rotatedAdjustVector = adjustVector.Rotate( glyphRotationAngle );
+
+            const VECTOR2D conversionFactor( m_biuTo3Dunits, -m_biuTo3Dunits );
+            const SFVEC2F  adjustOffset( rotatedAdjustVector.x * conversionFactor.x,
+                                        rotatedAdjustVector.y * conversionFactor.y );
+#ifdef DEBUG
+            std::cerr << ", adjustOffset " << xAdjust << "," << yAdjust << "->" << adjustVector
+                      << "->" << rotatedAdjustVector << "->" << adjustOffset.x << ","
+                      << adjustOffset.y << " justify " << aText->GetHorizJustify() << " "
+                      << aText->GetVertJustify() << " angle " << glyphRotationAngle << std::endl;
+#endif
+
+            auto triangleCallback = [&]( int aPolygonIndex, const VECTOR2D& aVertex1,
+                                         const VECTOR2D& aVertex2, const VECTOR2D& aVertex3,
+                                         void* aCallbackData )
+            {
+                SFVEC2F v1( aVertex1.x * conversionFactor.x, aVertex1.y * conversionFactor.y );
+                SFVEC2F v2( aVertex2.x * conversionFactor.x, aVertex2.y * conversionFactor.y );
+                SFVEC2F v3( aVertex3.x * conversionFactor.x, aVertex3.y * conversionFactor.y );
+
+#ifdef DEBUG
+                std::cerr << "#" << v1.x << "," << v1.y;
+#endif
+#ifdef ADJUST_HERE
+                aDstContainer->Add( new TRIANGLE_2D( v1 + adjustOffset, v2 + adjustOffset,
+                                                     v3 + adjustOffset, *aText ) );
+#else
+                aDstContainer->Add( new TRIANGLE_2D( v1, v2, v3, *aText ) );
+#endif
+            };
+
+            for( SHAPE_POLY_SET& glyph : glyphs )
+            {
+                SHAPE_POLY_SET theGlyph( glyph );
+#ifdef ADJUST_HERE
+                if( rotateGlyphs )
+                {
+#ifdef DEBUG
+                    std::cerr << "rotating " << glyph.BBox().GetX() << glyph.BBox().GetX() << " "
+                              << glyph.BBox().GetY() << " " << glyph.BBox().GetWidth() << " "
+                              << glyph.BBox().GetHeight();
+#endif
+                    theGlyph.Rotate( glyphRotationAngle, positions[ii] );
+#ifdef DEBUG
+                    std::cerr << " by " << glyphRotationAngle << " into " << theGlyph.BBox().GetX()
+                              << theGlyph.BBox().GetX() << " " << theGlyph.BBox().GetY() << " "
+                              << theGlyph.BBox().GetWidth() << " " << theGlyph.BBox().GetHeight()
+                              << std::endl;
+#endif
+                }
+#endif //ADJUST_HERE
+
+                // TODO: triangulate all glyphs in one go - needed for adding a label background rect
+                Triangulate( theGlyph, triangleCallback );
+            }
+        }
+        else
+        {
+            GRText( nullptr, positions[ii], dummy_color, txt, aText->GetTextAngle(), size,
+                    aText->GetHorizJustify(), aText->GetVertJustify(), penWidth, aText->IsItalic(),
+                    forceBold, addTextSegmToContainer );
+        }
     }
 }
 
@@ -467,6 +585,35 @@ void BOARD_ADAPTER::createPadWithClearance( const PAD* aPad, CONTAINER_2D_BASE* 
                 break;
 
             case SH_POLY_SET: poly = *(SHAPE_POLY_SET*) shape; break;
+
+            case SH_ARC:
+            {
+                SHAPE_ARC*       arc = (SHAPE_ARC*) shape;
+                SHAPE_LINE_CHAIN l = arc->ConvertToPolyline();
+
+                for( int i = 0; i < l.SegmentCount(); i++ )
+                {
+                    SHAPE_SEGMENT seg( l.Segment( i ).A, l.Segment( i ).B, arc->GetWidth() );
+                    const SFVEC2F start3DU( seg.GetSeg().A.x * m_biuTo3Dunits,
+                                            -seg.GetSeg().A.y * m_biuTo3Dunits );
+                    const SFVEC2F end3DU( seg.GetSeg().B.x * m_biuTo3Dunits,
+                                          -seg.GetSeg().B.y * m_biuTo3Dunits );
+                    const int     width = arc->GetWidth() + aClearanceValue.x * 2;
+
+                    // Cannot add segments that have the same start and end point
+                    if( Is_segment_a_circle( start3DU, end3DU ) )
+                    {
+                        aDstContainer->Add( new FILLED_CIRCLE_2D(
+                                start3DU, ( width / 2 ) * m_biuTo3Dunits, *aPad ) );
+                    }
+                    else
+                    {
+                        aDstContainer->Add( new ROUND_SEGMENT_2D( start3DU, end3DU,
+                                                                  width * m_biuTo3Dunits, *aPad ) );
+                    }
+                }
+            }
+            break;
 
             default:
                 wxFAIL_MSG( "BOARD_ADAPTER::createPadWithClearance no implementation for "

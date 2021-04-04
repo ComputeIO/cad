@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////
-// C++ code generated with wxFormBuilder (version 3.9.0 Nov  1 2020)
+// C++ code generated with wxFormBuilder (version Oct 26 2018)
 // http://www.wxformbuilder.org/
 //
 // PLEASE DO *NOT* EDIT THIS FILE!
@@ -59,6 +59,11 @@ DIALOG_EDIT_COMPONENTS_LIBID_BASE::DIALOG_EDIT_COMPONENTS_LIBID_BASE( wxWindow* 
 	m_buttonOrphanItems->SetToolTip( _("If some components are orphan (the linked symbol is found nowhere),\ntry to find a candidate having the same name in one of loaded symbol libraries.") );
 
 	bSizerButtons->Add( m_buttonOrphanItems, 0, wxALL|wxALIGN_CENTER_VERTICAL, 5 );
+
+	m_checkBoxUpdateFields = new wxCheckBox( this, wxID_ANY, _("Update symbol fields from new library"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_checkBoxUpdateFields->SetToolTip( _("Replace current symbols fields by fields from the new library.\nWarning: fields \"Value\" and \"Footprints\" will be therefore replaced.") );
+
+	bSizerButtons->Add( m_checkBoxUpdateFields, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 
 
 	bSizerButtons->Add( 0, 0, 1, wxEXPAND, 5 );

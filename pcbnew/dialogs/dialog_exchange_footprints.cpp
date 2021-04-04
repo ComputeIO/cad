@@ -31,6 +31,7 @@
 #include <dialog_exchange_footprints.h>
 #include <kicad_string.h>
 #include <kiway.h>
+#include <macros.h>
 #include <pcb_edit_frame.h>
 #include <pcbnew_settings.h>
 #include <project.h>
@@ -94,7 +95,7 @@ DIALOG_EXCHANGE_FOOTPRINTS::DIALOG_EXCHANGE_FOOTPRINTS( PCB_EDIT_FRAME* aParent,
     else
     {
         m_upperSizer->FindItem( m_matchAll )->Show( false );
-        m_newIDBrowseButton->SetBitmap( KiBitmap( small_library_xpm ) );
+        m_newIDBrowseButton->SetBitmap( KiBitmap( BITMAPS::small_library ) );
     }
 
     if( m_currentFootprint )
@@ -114,7 +115,7 @@ DIALOG_EXCHANGE_FOOTPRINTS::DIALOG_EXCHANGE_FOOTPRINTS( PCB_EDIT_FRAME* aParent,
     if( m_currentFootprint )
         m_specifiedID->ChangeValue( FROM_UTF8( m_currentFootprint->GetFPID().Format().c_str() ) );
 
-    m_specifiedIDBrowseButton->SetBitmap( KiBitmap( small_library_xpm ) );
+    m_specifiedIDBrowseButton->SetBitmap( KiBitmap( BITMAPS::small_library ) );
 
     m_upperSizer->SetEmptyCellSize( wxSize( 0, 0 ) );
     // The upper sizer has its content modified: re-layout it:
@@ -146,6 +147,7 @@ DIALOG_EXCHANGE_FOOTPRINTS::DIALOG_EXCHANGE_FOOTPRINTS( PCB_EDIT_FRAME* aParent,
     m_reset3DModels->SetValue( g_reset3DModels[ m_updateMode ? 0 : 1 ] );
 
     m_MessageWindow->SetLazyUpdate( true );
+    m_MessageWindow->SetFileName( Prj().GetProjectPath() + wxT( "report.txt" ) );
 
     // DIALOG_SHIM needs a unique hash_key because classname is not sufficient
     // because the update and change versions of this dialog have different controls.
@@ -425,6 +427,8 @@ void processTextItem( const FP_TEXT& aSrc, FP_TEXT& aDest,
         aDest.SetEffects( aSrc );
         aDest.SetVisible( visible );
     }
+
+    aDest.SetLocked( aSrc.IsLocked() );
 }
 
 
@@ -512,9 +516,11 @@ void PCB_EDIT_FRAME::ExchangeFootprint( FOOTPRINT* aExisting, FOOTPRINT* aNew,
         if( oldPad )
         {
             pad->SetLocalRatsnestVisible( oldPad->GetLocalRatsnestVisible() );
-            pad->SetNetCode( oldPad->GetNetCode() );
             pad->SetPinFunction( oldPad->GetPinFunction() );
+            pad->SetLocked( oldPad->IsLocked() );
         }
+
+        pad->SetNetCode( oldPad ? oldPad->GetNetCode() : NETINFO_LIST::UNCONNECTED );
     }
 
     // Copy reference
@@ -557,7 +563,6 @@ void PCB_EDIT_FRAME::ExchangeFootprint( FOOTPRINT* aExisting, FOOTPRINT* aNew,
     const_cast<KIID&>( aNew->m_Uuid ) = aExisting->m_Uuid;
     aNew->SetProperties( aExisting->GetProperties() );
     aNew->SetPath( aExisting->GetPath() );
-    aNew->CalculateBoundingBox();
 
     aCommit.Remove( aExisting );
     aCommit.Add( aNew );

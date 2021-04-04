@@ -32,6 +32,7 @@
 #include <drc/drc_rule_condition.h>
 #include <drc/drc_test_provider.h>
 #include <track.h>
+#include <footprint.h>
 #include <geometry/shape.h>
 #include <geometry/shape_segment.h>
 #include <geometry/shape_null.h>
@@ -55,7 +56,7 @@ void drcPrintDebugMessage( int level, const wxString& msg, const char *function,
 DRC_ENGINE::DRC_ENGINE( BOARD* aBoard, BOARD_DESIGN_SETTINGS *aSettings ) :
     m_designSettings ( aSettings ),
     m_board( aBoard ),
-    m_worksheet( nullptr ),
+    m_drawingSheet( nullptr ),
     m_schematicNetlist( nullptr ),
     m_rulesValid( false ),
     m_userUnits( EDA_UNITS::MILLIMETRES ),
@@ -244,7 +245,8 @@ void DRC_ENGINE::loadImplicitRules()
                     if( nc->GetClearance() )
                     {
                         DRC_CONSTRAINT constraint( CLEARANCE_CONSTRAINT );
-                        constraint.Value().SetMin( std::max( bds.m_MinClearance, nc->GetClearance() ) );
+                        constraint.Value().SetMin( std::max( bds.m_MinClearance,
+                                                             nc->GetClearance() ) );
                         netclassRule->AddConstraint( constraint );
                     }
 
@@ -260,10 +262,11 @@ void DRC_ENGINE::loadImplicitRules()
                 if( nc->GetDiffPairWidth() || nc->GetDiffPairGap() )
                 {
                     netclassRule = new DRC_RULE;
-                    netclassRule->m_Name = wxString::Format( _( "netclass '%s'" ), ncName );
+                    netclassRule->m_Name = wxString::Format( _( "netclass '%s' (diff pair)" ),
+                                                             ncName );
                     netclassRule->m_Implicit = true;
 
-                    expr = wxString::Format( "A.NetClass == '%s' && A.isDiffPair()",
+                    expr = wxString::Format( "A.NetClass == '%s' && A.inDiffPair('*')",
                                              ncName );
                     netclassRule->m_Condition = new DRC_RULE_CONDITION( expr );
                     netclassItemSpecificRules.push_back( netclassRule );
@@ -279,10 +282,28 @@ void DRC_ENGINE::loadImplicitRules()
                     if( nc->GetDiffPairGap() )
                     {
                         DRC_CONSTRAINT constraint( DIFF_PAIR_GAP_CONSTRAINT );
-                        constraint.Value().SetMin( std::max( bds.m_MinClearance, nc->GetClearance() ) );
+                        constraint.Value().SetMin( bds.m_MinClearance );
                         constraint.Value().SetOpt( nc->GetDiffPairGap() );
                         netclassRule->AddConstraint( constraint );
                     }
+                }
+
+                if( nc->GetDiffPairGap() )
+                {
+                    netclassRule = new DRC_RULE;
+                    netclassRule->m_Name = wxString::Format( _( "netclass '%s' (diff pair)" ),
+                                                             ncName );
+                    netclassRule->m_Implicit = true;
+
+                    expr = wxString::Format( "A.NetClass == '%s' && AB.isCoupledDiffPair()",
+                                             ncName );
+                    netclassRule->m_Condition = new DRC_RULE_CONDITION( expr );
+                    netclassItemSpecificRules.push_back( netclassRule );
+
+                    DRC_CONSTRAINT constraint( CLEARANCE_CONSTRAINT );
+                    constraint.Value().SetMin( std::max( bds.m_MinClearance,
+                                                         nc->GetDiffPairGap() ) );
+                    netclassRule->AddConstraint( constraint );
                 }
 
                 if( nc->GetViaDiameter() || nc->GetViaDrill() )
@@ -620,6 +641,8 @@ void DRC_ENGINE::InitEngine( const wxFileName& aRulePath )
 
     m_constraintMap.clear();
 
+    m_board->IncrementTimeStamp();  // Clear board-level caches
+
     try         // attempt to load full set of rules (implicit + user rules)
     {
         loadImplicitRules();
@@ -633,7 +656,7 @@ void DRC_ENGINE::InitEngine( const wxFileName& aRulePath )
             loadImplicitRules();
             compileRules();
         }
-        catch( PARSE_ERROR& ignore )
+        catch( PARSE_ERROR& )
         {
             wxFAIL_MSG( "Compiling implict rules failed." );
         }
@@ -656,19 +679,6 @@ void DRC_ENGINE::RunTests( EDA_UNITS aUnits, bool aReportAllTrackErrors, bool aT
     m_reportAllTrackErrors = aReportAllTrackErrors;
     m_testFootprints = aTestFootprints;
 
-    if( m_progressReporter )
-    {
-        int phases = 0;
-
-        for( DRC_TEST_PROVIDER* provider : m_testProviders )
-        {
-            if( provider->IsEnabled() )
-                phases += provider->GetNumPhases();
-        }
-
-        m_progressReporter->AddPhases( phases );
-    }
-
     for( int ii = DRCE_FIRST; ii < DRCE_LAST; ++ii )
     {
         if( m_designSettings->Ignore( ii ) )
@@ -677,10 +687,22 @@ void DRC_ENGINE::RunTests( EDA_UNITS aUnits, bool aReportAllTrackErrors, bool aT
             m_errorLimits[ ii ] = INT_MAX;
     }
 
+    m_board->IncrementTimeStamp();      // Invalidate all caches
+
+    if( !ReportPhase( _( "Tessellating copper zones..." ) ) )
+        return;
+
+    // Number of zones between progress bar updates
+    int                delta = 5;
+    std::vector<ZONE*> copperZones;
+
     for( ZONE* zone : m_board->Zones() )
     {
         zone->CacheBoundingBox();
         zone->CacheTriangulation();
+
+        if( !zone->GetIsRuleArea() )
+            copperZones.push_back( zone );
     }
 
     for( FOOTPRINT* footprint : m_board->Footprints() )
@@ -689,9 +711,33 @@ void DRC_ENGINE::RunTests( EDA_UNITS aUnits, bool aReportAllTrackErrors, bool aT
         {
             zone->CacheBoundingBox();
             zone->CacheTriangulation();
+
+            if( !zone->GetIsRuleArea() )
+                copperZones.push_back( zone );
         }
 
         footprint->BuildPolyCourtyards();
+    }
+
+    int zoneCount = copperZones.size();
+
+    for( int ii = 0; ii < zoneCount; ++ii )
+    {
+        ZONE* zone = copperZones[ ii ];
+
+        if( ( ii % delta ) == 0 || ii == zoneCount -  1 )
+        {
+            if( !ReportProgress( (double) ii / (double) zoneCount ) )
+                return;
+        }
+
+        m_board->m_CopperZoneRTrees[ zone ] = std::make_unique<DRC_RTREE>();
+
+        for( int layer : zone->GetLayerSet().Seq() )
+        {
+            if( IsCopperLayer( layer ) )
+                m_board->m_CopperZoneRTrees[ zone ]->Insert( zone, layer );
+        }
     }
 
     for( DRC_TEST_PROVIDER* provider : m_testProviders )
@@ -867,7 +913,20 @@ DRC_CONSTRAINT DRC_ENGINE::EvalRules( DRC_CONSTRAINT_T aConstraintId, const BOAR
                         return false;
                     }
 
-                    if( !( c->layerTest & a->GetLayerSet() ).any() )
+                    LSET itemLayers = a->GetLayerSet();
+
+                    if( a->Type() == PCB_FOOTPRINT_T )
+                    {
+                        const FOOTPRINT* footprint = static_cast<const FOOTPRINT*>( a );
+
+                        if( !footprint->GetPolyCourtyardFront().IsEmpty() )
+                            itemLayers |= LSET::FrontMask();
+
+                        if( !footprint->GetPolyCourtyardBack().IsEmpty() )
+                            itemLayers |= LSET::BackMask();
+                    }
+
+                    if( !( c->layerTest & itemLayers ).any() )
                     {
                         if( implicit )
                         {
@@ -1118,8 +1177,8 @@ bool DRC_ENGINE::QueryWorstConstraint( DRC_CONSTRAINT_T aConstraintId, DRC_CONST
 
 
 // fixme: move two functions below to pcbcommon?
-static int matchDpSuffix( const wxString& aNetName, wxString& aComplementNet,
-                          wxString& aBaseDpName )
+int DRC_ENGINE::MatchDpSuffix( const wxString& aNetName, wxString& aComplementNet,
+                               wxString& aBaseDpName )
 {
     int rv = 0;
 
@@ -1182,7 +1241,7 @@ bool DRC_ENGINE::IsNetADiffPair( BOARD* aBoard, NETINFO_ITEM* aNet, int& aNetP, 
     wxString refName = aNet->GetNetname();
     wxString dummy, coupledNetName;
 
-    if( int polarity = matchDpSuffix( refName, coupledNetName, dummy ) )
+    if( int polarity = MatchDpSuffix( refName, coupledNetName, dummy ) )
     {
         NETINFO_ITEM* net = aBoard->FindNet( coupledNetName );
 

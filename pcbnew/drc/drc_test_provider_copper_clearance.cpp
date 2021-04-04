@@ -31,7 +31,6 @@
 #include <geometry/shape_poly_set.h>
 #include <geometry/shape_rect.h>
 #include <geometry/shape_segment.h>
-#include <geometry/shape_null.h>
 
 #include <drc/drc_rtree.h>
 #include <drc/drc_item.h>
@@ -80,11 +79,10 @@ private:
     void testItemAgainstZones( BOARD_ITEM* aItem, PCB_LAYER_ID aLayer );
 
 private:
-    DRC_RTREE m_copperTree;
-    int       m_drcEpsilon;
+    DRC_RTREE          m_copperTree;
+    int                m_drcEpsilon;
 
-    std::vector<ZONE*>                          m_zones;
-    std::map<ZONE*, std::unique_ptr<DRC_RTREE>> m_zoneTrees;
+    std::vector<ZONE*> m_zones;
 };
 
 
@@ -94,18 +92,15 @@ bool DRC_TEST_PROVIDER_COPPER_CLEARANCE::Run()
     DRC_CONSTRAINT worstConstraint;
 
     if( m_drcEngine->QueryWorstConstraint( CLEARANCE_CONSTRAINT, worstConstraint ) )
-    {
         m_largestClearance = worstConstraint.GetValue().Min();
-    }
-    else
-    {
-        reportAux( "No Clearance constraints found..." );
-        return false;
-    }
 
     if( m_drcEngine->QueryWorstConstraint( HOLE_CLEARANCE_CONSTRAINT, worstConstraint ) )
-    {
         m_largestClearance = std::max( m_largestClearance, worstConstraint.GetValue().Min() );
+
+    if( m_largestClearance <= 0 )
+    {
+        reportAux( "No Clearance constraints found. Tests not run." );
+        return true;   // continue with other tests
     }
 
     m_drcEpsilon = m_board->GetDesignSettings().GetDRCEpsilon();
@@ -161,7 +156,7 @@ bool DRC_TEST_PROVIDER_COPPER_CLEARANCE::Run()
     };
 
     if( !reportPhase( _( "Gathering copper items..." ) ) )
-        return false;
+        return false;   // DRC cancelled
 
     static const std::vector<KICAD_T> itemTypes = {
         PCB_TRACE_T,      PCB_ARC_T,        PCB_VIA_T,           PCB_PAD_T,       PCB_SHAPE_T,
@@ -172,44 +167,53 @@ bool DRC_TEST_PROVIDER_COPPER_CLEARANCE::Run()
     forEachGeometryItem( itemTypes, LSET::AllCuMask(), countItems );
     forEachGeometryItem( itemTypes, LSET::AllCuMask(), addToCopperTree );
 
-    if( !reportPhase( _( "Tessellating copper zones..." ) ) )
-        return false;
-
-    delta = 5;
-    ii = 0;
-    m_zoneTrees.clear();
-
-    for( ZONE* zone : m_zones )
-    {
-        if( !reportProgress( ii++, m_zones.size(), delta ) )
-            break;
-
-        zone->CacheBoundingBox();
-        m_zoneTrees[zone] = std::make_unique<DRC_RTREE>();
-
-        for( int layer : zone->GetLayerSet().Seq() )
-        {
-            if( IsCopperLayer( layer ) )
-                m_zoneTrees[zone]->Insert( zone, layer );
-        }
-    }
-
     reportAux( "Testing %d copper items and %d zones...", count, m_zones.size() );
 
-    if( !reportPhase( _( "Checking track & via clearances..." ) ) )
-        return false;
+    if( !m_drcEngine->IsErrorLimitExceeded( DRCE_CLEARANCE ) )
+    {
+        if( !reportPhase( _( "Checking track & via clearances..." ) ) )
+            return false;   // DRC cancelled
 
-    testTrackClearances();
+        testTrackClearances();
+    }
+    else if( !m_drcEngine->IsErrorLimitExceeded( DRCE_HOLE_CLEARANCE ) )
+    {
+        if( !reportPhase( _( "Checking hole clearances..." ) ) )
+            return false;   // DRC cancelled
 
-    if( !reportPhase( _( "Checking pad clearances..." ) ) )
-        return false;
+        testTrackClearances();
+    }
 
-    testPadClearances();
+    if( !m_drcEngine->IsErrorLimitExceeded( DRCE_CLEARANCE ) )
+    {
+        if( !reportPhase( _( "Checking pad clearances..." ) ) )
+            return false;   // DRC cancelled
 
-    if( !reportPhase( _( "Checking copper zone clearances..." ) ) )
-        return false;
+        testPadClearances();
+    }
+    else if( !m_drcEngine->IsErrorLimitExceeded( DRCE_SHORTING_ITEMS )
+            || !m_drcEngine->IsErrorLimitExceeded( DRCE_HOLE_CLEARANCE ) )
+    {
+        if( !reportPhase( _( "Checking pads..." ) ) )
+            return false;   // DRC cancelled
 
-    testZones();
+        testPadClearances();
+    }
+
+    if( !m_drcEngine->IsErrorLimitExceeded( DRCE_CLEARANCE ) )
+    {
+        if( !reportPhase( _( "Checking copper zone clearances..." ) ) )
+            return false;   // DRC cancelled
+
+        testZones();
+    }
+    else if( !m_drcEngine->IsErrorLimitExceeded( DRCE_ZONES_INTERSECT ) )
+    {
+        if( !reportPhase( _( "Checking zones..." ) ) )
+            return false;   // DRC cancelled
+
+        testZones();
+    }
 
     reportRuleStatistics();
 
@@ -360,10 +364,9 @@ void DRC_TEST_PROVIDER_COPPER_CLEARANCE::testItemAgainstZones( BOARD_ITEM*  aIte
             if( clearance < 0 )
                 continue;
 
-            int        actual;
-            VECTOR2I   pos;
-            DRC_RTREE* zoneTree = m_zoneTrees[zone].get();
-
+            int                    actual;
+            VECTOR2I               pos;
+            DRC_RTREE*             zoneTree = m_board->m_CopperZoneRTrees[ zone ].get();
             EDA_RECT               itemBBox = aItem->GetBoundingBox();
             std::shared_ptr<SHAPE> itemShape = aItem->GetEffectiveShape( aLayer );
 
@@ -411,7 +414,7 @@ void DRC_TEST_PROVIDER_COPPER_CLEARANCE::testItemAgainstZones( BOARD_ITEM*  aIte
 void DRC_TEST_PROVIDER_COPPER_CLEARANCE::testTrackClearances()
 {
     // This is the number of tests between 2 calls to the progress bar
-    const int delta = 25;
+    const int delta = 100;
     int       ii = 0;
 
     reportAux( "Testing %d tracks & vias...", m_board->Tracks().size() );
@@ -616,7 +619,7 @@ bool DRC_TEST_PROVIDER_COPPER_CLEARANCE::testPadAgainstItem( PAD* pad, SHAPE* pa
 
 void DRC_TEST_PROVIDER_COPPER_CLEARANCE::testPadClearances()
 {
-    const int delta = 25; // This is the number of tests between 2 calls to the progress bar
+    const int delta = 50;  // This is the number of tests between 2 calls to the progress bar
 
     size_t count = 0;
 
@@ -853,7 +856,7 @@ void DRC_TEST_PROVIDER_COPPER_CLEARANCE::testZones()
 
 int DRC_TEST_PROVIDER_COPPER_CLEARANCE::GetNumPhases() const
 {
-    return 5;
+    return 4;
 }
 
 

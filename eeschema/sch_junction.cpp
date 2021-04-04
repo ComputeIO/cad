@@ -123,21 +123,21 @@ void SCH_JUNCTION::Print( const RENDER_SETTINGS* aSettings, const wxPoint& aOffs
 }
 
 
-void SCH_JUNCTION::MirrorX( int aXaxis_position )
+void SCH_JUNCTION::MirrorVertically( int aCenter )
 {
-    MIRROR( m_pos.y, aXaxis_position );
+    MIRROR( m_pos.y, aCenter );
 }
 
 
-void SCH_JUNCTION::MirrorY( int aYaxis_position )
+void SCH_JUNCTION::MirrorHorizontally( int aCenter )
 {
-    MIRROR( m_pos.x, aYaxis_position );
+    MIRROR( m_pos.x, aCenter );
 }
 
 
-void SCH_JUNCTION::Rotate( wxPoint aPosition )
+void SCH_JUNCTION::Rotate( wxPoint aCenter )
 {
-    RotatePoint( &m_pos, aPosition, 900 );
+    RotatePoint( &m_pos, aCenter, 900 );
 }
 
 
@@ -188,7 +188,10 @@ int SCH_JUNCTION::GetDiameter() const
 
 bool SCH_JUNCTION::HitTest( const wxPoint& aPosition, int aAccuracy ) const
 {
-    return getEffectiveShape().Collide( SEG( aPosition, aPosition ), aAccuracy );
+    if( aAccuracy >= 0 )
+        return getEffectiveShape().Collide( SEG( aPosition, aPosition ), aAccuracy );
+    else
+        return aPosition == m_pos;
 }
 
 
@@ -221,7 +224,7 @@ bool SCH_JUNCTION::doIsConnected( const wxPoint& aPosition ) const
 }
 
 
-void SCH_JUNCTION::Plot( PLOTTER* aPlotter )
+void SCH_JUNCTION::Plot( PLOTTER* aPlotter ) const
 {
     auto*   settings = static_cast<KIGFX::SCH_RENDER_SETTINGS*>( aPlotter->RenderSettings() );
     COLOR4D color = GetJunctionColor();
@@ -235,9 +238,9 @@ void SCH_JUNCTION::Plot( PLOTTER* aPlotter )
 }
 
 
-BITMAP_DEF SCH_JUNCTION::GetMenuImage() const
+BITMAPS SCH_JUNCTION::GetMenuImage() const
 {
-    return add_junction_xpm;
+    return BITMAPS::add_junction;
 }
 
 

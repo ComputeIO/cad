@@ -35,15 +35,23 @@ enum class MOUSE_DRAG_ACTION
     NONE
 };
 
+enum class ICON_THEME
+{
+    LIGHT,
+    DARK,
+    AUTO
+};
+
 
 class COMMON_SETTINGS : public JSON_SETTINGS
 {
 public:
     struct APPEARANCE
     {
-        double canvas_scale;
-        int icon_scale;
-        bool use_icons_in_menus;
+        double     canvas_scale;
+        int        icon_scale;
+        ICON_THEME icon_theme;
+        bool       use_icons_in_menus;
     };
 
     struct AUTO_BACKUP
@@ -109,6 +117,11 @@ public:
         int clear_3d_cache_interval;
     };
 
+    struct NETCLASS_PANEL
+    {
+        int sash_pos;
+    };
+
     COMMON_SETTINGS();
 
     virtual ~COMMON_SETTINGS() {}
@@ -133,6 +146,8 @@ public:
     SESSION m_Session;
 
     SYSTEM m_System;
+
+    NETCLASS_PANEL m_NetclassPanel;
 
     // TODO: These may not want to be in common
     wxString m_3DLibsUrl;

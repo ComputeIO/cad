@@ -111,7 +111,7 @@ SYMBOL_VIEWER_FRAME::SYMBOL_VIEWER_FRAME( KIWAY* aKiway, wxWindow* aParent, FRAM
     if( aFrameType == FRAME_SCH_VIEWER_MODAL )
         SetModal( true );
 
-    m_aboutTitle = "Symbol Library Viewer";
+    m_aboutTitle = _( "KiCad Symbol Library Viewer" );
 
     // Force the frame name used in config. the lib viewer frame has a name
     // depending on aFrameType (needed to identify the frame by wxWidgets),
@@ -120,7 +120,7 @@ SYMBOL_VIEWER_FRAME::SYMBOL_VIEWER_FRAME( KIWAY* aKiway, wxWindow* aParent, FRAM
 
     // Give an icon
     wxIcon  icon;
-    icon.CopyFromBitmap( KiBitmap( library_browser_xpm ) );
+    icon.CopyFromBitmap( KiBitmap( BITMAPS::library_browser ) );
     SetIcon( icon );
 
     m_libListWidth = 200;
@@ -231,7 +231,7 @@ void SYMBOL_VIEWER_FRAME::setupTools()
     m_toolManager->SetEnvironment( GetScreen(), GetCanvas()->GetView(),
                                    GetCanvas()->GetViewControls(), config(), this );
     m_actions = new EE_ACTIONS();
-    m_toolDispatcher = new TOOL_DISPATCHER( m_toolManager, m_actions );
+    m_toolDispatcher = new TOOL_DISPATCHER( m_toolManager );
 
     // Register tools
     m_toolManager->RegisterTool( new COMMON_TOOLS );
@@ -354,8 +354,8 @@ void SYMBOL_VIEWER_FRAME::updatePreviewSymbol()
         m_previewItem = symbol;
         view->Add( m_previewItem );
 
-        wxString parentName = _( "<none>" );
-        std::shared_ptr< LIB_PART > parent  = m_previewItem->GetParent().lock();
+        wxString parentName;
+        std::shared_ptr<LIB_PART> parent  = m_previewItem->GetParent().lock();
 
         if( parent )
             parentName = parent->GetName();
@@ -401,7 +401,7 @@ bool SYMBOL_VIEWER_FRAME::ShowModal( wxString* aSymbol, wxWindow* aParent )
             else
             {
                 SetSelectedLibrary( libid.GetLibNickname() );
-                SetSelectedComponent( libid.GetLibItemName() );
+                SetSelectedSymbol( libid.GetLibItemName());
             }
         }
     }
@@ -635,7 +635,7 @@ void SYMBOL_VIEWER_FRAME::ClickOnCmpList( wxCommandEvent& event )
 
     m_selection_changed = true;
 
-    SetSelectedComponent( m_symbolList->GetString( ii ) );
+    SetSelectedSymbol( m_symbolList->GetString( ii ));
 
     // The m_symbolList has now the focus, in order to be able to use arrow keys
     // to navigate inside the list.
@@ -645,16 +645,16 @@ void SYMBOL_VIEWER_FRAME::ClickOnCmpList( wxCommandEvent& event )
 }
 
 
-void SYMBOL_VIEWER_FRAME::SetSelectedComponent( const wxString& aComponentName )
+void SYMBOL_VIEWER_FRAME::SetSelectedSymbol( const wxString& aSymbolName )
 {
-    if( m_entryName != aComponentName )
+    if( m_entryName != aSymbolName )
     {
-        m_entryName = aComponentName;
+        m_entryName = aSymbolName;
 
         // Ensure the corresponding line in m_symbolList is selected
-        // (which is not necessarily the case if SetSelectedComponent is called
+        // (which is not necessarily the case if SetSelectedSymbol is called
         // by another caller than ClickOnCmpList.
-        m_symbolList->SetStringSelection( aComponentName, true );
+        m_symbolList->SetStringSelection( aSymbolName, true );
         DisplayLibInfos();
 
         if( m_selection_changed )
@@ -847,7 +847,7 @@ void SYMBOL_VIEWER_FRAME::OnSelectSymbol( wxCommandEvent& aEvent )
         return;
 
     SetSelectedLibrary( id.GetLibNickname() );
-    SetSelectedComponent( id.GetLibItemName() );
+    SetSelectedSymbol( id.GetLibItemName() );
     SetUnitAndConvert( unit, 1 );
 }
 

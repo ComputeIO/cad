@@ -23,6 +23,7 @@
  */
 
 #include <base_units.h>
+#include <bitmaps.h>
 #include <class_library.h>
 #include <confirm.h>
 #include <connection_graph.h>
@@ -77,7 +78,7 @@
 #include <wildcards_and_files_ext.h>
 #include <wx/cmdline.h>
 #include <gal/graphics_abstraction_layer.h>
-#include <page_layout/ws_proxy_view_item.h>
+#include <drawing_sheet/ds_proxy_view_item.h>
 
 // non-member so it can be moved easily, and kept REALLY private.
 // Do NOT Clear() in here.
@@ -216,7 +217,7 @@ SCH_EDIT_FRAME::SCH_EDIT_FRAME( KIWAY* aKiway, wxWindow* aParent ) :
 
     m_showBorderAndTitleBlock = true;   // true to show sheet references
     m_hasAutoSave = true;
-    m_aboutTitle = "Eeschema";
+    m_aboutTitle = _( "KiCad Schematic Editor" );
 
     m_findReplaceDialog = nullptr;
 
@@ -224,11 +225,11 @@ SCH_EDIT_FRAME::SCH_EDIT_FRAME( KIWAY* aKiway, wxWindow* aParent ) :
     wxIcon icon;
     wxIconBundle icon_bundle;
 
-    icon.CopyFromBitmap( KiBitmap( icon_eeschema_xpm ) );
+    icon.CopyFromBitmap( KiBitmap( BITMAPS::icon_eeschema ) );
     icon_bundle.AddIcon( icon );
-    icon.CopyFromBitmap( KiBitmap( icon_eeschema_32_xpm ) );
+    icon.CopyFromBitmap( KiBitmap( BITMAPS::icon_eeschema_32 ) );
     icon_bundle.AddIcon( icon );
-    icon.CopyFromBitmap( KiBitmap( icon_eeschema_16_xpm ) );
+    icon.CopyFromBitmap( KiBitmap( BITMAPS::icon_eeschema_16 ) );
     icon_bundle.AddIcon( icon );
 
     SetIcons( icon_bundle );
@@ -322,7 +323,7 @@ SCH_EDIT_FRAME::~SCH_EDIT_FRAME()
 
     // Close the project if we are standalone, so it gets cleaned up properly
     if( Kiface().IsSingle() )
-        GetSettingsManager()->UnloadProject( &Prj() );
+        GetSettingsManager()->UnloadProject( &Prj(), false );
 }
 
 
@@ -333,7 +334,7 @@ void SCH_EDIT_FRAME::setupTools()
     m_toolManager->SetEnvironment( &Schematic(), GetCanvas()->GetView(),
                                    GetCanvas()->GetViewControls(), config(), this );
     m_actions = new EE_ACTIONS();
-    m_toolDispatcher = new TOOL_DISPATCHER( m_toolManager, m_actions );
+    m_toolDispatcher = new TOOL_DISPATCHER( m_toolManager );
 
     // Register tools
     m_toolManager->RegisterTool( new COMMON_CONTROL );
@@ -370,13 +371,13 @@ void SCH_EDIT_FRAME::setupUIConditions()
     auto hasElements =
             [ this ] ( const SELECTION& aSel )
             {
-                return !GetScreen()->Items().empty();
+                return !GetScreen()->Items().empty() || !SELECTION_CONDITIONS::Idle( aSel );
             };
 
 #define ENABLE( x ) ACTION_CONDITIONS().Enable( x )
 #define CHECK( x )  ACTION_CONDITIONS().Check( x )
 
-    mgr->SetConditions( ACTIONS::save,                ENABLE( cond.ContentModified() ) );
+    mgr->SetConditions( ACTIONS::save,                ENABLE( SELECTION_CONDITIONS::ShowAlways ) );
     mgr->SetConditions( ACTIONS::undo,                ENABLE( cond.UndoAvailable() ) );
     mgr->SetConditions( ACTIONS::redo,                ENABLE( cond.RedoAvailable() ) );
 
@@ -385,8 +386,6 @@ void SCH_EDIT_FRAME::setupUIConditions()
     mgr->SetConditions( ACTIONS::millimetersUnits,    CHECK( cond.Units( EDA_UNITS::MILLIMETRES ) ) );
     mgr->SetConditions( ACTIONS::inchesUnits,         CHECK( cond.Units( EDA_UNITS::INCHES ) ) );
     mgr->SetConditions( ACTIONS::milsUnits,           CHECK( cond.Units( EDA_UNITS::MILS ) ) );
-    mgr->SetConditions( ACTIONS::acceleratedGraphics, CHECK( cond.CanvasType( EDA_DRAW_PANEL_GAL::GAL_TYPE_OPENGL ) ) );
-    mgr->SetConditions( ACTIONS::standardGraphics,    CHECK( cond.CanvasType( EDA_DRAW_PANEL_GAL::GAL_TYPE_CAIRO ) ) );
 
     mgr->SetConditions( ACTIONS::cut, ENABLE( hasElements ) );
     mgr->SetConditions( ACTIONS::copy, ENABLE( hasElements ) );
@@ -395,6 +394,11 @@ void SCH_EDIT_FRAME::setupUIConditions()
     mgr->SetConditions( ACTIONS::doDelete, ENABLE( hasElements ) );
     mgr->SetConditions( ACTIONS::duplicate, ENABLE( hasElements ) );
     mgr->SetConditions( ACTIONS::selectAll,           ENABLE( hasElements ) );
+
+    mgr->SetConditions( EE_ACTIONS::rotateCW,         ENABLE( hasElements ) );
+    mgr->SetConditions( EE_ACTIONS::rotateCCW,        ENABLE( hasElements ) );
+    mgr->SetConditions( EE_ACTIONS::mirrorH,          ENABLE( hasElements ) );
+    mgr->SetConditions( EE_ACTIONS::mirrorV,          ENABLE( hasElements ) );
 
     mgr->SetConditions( ACTIONS::zoomTool,            CHECK( cond.CurrentTool( ACTIONS::zoomTool ) ) );
     mgr->SetConditions( ACTIONS::selectionTool,       CHECK( cond.CurrentTool( ACTIONS::selectionTool ) ) );
@@ -458,7 +462,7 @@ void SCH_EDIT_FRAME::setupUIConditions()
 }
 
 
-void SCH_EDIT_FRAME::SaveCopyForRepeatItem( SCH_ITEM* aItem )
+void SCH_EDIT_FRAME::SaveCopyForRepeatItem( const SCH_ITEM* aItem )
 {
     // we cannot store a pointer to an item in the display list here since
     // that item may be deleted, such as part of a line concatenation or other.
@@ -475,7 +479,7 @@ void SCH_EDIT_FRAME::SaveCopyForRepeatItem( SCH_ITEM* aItem )
 }
 
 
-EDA_ITEM* SCH_EDIT_FRAME::GetItem( const KIID& aId )
+EDA_ITEM* SCH_EDIT_FRAME::GetItem( const KIID& aId ) const
 {
     return Schematic().GetSheets().GetItem( aId );
 }
@@ -701,7 +705,6 @@ void SCH_EDIT_FRAME::doCloseWindow()
     // Clear view before destroying schematic as repaints depend on schematic being valid
     SetScreen( nullptr );
 
-    GetSettingsManager()->SaveProject();
     Schematic().Reset();
 
     Destroy();
@@ -791,6 +794,9 @@ void SCH_EDIT_FRAME::OnModify()
 
     GetCanvas()->Refresh();
     UpdateHierarchyNavigator();
+
+    if( !GetTitle().StartsWith( "*" ) )
+        UpdateTitle();
 }
 
 
@@ -800,7 +806,7 @@ void SCH_EDIT_FRAME::OnUpdatePCB( wxCommandEvent& event )
     {
         DisplayError( this,  _( "Cannot update the PCB, because the Schematic Editor is opened"
                                 " in stand-alone mode. In order to create/update PCBs from"
-                                " schematics, launch the Kicad shell and create a project." ) );
+                                " schematics, launch the KiCad shell and create a project." ) );
         return;
     }
 
@@ -1066,7 +1072,7 @@ void SCH_EDIT_FRAME::PrintPage( const RENDER_SETTINGS* aSettings )
 
     aSettings->GetPrintDC()->SetLogicalFunction( wxCOPY );
     GetScreen()->Print( aSettings );
-    PrintWorkSheet( aSettings, GetScreen(), IU_PER_MILS, fileName );
+    PrintDrawingSheet( aSettings, GetScreen(), IU_PER_MILS, fileName );
 }
 
 
@@ -1232,30 +1238,28 @@ void SCH_EDIT_FRAME::AddItemToScreenAndUndoList( SCH_SCREEN* aScreen, SCH_ITEM* 
 void SCH_EDIT_FRAME::UpdateTitle()
 {
     wxString title;
-    wxString nofile = _( "[no file]" ) + wxS(" ");
-    wxString app = _( "Eeschema" );
 
     if( GetScreen()->GetFileName().IsEmpty() )
     {
-        title = nofile + wxT( "\u2014 " ) + app;
+        title = _( "[no file]" ) + wxT( " \u2014 " ) + _( "Schematic Editor" );
     }
     else
     {
-        wxFileName  fn( Prj().AbsolutePath( GetScreen()->GetFileName() ) );
-        wxString    append;
+        wxFileName fn( Prj().AbsolutePath( GetScreen()->GetFileName() ) );
+        bool       readOnly = false;
+        bool       unsaved = false;
 
-        if( fn.FileExists() )
-        {
-            if( !fn.IsFileWritable() )
-                append = _( "[Read Only]" ) + wxS( " " );
-        }
+        if( fn.IsOk() && fn.FileExists() )
+            readOnly = !fn.IsFileWritable();
         else
-            append = nofile;
+            unsaved = true;
 
-        title.Printf( wxT( "%s [%s] %s\u2014 " ) + app,
+        title.Printf( wxT( "%s%s [%s] %s%s\u2014 " ) + _( "Schematic Editor" ),
+                      IsContentModified() ? "*" : "",
                       fn.GetName(),
                       GetCurrentSheet().PathHumanReadable( false ),
-                      append );
+                      readOnly ? _( "[Read Only]" ) + wxS( " " ) : "",
+                      unsaved ? _( "[Unsaved]" ) + wxS( " " ) : "" );
     }
 
     SetTitle( title );
@@ -1282,7 +1286,7 @@ void SCH_EDIT_FRAME::RecalculateConnections( SCH_CLEANUP_FLAGS aCleanupFlags )
     }
     else if( aCleanupFlags == GLOBAL_CLEANUP )
     {
-        for( const auto& sheet : list )
+        for( const SCH_SHEET_PATH& sheet : list )
             SchematicCleanUp( sheet.LastScreen() );
     }
 
@@ -1339,17 +1343,14 @@ void SCH_EDIT_FRAME::RecomputeIntersheetRefs()
     bool show = Schematic().Settings().m_IntersheetRefsShow;
 
     /* Refresh all global labels */
-    for( EDA_ITEM* item : GetScreen()->Items() )
+    for( EDA_ITEM* item : GetScreen()->Items().OfType( SCH_GLOBAL_LABEL_T ) )
     {
-        if( item->Type() == SCH_GLOBAL_LABEL_T )
-        {
-            SCH_GLOBALLABEL* global = static_cast<SCH_GLOBALLABEL*>( item );
+        SCH_GLOBALLABEL* global = static_cast<SCH_GLOBALLABEL*>( item );
 
-            global->GetIntersheetRefs()->SetVisible( show );
+        global->GetIntersheetRefs()->SetVisible( show );
 
-            if( show )
-                GetCanvas()->GetView()->Update( global );
-        }
+        if( show )
+            GetCanvas()->GetView()->Update( global );
     }
 }
 
@@ -1363,20 +1364,13 @@ void SCH_EDIT_FRAME::ShowAllIntersheetRefs( bool aShow )
 
     for( SCH_SCREEN* screen = screens.GetFirst(); screen; screen = screens.GetNext() )
     {
-        for( SCH_ITEM* item : screen->Items() )
+        for( SCH_ITEM* item : screen->Items().OfType( SCH_GLOBAL_LABEL_T ) )
         {
-            if( item->Type() == SCH_GLOBAL_LABEL_T )
-            {
-                SCH_GLOBALLABEL* gLabel = (SCH_GLOBALLABEL*)( item );
-                SCH_FIELD*       intersheetRef = gLabel->GetIntersheetRefs();
+            SCH_GLOBALLABEL* gLabel = (SCH_GLOBALLABEL*)( item );
+            SCH_FIELD*       intersheetRef = gLabel->GetIntersheetRefs();
 
-                intersheetRef->SetVisible( aShow );
-
-                if( aShow )
-                    AddToScreen( intersheetRef, screen );
-                else
-                    RemoveFromScreen( intersheetRef, screen );
-            }
+            intersheetRef->SetVisible( aShow );
+            UpdateItem( intersheetRef, true );
         }
     }
 }
@@ -1463,9 +1457,9 @@ const BOX2I SCH_EDIT_FRAME::GetDocumentExtents( bool aIncludeAllVisible ) const
     }
     else
     {
-        // Get current worksheet in a form we can compare to an EDA_ITEM
-        KIGFX::WS_PROXY_VIEW_ITEM* currWs = SCH_BASE_FRAME::GetCanvas()->GetView()->GetWorksheet();
-        EDA_ITEM*                  currWsAsItem = static_cast<EDA_ITEM*>( currWs );
+        // Get current drawing-sheet in a form we can compare to an EDA_ITEM
+        DS_PROXY_VIEW_ITEM* ds = SCH_BASE_FRAME::GetCanvas()->GetView()->GetDrawingSheet();
+        EDA_ITEM*           dsAsItem = static_cast<EDA_ITEM*>( ds );
 
         // Need an EDA_RECT so the first ".Merge" sees it's uninitialized
         EDA_RECT bBoxItems;
@@ -1473,7 +1467,7 @@ const BOX2I SCH_EDIT_FRAME::GetDocumentExtents( bool aIncludeAllVisible ) const
         // Calc the bounding box of all items on screen except the page border
         for( EDA_ITEM* item : GetScreen()->Items() )
         {
-            if( item != currWsAsItem ) // Ignore the worksheet itself
+            if( item != dsAsItem ) // Ignore the drawing-sheet itself
             {
                 if( item->Type() == SCH_COMPONENT_T )
                 {
@@ -1631,7 +1625,7 @@ void SCH_EDIT_FRAME::UpdateSymbolFromEditor( const LIB_PART& aSymbol )
 
     // This should work for multiple selections of the same symbol even though the editor
     // only works for a single symbol selection.
-    for( auto item : selection )
+    for( EDA_ITEM* item : selection )
     {
         SCH_COMPONENT* symbol = dynamic_cast<SCH_COMPONENT*>( item );
 

@@ -26,6 +26,7 @@
 #include "netlist_exporter_xml.h"
 
 #include <build_version.h>
+#include <common.h>     // for ExpandTextVars
 #include <sch_base_frame.h>
 #include <class_library.h>
 #include <kicad_string.h>
@@ -34,6 +35,7 @@
 
 #include <symbol_lib_table.h>
 
+#include <set>
 
 static bool sortPinsByNumber( LIB_PIN* aPin1, LIB_PIN* aPin2 );
 
@@ -52,7 +54,7 @@ XNODE* NETLIST_EXPORTER_XML::makeRoot( unsigned aCtl )
 {
     XNODE* xroot = node( "export" );
 
-    xroot->AddAttribute( "version", "D" );
+    xroot->AddAttribute( "version", "E" );
 
     if( aCtl & GNL_HEADER )
         // add the "design" header
@@ -142,17 +144,17 @@ void NETLIST_EXPORTER_XML::addSymbolFields( XNODE* aNode, SCH_COMPONENT* aSymbol
                         fields.datasheet = comp2->GetField( DATASHEET_FIELD )->GetText();
                 }
 
-                for( int fldNdx = MANDATORY_FIELDS; fldNdx < comp2->GetFieldCount(); ++fldNdx )
+                for( int ii = MANDATORY_FIELDS; ii < comp2->GetFieldCount(); ++ii )
                 {
-                    SCH_FIELD* f = comp2->GetField( fldNdx );
+                    const SCH_FIELD& f = comp2->GetFields()[ ii ];
 
-                    if( f->GetText().size()
-                        && ( unit < minUnit || fields.f.count( f->GetName() ) == 0 ) )
+                    if( f.GetText().size()
+                        && ( unit < minUnit || fields.f.count( f.GetName() ) == 0 ) )
                     {
                         if( m_resolveTextVars )
-                            fields.f[f->GetName()] = f->GetShownText();
+                            fields.f[ f.GetName() ] = f.GetShownText();
                         else
-                            fields.f[f->GetName()] = f->GetText();
+                            fields.f[ f.GetName() ] = f.GetText();
                     }
                 }
 
@@ -170,16 +172,16 @@ void NETLIST_EXPORTER_XML::addSymbolFields( XNODE* aNode, SCH_COMPONENT* aSymbol
         else
             fields.datasheet = aSymbol->GetField( DATASHEET_FIELD )->GetText();
 
-        for( int fldNdx = MANDATORY_FIELDS; fldNdx < aSymbol->GetFieldCount(); ++fldNdx )
+        for( int ii = MANDATORY_FIELDS; ii < aSymbol->GetFieldCount(); ++ii )
         {
-            SCH_FIELD* f = aSymbol->GetField( fldNdx );
+            const SCH_FIELD& f = aSymbol->GetFields()[ ii ];
 
-            if( f->GetText().size() )
+            if( f.GetText().size() )
             {
                 if( m_resolveTextVars )
-                    fields.f[f->GetName()] = f->GetShownText();
+                    fields.f[ f.GetName() ] = f.GetShownText();
                 else
-                    fields.f[f->GetName()] = f->GetText();
+                    fields.f[ f.GetName() ] = f.GetText();
             }
         }
     }
@@ -236,6 +238,7 @@ XNODE* NETLIST_EXPORTER_XML::makeSymbols( unsigned aCtl )
         };
 
         std::set<SCH_COMPONENT*, decltype( cmp )> ordered_symbols( cmp );
+        std::multiset<SCH_COMPONENT*, decltype( cmp )> extra_units( cmp );
 
         for( SCH_ITEM* item : sheet.LastScreen()->Items().OfType( SCH_COMPONENT_T ) )
         {
@@ -244,10 +247,15 @@ XNODE* NETLIST_EXPORTER_XML::makeSymbols( unsigned aCtl )
 
             if( !test.second )
             {
-                if( ( *( test.first ) )->GetUnit() > symbol->GetUnit() )
+                if( ( *( test.first ) )->m_Uuid > symbol->m_Uuid )
                 {
+                    extra_units.insert( *( test.first ) );
                     ordered_symbols.erase( test.first );
                     ordered_symbols.insert( symbol );
+                }
+                else
+                {
+                    extra_units.insert( symbol );
                 }
             }
         }
@@ -322,7 +330,20 @@ XNODE* NETLIST_EXPORTER_XML::makeSymbols( unsigned aCtl )
 
             xsheetpath->AddAttribute( "names", sheet.PathHumanReadable() );
             xsheetpath->AddAttribute( "tstamps", sheet.PathAsString() );
-            xcomp->AddChild( node( "tstamp", symbol->m_Uuid.AsString() ) );
+
+            XNODE* xunits; // Node for extra units
+            xcomp->AddChild( xunits = node( "tstamps" ) );
+
+            auto range = extra_units.equal_range( symbol );
+
+            // Output a series of children with all UUIDs associated with the REFDES
+            for( auto it = range.first; it != range.second; ++it )
+                xunits->AddChild(
+                        new XNODE( wxXML_TEXT_NODE, wxEmptyString, ( *it )->m_Uuid.AsString() ) );
+
+            // Output the primary UUID
+            xunits->AddChild(
+                    new XNODE( wxXML_TEXT_NODE, wxEmptyString, symbol->m_Uuid.AsString() ) );
         }
     }
 

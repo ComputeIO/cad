@@ -21,6 +21,8 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
 
+#pragma once
+
 #include <wx/string.h>
 #include <pcbnew_scripting_helpers.h>
 
@@ -32,13 +34,27 @@ class VRML_WRITER
 {
 public:
 
+    /**
+     * Exports the board and its footprint shapes 3D (vrml files only) as a
+     * vrml file
+     * @param aFullFileName is the full filename of the board vrml file to create
+     * @param aMMtoWRMLunit is the convert factor from mm to the desired vrml file
+     * @param aExport3DFiles = true to copy 3D fp vrml models to a folder,
+     * and use " { inline fp_3d_model_filename }" keyword in vrml board file
+     * false to include them in the vrml board file
+     * @param aUseRelativePaths = true to use fp 3D relative paths,
+     * false to use absolute paths
+     * @param a3D_Subdir is the folder to copy 3D fp models
+     * @param aXRef = X position of board (in mm)
+     * @param aYRef = Y position of board (in mm)
+     */
     bool ExportVRML_File( const wxString& aFullFileName, double aMMtoWRMLunit,
                                       bool aExport3DFiles, bool aUseRelativePaths,
-                                      bool aUsePlainPCB, const wxString& a3D_Subdir,
+                                      const wxString& a3D_Subdir,
                                       double aXRef, double aYRef )
     {
-        return ExportVRML(aFullFileName, aMMtoWRMLunit,
-                                      aExport3DFiles, aUseRelativePaths, 
-                                      aUsePlainPCB, a3D_Subdir, aXRef, aYRef);
+        return ExportVRML( aFullFileName, aMMtoWRMLunit,
+                           aExport3DFiles, aUseRelativePaths,
+                           a3D_Subdir, aXRef, aYRef);
     }
 };

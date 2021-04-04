@@ -2,7 +2,7 @@
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
  * Copyright (C) 1992-2017 Jean_Pierre Charras <jp.charras at wanadoo.fr>
- * Copyright (C) 1992-2017 KiCad Developers, see change_log.txt for contributors.
+ * Copyright (C) 1992-2021 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -29,19 +29,38 @@
 #ifndef GENDRILL_FILE_WRITER_BASE_H
 #define GENDRILL_FILE_WRITER_BASE_H
 
+// holes can have an attribute in Excellon drill files, similar to attributes
+// in Gerber X2 format
+// They are only comments for a better identification of holes (vias, pads...)
+// Set to 1 to add these comments and 0 to not use these comments
+#define USE_ATTRIB_FOR_HOLES 1
+
 #include <vector>
 
 class BOARD_ITEM;
+
+// hole attribute, mainly to identify vias and pads and add this info as comment
+// in NC drill files
+enum class HOLE_ATTRIBUTE
+{
+    HOLE_UNKNOWN,       // uninitialized type
+    HOLE_VIA_THROUGH,   // a via hole (always plated) from top to bottom
+    HOLE_VIA_BURIED,    // a via hole (always plated) not through hole
+    HOLE_PAD,           // a plated or not plated pad hole
+    HOLE_MECHANICAL     // a mechanical pad (provided, not used)
+};
 
 
 // the DRILL_TOOL class  handles tools used in the excellon drill file:
 class DRILL_TOOL
 {
 public:
-    int m_Diameter;         // the diameter of the used tool (for oblong, the smaller size)
-    int m_TotalCount;       // how many times it is used (round and oblong)
-    int m_OvalCount;        // oblong count
-    bool m_Hole_NotPlated;  // Is the hole plated or not plated
+    int m_Diameter;                 // the diameter of the used tool
+                                    // (for oblong, the smaller size)
+    int m_TotalCount;               // how many times it is used (round and oblong)
+    int m_OvalCount;                // oblong count
+    bool m_Hole_NotPlated;          // Is the hole plated or not plated
+    HOLE_ATTRIBUTE m_HoleAttribute; // Attribute (used in Excellon drill file)
 
 public:
     DRILL_TOOL( int aDiameter, bool a_NotPlated )
@@ -50,6 +69,7 @@ public:
         m_OvalCount      = 0;
         m_Diameter       = aDiameter;
         m_Hole_NotPlated = a_NotPlated;
+        m_HoleAttribute  = HOLE_ATTRIBUTE::HOLE_UNKNOWN;
     }
 };
 
@@ -60,6 +80,7 @@ public:
  * Not plated holes are always through holes, and must be output on a specific drill file
  * because they are drilled after the Pcb process is finished.
  */
+
 class HOLE_INFO
 {
 public:
@@ -74,6 +95,8 @@ public:
     PCB_LAYER_ID m_Hole_Top_Layer;       // hole starting layer (usually front layer):
                                          // m_Hole_Top_Layer < m_Hole_Bottom_Layer
     bool         m_Hole_NotPlated;       // hole not plated. Must be in a specific drill file or section
+    HOLE_ATTRIBUTE m_HoleAttribute;      // Attribute, used in Excellon drill file and to sort holes
+                                         // by type.
 
 public:
     HOLE_INFO()
@@ -86,6 +109,7 @@ public:
         m_Hole_Shape = 0;
         m_Hole_Bottom_Layer = B_Cu;
         m_Hole_Top_Layer = F_Cu;
+        m_HoleAttribute = HOLE_ATTRIBUTE::HOLE_UNKNOWN;
     }
 };
 
@@ -131,6 +155,12 @@ public:
         SUPPRESS_LEADING,       // Suppress leading zeros
         SUPPRESS_TRAILING,      // Suppress trainling zeros
         KEEP_ZEROS              // keep zeros
+    };
+
+    enum TYPE_FILE {            // type of holes in file: PTH, NPTH, mixed
+        PTH_FILE,               // PTH only, this is the default also for blind/buried holes
+        NPTH_FILE,              // NPTH only
+        MIXED_FILE              // PHT+NPTH (mixed)
     };
 
 protected:
@@ -351,11 +381,12 @@ protected:
      * There is no X1 version, as the Gerber drill files uses only X2 format
      * There is a compatible NC drill version.
      * @param aLayerPair is the layer pair (Drill from rom first layer to second layer)
-     * @param aIsNpth is true when generating NPTH drill file
+     * @param aHoleType is type of drill file (PTH, NPTH, mixed)
      * @param aCompatNCdrill is true when generating NC (Excellon) compatible drill file
      */
     const wxString BuildFileFunctionAttributeString( DRILL_LAYER_PAIR aLayerPair,
-                                                     bool aIsNpth, bool aCompatNCdrill = false ) const;
+                                                     TYPE_FILE aHoleType,
+                                                     bool aCompatNCdrill = false ) const;
 };
 
 #endif      // #define GENDRILL_FILE_WRITER_BASE_H

@@ -94,8 +94,8 @@
 #include <base64.h>
 #include <eda_base_frame.h>
 #include <eda_rect.h>
-#include <common.h>
 #include <kicad_string.h>
+#include <macros.h>
 #include <trigo.h>
 
 #include <cstdint>
@@ -778,10 +778,19 @@ bool SVG_PLOTTER::EndPlot()
 }
 
 
-void SVG_PLOTTER::Text( const wxPoint& aPos, const COLOR4D aColor, const wxString& aText,
-                        double aOrient, const wxSize& aSize, enum EDA_TEXT_HJUSTIFY_T aH_justify,
-                        enum EDA_TEXT_VJUSTIFY_T aV_justify, int aWidth, bool aItalic, bool aBold,
-                        bool aMultilineAllowed, void* aData, FONT* aFont )
+void SVG_PLOTTER::Text( const wxPoint&              aPos,
+                        const COLOR4D               aColor,
+                        const wxString&             aText,
+                        double                      aOrient,
+                        const wxSize&               aSize,
+                        enum EDA_TEXT_HJUSTIFY_T    aH_justify,
+                        enum EDA_TEXT_VJUSTIFY_T    aV_justify,
+                        int                         aWidth,
+                        bool                        aItalic,
+                        bool                        aBold,
+                        bool                        aMultilineAllowed,
+                        KIFONT::FONT*               aFont,
+                        void*                       aData )
 {
     setFillMode( FILL_TYPE::NO_FILL );
     SetColor( aColor );
@@ -853,7 +862,7 @@ void SVG_PLOTTER::Text( const wxPoint& aPos, const COLOR4D aColor, const wxStrin
     fprintf( m_outputFile,
              "<g class=\"stroked-text\"><desc>%s</desc>\n",
              TO_UTF8( XmlEsc( aText ) ) );
-    PLOTTER::Text( aPos, aColor, aText, aOrient, aSize, aH_justify, aV_justify, aWidth, aItalic,
-                   aBold, aMultilineAllowed, NULL, aFont );
+    PLOTTER::Text( aPos, aColor, aText, aOrient, aSize, aH_justify, aV_justify,
+                   aWidth, aItalic, aBold, aMultilineAllowed, aFont, aData );
     fputs( "</g>", m_outputFile );
 }

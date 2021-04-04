@@ -27,12 +27,12 @@
 DIALOG_LOCKED_ITEMS_QUERY::DIALOG_LOCKED_ITEMS_QUERY( wxWindow* aParent, int aLockedItemCount ) :
     DIALOG_LOCKED_ITEMS_QUERY_BASE( aParent )
 {
-    m_icon->SetBitmap( KiBitmap( locked_xpm ) );
+    m_icon->SetBitmap( KiBitmap( BITMAPS::locked ) );
 
     m_messageLine1->SetLabel( wxString::Format( m_messageLine1->GetLabel(), aLockedItemCount ) );
 
-    m_sdbSizerOK->SetDefault();
-
+    m_removeBtn->SetDefault();
+    m_removeBtn->SetFocus();
     Layout();
 
     // Now all widgets have the size fixed, call FinishDialogSettings
@@ -67,7 +67,7 @@ int DIALOG_LOCKED_ITEMS_QUERY::ShowModal()
 
     int ret = DIALOG_SHIM::ShowModal();
 
-    // Has the user asked not to show the dialog again
+    // Has the user asked not to show the dialog again this session?
     if( m_doNotShowBtn->IsChecked() && ret != wxID_CANCEL )
         doNotShowValue = ret;
 

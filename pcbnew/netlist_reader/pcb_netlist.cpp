@@ -2,8 +2,8 @@
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
  * Copyright (C) 1992-2011 Jean-Pierre Charras.
- * Copyright (C) 2013 Wayne Stambaugh <stambaughw@verizon.net>.
- * Copyright (C) 1992-2020 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 2013 Wayne Stambaugh <stambaughw@gmail.com>.
+ * Copyright (C) 1992-2021 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -40,6 +40,9 @@ int COMPONENT_NET::Format( OUTPUTFORMATTER* aOut, int aNestLevel, int aCtl )
 void COMPONENT::SetFootprint( FOOTPRINT* aFootprint )
 {
     m_footprint.reset( aFootprint );
+    KIID_PATH path = m_path;
+
+    path.push_back( m_kiids.front() );
 
     if( aFootprint == NULL )
         return;
@@ -47,7 +50,7 @@ void COMPONENT::SetFootprint( FOOTPRINT* aFootprint )
     aFootprint->SetReference( m_reference );
     aFootprint->SetValue( m_value );
     aFootprint->SetFPID( m_fpid );
-    aFootprint->SetPath( m_path );
+    aFootprint->SetPath( path );
     aFootprint->SetProperties( m_properties );
 }
 
@@ -74,7 +77,7 @@ void COMPONENT::Format( OUTPUTFORMATTER* aOut, int aNestLevel, int aCtl )
     aOut->Print( nl, "(ref %s ",      aOut->Quotew( m_reference ).c_str() );
     aOut->Print( 0, "(fpid %s)\n",    aOut->Quotew( m_fpid.Format() ).c_str() );
 
-    if( ! ( aCtl & CTL_OMIT_EXTRA ) )
+    if( !( aCtl & CTL_OMIT_EXTRA ) )
     {
         aOut->Print( nl+1, "(value %s)\n",    aOut->Quotew( m_value ).c_str() );
         aOut->Print( nl+1, "(name %s)\n",     aOut->Quotew( m_name ).c_str() );
@@ -84,6 +87,9 @@ void COMPONENT::Format( OUTPUTFORMATTER* aOut, int aNestLevel, int aCtl )
 
         for( const KIID& pathStep : m_path )
             path += '/' + pathStep.AsString();
+
+        if( !( aCtl & CTL_OMIT_FP_UUID ) && !m_kiids.empty() )
+            path += '/' + m_kiids.front().AsString();
 
         aOut->Print( nl+1, "(timestamp %s)\n", aOut->Quotew( path ).c_str() );
     }
@@ -160,9 +166,23 @@ COMPONENT* NETLIST::GetComponentByReference( const wxString& aReference )
 
 COMPONENT* NETLIST::GetComponentByPath( const KIID_PATH& aUuidPath )
 {
+    if( aUuidPath.empty() )
+        return nullptr;
+
+    KIID comp_uuid = aUuidPath.back();
+    KIID_PATH base = aUuidPath;
+
+    if( !base.empty() )
+        base.pop_back();
+
     for( COMPONENT& component : m_components )
     {
-        if( component.GetPath() == aUuidPath )
+        const std::vector<KIID>& kiids = component.GetKIIDs();
+
+        if( base != component.GetPath() )
+            continue;
+
+        if( std::find( kiids.begin(), kiids.end(), comp_uuid ) != kiids.end() )
             return &component;
     }
 
@@ -171,8 +191,7 @@ COMPONENT* NETLIST::GetComponentByPath( const KIID_PATH& aUuidPath )
 
 
 /**
- * Function ByFPID
- * is a helper function used to sort the component list used by loadNewModules.
+ * A helper function used to sort the component list used by loadNewModules.
  */
 static bool ByFPID( const COMPONENT& ref, const COMPONENT& cmp )
 {
@@ -187,8 +206,7 @@ void NETLIST::SortByFPID()
 
 
 /**
- * Operator <
- * compares two #COMPONENT objects by reference designator.
+ * Compare two #COMPONENT objects by reference designator.
  */
 bool operator < ( const COMPONENT& item1, const COMPONENT& item2 )
 {

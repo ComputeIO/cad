@@ -55,8 +55,8 @@ enum class CONNECTION_TYPE
  * more than once in a higher level sheet).  Because of this, a single item may
  * contain more than one SCH_CONNECTION -- each is specific to a sheet.
  *
- * Components contain connections for each of their pins (and for each sheet
- * they exist on) but don't use their own connection object.
+ * Symbols contain connections for each of their pins (and for each sheet they
+ * exist on) but don't use their own connection object.
  */
 class SCH_CONNECTION
 {
@@ -99,7 +99,7 @@ public:
      *
      * @param aOther is the connection to clone
      */
-    void Clone( SCH_CONNECTION& aOther );
+    void Clone( const SCH_CONNECTION& aOther );
 
     SCH_ITEM* Parent() const { return m_parent; }
 
@@ -127,6 +127,8 @@ public:
         return ( m_type == CONNECTION_TYPE::NET );
     }
 
+    bool IsUnconnected() const { return ( m_type == CONNECTION_TYPE::NONE ); }
+
     bool IsDirty() const { return m_dirty; }
     void SetDirty() { m_dirty = true; }
     void ClearDirty() { m_dirty = false; }
@@ -141,7 +143,7 @@ public:
 
     wxString FullLocalName() const
     {
-        return m_prefix + m_local_name + m_suffix;
+        return m_local_prefix + m_local_name + m_suffix;
     }
 
     void SetName( const wxString& aName )
@@ -264,6 +266,9 @@ private:
 
     /// Prefix if connection is member of a labeled bus group (or "" if not)
     wxString m_prefix;
+
+    /// Local prefix for group bus members (used with m_local_name)
+    wxString m_local_prefix;
 
     /// Optional prefix of a bux group (always empty for nets and vector buses)
     wxString m_bus_prefix;

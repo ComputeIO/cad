@@ -2,7 +2,7 @@
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
  * Copyright (C) 2015 Jean-Pierre Charras, jp.charras at wanadoo.fr
- * Copyright (C) 2004-2020 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 2004-2021 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -32,6 +32,7 @@
  */
 
 #include <wx/menu.h>
+#include <common.h>     // for ExpandTextVars
 #include <eda_item.h>
 #include <gr_text.h>
 #include <sch_edit_frame.h>
@@ -41,7 +42,7 @@
 #include <kiway.h>
 #include <general.h>
 #include <class_library.h>
-#include <sch_component.h>
+#include <sch_symbol.h>
 #include <sch_field.h>
 #include <schematic.h>
 #include <settings/color_settings.h>
@@ -427,11 +428,11 @@ bool SCH_FIELD::Replace( const wxFindReplaceData& aSearchData, void* aAuxData )
 }
 
 
-void SCH_FIELD::Rotate( wxPoint aPosition )
+void SCH_FIELD::Rotate( wxPoint aCenter )
 {
-    wxPoint pt = GetTextPos();
-    RotatePoint( &pt, aPosition, 900 );
-    SetTextPos( pt );
+    wxPoint pt = GetPosition();
+    RotatePoint( &pt, aCenter, 900 );
+    SetPosition( pt );
 }
 
 
@@ -443,6 +444,8 @@ wxString SCH_FIELD::GetSelectMenuText( EDA_UNITS aUnits ) const
 
 void SCH_FIELD::DoHypertextMenu( EDA_DRAW_FRAME* aFrame )
 {
+    constexpr int START_ID = 1;
+
     static wxString back = "HYPERTEXT_BACK";
     wxMenu          menu;
     SCH_TEXT*       label = dynamic_cast<SCH_TEXT*>( m_parent );
@@ -459,6 +462,17 @@ void SCH_FIELD::DoHypertextMenu( EDA_DRAW_FRAME* aFrame )
             pageListCopy.insert( pageListCopy.end(), it->second.begin(), it->second.end() );
             std::sort( pageListCopy.begin(), pageListCopy.end() );
 
+            if( !Schematic()->Settings().m_IntersheetRefsListOwnPage )
+            {
+                wxString currentPage = Schematic()->CurrentSheet().GetPageNumber();
+                pageListCopy.erase( std::remove( pageListCopy.begin(),
+                                                 pageListCopy.end(),
+                                                 currentPage ), pageListCopy.end() );
+
+                if( pageListCopy.empty() )
+                    return;
+            }
+
             for( const SCH_SHEET_PATH& sheet : Schematic()->GetSheets() )
             {
                 if( sheet.size() == 1 )
@@ -469,14 +483,15 @@ void SCH_FIELD::DoHypertextMenu( EDA_DRAW_FRAME* aFrame )
 
             for( int i = 0; i < (int) pageListCopy.size(); ++i )
             {
-                menu.Append( i, wxString::Format( _( "Go to Page %s (%s)" ), pageListCopy[i],
-                                                  sheetNames[pageListCopy[i]] ) );
+                menu.Append( i + START_ID, wxString::Format( _( "Go to Page %s (%s)" ),
+                                                             pageListCopy[i],
+                                                             sheetNames[ pageListCopy[i] ] ) );
             }
 
             menu.AppendSeparator();
-            menu.Append( 999, _( "Back" ) );
+            menu.Append( 999, _( "Back to Previous Selected Sheet" ) );
 
-            int   sel = aFrame->GetPopupMenuSelectionFromUser( menu );
+            int   sel = aFrame->GetPopupMenuSelectionFromUser( menu ) - START_ID;
             void* param = nullptr;
 
             if( sel >= 0 && sel < (int) pageListCopy.size() )
@@ -538,20 +553,20 @@ wxString SCH_FIELD::GetCanonicalName() const
 }
 
 
-BITMAP_DEF SCH_FIELD::GetMenuImage() const
+BITMAPS SCH_FIELD::GetMenuImage() const
 {
     if( m_parent && m_parent->Type() == SCH_COMPONENT_T )
     {
         switch( m_id )
         {
-        case REFERENCE_FIELD: return edit_comp_ref_xpm;
-        case VALUE_FIELD: return edit_comp_value_xpm;
-        case FOOTPRINT_FIELD: return edit_comp_footprint_xpm;
-        default: return text_xpm;
+        case REFERENCE_FIELD: return BITMAPS::edit_comp_ref;
+        case VALUE_FIELD:     return BITMAPS::edit_comp_value;
+        case FOOTPRINT_FIELD: return BITMAPS::edit_comp_footprint;
+        default:              return BITMAPS::text;
         }
     }
 
-    return text_xpm;
+    return BITMAPS::text;
 }
 
 
@@ -586,7 +601,7 @@ bool SCH_FIELD::HitTest( const EDA_RECT& aRect, bool aContained, int aAccuracy )
 }
 
 
-void SCH_FIELD::Plot( PLOTTER* aPlotter )
+void SCH_FIELD::Plot( PLOTTER* aPlotter ) const
 {
     RENDER_SETTINGS* settings = aPlotter->RenderSettings();
     COLOR4D          color = settings->GetLayerColor( GetLayer() );
@@ -643,13 +658,12 @@ void SCH_FIELD::SetPosition( const wxPoint& aPosition )
     // the position relative to the parent component.
     if( m_parent && m_parent->Type() == SCH_COMPONENT_T )
     {
-        SCH_COMPONENT* parentComponent = static_cast<SCH_COMPONENT*>( m_parent );
-        wxPoint        relativePos = aPosition - parentComponent->GetPosition();
+        SCH_COMPONENT* parentSymbol = static_cast<SCH_COMPONENT*>( m_parent );
+        wxPoint        relPos = aPosition - parentSymbol->GetPosition();
 
-        relativePos = parentComponent->GetTransform().InverseTransform().TransformCoordinate(
-                relativePos );
+        relPos = parentSymbol->GetTransform().InverseTransform().TransformCoordinate( relPos );
 
-        SetTextPos( relativePos + parentComponent->GetPosition() );
+        SetTextPos( relPos + parentSymbol->GetPosition() );
         return;
     }
 
@@ -661,12 +675,12 @@ wxPoint SCH_FIELD::GetPosition() const
 {
     if( m_parent && m_parent->Type() == SCH_COMPONENT_T )
     {
-        SCH_COMPONENT* parentComponent = static_cast<SCH_COMPONENT*>( m_parent );
-        wxPoint        relativePos = GetTextPos() - parentComponent->GetPosition();
+        SCH_COMPONENT* parentSymbol = static_cast<SCH_COMPONENT*>( m_parent );
+        wxPoint        relativePos = GetTextPos() - parentSymbol->GetPosition();
 
-        relativePos = parentComponent->GetTransform().TransformCoordinate( relativePos );
+        relativePos = parentSymbol->GetTransform().TransformCoordinate( relativePos );
 
-        return relativePos + parentComponent->GetPosition();
+        return relativePos + parentSymbol->GetPosition();
     }
 
     return GetTextPos();

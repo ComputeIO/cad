@@ -36,6 +36,7 @@
 #include <geometry/shape_segment.h>
 #include <geometry/shape_circle.h>
 #include <geometry/shape_compound.h>
+#include <macros.h>
 #include <origin_transforms.h>
 #include <settings/color_settings.h>
 #include <settings/settings_manager.h>
@@ -308,9 +309,7 @@ void PCB_SHAPE::Flip( const wxPoint& aCentre, bool aFlipLeftRight )
         break;
     }
 
-    // PCB_SHAPE items are not allowed on copper layers, so
-    // copper layers count is not taken in account in Flip transform
-    SetLayer( FlipLayer( GetLayer() ) );
+    SetLayer( FlipLayer( GetLayer(), GetBoard()->GetCopperLayerCount() ) );
 }
 
 
@@ -937,9 +936,9 @@ wxString PCB_SHAPE::GetSelectMenuText( EDA_UNITS aUnits ) const
 }
 
 
-BITMAP_DEF PCB_SHAPE::GetMenuImage() const
+BITMAPS PCB_SHAPE::GetMenuImage() const
 {
-    return add_dashed_line_xpm;
+    return BITMAPS::add_dashed_line;
 }
 
 
@@ -1091,18 +1090,9 @@ std::vector<SHAPE*> PCB_SHAPE::MakeEffectiveShapes() const
     switch( m_shape )
     {
     case S_ARC:
-    {
-        SHAPE_ARC        arc( GetCenter(), GetArcStart(), (double) GetAngle() / 10.0 );
-        SHAPE_LINE_CHAIN l = arc.ConvertToPolyline();
-
-        for( int i = 0; i < l.SegmentCount(); i++ )
-        {
-            effectiveShapes.emplace_back( new SHAPE_SEGMENT( l.Segment( i ).A,
-                                                             l.Segment( i ).B, m_width ) );
-        }
-
+        effectiveShapes.emplace_back( new SHAPE_ARC( GetCenter(), GetArcStart(),
+                                                     GetAngle() / 10.0, m_width ) );
         break;
-    }
 
     case S_SEGMENT:
         effectiveShapes.emplace_back( new SHAPE_SEGMENT( GetStart(), GetEnd(), m_width ) );

@@ -115,21 +115,21 @@ void SCH_NO_CONNECT::Print( const RENDER_SETTINGS* aSettings, const wxPoint& aOf
 }
 
 
-void SCH_NO_CONNECT::MirrorX( int aXaxis_position )
+void SCH_NO_CONNECT::MirrorVertically( int aCenter )
 {
-    MIRROR( m_pos.y, aXaxis_position );
+    MIRROR( m_pos.y, aCenter );
 }
 
 
-void SCH_NO_CONNECT::MirrorY( int aYaxis_position )
+void SCH_NO_CONNECT::MirrorHorizontally( int aCenter )
 {
-    MIRROR( m_pos.x, aYaxis_position );
+    MIRROR( m_pos.x, aCenter );
 }
 
 
-void SCH_NO_CONNECT::Rotate( wxPoint aPosition )
+void SCH_NO_CONNECT::Rotate( wxPoint aCenter )
 {
-    RotatePoint( &m_pos, aPosition, 900 );
+    RotatePoint( &m_pos, aCenter, 900 );
 }
 
 
@@ -170,7 +170,7 @@ bool SCH_NO_CONNECT::HitTest( const EDA_RECT& aRect, bool aContained, int aAccur
 }
 
 
-void SCH_NO_CONNECT::Plot( PLOTTER* aPlotter )
+void SCH_NO_CONNECT::Plot( PLOTTER* aPlotter ) const
 {
     int delta = GetSize() / 2;
     int pX = m_pos.x;
@@ -186,7 +186,7 @@ void SCH_NO_CONNECT::Plot( PLOTTER* aPlotter )
 }
 
 
-BITMAP_DEF SCH_NO_CONNECT::GetMenuImage() const
+BITMAPS SCH_NO_CONNECT::GetMenuImage() const
 {
-    return noconn_xpm;
+    return BITMAPS::noconn;
 }

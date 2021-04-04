@@ -372,7 +372,7 @@ FOOTPRINT* MICROWAVE_TOOL::createMicrowaveInductor( MICROWAVE_INDUCTOR_PATTERN& 
     msg = StringFromValue( editFrame.GetUserUnits(), aInductorPattern.m_Length );
     WX_TEXT_ENTRY_DIALOG dlg( &editFrame, _( "Length of Trace:" ), wxEmptyString, msg );
 
-    if( dlg.ShowModal() != wxID_OK )
+    if( dlg.ShowQuasiModal() != wxID_OK )
         return nullptr; // canceled by user
 
     msg = dlg.GetValue();
@@ -388,7 +388,9 @@ FOOTPRINT* MICROWAVE_TOOL::createMicrowaveInductor( MICROWAVE_INDUCTOR_PATTERN& 
     // Calculate the elements.
     std::vector <wxPoint> buffer;
     const INDUCTOR_S_SHAPE_RESULT res = BuildCornersList_S_Shape( buffer, aInductorPattern.m_Start,
-                                                                  aInductorPattern.m_End, aInductorPattern.m_Length, aInductorPattern.m_Width );
+                                                                  aInductorPattern.m_End,
+                                                                  aInductorPattern.m_Length,
+                                                                  aInductorPattern.m_Width );
 
     switch( res )
     {
@@ -410,7 +412,7 @@ FOOTPRINT* MICROWAVE_TOOL::createMicrowaveInductor( MICROWAVE_INDUCTOR_PATTERN& 
     WX_TEXT_ENTRY_DIALOG cmpdlg( &editFrame, _( "Component Value:" ), wxEmptyString, msg );
     cmpdlg.SetTextValidator( FOOTPRINT_NAME_VALIDATOR( &msg ) );
 
-    if( ( cmpdlg.ShowModal() != wxID_OK ) || msg.IsEmpty() )
+    if( ( cmpdlg.ShowQuasiModal() != wxID_OK ) || msg.IsEmpty() )
         return nullptr;    //  Aborted by user
 
     FOOTPRINT* footprint = editFrame.CreateNewFootprint( msg );
@@ -471,6 +473,5 @@ FOOTPRINT* MICROWAVE_TOOL::createMicrowaveInductor( MICROWAVE_INDUCTOR_PATTERN& 
     valPos.y += footprint->Value().GetTextSize().y;
     footprint->Value().SetPosition( valPos );
 
-    footprint->CalculateBoundingBox();
     return footprint;
 }

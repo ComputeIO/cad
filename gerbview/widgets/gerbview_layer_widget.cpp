@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2004-2010 Jean-Pierre Charras, jp.charras at wanadoo.fr
  * Copyright (C) 2010 SoftPLC Corporation, Dick Hollenbeck <dick@softplc.com>
- * Copyright (C) 2018-2019 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 2018-2021 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -23,6 +23,7 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
 
+#include <bitmaps.h>
 #include <menus_helpers.h>
 #include <gerbview.h>
 #include <gerbview_frame.h>
@@ -36,6 +37,7 @@
 #include "layer_widget.h"
 #include "gbr_layer_box_selector.h"
 #include "gerbview_layer_widget.h"
+#include "dcode_selection_box.h"
 
 /*
  * GERBER_LAYER_WIDGET
@@ -97,12 +99,12 @@ void GERBER_LAYER_WIDGET::ReFillRender()
 #define RR  LAYER_WIDGET::ROW   // Render Row abreviation to reduce source width
 
              // text                 id                         color     tooltip                 checked
-        RR( _( "DCodes" ),           LAYER_DCODES,              WHITE,    _( "Show DCodes identification" ) ),
-        RR( _( "Negative Objects" ), LAYER_NEGATIVE_OBJECTS,    DARKGRAY, _( "Show negative objects in this color" ) ),
+        RR( _( "DCodes" ),           LAYER_DCODES,                WHITE,    _( "Show DCodes identification" ) ),
+        RR( _( "Negative Objects" ), LAYER_NEGATIVE_OBJECTS,      DARKGRAY, _( "Show negative objects in this color" ) ),
         RR(),
-        RR( _( "Grid" ),             LAYER_GERBVIEW_GRID,       WHITE,    _( "Show the (x,y) grid dots" ) ),
-        RR( _( "Worksheet" ),        LAYER_GERBVIEW_WORKSHEET,  DARKRED,  _( "Show worksheet") ),
-        RR( _( "Background" ),       LAYER_GERBVIEW_BACKGROUND, BLACK,    _( "PCB Background" ), true, false )
+        RR( _( "Grid" ),             LAYER_GERBVIEW_GRID,         WHITE,    _( "Show the (x,y) grid dots" ) ),
+        RR( _( "Drawing Sheet" ),    LAYER_GERBVIEW_DRAWINGSHEET, DARKRED,  _( "Show drawing sheet border and title block") ),
+        RR( _( "Background" ),       LAYER_GERBVIEW_BACKGROUND,   BLACK,    _( "PCB Background" ), true, false )
     };
 
     for( unsigned row=0;  row<arrayDim(renderRows);  ++row )
@@ -122,22 +124,22 @@ void GERBER_LAYER_WIDGET::AddRightClickMenuItems( wxMenu* aMenu )
 {
     // Remember: menu text is capitalized (see our rules_for_capitalization_in_Kicad_UI.txt)
     AddMenuItem( aMenu, ID_SHOW_ALL_LAYERS, _( "Show All Layers" ),
-                 KiBitmap( show_all_layers_xpm ) );
+                 KiBitmap( BITMAPS::show_all_layers ) );
 
     AddMenuItem( aMenu, ID_SHOW_NO_LAYERS_BUT_ACTIVE,
                  _( "Hide All Layers But Active" ),
-                 KiBitmap( select_w_layer_xpm ) );
+                 KiBitmap( BITMAPS::select_w_layer ) );
 
     AddMenuItem( aMenu, ID_ALWAYS_SHOW_NO_LAYERS_BUT_ACTIVE,
                  _( "Always Hide All Layers But Active" ),
-                 KiBitmap( select_w_layer_xpm ) );
+                 KiBitmap( BITMAPS::select_w_layer ) );
 
     AddMenuItem( aMenu, ID_SHOW_NO_LAYERS, _( "Hide All Layers" ),
-                 KiBitmap( show_no_layers_xpm ) );
+                 KiBitmap( BITMAPS::show_no_layers ) );
 
     aMenu->AppendSeparator();
     AddMenuItem( aMenu, ID_SORT_GBR_LAYERS, _( "Sort Layers if X2 Mode" ),
-                 KiBitmap( reload_xpm ) );
+                 KiBitmap( BITMAPS::reload ) );
 }
 
 
@@ -219,7 +221,8 @@ void GERBER_LAYER_WIDGET::ReFill()
         int      aRow = findLayerRow( layer );
         bool     visible = true;
         COLOR4D  color = myframe->GetLayerColor( GERBER_DRAW_LAYER( layer ) );
-        wxString msg = GetImagesList()->GetDisplayName( layer );
+        wxString msg = GetImagesList()->GetDisplayName( layer, /* include layer number */ false,
+                                                        /* Get the full name */ true );
 
         if( myframe->GetCanvas() )
             visible = myframe->GetCanvas()->GetView()->IsLayerVisible( GERBER_DRAW_LAYER( layer ) );
@@ -272,7 +275,14 @@ bool GERBER_LAYER_WIDGET::OnLayerSelect( int aLayer )
     if( layer != myframe->GetActiveLayer() )
     {
         if( ! OnLayerSelected() )
+        {
+            auto settings = static_cast<KIGFX::GERBVIEW_PAINTER*>
+                                ( myframe->GetCanvas()->GetView()->GetPainter() )->GetSettings();
+            int dcodeSelected = myframe->m_DCodeSelector->GetSelectedDCodeId();
+            settings->m_dcodeHighlightValue = dcodeSelected;
+            myframe->GetCanvas()->GetView()->UpdateAllItems( KIGFX::COLOR );
             myframe->GetCanvas()->Refresh();
+        }
     }
 
     return true;

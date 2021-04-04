@@ -128,7 +128,7 @@ DIALOG_IMPORT_GFX::DIALOG_IMPORT_GFX( PCB_BASE_FRAME* aParent, bool aImportAsFoo
 
     m_choiceDxfUnits->SetSelection( m_dxfUnits );
 
-    m_browseButton->SetBitmap( KiBitmap( small_folder_xpm ) );
+    m_browseButton->SetBitmap( KiBitmap( BITMAPS::small_folder ) );
 
     SetInitialFocus( m_textCtrlFileName );
     m_sdbSizerOK->SetDefault();
@@ -312,8 +312,8 @@ bool DIALOG_IMPORT_GFX::TransferDataFromWindow()
 
         // Set coordinates offset for import (offset is given in mm)
         m_importer->SetImportOffsetMM( m_origin );
-        m_scaleImport =
-                DoubleValueFromString( EDA_UNITS::UNSCALED, m_textCtrlImportScale->GetValue() );
+        m_scaleImport = DoubleValueFromString( EDA_UNITS::UNSCALED,
+                                               m_textCtrlImportScale->GetValue() );
 
         // The line width is meant to be in pcbnew units, so we scale the import width before
         // applying

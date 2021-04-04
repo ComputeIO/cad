@@ -170,11 +170,11 @@ public:
 
     void OnSelectUnit( wxCommandEvent& event );
 
-    void OnToggleSearchTree( wxCommandEvent& event );
+    void OnToggleSymbolTree( wxCommandEvent& event );
 
-    bool IsSearchTreeShown();
-    void FreezeSearchTree();
-    void ThawSearchTree();
+    bool IsSymbolTreeShown();
+    void FreezeLibraryTree();
+    void ThawLibraryTree();
 
     void OnUpdatePartNumber( wxUpdateUIEvent& event );
 
@@ -276,7 +276,7 @@ public:
      * @param aConvert the DeMorgan variant to show
      * @return true if the symbol defined by \a aLibId was loaded.
      */
-    bool LoadSymbolAndSelectLib( const LIB_ID& aLibId, int aUnit, int aConvert );
+    bool LoadSymbol( const LIB_ID& aLibId, int aUnit, int aConvert );
 
     /**
      * Print a page.
@@ -300,6 +300,11 @@ public:
      * Does NOT synchronize it with libraries in disk.
      */
     void RegenerateLibraryTree();
+
+    /**
+     * Redisplay the library tree.  Used after changing modified states, descriptions, etc.
+     */
+    void RefreshLibraryTree();
 
     /**
      * Allow the symbol editor to install its preferences panel into the preferences dialog.
@@ -330,12 +335,8 @@ public:
      * Load a symbol from the schematic to edit in place.
      *
      * @param aSymbol the symbol to edit.
-     * @param aReference the reference of the symbol to edit.
-     * @param aUnit the unit of the symbol to edit.
-     * @param aConvert the alternate body style of the symbol to edit.
      */
-    void LoadSymbolFromSchematic( const std::unique_ptr<LIB_PART>& aSymbol,
-                                  const wxString& aReference, int aUnit, int aConvert );
+    void LoadSymbolFromSchematic( SCH_COMPONENT* aSymbol );
 
     /**
      * Test if a symbol is loaded and can be edited.

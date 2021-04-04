@@ -163,7 +163,7 @@ void LIB_CIRCLE::Rotate( const wxPoint& aCenter, bool aRotateCCW )
 
 
 void LIB_CIRCLE::Plot( PLOTTER* aPlotter, const wxPoint& aOffset, bool aFill,
-                       const TRANSFORM& aTransform )
+                       const TRANSFORM& aTransform ) const
 {
     wxPoint pos = aTransform.TransformCoordinate( m_Pos ) + aOffset;
 
@@ -272,9 +272,9 @@ wxString LIB_CIRCLE::GetSelectMenuText( EDA_UNITS aUnits ) const
 }
 
 
-BITMAP_DEF LIB_CIRCLE::GetMenuImage() const
+BITMAPS LIB_CIRCLE::GetMenuImage() const
 {
-    return add_circle_xpm;
+    return BITMAPS::add_circle;
 }
 
 

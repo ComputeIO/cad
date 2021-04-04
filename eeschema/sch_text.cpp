@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2016 Jean-Pierre Charras, jp.charras at wanadoo.fr
  * Copyright (C) 2015 Wayne Stambaugh <stambaughw@verizon.net>
- * Copyright (C) 1992-2020 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 1992-2021 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -28,10 +28,11 @@
  * @brief Code for handling schematic texts (texts, labels, hlabels and global labels).
  */
 
-#include <sch_component.h>
+#include <sch_symbol.h>
 #include <sch_edit_frame.h>
 #include <plotter.h>
 #include <widgets/msgpanel.h>
+#include <font/stroke_font.h>
 #include <bitmaps.h>
 #include <kicad_string.h>
 #include <sch_text.h>
@@ -158,7 +159,7 @@ EDA_ITEM* SCH_TEXT::Clone() const
 bool SCH_TEXT::IncrementLabel( int aIncrement )
 {
     wxString text = GetText();
-    bool     ReturnVal = IncrementLabelMember( text, aIncrement );
+    bool ReturnVal = IncrementLabelMember( text, aIncrement );
 
     if( ReturnVal )
         SetText( text );
@@ -187,28 +188,28 @@ wxPoint SCH_TEXT::GetSchematicTextOffset( const RENDER_SETTINGS* aSettings ) con
 }
 
 
-void SCH_TEXT::MirrorY( int aYaxis_position )
+void SCH_TEXT::MirrorHorizontally( int aCenter )
 {
     // Text is NOT really mirrored; it is moved to a suitable horizontal position
     SetLabelSpinStyle( GetLabelSpinStyle().MirrorY() );
 
-    SetTextX( MIRRORVAL( GetTextPos().x, aYaxis_position ) );
+    SetTextX( MIRRORVAL( GetTextPos().x, aCenter ) );
 }
 
 
-void SCH_TEXT::MirrorX( int aXaxis_position )
+void SCH_TEXT::MirrorVertically( int aCenter )
 {
     // Text is NOT really mirrored; it is moved to a suitable vertical position
     SetLabelSpinStyle( GetLabelSpinStyle().MirrorX() );
 
-    SetTextY( MIRRORVAL( GetTextPos().y, aXaxis_position ) );
+    SetTextY( MIRRORVAL( GetTextPos().y, aCenter ) );
 }
 
 
-void SCH_TEXT::Rotate( wxPoint aPosition )
+void SCH_TEXT::Rotate( wxPoint aCenter )
 {
     wxPoint pt = GetTextPos();
-    RotatePoint( &pt, aPosition, 900 );
+    RotatePoint( &pt, aCenter, 900 );
     wxPoint offset = pt - GetTextPos();
 
     Rotate90( false );
@@ -568,9 +569,9 @@ wxString SCH_TEXT::GetSelectMenuText( EDA_UNITS aUnits ) const
 }
 
 
-BITMAP_DEF SCH_TEXT::GetMenuImage() const
+BITMAPS SCH_TEXT::GetMenuImage() const
 {
-    return text_xpm;
+    return BITMAPS::text;
 }
 
 
@@ -594,7 +595,7 @@ bool SCH_TEXT::HitTest( const EDA_RECT& aRect, bool aContained, int aAccuracy ) 
 }
 
 
-void SCH_TEXT::Plot( PLOTTER* aPlotter )
+void SCH_TEXT::Plot( PLOTTER* aPlotter ) const
 {
     static std::vector<wxPoint> s_poly;
 
@@ -655,7 +656,8 @@ void SCH_TEXT::GetMsgPanelInfo( EDA_DRAW_FRAME* aFrame, MSG_PANEL_ITEMS& aList )
     default: return;
     }
 
-    aList.push_back( MSG_PANEL_ITEM( msg, GetShownText() ) );
+    // Don't use GetShownText() here; we want to show the user the variable references
+    aList.push_back( MSG_PANEL_ITEM( msg, UnescapeString( GetText() ) ) );
 
     switch( GetLabelSpinStyle() )
     {
@@ -785,9 +787,8 @@ bool SCH_LABEL::IsType( const KICAD_T aScanTypes[] ) const
 const EDA_RECT SCH_LABEL::GetBoundingBox() const
 {
     EDA_RECT rect = GetTextBox();
-    int      margin = GetTextOffset();
 
-    rect.Inflate( margin );
+    rect.Offset( 0, -GetTextOffset() );
 
     if( GetTextAngle() != 0.0 )
     {
@@ -804,6 +805,9 @@ const EDA_RECT SCH_LABEL::GetBoundingBox() const
         rect.Normalize();
     }
 
+    // Labels have a position point that is outside of the TextBox
+    rect.Merge( GetPosition() );
+
     return rect;
 }
 
@@ -814,9 +818,9 @@ wxString SCH_LABEL::GetSelectMenuText( EDA_UNITS aUnits ) const
 }
 
 
-BITMAP_DEF SCH_LABEL::GetMenuImage() const
+BITMAPS SCH_LABEL::GetMenuImage() const
 {
-    return add_line_label_xpm;
+    return BITMAPS::add_line_label;
 }
 
 
@@ -966,10 +970,10 @@ void SCH_GLOBALLABEL::SetLabelSpinStyle( LABEL_SPIN_STYLE aSpinStyle )
 }
 
 
-void SCH_GLOBALLABEL::Rotate( wxPoint aPosition )
+void SCH_GLOBALLABEL::Rotate( wxPoint aCenter )
 {
     wxPoint pt = GetTextPos();
-    RotatePoint( &pt, aPosition, 900 );
+    RotatePoint( &pt, aCenter, 900 );
     wxPoint offset = pt - GetTextPos();
 
     Rotate90( false );
@@ -1047,10 +1051,10 @@ void SCH_GLOBALLABEL::MirrorSpinStyle( bool aLeftRight )
 }
 
 
-void SCH_GLOBALLABEL::MirrorY( int aYaxis_position )
+void SCH_GLOBALLABEL::MirrorHorizontally( int aCenter )
 {
     wxPoint old_pos = GetPosition();
-    SCH_TEXT::MirrorY( aYaxis_position );
+    SCH_TEXT::MirrorHorizontally( aCenter );
 
     if( m_intersheetRefsField.GetHorizJustify() == GR_TEXT_HJUSTIFY_LEFT )
         m_intersheetRefsField.SetHorizJustify( GR_TEXT_HJUSTIFY_RIGHT );
@@ -1065,10 +1069,10 @@ void SCH_GLOBALLABEL::MirrorY( int aYaxis_position )
 }
 
 
-void SCH_GLOBALLABEL::MirrorX( int aXaxis_position )
+void SCH_GLOBALLABEL::MirrorVertically( int aCenter )
 {
     wxPoint old_pos = GetPosition();
-    SCH_TEXT::MirrorX( aXaxis_position );
+    SCH_TEXT::MirrorVertically( aCenter );
     wxPoint pos = m_intersheetRefsField.GetTextPos();
     wxPoint delta = old_pos - pos;
     pos.y = GetPosition().y + delta.y;
@@ -1092,7 +1096,7 @@ void SCH_GLOBALLABEL::UpdateIntersheetRefProps()
 void SCH_GLOBALLABEL::AutoplaceFields( SCH_SCREEN* aScreen, bool aManual )
 {
     int margin = GetTextOffset();
-    int labelLen = GetBoundingBox().GetSizeMax();
+    int labelLen = GetBoundingBoxBase().GetSizeMax();
     int penOffset = GetPenWidth() / 2;
 
     // Set both axes to penOffset; we're going to overwrite the text axis below
@@ -1136,35 +1140,46 @@ bool SCH_GLOBALLABEL::ResolveTextVar( wxString* token, int aDepth ) const
 {
     if( token->IsSameAs( wxT( "INTERSHEET_REFS" ) ) && Schematic() )
     {
-        auto it = Schematic()->GetPageRefsMap().find( GetText() );
+        SCHEMATIC_SETTINGS& settings = Schematic()->Settings();
+        wxString            ref;
+        auto                it = Schematic()->GetPageRefsMap().find( GetText() );
 
-        if( it != Schematic()->GetPageRefsMap().end() )
+        if( it == Schematic()->GetPageRefsMap().end() )
         {
-            SCHEMATIC_SETTINGS&   settings = Schematic()->Settings();
+            ref = "?";
+        }
+        else
+        {
             std::vector<wxString> pageListCopy;
 
             pageListCopy.insert( pageListCopy.end(), it->second.begin(), it->second.end() );
             std::sort( pageListCopy.begin(), pageListCopy.end() );
 
-            token->Printf( "%s", settings.m_IntersheetRefsPrefix );
+            if( !settings.m_IntersheetRefsListOwnPage )
+            {
+                wxString currentPage = Schematic()->CurrentSheet().GetPageNumber();
+                pageListCopy.erase( std::remove( pageListCopy.begin(),
+                                                 pageListCopy.end(),
+                                                 currentPage ), pageListCopy.end() );
+            }
 
             if( ( settings.m_IntersheetRefsFormatShort ) && ( pageListCopy.size() > 2 ) )
             {
-                token->Append( wxString::Format( wxT( "%s..%s" ), pageListCopy.front(),
-                                                 pageListCopy.back() ) );
+                ref.Append( wxString::Format( wxT( "%s..%s" ),
+                                              pageListCopy.front(),
+                                              pageListCopy.back() ) );
             }
             else
             {
                 for( const wxString& pageNo : pageListCopy )
-                    token->Append( wxString::Format( wxT( "%s," ), pageNo ) );
+                    ref.Append( wxString::Format( wxT( "%s," ), pageNo ) );
 
-                if( !token->IsEmpty() && token->Last() == ',' )
-                    token->RemoveLast();
+                if( !ref.IsEmpty() && ref.Last() == ',' )
+                    ref.RemoveLast();
             }
-
-            token->Append( settings.m_IntersheetRefsSuffix );
         }
 
+        *token = settings.m_IntersheetRefsPrefix + ref + settings.m_IntersheetRefsSuffix;
         return true;
     }
 
@@ -1192,7 +1207,7 @@ void SCH_GLOBALLABEL::Print( const RENDER_SETTINGS* aSettings, const wxPoint& aO
         m_intersheetRefsField.Print( aSettings, aOffset );
 }
 
-void SCH_GLOBALLABEL::Plot( PLOTTER* aPlotter )
+void SCH_GLOBALLABEL::Plot( PLOTTER* aPlotter ) const
 {
     SCH_TEXT::Plot( aPlotter );
 
@@ -1203,7 +1218,7 @@ void SCH_GLOBALLABEL::Plot( PLOTTER* aPlotter )
 }
 
 void SCH_GLOBALLABEL::CreateGraphicShape( const RENDER_SETTINGS* aRenderSettings,
-                                          std::vector<wxPoint>& aPoints, const wxPoint& Pos )
+                                          std::vector<wxPoint>& aPoints, const wxPoint& Pos ) const
 {
     int margin = GetTextOffset( aRenderSettings );
     int halfSize = ( GetTextHeight() / 2 ) + margin;
@@ -1271,15 +1286,18 @@ void SCH_GLOBALLABEL::CreateGraphicShape( const RENDER_SETTINGS* aRenderSettings
 }
 
 
-const EDA_RECT SCH_GLOBALLABEL::GetBoundingBox() const
+const EDA_RECT SCH_GLOBALLABEL::GetBoundingBoxBase() const
 {
-    int x = GetTextPos().x;
-    int y = GetTextPos().y;
+    // build the bounding box on the global label only, without taking in account
+    // the intersheets references, just the bounding box of the graphic shape
+    int x  = GetTextPos().x;
+    int y  = GetTextPos().y;
     int penWidth = GetEffectiveTextPenWidth();
     int margin = GetTextOffset();
-    int height = ( ( GetTextHeight() * 15 ) / 10 ) + penWidth + 2 * margin;
-    int length = LenSize( GetShownText(), penWidth ) + height // add height for triangular shapes
-                 + 2 * margin;
+    int height   = ( ( GetTextHeight() * 15 ) / 10 ) + penWidth + margin;
+    int length = LenSize( GetShownText(), penWidth )
+                 + height                 // add height for triangular shapes
+                 - margin;                // margin added to height not needed here
 
     int dx, dy;
 
@@ -1289,7 +1307,6 @@ const EDA_RECT SCH_GLOBALLABEL::GetBoundingBox() const
     case LABEL_SPIN_STYLE::LEFT:
         dx = -length;
         dy = height;
-        x += margin;
         y -= height / 2;
         break;
 
@@ -1297,13 +1314,11 @@ const EDA_RECT SCH_GLOBALLABEL::GetBoundingBox() const
         dx = height;
         dy = -length;
         x -= height / 2;
-        y += margin;
         break;
 
     case LABEL_SPIN_STYLE::RIGHT:
         dx = length;
         dy = height;
-        x -= margin;
         y -= height / 2;
         break;
 
@@ -1311,12 +1326,30 @@ const EDA_RECT SCH_GLOBALLABEL::GetBoundingBox() const
         dx = height;
         dy = length;
         x -= height / 2;
-        y -= margin;
         break;
     }
 
     EDA_RECT box( wxPoint( x, y ), wxSize( dx, dy ) );
+
     box.Normalize();
+    return box;
+}
+
+
+const EDA_RECT SCH_GLOBALLABEL::GetBoundingBox() const
+{
+    // build the bounding box on the global label only, including the intersheets references
+    // full bounding box if they are shown
+
+    EDA_RECT box( GetBoundingBoxBase() );
+
+    // Note: Schematic() can be null in preference preview panel
+    if( Schematic() && Schematic()->Settings().m_IntersheetRefsShow )
+    {
+        box.Merge( m_intersheetRefsField.GetBoundingBox() );
+        box.Normalize();
+    }
+
     return box;
 }
 
@@ -1327,9 +1360,9 @@ wxString SCH_GLOBALLABEL::GetSelectMenuText( EDA_UNITS aUnits ) const
 }
 
 
-BITMAP_DEF SCH_GLOBALLABEL::GetMenuImage() const
+BITMAPS SCH_GLOBALLABEL::GetMenuImage() const
 {
-    return add_glabel_xpm;
+    return BITMAPS::add_glabel;
 }
 
 
@@ -1408,10 +1441,17 @@ void SCH_HIERLABEL::Print( const RENDER_SETTINGS* aSettings, const wxPoint& offs
 }
 
 
-void SCH_HIERLABEL::CreateGraphicShape( const RENDER_SETTINGS* aRenderSettings,
-                                        std::vector<wxPoint>& aPoints, const wxPoint& Pos )
+void SCH_HIERLABEL::CreateGraphicShape( const RENDER_SETTINGS* aSettings,
+                                        std::vector<wxPoint>& aPoints, const wxPoint& aPos ) const
 {
-    int* Template = TemplateShape[static_cast<int>( m_shape )][static_cast<int>( m_spin_style )];
+    CreateGraphicShape( aSettings, aPoints, aPos, m_shape );
+}
+
+
+void SCH_HIERLABEL::CreateGraphicShape( const RENDER_SETTINGS* aSettings,
+                                        std::vector<wxPoint>& aPoints, const wxPoint& aPos, PINSHEETLABEL_SHAPE aShape ) const
+{
+    int* Template = TemplateShape[static_cast<int>( aShape )][static_cast<int>( m_spin_style )];
     int  halfSize = GetTextHeight() / 2;
     int  imax = *Template;
     Template++;
@@ -1421,10 +1461,10 @@ void SCH_HIERLABEL::CreateGraphicShape( const RENDER_SETTINGS* aRenderSettings,
     for( int ii = 0; ii < imax; ii++ )
     {
         wxPoint corner;
-        corner.x = ( halfSize * ( *Template ) ) + Pos.x;
+        corner.x = ( halfSize * (*Template) ) + aPos.x;
         Template++;
 
-        corner.y = ( halfSize * ( *Template ) ) + Pos.y;
+        corner.y = ( halfSize * (*Template) ) + aPos.y;
         Template++;
 
         aPoints.push_back( corner );
@@ -1440,9 +1480,9 @@ const EDA_RECT SCH_HIERLABEL::GetBoundingBox() const
     int x = GetTextPos().x;
     int y = GetTextPos().y;
 
-    int height = GetTextHeight() + penWidth + 2 * margin;
-    int length = LenSize( GetShownText(), penWidth ) + height // add height for triangular shapes
-                 + 2 * margin;
+    int height = GetTextHeight() + penWidth + margin;
+    int length = LenSize( GetShownText(), penWidth )
+                 + height;                // add height for triangular shapes
 
     int dx, dy;
 
@@ -1510,9 +1550,9 @@ wxString SCH_HIERLABEL::GetSelectMenuText( EDA_UNITS aUnits ) const
 }
 
 
-BITMAP_DEF SCH_HIERLABEL::GetMenuImage() const
+BITMAPS SCH_HIERLABEL::GetMenuImage() const
 {
-    return add_hierarchical_label_xpm;
+    return BITMAPS::add_hierarchical_label;
 }
 
 

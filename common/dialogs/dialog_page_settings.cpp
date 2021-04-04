@@ -1,7 +1,7 @@
 /*
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
- * Copyright (C) 2020 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 2021 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * This program is free software: you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -25,14 +25,15 @@
 #include <eda_item.h>
 #include <gr_basic.h>
 #include <kiface_i.h>
+#include <macros.h>
 #include <math/util.h>      // for KiROUND, Clamp
 #include <project.h>
 #include <title_block.h>
 #include <tool/actions.h>
 #include <tool/tool_manager.h>
 #include <wildcards_and_files_ext.h>
-#include <page_layout/ws_data_model.h>
-#include <page_layout/ws_painter.h>
+#include <drawing_sheet/ds_data_model.h>
+#include <drawing_sheet/ds_painter.h>
 #include <wx/valgen.h>
 #include <wx/tokenzr.h>
 
@@ -74,8 +75,8 @@ DIALOG_PAGES_SETTINGS::DIALOG_PAGES_SETTINGS( EDA_DRAW_FRAME* aParent, double aI
         m_initialized( false ),
         m_pageBitmap( nullptr ),
         m_iuPerMils( aIuPerMils ),
-        m_customSizeX( aParent, m_userSizeXLabel, m_userSizeXCtrl, m_userSizeXUnits, false ),
-        m_customSizeY( aParent, m_userSizeYLabel, m_userSizeYCtrl, m_userSizeYUnits, false )
+        m_customSizeX( aParent, m_userSizeXLabel, m_userSizeXCtrl, m_userSizeXUnits ),
+        m_customSizeY( aParent, m_userSizeYLabel, m_userSizeYCtrl, m_userSizeYUnits )
 {
     m_projectPath = Prj().GetProjectPath();
     m_maxPageSizeMils = aMaxUserSizeMils;
@@ -83,10 +84,10 @@ DIALOG_PAGES_SETTINGS::DIALOG_PAGES_SETTINGS( EDA_DRAW_FRAME* aParent, double aI
     m_customFmt = false;
     m_localPrjConfigChanged = false;
 
-    m_pagelayout = new WS_DATA_MODEL;
+    m_drawingSheet = new DS_DATA_MODEL;
     wxString serialization;
-    WS_DATA_MODEL::GetTheInstance().SaveInString( serialization );
-    m_pagelayout->SetPageLayout( TO_UTF8( serialization ) );
+    DS_DATA_MODEL::GetTheInstance().SaveInString( serialization );
+    m_drawingSheet->SetPageLayout(TO_UTF8( serialization ) );
 
     m_PickDate->SetValue( wxDateTime::Now() );
 
@@ -110,7 +111,7 @@ DIALOG_PAGES_SETTINGS::DIALOG_PAGES_SETTINGS( EDA_DRAW_FRAME* aParent, double aI
 DIALOG_PAGES_SETTINGS::~DIALOG_PAGES_SETTINGS()
 {
     delete m_pageBitmap;
-    delete m_pagelayout;
+    delete m_drawingSheet;
 }
 
 
@@ -455,7 +456,7 @@ bool DIALOG_PAGES_SETTINGS::SavePageSettings()
 
     if( fileName != BASE_SCREEN::m_PageLayoutDescrFileName )
     {
-        wxString fullFileName = WS_DATA_MODEL::MakeFullFileName( fileName, m_projectPath );
+        wxString fullFileName = DS_DATA_MODEL::MakeFullFileName( fileName, m_projectPath );
 
         if( !fullFileName.IsEmpty() && !wxFileExists( fullFileName ) )
         {
@@ -466,8 +467,7 @@ bool DIALOG_PAGES_SETTINGS::SavePageSettings()
         }
 
         BASE_SCREEN::m_PageLayoutDescrFileName = fileName;
-        WS_DATA_MODEL& pglayout = WS_DATA_MODEL::GetTheInstance();
-        pglayout.SetPageLayout( fullFileName );
+        DS_DATA_MODEL::GetTheInstance().LoadDrawingSheet( fullFileName );
         m_localPrjConfigChanged = true;
     }
 
@@ -641,12 +641,12 @@ void DIALOG_PAGES_SETTINGS::UpdatePageLayoutExample()
         }
 
         // Draw layout preview.
-        KIGFX::WS_RENDER_SETTINGS renderSettings;
+        KIGFX::DS_RENDER_SETTINGS renderSettings;
         COLOR_SETTINGS*           colorSettings = m_parent->GetColorSettings();
         COLOR4D                   bgColor = m_parent->GetDrawBgColor();
         wxString                  emptyString;
 
-        WS_DATA_MODEL::SetAltInstance( m_pagelayout );
+        DS_DATA_MODEL::SetAltInstance( m_drawingSheet );
         {
             GRResetPenAndBrush( &memDC );
             renderSettings.SetDefaultPenWidth( 1 );
@@ -658,20 +658,20 @@ void DIALOG_PAGES_SETTINGS::UpdatePageLayoutExample()
                 || m_parent->IsType( FRAME_SCH_VIEWER )
                 || m_parent->IsType( FRAME_SCH_VIEWER_MODAL ) )
             {
-                COLOR4D worksheetColor = renderSettings.GetLayerColor( LAYER_SCHEMATIC_WORKSHEET );
-                renderSettings.SetLayerColor( LAYER_WORKSHEET, worksheetColor );
+                COLOR4D worksheetColor = renderSettings.GetLayerColor( LAYER_SCHEMATIC_DRAWINGSHEET );
+                renderSettings.SetLayerColor( LAYER_DRAWINGSHEET, worksheetColor );
             }
 
             GRFilledRect( NULL, &memDC, 0, 0, m_layout_size.x, m_layout_size.y, bgColor, bgColor );
 
-            PrintPageLayout( &renderSettings, pageDUMMY, emptyString, emptyString, m_tb,
-                             m_screen->GetPageCount(), m_screen->GetPageNumber(), 1, &Prj(),
-                             wxEmptyString, m_screen->GetVirtualPageNumber() ==  1 );
+            PrintDrawingSheet( &renderSettings, pageDUMMY, emptyString, emptyString, m_tb,
+                               m_screen->GetPageCount(), m_screen->GetPageNumber(), 1, &Prj(),
+                               wxEmptyString, m_screen->GetVirtualPageNumber() == 1 );
 
             memDC.SelectObject( wxNullBitmap );
             m_PageLayoutExampleBitmap->SetBitmap( *m_pageBitmap );
         }
-        WS_DATA_MODEL::SetAltInstance( NULL );
+        DS_DATA_MODEL::SetAltInstance( NULL );
 
         // Refresh the dialog.
         Layout();
@@ -787,7 +787,7 @@ void DIALOG_PAGES_SETTINGS::OnWksFileSelection( wxCommandEvent& event )
 
     // Try to remove the path, if the path is the current working dir,
     // or the dir of kicad.pro (template), and use a relative path
-    wxString shortFileName = WS_DATA_MODEL::MakeShortFileName( fileName, m_projectPath );
+    wxString shortFileName = DS_DATA_MODEL::MakeShortFileName( fileName, m_projectPath );
 
     // For Win/Linux/macOS compatibility, a relative path is a good idea
     if( shortFileName != GetWksFileName() && shortFileName != fileName )
@@ -806,10 +806,10 @@ void DIALOG_PAGES_SETTINGS::OnWksFileSelection( wxCommandEvent& event )
 
     SetWksFileName( shortFileName );
 
-    if( m_pagelayout == NULL )
-        m_pagelayout = new WS_DATA_MODEL;
+    if( m_drawingSheet == NULL )
+        m_drawingSheet = new DS_DATA_MODEL;
 
-    m_pagelayout->SetPageLayout( fileName );
+    m_drawingSheet->LoadDrawingSheet( fileName );
 
     GetPageLayoutInfoFromDialog();
     UpdatePageLayoutExample();

@@ -29,7 +29,7 @@
 #include <board_item.h>
 #include <pcb_text.h>
 #include <geometry/shape.h>
-
+#include <geometry/circle.h>
 
 class LINE_READER;
 class MSG_PANEL_ITEM;
@@ -206,8 +206,8 @@ public:
      */
     const wxString GetText() const;
 
-    PCB_TEXT&      Text() { return m_text; }
-    PCB_TEXT&      Text() const { return *( const_cast<PCB_TEXT*> ( &m_text ) ); }
+    PCB_TEXT& Text() { return m_text; }
+    const PCB_TEXT& Text() const { return m_text; }
 
     /**
      * @return a list of line segments that make up this dimension (for drawing, plotting, etc)
@@ -271,8 +271,9 @@ protected:
      * @param aStart if true will start from aSeg.A, otherwise aSeg.B
      * @return a point on aSeg that collides with aPoly closest to the start, if one exists
      */
-    static OPT_VECTOR2I segPolyIntersection( SHAPE_POLY_SET& aPoly, SEG& aSeg, bool aStart = true );
-
+    static OPT_VECTOR2I segPolyIntersection( const SHAPE_POLY_SET& aPoly, const SEG& aSeg, bool aStart = true );
+    static OPT_VECTOR2I segCircleIntersection( CIRCLE& aCircle, SEG& aSeg, bool aStart = true );
+    
     // Value format
     bool              m_overrideTextEnabled;   ///< Manually specify the displayed measurement value
     wxString          m_valueString;     ///< Displayed value when m_overrideValue = true
@@ -357,7 +358,7 @@ public:
 
     virtual void SwapData( BOARD_ITEM* aImage ) override;
 
-    BITMAP_DEF GetMenuImage() const override;
+    BITMAPS GetMenuImage() const override;
 
     const wxPoint& GetCrossbarStart() const { return m_crossBarStart; }
 
@@ -437,7 +438,7 @@ public:
 
     void SwapData( BOARD_ITEM* aImage ) override;
 
-    BITMAP_DEF GetMenuImage() const override;
+    BITMAPS GetMenuImage() const override;
 
     /**
      * Sets the orientation of the dimension line (so, perpendicular to the feature lines)
@@ -489,7 +490,7 @@ public:
 
     virtual void SwapData( BOARD_ITEM* aImage ) override;
 
-    BITMAP_DEF GetMenuImage() const override;
+    BITMAPS GetMenuImage() const override;
 
     wxString GetClass() const override
     {
@@ -527,7 +528,7 @@ public:
 
     virtual void SwapData( BOARD_ITEM* aImage ) override;
 
-    BITMAP_DEF GetMenuImage() const override;
+    BITMAPS GetMenuImage() const override;
 
     wxString GetClass() const override
     {

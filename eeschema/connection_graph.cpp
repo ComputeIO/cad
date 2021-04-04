@@ -2,6 +2,8 @@
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
  * Copyright (C) 2018 CERN
+ * Copyright (C) 2021 KiCad Developers, see AUTHORS.txt for contributors.
+ *
  * @author Jon Evans <jon@craftyjon.com>
  *
  * This program is free software; you can redistribute it and/or
@@ -29,7 +31,7 @@
 #include <erc.h>
 #include <pin_type.h>
 #include <sch_bus_entry.h>
-#include <sch_component.h>
+#include <sch_symbol.h>
 #include <sch_edit_frame.h>
 #include <sch_line.h>
 #include <sch_marker.h>
@@ -2245,7 +2247,7 @@ bool CONNECTION_GRAPH::ercCheckBusToNetConflicts( const CONNECTION_SUBGRAPH* aSu
     SCH_ITEM*      bus_item = nullptr;
     SCH_CONNECTION conn( this );
 
-    for( auto item : aSubgraph->m_items )
+    for( SCH_ITEM* item : aSubgraph->m_items )
     {
         switch( item->Type() )
         {
@@ -2258,6 +2260,7 @@ bool CONNECTION_GRAPH::ercCheckBusToNetConflicts( const CONNECTION_SUBGRAPH* aSu
             break;
         }
 
+        case SCH_LABEL_T:
         case SCH_GLOBAL_LABEL_T:
         case SCH_SHEET_PIN_T:
         case SCH_HIER_LABEL_T:
@@ -2403,9 +2406,9 @@ bool CONNECTION_GRAPH::ercCheckBusToBusEntryConflicts( const CONNECTION_SUBGRAPH
         {
             conflict = true; // Assume a conflict; we'll reset if we find it's OK
 
-            bus_name = bus_wire->Connection( &sheet )->Name( true );
+            bus_name = bus_wire->Connection( &sheet )->Name();
 
-            wxString test_name = bus_entry->Connection( &sheet )->Name( true );
+            wxString test_name = bus_entry->Connection( &sheet )->Name();
 
             for( const auto& member : bus_wire->Connection( &sheet )->Members() )
             {
@@ -2413,11 +2416,11 @@ bool CONNECTION_GRAPH::ercCheckBusToBusEntryConflicts( const CONNECTION_SUBGRAPH
                 {
                     for( const auto& sub_member : member->Members() )
                     {
-                        if( sub_member->Name( true ) == test_name )
+                        if( sub_member->Name() == test_name )
                             conflict = false;
                     }
                 }
-                else if( member->Name( true ) == test_name )
+                else if( member->Name() == test_name )
                 {
                     conflict = false;
                 }
@@ -2434,7 +2437,7 @@ bool CONNECTION_GRAPH::ercCheckBusToBusEntryConflicts( const CONNECTION_SUBGRAPH
 
     if( conflict )
     {
-        wxString netName = aSubgraph->m_driver_connection->Name( true );
+        wxString netName = aSubgraph->m_driver_connection->Name();
         wxString msg = wxString::Format( _( "Net %s is graphically connected to bus %s but is not a"
                                             " member of that bus" ),
                                          UnescapeString( netName ), UnescapeString( bus_name ) );
@@ -2736,7 +2739,7 @@ bool CONNECTION_GRAPH::ercCheckLabels( const CONNECTION_SUBGRAPH* aSubgraph )
         // This will be set to true if the global is connected to a pin above, but we
         // want to reset this to false so that globals get flagged if they only have a
         // single instance connected to a single pin
-        hasOtherConnections = ( pinCount < 2 );
+        hasOtherConnections = ( pinCount > 1 );
 
         auto it = m_net_name_to_subgraphs_map.find( name );
 
@@ -2798,6 +2801,7 @@ int CONNECTION_GRAPH::ercCheckHierSheets()
             SCH_SHEET* parentSheet = static_cast<SCH_SHEET*>( item );
 
             std::map<wxString, SCH_SHEET_PIN*> pins;
+            std::map<wxString, SCH_HIERLABEL*> labels;
 
             for( SCH_SHEET_PIN* pin : parentSheet->GetPins() )
             {
@@ -2815,14 +2819,23 @@ int CONNECTION_GRAPH::ercCheckHierSheets()
                 }
             }
 
+            std::set<wxString> matchedPins;
+
             for( SCH_ITEM* subItem : parentSheet->GetScreen()->Items() )
             {
                 if( subItem->Type() == SCH_HIER_LABEL_T )
                 {
                     SCH_HIERLABEL* label = static_cast<SCH_HIERLABEL*>( subItem );
-                    pins.erase( label->GetText() );
+
+                    if( !pins.count( label->GetText() ) )
+                        labels[label->GetText()] = label;
+                    else
+                        matchedPins.insert( label->GetText() );
                 }
             }
+
+            for( const wxString& matched : matchedPins )
+                pins.erase( matched );
 
             for( const std::pair<const wxString, SCH_SHEET_PIN*>& unmatched : pins )
             {
@@ -2837,6 +2850,23 @@ int CONNECTION_GRAPH::ercCheckHierSheets()
 
                 SCH_MARKER* marker = new SCH_MARKER( ercItem, unmatched.second->GetPosition() );
                 sheet.LastScreen()->Append( marker );
+
+                errors++;
+            }
+
+            for( const std::pair<const wxString, SCH_HIERLABEL*>& unmatched : labels )
+            {
+                wxString msg = wxString::Format( _( "Hierarchical label %s has no matching "
+                                                    "sheet pin in the parent sheet" ),
+                                                 UnescapeString( unmatched.first ) );
+
+                std::shared_ptr<ERC_ITEM> ercItem = ERC_ITEM::Create( ERCE_HIERACHICAL_LABEL );
+                ercItem->SetItems( unmatched.second );
+                ercItem->SetErrorMessage( msg );
+                ercItem->SetIsSheetSpecific();
+
+                SCH_MARKER* marker = new SCH_MARKER( ercItem, unmatched.second->GetPosition() );
+                parentSheet->GetScreen()->Append( marker );
 
                 errors++;
             }

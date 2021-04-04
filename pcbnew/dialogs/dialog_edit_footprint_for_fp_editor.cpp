@@ -27,7 +27,6 @@
 #include <confirm.h>
 #include <dialogs/dialog_text_entry.h>
 #include <3d_viewer/eda_3d_viewer.h>
-#include <pcb_edit_frame.h>
 #include <validators.h>
 #include <board_design_settings.h>
 #include <board_commit.h>
@@ -56,7 +55,7 @@ int DIALOG_FOOTPRINT_FP_EDITOR::m_page = 0;     // remember the last open page d
 DIALOG_FOOTPRINT_FP_EDITOR::DIALOG_FOOTPRINT_FP_EDITOR( FOOTPRINT_EDIT_FRAME* aParent,
                                                         FOOTPRINT* aFootprint ) :
     DIALOG_FOOTPRINT_FP_EDITOR_BASE( aParent ),
-    m_netClearance( aParent, m_NetClearanceLabel, m_NetClearanceCtrl, m_NetClearanceUnits, true ),
+    m_netClearance( aParent, m_NetClearanceLabel, m_NetClearanceCtrl, m_NetClearanceUnits ),
     m_solderMask( aParent, m_SolderMaskMarginLabel, m_SolderMaskMarginCtrl, m_SolderMaskMarginUnits ),
     m_solderPaste( aParent, m_SolderPasteMarginLabel, m_SolderPasteMarginCtrl, m_SolderPasteMarginUnits ),
     m_inSelect( false )
@@ -75,7 +74,7 @@ DIALOG_FOOTPRINT_FP_EDITOR::DIALOG_FOOTPRINT_FP_EDITOR( FOOTPRINT_EDIT_FRAME* aP
 
     // Give an icon
     wxIcon  icon;
-    icon.CopyFromBitmap( KiBitmap( icon_modedit_xpm ) );
+    icon.CopyFromBitmap( KiBitmap( BITMAPS::icon_modedit ) );
     SetIcon( icon );
 
     // Give a bit more room for combobox editors
@@ -96,8 +95,8 @@ DIALOG_FOOTPRINT_FP_EDITOR::DIALOG_FOOTPRINT_FP_EDITOR( FOOTPRINT_EDIT_FRAME* aP
     }
 
     wxGridCellAttr* attr = new wxGridCellAttr;
-    attr->SetEditor( new GRID_CELL_PATH_EDITOR( this, &cfg->m_lastFootprint3dDir, "*.*",
-                                                true, Prj().GetProjectPath() ) );
+    attr->SetEditor( new GRID_CELL_PATH_EDITOR( this, m_modelsGrid, &cfg->m_lastFootprint3dDir,
+                                                "*.*", true, Prj().GetProjectPath() ) );
     m_modelsGrid->SetColAttr( 0, attr );
 
     // Show checkbox
@@ -153,11 +152,11 @@ DIALOG_FOOTPRINT_FP_EDITOR::DIALOG_FOOTPRINT_FP_EDITOR( FOOTPRINT_EDIT_FRAME* aP
     m_sdbSizerStdButtonsOK->SetDefault();
 
     // Configure button logos
-    m_bpAdd->SetBitmap( KiBitmap( small_plus_xpm ) );
-    m_bpDelete->SetBitmap( KiBitmap( small_trash_xpm ) );
-    m_button3DShapeAdd->SetBitmap( KiBitmap( small_plus_xpm ) );
-    m_button3DShapeBrowse->SetBitmap( KiBitmap( small_folder_xpm ) );
-    m_button3DShapeRemove->SetBitmap( KiBitmap( small_trash_xpm ) );
+    m_bpAdd->SetBitmap( KiBitmap( BITMAPS::small_plus ) );
+    m_bpDelete->SetBitmap( KiBitmap( BITMAPS::small_trash ) );
+    m_button3DShapeAdd->SetBitmap( KiBitmap( BITMAPS::small_plus ) );
+    m_button3DShapeBrowse->SetBitmap( KiBitmap( BITMAPS::small_folder ) );
+    m_button3DShapeRemove->SetBitmap( KiBitmap( BITMAPS::small_trash ) );
 
     // wxFormBuilder doesn't include this event...
     m_itemsGrid->Connect( wxEVT_GRID_CELL_CHANGING, wxGridEventHandler( DIALOG_FOOTPRINT_FP_EDITOR::OnGridCellChanging ), NULL, this );
@@ -228,8 +227,7 @@ bool DIALOG_FOOTPRINT_FP_EDITOR::TransferDataToWindow()
     wxGridTableMessage tmsg( m_texts, wxGRIDTABLE_NOTIFY_ROWS_APPENDED, m_texts->GetNumberRows() );
     m_itemsGrid->ProcessTableMessage( tmsg );
 
-    // Module Properties
-
+    // Footprint Properties
     m_AutoPlaceCtrl->SetSelection( m_footprint->IsLocked() ? 1 : 0 );
     m_AutoPlaceCtrl->SetItemToolTip( 0, _( "Enable hotkey move commands and Auto Placement" ) );
     m_AutoPlaceCtrl->SetItemToolTip( 1, _( "Disable hotkey move commands and Auto Placement" ) );
@@ -315,16 +313,26 @@ bool DIALOG_FOOTPRINT_FP_EDITOR::TransferDataToWindow()
     }
 
     select3DModel( 0 );   // will clamp idx within bounds
+    m_PreviewPane->UpdateDummyFootprint();
 
     for( int col = 0; col < m_itemsGrid->GetNumberCols(); col++ )
     {
         // Adjust min size to the column label size
-        m_itemsGrid->SetColMinimalWidth( col, m_itemsGrid->GetVisibleWidth( col, true, false, false ) );
-        // Adjust the column size. The column 6 has a small bitmap, so its width must be taken in account
+        m_itemsGrid->SetColMinimalWidth( col, m_itemsGrid->GetVisibleWidth( col, true, false,
+                                                                            false ) );
+        // Adjust the column size.
         int col_size = m_itemsGrid->GetVisibleWidth( col, true, true, false );
 
-        if( col == 6 )
+        if( col == FPT_LAYER )  // This one's a drop-down.  Check all possible values.
+        {
+            BOARD* board = m_footprint->GetBoard();
+
+            for( PCB_LAYER_ID layer : board->GetEnabledLayers().Seq() )
+                col_size = std::max( col_size, GetTextExtent( board->GetLayerName( layer ) ).x );
+
+            // And the swatch:
             col_size += 20;
+        }
 
         if( m_itemsGrid->IsColShown( col ) )
             m_itemsGrid->SetColSize( col, col_size );
@@ -595,10 +603,10 @@ bool DIALOG_FOOTPRINT_FP_EDITOR::TransferDataFromWindow()
     if( !DIALOG_SHIM::TransferDataFromWindow() )
         return false;
 
-    if( !m_PanelGeneral->TransferDataFromWindow() )
+    if( !m_itemsGrid->CommitPendingChanges() )
         return false;
 
-    if( !m_Panel3D->TransferDataFromWindow() )
+    if( !m_modelsGrid->CommitPendingChanges() )
         return false;
 
     auto view = m_frame->GetCanvas()->GetView();
@@ -708,8 +716,6 @@ bool DIALOG_FOOTPRINT_FP_EDITOR::TransferDataFromWindow()
     std::list<FP_3DMODEL>* draw3D  = &m_footprint->Models();
     draw3D->clear();
     draw3D->insert( draw3D->end(), m_shapes3D_list.begin(), m_shapes3D_list.end() );
-
-    m_footprint->CalculateBoundingBox();
 
     commit.Push( _( "Modify footprint properties" ) );
 

@@ -27,6 +27,7 @@
 #include <kiface_i.h>
 #include <confirm.h>
 #include <pcb_edit_frame.h>
+#include <pcbnew_settings.h>
 #include <board_commit.h>
 #include <zone.h>
 #include <zones.h>
@@ -105,38 +106,43 @@ void PCB_EDIT_FRAME::Edit_Zone_Params( ZONE* aZone )
 
     UpdateCopyOfZonesList( pickedList, deletedList, GetBoard() );
 
-    // refill zones with the new properties applied
-    std::vector<ZONE*> zones_to_refill;
-
-    for( unsigned i = 0; i < pickedList.GetCount(); ++i )
+    // Only auto-refill zones here if in user preferences
+    if( Settings().m_AutoRefillZones )
     {
-        ZONE* zone = dyn_cast<ZONE*>( pickedList.GetPickedItem( i ) );
+        // refill zones with the new properties applied
+        std::vector<ZONE*> zones_to_refill;
 
-        if( zone == nullptr )
+        for( unsigned i = 0; i < pickedList.GetCount(); ++i )
         {
-            wxASSERT_MSG( false, "Expected a zone after zone properties edit" );
-            continue;
+            ZONE* zone = dyn_cast<ZONE*>( pickedList.GetPickedItem( i ) );
+
+            if( zone == nullptr )
+            {
+                wxASSERT_MSG( false, "Expected a zone after zone properties edit" );
+                continue;
+            }
+
+            // aZone won't be filled if the layer set was modified, but it needs to be updated
+            if( zone->IsFilled() || zone == aZone )
+                zones_to_refill.push_back( zone );
         }
 
-        // aZone won't be filled if the layer set was modified, but it needs to be updated
-        if( zone->IsFilled() || zone == aZone )
-            zones_to_refill.push_back( zone );
-    }
+        commit.Stage( pickedList );
 
-    commit.Stage( pickedList );
+        std::lock_guard<KISPINLOCK> lock( GetBoard()->GetConnectivity()->GetLock() );
 
-    std::lock_guard<KISPINLOCK> lock( GetBoard()->GetConnectivity()->GetLock() );
-
-    if( zones_to_refill.size() )
-    {
-        ZONE_FILLER filler( GetBoard(), &commit );
-        wxString title = wxString::Format( _( "Refill %d Zones" ), (int) zones_to_refill.size() );
-        filler.InstallNewProgressReporter( this, title, 4 );
-
-        if( !filler.Fill( zones_to_refill ) )
+        if( zones_to_refill.size() )
         {
-            commit.Revert();
-            return;
+            ZONE_FILLER filler( GetBoard(), &commit );
+            wxString    title =
+                    wxString::Format( _( "Refill %d Zones" ), (int) zones_to_refill.size() );
+            filler.InstallNewProgressReporter( this, title, 4 );
+
+            if( !filler.Fill( zones_to_refill ) )
+            {
+                // User has already OK'ed dialog so we're going to go ahead and commit even if the
+                // fill was cancelled.
+            }
         }
     }
 
@@ -152,13 +158,6 @@ bool BOARD::OnAreaPolygonModified( PICKED_ITEMS_LIST* aModifiedZonesList, ZONE* 
     // clip polygon against itself
     bool modified = NormalizeAreaPolygon( aModifiedZonesList, modified_area );
 
-    // now see if we need to clip against other areas
-    if( TestZoneIntersections( modified_area ) )
-    {
-        modified = true;
-        CombineAllZonesInNet( aModifiedZonesList, modified_area->GetNetCode() );
-    }
-
     // Test for bad areas: all zones must have more than 2 corners:
     // Note: should not happen, but just in case.
     for( ZONE* zone : m_zones )
@@ -172,152 +171,6 @@ bool BOARD::OnAreaPolygonModified( PICKED_ITEMS_LIST* aModifiedZonesList, ZONE* 
     }
 
     return modified;
-}
-
-
-bool BOARD::CombineAllZonesInNet( PICKED_ITEMS_LIST* aDeletedList, int aNetCode )
-{
-    if( m_zones.size() <= 1 )
-        return false;
-
-    bool modified = false;
-
-    for( ZONE* zone : m_zones )
-        zone->ClearFlags( STRUCT_DELETED );
-
-    // Loop through all combinations
-    for( unsigned ia1 = 0; ia1 < m_zones.size() - 1; ia1++ )
-    {
-        ZONE* refZone = m_zones[ia1];
-
-        if( refZone->GetNetCode() != aNetCode )
-            continue;
-
-        // legal polygon
-        BOX2I b1 = refZone->Outline()->BBox();
-        bool  mod_ia1 = false;
-
-        for( unsigned ia2 = m_zones.size() - 1; ia2 > ia1; ia2-- )
-        {
-            ZONE* otherZone = m_zones[ia2];
-
-            if( otherZone->HasFlag( STRUCT_DELETED ) )
-                continue;
-
-            if( otherZone->GetNetCode() != aNetCode )
-                continue;
-
-            if( refZone->GetPriority() != otherZone->GetPriority() )
-                continue;
-
-            if( refZone->GetIsRuleArea() != otherZone->GetIsRuleArea() )
-                continue;
-
-            if( refZone->GetLayerSet() != otherZone->GetLayerSet() )
-                continue;
-
-            BOX2I b2 = otherZone->Outline()->BBox();
-
-            if( b1.Intersects( b2 ) )
-            {
-                // check otherZone against refZone
-                if( refZone->GetLocalFlags() || otherZone->GetLocalFlags() )
-                {
-                    bool ret = TestZoneIntersection( refZone, otherZone );
-
-                    if( ret )
-                        ret = CombineZones( aDeletedList, refZone, otherZone );
-
-                    if( ret )
-                    {
-                        mod_ia1 = true;
-                        modified = true;
-                    }
-                }
-            }
-        }
-
-        if( mod_ia1 )
-            ia1--;     // if modified, we need to check it again
-    }
-
-    return modified;
-}
-
-
-bool BOARD::TestZoneIntersections( ZONE* aZone )
-{
-    for( ZONE* otherZone : m_zones )
-    {
-        if( aZone->GetNetCode() != otherZone->GetNetCode() )
-            continue;
-
-        if( aZone == otherZone )
-            continue;
-
-        // see if areas are on same layers
-        if( aZone->GetLayerSet() != otherZone->GetLayerSet() )
-            continue;
-
-        // test for different priorities
-        if( aZone->GetPriority() != otherZone->GetPriority() )
-            continue;
-
-        // test for different types
-        if( aZone->GetIsRuleArea() != otherZone->GetIsRuleArea() )
-            continue;
-
-        // Keepout area-specific tests
-        if( aZone->GetIsRuleArea() )
-        {
-            if( aZone->GetDoNotAllowCopperPour() != otherZone->GetDoNotAllowCopperPour() )
-                continue;
-
-            if( aZone->GetDoNotAllowTracks() != otherZone->GetDoNotAllowTracks() )
-                continue;
-
-            if( aZone->GetDoNotAllowVias() != otherZone->GetDoNotAllowVias() )
-                continue;
-
-            if( aZone->GetDoNotAllowPads() != otherZone->GetDoNotAllowPads() )
-                continue;
-
-            if( aZone->GetDoNotAllowFootprints() != otherZone->GetDoNotAllowFootprints() )
-                continue;
-        }
-        // Filled zone specific tests
-        else
-        {
-            if( aZone->GetLocalClearance() != otherZone->GetLocalClearance() )
-                continue;
-
-            if( aZone->GetThermalReliefGap() != otherZone->GetThermalReliefGap() )
-                continue;
-
-            if( aZone->GetThermalReliefSpokeWidth() != otherZone->GetThermalReliefSpokeWidth() )
-                continue;
-
-            if( aZone->GetLocalClearance() != otherZone->GetLocalClearance() )
-                continue;
-
-            if( aZone->GetPadConnection() != otherZone->GetPadConnection() )
-                continue;
-
-            if( aZone->GetMinThickness() != otherZone->GetMinThickness() )
-                continue;
-
-            if( aZone->GetCornerSmoothingType() != otherZone->GetCornerSmoothingType() )
-                continue;
-
-            if( aZone->GetCornerRadius() != otherZone->GetCornerRadius() )
-                continue;
-        }
-
-        if( TestZoneIntersection( aZone, otherZone ) )
-            return true;
-    }
-
-    return false;
 }
 
 
@@ -371,46 +224,5 @@ bool BOARD::TestZoneIntersection( ZONE* aZone1, ZONE* aZone2 )
     return false;
 }
 
-
-bool BOARD::CombineZones( PICKED_ITEMS_LIST* aDeletedList, ZONE* aRefZone, ZONE* aZoneToCombine )
-{
-    if( aRefZone == aZoneToCombine )
-    {
-        wxASSERT( 0 );
-        return false;
-    }
-
-    SHAPE_POLY_SET mergedOutlines = *aRefZone->Outline();
-    SHAPE_POLY_SET areaToMergePoly = *aZoneToCombine->Outline();
-
-    mergedOutlines.BooleanAdd( areaToMergePoly, SHAPE_POLY_SET::PM_FAST  );
-    mergedOutlines.Simplify( SHAPE_POLY_SET::PM_FAST );
-
-    // We should have one polygon with hole
-    // We can have 2 polygons with hole, if the 2 initial polygons have only one common corner
-    // and therefore cannot be merged (they are dectected as intersecting)
-    // but we should never have more than 2 polys
-    if( mergedOutlines.OutlineCount() > 2 )
-    {
-        wxLogMessage( "BOARD::CombineZones error: more than 2 polys after merging" );
-        return false;
-    }
-
-    if( mergedOutlines.OutlineCount() > 1 )
-        return false;
-
-    // Update the area with the new merged outline
-    delete aRefZone->Outline();
-    aRefZone->SetOutline( new SHAPE_POLY_SET( mergedOutlines ) );
-
-    ITEM_PICKER picker( nullptr, aZoneToCombine, UNDO_REDO::DELETED );
-    aDeletedList->PushItem( picker );
-    aZoneToCombine->SetFlags( STRUCT_DELETED );
-
-    aRefZone->SetLocalFlags( 1 );
-    aRefZone->HatchBorder();
-
-    return true;
-}
 
 

@@ -1,7 +1,8 @@
 /*
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
- * Copyright (C) 2016 CERN
+ * Copyright (C) 2016-2021 CERN
+ * Copyright (C) 2016-2021 KiCad Developers, see AUTHORS.txt for contributors.
  * @author Maciej Suminski <maciej.suminski@cern.ch>
  *
  * This program is free software; you can redistribute it and/or
@@ -24,6 +25,8 @@
 
 #include "dialog_sim_settings.h"
 #include <sim/netlist_exporter_pspice_sim.h>
+#include <sim/ngspice.h>
+
 #include <confirm.h>
 
 #include <wx/tokenzr.h>
@@ -41,8 +44,24 @@ static bool empty( const wxTextEntryBase* aCtrl )
 }
 
 
-DIALOG_SIM_SETTINGS::DIALOG_SIM_SETTINGS( wxWindow* aParent )
-    : DIALOG_SIM_SETTINGS_BASE( aParent ), m_exporter( nullptr ), m_spiceEmptyValidator( true )
+static void setStringSelection( wxRadioBox* aCtrl, const wxString& aStr )
+{
+    aCtrl->SetSelection( aCtrl->FindString( aStr ) );
+}
+
+
+static wxString getStringSelection( const wxRadioBox* aCtrl )
+{
+    return aCtrl->GetString( aCtrl->GetSelection() );
+}
+
+
+DIALOG_SIM_SETTINGS::DIALOG_SIM_SETTINGS( wxWindow* aParent,
+                                          std::shared_ptr<SPICE_SIMULATOR_SETTINGS>& aSettings ) :
+        DIALOG_SIM_SETTINGS_BASE( aParent ),
+        m_exporter( nullptr ),
+        m_settings( aSettings ),
+        m_spiceEmptyValidator( true )
 {
     m_posIntValidator.SetMin( 1 );
 
@@ -75,6 +94,9 @@ DIALOG_SIM_SETTINGS::DIALOG_SIM_SETTINGS( wxWindow* aParent )
     m_simPages->RemovePage( m_simPages->FindPage( m_pgPoleZero ) );
     m_simPages->RemovePage( m_simPages->FindPage( m_pgSensitivity ) );
     m_simPages->RemovePage( m_simPages->FindPage( m_pgTransferFunction ) );
+
+    if( !dynamic_cast<NGSPICE_SIMULATOR_SETTINGS*>( aSettings.get() ) )
+        m_compatibilityMode->Show( false );
 
     m_sdbSizerOK->SetDefault();
     updateNetlistOpts();
@@ -140,28 +162,43 @@ bool DIALOG_SIM_SETTINGS::TransferDataFromWindow()
     if( !wxDialog::TransferDataFromWindow() )
         return false;
 
+    // The simulator dependent settings always get transferred.
+    NGSPICE_SIMULATOR_SETTINGS* ngspiceSettings =
+            dynamic_cast<NGSPICE_SIMULATOR_SETTINGS*>( m_settings.get() );
+
+    if( ngspiceSettings )
+    {
+        switch( m_compatibilityModeChoice->GetSelection() )
+        {
+        case 0: ngspiceSettings->SetModelMode( NGSPICE_MODEL_MODE::USER_CONFIG ); break;
+        case 1: ngspiceSettings->SetModelMode( NGSPICE_MODEL_MODE::NGSPICE );     break;
+        case 2: ngspiceSettings->SetModelMode( NGSPICE_MODEL_MODE::PSPICE );      break;
+        case 3: ngspiceSettings->SetModelMode( NGSPICE_MODEL_MODE::LTSPICE );     break;
+        case 4: ngspiceSettings->SetModelMode( NGSPICE_MODEL_MODE::LT_PSPICE );   break;
+        case 5: ngspiceSettings->SetModelMode( NGSPICE_MODEL_MODE::HSPICE );      break;
+        }
+    }
+
+    wxString previousSimCommand = m_simCommand;
     wxWindow* page = m_simPages->GetCurrentPage();
 
-    // AC analysis
-    if( page == m_pgAC )
+    if( page == m_pgAC )                // AC analysis
     {
         if( !m_pgAC->Validate() )
             return false;
 
-        m_simCommand = wxString::Format( ".ac %s %s %s %s",
-            scaleToString( m_acScale->GetSelection() ),
-            m_acPointsNumber->GetValue(),
-            SPICE_VALUE( m_acFreqStart->GetValue() ).ToSpiceString(),
-            SPICE_VALUE( m_acFreqStop->GetValue() ).ToSpiceString() );
+        m_simCommand.Printf( ".ac %s %s %s %s",
+                             scaleToString( m_acScale->GetSelection() ),
+                             m_acPointsNumber->GetValue(),
+                             SPICE_VALUE( m_acFreqStart->GetValue() ).ToSpiceString(),
+                             SPICE_VALUE( m_acFreqStop->GetValue() ).ToSpiceString() );
     }
-
-
-    // DC transfer analysis
-    else if( page == m_pgDC )
+    else if( page == m_pgDC )           // DC transfer analysis
     {
         wxString simCmd = wxString( ".dc " );
 
         wxString src1 = evaluateDCControls( m_dcSource1, m_dcStart1, m_dcStop1, m_dcIncr1 );
+
         if( src1.IsEmpty() )
             return false;
         else
@@ -170,6 +207,7 @@ bool DIALOG_SIM_SETTINGS::TransferDataFromWindow()
         if( m_dcEnable2->IsChecked() )
         {
             wxString src2 = evaluateDCControls( m_dcSource2, m_dcStart2, m_dcStop2, m_dcIncr2 );
+
             if( src2.IsEmpty() )
                 return false;
             else
@@ -184,19 +222,20 @@ bool DIALOG_SIM_SETTINGS::TransferDataFromWindow()
 
         m_simCommand = simCmd;
     }
-
-
-    // Noise analysis
-    else if( page == m_pgNoise )
+    else if( page == m_pgNoise )        // Noise analysis
     {
         const NETLIST_EXPORTER_PSPICE::NET_INDEX_MAP& netMap = m_exporter->GetNetIndexMap();
 
         if( empty( m_noiseMeas ) || empty( m_noiseSrc ) || empty( m_noisePointsNumber )
                 || empty( m_noiseFreqStart ) || empty( m_noiseFreqStop ) )
+        {
             return false;
+        }
 
-        wxString ref = empty( m_noiseRef )
-            ? wxString() : wxString::Format( ", %d", netMap.at( m_noiseRef->GetValue() ) );
+        wxString ref;
+
+        if( !empty( m_noiseRef ) )
+            ref = wxString::Format( ", %d", netMap.at( m_noiseRef->GetValue() ) );
 
         wxString noiseSource = m_exporter->GetSpiceDevice( m_noiseSrc->GetValue() );
 
@@ -204,51 +243,65 @@ bool DIALOG_SIM_SETTINGS::TransferDataFromWindow()
         if( noiseSource[0] != 'v' && noiseSource[0] != 'V' )
             noiseSource += 'v' + noiseSource;
 
-        m_simCommand = wxString::Format( ".noise v(%d%s) %s %s %s %s %s",
-            netMap.at( m_noiseMeas->GetValue() ), ref,
-            noiseSource, scaleToString( m_noiseScale->GetSelection() ),
-            m_noisePointsNumber->GetValue(),
-            SPICE_VALUE( m_noiseFreqStart->GetValue() ).ToSpiceString(),
-            SPICE_VALUE( m_noiseFreqStop->GetValue() ).ToSpiceString() );
+        m_simCommand.Printf( ".noise v(%d%s) %s %s %s %s %s",
+                             netMap.at( m_noiseMeas->GetValue() ), ref,
+                             noiseSource, scaleToString( m_noiseScale->GetSelection() ),
+                             m_noisePointsNumber->GetValue(),
+                             SPICE_VALUE( m_noiseFreqStart->GetValue() ).ToSpiceString(),
+                             SPICE_VALUE( m_noiseFreqStop->GetValue() ).ToSpiceString() );
     }
-
-
-    // DC operating point analysis
-    else if( page == m_pgOP )
+    else if( page == m_pgOP )           // DC operating point analysis
     {
         m_simCommand = wxString( ".op" );
     }
-
-
-    // Transient analysis
-    else if( page == m_pgTransient )
+    else if( page == m_pgTransient )    // Transient analysis
     {
         if( !m_pgTransient->Validate() )
             return false;
 
-        wxString initial = empty( m_transInitial )
-            ? "" : SPICE_VALUE( m_transInitial->GetValue() ).ToSpiceString();
+        wxString initial;
 
-        m_simCommand = wxString::Format( ".tran %s %s %s",
-            SPICE_VALUE( m_transStep->GetValue() ).ToSpiceString(),
-            SPICE_VALUE( m_transFinal->GetValue() ).ToSpiceString(),
-            initial );
+        if( !empty( m_transInitial ) )
+            initial = SPICE_VALUE( m_transInitial->GetValue() ).ToSpiceString();
+
+        m_simCommand.Printf( ".tran %s %s %s",
+                             SPICE_VALUE( m_transStep->GetValue() ).ToSpiceString(),
+                             SPICE_VALUE( m_transFinal->GetValue() ).ToSpiceString(),
+                             initial );
     }
-
-
-    // Custom directives
-    else if( page == m_pgCustom )
+    else if( page == m_pgCustom )       // Custom directives
     {
         m_simCommand = m_customTxt->GetValue();
     }
-
     else
     {
+        wxString extendedMsg;
+
+        if( m_simCommand.IsEmpty() )
+        {
+            KIDIALOG dlg( this, _( "No valid simulation is configured." ), _( "Warning" ),
+                          wxOK | wxCANCEL | wxICON_EXCLAMATION | wxCENTER );
+
+            dlg.SetExtendedMessage( _( "A valid simulation can be configured by selecting a "
+                                       "simulation tab, setting the simulation parameters and "
+                                       "clicking the OK button with the tab selected." ) );
+            dlg.SetOKCancelLabels(
+                    wxMessageDialog::ButtonLabel( _( "Exit Without Valid Simulation" ) ),
+                    wxMessageDialog::ButtonLabel( _( "Configure Valid Simulation" ) ) );
+            dlg.DoNotShowCheckbox( __FILE__, __LINE__ );
+
+            if( dlg.ShowModal() == wxID_OK )
+                return true;
+        }
+
         return false;
     }
 
-    m_simCommand.Trim();
-    updateNetlistOpts();
+    if( previousSimCommand != m_simCommand )
+    {
+        m_simCommand.Trim();
+        updateNetlistOpts();
+    }
 
     return true;
 }
@@ -256,9 +309,29 @@ bool DIALOG_SIM_SETTINGS::TransferDataFromWindow()
 
 bool DIALOG_SIM_SETTINGS::TransferDataToWindow()
 {
-    /// @todo one day it could interpret the sim command and fill out appropriate fields..
+    /// @todo one day it could interpret the sim command and fill out appropriate fields.
     if( empty( m_customTxt ) )
         loadDirectives();
+
+    NGSPICE_SIMULATOR_SETTINGS* ngspiceSettings =
+            dynamic_cast<NGSPICE_SIMULATOR_SETTINGS*>( m_settings.get() );
+
+    if( ngspiceSettings )
+    {
+        switch( ngspiceSettings->GetModelMode() )
+        {
+        case NGSPICE_MODEL_MODE::USER_CONFIG: m_compatibilityModeChoice->SetSelection( 0 ); break;
+        case NGSPICE_MODEL_MODE::NGSPICE:     m_compatibilityModeChoice->SetSelection( 1 ); break;
+        case NGSPICE_MODEL_MODE::PSPICE:      m_compatibilityModeChoice->SetSelection( 2 ); break;
+        case NGSPICE_MODEL_MODE::LTSPICE:     m_compatibilityModeChoice->SetSelection( 3 ); break;
+        case NGSPICE_MODEL_MODE::LT_PSPICE:   m_compatibilityModeChoice->SetSelection( 4 ); break;
+        case NGSPICE_MODEL_MODE::HSPICE:      m_compatibilityModeChoice->SetSelection( 5 ); break;
+        default:
+            wxFAIL_MSG( wxString::Format( "Unknown NGSPICE_MODEL_MODE %d.",
+                                          ngspiceSettings->GetModelMode() ) );
+            break;
+        }
+    }
 
     if( m_simCommand.IsEmpty() && !empty( m_customTxt ) )
         return parseCommand( m_customTxt->GetValue() );
@@ -297,9 +370,14 @@ int DIALOG_SIM_SETTINGS::ShowModal()
     return DIALOG_SIM_SETTINGS_BASE::ShowModal();
 }
 
+
 void DIALOG_SIM_SETTINGS::updateDCSources( wxChar aType, wxChoice* aSource )
 {
-    wxString              prevSelection = aSource->GetString( aSource->GetSelection() );
+    wxString prevSelection;
+
+    if( aSource->GetCount() )
+        aSource->GetString( aSource->GetSelection() );
+
     std::vector<wxString> sourcesList;
     bool                  enableSrcSelection = true;
 
@@ -308,16 +386,14 @@ void DIALOG_SIM_SETTINGS::updateDCSources( wxChar aType, wxChoice* aSource )
         for( const auto& item : m_exporter->GetSpiceItems() )
         {
             if( item.m_primitive == aType )
-            {
                 sourcesList.push_back( item.m_refName );
-            }
         }
 
         std::sort( sourcesList.begin(), sourcesList.end(),
-                   []( wxString& a, wxString& b ) -> bool
-                   {
-                       return a.Len() < b.Len() || b.Cmp( a ) > 0;
-                   } );
+                [](wxString& a, wxString& b) -> bool
+                {
+                    return a.Len() < b.Len() || b.Cmp( a ) > 0;
+                } );
 
         if( aSource == m_dcSource2 && !m_dcEnable2->IsChecked() )
             enableSrcSelection = false;
@@ -332,14 +408,12 @@ void DIALOG_SIM_SETTINGS::updateDCSources( wxChar aType, wxChoice* aSource )
     aSource->Enable( enableSrcSelection );
 
     aSource->Clear();
+
     for( auto& src : sourcesList )
         aSource->Append( src );
 
     // Try to restore the previous selection, if possible
-    int idx = aSource->FindString( prevSelection );
-
-    if( idx != wxNOT_FOUND )
-        aSource->SetSelection( idx );
+    aSource->SetStringSelection( prevSelection );
 }
 
 
@@ -351,7 +425,8 @@ bool DIALOG_SIM_SETTINGS::parseCommand( const wxString& aCommand )
     wxStringTokenizer tokenizer( aCommand, " " );
     wxString tkn = tokenizer.GetNextToken().Lower();
 
-    try {
+    try
+    {
         if( tkn == ".ac" )
         {
             m_simPages->SetSelection( m_simPages->FindPage( m_pgAC ) );
@@ -372,38 +447,36 @@ bool DIALOG_SIM_SETTINGS::parseCommand( const wxString& aCommand )
             m_acFreqStart->SetValue( SPICE_VALUE( tokenizer.GetNextToken() ).ToSpiceString() );
             m_acFreqStop->SetValue( SPICE_VALUE( tokenizer.GetNextToken() ).ToSpiceString() );
         }
-
         else if( tkn == ".dc" )
         {
             SPICE_DC_PARAMS src1, src2;
             src2.m_vincrement = SPICE_VALUE( -1 );
+
             if( !m_exporter->ParseDCCommand( aCommand, &src1, &src2 ) )
                 return false;
 
             m_simPages->SetSelection( m_simPages->FindPage( m_pgDC ) );
 
-            if( !src1.m_source.IsSameAs( wxT( "TEMP" ), false ) == 0 )
-                m_dcSourceType1->SetSelection( m_dcSourceType1->FindString( src1.m_source ) );
+            if( src1.m_source.IsSameAs( wxT( "TEMP" ), false ) )
+                setStringSelection( m_dcSourceType1, wxT( "TEMP" ) );
             else
-                m_dcSourceType1->SetSelection(
-                        m_dcSourceType1->FindString( src1.m_source.GetChar( 0 ) ) );
+                setStringSelection( m_dcSourceType1, src1.m_source.GetChar( 0 ) );
 
             updateDCSources( src1.m_source.GetChar( 0 ), m_dcSource1 );
-            m_dcSource1->SetSelection( m_dcSource1->FindString( src1.m_source ) );
+            m_dcSource1->SetStringSelection( src1.m_source );
             m_dcStart1->SetValue( src1.m_vstart.ToSpiceString() );
             m_dcStop1->SetValue( src1.m_vend.ToSpiceString() );
             m_dcIncr1->SetValue( src1.m_vincrement.ToSpiceString() );
 
             if( src2.m_vincrement.ToDouble() != -1 )
             {
-                if( !src2.m_source.IsSameAs( wxT( "TEMP" ), false ) == 0 )
-                    m_dcSourceType2->SetSelection( m_dcSourceType2->FindString( src2.m_source ) );
+                if( src2.m_source.IsSameAs( wxT( "TEMP" ), false ) )
+                    setStringSelection( m_dcSourceType2, wxT( "TEMP" ) );
                 else
-                    m_dcSourceType2->SetSelection(
-                            m_dcSourceType2->FindString( src2.m_source.GetChar( 0 ) ) );
+                    setStringSelection( m_dcSourceType2, src2.m_source.GetChar( 0 ) );
 
                 updateDCSources( src2.m_source.GetChar( 0 ), m_dcSource2 );
-                m_dcSource2->SetSelection( m_dcSource2->FindString( src2.m_source ) );
+                m_dcSource2->SetStringSelection( src2.m_source );
                 m_dcStart2->SetValue( src2.m_vstart.ToSpiceString() );
                 m_dcStop2->SetValue( src2.m_vend.ToSpiceString() );
                 m_dcIncr2->SetValue( src2.m_vincrement.ToSpiceString() );
@@ -413,7 +486,6 @@ bool DIALOG_SIM_SETTINGS::parseCommand( const wxString& aCommand )
 
             refreshUIControls();
         }
-
         else if( tkn == ".tran" )
         {
             m_simPages->SetSelection( m_simPages->FindPage( m_pgTransient ) );
@@ -428,14 +500,11 @@ bool DIALOG_SIM_SETTINGS::parseCommand( const wxString& aCommand )
             if( !tkn.IsEmpty() )
                 m_transInitial->SetValue( SPICE_VALUE( tkn ).ToSpiceString() );
         }
-
         else if( tkn == ".op" )
         {
             m_simPages->SetSelection( m_simPages->FindPage( m_pgOP ) );
         }
-
-        // Custom directives
-        else if( !empty( m_customTxt ) )
+        else if( !empty( m_customTxt ) )        // Custom directives
         {
             m_simPages->SetSelection( m_simPages->FindPage( m_pgCustom ) );
         }
@@ -470,11 +539,9 @@ void DIALOG_SIM_SETTINGS::onSwapDCSources( wxCommandEvent& event )
     m_dcSourceType1->SetSelection( m_dcSourceType2->GetSelection() );
     m_dcSourceType2->SetSelection( sel );
 
-    wxChar type1 =
-            m_dcSourceType1->GetString( m_dcSourceType1->GetSelection() ).Upper().GetChar( 0 );
+    wxChar type1 = getStringSelection( m_dcSourceType1 ).Upper().GetChar( 0 );
     updateDCSources( type1, m_dcSource1 );
-    wxChar type2 =
-            m_dcSourceType2->GetString( m_dcSourceType2->GetSelection() ).Upper().GetChar( 0 );
+    wxChar type2 = getStringSelection( m_dcSourceType2 ).Upper().GetChar( 0 );
     updateDCSources( type2, m_dcSource2 );
 
     m_dcSource1->SetSelection( src2 );
@@ -488,8 +555,7 @@ void DIALOG_SIM_SETTINGS::onSwapDCSources( wxCommandEvent& event )
 void DIALOG_SIM_SETTINGS::onDCEnableSecondSource( wxCommandEvent& event )
 {
     bool   is2ndSrcEnabled = m_dcEnable2->IsChecked();
-    wxChar type =
-            m_dcSourceType2->GetString( m_dcSourceType2->GetSelection() ).Upper().GetChar( 0 );
+    wxChar type = getStringSelection( m_dcSourceType2 ).Upper().GetChar( 0 );
 
     m_dcSourceType2->Enable( is2ndSrcEnabled );
     m_dcSource2->Enable( is2ndSrcEnabled && type != 'T' );
@@ -507,11 +573,12 @@ void DIALOG_SIM_SETTINGS::updateDCUnits( wxChar aType, wxChoice* aSource,
 
     switch( aType )
     {
-    case 'V': unit = _( "Volts" ); break;
-    case 'I': unit = _( "Amperes" ); break;
-    case 'R': unit = _( "Ohms" ); break;
+    case 'V': unit = _( "Volts" );     break;
+    case 'I': unit = _( "Amperes" );   break;
+    case 'R': unit = _( "Ohms" );      break;
     case 'T': unit = wxT( "\u00B0C" ); break;
     }
+
     aStartValUnit->SetLabel( unit );
     aEndValUnit->SetLabel( unit );
     aStepUnit->SetLabel( unit );

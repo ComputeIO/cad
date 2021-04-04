@@ -26,12 +26,8 @@
 #include <vector>
 #include <list>
 #include <unordered_set>
-#include <unordered_map>
-
-#include <core/optional.h>
 #include <core/minoptmax.h>
 
-#include <geometry/shape.h>
 #include <geometry/shape_line_chain.h>
 #include <geometry/shape_index.h>
 
@@ -399,7 +395,7 @@ private:
     ARC* findRedundantArc( ARC* aSeg );
 
     ///< Scan the joint map, forming a line starting from segment (current).
-    void followLine( LINKED_ITEM* aCurrent, int aScanDirection, int& aPos, int aLimit,
+    void followLine( LINKED_ITEM* aCurrent, bool aScanDirection, int& aPos, int aLimit,
                      VECTOR2I* aCorners, LINKED_ITEM** aSegments, bool* aArcReversed,
                      bool& aGuardHit, bool aStopAtLockedJoints );
 

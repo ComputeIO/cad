@@ -23,6 +23,8 @@
 #include <geometry/shape_poly_set.h>
 #include <kiface_i.h>
 #include "bitmaps/viacalc.cpp"
+#include "bitmaps/regul.cpp"
+#include "bitmaps/regul_3pins.cpp"
 #include "attenuators/attenuator_classes.h"
 #include "class_regulator_data.h"
 #include "pcb_calculator_frame.h"
@@ -33,11 +35,13 @@
 const wxString DataFileNameExt( wxT("pcbcalc") );
 
 PCB_CALCULATOR_FRAME::PCB_CALCULATOR_FRAME( KIWAY* aKiway, wxWindow* aParent ) :
-        PCB_CALCULATOR_FRAME_BASE( aParent ), m_lastNotebookPage( -1 )
+    PCB_CALCULATOR_FRAME_BASE( aParent ),
+    m_lastNotebookPage( -1 ),
+    m_macHack( true )
 {
-    m_bpButtonCalcAtt->SetBitmap( KiBitmap( small_down_xpm ) );
-    m_bpButtonAnalyze->SetBitmap( KiBitmap( small_down_xpm ) );
-    m_bpButtonSynthetize->SetBitmap( KiBitmap( small_up_xpm ) );
+    m_bpButtonCalcAtt->SetBitmap( KiBitmap( BITMAPS::small_down ) );
+    m_bpButtonAnalyze->SetBitmap( KiBitmap( BITMAPS::small_down ) );
+    m_bpButtonSynthetize->SetBitmap( KiBitmap( BITMAPS::small_up ) );
 
     SetKiway( this, aKiway );
     m_currTransLine     = NULL;
@@ -46,9 +50,6 @@ PCB_CALCULATOR_FRAME::PCB_CALCULATOR_FRAME( KIWAY* aKiway, wxWindow* aParent ) :
     m_RegulatorListChanged = false;
     m_TWMode = TW_MASTER_CURRENT;
     m_TWNested = false;
-
-    // TODO: make regulator bitmaps transparent so we can remove this
-    m_panelRegulatorBitmaps->SetBackgroundColour( *wxWHITE );
 
     SHAPE_POLY_SET dummy;   // A ugly trick to force the linker to include
                             // some methods in code and avoid link errors
@@ -72,6 +73,36 @@ PCB_CALCULATOR_FRAME::PCB_CALCULATOR_FRAME( KIWAY* aKiway, wxWindow* aParent ) :
     wxFont infoFont = wxSystemSettings::GetFont( wxSYS_DEFAULT_GUI_FONT );
     infoFont.SetSymbolicSize( wxFONTSIZE_SMALL );
     m_staticTextAttMsg->SetFont( infoFont );
+
+    m_IadjUnitLabel->SetLabel( wxT( "µA" ) );
+
+    m_attZinUnit->SetLabel( wxT( "Ω" ) );
+    m_attZoutUnit->SetLabel( wxT( "Ω" ) );
+    m_attR1Unit->SetLabel( wxT( "Ω" ) );
+    m_attR2Unit->SetLabel( wxT( "Ω" ) );
+    m_attR3Unit->SetLabel( wxT( "Ω" ) );
+
+    m_r1Units->SetLabel( wxT( "kΩ" ) );
+    m_r2Units->SetLabel( wxT( "kΩ" ) );
+
+    m_reqResUnits->SetLabel( wxT( "kΩ" ) );
+    m_exclude1Units->SetLabel( wxT( "kΩ" ) );
+    m_exclude2Units->SetLabel( wxT( "kΩ" ) );
+
+    m_EpsilonR_label->SetLabel( wxT( "εr" ) );
+
+    m_trackTempUnits->SetLabel( wxT( "°C" ) );
+    m_resistivityUnits->SetLabel( wxT( "Ω•m" ) );
+
+    m_viaResistivityUnits->SetLabel( wxT( "Ω•m" ) );
+
+    m_viaTempUnits->SetLabel( wxT( "°C" ) );
+    m_viaResUnits->SetLabel( wxT( "Ω" ) );
+    m_viaThermalResUnits->SetLabel( wxT( "°C/W" ) );
+    m_viaReactanceUnits->SetLabel( wxT( "Ω" ) );
+
+    m_extTrackResUnits->SetLabel( wxT( "Ω" ) );
+    m_intTrackResUnits->SetLabel( wxT( "Ω" ) );
 
     LoadSettings( config() );
 
@@ -100,14 +131,18 @@ PCB_CALCULATOR_FRAME::PCB_CALCULATOR_FRAME( KIWAY* aKiway, wxWindow* aParent ) :
     wxIcon icon;
     wxIconBundle icon_bundle;
 
-    icon.CopyFromBitmap( KiBitmap( icon_pcbcalculator_xpm ) );
+    icon.CopyFromBitmap( KiBitmap( BITMAPS::icon_pcbcalculator ) );
     icon_bundle.AddIcon( icon );
-    icon.CopyFromBitmap( KiBitmap( icon_pcbcalculator_32_xpm ) );
+    icon.CopyFromBitmap( KiBitmap( BITMAPS::icon_pcbcalculator_32 ) );
     icon_bundle.AddIcon( icon );
-    icon.CopyFromBitmap( KiBitmap( icon_pcbcalculator_16_xpm ) );
+    icon.CopyFromBitmap( KiBitmap( BITMAPS::icon_pcbcalculator_16 ) );
     icon_bundle.AddIcon( icon );
 
     SetIcons( icon_bundle );
+
+    // Autosize the the row label column to be sure label are not truncated
+    m_gridClassesValuesDisplay->SetRowLabelSize( wxGRID_AUTOSIZE );
+    m_gridElectricalSpacingValues->SetRowLabelSize( wxGRID_AUTOSIZE );
 
     GetSizer()->SetSizeHints( this );
 
@@ -143,6 +178,7 @@ void PCB_CALCULATOR_FRAME::OnUpdateUI( wxUpdateUIEvent& event )
     if( m_Notebook->GetSelection() != m_lastNotebookPage )
     {
         // Kick all the things that wxWidgets can't seem to redraw on its own.
+        // This is getting seriously ridiculous....
 
         wxCommandEvent event2( wxEVT_RADIOBUTTON );
         event2.SetEventObject( m_TranslineSelection );
@@ -162,7 +198,16 @@ void PCB_CALCULATOR_FRAME::OnUpdateUI( wxUpdateUIEvent& event )
 
         ToleranceSelection( m_rbToleranceSelection->GetSelection() );
 
-        m_viaBitmap->SetBitmap( KiBitmap( viacalc_xpm ) );
+       	m_viaBitmap->SetBitmap( KiBitmap( viacalc_xpm ) );
+       	m_panelViaSize->Layout();
+
+        m_attenuatorBitmap->SetBitmap( *m_currAttenuator->m_SchBitMap );
+       	m_bitmapRegul3pins->SetBitmap( KiBitmap( regul_3pins_xpm ) );
+       	m_bitmapRegul4pins->SetBitmap( KiBitmap( regul_xpm ) );
+       	m_panelRegulators->Layout();
+
+       	m_attenuatorBitmap->GetParent()->Layout();
+       	m_attenuatorBitmap->GetParent()->Refresh();
 
         m_panelESeriesHelp->Refresh();
         m_htmlWinFormulas->Refresh();
@@ -170,7 +215,28 @@ void PCB_CALCULATOR_FRAME::OnUpdateUI( wxUpdateUIEvent& event )
         // Until it's shown on screen the above won't work; but doing it anyway at least keeps
         // putting new OnUpdateUI events into the queue until it *is* shown on screen.
         if( m_Notebook->IsShownOnScreen() )
+        {
+            // Work around an OSX bug where the wxGrid children don't get placed correctly until
+            // the first resize event.
+#ifdef __WXMAC__
+            if( m_macHack )
+            {
+                wxSize pageSize = m_panelElectricalSpacing->GetSize();
+
+                pageSize.x -= 100;
+                m_panelElectricalSpacing->SetSize( pageSize );
+                m_panelElectricalSpacing->Layout();
+
+                pageSize.x += 100;
+                m_panelElectricalSpacing->SetSize( pageSize );
+                m_panelElectricalSpacing->Layout();
+
+                m_macHack = false;
+            }
+#endif
+
             m_lastNotebookPage = m_Notebook->GetSelection();
+        }
     }
 }
 

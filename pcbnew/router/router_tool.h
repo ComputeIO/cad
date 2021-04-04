@@ -59,7 +59,7 @@ private:
     void performDragging( int aMode = PNS::DM_ANY );
     void breakTrack();
 
-    void handleCommonEvents( const TOOL_EVENT& evt );
+    void handleCommonEvents( TOOL_EVENT& evt );
     int handleLayerSwitch( const TOOL_EVENT& aEvent, bool aForceVia );
 
     int getStartLayer( const PNS::ITEM* aItem );
@@ -71,10 +71,13 @@ private:
 
     bool prepareInteractive();
     bool finishInteractive();
+    void saveRouterDebugLog();
 
 private:
     std::shared_ptr<ACTION_MENU> m_diffPairMenu;
     std::shared_ptr<ACTION_MENU> m_trackViaMenu;
+
+    int                          m_lastTargetLayer;
 };
 
 #endif

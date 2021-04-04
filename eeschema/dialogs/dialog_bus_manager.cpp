@@ -198,14 +198,14 @@ bool DIALOG_BUS_MANAGER::TransferDataToWindow()
     m_aliases.clear();
     m_screens.clear();
 
-    const SCH_SHEET_LIST& sheets = m_parent->Schematic().GetSheets();
+    SCH_SCREENS screens( m_parent->Schematic().Root() );
 
     std::vector< std::shared_ptr<BUS_ALIAS> > original_aliases;
 
     // collect aliases from each open sheet
-    for( unsigned i = 0; i < sheets.size(); i++ )
+    for( SCH_SCREEN* screen = screens.GetFirst(); screen != NULL; screen = screens.GetNext() )
     {
-        auto sheet_aliases = sheets[i].LastScreen()->GetBusAliases();
+        std::unordered_set<std::shared_ptr<BUS_ALIAS>> sheet_aliases = screen->GetBusAliases();
         original_aliases.insert( original_aliases.end(), sheet_aliases.begin(),
                                  sheet_aliases.end() );
     }
@@ -273,7 +273,6 @@ void DIALOG_BUS_MANAGER::OnSelectBus( wxListEvent& event )
 
             m_bus_edit->ChangeValue( alias->GetName() );
 
-            m_btn_add_bus->Disable();
             m_btn_rename_bus->Enable();
             m_btn_remove_bus->Enable();
 
@@ -303,7 +302,6 @@ void DIALOG_BUS_MANAGER::OnSelectBus( wxListEvent& event )
         m_signal_edit->Clear();
         m_signal_list_view->DeleteAllItems();
 
-        m_btn_add_bus->Enable();
         m_btn_rename_bus->Disable();
         m_btn_remove_bus->Disable();
 
@@ -399,6 +397,7 @@ void DIALOG_BUS_MANAGER::OnRemoveBus( wxCommandEvent& aEvent )
     wxASSERT(  m_active_alias == m_aliases[ i ] );
 
     m_bus_list_view->DeleteItem( i );
+    m_bus_list_view->Update();
     m_aliases.erase( m_aliases.begin() + i );
     m_bus_edit->Clear();
 

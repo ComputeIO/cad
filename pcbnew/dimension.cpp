@@ -229,9 +229,6 @@ void DIMENSION_BASE::Move( const wxPoint& offset )
 
 void DIMENSION_BASE::Rotate( const wxPoint& aRotCentre, double aAngle )
 {
-    if( m_keepTextAligned )
-        m_keepTextAligned = false;
-
     double newAngle = m_text.GetTextAngle() + aAngle;
 
     if( newAngle >= 3600 )
@@ -254,9 +251,7 @@ void DIMENSION_BASE::Flip( const wxPoint& aCentre, bool aFlipLeftRight )
 {
     Mirror( aCentre );
 
-    // DIMENSION items are not usually on copper layers, so
-    // copper layers count is not taken in accoun in Flip transform
-    SetLayer( FlipLayer( GetLayer() ) );
+    SetLayer( FlipLayer( GetLayer(), GetBoard()->GetCopperLayerCount() ) );
 }
 
 
@@ -454,7 +449,7 @@ const BOX2I DIMENSION_BASE::ViewBBox() const
 }
 
 
-OPT_VECTOR2I DIMENSION_BASE::segPolyIntersection( SHAPE_POLY_SET& aPoly, SEG& aSeg, bool aStart )
+OPT_VECTOR2I DIMENSION_BASE::segPolyIntersection( const SHAPE_POLY_SET& aPoly, const SEG& aSeg, bool aStart )
 {
     VECTOR2I start( aStart ? aSeg.A : aSeg.B );
     VECTOR2I endpoint( aStart ? aSeg.B : aSeg.A );
@@ -462,7 +457,7 @@ OPT_VECTOR2I DIMENSION_BASE::segPolyIntersection( SHAPE_POLY_SET& aPoly, SEG& aS
     if( aPoly.Contains( start ) )
         return NULLOPT;
 
-    for( SHAPE_POLY_SET::SEGMENT_ITERATOR seg = aPoly.IterateSegments(); seg; seg++ )
+    for( SHAPE_POLY_SET::CONST_SEGMENT_ITERATOR seg = aPoly.CIterateSegments(); seg; ++seg )
     {
         if( OPT_VECTOR2I intersection = ( *seg ).Intersect( aSeg ) )
         {
@@ -471,6 +466,30 @@ OPT_VECTOR2I DIMENSION_BASE::segPolyIntersection( SHAPE_POLY_SET& aPoly, SEG& aS
                 endpoint = *intersection;
         }
     }
+    if( start == endpoint )
+        return NULLOPT;
+
+    return OPT_VECTOR2I( endpoint );
+}
+
+
+OPT_VECTOR2I DIMENSION_BASE::segCircleIntersection( CIRCLE& aCircle, SEG& aSeg, bool aStart )
+{
+    VECTOR2I start( aStart ? aSeg.A : aSeg.B );
+    VECTOR2I endpoint( aStart ? aSeg.B : aSeg.A );
+
+    if( aCircle.Contains( start ) )
+        return NULLOPT;
+
+    std::vector<VECTOR2I> intersections = aCircle.Intersect( aSeg );
+
+    for( VECTOR2I& intersection : aCircle.Intersect( aSeg ) )
+    {
+        if( ( intersection - start ).SquaredEuclideanNorm() <
+            ( endpoint - start ).SquaredEuclideanNorm() )
+            endpoint = intersection;
+    }
+
     if( start == endpoint )
         return NULLOPT;
 
@@ -506,9 +525,9 @@ void ALIGNED_DIMENSION::SwapData( BOARD_ITEM* aImage )
     Update();
 }
 
-BITMAP_DEF ALIGNED_DIMENSION::GetMenuImage() const
+BITMAPS ALIGNED_DIMENSION::GetMenuImage() const
 {
-    return add_aligned_dimension_xpm;
+    return BITMAPS::add_aligned_dimension;
 }
 
 
@@ -622,7 +641,12 @@ void ALIGNED_DIMENSION::updateText()
     {
         int textOffsetDistance = m_text.GetEffectiveTextPenWidth() + m_text.GetTextHeight();
 
-        double rotation = std::copysign( DEG2RAD( 90 ), m_height );
+        double rotation;
+        if( crossbarCenter.x == 0 )
+            rotation = sign( crossbarCenter.y ) * DEG2RAD( 90 );
+        else
+            rotation = -std::copysign( DEG2RAD( 90 ), crossbarCenter.x );
+
         VECTOR2I textOffset = crossbarCenter.Rotate( rotation ).Resize( textOffsetDistance );
         textOffset += crossbarCenter;
 
@@ -639,7 +663,7 @@ void ALIGNED_DIMENSION::updateText()
 
         NORMALIZE_ANGLE_POS( textAngle );
 
-        if( textAngle > 900 && textAngle < 2700 )
+        if( textAngle > 900 && textAngle <= 2700 )
             textAngle -= 1800;
 
         m_text.SetTextAngle( textAngle );
@@ -687,9 +711,9 @@ void ORTHOGONAL_DIMENSION::SwapData( BOARD_ITEM* aImage )
 }
 
 
-BITMAP_DEF ORTHOGONAL_DIMENSION::GetMenuImage() const
+BITMAPS ORTHOGONAL_DIMENSION::GetMenuImage() const
 {
-    return add_orthogonal_dimension_xpm;
+    return BITMAPS::add_orthogonal_dimension;
 }
 
 
@@ -737,9 +761,6 @@ void ORTHOGONAL_DIMENSION::updateGeometry()
     extStart -= extension.Resize( m_extensionHeight );
 
     addShape( SHAPE_SEGMENT( extStart, extStart + extension.Resize( extensionHeight ) ) );
-
-    //##
-    //UpdateHeight(m_crossBarStart, m_crossBarEnd);
 
     // Update text after calculating crossbar position but before adding crossbar lines
     updateText();
@@ -805,20 +826,15 @@ void ORTHOGONAL_DIMENSION::updateText()
     {
         int textOffsetDistance = m_text.GetEffectiveTextPenWidth() + m_text.GetTextHeight();
 
-        VECTOR2D height( m_crossBarStart - GetStart() );
-        VECTOR2D crossBar( m_crossBarEnd - m_crossBarStart );
-
-        if( height.Cross( crossBar ) > 0 )
-            m_height = height.EuclideanNorm();
+        VECTOR2I textOffset;
+        if( m_orientation == DIR::HORIZONTAL )
+            textOffset.y = -textOffsetDistance;
         else
-            m_height = -height.EuclideanNorm();
+            textOffset.x = -textOffsetDistance;
 
-        double rotation = sign( m_height ) * DEG2RAD( -90 );
-        VECTOR2I textOffset = crossbarCenter.Rotate( rotation ).Resize( textOffsetDistance );
         textOffset += crossbarCenter;
 
         m_text.SetTextPos( m_crossBarStart + wxPoint( textOffset ) );
-        m_text.SetTextAngle(rotation);
     }
     else if( m_textPosition == DIM_TEXT_POSITION::INLINE )
     {
@@ -827,12 +843,11 @@ void ORTHOGONAL_DIMENSION::updateText()
 
     if( m_keepTextAligned )
     {
-        double textAngle = 3600 - RAD2DECIDEG( crossbarCenter.Angle() );
-
-        NORMALIZE_ANGLE_POS( textAngle );
-
-        if( textAngle > 900 && textAngle < 2700 )
-            textAngle -= 1800;
+        double textAngle;
+        if( abs( crossbarCenter.x ) > abs( crossbarCenter.y ) )
+            textAngle = 0;
+        else
+            textAngle = 900;
 
         m_text.SetTextAngle( textAngle );
     }
@@ -865,9 +880,9 @@ void LEADER::SwapData( BOARD_ITEM* aImage )
 }
 
 
-BITMAP_DEF LEADER::GetMenuImage() const
+BITMAPS LEADER::GetMenuImage() const
 {
-    return add_leader_xpm;
+    return BITMAPS::add_leader;
 }
 
 
@@ -894,13 +909,29 @@ void LEADER::updateGeometry()
     VECTOR2I start( m_start );
     start += firstLine.Resize( m_extensionOffset );
 
-    SEG          primarySeg( m_start, m_end );
-    OPT_VECTOR2I primaryEndpoint = segPolyIntersection( polyBox, primarySeg );
+    SEG arrowSeg( m_start, m_end );
+    SEG textSeg( m_end, m_text.GetPosition() );
+    OPT_VECTOR2I arrowSegEnd, textSegEnd;
 
-    if( !primaryEndpoint )
-        primaryEndpoint = m_end;
+    if( m_textFrame == DIM_TEXT_FRAME::CIRCLE )
+    {
+        double penWidth = m_text.GetEffectiveTextPenWidth() / 2.0;
+        double radius = ( textBox.GetWidth() / 2.0 ) - penWidth;
+        CIRCLE circle( textBox.GetCenter(), radius );
 
-    m_shapes.emplace_back( new SHAPE_SEGMENT( start, *primaryEndpoint ) );
+        arrowSegEnd = segCircleIntersection( circle, arrowSeg );
+        textSegEnd = segCircleIntersection( circle, textSeg );
+    }
+    else
+    {
+        arrowSegEnd = segPolyIntersection( polyBox, arrowSeg );
+        textSegEnd = segPolyIntersection( polyBox, textSeg );
+    }
+
+    if( !arrowSegEnd )
+        arrowSegEnd = m_end;
+
+    m_shapes.emplace_back( new SHAPE_SEGMENT( start, *arrowSegEnd ) );
 
     // Add arrows
     VECTOR2I arrowEnd( m_arrowLength, 0 );
@@ -913,8 +944,6 @@ void LEADER::updateGeometry()
     m_shapes.emplace_back( new SHAPE_SEGMENT( start,
                                               start + wxPoint( arrowEnd.Rotate( arrowRotNeg ) ) ) );
 
-    SEG textSeg( m_end, m_text.GetPosition() );
-    OPT_VECTOR2I textEndpoint = segPolyIntersection( polyBox, textSeg );
 
     if( !GetText().IsEmpty() )
     {
@@ -934,15 +963,6 @@ void LEADER::updateGeometry()
             double radius   = ( textBox.GetWidth() / 2.0 ) - penWidth;
             m_shapes.emplace_back( new SHAPE_CIRCLE( textBox.GetCenter(), radius ) );
 
-            // Calculated bbox endpoint won't be right
-            if( textEndpoint )
-            {
-                VECTOR2I totalLength( textBox.GetCenter() - m_end );
-                VECTOR2I circleEndpoint( *textEndpoint - m_end );
-                circleEndpoint = circleEndpoint.Resize( totalLength.EuclideanNorm() - radius );
-                textEndpoint = OPT_VECTOR2I( VECTOR2I( m_end ) + circleEndpoint );
-            }
-
             break;
         }
 
@@ -951,8 +971,8 @@ void LEADER::updateGeometry()
         }
     }
 
-    if( textEndpoint && *primaryEndpoint == m_end )
-        m_shapes.emplace_back( new SHAPE_SEGMENT( m_end, *textEndpoint ) );
+    if( textSegEnd && *arrowSegEnd == m_end )
+        m_shapes.emplace_back( new SHAPE_SEGMENT( m_end, *textSegEnd ) );
 }
 
 
@@ -998,9 +1018,9 @@ void CENTER_DIMENSION::SwapData( BOARD_ITEM* aImage )
 }
 
 
-BITMAP_DEF CENTER_DIMENSION::GetMenuImage() const
+BITMAPS CENTER_DIMENSION::GetMenuImage() const
 {
-    return add_center_dimension_xpm;
+    return BITMAPS::add_center_dimension;
 }
 
 

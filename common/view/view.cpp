@@ -28,6 +28,7 @@
 
 #include <eda_item.h>
 #include <layers_id_colors_and_visibility.h>
+#include <trace_helpers.h>
 
 #include <view/view.h>
 #include <view/view_group.h>
@@ -81,7 +82,7 @@ private:
     {
         int* layersPtr = aLayers;
 
-        for( auto layer : m_layers )
+        for( int layer : m_layers )
             *layersPtr++ = layer;
 
         aCount = m_layers.size();
@@ -246,7 +247,7 @@ private:
 
 void VIEW::OnDestroy( VIEW_ITEM* aItem )
 {
-    auto data = aItem->viewPrivData();
+    VIEW_ITEM_DATA* data = aItem->viewPrivData();
 
     if( !data )
         return;
@@ -401,12 +402,12 @@ void VIEW::SetRequired( int aLayerId, int aRequiredId, bool aRequired )
 
 
 // stupid C++... python lambda would do this in one line
-template <class Container>
-struct queryVisitor
+template <class CONTAINER>
+struct QUERY_VISITOR
 {
-    typedef typename Container::value_type item_type;
+    typedef typename CONTAINER::value_type item_type;
 
-    queryVisitor( Container& aCont, int aLayer ) :
+    QUERY_VISITOR( CONTAINER& aCont, int aLayer ) :
         m_cont( aCont ), m_layer( aLayer )
     {
     }
@@ -419,7 +420,7 @@ struct queryVisitor
         return true;
     }
 
-    Container&  m_cont;
+    CONTAINER&  m_cont;
     int         m_layer;
 };
 
@@ -439,7 +440,7 @@ int VIEW::Query( const BOX2I& aRect, std::vector<LAYER_ITEM_PAIR>& aResult ) con
         if( ( *i )->displayOnly || !( *i )->visible )
             continue;
 
-        queryVisitor<std::vector<LAYER_ITEM_PAIR> > visitor( aResult, ( *i )->id );
+        QUERY_VISITOR<std::vector<LAYER_ITEM_PAIR> > visitor( aResult, ( *i )->id );
         ( *i )->items->Query( aRect, visitor );
     }
 
@@ -702,7 +703,7 @@ void VIEW::ReorderLayerData( std::unordered_map<int, int> aReorderMap )
 
     for( VIEW_ITEM* item : *m_allItems )
     {
-        auto viewData = item->viewPrivData();
+        VIEW_ITEM_DATA* viewData = item->viewPrivData();
 
         if( !viewData )
             continue;
@@ -721,10 +722,12 @@ void VIEW::ReorderLayerData( std::unordered_map<int, int> aReorderMap )
 }
 
 
-struct VIEW::updateItemsColor
+struct VIEW::UPDATE_COLOR_VISITOR
 {
-    updateItemsColor( int aLayer, PAINTER* aPainter, GAL* aGal ) :
-        layer( aLayer ), painter( aPainter ), gal( aGal )
+    UPDATE_COLOR_VISITOR( int aLayer, PAINTER* aPainter, GAL* aGal ) :
+        layer( aLayer ),
+        painter( aPainter ),
+        gal( aGal )
     {
     }
 
@@ -760,7 +763,7 @@ void VIEW::UpdateLayerColor( int aLayer )
     {
         GAL_UPDATE_CONTEXT ctx( m_gal );
 
-        updateItemsColor visitor( aLayer, m_painter, m_gal );
+        UPDATE_COLOR_VISITOR visitor( aLayer, m_painter, m_gal );
         m_layers[aLayer].items->Query( r, visitor );
         MarkTargetDirty( m_layers[aLayer].target );
     }
@@ -775,7 +778,7 @@ void VIEW::UpdateAllLayersColor()
 
         for( VIEW_ITEM* item : *m_allItems )
         {
-            auto viewData = item->viewPrivData();
+            VIEW_ITEM_DATA* viewData = item->viewPrivData();
 
             if( !viewData )
                 continue;
@@ -798,10 +801,12 @@ void VIEW::UpdateAllLayersColor()
 }
 
 
-struct VIEW::changeItemsDepth
+struct VIEW::UPDATE_DEPTH_VISITOR
 {
-    changeItemsDepth( int aLayer, int aDepth, GAL* aGal ) :
-        layer( aLayer ), depth( aDepth ), gal( aGal )
+    UPDATE_DEPTH_VISITOR( int aLayer, int aDepth, GAL* aGal ) :
+        layer( aLayer ),
+        depth( aDepth ),
+        gal( aGal )
     {
     }
 
@@ -906,7 +911,7 @@ void VIEW::UpdateAllLayersOrder()
 
         for( VIEW_ITEM* item : *m_allItems )
         {
-            auto viewData = item->viewPrivData();
+            VIEW_ITEM_DATA* viewData = item->viewPrivData();
 
             if( !viewData )
                 continue;
@@ -928,10 +933,11 @@ void VIEW::UpdateAllLayersOrder()
 }
 
 
-struct VIEW::drawItem
+struct VIEW::DRAW_ITEM_VISITOR
 {
-    drawItem( VIEW* aView, int aLayer, bool aUseDrawPriority, bool aReverseDrawOrder ) :
-        view( aView ), layer( aLayer ),
+    DRAW_ITEM_VISITOR( VIEW* aView, int aLayer, bool aUseDrawPriority, bool aReverseDrawOrder ) :
+        view( aView ),
+        layer( aLayer ),
         useDrawPriority( aUseDrawPriority ),
         reverseDrawOrder( aReverseDrawOrder )
     {
@@ -968,7 +974,7 @@ struct VIEW::drawItem
                            return a->viewPrivData()->m_drawPriority < b->viewPrivData()->m_drawPriority;
                        });
 
-        for( auto item : drawItems )
+        for( VIEW_ITEM* item : drawItems )
             view->draw( item, layer );
     }
 
@@ -985,7 +991,7 @@ void VIEW::redrawRect( const BOX2I& aRect )
     {
         if( l->visible && IsTargetDirty( l->target ) && areRequiredLayersEnabled( l->id ) )
         {
-            drawItem drawFunc( this, l->id, m_useDrawPriority, m_reverseDrawOrder );
+            DRAW_ITEM_VISITOR drawFunc( this, l->id, m_useDrawPriority, m_reverseDrawOrder );
 
             m_gal->SetTarget( l->target );
             m_gal->SetLayerDepth( l->renderingOrder );
@@ -1000,7 +1006,7 @@ void VIEW::redrawRect( const BOX2I& aRect )
 
 void VIEW::draw( VIEW_ITEM* aItem, int aLayer, bool aImmediate )
 {
-    auto viewData = aItem->viewPrivData();
+    VIEW_ITEM_DATA* viewData = aItem->viewPrivData();
 
     if( !viewData )
         return;
@@ -1048,16 +1054,18 @@ void VIEW::draw( VIEW_GROUP* aGroup, bool aImmediate )
 }
 
 
-struct VIEW::recacheItem
+struct VIEW::RECACHE_ITEM_VISITOR
 {
-    recacheItem( VIEW* aView, GAL* aGal, int aLayer ) :
-        view( aView ), gal( aGal ), layer( aLayer )
+    RECACHE_ITEM_VISITOR( VIEW* aView, GAL* aGal, int aLayer ) :
+        view( aView ),
+        gal( aGal ),
+        layer( aLayer )
     {
     }
 
     bool operator()( VIEW_ITEM* aItem )
     {
-        auto viewData = aItem->viewPrivData();
+        VIEW_ITEM_DATA* viewData = aItem->viewPrivData();
 
         if( !viewData )
             return false;
@@ -1141,7 +1149,7 @@ void VIEW::Redraw()
 
 #ifdef __WXDEBUG__
     totalRealTime.Stop();
-    wxLogTrace( "GAL_PROFILE", "VIEW::Redraw(): %.1f ms", totalRealTime.msecs() );
+    wxLogTrace( traceGalProfile, "VIEW::Redraw(): %.1f ms", totalRealTime.msecs() );
 #endif /* __WXDEBUG__ */
 }
 
@@ -1152,9 +1160,9 @@ const VECTOR2I& VIEW::GetScreenPixelSize() const
 }
 
 
-struct VIEW::clearLayerCache
+struct VIEW::CLEAR_LAYER_CACHE_VISITOR
 {
-    clearLayerCache( VIEW* aView ) :
+    CLEAR_LAYER_CACHE_VISITOR( VIEW* aView ) :
         view( aView )
     {
     }
@@ -1175,7 +1183,7 @@ void VIEW::clearGroupCache()
     BOX2I r;
 
     r.SetMaximum();
-    clearLayerCache visitor( this );
+    CLEAR_LAYER_CACHE_VISITOR visitor( this );
 
     for( VIEW_LAYER& layer : m_layers )
         layer.items->Query( r, visitor );
@@ -1245,7 +1253,7 @@ void VIEW::sortLayers()
 
 void VIEW::updateItemColor( VIEW_ITEM* aItem, int aLayer )
 {
-    auto viewData = aItem->viewPrivData();
+    VIEW_ITEM_DATA* viewData = aItem->viewPrivData();
     wxCHECK( (unsigned) aLayer < m_layers.size(), /*void*/ );
     wxCHECK( IsCached( aLayer ), /*void*/ );
 
@@ -1264,7 +1272,7 @@ void VIEW::updateItemColor( VIEW_ITEM* aItem, int aLayer )
 
 void VIEW::updateItemGeometry( VIEW_ITEM* aItem, int aLayer )
 {
-    auto viewData = aItem->viewPrivData();
+    VIEW_ITEM_DATA* viewData = aItem->viewPrivData();
     wxCHECK( (unsigned) aLayer < m_layers.size(), /*void*/ );
     wxCHECK( IsCached( aLayer ), /*void*/ );
 
@@ -1310,8 +1318,8 @@ void VIEW::updateBbox( VIEW_ITEM* aItem )
 
 void VIEW::updateLayers( VIEW_ITEM* aItem )
 {
-    auto viewData = aItem->viewPrivData();
-    int layers[VIEW_MAX_LAYERS], layers_count;
+    VIEW_ITEM_DATA* viewData = aItem->viewPrivData();
+    int             layers[VIEW_MAX_LAYERS], layers_count;
 
     if( !viewData )
         return;
@@ -1379,7 +1387,7 @@ void VIEW::RecacheAllItems()
     {
         if( IsCached( l.id ) )
         {
-            recacheItem visitor( this, m_gal, l.id );
+            RECACHE_ITEM_VISITOR visitor( this, m_gal, l.id );
             l.items->Query( r, visitor );
         }
     }
@@ -1394,15 +1402,10 @@ void VIEW::UpdateItems()
 
         for( VIEW_ITEM* item : *m_allItems )
         {
-            auto viewData = item->viewPrivData();
-
-            if( !viewData )
-                continue;
-
-            if( viewData->m_requiredUpdate != NONE )
+            if( item->viewPrivData() && item->viewPrivData()->m_requiredUpdate != NONE )
             {
-                invalidateItem( item, viewData->m_requiredUpdate );
-                viewData->m_requiredUpdate = NONE;
+                invalidateItem( item, item->viewPrivData()->m_requiredUpdate );
+                item->viewPrivData()->m_requiredUpdate = NONE;
             }
         }
     }
@@ -1413,12 +1416,8 @@ void VIEW::UpdateAllItems( int aUpdateFlags )
 {
     for( VIEW_ITEM* item : *m_allItems )
     {
-        auto viewData = item->viewPrivData();
-
-        if( !viewData )
-            continue;
-
-        viewData->m_requiredUpdate |= aUpdateFlags;
+        if( item->viewPrivData() )
+            item->viewPrivData()->m_requiredUpdate |= aUpdateFlags;
     }
 }
 
@@ -1430,12 +1429,8 @@ void VIEW::UpdateAllItemsConditionally( int aUpdateFlags,
     {
         if( aCondition( item ) )
         {
-            auto viewData = item->viewPrivData();
-
-            if( !viewData )
-                continue;
-
-            viewData->m_requiredUpdate |= aUpdateFlags;
+            if( item->viewPrivData() )
+                item->viewPrivData()->m_requiredUpdate |= aUpdateFlags;
         }
     }
 }
@@ -1443,7 +1438,7 @@ void VIEW::UpdateAllItemsConditionally( int aUpdateFlags,
 
 std::unique_ptr<VIEW> VIEW::DataReference() const
 {
-    auto ret = std::make_unique<VIEW>();
+    std::unique_ptr<VIEW> ret = std::make_unique<VIEW>();
     ret->m_allItems = m_allItems;
     ret->m_layers = m_layers;
     ret->sortLayers();
@@ -1453,7 +1448,7 @@ std::unique_ptr<VIEW> VIEW::DataReference() const
 
 void VIEW::SetVisible( VIEW_ITEM* aItem, bool aIsVisible )
 {
-    auto viewData = aItem->viewPrivData();
+    VIEW_ITEM_DATA* viewData = aItem->viewPrivData();
 
     if( !viewData )
         return;
@@ -1474,7 +1469,7 @@ void VIEW::SetVisible( VIEW_ITEM* aItem, bool aIsVisible )
 
 void VIEW::Hide( VIEW_ITEM* aItem, bool aHide )
 {
-    auto viewData = aItem->viewPrivData();
+    VIEW_ITEM_DATA* viewData = aItem->viewPrivData();
 
     if( !viewData )
         return;
@@ -1493,7 +1488,7 @@ void VIEW::Hide( VIEW_ITEM* aItem, bool aHide )
 
 bool VIEW::IsVisible( const VIEW_ITEM* aItem ) const
 {
-    const auto viewData = aItem->viewPrivData();
+    const VIEW_ITEM_DATA* viewData = aItem->viewPrivData();
 
     return viewData && ( viewData->m_flags & VISIBLE );
 }
@@ -1529,13 +1524,16 @@ std::shared_ptr<VIEW_OVERLAY> VIEW::MakeOverlay()
 
 void VIEW::ClearPreview()
 {
-   m_preview->Clear();
+    if( !m_preview )
+        return;
 
-   for( EDA_ITEM* item : m_ownedItems )
-       delete item;
+    m_preview->Clear();
 
-   m_ownedItems.clear();
-   Update( m_preview.get() );
+    for( EDA_ITEM *item : m_ownedItems )
+        delete item;
+
+    m_ownedItems.clear();
+    Update( m_preview.get() );
 }
 
 

@@ -80,6 +80,12 @@ APP_SETTINGS_BASE::APP_SETTINGS_BASE( const std::string& aFilename, int aSchemaV
     m_params.emplace_back( new PARAM<int>( "lib_tree.column_width",
             &m_LibTree.column_width, 360 ) );
 
+    // Now that we allow hiding/showing of the tree control, it's never terribly useful to
+    // decrease the width to nothing, and wxWidgets appears to have some bugs where it sets it
+    // way too narrow.
+    if( m_LibTree.column_width < 360 )
+        m_LibTree.column_width = 360;
+
     m_params.emplace_back( new PARAM<bool>( "printing.background",
             &m_Printing.background, false ) );
 
@@ -287,7 +293,7 @@ void APP_SETTINGS_BASE::addParamsForWindow( WINDOW_SETTINGS* aWindow, const std:
             &aWindow->grid.axes_enabled, false ) );
 
     m_params.emplace_back( new PARAM_LIST<wxString>( aJsonPath + ".grid.sizes",
-            &aWindow->grid.sizes, {} ) );
+            &aWindow->grid.sizes, DefaultGridSizeList() ) );
 
     // pcbnew default grid doesn't matter much, but eeschema does, so default to the index
     // of the 50mil grid in eeschema
@@ -326,4 +332,31 @@ void APP_SETTINGS_BASE::addParamsForWindow( WINDOW_SETTINGS* aWindow, const std:
 
     m_params.emplace_back( new PARAM<bool>( aJsonPath + ".cursor.fullscreen_cursor",
             &aWindow->cursor.fullscreen_cursor, false ) );
+}
+
+
+const std::vector<wxString> APP_SETTINGS_BASE::DefaultGridSizeList() const
+{
+    return { "1000 mil",
+             "500 mil",
+             "250 mil",
+             "200 mil",
+             "100 mil",
+             "50 mil",
+             "25 mil",
+             "20 mil",
+             "10 mil",
+             "5 mil",
+             "2 mil",
+             "1 mil",
+             "5.0 mm",
+             "2.5 mm",
+             "1.0 mm",
+             "0.5 mm",
+             "0.25 mm",
+             "0.2 mm",
+             "0.1 mm",
+             "0.05 mm",
+             "0.025 mm",
+             "0.01 mm" };
 }

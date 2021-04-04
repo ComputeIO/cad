@@ -21,6 +21,8 @@
 #ifndef _JSON_SETTINGS_H
 #define _JSON_SETTINGS_H
 
+#include <core/wx_stl_compat.h>
+
 #include <nlohmann/json.hpp>
 #include <utility>
 #include <wx/string.h>
@@ -104,6 +106,13 @@ c     * @return true if the file was saved
      * Resets all parameters to default values.  Does NOT write to file or update underlying JSON.
      */
     void ResetToDefaults();
+
+    /**
+     * Checks if the current state of a parameter matches its default value
+     * @param aParamName is the JSON path to the parameter
+     * @return true if the given parameter is at its default value
+     */
+    bool IsDefault( const std::string& aParamName );
 
     /**
      * Fetches a JSON object that is a subset of this JSON_SETTINGS object, using a path of the

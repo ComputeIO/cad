@@ -20,18 +20,18 @@
  * with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
+#include <bitmaps.h>
 #include <macros.h>
-#include "class_library.h"
-#include "eeschema_id.h"
-#include "symbol_viewer_frame.h"
-#include "sch_painter.h"
+#include <class_library.h>
+#include <eeschema_id.h>
+#include <symbol_viewer_frame.h>
+#include <sch_painter.h>
 #include <tool/action_menu.h>
 #include <tool/action_toolbar.h>
-#include <tool/tool_manager.h>
 #include <tools/ee_actions.h>
 #include <tools/symbol_editor_control.h>
 #include <widgets/wx_menubar.h>
+
 
 void SYMBOL_VIEWER_FRAME::ReCreateHToolbar()
 {
@@ -47,15 +47,15 @@ void SYMBOL_VIEWER_FRAME::ReCreateHToolbar()
     }
 
     m_mainToolBar->AddTool( ID_LIBVIEW_SELECT_PART, wxEmptyString,
-                            KiScaledBitmap( library_browser_xpm, this ),
+                            KiScaledBitmap( BITMAPS::library_browser, this ),
                             _( "Choose symbol" ) );
 
     m_mainToolBar->AddTool( ID_LIBVIEW_PREVIOUS, wxEmptyString,
-                            KiScaledBitmap( lib_previous_xpm, this ),
+                            KiScaledBitmap( BITMAPS::lib_previous, this ),
                             _( "Display previous symbol" ) );
 
     m_mainToolBar->AddTool( ID_LIBVIEW_NEXT, wxEmptyString,
-                            KiScaledBitmap( lib_next_xpm, this ),
+                            KiScaledBitmap( BITMAPS::lib_next, this ),
                             _( "Display next symbol" ) );
 
     m_mainToolBar->AddScaledSeparator( this );

@@ -158,7 +158,9 @@ public:
     static TOOL_ACTION drawRuleArea;
     static TOOL_ACTION drawZoneCutout;
     static TOOL_ACTION drawSimilarZone;
+    static TOOL_ACTION placeCharacteristics;
     static TOOL_ACTION placeTarget;
+    static TOOL_ACTION placeStackup;
     static TOOL_ACTION placeFootprint;
     static TOOL_ACTION placeImportedGraphics;
     static TOOL_ACTION setAnchor;
@@ -347,7 +349,8 @@ public:
 
     // Module editor tools
 
-    static TOOL_ACTION toggleFootprintTree;
+    static TOOL_ACTION showFootprintTree;
+    static TOOL_ACTION hideFootprintTree;
 
     // We don't use ACTION::new here because we need to distinguish between New Library
     // and New Footprint.
@@ -420,9 +423,9 @@ public:
     static TOOL_ACTION unlock;
 
     // Grouping
-    static TOOL_ACTION groupCreate;
-    static TOOL_ACTION groupUngroup;
-    static TOOL_ACTION groupRemoveItems;
+    static TOOL_ACTION group;
+    static TOOL_ACTION ungroup;
+    static TOOL_ACTION removeFromGroup;
     static TOOL_ACTION groupEnter;
     static TOOL_ACTION groupLeave;
 
@@ -472,9 +475,6 @@ public:
     static TOOL_ACTION convertToLines;
     static TOOL_ACTION convertToArc;
     static TOOL_ACTION convertToTracks;
-
-    ///< @copydoc COMMON_ACTIONS::TranslateLegacyId()
-    virtual OPT<TOOL_EVENT> TranslateLegacyId( int aId ) override;
 };
 
 #endif

@@ -2,8 +2,8 @@
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
  * Copyright (C) 2012 SoftPLC Corporation, Dick Hollenbeck <dick@softplc.com>
- * Copyright (C) 2013 CERN
- * Copyright (C) 2012-2020 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 2013-2021 CERN
+ * Copyright (C) 2012-2021 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -32,6 +32,7 @@
 
 
 #include <set>
+#include <wx/dir.h>
 #include <wx/regex.h>
 #include <wx/grid.h>
 
@@ -60,13 +61,14 @@
 #include <pcbnew_id.h>          // For ID_PCBNEW_END_LIST
 #include <settings/settings_manager.h>
 #include <paths.h>
+#include <macros.h>
 
 // clang-format off
 
 /**
-* Container that describes file type info for the add a library options
-*/
-struct supportedFileType
+ * Container that describes file type info for the add a library options
+ */
+struct SUPPORTED_FILE_TYPE
 {
     wxString m_Description;            ///< Description shown in the file picker dialog
     wxString m_FileFilter;             ///< Filter used for file pickers if m_IsFile is true
@@ -90,7 +92,7 @@ enum {
 * library option.
 *
 */
-static const std::map<int, supportedFileType>& fileTypes()
+static const std::map<int, SUPPORTED_FILE_TYPE>& fileTypes()
 {
     /*
      * TODO(C++20): Clean this up
@@ -99,7 +101,7 @@ static const std::map<int, supportedFileType>& fileTypes()
      * extensions can be made constexpr and this can be removed from a function call and
      * placed in the file normally.
      */
-    static const std::map<int, supportedFileType> fileTypes =
+    static const std::map<int, SUPPORTED_FILE_TYPE> fileTypes =
     {
         { ID_PANEL_FPLIB_ADD_KICADMOD,
             {
@@ -143,18 +145,15 @@ public:
     {
     }
 
-
     virtual wxDirTraverseResult OnFile( const wxString& aFileName ) override
     {
         wxFileName file( aFileName );
+
         if( m_searchExtension.IsSameAs( file.GetExt(), false ) )
-        {
             m_foundDirs.insert( { m_currentDir, 1 } );
-        }
 
         return wxDIR_CONTINUE;
     }
-
 
     virtual wxDirTraverseResult OnOpenError( const wxString& aOpenErrorName ) override
     {
@@ -162,12 +161,10 @@ public:
         return wxDIR_IGNORE;
     }
 
-
     bool HasDirectoryOpenFailures()
     {
         return m_failedDirs.size() > 0;
     }
-
 
     virtual wxDirTraverseResult OnDir( const wxString& aDirName ) override
     {
@@ -175,22 +172,16 @@ public:
         return wxDIR_CONTINUE;
     }
 
-
     void GetPaths( wxArrayString& aPathArray )
     {
-        for( auto foundDirsPair : m_foundDirs )
-        {
+        for( std::pair<const wxString, int>& foundDirsPair : m_foundDirs )
             aPathArray.Add( foundDirsPair.first );
-        }
     }
-
 
     void GetFailedPaths( wxArrayString& aPathArray )
     {
-        for( auto failedDirsPair : m_failedDirs )
-        {
+        for( std::pair<const wxString, int>& failedDirsPair : m_failedDirs )
             aPathArray.Add( failedDirsPair.first );
-        }
     }
 
 private:
@@ -367,9 +358,6 @@ PANEL_FP_LIB_TABLE::PANEL_FP_LIB_TABLE( DIALOG_EDIT_LIBRARY_TABLES* aParent,
     m_projectBasePath( aProjectBasePath ),
     m_parent( aParent )
 {
-    // For user info, shows the table filenames:
-    m_GblTableFilename->SetLabel( aGlobalTblPath );
-
     m_global_grid->SetTable( new FP_LIB_TABLE_GRID( *aGlobal ), true );
 
     // add Cut, Copy, and Paste to wxGrids
@@ -407,8 +395,10 @@ PANEL_FP_LIB_TABLE::PANEL_FP_LIB_TABLE( DIALOG_EDIT_LIBRARY_TABLES* aParent,
                 wxGridCellAttr* attr;
 
                 attr = new wxGridCellAttr;
-                attr->SetEditor( new GRID_CELL_PATH_EDITOR( m_parent, &cfg->m_lastFootprintLibDir,
-                                                            wxEmptyString, true, m_projectBasePath ) );
+                attr->SetEditor( new GRID_CELL_PATH_EDITOR( m_parent, aGrid,
+                                                            &cfg->m_lastFootprintLibDir,
+                                                            wxEmptyString, true,
+                                                            m_projectBasePath ) );
                 aGrid->SetColAttr( COL_URI, attr );
 
                 attr = new wxGridCellAttr;
@@ -441,7 +431,6 @@ PANEL_FP_LIB_TABLE::PANEL_FP_LIB_TABLE( DIALOG_EDIT_LIBRARY_TABLES* aParent,
 
     if( aProject )
     {
-        m_PrjTableFilename->SetLabel( aProjectTblPath );
         m_project_grid->SetTable( new FP_LIB_TABLE_GRID( *aProject ), true );
         setupGrid( m_project_grid );
     }
@@ -463,16 +452,16 @@ PANEL_FP_LIB_TABLE::PANEL_FP_LIB_TABLE( DIALOG_EDIT_LIBRARY_TABLES* aParent,
     m_parent->SetInitialFocus( m_cur_grid );
 
     // Configure button logos
-    m_append_button->SetBitmap( KiBitmap( small_plus_xpm ) );
-    m_delete_button->SetBitmap( KiBitmap( small_trash_xpm ) );
-    m_move_up_button->SetBitmap( KiBitmap( small_up_xpm ) );
-    m_move_down_button->SetBitmap( KiBitmap( small_down_xpm ) );
-    m_browseButton->SetBitmap( KiBitmap( small_folder_xpm ) );
+    m_append_button->SetBitmap( KiBitmap( BITMAPS::small_plus ) );
+    m_delete_button->SetBitmap( KiBitmap( BITMAPS::small_trash ) );
+    m_move_up_button->SetBitmap( KiBitmap( BITMAPS::small_up ) );
+    m_move_down_button->SetBitmap( KiBitmap( BITMAPS::small_down ) );
+    m_browseButton->SetBitmap( KiBitmap( BITMAPS::small_folder ) );
 
-    // For aesthetic reasons, we must set the size of m_browseButton to match
-    // the other bitmaps manually (for instance m_append_button)
-    Layout();   // Needed at least on MSW to compute the actual buttons sizes,
-                // after initializing their bitmaps
+    // For aesthetic reasons, we must set the size of m_browseButton to match the other bitmaps
+    // manually (for instance m_append_button)
+    Layout();   // Needed at least on MSW to compute the actual buttons sizes, after initializing
+                // their bitmaps
     wxSize buttonSize = m_append_button->GetSize();
 
     m_browseButton->SetWidthPadding( 4 );
@@ -481,14 +470,19 @@ PANEL_FP_LIB_TABLE::PANEL_FP_LIB_TABLE( DIALOG_EDIT_LIBRARY_TABLES* aParent,
     // Populate the browse library options
     wxMenu* browseMenu = m_browseButton->GetSplitButtonMenu();
 
-    for( auto& fileType : fileTypes() )
+    for( const std::pair<const int, SUPPORTED_FILE_TYPE>& fileType : fileTypes() )
     {
         browseMenu->Append( fileType.first, fileType.second.m_Description );
 
         browseMenu->Bind( wxEVT_COMMAND_MENU_SELECTED, &PANEL_FP_LIB_TABLE::browseLibrariesHandler,
-                this, fileType.first );
+                          this, fileType.first );
     }
 
+    Layout();
+
+    // Hack to make buttons lay out correctly the first time on Mac
+    wxSize hackSize = m_buttonsPanel->GetSize();
+    m_buttonsPanel->SetSize( wxSize( hackSize.x - 5, hackSize.y ) );
     Layout();
 
     // This is the button only press for the browse button instead of the menu
@@ -752,7 +746,7 @@ void PANEL_FP_LIB_TABLE::browseLibrariesHandler( wxCommandEvent& event )
     if( !m_cur_grid->CommitPendingChanges() )
         return;
 
-    std::map<int, supportedFileType>::const_iterator fileTypeIt;
+    std::map<int, SUPPORTED_FILE_TYPE>::const_iterator fileTypeIt;
 
     // We are bound both to the menu and button with this one handler
     // So we must set the file type based on it
@@ -772,7 +766,7 @@ void PANEL_FP_LIB_TABLE::browseLibrariesHandler( wxCommandEvent& event )
         return;
     }
 
-    supportedFileType fileType = fileTypeIt->second;
+    SUPPORTED_FILE_TYPE fileType = fileTypeIt->second;
 
     PCBNEW_SETTINGS* cfg = Pgm().GetSettingsManager().GetAppSettings<PCBNEW_SETTINGS>();
 
@@ -861,7 +855,7 @@ void PANEL_FP_LIB_TABLE::browseLibrariesHandler( wxCommandEvent& event )
     wxString           detailedMsg   = _( "One of the nicknames will need to be changed after "
                                           "adding this library." );
 
-    for( const auto& filePath : files )
+    for( const wxString& filePath : files )
     {
         wxFileName fn( filePath );
         wxString   nickname = LIB_ID::FixIllegalChars( fn.GetName() );
@@ -915,6 +909,10 @@ void PANEL_FP_LIB_TABLE::adjustPathSubsGridColumns( int aWidth )
     aWidth -= ( m_path_subs_grid->GetSize().x - m_path_subs_grid->GetClientSize().x );
 
     m_path_subs_grid->AutoSizeColumn( 0 );
+
+    if( aWidth - m_path_subs_grid->GetColSize( 0 ) < 60 )
+        m_path_subs_grid->SetColSize( 0, aWidth / 2 );
+
     m_path_subs_grid->SetColSize( 1, aWidth - m_path_subs_grid->GetColSize( 0 ) );
 }
 
@@ -1085,7 +1083,10 @@ void InvokePcbLibTableEditor( KIWAY* aKiway, wxWindow* aCaller )
     auto editor = (FOOTPRINT_EDIT_FRAME*) aKiway->Player( FRAME_FOOTPRINT_EDITOR, false );
 
     if( editor )
+    {
         editor->SyncLibraryTree( true );
+        editor->RefreshLibraryTree();
+    }
 
     auto viewer = (FOOTPRINT_VIEWER_FRAME*) aKiway->Player( FRAME_FOOTPRINT_VIEWER, false );
 

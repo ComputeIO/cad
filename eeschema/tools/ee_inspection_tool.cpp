@@ -2,7 +2,7 @@
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
  * Copyright (C) 2019 CERN
- * Copyright (C) 2019-2020 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 2019-2021 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -22,7 +22,7 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
 
-#include <sch_component.h>
+#include <sch_symbol.h>
 #include <id.h>
 #include <kiway.h>
 #include <confirm.h>
@@ -37,7 +37,7 @@
 #include <symbol_edit_frame.h>
 #include <symbol_viewer_frame.h>
 #include <eda_doc.h>
-#include <invoke_sch_dialog.h>
+#include <sch_marker.h>
 #include <project.h>
 #include <dialogs/dialog_display_info_HTML_base.h>
 #include <dialogs/dialog_erc.h>
@@ -61,6 +61,8 @@ bool EE_INSPECTION_TOOL::Init()
     // Add inspection actions to the selection tool menu
     //
     CONDITIONAL_MENU& selToolMenu = m_selectionTool->GetToolMenu().GetMenu();
+
+    selToolMenu.AddItem( EE_ACTIONS::excludeMarker, singleMarkerCondition, 100 );
 
     selToolMenu.AddItem( EE_ACTIONS::showDatasheet, EE_CONDITIONS::SingleSymbol && EE_CONDITIONS::Idle, 220 );
 
@@ -154,7 +156,25 @@ int EE_INSPECTION_TOOL::NextMarker( const TOOL_EVENT& aEvent )
 int EE_INSPECTION_TOOL::ExcludeMarker( const TOOL_EVENT& aEvent )
 {
     if( m_ercDialog )
+    {
+        // Let the ERC dialog handle it since it has more update hassles to worry about
         m_ercDialog->ExcludeMarker();
+    }
+    else
+    {
+        EE_SELECTION_TOOL* selTool = m_toolMgr->GetTool<EE_SELECTION_TOOL>();
+        EE_SELECTION&      selection = selTool->GetSelection();
+
+        if( selection.GetSize() == 1 && selection.Front()->Type() == SCH_MARKER_T )
+        {
+            SCH_MARKER* marker = static_cast<SCH_MARKER*>( selection.Front() );
+
+            marker->SetExcluded( true );
+            m_frame->GetCanvas()->GetView()->Update( marker );
+            m_frame->GetCanvas()->Refresh();
+            m_frame->OnModify();
+        }
+    }
 
     return 0;
 }
@@ -396,6 +416,10 @@ int EE_INSPECTION_TOOL::RunSimulation( const TOOL_EVENT& aEvent )
 {
 #ifdef KICAD_SPICE
     SIM_PLOT_FRAME* simFrame = (SIM_PLOT_FRAME*) m_frame->Kiway().Player( FRAME_SIMULATOR, true );
+
+    if( !simFrame )
+        return -1;
+
     simFrame->Show( true );
 
     // On Windows, Raise() does not bring the window on screen, when iconized

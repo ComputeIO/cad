@@ -72,7 +72,7 @@ def_col( COLUMN_NAME,         1, _( "Name" ),         _( "Net Name" ),     CSV_Q
 def_col( COLUMN_PAD_COUNT,    2, _( "Pad Count" ),    _( "Pad Count" ),    CSV_NONE );
 def_col( COLUMN_VIA_COUNT,    3, _( "Via Count" ),    _( "Via Count" ),    CSV_NONE );
 def_col( COLUMN_VIA_LENGTH,   4, _( "Via Length" ),   _( "Via Length" ),   CSV_NONE );
-def_col( COLUMN_BOARD_LENGTH, 5, _( "Board Length" ), _( "Board Length" ), CSV_NONE );
+def_col( COLUMN_BOARD_LENGTH, 5, _( "Track Length" ), _( "Track Length" ), CSV_NONE );
 def_col( COLUMN_CHIP_LENGTH,  6, _( "Die Length" ),   _( "Die Length" ),   CSV_NONE );
 def_col( COLUMN_TOTAL_LENGTH, 7, _( "Total Length" ), _( "Net Length" ),   CSV_NONE );
 
@@ -505,10 +505,10 @@ public:
         i->SetParent( nullptr );
 
         m_items.erase( *aRow );
+        ItemDeleted( wxDataViewItem( parent ), wxDataViewItem( &*i ) );
 
         if( parent )
         {
-            ItemDeleted( wxDataViewItem( parent ), wxDataViewItem( &*i ) );
             ItemChanged( wxDataViewItem( parent ) );
 
             // for grouping type 2,3 a group item might disappear if it becomes empty.
@@ -870,9 +870,9 @@ DIALOG_NET_INSPECTOR::DIALOG_NET_INSPECTOR( PCB_EDIT_FRAME* aParent,
 
     adjustListColumns();
 
-    m_addNet->SetBitmap( KiBitmap( small_plus_xpm ) );
-    m_renameNet->SetBitmap( KiBitmap( small_edit_xpm ) );
-    m_deleteNet->SetBitmap( KiBitmap( small_trash_xpm ) );
+    m_addNet->SetBitmap( KiBitmap( BITMAPS::small_plus ) );
+    m_renameNet->SetBitmap( KiBitmap( BITMAPS::small_edit ) );
+    m_deleteNet->SetBitmap( KiBitmap( BITMAPS::small_trash ) );
 
     m_sdbSizerOK->SetDefault();
     m_renameNet->Disable();

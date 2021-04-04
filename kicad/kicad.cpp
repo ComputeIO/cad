@@ -37,6 +37,8 @@
 #include <filehistory.h>
 #include <hotkeys_basic.h>
 #include <kiway.h>
+#include <macros.h>
+#include <paths.h>
 #include <settings/settings_manager.h>
 #include <systemdirsappend.h>
 #include <wildcards_and_files_ext.h>
@@ -47,10 +49,9 @@
 #include "kicad_manager_frame.h"
 #include "kicad_settings.h"
 
-#if defined( _WIN32 )
-#include <config.h>
-#include <VersionHelpers.h>
-#endif
+#include <kiplatform/app.h>
+#include <kiplatform/environment.h>
+
 
 // a dummy to quiet linking with EDA_BASE_FRAME::config();
 #include <kiface_i.h>
@@ -89,7 +90,9 @@ PGM_KICAD& PgmTop()
 
 bool PGM_KICAD::OnPgmInit()
 {
-#if defined( DEBUG )
+    App().SetAppDisplayName( wxT( "KiCad" ) );
+
+#if defined(DEBUG)
     wxString absoluteArgv0 = wxStandardPaths::Get().GetExecutablePath();
 
     if( !wxIsAbsolutePath( absoluteArgv0 ) )
@@ -132,8 +135,11 @@ bool PGM_KICAD::OnPgmInit()
         if( it != GetLocalEnvVariables().end() && it->second.GetValue() != wxEmptyString )
             m_bm.m_search.Insert( it->second.GetValue(), 0 );
 
-        // The KICAD_USER_TEMPLATE_DIR takes precedence over KICAD6_TEMPLATE_DIR and the search
-        // stack template path.
+        // We've been adding system (installed default) search paths so far, now for user paths
+        // The default user search path is inside KIPLATFORM::ENV::GetDocumentsPath()
+        m_bm.m_search.Insert( PATHS::GetUserTemplatesPath(), 0 );
+
+        // ...but the user can override that default with the KICAD_USER_TEMPLATE_DIR env var
         it = GetLocalEnvVariables().find( "KICAD_USER_TEMPLATE_DIR" );
 
         if( it != GetLocalEnvVariables().end() && it->second.GetValue() != wxEmptyString )
@@ -251,57 +257,18 @@ KIWAY Kiway( &Pgm(), KFCTL_CPP_PROJECT_SUITE );
  */
 struct APP_KICAD : public wxApp
 {
-#if defined( __LINUX__ )
     APP_KICAD() : wxApp()
     {
-        // Disable proxy menu in Unity window manager. Only usual menubar works with
-        // wxWidgets (at least <= 3.1).  When the proxy menu menubar is enable, some
-        // important things for us do not work: menuitems UI events and shortcuts.
-        wxString wm;
-
-        if( wxGetEnv( wxT( "XDG_CURRENT_DESKTOP" ), &wm ) && wm.CmpNoCase( wxT( "Unity" ) ) == 0 )
-        {
-            wxSetEnv( wxT( "UBUNTU_MENUPROXY" ), wxT( "0" ) );
-        }
-
-        // Force the use of X11 backend (or wayland-x11 compatibilty layer).  This is
-        // required until wxWidgets supports the Wayland compositors
-        wxSetEnv( wxT( "GDK_BACKEND" ), wxT( "x11" ) );
-
-        // Disable overlay scrollbars as they mess up wxWidgets window sizing and cause
-        // excessive redraw requests.
-        wxSetEnv( wxT( "GTK_OVERLAY_SCROLLING" ), wxT( "0" ) );
-
-        // Set GTK2-style input instead of xinput2.  This disables touchscreen and smooth
-        // scrolling.  It's needed to ensure that we are not getting multiple mouse scroll
-        // events.
-        wxSetEnv( wxT( "GDK_CORE_DEVICE_EVENTS" ), wxT( "1" ) );
+        // Init the environment each platform wants
+        KIPLATFORM::ENV::Init();
     }
-#endif
+
 
     bool OnInit() override
     {
-#if defined( _MSC_VER ) && defined( DEBUG )
-        // wxWidgets turns on leak dumping in debug but its "flawed" and will falsely dump
-        // for half a hour _CRTDBG_ALLOC_MEM_DF is the usual default for MSVC.
-        _CrtSetDbgFlag( _CRTDBG_ALLOC_MEM_DF );
-#endif
-
-#if defined( _WIN32 ) && defined( PYTHON_VERSION_MAJOR )                                           \
-        && ( ( PYTHON_VERSION_MAJOR == 3 && PYTHON_VERSION_MINOR >= 8 )                            \
-             || PYTHON_VERSION_MAJOR > 3 )
-
-        // Python 3.8 switched to Windows 8+ API, we do not support Windows 7 and will not
-        // attempt to hack around it.  Gracefully inform the user and refuse to start (because
-        // python will crash us if we continue).
-        if( !IsWindows8OrGreater() )
-        {
-            wxMessageBox( _( "Windows 7 and older is no longer supported by KiCad and its "
-                             "dependencies." ),
-                          _( "Unsupported Operating System" ), wxOK | wxICON_ERROR );
+        // Perform platform-specific init tasks
+        if( !KIPLATFORM::APP::Init() )
             return false;
-        }
-#endif
 
         if( !program.OnPgmInit() )
         {

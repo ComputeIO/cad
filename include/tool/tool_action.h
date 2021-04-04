@@ -33,7 +33,7 @@
 
 #include <tool/tool_event.h>
 
-struct BITMAP_OPAQUE;
+enum class BITMAPS : unsigned int;
 
 /**
  * Represent a single user action.
@@ -53,7 +53,7 @@ public:
                  int aDefaultHotKey = 0, const std::string& aLegacyHotKeyName = "",
                  const wxString& aMenuText = wxEmptyString,
                  const wxString& aTooltip = wxEmptyString,
-                 const BITMAP_OPAQUE* aIcon = nullptr, TOOL_ACTION_FLAGS aFlags = AF_NONE,
+                 BITMAPS aIcon = static_cast<BITMAPS>( 0 ), TOOL_ACTION_FLAGS aFlags = AF_NONE,
                  void* aParam = nullptr );
 
     ~TOOL_ACTION();
@@ -136,6 +136,8 @@ public:
 
     TOOL_ACTION_SCOPE GetScope() const { return m_scope; }
 
+    void* GetParam() const { return m_param; }
+
     /**
      * Return name of the tool associated with the action. It is basically the action name
      * stripped of the last part (e.g. for "pcbnew.InteractiveDrawing.drawCircle" it is
@@ -164,7 +166,7 @@ public:
      *
      * It is used in context menu.
      */
-    const BITMAP_OPAQUE* GetIcon() const
+    const BITMAPS GetIcon() const
     {
         return m_icon;
     }
@@ -187,7 +189,7 @@ protected:
 
     wxString             m_label;
     wxString             m_tooltip;
-    const BITMAP_OPAQUE* m_icon;           // Icon for the menu entry
+    BITMAPS              m_icon;           // Icon for the menu entry
 
     int                  m_id;             // Unique ID for maps. Assigned by ACTION_MANAGER.
 

@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////
-// C++ code generated with wxFormBuilder (version Oct 26 2018)
+// C++ code generated with wxFormBuilder (version 3.9.0 Feb 10 2021)
 // http://www.wxformbuilder.org/
 //
 // PLEASE DO *NOT* EDIT THIS FILE!
@@ -23,11 +23,14 @@ class PCB_LAYER_BOX_SELECTOR;
 #include <wx/sizer.h>
 #include <wx/textctrl.h>
 #include <wx/checkbox.h>
+#include <wx/button.h>
+#include <wx/bitmap.h>
+#include <wx/image.h>
+#include <wx/icon.h>
 #include <wx/bmpcbox.h>
 #include <wx/choice.h>
 #include <wx/combobox.h>
 #include <wx/statline.h>
-#include <wx/button.h>
 #include <wx/dialog.h>
 
 ///////////////////////////////////////////////////////////////////////////
@@ -47,6 +50,9 @@ class DIALOG_TEXT_PROPERTIES_BASE : public DIALOG_SHIM
 		wxStaticText* m_TextLabel;
 		wxTextCtrl* m_SingleLineText;
 		wxCheckBox* m_cbLocked;
+		wxStaticText* m_FontLabel;
+		wxTextCtrl* m_FontCtrl;
+		wxButton* m_FontSelectionButton;
 		wxStaticText* m_LayerLabel;
 		PCB_LAYER_BOX_SELECTOR* m_LayerSelectionCtrl;
 		wxCheckBox* m_Visible;
@@ -78,10 +84,11 @@ class DIALOG_TEXT_PROPERTIES_BASE : public DIALOG_SHIM
 		wxButton* m_sdbSizerOK;
 		wxButton* m_sdbSizerCancel;
 
-		// Virtual event handlers, overide them in your derived class
+		// Virtual event handlers, override them in your derived class
 		virtual void OnInitDlg( wxInitDialogEvent& event ) { event.Skip(); }
 		virtual void OnSetFocusText( wxFocusEvent& event ) { event.Skip(); }
 		virtual void OnOkClick( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnShowFontDialog( wxCommandEvent& event ) { event.Skip(); }
 
 
 	public:

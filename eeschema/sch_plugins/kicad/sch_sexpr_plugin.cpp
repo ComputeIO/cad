@@ -2,6 +2,7 @@
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
  * Copyright (C) 2020 CERN
+ * Copyright (C) 2021 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * @author Wayne Stambaugh <stambaughw@gmail.com>
  *
@@ -32,8 +33,8 @@
 #include <locale_io.h>
 #include <sch_bitmap.h>
 #include <sch_bus_entry.h>
-#include <sch_component.h>
-#include <sch_edit_frame.h> // COMPONENT_ORIENTATION_T
+#include <sch_symbol.h>
+#include <sch_edit_frame.h>       // COMPONENT_ORIENTATION_T
 #include <sch_junction.h>
 #include <sch_line.h>
 #include <sch_no_connect.h>
@@ -268,35 +269,37 @@ static void formatStroke( OUTPUTFORMATTER* aFormatter, int aNestLevel,
  */
 class SCH_SEXPR_PLUGIN_CACHE
 {
-    static int m_modHash; // Keep track of the modification status of the library.
+    static int      m_modHash;      // Keep track of the modification status of the library.
 
-    wxString     m_fileName;    // Absolute path and file name.
-    wxFileName   m_libFileName; // Absolute path and file name is required here.
-    wxDateTime   m_fileModTime;
-    LIB_PART_MAP m_symbols; // Map of names of #LIB_PART pointers.
-    bool         m_isWritable;
-    bool         m_isModified;
-    int          m_versionMajor;
-    int          m_versionMinor;
-    SCH_LIB_TYPE m_libType; // Is this cache a component or symbol library.
+    wxString        m_fileName;     // Absolute path and file name.
+    wxFileName      m_libFileName;  // Absolute path and file name is required here.
+    wxDateTime      m_fileModTime;
+    LIB_PART_MAP    m_symbols;      // Map of names of #LIB_PART pointers.
+    bool            m_isWritable;
+    bool            m_isModified;
+    int             m_versionMajor;
+    SCH_LIB_TYPE    m_libType;      // Is this cache a component or symbol library.
 
-    LIB_PART* removeSymbol( LIB_PART* aAlias );
+    LIB_PART*       removeSymbol( LIB_PART* aAlias );
 
-    static void saveSymbolDrawItem( LIB_ITEM* aItem, OUTPUTFORMATTER& aFormatter, int aNestLevel );
-    static void saveArc( LIB_ARC* aArc, OUTPUTFORMATTER& aFormatter, int aNestLevel = 0 );
-    static void saveBezier( LIB_BEZIER* aBezier, OUTPUTFORMATTER& aFormatter, int aNestLevel = 0 );
-    static void saveCircle( LIB_CIRCLE* aCircle, OUTPUTFORMATTER& aFormatter, int aNestLevel = 0 );
-    static void saveField( const LIB_FIELD* aField, OUTPUTFORMATTER& aFormatter,
-                           int aNestLevel = 0 );
-    static void savePin( LIB_PIN* aPin, OUTPUTFORMATTER& aFormatter, int aNestLevel = 0 );
-    static void savePolyLine( LIB_POLYLINE* aPolyLine, OUTPUTFORMATTER& aFormatter,
-                              int aNestLevel = 0 );
-    static void saveRectangle( LIB_RECTANGLE* aRectangle, OUTPUTFORMATTER& aFormatter,
-                               int aNestLevel = 0 );
-    static void saveText( LIB_TEXT* aText, OUTPUTFORMATTER& aFormatter, int aNestLevel = 0 );
+    static void     saveSymbolDrawItem( LIB_ITEM* aItem, OUTPUTFORMATTER& aFormatter,
+                                        int aNestLevel );
+    static void     saveArc( LIB_ARC* aArc, OUTPUTFORMATTER& aFormatter, int aNestLevel = 0 );
+    static void     saveBezier( LIB_BEZIER* aBezier, OUTPUTFORMATTER& aFormatter,
+                                int aNestLevel = 0 );
+    static void     saveCircle( LIB_CIRCLE* aCircle, OUTPUTFORMATTER& aFormatter,
+                                int aNestLevel = 0 );
+    static void     saveField( LIB_FIELD* aField, OUTPUTFORMATTER& aFormatter,
+                               int& aNextFreeFieldId, int aNestLevel );
+    static void     savePin( LIB_PIN* aPin, OUTPUTFORMATTER& aFormatter, int aNestLevel = 0 );
+    static void     savePolyLine( LIB_POLYLINE* aPolyLine, OUTPUTFORMATTER& aFormatter,
+                                  int aNestLevel = 0 );
+    static void     saveRectangle( LIB_RECTANGLE* aRectangle, OUTPUTFORMATTER& aFormatter,
+                                   int aNestLevel = 0 );
+    static void     saveText( LIB_TEXT* aText, OUTPUTFORMATTER& aFormatter, int aNestLevel = 0 );
 
-    static void saveDcmInfoAsFields( LIB_PART* aSymbol, OUTPUTFORMATTER& aFormatter,
-                                     int aNestLevel = 0, int aFirstId = MANDATORY_FIELDS );
+    static void     saveDcmInfoAsFields( LIB_PART* aSymbol, OUTPUTFORMATTER& aFormatter,
+                                         int& aNextFreeFieldId, int aNestLevel );
 
     friend SCH_SEXPR_PLUGIN;
 
@@ -355,13 +358,12 @@ SCH_SEXPR_PLUGIN::~SCH_SEXPR_PLUGIN()
 
 void SCH_SEXPR_PLUGIN::init( SCHEMATIC* aSchematic, const PROPERTIES* aProperties )
 {
-    m_version = 0;
-    m_rootSheet = nullptr;
-    m_props = aProperties;
-    m_schematic = aSchematic;
-    m_cache = nullptr;
-    m_out = nullptr;
-    m_fieldId = 100; // number arbitrarily > MANDATORY_FIELDS or SHEET_MANDATORY_FIELDS
+    m_version         = 0;
+    m_rootSheet       = nullptr;
+    m_schematic       = aSchematic;
+    m_cache           = nullptr;
+    m_out             = nullptr;
+    m_nextFreeFieldId = 100; // number arbitrarily > MANDATORY_FIELDS or SHEET_MANDATORY_FIELDS
 }
 
 SCH_SHEET* SCH_SEXPR_PLUGIN::Load( const wxString& aFileName, SCHEMATIC* aSchematic,
@@ -905,11 +907,14 @@ void SCH_SEXPR_PLUGIN::saveSymbol( SCH_COMPONENT* aSymbol, SCH_SHEET_PATH* aShee
     m_out->Print( aNestLevel + 1, "(in_bom %s)", ( aSymbol->GetIncludeInBom() ) ? "yes" : "no" );
     m_out->Print( 0, " (on_board %s)", ( aSymbol->GetIncludeOnBoard() ) ? "yes" : "no" );
 
+    if( aSymbol->GetFieldsAutoplaced() != FIELDS_AUTOPLACED_NO )
+        m_out->Print( 0, " (fields_autoplaced)" );
+
     m_out->Print( 0, "\n" );
 
     m_out->Print( aNestLevel + 1, "(uuid %s)\n", TO_UTF8( aSymbol->m_Uuid.AsString() ) );
 
-    m_fieldId = MANDATORY_FIELDS;
+    m_nextFreeFieldId = MANDATORY_FIELDS;
 
     for( SCH_FIELD& field : aSymbol->GetFields() )
     {
@@ -958,8 +963,12 @@ void SCH_SEXPR_PLUGIN::saveField( SCH_FIELD* aField, int aNestLevel )
 
     if( aField->GetId() == -1 /* undefined ID */ )
     {
-        aField->SetId( m_fieldId );
-        m_fieldId += 1;
+        aField->SetId( m_nextFreeFieldId );
+        m_nextFreeFieldId += 1;
+    }
+    else if( aField->GetId() >= m_nextFreeFieldId )
+    {
+        m_nextFreeFieldId = aField->GetId() + 1;
     }
 
     m_out->Print( aNestLevel, "(property %s %s (id %d) (at %s %s %s)",
@@ -1034,11 +1043,16 @@ void SCH_SEXPR_PLUGIN::saveSheet( SCH_SHEET* aSheet, int aNestLevel )
 {
     wxCHECK_RET( aSheet != nullptr && m_out != nullptr, "" );
 
-    m_out->Print( aNestLevel, "(sheet (at %s %s) (size %s %s)\n",
+    m_out->Print( aNestLevel, "(sheet (at %s %s) (size %s %s)",
                   FormatInternalUnits( aSheet->GetPosition().x ).c_str(),
                   FormatInternalUnits( aSheet->GetPosition().y ).c_str(),
                   FormatInternalUnits( aSheet->GetSize().GetWidth() ).c_str(),
                   FormatInternalUnits( aSheet->GetSize().GetHeight() ).c_str() );
+
+    if( aSheet->GetFieldsAutoplaced() != FIELDS_AUTOPLACED_NO )
+        m_out->Print( 0, " (fields_autoplaced)" );
+
+    m_out->Print( 0, "\n" );
 
     STROKE_PARAMS stroke( aSheet->GetBorderWidth(), PLOT_DASH_TYPE::SOLID,
                           aSheet->GetBorderColor() );
@@ -1056,7 +1070,7 @@ void SCH_SEXPR_PLUGIN::saveSheet( SCH_SHEET* aSheet, int aNestLevel )
 
     m_out->Print( aNestLevel + 1, "(uuid %s)\n", TO_UTF8( aSheet->m_Uuid.AsString() ) );
 
-    m_fieldId = SHEET_MANDATORY_FIELDS;
+    m_nextFreeFieldId = SHEET_MANDATORY_FIELDS;
 
     for( SCH_FIELD& field : aSheet->GetFields() )
     {
@@ -1218,6 +1232,9 @@ void SCH_SEXPR_PLUGIN::saveText( SCH_TEXT* aText, int aNestLevel )
                       FormatAngle( aText->GetTextAngle() ).c_str() );
     }
 
+    if( aText->GetFieldsAutoplaced() != FIELDS_AUTOPLACED_NO )
+        m_out->Print( 0, " (fields_autoplaced)" );
+
     m_out->Print( 0, "\n" );
     aText->Format( m_out, aNestLevel, 0 );
 
@@ -1260,8 +1277,7 @@ SCH_SEXPR_PLUGIN_CACHE::SCH_SEXPR_PLUGIN_CACHE( const wxString& aFullPathAndFile
         m_isWritable( true ), m_isModified( false )
 {
     m_versionMajor = -1;
-    m_versionMinor = -1;
-    m_libType = SCH_LIB_TYPE::LT_EESCHEMA;
+    m_libType      = SCH_LIB_TYPE::LT_EESCHEMA;
 }
 
 
@@ -1499,7 +1515,7 @@ void SCH_SEXPR_PLUGIN_CACHE::SaveSymbol( LIB_PART* aSymbol, OUTPUTFORMATTER& aFo
     wxCHECK2( wxLocale::GetInfo( wxLOCALE_DECIMAL_POINT, wxLOCALE_CAT_NUMBER ) == ".",
               LOCALE_IO toggle );
 
-    int                     lastFieldId;
+    int nextFreeFieldId = MANDATORY_FIELDS;
     std::vector<LIB_FIELD*> fields;
     std::string             name = aFormatter.Quotew( aSymbol->GetLibId().Format().wx_str() );
     std::string             unitName = aSymbol->GetLibId().GetLibItemName();
@@ -1555,22 +1571,19 @@ void SCH_SEXPR_PLUGIN_CACHE::SaveSymbol( LIB_PART* aSymbol, OUTPUTFORMATTER& aFo
 
         aSymbol->GetFields( fields );
 
-        for( const LIB_FIELD* field : fields )
-            saveField( field, aFormatter, aNestLevel + 1 );
-
-        lastFieldId = fields.back()->GetId() + 1;
+        for( LIB_FIELD* field : fields )
+            saveField( field, aFormatter, nextFreeFieldId, aNestLevel + 1 );
 
         // @todo At some point in the future the lock status (all units interchangeable) should
         // be set deterministically.  For now a custom lock propertery is used to preserve the
         // locked flag state.
         if( aSymbol->UnitsLocked() )
         {
-            LIB_FIELD locked( lastFieldId, "ki_locked" );
-            saveField( &locked, aFormatter, aNestLevel + 1 );
-            lastFieldId += 1;
+            LIB_FIELD locked( -1, "ki_locked" );
+            saveField( &locked, aFormatter, nextFreeFieldId, aNestLevel + 1 );
         }
 
-        saveDcmInfoAsFields( aSymbol, aFormatter, aNestLevel, lastFieldId );
+        saveDcmInfoAsFields( aSymbol, aFormatter, nextFreeFieldId, aNestLevel );
 
         // Save the draw items grouped by units.
         std::vector<PART_UNITS> units = aSymbol->GetUnitDrawItems();
@@ -1609,12 +1622,10 @@ void SCH_SEXPR_PLUGIN_CACHE::SaveSymbol( LIB_PART* aSymbol, OUTPUTFORMATTER& aFo
 
         aSymbol->GetFields( fields );
 
-        for( const LIB_FIELD* field : fields )
-            saveField( field, aFormatter, aNestLevel + 1 );
+        for( LIB_FIELD* field : fields )
+            saveField( field, aFormatter, nextFreeFieldId, aNestLevel + 1 );
 
-        lastFieldId = fields.back()->GetId() + 1;
-
-        saveDcmInfoAsFields( aSymbol, aFormatter, aNestLevel, lastFieldId );
+        saveDcmInfoAsFields( aSymbol, aFormatter, nextFreeFieldId, aNestLevel );
     }
 
     aFormatter.Print( aNestLevel, ")\n" );
@@ -1622,28 +1633,24 @@ void SCH_SEXPR_PLUGIN_CACHE::SaveSymbol( LIB_PART* aSymbol, OUTPUTFORMATTER& aFo
 
 
 void SCH_SEXPR_PLUGIN_CACHE::saveDcmInfoAsFields( LIB_PART* aSymbol, OUTPUTFORMATTER& aFormatter,
-                                                  int aNestLevel, int aFirstId )
+                                                  int& aNextFreeFieldId, int aNestLevel )
 {
     wxCHECK_RET( aSymbol, "Invalid LIB_PART pointer." );
 
-    int id = aFirstId;
-
     if( !aSymbol->GetKeyWords().IsEmpty() )
     {
-        LIB_FIELD keywords( id, wxString( "ki_keywords" ) );
+        LIB_FIELD keywords( -1, wxString( "ki_keywords" ) );
         keywords.SetVisible( false );
         keywords.SetText( aSymbol->GetKeyWords() );
-        saveField( &keywords, aFormatter, aNestLevel + 1 );
-        id += 1;
+        saveField( &keywords, aFormatter, aNextFreeFieldId, aNestLevel + 1 );
     }
 
     if( !aSymbol->GetDescription().IsEmpty() )
     {
-        LIB_FIELD description( id, wxString( "ki_description" ) );
+        LIB_FIELD description( -1, wxString( "ki_description" ) );
         description.SetVisible( false );
         description.SetText( aSymbol->GetDescription() );
-        saveField( &description, aFormatter, aNestLevel + 1 );
-        id += 1;
+        saveField( &description, aFormatter, aNextFreeFieldId, aNestLevel + 1 );
     }
 
     wxArrayString fpFilters = aSymbol->GetFPFilters();
@@ -1660,11 +1667,10 @@ void SCH_SEXPR_PLUGIN_CACHE::saveDcmInfoAsFields( LIB_PART* aSymbol, OUTPUTFORMA
                 tmp += " " + filter;
         }
 
-        LIB_FIELD description( id, wxString( "ki_fp_filters" ) );
+        LIB_FIELD description( -1, wxString( "ki_fp_filters" ) );
         description.SetVisible( false );
         description.SetText( tmp );
-        saveField( &description, aFormatter, aNestLevel + 1 );
-        id += 1;
+        saveField( &description, aFormatter, aNextFreeFieldId, aNestLevel + 1 );
     }
 }
 
@@ -1795,12 +1801,22 @@ void SCH_SEXPR_PLUGIN_CACHE::saveCircle( LIB_CIRCLE* aCircle, OUTPUTFORMATTER& a
 }
 
 
-void SCH_SEXPR_PLUGIN_CACHE::saveField( const LIB_FIELD* aField, OUTPUTFORMATTER& aFormatter,
-                                        int aNestLevel )
+void SCH_SEXPR_PLUGIN_CACHE::saveField( LIB_FIELD* aField, OUTPUTFORMATTER& aFormatter,
+                                        int& aNextFreeFieldId, int aNestLevel  )
 {
     wxCHECK_RET( aField && aField->Type() == LIB_FIELD_T, "Invalid LIB_FIELD object." );
 
     wxString fieldName = aField->GetName();
+
+    if( aField->GetId() == -1 /* undefined ID */ )
+    {
+        aField->SetId( aNextFreeFieldId );
+        aNextFreeFieldId += 1;
+    }
+    else if( aField->GetId() >= aNextFreeFieldId )
+    {
+        aNextFreeFieldId = aField->GetId() + 1;
+    }
 
     if( aField->GetId() >= 0 && aField->GetId() < MANDATORY_FIELDS )
         fieldName = TEMPLATE_FIELDNAME::GetDefaultFieldName( aField->GetId(), false );
@@ -1986,7 +2002,7 @@ void SCH_SEXPR_PLUGIN_CACHE::DeleteSymbol( const wxString& aSymbolName )
 }
 
 
-void SCH_SEXPR_PLUGIN::cacheLib( const wxString& aLibraryFileName )
+void SCH_SEXPR_PLUGIN::cacheLib( const wxString& aLibraryFileName, const PROPERTIES* aProperties )
 {
     if( !m_cache || !m_cache->IsFile( aLibraryFileName ) || m_cache->IsFileChanged() )
     {
@@ -1999,7 +2015,7 @@ void SCH_SEXPR_PLUGIN::cacheLib( const wxString& aLibraryFileName )
         // must be updated.
         PART_LIBS::s_modify_generation++;
 
-        if( !isBuffering( m_props ) )
+        if( !isBuffering( aProperties ) )
             m_cache->Load();
     }
 }
@@ -2027,12 +2043,10 @@ void SCH_SEXPR_PLUGIN::EnumerateSymbolLib( wxArrayString&    aSymbolNameList,
 {
     LOCALE_IO toggle; // toggles on, then off, the C locale.
 
-    m_props = aProperties;
+    bool powerSymbolsOnly = ( aProperties &&
+                              aProperties->find( SYMBOL_LIB_TABLE::PropPowerSymsOnly ) != aProperties->end() );
 
-    bool powerSymbolsOnly =
-            ( aProperties
-              && aProperties->find( SYMBOL_LIB_TABLE::PropPowerSymsOnly ) != aProperties->end() );
-    cacheLib( aLibraryPath );
+    cacheLib( aLibraryPath, aProperties );
 
     const LIB_PART_MAP& symbols = m_cache->m_symbols;
 
@@ -2050,12 +2064,10 @@ void SCH_SEXPR_PLUGIN::EnumerateSymbolLib( std::vector<LIB_PART*>& aSymbolList,
 {
     LOCALE_IO toggle; // toggles on, then off, the C locale.
 
-    m_props = aProperties;
+    bool powerSymbolsOnly = ( aProperties &&
+                              aProperties->find( SYMBOL_LIB_TABLE::PropPowerSymsOnly ) != aProperties->end() );
 
-    bool powerSymbolsOnly =
-            ( aProperties
-              && aProperties->find( SYMBOL_LIB_TABLE::PropPowerSymsOnly ) != aProperties->end() );
-    cacheLib( aLibraryPath );
+    cacheLib( aLibraryPath, aProperties );
 
     const LIB_PART_MAP& symbols = m_cache->m_symbols;
 
@@ -2072,9 +2084,7 @@ LIB_PART* SCH_SEXPR_PLUGIN::LoadSymbol( const wxString& aLibraryPath, const wxSt
 {
     LOCALE_IO toggle; // toggles on, then off, the C locale.
 
-    m_props = aProperties;
-
-    cacheLib( aLibraryPath );
+    cacheLib( aLibraryPath, aProperties );
 
     LIB_PART_MAP::const_iterator it = m_cache->m_symbols.find( aSymbolName );
 
@@ -2088,9 +2098,9 @@ LIB_PART* SCH_SEXPR_PLUGIN::LoadSymbol( const wxString& aLibraryPath, const wxSt
 void SCH_SEXPR_PLUGIN::SaveSymbol( const wxString& aLibraryPath, const LIB_PART* aSymbol,
                                    const PROPERTIES* aProperties )
 {
-    m_props = aProperties;
+    LOCALE_IO toggle;     // toggles on, then off, the C locale.
 
-    cacheLib( aLibraryPath );
+    cacheLib( aLibraryPath, aProperties );
 
     m_cache->AddSymbol( aSymbol );
 
@@ -2102,9 +2112,9 @@ void SCH_SEXPR_PLUGIN::SaveSymbol( const wxString& aLibraryPath, const LIB_PART*
 void SCH_SEXPR_PLUGIN::DeleteSymbol( const wxString& aLibraryPath, const wxString& aSymbolName,
                                      const PROPERTIES* aProperties )
 {
-    m_props = aProperties;
+    LOCALE_IO toggle;     // toggles on, then off, the C locale.
 
-    cacheLib( aLibraryPath );
+    cacheLib( aLibraryPath, aProperties );
 
     m_cache->DeleteSymbol( aSymbolName );
 
@@ -2124,8 +2134,6 @@ void SCH_SEXPR_PLUGIN::CreateSymbolLib( const wxString&   aLibraryPath,
     }
 
     LOCALE_IO toggle;
-
-    m_props = aProperties;
 
     delete m_cache;
     m_cache = new SCH_SEXPR_PLUGIN_CACHE( aLibraryPath );

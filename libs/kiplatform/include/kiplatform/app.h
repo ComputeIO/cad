@@ -29,6 +29,14 @@ namespace KIPLATFORM
     namespace APP
     {
         /**
+         * Perform application-specific initialization tasks. These tasks should be called
+         * after the wxApp is constructed (e.g. inside the OnInit method).
+         *
+         * @return true if init successful, false if unsuccessful
+         */
+        bool Init();
+
+        /**
          * Registers the application for restart with the OS with the given command line string to pass as args
          *
          * @param aCommandLine is string the OS will invoke the application with
@@ -75,6 +83,15 @@ namespace KIPLATFORM
          * Call as needed in an application to ensure timers are dispatched
          */
         void ForceTimerMessagesToBeCreatedIfNecessary();
+
+        /**
+         * Inserts a search path for loading dynamic libraries.  The exact place this new path ends
+         * up in the dynamic library search order is platform-dependent, but generally this can be
+         * used to make sure dynamic libraries are found in non-standard runtime situations.
+         *
+         * @param aPath is the full path to insert
+         */
+        void AddDynamicLibrarySearchPath( const wxString& aPath );
     }
 }
 

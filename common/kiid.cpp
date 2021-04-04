@@ -23,7 +23,6 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
 
-#include <common.h> // AsLegacyTimestampString, AsString
 #include <kiid.h>
 
 #include <boost/uuid/uuid_generators.hpp>
@@ -47,6 +46,9 @@ static boost::uuids::nil_generator    nilGenerator;
 // Global nil reference
 KIID niluuid( 0 );
 
+// When true, always create nil uuids for performance, when valid ones aren't needed
+static bool createNilUuids = false;
+
 
 // For static initialization
 KIID& NilUuid()
@@ -65,11 +67,14 @@ KIID::KIID()
     {
 #endif
 
-        m_uuid = randomGenerator();
+        if( createNilUuids )
+            m_uuid = nilGenerator();
+        else
+            m_uuid = randomGenerator();
 
 #if BOOST_VERSION >= 106700
     }
-    catch( const boost::uuids::entropy_error& e )
+    catch( const boost::uuids::entropy_error& )
     {
         wxLogFatalError( "A Boost UUID entropy exception was thrown in %s:%s.", __FILE__,
                          __FUNCTION__ );
@@ -121,7 +126,7 @@ KIID::KIID( const wxString& aString ) : m_uuid(), m_cached_timestamp( 0 )
 
 #if BOOST_VERSION >= 106700
             }
-            catch( const boost::uuids::entropy_error& e )
+            catch( const boost::uuids::entropy_error& )
             {
                 wxLogFatalError( "A Boost UUID entropy exception was thrown in %s:%s.", __FILE__,
                                  __FUNCTION__ );
@@ -229,6 +234,12 @@ void KIID::ConvertTimestampToUuid()
 
     m_cached_timestamp = 0;
     m_uuid             = randomGenerator();
+}
+
+
+void KIID::CreateNilUuids( bool aNil )
+{
+    createNilUuids = aNil;
 }
 
 

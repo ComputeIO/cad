@@ -24,19 +24,18 @@ class UNIT_SELECTOR_THICKNESS;
 #include <wx/font.h>
 #include <wx/colour.h>
 #include <wx/settings.h>
-#include <wx/statusbr.h>
+#include <wx/stattext.h>
+#include <wx/choice.h>
+#include <wx/sizer.h>
 #include <wx/bitmap.h>
 #include <wx/image.h>
 #include <wx/icon.h>
 #include <wx/statbmp.h>
-#include <wx/sizer.h>
-#include <wx/panel.h>
-#include <wx/stattext.h>
 #include <wx/statbox.h>
 #include <wx/radiobut.h>
 #include <wx/textctrl.h>
-#include <wx/choice.h>
 #include <wx/button.h>
+#include <wx/panel.h>
 #include <wx/radiobox.h>
 #include <wx/bmpbuttn.h>
 #include <wx/html/htmlwin.h>
@@ -57,21 +56,21 @@ class PCB_CALCULATOR_FRAME_BASE : public KIWAY_PLAYER
 
 	protected:
 		wxMenuBar* m_menubar;
-		wxStatusBar* m_statusBar;
 		wxNotebook* m_Notebook;
 		wxPanel* m_panelRegulators;
-		wxPanel* m_panelRegulatorBitmaps;
+		wxStaticText* m_staticTextRegType;
+		wxChoice* m_choiceRegType;
 		wxStaticBitmap* m_bitmapRegul4pins;
 		wxStaticBitmap* m_bitmapRegul3pins;
 		wxStaticText* m_RegulFormula;
 		wxRadioButton* m_rbRegulR1;
 		wxStaticText* m_labelRegultR1;
 		wxTextCtrl* m_RegulR1Value;
-		wxStaticText* m_UnitRegultR11;
+		wxStaticText* m_r1Units;
 		wxRadioButton* m_rbRegulR2;
 		wxStaticText* m_labelRegultR2;
 		wxTextCtrl* m_RegulR2Value;
-		wxStaticText* m_UnitRegultR1;
+		wxStaticText* m_r2Units;
 		wxRadioButton* m_rbRegulVout;
 		wxStaticText* m_labelVout;
 		wxTextCtrl* m_RegulVoutValue;
@@ -82,10 +81,9 @@ class PCB_CALCULATOR_FRAME_BASE : public KIWAY_PLAYER
 		wxStaticText* m_RegulIadjTitle;
 		wxTextCtrl* m_RegulIadjValue;
 		wxStaticText* m_IadjUnitLabel;
-		wxStaticText* m_staticTextRegType;
-		wxChoice* m_choiceRegType;
 		wxButton* m_buttonCalculate;
 		wxButton* m_buttonRegulReset;
+		wxStaticText* m_RegulMessage;
 		wxChoice* m_choiceRegulatorSelector;
 		wxStaticText* m_staticTextRegFile;
 		wxTextCtrl* m_regulators_fileNameCtrl;
@@ -93,10 +91,8 @@ class PCB_CALCULATOR_FRAME_BASE : public KIWAY_PLAYER
 		wxButton* m_buttonEditItem;
 		wxButton* m_buttonAddItem;
 		wxButton* m_buttonRemoveItem;
-		wxStaticText* m_RegulMessage;
 		wxPanel* m_panelAttenuators;
 		wxRadioBox* m_AttenuatorsSelection;
-		wxPanel* m_attenuatorPanel;
 		wxStaticBitmap* m_attenuatorBitmap;
 		wxStaticText* m_attenuationLabel;
 		wxTextCtrl* m_AttValueCtrl;
@@ -114,7 +110,7 @@ class PCB_CALCULATOR_FRAME_BASE : public KIWAY_PLAYER
 		wxStaticText* m_attR1Unit;
 		wxStaticText* m_attenuatorR2Label;
 		wxTextCtrl* m_Att_R2_Value;
-		wxStaticText* m_attR2Unit1;
+		wxStaticText* m_attR2Unit;
 		wxStaticText* m_attenuatorR3Label;
 		wxTextCtrl* m_Att_R3_Value;
 		wxStaticText* m_attR3Unit;
@@ -124,13 +120,13 @@ class PCB_CALCULATOR_FRAME_BASE : public KIWAY_PLAYER
 		wxPanel* m_panelESeries;
 		wxStaticText* m_ESrequired;
 		wxTextCtrl* m_ResRequired;
-		wxStaticText* m_UnitRegultR111;
+		wxStaticText* m_reqResUnits;
 		wxStaticText* m_ESrequired1;
 		wxTextCtrl* m_ResExclude1;
-		wxStaticText* m_UnitRegultR1111;
+		wxStaticText* m_exclude1Units;
 		wxStaticText* m_ESrequired11;
 		wxTextCtrl* m_ResExclude2;
-		wxStaticText* m_UnitRegultR1112;
+		wxStaticText* m_exclude2Units;
 		wxStaticLine* m_staticline6;
 		wxRadioButton* m_e1;
 		wxRadioButton* m_e3;
@@ -171,7 +167,6 @@ class PCB_CALCULATOR_FRAME_BASE : public KIWAY_PLAYER
 		wxPanel* m_panelTransline;
 		wxRadioBox* m_TranslineSelection;
 		wxStaticBitmap* m_translineBitmap;
-		wxStaticLine* m_staticline1;
 		wxStaticText* m_EpsilonR_label;
 		wxTextCtrl* m_Value_EpsilonR;
 		wxButton* m_button_EpsilonR;
@@ -270,19 +265,20 @@ class PCB_CALCULATOR_FRAME_BASE : public KIWAY_PLAYER
 		wxStaticText* m_staticTextResistivity;
 		wxTextCtrl* m_textCtrlPlatingResistivity;
 		wxButton* m_button_ResistivityVia;
+		wxStaticText* m_viaResistivityUnits;
 		wxStaticText* m_staticTextPermittivity;
 		wxTextCtrl* m_textCtrlPlatingPermittivity;
 		wxButton* m_button_Permittivity;
 		wxStaticText* m_staticTextTemperatureDiff;
 		wxTextCtrl* m_textCtrlTemperatureDiff;
-		wxStaticText* m_staticTextTemperatureUnits;
+		wxStaticText* m_viaTempUnits;
 		wxStaticText* m_staticTextRiseTime;
 		wxTextCtrl* m_textCtrlRiseTime;
 		wxStaticText* m_staticTextRiseTimeUnits;
-		wxStaticBitmap* m_viaBitmap;
+		wxStaticText* m_staticTextWarning;
 		wxStaticText* m_staticTextArea11;
 		wxStaticText* m_ViaResistance;
-		wxStaticText* m_IntTrackAreaUnitLabel1;
+		wxStaticText* m_viaResUnits;
 		wxStaticText* m_staticText65111;
 		wxStaticText* m_ViaVoltageDrop;
 		wxStaticText* m_staticText8411;
@@ -291,7 +287,7 @@ class PCB_CALCULATOR_FRAME_BASE : public KIWAY_PLAYER
 		wxStaticText* m_staticText8311;
 		wxStaticText* m_staticText79211;
 		wxStaticText* m_ViaThermalResistance;
-		wxStaticText* m_staticText791111;
+		wxStaticText* m_viaThermalResUnits;
 		wxStaticText* m_staticTextAmpacity;
 		wxStaticText* m_ViaAmpacity;
 		wxStaticText* m_staticTextAmpacityUnits;
@@ -306,8 +302,8 @@ class PCB_CALCULATOR_FRAME_BASE : public KIWAY_PLAYER
 		wxStaticText* m_staticTextInductanceUnits;
 		wxStaticText* m_staticTextReactance;
 		wxStaticText* m_Reactance;
-		wxStaticText* m_staticTextReactanceUnits;
-		wxStaticText* m_staticTextWarning;
+		wxStaticText* m_viaReactanceUnits;
+		wxStaticBitmap* m_viaBitmap;
 		wxButton* m_buttonViaReset;
 		wxPanel* m_panelTrackWidth;
 		wxStaticText* m_staticTextCurrent;
@@ -315,13 +311,13 @@ class PCB_CALCULATOR_FRAME_BASE : public KIWAY_PLAYER
 		wxStaticText* m_staticText62;
 		wxStaticText* m_staticText63;
 		wxTextCtrl* m_TrackDeltaTValue;
-		wxStaticText* m_staticText64;
+		wxStaticText* m_trackTempUnits;
 		wxStaticText* m_staticText66;
 		wxTextCtrl* m_TrackLengthValue;
 		UNIT_SELECTOR_LEN* m_TW_CuLength_choiceUnit;
-		wxTextCtrl* m_TWResistivity;
 		wxStaticText* m_staticText103;
-		wxStaticText* m_staticText104;
+		wxTextCtrl* m_TWResistivity;
+		wxStaticText* m_resistivityUnits;
 		wxHtmlWindow* m_htmlWinFormulas;
 		wxStaticText* m_staticTextExtWidth;
 		wxTextCtrl* m_ExtTrackWidthValue;
@@ -334,10 +330,10 @@ class PCB_CALCULATOR_FRAME_BASE : public KIWAY_PLAYER
 		wxStaticLine* m_staticline5;
 		wxStaticText* m_staticTextArea;
 		wxStaticText* m_ExtTrackAreaValue;
-		wxStaticText* m_ExtTrackAreaUnitLabel;
+		wxStaticText* m_extTrackAreaUnitLabel;
 		wxStaticText* m_staticText651;
 		wxStaticText* m_ExtTrackResistValue;
-		wxStaticText* m_staticText84;
+		wxStaticText* m_extTrackResUnits;
 		wxStaticText* m_staticText661;
 		wxStaticText* m_ExtTrackVDropValue;
 		wxStaticText* m_staticText83;
@@ -350,12 +346,15 @@ class PCB_CALCULATOR_FRAME_BASE : public KIWAY_PLAYER
 		wxStaticText* m_staticText652;
 		wxTextCtrl* m_IntTrackThicknessValue;
 		UNIT_SELECTOR_THICKNESS* m_IntTrackThicknessUnit;
+		wxStaticLine* m_staticline8;
+		wxStaticLine* m_staticline9;
+		wxStaticLine* m_staticline10;
 		wxStaticText* m_staticTextArea1;
 		wxStaticText* m_IntTrackAreaValue;
-		wxStaticText* m_IntTrackAreaUnitLabel;
+		wxStaticText* m_intTrackAreaUnitLabel;
 		wxStaticText* m_staticText6511;
 		wxStaticText* m_IntTrackResistValue;
-		wxStaticText* m_staticText841;
+		wxStaticText* m_intTrackResUnits;
 		wxStaticText* m_staticText6611;
 		wxStaticText* m_IntTrackVDropValue;
 		wxStaticText* m_staticText831;
@@ -369,6 +368,7 @@ class PCB_CALCULATOR_FRAME_BASE : public KIWAY_PLAYER
 		wxStaticText* m_staticText891;
 		wxTextCtrl* m_ElectricalSpacingVoltage;
 		wxButton* m_buttonElectSpacingRefresh;
+		wxBoxSizer* m_electricalSpacingSizer;
 		wxStaticText* m_staticTextElectricalSpacing;
 		wxGrid* m_gridElectricalSpacingValues;
 		wxStaticText* m_staticText88;

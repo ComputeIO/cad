@@ -1,6 +1,3 @@
-#ifndef _DIALOG_CHANGE_SYMBOLS_H_
-#define _DIALOG_CHANGE_SYMBOLS_H_
-
 /*
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
@@ -22,6 +19,9 @@
  * You should have received a copy of the GNU General Public License along
  * with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+
+#ifndef _DIALOG_CHANGE_SYMBOLS_H_
+#define _DIALOG_CHANGE_SYMBOLS_H_
 
 #include <dialog_change_symbols_base.h>
 

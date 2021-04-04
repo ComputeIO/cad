@@ -47,12 +47,14 @@
 
 DIALOG_PLOT::DIALOG_PLOT( PCB_EDIT_FRAME* aParent ) :
     DIALOG_PLOT_BASE( aParent ), m_parent( aParent ),
-    m_defaultPenSize( aParent, m_hpglPenLabel, m_hpglPenCtrl, m_hpglPenUnits, true ),
-    m_trackWidthCorrection( aParent, m_widthAdjustLabel, m_widthAdjustCtrl, m_widthAdjustUnits, true )
+    m_defaultPenSize( aParent, m_hpglPenLabel, m_hpglPenCtrl, m_hpglPenUnits ),
+    m_trackWidthCorrection( aParent, m_widthAdjustLabel, m_widthAdjustCtrl, m_widthAdjustUnits )
 {
     SetName( DLG_WINDOW_NAME );
     m_plotOpts = aParent->GetPlotSettings();
     m_DRCWarningTemplate = m_DRCExclusionsWarning->GetLabel();
+
+    m_messagesPanel->SetFileName( Prj().GetProjectPath() + wxT( "report.txt" ) );
 
     init_Dialog();
 
@@ -82,7 +84,7 @@ void DIALOG_PLOT::init_Dialog()
 
     m_zoneFillCheck->SetValue( cfg->m_Plot.check_zones_before_plotting );
 
-    m_browseButton->SetBitmap( KiBitmap( small_folder_xpm ) );
+    m_browseButton->SetBitmap( KiBitmap( BITMAPS::small_folder ) );
 
     // m_PSWidthAdjust is stored in mm in user config
     m_PSWidthAdjust = KiROUND( cfg->m_Plot.ps_fine_width_adjust * IU_PER_MM );

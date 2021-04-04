@@ -23,6 +23,8 @@
 #ifndef __PNS_ALGO_BASE_H
 #define __PNS_ALGO_BASE_H
 
+#include <math/box2.h>
+
 #include "pns_routing_settings.h"
 
 namespace PNS
@@ -64,6 +66,8 @@ public:
     void SetDebugDecorator( DEBUG_DECORATOR* aDecorator ) { m_debugDecorator = aDecorator; }
 
     DEBUG_DECORATOR* Dbg() const { return m_debugDecorator; }
+
+    const BOX2I& VisibleViewArea() const;
 
 protected:
     DEBUG_DECORATOR* m_debugDecorator;

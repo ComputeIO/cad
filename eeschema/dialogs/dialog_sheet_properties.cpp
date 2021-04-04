@@ -44,12 +44,12 @@ DIALOG_SHEET_PROPERTIES::DIALOG_SHEET_PROPERTIES( SCH_EDIT_FRAME* aParent, SCH_S
     DIALOG_SHEET_PROPERTIES_BASE( aParent ),
     m_frame( aParent ),
     m_clearAnnotationNewItems( aClearAnnotationNewItems ),
-    m_borderWidth( aParent, m_borderWidthLabel, m_borderWidthCtrl, m_borderWidthUnits, true ),
+    m_borderWidth( aParent, m_borderWidthLabel, m_borderWidthCtrl, m_borderWidthUnits ),
     m_dummySheet( *aSheet ),
     m_dummySheetNameField( wxDefaultPosition, SHEETNAME, &m_dummySheet )
 {
     m_sheet = aSheet;
-    m_fields = new FIELDS_GRID_TABLE<SCH_FIELD>( this, aParent, m_sheet );
+    m_fields = new FIELDS_GRID_TABLE<SCH_FIELD>( this, aParent, m_grid, m_sheet );
     m_width = 100;  // Will be later set to a better value
     m_delayedFocusRow = SHEETNAME;
     m_delayedFocusColumn = FDC_VALUE;
@@ -74,10 +74,10 @@ DIALOG_SHEET_PROPERTIES::DIALOG_SHEET_PROPERTIES( SCH_EDIT_FRAME* aParent, SCH_S
     m_stdDialogButtonSizerOK->SetDefault();
 
     // Configure button logos
-    m_bpAdd->SetBitmap( KiBitmap( small_plus_xpm ) );
-    m_bpDelete->SetBitmap( KiBitmap( small_trash_xpm ) );
-    m_bpMoveUp->SetBitmap( KiBitmap( small_up_xpm ) );
-    m_bpMoveDown->SetBitmap( KiBitmap( small_down_xpm ) );
+    m_bpAdd->SetBitmap( KiBitmap( BITMAPS::small_plus ) );
+    m_bpDelete->SetBitmap( KiBitmap( BITMAPS::small_trash ) );
+    m_bpMoveUp->SetBitmap( KiBitmap( BITMAPS::small_up ) );
+    m_bpMoveDown->SetBitmap( KiBitmap( BITMAPS::small_down ) );
 
     // Set font sizes
     wxFont infoFont = wxSystemSettings::GetFont( wxSYS_DEFAULT_GUI_FONT );
@@ -249,8 +249,6 @@ bool DIALOG_SHEET_PROPERTIES::TransferDataFromWindow()
 
     // Ensure filepath is not empty.  (In normal use will be caught by grid validators,
     // but unedited data from existing files can be bad.)
-
-    // @todo What happens when there are invalid file name characters?
     if( newRelativeNativeFilename.IsEmpty() )
     {
         wxMessageBox( _( "A sheet must have a valid file name." ) );
@@ -613,16 +611,6 @@ void DIALOG_SHEET_PROPERTIES::OnGridCellChanging( wxGridEvent& event )
         {
             wxMessageBox( _( "A sheet must have a file specified." ) );
             success = false;
-        }
-        else
-        {
-            wxFileName fn = textControl->GetValue();
-
-            if( fn.GetExt().CmpNoCase( KiCadSchematicFileExtension ) != 0 )
-            {
-                wxMessageBox( _( "Sheet filename must have a '.kicad_sch' extension." ) );
-                success = false;
-            }
         }
     }
 

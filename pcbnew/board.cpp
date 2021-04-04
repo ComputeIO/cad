@@ -29,7 +29,6 @@
 #include <iterator>
 #include <pcb_base_frame.h>
 #include <reporter.h>
-#include <page_layout/ws_proxy_view_item.h>
 #include <board_commit.h>
 #include <board.h>
 #include <footprint.h>
@@ -49,7 +48,6 @@
 #include <project/project_file.h>
 #include <project/project_local_settings.h>
 #include <ratsnest/ratsnest_data.h>
-#include <ratsnest/ratsnest_viewitem.h>
 #include <tool/selection_conditions.h>
 #include <convert_drawsegment_list_to_polygon.h>
 
@@ -61,6 +59,7 @@ wxPoint BOARD_ITEM::ZeroOffset( 0, 0 );
 BOARD::BOARD() :
         BOARD_ITEM_CONTAINER( (BOARD_ITEM*) NULL, PCB_T ),
         m_boardUse( BOARD_USE::NORMAL ),
+        m_timeStamp( 1 ),
         m_paper( PAGE_INFO::A4 ),
         m_project( nullptr ),
         m_designSettings( new BOARD_DESIGN_SETTINGS( nullptr, "board.design_settings" ) ),
@@ -290,7 +289,7 @@ TRACKS BOARD::TracksInNet( int aNetCode )
 
     INSPECTOR_FUNC inspector = [aNetCode, &ret]( EDA_ITEM* item, void* testData )
                                {
-                                   TRACK*  t = (TRACK*) item;
+                                   TRACK* t = static_cast<TRACK*>( item );
 
                                    if( t->GetNetCode() == aNetCode )
                                        ret.push_back( t );
@@ -544,7 +543,7 @@ void BOARD::SetElementVisibility( GAL_LAYER_ID aLayer, bool isEnabled )
 }
 
 
-bool BOARD::IsFootprintLayerVisible( PCB_LAYER_ID aLayer )
+bool BOARD::IsFootprintLayerVisible( PCB_LAYER_ID aLayer ) const
 {
     switch( aLayer )
     {
@@ -738,8 +737,12 @@ void BOARD::Remove( BOARD_ITEM* aBoardItem, REMOVE_MODE aRemoveMode )
         wxFAIL_MSG( wxT( "BOARD::Remove() needs more ::Type() support" ) );
     }
 
-    if( aBoardItem->GetParentGroup() )
-        aBoardItem->GetParentGroup()->RemoveItem( aBoardItem );
+    aBoardItem->SetFlags( STRUCT_DELETED );
+
+    PCB_GROUP* parentGroup = aBoardItem->GetParentGroup();
+
+    if( parentGroup && !( parentGroup->GetFlags() & STRUCT_DELETED ) )
+        parentGroup->RemoveItem( aBoardItem );
 
     m_connectivity->Remove( aBoardItem );
 
@@ -901,7 +904,7 @@ void BOARD::FillItemMap( std::map<KIID, EDA_ITEM*>& aMap )
 }
 
 
-wxString BOARD::ConvertCrossReferencesToKIIDs( const wxString& aSource )
+wxString BOARD::ConvertCrossReferencesToKIIDs( const wxString& aSource ) const
 {
     wxString newbuf;
     size_t   sourceLen = aSource.length();
@@ -929,7 +932,7 @@ wxString BOARD::ConvertCrossReferencesToKIIDs( const wxString& aSource )
                 wxString remainder;
                 wxString ref = token.BeforeFirst( ':', &remainder );
 
-                for( FOOTPRINT* footprint : Footprints() )
+                for( const FOOTPRINT* footprint : Footprints() )
                 {
                     if( footprint->GetReference().CmpNoCase( ref ) == 0 )
                     {
@@ -955,7 +958,7 @@ wxString BOARD::ConvertCrossReferencesToKIIDs( const wxString& aSource )
 }
 
 
-wxString BOARD::ConvertKIIDsToCrossReferences( const wxString& aSource )
+wxString BOARD::ConvertKIIDsToCrossReferences( const wxString& aSource ) const
 {
     wxString newbuf;
     size_t   sourceLen = aSource.length();
@@ -1059,7 +1062,7 @@ EDA_RECT BOARD::ComputeBoundingBox( bool aBoardEdgesOnly ) const
         }
         else
         {
-            area.Merge( footprint->GetBoundingBox( showInvisibleText ) );
+            area.Merge( footprint->GetBoundingBox( true, showInvisibleText ) );
         }
     }
 
@@ -1386,11 +1389,11 @@ int BOARD::SortedNetnamesList( wxArrayString& aNames, bool aSortbyPadsCount )
 }
 
 
-std::vector<wxString> BOARD::GetNetClassAssignmentCandidates()
+std::vector<wxString> BOARD::GetNetClassAssignmentCandidates() const
 {
     std::vector<wxString> names;
 
-    for( NETINFO_ITEM* net : m_NetInfo )
+    for( const NETINFO_ITEM* net : m_NetInfo )
     {
         if( !net->GetNetname().IsEmpty() )
             names.emplace_back( net->GetNetname() );
@@ -1474,7 +1477,7 @@ int BOARD::SetAreasNetCodesFromNetNames()
 }
 
 
-PAD* BOARD::GetPad( const wxPoint& aPosition, LSET aLayerSet )
+PAD* BOARD::GetPad( const wxPoint& aPosition, LSET aLayerSet ) const
 {
     if( !aLayerSet.any() )
         aLayerSet = LSET::AllCuMask();
@@ -1494,7 +1497,7 @@ PAD* BOARD::GetPad( const wxPoint& aPosition, LSET aLayerSet )
 }
 
 
-PAD* BOARD::GetPad( TRACK* aTrace, ENDPOINT_T aEndPoint )
+PAD* BOARD::GetPad( const TRACK* aTrace, ENDPOINT_T aEndPoint ) const
 {
     const wxPoint& aPosition = aTrace->GetEndPoint( aEndPoint );
 
@@ -1504,7 +1507,7 @@ PAD* BOARD::GetPad( TRACK* aTrace, ENDPOINT_T aEndPoint )
 }
 
 
-PAD* BOARD::GetPadFast( const wxPoint& aPosition, LSET aLayerSet )
+PAD* BOARD::GetPadFast( const wxPoint& aPosition, LSET aLayerSet ) const
 {
     for( FOOTPRINT* footprint : Footprints() )
     {
@@ -1523,11 +1526,11 @@ PAD* BOARD::GetPadFast( const wxPoint& aPosition, LSET aLayerSet )
 }
 
 
-PAD* BOARD::GetPad( std::vector<PAD*>& aPadList, const wxPoint& aPosition, LSET aLayerSet )
+PAD* BOARD::GetPad( std::vector<PAD*>& aPadList, const wxPoint& aPosition, LSET aLayerSet ) const
 {
     // Search aPadList for aPosition
     // aPadList is sorted by X then Y values, and a fast binary search is used
-    int idxmax = aPadList.size()-1;
+    int idxmax = aPadList.size() - 1;
 
     int delta = aPadList.size();
 
@@ -1565,7 +1568,7 @@ PAD* BOARD::GetPad( std::vector<PAD*>& aPadList, const wxPoint& aPosition, LSET 
                     return pad;
             }
             // search previous
-            for(  int ii = idx-1 ;ii >=0; ii-- )
+            for( int ii = idx - 1 ;ii >=0; ii-- )
             {
                 pad = aPadList[ii];
 
@@ -1631,13 +1634,13 @@ bool sortPadsByXthenYCoord( PAD* const& aLH, PAD* const& aRH )
 }
 
 
-void BOARD::GetSortedPadListByXthenYCoord( std::vector<PAD*>& aVector, int aNetCode )
+void BOARD::GetSortedPadListByXthenYCoord( std::vector<PAD*>& aVector, int aNetCode ) const
 {
     for( FOOTPRINT* footprint : Footprints() )
     {
         for( PAD* pad : footprint->Pads( ) )
         {
-            if( aNetCode < 0 ||  pad->GetNetCode() == aNetCode )
+            if( aNetCode < 0 || pad->GetNetCode() == aNetCode )
                 aVector.push_back( pad );
         }
     }
@@ -1700,7 +1703,7 @@ std::tuple<int, double, double> BOARD::GetTrackLength( const TRACK& aTrack ) con
 
 
 FOOTPRINT* BOARD::GetFootprint( const wxPoint& aPosition, PCB_LAYER_ID aActiveLayer,
-                                bool aVisibleOnly, bool aIgnoreLocked )
+                                bool aVisibleOnly, bool aIgnoreLocked ) const
 {
     FOOTPRINT* footprint     = NULL;
     FOOTPRINT* alt_footprint = NULL;
@@ -1723,7 +1726,7 @@ FOOTPRINT* BOARD::GetFootprint( const wxPoint& aPosition, PCB_LAYER_ID aActiveLa
         // Filter non visible footprints if requested
         if( !aVisibleOnly || IsFootprintLayerVisible( layer ) )
         {
-            EDA_RECT bb = candidate->GetFootprintRect();
+            EDA_RECT bb = candidate->GetBoundingBox( false, false );
 
             int offx = bb.GetX() + bb.GetWidth() / 2;
             int offy = bb.GetY() + bb.GetHeight() / 2;
@@ -1737,7 +1740,7 @@ FOOTPRINT* BOARD::GetFootprint( const wxPoint& aPosition, PCB_LAYER_ID aActiveLa
                 if( dist <= min_dim )
                 {
                     // better footprint shown on the active side
-                    footprint  = candidate;
+                    footprint = candidate;
                     min_dim = dist;
                 }
             }
@@ -1746,7 +1749,7 @@ FOOTPRINT* BOARD::GetFootprint( const wxPoint& aPosition, PCB_LAYER_ID aActiveLa
                 if( dist <= alt_min_dim )
                 {
                     // better footprint shown on the other side
-                    alt_footprint  = candidate;
+                    alt_footprint = candidate;
                     alt_min_dim = dist;
                 }
             }
@@ -1763,7 +1766,7 @@ FOOTPRINT* BOARD::GetFootprint( const wxPoint& aPosition, PCB_LAYER_ID aActiveLa
 }
 
 
-std::list<ZONE*> BOARD::GetZoneList( bool aIncludeZonesInFootprints )
+std::list<ZONE*> BOARD::GetZoneList( bool aIncludeZonesInFootprints ) const
 {
     std::list<ZONE*> zones;
 

@@ -24,6 +24,7 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
 
+#include <bitmaps.h>
 #include <filehistory.h>
 #include <kiface_i.h>
 #include <menus_helpers.h>
@@ -59,10 +60,9 @@ void SCH_EDIT_FRAME::ReCreateMenuBar()
         // (the file history will be updated when adding/removing files in history)
         if( !openRecentMenu )
         {
-            openRecentMenu = new ACTION_MENU( false );
-            openRecentMenu->SetTool( selTool );
+            openRecentMenu = new ACTION_MENU( false, selTool );
             openRecentMenu->SetTitle( _( "Open Recent" ) );
-            openRecentMenu->SetIcon( recent_xpm );
+            openRecentMenu->SetIcon( BITMAPS::recent );
 
             fileHistory.UseMenu( openRecentMenu );
             fileHistory.AddFilesToMenu( openRecentMenu );
@@ -88,31 +88,29 @@ void SCH_EDIT_FRAME::ReCreateMenuBar()
     fileMenu->Add( _( "Append Schematic Sheet Content..." ),
                    _( "Append schematic sheet content from another project to the current sheet" ),
                    ID_APPEND_PROJECT,
-                   add_document_xpm );
+                   BITMAPS::add_document );
 
     fileMenu->AppendSeparator();
 
     // Import submenu
-    ACTION_MENU* submenuImport = new ACTION_MENU( false );
-    submenuImport->SetTool( selTool );
+    ACTION_MENU* submenuImport = new ACTION_MENU( false, selTool );
     submenuImport->SetTitle( _( "Import" ) );
-    submenuImport->SetIcon( import_xpm );
-    submenuImport->Add( _( "Import Non KiCad Schematic..." ),
+    submenuImport->SetIcon( BITMAPS::import );
+    submenuImport->Add( _( "Non-KiCad Schematic..." ),
                         _( "Replace current schematic sheet with one imported from another application" ),
                         ID_IMPORT_NON_KICAD_SCH,
-                        import_document_xpm );
+                        BITMAPS::import_document );
 
-    submenuImport->Add( EE_ACTIONS::importFPAssignments );
+    submenuImport->Add( EE_ACTIONS::importFPAssignments, ACTION_MENU::NORMAL, _( "Footprint Assignments..." ) );
     fileMenu->Add( submenuImport );
 
 
     // Export submenu
-    ACTION_MENU* submenuExport = new ACTION_MENU( false );
-    submenuExport->SetTool( selTool );
+    ACTION_MENU* submenuExport = new ACTION_MENU( false, selTool );
     submenuExport->SetTitle( _( "Export" ) );
-    submenuExport->SetIcon( export_xpm );
-    submenuExport->Add( EE_ACTIONS::drawSheetOnClipboard );
-    submenuExport->Add( EE_ACTIONS::exportNetlist );
+    submenuExport->SetIcon( BITMAPS::export_file );
+    submenuExport->Add( EE_ACTIONS::drawSheetOnClipboard, ACTION_MENU::NORMAL, _( "Drawing to Clipboard" ) );
+    submenuExport->Add( EE_ACTIONS::exportNetlist,        ACTION_MENU::NORMAL, _( "Netlist..." ) );
     fileMenu->Add( submenuExport );
 
     fileMenu->AppendSeparator();
@@ -124,7 +122,7 @@ void SCH_EDIT_FRAME::ReCreateMenuBar()
     fileMenu->Add( ACTIONS::plot );
 
     fileMenu->AppendSeparator();
-    fileMenu->AddQuitOrClose( &Kiface(), _( "Eeschema" ) );
+    fileMenu->AddQuitOrClose( &Kiface(), _( "Schematic Editor" ) );
 
 
     //-- Edit menu -----------------------------------------------------------
@@ -177,7 +175,7 @@ void SCH_EDIT_FRAME::ReCreateMenuBar()
     // Units submenu
     ACTION_MENU* unitsSubMenu = new ACTION_MENU( false, selTool );
     unitsSubMenu->SetTitle( _( "&Units" ) );
-    unitsSubMenu->SetIcon( unit_mm_xpm );
+    unitsSubMenu->SetIcon( BITMAPS::unit_mm );
     unitsSubMenu->Add( ACTIONS::inchesUnits,      ACTION_MENU::CHECK );
     unitsSubMenu->Add( ACTIONS::milsUnits,        ACTION_MENU::CHECK );
     unitsSubMenu->Add( ACTIONS::millimetersUnits, ACTION_MENU::CHECK );
@@ -236,8 +234,11 @@ void SCH_EDIT_FRAME::ReCreateMenuBar()
     //
     ACTION_MENU* toolsMenu = new ACTION_MENU( false, selTool );
 
-    toolsMenu->Add( ACTIONS::updatePcbFromSchematic );
-    toolsMenu->Add( ACTIONS::updateSchematicFromPcb );
+    wxMenuItem* update = toolsMenu->Add( ACTIONS::updatePcbFromSchematic );
+    update->Enable( !Kiface().IsSingle() );
+    update = toolsMenu->Add( ACTIONS::updateSchematicFromPcb );
+    update->Enable( !Kiface().IsSingle() );
+
     toolsMenu->Add( EE_ACTIONS::showPcbNew );
 
     toolsMenu->AppendSeparator();
@@ -268,16 +269,10 @@ void SCH_EDIT_FRAME::ReCreateMenuBar()
     prefsMenu->Add( _( "Preferences..." ) + "\tCtrl+,",
                     _( "Show preferences for all open tools" ),
                     wxID_PREFERENCES,
-                    preference_xpm );
+                    BITMAPS::preference );
 
     prefsMenu->AppendSeparator();
     AddMenuLanguageList( prefsMenu, selTool );
-
-#ifndef __WXMAC__
-    prefsMenu->AppendSeparator();
-    prefsMenu->Add( ACTIONS::acceleratedGraphics, ACTION_MENU::CHECK );
-    prefsMenu->Add( ACTIONS::standardGraphics,    ACTION_MENU::CHECK );
-#endif
 
 
     //-- Menubar -------------------------------------------------------------

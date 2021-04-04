@@ -128,23 +128,23 @@ wxSize SCH_BITMAP::GetSize() const
 }
 
 
-void SCH_BITMAP::MirrorX( int aXaxis_position )
+void SCH_BITMAP::MirrorVertically( int aCenter )
 {
-    MIRROR( m_pos.y, aXaxis_position );
+    MIRROR( m_pos.y, aCenter );
     m_image->Mirror( true );
 }
 
 
-void SCH_BITMAP::MirrorY( int aYaxis_position )
+void SCH_BITMAP::MirrorHorizontally( int aCenter )
 {
-    MIRROR( m_pos.x, aYaxis_position );
+    MIRROR( m_pos.x, aCenter );
     m_image->Mirror( false );
 }
 
 
-void SCH_BITMAP::Rotate( wxPoint aPosition )
+void SCH_BITMAP::Rotate( wxPoint aCenter )
 {
-    RotatePoint( &m_pos, aPosition, 900 );
+    RotatePoint( &m_pos, aCenter, 900 );
     m_image->Rotate( false );
 }
 
@@ -183,16 +183,16 @@ bool SCH_BITMAP::HitTest( const EDA_RECT& aRect, bool aContained, int aAccuracy 
 }
 
 
-void SCH_BITMAP::Plot( PLOTTER* aPlotter )
+void SCH_BITMAP::Plot( PLOTTER* aPlotter ) const
 {
     m_image->PlotImage( aPlotter, m_pos, aPlotter->RenderSettings()->GetLayerColor( GetLayer() ),
                         aPlotter->RenderSettings()->GetDefaultPenWidth() );
 }
 
 
-BITMAP_DEF SCH_BITMAP::GetMenuImage() const
+BITMAPS SCH_BITMAP::GetMenuImage() const
 {
-    return image_xpm;
+    return BITMAPS::image;
 }
 
 

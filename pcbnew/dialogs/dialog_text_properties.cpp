@@ -35,20 +35,17 @@
 #include <pcb_layer_box_selector.h>
 #include <wx/valnum.h>
 #include <math/util.h> // for KiROUND
-#ifdef KICAD_USE_FONTCONFIG
 #include <wx/fontdlg.h>
-#include <font/fontconfig.h>
-#endif
 
 DIALOG_TEXT_PROPERTIES::DIALOG_TEXT_PROPERTIES( PCB_BASE_EDIT_FRAME* aParent, BOARD_ITEM* aItem ) :
         DIALOG_TEXT_PROPERTIES_BASE( aParent ), m_Parent( aParent ), m_item( aItem ),
         m_edaText( nullptr ), m_fpText( nullptr ), m_pcbText( nullptr ),
-        m_textWidth( aParent, m_SizeXLabel, m_SizeXCtrl, m_SizeXUnits, true ),
-        m_textHeight( aParent, m_SizeYLabel, m_SizeYCtrl, m_SizeYUnits, true ),
-        m_thickness( aParent, m_ThicknessLabel, m_ThicknessCtrl, m_ThicknessUnits, true ),
+        m_textWidth( aParent, m_SizeXLabel, m_SizeXCtrl, m_SizeXUnits ),
+        m_textHeight( aParent, m_SizeYLabel, m_SizeYCtrl, m_SizeYUnits ),
+        m_thickness( aParent, m_ThicknessLabel, m_ThicknessCtrl, m_ThicknessUnits ),
         m_posX( aParent, m_PositionXLabel, m_PositionXCtrl, m_PositionXUnits ),
         m_posY( aParent, m_PositionYLabel, m_PositionYCtrl, m_PositionYUnits ),
-        m_orientation( aParent, m_OrientLabel, m_OrientCtrl, nullptr, false )
+        m_orientation( aParent, m_OrientLabel, m_OrientCtrl, nullptr )
 {
     wxString title;
 
@@ -139,25 +136,18 @@ DIALOG_TEXT_PROPERTIES::DIALOG_TEXT_PROPERTIES( PCB_BASE_EDIT_FRAME* aParent, BO
 
     // We can't set the tab order through wxWidgets due to shortcomings in their mnemonics
     // implementation on MSW
-    m_tabOrder = { m_LayerLabel,    m_LayerSelectionCtrl,
-#ifdef KICAD_USE_FONTCONFIG
-                   m_FontLabel,     m_Font,
-#endif
-                   m_SizeXCtrl,     m_SizeYCtrl,
-                   m_ThicknessCtrl, m_PositionXCtrl,
-                   m_PositionYCtrl, m_Visible,
-                   m_Italic,        m_JustifyChoice,
-                   m_OrientCtrl,    m_Mirrored,
-                   m_KeepUpright,   m_sdbSizerOK,
-                   m_sdbSizerCancel };
-
-#ifdef KICAD_USE_FONTCONFIG
-    setupFontMenu();
-#endif
+    m_tabOrder = { m_LayerLabel,    m_LayerSelectionCtrl, m_SizeXCtrl,     m_SizeYCtrl,
+                   m_ThicknessCtrl, m_PositionXCtrl,      m_PositionYCtrl, m_Visible,
+                   m_Italic,        m_JustifyChoice,      m_OrientCtrl,    m_Mirrored,
+                   m_KeepUpright,   m_sdbSizerOK,         m_sdbSizerCancel };
 
     // wxTextCtrls fail to generate wxEVT_CHAR events when the wxTE_MULTILINE flag is set,
     // so we have to listen to wxEVT_CHAR_HOOK events instead.
     Connect( wxEVT_CHAR_HOOK, wxKeyEventHandler( DIALOG_TEXT_PROPERTIES::OnCharHook ), NULL, this );
+
+    // If this item has a custom font, display font name
+    // Default font is named "" so it's OK to always display font name
+    m_FontCtrl->SetValue( m_edaText->GetFont()->Name() );
 
     finishDialogSettings();
 }
@@ -237,13 +227,11 @@ DIALOG_TEXT_PROPERTIES::~DIALOG_TEXT_PROPERTIES()
 }
 
 
-/**
- * Routine for main window class to launch text properties dialog.
- */
+// Launch the text properties dialog in quasi modal mode.
 void PCB_BASE_EDIT_FRAME::ShowTextPropertiesDialog( BOARD_ITEM* aText )
 {
     DIALOG_TEXT_PROPERTIES dlg( this, aText );
-    dlg.ShowModal();
+    dlg.ShowQuasiModal();
 }
 
 
@@ -252,7 +240,12 @@ void DIALOG_TEXT_PROPERTIES::OnCharHook( wxKeyEvent& aEvent )
     if( aEvent.GetKeyCode() == WXK_RETURN && aEvent.ShiftDown() )
     {
         if( TransferDataFromWindow() )
-            EndModal( wxID_OK );
+        {
+            // Do not use EndModal to close the dialog that can be opened
+            // in quasi modal mode
+            SetReturnCode( wxID_OK );
+            Close();
+        }
     }
     else if( m_MultiLineText->IsShown() && m_MultiLineText->HasFocus() )
     {
@@ -293,6 +286,73 @@ void DIALOG_TEXT_PROPERTIES::OnCharHook( wxKeyEvent& aEvent )
     {
         aEvent.Skip();
     }
+}
+
+
+#ifdef DEBUG
+std::ostream& operator<<( std::ostream& os, const wxFont& aFont )
+{
+    os << "(font " << aFont.GetFaceName() << " [" << aFont.GetNativeFontInfoDesc() << ","
+       << aFont.GetNativeFontInfoUserDesc() << "] ";
+    switch( aFont.GetStyle() )
+    {
+    case wxFONTSTYLE_NORMAL: os << "normal"; break;
+    case wxFONTSTYLE_ITALIC: os << "italic"; break;
+    case wxFONTSTYLE_SLANT: os << "slant"; break;
+    default: os << "unknown style";
+    }
+    os << ",";
+    switch( aFont.GetWeight() )
+    {
+    case wxFONTWEIGHT_NORMAL: os << "normal"; break;
+    case wxFONTWEIGHT_LIGHT: os << "light"; break;
+    case wxFONTWEIGHT_BOLD: os << "bold"; break;
+    default: os << "unknown style";
+    }
+    if (aFont.GetUnderlined())
+        os << ",underlined";
+    if (aFont.IsFixedWidth())
+        os << ",fixed-width";
+    os << "," << (aFont.IsOk() ? "OK" : "not-ok") << ")" << std::endl;
+
+    return os;
+}
+#endif
+
+
+void DIALOG_TEXT_PROPERTIES::OnShowFontDialog( wxCommandEvent& aEvent )
+{
+    wxFontData fontData;
+
+    fontData.SetShowHelp( true );
+
+    wxFontDialog* fontDialog = new wxFontDialog( this, fontData );
+    if( fontDialog->ShowModal() == wxID_OK )
+    {
+        wxFont theFont = fontDialog->GetFontData().GetChosenFont();
+        KIFONT::FONT* font = KIFONT::FONT::GetFont( theFont.GetFaceName() );
+        m_FontCtrl->SetValue( font->Name() );
+    }
+}
+
+
+void DIALOG_TEXT_PROPERTIES::OnOkClick( wxCommandEvent& aEvent )
+{
+    SetFontByName( m_FontCtrl->GetValue() );
+    aEvent.Skip();
+}
+
+
+void DIALOG_TEXT_PROPERTIES::SetFontByName( const wxString& aFontName )
+{
+#ifdef DEBUG
+    std::cerr << "chosen font is \"" << aFontName << "\", ";
+#endif
+    m_edaText->SetFont( KIFONT::FONT::GetFont( aFontName ) );
+    m_FontCtrl->SetValue( m_edaText->GetFont()->Name() );
+#ifdef DEBUG
+    std::cerr << "font is now \"" << m_edaText->GetFont()->Name() << "\"" << std::endl;
+#endif
 }
 
 

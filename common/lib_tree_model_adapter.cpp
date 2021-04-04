@@ -62,7 +62,7 @@ unsigned int LIB_TREE_MODEL_ADAPTER::IntoArray( LIB_TREE_NODE const& aNode,
 {
     unsigned int n = 0;
 
-    for( auto const& child: aNode.m_Children )
+    for( std::unique_ptr<LIB_TREE_NODE> const& child: aNode.m_Children )
     {
         if( child->m_Score > 0 )
         {
@@ -91,7 +91,7 @@ LIB_TREE_MODEL_ADAPTER::LIB_TREE_MODEL_ADAPTER( EDA_BASE_FRAME* aParent, wxStrin
     m_colWidths[PART_COL] = 360;
     m_colWidths[DESC_COL] = 2000;
 
-    auto cfg = Kiface().KifaceSettings();
+    APP_SETTINGS_BASE* cfg = Kiface().KifaceSettings();
     m_colWidths[PART_COL] = cfg->m_LibTree.column_width;
 
     // Read the pinned entries from the project config
@@ -114,7 +114,7 @@ void LIB_TREE_MODEL_ADAPTER::SaveColWidths()
 {
     if( m_widget )
     {
-        auto cfg = Kiface().KifaceSettings();
+        APP_SETTINGS_BASE* cfg = Kiface().KifaceSettings();
         cfg->m_LibTree.column_width = m_widget->GetColumn( PART_COL )->GetWidth();
     }
 }
@@ -131,7 +131,7 @@ void LIB_TREE_MODEL_ADAPTER::SavePinnedItems()
     entries.clear();
     m_pinnedLibs.clear();
 
-    for( auto& child: m_tree.m_Children )
+    for( std::unique_ptr<LIB_TREE_NODE>& child: m_tree.m_Children )
     {
         if( child->m_Pinned )
         {
@@ -252,7 +252,7 @@ void LIB_TREE_MODEL_ADAPTER::UpdateSearchString( wxString const& aSearch, bool a
 
     if( bestMatch )
     {
-        auto item = wxDataViewItem( bestMatch );
+        wxDataViewItem item = wxDataViewItem( bestMatch );
         m_widget->Select( item );
 
         // Make sure the *parent* item is visible. The selected item is the
@@ -281,23 +281,12 @@ void LIB_TREE_MODEL_ADAPTER::AttachTo( wxDataViewCtrl* aDataViewCtrl )
     wxString descHead = _( "Description" );
 
     // The extent of the text doesn't take into account the space on either side
-    // in the header, so artificially pad it by M
-    wxSize partHeadMinWidth = KIUI::GetTextSize( partHead + "M", aDataViewCtrl );
+    // in the header, so artificially pad it
+    wxSize partHeadMinWidth = KIUI::GetTextSize( partHead + "MMM", aDataViewCtrl );
 
-    if( aDataViewCtrl->GetColumnCount() > 0 )
-    {
-        int partWidth = aDataViewCtrl->GetColumn( PART_COL )->GetWidth();
-        int descWidth = aDataViewCtrl->GetColumn( DESC_COL )->GetWidth();
-
-        // Only use the widths read back if they are non-zero.
-        // GTK returns the displayed width of the column, which is not calculated immediately
-        // this leads to cases of 0 column width if the user types too fast in the filter
-        if( descWidth > 0 )
-        {
-            m_colWidths[PART_COL] = partWidth;
-            m_colWidths[DESC_COL] = descWidth;
-        }
-    }
+    // Ensure the part column is wider than the smallest allowable width
+    if( m_colWidths[PART_COL] < partHeadMinWidth.x )
+        m_colWidths[PART_COL] = partHeadMinWidth.x;
 
     m_widget = aDataViewCtrl;
     aDataViewCtrl->SetIndent( kDataViewIndent );
@@ -308,13 +297,6 @@ void LIB_TREE_MODEL_ADAPTER::AttachTo( wxDataViewCtrl* aDataViewCtrl )
                                                   m_colWidths[PART_COL] );
     m_col_desc = aDataViewCtrl->AppendTextColumn( descHead, DESC_COL, wxDATAVIEW_CELL_INERT,
                                                   m_colWidths[DESC_COL] );
-
-    // Ensure the part column is wider than the smallest allowable width
-    if( m_colWidths[PART_COL] < partHeadMinWidth.x )
-    {
-        m_colWidths[PART_COL] = partHeadMinWidth.x;
-        m_col_part->SetWidth( partHeadMinWidth.x );
-    }
 
     m_col_part->SetMinWidth( partHeadMinWidth.x );
 }
@@ -366,7 +348,7 @@ int LIB_TREE_MODEL_ADAPTER::GetItemCount() const
 
 wxDataViewItem LIB_TREE_MODEL_ADAPTER::FindItem( const LIB_ID& aLibId )
 {
-    for( auto& lib: m_tree.m_Children )
+    for( std::unique_ptr<LIB_TREE_NODE>& lib: m_tree.m_Children )
     {
         if( lib->m_Name != aLibId.GetLibNickname() )
             continue;
@@ -375,7 +357,7 @@ wxDataViewItem LIB_TREE_MODEL_ADAPTER::FindItem( const LIB_ID& aLibId )
         if( aLibId.GetLibItemName() == "" )
             return ToItem( lib.get() );
 
-        for( auto& alias: lib->m_Children )
+        for( std::unique_ptr<LIB_TREE_NODE>& alias: lib->m_Children )
         {
             if( alias->m_Name == aLibId.GetLibItemName() )
                 return ToItem( alias.get() );
@@ -398,6 +380,13 @@ unsigned int LIB_TREE_MODEL_ADAPTER::GetChildren( wxDataViewItem const&   aItem,
         return IntoArray( *node, aChildren );
     else
         return 0;
+}
+
+
+void LIB_TREE_MODEL_ADAPTER::FinishTreeInitialization()
+{
+    m_col_part->SetWidth( m_colWidths[PART_COL] );
+    m_col_desc->SetWidth( m_colWidths[DESC_COL] );
 }
 
 
@@ -517,11 +506,11 @@ void LIB_TREE_MODEL_ADAPTER::FindAndExpand( LIB_TREE_NODE& aNode,
                                             std::function<bool( LIB_TREE_NODE const* )> aFunc,
                                             LIB_TREE_NODE** aHighScore )
 {
-    for( auto& node: aNode.m_Children )
+    for( std::unique_ptr<LIB_TREE_NODE>& node: aNode.m_Children )
     {
         if( aFunc( &*node ) )
         {
-            auto item = wxDataViewItem( &*node );
+            wxDataViewItem item = wxDataViewItem( &*node );
             m_widget->ExpandAncestors( item );
 
             if( !(*aHighScore) || node->m_Score > (*aHighScore)->m_Score )

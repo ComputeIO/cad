@@ -24,14 +24,11 @@
 
 #define GLM_FORCE_RADIANS
 
-#include <fstream>
-#include <iostream>
-#include <iterator>
 #include <mutex>
-#include <sstream>
 #include <utility>
 
 #include <wx/datetime.h>
+#include <wx/dir.h>
 #include <wx/filename.h>
 #include <wx/log.h>
 #include <wx/stdpaths.h>
@@ -44,15 +41,13 @@
 #include <boost/uuid/sha1.hpp>
 #endif
 
-#include <glm/glm.hpp>
-#include <glm/ext.hpp>
-
 #include "3d_cache.h"
 #include "3d_info.h"
 #include "3d_plugin_manager.h"
 #include "sg/scenegraph.h"
 #include "plugins/3dapi/ifsg_api.h"
 
+#include <common.h>     // For ExpandEnvVarSubstitutions
 #include <filename_resolver.h>
 #include <paths.h>
 #include <pgm_base.h>

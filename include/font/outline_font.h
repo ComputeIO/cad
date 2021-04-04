@@ -28,15 +28,18 @@
 #define OUTLINE_FONT_H_
 
 #include <gal/graphics_abstraction_layer.h>
+#include <geometry/shape_poly_set.h>
 #include <freetype2/ft2build.h>
 #include FT_FREETYPE_H
 #include FT_OUTLINE_H
-#include <gal/opengl/opengl_freetype.h>
+//#include <gal/opengl/opengl_freetype.h>
 #include <harfbuzz/hb.h>
 #include <font/font.h>
 #include <font/outline_decomposer.h>
-#include <markup/markup_parser.h>
+#include <parser/markup_parser.h>
 
+namespace KIFONT
+{
 /**
  * Class OUTLINE_FONT implements outline font drawing.
  */
@@ -61,10 +64,11 @@ public:
      * @param aGal
      * @param aText is the text to be drawn.
      * @param aPosition is the text position in world coordinates.
-     * @param aRotationAngle is the text rotation angle in radians.
+     * @param aRotationAngle is the text rotation angle
+     * @return bounding box width/height
      */
-    void Draw( KIGFX::GAL* aGal, const UTF8& aText, const VECTOR2D& aPosition,
-               double aRotationAngle ) const override;
+    VECTOR2D Draw( KIGFX::GAL* aGal, const UTF8& aText, const VECTOR2D& aPosition,
+                   const VECTOR2D& aOrigin, const EDA_ANGLE& aRotationAngle ) const override;
 
     /**
      * Compute the boundary limits of aText (the bounding box of all shapes).
@@ -73,9 +77,9 @@ public:
      *
      * @return a VECTOR2D giving the width and height of text.
      */
-    VECTOR2D ComputeStringBoundaryLimits( const KIGFX::GAL* aGal, const UTF8& aText,
-                                          const VECTOR2D& aGlyphSize,
-                                          double          aGlyphThickness ) const override;
+    VECTOR2D StringBoundaryLimits( const KIGFX::GAL* aGal, const UTF8& aText,
+                                   const VECTOR2D& aGlyphSize,
+                                   double          aGlyphThickness ) const override;
 
     /**
      * Compute the vertical position of an overbar, sometimes used in texts.
@@ -107,18 +111,8 @@ public:
 
     VECTOR2I GetTextAsPolygon( std::vector<SHAPE_POLY_SET>& aGlyphs, const UTF8& aText,
                                const VECTOR2D& aGlyphSize, const wxPoint& aPosition,
-                               double aOrientation, bool aIsMirrored,
-                               const VECTOR2D&  aConversionFactor,
+                               const EDA_ANGLE& aAngle, bool aIsMirrored,
                                TEXT_STYLE_FLAGS aTextStyle = 0 ) const;
-
-    VECTOR2I GetTextAsPolygon( std::vector<SHAPE_POLY_SET>& aGlyphs, const UTF8& aText,
-                               const VECTOR2D& aGlyphSize, const wxPoint& aPosition,
-                               double aOrientation, bool aIsMirrored,
-                               TEXT_STYLE_FLAGS aTextStyle = 0 ) const
-    {
-        return GetTextAsPolygon( aGlyphs, aText, aGlyphSize, aPosition, aOrientation, aIsMirrored,
-                                 VECTOR2D( 1.0, 1.0 ), aTextStyle );
-    }
 
     /**
      * Like GetTextAsPolygon, but handles multiple lines.
@@ -127,9 +121,7 @@ public:
      */
     VECTOR2I GetLinesAsPolygon( std::vector<SHAPE_POLY_SET>& aGlyphs, const UTF8& aText,
                                 const VECTOR2D& aGlyphSize, const wxPoint& aPosition,
-                                double aOrientation, bool aIsMirrored,
-                                EDA_TEXT_HJUSTIFY_T aHorizJustify, EDA_TEXT_VJUSTIFY_T aVertJustify,
-                                const VECTOR2D&  aConversionFactor,
+                                const TEXT_ATTRIBUTES& aAttributes, bool aIsMirrored,
                                 TEXT_STYLE_FLAGS aTextStyle = 0 ) const;
 
     const FT_Face& GetFace() const { return mFace; }
@@ -140,18 +132,24 @@ public:
                                double aOrientation, bool aIsMirrored ) const;
 #endif
 
+protected:
+    VECTOR2D getBoundingBox( const UTF8& aString, const VECTOR2D& aGlyphSize,
+                             TEXT_STYLE_FLAGS aTextStyle = 0 ) const override;
+
 private:
     // FreeType variables
     static FT_Library mFreeType;
     FT_Face           mFace;
+    const int         mFaceSize;
     FT_Face           mSubscriptFace;
+    const int         mSubscriptSize;
 
     int mFaceScaler;
     int mSubscriptFaceScaler;
 
     // cache for glyphs converted to straight segments
     // key is glyph index (FT_GlyphSlot field glyph_index)
-    std::map<unsigned int, POINTS_LIST> mContourCache;
+    std::map<unsigned int, GLYPH_POINTS_LIST> mContourCache;
 
     FT_Error loadFace( const wxString& aFontFileName );
 
@@ -164,16 +162,22 @@ private:
      * @param aText is the text to be drawn.
      * @param aPosition is text position.
      * @param aAngle is text angle.
+     * @return bounding box width/height
      */
-    void drawSingleLineText( KIGFX::GAL* aGal, const UTF8& aText, const VECTOR2D& aPosition,
-                             double aAngle ) const override;
+    VECTOR2D drawSingleLineText( KIGFX::GAL* aGal, const UTF8& aText, const VECTOR2D& aPosition,
+                                 const EDA_ANGLE& aAngle ) const override;
 
     VECTOR2D drawMarkup( KIGFX::GAL* aGal, const MARKUP::MARKUP_NODE& aNode,
-                         const VECTOR2D& aPosition, double aAngle, TEXT_STYLE_FLAGS aTextStyle = 0,
-                         int aLevel = 0 ) const;
+                         const VECTOR2D& aPosition, const EDA_ANGLE& aAngle,
+                         TEXT_STYLE_FLAGS aTextStyle = 0, int aLevel = 0 ) const;
+
     VECTOR2D drawMarkup( std::vector<SHAPE_POLY_SET>& aGlyphs, const MARKUP::MARKUP_NODE& aNode,
                          const VECTOR2D& aPosition, const VECTOR2D& aGlyphSize, bool aIsMirrored,
-                         double aAngle, TEXT_STYLE_FLAGS aTextStyle = 0, int aLevel = 0 ) const;
+                         const EDA_ANGLE& aAngle, TEXT_STYLE_FLAGS aTextStyle = 0,
+                         int aLevel = 0 ) const;
+
+    BOX2I getBoundingBox( const std::vector<SHAPE_POLY_SET>& aGlyphs ) const;
 };
+} //namespace KIFONT
 
 #endif // OUTLINE_FONT_H_

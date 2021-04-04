@@ -34,6 +34,7 @@
 #include <dialogs/html_messagebox.h>
 #include <pcb_shape.h>
 #include <fp_shape.h>
+#include <macros.h>
 #include <confirm.h>
 #include <widgets/unit_binder.h>
 
@@ -76,8 +77,6 @@ private:
     }
 
     bool Validate() override;
-
-    void onLayer( wxCommandEvent& event ) override;
 };
 
 DIALOG_GRAPHIC_ITEM_PROPERTIES::DIALOG_GRAPHIC_ITEM_PROPERTIES( PCB_BASE_EDIT_FRAME* aParent,
@@ -88,7 +87,7 @@ DIALOG_GRAPHIC_ITEM_PROPERTIES::DIALOG_GRAPHIC_ITEM_PROPERTIES( PCB_BASE_EDIT_FR
     m_endX( aParent, m_endXLabel, m_endXCtrl, m_endXUnits ),
     m_endY( aParent, m_endYLabel, m_endYCtrl, m_endYUnits ),
     m_angle( aParent, m_angleLabel, m_angleCtrl, m_angleUnits ),
-    m_thickness( aParent, m_thicknessLabel, m_thicknessCtrl, m_thicknessUnits, true ),
+    m_thickness( aParent, m_thicknessLabel, m_thicknessCtrl, m_thicknessUnits ),
     m_bezierCtrl1X( aParent, m_BezierPointC1XLabel, m_BezierC1X_Ctrl, m_BezierPointC1XUnit ),
     m_bezierCtrl1Y( aParent, m_BezierPointC1YLabel, m_BezierC1Y_Ctrl, m_BezierPointC1YUnit ),
     m_bezierCtrl2X( aParent, m_BezierPointC2XLabel, m_BezierC2X_Ctrl, m_BezierPointC2XUnit ),
@@ -146,7 +145,7 @@ void PCB_BASE_EDIT_FRAME::ShowGraphicItemPropertiesDialog( BOARD_ITEM* aItem )
     wxCHECK_RET( aItem != NULL, wxT( "ShowGraphicItemPropertiesDialog() error: NULL item" ) );
 
     DIALOG_GRAPHIC_ITEM_PROPERTIES dlg( this, aItem );
-    dlg.ShowModal();
+    dlg.ShowQuasiModal();
 }
 
 
@@ -189,27 +188,15 @@ bool DIALOG_GRAPHIC_ITEM_PROPERTIES::TransferDataToWindow()
     case S_ARC:
         SetTitle( _( "Arc Properties" ) );
         m_AngleValue = m_item->GetAngle() / 10.0;
-
         m_filledCtrl->Show( false );
         break;
 
     case S_POLYGON:
-    {
-        LSET graphicPolygonsLayers = LSET::AllLayersMask();
-        graphicPolygonsLayers.reset( Edge_Cuts ).reset( F_CrtYd ).reset( B_CrtYd );
-
         SetTitle( _( "Polygon Properties" ) );
         m_sizerLeft->Show( false );
-
         m_filledCtrl->Show( true );
-        m_filledCtrl->Enable( graphicPolygonsLayers.Contains( m_item->GetLayer() ) );
-
-        // Prevent courtyard/edge cuts from being filled
-        if( !graphicPolygonsLayers.Contains( m_item->GetLayer() ) )
-            m_filledCtrl->SetValue( false );
-
         break;
-    }
+
     case S_RECT:
         SetTitle( _( "Rectangle Properties" ) );
 
@@ -217,12 +204,12 @@ bool DIALOG_GRAPHIC_ITEM_PROPERTIES::TransferDataToWindow()
         break;
 
     case S_SEGMENT:
+        SetTitle( _( "Line Segment Properties" ) );
+
         if( m_item->GetStart().x == m_item->GetEnd().x )
             m_flipStartEnd = m_item->GetStart().y > m_item->GetEnd().y;
         else
             m_flipStartEnd = m_item->GetStart().x > m_item->GetEnd().x;
-
-        SetTitle( _( "Line Segment Properties" ) );
 
         m_filledCtrl->Show( false );
         break;
@@ -375,24 +362,6 @@ bool DIALOG_GRAPHIC_ITEM_PROPERTIES::TransferDataFromWindow()
     m_parent->UpdateMsgPanel();
 
     return true;
-}
-
-
-void DIALOG_GRAPHIC_ITEM_PROPERTIES::onLayer( wxCommandEvent& event )
-{
-    if( m_item->GetShape() == S_POLYGON )
-    {
-        LSET graphicPolygonsLayers = LSET::AllLayersMask();
-        graphicPolygonsLayers.reset( Edge_Cuts ).reset( F_CrtYd ).reset( B_CrtYd );
-
-        m_filledCtrl->Enable( graphicPolygonsLayers.Contains(
-                ToLAYER_ID( m_LayerSelectionCtrl->GetLayerSelection() ) ) );
-
-        // Prevent courtyard/edge cuts from being filled
-        if( !graphicPolygonsLayers.Contains(
-                    ToLAYER_ID( m_LayerSelectionCtrl->GetLayerSelection() ) ) )
-            m_filledCtrl->SetValue( false );
-    }
 }
 
 

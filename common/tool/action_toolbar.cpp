@@ -23,6 +23,7 @@
  */
 
 #include <algorithm>
+#include <advanced_config.h>
 #include <bitmaps.h>
 #include <eda_draw_frame.h>
 #include <functional>
@@ -36,8 +37,10 @@
 #include <tool/tool_interactive.h>
 #include <tool/tool_manager.h>
 #include <widgets/bitmap_button.h>
+#include <widgets/wx_aui_art_providers.h>
 #include <wx/popupwin.h>
 #include <wx/renderer.h>
+#include <wx/sizer.h>
 
 
 ACTION_GROUP::ACTION_GROUP( std::string aName, const std::vector<const TOOL_ACTION*>& aActions )
@@ -168,6 +171,15 @@ ACTION_TOOLBAR::ACTION_TOOLBAR( EDA_BASE_FRAME* parent, wxWindowID id, const wxP
     m_palette( nullptr )
 {
     m_paletteTimer = new wxTimer( this );
+
+#if !wxCHECK_VERSION( 3, 1, 0 )
+    // Custom art provider makes dark mode work on wx < 3.1
+    if( ADVANCED_CFG::GetCfg().m_AllowDarkMode )
+    {
+        WX_AUI_TOOLBAR_ART* newArt = new WX_AUI_TOOLBAR_ART();
+        SetArtProvider( newArt );
+    }
+#endif
 
     Connect( wxEVT_COMMAND_TOOL_CLICKED, wxAuiToolBarEventHandler( ACTION_TOOLBAR::onToolEvent ),
              NULL, this );
@@ -318,6 +330,40 @@ void ACTION_TOOLBAR::doSelectAction( ACTION_GROUP* aGroup, const TOOL_ACTION& aA
     m_toolActions[ groupId ] = &aAction;
 
     Refresh();
+}
+
+
+void ACTION_TOOLBAR::UpdateControlWidth( int aID )
+{
+    wxAuiToolBarItem* item = FindTool( aID );
+    wxASSERT_MSG( item, wxString::Format( "No toolbar item found for ID %d", aID ) );
+
+    // The control on the toolbar is stored inside the window field of the item
+    wxControl* control = dynamic_cast<wxControl*>( item->GetWindow() );
+    wxASSERT_MSG( control, wxString::Format( "No control located in toolbar item with ID %d", aID ) );
+
+    // Update the size the item has stored using the best size of the control
+    wxSize bestSize = control->GetBestSize();
+    item->SetMinSize( bestSize );
+
+    // Update the sizer item sizes
+    // This is a bit convoluted because there are actually 2 sizers that need to be updated:
+    // 1. The main sizer that is used for the entire toolbar (this sizer item can be found in the
+    // toolbar item)
+    if( wxSizerItem* szrItem = item->GetSizerItem() )
+        szrItem->SetMinSize( bestSize );
+
+    // 2. The controls have a second sizer that allows for padding above/below the control with stretch
+    // space, so we also need to update the sizer item for the control in that sizer with the new size.
+    // We let wx do the search for us, since SetItemMinSize is recursive and will locate the control
+    // on that sizer.
+    if( m_sizer )
+    {
+        m_sizer->SetItemMinSize( control, bestSize );
+
+        // Now actually update the toolbar with the new sizes
+        m_sizer->Layout();
+    }
 }
 
 
@@ -747,4 +793,20 @@ bool ACTION_TOOLBAR::KiRealize()
 
     Refresh( false );
     return retval;
+}
+
+
+void ACTION_TOOLBAR::RefreshBitmaps()
+{
+    for( const std::pair<int, const TOOL_ACTION*> pair : m_toolActions )
+    {
+        wxAuiToolBarItem* tool = FindTool( pair.first );
+
+        wxBitmap bmp = KiScaledBitmap( pair.second->GetIcon(), GetParent() );
+
+        tool->SetBitmap( bmp );
+        tool->SetDisabledBitmap( bmp.ConvertToDisabled() );
+    }
+
+    Refresh();
 }

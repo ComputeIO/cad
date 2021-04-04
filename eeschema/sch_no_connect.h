@@ -2,7 +2,7 @@
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
  * Copyright (C) 2009 Jean-Pierre Charras, jaen-pierre.charras@gipsa-lab.inpg.com
- * Copyright (C) 1992-2019 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 1992-2021 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -38,9 +38,6 @@ class NETLIST_OBJECT_LIST;
 
 class SCH_NO_CONNECT : public SCH_ITEM
 {
-    wxPoint m_pos;                 ///< Position of the no connect object.
-    int     m_size;                ///< Size of the no connect object.
-
 public:
     SCH_NO_CONNECT( const wxPoint& pos = wxPoint( 0, 0 ) );
 
@@ -82,9 +79,9 @@ public:
         m_pos += aMoveVector;
     }
 
-    void MirrorY( int aYaxis_position ) override;
-    void MirrorX( int aXaxis_position ) override;
-    void Rotate( wxPoint aPosition ) override;
+    void MirrorHorizontally( int aCenter ) override;
+    void MirrorVertically( int aCenter ) override;
+    void Rotate( wxPoint aCenter ) override;
 
     bool IsConnectable() const override { return true; }
 
@@ -101,7 +98,7 @@ public:
         return wxString( _( "No Connect" ) );
     }
 
-    BITMAP_DEF GetMenuImage() const override;
+    BITMAPS GetMenuImage() const override;
 
     wxPoint GetPosition() const override { return m_pos; }
     void SetPosition( const wxPoint& aPosition ) override { m_pos = aPosition; }
@@ -109,7 +106,7 @@ public:
     bool HitTest( const wxPoint& aPosition, int aAccuracy = 0 ) const override;
     bool HitTest( const EDA_RECT& aRect, bool aContained, int aAccuracy = 0 ) const override;
 
-    void Plot( PLOTTER* aPlotter ) override;
+    void Plot( PLOTTER* aPlotter ) const override;
 
     EDA_ITEM* Clone() const override;
 
@@ -119,6 +116,9 @@ public:
 
 private:
     bool doIsConnected( const wxPoint& aPosition ) const override;
+
+    wxPoint m_pos;                 ///< Position of the no connect object.
+    int     m_size;                ///< Size of the no connect object.
 };
 
 

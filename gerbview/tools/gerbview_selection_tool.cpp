@@ -22,20 +22,16 @@
 #include <functional>
 using namespace std::placeholders;
 
-#include <eda_item.h>
 #include <bitmaps.h>
+#include <eda_item.h>
 #include <gerber_collectors.h>
 #include <class_draw_panel_gal.h>
 #include <kicad_string.h>
 #include <view/view.h>
-#include <view/view_controls.h>
 #include <view/view_group.h>
 #include <painter.h>
-#include <bitmaps.h>
 #include <tool/tool_event.h>
 #include <tool/tool_manager.h>
-#include <preview_items/ruler_item.h>
-#include <preview_items/selection_area.h>
 #include <gerbview_id.h>
 #include <gerbview_painter.h>
 #include "gerbview_selection_tool.h"
@@ -48,7 +44,7 @@ public:
     HIGHLIGHT_MENU() :
         ACTION_MENU( true )
     {
-        SetIcon( net_highlight_schematic_xpm );
+        SetIcon( BITMAPS::net_highlight_schematic );
         SetTitle( _( "Highlight" ) );
     }
 
@@ -91,6 +87,14 @@ private:
                 auto menuEntry = Add( GERBVIEW_ACTIONS::highlightAttribute );
                 menuEntry->SetItemLabel( wxString::Format( _( "Highlight Aperture Type \"%s\"" ),
                                                            apertDescr->m_AperFunction ) );
+                addSeparator = true;
+            }
+
+            if( apertDescr )
+            {
+                auto menuEntry = Add( GERBVIEW_ACTIONS::highlightDCode );
+                menuEntry->SetItemLabel( wxString::Format( _( "Highlight DCode D%d" ),
+                                                           apertDescr->m_Num_Dcode ) );
                 addSeparator = true;
             }
         }
@@ -427,7 +431,7 @@ EDA_ITEM* GERBVIEW_SELECTION_TOOL::disambiguationMenu( GERBER_COLLECTOR* aCollec
     if( aCollector->m_MenuTitle.Length() )
     {
         menu.SetTitle( aCollector->m_MenuTitle );
-        menu.SetIcon( info_xpm );
+        menu.SetIcon( BITMAPS::info );
         menu.DisplayTitle( true );
     }
     else

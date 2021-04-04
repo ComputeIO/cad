@@ -24,6 +24,7 @@
  */
 
 #include "connection_graph.h"
+#include <common.h>     // for ExpandEnvVarSubstitutions
 #include <erc.h>
 #include <kicad_string.h>
 #include <lib_pin.h>
@@ -32,8 +33,8 @@
 #include <sch_reference_list.h>
 #include <sch_sheet.h>
 #include <schematic.h>
-#include <page_layout/ws_draw_item.h>
-#include <page_layout/ws_proxy_view_item.h>
+#include <drawing_sheet/ds_draw_item.h>
+#include <drawing_sheet/ds_proxy_view_item.h>
 #include <wx/ffile.h>
 
 
@@ -132,9 +133,9 @@ int ERC_TESTER::TestDuplicateSheetNames( bool aCreateMarker )
 }
 
 
-void ERC_TESTER::TestTextVars( KIGFX::WS_PROXY_VIEW_ITEM* aWorksheet )
+void ERC_TESTER::TestTextVars( DS_PROXY_VIEW_ITEM* aDrawingSheet )
 {
-    WS_DRAW_ITEM_LIST wsItems;
+    DS_DRAW_ITEM_LIST wsItems;
 
     auto unresolved = [this]( wxString str )
     {
@@ -142,7 +143,7 @@ void ERC_TESTER::TestTextVars( KIGFX::WS_PROXY_VIEW_ITEM* aWorksheet )
         return str.Matches( wxT( "*${*}*" ) );
     };
 
-    if( aWorksheet )
+    if( aDrawingSheet )
     {
         wsItems.SetMilsToIUfactor( IU_PER_MILS );
         wsItems.SetPageNumber( "1" );
@@ -151,7 +152,7 @@ void ERC_TESTER::TestTextVars( KIGFX::WS_PROXY_VIEW_ITEM* aWorksheet )
         wsItems.SetSheetName( "dummySheet" );
         wsItems.SetSheetLayer( "dummyLayer" );
         wsItems.SetProject( &m_schematic->Prj() );
-        wsItems.BuildWorkSheetGraphicList( aWorksheet->GetPageInfo(), aWorksheet->GetTitleBlock() );
+        wsItems.BuildDrawItemsList( aDrawingSheet->GetPageInfo(), aDrawingSheet->GetTitleBlock());
     }
 
     SCH_SHEET_PATH savedCurrentSheet = m_schematic->CurrentSheet();
@@ -166,15 +167,15 @@ void ERC_TESTER::TestTextVars( KIGFX::WS_PROXY_VIEW_ITEM* aWorksheet )
         {
             if( item->Type() == SCH_COMPONENT_T )
             {
-                SCH_COMPONENT* component = static_cast<SCH_COMPONENT*>( item );
+                SCH_COMPONENT* symbol = static_cast<SCH_COMPONENT*>( item );
 
-                for( SCH_FIELD& field : component->GetFields() )
+                for( SCH_FIELD& field : symbol->GetFields() )
                 {
                     if( unresolved( field.GetShownText() ) )
                     {
-                        wxPoint pos = field.GetPosition() - component->GetPosition();
-                        pos = component->GetTransform().TransformCoordinate( pos );
-                        pos += component->GetPosition();
+                        wxPoint pos = field.GetPosition() - symbol->GetPosition();
+                        pos = symbol->GetTransform().TransformCoordinate( pos );
+                        pos += symbol->GetPosition();
 
                         std::shared_ptr<ERC_ITEM> ercItem =
                                 ERC_ITEM::Create( ERCE_UNRESOLVED_VARIABLE );
@@ -229,15 +230,14 @@ void ERC_TESTER::TestTextVars( KIGFX::WS_PROXY_VIEW_ITEM* aWorksheet )
             }
         }
 
-        for( WS_DRAW_ITEM_BASE* item = wsItems.GetFirst(); item; item = wsItems.GetNext() )
+        for( DS_DRAW_ITEM_BASE* item = wsItems.GetFirst(); item; item = wsItems.GetNext() )
         {
-            if( WS_DRAW_ITEM_TEXT* text = dynamic_cast<WS_DRAW_ITEM_TEXT*>( item ) )
+            if( DS_DRAW_ITEM_TEXT* text = dynamic_cast<DS_DRAW_ITEM_TEXT*>( item ) )
             {
                 if( text->GetShownText().Matches( wxT( "*${*}*" ) ) )
                 {
-                    std::shared_ptr<ERC_ITEM> ercItem =
-                            ERC_ITEM::Create( ERCE_UNRESOLVED_VARIABLE );
-                    ercItem->SetErrorMessage( _( "Unresolved text variable in worksheet." ) );
+                    std::shared_ptr<ERC_ITEM> ercItem = ERC_ITEM::Create( ERCE_UNRESOLVED_VARIABLE );
+                    ercItem->SetErrorMessage( _( "Unresolved text variable in drawing sheet." ) );
 
                     SCH_MARKER* marker = new SCH_MARKER( ercItem, text->GetPosition() );
                     screen->Append( marker );
@@ -658,8 +658,7 @@ int ERC_TESTER::TestLibSymbolIssues()
 
             wxCHECK2( symbol, continue );
 
-            wxString  libIdStr = symbol->GetSchSymbolLibraryName();
-            LIB_PART* libSymbolInSchematic = screen->GetLibSymbols()[libIdStr];
+            LIB_PART* libSymbolInSchematic = symbol->GetPartRef().get();
 
             wxCHECK2( libSymbolInSchematic, continue );
 

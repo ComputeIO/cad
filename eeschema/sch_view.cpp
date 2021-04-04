@@ -31,7 +31,7 @@
 #include <view/view_group.h>
 #include <view/view_rtree.h>
 #include <view/wx_view_controls.h>
-#include <page_layout/ws_proxy_view_item.h>
+#include <drawing_sheet/ds_proxy_view_item.h>
 #include <layers_id_colors_and_visibility.h>
 #include <sch_screen.h>
 #include <schematic.h>
@@ -47,12 +47,9 @@ SCH_VIEW::SCH_VIEW( bool aIsDynamic, SCH_BASE_FRAME* aFrame ) :
     VIEW( aIsDynamic )
 {
     m_frame = aFrame;
-    // Set m_boundary to define the max working area size. The default value
-    // is acceptable for Pcbnew and Gerbview, but too large for Eeschema due to
-    // very different internal units.
-    // So we have to use a smaller value.
-    // A full size = 3 * MAX_PAGE_SIZE_MILS size allows a wide margin
-    // around the worksheet.
+    // Set m_boundary to define the max working area size. The default value is acceptable for
+    // Pcbnew and Gerbview, but too large for Eeschema due to very different internal units.
+    // A full size = 3 * MAX_PAGE_SIZE_MILS size allows a wide margin around the drawing-sheet.
     double max_size = Mils2iu( MAX_PAGE_SIZE_MILS ) * 3.0;
     m_boundary.SetOrigin( -max_size/4, -max_size/4 );
     m_boundary.SetSize( max_size, max_size );
@@ -67,7 +64,7 @@ SCH_VIEW::~SCH_VIEW()
 void SCH_VIEW::Cleanup()
 {
     Clear();
-    m_worksheet.reset();
+    m_drawingSheet.reset();
     m_preview.reset();
 }
 
@@ -97,25 +94,25 @@ void SCH_VIEW::DisplaySheet( const SCH_SCREEN* aScreen )
     for( SCH_ITEM* item : aScreen->Items() )
         Add( item );
 
-    m_worksheet.reset( new KIGFX::WS_PROXY_VIEW_ITEM( static_cast< int >( IU_PER_MILS ),
-                                                      &aScreen->GetPageSettings(),
-                                                      &aScreen->Schematic()->Prj(),
-                                                      &aScreen->GetTitleBlock() ) );
-    m_worksheet->SetPageNumber( TO_UTF8( aScreen->GetPageNumber() ) );
-    m_worksheet->SetSheetCount( aScreen->GetPageCount() );
-    m_worksheet->SetFileName( TO_UTF8( aScreen->GetFileName() ) );
-    m_worksheet->SetColorLayer( LAYER_SCHEMATIC_WORKSHEET );
-    m_worksheet->SetPageBorderColorLayer( LAYER_SCHEMATIC_GRID );
-    m_worksheet->SetIsFirstPage( aScreen->GetVirtualPageNumber() == 1 );
+    m_drawingSheet.reset( new DS_PROXY_VIEW_ITEM( static_cast<int>( IU_PER_MILS ),
+                                                  &aScreen->GetPageSettings(),
+                                                  &aScreen->Schematic()->Prj(),
+                                                  &aScreen->GetTitleBlock() ) );
+    m_drawingSheet->SetPageNumber( TO_UTF8( aScreen->GetPageNumber() ) );
+    m_drawingSheet->SetSheetCount( aScreen->GetPageCount() );
+    m_drawingSheet->SetFileName( TO_UTF8( aScreen->GetFileName() ) );
+    m_drawingSheet->SetColorLayer( LAYER_SCHEMATIC_DRAWINGSHEET );
+    m_drawingSheet->SetPageBorderColorLayer( LAYER_SCHEMATIC_GRID );
+    m_drawingSheet->SetIsFirstPage( aScreen->GetVirtualPageNumber() == 1 );
 
     if( m_frame && m_frame->IsType( FRAME_SCH ) )
-        m_worksheet->SetSheetName( TO_UTF8( m_frame->GetScreenDesc() ) );
+        m_drawingSheet->SetSheetName( TO_UTF8( m_frame->GetScreenDesc() ) );
     else
-        m_worksheet->SetSheetName( "" );
+        m_drawingSheet->SetSheetName( "" );
 
     ResizeSheetWorkingArea( aScreen );
 
-    Add( m_worksheet.get() );
+    Add( m_drawingSheet.get() );
 
     InitPreview();
 }
@@ -178,9 +175,9 @@ void SCH_VIEW::ClearHiddenFlags()
 }
 
 
-void SCH_VIEW::HideWorksheet()
+void SCH_VIEW::HideDrawingSheet()
 {
-    //    SetVisible( m_worksheet.get(), false );
+    //    SetVisible( m_drawingSheet.get(), false );
 }
 
 

@@ -35,26 +35,26 @@
 #include <eda_item.h> // for EDA_ITEM
 #include <common.h>
 #include <base_units.h>
-#include <gr_text.h>
-#include <basic_gal.h>      // for BASIC_GAL, basic_gal
-#include <convert_to_biu.h> // for Mils2iu
-#include <eda_rect.h>       // for EDA_RECT
-#include <eda_text.h>       // for EDA_TEXT, TEXT_EFFECTS, GR_TEXT_VJUSTIF...
-#include <font/font.h>      // for FONT
-#include <gal/color4d.h>    // for COLOR4D, COLOR4D::BLACK
-#include <kicad_string.h>   // for UnescapeString
-#include <math/util.h>      // for KiROUND
-#include <math/vector2d.h>  // for VECTOR2D
+#include <basic_gal.h>        // for BASIC_GAL, basic_gal
+#include <convert_to_biu.h>   // for Mils2iu
+#include <eda_rect.h>         // for EDA_RECT
+#include <eda_text.h>         // for EDA_TEXT, TEXT_EFFECTS, GR_TEXT_VJUSTIF...
+#include <gal/color4d.h>      // for COLOR4D, COLOR4D::BLACK
+#include <gr_text.h>          // for GRText
+#include <kicad_string.h>     // for UnescapeString
+#include <math/util.h>          // for KiROUND
+#include <math/vector2d.h>    // for VECTOR2D
 #include <richio.h>
 #include <render_settings.h>
 #include <trigo.h> // for RotatePoint
 #include <i18n_utility.h>
 #include <geometry/shape_segment.h>
 #include <geometry/shape_compound.h>
+#include <font/font.h>
 
-#include <wx/debug.h>  // for wxASSERT
-#include <wx/string.h> // wxString, wxArrayString
-#include <wx/gdicmn.h> // for wxPoint,wxSize
+#include <wx/debug.h>           // for wxASSERT
+#include <wx/string.h>          // wxString, wxArrayString
+#include <wx/gdicmn.h>          // for wxPoint,wxSize
 
 class OUTPUTFORMATTER;
 class wxFindReplaceData;
@@ -70,7 +70,7 @@ EDA_TEXT_HJUSTIFY_T EDA_TEXT::MapHorizJustify( int aHorizJustify )
     if( aHorizJustify < GR_TEXT_HJUSTIFY_LEFT )
         return GR_TEXT_HJUSTIFY_LEFT;
 
-    return (EDA_TEXT_HJUSTIFY_T) aHorizJustify;
+    return static_cast<EDA_TEXT_HJUSTIFY_T>( aHorizJustify );
 }
 
 
@@ -84,7 +84,7 @@ EDA_TEXT_VJUSTIFY_T EDA_TEXT::MapVertJustify( int aVertJustify )
     if( aVertJustify < GR_TEXT_VJUSTIFY_TOP )
         return GR_TEXT_VJUSTIFY_TOP;
 
-    return (EDA_TEXT_VJUSTIFY_T) aVertJustify;
+    return static_cast<EDA_TEXT_VJUSTIFY_T>( aVertJustify );
 }
 
 
@@ -193,7 +193,8 @@ void EDA_TEXT::setTextInternals()
 
 
 EDA_TEXT::EDA_TEXT( const wxString& text ) :
-        m_text( text ), m_font( nullptr ), m_e( 1 << TE_VISIBLE ), m_resolver( nullptr )
+        m_text( text ),
+        m_e( 1 << TE_VISIBLE )
 {
     int sz = Mils2iu( DEFAULT_SIZE_TEXT );
     SetTextSize( wxSize( sz, sz ) );
@@ -234,6 +235,7 @@ void EDA_TEXT::CopyText( const EDA_TEXT& aSrc )
 void EDA_TEXT::SetEffects( const EDA_TEXT& aSrc )
 {
     m_e = aSrc.m_e;
+    m_font = aSrc.m_font;
 }
 
 
@@ -248,6 +250,7 @@ void EDA_TEXT::SwapText( EDA_TEXT& aTradingPartner )
 void EDA_TEXT::SwapEffects( EDA_TEXT& aTradingPartner )
 {
     std::swap( m_e, aTradingPartner.m_e );
+    std::swap( m_font, aTradingPartner.m_font );
 }
 
 
@@ -312,7 +315,6 @@ wxString EDA_TEXT::ShortenedShownText() const
 
 int EDA_TEXT::GetInterline() const
 {
-    // return KiROUND( KIGFX::STROKE_FONT::GetInterline( GetTextHeight() ) );
     return KiROUND( GetFont()->GetInterline( GetTextHeight() ) );
 }
 
@@ -353,11 +355,11 @@ EDA_RECT EDA_TEXT::GetTextBox( int aLine, bool aInvertY ) const
     }
 
     // calculate the H and V size
-    VECTOR2D fontSize( GetTextSize() );
-    double   penWidth( thickness );
-    int      dx = KiROUND(
-            GetFont()->ComputeStringBoundaryLimits( &basic_gal, text, fontSize, penWidth ).x );
-    int dy = GetInterline();
+    KIFONT::FONT* font = KIFONT::FONT::GetFont();
+    VECTOR2D    fontSize( GetTextSize() );
+    double      penWidth( thickness );
+    int         dx = KiROUND( font->StringBoundaryLimits( text, fontSize, penWidth ).x );
+    int         dy = GetInterline();
 
     // Creates bounding box (rectangle) for horizontal, left and top justified text. The
     // bounding box will be moved later according to the actual text options
@@ -369,18 +371,11 @@ EDA_RECT EDA_TEXT::GetTextBox( int aLine, bool aInvertY ) const
 
     rect.SetOrigin( pos );
 
-    // The bbox vertical size returned by GetInterline( aThickness )
-    // includes letters like j and y and ] + interval between lines.
-    // The interval below the last line is not usefull, and we can use its half value
-    // as vertical margin above the text
-    // the full interval is roughly GetTextHeight() * 0.4 - aThickness/2
-    rect.Move( wxPoint( 0, thickness / 4 - KiROUND( GetTextHeight() * 0.22 ) ) );
-
     if( hasOverBar )
     { // A overbar adds an extra size to the text
         // Height from the base line text of chars like [ or {
         double curr_height = GetTextHeight() * 1.15;
-        double overbarPosition = GetFont()->ComputeOverbarVerticalPosition( fontSize.y );
+        double overbarPosition = font->ComputeOverbarVerticalPosition( fontSize.y );
         int    extra_height = KiROUND( overbarPosition - curr_height );
 
         extra_height += thickness / 2;
@@ -395,10 +390,7 @@ EDA_RECT EDA_TEXT::GetTextBox( int aLine, bool aInvertY ) const
         for( unsigned ii = 1; ii < strings.GetCount(); ii++ )
         {
             text = strings.Item( ii );
-            dx = KiROUND(
-                    GetFont()
-                            ->ComputeStringBoundaryLimits( &basic_gal, text, fontSize, penWidth )
-                            .x );
+            dx = KiROUND( font->StringBoundaryLimits( text, fontSize, penWidth ).x );
             textsize.x = std::max( textsize.x, dx );
             textsize.y += dy;
         }
@@ -426,8 +418,6 @@ EDA_RECT EDA_TEXT::GetTextBox( int aLine, bool aInvertY ) const
             rect.SetX( rect.GetX() - rect.GetWidth() );
         break;
     }
-
-    dy = GetTextHeight() + thickness;
 
     switch( GetVertJustify() )
     {
@@ -594,9 +584,15 @@ wxString EDA_TEXT::GetTextStyleName() const
 
 bool EDA_TEXT::IsDefaultFormatting() const
 {
-    return ( IsVisible() && !IsMirrored() && GetHorizJustify() == GR_TEXT_HJUSTIFY_CENTER
-             && GetVertJustify() == GR_TEXT_VJUSTIFY_CENTER && GetTextThickness() == 0
-             && !IsItalic() && !IsBold() && !IsMultilineAllowed() );
+    return ( IsVisible()
+             && !IsMirrored()
+             && GetHorizJustify() == GR_TEXT_HJUSTIFY_CENTER
+             && GetVertJustify() == GR_TEXT_VJUSTIFY_CENTER
+             && GetTextThickness() == 0
+             && !IsItalic()
+             && !IsBold()
+             && !IsMultilineAllowed()
+           );
 }
 
 
@@ -608,10 +604,16 @@ void EDA_TEXT::Format( OUTPUTFORMATTER* aFormatter, int aNestLevel, int aControl
 
     aFormatter->Print( aNestLevel + 1, "(effects" );
 
-    // Text size
     aFormatter->Print( 0, " (font" );
 
-    aFormatter->Print( 0, " (size %s %s)", FormatInternalUnits( GetTextHeight() ).c_str(),
+    if( GetFont() && !GetFont()->Name().IsEmpty() )
+    {
+        aFormatter->Print( 0, " (face \"%s\")", GetFont()->NameAsToken() );
+    }
+
+    // Text size
+    aFormatter->Print( 0, " (size %s %s)",
+                       FormatInternalUnits( GetTextHeight() ).c_str(),
                        FormatInternalUnits( GetTextWidth() ).c_str() );
 
     if( GetTextThickness() )
@@ -726,6 +728,15 @@ std::shared_ptr<SHAPE_COMPOUND> EDA_TEXT::GetEffectiveTextShape() const
 double EDA_TEXT::GetDrawRotation() const
 {
     return GetTextAngle();
+}
+
+
+KIFONT::FONT* EDA_TEXT::GetFont() const {
+    if (m_font)
+        return m_font;
+
+    // default to newstroke
+    return KIFONT::FONT::GetFont();
 }
 
 

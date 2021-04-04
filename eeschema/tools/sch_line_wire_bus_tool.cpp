@@ -72,7 +72,7 @@ public:
         ACTION_MENU( true ),
         m_showTitle( false )
     {
-        SetIcon( add_line2bus_xpm );
+        SetIcon( BITMAPS::add_line2bus );
         SetTitle( _( "Unfold from Bus" ) );
     }
 
@@ -134,18 +134,17 @@ private:
             Enable( ID_POPUP_SCH_UNFOLD_BUS, false );
         }
 
-        for( const auto& member : connection->Members() )
+        for( const std::shared_ptr<SCH_CONNECTION>& member : connection->Members() )
         {
             int id = ID_POPUP_SCH_UNFOLD_BUS + ( idx++ );
             wxString name = member->FullLocalName();
 
             if( member->Type() == CONNECTION_TYPE::BUS )
             {
-                ACTION_MENU* submenu = new ACTION_MENU( true );
-                submenu->SetTool( m_tool );
+                ACTION_MENU* submenu = new ACTION_MENU( true, m_tool );
                 AppendSubMenu( submenu, SCH_CONNECTION::PrintBusForUI( name ), name );
 
-                for( const auto& sub_member : member->Members() )
+                for( const std::shared_ptr<SCH_CONNECTION>& sub_member : member->Members() )
                 {
                     id = ID_POPUP_SCH_UNFOLD_BUS + ( idx++ );
                     name = sub_member->FullLocalName();
@@ -519,8 +518,9 @@ int SCH_LINE_WIRE_BUS_TOOL::doDrawSegments( const std::string& aTool, int aType,
                 grid.ClearMaskFlag( GRID_HELPER::HORIZONTAL );
         }
 
-        wxPoint cursorPos = evt->IsPrime() ? (wxPoint) evt->Position()
-                                           : (wxPoint) controls->GetMousePosition();
+        wxPoint cursorPos = static_cast<wxPoint>( evt->HasPosition() ?
+                                                  evt->Position() :
+                                                  controls->GetMousePosition() );
 
         cursorPos = (wxPoint) grid.BestSnapAnchor( cursorPos, LAYER_CONNECTABLE, segment );
         controls->ForceCursorPosition( true, cursorPos );
@@ -561,7 +561,9 @@ int SCH_LINE_WIRE_BUS_TOOL::doDrawSegments( const std::string& aTool, int aType,
         if( evt->IsCancelInteractive() )
         {
             if( segment || m_busUnfold.in_progress )
+            {
                 cleanup();
+            }
             else
             {
                 m_frame->PopTool( aTool );
@@ -750,6 +752,11 @@ int SCH_LINE_WIRE_BUS_TOOL::doDrawSegments( const std::string& aTool, int aType,
                 segment = doUnfoldBus( net, contextMenuPos );
             }
         }
+        else if( evt->IsAction( &ACTIONS::doDelete ) )
+        {
+            if( segment || m_busUnfold.in_progress )
+                cleanup();
+        }
         else
         {
             evt->SetPassEvent();
@@ -913,14 +920,14 @@ void SCH_LINE_WIRE_BUS_TOOL::finishSegments()
     // Correct and remove segments that need to be merged.
     m_frame->SchematicCleanUp();
 
-    std::vector<SCH_ITEM*> components;
+    std::vector<SCH_ITEM*> symbols;
 
-    for( SCH_ITEM* item : m_frame->GetScreen()->Items().OfType( SCH_COMPONENT_T ) )
-        components.push_back( item );
+    for( SCH_ITEM* symbol : m_frame->GetScreen()->Items().OfType( SCH_COMPONENT_T ) )
+        symbols.push_back( symbol );
 
-    for( SCH_ITEM* item : components )
+    for( SCH_ITEM* symbol : symbols )
     {
-        std::vector<wxPoint> pts = item->GetConnectionPoints();
+        std::vector<wxPoint> pts = symbol->GetConnectionPoints();
 
         if( pts.size() > 2 )
             continue;

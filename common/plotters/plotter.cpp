@@ -609,3 +609,45 @@ void PLOTTER::PlotPoly( const SHAPE_LINE_CHAIN& aCornerList, FILL_TYPE aFill,
 
     PlotPoly( cornerList, aFill, aWidth, aData );
 }
+
+
+
+
+/**
+ * Function PLOTTER::Text
+ * same as GRText, but plot graphic text insteed of draw it
+ *  @param aPos = text position (according to aH_justify, aV_justify)
+ *  @param aColor (COLOR4D) = text color
+ *  @param aText = text to draw
+ *  @param aOrient = angle in 0.1 degree
+ *  @param aSize = text size (size.x or size.y can be < 0 for mirrored texts)
+ *  @param aH_justify = horizontal justification (Left, center, right)
+ *  @param aV_justify = vertical justification (bottom, center, top)
+ *  @param aPenWidth = line width (if = 0, use plot default line width)
+ *  @param aItalic = true to simulate an italic font
+ *  @param aBold = true to use a bold font Useful only with default width value (aWidth = 0)
+ *  @param aMultilineAllowed = true to plot text as multiline, otherwise single line
+ *  @param aData = a parameter used by some plotters in SetCurrentLineWidth(),
+ * not directly used here.
+ */
+void PLOTTER::Text( const wxPoint&              aPos,
+                    const COLOR4D               aColor,
+                    const wxString&             aText,
+                    double                      aOrient,
+                    const wxSize&               aSize,
+                    enum EDA_TEXT_HJUSTIFY_T    aH_justify,
+                    enum EDA_TEXT_VJUSTIFY_T    aV_justify,
+                    int                         aPenWidth,
+                    bool                        aItalic,
+                    bool                        aBold,
+                    bool                        aMultilineAllowed,
+                    KIFONT::FONT*               aFont,
+                    void*                       aData )
+{
+    SetColor( aColor );
+    SetCurrentLineWidth( aPenWidth, aData );
+    SetFont( aFont );
+
+    GRText( NULL, aPos, aColor, aText, aOrient, aSize, aH_justify, aV_justify, aPenWidth,
+            aItalic, aBold, nullptr, nullptr, this );
+}

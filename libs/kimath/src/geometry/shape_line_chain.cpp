@@ -1026,10 +1026,10 @@ SHAPE_LINE_CHAIN& SHAPE_LINE_CHAIN::Simplify( bool aRemoveColinear )
         if( n > i )
             i = n;
 
-        if( n == np )
+        if( n == np - 2 )
         {
-            m_points.push_back( pts_unique[n - 1] );
-            m_shapes.push_back( shapes_unique[n - 1] );
+            m_points.push_back( pts_unique[np - 1] );
+            m_shapes.push_back( shapes_unique[np - 1] );
             return *this;
         }
 

@@ -30,6 +30,7 @@
 #include <fp_shape.h>
 #include <board_commit.h>
 #include <pcb_painter.h>
+#include <pcbnew_settings.h>
 #include <tools/pcb_actions.h>
 #include <tools/pcb_selection_tool.h>
 #include <zone_filler.h>
@@ -132,10 +133,9 @@ std::unique_ptr<ZONE> ZONE_CREATE_HELPER::createZoneFromExisting( const ZONE& aS
 }
 
 
-void ZONE_CREATE_HELPER::performZoneCutout( ZONE& aZone, ZONE& aCutout )
+void ZONE_CREATE_HELPER::performZoneCutout( ZONE& aZone, const ZONE& aCutout )
 {
     BOARD_COMMIT commit( &m_tool );
-    BOARD* board = m_tool.getModel<BOARD>();
     std::vector<ZONE*> newZones;
 
     // Clear the selection before removing the old zone
@@ -162,21 +162,14 @@ void ZONE_CREATE_HELPER::performZoneCutout( ZONE& aZone, ZONE& aCutout )
         newZone->SetOutline( newZoneOutline );
         newZone->SetLocalFlags( 1 );
         newZone->HatchBorder();
+        newZone->UnFill();
         newZones.push_back( newZone );
         commit.Add( newZone );
     }
 
     commit.Remove( &aZone );
 
-    ZONE_FILLER filler( board, &commit );
-
-    std::lock_guard<KISPINLOCK> lock( board->GetConnectivity()->GetLock() );
-
-    if( !filler.Fill( newZones ) )
-    {
-        commit.Revert();
-        return;
-    }
+    // TODO Refill zones when KiCad supports auto re-fill
 
     commit.Push( _( "Add a zone cutout" ) );
 
@@ -206,49 +199,49 @@ void ZONE_CREATE_HELPER::commitZone( std::unique_ptr<ZONE> aZone )
         case ZONE_MODE::ADD:
         case ZONE_MODE::SIMILAR:
         {
-            BOARD_COMMIT bCommit( &m_tool );
+            BOARD_COMMIT commit( &m_tool );
+            BOARD*       board = m_tool.getModel<BOARD>();
 
             aZone->HatchBorder();
-            bCommit.Add( aZone.get() );
 
-            BOARD*                      board = m_tool.getModel<BOARD>();
+            // TODO Refill zones when KiCad supports auto re-fill
+
+            commit.Add( aZone.get() );
+
             std::lock_guard<KISPINLOCK> lock( board->GetConnectivity()->GetLock() );
 
-            if( !m_params.m_keepout )
-            {
-                ZONE_FILLER        filler( board, &bCommit );
-                std::vector<ZONE*> toFill = { aZone.get() };
-
-                if( !filler.Fill( toFill ) )
-                {
-                    bCommit.Revert();
-                    break;
-                }
-            }
-
-            bCommit.Push( _( "Add a zone" ) );
+            commit.Push( _( "Add a zone" ) );
             m_tool.GetManager()->RunAction( PCB_ACTIONS::selectItem, true, aZone.release() );
             break;
         }
 
         case ZONE_MODE::GRAPHIC_POLYGON:
         {
-            BOARD_COMMIT bCommit( &m_tool );
-            BOARD_ITEM_CONTAINER* parent = m_tool.m_frame->GetModel();
-            LSET graphicPolygonsLayers = LSET::AllLayersMask();
+            BOARD_COMMIT          commit( &m_tool );
+            BOARD*                board = m_tool.getModel<BOARD>();
+            PCB_LAYER_ID          layer = m_params.m_layer;
+            PCB_SHAPE*            poly;
 
-            graphicPolygonsLayers.reset( Edge_Cuts ).reset( F_CrtYd ).reset( B_CrtYd );
+            if( m_tool.m_isFootprintEditor )
+                poly = new FP_SHAPE( static_cast<FOOTPRINT*>( m_tool.m_frame->GetModel() ) );
+            else
+                poly = new PCB_SHAPE();
 
-            auto poly = m_tool.m_isFootprintEditor ? new FP_SHAPE( (FOOTPRINT*) parent )
-                                                   : new PCB_SHAPE();
             poly->SetShape( S_POLYGON );
-            poly->SetFilled( graphicPolygonsLayers.Contains( m_params.m_layer ) );
-            poly->SetLayer( m_params.m_layer );
+
+            if( layer == Edge_Cuts || layer == F_CrtYd || layer == B_CrtYd )
+                poly->SetFilled( false );
+            else
+                poly->SetFilled( true );
+
+            poly->SetWidth( board->GetDesignSettings().GetLineThickness( m_params.m_layer ) );
+            poly->SetLayer( layer );
             poly->SetPolyShape( *aZone->Outline() );
-            bCommit.Add( poly );
+
+            commit.Add( poly );
             m_tool.GetManager()->RunAction( PCB_ACTIONS::selectItem, true, poly );
 
-            bCommit.Push( _( "Add a graphical polygon" ) );
+            commit.Push( _( "Add a graphical polygon" ) );
 
             break;
         }

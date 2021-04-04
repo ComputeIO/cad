@@ -2,7 +2,7 @@
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
  * Copyright (C) 2019 CERN
- * Copyright (C) 2019 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 2019-2021 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -30,7 +30,7 @@
 #include <bitmaps.h>
 #include <eda_item.h>
 #include <sch_item.h>
-#include <sch_component.h>
+#include <sch_symbol.h>
 #include <sch_sheet.h>
 #include <sch_line.h>
 #include <sch_edit_frame.h>
@@ -47,7 +47,7 @@
 SCH_MOVE_TOOL::SCH_MOVE_TOOL() :
         EE_TOOL_BASE<SCH_EDIT_FRAME>( "eeschema.InteractiveMove" ),
         m_moveInProgress( false ),
-        m_isDragOperation( false ),
+        m_isDrag( false ),
         m_moveOffset( 0, 0 )
 {
 }
@@ -60,7 +60,7 @@ bool SCH_MOVE_TOOL::Init()
     auto moveCondition =
             []( const SELECTION& aSel )
             {
-                if( aSel.Empty() )
+                if( aSel.Empty() || SELECTION_CONDITIONS::OnlyType( SCH_MARKER_T )( aSel ) )
                     return false;
 
                 if( SCH_LINE_WIRE_BUS_TOOL::IsDrawingLineWireOrBus( aSel ) )
@@ -93,35 +93,39 @@ int SCH_MOVE_TOOL::Main( const TOOL_EVENT& aEvent )
     EESCHEMA_SETTINGS*    cfg = Pgm().GetSettingsManager().GetAppSettings<EESCHEMA_SETTINGS>();
     KIGFX::VIEW_CONTROLS* controls = getViewControls();
     EE_GRID_HELPER        grid( m_toolMgr );
+    bool                  wasDragging = m_moveInProgress && m_isDrag;
 
     m_anchorPos.reset();
 
     if( aEvent.IsAction( &EE_ACTIONS::move ) )
-        m_isDragOperation = false;
+        m_isDrag = false;
     else if( aEvent.IsAction( &EE_ACTIONS::drag ) )
-        m_isDragOperation = true;
+        m_isDrag = true;
     else if( aEvent.IsAction( &EE_ACTIONS::moveActivate ) )
-        m_isDragOperation = !cfg->m_Input.drag_is_move;
+        m_isDrag = !cfg->m_Input.drag_is_move;
     else
         return 0;
 
     if( m_moveInProgress )
     {
-        auto sel = m_selectionTool->GetSelection().Front();
-
-        if( sel && !sel->IsNew() )
+        if( m_isDrag != wasDragging )
         {
-            // User must have switched from move to drag or vice-versa.  Reset the selected
-            // items so we can start again with the current m_isDragOperation.
-            m_frame->RollbackSchematicFromUndo();
-            m_selectionTool->RemoveItemsFromSel( &m_dragAdditions, QUIET_MODE );
-            m_anchorPos = m_cursor - m_moveOffset;
-            m_moveInProgress = false;
-            controls->SetAutoPan( false );
+            auto sel = m_selectionTool->GetSelection().Front();
 
-            // And give it a kick so it doesn't have to wait for the first mouse movement to
-            // refresh.
-            m_toolMgr->RunAction( EE_ACTIONS::restartMove );
+            if( sel && !sel->IsNew() )
+            {
+                // Reset the selected items so we can start again with the current m_isDrag
+                // state.
+                m_frame->RollbackSchematicFromUndo();
+                m_selectionTool->RemoveItemsFromSel( &m_dragAdditions, QUIET_MODE );
+                m_anchorPos = m_cursor - m_moveOffset;
+                m_moveInProgress = false;
+                controls->SetAutoPan( false );
+
+                // And give it a kick so it doesn't have to wait for the first mouse movement
+                // to refresh.
+                m_toolMgr->RunAction( EE_ACTIONS::restartMove );
+            }
         }
 
         return 0;
@@ -196,8 +200,10 @@ int SCH_MOVE_TOOL::Main( const TOOL_EVENT& aEvent )
                         it->SetFlags( STARTPOINT | ENDPOINT );
                 }
 
-                if( m_isDragOperation )
+                if( m_isDrag )
                 {
+                    EDA_ITEMS connectedDragItems;
+
                     // Add connections to the selection for a drag.
                     //
                     for( EDA_ITEM* edaItem : selection )
@@ -211,10 +217,14 @@ int SCH_MOVE_TOOL::Main( const TOOL_EVENT& aEvent )
                             connections = item->GetConnectionPoints();
 
                         for( wxPoint point : connections )
-                            getConnectedDragItems( item, point, m_dragAdditions );
+                            getConnectedDragItems( item, point, connectedDragItems );
                     }
 
-                    m_selectionTool->AddItemsToSel( &m_dragAdditions, QUIET_MODE );
+                    for( EDA_ITEM* item : connectedDragItems )
+                    {
+                        m_dragAdditions.push_back( item->m_Uuid );
+                        m_selectionTool->AddItemToSel( item, QUIET_MODE );
+                    }
                 }
                 else
                 {
@@ -246,7 +256,7 @@ int SCH_MOVE_TOOL::Main( const TOOL_EVENT& aEvent )
 
                     if( item->IsNew() )
                     {
-                        if( item->HasFlag( TEMP_SELECTED ) && m_isDragOperation )
+                        if( item->HasFlag( TEMP_SELECTED ) && m_isDrag )
                         {
                             // Item was added in getConnectedDragItems
                             saveCopyInUndoList( (SCH_ITEM*) item, UNDO_REDO::NEWITEM, appendUndo );
@@ -303,7 +313,7 @@ int SCH_MOVE_TOOL::Main( const TOOL_EVENT& aEvent )
                     m_anchorPos = m_cursor;
                 }
                 // For some items, moving the cursor to anchor is not good (for instance large
-                // hierarchical sheets or components can have the anchor outside the view)
+                // hierarchical sheets or symbols can have the anchor outside the view)
                 else if( selection.Size() == 1 && !sch_item->IsMovableFromAnchorPoint() )
                 {
                     m_cursor = getViewControls()->GetCursorPosition( true );
@@ -378,7 +388,8 @@ int SCH_MOVE_TOOL::Main( const TOOL_EVENT& aEvent )
         }
         else if( evt->IsAction( &ACTIONS::doDelete ) )
         {
-            // Exit on a remove operation; there is no further processing for removed items.
+            evt->SetPassEvent();
+            // Exit on a delete; there will no longer be anything to drag.
             break;
         }
         else if( evt->IsAction( &ACTIONS::duplicate ) )
@@ -401,12 +412,12 @@ int SCH_MOVE_TOOL::Main( const TOOL_EVENT& aEvent )
             if( evt->GetCommandId().get() >= ID_POPUP_SCH_SELECT_UNIT_CMP
                 && evt->GetCommandId().get() <= ID_POPUP_SCH_SELECT_UNIT_CMP_MAX )
             {
-                SCH_COMPONENT* component = dynamic_cast<SCH_COMPONENT*>( selection.Front() );
+                SCH_COMPONENT* symbol = dynamic_cast<SCH_COMPONENT*>( selection.Front() );
                 int unit = evt->GetCommandId().get() - ID_POPUP_SCH_SELECT_UNIT_CMP;
 
-                if( component )
+                if( symbol )
                 {
-                    m_frame->SelectUnit( component, unit );
+                    m_frame->SelectUnit( symbol, unit );
                     m_toolMgr->RunAction( ACTIONS::refreshPreview );
                 }
             }
@@ -428,7 +439,9 @@ int SCH_MOVE_TOOL::Main( const TOOL_EVENT& aEvent )
             break; // Finish
         }
         else
+        {
             evt->SetPassEvent();
+        }
 
         controls->SetAutoPan( m_moveInProgress );
 
@@ -470,7 +483,7 @@ int SCH_MOVE_TOOL::Main( const TOOL_EVENT& aEvent )
 
         m_toolMgr->RunAction( EE_ACTIONS::addNeededJunctions, true, &selectionCopy );
 
-        m_frame->SchematicCleanUp();
+        m_frame->RecalculateConnections( LOCAL_CLEANUP );
         m_frame->TestDanglingEnds();
 
         m_frame->OnModify();
@@ -579,7 +592,7 @@ void SCH_MOVE_TOOL::getConnectedDragItems( SCH_ITEM* aOriginalItem, wxPoint aPoi
         case SCH_JUNCTION_T:
             if( test->IsConnected( aPoint ) )
             {
-                // Add a new wire between the component or junction and the selected item so
+                // Add a new wire between the symbol or junction and the selected item so
                 // the selected item can be dragged.
                 SCH_LINE* newWire = nullptr;
 
@@ -679,8 +692,8 @@ void SCH_MOVE_TOOL::moveItem( EDA_ITEM* aItem, const VECTOR2I& aDelta )
 
         if( parent && parent->Type() == SCH_COMPONENT_T )
         {
-            SCH_COMPONENT* component = (SCH_COMPONENT*) aItem->GetParent();
-            TRANSFORM      transform = component->GetTransform().InverseTransform();
+            SCH_COMPONENT* symbol = (SCH_COMPONENT*) aItem->GetParent();
+            TRANSFORM      transform = symbol->GetTransform().InverseTransform();
 
             delta = transform.TransformCoordinate( delta );
         }
@@ -779,6 +792,7 @@ int SCH_MOVE_TOOL::AlignElements( const TOOL_EVENT& aEvent )
                         append_undo = true;
 
                         moveItem( dragItem, gridpt );
+                        dragItem->ClearFlags( IS_MOVED );
                         updateItem( dragItem, true );
                     }
                 }
@@ -795,6 +809,7 @@ int SCH_MOVE_TOOL::AlignElements( const TOOL_EVENT& aEvent )
 
                 moveItem( item, gridpt );
                 updateItem( item, true );
+                item->ClearFlags( IS_MOVED );
             }
         }
         else
@@ -834,6 +849,7 @@ int SCH_MOVE_TOOL::AlignElements( const TOOL_EVENT& aEvent )
                     append_undo = true;
 
                     moveItem( dragItem, most_common );
+                    dragItem->ClearFlags( IS_MOVED );
                     updateItem( dragItem, true );
                 }
             }
@@ -843,7 +859,7 @@ int SCH_MOVE_TOOL::AlignElements( const TOOL_EVENT& aEvent )
     m_toolMgr->PostEvent( EVENTS::SelectedItemsMoved );
     m_toolMgr->RunAction( EE_ACTIONS::addNeededJunctions, true, &selection );
 
-    m_frame->SchematicCleanUp();
+    m_frame->RecalculateConnections( LOCAL_CLEANUP );
     m_frame->TestDanglingEnds();
 
     m_frame->OnModify();

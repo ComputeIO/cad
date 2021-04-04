@@ -2,7 +2,7 @@
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
  * Copyright (C) 2004 Jean-Pierre Charras, jaen-pierre.charras@gipsa-lab.inpg.com
- * Copyright (C) 2004-2020 KiCad Developers, see change_log.txt for contributors.
+ * Copyright (C) 2004-2021 KiCad Developers, see change_log.txt for contributors.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -30,7 +30,7 @@
 #include <sch_line.h>
 #include <sch_bitmap.h>
 #include <tools/ee_selection_tool.h>
-#include <page_layout/ws_proxy_undo_item.h>
+#include <drawing_sheet/ds_proxy_undo_item.h>
 #include <tool/actions.h>
 
 
@@ -115,10 +115,13 @@ void SCH_EDIT_FRAME::SaveCopyInUndoList( SCH_SCREEN* aScreen, SCH_ITEM* aItem,
     PICKED_ITEMS_LIST* lastUndo = PopCommandFromUndoList();
 
     // If the last stack was empty, use that one instead of creating a new stack
-    if( aAppend || !lastUndo->GetCount() )
-        commandToUndo = lastUndo;
-    else
-        PushCommandToUndoList( lastUndo );
+    if( lastUndo )
+    {
+        if( aAppend || !lastUndo->GetCount() )
+            commandToUndo = lastUndo;
+        else
+            PushCommandToUndoList( lastUndo );
+    }
 
     if( !commandToUndo )
     {
@@ -169,8 +172,16 @@ void SCH_EDIT_FRAME::SaveCopyInUndoList( const PICKED_ITEMS_LIST& aItemsList,
     if( !aItemsList.GetCount() )
         return;
 
-    if( aAppend )
-        commandToUndo = PopCommandFromUndoList();
+    PICKED_ITEMS_LIST* lastUndo = PopCommandFromUndoList();
+
+    // If the last stack was empty, use that one instead of creating a new stack
+    if( lastUndo )
+    {
+        if( aAppend || !lastUndo->GetCount() )
+            commandToUndo = lastUndo;
+        else
+            PushCommandToUndoList( lastUndo );
+    }
 
     if( !commandToUndo )
         commandToUndo = new PICKED_ITEMS_LIST();
@@ -246,7 +257,7 @@ void SCH_EDIT_FRAME::SaveCopyInUndoList( const PICKED_ITEMS_LIST& aItemsList,
 }
 
 
-void SCH_EDIT_FRAME::PutDataInPreviousState( PICKED_ITEMS_LIST* aList, bool aRedoCommand )
+void SCH_EDIT_FRAME::PutDataInPreviousState( PICKED_ITEMS_LIST* aList )
 {
     // Undo in the reverse order of list creation: (this can allow stacked changes like the
     // same item can be changed and deleted in the same complex command).
@@ -254,6 +265,10 @@ void SCH_EDIT_FRAME::PutDataInPreviousState( PICKED_ITEMS_LIST* aList, bool aRed
     {
         UNDO_REDO status = aList->GetPickedItemStatus((unsigned) ii );
         EDA_ITEM*   eda_item = aList->GetPickedItem( (unsigned) ii );
+        SCH_SCREEN* screen =
+                dynamic_cast< SCH_SCREEN* >( aList->GetScreenForItem( (unsigned) ii ) );
+
+        wxCHECK( screen, /* void */ );
 
         eda_item->SetFlags( aList->GetPickerFlags( (unsigned) ii ) );
         eda_item->ClearEditFlags();
@@ -266,20 +281,20 @@ void SCH_EDIT_FRAME::PutDataInPreviousState( PICKED_ITEMS_LIST* aList, bool aRed
         if( status == UNDO_REDO::NEWITEM )
         {
             // new items are deleted on undo
-            RemoveFromScreen( eda_item, (SCH_SCREEN*) aList->GetScreenForItem( (unsigned) ii ) );
+            RemoveFromScreen( eda_item, screen );
             aList->SetPickedItemStatus( UNDO_REDO::DELETED, (unsigned) ii );
         }
         else if( status == UNDO_REDO::DELETED )
         {
             // deleted items are re-inserted on undo
-            AddToScreen( eda_item, (SCH_SCREEN*) aList->GetScreenForItem( (unsigned) ii ) );
+            AddToScreen( eda_item, screen );
             aList->SetPickedItemStatus( UNDO_REDO::NEWITEM, (unsigned) ii );
         }
         else if( status == UNDO_REDO::PAGESETTINGS )
         {
             // swap current settings with stored settings
-            WS_PROXY_UNDO_ITEM  alt_item( this );
-            WS_PROXY_UNDO_ITEM* item = (WS_PROXY_UNDO_ITEM*) eda_item;
+            DS_PROXY_UNDO_ITEM  alt_item( this );
+            DS_PROXY_UNDO_ITEM* item = static_cast<DS_PROXY_UNDO_ITEM*>( eda_item );
             item->Restore( this );
             *item = alt_item;
             GetToolManager()->RunAction( ACTIONS::zoomFitScreen, true );
@@ -293,11 +308,22 @@ void SCH_EDIT_FRAME::PutDataInPreviousState( PICKED_ITEMS_LIST* aList, bool aRed
             // The root sheet is a pseudo object that owns the root screen object but is not on
             // the root screen so do not attempt to remove it from the screen it owns.
             if( item != &Schematic().Root() )
-                RemoveFromScreen( item, (SCH_SCREEN*) aList->GetScreenForItem( (unsigned) ii ) );
+                RemoveFromScreen( item, screen );
 
             switch( status )
             {
             case UNDO_REDO::CHANGED:
+                if( item->Type() == SCH_COMPONENT_T )
+                {
+                    // Update the schematic library cache in case that was the change.
+                    SCH_COMPONENT* symbol = dynamic_cast<SCH_COMPONENT*>( item );
+                    SCH_COMPONENT* altSymbol = dynamic_cast<SCH_COMPONENT*>( alt_item );
+
+                    wxCHECK( symbol && altSymbol, /* void */ );
+
+                    screen->SwapSymbolLinks( symbol, altSymbol );
+                }
+
                 item->SwapData( alt_item );
 
                 if( item->Type() == SCH_COMPONENT_T )
@@ -318,7 +344,7 @@ void SCH_EDIT_FRAME::PutDataInPreviousState( PICKED_ITEMS_LIST* aList, bool aRed
             }
 
             if( item != &Schematic().Root() )
-                AddToScreen( item, (SCH_SCREEN*) aList->GetScreenForItem( (unsigned) ii ) );
+                AddToScreen( item, screen );
         }
     }
 
@@ -337,12 +363,16 @@ void SCH_EDIT_FRAME::RollbackSchematicFromUndo()
     PICKED_ITEMS_LIST* undo = PopCommandFromUndoList();
 
     // Skip empty frames
-    while( undo && undo->GetCount() == 1 && undo->GetPickedItemStatus( 0 ) == UNDO_REDO::NOP )
+    while( undo && ( !undo->GetCount()
+            || ( undo->GetCount() == 1 && undo->GetPickedItemStatus( 0 ) == UNDO_REDO::NOP ) ) )
+    {
+        delete undo;
         undo = PopCommandFromUndoList();
+    }
 
     if( undo )
     {
-        PutDataInPreviousState( undo, false );
+        PutDataInPreviousState( undo );
         undo->ClearListAndDeleteItems();
         delete undo;
 

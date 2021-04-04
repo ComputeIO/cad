@@ -55,7 +55,6 @@ using namespace std::placeholders;
 #include <id.h>
 #include "tool_event_utils.h"
 #include "pcb_selection_tool.h"
-#include "pcb_bright_box.h"
 #include "pcb_actions.h"
 
 
@@ -104,6 +103,7 @@ PCB_SELECTION_TOOL::PCB_SELECTION_TOOL() :
         m_exclusive_or( false ),
         m_multiple( false ),
         m_skip_heuristics( false ),
+        m_highlight_modifier( false ),
         m_enteredGroup( nullptr ),
         m_priv( std::make_unique<PRIV>() )
 {
@@ -207,6 +207,58 @@ void PCB_SELECTION_TOOL::Reset( RESET_REASON aReason )
 }
 
 
+void PCB_SELECTION_TOOL::setModifiersState( bool aShiftState, bool aCtrlState, bool aAltState )
+{
+    // Set the configuration of m_additive, m_subtractive, m_exclusive_or
+    // from the state of modifier keys SHIFT, CTRL, ALT and the OS
+
+    // on left click, a selection is made, depending on modifiers ALT, SHIFT, CTRL:
+    // Due to the fact ALT key modifier cannot be useed freely on Winows and Linux,
+    // actions are different on OSX and others OS
+    // Especially, ALT key cannot be used to force showing the full selection choice
+    // context menu (the menu is immediately closed on Windows )
+    //
+    // No modifier = select items and deselect previous selection
+    // ALT (on OSX) = skip heuristic and show full selection choice
+    // ALT (on others) = exclusive OR of selected items (inverse selection)
+    //
+    // CTRL (on OSX) = exclusive OR of selected items (inverse selection)
+    // CTRL (on others) = skip heuristic and show full selection choice
+    //
+    // SHIFT = add selected items to the current selection
+    //
+    // CTRL+SHIFT (on OSX) = remove selected items to the current selection
+    // CTRL+SHIFT (on others) = highlight net
+    //
+    // CTRL+ALT (on OSX) = highlight net
+    // CTRL+ALT (on others) = do nothing (same as no modifier)
+    //
+    // SHIFT+ALT (on OSX) =  do nothing (same as no modifier)
+    // SHIFT+ALT (on others) = remove selected items to the current selection
+
+#ifdef __WXOSX_MAC__
+    m_subtractive        = aCtrlState && aShiftState && !aAltState;
+    m_additive           = aShiftState && !aCtrlState && !aAltState;
+    m_exclusive_or       = aCtrlState && !aShiftState && !aAltState;
+    m_skip_heuristics    = aAltState && !aShiftState && !aCtrlState;
+    m_highlight_modifier = aCtrlState && aAltState && !aShiftState;
+
+#else
+    m_subtractive  = aShiftState && !aCtrlState && aAltState;
+    m_additive     = aShiftState && !aCtrlState && !aAltState;
+    m_exclusive_or = !aShiftState && !aCtrlState && aAltState;
+
+    // Is the user requesting that the selection list include all possible
+    // items without removing less likely selection candidates
+    // Cannot use the Alt key on windows or the disambiguation context menu is immediately
+    // dismissed rendering it useless.
+    m_skip_heuristics = aCtrlState && !aShiftState && !aAltState;
+
+    m_highlight_modifier = aCtrlState && aShiftState && !aAltState;
+#endif
+}
+
+
 int PCB_SELECTION_TOOL::Main( const TOOL_EVENT& aEvent )
 {
     // Main loop: keep receiving events
@@ -216,72 +268,8 @@ int PCB_SELECTION_TOOL::Main( const TOOL_EVENT& aEvent )
         TRACK_DRAG_ACTION trackDragAction = m_frame->Settings().m_TrackDragAction;
 
         // on left click, a selection is made, depending on modifiers ALT, SHIFT, CTRL:
-        // Due to the fact ALT key modifier cannot be useed freely on Winows and Linux,
-        // actions are different on OSX and others OS
-        // Especially, ALT key cannot be used to force showing the full selection choice
-        // context menu (the menu is immediately closed on Windows )
-        //
-        // No modifier = select items and deselect previous selection
-        // ALT (on OSX) = skip heuristic and show full selection choice
-        // ALT (on others) = exclusive OR of selected items (inverse selection)
-        //
-        // CTRL (on OSX) = exclusive OR of selected items (inverse selection)
-        // CTRL (on others) = skip heuristic and show full selection choice
-        //
-        // SHIFT = add selected items to the current selection
-        //
-        // CTRL+SHIFT (on OSX) = remove selected items to the current selection
-        // CTRL+SHIFT (on others) = highlight net
-        //
-        // CTRL+ALT (on OSX) = highlight net
-        // CTRL+ALT (on others) = do nothing (same as no modifier)
-        //
-        // SHIFT+ALT (on OSX) =  do nothing (same as no modifier)
-        // SHIFT+ALT (on others) = remove selected items to the current selection
-
-#ifdef __WXOSX_MAC__
-        m_subtractive = evt->Modifier( MD_CTRL ) &&
-                        evt->Modifier( MD_SHIFT ) &&
-                        !evt->Modifier( MD_ALT );
-
-        m_additive = evt->Modifier( MD_SHIFT ) &&
-                     !evt->Modifier( MD_CTRL ) &&
-                     !evt->Modifier( MD_ALT );
-
-        m_exclusive_or = evt->Modifier( MD_CTRL ) &&
-                         !evt->Modifier( MD_SHIFT ) &&
-                         !evt->Modifier( MD_ALT );
-
-        m_skip_heuristics = evt->Modifier( MD_ALT ) &&
-                            !evt->Modifier( MD_SHIFT ) &&
-                            !evt->Modifier( MD_CTRL );
-
-        bool highlight_modifier = evt->Modifier( MD_CTRL )
-                                  && evt->Modifier( MD_ALT )
-                                  && !evt->Modifier( MD_SHIFT );
-#else
-        m_subtractive = evt->Modifier( MD_ALT ) &&
-                        evt->Modifier( MD_SHIFT ) &&
-                        !evt->Modifier( MD_CTRL );
-
-        m_additive = evt->Modifier( MD_SHIFT ) &&
-                     !evt->Modifier( MD_ALT ) &&
-                     !evt->Modifier( MD_CTRL );
-
-        m_exclusive_or = evt->Modifier( MD_ALT ) &&
-                         !evt->Modifier( MD_SHIFT ) &&
-                         !evt->Modifier( MD_CTRL );
-
-        // Cannot use the Alt key on windows or the disambiguation context menu is immediately
-        // dismissed rendering it useless.
-        m_skip_heuristics = evt->Modifier( MD_CTRL ) &&
-                            !evt->Modifier( MD_SHIFT ) &&
-                            !evt->Modifier( MD_ALT );
-
-        bool highlight_modifier = evt->Modifier( MD_CTRL )
-                                  && evt->Modifier( MD_SHIFT )
-                                  && !evt->Modifier( MD_ALT );
-#endif
+        setModifiersState( evt->Modifier( MD_SHIFT ), evt->Modifier( MD_CTRL ),
+                           evt->Modifier( MD_ALT ) );
 
         bool modifier_enabled = m_subtractive || m_additive || m_exclusive_or;
         PCB_BASE_FRAME* frame = getEditFrame<PCB_BASE_FRAME>();
@@ -296,7 +284,7 @@ int PCB_SELECTION_TOOL::Main( const TOOL_EVENT& aEvent )
         // Single click? Select single object
         else if( evt->IsClick( BUT_LEFT ) )
         {
-            if( highlight_modifier && brd_editor )
+            if( m_highlight_modifier && brd_editor )
                 m_toolMgr->RunAction( PCB_ACTIONS::highlightNet, true );
             else
             {
@@ -345,6 +333,13 @@ int PCB_SELECTION_TOOL::Main( const TOOL_EVENT& aEvent )
         }
         else if( evt->IsDrag( BUT_LEFT ) )
         {
+            // Is another tool already moving a new object?  Don't allow a drag start
+            if( !m_selection.Empty() && m_selection[0]->HasFlag( IS_NEW | IS_MOVED ) )
+            {
+                evt->SetPassEvent();
+                continue;
+            }
+
             // Drag with LMB? Select multiple objects (or at least draw a selection box)
             // or drag them
             m_frame->FocusOnItem( nullptr );
@@ -371,7 +366,7 @@ int PCB_SELECTION_TOOL::Main( const TOOL_EVENT& aEvent )
 
                             for( EDA_ITEM* item : aCollector )
                             {
-                                if( item->Type() == PCB_ZONE_T )
+                                if( item->Type() == PCB_ZONE_T || item->Type() == PCB_FP_ZONE_T )
                                 {
                                     ZONE* zone = static_cast<ZONE*>( item );
 
@@ -398,9 +393,12 @@ int PCB_SELECTION_TOOL::Main( const TOOL_EVENT& aEvent )
                     // Yes -> run the move tool and wait till it finishes
                     TRACK* track = dynamic_cast<TRACK*>( m_selection.GetItem( 0 ) );
 
-                    if( track && trackDragAction == TRACK_DRAG_ACTION::DRAG )
+                    // If there is only item in the selection and it's a track, then we need to route it
+                    bool doRouting = ( track && ( 1 == m_selection.GetSize() ) );
+
+                    if( doRouting && trackDragAction == TRACK_DRAG_ACTION::DRAG )
                         m_toolMgr->RunAction( PCB_ACTIONS::drag45Degree, true );
-                    else if( track && trackDragAction == TRACK_DRAG_ACTION::DRAG_FREE_ANGLE )
+                    else if( doRouting && trackDragAction == TRACK_DRAG_ACTION::DRAG_FREE_ANGLE )
                         m_toolMgr->RunAction( PCB_ACTIONS::dragFreeAngle, true );
                     else
                         m_toolMgr->RunAction( PCB_ACTIONS::move, true );
@@ -1509,6 +1507,7 @@ static bool itemIsIncludedByFilter( const BOARD_ITEM& aItem, const BOARD& aBoard
             include = aFilterOptions.includeVias;
             break;
 
+        case PCB_FP_ZONE_T:
         case PCB_ZONE_T:
             include = aFilterOptions.includeZones;
             break;
@@ -1525,6 +1524,7 @@ static bool itemIsIncludedByFilter( const BOARD_ITEM& aItem, const BOARD& aBoard
                 include = aFilterOptions.includeItemsOnTechLayers;
             break;
 
+        case PCB_FP_TEXT_T:
         case PCB_TEXT_T:
             include = aFilterOptions.includePcbTexts;
             break;
@@ -1623,6 +1623,7 @@ bool PCB_SELECTION_TOOL::itemPassesFilter( BOARD_ITEM* aItem )
 
         break;
 
+    case PCB_FP_ZONE_T:
     case PCB_ZONE_T:
     {
         ZONE* zone = static_cast<ZONE*>( aItem );
@@ -1635,6 +1636,7 @@ bool PCB_SELECTION_TOOL::itemPassesFilter( BOARD_ITEM* aItem )
     }
         break;
 
+    case PCB_FP_SHAPE_T:
     case PCB_SHAPE_T:
     case PCB_TARGET_T:
         if( !m_filter.graphics )
@@ -1775,15 +1777,15 @@ bool PCB_SELECTION_TOOL::doSelectionMenu( GENERAL_COLLECTOR* aCollector )
         }
 
         menu.AppendSeparator();
-        menu.Add( _( "Select &All\tA" ), limit + 1, nullptr );
+        menu.Add( _( "Select &All\tA" ), limit + 1, BITMAPS::INVALID_BITMAP );
 
         if( !expandSelection && aCollector->HasAdditionalItems() )
-            menu.Add( _( "&Expand Selection\tE" ), limit + 2, nullptr );
+            menu.Add( _( "&Expand Selection\tE" ), limit + 2, BITMAPS::INVALID_BITMAP );
 
         if( aCollector->m_MenuTitle.Length() )
         {
             menu.SetTitle( aCollector->m_MenuTitle );
-            menu.SetIcon( info_xpm );
+            menu.SetIcon( BITMAPS::info );
             menu.DisplayTitle( true );
         }
         else
@@ -2016,13 +2018,6 @@ bool PCB_SELECTION_TOOL::Selectable( const BOARD_ITEM* aItem, bool checkVisibili
         }
         else
         {
-            // Multiple selection is only allowed in footprint editor mode.  In pcbnew, you have
-            // to select footprint subparts one by one, rather than with a drag selection.  This
-            // is so you can pick up items under an (unlocked) footprint without also moving the
-            // footprint's sub-parts.
-            if( !checkVisibilityOnly && m_multiple && !settings->GetHighContrast() )
-                return false;
-
             if( !view()->IsVisible( aItem ) )
                 return false;
 
@@ -2280,7 +2275,7 @@ int PCB_SELECTION_TOOL::hitTestDistance( const wxPoint& aWhere, BOARD_ITEM* aIte
     case PCB_FOOTPRINT_T:
     {
         FOOTPRINT* footprint = static_cast<FOOTPRINT*>( aItem );
-        EDA_RECT   bbox = footprint->GetFootprintRect();
+        EDA_RECT   bbox = footprint->GetBoundingBox( false, false );
 
         footprint->GetBoundingHull().Collide( loc, aMaxDistance, &distance );
 
@@ -2401,7 +2396,7 @@ void PCB_SELECTION_TOOL::GuessSelectionCandidates( GENERAL_COLLECTOR& aCollector
     // If the user clicked on a small item within a much larger one then it's pretty clear
     // they're trying to select the smaller one.
 
-    constexpr double sizeRatio = 1.3;
+    constexpr double sizeRatio = 1.5;
 
     std::vector<std::pair<BOARD_ITEM*, double>> itemsByArea;
 
@@ -2410,7 +2405,7 @@ void PCB_SELECTION_TOOL::GuessSelectionCandidates( GENERAL_COLLECTOR& aCollector
         BOARD_ITEM* item = aCollector[i];
         double      area;
 
-        if( item->Type() == PCB_ZONE_T
+        if( ( item->Type() == PCB_ZONE_T || item->Type() == PCB_FP_ZONE_T )
                 && static_cast<ZONE*>( item )->HitTestForEdge( where, MAX_SLOP * pixel / 2 ) )
         {
             // Zone borders are very specific, so make them "small"
@@ -2475,6 +2470,28 @@ void PCB_SELECTION_TOOL::GuessSelectionCandidates( GENERAL_COLLECTOR& aCollector
     {
         for( BOARD_ITEM* item : rejected )
             aCollector.Transfer( item );
+    }
+
+    // Finally, what we are left with is a set of items of similar coverage area.  We now reject
+    // any that are not on the active layer, to reduce the number of disambiguation menus shown.
+    // If the user wants to force-disambiguate, they can either switch layers or use the modifier
+    // key to force the menu.
+    if( aCollector.GetCount() > 1 )
+    {
+        bool haveItemOnActive = false;
+        rejected.clear();
+
+        for( int i = 0; i < aCollector.GetCount(); ++i )
+        {
+            if( !aCollector[i]->IsOnLayer( activeLayer ) )
+                rejected.insert( aCollector[i] );
+            else
+                haveItemOnActive = true;
+        }
+
+        if( haveItemOnActive )
+            for( BOARD_ITEM* item : rejected )
+                aCollector.Transfer( item );
     }
 }
 

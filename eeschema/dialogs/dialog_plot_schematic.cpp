@@ -25,12 +25,14 @@
  */
 
 #include <bitmaps.h>
+#include <common.h>     // For ExpandEnvVarSubstitutions
+#include <dialogs/wx_html_report_panel.h>
 #include <dialog_plot_schematic.h>
 #include <eeschema_settings.h>
 #include <kiface_i.h>
 #include <pgm_base.h>
 #include <settings/settings_manager.h>
-#include <page_layout/ws_painter.h>
+#include <drawing_sheet/ds_painter.h>
 #include <sch_painter.h>
 #include <schematic.h>
 
@@ -47,12 +49,14 @@ DIALOG_PLOT_SCHEMATIC::DIALOG_PLOT_SCHEMATIC( SCH_EDIT_FRAME* parent )
           m_parent( parent ),
           m_plotFormat( PLOT_FORMAT::UNDEFINED ),
           m_HPGLPenSize( 1.0 ),
-          m_defaultLineWidth( parent, m_lineWidthLabel, m_lineWidthCtrl, m_lineWidthUnits, true ),
-          m_penWidth( parent, m_penWidthLabel, m_penWidthCtrl, m_penWidthUnits, true )
+          m_defaultLineWidth( parent, m_lineWidthLabel, m_lineWidthCtrl, m_lineWidthUnits ),
+          m_penWidth( parent, m_penWidthLabel, m_penWidthCtrl, m_penWidthUnits )
 {
     m_configChanged = false;
 
-    m_browseButton->SetBitmap( KiBitmap( small_folder_xpm ) );
+    m_browseButton->SetBitmap( KiBitmap( BITMAPS::small_folder ) );
+
+    m_MessagesBox->SetFileName( Prj().GetProjectPath() + wxT( "report.txt" ) );
 
     // We use a sdbSizer to get platform-dependent ordering of the action buttons, but
     // that requires us to correct the button labels here.
@@ -94,7 +98,7 @@ void DIALOG_PLOT_SCHEMATIC::initDlg()
         setModeColor( cfg->m_PlotPanel.color );
 
         // Set plot or not frame reference option
-        setPlotFrameRef( cfg->m_PlotPanel.frame_reference );
+        setPlotDrawingSheet( cfg->m_PlotPanel.frame_reference );
 
         // HPGL plot origin and unit system configuration
         m_plotOriginOpt->SetSelection( cfg->m_PlotPanel.hpgl_origin );
@@ -277,7 +281,7 @@ void DIALOG_PLOT_SCHEMATIC::getPlotOptions( RENDER_SETTINGS* aSettings )
         cfg->m_PlotPanel.background_color = m_plotBackgroundColor->GetValue();
         cfg->m_PlotPanel.color            = getModeColor();
         cfg->m_PlotPanel.color_theme      = colors->GetFilename();
-        cfg->m_PlotPanel.frame_reference  = getPlotFrameRef();
+        cfg->m_PlotPanel.frame_reference  = getPlotDrawingSheet();
         cfg->m_PlotPanel.format           = static_cast<int>( GetPlotFileFormat() );
         cfg->m_PlotPanel.hpgl_origin      = m_plotOriginOpt->GetSelection();
         cfg->m_PlotPanel.hpgl_paper_size  = m_HPGLPaperSizeSelect;
@@ -340,19 +344,19 @@ void DIALOG_PLOT_SCHEMATIC::PlotSchematic( bool aPlotAll )
     {
     default:
     case PLOT_FORMAT::POST:
-        createPSFile( aPlotAll, getPlotFrameRef(), &renderSettings );
+        createPSFile( aPlotAll, getPlotDrawingSheet(), &renderSettings );
         break;
     case PLOT_FORMAT::DXF:
-        CreateDXFFile( aPlotAll, getPlotFrameRef(), &renderSettings );
+        CreateDXFFile( aPlotAll, getPlotDrawingSheet(), &renderSettings );
         break;
     case PLOT_FORMAT::PDF:
-        createPDFFile( aPlotAll, getPlotFrameRef(), &renderSettings );
+        createPDFFile( aPlotAll, getPlotDrawingSheet(), &renderSettings );
         break;
     case PLOT_FORMAT::SVG:
-        createSVGFile( aPlotAll, getPlotFrameRef(), &renderSettings );
+        createSVGFile( aPlotAll, getPlotDrawingSheet(), &renderSettings );
         break;
     case PLOT_FORMAT::HPGL:
-        createHPGLFile( aPlotAll, getPlotFrameRef(), &renderSettings );
+        createHPGLFile( aPlotAll, getPlotDrawingSheet(), &renderSettings );
         break;
     }
 }

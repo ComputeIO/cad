@@ -22,6 +22,7 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
 
+#include <bitmaps.h>
 #include <core/mirror.h>
 #include <sch_painter.h>
 #include <plotter.h>
@@ -373,59 +374,62 @@ void SCH_LINE::Print( const RENDER_SETTINGS* aSettings, const wxPoint& offset )
 }
 
 
-void SCH_LINE::MirrorX( int aXaxis_position )
+void SCH_LINE::MirrorVertically( int aCenter )
 {
-    MIRROR( m_start.y, aXaxis_position );
-    MIRROR( m_end.y,   aXaxis_position );
+    MIRROR( m_start.y, aCenter );
+    MIRROR( m_end.y,   aCenter );
 }
 
 
-void SCH_LINE::MirrorY( int aYaxis_position )
+void SCH_LINE::MirrorHorizontally( int aCenter )
 {
-    MIRROR( m_start.x, aYaxis_position );
-    MIRROR( m_end.x,   aYaxis_position );
+    MIRROR( m_start.x, aCenter );
+    MIRROR( m_end.x,   aCenter );
 }
 
 
-void SCH_LINE::Rotate( wxPoint aPosition )
+void SCH_LINE::Rotate( wxPoint aCenter )
 {
-    RotatePoint( &m_start, aPosition, 900 );
-    RotatePoint( &m_end, aPosition, 900 );
+    RotatePoint( &m_start, aCenter, 900 );
+    RotatePoint( &m_end, aCenter, 900 );
 }
 
 
-void SCH_LINE::RotateStart( wxPoint aPosition )
+void SCH_LINE::RotateStart( wxPoint aCenter )
 {
-    RotatePoint( &m_start, aPosition, 900 );
+    RotatePoint( &m_start, aCenter, 900 );
 }
 
 
-void SCH_LINE::RotateEnd( wxPoint aPosition )
+void SCH_LINE::RotateEnd( wxPoint aCenter )
 {
-    RotatePoint( &m_end, aPosition, 900 );
+    RotatePoint( &m_end, aCenter, 900 );
 }
 
 
-bool SCH_LINE::IsSameQuadrant( const SCH_LINE* aLine, const wxPoint& aPosition ) const
+int SCH_LINE::GetAngleFrom( const wxPoint& aPoint ) const
 {
-    wxPoint first;
-    wxPoint second;
+    wxPoint vec;
 
-    if( m_start == aPosition )
-        first = m_end - aPosition;
-    else if( m_end == aPosition )
-        first = m_start - aPosition;
+    if( aPoint == m_start )
+        vec = m_end - aPoint;
     else
-        return false;
+        vec = m_start - aPoint;
 
-    if( aLine->m_start == aPosition )
-        second = aLine->m_end - aPosition;
-    else if( aLine->m_end == aPosition )
-        second = aLine->m_start - aPosition;
+    return KiROUND( ArcTangente( vec.y, vec.x ) );
+}
+
+
+int SCH_LINE::GetReverseAngleFrom( const wxPoint& aPoint ) const
+{
+    wxPoint vec;
+
+    if( aPoint == m_end )
+        vec = m_start - aPoint;
     else
-        return false;
+        vec = m_end - aPoint;
 
-    return ( sign( first.x ) == sign( second.x ) && sign( first.y ) == sign( second.y ) );
+    return KiROUND( ArcTangente( vec.y, vec.x ) );
 }
 
 
@@ -562,19 +566,29 @@ SCH_LINE* SCH_LINE::MergeOverlap( SCH_SCREEN* aScreen, SCH_LINE* aLine, bool aCh
 
 void SCH_LINE::GetEndPoints( std::vector <DANGLING_END_ITEM>& aItemList )
 {
-    if( IsGraphicLine() )
-        return;
+    DANGLING_END_T startType, endType;
 
-    if( ( GetLayer() == LAYER_BUS ) || ( GetLayer() == LAYER_WIRE ) )
+    switch( GetLayer() )
     {
-        DANGLING_END_ITEM item( (GetLayer() == LAYER_BUS) ? BUS_START_END : WIRE_START_END, this,
-                                m_start );
-        aItemList.push_back( item );
-
-        DANGLING_END_ITEM item1( (GetLayer() == LAYER_BUS) ? BUS_END_END : WIRE_END_END, this,
-                                 m_end );
-        aItemList.push_back( item1 );
+    case LAYER_WIRE:
+        startType = WIRE_START_END;
+        endType = WIRE_END_END;
+        break;
+    case LAYER_BUS:
+        startType = BUS_START_END;
+        endType = BUS_END_END;
+        break;
+    default:
+        startType = GRAPHIC_START_END;
+        endType = GRAPHIC_END_END;
+        break;
     }
+
+    DANGLING_END_ITEM item( startType, this, m_start );
+    aItemList.push_back( item );
+
+    DANGLING_END_ITEM item1( endType, this, m_end );
+    aItemList.push_back( item1 );
 }
 
 
@@ -586,32 +600,36 @@ bool SCH_LINE::UpdateDanglingState( std::vector<DANGLING_END_ITEM>& aItemList,
 
     m_startIsDangling = m_endIsDangling = true;
 
-    if( GetLayer() == LAYER_WIRE )
+    for( DANGLING_END_ITEM item : aItemList )
     {
-        for( DANGLING_END_ITEM item : aItemList )
-        {
-            if( item.GetItem() == this )
-                continue;
+        if( item.GetItem() == this )
+            continue;
 
-            if(     item.GetType() == BUS_START_END ||
-                    item.GetType() == BUS_END_END  ||
-                    item.GetType() == BUS_ENTRY_END )
-                continue;
+        if( ( IsWire()
+              && ( item.GetType() == BUS_START_END || item.GetType() == BUS_END_END
+                   || item.GetType() == BUS_ENTRY_END ) )
+            || ( IsBus()
+                 && ( item.GetType() == WIRE_START_END || item.GetType() == WIRE_END_END
+                      || item.GetType() == PIN_END ) )
+            || ( IsGraphicLine()
+                 && ( item.GetType() != GRAPHIC_START_END && item.GetType() != GRAPHIC_END_END ) ) )
+            continue;
 
-            if( m_start == item.GetPosition() )
-                m_startIsDangling = false;
+        if( m_start == item.GetPosition() )
+            m_startIsDangling = false;
 
-            if( m_end == item.GetPosition() )
-                m_endIsDangling = false;
+        if( m_end == item.GetPosition() )
+            m_endIsDangling = false;
 
-            if( !m_startIsDangling && !m_endIsDangling )
-                break;
-        }
+        if( !m_startIsDangling && !m_endIsDangling )
+            break;
     }
-    else if( GetLayer() == LAYER_BUS || IsGraphicLine() )
+
+    if( IsBus() || IsGraphicLine() )
     {
-        // Lines on the notes layer and the bus layer cannot be tested for dangling ends.
-        previousStartState = previousEndState = m_startIsDangling = m_endIsDangling = false;
+        // Force unchanged return state for graphic lines and busses
+        previousStartState = m_startIsDangling;
+        previousEndState = m_endIsDangling;
     }
 
     return ( previousStartState != m_startIsDangling ) || ( previousEndState != m_endIsDangling );
@@ -721,14 +739,14 @@ wxString SCH_LINE::GetSelectMenuText( EDA_UNITS aUnits ) const
 }
 
 
-BITMAP_DEF SCH_LINE::GetMenuImage() const
+BITMAPS SCH_LINE::GetMenuImage() const
 {
     if( m_layer == LAYER_NOTES )
-        return add_dashed_line_xpm;
+        return BITMAPS::add_dashed_line;
     else if( m_layer == LAYER_WIRE )
-        return add_line_xpm;
+        return BITMAPS::add_line;
 
-    return add_bus_xpm;
+    return BITMAPS::add_bus;
 }
 
 
@@ -761,7 +779,10 @@ bool SCH_LINE::HitTest( const wxPoint& aPosition, int aAccuracy ) const
     if( aPosition == m_start || aPosition == m_end )
         return true;
 
-    aAccuracy += GetPenWidth() / 2;
+    if( aAccuracy >= 0 )
+        aAccuracy += GetPenWidth() / 2;
+    else
+        aAccuracy = abs( aAccuracy );
 
     return TestSegmentHit( aPosition, m_start, m_end, aAccuracy );
 }
@@ -807,7 +828,7 @@ bool SCH_LINE::doIsConnected( const wxPoint& aPosition ) const
 }
 
 
-void SCH_LINE::Plot( PLOTTER* aPlotter )
+void SCH_LINE::Plot( PLOTTER* aPlotter ) const
 {
     auto*   settings = static_cast<KIGFX::SCH_RENDER_SETTINGS*>( aPlotter->RenderSettings() );
     int     penWidth;
@@ -897,6 +918,11 @@ bool SCH_LINE::IsGraphicLine() const
 bool SCH_LINE::IsWire() const
 {
     return ( GetLayer() == LAYER_WIRE );
+}
+
+bool SCH_LINE::IsBus() const
+{
+    return ( GetLayer() == LAYER_BUS );
 }
 
 

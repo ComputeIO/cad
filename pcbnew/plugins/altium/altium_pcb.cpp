@@ -471,13 +471,6 @@ void ALTIUM_PCB::Parse( const CFB::CompoundFileReader& aReader,
     m_board->GetDesignSettings().m_AuxOrigin += movementVector;
     m_board->GetDesignSettings().m_GridOrigin += movementVector;
 
-    // Finish Board by recalculating footprint boundingboxes
-    for( FOOTPRINT* footprint : m_board->Footprints() )
-    {
-        footprint->CalculateBoundingBox();
-        footprint->UpdateBoundingHull();
-    }
-    // Otherwise we cannot save the imported board
     m_board->SetModified();
 }
 
@@ -806,7 +799,7 @@ void ALTIUM_PCB::ParseComponents6Data( const CFB::CompoundFileReader& aReader,
         m_board->Add( footprint, ADD_MODE::APPEND );
         m_components.emplace_back( footprint );
 
-        LIB_ID fpID = AltiumToKiCadLibID( elem.sourcefootprintlibrary, elem.sourcelibreference );
+        LIB_ID fpID = AltiumToKiCadLibID( elem.sourcefootprintlibrary, elem.pattern );
 
         footprint->SetFPID( fpID );
 

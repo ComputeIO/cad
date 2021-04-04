@@ -32,6 +32,7 @@ class PANEL_SETUP_RULES;
 class PANEL_SETUP_TRACKS_AND_VIAS;
 class PANEL_SETUP_MASK_AND_PASTE;
 class PANEL_SETUP_BOARD_STACKUP;
+class PANEL_SETUP_BOARD_FINISH;
 class PANEL_SETUP_SEVERITIES;
 class PANEL_TEXT_VARIABLES;
 
@@ -55,6 +56,7 @@ protected:
     PANEL_SETUP_TRACKS_AND_VIAS*     m_tracksAndVias;
     PANEL_SETUP_MASK_AND_PASTE*      m_maskAndPaste;
     PANEL_SETUP_BOARD_STACKUP*       m_physicalStackup;
+    PANEL_SETUP_BOARD_FINISH*        m_boardFinish;
     PANEL_SETUP_SEVERITIES*          m_severities;
     PANEL_TEXT_VARIABLES*            m_textVars;
 
@@ -65,6 +67,7 @@ protected:
 
 private:
     int m_physicalStackupPage;      // the page index of the PANEL_SETUP_BOARD_STACKUP page
+    int m_layerSetupPage;           // the page index of the PANEL_SETUP_LAYERS page
 };
 
 

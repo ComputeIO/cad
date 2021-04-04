@@ -24,9 +24,11 @@
  */
 
 #include <bitmaps.h>
+#include <bitmap_store.h>
 #include <dialog_shim.h>
 #include <dialogs/panel_common_settings.h>
 #include <dialogs/panel_mouse_settings.h>
+#include <eda_dde.h>
 #include <filehistory.h>
 #include <id.h>
 #include <kiface_i.h>
@@ -41,6 +43,7 @@
 #include <project/project_local_settings.h>
 #include <tool/action_manager.h>
 #include <tool/action_menu.h>
+#include <tool/action_toolbar.h>
 #include <tool/actions.h>
 #include <tool/common_control.h>
 #include <tool/tool_manager.h>
@@ -48,11 +51,12 @@
 #include <trace_helpers.h>
 #include <widgets/paged_dialog.h>
 #include <widgets/infobar.h>
-#include <widgets/wx_aui_dock_art.h>
+#include <widgets/wx_aui_art_providers.h>
 #include <wx/display.h>
 #include <wx/stdpaths.h>
 #include <wx/string.h>
 #include <kiplatform/app.h>
+#include <kiplatform/ui.h>
 
 #include <functional>
 
@@ -60,23 +64,43 @@ wxDEFINE_EVENT( UNITS_CHANGED, wxCommandEvent );
 
 
 // Minimum window size
-static const int s_minsize_x = 500;
-static const int s_minsize_y = 400;
+static const wxSize minSize( FRAME_T aFrameType )
+{
+    switch( aFrameType )
+    {
+    case KICAD_MAIN_FRAME_T:
+        return wxSize( 406, 354 );
 
-static const int s_defaultSize_x = 1280;
-static const int s_defaultSize_y = 720;
+    default:
+        return wxSize( 500, 400 );
+    }
+}
+
+static const wxSize defaultSize( FRAME_T aFrameType )
+{
+    switch( aFrameType )
+    {
+    case KICAD_MAIN_FRAME_T:
+        return wxSize( 850, 540 );
+
+    default:
+        return wxSize( 1280, 720 );
+    }
+}
 
 
 BEGIN_EVENT_TABLE( EDA_BASE_FRAME, wxFrame )
-EVT_MENU( wxID_ABOUT, EDA_BASE_FRAME::OnKicadAbout )
-EVT_MENU( wxID_PREFERENCES, EDA_BASE_FRAME::OnPreferences )
+    EVT_MENU( wxID_ABOUT, EDA_BASE_FRAME::OnKicadAbout )
+    EVT_MENU( wxID_PREFERENCES, EDA_BASE_FRAME::OnPreferences )
 
-EVT_CHAR_HOOK( EDA_BASE_FRAME::OnCharHook )
-EVT_MENU_OPEN( EDA_BASE_FRAME::OnMenuEvent )
-EVT_MENU_CLOSE( EDA_BASE_FRAME::OnMenuEvent )
-EVT_MENU_HIGHLIGHT_ALL( EDA_BASE_FRAME::OnMenuEvent )
-EVT_MOVE( EDA_BASE_FRAME::OnMove )
-EVT_MAXIMIZE( EDA_BASE_FRAME::OnMaximize )
+    EVT_CHAR_HOOK( EDA_BASE_FRAME::OnCharHook )
+    EVT_MENU_OPEN( EDA_BASE_FRAME::OnMenuEvent )
+    EVT_MENU_CLOSE( EDA_BASE_FRAME::OnMenuEvent )
+    EVT_MENU_HIGHLIGHT_ALL( EDA_BASE_FRAME::OnMenuEvent )
+    EVT_MOVE( EDA_BASE_FRAME::OnMove )
+    EVT_MAXIMIZE( EDA_BASE_FRAME::OnMaximize )
+
+    EVT_SYS_COLOUR_CHANGED( EDA_BASE_FRAME::onSystemColorChange )
 END_EVENT_TABLE()
 
 EDA_BASE_FRAME::EDA_BASE_FRAME( wxWindow* aParent, FRAME_T aFrameType, const wxString& aTitle,
@@ -90,15 +114,15 @@ EDA_BASE_FRAME::EDA_BASE_FRAME( wxWindow* aParent, FRAME_T aFrameType, const wxS
         m_userUnits( EDA_UNITS::MILLIMETRES ), m_isClosing( false ), m_isNonUserClose( false )
 {
     m_autoSaveTimer = new wxTimer( this, ID_AUTO_SAVE_TIMER );
-    m_mruPath = PATHS::GetDefaultUserProjectsPath();
-    m_frameSize = wxSize( s_defaultSize_x, s_defaultSize_y );
+    m_mruPath       = PATHS::GetDefaultUserProjectsPath();
+    m_frameSize     = defaultSize( aFrameType );
 
     m_auimgr.SetArtProvider( new WX_AUI_DOCK_ART() );
 
     m_settingsManager = &Pgm().GetSettingsManager();
 
     // Set a reasonable minimal size for the frame
-    SetSizeHints( s_minsize_x, s_minsize_y, -1, -1, -1, -1 );
+    SetSizeHints( minSize( aFrameType ).x, minSize( aFrameType ).y, -1, -1, -1, -1 );
 
     // Store dimensions of the user area of the main window.
     GetClientSize( &m_frameSize.x, &m_frameSize.y );
@@ -192,6 +216,8 @@ EDA_BASE_FRAME::~EDA_BASE_FRAME()
     delete m_fileHistory;
 
     ClearUndoRedoList();
+
+    SocketCleanup();
 
     KIPLATFORM::APP::RemoveShutdownBlockReason( this );
 }
@@ -387,7 +413,7 @@ void EDA_BASE_FRAME::AddStandardHelpMenu( wxMenuBar* aMenuBar )
     helpMenu->Add( ACTIONS::reportBug );
 
     helpMenu->AppendSeparator();
-    helpMenu->Add( _( "&About KiCad" ), "", wxID_ABOUT, about_xpm );
+    helpMenu->Add( _( "&About KiCad" ), "", wxID_ABOUT, BITMAPS::about );
 
     aMenuBar->Append( helpMenu, _( "&Help" ) );
 }
@@ -415,11 +441,31 @@ void EDA_BASE_FRAME::CommonSettingsChanged( bool aEnvVarsChanged, bool aTextVars
         m_fileHistory->SetMaxFiles( (unsigned) std::max( 0, historySize ) );
     }
 
+    if( GetBitmapStore()->ThemeChanged() )
+    {
+        ThemeChanged();
+    }
+
     if( GetMenuBar() )
     {
         // For icons in menus, icon scaling & hotkeys
         ReCreateMenuBar();
         GetMenuBar()->Refresh();
+    }
+}
+
+
+void EDA_BASE_FRAME::ThemeChanged()
+{
+    ClearScaledBitmapCache();
+
+    // Update all the toolbars to have new icons
+    wxAuiPaneInfoArray panes = m_auimgr.GetAllPanes();
+
+    for( size_t i = 0; i < panes.GetCount(); ++i )
+    {
+        if( ACTION_TOOLBAR* toolbar = dynamic_cast<ACTION_TOOLBAR*>( panes[i].window ) )
+            toolbar->RefreshBitmaps();
     }
 }
 
@@ -451,11 +497,10 @@ void EDA_BASE_FRAME::LoadWindowState( const WINDOW_STATE& aState )
                 m_framePos.y, m_frameSize.x, m_frameSize.y );
 
     // Ensure minimum size is set if the stored config was zero-initialized
-    if( m_frameSize.x < s_minsize_x || m_frameSize.y < s_minsize_y )
+    if( m_frameSize.x < minSize( m_ident ).x || m_frameSize.y < minSize( m_ident ).y )
     {
-        m_frameSize.x = s_defaultSize_x;
-        m_frameSize.y = s_defaultSize_y;
-        wasDefault = true;
+        m_frameSize = defaultSize( m_ident );
+        wasDefault  = true;
 
         wxLogTrace( traceDisplayLocation, "Using minimum size (%d, %d)", m_frameSize.x,
                     m_frameSize.y );
@@ -932,7 +977,8 @@ void EDA_BASE_FRAME::CheckForAutoSaveFile( const wxFileName& aFileName )
                                         "last saved edits you made?" ),
                                      aFileName.GetFullName() );
 
-    int response = wxMessageBox( msg, Pgm().App().GetAppName(), wxYES_NO | wxICON_QUESTION, this );
+    int response = wxMessageBox( msg, Pgm().App().GetAppDisplayName(), wxYES_NO | wxICON_QUESTION,
+                                 this );
 
     // Make a backup of the current file, delete the file, and rename the auto save file to
     // the file name.
@@ -941,7 +987,7 @@ void EDA_BASE_FRAME::CheckForAutoSaveFile( const wxFileName& aFileName )
         if( !wxRenameFile( autoSaveFileName.GetFullPath(), aFileName.GetFullPath() ) )
         {
             wxMessageBox( _( "The auto save file could not be renamed to the board file name." ),
-                          Pgm().App().GetAppName(), wxOK | wxICON_EXCLAMATION, this );
+                          Pgm().App().GetAppDisplayName(), wxOK | wxICON_EXCLAMATION, this );
         }
     }
     else
@@ -1070,4 +1116,30 @@ wxSize EDA_BASE_FRAME::GetWindowSize()
 #endif
 
     return winSize;
+}
+
+
+void EDA_BASE_FRAME::HandleSystemColorChange()
+{
+    // Update the icon theme when the system theme changes and update the toolbars
+    if( GetBitmapStore()->ThemeChanged() )
+        ThemeChanged();
+
+    // This isn't handled by ThemeChanged()
+    if( GetMenuBar() )
+    {
+        // For icons in menus, icon scaling & hotkeys
+        ReCreateMenuBar();
+        GetMenuBar()->Refresh();
+    }
+}
+
+
+void EDA_BASE_FRAME::onSystemColorChange( wxSysColourChangedEvent& aEvent )
+{
+    // Call the handler to update the colors used in the frame
+    HandleSystemColorChange();
+
+    // Skip the change event to ensure the rest of the window controls get it
+    aEvent.Skip();
 }

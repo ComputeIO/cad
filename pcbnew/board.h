@@ -35,6 +35,7 @@
 #include <pcb_plot_params.h>
 #include <title_block.h>
 #include <tools/pcb_selection.h>
+#include <drc/drc_rtree.h>
 
 class BOARD_COMMIT;
 class PCB_BASE_FRAME;
@@ -193,6 +194,7 @@ class BOARD : public BOARD_ITEM_CONTAINER
 private:
     /// What is this board being used for
     BOARD_USE           m_boardUse;
+    int                 m_timeStamp;                // actually a modification counter
 
     wxString            m_fileName;
     MARKERS             m_markers;
@@ -213,9 +215,9 @@ private:
     std::shared_ptr<CONNECTIVITY_DATA>  m_connectivity;
 
     PAGE_INFO           m_paper;
-    TITLE_BLOCK         m_titles;               // text in lower right of screen and plots
+    TITLE_BLOCK         m_titles;                   // text in lower right of screen and plots
     PCB_PLOT_PARAMS     m_plotOptions;
-    PROJECT*            m_project;              // project this board is a part of
+    PROJECT*            m_project;                  // project this board is a part of
 
     /**
      * All of the board design settings are stored as a JSON object inside the project file.  The
@@ -265,6 +267,23 @@ public:
      * @return what the board is being used for
      */
     BOARD_USE GetBoardUse() const { return m_boardUse; }
+
+    void IncrementTimeStamp()
+    {
+        m_timeStamp++;
+
+        {
+            std::unique_lock<std::mutex> cacheLock( m_CachesMutex );
+            m_InsideAreaCache.clear();
+            m_InsideCourtyardCache.clear();
+            m_InsideFCourtyardCache.clear();
+            m_InsideBCourtyardCache.clear();
+        }
+
+        m_CopperZoneRTrees.clear();
+    }
+
+    int GetTimeStamp() { return m_timeStamp; }
 
     /**
      * Find out if the board is being used to hold a single footprint for editing/viewing.
@@ -384,8 +403,8 @@ public:
     /**
      * Convert cross-references back and forth between ${refDes:field} and ${kiid:field}
      */
-    wxString ConvertCrossReferencesToKIIDs( const wxString& aSource );
-    wxString ConvertKIIDsToCrossReferences( const wxString& aSource );
+    wxString ConvertCrossReferencesToKIIDs( const wxString& aSource ) const;
+    wxString ConvertKIIDsToCrossReferences( const wxString& aSource ) const;
 
     /**
      * Return a list of missing connections between components/tracks.
@@ -563,7 +582,7 @@ public:
      * @param aLayer One of the two allowed layers for footprints: F_Cu or B_Cu
      * @return bool - true if the layer is visible, else false.
      */
-    bool IsFootprintLayerVisible( PCB_LAYER_ID aLayer );
+    bool IsFootprintLayerVisible( PCB_LAYER_ID aLayer ) const;
 
     /**
      * @return the BOARD_DESIGN_SETTINGS for this BOARD
@@ -615,7 +634,7 @@ public:
      * @param aLayer = A copper layer, like B_Cu, etc.
      * @param aOutlines The SHAPE_POLY_SET to fill in with items outline.
      */
-    void ConvertBrdLayerToPolygonalContours( PCB_LAYER_ID aLayer, SHAPE_POLY_SET& aOutlines );
+    void ConvertBrdLayerToPolygonalContours( PCB_LAYER_ID aLayer, SHAPE_POLY_SET& aOutlines ) const;
 
     /**
      * Return the ID of a layer.
@@ -841,7 +860,7 @@ public:
      * Tokens may appear more than once if they were harvested from hierarchical nets
      * (ie: /CLK, /sheet1/CLK).
      */
-    std::vector<wxString> GetNetClassAssignmentCandidates();
+    std::vector<wxString> GetNetClassAssignmentCandidates() const;
 
     /**
      * Copy NETCLASS info to each NET, based on NET membership in a NETCLASS.
@@ -899,7 +918,7 @@ public:
     /**
      * @return a std::list of pointers to all board zones (possibly including zones in footprints)
      */
-    std::list<ZONE*> GetZoneList( bool aIncludeZonesInFootprints = false );
+    std::list<ZONE*> GetZoneList( bool aIncludeZonesInFootprints = false ) const;
 
     /**
      * @return The number of copper pour areas or ZONEs.
@@ -947,22 +966,6 @@ public:
     bool OnAreaPolygonModified( PICKED_ITEMS_LIST* aModifiedZonesList, ZONE* modified_area );
 
     /**
-     * Check all copper areas in net for intersections, combining them if found.
-     *
-     * @param aDeletedList = a PICKED_ITEMS_LIST * where to store deleted areas (useful
-     *                       in undo commands can be NULL
-     * @param aNetCode = net to consider
-     * @return true if some areas modified
-     */
-    bool CombineAllZonesInNet( PICKED_ITEMS_LIST* aDeletedList, int aNetCode );
-
-    /**
-     * Check for intersection of a given copper area with other areas in same net
-     * @param aZone = area to compare to all other areas in the same net
-     */
-    bool TestZoneIntersections( ZONE* aZone );
-
-    /**
      * Test for intersection of 2 copper areas
      * @param aZone1 = area reference
      * @param aZone2 = area to compare for intersection calculations
@@ -971,24 +974,14 @@ public:
     bool TestZoneIntersection( ZONE* aZone1, ZONE* aZone2 );
 
     /**
-     * If possible, combine 2 copper areas
-     * @param aDeletedList = a PICKED_ITEMS_LIST * where to store deleted areas (for undo).
-     * @param aRefZone = the main area (zone)
-     * @param aZoneToCombine = the zone that can be merged with aRefZone; will be deleted if the
-     *                         combine is successful
-     * @return : true if aZoneToCombine is combined with aRefZone (and therefore be deleted)
-     */
-    bool CombineZones( PICKED_ITEMS_LIST* aDeletedList, ZONE* aRefZone, ZONE* aZoneToCombine );
-
-    /**
      * Find a pad \a aPosition on \a aLayer.
      *
      * @param aPosition A wxPoint object containing the position to hit test.
      * @param aLayerMask A layer or layers to mask the hit test.
      * @return A pointer to a PAD object if found or NULL if not found.
      */
-    PAD* GetPad( const wxPoint& aPosition, LSET aLayerMask );
-    PAD* GetPad( const wxPoint& aPosition )
+    PAD* GetPad( const wxPoint& aPosition, LSET aLayerMask ) const;
+    PAD* GetPad( const wxPoint& aPosition ) const
     {
         return GetPad( aPosition, LSET().set() );
     }
@@ -1000,7 +993,7 @@ public:
      * @param aEndPoint The end point of \a aTrace the hit test against.
      * @return A pointer to a PAD object if found or NULL if not found.
      */
-    PAD* GetPad( TRACK* aTrace, ENDPOINT_T aEndPoint );
+    PAD* GetPad( const TRACK* aTrace, ENDPOINT_T aEndPoint ) const;
 
     /**
      * Return pad found at \a aPosition on \a aLayerMask using the fast search method.
@@ -1011,7 +1004,7 @@ public:
      * @param aLayerMask A layer or layers to mask the hit test.
      * @return A pointer to a PAD object if found or NULL if not found.
      */
-    PAD* GetPadFast( const wxPoint& aPosition, LSET aLayerMask );
+    PAD* GetPadFast( const wxPoint& aPosition, LSET aLayerMask ) const;
 
     /**
      * Locate the pad connected at \a aPosition on \a aLayer starting at list position
@@ -1027,7 +1020,7 @@ public:
      * @param aLayerMask A layer or layers to mask the hit test.
      * @return a PAD object pointer to the connected pad.
      */
-    PAD* GetPad( std::vector<PAD*>& aPadList, const wxPoint& aPosition, LSET aLayerMask );
+    PAD* GetPad( std::vector<PAD*>& aPadList, const wxPoint& aPosition, LSET aLayerMask ) const;
 
     /**
      * Delete a given pad from the BOARD by removing it from its footprint and from the
@@ -1046,7 +1039,7 @@ public:
      *                  = -1 to build the full pad list.
      *                  = a given netcode to build the pad list relative to the given net
      */
-    void GetSortedPadListByXthenYCoord( std::vector<PAD*>& aVector, int aNetCode = -1 );
+    void GetSortedPadListByXthenYCoord( std::vector<PAD*>& aVector, int aNetCode = -1 ) const;
 
     /**
      * Returns data on the length and number of track segments connected to a given track.
@@ -1078,7 +1071,7 @@ public:
      * @param aIgnoreLocked Ignore locked footprints when true.
      */
     FOOTPRINT* GetFootprint( const wxPoint& aPosition, PCB_LAYER_ID aActiveLayer,
-                             bool aVisibleOnly, bool aIgnoreLocked = false );
+                             bool aVisibleOnly, bool aIgnoreLocked = false ) const;
 
     /**
      * Reset all items' netcodes to 0 (no net).
@@ -1149,5 +1142,16 @@ public:
      * @return bit field of legal ops.
      */
     GroupLegalOpsField GroupLegalOps( const PCB_SELECTION& selection ) const;
+
+public:
+    // ------------ Run-time caches -------------
+
+    std::mutex                                            m_CachesMutex;
+    std::map< std::pair<BOARD_ITEM*, BOARD_ITEM*>, bool > m_InsideCourtyardCache;
+    std::map< std::pair<BOARD_ITEM*, BOARD_ITEM*>, bool > m_InsideFCourtyardCache;
+    std::map< std::pair<BOARD_ITEM*, BOARD_ITEM*>, bool > m_InsideBCourtyardCache;
+    std::map< std::pair<BOARD_ITEM*, BOARD_ITEM*>, bool > m_InsideAreaCache;
+
+    std::map< ZONE*, std::unique_ptr<DRC_RTREE> >         m_CopperZoneRTrees;
 };
 #endif      // CLASS_BOARD_H_

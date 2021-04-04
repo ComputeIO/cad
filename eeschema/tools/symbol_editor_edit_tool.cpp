@@ -22,7 +22,6 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
 
-#include <tool/tool_manager.h>
 #include <tool/picker_tool.h>
 #include <tools/ee_selection_tool.h>
 #include <tools/symbol_editor_pin_tool.h>
@@ -30,18 +29,18 @@
 #include <tools/symbol_editor_move_tool.h>
 #include <ee_actions.h>
 #include <bitmaps.h>
-#include <confirm.h>
+#include <kicad_string.h>
 #include <symbol_edit_frame.h>
 #include <dialogs/dialog_lib_edit_draw_item.h>
 #include <dialogs/dialog_lib_edit_text.h>
 #include <dialogs/dialog_edit_one_field.h>
 #include <dialogs/dialog_lib_symbol_properties.h>
 #include <dialogs/dialog_lib_edit_pin_table.h>
+#include <dialogs/dialog_update_symbol_fields.h>
 #include <sch_plugins/kicad/sch_sexpr_plugin.h>
 #include <lib_text.h>
 #include "symbol_editor_edit_tool.h"
 #include <math/util.h>      // for KiROUND
-
 
 SYMBOL_EDITOR_EDIT_TOOL::SYMBOL_EDITOR_EDIT_TOOL() :
         EE_TOOL_BASE( "eeschema.SymbolEditTool" ),
@@ -94,8 +93,8 @@ bool SYMBOL_EDITOR_EDIT_TOOL::Init()
         moveMenu.AddSeparator( 200 );
         moveMenu.AddItem( EE_ACTIONS::rotateCCW,    canEdit && EE_CONDITIONS::NotEmpty, 200 );
         moveMenu.AddItem( EE_ACTIONS::rotateCW,     canEdit && EE_CONDITIONS::NotEmpty, 200 );
-        moveMenu.AddItem( EE_ACTIONS::mirrorX,      canEdit && EE_CONDITIONS::NotEmpty, 200 );
-        moveMenu.AddItem( EE_ACTIONS::mirrorY,      canEdit && EE_CONDITIONS::NotEmpty, 200 );
+        moveMenu.AddItem( EE_ACTIONS::mirrorV,      canEdit && EE_CONDITIONS::NotEmpty, 200 );
+        moveMenu.AddItem( EE_ACTIONS::mirrorH,      canEdit && EE_CONDITIONS::NotEmpty, 200 );
 
         moveMenu.AddItem( EE_ACTIONS::properties,   canEdit && EE_CONDITIONS::Count( 1 ), 200 );
 
@@ -115,8 +114,8 @@ bool SYMBOL_EDITOR_EDIT_TOOL::Init()
     drawMenu.AddSeparator( 200 );
     drawMenu.AddItem( EE_ACTIONS::rotateCCW,        canEdit && EE_CONDITIONS::IdleSelection, 200 );
     drawMenu.AddItem( EE_ACTIONS::rotateCW,         canEdit && EE_CONDITIONS::IdleSelection, 200 );
-    drawMenu.AddItem( EE_ACTIONS::mirrorX,          canEdit && EE_CONDITIONS::IdleSelection, 200 );
-    drawMenu.AddItem( EE_ACTIONS::mirrorY,          canEdit && EE_CONDITIONS::IdleSelection, 200 );
+    drawMenu.AddItem( EE_ACTIONS::mirrorV,          canEdit && EE_CONDITIONS::IdleSelection, 200 );
+    drawMenu.AddItem( EE_ACTIONS::mirrorH,          canEdit && EE_CONDITIONS::IdleSelection, 200 );
 
     drawMenu.AddItem( EE_ACTIONS::properties,       canEdit && EE_CONDITIONS::Count( 1 ), 200 );
 
@@ -125,8 +124,8 @@ bool SYMBOL_EDITOR_EDIT_TOOL::Init()
 
     selToolMenu.AddItem( EE_ACTIONS::rotateCCW,     canEdit && EE_CONDITIONS::NotEmpty, 200 );
     selToolMenu.AddItem( EE_ACTIONS::rotateCW,      canEdit && EE_CONDITIONS::NotEmpty, 200 );
-    selToolMenu.AddItem( EE_ACTIONS::mirrorX,       canEdit && EE_CONDITIONS::NotEmpty, 200 );
-    selToolMenu.AddItem( EE_ACTIONS::mirrorY,       canEdit && EE_CONDITIONS::NotEmpty, 200 );
+    selToolMenu.AddItem( EE_ACTIONS::mirrorV,       canEdit && EE_CONDITIONS::NotEmpty, 200 );
+    selToolMenu.AddItem( EE_ACTIONS::mirrorH,       canEdit && EE_CONDITIONS::NotEmpty, 200 );
 
     selToolMenu.AddItem( EE_ACTIONS::properties,    canEdit && EE_CONDITIONS::Count( 1 ), 200 );
 
@@ -196,7 +195,7 @@ int SYMBOL_EDITOR_EDIT_TOOL::Mirror( const TOOL_EVENT& aEvent )
         return 0;
 
     wxPoint   mirrorPoint;
-    bool      xAxis = ( aEvent.Matches( EE_ACTIONS::mirrorX.MakeEvent() ) );
+    bool      xAxis = ( aEvent.Matches( EE_ACTIONS::mirrorV.MakeEvent() ) );
     LIB_ITEM* item = static_cast<LIB_ITEM*>( selection.Front() );
 
     if( !item->IsMoving() )
@@ -205,7 +204,7 @@ int SYMBOL_EDITOR_EDIT_TOOL::Mirror( const TOOL_EVENT& aEvent )
     if( selection.GetSize() == 1 )
         mirrorPoint = item->GetPosition();
     else
-        mirrorPoint = m_frame->GetNearestGridPosition( mapCoords( selection.GetCenter() ) );
+        mirrorPoint = m_frame->GetNearestHalfGridPosition( mapCoords( selection.GetCenter() ) );
 
     for( unsigned ii = 0; ii < selection.GetSize(); ii++ )
     {
@@ -471,33 +470,18 @@ void SYMBOL_EDITOR_EDIT_TOOL::editGraphicProperties( LIB_ITEM* aItem )
     if( aItem == NULL )
         return;
 
-    DIALOG_LIB_EDIT_DRAW_ITEM dialog( m_frame, aItem );
+    DIALOG_LIB_EDIT_DRAW_ITEM dlg( m_frame, aItem );
 
-    if( dialog.ShowModal() != wxID_OK )
+    if( dlg.ShowModal() != wxID_OK )
         return;
-
-    if( aItem->IsFillable() )
-        aItem->SetFillMode( (FILL_TYPE) dialog.GetFillStyle() );
-
-    aItem->SetWidth( dialog.GetWidth() );
-
-    if( dialog.GetApplyToAllConversions() )
-        aItem->SetConvert( 0 );
-    else
-        aItem->SetConvert( m_frame->GetConvert() );
-
-    if( dialog.GetApplyToAllUnits() )
-        aItem->SetUnit( 0 );
-    else
-        aItem->SetUnit( m_frame->GetUnit() );
 
     updateItem( aItem, true );
     m_frame->GetCanvas()->Refresh();
-    m_frame->OnModify( );
+    m_frame->OnModify();
 
     SYMBOL_EDITOR_DRAWING_TOOLS* drawingTools = m_toolMgr->GetTool<SYMBOL_EDITOR_DRAWING_TOOLS>();
-    drawingTools->SetDrawSpecificConvert( !dialog.GetApplyToAllConversions() );
-    drawingTools->SetDrawSpecificUnit( !dialog.GetApplyToAllUnits() );
+    drawingTools->SetDrawSpecificConvert( !dlg.GetApplyToAllConversions() );
+    drawingTools->SetDrawSpecificUnit( !dlg.GetApplyToAllUnits() );
 
     MSG_PANEL_ITEMS items;
     aItem->GetMsgPanelInfo( m_frame, items );
@@ -535,7 +519,7 @@ void SYMBOL_EDITOR_EDIT_TOOL::editFieldProperties( LIB_FIELD* aField )
     if( aField->GetId() == VALUE_FIELD )
         caption = _( "Edit Symbol Name" );
     else
-        caption.Printf( _( "Edit %s Field" ), aField->GetName() );
+        caption.Printf( _( "Edit %s Field" ), TitleCaps( aField->GetName() ) );
 
     DIALOG_LIB_EDIT_ONE_FIELD dlg( m_frame, caption, aField );
 
@@ -625,6 +609,29 @@ int SYMBOL_EDITOR_EDIT_TOOL::PinTable( const TOOL_EVENT& aEvent )
 
     m_frame->RebuildView();
     m_frame->OnModify();
+
+    return 0;
+}
+
+
+int SYMBOL_EDITOR_EDIT_TOOL::UpdateSymbolFields( const TOOL_EVENT& aEvent )
+{
+    LIB_PART* part = m_frame->GetCurPart();
+
+    if( !part )
+        return 0;
+
+    if( !part->IsAlias() )
+    {
+        m_frame->ShowInfoBarError( _( "Symbol is not derived from another symbol." ) );
+    }
+    else
+    {
+        DIALOG_UPDATE_SYMBOL_FIELDS dlg( m_frame, part );
+
+        if( dlg.ShowModal() == wxID_CANCEL )
+            return -1;
+    }
 
     return 0;
 }
@@ -744,7 +751,7 @@ int SYMBOL_EDITOR_EDIT_TOOL::Paste( const TOOL_EVENT& aEvent )
         newItem->SetUnit( newItem->GetUnit() ? m_frame->GetUnit() : 0 );
         newItem->SetConvert( newItem->GetConvert() ? m_frame->GetConvert() : 0 );
 
-        part->GetDrawItems().push_back( newItem );
+        part->AddDrawItem( newItem );
         getView()->Add( newItem );
     }
 
@@ -791,7 +798,7 @@ int SYMBOL_EDITOR_EDIT_TOOL::Duplicate( const TOOL_EVENT& aEvent )
         newItem->SetParent( part );
         newItems.push_back( newItem );
 
-        part->GetDrawItems().push_back( newItem );
+        part->AddDrawItem( newItem );
         getView()->Add( newItem );
     }
 
@@ -816,12 +823,13 @@ void SYMBOL_EDITOR_EDIT_TOOL::setTransitions()
 
     Go( &SYMBOL_EDITOR_EDIT_TOOL::Rotate,             EE_ACTIONS::rotateCW.MakeEvent() );
     Go( &SYMBOL_EDITOR_EDIT_TOOL::Rotate,             EE_ACTIONS::rotateCCW.MakeEvent() );
-    Go( &SYMBOL_EDITOR_EDIT_TOOL::Mirror,             EE_ACTIONS::mirrorX.MakeEvent() );
-    Go( &SYMBOL_EDITOR_EDIT_TOOL::Mirror,             EE_ACTIONS::mirrorY.MakeEvent() );
+    Go( &SYMBOL_EDITOR_EDIT_TOOL::Mirror,             EE_ACTIONS::mirrorV.MakeEvent() );
+    Go( &SYMBOL_EDITOR_EDIT_TOOL::Mirror,             EE_ACTIONS::mirrorH.MakeEvent() );
     Go( &SYMBOL_EDITOR_EDIT_TOOL::DoDelete,           ACTIONS::doDelete.MakeEvent() );
     Go( &SYMBOL_EDITOR_EDIT_TOOL::DeleteItemCursor,   ACTIONS::deleteTool.MakeEvent() );
 
     Go( &SYMBOL_EDITOR_EDIT_TOOL::Properties,         EE_ACTIONS::properties.MakeEvent() );
     Go( &SYMBOL_EDITOR_EDIT_TOOL::Properties,         EE_ACTIONS::symbolProperties.MakeEvent() );
     Go( &SYMBOL_EDITOR_EDIT_TOOL::PinTable,           EE_ACTIONS::pinTable.MakeEvent() );
+    Go( &SYMBOL_EDITOR_EDIT_TOOL::UpdateSymbolFields, EE_ACTIONS::updateSymbolFields.MakeEvent() );
 }

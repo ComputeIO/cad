@@ -32,10 +32,6 @@
 #include <geometry/convex_hull.h>
 #include <confirm.h>
 
-#include <view/view.h>
-#include <view/view_item.h>
-#include <view/view_group.h>
-
 #include <pcb_painter.h>
 
 #include <geometry/shape.h>
@@ -49,8 +45,6 @@
 #include <memory>
 
 #include <advanced_config.h>
-
-#include "tools/pcb_tool_base.h"
 
 #include "pns_kicad_iface.h"
 
@@ -97,6 +91,7 @@ private:
     TRACK              m_dummyTrack;
     ARC                m_dummyArc;
     VIA                m_dummyVia;
+    int                m_clearanceEpsilon;
 
     std::map<std::pair<const PNS::ITEM*, const PNS::ITEM*>, int> m_clearanceCache;
     std::map<std::pair<const PNS::ITEM*, const PNS::ITEM*>, int> m_holeClearanceCache;
@@ -112,6 +107,10 @@ PNS_PCBNEW_RULE_RESOLVER::PNS_PCBNEW_RULE_RESOLVER( BOARD* aBoard,
     m_dummyArc( aBoard ),
     m_dummyVia( aBoard )
 {
+    if( aBoard )
+        m_clearanceEpsilon = aBoard->GetDesignSettings().GetDRCEpsilon();
+    else
+        m_clearanceEpsilon = 0;
 }
 
 
@@ -173,7 +172,14 @@ bool isCopper( const PNS::ITEM* aItem )
 
 bool isEdge( const PNS::ITEM* aItem )
 {
-    return aItem->Layer() == Edge_Cuts || aItem->Layer() == Margin;
+    const BOARD_ITEM *parent = aItem->Parent();
+
+    if( parent )
+    {
+        return parent->GetLayer() == Edge_Cuts || parent->GetLayer () == Margin;
+    }
+
+    return false;
 }
 
 
@@ -280,24 +286,25 @@ int PNS_PCBNEW_RULE_RESOLVER::Clearance( const PNS::ITEM* aA, const PNS::ITEM* a
 
     PNS::CONSTRAINT constraint;
     int rv = 0;
+    int layer;
+
+    if( !aA->Layers().IsMultilayer() || !aB || aB->Layers().IsMultilayer() )
+        layer = aA->Layer();
+    else
+        layer = aB->Layer();
 
     if( isCopper( aA ) && ( !aB || isCopper( aB ) ) )
     {
-        if( QueryConstraint( PNS::CONSTRAINT_TYPE::CT_CLEARANCE, aA, aB, aA->Layer(),
-                             &constraint ) )
-        {
-            if( constraint.m_Value.Min() > rv )
-                rv = constraint.m_Value.Min();
-        }
+        if( QueryConstraint( PNS::CONSTRAINT_TYPE::CT_CLEARANCE, aA, aB, layer, &constraint ) )
+            rv = constraint.m_Value.Min() - m_clearanceEpsilon;
     }
 
     if( isEdge( aA ) || ( aB && isEdge( aB ) ) )
     {
-        if( QueryConstraint( PNS::CONSTRAINT_TYPE::CT_EDGE_CLEARANCE, aA, aB, aA->Layer(),
-                             &constraint ) )
+        if( QueryConstraint( PNS::CONSTRAINT_TYPE::CT_EDGE_CLEARANCE, aA, aB, layer, &constraint ) )
         {
             if( constraint.m_Value.Min() > rv )
-                rv = constraint.m_Value.Min();
+                rv = constraint.m_Value.Min() - m_clearanceEpsilon;
         }
     }
 
@@ -316,12 +323,15 @@ int PNS_PCBNEW_RULE_RESOLVER::HoleClearance( const PNS::ITEM* aA, const PNS::ITE
 
     PNS::CONSTRAINT constraint;
     int rv = 0;
+    int layer;
 
-    if( QueryConstraint( PNS::CONSTRAINT_TYPE::CT_HOLE_CLEARANCE, aA, aB, aA->Layer(),
-                         &constraint ) )
-    {
-        rv = constraint.m_Value.Min();
-    }
+    if( !aA->Layers().IsMultilayer() || !aB || aB->Layers().IsMultilayer() )
+        layer = aA->Layer();
+    else
+        layer = aB->Layer();
+
+    if( QueryConstraint( PNS::CONSTRAINT_TYPE::CT_HOLE_CLEARANCE, aA, aB, layer, &constraint ) )
+        rv = constraint.m_Value.Min() - m_clearanceEpsilon;
 
     m_holeClearanceCache[ key ] = rv;
     return rv;
@@ -338,12 +348,15 @@ int PNS_PCBNEW_RULE_RESOLVER::HoleToHoleClearance( const PNS::ITEM* aA, const PN
 
     PNS::CONSTRAINT constraint;
     int rv = 0;
+    int layer;
 
-    if( QueryConstraint( PNS::CONSTRAINT_TYPE::CT_HOLE_TO_HOLE, aA, aB, aA->Layer(),
-                         &constraint ) )
-    {
-        rv = constraint.m_Value.Min();
-    }
+    if( !aA->Layers().IsMultilayer() || !aB || aB->Layers().IsMultilayer() )
+        layer = aA->Layer();
+    else
+        layer = aB->Layer();
+
+    if( QueryConstraint( PNS::CONSTRAINT_TYPE::CT_HOLE_TO_HOLE, aA, aB, layer, &constraint ) )
+        rv = constraint.m_Value.Min() - m_clearanceEpsilon;
 
     m_holeToHoleClearanceCache[ key ] = rv;
     return rv;
@@ -401,6 +414,8 @@ bool PNS_KICAD_IFACE_BASE::ImportSizes( PNS::SIZES_SETTINGS& aSizes, PNS::ITEM* 
 {
     BOARD_DESIGN_SETTINGS& bds = m_board->GetDesignSettings();
     PNS::CONSTRAINT        constraint;
+
+    aSizes.SetMinClearance( bds.m_MinClearance );
 
     int  trackWidth = bds.m_TrackMinWidth;
     bool found = false;
@@ -472,11 +487,11 @@ bool PNS_KICAD_IFACE_BASE::ImportSizes( PNS::SIZES_SETTINGS& aSizes, PNS::ITEM* 
             diffPairViaGap = constraint.m_Value.Opt();
         }
     }
-    else if( bds.UseCustomDiffPairDimensions() )
+    else
     {
-        diffPairWidth  = bds.GetCustomDiffPairWidth();
-        diffPairGap    = bds.GetCustomDiffPairGap();
-        diffPairViaGap = bds.GetCustomDiffPairViaGap();
+        diffPairWidth  = bds.GetCurrentDiffPairWidth();
+        diffPairGap    = bds.GetCurrentDiffPairGap();
+        diffPairViaGap = bds.GetCurrentDiffPairViaGap();
     }
 
     //printf( "DPWidth: %d gap %d\n", diffPairWidth, diffPairGap );
@@ -485,7 +500,16 @@ bool PNS_KICAD_IFACE_BASE::ImportSizes( PNS::SIZES_SETTINGS& aSizes, PNS::ITEM* 
     aSizes.SetDiffPairGap( diffPairGap );
     aSizes.SetDiffPairViaGap( diffPairViaGap );
 
-    aSizes.SetHoleToHole( bds.m_HoleToHoleMin );
+    int      holeToHoleMin = bds.m_HoleToHoleMin;
+    PNS::VIA dummyVia;
+
+    if( m_ruleResolver->QueryConstraint( PNS::CONSTRAINT_TYPE::CT_HOLE_TO_HOLE, &dummyVia,
+                                         &dummyVia, UNDEFINED_LAYER, &constraint ) )
+    {
+        holeToHoleMin = constraint.m_Value.Min();
+    }
+
+    aSizes.SetHoleToHole( holeToHoleMin );
 
     aSizes.ClearLayerPairs();
 
@@ -665,18 +689,18 @@ public:
         m_view->Add( m_items );
     }
 
-    void AddPoint( VECTOR2I aP, int aColor, const std::string aName = "" ) override
+    virtual void AddPoint( VECTOR2I aP, int aColor, int aSize, const std::string aName ) override
     {
         SHAPE_LINE_CHAIN l;
 
-        l.Append( aP - VECTOR2I( -50000, -50000 ) );
-        l.Append( aP + VECTOR2I( -50000, -50000 ) );
+        l.Append( aP - VECTOR2I( -aSize, -aSize ) );
+        l.Append( aP + VECTOR2I( -aSize, -aSize ) );
 
         AddLine( l, aColor, 10000 );
 
         l.Clear();
-        l.Append( aP - VECTOR2I( 50000, -50000 ) );
-        l.Append( aP + VECTOR2I( 50000, -50000 ) );
+        l.Append( aP - VECTOR2I( aSize, -aSize ) );
+        l.Append( aP + VECTOR2I( aSize, -aSize ) );
 
         AddLine( l, aColor, 10000 );
     }
@@ -875,7 +899,7 @@ std::unique_ptr<PNS::SOLID> PNS_KICAD_IFACE_BASE::syncPad( PAD* aPad )
 
     if( shapes && shapes->Size() == 1 )
     {
-        solid->SetShape( shapes->Clone() );
+        solid->SetShape( shapes->Shapes()[0]->Clone() );
     }
     else
     {
@@ -883,13 +907,19 @@ std::unique_ptr<PNS::SOLID> PNS_KICAD_IFACE_BASE::syncPad( PAD* aPad )
         // router, otherwise it won't know how to correctly build walkaround 'hulls' for the pad
         // primitives - it can recognize only simple shapes, but not COMPOUNDs made of multiple shapes.
         // The proper way to fix this would be to implement SHAPE_COMPOUND::ConvertToSimplePolygon(),
-        // but the complexity of pad polygonization code (see PAD::GetEffectivePolygon), including approximation
-        // error handling makes me slightly scared to do it right now.
+        // but the complexity of pad polygonization code (see PAD::GetEffectivePolygon), including
+        // approximation error handling makes me slightly scared to do it right now.
 
-        const std::shared_ptr<SHAPE_POLY_SET>& outline = aPad->GetEffectivePolygon();
-        SHAPE_SIMPLE*                          shape = new SHAPE_SIMPLE();
+        // NOTE: PAD::GetEffectivePolygon puts the error on the inside, but we want the error on
+        // the outside so that the collision hull is larger than the pad
 
-        for( auto iter = outline->CIterate( 0 ); iter; iter++ )
+        SHAPE_POLY_SET outline;
+        aPad->TransformShapeWithClearanceToPolygon( outline, UNDEFINED_LAYER, 0, ARC_HIGH_DEF,
+                                                    ERROR_OUTSIDE );
+
+        SHAPE_SIMPLE* shape = new SHAPE_SIMPLE();
+
+        for( auto iter = outline.CIterate( 0 ); iter; iter++ )
             shape->Append( *iter );
 
         solid->SetShape( shape );
@@ -981,14 +1011,12 @@ bool PNS_KICAD_IFACE_BASE::syncZone( PNS::NODE* aWorld, ZONE* aZone, SHAPE_POLY_
 
     if( !poly->IsTriangulationUpToDate() )
     {
-        KIDIALOG dlg(
-                nullptr,
-                wxString::Format( _( "%s is malformed." ), aZone->GetSelectMenuText( units ) ),
-                KIDIALOG::KD_WARNING );
-        dlg.ShowDetailedText( wxString::Format( _( "This zone cannot be handled by the track "
-                                                   "layout tool.\n"
-                                                   "Please verify it is not a "
-                                                   "self-intersecting polygon." ) ) );
+        KIDIALOG dlg( nullptr, wxString::Format( _( "%s is malformed." ),
+                                                 aZone->GetSelectMenuText( units ) ),
+                      KIDIALOG::KD_WARNING );
+        dlg.ShowDetailedText( wxString::Format( _( "This zone cannot be handled by the router.\n"
+                                                   "Please verify it is not a self-intersecting "
+                                                   "polygon." ) ) );
         dlg.DoNotShowCheckbox( __FILE__, __LINE__ );
         dlg.ShowModal();
 
@@ -1341,18 +1369,18 @@ void PNS_KICAD_IFACE::DisplayItem( const PNS::ITEM* aItem, int aClearance, bool 
             pitem->ShowTrackClearance( false );
             pitem->ShowViaClearance( false );
             break;
-        case PCB_DISPLAY_OPTIONS::SHOW_CLEARANCE_ALWAYS:
-        case PCB_DISPLAY_OPTIONS::SHOW_CLEARANCE_NEW_AND_EDITED_TRACKS_AND_VIA_AREAS:
+        case PCB_DISPLAY_OPTIONS::SHOW_TRACK_CLEARANCE_WITH_VIA_ALWAYS:
+        case PCB_DISPLAY_OPTIONS::SHOW_WHILE_ROUTING_OR_DRAGGING:
             pitem->ShowTrackClearance( true );
             pitem->ShowViaClearance( true );
             break;
 
-        case PCB_DISPLAY_OPTIONS::SHOW_CLEARANCE_NEW_TRACKS_AND_VIA_AREAS:
+        case PCB_DISPLAY_OPTIONS::SHOW_TRACK_CLEARANCE_WITH_VIA_WHILE_ROUTING:
             pitem->ShowTrackClearance( !aEdit );
             pitem->ShowViaClearance( !aEdit );
             break;
 
-        case PCB_DISPLAY_OPTIONS::SHOW_CLEARANCE_NEW_TRACKS:
+        case PCB_DISPLAY_OPTIONS::SHOW_TRACK_CLEARANCE_WHILE_ROUTING:
             pitem->ShowTrackClearance( !aEdit );
             pitem->ShowViaClearance( false );
             break;
@@ -1399,7 +1427,7 @@ void PNS_KICAD_IFACE::RemoveItem( PNS::ITEM* aItem )
 {
     BOARD_ITEM* parent = aItem->Parent();
 
-    if ( aItem->OfKind(PNS::ITEM::SOLID_T) )
+    if( aItem->OfKind( PNS::ITEM::SOLID_T ) )
     {
         PAD*   pad = static_cast<PAD*>( parent );
         VECTOR2I pos = static_cast<PNS::SOLID*>( aItem )->Pos();
@@ -1471,7 +1499,8 @@ void PNS_KICAD_IFACE::UpdateItem( PNS::ITEM* aItem )
         PAD*     pad = static_cast<PAD*>( aItem->Parent() );
         VECTOR2I pos = static_cast<PNS::SOLID*>( aItem )->Pos();
 
-        m_fpOffsets[pad].p_new = pos;
+        m_fpOffsets[ pad ].p_old = pad->GetPosition();
+        m_fpOffsets[ pad ].p_new = pos;
         break;
     }
 
@@ -1565,18 +1594,18 @@ void PNS_KICAD_IFACE::Commit()
 
     for( auto fpOffset : m_fpOffsets )
     {
-        auto offset = fpOffset.second.p_new - fpOffset.second.p_old;
-        auto mod = fpOffset.first->GetParent();
+        VECTOR2I offset = fpOffset.second.p_new - fpOffset.second.p_old;
+        FOOTPRINT* footprint = fpOffset.first->GetParent();
 
-        VECTOR2I p_orig = mod->GetPosition();
+        VECTOR2I p_orig = footprint->GetPosition();
         VECTOR2I p_new = p_orig + offset;
 
-        if( processedMods.find( mod ) != processedMods.end() )
+        if( processedMods.find( footprint ) != processedMods.end() )
             continue;
 
-        processedMods.insert( mod );
-        m_commit->Modify( mod );
-        mod->SetPosition( wxPoint( p_new.x, p_new.y ));
+        processedMods.insert( footprint );
+        m_commit->Modify( footprint );
+        footprint->SetPosition( wxPoint( p_new.x, p_new.y ) );
     }
 
     m_fpOffsets.clear();

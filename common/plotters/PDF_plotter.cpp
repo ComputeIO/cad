@@ -27,15 +27,18 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
 
-#include <trigo.h>
 #include <algorithm>
-#include <wx/zstream.h>
+
+#include <wx/filename.h>
 #include <wx/mstream.h>
-#include <render_settings.h>
+#include <wx/zstream.h>
+
 #include <advanced_config.h>
+#include <macros.h>
+#include <render_settings.h>
+#include <trigo.h>
 
 #include "plotters_pslike.h"
-
 
 
 std::string PDF_PLOTTER::encodeStringForPlotter( const wxString& aText )
@@ -820,10 +823,19 @@ bool PDF_PLOTTER::EndPlot()
 }
 
 
-void PDF_PLOTTER::Text( const wxPoint& aPos, const COLOR4D aColor, const wxString& aText,
-                        double aOrient, const wxSize& aSize, enum EDA_TEXT_HJUSTIFY_T aH_justify,
-                        enum EDA_TEXT_VJUSTIFY_T aV_justify, int aWidth, bool aItalic, bool aBold,
-                        bool aMultilineAllowed, void* aData, FONT* aFont )
+void PDF_PLOTTER::Text( const wxPoint&              aPos,
+                        const COLOR4D               aColor,
+                        const wxString&             aText,
+                        double                      aOrient,
+                        const wxSize&               aSize,
+                        enum EDA_TEXT_HJUSTIFY_T    aH_justify,
+                        enum EDA_TEXT_VJUSTIFY_T    aV_justify,
+                        int                         aWidth,
+                        bool                        aItalic,
+                        bool                        aBold,
+                        bool                        aMultilineAllowed,
+                        KIFONT::FONT*               aFont,
+                        void*                       aData )
 {
     // PDF files do not like 0 sized texts which create broken files.
     if( aSize.x == 0 || aSize.y == 0 )
@@ -864,6 +876,6 @@ void PDF_PLOTTER::Text( const wxPoint& aPos, const COLOR4D aColor, const wxStrin
     fputs( "Q\n", workFile );
 
     // Plot the stroked text (if requested)
-    PLOTTER::Text( aPos, aColor, aText, aOrient, aSize, aH_justify, aV_justify, aWidth, aItalic,
-                   aBold, aMultilineAllowed, NULL, aFont );
+    PLOTTER::Text( aPos, aColor, aText, aOrient, aSize, aH_justify, aV_justify, aWidth,
+                   aItalic, aBold, aMultilineAllowed, aFont, aData );
 }

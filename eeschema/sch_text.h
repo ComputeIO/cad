@@ -2,7 +2,7 @@
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
  * Copyright (C) 2015 Jean-Pierre Charras, jp.charras at wanadoo.fr
- * Copyright (C) 1992-2020 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 1992-2021 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -116,7 +116,7 @@ public:
         case LABEL_SPIN_STYLE::BOTTOM: newSpin = LABEL_SPIN_STYLE::UP;     break;
         case LABEL_SPIN_STYLE::LEFT:                                       break;
         case LABEL_SPIN_STYLE::RIGHT:                                      break;
-        default: wxLogWarning( "MirrorX encountered unknown current spin style" ); break;
+        default: wxLogWarning( "MirrorVertically encountered unknown current spin style" ); break;
         }
 
         return LABEL_SPIN_STYLE( newSpin );
@@ -135,7 +135,7 @@ public:
         case LABEL_SPIN_STYLE::RIGHT: newSpin = LABEL_SPIN_STYLE::LEFT;  break;
         case LABEL_SPIN_STYLE::UP:                                       break;
         case LABEL_SPIN_STYLE::BOTTOM:                                   break;
-        default: wxLogWarning( "MirrorY encountered unknown current spin style" ); break;
+        default: wxLogWarning( "MirrorHorizontally encountered unknown current spin style" ); break;
         }
 
         return LABEL_SPIN_STYLE( newSpin );
@@ -145,8 +145,8 @@ private:
     SPIN m_spin;
 };
 
-/* Shape/Type of SCH_HIERLABEL and SCH_GLOBALLABEL
- * mainly used to handle the graphic associated shape
+/*
+ * Shape/Type of #SCH_HIERLABEL and #SCH_GLOBALLABEL.
  */
 enum class PINSHEETLABEL_SHAPE
 {
@@ -164,26 +164,6 @@ extern const char* SheetLabelType[];    /* names of types of labels */
 
 class SCH_TEXT : public SCH_ITEM, public EDA_TEXT
 {
-protected:
-    PINSHEETLABEL_SHAPE m_shape;
-
-    /// True if not connected to another object if the object derive from SCH_TEXT
-    /// supports connections.
-    bool m_isDangling;
-
-    CONNECTION_TYPE m_connectionType;
-
-    /**
-     * The orientation of text and any associated drawing elements of derived objects.
-     * 0 is the horizontal and left justified.
-     * 1 is vertical and top justified.
-     * 2 is horizontal and right justified.  It is the equivalent of the mirrored 0 orentation.
-     * 3 is veritcal and bottom justifiend. It is the equivalent of the mirrored 1 orentation.
-     * This is a duplicattion of m_Orient, m_HJustified, and m_VJustified in #EDA_TEXT but is
-     * easier to handle than 3 parameters when editing and reading and saving files.
-     */
-    LABEL_SPIN_STYLE m_spin_style;
-
 public:
     SCH_TEXT( const wxPoint& aPos = wxPoint( 0, 0 ), const wxString& aText = wxEmptyString,
               KICAD_T aType = SCH_TEXT_T );
@@ -210,7 +190,8 @@ public:
 
     /**
      * Returns the set of contextual text variable tokens for this text item.
-     * @param aVars [out]
+     *
+     * @param[out] aVars
      */
     void GetContextualTextVars( wxArrayString* aVars ) const;
 
@@ -229,7 +210,8 @@ public:
      * Set a spin or rotation angle, along with specific horizontal and vertical justification
      * styles with each angle.
      *
-     * @param aSpinStyle Spin style as per LABEL_SPIN_STYLE storage class, may be the enum values or int value
+     * @param aSpinStyle Spin style as per #LABEL_SPIN_STYLE storage class, may be the enum
+     *                   values or int value
      */
     virtual void     SetLabelSpinStyle( LABEL_SPIN_STYLE aSpinStyle );
     LABEL_SPIN_STYLE GetLabelSpinStyle() const  { return m_spin_style; }
@@ -239,10 +221,10 @@ public:
     void SetShape( PINSHEETLABEL_SHAPE aShape ) { m_shape = aShape; }
 
     /**
-     * @return the offset between the SCH_TEXT position and the text itself position
-     *
      * This offset depends on the orientation, the type of text, and the area required to
      * draw the associated graphic symbol or to put the text above a wire.
+     *
+     * @return the offset between the SCH_TEXT position and the text itself position
      */
     virtual wxPoint GetSchematicTextOffset( const RENDER_SETTINGS* aSettings ) const;
 
@@ -253,10 +235,9 @@ public:
      *
      * @param aPoints A buffer to fill with polygon corners coordinates
      * @param Pos Position of the shape, for texts and labels: do nothing
-     * Mainly for derived classes (SCH_SHEET_PIN and Hierarchical labels)
      */
     virtual void CreateGraphicShape( const RENDER_SETTINGS* aSettings,
-                                     std::vector<wxPoint>& aPoints, const wxPoint& Pos )
+                                     std::vector<wxPoint>& aPoints, const wxPoint& Pos ) const
     {
         aPoints.clear();
     }
@@ -278,9 +259,9 @@ public:
         EDA_TEXT::Offset( aMoveVector );
     }
 
-    void MirrorY( int aYaxis_position ) override;
-    void MirrorX( int aXaxis_position ) override;
-    void Rotate( wxPoint aPosition ) override;
+    void MirrorHorizontally( int aCenter ) override;
+    void MirrorVertically( int aCenter ) override;
+    void Rotate( wxPoint aCenter ) override;
 
     virtual void Rotate90( bool aClockwise );
     virtual void MirrorSpinStyle( bool aLeftRight );
@@ -309,7 +290,7 @@ public:
 
     wxString GetSelectMenuText( EDA_UNITS aUnits ) const override;
 
-    BITMAP_DEF GetMenuImage() const override;
+    BITMAPS GetMenuImage() const override;
 
     wxPoint GetPosition() const override { return EDA_TEXT::GetTextPos(); }
     void SetPosition( const wxPoint& aPosition ) override { EDA_TEXT::SetTextPos( aPosition ); }
@@ -317,7 +298,7 @@ public:
     bool HitTest( const wxPoint& aPosition, int aAccuracy = 0 ) const override;
     bool HitTest( const EDA_RECT& aRect, bool aContained, int aAccuracy = 0 ) const override;
 
-    void Plot( PLOTTER* aPlotter ) override;
+    void Plot( PLOTTER* aPlotter ) const override;
 
     EDA_ITEM* Clone() const override;
 
@@ -328,6 +309,27 @@ public:
 #endif
 
     static HTML_MESSAGE_BOX* ShowSyntaxHelp( wxWindow* aParentWindow );
+
+protected:
+    PINSHEETLABEL_SHAPE m_shape;
+
+    /// True if not connected to another object if the object derive from SCH_TEXT
+    /// supports connections.
+    bool m_isDangling;
+
+    CONNECTION_TYPE m_connectionType;
+
+    /**
+     * The orientation of text and any associated drawing elements of derived objects.
+     *  - 0 is the horizontal and left justified.
+     *  - 1 is vertical and top justified.
+     *  - 2 is horizontal and right justified.  It is the equivalent of the mirrored 0 orientation.
+     *  - 3 is vertical and bottom justified. It is the equivalent of the mirrored 1 orientation.
+     *
+     * This is a duplication of m_Orient, m_HJustified, and m_VJustified in #EDA_TEXT but is
+     * easier to handle than 3 parameters when editing and reading and saving files.
+     */
+    LABEL_SPIN_STYLE m_spin_style;
 };
 
 
@@ -364,16 +366,22 @@ public:
 
     wxString GetSelectMenuText( EDA_UNITS aUnits ) const override;
 
-    BITMAP_DEF GetMenuImage() const override;
+    BITMAPS GetMenuImage() const override;
 
     bool IsReplaceable() const override { return true; }
 
     EDA_ITEM* Clone() const override;
 
-    bool IsPointClickableAnchor( const wxPoint& aPos ) const override { return m_isDangling && GetPosition() == aPos; }
+    bool IsPointClickableAnchor( const wxPoint& aPos ) const override
+    {
+        return m_isDangling && GetPosition() == aPos;
+    }
 
 private:
-    bool doIsConnected( const wxPoint& aPosition ) const override { return EDA_TEXT::GetTextPos() == aPosition; }
+    bool doIsConnected( const wxPoint& aPosition ) const override
+    {
+        return EDA_TEXT::GetTextPos() == aPosition;
+    }
 };
 
 
@@ -404,21 +412,30 @@ public:
 
     void RunOnChildren( const std::function<void( SCH_ITEM* )>& aFunction ) override;
 
-    void Rotate( wxPoint aPosition ) override;
+    void Rotate( wxPoint aCenter ) override;
     void Rotate90( bool aClockwise ) override;
     void MirrorSpinStyle( bool aLeftRight ) override;
 
-    void MirrorY( int aYaxis_position ) override;
-    void MirrorX( int aXaxis_position ) override;
+    void MirrorHorizontally( int aCenter ) override;
+    void MirrorVertically( int aCenter ) override;
 
     void SetLabelSpinStyle( LABEL_SPIN_STYLE aSpinStyle ) override;
 
     wxPoint GetSchematicTextOffset( const RENDER_SETTINGS* aSettings ) const override;
 
+    /**
+     * Return the bounding box on the global label only, without taking in account
+     * the intersheet references.
+     */
+    const EDA_RECT GetBoundingBoxBase() const;
+
+    /**
+     * Return the bounding box on the global label only, including the intersheet references.
+     */
     const EDA_RECT GetBoundingBox() const override;
 
-    void CreateGraphicShape( const RENDER_SETTINGS* aRenderSettings, std::vector<wxPoint>& aPoints,
-                             const wxPoint& aPos ) override;
+    void CreateGraphicShape( const RENDER_SETTINGS* aRenderSettings,
+                             std::vector<wxPoint>& aPoints, const wxPoint& aPos ) const override;
 
     void UpdateIntersheetRefProps();
     void AutoplaceFields( SCH_SCREEN* aScreen, bool aManual ) override;
@@ -435,11 +452,11 @@ public:
 
     wxString GetSelectMenuText( EDA_UNITS aUnits ) const override;
 
-    BITMAP_DEF GetMenuImage() const override;
+    BITMAPS GetMenuImage() const override;
 
     void Print( const RENDER_SETTINGS* aSettings, const wxPoint& offset ) override;
 
-    void Plot( PLOTTER* aPlotter ) override;
+    void Plot( PLOTTER* aPlotter ) const override;
 
     SCH_FIELD* GetIntersheetRefs() { return &m_intersheetRefsField; }
     void SetIntersheetRefs( const SCH_FIELD& aField ) { m_intersheetRefsField = aField; }
@@ -492,7 +509,9 @@ public:
     wxPoint GetSchematicTextOffset( const RENDER_SETTINGS* aSettings ) const override;
 
     void CreateGraphicShape( const RENDER_SETTINGS* aSettings, std::vector<wxPoint>& aPoints,
-                             const wxPoint& Pos ) override;
+                             const wxPoint& aPos ) const override;
+    void CreateGraphicShape( const RENDER_SETTINGS* aSettings, std::vector<wxPoint>& aPoints,
+                             const wxPoint& aPos, PINSHEETLABEL_SHAPE aShape ) const;
 
     const EDA_RECT GetBoundingBox() const override;
 
@@ -506,14 +525,20 @@ public:
 
     wxString GetSelectMenuText( EDA_UNITS aUnits ) const override;
 
-    BITMAP_DEF GetMenuImage() const override;
+    BITMAPS GetMenuImage() const override;
 
     EDA_ITEM* Clone() const override;
 
-    bool IsPointClickableAnchor( const wxPoint& aPos ) const override { return m_isDangling && GetPosition() == aPos; }
+    bool IsPointClickableAnchor( const wxPoint& aPos ) const override
+    {
+        return m_isDangling && GetPosition() == aPos;
+    }
 
 private:
-    bool doIsConnected( const wxPoint& aPosition ) const override { return EDA_TEXT::GetTextPos() == aPosition; }
+    bool doIsConnected( const wxPoint& aPosition ) const override
+    {
+        return EDA_TEXT::GetTextPos() == aPosition;
+    }
 };
 
 #endif /* CLASS_TEXT_LABEL_H */

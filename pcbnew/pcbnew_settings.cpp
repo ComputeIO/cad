@@ -44,15 +44,37 @@
 const int pcbnewSchemaVersion = 0;
 
 
-PCBNEW_SETTINGS::PCBNEW_SETTINGS() :
-        APP_SETTINGS_BASE( "pcbnew", pcbnewSchemaVersion ), m_AuiPanels(), m_Cleanup(),
-        m_DrcDialog(), m_ExportIdf(), m_ExportStep(), m_ExportSvg(), m_ExportVrml(),
-        m_FootprintWizardList(), m_GenDrill(), m_ImportGraphics(), m_NetlistDialog(), m_PlaceFile(),
-        m_Plot(), m_FootprintChooser(), m_Zones(), m_FootprintViewer(), m_FootprintWizard(),
-        m_Display(), m_TrackDragAction( TRACK_DRAG_ACTION::DRAG ),
-        m_Use45DegreeGraphicSegments( false ), m_FlipLeftRight( false ), m_AddUnlockedPads( false ),
-        m_PolarCoords( false ), m_RotationAngle( 900 ), m_ShowPageLimits( true ),
-        m_PnsSettings( nullptr ), m_FootprintViewerAutoZoom( false ), m_FootprintViewerZoom( 1.0 )
+PCBNEW_SETTINGS::PCBNEW_SETTINGS()
+        : APP_SETTINGS_BASE( "pcbnew", pcbnewSchemaVersion ),
+          m_AuiPanels(),
+          m_Cleanup(),
+          m_DrcDialog(),
+          m_ExportIdf(),
+          m_ExportStep(),
+          m_ExportSvg(),
+          m_ExportVrml(),
+          m_FootprintWizardList(),
+          m_GenDrill(),
+          m_ImportGraphics(),
+          m_NetlistDialog(),
+          m_PlaceFile(),
+          m_Plot(),
+          m_FootprintChooser(),
+          m_Zones(),
+          m_FootprintViewer(),
+          m_FootprintWizard(),
+          m_Display(),
+          m_TrackDragAction( TRACK_DRAG_ACTION::DRAG ),
+          m_Use45DegreeGraphicSegments( false ),
+          m_FlipLeftRight( false ),
+          m_PolarCoords( false ),
+          m_RotationAngle( 900 ),
+          m_ShowPageLimits( true ),
+          m_AutoRefillZones( true ),
+          m_AllowFreePads( false ),
+          m_PnsSettings( nullptr ),
+          m_FootprintViewerAutoZoom( false ),
+          m_FootprintViewerZoom( 1.0 )
 {
     m_MagneticItems.pads     = MAGNETIC_OPTIONS::CAPTURE_CURSOR_IN_TRACK_TOOL;
     m_MagneticItems.tracks   = MAGNETIC_OPTIONS::CAPTURE_CURSOR_IN_TRACK_TOOL;
@@ -82,9 +104,6 @@ PCBNEW_SETTINGS::PCBNEW_SETTINGS() :
     m_params.emplace_back( new PARAM<bool>( "editing.flip_left_right",
             &m_FlipLeftRight, true ) );
 
-    m_params.emplace_back(
-            new PARAM<bool>( "editing.add_unlocked_pads", &m_AddUnlockedPads, false ) );
-
     m_params.emplace_back( new PARAM<bool>( "editing.magnetic_graphics",
             &m_MagneticItems.graphics, true ) );
 
@@ -106,6 +125,12 @@ PCBNEW_SETTINGS::PCBNEW_SETTINGS() :
     m_params.emplace_back( new PARAM<bool>( "editing.use_45_degree_graphic_segments",
             &m_Use45DegreeGraphicSegments, false ) );
 
+    m_params.emplace_back( new PARAM<bool>( "editing.auto_fill_zones",
+            &m_AutoRefillZones, true ) );
+
+    m_params.emplace_back( new PARAM<bool>( "editing.allow_free_pads",
+            &m_AllowFreePads, false ) );
+
     m_params.emplace_back( new PARAM<bool>( "pcb_display.graphic_items_fill",
             &m_Display.m_DisplayGraphicsFill, true ) );
 
@@ -122,7 +147,7 @@ PCBNEW_SETTINGS::PCBNEW_SETTINGS() :
             &m_Display.m_DisplayNetNamesMode, 3, 0, 3 ) );
 
     m_params.emplace_back( new PARAM<bool>( "pcb_display.pad_clearance",
-            &m_Display.m_DisplayPadIsol, true ) );
+            &m_Display.m_DisplayPadClearance, true ) );
 
     m_params.emplace_back( new PARAM<bool>( "pcb_display.pad_fill",
             &m_Display.m_DisplayPadFill, true ) );
@@ -144,7 +169,7 @@ PCBNEW_SETTINGS::PCBNEW_SETTINGS() :
 
     m_params.emplace_back( new PARAM<int>( "pcb_display.track_clearance_mode",
             reinterpret_cast<int*>( &m_Display.m_ShowTrackClearanceMode ),
-            PCB_DISPLAY_OPTIONS::SHOW_CLEARANCE_NEW_TRACKS_AND_VIA_AREAS ) );
+            PCB_DISPLAY_OPTIONS::SHOW_TRACK_CLEARANCE_WITH_VIA_WHILE_ROUTING ) );
 
     m_params.emplace_back( new PARAM<bool>( "pcb_display.track_fill",
             &m_Display.m_DisplayPcbTrackFill, true ) );
@@ -279,9 +304,6 @@ PCBNEW_SETTINGS::PCBNEW_SETTINGS() :
     m_params.emplace_back( new PARAM<bool>( "export_vrml.use_relative_paths",
             &m_ExportVrml.use_relative_paths, false ) );
 
-    m_params.emplace_back( new PARAM<bool>( "export_vrml.use_plain_pcb",
-            &m_ExportVrml.use_plain_pcb, false ) );
-
     m_params.emplace_back( new PARAM<int>( "export_vrml.ref_units",
             &m_ExportVrml.ref_units, 0 ) );
 
@@ -290,6 +312,9 @@ PCBNEW_SETTINGS::PCBNEW_SETTINGS() :
 
     m_params.emplace_back( new PARAM<double>( "export_vrml.ref_y",
             &m_ExportVrml.ref_y, 0 ) );
+
+    m_params.emplace_back( new PARAM<int>( "export_vrml.origin_mode",
+            &m_ExportVrml.origin_mode, 0 ) );
 
     m_params.emplace_back( new PARAM<int>( "zones.hatching_style",
             &m_Zones.hatching_style, 0 ) );
@@ -622,10 +647,10 @@ bool PCBNEW_SETTINGS::MigrateFromLegacy( wxConfigBase* aCfg )
     ret &= fromLegacy<int>(    aCfg, "VrmlExportUnit",       "export_vrml.units" );
     ret &= fromLegacy<bool>(   aCfg, "VrmlExportCopyFiles",  "export_vrml.copy_3d_models" );
     ret &= fromLegacy<bool>(   aCfg, "VrmlUseRelativePaths", "export_vrml.use_relative_paths" );
-    ret &= fromLegacy<bool>(   aCfg, "VrmlUsePlainPCB",      "export_vrml.use_plain_pcb" );
     ret &= fromLegacy<int>(    aCfg, "VrmlRefUnits",         "export_vrml.ref_units" );
     ret &= fromLegacy<double>( aCfg, "VrmlRefX",             "export_vrml.ref_x" );
     ret &= fromLegacy<double>( aCfg, "VrmlRefY",             "export_vrml.ref_y" );
+    ret &= fromLegacy<int>   ( aCfg, "VrmlOriginMode",       "export_vrml.origin_mode" );
 
     ret &= fromLegacy<int>(    aCfg, "Zone_Ouline_Hatch_Opt", "zones.hatching_style" );
     ret &= fromLegacyString(   aCfg, "Zone_Filter_Opt",       "zones.net_filter" );
@@ -736,7 +761,7 @@ bool PCBNEW_SETTINGS::MigrateFromLegacy( wxConfigBase* aCfg )
     migrateLegacyColor( "Color4DViaBBlindEx",        LAYER_VIA_BBLIND );
     migrateLegacyColor( "Color4DViaMicroEx",         LAYER_VIA_MICROVIA );
     migrateLegacyColor( "Color4DViaThruEx",          LAYER_VIA_THROUGH );
-    migrateLegacyColor( "Color4DWorksheet",          LAYER_WORKSHEET );
+    migrateLegacyColor( "Color4DWorksheet",          LAYER_DRAWINGSHEET );
 
     Pgm().GetSettingsManager().SaveColorSettings( cs, "board" );
 

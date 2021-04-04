@@ -39,7 +39,7 @@ TOOL_ACTION KICAD_MANAGER_ACTIONS::newProject( "kicad.Control.newProject",
         AS_GLOBAL,
         MD_CTRL + 'N', LEGACY_HK_NAME( "New Project" ),
         _( "New Project..." ), _( "Create new blank project" ),
-        new_project_xpm );
+        BITMAPS::new_project );
 
 TOOL_ACTION KICAD_MANAGER_ACTIONS::newFromTemplate( "kicad.Control.newFromTemplate", AS_GLOBAL,
                                                     MD_CTRL + 'T',
@@ -51,66 +51,66 @@ TOOL_ACTION KICAD_MANAGER_ACTIONS::openProject( "kicad.Control.openProject",
         AS_GLOBAL,
         MD_CTRL + 'O', LEGACY_HK_NAME( "Open Project" ),
         _( "Open Project..." ), _( "Open an existing project" ),
-        directory_open_xpm );
+        BITMAPS::directory_open );
 
 TOOL_ACTION KICAD_MANAGER_ACTIONS::closeProject( "kicad.Control.closeProject",
         AS_GLOBAL,
         0, LEGACY_HK_NAME( "Close Project" ),
         _( "Close Project" ), _( "Close the current project" ),
-        project_close_xpm );
+        BITMAPS::project_close );
 
 TOOL_ACTION KICAD_MANAGER_ACTIONS::editSchematic( "kicad.Control.editSchematic",
         AS_GLOBAL,
         MD_CTRL + 'E', LEGACY_HK_NAME( "Run Eeschema" ),
-        _( "Edit Schematic" ), _( "Edit Schematic" ),
-        icon_eeschema_24_xpm, AF_NONE, (void*) FRAME_SCH );
+        _( "Schematic Editor" ), _( "Edit schematic" ),
+        BITMAPS::icon_eeschema_24, AF_NONE, (void*) FRAME_SCH );
 
-TOOL_ACTION KICAD_MANAGER_ACTIONS::editSymbols( "kicad.Control.editSymbols", AS_GLOBAL,
-                                                MD_CTRL + 'L', LEGACY_HK_NAME( "Run LibEdit" ),
-                                                _( "Edit Schematic Symbols" ),
-                                                _( "Edit Schematic Symbols" ), icon_libedit_24_xpm,
-                                                AF_NONE, (void*) FRAME_SCH_SYMBOL_EDITOR );
+TOOL_ACTION KICAD_MANAGER_ACTIONS::editSymbols( "kicad.Control.editSymbols",
+        AS_GLOBAL,
+        MD_CTRL + 'L', LEGACY_HK_NAME( "Run LibEdit" ),
+        _( "Symbol Editor" ), _( "Edit schematic symbols" ),
+        BITMAPS::icon_libedit_24, AF_NONE, (void*) FRAME_SCH_SYMBOL_EDITOR );
 
 TOOL_ACTION KICAD_MANAGER_ACTIONS::editPCB( "kicad.Control.editPCB",
         AS_GLOBAL,
         MD_CTRL + 'P', LEGACY_HK_NAME( "Run Pcbnew" ),
-        _( "Edit PCB" ), _( "Edit PCB" ),
-        icon_pcbnew_24_xpm, AF_NONE, (void*) FRAME_PCB_EDITOR );
+        _( "PCB Editor" ), _( "Edit PCB" ),
+        BITMAPS::icon_pcbnew_24, AF_NONE, (void*) FRAME_PCB_EDITOR );
 
-TOOL_ACTION KICAD_MANAGER_ACTIONS::editFootprints( "kicad.Control.editFootprints", AS_GLOBAL,
-                                                   MD_CTRL + 'F', LEGACY_HK_NAME( "Run FpEditor" ),
-                                                   _( "Edit PCB Footprints" ),
-                                                   _( "Edit PCB Footprints" ), icon_modedit_24_xpm,
-                                                   AF_NONE, (void*) FRAME_FOOTPRINT_EDITOR );
+TOOL_ACTION KICAD_MANAGER_ACTIONS::editFootprints( "kicad.Control.editFootprints",
+        AS_GLOBAL,
+        MD_CTRL + 'F', LEGACY_HK_NAME( "Run FpEditor" ),
+        _( "Footprint Editor" ), _( "Edit PCB footprints" ),
+        BITMAPS::icon_modedit_24, AF_NONE, (void*) FRAME_FOOTPRINT_EDITOR );
 
 TOOL_ACTION KICAD_MANAGER_ACTIONS::viewGerbers( "kicad.Control.viewGerbers",
         AS_GLOBAL,
         MD_CTRL + 'G', LEGACY_HK_NAME( "Run Gerbview" ),
-        _( "View Gerber Files" ), _( "View Gerber Files" ),
-        icon_gerbview_24_xpm );
+        _( "Gerber Viewer" ), _( "Preview Gerber output files" ),
+        BITMAPS::icon_gerbview_24 );
 
 TOOL_ACTION KICAD_MANAGER_ACTIONS::convertImage( "kicad.Control.convertImage",
         AS_GLOBAL,
         MD_CTRL + 'B', LEGACY_HK_NAME( "Run Bitmap2Component" ),
-        _( "Convert Image" ), _( "Convert bitmap images to schematic or PCB components" ),
-        icon_bitmap2component_24_xpm );
+        _( "Image Converter" ), _( "Convert bitmap images to schematic or PCB components" ),
+        BITMAPS::icon_bitmap2component_24 );
 
 TOOL_ACTION KICAD_MANAGER_ACTIONS::showCalculator( "kicad.Control.showCalculator",
         AS_GLOBAL, 0, LEGACY_HK_NAME( "Run PcbCalculator" ),
         _( "Calculator Tools" ), _( "Run component calculations, track width calculations, etc." ),
-        icon_pcbcalculator_24_xpm );
+        BITMAPS::icon_pcbcalculator_24 );
 
-TOOL_ACTION KICAD_MANAGER_ACTIONS::editWorksheet( "kicad.Control.editWorksheet", AS_GLOBAL,
-                                                  MD_CTRL + 'Y', LEGACY_HK_NAME( "Run PlEditor" ),
-                                                  _( "Edit Worksheets" ),
-                                                  _( "Edit worksheet graphics and text" ),
-                                                  icon_pagelayout_editor_24_xpm );
+TOOL_ACTION KICAD_MANAGER_ACTIONS::editDrawingSheet( "kicad.Control.editDrawingSheet",
+        AS_GLOBAL,
+        MD_CTRL + 'Y', LEGACY_HK_NAME( "Run PlEditor" ),
+        _( "Drawing Sheet Editor" ), _( "Edit drawing sheet borders and title block" ),
+        BITMAPS::icon_pagelayout_editor_24 );
 
 TOOL_ACTION KICAD_MANAGER_ACTIONS::openTextEditor( "kicad.Control.openTextEditor",
         AS_GLOBAL,
         0, "",
         _( "Open Text Editor" ), _( "Launch preferred text editor" ),
-        editor_xpm );
+        BITMAPS::editor );
 
 TOOL_ACTION KICAD_MANAGER_ACTIONS::editOtherSch( "kicad.Control.editOtherSch",
         AS_GLOBAL );

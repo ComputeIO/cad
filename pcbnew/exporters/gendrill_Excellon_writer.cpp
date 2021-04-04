@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2018 Jean_Pierre Charras <jp.charras at wanadoo.fr>
  * Copyright (C) 2015 SoftPLC Corporation, Dick Hollenbeck <dick@softplc.com>
- * Copyright (C) 1992-2018 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 1992-2021 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -38,6 +38,7 @@
 #include <plotter.h>
 #include <kicad_string.h>
 #include <locale_io.h>
+#include <macros.h>
 #include <pcb_edit_frame.h>
 #include <pgm_base.h>
 #include <build_version.h>
@@ -50,11 +51,6 @@
 #include <wildcards_and_files_ext.h>
 #include <reporter.h>
 #include <gbr_metadata.h>
-
-// Comment/uncomment this to write or not a comment
-// in drill file when PTH and NPTH are merged to flag
-// tools used for PTH and tools used for NPTH
-// #define WRITE_PTH_NPTH_COMMENT
 
 // Oblong holes can be drilled by a "canned slot" command (G85) or a routing command
 // a linear routing command (G01) is perhaps more usual for drill files
@@ -131,7 +127,19 @@ void EXCELLON_WRITER::CreateDrillandMapFilesSet( const wxString& aPlotDirectory,
                     }
                 }
 
-                createDrillFile( file, pair, doing_npth );
+                TYPE_FILE file_type = TYPE_FILE::PTH_FILE;
+
+                // Only external layer pair can have non plated hole
+                // internal layers have only plated via holes
+                if( pair == DRILL_LAYER_PAIR( F_Cu, B_Cu ) )
+                {
+                    if( m_merge_PTH_NPTH )
+                        file_type = TYPE_FILE::MIXED_FILE;
+                    else if( doing_npth )
+                        file_type = TYPE_FILE::NPTH_FILE;
+                }
+
+                createDrillFile( file, pair, file_type );
             }
         }
     }
@@ -141,8 +149,41 @@ void EXCELLON_WRITER::CreateDrillandMapFilesSet( const wxString& aPlotDirectory,
 }
 
 
+void EXCELLON_WRITER::writeHoleAttribute( HOLE_ATTRIBUTE aAttribute )
+{
+    // Hole attributes are comments (lines starting by ';') in the drill files
+    // For tools (file header), they are similar to X2 apertures attributes.
+    // for attributes added in coordinate list, they are just comments.
+    if( !m_minimalHeader )
+    {
+        switch( aAttribute )
+        {
+        case HOLE_ATTRIBUTE::HOLE_VIA_THROUGH:
+            fprintf( m_file, "; #@! TA.AperFunction,Plated,PTH,ViaDrill\n" );
+            break;
+
+        case HOLE_ATTRIBUTE::HOLE_VIA_BURIED:
+            fprintf( m_file, "; #@! TA.AperFunction,Plated,Buried,ViaDrill\n" );
+            break;
+
+        case HOLE_ATTRIBUTE::HOLE_PAD:
+            fprintf( m_file, "; #@! TA.AperFunction,Plated,PTH,ComponentDrill\n" );
+            break;
+
+        case HOLE_ATTRIBUTE::HOLE_MECHANICAL:
+            fprintf( m_file, "; #@! TA.AperFunction,NonPlated,NPTH,ComponentDrill\n" );
+            break;
+
+        case HOLE_ATTRIBUTE::HOLE_UNKNOWN:
+            fprintf( m_file, "; #@! TD\n" );
+            break;
+        }
+    }
+}
+
+
 int EXCELLON_WRITER::createDrillFile( FILE* aFile, DRILL_LAYER_PAIR aLayerPair,
-                                      bool aGenerateNPTH_list )
+                                      TYPE_FILE aHolesType )
 {
     m_file = aFile;
 
@@ -153,39 +194,23 @@ int EXCELLON_WRITER::createDrillFile( FILE* aFile, DRILL_LAYER_PAIR aLayerPair,
 
     LOCALE_IO dummy;    // Use the standard notation for double numbers
 
-    writeEXCELLONHeader( aLayerPair, aGenerateNPTH_list );
+    writeEXCELLONHeader( aLayerPair, aHolesType );
 
     holes_count = 0;
-
-#ifdef WRITE_PTH_NPTH_COMMENT
-    // if PTH_ and NPTH are merged write a comment in drill file at the
-    // beginning of NPTH section
-    bool writePTHcomment  = m_merge_PTH_NPTH;
-    bool writeNPTHcomment = m_merge_PTH_NPTH;
-#endif
 
     /* Write the tool list */
     for( unsigned ii = 0; ii < m_toolListBuffer.size(); ii++ )
     {
         DRILL_TOOL& tool_descr = m_toolListBuffer[ii];
 
-#ifdef WRITE_PTH_NPTH_COMMENT
-        if( writePTHcomment && !tool_descr.m_Hole_NotPlated )
-        {
-            writePTHcomment = false;
-            fprintf( m_file, ";TYPE=PLATED\n" );
-        }
-
-        if( writeNPTHcomment && tool_descr.m_Hole_NotPlated )
-        {
-            writeNPTHcomment = false;
-            fprintf( m_file, ";TYPE=NON_PLATED\n" );
-        }
+#if USE_ATTRIB_FOR_HOLES
+        writeHoleAttribute( tool_descr.m_HoleAttribute );
 #endif
-
-        if( m_unitsMetric )    // if units are mm, the resolution is 0.001 mm (3 digits in mantissa)
+        // if units are mm, the resolution is 0.001 mm (3 digits in mantissa)
+        // if units are inches, the resolution is 0.1 mil (4 digits in mantissa)
+        if( m_unitsMetric )
             fprintf( m_file, "T%dC%.3f\n", ii + 1, tool_descr.m_Diameter * m_conversionUnits );
-        else                    // if units are inches, the resolution is 0.1 mil (4 digits in mantissa)
+        else
             fprintf( m_file, "T%dC%.4f\n", ii + 1, tool_descr.m_Diameter * m_conversionUnits );
     }
 
@@ -193,7 +218,7 @@ int EXCELLON_WRITER::createDrillFile( FILE* aFile, DRILL_LAYER_PAIR aLayerPair,
     fputs( "G90\n", m_file );                       // Absolute mode
     fputs( "G05\n", m_file );                       // Drill mode
 
-    /* Read the hole file and generate lines for normal holes (oblong
+    /* Read the hole list and generate data for normal holes (oblong
      * holes will be created later) */
     int tool_reference = -2;
 
@@ -224,10 +249,11 @@ int EXCELLON_WRITER::createDrillFile( FILE* aFile, DRILL_LAYER_PAIR aLayerPair,
         holes_count++;
     }
 
-    /* Read the hole file and generate lines for normal holes (oblong holes
-     * will be created later) */
+    /* Read the hole list and generate data for oblong holes
+     */
     tool_reference = -2;    // set to a value not used for
                             // m_holeListBuffer[ii].m_Tool_Reference
+
     for( unsigned ii = 0; ii < m_holeListBuffer.size(); ii++ )
     {
         HOLE_INFO& hole_descr = m_holeListBuffer[ii];
@@ -453,7 +479,7 @@ void EXCELLON_WRITER::writeCoordinates( char* aLine, double aCoordX, double aCoo
 
 
 void EXCELLON_WRITER::writeEXCELLONHeader( DRILL_LAYER_PAIR aLayerPair,
-                                           bool aGenerateNPTH_list)
+                                           TYPE_FILE aHolesType )
 {
     fputs( "M48\n", m_file );    // The beginning of a header
 
@@ -507,14 +533,11 @@ void EXCELLON_WRITER::writeEXCELLONHeader( DRILL_LAYER_PAIR aLayerPair,
         msg << GetBuildVersion() << "\n";
         fputs( TO_UTF8( msg ), m_file );
 
-        if( !m_merge_PTH_NPTH )
-        {
-            // Add the standard X2 FileFunction for drill files
-            // TF.FileFunction,Plated[NonPlated],layer1num,layer2num,PTH[NPTH]
-            msg = BuildFileFunctionAttributeString( aLayerPair, aGenerateNPTH_list, true )
-                  + "\n";
-            fputs( TO_UTF8( msg ), m_file );
-        }
+        // Add the standard X2 FileFunction for drill files
+        // TF.FileFunction,Plated[NonPlated],layer1num,layer2num,PTH[NPTH]
+        msg = BuildFileFunctionAttributeString( aLayerPair, aHolesType , true )
+              + "\n";
+        fputs( TO_UTF8( msg ), m_file );
 
         fputs( "FMAT,2\n", m_file );     // Use Format 2 commands (version used since 1979)
     }

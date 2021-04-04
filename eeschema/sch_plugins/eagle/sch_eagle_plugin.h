@@ -86,6 +86,8 @@ public:
 
     const wxString GetName() const override;
 
+    void SetReporter( REPORTER* aReporter ) override { m_reporter = aReporter; }
+
     const wxString GetFileExtension() const override;
 
     const wxString GetLibraryFileExtension() const override;
@@ -127,6 +129,7 @@ private:
     SCH_TEXT*           loadLabel( wxXmlNode* aLabelNode, const wxString& aNetName );
     SCH_JUNCTION*       loadJunction( wxXmlNode* aJunction );
     SCH_TEXT*           loadPlainText( wxXmlNode* aSchText );
+    void                loadFrame( wxXmlNode* aFrameNode, std::vector<SCH_LINE*>& aLines );
 
     bool loadSymbol( wxXmlNode* aSymbolNode, std::unique_ptr<LIB_PART>& aPart, EDEVICE* aDevice,
                      int aGateNumber, const wxString& aGateName );
@@ -134,13 +137,13 @@ private:
                                      int aGateNumber );
     LIB_RECTANGLE* loadSymbolRectangle( std::unique_ptr<LIB_PART>& aPart, wxXmlNode* aRectNode,
                                         int aGateNumber );
-    LIB_POLYLINE*  loadSymbolPolyLine( std::unique_ptr<LIB_PART>& aPart, wxXmlNode* aPolygonNode,
-                                       int aGateNumber );
-    LIB_ITEM*      loadSymbolWire( std::unique_ptr<LIB_PART>& aPart, wxXmlNode* aWireNode,
-                                   int aGateNumber );
-    LIB_PIN*  loadPin( std::unique_ptr<LIB_PART>& aPart, wxXmlNode*, EPIN* epin, int aGateNumber );
-    LIB_TEXT* loadSymbolText( std::unique_ptr<LIB_PART>& aPart, wxXmlNode* aLibText,
-                              int aGateNumber );
+    LIB_ITEM*       loadSymbolWire( std::unique_ptr<LIB_PART>& aPart, wxXmlNode* aWireNode,
+                                    int aGateNumber );
+    LIB_PIN*        loadPin( std::unique_ptr<LIB_PART>& aPart, wxXmlNode*, EPIN* epin,
+                             int aGateNumber );
+    LIB_TEXT*       loadSymbolText( std::unique_ptr<LIB_PART>& aPart, wxXmlNode* aLibText,
+                                    int aGateNumber );
+    void            loadFrame( wxXmlNode* aFrameNode, std::vector<LIB_ITEM*>& aLines );
 
     void            loadTextAttributes( EDA_TEXT* aText, const ETEXT& aAttribs ) const;
     void            loadFieldAttributes( LIB_FIELD* aField, const LIB_TEXT* aText ) const;
@@ -178,6 +181,8 @@ private:
      */
     void addImplicitConnections( SCH_COMPONENT* aComponent, SCH_SCREEN* aScreen, bool aUpdateSet );
 
+    bool netHasPowerDriver( SCH_LINE* aLine, const wxString& aNetName ) const;
+
     /**
      * Fix invalid characters in Eagle symbol names.
      *
@@ -204,32 +209,34 @@ private:
         std::map<int, bool> units;
     };
 
+    REPORTER*   m_reporter;       ///< Reporter for warnings/errors
+
     ///< Map references to missing component units data
     std::map<wxString, EAGLE_MISSING_CMP> m_missingCmps;
 
-    KIWAY* m_kiway;      ///< For creating sub sheets.
-    SCH_SHEET* m_rootSheet; ///< The root sheet of the schematic being loaded..
-    SCH_SHEET* m_currentSheet; ///< The current sheet of the schematic being loaded..
-    wxString m_version; ///< Eagle file version.
-    wxFileName m_filename;
-    wxString m_libName; ///< Library name to save symbols
-    SCHEMATIC* m_schematic;   ///< Passed to Load(), the schematic object being loaded
+    SCH_SHEET*  m_rootSheet;      ///< The root sheet of the schematic being loaded
+    SCH_SHEET*  m_currentSheet;   ///< The current sheet of the schematic being loaded
+    wxString    m_version;        ///< Eagle file version.
+    wxFileName  m_filename;
+    wxString    m_libName;        ///< Library name to save symbols
+    SCHEMATIC*  m_schematic;      ///< Passed to Load(), the schematic object being loaded
 
-    EPART_MAP m_partlist;
+    EPART_MAP                         m_partlist;
     std::map<wxString, EAGLE_LIBRARY> m_eagleLibs;
 
-    SCH_PLUGIN::SCH_PLUGIN_RELEASER m_pi;         ///< Plugin to create the KiCad symbol library.
-    std::unique_ptr< PROPERTIES > m_properties;   ///< Library plugin properties.
+    SCH_PLUGIN::SCH_PLUGIN_RELEASER   m_pi;         ///< Plugin to create the KiCad symbol library.
+    std::unique_ptr< PROPERTIES >     m_properties; ///< Library plugin properties.
 
-    std::map<wxString, int> m_netCounts;
-    std::map<int, SCH_LAYER_ID> m_layerMap;
+    std::map<wxString, int>           m_netCounts;
+    std::map<int, SCH_LAYER_ID>       m_layerMap;
 
     ///< Wire intersection points, used for quick checks whether placing a net label in a particular
     ///< place would short two nets.
     std::vector<VECTOR2I> m_wireIntersections;
 
     ///< Wires and labels of a single connection (segment in Eagle nomenclature)
-    typedef struct SEG_DESC_STRUCT {
+    typedef struct SEG_DESC_STRUCT
+    {
         ///< Test if a particular label is attached to any of the stored segments
         const SEG* LabelAttached( const SCH_TEXT* aLabel ) const;
 
@@ -239,6 +246,9 @@ private:
 
     ///< Segments representing wires for intersection checking
     std::vector<SEG_DESC> m_segments;
+
+    ///< Nets as defined in the <nets> sections of an Eagle schematic file.
+    std::map<wxString, ENET> m_nets;
 
     ///< Positions of pins and wire endings mapped to its parent
     std::map<wxPoint, std::set<const EDA_ITEM*>> m_connPoints;

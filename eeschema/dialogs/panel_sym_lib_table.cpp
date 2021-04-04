@@ -2,7 +2,8 @@
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
  * Copyright (C) 2017 Wayne Stambaugh <stambaughw@gmail.com>
- * Copyright (C) 2017-2020 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 2021 CERN
+ * Copyright (C) 2017-2021 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * This program is free software: you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -21,6 +22,7 @@
 #include <set>
 #include <wx/regex.h>
 
+#include <common.h>     // For ExpandEnvVarSubstitutions
 #include <project.h>
 #include <panel_sym_lib_table.h>
 #include <lib_id.h>
@@ -51,7 +53,7 @@
 /**
  * Container that describes file type info for the add a library options
  */
-struct supportedFileType
+struct SUPPORTED_FILE_TYPE
 {
     wxString m_Description;            ///< Description shown in the file picker dialog
     wxString m_FileFilter;             ///< Filter used for file pickers if m_IsFile is true
@@ -187,9 +189,6 @@ PANEL_SYM_LIB_TABLE::PANEL_SYM_LIB_TABLE( DIALOG_EDIT_LIBRARY_TABLES* aParent, P
     // so make it a grid owned table.
     m_global_grid->SetTable( new SYMBOL_LIB_TABLE_GRID( *m_globalTable ), true );
 
-    // For user info, shows the table filenames:
-    m_GblTableFilename->SetLabel( aGlobalTablePath );
-
     wxArrayString pluginChoices;
 
     pluginChoices.Add( SCH_IO_MGR::ShowType( SCH_IO_MGR::SCH_KICAD ) );
@@ -222,9 +221,9 @@ PANEL_SYM_LIB_TABLE::PANEL_SYM_LIB_TABLE( DIALOG_EDIT_LIBRARY_TABLES* aParent, P
                 wxString wildcards = AllSymbolLibFilesWildcard()
                                      + "|" + KiCadSymbolLibFileWildcard()
                                      + "|" + LegacySymbolLibFileWildcard();
-                attr->SetEditor( new GRID_CELL_PATH_EDITOR( m_parent, &cfg->m_lastSymbolLibDir,
-                                                            wildcards, true,
-                                                            m_project->GetProjectPath() ) );
+                attr->SetEditor( new GRID_CELL_PATH_EDITOR( m_parent, aGrid,
+                                                            &cfg->m_lastSymbolLibDir, wildcards,
+                                                            true, m_project->GetProjectPath() ) );
                 aGrid->SetColAttr( COL_URI, attr );
 
                 attr = new wxGridCellAttr;
@@ -256,7 +255,6 @@ PANEL_SYM_LIB_TABLE::PANEL_SYM_LIB_TABLE( DIALOG_EDIT_LIBRARY_TABLES* aParent, P
 
     if( m_projectTable )
     {
-        m_PrjTableFilename->SetLabel( aProjectTablePath );
         m_project_grid->SetTable( new SYMBOL_LIB_TABLE_GRID( *m_projectTable ), true );
         setupGrid( m_project_grid );
     }
@@ -283,11 +281,11 @@ PANEL_SYM_LIB_TABLE::PANEL_SYM_LIB_TABLE( DIALOG_EDIT_LIBRARY_TABLES* aParent, P
     m_parent->SetInitialFocus( m_cur_grid );
 
     // Configure button logos
-    m_append_button->SetBitmap( KiBitmap( small_plus_xpm ) );
-    m_delete_button->SetBitmap( KiBitmap( small_trash_xpm ) );
-    m_move_up_button->SetBitmap( KiBitmap( small_up_xpm ) );
-    m_move_down_button->SetBitmap( KiBitmap( small_down_xpm ) );
-    m_browse_button->SetBitmap( KiBitmap( small_folder_xpm ) );
+    m_append_button->SetBitmap( KiBitmap( BITMAPS::small_plus ) );
+    m_delete_button->SetBitmap( KiBitmap( BITMAPS::small_trash ) );
+    m_move_up_button->SetBitmap( KiBitmap( BITMAPS::small_up ) );
+    m_move_down_button->SetBitmap( KiBitmap( BITMAPS::small_down ) );
+    m_browse_button->SetBitmap( KiBitmap( BITMAPS::small_folder ) );
 }
 
 
@@ -459,9 +457,7 @@ void PANEL_SYM_LIB_TABLE::browseLibrariesHandler( wxCommandEvent& event )
                       openDir, wxEmptyString, wildcards,
                       wxFD_OPEN | wxFD_FILE_MUST_EXIST | wxFD_MULTIPLE );
 
-    auto result = dlg.ShowModal();
-
-    if( result == wxID_CANCEL )
+    if( dlg.ShowModal() == wxID_CANCEL )
         return;
 
     if( m_cur_grid == m_global_grid )
@@ -514,12 +510,11 @@ void PANEL_SYM_LIB_TABLE::browseLibrariesHandler( wxCommandEvent& event )
             // SCH_IO_MGR needs to provide file extension information for libraries too
 
             // auto detect the plugin type
-            for( auto pluginType : SCH_IO_MGR::SCH_FILE_T_vector )
+            for( SCH_IO_MGR::SCH_FILE_T piType : SCH_IO_MGR::SCH_FILE_T_vector )
             {
-                if( SCH_IO_MGR::GetLibraryFileExtension( pluginType ).Lower() == fn.GetExt().Lower() )
+                if( SCH_IO_MGR::GetLibraryFileExtension( piType ).Lower() == fn.GetExt().Lower() )
                 {
-                    m_cur_grid->SetCellValue( last_row, COL_TYPE,
-                                              SCH_IO_MGR::ShowType( pluginType ) );
+                    m_cur_grid->SetCellValue( last_row, COL_TYPE, SCH_IO_MGR::ShowType( piType ) );
                     break;
                 }
             }
@@ -774,6 +769,7 @@ bool PANEL_SYM_LIB_TABLE::convertLibrary( const wxString& aLibrary, const wxStri
     SCH_PLUGIN::SCH_PLUGIN_RELEASER kicadPI( SCH_IO_MGR::FindPlugin( SCH_IO_MGR::SCH_KICAD ) );
     std::vector<LIB_PART*>          parts;
     std::vector<LIB_PART*>          newParts;
+    std::map<LIB_PART*, LIB_PART*>  partMap;
 
     try
     {
@@ -788,8 +784,31 @@ bool PANEL_SYM_LIB_TABLE::convertLibrary( const wxString& aLibrary, const wxStri
 
         legacyPI->EnumerateSymbolLib( parts, legacyFilepath );
 
+        // Copy non-aliases first so we can build a map from parts to newParts
         for( LIB_PART* part : parts )
-            kicadPI->SaveSymbol( newFilepath, new LIB_PART( *part ) );
+        {
+            if( part->IsAlias() )
+                continue;
+
+            newParts.push_back( new LIB_PART( *part ) );
+            partMap[part] = newParts.back();
+        }
+
+        // Now do the aliases using the map to hook them up to their newPart parents
+        for( LIB_PART* part : parts )
+        {
+            if( !part->IsAlias() )
+                continue;
+
+            newParts.push_back( new LIB_PART( *part ) );
+            newParts.back()->SetParent( partMap[ part->GetParent().lock().get() ] );
+        }
+
+        // Finally write out newParts
+        for( LIB_PART* part : newParts )
+        {
+            kicadPI->SaveSymbol( newFilepath, part );
+        }
     }
     catch( ... )
     {
@@ -964,7 +983,7 @@ void InvokeSchEditSymbolLibTable( KIWAY* aKiway, wxWindow *aParent )
         currentLib = symbolEditor->GetCurLib();
 
         // This prevents an ugly crash on OSX (https://bugs.launchpad.net/kicad/+bug/1765286)
-        symbolEditor->FreezeSearchTree();
+        symbolEditor->FreezeLibraryTree();
 
         if( symbolEditor->HasLibModifications() )
         {
@@ -974,15 +993,16 @@ void InvokeSchEditSymbolLibTable( KIWAY* aKiway, wxWindow *aParent )
 
             switch( UnsavedChangesDialog( aParent, msg ) )
             {
-            case wxID_YES:    symbolEditor->SaveAll();        break;
-            case wxID_NO:     symbolEditor->RevertAll();      break;
+            case wxID_YES:    symbolEditor->SaveAll();         break;
+            case wxID_NO:     symbolEditor->RevertAll();       break;
             default:
-            case wxID_CANCEL: symbolEditor->ThawSearchTree(); return;
+            case wxID_CANCEL: symbolEditor->ThawLibraryTree(); return;
             }
         }
     }
 
     DIALOG_EDIT_LIBRARY_TABLES dlg( aParent, _( "Symbol Libraries" ) );
+    dlg.SetKiway( &dlg, aKiway );
 
     dlg.InstallPanel( new PANEL_SYM_LIB_TABLE( &dlg, &aKiway->Prj(), globalTable, globalTablePath,
                                                projectTable, projectTableFn.GetFullPath() ) );
@@ -990,7 +1010,7 @@ void InvokeSchEditSymbolLibTable( KIWAY* aKiway, wxWindow *aParent )
     if( dlg.ShowModal() == wxID_CANCEL )
     {
         if( symbolEditor )
-            symbolEditor->ThawSearchTree();
+            symbolEditor->ThawLibraryTree();
 
         return;
     }
@@ -1034,7 +1054,8 @@ void InvokeSchEditSymbolLibTable( KIWAY* aKiway, wxWindow *aParent )
         }
 
         symbolEditor->SyncLibraries( true );
-        symbolEditor->ThawSearchTree();
+        symbolEditor->ThawLibraryTree();
+        symbolEditor->RefreshLibraryTree();
     }
 
     if( symbolViewer )

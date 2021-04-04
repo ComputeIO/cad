@@ -128,8 +128,8 @@ void BOARD_PRINTOUT::DrawPage( const wxString& aLayerName, int aPageNum, int aPa
 
     dstSettings->SetIsPrinting( true );
 
-    setupViewLayers( *view, m_settings.m_LayerSet );
     setupPainter( *painter );
+    setupViewLayers( *view, m_settings.m_LayerSet );
 
     auto sheetSizeMils = m_settings.m_pageInfo.GetSizeMils();
     VECTOR2I sheetSizeIU( milsToIU( sheetSizeMils.GetWidth() ), milsToIU( sheetSizeMils.GetHeight() ) );
@@ -139,13 +139,13 @@ void BOARD_PRINTOUT::DrawPage( const wxString& aLayerName, int aPageNum, int aPa
     if( m_settings.PrintBorderAndTitleBlock() )
     {
         bBox = BOX2I( VECTOR2I( 0, 0 ), VECTOR2I( sheetSizeIU ) );
-        view->SetLayerVisible( LAYER_WORKSHEET, true );
+        view->SetLayerVisible( LAYER_DRAWINGSHEET, true );
     }
     else
     {
         EDA_RECT targetBbox = getBoundingBox();
         bBox = BOX2I( targetBbox.GetOrigin(), targetBbox.GetSize() );
-        view->SetLayerVisible( LAYER_WORKSHEET, false );
+        view->SetLayerVisible( LAYER_DRAWINGSHEET, false );
     }
 
 

@@ -31,6 +31,7 @@
 #include <footprint.h>
 #include <settings/settings_manager.h>
 #include <trigo.h>
+#include <kicad_string.h>
 
 FP_TEXT::FP_TEXT( FOOTPRINT* aParentFootprint, TEXT_TYPE text_type ) :
     BOARD_ITEM( aParentFootprint, PCB_FP_TEXT_T ),
@@ -103,22 +104,13 @@ void FP_TEXT::KeepUpright( double aOldOrientation, double aNewOrientation )
     if( !IsKeepUpright() )
         return;
 
-    double currentAngle = GetTextAngle() + aOldOrientation;
     double newAngle = GetTextAngle() + aNewOrientation;
-
-    NORMALIZE_ANGLE_POS( currentAngle );
     NORMALIZE_ANGLE_POS( newAngle );
-
-    bool   isFlipped = currentAngle >= 1800.0;
     bool   needsFlipped = newAngle >= 1800.0;
 
-    if( isFlipped != needsFlipped )
+    if( needsFlipped )
     {
-        if( GetHorizJustify() == GR_TEXT_HJUSTIFY_LEFT )
-            SetHorizJustify( GR_TEXT_HJUSTIFY_RIGHT );
-        else if( GetHorizJustify() == GR_TEXT_HJUSTIFY_RIGHT )
-            SetHorizJustify(GR_TEXT_HJUSTIFY_LEFT );
-
+        SetHorizJustify( static_cast<EDA_TEXT_HJUSTIFY_T>( -GetHorizJustify() ) );
         SetTextAngle( GetTextAngle() + 1800.0 );
         SetDrawCoord();
     }
@@ -143,22 +135,19 @@ void FP_TEXT::Flip( const wxPoint& aCentre, bool aFlipLeftRight )
 {
     // flipping the footprint is relative to the X axis
     if( aFlipLeftRight )
-        SetTextX( ::MIRRORVAL( GetTextPos().x, aCentre.x ) );
+    {
+        SetTextX( MIRRORVAL( GetTextPos().x, aCentre.x ) );
+        SetTextAngle( -GetTextAngle() );
+    }
     else
-        SetTextY( ::MIRRORVAL( GetTextPos().y, aCentre.y ) );
+    {
+        SetTextY( MIRRORVAL( GetTextPos().y, aCentre.y ) );
+        SetTextAngle( 1800 - GetTextAngle() );
+    }
 
-    SetTextAngle( -GetTextAngle() );
-
-    SetLayer( FlipLayer( GetLayer() ) );
+    SetLayer( FlipLayer( GetLayer(), GetBoard()->GetCopperLayerCount() ) );
     SetMirrored( IsBackLayer( GetLayer() ) );
     SetLocalCoord();
-
-    // adjust justified text for mirroring
-    if( GetHorizJustify() == GR_TEXT_HJUSTIFY_LEFT || GetHorizJustify() == GR_TEXT_HJUSTIFY_RIGHT )
-    {
-        SetHorizJustify( static_cast<EDA_TEXT_HJUSTIFY_T>( -GetHorizJustify() ) );
-        SetDrawCoord();
-    }
 }
 
 bool FP_TEXT::IsParentFlipped() const
@@ -282,7 +271,8 @@ void FP_TEXT::GetMsgPanelInfo( EDA_DRAW_FRAME* aFrame, std::vector<MSG_PANEL_ITE
 
     aList.emplace_back( _( "Footprint" ), fp ? fp->GetReference() : _( "<invalid>" ) );
 
-    aList.emplace_back( _( "Text" ), GetShownText() );
+    // Don't use GetShownText() here; we want to show the user the variable references
+    aList.emplace_back( _( "Text" ), UnescapeString( GetText() ) );
 
     wxASSERT( m_Type >= TEXT_is_REFERENCE && m_Type <= TEXT_is_DIVERS );
     aList.emplace_back( _( "Type" ), text_type_msg[m_Type] );
@@ -332,9 +322,9 @@ wxString FP_TEXT::GetSelectMenuText( EDA_UNITS aUnits ) const
 }
 
 
-BITMAP_DEF FP_TEXT::GetMenuImage() const
+BITMAPS FP_TEXT::GetMenuImage() const
 {
-    return text_xpm;
+    return BITMAPS::text;
 }
 
 
@@ -457,5 +447,8 @@ static struct FP_TEXT_DESC
         propMgr.AddTypeCast( new TYPE_CAST<FP_TEXT, EDA_TEXT> );
         propMgr.InheritsAfter( TYPE_HASH( FP_TEXT ), TYPE_HASH( BOARD_ITEM ) );
         propMgr.InheritsAfter( TYPE_HASH( FP_TEXT ), TYPE_HASH( EDA_TEXT ) );
+
+        propMgr.AddProperty( new PROPERTY<FP_TEXT, wxString>( _HKI( "Parent" ),
+                    NO_SETTER( FP_TEXT, wxString ), &FP_TEXT::GetParentAsString ) );
     }
 } _FP_TEXT_DESC;

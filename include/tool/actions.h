@@ -165,8 +165,6 @@ public:
     static TOOL_ACTION showFootprintEditor;
     static TOOL_ACTION updatePcbFromSchematic;
     static TOOL_ACTION updateSchematicFromPcb;
-    static TOOL_ACTION acceleratedGraphics;
-    static TOOL_ACTION standardGraphics;
 
     // Internal
     static TOOL_ACTION updateMenu;
@@ -182,15 +180,6 @@ public:
     static TOOL_ACTION listHotKeys;
     static TOOL_ACTION getInvolved;
     static TOOL_ACTION reportBug;
-
-    /**
-     * Translate legacy tool ids to the corresponding TOOL_ACTION name.
-     *
-     * @param aId is legacy tool id to be translated.
-     * @return std::string is name of the corresponding TOOL_ACTION. It may be empty, if there is
-     *         no corresponding TOOL_ACTION.
-     */
-    virtual OPT<TOOL_EVENT> TranslateLegacyId( int aId ) = 0;
 
     ///< Cursor control event types
     enum CURSOR_EVENT_TYPE { CURSOR_NONE, CURSOR_UP, CURSOR_DOWN, CURSOR_LEFT, CURSOR_RIGHT,

@@ -32,6 +32,7 @@
 #include <fp_shape.h>
 #include <pcb_text.h>
 #include <widgets/unit_binder.h>
+#include <tool/tool_manager.h>
 #include <tools/global_edit_tool.h>
 #include <dialog_global_edit_text_and_graphics_base.h>
 
@@ -72,12 +73,14 @@ static bool       g_filterByReference;
 static wxString   g_referenceFilter;
 static bool       g_filterByFootprint;
 static wxString   g_footprintFilter;
+static bool       g_filterSelected = false;
 
 
 class DIALOG_GLOBAL_EDIT_TEXT_AND_GRAPHICS : public DIALOG_GLOBAL_EDIT_TEXT_AND_GRAPHICS_BASE
 {
     PCB_EDIT_FRAME*        m_parent;
     BOARD_DESIGN_SETTINGS* m_brdSettings;
+    PCB_SELECTION          m_selection;
 
     UNIT_BINDER            m_lineWidth;
     UNIT_BINDER            m_textWidth;
@@ -113,10 +116,10 @@ protected:
 
 DIALOG_GLOBAL_EDIT_TEXT_AND_GRAPHICS::DIALOG_GLOBAL_EDIT_TEXT_AND_GRAPHICS( PCB_EDIT_FRAME* parent ) :
         DIALOG_GLOBAL_EDIT_TEXT_AND_GRAPHICS_BASE( parent ),
-        m_lineWidth( parent, m_lineWidthLabel, m_LineWidthCtrl, m_lineWidthUnits, true ),
-        m_textWidth( parent, m_SizeXlabel, m_SizeXCtrl, m_SizeXunit, true ),
-        m_textHeight( parent, m_SizeYlabel, m_SizeYCtrl, m_SizeYunit, true ),
-        m_thickness( parent, m_ThicknessLabel, m_ThicknessCtrl, m_ThicknessUnit, true )
+        m_lineWidth( parent, m_lineWidthLabel, m_LineWidthCtrl, m_lineWidthUnits ),
+        m_textWidth( parent, m_SizeXlabel, m_SizeXCtrl, m_SizeXunit ),
+        m_textHeight( parent, m_SizeYlabel, m_SizeYCtrl, m_SizeYunit ),
+        m_thickness( parent, m_ThicknessLabel, m_ThicknessCtrl, m_ThicknessUnit )
 {
     m_parent = parent;
     m_brdSettings = &m_parent->GetDesignSettings();
@@ -156,11 +159,15 @@ DIALOG_GLOBAL_EDIT_TEXT_AND_GRAPHICS::~DIALOG_GLOBAL_EDIT_TEXT_AND_GRAPHICS()
     g_referenceFilter = m_referenceFilter->GetValue();
     g_filterByFootprint = m_footprintFilterOpt->GetValue();
     g_footprintFilter = m_footprintFilter->GetValue();
+    g_filterSelected = m_selectedItemsFilter->GetValue();
 }
 
 
 bool DIALOG_GLOBAL_EDIT_TEXT_AND_GRAPHICS::TransferDataToWindow()
 {
+    PCB_SELECTION_TOOL* selTool = m_parent->GetToolManager()->GetTool<PCB_SELECTION_TOOL>();
+    m_selection                 = selTool->GetSelection();
+
     m_references->SetValue( g_modifyReferences );
     m_values->SetValue( g_modifyValues );
     m_otherFields->SetValue( g_modifyOtherFields );
@@ -176,6 +183,7 @@ bool DIALOG_GLOBAL_EDIT_TEXT_AND_GRAPHICS::TransferDataToWindow()
     m_referenceFilterOpt->SetValue( g_filterByReference );
     m_footprintFilter->ChangeValue( g_footprintFilter );
     m_footprintFilterOpt->SetValue( g_filterByFootprint );
+    m_selectedItemsFilter->SetValue( g_filterSelected );
 
     m_lineWidth.SetValue( INDETERMINATE_ACTION );
     m_textWidth.SetValue( INDETERMINATE_ACTION );
@@ -335,6 +343,9 @@ void DIALOG_GLOBAL_EDIT_TEXT_AND_GRAPHICS::processItem( BOARD_COMMIT& aCommit, B
 
 void DIALOG_GLOBAL_EDIT_TEXT_AND_GRAPHICS::visitItem( BOARD_COMMIT& aCommit, BOARD_ITEM* aItem )
 {
+    if( m_selectedItemsFilter->GetValue() && !m_selection.Contains( aItem ) )
+        return;
+
     if( m_layerFilterOpt->GetValue() && m_layerFilter->GetLayerSelection() != UNDEFINED_LAYER )
     {
         if( aItem->GetLayer() != m_layerFilter->GetLayerSelection() )

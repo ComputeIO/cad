@@ -251,23 +251,23 @@ void SCH_BUS_ENTRY_BASE::Print( const RENDER_SETTINGS* aSettings, const wxPoint&
 }
 
 
-void SCH_BUS_ENTRY_BASE::MirrorX( int aXaxis_position )
+void SCH_BUS_ENTRY_BASE::MirrorVertically( int aCenter )
 {
-    MIRROR( m_pos.y, aXaxis_position );
+    MIRROR( m_pos.y, aCenter );
     m_size.y = -m_size.y;
 }
 
 
-void SCH_BUS_ENTRY_BASE::MirrorY( int aYaxis_position )
+void SCH_BUS_ENTRY_BASE::MirrorHorizontally( int aCenter )
 {
-    MIRROR( m_pos.x, aYaxis_position );
+    MIRROR( m_pos.x, aCenter );
     m_size.x = -m_size.x;
 }
 
 
-void SCH_BUS_ENTRY_BASE::Rotate( wxPoint aPosition )
+void SCH_BUS_ENTRY_BASE::Rotate( wxPoint aCenter )
 {
-    RotatePoint( &m_pos, aPosition, 900 );
+    RotatePoint( &m_pos, aCenter, 900 );
     RotatePoint( &m_size.x, &m_size.y, 900 );
 }
 
@@ -289,7 +289,7 @@ bool SCH_BUS_WIRE_ENTRY::UpdateDanglingState( std::vector<DANGLING_END_ITEM>& aI
     bool has_wire[2] = { false };
     bool has_bus[2] = { false };
 
-    for( DANGLING_END_ITEM& each_item : aItemList )
+    for( const DANGLING_END_ITEM& each_item : aItemList )
     {
         if( each_item.GetItem() == this )
             continue;
@@ -348,7 +348,7 @@ bool SCH_BUS_BUS_ENTRY::UpdateDanglingState( std::vector<DANGLING_END_ITEM>& aIt
     // when the end position is found.
     wxPoint seg_start;
 
-    for( DANGLING_END_ITEM& each_item : aItemList )
+    for( const DANGLING_END_ITEM& each_item : aItemList )
     {
         if( each_item.GetItem() == this )
             continue;
@@ -397,15 +397,15 @@ wxString SCH_BUS_BUS_ENTRY::GetSelectMenuText( EDA_UNITS aUnits ) const
 }
 
 
-BITMAP_DEF SCH_BUS_WIRE_ENTRY::GetMenuImage() const
+BITMAPS SCH_BUS_WIRE_ENTRY::GetMenuImage() const
 {
-    return add_line2bus_xpm;
+    return BITMAPS::add_line2bus;
 }
 
 
-BITMAP_DEF SCH_BUS_BUS_ENTRY::GetMenuImage() const
+BITMAPS SCH_BUS_BUS_ENTRY::GetMenuImage() const
 {
-    return add_bus2bus_xpm;
+    return BITMAPS::add_bus2bus;
 }
 
 
@@ -432,7 +432,7 @@ bool SCH_BUS_ENTRY_BASE::HitTest( const EDA_RECT& aRect, bool aContained, int aA
 }
 
 
-void SCH_BUS_ENTRY_BASE::Plot( PLOTTER* aPlotter )
+void SCH_BUS_ENTRY_BASE::Plot( PLOTTER* aPlotter ) const
 {
     auto* settings = static_cast<KIGFX::SCH_RENDER_SETTINGS*>( aPlotter->RenderSettings() );
 

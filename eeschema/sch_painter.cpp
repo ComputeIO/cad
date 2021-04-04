@@ -2,7 +2,7 @@
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
  * Copyright (C) 2014 CERN
- * Copyright (C) 2019-2020 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 2019-2021 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * @author Tomasz Wlostowski <tomasz.wlostowski@cern.ch>
  *
@@ -47,7 +47,7 @@
 #include <plotter.h>
 #include <sch_bitmap.h>
 #include <sch_bus_entry.h>
-#include <sch_component.h>
+#include <sch_symbol.h>
 #include <sch_edit_frame.h>
 #include <sch_field.h>
 #include <sch_junction.h>
@@ -185,6 +185,21 @@ bool SCH_PAINTER::Draw( const VIEW_ITEM* aItem, int aLayer )
 
 #endif
 
+    if( ADVANCED_CFG::GetCfg().m_DrawBoundingBoxes )
+    {
+        BOX2I box = item->GetBoundingBox();
+
+        if( item->Type() == SCH_COMPONENT_T )
+            box = static_cast<const SCH_COMPONENT*>( item )->GetBodyBoundingBox();
+
+        m_gal->SetIsFill( false );
+        m_gal->SetIsStroke( true );
+        m_gal->SetStrokeColor( item->IsSelected() ? COLOR4D( 1.0, 0.2, 0.2, 1 ) :
+                               COLOR4D( 0.2, 0.2, 0.2, 1 ) );
+        m_gal->SetLineWidth( Mils2iu( 3 ) );
+        m_gal->DrawRectangle( box.GetOrigin(), box.GetEnd() );
+    }
+
     switch( item->Type() )
     {
         HANDLE_ITEM( LIB_PART_T, LIB_PART );
@@ -300,7 +315,7 @@ COLOR4D SCH_PAINTER::getRenderColor( const EDA_ITEM* aItem, int aLayer, bool aDr
     else if( aItem->IsSelected() )
     {
         if( aDrawingShadows )
-            color = m_schSettings.GetLayerColor( LAYER_SELECTION_SHADOWS ).WithAlpha( 0.8 );
+            color = m_schSettings.GetLayerColor( LAYER_SELECTION_SHADOWS );
     }
 
     if( m_schSettings.m_ShowDisabled
@@ -458,10 +473,6 @@ bool SCH_PAINTER::setDeviceColors( const LIB_ITEM* aItem, int aLayer )
         if( aItem->GetFillMode() == FILL_TYPE::FILLED_WITH_BG_BODYCOLOR )
         {
             COLOR4D fillColor = getRenderColor( aItem, LAYER_DEVICE_BACKGROUND, false );
-
-            // These actions place the item over others, so allow a modest transparency here
-            if( aItem->IsMoving() || aItem->IsDragging() || aItem->IsResized() )
-                fillColor = fillColor.WithAlpha( 0.75 );
 
             m_gal->SetIsFill( aItem->GetFillMode() == FILL_TYPE::FILLED_WITH_BG_BODYCOLOR );
             m_gal->SetFillColor( fillColor );
@@ -1263,13 +1274,13 @@ void SCH_PAINTER::draw( const SCH_LINE* aLine, int aLayer )
         }
     }
 
-    if( aLine->IsStartDangling() )
+    if( aLine->IsStartDangling() && aLine->IsWire() )
     {
         drawDanglingSymbol( aLine->GetStartPoint(), getLineWidth( aLine, drawingShadows ),
                             drawingShadows );
     }
 
-    if( aLine->IsEndDangling() )
+    if( aLine->IsEndDangling() && aLine->IsWire() )
     {
         drawDanglingSymbol( aLine->GetEndPoint(), getLineWidth( aLine, drawingShadows ),
                             drawingShadows );
@@ -1530,7 +1541,8 @@ void SCH_PAINTER::draw( const SCH_FIELD* aField, int aLayer )
 
     bool underline = false;
 
-    if( aField->IsHypertext() && ( aField->GetFlags() & IS_ROLLOVER ) > 0 )
+    if( aField->IsHypertext() && ( aField->GetFlags() & IS_ROLLOVER ) > 0
+            && !drawingShadows && !aField->IsMoving() )
     {
         color = PUREBLUE;
         underline = true;

@@ -2,7 +2,7 @@
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
  * Copyright (C) 2018 Jean-Pierre Charras, jp.charras at wanadoo.fr
- * Copyright (C) 2004-2019 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 2004-2021 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -60,12 +60,11 @@ public:
 
     void Print( const RENDER_SETTINGS* aSettings, const wxPoint& aOffset ) override;
 
-    void Plot( PLOTTER* aPlotter ) override
+    void Plot( PLOTTER* /* aPlotter */ ) const override
     {
         // SCH_MARKERs should not be plotted. However, SCH_ITEM will fail an
         // assertion if we do not confirm this by locally implementing a no-op
         // Plot().
-        (void) aPlotter;
     }
 
     EDA_RECT const GetBoundingBox() const override;
@@ -77,17 +76,15 @@ public:
         m_Pos += aMoveVector;
     }
 
-    void MirrorY( int aYaxis_position ) override;
-    void MirrorX( int aXaxis_position ) override;
-    void Rotate( wxPoint aPosition ) override;
+    void MirrorHorizontally( int aCenter ) override;
+    void MirrorVertically( int aCenter ) override;
+    void Rotate( wxPoint aCenter ) override;
 
     /**
      * Compare DRC marker main and auxiliary text against search string.
      *
-     * @param aSearchData - Criteria to search against.
-     * @param aAuxData A pointer to optional data required for the search or NULL
-     *                 if not used.
-     * @param aFindLocation - a wxPoint where to put the location of matched item. can be NULL.
+     * @param[in] aSearchData is the criteria to search against.
+     * @param[in] aAuxData is the optional data required for the search or NULL if not used.
      * @return True if the DRC main or auxiliary text matches the search criteria.
      */
     bool Matches( const wxFindReplaceData& aSearchData, void* aAuxDat ) const override;
@@ -99,7 +96,7 @@ public:
         return wxString( _( "ERC Marker" ) );
     }
 
-    BITMAP_DEF GetMenuImage() const override;
+    BITMAPS GetMenuImage() const override;
 
     wxPoint GetPosition() const override { return m_Pos; }
     void SetPosition( const wxPoint& aPosition ) override { m_Pos = aPosition; }

@@ -85,7 +85,7 @@ int SYMBOL_EDITOR_DRAWING_TOOLS::TwoClickPlace( const TOOL_EVENT& aEvent )
     Activate();
 
     // Prime the pump
-    if( aEvent.HasPosition() )
+    if( aEvent.HasPosition() || ( isText && !aEvent.IsReactivate() ) )
         m_toolMgr->RunAction( ACTIONS::cursorClick );
 
     auto setCursor =
@@ -354,7 +354,7 @@ int SYMBOL_EDITOR_DRAWING_TOOLS::DrawShape( const TOOL_EVENT& aEvent )
 
             wxCHECK( item, 0 );
 
-            item->SetWidth( settings->m_Defaults.line_width );
+            item->SetWidth( Mils2iu( settings->m_Defaults.line_width ) );
             item->SetFillMode( m_lastFillStyle );
             item->SetFlags( IS_NEW );
             item->BeginEdit( wxPoint( cursorPos.x, -cursorPos.y ) );

@@ -23,6 +23,13 @@
 #include <wx/string.h>
 
 
+bool KIPLATFORM::APP::Init()
+{
+    // No special OSX init tasks
+    return true;
+}
+
+
 bool KIPLATFORM::APP::RegisterApplicationRestart( const wxString& aCommandLine )
 {
     // Not implemented on this platform
@@ -54,5 +61,10 @@ void KIPLATFORM::APP::SetShutdownBlockReason( wxWindow* aWindow, const wxString&
 
 
 void KIPLATFORM::APP::ForceTimerMessagesToBeCreatedIfNecessary()
+{
+}
+
+
+void KIPLATFORM::APP::AddDynamicLibrarySearchPath( const wxString& aPath )
 {
 }

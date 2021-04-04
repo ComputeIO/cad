@@ -47,6 +47,24 @@ DRAGGER::~DRAGGER()
 }
 
 
+bool DRAGGER::propagateViaForces( NODE* node, std::set<VIA*>& vias )
+{
+    VIA* via = *vias.begin();
+
+    VECTOR2I force;
+    VECTOR2I lead = m_mouseTrailTracer.GetTrailLeadVector();
+
+    bool solidsOnly = false;// ( m_currentMode != RM_Walkaround );
+
+    if( via->PushoutForce( node, lead, force, solidsOnly, 40 ) )
+    {
+        via->SetPos( via->Pos() + force );
+        return true;
+    }
+
+    return false;
+}
+
 bool DRAGGER::startDragSegment( const VECTOR2D& aP, SEGMENT* aSeg )
 {
     int w2 = aSeg->Width() / 2;
@@ -153,6 +171,9 @@ bool DRAGGER::Start( const VECTOR2I& aP, ITEM_SET& aPrimitives )
     m_freeAngleMode = (m_mode & DM_FREE_ANGLE);
     m_lastValidPoint = aP;
 
+    m_mouseTrailTracer.Clear();
+    m_mouseTrailTracer.AddTrailPoint( aP );
+
     if( m_currentMode == RM_Shove  && !m_freeAngleMode )
     {
         m_shove = std::make_unique<SHOVE>( m_world, Router() );
@@ -241,7 +262,7 @@ bool DRAGGER::dragMarkObstacles( const VECTOR2I& aP )
 }
 
 
-void DRAGGER::dragViaMarkObstacles( const VIA_HANDLE& aHandle, NODE* aNode, const VECTOR2I& aP )
+bool DRAGGER::dragViaMarkObstacles( const VIA_HANDLE& aHandle, NODE* aNode, const VECTOR2I& aP )
 {
     m_draggedItems.Clear();
 
@@ -249,7 +270,7 @@ void DRAGGER::dragViaMarkObstacles( const VIA_HANDLE& aHandle, NODE* aNode, cons
 
     if( fanout.Empty() )
     {
-        return;
+        return true;
     }
     
     for( ITEM* item : fanout.Items() )
@@ -278,10 +299,12 @@ void DRAGGER::dragViaMarkObstacles( const VIA_HANDLE& aHandle, NODE* aNode, cons
             m_lastNode->Add( std::move( nvia ) );
         }
     }
+
+    return true;
 }
 
 
-void DRAGGER::dragViaWalkaround( const VIA_HANDLE& aHandle, NODE* aNode, const VECTOR2I& aP )
+bool DRAGGER::dragViaWalkaround( const VIA_HANDLE& aHandle, NODE* aNode, const VECTOR2I& aP )
 {
     m_draggedItems.Clear();
 
@@ -289,8 +312,39 @@ void DRAGGER::dragViaWalkaround( const VIA_HANDLE& aHandle, NODE* aNode, const V
 
     if( fanout.Empty() )
     {
-        return;
+        return true;
     }
+
+    bool viaPropOk = false;
+    VECTOR2I viaTargetPos;
+
+    for( ITEM* item : fanout.Items() )
+    {
+        if ( VIA *via = dyn_cast<VIA*>( item ) )
+        {
+            auto draggedVia = Clone( *via );
+
+            draggedVia->SetPos( aP );
+            m_draggedItems.Add( draggedVia.get() );
+
+            std::set<VIA*> vias;
+
+            vias.insert( draggedVia.get() );
+
+            bool ok = propagateViaForces( m_lastNode, vias );
+
+            if( ok )
+            {
+                viaTargetPos = draggedVia->Pos();
+                viaPropOk = true;
+                m_lastNode->Remove( via );
+                m_lastNode->Add( std::move(draggedVia) );
+            }
+        }
+    }
+
+    if( !viaPropOk ) // can't force-propagate the via? bummer...
+        return false;
     
     for( ITEM* item : fanout.Items() )
     {
@@ -298,36 +352,42 @@ void DRAGGER::dragViaWalkaround( const VIA_HANDLE& aHandle, NODE* aNode, const V
         {
             LINE origLine( *l );
             LINE draggedLine( *l );
+            LINE walkLine( *l );
 
-            draggedLine.DragCorner( aP, origLine.CLine().Find( aHandle.pos ), m_freeAngleMode );
+            draggedLine.DragCorner( viaTargetPos, origLine.CLine().Find( aHandle.pos ), m_freeAngleMode );
             draggedLine.ClearLinks();
 
-            m_draggedItems.Add( draggedLine );
+            if ( m_world->CheckColliding( &draggedLine ) )
+            {
+                bool ok = tryWalkaround( m_lastNode, draggedLine, walkLine );
+        
+                if( !ok )
+                    return false;
 
-            m_lastNode->Remove( origLine );
-            m_lastNode->Add( draggedLine );
-        }
-        else if ( VIA *via = dyn_cast<VIA*>( item ) )
-        {
-            auto nvia = Clone( *via );
+                m_lastNode->Remove( origLine );
+                optimizeAndUpdateDraggedLine( walkLine, origLine, aP );
+            }
+            else
+            {
+                m_draggedItems.Add( draggedLine );
 
-            nvia->SetPos( aP );
-            m_draggedItems.Add( nvia.get() );
-
-            m_lastNode->Remove( via );
-            m_lastNode->Add( std::move( nvia ) );
+                m_lastNode->Remove( origLine );
+                m_lastNode->Add( draggedLine );
+            }
         }
     }
+
+    return true;
 }
 
 
-void DRAGGER::optimizeAndUpdateDraggedLine( LINE& dragged, SEG& aDraggedSeg, const VECTOR2I& aP )
+void DRAGGER::optimizeAndUpdateDraggedLine( LINE& aDragged, const LINE& aOrig, const VECTOR2I& aP )
 {
     VECTOR2D lockV;
-    dragged.ClearLinks();
-    dragged.Unmark();
+    aDragged.ClearLinks();
+    aDragged.Unmark();
 
-    lockV = dragged.CLine().NearestPoint( aP );
+    lockV = aDragged.CLine().NearestPoint( aP );
 
     if( Settings().GetOptimizeDraggedTrack() )
     {
@@ -335,25 +395,66 @@ void DRAGGER::optimizeAndUpdateDraggedLine( LINE& dragged, SEG& aDraggedSeg, con
 
         optimizer.SetEffortLevel( OPTIMIZER::MERGE_SEGMENTS | OPTIMIZER::KEEP_TOPOLOGY );
 
-        int startV = dragged.CLine().Find( aDraggedSeg.A );
-        int endV = dragged.CLine().Find( aDraggedSeg.B );
+        OPT_BOX2I affectedArea = aDragged.ChangedArea( &aOrig );
+        VECTOR2I anchor( aP );
 
-        if ( endV > startV )
+        if( aDragged.CLine().Find( aP ) < 0 )
         {
-            std::swap(endV, startV);
+            anchor = aDragged.CLine().NearestPoint( aP );
         }
 
-        if( startV >= 0 && endV >= 0)
+        optimizer.SetPreserveVertex( anchor );
+
+        if( affectedArea )
         {
-            optimizer.SetPreserveVertex( aP );
-            optimizer.SetRestrictVertexRange( startV, endV );
-            optimizer.Optimize( &dragged );
+            Dbg()->AddPoint( anchor, 3 );
+            Dbg()->AddBox( *affectedArea, 2 );
+            optimizer.SetRestrictArea( *affectedArea );
+            optimizer.Optimize( &aDragged );
+
+            OPT_BOX2I optArea = *aDragged.ChangedArea( &aOrig );
+            if( optArea )
+                Dbg()->AddBox( *optArea, 4 );
         }
     }
 
-    m_lastNode->Add( dragged );
+    m_lastNode->Add( aDragged );
     m_draggedItems.Clear();
-    m_draggedItems.Add( dragged );
+    m_draggedItems.Add( aDragged );
+}
+
+
+bool DRAGGER::tryWalkaround( NODE* aNode, LINE& aOrig, LINE& aWalk )
+{
+    WALKAROUND walkaround( aNode, Router() );
+    bool       ok = false;
+    walkaround.SetSolidsOnly( false );
+    walkaround.SetDebugDecorator( Dbg() );
+    walkaround.SetLogger( Logger() );
+    walkaround.SetIterationLimit( Settings().WalkaroundIterationLimit() );
+
+    aWalk = aOrig;
+
+    WALKAROUND::RESULT wr = walkaround.Route( aWalk );
+
+
+    if( wr.statusCcw == WALKAROUND::DONE && wr.statusCw == WALKAROUND::DONE )
+    {
+        aWalk = ( wr.lineCw.CLine().Length() < wr.lineCcw.CLine().Length() ? wr.lineCw :
+                                                                             wr.lineCcw );
+        ok    = true;
+    }
+    else if( wr.statusCw == WALKAROUND::DONE )
+    {
+        aWalk = wr.lineCw;
+        ok    = true;
+    }
+    else if( wr.statusCcw == WALKAROUND::DONE )
+    {
+        aWalk = wr.lineCcw;
+        ok    = true;
+    }
+    return ok;
 }
 
 
@@ -376,8 +477,11 @@ bool DRAGGER::dragWalkaround( const VECTOR2I& aP )
     {
         int thresh = Settings().SmoothDraggedSegments() ? m_draggedLine.Width() / 4 : 0;
         LINE dragged( m_draggedLine );
+        LINE draggedWalk( m_draggedLine );
         LINE origLine( m_draggedLine );
         
+        dragged.SetSnapThreshhold( thresh );
+
         if( m_mode == DM_SEGMENT )
             dragged.DragSegment( aP, m_draggedSegmentIndex );
         else
@@ -385,55 +489,27 @@ bool DRAGGER::dragWalkaround( const VECTOR2I& aP )
 
         if ( m_world->CheckColliding( &dragged ) )
         {
-            WALKAROUND walkaround( m_lastNode, Router() );
-
-            walkaround.SetSolidsOnly( false );
-            walkaround.SetDebugDecorator( Dbg() );
-            walkaround.SetLogger( Logger() );
-            walkaround.SetIterationLimit( Settings().WalkaroundIterationLimit() );
-
-            WALKAROUND::RESULT wr = walkaround.Route( dragged );
-
-            //Dbg()->AddLine( wr.lineCw.CLine(), 3, 200000 );
-            //Dbg()->AddLine( wr.lineCcw.CLine(), 2, 200000 );
-
-            if( wr.statusCcw == WALKAROUND::DONE && wr.statusCw == WALKAROUND::DONE )
-            {
-                dragged = ( wr.lineCw.CLine().Length() < wr.lineCcw.CLine().Length() ? wr.lineCw : wr.lineCcw );
-                ok = true;
-            }
-            else if ( wr.statusCw == WALKAROUND::DONE )
-            {
-                dragged = wr.lineCw;
-                ok = true;
-            }
-            else if ( wr.statusCcw == WALKAROUND::DONE )
-            {
-                dragged = wr.lineCcw;
-                ok = true;
-             }
-
+            ok = tryWalkaround( m_lastNode, dragged, draggedWalk );
         }
         else
         {
+            draggedWalk = dragged;
             ok = true;
         }
 
         if( ok )
         {
+            //Dbg()->AddLine( origLine.CLine(), 4, 100000 );
             m_lastNode->Remove( origLine );
-            SEG dummy;
-            optimizeAndUpdateDraggedLine( dragged, dummy, aP );
+            optimizeAndUpdateDraggedLine( draggedWalk, origLine, aP );
         }
+    break;
     }
-        break;
-
     case DM_VIA: // fixme...
     {
-        dragViaWalkaround( m_initialVia, m_lastNode, aP );
-        ok = !m_world->CheckColliding( m_draggedItems );
-    }
+        ok = dragViaWalkaround( m_initialVia, m_lastNode, aP );
         break;
+    }
     }
 
     m_dragStatus = ok;
@@ -484,18 +560,7 @@ bool DRAGGER::dragShove( const VECTOR2I& aP )
             dragged.ClearLinks();
             dragged.Unmark();
 
-            lockV = dragged.CLine().NearestPoint( aP );
-
-            if( Settings().GetOptimizeDraggedTrack() )
-            {
-                OPTIMIZER::Optimize( &dragged, OPTIMIZER::MERGE_SEGMENTS 
-                                            | OPTIMIZER::KEEP_TOPOLOGY
-                                            | OPTIMIZER::PRESERVE_VERTEX, m_lastNode, lockV );
-            }
-
-            m_lastNode->Add( dragged );
-            m_draggedItems.Clear();
-            m_draggedItems.Add( dragged );
+            optimizeAndUpdateDraggedLine( dragged, m_draggedLine, aP );
         }
 
         break;
@@ -557,6 +622,8 @@ bool DRAGGER::FixRoute()
 
 bool DRAGGER::Drag( const VECTOR2I& aP )
 {
+    m_mouseTrailTracer.AddTrailPoint( aP );
+
     bool ret = false;
 
     if( m_freeAngleMode )
@@ -594,7 +661,7 @@ bool DRAGGER::Drag( const VECTOR2I& aP )
 
 NODE* DRAGGER::CurrentNode() const
 {
-   return m_lastNode;
+   return m_lastNode ? m_lastNode : m_world;
 }
 
 

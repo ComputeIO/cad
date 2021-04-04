@@ -304,12 +304,12 @@ public:
     /**
      * @return the biggest clearance value found in NetClasses list.
      */
-    int GetBiggestClearanceValue();
+    int GetBiggestClearanceValue() const;
 
     /**
      * @return the smallest clearance value found in NetClasses list.
      */
-    int GetSmallestClearanceValue();
+    int GetSmallestClearanceValue() const;
 
     /**
      * @return the current micro via size that is the current netclass value.
@@ -541,41 +541,21 @@ public:
     /**
      * @return the current diff pair track width, according to the selected options
      * ( using the default netclass value or a preset/custom value )
-     * the default netclass is always in m_DiffPairDimensionsList[0].
      */
-    inline int GetCurrentDiffPairWidth() const
-    {
-        if( m_useCustomDiffPair )
-            return m_customDiffPair.m_Width;
-        else
-            return m_DiffPairDimensionsList[m_diffPairIndex].m_Width;
-    }
+    int GetCurrentDiffPairWidth() const;
 
     /**
      * @return the current diff pair gap, according to the selected options
      * ( using the default netclass value or a preset/custom value )
-     * the default netclass is always in m_DiffPairDimensionsList[0].
      */
-    inline int GetCurrentDiffPairGap() const
-    {
-        if( m_useCustomDiffPair )
-            return m_customDiffPair.m_Gap;
-        else
-            return m_DiffPairDimensionsList[m_diffPairIndex].m_Gap;
-    }
+    int GetCurrentDiffPairGap() const;
 
     /**
      * @return the current diff pair via gap, according to the selected options
      * ( using the default netclass value or a preset/custom value )
      * the default netclass is always in m_DiffPairDimensionsList[0].
      */
-    inline int GetCurrentDiffPairViaGap() const
-    {
-        if( m_useCustomDiffPair )
-            return m_customDiffPair.m_ViaGap;
-        else
-            return m_DiffPairDimensionsList[m_diffPairIndex].m_ViaGap;
-    }
+    int GetCurrentDiffPairViaGap() const;
 
     /**
      * @param aValue The minimum distance between the edges of two holes or 0 to disable

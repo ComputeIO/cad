@@ -28,6 +28,7 @@
 
 #include <gal/graphics_abstraction_layer.h>
 #include <gal/definitions.h>
+#include <font/font.h>
 #include <geometry/shape_poly_set.h>
 
 #include <math/util.h> // for KiROUND
@@ -38,7 +39,7 @@
 using namespace KIGFX;
 
 
-GAL::GAL( GAL_DISPLAY_OPTIONS& aDisplayOptions ) : options( aDisplayOptions )
+GAL::GAL( GAL_DISPLAY_OPTIONS& aDisplayOptions ) : m_options( aDisplayOptions )
 {
     // Set the default values for the internal variables
     SetIsFill( false );
@@ -64,21 +65,23 @@ GAL::GAL( GAL_DISPLAY_OPTIONS& aDisplayOptions ) : options( aDisplayOptions )
     // Set grid defaults
     SetGridVisibility( true );
     SetCoarseGrid( 10 );
-    gridLineWidth = 0.5f;
-    gridStyle = GRID_STYLE::LINES;
-    gridMinSpacing = 10;
+    m_gridLineWidth = 0.5f;
+    m_gridStyle = GRID_STYLE::LINES;
+    m_gridMinSpacing = 10;
 
     // Initialize the cursor shape
     SetCursorColor( COLOR4D( 1.0, 1.0, 1.0, 1.0 ) );
-    fullscreenCursor = false;
-    forceDisplayCursor = false;
+    m_fullscreenCursor = false;
+    m_forceDisplayCursor = false;
     SetCursorEnabled( false );
 
     // Initialize text properties
     ResetTextAttributes();
 
+    //m_strokeFont.LoadNewStrokeFont( newstroke_font, newstroke_font_bufsize );
+
     // subscribe for settings updates
-    observerLink = options.Subscribe( this );
+    m_observerLink = m_options.Subscribe( this );
 }
 
 
@@ -100,39 +103,39 @@ bool GAL::updatedGalDisplayOptions( const GAL_DISPLAY_OPTIONS& aOptions )
 {
     bool refresh = false;
 
-    if( options.m_gridStyle != gridStyle )
+    if( m_options.m_gridStyle != m_gridStyle )
     {
-        gridStyle = options.m_gridStyle;
+        m_gridStyle = m_options.m_gridStyle;
         refresh = true;
     }
 
-    if( options.m_gridLineWidth != gridLineWidth )
+    if( m_options.m_gridLineWidth != m_gridLineWidth )
     {
-        gridLineWidth = std::floor( options.m_gridLineWidth + 0.5 );
+        m_gridLineWidth = std::floor( m_options.m_gridLineWidth + 0.5 );
         refresh = true;
     }
 
-    if( options.m_gridMinSpacing != gridMinSpacing )
+    if( m_options.m_gridMinSpacing != m_gridMinSpacing )
     {
-        gridMinSpacing = options.m_gridMinSpacing;
+        m_gridMinSpacing = m_options.m_gridMinSpacing;
         refresh = true;
     }
 
-    if( options.m_axesEnabled != axesEnabled )
+    if( m_options.m_axesEnabled != m_axesEnabled )
     {
-        axesEnabled = options.m_axesEnabled;
+        m_axesEnabled = m_options.m_axesEnabled;
         refresh = true;
     }
 
-    if( options.m_forceDisplayCursor != forceDisplayCursor )
+    if( m_options.m_forceDisplayCursor != m_forceDisplayCursor )
     {
-        forceDisplayCursor = options.m_forceDisplayCursor;
+        m_forceDisplayCursor = m_options.m_forceDisplayCursor;
         refresh = true;
     }
 
-    if( options.m_fullscreenCursor != fullscreenCursor )
+    if( m_options.m_fullscreenCursor != m_fullscreenCursor )
     {
-        fullscreenCursor = options.m_fullscreenCursor;
+        m_fullscreenCursor = m_options.m_fullscreenCursor;
         refresh = true;
     }
 
@@ -195,9 +198,7 @@ VECTOR2D GAL::GetTextLineSize( const UTF8& aText ) const
     // Compute the X and Y size of a given text.
     // Because ComputeTextLineSize expects a one line text,
     // aText is expected to be only one line text.
-    //
-    // TODO: use something other than defaultFont when appropriate
-    return DefaultFont().ComputeTextLineSize( this, aText );
+    return KIFONT::FONT::GetFont()->ComputeTextLineSize( this, aText );
 }
 
 
@@ -207,26 +208,26 @@ void GAL::ComputeWorldScreenMatrix()
 
     MATRIX3x3D translation;
     translation.SetIdentity();
-    translation.SetTranslation( 0.5 * VECTOR2D( screenSize ) );
+    translation.SetTranslation( 0.5 * VECTOR2D( m_screenSize ) );
 
     MATRIX3x3D rotate;
     rotate.SetIdentity();
-    rotate.SetRotation( rotation );
+    rotate.SetRotation( m_rotation );
 
     MATRIX3x3D scale;
     scale.SetIdentity();
-    scale.SetScale( VECTOR2D( worldScale, worldScale ) );
+    scale.SetScale( VECTOR2D( m_worldScale, m_worldScale ) );
 
     MATRIX3x3D flip;
     flip.SetIdentity();
-    flip.SetScale( VECTOR2D( globalFlipX ? -1.0 : 1.0, globalFlipY ? -1.0 : 1.0 ) );
+    flip.SetScale( VECTOR2D( m_globalFlipX ? -1.0 : 1.0, m_globalFlipY ? -1.0 : 1.0 ) );
 
     MATRIX3x3D lookat;
     lookat.SetIdentity();
-    lookat.SetTranslation( -lookAtPoint );
+    lookat.SetTranslation( -m_lookAtPoint );
 
-    worldScreenMatrix = translation * rotate * flip * scale * lookat;
-    screenWorldMatrix = worldScreenMatrix.Inverse();
+    m_worldScreenMatrix = translation * rotate * flip * scale * lookat;
+    m_screenWorldMatrix = m_worldScreenMatrix.Inverse();
 }
 
 
@@ -234,7 +235,7 @@ double GAL::computeMinGridSpacing() const
 {
     // just return the current value. This could be cleverer and take
     // into account other settings in future
-    return gridMinSpacing;
+    return m_gridMinSpacing;
 }
 
 
@@ -242,16 +243,18 @@ VECTOR2D GAL::GetGridPoint( const VECTOR2D& aPoint ) const
 {
 #if 0
     // This old code expects a non zero grid size, which can be wrong here.
-    return VECTOR2D( KiROUND( ( aPoint.x - gridOffset.x ) / gridSize.x ) * gridSize.x + gridOffset.x,
-                     KiROUND( ( aPoint.y - gridOffset.y ) / gridSize.y ) * gridSize.y + gridOffset.y );
+    return VECTOR2D( KiROUND( ( aPoint.x - m_gridOffset.x ) / m_gridSize.x ) * m_gridSize.x + m_gridOffset.x,
+                     KiROUND( ( aPoint.y - m_gridOffset.y ) / m_gridSize.y ) * m_gridSize.y + m_gridOffset.y );
 #else
     // if grid size == 0.0 there is no grid, so use aPoint as grid reference position
-    double cx = gridSize.x > 0.0 ? KiROUND( ( aPoint.x - gridOffset.x ) / gridSize.x ) * gridSize.x
-                                           + gridOffset.x
-                                 : aPoint.x;
-    double cy = gridSize.y > 0.0 ? KiROUND( ( aPoint.y - gridOffset.y ) / gridSize.y ) * gridSize.y
-                                           + gridOffset.y
-                                 : aPoint.y;
+    double cx = m_gridSize.x > 0.0
+                        ? KiROUND( ( aPoint.x - m_gridOffset.x ) / m_gridSize.x ) * m_gridSize.x
+                                  + m_gridOffset.x
+                        : aPoint.x;
+    double cy = m_gridSize.y > 0.0
+                        ? KiROUND( ( aPoint.y - m_gridOffset.y ) / m_gridSize.y ) * m_gridSize.y
+                                  + m_gridOffset.y
+                        : aPoint.y;
 
     return VECTOR2D( cx, cy );
 #endif
@@ -264,16 +267,27 @@ const int GAL::GRID_DEPTH = MAX_DEPTH - 1;
 
 COLOR4D GAL::getCursorColor() const
 {
-    auto color = cursorColor;
+    COLOR4D color = m_cursorColor;
 
     // dim the cursor if it's only on because it was forced
     // (this helps to provide a hint for active tools)
-    if( !isCursorEnabled )
-    {
+    if( !m_isCursorEnabled )
         color.a = color.a * 0.5;
-    }
 
     return color;
+}
+
+
+void GAL::StrokeText( const wxString& aText, const VECTOR2D& aPosition, double aRotationAngle,
+                      KIFONT::FONT* aFont )
+{
+#ifdef DEBUG
+    std::cerr << "GAL::StrokeText( " << aText << ", " << aPosition << ", " << aRotationAngle
+              << " ) m_lineWidth " << GetLineWidth() << std::endl;
+#endif
+    if( !aFont )
+        aFont = KIFONT::FONT::GetFont();
+    aFont->Draw( this, aText, aPosition, aRotationAngle );
 }
 
 

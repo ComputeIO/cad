@@ -153,7 +153,7 @@ __asm (
 "	push   %rax\n"
 "	mov    0x1478(%r10),%rax\n"
 "	push   %rax\n"
-"	mov    0x18(%r10),%rax\n"
+"	mov    0x20(%r10),%rax\n"
 "	push   %rax\n"
 "	lea    -0xa8(%rsp),%rsp\n"
 "	test   %r9,%r9\n"
@@ -199,7 +199,7 @@ __asm (
 "	lea    (%rsp,%rcx,1),%rsp\n"
 "	mov    %gs:0x30,%r10\n"
 "	pop    %rax\n"
-"	mov    %rax,0x18(%r10)\n"
+"	mov    %rax,0x20(%r10)\n"
 "	pop    %rax\n"
 "	mov    %rax,0x1478(%r10)\n"
 "	pop    %rax\n"
@@ -1340,7 +1340,7 @@ __asm (
 
 #endif
 
-#if defined(LIBCONTEXT_PLATFORM_msvc_x86_64) || defined(LIBCONTEXT_PLATFORM_msvc_i386)
+#if defined(LIBCONTEXT_USE_WINFIBER) && (defined(LIBCONTEXT_PLATFORM_msvc_x86_64) || defined(LIBCONTEXT_PLATFORM_msvc_i386))
 
 #include <map>
 
@@ -1398,10 +1398,15 @@ intptr_t LIBCONTEXT_CALL_CONVENTION jump_fcontext( fcontext_t* ofc, fcontext_t n
 
 void LIBCONTEXT_CALL_CONVENTION release_fcontext( fcontext_t ctx )
 {
+    if( ctx == nullptr )
+		return;
+
 	if( fiberParams.find( ctx ) != fiberParams.end() )
 	{
 		fiberParams.erase( ctx );
 	}
+
+	DeleteFiber( ctx );
 }
 
 
@@ -1411,7 +1416,7 @@ void LIBCONTEXT_CALL_CONVENTION release_fcontext( fcontext_t ctx )
 };
 #endif
 
-#else // defined(LIBCONTEXT_PLATFORM_msvc_x86_64) || defined(LIBCONTEXT_PLATFORM_msvc_i386)
+#else // defined(LIBCONTEXT_USE_WINFIBER) && (defined(LIBCONTEXT_PLATFORM_msvc_x86_64) || defined(LIBCONTEXT_PLATFORM_msvc_i386))
 
 #ifdef __cplusplus
 extern "C" {

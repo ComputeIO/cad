@@ -197,6 +197,8 @@ endif()
 set( PCBNEW_BRDSTACKUP_MGR
     board_stackup_manager/dielectric_material.cpp
     board_stackup_manager/stackup_predefined_prms.cpp
+    board_stackup_manager/panel_board_finish.cpp
+    board_stackup_manager/panel_board_finish_base.cpp
     board_stackup_manager/panel_board_stackup.cpp
     board_stackup_manager/panel_board_stackup_base.cpp
     board_stackup_manager/board_stackup_reporter.cpp
@@ -338,13 +340,13 @@ set( PCBNEW_CLASS_SRCS
     tools/board_reannotate_tool.cpp
     tools/convert_tool.cpp
     tools/drawing_tool.cpp
+    tools/drawing_stackup_table_tool.cpp
     tools/drc_tool.cpp
     tools/edit_tool.cpp
     tools/global_edit_tool.cpp
     tools/group_tool.cpp
     tools/footprint_editor_control.cpp
     tools/pad_tool.cpp
-    tools/pcb_bright_box.cpp
     tools/pcb_control.cpp
     tools/pcb_picker_tool.cpp
     tools/pcb_selection.cpp
@@ -577,25 +579,25 @@ if( MINGW )
     # PCBNEW_RESOURCES variable is set by the macro.
     mingw_resource_compiler( pcbnew )
 else()
-    set( PCBNEW_RESOURCES pcbnew.rc )
+    set( PCBNEW_RESOURCES ${CMAKE_SOURCE_DIR}/resources/msw/pcbnew.rc )
 endif()
 
 
 # Create a C++ compilable string initializer containing markdown text into a *.h file:
 add_custom_command(
-    OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/dialogs/panel_setup_rules_help_md.h
+    OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/dialogs/panel_setup_rules_help_md.h
     COMMAND ${CMAKE_COMMAND}
         -DinputFile=${CMAKE_CURRENT_SOURCE_DIR}/dialogs/panel_setup_rules_help.md
-        -DoutputFile=${CMAKE_CURRENT_BINARY_DIR}/dialogs/panel_setup_rules_help_md.h
+        -DoutputFile=${CMAKE_CURRENT_SOURCE_DIR}/dialogs/panel_setup_rules_help_md.h
         -P ${CMAKE_MODULE_PATH}/BuildSteps/markdown2C.cmake
     DEPENDS ${CMAKE_MODULE_PATH}/BuildSteps/markdown2C.cmake ${CMAKE_CURRENT_SOURCE_DIR}/dialogs/panel_setup_rules_help.md
-    COMMENT "creating ${CMAKE_CURRENT_BINARY_DIR}/dialogs/panel_setup_rules_help_md.h
+    COMMENT "creating ${CMAKE_CURRENT_SOURCE_DIR}/dialogs/panel_setup_rules_help_md.h
        from ${CMAKE_CURRENT_SOURCE_DIR}/dialogs/panel_setup_rules_help.md"
     )
 
 set_source_files_properties( dialogs/panel_setup_rules.cpp
     PROPERTIES
-        OBJECT_DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/dialogs/panel_setup_rules_help_md.h
+        OBJECT_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/dialogs/panel_setup_rules_help_md.h
     )
 
 if( APPLE )

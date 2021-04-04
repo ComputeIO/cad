@@ -38,6 +38,12 @@
 class SVG_IMPORT_PLUGIN : public GRAPHICS_IMPORT_PLUGIN
 {
 public:
+    SVG_IMPORT_PLUGIN():
+        GRAPHICS_IMPORT_PLUGIN(),
+        m_parsedImage( nullptr )
+    {
+    }
+
     const wxString GetName() const override
     {
         return "Scalable Vector Graphics";
@@ -52,7 +58,7 @@ public:
     /**
      * @return the list of messages in one string. Each message ends by '\n'
      */
-    const std::string& GetMessages() const override
+    const wxString& GetMessages() const override
     {
         return m_messages;
     }
@@ -77,7 +83,7 @@ private:
 
     struct NSVGimage* m_parsedImage;
 
-    std::string m_messages;     // messages generated during svg file parsing.
+    wxString m_messages; // messages generated during svg file parsing.
                                 // Each message ends by '\n'
 };
 

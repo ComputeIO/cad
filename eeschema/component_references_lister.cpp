@@ -2,7 +2,7 @@
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
  * Copyright (C) 1992-2018 jean-pierre Charras <jp.charras at wanadoo.fr>
- * Copyright (C) 1992-2011 Wayne Stambaugh <stambaughw@verizon.net>
+ * Copyright (C) 1992-2011 Wayne Stambaugh <stambaughw@gmail.com>
  * Copyright (C) 1992-2021 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * This program is free software; you can redistribute it and/or
@@ -37,7 +37,7 @@
 
 #include <refdes_utils.h>
 #include <erc_settings.h>
-#include <sch_component.h>
+#include <sch_symbol.h>
 #include <sch_edit_frame.h>
 
 
@@ -140,11 +140,9 @@ bool SCH_REFERENCE_LIST::sortByTimeStamp( const SCH_REFERENCE& item1, const SCH_
 }
 
 
-int SCH_REFERENCE_LIST::FindUnit( size_t aIndex, int aUnit )
+int SCH_REFERENCE_LIST::FindUnit( size_t aIndex, int aUnit ) const
 {
-    int NumRef;
-
-    NumRef = flatList[aIndex].m_numRef;
+    int NumRef = flatList[aIndex].m_numRef;
 
     for( size_t ii = 0; ii < flatList.size(); ii++ )
     {
@@ -184,11 +182,11 @@ int SCH_REFERENCE_LIST::FindRef( const wxString& aRef ) const
 }
 
 
-void SCH_REFERENCE_LIST::GetRefsInUse( int aIndex, std::vector<int>& aIdList, int aMinRefId )
+void SCH_REFERENCE_LIST::GetRefsInUse( int aIndex, std::vector< int >& aIdList, int aMinRefId ) const
 {
     aIdList.clear();
 
-    for( SCH_REFERENCE& ref : flatList )
+    for( const SCH_REFERENCE& ref : flatList )
     {
         if( flatList[aIndex].CompareRef( ref ) == 0 && ref.m_numRef >= aMinRefId )
             aIdList.push_back( ref.m_numRef );
@@ -206,11 +204,11 @@ void SCH_REFERENCE_LIST::GetRefsInUse( int aIndex, std::vector<int>& aIdList, in
 }
 
 
-int SCH_REFERENCE_LIST::GetLastReference( int aIndex, int aMinValue )
+int SCH_REFERENCE_LIST::GetLastReference( int aIndex, int aMinValue ) const
 {
     int lastNumber = aMinValue;
 
-    for( SCH_REFERENCE& ref : flatList )
+    for( const SCH_REFERENCE& ref : flatList )
     {
         // search only for the current reference prefix:
         if( flatList[aIndex].CompareRef( ref ) != 0 )

@@ -162,30 +162,30 @@ const EDA_RECT SCH_MARKER::GetBoundingBox() const
 
 void SCH_MARKER::GetMsgPanelInfo( EDA_DRAW_FRAME* aFrame, MSG_PANEL_ITEMS& aList )
 {
-    aList.push_back( MSG_PANEL_ITEM( _( "Electronics Rule Check Error" ),
+    aList.push_back( MSG_PANEL_ITEM( _( "Electrical Rule Check Error" ),
                                      m_rcItem->GetErrorMessage() ) );
 }
 
 
-BITMAP_DEF SCH_MARKER::GetMenuImage() const
+BITMAPS SCH_MARKER::GetMenuImage() const
 {
-    return erc_xpm;
+    return BITMAPS::erc;
 }
 
 
-void SCH_MARKER::Rotate( wxPoint aPosition )
-{
-    // Marker geometry isn't user-editable
-}
-
-
-void SCH_MARKER::MirrorX( int aXaxis_position )
+void SCH_MARKER::Rotate( wxPoint aCenter )
 {
     // Marker geometry isn't user-editable
 }
 
 
-void SCH_MARKER::MirrorY( int aYaxis_position )
+void SCH_MARKER::MirrorVertically( int aCenter )
+{
+    // Marker geometry isn't user-editable
+}
+
+
+void SCH_MARKER::MirrorHorizontally( int aCenter )
 {
     // Marker geometry isn't user-editable
 }

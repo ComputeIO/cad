@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2017 Jean-Pierre Charras, jp.charras at wanadoo.fr
  * Copyright (C) 2009 Wayne Stambaugh <stambaughw@gmail.com>
- * Copyright (C) 1992-2019 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 1992-2021 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -22,12 +22,13 @@
  * or you may write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
+
 #include "gerbview_frame.h"
 
+#include <bitmaps.h>
 #include "gerbview_id.h"
 #include <kiface_i.h>
 #include <menus_helpers.h>
-#include <pgm_base.h>
 #include <tool/action_menu.h>
 #include <tool/actions.h>
 #include <tool/tool_manager.h>
@@ -61,10 +62,9 @@ void GERBVIEW_FRAME::ReCreateMenuBar()
     // will automatically refresh the menu.
     if( !openRecentGbrMenu )
     {
-        openRecentGbrMenu = new ACTION_MENU( false );
-        openRecentGbrMenu->SetTool( selTool );
+        openRecentGbrMenu = new ACTION_MENU( false, selTool );
         openRecentGbrMenu->SetTitle( _( "Open Recent Gerber File" ) );
-        openRecentGbrMenu->SetIcon( recent_xpm );
+        openRecentGbrMenu->SetIcon( BITMAPS::recent );
 
         recentGbrFiles.UseMenu( openRecentGbrMenu );
         recentGbrFiles.SetClearText( _( "Clear Recent Gerber Files" ) );
@@ -80,10 +80,9 @@ void GERBVIEW_FRAME::ReCreateMenuBar()
     // will automatically refresh the menu.
     if( !openRecentDrlMenu )
     {
-        openRecentDrlMenu = new ACTION_MENU( false );
-        openRecentDrlMenu->SetTool( selTool );
+        openRecentDrlMenu = new ACTION_MENU( false, selTool );
         openRecentDrlMenu->SetTitle( _( "Open Recent Drill File" ) );
-        openRecentDrlMenu->SetIcon( recent_xpm );
+        openRecentDrlMenu->SetIcon( BITMAPS::recent );
 
         m_drillFileHistory.UseMenu( openRecentDrlMenu );
         m_drillFileHistory.SetClearText( _( "Clear Recent Drill Files" ) );
@@ -99,10 +98,9 @@ void GERBVIEW_FRAME::ReCreateMenuBar()
     // will automatically refresh the menu.
     if( !openRecentJobMenu )
     {
-        openRecentJobMenu = new ACTION_MENU( false );
-        openRecentJobMenu->SetTool( selTool );
+        openRecentJobMenu = new ACTION_MENU( false, selTool );
         openRecentJobMenu->SetTitle( _( "Open Recent Job File" ) );
-        openRecentJobMenu->SetIcon( recent_xpm );
+        openRecentJobMenu->SetIcon( BITMAPS::recent );
 
         m_jobFileHistory.UseMenu( openRecentJobMenu );
         m_jobFileHistory.SetClearText( _( "Clear Recent Job Files" ) );
@@ -118,10 +116,9 @@ void GERBVIEW_FRAME::ReCreateMenuBar()
     // will automatically refresh the menu.
     if( !openRecentZipMenu )
     {
-        openRecentZipMenu = new ACTION_MENU( false );
-        openRecentZipMenu->SetTool( selTool );
+        openRecentZipMenu = new ACTION_MENU( false, selTool );
         openRecentZipMenu->SetTitle( _( "Open Recent Zip File" ) );
-        openRecentZipMenu->SetIcon( recent_xpm );
+        openRecentZipMenu->SetIcon( BITMAPS::recent );
 
         m_zipFileHistory.UseMenu( openRecentZipMenu );
         m_zipFileHistory.SetClearText( _( "Clear Recent Zip Files" ) );
@@ -145,7 +142,7 @@ void GERBVIEW_FRAME::ReCreateMenuBar()
     fileMenu->Add( ACTIONS::print );
 
     fileMenu->AppendSeparator();
-    fileMenu->AddQuitOrClose( &Kiface(), _( "GerbView" ) );
+    fileMenu->AddQuitOrClose( &Kiface(), _( "Gerber Viewer" ) );
 
 
     //-- View menu -------------------------------------------------------
@@ -174,7 +171,7 @@ void GERBVIEW_FRAME::ReCreateMenuBar()
     ACTION_MENU* unitsSubMenu = new ACTION_MENU( false, selTool );
 
     unitsSubMenu->SetTitle( _( "&Units" ) );
-    unitsSubMenu->SetIcon( unit_mm_xpm );
+    unitsSubMenu->SetIcon( BITMAPS::unit_mm );
     unitsSubMenu->Add( ACTIONS::inchesUnits,                  ACTION_MENU::CHECK );
     unitsSubMenu->Add( ACTIONS::milsUnits,                    ACTION_MENU::CHECK );
     unitsSubMenu->Add( ACTIONS::millimetersUnits,             ACTION_MENU::CHECK );
@@ -212,16 +209,10 @@ void GERBVIEW_FRAME::ReCreateMenuBar()
     preferencesMenu->Add( _( "Preferences..." ) + "\tCtrl+,",
                           _( "Show preferences for all open tools" ),
                           wxID_PREFERENCES,
-                          preference_xpm );
+                          BITMAPS::preference );
 
     preferencesMenu->AppendSeparator();
     AddMenuLanguageList( preferencesMenu, selTool );
-
-#ifndef __WXMAC__
-    preferencesMenu->AppendSeparator();
-    preferencesMenu->Add( ACTIONS::acceleratedGraphics, ACTION_MENU::CHECK );
-    preferencesMenu->Add( ACTIONS::standardGraphics,    ACTION_MENU::CHECK );
-#endif
 
 
     //-- Menubar -------------------------------------------------------------

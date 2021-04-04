@@ -38,11 +38,6 @@ PANEL_EDIT_OPTIONS_BASE::PANEL_EDIT_OPTIONS_BASE( wxWindow* parent, wxWindowID i
 	wxBoxSizer* bSizerBoardEdit;
 	bSizerBoardEdit = new wxBoxSizer( wxVERTICAL );
 
-	m_autoLockPads = new wxCheckBox( bOptionsSizer->GetStaticBox(), wxID_ANY, _("Lock pads of newly added footprints"), wxDefaultPosition, wxDefaultSize, 0 );
-	m_autoLockPads->SetToolTip( _("If checked, when a footprint is added to the board, its pads will be locked and not movable with respect to the footprint.") );
-
-	bSizerBoardEdit->Add( m_autoLockPads, 0, wxBOTTOM, 15 );
-
 	m_flipLeftRight = new wxCheckBox( bOptionsSizer->GetStaticBox(), wxID_ANY, _("Flip board items L/R (default is T/B)"), wxDefaultPosition, wxDefaultSize, 0 );
 	bSizerBoardEdit->Add( m_flipLeftRight, 0, wxBOTTOM, 15 );
 
@@ -323,16 +318,6 @@ PANEL_EDIT_OPTIONS_BASE::PANEL_EDIT_OPTIONS_BASE( wxWindow* parent, wxWindowID i
 
 	pcbOptionsSizer->Add( sbSizer3, 0, wxEXPAND|wxTOP, 5 );
 
-	wxStaticBoxSizer* sbSizer4;
-	sbSizer4 = new wxStaticBoxSizer( new wxStaticBox( pcbPage, wxID_ANY, _("Annotations") ), wxVERTICAL );
-
-	m_Show_Page_Limits = new wxCheckBox( sbSizer4->GetStaticBox(), wxID_ANY, _("Show page limits"), wxDefaultPosition, wxDefaultSize, 0 );
-	m_Show_Page_Limits->SetValue(true);
-	sbSizer4->Add( m_Show_Page_Limits, 0, wxBOTTOM|wxRIGHT|wxLEFT, 5 );
-
-
-	pcbOptionsSizer->Add( sbSizer4, 1, wxEXPAND|wxTOP, 5 );
-
 	wxStaticBoxSizer* sbSizer41;
 	sbSizer41 = new wxStaticBoxSizer( new wxStaticBox( pcbPage, wxID_ANY, _("Track Editing") ), wxVERTICAL );
 
@@ -365,6 +350,29 @@ PANEL_EDIT_OPTIONS_BASE::PANEL_EDIT_OPTIONS_BASE( wxWindow* parent, wxWindowID i
 
 
 	pcbOptionsSizer->Add( sbSizer41, 0, wxEXPAND|wxTOP, 5 );
+
+	wxStaticBoxSizer* sbSizer4;
+	sbSizer4 = new wxStaticBoxSizer( new wxStaticBox( pcbPage, wxID_ANY, _("Miscellaneous") ), wxVERTICAL );
+
+	m_Show_Page_Limits = new wxCheckBox( sbSizer4->GetStaticBox(), wxID_ANY, _("Show page limits"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_Show_Page_Limits->SetValue(true);
+	m_Show_Page_Limits->SetToolTip( _("Draw an outline to show the sheet size.") );
+
+	sbSizer4->Add( m_Show_Page_Limits, 0, wxBOTTOM|wxRIGHT|wxLEFT, 5 );
+
+	m_Auto_Refill_Zones = new wxCheckBox( sbSizer4->GetStaticBox(), wxID_ANY, _("Refill zones after Zone Properties dialog"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_Auto_Refill_Zones->SetValue(true);
+	m_Auto_Refill_Zones->SetToolTip( _("If checked, zones will be re-filled after editing the properties of the zone using the Zone Properties dialog") );
+
+	sbSizer4->Add( m_Auto_Refill_Zones, 0, wxALL, 5 );
+
+	m_Allow_Free_Pads = new wxCheckBox( sbSizer4->GetStaticBox(), wxID_ANY, _("Allow free pads"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_Allow_Free_Pads->SetToolTip( _("If checked, pads can be moved with respect to the rest of the footprint.") );
+
+	sbSizer4->Add( m_Allow_Free_Pads, 0, wxALL, 5 );
+
+
+	pcbOptionsSizer->Add( sbSizer4, 1, wxEXPAND|wxTOP, 5 );
 
 
 	pcbPage->SetSizer( pcbOptionsSizer );

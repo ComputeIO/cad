@@ -20,7 +20,9 @@
 
 #include <regex>
 #include <wx/debug.h>
+#include <wx/dir.h>
 #include <wx/filename.h>
+#include <wx/snglinst.h>
 #include <wx/stdpaths.h>
 #include <wx/utils.h>
 
@@ -30,18 +32,17 @@
 #include <gestfich.h>
 #include <kiplatform/environment.h>
 #include <kiway.h>
+#include <lockfile.h>
 #include <macros.h>
 #include <paths.h>
 #include <project.h>
 #include <project/project_archiver.h>
 #include <project/project_file.h>
 #include <project/project_local_settings.h>
-#include <settings/app_settings.h>
 #include <settings/color_settings.h>
 #include <settings/common_settings.h>
 #include <settings/settings_manager.h>
 #include <wildcards_and_files_ext.h>
-
 
 
 /// Project settings path will be <projectname> + this
@@ -164,7 +165,14 @@ void SETTINGS_MANAGER::FlushAndRelease( JSON_SETTINGS* aSettings, bool aSave )
         if( aSave )
             ( *it )->SaveToFile( GetPathForSettingsFile( it->get() ) );
 
+        size_t typeHash = typeid( *it->get() ).hash_code();
+
+        if( m_app_settings_cache.count( typeHash ) )
+            m_app_settings_cache.erase( typeHash );
+
         m_settings.erase( it );
+
+
     }
 }
 
@@ -397,6 +405,11 @@ public:
             return wxDIR_CONTINUE;
         }
 
+        // Don't migrate hotkeys config files; we don't have a reasonable migration handler for them
+        // and so there is no way to resolve conflicts at the moment
+        if( file.GetExt() == wxT( "hotkeys" ) )
+            return wxDIR_CONTINUE;
+
         wxString path = file.GetPath();
 
         path.Replace( m_src, m_dest, false );
@@ -508,6 +521,25 @@ bool SETTINGS_MANAGER::GetPreviousVersionPaths( std::vector<wxString>* aPaths )
     if( wxGetEnv( wxT( "KICAD_CONFIG_HOME" ), nullptr ) )
         base_paths.emplace_back( wxFileName( calculateUserSettingsPath( false, false ), "" ) );
 
+#ifdef __WXGTK__
+    // When running inside FlatPak, KIPLATFORM::ENV::GetUserConfigPath() will return a sandboxed
+    // path.  In case the user wants to move from non-FlatPak KiCad to FlatPak KiCad, let's add our
+    // best guess as to the non-FlatPak config path.  Unfortunately FlatPak also hides the host
+    // XDG_CONFIG_HOME, so if the user customizes their config path, they will have to browse
+    // for it.
+    {
+        wxFileName wxGtkPath;
+        wxGtkPath.AssignDir( "~/.config/kicad" );
+        wxGtkPath.MakeAbsolute();
+        base_paths.emplace_back( wxGtkPath.GetPath() );
+
+        // We also want to pick up regular flatpak if we are nightly
+        wxGtkPath.AssignDir( "~/.var/app/org.kicad.KiCad/config/kicad" );
+        wxGtkPath.MakeAbsolute();
+        base_paths.emplace_back( wxGtkPath.GetPath() );
+    }
+#endif
+
     wxString subdir;
     std::string mine = GetSettingsVersion();
 
@@ -526,17 +558,24 @@ bool SETTINGS_MANAGER::GetPreviousVersionPaths( std::vector<wxString>* aPaths )
         }
     };
 
+    std::set<wxString> checkedPaths;
+
     for( auto base_path : base_paths )
     {
+        if( checkedPaths.count( base_path.GetFullPath() ) )
+            continue;
+
+        checkedPaths.insert( base_path.GetFullPath() );
+
         if( !dir.Open( base_path.GetFullPath() ) )
         {
             wxLogTrace( traceSettings, "GetPreviousVersionName: could not open base path %s",
-                    base_path.GetFullPath() );
+                        base_path.GetFullPath() );
             continue;
         }
 
         wxLogTrace( traceSettings, "GetPreviousVersionName: checking base path %s",
-            base_path.GetFullPath() );
+                    base_path.GetFullPath() );
 
         if( dir.GetFirst( &subdir, wxEmptyString, wxDIR_DIRS ) )
         {
@@ -554,7 +593,7 @@ bool SETTINGS_MANAGER::GetPreviousVersionPaths( std::vector<wxString>* aPaths )
         if( IsSettingsPathValid( dir.GetNameWithSep() ) )
         {
             wxLogTrace( traceSettings,
-                    "GetPreviousVersionName: root path %s is valid", dir.GetName() );
+                        "GetPreviousVersionName: root path %s is valid", dir.GetName() );
             aPaths->push_back( dir.GetName() );
         }
     }
@@ -566,6 +605,12 @@ bool SETTINGS_MANAGER::GetPreviousVersionPaths( std::vector<wxString>* aPaths )
 bool SETTINGS_MANAGER::IsSettingsPathValid( const wxString& aPath )
 {
     wxFileName test( aPath, "kicad_common" );
+
+    if( test.Exists() )
+        return true;
+
+    test.SetExt( "json" );
+
     return test.Exists();
 }
 
@@ -714,11 +759,20 @@ bool SETTINGS_MANAGER::LoadProject( const wxString& aFullPath, bool aSetActive )
     if( m_projects.count( fullPath ) )
         return true;
 
+    bool readOnly = false;
+    std::unique_ptr<wxSingleInstanceChecker> lockFile = ::LockFile( fullPath );
+
+    if( !lockFile )
+    {
+        wxLogTrace( traceSettings, "Project %s is locked; opening read-only", fullPath );
+        readOnly = true;
+    }
+
     // No MDI yet
     if( aSetActive && !m_projects.empty() )
     {
         PROJECT* oldProject = m_projects.begin()->second;
-        unloadProjectFile( oldProject, true );
+        unloadProjectFile( oldProject, false );
         m_projects.erase( m_projects.begin() );
     }
 
@@ -730,7 +784,12 @@ bool SETTINGS_MANAGER::LoadProject( const wxString& aFullPath, bool aSetActive )
     bool success = loadProjectFile( *project );
 
     if( success )
-        project->SetReadOnly( project->GetProjectFile().IsReadOnly() );
+    {
+        project->SetReadOnly( readOnly || project->GetProjectFile().IsReadOnly() );
+
+        if( lockFile )
+            m_project_lock.reset( lockFile.release() );
+    }
 
     m_projects_list.push_back( std::move( project ) );
     m_projects[fullPath] = m_projects_list.back().get();
@@ -781,6 +840,9 @@ bool SETTINGS_MANAGER::UnloadProject( PROJECT* aProject, bool aSave )
 
     // Remove the reference in the environment to the previous project
     wxSetEnv( PROJECT_VAR_NAME, "" );
+
+    // Release lock on the file, in case we had one
+    m_project_lock = nullptr;
 
     if( m_kiway )
         m_kiway->ProjectChanged();

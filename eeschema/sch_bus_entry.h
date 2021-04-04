@@ -88,9 +88,9 @@ public:
         m_pos += aMoveVector;
     }
 
-    void MirrorY( int aYaxis_position ) override;
-    void MirrorX( int aXaxis_position ) override;
-    void Rotate( wxPoint aPosition ) override;
+    void MirrorHorizontally( int aCenter ) override;
+    void MirrorVertically( int aCenter ) override;
+    void Rotate( wxPoint aCenter ) override;
 
     bool IsDangling() const override;
 
@@ -104,7 +104,7 @@ public:
     bool HitTest( const wxPoint& aPosition, int aAccuracy = 0 ) const override;
     bool HitTest( const EDA_RECT& aRect, bool aContained, int aAccuracy = 0 ) const override;
 
-    void Plot( PLOTTER* aPlotter ) override;
+    void Plot( PLOTTER* aPlotter ) const override;
 
     void GetMsgPanelInfo( EDA_DRAW_FRAME* aFrame, std::vector<MSG_PANEL_ITEM>& aList ) override;
 
@@ -161,7 +161,7 @@ public:
 
     virtual bool ConnectionPropagatesTo( const EDA_ITEM* aItem ) const override;
 
-    BITMAP_DEF GetMenuImage() const override;
+    BITMAPS GetMenuImage() const override;
 
     bool UpdateDanglingState( std::vector<DANGLING_END_ITEM>& aItemList,
                               const SCH_SHEET_PATH* aPath = nullptr ) override;
@@ -206,7 +206,7 @@ public:
 
     EDA_ITEM* Clone() const override;
 
-    BITMAP_DEF GetMenuImage() const override;
+    BITMAPS GetMenuImage() const override;
 
     bool UpdateDanglingState( std::vector<DANGLING_END_ITEM>& aItemList,
                               const SCH_SHEET_PATH* aPath = nullptr ) override;

@@ -38,14 +38,15 @@
 #include <confirm.h>
 #include <pcb_edit_frame.h>
 #include <eda_dde.h>
+#include <macros.h>
 #include <wx/file.h>
 #include <wx/log.h>
 #include <wx/snglinst.h>
 #include <gestfich.h>
+#include <paths.h>
 #include <pcbnew.h>
 #include <pcbnew_settings.h>
 #include <settings/settings_manager.h>
-#include <board.h>
 #include <class_draw_panel_gal.h>
 #include <fp_lib_table.h>
 #include <footprint_edit_frame.h>
@@ -56,6 +57,7 @@
 #include <dialogs/dialog_configure_paths.h>
 #include "invoke_pcb_dialog.h"
 #include "dialog_global_fp_lib_table_config.h"
+#include <wildcards_and_files_ext.h>
 
 
 namespace PCB {
@@ -245,7 +247,7 @@ static bool scriptingSetup()
     wxString pypath;
 
     // Bundle scripting folder (<kicad.app>/Contents/SharedSupport/scripting)
-    pypath += GetOSXKicadDataDir() + wxT( "/scripting" );
+    pypath += PATHS::GetOSXKicadDataDir() + wxT( "/scripting" );
 
     // $(KICAD_PATH)/scripting/plugins is always added in kicadplugins.i
     if( wxGetenv("KICAD_PATH") != NULL )
@@ -414,26 +416,26 @@ void IFACE::SaveFileAs( const wxString& aProjectBasePath, const wxString& aSrcPr
 
     destFile.SetPath( destPath );
 
-    if( ext == "kicad_pcb" || ext == "kicad_pcb-bak" )
+    if( ext == KiCadPcbFileExtension || ext == KiCadPcbFileExtension + BackupFileSuffix )
     {
         if( destFile.GetName() == aSrcProjectName )
             destFile.SetName( aNewProjectName );
 
         KiCopyFile( aSrcFilePath, destFile.GetFullPath(), aErrors );
     }
-    else if( ext == "brd" )
+    else if( ext == LegacyPcbFileExtension )
     {
         if( destFile.GetName() == aSrcProjectName )
             destFile.SetName( aNewProjectName );
 
         KiCopyFile( aSrcFilePath, destFile.GetFullPath(), aErrors );
     }
-    else if( ext == "mod" || ext == "kicad_mod" )
+    else if( ext == LegacyFootprintLibPathExtension || ext == KiCadFootprintFileExtension )
     {
         // Footprints are not project-specific.  Keep their source names.
         KiCopyFile( aSrcFilePath, destFile.GetFullPath(), aErrors );
     }
-    else if( ext == "cmp" )
+    else if( ext == ComponentFileExtension )
     {
         // JEY TODO
     }

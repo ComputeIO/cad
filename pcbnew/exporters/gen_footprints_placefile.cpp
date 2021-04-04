@@ -57,6 +57,7 @@ public:
         m_parent( aParent ),
         m_plotOpts( aParent->GetPlotSettings() )
     {
+        m_messagesPanel->SetFileName( Prj().GetProjectPath() + wxT( "report.txt" ) );
         m_reporter = &m_messagesPanel->Reporter();
         initDialog();
 
@@ -149,7 +150,7 @@ bool DIALOG_GEN_FOOTPRINT_POSITION::m_includeBoardEdge = false;
 
 void DIALOG_GEN_FOOTPRINT_POSITION::initDialog()
 {
-    m_browseButton->SetBitmap( KiBitmap( small_folder_xpm ) );
+    m_browseButton->SetBitmap( KiBitmap( BITMAPS::small_folder ) );
 
     auto cfg = m_parent->GetPcbNewSettings();
 

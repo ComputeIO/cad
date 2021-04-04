@@ -31,6 +31,7 @@
 #include <plotters_specific.h>
 #include <kicad_string.h>
 #include <locale_io.h>
+#include <macros.h>
 #include <pcb_edit_frame.h>
 #include <pgm_base.h>
 
@@ -38,7 +39,6 @@
 
 #include <pcbplot.h>
 #include <wildcards_and_files_ext.h>
-#include <reporter.h>
 #include <gbr_metadata.h>
 #include <footprint.h>
 
@@ -184,8 +184,8 @@ int PLACEFILE_GERBER_WRITER::CreatePlaceFile( wxString& aFullFilename, PCB_LAYER
         {
             gbr_metadata.SetApertureAttrib( GBR_APERTURE_METADATA::GBR_APERTURE_ATTRIB_CMP_COURTYARD );
 
-            SHAPE_POLY_SET& courtyard = onBack ? footprint->GetPolyCourtyardBack()
-                                               : footprint->GetPolyCourtyardFront();
+            const SHAPE_POLY_SET& courtyard = onBack ? footprint->GetPolyCourtyardBack()
+                                                     : footprint->GetPolyCourtyardFront();
 
             for( int ii = 0; ii < courtyard.OutlineCount(); ii++ )
             {

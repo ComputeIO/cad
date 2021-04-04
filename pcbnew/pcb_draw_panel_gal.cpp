@@ -26,17 +26,18 @@
 #include <pcb_view.h>
 #include <view/wx_view_controls.h>
 #include <pcb_painter.h>
-#include <page_layout/ws_proxy_view_item.h>
+#include <drawing_sheet/ds_proxy_view_item.h>
 #include <connectivity/connectivity_data.h>
 
 #include <board.h>
 #include <footprint.h>
 #include <track.h>
+#include <macros.h>
 #include <pcb_marker.h>
 #include <pcb_base_frame.h>
 #include <pcbnew_settings.h>
 #include <ratsnest/ratsnest_data.h>
-#include <ratsnest/ratsnest_viewitem.h>
+#include <ratsnest/ratsnest_view_item.h>
 
 #include <pgm_base.h>
 #include <settings/settings_manager.h>
@@ -51,184 +52,89 @@
 
 using namespace std::placeholders;
 
-const LAYER_NUM GAL_LAYER_ORDER[] = { LAYER_GP_OVERLAY,
-                                      LAYER_SELECT_OVERLAY,
-                                      LAYER_DRC_ERROR,
-                                      LAYER_DRC_WARNING,
-                                      LAYER_DRC_EXCLUSION,
-                                      LAYER_MARKER_SHADOWS,
-                                      LAYER_PAD_NETNAMES,
-                                      LAYER_VIA_NETNAMES,
-                                      Dwgs_User,
-                                      Cmts_User,
-                                      Eco1_User,
-                                      Eco2_User,
-                                      Edge_Cuts,
+const LAYER_NUM GAL_LAYER_ORDER[] =
+{
+    LAYER_GP_OVERLAY,
+    LAYER_SELECT_OVERLAY,
+    LAYER_DRC_ERROR, LAYER_DRC_WARNING, LAYER_DRC_EXCLUSION, LAYER_MARKER_SHADOWS,
+    LAYER_PAD_NETNAMES, LAYER_VIA_NETNAMES,
+    Dwgs_User,
+    Cmts_User,
+    Eco1_User, Eco2_User,
+    Edge_Cuts, Margin,
 
-                                      User_1,
-                                      ZONE_LAYER_FOR( User_1 ),
-                                      User_2,
-                                      ZONE_LAYER_FOR( User_2 ),
-                                      User_3,
-                                      ZONE_LAYER_FOR( User_3 ),
-                                      User_4,
-                                      ZONE_LAYER_FOR( User_4 ),
-                                      User_5,
-                                      ZONE_LAYER_FOR( User_5 ),
-                                      User_6,
-                                      ZONE_LAYER_FOR( User_6 ),
-                                      User_7,
-                                      ZONE_LAYER_FOR( User_7 ),
-                                      User_8,
-                                      ZONE_LAYER_FOR( User_8 ),
-                                      User_9,
-                                      ZONE_LAYER_FOR( User_9 ),
+    User_1, ZONE_LAYER_FOR( User_1 ),
+    User_2, ZONE_LAYER_FOR( User_2 ),
+    User_3, ZONE_LAYER_FOR( User_3 ),
+    User_4, ZONE_LAYER_FOR( User_4 ),
+    User_5, ZONE_LAYER_FOR( User_5 ),
+    User_6, ZONE_LAYER_FOR( User_6 ),
+    User_7, ZONE_LAYER_FOR( User_7 ),
+    User_8, ZONE_LAYER_FOR( User_8 ),
+    User_9, ZONE_LAYER_FOR( User_9 ),
 
-                                      LAYER_MOD_TEXT_FR,
-                                      LAYER_MOD_REFERENCES,
-                                      LAYER_MOD_VALUES,
+    LAYER_MOD_TEXT_FR,
+    LAYER_MOD_REFERENCES, LAYER_MOD_VALUES,
 
-                                      LAYER_RATSNEST,
-                                      LAYER_ANCHOR,
-                                      LAYER_VIA_HOLES,
-                                      LAYER_VIA_HOLEWALLS,
-                                      LAYER_PAD_PLATEDHOLES,
-                                      LAYER_PAD_HOLEWALLS,
-                                      LAYER_NON_PLATEDHOLES,
-                                      LAYER_VIA_THROUGH,
-                                      LAYER_VIA_BBLIND,
-                                      LAYER_VIA_MICROVIA,
-                                      LAYER_PADS_TH,
+    LAYER_RATSNEST,
+    LAYER_ANCHOR,
+    LAYER_VIA_HOLES, LAYER_VIA_HOLEWALLS,
+    LAYER_PAD_PLATEDHOLES, LAYER_PAD_HOLEWALLS, LAYER_NON_PLATEDHOLES,
+    LAYER_VIA_THROUGH, LAYER_VIA_BBLIND, LAYER_VIA_MICROVIA,
+    LAYER_PADS_TH,
 
-                                      LAYER_PAD_FR_NETNAMES,
-                                      LAYER_PAD_FR,
-                                      NETNAMES_LAYER_INDEX( F_Cu ),
-                                      F_Cu,
-                                      ZONE_LAYER_FOR( F_Cu ),
-                                      F_Mask,
-                                      ZONE_LAYER_FOR( F_Mask ),
-                                      F_SilkS,
-                                      ZONE_LAYER_FOR( F_SilkS ),
-                                      F_Paste,
-                                      ZONE_LAYER_FOR( F_Paste ),
-                                      F_Adhes,
-                                      ZONE_LAYER_FOR( F_Adhes ),
-                                      F_CrtYd,
-                                      ZONE_LAYER_FOR( F_CrtYd ),
-                                      F_Fab,
-                                      ZONE_LAYER_FOR( F_Fab ),
+    LAYER_PAD_FR_NETNAMES, LAYER_PAD_FR,
+    NETNAMES_LAYER_INDEX( F_Cu ), F_Cu, ZONE_LAYER_FOR( F_Cu ),
+    F_Mask, ZONE_LAYER_FOR( F_Mask ),
+    F_SilkS, ZONE_LAYER_FOR( F_SilkS ),
+    F_Paste, ZONE_LAYER_FOR( F_Paste ),
+    F_Adhes, ZONE_LAYER_FOR( F_Adhes ),
+    F_CrtYd, ZONE_LAYER_FOR( F_CrtYd ),
+    F_Fab, ZONE_LAYER_FOR( F_Fab ),
 
-                                      NETNAMES_LAYER_INDEX( In1_Cu ),
-                                      In1_Cu,
-                                      ZONE_LAYER_FOR( In1_Cu ),
-                                      NETNAMES_LAYER_INDEX( In2_Cu ),
-                                      In2_Cu,
-                                      ZONE_LAYER_FOR( In2_Cu ),
-                                      NETNAMES_LAYER_INDEX( In3_Cu ),
-                                      In3_Cu,
-                                      ZONE_LAYER_FOR( In3_Cu ),
-                                      NETNAMES_LAYER_INDEX( In4_Cu ),
-                                      In4_Cu,
-                                      ZONE_LAYER_FOR( In4_Cu ),
-                                      NETNAMES_LAYER_INDEX( In5_Cu ),
-                                      In5_Cu,
-                                      ZONE_LAYER_FOR( In5_Cu ),
-                                      NETNAMES_LAYER_INDEX( In6_Cu ),
-                                      In6_Cu,
-                                      ZONE_LAYER_FOR( In6_Cu ),
-                                      NETNAMES_LAYER_INDEX( In7_Cu ),
-                                      In7_Cu,
-                                      ZONE_LAYER_FOR( In7_Cu ),
-                                      NETNAMES_LAYER_INDEX( In8_Cu ),
-                                      In8_Cu,
-                                      ZONE_LAYER_FOR( In8_Cu ),
-                                      NETNAMES_LAYER_INDEX( In9_Cu ),
-                                      In9_Cu,
-                                      ZONE_LAYER_FOR( In9_Cu ),
-                                      NETNAMES_LAYER_INDEX( In10_Cu ),
-                                      In10_Cu,
-                                      ZONE_LAYER_FOR( In10_Cu ),
-                                      NETNAMES_LAYER_INDEX( In11_Cu ),
-                                      In11_Cu,
-                                      ZONE_LAYER_FOR( In11_Cu ),
-                                      NETNAMES_LAYER_INDEX( In12_Cu ),
-                                      In12_Cu,
-                                      ZONE_LAYER_FOR( In12_Cu ),
-                                      NETNAMES_LAYER_INDEX( In13_Cu ),
-                                      In13_Cu,
-                                      ZONE_LAYER_FOR( In13_Cu ),
-                                      NETNAMES_LAYER_INDEX( In14_Cu ),
-                                      In14_Cu,
-                                      ZONE_LAYER_FOR( In14_Cu ),
-                                      NETNAMES_LAYER_INDEX( In15_Cu ),
-                                      In15_Cu,
-                                      ZONE_LAYER_FOR( In15_Cu ),
-                                      NETNAMES_LAYER_INDEX( In16_Cu ),
-                                      In16_Cu,
-                                      ZONE_LAYER_FOR( In16_Cu ),
-                                      NETNAMES_LAYER_INDEX( In17_Cu ),
-                                      In17_Cu,
-                                      ZONE_LAYER_FOR( In17_Cu ),
-                                      NETNAMES_LAYER_INDEX( In18_Cu ),
-                                      In18_Cu,
-                                      ZONE_LAYER_FOR( In18_Cu ),
-                                      NETNAMES_LAYER_INDEX( In19_Cu ),
-                                      In19_Cu,
-                                      ZONE_LAYER_FOR( In19_Cu ),
-                                      NETNAMES_LAYER_INDEX( In20_Cu ),
-                                      In20_Cu,
-                                      ZONE_LAYER_FOR( In20_Cu ),
-                                      NETNAMES_LAYER_INDEX( In21_Cu ),
-                                      In21_Cu,
-                                      ZONE_LAYER_FOR( In21_Cu ),
-                                      NETNAMES_LAYER_INDEX( In22_Cu ),
-                                      In22_Cu,
-                                      ZONE_LAYER_FOR( In22_Cu ),
-                                      NETNAMES_LAYER_INDEX( In23_Cu ),
-                                      In23_Cu,
-                                      ZONE_LAYER_FOR( In23_Cu ),
-                                      NETNAMES_LAYER_INDEX( In24_Cu ),
-                                      In24_Cu,
-                                      ZONE_LAYER_FOR( In24_Cu ),
-                                      NETNAMES_LAYER_INDEX( In25_Cu ),
-                                      In25_Cu,
-                                      ZONE_LAYER_FOR( In25_Cu ),
-                                      NETNAMES_LAYER_INDEX( In26_Cu ),
-                                      In26_Cu,
-                                      ZONE_LAYER_FOR( In26_Cu ),
-                                      NETNAMES_LAYER_INDEX( In27_Cu ),
-                                      In27_Cu,
-                                      ZONE_LAYER_FOR( In27_Cu ),
-                                      NETNAMES_LAYER_INDEX( In28_Cu ),
-                                      In28_Cu,
-                                      ZONE_LAYER_FOR( In28_Cu ),
-                                      NETNAMES_LAYER_INDEX( In29_Cu ),
-                                      In29_Cu,
-                                      ZONE_LAYER_FOR( In29_Cu ),
-                                      NETNAMES_LAYER_INDEX( In30_Cu ),
-                                      In30_Cu,
-                                      ZONE_LAYER_FOR( In30_Cu ),
+    NETNAMES_LAYER_INDEX( In1_Cu ),   In1_Cu,   ZONE_LAYER_FOR( In1_Cu ),
+    NETNAMES_LAYER_INDEX( In2_Cu ),   In2_Cu,   ZONE_LAYER_FOR( In2_Cu ),
+    NETNAMES_LAYER_INDEX( In3_Cu ),   In3_Cu,   ZONE_LAYER_FOR( In3_Cu ),
+    NETNAMES_LAYER_INDEX( In4_Cu ),   In4_Cu,   ZONE_LAYER_FOR( In4_Cu ),
+    NETNAMES_LAYER_INDEX( In5_Cu ),   In5_Cu,   ZONE_LAYER_FOR( In5_Cu ),
+    NETNAMES_LAYER_INDEX( In6_Cu ),   In6_Cu,   ZONE_LAYER_FOR( In6_Cu ),
+    NETNAMES_LAYER_INDEX( In7_Cu ),   In7_Cu,   ZONE_LAYER_FOR( In7_Cu ),
+    NETNAMES_LAYER_INDEX( In8_Cu ),   In8_Cu,   ZONE_LAYER_FOR( In8_Cu ),
+    NETNAMES_LAYER_INDEX( In9_Cu ),   In9_Cu,   ZONE_LAYER_FOR( In9_Cu ),
+    NETNAMES_LAYER_INDEX( In10_Cu ),  In10_Cu,  ZONE_LAYER_FOR( In10_Cu ),
+    NETNAMES_LAYER_INDEX( In11_Cu ),  In11_Cu,  ZONE_LAYER_FOR( In11_Cu ),
+    NETNAMES_LAYER_INDEX( In12_Cu ),  In12_Cu,  ZONE_LAYER_FOR( In12_Cu ),
+    NETNAMES_LAYER_INDEX( In13_Cu ),  In13_Cu,  ZONE_LAYER_FOR( In13_Cu ),
+    NETNAMES_LAYER_INDEX( In14_Cu ),  In14_Cu,  ZONE_LAYER_FOR( In14_Cu ),
+    NETNAMES_LAYER_INDEX( In15_Cu ),  In15_Cu,  ZONE_LAYER_FOR( In15_Cu ),
+    NETNAMES_LAYER_INDEX( In16_Cu ),  In16_Cu,  ZONE_LAYER_FOR( In16_Cu ),
+    NETNAMES_LAYER_INDEX( In17_Cu ),  In17_Cu,  ZONE_LAYER_FOR( In17_Cu ),
+    NETNAMES_LAYER_INDEX( In18_Cu ),  In18_Cu,  ZONE_LAYER_FOR( In18_Cu ),
+    NETNAMES_LAYER_INDEX( In19_Cu ),  In19_Cu,  ZONE_LAYER_FOR( In19_Cu ),
+    NETNAMES_LAYER_INDEX( In20_Cu ),  In20_Cu,  ZONE_LAYER_FOR( In20_Cu ),
+    NETNAMES_LAYER_INDEX( In21_Cu ),  In21_Cu,  ZONE_LAYER_FOR( In21_Cu ),
+    NETNAMES_LAYER_INDEX( In22_Cu ),  In22_Cu,  ZONE_LAYER_FOR( In22_Cu ),
+    NETNAMES_LAYER_INDEX( In23_Cu ),  In23_Cu,  ZONE_LAYER_FOR( In23_Cu ),
+    NETNAMES_LAYER_INDEX( In24_Cu ),  In24_Cu,  ZONE_LAYER_FOR( In24_Cu ),
+    NETNAMES_LAYER_INDEX( In25_Cu ),  In25_Cu,  ZONE_LAYER_FOR( In25_Cu ),
+    NETNAMES_LAYER_INDEX( In26_Cu ),  In26_Cu,  ZONE_LAYER_FOR( In26_Cu ),
+    NETNAMES_LAYER_INDEX( In27_Cu ),  In27_Cu,  ZONE_LAYER_FOR( In27_Cu ),
+    NETNAMES_LAYER_INDEX( In28_Cu ),  In28_Cu,  ZONE_LAYER_FOR( In28_Cu ),
+    NETNAMES_LAYER_INDEX( In29_Cu ),  In29_Cu,  ZONE_LAYER_FOR( In29_Cu ),
+    NETNAMES_LAYER_INDEX( In30_Cu ),  In30_Cu,  ZONE_LAYER_FOR( In30_Cu ),
 
-                                      LAYER_PAD_BK_NETNAMES,
-                                      LAYER_PAD_BK,
-                                      NETNAMES_LAYER_INDEX( B_Cu ),
-                                      B_Cu,
-                                      ZONE_LAYER_FOR( B_Cu ),
-                                      B_Mask,
-                                      ZONE_LAYER_FOR( B_Mask ),
-                                      B_SilkS,
-                                      ZONE_LAYER_FOR( B_SilkS ),
-                                      B_Paste,
-                                      ZONE_LAYER_FOR( B_Paste ),
-                                      B_Adhes,
-                                      ZONE_LAYER_FOR( B_Adhes ),
-                                      B_CrtYd,
-                                      ZONE_LAYER_FOR( B_CrtYd ),
-                                      B_Fab,
-                                      ZONE_LAYER_FOR( B_Fab ),
+    LAYER_PAD_BK_NETNAMES, LAYER_PAD_BK,
+    NETNAMES_LAYER_INDEX( B_Cu ), B_Cu, ZONE_LAYER_FOR( B_Cu ),
+    B_Mask, ZONE_LAYER_FOR( B_Mask ),
+    B_SilkS, ZONE_LAYER_FOR( B_SilkS ),
+    B_Paste, ZONE_LAYER_FOR( B_Paste ),
+    B_Adhes, ZONE_LAYER_FOR( B_Adhes ),
+    B_CrtYd, ZONE_LAYER_FOR( B_CrtYd ),
+    B_Fab, ZONE_LAYER_FOR( B_Fab ),
 
-                                      LAYER_MOD_TEXT_BK,
-                                      LAYER_WORKSHEET };
+    LAYER_MOD_TEXT_BK,
+    LAYER_DRAWINGSHEET
+};
 
 
 PCB_DRAW_PANEL_GAL::PCB_DRAW_PANEL_GAL( wxWindow* aParentWindow, wxWindowID aWindowId,
@@ -293,8 +199,8 @@ void PCB_DRAW_PANEL_GAL::DisplayBoard( BOARD* aBoard )
         t.detach();
     }
 
-    if( m_worksheet )
-        m_worksheet->SetFileName( TO_UTF8( aBoard->GetFileName() ) );
+    if( m_drawingSheet )
+        m_drawingSheet->SetFileName( TO_UTF8( aBoard->GetFileName() ) );
 
     // Load drawings
     for( BOARD_ITEM* drawing : aBoard->Drawings() )
@@ -321,15 +227,15 @@ void PCB_DRAW_PANEL_GAL::DisplayBoard( BOARD* aBoard )
         m_view->Add( zone );
 
     // Ratsnest
-    m_ratsnest = std::make_unique<KIGFX::RATSNEST_VIEWITEM>( aBoard->GetConnectivity() );
+    m_ratsnest = std::make_unique<RATSNEST_VIEW_ITEM>( aBoard->GetConnectivity() );
     m_view->Add( m_ratsnest.get() );
 }
 
 
-void PCB_DRAW_PANEL_GAL::SetWorksheet( KIGFX::WS_PROXY_VIEW_ITEM* aWorksheet )
+void PCB_DRAW_PANEL_GAL::SetDrawingSheet( DS_PROXY_VIEW_ITEM* aDrawingSheet )
 {
-    m_worksheet.reset( aWorksheet );
-    m_view->Add( m_worksheet.get() );
+    m_drawingSheet.reset( aDrawingSheet );
+    m_view->Add( m_drawingSheet.get() );
 }
 
 
@@ -642,8 +548,8 @@ void PCB_DRAW_PANEL_GAL::RedrawRatsnest()
 
 BOX2I PCB_DRAW_PANEL_GAL::GetDefaultViewBBox() const
 {
-    if( m_worksheet && m_view->IsLayerVisible( LAYER_WORKSHEET ) )
-        return m_worksheet->ViewBBox();
+    if( m_drawingSheet && m_view->IsLayerVisible( LAYER_DRAWINGSHEET ) )
+        return m_drawingSheet->ViewBBox();
 
     return BOX2I();
 }
@@ -724,8 +630,8 @@ void PCB_DRAW_PANEL_GAL::setDefaultLayerDeps()
     m_view->SetLayerTarget( LAYER_MARKER_SHADOWS, KIGFX::TARGET_OVERLAY );
     m_view->SetLayerDisplayOnly( LAYER_MARKER_SHADOWS );
 
-    m_view->SetLayerTarget( LAYER_WORKSHEET, KIGFX::TARGET_NONCACHED );
-    m_view->SetLayerDisplayOnly( LAYER_WORKSHEET ) ;
+    m_view->SetLayerTarget( LAYER_DRAWINGSHEET, KIGFX::TARGET_NONCACHED );
+    m_view->SetLayerDisplayOnly( LAYER_DRAWINGSHEET ) ;
     m_view->SetLayerDisplayOnly( LAYER_GRID );
 }
 

@@ -25,12 +25,13 @@
 #include <wx/nonownedwnd.h>
 #include <wx/toplevel.h>
 #include <wx/button.h>
+#include <wx/window.h>
 
 
 bool KIPLATFORM::UI::IsDarkTheme()
 {
-    // TODO(ISM): Write this function
-    return false;
+    NSString *appearanceName = [[NSAppearance currentAppearance] name];
+    return !![appearanceName containsString:@"Dark"];
 }
 
 
@@ -38,6 +39,13 @@ void KIPLATFORM::UI::ForceFocus( wxWindow* aWindow )
 {
     // On OSX we need to forcefully give the focus to the window
     [[aWindow->GetHandle() window] makeFirstResponder: aWindow->GetHandle()];
+}
+
+
+bool KIPLATFORM::UI::IsWindowActive( wxWindow* aWindow )
+{
+    // Just always return true
+    return true;
 }
 
 
@@ -90,4 +98,10 @@ bool KIPLATFORM::UI::IsStockCursorOk( wxStockCursor aCursor )
 void KIPLATFORM::UI::EllipsizeChoiceBox( wxChoice* aChoice )
 {
     // Not implemented
+}
+
+
+double KIPLATFORM::UI::GetSystemScaleFactor( const wxWindow* aWindow )
+{
+    return aWindow->GetContentScaleFactor();
 }

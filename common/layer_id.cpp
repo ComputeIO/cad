@@ -117,7 +117,6 @@ wxString LayerName( int aLayer )
     case LAYER_DEVICE:                  return _( "Symbol body outlines" );
     case LAYER_DEVICE_BACKGROUND:       return _( "Symbol body fills" );
     case LAYER_NOTES:                   return _( "Notes" );
-    case LAYER_NETNAM:                  return _( "Net names" );
     case LAYER_PIN:                     return _( "Pins" );
     case LAYER_SHEET:                   return _( "Sheet borders" );
     case LAYER_SHEET_BACKGROUND:        return _( "Sheet backgrounds" );
@@ -136,7 +135,7 @@ wxString LayerName( int aLayer )
     case LAYER_BRIGHTENED:              return _( "Highlighted items" );
     case LAYER_HIDDEN:                  return _( "Hidden items" );
     case LAYER_SELECTION_SHADOWS:       return _( "Selection highlight" );
-    case LAYER_SCHEMATIC_WORKSHEET:     return _( "Worksheet" );
+    case LAYER_SCHEMATIC_DRAWINGSHEET:  return _( "Drawing sheet" );
 
     // GAL_LAYER_ID
 
@@ -166,7 +165,7 @@ wxString LayerName( int aLayer )
     case LAYER_DRC_EXCLUSION:           return _( "DRC exclusions" );
     case LAYER_MARKER_SHADOWS:          return _( "DRC marker shadows" );
     case LAYER_ANCHOR:                  return _( "Anchors" );
-    case LAYER_WORKSHEET:               return _( "Worksheet" );
+    case LAYER_DRAWINGSHEET:            return _( "Drawing sheet" );
     case LAYER_CURSOR:                  return _( "Cursor" );
     case LAYER_AUX_ITEMS:               return _( "Helper items" );
     case LAYER_GRID:                    return _( "Grid" );

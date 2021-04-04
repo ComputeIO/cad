@@ -31,6 +31,7 @@
 #include <footprint_edit_frame.h>
 #include <pcbnew_id.h>
 #include <confirm.h>
+#include <widgets/infobar.h>
 #include <bitmaps.h>
 #include <footprint.h>
 #include <project.h>
@@ -76,6 +77,15 @@ bool FOOTPRINT_EDITOR_CONTROL::Init()
                 LIB_ID sel = m_frame->GetTreeFPID();
                 return !sel.GetLibNickname().empty() && sel.GetLibItemName().empty();
             };
+    // The libInferredCondition allows you to do things like New Symbol and Paste with a
+    // symbol selected (in other words, when we know the library context even if the library
+    // itself isn't selected.
+    auto libInferredCondition =
+            [ this ]( const SELECTION& aSel )
+            {
+                LIB_ID sel = m_frame->GetTreeFPID();
+                return !sel.GetLibNickname().empty();
+            };
     auto pinnedLibSelectedCondition =
             [ this ]( const SELECTION& aSel )
             {
@@ -99,33 +109,29 @@ bool FOOTPRINT_EDITOR_CONTROL::Init()
     ctxMenu.AddItem( ACTIONS::unpinLibrary,          pinnedLibSelectedCondition );
 
     ctxMenu.AddSeparator();
-    ctxMenu.AddItem( ACTIONS::newLibrary,            SELECTION_CONDITIONS::ShowAlways );
-    ctxMenu.AddItem( ACTIONS::addLibrary,            SELECTION_CONDITIONS::ShowAlways );
-    ctxMenu.AddItem( ACTIONS::save,                  libSelectedCondition );
-    ctxMenu.AddItem( ACTIONS::saveAs,                libSelectedCondition );
-    ctxMenu.AddItem( ACTIONS::revert,                libSelectedCondition );
-
-    ctxMenu.AddSeparator();
-    ctxMenu.AddItem( PCB_ACTIONS::newFootprint, libSelectedCondition );
+    ctxMenu.AddItem( PCB_ACTIONS::newFootprint,      libSelectedCondition );
 #ifdef KICAD_SCRIPTING
     ctxMenu.AddItem( PCB_ACTIONS::createFootprint, libSelectedCondition );
 #endif
-    ctxMenu.AddItem( PCB_ACTIONS::editFootprint,     fpSelectedCondition );
 
     ctxMenu.AddSeparator();
-    ctxMenu.AddItem( ACTIONS::save,                  fpSelectedCondition );
+    ctxMenu.AddItem( ACTIONS::save,                  libSelectedCondition || libInferredCondition );
+    ctxMenu.AddItem( ACTIONS::saveAs,                libSelectedCondition );
     ctxMenu.AddItem( ACTIONS::saveCopyAs,            fpSelectedCondition );
-    ctxMenu.AddItem( ACTIONS::revert,                fpSelectedCondition );
+    ctxMenu.AddItem( ACTIONS::revert,                libSelectedCondition || libInferredCondition );
 
     ctxMenu.AddSeparator();
     ctxMenu.AddItem( PCB_ACTIONS::cutFootprint,      fpSelectedCondition );
     ctxMenu.AddItem( PCB_ACTIONS::copyFootprint,     fpSelectedCondition );
-    ctxMenu.AddItem( PCB_ACTIONS::pasteFootprint,    SELECTION_CONDITIONS::ShowAlways );
-    ctxMenu.AddItem( PCB_ACTIONS::deleteFootprint, fpSelectedCondition );
+    ctxMenu.AddItem( PCB_ACTIONS::pasteFootprint,    libInferredCondition );
+    ctxMenu.AddItem( PCB_ACTIONS::deleteFootprint,   fpSelectedCondition );
 
     ctxMenu.AddSeparator();
-    ctxMenu.AddItem( PCB_ACTIONS::importFootprint, libSelectedCondition );
+    ctxMenu.AddItem( PCB_ACTIONS::importFootprint,   libInferredCondition );
     ctxMenu.AddItem( PCB_ACTIONS::exportFootprint,   fpSelectedCondition );
+
+    // If we've got nothing else to show, at least show a hide tree option
+    ctxMenu.AddItem( PCB_ACTIONS::hideFootprintTree, !libInferredCondition );
 
     return true;
 }
@@ -250,6 +256,7 @@ int FOOTPRINT_EDITOR_CONTROL::Save( const TOOL_EVENT& aEvent )
 
             canvas()->ForceRefresh();
             m_frame->ClearModify();
+            m_frame->UpdateTitle();
         }
     }
 
@@ -276,6 +283,12 @@ int FOOTPRINT_EDITOR_CONTROL::SaveAs( const TOOL_EVENT& aEvent )
         {
             view()->Update( footprint() );
             m_frame->ClearModify();
+
+            // Get rid of the save-will-update-board-only (or any other dismissable warning)
+            WX_INFOBAR* infobar = m_frame->GetInfoBar();
+
+            if( infobar->IsShown() && infobar->HasCloseButton() )
+                infobar->Dismiss();
 
             canvas()->ForceRefresh();
             m_frame->SyncLibraryTree( true );
@@ -521,7 +534,8 @@ void FOOTPRINT_EDITOR_CONTROL::setTransitions()
 
     Go( &FOOTPRINT_EDITOR_CONTROL::PinLibrary,           ACTIONS::pinLibrary.MakeEvent() );
     Go( &FOOTPRINT_EDITOR_CONTROL::UnpinLibrary,         ACTIONS::unpinLibrary.MakeEvent() );
-    Go( &FOOTPRINT_EDITOR_CONTROL::ToggleFootprintTree,  PCB_ACTIONS::toggleFootprintTree.MakeEvent() );
+    Go( &FOOTPRINT_EDITOR_CONTROL::ToggleFootprintTree,  PCB_ACTIONS::showFootprintTree.MakeEvent() );
+    Go( &FOOTPRINT_EDITOR_CONTROL::ToggleFootprintTree,  PCB_ACTIONS::hideFootprintTree.MakeEvent() );
     Go( &FOOTPRINT_EDITOR_CONTROL::Properties,           PCB_ACTIONS::footprintProperties.MakeEvent() );
     Go( &FOOTPRINT_EDITOR_CONTROL::DefaultPadProperties, PCB_ACTIONS::defaultPadProperties.MakeEvent() );
 }

@@ -39,6 +39,8 @@
 class KIFACE_I;
 class TOOL_INTERACTIVE;
 
+enum class BITMAPS : unsigned int;
+
 /**
  * Defines the structure of a menu based on ACTIONs.
  */
@@ -71,16 +73,16 @@ public:
      *
      * @param aIcon is the icon to be assigned. NULL is used to remove icon.
      */
-    void SetIcon( const BITMAP_OPAQUE* aIcon );
+    void SetIcon( BITMAPS aIcon );
 
     /**
      * Add a wxWidgets-style entry to the menu.
      *
      * After highlighting/selecting the entry, a wxWidgets event is generated.
      */
-    wxMenuItem* Add( const wxString& aLabel, int aId, const BITMAP_OPAQUE* aIcon );
+    wxMenuItem* Add( const wxString& aLabel, int aId, BITMAPS aIcon );
     wxMenuItem* Add( const wxString& aLabel, const wxString& aToolTip, int aId,
-                     const BITMAP_OPAQUE* aIcon,  bool aIsCheckmarkEntry = false );
+                     BITMAPS aIcon,  bool aIsCheckmarkEntry = false );
 
     /**
      * Add an entry to the menu based on the #TOOL_ACTION object.
@@ -88,8 +90,12 @@ public:
      * After selecting the entry, a #TOOL_EVENT command containing name of the action is sent.
      *
      * @param aAction is the action to be added to menu entry.
+     * @param aIsCheckmarkEntry is true to indicate a check menu entry, false for normal menu entry
+     * @param aOverrideLabel is the label to show in the menu (overriding the action's menu text)
+     *        when non-empty
      */
-    wxMenuItem* Add( const TOOL_ACTION& aAction, bool aIsCheckmarkEntry = false );
+    wxMenuItem* Add( const TOOL_ACTION& aAction, bool aIsCheckmarkEntry = false,
+                     const wxString& aOverrideLabel = wxEmptyString );
 
     /**
      * Add an action menu as a submenu.
@@ -172,7 +178,8 @@ public:
 
     virtual bool PassHelpTextToHandler() { return false; }
 
-    static constexpr bool CHECK = true;
+    static constexpr bool NORMAL = false;
+    static constexpr bool CHECK  = true;
 
 protected:
     ///< Return an instance of this class. It has to be overridden in inheriting classes.
@@ -243,7 +250,7 @@ protected:
     wxString m_title;
 
     ///< Optional icon
-    const BITMAP_OPAQUE* m_icon;
+    BITMAPS m_icon;
 
     ///< Stores the id number of selected item.
     int m_selected;

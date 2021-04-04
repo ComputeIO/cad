@@ -45,6 +45,7 @@
 #include <netlist_exporters/netlist_exporter_pspice.h>
 #include <eeschema_settings.h>
 #include <schematic.h>
+#include <paths.h>
 
 #include <eeschema_id.h>
 #include <wx/regex.h>
@@ -67,9 +68,27 @@ enum panel_netlist_index {
 /* wxPanels for creating the NoteBook pages for each netlist format: */
 class NETLIST_PAGE_DIALOG : public wxPanel
 {
+
 public:
+    /**
+     * Create a setup page for one netlist format.
+     *
+     * Used in Netlist format dialog box creation.
+     *
+     * @param parent is the wxNotebook parent.
+     * @param title is the title of the notebook page.
+     * @param id_NetType is the netlist ID type.
+     */
+    NETLIST_PAGE_DIALOG( wxNotebook* parent, const wxString& title,
+                         NETLIST_TYPE_ID id_NetType );
+    ~NETLIST_PAGE_DIALOG() { };
+
+    /**
+     * @return the name of the netlist format for this page.
+     */
+    const wxString GetPageNetFmtName() { return m_pageNetFmtName; }
+
     NETLIST_TYPE_ID   m_IdNetType;
-    wxCheckBox*       m_IsCurrentFormat;
     // opt to reformat passive component values (e.g. 1M -> 1Meg):
     wxCheckBox*       m_AdjustPassiveValues;
     wxTextCtrl*       m_CommandStringCtrl;
@@ -81,46 +100,19 @@ public:
 
 private:
     wxString          m_pageNetFmtName;
-
-public:
-    /** Constructor to create a setup page for one netlist format.
-     * Used in Netlist format Dialog box creation
-     * @param parent = wxNotebook * parent
-     * @param title = title (name) of the notebook page
-     * @param id_NetType = netlist type id
-     */
-    NETLIST_PAGE_DIALOG( wxNotebook* parent, const wxString& title,
-                         NETLIST_TYPE_ID id_NetType );
-    ~NETLIST_PAGE_DIALOG() { };
-
-    /**
-     * function GetPageNetFmtName
-     * @return the name of the netlist format for this page
-     * This is also the page label.
-     */
-    const wxString GetPageNetFmtName() { return m_pageNetFmtName; }
 };
 
 
 /* Dialog frame for creating netlists */
 class NETLIST_DIALOG : public NETLIST_DIALOG_BASE
 {
-    friend class NETLIST_PAGE_DIALOG;
-
 public:
-    SCH_EDIT_FRAME*      m_Parent;
-    wxString             m_DefaultNetFmtName;
-    NETLIST_PAGE_DIALOG* m_PanelNetType[4 + CUSTOMPANEL_COUNTMAX];
-
-protected:
-    bool                 m_asFormatSelected;
-
-public:
-    // Constructor and destructor
     NETLIST_DIALOG( SCH_EDIT_FRAME* parent );
     ~NETLIST_DIALOG() { };
 
 private:
+    friend class NETLIST_PAGE_DIALOG;
+
     void InstallCustomPages();
     NETLIST_PAGE_DIALOG* AddOneCustomPage( const wxString & aTitle,
                                            const wxString & aCommandString,
@@ -132,58 +124,53 @@ private:
     // Called when changing the notebook page (and therefore the current netlist format)
     void OnNetlistTypeSelection( wxNotebookEvent& event ) override;
 
-    // called when checking the "Default format" wxCheckBox in the current page of the notbook
-    void SelectDefaultNetlistType( wxCommandEvent& event );
-
     /**
-     * Function OnAddGenerator
-     * Add a new panel for a new netlist plugin
+     * Add a new panel for a new netlist plugin.
      */
     void OnAddGenerator( wxCommandEvent& event ) override;
 
     /**
-     * Function OnDelGenerator
-     * Remove a panel relative to a netlist plugin
+     * Remove a panel relative to a netlist plugin.
      */
     void OnDelGenerator( wxCommandEvent& event ) override;
 
     /**
-     * Run the external spice simulator command
+     * Run the external spice simulator command.
      */
     void OnRunExternSpiceCommand( wxCommandEvent& event );
 
     /**
-     * Enable (if the command line is not empty or disable the button to run spice command
+     * Enable (if the command line is not empty or disable the button to run spice command.
      */
     void OnRunSpiceButtUI( wxUpdateUIEvent& event );
 
     /**
-     * Function WriteCurrentNetlistSetup
-     * Write the current netlist options setup in the configuration
+     * Write the current netlist options setup in the configuration.
      */
     void WriteCurrentNetlistSetup();
 
     /**
-     * Function FilenamePrms
-     * returns the filename extension and the wildcard string for this curr
-     * or a void name if there is no default name
-     * @param aType = the netlist type ( NET_TYPE_PCBNEW ... )
-     * @param aExt = a reference to a wxString to return the default  file ext.
-     * @param aWildCard =  reference to a wxString to return the default wildcard.
-     * @return true for known netlist type, false for custom formats
+     * Return the filename extension and the wildcard string for this page or a void name
+     * if there is no default name.
+     *
+     * @param aType is the netlist type ( NET_TYPE_PCBNEW ... ).
+     * @param aExt [in] is a holder for the netlist file extension.
+     * @param aWildCard [in] is a holder for netlist file dialog wildcard.
+     * @return true for known netlist type, false for custom formats.
      */
-    bool FilenamePrms( NETLIST_TYPE_ID aType,
-                       wxString * aExt, wxString * aWildCard );
+    bool FilenamePrms( NETLIST_TYPE_ID aType,  wxString* aExt, wxString* aWildCard );
 
     DECLARE_EVENT_TABLE()
+
+public:
+    SCH_EDIT_FRAME*      m_Parent;
+    wxString             m_DefaultNetFmtName;
+    NETLIST_PAGE_DIALOG* m_PanelNetType[4 + CUSTOMPANEL_COUNTMAX];
 };
 
 
 class NETLIST_DIALOG_ADD_GENERATOR : public NETLIST_DIALOG_ADD_GENERATOR_BASE
 {
-private:
-   NETLIST_DIALOG* m_Parent;
-
 public:
     NETLIST_DIALOG_ADD_GENERATOR( NETLIST_DIALOG* parent );
 
@@ -192,7 +179,6 @@ public:
 
 private:
     /**
-     * Function OnOKClick
      * Validate info relative to a new netlist plugin
      */
     void OnOKClick( wxCommandEvent& event ) override;
@@ -201,21 +187,20 @@ private:
      * Browse plugin files, and set m_CommandStringCtrl field
      */
     void OnBrowseGenerators( wxCommandEvent& event ) override;
+
+   NETLIST_DIALOG* m_Parent;
 };
 
 
 /* Event id for notebook page buttons: */
 enum id_netlist {
     ID_CREATE_NETLIST = ID_END_EESCHEMA_ID_LIST + 1,
-    ID_CURRENT_FORMAT_IS_DEFAULT,
-    ID_ADD_SUBCIRCUIT_PREFIX,
     ID_USE_NETCODE_AS_NETNAME,
     ID_RUN_SIMULATOR
 };
 
 
 BEGIN_EVENT_TABLE( NETLIST_DIALOG, NETLIST_DIALOG_BASE )
-    EVT_CHECKBOX( ID_CURRENT_FORMAT_IS_DEFAULT, NETLIST_DIALOG::SelectDefaultNetlistType )
     EVT_BUTTON( ID_RUN_SIMULATOR, NETLIST_DIALOG::OnRunExternSpiceCommand )
     EVT_UPDATE_UI( ID_RUN_SIMULATOR, NETLIST_DIALOG::OnRunSpiceButtUI )
 END_EVENT_TABLE()
@@ -230,7 +215,6 @@ NETLIST_PAGE_DIALOG::NETLIST_PAGE_DIALOG( wxNotebook* parent, const wxString& ti
     m_pageNetFmtName      = title;
     m_CommandStringCtrl   = NULL;
     m_TitleStringCtrl     = NULL;
-    m_IsCurrentFormat     = NULL;
     m_AdjustPassiveValues = NULL;
 
     wxString netfmtName = static_cast<NETLIST_DIALOG*>( parent->GetParent() )->m_DefaultNetFmtName;
@@ -252,16 +236,6 @@ NETLIST_PAGE_DIALOG::NETLIST_PAGE_DIALOG( wxNotebook* parent, const wxString& ti
     UpperBoxSizer->Add( m_LeftBoxSizer, 0, wxGROW | wxALL, 5 );
     UpperBoxSizer->Add( m_RightBoxSizer, 0, wxALIGN_CENTER_VERTICAL | wxALL, 5 );
     UpperBoxSizer->Add( m_RightOptionsBoxSizer, 0, wxALIGN_CENTER_VERTICAL | wxALL, 5 );
-
-    wxStaticText* text = new wxStaticText( this, -1, _( "Options:" ) );
-    m_LeftBoxSizer->Add( text, 0, wxGROW | wxBOTTOM | wxRIGHT, 5 );
-
-    m_IsCurrentFormat = new wxCheckBox( this, ID_CURRENT_FORMAT_IS_DEFAULT, _( "Default format" ) );
-    m_LeftBoxSizer->Add( m_IsCurrentFormat, 0, wxGROW | wxBOTTOM | wxRIGHT, 5 );
-    m_IsCurrentFormat->SetValue( selected );
-
-    if( selected )
-        ( (NETLIST_DIALOG*)parent->GetParent() )->m_asFormatSelected = true;
 }
 
 
@@ -279,9 +253,7 @@ NETLIST_DIALOG::NETLIST_DIALOG( SCH_EDIT_FRAME* parent ) :
         page = NULL;
 
     // Add notebook pages:
-    m_asFormatSelected = false;     // Will be set to true, if a format is selected
-
-    m_PanelNetType[PANELPCBNEW] = new NETLIST_PAGE_DIALOG( m_NoteBook, wxT( "Pcbnew" ),
+    m_PanelNetType[PANELPCBNEW] = new NETLIST_PAGE_DIALOG( m_NoteBook, wxT( "KiCad" ),
                                                            NET_TYPE_PCBNEW );
 
     m_PanelNetType[PANELORCADPCB2] = new NETLIST_PAGE_DIALOG( m_NoteBook, wxT( "OrcadPCB2" ),
@@ -292,18 +264,6 @@ NETLIST_DIALOG::NETLIST_DIALOG( SCH_EDIT_FRAME* parent ) :
 
     InstallPageSpice();
     InstallCustomPages();
-
-    // Ensure a netlist format is selected:
-    if( !m_asFormatSelected )
-    {
-        m_PanelNetType[PANELPCBNEW]->m_IsCurrentFormat->SetValue( true );
-        m_NoteBook->SetSelection( PANELPCBNEW );
-        m_DefaultNetFmtName = m_PanelNetType[PANELPCBNEW]->GetPageNetFmtName();
-        // call OnNetlistTypeSelection to update some widgets.
-        // SetSelection() do nothing if the current page is already PANELPCBNEW
-        wxNotebookEvent event;
-        OnNetlistTypeSelection( event );
-    }
 
     // We use a sdbSizer here to get the order right, which is platform-dependent
     m_sdbSizer2OK->SetLabel( _( "Export Netlist" ) );
@@ -447,33 +407,14 @@ NETLIST_PAGE_DIALOG* NETLIST_DIALOG::AddOneCustomPage( const wxString & aTitle,
 }
 
 
-void NETLIST_DIALOG::SelectDefaultNetlistType( wxCommandEvent& event )
-{
-    for( NETLIST_PAGE_DIALOG*& page : m_PanelNetType)
-    {
-        if( page )
-            page->m_IsCurrentFormat->SetValue( false );
-    }
-
-    NETLIST_PAGE_DIALOG* currPage = (NETLIST_PAGE_DIALOG*) m_NoteBook->GetCurrentPage();
-
-    if( currPage == NULL )
-        return;
-
-    SCHEMATIC_SETTINGS& settings = m_Parent->Schematic().Settings();
-
-    m_DefaultNetFmtName      = currPage->GetPageNetFmtName();
-    settings.m_NetFormatName = m_DefaultNetFmtName;
-    currPage->m_IsCurrentFormat->SetValue( true );
-}
-
-
 void NETLIST_DIALOG::OnNetlistTypeSelection( wxNotebookEvent& event )
 {
     NETLIST_PAGE_DIALOG* currPage = (NETLIST_PAGE_DIALOG*) m_NoteBook->GetCurrentPage();
 
     if( currPage == NULL )
         return;
+
+    m_DefaultNetFmtName = currPage->GetPageNetFmtName();
 
     m_buttonDelGenerator->Enable( currPage->m_IdNetType >= NET_TYPE_CUSTOM1 );
 }
@@ -489,15 +430,7 @@ void NETLIST_DIALOG::NetlistUpdateOpt()
     settings.m_SpiceAdjustPassiveValues = adjust;
     settings.m_SpiceCommandString       = spice_cmd_string;
     settings.m_NetFormatName            = wxEmptyString;
-
-    for( NETLIST_PAGE_DIALOG*& page : m_PanelNetType )
-    {
-        if( page == nullptr )
-            break;
-
-        if( page->m_IsCurrentFormat->GetValue() )
-            settings.m_NetFormatName = page->GetPageNetFmtName();
-    }
+    settings.m_NetFormatName            = m_DefaultNetFmtName;
 }
 
 
@@ -663,12 +596,7 @@ void NETLIST_DIALOG::OnDelGenerator( wxCommandEvent& event )
 
     currPage->m_CommandStringCtrl->SetValue( wxEmptyString );
     currPage->m_TitleStringCtrl->SetValue( wxEmptyString );
-
-    if( currPage->m_IsCurrentFormat->IsChecked() )
-    {
-        currPage->m_IsCurrentFormat->SetValue( false );
-        m_PanelNetType[PANELPCBNEW]->m_IsCurrentFormat->SetValue( true );
-    }
+    m_DefaultNetFmtName = m_PanelNetType[PANELPCBNEW]->GetPageNetFmtName();
 
     WriteCurrentNetlistSetup();
     EndModal( NET_PLUGIN_CHANGE );
@@ -748,7 +676,7 @@ void NETLIST_DIALOG_ADD_GENERATOR::OnBrowseGenerators( wxCommandEvent& event )
 #ifndef __WXMAC__
     Path = Pgm().GetExecutablePath();
 #else
-    Path = GetOSXKicadDataDir() + wxT( "/plugins" );
+    Path = PATHS::GetOSXKicadDataDir() + wxT( "/plugins" );
 #endif
     FullFileName = EDA_FILE_SELECTOR( _( "Generator files:" ), Path, FullFileName,
                                       wxEmptyString, wxFileSelectorDefaultWildcardStr,
@@ -791,7 +719,7 @@ int InvokeDialogNetList( SCH_EDIT_FRAME* aCaller )
 
     int ret = dlg.ShowModal();
 
-    // Update the default netlist and store it in prj config if it was explicitely changed.
+    // Update the default netlist and store it in prj config if it was explicitly changed.
     settings.m_NetFormatName = dlg.m_DefaultNetFmtName; // can have temporary changed
 
     if( curr_default_netformat != dlg.m_DefaultNetFmtName )

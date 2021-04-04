@@ -53,12 +53,12 @@
 #include <tool/zoom_menu.h>
 #include <trace_helpers.h>
 #include <view/view.h>
-#include <page_layout/ws_draw_item.h>
+#include <drawing_sheet/ds_draw_item.h>
 #include <widgets/msgpanel.h>
+#include <wx/event.h>
 #include <wx/snglinst.h>
 #include <dialogs/dialog_grid_settings.h>
 #include <widgets/ui_common.h>
-#include <zoom_defines.h>
 
 #define FR_HISTORY_LIST_CNT     10   ///< Maximum size of the find/replace history stacks.
 
@@ -66,6 +66,8 @@
 BEGIN_EVENT_TABLE( EDA_DRAW_FRAME, KIWAY_PLAYER )
     EVT_UPDATE_UI( ID_ON_GRID_SELECT, EDA_DRAW_FRAME::OnUpdateSelectGrid )
     EVT_UPDATE_UI( ID_ON_ZOOM_SELECT, EDA_DRAW_FRAME::OnUpdateSelectZoom )
+
+    EVT_ACTIVATE( EDA_DRAW_FRAME::onActivate )
 END_EVENT_TABLE()
 
 
@@ -301,9 +303,12 @@ void EDA_DRAW_FRAME::OnSelectGrid( wxCommandEvent& event )
         // Re-check the current grid.
         wxUpdateUIEvent dummy;
         OnUpdateSelectGrid( dummy );
-        // Now run the Grid Settings... dialog
-        wxCommandEvent dummy2;
-        OnGridSettings( dummy2 );
+
+        // Give a time-slice to close the menu before opening the dialog.
+        // (Only matters on some versions of GTK.)
+        wxSafeYield();
+
+        m_toolManager->RunAction( ACTIONS::gridProperties, true );
     }
     else
     {
@@ -744,6 +749,20 @@ wxPoint EDA_DRAW_FRAME::GetNearestGridPosition( const wxPoint& aPosition ) const
 }
 
 
+wxPoint EDA_DRAW_FRAME::GetNearestHalfGridPosition( const wxPoint& aPosition ) const
+{
+    const wxPoint& gridOrigin = GetGridOrigin();
+    VECTOR2D       gridSize = GetCanvas()->GetGAL()->GetGridSize() / 2.0;
+
+    double xOffset = fmod( gridOrigin.x, gridSize.x );
+    int    x = KiROUND( (aPosition.x - xOffset) / gridSize.x );
+    double yOffset = fmod( gridOrigin.y, gridSize.y );
+    int    y = KiROUND( (aPosition.y - yOffset) / gridSize.y );
+
+    return wxPoint( KiROUND( x * gridSize.x + xOffset ), KiROUND( y * gridSize.y + yOffset ) );
+}
+
+
 const BOX2I EDA_DRAW_FRAME::GetDocumentExtents( bool aIncludeAllVisible ) const
 {
     return BOX2I();
@@ -817,13 +836,13 @@ void EDA_DRAW_FRAME::FocusOnLocation( const wxPoint& aPos )
 
 static const wxString productName = wxT( "KiCad E.D.A.  " );
 
-void PrintPageLayout( const RENDER_SETTINGS* aSettings, const PAGE_INFO& aPageInfo,
-                      const wxString& aFullSheetName, const wxString& aFileName,
-                      const TITLE_BLOCK& aTitleBlock, int aSheetCount, const wxString& aPageNumber,
-                      double aMils2Iu, const PROJECT* aProject, const wxString& aSheetLayer,
-                      bool aIsFirstPage )
+void PrintDrawingSheet( const RENDER_SETTINGS* aSettings, const PAGE_INFO& aPageInfo,
+                        const wxString& aFullSheetName, const wxString& aFileName,
+                        const TITLE_BLOCK& aTitleBlock, int aSheetCount,
+                        const wxString& aPageNumber, double aMils2Iu, const PROJECT* aProject,
+                        const wxString& aSheetLayer, bool aIsFirstPage )
 {
-    WS_DRAW_ITEM_LIST drawList;
+    DS_DRAW_ITEM_LIST drawList;
 
     drawList.SetDefaultPenSize( aSettings->GetDefaultPenWidth() );
     drawList.SetMilsToIUfactor( aMils2Iu );
@@ -835,16 +854,16 @@ void PrintPageLayout( const RENDER_SETTINGS* aSettings, const PAGE_INFO& aPageIn
     drawList.SetProject( aProject );
     drawList.SetIsFirstPage( aIsFirstPage );
 
-    drawList.BuildWorkSheetGraphicList( aPageInfo, aTitleBlock );
+    drawList.BuildDrawItemsList( aPageInfo, aTitleBlock );
 
     // Draw item list
     drawList.Print( aSettings );
 }
 
 
-void EDA_DRAW_FRAME::PrintWorkSheet( const RENDER_SETTINGS* aSettings, BASE_SCREEN* aScreen,
-                                     double aMils2Iu, const wxString& aFilename,
-                                     const wxString& aSheetLayer )
+void EDA_DRAW_FRAME::PrintDrawingSheet( const RENDER_SETTINGS* aSettings, BASE_SCREEN* aScreen,
+                                        double aMils2Iu, const wxString &aFilename,
+                                        const wxString &aSheetLayer )
 {
     if( !m_showBorderAndTitleBlock )
         return;
@@ -858,9 +877,9 @@ void EDA_DRAW_FRAME::PrintWorkSheet( const RENDER_SETTINGS* aSettings, BASE_SCRE
         DC->SetAxisOrientation( true, false );
     }
 
-    PrintPageLayout( aSettings, GetPageSettings(), GetScreenDesc(), aFilename, GetTitleBlock(),
-                     aScreen->GetPageCount(), aScreen->GetPageNumber(), aMils2Iu, &Prj(),
-                     aSheetLayer, aScreen->GetVirtualPageNumber() == 1 );
+    ::PrintDrawingSheet( aSettings, GetPageSettings(), GetScreenDesc(), aFilename, GetTitleBlock(),
+                         aScreen->GetPageCount(), aScreen->GetPageNumber(), aMils2Iu, &Prj(),
+                         aSheetLayer, aScreen->GetVirtualPageNumber() == 1 );
 
     if( origin.y > 0 )
     {
@@ -1032,20 +1051,40 @@ void EDA_DRAW_FRAME::resolveCanvasType()
                 saveCanvasTypeSetting( EDA_DRAW_PANEL_GAL::GAL_TYPE_CAIRO );
 
                 // Switch to OpenGL, which will save the new setting if successful
-                GetToolManager()->RunAction( ACTIONS::acceleratedGraphics, true );
+                SwitchCanvas( EDA_DRAW_PANEL_GAL::GAL_TYPE_OPENGL );
 
                 // Switch back to Cairo if OpenGL is not supported
                 if( GetCanvas()->GetBackend() == EDA_DRAW_PANEL_GAL::GAL_TYPE_NONE )
-                    GetToolManager()->RunAction( ACTIONS::standardGraphics, true );
+                    SwitchCanvas( EDA_DRAW_PANEL_GAL::GAL_TYPE_CAIRO );
+
+                HardRedraw();
             }
             else
             {
                 // If they were on legacy, switch to Cairo
-                GetToolManager()->RunAction( ACTIONS::standardGraphics, true );
+                SwitchCanvas( EDA_DRAW_PANEL_GAL::GAL_TYPE_CAIRO );
+                HardRedraw();
             }
         }
 
         m_firstRunDialogSetting = 1;
         SaveSettings( config() );
     }
+}
+
+
+void EDA_DRAW_FRAME::handleActivateEvent( wxActivateEvent& aEvent )
+{
+    // Force a refresh of the message panel to ensure that the text is the right color
+    // when the window activates
+    if( !IsIconized() )
+        m_messagePanel->Refresh();
+}
+
+
+void EDA_DRAW_FRAME::onActivate( wxActivateEvent& aEvent )
+{
+    handleActivateEvent( aEvent );
+
+    aEvent.Skip();
 }

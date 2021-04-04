@@ -124,11 +124,49 @@ static void isPlated( LIBEVAL::CONTEXT* aCtx, void* self )
 
     PCB_EXPR_VAR_REF* vref = static_cast<PCB_EXPR_VAR_REF*>( self );
     BOARD_ITEM*       item = vref ? vref->GetObject( aCtx ) : nullptr;
-    PAD*              pad = dynamic_cast<PAD*>( item );
 
-    if( pad && pad->GetAttribute() == PAD_ATTRIB_PTH )
+    if( !item )
+        return;
+
+    if( item->Type() == PCB_PAD_T && static_cast<PAD*>( item )->GetAttribute() == PAD_ATTRIB_PTH )
+        result->Set( 1.0 );
+    else if( item->Type() == PCB_VIA_T )
         result->Set( 1.0 );
 }
+
+
+static bool insideFootprintCourtyard( BOARD_ITEM* aItem, const EDA_RECT& aItemBBox,
+                                      std::shared_ptr<SHAPE> aItemShape, PCB_EXPR_CONTEXT* aCtx,
+                                      FOOTPRINT* aFootprint, PCB_LAYER_ID aSide = UNDEFINED_LAYER )
+{
+    SHAPE_POLY_SET footprintCourtyard;
+
+    if( aSide == F_Cu )
+        footprintCourtyard = aFootprint->GetPolyCourtyardFront();
+    else if( aSide == B_Cu )
+        footprintCourtyard = aFootprint->GetPolyCourtyardBack();
+    else if( aFootprint->IsFlipped() )
+        footprintCourtyard = aFootprint->GetPolyCourtyardBack();
+    else
+        footprintCourtyard = aFootprint->GetPolyCourtyardFront();
+
+    if( aItem->Type() == PCB_ZONE_T || aItem->Type() == PCB_FP_ZONE_T )
+    {
+        // A zone must be entirely inside the courtyard to be considered
+        if( !aFootprint->GetBoundingBox().Contains( aItemBBox ) )
+            return false;
+    }
+    else
+    {
+        if( !aFootprint->GetBoundingBox().Intersects( aItemBBox ) )
+            return false;
+    }
+
+    if( !aItemShape )
+        aItemShape = aItem->GetEffectiveShape( aCtx->GetLayer() );
+
+    return footprintCourtyard.Collide( aItemShape.get() );
+};
 
 
 static void insideCourtyard( LIBEVAL::CONTEXT* aCtx, void* self )
@@ -147,13 +185,15 @@ static void insideCourtyard( LIBEVAL::CONTEXT* aCtx, void* self )
         return;
     }
 
-    PCB_EXPR_VAR_REF*      vref = static_cast<PCB_EXPR_VAR_REF*>( self );
-    BOARD_ITEM*            item = vref ? vref->GetObject( aCtx ) : nullptr;
-    EDA_RECT               itemBBox;
-    std::shared_ptr<SHAPE> shape;
+    PCB_EXPR_VAR_REF* vref = static_cast<PCB_EXPR_VAR_REF*>( self );
+    BOARD_ITEM*       item = vref ? vref->GetObject( aCtx ) : nullptr;
 
     if( !item )
         return;
+
+    BOARD*                 board = item->GetBoard();
+    EDA_RECT               itemBBox;
+    std::shared_ptr<SHAPE> shape;
 
     if( item->Type() == PCB_ZONE_T || item->Type() == PCB_FP_ZONE_T )
         itemBBox = static_cast<ZONE*>( item )->GetCachedBoundingBox();
@@ -163,20 +203,20 @@ static void insideCourtyard( LIBEVAL::CONTEXT* aCtx, void* self )
     auto insideFootprint =
             [&]( FOOTPRINT* footprint ) -> bool
             {
-                SHAPE_POLY_SET footprintCourtyard;
-
-                if( footprint->IsFlipped() )
-                    footprintCourtyard = footprint->GetPolyCourtyardBack();
-                else
-                    footprintCourtyard = footprint->GetPolyCourtyardFront();
-
-                if( !footprint->GetBoundingBox().Intersects( itemBBox ) )
+                if( !footprint )
                     return false;
 
-                if( !shape )
-                    shape = item->GetEffectiveShape( context->GetLayer() );
+                std::unique_lock<std::mutex>        cacheLock( board->m_CachesMutex );
+                std::pair<BOARD_ITEM*, BOARD_ITEM*> key( footprint, item );
+                auto                                i = board->m_InsideCourtyardCache.find( key );
 
-                return footprintCourtyard.Collide( shape.get() );
+                if( i != board->m_InsideCourtyardCache.end() )
+                    return i->second;
+
+                bool res = insideFootprintCourtyard( item, itemBBox, shape, context, footprint );
+
+                board->m_InsideCourtyardCache[ key ] = res;
+                return res;
             };
 
     if( arg->AsString() == "A" )
@@ -191,7 +231,163 @@ static void insideCourtyard( LIBEVAL::CONTEXT* aCtx, void* self )
     }
     else
     {
-        for( FOOTPRINT* candidate : item->GetBoard()->Footprints() )
+        for( FOOTPRINT* candidate : board->Footprints() )
+        {
+            if( candidate->GetReference().Matches( arg->AsString() ) )
+            {
+                if( insideFootprint( candidate ) )
+                {
+                    result->Set( 1.0 );
+                    return;
+                }
+            }
+        }
+    }
+}
+
+
+static void insideFrontCourtyard( LIBEVAL::CONTEXT* aCtx, void* self )
+{
+    PCB_EXPR_CONTEXT* context = static_cast<PCB_EXPR_CONTEXT*>( aCtx );
+    LIBEVAL::VALUE*   arg = aCtx->Pop();
+    LIBEVAL::VALUE*   result = aCtx->AllocValue();
+
+    result->Set( 0.0 );
+    aCtx->Push( result );
+
+    if( !arg )
+    {
+        aCtx->ReportError( wxString::Format( _( "Missing argument to '%s'" ),
+                                             wxT( "insideFrontCourtyard()" ) ) );
+        return;
+    }
+
+    PCB_EXPR_VAR_REF* vref = static_cast<PCB_EXPR_VAR_REF*>( self );
+    BOARD_ITEM*       item = vref ? vref->GetObject( aCtx ) : nullptr;
+
+    if( !item )
+        return;
+
+    BOARD*                 board = item->GetBoard();
+    EDA_RECT               itemBBox;
+    std::shared_ptr<SHAPE> shape;
+
+    if( item->Type() == PCB_ZONE_T || item->Type() == PCB_FP_ZONE_T )
+        itemBBox = static_cast<ZONE*>( item )->GetCachedBoundingBox();
+    else
+        itemBBox = item->GetBoundingBox();
+
+    auto insideFootprint =
+            [&]( FOOTPRINT* footprint ) -> bool
+            {
+                if( !footprint )
+                    return false;
+
+                std::unique_lock<std::mutex>        cacheLock( board->m_CachesMutex );
+                std::pair<BOARD_ITEM*, BOARD_ITEM*> key( footprint, item );
+                auto                                i = board->m_InsideFCourtyardCache.find( key );
+
+                if( i != board->m_InsideFCourtyardCache.end() )
+                    return i->second;
+
+                bool res = insideFootprintCourtyard( item, itemBBox, shape, context, footprint,
+                                                        F_Cu );
+
+                board->m_InsideFCourtyardCache[ key ] = res;
+                return res;
+            };
+
+    if( arg->AsString() == "A" )
+    {
+        if( insideFootprint( dynamic_cast<FOOTPRINT*>( context->GetItem( 0 ) ) ) )
+            result->Set( 1.0 );
+    }
+    else if( arg->AsString() == "B" )
+    {
+        if( insideFootprint( dynamic_cast<FOOTPRINT*>( context->GetItem( 1 ) ) ) )
+            result->Set( 1.0 );
+    }
+    else
+    {
+        for( FOOTPRINT* candidate : board->Footprints() )
+        {
+            if( candidate->GetReference().Matches( arg->AsString() ) )
+            {
+                if( insideFootprint( candidate ) )
+                {
+                    result->Set( 1.0 );
+                    return;
+                }
+            }
+        }
+    }
+}
+
+
+static void insideBackCourtyard( LIBEVAL::CONTEXT* aCtx, void* self )
+{
+    PCB_EXPR_CONTEXT* context = static_cast<PCB_EXPR_CONTEXT*>( aCtx );
+    LIBEVAL::VALUE*   arg = aCtx->Pop();
+    LIBEVAL::VALUE*   result = aCtx->AllocValue();
+
+    result->Set( 0.0 );
+    aCtx->Push( result );
+
+    if( !arg )
+    {
+        aCtx->ReportError( wxString::Format( _( "Missing argument to '%s'" ),
+                                             wxT( "insideBackCourtyard()" ) ) );
+        return;
+    }
+
+    PCB_EXPR_VAR_REF* vref = static_cast<PCB_EXPR_VAR_REF*>( self );
+    BOARD_ITEM*       item = vref ? vref->GetObject( aCtx ) : nullptr;
+
+    if( !item )
+        return;
+
+    BOARD*                 board = item->GetBoard();
+    EDA_RECT               itemBBox;
+    std::shared_ptr<SHAPE> shape;
+
+    if( item->Type() == PCB_ZONE_T || item->Type() == PCB_FP_ZONE_T )
+        itemBBox = static_cast<ZONE*>( item )->GetCachedBoundingBox();
+    else
+        itemBBox = item->GetBoundingBox();
+
+    auto insideFootprint =
+            [&]( FOOTPRINT* footprint ) -> bool
+            {
+                if( !footprint )
+                    return false;
+
+                std::unique_lock<std::mutex>        cacheLock( board->m_CachesMutex );
+                std::pair<BOARD_ITEM*, BOARD_ITEM*> key( footprint, item );
+                auto                                i = board->m_InsideBCourtyardCache.find( key );
+
+                if( i != board->m_InsideBCourtyardCache.end() )
+                    return i->second;
+
+                bool res = insideFootprintCourtyard( item, itemBBox, shape, context, footprint,
+                                                        B_Cu );
+
+                board->m_InsideBCourtyardCache[ key ] = res;
+                return res;
+            };
+
+    if( arg->AsString() == "A" )
+    {
+        if( insideFootprint( dynamic_cast<FOOTPRINT*>( context->GetItem( 0 ) ) ) )
+            result->Set( 1.0 );
+    }
+    else if( arg->AsString() == "B" )
+    {
+        if( insideFootprint( dynamic_cast<FOOTPRINT*>( context->GetItem( 1 ) ) ) )
+            result->Set( 1.0 );
+    }
+    else
+    {
+        for( FOOTPRINT* candidate : board->Footprints() )
         {
             if( candidate->GetReference().Matches( arg->AsString() ) )
             {
@@ -222,23 +418,26 @@ static void insideArea( LIBEVAL::CONTEXT* aCtx, void* self )
         return;
     }
 
-    PCB_EXPR_VAR_REF*      vref = static_cast<PCB_EXPR_VAR_REF*>( self );
-    BOARD_ITEM*            item = vref ? vref->GetObject( aCtx ) : nullptr;
-    EDA_RECT               itemBBox;
-    std::shared_ptr<SHAPE> shape;
+    PCB_EXPR_VAR_REF* vref = static_cast<PCB_EXPR_VAR_REF*>( self );
+    BOARD_ITEM*       item = vref ? vref->GetObject( aCtx ) : nullptr;
 
     if( !item )
         return;
+
+    BOARD*                 board = item->GetBoard();
+    EDA_RECT               itemBBox;
+    std::shared_ptr<SHAPE> shape;
 
     if( item->Type() == PCB_ZONE_T || item->Type() == PCB_FP_ZONE_T )
         itemBBox = static_cast<ZONE*>( item )->GetCachedBoundingBox();
     else
         itemBBox = item->GetBoundingBox();
 
-    auto insideZone = [&]( ZONE* zone ) -> bool
-    {
-        if( !zone || zone == item )
-            return false;
+    auto realInsideZone =
+            [&]( ZONE* zone ) -> bool
+            {
+                if( !zone->GetCachedBoundingBox().Intersects( itemBBox ) )
+                    return false;
 
         if( !zone->GetCachedBoundingBox().Intersects( itemBBox ) )
             return false;
@@ -290,13 +489,21 @@ static void insideArea( LIBEVAL::CONTEXT* aCtx, void* self )
                 }
                 else
                 {
-                    return zoneOutline.Collide( &courtyard.Outline( 0 ) );
-                }
-            }
+                    ZONE* itemZone = static_cast<ZONE*>( item );
 
-            if( ( zone->GetLayerSet() & LSET::BackMask() ).any() )
-            {
-                SHAPE_POLY_SET courtyard = footprint->GetPolyCourtyardBack();
+                    if( !itemZone->IsFilled() )
+                        return false;
+
+                    DRC_RTREE* itemRTree = board->m_CopperZoneRTrees[ itemZone ].get();
+
+                    if( itemRTree )
+                    {
+                        for( PCB_LAYER_ID layer : zone->GetLayerSet().Seq() )
+                        {
+                            if( itemRTree->QueryColliding( itemBBox,  &zoneOutline, layer, 0 ) )
+                                return true;
+                        }
+                    }
 
                 if( courtyard.OutlineCount() == 0 )
                 {
@@ -338,6 +545,25 @@ static void insideArea( LIBEVAL::CONTEXT* aCtx, void* self )
         }
     };
 
+    auto insideZone =
+            [&]( ZONE* zone ) -> bool
+            {
+                if( !zone || zone == item || zone->GetParent() == item )
+                    return false;
+
+                std::unique_lock<std::mutex>        cacheLock( board->m_CachesMutex );
+                std::pair<BOARD_ITEM*, BOARD_ITEM*> key( zone, item );
+                auto                                i = board->m_InsideAreaCache.find( key );
+
+                if( i != board->m_InsideAreaCache.end() )
+                    return i->second;
+
+                bool isInside = realInsideZone( zone );
+
+                board->m_InsideAreaCache[ key ] = isInside;
+                return isInside;
+            };
+
     if( arg->AsString() == "A" )
     {
         if( insideZone( dynamic_cast<ZONE*>( context->GetItem( 0 ) ) ) )
@@ -352,7 +578,7 @@ static void insideArea( LIBEVAL::CONTEXT* aCtx, void* self )
     {
         KIID target( arg->AsString() );
 
-        for( ZONE* candidate : item->GetBoard()->Zones() )
+        for( ZONE* candidate : board->Zones() )
         {
             // Only a single zone can match the UUID; exit once we find a match whether
             // "inside" or not
@@ -365,7 +591,7 @@ static void insideArea( LIBEVAL::CONTEXT* aCtx, void* self )
             }
         }
 
-        for( FOOTPRINT* footprint : item->GetBoard()->Footprints() )
+        for( FOOTPRINT* footprint : board->Footprints() )
         {
             for( ZONE* candidate : footprint->Zones() )
             {
@@ -383,7 +609,7 @@ static void insideArea( LIBEVAL::CONTEXT* aCtx, void* self )
     }
     else  // Match on zone name
     {
-        for( ZONE* candidate : item->GetBoard()->Zones() )
+        for( ZONE* candidate : board->Zones() )
         {
             if( candidate->GetZoneName().Matches( arg->AsString() ) )
             {
@@ -396,7 +622,7 @@ static void insideArea( LIBEVAL::CONTEXT* aCtx, void* self )
             }
         }
 
-        for( FOOTPRINT* footprint : item->GetBoard()->Footprints() )
+        for( FOOTPRINT* footprint : board->Footprints() )
         {
             for( ZONE* candidate : footprint->Zones() )
             {
@@ -490,21 +716,60 @@ static void isBlindBuriedVia( LIBEVAL::CONTEXT* aCtx, void* self )
 }
 
 
-static void isDiffPair( LIBEVAL::CONTEXT* aCtx, void* self )
+static void isCoupledDiffPair( LIBEVAL::CONTEXT* aCtx, void* self )
 {
-    PCB_EXPR_VAR_REF* vref = static_cast<PCB_EXPR_VAR_REF*>( self );
-    BOARD_ITEM*       item = vref ? vref->GetObject( aCtx ) : nullptr;
+    PCB_EXPR_CONTEXT*     context = static_cast<PCB_EXPR_CONTEXT*>( aCtx );
+    BOARD_CONNECTED_ITEM* a = dynamic_cast<BOARD_CONNECTED_ITEM*>( context->GetItem( 0 ) );
+    BOARD_CONNECTED_ITEM* b = dynamic_cast<BOARD_CONNECTED_ITEM*>( context->GetItem( 1 ) );
+    LIBEVAL::VALUE*       result = aCtx->AllocValue();
+
+    result->Set( 0.0 );
+    aCtx->Push( result );
+
+    if( a && b )
+    {
+        NETINFO_ITEM* netinfo = a->GetNet();
+        wxString      coupledNet, dummy;
+
+        if( netinfo && DRC_ENGINE::MatchDpSuffix( netinfo->GetNetname(), coupledNet, dummy ) != 0 )
+        {
+            if( b->GetNetname() == coupledNet )
+                result->Set( 1.0 );
+        }
+    }
+}
+
+
+static void inDiffPair( LIBEVAL::CONTEXT* aCtx, void* self )
+{
+    LIBEVAL::VALUE*   arg    = aCtx->Pop();
+    PCB_EXPR_VAR_REF* vref   = static_cast<PCB_EXPR_VAR_REF*>( self );
+    BOARD_ITEM*       item   = vref ? vref->GetObject( aCtx ) : nullptr;
     LIBEVAL::VALUE*   result = aCtx->AllocValue();
 
     result->Set( 0.0 );
     aCtx->Push( result );
 
+    if( !arg )
+    {
+        aCtx->ReportError( wxString::Format( _( "Missing argument to '%s'" ),
+                                             wxT( "inDiffPair()" ) ) );
+        return;
+    }
+
     if( item && item->IsConnected() )
     {
         NETINFO_ITEM* netinfo = static_cast<BOARD_CONNECTED_ITEM*>( item )->GetNet();
-        int dummy_p, dummy_n;
 
-        if( netinfo && DRC_ENGINE::IsNetADiffPair( item->GetBoard(), netinfo, dummy_p, dummy_n ) )
+        wxString refName = netinfo->GetNetname();
+        wxString baseName, coupledNet;
+
+        int polarity = DRC_ENGINE::MatchDpSuffix( refName, coupledNet, baseName );
+
+        if( polarity == 0 )
+            return;
+
+        if( baseName.Matches( arg->AsString() ) )
             result->Set( 1.0 );
     }
 }
@@ -522,12 +787,15 @@ void PCB_EXPR_BUILTIN_FUNCTIONS::RegisterAllFunctions()
     RegisterFunc( "existsOnLayer('x')", existsOnLayer );
     RegisterFunc( "isPlated()", isPlated );
     RegisterFunc( "insideCourtyard('x')", insideCourtyard );
+    RegisterFunc( "insideFrontCourtyard('x')", insideFrontCourtyard );
+    RegisterFunc( "insideBackCourtyard('x')", insideBackCourtyard );
     RegisterFunc( "insideArea('x')", insideArea );
     RegisterFunc( "isMicroVia()", isMicroVia );
     RegisterFunc( "isBlindBuriedVia()", isBlindBuriedVia );
     RegisterFunc( "memberOf('x')", memberOf );
     RegisterFunc( "fromTo('x','y')", exprFromTo );
-    RegisterFunc( "isDiffPair()", isDiffPair );
+    RegisterFunc( "isCoupledDiffPair()", isCoupledDiffPair );
+    RegisterFunc( "inDiffPair('x')", inDiffPair );
 }
 
 
@@ -683,7 +951,7 @@ std::unique_ptr<LIBEVAL::VAR_REF> PCB_EXPR_UCODE::CreateVarRef( const wxString& 
             return nullptr;
     }
 
-    if( aVar == "A" )
+    if( aVar == "A" || aVar == "AB" )
         vref = std::make_unique<PCB_EXPR_VAR_REF>( 0 );
     else if( aVar == "B" )
         vref = std::make_unique<PCB_EXPR_VAR_REF>( 1 );

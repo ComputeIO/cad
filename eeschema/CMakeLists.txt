@@ -110,6 +110,8 @@ set( EESCHEMA_DLGS
     dialogs/dialog_symbol_remap_base.cpp
     dialogs/dialog_update_from_pcb.cpp
     dialogs/dialog_update_from_pcb_base.cpp
+    dialogs/dialog_update_symbol_fields.cpp
+    dialogs/dialog_update_symbol_fields_base.cpp
     dialogs/panel_eeschema_color_settings.cpp
     dialogs/panel_eeschema_template_fieldnames.cpp
     dialogs/panel_eeschema_template_fieldnames_base.cpp
@@ -172,7 +174,6 @@ set( EESCHEMA_SRCS
     autoplace_fields.cpp
     bus_alias.cpp
     bus-wire-junction.cpp
-    lib_part.cpp
     class_library.cpp
     cmp_library_lexer.cpp
     component_references_lister.cpp
@@ -196,6 +197,7 @@ set( EESCHEMA_SRCS
     lib_pin.cpp
     lib_polyline.cpp
     lib_rectangle.cpp
+    lib_symbol.cpp
     lib_text.cpp
     symbol_viewer_frame.cpp
     libarch.cpp
@@ -213,7 +215,6 @@ set( EESCHEMA_SRCS
     sch_bitmap.cpp
     sch_bus_entry.cpp
     ee_collectors.cpp
-    sch_component.cpp
     sch_connection.cpp
     sch_plugins/eagle/sch_eagle_plugin.cpp
     sch_field.cpp
@@ -233,6 +234,7 @@ set( EESCHEMA_SRCS
     sch_sheet.cpp
     sch_sheet_path.cpp
     sch_sheet_pin.cpp
+    sch_symbol.cpp
     sch_text.cpp
     sch_validators.cpp
     schematic.cpp
@@ -240,6 +242,7 @@ set( EESCHEMA_SRCS
     schematic_undo_redo.cpp
     sch_edit_frame.cpp
     sheet.cpp
+    symbol_async_loader.cpp
     symbol_lib_table.cpp
     symbol_tree_model_adapter.cpp
     symbol_tree_synchronizing_adapter.cpp
@@ -254,6 +257,9 @@ set( EESCHEMA_SRCS
     netlist_exporters/netlist_exporter_orcadpcb2.cpp
     netlist_exporters/netlist_exporter_pspice.cpp
     netlist_exporters/netlist_generator.cpp
+
+    # Simulator settings must get built even when the simulator build option is disabled.
+    sim/spice_settings.cpp
 
     tools/backannotate.cpp
     tools/assign_footprints.cpp
@@ -295,6 +301,7 @@ if( KICAD_SPICE )
         ${EESCHEMA_SRCS}
         sim/netlist_exporter_pspice_sim.cpp
         sim/ngspice.cpp
+        sim/sim_plot_colors.cpp
         sim/sim_plot_frame.cpp
         sim/sim_plot_frame_base.cpp
         sim/sim_plot_panel.cpp
@@ -317,7 +324,7 @@ if( MINGW )
     # EESCHEMA_RESOURCES variable is set by the macro.
     mingw_resource_compiler( eeschema )
 else()
-    set( EESCHEMA_RESOURCES eeschema.rc )
+    set( EESCHEMA_RESOURCES ${CMAKE_SOURCE_DIR}/resources/msw/eeschema.rc )
 endif()
 
 # Create a C++ compilable string initializer containing markdown text into a *.h file:
@@ -375,7 +382,7 @@ add_executable( eeschema WIN32 MACOSX_BUNDLE
     ${EESCHEMA_RESOURCES}
     )
 set_source_files_properties( ${CMAKE_SOURCE_DIR}/common/single_top.cpp PROPERTIES
-    COMPILE_DEFINITIONS "TOP_FRAME=FRAME_SCH;PGM_DATA_FILE_EXT=\"sch\";BUILD_KIWAY_DLL"
+    COMPILE_DEFINITIONS "TOP_FRAME=FRAME_SCH;PGM_DATA_FILE_EXT=\"kicad_sch\";BUILD_KIWAY_DLL"
     )
 target_link_libraries( eeschema
     #singletop  # replaces common, giving us restrictive control and link warnings.

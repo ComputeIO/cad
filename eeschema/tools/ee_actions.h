@@ -84,7 +84,6 @@ public:
     static TOOL_ACTION placeGlobalLabel;
     static TOOL_ACTION placeHierLabel;
     static TOOL_ACTION drawSheet;
-    static TOOL_ACTION placeSheetPin;
     static TOOL_ACTION importSheetPin;
     static TOOL_ACTION placeSchematicText;
     static TOOL_ACTION drawLines;
@@ -114,8 +113,8 @@ public:
     static TOOL_ACTION repeatDrawItem;
     static TOOL_ACTION rotateCW;
     static TOOL_ACTION rotateCCW;
-    static TOOL_ACTION mirrorX;
-    static TOOL_ACTION mirrorY;
+    static TOOL_ACTION mirrorV;
+    static TOOL_ACTION mirrorH;
     static TOOL_ACTION properties;
     static TOOL_ACTION editReference;
     static TOOL_ACTION editValue;
@@ -176,12 +175,14 @@ public:
     static TOOL_ACTION pasteSymbol;
     static TOOL_ACTION importSymbol;
     static TOOL_ACTION exportSymbol;
+    static TOOL_ACTION updateSymbolFields;
 
     // Hierarchy navigation
     static TOOL_ACTION enterSheet;
     static TOOL_ACTION leaveSheet;
     static TOOL_ACTION navigateHierarchy;
     static TOOL_ACTION hypertextCommand;
+    static TOOL_ACTION importSingleSheetPin;
 
     // Global edit tools
     static TOOL_ACTION cleanupSheetPins;
@@ -197,7 +198,8 @@ public:
     static TOOL_ACTION pushPinNameSize;
     static TOOL_ACTION pushPinNumSize;
     static TOOL_ACTION showElectricalTypes;
-    static TOOL_ACTION showComponentTree;
+    static TOOL_ACTION showSymbolTree;
+    static TOOL_ACTION hideSymbolTree;
     static TOOL_ACTION toggleForceHV;
     static TOOL_ACTION drawSheetOnClipboard;
     static TOOL_ACTION exportSymbolView;
@@ -213,12 +215,6 @@ public:
     static TOOL_ACTION clearHighlight;
     static TOOL_ACTION updateNetHighlighting;
     static TOOL_ACTION highlightNetTool;
-
-    ///< @copydoc COMMON_ACTIONS::TranslateLegacyId()
-    virtual OPT<TOOL_EVENT> TranslateLegacyId( int aId ) override
-    {
-        return OPT<TOOL_EVENT>();
-    }
 };
 
 

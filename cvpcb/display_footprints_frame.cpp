@@ -71,7 +71,7 @@ DISPLAY_FOOTPRINTS_FRAME::DISPLAY_FOOTPRINTS_FRAME( KIWAY* aKiway, wxWindow* aPa
 {
     // Give an icon
     wxIcon  icon;
-    icon.CopyFromBitmap( KiBitmap( icon_cvpcb_xpm ) );
+    icon.CopyFromBitmap( KiBitmap( BITMAPS::icon_cvpcb ) );
     SetIcon( icon );
 
     SetBoard( new BOARD() );
@@ -95,7 +95,7 @@ DISPLAY_FOOTPRINTS_FRAME::DISPLAY_FOOTPRINTS_FRAME( KIWAY* aKiway, wxWindow* aPa
 
     // Initialize some display options
     auto displ_opts = GetDisplayOptions();
-    displ_opts.m_DisplayPadIsol = false;      // Pad clearance has no meaning here
+    displ_opts.m_DisplayPadClearance = false;      // Pad clearance has no meaning here
 
     // Track and via clearance has no meaning here.
     displ_opts.m_ShowTrackClearanceMode = PCB_DISPLAY_OPTIONS::DO_NOT_SHOW_CLEARANCE;
@@ -106,7 +106,7 @@ DISPLAY_FOOTPRINTS_FRAME::DISPLAY_FOOTPRINTS_FRAME( KIWAY* aKiway, wxWindow* aPa
     m_toolManager->SetEnvironment( GetBoard(), gal_drawPanel->GetView(),
                                    gal_drawPanel->GetViewControls(), config(), this );
     m_actions = new CVPCB_ACTIONS();
-    m_toolDispatcher = new TOOL_DISPATCHER( m_toolManager, m_actions );
+    m_toolDispatcher = new TOOL_DISPATCHER( m_toolManager );
     gal_drawPanel->SetEventDispatcher( m_toolDispatcher );
 
     m_toolManager->RegisterTool( new COMMON_TOOLS );
@@ -157,6 +157,14 @@ DISPLAY_FOOTPRINTS_FRAME::DISPLAY_FOOTPRINTS_FRAME( KIWAY* aKiway, wxWindow* aPa
     updateView();
 
     Show( true );
+
+    // Register a call to update the toolbar sizes. It can't be done immediately because
+    // it seems to require some sizes calculated that aren't yet (at least on GTK).
+    CallAfter( [&]()
+               {
+                   // Ensure the controls on the toolbars all are correctly sized
+                    UpdateToolbarControlSizes();
+               } );
 }
 
 
@@ -311,9 +319,23 @@ void DISPLAY_FOOTPRINTS_FRAME::ReCreateHToolbar()
     UpdateZoomSelectBox();
     m_mainToolBar->AddControl( m_zoomSelectBox );
 
+    m_mainToolBar->UpdateControlWidth( ID_ON_GRID_SELECT );
+    m_mainToolBar->UpdateControlWidth( ID_ON_ZOOM_SELECT );
+
     // after adding the buttons to the toolbar, must call Realize() to reflect
     // the changes
     m_mainToolBar->Realize();
+}
+
+
+void DISPLAY_FOOTPRINTS_FRAME::UpdateToolbarControlSizes()
+{
+    if( m_mainToolBar )
+    {
+        // Update the item widths
+        m_mainToolBar->UpdateControlWidth( ID_ON_GRID_SELECT );
+        m_mainToolBar->UpdateControlWidth( ID_ON_ZOOM_SELECT );
+    }
 }
 
 
@@ -405,7 +427,10 @@ FOOTPRINT* DISPLAY_FOOTPRINTS_FRAME::GetFootprint( const wxString& aFootprintNam
 
     try
     {
-        footprint = fpTable->FootprintLoad( libNickname, fpName );
+        const FOOTPRINT* fp = fpTable->GetEnumeratedFootprint( libNickname, fpName );
+
+        if( fp )
+            footprint = static_cast<FOOTPRINT*>( fp->Duplicate() );
     }
     catch( const IO_ERROR& ioe )
     {

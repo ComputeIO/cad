@@ -78,14 +78,15 @@ add_library( gal STATIC ${GAL_SRCS} )
 target_link_libraries( gal
     common          # This is needed until the circular dependency is removed
     kimath
-    bitmaps
     ${GLEW_LIBRARIES}
     ${CAIRO_LIBRARIES}
     ${PIXMAN_LIBRARIES}
     ${OPENGL_LIBRARIES}
     ${GDI_PLUS_LIBRARIES}
+	# outline font support
 	${FREETYPE_LIBRARIES}
 	${HARFBUZZ_LIBRARIES}
+	${Fontconfig_LIBRARIES}
 )
 
 target_include_directories( gal PRIVATE
@@ -249,26 +250,26 @@ set( COMMON_WIDGET_SRCS
     widgets/unit_binder.cpp
     widgets/widget_save_restore.cpp
     widgets/widget_hotkey_list.cpp
+    widgets/wx_aui_art_providers.cpp
     widgets/wx_busy_indicator.cpp
+    widgets/wx_ellipsized_static_text.cpp
     widgets/wx_grid.cpp
-    widgets/wx_aui_dock_art.cpp
     )
 
-set( COMMON_PAGE_LAYOUT_SRCS
-    page_layout/ws_data_item.cpp
-    page_layout/ws_data_model.cpp
-    page_layout/ws_data_model_io.cpp
-    page_layout/page_layout_default_description.cpp
-    page_layout/ws_draw_item.cpp
-    page_layout/ws_proxy_undo_item.cpp
-    page_layout/ws_proxy_view_item.cpp
-    page_layout/page_layout_reader.cpp
+set( COMMON_DRAWING_SHEET_SRCS
+    drawing_sheet/ds_data_item.cpp
+    drawing_sheet/ds_data_model.cpp
+    drawing_sheet/ds_data_model_io.cpp
+    drawing_sheet/drawing_sheet_default_description.cpp
+    drawing_sheet/ds_draw_item.cpp
+    drawing_sheet/ds_proxy_undo_item.cpp
+    drawing_sheet/ds_proxy_view_item.cpp
+    drawing_sheet/drawing_sheet_reader.cpp
     )
 
 set( COMMON_PREVIEW_ITEMS_SRCS
     preview_items/arc_assistant.cpp
     preview_items/arc_geom_manager.cpp
-    preview_items/bright_box.cpp
     preview_items/centreline_rect_item.cpp
     preview_items/draw_context.cpp
     preview_items/polygon_geom_manager.cpp
@@ -293,6 +294,7 @@ set( PLOTTERS_CONTROL_SRCS
 
 set( PLUGINS_ALTIUM_SRCS
     plugins/altium/altium_parser.cpp
+    plugins/altium/altium_parser_utils.cpp
     )
 
 set( PLUGINS_CADSTAR_SRCS
@@ -303,24 +305,38 @@ set( PLUGINS_EAGLE_SRCS
     plugins/eagle/eagle_parser.cpp
     )
 
+set( FONT_SRCS
+    parser/markup_parser.cpp
+    font/font.cpp
+    font/stroke_font.cpp
+	font/outline_font.cpp
+	font/outline_decomposer.cpp
+	font/text_attributes.cpp
+	font/triangulate.cpp
+	font/fontconfig.cpp
+	)
+
 set( COMMON_SRCS
     ${LIB_KICAD_SRCS}
     ${COMMON_ABOUT_DLG_SRCS}
     ${COMMON_DLG_SRCS}
     ${COMMON_WIDGET_SRCS}
-    ${COMMON_PAGE_LAYOUT_SRCS}
+    ${COMMON_DRAWING_SHEET_SRCS}
     ${COMMON_PREVIEW_ITEMS_SRCS}
     ${PLOTTERS_CONTROL_SRCS}
     ${PLUGINS_ALTIUM_SRCS}
     ${PLUGINS_CADSTAR_SRCS}
     ${PLUGINS_EAGLE_SRCS}
+	${FONT_SRCS}
     advanced_config.cpp
     array_axis.cpp
     array_options.cpp
+    asset_archive.cpp
     base64.cpp
     bin_mod.cpp
     bitmap.cpp
     bitmap_base.cpp
+    bitmap_store.cpp
     board_printout.cpp
     build_version.cpp
     commit.cpp
@@ -331,6 +347,7 @@ set( COMMON_SRCS
     dialog_shim.cpp
     gr_text.cpp
     dsnlexer.cpp
+    eda_angle.cpp
     eda_base_frame.cpp
     eda_dde.cpp
     eda_doc.cpp
@@ -400,8 +417,9 @@ set( COMMON_SRCS
     utf8.cpp
     validators.cpp
     wildcards_and_files_ext.cpp
-    page_layout/ws_painter.cpp
+    drawing_sheet/ds_painter.cpp
     wxdataviewctrl_helpers.cpp
+    wx_stl_compat.cpp
     wx_filename.cpp
     xnode.cpp
     )
@@ -486,7 +504,7 @@ add_library( common STATIC
 
 target_include_directories( common PRIVATE
     $<TARGET_PROPERTY:libcontext,INTERFACE_INCLUDE_DIRECTORIES>
-    )
+)
 
 add_dependencies( common libcontext )
 add_dependencies( common version_header )
@@ -495,7 +513,6 @@ add_dependencies( common compoundfilereader )  # used by altium_parser.cpp
 target_link_libraries( common
     kimath
     kiplatform
-    bitmaps
     gal
     ${Boost_LIBRARIES}
     ${CURL_LIBRARIES}
@@ -513,13 +530,14 @@ target_include_directories( common PUBLIC
     $<TARGET_PROPERTY:compoundfilereader,INTERFACE_INCLUDE_DIRECTORIES>
     )  # used by altium_parser.cpp
 
+# outline font support
+add_dependencies( common earcut )
+add_dependencies( common pegtl )
 target_include_directories( common PUBLIC
     $<TARGET_PROPERTY:earcut,INTERFACE_INCLUDE_DIRECTORIES>
-    )
-
-target_include_directories( common PUBLIC
     $<TARGET_PROPERTY:pegtl,INTERFACE_INCLUDE_DIRECTORIES>
     )
+
 
 set( PCB_COMMON_SRCS
     base_screen.cpp
@@ -585,7 +603,7 @@ set( PCB_COMMON_SRCS
     ${CMAKE_SOURCE_DIR}/pcbnew/pcbnew_settings.cpp
     ${CMAKE_SOURCE_DIR}/pcbnew/plugin.cpp
     ${CMAKE_SOURCE_DIR}/pcbnew/ratsnest/ratsnest_data.cpp
-    ${CMAKE_SOURCE_DIR}/pcbnew/ratsnest/ratsnest_viewitem.cpp
+    ${CMAKE_SOURCE_DIR}/pcbnew/ratsnest/ratsnest_view_item.cpp
     ${CMAKE_SOURCE_DIR}/pcbnew/sel_layer.cpp
     ${CMAKE_SOURCE_DIR}/pcbnew/zone_settings.cpp
 
@@ -693,9 +711,9 @@ make_lexer(
 # and title_block_reader_keywords.cpp.
 make_lexer(
     common
-    page_layout/page_layout_reader.keywords
-    page_layout/page_layout_reader_lexer.h
-    page_layout/page_layout_reader_keywords.cpp
+    drawing_sheet/drawing_sheet_reader.keywords
+    drawing_sheet/drawing_sheet_reader_lexer.h
+    drawing_sheet/drawing_sheet_reader_keywords.cpp
     TB_READER_T
     )
 
@@ -703,8 +721,6 @@ make_lexer(
 # to build it, first enable #define STAND_ALONE at top of dsnlexer.cpp
 add_executable( dsntest EXCLUDE_FROM_ALL dsnlexer.cpp )
 target_link_libraries( dsntest common ${wxWidgets_LIBRARIES} rt )
-
-target_link_libraries( pcbcommon PUBLIC bitmaps )
 
 
 # _kiway.so

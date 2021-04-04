@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: KiCad\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2021-02-12 10:26-0800\n"
+"POT-Creation-Date: 2021-03-30 13:37-0700\n"
 "PO-Revision-Date: 2018-07-15 17:07+0200\n"
 "Last-Translator: Simon Richter <Simon.Richter@hogyros.de>\n"
 "Language-Team: Simon Richter <Simon.Richter@hogyros.de>\n"
@@ -99,8 +99,8 @@ msgid "Your OpenGL version is not supported. Minimum required is 1.5"
 msgstr "Your OpenGL version is not supported. Minimum required is 1.5"
 
 #, c-format
-msgid "Render time %.0f ms ( %.1f fps)"
-msgstr "Render time %.0f ms ( %.1f fps)"
+msgid "Last render time %.0f ms"
+msgstr "Last render time %.0f ms"
 
 #, c-format
 msgid "Net %s\tNetClass %s\tPadName %s"
@@ -470,6 +470,9 @@ msgstr "Reset to defaults"
 msgid "3D Display Options"
 msgstr "3D Display Options"
 
+msgid "KiCad 3D Viewer"
+msgstr "KiCad 3D Viewer"
+
 msgid "Background Color, Bottom"
 msgstr "Background Color, Bottom"
 
@@ -816,20 +819,20 @@ msgstr "Export to File"
 msgid "Export to Clipboard"
 msgstr "Export to Clipboard"
 
-msgid "Eeschema (.lib file)"
-msgstr "Eeschema (.lib file)"
+msgid "Symbol (.lib file)"
+msgstr "Symbol (.lib file)"
 
-msgid "Pcbnew (.kicad_mod file)"
-msgstr "Pcbnew (.kicad_mod file)"
+msgid "Footprint (.kicad_mod file)"
+msgstr "Footprint (.kicad_mod file)"
 
 msgid "Postscript (.ps file)"
 msgstr "Postscript (.ps file)"
 
-msgid "Logo for title block (.kicad_wks file)"
-msgstr "Logo for title block (.kicad_wks file)"
+msgid "Worksheet (.kicad_wks file)"
+msgstr "Worksheet (.kicad_wks file)"
 
-msgid "Format"
-msgstr "Format"
+msgid "Output Format"
+msgstr "Output Format"
 
 msgid "Image Options"
 msgstr "Image Options"
@@ -1318,6 +1321,12 @@ msgstr "Grid 2:"
 msgid "Reset Grid Origin"
 msgstr "Reset Grid Origin"
 
+msgid "Reset Grid Sizes"
+msgstr "Reset Grid Sizes"
+
+msgid "Resets the list of grid sizes to default values"
+msgstr "Resets the list of grid sizes to default values"
+
 msgid "Grid Settings"
 msgstr "Grid Settings"
 
@@ -1750,8 +1759,8 @@ msgstr ""
 msgid "Executable files ("
 msgstr "Executable files ("
 
-msgid "Select Preferred PDF Browser"
-msgstr "Select Preferred PDF Browser"
+msgid "Select Preferred PDF Viewer"
+msgstr "Select Preferred PDF Viewer"
 
 msgid "&Auto save:"
 msgstr "&Auto save:"
@@ -1768,6 +1777,9 @@ msgstr "minutes"
 
 msgid "File history size:"
 msgstr "File history size:"
+
+msgid "3D cache file duration:"
+msgstr "3D cache file duration:"
 
 msgid ""
 "3D cache files older than this are deleted.\n"
@@ -1809,9 +1821,6 @@ msgstr "Balanced Antialiasing"
 msgid "High Quality Antialiasing"
 msgstr "High Quality Antialiasing"
 
-msgid "3D cache file duration:"
-msgstr "3D cache file duration:"
-
 msgid "Helper Applications"
 msgstr "Helper Applications"
 
@@ -1838,6 +1847,26 @@ msgstr "Canvas scale:"
 
 msgid "Show icons in menus"
 msgstr "Show icons in menus"
+
+msgid "Icon theme:"
+msgstr "Icon theme:"
+
+msgid "Light"
+msgstr "Light"
+
+msgid "Use icons designed for light window backgrounds"
+msgstr "Use icons designed for light window backgrounds"
+
+msgid "Dark"
+msgstr "Dark"
+
+msgid "Use icons designed for dark window backgrounds"
+msgstr "Use icons designed for dark window backgrounds"
+
+msgid ""
+"Automatically choose light or dark icons based on the system color theme"
+msgstr ""
+"Automatically choose light or dark icons based on the system color theme"
 
 msgid "Editing"
 msgstr "Editing"
@@ -1944,8 +1973,14 @@ msgstr ""
 msgid "Import Hotkeys File:"
 msgstr "Import Hotkeys File:"
 
+msgid "| Action | Default Hotkey | Description"
+msgstr "| Action | Default Hotkey | Description"
+
 msgid "Cmd"
 msgstr "Cmd"
+
+msgid "Only one action can be assigned to each vertical scroll setting"
+msgstr "Only one action can be assigned to each vertical scroll setting"
 
 msgid "Pan and Zoom"
 msgstr "Pan and Zoom"
@@ -2023,6 +2058,9 @@ msgstr "Scroll Gestures"
 msgid "Vertical touchpad or scroll wheel movement:"
 msgstr "Vertical touchpad or scroll wheel movement:"
 
+msgid "Only one action can be assigned to each column"
+msgstr "Only one action can be assigned to each column"
+
 msgid "--"
 msgstr "--"
 
@@ -2051,6 +2089,12 @@ msgid ""
 "Pan the canvas left and right when scrolling left to right on the touchpad"
 msgstr ""
 "Pan the canvas left and right when scrolling left to right on the touchpad"
+
+msgid "Reset to Mouse Defaults"
+msgstr "Reset to Mouse Defaults"
+
+msgid "Reset to Trackpad Defaults"
+msgstr "Reset to Trackpad Defaults"
 
 msgid "Solid"
 msgstr "Solid"
@@ -2109,8 +2153,8 @@ msgstr "Schematic wire line style"
 msgid "The default net class is required."
 msgstr "The default net class is required."
 
-msgid "Net Classes"
-msgstr "Net Classes"
+msgid "Net Class"
+msgstr "Net Class"
 
 msgid "Clearance"
 msgstr "Clearance"
@@ -2148,9 +2192,6 @@ msgstr "Line Style"
 msgid "Default"
 msgstr "Default"
 
-msgid "Net Class Memberships"
-msgstr "Net Class Memberships"
-
 msgid "Filter Nets"
 msgstr "Filter Nets"
 
@@ -2180,9 +2221,6 @@ msgstr "Assign To Selected Nets"
 
 msgid "Net"
 msgstr "Net"
-
-msgid "Net Class"
-msgstr "Net Class"
 
 msgid "Ignore"
 msgstr "Ignore"
@@ -2244,6 +2282,67 @@ msgstr "Could not use OpenGL, falling back to software rendering"
 
 msgid "Could not use OpenGL"
 msgstr "Could not use OpenGL"
+
+#, c-format
+msgid "The file \"%s\" was not fully read"
+msgstr "The file “%s” was not fully read"
+
+msgid "Text"
+msgstr "Text"
+
+msgid "Line"
+msgstr "Line"
+
+msgid "Rectangle"
+msgstr "Rectangle"
+
+msgid "Imported Shape"
+msgstr "Imported Shape"
+
+msgid "Image"
+msgstr "Image"
+
+msgid "Error writing page layout design file"
+msgstr "Error writing page layout design file"
+
+msgid "First Page Only"
+msgstr "First Page Only"
+
+msgid "Subsequent Pages"
+msgstr "Subsequent Pages"
+
+msgid "All Pages"
+msgstr "All Pages"
+
+msgid "First Page Option"
+msgstr "First Page Option"
+
+msgid "Repeat Count"
+msgstr "Repeat Count"
+
+msgid "Repeat Label Increment"
+msgstr "Repeat Label Increment"
+
+msgid "Repeat Position Increment"
+msgstr "Repeat Position Increment"
+
+msgid "Comment"
+msgstr "Comment"
+
+#, c-format
+msgid "Text '%s'"
+msgstr "Text '%s'"
+
+#, c-format
+msgid "Rectangle, width %s height %s"
+msgstr "Rectangle, width %s height %s"
+
+#, c-format
+msgid "Line, length %s"
+msgstr "Line, length %s"
+
+msgid "Page Limits"
+msgstr "Page Limits"
 
 msgid "clipboard"
 msgstr "clipboard"
@@ -2507,9 +2606,6 @@ msgstr "Circle"
 msgid "Symbol Text"
 msgstr "Symbol Text"
 
-msgid "Rectangle"
-msgstr "Rectangle"
-
 msgid "Polyline"
 msgstr "Polyline"
 
@@ -2527,9 +2623,6 @@ msgstr "Gerber Layout"
 
 msgid "Draw Item"
 msgstr "Draw Item"
-
-msgid "Image"
-msgstr "Image"
 
 msgid "Normal"
 msgstr "Normal"
@@ -2557,9 +2650,6 @@ msgstr "Top"
 
 msgid "Bottom"
 msgstr "Bottom"
-
-msgid "Text"
-msgstr "Text"
 
 msgid "Thickness"
 msgstr "Thickness"
@@ -2766,6 +2856,12 @@ msgstr "Paste"
 msgid "Paste clipboard cells to matrix at current cell"
 msgstr "Paste clipboard cells to matrix at current cell"
 
+msgid "Delete"
+msgstr "Delete"
+
+msgid "Delete selected cells"
+msgstr "Delete selected cells"
+
 msgid "Select All"
 msgstr "Select All"
 
@@ -2802,14 +2898,14 @@ msgstr "Ignore Other Snaps"
 msgid "Project Manager"
 msgstr "Project Manager"
 
-msgid "Eeschema"
-msgstr "Eeschema"
+msgid "Schematic Editor"
+msgstr "Schematic Editor"
 
-msgid "Pcbnew"
-msgstr "Pcbnew"
+msgid "PCB Editor"
+msgstr "PCB Editor"
 
-msgid "Page Layout Editor"
-msgstr "Page Layout Editor"
+msgid "Drawing Sheet Editor"
+msgstr "Drawing Sheet Editor"
 
 msgid "Gestures"
 msgstr "Gestures"
@@ -2820,9 +2916,9 @@ msgstr "Failed to load kiface library “%s”."
 
 #, c-format
 msgid ""
-"Could not read instance name and version symbol form kiface library \"%s\"."
+"Could not read instance name and version symbol from kiface library \"%s\"."
 msgstr ""
-"Could not read instance name and version symbol form kiface library “%s”."
+"Could not read instance name and version symbol from kiface library \"%s\"."
 
 #, c-format
 msgid ""
@@ -3082,9 +3178,6 @@ msgstr "Symbol body fills"
 msgid "Notes"
 msgstr "Notes"
 
-msgid "Net names"
-msgstr "Net names"
-
 msgid "Pins"
 msgstr "Pins"
 
@@ -3139,8 +3232,8 @@ msgstr "Hidden items"
 msgid "Selection highlight"
 msgstr "Selection highlight"
 
-msgid "Worksheet"
-msgstr "Worksheet"
+msgid "Drawing sheet"
+msgstr "Drawing sheet"
 
 msgid "Footprints front"
 msgstr "Footprints front"
@@ -3261,58 +3354,6 @@ msgstr "Unrecognized function '%s'"
 msgid "Missing units for '%s'| (%s)"
 msgstr "Missing units for '%s'| (%s)"
 
-#, c-format
-msgid "The file \"%s\" was not fully read"
-msgstr "The file “%s” was not fully read"
-
-msgid "Error writing page layout design file"
-msgstr "Error writing page layout design file"
-
-msgid "Line"
-msgstr "Line"
-
-msgid "Imported Shape"
-msgstr "Imported Shape"
-
-msgid "First Page Only"
-msgstr "First Page Only"
-
-msgid "Subsequent Pages"
-msgstr "Subsequent Pages"
-
-msgid "All Pages"
-msgstr "All Pages"
-
-msgid "First Page Option"
-msgstr "First Page Option"
-
-msgid "Repeat Count"
-msgstr "Repeat Count"
-
-msgid "Repeat Label Increment"
-msgstr "Repeat Label Increment"
-
-msgid "Repeat Position Increment"
-msgstr "Repeat Position Increment"
-
-msgid "Comment"
-msgstr "Comment"
-
-#, c-format
-msgid "Text '%s'"
-msgstr "Text '%s'"
-
-#, c-format
-msgid "Rectangle, width %s height %s"
-msgstr "Rectangle, width %s height %s"
-
-#, c-format
-msgid "Line, length %s"
-msgstr "Line, length %s"
-
-msgid "Page Limits"
-msgstr "Page Limits"
-
 msgid "No default editor found, you must choose it"
 msgstr "No default editor found, you must choose it"
 
@@ -3325,8 +3366,8 @@ msgstr "Executable file (*)|*"
 msgid "Select Preferred Editor"
 msgstr "Select Preferred Editor"
 
-msgid "Environmental variable HOME is empty.  Unable to continue."
-msgstr "Environmental variable HOME is empty.  Unable to continue."
+msgid "Environment variable HOME is empty.  Unable to continue."
+msgstr "Environment variable HOME is empty.  Unable to continue."
 
 #, c-format
 msgid "%s is already running. Continue?"
@@ -3439,14 +3480,6 @@ msgstr "KiCad Default"
 
 msgid "KiCad Classic"
 msgstr "KiCad Classic"
-
-msgid ""
-"Windows 7 and older is no longer supported by KiCad and its dependencies."
-msgstr ""
-"Windows 7 and older is no longer supported by KiCad and its dependencies."
-
-msgid "Unsupported Operating System"
-msgstr "Unsupported Operating System"
 
 #, c-format
 msgid "Field%d"
@@ -3573,9 +3606,6 @@ msgstr "Duplicate"
 
 msgid "Duplicates the selected item(s)"
 msgstr "Duplicates the selected item(s)"
-
-msgid "Delete"
-msgstr "Delete"
 
 msgid "Deletes selected item(s)"
 msgstr "Deletes selected item(s)"
@@ -3706,8 +3736,14 @@ msgstr "Performs left mouse button double-click"
 msgid "Pin Library"
 msgstr "Pin Library"
 
+msgid "Keep the library at the top of the list"
+msgstr "Keep the library at the top of the list"
+
 msgid "Unpin Library"
 msgstr "Unpin Library"
+
+msgid "No longer keep the library at the top of the list"
+msgstr "No longer keep the library at the top of the list"
 
 msgid "Pan Up"
 msgstr "Pan Up"
@@ -3850,18 +3886,6 @@ msgstr "Update Schematic from PCB..."
 msgid "Update schematic with changes made to PCB"
 msgstr "Update schematic with changes made to PCB"
 
-msgid "Accelerated Graphics"
-msgstr "Accelerated Graphics"
-
-msgid "Use hardware-accelerated graphics (recommended)"
-msgstr "Use hardware-accelerated graphics (recommended)"
-
-msgid "Standard Graphics"
-msgstr "Standard Graphics"
-
-msgid "Use software graphics (fall-back)"
-msgstr "Use software graphics (fall-back)"
-
 msgid "Configure Paths..."
 msgstr "Configure Paths…"
 
@@ -3980,6 +4004,25 @@ msgstr "Footprint not found."
 
 msgid "No default footprint"
 msgstr "No default footprint"
+
+msgid "Accelerated graphics"
+msgstr "Accelerated graphics"
+
+msgid "Fallback graphics"
+msgstr "Fallback graphics"
+
+msgid "Rendering Engine"
+msgstr "Rendering Engine"
+
+msgid "Hardware-accelerated graphics (recommended)"
+msgstr "Hardware-accelerated graphics (recommended)"
+
+msgid ""
+"Software graphics (for computers which do not support KiCad's hardware "
+"acceleration requirements)"
+msgstr ""
+"Software graphics (for computers which do not support KiCad's hardware "
+"acceleration requirements)"
 
 msgid "Grid Options"
 msgstr "Grid Options"
@@ -4509,12 +4552,12 @@ msgstr "Lib: %s"
 
 msgid ""
 "Some of the assigned footprints are legacy entries with no library names. "
-"Would you like Kicad to attempt to convert them to the new required LIB_ID "
+"Would you like KiCad to attempt to convert them to the new required LIB_ID "
 "format? (If you answer no, then these assignments will be cleared and you "
 "will need to re-assign them manually.)"
 msgstr ""
 "Some of the assigned footprints are legacy entries with no library names. "
-"Would you like Kicad to attempt to convert them to the new required LIB_ID "
+"Would you like KiCad to attempt to convert them to the new required LIB_ID "
 "format? (If you answer no, then these assignments will be cleared and you "
 "will need to re-assign them manually.)"
 
@@ -4741,6 +4784,10 @@ msgid "Sheet pin %s has no matching hierarchical label inside the sheet"
 msgstr "Sheet pin %s has no matching hierarchical label inside the sheet"
 
 #, c-format
+msgid "Hierarchical label %s has no matching sheet pin in the parent sheet"
+msgstr "Hierarchical label %s has no matching sheet pin in the parent sheet"
+
+#, c-format
 msgid "%s pin %s found"
 msgstr "%s pin %s found"
 
@@ -4813,6 +4860,27 @@ msgstr "Annotate Schematic"
 msgid "Generate"
 msgstr "Generate"
 
+msgid "(file missing)"
+msgstr "(file missing)"
+
+#, c-format
+msgid "The selected BOM generator script %s could not be found."
+msgstr "The selected BOM generator script %s could not be found."
+
+#, c-format
+msgid ""
+"\n"
+"\n"
+"Searched:\n"
+"\t%s\n"
+"\t%s"
+msgstr ""
+"\n"
+"\n"
+"Searched:\n"
+"\t%s\n"
+"\t%s"
+
 msgid "Generating BOM requires a fully annotated schematic."
 msgstr "Generating BOM requires a fully annotated schematic."
 
@@ -4864,6 +4932,9 @@ msgstr ""
 "By default, command line runs with hidden console window and output is "
 "redirected to the info display.\n"
 "Set this option to show the window of the running command."
+
+msgid "Reset the list of BOM generator scripts to the default settings"
+msgstr "Reset the list of BOM generator scripts to the default settings"
 
 msgid "Bill of Material"
 msgstr "Bill of Material"
@@ -5288,6 +5359,9 @@ msgstr "Remove fields if not in new symbol"
 msgid "Reset fields if empty in new symbol"
 msgstr "Reset fields if empty in new symbol"
 
+msgid "Update field text"
+msgstr "Update field text"
+
 msgid "Update field visibilities"
 msgstr "Update field visibilities"
 
@@ -5296,6 +5370,9 @@ msgstr "Update field sizes and styles"
 
 msgid "Update field positions"
 msgstr "Update field positions"
+
+msgid "Update symbol attributes"
+msgstr "Update symbol attributes"
 
 msgid "Change"
 msgstr "Change"
@@ -5360,6 +5437,9 @@ msgstr "Removes fields that do not occur in the original library symbols"
 
 msgid "Reset fields if empty in library symbol"
 msgstr "Reset fields if empty in library symbol"
+
+msgid "Update/reset field text"
+msgstr "Update/reset field text"
 
 msgid "Update/reset field visibilities"
 msgstr "Update/reset field visibilities"
@@ -5464,6 +5544,16 @@ msgstr ""
 "try to find a candidate having the same name in one of loaded symbol "
 "libraries."
 
+msgid "Update symbol fields from new library"
+msgstr "Update symbol fields from new library"
+
+msgid ""
+"Replace current symbols fields by fields from the new library.\n"
+"Warning: fields \"Value\" and \"Footprints\" will be therefore replaced."
+msgstr ""
+"Replace current symbols fields by fields from the new library.\n"
+"Warning: fields \"Value\" and \"Footprints\" will be therefore replaced."
+
 msgid "Symbol Library References"
 msgstr "Symbol Library References"
 
@@ -5482,8 +5572,8 @@ msgstr "Hierarchical Sheet Pin Properties"
 msgid "Text Properties"
 msgstr "Text Properties"
 
-msgid "Empty Text!"
-msgstr "Empty Text!"
+msgid "Label requires non-empty text."
+msgstr "Label requires non-empty text."
 
 msgid "Label:"
 msgstr "Label:"
@@ -5588,11 +5678,15 @@ msgstr "Errors and Warnings Only"
 msgid "Errors, Warnings and Exclusions"
 msgstr "Errors, Warnings and Exclusions"
 
+#, c-format
+msgid "%d symbol(s) require annotation.<br><br>"
+msgstr "%d symbol(s) require annotation.<br><br>"
+
 msgid "-------- ERC cancelled by user.<br><br>"
 msgstr "-------- ERC cancelled by user.<br><br>"
 
-msgid "Done.<br><br>"
-msgstr "Done.<br><br>"
+msgid "ERC completed.<br><br>"
+msgstr "ERC completed.<br><br>"
 
 msgid "Checking sheet names..."
 msgstr "Checking sheet names..."
@@ -5829,6 +5923,9 @@ msgstr "Power symbols"
 msgid "Filter items by net:"
 msgstr "Filter items by net:"
 
+msgid "Only include selected items"
+msgstr "Only include selected items"
+
 msgid "Set To"
 msgstr "Set To"
 
@@ -5918,6 +6015,11 @@ msgstr "Junction Properties"
 
 msgid "Read Only"
 msgstr "Read Only"
+
+msgid ""
+"Line width may not be 0 for shapes other than filled with body outline color."
+msgstr ""
+"Line width may not be 0 for shapes other than filled with body outline color."
 
 msgid "Do not fill"
 msgstr "Do not fill"
@@ -6313,12 +6415,6 @@ msgstr "Accept Name"
 msgid "Migrate Buses"
 msgstr "Migrate Buses"
 
-msgid "Options:"
-msgstr "Options:"
-
-msgid "Default format"
-msgstr "Default format"
-
 msgid "Export Netlist"
 msgstr "Export Netlist"
 
@@ -6538,8 +6634,8 @@ msgstr ""
 "Target directory for plot files. Can be absolute or relative to the "
 "schematic main file location."
 
-msgid "PostScript"
-msgstr "PostScript"
+msgid "Postscript"
+msgstr "Postscript"
 
 msgid "PDF"
 msgstr "PDF"
@@ -6553,17 +6649,14 @@ msgstr "DXF"
 msgid "HPGL"
 msgstr "HPGL"
 
-msgid "Output Format"
-msgstr "Output Format"
-
 msgid "Page size:"
 msgstr "Page size:"
 
-msgid "Plot border and title block"
-msgstr "Plot border and title block"
+msgid "Plot drawing sheet"
+msgstr "Plot drawing sheet"
 
-msgid "Print the frame references."
-msgstr "Print the frame references."
+msgid "Plot the drawing sheet border and title block"
+msgstr "Plot the drawing sheet border and title block"
 
 msgid "Black and White"
 msgstr "Black and White"
@@ -6804,6 +6897,9 @@ msgstr "Electrical Rules"
 msgid "Project"
 msgstr "Project"
 
+msgid "Net Classes"
+msgstr "Net Classes"
+
 msgid "Text Variables"
 msgstr "Text Variables"
 
@@ -6884,9 +6980,6 @@ msgstr "A sheet must have a name."
 msgid "A sheet must have a file specified."
 msgstr "A sheet must have a file specified."
 
-msgid "Sheet filename must have a '.kicad_sch' extension."
-msgstr "Sheet filename must have a '.kicad_sch' extension."
-
 msgid "Hierarchical path: "
 msgstr "Hierarchical path: "
 
@@ -6916,6 +7009,22 @@ msgstr "You need to select DC source"
 
 msgid "Source 1 and Source 2 must be different"
 msgstr "Source 1 and Source 2 must be different"
+
+msgid "No valid simulation is configured."
+msgstr "No valid simulation is configured."
+
+msgid ""
+"A valid simulation can be configured by selecting a simulation tab, setting "
+"the simulation parameters and clicking the OK button with the tab selected."
+msgstr ""
+"A valid simulation can be configured by selecting a simulation tab, setting "
+"the simulation parameters and clicking the OK button with the tab selected."
+
+msgid "Exit Without Valid Simulation"
+msgstr "Exit Without Valid Simulation"
+
+msgid "Configure Valid Simulation"
+msgstr "Configure Valid Simulation"
 
 msgid "Volts"
 msgstr "Volts"
@@ -7064,6 +7173,27 @@ msgstr "Adjust passive symbol values (e.g. M → Meg; 100 nF → 100n)"
 msgid "Add full path for .include library directives"
 msgstr "Add full path for .include library directives"
 
+msgid "Compatibility mode:"
+msgstr "Compatibility mode:"
+
+msgid "User configuration"
+msgstr "User configuration"
+
+msgid "Spice"
+msgstr "Spice"
+
+msgid "PSpice"
+msgstr "PSpice"
+
+msgid "LTSpice"
+msgstr "LTSpice"
+
+msgid "PSpice and LTSpice"
+msgstr "PSpice and LTSpice"
+
+msgid "HSpice"
+msgstr "HSpice"
+
 msgid "Simulation settings"
 msgstr "Simulation settings"
 
@@ -7143,10 +7273,10 @@ msgid "Spice value in simulation"
 msgstr "Spice value in simulation"
 
 msgid ""
-"In Spice values,the decimal separator is the point.\n"
+"In Spice values, the decimal separator is the point.\n"
 "Values can use Spice unit symbols."
 msgstr ""
-"In Spice values,the decimal separator is the point.\n"
+"In Spice values, the decimal separator is the point.\n"
 "Values can use Spice unit symbols."
 
 msgid "Spice unit symbols in values (case insensitive):"
@@ -7568,8 +7698,23 @@ msgstr ""
 msgid "Update symbols values that have been replaced in the PCB editor."
 msgstr "Update symbols values that have been replaced in the PCB editor."
 
+msgid "Net names"
+msgstr "Net names"
+
 msgid "Update Schematic from PCB"
 msgstr "Update Schematic from PCB"
+
+msgid "Parent symbol:"
+msgstr "Parent symbol:"
+
+msgid "Remove fields if not in parent symbol"
+msgstr "Remove fields if not in parent symbol"
+
+msgid "Reset fields if empty in parent symbol"
+msgstr "Reset fields if empty in parent symbol"
+
+msgid "Update Symbol Fields"
+msgstr "Update Symbol Fields"
 
 msgid ""
 "Some items have the same color as the background\n"
@@ -7673,6 +7818,41 @@ msgstr ""
 "In schematic editor:\n"
 "If enabled, clicking on a pin select the parent symbol.\n"
 "If disabled, clicking on a pin select only the pin."
+
+msgid "Left Click Mouse Commands"
+msgstr "Left Click Mouse Commands"
+
+msgid ""
+"Left click (and drag) actions depend on 3 modifier keys:\n"
+"Alt, Shift and Ctrl."
+msgstr ""
+"Left click (and drag) actions depend on 3 modifier keys:\n"
+"Alt, Shift and Ctrl."
+
+msgid "Add item(s) to selection."
+msgstr "Add item(s) to selection."
+
+msgid "Toggle selected state of item(s)."
+msgstr "Toggle selected state of item(s)."
+
+msgid "Alt+Shift"
+msgstr "Alt+Shift"
+
+msgid "Remove item(s) from selection."
+msgstr "Remove item(s) from selection."
+
+msgid "Clarify selection from menu."
+msgstr "Clarify selection from menu."
+
+msgid ""
+"Left click (and drag) actions depend on 3 modifier keys:\n"
+"Alt, Shift and Cmd."
+msgstr ""
+"Left click (and drag) actions depend on 3 modifier keys:\n"
+"Alt, Shift and Cmd."
+
+msgid "Cmd+Shift"
+msgstr "Cmd+Shift"
 
 msgid "Symbol Field Automatic Placement"
 msgstr "Symbol Field Automatic Placement"
@@ -7784,6 +7964,9 @@ msgstr "Inter-sheet References"
 
 msgid "Show inter-sheet references"
 msgstr "Show inter-sheet references"
+
+msgid "Show own page reference"
+msgstr "Show own page reference"
 
 msgid "Standard (1,2,3)"
 msgstr "Standard (1,2,3)"
@@ -7951,12 +8134,6 @@ msgstr ""
 msgid "Libraries by Scope"
 msgstr "Libraries by Scope"
 
-msgid "File:"
-msgstr "File:"
-
-msgid "Table Name"
-msgstr "Table Name"
-
 msgid "Global Libraries"
 msgstr "Global Libraries"
 
@@ -8034,8 +8211,8 @@ msgstr "Open Emitter"
 msgid "No Connection"
 msgstr "No Connection"
 
-msgid "Unresolved text variable in worksheet."
-msgstr "Unresolved text variable in worksheet."
+msgid "Unresolved text variable in drawing sheet."
+msgstr "Unresolved text variable in drawing sheet."
 
 #, c-format
 msgid "Bus alias %s has conflicting definitions on %s and %s"
@@ -8243,6 +8420,29 @@ msgstr ""
 msgid "Do not show this dialog again."
 msgstr "Do not show this dialog again."
 
+#, c-format
+msgid "The project symbol library cache file '%s' was not found."
+msgstr "The project symbol library cache file '%s' was not found."
+
+msgid ""
+"This can result in a broken schematic under certain conditions.  If the "
+"schematic does not have any missing symbols upon opening, save it "
+"immediately before making any changes to prevent data loss.  If there are "
+"missing symbols, either manual recovery of the schematic or recovery of the "
+"symbol cache library file and reloading the schematic is required."
+msgstr ""
+"This can result in a broken schematic under certain conditions.  If the "
+"schematic does not have any missing symbols upon opening, save it "
+"immediately before making any changes to prevent data loss.  If there are "
+"missing symbols, either manual recovery of the schematic or recovery of the "
+"symbol cache library file and reloading the schematic is required."
+
+msgid "Load Without Cache File"
+msgstr "Load Without Cache File"
+
+msgid "Abort"
+msgstr "Abort"
+
 msgid ""
 "This file was created by an older version of KiCad. It will be converted to "
 "the new format when saved."
@@ -8271,27 +8471,18 @@ msgstr "All supported formats|"
 msgid "Import Schematic"
 msgstr "Import Schematic"
 
-#, c-format
-msgid "Directory \"%s\" is not writable."
-msgstr "Directory “%s” is not writable."
+msgid "Saving will overwrite existing files."
+msgstr "Saving will overwrite existing files."
 
-msgid ""
-"Saving the project to the new file format will overwrite existing files."
-msgstr ""
-"Saving the project to the new file format will overwrite existing files."
+msgid "Save Warning"
+msgstr "Save Warning"
 
-msgid "Project Save Warning"
-msgstr "Project Save Warning"
-
-#, c-format
 msgid ""
 "The following files will be overwritten:\n"
 "\n"
-"%s"
 msgstr ""
 "The following files will be overwritten:\n"
 "\n"
-"%s"
 
 msgid "Overwrite Files"
 msgstr "Overwrite Files"
@@ -8431,16 +8622,25 @@ msgstr ""
 msgid "Import"
 msgstr "Import"
 
-msgid "Import Non KiCad Schematic..."
-msgstr "Import Non KiCad Schematic..."
+msgid "Non-KiCad Schematic..."
+msgstr "Non-KiCad Schematic..."
 
 msgid ""
 "Replace current schematic sheet with one imported from another application"
 msgstr ""
 "Replace current schematic sheet with one imported from another application"
 
+msgid "Footprint Assignments..."
+msgstr "Footprint Assignments..."
+
 msgid "Export"
 msgstr "Export"
+
+msgid "Drawing to Clipboard"
+msgstr "Drawing to Clipboard"
+
+msgid "Netlist..."
+msgstr "Netlist..."
 
 msgid "&Units"
 msgstr "&Units"
@@ -8611,32 +8811,6 @@ msgstr "Bus"
 msgid "Bus Entry Type"
 msgstr "Bus Entry Type"
 
-msgid "Power symbol"
-msgstr "Power symbol"
-
-msgid "flags"
-msgstr "flags"
-
-msgid "Missing parent"
-msgstr "Missing parent"
-
-msgid "Undefined!!!"
-msgstr "Undefined!!!"
-
-msgid "<Unknown>"
-msgstr "<Unknown>"
-
-msgid "No library defined!"
-msgstr "No library defined!"
-
-#, c-format
-msgid "Symbol not found in %s!"
-msgstr "Symbol not found in %s!"
-
-#, c-format
-msgid "Symbol %s [%s]"
-msgstr "Symbol %s [%s]"
-
 msgid "Connection Name"
 msgstr "Connection Name"
 
@@ -8653,6 +8827,9 @@ msgstr "Not Found"
 msgid "The following libraries were not found:"
 msgstr "The following libraries were not found:"
 
+msgid "KiCad Schematic Editor"
+msgstr "KiCad Schematic Editor"
+
 msgid "New schematic file is unsaved"
 msgstr "New schematic file is unsaved"
 
@@ -8662,11 +8839,11 @@ msgstr "Save changes to “%s” before closing?"
 
 msgid ""
 "Cannot update the PCB, because the Schematic Editor is opened in stand-alone "
-"mode. In order to create/update PCBs from schematics, launch the Kicad shell "
+"mode. In order to create/update PCBs from schematics, launch the KiCad shell "
 "and create a project."
 msgstr ""
 "Cannot update the PCB, because the Schematic Editor is opened in stand-alone "
-"mode. In order to create/update PCBs from schematics, launch the Kicad shell "
+"mode. In order to create/update PCBs from schematics, launch the KiCad shell "
 "and create a project."
 
 msgid "New Schematic"
@@ -8691,9 +8868,15 @@ msgstr "[no file]"
 msgid "[Read Only]"
 msgstr "[Read Only]"
 
+msgid "[Unsaved]"
+msgstr "[Unsaved]"
+
 #, c-format
 msgid "Highlighted net: %s"
 msgstr "Highlighted net: %s"
+
+msgid "File:"
+msgstr "File:"
 
 msgid "<root sheet>"
 msgstr "<root sheet>"
@@ -8702,8 +8885,8 @@ msgstr "<root sheet>"
 msgid "Go to Page %s (%s)"
 msgstr "Go to Page %s (%s)"
 
-msgid "Back"
-msgstr "Back"
+msgid "Back to Previous Selected Sheet"
+msgstr "Back to Previous Selected Sheet"
 
 msgid "Intersheet References"
 msgstr "Intersheet References"
@@ -8768,8 +8951,8 @@ msgstr "from netclass"
 msgid "Assigned Netclass"
 msgstr "Assigned Netclass"
 
-msgid "Electronics Rule Check Error"
-msgstr "Electronics Rule Check Error"
+msgid "Electrical Rule Check Error"
+msgstr "Electrical Rule Check Error"
 
 msgid "ERC Marker"
 msgstr "ERC Marker"
@@ -9125,48 +9308,48 @@ msgstr ""
 #, c-format
 msgid ""
 "Invalid symbol names definition in\n"
-"file: \"%s\"\n"
+"file: '%s'\n"
 "line: %d\n"
 "offset: %d"
 msgstr ""
 "Invalid symbol names definition in\n"
-"file: \"%s\"\n"
+"file: '%s'\n"
 "line: %d\n"
 "offset: %d"
 
 #, c-format
 msgid ""
 "Invalid property name in\n"
-"file: \"%s\"\n"
+"file: '%s'\n"
 "line: %d\n"
 "offset: %d"
 msgstr ""
 "Invalid property name in\n"
-"file: \"%s\"\n"
+"file: '%s'\n"
 "line: %d\n"
 "offset: %d"
 
 #, c-format
 msgid ""
 "Empty property name in\n"
-"file: \"%s\"\n"
+"file: '%s'\n"
 "line: %d\n"
 "offset: %d"
 msgstr ""
 "Empty property name in\n"
-"file: \"%s\"\n"
+"file: '%s'\n"
 "line: %d\n"
 "offset: %d"
 
 #, c-format
 msgid ""
 "Invalid property value in\n"
-"file: \"%s\"\n"
+"file: '%s'\n"
 "line: %d\n"
 "offset: %d"
 msgstr ""
 "Invalid property value in\n"
-"file: \"%s\"\n"
+"file: '%s'\n"
 "line: %d\n"
 "offset: %d"
 
@@ -9221,6 +9404,42 @@ msgstr ""
 #, c-format
 msgid "Page type \"%s\" is not valid "
 msgstr "Page type “%s” is not valid "
+
+#, c-format
+msgid ""
+"Invalid property name in\n"
+"file: \"%s\"\n"
+"line: %d\n"
+"offset: %d"
+msgstr ""
+"Invalid property name in\n"
+"file: \"%s\"\n"
+"line: %d\n"
+"offset: %d"
+
+#, c-format
+msgid ""
+"Empty property name in\n"
+"file: \"%s\"\n"
+"line: %d\n"
+"offset: %d"
+msgstr ""
+"Empty property name in\n"
+"file: \"%s\"\n"
+"line: %d\n"
+"offset: %d"
+
+#, c-format
+msgid ""
+"Invalid property value in\n"
+"file: \"%s\"\n"
+"line: %d\n"
+"offset: %d"
+msgstr ""
+"Invalid property value in\n"
+"file: \"%s\"\n"
+"line: %d\n"
+"offset: %d"
 
 #, c-format
 msgid ""
@@ -9380,6 +9599,32 @@ msgstr "(Deleted Item)"
 msgid "Hierarchical Sheet Pin %s"
 msgstr "Hierarchical Sheet Pin %s"
 
+msgid "Power symbol"
+msgstr "Power symbol"
+
+msgid "flags"
+msgstr "flags"
+
+msgid "Missing parent"
+msgstr "Missing parent"
+
+msgid "Undefined!!!"
+msgstr "Undefined!!!"
+
+msgid "<Unknown>"
+msgstr "<Unknown>"
+
+msgid "No library defined!"
+msgstr "No library defined!"
+
+#, c-format
+msgid "Symbol not found in %s!"
+msgstr "Symbol not found in %s!"
+
+#, c-format
+msgid "Symbol %s [%s]"
+msgstr "Symbol %s [%s]"
+
 msgid "Tri-State"
 msgstr "Tri-State"
 
@@ -9453,7 +9698,7 @@ msgid ""
 "    <tr>\n"
 "        <td>&nbsp;<br><samp>D_{0} - D_{15}</samp></td>\n"
 "        <td></td>\n"
-"        <td>&nbsp;<br><samp>D<sub>0</sub> - D<sub>31</sub></samp></td>\n"
+"        <td>&nbsp;<br><samp>D<sub>0</sub> - D<sub>15</sub></samp></td>\n"
 "    </tr>\n"
 "    <tr>\n"
 "        <td></td>\n"
@@ -9537,9 +9782,9 @@ msgid ""
 "        <td>&nbsp;<br><samp>prefix.net1, prefix.net2, ...</samp></td>\n"
 "    </tr>\n"
 "    <tr>\n"
-"        <td>&nbsp;<br><samp>USB1{DP DM}</samp></td>\n"
+"        <td>&nbsp;<br><samp>USB1{D+ D-}</samp></td>\n"
 "        <td></td>\n"
-"        <td>&nbsp;<br><samp>USB1.DP, USB1.DM</samp></td>\n"
+"        <td>&nbsp;<br><samp>USB1.D+, USB1.D-</samp></td>\n"
 "    </tr>\n"
 "    <tr>\n"
 "        <td><br></td>\n"
@@ -9552,10 +9797,10 @@ msgid ""
 "    <tr>\n"
 "        <td>&nbsp;<br><samp>MEM{D_{[1..2]} ~LATCH}</samp></td>\n"
 "        <td></td>\n"
-"        <td> <samp>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"
-"&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <u>&nbsp;&nbsp;&nbsp;&nbsp;"
-"&nbsp;</u></samp><br> <samp>MEM.D<sub>1</sub>, MEM.D<sub>2</sub>, MEM.LATCH</"
-"samp> </td>\n"
+"        <td> <samp>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<sub>&nbsp;</sub>&nbsp; "
+"&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<sub>&nbsp;</sub>&nbsp; &nbsp;&nbsp;&nbsp;"
+"&nbsp;<u>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</u></samp><br> <samp>MEM.D<sub>1</"
+"sub>, MEM.D<sub>2</sub>, MEM.LATCH</samp> </td>\n"
 "    </tr>\n"
 "</table>\n"
 msgstr ""
@@ -9586,7 +9831,7 @@ msgstr ""
 "    <tr>\n"
 "        <td>&nbsp;<br><samp>D_{0} - D_{15}</samp></td>\n"
 "        <td></td>\n"
-"        <td>&nbsp;<br><samp>D<sub>0</sub> - D<sub>31</sub></samp></td>\n"
+"        <td>&nbsp;<br><samp>D<sub>0</sub> - D<sub>15</sub></samp></td>\n"
 "    </tr>\n"
 "    <tr>\n"
 "        <td></td>\n"
@@ -9670,9 +9915,9 @@ msgstr ""
 "        <td>&nbsp;<br><samp>prefix.net1, prefix.net2, ...</samp></td>\n"
 "    </tr>\n"
 "    <tr>\n"
-"        <td>&nbsp;<br><samp>USB1{DP DM}</samp></td>\n"
+"        <td>&nbsp;<br><samp>USB1{D+ D-}</samp></td>\n"
 "        <td></td>\n"
-"        <td>&nbsp;<br><samp>USB1.DP, USB1.DM</samp></td>\n"
+"        <td>&nbsp;<br><samp>USB1.D+, USB1.D-</samp></td>\n"
 "    </tr>\n"
 "    <tr>\n"
 "        <td><br></td>\n"
@@ -9685,10 +9930,10 @@ msgstr ""
 "    <tr>\n"
 "        <td>&nbsp;<br><samp>MEM{D_{[1..2]} ~LATCH}</samp></td>\n"
 "        <td></td>\n"
-"        <td> <samp>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"
-"&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <u>&nbsp;&nbsp;&nbsp;&nbsp;"
-"&nbsp;</u></samp><br> <samp>MEM.D<sub>1</sub>, MEM.D<sub>2</sub>, MEM.LATCH</"
-"samp> </td>\n"
+"        <td> <samp>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<sub>&nbsp;</sub>&nbsp; "
+"&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<sub>&nbsp;</sub>&nbsp; &nbsp;&nbsp;&nbsp;"
+"&nbsp;<u>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</u></samp><br> <samp>MEM.D<sub>1</"
+"sub>, MEM.D<sub>2</sub>, MEM.LATCH</samp> </td>\n"
 "    </tr>\n"
 "</table>\n"
 
@@ -10099,8 +10344,34 @@ msgstr "Please, fill required fields"
 msgid "\"%s\" is not a valid Spice value"
 msgstr "“%s” is not a valid Spice value"
 
+#, c-format
+msgid ""
+"Error loading symbol library %s.\n"
+"\n"
+"%s\n"
+msgstr ""
+"Error loading symbol library %s.\n"
+"\n"
+"%s\n"
+
+#, c-format
+msgid "Loading library \"%s\""
+msgstr "Loading library “%s”"
+
+msgid "Symbol..."
+msgstr "Symbol..."
+
+msgid "View as PNG..."
+msgstr "View as PNG..."
+
+msgid "Symbol as SVG..."
+msgstr "Symbol as SVG..."
+
 msgid "Library Editor"
 msgstr "Library Editor"
+
+msgid "KiCad Symbol Editor"
+msgstr "KiCad Symbol Editor"
 
 msgid "Libraries"
 msgstr "Libraries"
@@ -10252,8 +10523,8 @@ msgstr ""
 "an integer to ensure no duplicate table entries."
 
 #, c-format
-msgid "%s from schematic"
-msgstr "%s from schematic"
+msgid "%s%s [from schematic]"
+msgstr "%s%s [from schematic]"
 
 msgid "[Read Only Library]"
 msgstr "[Read Only Library]"
@@ -10449,10 +10720,6 @@ msgstr ""
 "Duplicate library nickname '%s' found in symbol library table file line %d"
 
 #, c-format
-msgid "Loading library \"%s\""
-msgstr "Loading library “%s”"
-
-#, c-format
 msgid ""
 "Error loading symbol library %s.\n"
 "\n"
@@ -10465,8 +10732,8 @@ msgstr ""
 msgid "(failed to load)"
 msgstr "(failed to load)"
 
-msgid "<none>"
-msgstr "<none>"
+msgid "KiCad Symbol Library Viewer"
+msgstr "KiCad Symbol Library Viewer"
 
 #, c-format
 msgid "Unit %c"
@@ -10660,6 +10927,12 @@ msgstr "Export…"
 msgid "Export a symbol to a new library file"
 msgstr "Export a symbol to a new library file"
 
+msgid "Update Symbol Fields..."
+msgstr "Update Symbol Fields..."
+
+msgid "Update symbol to match changes made in parent symbol"
+msgstr "Update symbol to match changes made in parent symbol"
+
 msgid "Add Symbol to Schematic"
 msgstr "Add Symbol to Schematic"
 
@@ -10671,6 +10944,9 @@ msgstr "Annotate pins with their electrical types"
 
 msgid "Show Symbol Tree"
 msgstr "Show Symbol Tree"
+
+msgid "Hide Symbol Tree"
+msgstr "Hide Symbol Tree"
 
 msgid "Export View as PNG..."
 msgstr "Export View as PNG…"
@@ -10807,12 +11083,6 @@ msgstr "Add Sheet"
 msgid "Add a hierarchical sheet"
 msgstr "Add a hierarchical sheet"
 
-msgid "Add Sheet Pin"
-msgstr "Add Sheet Pin"
-
-msgid "Add a sheet pin"
-msgstr "Add a sheet pin"
-
 msgid "Import Sheet Pin"
 msgstr "Import Sheet Pin"
 
@@ -10858,14 +11128,14 @@ msgstr "Rotate"
 msgid "Rotates selected item(s) counter-clockwise"
 msgstr "Rotates selected item(s) counter-clockwise"
 
-msgid "Mirror Around Horizontal Axis"
-msgstr "Mirror Around Horizontal Axis"
+msgid "Mirror Vertically"
+msgstr "Mirror Vertically"
 
 msgid "Flips selected item(s) from top to bottom"
 msgstr "Flips selected item(s) from top to bottom"
 
-msgid "Mirror Around Vertical Axis"
-msgstr "Mirror Around Vertical Axis"
+msgid "Mirror Horizontally"
+msgstr "Mirror Horizontally"
 
 msgid "Flips selected item(s) from left to right"
 msgstr "Flips selected item(s) from left to right"
@@ -11065,8 +11335,8 @@ msgstr "Schematic Setup..."
 msgid "Edit schematic setup including annotation styles and electrical rules"
 msgstr "Edit schematic setup including annotation styles and electrical rules"
 
-msgid "Edit Page Number..."
-msgstr "Edit Page Number..."
+msgid "Edit Sheet Page Number..."
+msgstr "Edit Sheet Page Number..."
 
 msgid "Edit the page number of the current or selected sheet"
 msgstr "Edit the page number of the current or selected sheet"
@@ -11120,8 +11390,8 @@ msgstr "Generate a bill of materials for the current schematic"
 msgid "Highlight on PCB"
 msgstr "Highlight on PCB"
 
-msgid "Highlight corresponding items in board editor"
-msgstr "Highlight corresponding items in board editor"
+msgid "Highlight corresponding items in PCB editor"
+msgstr "Highlight corresponding items in PCB editor"
 
 msgid "Show Hidden Pins"
 msgstr "Show Hidden Pins"
@@ -11144,14 +11414,14 @@ msgstr "Switch H & V only mode for new wires and buses"
 msgid "Enter Sheet"
 msgstr "Enter Sheet"
 
-msgid "Display the selected sheet's contents in the Eeschema window"
-msgstr "Display the selected sheet's contents in the Eeschema window"
+msgid "Display the selected sheet's contents in the schematic editor"
+msgstr "Display the selected sheet's contents in the schematic editor"
 
 msgid "Leave Sheet"
 msgstr "Leave Sheet"
 
-msgid "Display the parent sheet in the Eeschema window"
-msgstr "Display the parent sheet in the Eeschema window"
+msgid "Display the parent sheet in the schematic editor"
+msgstr "Display the parent sheet in the schematic editor"
 
 msgid "Hierarchy Navigator"
 msgstr "Hierarchy Navigator"
@@ -11336,11 +11606,14 @@ msgstr ""
 msgid "Couldn't load image from \"%s\""
 msgstr "Couldn't load image from “%s”"
 
-msgid "Click over a sheet."
-msgstr "Click over a sheet."
-
 msgid "No new hierarchical labels found."
 msgstr "No new hierarchical labels found."
+
+msgid "Junction location contains no joinable wires and/or pins."
+msgstr "Junction location contains no joinable wires and/or pins."
+
+msgid "Click over a sheet."
+msgstr "Click over a sheet."
 
 msgid "Symbol Unit"
 msgstr "Symbol Unit"
@@ -11371,8 +11644,8 @@ msgstr "Do you wish to delete the unreferenced pins from this sheet?"
 msgid "Enter page number for sheet path%s"
 msgstr "Enter page number for sheet path%s"
 
-msgid "Edit Page Number"
-msgstr "Edit Page Number"
+msgid "Edit Sheet Page Number"
+msgstr "Edit Sheet Page Number"
 
 msgid "Reached end of schematic."
 msgstr "Reached end of schematic."
@@ -11414,6 +11687,9 @@ msgstr "No bus selected"
 msgid "Bus has no members"
 msgstr "Bus has no members"
 
+msgid "No symbol library selected."
+msgstr "No symbol library selected."
+
 msgid "No symbol to export"
 msgstr "No symbol to export"
 
@@ -11429,6 +11705,9 @@ msgstr "Filename:"
 
 msgid "Edit Symbol Name"
 msgstr "Edit Symbol Name"
+
+msgid "Symbol is not derived from another symbol."
+msgstr "Symbol is not derived from another symbol."
 
 #, c-format
 msgid "This position is already occupied by another pin, in unit %d."
@@ -11609,8 +11888,8 @@ msgstr "Unknown Excellon G Code: &lt;%s&gt;"
 msgid "Cannot create file \"%s\""
 msgstr "Cannot create file “%s”"
 
-msgid "<b>No more available layers</b> in Gerbview to load files"
-msgstr "<b>No more available layers</b> in Gerbview to load files"
+msgid "<b>No more available layers</b> in GerbView to load files"
+msgstr "<b>No more available layers</b> in GerbView to load files"
 
 #, c-format
 msgid ""
@@ -11724,9 +12003,6 @@ msgstr "Graphic Layer"
 msgid "Clear"
 msgstr "Clear"
 
-msgid "Dark"
-msgstr "Dark"
-
 msgid "Polarity"
 msgstr "Polarity"
 
@@ -11785,15 +12061,18 @@ msgstr "Clear Recent Drill Files"
 msgid "Clear Recent Job Files"
 msgstr "Clear Recent Job Files"
 
+msgid "KiCad Gerber Viewer"
+msgstr "KiCad Gerber Viewer"
+
 msgid "Layers Manager"
 msgstr "Layers Manager"
+
+msgid "Gerber Viewer"
+msgstr "Gerber Viewer"
 
 #, c-format
 msgid "Drawing layer %d not in use"
 msgstr "Drawing layer %d not in use"
-
-msgid "GerbView"
-msgstr "GerbView"
 
 msgid "(with X2 attributes)"
 msgstr "(with X2 attributes)"
@@ -11805,8 +12084,8 @@ msgstr "Image name: “%s”  Layer name: “%s”"
 msgid "X2 attr"
 msgstr "X2 attr"
 
-msgid "Gerbview"
-msgstr "Gerbview"
+msgid "GerbView"
+msgstr "GerbView"
 
 msgid "This job file uses an outdated format. Please recreate it."
 msgstr "This job file uses an outdated format. Please recreate it."
@@ -11930,11 +12209,11 @@ msgstr "Show Source..."
 msgid "Show source file for the current layer"
 msgstr "Show source file for the current layer"
 
-msgid "Export to Pcbnew..."
-msgstr "Export to Pcbnew..."
+msgid "Export to PCB Editor..."
+msgstr "Export to PCB Editor..."
 
-msgid "Export data in Pcbnew format"
-msgstr "Export data in Pcbnew format"
+msgid "Export data as a KiCad PCB file"
+msgstr "Export data as a KiCad PCB file"
 
 msgid "Clear Current Layer..."
 msgstr "Clear Current Layer..."
@@ -11962,6 +12241,9 @@ msgstr "Highlight Component"
 
 msgid "Highlight Attribute"
 msgstr "Highlight Attribute"
+
+msgid "Highlight DCode"
+msgstr "Highlight DCode"
 
 msgid "Next Layer"
 msgstr "Next Layer"
@@ -12046,6 +12328,10 @@ msgstr "Highlight Items of Net “%s”"
 msgid "Highlight Aperture Type \"%s\""
 msgstr "Highlight Aperture Type “%s”"
 
+#, c-format
+msgid "Highlight DCode D%d"
+msgstr "Highlight DCode D%d"
+
 msgid "Layers"
 msgstr "Layers"
 
@@ -12067,8 +12353,11 @@ msgstr "Show negative objects in this color"
 msgid "Show the (x,y) grid dots"
 msgstr "Show the (x,y) grid dots"
 
-msgid "Show worksheet"
-msgstr "Show worksheet"
+msgid "Drawing Sheet"
+msgstr "Drawing Sheet"
+
+msgid "Show drawing sheet border and title block"
+msgstr "Show drawing sheet border and title block"
 
 msgid "PCB Background"
 msgstr "PCB Background"
@@ -12162,6 +12451,34 @@ msgstr "Project Template Title"
 msgid "Project Template Selector"
 msgstr "Project Template Selector"
 
+msgid "Edit the project schematic"
+msgstr "Edit the project schematic"
+
+msgid "Edit global and/or project schematic symbol libraries"
+msgstr "Edit global and/or project schematic symbol libraries"
+
+msgid "Edit the project PCB design"
+msgstr "Edit the project PCB design"
+
+msgid "Edit global and/or project PCB footprint libraries"
+msgstr "Edit global and/or project PCB footprint libraries"
+
+msgid "Preview Gerber files"
+msgstr "Preview Gerber files"
+
+msgid "Convert bitmap images to schematic symbols or PCB footprints"
+msgstr "Convert bitmap images to schematic symbols or PCB footprints"
+
+msgid "Show tools for calculating resistance, current capacity, etc."
+msgstr "Show tools for calculating resistance, current capacity, etc."
+
+msgid ""
+"Edit drawing sheet borders and title blocks for use in schematics and PCB "
+"designs"
+msgstr ""
+"Edit drawing sheet borders and title blocks for use in schematics and PCB "
+"designs"
+
 msgid "KiCad project file"
 msgstr "KiCad project file"
 
@@ -12201,11 +12518,21 @@ msgstr ""
 "Do you want to create a new empty directory for the project?"
 
 msgid ""
-"Error creating new directory. Please try a different path. The project was "
-"not imported."
+"Error creating new directory. Please try a different path. The project "
+"cannot be imported."
 msgstr ""
-"Error creating new directory. Please try a different path. The project was "
-"not imported."
+"Error creating new directory. Please try a different path. The project "
+"cannot be imported."
+
+#, c-format
+msgid ""
+"Cannot copy file '%s'\n"
+"to '%s'\n"
+"The project cannot be imported."
+msgstr ""
+"Cannot copy file '%s'\n"
+"to '%s'\n"
+"The project cannot be imported."
 
 msgid "Import CADSTAR Archive Project Files"
 msgstr "Import CADSTAR Archive Project Files"
@@ -12221,16 +12548,18 @@ msgstr ""
 "File '%s'\n"
 "does not appear to be a valid KiCad project file."
 
+msgid "Project Files"
+msgstr "Project Files"
+
+msgid "Editors"
+msgstr "Editors"
+
 msgid "Load File to Edit"
 msgstr "Load File to Edit"
 
 #, c-format
-msgid ""
-"Project name:\n"
-"%s\n"
-msgstr ""
-"Project name:\n"
-"%s\n"
+msgid "Project: %s"
+msgstr "Project: %s"
 
 msgid "Restoring session"
 msgstr "Restoring session"
@@ -12245,14 +12574,14 @@ msgstr "Clear Recent Projects"
 msgid "Import Non-KiCad Project..."
 msgstr "Import Non-KiCad Project..."
 
-msgid "Import CADSTAR Project..."
-msgstr "Import CADSTAR Project..."
+msgid "CADSTAR Project..."
+msgstr "CADSTAR Project..."
 
 msgid "Import CADSTAR Archive Schematic and PCB (*.csa, *.cpa)"
 msgstr "Import CADSTAR Archive Schematic and PCB (*.csa, *.cpa)"
 
-msgid "Import EAGLE Project..."
-msgstr "Import EAGLE Project..."
+msgid "EAGLE Project..."
+msgstr "EAGLE Project..."
 
 msgid "Import EAGLE CAD XML schematic and board"
 msgstr "Import EAGLE CAD XML schematic and board"
@@ -12446,23 +12775,23 @@ msgstr "Close Project"
 msgid "Close the current project"
 msgstr "Close the current project"
 
-msgid "Edit Schematic"
-msgstr "Edit Schematic"
+msgid "Edit schematic"
+msgstr "Edit schematic"
 
-msgid "Edit Schematic Symbols"
-msgstr "Edit Schematic Symbols"
+msgid "Edit schematic symbols"
+msgstr "Edit schematic symbols"
 
 msgid "Edit PCB"
 msgstr "Edit PCB"
 
-msgid "Edit PCB Footprints"
-msgstr "Edit PCB Footprints"
+msgid "Edit PCB footprints"
+msgstr "Edit PCB footprints"
 
-msgid "View Gerber Files"
-msgstr "View Gerber Files"
+msgid "Preview Gerber output files"
+msgstr "Preview Gerber output files"
 
-msgid "Convert Image"
-msgstr "Convert Image"
+msgid "Image Converter"
+msgstr "Image Converter"
 
 msgid "Convert bitmap images to schematic or PCB components"
 msgstr "Convert bitmap images to schematic or PCB components"
@@ -12473,11 +12802,8 @@ msgstr "Calculator Tools"
 msgid "Run component calculations, track width calculations, etc."
 msgstr "Run component calculations, track width calculations, etc."
 
-msgid "Edit Worksheet"
-msgstr "Edit Worksheet"
-
-msgid "Edit worksheet graphics and text"
-msgstr "Edit worksheet graphics and text"
+msgid "Edit drawing sheet borders and title block"
+msgstr "Edit drawing sheet borders and title block"
 
 msgid "Open Text Editor"
 msgstr "Open Text Editor"
@@ -12578,6 +12904,14 @@ msgstr "%s closed [pid=%d]\n"
 #, c-format
 msgid "%s %s opened [pid=%ld]\n"
 msgstr "%s %s opened [pid=%ld]\n"
+
+msgid ""
+"Windows 7 and older is no longer supported by KiCad and its dependencies."
+msgstr ""
+"Windows 7 and older is no longer supported by KiCad and its dependencies."
+
+msgid "Unsupported Operating System"
+msgstr "Unsupported Operating System"
 
 #, c-format
 msgid "Error code: %d"
@@ -12756,8 +13090,8 @@ msgstr "File “%s” loaded"
 msgid "The current page layout has been modified.  Save changes?"
 msgstr "The current page layout has been modified.  Save changes?"
 
-msgid "Append Existing Page Layout File"
-msgstr "Append Existing Page Layout File"
+msgid "Append Existing Drawing Sheet"
+msgstr "Append Existing Drawing Sheet"
 
 #, c-format
 msgid "Unable to load %s file"
@@ -12783,6 +13117,9 @@ msgstr "Unable to create “%s”"
 
 msgid "Layout file is read only."
 msgstr "Layout file is read only."
+
+msgid "KiCad Drawing Sheet Editor"
+msgstr "KiCad Drawing Sheet Editor"
 
 msgid "coord origin: Right Bottom page corner"
 msgstr "coord origin: Right Bottom page corner"
@@ -12859,11 +13196,11 @@ msgstr "Add Bitmap"
 msgid "Add a bitmap image"
 msgstr "Add a bitmap image"
 
-msgid "Append Existing Page Layout File..."
-msgstr "Append Existing Page Layout File..."
+msgid "Append Existing Drawing Sheet..."
+msgstr "Append Existing Drawing Sheet..."
 
-msgid "Append an existing page layout design file to current file"
-msgstr "Append an existing page layout design file to current file"
+msgid "Append an existing drawing sheet file to current file"
+msgstr "Append an existing drawing sheet file to current file"
 
 msgid "Show Design Inspector"
 msgstr "Show Design Inspector"
@@ -12905,7 +13242,7 @@ msgid "Attenuation more than %f dB"
 msgstr "Attenuation more than %f dB"
 
 msgid ""
-"### Bridged tee attenuator:\n"
+"### Bridged Tee Attenuator\n"
 "__Zin__ desired input impedance in &#x2126;<br>\n"
 "__Zout__ desired output impedance<br>\n"
 "__Z<sub>0</sub> = Zin = Zout__<br><br>\n"
@@ -12915,7 +13252,7 @@ msgid ""
 "* ___R1 = Z<sub>0</sub> \\* (L - 1)___\n"
 "* ___R2 = Z<sub>0</sub> / (L - 1)___"
 msgstr ""
-"### Bridged tee attenuator:\n"
+"### Bridged Tee Attenuator\n"
 "__Zin__ desired input impedance in &#x2126;<br>\n"
 "__Zout__ desired output impedance<br>\n"
 "__Z<sub>0</sub> = Zin = Zout__<br><br>\n"
@@ -12926,69 +13263,71 @@ msgstr ""
 "* ___R2 = Z<sub>0</sub> / (L - 1)___"
 
 msgid ""
-"### Pi attenuator\n"
+"### PI Attenuator\n"
 "__Zin__ desired input impedance in &#x2126;<br>\n"
 "__Zout__ desired output impedance<br>\n"
 "__Zin = Zout__<br><br>\n"
 "\n"
 "* __a__ attenuation in dB\n"
 "* __L = 10<sup>a/20</sup>__ (the loss)\n"
-"* __A = (L + 1)/(L - 1)__<br><br>\n"
-"* ___R2 = (L- 1)/2 \\* &radic; ( (Zin \\* Zout) / L)___\n"
-"* ___R1 = 1/( A/Zin - 1/R2 )___\n"
-"* ___R3 = 1/ (A/Zout - 1/R2 )___"
+"* __A = (L + 1) / (L - 1)__<br><br>\n"
+"* ___R2 = (L- 1) / 2 \\* &radic; ( (Zin \\* Zout) / L)___\n"
+"* ___R1 = 1 / (A / Zin - 1 / R2)___\n"
+"* ___R3 = 1 / (A / Zout - 1 / R2)___"
 msgstr ""
-"### Pi attenuator\n"
+"### PI Attenuator\n"
 "__Zin__ desired input impedance in &#x2126;<br>\n"
 "__Zout__ desired output impedance<br>\n"
 "__Zin = Zout__<br><br>\n"
 "\n"
 "* __a__ attenuation in dB\n"
 "* __L = 10<sup>a/20</sup>__ (the loss)\n"
-"* __A = (L + 1)/(L - 1)__<br><br>\n"
-"* ___R2 = (L- 1)/2 \\* &radic; ( (Zin \\* Zout) / L)___\n"
-"* ___R1 = 1/( A/Zin - 1/R2 )___\n"
-"* ___R3 = 1/ (A/Zout - 1/R2 )___"
+"* __A = (L + 1) / (L - 1)__<br><br>\n"
+"* ___R2 = (L- 1) / 2 \\* &radic; ( (Zin \\* Zout) / L)___\n"
+"* ___R1 = 1 / (A / Zin - 1 / R2)___\n"
+"* ___R3 = 1 / (A / Zout - 1 / R2)___"
 
 msgid ""
-"### Split attenuator\n"
+"### Split Attenuator\n"
 "#### Attenuation is 6dB\n"
 "___Z<sub>in</sub>___ desired input impedance in &#x2126;<br>\n"
 "___Z<sub>out</sub>___ desired output impedance in &#x2126;<br>\n"
 "___Z<sub>in</sub> = Z<sub>out</sub>___\n"
 "\n"
-"___R1 = R2 = R3 = Z<sub>out</sub>/3___\n"
+"___R1 = R2 = R3 = Z<sub>out</sub> / 3___\n"
 msgstr ""
-"### Split attenuator\n"
+"### Split Attenuator\n"
 "#### Attenuation is 6dB\n"
 "___Z<sub>in</sub>___ desired input impedance in &#x2126;<br>\n"
 "___Z<sub>out</sub>___ desired output impedance in &#x2126;<br>\n"
 "___Z<sub>in</sub> = Z<sub>out</sub>___\n"
 "\n"
-"___R1 = R2 = R3 = Z<sub>out</sub>/3___\n"
+"___R1 = R2 = R3 = Z<sub>out</sub> / 3___\n"
 
 msgid ""
-"### Tee attenuator\n"
+"### Tee Attenuator\n"
 "__Zin__ desired input impedance in &#x2126;<br>\n"
 "__Zout__ desired output impedance<br>\n"
 "__Zin = Zout__<br><br>\n"
 "\n"
 "* __a__ attenuation in dB\n"
 "* __L = 10<sup>a/20</sup>__ (the loss)\n"
-"* ___A = (L + 1)/(L - 1)___<br><br>\n"
-"* ___R2 = 2&radic;(L \\* Z<sub>in</sub> \\* Z<sub>out</sub> )/(L - 1)___\n"
+"* ___A = (L + 1) / (L - 1)___<br><br>\n"
+"* ___R2 = 2 &radic; (L \\* Z<sub>in</sub> \\* Z<sub>out</sub> ) / (L - "
+"1)___\n"
 "* ___R1 = Z<sub>in</sub> \\* A - R2___\n"
 "* ___R3 = Z<sub>out</sub> \\* A - R2___\n"
 msgstr ""
-"### Tee attenuator\n"
+"### Tee Attenuator\n"
 "__Zin__ desired input impedance in &#x2126;<br>\n"
 "__Zout__ desired output impedance<br>\n"
 "__Zin = Zout__<br><br>\n"
 "\n"
 "* __a__ attenuation in dB\n"
 "* __L = 10<sup>a/20</sup>__ (the loss)\n"
-"* ___A = (L + 1)/(L - 1)___<br><br>\n"
-"* ___R2 = 2&radic;(L \\* Z<sub>in</sub> \\* Z<sub>out</sub> )/(L - 1)___\n"
+"* ___A = (L + 1) / (L - 1)___<br><br>\n"
+"* ___R2 = 2 &radic; (L \\* Z<sub>in</sub> \\* Z<sub>out</sub> ) / (L - "
+"1)___\n"
 "* ___R1 = Z<sub>in</sub> \\* A - R2___\n"
 "* ___R3 = Z<sub>out</sub> \\* A - R2___\n"
 
@@ -13019,11 +13358,25 @@ msgstr "µA"
 msgid "Regulator Parameters"
 msgstr "Regulator Parameters"
 
+msgid ""
+"Type of the regulator.\n"
+"There are 2 types:\n"
+"- regulators which have a dedicated sense pin for the voltage regulation.\n"
+"- 3 terminal pins."
+msgstr ""
+"Type of the regulator.\n"
+"There are 2 types:\n"
+"- regulators which have a dedicated sense pin for the voltage regulation.\n"
+"- 3 terminal pins."
+
+msgid "Standard Type"
+msgstr "Standard Type"
+
+msgid "3 Terminal Type"
+msgstr "3 Terminal Type"
+
 msgid "Formula"
 msgstr "Formula"
-
-msgid "Vout = Vref * (R1 + R2) / R2"
-msgstr "Vout = Vref * (R1 + R2) / R2"
 
 msgid "R1:"
 msgstr "R1:"
@@ -13046,23 +13399,6 @@ msgstr ""
 
 msgid "For 3 terminal regulators only, the  Adjust pin current."
 msgstr "For 3 terminal regulators only, the  Adjust pin current."
-
-msgid ""
-"Type of the regulator.\n"
-"There are 2 types:\n"
-"- regulators which have a dedicated sense pin for the voltage regulation.\n"
-"- 3 terminal pins."
-msgstr ""
-"Type of the regulator.\n"
-"There are 2 types:\n"
-"- regulators which have a dedicated sense pin for the voltage regulation.\n"
-"- 3 terminal pins."
-
-msgid "Standard Type"
-msgstr "Standard Type"
-
-msgid "3 Terminal Type"
-msgstr "3 Terminal Type"
 
 msgid "Calculate"
 msgstr "Calculate"
@@ -13103,11 +13439,11 @@ msgstr "PI"
 msgid "Tee"
 msgstr "Tee"
 
-msgid "Bridged Tee"
-msgstr "Bridged Tee"
+msgid "Bridged tee"
+msgstr "Bridged tee"
 
-msgid "Resistive Splitter"
-msgstr "Resistive Splitter"
+msgid "Resistive splitter"
+msgstr "Resistive splitter"
 
 msgid "Attenuators"
 msgstr "Attenuators"
@@ -13115,26 +13451,20 @@ msgstr "Attenuators"
 msgid "Parameters"
 msgstr "Parameters"
 
-msgid "Attenuation"
-msgstr "Attenuation"
+msgid "Attenuation:"
+msgstr "Attenuation:"
 
 msgid "dB"
 msgstr "dB"
 
-msgid "Zin"
-msgstr "Zin"
+msgid "Zin:"
+msgstr "Zin:"
 
-msgid "Zout"
-msgstr "Zout"
+msgid "Zout:"
+msgstr "Zout:"
 
-msgid "R1"
-msgstr "R1"
-
-msgid "R2"
-msgstr "R2"
-
-msgid "R3"
-msgstr "R3"
+msgid "R3:"
+msgstr "R3:"
 
 msgid "RF Attenuators"
 msgstr "RF Attenuators"
@@ -13142,14 +13472,14 @@ msgstr "RF Attenuators"
 msgid "Inputs"
 msgstr "Inputs"
 
-msgid "Required Resistance:"
-msgstr "Required Resistance:"
+msgid "Required resistance:"
+msgstr "Required resistance:"
 
-msgid "Exclude Value 1:"
-msgstr "Exclude Value 1:"
+msgid "Exclude value 1:"
+msgstr "Exclude value 1:"
 
-msgid "Exclude Value 2:"
-msgstr "Exclude Value 2:"
+msgid "Exclude value 2:"
+msgstr "Exclude value 2:"
 
 msgid "E1"
 msgstr "E1"
@@ -13166,14 +13496,14 @@ msgstr "E12"
 msgid "Solutions"
 msgstr "Solutions"
 
-msgid "Simple Solution:"
-msgstr "Simple Solution:"
+msgid "Simple solution:"
+msgstr "Simple solution:"
 
-msgid "3R Solution:"
-msgstr "3R Solution:"
+msgid "3R solution:"
+msgstr "3R solution:"
 
-msgid "4R Solution:"
-msgstr "4R Solution:"
+msgid "4R solution:"
+msgstr "4R solution:"
 
 msgid "E-Series"
 msgstr "E-Series"
@@ -13211,8 +13541,8 @@ msgstr "Microstrip Line"
 msgid "Coplanar wave guide"
 msgstr "Coplanar wave guide"
 
-msgid "Coplanar wave guide with ground plane"
-msgstr "Coplanar wave guide with ground plane"
+msgid "Coplanar wave guide w/ ground plane"
+msgstr "Coplanar wave guide w/ ground plane"
 
 msgid "Rectangular Waveguide"
 msgstr "Rectangular Waveguide"
@@ -13238,8 +13568,8 @@ msgstr "Substrate Parameters"
 msgid "Er:"
 msgstr "Er:"
 
-msgid "TanD:"
-msgstr "TanD:"
+msgid "Tan delta:"
+msgstr "Tan delta:"
 
 msgid "Rho:"
 msgstr "Rho:"
@@ -13259,11 +13589,11 @@ msgstr "T:"
 msgid "Rough:"
 msgstr "Rough:"
 
-msgid "mu Rel:"
-msgstr "mu Rel:"
+msgid "Insulator mu:"
+msgstr "Insulator mu:"
 
-msgid "mu Rel C:"
-msgstr "mu Rel C:"
+msgid "Conductor mu:"
+msgstr "Conductor mu:"
 
 msgid "Component Parameters"
 msgstr "Component Parameters"
@@ -13285,12 +13615,6 @@ msgstr "Synthesize"
 
 msgid "Electrical Parameters"
 msgstr "Electrical Parameters"
-
-msgid "Z"
-msgstr "Z"
-
-msgid "Angle"
-msgstr "Angle"
 
 msgid "Results"
 msgstr "Results"
@@ -13331,8 +13655,14 @@ msgstr "Characteristic impedance of conductor"
 msgid "Applied current:"
 msgstr "Applied current:"
 
-msgid "Plating resistivity (Ohm.m):"
-msgstr "Plating resistivity (Ohm.m):"
+msgid "Plating resistivity:"
+msgstr "Plating resistivity:"
+
+msgid "ohm-meter"
+msgstr "ohm-meter"
+
+msgid "Substrate relative permittivity:"
+msgstr "Substrate relative permittivity:"
 
 msgid "Relative dielectric constant (epsilon r)"
 msgstr "Relative dielectric constant (epsilon r)"
@@ -13358,14 +13688,20 @@ msgstr "ns"
 msgid "nanoseconds"
 msgstr "nanoseconds"
 
-msgid "Top view of via"
-msgstr "Top view of via"
+msgid ""
+"Warning:\n"
+"Via pad diameter >= Clearance hole diameter.\n"
+"Some parameters cannot be calculated for a via inside a copper zone."
+msgstr ""
+"Warning:\n"
+"Via pad diameter >= Clearance hole diameter.\n"
+"Some parameters cannot be calculated for a via inside a copper zone."
 
 msgid "Resistance:"
 msgstr "Resistance:"
 
-msgid "Ohm"
-msgstr "Ω"
+msgid "ohm"
+msgstr "ohm"
 
 msgid "Voltage drop:"
 msgstr "Voltage drop:"
@@ -13373,8 +13709,8 @@ msgstr "Voltage drop:"
 msgid "Power loss:"
 msgstr "Power loss:"
 
-msgid "Watt"
-msgstr "Watt"
+msgid "W"
+msgstr "W"
 
 msgid "Thermal resistance:"
 msgstr "Thermal resistance:"
@@ -13382,8 +13718,8 @@ msgstr "Thermal resistance:"
 msgid "Using thermal conductivity value 401 Watts/(meter-Kelvin)"
 msgstr "Using thermal conductivity value 401 Watts/(meter-Kelvin)"
 
-msgid "deg C/Watt"
-msgstr "deg C/Watt"
+msgid "deg C/W"
+msgstr "deg C/W"
 
 msgid "Estimated ampacity:"
 msgstr "Estimated ampacity:"
@@ -13427,16 +13763,8 @@ msgstr "Reactance:"
 msgid "Inductive reactance for given rise time and calculated inductance"
 msgstr "Inductive reactance for given rise time and calculated inductance"
 
-msgid ""
-"Warning:\n"
-"Via pad diameter >= Clearance hole diameter.\n"
-"Some parameters cannot be calculated for a via\n"
-"inside a copper zone."
-msgstr ""
-"Warning:\n"
-"Via pad diameter >= Clearance hole diameter.\n"
-"Some parameters cannot be calculated for a via\n"
-"inside a copper zone."
+msgid "Top view of via"
+msgstr "Top view of via"
 
 msgid "Current:"
 msgstr "Current:"
@@ -13446,9 +13774,6 @@ msgstr "Conductor length:"
 
 msgid "Resistivity:"
 msgstr "Resistivity:"
-
-msgid "Ohm-meter"
-msgstr "Ohm-meter"
 
 msgid "External Layer Traces"
 msgstr "External Layer Traces"
@@ -13468,8 +13793,8 @@ msgstr "mm²"
 msgid "Internal Layer Traces"
 msgstr "Internal Layer Traces"
 
-msgid "Voltage > 500V:"
-msgstr "Voltage > 500V:"
+msgid "Voltage > 500 V:"
+msgstr "Voltage > 500 V:"
 
 msgid "Update Values"
 msgstr "Update Values"
@@ -13495,35 +13820,35 @@ msgstr "A6"
 msgid "A7"
 msgstr "A7"
 
-msgid "0 .. 15V"
-msgstr "0 .. 15V"
+msgid "0 .. 15 V"
+msgstr "0 .. 15 V"
 
-msgid "16 .. 30V"
-msgstr "16 .. 30V"
+msgid "16 .. 30 V"
+msgstr "16 .. 30 V"
 
-msgid "31 .. 50V"
-msgstr "31 .. 50V"
+msgid "31 .. 50 V"
+msgstr "31 .. 50 V"
 
-msgid "51 .. 100V"
-msgstr "51 .. 100V"
+msgid "51 .. 100 V"
+msgstr "51 .. 100 V"
 
-msgid "101 .. 150V"
-msgstr "101 .. 150V"
+msgid "101 .. 150 V"
+msgstr "101 .. 150 V"
 
-msgid "151 .. 170V"
-msgstr "151 .. 170V"
+msgid "151 .. 170 V"
+msgstr "151 .. 170 V"
 
-msgid "171 .. 250V"
-msgstr "171 .. 250V"
+msgid "171 .. 250 V"
+msgstr "171 .. 250 V"
 
-msgid "251 .. 300V"
-msgstr "251 .. 300V"
+msgid "251 .. 300 V"
+msgstr "251 .. 300 V"
 
-msgid "301 .. 500V"
-msgstr "301 .. 500V"
+msgid "301 .. 500 V"
+msgstr "301 .. 500 V"
 
-msgid " > 500V"
-msgstr " > 500V"
+msgid " > 500 V"
+msgstr " > 500 V"
 
 msgid ""
 "*  B1 - Internal Conductors\n"
@@ -13608,8 +13933,8 @@ msgid ""
 "\tE1:  1.0   -    -    -    -    -    -    -    -    -    -    -\n"
 "\n"
 "This calculator finds combinations of standard E-series components to\n"
-"create arbitrary values.  You can enter the required resistance from 0,0025 "
-"to 4000 kOhm.\n"
+"create arbitrary values.  You can enter the required resistance from 0.0025 "
+"to 4000 kΩ.\n"
 "Solutions using up to 4 components are given.\n"
 "\n"
 "By default, the request value is always excluded from the solution set.  It "
@@ -13633,8 +13958,8 @@ msgstr ""
 "\tE1:  1.0   -    -    -    -    -    -    -    -    -    -    -\n"
 "\n"
 "This calculator finds combinations of standard E-series components to\n"
-"create arbitrary values.  You can enter the required resistance from 0,0025 "
-"to 4000 kOhm.\n"
+"create arbitrary values.  You can enter the required resistance from 0.0025 "
+"to 4000 kΩ.\n"
 "Solutions using up to 4 components are given.\n"
 "\n"
 "By default, the request value is always excluded from the solution set.  It "
@@ -13702,15 +14027,15 @@ msgid ""
 "\n"
 "The controlling value is shown in bold.\n"
 "\n"
-"The calculations are valid for currents up to 35A (external) or 17.5A "
-"(internal), temperature rises up to 100 deg C, and widths of up to 400mil "
-"(10mm).\n"
+"The calculations are valid for currents up to 35 A (external) or 17.5 A "
+"(internal), temperature rises up to 100 ºC, and widths of up to 400 mil (10 "
+"mm).\n"
 "\n"
 "The formula, from IPC 2221, is\n"
 "<center>__I = K * dT<sup>0.44</sup> * (W*H)<sup>0.725</sup>__</center>\n"
 "where:  \n"
-"__I__ = maximum current in amps  \n"
-"__dt__ = temperature rise above ambient in deg C  \n"
+"__I__ = maximum current in A  \n"
+"__dt__ = temperature rise above ambient in ºC  \n"
 "__W,H__ = width and thickness in mils  \n"
 "__K__ = 0.024 for internal traces or 0.048 for external traces\n"
 msgstr ""
@@ -13723,15 +14048,15 @@ msgstr ""
 "\n"
 "The controlling value is shown in bold.\n"
 "\n"
-"The calculations are valid for currents up to 35A (external) or 17.5A "
-"(internal), temperature rises up to 100 deg C, and widths of up to 400mil "
-"(10mm).\n"
+"The calculations are valid for currents up to 35 A (external) or 17.5 A "
+"(internal), temperature rises up to 100 ºC, and widths of up to 400 mil (10 "
+"mm).\n"
 "\n"
 "The formula, from IPC 2221, is\n"
 "<center>__I = K * dT<sup>0.44</sup> * (W*H)<sup>0.725</sup>__</center>\n"
 "where:  \n"
-"__I__ = maximum current in amps  \n"
-"__dt__ = temperature rise above ambient in deg C  \n"
+"__I__ = maximum current in A  \n"
+"__dt__ = temperature rise above ambient in ºC  \n"
 "__W,H__ = width and thickness in mils  \n"
 "__K__ = 0.024 for internal traces or 0.048 for external traces\n"
 
@@ -13744,134 +14069,132 @@ msgstr "Dielectric Loss Factor"
 msgid "Specific Resistance"
 msgstr "Specific Resistance"
 
-msgid "Er"
-msgstr "Er"
+msgid "Substrate relative permittivity (dielectric constant)"
+msgstr "Substrate relative permittivity (dielectric constant)"
 
-msgid "Epsilon R: substrate relative dielectric constant"
-msgstr "Epsilon R: substrate relative dielectric constant"
-
-msgid "TanD"
-msgstr "TanD"
-
-msgid "Tangent delta: dielectric loss factor."
-msgstr "Tangent delta: dielectric loss factor."
-
-msgid "Rho"
-msgstr "Rho"
+msgid "Dielectric loss (dissipation factor)"
+msgstr "Dielectric loss (dissipation factor)"
 
 msgid ""
 "Electrical resistivity or specific electrical resistance of conductor "
-"(Ohm*meter)"
+"(ohm*meter)"
 msgstr ""
-"Electrical resistivity or specific electrical resistance of conductor (Ωm)"
+"Electrical resistivity or specific electrical resistance of conductor "
+"(ohm*meter)"
 
 msgid "Frequency of the input signal"
 msgstr "Frequency of the input signal"
 
-msgid "ErEff:"
-msgstr "ErEff:"
+#, c-format
+msgid "Effective %s:"
+msgstr "Effective %s:"
 
-msgid "Conductor Losses:"
-msgstr "Conductor Losses:"
+msgid "Conductor losses:"
+msgstr "Conductor losses:"
 
-msgid "Dielectric Losses:"
-msgstr "Dielectric Losses:"
+msgid "Dielectric losses:"
+msgstr "Dielectric losses:"
 
-msgid "Skin Depth:"
-msgstr "Skin Depth:"
+msgid "Skin depth:"
+msgstr "Skin depth:"
 
-msgid "Height of Substrate"
-msgstr "Height of Substrate"
+msgid "Height of substrate"
+msgstr "Height of substrate"
 
-msgid "Height of Box Top"
-msgstr "Height of Box Top"
+msgid "Height of box top"
+msgstr "Height of box top"
 
-msgid "Strip Thickness"
-msgstr "Strip Thickness"
+msgid "Strip thickness"
+msgstr "Strip thickness"
 
-msgid "Rough"
-msgstr "Rough"
+msgid "Roughness"
+msgstr "Roughness"
 
-msgid "Conductor Roughness"
-msgstr "Conductor Roughness"
+msgid "Conductor roughness"
+msgstr "Conductor roughness"
 
-msgid "mu Rel S"
-msgstr "mu Rel S"
+msgid "substrate"
+msgstr "substrate"
 
-msgid "Relative Permeability (mu) of Substrate"
-msgstr "Relative Permeability (mu) of Substrate"
+msgid "Relative permeability (mu) of substrate"
+msgstr "Relative permeability (mu) of substrate"
 
-msgid "mu Rel C"
-msgstr "mu Rel C"
+msgid "conductor"
+msgstr "conductor"
 
-msgid "Relative Permeability (mu) of Conductor"
-msgstr "Relative Permeability (mu) of Conductor"
+msgid "Relative permeability (mu) of conductor"
+msgstr "Relative permeability (mu) of conductor"
 
-msgid "Line Length"
-msgstr "Line Length"
+msgid "Line width"
+msgstr "Line width"
 
-msgid "Characteristic Impedance"
-msgstr "Characteristic Impedance"
+msgid "Line length"
+msgstr "Line length"
 
-msgid "Electrical Length"
-msgstr "Electrical Length"
+msgid "Characteristic impedance"
+msgstr "Characteristic impedance"
 
-msgid "Gap Width"
-msgstr "Gap Width"
+msgid "Electrical length"
+msgstr "Electrical length"
+
+msgid "Gap width"
+msgstr "Gap width"
 
 msgid "ZF(H10) = Ey / Hx:"
 msgstr "ZF(H10) = Ey / Hx:"
 
-msgid "TE-Modes:"
-msgstr "TE-Modes:"
+msgid "TE-modes:"
+msgstr "TE-modes:"
 
-msgid "TM-Modes:"
-msgstr "TM-Modes:"
+msgid "TM-modes:"
+msgstr "TM-modes:"
 
-msgid "mu Rel I"
-msgstr "mu Rel I"
+msgid "insulator"
+msgstr "insulator"
 
-msgid "Relative Permeability (mu) of Insulator"
-msgstr "Relative Permeability (mu) of Insulator"
+msgid "Relative permeability (mu) of insulator"
+msgstr "Relative permeability (mu) of insulator"
 
-msgid "Width of Waveguide"
-msgstr "Width of Waveguide"
+msgid "Width of waveguide"
+msgstr "Width of waveguide"
 
-msgid "Height of Waveguide"
-msgstr "Height of Waveguide"
+msgid "Height of waveguide"
+msgstr "Height of waveguide"
 
-msgid "Waveguide Length"
-msgstr "Waveguide Length"
+msgid "Waveguide length"
+msgstr "Waveguide length"
 
 msgid "Din"
 msgstr "Din"
 
-msgid "Inner Diameter (conductor)"
-msgstr "Inner Diameter (conductor)"
+msgid "Inner diameter (conductor)"
+msgstr "Inner diameter (conductor)"
 
 msgid "Dout"
 msgstr "Dout"
 
-msgid "Outer Diameter (insulator)"
-msgstr "Outer Diameter (insulator)"
+msgid "Outer diameter (insulator)"
+msgstr "Outer diameter (insulator)"
 
-msgid "ErEff Even:"
-msgstr "ErEff Even:"
+#, c-format
+msgid "Effective %s (even):"
+msgstr "Effective %s (even):"
 
-msgid "ErEff Odd:"
-msgstr "ErEff Odd:"
+#, c-format
+msgid "Effective %s (odd):"
+msgstr "Effective %s (odd):"
 
-msgid "Conductor Losses Even:"
-msgstr "Conductor Losses Even:"
+msgid "Conductor losses (even):"
+msgstr "Conductor losses (even):"
 
-msgid "Conductor Losses Odd:"
-msgstr "Conductor Losses Odd:"
+msgid "Conductor losses (odd):"
+msgstr "Conductor losses (odd):"
 
-msgid "Dielectric Losses Even:"
-msgstr "Dielectric Losses Even:"
+msgid "Dielectric losses (even):"
+msgstr "Dielectric losses (even):"
 
-msgid "Dielectric Losses Odd:"
-msgstr "Dielectric Losses Odd:"
+msgid "Dielectric losses (odd):"
+msgstr "Dielectric losses (odd):"
 
 msgid "Zeven"
 msgstr "Zeven"
@@ -13885,23 +14208,23 @@ msgstr "Zodd"
 msgid "Odd mode impedance (lines driven by opposite (differential) voltages)"
 msgstr "Odd mode impedance (lines driven by opposite (differential) voltages)"
 
-msgid "distance between strip and top metal"
-msgstr "distance between strip and top metal"
+msgid "Distance between strip and top metal"
+msgstr "Distance between strip and top metal"
 
 msgid "Twists"
 msgstr "Twists"
 
-msgid "Number of Twists per Length"
-msgstr "Number of Twists per Length"
+msgid "Number of twists per length"
+msgstr "Number of twists per length"
 
-msgid "ErEnv"
-msgstr "ErEnv"
+msgid "environment"
+msgstr "environment"
 
-msgid "Relative Permittivity of Environment"
-msgstr "Relative Permittivity of Environment"
+msgid "Relative permittivity of environment"
+msgstr "Relative permittivity of environment"
 
-msgid "Cable Length"
-msgstr "Cable Length"
+msgid "Cable length"
+msgstr "Cable length"
 
 msgid "Electrical Resistivity in Ohm*m"
 msgstr "Electrical Resistivity in Ohm*m"
@@ -13918,9 +14241,6 @@ msgstr "mil"
 msgid "inch"
 msgstr "inch"
 
-msgid "oz/ft^2"
-msgstr "oz/ft^2"
-
 msgid "GHz"
 msgstr "GHz"
 
@@ -13930,11 +14250,8 @@ msgstr "MHz"
 msgid "kHz"
 msgstr "kHz"
 
-msgid "Radian"
-msgstr "Radian"
-
-msgid "Degree"
-msgstr "Degree"
+msgid "rad"
+msgstr "rad"
 
 msgid "Create an array"
 msgstr "Create an array"
@@ -14065,6 +14382,24 @@ msgstr "Available materials:"
 msgid "Dielectric Materials"
 msgstr "Dielectric Materials"
 
+msgid "Has castellated pads"
+msgstr "Has castellated pads"
+
+msgid "Plated board edge"
+msgstr "Plated board edge"
+
+msgid "Copper finish:"
+msgstr "Copper finish:"
+
+msgid "Edge card connectors:"
+msgstr "Edge card connectors:"
+
+msgid "Yes, bevelled"
+msgstr "Yes, bevelled"
+
+msgid "Options for edge card connectors."
+msgstr "Options for edge card connectors."
+
 msgid "Core"
 msgstr "Core"
 
@@ -14105,17 +14440,62 @@ msgstr ""
 msgid "A layer thickness is < 0. Fix it"
 msgstr "A layer thickness is < 0. Fix it"
 
-msgid "Id"
-msgstr "Id"
+msgid "Copper layers:"
+msgstr "Copper layers:"
 
-msgid "No constraint"
-msgstr "No constraint"
+msgid "Select the number of copper layers in the stackup"
+msgstr "Select the number of copper layers in the stackup"
+
+msgid "2"
+msgstr "2"
+
+msgid "4"
+msgstr "4"
+
+msgid "6"
+msgstr "6"
+
+msgid "8"
+msgstr "8"
+
+msgid "10"
+msgstr "10"
+
+msgid "12"
+msgstr "12"
+
+msgid "14"
+msgstr "14"
+
+msgid "16"
+msgstr "16"
+
+msgid "18"
+msgstr "18"
+
+msgid "20"
+msgstr "20"
+
+msgid "22"
+msgstr "22"
+
+msgid "24"
+msgstr "24"
+
+msgid "26"
+msgstr "26"
+
+msgid "28"
+msgstr "28"
+
+msgid "30"
+msgstr "30"
+
+msgid "32"
+msgstr "32"
 
 msgid "Impedance controlled"
 msgstr "Impedance controlled"
-
-msgid "Impedance Control"
-msgstr "Impedance Control"
 
 msgid ""
 "If Impedance Controlled option is set,\n"
@@ -14130,26 +14510,8 @@ msgstr "Add Dielectric Layer"
 msgid "Remove Dielectric Layer"
 msgstr "Remove Dielectric Layer"
 
-msgid "Board Finish"
-msgstr "Board Finish"
-
-msgid "Has castellated pads"
-msgstr "Has castellated pads"
-
-msgid "Plated board edge"
-msgstr "Plated board edge"
-
-msgid "Copper finish:"
-msgstr "Copper finish:"
-
-msgid "Edge card connectors:"
-msgstr "Edge card connectors:"
-
-msgid "Yes, bevelled"
-msgstr "Yes, bevelled"
-
-msgid "Options for edge card connectors."
-msgstr "Options for edge card connectors."
+msgid "Id"
+msgstr "Id"
 
 msgid "Board thickness from stackup:"
 msgstr "Board thickness from stackup:"
@@ -14454,8 +14816,8 @@ msgstr ""
 "    Change Array\n"
 "***********************\n"
 
-msgid "will be ignored"
-msgstr "will be ignored"
+msgid " will be ignored"
+msgstr " will be ignored"
 
 msgid ""
 "\n"
@@ -14600,6 +14962,9 @@ msgstr "Reannotate:"
 msgid "Front"
 msgstr "Front"
 
+msgid "Back"
+msgstr "Back"
+
 msgid "Update schematic"
 msgstr "Update schematic"
 
@@ -14655,14 +15020,14 @@ msgstr ""
 msgid "Front prefix:"
 msgstr "Front prefix:"
 
-msgid "Optional prefix for component side reference designations (i.e. F_)"
-msgstr "Optional prefix for component side reference designations (i.e. F_)"
+msgid "Optional prefix for component side reference designations (e.g. F_)"
+msgstr "Optional prefix for component side reference designations (e.g. F_)"
 
 msgid "Back prefix:"
 msgstr "Back prefix:"
 
-msgid "Optional prefix for solder side reference designations (i.e. B_)"
-msgstr "Optional prefix for solder side reference designations (i.e. B_)"
+msgid "Optional prefix for solder side reference designations (e.g. B_)"
+msgstr "Optional prefix for solder side reference designations (e.g. B_)"
 
 msgid "Exclude locked footprints"
 msgstr "Exclude locked footprints"
@@ -14700,6 +15065,9 @@ msgstr "Board Editor Layers"
 
 msgid "Physical Stackup"
 msgstr "Physical Stackup"
+
+msgid "Board Finish"
+msgstr "Board Finish"
 
 msgid "Solder Mask/Paste"
 msgstr "Solder Mask/Paste"
@@ -15046,10 +15414,10 @@ msgstr "Pad connections:"
 
 msgid ""
 "Default pad connection type to zone.\n"
-"This setting can be overridden by local  pad settings"
+"This setting can be overridden by local pad settings"
 msgstr ""
 "Default pad connection type to zone.\n"
-"This setting can be overridden by local  pad settings"
+"This setting can be overridden by local pad settings"
 
 msgid "Thermal reliefs"
 msgstr "Thermal reliefs"
@@ -15075,8 +15443,8 @@ msgstr "Fill"
 msgid "Fill type:"
 msgstr "Fill type:"
 
-msgid "Solid shape"
-msgstr "Solid shape"
+msgid "Solid fill"
+msgstr "Solid fill"
 
 msgid "Hatch pattern"
 msgstr "Hatch pattern"
@@ -15278,9 +15646,6 @@ msgid ""
 msgstr ""
 "Positive angles represent an anti-clockwise rotation. An angle of 0 will "
 "produce a full circle divided evenly into “Count” portions."
-
-msgid "4"
-msgstr "4"
 
 msgid "How many items in the array."
 msgstr "How many items in the array."
@@ -15500,6 +15865,9 @@ msgstr "Show design rules."
 
 msgid "-------- DRC cancelled by user.<br><br>"
 msgstr "-------- DRC cancelled by user.<br><br>"
+
+msgid "Done.<br><br>"
+msgstr "Done.<br><br>"
 
 msgid "Open the Board Setup... dialog"
 msgstr "Open the Board Setup... dialog"
@@ -16003,23 +16371,14 @@ msgstr ""
 "Enter a filename if you do not want to use default file names\n"
 "Can be used only when printing the current sheet"
 
-msgid "Copper layers:"
-msgstr "Copper layers:"
-
 msgid "Technical layers:"
 msgstr "Technical layers:"
 
 msgid "Print Mode"
 msgstr "Print Mode"
 
-msgid ""
-"Choose if you want to draw the sheet like it appears on screen,\n"
-"or in black and white mode, better to print it when using  black and white "
-"printers"
-msgstr ""
-"Choose if you want to draw the sheet like it appears on screen,\n"
-"or in black and white mode, better to print it when using  black and white "
-"printers"
+msgid "Export as black elements on a white background"
+msgstr "Export as black elements on a white background"
 
 msgid "Page with frame and title block"
 msgstr "Page with frame and title block"
@@ -16076,17 +16435,24 @@ msgstr "meter"
 msgid "0.1 Inch"
 msgstr "0.1 Inch"
 
+msgid "Vrml Units for Output Files"
+msgstr "Vrml Units for Output Files"
+
 msgid "Copy 3D model files to 3D model path"
 msgstr "Copy 3D model files to 3D model path"
+
+msgid ""
+"If checked: copy footprints 3D models in a folder\n"
+"If not checked: merge footprints 3D models in the vrml board file\n"
+msgstr ""
+"If checked: copy footprints 3D models in a folder\n"
+"If not checked: merge footprints 3D models in the vrml board file\n"
 
 msgid "Use relative paths to model files in board VRML file"
 msgstr "Use relative paths to model files in board VRML file"
 
 msgid "Use paths for model files in board VRML file relative to the vrml file"
 msgstr "Use paths for model files in board VRML file relative to the vrml file"
-
-msgid "Plain PCB (no copper or silk)"
-msgstr "Plain PCB (no copper or silk)"
 
 msgid "VRML Export Options"
 msgstr "VRML Export Options"
@@ -16334,6 +16700,9 @@ msgstr "CSV"
 msgid "Gerber (very experimental)"
 msgstr "Gerber (very experimental)"
 
+msgid "Format"
+msgstr "Format"
+
 msgid "Separate files for front, back"
 msgstr "Separate files for front, back"
 
@@ -16468,6 +16837,9 @@ msgstr ""
 msgid "Gerber X2"
 msgstr "Gerber X2"
 
+msgid "PostScript"
+msgstr "PostScript"
+
 msgid "Gerber"
 msgstr "Gerber"
 
@@ -16535,8 +16907,8 @@ msgstr "Reference designator:"
 msgid "(specify multiple items separated by spaces for successive placement)"
 msgstr "(specify multiple items separated by spaces for successive placement)"
 
-msgid "Available:"
-msgstr "Available:"
+msgid "Available footprints:"
+msgstr "Available footprints:"
 
 msgid "Get and Move Footprint"
 msgstr "Get and Move Footprint"
@@ -16940,8 +17312,8 @@ msgstr "Via Count"
 msgid "Via Length"
 msgstr "Via Length"
 
-msgid "Board Length"
-msgstr "Board Length"
+msgid "Track Length"
+msgstr "Track Length"
 
 msgid "Die Length"
 msgstr "Die Length"
@@ -17002,9 +17374,6 @@ msgstr "Create Report…"
 
 msgid "Net Inspector"
 msgstr "Net Inspector"
-
-msgid "Rebuild Ratsnest"
-msgstr "Rebuild Ratsnest"
 
 msgid "Select Netlist"
 msgstr "Select Netlist"
@@ -17657,8 +18026,8 @@ msgstr "Plot file “%s” created."
 msgid "Plot format:"
 msgstr "Plot format:"
 
-msgid "Postscript"
-msgstr "Postscript"
+msgid "Plot border and title block"
+msgstr "Plot border and title block"
 
 msgid "Plot footprint values"
 msgstr "Plot footprint values"
@@ -17751,6 +18120,9 @@ msgstr ""
 
 msgid "Board setup"
 msgstr "Board setup"
+
+msgid "File > Board Setup..."
+msgstr "File > Board Setup..."
 
 msgid "Gerber Options"
 msgstr "Gerber Options"
@@ -17869,15 +18241,15 @@ msgstr "Plot graphic items using their contours"
 msgid "Uncheck to plot graphic items using their center lines"
 msgstr "Uncheck to plot graphic items using their center lines"
 
-msgid "Use Pcbnew font to plot texts"
-msgstr "Use Pcbnew font to plot texts"
+msgid "Use KiCad font to plot texts"
+msgstr "Use KiCad font to plot texts"
 
 msgid ""
-"Check to use Pcbnew stroke font\n"
-"Uncheck to plot oneline ASCII texts as editable text (using DXF font)"
+"Check to use KiCad stroke font\n"
+"Uncheck to plot single-line ASCII texts as editable text (using DXF font)"
 msgstr ""
-"Check to use Pcbnew stroke font\n"
-"Uncheck to plot oneline ASCII texts as editable text (using DXF font)"
+"Check to use KiCad stroke font\n"
+"Uncheck to plot single-line ASCII texts as editable text (using DXF font)"
 
 msgid "Export units:"
 msgstr "Export units:"
@@ -18262,20 +18634,38 @@ msgstr "Basic Rules"
 msgid "Keep out tracks"
 msgstr "Keep out tracks"
 
+msgid "Prevent tracks from routing into this area"
+msgstr "Prevent tracks from routing into this area"
+
 msgid "Keep out vias"
 msgstr "Keep out vias"
+
+msgid "Prevent vias from being placed in this area"
+msgstr "Prevent vias from being placed in this area"
 
 msgid "Keep out pads"
 msgstr "Keep out pads"
 
-msgid "Keep out copper pours"
-msgstr "Keep out copper pours"
+msgid "Raise a DRC error if a pad overlaps this area"
+msgstr "Raise a DRC error if a pad overlaps this area"
+
+msgid "Keep out copper fill"
+msgstr "Keep out copper fill"
+
+msgid "Zones will not fill copper into this area"
+msgstr "Zones will not fill copper into this area"
 
 msgid "Keep out footprints"
 msgstr "Keep out footprints"
 
+msgid "Raise a DRC error if a footprint courtyard overlaps this area"
+msgstr "Raise a DRC error if a footprint courtyard overlaps this area"
+
 msgid "Constrain outline to H, V and 45 deg"
 msgstr "Constrain outline to H, V and 45 deg"
+
+msgid "Draw the area using horizontal, verical and 45 degree lines only"
+msgstr "Draw the area using horizontal, verical and 45 degree lines only"
 
 msgid "Area name:"
 msgstr "Area name:"
@@ -18439,8 +18829,8 @@ msgstr "End layer:"
 msgid "Track & Via Properties"
 msgstr "Track & Via Properties"
 
-msgid "Via drill size has to be smaller than via diameter"
-msgstr "Via drill size has to be smaller than via diameter"
+msgid "Via drill size must be smaller than via diameter"
+msgstr "Via drill size must be smaller than via diameter"
 
 msgid "Via drill:"
 msgstr "Via drill:"
@@ -18593,49 +18983,20 @@ msgstr "&Rotation angle:"
 msgid "Set increment (in degrees) for context menu and hotkey rotation."
 msgstr "Set increment (in degrees) for context menu and hotkey rotation."
 
-msgid "Left Click Mouse Commands"
-msgstr "Left Click Mouse Commands"
-
-msgid ""
-"Left click (and drag) actions depend on 3 modifier keys:\n"
-"Alt, Shift and Ctrl."
-msgstr ""
-"Left click (and drag) actions depend on 3 modifier keys:\n"
-"Alt, Shift and Ctrl."
-
 msgid "No modifier"
 msgstr "No modifier"
 
 msgid "Select item(s)."
 msgstr "Select item(s)."
 
-msgid "Add item(s) to selection."
-msgstr "Add item(s) to selection."
-
 msgid "Shift+Alt"
 msgstr "Shift+Alt"
-
-msgid "Remove item(s) from selection."
-msgstr "Remove item(s) from selection."
-
-msgid "Toggle selected state of item(s)."
-msgstr "Toggle selected state of item(s)."
-
-msgid "Clarify selection from menu."
-msgstr "Clarify selection from menu."
 
 msgid "Ctrl+Shift"
 msgstr "Ctrl+Shift"
 
 msgid "Highlight net (for pads or tracks)."
 msgstr "Highlight net (for pads or tracks)."
-
-msgid ""
-"Left click (and drag) actions depend on 3 modifier keys:\n"
-"Alt, Shift and Cmd."
-msgstr ""
-"Left click (and drag) actions depend on 3 modifier keys:\n"
-"Alt, Shift and Cmd."
 
 msgid "Shift+Cmd"
 msgstr "Shift+Cmd"
@@ -18700,6 +19061,19 @@ msgid ""
 "Drags the nearest joint in the track without restricting the track angle."
 msgstr ""
 "Drags the nearest joint in the track without restricting the track angle."
+
+msgid "Draw an outline to show the sheet size."
+msgstr "Draw an outline to show the sheet size."
+
+msgid "Refill zones after Zone Properties dialog"
+msgstr "Refill zones after Zone Properties dialog"
+
+msgid ""
+"If checked, zones will be re-filled after editing the properties of the zone "
+"using the Zone Properties dialog"
+msgstr ""
+"If checked, zones will be re-filled after editing the properties of the zone "
+"using the Zone Properties dialog"
 
 msgid "Internal Layers"
 msgstr "Internal Layers"
@@ -18903,9 +19277,8 @@ msgstr "Silkscreen"
 msgid "Minimum item clearance:"
 msgstr "Minimum item clearance:"
 
-#, c-format
-msgid "Use the \"%s\" control to change the number of copper layers."
-msgstr "Use the “%s” control to change the number of copper layers."
+msgid "Use the Physical Stackup page to change the number of copper layers."
+msgstr "Use the Physical Stackup page to change the number of copper layers."
 
 #, c-format
 msgid "The %s layer is mandatory."
@@ -18963,72 +19336,6 @@ msgstr "Inner Layers To Be Deleted"
 
 msgid "Select user defined layer to add to board layer set"
 msgstr "Select user defined layer to add to board layer set"
-
-msgid "Custom layer set"
-msgstr "Custom layer set"
-
-msgid "Two layers, parts on Front"
-msgstr "Two layers, parts on Front"
-
-msgid "Two layers, parts on Back"
-msgstr "Two layers, parts on Back"
-
-msgid "Two layers, parts on Front & Back"
-msgstr "Two layers, parts on Front & Back"
-
-msgid "Four layers, parts on Front"
-msgstr "Four layers, parts on Front"
-
-msgid "Four layers, parts on Front & Back"
-msgstr "Four layers, parts on Front & Back"
-
-msgid "All layers on"
-msgstr "All layers on"
-
-msgid "2"
-msgstr "2"
-
-msgid "6"
-msgstr "6"
-
-msgid "8"
-msgstr "8"
-
-msgid "10"
-msgstr "10"
-
-msgid "12"
-msgstr "12"
-
-msgid "14"
-msgstr "14"
-
-msgid "16"
-msgstr "16"
-
-msgid "18"
-msgstr "18"
-
-msgid "20"
-msgstr "20"
-
-msgid "22"
-msgstr "22"
-
-msgid "24"
-msgstr "24"
-
-msgid "26"
-msgstr "26"
-
-msgid "28"
-msgstr "28"
-
-msgid "30"
-msgstr "30"
-
-msgid "32"
-msgstr "32"
 
 msgid "Add User Defined Layer"
 msgstr "Add User Defined Layer"
@@ -19400,13 +19707,6 @@ msgstr "DRC rules:"
 msgid "Check rule syntax"
 msgstr "Check rule syntax"
 
-msgid ""
-"Text will not be readable with a thickness greater than 1/4 its width or "
-"height."
-msgstr ""
-"Text will not be readable with a thickness greater than 1/4 its width or "
-"height."
-
 msgid "Default properties for new dimension objects:"
 msgstr "Default properties for new dimension objects:"
 
@@ -19437,42 +19737,11 @@ msgstr ""
 "When checked, \"1.2300\" will be rendered as \"1.23\" even if precision is "
 "set to show more digits"
 
-#, c-format
-msgid "Track width less than minimum track width (%s)."
-msgstr "Track width less than minimum track width (%s)."
-
-#, c-format
-msgid "Via diameter less than minimum via diameter (%s)."
-msgstr "Via diameter less than minimum via diameter (%s)."
-
 msgid "No via hole size defined."
 msgstr "No via hole size defined."
 
-#, c-format
-msgid "Via hole diameter less than minimum through hole diameter (%s)."
-msgstr "Via hole diameter less than minimum through hole diameter (%s)."
-
-msgid "Via hole diameter larger than via diameter."
-msgstr "Via hole diameter larger than via diameter."
-
-#, c-format
-msgid "Diameter and hole leave via annulus less than minimum (%s)."
-msgstr "Diameter and hole leave via annulus less than minimum (%s)."
-
-#, c-format
-msgid "Differential pair track width less than minimum track width (%s)."
-msgstr "Differential pair track width less than minimum track width (%s)."
-
 msgid "No differential pair gap defined."
 msgstr "No differential pair gap defined."
-
-#, c-format
-msgid "Differential pair gap less than minimum clearance (%s)."
-msgstr "Differential pair gap less than minimum clearance (%s)."
-
-#, c-format
-msgid "Differential pair via gap less than minimum clearance (%s)."
-msgstr "Differential pair via gap less than minimum clearance (%s)."
 
 msgid "Pre-defined track and via dimensions:"
 msgstr "Pre-defined track and via dimensions:"
@@ -19521,12 +19790,19 @@ msgstr "board setup micro-via constraints"
 msgid "netclass '%s'"
 msgstr "netclass '%s'"
 
+#, c-format
+msgid "netclass '%s' (diff pair)"
+msgstr "netclass '%s' (diff pair)"
+
 msgid "keepout area"
 msgstr "keepout area"
 
 #, c-format
 msgid "keepout area '%s'"
 msgstr "keepout area '%s'"
+
+msgid "Tessellating copper zones..."
+msgstr "Tessellating copper zones..."
 
 #, c-format
 msgid "Local override on %s; clearance: %s."
@@ -19816,17 +20092,23 @@ msgstr "Checking net connections..."
 msgid "Gathering copper items..."
 msgstr "Gathering copper items..."
 
-msgid "Tessellating copper zones..."
-msgstr "Tessellating copper zones..."
-
 msgid "Checking track & via clearances..."
 msgstr "Checking track & via clearances..."
+
+msgid "Checking hole clearances..."
+msgstr "Checking hole clearances..."
 
 msgid "Checking pad clearances..."
 msgstr "Checking pad clearances..."
 
+msgid "Checking pads..."
+msgstr "Checking pads..."
+
 msgid "Checking copper zone clearances..."
 msgstr "Checking copper zone clearances..."
+
+msgid "Checking zones..."
+msgstr "Checking zones..."
 
 #, c-format
 msgid "(%s clearance %s; actual %s)"
@@ -19838,6 +20120,9 @@ msgstr "(nets %s and %s)"
 
 msgid "Checking footprint courtyard definitions..."
 msgstr "Checking footprint courtyard definitions..."
+
+msgid "Gathering footprint courtyards..."
+msgstr "Gathering footprint courtyards..."
 
 msgid "Checking footprints for overlapping courtyards..."
 msgstr "Checking footprints for overlapping courtyards..."
@@ -19864,8 +20149,11 @@ msgstr "actual: %s)"
 msgid "Checking keepouts & disallow constraints..."
 msgstr "Checking keepouts & disallow constraints..."
 
-msgid "Checking board edge clearances..."
-msgstr "Checking board edge clearances..."
+msgid "Checking copper to board edge clearances..."
+msgstr "Checking copper to board edge clearances..."
+
+msgid "Checking silk to board edge clearances..."
+msgstr "Checking silk to board edge clearances..."
 
 msgid "Checking hole to hole clearances..."
 msgstr "Checking hole to hole clearances..."
@@ -19879,6 +20167,9 @@ msgstr "Checking pad holes..."
 
 msgid "Checking via holes..."
 msgstr "Checking via holes..."
+
+msgid "Checking micro-via holes..."
+msgstr "Checking micro-via holes..."
 
 #, c-format
 msgid "(%s min width %s; actual %s)"
@@ -19978,9 +20269,6 @@ msgstr "(%s min diameter %s; actual %s)"
 #, c-format
 msgid "(%s max diameter %s; actual %s)"
 msgstr "(%s max diameter %s; actual %s)"
-
-msgid "Tracks & Vias"
-msgstr "Tracks & Vias"
 
 msgid "Modify zone properties"
 msgstr "Modify zone properties"
@@ -20114,9 +20402,8 @@ msgid "OK to load recovery file \"%s\""
 msgstr "OK to load recovery file \"%s\""
 
 #, c-format
-msgid "Current board will be closed, save changes to \"%s\" before continuing?"
-msgstr ""
-"Current board will be closed, save changes to \"%s\" before continuing?"
+msgid "Current board will be closed, save changes to '%s' before continuing?"
+msgstr "Current board will be closed, save changes to '%s' before continuing?"
 
 msgid "Current Board will be closed. Continue?"
 msgstr "Current Board will be closed. Continue?"
@@ -20127,12 +20414,12 @@ msgstr "noname"
 msgid ""
 "If the zones on this board are refilled the Copper Edge Clearance setting "
 "will be used (see Board Setup > Design Rules > Constraints).\n"
-"This may result in different fills from previous Kicad versions which used "
+"This may result in different fills from previous KiCad versions which used "
 "the line thicknesses of the board boundary on the Edge Cuts layer."
 msgstr ""
 "If the zones on this board are refilled the Copper Edge Clearance setting "
 "will be used (see Board Setup > Design Rules > Constraints).\n"
-"This may result in different fills from previous Kicad versions which used "
+"This may result in different fills from previous KiCad versions which used "
 "the line thicknesses of the board boundary on the Edge Cuts layer."
 
 msgid "Edge Clearance Warning"
@@ -20223,6 +20510,9 @@ msgstr "Attributes:"
 msgid "3D-Shape: %s"
 msgstr "3D-Shape: %s"
 
+msgid "<none>"
+msgstr "<none>"
+
 #, c-format
 msgid "Doc: %s"
 msgstr "Doc: %s"
@@ -20257,6 +20547,9 @@ msgstr "Thermal Gap"
 msgid "footprint %s"
 msgstr "footprint %s"
 
+msgid "KiCad Footprint Editor"
+msgstr "KiCad Footprint Editor"
+
 msgid "Inner layers"
 msgstr "Inner layers"
 
@@ -20271,11 +20564,8 @@ msgid "Editing %s from board.  Saving will update the board only."
 msgstr "Editing %s from board.  Saving will update the board only."
 
 #, c-format
-msgid "%s [from %s.%s]"
-msgstr "%s [from %s.%s]"
-
-msgid "[Unsaved]"
-msgstr "[Unsaved]"
+msgid "%s%s [from %s.%s]"
+msgstr "%s%s [from %s.%s]"
 
 msgid "Updating Footprint Libraries"
 msgstr "Updating Footprint Libraries"
@@ -20423,6 +20713,9 @@ msgstr "New Footprint"
 msgid "No footprint name defined."
 msgstr "No footprint name defined."
 
+msgid "KiCad Footprint Library Viewer"
+msgstr "KiCad Footprint Library Viewer"
+
 msgid ""
 "Filter on footprint name, keywords, description and pad count.\n"
 "Search terms are separated by spaces.  All search terms must match.\n"
@@ -20505,6 +20798,9 @@ msgstr "Ref."
 msgid "Display"
 msgstr "Display"
 
+msgid "Angle"
+msgstr "Angle"
+
 #, c-format
 msgid "Reference '%s'"
 msgstr "Reference '%s'"
@@ -20529,6 +20825,9 @@ msgstr ""
 "Error loading footprint %s from library %s.\n"
 "\n"
 "%s"
+
+msgid "doc url"
+msgstr "doc url"
 
 msgid "Centimeter"
 msgstr "Centimeter"
@@ -20596,6 +20895,12 @@ msgstr "Default units:"
 msgid "Import Vector Graphics File"
 msgstr "Import Vector Graphics File"
 
+msgid "Invalid spline definition encountered"
+msgstr "Invalid spline definition encountered"
+
+msgid "Invalid Bezier curve created"
+msgstr "Invalid Bezier curve created"
+
 msgid ""
 "Current Board will be lost and this operation cannot be undone. Continue?"
 msgstr ""
@@ -20627,14 +20932,14 @@ msgstr "Footprint “%s” saved"
 msgid "Footprint library \"%s\" saved as \"%s\"."
 msgstr "Footprint library “%s” saved as “%s”."
 
-msgid "&Import Graphics..."
-msgstr "&Import Graphics..."
+msgid "Footprint..."
+msgstr "Footprint..."
 
-msgid "Import 2D Drawing file to Footprint Editor on Drawings layer"
-msgstr "Import 2D Drawing file to Footprint Editor on Drawings layer"
+msgid "Graphics..."
+msgstr "Graphics..."
 
-msgid "Export View as &PNG..."
-msgstr "Export View as &PNG..."
+msgid "View as &PNG..."
+msgstr "View as &PNG..."
 
 msgid "Create a PNG file from the current view"
 msgstr "Create a PNG file from the current view"
@@ -20660,20 +20965,20 @@ msgstr "Insert footprint onto current board"
 msgid "Resc&ue"
 msgstr "Resc&ue"
 
-msgid "Clear board and get last rescue file automatically saved by Pcbnew"
-msgstr "Clear board and get last rescue file automatically saved by Pcbnew"
+msgid "Clear board and get last rescue file automatically saved by PCB editor"
+msgstr "Clear board and get last rescue file automatically saved by PCB editor"
 
-msgid "Graphics..."
-msgstr "Graphics..."
-
-msgid "Import 2D drawing file"
-msgstr "Import 2D drawing file"
+msgid "Specctra Session..."
+msgstr "Specctra Session..."
 
 msgid "Non-KiCad Board File..."
 msgstr "Non-KiCad Board File..."
 
 msgid "Import board file from other applications"
 msgstr "Import board file from other applications"
+
+msgid "Specctra DSN..."
+msgstr "Specctra DSN..."
 
 msgid "GenCAD..."
 msgstr "GenCAD..."
@@ -20715,8 +21020,8 @@ msgstr ""
 msgid "Hyperlynx..."
 msgstr "Hyperlynx..."
 
-msgid "Export Footprints to Library..."
-msgstr "Export Footprints to Library..."
+msgid "Footprints to Library..."
+msgstr "Footprints to Library..."
 
 msgid ""
 "Add footprints used on board to an existing footprint library\n"
@@ -20725,8 +21030,8 @@ msgstr ""
 "Add footprints used on board to an existing footprint library\n"
 "(does not remove other footprints from this library)"
 
-msgid "Export Footprints to New Library..."
-msgstr "Export Footprints to New Library..."
+msgid "Footprints to New Library..."
+msgstr "Footprints to New Library..."
 
 msgid ""
 "Create a new footprint library containing the footprints used on board\n"
@@ -20816,11 +21121,11 @@ msgstr "Read descr shape file"
 msgid "File not found"
 msgstr "File not found"
 
-msgid "Shape has a null size!"
-msgstr "Shape has a null size!"
+msgid "Shape has a null size."
+msgstr "Shape has a null size."
 
-msgid "Shape has no points!"
-msgstr "Shape has no points!"
+msgid "Shape has no points."
+msgstr "Shape has no points."
 
 msgid "Place microwave feature"
 msgstr "Place microwave feature"
@@ -20844,6 +21149,10 @@ msgid "Add %s (footprint \"%s\")."
 msgstr "Add %s (footprint “%s”)."
 
 #, c-format
+msgid "Added %s (footprint \"%s\")."
+msgstr "Added %s (footprint \"%s\")."
+
+#, c-format
 msgid "Cannot update %s (no footprint assigned)."
 msgstr "Cannot update %s (no footprint assigned)."
 
@@ -20852,40 +21161,72 @@ msgid "Cannot update %s (footprint \"%s\" not found)."
 msgstr "Cannot update %s (footprint “%s” not found)."
 
 #, c-format
-msgid "Change %s footprint from \"%s\" to \"%s\"."
-msgstr "Change %s footprint from “%s” to “%s”."
+msgid "Change %s footprint from '%s' to '%s'."
+msgstr "Change %s footprint from '%s' to '%s'."
+
+#, c-format
+msgid "Changed %s footprint from '%s' to '%s'."
+msgstr "Changed %s footprint from '%s' to '%s'."
 
 #, c-format
 msgid "Change %s reference designator to %s."
 msgstr "Change %s reference designator to %s."
 
 #, c-format
+msgid "Changed %s reference designator to %s."
+msgstr "Changed %s reference designator to %s."
+
+#, c-format
 msgid "Change %s value from %s to %s."
 msgstr "Change %s value from %s to %s."
+
+#, c-format
+msgid "Changed %s value from %s to %s."
+msgstr "Changed %s value from %s to %s."
 
 #, c-format
 msgid "Update %s symbol association from %s to %s."
 msgstr "Update %s symbol association from %s to %s."
 
 #, c-format
+msgid "Updated %s symbol association from %s to %s."
+msgstr "Updated %s symbol association from %s to %s."
+
+#, c-format
 msgid "Update %s properties."
 msgstr "Update %s properties."
 
 #, c-format
-msgid "Setting %s 'exclude from BOM' fabrication attribute."
-msgstr "Setting %s 'exclude from BOM' fabrication attribute."
+msgid "Updated %s properties."
+msgstr "Updated %s properties."
 
 #, c-format
-msgid "Removing %s 'exclude from BOM' fabrication attribute."
-msgstr "Removing %s 'exclude from BOM' fabrication attribute."
+msgid "Add %s 'exclude from BOM' fabrication attribute."
+msgstr "Add %s 'exclude from BOM' fabrication attribute."
+
+#, c-format
+msgid "Remove %s 'exclude from BOM' fabrication attribute."
+msgstr "Remove %s 'exclude from BOM' fabrication attribute."
+
+#, c-format
+msgid "Added %s 'exclude from BOM' fabrication attribute."
+msgstr "Added %s 'exclude from BOM' fabrication attribute."
+
+#, c-format
+msgid "Removed %s 'exclude from BOM' fabrication attribute."
+msgstr "Removed %s 'exclude from BOM' fabrication attribute."
 
 #, c-format
 msgid "Disconnect %s pin %s."
 msgstr "Disconnect %s pin %s."
 
 #, c-format
-msgid "No net for symbol %s pin %s."
-msgstr "No net for symbol %s pin %s."
+msgid "Disconnected %s pin %s."
+msgstr "Disconnected %s pin %s."
+
+#, c-format
+msgid "No net found for symbol %s pin %s."
+msgstr "No net found for symbol %s pin %s."
 
 #, c-format
 msgid "Add net %s."
@@ -20896,28 +21237,60 @@ msgid "Reconnect %s pin %s from %s to %s."
 msgstr "Reconnect %s pin %s from %s to %s."
 
 #, c-format
+msgid "Reconnected %s pin %s from %s to %s."
+msgstr "Reconnected %s pin %s from %s to %s."
+
+#, c-format
 msgid "Connect %s pin %s to %s."
 msgstr "Connect %s pin %s to %s."
+
+#, c-format
+msgid "Connected %s pin %s to %s."
+msgstr "Connected %s pin %s to %s."
 
 #, c-format
 msgid "Reconnect via from %s to %s."
 msgstr "Reconnect via from %s to %s."
 
 #, c-format
+msgid "Reconnected via from %s to %s."
+msgstr "Reconnected via from %s to %s."
+
+#, c-format
 msgid "Via connected to unknown net (%s)."
 msgstr "Via connected to unknown net (%s)."
+
+#, c-format
+msgid "Reconnect copper zone '%s' from %s to %s."
+msgstr "Reconnect copper zone '%s' from %s to %s."
 
 #, c-format
 msgid "Reconnect copper zone from %s to %s."
 msgstr "Reconnect copper zone from %s to %s."
 
 #, c-format
-msgid "Copper zone (%s) has no pads connected."
-msgstr "Copper zone (%s) has no pads connected."
+msgid "Reconnected copper zone '%s' from %s to %s."
+msgstr "Reconnected copper zone '%s' from %s to %s."
+
+#, c-format
+msgid "Reconnected copper zone from %s to %s."
+msgstr "Reconnected copper zone from %s to %s."
+
+#, c-format
+msgid "Copper zone '%s' has no pads connected."
+msgstr "Copper zone '%s' has no pads connected."
+
+#, c-format
+msgid "Copper zone on layer %s at (%s, %s) has no pads connected."
+msgstr "Copper zone on layer %s at (%s, %s) has no pads connected."
 
 #, c-format
 msgid "Remove single pad net %s."
 msgstr "Remove single pad net %s."
+
+#, c-format
+msgid "Removed single pad net %s."
+msgstr "Removed single pad net %s."
 
 #, c-format
 msgid "%s pad %s not found in %s."
@@ -20936,12 +21309,20 @@ msgid "Cannot remove unused footprint %s (locked)."
 msgstr "Cannot remove unused footprint %s (locked)."
 
 #, c-format
+msgid "Could not remove unused footprint %s (locked)."
+msgstr "Could not remove unused footprint %s (locked)."
+
+#, c-format
 msgid "Remove unused footprint %s."
 msgstr "Remove unused footprint %s."
 
 #, c-format
-msgid "Remove unused net \"%s\"."
-msgstr "Remove unused net \"%s\"."
+msgid "Removed unused footprint %s."
+msgstr "Removed unused footprint %s."
+
+#, c-format
+msgid "Removed unused net %s."
+msgstr "Removed unused net %s."
 
 msgid "Update netlist"
 msgstr "Update netlist"
@@ -21170,6 +21551,12 @@ msgstr "Round Radius Ratio"
 msgid "Error loading project footprint libraries"
 msgstr "Error loading project footprint libraries"
 
+msgid "KiCad PCB Editor"
+msgstr "KiCad PCB Editor"
+
+msgid "Export netlist used to update schematics"
+msgstr "Export netlist used to update schematics"
+
 msgid "New PCB file is unsaved"
 msgstr "New PCB file is unsaved"
 
@@ -21187,13 +21574,13 @@ msgid "The schematic for this board cannot be found."
 msgstr "The schematic for this board cannot be found."
 
 msgid ""
-"Cannot update the PCB because Pcbnew is opened in stand-alone mode. In order "
-"to create or update PCBs from schematics, you must launch the KiCad project "
-"manager and create a project."
+"Cannot update the PCB because PCB editor is opened in stand-alone mode. In "
+"order to create or update PCBs from schematics, you must launch the KiCad "
+"project manager and create a project."
 msgstr ""
-"Cannot update the PCB because Pcbnew is opened in stand-alone mode. In order "
-"to create or update PCBs from schematics, you must launch the KiCad project "
-"manager and create a project."
+"Cannot update the PCB because PCB editor is opened in stand-alone mode. In "
+"order to create or update PCBs from schematics, you must launch the KiCad "
+"project manager and create a project."
 
 msgid "Eeschema netlist"
 msgstr "Eeschema netlist"
@@ -21520,12 +21907,22 @@ msgstr ""
 #, c-format
 msgid ""
 "The CADSTAR area '%s' in library component '%s' does not have a KiCad "
-"equivalent. The area is neither a via orroute keepout area. The area was not "
-"imported."
+"equivalent. The area is neither a via nor route keepout area. The area was "
+"not imported."
 msgstr ""
 "The CADSTAR area '%s' in library component '%s' does not have a KiCad "
-"equivalent. The area is neither a via orroute keepout area. The area was not "
-"imported."
+"equivalent. The area is neither a via nor route keepout area. The area was "
+"not imported."
+
+#, c-format
+msgid ""
+"The CADSTAR pad definition '%s' is a complex pad stack, which is not "
+"supported in KiCad. Please review the imported pads as they may require "
+"manual correction."
+msgstr ""
+"The CADSTAR pad definition '%s' is a complex pad stack, which is not "
+"supported in KiCad. Please review the imported pads as they may require "
+"manual correction."
 
 #, c-format
 msgid ""
@@ -21534,6 +21931,10 @@ msgid ""
 msgstr ""
 "The CADSTAR pad definition '%s' has the hole shape outside the pad shape. "
 "The hole has been moved to the center of the pad."
+
+#, c-format
+msgid "The CADSTAR pad definition '%s' has import errors: %s"
+msgstr "The CADSTAR pad definition '%s' has import errors: %s"
 
 #, c-format
 msgid ""
@@ -22294,10 +22695,10 @@ msgid "%s is malformed."
 msgstr "%s is malformed."
 
 msgid ""
-"This zone cannot be handled by the track layout tool.\n"
+"This zone cannot be handled by the router.\n"
 "Please verify it is not a self-intersecting polygon."
 msgstr ""
-"This zone cannot be handled by the track layout tool.\n"
+"This zone cannot be handled by the router.\n"
 "Please verify it is not a self-intersecting polygon."
 
 msgid "Interactive Router"
@@ -22323,6 +22724,9 @@ msgstr "Too short: skew "
 
 msgid "Tuned: skew "
 msgstr "Tuned: skew "
+
+msgid "Diff pair gap is less than board minimum clearance."
+msgstr "Diff pair gap is less than board minimum clearance."
 
 msgid "Cannot start routing from a non-plated hole."
 msgstr "Cannot start routing from a non-plated hole."
@@ -22411,11 +22815,11 @@ msgstr "Switch Track Posture"
 msgid "Switches posture of the currently routed track."
 msgstr "Switches posture of the currently routed track."
 
-msgid "Switch Corner Rounding"
-msgstr "Switch Corner Rounding"
+msgid "Track Corner Mode"
+msgstr "Track Corner Mode"
 
-msgid "Switches the corner type of the currently routed track."
-msgstr "Switches the corner type of the currently routed track."
+msgid "Switches between sharp and rounded corners when routing tracks."
+msgstr "Switches between sharp and rounded corners when routing tracks."
 
 msgid "Select Track/Via Width"
 msgstr "Select Track/Via Width"
@@ -22481,20 +22885,38 @@ msgstr "Width %s, gap %s"
 msgid "Width %s, gap %s, via gap %s"
 msgstr "Width %s, gap %s, via gap %s"
 
+#, c-format
+msgid ""
+"Event file: %s\n"
+"Board dump: %s"
+msgstr ""
+"Event file: %s\n"
+"Board dump: %s"
+
+msgid "Save router log"
+msgstr "Save router log"
+
+msgid ""
+"Would you like to save the router\n"
+"event log for debugging purposes?"
+msgstr ""
+"Would you like to save the router\n"
+"event log for debugging purposes?"
+
 msgid "Show board setup"
 msgstr "Show board setup"
 
 msgid ""
-"Blind/buried vias have to be enabled in Board Setup > Design Rules > "
+"Blind/buried vias must first be enabled in Board Setup > Design Rules > "
 "Constraints."
 msgstr ""
-"Blind/buried vias have to be enabled in Board Setup > Design Rules > "
+"Blind/buried vias must first be enabled in Board Setup > Design Rules > "
 "Constraints."
 
 msgid ""
-"Microvias have to be enabled in Board Setup > Design Rules > Constraints."
+"Microvias must first be enabled in Board Setup > Design Rules > Constraints."
 msgstr ""
-"Microvias have to be enabled in Board Setup > Design Rules > Constraints."
+"Microvias must first be enabled in Board Setup > Design Rules > Constraints."
 
 msgid "Only through vias are allowed on 2 layer boards."
 msgstr "Only through vias are allowed on 2 layer boards."
@@ -22506,8 +22928,8 @@ msgstr ""
 "Microvias can only be placed between the outer layers (F.Cu/B.Cu) and the "
 "ones directly adjacent to them."
 
-msgid "Tracks on Copper layers only"
-msgstr "Tracks on Copper layers only"
+msgid "Tracks on Copper layers only."
+msgstr "Tracks on Copper layers only."
 
 msgid "The selected item is locked."
 msgstr "The selected item is locked."
@@ -22583,6 +23005,9 @@ msgstr "Method “%s” not found, or not callable"
 msgid "Unknown Method"
 msgstr "Unknown Method"
 
+msgid "Apply action script"
+msgstr "Apply action script"
+
 msgid "Exception on python footprint wizard code"
 msgstr "Exception on python footprint wizard code"
 
@@ -22631,11 +23056,33 @@ msgstr "Via: %s (%s)"
 msgid "Locking"
 msgstr "Locking"
 
+msgid "Omit extra information"
+msgstr "Omit extra information"
+
+msgid "Omit nets"
+msgstr "Omit nets"
+
+msgid "Do not prefix path with footprint UUID."
+msgstr "Do not prefix path with footprint UUID."
+
 msgid "Merge Specctra Session file:"
 msgstr "Merge Specctra Session file:"
 
 msgid "Specctra DSN File"
 msgstr "Specctra DSN File"
+
+msgid "Export Board Netlist"
+msgstr "Export Board Netlist"
+
+msgid "KiCad board netlist files"
+msgstr "KiCad board netlist files"
+
+#, c-format
+msgid "Path `%s` is read only."
+msgstr "Path `%s` is read only."
+
+msgid "I/O Error"
+msgstr "I/O Error"
 
 #, c-format
 msgid "Orphaned net %s re-parented.\n"
@@ -22829,6 +23276,51 @@ msgstr "Convert polygons to lines"
 msgid "Create arc from line segment"
 msgstr "Create arc from line segment"
 
+msgid "Layer Name"
+msgstr "Layer Name"
+
+msgid "Thickness (mm)"
+msgstr "Thickness (mm)"
+
+msgid "Thickness (mils)"
+msgstr "Thickness (mils)"
+
+msgid "Loss Tangent"
+msgstr "Loss Tangent"
+
+msgid "Insert board stackup table"
+msgstr "Insert board stackup table"
+
+msgid "BOARD CHARACTERISTICS"
+msgstr "BOARD CHARACTERISTICS"
+
+msgid "Copper Layer Count: "
+msgstr "Copper Layer Count: "
+
+msgid "Board overall dimensions: "
+msgstr "Board overall dimensions: "
+
+msgid "Min track/spacing: "
+msgstr "Min track/spacing: "
+
+msgid "Copper Finish: "
+msgstr "Copper Finish: "
+
+msgid "Castellated pads: "
+msgstr "Castellated pads: "
+
+msgid "Board Thickness: "
+msgstr "Board Thickness: "
+
+msgid "Min hole diameter: "
+msgstr "Min hole diameter: "
+
+msgid "Impedance Control: "
+msgstr "Impedance Control: "
+
+msgid "Plated Board Edge: "
+msgstr "Plated Board Edge: "
+
 msgid "Select Via Size"
 msgstr "Select Via Size"
 
@@ -22916,9 +23408,6 @@ msgstr "Some of the track segments could not be filleted."
 
 msgid "Change Side / Flip"
 msgstr "Change Side / Flip"
-
-msgid "Fill Zone"
-msgstr "Fill Zone"
 
 msgid "Move exact"
 msgstr "Move exact"
@@ -23039,6 +23528,18 @@ msgstr "Draw Circle"
 msgid "Draw Arc"
 msgstr "Draw Arc"
 
+msgid "Add Board Characteristics"
+msgstr "Add Board Characteristics"
+
+msgid "Add a board characteristics table on a graphic layer"
+msgstr "Add a board characteristics table on a graphic layer"
+
+msgid "Add Stackup Table"
+msgstr "Add Stackup Table"
+
+msgid "Add a board stackup table on a graphic layer"
+msgstr "Add a board stackup table on a graphic layer"
+
 msgid "Add Aligned Dimension"
 msgstr "Add Aligned Dimension"
 
@@ -23093,8 +23594,11 @@ msgstr "Add a Similar Zone"
 msgid "Add a zone with the same settings as an existing zone"
 msgstr "Add a zone with the same settings as an existing zone"
 
-msgid "Place Imported Graphics"
-msgstr "Place Imported Graphics"
+msgid "Import Graphics..."
+msgstr "Import Graphics..."
+
+msgid "Import 2D drawing file"
+msgstr "Import 2D drawing file"
 
 msgid "Place the Footprint Anchor"
 msgstr "Place the Footprint Anchor"
@@ -23217,8 +23721,8 @@ msgstr "Deletes selected item(s) and copper connections"
 msgid "Show Footprint Tree"
 msgstr "Show Footprint Tree"
 
-msgid "Toggles the footprint tree visibility"
-msgstr "Toggles the footprint tree visibility"
+msgid "Hide Footprint Tree"
+msgstr "Hide Footprint Tree"
 
 msgid "New Footprint..."
 msgstr "New Footprint..."
@@ -23253,11 +23757,20 @@ msgstr "Paste Footprint"
 msgid "Import Footprint..."
 msgstr "Import Footprint..."
 
+msgid "Import footprint from file"
+msgstr "Import footprint from file"
+
 msgid "Export Footprint..."
 msgstr "Export Footprint..."
 
+msgid "Export footprint to file"
+msgstr "Export footprint to file"
+
 msgid "Footprint Properties..."
 msgstr "Footprint Properties..."
+
+msgid "Edit footprint properties"
+msgstr "Edit footprint properties"
 
 msgid "Show the footprint checker window"
 msgstr "Show the footprint checker window"
@@ -23299,6 +23812,9 @@ msgstr "Move tracks or drawings from one layer to another"
 
 msgid "Edit Track & Via Properties..."
 msgstr "Edit Track & Via Properties..."
+
+msgid "Edit track and via properties globally across board"
+msgstr "Edit track and via properties globally across board"
 
 msgid "Edit Text and graphics properties globally across board"
 msgstr "Edit Text and graphics properties globally across board"
@@ -23405,20 +23921,20 @@ msgstr "Board Setup..."
 msgid "Edit board setup including layers, design rules and various defaults"
 msgstr "Edit board setup including layers, design rules and various defaults"
 
-msgid "Netlist..."
-msgstr "Netlist..."
+msgid "Import Netlist..."
+msgstr "Import Netlist..."
 
 msgid "Read netlist and update board connectivity"
 msgstr "Read netlist and update board connectivity"
 
-msgid "Specctra Session..."
-msgstr "Specctra Session..."
+msgid "Import Specctra Session..."
+msgstr "Import Specctra Session..."
 
 msgid "Import routed Specctra session (*.ses) file"
 msgstr "Import routed Specctra session (*.ses) file"
 
-msgid "Specctra DSN..."
-msgstr "Specctra DSN..."
+msgid "Export Specctra DSN..."
+msgstr "Export Specctra DSN..."
 
 msgid "Export Specctra DSN routing info"
 msgstr "Export Specctra DSN routing info"
@@ -23462,14 +23978,26 @@ msgstr "Create bill of materials from board"
 msgid "Switch Track Width to Next"
 msgstr "Switch Track Width to Next"
 
+msgid "Change track width to next pre-defined size"
+msgstr "Change track width to next pre-defined size"
+
 msgid "Switch Track Width to Previous"
 msgstr "Switch Track Width to Previous"
+
+msgid "Change track width to previous pre-defined size"
+msgstr "Change track width to previous pre-defined size"
 
 msgid "Increase Via Size"
 msgstr "Increase Via Size"
 
+msgid "Change via size to next pre-defined size"
+msgstr "Change via size to next pre-defined size"
+
 msgid "Decrease Via Size"
 msgstr "Decrease Via Size"
+
+msgid "Change via size to previous pre-defined size"
+msgstr "Change via size to previous pre-defined size"
 
 msgid "Merge Zones"
 msgstr "Merge Zones"
@@ -23504,11 +24032,23 @@ msgstr "Place origin point for drill files and component placement files"
 msgid "Toggle Lock"
 msgstr "Toggle Lock"
 
-msgid "Add the selected items to a new group"
-msgstr "Add the selected items to a new group"
+msgid "Lock or unlock selected items"
+msgstr "Lock or unlock selected items"
+
+msgid "Prevent items from being moved and/or resized on the canvas"
+msgstr "Prevent items from being moved and/or resized on the canvas"
+
+msgid "Allow items to be moved and/or resized on the canvas"
+msgstr "Allow items to be moved and/or resized on the canvas"
+
+msgid "Group the selected items so that they are treated as a single item"
+msgstr "Group the selected items so that they are treated as a single item"
 
 msgid "Ungroup"
 msgstr "Ungroup"
+
+msgid "Ungroup any selected groups"
+msgstr "Ungroup any selected groups"
 
 msgid "Remove Items"
 msgstr "Remove Items"
@@ -23531,6 +24071,9 @@ msgstr "Leave the current group"
 msgid "Append Board..."
 msgstr "Append Board..."
 
+msgid "Open another board and append its contents to this board"
+msgstr "Open another board and append its contents to this board"
+
 msgid "Highlight the selected net"
 msgstr "Highlight the selected net"
 
@@ -23542,6 +24085,9 @@ msgstr "Toggle between last two highlighted nets"
 
 msgid "Clear Net Highlighting"
 msgstr "Clear Net Highlighting"
+
+msgid "Clear any existing net highlighting"
+msgstr "Clear any existing net highlighting"
 
 msgid "Highlight all copper items of a net"
 msgstr "Highlight all copper items of a net"
@@ -23588,8 +24134,8 @@ msgstr "Show/hide the appearance manager"
 msgid "Flip Board View"
 msgstr "Flip Board View"
 
-msgid "Flip (mirror) the board view"
-msgstr "Flip (mirror) the board view"
+msgid "View board from the opposite side"
+msgstr "View board from the opposite side"
 
 msgid "Show Ratsnest"
 msgstr "Show Ratsnest"
@@ -24088,6 +24634,9 @@ msgstr "Zone fills may be inaccurate.  DRC rules contain errors."
 msgid "Fill All Zones"
 msgstr "Fill All Zones"
 
+msgid "Fill Zone"
+msgstr "Fill Zone"
+
 msgid "Unfill Zone"
 msgstr "Unfill Zone"
 
@@ -24234,6 +24783,9 @@ msgstr "DRC violations which have been individually excluded"
 
 msgid "Show footprint and text origins as a cross"
 msgstr "Show footprint and text origins as a cross"
+
+msgid "Show drawing sheet borders and title block"
+msgstr "Show drawing sheet borders and title block"
 
 msgid "No Layers"
 msgstr "No Layers"
@@ -24739,6 +25291,1535 @@ msgstr "KiCad Schematic"
 
 msgid "KiCad Printed Circuit Board"
 msgstr "KiCad Printed Circuit Board"
+
+#~ msgid "Environmental variable HOME is empty.  Unable to continue."
+#~ msgstr "Environmental variable HOME is empty.  Unable to continue."
+
+#~ msgid "Sheet filename must have a '.kicad_sch' extension."
+#~ msgstr "Sheet filename must have a '.kicad_sch' extension."
+
+#~ msgid "Import Non KiCad Schematic..."
+#~ msgstr "Import Non KiCad Schematic..."
+
+#, c-format
+#~ msgid ""
+#~ "Invalid symbol names definition in\n"
+#~ "file: \"%s\"\n"
+#~ "line: %d\n"
+#~ "offset: %d"
+#~ msgstr ""
+#~ "Invalid symbol names definition in\n"
+#~ "file: \"%s\"\n"
+#~ "line: %d\n"
+#~ "offset: %d"
+
+#~ msgid "Import CADSTAR Project..."
+#~ msgstr "Import CADSTAR Project..."
+
+#~ msgid "Import EAGLE Project..."
+#~ msgstr "Import EAGLE Project..."
+
+#~ msgid "will be ignored"
+#~ msgstr "will be ignored"
+
+#~ msgid "&Import Graphics..."
+#~ msgstr "&Import Graphics..."
+
+#~ msgid "Import 2D Drawing file to Footprint Editor on Drawings layer"
+#~ msgstr "Import 2D Drawing file to Footprint Editor on Drawings layer"
+
+#~ msgid "Export View as &PNG..."
+#~ msgstr "Export View as &PNG..."
+
+#~ msgid "Export Footprints to Library..."
+#~ msgstr "Export Footprints to Library..."
+
+#~ msgid "Export Footprints to New Library..."
+#~ msgstr "Export Footprints to New Library..."
+
+#~ msgid "Place Imported Graphics"
+#~ msgstr "Place Imported Graphics"
+
+#~ msgid "Toggles the footprint tree visibility"
+#~ msgstr "Toggles the footprint tree visibility"
+
+#~ msgid "Model Mode"
+#~ msgstr "Model Mode"
+
+#~ msgid ""
+#~ "Use the settings in the Ngspice configuration file or any settings "
+#~ "defined in the schematic"
+#~ msgstr ""
+#~ "Use the settings in the Ngspice configuration file or any settings "
+#~ "defined in the schematic"
+
+#~ msgid "Enable default spice model simulation"
+#~ msgstr "Enable default spice model simulation"
+
+#~ msgid "Enable PSpice model simulation"
+#~ msgstr "Enable PSpice model simulation"
+
+#~ msgid "Enable LTSpice model simulation"
+#~ msgstr "Enable LTSpice model simulation"
+
+#~ msgid "Enable PSpice and LTSpice model simulation"
+#~ msgstr "Enable PSpice and LTSpice model simulation"
+
+#~ msgid "Enable HSpice model simulation"
+#~ msgstr "Enable HSpice model simulation"
+
+#~ msgid "Ngspice"
+#~ msgstr "Ngspice"
+
+#~ msgid ""
+#~ "This zone cannot be handled by the track layout tool.\n"
+#~ "Please verify it is not a self-intersecting polygon."
+#~ msgstr ""
+#~ "This zone cannot be handled by the track layout tool.\n"
+#~ "Please verify it is not a self-intersecting polygon."
+
+#~ msgid "Switch Corner Rounding"
+#~ msgstr "Switch Corner Rounding"
+
+#~ msgid "Switches the corner type of the currently routed track."
+#~ msgstr "Switches the corner type of the currently routed track."
+
+#~ msgid "Plain PCB (no copper or silk)"
+#~ msgstr "Plain PCB (no copper or silk)"
+
+#~ msgid ""
+#~ "Text will not be readable with a thickness greater than 1/4 its width or "
+#~ "height."
+#~ msgstr ""
+#~ "Text will not be readable with a thickness greater than 1/4 its width or "
+#~ "height."
+
+#, c-format
+#~ msgid "Track width less than minimum track width (%s)."
+#~ msgstr "Track width less than minimum track width (%s)."
+
+#, c-format
+#~ msgid "Via diameter less than minimum via diameter (%s)."
+#~ msgstr "Via diameter less than minimum via diameter (%s)."
+
+#, c-format
+#~ msgid "Via hole diameter less than minimum through hole diameter (%s)."
+#~ msgstr "Via hole diameter less than minimum through hole diameter (%s)."
+
+#~ msgid "Via hole diameter larger than via diameter."
+#~ msgstr "Via hole diameter larger than via diameter."
+
+#, c-format
+#~ msgid "Diameter and hole leave via annulus less than minimum (%s)."
+#~ msgstr "Diameter and hole leave via annulus less than minimum (%s)."
+
+#, c-format
+#~ msgid "Differential pair track width less than minimum track width (%s)."
+#~ msgstr "Differential pair track width less than minimum track width (%s)."
+
+#, c-format
+#~ msgid "Differential pair gap less than minimum clearance (%s)."
+#~ msgstr "Differential pair gap less than minimum clearance (%s)."
+
+#, c-format
+#~ msgid "Differential pair via gap less than minimum clearance (%s)."
+#~ msgstr "Differential pair via gap less than minimum clearance (%s)."
+
+#~ msgid ""
+#~ "<table>\n"
+#~ "    <tr>\n"
+#~ "        <th>Markup</th>\n"
+#~ "        <th></th>\n"
+#~ "        <th>Result</th>\n"
+#~ "    </tr>\n"
+#~ "    <tr>\n"
+#~ "        <td>&nbsp;<br><samp>^{superscript}</samp></td>\n"
+#~ "        <td></td>\n"
+#~ "        <td>&nbsp;<br><samp><sup>superscript</sup>&nbsp;</samp></td>\n"
+#~ "    </tr>\n"
+#~ "    <tr>\n"
+#~ "        <td>&nbsp;<br><samp>Driver Board^{Rev A}</samp></td>\n"
+#~ "        <td></td>\n"
+#~ "        <td>&nbsp;<br><samp>Driver Board<sup>Rev A</sup></samp></td>\n"
+#~ "    </tr>\n"
+#~ "    <tr>\n"
+#~ "        <td><br></td>\n"
+#~ "    </tr>\n"
+#~ "    <tr>\n"
+#~ "        <td>&nbsp;<br><samp>_{subscript}</samp></td>\n"
+#~ "        <td></td>\n"
+#~ "        <td>&nbsp;<br><samp><sub>subscript</sub>&nbsp;</samp></td>\n"
+#~ "    </tr>\n"
+#~ "    <tr>\n"
+#~ "        <td>&nbsp;<br><samp>D_{0} - D_{15}</samp></td>\n"
+#~ "        <td></td>\n"
+#~ "        <td>&nbsp;<br><samp>D<sub>0</sub> - D<sub>31</sub></samp></td>\n"
+#~ "    </tr>\n"
+#~ "    <tr>\n"
+#~ "        <td></td>\n"
+#~ "    </tr>\n"
+#~ "    <tr>\n"
+#~ "        <td> &nbsp;<br><samp>~overbar</samp><br> &nbsp;<br><samp>~CLK</"
+#~ "samp><br> &nbsp;<br><samp>~~</samp> </td>\n"
+#~ "        <td></td>\n"
+#~ "        <td> <samp><u>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</u></"
+#~ "samp><br> <samp>overbar</samp><br> <samp><u>&nbsp;&nbsp;&nbsp;</u></"
+#~ "samp><br> <samp>CLK</samp><br> <samp>&nbsp;</samp><br> <samp>~</samp> </"
+#~ "td>\n"
+#~ "    </tr>\n"
+#~ "    <tr>\n"
+#~ "        <td><br></td>\n"
+#~ "    </tr>\n"
+#~ "    <tr>\n"
+#~ "        <td>&nbsp;<br><samp>${variable}</samp></td>\n"
+#~ "        <td></td>\n"
+#~ "        <td>&nbsp;<br><samp><i>variable_value</i></samp></td>\n"
+#~ "    </tr>\n"
+#~ "    <tr>\n"
+#~ "        <td>&nbsp;<br><samp>${REVISION}</samp></td>\n"
+#~ "        <td></td>\n"
+#~ "        <td>&nbsp;<br><samp>2020.1</samp></td>\n"
+#~ "    </tr>\n"
+#~ "    <tr>\n"
+#~ "        <td><br></td>\n"
+#~ "    </tr>\n"
+#~ "    <tr>\n"
+#~ "        <td>&nbsp;<br><samp>${refdes:field}</samp></td>\n"
+#~ "        <td></td>\n"
+#~ "        <td>&nbsp;<br><samp><i>field_value</i> of symbol <i>refdes</i></"
+#~ "samp></td>\n"
+#~ "    </tr>\n"
+#~ "    <tr>\n"
+#~ "        <td>&nbsp;<br><samp>${R3:VALUE}</samp></td>\n"
+#~ "        <td></td>\n"
+#~ "        <td>&nbsp;<br><samp>150K</samp></td>\n"
+#~ "    </tr>\n"
+#~ "    <tr>\n"
+#~ "        <td><br></td>\n"
+#~ "    </tr>\n"
+#~ "    <tr>\n"
+#~ "        <td><br></td>\n"
+#~ "    </tr>\n"
+#~ "    <tr>\n"
+#~ "        <th>Bus Definition</th>\n"
+#~ "        <th>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"
+#~ "&nbsp;&nbsp;&nbsp;</th>\n"
+#~ "        <th>Resultant Nets</th>\n"
+#~ "    </tr>\n"
+#~ "    <tr>\n"
+#~ "        <td>&nbsp;<br><samp>prefix[m..n]</samp></td>\n"
+#~ "        <td></td>\n"
+#~ "        <td>&nbsp;<br><samp>prefixm to prefixn</samp></td>\n"
+#~ "    </tr>\n"
+#~ "    <tr>\n"
+#~ "        <td>&nbsp;<br><samp>D[0..7]</samp></td>\n"
+#~ "        <td></td>\n"
+#~ "        <td>&nbsp;<br><samp>D0, D1, D2, D3, D4, D5, D6, D7</samp></td>\n"
+#~ "    </tr>\n"
+#~ "    <tr>\n"
+#~ "        <td><br></td>\n"
+#~ "    </tr>\n"
+#~ "    <tr>\n"
+#~ "\t\t<td>&nbsp;<br><samp>{net1 net2 ...}</samp></td>\n"
+#~ "\t\t<td></td>\n"
+#~ "\t\t<td>&nbsp;<br><samp>net1, net2, ...</samp></td>\n"
+#~ "    </tr>\n"
+#~ "    <tr>\n"
+#~ "        <td>&nbsp;<br><samp>{SCL SDA}</samp></td>\n"
+#~ "        <td></td>\n"
+#~ "        <td>&nbsp;<br><samp>SCL, SDA</samp></td>\n"
+#~ "    </tr>\n"
+#~ "    <tr>\n"
+#~ "        <td><br></td>\n"
+#~ "    </tr>\n"
+#~ "    <tr>\n"
+#~ "        <td>&nbsp;<br><samp>prefix{net1 net2 ...}</samp></td>\n"
+#~ "        <td></td>\n"
+#~ "        <td>&nbsp;<br><samp>prefix.net1, prefix.net2, ...</samp></td>\n"
+#~ "    </tr>\n"
+#~ "    <tr>\n"
+#~ "        <td>&nbsp;<br><samp>USB1{D+ D-}</samp></td>\n"
+#~ "        <td></td>\n"
+#~ "        <td>&nbsp;<br><samp>USB1.D+, USB1.D-</samp></td>\n"
+#~ "    </tr>\n"
+#~ "    <tr>\n"
+#~ "        <td><br></td>\n"
+#~ "    </tr>\n"
+#~ "    <tr>\n"
+#~ "        <td>&nbsp;<br><samp>MEM{D[1..2] LATCH}</samp></td>\n"
+#~ "        <td></td>\n"
+#~ "        <td>&nbsp;<br> <samp>MEM.D1, MEM.D2, MEM.LATCH</samp> </td>\n"
+#~ "    </tr>\n"
+#~ "    <tr>\n"
+#~ "        <td>&nbsp;<br><samp>MEM{D_{[1..2]} ~LATCH}</samp></td>\n"
+#~ "        <td></td>\n"
+#~ "        <td> <samp>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"
+#~ "&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <u>&nbsp;&nbsp;&nbsp;"
+#~ "&nbsp;&nbsp;</u></samp><br> <samp>MEM.D<sub>1</sub>, MEM.D<sub>2</sub>, "
+#~ "MEM.LATCH</samp> </td>\n"
+#~ "    </tr>\n"
+#~ "</table>\n"
+#~ msgstr ""
+#~ "<table>\n"
+#~ "    <tr>\n"
+#~ "        <th>Markup</th>\n"
+#~ "        <th></th>\n"
+#~ "        <th>Result</th>\n"
+#~ "    </tr>\n"
+#~ "    <tr>\n"
+#~ "        <td>&nbsp;<br><samp>^{superscript}</samp></td>\n"
+#~ "        <td></td>\n"
+#~ "        <td>&nbsp;<br><samp><sup>superscript</sup>&nbsp;</samp></td>\n"
+#~ "    </tr>\n"
+#~ "    <tr>\n"
+#~ "        <td>&nbsp;<br><samp>Driver Board^{Rev A}</samp></td>\n"
+#~ "        <td></td>\n"
+#~ "        <td>&nbsp;<br><samp>Driver Board<sup>Rev A</sup></samp></td>\n"
+#~ "    </tr>\n"
+#~ "    <tr>\n"
+#~ "        <td><br></td>\n"
+#~ "    </tr>\n"
+#~ "    <tr>\n"
+#~ "        <td>&nbsp;<br><samp>_{subscript}</samp></td>\n"
+#~ "        <td></td>\n"
+#~ "        <td>&nbsp;<br><samp><sub>subscript</sub>&nbsp;</samp></td>\n"
+#~ "    </tr>\n"
+#~ "    <tr>\n"
+#~ "        <td>&nbsp;<br><samp>D_{0} - D_{15}</samp></td>\n"
+#~ "        <td></td>\n"
+#~ "        <td>&nbsp;<br><samp>D<sub>0</sub> - D<sub>31</sub></samp></td>\n"
+#~ "    </tr>\n"
+#~ "    <tr>\n"
+#~ "        <td></td>\n"
+#~ "    </tr>\n"
+#~ "    <tr>\n"
+#~ "        <td> &nbsp;<br><samp>~overbar</samp><br> &nbsp;<br><samp>~CLK</"
+#~ "samp><br> &nbsp;<br><samp>~~</samp> </td>\n"
+#~ "        <td></td>\n"
+#~ "        <td> <samp><u>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</u></"
+#~ "samp><br> <samp>overbar</samp><br> <samp><u>&nbsp;&nbsp;&nbsp;</u></"
+#~ "samp><br> <samp>CLK</samp><br> <samp>&nbsp;</samp><br> <samp>~</samp> </"
+#~ "td>\n"
+#~ "    </tr>\n"
+#~ "    <tr>\n"
+#~ "        <td><br></td>\n"
+#~ "    </tr>\n"
+#~ "    <tr>\n"
+#~ "        <td>&nbsp;<br><samp>${variable}</samp></td>\n"
+#~ "        <td></td>\n"
+#~ "        <td>&nbsp;<br><samp><i>variable_value</i></samp></td>\n"
+#~ "    </tr>\n"
+#~ "    <tr>\n"
+#~ "        <td>&nbsp;<br><samp>${REVISION}</samp></td>\n"
+#~ "        <td></td>\n"
+#~ "        <td>&nbsp;<br><samp>2020.1</samp></td>\n"
+#~ "    </tr>\n"
+#~ "    <tr>\n"
+#~ "        <td><br></td>\n"
+#~ "    </tr>\n"
+#~ "    <tr>\n"
+#~ "        <td>&nbsp;<br><samp>${refdes:field}</samp></td>\n"
+#~ "        <td></td>\n"
+#~ "        <td>&nbsp;<br><samp><i>field_value</i> of symbol <i>refdes</i></"
+#~ "samp></td>\n"
+#~ "    </tr>\n"
+#~ "    <tr>\n"
+#~ "        <td>&nbsp;<br><samp>${R3:VALUE}</samp></td>\n"
+#~ "        <td></td>\n"
+#~ "        <td>&nbsp;<br><samp>150K</samp></td>\n"
+#~ "    </tr>\n"
+#~ "    <tr>\n"
+#~ "        <td><br></td>\n"
+#~ "    </tr>\n"
+#~ "    <tr>\n"
+#~ "        <td><br></td>\n"
+#~ "    </tr>\n"
+#~ "    <tr>\n"
+#~ "        <th>Bus Definition</th>\n"
+#~ "        <th>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"
+#~ "&nbsp;&nbsp;&nbsp;</th>\n"
+#~ "        <th>Resultant Nets</th>\n"
+#~ "    </tr>\n"
+#~ "    <tr>\n"
+#~ "        <td>&nbsp;<br><samp>prefix[m..n]</samp></td>\n"
+#~ "        <td></td>\n"
+#~ "        <td>&nbsp;<br><samp>prefixm to prefixn</samp></td>\n"
+#~ "    </tr>\n"
+#~ "    <tr>\n"
+#~ "        <td>&nbsp;<br><samp>D[0..7]</samp></td>\n"
+#~ "        <td></td>\n"
+#~ "        <td>&nbsp;<br><samp>D0, D1, D2, D3, D4, D5, D6, D7</samp></td>\n"
+#~ "    </tr>\n"
+#~ "    <tr>\n"
+#~ "        <td><br></td>\n"
+#~ "    </tr>\n"
+#~ "    <tr>\n"
+#~ "\t\t<td>&nbsp;<br><samp>{net1 net2 ...}</samp></td>\n"
+#~ "\t\t<td></td>\n"
+#~ "\t\t<td>&nbsp;<br><samp>net1, net2, ...</samp></td>\n"
+#~ "    </tr>\n"
+#~ "    <tr>\n"
+#~ "        <td>&nbsp;<br><samp>{SCL SDA}</samp></td>\n"
+#~ "        <td></td>\n"
+#~ "        <td>&nbsp;<br><samp>SCL, SDA</samp></td>\n"
+#~ "    </tr>\n"
+#~ "    <tr>\n"
+#~ "        <td><br></td>\n"
+#~ "    </tr>\n"
+#~ "    <tr>\n"
+#~ "        <td>&nbsp;<br><samp>prefix{net1 net2 ...}</samp></td>\n"
+#~ "        <td></td>\n"
+#~ "        <td>&nbsp;<br><samp>prefix.net1, prefix.net2, ...</samp></td>\n"
+#~ "    </tr>\n"
+#~ "    <tr>\n"
+#~ "        <td>&nbsp;<br><samp>USB1{D+ D-}</samp></td>\n"
+#~ "        <td></td>\n"
+#~ "        <td>&nbsp;<br><samp>USB1.D+, USB1.D-</samp></td>\n"
+#~ "    </tr>\n"
+#~ "    <tr>\n"
+#~ "        <td><br></td>\n"
+#~ "    </tr>\n"
+#~ "    <tr>\n"
+#~ "        <td>&nbsp;<br><samp>MEM{D[1..2] LATCH}</samp></td>\n"
+#~ "        <td></td>\n"
+#~ "        <td>&nbsp;<br> <samp>MEM.D1, MEM.D2, MEM.LATCH</samp> </td>\n"
+#~ "    </tr>\n"
+#~ "    <tr>\n"
+#~ "        <td>&nbsp;<br><samp>MEM{D_{[1..2]} ~LATCH}</samp></td>\n"
+#~ "        <td></td>\n"
+#~ "        <td> <samp>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"
+#~ "&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <u>&nbsp;&nbsp;&nbsp;"
+#~ "&nbsp;&nbsp;</u></samp><br> <samp>MEM.D<sub>1</sub>, MEM.D<sub>2</sub>, "
+#~ "MEM.LATCH</samp> </td>\n"
+#~ "    </tr>\n"
+#~ "</table>\n"
+
+#, c-format
+#~ msgid "Set %s 'exclude from BOM' fabrication attribute."
+#~ msgstr "Set %s 'exclude from BOM' fabrication attribute."
+
+#, c-format
+#~ msgid "Change %s footprint from \"%s\" to \"%s\"."
+#~ msgstr "Change %s footprint from “%s” to “%s”."
+
+#, c-format
+#~ msgid "Setting %s 'exclude from BOM' fabrication attribute."
+#~ msgstr "Setting %s 'exclude from BOM' fabrication attribute."
+
+#, c-format
+#~ msgid "Removing %s 'exclude from BOM' fabrication attribute."
+#~ msgstr "Removing %s 'exclude from BOM' fabrication attribute."
+
+#, c-format
+#~ msgid "No net for symbol %s pin %s."
+#~ msgstr "No net for symbol %s pin %s."
+
+#, c-format
+#~ msgid "Copper zone (%s) has no pads connected."
+#~ msgstr "Copper zone (%s) has no pads connected."
+
+#, c-format
+#~ msgid "Remove unused net \"%s\"."
+#~ msgstr "Remove unused net \"%s\"."
+
+#~ msgid "Select Preferred PDF Browser"
+#~ msgstr "Select Preferred PDF Browser"
+
+#, c-format
+#~ msgid ""
+#~ "Could not read instance name and version symbol form kiface library \"%s"
+#~ "\"."
+#~ msgstr ""
+#~ "Could not read instance name and version symbol form kiface library “%s”."
+
+#~ msgid "Empty Text!"
+#~ msgstr "Empty Text!"
+
+#~ msgid "Options:"
+#~ msgstr "Options:"
+
+#~ msgid "Default format"
+#~ msgstr "Default format"
+
+#~ msgid ""
+#~ "In Spice values,the decimal separator is the point.\n"
+#~ "Values can use Spice unit symbols."
+#~ msgstr ""
+#~ "In Spice values,the decimal separator is the point.\n"
+#~ "Values can use Spice unit symbols."
+
+#~ msgid "Electronics Rule Check Error"
+#~ msgstr "Electronics Rule Check Error"
+
+#~ msgid ""
+#~ "<table>\n"
+#~ "    <tr>\n"
+#~ "        <th>Markup</th>\n"
+#~ "        <th></th>\n"
+#~ "        <th>Result</th>\n"
+#~ "    </tr>\n"
+#~ "    <tr>\n"
+#~ "        <td>&nbsp;<br><samp>^{superscript}</samp></td>\n"
+#~ "        <td></td>\n"
+#~ "        <td>&nbsp;<br><samp><sup>superscript</sup>&nbsp;</samp></td>\n"
+#~ "    </tr>\n"
+#~ "    <tr>\n"
+#~ "        <td>&nbsp;<br><samp>Driver Board^{Rev A}</samp></td>\n"
+#~ "        <td></td>\n"
+#~ "        <td>&nbsp;<br><samp>Driver Board<sup>Rev A</sup></samp></td>\n"
+#~ "    </tr>\n"
+#~ "    <tr>\n"
+#~ "        <td><br></td>\n"
+#~ "    </tr>\n"
+#~ "    <tr>\n"
+#~ "        <td>&nbsp;<br><samp>_{subscript}</samp></td>\n"
+#~ "        <td></td>\n"
+#~ "        <td>&nbsp;<br><samp><sub>subscript</sub>&nbsp;</samp></td>\n"
+#~ "    </tr>\n"
+#~ "    <tr>\n"
+#~ "        <td>&nbsp;<br><samp>D_{0} - D_{15}</samp></td>\n"
+#~ "        <td></td>\n"
+#~ "        <td>&nbsp;<br><samp>D<sub>0</sub> - D<sub>31</sub></samp></td>\n"
+#~ "    </tr>\n"
+#~ "    <tr>\n"
+#~ "        <td></td>\n"
+#~ "    </tr>\n"
+#~ "    <tr>\n"
+#~ "        <td> &nbsp;<br><samp>~overbar</samp><br> &nbsp;<br><samp>~CLK</"
+#~ "samp><br> &nbsp;<br><samp>~~</samp> </td>\n"
+#~ "        <td></td>\n"
+#~ "        <td> <samp><u>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</u></"
+#~ "samp><br> <samp>overbar</samp><br> <samp><u>&nbsp;&nbsp;&nbsp;</u></"
+#~ "samp><br> <samp>CLK</samp><br> <samp>&nbsp;</samp><br> <samp>~</samp> </"
+#~ "td>\n"
+#~ "    </tr>\n"
+#~ "    <tr>\n"
+#~ "        <td><br></td>\n"
+#~ "    </tr>\n"
+#~ "    <tr>\n"
+#~ "        <td>&nbsp;<br><samp>${variable}</samp></td>\n"
+#~ "        <td></td>\n"
+#~ "        <td>&nbsp;<br><samp><i>variable_value</i></samp></td>\n"
+#~ "    </tr>\n"
+#~ "    <tr>\n"
+#~ "        <td>&nbsp;<br><samp>${REVISION}</samp></td>\n"
+#~ "        <td></td>\n"
+#~ "        <td>&nbsp;<br><samp>2020.1</samp></td>\n"
+#~ "    </tr>\n"
+#~ "    <tr>\n"
+#~ "        <td><br></td>\n"
+#~ "    </tr>\n"
+#~ "    <tr>\n"
+#~ "        <td>&nbsp;<br><samp>${refdes:field}</samp></td>\n"
+#~ "        <td></td>\n"
+#~ "        <td>&nbsp;<br><samp><i>field_value</i> of symbol <i>refdes</i></"
+#~ "samp></td>\n"
+#~ "    </tr>\n"
+#~ "    <tr>\n"
+#~ "        <td>&nbsp;<br><samp>${R3:VALUE}</samp></td>\n"
+#~ "        <td></td>\n"
+#~ "        <td>&nbsp;<br><samp>150K</samp></td>\n"
+#~ "    </tr>\n"
+#~ "    <tr>\n"
+#~ "        <td><br></td>\n"
+#~ "    </tr>\n"
+#~ "    <tr>\n"
+#~ "        <td><br></td>\n"
+#~ "    </tr>\n"
+#~ "    <tr>\n"
+#~ "        <th>Bus Definition</th>\n"
+#~ "        <th>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"
+#~ "&nbsp;&nbsp;&nbsp;</th>\n"
+#~ "        <th>Resultant Nets</th>\n"
+#~ "    </tr>\n"
+#~ "    <tr>\n"
+#~ "        <td>&nbsp;<br><samp>prefix[m..n]</samp></td>\n"
+#~ "        <td></td>\n"
+#~ "        <td>&nbsp;<br><samp>prefixm to prefixn</samp></td>\n"
+#~ "    </tr>\n"
+#~ "    <tr>\n"
+#~ "        <td>&nbsp;<br><samp>D[0..7]</samp></td>\n"
+#~ "        <td></td>\n"
+#~ "        <td>&nbsp;<br><samp>D0, D1, D2, D3, D4, D5, D6, D7</samp></td>\n"
+#~ "    </tr>\n"
+#~ "    <tr>\n"
+#~ "        <td><br></td>\n"
+#~ "    </tr>\n"
+#~ "    <tr>\n"
+#~ "\t\t<td>&nbsp;<br><samp>{net1 net2 ...}</samp></td>\n"
+#~ "\t\t<td></td>\n"
+#~ "\t\t<td>&nbsp;<br><samp>net1, net2, ...</samp></td>\n"
+#~ "    </tr>\n"
+#~ "    <tr>\n"
+#~ "        <td>&nbsp;<br><samp>{SCL SDA}</samp></td>\n"
+#~ "        <td></td>\n"
+#~ "        <td>&nbsp;<br><samp>SCL, SDA</samp></td>\n"
+#~ "    </tr>\n"
+#~ "    <tr>\n"
+#~ "        <td><br></td>\n"
+#~ "    </tr>\n"
+#~ "    <tr>\n"
+#~ "        <td>&nbsp;<br><samp>prefix{net1 net2 ...}</samp></td>\n"
+#~ "        <td></td>\n"
+#~ "        <td>&nbsp;<br><samp>prefix.net1, prefix.net2, ...</samp></td>\n"
+#~ "    </tr>\n"
+#~ "    <tr>\n"
+#~ "        <td>&nbsp;<br><samp>USB1{DP DM}</samp></td>\n"
+#~ "        <td></td>\n"
+#~ "        <td>&nbsp;<br><samp>USB1.DP, USB1.DM</samp></td>\n"
+#~ "    </tr>\n"
+#~ "    <tr>\n"
+#~ "        <td><br></td>\n"
+#~ "    </tr>\n"
+#~ "    <tr>\n"
+#~ "        <td>&nbsp;<br><samp>MEM{D[1..2] LATCH}</samp></td>\n"
+#~ "        <td></td>\n"
+#~ "        <td>&nbsp;<br> <samp>MEM.D1, MEM.D2, MEM.LATCH</samp> </td>\n"
+#~ "    </tr>\n"
+#~ "    <tr>\n"
+#~ "        <td>&nbsp;<br><samp>MEM{D_{[1..2]} ~LATCH}</samp></td>\n"
+#~ "        <td></td>\n"
+#~ "        <td> <samp>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"
+#~ "&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <u>&nbsp;&nbsp;&nbsp;"
+#~ "&nbsp;&nbsp;</u></samp><br> <samp>MEM.D<sub>1</sub>, MEM.D<sub>2</sub>, "
+#~ "MEM.LATCH</samp> </td>\n"
+#~ "    </tr>\n"
+#~ "</table>\n"
+#~ msgstr ""
+#~ "<table>\n"
+#~ "    <tr>\n"
+#~ "        <th>Markup</th>\n"
+#~ "        <th></th>\n"
+#~ "        <th>Result</th>\n"
+#~ "    </tr>\n"
+#~ "    <tr>\n"
+#~ "        <td>&nbsp;<br><samp>^{superscript}</samp></td>\n"
+#~ "        <td></td>\n"
+#~ "        <td>&nbsp;<br><samp><sup>superscript</sup>&nbsp;</samp></td>\n"
+#~ "    </tr>\n"
+#~ "    <tr>\n"
+#~ "        <td>&nbsp;<br><samp>Driver Board^{Rev A}</samp></td>\n"
+#~ "        <td></td>\n"
+#~ "        <td>&nbsp;<br><samp>Driver Board<sup>Rev A</sup></samp></td>\n"
+#~ "    </tr>\n"
+#~ "    <tr>\n"
+#~ "        <td><br></td>\n"
+#~ "    </tr>\n"
+#~ "    <tr>\n"
+#~ "        <td>&nbsp;<br><samp>_{subscript}</samp></td>\n"
+#~ "        <td></td>\n"
+#~ "        <td>&nbsp;<br><samp><sub>subscript</sub>&nbsp;</samp></td>\n"
+#~ "    </tr>\n"
+#~ "    <tr>\n"
+#~ "        <td>&nbsp;<br><samp>D_{0} - D_{15}</samp></td>\n"
+#~ "        <td></td>\n"
+#~ "        <td>&nbsp;<br><samp>D<sub>0</sub> - D<sub>31</sub></samp></td>\n"
+#~ "    </tr>\n"
+#~ "    <tr>\n"
+#~ "        <td></td>\n"
+#~ "    </tr>\n"
+#~ "    <tr>\n"
+#~ "        <td> &nbsp;<br><samp>~overbar</samp><br> &nbsp;<br><samp>~CLK</"
+#~ "samp><br> &nbsp;<br><samp>~~</samp> </td>\n"
+#~ "        <td></td>\n"
+#~ "        <td> <samp><u>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</u></"
+#~ "samp><br> <samp>overbar</samp><br> <samp><u>&nbsp;&nbsp;&nbsp;</u></"
+#~ "samp><br> <samp>CLK</samp><br> <samp>&nbsp;</samp><br> <samp>~</samp> </"
+#~ "td>\n"
+#~ "    </tr>\n"
+#~ "    <tr>\n"
+#~ "        <td><br></td>\n"
+#~ "    </tr>\n"
+#~ "    <tr>\n"
+#~ "        <td>&nbsp;<br><samp>${variable}</samp></td>\n"
+#~ "        <td></td>\n"
+#~ "        <td>&nbsp;<br><samp><i>variable_value</i></samp></td>\n"
+#~ "    </tr>\n"
+#~ "    <tr>\n"
+#~ "        <td>&nbsp;<br><samp>${REVISION}</samp></td>\n"
+#~ "        <td></td>\n"
+#~ "        <td>&nbsp;<br><samp>2020.1</samp></td>\n"
+#~ "    </tr>\n"
+#~ "    <tr>\n"
+#~ "        <td><br></td>\n"
+#~ "    </tr>\n"
+#~ "    <tr>\n"
+#~ "        <td>&nbsp;<br><samp>${refdes:field}</samp></td>\n"
+#~ "        <td></td>\n"
+#~ "        <td>&nbsp;<br><samp><i>field_value</i> of symbol <i>refdes</i></"
+#~ "samp></td>\n"
+#~ "    </tr>\n"
+#~ "    <tr>\n"
+#~ "        <td>&nbsp;<br><samp>${R3:VALUE}</samp></td>\n"
+#~ "        <td></td>\n"
+#~ "        <td>&nbsp;<br><samp>150K</samp></td>\n"
+#~ "    </tr>\n"
+#~ "    <tr>\n"
+#~ "        <td><br></td>\n"
+#~ "    </tr>\n"
+#~ "    <tr>\n"
+#~ "        <td><br></td>\n"
+#~ "    </tr>\n"
+#~ "    <tr>\n"
+#~ "        <th>Bus Definition</th>\n"
+#~ "        <th>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"
+#~ "&nbsp;&nbsp;&nbsp;</th>\n"
+#~ "        <th>Resultant Nets</th>\n"
+#~ "    </tr>\n"
+#~ "    <tr>\n"
+#~ "        <td>&nbsp;<br><samp>prefix[m..n]</samp></td>\n"
+#~ "        <td></td>\n"
+#~ "        <td>&nbsp;<br><samp>prefixm to prefixn</samp></td>\n"
+#~ "    </tr>\n"
+#~ "    <tr>\n"
+#~ "        <td>&nbsp;<br><samp>D[0..7]</samp></td>\n"
+#~ "        <td></td>\n"
+#~ "        <td>&nbsp;<br><samp>D0, D1, D2, D3, D4, D5, D6, D7</samp></td>\n"
+#~ "    </tr>\n"
+#~ "    <tr>\n"
+#~ "        <td><br></td>\n"
+#~ "    </tr>\n"
+#~ "    <tr>\n"
+#~ "\t\t<td>&nbsp;<br><samp>{net1 net2 ...}</samp></td>\n"
+#~ "\t\t<td></td>\n"
+#~ "\t\t<td>&nbsp;<br><samp>net1, net2, ...</samp></td>\n"
+#~ "    </tr>\n"
+#~ "    <tr>\n"
+#~ "        <td>&nbsp;<br><samp>{SCL SDA}</samp></td>\n"
+#~ "        <td></td>\n"
+#~ "        <td>&nbsp;<br><samp>SCL, SDA</samp></td>\n"
+#~ "    </tr>\n"
+#~ "    <tr>\n"
+#~ "        <td><br></td>\n"
+#~ "    </tr>\n"
+#~ "    <tr>\n"
+#~ "        <td>&nbsp;<br><samp>prefix{net1 net2 ...}</samp></td>\n"
+#~ "        <td></td>\n"
+#~ "        <td>&nbsp;<br><samp>prefix.net1, prefix.net2, ...</samp></td>\n"
+#~ "    </tr>\n"
+#~ "    <tr>\n"
+#~ "        <td>&nbsp;<br><samp>USB1{DP DM}</samp></td>\n"
+#~ "        <td></td>\n"
+#~ "        <td>&nbsp;<br><samp>USB1.DP, USB1.DM</samp></td>\n"
+#~ "    </tr>\n"
+#~ "    <tr>\n"
+#~ "        <td><br></td>\n"
+#~ "    </tr>\n"
+#~ "    <tr>\n"
+#~ "        <td>&nbsp;<br><samp>MEM{D[1..2] LATCH}</samp></td>\n"
+#~ "        <td></td>\n"
+#~ "        <td>&nbsp;<br> <samp>MEM.D1, MEM.D2, MEM.LATCH</samp> </td>\n"
+#~ "    </tr>\n"
+#~ "    <tr>\n"
+#~ "        <td>&nbsp;<br><samp>MEM{D_{[1..2]} ~LATCH}</samp></td>\n"
+#~ "        <td></td>\n"
+#~ "        <td> <samp>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"
+#~ "&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <u>&nbsp;&nbsp;&nbsp;"
+#~ "&nbsp;&nbsp;</u></samp><br> <samp>MEM.D<sub>1</sub>, MEM.D<sub>2</sub>, "
+#~ "MEM.LATCH</samp> </td>\n"
+#~ "    </tr>\n"
+#~ "</table>\n"
+
+#~ msgid "Highlight corresponding items in board editor"
+#~ msgstr "Highlight corresponding items in board editor"
+
+#~ msgid "Display the selected sheet's contents in the Eeschema window"
+#~ msgstr "Display the selected sheet's contents in the Eeschema window"
+
+#~ msgid "Display the parent sheet in the Eeschema window"
+#~ msgstr "Display the parent sheet in the Eeschema window"
+
+#~ msgid "Ω"
+#~ msgstr "Ω"
+
+#~ msgid "kΩ"
+#~ msgstr "kΩ"
+
+#~ msgid "Optional prefix for component side reference designations (i.e. F_)"
+#~ msgstr "Optional prefix for component side reference designations (i.e. F_)"
+
+#~ msgid "Optional prefix for solder side reference designations (i.e. B_)"
+#~ msgstr "Optional prefix for solder side reference designations (i.e. B_)"
+
+#~ msgid ""
+#~ "Default pad connection type to zone.\n"
+#~ "This setting can be overridden by local  pad settings"
+#~ msgstr ""
+#~ "Default pad connection type to zone.\n"
+#~ "This setting can be overridden by local  pad settings"
+
+#~ msgid "Solid shape"
+#~ msgstr "Solid shape"
+
+#~ msgid ""
+#~ "Choose if you want to draw the sheet like it appears on screen,\n"
+#~ "or in black and white mode, better to print it when using  black and "
+#~ "white printers"
+#~ msgstr ""
+#~ "Choose if you want to draw the sheet like it appears on screen,\n"
+#~ "or in black and white mode, better to print it when using  black and "
+#~ "white printers"
+
+#~ msgid "Board Length"
+#~ msgstr "Board Length"
+
+#~ msgid "Keep out copper pours"
+#~ msgstr "Keep out copper pours"
+
+#~ msgid "Checking board edge clearances..."
+#~ msgstr "Checking board edge clearances..."
+
+#, c-format
+#~ msgid ""
+#~ "The CADSTAR area '%s' in library component '%s' does not have a KiCad "
+#~ "equivalent. The area is neither a via orroute keepout area. The area was "
+#~ "not imported."
+#~ msgstr ""
+#~ "The CADSTAR area '%s' in library component '%s' does not have a KiCad "
+#~ "equivalent. The area is neither a via orroute keepout area. The area was "
+#~ "not imported."
+
+#~ msgid ""
+#~ "Error creating new directory. Please try a different path. The project "
+#~ "was not imported."
+#~ msgstr ""
+#~ "Error creating new directory. Please try a different path. The project "
+#~ "was not imported."
+
+#~ msgid "No constraint"
+#~ msgstr "No constraint"
+
+#~ msgid "Impedance Control"
+#~ msgstr "Impedance Control"
+
+#, c-format
+#~ msgid "Use the \"%s\" control to change the number of copper layers."
+#~ msgstr "Use the “%s” control to change the number of copper layers."
+
+#~ msgid "Custom layer set"
+#~ msgstr "Custom layer set"
+
+#~ msgid "Two layers, parts on Front"
+#~ msgstr "Two layers, parts on Front"
+
+#~ msgid "Two layers, parts on Back"
+#~ msgstr "Two layers, parts on Back"
+
+#~ msgid "Two layers, parts on Front & Back"
+#~ msgstr "Two layers, parts on Front & Back"
+
+#~ msgid "Four layers, parts on Front"
+#~ msgstr "Four layers, parts on Front"
+
+#~ msgid "Four layers, parts on Front & Back"
+#~ msgstr "Four layers, parts on Front & Back"
+
+#~ msgid "All layers on"
+#~ msgstr "All layers on"
+
+#~ msgid "Eeschema (.lib file)"
+#~ msgstr "Eeschema (.lib file)"
+
+#~ msgid "Pcbnew (.kicad_mod file)"
+#~ msgstr "Pcbnew (.kicad_mod file)"
+
+#~ msgid "Logo for title block (.kicad_wks file)"
+#~ msgstr "Logo for title block (.kicad_wks file)"
+
+#~ msgid "Net Class Memberships"
+#~ msgstr "Net Class Memberships"
+
+#~ msgid "Eeschema"
+#~ msgstr "Eeschema"
+
+#~ msgid "Pcbnew"
+#~ msgstr "Pcbnew"
+
+#~ msgid "Page Layout Editor"
+#~ msgstr "Page Layout Editor"
+
+#~ msgid "Worksheet"
+#~ msgstr "Worksheet"
+
+#~ msgid "Accelerated Graphics"
+#~ msgstr "Accelerated Graphics"
+
+#~ msgid "Use hardware-accelerated graphics (recommended)"
+#~ msgstr "Use hardware-accelerated graphics (recommended)"
+
+#~ msgid "Standard Graphics"
+#~ msgstr "Standard Graphics"
+
+#~ msgid "Use software graphics (fall-back)"
+#~ msgstr "Use software graphics (fall-back)"
+
+#~ msgid ""
+#~ "Some of the assigned footprints are legacy entries with no library names. "
+#~ "Would you like Kicad to attempt to convert them to the new required "
+#~ "LIB_ID format? (If you answer no, then these assignments will be cleared "
+#~ "and you will need to re-assign them manually.)"
+#~ msgstr ""
+#~ "Some of the assigned footprints are legacy entries with no library names. "
+#~ "Would you like Kicad to attempt to convert them to the new required "
+#~ "LIB_ID format? (If you answer no, then these assignments will be cleared "
+#~ "and you will need to re-assign them manually.)"
+
+#, c-format
+#~ msgid "Hierarchical label %s has no matching sheet pin outside the sheet"
+#~ msgstr "Hierarchical label %s has no matching sheet pin outside the sheet"
+
+#~ msgid "Print the frame references."
+#~ msgstr "Print the frame references."
+
+#~ msgid "Table Name"
+#~ msgstr "Table Name"
+
+#~ msgid "Unresolved text variable in worksheet."
+#~ msgstr "Unresolved text variable in worksheet."
+
+#, c-format
+#~ msgid "Directory \"%s\" is not writable."
+#~ msgstr "Directory “%s” is not writable."
+
+#~ msgid ""
+#~ "Saving the project to the new file format will overwrite existing files."
+#~ msgstr ""
+#~ "Saving the project to the new file format will overwrite existing files."
+
+#~ msgid "Project Save Warning"
+#~ msgstr "Project Save Warning"
+
+#, c-format
+#~ msgid ""
+#~ "The following files will be overwritten:\n"
+#~ "\n"
+#~ "%s"
+#~ msgstr ""
+#~ "The following files will be overwritten:\n"
+#~ "\n"
+#~ "%s"
+
+#~ msgid ""
+#~ "Cannot update the PCB, because the Schematic Editor is opened in stand-"
+#~ "alone mode. In order to create/update PCBs from schematics, launch the "
+#~ "Kicad shell and create a project."
+#~ msgstr ""
+#~ "Cannot update the PCB, because the Schematic Editor is opened in stand-"
+#~ "alone mode. In order to create/update PCBs from schematics, launch the "
+#~ "Kicad shell and create a project."
+
+#, c-format
+#~ msgid "%s from schematic"
+#~ msgstr "%s from schematic"
+
+#~ msgid "Add Sheet Pin"
+#~ msgstr "Add Sheet Pin"
+
+#~ msgid "Add a sheet pin"
+#~ msgstr "Add a sheet pin"
+
+#~ msgid "Edit Page Number..."
+#~ msgstr "Edit Page Number..."
+
+#~ msgid "Edit Page Number"
+#~ msgstr "Edit Page Number"
+
+#~ msgid "<b>No more available layers</b> in Gerbview to load files"
+#~ msgstr "<b>No more available layers</b> in Gerbview to load files"
+
+#~ msgid "Gerbview"
+#~ msgstr "Gerbview"
+
+#~ msgid "Export to Pcbnew..."
+#~ msgstr "Export to Pcbnew..."
+
+#~ msgid "Export data in Pcbnew format"
+#~ msgstr "Export data in Pcbnew format"
+
+#~ msgid "Show worksheet"
+#~ msgstr "Show worksheet"
+
+#~ msgid ""
+#~ "Edit worksheet borders and title blocks for use in schematics and PCB "
+#~ "designs"
+#~ msgstr ""
+#~ "Edit worksheet borders and title blocks for use in schematics and PCB "
+#~ "designs"
+
+#~ msgid "Worksheet Editor"
+#~ msgstr "Worksheet Editor"
+
+#~ msgid "Edit worksheet graphics and text"
+#~ msgstr "Edit worksheet graphics and text"
+
+#~ msgid "Append Existing Page Layout File"
+#~ msgstr "Append Existing Page Layout File"
+
+#~ msgid "Append Existing Page Layout File..."
+#~ msgstr "Append Existing Page Layout File..."
+
+#~ msgid "Append an existing page layout design file to current file"
+#~ msgstr "Append an existing page layout design file to current file"
+
+#~ msgid "Vout = Vref * (R1 + R2) / R2"
+#~ msgstr "Vout = Vref * (R1 + R2) / R2"
+
+#~ msgid "Rebuild Ratsnest"
+#~ msgstr "Rebuild Ratsnest"
+
+#~ msgid "Use Pcbnew font to plot texts"
+#~ msgstr "Use Pcbnew font to plot texts"
+
+#~ msgid ""
+#~ "Check to use Pcbnew stroke font\n"
+#~ "Uncheck to plot oneline ASCII texts as editable text (using DXF font)"
+#~ msgstr ""
+#~ "Check to use Pcbnew stroke font\n"
+#~ "Uncheck to plot oneline ASCII texts as editable text (using DXF font)"
+
+#, c-format
+#~ msgid ""
+#~ "Current board will be closed, save changes to \"%s\" before continuing?"
+#~ msgstr ""
+#~ "Current board will be closed, save changes to \"%s\" before continuing?"
+
+#~ msgid ""
+#~ "If the zones on this board are refilled the Copper Edge Clearance setting "
+#~ "will be used (see Board Setup > Design Rules > Constraints).\n"
+#~ "This may result in different fills from previous Kicad versions which "
+#~ "used the line thicknesses of the board boundary on the Edge Cuts layer."
+#~ msgstr ""
+#~ "If the zones on this board are refilled the Copper Edge Clearance setting "
+#~ "will be used (see Board Setup > Design Rules > Constraints).\n"
+#~ "This may result in different fills from previous Kicad versions which "
+#~ "used the line thicknesses of the board boundary on the Edge Cuts layer."
+
+#, c-format
+#~ msgid "%s [from %s.%s]"
+#~ msgstr "%s [from %s.%s]"
+
+#~ msgid "Clear board and get last rescue file automatically saved by Pcbnew"
+#~ msgstr "Clear board and get last rescue file automatically saved by Pcbnew"
+
+#~ msgid "Shape has a null size!"
+#~ msgstr "Shape has a null size!"
+
+#~ msgid "Shape has no points!"
+#~ msgstr "Shape has no points!"
+
+#~ msgid ""
+#~ "Cannot update the PCB because Pcbnew is opened in stand-alone mode. In "
+#~ "order to create or update PCBs from schematics, you must launch the KiCad "
+#~ "project manager and create a project."
+#~ msgstr ""
+#~ "Cannot update the PCB because Pcbnew is opened in stand-alone mode. In "
+#~ "order to create or update PCBs from schematics, you must launch the KiCad "
+#~ "project manager and create a project."
+
+#~ msgid "Tracks on Copper layers only"
+#~ msgstr "Tracks on Copper layers only"
+
+#~ msgid "Add the selected items to a new group"
+#~ msgstr "Add the selected items to a new group"
+
+#~ msgid "Flip (mirror) the board view"
+#~ msgstr "Flip (mirror) the board view"
+
+#, c-format
+#~ msgid "Render time %.0f ms ( %.1f fps)"
+#~ msgstr "Render time %.0f ms ( %.1f fps)"
+
+#~ msgid "Mirror Around Horizontal Axis"
+#~ msgstr "Mirror Around Horizontal Axis"
+
+#~ msgid "Mirror Around Vertical Axis"
+#~ msgstr "Mirror Around Vertical Axis"
+
+#, c-format
+#~ msgid ""
+#~ "Project name:\n"
+#~ "%s\n"
+#~ msgstr ""
+#~ "Project name:\n"
+#~ "%s\n"
+
+#~ msgid "Edit Schematic"
+#~ msgstr "Edit Schematic"
+
+#~ msgid "Edit Schematic Symbols"
+#~ msgstr "Edit Schematic Symbols"
+
+#~ msgid "Edit PCB Footprints"
+#~ msgstr "Edit PCB Footprints"
+
+#~ msgid "View Gerber Files"
+#~ msgstr "View Gerber Files"
+
+#~ msgid "Convert Image"
+#~ msgstr "Convert Image"
+
+#~ msgid "Edit Worksheet"
+#~ msgstr "Edit Worksheet"
+
+#~ msgid ""
+#~ "### Bridged tee attenuator:\n"
+#~ "__Zin__ desired input impedance in &#x2126;<br>\n"
+#~ "__Zout__ desired output impedance<br>\n"
+#~ "__Z<sub>0</sub> = Zin = Zout__<br><br>\n"
+#~ "\n"
+#~ "* __a__ attenuation in dB\n"
+#~ "* __L = 10<sup>a/20</sup>__ (the loss)<br><br>\n"
+#~ "* ___R1 = Z<sub>0</sub> \\* (L - 1)___\n"
+#~ "* ___R2 = Z<sub>0</sub> / (L - 1)___"
+#~ msgstr ""
+#~ "### Bridged tee attenuator:\n"
+#~ "__Zin__ desired input impedance in &#x2126;<br>\n"
+#~ "__Zout__ desired output impedance<br>\n"
+#~ "__Z<sub>0</sub> = Zin = Zout__<br><br>\n"
+#~ "\n"
+#~ "* __a__ attenuation in dB\n"
+#~ "* __L = 10<sup>a/20</sup>__ (the loss)<br><br>\n"
+#~ "* ___R1 = Z<sub>0</sub> \\* (L - 1)___\n"
+#~ "* ___R2 = Z<sub>0</sub> / (L - 1)___"
+
+#~ msgid ""
+#~ "### Pi attenuator\n"
+#~ "__Zin__ desired input impedance in &#x2126;<br>\n"
+#~ "__Zout__ desired output impedance<br>\n"
+#~ "__Zin = Zout__<br><br>\n"
+#~ "\n"
+#~ "* __a__ attenuation in dB\n"
+#~ "* __L = 10<sup>a/20</sup>__ (the loss)\n"
+#~ "* __A = (L + 1)/(L - 1)__<br><br>\n"
+#~ "* ___R2 = (L- 1)/2 \\* &radic; ( (Zin \\* Zout) / L)___\n"
+#~ "* ___R1 = 1/( A/Zin - 1/R2 )___\n"
+#~ "* ___R3 = 1/ (A/Zout - 1/R2 )___"
+#~ msgstr ""
+#~ "### Pi attenuator\n"
+#~ "__Zin__ desired input impedance in &#x2126;<br>\n"
+#~ "__Zout__ desired output impedance<br>\n"
+#~ "__Zin = Zout__<br><br>\n"
+#~ "\n"
+#~ "* __a__ attenuation in dB\n"
+#~ "* __L = 10<sup>a/20</sup>__ (the loss)\n"
+#~ "* __A = (L + 1)/(L - 1)__<br><br>\n"
+#~ "* ___R2 = (L- 1)/2 \\* &radic; ( (Zin \\* Zout) / L)___\n"
+#~ "* ___R1 = 1/( A/Zin - 1/R2 )___\n"
+#~ "* ___R3 = 1/ (A/Zout - 1/R2 )___"
+
+#~ msgid ""
+#~ "### Split attenuator\n"
+#~ "#### Attenuation is 6dB\n"
+#~ "___Z<sub>in</sub>___ desired input impedance in &#x2126;<br>\n"
+#~ "___Z<sub>out</sub>___ desired output impedance in &#x2126;<br>\n"
+#~ "___Z<sub>in</sub> = Z<sub>out</sub>___\n"
+#~ "\n"
+#~ "___R1 = R2 = R3 = Z<sub>out</sub>/3___\n"
+#~ msgstr ""
+#~ "### Split attenuator\n"
+#~ "#### Attenuation is 6dB\n"
+#~ "___Z<sub>in</sub>___ desired input impedance in &#x2126;<br>\n"
+#~ "___Z<sub>out</sub>___ desired output impedance in &#x2126;<br>\n"
+#~ "___Z<sub>in</sub> = Z<sub>out</sub>___\n"
+#~ "\n"
+#~ "___R1 = R2 = R3 = Z<sub>out</sub>/3___\n"
+
+#~ msgid ""
+#~ "### Tee attenuator\n"
+#~ "__Zin__ desired input impedance in &#x2126;<br>\n"
+#~ "__Zout__ desired output impedance<br>\n"
+#~ "__Zin = Zout__<br><br>\n"
+#~ "\n"
+#~ "* __a__ attenuation in dB\n"
+#~ "* __L = 10<sup>a/20</sup>__ (the loss)\n"
+#~ "* ___A = (L + 1)/(L - 1)___<br><br>\n"
+#~ "* ___R2 = 2&radic;(L \\* Z<sub>in</sub> \\* Z<sub>out</sub> )/(L - 1)___\n"
+#~ "* ___R1 = Z<sub>in</sub> \\* A - R2___\n"
+#~ "* ___R3 = Z<sub>out</sub> \\* A - R2___\n"
+#~ msgstr ""
+#~ "### Tee attenuator\n"
+#~ "__Zin__ desired input impedance in &#x2126;<br>\n"
+#~ "__Zout__ desired output impedance<br>\n"
+#~ "__Zin = Zout__<br><br>\n"
+#~ "\n"
+#~ "* __a__ attenuation in dB\n"
+#~ "* __L = 10<sup>a/20</sup>__ (the loss)\n"
+#~ "* ___A = (L + 1)/(L - 1)___<br><br>\n"
+#~ "* ___R2 = 2&radic;(L \\* Z<sub>in</sub> \\* Z<sub>out</sub> )/(L - 1)___\n"
+#~ "* ___R1 = Z<sub>in</sub> \\* A - R2___\n"
+#~ "* ___R3 = Z<sub>out</sub> \\* A - R2___\n"
+
+#~ msgid "Bridged Tee"
+#~ msgstr "Bridged Tee"
+
+#~ msgid "Resistive Splitter"
+#~ msgstr "Resistive Splitter"
+
+#~ msgid "Attenuation"
+#~ msgstr "Attenuation"
+
+#~ msgid "Zin"
+#~ msgstr "Zin"
+
+#~ msgid "Zout"
+#~ msgstr "Zout"
+
+#~ msgid "R1"
+#~ msgstr "R1"
+
+#~ msgid "R2"
+#~ msgstr "R2"
+
+#~ msgid "R3"
+#~ msgstr "R3"
+
+#~ msgid "Required Resistance:"
+#~ msgstr "Required Resistance:"
+
+#~ msgid "Exclude Value 1:"
+#~ msgstr "Exclude Value 1:"
+
+#~ msgid "Exclude Value 2:"
+#~ msgstr "Exclude Value 2:"
+
+#~ msgid "Simple Solution:"
+#~ msgstr "Simple Solution:"
+
+#~ msgid "3R Solution:"
+#~ msgstr "3R Solution:"
+
+#~ msgid "4R Solution:"
+#~ msgstr "4R Solution:"
+
+#~ msgid "Coplanar wave guide with ground plane"
+#~ msgstr "Coplanar wave guide with ground plane"
+
+#~ msgid "TanD:"
+#~ msgstr "TanD:"
+
+#~ msgid "mu Rel:"
+#~ msgstr "mu Rel:"
+
+#~ msgid "mu Rel C:"
+#~ msgstr "mu Rel C:"
+
+#~ msgid "Z"
+#~ msgstr "Z"
+
+#~ msgid "Plating resistivity (Ohm.m):"
+#~ msgstr "Plating resistivity (Ohm.m):"
+
+#~ msgid "Ohm"
+#~ msgstr "Ω"
+
+#~ msgid "Watt"
+#~ msgstr "Watt"
+
+#~ msgid "deg C/Watt"
+#~ msgstr "deg C/Watt"
+
+#~ msgid ""
+#~ "Warning:\n"
+#~ "Via pad diameter >= Clearance hole diameter.\n"
+#~ "Some parameters cannot be calculated for a via\n"
+#~ "inside a copper zone."
+#~ msgstr ""
+#~ "Warning:\n"
+#~ "Via pad diameter >= Clearance hole diameter.\n"
+#~ "Some parameters cannot be calculated for a via\n"
+#~ "inside a copper zone."
+
+#~ msgid "Ohm-meter"
+#~ msgstr "Ohm-meter"
+
+#~ msgid "Voltage > 500V:"
+#~ msgstr "Voltage > 500V:"
+
+#~ msgid "0 .. 15V"
+#~ msgstr "0 .. 15V"
+
+#~ msgid "16 .. 30V"
+#~ msgstr "16 .. 30V"
+
+#~ msgid "31 .. 50V"
+#~ msgstr "31 .. 50V"
+
+#~ msgid "51 .. 100V"
+#~ msgstr "51 .. 100V"
+
+#~ msgid "101 .. 150V"
+#~ msgstr "101 .. 150V"
+
+#~ msgid "151 .. 170V"
+#~ msgstr "151 .. 170V"
+
+#~ msgid "171 .. 250V"
+#~ msgstr "171 .. 250V"
+
+#~ msgid "251 .. 300V"
+#~ msgstr "251 .. 300V"
+
+#~ msgid "301 .. 500V"
+#~ msgstr "301 .. 500V"
+
+#~ msgid " > 500V"
+#~ msgstr " > 500V"
+
+#~ msgid ""
+#~ "E-series defined in IEC 60063 are a widely accepted system of preferred\n"
+#~ "numbers for electronic components.  Available values are approximately\n"
+#~ "equally spaced in a logarithmic scale.\n"
+#~ "\n"
+#~ "\tE12: 1.0  1.2  1.5  1.8  2.2  2.7  3.3  3.9  4.7  5.6  6.8  8.2\n"
+#~ "\tE6:  1.0   -   1.5   -   2.2   -   3.3   -   4.7   -   6.8   -\n"
+#~ "\tE3:  1.0   -    -    -   2.2   -    -    -   4.7   -    -    -\n"
+#~ "\tE1:  1.0   -    -    -    -    -    -    -    -    -    -    -\n"
+#~ "\n"
+#~ "This calculator finds combinations of standard E-series components to\n"
+#~ "create arbitrary values.  You can enter the required resistance from "
+#~ "0,0025 to 4000 kOhm.\n"
+#~ "Solutions using up to 4 components are given.\n"
+#~ "\n"
+#~ "By default, the request value is always excluded from the solution set.  "
+#~ "It is also possible to specify\n"
+#~ "up to two additional values to exclude from the solution if these "
+#~ "component values are not available\n"
+#~ "\n"
+#~ "Solutions are given in the following formats:\n"
+#~ "\n"
+#~ "\tR1 + R2 +...+ Rn\tresistors in series\n"
+#~ "\tR1 | R2 |...| Rn\tresistors in parallel\n"
+#~ "\tR1 + (R2|R3)...\t\tany combination of the above\n"
+#~ msgstr ""
+#~ "E-series defined in IEC 60063 are a widely accepted system of preferred\n"
+#~ "numbers for electronic components.  Available values are approximately\n"
+#~ "equally spaced in a logarithmic scale.\n"
+#~ "\n"
+#~ "\tE12: 1.0  1.2  1.5  1.8  2.2  2.7  3.3  3.9  4.7  5.6  6.8  8.2\n"
+#~ "\tE6:  1.0   -   1.5   -   2.2   -   3.3   -   4.7   -   6.8   -\n"
+#~ "\tE3:  1.0   -    -    -   2.2   -    -    -   4.7   -    -    -\n"
+#~ "\tE1:  1.0   -    -    -    -    -    -    -    -    -    -    -\n"
+#~ "\n"
+#~ "This calculator finds combinations of standard E-series components to\n"
+#~ "create arbitrary values.  You can enter the required resistance from "
+#~ "0,0025 to 4000 kOhm.\n"
+#~ "Solutions using up to 4 components are given.\n"
+#~ "\n"
+#~ "By default, the request value is always excluded from the solution set.  "
+#~ "It is also possible to specify\n"
+#~ "up to two additional values to exclude from the solution if these "
+#~ "component values are not available\n"
+#~ "\n"
+#~ "Solutions are given in the following formats:\n"
+#~ "\n"
+#~ "\tR1 + R2 +...+ Rn\tresistors in series\n"
+#~ "\tR1 | R2 |...| Rn\tresistors in parallel\n"
+#~ "\tR1 + (R2|R3)...\t\tany combination of the above\n"
+
+#~ msgid ""
+#~ "If you specify the maximum current, then the trace widths will be "
+#~ "calculated to suit.\n"
+#~ "\n"
+#~ "If you specify one of the trace widths, the maximum current it can handle "
+#~ "will be calculated. The width for the other trace to also handle this "
+#~ "current will then be calculated.\n"
+#~ "\n"
+#~ "The controlling value is shown in bold.\n"
+#~ "\n"
+#~ "The calculations are valid for currents up to 35A (external) or 17.5A "
+#~ "(internal), temperature rises up to 100 deg C, and widths of up to 400mil "
+#~ "(10mm).\n"
+#~ "\n"
+#~ "The formula, from IPC 2221, is\n"
+#~ "<center>__I = K * dT<sup>0.44</sup> * (W*H)<sup>0.725</sup>__</center>\n"
+#~ "where:  \n"
+#~ "__I__ = maximum current in amps  \n"
+#~ "__dt__ = temperature rise above ambient in deg C  \n"
+#~ "__W,H__ = width and thickness in mils  \n"
+#~ "__K__ = 0.024 for internal traces or 0.048 for external traces\n"
+#~ msgstr ""
+#~ "If you specify the maximum current, then the trace widths will be "
+#~ "calculated to suit.\n"
+#~ "\n"
+#~ "If you specify one of the trace widths, the maximum current it can handle "
+#~ "will be calculated. The width for the other trace to also handle this "
+#~ "current will then be calculated.\n"
+#~ "\n"
+#~ "The controlling value is shown in bold.\n"
+#~ "\n"
+#~ "The calculations are valid for currents up to 35A (external) or 17.5A "
+#~ "(internal), temperature rises up to 100 deg C, and widths of up to 400mil "
+#~ "(10mm).\n"
+#~ "\n"
+#~ "The formula, from IPC 2221, is\n"
+#~ "<center>__I = K * dT<sup>0.44</sup> * (W*H)<sup>0.725</sup>__</center>\n"
+#~ "where:  \n"
+#~ "__I__ = maximum current in amps  \n"
+#~ "__dt__ = temperature rise above ambient in deg C  \n"
+#~ "__W,H__ = width and thickness in mils  \n"
+#~ "__K__ = 0.024 for internal traces or 0.048 for external traces\n"
+
+#~ msgid "Er"
+#~ msgstr "Er"
+
+#~ msgid "Epsilon R: substrate relative dielectric constant"
+#~ msgstr "Epsilon R: substrate relative dielectric constant"
+
+#~ msgid "TanD"
+#~ msgstr "TanD"
+
+#~ msgid "Tangent delta: dielectric loss factor."
+#~ msgstr "Tangent delta: dielectric loss factor."
+
+#~ msgid "Rho"
+#~ msgstr "Rho"
+
+#~ msgid ""
+#~ "Electrical resistivity or specific electrical resistance of conductor "
+#~ "(Ohm*meter)"
+#~ msgstr ""
+#~ "Electrical resistivity or specific electrical resistance of conductor (Ωm)"
+
+#~ msgid "ErEff:"
+#~ msgstr "ErEff:"
+
+#~ msgid "Conductor Losses:"
+#~ msgstr "Conductor Losses:"
+
+#~ msgid "Dielectric Losses:"
+#~ msgstr "Dielectric Losses:"
+
+#~ msgid "Skin Depth:"
+#~ msgstr "Skin Depth:"
+
+#~ msgid "Height of Substrate"
+#~ msgstr "Height of Substrate"
+
+#~ msgid "Height of Box Top"
+#~ msgstr "Height of Box Top"
+
+#~ msgid "Strip Thickness"
+#~ msgstr "Strip Thickness"
+
+#~ msgid "Rough"
+#~ msgstr "Rough"
+
+#~ msgid "Conductor Roughness"
+#~ msgstr "Conductor Roughness"
+
+#~ msgid "mu Rel S"
+#~ msgstr "mu Rel S"
+
+#~ msgid "Relative Permeability (mu) of Substrate"
+#~ msgstr "Relative Permeability (mu) of Substrate"
+
+#~ msgid "mu Rel C"
+#~ msgstr "mu Rel C"
+
+#~ msgid "Relative Permeability (mu) of Conductor"
+#~ msgstr "Relative Permeability (mu) of Conductor"
+
+#~ msgid "Line Length"
+#~ msgstr "Line Length"
+
+#~ msgid "Characteristic Impedance"
+#~ msgstr "Characteristic Impedance"
+
+#~ msgid "Electrical Length"
+#~ msgstr "Electrical Length"
+
+#~ msgid "Gap Width"
+#~ msgstr "Gap Width"
+
+#~ msgid "TE-Modes:"
+#~ msgstr "TE-Modes:"
+
+#~ msgid "TM-Modes:"
+#~ msgstr "TM-Modes:"
+
+#~ msgid "mu Rel I"
+#~ msgstr "mu Rel I"
+
+#~ msgid "Relative Permeability (mu) of Insulator"
+#~ msgstr "Relative Permeability (mu) of Insulator"
+
+#~ msgid "Width of Waveguide"
+#~ msgstr "Width of Waveguide"
+
+#~ msgid "Height of Waveguide"
+#~ msgstr "Height of Waveguide"
+
+#~ msgid "Waveguide Length"
+#~ msgstr "Waveguide Length"
+
+#~ msgid "Inner Diameter (conductor)"
+#~ msgstr "Inner Diameter (conductor)"
+
+#~ msgid "Outer Diameter (insulator)"
+#~ msgstr "Outer Diameter (insulator)"
+
+#~ msgid "ErEff Even:"
+#~ msgstr "ErEff Even:"
+
+#~ msgid "ErEff Odd:"
+#~ msgstr "ErEff Odd:"
+
+#~ msgid "Conductor Losses Even:"
+#~ msgstr "Conductor Losses Even:"
+
+#~ msgid "Conductor Losses Odd:"
+#~ msgstr "Conductor Losses Odd:"
+
+#~ msgid "Dielectric Losses Even:"
+#~ msgstr "Dielectric Losses Even:"
+
+#~ msgid "Dielectric Losses Odd:"
+#~ msgstr "Dielectric Losses Odd:"
+
+#~ msgid "distance between strip and top metal"
+#~ msgstr "distance between strip and top metal"
+
+#~ msgid "Number of Twists per Length"
+#~ msgstr "Number of Twists per Length"
+
+#~ msgid "ErEnv"
+#~ msgstr "ErEnv"
+
+#~ msgid "Relative Permittivity of Environment"
+#~ msgstr "Relative Permittivity of Environment"
+
+#~ msgid "Cable Length"
+#~ msgstr "Cable Length"
+
+#~ msgid "oz/ft^2"
+#~ msgstr "oz/ft^2"
+
+#~ msgid "Radian"
+#~ msgstr "Radian"
+
+#~ msgid "Degree"
+#~ msgstr "Degree"
+
+#~ msgid "Available:"
+#~ msgstr "Available:"
+
+#~ msgid "Via drill size has to be smaller than via diameter"
+#~ msgstr "Via drill size has to be smaller than via diameter"
+
+#~ msgid "Tracks & Vias"
+#~ msgstr "Tracks & Vias"
+
+#~ msgid ""
+#~ "Blind/buried vias have to be enabled in Board Setup > Design Rules > "
+#~ "Constraints."
+#~ msgstr ""
+#~ "Blind/buried vias have to be enabled in Board Setup > Design Rules > "
+#~ "Constraints."
+
+#~ msgid ""
+#~ "Microvias have to be enabled in Board Setup > Design Rules > Constraints."
+#~ msgstr ""
+#~ "Microvias have to be enabled in Board Setup > Design Rules > Constraints."
 
 #~ msgid "Save Copy of Symbol"
 #~ msgstr "Save Copy of Symbol"
@@ -25844,9 +27925,6 @@ msgstr "KiCad Printed Circuit Board"
 
 #~ msgid "Pad setup errors list"
 #~ msgstr "Pad setup errors list"
-
-#~ msgid "Via drill size must be smaller than via diameter"
-#~ msgstr "Via drill size must be smaller than via diameter"
 
 #~ msgid "&Keep unused layers"
 #~ msgstr "&Keep unused layers"
@@ -27977,9 +30055,6 @@ msgstr "KiCad Printed Circuit Board"
 #~ " from reannotation\n"
 #~ "\n"
 
-#~ msgid " will be ignored"
-#~ msgstr " will be ignored"
-
 #~ msgid "Module not found in changelist "
 #~ msgstr "Module not found in changelist "
 
@@ -29362,9 +31437,6 @@ msgstr "KiCad Printed Circuit Board"
 #~ msgid "Reset field text sizes and styles"
 #~ msgstr "Reset field text sizes and styles"
 
-#~ msgid "Update Symbol Fields"
-#~ msgstr "Update Symbol Fields"
-
 #~ msgid "&Bus thickness:"
 #~ msgstr "&Bus thickness:"
 
@@ -29708,9 +31780,6 @@ msgstr "KiCad Printed Circuit Board"
 
 #~ msgid "Switch to Modern Toolset with software graphics (fall-back)"
 #~ msgstr "Switch to Modern Toolset with software graphics (fall-back)"
-
-#~ msgid "Schematic Editor"
-#~ msgstr "Schematic Editor"
 
 #~ msgid "Arc center (%s, %s), radius %s"
 #~ msgstr "Arc center (%s, %s), radius %s"
@@ -31146,9 +33215,6 @@ msgstr "KiCad Printed Circuit Board"
 
 #~ msgid "PCB Layout Editor"
 #~ msgstr "PCB Layout Editor"
-
-#~ msgid "Gerber Viewer"
-#~ msgstr "Gerber Viewer"
 
 #~ msgid ""
 #~ "Bitmap to Component Converter\n"
@@ -33238,9 +35304,6 @@ msgstr "KiCad Printed Circuit Board"
 
 #~ msgid "&Footprint Properties..."
 #~ msgstr "&Footprint Properties…"
-
-#~ msgid "Edit footprint properties"
-#~ msgstr "Edit footprint properties"
 
 #~ msgid "Edit default pad properties"
 #~ msgstr "Edit default pad properties"

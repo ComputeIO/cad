@@ -2,7 +2,7 @@
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
  * Copyright (C) 2019 CERN
- * Copyright (C) 2019-2020 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 2019-2021 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -22,8 +22,9 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
 
-
+#include <bitmaps.h>
 #include <core/typeinfo.h>
+#include <core/kicad_algo.h>
 #include <ee_actions.h>
 #include <ee_collectors.h>
 #include <ee_selection_tool.h>
@@ -36,7 +37,7 @@
 #include <painter.h>
 #include <preview_items/selection_area.h>
 #include <sch_base_frame.h>
-#include <sch_component.h>
+#include <sch_symbol.h>
 #include <sch_field.h>
 #include <sch_edit_frame.h>
 #include <sch_item.h>
@@ -51,8 +52,7 @@
 #include <view/view.h>
 #include <view/view_controls.h>
 
-
-SELECTION_CONDITION EE_CONDITIONS::SingleSymbol = [] (const SELECTION& aSel )
+SELECTION_CONDITION EE_CONDITIONS::SingleSymbol = []( const SELECTION& aSel )
 {
     if( aSel.GetSize() == 1 )
     {
@@ -66,7 +66,13 @@ SELECTION_CONDITION EE_CONDITIONS::SingleSymbol = [] (const SELECTION& aSel )
 };
 
 
-SELECTION_CONDITION EE_CONDITIONS::SingleDeMorganSymbol = [] ( const SELECTION& aSel )
+SELECTION_CONDITION EE_CONDITIONS::SingleSymbolOrPower = []( const SELECTION& aSel )
+{
+    return aSel.GetSize() == 1 && aSel.Front()->Type() == SCH_COMPONENT_T;
+};
+
+
+SELECTION_CONDITION EE_CONDITIONS::SingleDeMorganSymbol = []( const SELECTION& aSel )
 {
     if( aSel.GetSize() == 1 )
     {
@@ -80,7 +86,7 @@ SELECTION_CONDITION EE_CONDITIONS::SingleDeMorganSymbol = [] ( const SELECTION& 
 };
 
 
-SELECTION_CONDITION EE_CONDITIONS::SingleMultiUnitSymbol = [] ( const SELECTION& aSel )
+SELECTION_CONDITION EE_CONDITIONS::SingleMultiUnitSymbol = []( const SELECTION& aSel )
 {
     if( aSel.GetSize() == 1 )
     {
@@ -154,11 +160,12 @@ bool EE_SELECTION_TOOL::Init()
     auto sheetSelection =     E_C::Count( 1 )    && E_C::OnlyType( SCH_SHEET_T );
 
     auto schEditSheetPageNumberCondition =
-            [this] ( const SELECTION& aSel )
+            [&] ( const SELECTION& aSel )
             {
-                return !m_isSymbolEditor
-                        && !m_isSymbolViewer
-                        && ( E_C::Empty || ( E_C::Count( 1 ) && E_C::OnlyType( SCH_SHEET_T ) ) );
+                if( m_isSymbolEditor || m_isSymbolViewer )
+                    return false;
+
+                return E_C::LessThan( 2 )( aSel ) && E_C::OnlyType( SCH_SHEET_T )( aSel );
             };
 
     auto schEditCondition =
@@ -206,7 +213,7 @@ bool EE_SELECTION_TOOL::Init()
     menu.AddItem( EE_ACTIONS::placeHierLabel,     wireOrBusSelection && EE_CONDITIONS::Idle, 250 );
     menu.AddItem( EE_ACTIONS::breakWire,          wireSelection && EE_CONDITIONS::Idle, 250 );
     menu.AddItem( EE_ACTIONS::breakBus,           busSelection && EE_CONDITIONS::Idle, 250 );
-    menu.AddItem( EE_ACTIONS::importSheetPin,     sheetSelection && EE_CONDITIONS::Idle, 250 );
+    menu.AddItem( EE_ACTIONS::importSingleSheetPin, sheetSelection && EE_CONDITIONS::Idle, 250 );
     menu.AddItem( EE_ACTIONS::assignNetclass,     connectedSelection && EE_CONDITIONS::Idle, 250 );
     menu.AddItem( EE_ACTIONS::editPageNumber,     schEditSheetPageNumberCondition, 250 );
 
@@ -304,6 +311,55 @@ const KICAD_T movableSymbolItems[] =
 };
 
 
+void EE_SELECTION_TOOL::setModifiersState( bool aShiftState, bool aCtrlState, bool aAltState )
+{
+    // Set the configuration of m_additive, m_subtractive, m_exclusive_or
+    // from the state of modifier keys SHIFT, CTRL, ALT and the OS
+
+    // on left click, a selection is made, depending on modifiers ALT, SHIFT, CTRL:
+    // Due to the fact ALT key modifier cannot be useed freely on Windows and Linux,
+    // actions are different on OSX and others OS
+    // Especially, ALT key cannot be used to force showing the full selection choice
+    // context menu (the menu is immediately closed on Windows )
+    //
+    // No modifier = select items and deselect previous selection
+    // ALT (on OSX) = skip heuristic and show full selection choice
+    // ALT (on others) = exclusive OR of selected items (inverse selection)
+    //
+    // CTRL/CMD (on OSX) = exclusive OR of selected items (inverse selection)
+    // CTRL (on others) = skip heuristic and show full selection choice
+    //
+    // SHIFT = add selected items to the current selection
+    //
+    // CTRL/CMD+SHIFT (on OSX) = remove selected items to the current selection
+    // CTRL+SHIFT (on others) = unused (can be used for a new action)
+    //
+    // CTRL/CMT+ALT (on OSX) = unused (can be used for a new action)
+    // CTRL+ALT (on others) = do nothing (same as no modifier)
+    //
+    // SHIFT+ALT (on OSX) =  do nothing (same as no modifier)
+    // SHIFT+ALT (on others) = remove selected items to the current selection
+
+#ifdef __WXOSX_MAC__
+    m_subtractive     = aCtrlState && aShiftState && !aAltState;
+    m_additive        = aShiftState && !aCtrlState && !aAltState;
+    m_exclusive_or    = aCtrlState && !aShiftState && !aAltState;
+    m_skip_heuristics = aAltState && !aShiftState && !aCtrlState;
+
+#else
+    m_subtractive  = aShiftState && !aCtrlState && aAltState;
+    m_additive     = aShiftState && !aCtrlState && !aAltState;
+    m_exclusive_or = !aShiftState && !aCtrlState && aAltState;
+
+    // Is the user requesting that the selection list include all possible
+    // items without removing less likely selection candidates
+    // Cannot use the Alt key on windows or the disambiguation context menu is immediately
+    // dismissed rendering it useless.
+    m_skip_heuristics = aCtrlState && !aShiftState && !aAltState;
+#endif
+}
+
+
 int EE_SELECTION_TOOL::Main( const TOOL_EVENT& aEvent )
 {
     m_frame->GetCanvas()->SetCurrentCursor( KICURSOR::ARROW );
@@ -314,23 +370,17 @@ int EE_SELECTION_TOOL::Main( const TOOL_EVENT& aEvent )
     while( TOOL_EVENT* evt = Wait() )
     {
         bool displayWireCursor = false;
+        bool displayBusCursor = false;
+        bool displayLineCursor = false;
         KIID rolloverItem = lastRolloverItem;
-        m_additive = m_subtractive = m_exclusive_or = false;
 
-        if( evt->Modifier( MD_SHIFT ) && evt->Modifier( MD_CTRL ) )
-            m_subtractive = true;
-        else if( evt->Modifier( MD_SHIFT ) )
-            m_additive = true;
-        else if( evt->Modifier( MD_CTRL ) )
-            m_exclusive_or = true;
+        // on left click, a selection is made, depending on modifiers ALT, SHIFT, CTRL:
+        setModifiersState( evt->Modifier( MD_SHIFT ), evt->Modifier( MD_CTRL ),
+                           evt->Modifier( MD_ALT ) );
 
-        bool              modifier_enabled = m_subtractive || m_additive || m_exclusive_or;
+        bool modifier_enabled = m_subtractive || m_additive || m_exclusive_or;
+
         MOUSE_DRAG_ACTION drag_action = m_frame->GetDragAction();
-
-        // Is the user requesting that the selection list include all possible
-        // items without removing less likely selection candidates
-        m_skip_heuristics = !!evt->Modifier( MD_ALT );
-
         EE_GRID_HELPER grid( m_toolMgr );
 
         // Single click? Select single object
@@ -356,18 +406,35 @@ int EE_SELECTION_TOOL::Main( const TOOL_EVENT& aEvent )
                     if( m_frame->eeconfig()->m_Drawing.auto_start_wires
                             && collector[0]->IsPointClickableAnchor( (wxPoint) snappedCursorPos ) )
                     {
-                        OPT_TOOL_EVENT newEvt = EE_ACTIONS::drawWire.MakeEvent();
-                        auto*          params = newEvt->Parameter<DRAW_SEGMENT_EVENT_PARAMS*>();
-                        auto*          newParams = new DRAW_SEGMENT_EVENT_PARAMS();
+                        OPT_TOOL_EVENT newEvt;
+                        SCH_CONNECTION* connection = collector[0]->Connection();
+
+                        if( ( connection && ( connection->IsNet() || connection->IsUnconnected() ) )
+                            || collector[0]->Type() == SCH_COMPONENT_T )
+                        {
+                            newEvt = EE_ACTIONS::drawWire.MakeEvent();
+                        }
+                        else if( connection && connection->IsBus() )
+                        {
+                            newEvt = EE_ACTIONS::drawBus.MakeEvent();
+                        }
+                        else if( collector[0]->Type() == SCH_LINE_T
+                                 && static_cast<SCH_LINE*>( collector[0] )->IsGraphicLine() )
+                        {
+                            newEvt = EE_ACTIONS::drawLines.MakeEvent();
+                        }
+
+                        auto* params = newEvt->Parameter<DRAW_SEGMENT_EVENT_PARAMS*>();
+                        auto* newParams = new DRAW_SEGMENT_EVENT_PARAMS();
 
                         *newParams= *params;
                         newParams->quitOnDraw = true;
                         newEvt->SetParameter( newParams );
 
-
                         getViewControls()->ForceCursorPosition( true, snappedCursorPos );
                         newEvt->SetMousePosition( snappedCursorPos );
                         newEvt->SetHasPosition( true );
+                        newEvt->SetForceImmediate( true );
                         m_toolMgr->ProcessEvent( *newEvt );
 
                         continueSelect = false;
@@ -411,7 +478,7 @@ int EE_SELECTION_TOOL::Main( const TOOL_EVENT& aEvent )
             {
                 EE_SELECTION saved_selection = m_selection;
 
-                for( auto item : m_selection )
+                for( const auto& item : m_selection )
                     RemoveItemFromSel( item, true );
 
                 SelectPoint( evt->Position(), EE_COLLECTOR::AllItems, nullptr,
@@ -421,8 +488,8 @@ int EE_SELECTION_TOOL::Main( const TOOL_EVENT& aEvent )
                 {
                     m_selection.SetIsHover( false );
 
-                    for( auto item : saved_selection )
-                        AddItemToSel( item, true );
+                    for( const auto& item : saved_selection )
+                        AddItemToSel( item,  true);
                 }
                 else
                 {
@@ -452,13 +519,20 @@ int EE_SELECTION_TOOL::Main( const TOOL_EVENT& aEvent )
         else if( evt->IsDblClick( BUT_MIDDLE ) )
         {
             // Middle double click?  Do zoom to fit or zoom to objects
-            if( m_exclusive_or ) // Is CTRL key down?
+            if( evt->Modifier( MD_CTRL ) ) // Is CTRL key down?
                 m_toolMgr->RunAction( ACTIONS::zoomFitObjects, true );
             else
                 m_toolMgr->RunAction( ACTIONS::zoomFitScreen, true );
         }
         else if( evt->IsDrag( BUT_LEFT ) )
         {
+            // Is another tool already moving a new object?  Don't allow a drag start
+            if( !m_selection.Empty() && m_selection[0]->HasFlag( IS_NEW | IS_MOVED ) )
+            {
+                evt->SetPassEvent();
+                continue;
+            }
+
             // drag with LMB? Select multiple objects (or at least draw a selection box) or
             // drag them
             if( SCH_EDIT_FRAME* schframe = dynamic_cast<SCH_EDIT_FRAME*>( m_frame ) )
@@ -558,7 +632,23 @@ int EE_SELECTION_TOOL::Main( const TOOL_EVENT& aEvent )
                     if( m_frame->eeconfig()->m_Drawing.auto_start_wires
                             && collector[0]->IsPointClickableAnchor( (wxPoint) snappedCursorPos ) )
                     {
-                        displayWireCursor = true;
+                        SCH_CONNECTION* connection = collector[0]->Connection();
+
+                        if( ( connection && ( connection->IsNet() || connection->IsUnconnected() ) )
+                            || collector[0]->Type() == SCH_COMPONENT_T )
+                        {
+                            displayWireCursor = true;
+                        }
+                        else if( connection && connection->IsBus() )
+                        {
+                            displayBusCursor = true;
+                        }
+                        else if( collector[0]->Type() == SCH_LINE_T
+                                 && static_cast<SCH_LINE*>( collector[0] )->IsGraphicLine() )
+                        {
+                            displayLineCursor = true;
+                        }
+
                         getViewControls()->ForceCursorPosition( true, snappedCursorPos );
                     }
                     else if( collector[0]->IsHypertext()
@@ -614,6 +704,14 @@ int EE_SELECTION_TOOL::Main( const TOOL_EVENT& aEvent )
             {
                 m_nonModifiedCursor = KICURSOR::LINE_WIRE_ADD;
             }
+            else if( displayBusCursor )
+            {
+                m_nonModifiedCursor = KICURSOR::LINE_BUS;
+            }
+            else if( displayLineCursor )
+            {
+                m_nonModifiedCursor = KICURSOR::LINE_GRAPHIC;
+            }
             else if( rolloverItem != niluuid )
             {
                 m_nonModifiedCursor = KICURSOR::HAND;
@@ -644,14 +742,8 @@ void EE_SELECTION_TOOL::OnIdle( wxIdleEvent& aEvent )
     {
         wxMouseState keyboardState = wxGetMouseState();
 
-        m_subtractive = m_additive = m_exclusive_or = false;
-
-        if( keyboardState.ShiftDown() && keyboardState.ControlDown() )
-            m_subtractive = true;
-        else if( keyboardState.ShiftDown() )
-            m_additive = true;
-        else if( keyboardState.ControlDown() )
-            m_exclusive_or = true;
+        setModifiersState( keyboardState.ShiftDown(), keyboardState.ControlDown(),
+                           keyboardState.AltDown() );
 
         if( m_additive )
             m_frame->GetCanvas()->SetCurrentCursor( KICURSOR::ADD );
@@ -1073,8 +1165,8 @@ bool EE_SELECTION_TOOL::selectMultiple()
         if( view->IsMirroredX() )
             windowSelection = !windowSelection;
 
-        m_frame->GetCanvas()->SetCurrentCursor(
-                windowSelection ? KICURSOR::SELECT_WINDOW : KICURSOR::SELECT_LASSO );
+        m_frame->GetCanvas()->SetCurrentCursor( windowSelection ? KICURSOR::SELECT_WINDOW
+                                                                : KICURSOR::SELECT_LASSO );
 
         if( evt->IsCancelInteractive() || evt->IsActivate() )
         {
@@ -1137,6 +1229,16 @@ bool EE_SELECTION_TOOL::selectMultiple()
 
                     for( SCH_FIELD& field : symbol->GetFields() )
                         children.emplace_back( KIGFX::VIEW::LAYER_ITEM_PAIR( &field, layer ) );
+                }
+
+                SCH_GLOBALLABEL* gLabel = dynamic_cast<SCH_GLOBALLABEL*>( pair.first );
+
+                if( gLabel )
+                {
+                    int        layer = pair.second;
+                    SCH_FIELD* intersheetRef = gLabel->GetIntersheetRefs();
+
+                    children.emplace_back( KIGFX::VIEW::LAYER_ITEM_PAIR( intersheetRef, layer ) );
                 }
             }
 
@@ -1356,6 +1458,20 @@ void EE_SELECTION_TOOL::RemoveItemsFromSel( EDA_ITEMS* aList, bool aQuietMode )
 }
 
 
+void EE_SELECTION_TOOL::RemoveItemsFromSel( std::vector<KIID>* aList, bool aQuietMode )
+{
+    EDA_ITEMS removeItems;
+
+    for( EDA_ITEM* item : m_selection )
+    {
+        if( alg::contains( *aList, item->m_Uuid ) )
+            removeItems.push_back( item );
+    }
+
+    RemoveItemsFromSel( &removeItems, aQuietMode );
+}
+
+
 void EE_SELECTION_TOOL::BrightenItem( EDA_ITEM* aItem )
 {
     highlight( aItem, BRIGHTENED );
@@ -1457,15 +1573,15 @@ bool EE_SELECTION_TOOL::doSelectionMenu( EE_COLLECTOR* aCollector )
         }
 
         menu.AppendSeparator();
-        menu.Add( _( "Select &All\tA" ), limit + 1, nullptr );
+        menu.Add( _( "Select &All\tA" ), limit + 1, BITMAPS::INVALID_BITMAP );
 
         if( !expandSelection && aCollector->HasAdditionalItems() )
-            menu.Add( _( "&Expand Selection\tE" ), limit + 2, nullptr );
+            menu.Add( _( "&Expand Selection\tE" ), limit + 2, BITMAPS::INVALID_BITMAP );
 
         if( aCollector->m_MenuTitle.Length() )
         {
             menu.SetTitle( aCollector->m_MenuTitle );
-            menu.SetIcon( info_xpm );
+            menu.SetIcon( BITMAPS::info );
             menu.DisplayTitle( true );
         }
         else
@@ -1532,12 +1648,19 @@ bool EE_SELECTION_TOOL::doSelectionMenu( EE_COLLECTOR* aCollector )
                     selectAll = true;
                     current   = nullptr;
                 }
+                else if( id == limit + 2 )
+                {
+                    selectAll       = false;
+                    current         = nullptr;
+                    expandSelection = true;
+                }
                 // User has selected an item, so this one will be returned
                 else if( id && ( *id > 0 ) && ( *id <= limit ) )
                 {
                     selectAll = false;
                     current   = ( *aCollector )[*id - 1];
                 }
+                // User has cancelled the menu (either by <esc> or clicking out of it)
                 else
                 {
                     selectAll = false;
@@ -1575,12 +1698,12 @@ bool EE_SELECTION_TOOL::doSelectionMenu( EE_COLLECTOR* aCollector )
 bool EE_SELECTION_TOOL::Selectable( const EDA_ITEM* aItem, bool checkVisibilityOnly ) const
 {
     // NOTE: in the future this is where Eeschema layer/itemtype visibility will be handled
-    SYMBOL_EDIT_FRAME* symEditFrame = dynamic_cast< SYMBOL_EDIT_FRAME* >( m_frame );
+
+    SYMBOL_EDIT_FRAME* symEditFrame = dynamic_cast<SYMBOL_EDIT_FRAME*>( m_frame );
 
     // Do not allow selection of anything except fields when the current symbol in the symbol
     // editor is a derived symbol.
-    if( symEditFrame && symEditFrame->GetCurPart() && symEditFrame->GetCurPart()->IsAlias()
-      && aItem->Type() != LIB_FIELD_T )
+    if( symEditFrame && symEditFrame->IsSymbolAlias() && aItem->Type() != LIB_FIELD_T )
         return false;
 
     switch( aItem->Type() )

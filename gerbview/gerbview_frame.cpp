@@ -32,7 +32,7 @@
 #include <gerbview_draw_panel_gal.h>
 #include <gerbview_settings.h>
 #include <gal/graphics_abstraction_layer.h>
-#include <page_layout/ws_proxy_view_item.h>
+#include <drawing_sheet/ds_proxy_view_item.h>
 #include <settings/common_settings.h>
 #include <settings/settings_manager.h>
 #include <tool/tool_manager.h>
@@ -90,7 +90,7 @@ GERBVIEW_FRAME::GERBVIEW_FRAME( KIWAY* aKiway, wxWindow* aParent ) :
     m_apertText = nullptr;
     m_dcodeText = nullptr;
     m_displayMode = 0;
-    m_aboutTitle = "GerbView";
+    m_aboutTitle = _( "KiCad Gerber Viewer" );
 
     SHAPE_POLY_SET dummy;   // A ugly trick to force the linker to include
                             // some methods in code and avoid link errors
@@ -113,11 +113,11 @@ GERBVIEW_FRAME::GERBVIEW_FRAME( KIWAY* aKiway, wxWindow* aParent ) :
     wxIcon icon;
     wxIconBundle icon_bundle;
 
-    icon.CopyFromBitmap( KiBitmap( icon_gerbview_xpm ) );
+    icon.CopyFromBitmap( KiBitmap( BITMAPS::icon_gerbview ) );
     icon_bundle.AddIcon( icon );
-    icon.CopyFromBitmap( KiBitmap( icon_gerbview_32_xpm ) );
+    icon.CopyFromBitmap( KiBitmap( BITMAPS::icon_gerbview_32 ) );
     icon_bundle.AddIcon( icon );
-    icon.CopyFromBitmap( KiBitmap( icon_gerbview_16_xpm ) );
+    icon.CopyFromBitmap( KiBitmap( BITMAPS::icon_gerbview_16 ) );
     icon_bundle.AddIcon( icon );
 
     SetIcons( icon_bundle );
@@ -133,6 +133,10 @@ GERBVIEW_FRAME::GERBVIEW_FRAME( KIWAY* aKiway, wxWindow* aParent ) :
 
     // Create the PCB_LAYER_WIDGET *after* SetLayout():
     m_LayersManager = new GERBER_LAYER_WIDGET( this, GetCanvas() );
+
+    // Update the minimum string length in the layer panel with the length of the last default layer
+    wxString lyrName = GetImagesList()->GetDisplayName( GetImagesList()->ImagesMaxCount(), false, true );
+    m_LayersManager->SetSmallestLayerString( lyrName );
 
     // LoadSettings() *after* creating m_LayersManager, because LoadSettings()
     // initialize parameters in m_LayersManager
@@ -195,6 +199,14 @@ GERBVIEW_FRAME::GERBVIEW_FRAME( KIWAY* aKiway, wxWindow* aParent ) :
 
     // Ensure the window is on top
     Raise();
+
+    // Register a call to update the toolbar sizes. It can't be done immediately because
+    // it seems to require some sizes calculated that aren't yet (at least on GTK).
+    CallAfter( [&]()
+               {
+                   // Ensure the controls on the toolbars all are correctly sized
+                    UpdateToolbarControlSizes();
+               } );
 }
 
 
@@ -323,7 +335,7 @@ void GERBVIEW_FRAME::LoadSettings( APP_SETTINGS_BASE* aCfg )
     GERBVIEW_SETTINGS* cfg = dynamic_cast<GERBVIEW_SETTINGS*>( aCfg );
     wxCHECK( cfg, /*void*/ );
 
-    SetElementVisibility( LAYER_GERBVIEW_WORKSHEET, cfg->m_Appearance.show_border_and_titleblock );
+    SetElementVisibility( LAYER_GERBVIEW_DRAWINGSHEET, cfg->m_Appearance.show_border_and_titleblock );
 
     PAGE_INFO pageInfo( wxT( "GERBER" ) );
     pageInfo.SetType( cfg->m_Appearance.page_type );
@@ -411,11 +423,11 @@ void GERBVIEW_FRAME::SetElementVisibility( int aLayerID, bool aNewState )
         break;
     }
 
-    case LAYER_GERBVIEW_WORKSHEET:
+    case LAYER_GERBVIEW_DRAWINGSHEET:
         m_showBorderAndTitleBlock = aNewState;
-        // NOTE: LAYER_WORKSHEET always used for visibility, but the layer manager passes
-        // LAYER_GERBVIEW_WORKSHEET because of independent color control
-        GetCanvas()->GetView()->SetLayerVisible( LAYER_WORKSHEET, aNewState );
+        // NOTE: LAYER_DRAWINGSHEET always used for visibility, but the layer manager passes
+        // LAYER_GERBVIEW_DRAWINGSHEET because of independent color control
+        GetCanvas()->GetView()->SetLayerVisible( LAYER_DRAWINGSHEET, aNewState );
         break;
 
     case LAYER_GERBVIEW_GRID:
@@ -600,7 +612,7 @@ void GERBVIEW_FRAME::UpdateTitleAndInfo()
     // Display the gerber filename
     if( gerber == NULL )
     {
-        SetTitle( "GerbView" );
+        SetTitle( _("Gerber Viewer") );
 
         SetStatusText( wxEmptyString, 0 );
 
@@ -619,7 +631,7 @@ void GERBVIEW_FRAME::UpdateTitleAndInfo()
         wxString title;
         wxFileName filename( gerber->m_FileName );
 
-        title.Printf( wxT( "%s%s \u2014 " ) + _( "GerbView" ),
+        title.Printf( wxT( "%s%s \u2014 " ) + _( "Gerber Viewer" ),
                       filename.GetFullName(),
                       gerber->m_IsX2_file ? wxS( " " ) + _( "(with X2 attributes)" )
                                           : wxString( wxEmptyString ) );
@@ -659,11 +671,11 @@ bool GERBVIEW_FRAME::IsElementVisible( int aLayerID ) const
 {
     switch( aLayerID )
     {
-    case LAYER_DCODES:              return m_DisplayOptions.m_DisplayDCodes;
-    case LAYER_NEGATIVE_OBJECTS:    return m_DisplayOptions.m_DisplayNegativeObjects;
-    case LAYER_GERBVIEW_GRID:       return IsGridVisible();
-    case LAYER_GERBVIEW_WORKSHEET:  return m_showBorderAndTitleBlock;
-    case LAYER_GERBVIEW_BACKGROUND: return true;
+    case LAYER_DCODES:                return m_DisplayOptions.m_DisplayDCodes;
+    case LAYER_NEGATIVE_OBJECTS:      return m_DisplayOptions.m_DisplayNegativeObjects;
+    case LAYER_GERBVIEW_GRID:         return IsGridVisible();
+    case LAYER_GERBVIEW_DRAWINGSHEET: return m_showBorderAndTitleBlock;
+    case LAYER_GERBVIEW_BACKGROUND:   return true;
 
     default:
         wxFAIL_MSG( wxString::Format( "GERBVIEW_FRAME::IsElementVisible(): bad arg %d", aLayerID ) );
@@ -718,7 +730,7 @@ COLOR4D GERBVIEW_FRAME::GetVisibleElementColor( int aLayerID )
     {
     case LAYER_NEGATIVE_OBJECTS:
     case LAYER_DCODES:
-    case LAYER_GERBVIEW_WORKSHEET:
+    case LAYER_GERBVIEW_DRAWINGSHEET:
     case LAYER_GERBVIEW_BACKGROUND:
         color = settings->GetColor( aLayerID );
         break;
@@ -754,12 +766,12 @@ void GERBVIEW_FRAME::SetVisibleElementColor( int aLayerID, COLOR4D aColor )
         settings->SetColor( aLayerID, aColor );
         break;
 
-    case LAYER_GERBVIEW_WORKSHEET:
-        settings->SetColor( LAYER_GERBVIEW_WORKSHEET, aColor );
-        // LAYER_WORKSHEET color is also used to draw the worksheet
-        // FIX ME: why LAYER_WORKSHEET must be set, although LAYER_GERBVIEW_WORKSHEET
-        // is used to initialize the worksheet color layer.
-        settings->SetColor( LAYER_WORKSHEET, aColor );
+    case LAYER_GERBVIEW_DRAWINGSHEET:
+        settings->SetColor( LAYER_GERBVIEW_DRAWINGSHEET, aColor );
+        // LAYER_DRAWINGSHEET color is also used to draw the drawing-sheet
+        // FIX ME: why LAYER_DRAWINGSHEET must be set, although LAYER_GERBVIEW_DRAWINGSHEET
+        // is used to initialize the drawing-sheet color layer.
+        settings->SetColor( LAYER_DRAWINGSHEET, aColor );
         break;
 
     case LAYER_GERBVIEW_GRID:
@@ -825,22 +837,22 @@ void GERBVIEW_FRAME::SetPageSettings( const PAGE_INFO& aPageSettings )
     if( GetScreen() )
         GetScreen()->InitDataPoints( aPageSettings.GetSizeIU() );
 
-    auto drawPanel = static_cast<GERBVIEW_DRAW_PANEL_GAL*>( GetCanvas() );
+    GERBVIEW_DRAW_PANEL_GAL* drawPanel = static_cast<GERBVIEW_DRAW_PANEL_GAL*>( GetCanvas() );
 
-    // Prepare worksheet template
-    auto worksheet = new KIGFX::WS_PROXY_VIEW_ITEM( IU_PER_MILS, &GetPageSettings(),
-                                                    &Prj(), &GetTitleBlock() );
+    // Prepare drawing-sheet template
+    DS_PROXY_VIEW_ITEM* drawingSheet = new DS_PROXY_VIEW_ITEM( IU_PER_MILS, &GetPageSettings(),
+                                                               &Prj(), &GetTitleBlock() );
 
     if( GetScreen() )
     {
-        worksheet->SetPageNumber( "1" );
-        worksheet->SetSheetCount( 1 );
+        drawingSheet->SetPageNumber( "1" );
+        drawingSheet->SetSheetCount( 1 );
     }
 
-    worksheet->SetColorLayer( LAYER_GERBVIEW_WORKSHEET );
+    drawingSheet->SetColorLayer( LAYER_GERBVIEW_DRAWINGSHEET );
 
-    // Draw panel takes ownership of the worksheet
-    drawPanel->SetWorksheet( worksheet );
+    // Draw panel takes ownership of the drawing-sheet
+    drawPanel->SetDrawingSheet( drawingSheet );
 }
 
 
@@ -1004,7 +1016,7 @@ void GERBVIEW_FRAME::InstallPreferences( PAGED_DIALOG* aParent,
 {
     wxTreebook* book = aParent->GetTreebook();
 
-    book->AddPage( new wxPanel( book ), _( "Gerbview" ) );
+    book->AddPage( new wxPanel( book ), _( "GerbView" ) );
     book->AddSubPage( new PANEL_GERBVIEW_DISPLAY_OPTIONS( this, book ), _( "Display Options" ) );
     book->AddSubPage( new PANEL_GERBVIEW_SETTINGS( this, book ), _( "Editing Options" ) );
 
@@ -1020,7 +1032,7 @@ void GERBVIEW_FRAME::setupTools()
     m_toolManager->SetEnvironment( m_gerberLayout, GetCanvas()->GetView(),
                                    GetCanvas()->GetViewControls(), config(), this );
     m_actions = new GERBVIEW_ACTIONS();
-    m_toolDispatcher = new TOOL_DISPATCHER( m_toolManager, m_actions );
+    m_toolDispatcher = new TOOL_DISPATCHER( m_toolManager );
 
     // Register tools
     m_toolManager->RegisterTool( new COMMON_CONTROL );
@@ -1060,11 +1072,6 @@ void GERBVIEW_FRAME::setupUIConditions()
     mgr->SetConditions( ACTIONS::millimetersUnits, CHECK( cond.Units( EDA_UNITS::MILLIMETRES ) ) );
     mgr->SetConditions( ACTIONS::inchesUnits, CHECK( cond.Units( EDA_UNITS::INCHES ) ) );
     mgr->SetConditions( ACTIONS::milsUnits, CHECK( cond.Units( EDA_UNITS::MILS ) ) );
-
-    mgr->SetConditions( ACTIONS::acceleratedGraphics,
-                        CHECK( cond.CanvasType( EDA_DRAW_PANEL_GAL::GAL_TYPE_OPENGL ) ) );
-    mgr->SetConditions( ACTIONS::standardGraphics,
-                        CHECK( cond.CanvasType( EDA_DRAW_PANEL_GAL::GAL_TYPE_CAIRO ) ) );
 
     auto flashedDisplayOutlinesCond =
         [this] ( const SELECTION& )

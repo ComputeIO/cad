@@ -116,7 +116,7 @@ FOOTPRINT_VIEWER_FRAME::FOOTPRINT_VIEWER_FRAME( KIWAY* aKiway, wxWindow* aParent
     if( aFrameType == FRAME_FOOTPRINT_VIEWER_MODAL )
         SetModal( true );
 
-    m_aboutTitle = "Footprint Library Viewer";
+    m_aboutTitle = _( "KiCad Footprint Library Viewer" );
 
     // Force the items to always snap
     m_magneticItems.pads     = MAGNETIC_OPTIONS::CAPTURE_ALWAYS;
@@ -130,7 +130,7 @@ FOOTPRINT_VIEWER_FRAME::FOOTPRINT_VIEWER_FRAME( KIWAY* aKiway, wxWindow* aParent
 
     // Give an icon
     wxIcon  icon;
-    icon.CopyFromBitmap( KiBitmap( icon_footprint_browser_xpm ) );
+    icon.CopyFromBitmap( KiBitmap( BITMAPS::icon_footprint_browser ) );
     SetIcon( icon );
 
     wxPanel* libPanel = new wxPanel( this );
@@ -200,7 +200,7 @@ FOOTPRINT_VIEWER_FRAME::FOOTPRINT_VIEWER_FRAME( KIWAY* aKiway, wxWindow* aParent
     m_toolManager->SetEnvironment( GetBoard(), drawPanel->GetView(),
                                    drawPanel->GetViewControls(), config(), this );
     m_actions = new PCB_ACTIONS();
-    m_toolDispatcher = new TOOL_DISPATCHER( m_toolManager, m_actions );
+    m_toolDispatcher = new TOOL_DISPATCHER( m_toolManager );
     drawPanel->SetEventDispatcher( m_toolDispatcher );
 
     m_toolManager->RegisterTool( new PCB_CONTROL );
@@ -630,6 +630,8 @@ void FOOTPRINT_VIEWER_FRAME::ClickOnLibList( wxCommandEvent& aEvent )
     if( getCurNickname() == name )
         return;
 
+    bool filterFocus = m_libFilter->HasFocus();
+
     setCurNickname( name );
 
     ReCreateFootprintList();
@@ -639,7 +641,11 @@ void FOOTPRINT_VIEWER_FRAME::ClickOnLibList( wxCommandEvent& aEvent )
     // to navigate inside the list.
     // the gal canvas must not steal the focus to allow navigation
     GetCanvas()->SetStealsFocus( false );
-    m_libList->SetFocus();
+
+    if( filterFocus )
+        m_libFilter->SetFocus();
+    else
+        m_libList->SetFocus();
 }
 
 
@@ -652,6 +658,8 @@ void FOOTPRINT_VIEWER_FRAME::ClickOnFootprintList( wxCommandEvent& aEvent )
 
     if( ii < 0 )
         return;
+
+    bool filterFocus = m_fpFilter->HasFocus();
 
     wxString name = m_fpList->GetString( ii );
 
@@ -694,7 +702,11 @@ void FOOTPRINT_VIEWER_FRAME::ClickOnFootprintList( wxCommandEvent& aEvent )
     // to navigate inside the list.
     // the gal canvas must not steal the focus to allow navigation
     GetCanvas()->SetStealsFocus( false );
-    m_fpList->SetFocus();
+
+    if( filterFocus )
+        m_fpFilter->SetFocus();
+    else
+        m_fpList->SetFocus();
 }
 
 
@@ -741,7 +753,6 @@ void FOOTPRINT_VIEWER_FRAME::AddFootprintToPCB( wxCommandEvent& aEvent )
         {
             // Set the pads ratsnest settings to the global settings
             pad->SetLocalRatsnestVisible( pcbframe->GetDisplayOptions().m_ShowGlobalRatsnest );
-            pad->SetLocked( !pcbframe->Settings().m_AddUnlockedPads );
 
             // Pads in the library all have orphaned nets.  Replace with Default.
             pad->SetNetCode( 0 );
@@ -792,6 +803,8 @@ void FOOTPRINT_VIEWER_FRAME::SaveSettings( APP_SETTINGS_BASE* aCfg )
 {
     PCBNEW_SETTINGS* cfg = dynamic_cast<PCBNEW_SETTINGS*>( aCfg );
     wxCHECK( cfg, /*void*/ );
+
+    GetGalDisplayOptions().m_axesEnabled = true;
 
     // We don't want to store anything other than the window settings
     PCB_BASE_FRAME::SaveSettings( cfg );

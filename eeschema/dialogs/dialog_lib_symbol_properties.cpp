@@ -1,7 +1,7 @@
 /*
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
- * Copyright (C) 1992-2020 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 1992-2021 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -29,7 +29,7 @@
 #include <symbol_library_manager.h>
 #include <math/util.h> // for KiROUND
 #include <pgm_base.h>
-#include <sch_component.h>
+#include <sch_symbol.h>
 #include <widgets/grid_text_button_helpers.h>
 #include <widgets/wx_grid.h>
 
@@ -62,7 +62,7 @@ DIALOG_LIB_SYMBOL_PROPERTIES::DIALOG_LIB_SYMBOL_PROPERTIES( SYMBOL_EDIT_FRAME* a
 {
     // Give a bit more room for combobox editors
     m_grid->SetDefaultRowSize( m_grid->GetDefaultRowSize() + 4 );
-    m_fields = new FIELDS_GRID_TABLE<LIB_FIELD>( this, aParent, m_libEntry );
+    m_fields = new FIELDS_GRID_TABLE<LIB_FIELD>( this, aParent, m_grid, m_libEntry );
     m_grid->SetTable( m_fields );
     m_grid->PushEventHandler( new FIELDS_GRID_TRICKS( m_grid, this ) );
 
@@ -77,13 +77,13 @@ DIALOG_LIB_SYMBOL_PROPERTIES::DIALOG_LIB_SYMBOL_PROPERTIES( SYMBOL_EDIT_FRAME* a
     m_SymbolNameCtrl->SetValidator( SCH_FIELD_VALIDATOR( true, VALUE_FIELD ) );
 
     // Configure button logos
-    m_bpAdd->SetBitmap( KiBitmap( small_plus_xpm ) );
-    m_bpDelete->SetBitmap( KiBitmap( small_trash_xpm ) );
-    m_bpMoveUp->SetBitmap( KiBitmap( small_up_xpm ) );
-    m_bpMoveDown->SetBitmap( KiBitmap( small_down_xpm ) );
-    m_addFilterButton->SetBitmap( KiBitmap( small_plus_xpm ) );
-    m_deleteFilterButton->SetBitmap( KiBitmap( small_trash_xpm ) );
-    m_editFilterButton->SetBitmap( KiBitmap( small_edit_xpm ) );
+    m_bpAdd->SetBitmap( KiBitmap( BITMAPS::small_plus ) );
+    m_bpDelete->SetBitmap( KiBitmap( BITMAPS::small_trash ) );
+    m_bpMoveUp->SetBitmap( KiBitmap( BITMAPS::small_up ) );
+    m_bpMoveDown->SetBitmap( KiBitmap( BITMAPS::small_down ) );
+    m_addFilterButton->SetBitmap( KiBitmap( BITMAPS::small_plus ) );
+    m_deleteFilterButton->SetBitmap( KiBitmap( BITMAPS::small_trash ) );
+    m_editFilterButton->SetBitmap( KiBitmap( BITMAPS::small_edit ) );
 
     if( aParent->IsSymbolFromLegacyLibrary() )
     {
@@ -297,6 +297,9 @@ bool DIALOG_LIB_SYMBOL_PROPERTIES::TransferDataFromWindow()
     if( !wxDialog::TransferDataFromWindow() )
         return false;
 
+    if( !m_grid->CommitPendingChanges() )
+        return false;
+
     // We need to keep the name and the value the same at the moment!
     wxString   newName = m_fields->at( VALUE_FIELD ).GetText();
     wxString   oldName = m_libEntry->GetName();
@@ -329,6 +332,7 @@ bool DIALOG_LIB_SYMBOL_PROPERTIES::TransferDataFromWindow()
         wxPoint pos = m_fields->at( i ).GetPosition();
         pos.y = -pos.y;
         m_fields->at( i ).SetPosition( pos );
+        m_fields->at( i ).SetId( i );
     }
 
     m_libEntry->SetFields( *m_fields );

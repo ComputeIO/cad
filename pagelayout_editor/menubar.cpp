@@ -1,7 +1,7 @@
 /*
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
- * Copyright (C) 2016-2019 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 2016-2021 KiCad Developers, see AUTHORS.txt for contributors.
  * Copyright (C) 2013-2019 CERN
  * @author Jean-Pierre Charras, jp.charras at wanadoo.fr
  *
@@ -23,13 +23,13 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
 
+#include <bitmaps.h>
 #include <filehistory.h>
 #include <kiface_i.h>
 #include <menus_helpers.h>
 #include <pgm_base.h>
 #include <tool/action_menu.h>
 #include <tool/tool_manager.h>
-#include <tool/selection.h>
 #include <widgets/wx_menubar.h>
 
 #include "pl_editor_frame.h"
@@ -53,10 +53,9 @@ void PL_EDITOR_FRAME::ReCreateMenuBar()
     // will automatically refresh the menu.
     if( !openRecentMenu )
     {
-        openRecentMenu = new ACTION_MENU( false );
-        openRecentMenu->SetTool( selTool );
+        openRecentMenu = new ACTION_MENU( false, selTool );
         openRecentMenu->SetTitle( _( "Open Recent" ) );
-        openRecentMenu->SetIcon( recent_xpm );
+        openRecentMenu->SetIcon( BITMAPS::recent );
 
         recentFiles.UseMenu( openRecentMenu );
         recentFiles.AddFilesToMenu();
@@ -84,7 +83,7 @@ void PL_EDITOR_FRAME::ReCreateMenuBar()
     fileMenu->Add( ACTIONS::print );
 
     fileMenu->AppendSeparator();
-    fileMenu->AddQuitOrClose( &Kiface(), _( "Page Layout Editor" ) );
+    fileMenu->AddQuitOrClose( &Kiface(), _( "Drawing Sheet Editor" ) );
 
     //-- Edit menu -------------------------------------------------------
     //
@@ -115,7 +114,7 @@ void PL_EDITOR_FRAME::ReCreateMenuBar()
     // Units submenu
     ACTION_MENU* unitsSubMenu = new ACTION_MENU( false, selTool );
     unitsSubMenu->SetTitle( _( "&Units" ) );
-    unitsSubMenu->SetIcon( unit_mm_xpm );
+    unitsSubMenu->SetIcon( BITMAPS::unit_mm );
     unitsSubMenu->Add( ACTIONS::inchesUnits,      ACTION_MENU::CHECK );
     unitsSubMenu->Add( ACTIONS::milsUnits,        ACTION_MENU::CHECK );
     unitsSubMenu->Add( ACTIONS::millimetersUnits, ACTION_MENU::CHECK );
@@ -148,7 +147,6 @@ void PL_EDITOR_FRAME::ReCreateMenuBar()
     ACTION_MENU* inspectorMenu = new ACTION_MENU( false, selTool );
     inspectorMenu->Add( PL_ACTIONS::showInspector );
 
-
     //-- Preferences menu --------------------------------------------------
     //
     ACTION_MENU* preferencesMenu = new ACTION_MENU( false, selTool );
@@ -156,16 +154,10 @@ void PL_EDITOR_FRAME::ReCreateMenuBar()
     preferencesMenu->Add( _( "Preferences..." ) + "\tCtrl+,",
                           _( "Show preferences for all open tools" ),
                           wxID_PREFERENCES,
-                          preference_xpm );
+                          BITMAPS::preference );
 
     // Language submenu
     AddMenuLanguageList( preferencesMenu, selTool );
-
-#ifndef __WXMAC__
-    preferencesMenu->AppendSeparator();
-    preferencesMenu->Add( ACTIONS::acceleratedGraphics, ACTION_MENU::CHECK );
-    preferencesMenu->Add( ACTIONS::standardGraphics, ACTION_MENU::CHECK );
-#endif
 
     //-- Menubar -----------------------------------------------------------
     //

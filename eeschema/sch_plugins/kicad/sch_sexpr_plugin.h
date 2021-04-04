@@ -142,19 +142,17 @@ private:
     void saveText( SCH_TEXT* aText, int aNestLevel );
     void saveBusAlias( std::shared_ptr<BUS_ALIAS> aAlias, int aNestLevel );
 
-    void cacheLib( const wxString& aLibraryFileName );
+    void cacheLib( const wxString& aLibraryFileName, const PROPERTIES* aProperties );
     bool isBuffering( const PROPERTIES* aProperties );
 
 protected:
     int                  m_version;    ///< Version of file being loaded.
-    int                  m_fieldId;    ///< Non-mandatory schematic field ID counter.
+    int                  m_nextFreeFieldId;
 
-    /** For throwing exceptions or errors on partial schematic loads. */
-    wxString             m_error;
+    wxString             m_error;      ///< For throwing exceptions or errors on partial loads.
 
     wxString             m_path;       ///< Root project path for loading child sheets.
     std::stack<wxString> m_currentPath;///< Stack to maintain nested sheet paths
-    const PROPERTIES*    m_props;      ///< Passed via Save() or Load(), no ownership, may be nullptr.
     SCH_SHEET*           m_rootSheet;  ///< The root sheet of the schematic being loaded..
     SCHEMATIC*           m_schematic;  ///< Passed to Load(), the schematic object being loaded
     OUTPUTFORMATTER*     m_out;        ///< The output formatter for saving SCH_SCREEN objects.

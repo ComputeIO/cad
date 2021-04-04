@@ -34,6 +34,8 @@
 #include <gr_basic.h>
 #include <plotter.h>
 #include <trigo.h>
+#include <geometry/shape_poly_set.h>
+#include <font/triangulate.h>
 
 #include <basic_gal.h>
 #include <geometry/shape_poly_set.h>
@@ -61,7 +63,7 @@ void BASIC_GAL::doDrawPolyline( const std::vector<wxPoint>& aLocalPointList, boo
 {
     if( m_DC )
     {
-        if( isFillEnabled )
+        if( m_isFillEnabled )
         {
             GRPoly( m_isClipped ? &m_clipBox : NULL, m_DC, aLocalPointList.size(),
                     &aLocalPointList[0], 0, GetLineWidth(), m_Color, m_Color );
@@ -153,7 +155,7 @@ void BASIC_GAL::DrawLine( const VECTOR2D& aStartPoint, const VECTOR2D& aEndPoint
 
     if( m_DC )
     {
-        if( isFillEnabled )
+        if( m_isFillEnabled )
         {
             GRLine( m_isClipped ? &m_clipBox : NULL, m_DC, startVector.x, startVector.y,
                     endVector.x, endVector.y, GetLineWidth(), m_Color );

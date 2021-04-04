@@ -33,7 +33,7 @@
 #include <panel_pcbnew_display_origin.h>
 #include <tool/tool_manager.h>
 #include <tools/pcb_selection_tool.h>
-#include <page_layout/ws_data_model.h>
+#include <drawing_sheet/ds_data_model.h>
 #include <pcbplot.h>
 #include <pcb_painter.h>
 #include <invoke_pcb_dialog.h>
@@ -51,7 +51,7 @@ void PCB_EDIT_FRAME::InstallPreferences( PAGED_DIALOG* aParent,
 {
     wxTreebook* book = aParent->GetTreebook();
 
-    book->AddPage( new wxPanel( book ), _( "Pcbnew" ) );
+    book->AddPage( new wxPanel( book ), _( "PCB Editor" ) );
     book->AddSubPage( new PANEL_DISPLAY_OPTIONS( this, aParent ), _( "Display Options" ) );
     book->AddSubPage( new PANEL_EDIT_OPTIONS( this, aParent ), _( "Editing Options" ) );
     book->AddSubPage( new PANEL_PCBNEW_COLOR_SETTINGS( this, book ), _( "Colors" ) );
@@ -71,14 +71,13 @@ bool PCB_EDIT_FRAME::LoadProjectSettings()
 
     BASE_SCREEN::m_PageLayoutDescrFileName = project.m_BoardPageLayoutDescrFile;
 
-    // Load the page layout decr file, from the filename stored in
+    // Load the drawing sheet description file, from the filename stored in
     // BASE_SCREEN::m_PageLayoutDescrFileName, read in config project file
     // If empty, or not existing, the default descr is loaded
-    WS_DATA_MODEL& pglayout = WS_DATA_MODEL::GetTheInstance();
-    wxString filename = WS_DATA_MODEL::MakeFullFileName( BASE_SCREEN::m_PageLayoutDescrFileName,
+    wxString filename = DS_DATA_MODEL::MakeFullFileName( BASE_SCREEN::m_PageLayoutDescrFileName,
                                                          Prj().GetProjectPath() );
 
-    pglayout.SetPageLayout( filename );
+    DS_DATA_MODEL::GetTheInstance().LoadDrawingSheet( filename );
 
     // Load render settings that aren't stored in PCB_DISPLAY_OPTIONS
 
@@ -132,7 +131,9 @@ bool PCB_EDIT_FRAME::LoadProjectSettings()
     opts.m_PadOpacity          = localSettings.m_PadOpacity;
     opts.m_ZoneOpacity         = localSettings.m_ZoneOpacity;
     opts.m_ZoneDisplayMode     = localSettings.m_ZoneDisplayMode;
-    SetDisplayOptions( opts );
+
+    // No refresh here: callers of LoadProjectSettings refresh later
+    SetDisplayOptions( opts, false );
 
     BOARD_DESIGN_SETTINGS& bds   = GetDesignSettings();
     bds.m_UseConnectedTrackWidth = localSettings.m_AutoTrackWidth;
@@ -236,6 +237,6 @@ void PCB_EDIT_FRAME::SaveProjectSettings()
      * The explicit save action in PCB_EDIT_FRAME::SavePcbFile will call SaveProject directly,
      * so if the user does choose to save the board, the project file will get created then.
      */
-    if( !Prj().IsNullProject() && fn.Exists() )
+    if( !Prj().IsNullProject() && ( fn.Exists() || GetBoard()->m_LegacyDesignSettingsLoaded ) )
         GetSettingsManager()->SaveProject();
 }

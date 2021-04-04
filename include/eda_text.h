@@ -47,6 +47,13 @@ class COLOR4D;
 using KIGFX::COLOR4D;
 using KIGFX::RENDER_SETTINGS;
 
+namespace KIFONT
+{
+class FONT;
+class OUTLINE_FONT;
+class STROKE_FONT;
+} // namespace KIFONT
+
 /// Frequent text rotations, used with {Set,Get}TextAngle(),
 /// in 0.1 degrees for now, hoping to migrate to degrees eventually.
 #define TEXT_ANGLE_HORIZ 0
@@ -411,6 +418,10 @@ public:
 
     virtual double GetDrawRotation() const;
 
+    KIFONT::FONT* GetFont() const;
+
+    void SetFont( KIFONT::FONT* aFont ) { m_font = aFont; }
+
 private:
     /**
      * Print each line of this EDA_TEXT..
@@ -425,24 +436,10 @@ private:
                              COLOR4D aColor, OUTLINE_MODE aFillMode, const wxString& aText,
                              const wxPoint& aPos );
 
-    /**
-     * Parse given string for font specifier.
-     *
-     * @param aString A string.
-     * @return Font specified in aString, or default font.
-     */
-    FONT* getFontFromString( const wxString& aString ) const;
-
-    wxString m_text;
-    wxString m_shown_text; // Cache of unescaped text for efficient access
-    bool     m_shown_text_has_text_var_refs;
-    FONT*    m_font;
-
-    /**
-     * Reset internal text variables when text changes.
-     * m_text is assumed to be set to the new contents first.
-     */
-    void setTextInternals();
+    wxString      m_text;
+    wxString      m_shown_text; // Cache of unescaped text for efficient access
+    bool          m_shown_text_has_text_var_refs;
+    KIFONT::FONT* m_font = nullptr;
 
     TEXT_EFFECTS m_e; // Private bitflags for text styling.  API above
                       // provides accessor funcs.

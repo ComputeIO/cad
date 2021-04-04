@@ -23,6 +23,7 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
 
+#include <bitmaps.h>
 #include <menus_helpers.h>
 #include <pgm_base.h>
 #include <tool/action_menu.h>
@@ -64,13 +65,12 @@ void SYMBOL_EDIT_FRAME::ReCreateMenuBar()
     fileMenu->Add( EE_ACTIONS::importSymbol );
 
     // Export submenu
-    ACTION_MENU* submenuExport = new ACTION_MENU( false );
-    submenuExport->SetTool( selTool );
+    ACTION_MENU* submenuExport = new ACTION_MENU( false, selTool );
     submenuExport->SetTitle( _( "Export" ) );
-    submenuExport->SetIcon( export_xpm );
-    submenuExport->Add( EE_ACTIONS::exportSymbol );
-    submenuExport->Add( EE_ACTIONS::exportSymbolView );
-    submenuExport->Add( EE_ACTIONS::exportSymbolAsSVG );
+    submenuExport->SetIcon( BITMAPS::export_file );
+    submenuExport->Add( EE_ACTIONS::exportSymbol,      ACTION_MENU::NORMAL, _( "Symbol..." ) );
+    submenuExport->Add( EE_ACTIONS::exportSymbolView,  ACTION_MENU::NORMAL, _( "View as PNG..." ) );
+    submenuExport->Add( EE_ACTIONS::exportSymbolAsSVG, ACTION_MENU::NORMAL, _( "Symbol as SVG..." ) );
     fileMenu->Add( submenuExport );
 
     fileMenu->AppendSeparator();
@@ -97,6 +97,7 @@ void SYMBOL_EDIT_FRAME::ReCreateMenuBar()
     editMenu->AppendSeparator();
     editMenu->Add( EE_ACTIONS::symbolProperties );
     editMenu->Add( EE_ACTIONS::pinTable );
+    editMenu->Add( EE_ACTIONS::updateSymbolFields );
 
 
     //-- View menu -----------------------------------------------
@@ -119,7 +120,7 @@ void SYMBOL_EDIT_FRAME::ReCreateMenuBar()
     // Units submenu
     ACTION_MENU* unitsSubMenu = new ACTION_MENU( false, selTool );
     unitsSubMenu->SetTitle( _( "&Units" ) );
-    unitsSubMenu->SetIcon( unit_mm_xpm );
+    unitsSubMenu->SetIcon( BITMAPS::unit_mm );
     unitsSubMenu->Add( ACTIONS::inchesUnits,      ACTION_MENU::CHECK );
     unitsSubMenu->Add( ACTIONS::milsUnits,        ACTION_MENU::CHECK );
     unitsSubMenu->Add( ACTIONS::millimetersUnits, ACTION_MENU::CHECK );
@@ -128,7 +129,7 @@ void SYMBOL_EDIT_FRAME::ReCreateMenuBar()
     viewMenu->Add( ACTIONS::toggleCursorStyle,    ACTION_MENU::CHECK );
 
     viewMenu->AppendSeparator();
-    viewMenu->Add( EE_ACTIONS::showComponentTree, ACTION_MENU::CHECK );
+    viewMenu->Add( EE_ACTIONS::showSymbolTree,    ACTION_MENU::CHECK );
 
 
     //-- Place menu -----------------------------------------------
@@ -162,16 +163,10 @@ void SYMBOL_EDIT_FRAME::ReCreateMenuBar()
     prefsMenu->Add( _( "Preferences..." ) + "\tCtrl+,",
                     _( "Show preferences for all open tools" ),
                     wxID_PREFERENCES,
-                    preference_xpm );
+                    BITMAPS::preference );
 
     prefsMenu->AppendSeparator();
     AddMenuLanguageList( prefsMenu, selTool );
-
-#ifndef __WXMAC__
-    prefsMenu->AppendSeparator();
-    prefsMenu->Add( ACTIONS::acceleratedGraphics, ACTION_MENU::CHECK );
-    prefsMenu->Add( ACTIONS::standardGraphics,    ACTION_MENU::CHECK );
-#endif
 
 
     //-- Menubar -------------------------------------------------------------

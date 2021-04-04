@@ -39,6 +39,7 @@
 #include <fp_lib_table.h>
 #include <io_mgr.h>
 #include <kicad_string.h>
+#include <macros.h>
 #include <pcbnew_scripting_helpers.h>
 #include <project.h>
 #include <settings/settings_manager.h>
@@ -79,10 +80,9 @@ void ScriptingSetPcbEditFrame( PCB_EDIT_FRAME* aPcbEditFrame )
 
 BOARD* LoadBoard( wxString& aFileName )
 {
-    if( aFileName.EndsWith( wxT( ".kicad_pcb" ) ) )
+    if( aFileName.EndsWith( KiCadPcbFileExtension ) )
         return LoadBoard( aFileName, IO_MGR::KICAD_SEXP );
-
-    else if( aFileName.EndsWith( wxT( ".brd" ) ) )
+    else if( aFileName.EndsWith( LegacyPcbFileExtension ) )
         return LoadBoard( aFileName, IO_MGR::LEGACY );
 
     // as fall back for any other kind use the legacy format
@@ -271,14 +271,14 @@ bool ExportSpecctraDSN( wxString& aFullFilename )
 
 bool ExportVRML( const wxString& aFullFileName, double aMMtoWRMLunit,
                  bool aExport3DFiles, bool aUseRelativePaths,
-                 bool aUsePlainPCB, const wxString& a3D_Subdir,
+                 const wxString& a3D_Subdir,
                  double aXRef, double aYRef )
 {
     if( s_PcbEditFrame )
     {
         bool ok = s_PcbEditFrame->ExportVRML_File( aFullFileName, aMMtoWRMLunit,
-                                                   aExport3DFiles, aUseRelativePaths, 
-                                                   aUsePlainPCB, a3D_Subdir, aXRef, aYRef );
+                                                   aExport3DFiles, aUseRelativePaths,
+                                                   a3D_Subdir, aXRef, aYRef );
         return ok;
     }
     else
@@ -374,7 +374,7 @@ bool WriteDRCReport( BOARD* aBoard, const wxString& aFileName, EDA_UNITS aUnits,
     {
         engine->InitEngine( drcRulesPath );
     }
-    catch( PARSE_ERROR& pe )
+    catch( PARSE_ERROR& )
     {
         return false;
     }

@@ -35,12 +35,12 @@
 
 class PL_DRAW_PANEL_GAL;
 class PROPERTIES_FRAME;
-class WS_DATA_ITEM;
+class DS_DATA_ITEM;
 
 
 /**
  * PL_EDITOR_FRAME
- * is the main window used in the page layout editor.
+ * is the main window used in the drawing sheet editor.
  */
 
 class PL_EDITOR_FRAME : public EDA_DRAW_FRAME
@@ -69,7 +69,7 @@ public:
     PROPERTIES_FRAME* GetPropertiesFrame() { return m_propertiesPagelayout; }
 
     /**
-     * Show the dialog displaying the list of WS_DATA_ITEM items in the page layout
+     * Show the dialog displaying the list of DS_DATA_ITEM items in the page layout
      */
     void ShowDesignInspector();
 
@@ -116,7 +116,8 @@ public:
     void setupTools();
 
     // Virtual basic functions:
-    void    ReCreateHToolbar() override;
+    void ReCreateHToolbar() override;
+    void UpdateToolbarControlSizes() override;
 
     void SetPageSettings(const PAGE_INFO&) override;
     const PAGE_INFO& GetPageSettings () const override;
@@ -167,7 +168,7 @@ public:
     const BOX2I GetDocumentExtents( bool aIncludeAllVisible = true ) const override;
 
     /**
-     * Page layout editor can show the title block using a page number 1 or another number.
+     * Drawing sheet editor can show the title block using a page number 1 or another number.
      * This is because some items can be shown (or not) only on page 1 (a feature  which
      * looks like word processing option "page 1 differs from other pages").
      * @return true if the page 1 is selected, and false if not
@@ -243,11 +244,11 @@ public:
      * Function AddPageLayoutItem
      * Add a new item to the page layout item list.
      * @param aType = the type of item:
-     *  WS_TEXT, WS_SEGMENT, WS_RECT, WS_POLYPOLYGON
+     *  DS_TEXT, DS_SEGMENT, DS_RECT, DS_POLYPOLYGON
      * @param aIdx = the position in list to insert the new item.
      * @return a reference to the new item
      */
-    WS_DATA_ITEM* AddPageLayoutItem( int aType );
+    DS_DATA_ITEM* AddPageLayoutItem( int aType );
 
     /**
      * Must be called after a change in order to set the "modify" flag

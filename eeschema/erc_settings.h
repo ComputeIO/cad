@@ -189,19 +189,20 @@ public:
 
     void SetSeverities( int aSeverities ) override;
 
-    int GetCount( int aSeverity = -1 ) override;
+    int GetCount( int aSeverity = -1 ) const override;
 
-    std::shared_ptr<RC_ITEM> GetItem( int aIndex ) override;
+    std::shared_ptr<RC_ITEM> GetItem( int aIndex ) const override;
 
-    std::shared_ptr<ERC_ITEM> GetERCItem( int aIndex );
+    std::shared_ptr<ERC_ITEM> GetERCItem( int aIndex ) const;
 
     void DeleteItem( int aIndex, bool aDeep ) override;
 
     void DeleteAllItems( bool aIncludeExclusions, bool aDeep ) override;
 
 private:
-    void visitMarkers( std::function<void( SCH_MARKER* )> aVisitor );
+
+    void visitMarkers( std::function<void( SCH_MARKER* )> aVisitor ) const;
 };
 
 
-#endif
+#endif // _ERC_SETTINGS_H

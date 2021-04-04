@@ -68,12 +68,12 @@ static void addTextSegmToPoly( int x0, int y0, int xf, int yf, void* aData )
 }
 
 
-void BOARD::ConvertBrdLayerToPolygonalContours( PCB_LAYER_ID aLayer, SHAPE_POLY_SET& aOutlines )
+void BOARD::ConvertBrdLayerToPolygonalContours( PCB_LAYER_ID aLayer, SHAPE_POLY_SET& aOutlines ) const
 {
     int maxError = GetDesignSettings().m_MaxError;
 
     // convert tracks and vias:
-    for( TRACK* track : m_tracks )
+    for( const TRACK* track : m_tracks )
     {
         if( !track->IsOnLayer( aLayer ) )
             continue;
@@ -82,7 +82,7 @@ void BOARD::ConvertBrdLayerToPolygonalContours( PCB_LAYER_ID aLayer, SHAPE_POLY_
     }
 
     // convert pads and other copper items in footprints
-    for( FOOTPRINT* footprint : m_footprints )
+    for( const FOOTPRINT* footprint : m_footprints )
     {
         footprint->TransformPadsWithClearanceToPolygon( aOutlines, aLayer, 0, maxError,
                                                         ERROR_INSIDE );
@@ -92,7 +92,7 @@ void BOARD::ConvertBrdLayerToPolygonalContours( PCB_LAYER_ID aLayer, SHAPE_POLY_
                                                             ERROR_INSIDE, true, /* include text */
                                                             true /* include shapes */ );
 
-        for( ZONE* zone : footprint->Zones() )
+        for( const ZONE* zone : footprint->Zones() )
         {
             if( zone->GetLayerSet().test( aLayer ) )
                 zone->TransformSolidAreasShapesToPolygon( aLayer, aOutlines );
@@ -100,14 +100,14 @@ void BOARD::ConvertBrdLayerToPolygonalContours( PCB_LAYER_ID aLayer, SHAPE_POLY_
     }
 
     // convert copper zones
-    for( ZONE* zone : Zones() )
+    for( const ZONE* zone : Zones() )
     {
         if( zone->GetLayerSet().test( aLayer ) )
             zone->TransformSolidAreasShapesToPolygon( aLayer, aOutlines );
     }
 
     // convert graphic items on copper layers (texts)
-    for( BOARD_ITEM* item : m_drawings )
+    for( const BOARD_ITEM* item : m_drawings )
     {
         if( !item->IsOnLayer( aLayer ) )
             continue;
@@ -116,7 +116,7 @@ void BOARD::ConvertBrdLayerToPolygonalContours( PCB_LAYER_ID aLayer, SHAPE_POLY_
         {
         case PCB_SHAPE_T:
         {
-            PCB_SHAPE* shape = static_cast<PCB_SHAPE*>( item );
+            const PCB_SHAPE* shape = static_cast<const PCB_SHAPE*>( item );
             shape->TransformShapeWithClearanceToPolygon( aOutlines, aLayer, 0, maxError,
                                                          ERROR_INSIDE );
         }
@@ -124,7 +124,7 @@ void BOARD::ConvertBrdLayerToPolygonalContours( PCB_LAYER_ID aLayer, SHAPE_POLY_
 
         case PCB_TEXT_T:
         {
-            PCB_TEXT* text = static_cast<PCB_TEXT*>( item );
+            const PCB_TEXT* text = static_cast<const PCB_TEXT*>( item );
             text->TransformTextShapeWithClearanceToPolygon( aOutlines, aLayer, 0, maxError,
                                                             ERROR_INSIDE );
         }
@@ -143,7 +143,7 @@ void FOOTPRINT::TransformPadsWithClearanceToPolygon( SHAPE_POLY_SET& aCornerBuff
                                                      bool aSkipPlatedPads,
                                                      bool aSkipNonPlatedPads ) const
 {
-    for( PAD* pad : m_pads )
+    for( const PAD* pad : m_pads )
     {
         if( aLayer != UNDEFINED_LAYER && !pad->IsOnLayer( aLayer ) )
             continue;
@@ -250,7 +250,7 @@ void FOOTPRINT::TransformFPShapesWithClearanceToPolygon( SHAPE_POLY_SET& aCorner
 
         if( item->Type() == PCB_FP_SHAPE_T && aIncludeShapes )
         {
-            FP_SHAPE* outline = static_cast<FP_SHAPE*>( item );
+            const FP_SHAPE* outline = static_cast<FP_SHAPE*>( item );
 
             if( aLayer != UNDEFINED_LAYER && outline->GetLayer() == aLayer )
             {
@@ -269,7 +269,7 @@ void FOOTPRINT::TransformFPShapesWithClearanceToPolygon( SHAPE_POLY_SET& aCorner
             texts.push_back( &Value() );
     }
 
-    for( FP_TEXT* text : texts )
+    for( const FP_TEXT* text : texts )
     {
         text->TransformTextShapeWithClearanceToPolygon( aCornerBuffer, aLayer, aClearance, aError,
                                                         aErrorLoc );
@@ -569,7 +569,7 @@ void PCB_SHAPE::TransformShapeWithClearanceToPolygon( SHAPE_POLY_SET& aCornerBuf
         {
             aCornerBuffer.NewOutline();
 
-            for( wxPoint& point : poly )
+            for( const wxPoint& point : poly )
                 aCornerBuffer.Append( point.x, point.y );
         }
 
@@ -577,7 +577,7 @@ void PCB_SHAPE::TransformShapeWithClearanceToPolygon( SHAPE_POLY_SET& aCornerBuf
         {
             wxPoint pt1( poly[poly.size() - 1] );
 
-            for( wxPoint pt2 : poly )
+            for( const wxPoint& pt2 : poly )
             {
                 if( pt2 != pt1 )
                     TransformOvalToPolygon( aCornerBuffer, pt1, pt2, width, aError, aErrorLoc );
@@ -597,8 +597,7 @@ void PCB_SHAPE::TransformShapeWithClearanceToPolygon( SHAPE_POLY_SET& aCornerBuf
 
         for( unsigned ii = 1; ii < poly.size(); ii++ )
         {
-            TransformOvalToPolygon( aCornerBuffer, poly[ii - 1], poly[ii], width, aError,
-                                    aErrorLoc );
+            TransformOvalToPolygon( aCornerBuffer, poly[ii - 1], poly[ii], width, aError, aErrorLoc );
         }
     }
     break;
@@ -633,8 +632,8 @@ void TRACK::TransformShapeWithClearanceToPolygon( SHAPE_POLY_SET& aCornerBuffer,
         const ARC* arc = static_cast<const ARC*>( this );
         int        width = m_Width + ( 2 * aClearanceValue );
 
-        TransformArcToPolygon( aCornerBuffer, (wxPoint) arc->GetStart(), (wxPoint) arc->GetMid(),
-                               (wxPoint) arc->GetEnd(), width, aError, aErrorLoc );
+        TransformArcToPolygon( aCornerBuffer, arc->GetStart(), arc->GetMid(),
+                               arc->GetEnd(), width, aError, aErrorLoc );
     }
     break;
 

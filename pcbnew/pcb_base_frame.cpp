@@ -175,7 +175,7 @@ void PCB_BASE_FRAME::AddFootprintToBoard( FOOTPRINT* aFootprint )
 }
 
 
-EDA_ITEM* PCB_BASE_FRAME::GetItem( const KIID& aId )
+EDA_ITEM* PCB_BASE_FRAME::GetItem( const KIID& aId ) const
 {
     return GetBoard()->GetItem( aId );
 }
@@ -194,7 +194,7 @@ void PCB_BASE_FRAME::FocusOnItem( BOARD_ITEM* aItem )
     {
         lastItem = GetBoard()->GetItem( lastBrightenedItemID );
     }
-    catch( const boost::uuids::entropy_error& e )
+    catch( const boost::uuids::entropy_error& )
     {
         wxLogError( "A Boost UUID entropy exception was thrown in %s:%s.", __FILE__, __FUNCTION__ );
     }
@@ -228,7 +228,7 @@ void PCB_BASE_FRAME::FocusOnItem( BOARD_ITEM* aItem )
         GetCanvas()->Refresh();
     }
 
-    if( aItem )
+    if( aItem && aItem != DELETED_BOARD_ITEM::GetInstance() )
     {
         aItem->SetBrightened();
 
@@ -590,33 +590,8 @@ void PCB_BASE_FRAME::LoadSettings( APP_SETTINGS_BASE* aCfg )
 {
     EDA_DRAW_FRAME::LoadSettings( aCfg );
 
-    // Currently values read from config file are not used because the user cannot
-    // change this config
-    // if( aCfg->m_Window.grid.sizes.empty() )
-    {
-        aCfg->m_Window.grid.sizes = { "1000 mil",
-                                      "500 mil",
-                                      "250 mil",
-                                      "200 mil",
-                                      "100 mil",
-                                      "50 mil",
-                                      "25 mil",
-                                      "20 mil",
-                                      "10 mil",
-                                      "5 mil",
-                                      "2 mil",
-                                      "1 mil",
-                                      "5.0 mm",
-                                      "2.5 mm",
-                                      "1.0 mm",
-                                      "0.5 mm",
-                                      "0.25 mm",
-                                      "0.2 mm",
-                                      "0.1 mm",
-                                      "0.05 mm",
-                                      "0.025 mm",
-                                      "0.01 mm" };
-    }
+    if( aCfg->m_Window.grid.sizes.empty() )
+        aCfg->m_Window.grid.sizes = aCfg->DefaultGridSizeList();
 
     // Currently values read from config file are not used because the user cannot
     // change this config
@@ -699,7 +674,7 @@ void PCB_BASE_FRAME::CommonSettingsChanged( bool aEnvVarsChanged, bool aTextVars
     EDA_DRAW_FRAME::CommonSettingsChanged( aEnvVarsChanged, aTextVarsChanged );
 
     GetCanvas()->GetView()->GetPainter()->GetSettings()->LoadColors( GetColorSettings() );
-    GetCanvas()->GetView()->UpdateAllItems( KIGFX::ALL );
+    GetCanvas()->GetView()->UpdateAllItems( KIGFX::COLOR );
 
     RecreateToolbars();
 
@@ -715,6 +690,8 @@ void PCB_BASE_FRAME::OnModify()
 {
     GetScreen()->SetModify();
     GetScreen()->SetSave();
+
+    GetBoard()->IncrementTimeStamp();
 
     UpdateStatusBar();
     UpdateMsgPanel();
@@ -755,7 +732,7 @@ void PCB_BASE_FRAME::ActivateGalCanvas()
 }
 
 
-void PCB_BASE_FRAME::SetDisplayOptions( const PCB_DISPLAY_OPTIONS& aOptions )
+void PCB_BASE_FRAME::SetDisplayOptions( const PCB_DISPLAY_OPTIONS& aOptions, bool aRefresh )
 {
     bool hcChanged   = m_displayOptions.m_ContrastModeDisplay != aOptions.m_ContrastModeDisplay;
     m_displayOptions = aOptions;
@@ -783,5 +760,6 @@ void PCB_BASE_FRAME::SetDisplayOptions( const PCB_DISPLAY_OPTIONS& aOptions )
                 } );
     }
 
-    canvas->Refresh();
+    if( aRefresh )
+        canvas->Refresh();
 }

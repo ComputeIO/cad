@@ -97,14 +97,21 @@ public:
     virtual void FlashPadTrapez( const wxPoint& aPadPos, const wxPoint* aCorners, double aPadOrient,
                                  OUTLINE_MODE aTraceMode, void* aData ) override;
     virtual void FlashRegularPolygon( const wxPoint& aShapePos, int aDiameter, int aCornerCount,
-                                      double aOrient, OUTLINE_MODE aTraceMode,
-                                      void* aData ) override;
+                            double aOrient, OUTLINE_MODE aTraceMode, void* aData ) override;
 
-    virtual void Text( const wxPoint& aPos, const COLOR4D aColor, const wxString& aText,
-                       double aOrient, const wxSize& aSize, enum EDA_TEXT_HJUSTIFY_T aH_justify,
-                       enum EDA_TEXT_VJUSTIFY_T aV_justify, int aWidth, bool aItalic, bool aBold,
-                       bool aMultilineAllowed = false, void* aData = NULL,
-                       FONT* aFont = nullptr ) override;
+    virtual void Text( const wxPoint&              aPos,
+                       const COLOR4D               aColor,
+                       const wxString&             aText,
+                       double                      aOrient,
+                       const wxSize&               aSize,
+                       enum EDA_TEXT_HJUSTIFY_T    aH_justify,
+                       enum EDA_TEXT_VJUSTIFY_T    aV_justify,
+                       int                         aWidth,
+                       bool                        aItalic,
+                       bool                        aBold,
+                       bool                        aMultilineAllowed = false,
+                       KIFONT::FONT*               aFont = nullptr,
+                       void* aData = NULL ) override;
 
 
     /**

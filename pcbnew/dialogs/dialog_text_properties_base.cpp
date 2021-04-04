@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////
-// C++ code generated with wxFormBuilder (version Oct 26 2018)
+// C++ code generated with wxFormBuilder (version 3.9.0 Feb 10 2021)
 // http://www.wxformbuilder.org/
 //
 // PLEASE DO *NOT* EDIT THIS FILE!
@@ -35,6 +35,7 @@ DIALOG_TEXT_PROPERTIES_BASE::DIALOG_TEXT_PROPERTIES_BASE( wxWindow* parent, wxWi
 	m_MultiLineText->SetViewWhiteSpace( false );
 	m_MultiLineText->SetMarginWidth( 2, 0 );
 	m_MultiLineText->SetIndentationGuides( true );
+	m_MultiLineText->SetReadOnly( false );
 	m_MultiLineText->SetMarginWidth( 1, 0 );
 	m_MultiLineText->SetMarginWidth( 0, 0 );
 	m_MultiLineText->MarkerDefine( wxSTC_MARKNUM_FOLDER, wxSTC_MARK_BOXPLUS );
@@ -56,7 +57,7 @@ DIALOG_TEXT_PROPERTIES_BASE::DIALOG_TEXT_PROPERTIES_BASE( wxWindow* parent, wxWi
 	m_MultiLineText->SetSelForeground( true, wxSystemSettings::GetColour( wxSYS_COLOUR_HIGHLIGHTTEXT ) );
 	m_MultiLineText->SetToolTip( _("Enter the text placed on selected layer.") );
 
-	m_MultiLineSizer->Add( m_MultiLineText, 1, wxEXPAND|wxBOTTOM|wxRIGHT|wxLEFT, 5 );
+	m_MultiLineSizer->Add( m_MultiLineText, 1, wxBOTTOM|wxEXPAND|wxLEFT|wxRIGHT, 5 );
 
 
 	bMainSizer->Add( m_MultiLineSizer, 20, wxEXPAND|wxALL, 10 );
@@ -74,10 +75,26 @@ DIALOG_TEXT_PROPERTIES_BASE::DIALOG_TEXT_PROPERTIES_BASE( wxWindow* parent, wxWi
 	bMainSizer->Add( m_SingleLineSizer, 0, wxEXPAND|wxBOTTOM|wxRIGHT|wxLEFT, 10 );
 
 	wxBoxSizer* bSizerLocked;
-	bSizerLocked = new wxBoxSizer( wxHORIZONTAL );
+	bSizerLocked = new wxBoxSizer( wxVERTICAL );
 
 	m_cbLocked = new wxCheckBox( this, wxID_ANY, _("Locked"), wxDefaultPosition, wxDefaultSize, 0 );
 	bSizerLocked->Add( m_cbLocked, 0, wxBOTTOM|wxRIGHT|wxLEFT, 5 );
+
+	wxBoxSizer* bFont;
+	bFont = new wxBoxSizer( wxHORIZONTAL );
+
+	m_FontLabel = new wxStaticText( this, wxID_ANY, _("Font:"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_FontLabel->Wrap( -1 );
+	bFont->Add( m_FontLabel, 0, wxALL, 5 );
+
+	m_FontCtrl = new wxTextCtrl( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
+	bFont->Add( m_FontCtrl, 7, wxALL, 5 );
+
+	m_FontSelectionButton = new wxButton( this, wxID_ANY, _("Select font..."), wxDefaultPosition, wxDefaultSize, 0 );
+	bFont->Add( m_FontSelectionButton, 0, wxALL, 5 );
+
+
+	bSizerLocked->Add( bFont, 1, wxEXPAND, 10 );
 
 
 	bMainSizer->Add( bSizerLocked, 0, wxEXPAND|wxBOTTOM|wxRIGHT|wxLEFT, 10 );
@@ -265,6 +282,7 @@ DIALOG_TEXT_PROPERTIES_BASE::DIALOG_TEXT_PROPERTIES_BASE( wxWindow* parent, wxWi
 	this->Connect( wxEVT_INIT_DIALOG, wxInitDialogEventHandler( DIALOG_TEXT_PROPERTIES_BASE::OnInitDlg ) );
 	m_SingleLineText->Connect( wxEVT_SET_FOCUS, wxFocusEventHandler( DIALOG_TEXT_PROPERTIES_BASE::OnSetFocusText ), NULL, this );
 	m_SingleLineText->Connect( wxEVT_COMMAND_TEXT_ENTER, wxCommandEventHandler( DIALOG_TEXT_PROPERTIES_BASE::OnOkClick ), NULL, this );
+	m_FontSelectionButton->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( DIALOG_TEXT_PROPERTIES_BASE::OnShowFontDialog ), NULL, this );
 	m_SizeXCtrl->Connect( wxEVT_COMMAND_TEXT_ENTER, wxCommandEventHandler( DIALOG_TEXT_PROPERTIES_BASE::OnOkClick ), NULL, this );
 	m_SizeYCtrl->Connect( wxEVT_COMMAND_TEXT_ENTER, wxCommandEventHandler( DIALOG_TEXT_PROPERTIES_BASE::OnOkClick ), NULL, this );
 	m_ThicknessCtrl->Connect( wxEVT_COMMAND_TEXT_ENTER, wxCommandEventHandler( DIALOG_TEXT_PROPERTIES_BASE::OnOkClick ), NULL, this );
@@ -280,6 +298,7 @@ DIALOG_TEXT_PROPERTIES_BASE::~DIALOG_TEXT_PROPERTIES_BASE()
 	this->Disconnect( wxEVT_INIT_DIALOG, wxInitDialogEventHandler( DIALOG_TEXT_PROPERTIES_BASE::OnInitDlg ) );
 	m_SingleLineText->Disconnect( wxEVT_SET_FOCUS, wxFocusEventHandler( DIALOG_TEXT_PROPERTIES_BASE::OnSetFocusText ), NULL, this );
 	m_SingleLineText->Disconnect( wxEVT_COMMAND_TEXT_ENTER, wxCommandEventHandler( DIALOG_TEXT_PROPERTIES_BASE::OnOkClick ), NULL, this );
+	m_FontSelectionButton->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( DIALOG_TEXT_PROPERTIES_BASE::OnShowFontDialog ), NULL, this );
 	m_SizeXCtrl->Disconnect( wxEVT_COMMAND_TEXT_ENTER, wxCommandEventHandler( DIALOG_TEXT_PROPERTIES_BASE::OnOkClick ), NULL, this );
 	m_SizeYCtrl->Disconnect( wxEVT_COMMAND_TEXT_ENTER, wxCommandEventHandler( DIALOG_TEXT_PROPERTIES_BASE::OnOkClick ), NULL, this );
 	m_ThicknessCtrl->Disconnect( wxEVT_COMMAND_TEXT_ENTER, wxCommandEventHandler( DIALOG_TEXT_PROPERTIES_BASE::OnOkClick ), NULL, this );

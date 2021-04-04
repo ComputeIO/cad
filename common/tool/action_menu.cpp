@@ -24,6 +24,7 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
 
+#include <bitmaps.h>
 #include <eda_base_frame.h>
 #include <functional>
 #include <id.h>
@@ -47,7 +48,7 @@ ACTION_MENU::ACTION_MENU( bool isContextMenu, TOOL_INTERACTIVE* aTool ) :
     m_dirty( true ),
     m_titleDisplayed( false ),
     m_isContextMenu( isContextMenu ),
-    m_icon( nullptr ),
+    m_icon( BITMAPS::INVALID_BITMAP ),
     m_selected( -1 ),
     m_tool( aTool )
 {
@@ -68,7 +69,7 @@ ACTION_MENU::~ACTION_MENU()
 }
 
 
-void ACTION_MENU::SetIcon( const BITMAP_OPAQUE* aIcon )
+void ACTION_MENU::SetIcon( BITMAPS aIcon )
 {
     m_icon = aIcon;
 }
@@ -125,7 +126,7 @@ void ACTION_MENU::DisplayTitle( bool aDisplay )
             InsertSeparator( 0 );
             Insert( 0, new wxMenuItem( this, wxID_NONE, m_title, wxEmptyString, wxITEM_NORMAL ) );
 
-            if( m_icon )
+            if( !!m_icon )
                 AddBitmapToMenuItem( FindItemByPosition( 0 ), KiBitmap( m_icon ) );
 
             m_titleDisplayed = true;
@@ -134,13 +135,13 @@ void ACTION_MENU::DisplayTitle( bool aDisplay )
 }
 
 
-wxMenuItem* ACTION_MENU::Add( const wxString& aLabel, int aId, const BITMAP_OPAQUE* aIcon )
+wxMenuItem* ACTION_MENU::Add( const wxString& aLabel, int aId, BITMAPS aIcon )
 {
     wxASSERT_MSG( FindItem( aId ) == nullptr, "Duplicate menu IDs!" );
 
     wxMenuItem* item = new wxMenuItem( this, aId, aLabel, wxEmptyString, wxITEM_NORMAL );
 
-    if( aIcon )
+    if( !!aIcon )
         AddBitmapToMenuItem( item, KiBitmap( aIcon ) );
 
     return Append( item );
@@ -148,29 +149,33 @@ wxMenuItem* ACTION_MENU::Add( const wxString& aLabel, int aId, const BITMAP_OPAQ
 
 
 wxMenuItem* ACTION_MENU::Add( const wxString& aLabel, const wxString& aTooltip, int aId,
-                              const BITMAP_OPAQUE* aIcon, bool aIsCheckmarkEntry )
+                              BITMAPS aIcon, bool aIsCheckmarkEntry )
 {
     wxASSERT_MSG( FindItem( aId ) == nullptr, "Duplicate menu IDs!" );
 
     wxMenuItem* item = new wxMenuItem( this, aId, aLabel, aTooltip,
                                        aIsCheckmarkEntry ? wxITEM_CHECK : wxITEM_NORMAL );
 
-    if( aIcon )
+    if( !!aIcon )
         AddBitmapToMenuItem( item, KiBitmap( aIcon ) );
 
     return Append( item );
 }
 
 
-wxMenuItem* ACTION_MENU::Add( const TOOL_ACTION& aAction, bool aIsCheckmarkEntry )
+wxMenuItem* ACTION_MENU::Add( const TOOL_ACTION& aAction, bool aIsCheckmarkEntry,
+                              const wxString& aOverrideLabel )
 {
     /// ID numbers for tool actions are assigned above ACTION_BASE_UI_ID inside TOOL_EVENT
-    const BITMAP_OPAQUE* icon = aAction.GetIcon();
+    BITMAPS icon = aAction.GetIcon();
 
-    wxMenuItem* item = new wxMenuItem( this, aAction.GetUIId(), aAction.GetMenuItem(),
+    // Allow the label to be overriden at point of use
+    wxString menuLabel = aOverrideLabel.IsEmpty() ? aAction.GetMenuItem() :  aOverrideLabel;
+
+    wxMenuItem* item = new wxMenuItem( this, aAction.GetUIId(), menuLabel,
                                        aAction.GetDescription(),
                                        aIsCheckmarkEntry ? wxITEM_CHECK : wxITEM_NORMAL );
-    if( icon )
+    if( !!icon )
         AddBitmapToMenuItem( item, KiBitmap( icon ) );
 
     m_toolActions[aAction.GetUIId()] = &aAction;
@@ -186,7 +191,7 @@ wxMenuItem* ACTION_MENU::Add( ACTION_MENU* aMenu )
 
     wxASSERT_MSG( !menuCopy->m_title.IsEmpty(), "Set a title for ACTION_MENU using SetTitle()" );
 
-    if( aMenu->m_icon )
+    if( !!aMenu->m_icon )
     {
         wxMenuItem* newItem = new wxMenuItem( this, -1, menuCopy->m_title );
         AddBitmapToMenuItem( newItem, KiBitmap( aMenu->m_icon ) );
@@ -205,7 +210,7 @@ void ACTION_MENU::AddClose( wxString aAppname )
     Add( _( "Close" ) + "\tCtrl+W",
          wxString::Format( _( "Close %s" ), aAppname ),
          wxID_CLOSE,
-         exit_xpm );
+         BITMAPS::exit );
 }
 
 
@@ -218,7 +223,7 @@ void ACTION_MENU::AddQuitOrClose( KIFACE_I* aKiface, wxString aAppname )
         Add( _( "Quit" ),
              wxString::Format( _( "Quit %s" ), aAppname ),
              wxID_EXIT,
-             exit_xpm );
+             BITMAPS::exit );
     }
     else
     {

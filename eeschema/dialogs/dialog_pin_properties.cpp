@@ -124,11 +124,11 @@ DIALOG_PIN_PROPERTIES::DIALOG_PIN_PROPERTIES( SYMBOL_EDIT_FRAME* parent, LIB_PIN
     DIALOG_PIN_PROPERTIES_BASE( parent ),
     m_frame( parent ),
     m_pin( aPin ),
-    m_posX( parent, m_posXLabel, m_posXCtrl, m_posXUnits, true ),
-    m_posY( parent, m_posYLabel, m_posYCtrl, m_posYUnits, true ),
-    m_pinLength( parent, m_pinLengthLabel, m_pinLengthCtrl, m_pinLengthUnits, true ),
-    m_nameSize( parent, m_nameSizeLabel, m_nameSizeCtrl, m_nameSizeUnits, true ),
-    m_numberSize( parent, m_numberSizeLabel, m_numberSizeCtrl, m_numberSizeUnits, true ),
+    m_posX( parent, m_posXLabel, m_posXCtrl, m_posXUnits ),
+    m_posY( parent, m_posYLabel, m_posYCtrl, m_posYUnits ),
+    m_pinLength( parent, m_pinLengthLabel, m_pinLengthCtrl, m_pinLengthUnits ),
+    m_nameSize( parent, m_nameSizeLabel, m_nameSizeCtrl, m_nameSizeUnits ),
+    m_numberSize( parent, m_numberSizeLabel, m_numberSizeCtrl, m_numberSizeUnits ),
     m_delayedFocusRow( -1 ),
     m_delayedFocusColumn( -1 ),
     m_initialized( false )
@@ -140,7 +140,7 @@ DIALOG_PIN_PROPERTIES::DIALOG_PIN_PROPERTIES( SYMBOL_EDIT_FRAME* parent, LIB_PIN
     m_panelShowPin->SetBackgroundColour( bgColor.ToColour() );
 
     const wxArrayString&           orientationNames = PinOrientationNames();
-    const std::vector<BITMAP_DEF>& orientationIcons = PinOrientationIcons();
+    const std::vector<BITMAPS>& orientationIcons = PinOrientationIcons();
 
     for ( unsigned ii = 0; ii < orientationNames.GetCount(); ii++ )
         m_choiceOrientation->Insert( orientationNames[ii], KiBitmap( orientationIcons[ii] ), ii );
@@ -201,8 +201,8 @@ DIALOG_PIN_PROPERTIES::DIALOG_PIN_PROPERTIES( SYMBOL_EDIT_FRAME* parent, LIB_PIN
     attr->SetEditor( new GRID_CELL_ICON_TEXT_POPUP( PinShapeIcons(), PinShapeNames() ) );
     m_alternatesGrid->SetColAttr( COL_SHAPE, attr );
 
-    m_addAlternate->SetBitmap( KiBitmap( small_plus_xpm ) );
-    m_deleteAlternate->SetBitmap( KiBitmap( small_trash_xpm ) );
+    m_addAlternate->SetBitmap( KiBitmap( BITMAPS::small_plus ) );
+    m_deleteAlternate->SetBitmap( KiBitmap( BITMAPS::small_trash ) );
 
     m_sdbSizerButtonsOK->SetDefault();
     SetInitialFocus( m_textPinName );

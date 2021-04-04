@@ -2,7 +2,7 @@
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
  * Copyright (C) 2016-2018 CERN
- * Copyright (C) 2018 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 2018-2021 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * @author Tomasz Wlostowski <tomasz.wlostowski@cern.ch>
  * @author Maciej Suminski <maciej.suminski@cern.ch>
@@ -30,9 +30,12 @@
 
 #include "ngspice.h"
 #include "spice_reporter.h"
+#include "spice_settings.h"
 
 #include <common.h>
 #include <locale_io.h>
+
+#include <paths.h>
 
 #include <wx/stdpaths.h>
 #include <wx/dir.h>
@@ -43,18 +46,27 @@
 
 using namespace std;
 
+
+/**
+ * Flag to enable debug output of Ngspice simulator.
+ *
+ * Use "KICAD_NGSPICE" to enable Ngspice simulator tracing.
+ *
+ * @ingroup trace_env_vars
+ */
 static const wxChar* const traceNgspice = wxT( "KICAD_NGSPICE" );
 
-NGSPICE::NGSPICE()
-        : m_ngSpice_Init( nullptr ),
-          m_ngSpice_Circ( nullptr ),
-          m_ngSpice_Command( nullptr ),
-          m_ngGet_Vec_Info( nullptr ),
-          m_ngSpice_CurPlot( nullptr ),
-          m_ngSpice_AllPlots( nullptr ),
-          m_ngSpice_AllVecs( nullptr ),
-          m_ngSpice_Running( nullptr ),
-          m_error( false )
+
+NGSPICE::NGSPICE() :
+        m_ngSpice_Init( nullptr ),
+        m_ngSpice_Circ( nullptr ),
+        m_ngSpice_Command( nullptr ),
+        m_ngGet_Vec_Info( nullptr ),
+        m_ngSpice_CurPlot( nullptr ),
+        m_ngSpice_AllPlots( nullptr ),
+        m_ngSpice_AllVecs( nullptr ),
+        m_ngSpice_Running( nullptr ),
+        m_error( false )
 {
     init_dll();
 }
@@ -65,9 +77,15 @@ NGSPICE::~NGSPICE()
 }
 
 
-void NGSPICE::Init()
+void NGSPICE::Init( const SPICE_SIMULATOR_SETTINGS* aSettings )
 {
     Command( "reset" );
+
+    for( const std::string& command : GetSettingCommands() )
+    {
+        wxLogTrace( traceNgspice, "Sending Ngspice configuration command '%s'.", command );
+        Command( command );
+    }
 }
 
 
@@ -78,16 +96,22 @@ vector<string> NGSPICE::AllPlots() const
     char**    allPlots    = m_ngSpice_AllVecs( currentPlot );
     int       noOfPlots   = 0;
 
+    vector<string> retVal;
+
     if( allPlots != nullptr )
+    {
         for( char** plot = allPlots; *plot != nullptr; plot++ )
             noOfPlots++;
 
-    vector<string> retVal( noOfPlots );
-    for( int i = 0; i < noOfPlots; i++, allPlots++ )
-    {
-        string vec = *allPlots;
-        retVal.at( i )  = vec;
+        retVal.reserve( noOfPlots );
+
+        for( int i = 0; i < noOfPlots; i++, allPlots++ )
+        {
+            string vec = *allPlots;
+            retVal.push_back( vec );
+        }
     }
+
 
     return retVal;
 }
@@ -290,32 +314,83 @@ string NGSPICE::GetXAxis( SIM_TYPE aType ) const
 {
     switch( aType )
     {
-        case ST_AC:
-        case ST_NOISE:
-            return string( "frequency" );
+    case ST_AC:
+    case ST_NOISE:
+        return string( "frequency" );
 
-        case ST_DC:
-            // find plot, which ends with "-sweep"
-            for( auto& plot : AllPlots() )
+    case ST_DC:
+        // find plot, which ends with "-sweep"
+        for( auto& plot : AllPlots() )
+        {
+            const string sweepEnding = "-sweep";
+            unsigned int len = sweepEnding.length();
+
+            if( plot.length() > len
+              && plot.substr( plot.length() - len, len ).compare( sweepEnding ) == 0 )
             {
-                const string sweepEnding = "-sweep";
-                unsigned int len = sweepEnding.length();
-
-                if( plot.length() > len
-                    && plot.substr( plot.length() - len, len ).compare( sweepEnding ) == 0 )
-                {
-                    return string( plot );
-                }
+                return string( plot );
             }
-            break;
+        }
+        break;
 
-        case ST_TRANSIENT:
-            return string( "time" );
+    case ST_TRANSIENT:
+        return string( "time" );
 
-        default:
-            break;
+    default:
+        break;
     }
+
     return string( "" );
+}
+
+
+std::vector<std::string> NGSPICE::GetSettingCommands() const
+{
+    const NGSPICE_SIMULATOR_SETTINGS* settings =
+            dynamic_cast<const NGSPICE_SIMULATOR_SETTINGS*>( Settings().get() );
+
+    std::vector<std::string> commands;
+
+    wxCHECK( settings, commands );
+
+    switch( settings->GetModelMode() )
+    {
+    case NGSPICE_MODEL_MODE::USER_CONFIG:
+        break;
+
+    case NGSPICE_MODEL_MODE::NGSPICE:
+        commands.emplace_back( "unset ngbehavior" );
+        break;
+
+    case NGSPICE_MODEL_MODE::PSPICE:
+        commands.emplace_back( "set ngbehavior=ps" );
+        break;
+
+    case NGSPICE_MODEL_MODE::LTSPICE:
+        commands.emplace_back( "set ngbehavior=lt" );
+        break;
+
+    case NGSPICE_MODEL_MODE::LT_PSPICE:
+        commands.emplace_back( "set ngbehavior=ltps" );
+        break;
+
+    case NGSPICE_MODEL_MODE::HSPICE:
+        commands.emplace_back( "set ngbehavior=hs" );
+        break;
+
+    default:
+        wxFAIL_MSG( wxString::Format( "Undefined NGSPICE_MODEL_MODE %d.",
+                                      settings->GetModelMode() ) );
+        break;
+    }
+
+    return commands;
+}
+
+
+const std::string NGSPICE::GetNetlist() const
+{
+    return m_netlist;
 }
 
 
@@ -330,18 +405,26 @@ void NGSPICE::init_dll()
     if( m_dll.IsLoaded() )      // enable force reload
         m_dll.Unload();
 
-// Extra effort to find libngspice
+    // Extra effort to find libngspice
+    // @todo Shouldn't we be using the normal KiCad path searching mechanism here?
     wxFileName dllFile( "", NGSPICE_DLL_FILE );
 #if defined(__WINDOWS__)
+  #if defined( _MSC_VER )
+    const vector<string> dllPaths = { "" };
+  #else
     const vector<string> dllPaths = { "", "/mingw64/bin", "/mingw32/bin" };
+  #endif
 #elif defined(__WXMAC__)
     const vector<string> dllPaths = {
-        GetOSXKicadUserDataDir().ToStdString() + "/PlugIns/ngspice",
-        GetOSXKicadMachineDataDir().ToStdString() + "/PlugIns/ngspice",
+        PATHS::GetOSXKicadUserDataDir().ToStdString() + "/PlugIns/ngspice",
+        PATHS::GetOSXKicadMachineDataDir().ToStdString() + "/PlugIns/ngspice",
+
         // when running kicad.app
         stdPaths.GetPluginsDir().ToStdString() + "/sim",
+
         // when running eeschema.app
-        wxFileName( stdPaths.GetExecutablePath() ).GetPath().ToStdString() + "/../../../../../Contents/PlugIns/sim"
+        wxFileName( stdPaths.GetExecutablePath() ).GetPath().ToStdString() +
+                "/../../../../../Contents/PlugIns/sim"
     };
 #else   // Unix systems
     const vector<string> dllPaths = { "/usr/local/lib" };
@@ -363,8 +446,7 @@ void NGSPICE::init_dll()
 
     if( !m_dll.IsLoaded() ) // try also the system libraries
         m_dll.Load( wxDynamicLibrary::CanonicalizeName( "ngspice" ) );
-
-#else   // here: __LINUX__
+#else
     // First, try the system libraries
     m_dll.Load( NGSPICE_DLL_FILE, wxDL_VERBATIM | wxDL_QUIET | wxDL_NOW );
 
@@ -401,7 +483,8 @@ void NGSPICE::init_dll()
     m_ngSpice_AllVecs = (ngSpice_AllVecs) m_dll.GetSymbol( "ngSpice_AllVecs" );
     m_ngSpice_Running = (ngSpice_Running) m_dll.GetSymbol( "ngSpice_running" ); // it is not a typo
 
-    m_ngSpice_Init( &cbSendChar, &cbSendStat, &cbControlledExit, NULL, NULL, &cbBGThreadRunning, this );
+    m_ngSpice_Init( &cbSendChar, &cbSendStat, &cbControlledExit, NULL, NULL,
+                    &cbBGThreadRunning, this );
 
     // Load a custom spinit file, to fix the problem with loading .cm files
     // Switch to the executable directory, so the relative paths are correct
@@ -422,8 +505,9 @@ void NGSPICE::init_dll()
         ".",
 #ifdef __WXMAC__
         stdPaths.GetPluginsDir().ToStdString() + "/sim/ngspice/scripts",
-        wxFileName( stdPaths.GetExecutablePath() ).GetPath().ToStdString() + "/../../../../../Contents/PlugIns/sim/ngspice/scripts"
-#endif /* __WXMAC__ */
+        wxFileName( stdPaths.GetExecutablePath() ).GetPath().ToStdString() +
+                "/../../../../../Contents/PlugIns/sim/ngspice/scripts"
+#endif
         "../share/kicad",
         "../share",
         "../../share/kicad",
@@ -487,9 +571,10 @@ string NGSPICE::findCmPath() const
         "/Applications/ngspice/lib/ngspice",
         "Contents/Frameworks",
         wxStandardPaths::Get().GetPluginsDir().ToStdString() + "/sim/ngspice",
-        wxFileName( wxStandardPaths::Get().GetExecutablePath() ).GetPath().ToStdString() + "/../../../../../Contents/PlugIns/sim/ngspice",
+        wxFileName( wxStandardPaths::Get().GetExecutablePath() ).GetPath().ToStdString() +
+                "/../../../../../Contents/PlugIns/sim/ngspice",
         "../Plugins/sim/ngspice",
-#endif /* __WXMAC__ */
+#endif
         "../lib/ngspice",
         "../../lib/ngspice",
         "lib/ngspice",
@@ -543,10 +628,6 @@ int NGSPICE::cbSendChar( char* what, int id, void* user )
 
 int NGSPICE::cbSendStat( char* what, int id, void* user )
 {
-/*    NGSPICE* sim = reinterpret_cast<NGSPICE*>( user );
-    if( sim->m_consoleReporter )
-        sim->m_consoleReporter->Report( what );*/
-
     return 0;
 }
 
@@ -580,12 +661,6 @@ void NGSPICE::validate()
         m_initialized = false;
         init_dll();
     }
-}
-
-
-const std::string NGSPICE::GetNetlist() const
-{
-    return m_netlist;
 }
 
 

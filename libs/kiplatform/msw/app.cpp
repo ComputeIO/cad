@@ -23,9 +23,38 @@
 #include <wx/log.h>
 #include <wx/string.h>
 #include <wx/window.h>
+#include <wx/msgdlg.h>
 
 #include <windows.h>
 #include <strsafe.h>
+#include <config.h>
+#include <VersionHelpers.h>
+
+
+bool KIPLATFORM::APP::Init()
+{
+#if defined( _MSC_VER ) && defined( DEBUG )
+    // wxWidgets turns on leak dumping in debug but its "flawed" and will falsely dump
+    // for half a hour _CRTDBG_ALLOC_MEM_DF is the usual default for MSVC.
+    _CrtSetDbgFlag( _CRTDBG_ALLOC_MEM_DF );
+#endif
+
+#if defined( PYTHON_VERSION_MAJOR ) && ( ( PYTHON_VERSION_MAJOR == 3 && PYTHON_VERSION_MINOR >= 8 ) \
+             || PYTHON_VERSION_MAJOR > 3 )
+    // Python 3.8 switched to Windows 8+ API, we do not support Windows 7 and will not
+    // attempt to hack around it.  Gracefully inform the user and refuse to start (because
+    // python will crash us if we continue).
+    if( !IsWindows8OrGreater() )
+    {
+        wxMessageBox( _( "Windows 7 and older is no longer supported by KiCad and its "
+                         "dependencies." ), _( "Unsupported Operating System" ),
+                      wxOK | wxICON_ERROR );
+        return false;
+    }
+#endif
+
+    return true;
+}
 
 
 bool KIPLATFORM::APP::RegisterApplicationRestart( const wxString& aCommandLine )
@@ -81,4 +110,10 @@ void KIPLATFORM::APP::ForceTimerMessagesToBeCreatedIfNecessary()
     // Taken from https://devblogs.microsoft.com/oldnewthing/20191108-00/?p=103080
     MSG msg;
     PeekMessage( &msg, nullptr, WM_TIMER, WM_TIMER, PM_NOREMOVE );
+}
+
+
+void KIPLATFORM::APP::AddDynamicLibrarySearchPath( const wxString& aPath )
+{
+    SetDllDirectoryA( aPath.c_str() );
 }

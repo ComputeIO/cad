@@ -136,16 +136,21 @@ void SYMBOL_EDIT_FRAME::updateTitle()
 
     if( IsSymbolFromSchematic() )
     {
-        title += wxString::Format( _( "%s from schematic" ), m_reference );
-        title += wxT( " \u2014 " );
+        title = wxString::Format( _( "%s%s [from schematic]" ) + wxT( " \u2014 " ),
+                                     GetScreen() && GetScreen()->IsModify() ? "*" : "",
+                                   m_reference );
     }
     else
     {
         if( GetCurPart() )
-            title += GetCurPart()->GetLibId().Format() + wxT( " \u2014 " );
+        {
+            bool readOnly = m_libMgr && m_libMgr->IsLibraryReadOnly( GetCurLib() );
 
-        if( GetCurPart() && m_libMgr && m_libMgr->IsLibraryReadOnly( GetCurLib() ) )
-            title += _( "[Read Only Library]" ) + wxT( " \u2014 " );
+            title = wxString::Format( wxT( "%s%s %s\u2014 " ),
+                                      GetScreen() && GetScreen()->IsModify() ? "*" : "",
+                                      GetCurPart()->GetLibId().Format().c_str(),
+                                      readOnly ? _( "[Read Only Library]" ) + wxT( " " ) : "" );
+        }
     }
 
     title += _( "Symbol Editor" );
@@ -237,7 +242,7 @@ bool SYMBOL_EDIT_FRAME::saveCurrentPart()
 }
 
 
-bool SYMBOL_EDIT_FRAME::LoadSymbolAndSelectLib( const LIB_ID& aLibId, int aUnit, int aConvert )
+bool SYMBOL_EDIT_FRAME::LoadSymbol( const LIB_ID& aLibId, int aUnit, int aConvert )
 {
     if( GetCurPart() && GetCurPart()->GetLibId() == aLibId && GetUnit() == aUnit
         && GetConvert() == aConvert )
@@ -463,12 +468,12 @@ void SYMBOL_EDIT_FRAME::CreateNewPart()
         // Inherit the parent mandatory field attributes.
         for( int id = 0; id < MANDATORY_FIELDS; ++id )
         {
-            LIB_FIELD* field = new_part.GetField( id );
+            LIB_FIELD* field = new_part.GetFieldById( id );
 
             // the MANDATORY_FIELDS are exactly that in RAM.
             wxCHECK( field, /* void */ );
 
-            LIB_FIELD* parentField = parent->GetField( id );
+            LIB_FIELD* parentField = parent->GetFieldById( id );
 
             wxCHECK( parentField, /* void */ );
 
@@ -545,6 +550,7 @@ void SYMBOL_EDIT_FRAME::Save()
     }
 
     m_treePane->GetLibTree()->RefreshLibTree();
+    updateTitle();
 }
 
 
@@ -1063,9 +1069,9 @@ bool SYMBOL_EDIT_FRAME::saveLibrary( const wxString& aLibrary, bool aNewFile )
 
         if( resyncLibTree )
         {
-            FreezeSearchTree();
+            FreezeLibraryTree();
             SyncLibraries( true, forceRefresh );
-            ThawSearchTree();
+            ThawLibraryTree();
         }
     }
 
@@ -1151,6 +1157,7 @@ bool SYMBOL_EDIT_FRAME::saveAllLibraries( bool aRequireConfirmation )
         }
     }
 
+    updateTitle();
     return retv;
 }
 

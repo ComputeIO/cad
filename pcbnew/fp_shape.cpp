@@ -24,13 +24,14 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
 
+#include <core/wx_stl_compat.h>
 #include <bitmaps.h>
 #include <core/mirror.h>
+#include <macros.h>
 #include <math/util.h>      // for KiROUND
 #include <settings/color_settings.h>
 #include <settings/settings_manager.h>
 #include <pcb_edit_frame.h>
-#include <board.h>
 #include <footprint.h>
 #include <fp_shape.h>
 #include <view/view.h>
@@ -126,9 +127,9 @@ wxString FP_SHAPE::GetSelectMenuText( EDA_UNITS aUnits ) const
 }
 
 
-BITMAP_DEF FP_SHAPE::GetMenuImage() const
+BITMAPS FP_SHAPE::GetMenuImage() const
 {
-    return show_mod_edge_xpm;
+    return BITMAPS::show_mod_edge;
 }
 
 
@@ -210,10 +211,7 @@ void FP_SHAPE::Flip( const wxPoint& aCentre, bool aFlipLeftRight )
         break;
     }
 
-    // PCB_SHAPE items are not usually on copper layers, but it can happen in microwave apps.
-    // However, currently, only on Front or Back layers.
-    // So the copper layers count is not taken in account
-    SetLayer( FlipLayer( GetLayer() ) );
+    SetLayer( FlipLayer( GetLayer(), GetBoard()->GetCopperLayerCount() ) );
 }
 
 bool FP_SHAPE::IsParentFlipped() const
@@ -341,5 +339,8 @@ static struct FP_SHAPE_DESC
         PROPERTY_MANAGER& propMgr = PROPERTY_MANAGER::Instance();
         REGISTER_TYPE( FP_SHAPE );
         propMgr.InheritsAfter( TYPE_HASH( FP_SHAPE ), TYPE_HASH( PCB_SHAPE ) );
+
+        propMgr.AddProperty( new PROPERTY<FP_SHAPE, wxString>( _HKI( "Parent" ),
+                    NO_SETTER( FP_SHAPE, wxString ), &FP_SHAPE::GetParentAsString ) );
     }
 } _FP_SHAPE_DESC;

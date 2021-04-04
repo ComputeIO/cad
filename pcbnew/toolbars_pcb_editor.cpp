@@ -30,6 +30,7 @@
 #include <board.h>
 #include <dialog_helpers.h>
 #include <kiface_i.h>
+#include <macros.h>
 #include <pcb_edit_frame.h>
 #include <pcb_layer_box_selector.h>
 #include <pcbnew_id.h>
@@ -38,7 +39,6 @@
 #include <router/pns_routing_settings.h>
 #include <router/router_tool.h>
 #include <settings/color_settings.h>
-#include <settings/common_settings.h>
 #include <tool/action_toolbar.h>
 #include <tool/actions.h>
 #include <tool/common_tools.h>
@@ -257,11 +257,24 @@ void PCB_EDIT_FRAME::ReCreateHToolbar()
     m_mainToolBar->Add( ACTIONS::zoomTool, ACTION_TOOLBAR::TOGGLE, ACTION_TOOLBAR::CANCEL );
 
     m_mainToolBar->AddScaledSeparator( this );
+    m_mainToolBar->Add( PCB_ACTIONS::rotateCcw );
+    m_mainToolBar->Add( PCB_ACTIONS::rotateCw );
+    m_mainToolBar->Add( PCB_ACTIONS::group );
+    m_mainToolBar->Add( PCB_ACTIONS::ungroup );
+    m_mainToolBar->Add( PCB_ACTIONS::lock );
+    m_mainToolBar->Add( PCB_ACTIONS::unlock );
+
+    m_mainToolBar->AddScaledSeparator( this );
     m_mainToolBar->Add( ACTIONS::showFootprintEditor );
     m_mainToolBar->Add( ACTIONS::showFootprintBrowser );
 
     m_mainToolBar->AddScaledSeparator( this );
-    m_mainToolBar->Add( ACTIONS::updatePcbFromSchematic );
+
+    if( !Kiface().IsSingle() )
+        m_mainToolBar->Add( ACTIONS::updatePcbFromSchematic );
+    else
+        m_mainToolBar->Add( PCB_ACTIONS::importNetlist );
+
     m_mainToolBar->Add( PCB_ACTIONS::runDRC );
 
     m_mainToolBar->AddScaledSeparator( this );
@@ -293,6 +306,10 @@ void PCB_EDIT_FRAME::ReCreateHToolbar()
 #endif
     }
 #endif
+
+    // Go through and ensure the comboboxes are the correct size, since the strings in the
+    // box could have changed widths.
+    m_mainToolBar->UpdateControlWidth( ID_TOOLBARH_PCB_SELECT_LAYER );
 
     // after adding the buttons to the toolbar, must call Realize() to reflect the changes
     m_mainToolBar->KiRealize();
@@ -469,24 +486,14 @@ void PCB_EDIT_FRAME::ReCreateAuxiliaryToolbar()
 
     if( m_auxiliaryToolBar )
     {
-        UpdateTrackWidthSelectBox( m_SelTrackWidthBox );
-        UpdateViaSizeSelectBox( m_SelViaSizeBox );
-        UpdateGridSelectBox();
-
-        // combobox sizes can have changed: apply new best sizes
-        wxAuiToolBarItem* item = m_auxiliaryToolBar->FindTool( ID_AUX_TOOLBAR_PCB_TRACK_WIDTH );
-        item->SetMinSize( m_SelTrackWidthBox->GetBestSize() );
-        item = m_auxiliaryToolBar->FindTool( ID_AUX_TOOLBAR_PCB_VIA_SIZE );
-        item->SetMinSize( m_SelViaSizeBox->GetBestSize() );
-
-        m_auxiliaryToolBar->KiRealize();
-        m_auimgr.Update();
-        return;
+        m_auxiliaryToolBar->ClearToolbar();
     }
-
-    m_auxiliaryToolBar = new ACTION_TOOLBAR( this, ID_AUX_TOOLBAR,
-                                             wxDefaultPosition, wxDefaultSize,
-                                             KICAD_AUI_TB_STYLE | wxAUI_TB_HORZ_LAYOUT );
+    else
+    {
+        m_auxiliaryToolBar = new ACTION_TOOLBAR( this, ID_AUX_TOOLBAR, wxDefaultPosition, wxDefaultSize,
+                                                 KICAD_AUI_TB_STYLE | wxAUI_TB_HORZ_LAYOUT );
+        m_auxiliaryToolBar->SetAuiManager( &m_auimgr );
+    }
 
     /* Set up toolbar items */
 
@@ -510,7 +517,7 @@ void PCB_EDIT_FRAME::ReCreateAuxiliaryToolbar()
 
     // Creates box to display and choose strategy to handle tracks an vias sizes:
     m_auxiliaryToolBar->AddTool( ID_AUX_TOOLBAR_PCB_SELECT_AUTO_WIDTH, wxEmptyString,
-                                 KiScaledBitmap( auto_track_width_xpm, this ),
+                                 KiScaledBitmap( BITMAPS::auto_track_width, this ),
                                  _( "When routing from an existing track use its width instead "
                                     "of the current width setting" ),
                                  wxITEM_CHECK );
@@ -536,8 +543,34 @@ void PCB_EDIT_FRAME::ReCreateAuxiliaryToolbar()
     UpdateZoomSelectBox();
     m_auxiliaryToolBar->AddControl( m_zoomSelectBox );
 
+    // Go through and ensure the comboboxes are the correct size, since the strings in the
+    // box could have changed widths.
+    m_auxiliaryToolBar->UpdateControlWidth( ID_AUX_TOOLBAR_PCB_TRACK_WIDTH );
+    m_auxiliaryToolBar->UpdateControlWidth( ID_AUX_TOOLBAR_PCB_VIA_SIZE );
+    m_auxiliaryToolBar->UpdateControlWidth( ID_ON_ZOOM_SELECT );
+    m_auxiliaryToolBar->UpdateControlWidth( ID_ON_GRID_SELECT );
+
     // after adding the buttons to the toolbar, must call Realize()
     m_auxiliaryToolBar->KiRealize();
+}
+
+
+void PCB_EDIT_FRAME::UpdateToolbarControlSizes()
+{
+    if( m_mainToolBar )
+    {
+        // Update the item widths
+        m_mainToolBar->UpdateControlWidth( ID_TOOLBARH_PCB_SELECT_LAYER );
+    }
+
+    if( m_auxiliaryToolBar )
+    {
+        // Update the item widths
+        m_auxiliaryToolBar->UpdateControlWidth( ID_AUX_TOOLBAR_PCB_TRACK_WIDTH );
+        m_auxiliaryToolBar->UpdateControlWidth( ID_AUX_TOOLBAR_PCB_VIA_SIZE );
+        m_auxiliaryToolBar->UpdateControlWidth( ID_ON_ZOOM_SELECT );
+        m_auxiliaryToolBar->UpdateControlWidth( ID_ON_GRID_SELECT );
+    }
 }
 
 
@@ -683,11 +716,7 @@ void PCB_EDIT_FRAME::ReCreateLayerBox( bool aForceResizeToolbar )
     m_SelLayerBox->Resync();
 
     if( aForceResizeToolbar )
-    {
-        // the layer box can have its size changed
-        // Update the aui manager, to take in account the new size
-        m_auimgr.Update();
-    }
+        UpdateToolbarControlSizes();
 }
 
 

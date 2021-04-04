@@ -57,9 +57,8 @@ bool ALIGN_DISTRIBUTE_TOOL::Init()
     m_frame = getEditFrame<PCB_BASE_FRAME>();
 
     // Create a context menu and make it available through selection tool
-    m_placementMenu = new ACTION_MENU( true );
-    m_placementMenu->SetTool( this );
-    m_placementMenu->SetIcon( align_items_xpm );
+    m_placementMenu = new ACTION_MENU( true, this );
+    m_placementMenu->SetIcon( BITMAPS::align_items );
     m_placementMenu->SetTitle( _( "Align/Distribute" ) );
 
     // Add all align/distribute commands
@@ -95,7 +94,8 @@ ALIGNMENT_RECTS GetBoundingBoxes( const T& aItems )
         if( item->Type() == PCB_FOOTPRINT_T )
         {
             FOOTPRINT* footprint = static_cast<FOOTPRINT*>( item );
-            rects.emplace_back( std::make_pair( boardItem, footprint->GetFootprintRect() ) );
+            rects.emplace_back( std::make_pair( boardItem,
+                                                footprint->GetBoundingBox( false, false ) ) );
         }
         else
         {
@@ -213,8 +213,11 @@ int ALIGN_DISTRIBUTE_TOOL::AlignTop( const TOOL_EVENT& aEvent )
     // Move the selected items
     for( std::pair<BOARD_ITEM*, EDA_RECT>& i : itemsToAlign )
     {
-        int difference = targetTop - i.second.GetTop();
         BOARD_ITEM* item = i.first;
+        int difference = targetTop - i.second.GetTop();
+
+        if( item->GetParent() && item->GetParent()->IsSelected() )
+            continue;
 
         // Don't move a pad by itself unless editing the footprint
         if( item->Type() == PCB_PAD_T && m_frame->IsType( FRAME_PCB_EDITOR ) )
@@ -257,6 +260,9 @@ int ALIGN_DISTRIBUTE_TOOL::AlignBottom( const TOOL_EVENT& aEvent )
     {
         int difference = targetBottom - i.second.GetBottom();
         BOARD_ITEM* item = i.first;
+
+        if( item->GetParent() && item->GetParent()->IsSelected() )
+            continue;
 
         // Don't move a pad by itself unless editing the footprint
         if( item->Type() == PCB_PAD_T && m_frame->IsType( FRAME_PCB_EDITOR ) )
@@ -315,6 +321,9 @@ int ALIGN_DISTRIBUTE_TOOL::doAlignLeft()
         int difference = targetLeft - i.second.GetLeft();
         BOARD_ITEM* item = i.first;
 
+        if( item->GetParent() && item->GetParent()->IsSelected() )
+            continue;
+
         // Don't move a pad by itself unless editing the footprint
         if( item->Type() == PCB_PAD_T && m_frame->IsType( FRAME_PCB_EDITOR ) )
             item = item->GetParent();
@@ -372,6 +381,9 @@ int ALIGN_DISTRIBUTE_TOOL::doAlignRight()
         int difference = targetRight - i.second.GetRight();
         BOARD_ITEM* item = i.first;
 
+        if( item->GetParent() && item->GetParent()->IsSelected() )
+            continue;
+
         // Don't move a pad by itself unless editing the footprint
         if( item->Type() == PCB_PAD_T && m_frame->IsType( FRAME_PCB_EDITOR ) )
             item = item->GetParent();
@@ -414,6 +426,9 @@ int ALIGN_DISTRIBUTE_TOOL::AlignCenterX( const TOOL_EVENT& aEvent )
         int difference = targetX - i.second.GetCenter().x;
         BOARD_ITEM* item = i.first;
 
+        if( item->GetParent() && item->GetParent()->IsSelected() )
+            continue;
+
         // Don't move a pad by itself unless editing the footprint
         if( item->Type() == PCB_PAD_T && m_frame->IsType( FRAME_PCB_EDITOR ) )
             item = item->GetParent();
@@ -455,6 +470,9 @@ int ALIGN_DISTRIBUTE_TOOL::AlignCenterY( const TOOL_EVENT& aEvent )
     {
         int difference = targetY - i.second.GetCenter().y;
         BOARD_ITEM* item = i.first;
+
+        if( item->GetParent() && item->GetParent()->IsSelected() )
+            continue;
 
         // Don't move a pad by itself unless editing the footprint
         if( item->Type() == PCB_PAD_T && m_frame->IsType( FRAME_PCB_EDITOR ) )
@@ -548,6 +566,9 @@ void ALIGN_DISTRIBUTE_TOOL::doDistributeGapsHorizontally( ALIGNMENT_RECTS& items
         if( lastItem == item )
             continue;
 
+        if( item->GetParent() && item->GetParent()->IsSelected() )
+            continue;
+
         // Don't move a pad by itself unless editing the footprint
         if( item->Type() == PCB_PAD_T && m_frame->IsType( FRAME_PCB_EDITOR ) )
             item = item->GetParent();
@@ -577,6 +598,9 @@ void ALIGN_DISTRIBUTE_TOOL::doDistributeCentersHorizontally( ALIGNMENT_RECTS &it
     for( std::pair<BOARD_ITEM*, EDA_RECT>& i : itemsToDistribute )
     {
         BOARD_ITEM* item = i.first;
+
+        if( item->GetParent() && item->GetParent()->IsSelected() )
+            continue;
 
         // Don't move a pad by itself unless editing the footprint
         if( item->Type() == PCB_PAD_T && m_frame->IsType( FRAME_PCB_EDITOR ) )
@@ -668,6 +692,9 @@ void ALIGN_DISTRIBUTE_TOOL::doDistributeGapsVertically( ALIGNMENT_RECTS& itemsTo
         if( lastItem == item )
             continue;
 
+        if( item->GetParent() && item->GetParent()->IsSelected() )
+            continue;
+
         // Don't move a pad by itself unless editing the footprint
         if( item->Type() == PCB_PAD_T && m_frame->IsType( FRAME_PCB_EDITOR ) )
             item = item->GetParent();
@@ -697,6 +724,9 @@ void ALIGN_DISTRIBUTE_TOOL::doDistributeCentersVertically( ALIGNMENT_RECTS& item
     for( std::pair<BOARD_ITEM*, EDA_RECT>& i : itemsToDistribute )
     {
         BOARD_ITEM* item = i.first;
+
+        if( item->GetParent() && item->GetParent()->IsSelected() )
+            continue;
 
         // Don't move a pad by itself unless editing the footprint
         if( item->Type() == PCB_PAD_T && m_frame->IsType( FRAME_PCB_EDITOR ) )

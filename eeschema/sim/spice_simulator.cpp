@@ -2,6 +2,7 @@
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
  * Copyright (C) 2016 CERN
+ * Copyright (C) 2021 KiCad Developers, see AUTHORS.txt for contributors.
  * @author Tomasz Wlostowski <tomasz.wlostowski@cern.ch>
  *
  * This program is free software; you can redistribute it and/or
@@ -39,11 +40,12 @@ std::shared_ptr<SPICE_SIMULATOR> SPICE_SIMULATOR::CreateInstance( const std::str
     }
     catch( std::exception& e )
     {
-        DisplayError( NULL, e.what() );
+        DisplayError( nullptr, e.what() );
     }
 
-    return NULL;
+    return nullptr;
 }
+
 
 wxString SPICE_SIMULATOR::TypeToName( SIM_TYPE aType, bool aShortName )
 {

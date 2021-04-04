@@ -37,12 +37,12 @@ class GROUP_CONTEXT_MENU : public ACTION_MENU
 public:
     GROUP_CONTEXT_MENU( ) : ACTION_MENU( true )
     {
-        SetIcon( group_xpm ); // fixme
+        SetIcon( BITMAPS::group ); // fixme
         SetTitle( _( "Grouping" ) );
 
-        Add( PCB_ACTIONS::groupCreate );
-        Add( PCB_ACTIONS::groupUngroup );
-        Add( PCB_ACTIONS::groupRemoveItems );
+        Add( PCB_ACTIONS::group );
+        Add( PCB_ACTIONS::ungroup );
+        Add( PCB_ACTIONS::removeFromGroup );
         Add( PCB_ACTIONS::groupEnter );
     }
 
@@ -64,10 +64,10 @@ private:
 
         BOARD::GroupLegalOpsField legalOps = board->GroupLegalOps( selection );
 
-        Enable( PCB_ACTIONS::groupCreate.GetUIId(),      legalOps.create );
-        Enable( PCB_ACTIONS::groupUngroup.GetUIId(),     legalOps.ungroup );
-        Enable( PCB_ACTIONS::groupRemoveItems.GetUIId(), legalOps.removeItems );
-        Enable( PCB_ACTIONS::groupEnter.GetUIId(),       legalOps.enter );
+        Enable( PCB_ACTIONS::group.GetUIId(),           legalOps.create );
+        Enable( PCB_ACTIONS::ungroup.GetUIId(),         legalOps.ungroup );
+        Enable( PCB_ACTIONS::removeFromGroup.GetUIId(), legalOps.removeItems );
+        Enable( PCB_ACTIONS::groupEnter.GetUIId(),      legalOps.enter );
     }
 };
 
@@ -211,13 +211,46 @@ int GROUP_TOOL::PickNewMember( const TOOL_EVENT& aEvent  )
 
 int GROUP_TOOL::Group( const TOOL_EVENT& aEvent )
 {
-    PCB_SELECTION_TOOL*  selTool   = m_toolMgr->GetTool<PCB_SELECTION_TOOL>();
-    const PCB_SELECTION& selection = selTool->GetSelection();
-    BOARD*               board     = getModel<BOARD>();
-    PCB_GROUP*           group     = nullptr;
+    PCB_SELECTION_TOOL* selTool = m_toolMgr->GetTool<PCB_SELECTION_TOOL>();
+    PCB_SELECTION       selection;
+
+    if( m_isFootprintEditor )
+    {
+        selection = selTool->RequestSelection(
+                []( const VECTOR2I& , GENERAL_COLLECTOR& aCollector, PCB_SELECTION_TOOL*  )
+                {
+                } );
+    }
+    else
+    {
+        selection = selTool->RequestSelection(
+                []( const VECTOR2I& , GENERAL_COLLECTOR& aCollector, PCB_SELECTION_TOOL*  )
+                {
+                    // Iterate from the back so we don't have to worry about removals.
+                    for( int i = aCollector.GetCount() - 1; i >= 0; --i )
+                    {
+                        BOARD_ITEM* item = aCollector[ i ];
+
+                        switch( item->Type() )
+                        {
+                        case PCB_FP_TEXT_T:
+                        case PCB_FP_SHAPE_T:
+                        case PCB_FP_ZONE_T:
+                            aCollector.Remove( item );
+                            break;
+
+                        default:
+                            break;
+                        }
+                    }
+                } );
+    }
 
     if( selection.Empty() )
-        m_toolMgr->RunAction( PCB_ACTIONS::selectionCursor, true );
+        return 0;
+
+    BOARD*     board = getModel<BOARD>();
+    PCB_GROUP* group = nullptr;
 
     if( m_isFootprintEditor )
     {
@@ -378,9 +411,9 @@ void GROUP_TOOL::setTransitions()
     Go( &GROUP_TOOL::GroupProperties,         PCB_ACTIONS::groupProperties.MakeEvent() );
     Go( &GROUP_TOOL::PickNewMember,           PCB_ACTIONS::pickNewGroupMember.MakeEvent() );
 
-    Go( &GROUP_TOOL::Group,                   PCB_ACTIONS::groupCreate.MakeEvent() );
-    Go( &GROUP_TOOL::Ungroup,                 PCB_ACTIONS::groupUngroup.MakeEvent() );
-    Go( &GROUP_TOOL::RemoveFromGroup,         PCB_ACTIONS::groupRemoveItems.MakeEvent() );
+    Go( &GROUP_TOOL::Group,                   PCB_ACTIONS::group.MakeEvent() );
+    Go( &GROUP_TOOL::Ungroup,                 PCB_ACTIONS::ungroup.MakeEvent() );
+    Go( &GROUP_TOOL::RemoveFromGroup,         PCB_ACTIONS::removeFromGroup.MakeEvent() );
     Go( &GROUP_TOOL::EnterGroup,              PCB_ACTIONS::groupEnter.MakeEvent() );
     Go( &GROUP_TOOL::LeaveGroup,              PCB_ACTIONS::groupLeave.MakeEvent() );
 }

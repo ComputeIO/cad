@@ -47,6 +47,18 @@ void KIPLATFORM::UI::ForceFocus( wxWindow* aWindow )
 }
 
 
+bool KIPLATFORM::UI::IsWindowActive( wxWindow* aWindow )
+{
+    GtkWindow* window = GTK_WINDOW( aWindow->GetHandle() );
+
+    if( window )
+        return gtk_window_is_active( window );
+
+    // We shouldn't really ever reach this point
+    return false;
+}
+
+
 void KIPLATFORM::UI::ReparentQuasiModal( wxNonOwnedWindow* aWindow )
 {
     // Not needed on this platform
@@ -90,4 +102,17 @@ void KIPLATFORM::UI::EllipsizeChoiceBox( wxChoice* aChoice )
 
     // Only the list of cells must be freed, the renderer isn't ours to free
     g_list_free( cells );
+}
+
+
+double KIPLATFORM::UI::GetSystemScaleFactor( const wxWindow* aWindow )
+{
+    double val = 1.0;
+
+    GtkWidget* widget = static_cast<GtkWidget*>( aWindow->GetHandle() );
+
+    if( widget && gtk_check_version( 3, 10, 0 ) == NULL )
+        val = gtk_widget_get_scale_factor( widget );
+
+    return val;
 }

@@ -104,6 +104,12 @@ void SYMBOL_EDIT_FRAME::ReCreateHToolbar()
     m_mainToolBar->Add( ACTIONS::zoomTool, ACTION_TOOLBAR::TOGGLE, ACTION_TOOLBAR::CANCEL );
 
     m_mainToolBar->AddScaledSeparator( this );
+    m_mainToolBar->Add( EE_ACTIONS::rotateCCW );
+    m_mainToolBar->Add( EE_ACTIONS::rotateCW );
+    m_mainToolBar->Add( EE_ACTIONS::mirrorV );
+    m_mainToolBar->Add( EE_ACTIONS::mirrorH );
+
+    m_mainToolBar->AddScaledSeparator( this );
     m_mainToolBar->Add( EE_ACTIONS::symbolProperties );
     m_mainToolBar->Add( EE_ACTIONS::pinTable );
 
@@ -154,7 +160,7 @@ void SYMBOL_EDIT_FRAME::ReCreateOptToolbar()
     m_optionsToolBar->Add( ACTIONS::millimetersUnits,       ACTION_TOOLBAR::TOGGLE );
     m_optionsToolBar->Add( ACTIONS::toggleCursorStyle,      ACTION_TOOLBAR::TOGGLE );
     m_optionsToolBar->Add( EE_ACTIONS::showElectricalTypes, ACTION_TOOLBAR::TOGGLE );
-    m_optionsToolBar->Add( EE_ACTIONS::showComponentTree,   ACTION_TOOLBAR::TOGGLE );
+    m_optionsToolBar->Add( EE_ACTIONS::showSymbolTree,      ACTION_TOOLBAR::TOGGLE );
 
     EE_SELECTION_TOOL* selTool = m_toolManager->GetTool<EE_SELECTION_TOOL>();
     std::unique_ptr<ACTION_MENU> gridMenu = std::make_unique<ACTION_MENU>( false, selTool );

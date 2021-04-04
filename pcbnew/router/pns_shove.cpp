@@ -61,7 +61,14 @@ void SHOVE::replaceLine( LINE& aOld, LINE& aNew )
     OPT_BOX2I changed_area = ChangedArea( aOld, aNew );
 
     if( changed_area )
+    {
+        if( Dbg() )
+        {
+            Dbg()->AddBox( *changed_area, 3, "shove-changed-area" );
+        }
+
         m_affectedArea = m_affectedArea ? m_affectedArea->Merge( *changed_area ) : *changed_area;
+    }
 
     m_currentNode->Replace( aOld, aNew );
 }
@@ -210,7 +217,10 @@ SHOVE::SHOVE_STATUS SHOVE::shoveLineToHullSet( const LINE& aCurLine, const LINE&
             const SHAPE_LINE_CHAIN& hull = aHulls[invertTraversal ? aHulls.size() - 1 - i : i];
 
             if( ! l.Walkaround( hull, path, clockwise ) )
+            {
+                wxLogTrace("PNS", "Fail-Walk %s %s %d\n", hull.Format().c_str(), l.CLine().Format().c_str(), clockwise? 1:0);
                 return SH_INCOMPLETE;
+            }
 
             path.Simplify();
             l.SetShape( path );
@@ -409,13 +419,19 @@ SHOVE::SHOVE_STATUS SHOVE::onCollidingSegment( LINE& aCurrent, SEGMENT* aObstacl
 
     assert( obstacleLine.LayersOverlap( &shovedLine ) );
 
-#if 0
-    m_logger.NewGroup( "on-colliding-segment", m_iter );
-    m_logger.Log( &tmp, 0, "obstacle-segment" );
-    m_logger.Log( &aCurrent, 1, "current-line" );
-    m_logger.Log( &obstacleLine, 2, "obstacle-line" );
-    m_logger.Log( &shovedLine, 3, "shoved-line" );
-#endif
+    if( Dbg() )
+    {
+        Dbg()->BeginGroup( wxString::Format( "on-colliding-segment-iter-%d", m_iter ).ToStdString() );
+        Dbg()->AddSegment( tmp.Seg(), 0, "obstacle-segment" );
+        Dbg()->AddLine( aCurrent.CLine(), 1, 10000, "current-line" );
+        Dbg()->AddLine( obstacleLine.CLine(), 2, 10000, "obstacle-line" );
+        Dbg()->AddLine( shovedLine.CLine(), 3, 10000, "shoved-line" );
+        if( rv == SH_OK )
+            Dbg()->Message("Shove success");
+        else
+            Dbg()->Message("Shove FAIL");
+        Dbg()->EndGroup();
+    }
 
     if( rv == SH_OK )
     {
@@ -470,13 +486,15 @@ SHOVE::SHOVE_STATUS SHOVE::onCollidingArc( LINE& aCurrent, ARC* aObstacleArc )
 
     assert( obstacleLine.LayersOverlap( &shovedLine ) );
 
-#if 0
-    m_logger.NewGroup( "on-colliding-segment", m_iter );
-    m_logger.Log( &tmp, 0, "obstacle-segment" );
-    m_logger.Log( &aCurrent, 1, "current-line" );
-    m_logger.Log( &obstacleLine, 2, "obstacle-line" );
-    m_logger.Log( &shovedLine, 3, "shoved-line" );
-#endif
+    if ( Dbg() )
+    {
+        Dbg()->BeginGroup( wxString::Format( "on-colliding-arc-iter-%d", m_iter ).ToStdString() );
+        Dbg()->AddLine( tmp.CLine(), 0, 10000, "obstacle-segment" );
+        Dbg()->AddLine( aCurrent.CLine(), 1, 10000, "current-line" );
+        Dbg()->AddLine( obstacleLine.CLine(), 2, 10000, "obstacle-line" );
+        Dbg()->AddLine( shovedLine.CLine(), 3, 10000, "shoved-line" );
+        Dbg()->EndGroup();
+    }
 
     if( rv == SH_OK )
     {
@@ -511,13 +529,11 @@ SHOVE::SHOVE_STATUS SHOVE::onCollidingLine( LINE& aCurrent, LINE& aObstacle )
 
     SHOVE_STATUS rv = ShoveObstacleLine( aCurrent, aObstacle, shovedLine );
 
-    #if 0
-        m_logger.NewGroup( "on-colliding-line", m_iter );
-        m_logger.Log( &aObstacle, 0, "obstacle-line" );
-        m_logger.Log( &aCurrent, 1, "current-line" );
-        m_logger.Log( &shovedLine, 3, "shoved-line" );
-    #endif
-
+    Dbg()->BeginGroup( "on-colliding-line" );
+    Dbg()->AddLine( aObstacle.CLine(), 1, 100000, "obstacle-line" );
+    Dbg()->AddLine( aCurrent.CLine(), 2, 150000, "current-line" );
+    Dbg()->AddLine( shovedLine.CLine(), 3, 200000, "shoved-line" );
+    
     if( rv == SH_OK )
     {
         if( shovedLine.Marker() & MK_HEAD )
@@ -578,14 +594,6 @@ SHOVE::SHOVE_STATUS SHOVE::onCollidingSolid( LINE& aCurrent, ITEM* aObstacle )
     TOPOLOGY topo( m_currentNode );
 
     std::set<ITEM*> cluster = topo.AssembleCluster( aObstacle, aCurrent.Layers().Start() );
-
-#if 0
-    m_logger.NewGroup( "on-colliding-solid-cluster", m_iter );
-    for( ITEM* item : cluster )
-    {
-        m_logger.Log( item, 0, "cluster-entry" );
-    }
-#endif
 
     walkaround.SetSolidsOnly( false );
     walkaround.RestrictToSet( true, cluster );
@@ -661,12 +669,13 @@ SHOVE::SHOVE_STATUS SHOVE::onCollidingSolid( LINE& aCurrent, ITEM* aObstacle )
     replaceLine( aCurrent, walkaroundLine );
     walkaroundLine.SetRank( nextRank );
 
-#if 0
-    m_logger.NewGroup( "on-colliding-solid", m_iter );
-    m_logger.Log( aObstacle, 0, "obstacle-solid" );
-    m_logger.Log( &aCurrent, 1, "current-line" );
-    m_logger.Log( &walkaroundLine, 3, "walk-line" );
-#endif
+    if( Dbg() )
+    {
+        Dbg()->BeginGroup( "on-colliding-solid" );
+        Dbg()->AddLine( aCurrent.CLine(), 1, 10000, "current-line" );
+        Dbg()->AddLine( walkaroundLine.CLine(), 3, 10000, "walk-line" );
+        Dbg()->EndGroup();
+    }
 
     popLineStack();
 
@@ -1291,6 +1300,11 @@ SHOVE::SHOVE_STATUS SHOVE::ShoveLines( const LINE& aCurrentHead )
 
     m_multiLineMode = false;
 
+    if( Dbg() )
+    {    
+        Dbg()->Message( wxString::Format( "Shove start, lc = %d", aCurrentHead.SegmentCount() ) );
+    }
+
     // empty head? nothing to shove...
 
     if( !aCurrentHead.SegmentCount() && !aCurrentHead.EndsWithVia() )
@@ -1329,10 +1343,13 @@ SHOVE::SHOVE_STATUS SHOVE::ShoveLines( const LINE& aCurrentHead )
     head.Mark( MK_HEAD );
     head.SetRank( 100000 );
 
-#if 0
-    m_logger.NewGroup( "initial", 0 );
-    m_logger.Log( &head, 0, "head" );
-#endif
+    if ( Dbg() )
+    {
+
+        Dbg()->BeginGroup( "initial" );
+        Dbg()->AddLine(head.CLine(), 5, head.Width(), "head" );
+        Dbg()->EndGroup();
+    }
 
     if( head.EndsWithVia() )
     {
@@ -1578,20 +1595,20 @@ void SHOVE::runOptimizer( NODE* aNode )
         maxWidth = std::max( line.Width(), maxWidth );
 
     if( area )
-        area->Inflate( 10 * maxWidth );
+    {
+        area->Inflate( maxWidth );
+        area = area->Intersect( VisibleViewArea() );
+    }
 
     switch( effort )
     {
     case OE_LOW:
-        optFlags = OPTIMIZER::MERGE_OBTUSE;
+        optFlags |= OPTIMIZER::MERGE_OBTUSE;
         n_passes = 1;
         break;
 
     case OE_MEDIUM:
-        optFlags = OPTIMIZER::MERGE_SEGMENTS;
-
-        if( area )
-            optimizer.SetRestrictArea( *area );
+        optFlags |= OPTIMIZER::MERGE_SEGMENTS;
 
         n_passes = 2;
         break;
@@ -1603,6 +1620,17 @@ void SHOVE::runOptimizer( NODE* aNode )
 
     default:
         break;
+    }
+
+    if( area )
+    {
+        if( Dbg() )
+        {
+            Dbg()->AddBox( *area, 1, "opt-area" );
+        }
+
+        optFlags |= OPTIMIZER::RESTRICT_AREA;
+        optimizer.SetRestrictArea( *area, false );
     }
 
     if( Settings().SmartPads() )

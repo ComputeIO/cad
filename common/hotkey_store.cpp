@@ -43,10 +43,17 @@ static GESTURE_PSEUDO_ACTION* g_gesturePseudoActions[] = {
     new GESTURE_PSEUDO_ACTION( _( "Pan Left/Right" ), MD_CTRL + PSEUDO_WXK_WHEEL ),
     new GESTURE_PSEUDO_ACTION( _( "Pan Up/Down" ), MD_SHIFT + PSEUDO_WXK_WHEEL ),
     new GESTURE_PSEUDO_ACTION( _( "Finish Drawing" ), PSEUDO_WXK_DBLCLICK ),
+#ifdef __WXOSX_MAC__
     new GESTURE_PSEUDO_ACTION( _( "Show Clarify Selection Menu" ), MD_ALT + PSEUDO_WXK_CLICK ),
     new GESTURE_PSEUDO_ACTION( _( "Add to Selection" ), MD_SHIFT + PSEUDO_WXK_CLICK ),
     new GESTURE_PSEUDO_ACTION( _( "Toggle Selection State" ), MD_CTRL + PSEUDO_WXK_CLICK ),
     new GESTURE_PSEUDO_ACTION( _( "Remove from Selection" ), MD_SHIFT + MD_CTRL + PSEUDO_WXK_CLICK ),
+#else
+    new GESTURE_PSEUDO_ACTION( _( "Show Clarify Selection Menu" ), MD_CTRL + PSEUDO_WXK_CLICK ),
+    new GESTURE_PSEUDO_ACTION( _( "Add to Selection" ), MD_SHIFT + PSEUDO_WXK_CLICK ),
+    new GESTURE_PSEUDO_ACTION( _( "Toggle Selection State" ), MD_ALT + PSEUDO_WXK_CLICK ),
+    new GESTURE_PSEUDO_ACTION( _( "Remove from Selection" ), MD_SHIFT + MD_ALT + PSEUDO_WXK_CLICK ),
+#endif
     new GESTURE_PSEUDO_ACTION( _( "Ignore Grid Snaps" ), MD_ALT ),
     new GESTURE_PSEUDO_ACTION( _( "Ignore Other Snaps" ), MD_SHIFT ),
 };
@@ -64,9 +71,9 @@ wxString HOTKEY_STORE::GetSectionName( TOOL_ACTION* aAction )
     std::map<wxString, wxString> s_AppNames = {
             { wxT( "common" ),   _( "Common" ) },
             { wxT( "kicad" ),    _( "Project Manager" ) },
-            { wxT( "eeschema" ), _( "Eeschema" ) },
-            { wxT( "pcbnew" ),   _( "Pcbnew" ) },
-            { wxT( "plEditor" ), _( "Page Layout Editor" ), },
+            { wxT( "eeschema" ), _( "Schematic Editor" ) },
+            { wxT( "pcbnew" ),   _( "PCB Editor" ) },
+            { wxT( "plEditor" ), _( "Drawing Sheet Editor" ), },
             { wxT( "3DViewer" ), _( "3D Viewer" ) }
     };
 
@@ -186,7 +193,7 @@ bool HOTKEY_STORE::CheckKeyConflicts( TOOL_ACTION* aAction, long aKey, HOTKEY** 
     // Create a fake "TOOL_ACTION" so we can get the section name for "Common" through the API.
     // Simply declaring a wxString with the value "Common" works, but the goal is to futureproof
     // the code here as much as possible.
-    TOOL_ACTION commonAction( "common.Control.Fake", AS_GLOBAL, 0, "", "", "", nullptr );
+    TOOL_ACTION commonAction( "common.Control.Fake", AS_GLOBAL, 0, "", "", "" );
     wxString    commonName = GetSectionName( &commonAction );
 
     for( HOTKEY_SECTION& section : m_hk_sections )

@@ -56,7 +56,7 @@
 #include <tools/ee_selection.h>
 #include <tools/ee_selection_tool.h>
 #include <tools/sch_editor_control.h>
-#include <page_layout/ws_proxy_undo_item.h>
+#include <drawing_sheet/ds_proxy_undo_item.h>
 #include <dialog_update_from_pcb.h>
 #include <dialog_helpers.h>
 
@@ -99,7 +99,7 @@ int SCH_EDITOR_CONTROL::ShowSchematicSetup( const TOOL_EVENT& aEvent )
 int SCH_EDITOR_CONTROL::PageSetup( const TOOL_EVENT& aEvent )
 {
     PICKED_ITEMS_LIST   undoCmd;
-    WS_PROXY_UNDO_ITEM* undoItem = new WS_PROXY_UNDO_ITEM( m_frame );
+    DS_PROXY_UNDO_ITEM* undoItem = new DS_PROXY_UNDO_ITEM( m_frame );
     ITEM_PICKER         wrapper( m_frame->GetScreen(), undoItem, UNDO_REDO::PAGESETTINGS );
 
     undoCmd.PushItem( wrapper );
@@ -538,7 +538,7 @@ void SCH_EDITOR_CONTROL::doCrossProbeSchToPcb( const TOOL_EVENT& aEvent, bool aF
 
     EE_SELECTION_TOOL* selTool = m_toolMgr->GetTool<EE_SELECTION_TOOL>();
     SCH_ITEM*          item = nullptr;
-    SCH_COMPONENT*     component = nullptr;
+    SCH_COMPONENT*     symbol = nullptr;
 
     if( aForce )
     {
@@ -570,19 +570,19 @@ void SCH_EDITOR_CONTROL::doCrossProbeSchToPcb( const TOOL_EVENT& aEvent, bool aF
     case LIB_FIELD_T:
         if( item->GetParent() && item->GetParent()->Type() == SCH_COMPONENT_T )
         {
-            component = (SCH_COMPONENT*) item->GetParent();
-            m_frame->SendMessageToPCBNEW( item, component );
+            symbol = (SCH_COMPONENT*) item->GetParent();
+            m_frame->SendMessageToPCBNEW( item, symbol );
         }
         break;
 
     case SCH_COMPONENT_T:
-        component = (SCH_COMPONENT*) item;
-        m_frame->SendMessageToPCBNEW( item, component );
+        symbol = (SCH_COMPONENT*) item;
+        m_frame->SendMessageToPCBNEW( item, symbol );
         break;
 
     case SCH_PIN_T:
-        component = (SCH_COMPONENT*) item->GetParent();
-        m_frame->SendMessageToPCBNEW( static_cast<SCH_PIN*>( item ), component );
+        symbol = (SCH_COMPONENT*) item->GetParent();
+        m_frame->SendMessageToPCBNEW( static_cast<SCH_PIN*>( item ), symbol );
         break;
 
     case SCH_SHEET_T:
@@ -1159,7 +1159,7 @@ int SCH_EDITOR_CONTROL::Undo( const TOOL_EVENT& aEvent )
     PICKED_ITEMS_LIST* List = m_frame->PopCommandFromUndoList();
 
     /* Undo the command */
-    m_frame->PutDataInPreviousState( List, false );
+    m_frame->PutDataInPreviousState( List );
 
     /* Put the old list in RedoList */
     List->ReversePickersListOrder();
@@ -1189,14 +1189,14 @@ int SCH_EDITOR_CONTROL::Redo( const TOOL_EVENT& aEvent )
     m_toolMgr->ProcessEvent( { TC_MESSAGE, TA_UNDO_REDO_PRE, AS_GLOBAL } );
 
     /* Get the old list */
-    PICKED_ITEMS_LIST* List = m_frame->PopCommandFromRedoList();
+    PICKED_ITEMS_LIST* list = m_frame->PopCommandFromRedoList();
 
     /* Redo the command: */
-    m_frame->PutDataInPreviousState( List, true );
+    m_frame->PutDataInPreviousState( list );
 
     /* Put the old list in UndoList */
-    List->ReversePickersListOrder();
-    m_frame->PushCommandToUndoList( List );
+    list->ReversePickersListOrder();
+    m_frame->PushCommandToUndoList( list );
 
     EE_SELECTION_TOOL* selTool = m_toolMgr->GetTool<EE_SELECTION_TOOL>();
     selTool->RebuildSelection();
@@ -1343,6 +1343,7 @@ void SCH_EDITOR_CONTROL::updatePastedInstances( const SCH_SHEET_PATH& aPastePath
             KIID_PATH clipPath = aClipPath;
             clipPath.push_back( sheet->m_Uuid );
 
+            sheet->AddInstance( pastePath.Path() );
             updatePastedInstances( pastePath, clipPath, sheet, aForceKeepAnnotations );
         }
     }
@@ -1378,7 +1379,7 @@ int SCH_EDITOR_CONTROL::Paste( const TOOL_EVENT& aEvent )
     {
         plugin.LoadContent( reader, &paste_sheet );
     }
-    catch( IO_ERROR& ioe )
+    catch( IO_ERROR& )
     {
         // If it wasn't content, then paste as text
         paste_screen->Append( new SCH_TEXT( wxPoint( 0, 0 ), text ) );
@@ -1442,7 +1443,7 @@ int SCH_EDITOR_CONTROL::Paste( const TOOL_EVENT& aEvent )
 
         if( item->Type() == SCH_COMPONENT_T )
         {
-            SCH_COMPONENT* component = (SCH_COMPONENT*) item;
+            SCH_COMPONENT* symbol = static_cast<SCH_COMPONENT*>( item );
 
             // The library symbol gets set from the cached library symbols in the current
             // schematic not the symbol libraries.  The cached library symbol may have
@@ -1452,17 +1453,17 @@ int SCH_EDITOR_CONTROL::Paste( const TOOL_EVENT& aEvent )
 
             wxCHECK2( currentScreen, continue );
 
-            auto it = currentScreen->GetLibSymbols().find( component->GetSchSymbolLibraryName() );
+            auto it = currentScreen->GetLibSymbols().find( symbol->GetSchSymbolLibraryName() );
 
             if( it != currentScreen->GetLibSymbols().end() )
-                component->SetLibSymbol( new LIB_PART( *it->second ) );
+                symbol->SetLibSymbol( new LIB_PART( *it->second ) );
 
             if( !forceKeepAnnotations )
             {
                 // clear the annotation, but preserve the selected unit
-                int unit = component->GetUnit();
-                component->ClearAnnotation( nullptr );
-                component->SetUnit( unit );
+                int unit = symbol->GetUnit();
+                symbol->ClearAnnotation( nullptr );
+                symbol->SetUnit( unit );
             }
         }
 
@@ -1483,6 +1484,10 @@ int SCH_EDITOR_CONTROL::Paste( const TOOL_EVENT& aEvent )
             }
 
             int uniquifier = std::max( 0, wxAtoi( number ) ) + 1;
+
+            // Ensure we have latest hierarchy, as we may have added a sheet in the previous
+            // iteration
+            hierarchy = m_frame->Schematic().GetSheets();
 
             while( hierarchy.NameExists( candidateName ) )
                 candidateName = wxString::Format( wxT( "%s%d" ), baseName, uniquifier++ );
@@ -1530,6 +1535,14 @@ int SCH_EDITOR_CONTROL::Paste( const TOOL_EVENT& aEvent )
             SCH_SHEET_PATH pastePath = pasteRoot;
             pastePath.push_back( sheet );
 
+            int      page = 1;
+            wxString pageNum = wxString::Format( "%d", page );
+
+            while( hierarchy.PageNumberExists( pageNum ) )
+                pageNum = wxString::Format( "%d", ++page );
+
+            sheet->AddInstance( pastePath.Path() );
+            sheet->SetPageNumber( pastePath, pageNum );
             updatePastedInstances( pastePath, clipPath, sheet, forceKeepAnnotations );
         }
 
@@ -1569,28 +1582,24 @@ int SCH_EDITOR_CONTROL::Paste( const TOOL_EVENT& aEvent )
 }
 
 
-int SCH_EDITOR_CONTROL::EditWithLibEdit( const TOOL_EVENT& aEvent )
+int SCH_EDITOR_CONTROL::EditWithSymbolEditor( const TOOL_EVENT& aEvent )
 {
     EE_SELECTION_TOOL* selTool = m_toolMgr->GetTool<EE_SELECTION_TOOL>();
     EE_SELECTION&      selection = selTool->RequestSelection( EE_COLLECTOR::ComponentsOnly );
-    SCH_SHEET_PATH&    currentSheet = m_frame->GetCurrentSheet();
-    SCH_COMPONENT*     sym = nullptr;
+    SCH_COMPONENT*     symbol = nullptr;
     SYMBOL_EDIT_FRAME* symbolEditor;
 
     if( selection.GetSize() >= 1 )
-        sym = (SCH_COMPONENT*) selection.Front();
+        symbol = (SCH_COMPONENT*) selection.Front();
 
-    if( !sym || sym->GetEditFlags() != 0 )
+    if( !symbol || symbol->GetEditFlags() != 0 )
         return 0;
 
     m_toolMgr->RunAction( ACTIONS::showSymbolEditor, true );
     symbolEditor = (SYMBOL_EDIT_FRAME*) m_frame->Kiway().Player( FRAME_SCH_SYMBOL_EDITOR, false );
 
     if( symbolEditor )
-    {
-        symbolEditor->LoadSymbolFromSchematic( sym->GetPartRef(), sym->GetRef( &currentSheet ),
-                                               sym->GetUnit(), sym->GetConvert() );
-    }
+        symbolEditor->LoadSymbolFromSchematic( symbol );
 
     return 0;
 }
@@ -1817,7 +1826,7 @@ void SCH_EDITOR_CONTROL::setTransitions()
     Go( &SCH_EDITOR_CONTROL::Paste,                 ACTIONS::paste.MakeEvent() );
     Go( &SCH_EDITOR_CONTROL::Paste,                 ACTIONS::pasteSpecial.MakeEvent() );
 
-    Go( &SCH_EDITOR_CONTROL::EditWithLibEdit,       EE_ACTIONS::editWithLibEdit.MakeEvent() );
+    Go( &SCH_EDITOR_CONTROL::EditWithSymbolEditor,  EE_ACTIONS::editWithLibEdit.MakeEvent() );
     Go( &SCH_EDITOR_CONTROL::ShowCvpcb,             EE_ACTIONS::assignFootprints.MakeEvent() );
     Go( &SCH_EDITOR_CONTROL::ImportFPAssignments,   EE_ACTIONS::importFPAssignments.MakeEvent() );
     Go( &SCH_EDITOR_CONTROL::Annotate,              EE_ACTIONS::annotate.MakeEvent() );

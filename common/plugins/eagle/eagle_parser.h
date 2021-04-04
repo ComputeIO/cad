@@ -4,6 +4,7 @@
  * Copyright (C) 2012 SoftPLC Corporation, Dick Hollenbeck <dick@softplc.com>
  * Copyright (C) 2012-2021 KiCad Developers, see AUTHORS.txt for contributors.
  * Copyright (C) 2017 CERN
+ *
  * @author Alejandro García Montoro <alejandro.garciamontoro@gmail.com>
  *
  * This program is free software; you can redistribute it and/or
@@ -28,8 +29,8 @@
 #ifndef _EAGLE_PARSER_H_
 #define _EAGLE_PARSER_H_
 
-#include <cerrno>
 #include <map>
+#include <memory>
 #include <unordered_map>
 
 #include <wx/xml/xml.h>
@@ -37,10 +38,8 @@
 #include <wx/filename.h>
 
 #include <layers_id_colors_and_visibility.h>
-#include <convert_to_biu.h>
 #include <trigo.h>
-#include <kicad_string.h>
-#include <common.h> // needed for wxString hash template
+#include <core/wx_stl_compat.h>
 
 class FOOTPRINT;
 struct EINSTANCE;
@@ -69,9 +68,9 @@ static inline wxXmlNode* getChildrenNodes( NODE_MAP& aMap, const wxString& aName
 struct XML_PARSER_ERROR : std::runtime_error
 {
     /**
-     * Constructor XML_PARSER_ERROR
-     * build an XML error by just calling its parent class constructor, std::runtime_error, with
+     * Build an XML error by just calling its parent class constructor, std::runtime_error, with
      * the passed message.
+     *
      * @param aMessage is an explanatory error message.
      */
     XML_PARSER_ERROR( const wxString& aMessage ) noexcept :
@@ -669,6 +668,27 @@ struct ETEXT
 };
 
 
+/**
+ * Parse an Eagle frame element.
+ */
+struct EFRAME
+{
+    ECOORD   x1;
+    ECOORD   y1;
+    ECOORD   x2;
+    ECOORD   y2;
+    int      columns;
+    int      rows;
+    int      layer;
+    opt_bool border_left;
+    opt_bool border_top;
+    opt_bool border_right;
+    opt_bool border_bottom;
+
+    EFRAME( wxXmlNode* aFrameNode );
+};
+
+
 /// Structure holding common properties for through-hole and SMD pads
 struct EPAD_COMMON
 {
@@ -997,12 +1017,12 @@ struct ECONNECT
 struct EDEVICE
 {
     /*
-    <!ELEMENT device (connects?, technologies?)>
-    <!ATTLIST device
-              name          %String;       ""
-              package       %String;       #IMPLIED
-              >
-*/
+     * <!ELEMENT device (connects?, technologies?)>
+     * <!ATTLIST device
+     *         name          %String;       ""
+     *         package       %String;       #IMPLIED
+     * >
+     */
     wxString    name;
     opt_wxString package;
 

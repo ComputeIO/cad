@@ -43,6 +43,8 @@ namespace KIGFX
 class GAL;
 }
 
+namespace KIFONT
+{
 /**
  * Implement a stroke font drawing.
  *
@@ -70,10 +72,11 @@ public:
      * @param aGal
      * @param aText is the text to be drawn.
      * @param aPosition is the text position in world coordinates.
-     * @param aRotationAngle is the text rotation angle in radians.
+     * @param aRotationAngle is the text rotation angle
+     * @return bounding box width/height
      */
-    void Draw( KIGFX::GAL* aGal, const UTF8& aText, const VECTOR2D& aPosition,
-               double aRotationAngle ) const override;
+    VECTOR2D Draw( KIGFX::GAL* aGal, const UTF8& aText, const VECTOR2D& aPosition,
+                   const VECTOR2D& aOrigin, const EDA_ANGLE& aRotationAngle ) const override;
 
     /**
      * Compute the boundary limits of aText (the bounding box of all shapes).
@@ -82,9 +85,9 @@ public:
      *
      * @return a VECTOR2D giving the width and height of text.
      */
-    VECTOR2D ComputeStringBoundaryLimits( const KIGFX::GAL* aGal, const UTF8& aText,
-                                          const VECTOR2D& aGlyphSize,
-                                          double          aGlyphThickness ) const override;
+    VECTOR2D StringBoundaryLimits( const KIGFX::GAL* aGal, const UTF8& aText,
+                                   const VECTOR2D& aGlyphSize,
+                                   double          aGlyphThickness ) const override;
 
     /**
      * Compute the vertical position of an overbar, sometimes used in texts.
@@ -112,6 +115,10 @@ public:
      * @return the text size.
      */
     VECTOR2D ComputeTextLineSize( const KIGFX::GAL* aGal, const UTF8& aText ) const override;
+
+protected:
+    VECTOR2D getBoundingBox( const UTF8& aString, const VECTOR2D& aGlyphSize,
+                             TEXT_STYLE_FLAGS aTextStyle = 0 ) const override;
 
 private:
     /**
@@ -155,15 +162,11 @@ private:
      * @param aText is the text to be drawn.
      * @param aPosition is ignored; always draws at (0,0)
      * @param aAngle is text angle.
+     * @return bounding box width/height
      */
-    void drawSingleLineText( KIGFX::GAL* aGal, const UTF8& aText, const VECTOR2D& aPosition,
-                             double aAngle ) const override;
-
-    void drawSingleLineText( KIGFX::GAL* aGal, const UTF8& aText ) const
-    {
-        VECTOR2D p( 0, 0 );
-        drawSingleLineText( aGal, aText, p, 0.0 );
-    }
+    VECTOR2D drawSingleLineText( KIGFX::GAL* aGal, const UTF8& aText,
+                                 const VECTOR2D&  aPosition = VECTOR2D( 0, 0 ),
+                                 const EDA_ANGLE& aAngle = EDA_ANGLE() ) const override;
 
     /**
      * Process a string representing a Hershey font glyph. Not used for Newstroke font
@@ -180,21 +183,24 @@ private:
     double                         m_maxGlyphWidth;
 
     ///< Factor that determines relative vertical position of the overbar.
-    static const double OVERBAR_POSITION_FACTOR;
-    static const double UNDERLINE_POSITION_FACTOR;
+    static constexpr double OVERBAR_POSITION_FACTOR = 1.33;
+    static constexpr double UNDERLINE_POSITION_FACTOR = 0.41;
 
     ///< Factor that determines relative line width for bold text.
-    static const double BOLD_FACTOR;
+    static constexpr double BOLD_FACTOR = 1.3;
 
     ///< Scale factor for a glyph
-    static const double STROKE_FONT_SCALE;
+    static constexpr double STROKE_FONT_SCALE = 1.0 / 21.0;
 
     ///< Tilt factor for italic style (the is is the scaling factor
     ///< on dY relative coordinates to give a tilt shape
-    static const double ITALIC_TILT;
+    static constexpr double ITALIC_TILT = 1.0 / 8;
 
     ///< Factor that determines the pitch between 2 lines.
-    static const double INTERLINE_PITCH_RATIO;
+    static constexpr double INTERLINE_PITCH_RATIO = 1.61;
+
+    static constexpr int FONT_OFFSET = -10;
 };
+} //namespace KIFONT
 
 #endif // STROKE_FONT_H_

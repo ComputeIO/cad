@@ -103,7 +103,7 @@ bool S3D::WriteVRML( const char* filename, bool overwrite, SGNODE* aTopNode,
         return false;
     }
 
-    op.imbue( std::locale( "C" ) );
+    op.imbue( std::locale::classic() );
     op << "#VRML V2.0 utf8\n";
 
     if( renameNodes )
@@ -233,14 +233,6 @@ SGNODE* S3D::ReadCache( const char* aFileName, void* aPluginMgr,
     }
 
     SGNODE* np = new SCENEGRAPH( nullptr );
-
-    if( nullptr == np )
-    {
-        wxLogTrace( MASK_3D_SG, "%s:%s:%d * [INFO] failed to instantiate SCENEGRAPH",
-                    __FILE__, __FUNCTION__, __LINE__ );
-
-        return nullptr;
-    }
 
     OPEN_ISTREAM( file, aFileName );
 

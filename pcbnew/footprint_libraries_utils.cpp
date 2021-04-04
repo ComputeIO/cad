@@ -26,6 +26,7 @@
 #include <kiface_i.h>
 #include <confirm.h>
 #include <kicad_string.h>
+#include <macros.h>
 #include <pcb_edit_frame.h>
 #include <dialog_helpers.h>
 #include <filter_reader.h>
@@ -756,7 +757,9 @@ bool FOOTPRINT_EDIT_FRAME::SaveFootprint( FOOTPRINT* aFootprint )
             return true;
         }
         else
+        {
             return false;
+        }
     }
     else if( libraryName.IsEmpty() || footprintName.IsEmpty() )
     {
@@ -767,7 +770,9 @@ bool FOOTPRINT_EDIT_FRAME::SaveFootprint( FOOTPRINT* aFootprint )
             return true;
         }
         else
+        {
             return false;
+        }
     }
 
     FP_LIB_TABLE* tbl = Prj().PcbFootprintLibs();
@@ -1037,7 +1042,7 @@ bool FOOTPRINT_EDIT_FRAME::SaveFootprintAs( FOOTPRINT* aFootprint )
 
     wxString msg = wxString::Format( fmt, footprintName.GetData(), libraryName.GetData() );
     SetStatusText( msg );
-    updateTitle();
+    UpdateTitle();
     ReCreateHToolbar();
 
     return true;

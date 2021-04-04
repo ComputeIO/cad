@@ -50,6 +50,8 @@
 #include <wildcards_and_files_ext.h>
 #include <widgets/app_progress_dialog.h>
 #include <wx/ffile.h>
+#include <atomic>
+
 
 #include <../pcbnew/plugins/kicad/kicad_plugin.h> // for SEXPR_BOARD_FILE_VERSION def
 
@@ -103,20 +105,21 @@ KICAD_MANAGER_FRAME::KICAD_MANAGER_FRAME( wxWindow* parent, const wxString& titl
     m_aboutTitle = "KiCad";
 
     // Create the status line (bottom of the frame)
-    static const int dims[3] = { -1, -1, 100 };
+    static const int dims[2] = { -1, -1 };
 
-    CreateStatusBar( 3 );
-    SetStatusWidths( 3, dims );
+    CreateStatusBar( 2, wxSTB_SIZEGRIP | wxSTB_SHOW_TIPS | wxSTB_ELLIPSIZE_MIDDLE |
+                     wxFULL_REPAINT_ON_RESIZE );
+    SetStatusWidths( 2, dims );
 
     // Give an icon
     wxIcon       icon;
     wxIconBundle icon_bundle;
 
-    icon.CopyFromBitmap( KiBitmap( icon_kicad_xpm ) );
+    icon.CopyFromBitmap( KiBitmap( BITMAPS::icon_kicad ) );
     icon_bundle.AddIcon( icon );
-    icon.CopyFromBitmap( KiBitmap( icon_kicad_32_xpm ) );
+    icon.CopyFromBitmap( KiBitmap( BITMAPS::icon_kicad_32 ) );
     icon_bundle.AddIcon( icon );
-    icon.CopyFromBitmap( KiBitmap( icon_kicad_16_xpm ) );
+    icon.CopyFromBitmap( KiBitmap( BITMAPS::icon_kicad_16 ) );
     icon_bundle.AddIcon( icon );
 
     SetIcons( icon_bundle );
@@ -136,31 +139,33 @@ KICAD_MANAGER_FRAME::KICAD_MANAGER_FRAME( wxWindow* parent, const wxString& titl
     ReCreateMenuBar();
 
     m_auimgr.SetManagedWindow( this );
+    m_auimgr.SetFlags( wxAUI_MGR_LIVE_RESIZE );
 
-    m_auimgr.AddPane( m_mainToolBar, EDA_PANE().HToolbar().Name( "MainToolbar" ).Top().Layer( 6 ) );
+    m_auimgr.AddPane( m_mainToolBar, EDA_PANE().HToolbar().Name( "MainToolbar" ).Left()
+                      .Layer( 2 ) );
 
     // BestSize() does not always set the actual pane size of m_leftWin to the required value.
     // It happens when m_leftWin is too large (roughly > 1/3 of the kicad manager frame width.
     // (Well, BestSize() sets the best size... not the window size)
     // A trick is to use MinSize() to set the required pane width,
     // and after give a reasonable MinSize value
-    m_auimgr.AddPane( m_leftWin, EDA_PANE()
-                                         .Palette()
-                                         .Name( "ProjectTree" )
-                                         .Left()
-                                         .Layer( 3 )
-                                         .CaptionVisible( false )
-                                         .PaneBorder( false )
-                                         .MinSize( m_leftWinWidth, -1 )
-                                         .BestSize( m_leftWinWidth, -1 ) );
+    m_auimgr.AddPane( m_leftWin, EDA_PANE().Palette().Name( "ProjectTree" ).Left().Layer( 1 )
+                      .Caption( _( "Project Files" ) ).PaneBorder( true )
+                      .MinSize( m_leftWinWidth, -1 ).BestSize( m_leftWinWidth, -1 ) );
 
-    m_auimgr.AddPane( m_launcher,
-                      EDA_PANE().Canvas().PaneBorder( false ).Name( "Launcher" ).Center() );
+    m_auimgr.AddPane( m_launcher, EDA_PANE().Canvas().Name( "Launcher" ).Center()
+                      .Caption( _( "Editors" ) ).PaneBorder( false )
+                      .MinSize( m_launcher->GetBestSize() ) );
+
+    m_auimgr.GetArtProvider()->SetColour( wxAUI_DOCKART_ACTIVE_CAPTION_TEXT_COLOUR,
+                                          wxSystemSettings::GetColour( wxSYS_COLOUR_BTNTEXT ) );
+    m_auimgr.GetArtProvider()->SetColour( wxAUI_DOCKART_INACTIVE_CAPTION_TEXT_COLOUR,
+                                          wxSystemSettings::GetColour( wxSYS_COLOUR_BTNTEXT ) );
 
     m_auimgr.Update();
 
     // Now the actual m_leftWin size is set, give it a reasonable min width
-    m_auimgr.GetPane( m_leftWin ).MinSize( 200, -1 );
+    m_auimgr.GetPane( m_leftWin ).MinSize( 250, -1 );
 
     SetTitle( wxString( "KiCad " ) + GetBuildVersion() );
 
@@ -193,10 +198,9 @@ void KICAD_MANAGER_FRAME::setupTools()
     m_toolManager->SetEnvironment( nullptr, nullptr, nullptr, config(), this );
     m_actions = new KICAD_MANAGER_ACTIONS();
 
-    m_toolDispatcher = new TOOL_DISPATCHER( m_toolManager, m_actions );
+    m_toolDispatcher = new TOOL_DISPATCHER( m_toolManager );
 
     // Attach the events to the tool dispatcher
-    Bind( wxEVT_TOOL, &TOOL_DISPATCHER::DispatchWxCommand, m_toolDispatcher );
     Bind( wxEVT_CHAR, &TOOL_DISPATCHER::DispatchWxEvent, m_toolDispatcher );
     Bind( wxEVT_CHAR_HOOK, &TOOL_DISPATCHER::DispatchWxEvent, m_toolDispatcher );
 
@@ -314,12 +318,6 @@ wxString KICAD_MANAGER_FRAME::help_name()
 }
 
 
-void KICAD_MANAGER_FRAME::PrintMsg( const wxString& aText )
-{
-    m_launcher->GetMessagesBox()->AppendText( aText );
-}
-
-
 void KICAD_MANAGER_FRAME::OnSize( wxSizeEvent& event )
 {
     if( m_auimgr.GetManagedWindow() )
@@ -405,7 +403,7 @@ bool KICAD_MANAGER_FRAME::CloseProject( bool aSave )
         mgr.UnloadProject( &Prj() );
     }
 
-    ClearMsg();
+    SetStatusText( "" );
 
     m_leftWin->EmptyTreePrj();
 
@@ -422,7 +420,8 @@ void KICAD_MANAGER_FRAME::LoadProject( const wxFileName& aProjectFileName )
     // Any open KIFACE's must be closed if they are not part of the new project.
     // (We never want a KIWAY_PLAYER open on a KIWAY that isn't in the same project.)
     // User is prompted here to close those KIWAY_PLAYERs:
-    CloseProject( true );
+    if( !CloseProject( true ) )
+        return;
 
     m_active_project = true;
 
@@ -623,12 +622,6 @@ void KICAD_MANAGER_FRAME::ProjectChanged()
 }
 
 
-void KICAD_MANAGER_FRAME::ClearMsg()
-{
-    m_launcher->GetMessagesBox()->Clear();
-}
-
-
 void KICAD_MANAGER_FRAME::LoadSettings( APP_SETTINGS_BASE* aCfg )
 {
     EDA_BASE_FRAME::LoadSettings( aCfg );
@@ -662,8 +655,8 @@ void KICAD_MANAGER_FRAME::InstallPreferences( PAGED_DIALOG*         aParent,
 
 void KICAD_MANAGER_FRAME::PrintPrjInfo()
 {
-    wxString msg = wxString::Format( _( "Project name:\n%s\n" ), GetProjectFileName() );
-    PrintMsg( msg );
+    SetStatusText( wxString::Format( _( "Project: %s" ), Prj().GetProjectFullName() ) );
+
 }
 
 

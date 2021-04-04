@@ -431,6 +431,8 @@ private:
 
     std::set<std::unique_ptr<TRACE>, TRACE::BY_ID> polygons;
 
+    std::set<std::unique_ptr<TRACE>, TRACE::BY_ID> refdes;
+
 
     // A!REFDES!COMP_CLASS!COMP_PART_NUMBER!COMP_HEIGHT!COMP_DEVICE_LABEL!COMP_INSERTION_CODE!SYM_TYPE!
     // SYM_NAME!SYM_MIRROR!SYM_ROTATE!SYM_X!SYM_Y!COMP_VALUE!COMP_TOL!COMP_VOLTAGE!
@@ -566,6 +568,9 @@ private:
     bool loadZone( BOARD* aBoard, const std::unique_ptr<FABMASTER::TRACE>& aLine );
     bool loadPolygon( BOARD* aBoard, const std::unique_ptr<FABMASTER::TRACE>& aLine );
     bool loadFootprints( BOARD* aBoard );
+
+    SHAPE_POLY_SET loadShapePolySet( const graphic_element& aLine);
+
 };
 
 

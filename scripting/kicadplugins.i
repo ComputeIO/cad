@@ -2,7 +2,7 @@
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
  * Copyright (C) 2012 NBEE Embedded Systems, Miguel Angel Ajo <miguelangel@nbee.es>
- * Copyright (C) 1992-2018 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 1992-2021 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -67,20 +67,37 @@ NOT_LOADED_WIZARDS=""
 """
 PLUGIN_DIRECTORIES_SEARCH=""
 
-""" the trace of errors during execution of footprint wizards scripts
 """
+    the trace of errors during execution of footprint wizards scripts
+    Warning: strings (internally unicode) are returned as UTF-8 compatible C strings
+"""
+
 FULL_BACK_TRACE=""
 
 def GetUnLoadableWizards():
     global NOT_LOADED_WIZARDS
-    return NOT_LOADED_WIZARDS
+    import sys
+
+    if sys.version_info[0] < 3:
+        utf8_str = NOT_LOADED_WIZARDS.encode( 'UTF-8' )
+    else:
+        utf8_str = NOT_LOADED_WIZARDS
+
+    return utf8_str
 
 def GetWizardsSearchPaths():
     global PLUGIN_DIRECTORIES_SEARCH
-    return PLUGIN_DIRECTORIES_SEARCH
+    import sys
+
+    if sys.version_info[0] < 3:
+        utf8_str = PLUGIN_DIRECTORIES_SEARCH.encode( 'UTF-8' )
+    else:
+        utf8_str = PLUGIN_DIRECTORIES_SEARCH
+
+    return utf8_str
 
 def GetWizardsBackTrace():
-    global FULL_BACK_TRACE
+    global FULL_BACK_TRACE  # Already correct format
     return FULL_BACK_TRACE
 
 
@@ -96,28 +113,33 @@ def LoadPluginModule(Dirname, ModuleName, FileName):
     import sys
     import traceback
 
+    try:
+        from importlib import reload # Python 3.4 or above
+    except ImportError:
+        from imp import reload # Python <3.4; harmless alias on 2.7
+
     global NOT_LOADED_WIZARDS
     global FULL_BACK_TRACE
+    global KICAD_PLUGINS
+
+    top_level_modules = KICAD_PLUGINS.keys()
 
     try:  # If there is an error loading the script, skip it
 
         module_filename = os.path.join( Dirname, FileName )
         mtime = os.path.getmtime( module_filename )
+        mods_before = set( sys.modules )
 
         if ModuleName in KICAD_PLUGINS:
             plugin = KICAD_PLUGINS[ModuleName]
 
-            if sys.version_info >= (3,4,0):
-                import importlib
-                mod = importlib.reload( plugin["ModuleName"] )
-            elif sys.version_info >= (3,2,0):
-                """
-                TODO: This branch can be removed once the required python version is >=3.4
-                """
-                import imp
-                mod = imp.reload( plugin["ModuleName"] )
-            else:
-                mod = reload( plugin["ModuleName"] )
+            for dependency in plugin["dependencies"]:
+                if dependency in sys.modules and dependency not in top_level_modules:
+                    del sys.modules[dependency]
+
+            mods_before = set( sys.modules )
+
+            mod = reload( plugin["ModuleName"] )
 
         else:
             if sys.version_info >= (3,0,0):
@@ -126,11 +148,17 @@ def LoadPluginModule(Dirname, ModuleName, FileName):
             else:
                 mod = __import__( ModuleName, locals(), globals() )
 
+        mods_after = set( sys.modules ).difference( mods_before )
+
         KICAD_PLUGINS[ModuleName]={ "filename":module_filename,
                                     "modification_time":mtime,
-                                    "ModuleName":mod }
+                                    "ModuleName":mod,
+                                    "dependencies": mods_after }
 
     except:
+        if ModuleName in KICAD_PLUGINS:
+            del KICAD_PLUGINS[ModuleName]
+
         if NOT_LOADED_WIZARDS != "" :
             NOT_LOADED_WIZARDS += "\n"
         NOT_LOADED_WIZARDS += module_filename
@@ -142,6 +170,7 @@ def LoadPlugins(bundlepath=None, userpath=None):
     Initialise Scripting/Plugin python environment and load plugins.
 
     Arguments:
+    Note: bundlepath and userpath are given  utf8 encoded, to be compatible with asimple C string
     bundlepath -- The path to the bundled scripts.
                   The bundled Plugins are relative to this path, in the
                   "plugins" subdirectory.
@@ -172,6 +201,16 @@ def LoadPlugins(bundlepath=None, userpath=None):
     if sys.version_info >= (3,3,0):
         import importlib
         importlib.invalidate_caches()
+
+    """
+    bundlepath and userpath are strings utf-8 encoded (compatible "C" strings).
+    So convert these utf8 encoding to unicode strings to avoid any encoding issue.
+    """
+    try:
+        bundlepath = bundlepath.decode( 'UTF-8' );
+        userpath = userpath.decode( 'UTF-8' );
+    except AttributeError:
+        pass
 
     config_path = pcbnew.SETTINGS_MANAGER.GetUserSettingsPath()
     plugin_directories=[]
@@ -619,6 +658,7 @@ class ActionPlugin(KiCadPlugin, object):
     def __init__( self ):
         KiCadPlugin.__init__( self )
         self.icon_file_name = ""
+        self.dark_icon_file_name = ""
         self.show_toolbar_button = False
         self.defaults()
 
@@ -639,8 +679,11 @@ class ActionPlugin(KiCadPlugin, object):
     def GetShowToolbarButton( self ):
         return self.show_toolbar_button
 
-    def GetIconFileName( self ):
-        return self.icon_file_name
+    def GetIconFileName( self, dark ):
+        if dark and self.dark_icon_file_name:
+            return self.dark_icon_file_name
+        else:
+            return self.icon_file_name
 
     def Run(self):
         return

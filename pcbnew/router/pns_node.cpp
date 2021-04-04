@@ -836,7 +836,7 @@ void NODE::Remove( LINE& aLine )
 }
 
 
-void NODE::followLine( LINKED_ITEM* aCurrent, int aScanDirection, int& aPos, int aLimit,
+void NODE::followLine( LINKED_ITEM* aCurrent, bool aScanDirection, int& aPos, int aLimit,
                        VECTOR2I* aCorners, LINKED_ITEM** aSegments, bool* aArcReversed,
                        bool& aGuardHit, bool aStopAtLockedJoints )
 {
@@ -888,9 +888,9 @@ const LINE NODE::AssembleLine( LINKED_ITEM* aSeg, int* aOriginSegmentIndex,
 {
     const int MaxVerts = 1024 * 16;
 
-    VECTOR2I     corners[MaxVerts + 1];
-    LINKED_ITEM* segs[MaxVerts + 1];
-    bool         arcReversed[MaxVerts + 1];
+    std::array<VECTOR2I, MaxVerts + 1> corners;
+    std::array<LINKED_ITEM*, MaxVerts + 1> segs;
+    std::array<bool, MaxVerts + 1> arcReversed;
 
     LINE pl;
     bool guardHit = false;
@@ -902,12 +902,12 @@ const LINE NODE::AssembleLine( LINKED_ITEM* aSeg, int* aOriginSegmentIndex,
     pl.SetNet( aSeg->Net() );
     pl.SetOwner( this );
 
-    followLine( aSeg, false, i_start, MaxVerts, corners, segs, arcReversed, guardHit,
-                aStopAtLockedJoints );
+    followLine( aSeg, false, i_start, MaxVerts, corners.data(), segs.data(), arcReversed.data(),
+                guardHit, aStopAtLockedJoints );
 
     if( !guardHit )
     {
-        followLine( aSeg, true, i_end, MaxVerts, corners, segs, arcReversed, guardHit,
+        followLine( aSeg, true, i_end, MaxVerts, corners.data(), segs.data(), arcReversed.data(), guardHit,
                     aStopAtLockedJoints );
     }
 

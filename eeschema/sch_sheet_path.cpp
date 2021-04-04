@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2017 Jean-Pierre Charras, jp.charras at wanadoo.fr
  * Copyright (C) 2011 Wayne Stambaugh <stambaughw@gmail.com>
- * Copyright (C) 1992-2020 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 1992-2021 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -29,7 +29,7 @@
 #include <sch_reference_list.h>
 #include <class_library.h>
 #include <sch_sheet_path.h>
-#include <sch_component.h>
+#include <sch_symbol.h>
 #include <sch_sheet.h>
 #include <schematic.h>
 #include <template_fieldnames.h>
@@ -75,9 +75,9 @@ public:
     void SetPosition( const wxPoint& ) override {}
     void Print( const RENDER_SETTINGS* aSettings, const wxPoint& aOffset ) override {}
     void Move( const wxPoint& aMoveVector ) override {}
-    void MirrorY( int aYaxis_position ) override {}
-    void MirrorX( int aXaxis_position ) override {}
-    void Rotate( wxPoint aPosition ) override {}
+    void MirrorHorizontally( int aCenter ) override {}
+    void MirrorVertically( int aCenter ) override {}
+    void Rotate( wxPoint aCenter ) override {}
 
 #if defined(DEBUG)
     void Show( int , std::ostream&  ) const override {}
@@ -251,32 +251,32 @@ void SCH_SHEET_PATH::UpdateAllScreenReferences()
 {
     for( SCH_ITEM* item : LastScreen()->Items().OfType( SCH_COMPONENT_T ) )
     {
-        SCH_COMPONENT* component = static_cast<SCH_COMPONENT*>( item );
-        component->GetField( REFERENCE_FIELD )->SetText( component->GetRef( this ) );
-        component->GetField( VALUE_FIELD )->SetText( component->GetValue( this, false ) );
-        component->GetField( FOOTPRINT_FIELD )->SetText( component->GetFootprint( this, false ) );
-        component->UpdateUnit( component->GetUnitSelection( this ) );
+        SCH_COMPONENT* symbol = static_cast<SCH_COMPONENT*>( item );
+        symbol->GetField( REFERENCE_FIELD )->SetText( symbol->GetRef( this ) );
+        symbol->GetField( VALUE_FIELD )->SetText( symbol->GetValue( this, false ) );
+        symbol->GetField( FOOTPRINT_FIELD )->SetText( symbol->GetFootprint( this, false ) );
+        symbol->UpdateUnit( symbol->GetUnitSelection( this ) );
     }
 }
 
 
 
 void SCH_SHEET_PATH::GetSymbols( SCH_REFERENCE_LIST& aReferences, bool aIncludePowerSymbols,
-                                 bool aForceIncludeOrphanComponents ) const
+                                 bool aForceIncludeOrphanSymbols ) const
 {
     for( SCH_ITEM* item : LastScreen()->Items().OfType( SCH_COMPONENT_T ) )
     {
-        SCH_COMPONENT* component = static_cast<SCH_COMPONENT*>( item );
+        SCH_COMPONENT* symbol = static_cast<SCH_COMPONENT*>( item );
 
-        // Skip pseudo components, which have a reference starting with #.  This mainly
+        // Skip pseudo-symbols, which have a reference starting with #.  This mainly
         // affects power symbols.
-        if( aIncludePowerSymbols || component->GetRef( this )[0] != wxT( '#' ) )
+        if( aIncludePowerSymbols || symbol->GetRef( this )[0] != wxT( '#' ) )
         {
-            LIB_PART* part = component->GetPartRef().get();
+            LIB_PART* part = symbol->GetPartRef().get();
 
-            if( part || aForceIncludeOrphanComponents )
+            if( part || aForceIncludeOrphanSymbols )
             {
-                SCH_REFERENCE schReference( component, part, *this );
+                SCH_REFERENCE schReference( symbol, part, *this );
 
                 schReference.SetSheetNumber( m_virtualPageNumber );
                 aReferences.AddItem( schReference );
@@ -286,23 +286,23 @@ void SCH_SHEET_PATH::GetSymbols( SCH_REFERENCE_LIST& aReferences, bool aIncludeP
 }
 
 
-void SCH_SHEET_PATH::GetMultiUnitComponents( SCH_MULTI_UNIT_REFERENCE_MAP& aRefList,
-                                             bool aIncludePowerSymbols ) const
+void SCH_SHEET_PATH::GetMultiUnitSymbols( SCH_MULTI_UNIT_REFERENCE_MAP& aRefList,
+                                          bool aIncludePowerSymbols ) const
 {
-    for( auto item : LastScreen()->Items().OfType( SCH_COMPONENT_T ) )
+    for( SCH_ITEM* item : LastScreen()->Items().OfType( SCH_COMPONENT_T ) )
     {
-        auto component = static_cast<SCH_COMPONENT*>( item );
+        SCH_COMPONENT* symbol = static_cast<SCH_COMPONENT*>( item );
 
-        // Skip pseudo components, which have a reference starting with #.  This mainly
+        // Skip pseudo-symbols, which have a reference starting with #.  This mainly
         // affects power symbols.
-        if( !aIncludePowerSymbols && component->GetRef( this )[0] == wxT( '#' ) )
+        if( !aIncludePowerSymbols && symbol->GetRef( this )[0] == wxT( '#' ) )
             continue;
 
-        LIB_PART* part = component->GetPartRef().get();
+        LIB_PART* part = symbol->GetPartRef().get();
 
         if( part && part->GetUnitCount() > 1 )
         {
-            SCH_REFERENCE schReference = SCH_REFERENCE( component, part, *this );
+            SCH_REFERENCE schReference = SCH_REFERENCE( symbol, part, *this );
             schReference.SetSheetNumber( m_virtualPageNumber );
             wxString reference_str = schReference.GetRef();
 
@@ -482,8 +482,8 @@ void SCH_SHEET_LIST::BuildSheetList( SCH_SHEET* aSheet, bool aCheckIntegrity )
 
 void SCH_SHEET_LIST::SortByPageNumbers( bool aUpdateVirtualPageNums )
 {
-    std::sort( begin(), end(), 
-        []( SCH_SHEET_PATH a, SCH_SHEET_PATH b ) -> bool 
+    std::sort( begin(), end(),
+        []( SCH_SHEET_PATH a, SCH_SHEET_PATH b ) -> bool
         {
             wxString pageA = a.GetPageNumber();
             wxString pageB = b.GetPageNumber();
@@ -503,7 +503,7 @@ void SCH_SHEET_LIST::SortByPageNumbers( bool aUpdateVirtualPageNums )
 }
 
 
-bool SCH_SHEET_LIST::NameExists( const wxString& aSheetName )
+bool SCH_SHEET_LIST::NameExists( const wxString& aSheetName ) const
 {
     for( const SCH_SHEET_PATH& sheet : *this )
     {
@@ -515,7 +515,19 @@ bool SCH_SHEET_LIST::NameExists( const wxString& aSheetName )
 }
 
 
-bool SCH_SHEET_LIST::IsModified()
+bool SCH_SHEET_LIST::PageNumberExists( const wxString& aPageNumber ) const
+{
+    for( const SCH_SHEET_PATH& sheet : *this )
+    {
+        if( sheet.Last()->GetPageNumber( sheet ) == aPageNumber )
+            return true;
+    }
+
+    return false;
+}
+
+
+bool SCH_SHEET_LIST::IsModified() const
 {
     for( const SCH_SHEET_PATH& sheet : *this )
     {
@@ -537,7 +549,7 @@ void SCH_SHEET_LIST::ClearModifyStatus()
 }
 
 
-SCH_ITEM* SCH_SHEET_LIST::GetItem( const KIID& aID, SCH_SHEET_PATH* aPathOut )
+SCH_ITEM* SCH_SHEET_LIST::GetItem( const KIID& aID, SCH_SHEET_PATH* aPathOut ) const
 {
     for( const SCH_SHEET_PATH& sheet : *this )
     {
@@ -602,23 +614,20 @@ void SCH_SHEET_LIST::AnnotatePowerSymbols()
     // List of reference for power symbols
     SCH_REFERENCE_LIST references;
 
-    // Map of locked components (not used, but needed by Annotate()
-    SCH_MULTI_UNIT_REFERENCE_MAP lockedComponents;
+    // Map of locked symbols (not used, but needed by Annotate()
+    SCH_MULTI_UNIT_REFERENCE_MAP lockedSymbols;
 
-    // Build the list of power components:
+    // Build the list of power symbols:
     for( SCH_SHEET_PATH& sheet : *this )
     {
-        for( auto item : sheet.LastScreen()->Items().OfType( SCH_COMPONENT_T ) )
+        for( SCH_ITEM* item : sheet.LastScreen()->Items().OfType( SCH_COMPONENT_T ) )
         {
-            auto      component = static_cast<SCH_COMPONENT*>( item );
-            LIB_PART* part = component->GetPartRef().get();
+            SCH_COMPONENT* symbol = static_cast<SCH_COMPONENT*>( item );
+            LIB_PART*      part = symbol->GetPartRef().get();
 
-            if( !part || !part->IsPower() )
-                continue;
-
-            if( part )
+            if( part && part->IsPower() )
             {
-                SCH_REFERENCE schReference( component, part, sheet );
+                SCH_REFERENCE schReference( symbol, part, sheet );
                 references.AddItem( schReference );
             }
         }
@@ -649,12 +658,12 @@ void SCH_SHEET_LIST::AnnotatePowerSymbols()
     }
 
 
-    // Break full components reference in name (prefix) and number:
+    // Break full symbol reference into name (prefix) and number:
     // example: IC1 become IC, and 1
     references.SplitReferences();
 
     // Ensure all power symbols have the reference starting by '#'
-    // (No sure this is really useful)
+    // (Not sure this is really useful)
     for( unsigned ii = 0; ii< references.GetCount(); ++ii )
     {
         if( references[ii].GetRef()[0] != '#' )
@@ -665,16 +674,16 @@ void SCH_SHEET_LIST::AnnotatePowerSymbols()
     }
 
     // Recalculate and update reference numbers in schematic
-    references.Annotate( false, 0, 100, lockedComponents );
+    references.Annotate( false, 0, 100, lockedSymbols );
     references.UpdateAnnotation();
 }
 
 
 void SCH_SHEET_LIST::GetSymbols( SCH_REFERENCE_LIST& aReferences, bool aIncludePowerSymbols,
-                                 bool aForceIncludeOrphanComponents ) const
+                                 bool aForceIncludeOrphanSymbols ) const
 {
     for( const SCH_SHEET_PATH& sheet : *this )
-        sheet.GetSymbols( aReferences, aIncludePowerSymbols, aForceIncludeOrphanComponents );
+        sheet.GetSymbols( aReferences, aIncludePowerSymbols, aForceIncludeOrphanSymbols );
 }
 
 
@@ -684,7 +693,7 @@ void SCH_SHEET_LIST::GetMultiUnitSymbols( SCH_MULTI_UNIT_REFERENCE_MAP &aRefList
     for( SCH_SHEET_PATHS::const_iterator it = begin(); it != end(); ++it )
     {
         SCH_MULTI_UNIT_REFERENCE_MAP tempMap;
-        (*it).GetMultiUnitComponents( tempMap );
+        ( *it ).GetMultiUnitSymbols( tempMap );
 
         for( SCH_MULTI_UNIT_REFERENCE_MAP::value_type& pair : tempMap )
         {
@@ -692,9 +701,7 @@ void SCH_SHEET_LIST::GetMultiUnitSymbols( SCH_MULTI_UNIT_REFERENCE_MAP &aRefList
             unsigned n_refs = pair.second.GetCount();
 
             for( unsigned thisRef = 0; thisRef < n_refs; ++thisRef )
-            {
                 aRefList[pair.first].AddItem( pair.second[thisRef] );
-            }
         }
     }
 }
@@ -728,7 +735,9 @@ bool SCH_SHEET_LIST::TestForRecursion( const SCH_SHEET_LIST& aSrcSheetHierarchy,
             {
                 if( at( i ).TestForRecursion( sheetPath->GetSheet( k )->GetFileName(),
                                               aDestFileName ) )
+                {
                     return true;
+                }
             }
         }
     }
@@ -738,7 +747,7 @@ bool SCH_SHEET_LIST::TestForRecursion( const SCH_SHEET_LIST& aSrcSheetHierarchy,
 }
 
 
-SCH_SHEET_PATH* SCH_SHEET_LIST::FindSheetForScreen( SCH_SCREEN* aScreen )
+SCH_SHEET_PATH* SCH_SHEET_LIST::FindSheetForScreen( const SCH_SCREEN* aScreen )
 {
     for( SCH_SHEET_PATH& sheetpath : *this )
     {
@@ -838,27 +847,6 @@ std::vector<KIID_PATH> SCH_SHEET_LIST::GetPaths() const
         paths.emplace_back( sheetPath.Path() );
 
     return paths;
-}
-
-
-void SCH_SHEET_LIST::ReplaceLegacySheetPaths( const std::vector<KIID_PATH>& aOldSheetPaths )
-{
-    wxCHECK( size() == aOldSheetPaths.size(), /* void */ );
-
-    for( size_t i = 0;  i < size(); i++ )
-    {
-        const KIID_PATH oldSheetPath = aOldSheetPaths.at( i );
-        const KIID_PATH newSheetPath = at( i ).Path();
-        SCH_SCREEN* screen = at(i).LastScreen();
-
-        wxCHECK( screen, /* void */ );
-
-        for( SCH_ITEM* symbol : screen->Items().OfType( SCH_COMPONENT_T ) )
-        {
-            static_cast<SCH_COMPONENT*>( symbol )->ReplaceInstanceSheetPath( oldSheetPath,
-                                                                             newSheetPath );
-        }
-    }
 }
 
 

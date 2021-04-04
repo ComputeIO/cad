@@ -827,10 +827,19 @@ bool containsNonAsciiChars( const wxString& string )
     return false;
 }
 
-void DXF_PLOTTER::Text( const wxPoint& aPos, COLOR4D aColor, const wxString& aText, double aOrient,
-                        const wxSize& aSize, enum EDA_TEXT_HJUSTIFY_T aH_justify,
-                        enum EDA_TEXT_VJUSTIFY_T aV_justify, int aWidth, bool aItalic, bool aBold,
-                        bool aMultilineAllowed, void* aData, FONT* aFont )
+void DXF_PLOTTER::Text( const wxPoint&              aPos,
+                        COLOR4D                     aColor,
+                        const wxString&             aText,
+                        double                      aOrient,
+                        const wxSize&               aSize,
+                        enum EDA_TEXT_HJUSTIFY_T    aH_justify,
+                        enum EDA_TEXT_VJUSTIFY_T    aV_justify,
+                        int                         aWidth,
+                        bool                        aItalic,
+                        bool                        aBold,
+                        bool                        aMultilineAllowed,
+                        KIFONT::FONT*               aFont,
+                        void*                       aData )
 {
     // Fix me: see how to use DXF text mode for multiline texts
     if( aMultilineAllowed && !aText.Contains( wxT( "\n" ) ) )
@@ -843,8 +852,8 @@ void DXF_PLOTTER::Text( const wxPoint& aPos, COLOR4D aColor, const wxString& aTe
         // output text as graphics.
         // Perhaps multiline texts could be handled as DXF text entity
         // but I do not want spend time about this (JPC)
-        PLOTTER::Text( aPos, aColor, aText, aOrient, aSize, aH_justify, aV_justify, aWidth, aItalic,
-                       aBold, aMultilineAllowed, NULL, aFont );
+        PLOTTER::Text( aPos, aColor, aText, aOrient, aSize, aH_justify, aV_justify,
+                       aWidth, aItalic, aBold, aMultilineAllowed, aFont, aData );
     }
     else
     {

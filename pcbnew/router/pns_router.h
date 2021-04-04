@@ -23,18 +23,12 @@
 #define __PNS_ROUTER_H
 
 #include <list>
-
 #include <memory>
 #include <core/optional.h>
-#include <boost/unordered_set.hpp>
-
-#include <layers_id_colors_and_visibility.h>
-#include <geometry/shape_line_chain.h>
+#include <math/box2.h>
 
 #include "pns_routing_settings.h"
 #include "pns_sizes_settings.h"
-#include "pns_item.h"
-#include "pns_itemset.h"
 #include "pns_node.h"
 
 namespace KIGFX
@@ -119,7 +113,7 @@ enum DRAG_MODE
 
 class ROUTER
 {
-private:
+public:
     enum RouterState
     {
         IDLE,
@@ -134,6 +128,10 @@ public:
     void SetInterface( ROUTER_IFACE* aIface );
     void SetMode ( ROUTER_MODE aMode );
     ROUTER_MODE Mode() const { return m_mode; }
+
+    RouterState GetState() const { return m_state; }
+
+    DRAG_ALGO* GetDragger() { return m_dragger.get(); }
 
     static ROUTER* GetInstance();
 
@@ -182,15 +180,6 @@ public:
     void SetIterLimit( int aX ) { m_iterLimit = aX; }
     int GetIterLimit() const { return m_iterLimit; };
 
-    void SetShowIntermediateSteps( bool aX, int aSnapshotIter = -1 )
-    {
-        m_showInterSteps = aX;
-        m_snapshotIter = aSnapshotIter;
-    }
-
-    bool GetShowIntermediateSteps() const { return m_showInterSteps; }
-    int GetShapshotIter() const { return m_snapshotIter; }
-
     ROUTING_SETTINGS& Settings() { return *m_settings; }
 
     void CommitRouting( NODE* aNode );
@@ -222,6 +211,16 @@ public:
         return m_iface;
     }
 
+    void SetVisibleViewArea( const BOX2I& aExtents )
+    {
+        m_visibleViewArea = aExtents;
+    }
+
+    const BOX2I& VisibleViewArea() const
+    {
+        return m_visibleViewArea;
+    }
+
 private:
     void movePlacing( const VECTOR2I& aP, ITEM* aItem );
     void moveDragging( const VECTOR2I& aP, ITEM* aItem );
@@ -233,6 +232,7 @@ private:
     void markViolations( NODE* aNode, ITEM_SET& aCurrent, NODE::ITEM_VECTOR& aRemoved );
     bool isStartingPointRoutable( const VECTOR2I& aWhere, ITEM* aItem, int aLayer );
 
+    BOX2I             m_visibleViewArea;
     VECTOR2I          m_currentEnd;
     RouterState       m_state;
 
@@ -246,8 +246,6 @@ private:
     ROUTER_IFACE*     m_iface;
 
     int               m_iterLimit;
-    bool              m_showInterSteps;
-    int               m_snapshotIter;
     bool              m_forceMarkObstaclesMode = false;
 
     ROUTING_SETTINGS* m_settings;

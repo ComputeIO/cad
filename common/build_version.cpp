@@ -108,7 +108,12 @@ wxString GetVersionInfoData( const wxString& aTitle, bool aHtml, bool aBrief )
     aMsg << eol;
 
     aMsg << "Platform: " << wxGetOsDescription() << ", "
+// TODO (ISM): Readd conditional once our wx fork and flatpaks are running released 3.1.5
+#if 0 && wxCHECK_VERSION( 3, 1, 5 )
+         << platform.GetBitnessName() << ", "
+#else
          << platform.GetArchName() << ", "
+#endif
          << platform.GetEndiannessName() << ", "
          << platform.GetPortIdName();
 

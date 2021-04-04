@@ -61,6 +61,9 @@ void TOOL_EVENT::init()
     // Cancel tool doesn't contain a position
     if( IsCancel() )
         m_hasPosition = false;
+
+    m_forceImmediate = false;
+    m_reactivate = false;
 }
 
 
@@ -223,6 +226,6 @@ bool TOOL_EVENT::IsMoveTool() const
 
 bool TOOL_EVENT::IsSimulator() const
 {
-    return ( m_commandStr.is_initialized()
-             && m_commandStr.get().find( "Simulation" ) != GetCommandStr()->npos );
+    return( m_commandStr.is_initialized()
+                && m_commandStr.get().find( "Simulation" ) != GetCommandStr()->npos );
 }

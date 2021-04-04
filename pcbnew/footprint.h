@@ -140,26 +140,6 @@ public:
     void ClearAllNets();
 
     /**
-     * Calculate the bounding box in board coordinates.
-     */
-    void CalculateBoundingBox();
-
-    /**
-     * Build and returns the boundary box of the footprint excluding any text.
-     *
-     * @return The rectangle containing the footprint.
-     */
-    EDA_RECT GetFootprintRect() const;
-
-    /**
-     * Return the last calculated bounding box of the footprint (does not recalculate it).
-     * (call CalculateBoundingBox() to recalculate it).
-     *
-     * @return The rectangle containing the footprint.
-     */
-    EDA_RECT GetBoundingBoxBase() const { return m_boundingBox; }
-
-    /**
      * Return the bounding box containing pads when the footprint is on the front side,
      * orientation 0, position 0,0.
      *
@@ -175,19 +155,11 @@ public:
      *
      * This operation is slower but more accurate than calculating a bounding box.
      */
-    SHAPE_POLY_SET GetBoundingHull();
     SHAPE_POLY_SET GetBoundingHull() const;
-
-    /**
-     * Update the cached bounding Hull with current data
-     */
-    SHAPE_POLY_SET CalculateBoundingHull() const;
-
-    void UpdateBoundingHull();
 
     // Virtual function
     const EDA_RECT GetBoundingBox() const override;
-    const EDA_RECT GetBoundingBox( bool aIncludeInvisibleText ) const;
+    const EDA_RECT GetBoundingBox( bool aIncludeText, bool aIncludeInvisibleText ) const;
 
     PADS& Pads()             { return m_pads; }
     const PADS& Pads() const { return m_pads; }
@@ -448,7 +420,7 @@ public:
     /**
      * @return reference designator text.
      */
-    const wxString GetReference() const
+    const wxString& GetReference() const
     {
         return m_reference->GetText();
     }
@@ -470,7 +442,7 @@ public:
     /**
      * @return the value text.
      */
-    const wxString GetValue() const
+    const wxString& GetValue() const
     {
         return m_value->GetText();
     }
@@ -587,7 +559,7 @@ public:
 
     wxString GetSelectMenuText( EDA_UNITS aUnits ) const override;
 
-    BITMAP_DEF GetMenuImage() const override;
+    BITMAPS GetMenuImage() const override;
 
     EDA_ITEM* Clone() const override;
 
@@ -673,8 +645,8 @@ public:
      *
      * @return the courtyard polygon.
      */
-    SHAPE_POLY_SET& GetPolyCourtyardFront() { return m_poly_courtyard_front; }
-    SHAPE_POLY_SET& GetPolyCourtyardBack() { return m_poly_courtyard_back; }
+    const SHAPE_POLY_SET& GetPolyCourtyardFront() const { return m_poly_courtyard_front; }
+    const SHAPE_POLY_SET& GetPolyCourtyardBack() const { return m_poly_courtyard_back; }
 
     /**
      * Build complex polygons of the courtyard areas from graphic items on the courtyard layers.
@@ -716,11 +688,25 @@ private:
     LIB_ID          m_fpid;              // The #LIB_ID of the FOOTPRINT.
     int             m_attributes;        // Flag bits ( see FOOTPRINT_ATTR_T )
     int             m_fpStatus;          // For autoplace: flags (LOCKED, FIELDS_AUTOPLACED)
-    EDA_RECT        m_boundingBox;       // Bounding box : coordinates on board, real orientation.
 
-
-    mutable bool   m_hullDirty; // If the hull needs to be re-calculated
-    SHAPE_POLY_SET m_hull;      // Convex wrapping hull of the footprint
+    // Bounding box caching strategy:
+    // While we attempt to notice the low-hanging fruit operations and update the bounding boxes
+    // accordingly, we rely mostly on a "if anything changed then the caches are stale" approach.
+    // We implement this by having PCB_BASE_FRAME's OnModify() method increment an operation
+    // counter, and storing that as a timestamp for the various caches.
+    // This means caches will get regenerated often -- but still far less often than if we had no
+    // caches at all.  The principal opitmization would be to change to dirty flag and make sure
+    // that any edit that could affect the bounding boxes (including edits to the footprint
+    // children) marked the bounding boxes dirty.  It would definitely be faster -- but also more
+    // fragile.
+    mutable EDA_RECT       m_cachedBoundingBox;
+    mutable int            m_boundingBoxCacheTimeStamp;
+    mutable EDA_RECT       m_cachedVisibleBBox;
+    mutable int            m_visibleBBoxCacheTimeStamp;
+    mutable EDA_RECT       m_cachedTextExcludedBBox;
+    mutable int            m_textExcludedBBoxCacheTimeStamp;
+    mutable SHAPE_POLY_SET m_cachedHull;
+    mutable int            m_hullCacheTimeStamp;
 
     ZONE_CONNECTION m_zoneConnection;
     int             m_thermalWidth;

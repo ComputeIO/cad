@@ -43,7 +43,6 @@ class PANEL_EDIT_OPTIONS_BASE : public wxPanel
 
 		wxCheckBox* m_magneticPads;
 		wxCheckBox* m_magneticGraphics;
-		wxCheckBox* m_autoLockPads;
 		wxCheckBox* m_flipLeftRight;
 		wxCheckBox* m_segments45OnlyCtrl;
 		wxStaticText* m_staticTextRotationAngle;
@@ -61,11 +60,13 @@ class PANEL_EDIT_OPTIONS_BASE : public wxPanel
 		wxChoice* m_magneticGraphicsChoice;
 		wxCheckBox* m_showSelectedRatsnest;
 		wxCheckBox* m_OptDisplayCurvedRatsnestLines;
-		wxCheckBox* m_Show_Page_Limits;
 		wxStaticText* m_staticText5;
 		wxRadioButton* m_rbTrackDragMove;
 		wxRadioButton* m_rbTrackDrag45;
 		wxRadioButton* m_rbTrackDragFree;
+		wxCheckBox* m_Show_Page_Limits;
+		wxCheckBox* m_Auto_Refill_Zones;
+		wxCheckBox* m_Allow_Free_Pads;
 
 	public:
 

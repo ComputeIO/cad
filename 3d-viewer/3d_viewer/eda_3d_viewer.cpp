@@ -93,15 +93,15 @@ EDA_3D_VIEWER::EDA_3D_VIEWER( KIWAY *aKiway, PCB_BASE_FRAME *aParent, const wxSt
     wxLogTrace( m_logTrace, "EDA_3D_VIEWER::EDA_3D_VIEWER %s", aTitle );
 
     m_disable_ray_tracing = false;
-    m_aboutTitle = "3D Viewer";
+    m_aboutTitle = _( "KiCad 3D Viewer" );
 
     // Give it an icon
     wxIcon icon;
-    icon.CopyFromBitmap( KiBitmap( icon_3d_xpm ) );
+    icon.CopyFromBitmap( KiBitmap( BITMAPS::icon_3d ) );
     SetIcon( icon );
 
     // Create the status line
-    static const int status_dims[4] = { -1, 130, 130, 170 };
+    static const int status_dims[4] = { -1, 170, 130, 130 };
 
     wxStatusBar *status_bar = CreateStatusBar( arrayDim( status_dims ) );
     SetStatusWidths( arrayDim( status_dims ), status_dims );
@@ -122,7 +122,7 @@ EDA_3D_VIEWER::EDA_3D_VIEWER( KIWAY *aKiway, PCB_BASE_FRAME *aParent, const wxSt
     m_toolManager->SetEnvironment( GetBoard(), nullptr, nullptr, config, this );
 
     m_actions = new EDA_3D_ACTIONS();
-    m_toolDispatcher = new TOOL_DISPATCHER( m_toolManager, m_actions );
+    m_toolDispatcher = new TOOL_DISPATCHER( m_toolManager );
     m_canvas->SetEventDispatcher( m_toolDispatcher );
 
     // Register tools

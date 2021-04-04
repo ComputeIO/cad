@@ -1,7 +1,7 @@
 /*
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
- * Copyright (C) 2015-2020 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 2015-2021 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -28,7 +28,7 @@
 #include <invoke_sch_dialog.h>
 #include <kiface_i.h>
 #include <project_rescue.h>
-#include <sch_component.h>
+#include <sch_symbol.h>
 #include <sch_edit_frame.h>
 #include <set>
 #include <symbol_preview_widget.h>
@@ -219,7 +219,7 @@ void DIALOG_RESCUE_EACH::PopulateInstanceList()
         if( each_component->GetLibId().Format() != UTF8( selected_part.GetRequestedName() ) )
             continue;
 
-        SCH_FIELD* valueField = each_component->GetField( 1 );
+        SCH_FIELD* valueField = each_component->GetField( VALUE_FIELD );
 
         data.clear();
         data.push_back( each_component->GetRef( m_currentSheet ) );

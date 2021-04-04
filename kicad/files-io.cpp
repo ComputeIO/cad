@@ -26,6 +26,8 @@
  * @file kicad/files-io.cpp
  */
 
+#include <wx/dir.h>
+
 #include <confirm.h>
 #include <dialogs/panel_kicad_launcher.h>
 #include <kiway.h>
@@ -85,7 +87,7 @@ void KICAD_MANAGER_FRAME::OnUnarchiveFiles( wxCommandEvent& event )
             return;
     }
 
-    WX_TEXT_CTRL_REPORTER reporter( m_launcher->GetMessagesBox() );
+    STATUSBAR_REPORTER reporter( GetStatusBar(), 1 );
 
     PROJECT_ARCHIVER archiver;
 
@@ -126,8 +128,7 @@ void KICAD_MANAGER_FRAME::OnArchiveFiles( wxCommandEvent& event )
     if( !dir.IsOpened() )   // wxWidgets display a error message on issue.
         return;
 
-    WX_TEXT_CTRL_REPORTER reporter( m_launcher->GetMessagesBox() );
-
+    STATUSBAR_REPORTER reporter( GetStatusBar(), 1 );
     PROJECT_ARCHIVER archiver;
 
     archiver.Archive( currdirname, zipFile.GetFullPath(), reporter, true, true );

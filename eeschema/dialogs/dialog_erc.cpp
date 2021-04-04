@@ -82,10 +82,8 @@ DIALOG_ERC::DIALOG_ERC( SCH_EDIT_FRAME* parent ) :
     m_warningsBadge->SetMaximumNumber( 999 );
     m_exclusionsBadge->SetMaximumNumber( 999 );
 
-    if( m_parent->CheckAnnotate(
-                []( ERCE_T, const wxString&, SCH_REFERENCE*, SCH_REFERENCE* )
-                {
-                } ) )
+    if( m_parent->CheckAnnotate( []( ERCE_T, const wxString&, SCH_REFERENCE*,
+                                     SCH_REFERENCE* ) {} ) )
     {
         wxHyperlinkCtrl* button = new wxHyperlinkCtrl(
                 m_infoBar, wxID_ANY, _( "Show Annotation dialog" ), wxEmptyString );
@@ -140,10 +138,9 @@ bool DIALOG_ERC::updateUI()
 
 void DIALOG_ERC::AdvancePhase( const wxString& aMessage )
 {
+    // Will also call Report( aMessage ):
     PROGRESS_REPORTER::AdvancePhase( aMessage );
     SetCurrentProgress( 0.0 );
-
-    m_messages->Report( aMessage );
 }
 
 
@@ -280,7 +277,8 @@ void DIALOG_ERC::OnRunERCClick( wxCommandEvent& event )
     m_saveReport->Enable( false );
 
     sch->GetSheets().AnnotatePowerSymbols();
-    m_parent->CheckAnnotate(
+
+    int itemsNotAnnotated = m_parent->CheckAnnotate(
             []( ERCE_T aType, const wxString& aMsg, SCH_REFERENCE* aItemA, SCH_REFERENCE* aItemB )
             {
                 std::shared_ptr<ERC_ITEM> ercItem = ERC_ITEM::Create( aType );
@@ -297,10 +295,14 @@ void DIALOG_ERC::OnRunERCClick( wxCommandEvent& event )
 
     testErc();
 
+    if( itemsNotAnnotated )
+        m_messages->ReportHead( wxString::Format( _( "%d symbol(s) require annotation.<br><br>" ),
+                                                  itemsNotAnnotated ), RPT_SEVERITY_INFO );
+
     if( m_cancelled )
-        m_messages->Report( _( "-------- ERC cancelled by user.<br><br>" ) );
+        m_messages->Report( _( "-------- ERC cancelled by user.<br><br>" ), RPT_SEVERITY_INFO );
     else
-        m_messages->Report( _( "Done.<br><br>" ) );
+        m_messages->Report( _( "ERC completed.<br><br>" ), RPT_SEVERITY_INFO );
 
     Raise();
     wxYield(); // Allow time slice to refresh Messages
@@ -390,7 +392,7 @@ void DIALOG_ERC::testErc()
     if( settings.IsTestEnabled( ERCE_UNRESOLVED_VARIABLE ) )
     {
         AdvancePhase( _( "Checking for unresolved variables..." ) );
-        tester.TestTextVars( m_parent->GetCanvas()->GetView()->GetWorksheet() );
+        tester.TestTextVars( m_parent->GetCanvas()->GetView()->GetDrawingSheet() );
     }
 
     if( settings.IsTestEnabled( ERCE_NOCONNECT_CONNECTED ) )
@@ -418,9 +420,6 @@ void DIALOG_ERC::testErc()
     }
 
     m_parent->GetCanvas()->Refresh();
-
-    // Display message
-    Report( _( "Done.<br><br>" ) );
 }
 
 
@@ -727,9 +726,9 @@ void DIALOG_ERC::deleteAllMarkers( bool aIncludeExclusions )
 
 void DIALOG_ERC::OnSaveReport( wxCommandEvent& aEvent )
 {
-    wxFileName fn( "./ERC." + ReportFileExtension );
+    wxFileName fn( "erc." + ReportFileExtension );
 
-    wxFileDialog dlg( this, _( "Save Report to File" ), fn.GetPath(), fn.GetFullName(),
+    wxFileDialog dlg( this, _( "Save Report to File" ), Prj().GetProjectPath(), fn.GetFullName(),
                       ReportFileWildcard(), wxFD_SAVE | wxFD_OVERWRITE_PROMPT );
 
     if( dlg.ShowModal() != wxID_OK )

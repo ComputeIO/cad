@@ -54,6 +54,10 @@ public:
      */
     virtual void OnSetFocusText( wxFocusEvent& event ) override;
 
+    void OnShowFontDialog( wxCommandEvent& aEvent ) override;
+
+    void OnOkClick( wxCommandEvent& aEvent ) override;
+
 private:
     PCB_BASE_EDIT_FRAME* m_Parent;
     BOARD_ITEM*          m_item;    // FP_TEXT or PCB_TEXT
@@ -71,6 +75,8 @@ private:
 
     bool TransferDataToWindow() override;
     bool TransferDataFromWindow() override;
+
+    void SetFontByName( const wxString& aFontName );
 
     void OnCharHook( wxKeyEvent& aEvent ) override;
 

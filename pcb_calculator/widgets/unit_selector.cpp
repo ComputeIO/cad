@@ -2,7 +2,7 @@
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
  * Copyright (C) 2011-2014 Jean-Pierre Charras
- * Copyright (C) 2004-2016 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 2004-2021 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -63,12 +63,12 @@ UNIT_SELECTOR_THICKNESS::UNIT_SELECTOR_THICKNESS( wxWindow *parent, wxWindowID i
                   const wxArrayString& choices, long style )
                 : UNIT_SELECTOR( parent, id, pos, size, choices, style )
 {
-    Append( _( "mm" ) );
-    Append( _( "um" ) );
-    Append( _( "cm" ) );
-    Append( _( "mil" ) );
-    Append( _( "inch" ) );
-    Append( _( "oz/ft^2" ) );
+    Append( wxT( "mm" ) );
+    Append( wxT( "µm" ) );
+    Append( wxT( "cm" ) );
+    Append( wxT( "mil" ) );
+    Append( wxT( "inch" ) );
+    Append( wxT( "oz/ft²" ) );
 }
 
 
@@ -126,8 +126,8 @@ UNIT_SELECTOR_ANGLE::UNIT_SELECTOR_ANGLE( wxWindow *parent, wxWindowID id,
         const wxArrayString& choices, long style ) :
     UNIT_SELECTOR( parent, id, pos, size, choices, style )
 {
-    Append( _( "Radian" ) );
-    Append( _( "Degree" ) );
+    Append( _( "rad" ) );
+    Append( _( "deg" ) );
 }
 
 /*
@@ -151,8 +151,8 @@ UNIT_SELECTOR_RESISTOR::UNIT_SELECTOR_RESISTOR( wxWindow *parent, wxWindowID id,
                   const wxArrayString& choices, long style )
                 : UNIT_SELECTOR( parent, id, pos, size, choices, style )
 {
-    Append( _( "Ohm" ) );
-    Append( _( "kOhm" ) );
+    Append( wxT( "Ω" ) );
+    Append( wxT( "kΩ" ) );
 }
 
 

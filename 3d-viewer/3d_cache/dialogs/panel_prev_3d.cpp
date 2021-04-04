@@ -60,14 +60,14 @@ PANEL_PREV_3D::PANEL_PREV_3D( wxWindow* aParent, PCB_BASE_FRAME* aFrame, FOOTPRI
     m_selected = -1;
 
     // Set the bitmap of 3D view buttons:
-    m_bpvTop->SetBitmap( KiBitmap( axis3d_top_xpm ) );
-    m_bpvFront->SetBitmap( KiBitmap( axis3d_front_xpm ) );
-    m_bpvBack->SetBitmap( KiBitmap( axis3d_back_xpm ) );
-    m_bpvLeft->SetBitmap( KiBitmap( axis3d_left_xpm ) );
-    m_bpvRight->SetBitmap( KiBitmap( axis3d_right_xpm ) );
-    m_bpvBottom->SetBitmap( KiBitmap( axis3d_bottom_xpm ) );
-    m_bpvISO->SetBitmap( KiBitmap( ortho_xpm ) );
-    m_bpUpdate->SetBitmap( KiBitmap( reload_xpm ) );
+    m_bpvTop->SetBitmap( KiBitmap( BITMAPS::axis3d_top ) );
+    m_bpvFront->SetBitmap( KiBitmap( BITMAPS::axis3d_front ) );
+    m_bpvBack->SetBitmap( KiBitmap( BITMAPS::axis3d_back ) );
+    m_bpvLeft->SetBitmap( KiBitmap( BITMAPS::axis3d_left ) );
+    m_bpvRight->SetBitmap( KiBitmap( BITMAPS::axis3d_right ) );
+    m_bpvBottom->SetBitmap( KiBitmap( BITMAPS::axis3d_bottom ) );
+    m_bpvISO->SetBitmap( KiBitmap( BITMAPS::ortho ) );
+    m_bpUpdate->SetBitmap( KiBitmap( BITMAPS::reload ) );
 
     // Set the min and max values of spin buttons (mandatory on Linux)
     // They are not used, so they are set to min and max 32 bits int values
@@ -104,7 +104,7 @@ PANEL_PREV_3D::PANEL_PREV_3D( wxWindow* aParent, PCB_BASE_FRAME* aFrame, FOOTPRI
     m_toolManager->SetEnvironment( m_dummyBoard, nullptr, nullptr, nullptr, this );
 
     m_actions = new EDA_3D_ACTIONS();
-    m_toolDispatcher = new TOOL_DISPATCHER( m_toolManager, m_actions );
+    m_toolDispatcher = new TOOL_DISPATCHER( m_toolManager );
     m_previewPane->SetEventDispatcher( m_toolDispatcher );
 
     // Register tools
@@ -449,7 +449,7 @@ void PANEL_PREV_3D::UpdateDummyFootprint( bool aReloadRequired )
 {
     m_dummyFootprint->Models().clear();
 
-    for( FP_3DMODEL& model : *m_parentModelList)
+    for( FP_3DMODEL& model : *m_parentModelList )
     {
         if( model.m_Show )
             m_dummyFootprint->Models().push_back( model );

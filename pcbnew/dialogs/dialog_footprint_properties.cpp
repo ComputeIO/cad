@@ -56,7 +56,7 @@ DIALOG_FOOTPRINT_PROPERTIES::DIALOG_FOOTPRINT_PROPERTIES( PCB_EDIT_FRAME* aParen
     m_posX( aParent, m_XPosLabel, m_ModPositionX, m_XPosUnit ),
     m_posY( aParent, m_YPosLabel, m_ModPositionY, m_YPosUnit ),
     m_OrientValidator( 3, &m_OrientValue ),
-    m_netClearance( aParent, m_NetClearanceLabel, m_NetClearanceCtrl, m_NetClearanceUnits, true ),
+    m_netClearance( aParent, m_NetClearanceLabel, m_NetClearanceCtrl, m_NetClearanceUnits ),
     m_solderMask( aParent, m_SolderMaskMarginLabel, m_SolderMaskMarginCtrl, m_SolderMaskMarginUnits ),
     m_solderPaste( aParent, m_SolderPasteMarginLabel, m_SolderPasteMarginCtrl, m_SolderPasteMarginUnits ),
     m_initialFocus( true ),
@@ -82,7 +82,7 @@ DIALOG_FOOTPRINT_PROPERTIES::DIALOG_FOOTPRINT_PROPERTIES( PCB_EDIT_FRAME* aParen
 
     // Give an icon
     wxIcon  icon;
-    icon.CopyFromBitmap( KiBitmap( icon_modedit_xpm ) );
+    icon.CopyFromBitmap( KiBitmap( BITMAPS::icon_modedit ) );
     SetIcon( icon );
 
     // Give a bit more room for combobox editors
@@ -105,8 +105,8 @@ DIALOG_FOOTPRINT_PROPERTIES::DIALOG_FOOTPRINT_PROPERTIES( PCB_EDIT_FRAME* aParen
     }
 
     wxGridCellAttr* attr = new wxGridCellAttr;
-    attr->SetEditor( new GRID_CELL_PATH_EDITOR( this, &cfg->m_lastFootprint3dDir, "*.*",
-                                                true, Prj().GetProjectPath() ) );
+    attr->SetEditor( new GRID_CELL_PATH_EDITOR( this, m_modelsGrid, &cfg->m_lastFootprint3dDir,
+                                                "*.*", true, Prj().GetProjectPath() ) );
     m_modelsGrid->SetColAttr( 0, attr );
 
     // Show checkbox
@@ -167,11 +167,11 @@ DIALOG_FOOTPRINT_PROPERTIES::DIALOG_FOOTPRINT_PROPERTIES( PCB_EDIT_FRAME* aParen
     m_OrientValue = 0;
 
     // Configure button logos
-    m_bpAdd->SetBitmap( KiBitmap( small_plus_xpm ) );
-    m_bpDelete->SetBitmap( KiBitmap( small_trash_xpm ) );
-    m_buttonAdd->SetBitmap( KiBitmap( small_plus_xpm ) );
-    m_buttonBrowse->SetBitmap( KiBitmap( small_folder_xpm ) );
-    m_buttonRemove->SetBitmap( KiBitmap( small_trash_xpm ) );
+    m_bpAdd->SetBitmap( KiBitmap( BITMAPS::small_plus ) );
+    m_bpDelete->SetBitmap( KiBitmap( BITMAPS::small_trash ) );
+    m_buttonAdd->SetBitmap( KiBitmap( BITMAPS::small_plus ) );
+    m_buttonBrowse->SetBitmap( KiBitmap( BITMAPS::small_folder ) );
+    m_buttonRemove->SetBitmap( KiBitmap( BITMAPS::small_trash ) );
 
     finishDialogSettings();
 }
@@ -203,29 +203,41 @@ DIALOG_FOOTPRINT_PROPERTIES::~DIALOG_FOOTPRINT_PROPERTIES()
 
 void DIALOG_FOOTPRINT_PROPERTIES::EditFootprint( wxCommandEvent&  )
 {
-    m_returnValue = FP_PROPS_EDIT_BOARD_FP;
-    Close();
+    if( TransferDataFromWindow() )
+    {
+        m_returnValue = FP_PROPS_EDIT_BOARD_FP;
+        Close();
+    }
 }
 
 
 void DIALOG_FOOTPRINT_PROPERTIES::EditLibraryFootprint( wxCommandEvent&  )
 {
-    m_returnValue = FP_PROPS_EDIT_LIBRARY_FP;
-    Close();
+    if( TransferDataFromWindow() )
+    {
+        m_returnValue = FP_PROPS_EDIT_LIBRARY_FP;
+        Close();
+    }
 }
 
 
 void DIALOG_FOOTPRINT_PROPERTIES::UpdateFootprint( wxCommandEvent&  )
 {
-    m_returnValue = FP_PROPS_UPDATE_FP;
-    Close();
+    if( TransferDataFromWindow() )
+    {
+        m_returnValue = FP_PROPS_UPDATE_FP;
+        Close();
+    }
 }
 
 
 void DIALOG_FOOTPRINT_PROPERTIES::ChangeFootprint( wxCommandEvent&  )
 {
-    m_returnValue = FP_PROPS_CHANGE_FP;
-    Close();
+    if( TransferDataFromWindow() )
+    {
+        m_returnValue = FP_PROPS_CHANGE_FP;
+        Close();
+    }
 }
 
 
@@ -314,21 +326,11 @@ bool DIALOG_FOOTPRINT_PROPERTIES::TransferDataToWindow()
 
     updateOrientationControl();
 
-    if( m_footprint->IsLocked() )
-        m_AutoPlaceCtrl->SetSelection( 2 );
-    else if( allPadsLocked( m_footprint ) )
-        m_AutoPlaceCtrl->SetSelection( 1 );
-    else
-        m_AutoPlaceCtrl->SetSelection( 0 );
+    m_AutoPlaceCtrl->SetSelection( m_footprint->IsLocked() ? 1 : 0 );
 
     m_AutoPlaceCtrl->SetItemToolTip( 0, _( "Footprint can be freely moved and oriented on the "
-                                           "canvas. At least some of the footprint's pads are "
-                                           "unlocked and can be moved with respect to the "
-                                           "footprint." ) );
-    m_AutoPlaceCtrl->SetItemToolTip( 1, _( "Footprint can be freely moved and oriented on the "
-                                           "canvas, but all of its pads are locked with respect "
-                                           "to their position within in the footprint." ) );
-    m_AutoPlaceCtrl->SetItemToolTip( 2, _( "Footprint is locked: it cannot be freely moved and "
+                                           "canvas." ) );
+    m_AutoPlaceCtrl->SetItemToolTip( 1, _( "Footprint is locked: it cannot be freely moved and "
                                            "oriented on the canvas and can only be selected when "
                                            "the 'Locked items' checkbox is enabled in the "
                                            "selection filter." ) );
@@ -408,12 +410,19 @@ bool DIALOG_FOOTPRINT_PROPERTIES::TransferDataToWindow()
     {
         m_itemsGrid->SetColMinimalWidth( col, m_itemsGrid->GetVisibleWidth( col, true, false,
                                                                             false ) );
-        // Adjust the column size. The column 6 has a small bitmap, so its width must be
-        // taken in account
+        // Adjust the column size.
         int col_size = m_itemsGrid->GetVisibleWidth( col, true, true, false );
 
-        if( col == 6 )
+        if( col == FPT_LAYER )  // This one's a drop-down.  Check all possible values.
+        {
+            BOARD* board = m_footprint->GetBoard();
+
+            for( PCB_LAYER_ID layer : board->GetEnabledLayers().Seq() )
+                col_size = std::max( col_size, GetTextExtent( board->GetLayerName( layer ) ).x );
+
+            // And the swatch:
             col_size += 20;
+        }
 
         if( m_itemsGrid->IsColShown( col ) )
             m_itemsGrid->SetColSize( col, col_size );
@@ -716,13 +725,7 @@ bool DIALOG_FOOTPRINT_PROPERTIES::TransferDataFromWindow()
     // Set Footprint Position
     wxPoint pos( m_posX.GetValue(), m_posY.GetValue() );
     m_footprint->SetPosition( pos );
-    m_footprint->SetLocked( m_AutoPlaceCtrl->GetSelection() == 2 );
-
-    if( m_AutoPlaceCtrl->GetSelection() == 1 )
-    {
-        for( PAD* pad : m_footprint->Pads() )
-            pad->SetLocked( true );
-    }
+    m_footprint->SetLocked( m_AutoPlaceCtrl->GetSelection() == 1 );
 
     int attributes = 0;
 
@@ -772,8 +775,6 @@ bool DIALOG_FOOTPRINT_PROPERTIES::TransferDataFromWindow()
     std::list<FP_3DMODEL>* draw3D = &m_footprint->Models();
     draw3D->clear();
     draw3D->insert( draw3D->end(), m_shapes3D_list.begin(), m_shapes3D_list.end() );
-
-    m_footprint->CalculateBoundingBox();
 
     // This is a simple edit, we must create an undo entry
     if( m_footprint->GetEditFlags() == 0 )    // i.e. not edited, or moved

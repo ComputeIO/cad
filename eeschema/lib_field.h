@@ -54,11 +54,11 @@ class SCH_LEGACY_PLUGIN_CACHE;
  *  others = free fields
  * </p>
  *
- * @see enum NumFieldType
+ * @see enum MANDATORY_FIELD_T
  */
 class LIB_FIELD : public LIB_ITEM, public EDA_TEXT
 {
-    int      m_id;           ///< @see enum NumFieldType
+    int      m_id;           ///< @see enum MANDATORY_FIELD_T
     wxString m_name;         ///< Name (not the field text value itself, that is .m_Text)
 
     /**
@@ -169,7 +169,7 @@ public:
      */
     wxString GetFullText( int unit = 1 ) const;
 
-    SCH_LAYER_ID GetDefaultLayer();
+    SCH_LAYER_ID GetDefaultLayer() const;
 
     void BeginEdit( const wxPoint aStartPoint ) override;
 
@@ -184,14 +184,14 @@ public:
     void Rotate( const wxPoint& aCenter, bool aRotateCCW = true ) override;
 
     void Plot( PLOTTER* aPlotter, const wxPoint& aOffset, bool aFill,
-               const TRANSFORM& aTransform ) override;
+               const TRANSFORM& aTransform ) const override;
 
     int GetWidth() const override { return GetTextThickness(); }
     void SetWidth( int aWidth ) override { SetTextThickness( aWidth ); }
 
     wxString GetSelectMenuText( EDA_UNITS aUnits ) const override;
 
-    BITMAP_DEF GetMenuImage() const override;
+    BITMAPS GetMenuImage() const override;
 
     EDA_ITEM* Clone() const override;
 

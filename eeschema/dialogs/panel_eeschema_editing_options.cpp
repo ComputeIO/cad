@@ -35,12 +35,18 @@ PANEL_EESCHEMA_EDITING_OPTIONS::PANEL_EESCHEMA_EDITING_OPTIONS( SCH_EDIT_FRAME* 
                                                                 wxWindow* aWindow ) :
         PANEL_EESCHEMA_EDITING_OPTIONS_BASE( aWindow ),
         m_frame( aFrame ),
-        m_hPitch( aFrame, m_hPitchLabel, m_hPitchCtrl, m_hPitchUnits, true ),
-        m_vPitch( aFrame, m_vPitchLabel, m_vPitchCtrl, m_vPitchUnits, true )
+        m_hPitch( aFrame, m_hPitchLabel, m_hPitchCtrl, m_hPitchUnits ),
+        m_vPitch( aFrame, m_vPitchLabel, m_vPitchCtrl, m_vPitchUnits )
 {
     // Make the color swatch show "Clear Color" instead
     m_borderColorSwatch->SetDefaultColor( COLOR4D::UNSPECIFIED );
     m_backgroundColorSwatch->SetDefaultColor( COLOR4D::UNSPECIFIED );
+
+#ifdef __WXOSX_MAC__
+    m_leftClickCmdsBook->SetSelection( 1 );
+#else
+    m_leftClickCmdsBook->SetSelection( 0 );
+#endif
 }
 
 

@@ -928,9 +928,13 @@ void PAD::GetMsgPanelInfo( EDA_DRAW_FRAME* aFrame, std::vector<MSG_PANEL_ITEM>& 
     wxString source;
     int      clearance = GetOwnClearance( GetLayer(), &source );
 
-    aList.emplace_back(
-            wxString::Format( _( "Min Clearance: %s" ), MessageTextFromValue( units, clearance ) ),
-            wxString::Format( _( "(from %s)" ), source ) );
+    aList.emplace_back( wxString::Format( _( "Min Clearance: %s" ),
+                                          MessageTextFromValue( units, clearance ) ),
+                        wxString::Format( _( "(from %s)" ), source ) );
+#if 0
+    // useful for debug only
+    aList.emplace_back( "UUID", m_Uuid.AsString() );
+#endif
 }
 
 
@@ -1112,9 +1116,9 @@ wxString PAD::GetSelectMenuText( EDA_UNITS aUnits ) const
 }
 
 
-BITMAP_DEF PAD::GetMenuImage() const
+BITMAPS PAD::GetMenuImage() const
 {
-    return pad_xpm;
+    return BITMAPS::pad;
 }
 
 
@@ -1294,9 +1298,15 @@ const BOX2I PAD::ViewBBox() const
     VECTOR2I solderPasteMargin = VECTOR2D( GetSolderPasteMargin() );
     EDA_RECT bbox = GetBoundingBox();
 
+    // get the biggest possible clearance
+    int clearance = 0;
+
+    for( PCB_LAYER_ID layer : GetLayerSet().Seq() )
+        clearance = std::max( clearance, GetOwnClearance( layer ) );
+
     // Look for the biggest possible bounding box
-    int xMargin = std::max( solderMaskMargin, solderPasteMargin.x );
-    int yMargin = std::max( solderMaskMargin, solderPasteMargin.y );
+    int xMargin = std::max( solderMaskMargin, solderPasteMargin.x ) + clearance;
+    int yMargin = std::max( solderMaskMargin, solderPasteMargin.y ) + clearance;
 
     return BOX2I( VECTOR2I( bbox.GetOrigin() ) - VECTOR2I( xMargin, yMargin ),
                   VECTOR2I( bbox.GetSize() ) + VECTOR2I( 2 * xMargin, 2 * yMargin ) );
@@ -1487,9 +1497,12 @@ static struct PAD_DESC
                 } );
         propMgr.AddProperty( roundRadiusRatio );
 
-        propMgr.AddProperty(
-                new PROPERTY<PAD, int>( _HKI( "Local Clearance" ), &PAD::SetLocalClearance,
-                                        &PAD::GetLocalClearance, PROPERTY_DISPLAY::DISTANCE ) );
+        propMgr.AddProperty( new PROPERTY<PAD, int>( _HKI( "Local Clearance" ),
+                    &PAD::SetLocalClearance, &PAD::GetLocalClearance,
+                    PROPERTY_DISPLAY::DISTANCE ) );
+        propMgr.AddProperty( new PROPERTY<PAD, wxString>( _HKI( "Parent" ),
+                    NO_SETTER( PAD, wxString ), &PAD::GetParentAsString ) );
+
         // TODO delta, dirill shape offset, layerset, zone connection
     }
 } _PAD_DESC;

@@ -1,7 +1,7 @@
 /*
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
- * Copyright (C) 2017-2020 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 2017-2021 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * @author Russell Oliver <roliver8143@gmail.com>
  *
@@ -36,6 +36,7 @@
 #include <common.h>
 #include <confirm.h>
 #include <kiway.h>
+#include <macros.h>
 #include <richio.h>
 #include <wildcards_and_files_ext.h>
 #include <kiway_player.h>
@@ -54,8 +55,6 @@ void KICAD_MANAGER_FRAME::ImportNonKiCadProject( wxString aWindowTitle, wxString
     wxString msg;
     wxString default_dir = GetMruPath();
     int      style       = wxFD_OPEN | wxFD_FILE_MUST_EXIST;
-
-    ClearMsg();
 
     wxFileDialog schdlg( this, aWindowTitle, default_dir, wxEmptyString, aFilesWildcard, style );
 
@@ -113,7 +112,7 @@ void KICAD_MANAGER_FRAME::ImportNonKiCadProject( wxString aWindowTitle, wxString
             if( !wxMkdir( pro.GetPath() ) )
             {
                 msg = _( "Error creating new directory. Please try a different path. The "
-                         "project was not imported." );
+                         "project cannot be imported." );
 
                 wxMessageDialog dirErrorDlg( this, msg, _( "Error" ), wxOK_DEFAULT | wxICON_ERROR );
                 dirErrorDlg.ShowModal();
@@ -133,13 +132,39 @@ void KICAD_MANAGER_FRAME::ImportNonKiCadProject( wxString aWindowTitle, wxString
     schCopy.SetExt( aSchFileExtension );
 
     if( sch.Exists() && !schCopy.SameAs( sch ) )
-        wxCopyFile( sch.GetFullPath(), schCopy.GetFullPath(), true );
+    {
+        if( !wxCopyFile( sch.GetFullPath(), schCopy.GetFullPath(), true ) )
+        {
+            ///< @todo Should we remove the newly created folder?
+            msg.Printf( _( "Cannot copy file '%s'\n"
+                           "to '%s'\n"
+                           "The project cannot be imported." ),
+                        sch.GetFullPath(), schCopy.GetFullPath() );
+
+            wxMessageDialog schCopyErrorDlg( this, msg, _( "Error" ), wxOK_DEFAULT | wxICON_ERROR );
+            schCopyErrorDlg.ShowModal();
+            return;
+        }
+    }
 
     wxFileName pcbCopy( pro );
     pcbCopy.SetExt( aPcbFileExtension );
 
     if( pcb.Exists() && !pcbCopy.SameAs( pcb ) )
-        wxCopyFile( pcb.GetFullPath(), pcbCopy.GetFullPath(), true );
+    {
+        if( !wxCopyFile( pcb.GetFullPath(), pcbCopy.GetFullPath(), true ) )
+        {
+            ///< @todo Should we remove copied schematic file and the newly created folder?
+            msg.Printf( _( "Cannot copy file '%s'\n"
+                           "to '%s'\n"
+                           "The project cannot be imported." ),
+                        pcb.GetFullPath(), pcbCopy.GetFullPath() );
+
+            wxMessageDialog brdCopyErrorDlg( this, msg, _( "Error" ), wxOK_DEFAULT | wxICON_ERROR );
+            brdCopyErrorDlg.ShowModal();
+            return;
+        }
+    }
 
     // Close the project and make the new one
     CloseProject( true );

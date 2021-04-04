@@ -33,6 +33,7 @@
 #include <symbol_tree_model_adapter.h>
 #include <wildcards_and_files_ext.h>
 #include <gestfich.h>
+#include <bitmaps/bitmap_types.h>
 #include <confirm.h>
 
 
@@ -55,11 +56,15 @@ bool SYMBOL_EDITOR_CONTROL::Init()
                     LIB_ID sel = editFrame->GetTreeLIBID();
                     return !sel.GetLibNickname().empty() && sel.GetLibItemName().empty();
                 };
-        auto canEditLibrary = [editFrame]( const SELECTION& aSel )
-        {
-            LIB_ID sel = editFrame->GetTreeLIBID();
-            return !editFrame->GetLibManager().IsLibraryReadOnly( sel.GetLibNickname() );
-        };
+        // The libInferredCondition allows you to do things like New Symbol and Paste with a
+        // symbol selected (in other words, when we know the library context even if the library
+        // itself isn't selected.
+        auto libInferredCondition =
+                [ editFrame ]( const SELECTION& aSel )
+                {
+                    LIB_ID sel = editFrame->GetTreeLIBID();
+                    return !sel.GetLibNickname().empty();
+                };
         auto pinnedLibSelectedCondition =
                 [ editFrame ]( const SELECTION& aSel )
                 {
@@ -88,32 +93,27 @@ bool SYMBOL_EDITOR_CONTROL::Init()
         ctxMenu.AddItem( ACTIONS::unpinLibrary,          pinnedLibSelectedCondition );
 
         ctxMenu.AddSeparator();
-        ctxMenu.AddItem( ACTIONS::newLibrary, SELECTION_CONDITIONS::ShowAlways );
-        ctxMenu.AddItem( ACTIONS::addLibrary, SELECTION_CONDITIONS::ShowAlways );
-        ctxMenu.AddItem( ACTIONS::save,                  libSelectedCondition );
+        ctxMenu.AddItem( EE_ACTIONS::newSymbol,          libInferredCondition );
+
+        ctxMenu.AddSeparator();
+        ctxMenu.AddItem( ACTIONS::save,                  symbolSelectedCondition || libInferredCondition );
         ctxMenu.AddItem( EE_ACTIONS::saveLibraryAs,      libSelectedCondition );
-        ctxMenu.AddItem( ACTIONS::revert,                libSelectedCondition );
+        ctxMenu.AddItem( EE_ACTIONS::saveSymbolAs,       saveSymbolAsCondition );
+        ctxMenu.AddItem( ACTIONS::revert,                symbolSelectedCondition || libInferredCondition );
 
         ctxMenu.AddSeparator();
-        ctxMenu.AddItem( EE_ACTIONS::newSymbol, libSelectedCondition && canEditLibrary );
-        ctxMenu.AddItem( EE_ACTIONS::editSymbol, symbolSelectedCondition && canEditLibrary );
-
-        ctxMenu.AddSeparator();
-        ctxMenu.AddItem( ACTIONS::save,                  symbolSelectedCondition );
-        ctxMenu.AddItem( EE_ACTIONS::saveSymbolAs, saveSymbolAsCondition );
-        ctxMenu.AddItem( ACTIONS::revert,                symbolSelectedCondition );
-
-        ctxMenu.AddSeparator();
-        ctxMenu.AddItem( EE_ACTIONS::cutSymbol, symbolSelectedCondition && canEditLibrary );
+        ctxMenu.AddItem( EE_ACTIONS::cutSymbol,          symbolSelectedCondition );
         ctxMenu.AddItem( EE_ACTIONS::copySymbol,         symbolSelectedCondition );
-        ctxMenu.AddItem( EE_ACTIONS::pasteSymbol,
-                         SELECTION_CONDITIONS::ShowAlways && canEditLibrary );
-        ctxMenu.AddItem( EE_ACTIONS::duplicateSymbol, symbolSelectedCondition && canEditLibrary );
-        ctxMenu.AddItem( EE_ACTIONS::deleteSymbol, symbolSelectedCondition && canEditLibrary );
+        ctxMenu.AddItem( EE_ACTIONS::pasteSymbol,        libInferredCondition );
+        ctxMenu.AddItem( EE_ACTIONS::duplicateSymbol,    symbolSelectedCondition );
+        ctxMenu.AddItem( EE_ACTIONS::deleteSymbol,       symbolSelectedCondition );
 
         ctxMenu.AddSeparator();
-        ctxMenu.AddItem( EE_ACTIONS::importSymbol, libSelectedCondition && canEditLibrary );
+        ctxMenu.AddItem( EE_ACTIONS::importSymbol,       libInferredCondition );
         ctxMenu.AddItem( EE_ACTIONS::exportSymbol,       symbolSelectedCondition );
+
+        // If we've got nothing else to show, at least show a hide tree option
+        ctxMenu.AddItem( EE_ACTIONS::hideSymbolTree,    !libInferredCondition );
     }
 
     return true;
@@ -151,6 +151,24 @@ int SYMBOL_EDITOR_CONTROL::AddSymbol( const TOOL_EVENT& aEvent )
     if( m_frame->IsType( FRAME_SCH_SYMBOL_EDITOR ) )
     {
         SYMBOL_EDIT_FRAME* editFrame = static_cast<SYMBOL_EDIT_FRAME*>( m_frame );
+
+        LIB_ID          sel = editFrame->GetTreeLIBID();
+        const wxString& libName = sel.GetLibNickname();
+        wxString        msg;
+
+        if( libName.IsEmpty() )
+        {
+            msg.Printf( _( "No symbol library selected." ), libName );
+            m_frame->ShowInfoBarError( msg );
+            return 0;
+        }
+
+        if( editFrame->GetLibManager().IsLibraryReadOnly( libName ) )
+        {
+            msg.Printf( _( "Symbol library '%s' is not writeable." ), libName );
+            m_frame->ShowInfoBarError( msg );
+            return 0;
+        }
 
         if( aEvent.IsAction( &EE_ACTIONS::newSymbol ) )
             editFrame->CreateNewPart();
@@ -210,7 +228,20 @@ int SYMBOL_EDITOR_CONTROL::CutCopyDelete( const TOOL_EVENT& aEvt )
             editFrame->CopyPartToClipboard();
 
         if( aEvt.IsAction( &EE_ACTIONS::cutSymbol ) || aEvt.IsAction( &EE_ACTIONS::deleteSymbol ) )
+        {
+            LIB_ID          sel = editFrame->GetTreeLIBID();
+            const wxString& libName = sel.GetLibNickname();
+            wxString        msg;
+
+            if( editFrame->GetLibManager().IsLibraryReadOnly( libName ) )
+            {
+                msg.Printf( _( "Symbol library '%s' is not writeable." ), libName );
+                m_frame->ShowInfoBarError( msg );
+                return 0;
+            }
+
             editFrame->DeletePartFromLibrary();
+        }
     }
 
     return 0;
@@ -222,6 +253,18 @@ int SYMBOL_EDITOR_CONTROL::DuplicateSymbol( const TOOL_EVENT& aEvent )
     if( m_frame->IsType( FRAME_SCH_SYMBOL_EDITOR ) )
     {
         SYMBOL_EDIT_FRAME* editFrame = static_cast<SYMBOL_EDIT_FRAME*>( m_frame );
+
+        LIB_ID          sel = editFrame->GetTreeLIBID();
+        const wxString& libName = sel.GetLibNickname();
+        wxString        msg;
+
+        if( editFrame->GetLibManager().IsLibraryReadOnly( libName ) )
+        {
+            msg.Printf( _( "Symbol library '%s' is not writeable." ), libName );
+            m_frame->ShowInfoBarError( msg );
+            return 0;
+        }
+
         editFrame->DuplicatePart( aEvent.IsAction( &EE_ACTIONS::pasteSymbol ) );
     }
 
@@ -291,12 +334,12 @@ int SYMBOL_EDITOR_CONTROL::UnpinLibrary( const TOOL_EVENT& aEvent )
 }
 
 
-int SYMBOL_EDITOR_CONTROL::ShowComponentTree( const TOOL_EVENT& aEvent )
+int SYMBOL_EDITOR_CONTROL::ToggleSymbolTree( const TOOL_EVENT& aEvent )
 {
     if( m_frame->IsType( FRAME_SCH_SYMBOL_EDITOR ) )
     {
         wxCommandEvent dummy;
-        static_cast<SYMBOL_EDIT_FRAME*>( m_frame )->OnToggleSearchTree( dummy );
+        static_cast<SYMBOL_EDIT_FRAME*>( m_frame )->OnToggleSymbolTree( dummy );
     }
 
     return 0;
@@ -397,12 +440,12 @@ int SYMBOL_EDITOR_CONTROL::ExportSymbolAsSVG( const TOOL_EVENT& aEvent )
         PAGE_INFO pageSave = editFrame->GetScreen()->GetPageSettings();
         PAGE_INFO pageTemp = pageSave;
 
-        wxSize componentSize = part->GetUnitBoundingBox( editFrame->GetUnit(),
-                                                         editFrame->GetConvert() ).GetSize();
+        wxSize symbolSize = part->GetUnitBoundingBox( editFrame->GetUnit(),
+                                                      editFrame->GetConvert() ).GetSize();
 
         // Add a small margin to the plot bounding box
-        pageTemp.SetWidthMils(  int( componentSize.x * 1.2 ) );
-        pageTemp.SetHeightMils( int( componentSize.y * 1.2 ) );
+        pageTemp.SetWidthMils(  int( symbolSize.x * 1.2 ) );
+        pageTemp.SetHeightMils( int( symbolSize.y * 1.2 ) );
 
         editFrame->GetScreen()->SetPageSettings( pageTemp );
         editFrame->SVGPlotSymbol( fullFileName );
@@ -467,7 +510,7 @@ int SYMBOL_EDITOR_CONTROL::AddSymbolToSchematic( const TOOL_EVENT& aEvent )
         SCH_COMPONENT* symbol =
                 new SCH_COMPONENT( *part, libId, &schframe->GetCurrentSheet(), unit, convert );
 
-        symbol->SetParent( schframe->GetCurrentSheet().LastScreen() );
+        symbol->SetParent( schframe->GetScreen() );
 
         if( schframe->eeconfig()->m_AutoplaceFields.enable )
             symbol->AutoplaceFields( /* aScreen */ nullptr, /* aManual */ false );
@@ -510,6 +553,7 @@ void SYMBOL_EDITOR_CONTROL::setTransitions()
     Go( &SYMBOL_EDITOR_CONTROL::ShowElectricalTypes,   EE_ACTIONS::showElectricalTypes.MakeEvent() );
     Go( &SYMBOL_EDITOR_CONTROL::PinLibrary,            ACTIONS::pinLibrary.MakeEvent() );
     Go( &SYMBOL_EDITOR_CONTROL::UnpinLibrary,          ACTIONS::unpinLibrary.MakeEvent() );
-    Go( &SYMBOL_EDITOR_CONTROL::ShowComponentTree,     EE_ACTIONS::showComponentTree.MakeEvent() );
+    Go( &SYMBOL_EDITOR_CONTROL::ToggleSymbolTree,      EE_ACTIONS::showSymbolTree.MakeEvent() );
+    Go( &SYMBOL_EDITOR_CONTROL::ToggleSymbolTree,      EE_ACTIONS::hideSymbolTree.MakeEvent() );
     Go( &SYMBOL_EDITOR_CONTROL::ToggleSyncedPinsMode,  EE_ACTIONS::toggleSyncedPinsMode.MakeEvent() );
 }

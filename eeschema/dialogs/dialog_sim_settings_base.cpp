@@ -17,8 +17,6 @@ DIALOG_SIM_SETTINGS_BASE::DIALOG_SIM_SETTINGS_BASE( wxWindow* parent, wxWindowID
 	bSizer1 = new wxBoxSizer( wxVERTICAL );
 
 	m_simPages = new wxNotebook( this, wxID_ANY, wxDefaultPosition, wxDefaultSize, 0 );
-	m_simPages->SetMinSize( wxSize( 650,-1 ) );
-
 	m_pgAC = new wxPanel( m_simPages, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
 	wxBoxSizer* bSizer3;
 	bSizer3 = new wxBoxSizer( wxVERTICAL );
@@ -199,7 +197,7 @@ DIALOG_SIM_SETTINGS_BASE::DIALOG_SIM_SETTINGS_BASE( wxWindow* parent, wxWindowID
 	m_pgDC->SetSizer( bSizer82 );
 	m_pgDC->Layout();
 	bSizer82->Fit( m_pgDC );
-	m_simPages->AddPage( m_pgDC, _("DC Transfer"), true );
+	m_simPages->AddPage( m_pgDC, _("DC Transfer"), false );
 	m_pgDistortion = new wxPanel( m_simPages, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
 	m_simPages->AddPage( m_pgDistortion, _("Distortion"), false );
 	m_pgNoise = new wxPanel( m_simPages, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
@@ -424,14 +422,33 @@ DIALOG_SIM_SETTINGS_BASE::DIALOG_SIM_SETTINGS_BASE( wxWindow* parent, wxWindowID
 	bSizer88 = new wxBoxSizer( wxVERTICAL );
 
 	m_fixPassiveVals = new wxCheckBox( this, wxID_ANY, _("Adjust passive symbol values (e.g. M -> Meg; 100 nF -> 100n)"), wxDefaultPosition, wxDefaultSize, 0 );
-	bSizer88->Add( m_fixPassiveVals, 0, wxALL, 5 );
+	bSizer88->Add( m_fixPassiveVals, 0, wxBOTTOM|wxRIGHT|wxLEFT, 10 );
 
 	m_fixIncludePaths = new wxCheckBox( this, wxID_ANY, _("Add full path for .include library directives"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_fixIncludePaths->SetValue(true);
-	bSizer88->Add( m_fixIncludePaths, 0, wxBOTTOM|wxRIGHT|wxLEFT, 5 );
+	bSizer88->Add( m_fixIncludePaths, 0, wxBOTTOM|wxRIGHT|wxLEFT, 10 );
+
+	m_compatibilityMode = new wxBoxSizer( wxHORIZONTAL );
+
+	wxStaticText* compatibilityLabel;
+	compatibilityLabel = new wxStaticText( this, wxID_ANY, _("Compatibility mode:"), wxDefaultPosition, wxDefaultSize, 0 );
+	compatibilityLabel->Wrap( -1 );
+	m_compatibilityMode->Add( compatibilityLabel, 0, wxRIGHT|wxLEFT|wxALIGN_CENTER_VERTICAL, 8 );
+
+	wxString m_compatibilityModeChoiceChoices[] = { _("User configuration"), _("Spice"), _("PSpice"), _("LTSpice"), _("PSpice and LTSpice"), _("HSpice") };
+	int m_compatibilityModeChoiceNChoices = sizeof( m_compatibilityModeChoiceChoices ) / sizeof( wxString );
+	m_compatibilityModeChoice = new wxChoice( this, wxID_ANY, wxDefaultPosition, wxDefaultSize, m_compatibilityModeChoiceNChoices, m_compatibilityModeChoiceChoices, 0 );
+	m_compatibilityModeChoice->SetSelection( 0 );
+	m_compatibilityMode->Add( m_compatibilityModeChoice, 0, wxALIGN_CENTER_VERTICAL, 5 );
 
 
-	bSizer1->Add( bSizer88, 0, wxEXPAND|wxALL, 5 );
+	bSizer88->Add( m_compatibilityMode, 1, wxEXPAND|wxBOTTOM, 5 );
+
+	m_staticline1 = new wxStaticLine( this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxLI_HORIZONTAL );
+	bSizer88->Add( m_staticline1, 0, wxEXPAND|wxTOP|wxRIGHT|wxLEFT, 5 );
+
+
+	bSizer1->Add( bSizer88, 0, wxEXPAND|wxRIGHT|wxLEFT, 5 );
 
 	m_sdbSizer = new wxStdDialogButtonSizer();
 	m_sdbSizerOK = new wxButton( this, wxID_OK );

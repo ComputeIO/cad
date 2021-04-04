@@ -2,7 +2,7 @@
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
  * Copyright (C) 2019 CERN
- * Copyright (C) 2019 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 2021 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -30,9 +30,9 @@
 #include <tool/tool_event.h>
 #include <tool/tool_manager.h>
 #include <tool/selection.h>
-#include <page_layout/ws_data_item.h>
-#include <page_layout/ws_data_model.h>
-#include <page_layout/ws_draw_item.h>
+#include <drawing_sheet/ds_data_item.h>
+#include <drawing_sheet/ds_data_model.h>
+#include <drawing_sheet/ds_draw_item.h>
 #include <collector.h>
 #include <math/util.h>      // for KiROUND
 
@@ -106,20 +106,70 @@ int PL_SELECTION_TOOL::Main( const TOOL_EVENT& aEvent )
     // Main loop: keep receiving events
     while( TOOL_EVENT* evt = Wait() )
     {
-        m_additive = m_subtractive = m_exclusive_or = false;
+        // on left click, a selection is made, depending on modifiers ALT, SHIFT, CTRL:
+        // Due to the fact ALT key modifier cannot be useed freely on Winows and Linux,
+        // actions are different on OSX and others OS
+        // Especially, ALT key cannot be used to force showing the full selection choice
+        // context menu (the menu is immediately closed on Windows )
+        //
+        // No modifier = select items and deselect previous selection
+        // ALT (on OSX) = skip heuristic and show full selection choice
+        // ALT (on others) = exclusive OR of selected items (inverse selection)
+        //
+        // CTRL/CMD (on OSX) = exclusive OR of selected items (inverse selection)
+        // CTRL (on others) = skip heuristic and show full selection choice
+        //
+        // SHIFT = add selected items to the current selection
+        //
+        // CTRL/CMD+SHIFT (on OSX) = remove selected items to the current selection
+        // CTRL+SHIFT (on others) = unused (can be used for a new action)
+        //
+        // CTRL/CMT+ALT (on OSX) = unused (can be used for a new action)
+        // CTRL+ALT (on others) = do nothing (same as no modifier)
+        //
+        // SHIFT+ALT (on OSX) =  do nothing (same as no modifier)
+        // SHIFT+ALT (on others) = remove selected items to the current selection
 
-        if( evt->Modifier( MD_SHIFT ) && evt->Modifier( MD_CTRL ) )
-            m_subtractive = true;
-        else if( evt->Modifier( MD_SHIFT ) )
-            m_additive = true;
-        else if( evt->Modifier( MD_CTRL ) )
-            m_exclusive_or = true;
+#ifdef __WXOSX_MAC__
+        m_subtractive = evt->Modifier( MD_CTRL ) &&
+                        evt->Modifier( MD_SHIFT ) &&
+                        !evt->Modifier( MD_ALT );
 
-        bool modifier_enabled = m_subtractive || m_additive || m_exclusive_or;
+        m_additive = evt->Modifier( MD_SHIFT ) &&
+                     !evt->Modifier( MD_CTRL ) &&
+                     !evt->Modifier( MD_ALT );
+
+        m_exclusive_or = evt->Modifier( MD_CTRL ) &&
+                         !evt->Modifier( MD_SHIFT ) &&
+                         !evt->Modifier( MD_ALT );
+
+        m_skip_heuristics = evt->Modifier( MD_ALT ) &&
+                            !evt->Modifier( MD_SHIFT ) &&
+                            !evt->Modifier( MD_CTRL );
+
+#else
+        m_subtractive = evt->Modifier( MD_SHIFT )
+                        && !evt->Modifier( MD_CTRL )
+                        && evt->Modifier( MD_ALT );
+
+        m_additive = evt->Modifier( MD_SHIFT )
+                     && !evt->Modifier( MD_CTRL )
+                     && !evt->Modifier( MD_ALT );
+
+        m_exclusive_or = !evt->Modifier( MD_SHIFT )
+                         && !evt->Modifier( MD_CTRL )
+                         && evt->Modifier( MD_ALT );
 
         // Is the user requesting that the selection list include all possible
         // items without removing less likely selection candidates
-        m_skip_heuristics = !!evt->Modifier( MD_ALT );
+        // Cannot use the Alt key on windows or the disambiguation context menu is immediately
+        // dismissed rendering it useless.
+        m_skip_heuristics = evt->Modifier( MD_CTRL )
+                            && !evt->Modifier( MD_SHIFT )
+                            && !evt->Modifier( MD_ALT );
+#endif
+
+        bool modifier_enabled = m_subtractive || m_additive || m_exclusive_or;
 
         // Single click? Select single object
         if( evt->IsClick( BUT_LEFT ) )
@@ -230,9 +280,9 @@ void PL_SELECTION_TOOL::SelectPoint( const VECTOR2I& aWhere, bool* aSelectionCan
     // locate items.
     COLLECTOR collector;
 
-    for( WS_DATA_ITEM* dataItem : WS_DATA_MODEL::GetTheInstance().GetItems() )
+    for( DS_DATA_ITEM* dataItem : DS_DATA_MODEL::GetTheInstance().GetItems() )
     {
-        for( WS_DRAW_ITEM_BASE* drawItem : dataItem->GetDrawItems() )
+        for( DS_DRAW_ITEM_BASE* drawItem : dataItem->GetDrawItems() )
         {
             if( drawItem->HitTest( (wxPoint) aWhere, threshold ) )
                 collector.Append( drawItem );
@@ -387,9 +437,9 @@ bool PL_SELECTION_TOOL::selectMultiple()
 
             selectionRect.Normalize();
 
-            for( WS_DATA_ITEM* dataItem : WS_DATA_MODEL::GetTheInstance().GetItems() )
+            for( DS_DATA_ITEM* dataItem : DS_DATA_MODEL::GetTheInstance().GetItems() )
             {
-                for( WS_DRAW_ITEM_BASE* item : dataItem->GetDrawItems() )
+                for( DS_DRAW_ITEM_BASE* item : dataItem->GetDrawItems() )
                 {
                     if( item->HitTest( selectionRect, windowSelection ) )
                     {
@@ -536,9 +586,9 @@ void PL_SELECTION_TOOL::RebuildSelection()
 {
     m_selection.Clear();
 
-    for( WS_DATA_ITEM* dataItem : WS_DATA_MODEL::GetTheInstance().GetItems() )
+    for( DS_DATA_ITEM* dataItem : DS_DATA_MODEL::GetTheInstance().GetItems() )
     {
-        for( WS_DRAW_ITEM_BASE* item : dataItem->GetDrawItems() )
+        for( DS_DRAW_ITEM_BASE* item : dataItem->GetDrawItems() )
         {
             if( item->IsSelected() )
                 select( item );
@@ -578,12 +628,12 @@ bool PL_SELECTION_TOOL::doSelectionMenu( COLLECTOR* aCollector )
     }
 
     menu.AppendSeparator();
-    menu.Add( _( "Select &All\tA" ), limit + 1, nullptr );
+    menu.Add( _( "Select &All\tA" ), limit + 1, BITMAPS::INVALID_BITMAP );
 
     if( aCollector->m_MenuTitle.Length() )
     {
         menu.SetTitle( aCollector->m_MenuTitle );
-        menu.SetIcon( info_xpm );
+        menu.SetIcon( BITMAPS::info );
         menu.DisplayTitle( true );
     }
     else

@@ -19,14 +19,8 @@
  * with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <board.h>
-#include <board_item.h>
-#include <netinfo.h>
-
-#include "pns_node.h"
 #include "pns_walkaround.h"
 #include "pns_shove.h"
-#include "pns_utils.h"
 #include "pns_router.h"
 #include "pns_diff_pair_placer.h"
 #include "pns_solid.h"
@@ -534,7 +528,8 @@ bool DIFF_PAIR_PLACER::FindDpPrimitivePair( NODE* aWorld, const VECTOR2I& aP, IT
 
 int DIFF_PAIR_PLACER::viaGap() const
 {
-    return m_sizes.DiffPairViaGap() + m_sizes.DiffPairWidth();
+    return std::max( m_sizes.DiffPairViaGap(),
+                     m_sizes.GetHoleToHole() + m_sizes.ViaDrill() - m_sizes.ViaDiameter() );
 }
 
 

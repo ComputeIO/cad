@@ -2,7 +2,7 @@
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
  * Copyright (C) 2009 Jean-Pierre Charras, jaen-pierre.charras@gipsa-lab.inpg.com
- * Copyright (C) 1992-2020 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 1992-2021 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -36,14 +36,7 @@ class NETLIST_OBJECT_LIST;
  */
 class SCH_LINE : public SCH_ITEM
 {
-    bool    m_startIsDangling;  ///< True if start point is not connected.
-    bool    m_endIsDangling;    ///< True if end point is not connected.
-    wxPoint m_start;            ///< Line start point
-    wxPoint m_end;              ///< Line end point
-    STROKE_PARAMS m_stroke;     ///< Line stroke properties.
-
 public:
-
     static const enum wxPenStyle PenStyle[];
 
     SCH_LINE( const wxPoint& pos = wxPoint( 0, 0 ), int layer = LAYER_NOTES );
@@ -88,6 +81,9 @@ public:
     {
         return aPoint == m_start || aPoint == m_end;
     }
+
+    int GetAngleFrom( const wxPoint& aPoint ) const;
+    int GetReverseAngleFrom( const wxPoint& aPoint ) const;
 
     bool IsNull() const { return m_start == m_end; }
 
@@ -172,11 +168,11 @@ public:
     void MoveStart( const wxPoint& aMoveVector );
     void MoveEnd( const wxPoint& aMoveVector );
 
-    void MirrorX( int aXaxis_position ) override;
-    void MirrorY( int aYaxis_position ) override;
-    void Rotate( wxPoint aPosition ) override;
-    void RotateStart( wxPoint aPosition );
-    void RotateEnd( wxPoint aPosition );
+    void MirrorVertically( int aCenter ) override;
+    void MirrorHorizontally( int aCenter ) override;
+    void Rotate( wxPoint aCenter ) override;
+    void RotateStart( wxPoint aCenter );
+    void RotateEnd( wxPoint aCenter );
 
     /**
      * Check line against \a aLine to see if it overlaps and merge if it does.
@@ -185,23 +181,13 @@ public:
      * two lines overlap.  This method is used to merge multiple line segments into a single
      * line.
      *
-     * @param aScreen - the current screen
-     * @param aLine - Line to compare.
-     * @param aCheckJunctions - indicates we need to check for a junction if the two segments
-     *                          are colinear and touch
+     * @param aScreen is the current screen.
+     * @param aLine is the line to compare.
+     * @param aCheckJunctions is used to indicate if we need to check for a junction if the two
+     *                        segments are colinear and touch.
      * @return New line that combines the two or NULL on non-overlapping segments.
      */
     SCH_LINE* MergeOverlap( SCH_SCREEN* aScreen, SCH_LINE* aLine, bool aCheckJunctions );
-
-    /**
-     * Check if two lines are in the same quadrant as each other, using a reference point as
-     * the origin
-     *
-     * @param aLine - Line to compare
-     * @param aPosition - Point to reference against lines
-     * @return true if lines are mostly in different quadrants of aPosition, false otherwise
-     */
-    bool IsSameQuadrant( const SCH_LINE* aLine, const wxPoint& aPosition ) const;
 
     bool IsParallel( const SCH_LINE* aLine ) const;
 
@@ -224,7 +210,7 @@ public:
 
     wxString GetSelectMenuText( EDA_UNITS aUnits ) const override;
 
-    BITMAP_DEF GetMenuImage() const override;
+    BITMAPS GetMenuImage() const override;
 
     bool operator <( const SCH_ITEM& aItem ) const override;
 
@@ -240,7 +226,7 @@ public:
     bool HitTest( const wxPoint& aPosition, int aAccuracy = 0 ) const override;
     bool HitTest( const EDA_RECT& aRect, bool aContained, int aAccuracy = 0 ) const override;
 
-    void Plot( PLOTTER* aPlotter ) override;
+    void Plot( PLOTTER* aPlotter ) const override;
 
     EDA_ITEM* Clone() const override;
 
@@ -253,21 +239,34 @@ public:
 #endif
 
     /**
-     * Returns if the line is a graphic (non electrical line)
+     * Return if the line is a graphic (non electrical line)
      *
      * Currently, anything on the internal NOTES layer is a graphic line
      */
     bool IsGraphicLine() const;
 
     /**
-     * Returns true if the line is a wire.
+     * Return true if the line is a wire.
      *
      * @return true if this line is on the wire layer.
      */
     bool IsWire() const;
 
+    /**
+     * Return true if the line is a bus.
+     *
+     * @return true if this line is on the bus layer.
+     */
+    bool IsBus() const;
+
 private:
     bool doIsConnected( const wxPoint& aPosition ) const override;
+
+    bool    m_startIsDangling;  ///< True if start point is not connected.
+    bool    m_endIsDangling;    ///< True if end point is not connected.
+    wxPoint m_start;            ///< Line start point
+    wxPoint m_end;              ///< Line end point
+    STROKE_PARAMS m_stroke;     ///< Line stroke properties.
 };
 
 

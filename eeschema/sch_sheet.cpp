@@ -2,7 +2,7 @@
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
  * Copyright (C) 2016 Jean-Pierre Charras, jp.charras at wanadoo.fr
- * Copyright (C) 1992-2020 Kicad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 1992-2021 Kicad Developers, see AUTHORS.txt for contributors.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -22,6 +22,7 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
 
+#include <bitmaps.h>
 #include <core/mirror.h>
 #include <sch_draw_panel.h>
 #include <gr_text.h>
@@ -33,7 +34,7 @@
 #include <math/util.h>      // for KiROUND
 #include <sch_sheet.h>
 #include <sch_sheet_path.h>
-#include <sch_component.h>
+#include <sch_symbol.h>
 #include <sch_painter.h>
 #include <schematic.h>
 #include <settings/color_settings.h>
@@ -201,6 +202,7 @@ void SCH_SHEET::GetContextualTextVars( wxArrayString* aVars ) const
 
     aVars->push_back( wxT( "#" ) );
     aVars->push_back( wxT( "##" ) );
+    m_screen->GetTitleBlock().GetContextualTextVars( aVars );
 }
 
 
@@ -222,6 +224,13 @@ bool SCH_SHEET::ResolveTextVar( wxString* token, int aDepth ) const
             *token = m_fields[i].GetShownText( aDepth + 1 );
             return true;
         }
+    }
+
+    PROJECT *project = &Schematic()->Prj();
+
+    if( m_screen->GetTitleBlock().TextVarResolver( token, project ) )
+    {
+        return true;
     }
 
     if( token->IsSameAs( wxT( "#" ) ) )
@@ -382,82 +391,79 @@ bool SCH_SHEET::HasUndefinedPins() const
 }
 
 
-int SCH_SHEET::GetMinWidth() const
+int bumpToNextGrid( const int aVal, const int aDirection )
 {
-    int width = Mils2iu( MIN_SHEET_WIDTH );
+    constexpr int gridSize = Mils2iu( 50 );
 
-    for( size_t i = 0; i < m_pins.size();  i++ )
-    {
-        int edge = m_pins[i]->GetEdge();
-        EDA_RECT pinRect = m_pins[i]->GetBoundingBox();
-
-        wxASSERT( edge != SHEET_UNDEFINED_SIDE );
-
-        if( edge == SHEET_TOP_SIDE || edge == SHEET_BOTTOM_SIDE )
-        {
-            if( width < pinRect.GetRight() - m_pos.x )
-                width = pinRect.GetRight() - m_pos.x;
-        }
-        else
-        {
-            if( width < pinRect.GetWidth() )
-                width = pinRect.GetWidth();
-
-            for( size_t j = 0; j < m_pins.size(); j++ )
-            {
-                // Check for pin directly across from the current pin.
-                if( (i == j) || (m_pins[i]->GetPosition().y != m_pins[j]->GetPosition().y) )
-                    continue;
-
-                if( width < pinRect.GetWidth() + m_pins[j]->GetBoundingBox().GetWidth() )
-                {
-                    width = pinRect.GetWidth() + m_pins[j]->GetBoundingBox().GetWidth();
-                    break;
-                }
-            }
-        }
-    }
-
-    return width;
+    return ( KiROUND( aVal / gridSize ) * gridSize ) + ( aDirection * gridSize );
 }
 
 
-int SCH_SHEET::GetMinHeight() const
+int SCH_SHEET::GetMinWidth( bool aFromLeft ) const
 {
-    int height = Mils2iu( MIN_SHEET_HEIGHT );
+    int pinsLeft = m_pos.x + m_size.x;
+    int pinsRight = m_pos.x;
 
     for( size_t i = 0; i < m_pins.size();  i++ )
     {
         int edge = m_pins[i]->GetEdge();
-        EDA_RECT pinRect = m_pins[i]->GetBoundingBox();
 
-        // Make sure pin is on top or bottom side of sheet.
-        if( edge == SHEET_RIGHT_SIDE || edge == SHEET_LEFT_SIDE )
+        if( edge == SHEET_TOP_SIDE || edge == SHEET_BOTTOM_SIDE )
         {
-            if( height < pinRect.GetBottom() - m_pos.y )
-                height = pinRect.GetBottom() - m_pos.y;
-        }
-        else
-        {
-            if( height < pinRect.GetHeight() )
-                height = pinRect.GetHeight();
+            EDA_RECT pinRect = m_pins[i]->GetBoundingBox();
 
-            for( size_t j = 0; j < m_pins.size(); j++ )
-            {
-                // Check for pin directly above or below the current pin.
-                if( (i == j) || (m_pins[i]->GetPosition().x != m_pins[j]->GetPosition().x) )
-                    continue;
-
-                if( height < pinRect.GetHeight() + m_pins[j]->GetBoundingBox().GetHeight() )
-                {
-                    height = pinRect.GetHeight() + m_pins[j]->GetBoundingBox().GetHeight();
-                    break;
-                }
-            }
+            pinsLeft = std::min( pinsLeft, pinRect.GetLeft() );
+            pinsRight = std::max( pinsRight, pinRect.GetRight() );
         }
     }
 
-    return height;
+    pinsLeft = bumpToNextGrid( pinsLeft, -1 );
+    pinsRight = bumpToNextGrid( pinsRight, 1 );
+
+    int pinMinWidth;
+
+    if( pinsLeft >= pinsRight )
+        pinMinWidth = 0;
+    else if( aFromLeft )
+        pinMinWidth = pinsRight - m_pos.x;
+    else
+        pinMinWidth = m_pos.x + m_size.x - pinsLeft;
+
+    return std::max( pinMinWidth, Mils2iu( MIN_SHEET_WIDTH ) );
+}
+
+
+int SCH_SHEET::GetMinHeight( bool aFromTop ) const
+{
+    int pinsTop = m_pos.y + m_size.y;
+    int pinsBottom = m_pos.y;
+
+    for( size_t i = 0; i < m_pins.size();  i++ )
+    {
+        int edge = m_pins[i]->GetEdge();
+
+        if( edge == SHEET_RIGHT_SIDE || edge == SHEET_LEFT_SIDE )
+        {
+            EDA_RECT pinRect = m_pins[i]->GetBoundingBox();
+
+            pinsTop = std::min( pinsTop, pinRect.GetTop() );
+            pinsBottom = std::max( pinsBottom, pinRect.GetBottom() );
+        }
+    }
+
+    pinsTop = bumpToNextGrid( pinsTop, -1 );
+    pinsBottom = bumpToNextGrid( pinsBottom, 1 );
+
+    int pinMinHeight;
+
+    if( pinsTop >= pinsBottom )
+        pinMinHeight = 0;
+    else if( aFromTop )
+        pinMinHeight = pinsBottom - m_pos.y;
+    else
+        pinMinHeight = m_pos.y + m_size.y - pinsTop;
+
+    return std::max( pinMinHeight, Mils2iu( MIN_SHEET_HEIGHT ) );
 }
 
 
@@ -711,11 +717,11 @@ void SCH_SHEET::GetMsgPanelInfo( EDA_DRAW_FRAME* aFrame, MSG_PANEL_ITEMS& aList 
 }
 
 
-void SCH_SHEET::Rotate( wxPoint aPosition )
+void SCH_SHEET::Rotate( wxPoint aCenter )
 {
     wxPoint prev = m_pos;
 
-    RotatePoint( &m_pos, aPosition, 900 );
+    RotatePoint( &m_pos, aCenter, 900 );
     RotatePoint( &m_size.x, &m_size.y, 900 );
 
     if( m_size.x < 0 )
@@ -733,7 +739,7 @@ void SCH_SHEET::Rotate( wxPoint aPosition )
     // Pins must be rotated first as that's how we determine vertical vs horizontal
     // orientation for auto-placement
     for( SCH_SHEET_PIN* sheetPin : m_pins )
-        sheetPin->Rotate( aPosition );
+        sheetPin->Rotate( aCenter );
 
     if( m_fieldsAutoplaced == FIELDS_AUTOPLACED_AUTO )
     {
@@ -753,23 +759,23 @@ void SCH_SHEET::Rotate( wxPoint aPosition )
 }
 
 
-void SCH_SHEET::MirrorX( int aXaxis_position )
+void SCH_SHEET::MirrorVertically( int aCenter )
 {
-    MIRROR( m_pos.y, aXaxis_position );
+    MIRROR( m_pos.y, aCenter );
     m_pos.y -= m_size.y;
 
     for( SCH_SHEET_PIN* sheetPin : m_pins )
-        sheetPin->MirrorX( aXaxis_position );
+        sheetPin->MirrorVertically( aCenter );
 }
 
 
-void SCH_SHEET::MirrorY( int aYaxis_position )
+void SCH_SHEET::MirrorHorizontally( int aCenter )
 {
-    MIRROR( m_pos.x, aYaxis_position );
+    MIRROR( m_pos.x, aCenter );
     m_pos.x -= m_size.x;
 
     for( SCH_SHEET_PIN* sheetPin : m_pins )
-        sheetPin->MirrorY( aYaxis_position );
+        sheetPin->MirrorHorizontally( aCenter );
 }
 
 
@@ -909,9 +915,9 @@ wxString SCH_SHEET::GetSelectMenuText( EDA_UNITS aUnits ) const
 }
 
 
-BITMAP_DEF SCH_SHEET::GetMenuImage() const
+BITMAPS SCH_SHEET::GetMenuImage() const
 {
-    return add_hierarchical_subsheet_xpm;
+    return BITMAPS::add_hierarchical_subsheet;
 }
 
 
@@ -938,7 +944,7 @@ bool SCH_SHEET::HitTest( const EDA_RECT& aRect, bool aContained, int aAccuracy )
 }
 
 
-void SCH_SHEET::Plot( PLOTTER* aPlotter )
+void SCH_SHEET::Plot( PLOTTER* aPlotter ) const
 {
     wxString msg;
     wxPoint  pos;

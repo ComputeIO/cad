@@ -2,7 +2,7 @@
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
  * Copyright (C) 1992-2017 jean-pierre Charras jp.charras at wanadoo.fr
- * Copyright (C) 1992-2021 Kicad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 1992-2021 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -37,8 +37,7 @@
 
 
 /**
- * DIALOG_ANNOTATE: a dialog to set/clear reference designators,
- * of a schematic hierarchy, with different options
+ * A dialog to set/clear reference designators of a schematic with different options.
  */
 class DIALOG_ANNOTATE: public DIALOG_ANNOTATE_BASE
 {
@@ -47,9 +46,7 @@ public:
     ~DIALOG_ANNOTATE();
 
 private:
-    SCH_EDIT_FRAME* m_Parent;
-
-    /// Initialises member variables
+    /// Initialize member variables.
     void InitValues();
     void OnOptionChanged( wxCommandEvent& event ) override;
     void OnClearAnnotationClick( wxCommandEvent& event ) override;
@@ -63,14 +60,12 @@ private:
     bool GetLockUnits();
 
     /**
-     * Function GetSortOrder
      * @return 0 if annotation by X position,
      *         1 if annotation by Y position,
      */
     int GetSortOrder();
 
     /**
-     * Function GetAnnotateAlgo
      * @return 0 if annotation using first free Id value
      *         1 for first free Id value inside sheet num * 100 to sheet num * 100 + 99
      *         2 for first free Id value inside sheet num * 1000 to sheet num * 1000 + 999
@@ -78,6 +73,8 @@ private:
     int GetAnnotateAlgo();
 
     int GetStartNumber();
+
+    SCH_EDIT_FRAME* m_Parent;
 };
 
 
@@ -96,6 +93,7 @@ DIALOG_ANNOTATE::DIALOG_ANNOTATE( SCH_EDIT_FRAME* parent, const wxString& messag
     }
 
     m_MessageWindow->SetLabel( _( "Annotation Messages:" ) );
+    m_MessageWindow->SetFileName( Prj().GetProjectPath() + wxT( "report.txt" ) );
 
     // We use a sdbSizer to get platform-dependent ordering of the action buttons, but
     // that requires us to correct the button labels here.
@@ -153,8 +151,8 @@ void DIALOG_ANNOTATE::InitValues()
 
     m_textNumberAfter->SetValue( wxT( "0" ) );
 
-    annotate_down_right_bitmap->SetBitmap( KiBitmap( annotate_down_right_xpm ) );
-    annotate_right_down_bitmap->SetBitmap( KiBitmap( annotate_right_down_xpm ) );
+    annotate_down_right_bitmap->SetBitmap( KiBitmap( BITMAPS::annotate_down_right ) );
+    annotate_right_down_bitmap->SetBitmap( KiBitmap( BITMAPS::annotate_right_down ) );
 
     m_MessageWindow->SetVisibleSeverities( cfg->m_AnnotatePanel.messages_filter );
 
@@ -181,9 +179,9 @@ void DIALOG_ANNOTATE::OnApplyClick( wxCommandEvent& event )
     REPORTER& reporter = m_MessageWindow->Reporter();
     m_MessageWindow->SetLazyUpdate( true );     // Don't update after each message
 
-    m_Parent->AnnotateComponents( GetLevel(), (ANNOTATE_ORDER_T) GetSortOrder(),
-                                  (ANNOTATE_OPTION_T) GetAnnotateAlgo(), GetStartNumber(),
-                                  GetResetItems() , true, GetLockUnits(), reporter );
+    m_Parent->AnnotateSymbols( GetLevel(), (ANNOTATE_ORDER_T) GetSortOrder(),
+                               (ANNOTATE_OPTION_T) GetAnnotateAlgo(), GetStartNumber(),
+                               GetResetItems(), true, GetLockUnits(), reporter );
 
     m_MessageWindow->Flush( true );             // Now update to show all messages
 

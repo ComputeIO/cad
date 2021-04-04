@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2012 Jean-Pierre Charras, jean-pierre.charras@gipsa-lab.inpg.com
  * Copyright (C) 2016 Wayne Stambaugh, stambaughw@gmail.com
- * Copyright (C) 2004-2020 KiCad Developers, see change_log.txt for contributors.
+ * Copyright (C) 2004-2021 KiCad Developers, see AITHORS.txt for contributors.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -23,13 +23,14 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
 
+#include <bitmaps.h>
 #include <kiway.h>
 #include <confirm.h>
 #include <kicad_string.h>
 #include <sch_base_frame.h>
 #include <sch_edit_frame.h>
 #include <ee_collectors.h>
-#include <sch_component.h>
+#include <sch_symbol.h>
 #include <lib_field.h>
 #include <template_fieldnames.h>
 #include <class_library.h>
@@ -57,6 +58,7 @@ DIALOG_EDIT_ONE_FIELD::DIALOG_EDIT_ONE_FIELD( SCH_BASE_FRAME* aParent, const wxS
     m_isPower = false;
 
     m_scintillaTricks = new SCINTILLA_TRICKS( m_StyledTextCtrl, wxT( "{}" ) );
+    m_StyledTextCtrl->SetEOLMode( wxSTC_EOL_LF );   // Normalize EOL across platforms
 
     m_text = aTextItem->GetText();
     m_isItalic = aTextItem->IsItalic();
@@ -92,7 +94,10 @@ void DIALOG_EDIT_ONE_FIELD::init()
     bool use_validator = m_fieldId == REFERENCE_FIELD
                          || m_fieldId == VALUE_FIELD
                          || m_fieldId == FOOTPRINT_FIELD
-                         || m_fieldId == DATASHEET_FIELD;
+                         || m_fieldId == DATASHEET_FIELD
+                         || m_fieldId == SHEETNAME_V
+                         || m_fieldId == SHEETFILENAME_V;
+
     if( use_validator )
     {
         m_StyledTextCtrl->Show( false );
@@ -105,7 +110,7 @@ void DIALOG_EDIT_ONE_FIELD::init()
     }
 
     // Show the footprint selection dialog if this is the footprint field.
-    m_TextValueSelectButton->SetBitmap( KiBitmap( small_library_xpm ) );
+    m_TextValueSelectButton->SetBitmap( KiBitmap( BITMAPS::small_library ) );
     m_TextValueSelectButton->Show( m_fieldId == FOOTPRINT_FIELD );
 
     // Value fields of power components cannot be modified. This will grey out
@@ -126,6 +131,8 @@ void DIALOG_EDIT_ONE_FIELD::init()
     GetSizer()->SetSizeHints( this );
 
     // Adjust the height of the scintilla text editor after the first layout
+    // To show only one line
+    // (multiline text are is supported in fields and will be removed)
     if( m_StyledTextCtrl->IsShown() )
     {
         wxSize maxSize = m_StyledTextCtrl->GetSize();
@@ -324,11 +331,27 @@ DIALOG_SCH_EDIT_ONE_FIELD::DIALOG_SCH_EDIT_ONE_FIELD( SCH_BASE_FRAME* aParent,
 
 void DIALOG_SCH_EDIT_ONE_FIELD::onScintillaCharAdded( wxStyledTextEvent &aEvent )
 {
+    int key = aEvent.GetKey();
+
     SCH_EDIT_FRAME* editFrame = static_cast<SCH_EDIT_FRAME*>( GetParent() );
     wxArrayString   autocompleteTokens;
     int             pos = m_StyledTextCtrl->GetCurrentPos();
     int             start = m_StyledTextCtrl->WordStartPosition( pos, true );
     wxString        partial;
+
+    // Currently, '\n' is not allowed in fields. So remove it when entered
+    // TODO: see if we must close the dialog. However this is not obvious, as
+    // if a \n is typed (and removed) when a text is selected, this text is deleted
+    // (in fact replaced by \n, that is removed by the filter)
+    if( key == '\n' )
+    {
+        wxString text = m_StyledTextCtrl->GetText();
+        int currpos = m_StyledTextCtrl->GetCurrentPos();
+        text.Replace( "\n", "" );
+        m_StyledTextCtrl->SetText( text );
+        m_StyledTextCtrl->GotoPos( currpos-1 );
+        return;
+    }
 
     auto textVarRef =
             [&]( int pt )
@@ -465,7 +488,7 @@ void DIALOG_SCH_EDIT_ONE_FIELD::UpdateField( SCH_FIELD* aField, SCH_SHEET_PATH* 
                     else if( fieldType == FOOTPRINT_FIELD )
                         otherUnit->SetFootprint( m_text );
                     else
-                        otherUnit->GetField( fieldType )->SetText( m_text );
+                        otherUnit->GetField( DATASHEET_FIELD )->SetText( m_text );
 
                     editFrame->UpdateItem( otherUnit );
                 }

@@ -37,7 +37,7 @@
 #define MASK_VRML "PLUGIN_VRML"
 
 // version of the VRML file being parsed
-enum WRLVERSION
+enum class WRLVERSION
 {
     VRML_INVALID = 0,   // not a valid VRML file
     VRML_V1,
@@ -49,7 +49,7 @@ enum WRLVERSION
 // These are used to look up node names and to quickly
 // determine what routine to invoke to read a section of
 // a file.
-enum WRL1NODES
+enum class WRL1NODES
 {
     WRL1_BASE = 0,  // not really a VRML node but we need a top level virtual node
     WRL1_BEGIN,
@@ -94,7 +94,7 @@ enum WRL1NODES
 
 // VRML1 Material/Normal Binding values
 // note: PART/FACE have the same meaning in the specification
-enum WRL1_BINDING
+enum class WRL1_BINDING
 {
     BIND_DEFAULT = 0,
     BIND_OVERALL,
@@ -107,7 +107,7 @@ enum WRL1_BINDING
     BIND_END
 };
 
-enum WRL1_ORDER
+enum class WRL1_ORDER
 {
     ORD_UNKNOWN = 0,
     ORD_CLOCKWISE,
@@ -118,11 +118,11 @@ enum WRL1_ORDER
 // These are used to look up node names and to quickly
 // determine what routine to invoke to read a section of
 // a file.
-enum WRL2NODES
+enum class WRL2NODES
 {
     WRL2_BASE = 0,  // not really a VRML node but we need a top level virtual node
     WRL2_BEGIN,
-    WRL2_ANCHOR = WRL2_BEGIN,
+    WRL2_ANCHOR = WRL2NODES::WRL2_BEGIN,
     WRL2_APPEARANCE,
     WRL2_AUDIOCLIP,
     WRL2_BACKGROUND,

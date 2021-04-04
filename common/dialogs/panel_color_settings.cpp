@@ -101,8 +101,7 @@ bool PANEL_COLOR_SETTINGS::Show( bool show )
 void PANEL_COLOR_SETTINGS::OnLeftDownTheme( wxMouseEvent& event )
 {
     // Lazy rebuild of theme menu to catch any colour theme changes made in other panels
-    wxString sel = m_cbTheme->GetStringSelection();
-    createThemeList( sel );
+    createThemeList( m_currentSettings->GetFilename() );
 
     event.Skip();
 }
@@ -279,13 +278,13 @@ void PANEL_COLOR_SETTINGS::ShowColorContextMenu( wxMouseEvent& aEvent, int aLaye
 
     wxMenu menu;
 
-    AddMenuItem( &menu, ID_COPY, _( "Copy color" ), KiBitmap( copy_xpm ) );
+    AddMenuItem( &menu, ID_COPY, _( "Copy color" ), KiBitmap( BITMAPS::copy ) );
 
     if( !readOnly && m_copied != COLOR4D::UNSPECIFIED )
-        AddMenuItem( &menu, ID_PASTE, _( "Paste color" ), KiBitmap( paste_xpm ) );
+        AddMenuItem( &menu, ID_PASTE, _( "Paste color" ), KiBitmap( BITMAPS::paste ) );
 
     if( !readOnly && current != saved )
-        AddMenuItem( &menu, ID_REVERT, _( "Revert to saved color" ), KiBitmap( undo_xpm ) );
+        AddMenuItem( &menu, ID_REVERT, _( "Revert to saved color" ), KiBitmap( BITMAPS::undo ) );
 
     menu.Bind( wxEVT_COMMAND_MENU_SELECTED,
             [&]( wxCommandEvent& aCmd )

@@ -2,6 +2,7 @@
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
  * Copyright (C) 2020 Thomas Pointhuber <thomas.pointhuber@gmx.at>
+ * Copyright (C) 2021 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -43,7 +44,7 @@
 #include <bus_alias.h>
 #include <sch_bitmap.h>
 #include <sch_bus_entry.h>
-#include <sch_component.h>
+#include <sch_symbol.h>
 #include <sch_junction.h>
 #include <sch_line.h>
 #include <sch_no_connect.h>
@@ -79,6 +80,8 @@ SCH_ALTIUM_PLUGIN::SCH_ALTIUM_PLUGIN()
     m_rootSheet    = nullptr;
     m_currentSheet = nullptr;
     m_schematic    = nullptr;
+
+    m_reporter     = &WXLOG_REPORTER::GetInstance();
 }
 
 
@@ -157,7 +160,7 @@ SCH_SHEET* SCH_ALTIUM_PLUGIN::Load( const wxString& aFileName, SCHEMATIC* aSchem
     wxASSERT( !aFileName || aSchematic != NULL );
 
     wxFileName fileName( aFileName );
-    fileName.SetExt( ".kicad_sch" );
+    fileName.SetExt( KiCadSchematicFileExtension );
     m_schematic = aSchematic;
 
     // Delete on exception, if I own m_rootSheet, according to aAppendToMe
@@ -219,6 +222,9 @@ SCH_SHEET* SCH_ALTIUM_PLUGIN::Load( const wxString& aFileName, SCHEMATIC* aSchem
 
     m_pi->SaveLibrary( getLibFileName().GetFullPath() );
 
+    SCH_SCREENS allSheets( m_rootSheet );
+    allSheets.UpdateSymbolLinks(); // Update all symbol library links for all sheets.
+
     return m_rootSheet;
 }
 
@@ -237,7 +243,8 @@ void SCH_ALTIUM_PLUGIN::ParseAltiumSch( const wxString& aFileName )
 
     if( fp == nullptr )
     {
-        wxLogError( wxString::Format( _( "Cannot open file '%s'" ), aFileName ) );
+        m_reporter->Report( wxString::Format( _( "Cannot open file '%s'." ), aFileName ),
+                            RPT_SEVERITY_ERROR );
         return;
     }
 
@@ -430,7 +437,8 @@ void SCH_ALTIUM_PLUGIN::Parse( const CFB::CompoundFileReader& aReader )
         case ALTIUM_SCH_RECORD::RECORD_226:
             break;
         default:
-            wxLogError( wxString::Format( "Unknown Record id: %d", recordId ) );
+            m_reporter->Report( wxString::Format( _( "Unknown Record id: %d." ), recordId ),
+                                RPT_SEVERITY_ERROR );
             break;
         }
     }
@@ -528,8 +536,9 @@ void SCH_ALTIUM_PLUGIN::ParsePin( const std::map<wxString, wxString>& aPropertie
     if( symbol == m_symbols.end() )
     {
         // TODO: e.g. can depend on Template (RECORD=39
-        wxLogWarning( wxString::Format( "Pin has non-existent ownerindex %d",
-                                        elem.ownerindex ) );
+        m_reporter->Report( wxString::Format( _( "Pin has non-existent ownerindex %d." ),
+                                              elem.ownerindex ),
+                            RPT_SEVERITY_WARNING );
         return;
     }
 
@@ -568,7 +577,7 @@ void SCH_ALTIUM_PLUGIN::ParsePin( const std::map<wxString, wxString>& aPropertie
         pinLocation.y += elem.pinlength;
         break;
     default:
-        wxLogWarning( "Pin has unexpected orientation" );
+        m_reporter->Report( _( "Pin has unexpected orientation." ), RPT_SEVERITY_WARNING );
         break;
     }
 
@@ -606,15 +615,15 @@ void SCH_ALTIUM_PLUGIN::ParsePin( const std::map<wxString, wxString>& aPropertie
     case ASCH_PIN_ELECTRICAL::UNKNOWN:
     default:
         pin->SetType( ELECTRICAL_PINTYPE::PT_UNSPECIFIED );
-        wxLogWarning( "Pin has unexpected electrical type" );
+        m_reporter->Report( _( "Pin has unexpected electrical type." ), RPT_SEVERITY_WARNING );
         break;
     }
 
     if( elem.symbolOuterEdge == ASCH_PIN_SYMBOL_OUTEREDGE::UNKNOWN )
-        wxLogWarning( "Pin has unexpected outer edge type" );
+        m_reporter->Report( _( "Pin has unexpected outer edge type." ), RPT_SEVERITY_WARNING );
 
     if( elem.symbolInnerEdge == ASCH_PIN_SYMBOL_INNEREDGE::UNKNOWN )
-        wxLogWarning( "Pin has unexpected inner edge type" );
+        m_reporter->Report( _( "Pin has unexpected inner edge type." ), RPT_SEVERITY_WARNING );
 
     if( elem.symbolOuterEdge == ASCH_PIN_SYMBOL_OUTEREDGE::NEGATED )
     {
@@ -736,8 +745,9 @@ void SCH_ALTIUM_PLUGIN::ParseLabel( const std::map<wxString, wxString>& aPropert
         if( symbol == m_symbols.end() )
         {
             // TODO: e.g. can depend on Template (RECORD=39
-            wxLogWarning( wxString::Format( "Label has non-existent ownerindex %d",
-                                            elem.ownerindex ) );
+            m_reporter->Report( wxString::Format( _( "Label has non-existent ownerindex %d." ),
+                                                  elem.ownerindex ),
+                                RPT_SEVERITY_WARNING );
             return;
         }
 
@@ -771,8 +781,10 @@ void SCH_ALTIUM_PLUGIN::ParseBezier( const std::map<wxString, wxString>& aProper
 
     if( elem.points.size() < 2 )
     {
-        wxLogWarning( wxString::Format( "Bezier has %d control points. At least 2 are expected.",
-                                        static_cast<int>( elem.points.size() ) ) );
+        m_reporter->Report( wxString::Format( _( "Bezier has %d control points. At least 2 are "
+                                                 "expected." ),
+                                              static_cast<int>( elem.points.size() ) ),
+                            RPT_SEVERITY_WARNING );
         return;
     }
 
@@ -827,8 +839,9 @@ void SCH_ALTIUM_PLUGIN::ParseBezier( const std::map<wxString, wxString>& aProper
         if( symbol == m_symbols.end() )
         {
             // TODO: e.g. can depend on Template (RECORD=39
-            wxLogWarning( wxString::Format( "Bezier has non-existent ownerindex %d",
-                                            elem.ownerindex ) );
+            m_reporter->Report( wxString::Format( _( "Bezier has non-existent ownerindex %d." ),
+                                                  elem.ownerindex ),
+                                RPT_SEVERITY_WARNING );
             return;
         }
 
@@ -911,8 +924,9 @@ void SCH_ALTIUM_PLUGIN::ParsePolyline( const std::map<wxString, wxString>& aProp
         if( symbol == m_symbols.end() )
         {
             // TODO: e.g. can depend on Template (RECORD=39
-            wxLogWarning( wxString::Format( "Polyline has non-existent ownerindex %d",
-                                            elem.ownerindex ) );
+            m_reporter->Report( wxString::Format( _( "Polyline has non-existent ownerindex %d." ),
+                                                  elem.ownerindex ),
+                                RPT_SEVERITY_WARNING );
             return;
         }
 
@@ -972,8 +986,9 @@ void SCH_ALTIUM_PLUGIN::ParsePolygon( const std::map<wxString, wxString>& aPrope
         if( symbol == m_symbols.end() )
         {
             // TODO: e.g. can depend on Template (RECORD=39
-            wxLogWarning( wxString::Format( "Polygon has non-existent ownerindex %d",
-                                            elem.ownerindex ) );
+            m_reporter->Report( wxString::Format( _( "Polygon has non-existent ownerindex %d." ),
+                                                  elem.ownerindex ),
+                                RPT_SEVERITY_WARNING );
             return;
         }
 
@@ -1053,8 +1068,10 @@ void SCH_ALTIUM_PLUGIN::ParseRoundRectangle( const std::map<wxString, wxString>&
         if( symbol == m_symbols.end() )
         {
             // TODO: e.g. can depend on Template (RECORD=39
-            wxLogWarning( wxString::Format( "Rounded Rectangle has non-existent ownerindex %d",
-                                            elem.ownerindex ) );
+            m_reporter->Report( wxString::Format( _( "Rounded rectangle has non-existent "
+                                                     "ownerindex %d." ),
+                                                  elem.ownerindex ),
+                                RPT_SEVERITY_WARNING );
             return;
         }
 
@@ -1089,7 +1106,8 @@ void SCH_ALTIUM_PLUGIN::ParseArc( const std::map<wxString, wxString>& aPropertie
 
     if( elem.ownerpartid == ALTIUM_COMPONENT_NONE )
     {
-        wxLogError( "Arc drawing is not possible for now on schematic." );
+        m_reporter->Report( _( "Arc drawing is not possible for now on schematic." ),
+                            RPT_SEVERITY_ERROR );
     }
     else
     {
@@ -1097,8 +1115,9 @@ void SCH_ALTIUM_PLUGIN::ParseArc( const std::map<wxString, wxString>& aPropertie
         if( symbol == m_symbols.end() )
         {
             // TODO: e.g. can depend on Template (RECORD=39
-            wxLogWarning( wxString::Format( "Arc has non-existent ownerindex %d",
-                                            elem.ownerindex ) );
+            m_reporter->Report( wxString::Format( _( "Arc has non-existent ownerindex %d." ),
+                                                  elem.ownerindex ),
+                                RPT_SEVERITY_WARNING );
             return;
         }
 
@@ -1157,8 +1176,9 @@ void SCH_ALTIUM_PLUGIN::ParseLine( const std::map<wxString, wxString>& aProperti
         if( symbol == m_symbols.end() )
         {
             // TODO: e.g. can depend on Template (RECORD=39
-            wxLogWarning( wxString::Format( "Line has non-existent ownerindex %d",
-                                            elem.ownerindex ) );
+            m_reporter->Report( wxString::Format( _( "Line has non-existent ownerindex %d." ),
+                                                  elem.ownerindex ),
+                                RPT_SEVERITY_WARNING );
             return;
         }
 
@@ -1228,8 +1248,9 @@ void SCH_ALTIUM_PLUGIN::ParseRectangle( const std::map<wxString, wxString>& aPro
         if( symbol == m_symbols.end() )
         {
             // TODO: e.g. can depend on Template (RECORD=39
-            wxLogWarning( wxString::Format( "Rectangle has non-existent ownerindex %d",
-                                            elem.ownerindex ) );
+            m_reporter->Report( wxString::Format( _( "Rectangle has non-existent ownerindex %d." ),
+                                                  elem.ownerindex ),
+                                RPT_SEVERITY_WARNING );
             return;
         }
 
@@ -1347,7 +1368,8 @@ void SCH_ALTIUM_PLUGIN::ParseSheetEntry( const std::map<wxString, wxString>& aPr
 }
 
 
-wxPoint HelperGeneratePowerPortGraphics( LIB_PART* aKPart, ASCH_POWER_PORT_STYLE aStyle )
+wxPoint HelperGeneratePowerPortGraphics( LIB_PART* aKPart, ASCH_POWER_PORT_STYLE aStyle,
+                                         REPORTER* aReporter )
 {
     if( aStyle == ASCH_POWER_PORT_STYLE::CIRCLE || aStyle == ASCH_POWER_PORT_STYLE::ARROW )
     {
@@ -1530,7 +1552,10 @@ wxPoint HelperGeneratePowerPortGraphics( LIB_PART* aKPart, ASCH_POWER_PORT_STYLE
     else
     {
         if( aStyle != ASCH_POWER_PORT_STYLE::BAR )
-            wxLogWarning( "Power Port has unknown style, use bar instead. " );
+        {
+            aReporter->Report( _( "Power Port has unknown style, use bar instead." ),
+                               RPT_SEVERITY_WARNING );
+        }
 
         LIB_POLYLINE* line1 = new LIB_POLYLINE( aKPart );
         aKPart->AddDrawItem( line1 );
@@ -1587,7 +1612,7 @@ void SCH_ALTIUM_PLUGIN::ParsePowerPort( const std::map<wxString, wxString>& aPro
         pin->SetType( ELECTRICAL_PINTYPE::PT_POWER_IN );
         pin->SetVisible( false );
 
-        wxPoint valueFieldPos = HelperGeneratePowerPortGraphics( kpart, elem.style );
+        wxPoint valueFieldPos = HelperGeneratePowerPortGraphics( kpart, elem.style, m_reporter );
 
         kpart->GetValueField().SetPosition( valueFieldPos );
 
@@ -1637,7 +1662,7 @@ void SCH_ALTIUM_PLUGIN::ParsePowerPort( const std::map<wxString, wxString>& aPro
         valueField->SetHorizJustify( EDA_TEXT_HJUSTIFY_T::GR_TEXT_HJUSTIFY_CENTER );
         break;
     default:
-        wxLogWarning( "Pin has unexpected orientation" );
+        m_reporter->Report( _( "Pin has unexpected orientation." ), RPT_SEVERITY_WARNING );
         break;
     }
 
@@ -1981,7 +2006,16 @@ void SCH_ALTIUM_PLUGIN::ParseFileName( const std::map<wxString, wxString>& aProp
     SCH_FIELD& filenameField = sheet->second->GetFields()[SHEETFILENAME];
 
     filenameField.SetPosition( elem.location + m_sheetOffset );
-    filenameField.SetText( elem.text ); // TODO: use kicad_sch
+
+    // If last symbols are ".sChDoC", change them to ".kicad_sch"
+    if( ( elem.text.Right( GetFileExtension().length() + 1 ).Lower() ) == ( "." + GetFileExtension().Lower() ))
+    {
+        elem.text.RemoveLast( GetFileExtension().length() );
+        elem.text += KiCadSchematicFileExtension;
+    }
+
+    filenameField.SetText( elem.text );
+
     filenameField.SetVisible( !elem.isHidden );
 
     filenameField.SetHorizJustify( EDA_TEXT_HJUSTIFY_T::GR_TEXT_HJUSTIFY_LEFT );
@@ -1999,8 +2033,9 @@ void SCH_ALTIUM_PLUGIN::ParseDesignator( const std::map<wxString, wxString>& aPr
     if( symbol == m_symbols.end() )
     {
         // TODO: e.g. can depend on Template (RECORD=39
-        wxLogWarning( wxString::Format( "Designator has non-existent ownerindex %d",
-                                        elem.ownerindex ) );
+        m_reporter->Report( wxString::Format( _( "Designator has non-existent ownerindex %d." ),
+                                              elem.ownerindex ),
+                            RPT_SEVERITY_WARNING );
         return;
     }
 
@@ -2041,6 +2076,12 @@ void SCH_ALTIUM_PLUGIN::ParseParameter( const std::map<wxString, wxString>& aPro
 {
     ASCH_PARAMETER elem( aProperties );
 
+    // TODO: fill in replacements from variant, sheet and project
+    altium_override_map_t stringReplacement = {
+        { "Comment", "${VALUE}" },
+        { "Value", "${Altium_Value}" },
+    };
+
     if( elem.ownerindex <= 0 && elem.ownerpartid == ALTIUM_COMPONENT_NONE )
     {
         // This is some sheet parameter
@@ -2078,7 +2119,7 @@ void SCH_ALTIUM_PLUGIN::ParseParameter( const std::map<wxString, wxString>& aPro
         const wxPoint position = elem.location + m_sheetOffset;
 
         SCH_FIELD* field = nullptr;
-        if( elem.name == "Value" )
+        if( elem.name == "Comment" )
         {
             field = component->GetField( VALUE_FIELD );
             field->SetPosition( position );
@@ -2086,14 +2127,12 @@ void SCH_ALTIUM_PLUGIN::ParseParameter( const std::map<wxString, wxString>& aPro
         else
         {
             int fieldIdx = component->GetFieldCount();
-            field = component->AddField( { position, fieldIdx, component, elem.name } );
+            wxString fieldName = elem.name.IsSameAs( "Value", false ) ? "Altium_Value" : elem.name;
+            field = component->AddField( { position, fieldIdx, component, fieldName } );
         }
 
-        // TODO: improve text replacement (https://gitlab.com/kicad/code/kicad/-/issues/6256)
-        if( elem.text == "=Value" && field->GetId() != VALUE_FIELD )
-            field->SetText( "${VALUE}" );
-        else
-            field->SetText( elem.text );
+        wxString kicadText = AltiumSpecialStringsToKiCadVariables( elem.text, stringReplacement );
+        field->SetText( kicadText );
 
         field->SetVisible( !elem.isHidden );
         field->SetHorizJustify( EDA_TEXT_HJUSTIFY_T::GR_TEXT_HJUSTIFY_LEFT );

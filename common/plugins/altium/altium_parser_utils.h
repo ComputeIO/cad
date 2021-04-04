@@ -1,8 +1,8 @@
 /*
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
- * Copyright (C) 2020 Thomas Pointhuber <thomas.pointhuber@gmx.at>
- * Copyright (C) 2020 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 2020-2021 Thomas Pointhuber <thomas.pointhuber@gmx.at>
+ * Copyright (C) 2020-2021 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -25,22 +25,27 @@
 #ifndef ALTIUM_PARSER_UTILS_H
 #define ALTIUM_PARSER_UTILS_H
 
+#include <map>
+
 #include <kicad_string.h>
 #include <lib_id.h>
 
+#include <iostream>
 
-LIB_ID AltiumToKiCadLibID( wxString aLibName, wxString aLibReference )
+struct CASE_INSENSITIVE_COMPARATOR
 {
-    ReplaceIllegalFileNameChars( aLibName, '_' );
-    ReplaceIllegalFileNameChars( aLibReference, '_' );
+    bool operator()( const wxString& s1, const wxString& s2 ) const
+    {
+        // Altium variables are case insensitive.
+        return s1.CmpNoCase( s2 ) < 0;
+    }
+};
 
-    wxString key = !aLibName.empty() ? ( aLibName + ":" + aLibReference ) : aLibReference;
+typedef std::map<wxString, wxString, CASE_INSENSITIVE_COMPARATOR> altium_override_map_t;
 
-    LIB_ID libId;
-    libId.Parse( key, true );
+LIB_ID AltiumToKiCadLibID( wxString aLibName, wxString aLibReference );
 
-    return libId;
-}
-
+wxString AltiumSpecialStringsToKiCadVariables( const wxString&              aString,
+                                               const altium_override_map_t& aOverride );
 
 #endif //ALTIUM_PARSER_UTILS_H

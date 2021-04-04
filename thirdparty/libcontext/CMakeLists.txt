@@ -9,9 +9,33 @@ if( "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang" OR "${CMAKE_CXX_COMPILER_ID}" STR
         )
 endif()
 
+list(APPEND LIBCONTEXT_SOURCES
+    libcontext.cpp
+    )
+
+if( MSVC )
+    enable_language(ASM_MASM)
+
+    if( NOT LIBCONTEXT_USE_WINFIBER )
+        if ( KICAD_BUILD_ARCH_X86 )
+            set( CMAKE_ASM_MASM_FLAGS "${CMAKE_ASM_MASM_FLAGS} /safeseh" )
+            list(APPEND LIBCONTEXT_SOURCES
+                make_i386_ms_pe_masm.asm
+                jump_i386_ms_pe_masm.asm
+                )
+        elseif( KICAD_BUILD_ARCH_X64 )
+            list(APPEND LIBCONTEXT_SOURCES
+                make_x86_64_ms_pe_masm.asm
+                jump_x86_64_ms_pe_masm.asm
+                )
+        endif()
+    else()
+        add_compile_definitions(LIBCONTEXT_USE_WINFIBER)
+    endif()
+endif()
 
 add_library( libcontext OBJECT
-    libcontext.cpp
+    ${LIBCONTEXT_SOURCES}
     )
 
 target_include_directories( libcontext PUBLIC

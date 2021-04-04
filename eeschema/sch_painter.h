@@ -2,6 +2,8 @@
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
  * Copyright (C) 2019-2020 CERN
+ * Copyright (C) 2020-2021 KiCad Developers, see AUTHORS.txt for contributors.
+ *
  * @author Tomasz Wlostowski <tomasz.wlostowski@cern.ch>
  *
  * This program is free software; you can redistribute it and/or
@@ -25,7 +27,7 @@
 #ifndef __SCH_PAINTER_H
 #define __SCH_PAINTER_H
 
-#include <sch_component.h>
+#include <sch_symbol.h>
 
 #include <painter.h>
 
@@ -64,10 +66,8 @@ class SCH_PAINTER;
 
 
 /**
- * SCH_RENDER_SETTINGS
- * Stores schematic-specific render settings.
+ * Store schematic specific render settings.
  */
-
 class SCH_RENDER_SETTINGS : public RENDER_SETTINGS
 {
 public:
@@ -126,7 +126,6 @@ public:
 
 
 /**
- * SCH_PAINTER
  * Contains methods for drawing schematic-specific items.
  */
 class SCH_PAINTER : public PAINTER

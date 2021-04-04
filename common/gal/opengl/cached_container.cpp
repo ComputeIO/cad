@@ -2,7 +2,7 @@
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
  * Copyright 2013-2017 CERN
- * Copyright (C) 2020 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 2020-2021 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * @author Maciej Suminski <maciej.suminski@cern.ch>
  *
@@ -48,7 +48,11 @@
 using namespace KIGFX;
 
 CACHED_CONTAINER::CACHED_CONTAINER( unsigned int aSize ) :
-    VERTEX_CONTAINER( aSize ), m_item( NULL ), m_chunkSize( 0 ), m_chunkOffset( 0 ), m_maxIndex( 0 )
+        VERTEX_CONTAINER( aSize ),
+        m_item( nullptr ),
+        m_chunkSize( 0 ),
+        m_chunkOffset( 0 ),
+        m_maxIndex( 0 )
 {
     // In the beginning there is only free space
     m_freeChunks.insert( std::make_pair( aSize, 0 ) );
@@ -57,10 +61,10 @@ CACHED_CONTAINER::CACHED_CONTAINER( unsigned int aSize ) :
 
 void CACHED_CONTAINER::SetItem( VERTEX_ITEM* aItem )
 {
-    assert( aItem != NULL );
+    assert( aItem != nullptr );
 
     unsigned int itemSize = aItem->GetSize();
-    m_item      = aItem;
+    m_item = aItem;
     m_chunkSize = itemSize;
 
     // Get the previously set offset if the item was stored previously
@@ -70,7 +74,7 @@ void CACHED_CONTAINER::SetItem( VERTEX_ITEM* aItem )
 
 void CACHED_CONTAINER::FinishItem()
 {
-    assert( m_item != NULL );
+    assert( m_item != nullptr );
 
     unsigned int itemSize = m_item->GetSize();
 
@@ -90,7 +94,7 @@ void CACHED_CONTAINER::FinishItem()
     if( itemSize > 0 )
         m_items.insert( m_item );
 
-    m_item = NULL;
+    m_item = nullptr;
     m_chunkSize = 0;
     m_chunkOffset = 0;
 
@@ -102,11 +106,11 @@ void CACHED_CONTAINER::FinishItem()
 
 VERTEX* CACHED_CONTAINER::Allocate( unsigned int aSize )
 {
-    assert( m_item != NULL );
+    assert( m_item != nullptr );
     assert( IsMapped() );
 
     if( m_failed )
-        return NULL;
+        return nullptr;
 
     unsigned int itemSize = m_item->GetSize();
     unsigned int newSize = itemSize + aSize;
@@ -117,7 +121,7 @@ VERTEX* CACHED_CONTAINER::Allocate( unsigned int aSize )
         if( !reallocate( newSize ) )
         {
             m_failed = true;
-            return NULL;
+            return nullptr;
         }
     }
 
@@ -143,13 +147,13 @@ VERTEX* CACHED_CONTAINER::Allocate( unsigned int aSize )
 
 void CACHED_CONTAINER::Delete( VERTEX_ITEM* aItem )
 {
-    assert( aItem != NULL );
+    assert( aItem != nullptr );
     assert( m_items.find( aItem ) != m_items.end() || aItem->GetSize() == 0 );
 
     int size = aItem->GetSize();
 
     if( size == 0 )
-        return;     // Item is not stored here
+        return; // Item is not stored here
 
     int offset = aItem->GetOffset();
 
@@ -236,7 +240,7 @@ bool CACHED_CONTAINER::reallocate( unsigned int aSize )
     }
 
     // Parameters of the allocated chunk
-    unsigned int newChunkSize   = getChunkSize( *newChunk );
+    unsigned int newChunkSize = getChunkSize( *newChunk );
     unsigned int newChunkOffset = getChunkOffset( *newChunk );
 
     assert( newChunkSize >= aSize );
@@ -269,12 +273,12 @@ void CACHED_CONTAINER::defragment( VERTEX* aTarget )
 {
     // Defragmentation
     ITEMS::iterator it, it_end;
-    int newOffset = 0;
+    int             newOffset = 0;
 
     for( VERTEX_ITEM* item : m_items )
     {
-        int itemOffset    = item->GetOffset();
-        int itemSize      = item->GetSize();
+        int itemOffset = item->GetOffset();
+        int itemSize = item->GetSize();
 
         // Move an item to the new container
         memcpy( &aTarget[newOffset], &m_vertices[itemOffset], itemSize * VERTEX_SIZE );
@@ -322,8 +326,8 @@ void CACHED_CONTAINER::mergeFreeChunks()
     freeChunks.sort();
 
     std::list<CHUNK>::const_iterator itf, itf_end;
-    unsigned int offset = freeChunks.front().first;
-    unsigned int size   = freeChunks.front().second;
+    unsigned int                     offset = freeChunks.front().first;
+    unsigned int                     size = freeChunks.front().second;
     freeChunks.pop_front();
 
     for( itf = freeChunks.begin(), itf_end = freeChunks.end(); itf != itf_end; ++itf )
@@ -340,8 +344,7 @@ void CACHED_CONTAINER::mergeFreeChunks()
             m_freeChunks.insert( std::make_pair( size, offset ) );
             // and let's check the next chunk
             offset = itf->first;
-            size   = itf->second;
-
+            size = itf->second;
         }
     }
 
@@ -378,7 +381,7 @@ void CACHED_CONTAINER::test()
 {
 #ifdef __WXDEBUG__
     // Free space check
-    unsigned int freeSpace = 0;
+    unsigned int             freeSpace = 0;
     FREE_CHUNK_MAP::iterator itf;
 
     for( itf = m_freeChunks.begin(); itf != m_freeChunks.end(); ++itf )
@@ -387,8 +390,9 @@ void CACHED_CONTAINER::test()
     assert( freeSpace == m_freeSpace );
 
     // Used space check
-    unsigned int used_space = 0;
+    unsigned int    used_space = 0;
     ITEMS::iterator itr;
+
     for( itr = m_items.begin(); itr != m_items.end(); ++itr )
         used_space += ( *itr )->GetSize();
 

@@ -24,6 +24,7 @@
 #include <panel_setup_tracks_and_vias.h>
 #include <panel_setup_mask_and_paste.h>
 #include <../board_stackup_manager/panel_board_stackup.h>
+#include <../board_stackup_manager/panel_board_finish.h>
 #include <confirm.h>
 #include <kiface_i.h>
 #include <drc/drc_item.h>
@@ -58,6 +59,7 @@ DIALOG_BOARD_SETUP::DIALOG_BOARD_SETUP( PCB_EDIT_FRAME* aFrame ) :
     m_tracksAndVias = new PANEL_SETUP_TRACKS_AND_VIAS( this, aFrame, m_constraints );
     m_maskAndPaste = new PANEL_SETUP_MASK_AND_PASTE( this, aFrame );
     m_physicalStackup = new PANEL_SETUP_BOARD_STACKUP( this, aFrame, m_layers );
+    m_boardFinish = new PANEL_SETUP_BOARD_FINISH( this, board );
 
     m_severities = new PANEL_SETUP_SEVERITIES( this, DRC_ITEM::GetItemsWithSeverities(),
                                                bds.m_DRCSeverities );
@@ -72,10 +74,19 @@ DIALOG_BOARD_SETUP::DIALOG_BOARD_SETUP( PCB_EDIT_FRAME* aFrame ) :
      */
 
     m_treebook->AddPage( new wxPanel( this ),  _( "Board Stackup" ) );
+
+    /*
+     * WARNING: Code currently relies on the layers setup coming before the physical stackup panel,
+     * and thus transferring data to the board first.  See comment in
+     * PANEL_SETUP_BOARD_STACKUP::TransferDataFromWindow and rework this logic if it is determined
+     * that the order of these pages should be changed.
+     */
     m_treebook->AddSubPage( m_layers,  _( "Board Editor Layers" ) );
+    m_layerSetupPage = 1;
     m_treebook->AddSubPage( m_physicalStackup,  _( "Physical Stackup" ) );
     // Change this value if m_physicalStackup is not the page 2 of m_treebook
     m_physicalStackupPage = 2;  // The page number (from 0) to select the m_physicalStackup panel
+    m_treebook->AddSubPage( m_boardFinish, _( "Board Finish" ) );
     m_treebook->AddSubPage( m_maskAndPaste,  _( "Solder Mask/Paste" ) );
 
     m_treebook->AddPage( new wxPanel( this ), _( "Text & Graphics" ) );
@@ -92,15 +103,9 @@ DIALOG_BOARD_SETUP::DIALOG_BOARD_SETUP( PCB_EDIT_FRAME* aFrame ) :
     for( size_t i = 0; i < m_treebook->GetPageCount(); ++i )
    	    m_macHack.push_back( true );
 
-    AddAuxiliaryAction( "Validate Settings", "Check for problems with board settings",
-                        std::bind( &DIALOG_BOARD_SETUP::OnValidate, this, _1 ) );
-
-    // Connect Events
-    m_treebook->Connect( wxEVT_TREEBOOK_PAGE_CHANGED,
+	// Connect Events
+	m_treebook->Connect( wxEVT_TREEBOOK_PAGE_CHANGED,
                          wxBookCtrlEventHandler( DIALOG_BOARD_SETUP::OnPageChange ), NULL, this );
-
-    if( Prj().IsReadOnly() )
-        m_infoBar->ShowMessage( _( "Project is missing or read-only. Changes will not be saved." ) );
 
     finishDialogSettings();
 }
@@ -116,7 +121,20 @@ DIALOG_BOARD_SETUP::~DIALOG_BOARD_SETUP()
 void DIALOG_BOARD_SETUP::OnPageChange( wxBookCtrlEvent& event )
 {
     if( event.GetSelection() == m_physicalStackupPage )
+    {
         m_physicalStackup->OnLayersOptionsChanged( m_layers->GetUILayerMask() );
+        m_infoBar->Dismiss();
+    }
+    else if( event.GetSelection() == m_layerSetupPage )
+    {
+        m_layers->SyncCopperLayers( m_physicalStackup->GetCopperLayerCount() );
+        m_infoBar->Dismiss();
+    }
+    else if( Prj().IsReadOnly() )
+    {
+        m_infoBar->ShowMessage(
+                _( "Project is missing or read-only. Changes will not be saved." ) );
+    }
 
 #ifdef __WXMAC__
     // Work around an OSX bug where the wxGrid children don't get placed correctly until

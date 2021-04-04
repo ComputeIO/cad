@@ -222,11 +222,11 @@ void PlotStandardLayer( BOARD *aBoard, PLOTTER* aPlotter, LSET aLayerMask,
     itemplotter.PlotBoardGraphicItems();
 
     // Draw footprint texts:
-    for( FOOTPRINT* footprint : aBoard->Footprints() )
+    for( const FOOTPRINT* footprint : aBoard->Footprints() )
         itemplotter.PlotFootprintTextItems( footprint );
 
     // Draw footprint other graphic items:
-    for( FOOTPRINT* footprint : aBoard->Footprints() )
+    for( const FOOTPRINT* footprint : aBoard->Footprints() )
         itemplotter.PlotFootprintGraphicItems( footprint );
 
     // Plot footprint pads
@@ -269,7 +269,7 @@ void PlotStandardLayer( BOARD *aBoard, PLOTTER* aPlotter, LSET aLayerMask,
             int width_adj = 0;
 
             if( onCopperLayer )
-                width_adj =  itemplotter.getFineWidthAdj();
+                width_adj = itemplotter.getFineWidthAdj();
 
             if( onSolderMaskLayer )
                 margin.x = margin.y = pad->GetSolderMaskMargin();
@@ -277,12 +277,18 @@ void PlotStandardLayer( BOARD *aBoard, PLOTTER* aPlotter, LSET aLayerMask,
             if( onSolderPasteLayer )
                 margin = pad->GetSolderPasteMargin();
 
+            // not all shapes can have a different margin for x and y axis
+            // in fact only oval and rect shapes can have different values.
+            // Round shape have always the same x,y margin
+            // so define a unique value for other shapes that do not support different values
+            int mask_clearance = margin.x;
+
             // Now offset the pad size by margin + width_adj
             wxSize padPlotsSize = pad->GetSize() + margin * 2 + wxSize( width_adj, width_adj );
 
             // Store these parameters that can be modified to plot inflated/deflated pads shape
             PAD_SHAPE_T padShape = pad->GetShape();
-            wxSize      padSize = pad->GetSize();
+            wxSize      padSize  = pad->GetSize();
             wxSize      padDelta = pad->GetDelta(); // has meaning only for trapezoidal pads
             double      padCornerRadius = pad->GetRoundRectCornerRadius();
 
@@ -308,23 +314,56 @@ void PlotStandardLayer( BOARD *aBoard, PLOTTER* aPlotter, LSET aLayerMask,
             case PAD_SHAPE_RECT:
                 pad->SetSize( padPlotsSize );
 
-                if( margin.x > 0 )
+                if( mask_clearance > 0 )
                 {
                     pad->SetShape( PAD_SHAPE_ROUNDRECT );
-                    pad->SetRoundRectCornerRadius( margin.x );
+                    pad->SetRoundRectCornerRadius( mask_clearance );
                 }
 
                 itemplotter.PlotPad( pad, color, padPlotMode );
                 break;
 
             case PAD_SHAPE_TRAPEZOID:
-            {
-                wxSize scale( padPlotsSize.x / padSize.x, padPlotsSize.y / padSize.y );
-                pad->SetDelta( wxSize( padDelta.x * scale.x, padDelta.y * scale.y ) );
-                pad->SetSize( padPlotsSize );
+                // inflate/deflate a trapezoid is a bit complex.
+                // so if the margin is not null, build a similar polygonal pad shape,
+                // and inflate/deflate the polygonal shape
+                // because inflating/deflating using different values for y and y
+                // we are using only margin.x as inflate/deflate value
+                if( mask_clearance == 0 )
+                    itemplotter.PlotPad( pad, color, padPlotMode );
+                else
+                {
+                    PAD dummy( *pad );
+                    dummy.SetAnchorPadShape( PAD_SHAPE_CIRCLE );
+                    dummy.SetShape( PAD_SHAPE_CUSTOM );
+                    SHAPE_POLY_SET outline;
+                    outline.NewOutline();
+                    int dx = padSize.x / 2;
+                    int dy = padSize.y / 2;
+                    int ddx = padDelta.x / 2;
+                    int  ddy = padDelta.y / 2;
 
-                itemplotter.PlotPad( pad, color, padPlotMode );
-            }
+                    outline.Append( -dx - ddy,  dy + ddx );
+                    outline.Append(  dx + ddy,  dy - ddx );
+                    outline.Append(  dx - ddy, -dy + ddx );
+                    outline.Append( -dx + ddy, -dy - ddx );
+
+                    // Shape polygon can have holes so use InflateWithLinkedHoles(), not Inflate()
+                    // which can create bad shapes if margin.x is < 0
+                    int maxError = aBoard->GetDesignSettings().m_MaxError;
+                    int numSegs = GetArcToSegmentCount( mask_clearance, maxError, 360.0 );
+                    outline.InflateWithLinkedHoles( mask_clearance, numSegs, SHAPE_POLY_SET::PM_FAST );
+                    dummy.DeletePrimitivesList();
+                    dummy.AddPrimitivePoly( outline, 0, true );
+
+                    // Be sure the anchor pad is not bigger than the deflated shape because this
+                    // anchor will be added to the pad shape when plotting the pad. So now the
+                    // polygonal shape is built, we can clamp the anchor size
+                    dummy.SetSize( wxSize( 0,0 ) );
+
+                    itemplotter.PlotPad( &dummy, color, padPlotMode );
+                }
+
                 break;
 
             case PAD_SHAPE_ROUNDRECT:
@@ -344,15 +383,15 @@ void PlotStandardLayer( BOARD *aBoard, PLOTTER* aPlotter, LSET aLayerMask,
                 // Shape polygon can have holes so use InflateWithLinkedHoles(), not Inflate()
                 // which can create bad shapes if margin.x is < 0
                 int maxError = aBoard->GetDesignSettings().m_MaxError;
-                int numSegs = GetArcToSegmentCount( margin.x, maxError, 360.0 );
-                shape.InflateWithLinkedHoles( margin.x, numSegs, SHAPE_POLY_SET::PM_FAST );
+                int numSegs = GetArcToSegmentCount( mask_clearance, maxError, 360.0 );
+                shape.InflateWithLinkedHoles( mask_clearance, numSegs, SHAPE_POLY_SET::PM_FAST );
                 dummy.DeletePrimitivesList();
                 dummy.AddPrimitivePoly( shape, 0, true );
 
                 // Be sure the anchor pad is not bigger than the deflated shape because this
                 // anchor will be added to the pad shape when plotting the pad. So now the
                 // polygonal shape is built, we can clamp the anchor size
-                if( margin.x < 0 )  // we expect margin.x = margin.y for custom pads
+                if( mask_clearance < 0 )  // we expect margin.x = margin.y for custom pads
                     dummy.SetSize( padPlotsSize );
 
                 itemplotter.PlotPad( &dummy, color, padPlotMode );
@@ -385,7 +424,7 @@ void PlotStandardLayer( BOARD *aBoard, PLOTTER* aPlotter, LSET aLayerMask,
 
     aPlotter->StartBlock( NULL );
 
-    for( TRACK* track : aBoard->Tracks() )
+    for( const TRACK* track : aBoard->Tracks() )
     {
         const VIA* via = dyn_cast<const VIA*>( track );
 
@@ -448,7 +487,7 @@ void PlotStandardLayer( BOARD *aBoard, PLOTTER* aPlotter, LSET aLayerMask,
     gbr_metadata.SetApertureAttrib( GBR_APERTURE_METADATA::GBR_APERTURE_ATTRIB_CONDUCTOR );
 
     // Plot tracks (not vias) :
-    for( TRACK* track : aBoard->Tracks() )
+    for( const TRACK* track : aBoard->Tracks() )
     {
         if( track->Type() == PCB_VIA_T )
             continue;
@@ -466,7 +505,7 @@ void PlotStandardLayer( BOARD *aBoard, PLOTTER* aPlotter, LSET aLayerMask,
 
         if( track->Type() == PCB_ARC_T )
         {
-            ARC* arc = static_cast<ARC*>( track );
+            const ARC* arc = static_cast<const ARC*>( track );
             VECTOR2D center( arc->GetCenter() );
             int radius = arc->GetRadius();
             double start_angle = arc->GetArcAngleStart();
@@ -490,7 +529,7 @@ void PlotStandardLayer( BOARD *aBoard, PLOTTER* aPlotter, LSET aLayerMask,
 
     NETINFO_ITEM nonet( aBoard );
 
-    for( ZONE* zone : aBoard->Zones() )
+    for( const ZONE* zone : aBoard->Zones() )
     {
         for( PCB_LAYER_ID layer : zone->GetLayerSet().Seq() )
         {
@@ -613,7 +652,7 @@ void PlotLayerOutlines( BOARD* aBoard, PLOTTER* aPlotter, LSET aLayerMask,
         // Now we have one or more basic polygons: plot each polygon
         for( int ii = 0; ii < outlines.OutlineCount(); ii++ )
         {
-            for(int kk = 0; kk <= outlines.HoleCount (ii); kk++ )
+            for( int kk = 0; kk <= outlines.HoleCount(ii); kk++ )
             {
                 cornerList.clear();
                 const SHAPE_LINE_CHAIN& path = (kk == 0) ? outlines.COutline( ii ) : outlines.CHole( ii, kk - 1 );
@@ -904,8 +943,8 @@ void PlotSolderMaskLayer( BOARD *aBoard, PLOTTER* aPlotter, LSET aLayerMask,
  *      page size is the 'drawing' page size,
  *      paper size is the physical page size
  */
-static void initializePlotter( PLOTTER *aPlotter, BOARD * aBoard,
-                               PCB_PLOT_PARAMS *aPlotOpts )
+static void initializePlotter( PLOTTER* aPlotter, const BOARD* aBoard,
+                               const PCB_PLOT_PARAMS* aPlotOpts )
 {
     PAGE_INFO pageA4( wxT( "A4" ) );
     const PAGE_INFO& pageInfo = aBoard->GetPageSettings();
@@ -1003,7 +1042,7 @@ static void FillNegativeKnockout( PLOTTER *aPlotter, const EDA_RECT &aBbbox )
 /**
  * Calculate the effective size of HPGL pens and set them in the plotter object
  */
-static void ConfigureHPGLPenSizes( HPGL_PLOTTER *aPlotter, PCB_PLOT_PARAMS *aPlotOpts )
+static void ConfigureHPGLPenSizes( HPGL_PLOTTER *aPlotter, const PCB_PLOT_PARAMS *aPlotOpts )
 {
     // Compute penDiam (the value is given in mils) in pcb units, with plot scale (if Scale is 2,
     // penDiam value is always m_HPGLPenDiam so apparent penDiam is actually penDiam / Scale
@@ -1021,7 +1060,7 @@ static void ConfigureHPGLPenSizes( HPGL_PLOTTER *aPlotter, PCB_PLOT_PARAMS *aPlo
  * and prepare the page for plotting.
  * Return the plotter object if OK, NULL if the file is not created (or has a problem)
  */
-PLOTTER* StartPlotBoard( BOARD *aBoard, PCB_PLOT_PARAMS *aPlotOpts, int aLayer,
+PLOTTER* StartPlotBoard( BOARD *aBoard, const PCB_PLOT_PARAMS *aPlotOpts, int aLayer,
                          const wxString& aFullFileName, const wxString& aSheetDesc )
 {
     // Create the plotter driver and set the few plotter specific options
@@ -1109,8 +1148,9 @@ PLOTTER* StartPlotBoard( BOARD *aBoard, PCB_PLOT_PARAMS *aPlotOpts, int aLayer,
         // Plot the frame reference if requested
         if( aPlotOpts->GetPlotFrameRef() )
         {
-            PlotWorkSheet( plotter, aBoard->GetProject(), aBoard->GetTitleBlock(),
-                           aBoard->GetPageSettings(), "1", 1, aSheetDesc, aBoard->GetFileName() );
+            PlotDrawingSheet( plotter, aBoard->GetProject(), aBoard->GetTitleBlock(),
+                              aBoard->GetPageSettings(), "1", 1, aSheetDesc,
+                              aBoard->GetFileName() );
 
             if( aPlotOpts->GetMirror() )
                 initializePlotter( plotter, aBoard, aPlotOpts );

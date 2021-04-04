@@ -2,7 +2,7 @@
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
  * Copyright (C) 2004 Jean-Pierre Charras, jaen-pierre.charras@gipsa-lab.inpg.com
- * Copyright (C) 2004-2020 KiCad Developers, see change_log.txt for contributors.
+ * Copyright (C) 2004-2021 KiCad Developers, see AUTHOR.txt for contributors.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -30,13 +30,6 @@
 
 class LIB_RECTANGLE  : public LIB_ITEM
 {
-    wxPoint m_End;                  // Rectangle end point.
-    wxPoint m_Pos;                  // Rectangle start point.
-    int     m_Width;                // Line width
-
-    void print( const RENDER_SETTINGS* aSettings, const wxPoint& aOffset, void* aData,
-                const TRANSFORM& aTransform ) override;
-
 public:
     LIB_RECTANGLE( LIB_PART * aParent );
 
@@ -80,7 +73,7 @@ public:
     void Rotate( const wxPoint& aCenter, bool aRotateCCW = true ) override;
 
     void Plot( PLOTTER* aPlotter, const wxPoint& aOffset, bool aFill,
-               const TRANSFORM& aTransform ) override;
+               const TRANSFORM& aTransform ) const override;
 
     int GetWidth() const override { return m_Width; }
     void SetWidth( int aWidth ) override { m_Width = aWidth; }
@@ -90,12 +83,11 @@ public:
 
     wxString GetSelectMenuText( EDA_UNITS aUnits ) const override;
 
-    BITMAP_DEF GetMenuImage() const override;
+    BITMAPS GetMenuImage() const override;
 
     EDA_ITEM* Clone() const override;
 
 private:
-
     /**
      * @copydoc LIB_ITEM::compare()
      *
@@ -107,6 +99,13 @@ private:
      */
     int compare( const LIB_ITEM& aOther,
             LIB_ITEM::COMPARE_FLAGS aCompareFlags = LIB_ITEM::COMPARE_FLAGS::NORMAL ) const override;
+
+    void print( const RENDER_SETTINGS* aSettings, const wxPoint& aOffset,
+                void* aData, const TRANSFORM& aTransform ) override;
+
+    wxPoint m_End;                  // Rectangle end point.
+    wxPoint m_Pos;                  // Rectangle start point.
+    int     m_Width;                // Line width
 };
 
 

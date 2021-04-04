@@ -122,7 +122,7 @@ void LIB_RECTANGLE::Rotate( const wxPoint& aCenter, bool aRotateCCW )
 
 
 void LIB_RECTANGLE::Plot( PLOTTER* aPlotter, const wxPoint& aOffset, bool aFill,
-                          const TRANSFORM& aTransform )
+                          const TRANSFORM& aTransform ) const
 {
     wxASSERT( aPlotter != NULL );
 
@@ -282,9 +282,9 @@ wxString LIB_RECTANGLE::GetSelectMenuText( EDA_UNITS aUnits ) const
 }
 
 
-BITMAP_DEF LIB_RECTANGLE::GetMenuImage() const
+BITMAPS LIB_RECTANGLE::GetMenuImage() const
 {
-    return add_rectangle_xpm;
+    return BITMAPS::add_rectangle;
 }
 
 

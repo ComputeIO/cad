@@ -20,6 +20,7 @@
 #include <wx/filename.h>
 #include <wx/stdpaths.h>
 #include <wx/string.h>
+#include <wx/utils.h>
 
 #include <kiplatform/environment.h>
 #include <paths.h>
@@ -37,7 +38,13 @@
 
 void PATHS::getUserDocumentPath( wxFileName& aPath )
 {
-    aPath.AssignDir( KIPLATFORM::ENV::GetDocumentsPath() );
+    wxString envPath;
+
+    if( wxGetEnv( wxT( "KICAD_DOCUMENTS_HOME" ), &envPath ) )
+        aPath.AssignDir( envPath );
+    else
+        aPath.AssignDir( KIPLATFORM::ENV::GetDocumentsPath() );
+
     aPath.AppendDir( KICAD_PATH_STR );
     aPath.AppendDir( SETTINGS_MANAGER::GetSettingsVersion() );
 }
@@ -131,26 +138,35 @@ wxString PATHS::GetDefaultUserProjectsPath()
 }
 
 
+wxString PATHS::GetStockDataPath( bool aRespectRunFromBuildDir )
+{
+    wxString path;
+
+    if( aRespectRunFromBuildDir && wxGetEnv( wxT( "KICAD_RUN_FROM_BUILD_DIR" ), nullptr ) )
+    {
+        // Allow debugging from build dir by placing relevant files/folders in the build root
+        path = Pgm().GetExecutablePath() + wxT( ".." );
+    }
+    else
+    {
+#if defined( __WXMAC__ )
+        path = GetOSXKicadDataDir();
+#elif defined( __WXMSW__ )
+        path = Pgm().GetExecutablePath() + wxT( "../share/kicad" );
+#else
+        path = wxString::FromUTF8Unchecked( KICAD_DATA );
+#endif
+    }
+
+    return path;
+}
+
+
 wxString PATHS::GetStockScriptingPath()
 {
     wxString path;
 
-    if( wxGetEnv( wxT( "KICAD_RUN_FROM_BUILD_DIR" ), nullptr ) )
-    {
-        // Allow debugging from build dir by placing a "scripting" folder in the build root
-        path = Pgm().GetExecutablePath() + wxT( "../scripting" );
-    }
-    else
-    {
-        //TODO(snh) break out the directory functions into KIPLATFORM
-#if defined( __WXMAC__ )
-        path = GetOSXKicadDataDir() + wxT( "/scripting" );
-#elif defined( __WXMSW__ )
-        path = Pgm().GetExecutablePath() + wxT( "../share/kicad/scripting" );
-#else
-        path = wxString( KICAD_DATA ) + wxS( "/scripting" );
-#endif
-    }
+    path = GetStockDataPath() + wxT( "/scripting" );
 
     return path;
 }
@@ -160,20 +176,12 @@ wxString PATHS::GetStockPluginsPath()
 {
     wxFileName fn;
 
-#if defined( __WXMAC__ )
-    fn.Assign( Pgm().GetExecutablePath() );
-    fn.AppendDir( wxT( "Contents" ) );
-    fn.AppendDir( wxT( "PlugIns" ) );
-#elif defined( __WXMSW__ )
-    fn.Assign( Pgm().GetExecutablePath() + wxT( "/plugins/" ) );
+#if defined( __WXMSW__ )
+    fn.AssignDir( Pgm().GetExecutablePath() );
 #else
-    // PLUGINDIR = CMAKE_INSTALL_FULL_LIBDIR path is the absolute path
-    // corresponding to the install path used for constructing KICAD_USER_PLUGIN
-    wxString tfname = wxString::FromUTF8Unchecked( KICAD_PLUGINDIR );
-    fn.Assign( tfname, "" );
-    fn.AppendDir( "kicad" ); // linux use lowercase
-    fn.AppendDir( wxT( "plugins" ) );
+    fn.AssignDir( PATHS::GetStockDataPath( false ) );
 #endif
+    fn.AppendDir( wxT( "plugins" ) );
 
     return fn.GetPathWithSep();
 }
@@ -183,7 +191,19 @@ wxString PATHS::GetStockPlugins3DPath()
 {
     wxFileName fn;
 
+#ifdef __WXGTK__
+    // KICAD_PLUGINDIR = CMAKE_INSTALL_FULL_LIBDIR path is the absolute path
+    // corresponding to the install path used for constructing KICAD_USER_PLUGIN
+    wxString tfname = wxString::FromUTF8Unchecked( KICAD_PLUGINDIR );
+    fn.Assign( tfname, "" );
+    fn.AppendDir( wxT( "kicad" ) );
+    fn.AppendDir( wxT( "plugins" ) );
+#elif defined( __WXMAC__ )
+    fn.Assign( wxStandardPaths::Get().GetPluginsDir(), wxEmptyString );
+#else
     fn.Assign( PATHS::GetStockPluginsPath() );
+#endif
+
     fn.AppendDir( "3d" );
 
     return fn.GetPathWithSep();
@@ -233,3 +253,51 @@ void PATHS::EnsureUserPathsExist()
     EnsurePathExists( GetDefaultUserFootprintsPath() );
     EnsurePathExists( GetDefaultUser3DModelsPath() );
 }
+
+
+#ifdef __WXMAC__
+wxString PATHS::GetOSXKicadUserDataDir()
+{
+    // According to wxWidgets documentation for GetUserDataDir:
+    // Mac: ~/Library/Application Support/appname
+    wxFileName udir( wxStandardPaths::Get().GetUserDataDir(), wxEmptyString );
+
+    // Since appname is different if started via launcher or standalone binary
+    // map all to "kicad" here
+    udir.RemoveLastDir();
+    udir.AppendDir( "kicad" );
+
+    return udir.GetPath();
+}
+
+
+wxString PATHS::GetOSXKicadMachineDataDir()
+{
+    return wxT( "/Library/Application Support/kicad" );
+}
+
+
+wxString PATHS::GetOSXKicadDataDir()
+{
+    // According to wxWidgets documentation for GetDataDir:
+    // Mac: appname.app/Contents/SharedSupport bundle subdirectory
+    wxFileName ddir( wxStandardPaths::Get().GetDataDir(), wxEmptyString );
+
+    // This must be mapped to main bundle for everything but kicad.app
+    const wxArrayString dirs = ddir.GetDirs();
+    if( dirs[dirs.GetCount() - 3].Lower() != wxT( "kicad.app" ) )
+    {
+        // Bundle structure resp. current path is
+        //   kicad.app/Contents/Applications/<standalone>.app/Contents/SharedSupport
+        // and will be mapped to
+        //   kicad.app/Contents/SharedSupprt
+        ddir.RemoveLastDir();
+        ddir.RemoveLastDir();
+        ddir.RemoveLastDir();
+        ddir.RemoveLastDir();
+        ddir.AppendDir( wxT( "SharedSupport" ) );
+    }
+
+    return ddir.GetPath();
+}
+#endif

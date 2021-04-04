@@ -34,8 +34,10 @@
 #include <math/box2.h>
 #include <math/vector2d.h>
 
-typedef std::vector<VECTOR2D> POINTS;
-typedef std::vector<POINTS>   POINTS_LIST;
+namespace KIFONT
+{
+typedef std::vector<VECTOR2D>     GLYPH_POINTS;
+typedef std::vector<GLYPH_POINTS> GLYPH_POINTS_LIST;
 
 typedef std::vector<std::vector<VECTOR2D>*> GLYPH;
 typedef std::vector<GLYPH*>                 GLYPH_LIST;
@@ -43,7 +45,7 @@ typedef std::vector<BOX2D>                  GLYPH_BOUNDING_BOX_LIST;
 
 typedef struct
 {
-    POINTS         points;
+    GLYPH_POINTS   points;
     int            winding;
     FT_Orientation orientation;
 } CONTOUR;
@@ -69,19 +71,19 @@ private:
 
     void addContourPoint( const VECTOR2D& p );
 
-    int approximateContour( const POINTS& aPoints, const std::vector<bool>& aPointOnCurve,
-                            POINTS& aResult ) const;
+    int approximateContour( const GLYPH_POINTS& aPoints, const std::vector<bool>& aPointOnCurve,
+                            GLYPH_POINTS& aResult ) const;
 
-    bool approximateBezierCurve( POINTS& result, const POINTS& bezier ) const;
-    bool approximateQuadraticBezierCurve( POINTS& result, const POINTS& bezier ) const;
-    bool approximateCubicBezierCurve( POINTS& result, const POINTS& bezier ) const;
+    bool approximateBezierCurve( GLYPH_POINTS& result, const GLYPH_POINTS& bezier ) const;
+    bool approximateQuadraticBezierCurve( GLYPH_POINTS& result, const GLYPH_POINTS& bezier ) const;
+    bool approximateCubicBezierCurve( GLYPH_POINTS& result, const GLYPH_POINTS& bezier ) const;
 
     /**
      * @return 1 if aContour is in clockwise order, -1 if it is in
      *     counterclockwise order, or 0 if the winding can't be
      *     determined.
      */
-    int winding( const POINTS& aContour ) const;
+    int winding( const GLYPH_POINTS& aContour ) const;
 
     inline static const unsigned int onCurve( char aTags ) { return aTags & 0x1; }
 
@@ -112,5 +114,6 @@ private:
     static int cubicTo( const FT_Vector* aFirstControlPoint, const FT_Vector* aSecondControlPoint,
                         const FT_Vector* aEndPoint, void* aCallbackData );
 };
+} //namespace KIFONT
 
 #endif // OUTLINE_DECOMPOSER_H_

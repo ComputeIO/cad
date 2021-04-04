@@ -1299,7 +1299,7 @@ void PCB_POINT_EDITOR::updateItem() const
     case PCB_ZONE_T:
     {
         ZONE* zone = static_cast<ZONE*>( item );
-        zone->ClearFilledPolysList();
+        zone->UnFill();
         SHAPE_POLY_SET& outline = *zone->Outline();
 
         for( int i = 0; i < outline.TotalVertices(); ++i )
@@ -1310,8 +1310,15 @@ void PCB_POINT_EDITOR::updateItem() const
             outline.SetVertex( i, m_editPoints->Point( i ).GetPosition() );
         }
 
+        for( unsigned i = 0; i < m_editPoints->LinesSize(); ++i )
+        {
+            if( !isModified( m_editPoints->Line( i ) ) )
+                m_editPoints->Line( i ).SetConstraint( new EC_PERPLINE( m_editPoints->Line( i ) ) );
+        }
+
         validatePolygon( outline );
         zone->HatchBorder();
+        // TODO Refill zone when KiCad supports auto re-fill
         break;
     }
 
@@ -1385,23 +1392,53 @@ void PCB_POINT_EDITOR::updateItem() const
     {
         ORTHOGONAL_DIMENSION* dimension = static_cast<ORTHOGONAL_DIMENSION*>( item );
 
-        BOX2I bounds( dimension->GetStart(), dimension->GetEnd() - dimension->GetStart() );
-
-        VECTOR2I direction( m_editedPoint->GetPosition() - bounds.Centre() );
-        bool     vert = std::abs( direction.y ) < std::abs( direction.x );
-        VECTOR2D featureLine( m_editedPoint->GetPosition() - dimension->GetStart() );
-
-        if( isModified( m_editPoints->Point( DIM_CROSSBARSTART ) )
-            || isModified( m_editPoints->Point( DIM_CROSSBAREND ) ) )
+        if( isModified( m_editPoints->Point( DIM_CROSSBARSTART ) ) ||
+            isModified( m_editPoints->Point( DIM_CROSSBAREND ) ) )
         {
+            BOX2I bounds( dimension->GetStart(), dimension->GetEnd() - dimension->GetStart() );
+
+            const VECTOR2I& cursorPos = m_editedPoint->GetPosition();
+
+            // Find vector from nearest dimension point to edit position
+            VECTOR2I directionA( cursorPos - dimension->GetStart() );
+            VECTOR2I directionB( cursorPos - dimension->GetEnd() );
+            VECTOR2I direction = ( directionA < directionB ) ? directionA : directionB;
+
+            bool     vert;
+            VECTOR2D featureLine( cursorPos - dimension->GetStart() );
+
             // Only change the orientation when we move outside the bounds
-            if( !bounds.Contains( m_editedPoint->GetPosition() ) )
+            if( !bounds.Contains( cursorPos ) )
             {
+                // If the dimension is horizontal or vertical, set correct orientation
+                // otherwise, test if we're left/right of the bounding box or above/below it
+                if( bounds.GetWidth() == 0 )
+                {
+                    vert = true;
+                }
+                else if( bounds.GetHeight() == 0 )
+                {
+                    vert = false;
+                }
+                else if( cursorPos.x > bounds.GetLeft() && cursorPos.x < bounds.GetRight() )
+                {
+                    vert = false;
+                }
+                else if( cursorPos.y > bounds.GetTop() && cursorPos.y < bounds.GetBottom() )
+                {
+                    vert = true;
+                }
+                else
+                {
+                    vert = std::abs( direction.y ) < std::abs( direction.x );
+                }
                 dimension->SetOrientation( vert ? ORTHOGONAL_DIMENSION::DIR::VERTICAL
                                                 : ORTHOGONAL_DIMENSION::DIR::HORIZONTAL );
             }
-
-            vert = dimension->GetOrientation() == ORTHOGONAL_DIMENSION::DIR::VERTICAL;
+            else
+            {
+                vert = dimension->GetOrientation() == ORTHOGONAL_DIMENSION::DIR::VERTICAL;
+            }
 
             dimension->SetHeight( vert ? featureLine.x : featureLine.y );
         }
@@ -1488,13 +1525,7 @@ void PCB_POINT_EDITOR::finishItem()
     if( !item )
         return;
 
-    if( item->Type() == PCB_ZONE_T || item->Type() == PCB_FP_ZONE_T )
-    {
-        ZONE* zone = static_cast<ZONE*>( item );
-
-        if( zone->IsFilled() && m_refill && zone->NeedRefill() )
-            m_toolMgr->RunAction( PCB_ACTIONS::zoneFill, true, zone );
-    }
+    // TODO Refill edited zones when KiCad supports auto re-fill
 }
 
 
@@ -1770,19 +1801,23 @@ void PCB_POINT_EDITOR::setAltConstraint( bool aEnabled )
     if( aEnabled )
     {
         EDIT_LINE* line = dynamic_cast<EDIT_LINE*>( m_editedPoint );
-        bool       isPoly = false;
+        bool       isPoly;
 
-        if( m_editPoints->GetParent()->Type() == PCB_ZONE_T
-            || m_editPoints->GetParent()->Type() == PCB_FP_ZONE_T )
+        switch( m_editPoints->GetParent()->Type() )
         {
+        case PCB_ZONE_T:
+        case PCB_FP_ZONE_T:
             isPoly = true;
-        }
+            break;
 
-        else if( m_editPoints->GetParent()->Type() == PCB_SHAPE_T
-                 || m_editPoints->GetParent()->Type() == PCB_FP_SHAPE_T )
-        {
-            PCB_SHAPE* shape = static_cast<PCB_SHAPE*>( m_editPoints->GetParent() );
-            isPoly = shape->GetShape() == S_POLYGON;
+        case PCB_SHAPE_T:
+        case PCB_FP_SHAPE_T:
+            isPoly = static_cast<PCB_SHAPE*>( m_editPoints->GetParent() )->GetShape() == S_POLYGON;
+            break;
+
+        default:
+            isPoly = false;
+            break;
         }
 
         if( line && isPoly )
@@ -1907,24 +1942,31 @@ bool PCB_POINT_EDITOR::removeCornerCondition( const SELECTION& )
     if( !m_editPoints || !m_editedPoint )
         return false;
 
-    EDA_ITEM* item = m_editPoints->GetParent();
+    EDA_ITEM*       item = m_editPoints->GetParent();
+    SHAPE_POLY_SET* polyset = nullptr;
 
     if( !item )
         return false;
 
-    if( !( item->Type() == PCB_ZONE_T || item->Type() == PCB_FP_ZONE_T
-           || ( ( item->Type() == PCB_FP_SHAPE_T || item->Type() == PCB_SHAPE_T )
-                && static_cast<PCB_SHAPE*>( item )->GetShape() == S_POLYGON ) ) )
+    switch( item->Type() )
     {
+    case PCB_ZONE_T:
+    case PCB_FP_ZONE_T:
+        polyset = static_cast<ZONE*>( item )->Outline();
+        break;
+
+    case PCB_SHAPE_T:
+    case PCB_FP_SHAPE_T:
+        if( static_cast<PCB_SHAPE*>( item )->GetShape() == S_POLYGON )
+            polyset = &static_cast<PCB_SHAPE*>( item )->GetPolyShape();
+        else
+            return false;
+
+        break;
+
+    default:
         return false;
     }
-
-    SHAPE_POLY_SET* polyset;
-
-    if( item->Type() == PCB_ZONE_T || item->Type() == PCB_FP_ZONE_T )
-        polyset = static_cast<ZONE*>( item )->Outline();
-    else
-        polyset = &static_cast<PCB_SHAPE*>( item )->GetPolyShape();
 
     auto vertex = findVertex( *polyset, *m_editedPoint );
 

@@ -50,7 +50,7 @@ public:
     /// @copydoc TOOL_INTERACTIVE::Init()
     bool Init() override;
 
-    int PlaceComponent( const TOOL_EVENT& aEvent );
+    int PlaceSymbol( const TOOL_EVENT& aEvent );
     int SingleClickPlace( const TOOL_EVENT& aEvent );
     int TwoClickPlace( const TOOL_EVENT& aEvent );
     int DrawSheet( const TOOL_EVENT& aEvent );
@@ -83,11 +83,11 @@ private:
     bool                m_lastTextItalic;
 
     ///< Re-entrancy guards
-    bool m_inPlaceComponent;
-    bool m_inPlaceImage;
-    bool m_inSingleClickPlace;
-    bool m_inTwoClickPlace;
-    bool m_inDrawSheet;
+    bool                       m_inPlaceSymbol;
+    bool                       m_inPlaceImage;
+    bool                       m_inSingleClickPlace;
+    bool                       m_inTwoClickPlace;
+    bool                       m_inDrawSheet;
 
     std::unique_ptr<STATUS_TEXT_POPUP> m_statusPopup;
 };

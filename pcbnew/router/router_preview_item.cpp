@@ -21,11 +21,9 @@
 
 #include <deque>
 #include <gal/color4d.h>
-#include <view/view.h>
 
 #include <geometry/shape_rect.h>
 #include <geometry/shape_simple.h>
-#include "track.h"
 #include <pcb_painter.h>
 
 #include "router_preview_item.h"
@@ -391,7 +389,10 @@ void ROUTER_PREVIEW_ITEM::Line( const SHAPE_LINE_CHAIN& aLine, int aWidth, int a
     m_color = assignColor( aStyle );
     m_type = PR_SHAPE;
     m_depth = -1024;        // TODO gal->GetMinDepth()
-    m_shape = aLine.Clone();
+
+    SHAPE_LINE_CHAIN *lc = static_cast<SHAPE_LINE_CHAIN*>( aLine.Clone() );
+    lc->SetWidth( aWidth );
+    m_shape = lc;
 }
 
 

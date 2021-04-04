@@ -110,6 +110,7 @@ public:
 
     void ReCreateVToolbar() override;
     void ReCreateOptToolbar() override;
+    void UpdateToolbarControlSizes() override;
 
     /**
      * @brief (Re)Create the menubar for the Footprint Editor frame
@@ -147,7 +148,6 @@ public:
      */
     bool SaveLibraryAs( const wxString& aLibraryPath );
 
-    void OnUpdateModuleSelected( wxUpdateUIEvent& aEvent );
     void OnUpdateLoadFootprintFromBoard( wxUpdateUIEvent& aEvent );
     void OnUpdateSaveFootprintToBoard( wxUpdateUIEvent& aEvent );
 
@@ -303,10 +303,15 @@ public:
      */
     void RegenerateLibraryTree();
 
+    /**
+     * Redisplay the library tree.  Used after changing modified states, descriptions, etc.
+     */
     void RefreshLibraryTree();
 
     ///< Reload displayed items and sets view.
     void UpdateView();
+
+    void UpdateTitle();
 
     void FocusOnLibID( const LIB_ID& aLibID );
 
@@ -327,11 +332,6 @@ protected:
      * the footprint library tree.
      */
     void initLibraryTree();
-
-    /**
-     * Updates window title according to getLibNickName().
-     */
-    void updateTitle();
 
     void restoreLastFootprint();
     void retainLastFootprint();

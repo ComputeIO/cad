@@ -20,6 +20,7 @@
  * with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <advanced_config.h>
 #include <kiface_i.h>
 #include <kiway.h>
 #include <pgm_base.h>
@@ -40,7 +41,7 @@
 #include <invoke_pcb_dialog.h>
 #include <board.h>
 #include <footprint.h>
-#include <page_layout/ws_proxy_view_item.h>
+#include <drawing_sheet/ds_proxy_view_item.h>
 #include <connectivity/connectivity_data.h>
 #include <wildcards_and_files_ext.h>
 #include <pcb_draw_panel_gal.h>
@@ -88,7 +89,7 @@
 #include <netlist_reader/pcb_netlist.h>
 #include <wx/wupdlock.h>
 #include <dialog_drc.h>     // for DIALOG_DRC_WINDOW_NAME definition
-#include <ratsnest/ratsnest_viewitem.h>
+#include <ratsnest/ratsnest_view_item.h>
 #include <widgets/appearance_controls.h>
 #include <widgets/panel_selection_filter.h>
 #include <kiplatform/app.h>
@@ -98,6 +99,9 @@
 
 #if defined(KICAD_SCRIPTING) || defined(KICAD_SCRIPTING_WXPYTHON)
 #include <python_scripting.h>
+#if defined(KICAD_SCRIPTING_ACTION_MENU)
+#include <action_plugin.h>
+#endif
 #endif
 
 
@@ -170,8 +174,9 @@ END_EVENT_TABLE()
 
 
 PCB_EDIT_FRAME::PCB_EDIT_FRAME( KIWAY* aKiway, wxWindow* aParent ) :
-    PCB_BASE_EDIT_FRAME( aKiway, aParent, FRAME_PCB_EDITOR, wxT( "Pcbnew" ), wxDefaultPosition,
-                         wxDefaultSize, KICAD_DEFAULT_DRAWFRAME_STYLE, PCB_EDIT_FRAME_NAME )
+    PCB_BASE_EDIT_FRAME( aKiway, aParent, FRAME_PCB_EDITOR, wxT( "PCB Editor" ), wxDefaultPosition,
+                         wxDefaultSize, KICAD_DEFAULT_DRAWFRAME_STYLE, PCB_EDIT_FRAME_NAME ),
+    m_exportNetlistAction( nullptr )
 {
     m_maximizeByDefault = true;
     m_showBorderAndTitleBlock = true;   // true to display sheet references
@@ -181,12 +186,18 @@ PCB_EDIT_FRAME::PCB_EDIT_FRAME( KIWAY* aKiway, wxWindow* aParent ) :
     m_show_layer_manager_tools = true;
     m_hasAutoSave = true;
 
-    // We don't know what state board was in when it was lasat saved, so we have to
+    // We don't know what state board was in when it was last saved, so we have to
     // assume dirty
     m_ZoneFillsDirty = true;
 
     m_rotationAngle = 900;
-    m_aboutTitle = "Pcbnew";
+    m_aboutTitle = _( "KiCad PCB Editor" );
+
+    // Must be created before the menus are created.
+    if( ADVANCED_CFG::GetCfg().m_ShowPcbnewExportNetlist )
+        m_exportNetlistAction = new TOOL_ACTION( "pcbnew.EditorControl.exportNetlist",
+                                                 AS_GLOBAL, 0, "", _( "Netlist..." ),
+                                                 _( "Export netlist used to update schematics" ) );
 
     // Create GAL canvas
     auto canvas = new PCB_DRAW_PANEL_GAL( this, -1, wxPoint( 0, 0 ), m_frameSize,
@@ -200,11 +211,11 @@ PCB_EDIT_FRAME::PCB_EDIT_FRAME( KIWAY* aKiway, wxWindow* aParent ) :
     wxIcon icon;
     wxIconBundle icon_bundle;
 
-    icon.CopyFromBitmap( KiBitmap( icon_pcbnew_xpm ) );
+    icon.CopyFromBitmap( KiBitmap( BITMAPS::icon_pcbnew ) );
     icon_bundle.AddIcon( icon );
-    icon.CopyFromBitmap( KiBitmap( icon_pcbnew_32_xpm ) );
+    icon.CopyFromBitmap( KiBitmap( BITMAPS::icon_pcbnew_32 ) );
     icon_bundle.AddIcon( icon );
-    icon.CopyFromBitmap( KiBitmap( icon_pcbnew_16_xpm ) );
+    icon.CopyFromBitmap( KiBitmap( BITMAPS::icon_pcbnew_16 ) );
     icon_bundle.AddIcon( icon );
 
     SetIcons( icon_bundle );
@@ -237,7 +248,8 @@ PCB_EDIT_FRAME::PCB_EDIT_FRAME( KIWAY* aKiway, wxWindow* aParent ) :
 
     unsigned int auiFlags = wxAUI_MGR_DEFAULT;
 #if !defined( _WIN32 )
-    // Windows cannot redraw the UI fast enough during a live resize and may lead to all kinds of graphical glitches
+    // Windows cannot redraw the UI fast enough during a live resize and may lead to all kinds
+    // of graphical glitches.
     auiFlags |= wxAUI_MGR_LIVE_RESIZE;
 #endif
     m_auimgr.SetFlags( auiFlags );
@@ -360,6 +372,14 @@ PCB_EDIT_FRAME::PCB_EDIT_FRAME( KIWAY* aKiway, wxWindow* aParent ) :
                    } );
     }
 #endif
+
+    // Register a call to update the toolbar sizes. It can't be done immediately because
+    // it seems to require some sizes calculated that aren't yet (at least on GTK).
+    CallAfter( [&]()
+               {
+                   // Ensure the controls on the toolbars all are correctly sized
+                    UpdateToolbarControlSizes();
+               } );
 }
 
 
@@ -393,7 +413,7 @@ void PCB_EDIT_FRAME::SetBoard( BOARD* aBoard )
     aBoard->SetProject( &Prj() );
     aBoard->GetConnectivity()->Build( aBoard );
 
-    // reload the worksheet
+    // reload the drawing-sheet
     SetPageSettings( aBoard->GetPageSettings() );
 }
 
@@ -408,25 +428,26 @@ void PCB_EDIT_FRAME::SetPageSettings( const PAGE_INFO& aPageSettings )
 {
     PCB_BASE_FRAME::SetPageSettings( aPageSettings );
 
-    // Prepare worksheet template
-    KIGFX::WS_PROXY_VIEW_ITEM* worksheet;
-    worksheet = new KIGFX::WS_PROXY_VIEW_ITEM( IU_PER_MILS, &m_pcb->GetPageSettings(),
-                                               m_pcb->GetProject(), &m_pcb->GetTitleBlock() );
-    worksheet->SetSheetName( std::string( GetScreenDesc().mb_str() ) );
+    // Prepare drawing-sheet template
+    DS_PROXY_VIEW_ITEM* drawingSheet = new DS_PROXY_VIEW_ITEM( IU_PER_MILS,
+                                                               &m_pcb->GetPageSettings(),
+                                                               m_pcb->GetProject(),
+                                                               &m_pcb->GetTitleBlock() );
+    drawingSheet->SetSheetName( std::string( GetScreenDesc().mb_str() ) );
 
     BASE_SCREEN* screen = GetScreen();
 
     if( screen != NULL )
     {
-        worksheet->SetPageNumber( TO_UTF8( screen->GetPageNumber() ) );
-        worksheet->SetSheetCount( screen->GetPageCount() );
+        drawingSheet->SetPageNumber(TO_UTF8( screen->GetPageNumber() ) );
+        drawingSheet->SetSheetCount( screen->GetPageCount() );
     }
 
-    if( auto board = GetBoard() )
-        worksheet->SetFileName(  TO_UTF8( board->GetFileName() ) );
+    if( BOARD* board = GetBoard() )
+        drawingSheet->SetFileName( TO_UTF8( board->GetFileName() ) );
 
-    // PCB_DRAW_PANEL_GAL takes ownership of the worksheet
-    GetCanvas()->SetWorksheet( worksheet );
+    // PCB_DRAW_PANEL_GAL takes ownership of the drawing-sheet
+    GetCanvas()->SetDrawingSheet( drawingSheet );
 }
 
 
@@ -458,7 +479,7 @@ void PCB_EDIT_FRAME::setupTools()
     m_toolManager->SetEnvironment( m_pcb, GetCanvas()->GetView(),
                                    GetCanvas()->GetViewControls(), config(), this );
     m_actions = new PCB_ACTIONS();
-    m_toolDispatcher = new TOOL_DISPATCHER( m_toolManager, m_actions );
+    m_toolDispatcher = new TOOL_DISPATCHER( m_toolManager );
 
     // Register tools
     m_toolManager->RegisterTool( new COMMON_CONTROL );
@@ -505,30 +526,37 @@ void PCB_EDIT_FRAME::setupUIConditions()
 #define ENABLE( x ) ACTION_CONDITIONS().Enable( x )
 #define CHECK( x )  ACTION_CONDITIONS().Check( x )
 
-    mgr->SetConditions( ACTIONS::save,                     ENABLE( cond.ContentModified() ) );
-    mgr->SetConditions( ACTIONS::undo,                     ENABLE( cond.UndoAvailable() ) );
-    mgr->SetConditions( ACTIONS::redo,                     ENABLE( cond.RedoAvailable() ) );
+    mgr->SetConditions( ACTIONS::save, ENABLE( SELECTION_CONDITIONS::ShowAlways ) );
+    mgr->SetConditions( ACTIONS::undo, ENABLE( cond.UndoAvailable() ) );
+    mgr->SetConditions( ACTIONS::redo, ENABLE( cond.RedoAvailable() ) );
 
-    mgr->SetConditions( ACTIONS::toggleGrid,               CHECK( cond.GridVisible() ) );
-    mgr->SetConditions( ACTIONS::toggleCursorStyle,        CHECK( cond.FullscreenCursor() ) );
-    mgr->SetConditions( ACTIONS::togglePolarCoords,        CHECK( cond.PolarCoordinates() ) );
-    mgr->SetConditions( ACTIONS::millimetersUnits,         CHECK( cond.Units( EDA_UNITS::MILLIMETRES ) ) );
-    mgr->SetConditions( ACTIONS::inchesUnits,              CHECK( cond.Units( EDA_UNITS::INCHES ) ) );
-    mgr->SetConditions( ACTIONS::milsUnits,                CHECK( cond.Units( EDA_UNITS::MILS ) ) );
-    mgr->SetConditions( ACTIONS::acceleratedGraphics,      CHECK( cond.CanvasType( EDA_DRAW_PANEL_GAL::GAL_TYPE_OPENGL ) ) );
-    mgr->SetConditions( ACTIONS::standardGraphics,         CHECK( cond.CanvasType( EDA_DRAW_PANEL_GAL::GAL_TYPE_CAIRO ) ) );
+    mgr->SetConditions( ACTIONS::toggleGrid, CHECK( cond.GridVisible() ) );
+    mgr->SetConditions( ACTIONS::toggleCursorStyle, CHECK( cond.FullscreenCursor() ) );
+    mgr->SetConditions( ACTIONS::togglePolarCoords, CHECK( cond.PolarCoordinates() ) );
+    mgr->SetConditions( ACTIONS::millimetersUnits, CHECK( cond.Units( EDA_UNITS::MILLIMETRES ) ) );
+    mgr->SetConditions( ACTIONS::inchesUnits, CHECK( cond.Units( EDA_UNITS::INCHES ) ) );
+    mgr->SetConditions( ACTIONS::milsUnits, CHECK( cond.Units( EDA_UNITS::MILS ) ) );
 
-    mgr->SetConditions( ACTIONS::cut,                      ENABLE( SELECTION_CONDITIONS::NotEmpty ) );
-    mgr->SetConditions( ACTIONS::copy,                     ENABLE( SELECTION_CONDITIONS::NotEmpty ) );
-    mgr->SetConditions( ACTIONS::paste,                    ENABLE( SELECTION_CONDITIONS::Idle && cond.NoActiveTool() ) );
-    mgr->SetConditions( ACTIONS::pasteSpecial,             ENABLE( SELECTION_CONDITIONS::Idle && cond.NoActiveTool() ) );
-    mgr->SetConditions( ACTIONS::selectAll,                ENABLE( cond.HasItems() ) );
-    mgr->SetConditions( ACTIONS::doDelete,                 ENABLE( SELECTION_CONDITIONS::NotEmpty ) );
-    mgr->SetConditions( ACTIONS::duplicate,                ENABLE( SELECTION_CONDITIONS::NotEmpty ) );
+    mgr->SetConditions( ACTIONS::cut, ENABLE( cond.HasItems() ) );
+    mgr->SetConditions( ACTIONS::copy, ENABLE( cond.HasItems() ) );
+    mgr->SetConditions( ACTIONS::paste,
+                        ENABLE( SELECTION_CONDITIONS::Idle && cond.NoActiveTool() ) );
+    mgr->SetConditions( ACTIONS::pasteSpecial,
+                        ENABLE( SELECTION_CONDITIONS::Idle && cond.NoActiveTool() ) );
+    mgr->SetConditions( ACTIONS::selectAll, ENABLE( cond.HasItems() ) );
+    mgr->SetConditions( ACTIONS::doDelete, ENABLE( cond.HasItems() ) );
+    mgr->SetConditions( ACTIONS::duplicate, ENABLE( cond.HasItems() ) );
 
-    mgr->SetConditions( PCB_ACTIONS::padDisplayMode,       CHECK( !cond.PadFillDisplay() ) );
-    mgr->SetConditions( PCB_ACTIONS::viaDisplayMode,       CHECK( !cond.ViaFillDisplay() ) );
-    mgr->SetConditions( PCB_ACTIONS::trackDisplayMode,     CHECK( !cond.TrackFillDisplay() ) );
+    mgr->SetConditions( PCB_ACTIONS::rotateCw, ENABLE( cond.HasItems() ) );
+    mgr->SetConditions( PCB_ACTIONS::rotateCcw, ENABLE( cond.HasItems() ) );
+    mgr->SetConditions( PCB_ACTIONS::group, ENABLE( SELECTION_CONDITIONS::MoreThan( 1 ) ) );
+    mgr->SetConditions( PCB_ACTIONS::ungroup, ENABLE( cond.HasItems() ) );
+    mgr->SetConditions( PCB_ACTIONS::lock, ENABLE( cond.HasItems() ) );
+    mgr->SetConditions( PCB_ACTIONS::unlock, ENABLE( cond.HasItems() ) );
+
+    mgr->SetConditions( PCB_ACTIONS::padDisplayMode, CHECK( !cond.PadFillDisplay() ) );
+    mgr->SetConditions( PCB_ACTIONS::viaDisplayMode, CHECK( !cond.ViaFillDisplay() ) );
+    mgr->SetConditions( PCB_ACTIONS::trackDisplayMode, CHECK( !cond.TrackFillDisplay() ) );
 
 
 #if defined( KICAD_SCRIPTING_WXPYTHON )
@@ -667,15 +695,14 @@ void PCB_EDIT_FRAME::setupUIConditions()
                                         PCB_SELECTION_CONDITIONS::SameNet( true ) &&
                                         PCB_SELECTION_CONDITIONS::SameLayer();
 
-    mgr->SetConditions( PCB_ACTIONS::zoneDuplicate,   ENABLE( singleZoneCond ) );
-    mgr->SetConditions( PCB_ACTIONS::drawZoneCutout,  ENABLE( singleZoneCond ) );
+    mgr->SetConditions( PCB_ACTIONS::zoneDuplicate, ENABLE( singleZoneCond ) );
+    mgr->SetConditions( PCB_ACTIONS::drawZoneCutout, ENABLE( singleZoneCond ) );
     mgr->SetConditions( PCB_ACTIONS::drawSimilarZone, ENABLE( singleZoneCond ) );
-    mgr->SetConditions( PCB_ACTIONS::zoneMerge,       ENABLE( zoneMergeCond ) );
-    mgr->SetConditions( PCB_ACTIONS::zoneFill,        ENABLE( SELECTION_CONDITIONS::MoreThan( 0 ) ) );
-    mgr->SetConditions( PCB_ACTIONS::zoneUnfill,      ENABLE( SELECTION_CONDITIONS::MoreThan( 0 ) ) );
+    mgr->SetConditions( PCB_ACTIONS::zoneMerge, ENABLE( zoneMergeCond ) );
+    mgr->SetConditions( PCB_ACTIONS::zoneFill, ENABLE( SELECTION_CONDITIONS::MoreThan( 0 ) ) );
+    mgr->SetConditions( PCB_ACTIONS::zoneUnfill, ENABLE( SELECTION_CONDITIONS::MoreThan( 0 ) ) );
 
     mgr->SetConditions( PCB_ACTIONS::toggleLine45degMode, CHECK( cond.Line45degMode() ) );
-
 
 #define CURRENT_TOOL( action ) mgr->SetConditions( action, CHECK( cond.CurrentTool( action ) ) )
 
@@ -891,12 +918,31 @@ void PCB_EDIT_FRAME::ShowBoardSetupDialog( const wxString& aInitialPage )
         GetBoard()->SynchronizeNetsAndNetClasses();
         SaveProjectSettings();
 
-        UpdateUserInterface();
-        ReCreateAuxiliaryToolbar();
-
         Kiway().CommonSettingsChanged( false, true );
+
+        const PCB_DISPLAY_OPTIONS& opts = GetDisplayOptions();
+
+        if( opts.m_ShowTrackClearanceMode || opts.m_DisplayPadClearance )
+        {
+            // Update clearance outlines
+            GetCanvas()->GetView()->UpdateAllItemsConditionally( KIGFX::REPAINT,
+                    [&]( KIGFX::VIEW_ITEM* aItem ) -> bool
+                    {
+                        TRACK* track = dynamic_cast<TRACK*>( aItem );
+                        PAD*   pad = dynamic_cast<PAD*>( aItem );
+
+                        // TRACK is the base class of VIA and ARC so we don't need to
+                        // check them independently
+
+                        return ( track && opts.m_ShowTrackClearanceMode )
+                                || ( pad && opts.m_DisplayPadClearance );
+                    } );
+        }
+
         GetCanvas()->Refresh();
 
+        UpdateUserInterface();
+        ReCreateAuxiliaryToolbar();
         m_toolManager->ResetTools( TOOL_BASE::MODEL_RELOAD );
 
         //this event causes the routing tool to reload its design rules information
@@ -989,7 +1035,7 @@ void PCB_EDIT_FRAME::SetActiveLayer( PCB_LAYER_ID aLayer )
                 {
                     // Clearances could be layer-dependent so redraw them when the active layer
                     // is changed
-                    if( GetDisplayOptions().m_DisplayPadIsol )
+                    if( GetDisplayOptions().m_DisplayPadClearance )
                     {
                         // Round-corner rects are expensive to draw, but are mostly found on
                         // SMD pads which only need redrawing on an active-to-not-active
@@ -1032,7 +1078,7 @@ void PCB_EDIT_FRAME::onBoardLoaded()
     {
         drcTool->GetDRCEngine()->InitEngine( GetDesignRulesPath() );
     }
-    catch( PARSE_ERROR& pe )
+    catch( PARSE_ERROR& )
     {
         // Not sure this is the best place to tell the user their rules are buggy, so
         // we'll stay quiet for now.  Feel free to revisit this decision....
@@ -1072,6 +1118,9 @@ void PCB_EDIT_FRAME::onBoardLoaded()
 
     // Display the loaded board:
     Zoom_Automatique( false );
+
+    // Invalidate painting as loading the DRC engine will cause clearances to become valid
+    GetCanvas()->GetView()->UpdateAllItems( KIGFX::ALL );
 
     Refresh();
 
@@ -1163,6 +1212,9 @@ void PCB_EDIT_FRAME::OnModify( )
 
     Update3DView( true );
 
+    if( !GetTitle().StartsWith( "*" ) )
+        UpdateTitle();
+
     m_ZoneFillsDirty = true;
 }
 
@@ -1175,17 +1227,20 @@ void PCB_EDIT_FRAME::ExportSVG( wxCommandEvent& event )
 
 void PCB_EDIT_FRAME::UpdateTitle()
 {
-    wxFileName fileName = GetBoard()->GetFileName();
-    wxString fileinfo;
+    wxFileName fn = GetBoard()->GetFileName();
+    bool       readOnly = false;
+    bool       unsaved = false;
 
-    if( fileName.IsOk() && fileName.FileExists() )
-        fileinfo = fileName.IsFileWritable() ? wxString( wxEmptyString ) : wxS( " " ) + _( "[Read Only]" );
+    if( fn.IsOk() && fn.FileExists() )
+        readOnly = !fn.IsFileWritable();
     else
-        fileinfo = wxS( " " ) + _( "[Unsaved]" );
+        unsaved = true;
 
-    SetTitle( wxString::Format( wxT( "%s%s \u2014 " ) + _( "Pcbnew" ),
-                                fileName.GetName(),
-                                fileinfo ) );
+    SetTitle( wxString::Format( wxT( "%s%s %s%s\u2014 " ) + _( "PCB Editor" ),
+                                IsContentModified() ? "*" : "",
+                                fn.GetName(),
+                                readOnly ? _( "[Read Only]" ) + wxS( " " ) : "",
+                                unsaved ? _( "[Unsaved]" ) + wxS( " " ) : "" ) );
 }
 
 
@@ -1342,10 +1397,6 @@ bool PCB_EDIT_FRAME::TestStandalone()
 }
 
 
-//
-// Sends a Netlist packet to eeSchema.
-// The reply is in aNetlist so it is destroyed by this
-//
 bool PCB_EDIT_FRAME::ReannotateSchematic( std::string& aNetlist )
 {
     Kiway().ExpressMail( FRAME_SCH, MAIL_REANNOTATE, aNetlist, this );
@@ -1353,22 +1404,30 @@ bool PCB_EDIT_FRAME::ReannotateSchematic( std::string& aNetlist )
 }
 
 
-bool PCB_EDIT_FRAME::FetchNetlistFromSchematic( NETLIST&        aNetlist,
+bool PCB_EDIT_FRAME::FetchNetlistFromSchematic( NETLIST& aNetlist,
                                                 const wxString& aAnnotateMessage )
 {
     if( !TestStandalone() )
     {
-        DisplayError( this, _( "Cannot update the PCB because Pcbnew is opened in stand-alone "
-                               "mode. In order to create or update PCBs from schematics, you "
-                               "must launch the KiCad project manager and create a project." ) );
-        return false;       //Not in standalone mode
+        DisplayErrorMessage( this, _( "Cannot update the PCB because PCB editor is opened in "
+                                      "stand-alone mode. In order to create or update PCBs from "
+                                      "schematics, you must launch the KiCad project manager and "
+                                      "create a project." ) );
+        return false;       // Not in standalone mode
     }
 
-    Raise();                //Show
+    Raise();                // Show
 
     std::string payload( aAnnotateMessage );
 
     Kiway().ExpressMail( FRAME_SCH, MAIL_SCH_GET_NETLIST, payload, this );
+
+    if( payload == aAnnotateMessage )
+    {
+        Raise();
+        DisplayErrorMessage( this, aAnnotateMessage );
+        return false;
+    }
 
     try
     {
@@ -1378,6 +1437,7 @@ bool PCB_EDIT_FRAME::FetchNetlistFromSchematic( NETLIST&        aNetlist,
     }
     catch( const IO_ERROR& )
     {
+        Raise();
         assert( false ); // should never happen
         return false;
     }
@@ -1386,26 +1446,16 @@ bool PCB_EDIT_FRAME::FetchNetlistFromSchematic( NETLIST&        aNetlist,
 }
 
 
-void PCB_EDIT_FRAME::DoUpdatePCBFromNetlist( NETLIST& aNetlist, bool aUseTimestamps )
-{
-    BOARD_NETLIST_UPDATER updater( this, GetBoard() );
-    updater.SetLookupByTimestamp( aUseTimestamps );
-    updater.SetDeleteUnusedComponents( false );
-    updater.SetReplaceFootprints( true );
-    updater.SetDeleteSinglePadNets( false );
-    updater.SetWarnPadNoNetInNetlist( false );
-    updater.UpdateNetlist( aNetlist );
-}
-
-
 void PCB_EDIT_FRAME::RunEeschema()
 {
     wxString   msg;
-    wxFileName schematic( Prj().GetProjectPath(), Prj().GetProjectName(), "kicad_sch" );
+    wxFileName schematic( Prj().GetProjectPath(), Prj().GetProjectName(),
+                          KiCadSchematicFileExtension );
 
     if( !schematic.FileExists() )
     {
-        wxFileName legacySchematic( Prj().GetProjectPath(), Prj().GetProjectName(), "sch" );
+        wxFileName legacySchematic( Prj().GetProjectPath(), Prj().GetProjectName(),
+                                    LegacySchematicFileExtension );
 
         if( legacySchematic.FileExists() )
         {
@@ -1432,7 +1482,7 @@ void PCB_EDIT_FRAME::RunEeschema()
         // Kiway.Player( FRAME_SCH, true )
         // therefore, the schematic editor is sometimes running, but the schematic project
         // is not loaded, if the library editor was called, and the dialog field editor was used.
-        // On linux, it happens the first time the schematic editor is launched, if
+        // On Linux, it happens the first time the schematic editor is launched, if
         // library editor was running, and the dialog field editor was open
         // On Windows, it happens always after the library editor was called,
         // and the dialog field editor was used
@@ -1458,7 +1508,7 @@ void PCB_EDIT_FRAME::RunEeschema()
         }
 
         // On Windows, Raise() does not bring the window on screen, when iconized or not shown
-        // On linux, Raise() brings the window on screen, but this code works fine
+        // On Linux, Raise() brings the window on screen, but this code works fine
         if( frame->IsIconized() )
         {
             frame->Iconize( false );
@@ -1476,6 +1526,11 @@ void PCB_EDIT_FRAME::PythonPluginsReload()
 {
     // Reload Python plugins if they are newer than the already loaded, and load new plugins
 #if defined(KICAD_SCRIPTING)
+#if defined(KICAD_SCRIPTING_ACTION_MENU)
+    // Remove all action plugins so that we don't keep references to old versions
+    ACTION_PLUGINS::UnloadAll();
+#endif
+
     // Reload plugin list: reload Python plugins if they are newer than the already loaded,
     // and load new plugins
     PythonPluginsReloadBase();
@@ -1518,12 +1573,12 @@ void PCB_EDIT_FRAME::PythonSyncEnvironmentVariables()
     const ENV_VAR_MAP& vars = Pgm().GetLocalEnvVariables();
 
     // Set the environment variables for python scripts
-    // note: the strint will be encoded UTF8 for python env
+    // note: the string will be encoded UTF8 for python env
     for( auto& var : vars )
         pcbnewUpdatePythonEnvVar( var.first, var.second.GetValue() );
 
-    // Because the env vars can de modifed by the python scripts (rewritten in UTF8),
-    // regenerate them (in unicode) for our normal environment
+    // Because the env vars can de modified by the python scripts (rewritten in UTF8),
+    // regenerate them (in Unicode) for our normal environment
     for( auto& var : vars )
         wxSetEnv( var.first, var.second.GetValue() );
 #endif
@@ -1537,8 +1592,8 @@ void PCB_EDIT_FRAME::PythonSyncProjectName()
     wxGetEnv( PROJECT_VAR_NAME, &evValue );
     pcbnewUpdatePythonEnvVar( wxString( PROJECT_VAR_NAME ).ToStdString(), evValue );
 
-    // Because PROJECT_VAR_NAME can be modifed by the python scripts (rewritten in UTF8),
-    // regenerate it (in unicode) for our normal environment
+    // Because PROJECT_VAR_NAME can be modified by the python scripts (rewritten in UTF8),
+    // regenerate it (in Unicode) for our normal environment
     wxSetEnv( PROJECT_VAR_NAME, evValue );
 #endif
 }
@@ -1557,7 +1612,7 @@ void PCB_EDIT_FRAME::ShowFootprintPropertiesDialog( FOOTPRINT* aFootprint )
     /*
      * retvalue =
      *   FP_PROPS_UPDATE_FP to show Update Footprints dialog
-     *   FP_PROPS_CHANGE_FP to show Chanage Footprints dialog
+     *   FP_PROPS_CHANGE_FP to show Change Footprints dialog
      *   FP_PROPS_OK for normal edit
      *   FP_PROPS_CANCEL if aborted
      *   FP_PROPS_EDIT_BOARD_FP to load board footprint into Footprint Editor
@@ -1625,7 +1680,7 @@ void PCB_EDIT_FRAME::CommonSettingsChanged( bool aEnvVarsChanged, bool aTextVars
         drcTool->GetDRCEngine()->InitEngine( GetDesignRulesPath() );
         infobar->Hide();
     }
-    catch( PARSE_ERROR& pe )
+    catch( PARSE_ERROR& )
     {
         wxHyperlinkCtrl* button =
                 new wxHyperlinkCtrl( infobar, wxID_ANY, _( "Edit design rules" ), wxEmptyString );
@@ -1648,6 +1703,14 @@ void PCB_EDIT_FRAME::CommonSettingsChanged( bool aEnvVarsChanged, bool aTextVars
 
     Layout();
     SendSizeEvent();
+}
+
+
+void PCB_EDIT_FRAME::ThemeChanged()
+{
+    PCB_BASE_EDIT_FRAME::ThemeChanged();
+
+    PythonPluginsReload();
 }
 
 

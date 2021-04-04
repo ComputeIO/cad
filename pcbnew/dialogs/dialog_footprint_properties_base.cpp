@@ -42,13 +42,13 @@ DIALOG_FOOTPRINT_PROPERTIES_BASE::DIALOG_FOOTPRINT_PROPERTIES_BASE( wxWindow* pa
 	m_itemsGrid->SetColSize( 3, 110 );
 	m_itemsGrid->SetColSize( 4, 110 );
 	m_itemsGrid->SetColSize( 5, 60 );
-	m_itemsGrid->SetColSize( 6, 110 );
+	m_itemsGrid->SetColSize( 6, 140 );
 	m_itemsGrid->SetColSize( 7, 110 );
 	m_itemsGrid->SetColSize( 8, 110 );
 	m_itemsGrid->SetColSize( 9, 110 );
 	m_itemsGrid->SetColSize( 10, 110 );
 	m_itemsGrid->EnableDragColMove( false );
-	m_itemsGrid->EnableDragColSize( true );
+	m_itemsGrid->EnableDragColSize( false );
 	m_itemsGrid->SetColLabelSize( 24 );
 	m_itemsGrid->SetColLabelValue( 0, _("Text Items") );
 	m_itemsGrid->SetColLabelValue( 1, _("Show") );
@@ -192,7 +192,7 @@ DIALOG_FOOTPRINT_PROPERTIES_BASE::DIALOG_FOOTPRINT_PROPERTIES_BASE( wxWindow* pa
 	wxBoxSizer* bSizerMiddle;
 	bSizerMiddle = new wxBoxSizer( wxVERTICAL );
 
-	wxString m_AutoPlaceCtrlChoices[] = { _("Free"), _("Lock pads"), _("Lock footprint") };
+	wxString m_AutoPlaceCtrlChoices[] = { _("Unlock footprint"), _("Lock footprint") };
 	int m_AutoPlaceCtrlNChoices = sizeof( m_AutoPlaceCtrlChoices ) / sizeof( wxString );
 	m_AutoPlaceCtrl = new wxRadioBox( m_PanelGeneral, wxID_ANY, _("Move and Place"), wxDefaultPosition, wxDefaultSize, m_AutoPlaceCtrlNChoices, m_AutoPlaceCtrlChoices, 1, wxRA_SPECIFY_COLS );
 	m_AutoPlaceCtrl->SetSelection( 0 );

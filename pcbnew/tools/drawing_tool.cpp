@@ -2,7 +2,7 @@
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
  * Copyright (C) 2014-2017 CERN
- * Copyright (C) 2018-2020 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 2018-2021 KiCad Developers, see AUTHORS.txt for contributors.
  * @author Maciej Suminski <maciej.suminski@cern.ch>
  *
  * This program is free software; you can redistribute it and/or
@@ -23,17 +23,18 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
 
+#include "drawing_tool.h"
+#include "pcb_actions.h"
 #include <pcb_edit_frame.h>
 #include <confirm.h>
 #include <import_gfx/dialog_import_gfx.h>
 #include <view/view.h>
 #include <tool/tool_manager.h>
-#include <tools/pcb_actions.h>
 #include <tools/pcb_grid_helper.h>
 #include <tools/pcb_selection_tool.h>
 #include <tools/tool_event_utils.h>
 #include <tools/zone_create_helper.h>
-#include <tools/drawing_tool.h>
+#include <router/router_tool.h>
 #include <geometry/geometry_utils.h>
 #include <geometry/shape_segment.h>
 #include <board_commit.h>
@@ -55,6 +56,7 @@
 #include <pcbnew_id.h>
 #include <dialogs/dialog_track_via_size.h>
 #include <kicad_string.h>
+#include <macros.h>
 #include <widgets/infobar.h>
 
 using SCOPED_DRAW_MODE = SCOPED_SET_RESET<DRAWING_TOOL::MODE>;
@@ -65,7 +67,7 @@ class VIA_SIZE_MENU : public ACTION_MENU
 public:
     VIA_SIZE_MENU() : ACTION_MENU( true )
     {
-        SetIcon( width_track_via_xpm );
+        SetIcon( BITMAPS::width_track_via );
         SetTitle( _( "Select Via Size" ) );
     }
 
@@ -421,7 +423,7 @@ int DRAWING_TOOL::PlaceText( const TOOL_EVENT& aEvent )
     Activate();
 
     // Prime the pump
-    if( aEvent.HasPosition() )
+    if( !aEvent.IsReactivate() )
         m_toolMgr->RunAction( ACTIONS::cursorClick );
 
     auto setCursor = [&]()
@@ -685,7 +687,9 @@ int DRAWING_TOOL::DrawDimension( const TOOL_EVENT& aEvent )
 
         grid.SetSnap( !evt->Modifier( MD_SHIFT ) );
         grid.SetUseGrid( getView()->GetGAL()->GetGridSnapping() && !evt->Modifier( MD_ALT ) );
-        VECTOR2I cursorPos = evt->IsPrime() ? evt->Position() : m_controls->GetMousePosition();
+
+        VECTOR2I cursorPos = evt->HasPosition() ? evt->Position() : m_controls->GetMousePosition();
+
         cursorPos = grid.BestSnapAnchor( cursorPos, nullptr );
         m_controls->ForceCursorPosition( true, cursorPos );
 
@@ -893,6 +897,21 @@ int DRAWING_TOOL::DrawDimension( const TOOL_EVENT& aEvent )
             {
             case SET_END:
                 dimension->SetEnd( (wxPoint) cursorPos );
+
+                if( dimension->Type() == PCB_DIM_ORTHOGONAL_T )
+                {
+                    ORTHOGONAL_DIMENSION* ortho = static_cast<ORTHOGONAL_DIMENSION*>( dimension );
+
+                    BOX2I bounds( dimension->GetStart(),
+                                  dimension->GetEnd() - dimension->GetStart() );
+
+                    // Create a nice preview by measuring the longer dimension
+                    bool vert = bounds.GetWidth() < bounds.GetHeight();
+
+                    ortho->SetOrientation( vert ? ORTHOGONAL_DIMENSION::DIR::VERTICAL
+                                                : ORTHOGONAL_DIMENSION::DIR::HORIZONTAL );
+                }
+
                 dimension->Update();
 
                 if( !!evt->Modifier( MD_CTRL ) || dimension->Type() == PCB_DIM_CENTER_T )
@@ -921,11 +940,33 @@ int DRAWING_TOOL::DrawDimension( const TOOL_EVENT& aEvent )
                     BOX2I    bounds( dimension->GetStart(),
                                   dimension->GetEnd() - dimension->GetStart() );
                     VECTOR2I direction( cursorPos - bounds.Centre() );
-                    bool     vert = std::abs( direction.y ) < std::abs( direction.x );
+                    bool     vert;
 
                     // Only change the orientation when we move outside the bounds
                     if( !bounds.Contains( cursorPos ) )
                     {
+                        // If the dimension is horizontal or vertical, set correct orientation
+                        // otherwise, test if we're left/right of the bounding box or above/below it
+                        if( bounds.GetWidth() == 0 )
+                        {
+                            vert = true;
+                        }
+                        else if( bounds.GetHeight() == 0 )
+                        {
+                            vert = false;
+                        }
+                        else if( cursorPos.x > bounds.GetLeft() && cursorPos.x < bounds.GetRight() )
+                        {
+                            vert = false;
+                        }
+                        else if( cursorPos.y > bounds.GetTop() && cursorPos.y < bounds.GetBottom() )
+                        {
+                            vert = true;
+                        }
+                        else
+                        {
+                            vert = std::abs( direction.y ) < std::abs( direction.x );
+                        }
                         ortho->SetOrientation( vert ? ORTHOGONAL_DIMENSION::DIR::VERTICAL
                                                     : ORTHOGONAL_DIMENSION::DIR::HORIZONTAL );
                     }
@@ -1297,15 +1338,7 @@ bool DRAWING_TOOL::drawSegment( const std::string& aTool, PCB_SHAPE** aGraphic,
 
         grid.SetSnap( !evt->Modifier( MD_SHIFT ) );
         grid.SetUseGrid( getView()->GetGAL()->GetGridSnapping() && !evt->Modifier( MD_ALT ) );
-
-        // The first point in a circle should be able to snap to items on all layers because it doesn't
-        // overlap the graphical line
-        if( !started && graphic && shape == S_CIRCLE )
-            cursorPos = grid.BestSnapAnchor( m_controls->GetMousePosition(), nullptr );
-        else
-            cursorPos = grid.BestSnapAnchor( m_controls->GetMousePosition(),
-                                             m_frame->GetActiveLayer() );
-
+        cursorPos = grid.BestSnapAnchor( m_controls->GetMousePosition(), m_frame->GetActiveLayer() );
         m_controls->ForceCursorPosition( true, cursorPos );
 
         // 45 degree angle constraint enabled with an option and toggled with Ctrl
@@ -1607,15 +1640,7 @@ bool DRAWING_TOOL::drawArc( const std::string& aTool, PCB_SHAPE** aGraphic, bool
 
         grid.SetSnap( !evt->Modifier( MD_SHIFT ) );
         grid.SetUseGrid( getView()->GetGAL()->GetGridSnapping() && !evt->Modifier( MD_ALT ) );
-        VECTOR2I cursorPos;
-
-        // The first point in an arc should be able to snap to items on all layers because it doesn't
-        // overlap the graphical line
-        if( firstPoint )
-            cursorPos = grid.BestSnapAnchor( m_controls->GetMousePosition(), graphic );
-        else
-            cursorPos = grid.BestSnapAnchor( m_controls->GetMousePosition(), nullptr );
-
+        VECTOR2I cursorPos = grid.BestSnapAnchor( m_controls->GetMousePosition(), graphic );
         m_controls->ForceCursorPosition( true, cursorPos );
 
         auto cleanup = [&]()
@@ -1898,8 +1923,10 @@ int DRAWING_TOOL::DrawZone( const TOOL_EVENT& aEvent )
         LSET layers( m_frame->GetActiveLayer() );
         grid.SetSnap( !evt->Modifier( MD_SHIFT ) );
         grid.SetUseGrid( getView()->GetGAL()->GetGridSnapping() && !evt->Modifier( MD_ALT ) );
-        VECTOR2I cursorPos = grid.BestSnapAnchor(
-                evt->IsPrime() ? evt->Position() : m_controls->GetMousePosition(), layers );
+
+        VECTOR2I cursorPos = evt->HasPosition() ? evt->Position() : m_controls->GetMousePosition();
+        cursorPos          = grid.BestSnapAnchor( cursorPos, layers );
+
         m_controls->ForceCursorPosition( true, cursorPos );
 
         if( ( sourceZone && sourceZone->GetHV45() ) || constrainAngle || evt->Modifier( MD_CTRL ) )
@@ -2060,6 +2087,7 @@ int DRAWING_TOOL::DrawVia( const TOOL_EVENT& aEvent )
         std::shared_ptr<DRC_ENGINE> m_drcEngine;
         int                         m_drcEpsilon;
         int                         m_worstClearance;
+        bool                        m_allowDRCViolations;
         bool                        m_flaggedDRC;
 
         VIA_PLACER( PCB_BASE_EDIT_FRAME* aFrame ) :
@@ -2069,6 +2097,11 @@ int DRAWING_TOOL::DrawVia( const TOOL_EVENT& aEvent )
                 m_drcEpsilon( aFrame->GetBoard()->GetDesignSettings().GetDRCEpsilon() ),
                 m_worstClearance( 0 ), m_flaggedDRC( false )
         {
+            ROUTER_TOOL*           router = m_frame->GetToolManager()->GetTool<ROUTER_TOOL>();
+            PNS::ROUTING_SETTINGS& cfg = router->Router()->Settings();
+
+            m_allowDRCViolations = cfg.Mode() == PNS::RM_MarkObstacles && cfg.CanViolateDRC();
+
             try
             {
                 m_drcEngine->InitEngine( aFrame->GetDesignRulesPath() );
@@ -2087,7 +2120,7 @@ int DRAWING_TOOL::DrawVia( const TOOL_EVENT& aEvent )
                         m_worstClearance = std::max( m_worstClearance, pad->GetLocalClearance() );
                 }
             }
-            catch( PARSE_ERROR& pe )
+            catch( PARSE_ERROR& )
             {
             }
         }
@@ -2151,11 +2184,16 @@ int DRAWING_TOOL::DrawVia( const TOOL_EVENT& aEvent )
             if( cItem && cItem->GetNetCode() == aVia->GetNetCode() )
                 return false;
 
+            DRC_CONSTRAINT constraint;
+            int            clearance;
+
             for( PCB_LAYER_ID layer : aOther->GetLayerSet().Seq() )
             {
-                DRC_CONSTRAINT constraint =
-                        m_drcEngine->EvalRules( CLEARANCE_CONSTRAINT, aVia, aOther, layer );
-                int clearance = constraint.GetValue().Min();
+                if( !IsCopperLayer( layer ) )
+                    continue;
+
+                constraint = m_drcEngine->EvalRules( CLEARANCE_CONSTRAINT, aVia,  aOther, layer );
+                clearance = constraint.GetValue().Min();
 
                 if( clearance >= 0 )
                 {
@@ -2167,14 +2205,46 @@ int DRAWING_TOOL::DrawVia( const TOOL_EVENT& aEvent )
                 }
             }
 
+            std::unique_ptr<SHAPE_SEGMENT> holeShape;
+
+            if( aOther->Type() == PCB_VIA_T )
+            {
+                VIA* via = static_cast<VIA*>( aOther );
+                wxPoint pos = via->GetPosition();
+
+                holeShape.reset( new SHAPE_SEGMENT( pos, pos, via->GetDrill() ) );
+            }
+            else if( aOther->Type() == PCB_PAD_T )
+            {
+                PAD* pad = static_cast<PAD*>( aOther );
+
+                if( pad->GetDrillSize().x )
+                    holeShape.reset( new SHAPE_SEGMENT( *pad->GetEffectiveHoleShape() ) );
+            }
+
+            if( holeShape )
+            {
+                constraint = m_drcEngine->EvalRules( HOLE_CLEARANCE_CONSTRAINT, aVia, aOther,
+                                                     UNDEFINED_LAYER );
+                clearance = constraint.GetValue().Min();
+
+                if( clearance >= 0 )
+                {
+                    std::shared_ptr<SHAPE> viaShape = DRC_ENGINE::GetShape( aVia, UNDEFINED_LAYER );
+
+                    if( viaShape->Collide( holeShape.get(), clearance - m_drcEpsilon ) )
+                        return true;
+                }
+            }
+
             return false;
         }
 
-        bool hasDRCViolation( VIA* aVia )
+        bool checkDRCViolation( VIA* aVia )
         {
             std::vector<KIGFX::VIEW::LAYER_ITEM_PAIR> items;
-            std::set<BOARD_ITEM*>                     handled;
-            BOX2I                                     bbox = aVia->GetBoundingBox();
+            std::set<BOARD_ITEM*> checkedItems;
+            BOX2I bbox = aVia->GetBoundingBox();
 
             bbox.Inflate( m_worstClearance );
             m_frame->GetCanvas()->GetView()->Query( bbox, items );
@@ -2183,19 +2253,46 @@ int DRAWING_TOOL::DrawVia( const TOOL_EVENT& aEvent )
             {
                 BOARD_ITEM* item = dynamic_cast<BOARD_ITEM*>( it.first );
 
-                if( !item || item->Type() == PCB_ZONE_T || item->Type() == PCB_FP_ZONE_T )
+                if( !item )
                     continue;
 
-                if( handled.count( item ) )
+                if( item->Type() == PCB_ZONE_T || item->Type() == PCB_FP_ZONE_T )
+                    continue;       // stitching vias bind to zones, so ignore them
+
+                if( item->Type() == PCB_FOOTPRINT_T || item->Type() == PCB_GROUP_T )
+                    continue;       // check against children, but not against footprint itself
+
+                if( item->Type() == PCB_FP_TEXT_T && !static_cast<FP_TEXT*>( item )->IsVisible() )
+                    continue;       // ignore hidden items
+
+                if( checkedItems.count( item ) )
                     continue;
 
                 if( hasDRCViolation( aVia, item ) )
                     return true;
 
-                handled.insert( item );
+                checkedItems.insert( item );
             }
 
             return false;
+        }
+
+        PAD* findPad( VIA* aVia )
+        {
+            const wxPoint position = aVia->GetPosition();
+            const LSET    lset = aVia->GetLayerSet();
+
+            for( FOOTPRINT* fp : m_board->Footprints() )
+            {
+                for(PAD* pad : fp->Pads() )
+                {
+                    if( pad->HitTest( position ) && ( pad->GetLayerSet() & lset ).any() )
+                        if( pad->GetNetCode() > 0 )
+                            return pad;
+                }
+            }
+
+            return nullptr;
         }
 
         int findStitchedZoneNet( VIA* aVia )
@@ -2263,12 +2360,18 @@ int DRAWING_TOOL::DrawVia( const TOOL_EVENT& aEvent )
         {
             VIA*    via = static_cast<VIA*>( aItem );
             wxPoint viaPos = via->GetPosition();
-            int     newNet;
             TRACK*  track = findTrack( via );
+            PAD *   pad = findPad( via );
 
-            if( hasDRCViolation( via ) )
+            if( track )
+                via->SetNetCode( track->GetNetCode() );
+            else if( pad )
+                via->SetNetCode( pad->GetNetCode() );
+
+            if( !m_allowDRCViolations && checkDRCViolation( via ) )
             {
                 m_frame->ShowInfoBarError( _( "Via location violates DRC." ) );
+                via->SetNetCode( 0 );
                 m_flaggedDRC = true;
                 return false;
             }
@@ -2290,17 +2393,12 @@ int DRAWING_TOOL::DrawVia( const TOOL_EVENT& aEvent )
                     newTrack->SetStart( viaPos );
                     aCommit.Add( newTrack );
                 }
-
-                newNet = track->GetNetCode();
             }
-            else
+            else if( !pad )
             {
-                newNet = findStitchedZoneNet( via );
+                via->SetNetCode( findStitchedZoneNet( via ) );
                 via->SetIsFree();
             }
-
-            if( newNet > 0 )
-                via->SetNetCode( newNet );
 
             aCommit.Add( aItem );
             return true;
@@ -2391,21 +2489,24 @@ const unsigned int DRAWING_TOOL::WIDTH_STEP = Millimeter2iu( 0.1 );
 
 void DRAWING_TOOL::setTransitions()
 {
-    Go( &DRAWING_TOOL::DrawLine, PCB_ACTIONS::drawLine.MakeEvent() );
-    Go( &DRAWING_TOOL::DrawZone, PCB_ACTIONS::drawPolygon.MakeEvent() );
-    Go( &DRAWING_TOOL::DrawRectangle, PCB_ACTIONS::drawRectangle.MakeEvent() );
-    Go( &DRAWING_TOOL::DrawCircle, PCB_ACTIONS::drawCircle.MakeEvent() );
-    Go( &DRAWING_TOOL::DrawArc, PCB_ACTIONS::drawArc.MakeEvent() );
-    Go( &DRAWING_TOOL::DrawDimension, PCB_ACTIONS::drawAlignedDimension.MakeEvent() );
-    Go( &DRAWING_TOOL::DrawDimension, PCB_ACTIONS::drawOrthogonalDimension.MakeEvent() );
-    Go( &DRAWING_TOOL::DrawDimension, PCB_ACTIONS::drawCenterDimension.MakeEvent() );
-    Go( &DRAWING_TOOL::DrawDimension, PCB_ACTIONS::drawLeader.MakeEvent() );
-    Go( &DRAWING_TOOL::DrawZone, PCB_ACTIONS::drawZone.MakeEvent() );
-    Go( &DRAWING_TOOL::DrawZone, PCB_ACTIONS::drawRuleArea.MakeEvent() );
-    Go( &DRAWING_TOOL::DrawZone, PCB_ACTIONS::drawZoneCutout.MakeEvent() );
-    Go( &DRAWING_TOOL::DrawZone, PCB_ACTIONS::drawSimilarZone.MakeEvent() );
-    Go( &DRAWING_TOOL::DrawVia, PCB_ACTIONS::drawVia.MakeEvent() );
-    Go( &DRAWING_TOOL::PlaceText, PCB_ACTIONS::placeText.MakeEvent() );
+
+    Go( &DRAWING_TOOL::PlaceStackup,          PCB_ACTIONS::placeStackup.MakeEvent() );
+    Go( &DRAWING_TOOL::PlaceCharacteristics,  PCB_ACTIONS::placeCharacteristics.MakeEvent() );
+    Go( &DRAWING_TOOL::DrawLine,              PCB_ACTIONS::drawLine.MakeEvent() );
+    Go( &DRAWING_TOOL::DrawZone,              PCB_ACTIONS::drawPolygon.MakeEvent() );
+    Go( &DRAWING_TOOL::DrawRectangle,         PCB_ACTIONS::drawRectangle.MakeEvent() );
+    Go( &DRAWING_TOOL::DrawCircle,            PCB_ACTIONS::drawCircle.MakeEvent() );
+    Go( &DRAWING_TOOL::DrawArc,               PCB_ACTIONS::drawArc.MakeEvent() );
+    Go( &DRAWING_TOOL::DrawDimension,         PCB_ACTIONS::drawAlignedDimension.MakeEvent() );
+    Go( &DRAWING_TOOL::DrawDimension,         PCB_ACTIONS::drawOrthogonalDimension.MakeEvent() );
+    Go( &DRAWING_TOOL::DrawDimension,         PCB_ACTIONS::drawCenterDimension.MakeEvent() );
+    Go( &DRAWING_TOOL::DrawDimension,         PCB_ACTIONS::drawLeader.MakeEvent() );
+    Go( &DRAWING_TOOL::DrawZone,              PCB_ACTIONS::drawZone.MakeEvent() );
+    Go( &DRAWING_TOOL::DrawZone,              PCB_ACTIONS::drawRuleArea.MakeEvent() );
+    Go( &DRAWING_TOOL::DrawZone,              PCB_ACTIONS::drawZoneCutout.MakeEvent() );
+    Go( &DRAWING_TOOL::DrawZone,              PCB_ACTIONS::drawSimilarZone.MakeEvent() );
+    Go( &DRAWING_TOOL::DrawVia,               PCB_ACTIONS::drawVia.MakeEvent() );
+    Go( &DRAWING_TOOL::PlaceText,             PCB_ACTIONS::placeText.MakeEvent() );
     Go( &DRAWING_TOOL::PlaceImportedGraphics, PCB_ACTIONS::placeImportedGraphics.MakeEvent() );
     Go( &DRAWING_TOOL::SetAnchor, PCB_ACTIONS::setAnchor.MakeEvent() );
     Go( &DRAWING_TOOL::ToggleLine45degMode, PCB_ACTIONS::toggleLine45degMode.MakeEvent() );

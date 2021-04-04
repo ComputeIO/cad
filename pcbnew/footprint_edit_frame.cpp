@@ -44,12 +44,12 @@
 #include <footprint_editor_settings.h>
 #include <footprint_info_impl.h>
 #include <footprint_tree_pane.h>
-#include <footprint_viewer_frame.h>
 #include <fp_lib_table.h>
 #include <plugins/kicad/kicad_plugin.h>
 #include <kiface_i.h>
 #include <kiplatform/app.h>
 #include <kiway.h>
+#include <macros.h>
 #include <panel_hotkeys_editor.h>
 #include <pcb_draw_panel_gal.h>
 #include <pcb_edit_frame.h>
@@ -102,8 +102,6 @@ BEGIN_EVENT_TABLE( FOOTPRINT_EDIT_FRAME, PCB_BASE_FRAME )
     EVT_UPDATE_UI( ID_ADD_FOOTPRINT_TO_BOARD,
                    FOOTPRINT_EDIT_FRAME::OnUpdateSaveFootprintToBoard )
     EVT_UPDATE_UI( ID_TOOLBARH_PCB_SELECT_LAYER, FOOTPRINT_EDIT_FRAME::OnUpdateLayerSelectBox )
-    EVT_UPDATE_UI( ID_GEN_IMPORT_GRAPHICS_FILE, FOOTPRINT_EDIT_FRAME::OnUpdateModuleSelected )
-
 END_EVENT_TABLE()
 
 
@@ -115,7 +113,7 @@ FOOTPRINT_EDIT_FRAME::FOOTPRINT_EDIT_FRAME( KIWAY* aKiway, wxWindow* aParent,
 {
     m_showBorderAndTitleBlock = false;   // true to show the frame references
     m_canvasType = aBackend;
-    m_aboutTitle = _( "Footprint Editor" );
+    m_aboutTitle = _( "KiCad Footprint Editor" );
     m_selLayerBox = nullptr;
     m_settings = nullptr;
 
@@ -123,11 +121,11 @@ FOOTPRINT_EDIT_FRAME::FOOTPRINT_EDIT_FRAME( KIWAY* aKiway, wxWindow* aParent,
     wxIcon icon;
     wxIconBundle icon_bundle;
 
-    icon.CopyFromBitmap( KiBitmap( icon_modedit_xpm ) );
+    icon.CopyFromBitmap( KiBitmap( BITMAPS::icon_modedit ) );
     icon_bundle.AddIcon( icon );
-    icon.CopyFromBitmap( KiBitmap( icon_modedit_32_xpm ) );
+    icon.CopyFromBitmap( KiBitmap( BITMAPS::icon_modedit_32 ) );
     icon_bundle.AddIcon( icon );
-    icon.CopyFromBitmap( KiBitmap( icon_modedit_16_xpm ) );
+    icon.CopyFromBitmap( KiBitmap( BITMAPS::icon_modedit_16 ) );
     icon_bundle.AddIcon( icon );
 
     SetIcons( icon_bundle );
@@ -284,7 +282,7 @@ FOOTPRINT_EDIT_FRAME::FOOTPRINT_EDIT_FRAME( KIWAY* aKiway, wxWindow* aParent,
     m_appearancePanel->ApplyLayerPreset( cfg->m_ActiveLayerPreset );
 
     GetToolManager()->RunAction( ACTIONS::zoomFitScreen, false );
-    updateTitle();
+    UpdateTitle();
     setupUnits( GetSettings() );
 
     // Default shutdown reason until a file is loaded
@@ -293,6 +291,14 @@ FOOTPRINT_EDIT_FRAME::FOOTPRINT_EDIT_FRAME( KIWAY* aKiway, wxWindow* aParent,
     // Ensure the window is on top
     Raise();
     Show( true );
+
+    // Register a call to update the toolbar sizes. It can't be done immediately because
+    // it seems to require some sizes calculated that aren't yet (at least on GTK).
+    CallAfter( [&]()
+               {
+                   // Ensure the controls on the toolbars all are correctly sized
+                    UpdateToolbarControlSizes();
+               } );
 }
 
 
@@ -460,6 +466,7 @@ void FOOTPRINT_EDIT_FRAME::AddFootprintToBoard( FOOTPRINT* aFootprint )
                     aFootprint->GetReference() );
 
         GetInfoBar()->RemoveAllButtons();
+        GetInfoBar()->AddCloseButton();
         GetInfoBar()->ShowMessage( msg, wxICON_INFORMATION );
     }
 
@@ -527,6 +534,8 @@ void FOOTPRINT_EDIT_FRAME::LoadSettings( APP_SETTINGS_BASE* aCfg )
 
 void FOOTPRINT_EDIT_FRAME::SaveSettings( APP_SETTINGS_BASE* aCfg )
 {
+    GetGalDisplayOptions().m_axesEnabled = true;
+
     // aCfg will be the PCBNEW_SETTINGS
     FOOTPRINT_EDITOR_SETTINGS* cfg = GetSettings();
 
@@ -581,7 +590,7 @@ const BOX2I FOOTPRINT_EDIT_FRAME::GetDocumentExtents( bool aIncludeAllVisible ) 
 
         if( hasGraphicalItem )
         {
-            return footprint->GetFootprintRect();
+            return footprint->GetBoundingBox( false, false );
         }
         else
         {
@@ -661,12 +670,6 @@ void FOOTPRINT_EDIT_FRAME::CloseFootprintEditor( wxCommandEvent& Event )
 }
 
 
-void FOOTPRINT_EDIT_FRAME::OnUpdateModuleSelected( wxUpdateUIEvent& aEvent )
-{
-    aEvent.Enable( GetBoard()->GetFirstFootprint() != NULL );
-}
-
-
 void FOOTPRINT_EDIT_FRAME::OnUpdateLoadFootprintFromBoard( wxUpdateUIEvent& aEvent )
 {
     PCB_EDIT_FRAME* frame = (PCB_EDIT_FRAME*) Kiway().Player( FRAME_PCB_EDITOR, false );
@@ -735,10 +738,13 @@ void FOOTPRINT_EDIT_FRAME::OnModify()
     PCB_BASE_FRAME::OnModify();
     Update3DView( true );
     m_treePane->GetLibTree()->RefreshLibTree();
+
+    if( !GetTitle().StartsWith( "*" ) )
+        UpdateTitle();
 }
 
 
-void FOOTPRINT_EDIT_FRAME::updateTitle()
+void FOOTPRINT_EDIT_FRAME::UpdateTitle()
 {
     wxString   title;
     LIB_ID     fpid = GetLoadedFPID();
@@ -747,10 +753,11 @@ void FOOTPRINT_EDIT_FRAME::updateTitle()
 
     if( IsCurrentFPFromBoard() )
     {
-        title += wxString::Format( _( "%s [from %s.%s]" ) + wxT( " \u2014 " ),
-                                   footprint->GetReference(),
-                                   Prj().GetProjectName(),
-                                   PcbFileExtension );
+        title = wxString::Format( _( "%s%s [from %s.%s]" ) + wxT( " \u2014 " ),
+                                  IsContentModified() ? "*" : "",
+                                  footprint->GetReference(),
+                                  Prj().GetProjectName(),
+                                  PcbFileExtension );
     }
     else if( fpid.IsValid() )
     {
@@ -764,15 +771,16 @@ void FOOTPRINT_EDIT_FRAME::updateTitle()
         }
 
         // Note: don't used GetLoadedFPID(); footprint name may have been edited
-        title += wxString::Format( wxT( "%s %s\u2014 " ),
+        title += wxString::Format( wxT( "%s%s %s\u2014 " ),
+                                   IsContentModified() ? "*" : "",
                                    FROM_UTF8( footprint->GetFPID().Format().c_str() ),
-                                   writable ? wxString( wxEmptyString )
-                                            : _( "[Read Only]" ) + wxS( " " ) );
+                                   writable ? "" : _( "[Read Only]" ) + wxS( " " ) );
     }
     else if( !fpid.GetLibItemName().empty() )
     {
         // Note: don't used GetLoadedFPID(); footprint name may have been edited
-        title += wxString::Format( wxT( "%s %s \u2014 " ),
+        title += wxString::Format( wxT( "%s%s %s \u2014 " ),
+                                   IsContentModified() ? "*" : "",
                                    FROM_UTF8( footprint->GetFPID().GetLibItemName().c_str() ),
                                    _( "[Unsaved]" ) );
     }
@@ -794,7 +802,7 @@ void FOOTPRINT_EDIT_FRAME::UpdateView()
     GetCanvas()->UpdateColors();
     GetCanvas()->DisplayBoard( GetBoard() );
     m_toolManager->ResetTools( TOOL_BASE::MODEL_RELOAD );
-    updateTitle();
+    UpdateTitle();
 }
 
 
@@ -921,7 +929,7 @@ void FOOTPRINT_EDIT_FRAME::setupTools()
     m_toolManager->SetEnvironment( GetBoard(), GetCanvas()->GetView(),
                                    GetCanvas()->GetViewControls(), config(), this );
     m_actions = new PCB_ACTIONS();
-    m_toolDispatcher = new TOOL_DISPATCHER( m_toolManager, m_actions );
+    m_toolDispatcher = new TOOL_DISPATCHER( m_toolManager );
 
     GetCanvas()->SetEventDispatcher( m_toolDispatcher );
 
@@ -985,7 +993,7 @@ void FOOTPRINT_EDIT_FRAME::setupUIConditions()
 
     mgr->SetConditions( ACTIONS::saveAs,                 ENABLE( footprintTargettedCond ) );
     mgr->SetConditions( ACTIONS::revert,                 ENABLE( cond.ContentModified() ) );
-    mgr->SetConditions( ACTIONS::save, ENABLE( cond.ContentModified() ) );
+    mgr->SetConditions( ACTIONS::save,                   ENABLE( SELECTION_CONDITIONS::ShowAlways ) );
 
     mgr->SetConditions( ACTIONS::undo,                   ENABLE( cond.UndoAvailable() ) );
     mgr->SetConditions( ACTIONS::redo,                   ENABLE( cond.RedoAvailable() ) );
@@ -995,16 +1003,20 @@ void FOOTPRINT_EDIT_FRAME::setupUIConditions()
     mgr->SetConditions( ACTIONS::millimetersUnits,       CHECK( cond.Units( EDA_UNITS::MILLIMETRES ) ) );
     mgr->SetConditions( ACTIONS::inchesUnits,            CHECK( cond.Units( EDA_UNITS::INCHES ) ) );
     mgr->SetConditions( ACTIONS::milsUnits,              CHECK( cond.Units( EDA_UNITS::MILS ) ) );
-    mgr->SetConditions( ACTIONS::acceleratedGraphics,    CHECK( cond.CanvasType( EDA_DRAW_PANEL_GAL::GAL_TYPE_OPENGL ) ) );
-    mgr->SetConditions( ACTIONS::standardGraphics,       CHECK( cond.CanvasType( EDA_DRAW_PANEL_GAL::GAL_TYPE_CAIRO ) ) );
 
-    mgr->SetConditions( ACTIONS::cut,                    ENABLE( SELECTION_CONDITIONS::NotEmpty ) );
-    mgr->SetConditions( ACTIONS::copy,                   ENABLE( SELECTION_CONDITIONS::NotEmpty ) );
+    mgr->SetConditions( ACTIONS::cut,                    ENABLE( cond.HasItems() ) );
+    mgr->SetConditions( ACTIONS::copy,                   ENABLE( cond.HasItems() ) );
     mgr->SetConditions( ACTIONS::paste,                  ENABLE( SELECTION_CONDITIONS::Idle && cond.NoActiveTool() ) );
     mgr->SetConditions( ACTIONS::pasteSpecial,           ENABLE( SELECTION_CONDITIONS::Idle && cond.NoActiveTool() ) );
-    mgr->SetConditions( ACTIONS::doDelete,               ENABLE( SELECTION_CONDITIONS::NotEmpty ) );
-    mgr->SetConditions( ACTIONS::duplicate,              ENABLE( SELECTION_CONDITIONS::NotEmpty ) );
+    mgr->SetConditions( ACTIONS::doDelete,               ENABLE( cond.HasItems() ) );
+    mgr->SetConditions( ACTIONS::duplicate,              ENABLE( cond.HasItems() ) );
     mgr->SetConditions( ACTIONS::selectAll,              ENABLE( cond.HasItems() ) );
+
+    mgr->SetConditions( PCB_ACTIONS::rotateCw,           ENABLE( cond.HasItems() ) );
+    mgr->SetConditions( PCB_ACTIONS::rotateCcw,          ENABLE( cond.HasItems() ) );
+    mgr->SetConditions( PCB_ACTIONS::mirror,             ENABLE( cond.HasItems() ) );
+    mgr->SetConditions( PCB_ACTIONS::group,              ENABLE( SELECTION_CONDITIONS::MoreThan( 1 ) ) );
+    mgr->SetConditions( PCB_ACTIONS::ungroup,            ENABLE( cond.HasItems() ) );
 
     mgr->SetConditions( PCB_ACTIONS::padDisplayMode,     CHECK( !cond.PadFillDisplay() ) );
     mgr->SetConditions( PCB_ACTIONS::textOutlines,       CHECK( !cond.TextFillDisplay() ) );
@@ -1031,14 +1043,15 @@ void FOOTPRINT_EDIT_FRAME::setupUIConditions()
                 return IsSearchTreeShown();
             };
 
-    mgr->SetConditions( ACTIONS::highContrastMode,         CHECK( highContrastCond ) );
-    mgr->SetConditions( PCB_ACTIONS::flipBoard, CHECK( boardFlippedCond ) );
-    mgr->SetConditions( PCB_ACTIONS::toggleFootprintTree,  CHECK( footprintTreeCond ) );
+    mgr->SetConditions( ACTIONS::highContrastMode,          CHECK( highContrastCond ) );
+    mgr->SetConditions( PCB_ACTIONS::flipBoard,             CHECK( boardFlippedCond ) );
+    mgr->SetConditions( PCB_ACTIONS::showFootprintTree,     CHECK( footprintTreeCond ) );
 
-    mgr->SetConditions( ACTIONS::print,                    ENABLE( haveFootprintCond ) );
-    mgr->SetConditions( PCB_ACTIONS::exportFootprint,      ENABLE( haveFootprintCond ) );
-    mgr->SetConditions( PCB_ACTIONS::footprintProperties,  ENABLE( haveFootprintCond ) );
-    mgr->SetConditions( PCB_ACTIONS::cleanupGraphics,      ENABLE( haveFootprintCond ) );
+    mgr->SetConditions( ACTIONS::print,                     ENABLE( haveFootprintCond ) );
+    mgr->SetConditions( PCB_ACTIONS::exportFootprint,       ENABLE( haveFootprintCond ) );
+    mgr->SetConditions( PCB_ACTIONS::footprintProperties,   ENABLE( haveFootprintCond ) );
+    mgr->SetConditions( PCB_ACTIONS::cleanupGraphics,       ENABLE( haveFootprintCond ) );
+    mgr->SetConditions( PCB_ACTIONS::placeImportedGraphics, ENABLE( haveFootprintCond ) );
 
 
 // Only enable a tool if the part is edtable

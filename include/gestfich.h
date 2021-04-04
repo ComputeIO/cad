@@ -95,8 +95,6 @@ wxString EDA_FILE_SELECTOR( const wxString& aTitle,
                             const wxPoint&  aPosition = wxDefaultPosition,
                             wxString*       aMruPath = nullptr );
 
-EDA_LIST_DIALOG* GetFileNames( char* Directory, char* Mask );
-
 
 /**
  * Call the executable file \a ExecFile with the command line parameters \a param.
@@ -110,18 +108,6 @@ int ExecuteFile( wxWindow* frame, const wxString& ExecFile,
  * @param string string to modify.
  */
 void AddDelimiterString( wxString& string );
-
-/**
- * Return the data path common to KiCad.
- *
- * If environment variable KICAD is defined (KICAD = path to KiCad)
- * Returns \<KICAD\> /;
- * Otherwise returns \<path of binaries\> / (if "kicad" is in the path name)
- * Otherwise returns /usr /share/kicad/
- *
- * @note The \\ path separators are replaced by / (a la Unix).
- */
-wxString KicadDatasPath();
 
 /**
  * Search the executable file shortname in KiCad binary path and return full file

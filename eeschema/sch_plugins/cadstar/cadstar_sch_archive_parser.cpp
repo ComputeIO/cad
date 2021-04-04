@@ -41,12 +41,12 @@ void CADSTAR_SCH_ARCHIVE_PARSER::Parse()
     {
         if( cNode->GetName() == wxT( "HEADER" ) )
         {
-            Header.Parse( cNode, &mContext );
+            Header.Parse( cNode, &m_context );
 
             switch( Header.Resolution )
             {
             case RESOLUTION::HUNDREDTH_MICRON:
-                KiCadUnitMultiplier = SCH_IU_PER_MM / 1e5;
+                KiCadUnitDivider = (long) 1e5 / (long) SCH_IU_PER_MM;
                 break;
 
             default:
@@ -56,11 +56,11 @@ void CADSTAR_SCH_ARCHIVE_PARSER::Parse()
         }
         else if( cNode->GetName() == wxT( "ASSIGNMENTS" ) )
         {
-            Assignments.Parse( cNode, &mContext );
+            Assignments.Parse( cNode, &m_context );
         }
         else if( cNode->GetName() == wxT( "LIBRARY" ) )
         {
-            Library.Parse( cNode, &mContext );
+            Library.Parse( cNode, &m_context );
         }
         else if( cNode->GetName() == wxT( "DEFAULTS" ) )
         {
@@ -70,15 +70,15 @@ void CADSTAR_SCH_ARCHIVE_PARSER::Parse()
         }
         else if( cNode->GetName() == wxT( "PARTS" ) )
         {
-            Parts.Parse( cNode, &mContext );
+            Parts.Parse( cNode, &m_context );
         }
         else if( cNode->GetName() == wxT( "SHEETS" ) )
         {
-            Sheets.Parse( cNode, &mContext );
+            Sheets.Parse( cNode, &m_context );
         }
         else if( cNode->GetName() == wxT( "SCHEMATIC" ) )
         {
-            Schematic.Parse( cNode, &mContext );
+            Schematic.Parse( cNode, &m_context );
         }
         else if( cNode->GetName() == wxT( "DISPLAY" ) )
         {
@@ -90,7 +90,7 @@ void CADSTAR_SCH_ARCHIVE_PARSER::Parse()
             {
                 if( subNode->GetName() == wxT( "ATTRCOLORS" ) )
                 {
-                    AttrColors.Parse( subNode, &mContext );
+                    AttrColors.Parse( subNode, &m_context );
                 }
                 else if( subNode->GetName() == wxT( "SCMITEMCOLORS" ) )
                 {
@@ -105,7 +105,7 @@ void CADSTAR_SCH_ARCHIVE_PARSER::Parse()
                             for( ; sub3Node; sub3Node = sub3Node->GetNext() )
                             {
                                 if( sub3Node->GetName() == wxT( "PARTNAMECOL" ) )
-                                    SymbolPartNameColor.Parse( sub3Node, &mContext );
+                                    SymbolPartNameColor.Parse( sub3Node, &m_context );
                             }
                         }
                     }
@@ -612,6 +612,11 @@ void CADSTAR_SCH_ARCHIVE_PARSER::SYMBOLVARIANT::Parse( XNODE* aNode, PARSER_CONT
             Type      = TYPE::GLOBALSIGNAL;
             Reference = GetXmlAttributeIDString( cNode, 0 );
         }
+        else if( cNodeName == wxT( "TESTPOINT" ) )
+        {
+            Type = TYPE::TESTPOINT;
+            CheckNoNextNodes( cNode );
+        }
         else
         {
             THROW_UNKNOWN_NODE_IO_ERROR( cNodeName, aNode->GetName() );
@@ -1102,7 +1107,7 @@ void CADSTAR_SCH_ARCHIVE_PARSER::NET_SCH::Parse( XNODE* aNode, PARSER_CONTEXT* a
 }
 
 
-void CADSTAR_SCH_ARCHIVE_PARSER::SCHEMATIC::Parse( XNODE* aNode, PARSER_CONTEXT* aContext )
+void CADSTAR_SCH_ARCHIVE_PARSER::CADSTAR_SCHEMATIC::Parse( XNODE* aNode, PARSER_CONTEXT* aContext )
 {
     wxCHECK( aNode->GetName() == wxT( "SCHEMATIC" ), );
 

@@ -2,6 +2,7 @@
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
  * Copyright (C) 2020 CERN
+ * Copyright (C) 2021 KiCad Developers, see AUTHORS.txt for contributors.
  * @author Jon Evans <jon@craftyjon.com>
  *
  * This program is free software: you can redistribute it and/or modify it
@@ -19,14 +20,16 @@
  */
 
 #include <base_screen.h>
-#include <lib_part.h>
+#include <lib_symbol.h>
 #include <convert_to_biu.h>
 #include <default_values.h>
 #include <eda_text.h>
 #include <eeschema_settings.h>
 #include <kiface_i.h>
+#include <macros.h>
 #include <schematic_settings.h>
 #include <settings/parameters.h>
+#include <sim/spice_settings.h>
 
 
 const int schSettingsSchemaVersion = 0;
@@ -43,10 +46,12 @@ SCHEMATIC_SETTINGS::SCHEMATIC_SETTINGS( JSON_SETTINGS* aParent, const std::strin
         m_JunctionSize( DEFAULT_JUNCTION_DIAM * IU_PER_MILS ),
         m_JunctionSizeChoice( 3 ),
         m_IntersheetRefsShow( false ),
+        m_IntersheetRefsListOwnPage( true ),
         m_IntersheetRefsFormatShort( false ),
         m_IntersheetRefsPrefix( DEFAULT_IREF_PREFIX ),
         m_IntersheetRefsSuffix( DEFAULT_IREF_SUFFIX ),
-        m_SpiceAdjustPassiveValues( false )
+        m_SpiceAdjustPassiveValues( false ),
+        m_NgspiceSimulatorSettings( nullptr )
 {
     EESCHEMA_SETTINGS* appSettings = dynamic_cast<EESCHEMA_SETTINGS*>( Kiface().KifaceSettings() );
 
@@ -66,6 +71,8 @@ SCHEMATIC_SETTINGS::SCHEMATIC_SETTINGS( JSON_SETTINGS* aParent, const std::strin
             appSettings ? appSettings->m_Drawing.junction_size_choice : 3;
     bool defaultIntersheetsRefShow =
             appSettings ? appSettings->m_Drawing.intersheets_ref_show : false;
+    bool defaultIntersheetsRefOwnPage =
+            appSettings ? appSettings->m_Drawing.intersheets_ref_own_page : true;
     bool defaultIntersheetsRefFormatShort =
             appSettings ? appSettings->m_Drawing.intersheets_ref_short : false;
     wxString defaultIntersheetsRefPrefix =
@@ -75,6 +82,9 @@ SCHEMATIC_SETTINGS::SCHEMATIC_SETTINGS( JSON_SETTINGS* aParent, const std::strin
 
     m_params.emplace_back( new PARAM<bool>( "drawing.intersheets_ref_show",
             &m_IntersheetRefsShow, defaultIntersheetsRefShow ) );
+
+    m_params.emplace_back( new PARAM<bool>( "drawing.intersheets_ref_own_page",
+            &m_IntersheetRefsListOwnPage, defaultIntersheetsRefOwnPage ) );
 
     m_params.emplace_back( new PARAM<bool>( "drawing.intersheets_ref_short",
             &m_IntersheetRefsFormatShort, defaultIntersheetsRefFormatShort ) );
@@ -200,11 +210,17 @@ SCHEMATIC_SETTINGS::SCHEMATIC_SETTINGS( JSON_SETTINGS* aParent, const std::strin
 
     m_params.emplace_back( new PARAM<int>( "subpart_first_id",
             LIB_PART::SubpartFirstIdPtr(), 'A', '1', 'z' ) );
+
+    m_NgspiceSimulatorSettings =
+            std::make_shared<NGSPICE_SIMULATOR_SETTINGS>( this, "ngspice" );
 }
 
 
 SCHEMATIC_SETTINGS::~SCHEMATIC_SETTINGS()
 {
+    ReleaseNestedSettings( m_NgspiceSimulatorSettings.get() );
+    m_NgspiceSimulatorSettings.reset();
+
     if( m_parent )
     {
         m_parent->ReleaseNestedSettings( this );

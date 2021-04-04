@@ -165,6 +165,10 @@ wxString KIwxExpandEnvVars( const wxString& str, const PROJECT* aProject )
             }
 
             size_t m = n + 1;
+
+            if( m >= strlen )
+                break;
+
             wxUniChar str_m = str[m];
 
             while( wxIsalnum( str_m ) || str_m == wxT( '_' ) || str_m == wxT( ':' ) )
@@ -241,7 +245,7 @@ wxString KIwxExpandEnvVars( const wxString& str, const PROJECT* aProject )
 
         case wxT( '\\' ):
             // backslash can be used to suppress special meaning of % and $
-            if( n != strlen - 1 && (str[n + 1] == wxT( '%' ) || str[n + 1] == wxT( '$' )) )
+            if( n < strlen - 1 && (str[n + 1] == wxT( '%' ) || str[n + 1] == wxT( '$' )) )
             {
                 str_n = str[++n];
                 strResult += str_n;
@@ -342,97 +346,6 @@ bool EnsureFileDirectoryExists( wxFileName*     aTargetFullFileName,
     }
 
     return true;
-}
-
-
-#ifdef __WXMAC__
-wxString GetOSXKicadUserDataDir()
-{
-    // According to wxWidgets documentation for GetUserDataDir:
-    // Mac: ~/Library/Application Support/appname
-    wxFileName udir( wxStandardPaths::Get().GetUserDataDir(), wxEmptyString );
-
-    // Since appname is different if started via launcher or standalone binary
-    // map all to "kicad" here
-    udir.RemoveLastDir();
-    udir.AppendDir( "kicad" );
-
-    return udir.GetPath();
-}
-
-
-wxString GetOSXKicadMachineDataDir()
-{
-    return wxT( "/Library/Application Support/kicad" );
-}
-
-
-wxString GetOSXKicadDataDir()
-{
-    // According to wxWidgets documentation for GetDataDir:
-    // Mac: appname.app/Contents/SharedSupport bundle subdirectory
-    wxFileName ddir( wxStandardPaths::Get().GetDataDir(), wxEmptyString );
-
-    // This must be mapped to main bundle for everything but kicad.app
-    const wxArrayString dirs = ddir.GetDirs();
-    if( dirs[dirs.GetCount() - 3] != wxT( "kicad.app" ) )
-    {
-        // Bundle structure resp. current path is
-        //   kicad.app/Contents/Applications/<standalone>.app/Contents/SharedSupport
-        // and will be mapped to
-        //   kicad.app/Contents/SharedSupprt
-        ddir.RemoveLastDir();
-        ddir.RemoveLastDir();
-        ddir.RemoveLastDir();
-        ddir.RemoveLastDir();
-        ddir.AppendDir( wxT( "SharedSupport" ) );
-    }
-
-    return ddir.GetPath();
-}
-#endif
-
-
-// add this only if it is not in wxWidgets (for instance before 3.1.0)
-#ifdef USE_KICAD_WXSTRING_HASH
-size_t std::hash<wxString>::operator()( const wxString& s ) const
-{
-    return std::hash<std::wstring>{}( s.ToStdWstring() );
-}
-#endif
-
-#ifdef USE_KICAD_WXPOINT_LESS_AND_HASH
-size_t std::hash<wxPoint>::operator() ( const wxPoint& k ) const
-{
-    auto xhash = std::hash<int>()( k.x );
-
-    // 0x9e3779b9 is 2^33 / ( 1 + sqrt(5) )
-    // Adding this value ensures that consecutive bits of y will not be close to each other
-    // decreasing the likelihood of hash collision in similar values of x and y
-    return xhash ^ ( std::hash<int>()( k.y )  + 0x9e3779b9 + ( xhash << 6 ) + ( xhash >> 2 ) );
-}
-
-bool std::less<wxPoint>::operator()( const wxPoint& aA, const wxPoint& aB ) const
-{
-    if( aA.x == aB.x )
-        return aA.y < aB.y;
-
-    return aA.x < aB.x;
-}
-#endif
-
-
-std::ostream& operator<<( std::ostream& out, const wxSize& size )
-{
-    out << " width=\"" << size.GetWidth() << "\" height=\"" << size.GetHeight() << "\"";
-    return out;
-}
-
-
-std::ostream& operator<<( std::ostream& out, const wxPoint& pt )
-{
-    out << " x=\"" << pt.x << "\" y=\"" << pt.y << "\"";
-    return out;
 }
 
 
@@ -616,6 +529,7 @@ long long TimestampDir( const wxString& aDirPath, const wxString& aFilespec )
         {
             ConvertFileTimeToWx( &lastModDate, findData.ftLastWriteTime );
             timestamp += lastModDate.GetValue().GetValue();
+            timestamp += findData.nFileSizeLow; // Get the file size (partial) as well to check for sneaky changes
         }
         while ( FindNextFile( fileHandle, &findData ) != 0 );
     }
@@ -666,7 +580,10 @@ long long TimestampDir( const wxString& aDirPath, const wxString& aFilespec )
                 }
 
                 if( S_ISREG( entry_stat.st_mode ) )    // wxFileExists()
+                {
                     timestamp += entry_stat.st_mtime * 1000;
+                    timestamp += entry_stat.st_size;    // Get the file size as well to check for sneaky changes
+                }
             }
             else
             {

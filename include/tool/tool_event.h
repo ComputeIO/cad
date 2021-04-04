@@ -113,11 +113,14 @@ enum TOOL_ACTIONS
     // Tool activation event.
     TA_ACTIVATE             = 0x100000,
 
+    // Tool re-activation event for tools already on the stack
+    TA_REACTIVATE           = 0x200000,
+
     // Model has changed (partial update).
-    TA_MODEL_CHANGE         = 0x200000,
+    TA_MODEL_CHANGE         = 0x400000,
 
     // Tool priming event (a special mouse click)
-    TA_PRIME                = 0x400001,
+    TA_PRIME                = 0x800001,
 
     TA_ANY = 0xffffffff
 };
@@ -258,8 +261,17 @@ public:
     bool HasPosition() const { return m_hasPosition; }
     void SetHasPosition( bool aHasPosition ) { m_hasPosition = aHasPosition; }
 
+    ///< Returns if the action associated with this event should be treated as immediate regardless
+    ///< of the current immediate action settings.
+    bool ForceImmediate() const { return m_forceImmediate; }
+    void SetForceImmediate( bool aForceImmediate = true ) { m_forceImmediate = aForceImmediate; }
+
     TOOL_BASE* FirstResponder() const { return m_firstResponder; }
     void SetFirstResponder( TOOL_BASE* aTool ) { m_firstResponder = aTool; }
+
+    ///< Controls whether the tool is first being pushed to the stack or being reactivated after a pause
+    bool IsReactivate() const { return m_reactivate; }
+    void SetReactivate( bool aReactivate = true ) { m_reactivate = aReactivate; }
 
     ///< Returns information about difference between current mouse cursor position and the place
     ///< where dragging has started.
@@ -520,6 +532,10 @@ private:
     TOOL_ACTION_SCOPE m_scope;
     bool m_passEvent;
     bool m_hasPosition;
+    bool m_forceImmediate;
+
+    ///< True when the tool is being re-activated from the stack
+    bool m_reactivate;
 
     ///< Difference between mouse cursor position and
     ///< the point where dragging event has started

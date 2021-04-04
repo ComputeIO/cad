@@ -21,6 +21,8 @@
  */
 
 #include <wx/hyperlink.h>
+#include <advanced_config.h>
+
 #include <functional>
 using namespace std::placeholders;
 #include <board.h>
@@ -51,9 +53,7 @@ using namespace std::placeholders;
 
 #include "pns_kicad_iface.h"
 
-#ifdef DEBUG
 #include <plugins/kicad/kicad_plugin.h>
-#endif
 
 using namespace KIGFX;
 
@@ -81,77 +81,86 @@ enum VIA_ACTION_FLAGS
 #define _( s ) s
 
 static const TOOL_ACTION ACT_UndoLastSegment( "pcbnew.InteractiveRouter.UndoLastSegment",
-                                              AS_CONTEXT, WXK_BACK, "", _( "Undo last segment" ),
-                                              _( "Stops laying the current track." ),
-                                              checked_ok_xpm );
+        AS_CONTEXT,
+        WXK_BACK, "",
+        _( "Undo last segment" ),  _( "Stops laying the current track." ),
+        BITMAPS::checked_ok );
 
-static const TOOL_ACTION ACT_EndTrack( "pcbnew.InteractiveRouter.EndTrack", AS_CONTEXT, WXK_END, "",
-                                       _( "Finish Track" ), _( "Stops laying the current track." ),
-                                       checked_ok_xpm );
+static const TOOL_ACTION ACT_EndTrack( "pcbnew.InteractiveRouter.EndTrack",
+        AS_CONTEXT,
+        WXK_END, "",
+        _( "Finish Track" ),  _( "Stops laying the current track." ),
+        BITMAPS::checked_ok );
 
-static const TOOL_ACTION
-        ACT_AutoEndRoute( "pcbnew.InteractiveRouter.AutoEndRoute", AS_CONTEXT, 'F', "",
-                          _( "Auto-finish Track" ),
-                          _( "Automagically finishes laying the current track." ) );
+static const TOOL_ACTION ACT_AutoEndRoute( "pcbnew.InteractiveRouter.AutoEndRoute",
+        AS_CONTEXT,
+        'F', "",
+        _( "Auto-finish Track" ),  _( "Automagically finishes laying the current track." ) );
 
-static const TOOL_ACTION
-        ACT_PlaceThroughVia( "pcbnew.InteractiveRouter.PlaceVia", AS_CONTEXT, 'V',
-                             LEGACY_HK_NAME( "Add Through Via" ), _( "Place Through Via" ),
-                             _( "Adds a through-hole via at the end of currently routed track." ),
-                             via_xpm, AF_NONE, (void*) VIA_ACTION_FLAGS::VIA );
+static const TOOL_ACTION ACT_PlaceThroughVia( "pcbnew.InteractiveRouter.PlaceVia",
+        AS_CONTEXT,
+        'V', LEGACY_HK_NAME( "Add Through Via" ),
+        _( "Place Through Via" ),
+        _( "Adds a through-hole via at the end of currently routed track." ),
+        BITMAPS::via, AF_NONE, (void*) VIA_ACTION_FLAGS::VIA );
 
-static const TOOL_ACTION
-        ACT_PlaceBlindVia( "pcbnew.InteractiveRouter.PlaceBlindVia", AS_CONTEXT,
-                           MD_ALT + MD_SHIFT + 'V', LEGACY_HK_NAME( "Add Blind/Buried Via" ),
-                           _( "Place Blind/Buried Via" ),
-                           _( "Adds a blind or buried via at the end of currently routed track." ),
-                           via_buried_xpm, AF_NONE, (void*) VIA_ACTION_FLAGS::BLIND_VIA );
+static const TOOL_ACTION ACT_PlaceBlindVia( "pcbnew.InteractiveRouter.PlaceBlindVia",
+        AS_CONTEXT,
+        MD_ALT + MD_SHIFT + 'V', LEGACY_HK_NAME( "Add Blind/Buried Via" ),
+        _( "Place Blind/Buried Via" ),
+        _( "Adds a blind or buried via at the end of currently routed track."),
+        BITMAPS::via_buried, AF_NONE, (void*) VIA_ACTION_FLAGS::BLIND_VIA );
 
-static const TOOL_ACTION
-        ACT_PlaceMicroVia( "pcbnew.InteractiveRouter.PlaceMicroVia", AS_CONTEXT, MD_CTRL + 'V',
-                           LEGACY_HK_NAME( "Add MicroVia" ), _( "Place Microvia" ),
-                           _( "Adds a microvia at the end of currently routed track." ),
-                           via_microvia_xpm, AF_NONE, (void*) VIA_ACTION_FLAGS::MICROVIA );
+static const TOOL_ACTION ACT_PlaceMicroVia( "pcbnew.InteractiveRouter.PlaceMicroVia",
+        AS_CONTEXT,
+        MD_CTRL + 'V', LEGACY_HK_NAME( "Add MicroVia" ),
+        _( "Place Microvia" ), _( "Adds a microvia at the end of currently routed track." ),
+        BITMAPS::via_microvia, AF_NONE, (void*) VIA_ACTION_FLAGS::MICROVIA );
 
 static const TOOL_ACTION ACT_SelLayerAndPlaceThroughVia(
         "pcbnew.InteractiveRouter.SelLayerAndPlaceVia", AS_CONTEXT, '<',
         LEGACY_HK_NAME( "Select Layer and Add Through Via" ),
         _( "Select Layer and Place Through Via..." ),
         _( "Select a layer, then add a through-hole via at the end of currently routed track." ),
-        select_w_layer_xpm, AF_NONE,
+        BITMAPS::select_w_layer, AF_NONE,
         (void*) ( VIA_ACTION_FLAGS::VIA | VIA_ACTION_FLAGS::SELECT_LAYER ) );
 
 static const TOOL_ACTION ACT_SelLayerAndPlaceBlindVia(
         "pcbnew.InteractiveRouter.SelLayerAndPlaceBlindVia", AS_CONTEXT, MD_ALT + '<',
         LEGACY_HK_NAME( "Select Layer and Add Blind/Buried Via" ),
         _( "Select Layer and Place Blind/Buried Via..." ),
-        _( "Select a layer, then add a blind or buried via at the end of currently routed track." ),
-        select_w_layer_xpm, AF_NONE,
+        _( "Select a layer, then add a blind or buried via at the end of currently routed track."),
+        BITMAPS::select_w_layer, AF_NONE,
         (void*) ( VIA_ACTION_FLAGS::BLIND_VIA | VIA_ACTION_FLAGS::SELECT_LAYER ) );
 
-static const TOOL_ACTION ACT_CustomTrackWidth(
-        "pcbnew.InteractiveRouter.CustomTrackViaSize", AS_CONTEXT, 'Q',
-        LEGACY_HK_NAME( "Custom Track/Via Size" ), _( "Custom Track/Via Size..." ),
-        _( "Shows a dialog for changing the track width and via size." ), width_track_xpm );
+static const TOOL_ACTION ACT_CustomTrackWidth( "pcbnew.InteractiveRouter.CustomTrackViaSize",
+        AS_CONTEXT,
+        'Q', LEGACY_HK_NAME( "Custom Track/Via Size" ),
+        _( "Custom Track/Via Size..." ),
+        _( "Shows a dialog for changing the track width and via size." ),
+        BITMAPS::width_track );
 
-static const TOOL_ACTION ACT_SwitchPosture( "pcbnew.InteractiveRouter.SwitchPosture", AS_CONTEXT,
-                                            '/', LEGACY_HK_NAME( "Switch Track Posture" ),
-                                            _( "Switch Track Posture" ),
-                                            _( "Switches posture of the currently routed track." ),
-                                            change_entry_orient_xpm );
+static const TOOL_ACTION ACT_SwitchPosture( "pcbnew.InteractiveRouter.SwitchPosture",
+        AS_CONTEXT,
+        '/', LEGACY_HK_NAME( "Switch Track Posture" ),
+        _( "Switch Track Posture" ),
+        _( "Switches posture of the currently routed track." ),
+        BITMAPS::change_entry_orient );
 
-static const TOOL_ACTION
-        ACT_SwitchRounding( "pcbnew.InteractiveRouter.SwitchRounding", AS_CONTEXT, MD_CTRL + '/',
-                            LEGACY_HK_NAME( "Switch Corner Rounding" ),
-                            _( "Switch Corner Rounding" ),
-                            _( "Switches the corner type of the currently routed track." ),
-                            switch_corner_rounding_shape_xpm );
+static const TOOL_ACTION ACT_SwitchRounding( "pcbnew.InteractiveRouter.SwitchRounding",
+        AS_CONTEXT,
+        MD_CTRL + '/', "",
+        _( "Track Corner Mode" ),
+        _( "Switches between sharp and rounded corners when routing tracks." ),
+        BITMAPS::switch_corner_rounding_shape );
 
 #undef _
 #define _( s ) wxGetTranslation( ( s ) )
 
 
-ROUTER_TOOL::ROUTER_TOOL() : TOOL_BASE( "pcbnew.InteractiveRouter" )
+ROUTER_TOOL::ROUTER_TOOL() :
+        TOOL_BASE( "pcbnew.InteractiveRouter" ),
+        m_lastTargetLayer( UNDEFINED_LAYER )
 {
 }
 
@@ -161,7 +170,7 @@ class TRACK_WIDTH_MENU : public ACTION_MENU
 public:
     TRACK_WIDTH_MENU( PCB_EDIT_FRAME& aFrame ) : ACTION_MENU( true ), m_frame( aFrame )
     {
-        SetIcon( width_track_via_xpm );
+        SetIcon( BITMAPS::width_track_via );
         SetTitle( _( "Select Track/Via Width" ) );
     }
 
@@ -284,7 +293,7 @@ class DIFF_PAIR_MENU : public ACTION_MENU
 public:
     DIFF_PAIR_MENU( PCB_EDIT_FRAME& aFrame ) : ACTION_MENU( true ), m_frame( aFrame )
     {
-        SetIcon( width_track_via_xpm );
+        SetIcon( BITMAPS::width_track_via );
         SetTitle( _( "Select Differential Pair Dimensions" ) );
     }
 
@@ -394,6 +403,8 @@ ROUTER_TOOL::~ROUTER_TOOL()
 
 bool ROUTER_TOOL::Init()
 {
+    m_lastTargetLayer = UNDEFINED_LAYER;
+
     PCB_EDIT_FRAME* frame = getEditFrame<PCB_EDIT_FRAME>();
 
     wxASSERT( frame );
@@ -453,55 +464,92 @@ bool ROUTER_TOOL::Init()
 
 void ROUTER_TOOL::Reset( RESET_REASON aReason )
 {
+    m_lastTargetLayer = UNDEFINED_LAYER;
+
     if( aReason == RUN )
         TOOL_BASE::Reset( aReason );
 }
 
+// Saves the complete event log and the dump of the PCB, allowing us to
+// recreate hard-to-find P&S quirks and bugs.
 
-void ROUTER_TOOL::handleCommonEvents( const TOOL_EVENT& aEvent )
+void ROUTER_TOOL::saveRouterDebugLog()
 {
-#ifdef DEBUG
-    if( aEvent.IsKeyPressed() )
+    auto logger = m_router->Logger();
+
+    if( ! logger )
+        return;
+
+    wxString cwd = wxGetCwd();
+
+    wxFileName fname_log( cwd );
+    fname_log.SetName( "pns.log" );
+
+    wxFileName fname_dump( cwd );
+    fname_dump.SetName( "pns.dump" );
+
+    wxString msg = wxString::Format( _( "Event file: %s\nBoard dump: %s" ), fname_log.GetFullPath(), fname_log.GetFullPath() );
+
+    int rv = OKOrCancelDialog( nullptr, _("Save router log"), _("Would you like to save the router\nevent log for debugging purposes?"), msg, _("OK"), _("Cancel") );
+
+    if( !rv )
+        return;
+
+    FILE *f = fopen( fname_log.GetFullPath().c_str(), "wb" );
+
+    // save base router configuration (mode, etc.)
+    fprintf(f, "config %d %d %d\n",
+        m_router->Settings().Mode(),
+        m_router->Settings().RemoveLoops() ? 1 : 0,
+        m_router->Settings().GetFixAllSegments() ? 1 : 0
+     );
+
+    const auto& events = logger->GetEvents();
+
+    for( auto evt : events)
     {
-        switch( aEvent.KeyCode() )
-        {
-        case '0':
-        {
-            auto logger = m_router->Logger();
+        wxString id = "null";
+        if( evt.item && evt.item->Parent() )
+            id = evt.item->Parent()->m_Uuid.AsString();
 
-            if( !logger )
-                return;
-
-            FILE* f = fopen( "/tmp/pns.log", "wb" );
-            wxLogTrace( "PNS", "saving drag/route log...\n" );
-
-            const auto& events = logger->GetEvents();
-
-            for( auto evt : events )
-            {
-                wxString id = "null";
-
-                if( evt.item && evt.item->Parent() )
-                    id = evt.item->Parent()->m_Uuid.AsString();
-
-                fprintf( f, "event %d %d %d %s\n", evt.p.x, evt.p.y, evt.type,
-                         (const char*) id.c_str() );
-            }
-
-            fclose( f );
-
-            // Export as *.kicad_pcb format, using a strategy which is specifically chosen
-            // as an example on how it could also be used to send it to the system clipboard.
-
-            PCB_IO pcb_io;
-
-            pcb_io.Save( "/tmp/pns.dump", m_iface->GetBoard(), nullptr );
-
-            break;
-        }
-        }
+        fprintf( f, "event %d %d %d %s\n", evt.p.x, evt.p.y, evt.type,
+                   (const char*) id.c_str() );
     }
-#endif
+
+    fclose( f );
+
+    // Export as *.kicad_pcb format, using a strategy which is specifically chosen
+    // as an example on how it could also be used to send it to the system clipboard.
+
+    PCB_IO  pcb_io;
+
+    pcb_io.Save( fname_dump.GetFullPath(), m_iface->GetBoard(), nullptr );
+}
+
+
+void ROUTER_TOOL::handleCommonEvents( TOOL_EVENT& aEvent )
+{
+    if( aEvent.Category() == TC_VIEW || aEvent.Category() == TC_MOUSE )
+    {
+        auto viewAreaD = getView()->GetBoundary();
+        m_router->SetVisibleViewArea( BOX2I( viewAreaD.GetOrigin(), viewAreaD.GetSize() ) );
+    }
+
+    if( !aEvent.IsKeyPressed() )
+        return;
+
+    switch( aEvent.KeyCode() )
+    {
+        case '0':
+        if( !ADVANCED_CFG::GetCfg().m_ShowRouterDebugGraphics )
+            return;
+
+        saveRouterDebugLog();
+        aEvent.SetPassEvent( false );
+        break;
+        default:
+        break;
+    }
 }
 
 
@@ -539,6 +587,7 @@ void ROUTER_TOOL::switchLayerOnViaPlacement()
         newLayer = m_router->Sizes().GetLayerTop();
 
     m_router->SwitchLayer( *newLayer );
+    m_lastTargetLayer = *newLayer;
     frame()->SetActiveLayer( ToLAYER_ID( *newLayer ) );
 }
 
@@ -656,7 +705,7 @@ int ROUTER_TOOL::handleLayerSwitch( const TOOL_EVENT& aEvent, bool aForceVia )
 
         for( size_t i = 0; i < layers.size(); i++ )
         {
-            if( layers[i] == currentLayer )
+            if( layers[i] == m_lastTargetLayer )
             {
                 idx = i;
                 break;
@@ -672,7 +721,7 @@ int ROUTER_TOOL::handleLayerSwitch( const TOOL_EVENT& aEvent, bool aForceVia )
 
         for( size_t i = 0; i < layers.size(); i++ )
         {
-            if( layers[i] == currentLayer )
+            if( layers[i] == m_lastTargetLayer )
             {
                 idx = i;
                 break;
@@ -685,19 +734,21 @@ int ROUTER_TOOL::handleLayerSwitch( const TOOL_EVENT& aEvent, bool aForceVia )
     else
     {
         targetLayer = getTargetLayerFromEvent( aEvent );
-
-        if( targetLayer != UNDEFINED_LAYER )
-        {
-            if( targetLayer == currentLayer )
-                return 0;
-        }
     }
 
-    if( !aForceVia && m_router && m_router->SwitchLayer( targetLayer ) )
+    if( targetLayer != UNDEFINED_LAYER )
     {
-        updateEndItem( aEvent );
-        m_router->Move( m_endSnapPoint, m_endItem ); // refresh
-        return 0;
+        m_lastTargetLayer = targetLayer;
+
+        if( targetLayer == currentLayer )
+            return 0;
+
+        if( !aForceVia && m_router && m_router->SwitchLayer( targetLayer ) )
+        {
+            updateEndItem( aEvent );
+            m_router->Move( m_endSnapPoint, m_endItem );        // refresh
+            return 0;
+        }
     }
 
     BOARD_DESIGN_SETTINGS& bds = board()->GetDesignSettings();
@@ -725,13 +776,14 @@ int ROUTER_TOOL::handleLayerSwitch( const TOOL_EVENT& aEvent, bool aForceVia )
             wxPoint endPoint = (wxPoint) view()->ToScreen( m_endSnapPoint );
             endPoint = frame()->GetCanvas()->ClientToScreen( endPoint );
 
-            controls()->WarpCursor( endPoint );
-
-            targetLayer = frame()->SelectLayer( static_cast<PCB_LAYER_ID>( currentLayer ),
-                                                LSET::AllNonCuMask(), endPoint );
+            targetLayer = frame()->SelectOneLayer( static_cast<PCB_LAYER_ID>( currentLayer ),
+                                                   LSET::AllNonCuMask(), endPoint );
 
             // Reset the cursor to the end of the track
             controls()->SetCursorPosition( m_endSnapPoint );
+
+            if( targetLayer == UNDEFINED_LAYER )    // cancelled by user
+                return 0;
         }
     }
 
@@ -758,7 +810,7 @@ int ROUTER_TOOL::handleLayerSwitch( const TOOL_EVENT& aEvent, bool aForceVia )
             infobar->RemoveAllButtons();
             infobar->AddButton( button );
 
-            infobar->ShowMessageFor( _( "Blind/buried vias have to be enabled in "
+            infobar->ShowMessageFor( _( "Blind/buried vias must first be enabled in "
                                         "Board Setup > Design Rules > Constraints." ),
                                      10000, wxICON_ERROR );
             return false;
@@ -781,7 +833,7 @@ int ROUTER_TOOL::handleLayerSwitch( const TOOL_EVENT& aEvent, bool aForceVia )
             infobar->RemoveAllButtons();
             infobar->AddButton( button );
 
-            infobar->ShowMessageFor( _( "Microvias have to be enabled in "
+            infobar->ShowMessageFor( _( "Microvias must first be enabled in "
                                         "Board Setup > Design Rules > Constraints." ),
                                      10000, wxICON_ERROR );
             return false;
@@ -903,7 +955,11 @@ int ROUTER_TOOL::handleLayerSwitch( const TOOL_EVENT& aEvent, bool aForceVia )
     sizes.AddLayerPair( currentLayer, targetLayer );
 
     m_router->UpdateSizes( sizes );
-    m_router->ToggleViaPlacement();
+
+    if( !m_router->IsPlacingVia() )
+        m_router->ToggleViaPlacement();
+
+    m_lastTargetLayer = targetLayer;
 
     if( m_router->RoutingInProgress() )
         updateEndItem( aEvent );
@@ -922,7 +978,7 @@ bool ROUTER_TOOL::prepareInteractive()
 
     if( !IsCopperLayer( routingLayer ) )
     {
-        frame()->ShowInfoBarError( _( "Tracks on Copper layers only" ) );
+        frame()->ShowInfoBarError( _( "Tracks on Copper layers only." ) );
         return false;
     }
 
@@ -930,7 +986,7 @@ bool ROUTER_TOOL::prepareInteractive()
 
     editFrame->SetActiveLayer( ToLAYER_ID( routingLayer ) );
 
-    if( m_startItem && m_startItem->Net() >= 0 )
+    if( m_startItem && m_startItem->Net() > 0 )
         highlightNet( true, m_startItem->Net() );
 
     controls()->ForceCursorPosition( false );
@@ -1321,7 +1377,7 @@ void ROUTER_TOOL::performDragging( int aMode )
     if( !dragStarted )
         return;
 
-    if( m_startItem && m_startItem->Net() >= 0 )
+    if( m_startItem && m_startItem->Net() > 0 )
         highlightNet( true, m_startItem->Net() );
 
     ctls->SetAutoPan( true );
@@ -1566,6 +1622,9 @@ int ROUTER_TOOL::InlineDrag( const TOOL_EVENT& aEvent )
     // Set initial cursor
     setCursor();
 
+    // Send an initial movement to prime the collision detection
+    m_router->Move( p, nullptr );
+
     while( TOOL_EVENT* evt = Wait() )
     {
         setCursor();
@@ -1593,7 +1652,8 @@ int ROUTER_TOOL::InlineDrag( const TOOL_EVENT& aEvent )
                     if( drawing->Type() == PCB_FP_SHAPE_T )
                     {
                         FP_SHAPE* shape = static_cast<FP_SHAPE*>( previewItem );
-                        shape->PCB_SHAPE::Move( (wxPoint) offset );
+                        wxPoint fp_offset = wxPoint( offset.Rotate( footprint->GetOrientationRadians() ) );
+                        shape->FP_SHAPE::Move( fp_offset );
                     }
                     else
                     {
@@ -1646,6 +1706,8 @@ int ROUTER_TOOL::InlineDrag( const TOOL_EVENT& aEvent )
         {
             evt->SetPassEvent();
         }
+
+        handleCommonEvents( *evt );
     }
 
     if( footprint )

@@ -48,6 +48,11 @@ class GBR_NETLIST_METADATA;
 class PROJECT;
 class FONT;
 
+namespace KIFONT
+{
+class FONT;
+}
+
 using KIGFX::RENDER_SETTINGS;
 
 
@@ -393,7 +398,8 @@ public:
     virtual void Text( const wxPoint& aPos, const COLOR4D aColor, const wxString& aText,
                        double aOrient, const wxSize& aSize, enum EDA_TEXT_HJUSTIFY_T aH_justify,
                        enum EDA_TEXT_VJUSTIFY_T aV_justify, int aWidth, bool aItalic, bool aBold,
-                       bool aMultilineAllowed = false, void* aData = NULL, FONT* aFont = nullptr );
+                       bool aMultilineAllowed = false, KIFONT::FONT* aFont = nullptr,
+                       void* aData = NULL );
 
     /**
      * Draw a marker (used for the drill map)
@@ -457,6 +463,9 @@ public:
      */
     virtual void EndBlock( void* aData ) {}
 
+    KIFONT::FONT* GetFont() const { return m_font; }
+
+    void SetFont( KIFONT::FONT* aFont ) { m_font = aFont; }
 
 protected:
     // These are marker subcomponents
@@ -568,16 +577,18 @@ protected: // variables used in most of plotters:
 
     wxArrayString m_headerExtraLines; // a set of string to print in header file
 
+    KIFONT::FONT* m_font = nullptr;
+
     RENDER_SETTINGS* m_renderSettings;
 };
 
 
 class TITLE_BLOCK;
 
-void PlotWorkSheet( PLOTTER* plotter, const PROJECT* aProject, const TITLE_BLOCK& aTitleBlock,
-                    const PAGE_INFO& aPageInfo, const wxString& aSheetNumber, int aNumberOfSheets,
-                    const wxString& aSheetDesc, const wxString& aFilename,
-                    COLOR4D aColor = COLOR4D::UNSPECIFIED, bool aIsFirstPage = true );
+void PlotDrawingSheet( PLOTTER* plotter, const PROJECT* aProject, const TITLE_BLOCK& aTitleBlock,
+                       const PAGE_INFO& aPageInfo, const wxString& aSheetNumber, int aSheetCount,
+                       const wxString& aSheetDesc, const wxString& aFilename,
+                       COLOR4D aColor = COLOR4D::UNSPECIFIED, bool aIsFirstPage = true );
 
 /** Returns the default plot extension for a format
   */

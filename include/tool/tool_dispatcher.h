@@ -53,9 +53,8 @@ class TOOL_DISPATCHER : public wxEvtHandler
 public:
     /**
      * @param aToolMgr: tool manager instance the events will be sent to.
-     * @param aActions: ACTIONS subclass instance for ACTIONS::TranslateLegacyId().
      */
-    TOOL_DISPATCHER( TOOL_MANAGER* aToolMgr, ACTIONS *aActions );
+    TOOL_DISPATCHER( TOOL_MANAGER* aToolMgr );
 
     virtual ~TOOL_DISPATCHER();
 
@@ -76,14 +75,6 @@ public:
      * Map a wxWidgets key event to a TOOL_EVENT.
      */
     OPT<TOOL_EVENT> GetToolEvent( wxKeyEvent* aKeyEvent, bool* aSpecialKeyFlag );
-
-    /**
-     * Process wxCommands (mostly menu related events) and runs appropriate actions (eg. run the
-     * specified tool).
-     *
-     * @param aEvent is the wxCommandEvent to be processed.
-     */
-    virtual void DispatchWxCommand( wxCommandEvent& aEvent );
 
 private:
     ///< Number of mouse buttons that is handled in events.
@@ -131,9 +122,6 @@ private:
 
     ///< Instance of tool manager that cooperates with the dispatcher.
     TOOL_MANAGER* m_toolMgr;
-
-    ///< Instance of an actions list that handles legacy action translation
-    ACTIONS* m_actions;
 };
 
 #endif

@@ -22,6 +22,7 @@
  * or you may write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
+#include <advanced_config.h>
 #include "board_editor_control.h"
 #include "drawing_tool.h"
 #include "pcb_actions.h"
@@ -62,7 +63,7 @@
 #include <view/view_controls.h>
 #include <view/view_group.h>
 #include <wildcards_and_files_ext.h>
-#include <page_layout/ws_proxy_undo_item.h>
+#include <drawing_sheet/ds_proxy_undo_item.h>
 #include <footprint_edit_frame.h>
 
 using namespace std::placeholders;
@@ -73,7 +74,7 @@ class ZONE_CONTEXT_MENU : public ACTION_MENU
 public:
     ZONE_CONTEXT_MENU() : ACTION_MENU( true )
     {
-        SetIcon( add_zone_xpm );
+        SetIcon( BITMAPS::add_zone );
         SetTitle( _( "Zones" ) );
 
         Add( PCB_ACTIONS::zoneFill );
@@ -100,7 +101,7 @@ class LOCK_CONTEXT_MENU : public ACTION_MENU
 public:
     LOCK_CONTEXT_MENU() : ACTION_MENU( true )
     {
-        SetIcon( locked_xpm );
+        SetIcon( BITMAPS::locked );
         SetTitle( _( "Locking" ) );
 
         Add( PCB_ACTIONS::lock );
@@ -112,11 +113,62 @@ public:
 };
 
 
+/**
+ * Helper widget to add controls to a wxFileDialog to set netlist configuration options.
+ */
+class NETLIST_OPTIONS_HELPER : public wxPanel
+{
+public:
+    NETLIST_OPTIONS_HELPER( wxWindow* aParent )
+            : wxPanel( aParent )
+    {
+        m_cbOmitExtras = new wxCheckBox( this, wxID_ANY, _( "Omit extra information" ) );
+        m_cbOmitNets = new wxCheckBox( this, wxID_ANY, _( "Omit nets" ) );
+        m_cbOmitFpUuids = new wxCheckBox( this, wxID_ANY,
+                                          _( "Do not prefix path with footprint UUID." ) );
+
+        wxBoxSizer* sizer = new wxBoxSizer( wxHORIZONTAL );
+        sizer->Add( m_cbOmitExtras, 0, wxALL, 5 );
+        sizer->Add( m_cbOmitNets, 0, wxALL, 5 );
+        sizer->Add( m_cbOmitFpUuids, 0, wxALL, 5 );
+
+        SetSizerAndFit( sizer );
+    }
+
+    int GetNetlistOptions() const
+    {
+        int options = 0;
+
+        if( m_cbOmitExtras->GetValue() )
+            options |= CTL_OMIT_EXTRA;
+
+        if( m_cbOmitNets->GetValue() )
+            options |= CTL_OMIT_NETS;
+
+        if( m_cbOmitFpUuids->GetValue() )
+            options |= CTL_OMIT_FP_UUID;
+
+        return options;
+    }
+
+    static wxWindow* Create( wxWindow* aParent )
+    {
+        return new NETLIST_OPTIONS_HELPER( aParent );
+    }
+
+protected:
+    wxCheckBox* m_cbOmitExtras;
+    wxCheckBox* m_cbOmitNets;
+    wxCheckBox* m_cbOmitFpUuids;
+};
+
+
 BOARD_EDITOR_CONTROL::BOARD_EDITOR_CONTROL() :
         PCB_TOOL_BASE( "pcbnew.EditorControl" ), m_frame( nullptr )
 {
     m_placeOrigin = std::make_unique<KIGFX::ORIGIN_VIEWITEM>(
-            KIGFX::COLOR4D( 0.8, 0.0, 0.0, 1.0 ), KIGFX::ORIGIN_VIEWITEM::CIRCLE_CROSS );
+            KIGFX::COLOR4D( 0.8, 0.0, 0.0, 1.0 ),
+            KIGFX::ORIGIN_VIEWITEM::CIRCLE_CROSS );
 }
 
 
@@ -259,7 +311,7 @@ int BOARD_EDITOR_CONTROL::SaveCopyAs( const TOOL_EVENT& aEvent )
 int BOARD_EDITOR_CONTROL::PageSettings( const TOOL_EVENT& aEvent )
 {
     PICKED_ITEMS_LIST   undoCmd;
-    WS_PROXY_UNDO_ITEM* undoItem = new WS_PROXY_UNDO_ITEM( m_frame );
+    DS_PROXY_UNDO_ITEM* undoItem = new DS_PROXY_UNDO_ITEM( m_frame );
     ITEM_PICKER         wrapper( nullptr, undoItem, UNDO_REDO::PAGESETTINGS );
 
     undoCmd.PushItem( wrapper );
@@ -339,6 +391,70 @@ int BOARD_EDITOR_CONTROL::ExportSpecctraDSN( const TOOL_EVENT& aEvent )
         m_frame->SetLastPath( LAST_PATH_SPECCTRADSN, fullFileName );
         getEditFrame<PCB_EDIT_FRAME>()->ExportSpecctraFile( fullFileName );
     }
+
+    return 0;
+}
+
+
+int BOARD_EDITOR_CONTROL::ExportNetlist( const TOOL_EVENT& aEvent )
+{
+    wxCHECK( m_frame, 0 );
+
+    wxFileName fn = m_frame->Prj().GetProjectFullName();
+
+    // Use a different file extension for the board netlist so the schematic netlist file
+    // is accidently overwritten.
+    fn.SetExt( "pcb_net" );
+
+    wxFileDialog dlg( m_frame, _( "Export Board Netlist" ), fn.GetPath(), fn.GetFullName(),
+                      _( "KiCad board netlist files" ) + wxT( " (*.pcb_net)|*.pcb_net" ),
+                      wxFD_SAVE | wxFD_OVERWRITE_PROMPT );
+
+    dlg.SetExtraControlCreator( &NETLIST_OPTIONS_HELPER::Create );
+
+    if( dlg.ShowModal() == wxID_CANCEL )
+        return 0;
+
+    fn = dlg.GetPath();
+
+    if( !fn.IsDirWritable() )
+    {
+        wxString msg;
+
+        msg.Printf( _( "Path `%s` is read only." ), fn.GetPath() );
+        wxMessageDialog( m_frame, msg, _( "I/O Error" ), wxOK | wxCENTER | wxICON_EXCLAMATION );
+        return 0;
+    }
+
+    const NETLIST_OPTIONS_HELPER* noh =
+            dynamic_cast<const NETLIST_OPTIONS_HELPER*>( dlg.GetExtraControl() );
+    wxCHECK( noh, 0 );
+
+    NETLIST netlist;
+
+    for( const FOOTPRINT* footprint : board()->Footprints() )
+    {
+        COMPONENT* component = new COMPONENT( footprint->GetFPID(), footprint->GetReference(),
+                                              footprint->GetValue(), footprint->GetPath(),
+                                              { footprint->m_Uuid } );
+
+        for( const PAD* pad : footprint->Pads() )
+        {
+            const wxString& netname = pad->GetShortNetname();
+
+            if( !netname.IsEmpty() )
+            {
+                component->AddNet( pad->GetName(), netname, pad->GetPinFunction(),
+                                   pad->GetPinType() );
+            }
+        }
+
+        netlist.AddComponent( component );
+    }
+
+    FILE_OUTPUTFORMATTER formatter( fn.GetFullPath() );
+
+    netlist.Format( "pcb_netlist", &formatter, 0, noh->GetNetlistOptions() );
 
     return 0;
 }
@@ -805,7 +921,7 @@ int BOARD_EDITOR_CONTROL::PlaceFootprint( const TOOL_EVENT& aEvent )
         m_toolMgr->RunAction( PCB_ACTIONS::selectItem, true, fp );
         m_toolMgr->RunAction( ACTIONS::refreshPreview );
     }
-    else if( aEvent.HasPosition() )
+    else if( !aEvent.IsReactivate() )
         m_toolMgr->RunAction( PCB_ACTIONS::cursorClick );
 
     auto setCursor = [&]()
@@ -830,17 +946,17 @@ int BOARD_EDITOR_CONTROL::PlaceFootprint( const TOOL_EVENT& aEvent )
             m_toolMgr->RunAction( PCB_ACTIONS::selectionClear, true );
             commit.Revert();
 
-            if( fromOtherCommand )
-            {
-                PICKED_ITEMS_LIST* undo = m_frame->PopCommandFromUndoList();
+                    if( fromOtherCommand )
+                    {
+                        PICKED_ITEMS_LIST* undo = m_frame->PopCommandFromUndoList();
 
-                if( undo )
-                {
-                    m_frame->PutDataInPreviousState( undo, false );
-                    undo->ClearListAndDeleteItems();
-                    delete undo;
-                }
-            }
+                        if( undo )
+                        {
+                            m_frame->PutDataInPreviousState( undo );
+                            undo->ClearListAndDeleteItems();
+                            delete undo;
+                        }
+                    }
 
             fp = NULL;
         };
@@ -890,9 +1006,7 @@ int BOARD_EDITOR_CONTROL::PlaceFootprint( const TOOL_EVENT& aEvent )
 
                 for( PAD* pad : fp->Pads() )
                 {
-                    pad->SetLocalRatsnestVisible(
-                            m_frame->GetDisplayOptions().m_ShowGlobalRatsnest );
-                    pad->SetLocked( !m_frame->Settings().m_AddUnlockedPads );
+                    pad->SetLocalRatsnestVisible( m_frame->GetDisplayOptions().m_ShowGlobalRatsnest );
 
                     // Pads in the library all have orphaned nets.  Replace with Default.
                     pad->SetNetCode( 0 );
@@ -1137,6 +1251,8 @@ int BOARD_EDITOR_CONTROL::PlaceTarget( const TOOL_EVENT& aEvent )
 static bool mergeZones( BOARD_COMMIT& aCommit, std::vector<ZONE*>& aOriginZones,
                         std::vector<ZONE*>& aMergedZones )
 {
+    aCommit.Modify( aOriginZones[0] );
+
     for( unsigned int i = 1; i < aOriginZones.size(); i++ )
     {
         aOriginZones[0]->Outline()->BooleanAdd( *aOriginZones[i]->Outline(),
@@ -1160,7 +1276,6 @@ static bool mergeZones( BOARD_COMMIT& aCommit, std::vector<ZONE*>& aOriginZones,
         aCommit.Remove( aOriginZones[i] );
     }
 
-    aCommit.Modify( aOriginZones[0] );
     aMergedZones.push_back( aOriginZones[0] );
 
     aOriginZones[0]->SetLocalFlags( 1 );
@@ -1343,25 +1458,29 @@ int BOARD_EDITOR_CONTROL::DrillOrigin( const TOOL_EVENT& aEvent )
 
 void BOARD_EDITOR_CONTROL::setTransitions()
 {
-    Go( &BOARD_EDITOR_CONTROL::New, ACTIONS::doNew.MakeEvent() );
-    Go( &BOARD_EDITOR_CONTROL::Open, ACTIONS::open.MakeEvent() );
-    Go( &BOARD_EDITOR_CONTROL::Save, ACTIONS::save.MakeEvent() );
-    Go( &BOARD_EDITOR_CONTROL::SaveAs, ACTIONS::saveAs.MakeEvent() );
-    Go( &BOARD_EDITOR_CONTROL::SaveCopyAs, ACTIONS::saveCopyAs.MakeEvent() );
-    Go( &BOARD_EDITOR_CONTROL::PageSettings, ACTIONS::pageSettings.MakeEvent() );
-    Go( &BOARD_EDITOR_CONTROL::Plot, ACTIONS::plot.MakeEvent() );
+    Go( &BOARD_EDITOR_CONTROL::New,                    ACTIONS::doNew.MakeEvent() );
+    Go( &BOARD_EDITOR_CONTROL::Open,                   ACTIONS::open.MakeEvent() );
+    Go( &BOARD_EDITOR_CONTROL::Save,                   ACTIONS::save.MakeEvent() );
+    Go( &BOARD_EDITOR_CONTROL::SaveAs,                 ACTIONS::saveAs.MakeEvent() );
+    Go( &BOARD_EDITOR_CONTROL::SaveCopyAs,             ACTIONS::saveCopyAs.MakeEvent() );
+    Go( &BOARD_EDITOR_CONTROL::PageSettings,           ACTIONS::pageSettings.MakeEvent() );
+    Go( &BOARD_EDITOR_CONTROL::Plot,                   ACTIONS::plot.MakeEvent() );
 
-    Go( &BOARD_EDITOR_CONTROL::BoardSetup, PCB_ACTIONS::boardSetup.MakeEvent() );
-    Go( &BOARD_EDITOR_CONTROL::ImportNetlist, PCB_ACTIONS::importNetlist.MakeEvent() );
-    Go( &BOARD_EDITOR_CONTROL::ImportSpecctraSession,
-        PCB_ACTIONS::importSpecctraSession.MakeEvent() );
-    Go( &BOARD_EDITOR_CONTROL::ExportSpecctraDSN, PCB_ACTIONS::exportSpecctraDSN.MakeEvent() );
-    Go( &BOARD_EDITOR_CONTROL::GenerateDrillFiles, PCB_ACTIONS::generateDrillFiles.MakeEvent() );
-    Go( &BOARD_EDITOR_CONTROL::GenerateFabFiles, PCB_ACTIONS::generateGerbers.MakeEvent() );
-    Go( &BOARD_EDITOR_CONTROL::GeneratePosFile, PCB_ACTIONS::generatePosFile.MakeEvent() );
-    Go( &BOARD_EDITOR_CONTROL::GenerateFabFiles, PCB_ACTIONS::generateReportFile.MakeEvent() );
-    Go( &BOARD_EDITOR_CONTROL::GenerateFabFiles, PCB_ACTIONS::generateD356File.MakeEvent() );
-    Go( &BOARD_EDITOR_CONTROL::GenerateFabFiles, PCB_ACTIONS::generateBOM.MakeEvent() );
+    Go( &BOARD_EDITOR_CONTROL::BoardSetup,             PCB_ACTIONS::boardSetup.MakeEvent() );
+    Go( &BOARD_EDITOR_CONTROL::ImportNetlist,          PCB_ACTIONS::importNetlist.MakeEvent() );
+    Go( &BOARD_EDITOR_CONTROL::ImportSpecctraSession,  PCB_ACTIONS::importSpecctraSession.MakeEvent() );
+    Go( &BOARD_EDITOR_CONTROL::ExportSpecctraDSN,      PCB_ACTIONS::exportSpecctraDSN.MakeEvent() );
+
+    if( ADVANCED_CFG::GetCfg().m_ShowPcbnewExportNetlist && m_frame &&
+        m_frame->GetExportNetlistAction() )
+        Go( &BOARD_EDITOR_CONTROL::ExportNetlist, m_frame->GetExportNetlistAction()->MakeEvent() );
+
+    Go( &BOARD_EDITOR_CONTROL::GenerateDrillFiles,     PCB_ACTIONS::generateDrillFiles.MakeEvent() );
+    Go( &BOARD_EDITOR_CONTROL::GenerateFabFiles,       PCB_ACTIONS::generateGerbers.MakeEvent() );
+    Go( &BOARD_EDITOR_CONTROL::GeneratePosFile,        PCB_ACTIONS::generatePosFile.MakeEvent() );
+    Go( &BOARD_EDITOR_CONTROL::GenerateFabFiles,       PCB_ACTIONS::generateReportFile.MakeEvent() );
+    Go( &BOARD_EDITOR_CONTROL::GenerateFabFiles,       PCB_ACTIONS::generateD356File.MakeEvent() );
+    Go( &BOARD_EDITOR_CONTROL::GenerateFabFiles,       PCB_ACTIONS::generateBOM.MakeEvent() );
 
     // Track & via size control
     Go( &BOARD_EDITOR_CONTROL::TrackWidthInc, PCB_ACTIONS::trackWidthInc.MakeEvent() );

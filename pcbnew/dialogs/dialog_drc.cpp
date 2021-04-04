@@ -23,10 +23,10 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
 
-#include <bitmaps.h>
 #include <confirm.h>
 #include <dialog_drc.h>
 #include <kiface_i.h>
+#include <macros.h>
 #include <pcb_edit_frame.h>
 #include <pcbnew_settings.h>
 #include <pgm_base.h>
@@ -135,7 +135,8 @@ void DIALOG_DRC::initValues()
     m_cbRefillZones->SetValue( cfg->m_DrcDialog.refill_zones );
     m_cbReportAllTrackErrors->SetValue( cfg->m_DrcDialog.test_all_track_errors );
 
-    if( Kiface().IsSingle() )
+
+    if( !Kiface().IsSingle() )
         m_cbTestFootprints->SetValue( cfg->m_DrcDialog.test_footprints );
 
     m_severities = cfg->m_DrcDialog.severities;
@@ -204,7 +205,7 @@ void DIALOG_DRC::OnRunDRCClick( wxCommandEvent& aEvent )
     {
         drcTool->GetDRCEngine()->InitEngine( m_brdEditor->GetDesignRulesPath() );
     }
-    catch( PARSE_ERROR& pe )
+    catch( PARSE_ERROR& )
     {
         m_runningResultsBook->ChangeSelection( 0 );   // Display the "Tests Running..." tab
         m_DeleteCurrentMarkerButton->Enable( false );

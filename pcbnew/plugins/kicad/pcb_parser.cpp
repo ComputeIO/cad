@@ -278,6 +278,28 @@ void PCB_PARSER::parseEDA_TEXT( EDA_TEXT* aText )
 
                 switch( token )
                 {
+                case T_face:
+                    {
+                        // parser treats double-quoted strings as symbols
+                        NeedSYMBOL();
+                        wxString faceName = FromUTF8();
+                        KIFONT::FONT* font = KIFONT::FONT::GetFont( faceName );
+                        if( font )
+                        {
+                            aText->SetFont( font );
+                        }
+                        else
+                        {
+                            // TODO: notify user about missing font
+#ifdef DEBUG
+                            std::cerr << "parseEDA_TEXT: could not find font face \""
+                                      << faceName << "\"" << std::endl;
+#endif
+                        }
+                        NeedRIGHT();
+                    }
+                    break;
+
                 case T_size:
                 {
                     wxSize sz;
@@ -305,7 +327,8 @@ void PCB_PARSER::parseEDA_TEXT( EDA_TEXT* aText )
                     NeedRIGHT();
                     break;
 
-                default: Expecting( "size, thickness, bold, italic, or face" );
+                default:
+                    Expecting( "face, size, thickness, bold, or italic" );
                 }
             }
             break;
@@ -698,6 +721,15 @@ BOARD* PCB_PARSER::parseBOARD_unchecked()
         for( BOARD_ITEM* drawing : m_board->Drawings() )
             visitItem( drawing );
 
+        for( FOOTPRINT* fp : m_board->Footprints() )
+        {
+            for( BOARD_ITEM* drawing : fp->GraphicalItems() )
+                visitItem( drawing );
+
+            for( BOARD_ITEM* zone : fp->Zones() )
+                visitItem( zone );
+        }
+
         for( BOARD_ITEM* curr_item : deleteList )
             m_board->Delete( curr_item );
 
@@ -772,7 +804,26 @@ void PCB_PARSER::resolveGroups( BOARD_ITEM* aParent )
                 item = getItem( aUuid );
 
             if( item && item->Type() != NOT_USED )
-                group->AddItem( item );
+            {
+                switch( item->Type() )
+                {
+                // We used to allow fp items in non-footprint groups.  It was a mistake.
+                case PCB_FP_TEXT_T:
+                case PCB_FP_SHAPE_T:
+                case PCB_FP_ZONE_T:
+                    if( item->GetParent() == group->GetParent() )
+                        group->AddItem( item );
+
+                    break;
+
+                // This is the deleted item singleton, which means we didn't find the uuid.
+                case NOT_USED:
+                    break;
+
+                default:
+                    group->AddItem( item );
+                }
+            }
         }
     }
 
@@ -1460,6 +1511,10 @@ T PCB_PARSER::lookUpLayer( const M& aMap )
         return Rescue;
     }
 
+    // Some files may have saved items to the Rescue Layer due to an issue in v5
+    if( it->second == Rescue )
+        m_undefinedLayers.insert( curText );
+
     return it->second;
 }
 
@@ -1749,25 +1804,21 @@ void PCB_PARSER::parseSetup()
 
         case T_pad_to_mask_clearance:
             designSettings.m_SolderMaskMargin = parseBoardUnits( T_pad_to_mask_clearance );
-            m_board->m_LegacyDesignSettingsLoaded = true;
             NeedRIGHT();
             break;
 
         case T_solder_mask_min_width:
             designSettings.m_SolderMaskMinWidth = parseBoardUnits( T_solder_mask_min_width );
-            m_board->m_LegacyDesignSettingsLoaded = true;
             NeedRIGHT();
             break;
 
         case T_pad_to_paste_clearance:
             designSettings.m_SolderPasteMargin = parseBoardUnits( T_pad_to_paste_clearance );
-            m_board->m_LegacyDesignSettingsLoaded = true;
             NeedRIGHT();
             break;
 
         case T_pad_to_paste_clearance_ratio:
             designSettings.m_SolderPasteMarginRatio = parseDouble( T_pad_to_paste_clearance_ratio );
-            m_board->m_LegacyDesignSettingsLoaded = true;
             NeedRIGHT();
             break;
 
@@ -1795,21 +1846,18 @@ void PCB_PARSER::parseSetup()
 
         // Stored in board prior to 6.0
         case T_visible_elements:
-        {
-            m_board->m_LegacyVisibleItems.reset();
+            {
+                // Make sure to start with DefaultVisible so all new layers are set
+                m_board->m_LegacyVisibleItems = GAL_SET::DefaultVisible();
 
             int visible = parseHex() | MIN_VISIBILITY_MASK;
 
             for( size_t i = 0; i < sizeof( int ) * CHAR_BIT; i++ )
                 m_board->m_LegacyVisibleItems.set( i, visible & ( 1u << i ) );
 
-            // These didn't exist in legacy files; make sure they are set
-            m_board->m_LegacyVisibleItems.set( LAYER_PADS );
-            m_board->m_LegacyVisibleItems.set( LAYER_ZONES );
-
-            NeedRIGHT();
-        }
-        break;
+                NeedRIGHT();
+            }
+            break;
 
         case T_max_error:
             designSettings.m_MaxError = parseBoardUnits( T_max_error );
@@ -3072,17 +3120,6 @@ FOOTPRINT* PCB_PARSER::parseFOOTPRINT_unchecked( wxArrayString* aInitialComments
 
     footprint->SetFPID( fpid );
     footprint->SetProperties( properties );
-
-    // We want to calculate the bounding box in most cases except if the advanced config is set
-    // and its a general footprint load.  This improves debugging greatly under MSVC where full
-    // STL iterator debugging is present and loading a massive amount of footprints can lead to
-    // 2 minute load times.
-    if( !ADVANCED_CFG::GetCfg().m_SkipBoundingBoxOnFpLoad || m_board != nullptr
-        || reader->GetSource().Contains( "clipboard" ) )
-    {
-        footprint->CalculateBoundingBox();
-        footprint->UpdateBoundingHull();
-    }
 
     return footprint.release();
 }

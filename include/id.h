@@ -74,7 +74,6 @@ enum main_id
     ID_RUN_PCB                  = wxID_HIGHEST,
 
     ID_APPEND_PROJECT,
-    ID_SAVE_PROJECT,
     ID_LOAD_FILE,
     ID_NEW_BOARD,
     ID_SAVE_BOARD,
@@ -144,6 +143,7 @@ enum main_id
     ID_LANGUAGE_LATVIAN,
     ID_LANGUAGE_LITHUANIAN,
     ID_LANGUAGE_VIETNAMESE,
+    ID_LANGUAGE_SERBIAN,
     ID_LANGUAGE_CHOICE_END,
 
     // Popup Menu (mouse Right button) (id consecutifs)

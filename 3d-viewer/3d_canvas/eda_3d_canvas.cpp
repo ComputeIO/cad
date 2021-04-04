@@ -37,6 +37,7 @@
 #include <gl_context_mgr.h>
 #include <profile.h>        // To use GetRunningMicroSecs or another profiling utility
 #include <bitmaps.h>
+#include <macros.h>
 #include <menus_helpers.h>
 #include <pgm_base.h>
 #include <settings/settings_manager.h>
@@ -372,7 +373,7 @@ void EDA_3D_CANVAS::DoRePaint()
     // !TODO: implement error reporter
     INFOBAR_REPORTER   warningReporter( m_parentInfoBar );
     STATUSBAR_REPORTER activityReporter( m_parentStatusBar,
-                                         (int) EDA_3D_VIEWER_STATUSBAR::STATUS_TEXT );
+                                         (int) EDA_3D_VIEWER_STATUSBAR::ACTIVITY );
 
     unsigned strtime = GetRunningMicroSecs();
 
@@ -499,7 +500,7 @@ void EDA_3D_CANVAS::DoRePaint()
             if( reloadRaytracingForIntersectionCalculations )
                 m_3d_render_raytracing->Reload( nullptr, nullptr, true );
         }
-        catch( std::runtime_error& err )
+        catch( std::runtime_error& )
         {
             m_is_opengl_version_supported = false;
             m_opengl_supports_raytracing  = false;
@@ -530,8 +531,8 @@ void EDA_3D_CANVAS::DoRePaint()
             // Calculation time in milliseconds
             const double calculation_time = (double)( GetRunningMicroSecs() - strtime) / 1e3;
 
-            activityReporter.Report( wxString::Format( _( "Render time %.0f ms ( %.1f fps)" ),
-                                     calculation_time, 1000.0 / calculation_time ) );
+            activityReporter.Report( wxString::Format( _( "Last render time %.0f ms" ),
+                                     calculation_time ) );
         }
     }
 
@@ -556,20 +557,6 @@ void EDA_3D_CANVAS::DoRePaint()
 void EDA_3D_CANVAS::SetEventDispatcher( TOOL_DISPATCHER* aEventDispatcher )
 {
     m_eventDispatcher = aEventDispatcher;
-
-    if( m_eventDispatcher )
-    {
-        m_parent->Connect( wxEVT_TOOL,
-                           wxCommandEventHandler( TOOL_DISPATCHER::DispatchWxCommand ),
-                           nullptr, m_eventDispatcher );
-    }
-    else
-    {
-        // While loop is used to be sure that all event handlers are removed.
-        while( m_parent->Disconnect( wxEVT_TOOL,
-                                     wxCommandEventHandler( TOOL_DISPATCHER::DispatchWxCommand ),
-                                     nullptr, m_eventDispatcher ) );
-    }
 }
 
 
@@ -710,7 +697,7 @@ void EDA_3D_CANVAS::OnMouseMove( wxMouseEvent& event )
         ( m_boardAdapter.GetRenderEngine() == RENDER_ENGINE::OPENGL_LEGACY ) )
     {
         STATUSBAR_REPORTER reporter( m_parentStatusBar,
-                                     static_cast<int>( EDA_3D_VIEWER_STATUSBAR::STATUS_TEXT ) );
+                                     static_cast<int>( EDA_3D_VIEWER_STATUSBAR::HOVERED_ITEM ) );
 
         RAY mouseRay = getRayAtCurrrentMousePosition();
 

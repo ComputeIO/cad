@@ -23,6 +23,7 @@
 
 #include "dialog_symbol_properties.h"
 
+#include <bitmaps.h>
 #include <wx/tooltip.h>
 #include <grid_tricks.h>
 #include <confirm.h>
@@ -286,7 +287,7 @@ DIALOG_SYMBOL_PROPERTIES::DIALOG_SYMBOL_PROPERTIES( SCH_EDIT_FRAME* aParent,
     // so we need to handle m_part == nullptr
     wxASSERT( m_part );
 
-    m_fields = new FIELDS_GRID_TABLE<SCH_FIELD>( this, aParent, m_part );
+    m_fields = new FIELDS_GRID_TABLE<SCH_FIELD>( this, aParent, m_fieldsGrid, m_part );
 
     m_width = 0;
     m_delayedFocusRow = REFERENCE_FIELD;
@@ -351,10 +352,10 @@ DIALOG_SYMBOL_PROPERTIES::DIALOG_SYMBOL_PROPERTIES( SCH_EDIT_FRAME* aParent,
     m_stdDialogButtonSizerOK->SetDefault();
 
     // Configure button logos
-    m_bpAdd->SetBitmap( KiBitmap( small_plus_xpm ) );
-    m_bpDelete->SetBitmap( KiBitmap( small_trash_xpm ) );
-    m_bpMoveUp->SetBitmap( KiBitmap( small_up_xpm ) );
-    m_bpMoveDown->SetBitmap( KiBitmap( small_down_xpm ) );
+    m_bpAdd->SetBitmap( KiBitmap( BITMAPS::small_plus ) );
+    m_bpDelete->SetBitmap( KiBitmap( BITMAPS::small_trash ) );
+    m_bpMoveUp->SetBitmap( KiBitmap( BITMAPS::small_up ) );
+    m_bpMoveDown->SetBitmap( KiBitmap( BITMAPS::small_down ) );
 
     // wxFormBuilder doesn't include this event...
     m_fieldsGrid->Connect( wxEVT_GRID_CELL_CHANGING,
@@ -412,7 +413,7 @@ bool DIALOG_SYMBOL_PROPERTIES::TransferDataToWindow()
     // Push a copy of each field into m_updateFields
     for( int i = 0; i < m_comp->GetFieldCount(); ++i )
     {
-        SCH_FIELD field( *m_comp->GetField( i ) );
+        SCH_FIELD field( m_comp->GetFields()[i] );
 
         // change offset to be symbol-relative
         field.Offset( -m_comp->GetPosition() );
@@ -906,25 +907,29 @@ void DIALOG_SYMBOL_PROPERTIES::OnMoveDown( wxCommandEvent& event )
 
 void DIALOG_SYMBOL_PROPERTIES::OnEditSymbol( wxCommandEvent&  )
 {
-    EndQuasiModal( SYMBOL_PROPS_EDIT_SCHEMATIC_SYMBOL );
+    if( TransferDataFromWindow() )
+        EndQuasiModal( SYMBOL_PROPS_EDIT_SCHEMATIC_SYMBOL );
 }
 
 
 void DIALOG_SYMBOL_PROPERTIES::OnEditLibrarySymbol( wxCommandEvent&  )
 {
-    EndQuasiModal( SYMBOL_PROPS_EDIT_LIBRARY_SYMBOL );
+    if( TransferDataFromWindow() )
+        EndQuasiModal( SYMBOL_PROPS_EDIT_LIBRARY_SYMBOL );
 }
 
 
 void DIALOG_SYMBOL_PROPERTIES::OnUpdateSymbol( wxCommandEvent&  )
 {
-    EndQuasiModal( SYMBOL_PROPS_WANT_UPDATE_SYMBOL );
+    if( TransferDataFromWindow() )
+        EndQuasiModal( SYMBOL_PROPS_WANT_UPDATE_SYMBOL );
 }
 
 
 void DIALOG_SYMBOL_PROPERTIES::OnExchangeSymbol( wxCommandEvent&  )
 {
-    EndQuasiModal( SYMBOL_PROPS_WANT_EXCHANGE_SYMBOL );
+    if( TransferDataFromWindow() )
+        EndQuasiModal( SYMBOL_PROPS_WANT_EXCHANGE_SYMBOL );
 }
 
 
@@ -1043,6 +1048,7 @@ void DIALOG_SYMBOL_PROPERTIES::OnSizeGrid( wxSizeEvent& event )
     if( m_width != new_size )
     {
         AdjustGridColumns( new_size );
+        Layout();
     }
 
     // Always propagate for a grid repaint (needed if the height changes, as well as width)

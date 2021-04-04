@@ -78,6 +78,8 @@ public:
         return false;
     }
 
+    wxString GetParentAsString() const { return m_parent->m_Uuid.AsString(); }
+
     bool Matches( const wxFindReplaceData& aSearchData, void* aAuxData ) const override
     {
         return BOARD_ITEM::Matches( GetShownText(), aSearchData );
@@ -207,7 +209,7 @@ public:
 
     wxString GetSelectMenuText( EDA_UNITS aUnits ) const override;
 
-    BITMAP_DEF GetMenuImage() const override;
+    BITMAPS GetMenuImage() const override;
 
     EDA_ITEM* Clone() const override;
 

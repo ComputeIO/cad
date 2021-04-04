@@ -12,14 +12,13 @@
 #include <wx/intl.h>
 class WX_GRID;
 
-#include <wx/string.h>
-#include <wx/stattext.h>
-#include <wx/gdicmn.h>
-#include <wx/font.h>
 #include <wx/colour.h>
 #include <wx/settings.h>
-#include <wx/sizer.h>
+#include <wx/string.h>
+#include <wx/font.h>
 #include <wx/grid.h>
+#include <wx/gdicmn.h>
+#include <wx/sizer.h>
 #include <wx/panel.h>
 #include <wx/bitmap.h>
 #include <wx/image.h>
@@ -43,13 +42,10 @@ class PANEL_FP_LIB_TABLE_BASE : public wxPanel
 	protected:
 		wxNotebook* m_notebook;
 		wxPanel* m_global_panel;
-		wxStaticText* m_staticText3;
-		wxStaticText* m_GblTableFilename;
 		WX_GRID* m_global_grid;
 		wxPanel* m_project_panel;
-		wxStaticText* m_staticText4;
-		wxStaticText* m_PrjTableFilename;
 		WX_GRID* m_project_grid;
+		wxPanel* m_buttonsPanel;
 		wxBitmapButton* m_append_button;
 		SPLIT_BUTTON* m_browseButton;
 		wxBitmapButton* m_move_up_button;

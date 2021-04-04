@@ -31,11 +31,11 @@
 
 static const UTIL::CFG_MAP<PCB_DISPLAY_OPTIONS::TRACE_CLEARANCE_DISPLAY_MODE_T> traceClearanceSelectMap =
 {
-    { PCB_DISPLAY_OPTIONS::SHOW_CLEARANCE_NEW_TRACKS_AND_VIA_AREAS,            2 },     // Default
-    { PCB_DISPLAY_OPTIONS::DO_NOT_SHOW_CLEARANCE,                              0 },
-    { PCB_DISPLAY_OPTIONS::SHOW_CLEARANCE_NEW_TRACKS,                          1 },
-    { PCB_DISPLAY_OPTIONS::SHOW_CLEARANCE_NEW_AND_EDITED_TRACKS_AND_VIA_AREAS, 3 },
-    { PCB_DISPLAY_OPTIONS::SHOW_CLEARANCE_ALWAYS,                              4 },
+    { PCB_DISPLAY_OPTIONS::SHOW_TRACK_CLEARANCE_WITH_VIA_WHILE_ROUTING, 2 },     // Default
+    { PCB_DISPLAY_OPTIONS::DO_NOT_SHOW_CLEARANCE,                       0 },
+    { PCB_DISPLAY_OPTIONS::SHOW_TRACK_CLEARANCE_WHILE_ROUTING,          1 },
+    { PCB_DISPLAY_OPTIONS::SHOW_WHILE_ROUTING_OR_DRAGGING,              3 },
+    { PCB_DISPLAY_OPTIONS::SHOW_TRACK_CLEARANCE_WITH_VIA_ALWAYS,        4 },
 };
 
 
@@ -44,9 +44,7 @@ PANEL_DISPLAY_OPTIONS::PANEL_DISPLAY_OPTIONS( PCB_BASE_FRAME* aFrame,
     PANEL_DISPLAY_OPTIONS_BASE( aParent->GetTreebook() ),
     m_frame( aFrame )
 {
-    KIGFX::GAL_DISPLAY_OPTIONS& galOptions = m_frame->GetGalDisplayOptions();
-    m_galOptsPanel = new GAL_OPTIONS_PANEL( this, galOptions );
-
+    m_galOptsPanel = new GAL_OPTIONS_PANEL( this, m_frame );
     m_galOptionsSizer->Add( m_galOptsPanel, 1, wxEXPAND, 0 );
 
     m_optionsBook->SetSelection( dynamic_cast<PCB_EDIT_FRAME*>( m_frame ) ? 1 : 0 );
@@ -64,7 +62,7 @@ bool PANEL_DISPLAY_OPTIONS::TransferDataToWindow()
         m_OptDisplayTracksClearance->SetSelection( UTIL::GetConfigForVal(
                 traceClearanceSelectMap, displ_opts.m_ShowTrackClearanceMode ) );
 
-        m_OptDisplayPadClearence->SetValue( displ_opts.m_DisplayPadIsol );
+        m_OptDisplayPadClearence->SetValue( displ_opts.m_DisplayPadClearance );
         m_OptDisplayPadNumber->SetValue( displ_opts.m_DisplayPadNum );
         m_OptDisplayPadNoConn->SetValue( pcbEdit->IsElementVisible( LAYER_NO_CONNECTS ) );
         m_ShowNetNamesOption->SetSelection( displ_opts.m_DisplayNetNamesMode );
@@ -103,7 +101,7 @@ bool PANEL_DISPLAY_OPTIONS::TransferDataFromWindow()
         displ_opts.m_ShowTrackClearanceMode = UTIL::GetValFromConfig(
                 traceClearanceSelectMap, m_OptDisplayTracksClearance->GetSelection() );
 
-        displ_opts.m_DisplayPadIsol = m_OptDisplayPadClearence->GetValue();
+        displ_opts.m_DisplayPadClearance = m_OptDisplayPadClearence->GetValue();
         displ_opts.m_DisplayPadNum = m_OptDisplayPadNumber->GetValue();
 
         pcbEdit->SetElementVisibility( LAYER_NO_CONNECTS, m_OptDisplayPadNoConn->GetValue() );
@@ -119,9 +117,23 @@ bool PANEL_DISPLAY_OPTIONS::TransferDataFromWindow()
         crossProbing.center_on_items = m_checkCrossProbeCenter->GetValue();
         crossProbing.zoom_to_fit     = m_checkCrossProbeZoom->GetValue();
         crossProbing.auto_highlight  = m_checkCrossProbeAutoHighlight->GetValue();
+
+        // Mark items with clearance display for repaint
+        view->UpdateAllItemsConditionally( KIGFX::REPAINT,
+                []( KIGFX::VIEW_ITEM* aItem ) -> bool
+                {
+                    if( EDA_ITEM* item = dynamic_cast<EDA_ITEM*>( aItem ) )
+                    {
+                        return( item->Type() == PCB_TRACE_T ||
+                                item->Type() == PCB_ARC_T ||
+                                item->Type() == PCB_VIA_T ||
+                                item->Type() == PCB_PAD_T );
+                    }
+
+                    return false;
+                } );
     }
 
-    view->RecacheAllItems();
     view->MarkTargetDirty( KIGFX::TARGET_NONCACHED );
 
     return true;

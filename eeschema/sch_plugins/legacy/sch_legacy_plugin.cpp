@@ -2,7 +2,7 @@
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
  * Copyright (C) 2016 CERN
- * Copyright (C) 2016-2020 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 2016-2021 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * @author Wayne Stambaugh <stambaughw@gmail.com>
  *
@@ -27,6 +27,7 @@
 
 #include <wx/mstream.h>
 #include <wx/filename.h>
+#include <wx/textfile.h>
 #include <wx/tokenzr.h>
 
 #include <pgm_base.h>
@@ -42,7 +43,7 @@
 #include <general.h>
 #include <sch_bitmap.h>
 #include <sch_bus_entry.h>
-#include <sch_component.h>
+#include <sch_symbol.h>
 #include <sch_junction.h>
 #include <sch_line.h>
 #include <sch_marker.h>
@@ -580,7 +581,6 @@ void SCH_LEGACY_PLUGIN::init( SCHEMATIC* aSchematic, const PROPERTIES* aProperti
 {
     m_version   = 0;
     m_rootSheet = nullptr;
-    m_props     = aProperties;
     m_schematic = aSchematic;
     m_cache     = nullptr;
     m_out       = nullptr;
@@ -1671,6 +1671,8 @@ SCH_COMPONENT* SCH_LEGACY_PLUGIN::loadComponent( LINE_READER& aReader )
                 component->AddField( field );
             }
 
+            SCH_FIELD& field = component->GetFields()[index];
+
             // Prior to version 2 of the schematic file format, none of the following existed.
             if( m_version > 1 )
             {
@@ -1683,9 +1685,9 @@ SCH_COMPONENT* SCH_LEGACY_PLUGIN::loadComponent( LINE_READER& aReader )
                 parseQuotedString( name, aReader, line, &line, true );
 
                 if( hjustify == 'L' )
-                    component->GetField( index )->SetHorizJustify( GR_TEXT_HJUSTIFY_LEFT );
+                    field.SetHorizJustify( GR_TEXT_HJUSTIFY_LEFT );
                 else if( hjustify == 'R' )
-                    component->GetField( index )->SetHorizJustify( GR_TEXT_HJUSTIFY_RIGHT );
+                    field.SetHorizJustify( GR_TEXT_HJUSTIFY_RIGHT );
                 else if( hjustify != 'C' )
                     SCH_PARSE_ERROR( "component field text horizontal justification must be "
                                      "L, R, or C", aReader, line );
@@ -1693,9 +1695,9 @@ SCH_COMPONENT* SCH_LEGACY_PLUGIN::loadComponent( LINE_READER& aReader )
                 // We are guaranteed to have a least one character here for older file formats
                 // otherwise an exception would have been raised..
                 if( textAttrs[0] == 'T' )
-                    component->GetField( index )->SetVertJustify( GR_TEXT_VJUSTIFY_TOP );
+                    field.SetVertJustify( GR_TEXT_VJUSTIFY_TOP );
                 else if( textAttrs[0] == 'B' )
-                    component->GetField( index )->SetVertJustify( GR_TEXT_VJUSTIFY_BOTTOM );
+                    field.SetVertJustify( GR_TEXT_VJUSTIFY_BOTTOM );
                 else if( textAttrs[0] != 'C' )
                     SCH_PARSE_ERROR( "component field text vertical justification must be "
                                      "B, T, or C", aReader, line );
@@ -1708,36 +1710,35 @@ SCH_COMPONENT* SCH_LEGACY_PLUGIN::loadComponent( LINE_READER& aReader )
                                          aReader, line );
 
                     if( textAttrs[1] == 'I' )
-                        component->GetField( index )->SetItalic( true );
+                        field.SetItalic( true );
                     else if( textAttrs[1] != 'N' )
                         SCH_PARSE_ERROR( "component field text italics indicator must be I or N",
                                          aReader, line );
 
                     if( textAttrs[2] == 'B' )
-                        component->GetField( index )->SetBold( true );
+                        field.SetBold( true );
                     else if( textAttrs[2] != 'N' )
                         SCH_PARSE_ERROR( "component field text bold indicator must be B or N",
                                          aReader, line );
                 }
             }
 
-            component->GetField( index )->SetText( text );
-            component->GetField( index )->SetTextPos( pos );
-            component->GetField( index )->SetVisible( !attributes );
-            component->GetField( index )->SetTextSize( wxSize( size, size ) );
+            field.SetText( text );
+            field.SetTextPos( pos );
+            field.SetVisible( !attributes );
+            field.SetTextSize( wxSize( size, size ) );
 
             if( orientation == 'H' )
-                component->GetField( index )->SetTextAngle( TEXT_ANGLE_HORIZ );
+                field.SetTextAngle( TEXT_ANGLE_HORIZ );
             else if( orientation == 'V' )
-                component->GetField( index )->SetTextAngle( TEXT_ANGLE_VERT );
+                field.SetTextAngle( TEXT_ANGLE_VERT );
             else
-                SCH_PARSE_ERROR( "component field orientation must be H or V",
-                                 aReader, line );
+                SCH_PARSE_ERROR( "component field orientation must be H or V", aReader, line );
 
             if( name.IsEmpty() )
                 name = TEMPLATE_FIELDNAME::GetDefaultFieldName( index );
 
-            component->GetField( index )->SetName( name );
+            field.SetName( name );
         }
         else if( strCompare( "$EndComp", line ) )
         {
@@ -2062,15 +2063,15 @@ void SCH_LEGACY_PLUGIN::saveComponent( SCH_COMPONENT* aComponent )
         }
     }
 
-    // update the ugly field index, which I would like to see go away someday soon.
+    // update the ugly field id, which I would like to see go away someday soon.
     for( int i = 0;  i < aComponent->GetFieldCount();  ++i )
-        aComponent->GetField( i )->SetId( i );
+        aComponent->GetFields()[i].SetId( i );
 
     // Fixed fields:
     // Save mandatory fields even if they are blank,
     // because the visibility, size and orientation are set from library editor.
-    for( unsigned i = 0;  i < MANDATORY_FIELDS;  ++i )
-        saveField( aComponent->GetField( i ) );
+    for( unsigned i = 0; i < MANDATORY_FIELDS; ++i )
+        saveField( &aComponent->GetFields()[i] );
 
     // User defined fields:
     // The *policy* about which user defined fields are part of a symbol is now
@@ -2078,7 +2079,7 @@ void SCH_LEGACY_PLUGIN::saveComponent( SCH_COMPONENT* aComponent )
     // save all the user defined fields, they are present because a dialog editor
     // thought they should be.  If you disagree, go fix the dialog editors.
     for( int i = MANDATORY_FIELDS;  i < aComponent->GetFieldCount();  ++i )
-        saveField( aComponent->GetField( i ) );
+        saveField( &aComponent->GetFields()[i] );
 
     // Unit number, position, box ( old standard )
     m_out->Print( 0, "\t%-4d %-4d %-4d\n", aComponent->GetUnit(),
@@ -2122,10 +2123,8 @@ void SCH_LEGACY_PLUGIN::saveField( SCH_FIELD* aField )
                   aField->IsBold() ? 'B' : 'N' );
 
     // Save field name, if the name is user definable
-    if( aField->GetId() >= FIELD1 )
-    {
+    if( aField->GetId() >= MANDATORY_FIELDS )
         m_out->Print( 0, " %s", EscapedUTF8( aField->GetName() ).c_str() );
-    }
 
     m_out->Print( 0, "\n" );
 }
@@ -2412,11 +2411,9 @@ SCH_LEGACY_PLUGIN_CACHE::SCH_LEGACY_PLUGIN_CACHE( const wxString& aFullPathAndFi
 
 SCH_LEGACY_PLUGIN_CACHE::~SCH_LEGACY_PLUGIN_CACHE()
 {
-    std::vector< LIB_PART* > rootParts;
-
     // When the cache is destroyed, all of the alias objects on the heap should be deleted.
-    for( LIB_PART_MAP::iterator it = m_symbols.begin();  it != m_symbols.end();  ++it )
-        delete it->second;
+    for( auto& symbol : m_symbols )
+        delete symbol.second;
 
     m_symbols.clear();
 }
@@ -2728,7 +2725,7 @@ void SCH_LEGACY_PLUGIN_CACHE::loadDocs()
 
             case 'F':
                 if( symbol )
-                    symbol->GetField( DATASHEET_FIELD )->SetText( text );
+                    symbol->GetFieldById( DATASHEET_FIELD )->SetText( text );
                 break;
 
             case 0:
@@ -2963,14 +2960,14 @@ void SCH_LEGACY_PLUGIN_CACHE::loadAliases( std::unique_ptr<LIB_PART>& aPart,
             LIB_PART* newPart = new LIB_PART( newAliasName );
 
             // Inherit the parent mandatory field attributes.
-            for( int id=0;  id<MANDATORY_FIELDS;  ++id )
+            for( int id = 0; id < MANDATORY_FIELDS; ++id )
             {
-                LIB_FIELD* field = newPart->GetField( id );
+                LIB_FIELD* field = newPart->GetFieldById( id );
 
                 // the MANDATORY_FIELDS are exactly that in RAM.
                 wxASSERT( field );
 
-                LIB_FIELD* parentField = aPart->GetField( id );
+                LIB_FIELD* parentField = aPart->GetFieldById( id );
 
                 wxASSERT( parentField );
 
@@ -3008,7 +3005,7 @@ void SCH_LEGACY_PLUGIN_CACHE::loadField( std::unique_ptr<LIB_PART>& aPart,
 
     if( id >= 0 && id < MANDATORY_FIELDS )
     {
-        field = aPart->GetField( id );
+        field = aPart->GetFieldById( id );
 
         // this will fire only if somebody broke a constructor or editor.
         // MANDATORY_FIELDS are always present in ram resident components, no
@@ -3018,7 +3015,7 @@ void SCH_LEGACY_PLUGIN_CACHE::loadField( std::unique_ptr<LIB_PART>& aPart,
     else
     {
         field = new LIB_FIELD( aPart.get(), id );
-        aPart->AddDrawItem( field );
+        aPart->AddDrawItem( field, false );
     }
 
     // Skip to the first double quote.
@@ -3153,36 +3150,39 @@ void SCH_LEGACY_PLUGIN_CACHE::loadDrawEntries( std::unique_ptr<LIB_PART>& aPart,
     while( line )
     {
         if( strCompare( "ENDDRAW", line, &line ) )
+        {
+            aPart->GetDrawItems().sort();
             return;
+        }
 
         switch( line[0] )
         {
         case 'A':    // Arc
-            aPart->AddDrawItem( loadArc( aPart, aReader ) );
+            aPart->AddDrawItem( loadArc( aPart, aReader ), false );
             break;
 
         case 'C':    // Circle
-            aPart->AddDrawItem( loadCircle( aPart, aReader ) );
+            aPart->AddDrawItem( loadCircle( aPart, aReader ), false );
             break;
 
         case 'T':    // Text
-            aPart->AddDrawItem( loadText( aPart, aReader, aMajorVersion, aMinorVersion ) );
+            aPart->AddDrawItem( loadText( aPart, aReader, aMajorVersion, aMinorVersion ), false );
             break;
 
         case 'S':    // Square
-            aPart->AddDrawItem( loadRectangle( aPart, aReader ) );
+            aPart->AddDrawItem( loadRectangle( aPart, aReader ), false );
             break;
 
         case 'X':    // Pin Description
-            aPart->AddDrawItem( loadPin( aPart, aReader ) );
+            aPart->AddDrawItem( loadPin( aPart, aReader ), false );
             break;
 
         case 'P':    // Polyline
-            aPart->AddDrawItem( loadPolyLine( aPart, aReader ) );
+            aPart->AddDrawItem( loadPolyLine( aPart, aReader ), false );
             break;
 
         case 'B':    // Bezier Curves
-            aPart->AddDrawItem( loadBezier( aPart, aReader ) );
+            aPart->AddDrawItem( loadBezier( aPart, aReader ), false );
             break;
 
         case '#':    // Comment
@@ -3982,7 +3982,7 @@ void SCH_LEGACY_PLUGIN_CACHE::saveField( const LIB_FIELD* aField, OUTPUTFORMATTE
      */
     wxString defName = TEMPLATE_FIELDNAME::GetDefaultFieldName( id );
 
-    if( id >= FIELD1 && !aField->m_name.IsEmpty() && aField->m_name != defName )
+    if( id >= MANDATORY_FIELDS && !aField->m_name.IsEmpty() && aField->m_name != defName )
         aFormatter.Print( 0, " %s", EscapedUTF8( aField->m_name ).c_str() );
 
     aFormatter.Print( 0, "\n" );
@@ -4203,7 +4203,7 @@ void SCH_LEGACY_PLUGIN_CACHE::DeleteSymbol( const wxString& aSymbolName )
 }
 
 
-void SCH_LEGACY_PLUGIN::cacheLib( const wxString& aLibraryFileName )
+void SCH_LEGACY_PLUGIN::cacheLib( const wxString& aLibraryFileName, const PROPERTIES* aProperties )
 {
     if( !m_cache || !m_cache->IsFile( aLibraryFileName ) || m_cache->IsFileChanged() )
     {
@@ -4216,7 +4216,7 @@ void SCH_LEGACY_PLUGIN::cacheLib( const wxString& aLibraryFileName )
         // must be updated.
         PART_LIBS::s_modify_generation++;
 
-        if( !isBuffering( m_props ) )
+        if( !isBuffering( aProperties ) )
             m_cache->Load();
     }
 }
@@ -4255,11 +4255,10 @@ void SCH_LEGACY_PLUGIN::EnumerateSymbolLib( wxArrayString&    aSymbolNameList,
 {
     LOCALE_IO   toggle;     // toggles on, then off, the C locale.
 
-    m_props = aProperties;
-
     bool powerSymbolsOnly = ( aProperties &&
                               aProperties->find( SYMBOL_LIB_TABLE::PropPowerSymsOnly ) != aProperties->end() );
-    cacheLib( aLibraryPath );
+
+    cacheLib( aLibraryPath, aProperties  );
 
     const LIB_PART_MAP& symbols = m_cache->m_symbols;
 
@@ -4277,11 +4276,10 @@ void SCH_LEGACY_PLUGIN::EnumerateSymbolLib( std::vector<LIB_PART*>& aSymbolList,
 {
     LOCALE_IO   toggle;     // toggles on, then off, the C locale.
 
-    m_props = aProperties;
-
     bool powerSymbolsOnly = ( aProperties &&
                               aProperties->find( SYMBOL_LIB_TABLE::PropPowerSymsOnly ) != aProperties->end() );
-    cacheLib( aLibraryPath );
+
+    cacheLib( aLibraryPath, aProperties );
 
     const LIB_PART_MAP& symbols = m_cache->m_symbols;
 
@@ -4298,9 +4296,7 @@ LIB_PART* SCH_LEGACY_PLUGIN::LoadSymbol( const wxString& aLibraryPath, const wxS
 {
     LOCALE_IO toggle;     // toggles on, then off, the C locale.
 
-    m_props = aProperties;
-
-    cacheLib( aLibraryPath );
+    cacheLib( aLibraryPath, aProperties );
 
     LIB_PART_MAP::const_iterator it = m_cache->m_symbols.find( aSymbolName );
 
@@ -4314,9 +4310,9 @@ LIB_PART* SCH_LEGACY_PLUGIN::LoadSymbol( const wxString& aLibraryPath, const wxS
 void SCH_LEGACY_PLUGIN::SaveSymbol( const wxString& aLibraryPath, const LIB_PART* aSymbol,
                                     const PROPERTIES* aProperties )
 {
-    m_props = aProperties;
+    LOCALE_IO toggle;     // toggles on, then off, the C locale.
 
-    cacheLib( aLibraryPath );
+    cacheLib( aLibraryPath, aProperties );
 
     m_cache->AddSymbol( aSymbol );
 
@@ -4328,9 +4324,9 @@ void SCH_LEGACY_PLUGIN::SaveSymbol( const wxString& aLibraryPath, const LIB_PART
 void SCH_LEGACY_PLUGIN::DeleteSymbol( const wxString& aLibraryPath, const wxString& aSymbolName,
                                       const PROPERTIES* aProperties )
 {
-    m_props = aProperties;
+    LOCALE_IO toggle;     // toggles on, then off, the C locale.
 
-    cacheLib( aLibraryPath );
+    cacheLib( aLibraryPath, aProperties );
 
     m_cache->DeleteSymbol( aSymbolName );
 
@@ -4350,8 +4346,6 @@ void SCH_LEGACY_PLUGIN::CreateSymbolLib( const wxString& aLibraryPath,
     }
 
     LOCALE_IO toggle;
-
-    m_props = aProperties;
 
     delete m_cache;
     m_cache = new SCH_LEGACY_PLUGIN_CACHE( aLibraryPath );

@@ -32,6 +32,7 @@
 #include <config.h>
 #include <core/arraydim.h>
 #include <id.h>
+#include <kiplatform/app.h>
 #include <settings/settings_manager.h>
 #include <logging.h>
 
@@ -135,7 +136,6 @@ const wxString KIWAY::dso_search_path( FACE_T aFaceId )
 
     fn.SetName( name );
 
-#ifdef DEBUG
     // To speed up development, it's sometimes nice to run kicad from inside
     // the build path.  In that case, each program will be in a subdirectory.
     // To find the DSOs, we need to go up one directory and then enter a subdirectory.
@@ -161,7 +161,6 @@ const wxString KIWAY::dso_search_path( FACE_T aFaceId )
         fn.AppendDir( dirName );
 #endif
     }
-#endif
 
     // Here a "suffix" == an extension with a preceding '.',
     // so skip the preceding '.' to get an extension
@@ -201,6 +200,19 @@ KIFACE*  KIWAY::KiFACE( FACE_T aFaceId, bool doLoad )
     {
         wxString dname = dso_search_path( aFaceId );
 
+        // Insert DLL search path for kicad_3dsg from build dir
+        if( wxGetEnv( wxT( "KICAD_RUN_FROM_BUILD_DIR" ), nullptr ) )
+        {
+            wxFileName myPath = wxStandardPaths::Get().GetExecutablePath();
+
+            if( !myPath.GetPath().EndsWith( wxT( "pcbnew" ) ) )
+            {
+                myPath.RemoveLastDir();
+                myPath.AppendDir( wxT( "pcbnew" ) );
+                KIPLATFORM::APP::AddDynamicLibrarySearchPath( myPath.GetPath() );
+            }
+        }
+
         wxDynamicLibrary dso;
 
         void*   addr = NULL;
@@ -234,7 +246,7 @@ KIFACE*  KIWAY::KiFACE( FACE_T aFaceId, bool doLoad )
             // Failure: error reporting UI was done via wxLogSysError().
             // No further reporting required here.  Assume the same thing applies here as
             // above with the Load() call.  This has not been tested.
-            msg.Printf( _( "Could not read instance name and version symbol form kiface "
+            msg.Printf( _( "Could not read instance name and version symbol from kiface "
                            "library \"%s\"." ),
                         dname );
             THROW_IO_ERROR( msg );

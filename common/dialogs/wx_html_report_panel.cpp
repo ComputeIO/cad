@@ -37,8 +37,7 @@ WX_HTML_REPORT_PANEL::WX_HTML_REPORT_PANEL( wxWindow* parent,
         WX_HTML_REPORT_PANEL_BASE( parent, id, pos, size, style ),
         m_reporter( this ),
         m_severities( -1 ),
-        m_lazyUpdate( false ),
-        m_printInfo( true )
+        m_lazyUpdate( false )
 {
     syncCheckboxes();
     m_htmlView->SetPage( addHeader( "" ) );
@@ -350,13 +349,17 @@ void WX_HTML_REPORT_PANEL::onBtnSaveToFile( wxCommandEvent& event )
         return;
     }
 
-    for( const REPORT_LINE& l : m_report )
+    for( REPORT_LINES section : { m_reportHead, m_report, m_reportTail } )
     {
-        wxString s = generatePlainText( l );
+        for( const REPORT_LINE& l : section )
+        {
+            wxString s = generatePlainText( l );
 
-        ConvertSmartQuotesAndDashes( &s );
-        f.Write( s );
+            ConvertSmartQuotesAndDashes( &s );
+            f.Write( s );
+        }
     }
+
     m_reportFileName = fn.GetFullPath();
     f.Close();
 }
@@ -402,12 +405,6 @@ void WX_HTML_REPORT_PANEL::SetFileName( const wxString& aReportFileName )
 wxString& WX_HTML_REPORT_PANEL::GetFileName( void )
 {
     return ( m_reportFileName );
-}
-
-
-void WX_HTML_REPORT_PANEL::SetPrintInfo( bool aPrintInfo )
-{
-    m_printInfo = aPrintInfo;
 }
 
 

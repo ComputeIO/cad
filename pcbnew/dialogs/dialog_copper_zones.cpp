@@ -98,29 +98,25 @@ int InvokeCopperZonesEditor( PCB_BASE_FRAME* aCaller, ZONE_SETTINGS* aSettings )
 {
     DIALOG_COPPER_ZONE dlg( aCaller, aSettings );
 
-    return dlg.ShowModal();
+    return dlg.ShowQuasiModal();
 }
 
-#define MIN_THICKNESS ZONE_THICKNESS_MIN_VALUE_MIL*IU_PER_MILS
 
 DIALOG_COPPER_ZONE::DIALOG_COPPER_ZONE( PCB_BASE_FRAME* aParent, ZONE_SETTINGS* aSettings ) :
     DIALOG_COPPER_ZONE_BASE( aParent ),
     m_cornerSmoothingType( ZONE_SETTINGS::SMOOTHING_UNDEFINED ),
-    m_cornerRadius( aParent, m_cornerRadiusLabel, m_cornerRadiusCtrl, m_cornerRadiusUnits, true ),
-    m_clearance( aParent, m_clearanceLabel, m_clearanceCtrl, m_clearanceUnits, true ),
-    m_minWidth( aParent, m_minWidthLabel, m_minWidthCtrl, m_minWidthUnits, true ),
-    m_antipadClearance( aParent, m_antipadLabel, m_antipadCtrl, m_antipadUnits, true ),
-    m_spokeWidth( aParent, m_spokeWidthLabel, m_spokeWidthCtrl, m_spokeWidthUnits, true ),
-    m_gridStyleRotation( aParent, m_staticTextGrindOrient, m_tcGridStyleOrientation,
-                         m_staticTextRotUnits, false ),
-    m_gridStyleThickness( aParent, m_staticTextStyleThickness,
-                          m_tcGridStyleThickness, m_GridStyleThicknessUnits, false ),
-    m_gridStyleGap( aParent, m_staticTextGridGap, m_tcGridStyleGap, m_GridStyleGapUnits, false ),
-    m_islandThreshold( aParent, m_islandThresholdLabel,
-                       m_tcIslandThreshold, m_islandThresholdUnits, false )
+    m_cornerRadius( aParent, m_cornerRadiusLabel, m_cornerRadiusCtrl, m_cornerRadiusUnits ),
+    m_clearance( aParent, m_clearanceLabel, m_clearanceCtrl, m_clearanceUnits ),
+    m_minWidth( aParent, m_minWidthLabel, m_minWidthCtrl, m_minWidthUnits ),
+    m_antipadClearance( aParent, m_antipadLabel, m_antipadCtrl, m_antipadUnits ),
+    m_spokeWidth( aParent, m_spokeWidthLabel, m_spokeWidthCtrl, m_spokeWidthUnits ),
+    m_gridStyleRotation( aParent, m_staticTextGrindOrient, m_tcGridStyleOrientation, m_staticTextRotUnits ),
+    m_gridStyleThickness( aParent, m_staticTextStyleThickness, m_tcGridStyleThickness, m_GridStyleThicknessUnits ),
+    m_gridStyleGap( aParent, m_staticTextGridGap, m_tcGridStyleGap, m_GridStyleGapUnits ),
+    m_islandThreshold( aParent, m_islandThresholdLabel, m_tcIslandThreshold, m_islandThresholdUnits )
 {
     m_Parent = aParent;
-    m_bitmapNoNetWarning->SetBitmap( KiBitmap( dialog_warning_xpm ) );
+    m_bitmapNoNetWarning->SetBitmap( KiBitmap( BITMAPS::dialog_warning ) );
 
     m_ptr = aSettings;
     m_settings = *aSettings;
@@ -194,7 +190,7 @@ bool DIALOG_COPPER_ZONE::TransferDataToWindow()
     m_NetFiltering = false;
     m_NetSortingByPadCount = true;
 
-    auto cfg = m_Parent->GetPcbNewSettings();
+    PCBNEW_SETTINGS* cfg = m_Parent->GetPcbNewSettings();
 
     int opt = cfg->m_Zones.net_sort_mode;
     m_NetFiltering = opt >= 2;
@@ -214,10 +210,8 @@ bool DIALOG_COPPER_ZONE::TransferDataToWindow()
 
     switch( m_settings.m_FillMode )
     {
-    case ZONE_FILL_MODE::HATCH_PATTERN:
-        m_GridStyleCtrl->SetSelection( 1 ); break;
-    default:
-        m_GridStyleCtrl->SetSelection( 0 ); break;
+    case ZONE_FILL_MODE::HATCH_PATTERN: m_GridStyleCtrl->SetSelection( 1 ); break;
+    default:                            m_GridStyleCtrl->SetSelection( 0 ); break;
     }
 
     m_gridStyleRotation.SetUnits( EDA_UNITS::DEGREES );
@@ -321,7 +315,8 @@ bool DIALOG_COPPER_ZONE::TransferDataFromWindow()
 
 void DIALOG_COPPER_ZONE::OnClose( wxCloseEvent& event )
 {
-    EndModal( m_settingsExported ? ZONE_EXPORT_VALUES : wxID_CANCEL );
+    SetReturnCode( m_settingsExported ? ZONE_EXPORT_VALUES : wxID_CANCEL );
+    event.Skip();
 }
 
 
@@ -354,18 +349,10 @@ bool DIALOG_COPPER_ZONE::AcceptOptions( bool aUseExportableSetupOnly )
 
     switch( m_PadInZoneOpt->GetSelection() )
     {
-    case 3:
-        m_settings.SetPadConnection( ZONE_CONNECTION::NONE );
-        break;
-    case 2:
-        m_settings.SetPadConnection( ZONE_CONNECTION::THT_THERMAL );
-        break;
-    case 1:
-        m_settings.SetPadConnection( ZONE_CONNECTION::THERMAL );
-        break;
-    case 0:
-        m_settings.SetPadConnection( ZONE_CONNECTION::FULL );
-        break;
+    case 3: m_settings.SetPadConnection( ZONE_CONNECTION::NONE );        break;
+    case 2: m_settings.SetPadConnection( ZONE_CONNECTION::THT_THERMAL ); break;
+    case 1: m_settings.SetPadConnection( ZONE_CONNECTION::THERMAL );     break;
+    case 0: m_settings.SetPadConnection( ZONE_CONNECTION::FULL );        break;
     }
 
     switch( m_OutlineDisplayCtrl->GetSelection() )
@@ -375,7 +362,7 @@ bool DIALOG_COPPER_ZONE::AcceptOptions( bool aUseExportableSetupOnly )
     case 2: m_settings.m_ZoneBorderDisplayStyle = ZONE_BORDER_DISPLAY_STYLE::DIAGONAL_FULL; break;
     }
 
-    auto cfg = m_Parent->GetPcbNewSettings();
+    PCBNEW_SETTINGS* cfg = m_Parent->GetPcbNewSettings();
 
     cfg->m_Zones.hatching_style = static_cast<int>( m_settings.m_ZoneBorderDisplayStyle );
     cfg->m_Zones.net_filter = m_DoNotShowNetNameFilter->GetValue().ToStdString();

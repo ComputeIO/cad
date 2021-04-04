@@ -103,7 +103,8 @@ public:
         KEEP_TOPOLOGY         = 0x10,
         PRESERVE_VERTEX       = 0x20,
         RESTRICT_VERTEX_RANGE = 0x40,
-        MERGE_COLINEAR        = 0x80    ///< Merge co-linear segments
+        MERGE_COLINEAR        = 0x80,    ///< Merge co-linear segments
+        RESTRICT_AREA         = 0x100
     };
 
     OPTIMIZER( NODE* aWorld );
@@ -144,9 +145,10 @@ public:
         m_effortLevel |= OPTIMIZER::RESTRICT_VERTEX_RANGE;
     }
 
-    void SetRestrictArea( const BOX2I& aArea )
+    void SetRestrictArea( const BOX2I& aArea, bool aStrict = true )
     {
         m_restrictArea = aArea;
+        m_restrictAreaIsStrict = aStrict;
     }
 
     void ClearConstraints();
@@ -205,6 +207,7 @@ private:
     VECTOR2I            m_preservedVertex;
     std::pair<int, int> m_restrictedVertexRange;
     BOX2I               m_restrictArea;
+    bool                m_restrictAreaIsStrict;
 };
 
 
@@ -233,13 +236,33 @@ protected:
     int   m_priority;
 };
 
+class ANGLE_CONSTRAINT_45: public OPT_CONSTRAINT
+{
+public:
+    ANGLE_CONSTRAINT_45( NODE* aWorld, int aEntryDirectionMask = -1, int aExitDirectionMask = -1 ) :
+        OPT_CONSTRAINT( aWorld ),
+        m_entryDirectionMask( aEntryDirectionMask ),
+        m_exitDirectionMask( aExitDirectionMask )
+        {
+
+        }
+
+    virtual ~ANGLE_CONSTRAINT_45() {};
+
+    virtual bool Check ( int aVertex1, int aVertex2, const LINE* aOriginLine, const SHAPE_LINE_CHAIN& aCurrentPath, const SHAPE_LINE_CHAIN& aReplacement ) override;
+
+private:
+    int m_entryDirectionMask;
+    int m_exitDirectionMask;
+};
 
 class AREA_CONSTRAINT : public OPT_CONSTRAINT
 {
 public:
-    AREA_CONSTRAINT( NODE* aWorld, const  BOX2I& aAllowedArea ) :
+    AREA_CONSTRAINT( NODE* aWorld, const  BOX2I& aAllowedArea, bool aAllowedAreaStrict ) :
         OPT_CONSTRAINT( aWorld ),
-        m_allowedArea ( aAllowedArea )
+        m_allowedArea ( aAllowedArea ),
+        m_allowedAreaStrict ( aAllowedAreaStrict )
     {
     };
 
@@ -249,6 +272,7 @@ public:
 
 private:
     BOX2I m_allowedArea;
+    bool m_allowedAreaStrict;
 };
 
 

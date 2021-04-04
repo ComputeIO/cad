@@ -32,10 +32,10 @@
 #include <dialog_helpers.h>
 #include <eda_item.h>
 #include <gr_basic.h>
-#include <page_layout/ws_draw_item.h>
-#include <page_layout/ws_data_item.h>
-#include <page_layout/ws_data_model.h>
-#include <page_layout/ws_painter.h>
+#include <drawing_sheet/ds_draw_item.h>
+#include <drawing_sheet/ds_data_item.h>
+#include <drawing_sheet/ds_data_model.h>
+#include <drawing_sheet/ds_painter.h>
 #include <dialogs/dialog_page_settings.h>
 
 #include "invoke_pl_editor_dialog.h"
@@ -188,24 +188,24 @@ void PLEDITOR_PRINTOUT::PrintPage( int aPageNum )
 
     screen->SetVirtualPageNumber( aPageNum );
 
-    KIGFX::WS_RENDER_SETTINGS renderSettings;
+    KIGFX::DS_RENDER_SETTINGS renderSettings;
     renderSettings.SetDefaultPenWidth( 1 );
-    renderSettings.SetLayerColor( LAYER_WORKSHEET, COLOR4D( RED ) );
+    renderSettings.SetLayerColor( LAYER_DRAWINGSHEET, COLOR4D( RED ) );
     renderSettings.SetPrintDC( dc );
 
     // Ensure the scaling factor (used only in printing) of bitmaps is up to date
-    WS_DATA_MODEL&     model = WS_DATA_MODEL::GetTheInstance();
+    DS_DATA_MODEL& model = DS_DATA_MODEL::GetTheInstance();
 
-    for( WS_DATA_ITEM* dataItem : model.GetItems() )
+    for( DS_DATA_ITEM* dataItem : model.GetItems() )
     {
-        if( dataItem->GetType() == WS_DATA_ITEM::WS_BITMAP )
+        if( dataItem->GetType() == DS_DATA_ITEM::DS_BITMAP )
         {
-            BITMAP_BASE* bitmap = static_cast<WS_DATA_ITEM_BITMAP*>( dataItem )->m_ImageBitmap;
+            BITMAP_BASE* bitmap = static_cast<DS_DATA_ITEM_BITMAP*>( dataItem )->m_ImageBitmap;
             bitmap->SetPixelSizeIu( IU_PER_MILS * 1000 / bitmap->GetPPI() );
         }
     }
 
-    m_parent->PrintWorkSheet( &renderSettings, screen, IU_PER_MILS, wxEmptyString );
+    m_parent->PrintDrawingSheet( &renderSettings, screen, IU_PER_MILS, wxEmptyString );
 
     m_parent->SetDrawBgColor( bg_color );
 
@@ -214,7 +214,7 @@ void PLEDITOR_PRINTOUT::PrintPage( int aPageNum )
     screen->m_StartVisu = tmp_startvisu;
     screen->m_DrawOrg   = old_org;
 
-    // PrintWorkSheet clears the current display list when calling BuildWorkSheetGraphicList()
+    // PrintDrawingSheet clears the current display list when calling BuildDrawItemsList()
     // So rebuild and redraw it.
     m_parent->GetCanvas()->DisplayWorksheet();
 }

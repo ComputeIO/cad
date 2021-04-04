@@ -153,12 +153,19 @@ public:
                             double aScaleFactor ) override;
 
     virtual void PenTo( const wxPoint& pos, char plume ) override;
-    virtual void Text( const wxPoint& aPos, const COLOR4D aColor, const wxString& aText,
-                       double aOrient, const wxSize& aSize, enum EDA_TEXT_HJUSTIFY_T aH_justify,
-                       enum EDA_TEXT_VJUSTIFY_T aV_justify, int aWidth, bool aItalic, bool aBold,
-                       bool aMultilineAllowed = false, void* aData = NULL,
-                       FONT* aFont = nullptr ) override;
-
+    virtual void Text( const wxPoint&              aPos,
+                       const COLOR4D               aColor,
+                       const wxString&             aText,
+                       double                      aOrient,
+                       const wxSize&               aSize,
+                       enum EDA_TEXT_HJUSTIFY_T    aH_justify,
+                       enum EDA_TEXT_VJUSTIFY_T    aV_justify,
+                       int                         aWidth,
+                       bool                        aItalic,
+                       bool                        aBold,
+                       bool                        aMultilineAllowed = false,
+                       KIFONT::FONT*               aFont = nullptr,
+                       void* aData = NULL ) override;
 protected:
     virtual void emitSetRGBColor( double r, double g, double b ) override;
 };
@@ -255,11 +262,19 @@ public:
 
     virtual void PenTo( const wxPoint& pos, char plume ) override;
 
-    virtual void Text( const wxPoint& aPos, const COLOR4D aColor, const wxString& aText,
-                       double aOrient, const wxSize& aSize, enum EDA_TEXT_HJUSTIFY_T aH_justify,
-                       enum EDA_TEXT_VJUSTIFY_T aV_justify, int aWidth, bool aItalic, bool aBold,
-                       bool aMultilineAllowed = false, void* aData = NULL,
-                       FONT* aFont = nullptr ) override;
+    virtual void Text( const wxPoint&              aPos,
+                       const COLOR4D               aColor,
+                       const wxString&             aText,
+                       double                      aOrient,
+                       const wxSize&               aSize,
+                       enum EDA_TEXT_HJUSTIFY_T    aH_justify,
+                       enum EDA_TEXT_VJUSTIFY_T    aV_justify,
+                       int                         aWidth,
+                       bool                        aItalic,
+                       bool                        aBold,
+                       bool                        aMultilineAllowed = false,
+                       KIFONT::FONT*               aFont = nullptr,
+                       void* aData = NULL ) override;
     /**
      * PDF images are handles as inline, not XObject streams...
      */
@@ -388,11 +403,19 @@ public:
      */
     virtual void EndBlock( void* aData ) override;
 
-    virtual void Text( const wxPoint& aPos, const COLOR4D aColor, const wxString& aText,
-                       double aOrient, const wxSize& aSize, enum EDA_TEXT_HJUSTIFY_T aH_justify,
-                       enum EDA_TEXT_VJUSTIFY_T aV_justify, int aWidth, bool aItalic, bool aBold,
-                       bool aMultilineAllowed = false, void* aData = NULL,
-                       FONT* aFont = nullptr ) override;
+    virtual void Text( const wxPoint&              aPos,
+                       const COLOR4D               aColor,
+                       const wxString&             aText,
+                       double                      aOrient,
+                       const wxSize&               aSize,
+                       enum EDA_TEXT_HJUSTIFY_T    aH_justify,
+                       enum EDA_TEXT_VJUSTIFY_T    aV_justify,
+                       int                         aWidth,
+                       bool                        aItalic,
+                       bool                        aBold,
+                       bool                        aMultilineAllowed = false,
+                       KIFONT::FONT*               aFont = nullptr,
+                       void* aData = NULL ) override;
 
 protected:
     FILL_TYPE m_fillMode;     // true if the current contour

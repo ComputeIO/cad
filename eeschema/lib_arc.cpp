@@ -251,7 +251,7 @@ void LIB_ARC::Rotate( const wxPoint& aCenter, bool aRotateCCW )
 
 
 void LIB_ARC::Plot( PLOTTER* aPlotter, const wxPoint& aOffset, bool aFill,
-                    const TRANSFORM& aTransform )
+                    const TRANSFORM& aTransform ) const
 {
     wxASSERT( aPlotter != NULL );
 
@@ -415,9 +415,9 @@ wxString LIB_ARC::GetSelectMenuText( EDA_UNITS aUnits ) const
 }
 
 
-BITMAP_DEF LIB_ARC::GetMenuImage() const
+BITMAPS LIB_ARC::GetMenuImage() const
 {
-    return add_arc_xpm;
+    return BITMAPS::add_arc;
 }
 
 

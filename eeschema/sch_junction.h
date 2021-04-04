@@ -2,7 +2,7 @@
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
  * Copyright (C) 2009 Jean-Pierre Charras, jaen-pierre.charras@gipsa-lab.inpg.com
- * Copyright (C) 1992-2020 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 1992-2021 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -34,10 +34,6 @@ class NETLIST_OBJECT_LIST;
 
 class SCH_JUNCTION : public SCH_ITEM
 {
-    wxPoint m_pos;              // Position of the junction.
-    int m_diameter;             // Diameter of the junction.  Zero is user default.
-    COLOR4D m_color;            // Color of the junction.  #COLOR4D::UNSPECIFIED is user default.
-
 public:
     SCH_JUNCTION( const wxPoint& aPosition = wxPoint( 0, 0 ), int aDiameter = 0,
                   SCH_LAYER_ID aLayer = LAYER_JUNCTION );
@@ -69,9 +65,9 @@ public:
         m_pos += aMoveVector;
     }
 
-    void MirrorY( int aYaxis_position ) override;
-    void MirrorX( int aXaxis_position ) override;
-    void Rotate( wxPoint aPosition ) override;
+    void MirrorHorizontally( int aCenter ) override;
+    void MirrorVertically( int aCenter ) override;
+    void Rotate( wxPoint aCenter ) override;
 
     void GetEndPoints( std::vector <DANGLING_END_ITEM>& aItemList ) override;
 
@@ -91,7 +87,7 @@ public:
         return wxString( _( "Junction" ) );
     }
 
-    BITMAP_DEF GetMenuImage() const override;
+    BITMAPS GetMenuImage() const override;
 
     wxPoint GetPosition() const override { return m_pos; }
     void SetPosition( const wxPoint& aPosition ) override { m_pos = aPosition; }
@@ -109,7 +105,7 @@ public:
     bool HitTest( const wxPoint& aPosition, int aAccuracy = 0 ) const override;
     bool HitTest( const EDA_RECT& aRect, bool aContained, int aAccuracy = 0 ) const override;
 
-    void Plot( PLOTTER* aPlotter ) override;
+    void Plot( PLOTTER* aPlotter ) const override;
 
     EDA_ITEM* Clone() const override;
 
@@ -123,6 +119,10 @@ private:
     bool doIsConnected( const wxPoint& aPosition ) const override;
 
     SHAPE_CIRCLE getEffectiveShape() const;
+
+    wxPoint m_pos;              ///< Position of the junction.
+    int m_diameter;             ///< Diameter of the junction.  Zero is user default.
+    COLOR4D m_color;            ///< Color of the junction.  #COLOR4D::UNSPECIFIED is user default.
 };
 
 

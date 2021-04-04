@@ -43,7 +43,7 @@ set( CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/CMakeModules )
 # and more than 3Gb for the full kicad suite)
 # This option create binaries using link option -g1 that create much smaller files, but
 # there are less info in debug (but the file names and line numbers are available)
-option( BUILD_SMALL_DEBUG_FILES "In debug build: create smaller binaries." OFF )
+cmake_dependent_option( BUILD_SMALL_DEBUG_FILES "In debug build: create smaller binaries." OFF "NOT MSVC" OFF )
 
 
 #
@@ -119,9 +119,9 @@ option( KICAD_STDLIB_LIGHT_DEBUG
     "Build KiCad with libstdc++ with -Wp,-D_GLIBCXX_ASSERTIONS flag enabled. Not as intrusive as KICAD_STDLIB_DEBUG"
     OFF )
 
-option( KICAD_BUILD_PARALLEL_CL_MP
+cmake_dependent_option( KICAD_WIN32_BUILD_PARALLEL_CL_MP
     "Build in parallel using the /MP compiler option (default OFF for safety reasons)"
-    OFF )
+    OFF "WIN32" OFF )
 
 option( KICAD_USE_VALGRIND
     "Build KiCad with valgrind stack tracking enabled."
@@ -135,6 +135,10 @@ cmake_dependent_option( KICAD_WIN32_DPI_AWARE
     "Turn on DPI awareness for Windows builds only"
     OFF "WIN32" OFF )
 
+cmake_dependent_option( KICAD_WIN32_CONTEXT_WINFIBER
+    "Use win32 fibers for libcontext"
+    OFF "WIN32" OFF )
+
 option( KICAD_USE_EGL
     "Build KiCad with EGL backend support for Wayland."
     OFF )
@@ -144,9 +148,9 @@ cmake_dependent_option( KICAD_USE_BUNDLED_GLEW
     ON "KICAD_USE_EGL"
     OFF )
 
-option( KICAD_USE_FONTCONFIG
-    "Build KiCad with Fontconfig support."
-    ON )
+option( KICAD_DRC_PROTO
+    "Build the DRC prototype QA tool"
+    OFF )
 
 # when option KICAD_SCRIPTING OR KICAD_SCRIPTING_MODULES is enabled:
 # PYTHON_EXECUTABLE can be defined when invoking cmake
@@ -223,6 +227,13 @@ perform_feature_checks()
 # Setup the compiler warnings
 include( ${CMAKE_MODULE_PATH}/Warnings.cmake )
 
+if( KICAD_WIN32_CONTEXT_WINFIBER )
+    set(LIBCONTEXT_USE_WINFIBER true)
+    add_compile_definitions(LIBCONTEXT_USE_WINFIBER)
+else()
+    set(LIBCONTEXT_USE_WINFIBER false)
+endif()
+
 if( WIN32 )
     # define UNICODE and_UNICODE definition on Windows. KiCad uses unicode.
     # Both definitions are required
@@ -232,12 +243,35 @@ if( WIN32 )
     # _USE_MATH_DEFINES is set.
     add_definitions( -D_USE_MATH_DEFINES )
 
-    # We need the arch for the resource compiler later
-    if ( NOT CMAKE_SIZEOF_VOID_P EQUAL 8 )
-        set( KICAD_BUILD_ARCH "x86" )
-    elseif( CMAKE_SIZEOF_VOID_P EQUAL 8 )
-        set( KICAD_BUILD_ARCH "x64" )
+    # Used for the resource compiler and other arch dependent steps
+    if( MSVC )
+        # CMake does not set CMAKE_SYSTEM_PROCESSOR correctly for MSVC 
+        # and it will always return the host instead of the target arch
+        if("${MSVC_C_ARCHITECTURE_ID}" STREQUAL "ARM64")
+            set( KICAD_BUILD_ARCH "arm64" )
+            set( KICAD_BUILD_ARCH_ARM64 1 )
+        elseif("${MSVC_C_ARCHITECTURE_ID}" STREQUAL "ARM")
+            set( KICAD_BUILD_ARCH "arm" )
+            set( KICAD_BUILD_ARCH_ARM 1 )
+        elseif("${MSVC_C_ARCHITECTURE_ID}" STREQUAL "X86")
+            set( KICAD_BUILD_ARCH "x86" )
+            set( KICAD_BUILD_ARCH_X86 1 )
+        elseif("${MSVC_C_ARCHITECTURE_ID}" STREQUAL "x64")
+            set( KICAD_BUILD_ARCH "x64" )
+            set( KICAD_BUILD_ARCH_X64 1 )
+        else()
+            message(FATAL_ERROR "Failed to determine the MSVC target architecture: ${MSVC_C_ARCHITECTURE_ID}")
+        endif()
+    else()
+        if ( NOT CMAKE_SIZEOF_VOID_P EQUAL 8 )
+            set( KICAD_BUILD_ARCH "x86" )
+            set( KICAD_BUILD_ARCH_X86 1 )
+        elseif( CMAKE_SIZEOF_VOID_P EQUAL 8 )
+            set( KICAD_BUILD_ARCH "x64" )
+            set( KICAD_BUILD_ARCH_X64 1 )
+        endif()
     endif()
+
     add_definitions( -DKICAD_BUILD_ARCH=${KICAD_BUILD_ARCH} )
 
     if( KICAD_WIN32_DPI_AWARE )
@@ -327,6 +361,8 @@ if( CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang" )
 
     if( MINGW )
         list(APPEND mingw_resource_compiler_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/resources/msw/ )
+        # include dir to allow getting the version header
+        list(APPEND mingw_resource_compiler_INCLUDE_DIRS ${CMAKE_BINARY_DIR}/ )
         list(APPEND mingw_resource_compiler_DEFINES KICAD_BUILD_ARCH=${KICAD_BUILD_ARCH} )
         if( KICAD_WIN32_DPI_AWARE )
             list(APPEND mingw_resource_compiler_DEFINES KICAD_WIN32_DPI_AWARE=1 )
@@ -361,14 +397,6 @@ if( CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang" )
 
         # Allow linking for Boost for the UUID against bcrypt
         set( EXTRA_LIBS "bcrypt" )
-
-    elseif( NOT APPLE )
-        # Thou shalt not link vaporware and tell us it's a valid DSO (apple ld doesn't support it)
-        # temporarily disabled due to breaking ASAN-enabled builds - Tom
-        # set( CMAKE_SHARED_LINKER_FLAGS "-Wl,--no-undefined" )
-        # set( CMAKE_MODULE_LINKER_FLAGS "-Wl,--no-undefined" )
-
-        set( CMAKE_EXE_LINKER_FLAGS_RELEASE "-s" )
     endif()
 
     if( APPLE )
@@ -398,19 +426,38 @@ if( MSVC )
     string( APPEND CMAKE_CXX_FLAGS " /Zi" )
     # /GF: enable string pooling
     string( APPEND CMAKE_CXX_FLAGS_RELEASE " /GF" )
+    string( APPEND CMAKE_CXX_FLAGS_RELWITHDEBINFO " /GF" )
+    # /Gy: Enable Function-Level Linking
+    string( APPEND CMAKE_CXX_FLAGS_RELEASE " /Gy" )
+    string( APPEND CMAKE_CXX_FLAGS_RELWITHDEBINFO " /Gy" )
     # Avoid fatal error because /GF + swig wrapper exceed standard obj file limits
     string( APPEND CMAKE_CXX_FLAGS " /bigobj" )
+
+    # Exception handling
+    # Remove the potential default EHsc option cmake doesnt allow us to remove easily
+    string( REPLACE "/EHsc" "" CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} )
+    if( KICAD_WIN32_CONTEXT_WINFIBER )
+    # /EHsc: ensure standard exception C++ unwinding is enabled, "extern C" can never throw exceptions
+    string( APPEND CMAKE_CXX_FLAGS " /EHsc" )
+    else()
+    # the asm libcontext implementation a slight change of rules
+    # /EHs: ensure standard exception C++ unwinding is enabled, "extern C" MAY throw exceptions
+    string( APPEND CMAKE_CXX_FLAGS " /EHs" )
+    endif()
+
     foreach( type EXE SHARED MODULE)
         # /DEBUG: create PDB
         string( APPEND CMAKE_${type}_LINKER_FLAGS " /DEBUG /MANIFEST:NO" )
         # /OPT:REF: omit unreferenced code
         string( APPEND CMAKE_${type}_LINKER_FLAGS_RELEASE " /OPT:REF /MANIFEST:NO" )
+        string( APPEND CMAKE_${type}_LINKER_FLAGS_RELWITHDEBINFO " /OPT:REF /MANIFEST:NO" )
         # /OPT:ICF: fold common data
         string( APPEND CMAKE_${type}_LINKER_FLAGS_RELEASE " /OPT:ICF /MANIFEST:NO" )
+        string( APPEND CMAKE_${type}_LINKER_FLAGS_RELWITHDEBINFO " /OPT:ICF /MANIFEST:NO" )
     endforeach()
 
     # Let cl.exe parallelize builds
-    if( KICAD_BUILD_PARALLEL_CL_MP )
+    if( KICAD_WIN32_BUILD_PARALLEL_CL_MP )
         string( APPEND CMAKE_CXX_FLAGS " /MP" )
     endif()
 endif()
@@ -693,6 +740,15 @@ include_directories( SYSTEM ${HARFBUZZ_INCLUDE_DIRS} )
 find_package( Boost 1.59.0 REQUIRED )
 include_directories( SYSTEM ${Boost_INCLUDE_DIR} )
 
+#
+# Libraries required for outline font support.
+find_package( Freetype REQUIRED )
+include_directories( SYSTEM ${FREETYPE_INCLUDE_DIRS} )
+
+find_package( HarfBuzz REQUIRED )
+include_directories( SYSTEM ${HARFBUZZ_INCLUDE_DIRS} )
+
+find_package( Fontconfig REQUIRED )
 
 # Include MinGW resource compiler.
 include( MinGWResourceCompiler )

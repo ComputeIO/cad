@@ -24,9 +24,9 @@
 
 #include <eda_item.h>
 #include <plotters_specific.h>
-#include <page_layout/ws_data_item.h>
-#include <page_layout/ws_draw_item.h>
-#include <page_layout/ws_painter.h>
+#include <drawing_sheet/ds_data_item.h>
+#include <drawing_sheet/ds_draw_item.h>
+#include <drawing_sheet/ds_painter.h>
 #include <title_block.h>
 #include <wx/filename.h>
 
@@ -54,10 +54,10 @@ wxString GetDefaultPlotExtension( PLOT_FORMAT aFormat )
 }
 
 
-void PlotWorkSheet( PLOTTER* plotter, const PROJECT* aProject, const TITLE_BLOCK& aTitleBlock,
-                    const PAGE_INFO& aPageInfo, const wxString&  aSheetNumber, int aNumberOfSheets,
-                    const wxString& aSheetDesc, const wxString& aFilename, COLOR4D aColor,
-                    bool aIsFirstPage )
+void PlotDrawingSheet( PLOTTER* plotter, const PROJECT* aProject, const TITLE_BLOCK& aTitleBlock,
+                       const PAGE_INFO& aPageInfo, const wxString& aSheetNumber, int aSheetCount,
+                       const wxString& aSheetDesc, const wxString& aFilename, COLOR4D aColor,
+                       bool aIsFirstPage )
 {
     /* Note: Page sizes values are given in mils
      */
@@ -69,7 +69,7 @@ void PlotWorkSheet( PLOTTER* plotter, const PROJECT* aProject, const TITLE_BLOCK
         plotColor = COLOR4D( RED );
 
     plotter->SetColor( plotColor );
-    WS_DRAW_ITEM_LIST drawList;
+    DS_DRAW_ITEM_LIST drawList;
 
     // Print only a short filename, if aFilename is the full filename
     wxFileName fn( aFilename );
@@ -78,16 +78,16 @@ void PlotWorkSheet( PLOTTER* plotter, const PROJECT* aProject, const TITLE_BLOCK
     drawList.SetDefaultPenSize( PLOTTER::USE_DEFAULT_LINE_WIDTH );
     drawList.SetMilsToIUfactor( iusPerMil );
     drawList.SetPageNumber( aSheetNumber );
-    drawList.SetSheetCount( aNumberOfSheets );
+    drawList.SetSheetCount( aSheetCount );
     drawList.SetFileName( fn.GetFullName() );   // Print only the short filename
     drawList.SetSheetName( aSheetDesc );
     drawList.SetProject( aProject );
     drawList.SetIsFirstPage( aIsFirstPage );
 
-    drawList.BuildWorkSheetGraphicList( aPageInfo, aTitleBlock );
+    drawList.BuildDrawItemsList( aPageInfo, aTitleBlock );
 
     // Draw item list
-    for( WS_DRAW_ITEM_BASE* item = drawList.GetFirst(); item; item = drawList.GetNext() )
+    for( DS_DRAW_ITEM_BASE* item = drawList.GetFirst(); item; item = drawList.GetNext() )
     {
         plotter->SetCurrentLineWidth( PLOTTER::USE_DEFAULT_LINE_WIDTH );
 
@@ -95,7 +95,7 @@ void PlotWorkSheet( PLOTTER* plotter, const PROJECT* aProject, const TITLE_BLOCK
         {
         case WSG_LINE_T:
             {
-                WS_DRAW_ITEM_LINE* line = (WS_DRAW_ITEM_LINE*) item;
+                DS_DRAW_ITEM_LINE* line = (DS_DRAW_ITEM_LINE*) item;
                 plotter->SetCurrentLineWidth( std::max( line->GetPenWidth(), defaultPenWidth ) );
                 plotter->MoveTo( line->GetStart() );
                 plotter->FinishTo( line->GetEnd() );
@@ -104,7 +104,7 @@ void PlotWorkSheet( PLOTTER* plotter, const PROJECT* aProject, const TITLE_BLOCK
 
         case WSG_RECT_T:
             {
-                WS_DRAW_ITEM_RECT* rect = (WS_DRAW_ITEM_RECT*) item;
+                DS_DRAW_ITEM_RECT* rect = (DS_DRAW_ITEM_RECT*) item;
                 int penWidth = std::max( rect->GetPenWidth(), defaultPenWidth );
                 plotter->Rect( rect->GetStart(), rect->GetEnd(), FILL_TYPE::NO_FILL, penWidth );
             }
@@ -112,7 +112,7 @@ void PlotWorkSheet( PLOTTER* plotter, const PROJECT* aProject, const TITLE_BLOCK
 
         case WSG_TEXT_T:
             {
-                WS_DRAW_ITEM_TEXT* text = (WS_DRAW_ITEM_TEXT*) item;
+                DS_DRAW_ITEM_TEXT* text = (DS_DRAW_ITEM_TEXT*) item;
                 int penWidth = std::max( text->GetEffectiveTextPenWidth(), defaultPenWidth );
                 plotter->Text( text->GetTextPos(), plotColor, text->GetShownText(),
                                text->GetTextAngle(), text->GetTextSize(), text->GetHorizJustify(),
@@ -123,7 +123,7 @@ void PlotWorkSheet( PLOTTER* plotter, const PROJECT* aProject, const TITLE_BLOCK
 
         case WSG_POLY_T:
             {
-                WS_DRAW_ITEM_POLYPOLYGONS* poly = (WS_DRAW_ITEM_POLYPOLYGONS*) item;
+                DS_DRAW_ITEM_POLYPOLYGONS* poly = (DS_DRAW_ITEM_POLYPOLYGONS*) item;
                 int penWidth = std::max( poly->GetPenWidth(), defaultPenWidth );
                 std::vector<wxPoint> points;
 
@@ -142,8 +142,8 @@ void PlotWorkSheet( PLOTTER* plotter, const PROJECT* aProject, const TITLE_BLOCK
 
         case WSG_BITMAP_T:
             {
-                WS_DRAW_ITEM_BITMAP* drawItem = (WS_DRAW_ITEM_BITMAP*) item;
-                auto*                bitmap = (WS_DATA_ITEM_BITMAP*) drawItem->GetPeer();
+                DS_DRAW_ITEM_BITMAP* drawItem = (DS_DRAW_ITEM_BITMAP*) item;
+                DS_DATA_ITEM_BITMAP* bitmap = (DS_DATA_ITEM_BITMAP*) drawItem->GetPeer();
 
                 if( bitmap->m_ImageBitmap == NULL )
                     break;
@@ -154,7 +154,7 @@ void PlotWorkSheet( PLOTTER* plotter, const PROJECT* aProject, const TITLE_BLOCK
             break;
 
         default:
-            wxFAIL_MSG( "PlotWorkSheet(): Unknown worksheet item." );
+            wxFAIL_MSG( "PlotDrawingSheet(): Unknown drawing sheet item." );
             break;
         }
     }

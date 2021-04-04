@@ -188,6 +188,13 @@ public:
 
 private:
     /**
+     * Set the configuration of m_additive, m_subtractive, m_exclusive_or,
+     * m_skip_heuristics and m_highlight_modifier
+     * from the state of modifier keys SHIFT, CTRL, ALT and depending on the OS
+     */
+    void setModifiersState( bool aShiftState, bool aCtrlState, bool aAltState );
+
+    /**
      * Select an item pointed by the parameter \a aWhere.
      *
      * If there is more than one item at that place, there is a menu displayed that allows
@@ -352,11 +359,12 @@ private:
 
     SELECTION_FILTER_OPTIONS m_filter;
 
-    bool m_additive;        // Items should be added to selection (instead of replacing)
-    bool m_subtractive;     // Items should be removed from selection
-    bool m_exclusive_or;    // Items' selection state should be toggled
-    bool m_multiple;        // Multiple selection mode is active
-    bool m_skip_heuristics; // Heuristics are not allowed when choosing item under cursor
+    bool m_additive;              // Items should be added to selection (instead of replacing)
+    bool m_subtractive;           // Items should be removed from selection
+    bool m_exclusive_or;          // Items' selection state should be toggled
+    bool m_multiple;              // Multiple selection mode is active
+    bool m_skip_heuristics;       // Heuristics are not allowed when choosing item under cursor
+    bool m_highlight_modifier;    // select highlight net on left click
 
     PCB_GROUP* m_enteredGroup;               // If non-null, selections are limited to
                                              // members of this group

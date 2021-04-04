@@ -26,8 +26,8 @@
 #include <drc/drc_rule.h>
 #include <drc/drc_test_provider.h>
 
-#include <page_layout/ws_draw_item.h>
-#include <page_layout/ws_proxy_view_item.h>
+#include <drawing_sheet/ds_draw_item.h>
+#include <drawing_sheet/ds_proxy_view_item.h>
 
 /*
     Miscellaneous tests:
@@ -57,7 +57,7 @@ public:
 
     virtual const wxString GetName() const override
     {
-        return "miscellanous";
+        return "miscellaneous";
     };
 
     virtual const wxString GetDescription() const override
@@ -176,27 +176,27 @@ void DRC_TEST_PROVIDER_MISC::testTextVars()
     forEachGeometryItem( { PCB_FP_TEXT_T, PCB_TEXT_T }, LSET::AllLayersMask(),
                          checkUnresolvedTextVar );
 
-    KIGFX::WS_PROXY_VIEW_ITEM* worksheet = m_drcEngine->GetWorksheet();
-    WS_DRAW_ITEM_LIST          wsItems;
+    DS_PROXY_VIEW_ITEM* drawingSheet = m_drcEngine->GetDrawingSheet();
+    DS_DRAW_ITEM_LIST   drawItems;
 
-    if( !worksheet || m_drcEngine->IsErrorLimitExceeded( DRCE_UNRESOLVED_VARIABLE ) )
+    if( !drawingSheet || m_drcEngine->IsErrorLimitExceeded( DRCE_UNRESOLVED_VARIABLE ) )
         return;
 
-    wsItems.SetMilsToIUfactor( IU_PER_MILS );
-    wsItems.SetPageNumber( "1" );
-    wsItems.SetSheetCount( 1 );
-    wsItems.SetFileName( "dummyFilename" );
-    wsItems.SetSheetName( "dummySheet" );
-    wsItems.SetSheetLayer( "dummyLayer" );
-    wsItems.SetProject( m_board->GetProject() );
-    wsItems.BuildWorkSheetGraphicList( worksheet->GetPageInfo(), worksheet->GetTitleBlock() );
+    drawItems.SetMilsToIUfactor( IU_PER_MILS );
+    drawItems.SetPageNumber( "1" );
+    drawItems.SetSheetCount( 1 );
+    drawItems.SetFileName( "dummyFilename" );
+    drawItems.SetSheetName( "dummySheet" );
+    drawItems.SetSheetLayer( "dummyLayer" );
+    drawItems.SetProject( m_board->GetProject() );
+    drawItems.BuildDrawItemsList( drawingSheet->GetPageInfo(), drawingSheet->GetTitleBlock() );
 
-    for( WS_DRAW_ITEM_BASE* item = wsItems.GetFirst(); item; item = wsItems.GetNext() )
+    for( DS_DRAW_ITEM_BASE* item = drawItems.GetFirst(); item; item = drawItems.GetNext() )
     {
         if( m_drcEngine->IsErrorLimitExceeded( DRCE_UNRESOLVED_VARIABLE ) )
             break;
 
-        WS_DRAW_ITEM_TEXT* text = dynamic_cast<WS_DRAW_ITEM_TEXT*>( item );
+        DS_DRAW_ITEM_TEXT* text = dynamic_cast<DS_DRAW_ITEM_TEXT*>( item );
 
         if( text && text->GetShownText().Matches( wxT( "*${*}*" ) ) )
         {
@@ -213,20 +213,29 @@ bool DRC_TEST_PROVIDER_MISC::Run()
 {
     m_board = m_drcEngine->GetBoard();
 
-    if( !reportPhase( _( "Checking board outline..." ) ) )
-        return false;
+    if( !m_drcEngine->IsErrorLimitExceeded( DRCE_INVALID_OUTLINE ) )
+    {
+        if( !reportPhase( _( "Checking board outline..." ) ) )
+            return false;   // DRC cancelled
 
-    testOutline();
+        testOutline();
+    }
 
-    if( !reportPhase( _( "Checking disabled layers..." ) ) )
-        return false;
+    if( !m_drcEngine->IsErrorLimitExceeded( DRCE_DISABLED_LAYER_ITEM ) )
+    {
+        if( !reportPhase( _( "Checking disabled layers..." ) ) )
+            return false;   // DRC cancelled
 
-    testDisabledLayers();
+        testDisabledLayers();
+    }
 
-    if( !reportPhase( _( "Checking text variables..." ) ) )
-        return false;
+    if( !m_drcEngine->IsErrorLimitExceeded( DRCE_UNRESOLVED_VARIABLE ) )
+    {
+        if( !reportPhase( _( "Checking text variables..." ) ) )
+            return false;   // DRC cancelled
 
-    testTextVars();
+        testTextVars();
+    }
 
     return true;
 }

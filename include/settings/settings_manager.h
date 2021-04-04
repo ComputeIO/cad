@@ -21,7 +21,8 @@
 #ifndef _SETTINGS_MANAGER_H
 #define _SETTINGS_MANAGER_H
 
-#include <common.h> // for wxString hash
+#include <typeinfo>
+#include <core/wx_stl_compat.h> // for wxString hash
 #include <settings/color_settings.h>
 
 class COLOR_SETTINGS;
@@ -30,6 +31,7 @@ class KIWAY;
 class PROJECT;
 class PROJECT_FILE;
 class REPORTER;
+class wxSingleInstanceChecker;
 
 
 class SETTINGS_MANAGER
@@ -85,7 +87,14 @@ public:
     template<typename AppSettings>
     AppSettings* GetAppSettings( bool aLoadNow = true )
     {
-        AppSettings* ret = nullptr;
+        AppSettings* ret      = nullptr;
+        size_t       typeHash = typeid( AppSettings ).hash_code();
+
+         if( m_app_settings_cache.count( typeHash ) )
+            ret = dynamic_cast<AppSettings*>( m_app_settings_cache.at( typeHash ) );
+
+        if( ret )
+            return ret;
 
         auto it = std::find_if( m_settings.begin(), m_settings.end(),
                                 []( const std::unique_ptr<JSON_SETTINGS>& aSettings )
@@ -109,6 +118,8 @@ public:
             }
 
         }
+
+        m_app_settings_cache[typeHash] = ret;
 
         return ret;
     }
@@ -392,6 +403,9 @@ private:
 
     std::unordered_map<wxString, COLOR_SETTINGS*> m_color_settings;
 
+    /// Cache for app settings
+    std::unordered_map<size_t, JSON_SETTINGS*> m_app_settings_cache;
+
     // Convenience shortcut
     COMMON_SETTINGS* m_common_settings;
 
@@ -411,6 +425,9 @@ private:
 
     /// Loaded project files, mapped according to project full name
     std::map<wxString, PROJECT_FILE*> m_project_files;
+
+    /// Lock for loaded project (expand to multiple once we support MDI)
+    std::unique_ptr<wxSingleInstanceChecker> m_project_lock;
 
     static wxString backupDateTimeFormat;
 };

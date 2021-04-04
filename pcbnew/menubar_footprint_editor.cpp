@@ -26,12 +26,12 @@
 
 #include "footprint_edit_frame.h"
 #include "pcbnew_id.h"
+#include <bitmaps.h>
 #include <menus_helpers.h>
 #include <tool/actions.h>
 #include <tool/action_menu.h>
 #include <tool/tool_manager.h>
 #include <tools/pcb_actions.h>
-#include <board.h>
 #include <tools/pcb_selection_tool.h>
 #include <widgets/wx_menubar.h>
 
@@ -64,28 +64,24 @@ void FOOTPRINT_EDIT_FRAME::ReCreateMenuBar()
 
     fileMenu->AppendSeparator();
 
-    ACTION_MENU* submenuImport = new ACTION_MENU( false );
-    submenuImport->SetTool( selTool );
+    ACTION_MENU* submenuImport = new ACTION_MENU( false, selTool );
     submenuImport->SetTitle( _( "Import" ) );
-    submenuImport->SetIcon( import_xpm );
+    submenuImport->SetIcon( BITMAPS::import );
 
-    submenuImport->Add( PCB_ACTIONS::importFootprint );
-    submenuImport->Add( _( "&Import Graphics..." ),
-                        _( "Import 2D Drawing file to Footprint Editor on Drawings layer" ),
-                        ID_GEN_IMPORT_GRAPHICS_FILE,
-                        import_vector_xpm );
+    submenuImport->Add( PCB_ACTIONS::importFootprint,        ACTION_MENU::NORMAL, _( "Footprint..." ) );
+    submenuImport->Add( PCB_ACTIONS::placeImportedGraphics,  ACTION_MENU::NORMAL, _( "Graphics..." ) );
 
     fileMenu->Add( submenuImport );
 
     ACTION_MENU* submenuExport = new ACTION_MENU( false, selTool );
     submenuExport->SetTitle( _( "Export" ) );
-    submenuExport->SetIcon( export_xpm );
+    submenuExport->SetIcon( BITMAPS::export_file );
 
-    submenuExport->Add( PCB_ACTIONS::exportFootprint );
-    submenuExport->Add( _( "Export View as &PNG..." ),
+    submenuExport->Add( PCB_ACTIONS::exportFootprint, ACTION_MENU::NORMAL, _( "Footprint..." ) );
+    submenuExport->Add( _( "View as &PNG..." ),
                         _( "Create a PNG file from the current view" ),
                         ID_FPEDIT_SAVE_PNG,
-                        export_png_xpm );
+                        BITMAPS::export_png );
 
     fileMenu->Add( submenuExport );
 
@@ -143,7 +139,7 @@ void FOOTPRINT_EDIT_FRAME::ReCreateMenuBar()
     // Units submenu
     ACTION_MENU* unitsSubMenu = new ACTION_MENU( false, selTool );
     unitsSubMenu->SetTitle( _( "&Units" ) );
-    unitsSubMenu->SetIcon( unit_mm_xpm );
+    unitsSubMenu->SetIcon( BITMAPS::unit_mm );
     unitsSubMenu->Add( ACTIONS::inchesUnits,                ACTION_MENU::CHECK );
     unitsSubMenu->Add( ACTIONS::milsUnits,                  ACTION_MENU::CHECK );
     unitsSubMenu->Add( ACTIONS::millimetersUnits,           ACTION_MENU::CHECK );
@@ -155,7 +151,7 @@ void FOOTPRINT_EDIT_FRAME::ReCreateMenuBar()
     // Drawing Mode Submenu
     ACTION_MENU* drawingModeSubMenu = new ACTION_MENU( false, selTool );
     drawingModeSubMenu->SetTitle( _( "&Drawing Mode" ) );
-    drawingModeSubMenu->SetIcon( add_zone_xpm );
+    drawingModeSubMenu->SetIcon( BITMAPS::add_zone );
 
     drawingModeSubMenu->Add( PCB_ACTIONS::padDisplayMode,   ACTION_MENU::CHECK );
     drawingModeSubMenu->Add( PCB_ACTIONS::graphicsOutlines, ACTION_MENU::CHECK );
@@ -165,7 +161,7 @@ void FOOTPRINT_EDIT_FRAME::ReCreateMenuBar()
     // Contrast Mode Submenu
     ACTION_MENU* contrastModeSubMenu = new ACTION_MENU( false, selTool );
     contrastModeSubMenu->SetTitle( _( "&Contrast Mode" ) );
-    contrastModeSubMenu->SetIcon( contrast_mode_xpm );
+    contrastModeSubMenu->SetIcon( BITMAPS::contrast_mode );
 
     contrastModeSubMenu->Add( ACTIONS::highContrastMode,    ACTION_MENU::CHECK );
     contrastModeSubMenu->Add( PCB_ACTIONS::layerAlphaDec );
@@ -175,7 +171,7 @@ void FOOTPRINT_EDIT_FRAME::ReCreateMenuBar()
     viewMenu->Add( PCB_ACTIONS::flipBoard, ACTION_MENU::CHECK );
 
     viewMenu->AppendSeparator();
-    viewMenu->Add( PCB_ACTIONS::toggleFootprintTree,        ACTION_MENU::CHECK );
+    viewMenu->Add( PCB_ACTIONS::showFootprintTree,          ACTION_MENU::CHECK );
 
 
     //-- Place menu -------------------------------------------------------
@@ -215,12 +211,12 @@ void FOOTPRINT_EDIT_FRAME::ReCreateMenuBar()
     toolsMenu->Add( _( "&Load Footprint from PCB..." ),
                     _( "Load a footprint from the current board into the editor" ),
                     ID_LOAD_FOOTPRINT_FROM_BOARD,
-                    load_module_board_xpm );
+                    BITMAPS::load_module_board );
 
     toolsMenu->Add( _( "&Insert Footprint on PCB" ),
                     _( "Insert footprint onto current board" ),
                     ID_ADD_FOOTPRINT_TO_BOARD,
-                    insert_module_board_xpm );
+                    BITMAPS::insert_module_board );
 
 
     //-- Preferences menu -------------------------------------------------
@@ -232,16 +228,10 @@ void FOOTPRINT_EDIT_FRAME::ReCreateMenuBar()
     prefsMenu->Add( _( "Preferences..." ) + "\tCtrl+,",
                     _( "Show preferences for all open tools" ),
                     wxID_PREFERENCES,
-                    preference_xpm );
+                    BITMAPS::preference );
 
     prefsMenu->AppendSeparator();
     AddMenuLanguageList( prefsMenu, selTool );
-
-#ifndef __WXMAC__
-    prefsMenu->AppendSeparator();
-    prefsMenu->Add( ACTIONS::acceleratedGraphics,   ACTION_MENU::CHECK );
-    prefsMenu->Add( ACTIONS::standardGraphics,      ACTION_MENU::CHECK );
-#endif
 
     //--MenuBar -----------------------------------------------------------
     //

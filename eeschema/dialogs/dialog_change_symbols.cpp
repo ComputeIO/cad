@@ -1,7 +1,7 @@
 /*
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
- * Copyright (C) 2020 CERN
+ * Copyright (C) 2020-2021 CERN
  *
  * @author Wayne Stambaugh <stambaughw@gmail.com>
  *
@@ -28,7 +28,7 @@
 
 #include <core/kicad_algo.h>
 #include <dialog_change_symbols.h>
-#include <sch_component.h>
+#include <sch_symbol.h>
 #include <sch_edit_frame.h>
 #include <sch_screen.h>
 #include <sch_sheet_path.h>
@@ -39,13 +39,14 @@
 
 bool g_selectRefDes = false;
 bool g_selectValue  = false;
-// { change, update }
-bool g_removeExtraFields[2] = { false, false };
-bool g_resetEmptyFields[2] = { false, false };
-bool g_resetFieldVisibilities[2] = { true, false };
-bool g_resetFieldEffects[2] = { true, false };
-bool g_resetFieldPositions[2] = { true, false };
-bool g_resetAttributes[2] = { true, false };
+                                // { change, update }
+bool g_removeExtraFields[2]      = { false,  false  };
+bool g_resetEmptyFields[2]       = { false,  false  };
+bool g_resetFieldText[2]         = { true,   true   };
+bool g_resetFieldVisibilities[2] = { true,   false  };
+bool g_resetFieldEffects[2]      = { true,   false  };
+bool g_resetFieldPositions[2]    = { true,   false  };
+bool g_resetAttributes[2]        = { true,   false  };
 
 
 DIALOG_CHANGE_SYMBOLS::DIALOG_CHANGE_SYMBOLS( SCH_EDIT_FRAME* aParent, SCH_COMPONENT* aSymbol,
@@ -84,8 +85,8 @@ DIALOG_CHANGE_SYMBOLS::DIALOG_CHANGE_SYMBOLS( SCH_EDIT_FRAME* aParent, SCH_COMPO
         m_matchSizer->FindItem( m_matchBySelection )->Show( false );
     }
 
-    m_matchIdBrowserButton->SetBitmap( KiBitmap( small_library_xpm ) );
-    m_newIdBrowserButton->SetBitmap( KiBitmap( small_library_xpm ) );
+    m_matchIdBrowserButton->SetBitmap( KiBitmap( BITMAPS::small_library ) );
+    m_newIdBrowserButton->SetBitmap( KiBitmap( BITMAPS::small_library ) );
 
     if( m_mode == MODE::CHANGE )
     {
@@ -110,6 +111,7 @@ DIALOG_CHANGE_SYMBOLS::DIALOG_CHANGE_SYMBOLS( SCH_EDIT_FRAME* aParent, SCH_COMPO
     }
 
     m_messagePanel->SetLazyUpdate( true );
+    m_messagePanel->SetFileName( Prj().GetProjectPath() + wxT( "report.txt" ) );
 
     if( aSymbol && aSymbol->IsSelected() )
     {
@@ -130,17 +132,20 @@ DIALOG_CHANGE_SYMBOLS::DIALOG_CHANGE_SYMBOLS( SCH_EDIT_FRAME* aParent, SCH_COMPO
         m_updateFieldsSizer->GetStaticBox()->SetLabel( _( "Update Fields" ) );
         m_removeExtraBox->SetLabel( _( "Remove fields if not in new symbol" ) );
         m_resetEmptyFields->SetLabel( _( "Reset fields if empty in new symbol" ) );
+        m_resetFieldText->SetLabel( _( "Update field text" ) );
         m_resetFieldVisibilities->SetLabel( _( "Update field visibilities" ) );
         m_resetFieldEffects->SetLabel( _( "Update field sizes and styles" ) );
         m_resetFieldPositions->SetLabel( _( "Update field positions" ) );
+        m_resetAttributes->SetLabel( _( "Update symbol attributes" ) );
     }
 
-    m_removeExtraBox->SetValue( g_removeExtraFields[(int) m_mode] );
-    m_resetEmptyFields->SetValue( g_resetEmptyFields[(int) m_mode] );
-    m_resetFieldVisibilities->SetValue( g_resetFieldVisibilities[(int) m_mode] );
-    m_resetFieldEffects->SetValue( g_resetFieldEffects[(int) m_mode] );
-    m_resetFieldPositions->SetValue( g_resetFieldPositions[(int) m_mode] );
-    m_resetAttributes->SetValue( g_resetAttributes[(int) m_mode] );
+    m_removeExtraBox->SetValue( g_removeExtraFields[ (int) m_mode ] );
+    m_resetEmptyFields->SetValue( g_resetEmptyFields[ (int) m_mode ] );
+    m_resetFieldText->SetValue( g_resetFieldText[ (int) m_mode ] );
+    m_resetFieldVisibilities->SetValue( g_resetFieldVisibilities[ (int) m_mode ] );
+    m_resetFieldEffects->SetValue( g_resetFieldEffects[ (int) m_mode ] );
+    m_resetFieldPositions->SetValue( g_resetFieldPositions[ (int) m_mode ] );
+    m_resetAttributes->SetValue( g_resetAttributes[ (int) m_mode ] );
 
     // DIALOG_SHIM needs a unique hash_key because classname is not sufficient
     // because the update and change versions of this dialog have different controls.
@@ -206,12 +211,13 @@ DIALOG_CHANGE_SYMBOLS::~DIALOG_CHANGE_SYMBOLS()
     g_selectRefDes = m_fieldsBox->IsChecked( REFERENCE_FIELD );
     g_selectValue = m_fieldsBox->IsChecked( VALUE_FIELD );
 
-    g_removeExtraFields[(int) m_mode] = m_removeExtraBox->GetValue();
-    g_resetEmptyFields[(int) m_mode] = m_resetEmptyFields->GetValue();
-    g_resetFieldVisibilities[(int) m_mode] = m_resetFieldVisibilities->GetValue();
-    g_resetFieldEffects[(int) m_mode] = m_resetFieldEffects->GetValue();
-    g_resetFieldPositions[(int) m_mode] = m_resetFieldPositions->GetValue();
-    g_resetAttributes[(int) m_mode] = m_resetAttributes->GetValue();
+    g_removeExtraFields[ (int) m_mode ] = m_removeExtraBox->GetValue();
+    g_resetEmptyFields[ (int) m_mode ] = m_resetEmptyFields->GetValue();
+    g_resetFieldText[ (int) m_mode ] = m_resetFieldText->GetValue();
+    g_resetFieldVisibilities[ (int) m_mode ] = m_resetFieldVisibilities->GetValue();
+    g_resetFieldEffects[ (int) m_mode ] = m_resetFieldEffects->GetValue();
+    g_resetFieldPositions[ (int) m_mode ] = m_resetFieldPositions->GetValue();
+    g_resetAttributes[ (int) m_mode ] = m_resetAttributes->GetValue();
 }
 
 
@@ -281,16 +287,21 @@ void DIALOG_CHANGE_SYMBOLS::updateFieldsList()
             for( unsigned i = MANDATORY_FIELDS; i < fields.size(); ++i )
                 fieldNames.insert( fields[i]->GetName() );
 
-            if( m_mode == MODE::UPDATE && symbol->GetPartRef() )
+            if( m_mode == MODE::UPDATE && symbol->GetLibId().IsValid() )
             {
-                std::unique_ptr<LIB_PART> flattenedPart = symbol->GetPartRef()->Flatten();
+                LIB_PART* libSymbol = frame->GetLibPart( symbol->GetLibId() );
 
-                flattenedPart->GetFields( libFields );
+                if( libSymbol )
+                {
+                    std::unique_ptr<LIB_PART> flattenedPart = libSymbol->Flatten();
 
-                for( unsigned i = MANDATORY_FIELDS; i < libFields.size(); ++i )
-                    fieldNames.insert( libFields[i]->GetName() );
+                    flattenedPart->GetFields( libFields );
 
-                libFields.clear();  // flattenedPart is about to go out of scope...
+                    for( unsigned i = MANDATORY_FIELDS; i < libFields.size(); ++i )
+                        fieldNames.insert( libFields[i]->GetName() );
+
+                    libFields.clear();  // flattenedPart is about to go out of scope...
+                }
             }
         }
     }
@@ -556,27 +567,29 @@ bool DIALOG_CHANGE_SYMBOLS::processSymbol( SCH_COMPONENT* aSymbol, const SCH_SHE
     }
 
     bool removeExtras = m_removeExtraBox->GetValue();
-    bool resetEmpty = m_resetEmptyFields->GetValue();
     bool resetVis = m_resetFieldVisibilities->GetValue();
     bool resetEffects = m_resetFieldEffects->GetValue();
     bool resetPositions = m_resetFieldPositions->GetValue();
 
     for( unsigned i = 0; i < aSymbol->GetFields().size(); ++i )
     {
-        SCH_FIELD* field = aSymbol->GetField( (int) i ) ;
+        SCH_FIELD& field = aSymbol->GetFields()[i];
         LIB_FIELD* libField = nullptr;
 
-        if( !alg::contains( m_updateFields, field->GetName() ) )
+        if( !alg::contains( m_updateFields, field.GetName() ) )
             continue;
 
         if( i < MANDATORY_FIELDS )
-            libField = libSymbol->GetField( (int) i );
+            libField = libSymbol->GetFieldById( (int) i );
         else
-            libField = libSymbol->FindField( field->GetName() );
+            libField = libSymbol->FindField( field.GetName() );
 
         if( libField )
         {
-            if( !libField->GetText().IsEmpty() || resetEmpty )
+            bool resetText = libField->GetText().IsEmpty() ? m_resetEmptyFields->GetValue()
+                                                           : m_resetFieldText->GetValue();
+
+            if( resetText )
             {
                 if( i == REFERENCE_FIELD )
                     aSymbol->SetRef( aInstance, libField->GetText() );
@@ -585,26 +598,30 @@ bool DIALOG_CHANGE_SYMBOLS::processSymbol( SCH_COMPONENT* aSymbol, const SCH_SHE
                 else if( i == FOOTPRINT_FIELD )
                     aSymbol->SetFootprint( aInstance, libField->GetText() );
                 else
-                    field->SetText( libField->GetText() );
+                    field.SetText( libField->GetText() );
             }
 
             if( resetVis )
-                field->SetVisible( libField->IsVisible() );
+                field.SetVisible( libField->IsVisible() );
 
             if( resetEffects )
             {
-                // Careful: the visible bit is also in Effects
-                bool visible = field->IsVisible();
-                field->SetEffects( *libField );
-                field->SetVisible( visible );
+                // Careful: the visible bit and position are also in Effects
+                bool    visible = field.IsVisible();
+                wxPoint pos = field.GetPosition();
+
+                field.SetEffects( *libField );
+
+                field.SetVisible( visible );
+                field.SetPosition( pos );
             }
 
             if( resetPositions )
-                field->SetTextPos( aSymbol->GetPosition() + libField->GetTextPos() );
+                field.SetTextPos( aSymbol->GetPosition() + libField->GetTextPos() );
         }
         else if( i >= MANDATORY_FIELDS && removeExtras )
         {
-            aSymbol->RemoveField( field->GetName() );
+            aSymbol->RemoveField( field.GetName() );
             i--;
         }
     }
@@ -631,6 +648,7 @@ bool DIALOG_CHANGE_SYMBOLS::processSymbol( SCH_COMPONENT* aSymbol, const SCH_SHE
         }
     }
 
+    aSymbol->SetSchSymbolLibraryName( wxEmptyString );
     screen->Append( aSymbol );
     frame->GetCanvas()->GetView()->Update( aSymbol );
 

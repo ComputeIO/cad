@@ -945,10 +945,20 @@ bool PS_PLOTTER::EndPlot()
 }
 
 
-void PS_PLOTTER::Text( const wxPoint& aPos, const COLOR4D aColor, const wxString& aText,
-                       double aOrient, const wxSize& aSize, enum EDA_TEXT_HJUSTIFY_T aH_justify,
-                       enum EDA_TEXT_VJUSTIFY_T aV_justify, int aWidth, bool aItalic, bool aBold,
-                       bool aMultilineAllowed, void* aData, FONT* aFont )
+
+void PS_PLOTTER::Text( const wxPoint&              aPos,
+                       const COLOR4D               aColor,
+                       const wxString&             aText,
+                       double                      aOrient,
+                       const wxSize&               aSize,
+                       enum EDA_TEXT_HJUSTIFY_T    aH_justify,
+                       enum EDA_TEXT_VJUSTIFY_T    aV_justify,
+                       int                         aWidth,
+                       bool                        aItalic,
+                       bool                        aBold,
+                       bool                        aMultilineAllowed,
+                       KIFONT::FONT*               aFont,
+                       void*                       aData )
 {
     SetCurrentLineWidth( aWidth );
     SetColor( aColor );
@@ -961,8 +971,8 @@ void PS_PLOTTER::Text( const wxPoint& aPos, const COLOR4D aColor, const wxString
         fprintf( m_outputFile, "%s %g %g phantomshow\n", ps_test.c_str(), pos_dev.x, pos_dev.y );
     }
 
-    PLOTTER::Text( aPos, aColor, aText, aOrient, aSize, aH_justify, aV_justify, aWidth, aItalic,
-                   aBold, aMultilineAllowed, NULL, aFont );
+    PLOTTER::Text( aPos, aColor, aText, aOrient, aSize, aH_justify, aV_justify, aWidth,
+                   aItalic, aBold, aMultilineAllowed, aFont, aData );
 }
 
 

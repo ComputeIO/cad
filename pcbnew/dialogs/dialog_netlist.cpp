@@ -66,7 +66,7 @@ DIALOG_NETLIST::DIALOG_NETLIST( PCB_EDIT_FRAME* aParent, wxString& aNetlistFullF
       m_runDragCommand( false )
 {
     m_NetlistFilenameCtrl->SetValue( m_netlistPath );
-    m_browseButton->SetBitmap( KiBitmap( small_folder_xpm ) );
+    m_browseButton->SetBitmap( KiBitmap( BITMAPS::small_folder ) );
 
     auto cfg = m_parent->GetPcbNewSettings();
 
@@ -80,11 +80,11 @@ DIALOG_NETLIST::DIALOG_NETLIST( PCB_EDIT_FRAME* aParent, wxString& aNetlistFullF
 
     m_MessageWindow->SetLabel( _("Changes To Be Applied") );
     m_MessageWindow->SetVisibleSeverities( cfg->m_NetlistDialog.report_filter );
+    m_MessageWindow->SetFileName( Prj().GetProjectPath() + wxT( "report.txt" ) );
 
     // We use a sdbSizer to get platform-dependent ordering of the action buttons, but
     // that requires us to correct the button labels here.
     m_sdbSizer1OK->SetLabel( _( "Update PCB" ) );
-    m_sdbSizer1Apply->SetLabel( _( "Rebuild Ratsnest" ) );
     m_sdbSizer1Cancel->SetLabel( _( "Close" ) );
     m_buttonsSizer->Layout();
 
@@ -205,14 +205,6 @@ void DIALOG_NETLIST::OnOptionChanged( wxCommandEvent& event )
 {
     if( m_initialized )
         loadNetlist( true );
-}
-
-
-void DIALOG_NETLIST::OnCompileRatsnestClick( wxCommandEvent& event )
-{
-    // Rebuild the board connectivity:
-    auto board = m_parent->GetBoard();
-	board->GetConnectivity()->RecalculateRatsnest();
 }
 
 

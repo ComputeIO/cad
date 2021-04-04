@@ -25,6 +25,7 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
 
+#include <convert_to_biu.h>
 #include <io_mgr.h>
 #include <layers_id_colors_and_visibility.h>
 #include <plugins/eagle/eagle_parser.h>
@@ -130,6 +131,7 @@ public:
                              bool aBestEfforts, const PROPERTIES* aProperties = nullptr ) override;
 
     FOOTPRINT* FootprintLoad( const wxString& aLibraryPath, const wxString& aFootprintName,
+                              bool  aKeepUUID = false,
                               const PROPERTIES* aProperties = nullptr ) override;
 
     long long GetLibraryTimestamp( const wxString& aLibraryPath ) const override

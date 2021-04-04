@@ -28,6 +28,7 @@
 #include <pcb_painter.h>
 #include <pcb_view.h>
 #include <pcbnew_settings.h>
+#include <ratsnest/ratsnest_view_item.h>
 #include <widgets/paged_dialog.h>
 #include <footprint_edit_frame.h>
 
@@ -37,7 +38,6 @@ PANEL_EDIT_OPTIONS::PANEL_EDIT_OPTIONS( PCB_BASE_EDIT_FRAME* aFrame, PAGED_DIALO
     m_magneticPads->Show( dynamic_cast<FOOTPRINT_EDIT_FRAME*>( m_frame ) != nullptr );
     m_magneticGraphics->Show( dynamic_cast<FOOTPRINT_EDIT_FRAME*>( m_frame ) != nullptr );
     m_flipLeftRight->Show( dynamic_cast<PCB_EDIT_FRAME*>( m_frame ) != nullptr );
-    m_autoLockPads->Show( dynamic_cast<PCB_EDIT_FRAME*>( m_frame ) != nullptr );
 
 #ifdef __WXOSX_MAC__
     m_mouseCmdsOSX->Show( true );
@@ -72,9 +72,6 @@ bool PANEL_EDIT_OPTIONS::TransferDataToWindow()
         m_magneticTrackChoice->SetSelection( static_cast<int>( general_opts.m_MagneticItems.tracks ) );
         m_magneticGraphicsChoice->SetSelection( !general_opts.m_MagneticItems.graphics );
         m_flipLeftRight->SetValue( general_opts.m_FlipLeftRight );
-        m_autoLockPads->SetValue( !general_opts.m_AddUnlockedPads );
-
-        m_Show_Page_Limits->SetValue( m_frame->ShowPageLimits() );
 
         switch( general_opts.m_TrackDragAction )
         {
@@ -82,6 +79,10 @@ bool PANEL_EDIT_OPTIONS::TransferDataToWindow()
         case TRACK_DRAG_ACTION::DRAG:            m_rbTrackDrag45->SetValue( true );   break;
         case TRACK_DRAG_ACTION::DRAG_FREE_ANGLE: m_rbTrackDragFree->SetValue( true ); break;
         }
+
+        m_Show_Page_Limits->SetValue( m_frame->ShowPageLimits() );
+        m_Auto_Refill_Zones->SetValue( general_opts.m_AutoRefillZones );
+        m_Allow_Free_Pads->SetValue( general_opts.m_AllowFreePads );
     }
     else if( dynamic_cast<FOOTPRINT_EDIT_FRAME*>( m_frame ) )
     {
@@ -117,7 +118,8 @@ bool PANEL_EDIT_OPTIONS::TransferDataFromWindow()
 
         m_frame->Settings().m_FlipLeftRight = m_flipLeftRight->GetValue();
         m_frame->SetShowPageLimits( m_Show_Page_Limits->GetValue() );
-        m_frame->Settings().m_AddUnlockedPads = !m_autoLockPads->GetValue();
+        m_frame->Settings().m_AutoRefillZones = m_Auto_Refill_Zones->GetValue();
+        m_frame->Settings().m_AllowFreePads = m_Allow_Free_Pads->GetValue();
 
         if( m_rbTrackDragMove->GetValue() )
             pcbnewSettings.m_TrackDragAction = TRACK_DRAG_ACTION::MOVE;
@@ -140,9 +142,14 @@ bool PANEL_EDIT_OPTIONS::TransferDataFromWindow()
     KIGFX::PCB_PAINTER*         painter = static_cast<KIGFX::PCB_PAINTER*>( view->GetPainter() );
     KIGFX::PCB_RENDER_SETTINGS* settings = painter->GetSettings();
 
-    m_frame->SetDisplayOptions( displ_opts );
+    m_frame->SetDisplayOptions( displ_opts, false );
     settings->LoadDisplayOptions( displ_opts, m_frame->ShowPageLimits() );
-    view->RecacheAllItems();
+
+    view->UpdateAllItemsConditionally( KIGFX::REPAINT,
+                                       []( KIGFX::VIEW_ITEM* aItem ) -> bool
+                                       {
+                                           return dynamic_cast<RATSNEST_VIEW_ITEM*>( aItem );
+                                       } );
     view->MarkTargetDirty( KIGFX::TARGET_NONCACHED );
 
     m_frame->GetCanvas()->Refresh();

@@ -19,21 +19,10 @@
  * with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <core/optional.h>
-
 #include "class_draw_panel_gal.h"
-#include "board.h"
-
-#include <pcb_edit_frame.h>
-#include <pcbnew_id.h>
-#include <view/view_controls.h>
-#include <pcb_painter.h>
-#include <dialogs/dialog_pns_settings.h>
 #include <dialogs/dialog_pns_length_tuning_settings.h>
-#include <tool/action_menu.h>
 #include <tool/tool_manager.h>
 #include <tools/pcb_actions.h>
-#include "pns_segment.h"
 #include "pns_router.h"
 #include "pns_meander_placer.h" // fixme: move settings to separate header
 #include "pns_tune_status_popup.h"
@@ -66,31 +55,31 @@ static TOOL_ACTION ACT_Settings( "pcbnew.LengthTuner.Settings",
         // Don't be tempted to remove "Modern Toolset only".  It's in the legacy property name.
         MD_CTRL + 'L', LEGACY_HK_NAME( "Length Tuning Settings (Modern Toolset only)" ),
         _( "Length Tuning Settings..." ), _( "Sets the length tuning parameters for currently routed item." ),
-        router_len_tuner_setup_xpm );
+        BITMAPS::router_len_tuner_setup );
 
 static TOOL_ACTION ACT_SpacingIncrease( "pcbnew.LengthTuner.SpacingIncrease",
         AS_CONTEXT,
         '1', LEGACY_HK_NAME( "Increase meander spacing by one step." ),
         _( "Increase Spacing" ), _( "Increase meander spacing by one step." ),
-        router_len_tuner_dist_incr_xpm );
+        BITMAPS::router_len_tuner_dist_incr );
 
 static TOOL_ACTION ACT_SpacingDecrease( "pcbnew.LengthTuner.SpacingDecrease",
         AS_CONTEXT,
         '2', LEGACY_HK_NAME( "Decrease meander spacing by one step." ),
         _( "Decrease Spacing" ), _( "Decrease meander spacing by one step." ),
-        router_len_tuner_dist_decr_xpm );
+        BITMAPS::router_len_tuner_dist_decr );
 
 static TOOL_ACTION ACT_AmplIncrease( "pcbnew.LengthTuner.AmplIncrease",
         AS_CONTEXT,
         '3', LEGACY_HK_NAME( "Increase meander amplitude by one step." ),
         _( "Increase Amplitude" ), _( "Increase meander amplitude by one step." ),
-        router_len_tuner_amplitude_incr_xpm );
+        BITMAPS::router_len_tuner_amplitude_incr );
 
 static TOOL_ACTION ACT_AmplDecrease( "pcbnew.LengthTuner.AmplDecrease",
         AS_CONTEXT,
         '4', LEGACY_HK_NAME( "Decrease meander amplitude by one step." ),
         _( "Decrease Amplitude" ), _( "Decrease meander amplitude by one step." ),
-        router_len_tuner_amplitude_decr_xpm );
+        BITMAPS::router_len_tuner_amplitude_decr );
 
 #undef _
 #define _(s) wxGetTranslation((s))
@@ -112,7 +101,7 @@ bool LENGTH_TUNER_TOOL::Init()
     auto& menu = m_menu.GetMenu();
 
     menu.SetTitle( _( "Length Tuner" ) );
-    menu.SetIcon( router_len_tuner_xpm );
+    menu.SetIcon( BITMAPS::router_len_tuner );
     menu.DisplayTitle( true );
 
     menu.AddItem( ACTIONS::cancelInteractive, SELECTION_CONDITIONS::ShowAlways );

@@ -26,10 +26,11 @@
 #include <wx/stdpaths.h>
 
 #include <common.h>
+#include <kiplatform/environment.h>
 #include <search_stack.h>
 #include <pgm_base.h>
 #include <config.h>     // to define DEFAULT_INSTALL_PATH
-
+#include <paths.h>
 
 // put your best guesses in here, send the computer on a wild goose chase, its
 // got nothing else to do.
@@ -53,24 +54,30 @@ void SystemDirsAppend( SEARCH_STACK* aSearchStack )
 
 #ifdef __WXMAC__
     // Add the directory for the user-dependent, program specific data files.
-    maybe.AddPaths( GetOSXKicadUserDataDir() );
+    maybe.AddPaths( PATHS::GetOSXKicadUserDataDir() );
 
     // Global machine specific application data
-    maybe.AddPaths( GetOSXKicadMachineDataDir() );
+    maybe.AddPaths( PATHS::GetOSXKicadMachineDataDir() );
 
     // Global application specific data files inside bundle
-    maybe.AddPaths( GetOSXKicadDataDir() );
+    maybe.AddPaths( PATHS::GetOSXKicadDataDir() );
 #else
     // This is from CMAKE_INSTALL_PREFIX.
     // Useful when KiCad is installed by `make install`.
     // Use as second ranked place.
     maybe.AddPaths( wxT( DEFAULT_INSTALL_PATH ) );
 
+#ifdef __WXGTK__
+    // On Linux, the stock data install path is defined by KICAD_DATA.
+    // Useful when multiple versions of KiCad are installed in parallel.
+    maybe.AddPaths( PATHS::GetStockDataPath( false ) );
+#endif
+
     // Add the directory for the user-dependent, program specific data files.
     // According to wxWidgets documentation:
     // Unix: ~/.appname
     // Windows: C:\Documents and Settings\username\Application Data\appname
-    maybe.AddPaths( wxStandardPaths::Get().GetUserDataDir() );
+    maybe.AddPaths( KIPLATFORM::ENV::GetDocumentsPath() );
 
     {
         // Should be full path to this program executable.

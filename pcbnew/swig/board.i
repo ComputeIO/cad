@@ -69,12 +69,32 @@ HANDLE_EXCEPTIONS(BOARD::TracksInNetBetweenPoints)
 // Do not permit default BOARD ctor since it won't initialize the project
 %ignore BOARD::BOARD();
 
+// Do not wrap internal-only structures
+%ignore BOARD::m_CachesMutex;
+%ignore BOARD::m_InsideCourtyardCache;
+%ignore BOARD::m_InsideAreaCache;
+%ignore BOARD::m_CopperZoneRTrees;
+
 %include board.h
 %{
 #include <board.h>
 %}
 
 %extend std::deque<BOARD_ITEM *>
+{
+    %pythoncode
+    %{
+        def __iter__(self):
+            it = self.iterator()
+            try:
+                while True:
+                    item = it.next()  # throws StopIteration when iterator reached the end.
+                    yield item.Cast()
+            except StopIteration:
+                return
+    %}
+}
+%extend std::deque<TRACK *>
 {
     %pythoncode
     %{

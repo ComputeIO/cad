@@ -46,12 +46,14 @@ COMMON_SETTINGS::COMMON_SETTINGS() :
         m_Input(),
         m_Graphics(),
         m_Session(),
-        m_System()
+        m_System(),
+        m_NetclassPanel()
 {
     // This only effect the first time KiCad is run.  The user's setting will be used for all
     // subsequent runs.
     // Menu icons are off by default on OSX and on for all other platforms.
-    // Use automatic canvas scaling on OSX, but not on the other platforms (their detection isn't as good).
+    // Use automatic canvas scaling on OSX, but not on the other platforms (their detection
+    // isn't as good).
 #if defined( __WXMAC__ )
     bool   defaultUseIconsInMenus = false;
     double canvasScale = 0.0;
@@ -65,6 +67,9 @@ COMMON_SETTINGS::COMMON_SETTINGS() :
 
     m_params.emplace_back( new PARAM<int>( "appearance.icon_scale",
             &m_Appearance.icon_scale, 0 ) );
+
+    m_params.emplace_back( new PARAM_ENUM<ICON_THEME>( "appearance.icon_theme",
+            &m_Appearance.icon_theme, ICON_THEME::AUTO, ICON_THEME::LIGHT, ICON_THEME::AUTO ) );
 
     m_params.emplace_back( new PARAM<bool>( "appearance.use_icons_in_menus",
             &m_Appearance.use_icons_in_menus, defaultUseIconsInMenus ) );
@@ -108,14 +113,8 @@ COMMON_SETTINGS::COMMON_SETTINGS() :
     m_params.emplace_back(
             new PARAM<bool>( "input.horizontal_pan", &m_Input.horizontal_pan, false ) );
 
-#if defined(__WXMAC__) || defined(__WXGTK3__)
-    bool default_zoom_acceleration = false;
-#else
-    bool default_zoom_acceleration = true;
-#endif
-
-    m_params.emplace_back( new PARAM<bool>( "input.zoom_acceleration", &m_Input.zoom_acceleration,
-                                            default_zoom_acceleration ) );
+    m_params.emplace_back( new PARAM<bool>( "input.zoom_acceleration",
+            &m_Input.zoom_acceleration, false ) );
 
 #ifdef __WXMAC__
     int default_zoom_speed = 5;
@@ -181,7 +180,10 @@ COMMON_SETTINGS::COMMON_SETTINGS() :
             &m_System.clear_3d_cache_interval, 30 ) );
 
     m_params.emplace_back( new PARAM<bool>( "session.remember_open_files",
-        &m_Session.remember_open_files, false ) );
+            &m_Session.remember_open_files, false ) );
+
+    m_params.emplace_back( new PARAM<int>( "netclass_panel.sash_pos",
+            &m_NetclassPanel.sash_pos, 160 ) );
 
     registerMigration( 0, 1, std::bind( &COMMON_SETTINGS::migrateSchema0to1, this ) );
     registerMigration( 1, 2, std::bind( &COMMON_SETTINGS::migrateSchema1to2, this ) );
@@ -267,8 +269,9 @@ bool COMMON_SETTINGS::MigrateFromLegacy( wxConfigBase* aCfg )
     ret &= fromLegacy<int>( aCfg,    "IconScale",       "appearance.icon_scale" );
     ret &= fromLegacy<bool>( aCfg,   "UseIconsInMenus", "appearance.use_icons_in_menus" );
 
-// Force OSX to automatically scale the canvas. Before v6, the user setting wasn't used on OSX and was
-// set to 1.0. In v6, the setting is now used by OSX and should default to automatic scaling.
+// Force OSX to automatically scale the canvas. Before v6, the user setting wasn't used on OSX
+// and was set to 1.0. In v6, the setting is now used by OSX and should default to automatic
+// scaling.
 #ifdef __WXMAC__
     ( *this )[PointerFromString( "appearance.canvas_scale" )] = 0.0;
 #endif

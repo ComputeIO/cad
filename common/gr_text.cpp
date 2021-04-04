@@ -32,7 +32,7 @@
 #include <kicad_string.h>
 #include <gr_basic.h>
 #include <plotter.h>
-#include <eda_text.h>
+#include <eda_text.h> // EDA_TEXT_HJUSTIFY_T and EDA_TEXT_VJUSTIFY_T
 #include <trigo.h>
 #include <base_screen.h>
 #include <gr_text.h>
@@ -133,8 +133,8 @@ int GraphicTextWidth( const wxString& aText, const wxSize& aSize, bool aItalic, 
 void GRText( wxDC* aDC, const wxPoint& aPos, COLOR4D aColor, const wxString& aText, double aOrient,
              const wxSize& aSize, enum EDA_TEXT_HJUSTIFY_T aH_justify,
              enum EDA_TEXT_VJUSTIFY_T aV_justify, int aWidth, bool aItalic, bool aBold,
-             TEXT_SEGMENT_CALLBACK aCallback, void* aCallbackData, PLOTTER* aPlotter, FONT* aFont,
-             bool aMultilineAllowed )
+             void ( *aCallback )( int x0, int y0, int xf, int yf, void* aData ),
+             void* aCallbackData, PLOTTER* aPlotter )
 {
     bool fill_mode = true;
 
@@ -171,65 +171,17 @@ void GRText( wxDC* aDC, const wxPoint& aPos, COLOR4D aColor, const wxString& aTe
     basic_gal.m_Color = aColor;
     basic_gal.SetClipBox( nullptr );
 
-    basic_gal.StrokeText( aText, VECTOR2D( aPos ), aOrient * M_PI / 1800, aFont,
-                          aMultilineAllowed );
-}
+    KIFONT::FONT* font = aPlotter && aPlotter->GetFont() ? aPlotter->GetFont() : nullptr;
 
-
-void GRShowText( const EDA_TEXT* aTextItem, COLOR4D aColor, bool aForceBold, int aPenWidth,
-                 TEXT_SEGMENT_CALLBACK aCallback, void* aCallbackData, wxDC* aDC )
-{
-    wxSize size = aTextItem->GetTextSize();
-    if( aTextItem->IsMirrored() )
-        size.x = -size.x;
-
-    int penWidth = aForceBold ? 0 : aPenWidth;
-#if 0
-    bool          multiLine = aTextItem->IsMultilineAllowed();
-    wxArrayString strings_list;
-    int           n = 1;
-    if( multiLine )
-    {
-        wxStringSplit( aTextItem->GetShownText(), strings_list, '\n' );
-        n = strings_list.Count();
-    }
-    else
-    {
-        strings_list.Add( aTextItem->GetShownText() );
-    }
-    std::vector<wxPoint> positions;
-    positions.reserve( n );
-    if( multiLine )
-    {
-        aTextItem->GetLinePositions( positions, n );
-    }
-    else
-    {
-        positions[0] = aTextItem->GetTextPos();
-    }
-
-    for( int i = 0; i < n; i++ )
-    {
-        GRText( aDC, aTextItem->GetTextPos(), aColor, strings_list.Item( i ),
-                aTextItem->GetTextAngle(), size, aTextItem->GetHorizJustify(),
-                aTextItem->GetVertJustify(), penWidth, aTextItem->IsItalic(),
-                aForceBold ? aForceBold : aTextItem->IsBold(), aCallback, aCallbackData, nullptr,
-                aTextItem->GetFont(), aTextItem->IsMultilineAllowed() );
-    }
-#else
-    GRText( aDC, aTextItem->GetTextPos(), aColor, aTextItem->GetShownText(),
-            aTextItem->GetTextAngle(), size, aTextItem->GetHorizJustify(),
-            aTextItem->GetVertJustify(), penWidth, aTextItem->IsItalic(),
-            aForceBold ? aForceBold : aTextItem->IsBold(), aCallback, aCallbackData, nullptr,
-            aTextItem->GetFont(), aTextItem->IsMultilineAllowed() );
-#endif
+    basic_gal.StrokeText( aText, VECTOR2D( aPos ), aOrient * M_PI / 1800, font );
 }
 
 
 void GRHaloText( wxDC* aDC, const wxPoint& aPos, COLOR4D aBgColor, COLOR4D aColor1, COLOR4D aColor2,
                  const wxString& aText, double aOrient, const wxSize& aSize,
                  enum EDA_TEXT_HJUSTIFY_T aH_justify, enum EDA_TEXT_VJUSTIFY_T aV_justify,
-                 int aWidth, bool aItalic, bool aBold, TEXT_SEGMENT_CALLBACK aCallback,
+                 int aWidth, bool aItalic, bool aBold,
+                 void ( *aCallback )( int x0, int y0, int xf, int yf, void* aData ),
                  void* aCallbackData, PLOTTER* aPlotter )
 {
     // Swap color if contrast would be better
@@ -248,35 +200,4 @@ void GRHaloText( wxDC* aDC, const wxPoint& aPos, COLOR4D aBgColor, COLOR4D aColo
     // Draw the text
     GRText( aDC, aPos, aColor2, aText, aOrient, aSize, aH_justify, aV_justify, aWidth / 4, aItalic,
             aBold, aCallback, aCallbackData, aPlotter );
-}
-
-
-/**
- * Function PLOTTER::Text
- * same as GRText, but plot graphic text insteed of draw it
- *  @param aPos = text position (according to aH_justify, aV_justify)
- *  @param aColor (COLOR4D) = text color
- *  @param aText = text to draw
- *  @param aOrient = angle in 0.1 degree
- *  @param aSize = text size (size.x or size.y can be < 0 for mirrored texts)
- *  @param aH_justify = horizontal justification (Left, center, right)
- *  @param aV_justify = vertical justification (bottom, center, top)
- *  @param aPenWidth = line width (if = 0, use plot default line width)
- *  @param aItalic = true to simulate an italic font
- *  @param aBold = true to use a bold font Useful only with default width value (aWidth = 0)
- *  @param aMultilineAllowed = true to plot text as multiline, otherwise single line
- *  @param aData = a parameter used by some plotters in SetCurrentLineWidth(),
- * not directly used here.
- *  @param aFont = name of font (nullptr for default)
- */
-void PLOTTER::Text( const wxPoint& aPos, const COLOR4D aColor, const wxString& aText,
-                    double aOrient, const wxSize& aSize, enum EDA_TEXT_HJUSTIFY_T aH_justify,
-                    enum EDA_TEXT_VJUSTIFY_T aV_justify, int aPenWidth, bool aItalic, bool aBold,
-                    bool aMultilineAllowed, void* aData, FONT* aFont )
-{
-    SetColor( aColor );
-    SetCurrentLineWidth( aPenWidth );
-
-    GRText( NULL, aPos, aColor, aText, aOrient, aSize, aH_justify, aV_justify, aPenWidth, aItalic,
-            aBold, nullptr, nullptr, this, aFont, aMultilineAllowed );
 }

@@ -4,7 +4,7 @@
  * Copyright (C) 2013 Jean-Pierre Charras, jp.charras at wanadoo.fr
  * Copyright (C) 2013 Wayne Stambaugh <stambaughw@gmail.com>
  * Copyright (C) 2013 CERN (www.cern.ch)
- * Copyright (C) 1992-2020 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 1992-2021 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -39,27 +39,25 @@
 #include <profile.h>
 #include <project/project_file.h>
 #include <project_rescue.h>
+#include <wx_html_report_box.h>
+#include <dialog_HTML_reporter_base.h>
 #include <reporter.h>
 #include <richio.h>
-#include <sch_component.h>
 #include <sch_edit_frame.h>
 #include <sch_plugins/legacy/sch_legacy_plugin.h>
 #include <sch_file_versions.h>
 #include <sch_sheet.h>
 #include <sch_sheet_path.h>
 #include <schematic.h>
-#include <settings/common_settings.h>
 #include <settings/settings_manager.h>
-#include <symbol_lib_table.h>
 #include <tool/actions.h>
 #include <tool/tool_manager.h>
 #include <tools/sch_editor_control.h>
 #include <trace_helpers.h>
 #include <widgets/infobar.h>
 #include <wildcards_and_files_ext.h>
-#include <page_layout/ws_data_model.h>
+#include <drawing_sheet/ds_data_model.h>
 #include <wx/ffile.h>
-#include <wx/stdpaths.h>
 #include <tools/ee_inspection_tool.h>
 #include <paths.h>
 
@@ -185,6 +183,7 @@ bool SCH_EDIT_FRAME::SaveEEFile( SCH_SHEET* aSheet, bool aSaveUnderNewName )
 
         screen->ClrSave();
         screen->ClrModify();
+        UpdateTitle();
 
         msg.Printf( _( "File \"%s\" saved." ),  screen->GetFileName() );
         SetStatusText( msg, 0 );
@@ -314,13 +313,16 @@ bool SCH_EDIT_FRAME::OpenProjectFiles( const std::vector<wxString>& aFileSet, in
             GetSettingsManager()->SaveProject();
 
         Schematic().SetProject( nullptr );
-        GetSettingsManager()->UnloadProject( &Prj() );
+        GetSettingsManager()->UnloadProject( &Prj(), false );
 
         GetSettingsManager()->LoadProject( pro.GetFullPath() );
 
+        wxFileName legacyPro( pro );
+        legacyPro.SetExt( LegacyProjectFileExtension );
+
         // Do not allow saving a project if one doesn't exist.  This normally happens if we are
         // standalone and opening a schematic that has been moved from its project folder.
-        if( !pro.Exists() && !( aCtl & KICTL_CREATE ) )
+        if( !pro.Exists() && !legacyPro.Exists() && !( aCtl & KICTL_CREATE ) )
             Prj().SetReadOnly();
 
         CreateScreens();
@@ -462,8 +464,9 @@ bool SCH_EDIT_FRAME::OpenProjectFiles( const std::vector<wxString>& aFileSet, in
                                 wxOK | wxCENTER | wxICON_EXCLAMATION );
                         invalidLibDlg.ShowDetailedText(
                                 _( "Symbol libraries defined in the project file symbol library "
-                                   "list are no longer supported and will be removed.\n\nThis may "
-                                   "cause broken symbol library links under certain conditions." ) );
+                                   "list are no longer supported and will be removed.\n\n"
+                                   "This may cause broken symbol library links under certain "
+                                   "conditions." ) );
                         invalidLibDlg.ShowCheckBox( _( "Do not show this dialog again." ) );
                         invalidLibDlg.ShowModal();
                         eeconfig()->m_Appearance.show_illegal_symbol_lib_dialog =
@@ -482,6 +485,41 @@ bool SCH_EDIT_FRAME::OpenProjectFiles( const std::vector<wxString>& aFileSet, in
                 }
             }
 
+            // Ensure there is only one legacy library loaded and that it is the cache library.
+            PART_LIBS* legacyLibs = Schematic().Prj().SchLibs();
+
+            if( legacyLibs->GetLibraryCount() == 0 )
+            {
+                wxString extMsg;
+                wxFileName cacheFn = pro;
+
+                cacheFn.SetName( cacheFn.GetName() + "-cache" );
+                cacheFn.SetExt( LegacySymbolLibFileExtension );
+
+                msg.Printf( _( "The project symbol library cache file '%s' was not found." ),
+                            cacheFn.GetFullName() );
+                extMsg = _( "This can result in a broken schematic under certain conditions.  "
+                            "If the schematic does not have any missing symbols upon opening, "
+                            "save it immediately before making any changes to prevent data "
+                            "loss.  If there are missing symbols, either manual recovery of "
+                            "the schematic or recovery of the symbol cache library file and "
+                            "reloading the schematic is required." );
+
+                wxMessageDialog dlgMissingCache( this, msg, _( "Warning" ),
+                                                 wxOK | wxCANCEL | wxICON_EXCLAMATION | wxCENTER );
+                dlgMissingCache.SetExtendedMessage( extMsg );
+                dlgMissingCache.SetOKCancelLabels(
+                        wxMessageDialog::ButtonLabel( _( "Load Without Cache File" ) ),
+                        wxMessageDialog::ButtonLabel( _( "Abort" ) ) );
+
+                if( dlgMissingCache.ShowModal() == wxID_CANCEL )
+                {
+                    Schematic().Reset();
+                    CreateScreens();
+                    return false;
+                }
+            }
+
             // Update all symbol library links for all sheets.
             schematic.UpdateSymbolLinks();
 
@@ -489,7 +527,7 @@ bool SCH_EDIT_FRAME::OpenProjectFiles( const std::vector<wxString>& aFileSet, in
             m_infoBar->AddCloseButton();
             m_infoBar->ShowMessage( _( "This file was created by an older version of KiCad. "
                                        "It will be converted to the new format when saved." ),
-                                    wxICON_WARNING );
+                                    wxICON_WARNING, WX_INFOBAR::MESSAGE_TYPE::OUTDATED_SAVE );
 
             // Legacy schematic can have duplicate time stamps so fix that before converting
             // to the s-expression format.
@@ -506,7 +544,7 @@ bool SCH_EDIT_FRAME::OpenProjectFiles( const std::vector<wxString>& aFileSet, in
                 m_infoBar->AddCloseButton();
                 m_infoBar->ShowMessage( _( "This file was created by an older version of KiCad. "
                                            "It will be converted to the new format when saved." ),
-                                        wxICON_WARNING );
+                                        wxICON_WARNING, WX_INFOBAR::MESSAGE_TYPE::OUTDATED_SAVE );
             }
 
             for( SCH_SCREEN* screen = schematic.GetFirst(); screen; screen = schematic.GetNext() )
@@ -547,7 +585,8 @@ bool SCH_EDIT_FRAME::OpenProjectFiles( const std::vector<wxString>& aFileSet, in
     // colinear segments. If a schematic is saved without a valid
     // cache library or missing installed libraries, this can cause connectivity errors
     // unless junctions are added.
-    FixupJunctions();
+    if( schFileType == SCH_IO_MGR::SCH_LEGACY )
+        FixupJunctions();
 
     SyncView();
     GetScreen()->ClearDrawingState();
@@ -627,19 +666,21 @@ void SCH_EDIT_FRAME::OnImportProject( wxCommandEvent& aEvent )
     if( !AskToSaveChanges() )
         return;
 
-    // Set the project location if none is set
-    bool setProject = Prj().GetProjectFullName().IsEmpty();
+    // Set the project location if none is set or if we are running in standalone mode
+    bool     setProject = Prj().GetProjectFullName().IsEmpty() || Kiface().IsSingle();
     wxString path = wxPathOnly( Prj().GetProjectFullName() );
 
-    // clang-format off
     std::list<std::pair<const wxString, const SCH_IO_MGR::SCH_FILE_T>> loaders;
 
+    // Import Altium schematic files.
     if( ADVANCED_CFG::GetCfg().m_PluginAltiumSch )
-        loaders.emplace_back( AltiumSchematicFileWildcard(), SCH_IO_MGR::SCH_ALTIUM ); // Import Altium schematic files
+        loaders.emplace_back( AltiumSchematicFileWildcard(), SCH_IO_MGR::SCH_ALTIUM );
 
-    loaders.emplace_back( CadstarSchematicArchiveFileWildcard(), SCH_IO_MGR::SCH_CADSTAR_ARCHIVE ); //Import CADSTAR Schematic Archive files
-    loaders.emplace_back( EagleSchematicFileWildcard(),  SCH_IO_MGR::SCH_EAGLE ); // Import Eagle schematic files
-    // clang-format on
+    // Import CADSTAR Schematic Archive files.
+    loaders.emplace_back( CadstarSchematicArchiveFileWildcard(), SCH_IO_MGR::SCH_CADSTAR_ARCHIVE );
+
+    // Import Eagle schematic files.
+    loaders.emplace_back( EagleSchematicFileWildcard(),  SCH_IO_MGR::SCH_EAGLE );
 
     wxString fileFilters;
     wxString allWildcards;
@@ -659,18 +700,15 @@ void SCH_EDIT_FRAME::OnImportProject( wxCommandEvent& aEvent )
     fileFilters = _( "All supported formats|" ) + allWildcards + "|" + fileFilters;
 
     wxFileDialog dlg( this, _( "Import Schematic" ), path, wxEmptyString, fileFilters,
-            wxFD_OPEN | wxFD_FILE_MUST_EXIST ); // TODO
+                      wxFD_OPEN | wxFD_FILE_MUST_EXIST ); // TODO
 
     if( dlg.ShowModal() == wxID_CANCEL )
         return;
 
     if( setProject )
     {
-        if( !Prj().IsNullProject() )
-            GetSettingsManager()->SaveProject();
-
         Schematic().SetProject( nullptr );
-        GetSettingsManager()->UnloadProject( &Prj() );
+        GetSettingsManager()->UnloadProject( &Prj(), false );
 
         Schematic().Reset();
 
@@ -716,13 +754,6 @@ bool SCH_EDIT_FRAME::SaveProject()
     wxString    fileName = Prj().AbsolutePath( Schematic().Root().GetFileName() );
     wxFileName  fn = fileName;
 
-    if( fn.IsOk() && !fn.IsDirWritable() )
-    {
-        msg = wxString::Format( _( "Directory \"%s\" is not writable." ), fn.GetPath() );
-        DisplayError( this, msg );
-        return false;
-    }
-
     // Warn user on potential file overwrite.  This can happen on shared sheets.
     wxArrayString overwrittenFiles;
 
@@ -749,7 +780,7 @@ bool SCH_EDIT_FRAME::SaveProject()
 
     if( !overwrittenFiles.IsEmpty() )
     {
-        for( auto overwrittenFile : overwrittenFiles )
+        for( const wxString& overwrittenFile : overwrittenFiles )
         {
             if( msg.IsEmpty() )
                 msg = overwrittenFile;
@@ -757,15 +788,13 @@ bool SCH_EDIT_FRAME::SaveProject()
                 msg += "\n" + overwrittenFile;
         }
 
-        wxRichMessageDialog dlg(
-                this,
-                _( "Saving the project to the new file format will overwrite existing files." ),
-                _( "Project Save Warning" ),
-                wxOK | wxCANCEL | wxCANCEL_DEFAULT | wxCENTER | wxICON_EXCLAMATION );
-        dlg.ShowDetailedText( wxString::Format(
-                              _( "The following files will be overwritten:\n\n%s" ), msg ) );
+        wxRichMessageDialog dlg( this, _( "Saving will overwrite existing files." ),
+                                 _( "Save Warning" ),
+                                 wxOK | wxCANCEL | wxCANCEL_DEFAULT | wxCENTER |
+                                 wxICON_EXCLAMATION );
+        dlg.ShowDetailedText( _( "The following files will be overwritten:\n\n" ) + msg );
         dlg.SetOKCancelLabels( wxMessageDialog::ButtonLabel( _( "Overwrite Files" ) ),
-                wxMessageDialog::ButtonLabel( _( "Abort Project Save" ) ) );
+                               wxMessageDialog::ButtonLabel( _( "Abort Project Save" ) ) );
 
         if( dlg.ShowModal() == wxID_CANCEL )
             return false;
@@ -839,6 +868,8 @@ bool SCH_EDIT_FRAME::SaveProject()
 
     UpdateTitle();
 
+    m_infoBar->DismissOutdatedSave();
+
     return success;
 }
 
@@ -901,10 +932,11 @@ bool SCH_EDIT_FRAME::doAutoSave()
 
 bool SCH_EDIT_FRAME::importFile( const wxString& aFileName, int aFileType )
 {
-    wxFileName newfilename;
-    SCH_SHEET_LIST sheetList = Schematic().GetSheets();
+    wxFileName             newfilename;
+    SCH_SHEET_LIST         sheetList = Schematic().GetSheets();
+    SCH_IO_MGR::SCH_FILE_T fileType = (SCH_IO_MGR::SCH_FILE_T) aFileType;
 
-    switch( (SCH_IO_MGR::SCH_FILE_T) aFileType )
+    switch( fileType )
     {
     case SCH_IO_MGR::SCH_ALTIUM:
     case SCH_IO_MGR::SCH_CADSTAR_ARCHIVE:
@@ -923,13 +955,22 @@ bool SCH_EDIT_FRAME::importFile( const wxString& aFileName, int aFileType )
 
         try
         {
-            SCH_PLUGIN::SCH_PLUGIN_RELEASER pi(
-                    SCH_IO_MGR::FindPlugin( (SCH_IO_MGR::SCH_FILE_T) aFileType ) );
+            SCH_PLUGIN::SCH_PLUGIN_RELEASER pi( SCH_IO_MGR::FindPlugin( fileType ) );
+            DIALOG_HTML_REPORTER*           reporter = new DIALOG_HTML_REPORTER( this );
+
+            pi->SetReporter( reporter->m_Reporter );
             Schematic().SetRoot( pi->Load( aFileName, &Schematic() ) );
 
-            // Eagle sheets do not use a worksheet frame by default, so set it to an empty one
-            WS_DATA_MODEL& pglayout = WS_DATA_MODEL::GetTheInstance();
-            pglayout.SetEmptyLayout();
+            if( reporter->m_Reporter->HasMessage() )
+                reporter->ShowModal();
+
+            pi->SetReporter( &WXLOG_REPORTER::GetInstance() );
+            delete reporter;
+
+            // Non-KiCad schematics do not use a drawing-sheet (or if they do, it works differently
+            // to KiCad), so set it to an empty one
+            DS_DATA_MODEL& drawingSheet = DS_DATA_MODEL::GetTheInstance();
+            drawingSheet.SetEmptyLayout();
 
             BASE_SCREEN::m_PageLayoutDescrFileName = "empty.kicad_wks";
             wxFileName layoutfn( Prj().GetProjectPath(), BASE_SCREEN::m_PageLayoutDescrFileName );
@@ -937,7 +978,7 @@ bool SCH_EDIT_FRAME::importFile( const wxString& aFileName, int aFileType )
 
             if( layoutfile.Open( layoutfn.GetFullPath(), "wb" ) )
             {
-                layoutfile.Write( WS_DATA_MODEL::EmptyLayout() );
+                layoutfile.Write( DS_DATA_MODEL::EmptyLayout() );
                 layoutfile.Close();
             }
 
@@ -951,9 +992,10 @@ bool SCH_EDIT_FRAME::importFile( const wxString& aFileName, int aFileType )
             GetScreen()->SetFileName( newfilename.GetFullPath() );
             GetScreen()->SetModify();
 
-            SaveProjectSettings();
-
-            UpdateFileHistory( aFileName );
+            // Only fix junctions for CADSTAR importer for now as it may cause issues with
+            // other importers
+            if( fileType == SCH_IO_MGR::SCH_CADSTAR_ARCHIVE )
+                FixupJunctions();
 
             // Only perform the dangling end test on root sheet.
             GetScreen()->TestDanglingEnds();

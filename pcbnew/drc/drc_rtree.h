@@ -199,6 +199,10 @@ public:
         // means we have a hit)
         std::unordered_set<BOARD_ITEM*> collidingCompounds;
 
+        // keep track of results of client filter so we don't ask more than once for compound
+        // shapes
+        std::map<BOARD_ITEM*, bool> filterResults;
+
         EDA_RECT box = aRefItem->GetBoundingBox();
         box.Inflate( aClearance );
 
@@ -218,16 +222,29 @@ public:
                     if( collidingCompounds.find( aItem->parent ) != collidingCompounds.end() )
                         return true;
 
-                    if( !aFilter || aFilter( aItem->parent ) )
-                    {
-                        if( refShape->Collide( aItem->shape, aClearance ) )
-                        {
-                            collidingCompounds.insert( aItem->parent );
-                            count++;
+                    bool filtered;
+                    auto it = filterResults.find( aItem->parent );
 
-                            if( aVisitor )
-                                return aVisitor( aItem->parent );
-                        }
+                    if( it == filterResults.end() )
+                    {
+                        filtered = aFilter && !aFilter( aItem->parent );
+                        filterResults[ aItem->parent ] = filtered;
+                    }
+                    else
+                    {
+                        filtered = it->second;
+                    }
+
+                    if( filtered )
+                        return true;
+
+                    if( refShape->Collide( aItem->shape, aClearance ) )
+                    {
+                        collidingCompounds.insert( aItem->parent );
+                        count++;
+
+                        if( aVisitor )
+                            return aVisitor( aItem->parent );
                     }
 
                     return true;
@@ -244,7 +261,7 @@ public:
      * position.
      */
     bool QueryColliding( EDA_RECT aBox, SHAPE* aRefShape, PCB_LAYER_ID aLayer, int aClearance,
-                         int* aActual, VECTOR2I* aPos ) const
+                         int* aActual = nullptr, VECTOR2I* aPos = nullptr ) const
     {
         aBox.Inflate( aClearance );
 
@@ -279,8 +296,11 @@ public:
 
         if( collision )
         {
-            *aActual = std::max( 0, actual );
-            *aPos = pos;
+            if( aActual )
+                *aActual = std::max( 0, actual );
+
+            if( aPos )
+                *aPos = pos;
 
             return true;
         }
@@ -428,19 +448,19 @@ public:
         }
     };
 
-    DRC_LAYER OnLayer( PCB_LAYER_ID aLayer )
+    DRC_LAYER OnLayer( PCB_LAYER_ID aLayer ) const
     {
         return DRC_LAYER( m_tree[int( aLayer )] );
     }
 
-    DRC_LAYER Overlapping( PCB_LAYER_ID aLayer, const wxPoint& aPoint, int aAccuracy = 0 )
+    DRC_LAYER Overlapping( PCB_LAYER_ID aLayer, const wxPoint& aPoint, int aAccuracy = 0 ) const
     {
         EDA_RECT rect( aPoint, wxSize( 0, 0 ) );
         rect.Inflate( aAccuracy );
         return DRC_LAYER( m_tree[int( aLayer )], rect );
     }
 
-    DRC_LAYER Overlapping( PCB_LAYER_ID aLayer, const EDA_RECT& aRect )
+    DRC_LAYER Overlapping( PCB_LAYER_ID aLayer, const EDA_RECT& aRect ) const
     {
         return DRC_LAYER( m_tree[int( aLayer )], aRect );
     }

@@ -350,7 +350,7 @@ const APPEARANCE_CONTROLS::APPEARANCE_SETTING APPEARANCE_CONTROLS::s_objectSetti
     RR( _( "DRC Errors" ),       LAYER_DRC_ERROR,          _( "DRC violations with an Error severity" ) ),
     RR( _( "DRC Exclusions" ),   LAYER_DRC_EXCLUSION,      _( "DRC violations which have been individually excluded" ) ),
     RR( _( "Anchors" ),          LAYER_ANCHOR,             _( "Show footprint and text origins as a cross" ) ),
-    RR( _( "Worksheet" ),        LAYER_WORKSHEET,          _( "Show worksheet" ) ),
+    RR( _( "Drawing Sheet" ),    LAYER_DRAWINGSHEET,       _( "Show drawing sheet borders and title block" ) ),
     RR( _( "Grid" ),             LAYER_GRID,               _( "Show the (x,y) grid dots" ) )
 };
 
@@ -423,10 +423,10 @@ APPEARANCE_CONTROLS::APPEARANCE_CONTROLS( PCB_BASE_FRAME* aParent, wxWindow* aFo
 
     createControls();
 
-    m_btnNetInspector->SetBitmap( KiBitmap( list_nets_16_xpm ) );
+    m_btnNetInspector->SetBitmap( KiBitmap( BITMAPS::list_nets_16 ) );
     m_btnNetInspector->SetPadding( 2 );
 
-    m_btnConfigureNetClasses->SetBitmap( KiBitmap( options_generic_16_xpm ) );
+    m_btnConfigureNetClasses->SetBitmap( KiBitmap( BITMAPS::options_generic_16 ) );
     m_btnConfigureNetClasses->SetPadding( 2 );
 
     m_txtNetFilter->SetHint( _( "Filter nets" ) );
@@ -496,8 +496,8 @@ APPEARANCE_CONTROLS::APPEARANCE_CONTROLS( PCB_BASE_FRAME* aParent, wxWindow* aFo
                 m_frame->GetToolManager()->RunAction( PCB_ACTIONS::flipBoard, true );
             } );
 
-    m_toggleGridRenderer = new GRID_BITMAP_TOGGLE_RENDERER( KiBitmap( visibility_xpm ),
-                                                            KiBitmap( visibility_off_xpm ) );
+    m_toggleGridRenderer = new GRID_BITMAP_TOGGLE_RENDERER( KiBitmap( BITMAPS::visibility ),
+                                                            KiBitmap( BITMAPS::visibility_off ) );
 
     m_netsGrid->RegisterDataType( wxT( "bool" ), m_toggleGridRenderer, new wxGridCellBoolEditor );
 
@@ -524,7 +524,7 @@ APPEARANCE_CONTROLS::APPEARANCE_CONTROLS( PCB_BASE_FRAME* aParent, wxWindow* aFo
     wxSize size = ConvertDialogToPixels( SWATCH_SIZE_SMALL_DU );
     m_netsGrid->SetColSize( NET_GRID_TABLE::COL_COLOR, size.x + cellPadding );
 
-    size = KiBitmap( visibility_xpm ).GetSize();
+    size = KiBitmap( BITMAPS::visibility ).GetSize();
     m_netsGrid->SetColSize( NET_GRID_TABLE::COL_VISIBILITY, size.x + cellPadding );
 
     m_netsGrid->SetDefaultCellFont( font );
@@ -572,7 +572,7 @@ void APPEARANCE_CONTROLS::createControls()
     layerDisplayOptionsSizer = new wxBoxSizer( wxVERTICAL );
 
     m_staticTextContrastModeTitle = new wxStaticText( layerDisplayPane, wxID_ANY,
-                                                      _( "Non-active layers:" ), wxDefaultPosition,
+                                                      _( "Inactive layers:" ), wxDefaultPosition,
                                                       wxDefaultSize, 0 );
     m_staticTextContrastModeTitle->Wrap( -1 );
     layerDisplayOptionsSizer->Add( m_staticTextContrastModeTitle, 0,
@@ -584,19 +584,19 @@ void APPEARANCE_CONTROLS::createControls()
     m_rbHighContrastNormal = new wxRadioButton( layerDisplayPane, wxID_ANY, _( "Normal" ),
                                                 wxDefaultPosition, wxDefaultSize, wxRB_GROUP );
     m_rbHighContrastNormal->SetValue( true );
-    m_rbHighContrastNormal->SetToolTip( _( "Non-active layers will be shown in full color" ) );
+    m_rbHighContrastNormal->SetToolTip( _( "Inactive layers will be shown in full color" ) );
 
     contrastModeSizer->Add( m_rbHighContrastNormal, 0, wxRIGHT, 4 );
 
     m_rbHighContrastDim = new wxRadioButton( layerDisplayPane, wxID_ANY, _( "Dim" ),
                                              wxDefaultPosition, wxDefaultSize, 0 );
-    m_rbHighContrastDim->SetToolTip( _( "Non-active layers will be dimmed" ) );
+    m_rbHighContrastDim->SetToolTip( _( "Inactive layers will be dimmed" ) );
 
     contrastModeSizer->Add( m_rbHighContrastDim, 0, wxRIGHT | wxLEFT, 10 );
 
     m_rbHighContrastOff = new wxRadioButton( layerDisplayPane, wxID_ANY, _( "Hide" ),
                                              wxDefaultPosition, wxDefaultSize, 0 );
-    m_rbHighContrastOff->SetToolTip( _( "Non-active layers will be hidden" ) );
+    m_rbHighContrastOff->SetToolTip( _( "Inactive layers will be hidden" ) );
 
     contrastModeSizer->Add( m_rbHighContrastOff, 0, 0, 5 );
 
@@ -828,23 +828,23 @@ void APPEARANCE_CONTROLS::OnNetGridRightClick( wxGridEvent& event )
     wxMenu menu;
 
     menu.Append( new wxMenuItem( &menu, ID_SET_NET_COLOR,
-                                 _( "Set net color" ), wxEmptyString, wxITEM_NORMAL ) );
+                                 _( "Set Net Color" ), wxEmptyString, wxITEM_NORMAL ) );
     menu.Append( new wxMenuItem( &menu, ID_HIGHLIGHT_NET,
                                  wxString::Format( _( "Highlight %s" ), netName ),
                                  wxEmptyString, wxITEM_NORMAL ) );
     menu.Append( new wxMenuItem( &menu, ID_SELECT_NET,
-                                 wxString::Format( _( "Select tracks and vias in %s" ), netName ),
+                                 wxString::Format( _( "Select Tracks and Vias in %s" ), netName ),
                                  wxEmptyString, wxITEM_NORMAL ) );
     menu.Append( new wxMenuItem( &menu, ID_DESELECT_NET,
-                                 wxString::Format( _( "Deselect tracks and vias in %s" ), netName ),
+                                 wxString::Format( _( "Unselect Tracks and Vias in %s" ), netName ),
                                  wxEmptyString, wxITEM_NORMAL ) );
 
     menu.AppendSeparator();
 
     menu.Append( new wxMenuItem( &menu, ID_SHOW_ALL_NETS,
-                                 _( "Show all nets" ), wxEmptyString, wxITEM_NORMAL ) );
+                                 _( "Show All Nets" ), wxEmptyString, wxITEM_NORMAL ) );
     menu.Append( new wxMenuItem( &menu, ID_HIDE_OTHER_NETS,
-                                 _( "Hide all other nets" ), wxEmptyString,
+                                 _( "Hide All Other Nets" ), wxEmptyString,
                                  wxITEM_NORMAL ) );
 
     menu.Bind( wxEVT_COMMAND_MENU_SELECTED,
@@ -884,8 +884,8 @@ void APPEARANCE_CONTROLS::OnNetGridMouseEvent( wxMouseEvent& aEvent )
         if( cell.GetCol() == NET_GRID_TABLE::COL_VISIBILITY )
             tip.Printf( showOrHide, name );
         else if( cell.GetCol() == NET_GRID_TABLE::COL_COLOR )
-            tip = _( "Left double click or middle click for color change, "
-                     "right click for menu" );
+            tip = _( "Double click (or middle click) to change color; "
+                     "right click for more actions" );
 
         m_netsGrid->GetGridWindow()->SetToolTip( tip );
     }
@@ -945,6 +945,18 @@ void APPEARANCE_CONTROLS::OnBoardChanged()
 void APPEARANCE_CONTROLS::OnBoardNetSettingsChanged( BOARD& aBoard )
 {
     handleBoardItemsChanged();
+}
+
+
+void APPEARANCE_CONTROLS::OnNetVisibilityChanged( int aNetCode, bool aVisibility )
+{
+    int row = m_netsTable->GetRowByNetcode( aNetCode );
+
+    if( row >= 0 )
+    {
+        m_netsTable->SetValueAsBool( row, NET_GRID_TABLE::COL_VISIBILITY, aVisibility );
+        m_netsGrid->ForceRefresh();
+    }
 }
 
 
@@ -1378,8 +1390,8 @@ void APPEARANCE_CONTROLS::rebuildLayers()
                                        "right click for menu" ) );
 
                 BITMAP_TOGGLE* btn_visible = new BITMAP_TOGGLE( panel, layer,
-                                                                KiBitmap( visibility_xpm ),
-                                                                KiBitmap( visibility_off_xpm ),
+                                                                KiBitmap( BITMAPS::visibility ),
+                                                                KiBitmap( BITMAPS::visibility_off ),
                                                                 aSetting->visible );
                 btn_visible->SetToolTip( _( "Show or hide this layer" ) );
 
@@ -1554,53 +1566,53 @@ void APPEARANCE_CONTROLS::rebuildLayerContextMenu()
 
     AddMenuItem( m_layerContextMenu, ID_SHOW_ALL_COPPER_LAYERS,
                  _( "Show All Copper Layers" ),
-                 KiBitmap( show_all_copper_layers_xpm ) );
+                 KiBitmap( BITMAPS::show_all_copper_layers ) );
     AddMenuItem( m_layerContextMenu, ID_HIDE_ALL_COPPER_LAYERS,
                  _( "Hide All Copper Layers" ),
-                 KiBitmap( show_no_copper_layers_xpm ) );
+                 KiBitmap( BITMAPS::show_no_copper_layers ) );
 
     m_layerContextMenu->AppendSeparator();
 
     AddMenuItem( m_layerContextMenu, ID_HIDE_ALL_BUT_ACTIVE,
                  _( "Hide All Layers But Active" ),
-                 KiBitmap( select_w_layer_xpm ) );
+                 KiBitmap( BITMAPS::select_w_layer ) );
 
     m_layerContextMenu->AppendSeparator();
 
     AddMenuItem( m_layerContextMenu, ID_SHOW_ALL_NON_COPPER, _( "Show All Non Copper Layers" ),
-                 KiBitmap( show_no_copper_layers_xpm ) );
+                 KiBitmap( BITMAPS::show_no_copper_layers ) );
 
     AddMenuItem( m_layerContextMenu, ID_HIDE_ALL_NON_COPPER, _( "Hide All Non Copper Layers" ),
-                 KiBitmap( show_all_copper_layers_xpm ) );
+                 KiBitmap( BITMAPS::show_all_copper_layers ) );
 
     m_layerContextMenu->AppendSeparator();
 
     AddMenuItem( m_layerContextMenu, ID_PRESET_ALL_LAYERS, _( "Show All Layers" ),
-                 KiBitmap( show_all_layers_xpm ) );
+                 KiBitmap( BITMAPS::show_all_layers ) );
 
     AddMenuItem( m_layerContextMenu, ID_PRESET_NO_LAYERS, _( "Hide All Layers" ),
-                 KiBitmap( show_no_layers_xpm ) );
+                 KiBitmap( BITMAPS::show_no_layers ) );
 
     m_layerContextMenu->AppendSeparator();
 
     AddMenuItem( m_layerContextMenu, ID_PRESET_FRONT_ASSEMBLY,
-                 _( "Show Only Front Assembly Layers" ), KiBitmap( show_front_assembly_layers_xpm ) );
+                 _( "Show Only Front Assembly Layers" ), KiBitmap( BITMAPS::show_front_assembly_layers ) );
 
     AddMenuItem( m_layerContextMenu, ID_PRESET_FRONT, _( "Show Only Front Layers" ),
-                 KiBitmap( show_all_front_layers_xpm ) );
+                 KiBitmap( BITMAPS::show_all_front_layers ) );
 
     // Only show the internal layer option if internal layers are enabled
     if( m_frame->GetBoard()->GetCopperLayerCount() > 2 )
     {
         AddMenuItem( m_layerContextMenu, ID_PRESET_INNER_COPPER, _( "Show Only Inner Layers" ),
-                     KiBitmap( show_all_copper_layers_xpm ) );
+                     KiBitmap( BITMAPS::show_all_copper_layers ) );
     }
 
     AddMenuItem( m_layerContextMenu, ID_PRESET_BACK, _( "Show Only Back Layers" ),
-                 KiBitmap( show_all_back_layers_xpm ) );
+                 KiBitmap( BITMAPS::show_all_back_layers ) );
 
     AddMenuItem( m_layerContextMenu, ID_PRESET_BACK_ASSEMBLY, _( "Show Only Back Assembly Layers" ),
-                 KiBitmap( show_back_assembly_layers_xpm ) );
+                 KiBitmap( BITMAPS::show_back_assembly_layers ) );
 }
 
 
@@ -1897,8 +1909,8 @@ void APPEARANCE_CONTROLS::rebuildObjects()
                 }
 
                 BITMAP_TOGGLE* btn_visible = new BITMAP_TOGGLE( m_windowObjects, layer,
-                                                                KiBitmap( visibility_xpm ),
-                                                                KiBitmap( visibility_off_xpm ),
+                                                                KiBitmap( BITMAPS::visibility ),
+                                                                KiBitmap( BITMAPS::visibility_off ),
                                                                 aSetting->visible );
 
                 wxString tip;
@@ -2092,8 +2104,8 @@ void APPEARANCE_CONTROLS::rebuildNets()
                     setting->ctl_color->Hide();
 
                 setting->ctl_visibility =
-                        new BITMAP_TOGGLE( setting->ctl_panel, aId, KiBitmap( visibility_xpm ),
-                                           KiBitmap( visibility_off_xpm ), true );
+                        new BITMAP_TOGGLE( setting->ctl_panel, aId, KiBitmap( BITMAPS::visibility ),
+                                           KiBitmap( BITMAPS::visibility_off ), true );
 
                 wxString tip;
                 tip.Printf( _( "Show or hide ratsnest for nets in %s" ), name );
@@ -2127,29 +2139,29 @@ void APPEARANCE_CONTROLS::rebuildNets()
                             if( !isDefaultClass)
                             {
                                 menu.Append( new wxMenuItem( &menu, ID_SET_NET_COLOR,
-                                             _( "Set netclass color" ), wxEmptyString,
+                                             _( "Set Netclass Color" ), wxEmptyString,
                                              wxITEM_NORMAL ) );
                             }
 
                             menu.Append( new wxMenuItem( &menu, ID_HIGHLIGHT_NET,
-                                         wxString::Format( _( "Highlight nets in %s" ), name ),
+                                         wxString::Format( _( "Highlight Nets in %s" ), name ),
                                                          wxEmptyString, wxITEM_NORMAL ) );
                             menu.Append( new wxMenuItem( &menu, ID_SELECT_NET,
-                                         wxString::Format( _( "Select tracks and vias in %s" ),
+                                         wxString::Format( _( "Select Tracks and Vias in %s" ),
                                                            name ),
                                          wxEmptyString, wxITEM_NORMAL ) );
                             menu.Append( new wxMenuItem( &menu, ID_DESELECT_NET,
-                                         wxString::Format( _( "Deselect tracks and vias in %s" ),
+                                         wxString::Format( _( "Unselect Tracks and Vias in %s" ),
                                                            name ),
                                          wxEmptyString, wxITEM_NORMAL ) );
 
                             menu.AppendSeparator();
 
                             menu.Append( new wxMenuItem( &menu, ID_SHOW_ALL_NETS,
-                                         _( "Show all netclasses" ), wxEmptyString,
+                                         _( "Show All Netclasses" ), wxEmptyString,
                                          wxITEM_NORMAL ) );
                             menu.Append( new wxMenuItem( &menu, ID_HIDE_OTHER_NETS,
-                                         _( "Hide all other netclasses" ), wxEmptyString,
+                                         _( "Hide All Other Netclasses" ), wxEmptyString,
                                          wxITEM_NORMAL ) );
 
                             menu.Bind( wxEVT_COMMAND_MENU_SELECTED,
@@ -2265,7 +2277,7 @@ void APPEARANCE_CONTROLS::onLayerPresetChanged( wxCommandEvent& aEvent )
                 if( m_currentPreset )
                     m_cbLayerPresets->SetStringSelection( m_currentPreset->name );
                 else
-                    m_cbLayerPresets->SetSelection( count - 3 );
+                    m_cbLayerPresets->SetSelection( m_cbLayerPresets->GetCount() - 3 );
             };
 
     if( index == count - 3 )
@@ -2301,12 +2313,16 @@ void APPEARANCE_CONTROLS::onLayerPresetChanged( wxCommandEvent& aEvent )
         m_currentPreset      = preset;
 
         if( !exists )
+        {
             index = m_cbLayerPresets->Insert( name, index - 1, static_cast<void*>( preset ) );
+        }
         else
+        {
             index = m_cbLayerPresets->FindString( name );
+            m_presetMRU.Remove( name );
+        }
 
         m_cbLayerPresets->SetSelection( index );
-
         m_presetMRU.Insert( name, 0 );
 
         return;
@@ -2335,14 +2351,17 @@ void APPEARANCE_CONTROLS::onLayerPresetChanged( wxCommandEvent& aEvent )
         if( dlg.ShowModal() == wxID_OK )
         {
             wxString presetName = dlg.GetTextSelection();
+            int idx = m_cbLayerPresets->FindString( presetName );
 
-            m_layerPresets.erase( presetName );
+            if( idx != wxNOT_FOUND )
+            {
+                m_layerPresets.erase( presetName );
 
-            m_cbLayerPresets->Delete( m_cbLayerPresets->FindString( presetName ) );
-            m_cbLayerPresets->SetSelection( m_cbLayerPresets->GetCount() - 3 );
-            m_currentPreset = nullptr;
+                m_cbLayerPresets->Delete( idx );
+                m_currentPreset = nullptr;
 
-            m_presetMRU.Remove( presetName );
+                m_presetMRU.Remove( presetName );
+            }
         }
 
         resetSelection();
@@ -2806,4 +2825,10 @@ void APPEARANCE_CONTROLS::onReadOnlySwatch()
     infobar->ShowMessageFor( _( "The current color theme is read-only.  Create a new theme in "
                                 "Preferences to enable color editing." ),
                              10000, wxICON_INFORMATION );
+}
+
+
+void APPEARANCE_CONTROLS::RefreshCollapsiblePanes()
+{
+    m_paneLayerDisplayOptions->Refresh();
 }

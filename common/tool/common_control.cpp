@@ -24,17 +24,15 @@
 
 #include <bitmaps.h>
 #include <build_version.h>
+#include <common.h>     // for SearchHelpFileFullPath
 #include <tool/actions.h>
 #include <tool/tool_manager.h>
 #include <eda_draw_frame.h>
-#include <class_draw_panel_gal.h>
 #include <view/view.h>
-#include <view/view_controls.h>
 #include <gal/graphics_abstraction_layer.h>
 #include <base_screen.h>
 #include <tool/common_control.h>
 #include <id.h>
-#include <project.h>
 #include <kiface_i.h>
 #include <kicad_curl/kicad_curl_easy.h>
 #include <dialogs/dialog_configure_paths.h>
@@ -147,6 +145,9 @@ int COMMON_CONTROL::ShowPlayer( const TOOL_EVENT& aEvent )
     FRAME_T       playerType = aEvent.Parameter<FRAME_T>();
     KIWAY_PLAYER* editor = m_frame->Kiway().Player( playerType, true );
 
+    // editor can be null if Player() fails:
+    wxCHECK_MSG( editor != nullptr, 0, "Cannot open/create the editor frame" );
+
     // Needed on Windows, other platforms do not use it, but it creates no issue
     if( editor->IsIconized() )
         editor->Iconize( false );
@@ -249,7 +250,7 @@ int COMMON_CONTROL::ReportBug( const TOOL_EVENT& aEvent )
 
     KICAD_CURL_EASY kcurl;
     wxString url_string;
-    url_string.Printf( m_bugReportUrl, kcurl.Escape( message.ToStdString() ) );
+    url_string.Printf( m_bugReportUrl, kcurl.Escape( std::string( message.utf8_str() ) ) );
 
     wxLaunchDefaultBrowser( url_string );
 

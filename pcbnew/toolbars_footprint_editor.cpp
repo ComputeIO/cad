@@ -76,17 +76,24 @@ void FOOTPRINT_EDIT_FRAME::ReCreateHToolbar()
     m_mainToolBar->Add( ACTIONS::zoomTool, ACTION_TOOLBAR::TOGGLE, ACTION_TOOLBAR::CANCEL );
 
     m_mainToolBar->AddScaledSeparator( this );
+    m_mainToolBar->Add( PCB_ACTIONS::rotateCcw );
+    m_mainToolBar->Add( PCB_ACTIONS::rotateCw );
+    m_mainToolBar->Add( PCB_ACTIONS::mirror );
+    m_mainToolBar->Add( PCB_ACTIONS::group );
+    m_mainToolBar->Add( PCB_ACTIONS::ungroup );
+
+    m_mainToolBar->AddScaledSeparator( this );
     m_mainToolBar->Add( PCB_ACTIONS::footprintProperties );
     m_mainToolBar->Add( PCB_ACTIONS::defaultPadProperties );
     m_mainToolBar->Add( PCB_ACTIONS::checkFootprint );
 
     m_mainToolBar->AddScaledSeparator( this );
     m_mainToolBar->AddTool( ID_LOAD_FOOTPRINT_FROM_BOARD, wxEmptyString,
-                            KiScaledBitmap( import_brd_file_xpm, this ),
+                            KiScaledBitmap( BITMAPS::import_brd_file, this ),
                             _( "Load footprint from current board" ) );
 
     m_mainToolBar->AddTool( ID_ADD_FOOTPRINT_TO_BOARD, wxEmptyString,
-                            KiScaledBitmap( insert_module_board_xpm, this ),
+                            KiScaledBitmap( BITMAPS::insert_module_board, this ),
                             _( "Insert footprint into current board" ) );
 
     m_mainToolBar->AddScaledSeparator( this );
@@ -126,6 +133,12 @@ void FOOTPRINT_EDIT_FRAME::ReCreateHToolbar()
 
     ReCreateLayerBox( false );
     m_mainToolBar->AddControl( m_selLayerBox );
+
+    // Go through and ensure the comboboxes are the correct size, since the strings in the
+    // box could have changed widths.
+    m_mainToolBar->UpdateControlWidth( ID_TOOLBARH_PCB_SELECT_LAYER );
+    m_mainToolBar->UpdateControlWidth( ID_ON_ZOOM_SELECT );
+    m_mainToolBar->UpdateControlWidth( ID_ON_GRID_SELECT );
 
     // after adding the buttons to the toolbar, must call Realize() to reflect the changes
     m_mainToolBar->KiRealize();
@@ -194,7 +207,7 @@ void FOOTPRINT_EDIT_FRAME::ReCreateOptToolbar()
     m_optionsToolBar->Add( ACTIONS::highContrastMode,        ACTION_TOOLBAR::TOGGLE );
 
     m_optionsToolBar->AddScaledSeparator( this );
-    m_optionsToolBar->Add( PCB_ACTIONS::toggleFootprintTree, ACTION_TOOLBAR::TOGGLE );
+    m_optionsToolBar->Add( PCB_ACTIONS::showFootprintTree,   ACTION_TOOLBAR::TOGGLE );
 
     PCB_SELECTION_TOOL*          selTool = m_toolManager->GetTool<PCB_SELECTION_TOOL>();
     std::unique_ptr<ACTION_MENU> gridMenu = std::make_unique<ACTION_MENU>( false, selTool );
@@ -202,6 +215,18 @@ void FOOTPRINT_EDIT_FRAME::ReCreateOptToolbar()
     m_optionsToolBar->AddToolContextMenu( ACTIONS::toggleGrid, std::move( gridMenu ) );
 
     m_optionsToolBar->KiRealize();
+}
+
+
+void FOOTPRINT_EDIT_FRAME::UpdateToolbarControlSizes()
+{
+    if( m_mainToolBar )
+    {
+        // Update the item widths
+        m_mainToolBar->UpdateControlWidth( ID_TOOLBARH_PCB_SELECT_LAYER );
+        m_mainToolBar->UpdateControlWidth( ID_ON_ZOOM_SELECT );
+        m_mainToolBar->UpdateControlWidth( ID_ON_GRID_SELECT );
+    }
 }
 
 
@@ -214,11 +239,7 @@ void FOOTPRINT_EDIT_FRAME::ReCreateLayerBox( bool aForceResizeToolbar )
     m_selLayerBox->Resync();
 
     if( aForceResizeToolbar )
-    {
-        // the layer box can have its size changed
-        // Update the aui manager, to take in account the new size
-        m_auimgr.Update();
-    }
+        UpdateToolbarControlSizes();
 }
 
 

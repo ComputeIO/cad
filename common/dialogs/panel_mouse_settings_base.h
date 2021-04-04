@@ -23,7 +23,12 @@
 #include <wx/gbsizer.h>
 #include <wx/statbox.h>
 #include <wx/choice.h>
+#include <wx/bitmap.h>
+#include <wx/image.h>
+#include <wx/icon.h>
+#include <wx/statbmp.h>
 #include <wx/radiobut.h>
+#include <wx/button.h>
 #include <wx/panel.h>
 
 ///////////////////////////////////////////////////////////////////////////
@@ -53,6 +58,7 @@ class PANEL_MOUSE_SETTINGS_BASE : public RESETTABLE_PANEL
 		wxStaticText* m_staticText31;
 		wxChoice* m_choiceRightButtonDrag;
 		wxStaticText* m_staticText21;
+		wxStaticBitmap* m_scrollWarning;
 		wxStaticText* m_staticText19;
 		wxStaticText* m_staticText17;
 		wxStaticText* m_lblCtrl;
@@ -74,9 +80,13 @@ class PANEL_MOUSE_SETTINGS_BASE : public RESETTABLE_PANEL
 		wxRadioButton* m_rbPanHShift;
 		wxRadioButton* m_rbPanHAlt;
 		wxCheckBox* m_checkEnablePanH;
+		wxButton* m_mouseDefaults;
+		wxButton* m_trackpadDefaults;
 
 		// Virtual event handlers, overide them in your derived class
 		virtual void OnScrollRadioButton( wxCommandEvent& event ) { event.Skip(); }
+		virtual void onMouseDefaults( wxCommandEvent& event ) { event.Skip(); }
+		virtual void onTrackpadDefaults( wxCommandEvent& event ) { event.Skip(); }
 
 
 	public:

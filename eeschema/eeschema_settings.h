@@ -1,7 +1,7 @@
 /*
 * This program source code file is part of KiCad, a free EDA CAD application.
 *
-* Copyright (C) 2020 KiCad Developers, see AUTHORS.txt for contributors.
+* Copyright (C) 2020-2021 KiCad Developers, see AUTHORS.txt for contributors.
 *
 * This program is free software; you can redistribute it and/or
 * modify it under the terms of the GNU General Public License
@@ -33,7 +33,6 @@ using KIGFX::COLOR4D;
 class EESCHEMA_SETTINGS : public APP_SETTINGS_BASE
 {
 public:
-
     struct APPEARANCE
     {
         wxString edit_component_visible_columns;
@@ -57,6 +56,20 @@ public:
         bool align_to_grid;
     };
 
+    struct BOM_PLUGIN_SETTINGS
+    {
+        BOM_PLUGIN_SETTINGS() = default;
+
+        BOM_PLUGIN_SETTINGS( const wxString& aName, const wxString& aPath ) :
+                name( aName ),
+                path( aPath )
+        {}
+
+        wxString name;
+        wxString path;
+        wxString command;
+    };
+
     struct DRAWING
     {
         int      default_bus_thickness;
@@ -74,6 +87,7 @@ public:
         bool     hv_lines_only;
         int      repeat_label_increment;
         bool     intersheets_ref_show;
+        bool     intersheets_ref_own_page;
         bool     intersheets_ref_short;
         wxString intersheets_ref_prefix;
         wxString intersheets_ref_suffix;
@@ -126,7 +140,7 @@ public:
     struct PANEL_BOM
     {
         wxString selected_plugin;
-        wxString plugins;
+        std::vector<BOM_PLUGIN_SETTINGS> plugins;
     };
 
     struct PANEL_FIELD_EDITOR
@@ -188,6 +202,20 @@ public:
 
     virtual bool MigrateFromLegacy( wxConfigBase* aLegacyConfig ) override;
 
+    static std::vector<BOM_PLUGIN_SETTINGS> DefaultBomPlugins();
+
+
+protected:
+    virtual std::string getLegacyFrameName() const override { return "SchematicFrame"; }
+
+private:
+    bool migrateBomSettings();
+
+    nlohmann::json bomSettingsToJson() const;
+
+    static std::vector<BOM_PLUGIN_SETTINGS> bomSettingsFromJson( const nlohmann::json& aObj );
+
+public:
     APPEARANCE m_Appearance;
 
     AUTOPLACE_FIELDS m_AutoplaceFields;
@@ -219,10 +247,6 @@ public:
     bool m_RescueNeverShow;
 
     wxString m_lastSymbolLibDir;
-
-protected:
-
-    virtual std::string getLegacyFrameName() const override { return "SchematicFrame"; }
 };
 
 

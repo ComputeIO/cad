@@ -37,6 +37,8 @@ class SCH_SCREEN;
 class LIB_PART;
 class LIB_PIN;
 class SCH_BASE_FRAME;
+class DS_PROXY_VIEW_ITEM;
+
 
 // Eeschema 100nm as the internal units
 constexpr double SCH_WORLD_UNIT ( 1e-7 / 0.0254 );
@@ -55,14 +57,13 @@ static const LAYER_NUM SCH_LAYER_ORDER[] =
     LAYER_SELECTION_SHADOWS,
     LAYER_DEVICE_BACKGROUND,
     LAYER_SHEET_BACKGROUND,
-    LAYER_WORKSHEET
+    LAYER_DRAWINGSHEET
 };
 
 
 namespace KIGFX
 {
     class VIEW_GROUP;
-    class WS_PROXY_VIEW_ITEM;
 
     namespace PREVIEW
     {
@@ -92,15 +93,15 @@ public:
      */
     void ClearHiddenFlags();
 
-    void HideWorksheet();
+    void HideDrawingSheet();
 
-    WS_PROXY_VIEW_ITEM* GetWorksheet() const { return m_worksheet.get(); }
+    DS_PROXY_VIEW_ITEM* GetDrawingSheet() const { return m_drawingSheet.get(); }
 
 private:
     SCH_BASE_FRAME* m_frame;    // The frame using this view. Can be null. Used mainly
                                 // to know the sheet path name when drawing the page layout
 
-    std::unique_ptr<WS_PROXY_VIEW_ITEM> m_worksheet;
+    std::unique_ptr<DS_PROXY_VIEW_ITEM> m_drawingSheet;
 };
 
 }; // namespace

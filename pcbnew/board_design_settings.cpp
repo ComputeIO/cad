@@ -32,7 +32,7 @@
 #include <project/project_file.h>
 #include <advanced_config.h>
 
-const int bdsSchemaVersion = 1;
+const int bdsSchemaVersion = 2;
 
 
 BOARD_DESIGN_SETTINGS::BOARD_DESIGN_SETTINGS( JSON_SETTINGS* aParent, const std::string& aPath ) :
@@ -169,10 +169,14 @@ BOARD_DESIGN_SETTINGS::BOARD_DESIGN_SETTINGS( JSON_SETTINGS* aParent, const std:
     // Global mask margins:
     m_SolderMaskMargin  = Millimeter2iu( DEFAULT_SOLDERMASK_CLEARANCE );
     m_SolderMaskMinWidth = Millimeter2iu( DEFAULT_SOLDERMASK_MIN_WIDTH );
-    m_SolderPasteMargin = 0;                    // Solder paste margin absolute value
-    m_SolderPasteMarginRatio = 0.0;             // Solder paste margin as a ratio of pad size
-                                                // The final margin is the sum of these 2 values
-                                                // Usually < 0 because the mask is smaller than pad
+
+    // Solder paste margin absolute value
+    m_SolderPasteMargin = Millimeter2iu( DEFAULT_SOLDERPASTE_CLEARANCE );
+    // Solder paste margin as a ratio of pad size
+    // The final margin is the sum of these 2 values
+    // Usually < 0 because the mask is smaller than pad
+    m_SolderPasteMarginRatio = DEFAULT_SOLDERPASTE_RATIO;
+
     // Layer thickness for 3D viewer
     m_boardThickness = Millimeter2iu( DEFAULT_BOARD_THICKNESS_MM );
 
@@ -238,21 +242,6 @@ BOARD_DESIGN_SETTINGS::BOARD_DESIGN_SETTINGS( JSON_SETTINGS* aParent, const std:
     m_params.emplace_back( new PARAM_SCALED<int>( "rules.min_copper_edge_clearance",
             &m_CopperEdgeClearance, Millimeter2iu( LEGACY_COPPEREDGECLEARANCE ),
             Millimeter2iu( -0.01 ), Millimeter2iu( 25.0 ), MM_PER_IU ) );
-
-    m_params.emplace_back( new PARAM_SCALED<int>( "rules.solder_mask_clearance",
-            &m_SolderMaskMargin, Millimeter2iu( DEFAULT_SOLDERMASK_CLEARANCE ),
-            Millimeter2iu( -1.0 ), Millimeter2iu( 1.0 ), MM_PER_IU ) );
-
-    m_params.emplace_back( new PARAM_SCALED<int>( "rules.solder_mask_min_width",
-            &m_SolderMaskMinWidth, Millimeter2iu( DEFAULT_SOLDERMASK_MIN_WIDTH ), 0,
-            Millimeter2iu( 1.0 ), MM_PER_IU ) );
-
-    m_params.emplace_back( new PARAM_SCALED<int>( "rules.solder_paste_clearance",
-            &m_SolderPasteMargin, Millimeter2iu( DEFAULT_SOLDERPASTE_CLEARANCE ),
-            Millimeter2iu( -1.0 ), Millimeter2iu( 1.0 ), MM_PER_IU ) );
-
-    m_params.emplace_back( new PARAM<double>( "rules.solder_paste_margin_ratio",
-            &m_SolderPasteMarginRatio, DEFAULT_SOLDERPASTE_RATIO, -0.5, 1.0 ) );
 
     m_params.emplace_back( new PARAM_LAMBDA<nlohmann::json>( "rule_severities",
             [&]() -> nlohmann::json
@@ -606,6 +595,37 @@ BOARD_DESIGN_SETTINGS::BOARD_DESIGN_SETTINGS( JSON_SETTINGS* aParent, const std:
             &m_ZoneKeepExternalFillets, false ) );
 
     registerMigration( 0, 1, std::bind( &BOARD_DESIGN_SETTINGS::migrateSchema0to1, this ) );
+
+    registerMigration( 1, 2,
+            [&]() -> bool
+            {
+                // Schema 1 to 2: move mask and paste margin settings back to board.
+                // The parameters are removed, so we just have to manually load them here and
+                // they will get saved with the board
+                if( OPT<double> optval = Get<double>( "rules.solder_mask_clearance" ) )
+                    m_SolderMaskMargin = static_cast<int>( *optval * IU_PER_MM );
+
+                if( OPT<double> optval = Get<double>( "rules.solder_mask_min_width" ) )
+                    m_SolderMaskMinWidth = static_cast<int>( *optval * IU_PER_MM );
+
+                if( OPT<double> optval = Get<double>( "rules.solder_paste_clearance" ) )
+                    m_SolderPasteMargin = static_cast<int>( *optval * IU_PER_MM );
+
+                if( OPT<double> optval = Get<double>( "rules.solder_paste_margin_ratio" ) )
+                    m_SolderPasteMarginRatio = *optval;
+
+                try
+                {
+                    at( "rules" ).erase( "solder_mask_clearance" );
+                    at( "rules" ).erase( "solder_mask_min_width" );
+                    at( "rules" ).erase( "solder_paste_clearance" );
+                    at( "rules" ).erase( "solder_paste_margin_ratio" );
+                }
+                catch( ... )
+                {}
+
+                return true;
+            } );
 }
 
 
@@ -848,7 +868,7 @@ bool BOARD_DESIGN_SETTINGS::Ignore( int aDRCErrorCode )
 }
 
 
-int BOARD_DESIGN_SETTINGS::GetBiggestClearanceValue()
+int BOARD_DESIGN_SETTINGS::GetBiggestClearanceValue() const
 {
     int            biggest = 0;
     DRC_CONSTRAINT constraint;
@@ -869,7 +889,7 @@ int BOARD_DESIGN_SETTINGS::GetBiggestClearanceValue()
 }
 
 
-int BOARD_DESIGN_SETTINGS::GetSmallestClearanceValue()
+int BOARD_DESIGN_SETTINGS::GetSmallestClearanceValue() const
 {
     int clearance = GetDefault()->GetClearance();
 
@@ -951,6 +971,66 @@ void BOARD_DESIGN_SETTINGS::SetDiffPairIndex( unsigned aIndex )
 {
     m_diffPairIndex = std::min( aIndex, (unsigned) 8 );
     m_useCustomDiffPair = false;
+}
+
+
+int BOARD_DESIGN_SETTINGS::GetCurrentDiffPairWidth() const
+{
+    if( m_useCustomDiffPair )
+    {
+        return m_customDiffPair.m_Width;
+    }
+    else if( m_diffPairIndex == 0 )
+    {
+        if( GetNetClasses().GetDefaultPtr()->HasDiffPairWidth() )
+            return GetNetClasses().GetDefaultPtr()->GetDiffPairWidth();
+        else
+            return GetNetClasses().GetDefaultPtr()->GetTrackWidth();
+    }
+    else
+    {
+        return m_DiffPairDimensionsList[m_diffPairIndex].m_Width;
+    }
+}
+
+
+int BOARD_DESIGN_SETTINGS::GetCurrentDiffPairGap() const
+{
+    if( m_useCustomDiffPair )
+    {
+        return m_customDiffPair.m_Gap;
+    }
+    else if( m_diffPairIndex == 0 )
+    {
+        if( GetNetClasses().GetDefaultPtr()->HasDiffPairGap() )
+            return GetNetClasses().GetDefaultPtr()->GetDiffPairGap();
+        else
+            return GetNetClasses().GetDefaultPtr()->GetClearance();
+    }
+    else
+    {
+        return m_DiffPairDimensionsList[m_diffPairIndex].m_Gap;
+    }
+}
+
+
+int BOARD_DESIGN_SETTINGS::GetCurrentDiffPairViaGap() const
+{
+    if( m_useCustomDiffPair )
+    {
+        return m_customDiffPair.m_ViaGap;
+    }
+    else if( m_diffPairIndex == 0 )
+    {
+        if( GetNetClasses().GetDefaultPtr()->HasDiffPairViaGap() )
+            return GetNetClasses().GetDefaultPtr()->GetDiffPairViaGap();
+        else
+            return GetCurrentDiffPairGap();
+    }
+    else
+    {
+        return m_DiffPairDimensionsList[m_diffPairIndex].m_ViaGap;
+    }
 }
 
 

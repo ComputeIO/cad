@@ -136,6 +136,17 @@ public:
     wxPoint GetNearestGridPosition( const wxPoint& aPosition ) const;
 
     /**
+     * Return the nearest \a aGridSize / 2 location to \a aPosition.
+     *
+     * This is useful when attempting for keep outer points on grid but
+     * not the middle point.
+     *
+     * @param aPosition The position to check.
+     * @return The nearest half-grid position.
+     */
+    wxPoint GetNearestHalfGridPosition( const wxPoint& aPosition ) const;
+
+    /**
      * Return a reference to the default ORIGIN_TRANSFORMS object
      */
     virtual ORIGIN_TRANSFORMS& GetOriginTransforms()
@@ -195,6 +206,11 @@ public:
     virtual void ReCreateVToolbar() = 0;
     virtual void ReCreateOptToolbar() = 0;
     virtual void ReCreateAuxiliaryToolbar() { }
+
+    /**
+     * Update the sizes of any controls in the toolbars of the frame.
+     */
+    virtual void UpdateToolbarControlSizes() { }
 
     /*
      * These 4 functions provide a basic way to show/hide grid and /get/set grid color.
@@ -291,15 +307,16 @@ public:
     void AddStandardSubMenus( TOOL_MENU& aMenu );
 
     /**
-     * Prints the page layout with the frame and the basic inscriptions.
+     * Prints the drawing-sheet (frame and title block).
      *
      * @param aScreen screen to draw.
      * @param aMils2Iu The mils to Iu conversion factor.
      * @param aFilename The filename to display in basic inscriptions.
      * @param aSheetLayer The layer displayed from PcbNew.
      */
-    void PrintWorkSheet( const RENDER_SETTINGS* aSettings, BASE_SCREEN* aScreen, double aMils2Iu,
-                         const wxString& aFilename, const wxString& aSheetLayer = wxEmptyString );
+    void PrintDrawingSheet( const RENDER_SETTINGS* aSettings, BASE_SCREEN* aScreen,
+                            double aMils2Iu, const wxString& aFilename,
+                            const wxString& aSheetLayer = wxEmptyString );
 
     void DisplayToolMsg( const wxString& msg ) override;
 
@@ -379,7 +396,7 @@ public:
     /**
      * Fetch an item by KIID.  Frame-type-specific implementation.
      */
-    virtual EDA_ITEM* GetItem( const KIID& aId ) { return nullptr; }
+    virtual EDA_ITEM* GetItem( const KIID& aId ) const { return nullptr; }
 
     /**
      * Print the page pointed by current screen, set by the calling print function.
@@ -461,6 +478,13 @@ protected:
      * Stores the canvas type in the application settings.
      */
     bool saveCanvasTypeSetting( EDA_DRAW_PANEL_GAL::GAL_TYPE aCanvasType );
+
+    /**
+     * Handle a window activation event.
+     */
+    virtual void handleActivateEvent( wxActivateEvent& aEvent );
+    void onActivate( wxActivateEvent& aEvent );
+
 
     wxSocketServer*             m_socketServer;
     std::vector<wxSocketBase*>  m_sockets;         ///< interprocess communication

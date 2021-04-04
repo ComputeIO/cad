@@ -23,22 +23,20 @@
 
 # In this directory, a number of different processes are managed:
 #
-# 1) PNG files are created from SVG files
-# 2) CPP files are created from PNG files.
-# 3) Object files are created from CPP files.
-# 4) A static library is created from the object files
+# 1) PNG files are created from SVG files for each icon theme and needed bitmap resolution
+# 2) An images.tar.gz file is created from all the PNG files
 
-# Step 3) is universal and is done for any builder, whereas steps 1) and 2) are
+# Step 2) is universal and is done for any builder, whereas step 1) is
 # optional and depend on MAINTAIN_PNGS being defined in CMake.  The reason we
-# can skip 1) and 2) is that the *.CPP files are part of the source tree so
-# do not need to rebuilt by a typical builder.  However, because the *.CPP files
+# can skip 1) is that the *.PNG files are part of the source tree so
+# do not need to rebuilt by a typical builder.  However, because the *.PNG files
 # are part of the source tree, and subject to version control, they should be built
 # only when needed, otherwise this results in a diff for the version control system.
-# Therefore steps 1) and 2) are driven by CMake (if MAINTAIN_PNGS) which gives
-# us conditional *.CPP building based on an edit to the respective *.SVG file.
+# Therefore step 1) is driven by CMake (if MAINTAIN_PNGS) which gives
+# us conditional *.PNG building based on an edit to the respective *.SVG file.
 
 # If MAINTAIN_PNGS is not defined, then you are a normal builder and no special
-# tools are required.  If MAINTAIN_PNG is defined, then you are a PNG maintainer
+# tools are required.  If MAINTAIN_PNGS is defined, then you are a PNG maintainer
 # and will need the following tools findable in your PATH:
 #
 # 1) inkscape - command line mode is used, must be on your PATH
@@ -53,6 +51,11 @@ option( MAINTAIN_PNGS
 
 # Used Only to maintain PNG files (and therefore to recreate .cpp files)
 # The png2cpp creates files with native End of Line format.
+
+# List of themes - each corresponds to a folder of SVGS in ./bitmaps_png/sources/
+set( THEMES
+    light
+    dark )
 
 # Plan for three sizes of bitmaps:
 # SMALL - for menus         - 16 x 16
@@ -112,8 +115,6 @@ set( BMAPS_SMALL
     small_warning
     tree_nosel
     tree_sel
-    triangle_down
-    triangle_right
     visibility
     visibility_off
     www
@@ -200,9 +201,9 @@ set( BMAPS_MID
     cut
     datasheet
     delete_association
+    delete_cursor
     delete_gerber
     delete_sheet
-    delete
     directory
     directory_browser
     directory_open
@@ -231,6 +232,7 @@ set( BMAPS_MID
     export_cmp
     export_dsn
     export_idf
+    export_file
     export_footprint_names
     export_module
     export_part
@@ -238,7 +240,6 @@ set( BMAPS_MID
     export_step
     export_svg
     export_to_pcbnew
-    export
     fabrication
     file_bom
     file_drl
@@ -264,7 +265,6 @@ set( BMAPS_MID
     grid_select_axis
     grid
     group
-    group_add
     group_enter
     group_leave
     group_remove
@@ -588,8 +588,13 @@ set( TMP_DIR   "${CMAKE_CURRENT_BINARY_DIR}/tmp" )
 
 # true to generate log files, false to build icon files only
 # generate logs is useful only if you have problems
-set( CREATE_LOG_FILES false )
+set( CREATE_LOG_FILES true )
 
+set( BITMAP_INFO_FILE "${CMAKE_SOURCE_DIR}/include/bitmaps/bitmap_info.h" )
+set( BITMAP_INFO_TEMPLATE "${CMAKE_SOURCE_DIR}/include/bitmaps/bitmap_info.h.in" )
+set( BITMAP_INFO_LIST "" )
+
+set( ALL_PNGS "" )
 
 function( svg2png inputFile outFile pngWidth pngHeight )
     #message( "svg2png( inputFile: ${inputFile} outFile: ${outFile} pngWidth: ${pngWidth} pngHeight: ${pngHeight})")
@@ -600,7 +605,11 @@ function( svg2png inputFile outFile pngWidth pngHeight )
         set( logfile "null" )
     endif()
 
-    get_filename_component( bmn ${inputFile} NAME_WE )
+    if( ${pngWidth} EQUAL -1 )
+        set( sizeArgs --export-area-page )
+    else()
+        set( sizeArgs -w ${pngWidth} -h ${pngHeight} )
+    endif()
 
     add_custom_command(
         OUTPUT ${outFile}
@@ -608,11 +617,12 @@ function( svg2png inputFile outFile pngWidth pngHeight )
         # COMMAND ${Inkscape_EXECUTABLE} --without-gui --export-area-snap -f ${inputFile} --export-png ${outFile} -w ${pngWidth} -h ${pngHeight} > ${logfile}
 
         # this Inkscape command line is for Inkscape >= 1.0
-        COMMAND ${Inkscape_EXECUTABLE} --export-area-snap --export-type="png" ${inputFile} --export-filename ${outFile}
-            -w ${pngWidth} -h ${pngHeight} > ${logfile}
+        COMMAND ${Inkscape_EXECUTABLE} --export-area-snap --export-type=png ${inputFile}
+                --export-filename ${outFile} ${sizeArgs} > ${logfile}
 
         DEPENDS ${inputFile}
         COMMENT "Creating ${pngHeight} pixel tall ${outFile}"
+        VERBATIM
         )
 endfunction()
 
@@ -626,8 +636,6 @@ function( png2png inputFile outFile )
     else()
         set( logfile "null" )
     endif()
-
-    get_filename_component( bmn ${inputFile} NAME_WE )
 
     add_custom_command(
         OUTPUT  ${outFile}
@@ -657,37 +665,101 @@ endfunction()
 
 
 # Function bitmap_dir
-# converts all the basenames in bmapList found in hardcoded 'sources' dir
-# and and puts them into cpp_${pngHeight} and png_${pngHeight} directories.
+# Creates build targets for all the source SVGs in the given list, output at the given resolution
+# Will create targets for each theme in the THEMES list.
+# A height of -1 means to export with the page area rather than scaling to a given resolution.
+# This is used for the BMAPS_OTHER list which have varying output sizes.
 function( bitmap_dir pngWidth pngHeight bmapList )
 
-    set( cppDir "${CMAKE_CURRENT_SOURCE_DIR}/cpp_${pngHeight}" )
-    set( pngDir "${CMAKE_CURRENT_SOURCE_DIR}/png_${pngHeight}" )
+    set( pngDir "${CMAKE_CURRENT_SOURCE_DIR}/png" )
 
-    file( MAKE_DIRECTORY ${pngDir} ${cppDir} )
+    file( MAKE_DIRECTORY ${pngDir} )
 
     #file( REMOVE_RECURSE ${TMP_DIR} )
     file( MAKE_DIRECTORY ${TMP_DIR} )
 
-    #svg2png( inputFile outFile pngWidth pngHeight )
+    foreach( theme ${THEMES} )
+        if( NOT ${theme} STREQUAL "light" )
+            set( themeTag "_${theme}" )
+        else()
+            set( themeTag "" )
+        endif()
 
-    foreach( bmn ${bmapList} )
-        set( pngFile "${pngDir}/${bmn}.png" )
-        set( cppFile "${cppDir}/${bmn}.cpp" )
-        set( tmpFile "${TMP_DIR}/${bmn}_${pngHeight}.png" )
+        if( ${pngHeight} EQUAL -1 )
+            set( heightTag "" )
+        else()
+            set( heightTag "_${pngHeight}" )
+        endif()
 
-        #svg2png( inputFile outFile pngWidth pngHeight )
-        svg2png( ${CMAKE_CURRENT_SOURCE_DIR}/sources/${bmn}.svg ${tmpFile} ${pngWidth} ${pngHeight} )
+        foreach( bmn ${bmapList} )
 
-        #png2png( inputFile outFile )
-        png2png( ${tmpFile} ${pngFile} )
+            set( svgFile "${CMAKE_CURRENT_SOURCE_DIR}/sources/${theme}/${bmn}.svg" )
+            set( pngFile "${bmn}${themeTag}${heightTag}.png" )
+            set( pngPath "${pngDir}/${pngFile}" )
+            set( tmpFile "${TMP_DIR}/${pngFile}" )
 
-        #png2cpp( inputFile outFile )
-        png2cpp( ${pngFile} ${cppFile} )
+            if( NOT EXISTS ${svgFile} )
+                message( "Warning: Source SVG ${svgFile} does not exist!" )
+                continue()
+            endif()
+
+            #svg2png( inputFile outFile pngWidth pngHeight )
+            svg2png( ${svgFile} ${tmpFile} ${pngWidth} ${pngHeight} )
+
+            #png2png( inputFile outFile )
+            png2png( ${tmpFile} ${pngPath} )
+
+            set( bitmapInfo
+            "    { BITMAPS::${bmn}, wxT( \"${pngFile}\" ), ${pngHeight}, wxT( \"${theme}\" ) },\n"
+            )
+
+            set( BITMAP_INFO_LIST "${BITMAP_INFO_LIST}${bitmapInfo}" )
+            list( APPEND ALL_PNGS ${pngPath} )
+        endforeach()
     endforeach()
+
+    set( ALL_PNGS ${ALL_PNGS} PARENT_SCOPE )
+    set( BITMAP_INFO_LIST ${BITMAP_INFO_LIST} PARENT_SCOPE )
 
 endfunction()
 
+
+include( FindUnixCommands )
+
+# CMake on Windows CI seems to struggle to find tar even though it's in PATH
+# Let's help it out as modern windows (Server 2019 and 10 provide tar)
+if( MSVC AND TAR STREQUAL "TAR-NOTFOUND" )
+   # yolo
+    set( TAR "C:\\Windows\\System32\\tar.exe" )
+endif()
+
+set( BITMAP_ARCHIVE_PATH ${CMAKE_BINARY_DIR}/resources/images.tar.gz )
+
+if( NOT ALL_PNGS )
+    file( GLOB_RECURSE ALL_PNGS ${CMAKE_CURRENT_SOURCE_DIR}/png/*.png )
+endif()
+
+if( MINGW )
+    # This seems like a huge hack, but I can't find a better way.  If anyone else does, please
+    # feel free to replace this with it...
+    file( TO_CMAKE_PATH "${BITMAP_ARCHIVE_PATH}" TAR_OUTPUT_FILE )
+    string( REGEX REPLACE "^([a-zA-Z]):/" "/\\1/" TAR_OUTPUT_FILE "${TAR_OUTPUT_FILE}" )
+else()
+    set( TAR_OUTPUT_FILE "${BITMAP_ARCHIVE_PATH}" )
+endif()
+
+add_custom_target( bitmap_archive ALL
+    COMMAND ${TAR} cfz "${TAR_OUTPUT_FILE}" .
+    DEPENDS ${ALL_PNGS}
+    BYPRODUCTS ${BITMAP_ARCHIVE_PATH}
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/png
+    COMMENT "Creating image archive ${TAR_OUTPUT_FILE}"
+    VERBATIM
+    )
+
+install( FILES ${BITMAP_ARCHIVE_PATH}
+    DESTINATION ${KICAD_DATA}/resources
+    )
 
 if( MAINTAIN_PNGS )
 
@@ -725,7 +797,6 @@ if( MAINTAIN_PNGS )
         endif( NOT pngcrush_EXECUTABLE )
     endif( NOT pngcrush_FOUND )
 
-
     # these 3 cmake commands for each desired bitmap size set, repeat as needed:
     bitmap_dir( 16 16 "${BMAPS_SMALL}" )
 
@@ -743,66 +814,15 @@ if( MAINTAIN_PNGS )
 
     bitmap_dir( 48 48 "${BMAPS_BIG}" )
 
+    bitmap_dir( -1 -1 "${BMAPS_OTHER}" )
+
+    configure_file( ${BITMAP_INFO_TEMPLATE} ${BITMAP_INFO_FILE}  NEWLINE_STYLE UNIX )
+
+    add_custom_target( generate_pngs ALL
+        DEPENDS ${ALL_PNGS}
+        COMMENT "Creating PNGs from SVGs"
+        )
+
+    add_dependencies( bitmap_archive generate_pngs )
+
 endif( MAINTAIN_PNGS )
-
-    #message( "CPP_LIST: ${CPP_LIST}" )
-
-    # a target with no output, just so changes get built
-    #add_custom_target( make_cpp_files ALL DEPENDS ${CPP_LIST} )
-
-set( CPP_LIST "" )
-
-foreach( bmn ${BMAPS_SMALL} )
-    #message( "library add cpp_16/${bmn}.cpp" )
-    list( APPEND CPP_LIST cpp_16/${bmn}.cpp )
-endforeach()
-
-foreach( bmn ${BMAPS_MID} )
-    #message( "library add cpp_24/${bmn}.cpp" )
-    list( APPEND CPP_LIST cpp_24/${bmn}.cpp )
-endforeach()
-
-foreach( bmn ${BMAPS_24} )
-    #message( "library add cpp_24/${bmn}.cpp" )
-    list( APPEND CPP_LIST cpp_24/${bmn}.cpp )
-endforeach()
-
-foreach( bmn ${BMAPS_32} )
-    #message( "library add cpp_32/${bmn}.cpp" )
-    list( APPEND CPP_LIST cpp_32/${bmn}.cpp )
-endforeach()
-
-foreach( bmn ${BMAPS_BIG} )
-    #message( "library add cpp_48/${bmn}.cpp" )
-    list( APPEND CPP_LIST cpp_48/${bmn}.cpp )
-endforeach()
-
-foreach( bmn ${BMAPS_OTHER} )
-    #message( "library add cpp_other/${bmn}.cpp" )
-    list( APPEND CPP_LIST cpp_other/${bmn}.cpp )
-endforeach()
-
-# Commented out to prevent name smashing in the library
-# Uncomment to regenerate for icon sets
-# TODO: make this build automatic
-#foreach( bmn ${BMAPS_22} )
-    #message( "library add cpp_22/${bmn}.cpp" )
-#    list( APPEND CPP_LIST cpp_22/${bmn}.cpp )
-#endforeach()
-
-#foreach( bmn ${BMAPS_64} )
-    #message( "library add cpp_64/${bmn}.cpp" )
-#    list( APPEND CPP_LIST cpp_64/${bmn}.cpp )
-#endforeach()
-
-#foreach( bmn ${BMAPS_128} )
-    #message( "library add cpp_128/${bmn}.cpp" )
-#    list( APPEND CPP_LIST cpp_128/${bmn}.cpp )
-#endforeach()
-
-#add_library( bitmaps SHARED ${CPP_LIST} )
-add_library( bitmaps STATIC ${CPP_LIST} )
-
-target_include_directories( bitmaps PUBLIC
-    include
-)

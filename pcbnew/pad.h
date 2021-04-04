@@ -107,6 +107,8 @@ public:
 
     FOOTPRINT* GetParent() const;
 
+    wxString GetParentAsString() const { return m_parent->m_Uuid.AsString(); }
+
     bool IsLocked() const override;
 
     /**
@@ -642,7 +644,7 @@ public:
 
     wxString GetSelectMenuText( EDA_UNITS aUnits ) const override;
 
-    BITMAP_DEF GetMenuImage() const override;
+    BITMAPS GetMenuImage() const override;
 
     /**
      * @return the GUI-appropriate name of the shape.

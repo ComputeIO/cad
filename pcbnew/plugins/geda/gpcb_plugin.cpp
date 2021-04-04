@@ -34,6 +34,7 @@
 #include <board.h>
 #include <footprint.h>
 #include <locale_io.h>
+#include <macros.h>
 #include <pcb_text.h>
 #include <pcb_shape.h>
 #include <fp_shape.h>
@@ -44,7 +45,6 @@
 #include <wx/filename.h>
 #include <wx/wfstream.h>
 #include <boost/ptr_container/ptr_map.hpp>
-#include <memory.h>
 
 
 static inline long parseInt( const wxString& aValue, double aScalar )
@@ -687,9 +687,6 @@ FOOTPRINT* GPCB_FPL_CACHE::parseFOOTPRINT( LINE_READER* aLineReader )
         }
     }
 
-    // Recalculate the bounding box
-    footprint->CalculateBoundingBox();
-    footprint->UpdateBoundingHull();
     return footprint.release();
 }
 
@@ -934,6 +931,7 @@ const FOOTPRINT* GPCB_PLUGIN::GetEnumeratedFootprint( const wxString& aLibraryPa
 
 FOOTPRINT* GPCB_PLUGIN::FootprintLoad( const wxString& aLibraryPath,
                                        const wxString& aFootprintName,
+                                       bool  aKeepUUID,
                                        const PROPERTIES* aProperties )
 {
     const FOOTPRINT* footprint = getFootprint( aLibraryPath, aFootprintName, aProperties, true );

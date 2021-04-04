@@ -2,7 +2,7 @@
  * KiRouter - a push-and-(sometimes-)shove PCB router
  *
  * Copyright (C) 2013-2014 CERN
- * Copyright (C) 2016 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 2016-2021 KiCad Developers, see AUTHORS.txt for contributors.
  * Author: Tomasz Wlostowski <tomasz.wlostowski@cern.ch>
  *
  * This program is free software: you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
 #include <geometry/shape_line_chain.h>
 #include <geometry/shape_rect.h>
 #include <geometry/shape_simple.h>
-#include <geometry/shape_file_io.h>
 
 #include <cmath>
 
@@ -121,7 +120,8 @@ bool COST_ESTIMATOR::IsBetter( const COST_ESTIMATOR& aOther, double aLengthToler
 OPTIMIZER::OPTIMIZER( NODE* aWorld ) :
     m_world( aWorld ),
     m_collisionKindMask( ITEM::ANY_T ),
-    m_effortLevel( MERGE_SEGMENTS )
+    m_effortLevel( MERGE_SEGMENTS ),
+    m_restrictAreaIsStrict( false )
 {
 }
 
@@ -172,7 +172,8 @@ void OPTIMIZER::cacheAdd( ITEM* aItem, bool aIsStatic = false )
 
 void OPTIMIZER::removeCachedSegments( LINE* aLine, int aStartVertex, int aEndVertex )
 {
-    if( !aLine->IsLinked() ) return;
+    if( !aLine->IsLinked() )
+        return;
 
     auto links = aLine->Links();
 
@@ -225,7 +226,10 @@ bool AREA_CONSTRAINT::Check( int aVertex1, int aVertex2, const LINE* aOriginLine
     bool p1_in = m_allowedArea.Contains( p1 );
     bool p2_in = m_allowedArea.Contains( p2 );
 
-    return p1_in || p2_in;
+    if( m_allowedAreaStrict ) // strict restriction? both points must be inside the restricted area
+        return p1_in && p2_in;
+    else // loose restriction
+        return p1_in || p2_in;
 }
 
 
@@ -268,14 +272,22 @@ bool RESTRICT_VERTEX_RANGE_CONSTRAINT::Check( int aVertex1, int aVertex2, const 
     return true;
 }
 
-
-// fixme: integrate into SHAPE_LINE_CHAIN, check corner cases against current PointInside implementation
+/**
+ * Determine if a point is located within a given polygon
+ *
+ * @todo fixme: integrate into SHAPE_LINE_CHAIN, check corner cases against current PointInside
+ *       implementation
+ *
+ * @param aL Polygon
+ * @param aP Point to check for location within the polygon
+ *
+ * @return false if point is not polygon boundary aL, true if within or on the polygon boundary
+ */
 static bool pointInside2( const SHAPE_LINE_CHAIN& aL, const VECTOR2I& aP )
 {
     if( !aL.IsClosed() || aL.SegmentCount() < 3 )
         return false;
 
-    // returns 0 if false, +1 if true, -1 if pt ON polygon boundary
     int result  = 0;
     size_t cnt  = aL.PointCount();
 
@@ -288,7 +300,7 @@ static bool pointInside2( const SHAPE_LINE_CHAIN& aL, const VECTOR2I& aP )
         if( ipNext.y == aP.y )
         {
             if( (ipNext.x ==aP.x) || ( ip.y == aP.y && ( (ipNext.x >aP.x) == (ip.x <aP.x) ) ) )
-                return -1;
+                return true;  // pt on polyground boundary
         }
 
         if( (ip.y <aP.y) != (ipNext.y <aP.y) )
@@ -299,13 +311,13 @@ static bool pointInside2( const SHAPE_LINE_CHAIN& aL, const VECTOR2I& aP )
                     result = 1 - result;
                 else
                 {
-                    double d = static_cast<double>( ip.x - aP.x ) * 
+                    double d = static_cast<double>( ip.x - aP.x ) *
                                static_cast<double>( ipNext.y - aP.y ) -
-                               static_cast<double>( ipNext.x - aP.x ) * 
+                               static_cast<double>( ipNext.x - aP.x ) *
                                static_cast<double>( ip.y - aP.y );
 
                     if( !d )
-                        return -1;
+                        return true;  // pt on polyground boundary
 
                     if( (d > 0) == (ipNext.y > ip.y) )
                         result = 1 - result;
@@ -319,7 +331,7 @@ static bool pointInside2( const SHAPE_LINE_CHAIN& aL, const VECTOR2I& aP )
                                ((double)ipNext.x -aP.x) * ((double)ip.y -aP.y);
 
                     if( !d )
-                        return -1;
+                        return true;  // pt on polyground boundary
 
                     if( (d > 0) == (ipNext.y > ip.y) )
                         result = 1 - result;
@@ -360,6 +372,7 @@ bool KEEP_TOPOLOGY_CONSTRAINT::Check( int aVertex1, int aVertex2, const LINE* aO
         if( pointInside2( encPoly, j->Pos() ) )
         {
             bool falsePositive = false;
+
             for( int k = 0; k < encPoly.PointCount(); k++ )
             {
                 if( encPoly.CPoint(k) == j->Pos() )
@@ -585,11 +598,17 @@ bool OPTIMIZER::Optimize( LINE* aLine, LINE* aResult )
         auto c = new PRESERVE_VERTEX_CONSTRAINT( m_world, m_preservedVertex );
         AddConstraint( c );
     }
-    
+
     if( m_effortLevel & RESTRICT_VERTEX_RANGE )
     {
         auto c = new RESTRICT_VERTEX_RANGE_CONSTRAINT( m_world, m_restrictedVertexRange.first,
                                                        m_restrictedVertexRange.second );
+        AddConstraint( c );
+    }
+
+    if( m_effortLevel & RESTRICT_AREA )
+    {
+        auto c = new AREA_CONSTRAINT( m_world, m_restrictArea, m_restrictAreaIsStrict );
         AddConstraint( c );
     }
 
@@ -653,10 +672,11 @@ bool OPTIMIZER::mergeStep( LINE* aLine, SHAPE_LINE_CHAIN& aCurrentPath, int step
             SHAPE_LINE_CHAIN bypass = DIRECTION_45().BuildInitialTrace( s1.A, s2.B, i );
             cost[i] = INT_MAX;
 
-
             bool ok = false;
+
             if( !checkColliding( aLine, bypass ) )
             {
+                //printf("Chk-constraints: %d %d\n", n, n+step+1 );
                 ok = checkConstraints ( n, n + step + 1, aLine, aCurrentPath, bypass );
             }
 
@@ -989,6 +1009,7 @@ int OPTIMIZER::smartPadsSingle( LINE* aLine, ITEM* aPad, bool aEnd, int aEndVert
     return -1;
 }
 
+
 bool OPTIMIZER::runSmartPads( LINE* aLine )
 {
     SHAPE_LINE_CHAIN& line = aLine->Line();
@@ -1085,7 +1106,7 @@ int findCoupledVertices( const VECTOR2I& aVertex, const SEG& aOrigSeg,
 {
     int count = 0;
 
-    for( int i = 0; i < aCoupled.SegmentCount(); i++ )
+    for ( int i = 0; i < aCoupled.SegmentCount(); i++ )
     {
         SEG s = aCoupled.CSegment( i );
         VECTOR2I projOverCoupled = s.LineProject ( aVertex );
@@ -1130,7 +1151,8 @@ bool coupledBypass( NODE* aNode, DIFF_PAIR* aPair, bool aRefIsP, const SHAPE_LIN
                     SHAPE_LINE_CHAIN& aNewCoupled )
 {
     int              vStartIdx[1024]; // fixme: possible overflow
-    int              nStarts = findCoupledVertices( aRefBypass.CPoint( 0 ), aRefBypass.CSegment( 0 ),
+    int              nStarts = findCoupledVertices( aRefBypass.CPoint( 0 ),
+                                                    aRefBypass.CSegment( 0 ),
                                                     aCoupled, aPair, vStartIdx );
     DIRECTION_45     dir( aRefBypass.CSegment( 0 ) );
 
@@ -1174,7 +1196,6 @@ bool coupledBypass( NODE* aNode, DIFF_PAIR* aPair, bool aRefIsP, const SHAPE_LIN
         }
     }
 
-
     if( found )
         aNewCoupled = bestBypass;
 
@@ -1212,7 +1233,8 @@ bool OPTIMIZER::mergeDpStep( DIFF_PAIR* aPair, bool aTryP, int step )
 
         if( dir1.IsObtuse( dir2 ) )
         {
-            SHAPE_LINE_CHAIN bypass = DIRECTION_45().BuildInitialTrace( s1.A, s2.B, dir1.IsDiagonal() );
+            SHAPE_LINE_CHAIN bypass = DIRECTION_45().BuildInitialTrace( s1.A, s2.B,
+                                                                        dir1.IsDiagonal() );
             SHAPE_LINE_CHAIN newRef;
             SHAPE_LINE_CHAIN newCoup;
             int64_t deltaCoupled = -1, deltaUni = -1;
@@ -1271,7 +1293,7 @@ bool OPTIMIZER::mergeDpSegments( DIFF_PAIR* aPair )
         if( step_n > max_step_n )
             step_n = max_step_n;
 
-        if( step_p < 1 && step_n < 1)
+        if( step_p < 1 && step_n < 1 )
             break;
 
         bool found_anything_p = false;
@@ -1317,8 +1339,9 @@ static int64_t shovedArea( const SHAPE_LINE_CHAIN& aOld, const SHAPE_LINE_CHAIN&
         area += -(int64_t) v0.y * v1.x + (int64_t) v0.x * v1.y;
     }
 
-    return std::abs(area / 2);
+    return std::abs( area / 2 );
 }
+
 
 bool tightenSegment( bool dir, NODE *aNode, const LINE& cur, const SHAPE_LINE_CHAIN& in,
                      SHAPE_LINE_CHAIN& out )
@@ -1376,7 +1399,6 @@ bool tightenSegment( bool dir, NODE *aNode, const LINE& cur, const SHAPE_LINE_CH
     else
         guide = b;
 
-
     initial = guide.Length();
 
     int step = initial;
@@ -1404,17 +1426,16 @@ bool tightenSegment( bool dir, NODE *aNode, const LINE& cur, const SHAPE_LINE_CH
         else
             current += step;
 
-
         //dbg->AddSegment ( SEG( center.A ,  a.LineProject( center.A + gr ) ), 3 );
         //dbg->AddSegment ( SEG( center.A ,  center.A + guideA  ), 3 );
         //dbg->AddSegment ( SEG( center.B , center.B + guideB ), 4 );
-
 
         if ( current == initial )
             break;
 
 
     }
+
     out = snew;
 
     //dbg->AddLine ( snew, 3, 100000 );
@@ -1422,7 +1443,8 @@ bool tightenSegment( bool dir, NODE *aNode, const LINE& cur, const SHAPE_LINE_CH
     return true;
 }
 
-void Tighten( NODE *aNode, const SHAPE_LINE_CHAIN& aOldLine, const LINE& aNewLine, LINE& aOptimized )
+void Tighten( NODE *aNode, const SHAPE_LINE_CHAIN& aOldLine, const LINE& aNewLine,
+              LINE& aOptimized )
 {
     LINE tmp;
 

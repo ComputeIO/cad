@@ -56,8 +56,8 @@ using namespace std::placeholders;
 
 
 // files.cpp
-extern bool AskLoadBoardFileName( wxWindow* aParent, int* aCtl, wxString* aFileName,
-                                    bool aKicadFilesOnly = false );
+extern bool AskLoadBoardFileName( PCB_EDIT_FRAME* aParent, int* aCtl, wxString* aFileName,
+                                  bool aKicadFilesOnly = false );
 extern IO_MGR::PCB_FILE_T plugin_type( const wxString& aFileName, int aCtl );
 
 
@@ -545,8 +545,9 @@ int PCB_CONTROL::DeleteItemCursor( const TOOL_EVENT& aEvent )
             if( m_pickerItem )
                 m_toolMgr->GetTool<PCB_SELECTION_TOOL>()->UnbrightenItem( m_pickerItem );
 
-            // Wake the selection tool after exiting to ensure the cursor gets updated
-            m_toolMgr->RunAction( PCB_ACTIONS::selectionActivate, false );
+            // Ensure the cursor gets changed&updated
+            m_frame->GetCanvas()->SetCurrentCursor( KICURSOR::ARROW );
+            m_frame->GetCanvas()->Refresh();
         } );
 
     m_toolMgr->RunAction( ACTIONS::pickerTool, true, &tool );
@@ -849,7 +850,9 @@ int PCB_CONTROL::placeBoardItems( std::vector<BOARD_ITEM*>& aItems, bool aIsNew,
 
     PCB_SELECTION_TOOL* selectionTool = m_toolMgr->GetTool<PCB_SELECTION_TOOL>();
     EDIT_TOOL*          editTool = m_toolMgr->GetTool<EDIT_TOOL>();
-    PCB_SELECTION&      selection = selectionTool->GetSelection();
+
+    std::vector<BOARD_ITEM*> itemsToSel;
+    itemsToSel.reserve( aItems.size() );
 
     for( BOARD_ITEM* item : aItems )
     {
@@ -896,19 +899,17 @@ int PCB_CONTROL::placeBoardItems( std::vector<BOARD_ITEM*>& aItems, bool aIsNew,
         else
             editTool->GetCurrentCommit()->Added( item );
 
-        // Matching the logic of PCB_SELECTION_TOOL::select for PCB_GROUP_T, there
-        // is a distinction between which items are SetSelected and which are in
-        // the selection object.  Top-level groups or items not in groups are
-        // added to the selection object (via selection.Add(), below), but all
-        // items have SetSelected called.  This is because much of the selection
-        // management logic (e.g. move) recursively acts on groups in the
-        // selection, so descendents of groups should not be in the selection
-        // object.
-        item->SetSelected();
-
+        // We only need to add the items that aren't inside a group currently selected
+        // to the selection. If an item is inside a group and that group is selected,
+        // then the selection tool will select it for us.
         if( !item->GetParentGroup() || !alg::contains( aItems, item->GetParentGroup() ) )
-            selection.Add( item );
+            itemsToSel.push_back( item );
     }
+
+    // Select the items that should be selected
+    m_toolMgr->RunAction( PCB_ACTIONS::selectItems, true, &itemsToSel );
+
+    PCB_SELECTION& selection = selectionTool->GetSelection();
 
     if( selection.Size() > 0 )
     {

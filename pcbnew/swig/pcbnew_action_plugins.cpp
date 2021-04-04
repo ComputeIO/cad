@@ -22,6 +22,7 @@
  */
 
 #include "pcbnew_action_plugins.h"
+#include <bitmaps.h>
 #include <board.h>
 #include <footprint.h>
 #include <track.h>
@@ -137,11 +138,17 @@ bool PYTHON_ACTION_PLUGIN::GetShowToolbarButton()
 }
 
 
-wxString PYTHON_ACTION_PLUGIN::GetIconFileName()
+wxString PYTHON_ACTION_PLUGIN::GetIconFileName( bool aDark )
 {
     PyLOCK lock;
 
-    return CallRetStrMethod( "GetIconFileName" );
+    PyObject* arglist = Py_BuildValue( "(i)", static_cast<int>( aDark ) );
+
+    wxString result = CallRetStrMethod( "GetIconFileName", arglist );
+
+    Py_DECREF( arglist );
+
+    return result;
 }
 
 
@@ -242,6 +249,8 @@ void PCB_EDIT_FRAME::RunActionPlugin( ACTION_PLUGIN* aActionPlugin )
 
     itemsList.ClearItemsList();
 
+    BOARD_COMMIT commit( this );
+
     // Execute plugin itself...
     ACTION_PLUGINS::SetActionRunning( true );
     aActionPlugin->Run();
@@ -282,7 +291,7 @@ void PCB_EDIT_FRAME::RunActionPlugin( ACTION_PLUGIN* aActionPlugin )
     for( ZONE* zone : currentPcb->Zones() )
         currItemList.insert( zone );
 
-    // Found deleted footprints
+    // Found deleted items
     for( unsigned int i = 0; i < oldBuffer->GetCount(); i++ )
     {
         BOARD_ITEM* item = (BOARD_ITEM*) oldBuffer->GetPickedItem( i );
@@ -291,15 +300,18 @@ void PCB_EDIT_FRAME::RunActionPlugin( ACTION_PLUGIN* aActionPlugin )
         wxASSERT( item );
 
         if( currItemList.find( item ) == currItemList.end() )
+        {
             deletedItemsList.PushItem( picker );
+            commit.Removed( item );
+        }
     }
 
     // Mark deleted elements in undolist
+
     for( unsigned int i = 0; i < deletedItemsList.GetCount(); i++ )
     {
         oldBuffer->PushItem( deletedItemsList.GetItemWrapper( i ) );
     }
-
     // Find new footprints
     for( FOOTPRINT* item : currentPcb->Footprints() )
     {
@@ -307,6 +319,7 @@ void PCB_EDIT_FRAME::RunActionPlugin( ACTION_PLUGIN* aActionPlugin )
         {
             ITEM_PICKER picker( nullptr, item, UNDO_REDO::NEWITEM );
             oldBuffer->PushItem( picker );
+            commit.Added( item );
         }
     }
 
@@ -316,6 +329,7 @@ void PCB_EDIT_FRAME::RunActionPlugin( ACTION_PLUGIN* aActionPlugin )
         {
             ITEM_PICKER picker( nullptr, item, UNDO_REDO::NEWITEM );
             oldBuffer->PushItem( picker );
+            commit.Added( item );
         }
     }
 
@@ -325,6 +339,7 @@ void PCB_EDIT_FRAME::RunActionPlugin( ACTION_PLUGIN* aActionPlugin )
         {
             ITEM_PICKER picker( nullptr, item, UNDO_REDO::NEWITEM );
             oldBuffer->PushItem( picker );
+            commit.Added( item );
         }
     }
 
@@ -334,8 +349,10 @@ void PCB_EDIT_FRAME::RunActionPlugin( ACTION_PLUGIN* aActionPlugin )
         {
             ITEM_PICKER picker( nullptr, zone, UNDO_REDO::NEWITEM );
             oldBuffer->PushItem( picker );
+            commit.Added( zone );
         }
     }
+
 
     if( oldBuffer->GetCount() )
     {
@@ -347,6 +364,7 @@ void PCB_EDIT_FRAME::RunActionPlugin( ACTION_PLUGIN* aActionPlugin )
         delete oldBuffer;
     }
 
+    commit.Push( _( "Apply action script" ) );
     ActivateGalCanvas();
 }
 
@@ -360,8 +378,7 @@ void PCB_EDIT_FRAME::buildActionPluginMenus( ACTION_MENU* actionMenu )
     {
         wxMenuItem* item;
         ACTION_PLUGIN* ap = ACTION_PLUGINS::GetAction( ii );
-        const wxBitmap& bitmap =
-                ap->iconBitmap.IsOk() ? ap->iconBitmap : KiBitmap( puzzle_piece_xpm );
+        const wxBitmap& bitmap = ap->iconBitmap.IsOk() ? ap->iconBitmap : KiBitmap( BITMAPS::puzzle_piece );
 
         item = AddMenuItem( actionMenu, wxID_ANY,  ap->GetName(), ap->GetDescription(), bitmap );
 
@@ -394,7 +411,7 @@ void PCB_EDIT_FRAME::AddActionPluginTools()
             if ( ap->iconBitmap.IsOk() )
                 bitmap = KiScaledBitmap( ap->iconBitmap, this );
             else
-                bitmap = KiScaledBitmap( puzzle_piece_xpm, this );
+                bitmap = KiScaledBitmap( BITMAPS::puzzle_piece, this );
 
             wxAuiToolBarItem* button = m_mainToolBar->AddTool(
                     wxID_ANY, wxEmptyString, bitmap, ap->GetName() );

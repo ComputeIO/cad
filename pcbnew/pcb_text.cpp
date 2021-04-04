@@ -33,7 +33,7 @@
 #include <pcb_text.h>
 #include <pcb_painter.h>
 #include <trigo.h>
-#include <font/outline_font.h>
+#include <kicad_string.h>
 
 using KIGFX::PCB_RENDER_SETTINGS;
 
@@ -53,7 +53,7 @@ wxString PCB_TEXT::GetShownText( int aDepth, FONT** aFontPtr ) const
 {
     BOARD* board = dynamic_cast<BOARD*>( GetParent() );
 
-    RESOLVER_FN pcbTextResolver = [&]( wxString* token ) -> bool
+    std::function<bool( wxString* )> pcbTextResolver = [&]( wxString* token ) -> bool
     {
         if( token->IsSameAs( wxT( "LAYER" ) ) )
         {
@@ -63,39 +63,25 @@ wxString PCB_TEXT::GetShownText( int aDepth, FONT** aFontPtr ) const
 
         if( token->Contains( ':' ) )
         {
-            wxString remainder;
-            wxString ref = token->BeforeFirst( ':', &remainder );
+            wxString    remainder;
+            wxString    ref = token->BeforeFirst( ':', &remainder );
+            BOARD_ITEM* refItem = board->GetItem( KIID( ref ) );
 
-            if( !ref.Cmp( "FONT" ) )
+            if( refItem && refItem->Type() == PCB_FOOTPRINT_T )
             {
-                // special case: handle FONT variable in Text item
-                // as font specifier
-                //
-                // put "" in token as we don't want the font specifier
-                // to show
-                *token = "";
-                return true;
-            }
-            else
-            {
-                BOARD_ITEM* refItem = board->GetItem( KIID( ref ) );
+                FOOTPRINT* refFP = static_cast<FOOTPRINT*>( refItem );
 
-                if( refItem && refItem->Type() == PCB_FOOTPRINT_T )
+                if( refFP->ResolveTextVar( &remainder, aDepth + 1 ) )
                 {
-                    FOOTPRINT* refFP = static_cast<FOOTPRINT*>( refItem );
-
-                    if( refFP->ResolveTextVar( &remainder, aDepth + 1 ) )
-                    {
-                        *token = remainder;
-                        return true;
-                    }
+                    *token = remainder;
+                    return true;
                 }
             }
         }
         return false;
     };
 
-    RESOLVER_FN boardTextResolver = [&]( wxString* token ) -> bool
+    std::function<bool( wxString* )> boardTextResolver = [&]( wxString* token ) -> bool
     {
         return board->ResolveTextVar( token, aDepth + 1 );
     };
@@ -153,7 +139,8 @@ void PCB_TEXT::GetMsgPanelInfo( EDA_DRAW_FRAME* aFrame, std::vector<MSG_PANEL_IT
 {
     EDA_UNITS units = aFrame->GetUserUnits();
 
-    aList.emplace_back( _( "PCB Text" ), GetShownText() );
+    // Don't use GetShownText() here; we want to show the user the variable references
+    aList.emplace_back( _( "PCB Text" ), UnescapeString( GetText() ) );
 
     if( IsLocked() )
         aList.emplace_back( _( "Status" ), _( "locked" ) );
@@ -184,67 +171,32 @@ const EDA_RECT PCB_TEXT::GetBoundingBox() const
 void PCB_TEXT::Rotate( const wxPoint& aRotCentre, double aAngle )
 {
     wxPoint pt = GetTextPos();
+#ifdef DEBUG
+    std::cerr << "PCB_TEXT::Rotate( {" << aRotCentre.x << "," << aRotCentre.y << "}, " << aAngle
+              << " ) " << GetShownText() << "@" << pt << " angle " << GetTextAngle();
+#endif
     RotatePoint( &pt, aRotCentre, aAngle );
     SetTextPos( pt );
-
-    SetTextAngle( GetTextAngle() + aAngle );
+    double angle = GetTextAngle() + aAngle;
+#ifdef DEBUG
+    std::cerr << "->" << pt << " angle " << angle << std::endl;
+#endif
+    SetTextAngle( angle );
 }
 
 
 void PCB_TEXT::Flip( const wxPoint& aCentre, bool aFlipLeftRight )
 {
-    double angle = GetTextAngle();
-    bool   vertical = KiROUND( angle ) % 1800 == 900;
-
-    if( KiROUND( angle ) != 0 )
-    {
-        Rotate( aCentre, -angle );
-
-        if( vertical )
-            aFlipLeftRight = !aFlipLeftRight;
-    }
-
-    // Flip the bounding box
-    EDA_RECT box = GetTextBox();
-    int      left = box.GetLeft();
-    int      right = box.GetRight();
-    int      top = box.GetTop();
-    int      bottom = box.GetBottom();
-
     if( aFlipLeftRight )
     {
-        MIRROR( left, aCentre.x );
-        MIRROR( right, aCentre.x );
-        std::swap( left, right );
+        SetTextX( MIRRORVAL( GetTextPos().x, aCentre.x ) );
+        SetTextAngle( -GetTextAngle() );
     }
     else
     {
-        MIRROR( top, aCentre.y );
-        MIRROR( bottom, aCentre.y );
-        std::swap( top, bottom );
+        SetTextY( MIRRORVAL( GetTextPos().y, aCentre.y ) );
+        SetTextAngle( 1800 - GetTextAngle() );
     }
-
-    // Now put the text back in its bounding box
-    switch( GetHorizJustify() )
-    {
-    case GR_TEXT_HJUSTIFY_LEFT: SetTextX( IsMirrored() ? left : right ); break;
-    case GR_TEXT_HJUSTIFY_CENTER: SetTextX( ( left + right ) / 2 ); break;
-    case GR_TEXT_HJUSTIFY_RIGHT: SetTextX( IsMirrored() ? right : left ); break;
-    }
-
-    if( !aFlipLeftRight )
-    {
-        switch( GetVertJustify() )
-        {
-        case GR_TEXT_VJUSTIFY_TOP: SetTextY( bottom ); break;
-        case GR_TEXT_VJUSTIFY_CENTER: SetTextY( ( top + bottom ) / 2 ); break;
-        case GR_TEXT_VJUSTIFY_BOTTOM: SetTextY( top ); break;
-        }
-    }
-
-    // And restore orientation
-    if( KiROUND( angle ) != 0 )
-        Rotate( aCentre, angle );
 
     SetLayer( FlipLayer( GetLayer(), GetBoard()->GetCopperLayerCount() ) );
     SetMirrored( !IsMirrored() );
@@ -257,9 +209,9 @@ wxString PCB_TEXT::GetSelectMenuText( EDA_UNITS aUnits ) const
 }
 
 
-BITMAP_DEF PCB_TEXT::GetMenuImage() const
+BITMAPS PCB_TEXT::GetMenuImage() const
 {
-    return text_xpm;
+    return BITMAPS::text;
 }
 
 

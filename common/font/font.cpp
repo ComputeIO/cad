@@ -24,11 +24,12 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
 
+#include <common.h>
 #include <kicad_string.h>
 #include <font/stroke_font.h>
 #include <font/outline_font.h>
 #include <trigo.h>
-#include <markup/markup_parser.h>
+#include <parser/markup_parser.h>
 #include <sstream>
 
 std::string TextStyleAsString( TEXT_STYLE_FLAGS aFlags )
@@ -50,15 +51,11 @@ std::string TextStyleAsString( TEXT_STYLE_FLAGS aFlags )
     return s.str();
 }
 
+using namespace KIFONT;
+
 FONT*                     FONT::s_defaultFont = nullptr;
 std::map<wxString, FONT*> FONT::s_fontMap;
 
-#ifdef DEBUG
-bool FONT::debugMe( const UTF8& aText ) const
-{
-    return ( !aText.substr( 0, 3 ).compare( "Foo" ) || !aText.substr( 0, 6 ).compare( "${FONT" ) );
-}
-#endif
 
 FONT::FONT()
 {
@@ -142,109 +139,225 @@ bool FONT::IsOutline( const wxString& aFontName )
  * @param aGal
  * @param aTextItem is the underlying text item
  * @param aPosition is the text position
+ * @return bounding box width/height
  */
-void FONT::DrawString( KIGFX::GAL* aGal, const UTF8& aText, const VECTOR2D& aPosition,
-                       double aRotationAngle, bool aParse, bool aMultiLine, int aTextWidth,
-                       int aTextHeight, EDA_TEXT_HJUSTIFY_T aHorizJustify,
-                       EDA_TEXT_VJUSTIFY_T aVertJustify ) const
+VECTOR2D FONT::doDrawString( KIGFX::GAL* aGal, const UTF8& aText, const VECTOR2D& aPosition,
+                             bool aParse, const VECTOR2D& aGlyphSize,
+                             const TEXT_ATTRIBUTES& aAttributes, const EDA_ANGLE& aAngle ) const
 {
-    int textHeight = ( aTextHeight > 0 ? aTextHeight : aGal->GetGlyphSize().y );
 #ifdef DEBUG
-    if( debugMe( aText ) )
-        std::cerr << "FONT::DrawString( aGal, \"" << aText << "\", " << aPosition << ", "
-                  << aRotationAngle << ", " << ( aParse ? "true" : "false" ) << ", "
-                  << ( aMultiLine ? "true" : "false" ) << ", " << aTextWidth << ", " << aTextHeight
-                  << ", " << aVertJustify << " ) const; textHeight " << textHeight << std::endl;
+    std::cerr << "FONT::doDrawString( aGal, \"" << aText << "\", " << aPosition << ", "
+              << ", " << ( aParse ? "true" : "false" ) << ", "
+              << ", " << aGlyphSize << ", " << aAttributes << ", " << aAngle << " ) const"
+              << std::endl;
 #endif
     if( aText.empty() )
-        return;
+        return VECTOR2D( 0.0, 0.0 );
 
-    if( aParse )
-    {
-        MARKUP::MARKUP_PARSER markupParser( aText );
-        auto                  parse_result = markupParser.parse();
+    wxArrayString         strings;
+    std::vector<wxPoint>  positions;
+    int                   n_lines;
+    VECTOR2D              boundingBox;
+    std::vector<VECTOR2D> lineBoundingBoxes;
+
+    getLinePositions( aText, aPosition, strings, positions, n_lines, lineBoundingBoxes, aGlyphSize,
+                      aAttributes, aAngle );
 #ifdef DEBUG
-        std::cerr << "[[[" << parse_result << "]]]" << std::endl;
+    std::cerr << "FONT::doDrawString getLinePositions(\"" << aText << "\"): " << n_lines
+              << " lines, ";
+    for( int i = 0; i < n_lines; i++ )
+    {
+        std::cerr << "#" << i << " \"" << strings[i] << "\"" << positions[i].x << ","
+                  << positions[i].y << " " << lineBoundingBoxes.at( i );
+    }
+    std::cerr << std::endl;
 #endif
-        /* ... */
+
+    for( int i = 0; i < n_lines; i++ )
+    {
+#ifdef DEBUG
+        std::cerr << "FONT::doDrawString calling Draw( aGal, \"" << strings.Item( i ) << "\", "
+                  << positions[i].x << "," << positions[i].y << ", " << aAngle.AsDegrees()
+                  << " ) i==" << i << std::endl;
+#endif
+        VECTOR2D lineBoundingBox;
+        if( aParse )
+        {
+            MARKUP::MARKUP_PARSER markupParser( std::string( strings.Item( i ) ) );
+            //auto                  parse_result = markupParser.Parse();
+            VECTOR2D cursor = positions[i];
+
+            std::function<void( const MARKUP::MARKUP_NODE& )> nodeHandler =
+                    [&]( const MARKUP::MARKUP_NODE& aNode )
+            {
+                if( !aNode->is_root() && aNode->has_content() )
+                {
+#ifdef DEBUG
+                    std::cerr << "drawing " << aNode->asString() << " at " << cursor << std::endl;
+#endif
+                    VECTOR2D itemBoundingBox =
+                            Draw( aGal, aNode->string(), cursor, aPosition, aAngle );
+                    lineBoundingBox += itemBoundingBox;
+                    cursor += itemBoundingBox;
+                }
+
+                for( const auto& child : aNode->children )
+                    nodeHandler( child );
+            };
+            nodeHandler( markupParser.Parse() );
+        }
+        else
+        {
+            //drawSingleLineText( aGal, strings.Item( i ), positions[i], aRotationAngle );
+            lineBoundingBox = Draw( aGal, strings.Item( i ), positions[i], aPosition, aAngle );
+        }
+
+        boundingBox.x = fmax( boundingBox.x, lineBoundingBox.x );
+        //boundingBox.y += positions[i].y;
+#if 0 //def DEBUG
+        std::cerr << "lineBoundingBox " << lineBoundingBox << " -> boundingBox " << boundingBox
+                  << std::endl;
+#endif
     }
 
-    wxArrayString        strings;
-    std::vector<wxPoint> positions;
-    int                  n;
-    getLinePositions( aGal, aText, aPosition, strings, positions, n, textHeight, aMultiLine,
-                      aHorizJustify, aVertJustify, aRotationAngle );
-    for( int i = 0; i < n; i++ )
-    {
-#ifdef DEBUG
-        if( debugMe( aText ) )
-            std::cerr << "Draw( aGal, \"" << strings.Item( i ) << "\", " << positions[i] << ", "
-                      << aRotationAngle << " ) i==" << i << std::endl;
-#endif
-        //drawSingleLineText( aGal, strings.Item( i ), positions[i], aRotationAngle );
-        Draw( aGal, strings.Item( i ), positions[i], aRotationAngle );
-    }
+    boundingBox.y = ( n_lines + 1 ) * GetInterline( aGlyphSize.y );
+
+    return boundingBox;
 }
 
 
-void FONT::getLinePositions( KIGFX::GAL* aGal, const UTF8& aText, const VECTOR2D& aPosition,
+void FONT::getLinePositions( const UTF8& aText, const VECTOR2D& aPosition,
                              wxArrayString& aStringList, std::vector<wxPoint>& aPositions,
-                             int& aLineCount, int aTextHeight, bool aMultiLine,
-                             EDA_TEXT_HJUSTIFY_T aHorizJustify, EDA_TEXT_VJUSTIFY_T aVertJustify,
-                             double aRotationAngle ) const
+                             int& aLineCount, std::vector<VECTOR2D>& aBoundingBoxes,
+                             const VECTOR2D& aGlyphSize, const TEXT_ATTRIBUTES& aAttributes,
+                             const EDA_ANGLE& aAngle ) const
 {
-    if( aMultiLine )
-    {
-        wxStringSplit( aText, aStringList, '\n' );
-        aLineCount = aStringList.Count();
-        aPositions.reserve( aLineCount );
-    }
-    else
-    {
-        aLineCount = 1;
-        aStringList.Add( aText );
-    }
+#ifdef DEBUG
+    std::cerr << "FONT::getLinePositions( \"" << aText << "\", ..., " << aGlyphSize << ", "
+              << aAttributes << ", " << aAngle << " )" << std::endl;
+#endif
+
+    wxStringSplit( aText, aStringList, '\n' );
+    aLineCount = aStringList.Count();
+    aPositions.reserve( aLineCount );
+
+    VECTOR2D maxBoundingBox;
 
     for( int i = 0; i < aLineCount; i++ )
     {
-        // Position of first line of the multiline text according to the
-        // center of the multiline text block
-        wxPoint pos( aPosition.x, aPosition.y );
+        VECTOR2D textSize = getBoundingBox( aStringList[i], aGlyphSize );
 
-        // Offset to next line.
-        wxPoint offset;
+        if( textSize.x > maxBoundingBox.x )
+            maxBoundingBox.x = textSize.x;
+        if( textSize.y > maxBoundingBox.y )
+            maxBoundingBox.y = textSize.y;
 
-        int interline = GetInterline( aTextHeight ? aTextHeight : -1 );
-        offset.y = i * interline;
+        aBoundingBoxes.push_back( textSize );
+    }
 
-        switch( aVertJustify )
+    wxPoint origin( aPosition.x, aPosition.y );
+
+    for( int i = 0; i < aLineCount; i++ )
+    {
+        int      interline = GetInterline( aGlyphSize.y );
+        VECTOR2D textSize = aBoundingBoxes.at( i );
+        wxPoint  offset( 0, i * interline );
+
+        switch( aAttributes.GetHorizontalAlignment() )
         {
-        case GR_TEXT_VJUSTIFY_TOP: pos.y += offset.y; break;
-
-        case GR_TEXT_VJUSTIFY_CENTER: pos.y += offset.y - ( aLineCount - 1 ) * interline / 2; break;
-
-        case GR_TEXT_VJUSTIFY_BOTTOM: pos.y += offset.y - ( aLineCount - 1 ) * interline;
+        case TEXT_ATTRIBUTES::H_LEFT: break;
+        case TEXT_ATTRIBUTES::H_CENTER: offset.x = -textSize.x / 2; break;
+        case TEXT_ATTRIBUTES::H_RIGHT: offset.x = -textSize.x;
         }
 
-        if( IsOutline() )
+        switch( aAttributes.GetVerticalAlignment() )
         {
-            VECTOR2D textSize = ComputeTextLineSize( aGal, aStringList[i] );
-
-            switch( aHorizJustify )
-            {
-            case GR_TEXT_HJUSTIFY_LEFT: pos.x += textSize.x / 2;
-
-            case GR_TEXT_HJUSTIFY_CENTER: break;
-
-            case GR_TEXT_HJUSTIFY_RIGHT: pos.x -= textSize.x / 2;
-            }
+        case TEXT_ATTRIBUTES::V_TOP: offset.y += interline; break;
+        case TEXT_ATTRIBUTES::V_CENTER: offset.y -= ( aLineCount - 2 ) * interline / 2; break;
+        case TEXT_ATTRIBUTES::V_BOTTOM: offset.y -= ( aLineCount - 1 ) * interline; break;
         }
 
-        // Rotate the position of the line around the origin of the
-        // multiline text block
-        wxPoint origin( aPosition.x, aPosition.y );
-        RotatePoint( &pos, origin, aRotationAngle );
+        wxPoint pos( aPosition.x + offset.x, aPosition.y + offset.y );
+
+        // Rotate the position of the line around the origin of the multiline text block
+        RotatePoint( &pos, origin, aAngle.AsTenthsOfADegree() );
 
         aPositions.push_back( pos );
     }
+
+#ifdef DEBUG
+    std::cerr << "FONT::getLinePositions( \"" << aText << "\", " << aPosition << ", ..., "
+              << aGlyphSize << ", " << aAttributes << ", " << aAngle << " ) returns " << aLineCount
+              << " lines:" << std::endl;
+    for( int i = 0; i < aLineCount; i++ )
+    {
+        std::cerr << "#" << i << " \"" << aStringList[i] << "\" " << aPositions.at( i ).x << ","
+                  << aPositions.at( i ).y << " " << aBoundingBoxes.at( i ) << std::endl;
+    }
+#endif
+}
+
+
+VECTOR2D FONT::getBoundingBox( const UTF8& aText, const VECTOR2D& aGlyphSize,
+                               TEXT_STYLE_FLAGS aTextStyle, const TEXT_ATTRIBUTES& aAttributes,
+                               const EDA_ANGLE& aAngle ) const
+{
+    if( aText.empty() )
+        return VECTOR2D( 0.0, 0.0 );
+
+    if( false ) // aParse ) // TODO: parse markup!
+    {
+        MARKUP::MARKUP_PARSER markupParser( aText );
+        auto                  parse_result = markupParser.Parse();
+
+        /* ... */
+    }
+
+#ifdef DEBUG
+    std::cerr << "FONT::getBoundingBox( \"" << aText << "\", " << aGlyphSize << ", " << aTextStyle
+              << ", " << aAttributes << ", " << aAngle << " )" << std::endl;
+#endif
+    wxArrayString         strings;
+    std::vector<wxPoint>  positions;
+    int                   n_lines;
+    VECTOR2D              boundingBox;
+    std::vector<VECTOR2D> boundingBoxes;
+
+    getLinePositions( aText, VECTOR2D( 0.0, 0.0 ), strings, positions, n_lines, boundingBoxes,
+                      aGlyphSize, aAttributes, aAngle );
+
+    int i = 1;
+    for( VECTOR2D lineBoundingBox : boundingBoxes )
+    {
+#ifdef DEBUG
+        std::cerr << i << "/" << n_lines << ": boundingBox " << boundingBox << " lineBoundingBox "
+                  << lineBoundingBox << std::endl;
+#endif
+        boundingBox.x = fmax( boundingBox.x, lineBoundingBox.x );
+        boundingBox.y += lineBoundingBox.y;
+        i++;
+    }
+
+#ifdef DEBUG
+    std::cerr << "FONT::getBoundingBox( \"" << aText << "\", ... ) returns " << boundingBox
+              << std::endl;
+#endif
+    return boundingBox;
+}
+
+
+void FONT::DrawText( KIGFX::GAL* aGal, const UTF8& aText, const VECTOR2D& aPosition,
+                     const TEXT_ATTRIBUTES& aAttributes ) const
+{
+#ifdef DEBUG
+    std::cerr << "FONT::DrawText( " << ( aGal ? "[aGal]" : "nullptr" ) << ", \"" << aText << "\", "
+              << aPosition << ", " << aAttributes << " )" << std::endl;
+#endif
+    aGal->SetHorizontalJustify( aAttributes.GetHorizJustify() );
+    aGal->SetVerticalJustify( aAttributes.GetVertJustify() );
+    aGal->SetGlyphSize( aAttributes.GetSize() );
+    aGal->SetFontItalic( aAttributes.IsItalic() );
+    aGal->SetFontBold( aAttributes.IsBold() );
+    aGal->SetTextMirrored( aAttributes.IsMirrored() );
+    Draw( aGal, aText, aPosition, VECTOR2D( 0, 0 ), aAttributes.GetAngle() );
 }

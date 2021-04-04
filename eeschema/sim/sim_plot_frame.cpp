@@ -26,6 +26,7 @@
 
 #include <wx/stc/stc.h>
 
+#include <project/project_file.h>
 #include <sch_edit_frame.h>
 #include <eeschema_id.h>
 #include <kiway.h>
@@ -36,12 +37,13 @@
 #include <dialogs/dialog_signal_list.h>
 #include "netlist_exporter_pspice_sim.h"
 #include <pgm_base.h>
+#include "ngspice.h"
+#include "sim_plot_colors.h"
 #include "sim_plot_frame.h"
 #include "sim_plot_panel.h"
 #include "spice_simulator.h"
 #include "spice_reporter.h"
 #include <menus_helpers.h>
-#include <settings/common_settings.h>
 #include <tool/tool_manager.h>
 #include <tools/ee_actions.h>
 #include <eeschema_settings.h>
@@ -59,8 +61,8 @@ SIM_PLOT_TYPE operator|( SIM_PLOT_TYPE aFirst, SIM_PLOT_TYPE aSecond )
 class SIM_THREAD_REPORTER : public SPICE_REPORTER
 {
 public:
-    SIM_THREAD_REPORTER( SIM_PLOT_FRAME* aParent )
-        : m_parent( aParent )
+    SIM_THREAD_REPORTER( SIM_PLOT_FRAME* aParent ) :
+        m_parent( aParent )
     {
     }
 
@@ -83,17 +85,17 @@ public:
 
         switch( aNewState )
         {
-            case SIM_IDLE:
-                event = new wxCommandEvent( EVT_SIM_FINISHED );
-                break;
+        case SIM_IDLE:
+            event = new wxCommandEvent( EVT_SIM_FINISHED );
+            break;
 
-            case SIM_RUNNING:
-                event = new wxCommandEvent( EVT_SIM_STARTED );
-                break;
+        case SIM_RUNNING:
+            event = new wxCommandEvent( EVT_SIM_STARTED );
+            break;
 
-            default:
-                wxFAIL;
-                return;
+        default:
+            wxFAIL;
+            return;
         }
 
         wxQueueEvent( m_parent, event );
@@ -105,8 +107,10 @@ private:
 
 
 TRACE_DESC::TRACE_DESC( const NETLIST_EXPORTER_PSPICE_SIM& aExporter, const wxString& aName,
-        SIM_PLOT_TYPE aType, const wxString& aParam )
-    : m_name( aName ), m_type( aType ), m_param( aParam )
+                        SIM_PLOT_TYPE aType, const wxString& aParam ) :
+        m_name( aName ),
+        m_type( aType ),
+        m_param( aParam )
 {
     // Title generation
     m_title = wxString::Format( "%s(%s)", aParam, aName );
@@ -117,14 +121,16 @@ TRACE_DESC::TRACE_DESC( const NETLIST_EXPORTER_PSPICE_SIM& aExporter, const wxSt
         m_title += " (phase)";
 }
 
+
 // Store the path of saved workbooks during the session
 wxString SIM_PLOT_FRAME::m_savedWorkbooksPath;
 
-SIM_PLOT_FRAME::SIM_PLOT_FRAME( KIWAY* aKiway, wxWindow* aParent )
-        : SIM_PLOT_FRAME_BASE( aParent ),
-          m_lastSimPlot( nullptr ),
-          m_welcomePanel( nullptr ),
-          m_plotNumber( 0 )
+
+SIM_PLOT_FRAME::SIM_PLOT_FRAME( KIWAY* aKiway, wxWindow* aParent ) :
+        SIM_PLOT_FRAME_BASE( aParent ),
+        m_lastSimPlot( nullptr ),
+        m_welcomePanel( nullptr ),
+        m_plotNumber( 0 )
 {
     SetKiway( this, aKiway );
     m_signalsIconColorList = NULL;
@@ -136,17 +142,8 @@ SIM_PLOT_FRAME::SIM_PLOT_FRAME( KIWAY* aKiway, wxWindow* aParent )
 
     // Give an icon
     wxIcon icon;
-    icon.CopyFromBitmap( KiBitmap( simulator_xpm ) );
+    icon.CopyFromBitmap( KiBitmap( BITMAPS::simulator ) );
     SetIcon( icon );
-
-    // Get the previous size and position of windows:
-    LoadSettings( config() );
-
-    // Prepare the color list to plot traces
-    fillDefaultColorList( GetPlotBgOpt() );
-
-    // Give icons to menuitems
-    setIconsForMenuItems();
 
     m_simulator = SPICE_SIMULATOR::CreateInstance( "ngspice" );
 
@@ -155,6 +152,15 @@ SIM_PLOT_FRAME::SIM_PLOT_FRAME( KIWAY* aKiway, wxWindow* aParent )
         throw std::runtime_error( "Could not create simulator instance" );
         return;
     }
+
+    // Get the previous size and position of windows:
+    LoadSettings( config() );
+
+    // Prepare the color list to plot traces
+    SIM_PLOT_COLORS::FillDefaultColorList( GetPlotBgOpt() );
+
+    // Give icons to menuitems
+    setIconsForMenuItems();
 
     m_simulator->Init();
 
@@ -178,19 +184,20 @@ SIM_PLOT_FRAME::SIM_PLOT_FRAME( KIWAY* aKiway, wxWindow* aParent )
     Connect( EVT_SIM_REPORT, wxCommandEventHandler( SIM_PLOT_FRAME::onSimReport ), NULL, this );
     Connect( EVT_SIM_STARTED, wxCommandEventHandler( SIM_PLOT_FRAME::onSimStarted ), NULL, this );
     Connect( EVT_SIM_FINISHED, wxCommandEventHandler( SIM_PLOT_FRAME::onSimFinished ), NULL, this );
-    Connect( EVT_SIM_CURSOR_UPDATE, wxCommandEventHandler( SIM_PLOT_FRAME::onCursorUpdate ), NULL, this );
+    Connect( EVT_SIM_CURSOR_UPDATE, wxCommandEventHandler( SIM_PLOT_FRAME::onCursorUpdate ),
+             NULL, this );
 
     // Toolbar buttons
     m_toolSimulate = m_toolBar->AddTool( ID_SIM_RUN, _( "Run/Stop Simulation" ),
-            KiBitmap( sim_run_xpm ), _( "Run Simulation" ), wxITEM_NORMAL );
+            KiBitmap( BITMAPS::sim_run ), _( "Run Simulation" ), wxITEM_NORMAL );
     m_toolAddSignals = m_toolBar->AddTool( ID_SIM_ADD_SIGNALS, _( "Add Signals" ),
-            KiBitmap( sim_add_signal_xpm ), _( "Add signals to plot" ), wxITEM_NORMAL );
+            KiBitmap( BITMAPS::sim_add_signal ), _( "Add signals to plot" ), wxITEM_NORMAL );
     m_toolProbe = m_toolBar->AddTool( ID_SIM_PROBE,  _( "Probe" ),
-            KiBitmap( sim_probe_xpm ), _( "Probe signals on the schematic" ), wxITEM_NORMAL );
+            KiBitmap( BITMAPS::sim_probe ), _( "Probe signals on the schematic" ), wxITEM_NORMAL );
     m_toolTune = m_toolBar->AddTool( ID_SIM_TUNE, _( "Tune" ),
-            KiBitmap( sim_tune_xpm ), _( "Tune component values" ), wxITEM_NORMAL );
-    m_toolSettings = m_toolBar->AddTool( wxID_ANY, _( "Sim Parameters" ), KiBitmap( config_xpm ),
-                                         _( "Simulation parameters and settings" ), wxITEM_NORMAL );
+            KiBitmap( BITMAPS::sim_tune ), _( "Tune component values" ), wxITEM_NORMAL );
+    m_toolSettings = m_toolBar->AddTool( wxID_ANY, _( "Sim Parameters" ),
+            KiBitmap( BITMAPS::config ), _( "Simulation parameters and settings" ), wxITEM_NORMAL );
 
     Connect( m_toolSimulate->GetId(), wxEVT_COMMAND_TOOL_CLICKED,
              wxCommandEventHandler( SIM_PLOT_FRAME::onSimulate ), NULL, this );
@@ -204,17 +211,22 @@ SIM_PLOT_FRAME::SIM_PLOT_FRAME( KIWAY* aKiway, wxWindow* aParent )
              wxCommandEventHandler( SIM_PLOT_FRAME::onSettings ), NULL, this );
 
     // Bind toolbar buttons event to existing menu event handlers, so they behave the same
-    Bind( wxEVT_COMMAND_MENU_SELECTED, &SIM_PLOT_FRAME::onSimulate,    this, m_runSimulation->GetId() );
-    Bind( wxEVT_COMMAND_MENU_SELECTED, &SIM_PLOT_FRAME::onAddSignal,   this, m_addSignals->GetId() );
-    Bind( wxEVT_COMMAND_MENU_SELECTED, &SIM_PLOT_FRAME::onProbe,       this, m_probeSignals->GetId() );
-    Bind( wxEVT_COMMAND_MENU_SELECTED, &SIM_PLOT_FRAME::onTune,        this, m_tuneValue->GetId() );
-    Bind( wxEVT_COMMAND_MENU_SELECTED, &SIM_PLOT_FRAME::onShowNetlist, this, m_showNetlist->GetId() );
-    Bind( wxEVT_COMMAND_MENU_SELECTED, &SIM_PLOT_FRAME::onSettings,    this, m_settings->GetId() );
+    Bind( wxEVT_COMMAND_MENU_SELECTED, &SIM_PLOT_FRAME::onSimulate, this,
+          m_runSimulation->GetId() );
+    Bind( wxEVT_COMMAND_MENU_SELECTED, &SIM_PLOT_FRAME::onAddSignal, this, m_addSignals->GetId() );
+    Bind( wxEVT_COMMAND_MENU_SELECTED, &SIM_PLOT_FRAME::onProbe, this, m_probeSignals->GetId() );
+    Bind( wxEVT_COMMAND_MENU_SELECTED, &SIM_PLOT_FRAME::onTune, this, m_tuneValue->GetId() );
+    Bind( wxEVT_COMMAND_MENU_SELECTED, &SIM_PLOT_FRAME::onShowNetlist, this,
+          m_showNetlist->GetId() );
+    Bind( wxEVT_COMMAND_MENU_SELECTED, &SIM_PLOT_FRAME::onSettings, this, m_settings->GetId() );
 
     m_toolBar->Realize();
 
     m_welcomePanel = new SIM_PANEL_BASE( wxEmptyString, m_plotNotebook, wxID_ANY );
     m_plotNotebook->AddPage( m_welcomePanel, _( "Welcome!" ), 1, true );
+
+    // Ensure new items are taken in account by sizers:
+    Layout();
 
     // resize the subwindows size. At least on Windows, calling wxSafeYield before
     // resizing the subwindows forces the wxSplitWindows size events automatically generated
@@ -242,7 +254,7 @@ SIM_PLOT_FRAME::~SIM_PLOT_FRAME()
 
 void SIM_PLOT_FRAME::SaveSettings( APP_SETTINGS_BASE* aCfg )
 {
-    auto cfg = dynamic_cast<EESCHEMA_SETTINGS*>( aCfg );
+    EESCHEMA_SETTINGS* cfg = dynamic_cast<EESCHEMA_SETTINGS*>( aCfg );
     wxASSERT( cfg );
 
     if( cfg )
@@ -255,12 +267,20 @@ void SIM_PLOT_FRAME::SaveSettings( APP_SETTINGS_BASE* aCfg )
         cfg->m_Simulator.cursors_panel_height = m_splitterTuneValues->GetSashPosition();
         cfg->m_Simulator.white_background     = m_plotUseWhiteBg;
     }
+
+    if( m_schematicFrame )
+    {
+        PROJECT_FILE& project = Prj().GetProjectFile();
+
+        project.m_SchematicSettings->m_NgspiceSimulatorSettings->SaveToFile();
+        m_schematicFrame->SaveProjectSettings();
+    }
 }
 
 
 void SIM_PLOT_FRAME::LoadSettings( APP_SETTINGS_BASE* aCfg )
 {
-    auto cfg = dynamic_cast<EESCHEMA_SETTINGS*>( aCfg );
+    EESCHEMA_SETTINGS* cfg = dynamic_cast<EESCHEMA_SETTINGS*>( aCfg );
     wxASSERT( cfg );
 
     if( cfg )
@@ -274,12 +294,19 @@ void SIM_PLOT_FRAME::LoadSettings( APP_SETTINGS_BASE* aCfg )
         m_splitterTuneValuesSashPosition     = cfg->m_Simulator.cursors_panel_height;
         m_plotUseWhiteBg                     = cfg->m_Simulator.white_background;
     }
+
+    PROJECT_FILE& project = Prj().GetProjectFile();
+
+    NGSPICE* currentSim = dynamic_cast<NGSPICE*>( m_simulator.get() );
+
+    if( currentSim )
+        m_simulator->Settings() = project.m_SchematicSettings->m_NgspiceSimulatorSettings;
 }
 
 
 WINDOW_SETTINGS* SIM_PLOT_FRAME::GetWindowSettings( APP_SETTINGS_BASE* aCfg )
 {
-    auto cfg = dynamic_cast<EESCHEMA_SETTINGS*>( aCfg );
+    EESCHEMA_SETTINGS* cfg = dynamic_cast<EESCHEMA_SETTINGS*>( aCfg );
     wxASSERT( cfg );
 
     return cfg ? &cfg->m_Simulator.window : nullptr;
@@ -290,7 +317,7 @@ WINDOW_SETTINGS* SIM_PLOT_FRAME::GetWindowSettings( APP_SETTINGS_BASE* aCfg )
 struct BM_MENU_INIT_ITEM
 {
     int m_MenuId;
-    BITMAP_DEF m_Bitmap;
+    BITMAPS m_Bitmap;
 };
 
 
@@ -299,31 +326,31 @@ void SIM_PLOT_FRAME::setIconsForMenuItems()
     // Give icons to menuitems of the main menubar
     BM_MENU_INIT_ITEM bm_list[]{
         // File menu:
-        { wxID_NEW, simulator_xpm },
-        { wxID_OPEN, directory_open_xpm },
-        { wxID_SAVE, save_xpm },
-        { ID_SAVE_AS_IMAGE, export_xpm },
-        { ID_SAVE_AS_CSV, export_xpm },
-        { wxID_CLOSE, exit_xpm },
+        { wxID_NEW, BITMAPS::simulator },
+        { wxID_OPEN, BITMAPS::directory_open },
+        { wxID_SAVE, BITMAPS::save },
+        { ID_SAVE_AS_IMAGE, BITMAPS::export_file },
+        { ID_SAVE_AS_CSV, BITMAPS::export_file },
+        { wxID_CLOSE, BITMAPS::exit },
 
         // simulator menu:
-        { ID_MENU_RUN_SIM, sim_run_xpm },
-        { ID_MENU_ADD_SIGNAL, sim_add_signal_xpm },
-        { ID_MENU_PROBE_SIGNALS, sim_probe_xpm },
-        { ID_MENU_TUNE_SIGNALS, sim_tune_xpm },
-        { ID_MENU_SHOW_NETLIST, netlist_xpm },
-        { ID_MENU_SET_SIMUL, config_xpm },
+        { ID_MENU_RUN_SIM, BITMAPS::sim_run },
+        { ID_MENU_ADD_SIGNAL, BITMAPS::sim_add_signal },
+        { ID_MENU_PROBE_SIGNALS, BITMAPS::sim_probe },
+        { ID_MENU_TUNE_SIGNALS, BITMAPS::sim_tune },
+        { ID_MENU_SHOW_NETLIST, BITMAPS::netlist },
+        { ID_MENU_SET_SIMUL, BITMAPS::config },
 
         // View menu
-        { wxID_ZOOM_IN, zoom_in_xpm },
-        { wxID_ZOOM_OUT, zoom_out_xpm },
-        { wxID_ZOOM_FIT, zoom_fit_in_page_xpm },
-        { ID_MENU_SHOW_GRID, grid_xpm },
-        { ID_MENU_SHOW_LEGEND, text_xpm },
-        { ID_MENU_DOTTED, add_dashed_line_xpm },
-        { ID_MENU_WHITE_BG, swap_layer_xpm },
+        { wxID_ZOOM_IN, BITMAPS::zoom_in },
+        { wxID_ZOOM_OUT, BITMAPS::zoom_out },
+        { wxID_ZOOM_FIT, BITMAPS::zoom_fit_in_page },
+        { ID_MENU_SHOW_GRID, BITMAPS::grid },
+        { ID_MENU_SHOW_LEGEND, BITMAPS::text },
+        { ID_MENU_DOTTED, BITMAPS::add_dashed_line },
+        { ID_MENU_WHITE_BG, BITMAPS::swap_layer },
 
-        { 0, nullptr } // Sentinel
+        { 0, BITMAPS::INVALID_BITMAP }  // Sentinel
     };
 
     // wxMenuItems are already created and attached to the m_mainMenu wxMenuBar.
@@ -337,11 +364,12 @@ void SIM_PLOT_FRAME::setIconsForMenuItems()
     {
         wxMenuItem* item = m_mainMenu->FindItem( bm_list[ii].m_MenuId );
 
-        if( !item || !bm_list[ii].m_Bitmap)
+        if( !item || ( bm_list[ii].m_Bitmap == BITMAPS::INVALID_BITMAP ) )
             continue;
 
         wxMenu* menu = item->GetMenu();
-        // Calculate the initial index of item inside the wxMenu parent
+
+        // Calculate the initial index of item inside the wxMenu parent.
         wxMenuItemList& mlist = menu->GetMenuItems();
         int mpos = mlist.IndexOf( item );
 
@@ -350,6 +378,7 @@ void SIM_PLOT_FRAME::setIconsForMenuItems()
             // Modify the bitmap
             menu->Remove( item );
             AddBitmapToMenuItem( item, KiBitmap( bm_list[ii].m_Bitmap ) );
+
             // Insert item to its the initial index
             menu->Insert( mpos, item );
         }
@@ -373,62 +402,12 @@ void SIM_PLOT_FRAME::setSubWindowsSashSize()
 }
 
 
-wxColor SIM_PLOT_FRAME::GetPlotColor( int aColorId )
-{
-    // return the wxColor selected in color list or BLACK is not in list
-    if( aColorId >= 0 && aColorId < (int)m_colorList.size() )
-        return m_colorList[aColorId];
-
-    return wxColor( 0, 0, 0 );
-}
-
-
-void SIM_PLOT_FRAME::fillDefaultColorList( bool aWhiteBg )
-{
-    m_colorList.clear();
-
-    if( aWhiteBg )
-    {
-        m_colorList.emplace_back( 255, 255, 255 );  // Bg color
-        m_colorList.emplace_back( 0, 0, 0 );        // Fg color (texts)
-        m_colorList.emplace_back( 130, 130, 130 );  // Axis color
-        m_colorList.emplace_back( 0, 0, 0 );        // cursors color
-    }
-    else
-    {
-        m_colorList.emplace_back( 0, 0, 0 );        // Bg color
-        m_colorList.emplace_back( 255, 255, 255 );  // Fg color (texts)
-        m_colorList.emplace_back( 130, 130, 130 );  // Axis color
-        m_colorList.emplace_back( 255, 255, 255 );  // cursors color
-    }
-
-    // Add a list of color for traces, starting at index SIM_TRACE_COLOR
-    m_colorList.emplace_back( 0xE4, 0x1A, 0x1C );
-    m_colorList.emplace_back( 0x37, 0x7E, 0xB8 );
-    m_colorList.emplace_back( 0x4D, 0xAF, 0x4A );
-    m_colorList.emplace_back( 0x98, 0x4E, 0xA3 );
-    m_colorList.emplace_back( 0xFF, 0x7F, 0x00 );
-    m_colorList.emplace_back( 0xFF, 0xFF, 0x33 );
-    m_colorList.emplace_back( 0xA6, 0x56, 0x28 );
-    m_colorList.emplace_back( 0xF7, 0x81, 0xBF );
-    m_colorList.emplace_back( 0x66, 0xC2, 0xA5 );
-    m_colorList.emplace_back( 0xFC, 0x8D, 0x62 );
-    m_colorList.emplace_back( 0x8D, 0xA0, 0xCB );
-    m_colorList.emplace_back( 0xE7, 0x8A, 0xC3 );
-    m_colorList.emplace_back( 0xA6, 0xD8, 0x54 );
-    m_colorList.emplace_back( 0xFF, 0xD9, 0x2F );
-    m_colorList.emplace_back( 0xE5, 0xC4, 0x94 );
-    m_colorList.emplace_back( 0xB3, 0xB3, 0xB3 );
-
-}
-
-
 void SIM_PLOT_FRAME::StartSimulation( const wxString& aSimCommand )
 {
     STRING_FORMATTER formatter;
 
     if( !m_settingsDlg )
-        m_settingsDlg = new DIALOG_SIM_SETTINGS( this );
+        m_settingsDlg = new DIALOG_SIM_SETTINGS( this, m_simulator->Settings() );
 
     m_simConsole->Clear();
     updateNetlistExporter();
@@ -536,7 +515,8 @@ void SIM_PLOT_FRAME::AddTuner( SCH_COMPONENT* aComponent )
     // For now limit the tuner tool to RLC components
     char primitiveType = NETLIST_EXPORTER_PSPICE::GetSpiceField( SF_PRIMITIVE, aComponent, 0 )[0];
 
-    if( primitiveType != SP_RESISTOR && primitiveType != SP_CAPACITOR && primitiveType != SP_INDUCTOR )
+    if( primitiveType != SP_RESISTOR && primitiveType != SP_CAPACITOR
+      && primitiveType != SP_INDUCTOR )
         return;
 
     const wxString componentName = aComponent->GetField( REFERENCE_FIELD )->GetText();
@@ -592,6 +572,14 @@ const NETLIST_EXPORTER_PSPICE_SIM* SIM_PLOT_FRAME::GetExporter() const
 }
 
 
+std::shared_ptr<SPICE_SIMULATOR_SETTINGS>& SIM_PLOT_FRAME::GetSimulatorSettings()
+{
+    wxASSERT( m_simulator->Settings() );
+
+    return m_simulator->Settings();
+}
+
+
 void SIM_PLOT_FRAME::addPlot( const wxString& aName, SIM_PLOT_TYPE aType, const wxString& aParam )
 {
     SIM_TYPE simType = m_exporter->GetSimType();
@@ -632,7 +620,8 @@ void SIM_PLOT_FRAME::addPlot( const wxString& aName, SIM_PLOT_TYPE aType, const 
 
         // Add two plots: magnitude & phase
         TRACE_DESC mag_desc( *m_exporter, descriptor, (SIM_PLOT_TYPE)( baseType | SPT_AC_MAG ) );
-        TRACE_DESC phase_desc( *m_exporter, descriptor, (SIM_PLOT_TYPE)( baseType | SPT_AC_PHASE ) );
+        TRACE_DESC phase_desc( *m_exporter, descriptor,
+                               (SIM_PLOT_TYPE)( baseType | SPT_AC_PHASE ) );
 
         updated |= updatePlot( mag_desc, plotPanel );
         updated |= updatePlot( phase_desc, plotPanel );
@@ -677,6 +666,7 @@ void SIM_PLOT_FRAME::removePlot( const wxString& aPlotName, bool aErase )
 void SIM_PLOT_FRAME::updateNetlistExporter()
 {
     m_exporter.reset( new NETLIST_EXPORTER_PSPICE_SIM( &m_schematicFrame->Schematic() ) );
+
     if( m_settingsDlg )
         m_settingsDlg->SetNetlistExporter( m_exporter.get() );
 }
@@ -714,31 +704,28 @@ bool SIM_PLOT_FRAME::updatePlot( const TRACE_DESC& aDescriptor, SIM_PLOT_PANEL* 
     // Now, Y axis data
     switch( m_exporter->GetSimType() )
     {
-        case ST_AC:
-        {
-            wxASSERT_MSG( !( ( plotType & SPT_AC_MAG ) && ( plotType & SPT_AC_PHASE ) ),
-                    "Cannot set both AC_PHASE and AC_MAG bits" );
+    case ST_AC:
+        wxASSERT_MSG( !( ( plotType & SPT_AC_MAG ) && ( plotType & SPT_AC_PHASE ) ),
+                      "Cannot set both AC_PHASE and AC_MAG bits" );
 
-            if( plotType & SPT_AC_MAG )
-                data_y = m_simulator->GetMagPlot( (const char*) spiceVector.c_str() );
-            else if( plotType & SPT_AC_PHASE )
-                data_y = m_simulator->GetPhasePlot( (const char*) spiceVector.c_str() );
-            else
-                wxASSERT_MSG( false, "Plot type missing AC_PHASE or AC_MAG bit" );
-        }
-        break;
-
-        case ST_NOISE:
-        case ST_DC:
-        case ST_TRANSIENT:
-        {
+        if( plotType & SPT_AC_MAG )
             data_y = m_simulator->GetMagPlot( (const char*) spiceVector.c_str() );
-        }
+        else if( plotType & SPT_AC_PHASE )
+            data_y = m_simulator->GetPhasePlot( (const char*) spiceVector.c_str() );
+        else
+            wxASSERT_MSG( false, "Plot type missing AC_PHASE or AC_MAG bit" );
+
         break;
 
-        default:
-            wxASSERT_MSG( false, "Unhandled plot type" );
-            return false;
+    case ST_NOISE:
+    case ST_DC:
+    case ST_TRANSIENT:
+        data_y = m_simulator->GetMagPlot( (const char*) spiceVector.c_str() );
+        break;
+
+    default:
+        wxASSERT_MSG( false, "Unhandled plot type" );
+        return false;
     }
 
     if( data_y.size() != size )
@@ -824,7 +811,7 @@ void SIM_PLOT_FRAME::updateSignalList()
     {
         wxBitmap bitmap( isize, isize );
         bmDC.SelectObject( bitmap );
-        wxColour tcolor = trace.second->GetTraceColour();
+        wxColour tcolor = trace.second->GetPen().GetColour();
 
         wxColour bgColor = m_signals->wxWindow::GetBackgroundColour();
         bmDC.SetPen( wxPen( bgColor ) );
@@ -1213,7 +1200,7 @@ void SIM_PLOT_FRAME::menuWhiteBackground( wxCommandEvent& event )
     m_plotUseWhiteBg = not m_plotUseWhiteBg;
 
     // Rebuild the color list to plot traces
-    fillDefaultColorList( GetPlotBgOpt() );
+    SIM_PLOT_COLORS::FillDefaultColorList( GetPlotBgOpt() );
 
     // Now send changes to all SIM_PLOT_PANEL
     for( size_t page = 0; page < m_plotNotebook->GetPageCount(); page++ )
@@ -1223,7 +1210,7 @@ void SIM_PLOT_FRAME::menuWhiteBackground( wxCommandEvent& event )
         if( curPage == m_welcomePanel )
             continue;
 
-        // ensure it is truely a plot panel and not the (zero plots) placeholder
+        // ensure it is truly a plot panel and not the (zero plots) placeholder
         // which is only SIM_PLOT_PANEL_BASE
         SIM_PLOT_PANEL* panel = dynamic_cast<SIM_PLOT_PANEL*>( curPage );
 
@@ -1302,7 +1289,7 @@ void SIM_PLOT_FRAME::onSettings( wxCommandEvent& event )
     SIM_PANEL_BASE* plotPanelWindow = currentPlotWindow();
 
     if( !m_settingsDlg )
-        m_settingsDlg = new DIALOG_SIM_SETTINGS( this );
+        m_settingsDlg = new DIALOG_SIM_SETTINGS( this, m_simulator->Settings() );
 
     // Initial processing is required to e.g. display a list of power sources
     updateNetlistExporter();
@@ -1323,8 +1310,10 @@ void SIM_PLOT_FRAME::onSettings( wxCommandEvent& event )
         SIM_TYPE newSimType = NETLIST_EXPORTER_PSPICE_SIM::CommandToSimType( newCommand );
 
         // If it is a new simulation type, open a new plot
-        // For the DC sim, check if sweep source type has changed (char 4 will contain 'v', 'i', 'r' or 't'
-        if( !plotPanelWindow || ( plotPanelWindow && plotPanelWindow->GetType() != newSimType )
+        // For the DC sim, check if sweep source type has changed (char 4 will contain 'v',
+        // 'i', 'r' or 't'.
+        if( !plotPanelWindow
+            || ( plotPanelWindow && plotPanelWindow->GetType() != newSimType )
             || ( newSimType == ST_DC
                  && oldCommand.Lower().GetChar( 4 ) != newCommand.Lower().GetChar( 4 ) ) )
         {
@@ -1332,6 +1321,7 @@ void SIM_PLOT_FRAME::onSettings( wxCommandEvent& event )
         }
 
         m_plots[plotPanelWindow].m_simCommand = newCommand;
+        m_simulator->Init();
     }
 }
 
@@ -1369,6 +1359,7 @@ void SIM_PLOT_FRAME::onTune( wxCommandEvent& event )
     m_schematicFrame->GetToolManager()->RunAction( EE_ACTIONS::simTune );
     m_schematicFrame->Raise();
 }
+
 
 void SIM_PLOT_FRAME::onShowNetlist( wxCommandEvent& event )
 {
@@ -1413,7 +1404,7 @@ void SIM_PLOT_FRAME::onShowNetlist( wxCommandEvent& event )
             SetSizer( sizer );
 
             Connect( wxEVT_CLOSE_WINDOW, wxCloseEventHandler( NETLIST_VIEW_DIALOG::onClose ), NULL,
-                    this );
+                     this );
 
             finishDialogSettings();
         }
@@ -1455,7 +1446,8 @@ void SIM_PLOT_FRAME::onCursorUpdate( wxCommandEvent& event )
 
     // Fill the signals listctrl
     m_cursors->AppendColumn( _( "Signal" ), wxLIST_FORMAT_LEFT, size.x / 2 );
-    const long X_COL = m_cursors->AppendColumn( plotPanel->GetLabelX(), wxLIST_FORMAT_LEFT, size.x / 4 );
+    const long X_COL = m_cursors->AppendColumn( plotPanel->GetLabelX(), wxLIST_FORMAT_LEFT,
+                                                size.x / 4 );
 
     wxString labelY1 = plotPanel->GetLabelY1();
     wxString labelY2 = plotPanel->GetLabelY2();
@@ -1490,14 +1482,14 @@ void SIM_PLOT_FRAME::onCursorUpdate( wxCommandEvent& event )
 
 void SIM_PLOT_FRAME::onSimStarted( wxCommandEvent& aEvent )
 {
-    m_toolBar->SetToolNormalBitmap( ID_SIM_RUN, KiBitmap( sim_stop_xpm ) );
+    m_toolBar->SetToolNormalBitmap( ID_SIM_RUN, KiBitmap( BITMAPS::sim_stop ) );
     SetCursor( wxCURSOR_ARROWWAIT );
 }
 
 
 void SIM_PLOT_FRAME::onSimFinished( wxCommandEvent& aEvent )
 {
-    m_toolBar->SetToolNormalBitmap( ID_SIM_RUN, KiBitmap( sim_run_xpm ) );
+    m_toolBar->SetToolNormalBitmap( ID_SIM_RUN, KiBitmap( BITMAPS::sim_run ) );
     SetCursor( wxCURSOR_ARROW );
 
     SIM_TYPE simType = m_exporter->GetSimType();
@@ -1597,23 +1589,25 @@ void SIM_PLOT_FRAME::onSimReport( wxCommandEvent& aEvent )
 
 
 SIM_PLOT_FRAME::SIGNAL_CONTEXT_MENU::SIGNAL_CONTEXT_MENU( const wxString& aSignal,
-        SIM_PLOT_FRAME* aPlotFrame )
-    : m_signal( aSignal ), m_plotFrame( aPlotFrame )
+                                                          SIM_PLOT_FRAME* aPlotFrame ) :
+        m_signal( aSignal ),
+        m_plotFrame( aPlotFrame )
 {
     SIM_PLOT_PANEL* plot = m_plotFrame->CurrentPlot();
 
     AddMenuItem( this, HIDE_SIGNAL, _( "Hide Signal" ),
                  _( "Erase the signal from plot screen" ),
-                 KiBitmap( trash_xpm ) );
+                 KiBitmap( BITMAPS::trash ) );
 
     TRACE* trace = plot->GetTrace( m_signal );
 
     if( trace->HasCursor() )
-        AddMenuItem( this, HIDE_CURSOR, _( "Hide Cursor" ), KiBitmap( pcb_target_xpm ) );
+        AddMenuItem( this, HIDE_CURSOR, _( "Hide Cursor" ), KiBitmap( BITMAPS::pcb_target ) );
     else
-        AddMenuItem( this, SHOW_CURSOR, _( "Show Cursor" ), KiBitmap( pcb_target_xpm ) );
+        AddMenuItem( this, SHOW_CURSOR, _( "Show Cursor" ), KiBitmap( BITMAPS::pcb_target ) );
 
-    Connect( wxEVT_COMMAND_MENU_SELECTED, wxMenuEventHandler( SIGNAL_CONTEXT_MENU::onMenuEvent ), NULL, this );
+    Connect( wxEVT_COMMAND_MENU_SELECTED, wxMenuEventHandler( SIGNAL_CONTEXT_MENU::onMenuEvent ),
+             NULL, this );
 }
 
 
@@ -1623,19 +1617,20 @@ void SIM_PLOT_FRAME::SIGNAL_CONTEXT_MENU::onMenuEvent( wxMenuEvent& aEvent )
 
     switch( aEvent.GetId() )
     {
-        case HIDE_SIGNAL:
-            m_plotFrame->removePlot( m_signal );
-            break;
+    case HIDE_SIGNAL:
+        m_plotFrame->removePlot( m_signal );
+        break;
 
-        case SHOW_CURSOR:
-            plot->EnableCursor( m_signal, true );
-            break;
+    case SHOW_CURSOR:
+        plot->EnableCursor( m_signal, true );
+        break;
 
-        case HIDE_CURSOR:
-            plot->EnableCursor( m_signal, false );
-            break;
+    case HIDE_CURSOR:
+        plot->EnableCursor( m_signal, false );
+        break;
     }
 }
+
 
 wxDEFINE_EVENT( EVT_SIM_UPDATE, wxCommandEvent );
 wxDEFINE_EVENT( EVT_SIM_REPORT, wxCommandEvent );

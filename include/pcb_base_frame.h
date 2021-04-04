@@ -175,7 +175,13 @@ public:
      * (for instance solid or sketch mode).
      */
     const PCB_DISPLAY_OPTIONS& GetDisplayOptions() const { return m_displayOptions; }
-    void SetDisplayOptions( const PCB_DISPLAY_OPTIONS& aOptions );
+
+    /**
+     * Updates the current display options from the given options struct
+     * @param aOptions is the options struct to apply
+     * @param aRefresh will refresh the view after updating
+     */
+    void SetDisplayOptions( const PCB_DISPLAY_OPTIONS& aOptions, bool aRefresh = true );
 
     const ZONE_SETTINGS& GetZoneSettings() const;
     void SetZoneSettings( const ZONE_SETTINGS& aSettings );
@@ -206,7 +212,7 @@ public:
      */
     virtual BOARD_ITEM_CONTAINER* GetModel() const = 0;
 
-    EDA_ITEM* GetItem( const KIID& aId ) override;
+    EDA_ITEM* GetItem( const KIID& aId ) const override;
 
     void FocusOnItem( BOARD_ITEM* aItem );
 
@@ -329,16 +335,16 @@ public:
 
 
     /**
-     * Show the dialog box for layer selection.
+     * Show the dialog box for a layer selection.
      *
-     * @param aDefaultLayer is the default layer to select.  Use #NB_PCB_LAYERS if no selection
+     * @param aDefaultLayer is the default layer to select.  Use UNDEFINED_LAYER if no selection
      *                      is desired.
      * @param aNotAllowedLayersMask is a layer mask for not allowed layers.  Use 0 to show all
      *                              layers in use.
      * @param aDlgPosition is the position of dialog (default is centered).
      * @return the selected layer id.
      */
-    PCB_LAYER_ID SelectLayer( PCB_LAYER_ID aDefaultLayer, LSET aNotAllowedLayersMask = LSET(),
+    PCB_LAYER_ID SelectOneLayer( PCB_LAYER_ID aDefaultLayer, LSET aNotAllowedLayersMask = LSET(),
                               wxPoint aDlgPosition = wxDefaultPosition );
 
     virtual void SwitchLayer( wxDC* DC, PCB_LAYER_ID layer );

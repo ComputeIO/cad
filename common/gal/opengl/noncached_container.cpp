@@ -2,6 +2,8 @@
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
  * Copyright (C) 2013 CERN
+ * Copyright (C) 2021 KiCad Developers, see AUTHORS.txt for contributors.
+ *
  * @author Maciej Suminski <maciej.suminski@cern.ch>
  *
  * This program is free software; you can redistribute it and/or
@@ -35,9 +37,17 @@
 using namespace KIGFX;
 
 NONCACHED_CONTAINER::NONCACHED_CONTAINER( unsigned int aSize ) :
-    VERTEX_CONTAINER( aSize ), m_freePtr( 0 )
+        VERTEX_CONTAINER( aSize ),
+        m_freePtr( 0 )
 {
     m_vertices = static_cast<VERTEX*>( malloc( aSize * sizeof( VERTEX ) ) );
+
+    // Unfortunately we cannot remove the use of malloc here because realloc is used in
+    // the Allocate method below.  The new operator behavior is mimicked here so that a
+    // malloc failure can be caught in the OpenGL initialization code further up the stack.
+    if( !m_vertices )
+        throw std::bad_alloc();
+
     memset( m_vertices, 0x00, aSize * sizeof( VERTEX ) );
 }
 
@@ -60,26 +70,25 @@ VERTEX* NONCACHED_CONTAINER::Allocate( unsigned int aSize )
     if( m_freeSpace < aSize )
     {
         // Double the space
-        VERTEX* newVertices = static_cast<VERTEX*>( realloc( m_vertices,
-                                                             m_currentSize * 2 *
-                                                             sizeof(VERTEX) ) );
+        VERTEX* newVertices =
+                static_cast<VERTEX*>( realloc( m_vertices, m_currentSize * 2 * sizeof( VERTEX ) ) );
 
         if( newVertices != NULL )
         {
-            m_vertices    = newVertices;
-            m_freeSpace   += m_currentSize;
+            m_vertices = newVertices;
+            m_freeSpace += m_currentSize;
             m_currentSize *= 2;
         }
         else
         {
-            return NULL;
+            throw std::bad_alloc();
         }
     }
 
     VERTEX* freeVertex = &m_vertices[m_freePtr];
 
     // Move to the next free chunk
-    m_freePtr   += aSize;
+    m_freePtr += aSize;
     m_freeSpace -= aSize;
 
     return freeVertex;
@@ -88,6 +97,6 @@ VERTEX* NONCACHED_CONTAINER::Allocate( unsigned int aSize )
 
 void NONCACHED_CONTAINER::Clear()
 {
-    m_freePtr   = 0;
+    m_freePtr = 0;
     m_freeSpace = m_currentSize;
 }

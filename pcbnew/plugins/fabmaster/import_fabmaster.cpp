@@ -57,7 +57,7 @@
 double FABMASTER::readDouble( const std::string aStr ) const
 {
     std::istringstream istr( aStr );
-    istr.imbue( std::locale( "C" ) );
+    istr.imbue( std::locale::classic() );
 
     double doubleValue;
     istr >> doubleValue;
@@ -68,7 +68,7 @@ double FABMASTER::readDouble( const std::string aStr ) const
 int FABMASTER::readInt( const std::string aStr ) const
 {
     std::istringstream istr( aStr );
-    istr.imbue( std::locale( "C" ) );
+    istr.imbue( std::locale::classic() );
 
     int intValue;
     istr >> intValue;
@@ -85,10 +85,23 @@ bool FABMASTER::Read( const std::string& aFile )
 
     m_filename = aFile;
 
-    std::string              buffer( std::istreambuf_iterator<char>{ ifs }, {} );
-    std::vector<std::string> row;
-    std::string              cell;
-    bool                     quoted = false;
+    // Read/ignore all bytes in the file to find the size and then go back to the beginning
+    ifs.ignore( std::numeric_limits<std::streamsize>::max() );
+    std::streamsize length = ifs.gcount();
+    ifs.clear();
+    ifs.seekg( 0, std::ios_base::beg );
+
+    std::string buffer( std::istreambuf_iterator<char>{ ifs }, {} );
+
+    std::vector < std::string > row;
+
+    // Reserve an estimate of the number of rows to prevent continual re-allocation
+    // crashing (Looking at you MSVC)
+    row.reserve( length / 100 );
+    std::string cell;
+    cell.reserve( 100 );
+
+    bool quoted = false;
 
     for( auto ch : buffer )
     {
@@ -150,12 +163,15 @@ FABMASTER::section_type FABMASTER::detectType( size_t aOffset )
     {
         row = rows.at( aOffset );
     }
-    catch( std::out_of_range& e )
+    catch( std::out_of_range& )
     {
         return UNKNOWN_EXTRACT;
     }
 
     if( row.size() < 3 )
+        return UNKNOWN_EXTRACT;
+
+    if( row[0].back() != 'A' )
         return UNKNOWN_EXTRACT;
 
     std::string row1 = row[1];
@@ -913,7 +929,8 @@ size_t FABMASTER::processCustomPads( size_t aRow )
         // and we don't process other pad shape records
         std::string prefix( "FIG_SHAPE " );
 
-        if( !std::equal( prefix.begin(), prefix.end(), pad_shape_name.begin() ) )
+        if( pad_shape_name.length() <= prefix.length()
+                || !std::equal( prefix.begin(), prefix.end(), pad_shape_name.begin() ) )
         {
             continue;
         }
@@ -1226,7 +1243,7 @@ size_t FABMASTER::processGeometry( size_t aRow )
 
         if( !gr_item )
         {
-            wxLogError( wxString::Format( _( "Unhandled graphic item '%s' "
+            wxLogDebug( wxString::Format( _( "Unhandled graphic item '%s' "
                                              "in Geometric definition row %zu" ),
                                           gr_data.graphic_dataname.c_str(), geo_tag.c_str(),
                                           rownum ) );
@@ -1412,7 +1429,7 @@ size_t FABMASTER::processTraces( size_t aRow )
 
         if( !gr_item )
         {
-            wxLogError( wxString::Format( _( "Unhandled graphic item '%s' "
+            wxLogDebug( wxString::Format( _( "Unhandled graphic item '%s' "
                                              "in Traces definition row %zu" ),
                                           gr_data.graphic_dataname.c_str(), rownum ) );
             continue;
@@ -1428,7 +1445,14 @@ size_t FABMASTER::processTraces( size_t aRow )
         gr_item->seq = seq;
         gr_item->subseq = subseq;
 
-        if( gr_item->width == 0 )
+        // Collect the reference designator positions for the footprints later
+        if( new_trace->lclass == "REF DES" )
+        {
+            auto result = refdes.emplace( std::move( new_trace ) );
+            auto& ref   = *result.first;
+            ref->segment.emplace( std::move( gr_item ) );
+        }
+        else if( gr_item->width == 0 )
         {
             auto  result = zones.emplace( std::move( new_trace ) );
             auto& zone = *result.first;
@@ -1804,11 +1828,11 @@ bool FABMASTER::loadZones( BOARD* aBoard )
 {
     for( auto& zone : zones )
     {
-        if( IsCopperLayer( getLayer( zone->layer ) ) )
+        if( IsCopperLayer( getLayer( zone->layer ) ) || zone->layer == "ALL" )
             loadZone( aBoard, zone );
         else
         {
-            if( zone->layer == "OUTLINE" )
+            if( zone->layer == "OUTLINE" || zone->layer == "DESIGN_OUTLINE" )
             {
                 loadOutline( aBoard, zone );
             }
@@ -1865,12 +1889,17 @@ bool FABMASTER::loadZones( BOARD* aBoard )
 
             for( auto& pt1 : outline1.CPoints() )
             {
-                if( !outline2.PointOnEdge( pt1, 1 ) )
-                    continue;
-
                 /// We're looking for the netcode with the most overlaps to the un-netted zone
-                overlaps[zone2->GetNetCode()]++;
-                break;
+                if( outline2.PointOnEdge( pt1, 1 ) )
+                    overlaps[ zone2->GetNetCode() ]++;
+            }
+
+            for( auto& pt2 : outline2.CPoints() )
+            {
+                /// The overlap between outline1 and outline2 isn't perfect, so look for overlaps
+                /// in both directions
+                if( outline1.PointOnEdge( pt2,  1 ) )
+                    overlaps[ zone2->GetNetCode() ]++;
             }
         }
 
@@ -1941,7 +1970,55 @@ bool FABMASTER::loadFootprints( BOARD* aBoard )
                 reference.Prepend( "UNK" );
 
             fp->SetReference( reference );
+
             fp->SetValue( src->value );
+            fp->Value().SetLayer( F_Fab );
+            fp->Value().SetVisible( false );
+
+            for( auto& ref : refdes )
+            {
+                const GRAPHIC_TEXT *lsrc =
+                        static_cast<const GRAPHIC_TEXT*>( ( *( ref->segment.begin() ) ).get() );
+
+                if( lsrc->text == src->refdes )
+                {
+                    FP_TEXT* txt = nullptr;
+                    PCB_LAYER_ID layer = getLayer( ref->layer );
+
+                    if( !IsPcbLayer( layer ) )
+                    {
+                        printf("The layer %s is not mapped?\n", ref->layer.c_str() );
+                        continue;
+                    }
+
+                    if( layer == F_SilkS || layer == B_SilkS )
+                        txt = &( fp->Reference() );
+                    else
+                        txt = new FP_TEXT( fp );
+
+                    if( src->mirror )
+                    {
+                        txt->SetLayer( FlipLayer( layer ) );
+                        txt->SetTextPos( wxPoint( lsrc->start_x, 2 * src->y - ( lsrc->start_y - lsrc->height / 2 ) ) );
+                    }
+                    else
+                    {
+                        txt->SetLayer( layer );
+                        txt->SetTextPos( wxPoint( lsrc->start_x, lsrc->start_y - lsrc->height / 2 ) );
+                    }
+
+                    txt->SetText( lsrc->text );
+                    txt->SetItalic( lsrc->ital );
+                    txt->SetTextThickness( lsrc->thickness );
+                    txt->SetTextHeight( lsrc->height );
+                    txt->SetTextWidth( lsrc->width );
+                    txt->SetHorizJustify( lsrc->orient );
+                    txt->SetLocalCoord();
+
+                    if( txt != &fp->Reference() )
+                        fp->Add( txt, ADD_MODE::APPEND );
+                }
+            }
 
             /// Always set the module to the top and flip later if needed
             /// When flipping later, we get the full coordinate transform for free
@@ -1963,7 +2040,7 @@ bool FABMASTER::loadFootprints( BOARD* aBoard )
                 {
                     PCB_LAYER_ID layer = Dwgs_User;
 
-                    if( IsValidLayer( getLayer( seg->layer ) ) )
+                    if( IsPcbLayer( getLayer( seg->layer ) ) )
                         layer = getLayer( seg->layer );
 
                     switch( seg->shape )
@@ -2047,7 +2124,7 @@ bool FABMASTER::loadFootprints( BOARD* aBoard )
                             rect->SetEnd( wxPoint( lsrc->end_x, lsrc->end_y ) );
                         }
 
-                        rect->SetWidth( 0 );
+                        rect->SetWidth( ds.GetLineThickness( rect->GetLayer() ) );
                         rect->SetLocalCoord();
 
                         fp->Add( rect, ADD_MODE::APPEND );
@@ -2218,13 +2295,27 @@ bool FABMASTER::loadFootprints( BOARD* aBoard )
                                     poly_outline.Move( -newpad->GetPosition() );
 
                                     if( src->mirror )
-                                        poly_outline.Rotate( ( -src->rotate + pin->rotation ) * M_PI
-                                                             / 180.0 );
+                                    {
+                                        poly_outline.Mirror( false, true, VECTOR2I( 0, ( pin->pin_y - src->y ) ) );
+                                        poly_outline.Rotate( ( -src->rotate + pin->rotation ) * M_PI / 180.0 );
+                                    }
                                     else
-                                        poly_outline.Rotate( ( src->rotate - pin->rotation ) * M_PI
-                                                             / 180.0 );
+                                    {
+                                        poly_outline.Rotate( ( src->rotate - pin->rotation ) * M_PI / 180.0 );
+                                    }
 
                                     newpad->AddPrimitivePoly( poly_outline, 0, true );
+                                }
+
+                                SHAPE_POLY_SET mergedPolygon;
+                                newpad->MergePrimitivesAsPolygon( &mergedPolygon, UNDEFINED_LAYER );
+
+                                if( mergedPolygon.OutlineCount() > 1 )
+                                {
+                                    wxLogError( wxString::Format(
+                                            _( "Invalid custom pad named '%s'. Replacing with circular pad." ),
+                                            custom_name.c_str() ) );
+                                    newpad->SetShape( PAD_SHAPE_CIRCLE );
                                 }
                             }
                             else
@@ -2284,9 +2375,6 @@ bool FABMASTER::loadFootprints( BOARD* aBoard )
                 fp->SetOrientationDegrees( 180.0 - src->rotate );
                 fp->Flip( fp->GetPosition(), true );
             }
-
-            fp->CalculateBoundingBox();
-            fp->UpdateBoundingHull();
 
             aBoard->Add( fp, ADD_MODE::APPEND );
         }
@@ -2437,24 +2525,15 @@ bool FABMASTER::loadEtch( BOARD* aBoard, const std::unique_ptr<FABMASTER::TRACE>
 }
 
 
-bool FABMASTER::loadPolygon( BOARD* aBoard, const std::unique_ptr<FABMASTER::TRACE>& aLine )
+SHAPE_POLY_SET FABMASTER::loadShapePolySet( const graphic_element& aElement )
 {
-    if( aLine->segment.size() < 3 )
-        return false;
-
-    PCB_LAYER_ID   layer = Cmts_User;
-    int            last_subseq = 0;
-    int            hole_idx = -1;
     SHAPE_POLY_SET poly_outline;
+    int last_subseq = 0;
+    int hole_idx = -1;
 
     poly_outline.NewOutline();
 
-    auto new_layer = getLayer( aLine->layer );
-
-    if( IsValidLayer( new_layer ) )
-        layer = new_layer;
-
-    for( const auto& seg : aLine->segment )
+    for( const auto& seg : aElement )
     {
         if( seg->subseq > 0 || seg->subseq != last_subseq )
             hole_idx = poly_outline.AddHole( SHAPE_LINE_CHAIN{} );
@@ -2478,6 +2557,23 @@ bool FABMASTER::loadPolygon( BOARD* aBoard, const std::unique_ptr<FABMASTER::TRA
     }
 
     poly_outline.Fracture( SHAPE_POLY_SET::POLYGON_MODE::PM_FAST );
+    return poly_outline;
+}
+
+
+bool FABMASTER::loadPolygon( BOARD* aBoard, const std::unique_ptr<FABMASTER::TRACE>& aLine)
+{
+    if( aLine->segment.size() < 3 )
+        return false;
+
+    PCB_LAYER_ID layer = Cmts_User;
+
+    auto new_layer = getLayer( aLine->layer );
+
+    if( IsPcbLayer( new_layer ) )
+        layer = new_layer;
+
+    SHAPE_POLY_SET poly_outline = loadShapePolySet( aLine->segment );
 
     if( poly_outline.OutlineCount() < 1 || poly_outline.COutline( 0 ).PointCount() < 3 )
         return false;
@@ -2486,6 +2582,21 @@ bool FABMASTER::loadPolygon( BOARD* aBoard, const std::unique_ptr<FABMASTER::TRA
 
     new_poly->SetShape( S_POLYGON );
     new_poly->SetLayer( layer );
+
+    // Polygons on the silk layer are filled but other layers are not/fill doesn't make sense
+    if( layer == F_SilkS || layer == B_SilkS )
+    {
+        new_poly->SetFilled( true );
+        new_poly->SetWidth( 0 );
+    }
+    else
+    {
+        new_poly->SetWidth( ( *( aLine->segment.begin() ) )->width );
+
+        if( new_poly->GetWidth() == 0 )
+            new_poly->SetWidth( aBoard->GetDesignSettings().GetLineThickness( layer ) );
+    }
+
     new_poly->SetPolyShape( poly_outline );
     aBoard->Add( new_poly, ADD_MODE::APPEND );
 
@@ -2508,7 +2619,7 @@ bool FABMASTER::loadZone( BOARD* aBoard, const std::unique_ptr<FABMASTER::TRACE>
     PCB_LAYER_ID        layer = Cmts_User;
     auto                new_layer = getLayer( aLine->layer );
 
-    if( IsValidLayer( new_layer ) )
+    if( IsPcbLayer( new_layer ) )
         layer = new_layer;
 
     zone = new ZONE( aBoard );
@@ -2517,7 +2628,10 @@ bool FABMASTER::loadZone( BOARD* aBoard, const std::unique_ptr<FABMASTER::TRACE>
     if( net_it != netinfo.end() )
         zone->SetNet( net_it->second );
 
-    zone->SetLayer( layer );
+    if( aLine->layer == "ALL" )
+        zone->SetLayerSet( aBoard->GetLayerSet() & LSET::AllCuMask() );
+    else
+        zone->SetLayer( layer );
 
     zone->SetIsRuleArea( false );
     zone->SetDoNotAllowTracks( false );
@@ -2525,6 +2639,17 @@ bool FABMASTER::loadZone( BOARD* aBoard, const std::unique_ptr<FABMASTER::TRACE>
     zone->SetDoNotAllowPads( false );
     zone->SetDoNotAllowFootprints( false );
     zone->SetDoNotAllowCopperPour( false );
+
+    if( aLine->lclass == "ROUTE KEEPOUT")
+    {
+        zone->SetIsRuleArea( true );
+        zone->SetDoNotAllowTracks( true );
+    }
+    else if( aLine->lclass == "VIA KEEPOUT")
+    {
+        zone->SetIsRuleArea( true );
+        zone->SetDoNotAllowVias( true );
+    }
 
     zone->SetPriority( 50 );
     zone->SetLocalClearance( 0 );
@@ -2562,18 +2687,15 @@ bool FABMASTER::loadZone( BOARD* aBoard, const std::unique_ptr<FABMASTER::TRACE>
         }
     }
 
-    if( zone && zone_outline )
+    if( zone_outline->Outline( 0 ).PointCount() >= 3 )
     {
-        if( zone_outline->Outline( 0 ).PointCount() >= 3 )
-        {
-            zone->SetOutline( zone_outline );
-            aBoard->Add( zone, ADD_MODE::APPEND );
-        }
-        else
-        {
-            delete( zone_outline );
-            delete( zone );
-        }
+        zone->SetOutline( zone_outline );
+        aBoard->Add( zone, ADD_MODE::APPEND );
+    }
+    else
+    {
+        delete( zone_outline );
+        delete( zone );
     }
 
     return true;
@@ -2606,6 +2728,9 @@ bool FABMASTER::loadOutline( BOARD* aBoard, const std::unique_ptr<FABMASTER::TRA
             line->SetEnd( wxPoint( src->end_x, src->end_y ) );
             line->SetWidth( src->width );
 
+            if( line->GetWidth() == 0 )
+                line->SetWidth( aBoard->GetDesignSettings().GetLineThickness( layer ) );
+
             aBoard->Add( line, ADD_MODE::APPEND );
             break;
         }
@@ -2621,6 +2746,9 @@ bool FABMASTER::loadOutline( BOARD* aBoard, const std::unique_ptr<FABMASTER::TRA
             arc->SetAngle( src->result.GetCentralAngle() * 10.0 );
             arc->SetWidth( src->width );
 
+            if( arc->GetWidth() == 0 )
+                arc->SetWidth( aBoard->GetDesignSettings().GetLineThickness( layer ) );
+
             aBoard->Add( arc, ADD_MODE::APPEND );
             break;
         }
@@ -2633,7 +2761,8 @@ bool FABMASTER::loadOutline( BOARD* aBoard, const std::unique_ptr<FABMASTER::TRA
             rect->SetLayer( layer );
             rect->SetStart( wxPoint( src->start_x, src->start_y ) );
             rect->SetEnd( wxPoint( src->end_x, src->end_y ) );
-            rect->SetWidth( 0 );
+            rect->SetWidth( aBoard->GetDesignSettings().GetLineThickness( layer ) );
+
             aBoard->Add( rect, ADD_MODE::APPEND );
             break;
         }
@@ -2650,6 +2779,7 @@ bool FABMASTER::loadOutline( BOARD* aBoard, const std::unique_ptr<FABMASTER::TRA
             txt->SetTextHeight( src->height );
             txt->SetTextWidth( src->width );
             txt->SetHorizJustify( src->orient );
+
             aBoard->Add( txt, ADD_MODE::APPEND );
             break;
         }
@@ -2667,15 +2797,38 @@ bool FABMASTER::loadGraphics( BOARD* aBoard )
     {
         PCB_LAYER_ID layer;
 
-        if( geom.subclass == "SILKSCREEN_TOP" )
-            layer = F_SilkS;
-        else if( geom.subclass == "SILKSCREEN_BOTTOM" )
-            layer = B_SilkS;
         // The pin numbers are not useful for us outside of the footprints
-        else if( geom.subclass == "PIN_NUMBER" )
+        if( geom.subclass == "PIN_NUMBER" )
             continue;
-        else
+
+        layer = getLayer( geom.subclass );
+
+        if( !IsPcbLayer( layer ) )
             layer = Cmts_User;
+
+        if( !geom.elements->empty() )
+        {
+            /// Zero-width segments/arcs are polygon outlines
+            if( ( *( geom.elements->begin() ) )->width == 0 )
+            {
+                SHAPE_POLY_SET poly_outline = loadShapePolySet( *( geom.elements ) );
+
+                if( poly_outline.OutlineCount() < 1 || poly_outline.COutline( 0 ).PointCount() < 3 )
+                    continue;
+
+                PCB_SHAPE* new_poly = new PCB_SHAPE( aBoard );
+
+                new_poly->SetShape( S_POLYGON );
+                new_poly->SetLayer( layer );
+                new_poly->SetPolyShape( poly_outline );
+                new_poly->SetWidth( 0 );
+
+                if( layer == F_SilkS || layer == B_SilkS )
+                    new_poly->SetFilled( true );
+
+                aBoard->Add( new_poly, ADD_MODE::APPEND );
+            }
+        }
 
         for( auto& seg : *geom.elements )
         {

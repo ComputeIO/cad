@@ -1,7 +1,7 @@
 /*
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
- * Copyright (C) 1992-2020 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 1992-2021 KiCad Developers, see AUTHORS.txt for contributors.
  *
  *
  * This program is free software; you can redistribute it and/or
@@ -70,6 +70,23 @@ void TITLE_BLOCK::Format( OUTPUTFORMATTER* aFormatter, int aNestLevel, int aCont
     }
 }
 
+void TITLE_BLOCK::GetContextualTextVars( wxArrayString* aVars )
+{
+    aVars->push_back( wxT( "ISSUE_DATE" ) );
+    aVars->push_back( wxT( "REVISION" ) );
+    aVars->push_back( wxT( "TITLE" ) );
+    aVars->push_back( wxT( "COMPANY" ) );
+    aVars->push_back( wxT( "COMMENT1" ) );
+    aVars->push_back( wxT( "COMMENT2" ) );
+    aVars->push_back( wxT( "COMMENT3" ) );
+    aVars->push_back( wxT( "COMMENT4" ) );
+    aVars->push_back( wxT( "COMMENT5" ) );
+    aVars->push_back( wxT( "COMMENT6" ) );
+    aVars->push_back( wxT( "COMMENT7" ) );
+    aVars->push_back( wxT( "COMMENT8" ) );
+    aVars->push_back( wxT( "COMMENT9" ) );
+}
+
 
 bool TITLE_BLOCK::TextVarResolver( wxString* aToken, const PROJECT* aProject ) const
 {
@@ -101,7 +118,6 @@ bool TITLE_BLOCK::TextVarResolver( wxString* aToken, const PROJECT* aProject ) c
 
         switch( c )
         {
-        case '0':
         case '1':
         case '2':
         case '3':
@@ -110,7 +126,9 @@ bool TITLE_BLOCK::TextVarResolver( wxString* aToken, const PROJECT* aProject ) c
         case '6':
         case '7':
         case '8':
-        case '9': *aToken = GetComment( c - '0' ); tokenUpdated = true;
+        case '9':
+            *aToken = GetComment( c - '1' );
+            tokenUpdated = true;
         }
     }
 

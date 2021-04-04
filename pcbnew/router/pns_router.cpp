@@ -2,7 +2,7 @@
  * KiRouter - a push-and-(sometimes-)shove PCB router
  *
  * Copyright (C) 2013-2014 CERN
- * Copyright (C) 2016 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 2016-2021 KiCad Developers, see AUTHORS.txt for contributors.
  * Author: Tomasz Wlostowski <tomasz.wlostowski@cern.ch>
  *
  * This program is free software: you can redistribute it and/or modify it
@@ -71,9 +71,8 @@ ROUTER::ROUTER()
     m_lastNode = nullptr;
     m_iterLimit = 0;
     m_settings = nullptr;
-    m_showInterSteps = false;
-    m_snapshotIter = 0;
     m_iface = nullptr;
+    m_visibleViewArea.SetMaximum();
 }
 
 
@@ -126,6 +125,7 @@ const ITEM_SET ROUTER::QueryHoverItems( const VECTOR2I& aP )
         return m_placer->CurrentNode()->HitTest( aP );
 }
 
+
 bool ROUTER::StartDragging( const VECTOR2I& aP, ITEM* aItem, int aDragMode )
 {
     return StartDragging( aP, ITEM_SET( aItem ), aDragMode );
@@ -157,6 +157,14 @@ bool ROUTER::StartDragging( const VECTOR2I& aP, ITEM_SET aStartItems, int aDragM
     m_dragger->SetLogger( m_logger );
     m_dragger->SetDebugDecorator( m_iface->GetDebugDecorator() );
 
+    if( m_logger )
+        m_logger->Clear();
+
+    if( m_logger && aStartItems.Size() )
+    {
+        m_logger->Log( LOGGER::EVT_START_DRAG, aP, aStartItems[0] );
+    }
+
     if( m_dragger->Start( aP, aStartItems ) )
     {
         m_state = DRAG_SEGMENT;
@@ -176,6 +184,15 @@ bool ROUTER::isStartingPointRoutable( const VECTOR2I& aWhere, ITEM* aStartItem, 
 {
     if( Settings().CanViolateDRC() && Settings().Mode() == RM_MarkObstacles )
         return true;
+
+    if( m_mode == PNS_MODE_ROUTE_DIFF_PAIR )
+    {
+        if( m_sizes.DiffPairGap() < m_sizes.MinClearance() )
+        {
+            SetFailureReason( _( "Diff pair gap is less than board minimum clearance." ) );
+            return false;
+        }
+    }
 
     ITEM_SET candidates = QueryHoverItems( aWhere );
 
@@ -330,6 +347,7 @@ bool ROUTER::isStartingPointRoutable( const VECTOR2I& aWhere, ITEM* aStartItem, 
     return true;
 }
 
+
 bool ROUTER::StartRouting( const VECTOR2I& aP, ITEM* aStartItem, int aLayer )
 {
     if( !isStartingPointRoutable( aP, aStartItem, aLayer ) )
@@ -339,24 +357,28 @@ bool ROUTER::StartRouting( const VECTOR2I& aP, ITEM* aStartItem, int aLayer )
 
     switch( m_mode )
     {
-        case PNS_MODE_ROUTE_SINGLE:
-            m_placer = std::make_unique<LINE_PLACER>( this );
-            break;
-        case PNS_MODE_ROUTE_DIFF_PAIR:
-            m_placer = std::make_unique<DIFF_PAIR_PLACER>( this );
-            break;
-        case PNS_MODE_TUNE_SINGLE:
-            m_placer = std::make_unique<MEANDER_PLACER>( this );
-            break;
-        case PNS_MODE_TUNE_DIFF_PAIR:
-            m_placer = std::make_unique<DP_MEANDER_PLACER>( this );
-            break;
-        case PNS_MODE_TUNE_DIFF_PAIR_SKEW:
-            m_placer = std::make_unique<MEANDER_SKEW_PLACER>( this );
-            break;
+    case PNS_MODE_ROUTE_SINGLE:
+        m_placer = std::make_unique<LINE_PLACER>( this );
+        break;
 
-        default:
-            return false;
+    case PNS_MODE_ROUTE_DIFF_PAIR:
+        m_placer = std::make_unique<DIFF_PAIR_PLACER>( this );
+        break;
+
+    case PNS_MODE_TUNE_SINGLE:
+        m_placer = std::make_unique<MEANDER_PLACER>( this );
+        break;
+
+    case PNS_MODE_TUNE_DIFF_PAIR:
+        m_placer = std::make_unique<DP_MEANDER_PLACER>( this );
+        break;
+
+    case PNS_MODE_TUNE_DIFF_PAIR_SKEW:
+        m_placer = std::make_unique<MEANDER_SKEW_PLACER>( this );
+        break;
+
+    default:
+        return false;
     }
 
     m_placer->UpdateSizes( m_sizes );
@@ -365,7 +387,10 @@ bool ROUTER::StartRouting( const VECTOR2I& aP, ITEM* aStartItem, int aLayer )
     m_placer->SetLogger( m_logger );
 
     if( m_logger )
+    {
+        m_logger->Clear();
         m_logger->Log( LOGGER::EVT_START_ROUTE, aP, aStartItem );
+    }
 
     bool rv = m_placer->Start( aP, aStartItem );
 
@@ -427,12 +452,12 @@ void ROUTER::markViolations( NODE* aNode, ITEM_SET& aCurrent, NODE::ITEM_VECTOR&
                     clearance = aNode->GetClearance( currentItem, itemToMark );
 
                 if( itemToMark->Layers().IsMultilayer() && !currentItem->Layers().IsMultilayer() )
-                    itemToMark->SetLayer( currentItem->Layer() );
+                    tmp->SetLayer( currentItem->Layer() );
 
                 if( itemToMark->Kind() == ITEM::SOLID_T )
                 {
                     if( ( itemToMark->Marker() & PNS::MK_HOLE )
-                            || !m_iface->IsFlashedOnLayer( itemToMark, itemToMark->Layer() ) )
+                      || !m_iface->IsFlashedOnLayer( itemToMark, itemToMark->Layer() ) )
                     {
                         SOLID* solid = static_cast<SOLID*>( tmp.get() );
                         solid->SetShape( solid->Hole()->Clone() );
@@ -512,8 +537,10 @@ void ROUTER::UpdateSizes( const SIZES_SETTINGS& aSizes )
     m_sizes = aSizes;
 
     // Change track/via size settings
-    if( m_state == ROUTE_TRACK)
+    if( m_state == ROUTE_TRACK )
+    {
         m_placer->UpdateSizes( m_sizes );
+    }
 }
 
 
@@ -794,7 +821,6 @@ void ROUTER::BreakSegment( ITEM *aItem, const VECTOR2I& aP )
     {
         delete node;
     }
-
 }
 
 }

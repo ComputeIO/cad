@@ -292,7 +292,8 @@ bool JSON_SETTINGS::LoadFromFile( const wxString& aDirectory )
         }
 
         // And write-out immediately so that we don't lose data if the program later crashes.
-        SaveToFile( aDirectory, true );
+        if( m_deleteLegacyAfterMigration )
+            SaveToFile( aDirectory, true );
     }
 
     return success;
@@ -317,6 +318,18 @@ void JSON_SETTINGS::ResetToDefaults()
 {
     for( auto param : m_params )
         param->SetDefault();
+}
+
+
+bool JSON_SETTINGS::IsDefault( const std::string& aParamName )
+{
+    for( const PARAM_BASE* param : m_params )
+    {
+        if( param->GetJsonPath() == aParamName )
+            return param->IsDefault();
+    }
+
+    return false;
 }
 
 

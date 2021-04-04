@@ -50,6 +50,7 @@ class SCH_EDIT_FRAME;
 class SCH_COMPONENT;
 
 class SPICE_SIMULATOR;
+class SPICE_SIMULATOR_SETTINGS;
 class NETLIST_EXPORTER_PSPICE_SIM;
 
 #include "sim_plot_panel.h"
@@ -57,17 +58,6 @@ class NETLIST_EXPORTER_PSPICE_SIM;
 
 class SIM_THREAD_REPORTER;
 class TUNER_SLIDER;
-
-
-// Identifiers (indexes) for color choice in color table
-enum SIM_COLOR_SET
-{
-    SIM_BG_COLOR,
-    SIM_FG_COLOR,
-    SIM_AXIS_COLOR,
-    SIM_CURSOR_COLOR,
-    SIM_TRACE_COLOR     // First index for trace colors list
-};
 
 
 ///< Trace descriptor class
@@ -121,11 +111,12 @@ private:
 };
 
 
-/** Implementing SIM_PLOT_FRAME_BASE */
+/**
+ * Implementing SIM_PLOT_FRAME_BASE
+ */
 class SIM_PLOT_FRAME : public SIM_PLOT_FRAME_BASE
 {
 public:
-    /** Constructor */
     SIM_PLOT_FRAME( KIWAY* aKiway, wxWindow* aParent );
     ~SIM_PLOT_FRAME();
 
@@ -158,7 +149,6 @@ public:
 
     /**
      * Add a tuner for a component.
-     *
      */
     void AddTuner( SCH_COMPONENT* aComponent );
 
@@ -187,17 +177,6 @@ public:
      */
     bool GetPlotBgOpt() const { return m_plotUseWhiteBg; }
 
-    /**
-     * @return the wxColor selected in color list.
-     * @param aColorId is the index in color list
-     */
-    wxColor GetPlotColor( int aColorId );
-
-    /**
-     * @return the count of colors in color list
-     */
-    int GetPlotColorCount() { return m_colorList.size(); }
-
     void LoadSettings( APP_SETTINGS_BASE* aCfg ) override;
 
     void SaveSettings( APP_SETTINGS_BASE* aCfg ) override;
@@ -207,18 +186,13 @@ public:
     // Simulator doesn't host a tool framework
     wxWindow* GetToolCanvas() const override { return nullptr; }
 
+    std::shared_ptr<SPICE_SIMULATOR_SETTINGS>& GetSimulatorSettings();
+
 private:
     /**
      * Give icons to menuitems of the main menubar
      */
     void setIconsForMenuItems();
-
-    /**
-     * Fill m_colorList by a default set of colors.
-     *
-     *  @param aWhiteBg true to use a white (or clear) background false to use a dark background.
-     */
-    void fillDefaultColorList( bool aWhiteBg );
 
     /**
      * Return the currently opened plot panel (or NULL if there is none).
@@ -267,7 +241,8 @@ private:
 
     /**
      * Filter out tuners for components that do not exist anymore.
-     * Decisions are based on the current NETLIST_EXPORTER_BASE data.
+     *
+     * Decisions are based on the current #NETLIST_EXPORTER_BASE data.
      */
     void updateTuners();
 
@@ -427,9 +402,6 @@ private:
     int m_splitterTuneValuesSashPosition;
     bool m_plotUseWhiteBg;
     unsigned int m_plotNumber;
-
-    ///< The color list to draw traces, bg, fg, axis...
-    std::vector<wxColour> m_colorList;
 };
 
 // Commands

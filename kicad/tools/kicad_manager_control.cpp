@@ -24,7 +24,6 @@
 #include <kiway.h>
 #include <kicad_manager_frame.h>
 #include <confirm.h>
-#include <bitmaps.h>
 #include <tool/selection.h>
 #include <tool/tool_event.h>
 #include <tools/kicad_manager_actions.h>
@@ -224,8 +223,6 @@ int KICAD_MANAGER_CONTROL::NewFromTemplate( const TOOL_EVENT& aEvent )
         return -1;
     }
 
-    m_frame->ClearMsg();
-
     // Make sure we are not overwriting anything in the destination folder.
     std::vector<wxFileName> destFiles;
 
@@ -355,28 +352,43 @@ public:
             // straight copy
             KiCopyFile( aSrcFilePath, destFile.GetFullPath(), m_errors );
         }
-        else if( ext == "kicad_sch" || ext == "kicad_sch-bak" || ext == "sch" || ext == "sch-bak"
-                 || ext == "sym" || ext == "lib" || ext == "dcm" || ext == "kicad_sym"
-                 || ext == "net" || destFile.GetName() == "sym-lib-table" )
+        else if( ext == KiCadSchematicFileExtension
+               || ext == KiCadSchematicFileExtension + BackupFileSuffix
+               || ext == LegacySchematicFileExtension
+               || ext == LegacySchematicFileExtension + BackupFileSuffix
+               || ext == SchematicSymbolFileExtension
+               || ext == LegacySymbolLibFileExtension
+               || ext == LegacySymbolDocumentFileExtension
+               || ext == KiCadSymbolLibFileExtension
+               || ext == NetlistFileExtension
+               || destFile.GetName() == "sym-lib-table" )
         {
             KIFACE* eeschema = m_frame->Kiway().KiFACE( KIWAY::FACE_SCH );
             eeschema->SaveFileAs( m_projectDirPath, m_projectName, m_newProjectDirPath,
                                   m_newProjectName, aSrcFilePath, m_errors );
         }
-        else if( ext == "kicad_pcb" || ext == "kicad_pcb-bak" || ext == "brd" || ext == "kicad_mod"
-                 || ext == "mod" || ext == "cmp" || destFile.GetName() == "fp-lib-table" )
+        else if( ext == KiCadPcbFileExtension
+               || ext == KiCadPcbFileExtension + BackupFileSuffix
+               || ext == LegacyPcbFileExtension
+               || ext == KiCadFootprintFileExtension
+               || ext == LegacyFootprintLibPathExtension
+               || ext == ComponentFileExtension
+               || destFile.GetName() == "fp-lib-table" )
         {
             KIFACE* pcbnew = m_frame->Kiway().KiFACE( KIWAY::FACE_PCB );
             pcbnew->SaveFileAs( m_projectDirPath, m_projectName, m_newProjectDirPath,
                                 m_newProjectName, aSrcFilePath, m_errors );
         }
-        else if( ext == "kicad_wks" )
+        else if( ext == PageLayoutDescrFileExtension )
         {
             KIFACE* pleditor = m_frame->Kiway().KiFACE( KIWAY::FACE_PL_EDITOR );
             pleditor->SaveFileAs( m_projectDirPath, m_projectName, m_newProjectDirPath,
                                   m_newProjectName, aSrcFilePath, m_errors );
         }
-        else if( ext == "gbr" || ext == "gbrjob" || ext == "drl" || IsProtelExtension( ext ) )
+        else if( ext == GerberFileExtension
+               || ext == GerberJobFileExtension
+               || ext == DrillFileExtension
+               || IsProtelExtension( ext ) )
         {
             KIFACE* gerbview = m_frame->Kiway().KiFACE( KIWAY::FACE_GERBVIEW );
             gerbview->SaveFileAs( m_projectDirPath, m_projectName, m_newProjectDirPath,
@@ -699,7 +711,7 @@ int KICAD_MANAGER_CONTROL::Execute( const TOOL_EVENT& aEvent )
         execFile = BITMAPCONVERTER_EXE;
     else if( aEvent.IsAction( &KICAD_MANAGER_ACTIONS::showCalculator ) )
         execFile = PCB_CALCULATOR_EXE;
-    else if( aEvent.IsAction( &KICAD_MANAGER_ACTIONS::editWorksheet ) )
+    else if( aEvent.IsAction( &KICAD_MANAGER_ACTIONS::editDrawingSheet ) )
         execFile = PL_EDITOR_EXE;
     else if( aEvent.IsAction( &KICAD_MANAGER_ACTIONS::openTextEditor ) )
         execFile = Pgm().GetEditorName();
@@ -747,26 +759,25 @@ int KICAD_MANAGER_CONTROL::Execute( const TOOL_EVENT& aEvent )
 
 void KICAD_MANAGER_CONTROL::setTransitions()
 {
-    Go( &KICAD_MANAGER_CONTROL::NewProject, KICAD_MANAGER_ACTIONS::newProject.MakeEvent() );
-    Go( &KICAD_MANAGER_CONTROL::NewFromTemplate,
-        KICAD_MANAGER_ACTIONS::newFromTemplate.MakeEvent() );
-    Go( &KICAD_MANAGER_CONTROL::OpenProject, KICAD_MANAGER_ACTIONS::openProject.MakeEvent() );
-    Go( &KICAD_MANAGER_CONTROL::CloseProject, KICAD_MANAGER_ACTIONS::closeProject.MakeEvent() );
-    Go( &KICAD_MANAGER_CONTROL::SaveProjectAs, ACTIONS::saveAs.MakeEvent() );
+    Go( &KICAD_MANAGER_CONTROL::NewProject,      KICAD_MANAGER_ACTIONS::newProject.MakeEvent() );
+    Go( &KICAD_MANAGER_CONTROL::NewFromTemplate, KICAD_MANAGER_ACTIONS::newFromTemplate.MakeEvent() );
+    Go( &KICAD_MANAGER_CONTROL::OpenProject,     KICAD_MANAGER_ACTIONS::openProject.MakeEvent() );
+    Go( &KICAD_MANAGER_CONTROL::CloseProject,    KICAD_MANAGER_ACTIONS::closeProject.MakeEvent() );
+    Go( &KICAD_MANAGER_CONTROL::SaveProjectAs,   ACTIONS::saveAs.MakeEvent() );
 
-    Go( &KICAD_MANAGER_CONTROL::Refresh, ACTIONS::zoomRedraw.MakeEvent() );
-    Go( &KICAD_MANAGER_CONTROL::UpdateMenu, ACTIONS::updateMenu.MakeEvent() );
+    Go( &KICAD_MANAGER_CONTROL::Refresh,         ACTIONS::zoomRedraw.MakeEvent() );
+    Go( &KICAD_MANAGER_CONTROL::UpdateMenu,      ACTIONS::updateMenu.MakeEvent() );
 
-    Go( &KICAD_MANAGER_CONTROL::ShowPlayer, KICAD_MANAGER_ACTIONS::editSchematic.MakeEvent() );
-    Go( &KICAD_MANAGER_CONTROL::ShowPlayer, KICAD_MANAGER_ACTIONS::editSymbols.MakeEvent() );
-    Go( &KICAD_MANAGER_CONTROL::ShowPlayer, KICAD_MANAGER_ACTIONS::editPCB.MakeEvent() );
-    Go( &KICAD_MANAGER_CONTROL::ShowPlayer, KICAD_MANAGER_ACTIONS::editFootprints.MakeEvent() );
-    Go( &KICAD_MANAGER_CONTROL::Execute, KICAD_MANAGER_ACTIONS::viewGerbers.MakeEvent() );
-    Go( &KICAD_MANAGER_CONTROL::Execute, KICAD_MANAGER_ACTIONS::convertImage.MakeEvent() );
-    Go( &KICAD_MANAGER_CONTROL::Execute, KICAD_MANAGER_ACTIONS::showCalculator.MakeEvent() );
-    Go( &KICAD_MANAGER_CONTROL::Execute, KICAD_MANAGER_ACTIONS::editWorksheet.MakeEvent() );
-    Go( &KICAD_MANAGER_CONTROL::Execute, KICAD_MANAGER_ACTIONS::openTextEditor.MakeEvent() );
+    Go( &KICAD_MANAGER_CONTROL::ShowPlayer,      KICAD_MANAGER_ACTIONS::editSchematic.MakeEvent() );
+    Go( &KICAD_MANAGER_CONTROL::ShowPlayer,      KICAD_MANAGER_ACTIONS::editSymbols.MakeEvent() );
+    Go( &KICAD_MANAGER_CONTROL::ShowPlayer,      KICAD_MANAGER_ACTIONS::editPCB.MakeEvent() );
+    Go( &KICAD_MANAGER_CONTROL::ShowPlayer,      KICAD_MANAGER_ACTIONS::editFootprints.MakeEvent() );
+    Go( &KICAD_MANAGER_CONTROL::Execute,         KICAD_MANAGER_ACTIONS::viewGerbers.MakeEvent() );
+    Go( &KICAD_MANAGER_CONTROL::Execute,         KICAD_MANAGER_ACTIONS::convertImage.MakeEvent() );
+    Go( &KICAD_MANAGER_CONTROL::Execute,         KICAD_MANAGER_ACTIONS::showCalculator.MakeEvent() );
+    Go( &KICAD_MANAGER_CONTROL::Execute,         KICAD_MANAGER_ACTIONS::editDrawingSheet.MakeEvent() );
+    Go( &KICAD_MANAGER_CONTROL::Execute,         KICAD_MANAGER_ACTIONS::openTextEditor.MakeEvent() );
 
-    Go( &KICAD_MANAGER_CONTROL::Execute, KICAD_MANAGER_ACTIONS::editOtherSch.MakeEvent() );
-    Go( &KICAD_MANAGER_CONTROL::Execute, KICAD_MANAGER_ACTIONS::editOtherPCB.MakeEvent() );
+    Go( &KICAD_MANAGER_CONTROL::Execute,         KICAD_MANAGER_ACTIONS::editOtherSch.MakeEvent() );
+    Go( &KICAD_MANAGER_CONTROL::Execute,         KICAD_MANAGER_ACTIONS::editOtherPCB.MakeEvent() );
 }

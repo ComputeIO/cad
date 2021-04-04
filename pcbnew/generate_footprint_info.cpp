@@ -49,7 +49,8 @@ class FOOTPRINT_INFO_GENERATOR
     wxString      m_html;
     FP_LIB_TABLE* m_fp_lib_table;
     LIB_ID const  m_lib_id;
-    FOOTPRINT*    m_footprint;
+
+    const FOOTPRINT*    m_footprint;
 
 public:
     FOOTPRINT_INFO_GENERATOR( FP_LIB_TABLE* aFpLibTable, LIB_ID const& aLibId )
@@ -71,8 +72,8 @@ public:
 
         try
         {
-            m_footprint = m_fp_lib_table->FootprintLoad( m_lib_id.GetLibNickname(),
-                                                         m_lib_id.GetLibItemName() );
+            m_footprint = m_fp_lib_table->GetEnumeratedFootprint( m_lib_id.GetLibNickname(),
+                                                                  m_lib_id.GetLibItemName() );
         }
         catch( const IO_ERROR& ioe )
         {
@@ -93,15 +94,41 @@ public:
             // It is currently common practice to store a documentation link in the description.
             int idx = desc.find( wxT( "http:" ) );
 
+            if( idx < 0 )
+                idx = desc.find( wxT( "https:" ) );
+
             if( idx >= 0 )
             {
-                doc = desc.substr( (unsigned) idx );
+                // And, sadly, it appears to have also become customary to bury the url inside
+                // parentheses.
+                if( idx >= 1 && desc.at( idx - 1 ) == '(' )
+                {
+                    int nesting = 0;
 
-                desc = desc.substr( 0, (unsigned) idx );
-                desc = desc.Trim( true );
+                    while( idx < (int) desc.size() )
+                    {
+                        char c = desc.at( idx++ );
 
-                if( !desc.IsEmpty() && desc.Last() == ',' )
-                    desc.RemoveLast( 1 );
+                        if( c == '(' )
+                            nesting++;
+                        else if( c == ')' && --nesting < 0 )
+                            break;
+
+                        doc += c;
+                    }
+
+                    desc.Replace( doc, _( "doc url" ) );
+                }
+                else
+                {
+                    doc = desc.substr( (unsigned) idx );
+
+                    desc = desc.substr( 0, (unsigned) idx );
+                    desc = desc.Trim( true );
+
+                    if( !desc.IsEmpty() && desc.Last() == ',' )
+                        desc.RemoveLast( 1 );
+                }
             }
 
             m_html.Replace( "__NAME__", EscapeHTML( name ) );

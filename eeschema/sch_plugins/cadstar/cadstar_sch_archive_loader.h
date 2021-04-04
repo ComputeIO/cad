@@ -52,14 +52,15 @@ class SCHEMATIC;
 class CADSTAR_SCH_ARCHIVE_LOADER : public CADSTAR_SCH_ARCHIVE_PARSER
 {
 public:
-    explicit CADSTAR_SCH_ARCHIVE_LOADER( wxString aFilename )
+    explicit CADSTAR_SCH_ARCHIVE_LOADER( wxString aFilename, REPORTER* aReporter )
             : CADSTAR_SCH_ARCHIVE_PARSER( aFilename )
     {
-        mSchematic      = nullptr;
-        mRootSheet      = nullptr;
-        mPlugin         = nullptr;
-        mDesignCenter.x = 0;
-        mDesignCenter.y = 0;
+        m_schematic      = nullptr;
+        m_rootSheet      = nullptr;
+        m_plugin         = nullptr;
+        m_designCenter.x = 0;
+        m_designCenter.y = 0;
+        m_reporter       = aReporter;
     }
 
 
@@ -72,35 +73,41 @@ public:
      * @param aSchematic Schematic to add the design onto
      * @param aRootSheet Root sheet to add the design onto
      */
-    void Load( ::SCHEMATIC* aSchematic, ::SCH_SHEET* aRootSheet,
+    void Load( SCHEMATIC* aSchematic, SCH_SHEET* aRootSheet,
             SCH_PLUGIN::SCH_PLUGIN_RELEASER* aSchPlugin, const wxFileName& aLibraryFileName );
 
 
 private:
     typedef std::pair<BLOCK_ID, TERMINAL_ID> BLOCK_PIN_ID;
+    typedef std::pair<PART_ID, GATE_ID> PART_GATE_ID;
+
+    /**
+     * Map between a terminal ID in a symbol definition to the pin number that should
+     * be imported into KiCad.
+     */
     typedef std::map<TERMINAL_ID, wxString>  TERMINAL_TO_PINNUM_MAP;
 
-    ::SCHEMATIC*                     mSchematic;
-    ::SCH_SHEET*                     mRootSheet;
-    SCH_PLUGIN::SCH_PLUGIN_RELEASER* mPlugin;
-    wxFileName                       mLibraryFileName;
-    wxPoint                          mDesignCenter; ///< Used for calculating the required
-                                                    ///< offset to apply to the Cadstar design
-                                                    ///< so that it fits in KiCad canvas
-    std::set<HATCHCODE_ID> mHatchcodesTested;       ///< Used by checkAndLogHatchCode() to
-                                                    ///< avoid multiple duplicate warnings
-    std::map<LAYER_ID, SCH_SHEET*> mSheetMap;       ///< Map between Cadstar and KiCad Sheets
+    REPORTER*                        m_reporter;
+    SCHEMATIC*                       m_schematic;
+    SCH_SHEET*                       m_rootSheet;
+    SCH_PLUGIN::SCH_PLUGIN_RELEASER* m_plugin;
+    wxFileName                       m_libraryFileName;
+    wxPoint                          m_designCenter; ///< Used for calculating the required
+                                                     ///< offset to apply to the Cadstar design
+                                                     ///< so that it fits in KiCad canvas
+    std::map<LAYER_ID, SCH_SHEET*> m_sheetMap;       ///< Map between Cadstar and KiCad Sheets
     std::map<BLOCK_PIN_ID, SCH_HIERLABEL*>
-                                 mSheetPinMap; ///< Map between Cadstar and KiCad Sheets Pins
-    std::map<PART_ID, LIB_PART*> mPartMap;     ///< Map between Cadstar and KiCad Parts
-    std::map<PART_ID, TERMINAL_TO_PINNUM_MAP> mPinNumsMap; ///< Map of pin numbers
-    std::map<SYMDEF_ID, LIB_PART*>
-            mPowerSymLibMap; ///< Map between Cadstar and KiCad Power Symbol Library items
+                                 m_sheetPinMap; ///< Map between Cadstar and KiCad Sheets Pins
+    std::map<PART_ID, LIB_PART*> m_partMap;     ///< Map between Cadstar and KiCad Parts
+    std::map<PART_GATE_ID, SYMDEF_ID> m_partSymbolsMap; ///< Map holding the symbols loaded so far
+                                                        ///  for a particular PART_ID and GATE_ID
+    std::map<PART_ID, TERMINAL_TO_PINNUM_MAP> m_pinNumsMap; ///< Map of pin numbers in CADSTAR parts
+    std::map<wxString, LIB_PART*> m_powerSymLibMap; ///< Map of KiCad Power Symbol Library items
     std::map<SYMBOL_ID, SCH_COMPONENT*>
-            mPowerSymMap; ///< Map between Cadstar and KiCad Power Symbols
+            m_powerSymMap; ///< Map between Cadstar and KiCad Power Symbols
     std::map<SYMBOL_ID, SCH_GLOBALLABEL*>
-            mGlobLabelMap; ///< Map between Cadstar and KiCad Global Labels
-    std::map<BUS_ID, std::shared_ptr<BUS_ALIAS>> mBusesMap; ///< Map between Cadstar and KiCad Buses
+            m_globalLabelsMap; ///< Map between Cadstar and KiCad Global Labels
+    std::map<BUS_ID, std::shared_ptr<BUS_ALIAS>> m_busesMap; ///< Map of Cadstar and KiCad Buses
 
     void loadSheets();
     void loadHierarchicalSheetPins();
@@ -185,8 +192,6 @@ private:
     ROUTECODE      getRouteCode( const ROUTECODE_ID& aCadstarRouteCodeID );
     TEXTCODE       getTextCode( const TEXTCODE_ID& aCadstarTextCodeID );
     wxString       getAttributeName( const ATTRIBUTE_ID& aCadstarAttributeID );
-    wxString       getAttributeValue( const ATTRIBUTE_ID&        aCadstarAttributeID,
-                  const std::map<ATTRIBUTE_ID, ATTRIBUTE_VALUE>& aCadstarAttributeMap );
 
     PART::DEFINITION::PIN getPartDefinitionPin(
             const PART& aCadstarPart, const GATE_ID& aGateID, const TERMINAL_ID& aTerminalID );
@@ -197,7 +202,6 @@ private:
     int              getKiCadUnitNumberFromGate( const GATE_ID& aCadstarGateID );
     LABEL_SPIN_STYLE getSpinStyle( const long long& aCadstarOrientation, bool aMirror );
     LABEL_SPIN_STYLE getSpinStyleDeciDeg( const double& aOrientationDeciDeg );
-    SCH_FIELD*       getFieldByName( SCH_COMPONENT* aComponent );
 
     //General Graphical manipulation functions
     std::pair<wxPoint, wxSize> getFigureExtentsKiCad( const FIGURE& aCadstarFigure );
@@ -212,7 +216,15 @@ private:
 
     int getKiCadLength( long long aCadstarLength )
     {
-        return aCadstarLength * KiCadUnitMultiplier;
+        int mod = aCadstarLength % KiCadUnitDivider;
+        int absmod = sign( mod ) * mod;
+        int offset = 0;
+
+        // Round half-way cases away from zero
+        if( absmod >= KiCadUnitDivider / 2 )
+            offset = sign( aCadstarLength );
+
+        return ( aCadstarLength / KiCadUnitDivider ) + offset;
     }
 
     /**

@@ -263,7 +263,7 @@ void LIB_TEXT::Rotate( const wxPoint& center, bool aRotateCCW )
 
 
 void LIB_TEXT::Plot( PLOTTER* plotter, const wxPoint& offset, bool fill,
-                     const TRANSFORM& aTransform )
+                     const TRANSFORM& aTransform ) const
 {
     wxASSERT( plotter != NULL );
 
@@ -384,9 +384,9 @@ wxString LIB_TEXT::GetSelectMenuText( EDA_UNITS aUnits ) const
 }
 
 
-BITMAP_DEF LIB_TEXT::GetMenuImage() const
+BITMAPS LIB_TEXT::GetMenuImage() const
 {
-    return text_xpm;
+    return BITMAPS::text;
 }
 
 
