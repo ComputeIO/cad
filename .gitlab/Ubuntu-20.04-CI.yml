@@ -110,48 +110,72 @@ report_metrics_ubuntu20.04:
     - tags@kicad/code/kicad
 
 qa_python_ubuntu20.04:
+  only:
+    - branches@kicad/code/kicad
+    - tags@kicad/code/kicad
   extends:
     - .unit_test_ubuntu20.04
   variables:
     TEST: 'qa_python'
 
 qa_common_ubuntu20.04:
+  only:
+    - branches@kicad/code/kicad
+    - tags@kicad/code/kicad  
   extends:
     - .unit_test_ubuntu20.04
   variables:
     TEST: 'qa_common'
 
 qa_gerbview_ubuntu20.04:
+  only:
+    - branches@kicad/code/kicad
+    - tags@kicad/code/kicad  
   extends:
     - .unit_test_ubuntu20.04
   variables:
     TEST: 'qa_gerbview'
 
 qa_pcbnew_ubuntu20.04:
+  only:
+    - branches@kicad/code/kicad
+    - tags@kicad/code/kicad  
   extends:
     - .unit_test_ubuntu20.04
   variables:
     TEST: 'qa_pcbnew'
 
 qa_eeschema_ubuntu20.04:
+  only:
+    - branches@kicad/code/kicad
+    - tags@kicad/code/kicad  
   extends:
     - .unit_test_ubuntu20.04
   variables:
     TEST: 'qa_eeschema'
 
 qa_kimath_ubuntu20.04:
+  only:
+    - branches@kicad/code/kicad
+    - tags@kicad/code/kicad  
   extends:
     - .unit_test_ubuntu20.04
   variables:
     TEST: 'qa_kimath'
 
 qa_sexpr_ubuntu20.04:
+  only:
+    - branches@kicad/code/kicad
+    - tags@kicad/code/kicad  
   extends:
     - .unit_test_ubuntu20.04
   variables:
     TEST: 'qa_sexpr'
 
 qa_kicad2step_ubuntu20.04:
+  only:
+    - branches@kicad/code/kicad
+    - tags@kicad/code/kicad  
   extends:
     - .unit_test_ubuntu20.04
   variables:
