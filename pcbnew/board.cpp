@@ -1665,32 +1665,64 @@ std::tuple<int, double, double> BOARD::GetTrackLength( const TRACK& aTrack ) con
     double length = 0.0;
     double package_length = 0.0;
 
-    constexpr KICAD_T types[] = { PCB_TRACE_T, PCB_ARC_T, PCB_VIA_T, PCB_PAD_T, EOT };
+    constexpr KICAD_T types[]      = { PCB_TRACE_T, PCB_ARC_T, PCB_VIA_T, PCB_PAD_T, EOT };
     auto              connectivity = GetBoard()->GetConnectivity();
+    BOARD_STACKUP&    stackup      = GetDesignSettings().GetStackupDescriptor();
 
     for( BOARD_CONNECTED_ITEM* item : connectivity->GetConnectedItems(
                  static_cast<const BOARD_CONNECTED_ITEM*>( &aTrack ), types ) )
     {
         count++;
 
-        if( TRACK* track = dyn_cast<TRACK*>( item ) )
+        if( TRACK* track = dynamic_cast<TRACK*>( item ) )
         {
-            bool inPad = false;
+            if( track->Type() == PCB_VIA_T )
+            {
+                VIA* via = static_cast<VIA*>( track );
+                length += stackup.GetLayerDistance( via->TopLayer(), via->BottomLayer() );
+                continue;
+            }
+
+            bool   inPad = false;
+            SEG    trackSeg( track->GetStart(), track->GetEnd() );
+            double segLen      = trackSeg.Length();
+            double segInPadLen = 0;
 
             for( auto pad_it : connectivity->GetConnectedPads( item ) )
             {
                 PAD* pad = static_cast<PAD*>( pad_it );
 
-                if( pad->HitTest( track->GetStart(), track->GetWidth() / 2 )
-                        && pad->HitTest( track->GetEnd(), track->GetWidth() / 2 ) )
+                bool hitStart = pad->HitTest( track->GetStart(), track->GetWidth() / 2 );
+                bool hitEnd   = pad->HitTest( track->GetEnd(), track->GetWidth() / 2 );
+
+                if( hitStart && hitEnd )
                 {
                     inPad = true;
                     break;
                 }
+                else if( hitStart || hitEnd )
+                {
+                    VECTOR2I loc;
+
+                    // We may not collide even if we passed the bounding-box hit test
+                    if( pad->GetEffectivePolygon()->Collide( trackSeg, 0, nullptr, &loc ) )
+                    {
+                        // Part 1: length of the seg to the intersection with the pad poly
+                        if( hitStart )
+                            trackSeg.A = loc;
+                        else
+                            trackSeg.B = loc;
+
+                        segLen = trackSeg.Length();
+
+                        // Part 2: length from the interesection to the pad anchor
+                        segInPadLen += ( loc - pad->GetPosition() ).EuclideanNorm();
+                    }
+                }
             }
 
             if( !inPad )
-                length += track->GetLength();
+                length += segLen + segInPadLen;
         }
         else if( PAD* pad = dyn_cast<PAD*>( item ) )
         {

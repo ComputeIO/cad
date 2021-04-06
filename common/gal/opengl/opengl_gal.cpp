@@ -68,7 +68,7 @@ using namespace KIGFX;
 // and the schematic is a hierarchy and when using cross-probing
 // When the cross probing from pcbnew to eeschema switches to a sheet, the bitmaps cache
 // becomes broken (in fact the associated texture).
-// I hope (JPC) it will be fixed later, but a slighty slower refresh is better than a crash
+// I hope (JPC) it will be fixed later, but a slightly slower refresh is better than a crash
 #define DISABLE_BITMAP_CACHE
 
 // The current font is "Ubuntu Mono" available under Ubuntu Font Licence 1.0
@@ -236,6 +236,10 @@ OPENGL_GAL::OPENGL_GAL( GAL_DISPLAY_OPTIONS& aDisplayOptions, wxWindow* aParent,
     m_isInitialized = false;
     m_isGrouping = false;
     m_groupCounter = 0;
+
+    // Connect the native cursor handler
+    Connect( wxEVT_SET_CURSOR, wxSetCursorEventHandler( OPENGL_GAL::onSetNativeCursor ), NULL,
+             this );
 
     // Connecting the event handlers
     Connect( wxEVT_PAINT, wxPaintEventHandler( OPENGL_GAL::onPaint ) );
@@ -1719,6 +1723,27 @@ bool OPENGL_GAL::HasTarget( RENDER_TARGET aTarget )
 }
 
 
+bool OPENGL_GAL::SetNativeCursorStyle( KICURSOR aCursor )
+{
+    // Store the current cursor type and get the wxCursor for it
+    if( !GAL::SetNativeCursorStyle( aCursor ) )
+        return false;
+
+    m_currentwxCursor = CURSOR_STORE::GetCursor( m_currentNativeCursor );
+
+    // Update the cursor in the wx control
+    HIDPI_GL_CANVAS::SetCursor( m_currentwxCursor );
+
+    return true;
+}
+
+
+void OPENGL_GAL::onSetNativeCursor( wxSetCursorEvent& aEvent )
+{
+    aEvent.SetCursor( m_currentwxCursor );
+}
+
+
 void OPENGL_GAL::DrawCursor( const VECTOR2D& aCursorPosition )
 {
     // Now we should only store the position of the mouse cursor
@@ -1934,7 +1959,7 @@ int OPENGL_GAL::drawBitmapChar( unsigned long aChar )
 
     const FONT_GLYPH_TYPE* glyph = LookupGlyph( aChar );
 
-    // If the glyph is not found (happens for many esotheric unicode chars)
+    // If the glyph is not found (happens for many esoteric unicode chars)
     // shows a '?' instead.
     if( !glyph )
         glyph = LookupGlyph( '?' );
@@ -2165,7 +2190,7 @@ void OPENGL_GAL::init()
 
     if( m_tesselator == NULL )
         throw std::runtime_error( "Could not create the m_tesselator" );
-    // End initialzation checks
+    // End initialization checks
 
     GLenum err = glewInit();
 

@@ -150,7 +150,9 @@ void LENGTH_TUNER_TOOL::performTuning()
     controls()->ForceCursorPosition( false );
     controls()->SetAutoPan( true );
 
-    if( !m_router->StartRouting( m_startSnapPoint, m_startItem, 0 ) )
+    int layer = m_startItem ? m_startItem->Layer() : static_cast<int>( frame()->GetActiveLayer() );
+
+    if( !m_router->StartRouting( m_startSnapPoint, m_startItem, layer ) )
     {
         frame()->ShowInfoBarMsg( m_router->FailureReason() );
         highlightNet( false );
@@ -289,6 +291,14 @@ int LENGTH_TUNER_TOOL::MainLoop( const TOOL_EVENT& aEvent )
         if( evt->IsCancelInteractive() || evt->IsActivate() )
         {
             break; // Finish
+        }
+        else if( evt->Action() == TA_UNDO_REDO_PRE )
+        {
+            m_router->ClearWorld();
+        }
+        else if( evt->Action() == TA_UNDO_REDO_POST || evt->Action() == TA_MODEL_CHANGE )
+        {
+            m_router->SyncWorld();
         }
         else if( evt->IsMotion() )
         {

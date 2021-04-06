@@ -69,7 +69,7 @@ CAIRO_GAL_BASE::CAIRO_GAL_BASE( GAL_DISPLAY_OPTIONS& aDisplayOptions ) : GAL( aD
     SetGridColor( COLOR4D( 0.1, 0.1, 0.1, 0.8 ) );
     SetAxesColor( COLOR4D( BLUE ) );
 
-    // Avoid unitialized variables:
+    // Avoid uninitialized variables:
     cairo_matrix_init_identity( &m_currentXform );
     cairo_matrix_init_identity( &m_currentWorld2Screen );
 }
@@ -158,7 +158,7 @@ void CAIRO_GAL_BASE::arc_angles_xform_and_normalize( double& aStartAngle, double
     // now rotate arc according to the rotation transform matrix
     // Remark:
     // We call angle_xform() to calculate angles according to the flip/rotation
-    // transform and normatize between -2M_PI and +2M_PI.
+    // transform and normalize between -2M_PI and +2M_PI.
     // Therefore, if aStartAngle = aEndAngle + 2*n*M_PI, the transform gives
     // aEndAngle = aStartAngle
     // So, if this is the case, force the aEndAngle value to draw a circle.
@@ -1231,6 +1231,10 @@ CAIRO_GAL::CAIRO_GAL( GAL_DISPLAY_OPTIONS& aDisplayOptions, wxWindow* aParent,
     m_mouseListener = aMouseListener;
     m_paintListener = aPaintListener;
 
+    // Connect the native cursor handler
+    Connect( wxEVT_SET_CURSOR, wxSetCursorEventHandler( CAIRO_GAL::onSetNativeCursor ), NULL,
+             this );
+
     // Connecting the event handlers
     Connect( wxEVT_PAINT, wxPaintEventHandler( CAIRO_GAL::onPaint ) );
 
@@ -1532,6 +1536,27 @@ bool CAIRO_GAL::updatedGalDisplayOptions( const GAL_DISPLAY_OPTIONS& aOptions )
     }
 
     return refresh;
+}
+
+
+bool CAIRO_GAL::SetNativeCursorStyle( KICURSOR aCursor )
+{
+    // Store the current cursor type and get the wxCursor for it
+    if( !GAL::SetNativeCursorStyle( aCursor ) )
+        return false;
+
+    m_currentwxCursor = CURSOR_STORE::GetCursor( m_currentNativeCursor );
+
+    // Update the cursor in the wx control
+    wxWindow::SetCursor( m_currentwxCursor );
+
+    return true;
+}
+
+
+void CAIRO_GAL::onSetNativeCursor( wxSetCursorEvent& aEvent )
+{
+    aEvent.SetCursor( m_currentwxCursor );
 }
 
 

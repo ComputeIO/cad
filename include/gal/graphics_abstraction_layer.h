@@ -34,6 +34,7 @@
 #include <math/matrix3x3.h>
 
 #include <gal/color4d.h>
+#include <gal/cursors.h>
 #include <gal/definitions.h>
 #include <gal/gal_display_options.h>
 #include <newstroke_font.h>
@@ -141,8 +142,8 @@ public:
      * DrawArc() draws a "pie piece" when fill is turned on, and a thick stroke when fill is off.
      * DrawArcSegment() with fill *on* behaves like DrawArc() with fill *off*.
      * DrawArcSegment() with fill *off* draws the outline of what it would have drawn with fill on.
-	 *
-	 * TODO: Unify Arc routines
+     *
+     * TODO: Unify Arc routines
      *
      * @param aCenterPoint  is the center point of the arc.
      * @param aRadius       is the arc radius.
@@ -858,6 +859,14 @@ public:
     }
 
     /**
+     * Set the cursor in the native panel.
+     *
+     * @param aCursor is the cursor to use in the native panel
+     * @return true if the cursor was updated, false if the cursor given was already set
+     */
+    virtual bool SetNativeCursorStyle( KICURSOR aCursor );
+
+    /**
      * Enable/disable cursor.
      *
      * @param aCursorEnabled is true if the cursor should be drawn, else false.
@@ -1029,6 +1038,7 @@ protected:
     bool     m_fullscreenCursor;   ///< Shape of the cursor (fullscreen or small cross)
     VECTOR2D m_cursorPosition;     ///< Current cursor position (world coordinates)
 
+    KICURSOR             m_currentNativeCursor; ///< Current cursor
 private:
     struct TEXT_PROPERTIES
     {

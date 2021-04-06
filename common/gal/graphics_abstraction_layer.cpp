@@ -74,6 +74,9 @@ GAL::GAL( GAL_DISPLAY_OPTIONS& aDisplayOptions ) : m_options( aDisplayOptions )
     m_forceDisplayCursor = false;
     SetCursorEnabled( false );
 
+    // Initialize the native widget to an arrow cursor
+    SetNativeCursorStyle( KICURSOR::ARROW );
+
     // Initialize text properties
     ResetTextAttributes();
 
@@ -280,4 +283,15 @@ void GAL::DrawGlyphs( const std::vector<SHAPE_POLY_SET> aGlyphs )
         DrawGlyph( glyph, nth, total );
         nth++;
     }
+}
+
+
+bool GAL::SetNativeCursorStyle( KICURSOR aCursor )
+{
+    if( m_currentNativeCursor == aCursor )
+        return false;
+
+    m_currentNativeCursor = aCursor;
+
+    return true;
 }
