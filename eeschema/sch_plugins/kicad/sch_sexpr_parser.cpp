@@ -49,6 +49,7 @@
 #include <sch_junction.h>
 #include <sch_no_connect.h>
 #include <sch_screen.h>
+#include <sch_sheet_pin.h>
 #include <sch_plugins/kicad/sch_sexpr_parser.h>
 #include <template_fieldnames.h>
 
@@ -2067,6 +2068,12 @@ void SCH_SEXPR_PARSER::ParseSchematic( SCH_SHEET* aSheet, bool aIsCopyableOnly, 
 
         switch( token )
         {
+        case T_uuid:
+            NeedSYMBOL();
+            screen->m_uuid = KIID( FromUTF8() );
+            NeedRIGHT();
+            break;
+
         case T_paper:
         {
             if( aIsCopyableOnly )

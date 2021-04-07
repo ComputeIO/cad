@@ -65,6 +65,7 @@ bool SCH_EDIT_FRAME::SaveEEFile( SCH_SHEET* aSheet, bool aSaveUnderNewName )
 {
     wxString msg;
     wxFileName schematicFileName;
+    wxFileName oldFileName;
     bool success;
 
     if( aSheet == NULL )
@@ -80,6 +81,7 @@ bool SCH_EDIT_FRAME::SaveEEFile( SCH_SHEET* aSheet, bool aSaveUnderNewName )
 
     // Construct the name of the file to be saved
     schematicFileName = Prj().AbsolutePath( screen->GetFileName() );
+    oldFileName = schematicFileName;
 
     if( aSaveUnderNewName )
     {
@@ -109,13 +111,16 @@ bool SCH_EDIT_FRAME::SaveEEFile( SCH_SHEET* aSheet, bool aSaveUnderNewName )
     if( !IsWritable( schematicFileName ) )
         return false;
 
+    // This is a new schematic file so make sure it has a unique ID.
+    if( aSaveUnderNewName && schematicFileName != oldFileName )
+        screen->AssignNewUuid();
+
     wxFileName tempFile( schematicFileName );
     tempFile.SetName( wxT( "." ) + tempFile.GetName() );
     tempFile.SetExt( tempFile.GetExt() + wxT( "$" ) );
 
     // Save
-    wxLogTrace( traceAutoSave,
-                wxT( "Saving file <" ) + schematicFileName.GetFullPath() + wxT( ">" ) );
+    wxLogTrace( traceAutoSave, "Saving file " + schematicFileName.GetFullPath() );
 
     SCH_IO_MGR::SCH_FILE_T pluginType = SCH_IO_MGR::GuessPluginTypeFromSchPath(
             schematicFileName.GetFullPath() );
@@ -179,6 +184,8 @@ bool SCH_EDIT_FRAME::SaveEEFile( SCH_SHEET* aSheet, bool aSaveUnderNewName )
             screen->SetFileName( schematicFileName.GetFullPath() );
             aSheet->SetFileName( schematicFileName.GetFullPath() );
             LockFile( schematicFileName.GetFullPath() );
+
+            UpdateFileHistory( schematicFileName.GetFullPath() );
         }
 
         screen->ClrSave();
@@ -852,7 +859,22 @@ bool SCH_EDIT_FRAME::SaveProject()
     for( SCH_SHEET_PATH& sheetPath : Schematic().GetSheets() )
     {
         SCH_SHEET* sheet = sheetPath.Last();
-        sheets.emplace_back( std::make_pair( sheet->m_Uuid, sheet->GetName() ) );
+
+        wxCHECK2( sheet, continue );
+
+        // Use the schematic UUID for the root sheet.
+        if( sheet->IsRootSheet() )
+        {
+            screen = sheet->GetScreen();
+
+            wxCHECK2( screen, continue );
+
+            sheets.emplace_back( std::make_pair( screen->GetUuid(), sheet->GetName() ) );
+        }
+        else
+        {
+            sheets.emplace_back( std::make_pair( sheet->m_Uuid, sheet->GetName() ) );
+        }
     }
 
     if( !Prj().IsNullProject() )
