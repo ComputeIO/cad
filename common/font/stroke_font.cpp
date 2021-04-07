@@ -49,7 +49,7 @@ STROKE_FONT::STROKE_FONT() : m_glyphs( nullptr ), m_glyphBoundingBoxes( nullptr 
 }
 
 
-bool STROKE_FONT::LoadFont( const wxString& aFontName )
+bool STROKE_FONT::LoadFont( const wxString& aFontName, bool aBold, bool aItalic )
 {
     if( aFontName.empty() )
     {

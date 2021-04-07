@@ -50,13 +50,23 @@ public:
 
     bool IsOutline() const override { return true; }
 
+    bool IsBold() const override {
+        return mFace && (mFace->style_flags & FT_STYLE_FLAG_BOLD);
+    }
+
+    bool IsItalic() const override {
+        return mFace && (mFace->style_flags & FT_STYLE_FLAG_ITALIC);
+    }
+
     /**
      * Load an outline font. TrueType (.ttf) and OpenType (.otf)
      * are supported.
      * @param aFontFileName is the name of the font file
+     * @param aBold is true if font should be bold, otherwise false
+     * @param aItalic is true if font should be italic, otherwise false
      * @return true if the font was successfully loaded, otherwise false.
      */
-    bool LoadFont( const wxString& aFontFileName ) override;
+    bool LoadFont( const wxString& aFontFileName, bool aBold, bool aItalic ) override;
 
     /**
      * Draw a string.

@@ -261,7 +261,8 @@ void PCB_PARSER::parseEDA_TEXT( EDA_TEXT* aText )
 
     // Prior to v5.0 text size was omitted from file format if equal to 60mils
     // Now, it is always explicitly written to file
-    bool foundTextSize = false;
+    bool     foundTextSize = false;
+    wxString faceName;
 
     for( token = NextTok();  token != T_RIGHT;  token = NextTok() )
     {
@@ -282,20 +283,7 @@ void PCB_PARSER::parseEDA_TEXT( EDA_TEXT* aText )
                     {
                         // parser treats double-quoted strings as symbols
                         NeedSYMBOL();
-                        wxString faceName = FromUTF8();
-                        KIFONT::FONT* font = KIFONT::FONT::GetFont( faceName );
-                        if( font )
-                        {
-                            aText->SetFont( font );
-                        }
-                        else
-                        {
-                            // TODO: notify user about missing font
-#ifdef OUTLINEFONT_DEBUG
-                            std::cerr << "parseEDA_TEXT: could not find font face \""
-                                      << faceName << "\"" << std::endl;
-#endif
-                        }
+                        faceName = FromUTF8();
                         NeedRIGHT();
                     }
                     break;
@@ -329,6 +317,14 @@ void PCB_PARSER::parseEDA_TEXT( EDA_TEXT* aText )
                     Expecting( "face, size, thickness, bold, or italic" );
                 }
             }
+
+            if( !faceName.IsEmpty() )
+            {
+                // TODO: notify user about missing font
+                aText->SetFont(
+                    KIFONT::FONT::GetFont( faceName, aText->IsBold(), aText->IsItalic() ) );
+            }
+
             break;
 
         case T_justify:

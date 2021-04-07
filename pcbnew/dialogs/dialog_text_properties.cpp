@@ -37,6 +37,8 @@
 #include <math/util.h> // for KiROUND
 #include <wx/fontdlg.h>
 
+#define OUTLINEFONT_DEBUG
+
 DIALOG_TEXT_PROPERTIES::DIALOG_TEXT_PROPERTIES( PCB_BASE_EDIT_FRAME* aParent, BOARD_ITEM* aItem ) :
         DIALOG_TEXT_PROPERTIES_BASE( aParent ), m_Parent( aParent ), m_item( aItem ),
         m_edaText( nullptr ), m_fpText( nullptr ), m_pcbText( nullptr ),
@@ -138,8 +140,8 @@ DIALOG_TEXT_PROPERTIES::DIALOG_TEXT_PROPERTIES( PCB_BASE_EDIT_FRAME* aParent, BO
     // implementation on MSW
     m_tabOrder = { m_LayerLabel,    m_LayerSelectionCtrl, m_SizeXCtrl,     m_SizeYCtrl,
                    m_ThicknessCtrl, m_PositionXCtrl,      m_PositionYCtrl, m_Visible,
-                   m_Italic,        m_JustifyChoice,      m_OrientCtrl,    m_Mirrored,
-                   m_KeepUpright,   m_sdbSizerOK,         m_sdbSizerCancel };
+                   m_JustifyChoice, m_OrientCtrl,         m_Mirrored,      m_KeepUpright,
+                   m_sdbSizerOK,    m_sdbSizerCancel };
 
     // wxTextCtrls fail to generate wxEVT_CHAR events when the wxTE_MULTILINE flag is set,
     // so we have to listen to wxEVT_CHAR_HOOK events instead.
@@ -148,6 +150,13 @@ DIALOG_TEXT_PROPERTIES::DIALOG_TEXT_PROPERTIES( PCB_BASE_EDIT_FRAME* aParent, BO
     // If this item has a custom font, display font name
     // Default font is named "" so it's OK to always display font name
     m_FontCtrl->SetValue( m_edaText->GetFont()->Name() );
+#if 0
+    m_FontBold->SetValue( m_edaText->GetFont()->IsBold() );
+    m_FontItalic->SetValue( m_edaText->GetFont()->IsItalic() );
+#else
+    m_FontBold->SetValue( m_edaText->IsBold() );
+    m_FontItalic->SetValue( m_edaText->IsItalic() );
+#endif
 
     finishDialogSettings();
 }
@@ -242,15 +251,30 @@ std::ostream& operator<<( std::ostream& os, const wxFont& aFont )
     case wxFONTWEIGHT_BOLD: os << "bold"; break;
     default: os << "unknown style";
     }
-    if (aFont.GetUnderlined())
+    if( aFont.GetUnderlined() )
         os << ",underlined";
-    if (aFont.IsFixedWidth())
+    if( aFont.IsFixedWidth() )
         os << ",fixed-width";
-    os << "," << (aFont.IsOk() ? "OK" : "not-ok") << ")" << std::endl;
+    os << "," << ( aFont.IsOk() ? "OK" : "not-ok" ) << ")" << std::endl;
 
     return os;
 }
 #endif
+
+
+void DIALOG_TEXT_PROPERTIES::OnFontFieldChange( wxCommandEvent& aEvent )
+{
+#if 0
+    bool enableOutlineFontControls = !m_FontCtrl->GetValue().IsEmpty();
+
+    m_FontBold->Enable( enableOutlineFontControls );
+    m_FontItalic->Enable( enableOutlineFontControls );
+    m_FontLineSpacingLabel->Enable( enableOutlineFontControls );
+    m_FontLineSpacing->Enable( enableOutlineFontControls );
+#endif
+
+    aEvent.Skip();
+}
 
 
 void DIALOG_TEXT_PROPERTIES::OnShowFontDialog( wxCommandEvent& aEvent )
@@ -263,26 +287,59 @@ void DIALOG_TEXT_PROPERTIES::OnShowFontDialog( wxCommandEvent& aEvent )
     if( fontDialog->ShowModal() == wxID_OK )
     {
         wxFont theFont = fontDialog->GetFontData().GetChosenFont();
-        KIFONT::FONT* font = KIFONT::FONT::GetFont( theFont.GetFaceName() );
+        bool   bold = false;
+        bool   italic = false;
+        switch( theFont.GetStyle() )
+        {
+        case wxFONTSTYLE_ITALIC:
+        case wxFONTSTYLE_SLANT: italic = true; break;
+        default: break;
+        }
+        switch( theFont.GetWeight() )
+        {
+        case wxFONTWEIGHT_BOLD: bold = true; break;
+        default: break;
+        }
+#ifdef OUTLINEFONT_DEBUG
+        std::cerr << "DIALOG_TEXT_PROPERTIES::OnShowFontDialog() face name \""
+                  << theFont.GetFaceName() << "\"" << ( bold ? "bold " : "" )
+                  << ( italic ? "italic " : "" ) << std::endl;
+#endif
+        KIFONT::FONT* font = KIFONT::FONT::GetFont( theFont.GetFaceName(), bold, italic );
+#ifdef OUTLINEFONT_DEBUG
+        std::cerr << "DIALOG_TEXT_PROPERTIES::OnShowFontDialog() face \"" << theFont.GetFaceName()
+                  << "\" font \"" << font->Name() << "\"" << std::endl;
+#endif
         m_FontCtrl->SetValue( font->Name() );
+        m_FontBold->SetValue( bold );
+        m_FontItalic->SetValue( italic );
     }
 }
 
 
 void DIALOG_TEXT_PROPERTIES::OnOkClick( wxCommandEvent& aEvent )
 {
-    SetFontByName( m_FontCtrl->GetValue() );
+    bool requestingOutlineFont = !m_FontCtrl->GetValue().IsEmpty();
+    bool bold = requestingOutlineFont ? m_FontBold->GetValue() : false;
+    bool italic = requestingOutlineFont ? m_FontItalic->GetValue() : false;
+
+    SetFontByName( m_FontCtrl->GetValue(), bold, italic );
+
     aEvent.Skip();
 }
 
 
-void DIALOG_TEXT_PROPERTIES::SetFontByName( const wxString& aFontName )
+void DIALOG_TEXT_PROPERTIES::SetFontByName( const wxString& aFontName, bool aBold, bool aItalic )
 {
 #ifdef OUTLINEFONT_DEBUG
-    std::cerr << "chosen font is \"" << aFontName << "\", ";
+    std::cerr << "DIALOG_TEXT_PROPERTIES::SetFontByName( \"" << aFontName << "\", "
+              << ( aBold ? "true, " : "false, " ) << ( aItalic ? "true" : "false" ) << " )"
+              << std::endl;
 #endif
-    m_edaText->SetFont( KIFONT::FONT::GetFont( aFontName ) );
+    m_edaText->SetFont( KIFONT::FONT::GetFont( aFontName, aBold, aItalic ) );
     m_FontCtrl->SetValue( m_edaText->GetFont()->Name() );
+    m_edaText->SetBold( aBold );
+    m_edaText->SetItalic( aBold );
 #ifdef OUTLINEFONT_DEBUG
     std::cerr << "font is now \"" << m_edaText->GetFont()->Name() << "\"" << std::endl;
 #endif
@@ -362,7 +419,8 @@ bool DIALOG_TEXT_PROPERTIES::TransferDataToWindow()
     m_posY.SetValue( m_edaText->GetTextPos().y );
 
     m_Visible->SetValue( m_edaText->IsVisible() );
-    m_Italic->SetValue( m_edaText->IsItalic() );
+    m_FontBold->SetValue( m_edaText->IsBold() );
+    m_FontItalic->SetValue( m_edaText->IsItalic() );
     EDA_TEXT_HJUSTIFY_T hJustify = m_edaText->GetHorizJustify();
     m_JustifyChoice->SetSelection( (int) hJustify + 1 );
     m_OrientValue = m_edaText->GetTextAngle();
@@ -443,7 +501,8 @@ bool DIALOG_TEXT_PROPERTIES::TransferDataFromWindow()
     }
 
     m_edaText->SetVisible( m_Visible->GetValue() );
-    m_edaText->SetItalic( m_Italic->GetValue() );
+    m_edaText->SetBold( m_FontBold->GetValue() );
+    m_edaText->SetItalic( m_FontItalic->GetValue() );
     m_OrientValue = m_orientation.GetDoubleValue();
     m_edaText->SetTextAngle( m_OrientValue );
     m_edaText->SetMirrored( m_Mirrored->GetValue() );

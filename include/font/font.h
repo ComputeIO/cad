@@ -94,8 +94,11 @@ public:
 
     virtual bool IsStroke() const { return false; }
     virtual bool IsOutline() const { return false; }
+    virtual bool IsBold() const { return false; }
+    virtual bool IsItalic() const { return false; }
 
-    static FONT* GetFont( const wxString& aFontName = "" );
+    static FONT* GetFont( const wxString& aFontName = "", bool aBold = false,
+                          bool aItalic = false );
     static bool  IsOutline( const wxString& aFontName );
 
     const wxString&    Name() const;
@@ -105,9 +108,14 @@ public:
      * Load a font.
      *
      * @param aFontName is the name of the font. If empty, Newstroke is loaded by default.
+     * @param aBool is true if a bold version of the font should be loaded,
+     *        otherwise false (default).
+     * @param aItalic is true if an italic version of the font should be loaded,
+     *        otherwise false (default).
      * @return True, if the font was successfully loaded, else false.
      */
-    virtual bool LoadFont( const wxString& aFontName = "" ) = 0;
+    virtual bool LoadFont( const wxString& aFontName = "", bool aBold = false,
+                           bool aItalic = false ) = 0;
 
     virtual void DrawText( KIGFX::GAL* aGal, const UTF8& aText, const VECTOR2D& aPosition,
                            const TEXT_ATTRIBUTES& aAttributes ) const;
@@ -272,6 +280,9 @@ protected:
 
     virtual VECTOR2D getBoundingBox( const UTF8& aString, const VECTOR2D& aGlyphSize,
                                      TEXT_STYLE_FLAGS aTextStyle = 0 ) const = 0;
+
+protected:
+    static wxString getFontNameForFontconfig( const wxString& aFontName, bool aBold, bool aItalic );
 
 private:
     static FONT*                     s_defaultFont;

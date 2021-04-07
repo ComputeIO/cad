@@ -37,6 +37,8 @@
 #include <trigo.h>
 #include <font/fontconfig.h>
 
+#define OUTLINEFONT_DEBUG
+
 using namespace KIFONT;
 
 FT_Library OUTLINE_FONT::mFreeType = nullptr;
@@ -52,17 +54,23 @@ OUTLINE_FONT::OUTLINE_FONT() : mFaceSize( 16 ), mSubscriptSize( 10 )
 }
 
 
-bool OUTLINE_FONT::LoadFont( const wxString& aFontName )
+bool OUTLINE_FONT::LoadFont( const wxString& aFontName, bool aBold, bool aItalic )
 {
+#ifdef OUTLINEFONT_DEBUG
+    std::cerr << "OUTLINE_FONT::LoadFont( \"" << aFontName << "\", "
+              << ( aBold ? "true, " : "false, " ) << ( aBold ? "true" : "false" ) << " )\n";
+#endif
     wxString fontFile;
-    bool     r = Fontconfig().FindFont( aFontName, fontFile );
+    wxString fontName = getFontNameForFontconfig( aFontName, aBold, aItalic );
+
+    bool r = Fontconfig().FindFont( fontName, fontFile );
 #ifdef OUTLINEFONT_DEBUG
     std::cerr << "Fontconfig ";
     if( r )
         std::cerr << "found  [" << fontFile << "]";
     else
         std::cerr << "did not find font";
-    std::cerr << " for [" << aFontName << "]" << std::endl;
+    std::cerr << " for [" << fontName << "]" << std::endl;
 #endif
     if( r )
     {
@@ -424,8 +432,7 @@ VECTOR2D OUTLINE_FONT::drawMarkup( KIGFX::GAL* aGal, const MARKUP::MARKUP_NODE& 
 #ifdef OUTLINEFONT_DEBUG
                 std::cerr << "Adjusting position by " << adjustVector << " H"
                           << aGal->GetHorizontalJustify() << " V" << aGal->GetVerticalJustify()
-                          << " lineheight " << lineHeight
-                          << std::endl;
+                          << " lineheight " << lineHeight << std::endl;
 #endif
                 aGal->Translate( VECTOR2D( xAdjust, yAdjust ) );
 

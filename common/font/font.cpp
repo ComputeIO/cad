@@ -80,25 +80,48 @@ FONT* FONT::getDefaultFont()
 }
 
 
-FONT* FONT::GetFont( const wxString& aFontName )
+wxString FONT::getFontNameForFontconfig( const wxString& aFontName, bool aBold, bool aItalic )
 {
+    wxString fontName = aFontName;
+
+    if( aBold )
+        fontName = fontName.Append( ":bold" );
+    if( aItalic )
+        fontName = fontName.Append( ":italic" );
+
+    return fontName;
+}
+
+
+FONT* FONT::GetFont( const wxString& aFontName, bool aBold, bool aItalic )
+{
+#ifdef OUTLINEFONT_DEBUG
+    std::cerr << "FONT::GetFont( \"" << aFontName << "\" " << ( aBold ? "bold " : "" )
+              << ( aItalic ? "italic " : "" ) << " )\n";
+#endif
     if( aFontName.empty() )
         return getDefaultFont();
 
-    FONT* font = s_fontMap[aFontName];
+    wxString fontName = getFontNameForFontconfig( aFontName, aBold, aItalic );
+
+#ifdef OUTLINEFONT_DEBUG
+    std::cerr << "looking for \"" << fontName << "\"\n";
+#endif
+    FONT* font = s_fontMap[fontName];
 
     if( !font )
     {
         // Try outline first
         font = new OUTLINE_FONT();
-        bool success = font->LoadFont( aFontName );
+        bool success = font->LoadFont( aFontName, aBold, aItalic );
 
         if( !success )
         {
             // Could not load TrueType, falling back to Hershey
             delete font;
             font = new STROKE_FONT();
-            success = font->LoadFont( aFontName );
+            fontName = aFontName;
+            success = font->LoadFont( fontName );
             if( !success )
             {
                 delete font;
@@ -108,7 +131,7 @@ FONT* FONT::GetFont( const wxString& aFontName )
 
         if( font )
         {
-            s_fontMap[aFontName] = font;
+            s_fontMap[fontName] = font;
         }
         else
         {

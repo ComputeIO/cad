@@ -64,7 +64,8 @@ public:
      * @param aFontName is the name of the font. If empty, Newstroke is loaded by default.
      * @return True, if the font was successfully loaded, else false.
      */
-    bool LoadFont( const wxString& aFontName = "" ) override;
+    bool LoadFont( const wxString& aFontName = "", bool aBold = false,
+                   bool aItalic = false ) override;
 
     /**
      * Draw a string.
