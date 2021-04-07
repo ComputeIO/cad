@@ -543,7 +543,6 @@
                                         <property name="window_extra_style"></property>
                                         <property name="window_name"></property>
                                         <property name="window_style"></property>
-                                        <event name="OnTextEnter">OnFontCtrlEnter</event>
                                     </object>
                                 </object>
                                 <object class="sizeritem" expanded="0">
@@ -2405,7 +2404,7 @@
                     <property name="border">5</property>
                     <property name="flag">wxEXPAND</property>
                     <property name="proportion">0</property>
-                    <object class="wxBoxSizer" expanded="0">
+                    <object class="wxBoxSizer" expanded="1">
                         <property name="minimum_size"></property>
                         <property name="name">lowerSizer</property>
                         <property name="orient">wxHORIZONTAL</property>
