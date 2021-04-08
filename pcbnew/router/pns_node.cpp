@@ -201,7 +201,6 @@ struct NODE::DEFAULT_OBSTACLE_VISITOR : public OBSTACLE_VISITOR
     int        m_kindMask;          ///<  (solids, vias, segments, etc...)
     int        m_limitCount;
     int        m_matchCount;
-    int        m_extraClearance;
     bool       m_differentNetsOnly;
 
     DEFAULT_OBSTACLE_VISITOR( NODE::OBSTACLES& aTab, const ITEM* aItem, int aKindMask,
@@ -211,7 +210,6 @@ struct NODE::DEFAULT_OBSTACLE_VISITOR : public OBSTACLE_VISITOR
         m_kindMask( aKindMask ),
         m_limitCount( -1 ),
         m_matchCount( 0 ),
-        m_extraClearance( 0 ),
         m_differentNetsOnly( aDifferentNetsOnly )
     {
         if( aItem && aItem->Kind() == ITEM::LINE_T )
@@ -892,7 +890,9 @@ void NODE::followLine( LINKED_ITEM* aCurrent, bool aScanDirection, int& aPos, in
 
         if( count && guard == p )
         {
-            aSegments[aPos] = NULL;
+            if( aPos >= 0 && aPos < aLimit )
+                aSegments[aPos] = NULL;
+
             aGuardHit = true;
             break;
         }
@@ -904,7 +904,7 @@ void NODE::followLine( LINKED_ITEM* aCurrent, bool aScanDirection, int& aPos, in
 
         aCurrent = jt->NextSegment( aCurrent );
 
-        prevReversed = ( jt->Pos() == aCurrent->Anchor( aScanDirection ) );
+        prevReversed = ( aCurrent && jt->Pos() == aCurrent->Anchor( aScanDirection ) );
     }
 }
 
@@ -921,7 +921,8 @@ const LINE NODE::AssembleLine( LINKED_ITEM* aSeg, int* aOriginSegmentIndex,
     LINE pl;
     bool guardHit = false;
 
-    int i_start = MaxVerts / 2, i_end = i_start + 1;
+    int i_start = MaxVerts / 2;
+    int i_end   = i_start + 1;
 
     pl.SetWidth( aSeg->Width() );
     pl.SetLayers( aSeg->Layers() );
@@ -933,8 +934,8 @@ const LINE NODE::AssembleLine( LINKED_ITEM* aSeg, int* aOriginSegmentIndex,
 
     if( !guardHit )
     {
-        followLine( aSeg, true, i_end, MaxVerts, corners.data(), segs.data(), arcReversed.data(), guardHit,
-                    aStopAtLockedJoints );
+        followLine( aSeg, true, i_end, MaxVerts, corners.data(), segs.data(), arcReversed.data(),
+                    guardHit, aStopAtLockedJoints );
     }
 
     int n = 0;
@@ -952,11 +953,18 @@ const LINE NODE::AssembleLine( LINKED_ITEM* aSeg, int* aOriginSegmentIndex,
 
         if( li && prev_seg != li )
         {
+            int segIdxIncrement = 1;
+
             if( li->Kind() == ITEM::ARC_T )
             {
                 const ARC*       arc = static_cast<const ARC*>( li );
                 const SHAPE_ARC* sa  = static_cast<const SHAPE_ARC*>( arc->Shape() );
+
+                int nSegs = pl.Line().SegmentCount();
+
                 pl.Line().Append( arcReversed[i] ? sa->Reversed() : *sa );
+
+                segIdxIncrement = pl.Line().SegmentCount() - nSegs - 1;
             }
 
             pl.Link( li );
@@ -968,7 +976,7 @@ const LINE NODE::AssembleLine( LINKED_ITEM* aSeg, int* aOriginSegmentIndex,
                 originSet = true;
             }
 
-            n++;
+            n += segIdxIncrement;
         }
 
         prev_seg = li;
@@ -1336,12 +1344,12 @@ void NODE::ClearRanks( int aMarkerMask )
 
 void NODE::RemoveByMarker( int aMarker )
 {
-    std::list<ITEM*> garbage;
+    std::vector<ITEM*> garbage;
 
     for( ITEM* item : *m_index )
     {
         if( item->Marker() & aMarker )
-            garbage.push_back( item );
+            garbage.emplace_back( item );
     }
 
     for( ITEM* item : garbage )

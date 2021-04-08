@@ -30,7 +30,9 @@
 namespace PNS {
 
 DRAGGER::DRAGGER( ROUTER* aRouter ) :
-    DRAG_ALGO( aRouter )
+    DRAG_ALGO( aRouter ),
+    m_initialVia( {} ),
+    m_draggedVia( {} )
 {
     m_world = NULL;
     m_lastNode = NULL;
@@ -69,7 +71,8 @@ bool DRAGGER::startDragSegment( const VECTOR2D& aP, SEGMENT* aSeg )
 {
     int w2 = aSeg->Width() / 2;
 
-    m_draggedLine = m_world->AssembleLine( aSeg, &m_draggedSegmentIndex );
+    m_draggedLine      = m_world->AssembleLine( aSeg, &m_draggedSegmentIndex );
+    m_lastDragSolution = m_draggedLine;
 
     if( m_shove )
     {
@@ -272,7 +275,7 @@ bool DRAGGER::dragViaMarkObstacles( const VIA_HANDLE& aHandle, NODE* aNode, cons
     {
         return true;
     }
-    
+
     for( ITEM* item : fanout.Items() )
     {
         if( const LINE* l = dyn_cast<const LINE*>( item ) )
@@ -345,7 +348,7 @@ bool DRAGGER::dragViaWalkaround( const VIA_HANDLE& aHandle, NODE* aNode, const V
 
     if( !viaPropOk ) // can't force-propagate the via? bummer...
         return false;
-    
+
     for( ITEM* item : fanout.Items() )
     {
         if( const LINE* l = dyn_cast<const LINE*>( item ) )
@@ -360,7 +363,7 @@ bool DRAGGER::dragViaWalkaround( const VIA_HANDLE& aHandle, NODE* aNode, const V
             if ( m_world->CheckColliding( &draggedLine ) )
             {
                 bool ok = tryWalkaround( m_lastNode, draggedLine, walkLine );
-        
+
                 if( !ok )
                     return false;
 
@@ -480,7 +483,7 @@ bool DRAGGER::dragWalkaround( const VECTOR2I& aP )
         LINE dragged( m_draggedLine );
         LINE draggedWalk( m_draggedLine );
         LINE origLine( m_draggedLine );
-        
+
         dragged.SetSnapThreshhold( thresh );
 
         if( m_mode == DM_SEGMENT )
@@ -517,6 +520,7 @@ bool DRAGGER::dragWalkaround( const VECTOR2I& aP )
 
     return true;
 }
+
 
 bool DRAGGER::dragShove( const VECTOR2I& aP )
 {
@@ -560,8 +564,13 @@ bool DRAGGER::dragShove( const VECTOR2I& aP )
             VECTOR2D lockV;
             dragged.ClearLinks();
             dragged.Unmark();
-
             optimizeAndUpdateDraggedLine( dragged, m_draggedLine, aP );
+            m_lastDragSolution = dragged;
+        }
+        else
+        {
+            m_lastDragSolution.ClearLinks();
+            m_lastNode->Add( m_lastDragSolution );
         }
 
         break;

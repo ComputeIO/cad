@@ -82,13 +82,6 @@ bool SCH_MOVE_TOOL::Init()
 }
 
 
-/* TODO - Tom/Jeff
-  - add preferences option "Move origin: always cursor / item origin"
-  - add preferences option "Default drag action: drag items / move"
-  - add preferences option "Drag always selects"
-  */
-
-
 int SCH_MOVE_TOOL::Main( const TOOL_EVENT& aEvent )
 {
     EESCHEMA_SETTINGS*    cfg = Pgm().GetSettingsManager().GetAppSettings<EESCHEMA_SETTINGS>();
@@ -111,7 +104,7 @@ int SCH_MOVE_TOOL::Main( const TOOL_EVENT& aEvent )
     {
         if( m_isDrag != wasDragging )
         {
-            auto sel = m_selectionTool->GetSelection().Front();
+            EDA_ITEM* sel = m_selectionTool->GetSelection().Front();
 
             if( sel && !sel->IsNew() )
             {
@@ -518,7 +511,7 @@ void SCH_MOVE_TOOL::getConnectedDragItems( SCH_ITEM* aOriginalItem, wxPoint aPoi
         }
     }
 
-    for( SCH_ITEM *test : itemsOverlapping )
+    for( SCH_ITEM* test : itemsOverlapping )
     {
         if( test == aOriginalItem || test->IsSelected() || !test->CanConnect( aOriginalItem ) )
             continue;
@@ -534,21 +527,21 @@ void SCH_MOVE_TOOL::getConnectedDragItems( SCH_ITEM* aOriginalItem, wxPoint aPoi
             if( ptHasUnselectedJunction )
                 break;
 
-            SCH_LINE* testLine = static_cast<SCH_LINE*>( test );
+            SCH_LINE* line = static_cast<SCH_LINE*>( test );
 
-            if( testLine->GetStartPoint() == aPoint )
+            if( line->GetStartPoint() == aPoint )
             {
-                if( !testLine->HasFlag( TEMP_SELECTED ) )
-                    aList.push_back( testLine );
+                if( !line->HasFlag(TEMP_SELECTED ) )
+                    aList.push_back( line );
 
-                testLine->SetFlags( STARTPOINT | TEMP_SELECTED );
+                line->SetFlags(STARTPOINT | TEMP_SELECTED );
             }
-            else if( testLine->GetEndPoint() == aPoint )
+            else if( line->GetEndPoint() == aPoint )
             {
-                if( !testLine->HasFlag( TEMP_SELECTED ) )
-                    aList.push_back( testLine );
+                if( !line->HasFlag(TEMP_SELECTED ) )
+                    aList.push_back( line );
 
-                testLine->SetFlags( ENDPOINT | TEMP_SELECTED );
+                line->SetFlags(ENDPOINT | TEMP_SELECTED );
             }
             else
             {
@@ -567,14 +560,16 @@ void SCH_MOVE_TOOL::getConnectedDragItems( SCH_ITEM* aOriginalItem, wxPoint aPoi
                     if( label->IsSelected() )
                         continue;   // These will be moved on their own because they're selected
 
-                    if( label->CanConnect( testLine )
-                            && testLine->HitTest( label->GetPosition(), 1 ) )
+                    if( label->HasFlag( TEMP_SELECTED ) )
+                        continue;
+
+                    if( label->CanConnect( line ) && line->HitTest( label->GetPosition(), 1 ) )
                     {
-                        if( !label->HasFlag( TEMP_SELECTED ) )
-                            aList.push_back( label );
+                        label->SetFlags( TEMP_SELECTED );
+                        aList.push_back( label );
 
                         SPECIAL_CASE_LABEL_INFO info;
-                        info.attachedLine = testLine;
+                        info.attachedLine = line;
                         info.originalLabelPos = label->GetPosition();
                         m_specialCaseLabels[label] = info;
                     }
@@ -623,37 +618,71 @@ void SCH_MOVE_TOOL::getConnectedDragItems( SCH_ITEM* aOriginalItem, wxPoint aPoi
         case SCH_LABEL_T:
         case SCH_GLOBAL_LABEL_T:
         case SCH_HIER_LABEL_T:
+            // Performance optimization:
+            if( test->HasFlag( TEMP_SELECTED ) )
+                break;
+
+            // Select labels that are connected to a wire (or bus) being moved.
+            if( aOriginalItem->Type() == SCH_LINE_T && test->CanConnect( aOriginalItem ) )
+            {
+                SCH_TEXT* label = static_cast<SCH_TEXT*>( test );
+                SCH_LINE* line = static_cast<SCH_LINE*>( aOriginalItem );
+                bool      oneEndFixed = !line->HasFlag( STARTPOINT ) || !line->HasFlag( ENDPOINT );
+
+                if( line->HitTest( label->GetTextPos(), 1 ) )
+                {
+                    label->SetFlags( TEMP_SELECTED );
+                    aList.push_back( label );
+
+                    if( oneEndFixed )
+                    {
+                        SPECIAL_CASE_LABEL_INFO info;
+                        info.attachedLine = line;
+                        info.originalLabelPos = label->GetPosition();
+                        m_specialCaseLabels[ label ] = info;
+                    }
+                }
+            }
+
+            break;
+
         case SCH_BUS_WIRE_ENTRY_T:
         case SCH_BUS_BUS_ENTRY_T:
             // Performance optimization:
             if( test->HasFlag( TEMP_SELECTED ) )
                 break;
 
-            // Select labels and bus entries that are connected to a wire being moved.
-            if( aOriginalItem->Type() == SCH_LINE_T )
+            // Select bus entries that are connected to a bus being moved.
+            if( aOriginalItem->Type() == SCH_LINE_T && test->CanConnect( aOriginalItem ) )
             {
-                std::vector<wxPoint> connections = test->GetConnectionPoints();
+                SCH_LINE* line = static_cast<SCH_LINE*>( aOriginalItem );
+                bool      oneEndFixed = !line->HasFlag( STARTPOINT ) || !line->HasFlag( ENDPOINT );
 
-                for( wxPoint& point : connections )
+                if( oneEndFixed )
                 {
-                    if( aOriginalItem->HitTest( point, 1 ) )
+                    // This is only going to end in tears, so don't go there
+                    continue;
+                }
+
+                for( wxPoint& point : test->GetConnectionPoints() )
+                {
+                    if( line->HitTest( point, 1 ) )
                     {
                         test->SetFlags( TEMP_SELECTED );
                         aList.push_back( test );
 
                         // A bus entry needs its wire & label as well
-                        if( testType == SCH_BUS_WIRE_ENTRY_T || testType == SCH_BUS_BUS_ENTRY_T )
-                        {
-                            std::vector<wxPoint> ends = test->GetConnectionPoints();
-                            wxPoint              otherEnd;
+                        std::vector<wxPoint> ends = test->GetConnectionPoints();
+                        wxPoint              otherEnd;
 
-                            if( ends[0] == point )
-                                otherEnd = ends[1];
-                            else
-                                otherEnd = ends[0];
+                        if( ends[0] == point )
+                            otherEnd = ends[1];
+                        else
+                            otherEnd = ends[0];
 
-                            getConnectedDragItems( test, otherEnd, aList );
-                        }
+                        getConnectedDragItems( test, otherEnd, aList );
+
+                        // No need to test the other end of the bus entry
                         break;
                     }
                 }

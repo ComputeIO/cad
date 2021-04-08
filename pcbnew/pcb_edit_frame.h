@@ -124,6 +124,8 @@ public:
      */
     void UpdateUserInterface();
 
+    void HardRedraw() override;
+
     /**
      * Execute a remote command send by Eeschema via a socket, port KICAD_PCB_PORT_SERVICE_NUMBER
      * (currently 4242).
@@ -267,11 +269,6 @@ public:
      * Change the currently active layer to \a aLayer and also update the #APPEARANCE_CONTROLS.
      */
     void SetActiveLayer( PCB_LAYER_ID aLayer ) override;
-
-    /**
-     * Update the UI to reflect changes to the current layer's transparency.
-     */
-    void OnUpdateLayerAlpha( wxUpdateUIEvent& aEvent ) override;
 
     void OnDisplayOptionsChanged() override;
 
