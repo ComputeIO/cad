@@ -132,9 +132,13 @@ bool NoPrintableChars( wxString aString );
 char* StrPurge( char* text );
 
 /**
+ * Returns current date and time with local format or ISO format (YY-MM-DD-T-HH-MM-SS).
+ *
+ * @param aISODateTime If true, function returns a ISO format. If false returns a local format.
+ * @param aIncludeTime If true, time is included to date.
  * @return a string giving the current date and time.
  */
-wxString DateAndTime();
+wxString DateAndTime( bool aIsoDateTime = false, bool aIncludeTime = true );
 
 /**
  * Compare two strings with alphanumerical content.

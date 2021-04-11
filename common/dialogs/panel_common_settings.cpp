@@ -120,6 +120,7 @@ bool PANEL_COMMON_SETTINGS::TransferDataFromWindow()
     commonSettings->m_System.autosave_interval = m_SaveTime->GetValue() * 60;
     commonSettings->m_System.file_history_size = m_fileHistorySize->GetValue();
     commonSettings->m_System.clear_3d_cache_interval = m_Clear3DCacheFilesOlder->GetValue();
+    commonSettings->m_System.include_time_in_date = m_cbIncludeTimeInDate->GetValue();
 
     commonSettings->m_Graphics.opengl_aa_mode = m_antialiasing->GetSelection();
     commonSettings->m_Graphics.cairo_aa_mode = m_antialiasingFallback->GetSelection();
@@ -228,6 +229,8 @@ void PANEL_COMMON_SETTINGS::applySettingsToPanel( COMMON_SETTINGS& aSettings )
     m_NonImmediateActions->SetValue( !aSettings.m_Input.immediate_actions );
 
     m_cbRememberOpenFiles->SetValue( aSettings.m_Session.remember_open_files );
+
+    m_cbIncludeTimeInDate->SetValue( aSettings.m_System.include_time_in_date );
 
     m_cbBackupEnabled->SetValue( aSettings.m_Backup.enabled );
     m_cbBackupAutosave->SetValue( aSettings.m_Backup.backup_on_autosave );

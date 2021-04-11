@@ -428,14 +428,35 @@ char* GetLine( FILE* File, char* Line, int* LineNum, int SizeLine )
 }
 
 
-wxString DateAndTime()
+wxString DateAndTime( bool aIsoDateTime, bool aIncludeTime )
 {
     wxDateTime datetime = wxDateTime::Now();
 
     datetime.SetCountry( wxDateTime::Country_Default );
-    return datetime.Format( wxDefaultDateTimeFormat, wxDateTime::Local );
-}
 
+    if( !aIsoDateTime )
+    {
+        if( aIncludeTime )
+        {
+            return datetime.Format( wxDefaultDateTimeFormat, wxDateTime::Local );
+        }
+        else
+        {
+            return datetime.Format( "%a %b %d %Y", wxDateTime::Local );
+        }
+    }
+    else
+    {
+        if( aIncludeTime )
+        {
+            return datetime.FormatISOCombined();
+        }
+        else
+        {
+            return datetime.FormatISODate();
+        }
+    }
+}
 
 int StrNumCmp( const wxString& aString1, const wxString& aString2, bool aIgnoreCase )
 {
