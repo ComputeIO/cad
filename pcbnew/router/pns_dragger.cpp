@@ -392,35 +392,38 @@ void DRAGGER::optimizeAndUpdateDraggedLine( LINE& aDragged, const LINE& aOrig, c
 
     lockV = aDragged.CLine().NearestPoint( aP );
 
-    if( Settings().GetOptimizeDraggedTrack() )
+    OPTIMIZER optimizer( m_lastNode );
+
+    optimizer.SetEffortLevel( OPTIMIZER::MERGE_SEGMENTS |
+                              OPTIMIZER::KEEP_TOPOLOGY |
+                              OPTIMIZER::RESTRICT_AREA );
+
+    OPT_BOX2I affectedArea = aDragged.ChangedArea( &aOrig );
+    VECTOR2I anchor( aP );
+
+    if( aDragged.CLine().Find( aP ) < 0 )
     {
-        OPTIMIZER optimizer( m_lastNode );
-
-        optimizer.SetEffortLevel( OPTIMIZER::MERGE_SEGMENTS | OPTIMIZER::KEEP_TOPOLOGY );
-
-        OPT_BOX2I affectedArea = aDragged.ChangedArea( &aOrig );
-        VECTOR2I anchor( aP );
-
-        if( aDragged.CLine().Find( aP ) < 0 )
-        {
-            anchor = aDragged.CLine().NearestPoint( aP );
-        }
-
-        optimizer.SetPreserveVertex( anchor );
-
-        if( affectedArea )
-        {
-            Dbg()->AddPoint( anchor, 3 );
-            Dbg()->AddBox( *affectedArea, 2 );
-            optimizer.SetRestrictArea( *affectedArea );
-            optimizer.Optimize( &aDragged );
-
-            OPT_BOX2I optArea = aDragged.ChangedArea( &aOrig );
-
-            if( optArea )
-                Dbg()->AddBox( *optArea, 4 );
-        }
+        anchor = aDragged.CLine().NearestPoint( aP );
     }
+
+    optimizer.SetPreserveVertex( anchor );
+
+    // People almost never want KiCad to reroute tracks in areas they can't even see, so restrict
+    // the area to what is visible even if we are optimizing the "entire" track.
+    if( Settings().GetOptimizeEntireDraggedTrack() )
+        affectedArea = VisibleViewArea();
+    else if( !affectedArea )
+        affectedArea = BOX2I( aP ); // No valid area yet? set to minimum to disable optimization
+
+    Dbg()->AddPoint( anchor, 3 );
+    Dbg()->AddBox( *affectedArea, 2 );
+    optimizer.SetRestrictArea( *affectedArea );
+    optimizer.Optimize( &aDragged );
+
+    OPT_BOX2I optArea = aDragged.ChangedArea( &aOrig );
+
+    if( optArea )
+        Dbg()->AddBox( *optArea, 4 );
 
     m_lastNode->Add( aDragged );
     m_draggedItems.Clear();
@@ -546,6 +549,8 @@ bool DRAGGER::dragShove( const VECTOR2I& aP )
             dragged.DragSegment( aP, m_draggedSegmentIndex );
         else
             dragged.DragCorner( aP, m_draggedSegmentIndex );
+
+        Dbg()->AddLine( dragged.CLine(), 5, 10000 );
 
         SHOVE::SHOVE_STATUS st = m_shove->ShoveLines( dragged );
 
