@@ -70,7 +70,6 @@ public:
         m_cornerStyle = MEANDER_STYLE_ROUND;
         m_cornerRadiusPercentage = 100;
         m_lengthTolerance = 100000;
-        m_cornerArcSegments = 8;
     }
 
     ///< Minimum meandering amplitude.
@@ -91,8 +90,6 @@ public:
     int m_cornerRadiusPercentage;
     ///< Allowable tuning error.
     int m_lengthTolerance;
-    ///< Number of line segments for arc approximation.
-    int m_cornerArcSegments;
     ///< Target skew value for diff pair de-skewing.
     int m_targetSkew;
 };
@@ -299,9 +296,6 @@ private:
 
     ///< Generate a 90-degree circular arc.
     SHAPE_LINE_CHAIN makeMiterShape( VECTOR2D aP, VECTOR2D aDir, bool aSide );
-
-    ///< Reflect a point onto other side of a given segment.
-    VECTOR2I reflect( VECTOR2I aP, const SEG& aLine );
 
     ///< Produce a meander shape of given type.
     SHAPE_LINE_CHAIN genMeanderShape( VECTOR2D aP, VECTOR2D aDir, bool aSide, MEANDER_TYPE aType,
