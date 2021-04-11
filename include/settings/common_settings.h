@@ -115,6 +115,7 @@ public:
         bool use_system_pdf_viewer;
         wxString working_dir;
         int clear_3d_cache_interval;
+        bool     include_time_in_date;
     };
 
     struct NETCLASS_PANEL

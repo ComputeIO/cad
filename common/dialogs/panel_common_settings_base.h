@@ -86,6 +86,7 @@ class PANEL_COMMON_SETTINGS_BASE : public RESETTABLE_PANEL
 		wxSpinCtrl* m_backupLimitTotalSize;
 		wxStaticText* m_staticText17;
 		wxCheckBox* m_cbRememberOpenFiles;
+		wxCheckBox* m_cbIncludeTimeInDate;
 
 		// Virtual event handlers, overide them in your derived class
 		virtual void OnTextEditorClick( wxCommandEvent& event ) { event.Skip(); }
@@ -102,4 +103,3 @@ class PANEL_COMMON_SETTINGS_BASE : public RESETTABLE_PANEL
 		~PANEL_COMMON_SETTINGS_BASE();
 
 };
-
