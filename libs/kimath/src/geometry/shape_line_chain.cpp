@@ -256,6 +256,16 @@ void SHAPE_LINE_CHAIN::Mirror( bool aX, bool aY, const VECTOR2I& aRef )
 }
 
 
+void SHAPE_LINE_CHAIN::Mirror( const SEG& axis )
+{
+    for( auto& pt : m_points )
+        pt = axis.ReflectPoint( pt );
+
+    for( auto& arc : m_arcs )
+        arc.Mirror( axis );
+}
+
+
 void SHAPE_LINE_CHAIN::Replace( int aStartIndex, int aEndIndex, const VECTOR2I& aP )
 {
     if( aEndIndex < 0 )
@@ -295,18 +305,53 @@ void SHAPE_LINE_CHAIN::Replace( int aStartIndex, int aEndIndex, const SHAPE_LINE
     if( aStartIndex < 0 )
         aStartIndex += PointCount();
 
+    // We only process lines in order in this house
+    wxASSERT( aStartIndex <= aEndIndex );
+    wxASSERT( aEndIndex < m_points.size() );
+
+    SHAPE_LINE_CHAIN newLine = aLine;
+
+    // It's possible that the start or end lands on the end of an arc.  If so, we'd better have a
+    // replacement line that matches up to the same coordinates, as we can't break the arc(s).
+    ssize_t startShape = m_shapes[aStartIndex];
+    ssize_t endShape   = m_shapes[aEndIndex];
+
+    if( startShape >= 0 )
+    {
+        wxASSERT( !newLine.PointCount() ||
+                  ( newLine.m_points.front() == m_points[aStartIndex] &&
+                  aStartIndex < m_points.size() - 1 ) );
+        aStartIndex++;
+        newLine.Remove( 0 );
+    }
+
+    if( endShape >= 0 )
+    {
+        wxASSERT( !newLine.PointCount() ||
+                  ( newLine.m_points.back() == m_points[aEndIndex] && aEndIndex > 0 ) );
+        aEndIndex--;
+        newLine.Remove( -1 );
+    }
+
     Remove( aStartIndex, aEndIndex );
 
-    // The total new arcs index is added to the new arc indices
-    size_t prev_arc_count = m_arcs.size();
-    auto   new_shapes = aLine.m_shapes;
+    if( !aLine.PointCount() )
+        return;
 
-    for( auto& shape : new_shapes )
-        shape += prev_arc_count;
+    // The total new arcs index is added to the new arc indices
+    size_t               prev_arc_count = m_arcs.size();
+    std::vector<ssize_t> new_shapes     = newLine.m_shapes;
+
+    for( ssize_t& shape : new_shapes )
+    {
+        if( shape >= 0 )
+            shape += prev_arc_count;
+    }
 
     m_shapes.insert( m_shapes.begin() + aStartIndex, new_shapes.begin(), new_shapes.end() );
-    m_points.insert( m_points.begin() + aStartIndex, aLine.m_points.begin(), aLine.m_points.end() );
-    m_arcs.insert( m_arcs.end(), aLine.m_arcs.begin(), aLine.m_arcs.end() );
+    m_points.insert( m_points.begin() + aStartIndex, newLine.m_points.begin(),
+                     newLine.m_points.end() );
+    m_arcs.insert( m_arcs.end(), newLine.m_arcs.begin(), newLine.m_arcs.end() );
 
     assert( m_shapes.size() == m_points.size() );
 }
@@ -315,6 +360,7 @@ void SHAPE_LINE_CHAIN::Replace( int aStartIndex, int aEndIndex, const SHAPE_LINE
 void SHAPE_LINE_CHAIN::Remove( int aStartIndex, int aEndIndex )
 {
     assert( m_shapes.size() == m_points.size() );
+
     if( aEndIndex < 0 )
         aEndIndex += PointCount();
 
@@ -451,10 +497,8 @@ int SHAPE_LINE_CHAIN::ShapeCount() const
             while( i < numPoints && m_shapes[i] == arcIdx )
                 i++;
 
-            // Is there another arc right after?  Add the "hidden" segment
+            // Add the "hidden" segment at the end of the arc, if it exists
             if( i < numPoints &&
-                m_shapes[i] != SHAPE_IS_PT &&
-                m_shapes[i] != arcIdx &&
                 m_points[i] != m_points[i - 1] )
             {
                 numShapes++;
@@ -1012,7 +1056,7 @@ SHAPE_LINE_CHAIN& SHAPE_LINE_CHAIN::Simplify( bool aRemoveColinear )
         const VECTOR2I p1 = pts_unique[i + 1];
         int n = i;
 
-        if( aRemoveColinear )
+        if( aRemoveColinear && shapes_unique[i] < 0 && shapes_unique[i + 1] < 0 )
         {
             while( n < np - 2
                     && ( SEG( p0, p1 ).LineDistance( pts_unique[n + 2] ) <= 1

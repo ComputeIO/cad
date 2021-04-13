@@ -206,29 +206,9 @@ SHAPE_LINE_CHAIN MEANDER_SHAPE::makeMiterShape( VECTOR2D aP, VECTOR2D aDir, bool
     {
     case MEANDER_STYLE_ROUND:
     {
-        const int ArcSegments = Settings().m_cornerArcSegments;
+        VECTOR2D center = aP + dir_v * ( aSide ? -1.0 : 1.0 );
 
-        double radius = (double) aDir.EuclideanNorm();
-        double angleStep = M_PI / 2.0 / (double) ArcSegments;
-
-        double correction = 12.0 * radius * ( 1.0 - cos( angleStep / 2.0 ) );
-
-        if( !m_dual )
-            correction = 0.0;
-        else if( radius < m_meanCornerRadius )
-            correction = 0.0;
-
-        VECTOR2D dir_uu = dir_u.Resize( radius - correction );
-        VECTOR2D dir_vv = dir_v.Resize( radius - correction );
-
-        VECTOR2D shift = dir_u.Resize( correction );
-
-        for( int i = ArcSegments - 1; i >= 0; i-- )
-        {
-            double alpha = (double) i / (double) ( ArcSegments - 1 ) * M_PI / 2.0;
-            p = aP + shift + dir_uu * cos( alpha ) + dir_vv * ( aSide ? -1.0 : 1.0 ) * ( 1.0 - sin( alpha ) );
-            lc.Append( ( int ) p.x, ( int ) p.y );
-        }
+        lc.Append( SHAPE_ARC( center, aP, ( aSide ? -90 : 90 ) ) );
     }
         break;
 
@@ -254,25 +234,6 @@ SHAPE_LINE_CHAIN MEANDER_SHAPE::makeMiterShape( VECTOR2D aP, VECTOR2D aDir, bool
     lc.Append( ( int ) p.x, ( int ) p.y );
 
     return lc;
-}
-
-
-VECTOR2I MEANDER_SHAPE::reflect( VECTOR2I p, const SEG& line )
-{
-    typedef int64_t ecoord;
-    VECTOR2I d = line.B - line.A;
-    ecoord l_squared = d.Dot( d );
-    ecoord t = d.Dot( p - line.A );
-    VECTOR2I c, rv;
-
-    if( !l_squared )
-        c = p;
-    else {
-        c.x = line.A.x + rescale( t, (ecoord) d.x, l_squared );
-        c.y = line.A.y + rescale( t, (ecoord) d.y, l_squared );
-    }
-
-    return 2 * c - p;
 }
 
 
@@ -412,8 +373,7 @@ SHAPE_LINE_CHAIN MEANDER_SHAPE::genMeanderShape( VECTOR2D aP, VECTOR2D aDir,
     {
         SEG axis( aP, aP + aDir );
 
-        for( int i = 0; i < lc.PointCount(); i++ )
-            lc.SetPoint( i, reflect( lc.CPoint( i ), axis ) );
+        lc.Mirror( axis );
     }
 
     return lc;

@@ -114,44 +114,42 @@ DIRECTION_45 DP_PRIMITIVE_PAIR::anchorDirection( const ITEM* aItem, const VECTOR
         return DIRECTION_45( aItem->Anchor( 1 ) - aItem->Anchor( 0 ) );
 }
 
-void DP_PRIMITIVE_PAIR::CursorOrientation( const VECTOR2I& aCursorPos, VECTOR2I& aMidpoint, VECTOR2I& aDirection ) const
+void DP_PRIMITIVE_PAIR::CursorOrientation( const VECTOR2I& aCursorPos, VECTOR2I& aMidpoint,
+                                           VECTOR2I& aDirection ) const
 {
     assert( m_primP && m_primN );
 
-    VECTOR2I aP, aN, dir, midpoint;
+    VECTOR2I aP, aN;
 
-    if ( m_primP->OfKind( ITEM::SEGMENT_T ) && m_primN->OfKind( ITEM::SEGMENT_T ) )
+    if( m_primP->OfKind( ITEM::SEGMENT_T ) && m_primN->OfKind( ITEM::SEGMENT_T ) )
     {
         aP = m_primP->Anchor( 1 );
         aN = m_primN->Anchor( 1 );
-        midpoint = ( aP + aN ) / 2;
-        SEG s = static_cast <SEGMENT*>( m_primP )->Seg();
 
-        if ( s.B != s.A )
+        // If both segments are parallel, use that as the direction.  Otherwise, fall back on the
+        // direction perpendicular to the anchor points.
+        const SEG& segP = static_cast<SEGMENT*>( m_primP )->Seg();
+        const SEG& segN = static_cast<SEGMENT*>( m_primN )->Seg();
+
+        if( ( segP.B != segP.A ) && ( segN.B != segN.A ) && segP.ApproxParallel( segN ) )
         {
-            dir = s.B - s.A;
+            aMidpoint  = ( aP + aN ) / 2;
+            aDirection = segP.B - segP.A;
+            aDirection = aDirection.Resize( ( aP - aN ).EuclideanNorm() );
+            return;
         }
-        else
-        {
-            dir = VECTOR2I( 0, 1 );
-        }
-
-        dir = dir.Resize( ( aP - aN ).EuclideanNorm() );
-
     }
     else
     {
         aP = m_primP->Anchor( 0 );
         aN = m_primN->Anchor( 0 );
-        midpoint = ( aP + aN ) / 2;
-        dir = ( aP - aN ).Perpendicular();
-
-        if ( dir.Dot( aCursorPos - midpoint ) < 0 )
-            dir = -dir;
     }
 
-    aMidpoint = midpoint;
-    aDirection = dir;
+    aMidpoint  = ( aP + aN ) / 2;
+    aDirection = ( aP - aN ).Perpendicular();
+
+    if( aDirection.Dot( aCursorPos - aMidpoint ) < 0 )
+        aDirection = -aDirection;
 }
 
 

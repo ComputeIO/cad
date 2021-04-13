@@ -574,6 +574,10 @@ void LINE::dragCorner45( const VECTOR2I& aP, int aIndex )
         path = dragCornerInternal( m_line, snapped );
     else
     {
+        // Are we next to an arc? Insert a new point so we slice correctly
+        if( m_line.CShapes()[aIndex + 1] >= 0 )
+            m_line.Insert( aIndex + 1, m_line.CPoint( aIndex + 1 ) );
+
         // fixme: awkward behaviour for "outwards" drags
         path = dragCornerInternal( m_line.Slice( 0, aIndex ), snapped );
         SHAPE_LINE_CHAIN path_rev =
@@ -587,12 +591,30 @@ void LINE::dragCorner45( const VECTOR2I& aP, int aIndex )
 
 void LINE::dragCornerFree( const VECTOR2I& aP, int aIndex )
 {
+    const std::vector<ssize_t>& shapes = m_line.CShapes();
+
+    // If we're asked to drag the end of an arc, insert a new vertex to drag instead
+    if( shapes[aIndex] >= 0 )
+    {
+        if( aIndex > 0 && shapes[aIndex - 1] == -1 )
+            m_line.Insert( aIndex, m_line.GetPoint( aIndex ) );
+        else if( aIndex < shapes.size() - 1 && shapes[aIndex + 1] != shapes[aIndex] )
+        {
+            aIndex++;
+            m_line.Insert( aIndex, m_line.GetPoint( aIndex ) );
+        }
+        else
+            wxASSERT_MSG( false, "Attempt to dragCornerFree in the middle of an arc!" );
+    }
+
     m_line.SetPoint( aIndex, aP );
     m_line.Simplify();
 }
 
 void LINE::DragCorner( const VECTOR2I& aP, int aIndex, bool aFreeAngle )
 {
+    wxCHECK_RET( aIndex >= 0, "Negative index passed to LINE::DragCorner" );
+
     if( aFreeAngle )
     {
         dragCornerFree( aP, aIndex );
@@ -707,20 +729,33 @@ void LINE::dragSegment45( const VECTOR2I& aP, int aIndex )
     SHAPE_LINE_CHAIN path( m_line );
     VECTOR2I         target( aP );
 
+    wxASSERT( aIndex < m_line.PointCount() );
+
     SEG guideA[2], guideB[2];
     int index = aIndex;
 
     target = snapToNeighbourSegments( path, aP, aIndex );
 
-    if( index == 0 )
+    const std::vector<ssize_t>& shapes = path.CShapes();
+
+    // We require a valid s_prev and s_next.  If we are at the start or end of the line, we insert
+    // a new point at the start or end so there is a zero-length segment for prev or next (we will
+    // resize it as part of the drag operation).  If we are next to an arc, we do this also, as we
+    // cannot drag away one of the arc's points.
+
+    if( index == 0 || shapes[index] >= 0 )
     {
-        path.Insert( 0, path.CPoint( 0 ) );
+        path.Insert( index > 0 ? index + 1 : 0, path.CPoint( index ) );
         index++;
     }
 
     if( index == path.SegmentCount() - 1 )
     {
         path.Insert( path.PointCount() - 1, path.CPoint( -1 ) );
+    }
+    else if( shapes[index + 1] >= 0 )
+    {
+        path.Insert( index + 1, path.CPoint( index + 1 ) );
     }
 
     SEG          dragged = path.CSegment( index );
@@ -738,11 +773,19 @@ void LINE::dragSegment45( const VECTOR2I& aP, int aIndex )
         path.Insert( index, path.CPoint( index ) );
         index++;
     }
+    else if( dir_prev == DIRECTION_45::UNDEFINED )
+    {
+        dir_prev = drag_dir.Left();
+    }
 
     if( dir_next == drag_dir )
     {
         dir_next = dir_next.Right();
         path.Insert( index + 1, path.CPoint( index + 1 ) );
+    }
+    else if( dir_next == DIRECTION_45::UNDEFINED )
+    {
+        dir_next = drag_dir.Right();
     }
 
     s_prev = path.CSegment( index - 1 );

@@ -622,7 +622,8 @@ void CADSTAR_PCB_ARCHIVE_LOADER::loadDesignRules()
     ds.m_TrackMinWidth = getKiCadLength( Assignments.Technology.MinRouteWidth );
     ds.m_ViasMinSize = ds.m_TrackMinWidth; // Not specified, assumed same as track width
     ds.m_ViasMinAnnulus = ds.m_TrackMinWidth / 2; // Not specified, assumed half track width
-    ds.m_MinThroughDrill = 0; // CADSTAR does not specify a minimum hole size
+    ds.m_MinThroughDrill = PCB_IU_PER_MM * 0.0508; // CADSTAR does not specify a minimum hole size
+                                                   // so set to minimum permitted in KiCad (2 mils)
     ds.m_HoleClearance = ds.m_CopperEdgeClearance; // Not specified, assumed same as edge
 
     auto applyNetClassRule = [&]( wxString aID, NETCLASS* aNetClassPtr,
@@ -655,16 +656,16 @@ void CADSTAR_PCB_ARCHIVE_LOADER::loadComponentLibrary()
                                               wxT( "" ) );
         FOOTPRINT* footprint = new FOOTPRINT( m_board );
         footprint->SetPosition( getKiCadPoint( component.Origin ) );
-        footprint->SetKeywords( wxT( "allow thermal pads" ) );
 
         LIB_ID libID;
         libID.Parse( fpName, true );
 
         footprint->SetFPID( libID );
         loadLibraryFigures( component, footprint );
-        loadLibraryCoppers( component, footprint );
         loadLibraryAreas( component, footprint );
         loadLibraryPads( component, footprint );
+        loadLibraryCoppers( component, footprint ); // Load coppers after pads to ensure correct
+                                                    // ordering of pads in footprint->Pads()
 
         m_libraryMap.insert( std::make_pair( key, footprint ) );
     }
@@ -691,15 +692,104 @@ void CADSTAR_PCB_ARCHIVE_LOADER::loadLibraryFigures( const SYMDEF_PCB& aComponen
 
 void CADSTAR_PCB_ARCHIVE_LOADER::loadLibraryCoppers( const SYMDEF_PCB& aComponent, FOOTPRINT* aFootprint )
 {
+    int totalCopperPads = 0;
+
     for( COMPONENT_COPPER compCopper : aComponent.ComponentCoppers )
     {
         int lineThickness = getKiCadLength( getCopperCode( compCopper.CopperCodeID ).CopperWidth );
+        PCB_LAYER_ID copperLayer = getKiCadLayer( compCopper.LayerID );
 
-        drawCadstarShape( compCopper.Shape, getKiCadLayer( compCopper.LayerID ), lineThickness,
-                          wxString::Format( "Component %s:%s -> Copper element",
-                                            aComponent.ReferenceName,
-                                            aComponent.Alternate ),
-                          aFootprint );
+        if( compCopper.AssociatedPadIDs.size() > 0 && LSET::AllCuMask().Contains( copperLayer )
+            && compCopper.Shape.Type == SHAPE_TYPE::SOLID )
+        {
+            // The copper is associated with pads and in an electrical layer which means it can
+            // have a net associated with it. Load as a pad instead.
+            // Note: we can only handle SOLID copper shapes. If the copper shape is an outline or
+            // hatched or outline, then we give up and load as a graphical shape instead.
+
+            // Find the first non-PCB-only pad. If there are none, use the first one
+            COMPONENT_PAD anchorPad;
+            bool          found = false;
+
+            for( PAD_ID padID : compCopper.AssociatedPadIDs )
+            {
+                anchorPad = aComponent.ComponentPads.at( padID );
+
+                if( !anchorPad.PCBonlyPad )
+                {
+                    found = true;
+                    break;
+                }
+            }
+
+            if( !found )
+                anchorPad = aComponent.ComponentPads.at( compCopper.AssociatedPadIDs.front() );
+
+
+            PAD* pad = new PAD( aFootprint );
+            pad->SetAttribute( PAD_ATTR_T::PAD_ATTRIB_SMD );
+            pad->SetLayerSet( LSET( 1, copperLayer ) );
+            pad->SetName( anchorPad.Identifier.IsEmpty()
+                                  ? wxString::Format( wxT( "%ld" ), anchorPad.ID )
+                                  : anchorPad.Identifier );
+
+            // Custom pad shape with an anchor at the position of one of the associated
+            // pads and same size as the pad. Shape circle as it fits inside a rectangle
+            // but not the other way round
+            PADCODE anchorpadcode = getPadCode( anchorPad.PadCodeID );
+            int     anchorSize = getKiCadLength( anchorpadcode.Shape.Size );
+            wxPoint anchorPos = getKiCadPoint( anchorPad.Position );
+
+            pad->SetShape( PAD_SHAPE_T::PAD_SHAPE_CUSTOM );
+            pad->SetAnchorPadShape( PAD_SHAPE_CIRCLE );
+            pad->SetSize( { anchorSize, anchorSize } );
+            pad->SetPosition( anchorPos );
+            pad->SetLocalCoord();
+            pad->SetLocked( true ); // Cadstar pads are always locked with respect to the footprint
+
+            SHAPE_POLY_SET shapePolys = getPolySetFromCadstarShape( compCopper.Shape,
+                                                                    lineThickness,
+                                                                    aFootprint );
+            shapePolys.Move( aFootprint->GetPosition() - anchorPos );
+            pad->AddPrimitivePoly( shapePolys, 0, true );
+
+            aFootprint->Add( pad, ADD_MODE::APPEND ); // Append so that we get the correct behaviour
+                                                      // when finding pads by PAD_ID. See loadNets()
+
+            m_librarycopperpads[aComponent.ID][anchorPad.ID].push_back( aFootprint->Pads().size() );
+            totalCopperPads++;
+
+            // Now renumber all the associated pads if they are PCB Only
+            int numRenames = 0;
+            COMPONENT_PAD associatedPad;
+
+            for( PAD_ID padID : compCopper.AssociatedPadIDs )
+            {
+                associatedPad = aComponent.ComponentPads.at( padID );
+
+                if( associatedPad.PCBonlyPad )
+                {
+                    PAD* assocPad = getPadReference( aFootprint, padID );
+                    assocPad->SetName( pad->GetName() );
+                    ++numRenames;
+                }
+            }
+
+            if( numRenames < compCopper.AssociatedPadIDs.size() - 1 )
+            {
+                // This is an older design of thermal pad. The schematic will
+                // have multiple pins for the same pad, so lets use the
+                // "allow thermal pads" hack
+                aFootprint->SetKeywords( wxT( "allow thermal pads" ) );
+            }
+        }
+        else
+        {
+            drawCadstarShape( compCopper.Shape, copperLayer, lineThickness,
+                              wxString::Format( "Component %s:%s -> Copper element",
+                                                aComponent.ReferenceName, aComponent.Alternate ),
+                              aFootprint );
+        }
     }
 }
 
@@ -756,7 +846,7 @@ void CADSTAR_PCB_ARCHIVE_LOADER::loadLibraryPads( const SYMDEF_PCB& aComponent,
     for( std::pair<PAD_ID, COMPONENT_PAD> padPair : aComponent.ComponentPads )
     {
         PAD* pad = getKiCadPad( padPair.second, aFootprint );
-        aFootprint->Add( pad, ADD_MODE::INSERT ); // insert so that we get correct behaviour
+        aFootprint->Add( pad, ADD_MODE::APPEND ); // Append so that we get correct behaviour
                                                   // when finding pads by PAD_ID - see loadNets()
     }
 }
@@ -1084,6 +1174,13 @@ PAD* CADSTAR_PCB_ARCHIVE_LOADER::getKiCadPad( const COMPONENT_PAD& aCadstarPad, 
     }
 
     return pad;
+}
+
+
+PAD*& CADSTAR_PCB_ARCHIVE_LOADER::getPadReference( FOOTPRINT*   aFootprint,
+                                                   const PAD_ID aCadstarPadID )
+{
+    return aFootprint->Pads().at( aCadstarPadID - (long long) 1 );
 }
 
 
@@ -1507,7 +1604,7 @@ void CADSTAR_PCB_ARCHIVE_LOADER::loadComponents()
                     if( pinName.empty() )
                         pinName = wxString::Format( wxT( "%ld" ), pin.ID );
 
-                    footprint->Pads().at( pin.ID - (long long) 1 )->SetName( pinName );
+                    getPadReference( footprint, pin.ID )->SetName( pinName );
                 }
             }
         }
@@ -1535,7 +1632,7 @@ void CADSTAR_PCB_ARCHIVE_LOADER::loadComponents()
                     csPad.Side = padEx.Side;
 
                 // Find the pad in the footprint definition
-                PAD* kiPad = footprint->Pads().at( padEx.ID - (long long) 1 );
+                PAD*     kiPad = getPadReference( footprint, padEx.ID );
                 wxString padName = kiPad->GetName();
 
                 if( kiPad )
@@ -1543,7 +1640,9 @@ void CADSTAR_PCB_ARCHIVE_LOADER::loadComponents()
 
                 kiPad = getKiCadPad( csPad, footprint );
                 kiPad->SetName( padName );
-                footprint->Pads().at( padEx.ID - (long long) 1 ) = kiPad;
+
+                // Change the pointer in the footprint to the newly created pad
+                getPadReference( footprint, padEx.ID ) = kiPad;
             }
         }
 
@@ -2035,8 +2134,26 @@ void CADSTAR_PCB_ARCHIVE_LOADER::loadNets()
             {
                 // The below works because we have added the pads in the correct order to the
                 // footprint and the PAD_ID in Cadstar is a sequential, numerical ID
-                PAD* pad = footprint->Pads().at( pin.PadID - (long) 1 );
+                PAD* pad = getPadReference( footprint, pin.PadID );
                 pad->SetNet( getKiCadNet( net.ID ) );
+
+                // also set the net to any copper pads (i.e. copper elements that we have imported
+                // as pads instead:
+                SYMDEF_ID symdefid = Layout.Components.at( pin.ComponentID ).SymdefID;
+
+                if( m_librarycopperpads.find( symdefid ) != m_librarycopperpads.end() )
+                {
+                    ASSOCIATED_COPPER_PADS assocPads = m_librarycopperpads.at( symdefid );
+
+                    if( assocPads.find( pin.PadID ) != assocPads.end() )
+                    {
+                        for( PAD_ID copperPadID : assocPads.at( pin.PadID ) )
+                        {
+                            PAD* copperpad = getPadReference( footprint, copperPadID );
+                            copperpad->SetNet( getKiCadNet( net.ID ) );
+                        }
+                    }
+                }
 
                 // padsize is used for calculating route offset (as done in CADSTAR post processor)
                 int padsize = std::min( pad->GetSizeX(), pad->GetSizeY() );

@@ -89,15 +89,23 @@ bool DRAGGER::startDragSegment( const VECTOR2D& aP, SEGMENT* aSeg )
     else if( distB <= w2 )
     {
         //todo (snh) Adjust segment for arcs
-        m_draggedSegmentIndex++;
-        m_mode = DM_CORNER;
-    }
-    else if ( m_freeAngleMode )
-    {
-        if( distB < distA )
+        if( ( m_draggedSegmentIndex < m_draggedLine.PointCount() - 2 ) &&
+            ( m_draggedLine.CLine().CShapes()[ m_draggedSegmentIndex + 1 ] < 0 ) )
         {
             m_draggedSegmentIndex++;
         }
+
+        m_mode = DM_CORNER;
+    }
+    else if( m_freeAngleMode )
+    {
+        if( distB < distA &&
+            ( m_draggedSegmentIndex < m_draggedLine.PointCount() - 2 ) &&
+            ( m_draggedLine.CLine().CShapes()[ m_draggedSegmentIndex + 1 ] < 0 ) )
+        {
+            m_draggedSegmentIndex++;
+        }
+
         m_mode = DM_CORNER;
     }
     else
@@ -394,9 +402,12 @@ void DRAGGER::optimizeAndUpdateDraggedLine( LINE& aDragged, const LINE& aOrig, c
 
     OPTIMIZER optimizer( m_lastNode );
 
-    optimizer.SetEffortLevel( OPTIMIZER::MERGE_SEGMENTS |
-                              OPTIMIZER::KEEP_TOPOLOGY |
-                              OPTIMIZER::RESTRICT_AREA );
+    int effort = OPTIMIZER::MERGE_SEGMENTS | OPTIMIZER::KEEP_TOPOLOGY | OPTIMIZER::RESTRICT_AREA;
+
+    if( Settings().SmoothDraggedSegments() )
+        effort |= OPTIMIZER::MERGE_COLINEAR;
+
+    optimizer.SetEffortLevel( effort );
 
     OPT_BOX2I affectedArea = aDragged.ChangedArea( &aOrig );
     VECTOR2I anchor( aP );
@@ -506,7 +517,8 @@ bool DRAGGER::dragWalkaround( const VECTOR2I& aP )
 
         if( ok )
         {
-            //Dbg()->AddLine( origLine.CLine(), 4, 100000 );
+            Dbg()->AddLine( origLine.CLine(), 5, 50000 );
+            Dbg()->AddLine( draggedWalk.CLine(), 6, 75000 );
             m_lastNode->Remove( origLine );
             optimizeAndUpdateDraggedLine( draggedWalk, origLine, aP );
         }
@@ -550,7 +562,7 @@ bool DRAGGER::dragShove( const VECTOR2I& aP )
         else
             dragged.DragCorner( aP, m_draggedSegmentIndex );
 
-        Dbg()->AddLine( dragged.CLine(), 5, 10000 );
+        Dbg()->AddLine( dragged.CLine(), 5, 5000 );
 
         SHOVE::SHOVE_STATUS st = m_shove->ShoveLines( dragged );
 
