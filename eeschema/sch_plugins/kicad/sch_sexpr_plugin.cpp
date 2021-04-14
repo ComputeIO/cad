@@ -946,7 +946,7 @@ void SCH_SEXPR_PLUGIN::saveSymbol( SCH_COMPONENT* aSymbol, SCH_SHEET_PATH* aShee
     if ( unit >= 0 )
         m_out->Print( 0, " (unit %d)", unit );
 
-    if( aSymbol->GetConvert() == LIB_ITEM::LIB_CONVERT::DEMORGAN )
+    if( aSymbol->GetConvert() != LIB_ITEM::LIB_CONVERT::BASE )
         m_out->Print( 0, " (convert %d)", aSymbol->GetConvert() );
 
     m_out->Print( 0, "\n" );
