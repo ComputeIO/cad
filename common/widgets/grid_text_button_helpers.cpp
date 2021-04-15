@@ -176,6 +176,9 @@ public:
             m_preselect( aPreselect )
     {
         SetButtonBitmaps( KiBitmap( BITMAPS::small_library ) );
+
+        // win32 fix, avoids drawing the "native dropdown caret"
+        Customize( wxCC_IFLAG_HAS_NONSTANDARD_BUTTON );
     }
 
 protected:
@@ -219,11 +222,15 @@ class TEXT_BUTTON_FP_CHOOSER : public wxComboCtrl
 public:
     TEXT_BUTTON_FP_CHOOSER( wxWindow* aParent, DIALOG_SHIM* aParentDlg,
                             const wxString& aPreselect ) :
-            wxComboCtrl( aParent ),
+            wxComboCtrl( aParent, -1, wxEmptyString, wxDefaultPosition, wxDefaultSize,
+                         wxTE_PROCESS_ENTER ),
             m_dlg( aParentDlg ),
             m_preselect( aPreselect )
     {
         SetButtonBitmaps( KiBitmap( BITMAPS::small_library ) );
+
+        // win32 fix, avoids drawing the "native dropdown caret"
+        Customize( wxCC_IFLAG_HAS_NONSTANDARD_BUTTON );
     }
 
 protected:
@@ -274,10 +281,14 @@ class TEXT_BUTTON_URL : public wxComboCtrl
 {
 public:
     TEXT_BUTTON_URL( wxWindow* aParent, DIALOG_SHIM* aParentDlg ) :
-            wxComboCtrl( aParent ),
+            wxComboCtrl( aParent, -1, wxEmptyString, wxDefaultPosition, wxDefaultSize,
+                         wxTE_PROCESS_ENTER ),
             m_dlg( aParentDlg )
     {
         SetButtonBitmaps( KiBitmap( BITMAPS::www ) );
+
+        // win32 fix, avoids drawing the "native dropdown caret"
+        Customize( wxCC_IFLAG_HAS_NONSTANDARD_BUTTON );
     }
 
 protected:
@@ -322,7 +333,8 @@ public:
                               wxString* aCurrentDir, wxString* aExt = nullptr,
                               bool aNormalize = false,
                               wxString aNormalizeBasePath = wxEmptyString ) :
-            wxComboCtrl( aParent ),
+            wxComboCtrl( aParent, -1, wxEmptyString, wxDefaultPosition, wxDefaultSize,
+                         wxTE_PROCESS_ENTER ),
             m_dlg( aParentDlg ),
             m_grid( aGrid ),
             m_currentDir( aCurrentDir ),
@@ -331,6 +343,9 @@ public:
             m_normalizeBasePath( aNormalizeBasePath )
     {
         SetButtonBitmaps( KiBitmap( BITMAPS::small_folder ) );
+
+        // win32 fix, avoids drawing the "native dropdown caret"
+        Customize( wxCC_IFLAG_HAS_NONSTANDARD_BUTTON );
     }
 
 protected:

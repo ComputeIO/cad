@@ -55,6 +55,7 @@ DIFF_PAIR_PLACER::DIFF_PAIR_PLACER( ROUTER* aRouter ) :
     m_snapOnTarget = false;
     m_currentEndItem = NULL;
     m_currentMode = RM_MarkObstacles;
+    m_currentTraceOk = false;
     m_idle = true;
 }
 
@@ -556,6 +557,8 @@ bool DIFF_PAIR_PLACER::Start( const VECTOR2I& aP, ITEM* aStartItem )
     m_currentEnd = p;
     m_placingVia = false;
     m_chainedPlacement = false;
+    m_currentTraceOk = false;
+    m_currentTrace = DIFF_PAIR();
 
     initPlacement();
 
@@ -631,7 +634,7 @@ bool DIFF_PAIR_PLACER::routeHead( const VECTOR2I& aP )
         gwsTarget.SetFitVias( m_placingVia, m_sizes.ViaDiameter(), viaGap() );
 
         // far from the initial segment extension line -> allow a 45-degree obtuse turn
-        if( lead_dist > m_sizes.DiffPairGap() + m_sizes.DiffPairWidth() )
+        if( lead_dist > ( m_sizes.DiffPairGap() + m_sizes.DiffPairWidth() ) / 2 )
         {
             gwsTarget.BuildForCursor( fp );
         }
@@ -640,13 +643,13 @@ bool DIFF_PAIR_PLACER::routeHead( const VECTOR2I& aP )
         else
         {
             gwsTarget.BuildForCursor( fpProj );
-            gwsTarget.FilterByOrientation( DIRECTION_45::ANG_STRAIGHT | DIRECTION_45::ANG_HALF_FULL, DIRECTION_45( dirV ) );
+            gwsTarget.FilterByOrientation( DIRECTION_45::ANG_STRAIGHT | DIRECTION_45::ANG_HALF_FULL,
+                                           DIRECTION_45( dirV ) );
         }
 
         m_snapOnTarget = false;
     }
 
-    m_currentTrace = DIFF_PAIR();
     m_currentTrace.SetGap( gap() );
     m_currentTrace.SetLayer( m_currentLayer );
 
@@ -654,6 +657,7 @@ bool DIFF_PAIR_PLACER::routeHead( const VECTOR2I& aP )
 
     if( result )
     {
+        m_currentTraceOk = true;
         m_currentTrace.SetNets( m_netP, m_netN );
         m_currentTrace.SetWidth( m_sizes.DiffPairWidth() );
         m_currentTrace.SetGap( m_sizes.DiffPairGap() );
@@ -667,7 +671,7 @@ bool DIFF_PAIR_PLACER::routeHead( const VECTOR2I& aP )
         return true;
     }
 
-    return false;
+    return m_currentTraceOk;
 }
 
 
@@ -724,7 +728,8 @@ bool DIFF_PAIR_PLACER::FixRoute( const VECTOR2I& aP, ITEM* aEndItem, bool aForce
 
     TOPOLOGY topo( m_lastNode );
 
-    if( !m_snapOnTarget && !m_currentTrace.EndsWithVias() && !aForceFinish )
+    if( !m_snapOnTarget && !m_currentTrace.EndsWithVias() && !aForceFinish &&
+        !Settings().GetFixAllSegments() )
     {
         SHAPE_LINE_CHAIN newP( m_currentTrace.CP() );
         SHAPE_LINE_CHAIN newN( m_currentTrace.CN() );
