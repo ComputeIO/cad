@@ -179,7 +179,7 @@ COMMON_SETTINGS::COMMON_SETTINGS() :
     m_params.emplace_back( new PARAM<int>( "system.clear_3d_cache_interval",
             &m_System.clear_3d_cache_interval, 30 ) );
 
-    m_params.emplace_back( new PARAM<bool>( "session.include_time_in_date",
+    m_params.emplace_back( new PARAM<bool>( "system.include_time_in_date",
                                             &m_System.include_time_in_date, true ) );
 
     m_params.emplace_back( new PARAM<bool>( "session.remember_open_files",
