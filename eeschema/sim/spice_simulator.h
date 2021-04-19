@@ -198,6 +198,14 @@ public:
      */
     static wxString TypeToName( SIM_TYPE aType, bool aShortName );
 
+    /**
+     * Expand plot data that is too short for the time axis
+     *
+     * @return signalName data expanded to equal the size of time axis data
+     */
+    virtual std::vector<double> expandShortData(std::vector<double>& time_data, const char* signalName)=0;
+
+
 protected:
     ///< Reporter object to receive simulation log.
     SPICE_REPORTER* m_reporter;

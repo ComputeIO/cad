@@ -729,6 +729,10 @@ bool SIM_PLOT_FRAME::updatePlot( const TRACE_DESC& aDescriptor, SIM_PLOT_PANEL* 
         return false;
     }
 
+    // Expand Y data to fit X data.
+    if (size-data_y.size()!=0)
+            data_y = m_simulator->expandShortData(data_x, (const char*) spiceVector.c_str());
+
     if( data_y.size() != size )
         return false;
 
@@ -1301,6 +1305,7 @@ void SIM_PLOT_FRAME::onSettings( wxCommandEvent& event )
         return;
     }
 
+
     if( plotPanelWindow != m_welcomePanel )
         m_settingsDlg->SetSimCommand( m_plots[plotPanelWindow].m_simCommand );
 
@@ -1615,6 +1620,7 @@ SIM_PLOT_FRAME::SIGNAL_CONTEXT_MENU::SIGNAL_CONTEXT_MENU( const wxString& aSigna
     Connect( wxEVT_COMMAND_MENU_SELECTED, wxMenuEventHandler( SIGNAL_CONTEXT_MENU::onMenuEvent ),
              NULL, this );
 }
+
 
 
 void SIM_PLOT_FRAME::SIGNAL_CONTEXT_MENU::onMenuEvent( wxMenuEvent& aEvent )

@@ -66,6 +66,7 @@ NGSPICE::NGSPICE() :
         m_ngSpice_AllPlots( nullptr ),
         m_ngSpice_AllVecs( nullptr ),
         m_ngSpice_Running( nullptr ),
+        m_ngGet_Evt_NodeInfo( nullptr ),
         m_error( false )
 {
     init_dll();
@@ -111,7 +112,6 @@ vector<string> NGSPICE::AllPlots() const
             retVal.push_back( vec );
         }
     }
-
 
     return retVal;
 }
@@ -173,6 +173,17 @@ vector<double> NGSPICE::GetRealPlot( const string& aName, int aMaxLen )
     }
 
     return data;
+}
+
+
+pevt_shared_data NGSPICE::GetEvtNodeInfo( const char* aName )
+{
+
+    LOCALE_IO c_locale;       // ngspice works correctly only with C locale
+
+     pevt_shared_data pevtData = m_ngGet_Evt_NodeInfo( aName );
+
+    return pevtData;
 }
 
 
@@ -283,7 +294,10 @@ bool NGSPICE::LoadNetlist( const string& aNetlist )
 bool NGSPICE::Run()
 {
     LOCALE_IO c_locale;               // ngspice works correctly only with C locale
-    return Command( "bg_run" );     // bg_* commands execute in a separate thread
+
+    Command( "bg_ctrl" );    // required after reset or for repeated bg_run commands
+return Command( "bg_run" );     // bg_* commands execute in a separate thread
+
 }
 
 
@@ -475,6 +489,7 @@ void NGSPICE::init_dll()
 
     // Obtain function pointers
     m_ngSpice_Init = (ngSpice_Init) m_dll.GetSymbol( "ngSpice_Init" );
+
     m_ngSpice_Circ = (ngSpice_Circ) m_dll.GetSymbol( "ngSpice_Circ" );
     m_ngSpice_Command = (ngSpice_Command) m_dll.GetSymbol( "ngSpice_Command" );
     m_ngGet_Vec_Info = (ngGet_Vec_Info) m_dll.GetSymbol( "ngGet_Vec_Info" );
@@ -482,6 +497,7 @@ void NGSPICE::init_dll()
     m_ngSpice_AllPlots = (ngSpice_AllPlots) m_dll.GetSymbol( "ngSpice_AllPlots" );
     m_ngSpice_AllVecs = (ngSpice_AllVecs) m_dll.GetSymbol( "ngSpice_AllVecs" );
     m_ngSpice_Running = (ngSpice_Running) m_dll.GetSymbol( "ngSpice_running" ); // it is not a typo
+    m_ngGet_Evt_NodeInfo = (ngGet_Evt_NodeInfo) m_dll.GetSymbol( "ngGet_Evt_NodeInfo" ); //ngGet_Evt_NodeInfo
 
     m_ngSpice_Init( &cbSendChar, &cbSendStat, &cbControlledExit, NULL, NULL,
                     &cbBGThreadRunning, this );
@@ -665,3 +681,40 @@ void NGSPICE::validate()
 
 
 bool NGSPICE::m_initialized = false;
+
+std::vector<double> NGSPICE::expandShortData(std::vector<double>& time_data, const char* signalName)
+{
+
+    std::vector<double> data_y;
+    data_y.reserve(time_data.size());
+
+    // remove V( and ) from signal name
+    wxString pureName(signalName);
+    pureName=pureName.SubString(2, pureName.size()-2).Lower();
+
+    evt_shared_data* evt = GetEvtNodeInfo(pureName.c_str());
+    double lastTime = time_data[time_data.size()-1];
+    if (evt && evt->num_steps && evt->evt_dect)
+    {
+        evt_data** dt = evt->evt_dect;
+        int index = 0;
+        double val;
+        double endtime;
+        for (int n=0; n < evt->num_steps; n++)
+        {
+            val =  (dt[n]->node_value[0] == '0') ? 0.0 : 1.0;
+            if ((n < evt->num_steps-1) && (dt[n+1]->step < lastTime ))
+                endtime =   dt[n+1]->step  ;
+            else
+                endtime = lastTime;
+            while (time_data[index] < endtime)
+            {
+                data_y.push_back( val);
+                index++;
+            }
+        }
+        data_y.push_back( val);
+
+    }
+    return data_y;
+}
