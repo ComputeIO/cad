@@ -30,6 +30,7 @@
 #include "spice_simulator.h"
 
 #include <wx/dynlib.h>
+#define XSPICE // must be defined to get XSPICE typedefs from sharedspice.h
 #include <ngspice/sharedspice.h>
 
 class wxDynamicLibrary;
@@ -79,6 +80,10 @@ public:
     ///< @copydoc SPICE_SIMULATOR::GetPhasePlot()
     std::vector<double> GetPhasePlot( const std::string& aName, int aMaxLen = -1 ) override;
 
+    ///< @copydoc SPICE_SIMULATOR::GetEvtNodeInfo()
+    pevt_shared_data GetEvtNodeInfo( const char* aName );
+
+    ///< @copydoc SPICE_SIMULATOR::GetSettingCommands()
     std::vector<std::string> GetSettingCommands() const override;
 
     ///< @copydoc SPICE_SIMULATOR::GetNetlist()
@@ -100,16 +105,18 @@ private:
     typedef char** ( *ngSpice_AllPlots )( void );
     typedef char** ( *ngSpice_AllVecs )( char* plotname );
     typedef bool ( *ngSpice_Running )( void );
+    typedef pevt_shared_data ( *ngGet_Evt_NodeInfo )( const char* nodename );
 
     ///< Handle to DLL functions
-    ngSpice_Init m_ngSpice_Init;
-    ngSpice_Circ m_ngSpice_Circ;
-    ngSpice_Command m_ngSpice_Command;
-    ngGet_Vec_Info m_ngGet_Vec_Info;
-    ngSpice_CurPlot  m_ngSpice_CurPlot;
-    ngSpice_AllPlots m_ngSpice_AllPlots;
-    ngSpice_AllVecs m_ngSpice_AllVecs;
-    ngSpice_Running m_ngSpice_Running;
+    ngSpice_Init       m_ngSpice_Init;
+    ngSpice_Circ       m_ngSpice_Circ;
+    ngSpice_Command    m_ngSpice_Command;
+    ngGet_Vec_Info     m_ngGet_Vec_Info;
+    ngSpice_CurPlot    m_ngSpice_CurPlot;
+    ngSpice_AllPlots   m_ngSpice_AllPlots;
+    ngSpice_AllVecs    m_ngSpice_AllVecs;
+    ngSpice_Running    m_ngSpice_Running;
+    ngGet_Evt_NodeInfo m_ngGet_Evt_NodeInfo;
 
     wxDynamicLibrary m_dll;
 
@@ -140,6 +147,12 @@ private:
 
     ///< current netlist
     std::string m_netlist;
+
+    /**
+     * @return aSignalName data expanded to equal the size of time axis data
+     */
+    virtual std::vector<double> ExpandShortData( std::vector<double>& aTimeData,
+                                                 const char*          aSignalName ) override;
 };
 
 #endif /* NGSPICE_H */
