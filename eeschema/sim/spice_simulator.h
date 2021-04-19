@@ -45,10 +45,7 @@ typedef std::complex<double> COMPLEX;
 class SPICE_SIMULATOR
 {
 public:
-    SPICE_SIMULATOR() :
-        m_reporter( nullptr ),
-        m_settings( nullptr )
-    {}
+    SPICE_SIMULATOR() : m_reporter( nullptr ), m_settings( nullptr ) {}
 
     virtual ~SPICE_SIMULATOR() {}
 
@@ -102,10 +99,7 @@ public:
     virtual std::string GetXAxis( SIM_TYPE aType ) const = 0;
 
     ///< Set a #SPICE_REPORTER object to receive the simulation log.
-    virtual void SetReporter( SPICE_REPORTER* aReporter )
-    {
-        m_reporter = aReporter;
-    }
+    virtual void SetReporter( SPICE_REPORTER* aReporter ) { m_reporter = aReporter; }
 
     /**
      * Return a list with all vectors generated in current simulation.
@@ -201,10 +195,12 @@ public:
     /**
      * Expand plot data that is too short for the time axis
      *
-     * @return signalName data expanded to equal the size of time axis data
+     * @param aTimedata is the X axis coordinate of each data point, i.e. monotonically increasing
+     * @param aSignalName is the name of the signal being plotted
+     * @return aSignalName data expanded to equal the size of time axis data
      */
-    virtual std::vector<double> expandShortData(std::vector<double>& time_data, const char* signalName)=0;
-
+    virtual std::vector<double> ExpandShortData( std::vector<double>& aTimeData,
+                                                 const char*          aSignalName ) = 0;
 
 protected:
     ///< Reporter object to receive simulation log.

@@ -61,10 +61,7 @@ SIM_PLOT_TYPE operator|( SIM_PLOT_TYPE aFirst, SIM_PLOT_TYPE aSecond )
 class SIM_THREAD_REPORTER : public SPICE_REPORTER
 {
 public:
-    SIM_THREAD_REPORTER( SIM_PLOT_FRAME* aParent ) :
-        m_parent( aParent )
-    {
-    }
+    SIM_THREAD_REPORTER( SIM_PLOT_FRAME* aParent ) : m_parent( aParent ) {}
 
     REPORTER& Report( const wxString& aText, SEVERITY aSeverity = RPT_SEVERITY_UNDEFINED ) override
     {
@@ -76,7 +73,7 @@ public:
 
     bool HasMessage() const override
     {
-        return false;       // Technically "indeterminate" rather than false.
+        return false; // Technically "indeterminate" rather than false.
     }
 
     void OnSimStateChange( SPICE_SIMULATOR* aObject, SIM_STATE aNewState ) override
@@ -85,17 +82,11 @@ public:
 
         switch( aNewState )
         {
-        case SIM_IDLE:
-            event = new wxCommandEvent( EVT_SIM_FINISHED );
-            break;
+        case SIM_IDLE: event = new wxCommandEvent( EVT_SIM_FINISHED ); break;
 
-        case SIM_RUNNING:
-            event = new wxCommandEvent( EVT_SIM_STARTED );
-            break;
+        case SIM_RUNNING: event = new wxCommandEvent( EVT_SIM_STARTED ); break;
 
-        default:
-            wxFAIL;
-            return;
+        default: wxFAIL; return;
         }
 
         wxQueueEvent( m_parent, event );
@@ -109,8 +100,7 @@ private:
 TRACE_DESC::TRACE_DESC( const NETLIST_EXPORTER_PSPICE_SIM& aExporter, const wxString& aName,
                         SIM_PLOT_TYPE aType, const wxString& aParam ) :
         m_name( aName ),
-        m_type( aType ),
-        m_param( aParam )
+        m_type( aType ), m_param( aParam )
 {
     // Title generation
     m_title = wxString::Format( "%s(%s)", aParam, aName );
@@ -127,9 +117,7 @@ wxString SIM_PLOT_FRAME::m_savedWorkbooksPath;
 
 
 SIM_PLOT_FRAME::SIM_PLOT_FRAME( KIWAY* aKiway, wxWindow* aParent ) :
-        SIM_PLOT_FRAME_BASE( aParent ),
-        m_lastSimPlot( nullptr ),
-        m_welcomePanel( nullptr ),
+        SIM_PLOT_FRAME_BASE( aParent ), m_lastSimPlot( nullptr ), m_welcomePanel( nullptr ),
         m_plotNumber( 0 )
 {
     SetKiway( this, aKiway );
@@ -184,20 +172,23 @@ SIM_PLOT_FRAME::SIM_PLOT_FRAME( KIWAY* aKiway, wxWindow* aParent ) :
     Connect( EVT_SIM_REPORT, wxCommandEventHandler( SIM_PLOT_FRAME::onSimReport ), NULL, this );
     Connect( EVT_SIM_STARTED, wxCommandEventHandler( SIM_PLOT_FRAME::onSimStarted ), NULL, this );
     Connect( EVT_SIM_FINISHED, wxCommandEventHandler( SIM_PLOT_FRAME::onSimFinished ), NULL, this );
-    Connect( EVT_SIM_CURSOR_UPDATE, wxCommandEventHandler( SIM_PLOT_FRAME::onCursorUpdate ),
-             NULL, this );
+    Connect( EVT_SIM_CURSOR_UPDATE, wxCommandEventHandler( SIM_PLOT_FRAME::onCursorUpdate ), NULL,
+             this );
 
     // Toolbar buttons
     m_toolSimulate = m_toolBar->AddTool( ID_SIM_RUN, _( "Run/Stop Simulation" ),
-            KiBitmap( BITMAPS::sim_run ), _( "Run Simulation" ), wxITEM_NORMAL );
+                                         KiBitmap( BITMAPS::sim_run ), _( "Run Simulation" ),
+                                         wxITEM_NORMAL );
     m_toolAddSignals = m_toolBar->AddTool( ID_SIM_ADD_SIGNALS, _( "Add Signals" ),
-            KiBitmap( BITMAPS::sim_add_signal ), _( "Add signals to plot" ), wxITEM_NORMAL );
-    m_toolProbe = m_toolBar->AddTool( ID_SIM_PROBE,  _( "Probe" ),
-            KiBitmap( BITMAPS::sim_probe ), _( "Probe signals on the schematic" ), wxITEM_NORMAL );
-    m_toolTune = m_toolBar->AddTool( ID_SIM_TUNE, _( "Tune" ),
-            KiBitmap( BITMAPS::sim_tune ), _( "Tune component values" ), wxITEM_NORMAL );
-    m_toolSettings = m_toolBar->AddTool( wxID_ANY, _( "Sim Parameters" ),
-            KiBitmap( BITMAPS::config ), _( "Simulation parameters and settings" ), wxITEM_NORMAL );
+                                           KiBitmap( BITMAPS::sim_add_signal ),
+                                           _( "Add signals to plot" ), wxITEM_NORMAL );
+    m_toolProbe = m_toolBar->AddTool( ID_SIM_PROBE, _( "Probe" ), KiBitmap( BITMAPS::sim_probe ),
+                                      _( "Probe signals on the schematic" ), wxITEM_NORMAL );
+    m_toolTune = m_toolBar->AddTool( ID_SIM_TUNE, _( "Tune" ), KiBitmap( BITMAPS::sim_tune ),
+                                     _( "Tune component values" ), wxITEM_NORMAL );
+    m_toolSettings =
+            m_toolBar->AddTool( wxID_ANY, _( "Sim Parameters" ), KiBitmap( BITMAPS::config ),
+                                _( "Simulation parameters and settings" ), wxITEM_NORMAL );
 
     Connect( m_toolSimulate->GetId(), wxEVT_COMMAND_TOOL_CLICKED,
              wxCommandEventHandler( SIM_PLOT_FRAME::onSimulate ), NULL, this );
@@ -261,11 +252,11 @@ void SIM_PLOT_FRAME::SaveSettings( APP_SETTINGS_BASE* aCfg )
     {
         EDA_BASE_FRAME::SaveSettings( cfg );
 
-        cfg->m_Simulator.plot_panel_width     = m_splitterLeftRight->GetSashPosition();
-        cfg->m_Simulator.plot_panel_height    = m_splitterPlotAndConsole->GetSashPosition();
-        cfg->m_Simulator.signal_panel_height  = m_splitterSignals->GetSashPosition();
+        cfg->m_Simulator.plot_panel_width = m_splitterLeftRight->GetSashPosition();
+        cfg->m_Simulator.plot_panel_height = m_splitterPlotAndConsole->GetSashPosition();
+        cfg->m_Simulator.signal_panel_height = m_splitterSignals->GetSashPosition();
         cfg->m_Simulator.cursors_panel_height = m_splitterTuneValues->GetSashPosition();
-        cfg->m_Simulator.white_background     = m_plotUseWhiteBg;
+        cfg->m_Simulator.white_background = m_plotUseWhiteBg;
     }
 
     if( m_schematicFrame )
@@ -288,11 +279,11 @@ void SIM_PLOT_FRAME::LoadSettings( APP_SETTINGS_BASE* aCfg )
         EDA_BASE_FRAME::LoadSettings( cfg );
 
         // Read subwindows sizes (should be > 0 )
-        m_splitterLeftRightSashPosition      = cfg->m_Simulator.plot_panel_width;
+        m_splitterLeftRightSashPosition = cfg->m_Simulator.plot_panel_width;
         m_splitterPlotAndConsoleSashPosition = cfg->m_Simulator.plot_panel_height;
-        m_splitterSignalsSashPosition        = cfg->m_Simulator.signal_panel_height;
-        m_splitterTuneValuesSashPosition     = cfg->m_Simulator.cursors_panel_height;
-        m_plotUseWhiteBg                     = cfg->m_Simulator.white_background;
+        m_splitterSignalsSashPosition = cfg->m_Simulator.signal_panel_height;
+        m_splitterTuneValuesSashPosition = cfg->m_Simulator.cursors_panel_height;
+        m_plotUseWhiteBg = cfg->m_Simulator.white_background;
     }
 
     PROJECT_FILE& project = Prj().GetProjectFile();
@@ -316,7 +307,7 @@ WINDOW_SETTINGS* SIM_PLOT_FRAME::GetWindowSettings( APP_SETTINGS_BASE* aCfg )
 // A small helper struct to handle bitmaps initialisation in menus
 struct BM_MENU_INIT_ITEM
 {
-    int m_MenuId;
+    int     m_MenuId;
     BITMAPS m_Bitmap;
 };
 
@@ -324,8 +315,7 @@ struct BM_MENU_INIT_ITEM
 void SIM_PLOT_FRAME::setIconsForMenuItems()
 {
     // Give icons to menuitems of the main menubar
-    BM_MENU_INIT_ITEM bm_list[]
-    {
+    BM_MENU_INIT_ITEM bm_list[]{
         // File menu:
         { wxID_NEW, BITMAPS::simulator },
         { wxID_OPEN, BITMAPS::directory_open },
@@ -351,7 +341,7 @@ void SIM_PLOT_FRAME::setIconsForMenuItems()
         { ID_MENU_DOTTED, BITMAPS::add_dashed_line },
         { ID_MENU_WHITE_BG, BITMAPS::swap_layer },
 
-        { 0, BITMAPS::INVALID_BITMAP }  // Sentinel
+        { 0, BITMAPS::INVALID_BITMAP } // Sentinel
     };
 
     // wxMenuItems are already created and attached to the m_mainMenu wxMenuBar.
@@ -372,7 +362,7 @@ void SIM_PLOT_FRAME::setIconsForMenuItems()
 
         // Calculate the initial index of item inside the wxMenu parent.
         wxMenuItemList& mlist = menu->GetMenuItems();
-        int mpos = mlist.IndexOf( item );
+        int             mpos = mlist.IndexOf( item );
 
         if( mpos >= 0 ) // Should be always the case
         {
@@ -517,20 +507,18 @@ void SIM_PLOT_FRAME::AddTuner( SCH_COMPONENT* aComponent )
     char primitiveType = NETLIST_EXPORTER_PSPICE::GetSpiceField( SF_PRIMITIVE, aComponent, 0 )[0];
 
     if( primitiveType != SP_RESISTOR && primitiveType != SP_CAPACITOR
-      && primitiveType != SP_INDUCTOR )
+        && primitiveType != SP_INDUCTOR )
         return;
 
     const wxString componentName = aComponent->GetField( REFERENCE_FIELD )->GetText();
 
     // Do not add multiple instances for the same component
-    auto tunerIt = std::find_if( m_tuners.begin(), m_tuners.end(), [&]( const TUNER_SLIDER* t )
-        {
-            return t->GetComponentName() == componentName;
-        }
-    );
+    auto tunerIt = std::find_if( m_tuners.begin(), m_tuners.end(), [&]( const TUNER_SLIDER* t ) {
+        return t->GetComponentName() == componentName;
+    } );
 
     if( tunerIt != m_tuners.end() )
-        return;     // We already have it
+        return; // We already have it
 
     try
     {
@@ -561,9 +549,9 @@ SIM_PLOT_PANEL* SIM_PLOT_FRAME::CurrentPlot() const
 {
     SIM_PANEL_BASE* curPage = currentPlotWindow();
 
-    return ( ( !curPage || curPage->GetType() == ST_UNKNOWN ) ?
-                     nullptr :
-                     dynamic_cast<SIM_PLOT_PANEL*>( curPage ) );
+    return ( ( !curPage || curPage->GetType() == ST_UNKNOWN )
+                     ? nullptr
+                     : dynamic_cast<SIM_PLOT_PANEL*>( curPage ) );
 }
 
 
@@ -607,12 +595,12 @@ void SIM_PLOT_FRAME::addPlot( const wxString& aName, SIM_PLOT_TYPE aType, const 
 
     wxASSERT( plotPanel );
 
-    if( !plotPanel )    // Something is wrong
+    if( !plotPanel ) // Something is wrong
         return;
 
     TRACE_DESC descriptor( *m_exporter, aName, aType, aParam );
 
-    bool updated = false;
+    bool          updated = false;
     SIM_PLOT_TYPE xAxisType = GetXAxisType( simType );
 
     if( xAxisType == SPT_LIN_FREQUENCY || xAxisType == SPT_LOG_FREQUENCY )
@@ -620,9 +608,9 @@ void SIM_PLOT_FRAME::addPlot( const wxString& aName, SIM_PLOT_TYPE aType, const 
         int baseType = descriptor.GetType() & ~( SPT_AC_MAG | SPT_AC_PHASE );
 
         // Add two plots: magnitude & phase
-        TRACE_DESC mag_desc( *m_exporter, descriptor, (SIM_PLOT_TYPE)( baseType | SPT_AC_MAG ) );
+        TRACE_DESC mag_desc( *m_exporter, descriptor, ( SIM_PLOT_TYPE )( baseType | SPT_AC_MAG ) );
         TRACE_DESC phase_desc( *m_exporter, descriptor,
-                               (SIM_PLOT_TYPE)( baseType | SPT_AC_PHASE ) );
+                               ( SIM_PLOT_TYPE )( baseType | SPT_AC_PHASE ) );
 
         updated |= updatePlot( mag_desc, plotPanel );
         updated |= updatePlot( phase_desc, plotPanel );
@@ -649,7 +637,7 @@ void SIM_PLOT_FRAME::removePlot( const wxString& aPlotName, bool aErase )
     if( aErase )
     {
         auto& traceMap = m_plots[plotPanel].m_traces;
-        auto traceIt = traceMap.find( aPlotName );
+        auto  traceIt = traceMap.find( aPlotName );
         wxASSERT( traceIt != traceMap.end() );
         traceMap.erase( traceIt );
     }
@@ -693,13 +681,13 @@ bool SIM_PLOT_FRAME::updatePlot( const TRACE_DESC& aDescriptor, SIM_PLOT_PANEL* 
     if( xAxisName.IsEmpty() )
         return false;
 
-    auto data_x = m_simulator->GetMagPlot( (const char*) xAxisName.c_str() );
+    auto         data_x = m_simulator->GetMagPlot( (const char*) xAxisName.c_str() );
     unsigned int size = data_x.size();
 
     if( data_x.empty() )
         return false;
 
-    SIM_PLOT_TYPE plotType = aDescriptor.GetType();
+    SIM_PLOT_TYPE       plotType = aDescriptor.GetType();
     std::vector<double> data_y;
 
     // Now, Y axis data
@@ -720,18 +708,14 @@ bool SIM_PLOT_FRAME::updatePlot( const TRACE_DESC& aDescriptor, SIM_PLOT_PANEL* 
 
     case ST_NOISE:
     case ST_DC:
-    case ST_TRANSIENT:
-        data_y = m_simulator->GetMagPlot( (const char*) spiceVector.c_str() );
-        break;
+    case ST_TRANSIENT: data_y = m_simulator->GetMagPlot( (const char*) spiceVector.c_str() ); break;
 
-    default:
-        wxASSERT_MSG( false, "Unhandled plot type" );
-        return false;
+    default: wxASSERT_MSG( false, "Unhandled plot type" ); return false;
     }
 
     // Expand Y data to fit X data.
-    if (size-data_y.size()!=0)
-            data_y = m_simulator->expandShortData(data_x, (const char*) spiceVector.c_str());
+    if( size - data_y.size() != 0 )
+        data_y = m_simulator->ExpandShortData( data_x, (const char*) spiceVector.c_str() );
 
     if( data_y.size() != size )
         return false;
@@ -740,14 +724,14 @@ bool SIM_PLOT_FRAME::updatePlot( const TRACE_DESC& aDescriptor, SIM_PLOT_PANEL* 
     // for each input step
     SPICE_DC_PARAMS source1, source2;
 
-    if( m_exporter->GetSimType() == ST_DC &&
-        m_exporter->ParseDCCommand( m_exporter->GetUsedSimCommand(), &source1, &source2 ) )
+    if( m_exporter->GetSimType() == ST_DC
+        && m_exporter->ParseDCCommand( m_exporter->GetUsedSimCommand(), &source1, &source2 ) )
     {
         if( !source2.m_source.IsEmpty() )
         {
             // Source 1 is the inner loop, so lets add traces for each Source 2 (outer loop) step
             SPICE_VALUE v = source2.m_vstart;
-            wxString name;
+            wxString    name;
 
             size_t offset = 0;
             size_t outer = ( size_t )( ( source2.m_vend - v ) / source2.m_vincrement ).ToDouble();
@@ -757,16 +741,16 @@ bool SIM_PLOT_FRAME::updatePlot( const TRACE_DESC& aDescriptor, SIM_PLOT_PANEL* 
 
             for( size_t idx = 0; idx <= outer; idx++ )
             {
-                name = wxString::Format( "%s (%s = %s V)", aDescriptor.GetTitle(),
-                                         source2.m_source, v.ToString() );
+                name = wxString::Format( "%s (%s = %s V)", aDescriptor.GetTitle(), source2.m_source,
+                                         v.ToString() );
 
                 std::vector<double> sub_x( data_x.begin() + offset,
                                            data_x.begin() + offset + inner );
                 std::vector<double> sub_y( data_y.begin() + offset,
                                            data_y.begin() + offset + inner );
 
-                if( aPanel->AddTrace( name, inner,
-                                      sub_x.data(), sub_y.data(), aDescriptor.GetType() ) )
+                if( aPanel->AddTrace( name, inner, sub_x.data(), sub_y.data(),
+                                      aDescriptor.GetType() ) )
                 {
                     m_plots[aPanel].m_traces.insert( std::make_pair( name, aDescriptor ) );
                 }
@@ -779,8 +763,8 @@ bool SIM_PLOT_FRAME::updatePlot( const TRACE_DESC& aDescriptor, SIM_PLOT_PANEL* 
         }
     }
 
-    if( aPanel->AddTrace( aDescriptor.GetTitle(), size,
-                data_x.data(), data_y.data(), aDescriptor.GetType() ) )
+    if( aPanel->AddTrace( aDescriptor.GetTitle(), size, data_x.data(), data_y.data(),
+                          aDescriptor.GetType() ) )
     {
         m_plots[aPanel].m_traces.insert( std::make_pair( aDescriptor.GetTitle(), aDescriptor ) );
     }
@@ -805,7 +789,7 @@ void SIM_PLOT_FRAME::updateSignalList()
     // in the plot panel
     // This image list is used for trace and cursor lists
     wxMemoryDC bmDC;
-    const int isize = bmDC.GetCharHeight();
+    const int  isize = bmDC.GetCharHeight();
 
     if( m_signalsIconColorList == NULL )
         m_signalsIconColorList = new wxImageList( isize, isize, false );
@@ -827,7 +811,7 @@ void SIM_PLOT_FRAME::updateSignalList()
         bmDC.SetBrush( wxBrush( tcolor ) );
         bmDC.DrawRectangle( 0, isize / 4 + 1, isize, isize / 2 );
 
-        bmDC.SelectObject( wxNullBitmap );  // Needed to initialize bitmap
+        bmDC.SelectObject( wxNullBitmap ); // Needed to initialize bitmap
 
         bitmap.SetMask( new wxMask( bitmap, *wxBLACK ) );
         m_signalsIconColorList->Add( bitmap );
@@ -861,12 +845,13 @@ void SIM_PLOT_FRAME::updateTuners()
 
     for( auto it = m_tuners.begin(); it != m_tuners.end(); /* iteration inside the loop */ )
     {
-        const wxString& ref = (*it)->GetComponentName();
+        const wxString& ref = ( *it )->GetComponentName();
 
-        if( std::find_if( spiceItems.begin(), spiceItems.end(), [&]( const SPICE_ITEM& item )
-                {
-                    return item.m_refName == ref;
-                }) == spiceItems.end() )
+        if( std::find_if( spiceItems.begin(), spiceItems.end(),
+                          [&]( const SPICE_ITEM& item ) {
+                              return item.m_refName == ref;
+                          } )
+            == spiceItems.end() )
         {
             // The component does not exist anymore, remove the associated tuner
             TUNER_SLIDER* tuner = *it;
@@ -886,8 +871,8 @@ void SIM_PLOT_FRAME::applyTuners()
     for( auto& tuner : m_tuners )
     {
         /// @todo no ngspice hardcoding
-        std::string command( "alter @" + tuner->GetSpiceName()
-                + "=" + tuner->GetValue().ToSpiceString() );
+        std::string command( "alter @" + tuner->GetSpiceName() + "="
+                             + tuner->GetValue().ToSpiceString() );
 
         m_simulator->Command( command );
     }
@@ -906,7 +891,7 @@ bool SIM_PLOT_FRAME::loadWorkbook( const wxString& aPath )
 
     long plotsCount;
 
-    if( !file.GetFirstLine().ToLong( &plotsCount ) )        // GetFirstLine instead of GetNextLine
+    if( !file.GetFirstLine().ToLong( &plotsCount ) ) // GetFirstLine instead of GetNextLine
         return false;
 
     for( long i = 0; i < plotsCount; ++i )
@@ -925,15 +910,14 @@ bool SIM_PLOT_FRAME::loadWorkbook( const wxString& aPath )
         do
         {
             wxThread::This()->Sleep( 50 );
-        }
-        while( IsSimulationRunning() );
+        } while( IsSimulationRunning() );
 
         if( !file.GetNextLine().ToLong( &tracesCount ) )
             return false;
 
         for( long j = 0; j < tracesCount; ++j )
         {
-            long traceType;
+            long     traceType;
             wxString name, param;
 
             if( !file.GetNextLine().ToLong( &traceType ) )
@@ -957,7 +941,7 @@ bool SIM_PLOT_FRAME::saveWorkbook( const wxString& aPath )
 {
     wxString savePath = aPath;
 
-    if( !savePath.Lower().EndsWith(".wbk") )
+    if( !savePath.Lower().EndsWith( ".wbk" ) )
         savePath += ".wbk";
 
     wxTextFile file( savePath );
@@ -1004,19 +988,15 @@ SIM_PLOT_TYPE SIM_PLOT_FRAME::GetXAxisType( SIM_TYPE aType ) const
 {
     switch( aType )
     {
-        case ST_AC:
-            return SPT_LIN_FREQUENCY;
-            /// @todo SPT_LOG_FREQUENCY
+    case ST_AC:
+        return SPT_LIN_FREQUENCY;
+        /// @todo SPT_LOG_FREQUENCY
 
-        case ST_DC:
-            return SPT_SWEEP;
+    case ST_DC: return SPT_SWEEP;
 
-        case ST_TRANSIENT:
-            return SPT_TIME;
+    case ST_TRANSIENT: return SPT_TIME;
 
-        default:
-            wxASSERT_MSG( false, "Unhandled simulation type" );
-            return (SIM_PLOT_TYPE) 0;
+    default: wxASSERT_MSG( false, "Unhandled simulation type" ); return (SIM_PLOT_TYPE) 0;
     }
 }
 
@@ -1076,8 +1056,8 @@ void SIM_PLOT_FRAME::menuSaveImage( wxCommandEvent& event )
     if( !CurrentPlot() )
         return;
 
-    wxFileDialog saveDlg( this, _( "Save Plot as Image" ), "", "",
-                          PngFileWildcard(), wxFD_SAVE | wxFD_OVERWRITE_PROMPT );
+    wxFileDialog saveDlg( this, _( "Save Plot as Image" ), "", "", PngFileWildcard(),
+                          wxFD_SAVE | wxFD_OVERWRITE_PROMPT );
 
     if( saveDlg.ShowModal() == wxID_CANCEL )
         return;
@@ -1093,14 +1073,14 @@ void SIM_PLOT_FRAME::menuSaveCsv( wxCommandEvent& event )
 
     const wxChar SEPARATOR = ';';
 
-    wxFileDialog saveDlg( this, _( "Save Plot Data" ), "", "",
-                          CsvFileWildcard(), wxFD_SAVE | wxFD_OVERWRITE_PROMPT );
+    wxFileDialog saveDlg( this, _( "Save Plot Data" ), "", "", CsvFileWildcard(),
+                          wxFD_SAVE | wxFD_OVERWRITE_PROMPT );
 
     if( saveDlg.ShowModal() == wxID_CANCEL )
         return;
 
     wxFFile out( saveDlg.GetPath(), "wb" );
-    bool timeWritten = false;
+    bool    timeWritten = false;
 
     for( const auto& t : CurrentPlot()->GetTraces() )
     {
@@ -1234,8 +1214,7 @@ void SIM_PLOT_FRAME::onPlotClose( wxAuiNotebookEvent& event )
     if( idx == wxNOT_FOUND )
         return;
 
-    SIM_PANEL_BASE* plotPanel =
-            dynamic_cast<SIM_PANEL_BASE*>( m_plotNotebook->GetPage( idx ) );
+    SIM_PANEL_BASE* plotPanel = dynamic_cast<SIM_PANEL_BASE*>( m_plotNotebook->GetPage( idx ) );
 
     m_plots.erase( plotPanel );
     updateSignalList();
@@ -1273,7 +1252,7 @@ void SIM_PLOT_FRAME::onSignalRClick( wxListEvent& event )
 
     if( idx != wxNOT_FOUND )
     {
-        const wxString& netName = m_signals->GetItemText( idx, 0 );
+        const wxString&     netName = m_signals->GetItemText( idx, 0 );
         SIGNAL_CONTEXT_MENU ctxMenu( netName, this );
         m_signals->PopupMenu( &ctxMenu );
     }
@@ -1318,8 +1297,7 @@ void SIM_PLOT_FRAME::onSettings( wxCommandEvent& event )
         // If it is a new simulation type, open a new plot
         // For the DC sim, check if sweep source type has changed (char 4 will contain 'v',
         // 'i', 'r' or 't'.
-        if( !plotPanelWindow
-            || ( plotPanelWindow && plotPanelWindow->GetType() != newSimType )
+        if( !plotPanelWindow || ( plotPanelWindow && plotPanelWindow->GetType() != newSimType )
             || ( newSimType == ST_DC
                  && oldCommand.Lower().GetChar( 4 ) != newCommand.Lower().GetChar( 4 ) ) )
         {
@@ -1377,15 +1355,11 @@ void SIM_PLOT_FRAME::onShowNetlist( wxCommandEvent& event )
             MARGIN_LINE_NUMBERS
         };
 
-        void onClose( wxCloseEvent& evt )
-        {
-            EndModal( GetReturnCode() );
-        }
+        void onClose( wxCloseEvent& evt ) { EndModal( GetReturnCode() ); }
 
-        NETLIST_VIEW_DIALOG( wxWindow* parent, wxString source) :
-            DIALOG_SHIM( parent, wxID_ANY, "SPICE Netlist",
-                         wxDefaultPosition, wxDefaultSize,
-                         wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER )
+        NETLIST_VIEW_DIALOG( wxWindow* parent, wxString source ) :
+                DIALOG_SHIM( parent, wxID_ANY, "SPICE Netlist", wxDefaultPosition, wxDefaultSize,
+                             wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER )
         {
             wxStyledTextCtrl* text = new wxStyledTextCtrl( this, wxID_ANY );
             text->SetMinSize( wxSize( 600, 400 ) );
@@ -1396,7 +1370,7 @@ void SIM_PLOT_FRAME::onShowNetlist( wxCommandEvent& event )
             text->SetMarginType( MARGIN_LINE_NUMBERS, wxSTC_MARGIN_NUMBER );
 
             wxFont font = wxFont( wxNORMAL_FONT->GetPointSize(), wxFONTFAMILY_TELETYPE,
-                    wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL, false, wxEmptyString );
+                                  wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL, false, wxEmptyString );
             text->StyleSetFont( wxSTC_STYLE_DEFAULT, font );
 
             text->SetWrapMode( wxSTC_WRAP_WORD );
@@ -1441,7 +1415,7 @@ void SIM_PLOT_FRAME::doCloseWindow()
 
 void SIM_PLOT_FRAME::onCursorUpdate( wxCommandEvent& event )
 {
-    wxSize size = m_cursors->GetClientSize();
+    wxSize          size = m_cursors->GetClientSize();
     SIM_PLOT_PANEL* plotPanel = CurrentPlot();
     m_cursors->ClearAll();
 
@@ -1449,12 +1423,12 @@ void SIM_PLOT_FRAME::onCursorUpdate( wxCommandEvent& event )
         return;
 
     if( m_signalsIconColorList )
-        m_cursors->SetImageList(m_signalsIconColorList, wxIMAGE_LIST_SMALL);
+        m_cursors->SetImageList( m_signalsIconColorList, wxIMAGE_LIST_SMALL );
 
     // Fill the signals listctrl
     m_cursors->AppendColumn( _( "Signal" ), wxLIST_FORMAT_LEFT, size.x / 2 );
-    const long X_COL = m_cursors->AppendColumn( plotPanel->GetLabelX(), wxLIST_FORMAT_LEFT,
-                                                size.x / 4 );
+    const long X_COL =
+            m_cursors->AppendColumn( plotPanel->GetLabelX(), wxLIST_FORMAT_LEFT, size.x / 4 );
 
     wxString labelY1 = plotPanel->GetLabelY1();
     wxString labelY2 = plotPanel->GetLabelY2();
@@ -1474,12 +1448,12 @@ void SIM_PLOT_FRAME::onCursorUpdate( wxCommandEvent& event )
     {
         if( CURSOR* cursor = trace.second->GetCursor() )
         {
-           // Find the right icon color in list.
+            // Find the right icon color in list.
             // It is the icon used in m_signals list for the same trace
             long iconColor = m_signals->FindItem( -1, trace.first );
 
             const wxRealPoint coords = cursor->GetCoords();
-            long idx = m_cursors->InsertItem( itemidx++, trace.first, iconColor );
+            long              idx = m_cursors->InsertItem( itemidx++, trace.first, iconColor );
             m_cursors->SetItem( idx, X_COL, SPICE_VALUE( coords.x ).ToSpiceString() );
             m_cursors->SetItem( idx, Y_COL, SPICE_VALUE( coords.y ).ToSpiceString() );
         }
@@ -1515,17 +1489,17 @@ void SIM_PLOT_FRAME::onSimFinished( wxCommandEvent& aEvent )
     // If there are any signals plotted, update them
     if( SIM_PANEL_BASE::IsPlottable( simType ) )
     {
-        TRACE_MAP&      traceMap  = m_plots[plotPanelWindow].m_traces;
+        TRACE_MAP&      traceMap = m_plots[plotPanelWindow].m_traces;
         SIM_PLOT_PANEL* plotPanel = dynamic_cast<SIM_PLOT_PANEL*>( plotPanelWindow );
 
-        wxCHECK_RET( plotPanel, "not a SIM_PLOT_PANEL"  );
+        wxCHECK_RET( plotPanel, "not a SIM_PLOT_PANEL" );
 
-        for( auto it = traceMap.begin(); it != traceMap.end(); /* iteration occurs in the loop */)
+        for( auto it = traceMap.begin(); it != traceMap.end(); /* iteration occurs in the loop */ )
         {
             if( !updatePlot( it->second, plotPanel ) )
             {
                 removePlot( it->first, false );
-                it = traceMap.erase( it );       // remove a plot that does not exist anymore
+                it = traceMap.erase( it ); // remove a plot that does not exist anymore
             }
             else
             {
@@ -1546,18 +1520,18 @@ void SIM_PLOT_FRAME::onSimFinished( wxCommandEvent& aEvent )
         {
             std::vector<double> val_list = m_simulator->GetRealPlot( vec, 1 );
 
-            if( val_list.size() == 0 )      // The list of values can be empty!
+            if( val_list.size() == 0 ) // The list of values can be empty!
                 continue;
 
-            double val = val_list.at( 0 );
+            double        val = val_list.at( 0 );
             wxString      outLine, signal;
             SIM_PLOT_TYPE type = m_exporter->VectorToSignal( vec, signal );
 
-            const size_t tab     = 25; //characters
-            size_t padding = ( signal.length() < tab ) ? ( tab - signal.length() ) : 1;
+            const size_t tab = 25; //characters
+            size_t       padding = ( signal.length() < tab ) ? ( tab - signal.length() ) : 1;
 
             outLine.Printf( wxT( "%s%s" ), ( signal + wxT( ":" ) ).Pad( padding, wxUniChar( ' ' ) ),
-                    SPICE_VALUE( val ).ToSpiceString() );
+                            SPICE_VALUE( val ).ToSpiceString() );
 
             outLine.Append( type == SPT_CURRENT ? "A\n" : "V\n" );
 
@@ -1606,8 +1580,7 @@ SIM_PLOT_FRAME::SIGNAL_CONTEXT_MENU::SIGNAL_CONTEXT_MENU( const wxString& aSigna
 {
     SIM_PLOT_PANEL* plot = m_plotFrame->CurrentPlot();
 
-    AddMenuItem( this, HIDE_SIGNAL, _( "Hide Signal" ),
-                 _( "Erase the signal from plot screen" ),
+    AddMenuItem( this, HIDE_SIGNAL, _( "Hide Signal" ), _( "Erase the signal from plot screen" ),
                  KiBitmap( BITMAPS::trash ) );
 
     TRACE* trace = plot->GetTrace( m_signal );
@@ -1622,24 +1595,17 @@ SIM_PLOT_FRAME::SIGNAL_CONTEXT_MENU::SIGNAL_CONTEXT_MENU( const wxString& aSigna
 }
 
 
-
 void SIM_PLOT_FRAME::SIGNAL_CONTEXT_MENU::onMenuEvent( wxMenuEvent& aEvent )
 {
     SIM_PLOT_PANEL* plot = m_plotFrame->CurrentPlot();
 
     switch( aEvent.GetId() )
     {
-    case HIDE_SIGNAL:
-        m_plotFrame->removePlot( m_signal );
-        break;
+    case HIDE_SIGNAL: m_plotFrame->removePlot( m_signal ); break;
 
-    case SHOW_CURSOR:
-        plot->EnableCursor( m_signal, true );
-        break;
+    case SHOW_CURSOR: plot->EnableCursor( m_signal, true ); break;
 
-    case HIDE_CURSOR:
-        plot->EnableCursor( m_signal, false );
-        break;
+    case HIDE_CURSOR: plot->EnableCursor( m_signal, false ); break;
     }
 }
 
