@@ -25,7 +25,7 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
 
-#include <config.h>     // Needed for MSW compilation
+#include <config.h> // Needed for MSW compilation
 #include <wx/log.h>
 
 #include "ngspice.h"
@@ -58,15 +58,9 @@ static const wxChar* const traceNgspice = wxT( "KICAD_NGSPICE" );
 
 
 NGSPICE::NGSPICE() :
-        m_ngSpice_Init( nullptr ),
-        m_ngSpice_Circ( nullptr ),
-        m_ngSpice_Command( nullptr ),
-        m_ngGet_Vec_Info( nullptr ),
-        m_ngSpice_CurPlot( nullptr ),
-        m_ngSpice_AllPlots( nullptr ),
-        m_ngSpice_AllVecs( nullptr ),
-        m_ngSpice_Running( nullptr ),
-        m_ngGet_Evt_NodeInfo( nullptr ),
+        m_ngSpice_Init( nullptr ), m_ngSpice_Circ( nullptr ), m_ngSpice_Command( nullptr ),
+        m_ngGet_Vec_Info( nullptr ), m_ngSpice_CurPlot( nullptr ), m_ngSpice_AllPlots( nullptr ),
+        m_ngSpice_AllVecs( nullptr ), m_ngSpice_Running( nullptr ), m_ngGet_Evt_NodeInfo( nullptr ),
         m_error( false )
 {
     init_dll();
@@ -94,8 +88,8 @@ vector<string> NGSPICE::AllPlots() const
 {
     LOCALE_IO c_locale; // ngspice works correctly only with C locale
     char*     currentPlot = m_ngSpice_CurPlot();
-    char**    allPlots    = m_ngSpice_AllVecs( currentPlot );
-    int       noOfPlots   = 0;
+    char**    allPlots = m_ngSpice_AllVecs( currentPlot );
+    int       noOfPlots = 0;
 
     vector<string> retVal;
 
@@ -119,9 +113,9 @@ vector<string> NGSPICE::AllPlots() const
 
 vector<COMPLEX> NGSPICE::GetPlot( const string& aName, int aMaxLen )
 {
-    LOCALE_IO c_locale;       // ngspice works correctly only with C locale
+    LOCALE_IO       c_locale; // ngspice works correctly only with C locale
     vector<COMPLEX> data;
-    vector_info* vi = m_ngGet_Vec_Info( (char*) aName.c_str() );
+    vector_info*    vi = m_ngGet_Vec_Info( (char*) aName.c_str() );
 
     if( vi )
     {
@@ -146,9 +140,9 @@ vector<COMPLEX> NGSPICE::GetPlot( const string& aName, int aMaxLen )
 
 vector<double> NGSPICE::GetRealPlot( const string& aName, int aMaxLen )
 {
-    LOCALE_IO c_locale;       // ngspice works correctly only with C locale
+    LOCALE_IO      c_locale; // ngspice works correctly only with C locale
     vector<double> data;
-    vector_info* vi = m_ngGet_Vec_Info( (char*) aName.c_str() );
+    vector_info*   vi = m_ngGet_Vec_Info( (char*) aName.c_str() );
 
     if( vi )
     {
@@ -178,10 +172,9 @@ vector<double> NGSPICE::GetRealPlot( const string& aName, int aMaxLen )
 
 pevt_shared_data NGSPICE::GetEvtNodeInfo( const char* aName )
 {
+    LOCALE_IO c_locale; // ngspice works correctly only with C locale
 
-    LOCALE_IO c_locale;       // ngspice works correctly only with C locale
-
-     pevt_shared_data pevtData = m_ngGet_Evt_NodeInfo( aName );
+    pevt_shared_data pevtData = m_ngGet_Evt_NodeInfo( aName );
 
     return pevtData;
 }
@@ -189,9 +182,9 @@ pevt_shared_data NGSPICE::GetEvtNodeInfo( const char* aName )
 
 vector<double> NGSPICE::GetImagPlot( const string& aName, int aMaxLen )
 {
-    LOCALE_IO c_locale;       // ngspice works correctly only with C locale
+    LOCALE_IO      c_locale; // ngspice works correctly only with C locale
     vector<double> data;
-    vector_info* vi = m_ngGet_Vec_Info( (char*) aName.c_str() );
+    vector_info*   vi = m_ngGet_Vec_Info( (char*) aName.c_str() );
 
     if( vi )
     {
@@ -213,9 +206,9 @@ vector<double> NGSPICE::GetImagPlot( const string& aName, int aMaxLen )
 
 vector<double> NGSPICE::GetMagPlot( const string& aName, int aMaxLen )
 {
-    LOCALE_IO c_locale;       // ngspice works correctly only with C locale
+    LOCALE_IO      c_locale; // ngspice works correctly only with C locale
     vector<double> data;
-    vector_info* vi = m_ngGet_Vec_Info( (char*) aName.c_str() );
+    vector_info*   vi = m_ngGet_Vec_Info( (char*) aName.c_str() );
 
     if( vi )
     {
@@ -240,9 +233,9 @@ vector<double> NGSPICE::GetMagPlot( const string& aName, int aMaxLen )
 
 vector<double> NGSPICE::GetPhasePlot( const string& aName, int aMaxLen )
 {
-    LOCALE_IO c_locale;       // ngspice works correctly only with C locale
+    LOCALE_IO      c_locale; // ngspice works correctly only with C locale
     vector<double> data;
-    vector_info* vi = m_ngGet_Vec_Info( (char*) aName.c_str() );
+    vector_info*   vi = m_ngGet_Vec_Info( (char*) aName.c_str() );
 
     if( vi )
     {
@@ -252,7 +245,7 @@ vector<double> NGSPICE::GetPhasePlot( const string& aName, int aMaxLen )
         if( vi->v_realdata )
         {
             for( int i = 0; i < length; i++ )
-                data.push_back( 0.0 );      // well, that's life
+                data.push_back( 0.0 ); // well, that's life
         }
         else if( vi->v_compdata )
         {
@@ -267,9 +260,9 @@ vector<double> NGSPICE::GetPhasePlot( const string& aName, int aMaxLen )
 
 bool NGSPICE::LoadNetlist( const string& aNetlist )
 {
-    LOCALE_IO c_locale;       // ngspice works correctly only with C locale
+    LOCALE_IO     c_locale; // ngspice works correctly only with C locale
     vector<char*> lines;
-    stringstream ss( aNetlist );
+    stringstream  ss( aNetlist );
 
     m_netlist = "";
 
@@ -293,31 +286,30 @@ bool NGSPICE::LoadNetlist( const string& aNetlist )
 
 bool NGSPICE::Run()
 {
-    LOCALE_IO c_locale;               // ngspice works correctly only with C locale
+    LOCALE_IO c_locale; // ngspice works correctly only with C locale
 
-    Command( "bg_ctrl" );    // required after reset or for repeated bg_run commands
-return Command( "bg_run" );     // bg_* commands execute in a separate thread
-
+    Command( "bg_ctrl" );       // required after reset or for repeated bg_run commands
+    return Command( "bg_run" ); // bg_* commands execute in a separate thread
 }
 
 
 bool NGSPICE::Stop()
 {
-    LOCALE_IO c_locale;               // ngspice works correctly only with C locale
-    return Command( "bg_halt" );    // bg_* commands execute in a separate thread
+    LOCALE_IO c_locale;          // ngspice works correctly only with C locale
+    return Command( "bg_halt" ); // bg_* commands execute in a separate thread
 }
 
 
 bool NGSPICE::IsRunning()
 {
-    LOCALE_IO c_locale;               // ngspice works correctly only with C locale
+    LOCALE_IO c_locale; // ngspice works correctly only with C locale
     return m_ngSpice_Running();
 }
 
 
 bool NGSPICE::Command( const string& aCmd )
 {
-    LOCALE_IO c_locale;               // ngspice works correctly only with C locale
+    LOCALE_IO c_locale; // ngspice works correctly only with C locale
     validate();
     m_ngSpice_Command( (char*) aCmd.c_str() );
     return true;
@@ -329,8 +321,7 @@ string NGSPICE::GetXAxis( SIM_TYPE aType ) const
     switch( aType )
     {
     case ST_AC:
-    case ST_NOISE:
-        return string( "frequency" );
+    case ST_NOISE: return string( "frequency" );
 
     case ST_DC:
         // find plot, which ends with "-sweep"
@@ -340,18 +331,16 @@ string NGSPICE::GetXAxis( SIM_TYPE aType ) const
             unsigned int len = sweepEnding.length();
 
             if( plot.length() > len
-              && plot.substr( plot.length() - len, len ).compare( sweepEnding ) == 0 )
+                && plot.substr( plot.length() - len, len ).compare( sweepEnding ) == 0 )
             {
                 return string( plot );
             }
         }
         break;
 
-    case ST_TRANSIENT:
-        return string( "time" );
+    case ST_TRANSIENT: return string( "time" );
 
-    default:
-        break;
+    default: break;
     }
 
     return string( "" );
@@ -369,32 +358,21 @@ std::vector<std::string> NGSPICE::GetSettingCommands() const
 
     switch( settings->GetModelMode() )
     {
-    case NGSPICE_MODEL_MODE::USER_CONFIG:
-        break;
+    case NGSPICE_MODEL_MODE::USER_CONFIG: break;
 
-    case NGSPICE_MODEL_MODE::NGSPICE:
-        commands.emplace_back( "unset ngbehavior" );
-        break;
+    case NGSPICE_MODEL_MODE::NGSPICE: commands.emplace_back( "unset ngbehavior" ); break;
 
-    case NGSPICE_MODEL_MODE::PSPICE:
-        commands.emplace_back( "set ngbehavior=ps" );
-        break;
+    case NGSPICE_MODEL_MODE::PSPICE: commands.emplace_back( "set ngbehavior=ps" ); break;
 
-    case NGSPICE_MODEL_MODE::LTSPICE:
-        commands.emplace_back( "set ngbehavior=lt" );
-        break;
+    case NGSPICE_MODEL_MODE::LTSPICE: commands.emplace_back( "set ngbehavior=lt" ); break;
 
-    case NGSPICE_MODEL_MODE::LT_PSPICE:
-        commands.emplace_back( "set ngbehavior=ltps" );
-        break;
+    case NGSPICE_MODEL_MODE::LT_PSPICE: commands.emplace_back( "set ngbehavior=ltps" ); break;
 
-    case NGSPICE_MODEL_MODE::HSPICE:
-        commands.emplace_back( "set ngbehavior=hs" );
-        break;
+    case NGSPICE_MODEL_MODE::HSPICE: commands.emplace_back( "set ngbehavior=hs" ); break;
 
     default:
-        wxFAIL_MSG( wxString::Format( "Undefined NGSPICE_MODEL_MODE %d.",
-                                      settings->GetModelMode() ) );
+        wxFAIL_MSG(
+                wxString::Format( "Undefined NGSPICE_MODEL_MODE %d.", settings->GetModelMode() ) );
         break;
     }
 
@@ -413,22 +391,22 @@ void NGSPICE::init_dll()
     if( m_initialized )
         return;
 
-    LOCALE_IO c_locale;               // ngspice works correctly only with C locale
+    LOCALE_IO              c_locale; // ngspice works correctly only with C locale
     const wxStandardPaths& stdPaths = wxStandardPaths::Get();
 
-    if( m_dll.IsLoaded() )      // enable force reload
+    if( m_dll.IsLoaded() ) // enable force reload
         m_dll.Unload();
 
     // Extra effort to find libngspice
     // @todo Shouldn't we be using the normal KiCad path searching mechanism here?
     wxFileName dllFile( "", NGSPICE_DLL_FILE );
-#if defined(__WINDOWS__)
-  #if defined( _MSC_VER )
+#if defined( __WINDOWS__ )
+#if defined( _MSC_VER )
     const vector<string> dllPaths = { "" };
-  #else
+#else
     const vector<string> dllPaths = { "", "/mingw64/bin", "/mingw32/bin" };
-  #endif
-#elif defined(__WXMAC__)
+#endif
+#elif defined( __WXMAC__ )
     const vector<string> dllPaths = {
         PATHS::GetOSXKicadUserDataDir().ToStdString() + "/PlugIns/ngspice",
         PATHS::GetOSXKicadMachineDataDir().ToStdString() + "/PlugIns/ngspice",
@@ -437,14 +415,14 @@ void NGSPICE::init_dll()
         stdPaths.GetPluginsDir().ToStdString() + "/sim",
 
         // when running eeschema.app
-        wxFileName( stdPaths.GetExecutablePath() ).GetPath().ToStdString() +
-                "/../../../../../Contents/PlugIns/sim"
+        wxFileName( stdPaths.GetExecutablePath() ).GetPath().ToStdString()
+                + "/../../../../../Contents/PlugIns/sim"
     };
-#else   // Unix systems
+#else // Unix systems
     const vector<string> dllPaths = { "/usr/local/lib" };
 #endif
 
-#if defined(__WINDOWS__) || (__WXMAC__)
+#if defined( __WINDOWS__ ) || ( __WXMAC__ )
     for( const auto& path : dllPaths )
     {
         dllFile.SetPath( path );
@@ -493,18 +471,19 @@ void NGSPICE::init_dll()
     m_ngSpice_Circ = (ngSpice_Circ) m_dll.GetSymbol( "ngSpice_Circ" );
     m_ngSpice_Command = (ngSpice_Command) m_dll.GetSymbol( "ngSpice_Command" );
     m_ngGet_Vec_Info = (ngGet_Vec_Info) m_dll.GetSymbol( "ngGet_Vec_Info" );
-    m_ngSpice_CurPlot  = (ngSpice_CurPlot) m_dll.GetSymbol( "ngSpice_CurPlot" );
+    m_ngSpice_CurPlot = (ngSpice_CurPlot) m_dll.GetSymbol( "ngSpice_CurPlot" );
     m_ngSpice_AllPlots = (ngSpice_AllPlots) m_dll.GetSymbol( "ngSpice_AllPlots" );
     m_ngSpice_AllVecs = (ngSpice_AllVecs) m_dll.GetSymbol( "ngSpice_AllVecs" );
     m_ngSpice_Running = (ngSpice_Running) m_dll.GetSymbol( "ngSpice_running" ); // it is not a typo
-    m_ngGet_Evt_NodeInfo = (ngGet_Evt_NodeInfo) m_dll.GetSymbol( "ngGet_Evt_NodeInfo" ); //ngGet_Evt_NodeInfo
+    m_ngGet_Evt_NodeInfo =
+            (ngGet_Evt_NodeInfo) m_dll.GetSymbol( "ngGet_Evt_NodeInfo" ); //ngGet_Evt_NodeInfo
 
-    m_ngSpice_Init( &cbSendChar, &cbSendStat, &cbControlledExit, NULL, NULL,
-                    &cbBGThreadRunning, this );
+    m_ngSpice_Init( &cbSendChar, &cbSendStat, &cbControlledExit, NULL, NULL, &cbBGThreadRunning,
+                    this );
 
     // Load a custom spinit file, to fix the problem with loading .cm files
     // Switch to the executable directory, so the relative paths are correct
-    wxString cwd( wxGetCwd() );
+    wxString   cwd( wxGetCwd() );
     wxFileName exeDir( stdPaths.GetExecutablePath() );
     wxSetWorkingDirectory( exeDir.GetPath() );
 
@@ -516,15 +495,14 @@ void NGSPICE::init_dll()
         Command( "set __CMPATH=\"" + cmPath + "\"" );
 
     // Possible relative locations for spinit file
-    const vector<string> spiceinitPaths =
-    {
+    const vector<string> spiceinitPaths = {
         ".",
 #ifdef __WXMAC__
         stdPaths.GetPluginsDir().ToStdString() + "/sim/ngspice/scripts",
-        wxFileName( stdPaths.GetExecutablePath() ).GetPath().ToStdString() +
-                "/../../../../../Contents/PlugIns/sim/ngspice/scripts"
+        wxFileName( stdPaths.GetExecutablePath() ).GetPath().ToStdString()
+                + "/../../../../../Contents/PlugIns/sim/ngspice/scripts"
 #endif
-        "../share/kicad",
+                  "../share/kicad",
         "../share",
         "../../share/kicad",
         "../../share"
@@ -581,14 +559,13 @@ bool NGSPICE::loadSpinit( const string& aFileName )
 
 string NGSPICE::findCmPath() const
 {
-    const vector<string> cmPaths =
-    {
+    const vector<string> cmPaths = {
 #ifdef __WXMAC__
         "/Applications/ngspice/lib/ngspice",
         "Contents/Frameworks",
         wxStandardPaths::Get().GetPluginsDir().ToStdString() + "/sim/ngspice",
-        wxFileName( wxStandardPaths::Get().GetExecutablePath() ).GetPath().ToStdString() +
-                "/../../../../../Contents/PlugIns/sim/ngspice",
+        wxFileName( wxStandardPaths::Get().GetExecutablePath() ).GetPath().ToStdString()
+                + "/../../../../../Contents/PlugIns/sim/ngspice",
         "../Plugins/sim/ngspice",
 #endif
         "../lib/ngspice",
@@ -615,7 +592,7 @@ string NGSPICE::findCmPath() const
 bool NGSPICE::loadCodemodels( const string& aPath )
 {
     wxArrayString cmFiles;
-    size_t count = wxDir::GetAllFiles( aPath, &cmFiles );
+    size_t        count = wxDir::GetAllFiles( aPath, &cmFiles );
 
     for( const auto& cm : cmFiles )
         Command( "codemodel " + cm.ToStdString() );
@@ -632,7 +609,7 @@ int NGSPICE::cbSendChar( char* what, int id, void* user )
     {
         // strip stdout/stderr from the line
         if( ( strncasecmp( what, "stdout ", 7 ) == 0 )
-                || ( strncasecmp( what, "stderr ", 7 ) == 0 ) )
+            || ( strncasecmp( what, "stderr ", 7 ) == 0 ) )
             what += 7;
 
         sim->m_reporter->Report( what );
@@ -682,39 +659,38 @@ void NGSPICE::validate()
 
 bool NGSPICE::m_initialized = false;
 
-std::vector<double> NGSPICE::expandShortData(std::vector<double>& time_data, const char* signalName)
+std::vector<double> NGSPICE::ExpandShortData( std::vector<double>& aTimeData,
+                                              const char*          aSignalName )
 {
-
     std::vector<double> data_y;
-    data_y.reserve(time_data.size());
+    data_y.reserve( aTimeData.size() );
 
     // remove V( and ) from signal name
-    wxString pureName(signalName);
-    pureName=pureName.SubString(2, pureName.size()-2).Lower();
+    wxString pureName( aSignalName );
+    pureName = pureName.SubString( 2, pureName.size() - 2 ).Lower();
 
-    evt_shared_data* evt = GetEvtNodeInfo(pureName.c_str());
-    double lastTime = time_data[time_data.size()-1];
-    if (evt && evt->num_steps && evt->evt_dect)
+    evt_shared_data* evt = GetEvtNodeInfo( pureName.c_str() );
+    double           lastTime = aTimeData[aTimeData.size() - 1];
+    if( evt && evt->num_steps && evt->evt_dect )
     {
         evt_data** dt = evt->evt_dect;
-        int index = 0;
-        double val;
-        double endtime;
-        for (int n=0; n < evt->num_steps; n++)
+        int        index = 0;
+        double     val;
+        double     endtime;
+        for( int n = 0; n < evt->num_steps; n++ )
         {
-            val =  (dt[n]->node_value[0] == '0') ? 0.0 : 1.0;
-            if ((n < evt->num_steps-1) && (dt[n+1]->step < lastTime ))
-                endtime =   dt[n+1]->step  ;
+            val = ( dt[n]->node_value[0] == '0' ) ? 0.0 : 1.0;
+            if( ( n < evt->num_steps - 1 ) && ( dt[n + 1]->step < lastTime ) )
+                endtime = dt[n + 1]->step;
             else
                 endtime = lastTime;
-            while (time_data[index] < endtime)
+            while( aTimeData[index] < endtime )
             {
-                data_y.push_back( val);
+                data_y.push_back( val );
                 index++;
             }
         }
-        data_y.push_back( val);
-
+        data_y.push_back( val );
     }
     return data_y;
 }
