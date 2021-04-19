@@ -109,6 +109,9 @@ protected:
     /// The schematic's CurrentSheet when we entered.  Restore on exiting.
     SCH_SHEET_PATH        m_savedCurrentSheet;
 
+    /// Regard each device in a multi-device package as a separate device when making a netlist
+    bool m_splitMultiDevices = false;
+
     /**
      * Find a symbol from the DrawList and builds its pin list in m_sortedSymbolPinList.
      *
