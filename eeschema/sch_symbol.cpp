@@ -34,7 +34,7 @@
 #include <schematic.h>
 #include <trace_helpers.h>
 #include <trigo.h>
-
+#include <refdes_utils.h>
 
 /**
  * Convert a wxString to UTF8 and replace any control characters with a ~,
@@ -124,11 +124,10 @@ SCH_COMPONENT::SCH_COMPONENT( const LIB_PART& aPart, const LIB_ID& aLibId,
                   true, /* reset ref */
                   true /* reset other fields */ );
 
-    // Update the reference -- just the prefix for now.
+    m_prefix = UTIL::GetRefDesPrefix( m_part->GetReferenceField().GetText() );
+
     if( aSheet )
-        SetRef( aSheet, m_part->GetReferenceField().GetText() + wxT( "?" ) );
-    else
-        m_prefix = m_part->GetReferenceField().GetText() + wxT( "?" );
+        SetRef( aSheet, UTIL::GetRefDesUnannotated( m_prefix ) );
 
     // Inherit the include in bill of materials and board netlist settings from library symbol.
     m_inBom = aPart.GetIncludeInBom();
@@ -454,7 +453,7 @@ const wxString SCH_COMPONENT::GetRef( const SCH_SHEET_PATH* sheet, bool aInclude
     }
 
     if( ref.IsEmpty() )
-        ref = m_prefix;
+        ref = UTIL::GetRefDesUnannotated( m_prefix );
 
     if( aIncludeUnit && GetUnitCount() > 1 )
         ref += LIB_PART::SubReference( GetUnit() );
@@ -465,17 +464,7 @@ const wxString SCH_COMPONENT::GetRef( const SCH_SHEET_PATH* sheet, bool aInclude
 
 bool SCH_COMPONENT::IsReferenceStringValid( const wxString& aReferenceString )
 {
-    wxString text = aReferenceString;
-    bool ok = true;
-
-    // Try to unannotate this reference
-    while( !text.IsEmpty() && ( text.Last() == '?' || wxIsdigit( text.Last() ) ) )
-        text.RemoveLast();
-
-    if( text.IsEmpty() )
-        ok = false;
-
-    return ok;
+    return !UTIL::GetRefDesPrefix( aReferenceString ).IsEmpty();
 }
 
 
@@ -502,32 +491,13 @@ void SCH_COMPONENT::SetRef( const SCH_SHEET_PATH* sheet, const wxString& ref )
 
     SCH_FIELD* rf = GetField( REFERENCE_FIELD );
 
-    // @todo Should we really be checking for what is a "reasonable" position?
-    if( rf->GetText().IsEmpty()
-      || ( abs( rf->GetTextPos().x - m_pos.x ) +
-           abs( rf->GetTextPos().y - m_pos.y ) > Mils2iu( 10000 ) ) )
-    {
-        // move it to a reasonable position
-        rf->SetTextPos( m_pos + wxPoint( Mils2iu( 50 ), Mils2iu( 50 ) ) );
-    }
-
     rf->SetText( ref );  // for drawing.
 
     // Reinit the m_prefix member if needed
-    wxString prefix = ref;
+    m_prefix = UTIL::GetRefDesPrefix( ref );
 
-    if( IsReferenceStringValid( prefix ) )
-    {
-        while( prefix.Last() == '?' || wxIsdigit( prefix.Last() ) )
-            prefix.RemoveLast();
-    }
-    else
-    {
-        prefix = wxT( "U" );        // Set to default ref prefix
-    }
-
-    if( m_prefix != prefix )
-        m_prefix = prefix;
+    if( m_prefix.IsEmpty() )
+        m_prefix = wxT( "U" );
 
     // Power symbols have references starting with # and are not included in netlists
     m_isInNetlist = ! ref.StartsWith( wxT( "#" ) );
@@ -579,7 +549,7 @@ void SCH_COMPONENT::SetUnitSelection( const SCH_SHEET_PATH* aSheet, int aUnitSel
     }
 
     // didn't find it; better add it
-    AddHierarchicalReference( path, m_prefix, aUnitSelection );
+    AddHierarchicalReference( path, UTIL::GetRefDesUnannotated( m_prefix ), aUnitSelection );
 }
 
 
@@ -636,7 +606,8 @@ void SCH_COMPONENT::SetValue( const SCH_SHEET_PATH* sheet, const wxString& aValu
     }
 
     // didn't find it; better add it
-    AddHierarchicalReference( path, m_prefix, m_unit, aValue, wxEmptyString );
+    AddHierarchicalReference( path, UTIL::GetRefDesUnannotated( m_prefix ), m_unit,
+                              aValue, wxEmptyString );
 }
 
 
@@ -686,7 +657,8 @@ void SCH_COMPONENT::SetFootprint( const SCH_SHEET_PATH* sheet, const wxString& a
     }
 
     // didn't find it; better add it
-    AddHierarchicalReference( path, m_prefix, m_unit, wxEmptyString, aFootprint );
+    AddHierarchicalReference( path, UTIL::GetRefDesUnannotated( m_prefix ), m_unit,
+                              wxEmptyString, aFootprint );
 }
 
 
@@ -1035,19 +1007,8 @@ bool SCH_COMPONENT::ResolveTextVar( wxString* token, int aDepth ) const
 
 void SCH_COMPONENT::ClearAnnotation( const SCH_SHEET_PATH* aSheetPath )
 {
-    // Build a reference with no annotation,
-    // i.e. a reference ended by only one '?'
-    wxString defRef = m_prefix;
-
-    if( !IsReferenceStringValid( defRef ) )
-    {   // This is a malformed reference: reinit this reference
-        m_prefix = defRef = wxT("U");        // Set to default ref prefix
-    }
-
-    while( defRef.Last() == '?' )
-        defRef.RemoveLast();
-
-    defRef.Append( wxT( "?" ) );
+    // Build a reference with no annotation, i.e. a reference ending with a single '?'
+    wxString defRef = UTIL::GetRefDesUnannotated( m_prefix );
 
     if( aSheetPath )
     {
