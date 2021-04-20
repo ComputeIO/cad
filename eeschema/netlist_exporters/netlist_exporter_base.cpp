@@ -69,7 +69,7 @@ wxString NETLIST_EXPORTER_BASE::MakeCommandLine( const wxString& aFormatString,
 
     return ret;
 }
-
+ 
 
 SCH_COMPONENT* NETLIST_EXPORTER_BASE::findNextSymbol( EDA_ITEM* aItem, SCH_SHEET_PATH* aSheetPath )
 {
@@ -83,7 +83,7 @@ SCH_COMPONENT* NETLIST_EXPORTER_BASE::findNextSymbol( EDA_ITEM* aItem, SCH_SHEET
 
     // Power symbols and other symbols which have the reference starting with "#" are not
     // included in netlist (pseudo or virtual symbols)
-    ref = symbol->GetRef( aSheetPath );
+    ref = symbol->GetRef( aSheetPath, m_splitMultiDevices );
 
     if( ref[0] == wxChar( '#' ) )
         return nullptr;
@@ -97,7 +97,7 @@ SCH_COMPONENT* NETLIST_EXPORTER_BASE::findNextSymbol( EDA_ITEM* aItem, SCH_SHEET
         return nullptr;
 
     // If component is a "multi parts per package" type
-    if( symbol->GetPartRef()->GetUnitCount() > 1 )
+    if(!m_splitMultiDevices && symbol->GetPartRef()->GetUnitCount() > 1 )
     {
         // test if this reference has already been processed, and if so skip
         if( m_referencesAlreadyFound.Lookup( ref ) )
@@ -121,8 +121,8 @@ static bool sortPinsByNum( PIN_INFO& aPin1, PIN_INFO& aPin2 )
 
 void NETLIST_EXPORTER_BASE::CreatePinList( SCH_COMPONENT* aSymbol, SCH_SHEET_PATH* aSheetPath )
 {
-    wxString ref( aSymbol->GetRef( aSheetPath ) );
-
+    wxString ref = aSymbol->GetRef( aSheetPath, m_splitMultiDevices ) ;
+   
     // Power symbols and other symbols which have the reference starting with "#" are not
     // included in netlist (pseudo or virtual symbols)
 
@@ -161,7 +161,7 @@ void NETLIST_EXPORTER_BASE::CreatePinList( SCH_COMPONENT* aSymbol, SCH_SHEET_PAT
                 // Skip unconnected pins
                 CONNECTION_SUBGRAPH* sg = graph->FindSubgraphByName( netName, *aSheetPath );
 
-                if( !sg || sg->m_no_connect || sg->m_items.size() < 2 )
+                if(!sg || ( !m_splitMultiDevices && (sg->m_no_connect || sg->m_items.size() < 2 )))
                     continue;
 
                 m_sortedSymbolPinList.emplace_back( pin->GetNumber(), netName );
@@ -216,7 +216,7 @@ void NETLIST_EXPORTER_BASE::eraseDuplicatePins()
 void NETLIST_EXPORTER_BASE::findAllUnitsOfSymbol( SCH_COMPONENT* aSymbol,
                                                   LIB_PART* aPart, SCH_SHEET_PATH* aSheetPath )
 {
-    wxString    ref = aSymbol->GetRef( aSheetPath );
+    wxString ref = aSymbol->GetRef( aSheetPath, m_splitMultiDevices );
     wxString    ref2;
 
     SCH_SHEET_LIST    sheetList = m_schematic->GetSheets();
@@ -230,7 +230,7 @@ void NETLIST_EXPORTER_BASE::findAllUnitsOfSymbol( SCH_COMPONENT* aSymbol,
         {
             SCH_COMPONENT* comp2 = static_cast<SCH_COMPONENT*>( item );
 
-            ref2 = comp2->GetRef( &sheet );
+            ref2 =  comp2->GetRef( &sheet, m_splitMultiDevices );
 
             if( ref2.CmpNoCase( ref ) != 0 )
                 continue;
@@ -244,7 +244,7 @@ void NETLIST_EXPORTER_BASE::findAllUnitsOfSymbol( SCH_COMPONENT* aSymbol,
                     // Skip unconnected pins
                     CONNECTION_SUBGRAPH* sg = graph->FindSubgraphByName( netName, sheet );
 
-                    if( !sg || sg->m_no_connect || sg->m_items.size() < 2 )
+                    if(!sg || ( !m_splitMultiDevices && (sg->m_no_connect || sg->m_items.size() < 2 )))
                         continue;
 
                     m_sortedSymbolPinList.emplace_back( pin->GetNumber(), netName );
