@@ -632,7 +632,7 @@ else()
     set( KICAD_DEMOS demos
         CACHE PATH "Location of KiCad demo files." FORCE )
 
-    # RPATH setttings for building shared libraries
+    # RPATH settings for building shared libraries
     set( CMAKE_MACOSX_RPATH FALSE )
 
     # Override default paths for fixup_bundle
@@ -844,12 +844,13 @@ if( KICAD_SCRIPTING OR KICAD_SCRIPTING_MODULES )
     endif()
 
     if( APPLE )
-        # relative path for python in bundle
-        set( PYTHON_LIB_DIR "python/site-packages" )
-        # install into bundle Frameworks folder
-        set( PYTHON_DEST "${OSX_BUNDLE_BUILD_LIB_DIR}/${PYTHON_LIB_DIR}"
+        set( OSX_BUNDLE_PYTHON_SITE_PACKAGES_DIR ${OSX_BUNDLE_LIB_DIR}/Python.framework/Versions/${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}/lib/python${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}/site-packages)
+        set( OSX_BUNDLE_INSTALL_PYTHON_SITE_PACKAGES_DIR "${OSX_BUNDLE_INSTALL_DIR}/${OSX_BUNDLE_PYTHON_SITE_PACKAGES_DIR}")
+        set( PYTHON_DEST "${OSX_BUNDLE_BUILD_DIR}/${OSX_BUNDLE_PYTHON_SITE_PACKAGES_DIR}"
             CACHE PATH "Python module install path."
             )
+        # change to add_compile_definitions() after minimum required CMake version is 3.12
+        set_property( DIRECTORY APPEND PROPERTY COMPILE_DEFINITIONS OSX_BUNDLE_PYTHON_SITE_PACKAGES_DIR="${OSX_BUNDLE_PYTHON_SITE_PACKAGES_DIR}")
     elseif( VCPKG_TOOLCHAIN )
         set( PYTHON_DEST "${CMAKE_INSTALL_PREFIX}/bin/Lib/site-packages"
             CACHE PATH "Python module install path."

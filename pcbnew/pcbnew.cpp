@@ -256,9 +256,9 @@ static bool scriptingSetup()
         pypath += wxT( ":" ) + wxString( wxGetenv("KICAD_PATH") );
     }
 
-    // Bundle wxPython folder (<kicad.app>/Contents/Frameworks/python/site-packages)
-    pypath += wxT( ":" ) + Pgm().GetExecutablePath() +
-              wxT( "Contents/Frameworks/python/site-packages" );
+    // OSX_BUNDLE_PYTHON_SITE_PACKAGES_DIR is provided via the build system.
+
+    pypath += wxT( ":" ) + Pgm().GetExecutablePath() + wxT( OSX_BUNDLE_PYTHON_SITE_PACKAGES_DIR );
 
     // Original content of $PYTHONPATH
     if( wxGetenv( wxT( "PYTHONPATH" ) ) != NULL )
@@ -269,6 +269,13 @@ static bool scriptingSetup()
     // set $PYTHONPATH
     wxSetEnv( "PYTHONPATH", pypath );
 
+    wxString pyhome;
+
+    pyhome += Pgm().GetExecutablePath() +
+              wxT( "Contents/Frameworks/Python.framework/Versions/Current" );
+
+    // set $PYTHONHOME
+    wxSetEnv( "PYTHONHOME", pyhome );
 #else
     wxString pypath;
 
