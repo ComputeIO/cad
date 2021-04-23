@@ -77,7 +77,8 @@ public:
      * @return bounding box width/height
      */
     VECTOR2D Draw( KIGFX::GAL* aGal, const UTF8& aText, const VECTOR2D& aPosition,
-                   const VECTOR2D& aOrigin, const EDA_ANGLE& aRotationAngle ) const override;
+                   const VECTOR2D& aOrigin, const EDA_ANGLE& aRotationAngle,
+                   double aLineSpacing ) const override;
 
     /**
      * Compute the boundary limits of aText (the bounding box of all shapes).
@@ -104,9 +105,10 @@ public:
      * Compute the distance (interline) between 2 lines of text (for multiline texts).
      *
      * @param aGlyphHeight is the height (vertical size) of the text.
+     * @param aLineSpacing is the line spacing multiplier (defaults to 1.0)
      * @return the interline.
      */
-    double GetInterline( double aGlyphHeight ) const override;
+    double GetInterline( double aGlyphHeight, double aLineSpacing = 1.0 ) const override;
 
     /**
      * Compute the X and Y size of a given text. The text is expected to be

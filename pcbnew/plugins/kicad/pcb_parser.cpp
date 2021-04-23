@@ -300,6 +300,11 @@ void PCB_PARSER::parseEDA_TEXT( EDA_TEXT* aText )
                     }
                     break;
 
+                case T_line_spacing:
+                    aText->SetLineSpacing( parseDouble( "line spacing" ) );
+                    NeedRIGHT();
+                    break;
+
                 case T_thickness:
                     aText->SetTextThickness( parseBoardUnits( "text thickness" ) );
                     NeedRIGHT();

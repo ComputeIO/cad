@@ -729,6 +729,7 @@ void BRDITEMS_PLOTTER::PlotPcbText( const PCB_TEXT* aText )
 
     m_plotter->SetCurrentLineWidth( thickness );
 
+#if 0
     if( aText->IsMultilineAllowed() )
     {
         std::vector<wxPoint> positions;
@@ -752,6 +753,9 @@ void BRDITEMS_PLOTTER::PlotPcbText( const PCB_TEXT* aText )
                          aText->GetVertJustify(), thickness, aText->IsItalic(), allow_bold,
                          false, aText->GetFont(), &gbr_metadata );
     }
+#else
+    m_plotter->Text( aText, color, &gbr_metadata );
+#endif
 }
 
 

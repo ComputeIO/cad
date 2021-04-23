@@ -39,8 +39,25 @@ TEXT_ATTRIBUTES::ORIENTATION TEXT_ATTRIBUTES::ReadOrientation( const EDA_ANGLE& 
 }
 
 
+TEXT_ATTRIBUTES::TEXT_ATTRIBUTES( const EDA_TEXT& aText )
+{
+    EDA_ANGLE angle( aText.GetTextAngleRadians(), EDA_ANGLE::RADIANS );
+    m_orientation = ReadOrientation( angle );
+    if( m_orientation == TEXT_ATTRIBUTES::FREE_ANGLE )
+    {
+        m_angle = angle;
+    }
+    SetHorizJustify( aText.GetHorizJustify() );
+    SetVertJustify( aText.GetVertJustify() );
+    SetBold( aText.IsBold() );
+    SetItalic( aText.IsItalic() );
+    SetMirrored( aText.IsMirrored() );
+    SetLineSpacing( aText.GetLineSpacing() );
+}
+
+
 TEXT_ATTRIBUTES::TEXT_ATTRIBUTES( const EDA_ANGLE& aAngle, EDA_TEXT_HJUSTIFY_T aHorizontalJustify,
-                                EDA_TEXT_VJUSTIFY_T aVerticalJustify )
+                                  EDA_TEXT_VJUSTIFY_T aVerticalJustify )
 {
     m_orientation = ReadOrientation( aAngle );
     if( m_orientation == TEXT_ATTRIBUTES::FREE_ANGLE )
@@ -237,7 +254,8 @@ void TEXT_ATTRIBUTES::SetVertJustify( EDA_TEXT_VJUSTIFY_T aVertJustify )
 }
 
 
-TEXT_ATTRIBUTES::HORIZONTAL_ALIGNMENT TEXT_ATTRIBUTES::ReadHorizontalAlignment( std::string aString )
+TEXT_ATTRIBUTES::HORIZONTAL_ALIGNMENT
+TEXT_ATTRIBUTES::ReadHorizontalAlignment( std::string aString )
 {
     const char& c = aString.at( 0 );
     if( c == 'R' || c == 'r' )

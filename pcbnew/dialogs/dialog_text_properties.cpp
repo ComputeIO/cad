@@ -36,6 +36,7 @@
 #include <wx/valnum.h>
 #include <math/util.h> // for KiROUND
 #include <wx/fontdlg.h>
+#include <wx/numformatter.h>
 
 #define OUTLINEFONT_DEBUG
 
@@ -421,6 +422,7 @@ bool DIALOG_TEXT_PROPERTIES::TransferDataToWindow()
     m_Visible->SetValue( m_edaText->IsVisible() );
     m_FontBold->SetValue( m_edaText->IsBold() );
     m_FontItalic->SetValue( m_edaText->IsItalic() );
+    m_FontLineSpacing->SetValue( wxNumberFormatter::ToString( m_edaText->GetLineSpacing(), 2 ) );
     EDA_TEXT_HJUSTIFY_T hJustify = m_edaText->GetHorizJustify();
     m_JustifyChoice->SetSelection( (int) hJustify + 1 );
     m_OrientValue = m_edaText->GetTextAngle();
@@ -500,9 +502,17 @@ bool DIALOG_TEXT_PROPERTIES::TransferDataFromWindow()
         m_edaText->SetTextThickness( maxPenWidth );
     }
 
+    double lineSpacing;
+    if( !m_FontLineSpacing->GetValue().ToDouble( &lineSpacing ) )
+    {
+        // error in reading line spacing, defaulting to 1.0
+        lineSpacing = 1.0;
+    }
+
     m_edaText->SetVisible( m_Visible->GetValue() );
     m_edaText->SetBold( m_FontBold->GetValue() );
     m_edaText->SetItalic( m_FontItalic->GetValue() );
+    m_edaText->SetLineSpacing( lineSpacing );
     m_OrientValue = m_orientation.GetDoubleValue();
     m_edaText->SetTextAngle( m_OrientValue );
     m_edaText->SetMirrored( m_Mirrored->GetValue() );

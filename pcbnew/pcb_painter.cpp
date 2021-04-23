@@ -368,7 +368,7 @@ COLOR4D PCB_RENDER_SETTINGS::GetColor( const VIEW_ITEM* aItem, int aLayer ) cons
         case LAYER_VIA_HOLES:
         case LAYER_VIA_HOLEWALLS:
             if( static_cast<const VIA*>( item )->GetViaType() == VIATYPE::BLIND_BURIED
-                    || static_cast<const VIA*>( item )->GetViaType() == VIATYPE::MICROVIA )
+                || static_cast<const VIA*>( item )->GetViaType() == VIATYPE::MICROVIA )
             {
                 // A blind or micro via's hole is active if it crosses the primary layer
                 if( static_cast<const VIA*>( item )->GetLayerSet().test( primary ) == 0 )
@@ -383,8 +383,7 @@ COLOR4D PCB_RENDER_SETTINGS::GetColor( const VIEW_ITEM* aItem, int aLayer ) cons
 
             break;
 
-        default:
-            break;
+        default: break;
         }
 
         if( !isActive )
@@ -1168,8 +1167,8 @@ void PCB_PAINTER::draw( const PAD* aPad, int aLayer )
 
                     // Use ERROR_INSIDE because it avoids Clipper and is therefore much faster.
                     aPad->TransformShapeWithClearanceToPolygon( polySet, ToLAYER_ID( aLayer ),
-                                                                clearance,
-                                                                bds.m_MaxError, ERROR_INSIDE );
+                                                                clearance, bds.m_MaxError,
+                                                                ERROR_INSIDE );
                     m_gal->DrawPolygon( polySet );
                 }
             }
@@ -1384,10 +1383,9 @@ void PCB_PAINTER::draw( const PCB_TEXT* aText, int aLayer )
     if( shownText.Length() == 0 )
         return;
 
-    const COLOR4D& color = m_pcbSettings.GetColor( aText, aText->GetLayer() );
-    //VECTOR2D position( aText->GetTextPos().x, aText->GetTextPos().y );
+    bool outlineMode = m_pcbSettings.m_sketchText || m_pcbSettings.m_sketchMode[aLayer];
 
-    if( m_pcbSettings.m_sketchText || m_pcbSettings.m_sketchMode[aLayer] )
+    if( outlineMode )
     {
         // Outline mode
         m_gal->SetLineWidth( m_pcbSettings.m_outlineWidth );
@@ -1398,14 +1396,31 @@ void PCB_PAINTER::draw( const PCB_TEXT* aText, int aLayer )
         m_gal->SetLineWidth( getLineThickness( aText->GetEffectiveTextPenWidth() ) );
     }
 
+    const COLOR4D& color = m_pcbSettings.GetColor( aText, aText->GetLayer() );
+    KIFONT::FONT*  font = aText->GetFont();
+
     m_gal->SetStrokeColor( color );
-    m_gal->SetIsFill( false );
-    m_gal->SetIsStroke( true );
+    m_gal->SetFillColor( color );
+    m_gal->SetIsFill( font->IsOutline() || !outlineMode );
+    m_gal->SetIsStroke( font->IsStroke() || outlineMode );
     m_gal->SetTextAttributes( aText );
 
-    //m_gal->StrokeText( shownText, position, aText->GetTextAngleRadians() );
-    aText->GetFont()->Draw( m_gal, shownText, aText->GetTextPos(), VECTOR2D( 0, 0 ),
-                            EDA_ANGLE( aText->GetTextAngleRadians(), EDA_ANGLE::RADIANS ) );
+    // TODO: make outline fonts respect outlineMode (currently always drawn filled)
+
+#if 0
+    font->Draw( m_gal, shownText, aText->GetTextPos(), VECTOR2D( 0, 0 ),
+                EDA_ANGLE( aText->GetTextAngleRadians(), EDA_ANGLE::RADIANS ) );
+#else
+    TEXT_ATTRIBUTES textAttributes( *aText );
+    textAttributes.SetSize( m_gal->GetGlyphSize() );
+    font->DrawText( m_gal, shownText, aText->GetTextPos(), textAttributes );
+#endif
+
+    //if( aLayer == LAYER_ANCHOR ) //if( aText->IsSelected() )
+    if( aText->IsSelected() )
+    {
+        drawAnchor( aText );
+    }
 }
 
 
@@ -1446,10 +1461,34 @@ void PCB_PAINTER::draw( const FP_TEXT* aText, int aLayer )
 }
 
 
+void PCB_PAINTER::drawAnchor( const EDA_ITEM* aItem )
+{
+    const COLOR4D color = m_pcbSettings.GetColor( aItem, LAYER_ANCHOR );
+
+    // Keep the size and width constant, not related to the scale because the anchor
+    // is just a marker on screen
+    double anchorSize = 5.0 / m_gal->GetWorldScale();      // 5 pixels size
+    double anchorThickness = 1.0 / m_gal->GetWorldScale(); // 1 pixels width
+
+    // Draw anchor
+    m_gal->SetIsFill( false );
+    m_gal->SetIsStroke( true );
+    m_gal->SetStrokeColor( color );
+    m_gal->SetLineWidth( anchorThickness );
+
+    VECTOR2D center = aItem->GetPosition();
+    m_gal->DrawLine( center - VECTOR2D( anchorSize, 0 ), center + VECTOR2D( anchorSize, 0 ) );
+    m_gal->DrawLine( center - VECTOR2D( 0, anchorSize ), center + VECTOR2D( 0, anchorSize ) );
+}
+
+
 void PCB_PAINTER::draw( const FOOTPRINT* aFootprint, int aLayer )
 {
     if( aLayer == LAYER_ANCHOR )
     {
+#if 1
+        drawAnchor( aFootprint );
+#else
         const COLOR4D color = m_pcbSettings.GetColor( aFootprint, aLayer );
 
         // Keep the size and width constant, not related to the scale because the anchor
@@ -1466,6 +1505,7 @@ void PCB_PAINTER::draw( const FOOTPRINT* aFootprint, int aLayer )
         VECTOR2D center = aFootprint->GetPosition();
         m_gal->DrawLine( center - VECTOR2D( anchorSize, 0 ), center + VECTOR2D( anchorSize, 0 ) );
         m_gal->DrawLine( center - VECTOR2D( 0, anchorSize ), center + VECTOR2D( 0, anchorSize ) );
+#endif
 
 #if 0 // For debug purpose only: draw the footing bounding box
         double bboxThickness = 1.0 / m_gal->GetWorldScale();

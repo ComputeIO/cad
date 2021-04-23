@@ -27,9 +27,9 @@ class PCB_LAYER_BOX_SELECTOR;
 #include <wx/bitmap.h>
 #include <wx/image.h>
 #include <wx/icon.h>
-#include <wx/combobox.h>
 #include <wx/bmpcbox.h>
 #include <wx/choice.h>
+#include <wx/combobox.h>
 #include <wx/statline.h>
 #include <wx/dialog.h>
 
@@ -56,14 +56,14 @@ class DIALOG_TEXT_PROPERTIES_BASE : public DIALOG_SHIM
 		wxBoxSizer* m_FontProperties;
 		wxCheckBox* m_FontBold;
 		wxCheckBox* m_FontItalic;
-		wxStaticText* m_FontLineSpacingLabel;
-		wxComboBox* m_FontLineSpacing;
 		wxStaticText* m_LayerLabel;
 		PCB_LAYER_BOX_SELECTOR* m_LayerSelectionCtrl;
 		wxCheckBox* m_Visible;
 		wxStaticText* m_SizeXLabel;
 		wxTextCtrl* m_SizeXCtrl;
 		wxStaticText* m_SizeXUnits;
+		wxStaticText* m_FontLineSpacingLabel;
+		wxTextCtrl* m_FontLineSpacing;
 		wxStaticText* m_SizeYLabel;
 		wxTextCtrl* m_SizeYCtrl;
 		wxStaticText* m_SizeYUnits;

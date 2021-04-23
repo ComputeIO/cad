@@ -362,16 +362,11 @@ bool STROKE_FONT::loadHersheyFont( const wxString& aFontName )
 }
 
 
-double STROKE_FONT::GetInterline( double aGlyphHeight ) const
+double STROKE_FONT::GetInterline( double aGlyphHeight, double aLineSpacing ) const
 {
     // Do not add the glyph thickness to the interline.  This makes bold text line-spacing
     // different from normal text, which is poor typography.
-    double ret = aGlyphHeight * INTERLINE_PITCH_RATIO;
-#ifdef FOOBAR //DEBUG
-    std::cerr << "STROKE_FONT::GetInterline( " << aGlyphHeight << " ) const --> " << ret
-              << std::endl;
-#endif
-    return ret;
+    return ( aGlyphHeight * aLineSpacing * INTERLINE_PITCH_RATIO );
 }
 
 
@@ -394,7 +389,8 @@ BOX2D STROKE_FONT::computeBoundingBox( const GLYPH* aGLYPH, double aGlyphWidth )
 
 
 VECTOR2D STROKE_FONT::Draw( KIGFX::GAL* aGal, const UTF8& aText, const VECTOR2D& aPosition,
-                            const VECTOR2D& aOrigin, const EDA_ANGLE& aRotationAngle ) const
+                            const VECTOR2D& aOrigin, const EDA_ANGLE& aRotationAngle,
+                            double aLineSpacing ) const
 {
     if( aText.empty() )
         return VECTOR2D( 0.0, 0.0 );
@@ -501,7 +497,7 @@ VECTOR2D STROKE_FONT::Draw( KIGFX::GAL* aGal, const UTF8& aText, const VECTOR2D&
 
     int n = strings_list.Count();
     //double lineHeight = aGal->GetGlyphSize().y + GetInterline( aGal->GetGlyphSize().y );
-    double lineHeight = GetInterline( aGal->GetGlyphSize().y );
+    double lineHeight = GetInterline( aGal->GetGlyphSize().y, aLineSpacing );
 
     // multiline text alignment needs a lot more work
     double xAdjust = 0.0;

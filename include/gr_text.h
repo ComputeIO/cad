@@ -32,7 +32,7 @@
 #define __INCLUDE__DRAWTXT_H__ 1
 
 #include <eda_item.h>
-#include <eda_text.h>               // EDA_TEXT_HJUSTIFY_T and EDA_TEXT_VJUSTIFY_T
+#include <eda_text.h> // EDA_TEXT_HJUSTIFY_T and EDA_TEXT_VJUSTIFY_T
 
 /**
  * Minimum dimension in pixel for drawing/no drawing a text used in Pcbnew to decide to
@@ -40,7 +40,7 @@
  *
  * When a text height is smaller than MIN_TEXT_SIZE, it is not drawn by Pcbnew.
  */
-#define MIN_TEXT_SIZE   5
+#define MIN_TEXT_SIZE 5
 
 /* Absolute minimum dimension in pixel to draw a text as text or a line
  * When a text height is smaller than MIN_DRAWABLE_TEXT_SIZE,
@@ -62,9 +62,9 @@ class PLOTTER;
  * @param aBold true if text accept bold pen size.
  * @return the max pen size allowed.
  */
-int Clamp_Text_PenSize( int aPenSize, int aSize, bool aBold = true );
+int   Clamp_Text_PenSize( int aPenSize, int aSize, bool aBold = true );
 float Clamp_Text_PenSize( float aPenSize, int aSize, bool aBold = true );
-int Clamp_Text_PenSize( int aPenSize, wxSize aSize, bool aBold = true );
+int   Clamp_Text_PenSize( int aPenSize, wxSize aSize, bool aBold = true );
 
 /**
  * @param aTextSize the char size (height or width).
@@ -110,12 +110,28 @@ int GraphicTextWidth( const wxString& aText, const wxSize& aSize, bool italic, b
  *  @param aPlotter = a pointer to a PLOTTER instance, when this function is used to plot
  *                    the text. NULL to draw this text.
  */
-void GRText( wxDC* aDC, const wxPoint& aPos, COLOR4D aColor, const wxString& aText,
+void GRText( wxDC* aDC, const wxPoint& aPos, const COLOR4D& aColor, const wxString& aText,
              double aOrient, const wxSize& aSize, enum EDA_TEXT_HJUSTIFY_T aH_justify,
              enum EDA_TEXT_VJUSTIFY_T aV_justify, int aWidth, bool aItalic, bool aBold,
-             void (*aCallback)( int x0, int y0, int xf, int yf, void* aData ) = nullptr,
+             void ( *aCallback )( int x0, int y0, int xf, int yf, void* aData ) = nullptr,
              void* aCallbackData = nullptr, PLOTTER* aPlotter = nullptr );
 
+/**
+ * Draw a graphic PCB text item.
+ *
+ *  @param aText text item to draw.
+ *  @param aColor (COLOR4D) = text color.
+ *  @param aCallback ( int x0, int y0, int xf, int yf, void* aData ) is a function called
+ *                   (if non null) to draw each segment. used to draw 3D texts or for plotting.
+ *                   NULL for normal drawings.
+ *  @param aCallbackData is the auxiliary parameter aData for the callback function.
+ *                       This can be nullptr if no auxiliary parameter is needed.
+ *  @param aPlotter = a pointer to a PLOTTER instance, when this function is used to plot
+ *                    the text. NULL to draw this text.
+ */
+void GRText( const EDA_TEXT* aText, const COLOR4D& aColor,
+             void ( *aCallback )( int x0, int y0, int xf, int yf, void* aData ) = nullptr,
+             void* aCallbackData = nullptr, PLOTTER* aPlotter = nullptr );
 
 /**
  * Draw graphic text with a border so that it can be read on different backgrounds.
@@ -123,11 +139,11 @@ void GRText( wxDC* aDC, const wxPoint& aPos, COLOR4D aColor, const wxString& aTe
  * See GRText for most of the parameters.  If \a aBgColor is a dark color text is drawn
  * in \a aColor2 with \a aColor1 border.  Otherwise colors are swapped.
  */
-void GRHaloText( wxDC* aDC, const wxPoint& aPos, COLOR4D aBgColor, COLOR4D aColor1,
-                 COLOR4D aColor2, const wxString& aText, double aOrient, const wxSize &aSize,
+void GRHaloText( wxDC* aDC, const wxPoint& aPos, COLOR4D aBgColor, COLOR4D aColor1, COLOR4D aColor2,
+                 const wxString& aText, double aOrient, const wxSize& aSize,
                  enum EDA_TEXT_HJUSTIFY_T aH_justify, enum EDA_TEXT_VJUSTIFY_T aV_justify,
                  int aWidth, bool aItalic, bool aBold,
-                 void (*aCallback)( int x0, int y0, int xf, int yf, void* aData ) = nullptr,
+                 void ( *aCallback )( int x0, int y0, int xf, int yf, void* aData ) = nullptr,
                  void* aCallbackData = nullptr, PLOTTER* aPlotter = nullptr );
 
 #endif /* __INCLUDE__DRAWTXT_H__ */

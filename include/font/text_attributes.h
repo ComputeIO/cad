@@ -207,6 +207,10 @@ public:
                      EDA_TEXT_VJUSTIFY_T aVerticalJustify );
 
 
+    TEXT_ATTRIBUTES( const EDA_TEXT& aText );
+
+    TEXT_ATTRIBUTES( const EDA_TEXT* aText ) : TEXT_ATTRIBUTES( *aText ) {}
+
     TEXT_ATTRIBUTES() :
             m_orientation( TEXT_ATTRIBUTES::ANGLE_0 ),
             m_horizontal_alignment( TEXT_ATTRIBUTES::H_LEFT ),
@@ -624,9 +628,25 @@ public:
     bool IsMirrored() const { return m_mirrored; }
 
     /**
+     * Set line spacing.
+     * @return old line spacing
+     */
+    double SetLineSpacing( double aLineSpacing )
+    {
+        std::swap( aLineSpacing, m_line_spacing );
+        return aLineSpacing;
+    }
+
+    /**
+     * Get line spacing.
+     * @return line spacing
+     */
+    double GetLineSpacing() const { return m_line_spacing; }
+
+    /**
      * Set font size.
      * @param aSize new font size.
-     * @return old font size.
+     * @return old font size
      */
     VECTOR2D SetSize( const VECTOR2D& aSize )
     {
@@ -667,6 +687,7 @@ private:
     HORIZONTAL_ALIGNMENT m_horizontal_alignment;
     VERTICAL_ALIGNMENT   m_vertical_alignment;
     EDA_ANGLE            m_angle;
+    double               m_line_spacing = 1.0;
     int                  m_stroke_width = 0;
     bool                 m_italic = false;
     bool                 m_bold = false;
@@ -697,8 +718,9 @@ inline std::ostream& operator<<( std::ostream&                              os,
 inline std::ostream& operator<<( std::ostream& os, const TEXT_ATTRIBUTES& attr )
 {
     os << "(attributes " << attr.GetHorizontalAlignment() << " " << attr.GetVerticalAlignment()
-       << " " << attr.GetAngle() << " (size " << attr.GetSize() << ") "
-       << "(stroke_width " << attr.GetStrokeWidth() << ")" << ( attr.IsBold() ? " bold" : "" )
+       << " " << attr.GetAngle() << " (size " << attr.GetSize() << ")"
+       << " (line_spacing " << attr.GetLineSpacing() << ")"
+       << " (stroke_width " << attr.GetStrokeWidth() << ")" << ( attr.IsBold() ? " bold" : "" )
        << ( attr.IsItalic() ? " italic" : "" ) << ( attr.IsMirrored() ? " mirrored" : "" )
        << ( attr.IsFlipY() ? " flipY" : "" ) << ")";
 

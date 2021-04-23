@@ -100,7 +100,7 @@ struct TEXT_EFFECTS
 {
     TEXT_EFFECTS( int aSetOfBits = 0 ) :
             bits( aSetOfBits ), hjustify( GR_TEXT_HJUSTIFY_CENTER ),
-            vjustify( GR_TEXT_VJUSTIFY_CENTER ), penwidth( 0 ), angle( 0.0 )
+            vjustify( GR_TEXT_VJUSTIFY_CENTER ), penwidth( 0 ), angle( 0.0 ), lineSpacing( 1.0 )
     {
     }
 
@@ -110,6 +110,7 @@ struct TEXT_EFFECTS
     wxSize      size;
     int         penwidth;
     double      angle; ///< now: 0.1 degrees; future: degrees
+    double      lineSpacing;
     wxPoint     pos;
 
     void Bit( int aBit, bool aValue ) { aValue ? bits |= ( 1 << aBit ) : bits &= ~( 1 << aBit ); }
@@ -247,6 +248,9 @@ public:
     bool Replace( const wxFindReplaceData& aSearchData );
 
     bool IsDefaultFormatting() const;
+
+    void   SetLineSpacing( double aLineSpacing ) { m_e.lineSpacing = aLineSpacing; }
+    double GetLineSpacing() const { return m_e.lineSpacing; }
 
     void          SetTextSize( const wxSize& aNewSize ) { m_e.size = aNewSize; }
     const wxSize& GetTextSize() const { return m_e.size; }

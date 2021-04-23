@@ -177,10 +177,12 @@ FT_Error OUTLINE_FONT::loadFace( const wxString& aFontFileName )
  * @param aAngle is the text rotation angle
  */
 VECTOR2D OUTLINE_FONT::Draw( KIGFX::GAL* aGal, const UTF8& aText, const VECTOR2D& aPosition,
-                             const VECTOR2D& aOrigin, const EDA_ANGLE& aAngle ) const
+                             const VECTOR2D& aOrigin, const EDA_ANGLE& aAngle,
+                             double aLineSpacing ) const
 {
-#ifdef OUTLINEFONT_DEBUG
+#ifdef DEBUG
     std::cerr << "OUTLINE_FONT::Draw( aGal, \"" << aText << "\", " << aPosition << ", " << aAngle
+              << ", " << aLineSpacing
               << " ) const\n";
     bool   drawDebugShapes = false;
     double dbg = 200000;
@@ -225,13 +227,41 @@ VECTOR2D OUTLINE_FONT::Draw( KIGFX::GAL* aGal, const UTF8& aText, const VECTOR2D
         aGal->Rotate( aAngle.Invert().AsRadians() );
     }
 
-    // angle is 0 as we have already rotated by -aAngle
-    VECTOR2D bbox = drawSingleLineText( aGal, aText, wxPoint( 0, 0 ), EDA_ANGLE() );
+    // Split multiline strings into separate ones and draw them line by line
+    wxArrayString        strings_list;
+    std::vector<wxPoint> positions;
+
+    wxStringSplit( aText, strings_list, '\n' );
+    int n = strings_list.Count();
+
+    VECTOR2D boundingBox( 0, 0 );
+    for( int i = 0; i < n; i++ )
+    {
+        // angle is 0 as we have already rotated by -aAngle
+        VECTOR2D lineBoundingBox =
+                drawSingleLineText( aGal, strings_list[i], wxPoint( 0, 0 ), EDA_ANGLE() );
+
+        // expand bounding box of whole text
+        boundingBox.x = std::max( boundingBox.x, lineBoundingBox.x );
+
+        if( aGal )
+        {
+            //double lineHeight = GetInterline( aGal->GetGlyphSize().y ); // lineBoundingBox.y;
+
+            // TODO: interlineScaler is determined empirically; not sure how
+            // to determine it otherwise
+            int    interlineScaler = mFaceScaler * 32;
+            //double lineHeight = interlineScaler * GetInterline( lineBoundingBox.y, aLineSpacing );
+            double lineHeight = GetInterline( aGal->GetGlyphSize().y, aLineSpacing );
+            aGal->Translate( VECTOR2D( 0, lineHeight ) );
+            boundingBox.y += lineHeight;
+        }
+    }
 
     if( aGal )
         aGal->Restore();
 
-    return bbox;
+    return boundingBox;
 }
 
 
@@ -312,17 +342,11 @@ double OUTLINE_FONT::ComputeOverbarVerticalPosition( double aGlyphHeight ) const
  * @param aGlyphHeight is the height (vertical size) of the text.
  * @return the interline.
  */
-double OUTLINE_FONT::GetInterline( double aGlyphHeight ) const
+double OUTLINE_FONT::GetInterline( double aGlyphHeight, double aLineSpacing ) const
 {
-    if( aGlyphHeight < 0 )
-    {
-        return ( mFace->size->metrics.ascender - mFace->size->metrics.descender ) >> 6;
-    }
-    else
-    {
-        // TODO
-        return aGlyphHeight;
-    }
+    //return GetFace()->height;
+    //return ( GetFace()->size->metrics.ascender - GetFace()->size->metrics.descender ) >> 6;
+    return ( aLineSpacing * aGlyphHeight * ( GetFace()->height / GetFace()->units_per_EM ) );
 }
 
 
@@ -428,6 +452,7 @@ VECTOR2D OUTLINE_FONT::drawMarkup( KIGFX::GAL* aGal, const MARKUP::MARKUP_NODE& 
                 default: yAdjust = lineHeight / 2; break;
                 }
 
+#if 0//do not adjust as getLinePositions does this already
                 VECTOR2D adjustVector( xAdjust, yAdjust );
 #ifdef OUTLINEFONT_DEBUG
                 std::cerr << "Adjusting position by " << adjustVector << " H"
@@ -435,6 +460,7 @@ VECTOR2D OUTLINE_FONT::drawMarkup( KIGFX::GAL* aGal, const MARKUP::MARKUP_NODE& 
                           << " lineheight " << lineHeight << std::endl;
 #endif
                 aGal->Translate( VECTOR2D( xAdjust, yAdjust ) );
+#endif
 
                 for( auto glyph : glyphs )
                     aGal->DrawGlyph( glyph );
@@ -602,21 +628,18 @@ BOX2I OUTLINE_FONT::getBoundingBox( const std::vector<SHAPE_POLY_SET>& aGlyphs )
 }
 
 
-VECTOR2I OUTLINE_FONT::GetLinesAsPolygon( std::vector<SHAPE_POLY_SET>& aGlyphs, const UTF8& aText,
-                                          const VECTOR2D& aGlyphSize, const wxPoint& aPosition,
-                                          const TEXT_ATTRIBUTES& aAttributes, bool aIsMirrored,
-                                          TEXT_STYLE_FLAGS aTextStyle ) const
+VECTOR2I OUTLINE_FONT::GetLinesAsPolygon( std::vector<SHAPE_POLY_SET>& aGlyphs,
+                                          const EDA_TEXT*              aText ) const
 {
     wxArrayString         strings;
     std::vector<wxPoint>  positions;
     int                   n;
     VECTOR2I              ret;
     std::vector<VECTOR2D> boundingBoxes;
+    TEXT_ATTRIBUTES       attributes( aText );
 
-    wxPoint thePosition( aPosition ); //(0,0);
-
-    getLinePositions( aText, thePosition, strings, positions, n, boundingBoxes, aGlyphSize,
-                      aAttributes, aAttributes.GetAngle() );
+    getLinePositions( aText->GetShownText(), aText->GetTextPos(), strings, positions, n,
+                      boundingBoxes, aText->GetTextSize(), attributes, attributes.GetAngle() );
 
     for( int i = 0; i < n; i++ )
     {
@@ -628,40 +651,42 @@ VECTOR2I OUTLINE_FONT::GetLinesAsPolygon( std::vector<SHAPE_POLY_SET>& aGlyphs, 
         //VECTOR2D position( 0, 0 ); //position(aPosition);
         //drawMarkup( aGal, markupRoot, position, aAngle );
 
-        ret = drawMarkup( lineGlyphs, markupRoot, positions[i], aGlyphSize, aIsMirrored,
-                          aAttributes.GetAngle() );
+        ret = drawMarkup( lineGlyphs, markupRoot, positions[i], aText->GetTextSize(),
+                          aText->IsMirrored(), attributes.GetAngle() );
 
         BOX2I lineBoundingBox = getBoundingBox( lineGlyphs );
         int   textWidth = lineBoundingBox.GetWidth();
 
         int xAdjust = 0;
         int yAdjust = 0;
-        switch( aAttributes.GetHorizontalAlignment() )
+#if 0//do not adjust here, getLinePositions already does that
+        switch( attributes.GetHorizontalAlignment() )
         {
         case TEXT_ATTRIBUTES::H_LEFT: break;
         case TEXT_ATTRIBUTES::H_RIGHT: xAdjust = textWidth; break;
         case TEXT_ATTRIBUTES::H_CENTER:
-        default: xAdjust = textWidth; // / 2;
+        default: xAdjust = textWidth / 2;
         }
 
         int textHeight = lineBoundingBox.GetHeight();
-        switch( aAttributes.GetVerticalAlignment() )
+        switch( attributes.GetVerticalAlignment() )
         {
         case TEXT_ATTRIBUTES::V_TOP: yAdjust = textHeight / 2; break;
         case TEXT_ATTRIBUTES::V_BOTTOM: break;
         case TEXT_ATTRIBUTES::V_CENTER:
         default: yAdjust = -textHeight / 2; break;
         }
+#endif
 
-        int xMirrorFactor = aIsMirrored ? 1 : -1;
+        int xMirrorFactor = aText->IsMirrored() ? 1 : -1;
 #if 1
         VECTOR2I adjustVector( xMirrorFactor * xAdjust, yAdjust );
 #else
         VECTOR2I adjustVector( 0, 0 );
 #endif
-#ifdef OUTLINEFONT_DEBUG
-        std::cerr << "adjusting H" << aAttributes.GetHorizontalAlignment() << " V"
-                  << aAttributes.GetVerticalAlignment() << " by " << adjustVector << std::endl;
+#ifdef DEBUG
+        std::cerr << "adjusting H" << attributes.GetHorizontalAlignment() << " V"
+                  << attributes.GetVerticalAlignment() << " by " << adjustVector << std::endl;
 #endif
         for( auto glyph : lineGlyphs )
         {
@@ -670,7 +695,7 @@ VECTOR2I OUTLINE_FONT::GetLinesAsPolygon( std::vector<SHAPE_POLY_SET>& aGlyphs, 
         }
 #else
         ret = GetTextAsPolygon( aGlyphs, strings.Item( i ), aGlyphSize, positions[i],
-                                aAttributes.GetAngle(), aIsMirrored, aTextStyle );
+                                attributes.GetAngle(), aIsMirrored, aTextStyle );
 #endif
     }
     return ret;

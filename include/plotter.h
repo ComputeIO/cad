@@ -400,6 +400,8 @@ public:
                        bool aMultilineAllowed = false, KIFONT::FONT* aFont = nullptr,
                        void* aData = NULL );
 
+    virtual void Text( const EDA_TEXT* aText, const COLOR4D aColor, void* aData = nullptr );
+
     /**
      * Draw a marker (used for the drill map)
      */

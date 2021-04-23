@@ -117,9 +117,6 @@ public:
     virtual bool LoadFont( const wxString& aFontName = "", bool aBold = false,
                            bool aItalic = false ) = 0;
 
-    virtual void DrawText( KIGFX::GAL* aGal, const UTF8& aText, const VECTOR2D& aPosition,
-                           const TEXT_ATTRIBUTES& aAttributes ) const;
-
     /**
      * Draw a string.
      *
@@ -130,14 +127,18 @@ public:
      * @return bounding box width/height
      */
     virtual VECTOR2D Draw( KIGFX::GAL* aGal, const UTF8& aText, const VECTOR2D& aPosition,
-                           const VECTOR2D& aOrigin, const EDA_ANGLE& aRotationAngle ) const = 0;
+                           const VECTOR2D& aOrigin, const EDA_ANGLE& aRotationAngle,
+                           double aLineSpacing ) const = 0;
 
     VECTOR2D Draw( KIGFX::GAL* aGal, const UTF8& aText, const VECTOR2D& aPosition,
-                   double aRotationAngle ) const
+                   double aRotationAngle, double aLineSpacing ) const
     {
         return Draw( aGal, aText, aPosition, VECTOR2D( 0, 0 ),
-                     EDA_ANGLE( aRotationAngle, EDA_ANGLE::RADIANS ) );
+                     EDA_ANGLE( aRotationAngle, EDA_ANGLE::RADIANS ), aLineSpacing );
     }
+
+    virtual void DrawText( KIGFX::GAL* aGal, const UTF8& aText, const VECTOR2D& aPosition,
+                           const TEXT_ATTRIBUTES& aAttributes ) const;
 
     /**
      * Draw a string.
@@ -218,9 +219,10 @@ public:
      * Compute the distance (interline) between 2 lines of text (for multiline texts).
      *
      * @param aGlyphHeight is the height (vertical size) of the text.
+     * @param aLineSpacing is the line spacing multiplier (defaults to 1.0)
      * @return the interline.
      */
-    virtual double GetInterline( double aGlyphHeight ) const = 0;
+    virtual double GetInterline( double aGlyphHeight, double aLineSpacing = 1.0 ) const = 0;
 
     /**
      * Compute the X and Y size of a given text. The text is expected to be

@@ -1770,6 +1770,17 @@ void GERBER_PLOTTER::Text( const wxPoint& aPos, const COLOR4D aColor,
 }
 
 
+void GERBER_PLOTTER::Text( const EDA_TEXT* aText, const COLOR4D aColor, void* aData )
+{
+    GBR_METADATA* gbr_metadata = static_cast<GBR_METADATA*>( aData );
+
+    if( gbr_metadata )
+        formatNetAttribute( &gbr_metadata->m_NetlistMetadata );
+
+    PLOTTER::Text( aText, aColor, aData );
+}
+
+
 void GERBER_PLOTTER::SetLayerPolarity( bool aPositive )
 {
     if( aPositive )

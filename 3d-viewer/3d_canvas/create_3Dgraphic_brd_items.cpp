@@ -98,155 +98,90 @@ void BOARD_ADAPTER::addShapeWithClearance( const PCB_TEXT* aText, CONTAINER_2D_B
     s_textWidth = aText->GetEffectiveTextPenWidth() + ( 2 * aClearanceValue );
     s_biuTo3Dunits = m_biuTo3Dunits;
 
-    // not actually used, but needed by GRText
-    const COLOR4D        dummy_color = COLOR4D::BLACK;
-    bool                 forceBold = true;
-    int                  penWidth = 0; // force max width for bold
-    wxArrayString        strings_list;
-    std::vector<wxPoint> positions;
+    bool          forceBold = true;
+    int           penWidth = 0; // force max width for bold
+    KIFONT::FONT* font = aText->GetFont();
 
-    if( aText->IsMultilineAllowed() )
+    if( font->IsOutline() )
     {
-        wxStringSplit( aText->GetShownText(), strings_list, '\n' );
+        const KIFONT::OUTLINE_FONT* outlineFont = dynamic_cast<const KIFONT::OUTLINE_FONT*>( font );
+        std::vector<SHAPE_POLY_SET> glyphs;
+        VECTOR2I                    textSize = outlineFont->GetLinesAsPolygon( glyphs, aText );
+        int                         textHeight = 0;
+        double                      textWidth = 0;
+        bool                        rotateGlyphs = aText->GetTextAngle() != 0;
+        double                      glyphRotationAngle = -aText->GetTextAngleRadians();
+        const VECTOR2D              conversionFactor( m_biuTo3Dunits, -m_biuTo3Dunits );
+#ifdef DEBUG
+        double minX = std::numeric_limits<double>::max();
+        double minY = std::numeric_limits<double>::max();
+        double maxX = std::numeric_limits<double>::lowest();
+        double maxY = std::numeric_limits<double>::lowest();
+
+        std::cerr << "[" << minX << "," << minY << "]->"
+                  << "[" << maxX << "," << maxY << "]"
+                  << " conversionFactor " << conversionFactor
+                  << std::endl;
+#endif
+
+        auto triangleCallback = [&]( int aPolygonIndex, const VECTOR2D& aVertex1,
+                                     const VECTOR2D& aVertex2, const VECTOR2D& aVertex3,
+                                     void* aCallbackData )
+        {
+            SFVEC2F v1( aVertex1.x * conversionFactor.x, aVertex1.y * conversionFactor.y );
+            SFVEC2F v2( aVertex2.x * conversionFactor.x, aVertex2.y * conversionFactor.y );
+            SFVEC2F v3( aVertex3.x * conversionFactor.x, aVertex3.y * conversionFactor.y );
+
+#ifdef DEBUG
+            if (minX > v1.x) minX = v1.x;
+            if (minX > v2.x) minX = v2.x;
+            if (minX > v3.x) minX = v3.x;
+            if (minY > v1.y) minY = v1.y;
+            if (minY > v2.y) minY = v2.y;
+            if (minY > v3.y) minY = v3.y;
+            if (maxX < v1.x) maxX = v1.x;
+            if (maxX < v2.x) maxX = v2.x;
+            if (maxX < v3.x) maxX = v3.x;
+            if (maxY < v1.y) maxY = v1.y;
+            if (maxY < v2.y) maxY = v2.y;
+            if (maxY < v3.y) maxY = v3.y;
+            //std::cerr << "triangleCallback " << aCallbackData;
+#if 0
+            if( aCallbackData ) {
+                bool* callbackFlagPtr = (bool*) aCallbackData;
+                if( *callbackFlagPtr )
+                {
+                    std::cerr << "[" << minX << "," << minY << "]->"
+                              << "[" << maxX << "," << maxY << "]" << std::endl;
+                    *callbackFlagPtr = false;
+                }
+            }
+#endif//0
+#endif
+            aDstContainer->Add( new TRIANGLE_2D( v1, v2, v3, *aText ) );
+        };
+
+        for( SHAPE_POLY_SET& glyph : glyphs )
+        {
+            // TODO: triangulate all glyphs in one go - needed for adding a label background rect
+            bool callbackFlag = true;
+#ifdef DEBUG
+             minX = std::numeric_limits<double>::max();
+              minY = std::numeric_limits<double>::max();
+               maxX = std::numeric_limits<double>::lowest();
+                maxY = std::numeric_limits<double>::lowest();
+#endif
+            Triangulate( glyph, triangleCallback, &callbackFlag );
+        }
+#ifdef DEBUG
+        std::cerr << "[" << minX << "," << minY << "]->"
+                  << "[" << maxX << "," << maxY << "]" << std::endl;
+#endif
     }
     else
     {
-        strings_list.Add( aText->GetShownText() );
-    }
-
-    positions.reserve( strings_list.Count() );
-    aText->GetLinePositions( positions, strings_list.Count() );
-
-    KIFONT::FONT*               font = aText->GetFont();
-    const KIFONT::OUTLINE_FONT* outlineFont = dynamic_cast<const KIFONT::OUTLINE_FONT*>( font );
-
-    TEXT_STYLE_FLAGS textStyleFlags;
-#ifdef ADJUST_HERE
-    // GetLinesAsPolygon() does not actually respect attributes, so
-    // let's pass a dummy instance
-    TEXT_ATTRIBUTES attributes( TEXT_ATTRIBUTES::ANGLE_0, TEXT_ATTRIBUTES::H_LEFT,
-                                TEXT_ATTRIBUTES::V_BOTTOM );
-#else
-    EDA_ANGLE textAngle( aText->GetTextAngle(), EDA_ANGLE::TENTHS_OF_A_DEGREE );
-    TEXT_ATTRIBUTES attributes( textAngle, aText->GetHorizJustify(),
-                                aText->GetVertJustify() );
-#endif
-
-    for( unsigned ii = 0; ii < strings_list.Count(); ++ii )
-    {
-        wxString txt = strings_list.Item( ii );
-
-        if( font->IsOutline() )
-        {
-            std::vector<SHAPE_POLY_SET> glyphs;
-            // aText->DrawTextAsPolygon( glyphs, aLayerId );
-            VECTOR2I textSize = outlineFont->GetLinesAsPolygon(
-                    glyphs, txt, aText->GetTextSize(), positions[ii], attributes,
-                    aText->IsMirrored(), textStyleFlags );
-#ifdef DEBUG
-            std::cerr << "positions[" << ii << "] = " << positions[ii]
-                      << ", attributes = " << attributes << ", textSize = " << textSize;
-#endif
-
-            int    textHeight = 0;
-            double textWidth = 0;
-            bool   rotateGlyphs = aText->GetTextAngle() != 0;
-            double glyphRotationAngle = -aText->GetTextAngleRadians();
-            for( auto glyph : glyphs )
-            {
-                BOX2I boundingBox = glyph.BBox( 0 );
-                textHeight = std::max( textHeight, boundingBox.GetY() );
-                textWidth += boundingBox.GetWidth();
-            }
-
-            double xAdjust = 0.0;
-            double yAdjust = 0.0;
-            switch( aText->GetHorizJustify() )
-            {
-            case GR_TEXT_HJUSTIFY_LEFT: break;
-            case GR_TEXT_HJUSTIFY_RIGHT: xAdjust = textWidth; break;
-            case GR_TEXT_HJUSTIFY_CENTER:
-            default: xAdjust = textWidth / 2.0;
-            }
-
-            switch( aText->GetVertJustify() )
-            {
-#if 0
-            case GR_TEXT_VJUSTIFY_TOP: yAdjust = textHeight / 2; break;
-            case GR_TEXT_VJUSTIFY_BOTTOM: yAdjust = -textHeight / 2; break;
-            case GR_TEXT_VJUSTIFY_CENTER:
-            default: break;
-#else
-            case GR_TEXT_VJUSTIFY_TOP: yAdjust = textHeight / 2; break;
-            case GR_TEXT_VJUSTIFY_BOTTOM: break;
-            case GR_TEXT_VJUSTIFY_CENTER:
-            default: yAdjust = -textHeight / 2; break;
-#endif
-            }
-
-            VECTOR2I adjustVector( xAdjust, yAdjust );
-            VECTOR2I rotatedAdjustVector = adjustVector.Rotate( glyphRotationAngle );
-
-            const VECTOR2D conversionFactor( m_biuTo3Dunits, -m_biuTo3Dunits );
-            const SFVEC2F  adjustOffset( rotatedAdjustVector.x * conversionFactor.x,
-                                        rotatedAdjustVector.y * conversionFactor.y );
-#ifdef DEBUG
-            std::cerr << ", adjustOffset " << xAdjust << "," << yAdjust << "->" << adjustVector
-                      << "->" << rotatedAdjustVector << "->" << adjustOffset.x << ","
-                      << adjustOffset.y << " justify " << aText->GetHorizJustify() << " "
-                      << aText->GetVertJustify() << " angle " << glyphRotationAngle << std::endl;
-#endif
-
-            auto triangleCallback = [&]( int aPolygonIndex, const VECTOR2D& aVertex1,
-                                         const VECTOR2D& aVertex2, const VECTOR2D& aVertex3,
-                                         void* aCallbackData )
-            {
-                SFVEC2F v1( aVertex1.x * conversionFactor.x, aVertex1.y * conversionFactor.y );
-                SFVEC2F v2( aVertex2.x * conversionFactor.x, aVertex2.y * conversionFactor.y );
-                SFVEC2F v3( aVertex3.x * conversionFactor.x, aVertex3.y * conversionFactor.y );
-
-#ifdef DEBUG
-                std::cerr << "#" << v1.x << "," << v1.y;
-#endif
-#ifdef ADJUST_HERE
-                aDstContainer->Add( new TRIANGLE_2D( v1 + adjustOffset, v2 + adjustOffset,
-                                                     v3 + adjustOffset, *aText ) );
-#else
-                aDstContainer->Add( new TRIANGLE_2D( v1, v2, v3, *aText ) );
-#endif
-            };
-
-            for( SHAPE_POLY_SET& glyph : glyphs )
-            {
-                SHAPE_POLY_SET theGlyph( glyph );
-#ifdef ADJUST_HERE
-                if( rotateGlyphs )
-                {
-#ifdef DEBUG
-                    std::cerr << "rotating " << glyph.BBox().GetX() << glyph.BBox().GetX() << " "
-                              << glyph.BBox().GetY() << " " << glyph.BBox().GetWidth() << " "
-                              << glyph.BBox().GetHeight();
-#endif
-                    theGlyph.Rotate( glyphRotationAngle, positions[ii] );
-#ifdef DEBUG
-                    std::cerr << " by " << glyphRotationAngle << " into " << theGlyph.BBox().GetX()
-                              << theGlyph.BBox().GetX() << " " << theGlyph.BBox().GetY() << " "
-                              << theGlyph.BBox().GetWidth() << " " << theGlyph.BBox().GetHeight()
-                              << std::endl;
-#endif
-                }
-#endif //ADJUST_HERE
-
-                // TODO: triangulate all glyphs in one go - needed for adding a label background rect
-                Triangulate( theGlyph, triangleCallback );
-            }
-        }
-        else
-        {
-            GRText( nullptr, positions[ii], dummy_color, txt, aText->GetTextAngle(), size,
-                    aText->GetHorizJustify(), aText->GetVertJustify(), penWidth, aText->IsItalic(),
-                    forceBold, addTextSegmToContainer );
-        }
+        // color is not used, but we have to specify it anyway
+        GRText( aText, COLOR4D::BLACK, addTextSegmToContainer );
     }
 }
 
@@ -473,9 +408,9 @@ void BOARD_ADAPTER::createPadWithClearance( const PAD* aPad, CONTAINER_2D_BASE* 
             {
                 const SHAPE_SEGMENT* seg = (SHAPE_SEGMENT*) shape;
                 const SFVEC2F        start3DU( seg->GetSeg().A.x * m_biuTo3Dunits,
-                                        -seg->GetSeg().A.y * m_biuTo3Dunits );
+                                               -seg->GetSeg().A.y * m_biuTo3Dunits );
                 const SFVEC2F        end3DU( seg->GetSeg().B.x * m_biuTo3Dunits,
-                                      -seg->GetSeg().B.y * m_biuTo3Dunits );
+                                             -seg->GetSeg().B.y * m_biuTo3Dunits );
                 const int            width = seg->GetWidth() + aClearanceValue.x * 2;
 
                 // Cannot add segments that have the same start and end point
@@ -497,7 +432,7 @@ void BOARD_ADAPTER::createPadWithClearance( const PAD* aPad, CONTAINER_2D_BASE* 
                 const SHAPE_CIRCLE* circle = (SHAPE_CIRCLE*) shape;
                 const int           radius = circle->GetRadius() + aClearanceValue.x;
                 const SFVEC2F       center( circle->GetCenter().x * m_biuTo3Dunits,
-                                      -circle->GetCenter().y * m_biuTo3Dunits );
+                                            -circle->GetCenter().y * m_biuTo3Dunits );
 
                 aDstContainer->Add(
                         new FILLED_CIRCLE_2D( center, radius * m_biuTo3Dunits, *aPad ) );

@@ -268,6 +268,8 @@ protected:
     void draw( const PCB_TARGET* aTarget );
     void draw( const PCB_MARKER* aMarker, int aLayer );
 
+    void drawAnchor( const EDA_ITEM* aItem );
+
     /**
      * Get the thickness to draw for a line (e.g. 0 thickness lines get a minimum value).
      *

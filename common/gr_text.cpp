@@ -128,8 +128,8 @@ int GraphicTextWidth( const wxString& aText, const wxSize& aSize, bool aItalic, 
  *  @param aPlotter = a pointer to a PLOTTER instance, when this function is used to plot
  *                  the text. NULL to draw this text.
  */
-void GRText( wxDC* aDC, const wxPoint& aPos, COLOR4D aColor, const wxString& aText, double aOrient,
-             const wxSize& aSize, enum EDA_TEXT_HJUSTIFY_T aH_justify,
+void GRText( wxDC* aDC, const wxPoint& aPos, const COLOR4D& aColor, const wxString& aText,
+             double aOrient, const wxSize& aSize, enum EDA_TEXT_HJUSTIFY_T aH_justify,
              enum EDA_TEXT_VJUSTIFY_T aV_justify, int aWidth, bool aItalic, bool aBold,
              void ( *aCallback )( int x0, int y0, int xf, int yf, void* aData ),
              void* aCallbackData, PLOTTER* aPlotter )
@@ -172,6 +172,55 @@ void GRText( wxDC* aDC, const wxPoint& aPos, COLOR4D aColor, const wxString& aTe
     KIFONT::FONT* font = aPlotter && aPlotter->GetFont() ? aPlotter->GetFont() : nullptr;
 
     basic_gal.StrokeText( aText, VECTOR2D( aPos ), aOrient * M_PI / 1800, font );
+}
+
+
+void GRText( const EDA_TEXT* aText, const COLOR4D& aColor,
+             void ( *aCallback )( int x0, int y0, int xf, int yf, void* aData ),
+             void* aCallbackData, PLOTTER* aPlotter )
+{
+    bool fill_mode = true;
+
+    int    penWidth = aText->GetEffectiveTextPenWidth();
+    wxSize size = aText->GetTextSize();
+
+    if( penWidth == 0 ) // Use default values if aWidth == 0
+        penWidth = GetPenSizeForBold( std::min( size.x, size.y ) );
+
+    if( penWidth < 0 )
+    {
+        penWidth = std::abs( penWidth );
+        fill_mode = false;
+    }
+
+    basic_gal.SetIsFill( fill_mode );
+    basic_gal.SetLineWidth( penWidth );
+
+    //EDA_TEXT dummy;
+    //dummy.SetItalic( aItalic );
+    //dummy.SetBold( aBold );
+    //dummy.SetHorizJustify( aH_justify );
+    //dummy.SetVertJustify( aV_justify );
+
+    //wxSize size = aSize;
+    //dummy.SetMirrored( size.x < 0 );
+
+    //if( size.x < 0 )
+    //    size.x = -size.x;
+
+    //dummy.SetTextSize( size );
+
+    basic_gal.SetTextAttributes( aText );
+    basic_gal.SetPlotter( aPlotter );
+    basic_gal.SetCallback( aCallback, aCallbackData );
+    basic_gal.m_DC = nullptr;
+    basic_gal.m_Color = aColor;
+    basic_gal.SetClipBox( nullptr );
+
+    KIFONT::FONT* font = aPlotter && aPlotter->GetFont() ? aPlotter->GetFont() : aText->GetFont();
+
+    basic_gal.StrokeText( aText->GetShownText(), aText->GetTextPos(), aText->GetTextAngleRadians(),
+                          font, aText->GetLineSpacing() );
 }
 
 

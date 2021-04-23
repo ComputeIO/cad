@@ -105,6 +105,7 @@ EDA_TEXT::EDA_TEXT( const wxString& text ) :
 
 EDA_TEXT::EDA_TEXT( const EDA_TEXT& aText ) :
         m_text( aText.m_text ),
+        m_font( aText.m_font ),
         m_e( aText.m_e )
 {
     m_shown_text = UnescapeString( m_text );
@@ -135,8 +136,8 @@ void EDA_TEXT::CopyText( const EDA_TEXT& aSrc )
 
 void EDA_TEXT::SetEffects( const EDA_TEXT& aSrc )
 {
-    m_e = aSrc.m_e;
     m_font = aSrc.m_font;
+    m_e = aSrc.m_e;
 }
 
 
@@ -150,8 +151,8 @@ void EDA_TEXT::SwapText( EDA_TEXT& aTradingPartner )
 
 void EDA_TEXT::SwapEffects( EDA_TEXT& aTradingPartner )
 {
-    std::swap( m_e, aTradingPartner.m_e );
     std::swap( m_font, aTradingPartner.m_font );
+    std::swap( m_e, aTradingPartner.m_e );
 }
 
 
@@ -533,6 +534,10 @@ void EDA_TEXT::Format( OUTPUTFORMATTER* aFormatter, int aNestLevel, int aControl
     aFormatter->Print( 0, " (size %s %s)",
                        FormatInternalUnits( GetTextHeight() ).c_str(),
                        FormatInternalUnits( GetTextWidth() ).c_str() );
+
+    // Line spacing saved if not within +/- epsilon (which is 0.001) of default (1.0)
+    if( GetLineSpacing() < 0.999 || GetLineSpacing() > 1.001 )
+        aFormatter->Print( 0, " (line_spacing %.2f)", GetLineSpacing() );
 
     if( GetTextThickness() )
         aFormatter->Print( 0, " (thickness %s)", FormatInternalUnits( GetTextThickness() ).c_str() );

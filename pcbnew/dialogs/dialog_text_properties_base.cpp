@@ -104,13 +104,6 @@ DIALOG_TEXT_PROPERTIES_BASE::DIALOG_TEXT_PROPERTIES_BASE( wxWindow* parent, wxWi
 	m_FontItalic = new wxCheckBox( this, wxID_ANY, _("Italic"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_FontProperties->Add( m_FontItalic, 0, wxALIGN_CENTER_VERTICAL|wxRIGHT, 5 );
 
-	m_FontLineSpacingLabel = new wxStaticText( this, wxID_ANY, _("Line spacing:"), wxDefaultPosition, wxDefaultSize, 0 );
-	m_FontLineSpacingLabel->Wrap( -1 );
-	m_FontProperties->Add( m_FontLineSpacingLabel, 0, wxALIGN_CENTER_VERTICAL|wxRIGHT, 5 );
-
-	m_FontLineSpacing = new wxComboBox( this, wxID_ANY, _("1.0"), wxDefaultPosition, wxDefaultSize, 0, NULL, 0 );
-	m_FontProperties->Add( m_FontLineSpacing, 0, wxALIGN_CENTER_VERTICAL, 5 );
-
 
 	bSizerLocked->Add( m_FontProperties, 1, wxEXPAND, 5 );
 
@@ -153,11 +146,12 @@ DIALOG_TEXT_PROPERTIES_BASE::DIALOG_TEXT_PROPERTIES_BASE( wxWindow* parent, wxWi
 	m_SizeXUnits->Wrap( -1 );
 	fgSizerSetup->Add( m_SizeXUnits, 0, wxALIGN_CENTER_VERTICAL|wxRIGHT|wxLEFT, 5 );
 
+	m_FontLineSpacingLabel = new wxStaticText( this, wxID_ANY, _("Line spacing:"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_FontLineSpacingLabel->Wrap( -1 );
+	fgSizerSetup->Add( m_FontLineSpacingLabel, 0, wxALIGN_CENTER_VERTICAL|wxLEFT|wxRIGHT, 5 );
 
-	fgSizerSetup->Add( 0, 0, 0, 0, 5 );
-
-
-	fgSizerSetup->Add( 0, 0, 1, wxEXPAND, 5 );
+	m_FontLineSpacing = new wxTextCtrl( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
+	fgSizerSetup->Add( m_FontLineSpacing, 0, wxALIGN_CENTER_VERTICAL|wxEXPAND|wxRIGHT, 5 );
 
 	m_SizeYLabel = new wxStaticText( this, wxID_ANY, _("Height:"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_SizeYLabel->Wrap( -1 );
