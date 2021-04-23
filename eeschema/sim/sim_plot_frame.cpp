@@ -222,6 +222,11 @@ SIM_PLOT_FRAME::SIM_PLOT_FRAME( KIWAY* aKiway, wxWindow* aParent ) :
 
     m_toolBar->Realize();
 
+#ifndef wxHAS_NATIVE_TABART
+    // Non-native default tab art has ulgy gradients we don't want
+    m_plotNotebook->SetArtProvider( new wxAuiSimpleTabArt() );
+#endif
+
     m_welcomePanel = new SIM_PANEL_BASE( wxEmptyString, m_plotNotebook, wxID_ANY );
     m_plotNotebook->AddPage( m_welcomePanel, _( "Welcome!" ), 1, true );
 
@@ -458,8 +463,8 @@ bool SIM_PLOT_FRAME::IsSimulationRunning()
 
 SIM_PANEL_BASE* SIM_PLOT_FRAME::NewPlotPanel( wxString aSimCommand )
 {
-    SIM_PANEL_BASE* plotPanel;
-    SIM_TYPE        simType = NETLIST_EXPORTER_PSPICE_SIM::CommandToSimType( aSimCommand );
+    SIM_PANEL_BASE* plotPanel = nullptr;
+    SIM_TYPE        simType   = NETLIST_EXPORTER_PSPICE_SIM::CommandToSimType( aSimCommand );
 
     if( SIM_PANEL_BASE::IsPlottable( simType ) )
     {
@@ -972,7 +977,7 @@ bool SIM_PLOT_FRAME::saveWorkbook( const wxString& aPath )
 
     file.AddLine( wxString::Format( "%llu", m_plots.size() ) );
 
-    for( const auto& plot : m_plots )
+    for( const std::pair<SIM_PANEL_BASE*, PLOT_INFO> plot : m_plots )
     {
         if( plot.first )
         {
@@ -1296,17 +1301,15 @@ void SIM_PLOT_FRAME::onSettings( wxCommandEvent& event )
     updateNetlistExporter();
 
     if( !m_exporter->ProcessNetlist( NET_ALL_FLAGS ) )
-    {
-        DisplayError( this, _( "There were errors during netlist export, aborted." ) );
         return;
-    }
 
     if( plotPanelWindow != m_welcomePanel )
         m_settingsDlg->SetSimCommand( m_plots[plotPanelWindow].m_simCommand );
 
     if( m_settingsDlg->ShowModal() == wxID_OK )
     {
-        wxString oldCommand = m_plots[plotPanelWindow].m_simCommand;
+        wxString oldCommand = plotPanelWindow != m_welcomePanel ?
+                              m_plots[plotPanelWindow].m_simCommand : wxString();
         wxString newCommand = m_settingsDlg->GetSimCommand();
         SIM_TYPE newSimType = NETLIST_EXPORTER_PSPICE_SIM::CommandToSimType( newCommand );
 

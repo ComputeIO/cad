@@ -653,7 +653,7 @@ bool PCB_EDIT_FRAME::OpenProjectFiles( const std::vector<wxString>& aFileSet, in
     }
     else
     {
-        BOARD* loadedBoard = 0;   // it will be set to non-NULL if loaded OK
+        BOARD* loadedBoard = nullptr;   // it will be set to non-NULL if loaded OK
 
         PLUGIN::RELEASER pi( IO_MGR::PluginFind( pluginType ) );
 
@@ -939,7 +939,10 @@ bool PCB_EDIT_FRAME::SavePcbFile( const wxString& aFileName, bool addToHistory,
     rulesFile.SetExt( DesignRulesFileExtension );
 
     if( !projectFile.FileExists() && aChangeProject )
+    {
+        Prj().SetReadOnly( false );
         GetSettingsManager()->SaveProjectAs( projectFile.GetFullPath() );
+    }
 
     wxFileName currentRules( GetDesignRulesPath() );
 
