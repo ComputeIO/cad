@@ -168,8 +168,11 @@ DIALOG_PAD_PROPERTIES::DIALOG_PAD_PROPERTIES( PCB_BASE_FRAME* aParent, PAD* aPad
         *m_dummyPad = *aPad;
         m_dummyPad->ClearFlags( SELECTED|BRIGHTENED );
     }
-    else    // We are editing a "master" pad, i.e. a template to create new pads
+    else
+    {
+        // We are editing a "master" pad, i.e. a template to create new pads
         *m_dummyPad = *m_padMaster;
+    }
 
     // Pad needs to have a parent for painting; use the parent board for its design settings
     if( !m_dummyPad->GetParent() )
@@ -317,18 +320,14 @@ void DIALOG_PAD_PROPERTIES::updateRoundRectCornerValues()
 {
     // Note: use m_tcCornerSizeRatio->ChangeValue() to avoid generating a wxEVT_TEXT event
 
-    if( m_dummyPad->GetShape() == PAD_SHAPE_ROUNDRECT ||
-        m_dummyPad->GetShape() == PAD_SHAPE_CHAMFERED_RECT )
-    {
-        wxString ratio = wxString::Format( "%.1f", m_dummyPad->GetRoundRectRadiusRatio() * 100 );
-        m_tcCornerSizeRatio->ChangeValue( ratio );
-        m_tcMixedCornerSizeRatio->ChangeValue( ratio );
-        m_cornerRadius.ChangeValue( m_dummyPad->GetRoundRectCornerRadius() );
+    wxString ratio = wxString::Format( "%.1f", m_dummyPad->GetRoundRectRadiusRatio() * 100 );
+    m_tcCornerSizeRatio->ChangeValue( ratio );
+    m_tcMixedCornerSizeRatio->ChangeValue( ratio );
+    m_cornerRadius.ChangeValue( m_dummyPad->GetRoundRectCornerRadius() );
 
-        ratio = wxString::Format( "%.1f", m_dummyPad->GetChamferRectRatio() * 100 );
-        m_tcChamferRatio->ChangeValue( ratio );
-        m_tcMixedChamferRatio->ChangeValue( ratio );
-    }
+    ratio = wxString::Format( "%.1f", m_dummyPad->GetChamferRectRatio() * 100 );
+    m_tcChamferRatio->ChangeValue( ratio );
+    m_tcMixedChamferRatio->ChangeValue( ratio );
 }
 
 
