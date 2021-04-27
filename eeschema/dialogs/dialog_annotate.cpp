@@ -55,22 +55,14 @@ private:
     void OnApplyClick( wxCommandEvent& event ) override;
 
     // User functions:
-    bool GetLevel();
     bool GetResetItems();
     bool GetLockUnits();
 
-    /**
-     * @return 0 if annotation by X position,
-     *         1 if annotation by Y position,
-     */
-    int GetSortOrder();
+    ANNOTATE_SCOPE_T GetScope();
 
-    /**
-     * @return 0 if annotation using first free Id value
-     *         1 for first free Id value inside sheet num * 100 to sheet num * 100 + 99
-     *         2 for first free Id value inside sheet num * 1000 to sheet num * 1000 + 999
-     */
-    int GetAnnotateAlgo();
+    ANNOTATE_ORDER_T GetSortOrder();
+
+    ANNOTATE_ALGO_T GetAnnotateAlgo();
 
     int GetStartNumber();
 
@@ -117,6 +109,8 @@ DIALOG_ANNOTATE::~DIALOG_ANNOTATE()
 
     cfg->m_AnnotatePanel.sort_order = GetSortOrder();
     cfg->m_AnnotatePanel.method = GetAnnotateAlgo();
+    cfg->m_AnnotatePanel.options = m_rbOptions->GetSelection();
+    cfg->m_AnnotatePanel.scope = m_rbScope->GetSelection();
     cfg->m_AnnotatePanel.messages_filter = m_MessageWindow->GetVisibleSeverities();
 }
 
@@ -126,9 +120,8 @@ void DIALOG_ANNOTATE::InitValues()
     EESCHEMA_SETTINGS* cfg = static_cast<EESCHEMA_SETTINGS*>( Kiface().KifaceSettings() );
     int option;
 
-    // These are always reset to attempt to keep the user out of trouble...
-    m_rbScope->SetSelection( 0 );
-    m_rbOptions->SetSelection( 0 );
+    m_rbScope->SetSelection( cfg->m_AnnotatePanel.scope );
+    m_rbOptions->SetSelection( cfg->m_AnnotatePanel.options );
 
     option = cfg->m_AnnotatePanel.sort_order;
 
@@ -179,9 +172,8 @@ void DIALOG_ANNOTATE::OnApplyClick( wxCommandEvent& event )
     REPORTER& reporter = m_MessageWindow->Reporter();
     m_MessageWindow->SetLazyUpdate( true );     // Don't update after each message
 
-    m_Parent->AnnotateSymbols( GetLevel(), (ANNOTATE_ORDER_T) GetSortOrder(),
-                               (ANNOTATE_OPTION_T) GetAnnotateAlgo(), GetStartNumber(),
-                               GetResetItems(), true, GetLockUnits(), reporter );
+    m_Parent->AnnotateSymbols( GetScope() == ANNOTATE_ALL, GetSortOrder(), GetAnnotateAlgo(),
+                               GetStartNumber(), GetResetItems(), true, GetLockUnits(), reporter );
 
     m_MessageWindow->Flush( true );             // Now update to show all messages
 
@@ -207,7 +199,7 @@ void DIALOG_ANNOTATE::OnClearAnnotationClick( wxCommandEvent& event )
 {
     bool appendUndo = false;
 
-    m_Parent->DeleteAnnotation( !GetLevel(), &appendUndo );
+    m_Parent->DeleteAnnotation( GetScope() == ANNOTATE_CURRENT_SHEET, &appendUndo );
     m_btnClear->Enable( false );
 }
 
@@ -216,12 +208,6 @@ void DIALOG_ANNOTATE::OnOptionChanged( wxCommandEvent& event )
 {
     m_sdbSizer1OK->Enable( true );
     m_sdbSizer1OK->SetDefault();
-}
-
-
-bool DIALOG_ANNOTATE::GetLevel()
-{
-    return m_rbScope->GetSelection() == 0;
 }
 
 
@@ -237,23 +223,35 @@ bool DIALOG_ANNOTATE::GetLockUnits()
 }
 
 
-int DIALOG_ANNOTATE::GetSortOrder()
+ANNOTATE_SCOPE_T DIALOG_ANNOTATE::GetScope()
 {
-    if( m_rbSortBy_Y_Position->GetValue() )
-        return 1;
-    else
-        return 0;
+    switch( m_rbScope->GetSelection() )
+    {
+    case 0:  return ANNOTATE_ALL;
+    case 1:  return ANNOTATE_CURRENT_SHEET;
+    case 2:  return ANNOTATE_SELECTION;
+    default: return ANNOTATE_ALL;
+    }
 }
 
 
-int DIALOG_ANNOTATE::GetAnnotateAlgo()
+ANNOTATE_ORDER_T DIALOG_ANNOTATE::GetSortOrder()
+{
+    if( m_rbSortBy_Y_Position->GetValue() )
+        return SORT_BY_Y_POSITION;
+    else
+        return SORT_BY_X_POSITION;
+}
+
+
+ANNOTATE_ALGO_T DIALOG_ANNOTATE::GetAnnotateAlgo()
 {
     if( m_rbSheetX100->GetValue() )
-        return 1;
+        return SHEET_NUMBER_X_100;
     else if( m_rbSheetX1000->GetValue() )
-        return 2;
+        return SHEET_NUMBER_X_1000;
     else
-        return 0;
+        return INCREMENTAL_BY_REF;
 }
 
 
