@@ -24,6 +24,8 @@
 
 #include <tools/ee_selection.h>
 #include <sch_item.h>
+#include <sch_reference_list.h>
+#include <sch_sheet_path.h>
 #include <sch_symbol.h>
 #include <sch_sheet.h>
 
@@ -74,6 +76,38 @@ EDA_RECT EE_SELECTION::GetBoundingBox() const
     }
 
     return bbox;
+}
+
+
+void EE_SELECTION::GetSymbols( SCH_REFERENCE_LIST&   aReferences,
+                               const SCH_SHEET_PATH& aSelectionPath,
+                               bool aIncludePowerSymbols,
+                               bool aForceIncludeOrphanSymbols )
+{
+    for( EDA_ITEM* item : Items() )
+    {
+        if( item->Type() != SCH_COMPONENT_T )
+            continue;
+
+        SCH_COMPONENT* symbol = static_cast<SCH_COMPONENT*>( item );
+        aSelectionPath.AppendSymbol( aReferences, symbol, aIncludePowerSymbols,
+                                    aForceIncludeOrphanSymbols );
+    }
+}
+
+
+void EE_SELECTION::GetMultiUnitSymbols( SCH_MULTI_UNIT_REFERENCE_MAP& aRefList,
+                                        const SCH_SHEET_PATH& aSelectionPath,
+                                        bool aIncludePowerSymbols )
+{
+    for( EDA_ITEM* item : Items() )
+    {
+        if( item->Type() != SCH_COMPONENT_T )
+            continue;
+
+        SCH_COMPONENT* symbol = static_cast<SCH_COMPONENT*>( item );
+        aSelectionPath.AppendMultiUnitSymbol( aRefList, symbol, aIncludePowerSymbols );
+    }
 }
 
 
