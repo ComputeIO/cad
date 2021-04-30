@@ -27,152 +27,30 @@
 #include <math/vector2d.h>
 #include <eda_angle.h>
 #include <eda_text.h>
-
-#ifdef EDA_TEXT_OVERHAUL
-// Graphic Text justify:
-// Values -1,0,1 are used in computations, do not change them
-enum EDA_TEXT_HJUSTIFY_T
-{
-    GR_TEXT_HJUSTIFY_LEFT = -1,
-    GR_TEXT_HJUSTIFY_CENTER = 0,
-    GR_TEXT_HJUSTIFY_RIGHT = 1
-};
-#endif //EDA_TEXT_OVERHAUL
+#include <kicad_string.h>
 
 inline std::ostream& operator<<( std::ostream& os, EDA_TEXT_HJUSTIFY_T hj )
 {
     switch( hj )
     {
-    case GR_TEXT_HJUSTIFY_LEFT: os << "LEFT"; break;
-    case GR_TEXT_HJUSTIFY_CENTER: os << "CENTER"; break;
-    default: os << "RIGHT";
+    case GR_TEXT_HJUSTIFY_LEFT: os << _( "Left" ); break;
+    case GR_TEXT_HJUSTIFY_CENTER: os << _( "Center" ); break;
+    default: os << _( "Right" );
     }
     return os;
 }
 
-
-#ifdef EDA_TEXT_OVERHAUL
-enum EDA_TEXT_VJUSTIFY_T
-{
-    GR_TEXT_VJUSTIFY_TOP = -1,
-    GR_TEXT_VJUSTIFY_CENTER = 0,
-    GR_TEXT_VJUSTIFY_BOTTOM = 1
-};
-#endif //EDA_TEXT_OVERHAUL
 
 inline std::ostream& operator<<( std::ostream& os, EDA_TEXT_VJUSTIFY_T vj )
 {
     switch( vj )
     {
-    case GR_TEXT_VJUSTIFY_TOP: os << "TOP"; break;
-    case GR_TEXT_VJUSTIFY_CENTER: os << "CENTER"; break;
-    default: os << "BOTTOM";
+    case GR_TEXT_VJUSTIFY_TOP: os << _( "Top" ); break;
+    case GR_TEXT_VJUSTIFY_CENTER: os << _( "Center" ); break;
+    default: os << _( "Bottom" );
     }
     return os;
 }
-
-
-#ifdef EDA_TEXT_OVERHAUL
-/*
- * Legacy code:
- * Spin style for text items of all kinds on schematics
- * Basically a higher level abstraction of rotation and justification of text
- */
-class LABEL_SPIN_STYLE
-{
-public:
-    enum SPIN : int
-    {
-        LEFT = 0,
-        UP = 1,
-        RIGHT = 2,
-        BOTTOM = 3
-    };
-
-
-    LABEL_SPIN_STYLE() = default;
-    constexpr LABEL_SPIN_STYLE( SPIN aSpin ) : m_spin( aSpin ) {}
-
-    constexpr bool operator==( SPIN a ) const { return m_spin == a; }
-
-    constexpr bool operator!=( SPIN a ) const { return m_spin != a; }
-
-    operator int() const { return static_cast<int>( m_spin ); }
-
-    LABEL_SPIN_STYLE RotateCW()
-    {
-        SPIN newSpin = m_spin;
-
-        switch( m_spin )
-        {
-        case LABEL_SPIN_STYLE::LEFT: newSpin = LABEL_SPIN_STYLE::UP; break;
-        case LABEL_SPIN_STYLE::UP: newSpin = LABEL_SPIN_STYLE::RIGHT; break;
-        case LABEL_SPIN_STYLE::RIGHT: newSpin = LABEL_SPIN_STYLE::BOTTOM; break;
-        case LABEL_SPIN_STYLE::BOTTOM: newSpin = LABEL_SPIN_STYLE::LEFT; break;
-        default: wxLogWarning( "RotateCCW encountered unknown current spin style" ); break;
-        }
-
-        return LABEL_SPIN_STYLE( newSpin );
-    }
-
-    LABEL_SPIN_STYLE RotateCCW()
-    {
-        SPIN newSpin = m_spin;
-
-        switch( m_spin )
-        {
-        case LABEL_SPIN_STYLE::LEFT: newSpin = LABEL_SPIN_STYLE::BOTTOM; break;
-        case LABEL_SPIN_STYLE::BOTTOM: newSpin = LABEL_SPIN_STYLE::RIGHT; break;
-        case LABEL_SPIN_STYLE::RIGHT: newSpin = LABEL_SPIN_STYLE::UP; break;
-        case LABEL_SPIN_STYLE::UP: newSpin = LABEL_SPIN_STYLE::LEFT; break;
-        default: wxLogWarning( "RotateCCW encountered unknown current spin style" ); break;
-        }
-
-        return LABEL_SPIN_STYLE( newSpin );
-    }
-
-    /*
-     * Mirrors the label spin style across the X axis or simply swaps up and bottom
-     */
-    LABEL_SPIN_STYLE MirrorX()
-    {
-        SPIN newSpin = m_spin;
-
-        switch( m_spin )
-        {
-        case LABEL_SPIN_STYLE::UP: newSpin = LABEL_SPIN_STYLE::BOTTOM; break;
-        case LABEL_SPIN_STYLE::BOTTOM: newSpin = LABEL_SPIN_STYLE::UP; break;
-        case LABEL_SPIN_STYLE::LEFT: break;
-        case LABEL_SPIN_STYLE::RIGHT: break;
-        default: wxLogWarning( "MirrorX encountered unknown current spin style" ); break;
-        }
-
-        return LABEL_SPIN_STYLE( newSpin );
-    }
-
-    /*
-     * Mirrors the label spin style across the Y axis or simply swaps left and right
-     */
-    LABEL_SPIN_STYLE MirrorY()
-    {
-        SPIN newSpin = m_spin;
-
-        switch( m_spin )
-        {
-        case LABEL_SPIN_STYLE::LEFT: newSpin = LABEL_SPIN_STYLE::RIGHT; break;
-        case LABEL_SPIN_STYLE::RIGHT: newSpin = LABEL_SPIN_STYLE::LEFT; break;
-        case LABEL_SPIN_STYLE::UP: break;
-        case LABEL_SPIN_STYLE::BOTTOM: break;
-        default: wxLogWarning( "MirrorY encountered unknown current spin style" ); break;
-        }
-
-        return LABEL_SPIN_STYLE( newSpin );
-    }
-
-private:
-    SPIN m_spin;
-};
-#endif //EDA_TEXT_OVERHAUL
 
 
 class TEXT_ATTRIBUTES
@@ -211,13 +89,7 @@ public:
 
     TEXT_ATTRIBUTES( const EDA_TEXT* aText ) : TEXT_ATTRIBUTES( *aText ) {}
 
-    TEXT_ATTRIBUTES() :
-            m_orientation( TEXT_ATTRIBUTES::ANGLE_0 ),
-            m_horizontal_alignment( TEXT_ATTRIBUTES::H_LEFT ),
-            m_vertical_alignment( TEXT_ATTRIBUTES::V_BOTTOM )
-    {
-    }
-
+    TEXT_ATTRIBUTES() {}
 
 #ifdef EDA_TEXT_OVERHAUL
     // LABEL_SPIN_STYLE only used in eeschema
@@ -241,17 +113,11 @@ public:
     }
 
 
-    TEXT_ATTRIBUTES( ORIENTATION aOrientation ) :
-            m_orientation( aOrientation ), m_horizontal_alignment( TEXT_ATTRIBUTES::H_LEFT ),
-            m_vertical_alignment( TEXT_ATTRIBUTES::V_BOTTOM )
-    {
-    }
+    TEXT_ATTRIBUTES( ORIENTATION aOrientation ) : m_orientation( aOrientation ) {}
 
 
     TEXT_ATTRIBUTES( HORIZONTAL_ALIGNMENT aHorizontalAlignment ) :
-            m_orientation( TEXT_ATTRIBUTES::ANGLE_0 ),
-            m_horizontal_alignment( aHorizontalAlignment ),
-            m_vertical_alignment( TEXT_ATTRIBUTES::V_BOTTOM )
+            m_horizontal_alignment( aHorizontalAlignment )
     {
     }
 
@@ -266,7 +132,6 @@ public:
 
     TEXT_ATTRIBUTES( HORIZONTAL_ALIGNMENT aHorizontalAlignment,
                      VERTICAL_ALIGNMENT   aVerticalAlignment ) :
-            m_orientation( TEXT_ATTRIBUTES::ANGLE_0 ),
             m_horizontal_alignment( aHorizontalAlignment ),
             m_vertical_alignment( aVerticalAlignment )
     {
@@ -274,15 +139,13 @@ public:
 
 
     TEXT_ATTRIBUTES( ORIENTATION aOrientation, HORIZONTAL_ALIGNMENT aHorizontalAlignment ) :
-            m_orientation( aOrientation ), m_horizontal_alignment( aHorizontalAlignment ),
-            m_vertical_alignment( TEXT_ATTRIBUTES::V_BOTTOM )
+            m_orientation( aOrientation ), m_horizontal_alignment( aHorizontalAlignment )
     {
     }
 
 
     TEXT_ATTRIBUTES( ORIENTATION aOrientation, VERTICAL_ALIGNMENT aVerticalAlignment ) :
-            m_orientation( aOrientation ), m_horizontal_alignment( TEXT_ATTRIBUTES::H_LEFT ),
-            m_vertical_alignment( aVerticalAlignment )
+            m_orientation( aOrientation ), m_vertical_alignment( aVerticalAlignment )
     {
     }
 
@@ -683,9 +546,9 @@ public:
     VECTOR2D GetSize() const { return VECTOR2D( m_size ); }
 
 private:
-    ORIENTATION          m_orientation;
-    HORIZONTAL_ALIGNMENT m_horizontal_alignment;
-    VERTICAL_ALIGNMENT   m_vertical_alignment;
+    ORIENTATION          m_orientation = TEXT_ATTRIBUTES::ANGLE_0;
+    HORIZONTAL_ALIGNMENT m_horizontal_alignment = TEXT_ATTRIBUTES::H_CENTER;
+    VERTICAL_ALIGNMENT   m_vertical_alignment = TEXT_ATTRIBUTES::V_CENTER;
     EDA_ANGLE            m_angle;
     double               m_line_spacing = 1.0;
     int                  m_stroke_width = 0;

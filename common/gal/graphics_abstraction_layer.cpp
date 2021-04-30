@@ -286,7 +286,10 @@ void GAL::StrokeText( const wxString& aText, const VECTOR2D& aPosition, double a
         aFont = KIFONT::FONT::GetFont();
     }
 
-    aFont->Draw( this, aText, aPosition, aRotationAngle, aLineSpacing );
+    TEXT_ATTRIBUTES attributes;
+    attributes.SetAngle( EDA_ANGLE( aRotationAngle, EDA_ANGLE::RADIANS ) );
+    attributes.SetLineSpacing( aLineSpacing );
+    aFont->Draw( this, aText, aPosition, attributes );
 }
 
 

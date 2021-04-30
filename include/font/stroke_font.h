@@ -67,18 +67,19 @@ public:
     bool LoadFont( const wxString& aFontName = "", bool aBold = false,
                    bool aItalic = false ) override;
 
+#if 0
     /**
      * Draw a string.
      *
      * @param aGal
      * @param aText is the text to be drawn.
      * @param aPosition is the text position in world coordinates.
-     * @param aRotationAngle is the text rotation angle
+     * @param aAttributes contains the text attributes (angle, line spacing, etc.)
      * @return bounding box width/height
      */
     VECTOR2D Draw( KIGFX::GAL* aGal, const UTF8& aText, const VECTOR2D& aPosition,
-                   const VECTOR2D& aOrigin, const EDA_ANGLE& aRotationAngle,
-                   double aLineSpacing ) const override;
+                   const VECTOR2D& aOrigin, const TEXT_ATTRIBUTES& aRotationAngle ) const override;
+#endif
 
     /**
      * Compute the boundary limits of aText (the bounding box of all shapes).

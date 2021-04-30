@@ -219,8 +219,13 @@ void GRText( const EDA_TEXT* aText, const COLOR4D& aColor,
 
     KIFONT::FONT* font = aPlotter && aPlotter->GetFont() ? aPlotter->GetFont() : aText->GetFont();
 
+#if 0
     basic_gal.StrokeText( aText->GetShownText(), aText->GetTextPos(), aText->GetTextAngleRadians(),
                           font, aText->GetLineSpacing() );
+#endif
+
+    //KIGFX::GAL* gal = static_cast<KIGFX::GAL*> &basic_gal;
+    font->Draw( &basic_gal, aText->GetShownText(), aText->GetTextPos(), TEXT_ATTRIBUTES( aText ) );
 }
 
 

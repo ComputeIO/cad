@@ -120,6 +120,12 @@ void PCB_TEXT::GetMsgPanelInfo( EDA_DRAW_FRAME* aFrame, std::vector<MSG_PANEL_IT
     aList.emplace_back( _( "Thickness" ), MessageTextFromValue( units, GetTextThickness() ) );
     aList.emplace_back( _( "Width" ), MessageTextFromValue( units, GetTextWidth() ) );
     aList.emplace_back( _( "Height" ), MessageTextFromValue( units, GetTextHeight() ) );
+
+    std::ostringstream alignment;
+    alignment << GetHorizJustify();
+    aList.emplace_back( _( "Justification" ), alignment.str() );
+
+    aList.emplace_back( _( "Line Spacing" ), wxString::Format( "%f", GetLineSpacing() ) );
 }
 
 

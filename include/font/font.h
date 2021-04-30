@@ -126,16 +126,24 @@ public:
      * @param aRotationAngle is the text rotation angle
      * @return bounding box width/height
      */
-    virtual VECTOR2D Draw( KIGFX::GAL* aGal, const UTF8& aText, const VECTOR2D& aPosition,
-                           const VECTOR2D& aOrigin, const EDA_ANGLE& aRotationAngle,
-                           double aLineSpacing ) const = 0;
+    VECTOR2D Draw( KIGFX::GAL* aGal, const UTF8& aText, const VECTOR2D& aPosition,
+                   const VECTOR2D& aOrigin, const TEXT_ATTRIBUTES& aAttributes ) const;
 
+    VECTOR2D Draw( KIGFX::GAL* aGal, const UTF8& aText, const VECTOR2D& aPosition,
+                   const TEXT_ATTRIBUTES& aAttributes ) const
+    {
+        return Draw( aGal, aText, aPosition, VECTOR2D( 0, 0 ), aAttributes );
+    }
+
+
+#if 0
     VECTOR2D Draw( KIGFX::GAL* aGal, const UTF8& aText, const VECTOR2D& aPosition,
                    double aRotationAngle, double aLineSpacing ) const
     {
         return Draw( aGal, aText, aPosition, VECTOR2D( 0, 0 ),
                      EDA_ANGLE( aRotationAngle, EDA_ANGLE::RADIANS ), aLineSpacing );
     }
+#endif
 
     virtual void DrawText( KIGFX::GAL* aGal, const UTF8& aText, const VECTOR2D& aPosition,
                            const TEXT_ATTRIBUTES& aAttributes ) const;
@@ -154,15 +162,15 @@ public:
                          bool aParse, const VECTOR2D& aGlyphSize,
                          const TEXT_ATTRIBUTES& aAttributes ) const
     {
-        return doDrawString( aGal, aText, aPosition, aParse, aGlyphSize, aAttributes,
-                             aAttributes.GetAngle() );
+        return doDrawString( aGal, aText, aPosition, aParse, aGlyphSize, aAttributes );
     }
 
     VECTOR2D DrawString( KIGFX::GAL* aGal, const UTF8& aText, const VECTOR2D& aPosition,
                          bool aParse, const VECTOR2D& aGlyphSize, const EDA_ANGLE& aAngle ) const
     {
-        return doDrawString( aGal, aText, aPosition, aParse, aGlyphSize, TEXT_ATTRIBUTES(),
-                             aAngle );
+        TEXT_ATTRIBUTES attributes;
+        attributes.SetAngle( aAngle );
+        return doDrawString( aGal, aText, aPosition, aParse, aGlyphSize, attributes );
     }
 
     VECTOR2D DrawString( KIGFX::GAL* aGal, const UTF8& aText, const VECTOR2D& aPosition )
@@ -239,8 +247,7 @@ public:
     {
         // TODO: add version of BoundingBox with a free angle - only
         // if needed, doesn't look like there are any uses like that
-        return getBoundingBox( aString, aGlyphSize, aTextStyle, aAttributes,
-                               aAttributes.GetAngle() );
+        return getBoundingBox( aString, aGlyphSize, aTextStyle, aAttributes );
     }
 
 protected:
@@ -272,13 +279,12 @@ protected:
      * @return bounding box width/height
      */
     virtual VECTOR2D drawSingleLineText( KIGFX::GAL* aGal, const UTF8& aText,
-                                         const VECTOR2D&  aPosition,
-                                         const EDA_ANGLE& aAngle ) const = 0;
+                                         const VECTOR2D& aPosition, const EDA_ANGLE& aAngle = EDA_ANGLE() ) const = 0;
 
     void getLinePositions( const UTF8& aText, const VECTOR2D& aPosition, wxArrayString& aStringList,
                            std::vector<wxPoint>& aPositions, int& aLineCount,
                            std::vector<VECTOR2D>& aBoundingBoxes, const VECTOR2D& aGlyphSize,
-                           const TEXT_ATTRIBUTES& aAttributes, const EDA_ANGLE& aAngle ) const;
+                           const TEXT_ATTRIBUTES& aAttributes ) const;
 
     virtual VECTOR2D getBoundingBox( const UTF8& aString, const VECTOR2D& aGlyphSize,
                                      TEXT_STYLE_FLAGS aTextStyle = 0 ) const = 0;
@@ -294,10 +300,10 @@ private:
 
     VECTOR2D doDrawString( KIGFX::GAL* aGal, const UTF8& aText, const VECTOR2D& aPosition,
                            bool aParse, const VECTOR2D& aGlyphSize,
-                           const TEXT_ATTRIBUTES& aAttributes, const EDA_ANGLE& aAngle ) const;
+                           const TEXT_ATTRIBUTES& aAttributes ) const;
     VECTOR2D getBoundingBox( const UTF8& aText, const VECTOR2D& aGlyphSize,
-                             TEXT_STYLE_FLAGS aTextStyle, const TEXT_ATTRIBUTES& aAttributes,
-                             const EDA_ANGLE& aAngle ) const;
+                             TEXT_STYLE_FLAGS       aTextStyle,
+                             const TEXT_ATTRIBUTES& aAttributes ) const;
 };
 } //namespace KIFONT
 

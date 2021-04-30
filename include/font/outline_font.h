@@ -67,19 +67,20 @@ public:
      */
     bool LoadFont( const wxString& aFontFileName, bool aBold, bool aItalic ) override;
 
+#if 0
     /**
      * Draw a string.
      *
      * @param aGal
      * @param aText is the text to be drawn.
      * @param aPosition is the text position in world coordinates.
-     * @param aRotationAngle is the text rotation angle
-     * @param aLineSpacing is the line spacing multiplier for multiline text items
+     * @param aOrigin is the item origin
+     * @param aAttributes contains text attributes (angle, line spacing, ...)
      * @return bounding box width/height
      */
     VECTOR2D Draw( KIGFX::GAL* aGal, const UTF8& aText, const VECTOR2D& aPosition,
-                   const VECTOR2D& aOrigin, const EDA_ANGLE& aRotationAngle,
-                   double aLineSpacing ) const override;
+                   const VECTOR2D& aOrigin, const TEXT_ATTRIBUTES& aAttributes ) const override;
+#endif
 
     /**
      * Compute the boundary limits of aText (the bounding box of all shapes).
@@ -173,11 +174,11 @@ private:
      *
      * @param aText is the text to be drawn.
      * @param aPosition is text position.
-     * @param aAngle is text angle.
+     * @param aAngle is text angle (defaults to 0)
      * @return bounding box width/height
      */
     VECTOR2D drawSingleLineText( KIGFX::GAL* aGal, const UTF8& aText, const VECTOR2D& aPosition,
-                                 const EDA_ANGLE& aAngle ) const override;
+                                 const EDA_ANGLE& aAngle = EDA_ANGLE() ) const override;
 
     VECTOR2D drawMarkup( KIGFX::GAL* aGal, const MARKUP::MARKUP_NODE& aNode,
                          const VECTOR2D& aPosition, const EDA_ANGLE& aAngle,

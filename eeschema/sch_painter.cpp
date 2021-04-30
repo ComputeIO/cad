@@ -189,7 +189,8 @@ bool SCH_PAINTER::Draw( const VIEW_ITEM *aItem, int aLayer )
         m_gal->SetStrokeColor( COLOR4D( LIGHTRED ) );
         m_gal->SetLineWidth( Mils2ui( 2 ) );
         m_gal->SetGlyphSize( VECTOR2D( Mils2ui( 20 ), Mils2ui( 20 ) ) );
-        m_gal->StrokeText( conn->Name( true ), pos, 0.0, 0 );
+        //m_gal->StrokeText( conn->Name( true ), pos, 0.0, 0 );
+        strokeText( conn->Name( true ), pos, 0.0 );
     }
 
 #endif
@@ -408,7 +409,11 @@ float SCH_PAINTER::getTextThickness( const LIB_TEXT* aItem, bool aDrawingShadows
 
 void SCH_PAINTER::strokeText( const wxString& aText, const VECTOR2D& aPosition, double aAngle )
 {
-    m_gal->StrokeText( aText, aPosition, aAngle );
+    TEXT_ATTRIBUTES attributes;
+    attributes.SetHorizJustify( m_gal->GetHorizontalJustify() );
+    attributes.SetVertJustify( m_gal->GetVerticalJustify() );
+    attributes.SetAngle( EDA_ANGLE( aAngle, EDA_ANGLE::RADIANS ) );
+    KIFONT::FONT::GetFont()->Draw( m_gal, aText, aPosition, attributes );
 }
 
 

@@ -388,16 +388,16 @@ BOX2D STROKE_FONT::computeBoundingBox( const GLYPH* aGLYPH, double aGlyphWidth )
 }
 
 
+#if 0
 VECTOR2D STROKE_FONT::Draw( KIGFX::GAL* aGal, const UTF8& aText, const VECTOR2D& aPosition,
-                            const VECTOR2D& aOrigin, const EDA_ANGLE& aRotationAngle,
-                            double aLineSpacing ) const
+                            const VECTOR2D& aOrigin, const TEXT_ATTRIBUTES& aAttributes ) const
 {
     if( aText.empty() )
         return VECTOR2D( 0.0, 0.0 );
 
 #ifdef OUTLINEFONT_DEBUG
     std::cerr << "STROKE_FONT::Draw( " << ( aGal ? "[aGal]" : "nullptr" ) << ", \"" << aText
-              << "\", " << aPosition << ", " << aOrigin << ", " << aRotationAngle << " )"
+              << "\", " << aPosition << ", " << aOrigin << ", " << aAttributes << " )"
               << " aGal line width " << ( aGal ? aGal->GetLineWidth() : 0.0f ) << std::endl;
     // debug circle width
     double dbg = 200000;
@@ -430,7 +430,7 @@ VECTOR2D STROKE_FONT::Draw( KIGFX::GAL* aGal, const UTF8& aText, const VECTOR2D&
             aGal->DrawCircle( VECTOR2D( 0, 0 ), 1.35 * dbg );
         }
 #endif
-        aGal->Rotate( aRotationAngle.Invert().AsRadians() );
+        aGal->Rotate( aAttributes.GetAngle().Invert().AsRadians() );
 #ifdef OUTLINEFONT_DEBUG
         if( drawDebugShapes )
         {
@@ -497,7 +497,7 @@ VECTOR2D STROKE_FONT::Draw( KIGFX::GAL* aGal, const UTF8& aText, const VECTOR2D&
 
     int n = strings_list.Count();
     //double lineHeight = aGal->GetGlyphSize().y + GetInterline( aGal->GetGlyphSize().y );
-    double lineHeight = GetInterline( aGal->GetGlyphSize().y, aLineSpacing );
+    double lineHeight = GetInterline( aGal->GetGlyphSize().y, aAttributes.GetLineSpacing() );
 
     // multiline text alignment needs a lot more work
     double xAdjust = 0.0;
@@ -540,14 +540,16 @@ VECTOR2D STROKE_FONT::Draw( KIGFX::GAL* aGal, const UTF8& aText, const VECTOR2D&
 
     return boundingBox;
 }
+#endif
 
 
 VECTOR2D STROKE_FONT::drawSingleLineText( KIGFX::GAL* aGal, const UTF8& aText,
                                           const VECTOR2D& aPosition, const EDA_ANGLE& aAngle ) const
 {
-#ifdef OUTLINEFONT_DEBUG
-    std::cerr << "drawSingleLineText(...," << aText << ",...) aGal line width "
-              << ( aGal ? aGal->GetLineWidth() : 0.0f ) << std::endl;
+#ifdef DEBUG
+    std::cerr << "STROKE_FONT::drawSingleLineText( [aGal], " << aText << ", " << aPosition << ", "
+              << aAngle << " ) "
+              << "aGal line width " << ( aGal ? aGal->GetLineWidth() : 0.0f ) << std::endl;
     bool   drawDebugShapes = false;
     double debugLineWidth = 15000.0;
 #endif
@@ -572,7 +574,7 @@ VECTOR2D STROKE_FONT::drawSingleLineText( KIGFX::GAL* aGal, const UTF8& aText,
         baseGlyphSize.x = -baseGlyphSize.x;
     }
 
-#ifdef OUTLINEFONT_DEBUG
+#ifdef DEBUG
     std::cerr << "STROKE_FONT::drawSingleLineText( " << ( aGal ? "[aGal]" : "nullptr" ) << ", \""
               << aText << "\", " << aPosition << ", " << aAngle << " )\n"
               << "baseGlyphSize " << baseGlyphSize << " textSize " << textSize << " half_thickness "
@@ -590,7 +592,7 @@ VECTOR2D STROKE_FONT::drawSingleLineText( KIGFX::GAL* aGal, const UTF8& aText,
     int dbg = 40000;
 #endif
 
-#ifdef OUTLINEFONT_DEBUG
+#ifdef DEBUG
     if( aGal && drawDebugShapes )
     {
         COLOR4D oldColor = aGal->GetStrokeColor();
@@ -658,7 +660,10 @@ VECTOR2D STROKE_FONT::drawSingleLineText( KIGFX::GAL* aGal, const UTF8& aText,
             aGal->DrawRectangle( VECTOR2D( -textSize.x / 2, -textSize.y / 2 ), textSize );
         }
 #endif
+
+#ifdef STROKEFONT_TRANSLATE
         aGal->Translate( hv );
+#endif
 #ifdef OUTLINEFONT_DEBUG
         if( drawDebugShapes )
         {
@@ -830,7 +835,14 @@ VECTOR2D STROKE_FONT::drawSingleLineText( KIGFX::GAL* aGal, const UTF8& aText,
 #endif
             for( const VECTOR2D& pt : *ptList )
             {
-                VECTOR2D scaledPt( pt.x * glyphSize.x + xOffset, pt.y * glyphSize.y + yOffset );
+#if 0
+                double x = pt.x * glyphSize.x + xOffset;
+                double y = pt.y * glyphSize.y + yOffset;
+#else
+                double x = pt.x * glyphSize.x + xOffset + aPosition.x;
+                double y = pt.y * glyphSize.y + yOffset + aPosition.y;
+#endif
+                VECTOR2D scaledPt( x, y );
 
                 scaledPt.x += -scaledPt.y * italic_tilt;
 
