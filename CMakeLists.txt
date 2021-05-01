@@ -63,8 +63,8 @@ cmake_dependent_option( BUILD_SMALL_DEBUG_FILES "In debug build: create smaller 
 #
 # KiCad build options should be added below.
 #
-# If you add a new build option, please add its state to the
-# OnCopyVersionInfo() function in common/dialog_about/dialog_about.cpp
+# If you add a new build option, please add it's state to the
+# GetVersionInfoData() function in common/build_version.cpp
 # so that build option settings can be included in bug reports.
 #
 
@@ -80,6 +80,10 @@ option( KICAD_INSTALL_DEMOS
 option( KICAD_BUILD_QA_TESTS
     "Build software Quality assurance unit tests (default ON)"
     ON )
+
+option( KICAD_SPARSELIZARD
+    "Build tools and plugins related to Sparselizard (default OFF)"
+    OFF )
 
 option( KICAD_SPICE
     "Build KiCad with internal Spice simulator."
@@ -500,6 +504,11 @@ if( KICAD_SCRIPTING_WXPYTHON )
     add_definitions( -DKICAD_SCRIPTING_WXPYTHON )
 endif()
 
+
+if( KICAD_SPARSELIZARD )
+    add_definitions( -DKICAD_SPARSELIZARD )
+endif()
+
 if( KICAD_SPICE )
     add_definitions( -DKICAD_SPICE )
 endif()
@@ -789,6 +798,12 @@ if( OCC_VERSION_STRING VERSION_LESS 7.3.0 )
                          "================================================================\n")
 endif()
 include_directories( SYSTEM ${OCC_INCLUDE_DIR} )
+
+# Find Sparselizard, required for FEM
+if( KICAD_USE_SPARSELIZARD )
+    find_package( Sparselizard REQUIRED )
+    include_directories( SYSTEM ${SPARSELIZARD_INCLUDE_DIRS} )
+endif()
 
 # Assist with header file searching optimization:
 # INC_BEFORE and INC_AFTER are two lists which go at the front and back of the

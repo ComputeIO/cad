@@ -121,6 +121,8 @@ Installation from source code
 
   libngspice           (optional)         http://ngspice.sourceforge.net/
 
+  Sparselizard         (optional)         https://www.sparselizard.org/
+
   One of:
     OCE                >= 0.18 (optional) https://github.com/tpaviot/oce
 
