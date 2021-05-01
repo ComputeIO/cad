@@ -688,7 +688,7 @@ void BOARD_ADAPTER::addShapeWithClearance( const PCB_SHAPE*   aShape,
 
     switch( aShape->GetShape() )
     {
-    case S_CIRCLE:
+    case PCB_SHAPE_TYPE::CIRCLE:
     {
         const SFVEC2F center3DU( aShape->GetCenter().x * m_biuTo3Dunits,
                                  -aShape->GetCenter().y * m_biuTo3Dunits );
@@ -706,7 +706,7 @@ void BOARD_ADAPTER::addShapeWithClearance( const PCB_SHAPE*   aShape,
     }
     break;
 
-    case S_RECT:
+    case PCB_SHAPE_TYPE::RECT:
         if( aShape->IsFilled() )
         {
             SHAPE_POLY_SET polyList;
@@ -738,7 +738,7 @@ void BOARD_ADAPTER::addShapeWithClearance( const PCB_SHAPE*   aShape,
         }
         break;
 
-    case S_ARC:
+    case PCB_SHAPE_TYPE::ARC:
     {
         unsigned int segCount = GetCircleSegmentCount( aShape->GetBoundingBox().GetSizeMax() );
 
@@ -747,7 +747,7 @@ void BOARD_ADAPTER::addShapeWithClearance( const PCB_SHAPE*   aShape,
     }
     break;
 
-    case S_SEGMENT:
+    case PCB_SHAPE_TYPE::SEGMENT:
     {
         const SFVEC2F start3DU( aShape->GetStart().x * m_biuTo3Dunits,
                                 -aShape->GetStart().y * m_biuTo3Dunits );
@@ -768,8 +768,8 @@ void BOARD_ADAPTER::addShapeWithClearance( const PCB_SHAPE*   aShape,
     }
     break;
 
-    case S_CURVE:
-    case S_POLYGON:
+    case PCB_SHAPE_TYPE::CURVE:
+    case PCB_SHAPE_TYPE::POLYGON:
     {
         SHAPE_POLY_SET polyList;
 

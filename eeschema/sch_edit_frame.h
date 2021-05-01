@@ -82,9 +82,9 @@ enum COMPONENT_ORIENTATION_T
 /** Schematic annotation scope options. */
 enum ANNOTATE_SCOPE_T
 {
-    ANNOTATE_ALL,
-    ANNOTATE_CURRENT_SHEET,
-    ANNOTATE_SELECTION
+    ANNOTATE_ALL,           ///< Annotate the full schematic
+    ANNOTATE_CURRENT_SHEET, ///< Annotate the current sheet
+    ANNOTATE_SELECTION      ///< Annotate the selection
 };
 
 
@@ -372,16 +372,17 @@ public:
     /**
      * Clear the current component annotation.
      *
-     * @param aCurrentSheetOnly Clear only the annotation for the current sheet if true.
-     *                          Otherwise clear the entire schematic annotation.
+     * @param aCurrentSheetOnly Where to clear the annotation. See #ANNOTATE_SCOPE_T
+     * @param appendUndo true to add the action to the previous undo list
      */
-    void DeleteAnnotation( bool aCurrentSheetOnly, bool* appendUndo );
+    void DeleteAnnotation( ANNOTATE_SCOPE_T aAnnotateScope, bool* appendUndo );
 
     /**
-     * Annotate the symbols in the schematic that are not currently annotated.
+     * Annotate the symbols in the schematic that are not currently annotated. Multi-unit symbols
+     * are annotated together. E.g. if two components were R8A and R8B, they may become R3A and
+     * R3B, but not R3A and R3C or R3C and R4D.
      *
-     * @param aAnnotateSchematic Annotate the entire schematic if true.  Otherwise annotate
-     *                           the current sheet only.
+     * @param aAnnotateScope See #ANNOTATE_SCOPE_T
      * @param aSortOption Define the annotation order.  See #ANNOTATE_ORDER_T.
      * @param aAlgoOption Define the annotation style.  See #ANNOTATE_ALGO_T.
      * @param aStartNumber The start number for non-sheet-based annotation styles.
@@ -391,22 +392,15 @@ public:
      *                          Otherwise, keep the existing time stamps.  This option
      *                          could change previous annotation because time stamps are
      *                          used to handle annotation in complex hierarchies.
-     * @param aLockUnits    When both aLockUnits and aResetAnnotation are true, all unit
-     *                      associations should be kept when reannotating. That is, if two
-     *                      components were R8A and R8B, they may become R3A and R3B, but not
-     *                      R3A and R3C or R3C and R4D.
-     *                      When aResetAnnotation is true but aLockUnits is false, the usual
-     *                      behavior of annotating each part individually is performed.
-     *                      When aResetAnnotation is false, this option has no effect.
      * @param aReporter A sink for error messages.  Use NULL_REPORTER if you don't need errors.
      *
      * When the sheet number is used in annotation, each sheet annotation starts from sheet
      * number * 100.  In other words the first sheet uses 100 to 199, the second sheet uses
      * 200 to 299, and so on.
      */
-    void AnnotateSymbols( bool aAnnotateSchematic, ANNOTATE_ORDER_T aSortOption,
+    void AnnotateSymbols( ANNOTATE_SCOPE_T aAnnotateScope, ANNOTATE_ORDER_T aSortOption,
                           ANNOTATE_ALGO_T aAlgoOption, int aStartNumber, bool aResetAnnotation,
-                          bool aRepairTimestamps, bool aLockUnits, REPORTER& aReporter );
+                          bool aRepairTimestamps, REPORTER& aReporter );
 
     /**
      * Check for annotation errors.
@@ -421,10 +415,11 @@ public:
      *
      * @return Number of annotation errors found.
      * @param aReporter A handler for error reporting.
-     * @param aOneSheetOnly Check the current sheet only if true.  Otherwise check the entire
+     * @param aAnnotateScope See #ANNOTATE_SCOPE_T Check the current sheet only if true.  Otherwise check the entire
      *                      schematic.
      */
-    int CheckAnnotate( ANNOTATION_ERROR_HANDLER aErrorHandler, bool aOneSheetOnly = false );
+    int CheckAnnotate( ANNOTATION_ERROR_HANDLER aErrorHandler,
+                       ANNOTATE_SCOPE_T         aAnnotateScope = ANNOTATE_ALL );
 
     /**
      * Run a modal version of the annotate dialog for a specific purpose.

@@ -157,6 +157,10 @@ option( KICAD_DRC_PROTO
     "Build the DRC prototype QA tool"
     OFF )
 
+option( KICAD_GAL_PROFILE
+    "Enable profiling info for GAL"
+    OFF )
+
 # when option KICAD_SCRIPTING OR KICAD_SCRIPTING_MODULES is enabled:
 # PYTHON_EXECUTABLE can be defined when invoking cmake
 # ( use -DPYTHON_EXECUTABLE=<python path>/python.exe or python2 )
@@ -197,6 +201,10 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # Enable additional valgrind instrumentation for stack tracking in libcontext
 if( KICAD_USE_VALGRIND )
     add_definitions( -DKICAD_USE_VALGRIND )
+endif()
+
+if( KICAD_GAL_PROFILE )
+    add_definitions( -DKICAD_GAL_PROFILE )
 endif()
 
 # Ensure DEBUG is defined for all platforms in Debug builds
@@ -284,6 +292,15 @@ if( WIN32 )
     endif()
 endif()
 
+if(KICAD_BUILD_ARCH_X64)
+    add_definitions( -DKICAD_BUILD_ARCH_X64 )
+elseif(KICAD_BUILD_ARCH_X86)
+    add_definitions( -DKICAD_BUILD_ARCH_X86 )
+elseif(KICAD_BUILD_ARCH_ARM64)
+    add_definitions( -DKICAD_BUILD_ARCH_ARM64 )
+elseif(KICAD_BUILD_ARCH_ARM)
+    add_definitions( -DKICAD_BUILD_ARCH_ARM )
+endif()
 
 #================================================
 # Provide access to CCACHE
