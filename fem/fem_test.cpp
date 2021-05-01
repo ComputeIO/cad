@@ -1,5 +1,6 @@
 #include <sparselizard/sparselizard.h>
 
+#include <pcbnew/board.h>
 
 using namespace sl;
 
@@ -27,5 +28,7 @@ void create_mesh_and_save()
 
 int main( void )
 {
+    BOARD board;
+
     create_mesh_and_save();
 }

@@ -44,6 +44,7 @@ enum FRAME_T
     FRAME_FOOTPRINT_WIZARD,
     FRAME_PCB_DISPLAY3D,
     FRAME_FOOTPRINT_PREVIEW,
+    FRAME_FEM,
 
     FRAME_CVPCB,
     FRAME_CVPCB_DISPLAY,
@@ -58,7 +59,7 @@ enum FRAME_T
 
     FRAME_CALC,
 
-    KIWAY_PLAYER_COUNT,         // counts subset of FRAME_T's which are KIWAY_PLAYER derivatives
+    KIWAY_PLAYER_COUNT, // counts subset of FRAME_T's which are KIWAY_PLAYER derivatives
 
     // C++ project manager is not a KIWAY_PLAYER
     KICAD_MAIN_FRAME_T = KIWAY_PLAYER_COUNT,
@@ -105,7 +106,7 @@ enum FRAME_T
     DIALOG_PCB_LIBRARY_TABLE
 };
 
-    //TEXT_EDITOR_FRAME_T,
+//TEXT_EDITOR_FRAME_T,
 
 
 #endif  // FRAME_T_H_
