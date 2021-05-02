@@ -1,14 +1,19 @@
 #include <iostream>
+#include <string>
+
+#include <wx/init.h>
+#include <pgm_base.h>
+
+#include <pcbnew_utils/board_file_utils.h>
 
 #include <sparselizard/sparselizard.h>
 
-//#include <io_mgr.h>
-//#include <pcbnew/board.h>
+#include <pcbnew/board.h>
 
 using namespace sl;
 
 
-void create_mesh_and_save()
+void runFEMProto( const BOARD* board )
 {
     int   quadranglephysicalregion = 1, trianglephysicalregion = 2, unionphysicalregion = 3;
     shape line1( "line", -1, { -1, -1, 0, 1, -1, 0 }, 10 );
@@ -31,15 +36,23 @@ void create_mesh_and_save()
 
 int main( int argc, char** argv )
 {
-    if( argc < 2 ) {
-        std::cout << argv[0] << " KICAD_PCB_FILE" << std::endl;
-        return 1; // not enough arguments!
+    wxInitialize( argc, argv );
+    Pgm().InitPgm();
+
+    if( argc < 2 )
+    {
+        printf( "usage: %s <project-file/board-file>\n", argv[0] );
+        Pgm().Destroy();
+        wxUninitialize();
+        return -1;
     }
 
-    //wxString fileName = argv[1];
-    //std::cout << "Load file: '" << fileName << "'" << std::endl;
+    std::unique_ptr<BOARD> board = KI_TEST::ReadBoardFromFileOrStream( std::string( argv[1] ) );
 
-    //BOARD* board = IO_MGR::Load(IO_MGR::PCB_FILE_T::KICAD_SEXP, fileName);
+    runFEMProto( board.get() );
 
-    create_mesh_and_save();
+    Pgm().Destroy();
+    wxUninitialize();
+
+    return 0;
 }
