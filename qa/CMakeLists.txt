@@ -45,6 +45,10 @@ add_subdirectory( schematic_utils )
 # Unit tests
 add_subdirectory( unittests )
 
+if( KICAD_SPARSELIZARD )
+    add_subdirectory( fem_proto )
+endif()
+
 # Utility/debugging/profiling programs
 add_subdirectory( tools )
 

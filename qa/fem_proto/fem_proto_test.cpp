@@ -1,6 +1,9 @@
+#include <iostream>
+
 #include <sparselizard/sparselizard.h>
 
-#include <pcbnew/board.h>
+//#include <io_mgr.h>
+//#include <pcbnew/board.h>
 
 using namespace sl;
 
@@ -26,9 +29,17 @@ void create_mesh_and_save()
     mymesh.write( "mymesh.msh" );
 }
 
-int main( void )
+int main( int argc, char** argv )
 {
-    BOARD board;
+    if( argc < 2 ) {
+        std::cout << argv[0] << " KICAD_PCB_FILE" << std::endl;
+        return 1; // not enough arguments!
+    }
+
+    //wxString fileName = argv[1];
+    //std::cout << "Load file: '" << fileName << "'" << std::endl;
+
+    //BOARD* board = IO_MGR::Load(IO_MGR::PCB_FILE_T::KICAD_SEXP, fileName);
 
     create_mesh_and_save();
 }
