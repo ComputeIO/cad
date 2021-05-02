@@ -27,6 +27,7 @@
 #include "base_units.h"
 #include <macros.h>
 #include <wildcards_and_files_ext.h>
+#include <wx/filedlg.h>
 
 #define COL_LABEL 0
 #define COL_AMOUNT 1
@@ -138,10 +139,10 @@ void DIALOG_BOARD_STATISTICS::refreshItemsTypes()
     m_componentsTypes.push_back( componentsType_t( FP_SMD, _( "SMD:" ) ) );
 
     m_padsTypes.clear();
-    m_padsTypes.push_back( padsType_t( PAD_ATTRIB_PTH, _( "Through hole:" ) ) );
-    m_padsTypes.push_back( padsType_t( PAD_ATTRIB_SMD, _( "SMD:" ) ) );
-    m_padsTypes.push_back( padsType_t( PAD_ATTRIB_CONN, _( "Connector:" ) ) );
-    m_padsTypes.push_back( padsType_t( PAD_ATTRIB_NPTH, _( "NPTH:" ) ) );
+    m_padsTypes.push_back( padsType_t( PAD_ATTRIB::PTH, _( "Through hole:" ) ) );
+    m_padsTypes.push_back( padsType_t( PAD_ATTRIB::SMD, _( "SMD:" ) ) );
+    m_padsTypes.push_back( padsType_t( PAD_ATTRIB::CONN, _( "Connector:" ) ) );
+    m_padsTypes.push_back( padsType_t( PAD_ATTRIB::NPTH, _( "NPTH:" ) ) );
 
     m_viasTypes.clear();
     m_viasTypes.push_back( viasType_t( VIATYPE::THROUGH, _( "Through vias:" ) ) );
@@ -229,7 +230,7 @@ void DIALOG_BOARD_STATISTICS::getDataFromPCB()
                 }
 
                 drillType_t drill( pad->GetDrillSize().x, pad->GetDrillSize().y,
-                                   pad->GetDrillShape(), pad->GetAttribute() != PAD_ATTRIB_NPTH,
+                                   pad->GetDrillShape(), pad->GetAttribute() != PAD_ATTRIB::NPTH,
                                    true, top, bottom );
 
                 auto it = m_drillTypes.begin();

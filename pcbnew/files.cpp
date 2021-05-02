@@ -47,7 +47,6 @@
 #include <kiplatform/app.h>
 #include <widgets/appearance_controls.h>
 #include <widgets/infobar.h>
-#include <wx/wupdlock.h>
 #include <settings/settings_manager.h>
 #include <paths.h>
 #include <project/project_file.h>
@@ -57,6 +56,10 @@
 #include <plugins/kicad/kicad_plugin.h>
 #include <dialogs/dialog_imported_layers.h>
 #include "footprint_info_impl.h"
+
+#include <wx/wupdlock.h>
+#include <wx/filedlg.h>
+
 
 
 //#define     USE_INSTRUMENTATION     1
@@ -669,6 +672,8 @@ bool PCB_EDIT_FRAME::OpenProjectFiles( const std::vector<wxString>& aFileSet, in
         // This will rename the file if there is an autosave and the user want to recover
 		CheckForAutoSaveFile( fullFileName );
 
+        bool failedLoad = false;
+
         try
         {
             PROPERTIES  props;
@@ -703,6 +708,18 @@ bool PCB_EDIT_FRAME::OpenProjectFiles( const std::vector<wxString>& aFileSet, in
                 DisplayErrorMessage( this, msg, ioe.What() );
             }
 
+            failedLoad = true;
+        }
+        catch( const std::bad_alloc& )
+        {
+            wxString msg = wxString::Format( _( "Memory exhausted loading board file:\n%s" ), fullFileName );
+            DisplayErrorMessage( this, msg );
+
+            failedLoad = true;
+        }
+
+        if( failedLoad )
+        {
             // We didn't create a new blank board above, so do that now
             Clear_Pcb( false );
 

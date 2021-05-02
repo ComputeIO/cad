@@ -3750,11 +3750,11 @@ PAD* PCB_PARSER::parsePAD( FOOTPRINT* aParent )
     switch( token )
     {
     case T_thru_hole:
-        pad->SetAttribute( PAD_ATTRIB_PTH );
+        pad->SetAttribute( PAD_ATTRIB::PTH );
         break;
 
     case T_smd:
-        pad->SetAttribute( PAD_ATTRIB_SMD );
+        pad->SetAttribute( PAD_ATTRIB::SMD );
 
         // Default PAD object is thru hole with drill.
         // SMD pads have no hole
@@ -3762,7 +3762,7 @@ PAD* PCB_PARSER::parsePAD( FOOTPRINT* aParent )
         break;
 
     case T_connect:
-        pad->SetAttribute( PAD_ATTRIB_CONN );
+        pad->SetAttribute( PAD_ATTRIB::CONN );
 
         // Default PAD object is thru hole with drill.
         // CONN pads have no hole
@@ -3770,7 +3770,7 @@ PAD* PCB_PARSER::parsePAD( FOOTPRINT* aParent )
         break;
 
     case T_np_thru_hole:
-        pad->SetAttribute( PAD_ATTRIB_NPTH );
+        pad->SetAttribute( PAD_ATTRIB::NPTH );
         break;
 
     default:
@@ -3782,29 +3782,29 @@ PAD* PCB_PARSER::parsePAD( FOOTPRINT* aParent )
     switch( token )
     {
     case T_circle:
-        pad->SetShape( PAD_SHAPE_CIRCLE );
+        pad->SetShape( PAD_SHAPE::CIRCLE );
         break;
 
     case T_rect:
-        pad->SetShape( PAD_SHAPE_RECT );
+        pad->SetShape( PAD_SHAPE::RECT );
         break;
 
     case T_oval:
-        pad->SetShape( PAD_SHAPE_OVAL );
+        pad->SetShape( PAD_SHAPE::OVAL );
         break;
 
     case T_trapezoid:
-        pad->SetShape( PAD_SHAPE_TRAPEZOID );
+        pad->SetShape( PAD_SHAPE::TRAPEZOID );
         break;
 
     case T_roundrect:
-        // Note: the shape can be PAD_SHAPE_ROUNDRECT or PAD_SHAPE_CHAMFERED_RECT
+        // Note: the shape can be PAD_SHAPE::ROUNDRECT or PAD_SHAPE::CHAMFERED_RECT
         // (if chamfer parameters are found later in pad descr.)
-        pad->SetShape( PAD_SHAPE_ROUNDRECT );
+        pad->SetShape( PAD_SHAPE::ROUNDRECT );
         break;
 
     case T_custom:
-        pad->SetShape( PAD_SHAPE_CUSTOM );
+        pad->SetShape( PAD_SHAPE::CUSTOM );
         break;
 
     default:
@@ -3911,7 +3911,7 @@ PAD* PCB_PARSER::parsePAD( FOOTPRINT* aParent )
                 // than 0 used to fix a bunch of debug assertions even though it is defined as a
                 // through hole pad.  Wouldn't a though hole pad with no drill be a surface mount
                 // pad (or a conn pad which is a smd pad with no solder paste)?
-                if( ( pad->GetAttribute() != PAD_ATTRIB_SMD ) && ( pad->GetAttribute() != PAD_ATTRIB_CONN ) )
+                if( ( pad->GetAttribute() != PAD_ATTRIB::SMD ) && ( pad->GetAttribute() != PAD_ATTRIB::CONN ) )
                     pad->SetDrillSize( drillSize );
                 else
                     pad->SetDrillSize( wxSize( 0, 0 ) );
@@ -4019,7 +4019,7 @@ PAD* PCB_PARSER::parsePAD( FOOTPRINT* aParent )
             pad->SetChamferRectRatio( parseDouble( "chamfer ratio" ) );
 
             if( pad->GetChamferRectRatio() > 0 )
-                pad->SetShape( PAD_SHAPE_CHAMFERED_RECT );
+                pad->SetShape( PAD_SHAPE::CHAMFERED_RECT );
 
             NeedRIGHT();
             break;
@@ -4061,7 +4061,7 @@ PAD* PCB_PARSER::parsePAD( FOOTPRINT* aParent )
             }
 
             if( pad->GetChamferPositions() != RECT_NO_CHAMFER )
-                pad->SetShape( PAD_SHAPE_CHAMFERED_RECT );
+                pad->SetShape( PAD_SHAPE::CHAMFERED_RECT );
         }
             break;
 
@@ -4074,31 +4074,31 @@ PAD* PCB_PARSER::parsePAD( FOOTPRINT* aParent )
                 switch( token )
                 {
                 case T_pad_prop_bga:
-                    pad->SetProperty( PAD_PROP_BGA );
+                    pad->SetProperty( PAD_PROP::BGA );
                     break;
 
                 case T_pad_prop_fiducial_glob:
-                    pad->SetProperty( PAD_PROP_FIDUCIAL_GLBL );
+                    pad->SetProperty( PAD_PROP::FIDUCIAL_GLBL );
                     break;
 
                 case T_pad_prop_fiducial_loc:
-                    pad->SetProperty( PAD_PROP_FIDUCIAL_LOCAL );
+                    pad->SetProperty( PAD_PROP::FIDUCIAL_LOCAL );
                     break;
 
                 case T_pad_prop_testpoint:
-                    pad->SetProperty( PAD_PROP_TESTPOINT );
+                    pad->SetProperty( PAD_PROP::TESTPOINT );
                     break;
 
                 case T_pad_prop_castellated:
-                    pad->SetProperty( PAD_PROP_CASTELLATED );
+                    pad->SetProperty( PAD_PROP::CASTELLATED );
                     break;
 
                 case T_pad_prop_heatsink:
-                    pad->SetProperty( PAD_PROP_HEATSINK );
+                    pad->SetProperty( PAD_PROP::HEATSINK );
                     break;
 
                 case T_none:
-                    pad->SetProperty( PAD_PROP_NONE );
+                    pad->SetProperty( PAD_PROP::NONE );
                     break;
 
                 case T_RIGHT:
@@ -4238,7 +4238,7 @@ bool PCB_PARSER::parsePAD_option( PAD* aPad )
                     break;
 
                 case T_rect:
-                    aPad->SetAnchorPadShape( PAD_SHAPE_RECT );
+                    aPad->SetAnchorPadShape( PAD_SHAPE::RECT );
                     break;
 
                 default:

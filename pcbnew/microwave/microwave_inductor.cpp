@@ -21,8 +21,6 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
 
-#include <wx/wx.h>
-
 #include <base_units.h>
 #include <board_commit.h>
 #include <pad.h>
@@ -449,8 +447,8 @@ FOOTPRINT* MICROWAVE_TOOL::createMicrowaveInductor( MICROWAVE_INDUCTOR_PATTERN& 
     pad->SetSize( wxSize( aInductorPattern.m_Width, aInductorPattern.m_Width ) );
 
     pad->SetLayerSet( LSET( footprint->GetLayer() ) );
-    pad->SetAttribute( PAD_ATTRIB_SMD );
-    pad->SetShape( PAD_SHAPE_CIRCLE );
+    pad->SetAttribute( PAD_ATTRIB::SMD );
+    pad->SetShape( PAD_SHAPE::CIRCLE );
 
     PAD* newpad = new PAD( *pad );
     const_cast<KIID&>( newpad->m_Uuid ) = KIID();

@@ -389,7 +389,7 @@ void BOARD_ADAPTER::createPadWithClearance( const PAD* aPad, CONTAINER_2D_BASE* 
     // is only the size of the anchor), so for those we punt and just use aClearanceValue.x.
 
     if( ( aClearanceValue.x < 0 || aClearanceValue.x != aClearanceValue.y )
-        && aPad->GetShape() != PAD_SHAPE_CUSTOM )
+        && aPad->GetShape() != PAD_SHAPE::CUSTOM )
     {
         PAD dummy( *aPad );
         dummy.SetSize( aPad->GetSize() + aClearanceValue + aClearanceValue );
@@ -556,18 +556,18 @@ void BOARD_ADAPTER::addPadsWithClearance( const FOOTPRINT*   aFootprint,
 
         // NPTH pads are not drawn on layers if the
         // shape size and pos is the same as their hole:
-        if( aSkipNPTHPadsWihNoCopper && ( pad->GetAttribute() == PAD_ATTRIB_NPTH ) )
+        if( aSkipNPTHPadsWihNoCopper && ( pad->GetAttribute() == PAD_ATTRIB::NPTH ) )
         {
             if( pad->GetDrillSize() == pad->GetSize() && pad->GetOffset() == wxPoint( 0, 0 ) )
             {
                 switch( pad->GetShape() )
                 {
-                case PAD_SHAPE_CIRCLE:
+                case PAD_SHAPE::CIRCLE:
                     if( pad->GetDrillShape() == PAD_DRILL_SHAPE_CIRCLE )
                         continue;
                     break;
 
-                case PAD_SHAPE_OVAL:
+                case PAD_SHAPE::OVAL:
                     if( pad->GetDrillShape() != PAD_DRILL_SHAPE_CIRCLE )
                         continue;
                     break;
@@ -874,7 +874,7 @@ void BOARD_ADAPTER::addSolidAreasShapes( const ZONE*        aZoneContainer,
 void BOARD_ADAPTER::buildPadOutlineAsSegments( const PAD* aPad, CONTAINER_2D_BASE* aDstContainer,
                                                int aWidth )
 {
-    if( aPad->GetShape() == PAD_SHAPE_CIRCLE ) // Draw a ring
+    if( aPad->GetShape() == PAD_SHAPE::CIRCLE )    // Draw a ring
     {
         const SFVEC2F center3DU( aPad->ShapePos().x * m_biuTo3Dunits,
                                  -aPad->ShapePos().y * m_biuTo3Dunits );

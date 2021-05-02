@@ -2,7 +2,7 @@
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
  * Copyright (C) 2013 CERN
- * Copyright (C) 2017-2019 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 2017-2021 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * @author Jean-Pierre Charras, jp.charras at wanadoo.fr
  *
@@ -34,6 +34,8 @@
 #include "pl_editor_frame.h"
 #include "pl_editor_id.h"
 #include "properties_frame.h"
+
+#include <wx/filedlg.h>
 
 bool PL_EDITOR_FRAME::saveCurrentPageLayout()
 {
@@ -223,7 +225,16 @@ bool PL_EDITOR_FRAME::LoadPageLayoutDescrFile( const wxString& aFullFileName )
 {
     if( wxFileExists( aFullFileName ) )
     {
-        DS_DATA_MODEL::GetTheInstance().LoadDrawingSheet( aFullFileName );
+        bool loaded = false;
+
+        loaded = DS_DATA_MODEL::GetTheInstance().LoadDrawingSheet( aFullFileName );
+
+        if( !loaded )
+        {
+            ShowInfoBarError( _( "Error reading drawing sheet" ), true );
+            return false;
+        }
+
         SetCurrentFileName( aFullFileName );
         UpdateFileHistory( aFullFileName );
         GetScreen()->ClrModify();
@@ -233,9 +244,7 @@ bool PL_EDITOR_FRAME::LoadPageLayoutDescrFile( const wxString& aFullFileName )
 
         if( fn.FileExists() && !fn.IsFileWritable() )
         {
-            m_infoBar->RemoveAllButtons();
-            m_infoBar->AddCloseButton();
-            m_infoBar->ShowMessage( _( "Layout file is read only." ), wxICON_WARNING );
+            ShowInfoBarWarning( _( "Layout file is read only." ), true );
         }
 
         return true;

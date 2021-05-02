@@ -56,7 +56,7 @@ public:
 
     bool isThrough() const
     {
-        return m_type == PAD_ATTRIB_NPTH || m_type == PAD_ATTRIB_PTH;
+        return m_type == PAD_ATTRIB::NPTH || m_type == PAD_ATTRIB::PTH;
     }
 
     bool operator==( const HYPERLYNX_PAD_STACK& other ) const
@@ -87,7 +87,7 @@ public:
 
     bool isSMD() const
     {
-        return m_type == PAD_ATTRIB_SMD;
+        return m_type == PAD_ATTRIB::SMD;
     }
 
     PCB_LAYER_ID getSMDLayer() const
@@ -114,10 +114,10 @@ public:
     {
         switch( m_shape )
         {
-        case PAD_SHAPE_CIRCLE:
-        case PAD_SHAPE_OVAL:
-        case PAD_SHAPE_ROUNDRECT:
-        case PAD_SHAPE_RECT: return true;
+        case PAD_SHAPE::CIRCLE:
+        case PAD_SHAPE::OVAL:
+        case PAD_SHAPE::ROUNDRECT:
+        case PAD_SHAPE::RECT: return true;
         default: return false;
         }
     }
@@ -134,11 +134,11 @@ private:
     BOARD*      m_board;
     int         m_id;
     int         m_drill;
-    PAD_SHAPE_T m_shape;
+    PAD_SHAPE   m_shape;
     int         m_sx, m_sy;
     double      m_angle;
     LSET        m_layers;
-    PAD_ATTR_T  m_type;
+    PAD_ATTRIB  m_type;
 };
 
 
@@ -175,10 +175,10 @@ private:
 
         switch( aStack.m_shape )
         {
-        case PAD_SHAPE_CIRCLE:
-        case PAD_SHAPE_OVAL:      shapeId = 0; break;
-        case PAD_SHAPE_ROUNDRECT: shapeId = 2; break;
-        case PAD_SHAPE_RECT:      shapeId = 1; break;
+        case PAD_SHAPE::CIRCLE:
+        case PAD_SHAPE::OVAL:      shapeId = 0; break;
+        case PAD_SHAPE::ROUNDRECT: shapeId = 2; break;
+        case PAD_SHAPE::RECT:      shapeId = 1; break;
         default:
             shapeId = 0;
 
@@ -238,7 +238,7 @@ HYPERLYNX_PAD_STACK::HYPERLYNX_PAD_STACK( BOARD* aBoard, const PAD* aPad )
     m_layers = aPad->GetLayerSet();
     m_drill  = aPad->GetDrillSize().x;
     m_shape  = aPad->GetShape();
-    m_type   = PAD_ATTRIB_PTH;
+    m_type   = PAD_ATTRIB::PTH;
     m_id     = 0;
 }
 
@@ -251,8 +251,8 @@ HYPERLYNX_PAD_STACK::HYPERLYNX_PAD_STACK( BOARD* aBoard, const VIA* aVia )
     m_angle  = 0;
     m_layers = LSET::AllCuMask();
     m_drill  = aVia->GetDrillValue();
-    m_shape  = PAD_SHAPE_CIRCLE;
-    m_type   = PAD_ATTRIB_PTH;
+    m_shape  = PAD_SHAPE::CIRCLE;
+    m_type   = PAD_ATTRIB::PTH;
     m_id     = 0;
 }
 

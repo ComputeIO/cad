@@ -1307,13 +1307,13 @@ void PCB_IO::format( const PAD* aPad, int aNestLevel ) const
 
     switch( aPad->GetShape() )
     {
-    case PAD_SHAPE_CIRCLE:          shape = "circle";       break;
-    case PAD_SHAPE_RECT:            shape = "rect";         break;
-    case PAD_SHAPE_OVAL:            shape = "oval";         break;
-    case PAD_SHAPE_TRAPEZOID:       shape = "trapezoid";    break;
-    case PAD_SHAPE_CHAMFERED_RECT:
-    case PAD_SHAPE_ROUNDRECT:       shape = "roundrect";    break;
-    case PAD_SHAPE_CUSTOM:          shape = "custom";       break;
+    case PAD_SHAPE::CIRCLE:          shape = "circle";       break;
+    case PAD_SHAPE::RECT:            shape = "rect";         break;
+    case PAD_SHAPE::OVAL:            shape = "oval";         break;
+    case PAD_SHAPE::TRAPEZOID:       shape = "trapezoid";    break;
+    case PAD_SHAPE::CHAMFERED_RECT:
+    case PAD_SHAPE::ROUNDRECT:       shape = "roundrect";    break;
+    case PAD_SHAPE::CUSTOM:          shape = "custom";       break;
 
     default:
         THROW_IO_ERROR( wxString::Format( _( "unknown pad type: %d"), aPad->GetShape() ) );
@@ -1323,10 +1323,10 @@ void PCB_IO::format( const PAD* aPad, int aNestLevel ) const
 
     switch( aPad->GetAttribute() )
     {
-    case PAD_ATTRIB_PTH:    type = "thru_hole";      break;
-    case PAD_ATTRIB_SMD:    type = "smd";            break;
-    case PAD_ATTRIB_CONN:   type = "connect";        break;
-    case PAD_ATTRIB_NPTH:   type = "np_thru_hole";   break;
+    case PAD_ATTRIB::PTH:    type = "thru_hole";      break;
+    case PAD_ATTRIB::SMD:    type = "smd";            break;
+    case PAD_ATTRIB::CONN:   type = "connect";        break;
+    case PAD_ATTRIB::NPTH:   type = "np_thru_hole";   break;
 
     default:
         THROW_IO_ERROR( wxString::Format( "unknown pad attribute: %d", aPad->GetAttribute() ) );
@@ -1336,13 +1336,13 @@ void PCB_IO::format( const PAD* aPad, int aNestLevel ) const
 
     switch( aPad->GetProperty() )
     {
-    case PAD_PROP_NONE:                                                  break;  // could be "none"
-    case PAD_PROP_BGA:              property = "pad_prop_bga";           break;
-    case PAD_PROP_FIDUCIAL_GLBL:    property = "pad_prop_fiducial_glob"; break;
-    case PAD_PROP_FIDUCIAL_LOCAL:   property = "pad_prop_fiducial_loc";  break;
-    case PAD_PROP_TESTPOINT:        property = "pad_prop_testpoint";     break;
-    case PAD_PROP_HEATSINK:         property = "pad_prop_heatsink";      break;
-    case PAD_PROP_CASTELLATED:      property = "pad_prop_castellated";   break;
+    case PAD_PROP::NONE:                                                  break;  // could be "none"
+    case PAD_PROP::BGA:              property = "PAD_PROP::BGA";           break;
+    case PAD_PROP::FIDUCIAL_GLBL:    property = "pad_prop_fiducial_glob"; break;
+    case PAD_PROP::FIDUCIAL_LOCAL:   property = "pad_prop_fiducial_loc";  break;
+    case PAD_PROP::TESTPOINT:        property = "PAD_PROP::TESTPOINT";     break;
+    case PAD_PROP::HEATSINK:         property = "PAD_PROP::HEATSINK";      break;
+    case PAD_PROP::CASTELLATED:      property = "PAD_PROP::CASTELLATED";   break;
 
     default:
         THROW_IO_ERROR( wxString::Format( "unknown pad property: %d", aPad->GetProperty() ) );
@@ -1397,7 +1397,7 @@ void PCB_IO::format( const PAD* aPad, int aNestLevel ) const
 
     formatLayers( aPad->GetLayerSet() );
 
-    if( aPad->GetAttribute() == PAD_ATTRIB_PTH )
+    if( aPad->GetAttribute() == PAD_ATTRIB::PTH )
     {
         if( aPad->GetRemoveUnconnected() )
         {
@@ -1409,14 +1409,14 @@ void PCB_IO::format( const PAD* aPad, int aNestLevel ) const
     }
 
     // Output the radius ratio for rounded and chamfered rect pads
-    if( aPad->GetShape() == PAD_SHAPE_ROUNDRECT || aPad->GetShape() == PAD_SHAPE_CHAMFERED_RECT)
+    if( aPad->GetShape() == PAD_SHAPE::ROUNDRECT || aPad->GetShape() == PAD_SHAPE::CHAMFERED_RECT)
     {
         m_out->Print( 0,  " (roundrect_rratio %s)",
                       Double2Str( aPad->GetRoundRectRadiusRatio() ).c_str() );
     }
 
     // Output the chamfer corners for chamfered rect pads
-    if( aPad->GetShape() == PAD_SHAPE_CHAMFERED_RECT)
+    if( aPad->GetShape() == PAD_SHAPE::CHAMFERED_RECT)
     {
         m_out->Print( 0, "\n" );
 
@@ -1520,7 +1520,7 @@ void PCB_IO::format( const PAD* aPad, int aNestLevel ) const
         m_out->Print( aNestLevel+1, "%s", output.c_str()+1 );   // +1 skips 1st space on 1st element
     }
 
-    if( aPad->GetShape() == PAD_SHAPE_CUSTOM )
+    if( aPad->GetShape() == PAD_SHAPE::CUSTOM )
     {
         m_out->Print( 0, "\n");
         m_out->Print( aNestLevel+1, "(options" );
@@ -1533,7 +1533,7 @@ void PCB_IO::format( const PAD* aPad, int aNestLevel ) const
         #endif
 
         // Output the anchor pad shape (circle/rect)
-        if( aPad->GetAnchorPadShape() == PAD_SHAPE_RECT )
+        if( aPad->GetAnchorPadShape() == PAD_SHAPE::RECT )
             shape = "rect";
         else
             shape = "circle";

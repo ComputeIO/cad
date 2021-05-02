@@ -53,6 +53,7 @@
 #include <settings/settings_manager.h>
 #include <advanced_config.h>
 #include <sim/sim_plot_frame.h>
+#include <sim/spice_settings.h>
 #include <tool/action_manager.h>
 #include <tool/action_toolbar.h>
 #include <tool/common_control.h>
@@ -77,6 +78,9 @@
 #include <widgets/infobar.h>
 #include <wildcards_and_files_ext.h>
 #include <wx/cmdline.h>
+#include <wx/app.h>
+#include <wx/filedlg.h>
+
 #include <gal/graphics_abstraction_layer.h>
 #include <drawing_sheet/ds_proxy_view_item.h>
 
@@ -241,7 +245,6 @@ SCH_EDIT_FRAME::SCH_EDIT_FRAME( KIWAY* aKiway, wxWindow* aParent ) :
 
     // After schematic has been linked to project, SCHEMATIC_SETTINGS works
     m_defaults = &m_schematic->Settings();
-    LoadProjectSettings();
 
     setupTools();
     setupUIConditions();
@@ -274,6 +277,8 @@ SCH_EDIT_FRAME::SCH_EDIT_FRAME( KIWAY* aKiway, wxWindow* aParent ) :
 
     resolveCanvasType();
     SwitchCanvas( m_canvasType );
+
+    LoadProjectSettings();
 
     initScreenZoom();
 
@@ -675,6 +680,9 @@ void SCH_EDIT_FRAME::doCloseWindow()
 
     if( FindHierarchyNavigator() )
         FindHierarchyNavigator()->Close( true );
+
+    if( Kiway().Player( FRAME_SIMULATOR, false ) )
+        Prj().GetProjectFile().m_SchematicSettings->m_NgspiceSimulatorSettings->SaveToFile();
 
     SCH_SCREENS screens( Schematic().Root() );
     wxFileName fn;
@@ -1281,8 +1289,10 @@ void SCH_EDIT_FRAME::initScreenZoom()
 void SCH_EDIT_FRAME::RecalculateConnections( SCH_CLEANUP_FLAGS aCleanupFlags )
 {
     SCHEMATIC_SETTINGS& settings = Schematic().Settings();
-    SCH_SHEET_LIST list = Schematic().GetSheets();
+    SCH_SHEET_LIST      list = Schematic().GetSheets();
+#ifdef PROFILE
     PROF_COUNTER   timer;
+#endif
 
     // Ensure schematic graph is accurate
     if( aCleanupFlags == LOCAL_CLEANUP )
@@ -1295,8 +1305,10 @@ void SCH_EDIT_FRAME::RecalculateConnections( SCH_CLEANUP_FLAGS aCleanupFlags )
             SchematicCleanUp( sheet.LastScreen() );
     }
 
+#ifdef PROFILE
     timer.Stop();
     wxLogTrace( "CONN_PROFILE", "SchematicCleanUp() %0.4f ms", timer.msecs() );
+#endif
 
     if( settings.m_IntersheetRefsShow )
         RecomputeIntersheetRefs();

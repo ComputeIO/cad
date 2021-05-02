@@ -234,7 +234,7 @@ COLOR4D PCB_RENDER_SETTINGS::GetColor( const VIEW_ITEM* aItem, int aLayer ) cons
         int        holeLayer = aLayer;
         int        annularRingLayer = UNDEFINED_LAYER;
 
-        if( pad && pad->GetAttribute() == PAD_ATTRIB_PTH )
+        if( pad && pad->GetAttribute() == PAD_ATTRIB::PTH )
             annularRingLayer = LAYER_PADS_TH;
         else if( via && via->GetViaType() == VIATYPE::MICROVIA )
             annularRingLayer = LAYER_VIA_MICROVIA;
@@ -820,7 +820,7 @@ void PCB_PAINTER::draw( const PAD* aPad, int aLayer )
             VECTOR2D position = padBBox.Centre();
             VECTOR2D padsize = VECTOR2D( padBBox.GetSize() );
 
-            if( aPad->GetShape() != PAD_SHAPE_CUSTOM )
+            if( aPad->GetShape() != PAD_SHAPE::CUSTOM )
             {
                 // Don't allow a 45º rotation to bloat a pad's bounding box unnecessarily
                 double limit = std::min( aPad->GetSize().x, aPad->GetSize().y ) * 1.1;
@@ -980,7 +980,7 @@ void PCB_PAINTER::draw( const PAD* aPad, int aLayer )
         std::shared_ptr<SHAPE_COMPOUND> shapes;
         bool                            simpleShapes = true;
 
-        if( margin.x != margin.y && aPad->GetShape() != PAD_SHAPE_CUSTOM )
+        if( margin.x != margin.y && aPad->GetShape() != PAD_SHAPE::CUSTOM )
         {
             // Our algorithms below (polygon inflation in particular) can't handle differential
             // inflation along separate axes.  So for those cases we build a dummy pad instead,

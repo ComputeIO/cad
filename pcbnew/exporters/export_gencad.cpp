@@ -46,6 +46,7 @@
 #include <project/project_file.h> // LAST_PATH_TYPE
 
 #include <wx/app.h>
+#include <wx/filedlg.h>
 
 static bool CreateHeaderInfoData( FILE* aFile, PCB_EDIT_FRAME* frame );
 static void CreateArtworksSection( FILE* aFile );
@@ -436,7 +437,7 @@ static void CreatePadsShapesSection( FILE* aFile, BOARD* aPcb )
             wxASSERT_MSG( false, "Pad type not implemented" );
             KI_FALLTHROUGH;
 
-        case PAD_SHAPE_CIRCLE:
+        case PAD_SHAPE::CIRCLE:
             fprintf( aFile, " ROUND %g\n",
                      pad->GetDrillSize().x / SCALE_FACTOR );
             /* Circle is center, radius */
@@ -446,7 +447,7 @@ static void CreatePadsShapesSection( FILE* aFile, BOARD* aPcb )
                      pad->GetSize().x / (SCALE_FACTOR * 2) );
             break;
 
-        case PAD_SHAPE_RECT:
+        case PAD_SHAPE::RECT:
             fprintf( aFile, " RECTANGULAR %g\n",
                      pad->GetDrillSize().x / SCALE_FACTOR );
 
@@ -457,13 +458,13 @@ static void CreatePadsShapesSection( FILE* aFile, BOARD* aPcb )
                      dx / (SCALE_FACTOR / 2), dy / (SCALE_FACTOR / 2) );
             break;
 
-        case PAD_SHAPE_ROUNDRECT:
-        case PAD_SHAPE_OVAL:
+        case PAD_SHAPE::ROUNDRECT:
+        case PAD_SHAPE::OVAL:
             {
                 const wxSize& size = pad->GetSize();
                 int radius;
 
-                if( pad->GetShape() == PAD_SHAPE_ROUNDRECT )
+                if( pad->GetShape() == PAD_SHAPE::ROUNDRECT )
                     radius = pad->GetRoundRectCornerRadius();
                 else
                     radius = std::min( size.x, size.y ) / 2;
@@ -545,7 +546,7 @@ static void CreatePadsShapesSection( FILE* aFile, BOARD* aPcb )
             }
             break;
 
-        case PAD_SHAPE_TRAPEZOID:
+        case PAD_SHAPE::TRAPEZOID:
             {
                 fprintf( aFile, " POLYGON %g\n", pad->GetDrillSize().x / SCALE_FACTOR );
 
@@ -570,7 +571,7 @@ static void CreatePadsShapesSection( FILE* aFile, BOARD* aPcb )
             }
             break;
 
-        case PAD_SHAPE_CUSTOM:
+        case PAD_SHAPE::CUSTOM:
             {
                 fprintf( aFile, " POLYGON %g\n", pad->GetDrillSize().x / SCALE_FACTOR );
 

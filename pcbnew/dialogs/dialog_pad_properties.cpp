@@ -47,20 +47,21 @@
 #include <tool/tool_manager.h>
 #include <tools/pad_tool.h>
 #include <advanced_config.h>    // for pad property feature management
+#include <wx/choicdlg.h>
 
 
 // list of pad shapes, ordered like the pad shape wxChoice in dialog.
-static PAD_SHAPE_T code_shape[] =
+static PAD_SHAPE code_shape[] =
 {
-    PAD_SHAPE_CIRCLE,
-    PAD_SHAPE_OVAL,
-    PAD_SHAPE_RECT,
-    PAD_SHAPE_TRAPEZOID,
-    PAD_SHAPE_ROUNDRECT,
-    PAD_SHAPE_CHAMFERED_RECT,
-    PAD_SHAPE_CHAMFERED_RECT,  // choice = CHOICE_SHAPE_CHAMFERED_ROUNDED_RECT
-    PAD_SHAPE_CUSTOM,          // choice = CHOICE_SHAPE_CUSTOM_CIRC_ANCHOR
-    PAD_SHAPE_CUSTOM           // choice = PAD_SHAPE_CUSTOM_RECT_ANCHOR
+    PAD_SHAPE::CIRCLE,
+    PAD_SHAPE::OVAL,
+    PAD_SHAPE::RECT,
+    PAD_SHAPE::TRAPEZOID,
+    PAD_SHAPE::ROUNDRECT,
+    PAD_SHAPE::CHAMFERED_RECT,
+    PAD_SHAPE::CHAMFERED_RECT,  // choice = CHOICE_SHAPE_CHAMFERED_ROUNDED_RECT
+    PAD_SHAPE::CUSTOM,          // choice = CHOICE_SHAPE_CUSTOM_CIRC_ANCHOR
+    PAD_SHAPE::CUSTOM           // choice = PAD_SHAPE::CUSTOM_RECT_ANCHOR
 };
 
 // the ordered index of the pad shape wxChoice in dialog.
@@ -78,13 +79,13 @@ enum CODE_CHOICE
     CHOICE_SHAPE_CUSTOM_RECT_ANCHOR
 };
 
-static PAD_ATTR_T code_type[] =
+static PAD_ATTRIB code_type[] =
 {
-    PAD_ATTRIB_PTH,
-    PAD_ATTRIB_SMD,
-    PAD_ATTRIB_CONN,
-    PAD_ATTRIB_NPTH,
-    PAD_ATTRIB_SMD                  // Aperture pad :type SMD with no copper layers,
+    PAD_ATTRIB::PTH,
+    PAD_ATTRIB::SMD,
+    PAD_ATTRIB::CONN,
+    PAD_ATTRIB::NPTH,
+    PAD_ATTRIB::SMD                  // Aperture pad :type SMD with no copper layers,
                                     // only on tech layers (usually only on paste layer
 };
 
@@ -333,8 +334,8 @@ void DIALOG_PAD_PROPERTIES::updateRoundRectCornerValues()
 
 void DIALOG_PAD_PROPERTIES::onCornerRadiusChange( wxCommandEvent& event )
 {
-    if( m_dummyPad->GetShape() != PAD_SHAPE_ROUNDRECT &&
-        m_dummyPad->GetShape() != PAD_SHAPE_CHAMFERED_RECT )
+    if( m_dummyPad->GetShape() != PAD_SHAPE::ROUNDRECT &&
+        m_dummyPad->GetShape() != PAD_SHAPE::CHAMFERED_RECT )
         return;
 
     double rrRadius = m_cornerRadius.GetValue();
@@ -358,8 +359,8 @@ void DIALOG_PAD_PROPERTIES::onCornerRadiusChange( wxCommandEvent& event )
 
 void DIALOG_PAD_PROPERTIES::onCornerSizePercentChange( wxCommandEvent& event )
 {
-    if( m_dummyPad->GetShape() != PAD_SHAPE_ROUNDRECT &&
-        m_dummyPad->GetShape() != PAD_SHAPE_CHAMFERED_RECT )
+    if( m_dummyPad->GetShape() != PAD_SHAPE::ROUNDRECT &&
+        m_dummyPad->GetShape() != PAD_SHAPE::CHAMFERED_RECT )
     {
         return;
     }
@@ -575,21 +576,21 @@ void DIALOG_PAD_PROPERTIES::initValues()
     switch( m_dummyPad->GetShape() )
     {
     default:
-    case PAD_SHAPE_CIRCLE:    m_PadShapeSelector->SetSelection( CHOICE_SHAPE_CIRCLE );    break;
-    case PAD_SHAPE_OVAL:      m_PadShapeSelector->SetSelection( CHOICE_SHAPE_OVAL );      break;
-    case PAD_SHAPE_RECT:      m_PadShapeSelector->SetSelection( CHOICE_SHAPE_RECT );      break;
-    case PAD_SHAPE_TRAPEZOID: m_PadShapeSelector->SetSelection( CHOICE_SHAPE_TRAPEZOID ); break;
-    case PAD_SHAPE_ROUNDRECT: m_PadShapeSelector->SetSelection( CHOICE_SHAPE_ROUNDRECT ); break;
+    case PAD_SHAPE::CIRCLE:    m_PadShapeSelector->SetSelection( CHOICE_SHAPE_CIRCLE );    break;
+    case PAD_SHAPE::OVAL:      m_PadShapeSelector->SetSelection( CHOICE_SHAPE_OVAL );      break;
+    case PAD_SHAPE::RECT:      m_PadShapeSelector->SetSelection( CHOICE_SHAPE_RECT );      break;
+    case PAD_SHAPE::TRAPEZOID: m_PadShapeSelector->SetSelection( CHOICE_SHAPE_TRAPEZOID ); break;
+    case PAD_SHAPE::ROUNDRECT: m_PadShapeSelector->SetSelection( CHOICE_SHAPE_ROUNDRECT ); break;
 
-    case PAD_SHAPE_CHAMFERED_RECT:
+    case PAD_SHAPE::CHAMFERED_RECT:
         if( m_dummyPad->GetRoundRectRadiusRatio() > 0.0 )
             m_PadShapeSelector->SetSelection( CHOICE_SHAPE_CHAMFERED_ROUNDED_RECT );
         else
             m_PadShapeSelector->SetSelection( CHOICE_SHAPE_CHAMFERED_RECT );
         break;
 
-    case PAD_SHAPE_CUSTOM:
-        if( m_dummyPad->GetAnchorPadShape() == PAD_SHAPE_RECT )
+    case PAD_SHAPE::CUSTOM:
+        if( m_dummyPad->GetAnchorPadShape() == PAD_SHAPE::RECT )
             m_PadShapeSelector->SetSelection( CHOICE_SHAPE_CUSTOM_RECT_ANCHOR );
         else
             m_PadShapeSelector->SetSelection( CHOICE_SHAPE_CUSTOM_CIRC_ANCHOR );
@@ -607,10 +608,10 @@ void DIALOG_PAD_PROPERTIES::initValues()
 
     updateRoundRectCornerValues();
 
-    enablePrimitivePage( PAD_SHAPE_CUSTOM == m_dummyPad->GetShape() );
+    enablePrimitivePage( PAD_SHAPE::CUSTOM == m_dummyPad->GetShape() );
 
     // Type of pad selection
-    bool aperture = m_dummyPad->GetAttribute() == PAD_ATTRIB_SMD && m_dummyPad->IsAperturePad();
+    bool aperture = m_dummyPad->GetAttribute() == PAD_ATTRIB::SMD && m_dummyPad->IsAperturePad();
 
     if( aperture )
     {
@@ -620,26 +621,26 @@ void DIALOG_PAD_PROPERTIES::initValues()
     {
         switch( m_dummyPad->GetAttribute() )
         {
-        case PAD_ATTRIB_PTH:    m_PadType->SetSelection( PTH_DLG_TYPE ); break;
-        case PAD_ATTRIB_SMD:    m_PadType->SetSelection( SMD_DLG_TYPE ); break;
-        case PAD_ATTRIB_CONN:   m_PadType->SetSelection( CONN_DLG_TYPE ); break;
-        case PAD_ATTRIB_NPTH:   m_PadType->SetSelection( NPTH_DLG_TYPE ); break;
+        case PAD_ATTRIB::PTH:    m_PadType->SetSelection( PTH_DLG_TYPE ); break;
+        case PAD_ATTRIB::SMD:    m_PadType->SetSelection( SMD_DLG_TYPE ); break;
+        case PAD_ATTRIB::CONN:   m_PadType->SetSelection( CONN_DLG_TYPE ); break;
+        case PAD_ATTRIB::NPTH:   m_PadType->SetSelection( NPTH_DLG_TYPE ); break;
         }
     }
 
     switch( m_dummyPad->GetProperty() )
     {
-    case PAD_PROP_NONE:             m_choiceFabProperty->SetSelection( 0 ); break;
-    case PAD_PROP_BGA:              m_choiceFabProperty->SetSelection( 1 ); break;
-    case PAD_PROP_FIDUCIAL_LOCAL:   m_choiceFabProperty->SetSelection( 2 ); break;
-    case PAD_PROP_FIDUCIAL_GLBL:    m_choiceFabProperty->SetSelection( 3 ); break;
-    case PAD_PROP_TESTPOINT:        m_choiceFabProperty->SetSelection( 4 ); break;
-    case PAD_PROP_HEATSINK:         m_choiceFabProperty->SetSelection( 5 ); break;
-    case PAD_PROP_CASTELLATED:      m_choiceFabProperty->SetSelection( 6 ); break;
+    case PAD_PROP::NONE:             m_choiceFabProperty->SetSelection( 0 ); break;
+    case PAD_PROP::BGA:              m_choiceFabProperty->SetSelection( 1 ); break;
+    case PAD_PROP::FIDUCIAL_LOCAL:   m_choiceFabProperty->SetSelection( 2 ); break;
+    case PAD_PROP::FIDUCIAL_GLBL:    m_choiceFabProperty->SetSelection( 3 ); break;
+    case PAD_PROP::TESTPOINT:        m_choiceFabProperty->SetSelection( 4 ); break;
+    case PAD_PROP::HEATSINK:         m_choiceFabProperty->SetSelection( 5 ); break;
+    case PAD_PROP::CASTELLATED:      m_choiceFabProperty->SetSelection( 6 ); break;
     }
 
     // Ensure the pad property is compatible with the pad type
-    if( m_dummyPad->GetAttribute() == PAD_ATTRIB_NPTH )
+    if( m_dummyPad->GetAttribute() == PAD_ATTRIB::NPTH )
     {
         m_choiceFabProperty->SetSelection( 0 );
         m_choiceFabProperty->Enable( false );
@@ -842,8 +843,8 @@ void DIALOG_PAD_PROPERTIES::OnPadShapeSelection( wxCommandEvent& event )
                                                m_dummyPad->GetRoundRectRadiusRatio() * 100 ) );
         break;
 
-    case CHOICE_SHAPE_CUSTOM_CIRC_ANCHOR:     // PAD_SHAPE_CUSTOM, circular anchor
-    case CHOICE_SHAPE_CUSTOM_RECT_ANCHOR:     // PAD_SHAPE_CUSTOM, rect anchor
+    case CHOICE_SHAPE_CUSTOM_CIRC_ANCHOR:     // PAD_SHAPE::CUSTOM, circular anchor
+    case CHOICE_SHAPE_CUSTOM_RECT_ANCHOR:     // PAD_SHAPE::CUSTOM, rect anchor
         m_shapePropsBook->SetSelection( 0 );
         break;
     }
@@ -1207,11 +1208,11 @@ bool DIALOG_PAD_PROPERTIES::padValuesOK()
     wxSize        pad_size = m_dummyPad->GetSize();
     wxSize        drill_size = m_dummyPad->GetDrillSize();
 
-    if( m_dummyPad->GetShape() == PAD_SHAPE_CUSTOM )
+    if( m_dummyPad->GetShape() == PAD_SHAPE::CUSTOM )
     {
         // allow 0-sized anchor pads
     }
-    else if( m_dummyPad->GetShape() == PAD_SHAPE_CIRCLE )
+    else if( m_dummyPad->GetShape() == PAD_SHAPE::CIRCLE )
     {
         if( pad_size.x <= 0 )
             warning_msgs.Add( _( "Warning: Pad size is less than zero." ) );
@@ -1257,7 +1258,7 @@ bool DIALOG_PAD_PROPERTIES::padValuesOK()
     // Therefore test for minimal acceptable negative value
     // Hovewer, a negative value can give strange result with custom shapes, so it is not
     // allowed for custom pad shape
-    if( m_dummyPad->GetLocalSolderMaskMargin() < 0 && m_dummyPad->GetShape() == PAD_SHAPE_CUSTOM )
+    if( m_dummyPad->GetLocalSolderMaskMargin() < 0 && m_dummyPad->GetShape() == PAD_SHAPE::CUSTOM )
     {
         warning_msgs.Add( _( "Warning: Negative solder mask clearances are not supported for "
                              "custom pad shapes." ) );
@@ -1302,7 +1303,7 @@ bool DIALOG_PAD_PROPERTIES::padValuesOK()
 
     if( !padlayers_mask[F_Cu] && !padlayers_mask[B_Cu] )
     {
-        if( ( drill_size.x || drill_size.y ) && m_dummyPad->GetAttribute() != PAD_ATTRIB_NPTH )
+        if( ( drill_size.x || drill_size.y ) && m_dummyPad->GetAttribute() != PAD_ATTRIB::NPTH )
         {
             warning_msgs.Add( _( "Warning: Plated through holes should normally have a copper pad "
                                  "on at least one layer." ) );
@@ -1314,8 +1315,8 @@ bool DIALOG_PAD_PROPERTIES::padValuesOK()
 
     switch( m_dummyPad->GetAttribute() )
     {
-    case PAD_ATTRIB_NPTH:   // Not plated, but through hole, a hole is expected
-    case PAD_ATTRIB_PTH:    // Pad through hole, a hole is also expected
+    case PAD_ATTRIB::NPTH:   // Not plated, but through hole, a hole is expected
+    case PAD_ATTRIB::PTH:    // Pad through hole, a hole is also expected
         if( drill_size.x <= 0
             || ( drill_size.y <= 0 && m_dummyPad->GetDrillShape() == PAD_DRILL_SHAPE_OBLONG ) )
         {
@@ -1323,7 +1324,7 @@ bool DIALOG_PAD_PROPERTIES::padValuesOK()
         }
         break;
 
-    case PAD_ATTRIB_CONN:      // Connector pads are smd pads, just they do not have solder paste.
+    case PAD_ATTRIB::CONN:      // Connector pads are smd pads, just they do not have solder paste.
         if( padlayers_mask[B_Paste] || padlayers_mask[F_Paste] )
         {
             warning_msgs.Add( _( "Warning: Connector pads normally have no solder paste. Use an "
@@ -1331,7 +1332,7 @@ bool DIALOG_PAD_PROPERTIES::padValuesOK()
         }
         KI_FALLTHROUGH;
 
-    case PAD_ATTRIB_SMD:       // SMD and Connector pads (One external copper layer only)
+    case PAD_ATTRIB::SMD:       // SMD and Connector pads (One external copper layer only)
     {
         LSET innerlayers_mask = padlayers_mask & LSET::InternalCuMask();
 
@@ -1341,39 +1342,39 @@ bool DIALOG_PAD_PROPERTIES::padValuesOK()
         break;
     }
 
-    if( ( m_dummyPad->GetProperty() == PAD_PROP_FIDUCIAL_GLBL ||
-          m_dummyPad->GetProperty() == PAD_PROP_FIDUCIAL_LOCAL ) &&
-        m_dummyPad->GetAttribute() == PAD_ATTRIB_NPTH )
+    if( ( m_dummyPad->GetProperty() == PAD_PROP::FIDUCIAL_GLBL ||
+          m_dummyPad->GetProperty() == PAD_PROP::FIDUCIAL_LOCAL ) &&
+        m_dummyPad->GetAttribute() == PAD_ATTRIB::NPTH )
     {
         warning_msgs.Add(  _( "Warning: Fiducial property makes no sense on NPTH pads." ) );
     }
 
-    if( m_dummyPad->GetProperty() == PAD_PROP_TESTPOINT &&
-        m_dummyPad->GetAttribute() == PAD_ATTRIB_NPTH )
+    if( m_dummyPad->GetProperty() == PAD_PROP::TESTPOINT &&
+        m_dummyPad->GetAttribute() == PAD_ATTRIB::NPTH )
     {
         warning_msgs.Add(  _( "Warning: Testpoint property makes no sense on NPTH pads." ) );
     }
 
-    if( m_dummyPad->GetProperty() == PAD_PROP_HEATSINK &&
-        m_dummyPad->GetAttribute() == PAD_ATTRIB_NPTH )
+    if( m_dummyPad->GetProperty() == PAD_PROP::HEATSINK &&
+        m_dummyPad->GetAttribute() == PAD_ATTRIB::NPTH )
     {
         warning_msgs.Add(  _( "Warning: Heatsink property makes no sense of NPTH pads." ) );
     }
 
-    if( m_dummyPad->GetProperty() == PAD_PROP_CASTELLATED &&
-        m_dummyPad->GetAttribute() != PAD_ATTRIB_PTH )
+    if( m_dummyPad->GetProperty() == PAD_PROP::CASTELLATED &&
+        m_dummyPad->GetAttribute() != PAD_ATTRIB::PTH )
     {
         warning_msgs.Add(  _( "Warning: Castellated property is for PTH pads." ) );
     }
 
-    if( m_dummyPad->GetProperty() == PAD_PROP_BGA &&
-        m_dummyPad->GetAttribute() != PAD_ATTRIB_SMD )
+    if( m_dummyPad->GetProperty() == PAD_PROP::BGA &&
+        m_dummyPad->GetAttribute() != PAD_ATTRIB::SMD )
     {
         warning_msgs.Add(  _( "Warning: BGA property is for SMD pads." ) );
     }
 
-    if( m_dummyPad->GetShape() == PAD_SHAPE_ROUNDRECT ||
-        m_dummyPad->GetShape() == PAD_SHAPE_CHAMFERED_RECT )
+    if( m_dummyPad->GetShape() == PAD_SHAPE::ROUNDRECT ||
+        m_dummyPad->GetShape() == PAD_SHAPE::CHAMFERED_RECT )
     {
         wxASSERT( m_tcCornerSizeRatio->GetValue() == m_tcMixedCornerSizeRatio->GetValue() );
         wxString value = m_tcCornerSizeRatio->GetValue();
@@ -1393,7 +1394,7 @@ bool DIALOG_PAD_PROPERTIES::padValuesOK()
     }
 
     // PADSTACKS TODO: this will need to check each layer in the pad...
-    if( m_dummyPad->GetShape() == PAD_SHAPE_CUSTOM )
+    if( m_dummyPad->GetShape() == PAD_SHAPE::CUSTOM )
     {
         SHAPE_POLY_SET mergedPolygon;
         m_dummyPad->MergePrimitivesAsPolygon( &mergedPolygon, UNDEFINED_LAYER );
@@ -1567,7 +1568,7 @@ bool DIALOG_PAD_PROPERTIES::TransferDataFromWindow()
 
     m_currentPad->SetPadToDieLength( m_padMaster->GetPadToDieLength() );
 
-    if( m_padMaster->GetShape() != PAD_SHAPE_CUSTOM )
+    if( m_padMaster->GetShape() != PAD_SHAPE::CUSTOM )
         m_padMaster->DeletePrimitivesList();
 
 
@@ -1582,8 +1583,8 @@ bool DIALOG_PAD_PROPERTIES::TransferDataFromWindow()
 
     int padNetcode = NETINFO_LIST::UNCONNECTED;
 
-    // For PAD_ATTRIB_NPTH, ensure there is no net name selected
-    if( m_padMaster->GetAttribute() != PAD_ATTRIB_NPTH  )
+    // For PAD_ATTRIB::NPTH, ensure there is no net name selected
+    if( m_padMaster->GetAttribute() != PAD_ATTRIB::NPTH  )
         padNetcode = m_PadNetSelector->GetSelectedNetcode();
 
     m_currentPad->SetNetCode( padNetcode );
@@ -1600,10 +1601,10 @@ bool DIALOG_PAD_PROPERTIES::TransferDataFromWindow()
 
     // rounded rect pads with radius ratio = 0 are in fact rect pads.
     // So set the right shape (and perhaps issues with a radius = 0)
-    if( m_currentPad->GetShape() == PAD_SHAPE_ROUNDRECT &&
+    if( m_currentPad->GetShape() == PAD_SHAPE::ROUNDRECT &&
         m_currentPad->GetRoundRectRadiusRatio() == 0.0 )
     {
-        m_currentPad->SetShape( PAD_SHAPE_RECT );
+        m_currentPad->SetShape( PAD_SHAPE::RECT );
     }
 
     // Set the fabrication property:
@@ -1642,19 +1643,19 @@ bool DIALOG_PAD_PROPERTIES::TransferDataFromWindow()
 }
 
 
-PAD_PROP_T DIALOG_PAD_PROPERTIES::getSelectedProperty()
+PAD_PROP DIALOG_PAD_PROPERTIES::getSelectedProperty()
 {
-    PAD_PROP_T prop = PAD_PROP_NONE;
+    PAD_PROP prop = PAD_PROP::NONE;
 
     switch( m_choiceFabProperty->GetSelection() )
     {
-    case 0:     prop = PAD_PROP_NONE; break;
-    case 1:     prop = PAD_PROP_BGA; break;
-    case 2:     prop = PAD_PROP_FIDUCIAL_LOCAL; break;
-    case 3:     prop = PAD_PROP_FIDUCIAL_GLBL; break;
-    case 4:     prop = PAD_PROP_TESTPOINT; break;
-    case 5:     prop = PAD_PROP_HEATSINK; break;
-    case 6:     prop = PAD_PROP_CASTELLATED; break;
+    case 0:     prop = PAD_PROP::NONE; break;
+    case 1:     prop = PAD_PROP::BGA; break;
+    case 2:     prop = PAD_PROP::FIDUCIAL_LOCAL; break;
+    case 3:     prop = PAD_PROP::FIDUCIAL_GLBL; break;
+    case 4:     prop = PAD_PROP::TESTPOINT; break;
+    case 5:     prop = PAD_PROP::HEATSINK; break;
+    case 6:     prop = PAD_PROP::CASTELLATED; break;
     }
 
     return prop;
@@ -1680,11 +1681,11 @@ bool DIALOG_PAD_PROPERTIES::transferDataToPad( PAD* aPad )
     aPad->SetShape( code_shape[m_PadShapeSelector->GetSelection()] );
 
     if( m_PadShapeSelector->GetSelection() == CHOICE_SHAPE_CUSTOM_RECT_ANCHOR )
-        aPad->SetAnchorPadShape( PAD_SHAPE_RECT );
+        aPad->SetAnchorPadShape( PAD_SHAPE::RECT );
     else
-        aPad->SetAnchorPadShape( PAD_SHAPE_CIRCLE );
+        aPad->SetAnchorPadShape( PAD_SHAPE::CIRCLE );
 
-    if( aPad->GetShape() == PAD_SHAPE_CUSTOM )
+    if( aPad->GetShape() == PAD_SHAPE::CUSTOM )
         aPad->ReplacePrimitives( m_primitives );
 
     // Read pad clearances values:
@@ -1721,7 +1722,7 @@ bool DIALOG_PAD_PROPERTIES::transferDataToPad( PAD* aPad )
         aPad->SetDrillSize( wxSize( m_holeX.GetValue(), m_holeY.GetValue() ) );
     }
 
-    if( aPad->GetShape() == PAD_SHAPE_CIRCLE )
+    if( aPad->GetShape() == PAD_SHAPE::CIRCLE )
         aPad->SetSize( wxSize( m_sizeX.GetValue(), m_sizeX.GetValue() ) );
     else
         aPad->SetSize( wxSize( m_sizeX.GetValue(), m_sizeY.GetValue() ) );
@@ -1731,7 +1732,7 @@ bool DIALOG_PAD_PROPERTIES::transferDataToPad( PAD* aPad )
     bool   error    = false;
     wxSize delta( 0, 0 );
 
-    if( aPad->GetShape() == PAD_SHAPE_TRAPEZOID )
+    if( aPad->GetShape() == PAD_SHAPE::TRAPEZOID )
     {
         // For a trapezoid, only one of delta.x or delta.y is not 0, depending on axis.
         if( m_trapAxisCtrl->GetSelection() == 0 )
@@ -1813,13 +1814,13 @@ bool DIALOG_PAD_PROPERTIES::transferDataToPad( PAD* aPad )
     }
     aPad->SetChamferPositions( chamfers );
 
-    if( aPad->GetShape() == PAD_SHAPE_CUSTOM )
+    if( aPad->GetShape() == PAD_SHAPE::CUSTOM )
     {
         // The pad custom has a "anchor pad" (a basic shape: round or rect pad)
         // that is the minimal area of this pad, and is usefull to ensure a hole
         // diameter is acceptable, and is used in Gerber files as flashed area
         // reference
-        if( aPad->GetAnchorPadShape() == PAD_SHAPE_CIRCLE )
+        if( aPad->GetAnchorPadShape() == PAD_SHAPE::CIRCLE )
             aPad->SetSize( wxSize( m_sizeX.GetValue(), m_sizeX.GetValue() ) );
 
         // define the way the clearance area is defined in zones
@@ -1830,21 +1831,21 @@ bool DIALOG_PAD_PROPERTIES::transferDataToPad( PAD* aPad )
 
     switch( aPad->GetAttribute() )
     {
-    case PAD_ATTRIB_PTH:
+    case PAD_ATTRIB::PTH:
         break;
 
-    case PAD_ATTRIB_CONN:
-    case PAD_ATTRIB_SMD:
-        // SMD and PAD_ATTRIB_CONN has no hole.
-        // basically, SMD and PAD_ATTRIB_CONN are same type of pads
-        // PAD_ATTRIB_CONN has just a default non technical layers that differs from SMD
+    case PAD_ATTRIB::CONN:
+    case PAD_ATTRIB::SMD:
+        // SMD and PAD_ATTRIB::CONN has no hole.
+        // basically, SMD and PAD_ATTRIB::CONN are same type of pads
+        // PAD_ATTRIB::CONN has just a default non technical layers that differs from SMD
         // and are intended to be used in virtual edge board connectors
         // However we can accept a non null offset,
         // mainly to allow complex pads build from a set of basic pad shapes
         aPad->SetDrillSize( wxSize( 0, 0 ) );
         break;
 
-    case PAD_ATTRIB_NPTH:
+    case PAD_ATTRIB::NPTH:
         // Mechanical purpose only:
         // no net name, no pad name allowed
         aPad->SetName( wxEmptyString );
@@ -1856,7 +1857,7 @@ bool DIALOG_PAD_PROPERTIES::transferDataToPad( PAD* aPad )
         break;
     }
 
-    if( aPad->GetShape() == PAD_SHAPE_ROUNDRECT )
+    if( aPad->GetShape() == PAD_SHAPE::ROUNDRECT )
     {
         double ratioPercent;
 
@@ -1864,7 +1865,7 @@ bool DIALOG_PAD_PROPERTIES::transferDataToPad( PAD* aPad )
         aPad->SetRoundRectRadiusRatio( ratioPercent / 100.0 );
     }
 
-    if( aPad->GetShape() == PAD_SHAPE_CHAMFERED_RECT )
+    if( aPad->GetShape() == PAD_SHAPE::CHAMFERED_RECT )
     {
         if( m_PadShapeSelector->GetSelection() == CHOICE_SHAPE_CHAMFERED_ROUNDED_RECT )
         {

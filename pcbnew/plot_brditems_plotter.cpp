@@ -47,7 +47,7 @@
 #include <gbr_metadata.h>
 #include <gbr_netlist_metadata.h>             // for GBR_NETLIST_METADATA
 #include <layers_id_colors_and_visibility.h>  // for LSET, IsCopperLayer
-#include <pad_shapes.h>                       // for PAD_ATTRIB_NPTH
+#include <pad_shapes.h>                       // for PAD_ATTRIB::NPTH
 #include <pcbplot.h>
 #include <pcb_plot_params.h>                  // for PCB_PLOT_PARAMS, PCB_PL...
 #include <advanced_config.h>
@@ -123,7 +123,7 @@ void BRDITEMS_PLOTTER::PlotPad( const PAD* aPad, COLOR4D aColor, OUTLINE_MODE aP
         // Some pads are mechanical pads ( through hole or smd )
         // when this is the case, they have no pad name and/or are not plated.
         // In this case gerber files have slightly different attributes.
-        if( aPad->GetAttribute() == PAD_ATTRIB_NPTH || aPad->GetName().IsEmpty() )
+        if( aPad->GetAttribute() == PAD_ATTRIB::NPTH || aPad->GetName().IsEmpty() )
             gbr_metadata.m_NetlistMetadata.m_NotInNet = true;
 
         if( !plotOnExternalCopperLayer )
@@ -142,24 +142,24 @@ void BRDITEMS_PLOTTER::PlotPad( const PAD* aPad, COLOR4D aColor, OUTLINE_MODE aP
         // Some attributes are reserved to the external copper layers:
         // GBR_APERTURE_ATTRIB_CONNECTORPAD and GBR_APERTURE_ATTRIB_SMDPAD_CUDEF
         // for instance.
-        // Pad with type PAD_ATTRIB_CONN or PAD_ATTRIB_SMD that is not on outer layer
+        // Pad with type PAD_ATTRIB::CONN or PAD_ATTRIB::SMD that is not on outer layer
         // has its aperture attribute set to GBR_APERTURE_ATTRIB_CONDUCTOR
         switch( aPad->GetAttribute() )
         {
-        case PAD_ATTRIB_NPTH:       // Mechanical pad through hole
+        case PAD_ATTRIB::NPTH:       // Mechanical pad through hole
             gbr_metadata.SetApertureAttrib( GBR_APERTURE_METADATA::GBR_APERTURE_ATTRIB_WASHERPAD );
             break;
 
-        case PAD_ATTRIB_PTH :       // Pad through hole, a hole is also expected
+        case PAD_ATTRIB::PTH :       // Pad through hole, a hole is also expected
             gbr_metadata.SetApertureAttrib( GBR_APERTURE_METADATA::GBR_APERTURE_ATTRIB_COMPONENTPAD );
             break;
 
-        case PAD_ATTRIB_CONN:       // Connector pads, no solder paste but with solder mask.
+        case PAD_ATTRIB::CONN:       // Connector pads, no solder paste but with solder mask.
             if( plotOnExternalCopperLayer )
                 gbr_metadata.SetApertureAttrib( GBR_APERTURE_METADATA::GBR_APERTURE_ATTRIB_CONNECTORPAD );
             break;
 
-        case PAD_ATTRIB_SMD:        // SMD pads (on external copper layer only)
+        case PAD_ATTRIB::SMD:        // SMD pads (on external copper layer only)
                                     // with solder paste and mask
             if( plotOnExternalCopperLayer )
                 gbr_metadata.SetApertureAttrib( GBR_APERTURE_METADATA::GBR_APERTURE_ATTRIB_SMDPAD_CUDEF );
@@ -170,38 +170,38 @@ void BRDITEMS_PLOTTER::PlotPad( const PAD* aPad, COLOR4D aColor, OUTLINE_MODE aP
         // that replace previous aperture attribute:
         switch( aPad->GetProperty() )
         {
-        case PAD_PROP_BGA:          // Only applicable to outer layers
+        case PAD_PROP::BGA:          // Only applicable to outer layers
             if( plotOnExternalCopperLayer )
                 gbr_metadata.SetApertureAttrib( GBR_APERTURE_METADATA::GBR_APERTURE_ATTRIB_BGAPAD_CUDEF );
             break;
 
-        case PAD_PROP_FIDUCIAL_GLBL:
+        case PAD_PROP::FIDUCIAL_GLBL:
             gbr_metadata.SetApertureAttrib( GBR_APERTURE_METADATA::GBR_APERTURE_ATTRIB_FIDUCIAL_GLBL );
             break;
 
-        case PAD_PROP_FIDUCIAL_LOCAL:
+        case PAD_PROP::FIDUCIAL_LOCAL:
             gbr_metadata.SetApertureAttrib( GBR_APERTURE_METADATA::GBR_APERTURE_ATTRIB_FIDUCIAL_LOCAL );
             break;
 
-        case PAD_PROP_TESTPOINT:    // Only applicable to outer layers
+        case PAD_PROP::TESTPOINT:    // Only applicable to outer layers
             if( plotOnExternalCopperLayer )
                 gbr_metadata.SetApertureAttrib( GBR_APERTURE_METADATA::GBR_APERTURE_ATTRIB_TESTPOINT );
             break;
 
-        case PAD_PROP_HEATSINK:
+        case PAD_PROP::HEATSINK:
             gbr_metadata.SetApertureAttrib( GBR_APERTURE_METADATA::GBR_APERTURE_ATTRIB_HEATSINKPAD );
             break;
 
-        case PAD_PROP_CASTELLATED:
+        case PAD_PROP::CASTELLATED:
             gbr_metadata.SetApertureAttrib( GBR_APERTURE_METADATA::GBR_APERTURE_ATTRIB_CASTELLATEDPAD );
             break;
 
-        case PAD_PROP_NONE:
+        case PAD_PROP::NONE:
             break;
         }
 
         // Ensure NPTH pads have *always* the GBR_APERTURE_ATTRIB_WASHERPAD attribute
-        if( aPad->GetAttribute() == PAD_ATTRIB_NPTH )
+        if( aPad->GetAttribute() == PAD_ATTRIB::NPTH )
             gbr_metadata.SetApertureAttrib( GBR_APERTURE_METADATA::GBR_APERTURE_ATTRIB_WASHERPAD );
     }
     else
@@ -218,26 +218,26 @@ void BRDITEMS_PLOTTER::PlotPad( const PAD* aPad, COLOR4D aColor, OUTLINE_MODE aP
 
     switch( aPad->GetShape() )
     {
-    case PAD_SHAPE_CIRCLE:
+    case PAD_SHAPE::CIRCLE:
         m_plotter->FlashPadCircle( shape_pos, aPad->GetSize().x, aPlotMode, &gbr_metadata );
         break;
 
-    case PAD_SHAPE_OVAL:
+    case PAD_SHAPE::OVAL:
         m_plotter->FlashPadOval( shape_pos, aPad->GetSize(), aPad->GetOrientation(), aPlotMode,
                                  &gbr_metadata );
         break;
 
-    case PAD_SHAPE_RECT:
+    case PAD_SHAPE::RECT:
         m_plotter->FlashPadRect( shape_pos, aPad->GetSize(), aPad->GetOrientation(), aPlotMode,
                                  &gbr_metadata );
         break;
 
-    case PAD_SHAPE_ROUNDRECT:
+    case PAD_SHAPE::ROUNDRECT:
         m_plotter->FlashPadRoundRect( shape_pos, aPad->GetSize(), aPad->GetRoundRectCornerRadius(),
                                       aPad->GetOrientation(), aPlotMode, &gbr_metadata );
         break;
 
-    case PAD_SHAPE_TRAPEZOID:
+    case PAD_SHAPE::TRAPEZOID:
     {
         // Build the pad polygon in coordinates relative to the pad
         // (i.e. for a pad at pos 0,0, rot 0.0). Needed to use aperture macros,
@@ -257,7 +257,7 @@ void BRDITEMS_PLOTTER::PlotPad( const PAD* aPad, COLOR4D aColor, OUTLINE_MODE aP
     }
         break;
 
-    case PAD_SHAPE_CHAMFERED_RECT:
+    case PAD_SHAPE::CHAMFERED_RECT:
         if( m_plotter->GetPlotterType() == PLOT_FORMAT::GERBER )
         {
             static_cast<GERBER_PLOTTER*>( m_plotter )->FlashPadChamferRoundRect(
@@ -271,7 +271,7 @@ void BRDITEMS_PLOTTER::PlotPad( const PAD* aPad, COLOR4D aColor, OUTLINE_MODE aP
         KI_FALLTHROUGH;
 
     default:
-    case PAD_SHAPE_CUSTOM:
+    case PAD_SHAPE::CUSTOM:
     {
         const std::shared_ptr<SHAPE_POLY_SET>& polygons = aPad->GetEffectivePolygon();
 

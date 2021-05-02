@@ -36,6 +36,8 @@
 #include <drawing_sheet/ds_painter.h>
 #include <wx/valgen.h>
 #include <wx/tokenzr.h>
+#include <wx/filedlg.h>
+#include <wx/dcmemory.h>
 
 #define MAX_PAGE_EXAMPLE_SIZE 200
 
@@ -804,13 +806,20 @@ void DIALOG_PAGES_SETTINGS::OnWksFileSelection( wxCommandEvent& event )
             shortFileName = fileName;
     }
 
-    SetWksFileName( shortFileName );
+    std::unique_ptr<DS_DATA_MODEL> ws = std::make_unique<DS_DATA_MODEL>();
 
-    if( m_drawingSheet == NULL )
-        m_drawingSheet = new DS_DATA_MODEL;
+    if( ws->LoadDrawingSheet( fileName ) )
+    {
+        if( m_drawingSheet != nullptr )
+        {
+            delete m_drawingSheet;
+        }
 
-    m_drawingSheet->LoadDrawingSheet( fileName );
+        m_drawingSheet = ws.release();
 
-    GetPageLayoutInfoFromDialog();
-    UpdatePageLayoutExample();
+        SetWksFileName( shortFileName );
+
+        GetPageLayoutInfoFromDialog();
+        UpdatePageLayoutExample();
+    }
 }

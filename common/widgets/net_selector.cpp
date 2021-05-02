@@ -30,6 +30,13 @@
 #include <netinfo.h>
 #include <wx/arrstr.h>
 #include <wx/display.h>
+#include <wx/valtext.h>
+#include <wx/listbox.h>
+#include <wx/stattext.h>
+#include <wx/sizer.h>
+#include <wx/textctrl.h>
+#include <wx/panel.h>
+
 
 wxDEFINE_EVENT( NET_SELECTED, wxCommandEvent );
 
