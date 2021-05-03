@@ -407,13 +407,41 @@ float SCH_PAINTER::getTextThickness( const LIB_TEXT* aItem, bool aDrawingShadows
 }
 
 
+void SCH_PAINTER::doStrokeText( const wxString& aText, const VECTOR2D& aPosition, const TEXT_ATTRIBUTES& aAttributes )
+{
+#ifdef DEBUG
+    std::cerr << "SCH_PAINTER::doStrokeText( \"" << aText << "\", " << aPosition << ", " << aAttributes << " )\n";
+#endif
+    bool flippedY = m_gal->IsTextFlippedY();
+    m_gal->SetTextFlippedY( true );
+    KIFONT::FONT::GetFont()->Draw( m_gal, aText, aPosition, aAttributes );
+    m_gal->SetTextFlippedY( flippedY );
+}
+
+
 void SCH_PAINTER::strokeText( const wxString& aText, const VECTOR2D& aPosition, double aAngle )
 {
     TEXT_ATTRIBUTES attributes;
     attributes.SetHorizJustify( m_gal->GetHorizontalJustify() );
     attributes.SetVertJustify( m_gal->GetVerticalJustify() );
     attributes.SetAngle( EDA_ANGLE( aAngle, EDA_ANGLE::RADIANS ) );
-    KIFONT::FONT::GetFont()->Draw( m_gal, aText, aPosition, attributes );
+    doStrokeText( aText, aPosition, attributes );
+}
+
+
+void SCH_PAINTER::strokeText( const EDA_TEXT* aText, const VECTOR2D& aPosition )
+{
+    TEXT_ATTRIBUTES attributes;
+    attributes.SetHorizJustify( aText->GetHorizJustify() );
+    attributes.SetVertJustify( aText->GetVertJustify() );
+    attributes.SetAngle( EDA_ANGLE( aText->GetTextAngleRadians(), EDA_ANGLE::RADIANS ) );
+    doStrokeText( aText->GetShownText(), aPosition, attributes );
+}
+
+
+void SCH_PAINTER::strokeText( const EDA_TEXT* aText )
+{
+    strokeText( aText, aText->GetTextPos() );
 }
 
 
@@ -674,9 +702,10 @@ void SCH_PAINTER::draw( const LIB_FIELD *aField, int aLayer )
         m_gal->SetHorizontalJustify( aField->GetHorizJustify() );
         m_gal->SetVerticalJustify( aField->GetVertJustify() );
 
-        double orient = aField->GetTextAngleRadians();
-
-        strokeText( aField->GetText(), pos, orient );
+#ifdef DEBUG
+        m_gal->SetStrokeColor( COLOR4D( 1, 1, 0, 1 ) );
+#endif
+        strokeText( aField );
     }
 
     // Draw the umbilical line
@@ -711,8 +740,6 @@ void SCH_PAINTER::draw( const LIB_TEXT *aText, int aLayer )
 
     EDA_RECT bBox = aText->GetBoundingBox();
     bBox.RevertYAxis();
-    VECTOR2D pos = mapCoords( bBox.Centre() );
-    double orient = aText->GetTextAngleRadians();
 
     m_gal->SetHorizontalJustify( GR_TEXT_HJUSTIFY_CENTER );
     m_gal->SetVerticalJustify( GR_TEXT_VJUSTIFY_CENTER );
@@ -724,7 +751,17 @@ void SCH_PAINTER::draw( const LIB_TEXT *aText, int aLayer )
     m_gal->SetFontBold( aText->IsBold() );
     m_gal->SetFontItalic( aText->IsItalic() );
     m_gal->SetFontUnderlined( false );
-    strokeText( aText->GetText(), pos, orient );
+
+#if 0
+    VECTOR2D pos = mapCoords( bBox.Centre() );
+    strokeText( aText->GetShownText(), pos, aText->GetTextAngleRadians() );
+#else
+#ifdef DEBUG
+    m_gal->SetStrokeColor( COLOR4D( 1, 0, .5, 1 ) );
+#endif
+    //strokeText( aText );
+    strokeText( aText->GetShownText(), aText->GetTextPos(), aText->GetTextAngleRadians() );
+#endif
 }
 
 
@@ -1373,7 +1410,10 @@ void SCH_PAINTER::draw( const SCH_TEXT *aText, int aLayer )
 
     if( !shownText.IsEmpty() )
     {
-        strokeText( shownText, text_offset, aText->GetTextAngleRadians() );
+#ifdef DEBUG
+        m_gal->SetStrokeColor( COLOR4D( 0, .6, .4, 1 ) );
+#endif
+        strokeText( aText, text_offset );
     }
 
     if( aText->IsDangling() )
@@ -1575,7 +1615,19 @@ void SCH_PAINTER::draw( const SCH_FIELD *aField, int aLayer )
         m_gal->SetTextMirrored( aField->IsMirrored() );
         m_gal->SetLineWidth( getTextThickness( aField, drawingShadows ) );
 
+#if 0
+#ifdef DEBUG
+        m_gal->SetStrokeColor( COLOR4D( 0.5, 0.7, 0.5, 1 ) );
+#endif
+        // H/V justify is forced to center, so can't do this:
+        // strokeText( aField, textpos );
         strokeText( aField->GetShownText(), textpos, orient == TEXT_ANGLE_VERT ? M_PI / 2 : 0 );
+#else
+#ifdef DEBUG
+        m_gal->SetStrokeColor( COLOR4D( 0.5, 0.5, 0.7, 1 ) );
+#endif
+        strokeText( aField );
+#endif
     }
 
     // Draw the umbilical line

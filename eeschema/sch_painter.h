@@ -30,7 +30,7 @@
 #include <sch_symbol.h>
 
 #include <painter.h>
-
+#include <font/text_attributes.h>
 
 class LIB_RECTANGLE;
 class LIB_PIN;
@@ -194,7 +194,11 @@ private:
     void fillIfSelection( int aLayer );
 
     void triLine ( const VECTOR2D &a, const VECTOR2D &b, const VECTOR2D &c );
+
+    void doStrokeText( const wxString& aText, const VECTOR2D& aPosition, const TEXT_ATTRIBUTES& aAttributes );
     void strokeText( const wxString& aText, const VECTOR2D& aPosition, double aRotationAngle );
+    void strokeText( const EDA_TEXT* aText, const VECTOR2D& aPosition );
+    void strokeText( const EDA_TEXT* aText );
 
     SCH_RENDER_SETTINGS m_schSettings;
 

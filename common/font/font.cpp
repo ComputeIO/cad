@@ -251,7 +251,8 @@ VECTOR2D FONT::doDrawString( KIGFX::GAL* aGal, const UTF8& aText, const VECTOR2D
 void FONT::getLinePositions( const UTF8& aText, const VECTOR2D& aPosition,
                              wxArrayString& aStringList, std::vector<wxPoint>& aPositions,
                              int& aLineCount, std::vector<VECTOR2D>& aBoundingBoxes,
-                             const VECTOR2D& aGlyphSize, const TEXT_ATTRIBUTES& aAttributes ) const
+                             const VECTOR2D& aGlyphSize, const TEXT_ATTRIBUTES& aAttributes,
+                             bool aFlippedY ) const
 {
 #ifdef DEBUG // OUTLINEFONT_DEBUG
     std::cerr << "FONT::getLinePositions( \"" << aText << "\", ..., " << aGlyphSize << ", "
@@ -298,7 +299,10 @@ void FONT::getLinePositions( const UTF8& aText, const VECTOR2D& aPosition,
     {
         VECTOR2D textSize = aBoundingBoxes.at( i );
         wxPoint  lineOffset( offset );
-        lineOffset.y += i * interline;
+        /* aFlippedY is true when calling from eeschema so multiline text needs to be inverted
+         */
+        int lineOffsetMultiplier = aFlippedY ? -i : i;
+        lineOffset.y += lineOffsetMultiplier * interline;
 
         switch( aAttributes.GetHorizontalAlignment() )
         {
@@ -424,7 +428,7 @@ VECTOR2D FONT::Draw( KIGFX::GAL* aGal, const UTF8& aText, const VECTOR2D& aPosit
 #ifdef DEBUG
     std::cerr << "FONT::Draw( aGal, \"" << aText << "\", " << aPosition << ", " << aOrigin
               << ", " << aAttributes << " ) const ; position " << position << std::endl;
-    bool   drawDebugShapes = true;
+    bool   drawDebugShapes = false;
     double dbg = 200000;
 #endif
 
@@ -456,7 +460,7 @@ VECTOR2D FONT::Draw( KIGFX::GAL* aGal, const UTF8& aText, const VECTOR2D& aPosit
     int n;
 
     getLinePositions( aText, position, strings_list, positions, n, boundingBoxes,
-                      aGal->GetGlyphSize(), aAttributes );
+                      aGal->GetGlyphSize(), aAttributes, aGal->IsTextFlippedY() );
 
     VECTOR2D boundingBox( 0, 0 );
     for( int i = 0; i < n; i++ )

@@ -281,10 +281,15 @@ protected:
     virtual VECTOR2D drawSingleLineText( KIGFX::GAL* aGal, const UTF8& aText,
                                          const VECTOR2D& aPosition, const EDA_ANGLE& aAngle = EDA_ANGLE() ) const = 0;
 
+    /**
+     * @param aFlippedY true if multiline text Y coordinates should decrease instead of increasing
+     *        (needed because eeschema Y coordinates are upside down)
+     */
     void getLinePositions( const UTF8& aText, const VECTOR2D& aPosition, wxArrayString& aStringList,
                            std::vector<wxPoint>& aPositions, int& aLineCount,
                            std::vector<VECTOR2D>& aBoundingBoxes, const VECTOR2D& aGlyphSize,
-                           const TEXT_ATTRIBUTES& aAttributes ) const;
+                           const TEXT_ATTRIBUTES& aAttributes,
+                           bool aFlippedY = false ) const;
 
     virtual VECTOR2D getBoundingBox( const UTF8& aString, const VECTOR2D& aGlyphSize,
                                      TEXT_STYLE_FLAGS aTextStyle = 0 ) const = 0;
