@@ -28,11 +28,13 @@
 #include "pcb_control.h"
 #include "pcb_picker_tool.h"
 #include "pcb_selection_tool.h"
+#include "board_reannotate_tool.h"
 #include <3d_viewer/eda_3d_viewer.h>
 #include <bitmaps.h>
 #include <board_commit.h>
 #include <board.h>
 #include <board_item.h>
+#include <dialogs/dialog_paste_special.h>
 #include <dimension.h>
 #include <footprint.h>
 #include <track.h>
@@ -631,6 +633,17 @@ int PCB_CONTROL::Paste( const TOOL_EVENT& aEvent )
     if( !frame()->IsType( FRAME_FOOTPRINT_EDITOR ) && !frame()->IsType( FRAME_PCB_EDITOR ) )
         return 0;
 
+    PASTE_MODE     pasteMode = PASTE_MODE::KEEP_ANNOTATIONS;
+    const wxString defaultRef = wxT( "REF**" );
+
+    if( aEvent.IsAction( &ACTIONS::pasteSpecial ) )
+    {
+        DIALOG_PASTE_SPECIAL dlg( m_frame, &pasteMode, defaultRef );
+
+        if( dlg.ShowModal() == wxID_CANCEL )
+            return 0;
+    }
+
     bool isFootprintEditor = m_isFootprintEditor || frame()->IsType( FRAME_FOOTPRINT_EDITOR );
 
     if( clipItem->Type() == PCB_T )
@@ -697,11 +710,18 @@ int PCB_CONTROL::Paste( const TOOL_EVENT& aEvent )
 
                 delete clipBoard;
 
-                placeBoardItems( pastedItems, true, true );
+                placeBoardItems( pastedItems, true, true,
+                                 pasteMode == PASTE_MODE::UNIQUE_ANNOTATIONS );
             }
             else
             {
-                placeBoardItems( clipBoard, true );
+                if( pasteMode == PASTE_MODE::REMOVE_ANNOTATIONS )
+                {
+                    for( FOOTPRINT* clipFootprint : clipBoard->Footprints() )
+                        clipFootprint->SetReference( defaultRef );
+                }
+
+                placeBoardItems( clipBoard, true, pasteMode == PASTE_MODE::UNIQUE_ANNOTATIONS );
 
                 m_frame->GetBoard()->BuildConnectivity();
                 m_frame->Compile_Ratsnest( true );
@@ -722,11 +742,14 @@ int PCB_CONTROL::Paste( const TOOL_EVENT& aEvent )
             }
             else
             {
+                if( pasteMode == PASTE_MODE::REMOVE_ANNOTATIONS )
+                    clipFootprint->SetReference( defaultRef );
+
                 clipFootprint->SetParent( board() );
                 pastedItems.push_back( clipFootprint );
             }
 
-            placeBoardItems( pastedItems, true, true );
+            placeBoardItems( pastedItems, true, true, pasteMode == PASTE_MODE::UNIQUE_ANNOTATIONS );
             break;
         }
 
@@ -819,7 +842,7 @@ static void moveUnflaggedItems( ZONES& aList, std::vector<BOARD_ITEM*>& aTarget,
 
 
 
-int PCB_CONTROL::placeBoardItems( BOARD* aBoard, bool aAnchorAtOrigin  )
+int PCB_CONTROL::placeBoardItems( BOARD* aBoard, bool aAnchorAtOrigin, bool aReannotateDuplicates )
 {
     // items are new if the current board is not the board source
     bool isNew = board() != aBoard;
@@ -837,12 +860,12 @@ int PCB_CONTROL::placeBoardItems( BOARD* aBoard, bool aAnchorAtOrigin  )
     // selection created aBoard that has the group and all descendents in it.
     moveUnflaggedItems( aBoard->Groups(), items, isNew );
 
-    return placeBoardItems( items, isNew, aAnchorAtOrigin );
+    return placeBoardItems( items, isNew, aAnchorAtOrigin, aReannotateDuplicates );
 }
 
 
 int PCB_CONTROL::placeBoardItems( std::vector<BOARD_ITEM*>& aItems, bool aIsNew,
-                                  bool aAnchorAtOrigin )
+                                  bool aAnchorAtOrigin, bool aReannotateDuplicates )
 {
     m_toolMgr->RunAction( PCB_ACTIONS::selectionClear, true );
 
@@ -891,12 +914,6 @@ int PCB_CONTROL::placeBoardItems( std::vector<BOARD_ITEM*>& aItems, bool aIsNew,
             break;
         }
 
-        // Add or just select items for the move/place command
-        if( aIsNew )
-            editTool->GetCurrentCommit()->Add( item );
-        else
-            editTool->GetCurrentCommit()->Added( item );
-
         // We only need to add the items that aren't inside a group currently selected
         // to the selection. If an item is inside a group and that group is selected,
         // then the selection tool will select it for us.
@@ -906,6 +923,19 @@ int PCB_CONTROL::placeBoardItems( std::vector<BOARD_ITEM*>& aItems, bool aIsNew,
 
     // Select the items that should be selected
     m_toolMgr->RunAction( PCB_ACTIONS::selectItems, true, &itemsToSel );
+
+    // Reannotate duplicate footprints
+    if( aReannotateDuplicates )
+        m_toolMgr->GetTool<BOARD_REANNOTATE_TOOL>()->ReannotateDuplicatesInSelection();
+
+    for( BOARD_ITEM* item : aItems )
+    {
+        // Commit after reannotation
+        if( aIsNew )
+            editTool->GetCurrentCommit()->Add( item );
+        else
+            editTool->GetCurrentCommit()->Added( item );
+    }
 
     PCB_SELECTION& selection = selectionTool->GetSelection();
 
@@ -1017,7 +1047,7 @@ int PCB_CONTROL::AppendBoard( PLUGIN& pi, wxString& fileName )
     brd->SetEnabledLayers( enabledLayers );
     brd->SetVisibleLayers( enabledLayers );
 
-    return placeBoardItems( brd, false );
+    return placeBoardItems( brd, false, false ); // Do not reannotate duplicates on Append Board
 }
 
 
@@ -1194,6 +1224,7 @@ void PCB_CONTROL::setTransitions()
     Go( &PCB_CONTROL::AppendBoardFromFile,  PCB_ACTIONS::appendBoard.MakeEvent() );
 
     Go( &PCB_CONTROL::Paste,                ACTIONS::paste.MakeEvent() );
+    Go( &PCB_CONTROL::Paste,                ACTIONS::pasteSpecial.MakeEvent() );
 
     Go( &PCB_CONTROL::UpdateMessagePanel,   EVENTS::SelectedEvent );
     Go( &PCB_CONTROL::UpdateMessagePanel,   EVENTS::UnselectedEvent );
