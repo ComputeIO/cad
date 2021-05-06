@@ -6,6 +6,9 @@ add_definitions(-DBOOST_TEST_DYN_LINK -DPCBNEW -DFEM_PROTO -DTEST_APP_NO_MAIN)
 
 add_executable( fem_proto
     fem_proto_test.cpp
+
+    ../../pcbnew/fem/sparselizard/sparselizard_mesher.cpp
+
     ../qa_utils/mocks.cpp
     ../pcbnew_utils/board_file_utils.cpp
     ../qa_utils/test_app_main.cpp

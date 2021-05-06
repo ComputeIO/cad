@@ -1,3 +1,27 @@
+/*
+ * This program source code file is part of KiCad, a free EDA CAD application.
+ *
+ * Copyright (C) 2021 Thomas Pointhuber <thomas.pointhuber@gmx.at>
+ * Copyright (C) 2021 KiCad Developers, see AUTHORS.txt for contributors.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, you may find one here:
+ * http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
+ * or you may search the http://www.gnu.org website for the version 2 license,
+ * or you may write to the Free Software Foundation, Inc.,
+ * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
+ */
+
 #include <iostream>
 #include <string>
 
@@ -6,6 +30,8 @@
 
 #include <pcbnew_utils/board_file_utils.h>
 
+#include <pcbnew/fem/sparselizard/sparselizard_mesher.h>
+
 #include <sparselizard/sparselizard.h>
 
 #include <pcbnew/board.h>
@@ -13,67 +39,36 @@
 using namespace sl;
 
 
-void runFEMProto( const BOARD* board )
+void runFEMProto( const BOARD* aBoard, std::string aNetname )
 {
-    vector<shape> shapes;
+    SPARSELIZARD_MESHER mesher( aBoard );
 
-    PCB_LAYER_ID klayer = PCB_LAYER_ID::F_Cu;
-    for( size_t i = 0; i < board->GetAreaCount(); i++ )
+    NETINFO_ITEM* gndNetinfo = aBoard->FindNet( aNetname );
+    if( gndNetinfo == nullptr )
     {
-        ZONE* area = board->GetArea( i );
-        if( area->IsFilled() && area->IsOnLayer( klayer ) )
-        {
-            area->CacheTriangulation( klayer );
-
-            const SHAPE_POLY_SET& polyset = area->GetFilledPolysList( klayer );
-            for( size_t k = 0; k < polyset.TriangulatedPolyCount(); k++ )
-            {
-                const SHAPE_POLY_SET::TRIANGULATED_POLYGON* triangulated =
-                        polyset.TriangulatedPolygon( k );
-
-                std::cout << "* Found area on " << area->GetLayerName() << " with "
-                          << triangulated->GetTriangleCount() << " triangles" << std::endl;
-                for( size_t t = 0; t < triangulated->GetTriangleCount(); t++ )
-                {
-                    VECTOR2<int> a, b, c;
-                    triangulated->GetTriangle( t, a, b, c );
-
-                    std::vector<double> coords = { a.x / IU_PER_MM, a.y / IU_PER_MM, 0,
-                                                   b.x / IU_PER_MM, b.y / IU_PER_MM, 0,
-                                                   c.x / IU_PER_MM, c.y / IU_PER_MM, 0 };
-
-                    /*); i < coords.size(); ++i){
-                        std::ostringstream doubleStr;
-                        doubleStr << coords[i];
-                        tempStr += doubleStr.str() + ", ";
-                    }
-                    std::cout << tempStr << std::endl;*/
-
-                    shape mytriangle( "triangle", area->GetNetCode(), coords, { 2, 2, 2 } );
-                    shapes.push_back( mytriangle );
-                }
-            }
-        }
+        std::cerr << "Net not found: '" << aNetname << "'" << std::endl;
+        return;
     }
 
-    /*int   quadranglephysicalregion = 1, trianglephysicalregion = 2, unionphysicalregion = 3;
-    shape line1( "line", -1, { -1, -1, 0, 1, -1, 0 }, 10 );
-    shape arc2( "arc", -1, { 1, -1, 0, 1, 1, 0, 0, 0, 0 }, 12 );
-    shape line3( "line", -1, { 1, 1, 0, -1, 1, 0 }, 10 );
-    shape line4( "line", -1, { -1, 1, 0, -1, -1, 0 }, 12 );
-    shape line5( "line", -1, { 1, -1, 0, 3, -1, 0 }, 12 );
-    shape arc6( "arc", -1, { 3, -1, 0, 1, 1, 0, 1.6, -0.4, 0 }, 12 );
-    shape myquadrangle( "quadrangle", quadranglephysicalregion, { line1, arc2, line3, line4 } );*/
-    //shape mytriangle("triangle",  trianglephysicalregion , {line5 ,arc6, arc2});
-    //shape myunion("union", unionphysicalregion, {line1, arc2, line3 ,line4 });
+    int regionId = mesher.AddNetRegion( gndNetinfo->GetNetCode() );
+    std::cerr << "Net '" << aNetname << "' will be on region: " << regionId << std::endl;
 
-    // Add here all regions needed in the finite element simulation.
+    std::vector<shape> shapes;
+
+    // offset front CU so we can see both sides :D
+    /*mesher.Get2DShapes( shapes, PCB_LAYER_ID::F_Cu );
+    for(auto& shape : shapes)
+    {
+        shape.shift(0, 0, 10.);
+    }*/
+
+    mesher.Get2DShapes( shapes, PCB_LAYER_ID::B_Cu );
+
     mesh mymesh( shapes );
 
-    // You can write the mesh at any time during the geometry
-    // construction to easily debug and validate every line of code.
     mymesh.write( "mymesh.msh" );
 }
+
 
 int main( int argc, char** argv )
 {
@@ -90,7 +85,7 @@ int main( int argc, char** argv )
 
     std::unique_ptr<BOARD> board = KI_TEST::ReadBoardFromFileOrStream( std::string( argv[1] ) );
 
-    runFEMProto( board.get() );
+    runFEMProto( board.get(), "GND" );
 
     Pgm().Destroy();
     wxUninitialize();
