@@ -24,22 +24,27 @@
 
 #include "sparselizard_mesher.h"
 
+#include <convert_basic_shapes_to_polygon.h>
+
 #include "board.h"
+#include "pad.h"
+#include "track.h"
 
 #include <sparselizard/shape.h>
 
 
-void SPARSELIZARD_MESHER::Get2DShapes( std::vector<shape>& aShapes, PCB_LAYER_ID aLayer )
+void SPARSELIZARD_MESHER::Get2DShapes( std::vector<shape>& aShapes, PCB_LAYER_ID aLayer,
+                                       bool substractHoles )
 {
     for( int regionId = 1; regionId < m_next_region_id; regionId++ )
     {
-        Get2DShapes( aShapes, regionId, aLayer );
+        Get2DShapes( aShapes, regionId, aLayer, substractHoles );
     }
 }
 
 
 void SPARSELIZARD_MESHER::Get2DShapes( std::vector<shape>& aShapes, int aRegionId,
-                                       PCB_LAYER_ID aLayer )
+                                       PCB_LAYER_ID aLayer, bool substractHoles )
 {
     SHAPE_POLY_SET polyset;
     SetPolysetOfNetRegion( polyset, aRegionId, aLayer );
@@ -50,6 +55,19 @@ void SPARSELIZARD_MESHER::Get2DShapes( std::vector<shape>& aShapes, int aRegionI
     }
 
     polyset.Simplify( SHAPE_POLY_SET::POLYGON_MODE::PM_FAST );
+
+    if( substractHoles )
+    {
+        SHAPE_POLY_SET substractPolyset;
+        SetPolysetOfHolesOfNetRegion( substractPolyset, aRegionId, aLayer );
+
+        if( !substractPolyset.IsEmpty() )
+        {
+            substractPolyset.Simplify( SHAPE_POLY_SET::POLYGON_MODE::PM_FAST );
+            polyset.BooleanSubtract( substractPolyset, SHAPE_POLY_SET::POLYGON_MODE::PM_FAST );
+            substractPolyset.Simplify( SHAPE_POLY_SET::POLYGON_MODE::PM_FAST );
+        }
+    }
 
     // triangulate polygon and generate shape
     // TODO: use triangulation algorithm which is more suited for FEM
@@ -80,36 +98,175 @@ void SPARSELIZARD_MESHER::Get2DShapes( std::vector<shape>& aShapes, int aRegionI
 void SPARSELIZARD_MESHER::SetPolysetOfNetRegion( SHAPE_POLY_SET& aPolyset, int aRegionId,
                                                  PCB_LAYER_ID aLayer ) const
 {
-    const auto& netRegions = m_net_regions.find( aRegionId );
-    if( netRegions == m_net_regions.end() )
+    const auto& netRegion = m_net_regions.find( aRegionId );
+    if( netRegion == m_net_regions.end() )
     {
         return; // nothing found
     }
 
-    int netcode = netRegions->second;
+    int netcode = netRegion->second;
+    int maxError = m_board->GetDesignSettings().m_MaxError;
 
-    for( size_t i = 0; i < m_board->GetAreaCount(); i++ )
+    // inspired by board_items_to_polygon_shape_transform.cpp
+
+    // convert tracks and vias:
+    for( const TRACK* track : m_board->Tracks() )
     {
-        const ZONE* zone = m_board->GetArea( i );
-        if( zone->GetNetCode() == netcode )
+        if( !track->IsOnLayer( aLayer ) || track->GetNetCode() != netcode )
+            continue;
+
+        track->TransformShapeWithClearanceToPolygon( aPolyset, aLayer, 0, maxError, ERROR_INSIDE );
+    }
+
+    // convert pads and other copper items in footprints
+    for( const FOOTPRINT* footprint : m_board->Footprints() )
+    {
+        for( const PAD* pad : footprint->Pads() )
         {
-            AddZoneToPolyset( aPolyset, zone, aLayer );
+            if( !pad->IsOnLayer( aLayer ) || pad->GetNetCode() != netcode )
+                continue;
+
+            TransformPadWithClearanceToPolygon( aPolyset, pad, aLayer, 0, maxError, ERROR_INSIDE );
+        }
+
+        // TODO: footprints with drawsegments on copper?
+
+        for( const ZONE* zone : footprint->Zones() )
+        {
+            if( zone->IsFilled() && zone->IsOnLayer( aLayer ) )
+                zone->TransformSolidAreasShapesToPolygon( aLayer, aPolyset );
         }
     }
 
-    // TODO: tracks, pads,...
-
-    // TODO: substract pad and holes from polyset
+    // convert copper zones
+    for( const ZONE* zone : m_board->Zones() )
+    {
+        if( zone->IsFilled() && zone->IsOnLayer( aLayer ) && zone->GetNetCode() == netcode )
+            zone->TransformSolidAreasShapesToPolygon( aLayer, aPolyset );
+    }
 }
 
 
-void SPARSELIZARD_MESHER::AddZoneToPolyset( SHAPE_POLY_SET& aPolyset, const ZONE* aZone,
-                                            PCB_LAYER_ID aLayer ) const
+void SPARSELIZARD_MESHER::SetPolysetOfHolesOfNetRegion( SHAPE_POLY_SET& aPolyset, int aRegionId,
+                                                        PCB_LAYER_ID aLayer ) const
 {
-    if( aZone->IsFilled() && aZone->IsOnLayer( aLayer ) )
+    const auto& netRegion = m_net_regions.find( aRegionId );
+    if( netRegion == m_net_regions.end() )
     {
-        aPolyset.BooleanAdd( aZone->GetFilledPolysList( aLayer ),
-                             SHAPE_POLY_SET::POLYGON_MODE::PM_FAST );
-        // TODO: handle old zones with linewidth
+        return; // nothing found
+    }
+
+    int netcode = netRegion->second;
+    int maxError = m_board->GetDesignSettings().m_MaxError;
+
+
+    for( const TRACK* track : m_board->Tracks() )
+    {
+        // assuming proper zone fills and no overlapping vias and pads of different nets!!!
+        if( track->GetNetCode() != netcode || !track->IsOnLayer( aLayer )
+            || !VIA::ClassOf( track ) )
+            continue;
+
+        int radius = ( static_cast<const VIA*>( track )->GetDrill() / 2 );
+        TransformCircleToPolygon( aPolyset, track->GetPosition(), radius, maxError, ERROR_INSIDE );
+    }
+
+    for( const FOOTPRINT* footprint : m_board->Footprints() )
+    {
+        for( const PAD* pad : footprint->Pads() )
+        {
+            if( pad->GetAttribute() == PAD_ATTRIB::SMD )
+                continue;
+
+            switch( pad->GetDrillShape() )
+            {
+            case PAD_DRILL_SHAPE_CIRCLE:
+            case PAD_DRILL_SHAPE_OBLONG:
+                // TODO: correct position, todo oval + rotation correctly
+                TransformCircleToPolygon( aPolyset, pad->GetPosition() + pad->GetOffset(),
+                                          pad->GetDrillSizeX() / 2, maxError, ERROR_INSIDE );
+                break;
+            default: break;
+            }
+        }
+    }
+}
+
+
+// TODO: inspired by board_items_to_polygon_shape_transform.cpp and should be simplified there
+void SPARSELIZARD_MESHER::TransformPadWithClearanceToPolygon( SHAPE_POLY_SET& aCornerBuffer,
+                                                              const PAD* pad, PCB_LAYER_ID aLayer,
+                                                              int aClearance, int aMaxError,
+                                                              ERROR_LOC aErrorLoc ) const
+{
+    if( aLayer != UNDEFINED_LAYER && !pad->IsOnLayer( aLayer ) )
+        return;
+
+    if( !pad->FlashLayer( aLayer ) && IsCopperLayer( aLayer ) )
+        return;
+
+    // NPTH pads are not drawn on layers if the shape size and pos is the same
+    // as their hole:
+    if( pad->GetAttribute() == PAD_ATTRIB::NPTH )
+    {
+        if( pad->GetDrillSize() == pad->GetSize() && pad->GetOffset() == wxPoint( 0, 0 ) )
+        {
+            switch( pad->GetShape() )
+            {
+            case PAD_SHAPE::CIRCLE:
+                if( pad->GetDrillShape() == PAD_DRILL_SHAPE_CIRCLE )
+                    return;
+                break;
+
+            case PAD_SHAPE::OVAL:
+                if( pad->GetDrillShape() != PAD_DRILL_SHAPE_CIRCLE )
+                    return;
+                break;
+
+            default: break;
+            }
+        }
+    }
+
+    const bool isPlated = ( ( aLayer == F_Cu ) && pad->FlashLayer( F_Mask ) )
+                          || ( ( aLayer == B_Cu ) && pad->FlashLayer( B_Mask ) );
+
+    if( !isPlated )
+        return;
+
+    wxSize clearance( aClearance, aClearance );
+
+    switch( aLayer )
+    {
+    case F_Mask:
+    case B_Mask:
+        clearance.x += pad->GetSolderMaskMargin();
+        clearance.y += pad->GetSolderMaskMargin();
+        break;
+
+    case F_Paste:
+    case B_Paste: clearance += pad->GetSolderPasteMargin(); break;
+
+    default: break;
+    }
+
+    // Our standard TransformShapeWithClearanceToPolygon() routines can't handle differing
+    // x:y clearance values (which get generated when a relative paste margin is used with
+    // an oblong pad).  So we apply this huge hack and fake a larger pad to run the transform
+    // on.
+    // Of course being a hack it falls down when dealing with custom shape pads (where the
+    // size is only the size of the anchor), so for those we punt and just use clearance.x.
+
+    if( ( clearance.x < 0 || clearance.x != clearance.y ) && pad->GetShape() != PAD_SHAPE::CUSTOM )
+    {
+        PAD dummy( *pad );
+        dummy.SetSize( pad->GetSize() + clearance + clearance );
+        dummy.TransformShapeWithClearanceToPolygon( aCornerBuffer, aLayer, 0, aMaxError,
+                                                    aErrorLoc );
+    }
+    else
+    {
+        pad->TransformShapeWithClearanceToPolygon( aCornerBuffer, aLayer, clearance.x, aMaxError,
+                                                   aErrorLoc );
     }
 }

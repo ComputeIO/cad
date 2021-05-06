@@ -62,7 +62,7 @@ void runFEMProto( const BOARD* aBoard, std::string aNetname )
         shape.shift(0, 0, 10.);
     }*/
 
-    mesher.Get2DShapes( shapes, PCB_LAYER_ID::B_Cu );
+    mesher.Get2DShapes( shapes, PCB_LAYER_ID::B_Cu, true );
 
     mesh mymesh( shapes );
 

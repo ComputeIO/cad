@@ -30,6 +30,7 @@
 #include <vector>
 
 #include <layers_id_colors_and_visibility.h>
+#include <geometry/geometry_utils.h>
 
 // sparselizard
 class shape;
@@ -37,6 +38,7 @@ class shape;
 class SHAPE_POLY_SET;
 
 class BOARD;
+class TRACK;
 class PAD;
 class ZONE;
 
@@ -55,16 +57,21 @@ public:
         return m_pad_regions.emplace( m_next_region_id++, aPad ).first->first;
     }
 
-    void Get2DShapes( std::vector<shape>& aShapes, PCB_LAYER_ID aLayer );
+    void Get2DShapes( std::vector<shape>& aShapes, PCB_LAYER_ID aLayer, bool substractHoles );
 
-    void Get2DShapes( std::vector<shape>& aShapes, int aRegionId, PCB_LAYER_ID aLayer );
+    void Get2DShapes( std::vector<shape>& aShapes, int aRegionId, PCB_LAYER_ID aLayer,
+                      bool substractHoles );
 
 private:
     void SetPolysetOfNetRegion( SHAPE_POLY_SET& aPolyset, int aRegionId,
                                 PCB_LAYER_ID aLayer ) const;
 
-    void AddZoneToPolyset( SHAPE_POLY_SET& aPolyset, const ZONE* aZone, PCB_LAYER_ID aLayer ) const;
+    void SetPolysetOfHolesOfNetRegion( SHAPE_POLY_SET& aPolyset, int aRegionId,
+                                       PCB_LAYER_ID aLayer ) const;
 
+    void TransformPadWithClearanceToPolygon( SHAPE_POLY_SET& aCornerBuffer, const PAD* pad,
+                                             PCB_LAYER_ID aLayer, int aClearance, int aMaxError,
+                                             ERROR_LOC aErrorLoc ) const;
     // TODO: Track, via, pad, hole
 
     int m_next_region_id;
