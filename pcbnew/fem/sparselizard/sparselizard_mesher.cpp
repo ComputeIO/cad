@@ -47,27 +47,46 @@ void SPARSELIZARD_MESHER::Get2DShapes( std::vector<shape>& aShapes, int aRegionI
                                        PCB_LAYER_ID aLayer, bool substractHoles )
 {
     SHAPE_POLY_SET polyset;
-    SetPolysetOfNetRegion( polyset, aRegionId, aLayer );
+    SHAPE_POLY_SET substractPolyset;
+
+    if( m_net_regions.count( aRegionId ) )
+    {
+        SetPolysetOfNetRegion( polyset, aRegionId, aLayer );
+
+        for( auto& padRegion : m_pad_regions )
+        {
+            SetPolysetOfPadRegion( substractPolyset, padRegion.first, aLayer );
+        }
+
+        if( substractHoles )
+        {
+            SetPolysetOfHolesOfNetRegion( substractPolyset, aRegionId, aLayer );
+        }
+    }
+    else
+    {
+        SetPolysetOfPadRegion( polyset, aRegionId, aLayer );
+
+        const auto& padRegion = m_pad_regions.find( aRegionId );
+        if( substractHoles && padRegion != m_pad_regions.end() )
+        {
+            SetPolysetOfPadDrill( substractPolyset, padRegion->second );
+        }
+    }
 
     if( polyset.IsEmpty() )
     {
         return;
     }
 
-    polyset.Simplify( SHAPE_POLY_SET::POLYGON_MODE::PM_FAST );
-
-    if( substractHoles )
+    if( !substractPolyset.IsEmpty() )
     {
-        SHAPE_POLY_SET substractPolyset;
-        SetPolysetOfHolesOfNetRegion( substractPolyset, aRegionId, aLayer );
-
-        if( !substractPolyset.IsEmpty() )
-        {
-            substractPolyset.Simplify( SHAPE_POLY_SET::POLYGON_MODE::PM_FAST );
-            polyset.BooleanSubtract( substractPolyset, SHAPE_POLY_SET::POLYGON_MODE::PM_FAST );
-            substractPolyset.Simplify( SHAPE_POLY_SET::POLYGON_MODE::PM_FAST );
-        }
+        polyset.Simplify( SHAPE_POLY_SET::POLYGON_MODE::PM_FAST );
+        substractPolyset.Simplify( SHAPE_POLY_SET::POLYGON_MODE::PM_FAST );
+        polyset.BooleanSubtract( substractPolyset, SHAPE_POLY_SET::POLYGON_MODE::PM_FAST );
     }
+
+    polyset.Simplify( SHAPE_POLY_SET::POLYGON_MODE::PM_FAST );
 
     // triangulate polygon and generate shape
     // TODO: use triangulation algorithm which is more suited for FEM
@@ -175,21 +194,46 @@ void SPARSELIZARD_MESHER::SetPolysetOfHolesOfNetRegion( SHAPE_POLY_SET& aPolyset
     {
         for( const PAD* pad : footprint->Pads() )
         {
-            if( pad->GetAttribute() == PAD_ATTRIB::SMD )
-                continue;
-
-            switch( pad->GetDrillShape() )
-            {
-            case PAD_DRILL_SHAPE_CIRCLE:
-            case PAD_DRILL_SHAPE_OBLONG:
-                // TODO: correct position, todo oval + rotation correctly
-                TransformCircleToPolygon( aPolyset, pad->GetPosition() + pad->GetOffset(),
-                                          pad->GetDrillSizeX() / 2, maxError, ERROR_INSIDE );
-                break;
-            default: break;
-            }
+            SetPolysetOfPadDrill( aPolyset, pad );
         }
     }
+}
+
+
+void SPARSELIZARD_MESHER::SetPolysetOfPadDrill( SHAPE_POLY_SET& aPolyset, const PAD* pad ) const
+{
+    if( pad->GetAttribute() == PAD_ATTRIB::SMD )
+        return;
+
+    int maxError = m_board->GetDesignSettings().m_MaxError;
+
+    switch( pad->GetDrillShape() )
+    {
+    case PAD_DRILL_SHAPE_CIRCLE:
+    case PAD_DRILL_SHAPE_OBLONG:
+        // TODO: correct position, todo oval + rotation correctly
+        TransformCircleToPolygon( aPolyset, pad->GetPosition() + pad->GetOffset(),
+                                  pad->GetDrillSizeX() / 2, maxError, ERROR_INSIDE );
+        break;
+    default: break;
+    }
+}
+
+
+void SPARSELIZARD_MESHER::SetPolysetOfPadRegion( SHAPE_POLY_SET& aPolyset, int aRegionId,
+                                                 PCB_LAYER_ID aLayer ) const
+{
+    const auto& padRegion = m_pad_regions.find( aRegionId );
+    if( padRegion == m_pad_regions.end() )
+    {
+        return; // nothing found
+    }
+
+    const PAD* pad = padRegion->second;
+    int        maxError = m_board->GetDesignSettings().m_MaxError;
+
+    if( pad->IsOnLayer( aLayer ) )
+        TransformPadWithClearanceToPolygon( aPolyset, pad, aLayer, 0, maxError, ERROR_INSIDE );
 }
 
 

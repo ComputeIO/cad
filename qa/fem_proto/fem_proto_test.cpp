@@ -53,6 +53,19 @@ void runFEMProto( const BOARD* aBoard, std::string aNetname )
     int regionId = mesher.AddNetRegion( gndNetinfo->GetNetCode() );
     std::cerr << "Net '" << aNetname << "' will be on region: " << regionId << std::endl;
 
+    const FOOTPRINT* footprint = aBoard->FindFootprintByReference( "J1" );
+    if( footprint != nullptr )
+    {
+        std::cerr << "Footprint found: '" << footprint->GetReference() << "'" << std::endl;
+        const PAD* pad = footprint->FindPadByName( "1" );
+        if( pad != nullptr )
+        {
+            int padRegionId = mesher.AddPadRegion( pad );
+            std::cerr << "  * Pad '" << pad->GetName() << "' will be on region: " << padRegionId
+                      << std::endl;
+        }
+    }
+
     std::vector<shape> shapes;
 
     // offset front CU so we can see both sides :D

@@ -52,7 +52,7 @@ public:
         return m_net_regions.emplace( m_next_region_id++, aNetcode ).first->first;
     }
 
-    int AddPadRegion( PAD* aPad )
+    int AddPadRegion( const PAD* aPad )
     {
         return m_pad_regions.emplace( m_next_region_id++, aPad ).first->first;
     }
@@ -69,6 +69,11 @@ private:
     void SetPolysetOfHolesOfNetRegion( SHAPE_POLY_SET& aPolyset, int aRegionId,
                                        PCB_LAYER_ID aLayer ) const;
 
+    void SetPolysetOfPadDrill( SHAPE_POLY_SET& aPolyset, const PAD* pad ) const;
+
+    void SetPolysetOfPadRegion( SHAPE_POLY_SET& aPolyset, int aRegionId,
+                                PCB_LAYER_ID aLayer ) const;
+
     void TransformPadWithClearanceToPolygon( SHAPE_POLY_SET& aCornerBuffer, const PAD* pad,
                                              PCB_LAYER_ID aLayer, int aClearance, int aMaxError,
                                              ERROR_LOC aErrorLoc ) const;
@@ -77,7 +82,7 @@ private:
     int m_next_region_id;
 
     std::map<int, int>  m_net_regions;
-    std::map<int, PAD*> m_pad_regions;
+    std::map<int, const PAD*> m_pad_regions;
 
     const BOARD* m_board;
 };
