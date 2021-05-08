@@ -60,6 +60,7 @@ bool Run_DC_CurrentDensity( FEM_DESCRIPTOR* aDescriptor )
         {
         case PCB_PAD_T:
             port->m_simulationID = mesher.AddPadRegion( static_cast<const PAD*>( port->m_item ) );
+            regionlist.push_back( port->m_simulationID );
             break;
         default: break;
         }
@@ -80,7 +81,9 @@ bool Run_DC_CurrentDensity( FEM_DESCRIPTOR* aDescriptor )
 
     mesher.Get2DShapes( shapes, PCB_LAYER_ID::F_Cu, true );
 
-    mesh mymesh( shapes );
+    mesh mymesh;
+    mymesh.split( 3 );
+    mymesh.load( shapes );
 
     mymesh.write( "mymesh.msh" );
 
@@ -93,6 +96,12 @@ bool Run_DC_CurrentDensity( FEM_DESCRIPTOR* aDescriptor )
     // parameters
     parameter   rho; // resistivity
     formulation electrokinetics;
+
+    for( int region : regionlist )
+    {
+        v.setorder( region, 2 );
+        rho | region = 1.68e-8;
+    }
 
     for( FEM_PORT* port : aDescriptor->GetPorts() )
     {
@@ -107,17 +116,15 @@ bool Run_DC_CurrentDensity( FEM_DESCRIPTOR* aDescriptor )
             std::cerr << "Contraint should be FEM_PORT_CONSTRAINT_TYPE::VOLTAGE" << std::endl;
             continue;
         }
-        v.setorder( port->m_simulationID, 2 );
         v.setconstraint( port->m_simulationID, port->m_constraint->m_value );
         std::cout << "Setting region " << port->m_simulationID << " to "
                   << port->m_constraint->m_value << " V" << std::endl;
-        rho | port->m_simulationID = 1.68e-8;
+        //electrokinetics += sl::integral( port->m_simulationID , sl::grad( sl::tf( v ) ) * 1 / rho
+        //                                                 * sl::grad( sl::dof( v ) ) );
     }
 
     for( int region : regionlist )
     {
-        v.setorder( region, 2 );
-        rho | region = 1.68e-8;
         electrokinetics += sl::integral( region, sl::grad( sl::tf( v ) ) * 1 / rho
                                                          * sl::grad( sl::dof( v ) ) );
     }
@@ -135,6 +142,7 @@ bool Run_DC_CurrentDensity( FEM_DESCRIPTOR* aDescriptor )
     int wholedomain = sl::selectall();
     v.setdata( wholedomain, solv );
     j.write( wholedomain, "currentdensity.pos" );
+    v.write( wholedomain, "potential.pos" );
 
 
     return true;
