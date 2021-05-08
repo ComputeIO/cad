@@ -119,14 +119,12 @@ bool Run_DC_CurrentDensity( FEM_DESCRIPTOR* aDescriptor )
         v.setconstraint( port->m_simulationID, port->m_constraint->m_value );
         std::cout << "Setting region " << port->m_simulationID << " to "
                   << port->m_constraint->m_value << " V" << std::endl;
-        //electrokinetics += sl::integral( port->m_simulationID , sl::grad( sl::tf( v ) ) * 1 / rho
-        //                                                 * sl::grad( sl::dof( v ) ) );
     }
 
     for( int region : regionlist )
     {
-        electrokinetics += sl::integral( region, sl::grad( sl::tf( v ) ) * 1 / rho
-                                                         * sl::grad( sl::dof( v ) ) );
+        electrokinetics +=
+                sl::integral( region, sl::grad( sl::tf( v ) ) / rho * sl::grad( sl::dof( v ) ) );
     }
 
     // Expression for the electric field E [V/m] and current density j [A/m^2]:
