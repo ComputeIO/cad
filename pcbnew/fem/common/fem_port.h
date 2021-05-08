@@ -27,20 +27,20 @@
 #include <board_connected_item.h>
 
 
-typedef enum FEM_PORT_TYPE
+enum class FEM_PORT_TYPE
 {
     SOURCE,
     SINK,
     PASSIVE
-} FEM_PORT_TYPE;
+};
 
-typedef enum FEM_PORT_CONSTRAINT_TYPE
+enum class FEM_PORT_CONSTRAINT_TYPE
 {
     VOLTAGE,
     CURRENT,
     POWER,
     SPICE // unused
-} FEM_PORT_CONSTRAINT_TYPE;
+};
 
 class FEM_PORT_CONSTRAINT
 {

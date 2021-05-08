@@ -30,18 +30,18 @@
 
 #include <board_connected_item.h>
 
-typedef enum FEM_SIMULATION_TYPE
+enum class FEM_SIMULATION_TYPE
 {
     DC_CURRENT_DENSITY,
     DC_RESISTANCE,
     DC_VOLTAGE_DROP,
     DC_THERMAL
-} FEM_SIMULATION_TYPE;
+};
 
-typedef enum FEM_SOLVER
+enum class FEM_SOLVER
 {
     SPARSELIZARD
-} FEM_SOLVER;
+};
 
 class FEM_DESCRIPTOR
 {
