@@ -19,6 +19,23 @@ add_executable( fem_proto
 
 add_dependencies( fem_proto pcbcommon ${PCBNEW_IO_LIBRARIES} )
 
+add_executable( fem_currentDensity
+
+    ../../pcbnew/fem/common/fem_descriptor.cpp
+    ../../pcbnew/fem/sparselizard/sparselizard_DC_CurrentDensity.cpp
+    ../../pcbnew/fem/sparselizard/sparselizard_mesher.cpp
+    fem_currentDensity.cpp
+
+    ../qa_utils/mocks.cpp
+    ../pcbnew_utils/board_file_utils.cpp
+    ../qa_utils/test_app_main.cpp
+    ../qa_utils/utility_program.cpp
+    ../qa_utils/stdstream_line_reader.cpp
+    ../../common/base_units.cpp
+)
+
+add_dependencies( fem_currentDensity pcbcommon ${PCBNEW_IO_LIBRARIES} )
+
 include_directories( BEFORE ${INC_BEFORE} )
 include_directories(
     ${CMAKE_SOURCE_DIR}
@@ -42,6 +59,30 @@ include_directories(
 )
 
 target_link_libraries( fem_proto
+    ${SPARSELIZARD_LIBRARIES}
+    qa_pcbnew_utils
+    3d-viewer
+    connectivity
+    pcbcommon
+    pnsrouter
+    gal
+    common
+    gal
+    qa_utils
+    dxflib_qcad
+    tinyspline_lib
+    nanosvg
+    idf3
+    unit_test_utils
+    ${PCBNEW_IO_LIBRARIES}
+    ${wxWidgets_LIBRARIES}
+    ${GDI_PLUS_LIBRARIES}
+    ${PYTHON_LIBRARIES}
+    ${Boost_LIBRARIES}
+    ${PCBNEW_EXTRA_LIBS}    # -lrt must follow Boost
+)
+
+target_link_libraries( fem_currentDensity
     ${SPARSELIZARD_LIBRARIES}
     qa_pcbnew_utils
     3d-viewer
