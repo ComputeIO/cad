@@ -29,6 +29,9 @@
 
 bool Run_DC_CurrentDensity( FEM_DESCRIPTOR* aDescriptor )
 {
+    const double copperResistivity = 1.68e-8;
+    const double interpolationOrder = 2;
+
     if( aDescriptor == nullptr )
         return false;
 
@@ -98,8 +101,8 @@ bool Run_DC_CurrentDensity( FEM_DESCRIPTOR* aDescriptor )
 
     for( int region : regionlist )
     {
-        v.setorder( region, 2 );
-        rho | region = 1.68e-8;
+        v.setorder( region, interpolationOrder );
+        rho | region = copperResistivity;
     }
 
     for( FEM_PORT* port : aDescriptor->GetPorts() )
