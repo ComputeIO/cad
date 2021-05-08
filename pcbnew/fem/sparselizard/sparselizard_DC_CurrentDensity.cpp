@@ -29,10 +29,10 @@
 
 bool Run_DC_CurrentDensity( FEM_DESCRIPTOR* aDescriptor )
 {
-    if( aDescriptor == NULL )
+    if( aDescriptor == nullptr )
         return false;
 
-    if( aDescriptor->m_board == NULL )
+    if( aDescriptor->m_board == nullptr )
         return false;
 
     SPARSELIZARD_MESHER mesher = SPARSELIZARD_MESHER( aDescriptor->m_board );
@@ -43,7 +43,7 @@ bool Run_DC_CurrentDensity( FEM_DESCRIPTOR* aDescriptor )
 
     for( FEM_PORT* port : aDescriptor->GetPorts() )
     {
-        if( port->m_item == NULL )
+        if( port->m_item == nullptr )
         {
             std::cerr << "Uninitialized port" << std::endl;
             continue;
@@ -105,7 +105,7 @@ bool Run_DC_CurrentDensity( FEM_DESCRIPTOR* aDescriptor )
 
     for( FEM_PORT* port : aDescriptor->GetPorts() )
     {
-        if( port->m_item == NULL )
+        if( port->m_item == nullptr )
         {
             std::cerr << "Uninitialized port" << std::endl;
             continue;
@@ -123,13 +123,13 @@ bool Run_DC_CurrentDensity( FEM_DESCRIPTOR* aDescriptor )
 
     for( int region : regionlist )
     {
-        electrokinetics +=
-                sl::integral( region, sl::grad( sl::tf( v ) ) / rho * sl::grad( sl::dof( v ) ) );
+        electrokinetics += sl::integral( region, sl::grad( sl::tf( v ) ) / rho
+                                                         * sl::grad( sl::dof( v ) ) );
     }
 
     // Expression for the electric field E [V/m] and current density j [A/m^2]:
     expression E = -sl::grad( v );
-    expression j = 1 / rho * E;
+    expression j = E / rho ;
 
 
     // Compute the static current everywhere:

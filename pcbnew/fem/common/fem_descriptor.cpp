@@ -49,9 +49,9 @@ std::list<FEM_PORT*> FEM_DESCRIPTOR::GetPorts()
 
 bool FEM_DESCRIPTOR::AddPort( FEM_PORT* aPort )
 {
-    if( aPort == NULL )
+    if( aPort == nullptr )
         return false;
-    if( aPort->m_item == NULL )
+    if( aPort->m_item == nullptr )
         return false;
 
     // Check for unicity
@@ -67,9 +67,9 @@ bool FEM_DESCRIPTOR::AddPort( FEM_PORT* aPort )
 
 bool FEM_DESCRIPTOR::RemovePort( FEM_PORT* aPort )
 {
-    if( aPort == NULL )
+    if( aPort == nullptr )
         return false;
-    if( aPort->m_item == NULL )
+    if( aPort->m_item == nullptr )
         return false;
 
     // @TODO
