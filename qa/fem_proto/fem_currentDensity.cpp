@@ -62,7 +62,7 @@ void runFEMCurrentDensity( const BOARD* aBoard )
             constraint1->m_value = 0.001; // 1 mV
 
             port1.m_type = FEM_PORT_TYPE::SOURCE;
-            port1.m_constraint = constraint1;
+            port1.m_constraint = *constraint1;
             port1.m_item = pad;
         }
         else
@@ -94,7 +94,7 @@ void runFEMCurrentDensity( const BOARD* aBoard )
             constraint2->m_value = 0; // 1 mV
 
             port2.m_type = FEM_PORT_TYPE::SOURCE;
-            port2.m_constraint = constraint2;
+            port2.m_constraint = *constraint2;
             port2.m_item = pad;
         }
         else

@@ -53,7 +53,7 @@ class FEM_PORT
 {
 public:
     FEM_PORT_TYPE               m_type;
-    FEM_PORT_CONSTRAINT*        m_constraint;
+    FEM_PORT_CONSTRAINT         m_constraint;
     const BOARD_CONNECTED_ITEM* m_item;
     bool                        IsMeshed();
     int                         m_simulationID;

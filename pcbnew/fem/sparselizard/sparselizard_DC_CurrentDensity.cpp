@@ -113,20 +113,20 @@ bool Run_DC_CurrentDensity( FEM_DESCRIPTOR* aDescriptor )
             continue;
         }
 
-        if( port->m_constraint->m_type != FEM_PORT_CONSTRAINT_TYPE::VOLTAGE )
+        if( port->m_constraint.m_type != FEM_PORT_CONSTRAINT_TYPE::VOLTAGE )
         {
             std::cerr << "Contraint should be FEM_PORT_CONSTRAINT_TYPE::VOLTAGE" << std::endl;
             continue;
         }
-        v.setconstraint( port->m_simulationID, port->m_constraint->m_value );
+        v.setconstraint( port->m_simulationID, port->m_constraint.m_value );
         std::cout << "Setting region " << port->m_simulationID << " to "
-                  << port->m_constraint->m_value << " V" << std::endl;
+                  << port->m_constraint.m_value << " V" << std::endl;
     }
 
     for( int region : regionlist )
     {
-        electrokinetics += sl::integral( region, sl::grad( sl::tf( v ) ) / rho
-                                                         * sl::grad( sl::dof( v ) ) );
+        electrokinetics +=
+                sl::integral( region, sl::grad( sl::tf( v ) ) / rho * sl::grad( sl::dof( v ) ) );
     }
 
     // Expression for the electric field E [V/m] and current density j [A/m^2]:
