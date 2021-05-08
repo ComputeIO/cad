@@ -44,8 +44,8 @@ void runFEMCurrentDensity( const BOARD* aBoard )
     std::cout << "Current density from J1-pad1 to J2-pad1" << std::endl;
     wxString netName;
 
-    FEM_PORT        port1;
-    FEM_PORT        port2;
+    FEM_PORT*       port1;
+    FEM_PORT*       port2;
     FEM_DESCRIPTOR* descriptor = new FEM_DESCRIPTOR( FEM_SOLVER::SPARSELIZARD, aBoard );
 
     const FOOTPRINT* footprint1 = aBoard->FindFootprintByReference( "J1" );
@@ -61,9 +61,9 @@ void runFEMCurrentDensity( const BOARD* aBoard )
             constraint1->m_type = FEM_PORT_CONSTRAINT_TYPE::VOLTAGE;
             constraint1->m_value = 0.001; // 1 mV
 
-            port1.m_type = FEM_PORT_TYPE::SOURCE;
-            port1.m_constraint = *constraint1;
-            port1.m_item = pad;
+            port1 = new FEM_PORT( pad );
+            port1->m_type = FEM_PORT_TYPE::SOURCE;
+            port1->m_constraint = *constraint1;
         }
         else
         {
@@ -93,9 +93,9 @@ void runFEMCurrentDensity( const BOARD* aBoard )
             constraint2->m_type = FEM_PORT_CONSTRAINT_TYPE::VOLTAGE;
             constraint2->m_value = 0; // 1 mV
 
-            port2.m_type = FEM_PORT_TYPE::SOURCE;
-            port2.m_constraint = *constraint2;
-            port2.m_item = pad;
+            port2 = new FEM_PORT( pad );
+            port2->m_type = FEM_PORT_TYPE::SOURCE;
+            port2->m_constraint = *constraint2;
         }
         else
         {
@@ -110,8 +110,8 @@ void runFEMCurrentDensity( const BOARD* aBoard )
     }
     std::cout << "Board loaded" << std::endl;
 
-    descriptor->AddPort( &port1 );
-    descriptor->AddPort( &port2 );
+    descriptor->AddPort( port1 );
+    descriptor->AddPort( port2 );
 
     Run_DC_CurrentDensity( descriptor );
 }

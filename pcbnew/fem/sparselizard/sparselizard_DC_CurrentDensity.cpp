@@ -46,23 +46,24 @@ bool Run_DC_CurrentDensity( FEM_DESCRIPTOR* aDescriptor )
 
     for( FEM_PORT* port : aDescriptor->GetPorts() )
     {
-        if( port->m_item == nullptr )
+        if( port->GetItem() == nullptr )
         {
             std::cerr << "Uninitialized port" << std::endl;
             continue;
         }
 
         std::list<int>::iterator it;
-        it = std::find( netlist.begin(), netlist.end(), port->m_item->GetNetCode() );
+        it = std::find( netlist.begin(), netlist.end(), port->GetItem()->GetNetCode() );
         if( it == netlist.end() )
         {
-            netlist.push_back( port->m_item->GetNetCode() );
+            netlist.push_back( port->GetItem()->GetNetCode() );
         }
 
-        switch( port->m_item->Type() )
+        switch( port->GetItem()->Type() )
         {
         case PCB_PAD_T:
-            port->m_simulationID = mesher.AddPadRegion( static_cast<const PAD*>( port->m_item ) );
+            port->m_simulationID =
+                    mesher.AddPadRegion( static_cast<const PAD*>( port->GetItem() ) );
             regionlist.push_back( port->m_simulationID );
             break;
         default: break;
@@ -107,7 +108,7 @@ bool Run_DC_CurrentDensity( FEM_DESCRIPTOR* aDescriptor )
 
     for( FEM_PORT* port : aDescriptor->GetPorts() )
     {
-        if( port->m_item == nullptr )
+        if( port->GetItem() == nullptr )
         {
             std::cerr << "Uninitialized port" << std::endl;
             continue;

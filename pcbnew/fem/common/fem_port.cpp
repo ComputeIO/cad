@@ -21,48 +21,14 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
 
-#ifndef FEM_PORT_H
-#define FEM_PORT_H
+#include "fem_port.h"
 
-#include <board_connected_item.h>
-
-
-enum class FEM_PORT_TYPE
+FEM_PORT::FEM_PORT( const BOARD_CONNECTED_ITEM* aItem )
 {
-    SOURCE,
-    SINK,
-    PASSIVE
-};
+    m_item = aItem;
+}
 
-enum class FEM_PORT_CONSTRAINT_TYPE
+const BOARD_CONNECTED_ITEM* FEM_PORT::GetItem()
 {
-    VOLTAGE,
-    CURRENT,
-    POWER,
-    SPICE // unused
-};
-
-class FEM_PORT_CONSTRAINT
-{
-public:
-    FEM_PORT_CONSTRAINT_TYPE m_type;
-    double                   m_value;
-};
-
-class FEM_PORT
-{
-public:
-    FEM_PORT( const BOARD_CONNECTED_ITEM* aItem );
-
-    const BOARD_CONNECTED_ITEM* GetItem();
-    FEM_PORT_TYPE               m_type;
-    FEM_PORT_CONSTRAINT         m_constraint;
-    bool                        IsMeshed();
-    int                         m_simulationID;
-
-private:
-    bool m_meshed;
-    const BOARD_CONNECTED_ITEM* m_item;
-};
-
-#endif
+    return m_item;
+}

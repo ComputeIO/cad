@@ -55,13 +55,13 @@ bool FEM_DESCRIPTOR::AddPort( FEM_PORT* aPort )
 {
     if( aPort == nullptr )
         return false;
-    if( aPort->m_item == nullptr )
+    if( aPort->GetItem() == nullptr )
         return false;
 
     // Check for unicity
     for( FEM_PORT* port : m_ports )
     {
-        if( port->m_item == aPort->m_item )
+        if( port->GetItem() == aPort->GetItem() )
             return false;
     }
     m_ports.push_back( aPort );
@@ -73,7 +73,7 @@ bool FEM_DESCRIPTOR::RemovePort( FEM_PORT* aPort )
 {
     if( aPort == nullptr )
         return false;
-    if( aPort->m_item == nullptr )
+    if( aPort->GetItem() == nullptr )
         return false;
 
     // @TODO
