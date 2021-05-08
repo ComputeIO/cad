@@ -43,6 +43,88 @@ void SPARSELIZARD_MESHER::Get2DShapes( std::vector<shape>& aShapes, PCB_LAYER_ID
 }
 
 
+void SPARSELIZARD_MESHER::Get3DShapes( std::vector<shape>& aShapes, bool substractHoles )
+{
+    int currentHeight = 0;
+
+    // TODO: better way?
+    m_board->GetDesignSettings().GetStackupDescriptor().SynchronizeWithBoard(
+            &m_board->GetDesignSettings() );
+
+    // only through-holes (no blind vias for now)
+
+    std::map<int, std::vector<shape>> holeShapes;
+    for( int regionId = 1; regionId < m_next_region_id; regionId++ )
+    {
+        SHAPE_POLY_SET aHolePolygons;
+        SetPolysetOfHolewallOfNetRegion( aHolePolygons, regionId, IU_PER_MM / 100 );
+
+        Triangulate( holeShapes[regionId], aHolePolygons, regionId, 0 );
+    }
+
+    for( const BOARD_STACKUP_ITEM* item :
+         m_board->GetDesignSettings().GetStackupDescriptor().GetList() )
+    {
+        if( item->GetType() != BS_ITEM_TYPE_COPPER && item->GetType() != BS_ITEM_TYPE_DIELECTRIC )
+        {
+            continue;
+        }
+
+        int    thickness = item->GetThickness( 0 );
+        double thickness_mm = thickness / IU_PER_MM;
+        double currentHeight_mm = currentHeight / IU_PER_MM;
+
+        for( auto& elem : holeShapes )
+        {
+            for( shape& curShape : elem.second )
+            {
+                shape newShape = curShape.extrude( elem.first, -thickness_mm, 2 );
+                newShape.shift( 0, 0, -currentHeight_mm );
+                aShapes.emplace_back( newShape );
+            }
+        }
+
+        std::cout << "item " << item->GetType() << std::endl;
+        // We only model copper for now
+        if( item->GetType() != BS_ITEM_TYPE_COPPER )
+        {
+            for( int i = 0; i < item->GetSublayersCount(); i++ )
+            {
+                currentHeight += item->GetThickness( i );
+            }
+            continue;
+        }
+
+        PCB_LAYER_ID layer = item->GetBrdLayerId();
+        std::cout << "render layer " << layer << " with offset: " << std::endl;
+
+        for( int regionId = 1; regionId < m_next_region_id; regionId++ )
+        {
+            std::vector<shape> aLayerShapes;
+            Get2DShapes( aLayerShapes, regionId, layer, substractHoles );
+
+            // move layer upwards // TODO: create in-place
+            if( currentHeight != 0 )
+            {
+                for( auto& shape : aLayerShapes )
+                {
+                    shape.shift( 0, 0, -currentHeight_mm );
+                }
+            }
+
+            // create 3d-volume
+            for( auto& shape : aLayerShapes )
+            {
+                aShapes.emplace_back( shape.extrude( regionId, -thickness_mm, 2 ) );
+            }
+        }
+
+        // TODO: make holes
+
+        currentHeight += thickness;
+    }
+}
+
 void SPARSELIZARD_MESHER::Get2DShapes( std::vector<shape>& aShapes, int aRegionId,
                                        PCB_LAYER_ID aLayer, bool substractHoles )
 {
@@ -86,26 +168,33 @@ void SPARSELIZARD_MESHER::Get2DShapes( std::vector<shape>& aShapes, int aRegionI
         polyset.BooleanSubtract( substractPolyset, SHAPE_POLY_SET::POLYGON_MODE::PM_FAST );
     }
 
-    polyset.Simplify( SHAPE_POLY_SET::POLYGON_MODE::PM_FAST );
+    Triangulate( aShapes, polyset, aRegionId, 0 );
+}
+
+void SPARSELIZARD_MESHER::Triangulate( std::vector<shape>& aShapes, SHAPE_POLY_SET& aPolyset,
+                                       int aRegionId, double zOffset ) const
+{
+    aPolyset.Simplify( SHAPE_POLY_SET::POLYGON_MODE::PM_FAST );
 
     // triangulate polygon and generate shape
     // TODO: use triangulation algorithm which is more suited for FEM
     // https://people.sc.fsu.edu/~jburkardt/presentations/mesh_2012_fsu.pdf
-    polyset.CacheTriangulation();
+    aPolyset.CacheTriangulation();
 
     std::vector<shape> shapes;
-    for( size_t i = 0; i < polyset.TriangulatedPolyCount(); i++ )
+    for( size_t i = 0; i < aPolyset.TriangulatedPolyCount(); i++ )
     {
-        const SHAPE_POLY_SET::TRIANGULATED_POLYGON* triangulated = polyset.TriangulatedPolygon( i );
+        const SHAPE_POLY_SET::TRIANGULATED_POLYGON* triangulated =
+                aPolyset.TriangulatedPolygon( i );
 
         for( size_t t = 0; t < triangulated->GetTriangleCount(); t++ )
         {
             VECTOR2<int> a, b, c;
             triangulated->GetTriangle( t, a, b, c );
 
-            std::vector<double> coords = { a.x / IU_PER_MM, a.y / IU_PER_MM, 0,
-                                           b.x / IU_PER_MM, b.y / IU_PER_MM, 0,
-                                           c.x / IU_PER_MM, c.y / IU_PER_MM, 0 };
+            std::vector<double> coords = { a.x / IU_PER_MM, a.y / IU_PER_MM, zOffset,
+                                           b.x / IU_PER_MM, b.y / IU_PER_MM, zOffset,
+                                           c.x / IU_PER_MM, c.y / IU_PER_MM, zOffset };
 
             shape triangle( "triangle", aRegionId, coords, { 2, 2, 2 } );
             aShapes.push_back( triangle );
@@ -178,7 +267,6 @@ void SPARSELIZARD_MESHER::SetPolysetOfHolesOfNetRegion( SHAPE_POLY_SET& aPolyset
     int netcode = netRegion->second;
     int maxError = m_board->GetDesignSettings().m_MaxError;
 
-
     for( const TRACK* track : m_board->Tracks() )
     {
         // assuming proper zone fills and no overlapping vias and pads of different nets!!!
@@ -200,7 +288,74 @@ void SPARSELIZARD_MESHER::SetPolysetOfHolesOfNetRegion( SHAPE_POLY_SET& aPolyset
 }
 
 
-void SPARSELIZARD_MESHER::SetPolysetOfPadDrill( SHAPE_POLY_SET& aPolyset, const PAD* pad ) const
+void SPARSELIZARD_MESHER::SetPolysetOfHolewallOfNetRegion( SHAPE_POLY_SET& aPolyset, int aRegionId,
+                                                           int aThickness ) const
+{
+    const auto&    netRegion = m_net_regions.find( aRegionId );
+    SHAPE_POLY_SET substractPolyset;
+
+    if( netRegion == m_net_regions.end() )
+    {
+        const auto& padRegion = m_pad_regions.find( aRegionId );
+        if( padRegion == m_pad_regions.end() )
+        {
+            return;
+        }
+
+        SetPolysetOfPadDrill( aPolyset, padRegion->second, 0 );
+        SetPolysetOfPadDrill( substractPolyset, padRegion->second, aThickness );
+    }
+    else
+    {
+        int netcode = netRegion->second;
+        int maxError = m_board->GetDesignSettings().m_MaxError;
+
+        for( const TRACK* track : m_board->Tracks() )
+        {
+            // assuming proper zone fills and no overlapping vias and pads of different nets!!!
+            if( track->GetNetCode() != netcode || !VIA::ClassOf( track ) )
+                continue;
+
+            int radius = ( static_cast<const VIA*>( track )->GetDrill() / 2 );
+            TransformCircleToPolygon( aPolyset, track->GetPosition(), radius, maxError,
+                                      ERROR_INSIDE );
+            TransformCircleToPolygon( substractPolyset, track->GetPosition(), radius - aThickness,
+                                      maxError, ERROR_INSIDE );
+        }
+
+        for( const FOOTPRINT* footprint : m_board->Footprints() )
+        {
+            for( const PAD* pad : footprint->Pads() )
+            {
+                if( std::find_if( m_pad_regions.begin(), m_pad_regions.end(),
+                                  [pad]( const auto& mo ) {
+                                      return mo.second == pad;
+                                  } )
+                    != m_pad_regions.end() )
+                {
+                    continue; // pad is used in pad region
+                }
+
+                if( pad->GetNetCode() != netcode )
+                {
+                    continue;
+                }
+
+                SetPolysetOfPadDrill( aPolyset, pad, 0 );
+                SetPolysetOfPadDrill( substractPolyset, pad, aThickness );
+            }
+        }
+    }
+    aPolyset.Simplify( SHAPE_POLY_SET::POLYGON_MODE::PM_FAST );
+    substractPolyset.Simplify( SHAPE_POLY_SET::POLYGON_MODE::PM_FAST );
+
+    aPolyset.BooleanAdd( substractPolyset, SHAPE_POLY_SET::POLYGON_MODE::PM_FAST );
+
+    aPolyset.BooleanSubtract( substractPolyset, SHAPE_POLY_SET::POLYGON_MODE::PM_FAST );
+}
+
+void SPARSELIZARD_MESHER::SetPolysetOfPadDrill( SHAPE_POLY_SET& aPolyset, const PAD* pad,
+                                                int thicknessModifier ) const
 {
     if( pad->GetAttribute() == PAD_ATTRIB::SMD )
         return;
@@ -213,7 +368,8 @@ void SPARSELIZARD_MESHER::SetPolysetOfPadDrill( SHAPE_POLY_SET& aPolyset, const 
     case PAD_DRILL_SHAPE_OBLONG:
         // TODO: correct position, todo oval + rotation correctly
         TransformCircleToPolygon( aPolyset, pad->GetPosition() + pad->GetOffset(),
-                                  pad->GetDrillSizeX() / 2, maxError, ERROR_INSIDE );
+                                  pad->GetDrillSizeX() / 2 - thicknessModifier, maxError,
+                                  ERROR_INSIDE );
         break;
     default: break;
     }

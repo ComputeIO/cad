@@ -59,17 +59,26 @@ public:
 
     void Get2DShapes( std::vector<shape>& aShapes, PCB_LAYER_ID aLayer, bool substractHoles );
 
+    void Get3DShapes( std::vector<shape>& aShapes, bool substractHoles );
+
     void Get2DShapes( std::vector<shape>& aShapes, int aRegionId, PCB_LAYER_ID aLayer,
                       bool substractHoles );
 
 private:
+    void Triangulate( std::vector<shape>& aShapes, SHAPE_POLY_SET& aPolyset, int aRegionId,
+                      double zOffset ) const;
+
     void SetPolysetOfNetRegion( SHAPE_POLY_SET& aPolyset, int aRegionId,
                                 PCB_LAYER_ID aLayer ) const;
 
     void SetPolysetOfHolesOfNetRegion( SHAPE_POLY_SET& aPolyset, int aRegionId,
                                        PCB_LAYER_ID aLayer ) const;
 
-    void SetPolysetOfPadDrill( SHAPE_POLY_SET& aPolyset, const PAD* pad ) const;
+    void SetPolysetOfHolewallOfNetRegion( SHAPE_POLY_SET& aPolyset, int aRegionId,
+                                          int aThickness ) const;
+
+    void SetPolysetOfPadDrill( SHAPE_POLY_SET& aPolyset, const PAD* pad,
+                               int thicknessModifier = 0 ) const;
 
     void SetPolysetOfPadRegion( SHAPE_POLY_SET& aPolyset, int aRegionId,
                                 PCB_LAYER_ID aLayer ) const;
