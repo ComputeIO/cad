@@ -41,6 +41,10 @@ FEM_SOLVER FEM_DESCRIPTOR::GetSolver()
     return m_solver;
 }
 
+const BOARD* FEM_DESCRIPTOR::GetBoard()
+{
+    return m_board;
+}
 
 std::list<FEM_PORT*> FEM_DESCRIPTOR::GetPorts()
 {

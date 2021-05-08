@@ -57,11 +57,12 @@ public:
     FEM_SOLVER GetSolver();
     bool       SetSolver( FEM_SOLVER );
 
-    const BOARD* m_board;
+    const BOARD* GetBoard();
 
 private:
     std::list<FEM_PORT*> m_ports;
     FEM_SOLVER           m_solver;
+    const BOARD*         m_board;
 };
 
 #endif

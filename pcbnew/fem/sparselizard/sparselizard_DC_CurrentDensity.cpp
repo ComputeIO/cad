@@ -35,10 +35,10 @@ bool Run_DC_CurrentDensity( FEM_DESCRIPTOR* aDescriptor )
     if( aDescriptor == nullptr )
         return false;
 
-    if( aDescriptor->m_board == nullptr )
+    if( aDescriptor->GetBoard() == nullptr )
         return false;
 
-    SPARSELIZARD_MESHER mesher = SPARSELIZARD_MESHER( aDescriptor->m_board );
+    SPARSELIZARD_MESHER mesher = SPARSELIZARD_MESHER( aDescriptor->GetBoard() );
     std::cout << "Trying to add ports" << std::endl;
 
     std::list<int> netlist;
