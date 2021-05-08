@@ -757,7 +757,9 @@ void SCH_PAINTER::draw( const LIB_TEXT *aText, int aLayer )
     strokeText( aText->GetShownText(), pos, aText->GetTextAngleRadians() );
 #else
 #ifdef DEBUG
-    m_gal->SetStrokeColor( COLOR4D( 1, 0, .5, 1 ) );
+    m_gal->SetStrokeColor( COLOR4D( .5, 1, .5, 1 ) );
+    std::cerr << "SCH_PAINTER::draw( LIB_TEXT{" << aText->GetShownText() << "}, " << aLayer << " ) @"
+              << aText->GetTextPos() << std::endl;
 #endif
     //strokeText( aText );
     strokeText( aText->GetShownText(), aText->GetTextPos(), aText->GetTextAngleRadians() );
@@ -1411,7 +1413,7 @@ void SCH_PAINTER::draw( const SCH_TEXT *aText, int aLayer )
     if( !shownText.IsEmpty() )
     {
 #ifdef DEBUG
-        m_gal->SetStrokeColor( COLOR4D( 0, .6, .4, 1 ) );
+        //m_gal->SetStrokeColor( COLOR4D( 0, .6, .4, 1 ) );
 #endif
         strokeText( aText, text_offset );
     }

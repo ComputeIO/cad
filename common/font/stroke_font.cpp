@@ -550,8 +550,8 @@ VECTOR2D STROKE_FONT::drawSingleLineText( KIGFX::GAL* aGal, const UTF8& aText,
     std::cerr << "STROKE_FONT::drawSingleLineText( [aGal], " << aText << ", " << aPosition << ", "
               << aAngle << " ) "
               << "aGal line width " << ( aGal ? aGal->GetLineWidth() : 0.0f ) << std::endl;
-    bool   drawDebugShapes = false;
-    double debugLineWidth = 15000.0;
+    bool   drawDebugShapes = true;
+    double debugLineWidth = 1500.0;
 #endif
     // TODO default for baseGlyphSize just a guess
     VECTOR2D baseGlyphSize( aGal ? aGal->GetGlyphSize() : VECTOR2D( 16.0, 16.0 ) );
@@ -595,18 +595,30 @@ VECTOR2D STROKE_FONT::drawSingleLineText( KIGFX::GAL* aGal, const UTF8& aText,
 #ifdef DEBUG
     if( aGal && drawDebugShapes )
     {
-        COLOR4D oldColor = aGal->GetStrokeColor();
-        double  lw = aGal->GetLineWidth();
+        VECTOR2D debugPosition( aPosition );
+        VECTOR2D offsetPosition( aPosition.x + xOffset, aPosition.y + yOffset );
+        COLOR4D  oldColor = aGal->GetStrokeColor();
+        double   lw = aGal->GetLineWidth();
         aGal->SetLineWidth( debugLineWidth );
-        aGal->SetStrokeColor( COLOR4D( 1, 0, 0, 1 ) );
-        aGal->DrawCircle( VECTOR2D( 0, 0 ), 2.2 * dbg );
+        aGal->SetStrokeColor( COLOR4D( 1, 0, 0, .2 ) );
+        aGal->DrawCircle( debugPosition, 2.2 * dbg );
         if( mirrored )
-            aGal->SetStrokeColor( COLOR4D( 1, 1, 0, 1 ) );
+            aGal->SetStrokeColor( COLOR4D( 1, 1, 0, .2 ) );
         else
-            aGal->SetStrokeColor( COLOR4D( 1, 0, 1, 1 ) );
-        aGal->DrawCircle( VECTOR2D( 0, 0 ), 0.8 * dbg );
-        aGal->DrawCircle( VECTOR2D( xOffset, yOffset ), 1.1 * dbg );
-        aGal->DrawRectangle( VECTOR2D( -dbg / 2, -dbg / 2 ), VECTOR2D( dbg, dbg ) );
+            aGal->SetStrokeColor( COLOR4D( 1, 0, 1, .2 ) );
+        aGal->DrawCircle( debugPosition, 0.8 * dbg );
+        //aGal->SetStrokeColor( COLOR4D( 1, 0, 1, .2 ) );
+        aGal->SetStrokeColor( COLOR4D( .5, .5, .5, .2 ) );
+        aGal->DrawCircle( offsetPosition, 0.75 * dbg );
+        //
+        //aGal->DrawRectangle( VECTOR2D( -dbg / 2, -dbg / 2 ), VECTOR2D( dbg, dbg ) );
+        double hd = dbg / 2;
+        aGal->SetStrokeColor( COLOR4D( .7, .7, .8, .2 ) );
+        // crosshair
+        aGal->DrawLine( VECTOR2D( aPosition.x, aPosition.y - hd ),
+                        VECTOR2D( aPosition.x, aPosition.y + hd ) );
+        aGal->DrawLine( VECTOR2D( aPosition.x - hd, aPosition.y ),
+                        VECTOR2D( aPosition.x + hd, aPosition.y ) );
         aGal->SetLineWidth( lw );
         aGal->SetStrokeColor( oldColor );
     }
