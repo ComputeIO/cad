@@ -88,10 +88,9 @@ bool Run_DC_CurrentDensity( FEM_DESCRIPTOR* aDescriptor )
     mymesh.write( "mymesh.msh" );
 
     // from now - Sparselizard  only
-    // Create the electric potential field v and temperature field T (both with nodal shape functions h1):
 
     std::cout << std::endl << "---------SPARSELIZARD---------" << netlist.size() << std::endl;
-
+    // Create the electric potential field v
     field v( "h1" );
     // parameters
     parameter   rho; // resistivity
