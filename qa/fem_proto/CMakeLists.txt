@@ -23,6 +23,7 @@ add_executable( fem_currentDensity
 
     ../../pcbnew/fem/common/fem_descriptor.cpp
     ../../pcbnew/fem/common/fem_port.cpp
+    ../../pcbnew/fem/common/fem_result.cpp
     ../../pcbnew/fem/sparselizard/sparselizard_DC_CurrentDensity.cpp
     ../../pcbnew/fem/sparselizard/sparselizard_mesher.cpp
     fem_currentDensity.cpp

@@ -113,7 +113,39 @@ void runFEMCurrentDensity( const BOARD* aBoard )
     descriptor->AddPort( port1 );
     descriptor->AddPort( port2 );
 
+    FEM_RESULT_VALUE* r_voltage = new FEM_RESULT_VALUE( FEM_VALUE_TYPE::VOLTAGE, port1, port2 );
+    FEM_RESULT_VALUE* r_current = new FEM_RESULT_VALUE( FEM_VALUE_TYPE::CURRENT, port1, nullptr );
+    FEM_RESULT_VALUE* r_resistance = new FEM_RESULT_VALUE( FEM_VALUE_TYPE::CURRENT, port1, port2 );
+
+    if( !( r_voltage )->IsInitialized() )
+        std::cerr << "Could not initialize voltage result. " << std::endl;
+    if( !( r_current )->IsInitialized() )
+        std::cerr << "Could not initialize current result. " << std::endl;
+    if( !( r_resistance )->IsInitialized() )
+        std::cerr << "Could not initialize resistance result. " << std::endl;
+
+    if( !descriptor->AddResult( r_voltage ) )
+        std::cerr << "Could not add voltage result to descriptor " << std::endl;
+    if( !descriptor->AddResult( r_current ) )
+        std::cerr << "Could not add current result to descriptor " << std::endl;
+    if( !descriptor->AddResult( r_resistance ) )
+        std::cerr << "Could not add resistance result to descriptor " << std::endl;
+
     Run_DC_CurrentDensity( descriptor );
+
+    if( r_voltage->m_valid )
+        std::cout << "Voltage between J1-Pad1 and J2-Pad1: " << r_voltage->GetResult() << std::endl;
+    else
+        std::cerr << "Voltage result is not valid" << std::endl;
+    if( r_current->m_valid )
+        std::cout << "Current at J1-Pad1: " << r_current->GetResult() << std::endl;
+    else
+        std::cerr << "Current result is not valid" << std::endl;
+    if( r_resistance->m_valid )
+        std::cout << "Resistance between J1-Pad1 and J2-Pad1: " << r_resistance->GetResult()
+                  << std::endl;
+    else
+        std::cerr << "Resistance result is not valid" << std::endl;
 }
 
 

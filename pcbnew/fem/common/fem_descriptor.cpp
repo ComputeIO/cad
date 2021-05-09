@@ -51,6 +51,11 @@ std::list<FEM_PORT*> FEM_DESCRIPTOR::GetPorts()
     return m_ports;
 }
 
+std::list<FEM_RESULT*> FEM_DESCRIPTOR::GetResults()
+{
+    return m_results;
+}
+
 bool FEM_DESCRIPTOR::AddPort( FEM_PORT* aPort )
 {
     if( aPort == nullptr )
@@ -74,6 +79,41 @@ bool FEM_DESCRIPTOR::RemovePort( FEM_PORT* aPort )
     if( aPort == nullptr )
         return false;
     if( aPort->GetItem() == nullptr )
+        return false;
+
+    // @TODO
+
+    return false;
+}
+
+bool FEM_DESCRIPTOR::AddResult( FEM_RESULT* aResult )
+{
+    if( aResult == nullptr )
+        return false;
+    switch( aResult->GetType() )
+    {
+    case FEM_RESULT_TYPE::VALUE:
+        if( static_cast<FEM_RESULT_VALUE*>( aResult )->IsInitialized() == false )
+            return false;
+        break;
+    default: return false;
+    }
+
+
+    // Check for unicity
+    for( FEM_RESULT* result : m_results )
+    {
+        if( result == aResult )
+            return false;
+    }
+    m_results.push_back( aResult );
+
+    return true;
+}
+
+bool FEM_DESCRIPTOR::RemoveResult( FEM_RESULT* aResult )
+{
+    if( aResult == nullptr )
         return false;
 
     // @TODO

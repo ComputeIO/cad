@@ -82,7 +82,6 @@ bool Run_DC_CurrentDensity( FEM_DESCRIPTOR* aDescriptor )
 
 
     std::vector<shape> shapes;
-
     mesher.Get2DShapes( shapes, PCB_LAYER_ID::F_Cu, true );
 
     mesh mymesh;
@@ -90,8 +89,6 @@ bool Run_DC_CurrentDensity( FEM_DESCRIPTOR* aDescriptor )
     mymesh.load( shapes );
 
     mymesh.write( "mymesh.msh" );
-
-    // from now - Sparselizard  only
 
     std::cout << std::endl << "---------SPARSELIZARD---------" << netlist.size() << std::endl;
     // Create the electric potential field v
@@ -140,6 +137,51 @@ bool Run_DC_CurrentDensity( FEM_DESCRIPTOR* aDescriptor )
     // Get A and b to solve Ax = b:
     vec solv = sl::solve( electrokinetics.A(), electrokinetics.b() );
     // Transfer the data from the solution vector to the v field to be used for the heat equation below:
+
+    for( FEM_RESULT* result : aDescriptor->GetResults() )
+    {
+        if( result == nullptr )
+        {
+            std::cerr << "Uninitialized result - null" << std::endl;
+            continue;
+        }
+
+        switch( result->GetType() )
+        {
+        case FEM_RESULT_TYPE::VALUE:
+        {
+            FEM_RESULT_VALUE* resultValue = static_cast<FEM_RESULT_VALUE*>( result );
+
+            if( resultValue->IsInitialized() == false )
+            {
+                std::cerr << "Uninitialized result" << std::endl;
+                continue;
+            }
+
+            switch( resultValue->m_valueType )
+            {
+            case FEM_VALUE_TYPE::VOLTAGE:
+                resultValue->m_value = 0;
+                resultValue->m_valid = true;
+                break;
+            case FEM_VALUE_TYPE::CURRENT:
+                resultValue->m_value = 0;
+                resultValue->m_valid = true;
+                break;
+            case FEM_VALUE_TYPE::RESISTANCE:
+                resultValue->m_value = 0;
+                resultValue->m_valid = true;
+                break;
+            default: std::cerr << "Result type not supported by DC simulation" << std::endl; break;
+            }
+        }
+        break;
+        case FEM_RESULT_TYPE::MESH: break;
+        case FEM_RESULT_TYPE::VIEW: break;
+        default: std::cerr << "Result type not supported by DC simulation" << std::endl;
+        }
+    }
+
     int wholedomain = sl::selectall();
     v.setdata( wholedomain, solv );
     j.write( wholedomain, "currentdensity.pos" );

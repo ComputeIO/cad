@@ -21,53 +21,35 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
 
-#ifndef FEM_DESCRIPTOR_H
-#define FEM_DESCRIPTOR_H
-
-#include <pcbnew/board.h>
-#include "fem_port.h"
 #include "fem_result.h"
-#include <list>
 
-#include <board_connected_item.h>
-
-enum class FEM_SIMULATION_TYPE
+FEM_RESULT::FEM_RESULT( FEM_RESULT_TYPE aType )
 {
-    DC_CURRENT_DENSITY,
-    DC_RESISTANCE,
-    DC_VOLTAGE_DROP,
-    DC_THERMAL
-};
+    m_type = aType;
+    m_valid = false;
+    m_initialized = false;
+}
 
-enum class FEM_SOLVER
+FEM_RESULT_VALUE::FEM_RESULT_VALUE( FEM_VALUE_TYPE aType, FEM_PORT* aPortA, FEM_PORT* aPortB ) :
+        FEM_RESULT( FEM_RESULT_TYPE::VALUE )
 {
-    SPARSELIZARD
-};
+    if( aPortA == nullptr )
+    {
+        std::cerr << "FEM_RESULT_VALUE : Port A is unspecificed." << std::endl;
+    }
+    if( ( aType >= FEM_VALUE_TYPE::REQUIRES_2_PORTS ) && ( aPortB == nullptr ) )
+    {
+        std::cerr << "FEM_RESULT_VALUE : Port B is unspecificed for value requiring 2 ports."
+                  << std::endl;
+    }
+    if( ( aType >= FEM_VALUE_TYPE::REQUIRES_2_PORTS )
+        && ( aPortA->GetItem() == aPortB->GetItem() ) )
+    {
+        std::cerr << "FEM_RESULT_VALUE : Port A and Port B are the same item." << std::endl;
+    }
 
-class FEM_DESCRIPTOR
-{
-public:
-    FEM_DESCRIPTOR( FEM_SOLVER aSolver, const BOARD* aBoard );
-
-    bool Run();
-
-    std::list<FEM_PORT*> GetPorts();
-    bool                 AddPort( FEM_PORT* );
-    bool                 RemovePort( FEM_PORT* );
-    std::list<FEM_RESULT*> GetResults();
-    bool                   AddResult( FEM_RESULT* );
-    bool                   RemoveResult( FEM_RESULT* );
-
-    FEM_SOLVER GetSolver();
-    bool       SetSolver( FEM_SOLVER );
-
-    const BOARD* GetBoard();
-
-private:
-    std::list<FEM_PORT*>   m_ports;
-    std::list<FEM_RESULT*> m_results;
-    FEM_SOLVER             m_solver;
-    const BOARD*           m_board;
-};
-
-#endif
+    m_valueType = aType;
+    m_portA = aPortA;
+    m_portB = aPortB;
+    m_initialized = true;
+}
