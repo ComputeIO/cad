@@ -72,6 +72,8 @@ public:
     bool            IsInitialized() { return m_initialized; };
     FEM_RESULT_TYPE GetType() { return m_type; };
     FEM_VALUE_TYPE  m_valueType;
+    FEM_PORT*       GetPortA() { return m_portA; };
+    FEM_PORT*       GetPortB() { return m_portB; };
     double          m_value;
 
 private:

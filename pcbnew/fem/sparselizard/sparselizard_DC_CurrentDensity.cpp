@@ -27,9 +27,64 @@
 #include "sparselizard_mesher.h"
 #include "../common/fem_descriptor.h"
 
+
+std::vector<int> getAllRegionsWithNetcode( std::map<int, int> aRegionMap, int aNetCode,
+                                           int aIgnoredPort = -1 )
+{
+    std::vector<int> regions;
+
+    for( std::map<int, int>::iterator it = aRegionMap.begin(); it != aRegionMap.end(); ++it )
+    {
+        if( ( it->second == aNetCode ) && ( it->first != aIgnoredPort ) )
+        {
+            regions.push_back( it->first );
+        }
+    }
+    return regions;
+}
+
+
+double compute_DC_Current( expression j, int aPort, std::map<int, int> aRegionMap, int aNetCode )
+{
+    std::vector<int> regions = getAllRegionsWithNetcode( aRegionMap, aNetCode, aPort );
+
+    if( regions.size() < 1 )
+    {
+        // The port is the only region with aNetCode, it is not connected to anything
+        std::cerr << "Port is not connected to any region" << std::endl;
+        return 0;
+    }
+    int outsideOfPort = sl::selectunion( regions );
+    int line = sl::selectintersection( { aPort, outsideOfPort } );
+    return ( sl::normal( aPort ) * sl::on( outsideOfPort, j ) ).integrate( line, 4 );
+}
+
+double compute_DC_Voltage( expression v, int aPortA, int aPortB )
+{
+    double result;
+    result = v.integrate( aPortA, 4 ) / expression( 1 ).integrate( aPortA, 4 );
+    result -= v.integrate( aPortB, 4 ) / expression( 1 ).integrate( aPortB, 4 );
+    return result;
+}
+
+double compute_DC_Resistance( expression v, expression j, int aPortA, int aPortB,
+                              std::map<int, int> aRegionMap, int aNetCode )
+{
+    double V, I;
+    V = compute_DC_Voltage( v, aPortA, aPortB );
+    I = compute_DC_Current( j, aPortA, aRegionMap, aNetCode );
+
+    if( ( I == 0 ) && ( V == 0 ) )
+        return 0; // Should be nan, we coulld not get the resistance
+    if( I == 0 )
+        return std::numeric_limits<double>::infinity();
+
+    return V / I;
+}
+
 bool Run_DC_CurrentDensity( FEM_DESCRIPTOR* aDescriptor )
 {
-    const double copperResistivity = 1.68e-8;
+    const double copperResistivity = 1.68e-8 / ( 35e-6 );
     const double interpolationOrder = 2;
 
     if( aDescriptor == nullptr )
@@ -42,7 +97,7 @@ bool Run_DC_CurrentDensity( FEM_DESCRIPTOR* aDescriptor )
     std::cout << "Trying to add ports" << std::endl;
 
     std::list<int> netlist;
-    std::list<int> regionlist;
+    std::map<int, int> regionMap; // RegionID, netcode
 
     for( FEM_PORT* port : aDescriptor->GetPorts() )
     {
@@ -64,43 +119,49 @@ bool Run_DC_CurrentDensity( FEM_DESCRIPTOR* aDescriptor )
         case PCB_PAD_T:
             port->m_simulationID =
                     mesher.AddPadRegion( static_cast<const PAD*>( port->GetItem() ) );
-            regionlist.push_back( port->m_simulationID );
+            regionMap.insert(
+                    std::make_pair( port->m_simulationID,
+                                    static_cast<const PAD*>( port->GetItem() )->GetNetCode() ) );
             break;
         default: break;
         }
-        std::cout << "Port found" << std::endl;
     }
 
     // Add copper zones / tracks
+
     for( int netID : netlist )
     {
         int regionId = mesher.AddNetRegion( netID );
-        regionlist.push_back( regionId );
+        regionMap.insert( std::make_pair( regionId, netID ) );
     }
 
-    std::cout << "Number of regions in simulation: " << netlist.size() << std::endl;
+    std::cout << "Number of ports in simulation: " << regionMap.size() - netlist.size()
+              << std::endl;
+    std::cout << "Number of regions in simulation: " << regionMap.size() << std::endl;
 
 
     std::vector<shape> shapes;
     mesher.Get2DShapes( shapes, PCB_LAYER_ID::F_Cu, true );
 
+    std::cout << std::endl << "---------SPARSELIZARD---------" << std::endl;
     mesh mymesh;
-    mymesh.split( 3 );
+    mymesh.split( 4 );
     mymesh.load( shapes );
 
     mymesh.write( "mymesh.msh" );
 
-    std::cout << std::endl << "---------SPARSELIZARD---------" << netlist.size() << std::endl;
+
+    std::cout << std::endl << "---------SIMULATION---------" << std::endl;
     // Create the electric potential field v
     field v( "h1" );
     // parameters
     parameter   rho; // resistivity
     formulation electrokinetics;
 
-    for( int region : regionlist )
+    for( std::map<int, int>::iterator it = regionMap.begin(); it != regionMap.end(); ++it )
     {
-        v.setorder( region, interpolationOrder );
-        rho | region = copperResistivity;
+        v.setorder( it->first, interpolationOrder );
+        rho | it->first = copperResistivity;
     }
 
     for( FEM_PORT* port : aDescriptor->GetPorts() )
@@ -121,10 +182,10 @@ bool Run_DC_CurrentDensity( FEM_DESCRIPTOR* aDescriptor )
                   << port->m_constraint.m_value << " V" << std::endl;
     }
 
-    for( int region : regionlist )
+    for( std::map<int, int>::iterator it = regionMap.begin(); it != regionMap.end(); ++it )
     {
         electrokinetics +=
-                sl::integral( region, sl::grad( sl::tf( v ) ) / rho * sl::grad( sl::dof( v ) ) );
+                sl::integral( it->first, sl::grad( sl::tf( v ) ) / rho * sl::grad( sl::dof( v ) ) );
     }
 
     // Expression for the electric field E [V/m] and current density j [A/m^2]:
@@ -136,7 +197,10 @@ bool Run_DC_CurrentDensity( FEM_DESCRIPTOR* aDescriptor )
     electrokinetics.generate();
     // Get A and b to solve Ax = b:
     vec solv = sl::solve( electrokinetics.A(), electrokinetics.b() );
-    // Transfer the data from the solution vector to the v field to be used for the heat equation below:
+    int wholedomain = sl::selectall();
+    v.setdata( wholedomain, solv );
+
+    std::cout << std::endl << "---------RESULTS---------" << std::endl;
 
     for( FEM_RESULT* result : aDescriptor->GetResults() )
     {
@@ -157,21 +221,39 @@ bool Run_DC_CurrentDensity( FEM_DESCRIPTOR* aDescriptor )
                 std::cerr << "Uninitialized result" << std::endl;
                 continue;
             }
-
+            std::cout << "--Result type : ";
             switch( resultValue->m_valueType )
             {
             case FEM_VALUE_TYPE::VOLTAGE:
-                resultValue->m_value = 0;
+            {
+                int portA = resultValue->GetPortA()->m_simulationID;
+                int portB = resultValue->GetPortB()->m_simulationID;
+                std::cout << "Voltage from " << portB << " to " << portA << endl;
+                resultValue->m_value = compute_DC_Voltage( v, portA, portB );
                 resultValue->m_valid = true;
                 break;
+            }
             case FEM_VALUE_TYPE::CURRENT:
-                resultValue->m_value = 0;
+            {
+                int port = resultValue->GetPortA()->m_simulationID;
+                std::cout << "Current through " << port << endl;
+                int netCode = resultValue->GetPortA()->GetItem()->GetNetCode();
+                resultValue->m_value = compute_DC_Current( j, port, regionMap, netCode );
                 resultValue->m_valid = true;
                 break;
+            }
             case FEM_VALUE_TYPE::RESISTANCE:
-                resultValue->m_value = 0;
+            {
+                int portA = resultValue->GetPortA()->m_simulationID;
+                int portB = resultValue->GetPortB()->m_simulationID;
+                int netCode = resultValue->GetPortA()->GetItem()->GetNetCode();
+                std::cout << "Resistance between " << portB << " and " << portA << endl;
+                // Find the region with same potential as
+                resultValue->m_value =
+                        compute_DC_Resistance( v, j, portA, portB, regionMap, netCode );
                 resultValue->m_valid = true;
                 break;
+            }
             default: std::cerr << "Result type not supported by DC simulation" << std::endl; break;
             }
         }
@@ -182,11 +264,9 @@ bool Run_DC_CurrentDensity( FEM_DESCRIPTOR* aDescriptor )
         }
     }
 
-    int wholedomain = sl::selectall();
-    v.setdata( wholedomain, solv );
-    j.write( wholedomain, "currentdensity.pos" );
-    v.write( wholedomain, "potential.pos" );
+    j.write( wholedomain, "currentdensity.pos", 2 );
+    v.write( wholedomain, "potential.pos", 2 );
 
-
+    cout << "---------END OF SPARSELIZARD---------" << std::endl << std::endl;
     return true;
 }

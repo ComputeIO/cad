@@ -59,7 +59,7 @@ void runFEMCurrentDensity( const BOARD* aBoard )
 
             FEM_PORT_CONSTRAINT* constraint1 = new FEM_PORT_CONSTRAINT();
             constraint1->m_type = FEM_PORT_CONSTRAINT_TYPE::VOLTAGE;
-            constraint1->m_value = 0.001; // 1 mV
+            constraint1->m_value = 1e-3; // 1 mV
 
             port1 = new FEM_PORT( pad );
             port1->m_type = FEM_PORT_TYPE::SOURCE;
@@ -91,7 +91,7 @@ void runFEMCurrentDensity( const BOARD* aBoard )
 
             FEM_PORT_CONSTRAINT* constraint2 = new FEM_PORT_CONSTRAINT();
             constraint2->m_type = FEM_PORT_CONSTRAINT_TYPE::VOLTAGE;
-            constraint2->m_value = 0; // 1 mV
+            constraint2->m_value = 0; // 0V
 
             port2 = new FEM_PORT( pad );
             port2->m_type = FEM_PORT_TYPE::SOURCE;
@@ -115,7 +115,7 @@ void runFEMCurrentDensity( const BOARD* aBoard )
 
     FEM_RESULT_VALUE* r_voltage = new FEM_RESULT_VALUE( FEM_VALUE_TYPE::VOLTAGE, port1, port2 );
     FEM_RESULT_VALUE* r_current = new FEM_RESULT_VALUE( FEM_VALUE_TYPE::CURRENT, port1, nullptr );
-    FEM_RESULT_VALUE* r_resistance = new FEM_RESULT_VALUE( FEM_VALUE_TYPE::CURRENT, port1, port2 );
+    FEM_RESULT_VALUE* r_resistance = new FEM_RESULT_VALUE( FEM_VALUE_TYPE::RESISTANCE, port1, port2 );
 
     if( !( r_voltage )->IsInitialized() )
         std::cerr << "Could not initialize voltage result. " << std::endl;
