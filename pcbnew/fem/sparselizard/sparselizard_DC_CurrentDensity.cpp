@@ -82,6 +82,7 @@ double compute_DC_Resistance( expression v, expression j, int aPortA, int aPortB
     return V / I;
 }
 
+
 bool Run_DC_CurrentDensity( FEM_DESCRIPTOR* aDescriptor )
 {
     const double copperResistivity = 1.68e-8 / ( 35e-6 );
@@ -172,14 +173,17 @@ bool Run_DC_CurrentDensity( FEM_DESCRIPTOR* aDescriptor )
             continue;
         }
 
-        if( port->m_constraint.m_type != FEM_PORT_CONSTRAINT_TYPE::VOLTAGE )
+        if( port->m_type != FEM_PORT_TYPE::PASSIVE ) // Don't constrain passive ports
         {
-            std::cerr << "Contraint should be FEM_PORT_CONSTRAINT_TYPE::VOLTAGE" << std::endl;
-            continue;
+            if( port->m_constraint.m_type != FEM_PORT_CONSTRAINT_TYPE::VOLTAGE )
+            {
+                std::cerr << "Contraint should be FEM_PORT_CONSTRAINT_TYPE::VOLTAGE" << std::endl;
+                continue;
+            }
+            v.setconstraint( port->m_simulationID, port->m_constraint.m_value );
+            std::cout << "Setting region " << port->m_simulationID << " to "
+                      << port->m_constraint.m_value << " V" << std::endl;
         }
-        v.setconstraint( port->m_simulationID, port->m_constraint.m_value );
-        std::cout << "Setting region " << port->m_simulationID << " to "
-                  << port->m_constraint.m_value << " V" << std::endl;
     }
 
     for( std::map<int, int>::iterator it = regionMap.begin(); it != regionMap.end(); ++it )
