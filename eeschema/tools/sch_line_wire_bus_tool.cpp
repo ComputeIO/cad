@@ -288,7 +288,7 @@ int SCH_LINE_WIRE_BUS_TOOL::DrawSegments( const TOOL_EVENT& aEvent )
     {
         EE_GRID_HELPER   grid( m_toolMgr );
         grid.SetSnap( !aEvent.Modifier( MD_SHIFT ) );
-        grid.SetUseGrid( getView()->GetGAL()->GetGridSnapping() && !aEvent.Modifier( MD_ALT ) );
+        grid.SetUseGrid( getView()->GetGAL()->GetGridSnapping() && !aEvent.DisableGridSnapping() );
 
         VECTOR2D cursorPos = grid.BestSnapAnchor( aEvent.Position(), LAYER_CONNECTABLE, nullptr );
         startSegments( params->layer, cursorPos );
@@ -535,7 +535,7 @@ int SCH_LINE_WIRE_BUS_TOOL::doDrawSegments( const std::string& aTool, int aType,
         setCursor();
         grid.SetMask( GRID_HELPER::ALL );
         grid.SetSnap( !evt->Modifier( MD_SHIFT ) );
-        grid.SetUseGrid( getView()->GetGAL()->GetGridSnapping() && !evt->Modifier( MD_ALT ) );
+        grid.SetUseGrid( getView()->GetGAL()->GetGridSnapping() && !evt->DisableGridSnapping() );
 
         if( segment )
         {
@@ -573,7 +573,11 @@ int SCH_LINE_WIRE_BUS_TOOL::doDrawSegments( const std::string& aTool, int aType,
         else if( evt->IsActivate() )
         {
             if( segment || m_busUnfold.in_progress )
-                cleanup();
+            {
+                m_frame->ShowInfoBarMsg( _( "Press <ESC> to cancel drawing." ) );
+                evt->SetPassEvent( false );
+                continue;
+            }
 
             if( evt->IsMoveTool() )
             {
