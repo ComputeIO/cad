@@ -28,18 +28,22 @@
      id="layer1">
     <path
        style="fill:none;stroke:#000000;stroke-width:2;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
-       d="M 207.89133,25.40776 183.15392,25.86344 167.96547,47.98192 6.3431825,48.493349 5.9478625,4.7464825 166.89134,5.1266975 183.10141,25.717239"
+       d="M 209.40804,26.265916 194.21959,48.384396 32.597302,48.895825 32.201982,5.1489589 193.14546,5.5291739 209.35553,26.119715"
        id="path833" />
     <text
        xml:space="preserve"
        style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:44.7263px;line-height:1.25;font-family:'Liberation Sans';-inkscape-font-specification:'Liberation Sans, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;letter-spacing:0px;word-spacing:0px;stroke-width:0.232949"
-       x="8.1221056"
-       y="39.619171"
+       x="37.941467"
+       y="39.973526"
        id="text837"
        transform="scale(0.88043863,1.1357975)"><tspan
          id="tspan857"
-         x="8.1221056"
-         y="39.619171"
+         x="37.941467"
+         y="39.973526"
          style="stroke-width:0.232949">OUTPUT</tspan></text>
+    <path
+       style="fill:none;stroke:#000000;stroke-width:2;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;stroke-miterlimit:4;stroke-dasharray:none"
+       d="M 31.78285,27.436955 3.8587529,28.172653"
+       id="path834" />
   </g>
 </svg>
