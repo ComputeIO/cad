@@ -76,13 +76,22 @@ double compute_DC_Resistance( expression v, expression j, int aPortA, int aPortB
     I = compute_DC_Current( j, aPortA, aRegionMap, aNetCode );
 
     if( ( I == 0 ) && ( V == 0 ) )
-        return 0; // Should be nan, we coulld not get the resistance
+        return 0; // Should be nan, we could not get the resistance
     if( I == 0 )
         return std::numeric_limits<double>::infinity();
 
     return V / I;
 }
 
+double compute_DC_Power( expression v, expression j, int aPortA, int aPortB,
+                         std::map<int, int> aRegionMap, int aNetCode )
+{
+    double V, I;
+    V = compute_DC_Voltage( v, aPortA, aPortB );
+    I = compute_DC_Current( j, aPortA, aRegionMap, aNetCode );
+
+    return V * I;
+}
 
 bool Run_DC_CurrentDensity( FEM_DESCRIPTOR* aDescriptor )
 {
@@ -147,7 +156,7 @@ bool Run_DC_CurrentDensity( FEM_DESCRIPTOR* aDescriptor )
 
     std::cout << std::endl << "---------SPARSELIZARD---------" << std::endl;
     mesh mymesh;
-    mymesh.split( 4 );
+    mymesh.split( 2 );
     mymesh.load( shapes );
 
     mymesh.write( "mymesh.msh" );
@@ -196,7 +205,8 @@ bool Run_DC_CurrentDensity( FEM_DESCRIPTOR* aDescriptor )
     // Expression for the electric field E [V/m] and current density j [A/m^2]:
     expression E = -sl::grad( v ); // electric field
     expression j = E / rho;        // current density
-    expression p = j * E;          // power density
+    expression p = sl::doubledotproduct( j, E ); // power density
+    //expression P = sl::compx(p)*sl::compx(p)+sl::compy(p)*sl::compy(p);          // power density
 
 
     // Compute the static current everywhere:
@@ -273,6 +283,50 @@ bool Run_DC_CurrentDensity( FEM_DESCRIPTOR* aDescriptor )
                 resultValue->m_valid = true;
                 break;
             }
+            case FEM_VALUE_TYPE::DISSIPATED_POWER:
+            {
+                int port = resultValue->GetPortA()->m_simulationID;
+                std::cout << "Power dissipated by passive port " << port << endl;
+                if( resultValue->GetPortA()->m_type == FEM_PORT_TYPE::PASSIVE )
+                {
+                    int port = resultValue->GetPortA()->m_simulationID;
+                    resultValue->m_value = ( sl::on( port, p ) ).integrate( port, 4 );
+                    resultValue->m_valid = true;
+                }
+                else
+                {
+                    std::cerr << " Copper a sink / source port does not dissipate power" << port
+                              << endl;
+                    resultValue->m_value = 0;
+                    resultValue->m_valid = true;
+                }
+                break;
+            }
+            case FEM_VALUE_TYPE::POWER:
+            {
+                int portA = resultValue->GetPortA()->m_simulationID;
+                int portB = resultValue->GetPortB()->m_simulationID;
+                int netCode = resultValue->GetPortA()->GetItem()->GetNetCode();
+                std::cout << "Total power on port " << portA << " using " << portB
+                          << " as reference." << std::endl;
+                // Find the region with same potential as
+
+                if( resultValue->GetPortA()->m_type == FEM_PORT_TYPE::PASSIVE )
+                {
+                    std::cerr << " Cannot get power flowing through a passive port ( net current "
+                                 "is 0 ) "
+                              << std::endl;
+                    resultValue->m_value = 0;
+                    resultValue->m_valid = true;
+                }
+                else
+                {
+                    resultValue->m_value =
+                            compute_DC_Power( v, j, portA, portB, regionMap, netCode );
+                    resultValue->m_valid = true;
+                }
+                break;
+            }
             default: std::cerr << "Result type not supported by DC simulation" << std::endl; break;
             }
         }
@@ -281,7 +335,6 @@ bool Run_DC_CurrentDensity( FEM_DESCRIPTOR* aDescriptor )
         case FEM_RESULT_TYPE::VIEW:
         {
             FEM_RESULT_VIEW* resultView = static_cast<FEM_RESULT_VIEW*>( result );
-            std::cout << resultView->m_valid << std::endl;
             switch( resultView->m_viewType )
             {
             case FEM_VIEW_TYPE::TEMPERATURE:
@@ -302,7 +355,6 @@ bool Run_DC_CurrentDensity( FEM_DESCRIPTOR* aDescriptor )
                 break;
             default:
                 std::cerr << "Result type not supported by DC simulation" << std::endl;
-                break;
                 break;
             }
             if( resultView->m_valid )
