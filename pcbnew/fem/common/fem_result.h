@@ -25,6 +25,7 @@
 #define FEM_RESULT_H
 
 #include "fem_port.h"
+#include <wx/filename.h>
 
 enum class FEM_RESULT_TYPE
 {
@@ -62,6 +63,7 @@ enum class FEM_VALUE_TYPE
     REQUIRES_2_PORTS = VOLTAGE
 };
 
+
 class FEM_RESULT_VALUE : public FEM_RESULT
 {
 public:
@@ -83,4 +85,31 @@ private:
     bool            m_initialized;
 };
 
+
+enum class FEM_VIEW_TYPE
+{
+    TEMPERATURE,
+    CURRENT,
+    VOLTAGE,
+    POWER,
+    NB_TYPE,
+};
+
+class FEM_RESULT_VIEW : public FEM_RESULT
+{
+public:
+    FEM_RESULT_VIEW( FEM_VIEW_TYPE aType, wxFileName aFilename );
+
+    bool            m_valid;
+    wxFileName      GetResult() { return m_filename; };
+    bool            IsInitialized() { return m_initialized; };
+    FEM_RESULT_TYPE GetType() { return m_type; };
+    FEM_VIEW_TYPE   m_viewType;
+    wxFileName      m_filename;
+
+private:
+    // Two ports should be enough for any measurement ?
+    FEM_RESULT_TYPE m_type;
+    bool            m_initialized;
+};
 #endif

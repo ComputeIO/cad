@@ -53,3 +53,11 @@ FEM_RESULT_VALUE::FEM_RESULT_VALUE( FEM_VALUE_TYPE aType, FEM_PORT* aPortA, FEM_
     m_portB = aPortB;
     m_initialized = true;
 }
+
+FEM_RESULT_VIEW::FEM_RESULT_VIEW( FEM_VIEW_TYPE aType, wxFileName aFilename ) :
+        FEM_RESULT( FEM_RESULT_TYPE::VIEW )
+{
+    m_viewType = aType;
+    m_filename = aFilename;
+    m_initialized = true;
+}

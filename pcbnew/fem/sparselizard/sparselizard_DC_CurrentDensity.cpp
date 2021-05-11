@@ -194,8 +194,9 @@ bool Run_DC_CurrentDensity( FEM_DESCRIPTOR* aDescriptor )
     }
 
     // Expression for the electric field E [V/m] and current density j [A/m^2]:
-    expression E = -sl::grad( v );
-    expression j = E / rho ;
+    expression E = -sl::grad( v ); // electric field
+    expression j = E / rho;        // current density
+    expression p = j * E;          // power density
 
 
     // Compute the static current everywhere:
@@ -277,14 +278,42 @@ bool Run_DC_CurrentDensity( FEM_DESCRIPTOR* aDescriptor )
         }
         break;
         case FEM_RESULT_TYPE::MESH: break;
-        case FEM_RESULT_TYPE::VIEW: break;
+        case FEM_RESULT_TYPE::VIEW:
+        {
+            FEM_RESULT_VIEW* resultView = static_cast<FEM_RESULT_VIEW*>( result );
+            std::cout << resultView->m_valid << std::endl;
+            switch( resultView->m_viewType )
+            {
+            case FEM_VIEW_TYPE::TEMPERATURE:
+                std::cerr << "Temperature is not supported by DC simulation" << std::endl;
+                break;
+            case FEM_VIEW_TYPE::CURRENT:
+
+                j.write( wholedomain, std::string( resultView->m_filename.GetFullName() ), 2 );
+                resultView->m_valid = true;
+                break;
+            case FEM_VIEW_TYPE::VOLTAGE:
+                v.write( wholedomain, std::string( resultView->m_filename.GetFullName() ), 2 );
+                resultView->m_valid = true;
+                break;
+            case FEM_VIEW_TYPE::POWER:
+                p.write( wholedomain, std::string( resultView->m_filename.GetFullName() ), 2 );
+                resultView->m_valid = true;
+                break;
+            default:
+                std::cerr << "Result type not supported by DC simulation" << std::endl;
+                break;
+                break;
+            }
+            if( resultView->m_valid )
+            {
+                std::cout << "Filed created: " << resultView->m_filename.GetFullName() << std::endl;
+            }
+        }
+        break;
         default: std::cerr << "Result type not supported by DC simulation" << std::endl;
         }
     }
-
-    j.write( wholedomain, "currentdensity.pos", 2 );
-    v.write( wholedomain, "potential.pos", 2 );
-
     cout << "---------END OF SPARSELIZARD---------" << std::endl << std::endl;
     return true;
 }

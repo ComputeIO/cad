@@ -146,6 +146,14 @@ void runFEMCurrentDensity( const BOARD* aBoard )
     FEM_RESULT_VALUE* r_current2 = new FEM_RESULT_VALUE( FEM_VALUE_TYPE::CURRENT, port3, nullptr );
     FEM_RESULT_VALUE* r_resistance = new FEM_RESULT_VALUE( FEM_VALUE_TYPE::RESISTANCE, port1, port2 );
 
+    wxFileName*      currentFile = new wxFileName( "currentDensity.pos" );
+    FEM_RESULT_VIEW* r_currentView = new FEM_RESULT_VIEW( FEM_VIEW_TYPE::CURRENT, *currentFile );
+    wxFileName*      potentialFile = new wxFileName( "potential.pos" );
+    FEM_RESULT_VIEW* r_potentialView =
+            new FEM_RESULT_VIEW( FEM_VIEW_TYPE::VOLTAGE, *potentialFile );
+    wxFileName*      powerFile = new wxFileName( "power.pos" );
+    FEM_RESULT_VIEW* r_powerView = new FEM_RESULT_VIEW( FEM_VIEW_TYPE::POWER, *powerFile );
+
     if( !( r_voltage )->IsInitialized() )
         std::cerr << "Could not initialize voltage result. " << std::endl;
     if( !( r_voltage2 )->IsInitialized() )
@@ -156,6 +164,12 @@ void runFEMCurrentDensity( const BOARD* aBoard )
         std::cerr << "Could not initialize current result. " << std::endl;
     if( !( r_resistance )->IsInitialized() )
         std::cerr << "Could not initialize resistance result. " << std::endl;
+    if( !( r_currentView )->IsInitialized() )
+        std::cerr << "Could not initialize view result. " << std::endl;
+    if( !( r_potentialView )->IsInitialized() )
+        std::cerr << "Could not initialize view result. " << std::endl;
+    if( !( r_powerView )->IsInitialized() )
+        std::cerr << "Could not initialize view result. " << std::endl;
 
     if( !descriptor->AddResult( r_voltage ) )
         std::cerr << "Could not add voltage result to descriptor " << std::endl;
@@ -167,6 +181,12 @@ void runFEMCurrentDensity( const BOARD* aBoard )
         std::cerr << "Could not add current result to descriptor " << std::endl;
     if( !descriptor->AddResult( r_resistance ) )
         std::cerr << "Could not add resistance result to descriptor " << std::endl;
+    if( !descriptor->AddResult( r_currentView ) )
+        std::cerr << "Could not add view result to descriptor " << std::endl;
+    if( !descriptor->AddResult( r_potentialView ) )
+        std::cerr << "Could not add view result to descriptor " << std::endl;
+    if( !descriptor->AddResult( r_powerView ) )
+        std::cerr << "Could not add view result to descriptor " << std::endl;
 
     Run_DC_CurrentDensity( descriptor );
 

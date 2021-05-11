@@ -96,6 +96,10 @@ bool FEM_DESCRIPTOR::AddResult( FEM_RESULT* aResult )
         if( static_cast<FEM_RESULT_VALUE*>( aResult )->IsInitialized() == false )
             return false;
         break;
+    case FEM_RESULT_TYPE::VIEW:
+        if( static_cast<FEM_RESULT_VIEW*>( aResult )->IsInitialized() == false )
+            return false;
+        break;
     default: return false;
     }
 
