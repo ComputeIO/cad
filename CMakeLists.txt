@@ -799,10 +799,11 @@ if( OCC_VERSION_STRING VERSION_LESS 7.3.0 )
 endif()
 include_directories( SYSTEM ${OCC_INCLUDE_DIR} )
 
-# Find Sparselizard, required for FEM
+# Find Sparselizard and gmsh, required for FEM
 if( KICAD_SPARSELIZARD )
     find_package( Sparselizard REQUIRED )
-    include_directories( SYSTEM ${SPARSELIZARD_INCLUDE_DIRS} )
+    find_package( Gmsh REQUIRED )
+    include_directories( SYSTEM ${SPARSELIZARD_INCLUDE_DIRS} ${GMSH_INCLUDE_DIRS} )
 endif()
 
 # Assist with header file searching optimization:

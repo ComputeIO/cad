@@ -62,6 +62,7 @@ include_directories(
 
 target_link_libraries( fem_proto
     ${SPARSELIZARD_LIBRARIES}
+    ${GMSH_LIBRARIES}
     qa_pcbnew_utils
     3d-viewer
     connectivity
@@ -86,6 +87,7 @@ target_link_libraries( fem_proto
 
 target_link_libraries( fem_currentDensity
     ${SPARSELIZARD_LIBRARIES}
+    ${GMSH_LIBRARIES}
     qa_pcbnew_utils
     3d-viewer
     connectivity
