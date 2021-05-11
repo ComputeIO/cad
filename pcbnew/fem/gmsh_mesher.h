@@ -64,9 +64,34 @@ public:
     void Finalize(); // TODO: automatically called after Load3DMesh?
 
 private:
-    std::vector<int> Mesh2DZone( PCB_LAYER_ID aLayer, const ZONE* zone );
+    std::vector<int> Mesh2DZone( PCB_LAYER_ID aLayer, double aOffsetZ, const ZONE* zone );
+
+    std::vector<int> Mesh2DRegion( PCB_LAYER_ID aLayer, double aOffsetZ, int aRegionId,
+                                   bool substractHoles );
+
+    std::vector<int> MeshShapePolySetToPlaneSurfaces( const SHAPE_POLY_SET& aPolySet,
+                                                      double                aOffsetZ );
 
     int MeshShapeLineChainToCurveLoop( const SHAPE_LINE_CHAIN& aLineChain, double aOffsetZ );
+
+    void SetPolysetOfNetRegion( SHAPE_POLY_SET& aPolyset, int aRegionId,
+                                PCB_LAYER_ID aLayer ) const;
+
+    void SetPolysetOfHolesOfNetRegion( SHAPE_POLY_SET& aPolyset, int aRegionId,
+                                       PCB_LAYER_ID aLayer ) const;
+
+    void SetPolysetOfHolewallOfNetRegion( SHAPE_POLY_SET& aPolyset, int aRegionId,
+                                          int aThickness ) const;
+
+    void SetPolysetOfPadDrill( SHAPE_POLY_SET& aPolyset, const PAD* pad,
+                               int thicknessModifier = 0 ) const;
+
+    void SetPolysetOfPadRegion( SHAPE_POLY_SET& aPolyset, int aRegionId,
+                                PCB_LAYER_ID aLayer ) const;
+
+    void TransformPadWithClearanceToPolygon( SHAPE_POLY_SET& aCornerBuffer, const PAD* pad,
+                                             PCB_LAYER_ID aLayer, int aClearance, int aMaxError,
+                                             ERROR_LOC aErrorLoc ) const;
 
     int m_next_region_id;
 
