@@ -8,6 +8,7 @@ add_executable( fem_proto
     fem_proto_test.cpp
 
     ../../pcbnew/fem/sparselizard/sparselizard_mesher.cpp
+    ../../pcbnew/fem/gmsh_mesher.cpp
 
     ../qa_utils/mocks.cpp
     ../pcbnew_utils/board_file_utils.cpp
@@ -26,6 +27,7 @@ add_executable( fem_currentDensity
     ../../pcbnew/fem/common/fem_result.cpp
     ../../pcbnew/fem/sparselizard/sparselizard_DC_CurrentDensity.cpp
     ../../pcbnew/fem/sparselizard/sparselizard_mesher.cpp
+    ../../pcbnew/fem/gmsh_mesher.cpp
     fem_currentDensity.cpp
 
     ../qa_utils/mocks.cpp

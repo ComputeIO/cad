@@ -31,6 +31,7 @@
 #include <pcbnew_utils/board_file_utils.h>
 
 #include <pcbnew/fem/sparselizard/sparselizard_mesher.h>
+#include <pcbnew/fem/gmsh_mesher.h>
 
 #include <sparselizard/sparselizard.h>
 
@@ -41,7 +42,8 @@ using namespace sl;
 
 void runFEMProto( const BOARD* aBoard, std::string aNetname )
 {
-    SPARSELIZARD_MESHER mesher( aBoard );
+    //SPARSELIZARD_MESHER mesher( aBoard );
+    GMSH_MESHER mesher( aBoard );
 
     NETINFO_ITEM* gndNetinfo = aBoard->FindNet( aNetname );
     if( gndNetinfo == nullptr )
@@ -66,7 +68,7 @@ void runFEMProto( const BOARD* aBoard, std::string aNetname )
         }
     }
 
-    std::vector<shape> shapes;
+    //std::vector<shape> shapes;
 
     // offset front CU so we can see both sides :D
     /*mesher.Get2DShapes( shapes, PCB_LAYER_ID::F_Cu );
@@ -75,9 +77,12 @@ void runFEMProto( const BOARD* aBoard, std::string aNetname )
         shape.shift(0, 0, 10.);
     }*/
 
-    mesher.Get2DShapes( shapes, PCB_LAYER_ID::B_Cu, true );
+    //mesher.Get2DShapes( shapes, PCB_LAYER_ID::B_Cu, true );
+    //mesh mymesh( shapes );
 
-    mesh mymesh( shapes );
+    mesher.Load25DMesh();
+    mesh mymesh( "gmsh:api" );
+    mesher.Finalize();
 
     mymesh.write( "mymesh.msh" );
 }
