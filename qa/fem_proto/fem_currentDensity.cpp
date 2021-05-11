@@ -143,6 +143,7 @@ void runFEMCurrentDensity( const BOARD* aBoard )
     FEM_RESULT_VALUE* r_voltage = new FEM_RESULT_VALUE( FEM_VALUE_TYPE::VOLTAGE, port1, port2 );
     FEM_RESULT_VALUE* r_voltage2 = new FEM_RESULT_VALUE( FEM_VALUE_TYPE::VOLTAGE, port3, port2 );
     FEM_RESULT_VALUE* r_current = new FEM_RESULT_VALUE( FEM_VALUE_TYPE::CURRENT, port1, nullptr );
+    FEM_RESULT_VALUE* r_current2 = new FEM_RESULT_VALUE( FEM_VALUE_TYPE::CURRENT, port3, nullptr );
     FEM_RESULT_VALUE* r_resistance = new FEM_RESULT_VALUE( FEM_VALUE_TYPE::RESISTANCE, port1, port2 );
 
     if( !( r_voltage )->IsInitialized() )
@@ -150,6 +151,8 @@ void runFEMCurrentDensity( const BOARD* aBoard )
     if( !( r_voltage2 )->IsInitialized() )
         std::cerr << "Could not initialize voltage result. " << std::endl;
     if( !( r_current )->IsInitialized() )
+        std::cerr << "Could not initialize current result. " << std::endl;
+    if( !( r_current2 )->IsInitialized() )
         std::cerr << "Could not initialize current result. " << std::endl;
     if( !( r_resistance )->IsInitialized() )
         std::cerr << "Could not initialize resistance result. " << std::endl;
@@ -159,6 +162,8 @@ void runFEMCurrentDensity( const BOARD* aBoard )
     if( !descriptor->AddResult( r_voltage2 ) )
         std::cerr << "Could not add voltage result to descriptor " << std::endl;
     if( !descriptor->AddResult( r_current ) )
+        std::cerr << "Could not add current result to descriptor " << std::endl;
+    if( !descriptor->AddResult( r_current2 ) )
         std::cerr << "Could not add current result to descriptor " << std::endl;
     if( !descriptor->AddResult( r_resistance ) )
         std::cerr << "Could not add resistance result to descriptor " << std::endl;
@@ -176,6 +181,10 @@ void runFEMCurrentDensity( const BOARD* aBoard )
         std::cerr << "Voltage result is not valid" << std::endl;
     if( r_current->m_valid )
         std::cout << "Current at J1-Pad1: " << r_current->GetResult() << std::endl;
+    else
+        std::cerr << "Current result is not valid" << std::endl;
+    if( r_current2->m_valid )
+        std::cout << "Current at J3-Pad1: " << r_current2->GetResult() << std::endl;
     else
         std::cerr << "Current result is not valid" << std::endl;
     if( r_resistance->m_valid )

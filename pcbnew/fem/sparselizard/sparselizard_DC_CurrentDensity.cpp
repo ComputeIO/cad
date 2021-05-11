@@ -59,6 +59,7 @@ double compute_DC_Current( expression j, int aPort, std::map<int, int> aRegionMa
     return ( sl::normal( aPort ) * sl::on( outsideOfPort, j ) ).integrate( line, 4 );
 }
 
+
 double compute_DC_Voltage( expression v, int aPortA, int aPortB )
 {
     double result;
@@ -242,7 +243,20 @@ bool Run_DC_CurrentDensity( FEM_DESCRIPTOR* aDescriptor )
                 int port = resultValue->GetPortA()->m_simulationID;
                 std::cout << "Current through " << port << endl;
                 int netCode = resultValue->GetPortA()->GetItem()->GetNetCode();
-                resultValue->m_value = compute_DC_Current( j, port, regionMap, netCode );
+
+                if( resultValue->GetPortA()->m_type == FEM_PORT_TYPE::PASSIVE )
+                {
+                    std::cerr << "Computing current on passive port "
+                              << resultValue->GetPortA()->m_simulationID << ". Result is 0."
+                              << std::endl;
+                    // On passive port, all current that flows into the port, also flows out of the port
+                    // Therefore the closed loop integral of the current density over is 0.
+                    resultValue->m_value = 0;
+                }
+                else
+                {
+                    resultValue->m_value = compute_DC_Current( j, port, regionMap, netCode );
+                }
                 resultValue->m_valid = true;
                 break;
             }
