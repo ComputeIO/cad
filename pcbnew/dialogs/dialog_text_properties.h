@@ -27,7 +27,7 @@
 #include <widgets/unit_binder.h>
 #include <wx/valnum.h>
 
-#include <dialog_text_properties_base.h>
+#include <dialog_text_item_properties_base.h>
 
 
 class PCB_BASE_EDIT_FRAME;
@@ -37,7 +37,7 @@ class FP_TEXT;
 class PCB_TEXT;
 
 
-class DIALOG_TEXT_PROPERTIES : public DIALOG_TEXT_PROPERTIES_BASE
+class DIALOG_TEXT_PROPERTIES : public DIALOG_TEXT_ITEM_PROPERTIES_BASE
 {
 public:
     DIALOG_TEXT_PROPERTIES( PCB_BASE_EDIT_FRAME* aParent, BOARD_ITEM* aItem );

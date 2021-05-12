@@ -41,7 +41,7 @@
 #define OUTLINEFONT_DEBUG
 
 DIALOG_TEXT_PROPERTIES::DIALOG_TEXT_PROPERTIES( PCB_BASE_EDIT_FRAME* aParent, BOARD_ITEM* aItem ) :
-        DIALOG_TEXT_PROPERTIES_BASE( aParent ), m_Parent( aParent ), m_item( aItem ),
+        DIALOG_TEXT_ITEM_PROPERTIES_BASE( aParent ), m_Parent( aParent ), m_item( aItem ),
         m_edaText( nullptr ), m_fpText( nullptr ), m_pcbText( nullptr ),
         m_textWidth( aParent, m_SizeXLabel, m_SizeXCtrl, m_SizeXUnits ),
         m_textHeight( aParent, m_SizeYLabel, m_SizeYCtrl, m_SizeYUnits ),
@@ -72,9 +72,9 @@ DIALOG_TEXT_PROPERTIES::DIALOG_TEXT_PROPERTIES( PCB_BASE_EDIT_FRAME* aParent, BO
 
         switch( m_fpText->GetType() )
         {
-        case FP_TEXT::TEXT_is_REFERENCE: m_TextLabel->SetLabel( _( "Reference:" ) ); break;
-        case FP_TEXT::TEXT_is_VALUE: m_TextLabel->SetLabel( _( "Value:" ) ); break;
-        case FP_TEXT::TEXT_is_DIVERS: m_TextLabel->SetLabel( _( "Text:" ) ); break;
+        case FP_TEXT::TEXT_is_REFERENCE: m_SingleLineLabel->SetLabel( _( "Reference:" ) ); break;
+        case FP_TEXT::TEXT_is_VALUE: m_SingleLineLabel->SetLabel( _( "Value:" ) ); break;
+        case FP_TEXT::TEXT_is_DIVERS: m_SingleLineLabel->SetLabel( _( "Text:" ) ); break;
         }
 
         SetInitialFocus( m_SingleLineText );
@@ -141,7 +141,7 @@ DIALOG_TEXT_PROPERTIES::DIALOG_TEXT_PROPERTIES( PCB_BASE_EDIT_FRAME* aParent, BO
     // implementation on MSW
     m_tabOrder = { m_LayerLabel,    m_LayerSelectionCtrl, m_SizeXCtrl,     m_SizeYCtrl,
                    m_ThicknessCtrl, m_PositionXCtrl,      m_PositionYCtrl, m_Visible,
-                   m_JustifyChoice, m_OrientCtrl,         m_Mirrored,      m_KeepUpright,
+                   m_Justify,       m_OrientCtrl,         m_Mirrored,      m_KeepUpright,
                    m_sdbSizerOK,    m_sdbSizerCancel };
 
     // wxTextCtrls fail to generate wxEVT_CHAR events when the wxTE_MULTILINE flag is set,
@@ -424,7 +424,7 @@ bool DIALOG_TEXT_PROPERTIES::TransferDataToWindow()
     m_FontItalic->SetValue( m_edaText->IsItalic() );
     m_FontLineSpacing->SetValue( wxNumberFormatter::ToString( m_edaText->GetLineSpacing(), 2 ) );
     EDA_TEXT_HJUSTIFY_T hJustify = m_edaText->GetHorizJustify();
-    m_JustifyChoice->SetSelection( (int) hJustify + 1 );
+    m_Justify->SetSelection( (int) hJustify + 1 );
     m_OrientValue = m_edaText->GetTextAngle();
     m_orientation.SetDoubleValue( m_OrientValue );
     m_Mirrored->SetValue( m_edaText->IsMirrored() );
@@ -432,13 +432,13 @@ bool DIALOG_TEXT_PROPERTIES::TransferDataToWindow()
     if( m_fpText )
         m_KeepUpright->SetValue( m_fpText->IsKeepUpright() );
 
-    return DIALOG_TEXT_PROPERTIES_BASE::TransferDataToWindow();
+    return DIALOG_TEXT_ITEM_PROPERTIES_BASE::TransferDataToWindow();
 }
 
 
 bool DIALOG_TEXT_PROPERTIES::TransferDataFromWindow()
 {
-    if( !DIALOG_TEXT_PROPERTIES_BASE::TransferDataFromWindow() )
+    if( !DIALOG_TEXT_ITEM_PROPERTIES_BASE::TransferDataFromWindow() )
         return false;
 
     if( !m_textWidth.Validate( TEXTS_MIN_SIZE, TEXTS_MAX_SIZE )
@@ -520,7 +520,7 @@ bool DIALOG_TEXT_PROPERTIES::TransferDataFromWindow()
     if( m_fpText )
         m_fpText->SetKeepUpright( m_KeepUpright->GetValue() );
 
-    switch( m_JustifyChoice->GetSelection() )
+    switch( m_Justify->GetSelection() )
     {
     case 0: m_edaText->SetHorizJustify( GR_TEXT_HJUSTIFY_LEFT ); break;
     case 1: m_edaText->SetHorizJustify( GR_TEXT_HJUSTIFY_CENTER ); break;
