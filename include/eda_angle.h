@@ -115,6 +115,8 @@ public:
      */
     bool IsCardinal() const { return AsTenthsOfADegree() % 900 == 0; }
 
+    bool IsZero() const { return AsDegrees() == 0; }
+
     bool IsHorizontal() const { return AsDegrees() == 0 || AsDegrees() == 180; }
 
     bool IsVertical() const { return AsDegrees() == 90 || AsDegrees() == 270; }
