@@ -185,14 +185,42 @@ bool Run_DC_CurrentDensity( FEM_DESCRIPTOR* aDescriptor )
 
         if( port->m_type != FEM_PORT_TYPE::PASSIVE ) // Don't constrain passive ports
         {
-            if( port->m_constraint.m_type != FEM_PORT_CONSTRAINT_TYPE::VOLTAGE )
+            switch( port->m_constraint.m_type )
             {
-                std::cerr << "Contraint should be FEM_PORT_CONSTRAINT_TYPE::VOLTAGE" << std::endl;
-                continue;
+            case FEM_PORT_CONSTRAINT_TYPE::VOLTAGE:
+                v.setconstraint( port->m_simulationID, port->m_constraint.m_value );
+                std::cout << "Setting region " << port->m_simulationID << " to "
+                          << port->m_constraint.m_value << " V" << std::endl;
+                break;
+            case FEM_PORT_CONSTRAINT_TYPE::CURRENT:
+            {
+                int              portid = port->m_simulationID;
+                int              netCode = port->GetItem()->GetNetCode();
+                std::vector<int> regions = getAllRegionsWithNetcode( regionMap, netCode, portid );
+
+                if( regions.size() < 1 )
+                {
+                    // The port is the only region with aNetCode, it is not connected to anything
+                    std::cerr << "Port is not connected to any region" << std::endl;
+                    return 0;
+                }
+                int outsideOfPort = sl::selectunion( regions );
+                int line = sl::selectintersection( { portid, outsideOfPort } );
+
+                electrokinetics += sl::integral(
+                        line, sl::grad( sl::tf( v ) ) * 1 / rho * sl::grad( sl::dof( v ) )
+                                      - ( port->m_constraint.m_value ) * sl::tf( v )
+                                                / ( expression( 1 ).integrate( line, 4 ) ) );
+
+                std::cout << "Setting region " << port->m_simulationID << " divergence to "
+                          << port->m_constraint.m_value << " A" << std::endl;
+                break;
             }
-            v.setconstraint( port->m_simulationID, port->m_constraint.m_value );
-            std::cout << "Setting region " << port->m_simulationID << " to "
-                      << port->m_constraint.m_value << " V" << std::endl;
+            default: std::cerr << "Source / Sink type not supported" << std::endl;
+            }
+        }
+        else
+        {
         }
     }
 

@@ -61,7 +61,7 @@ void runFEMCurrentDensity( const BOARD* aBoard )
 
             FEM_PORT_CONSTRAINT* constraint1 = new FEM_PORT_CONSTRAINT();
             constraint1->m_type = FEM_PORT_CONSTRAINT_TYPE::VOLTAGE;
-            constraint1->m_value = 1e-3; // 1 mV
+            constraint1->m_value = 0; // 1 mV
 
             port1 = new FEM_PORT( pad );
             port1->m_type = FEM_PORT_TYPE::SOURCE;
@@ -92,8 +92,8 @@ void runFEMCurrentDensity( const BOARD* aBoard )
             }
 
             FEM_PORT_CONSTRAINT* constraint2 = new FEM_PORT_CONSTRAINT();
-            constraint2->m_type = FEM_PORT_CONSTRAINT_TYPE::VOLTAGE;
-            constraint2->m_value = 0; // 0V
+            constraint2->m_type = FEM_PORT_CONSTRAINT_TYPE::CURRENT;
+            constraint2->m_value = 1; // 1A
 
             port2 = new FEM_PORT( pad );
             port2->m_type = FEM_PORT_TYPE::SOURCE;
@@ -118,8 +118,13 @@ void runFEMCurrentDensity( const BOARD* aBoard )
         const PAD* pad = footprint3->FindPadByName( "1" );
         if( pad != nullptr )
         {
+            FEM_PORT_CONSTRAINT* constraint3 = new FEM_PORT_CONSTRAINT();
+            constraint3->m_type = FEM_PORT_CONSTRAINT_TYPE::CURRENT;
+            constraint3->m_value = -1; // 1A
+
             port3 = new FEM_PORT( pad );
-            port3->m_type = FEM_PORT_TYPE::PASSIVE;
+            port3->m_type = FEM_PORT_TYPE::SOURCE;
+            port3->m_constraint = *constraint3;
         }
         else
         {
@@ -143,7 +148,8 @@ void runFEMCurrentDensity( const BOARD* aBoard )
     FEM_RESULT_VALUE* r_voltage = new FEM_RESULT_VALUE( FEM_VALUE_TYPE::VOLTAGE, port1, port2 );
     FEM_RESULT_VALUE* r_voltage2 = new FEM_RESULT_VALUE( FEM_VALUE_TYPE::VOLTAGE, port3, port2 );
     FEM_RESULT_VALUE* r_current = new FEM_RESULT_VALUE( FEM_VALUE_TYPE::CURRENT, port1, nullptr );
-    FEM_RESULT_VALUE* r_current2 = new FEM_RESULT_VALUE( FEM_VALUE_TYPE::CURRENT, port3, nullptr );
+    FEM_RESULT_VALUE* r_current2 = new FEM_RESULT_VALUE( FEM_VALUE_TYPE::CURRENT, port2, nullptr );
+    FEM_RESULT_VALUE* r_current3 = new FEM_RESULT_VALUE( FEM_VALUE_TYPE::CURRENT, port3, nullptr );
     FEM_RESULT_VALUE* r_resistance = new FEM_RESULT_VALUE( FEM_VALUE_TYPE::RESISTANCE, port1, port2 );
     FEM_RESULT_VALUE* r_power =
             new FEM_RESULT_VALUE( FEM_VALUE_TYPE::DISSIPATED_POWER, port3, nullptr );
@@ -165,6 +171,8 @@ void runFEMCurrentDensity( const BOARD* aBoard )
         std::cerr << "Could not initialize current result. " << std::endl;
     if( !( r_current2 )->IsInitialized() )
         std::cerr << "Could not initialize current result. " << std::endl;
+    if( !( r_current3 )->IsInitialized() )
+        std::cerr << "Could not initialize current result. " << std::endl;
     if( !( r_resistance )->IsInitialized() )
         std::cerr << "Could not initialize resistance result. " << std::endl;
     if( !( r_power )->IsInitialized() )
@@ -185,6 +193,8 @@ void runFEMCurrentDensity( const BOARD* aBoard )
     if( !descriptor->AddResult( r_current ) )
         std::cerr << "Could not add current result to descriptor " << std::endl;
     if( !descriptor->AddResult( r_current2 ) )
+        std::cerr << "Could not add current result to descriptor " << std::endl;
+    if( !descriptor->AddResult( r_current3 ) )
         std::cerr << "Could not add current result to descriptor " << std::endl;
     if( !descriptor->AddResult( r_resistance ) )
         std::cerr << "Could not add resistance result to descriptor " << std::endl;
@@ -215,7 +225,11 @@ void runFEMCurrentDensity( const BOARD* aBoard )
     else
         std::cerr << "Current result is not valid" << std::endl;
     if( r_current2->m_valid )
-        std::cout << "Current at J3-Pad1: " << r_current2->GetResult() << std::endl;
+        std::cout << "Current at J2-Pad1: " << r_current2->GetResult() << std::endl;
+    else
+        std::cerr << "Current result is not valid" << std::endl;
+    if( r_current3->m_valid )
+        std::cout << "Current at J3-Pad1: " << r_current3->GetResult() << std::endl;
     else
         std::cerr << "Current result is not valid" << std::endl;
     if( r_resistance->m_valid )
