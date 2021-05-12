@@ -36,16 +36,26 @@
 #include <kicad_string.h>
 #include <tool/actions.h>
 #include <scintilla_tricks.h>
+#include <bitmaps.h>
+#include <string>
 
 class SCH_EDIT_FRAME;
 class SCH_TEXT;
 
+BITMAPS DIALOG_TEXT_ITEM_PROPERTIES::label_icons[] = { BITMAPS::label_input, BITMAPS::label_output,
+                                                       BITMAPS::label_bidirectional,
+                                                       BITMAPS::label_tristate,
+                                                       BITMAPS::label_passive };
+
+//m_textSize( aParent, m_textSizeLabel, m_textSizeCtrl, m_textSizeUnits, false ),
 
 DIALOG_TEXT_ITEM_PROPERTIES::DIALOG_TEXT_ITEM_PROPERTIES( SCH_EDIT_FRAME* aParent,
                                                           SCH_TEXT*       aTextItem ) :
         DIALOG_TEXT_ITEM_PROPERTIES_BASE( aParent ),
-        //m_textSize( aParent, m_textSizeLabel, m_textSizeCtrl, m_textSizeUnits, false ),
-        m_textSize( aParent, m_SizeXLabel, m_SizeXCtrl, m_SizeXUnits, false ),
+        m_textWidth( aParent, m_SizeXLabel, m_SizeXCtrl, m_SizeXUnits, false ),
+        m_textHeight( aParent, m_SizeYLabel, m_SizeYCtrl, m_SizeYUnits, false ),
+        m_positionX( aParent, m_PositionXLabel, m_PositionXCtrl, m_PositionXUnits, false ),
+        m_positionY( aParent, m_PositionYLabel, m_PositionYCtrl, m_PositionYUnits, false ),
         m_netNameValidator( true ), m_scintillaTricks( nullptr ), m_helpWindow( nullptr )
 {
     m_Parent = aParent;
@@ -71,62 +81,64 @@ DIALOG_TEXT_ITEM_PROPERTIES::DIALOG_TEXT_ITEM_PROPERTIES( SCH_EDIT_FRAME* aParen
 
         m_SingleLineLabel->Show( false );
         m_SingleLineText->Show( false );
-        m_labelCombo->Show( false );
-        m_valueCombo->Show( false );
+        m_NetlistLabel->Show( false );
+        m_NetlistValue->Show( false );
 
-        m_textEntrySizer->AddGrowableRow( 0 );
+        //m_textEntrySizer->AddGrowableRow( 0 );
     }
     else if( m_CurrentText->Type() == SCH_GLOBAL_LABEL_T || m_CurrentText->Type() == SCH_LABEL_T )
     {
-        m_activeTextCtrl = m_valueCombo;
-        m_activeTextEntry = m_valueCombo;
+        m_activeTextCtrl = m_NetlistValue;
+        m_activeTextEntry = m_NetlistValue;
 
         m_SingleLineLabel->Show( false );
         m_SingleLineText->Show( false );
         m_MultiLineLabel->Show( false );
         m_MultiLineText->Show( false );
 
-        m_valueCombo->SetValidator( m_netNameValidator );
+        m_NetlistValue->SetValidator( m_netNameValidator );
     }
     else
     {
-        m_activeTextCtrl = m_valueSingleLine;
-        m_activeTextEntry = m_valueSingleLine;
+        m_activeTextCtrl = m_SingleLineText;
+        m_activeTextEntry = m_SingleLineText;
 
-        m_labelCombo->Show( false );
-        m_valueCombo->Show( false );
         m_MultiLineLabel->Show( false );
         m_MultiLineText->Show( false );
+        m_NetlistLabel->Show( false );
+        m_NetlistValue->Show( false );
 
         if( m_CurrentText->Type() != SCH_TEXT_T )
             m_SingleLineText->SetValidator( m_netNameValidator );
 
-        m_valueCombo->SetValidator( m_netNameValidator );
+        m_NetlistValue->SetValidator( m_netNameValidator );
     }
 
     SetInitialFocus( m_activeTextCtrl );
 
-    m_TextShape->Show( m_CurrentText->Type() == SCH_GLOBAL_LABEL_T
-                       || m_CurrentText->Type() == SCH_HIER_LABEL_T );
+    bool selectShape = m_CurrentText->Type() == SCH_GLOBAL_LABEL_T
+                       || m_CurrentText->Type() == SCH_HIER_LABEL_T;
+    m_ShapeLabel->Show( selectShape );
+    m_Shape->Show( selectShape );
+    m_ShapeBitmap->Show( selectShape );
 
-    if( m_CurrentText->Type() == SCH_GLOBAL_LABEL_T )
+    bool showNote = m_CurrentText->Type() == SCH_GLOBAL_LABEL_T;
+    if( showNote )
     {
         wxFont infoFont = wxSystemSettings::GetFont( wxSYS_DEFAULT_GUI_FONT );
         infoFont.SetSymbolicSize( wxFONTSIZE_X_SMALL );
         m_note1->SetFont( infoFont );
         m_note2->SetFont( infoFont );
     }
-    else
-    {
-        m_note1->Show( false );
-        m_note2->Show( false );
-    }
 
-    m_sdbSizer1OK->SetDefault();
+    m_note1->Show( showNote );
+    m_note2->Show( showNote );
+
+    m_sdbSizerOK->SetDefault();
     Layout();
 
     m_MultiLineText->Bind( wxEVT_STC_CHARADDED, &DIALOG_TEXT_ITEM_PROPERTIES::onScintillaCharAdded,
-                            this );
+                           this );
 
     int    size = wxNORMAL_FONT->GetPointSize();
     wxFont fixedFont( size, wxFONTFAMILY_TELETYPE, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL );
@@ -156,7 +168,7 @@ DIALOG_TEXT_ITEM_PROPERTIES::~DIALOG_TEXT_ITEM_PROPERTIES()
 }
 
 
-void DIALOG_TEXT_ITEM_PROPERTIES::SetTitle( const wxString& aTitle ) override
+void DIALOG_TEXT_ITEM_PROPERTIES::SetTitle( const wxString& aTitle )
 {
     // This class is shared for numerous tasks: a couple of single line labels and
     // multi-line text fields.  Since the desired size of the multi-line text field editor
@@ -194,7 +206,7 @@ bool DIALOG_TEXT_ITEM_PROPERTIES::TransferDataToWindow()
         m_activeTextEntry->SetValue( UnescapeString( m_CurrentText->GetText() ) );
     }
 
-    if( m_valueCombo->IsShown() )
+    if( m_NetlistValue->IsShown() )
     {
         // Load the combobox with the existing labels of the same type
         std::set<wxString> existingLabels;
@@ -215,25 +227,53 @@ bool DIALOG_TEXT_ITEM_PROPERTIES::TransferDataToWindow()
             existingLabelArray.push_back( label );
 
         // existingLabelArray.Sort();
-        m_valueCombo->Append( existingLabelArray );
+        m_NetlistValue->Append( existingLabelArray );
     }
 
-    // Set text options:
-    m_TextOrient->SetSelection( static_cast<int>( m_CurrentText->GetLabelSpinStyle() ) );
+    EDA_ANGLE textAngle( m_CurrentText->GetTextAngle(), EDA_ANGLE::TENTHS_OF_A_DEGREE );
+    textAngle.Normalize();
 
-    m_TextShape->SetSelection( static_cast<int>( m_CurrentText->GetShape() ) );
+    // Set text options
+    switch( textAngle.AsDegrees() )
+    {
+    case 0:
+    default: m_OrientCtrl->SetSelection( 0 ); break;
+    case 90: m_OrientCtrl->SetSelection( 1 ); break;
+    case 180: m_OrientCtrl->SetSelection( 2 ); break;
+    case 270: m_OrientCtrl->SetSelection( 2 ); break;
+    }
 
-    int style = 0;
+    bool showJustify = m_CurrentText->IsMultilineAllowed();
+    if( showJustify )
+    {
+        switch( m_CurrentText->GetHorizJustify() )
+        {
+        case GR_TEXT_HJUSTIFY_LEFT: m_Justify->SetSelection( 0 ); break;
+        case GR_TEXT_HJUSTIFY_CENTER: m_Justify->SetSelection( 1 ); break;
+        case GR_TEXT_HJUSTIFY_RIGHT: m_Justify->SetSelection( 2 ); break;
+        }
+    }
+    else
+    {
+        m_JustifyLabel->Show( false );
+        m_Justify->Show( false );
+    }
 
-    if( m_CurrentText->IsItalic() )
-        style = 1;
+    m_Shape->SetSelection( static_cast<int>( m_CurrentText->GetShape() ) );
+    setShapeBitmap();
 
-    if( m_CurrentText->IsBold() )
-        style += 2;
+    m_FontBold->SetValue( m_CurrentText->IsBold() );
+    m_FontItalic->SetValue( m_CurrentText->IsItalic() );
 
-    m_TextStyle->SetSelection( style );
+    m_textWidth.SetValue( m_CurrentText->GetTextWidth() );
+    m_textHeight.SetValue( m_CurrentText->GetTextHeight() );
 
-    m_textSize.SetValue( m_CurrentText->GetTextWidth() );
+    m_positionX.SetValue( m_CurrentText->GetPosition().x );
+    m_positionY.SetValue( m_CurrentText->GetPosition().y );
+
+    m_Mirrored->SetValue( m_CurrentText->IsMirrored() );
+
+    m_FontLineSpacing->SetValue( wxString::Format( "%.1f", m_CurrentText->GetLineSpacing() ) );
 
     return true;
 }
@@ -318,7 +358,10 @@ bool DIALOG_TEXT_ITEM_PROPERTIES::TransferDataFromWindow()
         return false;
 
     // Don't allow text to disappear; it can be difficult to correct if you can't select it
-    if( !m_textSize.Validate( 0.01, 1000.0, EDA_UNITS::MILLIMETRES ) )
+    if( !m_textWidth.Validate( 0.01, 1000.0, EDA_UNITS::MILLIMETRES ) )
+        return false;
+
+    if( !m_textHeight.Validate( 0.01, 1000.0, EDA_UNITS::MILLIMETRES ) )
         return false;
 
     wxString text;
@@ -351,27 +394,36 @@ bool DIALOG_TEXT_ITEM_PROPERTIES::TransferDataFromWindow()
         return false;
     }
 
-    m_CurrentText->SetLabelSpinStyle( (LABEL_SPIN_STYLE::SPIN) m_TextOrient->GetSelection() );
-
-    m_CurrentText->SetTextSize( wxSize( m_textSize.GetValue(), m_textSize.GetValue() ) );
-
-    if( m_TextShape )
-        m_CurrentText->SetShape( (PINSHEETLABEL_SHAPE) m_TextShape->GetSelection() );
-
-    int style = m_TextStyle->GetSelection();
-
-    m_CurrentText->SetItalic( ( style & 1 ) );
-
-    if( ( style & 2 ) )
+    //m_CurrentText->SetLabelSpinStyle( (LABEL_SPIN_STYLE::SPIN) m_TextOrient->GetSelection() );
+    switch( m_Justify->GetSelection() )
     {
-        m_CurrentText->SetBold( true );
-        m_CurrentText->SetTextThickness( GetPenSizeForBold( m_CurrentText->GetTextWidth() ) );
+    case 0:
+    default: m_CurrentText->SetHorizJustify( GR_TEXT_HJUSTIFY_LEFT ); break;
+    case 1: m_CurrentText->SetHorizJustify( GR_TEXT_HJUSTIFY_CENTER ); break;
+    case 2: m_CurrentText->SetHorizJustify( GR_TEXT_HJUSTIFY_RIGHT ); break;
     }
-    else
+
+    switch( m_OrientCtrl->GetSelection() )
     {
-        m_CurrentText->SetBold( false );
-        m_CurrentText->SetTextThickness( 0 ); // Use default pen width
+    case 0:
+    default: m_CurrentText->SetTextAngle( 0 ); break;
+    case 1: m_CurrentText->SetTextAngle( 900 ); break;
+    case 2: m_CurrentText->SetTextAngle( 1800 ); break;
+    case 3: m_CurrentText->SetTextAngle( 2700 ); break;
     }
+
+    m_CurrentText->SetTextSize( wxSize( m_textWidth.GetValue(), m_textHeight.GetValue() ) );
+
+    if( m_Shape )
+        m_CurrentText->SetShape( (PINSHEETLABEL_SHAPE) m_Shape->GetSelection() );
+
+    m_CurrentText->SetItalic( m_FontItalic->GetValue() );
+    m_CurrentText->SetBold( m_FontBold->GetValue() );
+
+    int penWidth = m_FontBold->GetValue() ? GetPenSizeForBold( m_CurrentText->GetTextWidth() ) : 0;
+    m_CurrentText->SetTextThickness( penWidth );
+
+    m_CurrentText->SetLineSpacing( std::stod( m_FontLineSpacing->GetValue().ToStdString() ) );
 
     m_Parent->UpdateItem( m_CurrentText );
     m_Parent->GetCanvas()->Refresh();
@@ -393,7 +445,17 @@ void DIALOG_TEXT_ITEM_PROPERTIES::OnFormattingHelp( wxHyperlinkEvent& aEvent )
 }
 
 
-void DIALOG_TEXT_ITEM_PROPERTIES::OnShapeChoice( wxCommandEvent& aEvent )
+void DIALOG_TEXT_ITEM_PROPERTIES::setShapeBitmap()
 {
-    m_helpWindow = SCH_TEXT::ShowSyntaxHelp( this );
+    int selectedItem = m_Shape->GetSelection();
+
+    if( selectedItem == wxNOT_FOUND )
+    {
+        // clear shape display
+        m_ShapeBitmap->SetBitmap( wxBitmap() );
+    }
+    else
+    {
+        m_ShapeBitmap->SetBitmap( KiBitmap( label_icons[selectedItem] ) );
+    }
 }

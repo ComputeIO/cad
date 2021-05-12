@@ -26,7 +26,7 @@
 #include <widgets/unit_binder.h>
 #include <sch_text.h>
 #include <sch_validators.h>
-#include <dialog_edit_label_base.h>
+#include <bitmaps.h>
 
 class SCH_EDIT_FRAME;
 class SCINTILLA_TRICKS;
@@ -46,16 +46,22 @@ private:
     //void OnEnterKey( wxCommandEvent& aEvent ) override;
     void OnFormattingHelp( wxHyperlinkEvent& aEvent ) override;
 
-    void OnShapeChoice( wxCommandEvent& aEvent ) override;
+    void setShapeBitmap();
+    void OnShapeChoice( wxCommandEvent& aEvent ) override { setShapeBitmap(); }
 
     bool TransferDataToWindow() override;
     bool TransferDataFromWindow() override;
+
+    static BITMAPS label_icons[];
 
     SCH_EDIT_FRAME*       m_Parent;
     SCH_TEXT*             m_CurrentText;
     wxWindow*             m_activeTextCtrl;
     wxTextEntry*          m_activeTextEntry;
-    UNIT_BINDER           m_textSize;
+    UNIT_BINDER           m_textWidth;
+    UNIT_BINDER           m_textHeight;
+    UNIT_BINDER           m_positionX;
+    UNIT_BINDER           m_positionY;
     SCH_NETNAME_VALIDATOR m_netNameValidator;
     SCINTILLA_TRICKS*     m_scintillaTricks;
 
