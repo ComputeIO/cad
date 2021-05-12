@@ -64,7 +64,8 @@
 #include <pgm_base.h>
 #include <settings/settings_manager.h>
 #include <symbol_editor_settings.h>
-#include <dialogs/dialog_edit_label.h>
+//#include <dialogs/dialog_edit_label.h>
+#include <dialogs/dialog_text_item_properties.h>
 #include <core/kicad_algo.h>
 //#include <wx/filedlg.h>
 #include <wx/textdlg.h>
@@ -1505,7 +1506,8 @@ int SCH_EDIT_TOOL::Properties( const TOOL_EVENT& aEvent )
     case SCH_GLOBAL_LABEL_T:
     case SCH_HIER_LABEL_T:
     {
-        DIALOG_LABEL_EDITOR dlg( m_frame, (SCH_TEXT*) item );
+        //DIALOG_LABEL_EDITOR dlg( m_frame, (SCH_TEXT*) item );
+        DIALOG_TEXT_ITEM_PROPERTIES dlg( m_frame, (SCH_TEXT*) item );
 
         // Must be quasi modal for syntax help
         if( dlg.ShowQuasiModal() == wxID_OK )
