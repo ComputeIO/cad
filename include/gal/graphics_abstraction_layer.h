@@ -410,15 +410,6 @@ public:
     inline bool IsTextMirrored() const { return textProperties.m_mirrored; }
 
     /**
-     * Set "Y flipped" property of text.
-     * This is needed for drawing multiline text in eeschema.
-     *
-     * @param aFlippedY tells if the text should be "Y flipped" or not.
-     */
-    inline void SetTextFlippedY( const bool aFlippedY ) { textProperties.m_flippedY = aFlippedY; }
-    inline bool IsTextFlippedY() const { return textProperties.m_flippedY; }
-
-    /**
      * Set the horizontal justify for text drawing.
      *
      * @param aHorizontalJustify is the horizontal justify value.
@@ -1064,7 +1055,6 @@ private:
         bool                m_italic;
         bool                m_underlined;
         bool                m_mirrored;
-        bool                m_flippedY;         ///< eeschema uses flipped Y coordinates
     } textProperties;
 };
 
