@@ -110,14 +110,17 @@ DIALOG_TEXT_PROPERTIES::DIALOG_TEXT_PROPERTIES( PCB_BASE_EDIT_FRAME* aParent, BO
     SetTitle( title );
     m_hash_key = title;
 
+	m_pcbLayerSelector = new PCB_LAYER_BOX_SELECTOR( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, NULL, 0 );
+    fgSizerSetup->Replace( m_LayerSelectionCtrl, m_pcbLayerSelector );
+
     // Configure the layers list selector.  Note that footprints are built outside the current
     // board and so we may need to show all layers if the text is on an unactivated layer.
     if( !m_Parent->GetBoard()->IsLayerEnabled( m_item->GetLayer() ) )
-        m_LayerSelectionCtrl->ShowNonActivatedLayers( true );
+        m_pcbLayerSelector->ShowNonActivatedLayers( true );
 
-    m_LayerSelectionCtrl->SetLayersHotkeys( false );
-    m_LayerSelectionCtrl->SetBoardFrame( m_Parent );
-    m_LayerSelectionCtrl->Resync();
+    m_pcbLayerSelector->SetLayersHotkeys( false );
+    m_pcbLayerSelector->SetBoardFrame( m_Parent );
+    m_pcbLayerSelector->Resync();
 
     m_OrientValue = 0.0;
     m_orientation.SetUnits( EDA_UNITS::DEGREES );
@@ -139,7 +142,7 @@ DIALOG_TEXT_PROPERTIES::DIALOG_TEXT_PROPERTIES( PCB_BASE_EDIT_FRAME* aParent, BO
 
     // We can't set the tab order through wxWidgets due to shortcomings in their mnemonics
     // implementation on MSW
-    m_tabOrder = { m_LayerLabel,    m_LayerSelectionCtrl, m_SizeXCtrl,     m_SizeYCtrl,
+    m_tabOrder = { m_LayerLabel,    m_pcbLayerSelector, m_SizeXCtrl,     m_SizeYCtrl,
                    m_ThicknessCtrl, m_PositionXCtrl,      m_PositionYCtrl, m_Visible,
                    m_Justify,       m_OrientCtrl,         m_Mirrored,      m_KeepUpright,
                    m_sdbSizerOK,    m_sdbSizerCancel };
@@ -151,13 +154,8 @@ DIALOG_TEXT_PROPERTIES::DIALOG_TEXT_PROPERTIES( PCB_BASE_EDIT_FRAME* aParent, BO
     // If this item has a custom font, display font name
     // Default font is named "" so it's OK to always display font name
     m_FontCtrl->SetValue( m_edaText->GetFont()->Name() );
-#if 0
-    m_FontBold->SetValue( m_edaText->GetFont()->IsBold() );
-    m_FontItalic->SetValue( m_edaText->GetFont()->IsItalic() );
-#else
     m_FontBold->SetValue( m_edaText->IsBold() );
     m_FontItalic->SetValue( m_edaText->IsItalic() );
-#endif
 
     finishDialogSettings();
 }
@@ -411,7 +409,7 @@ bool DIALOG_TEXT_PROPERTIES::TransferDataToWindow()
 
     m_cbLocked->SetValue( m_item->IsLocked() );
 
-    m_LayerSelectionCtrl->SetLayerSelection( m_item->GetLayer() );
+    m_pcbLayerSelector->SetLayerSelection( m_item->GetLayer() );
 
     m_textWidth.SetValue( m_edaText->GetTextSize().x );
     m_textHeight.SetValue( m_edaText->GetTextSize().y );
@@ -483,7 +481,7 @@ bool DIALOG_TEXT_PROPERTIES::TransferDataFromWindow()
 
     m_item->SetLocked( m_cbLocked->GetValue() );
 
-    m_item->SetLayer( ToLAYER_ID( m_LayerSelectionCtrl->GetLayerSelection() ) );
+    m_item->SetLayer( ToLAYER_ID( m_pcbLayerSelector->GetLayerSelection() ) );
 
     m_edaText->SetTextSize( wxSize( m_textWidth.GetValue(), m_textHeight.GetValue() ) );
     m_edaText->SetTextThickness( m_thickness.GetValue() );
