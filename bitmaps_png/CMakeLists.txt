@@ -585,7 +585,7 @@ set( BMAPS_OTHER
     label_input
     label_output
     label_passive
-    label_tri-state
+    label_tristate
     microstrip
     microstrip_zodd_zeven
     pads_npth
