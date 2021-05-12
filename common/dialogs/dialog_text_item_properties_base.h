@@ -19,18 +19,19 @@ class PCB_LAYER_BOX_SELECTOR;
 #include <wx/font.h>
 #include <wx/colour.h>
 #include <wx/settings.h>
-#include <wx/stc/stc.h>
-#include <wx/sizer.h>
 #include <wx/textctrl.h>
+#include <wx/sizer.h>
+#include <wx/stc/stc.h>
+#include <wx/combobox.h>
 #include <wx/choice.h>
-#include <wx/checkbox.h>
-#include <wx/button.h>
 #include <wx/bitmap.h>
 #include <wx/image.h>
 #include <wx/icon.h>
+#include <wx/statbmp.h>
+#include <wx/checkbox.h>
+#include <wx/button.h>
 #include <wx/hyperlink.h>
 #include <wx/bmpcbox.h>
-#include <wx/combobox.h>
 #include <wx/statline.h>
 #include <wx/dialog.h>
 
@@ -45,14 +46,20 @@ class DIALOG_TEXT_ITEM_PROPERTIES_BASE : public DIALOG_SHIM
 	private:
 
 	protected:
-		wxBoxSizer* m_MultiLineSizer;
-		wxStyledTextCtrl* m_MultiLineText;
 		wxBoxSizer* m_SingleLineSizer;
 		wxStaticText* m_SingleLineLabel;
 		wxTextCtrl* m_SingleLineText;
+		wxBoxSizer* m_MultiLineSizer;
+		wxStaticText* m_MultiLineLabel;
+		wxStyledTextCtrl* m_MultiLineText;
+		wxStaticText* m_NetlistLabel;
+		wxComboBox* m_NetlistValue;
 		wxStaticText* m_ShapeLabel;
 		wxChoice* m_Shape;
+		wxStaticBitmap* m_ShapeBitmap;
 		wxCheckBox* m_cbLocked;
+		wxStaticText* m_note1;
+		wxStaticText* m_note2;
 		wxStaticText* m_FontLabel;
 		wxTextCtrl* m_FontCtrl;
 		wxButton* m_FontSelectionButton;
@@ -71,8 +78,8 @@ class DIALOG_TEXT_ITEM_PROPERTIES_BASE : public DIALOG_SHIM
 		wxStaticText* m_SizeYLabel;
 		wxTextCtrl* m_SizeYCtrl;
 		wxStaticText* m_SizeYUnits;
-		wxStaticText* m_staticText11;
-		wxChoice* m_JustifyChoice;
+		wxStaticText* m_JustifyLabel;
+		wxChoice* m_Justify;
 		wxStaticText* m_ThicknessLabel;
 		wxTextCtrl* m_ThicknessCtrl;
 		wxStaticText* m_ThicknessUnits;
@@ -96,6 +103,7 @@ class DIALOG_TEXT_ITEM_PROPERTIES_BASE : public DIALOG_SHIM
 		virtual void OnInitDlg( wxInitDialogEvent& event ) { event.Skip(); }
 		virtual void OnSetFocusText( wxFocusEvent& event ) { event.Skip(); }
 		virtual void OnOkClick( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnShapeChoice( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnFontFieldChange( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnShowFontDialog( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnFormattingHelp( wxHyperlinkEvent& event ) { event.Skip(); }
@@ -103,7 +111,7 @@ class DIALOG_TEXT_ITEM_PROPERTIES_BASE : public DIALOG_SHIM
 
 	public:
 
-		DIALOG_TEXT_ITEM_PROPERTIES_BASE( wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = _("Text Properties"), const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( 515,717 ), long style = wxDEFAULT_DIALOG_STYLE|wxRESIZE_BORDER|wxSYSTEM_MENU );
+		DIALOG_TEXT_ITEM_PROPERTIES_BASE( wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = _("Text Properties"), const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( 515,776 ), long style = wxDEFAULT_DIALOG_STYLE|wxRESIZE_BORDER|wxSYSTEM_MENU );
 		~DIALOG_TEXT_ITEM_PROPERTIES_BASE();
 
 };

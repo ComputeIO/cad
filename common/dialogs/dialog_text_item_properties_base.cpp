@@ -18,9 +18,20 @@ DIALOG_TEXT_ITEM_PROPERTIES_BASE::DIALOG_TEXT_ITEM_PROPERTIES_BASE( wxWindow* pa
 	wxBoxSizer* bMainSizer;
 	bMainSizer = new wxBoxSizer( wxVERTICAL );
 
+	m_SingleLineSizer = new wxBoxSizer( wxHORIZONTAL );
+
+	m_SingleLineLabel = new wxStaticText( this, wxID_ANY, _("Reference designator:"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_SingleLineLabel->Wrap( -1 );
+	m_SingleLineSizer->Add( m_SingleLineLabel, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
+
+	m_SingleLineText = new wxTextCtrl( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxTE_PROCESS_ENTER );
+	m_SingleLineSizer->Add( m_SingleLineText, 1, wxTOP|wxBOTTOM|wxRIGHT|wxALIGN_CENTER_VERTICAL, 5 );
+
+
+	bMainSizer->Add( m_SingleLineSizer, 0, wxEXPAND|wxBOTTOM|wxRIGHT|wxLEFT, 10 );
+
 	m_MultiLineSizer = new wxBoxSizer( wxVERTICAL );
 
-	wxStaticText* m_MultiLineLabel;
 	m_MultiLineLabel = new wxStaticText( this, wxID_ANY, _("Text:"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_MultiLineLabel->Wrap( -1 );
 	m_MultiLineSizer->Add( m_MultiLineLabel, 0, wxRIGHT|wxLEFT, 5 );
@@ -62,17 +73,20 @@ DIALOG_TEXT_ITEM_PROPERTIES_BASE::DIALOG_TEXT_ITEM_PROPERTIES_BASE( wxWindow* pa
 
 	bMainSizer->Add( m_MultiLineSizer, 20, wxEXPAND|wxALL, 10 );
 
-	m_SingleLineSizer = new wxBoxSizer( wxHORIZONTAL );
+	wxBoxSizer* m_NetlistSizer;
+	m_NetlistSizer = new wxBoxSizer( wxHORIZONTAL );
 
-	m_SingleLineLabel = new wxStaticText( this, wxID_ANY, _("Reference designator:"), wxDefaultPosition, wxDefaultSize, 0 );
-	m_SingleLineLabel->Wrap( -1 );
-	m_SingleLineSizer->Add( m_SingleLineLabel, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
+	m_NetlistLabel = new wxStaticText( this, wxID_ANY, _("Netlist:"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_NetlistLabel->Wrap( -1 );
+	m_NetlistSizer->Add( m_NetlistLabel, 0, wxALIGN_CENTER_VERTICAL|wxLEFT|wxRIGHT, 5 );
 
-	m_SingleLineText = new wxTextCtrl( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxTE_PROCESS_ENTER );
-	m_SingleLineSizer->Add( m_SingleLineText, 1, wxTOP|wxBOTTOM|wxRIGHT|wxALIGN_CENTER_VERTICAL, 5 );
+	m_NetlistValue = new wxComboBox( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, NULL, wxTE_PROCESS_ENTER );
+	m_NetlistValue->SetMinSize( wxSize( 445,-1 ) );
+
+	m_NetlistSizer->Add( m_NetlistValue, 0, wxALIGN_CENTER_VERTICAL|wxEXPAND, 5 );
 
 
-	bMainSizer->Add( m_SingleLineSizer, 0, wxEXPAND|wxBOTTOM|wxRIGHT|wxLEFT, 10 );
+	bMainSizer->Add( m_NetlistSizer, 1, wxEXPAND, 5 );
 
 	wxBoxSizer* m_ShapeSizer;
 	m_ShapeSizer = new wxBoxSizer( wxHORIZONTAL );
@@ -87,6 +101,9 @@ DIALOG_TEXT_ITEM_PROPERTIES_BASE::DIALOG_TEXT_ITEM_PROPERTIES_BASE( wxWindow* pa
 	m_Shape->SetSelection( 0 );
 	m_ShapeSizer->Add( m_Shape, 0, wxALL, 5 );
 
+	m_ShapeBitmap = new wxStaticBitmap( this, wxID_ANY, wxNullBitmap, wxDefaultPosition, wxDefaultSize, 0 );
+	m_ShapeSizer->Add( m_ShapeBitmap, 0, wxALIGN_CENTER_VERTICAL, 5 );
+
 
 	m_ShapeSizer->Add( 0, 0, 1, wxEXPAND, 5 );
 
@@ -97,24 +114,38 @@ DIALOG_TEXT_ITEM_PROPERTIES_BASE::DIALOG_TEXT_ITEM_PROPERTIES_BASE( wxWindow* pa
 
 	bMainSizer->Add( m_ShapeSizer, 1, wxEXPAND, 5 );
 
-	wxBoxSizer* bSizerLocked;
-	bSizerLocked = new wxBoxSizer( wxVERTICAL );
+	wxBoxSizer* bSizer14;
+	bSizer14 = new wxBoxSizer( wxHORIZONTAL );
 
-	wxBoxSizer* bFont;
-	bFont = new wxBoxSizer( wxHORIZONTAL );
+	m_note1 = new wxStaticText( this, wxID_ANY, _("Note:"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_note1->Wrap( -1 );
+	bSizer14->Add( m_note1, 0, wxALIGN_TOP|wxLEFT|wxRIGHT|wxTOP, 5 );
+
+	m_note2 = new wxStaticText( this, wxID_ANY, _("The margins around the text are controlled by the text offset ratio\nin Schematic Setup > General > Formatting."), wxDefaultPosition, wxDefaultSize, 0 );
+	m_note2->Wrap( -1 );
+	bSizer14->Add( m_note2, 0, wxALL, 5 );
+
+
+	bMainSizer->Add( bSizer14, 1, wxALIGN_BOTTOM|wxALIGN_LEFT|wxALIGN_RIGHT|wxEXPAND, 5 );
+
+	wxBoxSizer* bNote;
+	bNote = new wxBoxSizer( wxVERTICAL );
+
+	wxBoxSizer* bFontName;
+	bFontName = new wxBoxSizer( wxHORIZONTAL );
 
 	m_FontLabel = new wxStaticText( this, wxID_ANY, _("Font:"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_FontLabel->Wrap( -1 );
-	bFont->Add( m_FontLabel, 0, wxALIGN_CENTER_VERTICAL|wxLEFT|wxRIGHT, 5 );
+	bFontName->Add( m_FontLabel, 0, wxALIGN_CENTER_VERTICAL|wxLEFT|wxRIGHT, 5 );
 
 	m_FontCtrl = new wxTextCtrl( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
-	bFont->Add( m_FontCtrl, 7, wxALL, 5 );
+	bFontName->Add( m_FontCtrl, 7, wxALL, 5 );
 
 	m_FontSelectionButton = new wxButton( this, wxID_ANY, _("Select font..."), wxDefaultPosition, wxDefaultSize, 0 );
-	bFont->Add( m_FontSelectionButton, 0, wxALL, 5 );
+	bFontName->Add( m_FontSelectionButton, 0, wxALL, 5 );
 
 
-	bSizerLocked->Add( bFont, 1, wxEXPAND, 10 );
+	bNote->Add( bFontName, 1, wxEXPAND, 10 );
 
 	m_FontProperties = new wxBoxSizer( wxHORIZONTAL );
 
@@ -133,10 +164,10 @@ DIALOG_TEXT_ITEM_PROPERTIES_BASE::DIALOG_TEXT_ITEM_PROPERTIES_BASE( wxWindow* pa
 	m_FontProperties->Add( m_formattingHelp, 0, wxALIGN_CENTER_VERTICAL|wxBOTTOM|wxLEFT|wxRIGHT, 5 );
 
 
-	bSizerLocked->Add( m_FontProperties, 1, wxEXPAND, 5 );
+	bNote->Add( m_FontProperties, 1, wxEXPAND, 5 );
 
 
-	bMainSizer->Add( bSizerLocked, 0, wxEXPAND|wxBOTTOM|wxRIGHT|wxLEFT, 10 );
+	bMainSizer->Add( bNote, 0, wxEXPAND|wxBOTTOM|wxRIGHT|wxLEFT, 10 );
 
 	wxFlexGridSizer* fgSizerSetup;
 	fgSizerSetup = new wxFlexGridSizer( 0, 5, 3, 0 );
@@ -194,15 +225,15 @@ DIALOG_TEXT_ITEM_PROPERTIES_BASE::DIALOG_TEXT_ITEM_PROPERTIES_BASE( wxWindow* pa
 	m_SizeYUnits->Wrap( -1 );
 	fgSizerSetup->Add( m_SizeYUnits, 0, wxALIGN_CENTER_VERTICAL|wxRIGHT|wxLEFT, 5 );
 
-	m_staticText11 = new wxStaticText( this, wxID_ANY, _("Justification:"), wxDefaultPosition, wxDefaultSize, 0 );
-	m_staticText11->Wrap( -1 );
-	fgSizerSetup->Add( m_staticText11, 0, wxALIGN_CENTER_VERTICAL|wxRIGHT|wxLEFT, 5 );
+	m_JustifyLabel = new wxStaticText( this, wxID_ANY, _("Justification:"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_JustifyLabel->Wrap( -1 );
+	fgSizerSetup->Add( m_JustifyLabel, 0, wxALIGN_CENTER_VERTICAL|wxRIGHT|wxLEFT, 5 );
 
-	wxString m_JustifyChoiceChoices[] = { _("Left"), _("Center"), _("Right") };
-	int m_JustifyChoiceNChoices = sizeof( m_JustifyChoiceChoices ) / sizeof( wxString );
-	m_JustifyChoice = new wxChoice( this, wxID_ANY, wxDefaultPosition, wxDefaultSize, m_JustifyChoiceNChoices, m_JustifyChoiceChoices, 0 );
-	m_JustifyChoice->SetSelection( 0 );
-	fgSizerSetup->Add( m_JustifyChoice, 0, wxALIGN_CENTER_VERTICAL|wxEXPAND|wxRIGHT, 3 );
+	wxString m_JustifyChoices[] = { _("Left"), _("Center"), _("Right") };
+	int m_JustifyNChoices = sizeof( m_JustifyChoices ) / sizeof( wxString );
+	m_Justify = new wxChoice( this, wxID_ANY, wxDefaultPosition, wxDefaultSize, m_JustifyNChoices, m_JustifyChoices, 0 );
+	m_Justify->SetSelection( 0 );
+	fgSizerSetup->Add( m_Justify, 0, wxALIGN_CENTER_VERTICAL|wxEXPAND|wxRIGHT, 3 );
 
 	m_ThicknessLabel = new wxStaticText( this, wxID_ANY, _("Thickness:"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_ThicknessLabel->Wrap( -1 );
@@ -224,10 +255,10 @@ DIALOG_TEXT_ITEM_PROPERTIES_BASE::DIALOG_TEXT_ITEM_PROPERTIES_BASE( wxWindow* pa
 	fgSizerSetup->Add( m_OrientLabel, 0, wxALIGN_CENTER_VERTICAL|wxRIGHT|wxLEFT, 5 );
 
 	m_OrientCtrl = new wxComboBox( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, NULL, 0 );
-	m_OrientCtrl->Append( _("0.0") );
-	m_OrientCtrl->Append( _("90.0") );
-	m_OrientCtrl->Append( _("-90.0") );
-	m_OrientCtrl->Append( _("180.0") );
+	m_OrientCtrl->Append( _("0") );
+	m_OrientCtrl->Append( _("90") );
+	m_OrientCtrl->Append( _("180") );
+	m_OrientCtrl->Append( _("270") );
 	fgSizerSetup->Add( m_OrientCtrl, 0, wxALIGN_CENTER_VERTICAL|wxEXPAND, 5 );
 
 	m_PositionXLabel = new wxStaticText( this, wxID_ANY, _("Position X:"), wxDefaultPosition, wxDefaultSize, 0 );
@@ -321,6 +352,7 @@ DIALOG_TEXT_ITEM_PROPERTIES_BASE::DIALOG_TEXT_ITEM_PROPERTIES_BASE( wxWindow* pa
 	this->Connect( wxEVT_INIT_DIALOG, wxInitDialogEventHandler( DIALOG_TEXT_ITEM_PROPERTIES_BASE::OnInitDlg ) );
 	m_SingleLineText->Connect( wxEVT_SET_FOCUS, wxFocusEventHandler( DIALOG_TEXT_ITEM_PROPERTIES_BASE::OnSetFocusText ), NULL, this );
 	m_SingleLineText->Connect( wxEVT_COMMAND_TEXT_ENTER, wxCommandEventHandler( DIALOG_TEXT_ITEM_PROPERTIES_BASE::OnOkClick ), NULL, this );
+	m_Shape->Connect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( DIALOG_TEXT_ITEM_PROPERTIES_BASE::OnShapeChoice ), NULL, this );
 	m_FontCtrl->Connect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( DIALOG_TEXT_ITEM_PROPERTIES_BASE::OnFontFieldChange ), NULL, this );
 	m_FontSelectionButton->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( DIALOG_TEXT_ITEM_PROPERTIES_BASE::OnShowFontDialog ), NULL, this );
 	m_formattingHelp->Connect( wxEVT_COMMAND_HYPERLINK, wxHyperlinkEventHandler( DIALOG_TEXT_ITEM_PROPERTIES_BASE::OnFormattingHelp ), NULL, this );
@@ -339,6 +371,7 @@ DIALOG_TEXT_ITEM_PROPERTIES_BASE::~DIALOG_TEXT_ITEM_PROPERTIES_BASE()
 	this->Disconnect( wxEVT_INIT_DIALOG, wxInitDialogEventHandler( DIALOG_TEXT_ITEM_PROPERTIES_BASE::OnInitDlg ) );
 	m_SingleLineText->Disconnect( wxEVT_SET_FOCUS, wxFocusEventHandler( DIALOG_TEXT_ITEM_PROPERTIES_BASE::OnSetFocusText ), NULL, this );
 	m_SingleLineText->Disconnect( wxEVT_COMMAND_TEXT_ENTER, wxCommandEventHandler( DIALOG_TEXT_ITEM_PROPERTIES_BASE::OnOkClick ), NULL, this );
+	m_Shape->Disconnect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( DIALOG_TEXT_ITEM_PROPERTIES_BASE::OnShapeChoice ), NULL, this );
 	m_FontCtrl->Disconnect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( DIALOG_TEXT_ITEM_PROPERTIES_BASE::OnFontFieldChange ), NULL, this );
 	m_FontSelectionButton->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( DIALOG_TEXT_ITEM_PROPERTIES_BASE::OnShowFontDialog ), NULL, this );
 	m_formattingHelp->Disconnect( wxEVT_COMMAND_HYPERLINK, wxHyperlinkEventHandler( DIALOG_TEXT_ITEM_PROPERTIES_BASE::OnFormattingHelp ), NULL, this );
