@@ -251,12 +251,11 @@ VECTOR2D FONT::doDrawString( KIGFX::GAL* aGal, const UTF8& aText, const VECTOR2D
 void FONT::getLinePositions( const UTF8& aText, const VECTOR2D& aPosition,
                              wxArrayString& aStringList, std::vector<wxPoint>& aPositions,
                              int& aLineCount, std::vector<VECTOR2D>& aBoundingBoxes,
-                             const VECTOR2D& aGlyphSize, const TEXT_ATTRIBUTES& aAttributes,
-                             bool aFlippedY ) const
+                             const VECTOR2D& aGlyphSize, const TEXT_ATTRIBUTES& aAttributes ) const
 {
-#ifdef DEBUG // OUTLINEFONT_DEBUG
-    std::cerr << "FONT::getLinePositions( \"" << aText << "\", ..., " << aGlyphSize << ", "
-              << aAttributes << " )" << std::endl;
+#ifdef DEBUG
+    std::cerr << "FONT::getLinePositions( \"" << aText << "\", " << aPosition << ", ..., "
+              << aGlyphSize << ", " << aAttributes << " )" << std::endl;
 #endif
 
     wxStringSplit( aText, aStringList, '\n' );
@@ -299,16 +298,13 @@ void FONT::getLinePositions( const UTF8& aText, const VECTOR2D& aPosition,
     {
         VECTOR2D textSize = aBoundingBoxes.at( i );
         wxPoint  lineOffset( offset );
-        /* aFlippedY is true when calling from eeschema so multiline text needs to be inverted
-         */
-        int lineOffsetMultiplier = aFlippedY ? -i : i;
-        lineOffset.y += lineOffsetMultiplier * interline;
+        lineOffset.y += i * interline;
 
         switch( aAttributes.GetHorizontalAlignment() )
         {
         case TEXT_ATTRIBUTES::H_LEFT: break;
-        case TEXT_ATTRIBUTES::H_CENTER: lineOffset.x = mirrorX * textSize.x / 2; break;
-        case TEXT_ATTRIBUTES::H_RIGHT: lineOffset.x = mirrorX * textSize.x;
+        case TEXT_ATTRIBUTES::H_CENTER: lineOffset.x = mirrorX * -textSize.x / 2; break;
+        case TEXT_ATTRIBUTES::H_RIGHT: lineOffset.x = mirrorX * -textSize.x;
         }
 
         wxPoint pos( aPosition.x + lineOffset.x, aPosition.y + lineOffset.y );
@@ -319,8 +315,10 @@ void FONT::getLinePositions( const UTF8& aText, const VECTOR2D& aPosition,
                   << " interline " << interline << " textSize " << textSize << std::endl;
 #endif
 
+#if 0
         // Rotate the position of the line around the origin of the multiline text block
         RotatePoint( &pos, origin, aAttributes.GetAngle().AsTenthsOfADegree() );
+#endif
 
         aPositions.push_back( pos );
     }
@@ -420,74 +418,69 @@ void FONT::DrawText( KIGFX::GAL* aGal, const UTF8& aText, const VECTOR2D& aPosit
 VECTOR2D FONT::Draw( KIGFX::GAL* aGal, const UTF8& aText, const VECTOR2D& aPosition,
                      const VECTOR2D& aOrigin, const TEXT_ATTRIBUTES& aAttributes ) const
 {
-    if( aText.empty() )
+    if( !aGal || aText.empty() )
         return VECTOR2D( 0, 0 );
 
     EDA_ANGLE angle = aAttributes.GetAngle();
-    VECTOR2D position( aPosition - aOrigin );
+    VECTOR2D  position( aPosition - aOrigin );
 #ifdef DEBUG
-    std::cerr << "FONT::Draw( aGal, \"" << aText << "\", " << aPosition << ", " << aOrigin
-              << ", " << aAttributes << " ) const ; position " << position << std::endl;
+    std::cerr << "FONT::Draw( aGal, \"" << aText << "\", " << aPosition << ", " << aOrigin << ", "
+              << aAttributes << " ) const ; position " << position << std::endl;
     bool   drawDebugShapes = false;
     double dbg = 200000;
 #endif
 
-    if( aGal )
-    {
 #ifdef DEBUG
-        COLOR4D oldColor = aGal->GetStrokeColor();
-        if( drawDebugShapes )
-        {
-            aGal->SetStrokeColor( COLOR4D( 1, 1, 0, 1 ) );
-            aGal->DrawCircle( aPosition, dbg );
-            aGal->SetStrokeColor( COLOR4D( 1, 0, 1, 1 ) );
-            aGal->DrawCircle( aOrigin, dbg * 0.8 );
-            aGal->SetStrokeColor( COLOR4D( 0, 0, 1, 1 ) );
-            aGal->DrawCircle( position, dbg * 1.2 );
-            aGal->SetStrokeColor( oldColor );
-        }
-#endif
-        // Context needs to be saved before any transformations
-        aGal->Save();
-        //aGal->Translate( aPosition );
-        aGal->Rotate( angle.Invert().AsRadians() );
+    COLOR4D oldColor = aGal->GetStrokeColor();
+    if( drawDebugShapes )
+    {
+        aGal->SetStrokeColor( COLOR4D( 1, 1, 0, 1 ) );
+        aGal->DrawCircle( aPosition, dbg );
+        aGal->SetStrokeColor( COLOR4D( 1, 0, 1, 1 ) );
+        aGal->DrawCircle( aOrigin, dbg * 0.8 );
+        aGal->SetStrokeColor( COLOR4D( 0, 0, 1, 1 ) );
+        aGal->DrawCircle( position, dbg * 1.2 );
+        aGal->SetStrokeColor( oldColor );
     }
+#endif
+
+    // Context needs to be saved before any transformations
+    //aGal->Save();
 
     // Split multiline strings into separate ones and draw them line by line
     wxArrayString         strings_list;
     std::vector<wxPoint>  positions;
     std::vector<VECTOR2D> boundingBoxes;
-    int n;
+    int                   n;
 
     getLinePositions( aText, position, strings_list, positions, n, boundingBoxes,
-                      aGal->GetGlyphSize(), aAttributes, aGal->IsTextFlippedY() );
+                      aGal->GetGlyphSize(), aAttributes );
 
     VECTOR2D boundingBox( 0, 0 );
     for( int i = 0; i < n; i++ )
     {
 #ifdef DEBUG
-        std::cerr << "FONT::Draw( aGal, \"" << aText << "\", " << aPosition << ", "
-                  << aOrigin << ", " << aAttributes << " ) const "
+        std::cerr << "FONT::Draw( aGal, \"" << aText << "\", " << aPosition << ", " << aOrigin
+                  << ", " << aAttributes << " ) const "
                   << "drawing line #" << i << "/" << n << " \"" << strings_list[i] << "\" @"
-                  << positions[i].x << "," << positions[i].y << std::endl;
+                  << positions[i].x << "," << positions[i].y << " angle " << angle << std::endl;
 #endif
-        VECTOR2D lineBoundingBox = drawSingleLineText( aGal, strings_list[i], positions[i] );
+        aGal->Save();
+        aGal->Translate( positions[i] );
+        if( !angle.IsZero() )
+            aGal->Rotate( angle.Invert().AsRadians() );
+        VECTOR2D lineBoundingBox = drawSingleLineText( aGal, strings_list[i], VECTOR2D( 0, 0 ) );
+        aGal->Restore();
 
         // expand bounding box of whole text
         boundingBox.x = std::max( boundingBox.x, lineBoundingBox.x );
 
-        if( aGal )
-        {
-            double lineHeight =
-                    GetInterline( aGal->GetGlyphSize().y, aAttributes.GetLineSpacing() );
-            boundingBox.y += lineHeight;
-        }
+        double lineHeight = GetInterline( aGal->GetGlyphSize().y, aAttributes.GetLineSpacing() );
+        boundingBox.y += lineHeight;
     }
 
-    if( aGal ) {
-        // undo rotation
-        aGal->Restore();
-    }
+    // undo rotation
+    //aGal->Restore();
 
     return boundingBox;
 }
