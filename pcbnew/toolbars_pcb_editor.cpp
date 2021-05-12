@@ -395,7 +395,7 @@ void PCB_EDIT_FRAME::ReCreateVToolbar()
     static ACTION_GROUP* dimensionGroup = nullptr;
     static ACTION_GROUP* originGroup    = nullptr;
     static ACTION_GROUP* routingGroup   = nullptr;
-    static ACTION_GROUP* microwaveGroup = nullptr;
+    static ACTION_GROUP* tuneGroup      = nullptr;
 
     if( !dimensionGroup )
     {
@@ -420,14 +420,12 @@ void PCB_EDIT_FRAME::ReCreateVToolbar()
                                           &PCB_ACTIONS::routeDiffPair } );
     }
 
-    if( !microwaveGroup )
+    if( !tuneGroup )
     {
-        microwaveGroup = new ACTION_GROUP( "group.pcbMicrowave",
-                                           { &PCB_ACTIONS::microwaveCreateLine,
-                                             &PCB_ACTIONS::microwaveCreateGap,
-                                             &PCB_ACTIONS::microwaveCreateStub,
-                                             &PCB_ACTIONS::microwaveCreateStubArc,
-                                             &PCB_ACTIONS::microwaveCreateFunctionShape } );
+        tuneGroup = new ACTION_GROUP( "group.pcbTune", 
+                                      { &PCB_ACTIONS::routerTuneSingleTrace,
+                                        &PCB_ACTIONS::routerTuneDiffPair,
+                                        &PCB_ACTIONS::routerTuneDiffPairSkew } );
     }
 
     m_drawToolBar->Add( ACTIONS::selectionTool,            ACTION_TOOLBAR::TOGGLE );
@@ -437,8 +435,8 @@ void PCB_EDIT_FRAME::ReCreateVToolbar()
     m_drawToolBar->AddScaledSeparator( this );
     m_drawToolBar->Add( PCB_ACTIONS::placeFootprint,       ACTION_TOOLBAR::TOGGLE );
     m_drawToolBar->AddGroup( routingGroup,                 ACTION_TOOLBAR::TOGGLE );
+    m_drawToolBar->AddGroup( tuneGroup,                    ACTION_TOOLBAR::TOGGLE );
     m_drawToolBar->Add( PCB_ACTIONS::drawVia,              ACTION_TOOLBAR::TOGGLE );
-    m_drawToolBar->AddGroup( microwaveGroup,               ACTION_TOOLBAR::TOGGLE );
     m_drawToolBar->Add( PCB_ACTIONS::drawZone,             ACTION_TOOLBAR::TOGGLE );
     m_drawToolBar->Add( PCB_ACTIONS::drawRuleArea,         ACTION_TOOLBAR::TOGGLE );
 
@@ -477,6 +475,18 @@ void PCB_EDIT_FRAME::ReCreateVToolbar()
 
     m_drawToolBar->AddToolContextMenu( PCB_ACTIONS::routeSingleTrack, makeRouteMenu() );
     m_drawToolBar->AddToolContextMenu( PCB_ACTIONS::routeDiffPair, makeRouteMenu() );
+
+    auto makeTuneMenu = 
+        [&]()
+        {
+            std::unique_ptr<ACTION_MENU> tuneMenu = std::make_unique<ACTION_MENU>( false, selTool );
+            tuneMenu->Add( PCB_ACTIONS::lengthTunerSettingsDialog );
+            return tuneMenu;
+        };
+
+    m_drawToolBar->AddToolContextMenu( PCB_ACTIONS::routerTuneSingleTrace, makeTuneMenu() );
+    m_drawToolBar->AddToolContextMenu( PCB_ACTIONS::routerTuneDiffPair, makeTuneMenu() );
+    m_drawToolBar->AddToolContextMenu( PCB_ACTIONS::routerTuneDiffPairSkew, makeTuneMenu() );
 
     std::unique_ptr<ACTION_MENU> zoneMenu = std::make_unique<ACTION_MENU>( false, selTool );
     zoneMenu->Add( PCB_ACTIONS::zoneFillAll );
