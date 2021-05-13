@@ -25,7 +25,11 @@
 #include <sparselizard/sparselizard.h>
 #include "sparselizard_solver.h"
 #include "sparselizard_mesher.h"
+#include "../gmsh_mesher.h"
 #include "../common/fem_descriptor.h"
+
+
+#define USE_GMSH
 
 
 std::vector<int> getAllRegionsWithNetcode( std::map<int, int> aRegionMap, int aNetCode,
@@ -104,7 +108,11 @@ bool Run_DC_CurrentDensity( FEM_DESCRIPTOR* aDescriptor )
     if( aDescriptor->GetBoard() == nullptr )
         return false;
 
-    SPARSELIZARD_MESHER mesher = SPARSELIZARD_MESHER( aDescriptor->GetBoard() );
+#ifdef USE_GMSH
+    GMSH_MESHER mesher( aDescriptor->GetBoard() );
+#else
+    SPARSELIZARD_MESHER mesher( aDescriptor->GetBoard() );
+#endif
     std::cout << "Trying to add ports" << std::endl;
 
     std::list<int> netlist;
@@ -151,13 +159,19 @@ bool Run_DC_CurrentDensity( FEM_DESCRIPTOR* aDescriptor )
     std::cout << "Number of regions in simulation: " << regionMap.size() << std::endl;
 
 
+    std::cout << std::endl << "---------SPARSELIZARD---------" << std::endl;
+
+#ifdef USE_GMSH
+    mesher.Load25DMesh();
+    mesh mymesh( "gmsh:api" );
+    mesher.Finalize();
+#else
     std::vector<shape> shapes;
     mesher.Get2DShapes( shapes, PCB_LAYER_ID::F_Cu, true );
-
-    std::cout << std::endl << "---------SPARSELIZARD---------" << std::endl;
     mesh mymesh;
     mymesh.split( 2 );
     mymesh.load( shapes );
+#endif
 
     mymesh.write( "mymesh.msh" );
 
