@@ -48,8 +48,11 @@ void GMSH_MESHER::Load25DMesh()
 
     // TODO: better solution to track which elements belong to which surface
     std::vector<std::pair<int, int>> fragments;
-    std::set<int>                    padHoleTags;
-    std::set<int>                    holeTags;
+
+    std::map<int, int> padRegions;
+    std::map<int, int> netRegions;
+    std::set<int>      padHoleTags;
+    std::set<int>      holeTags;
     int currentHeight = 0;
     m_board->GetDesignSettings().GetStackupDescriptor().SynchronizeWithBoard(
             &m_board->GetDesignSettings() );
@@ -88,6 +91,7 @@ void GMSH_MESHER::Load25DMesh()
                  PadTo2DPlaneSurfaces( layer, -currentHeight_mm, pad_region.second ) )
             {
                 fragments.emplace_back( 2, idx );
+                padRegions.emplace( idx, pad_region.first );
             }
         }
 
@@ -98,6 +102,7 @@ void GMSH_MESHER::Load25DMesh()
             for( const auto& idx : netSurfaces.first )
             {
                 fragments.emplace_back( 2, idx );
+                netRegions.emplace( idx, net_region.first );
             }
             for( const auto& idx : netSurfaces.second )
             {
@@ -112,41 +117,99 @@ void GMSH_MESHER::Load25DMesh()
     std::vector<std::vector<std::pair<int, int>>> ovv;
     gmsh::model::occ::fragment( fragments, {}, ov, ovv );
 
-    // Debug output for fragment
-    std::cerr << "before/after volume relations:" << std::endl;
-    for( std::size_t i = 0; i < ovv.size(); i++ )
+    std::map<int, std::vector<int>> regionToShapeId;
+    std::set<int>                   assignedShapeId;
+
+    int airTag = m_next_region_id; // TODO
+
+    // holes
+    for( std::size_t i = 0; i < fragments.size(); i++ )
     {
-        std::cerr << "parent (" << ov[i].second << ") -> child" << std::endl;
-        for( std::size_t j = 0; j < ovv[i].size(); j++ )
+        int origTag = fragments.at( i ).second;
+        if( padHoleTags.count( origTag ) )
         {
-            std::cerr << " (" << std::to_string( ovv[i][j].second ) << ")" << std::endl;
+            for( const auto ovTag : ovv.at( i ) )
+            {
+                if( !assignedShapeId.count( ovTag.second ) )
+                {
+                    regionToShapeId[airTag].emplace_back( ovTag.second );
+                    assignedShapeId.emplace( ovTag.second );
+                }
+            }
         }
     }
-
-    std::cerr << "detect holes: " << std::endl;
-    std::vector<int> airRegion;
-    std::vector<int> otherRegions;
-    for( int i = 0; i < ov.size(); i++ )
+    // pads
+    for( std::size_t i = 0; i < fragments.size(); i++ )
     {
-        bool set = false;
-        for( const auto& e : ovv[i] )
+        int origTag = fragments.at( i ).second;
+
+        const auto& padRegionFound = padRegions.find( origTag );
+        if( padRegionFound != padRegions.end() )
         {
-            if( padHoleTags.count( e.second ) != 0 )
+            for( const auto ovTag : ovv.at( i ) )
             {
-                set = true;
-                break;
+                if( !assignedShapeId.count( ovTag.second ) )
+                {
+                    regionToShapeId[padRegionFound->second].emplace_back( ovTag.second );
+                    assignedShapeId.emplace( ovTag.second );
+                }
             }
-            // TODO: zone tag has also be set
-            /*if(holeTags.count(e.second) != 0 && ovv[i].size() == 2) {
-                set = true;
-                break;
-            }*/
         }
-        if( set )
-            //gmsh::model::occ::remove({ov[i]}, false);
-            airRegion.emplace_back( ov[i].second );
-        else
-            otherRegions.emplace_back( ov[i].second );
+    }
+    // region holes
+    for( std::size_t i = 0; i < fragments.size(); i++ )
+    {
+        int origTag = fragments.at( i ).second;
+        if( holeTags.count( origTag ) )
+        {
+            for( const auto ovTag : ovv.at( i ) )
+            {
+                if( !assignedShapeId.count( ovTag.second ) )
+                {
+                    regionToShapeId[airTag].emplace_back( ovTag.second );
+                    assignedShapeId.emplace( ovTag.second );
+                }
+            }
+        }
+    }
+    // regions
+    for( std::size_t i = 0; i < fragments.size(); i++ )
+    {
+        int         origTag = fragments.at( i ).second;
+        const auto& netRegionFound = netRegions.find( origTag );
+        if( netRegionFound != netRegions.end() )
+        {
+            for( const auto ovTag : ovv.at( i ) )
+            {
+                if( !assignedShapeId.count( ovTag.second ) )
+                {
+                    regionToShapeId[netRegionFound->second].emplace_back( ovTag.second );
+                    assignedShapeId.emplace( ovTag.second );
+                }
+            }
+        }
+    }
+    // remove air regions
+    const auto& airShapes = regionToShapeId.find( airTag );
+    if( airShapes != regionToShapeId.end() )
+    {
+        for( const auto& e : airShapes->second )
+        {
+            gmsh::model::occ::remove( { { 2, e } }, true );
+        }
+        regionToShapeId.erase( airShapes->first );
+    }
+
+    if( assignedShapeId.size() != ov.size() )
+    {
+        std::cerr << "!!!!!!!!!!!!!!!!!!!!! SOMETHING WAS NOT ASSIGNED !!!!!!!!!!!!!!" << std::endl;
+        // Assign everything else
+        for( std::size_t i = 0; i < ov.size(); i++ )
+        {
+            int ovTag = ov[i].second;
+            if( !assignedShapeId.count( ovTag ) )
+                regionToShapeId[airTag + 1].emplace_back( ov[i].second );
+        }
     }
 
     // we need to do synchronize when calling any non occ function!
@@ -154,13 +217,10 @@ void GMSH_MESHER::Load25DMesh()
     gmsh::model::occ::synchronize();
     std::cerr << "FINISHED" << std::endl;
 
-    //for(auto e : ov)
-    //    gmsh::model::addPhysicalGroup(2, {e.second});
-    if( !airRegion.empty() )
-        gmsh::model::addPhysicalGroup( 2, airRegion );
-    //gmsh::model::addPhysicalGroup(2, otherRegions);
-    for( auto e : otherRegions )
-        gmsh::model::addPhysicalGroup( 2, { e } );
+    for( const auto& kv : regionToShapeId )
+    {
+        gmsh::model::addPhysicalGroup( 2, kv.second, kv.first );
+    }
 
     // generated 2.5d-mesh
     std::cerr << "generate mesh" << std::endl;
