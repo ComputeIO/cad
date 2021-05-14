@@ -30,6 +30,7 @@
 #include <tool/tool_action.h>
 #include <tool/actions.h>
 #include <core/optional.h>
+#include <layers_id_colors_and_visibility.h>
 
 class TOOL_EVENT;
 class TOOL_MANAGER;
@@ -475,6 +476,8 @@ public:
     static TOOL_ACTION convertToLines;
     static TOOL_ACTION convertToArc;
     static TOOL_ACTION convertToTracks;
+
+    static TOOL_ACTION* LayerToAction( PCB_LAYER_ID aLayer );
 };
 
 #endif

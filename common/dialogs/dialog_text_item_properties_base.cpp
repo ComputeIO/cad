@@ -5,8 +5,6 @@
 // PLEASE DO *NOT* EDIT THIS FILE!
 ///////////////////////////////////////////////////////////////////////////
 
-#include "pcb_layer_box_selector.h"
-
 #include "dialog_text_item_properties_base.h"
 
 ///////////////////////////////////////////////////////////////////////////
@@ -169,7 +167,6 @@ DIALOG_TEXT_ITEM_PROPERTIES_BASE::DIALOG_TEXT_ITEM_PROPERTIES_BASE( wxWindow* pa
 
 	bMainSizer->Add( bNote, 0, wxEXPAND|wxBOTTOM|wxRIGHT|wxLEFT, 10 );
 
-	wxFlexGridSizer* fgSizerSetup;
 	fgSizerSetup = new wxFlexGridSizer( 0, 5, 3, 0 );
 	fgSizerSetup->AddGrowableCol( 1 );
 	fgSizerSetup->AddGrowableCol( 4 );
@@ -180,7 +177,7 @@ DIALOG_TEXT_ITEM_PROPERTIES_BASE::DIALOG_TEXT_ITEM_PROPERTIES_BASE( wxWindow* pa
 	m_LayerLabel->Wrap( -1 );
 	fgSizerSetup->Add( m_LayerLabel, 0, wxALIGN_CENTER_VERTICAL|wxRIGHT, 5 );
 
-	m_LayerSelectionCtrl = new PCB_LAYER_BOX_SELECTOR( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, NULL, 0 );
+	m_LayerSelectionCtrl = new wxBitmapComboBox( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, NULL, 0 );
 	fgSizerSetup->Add( m_LayerSelectionCtrl, 0, wxALIGN_CENTER_VERTICAL|wxEXPAND, 5 );
 
 
@@ -255,10 +252,10 @@ DIALOG_TEXT_ITEM_PROPERTIES_BASE::DIALOG_TEXT_ITEM_PROPERTIES_BASE( wxWindow* pa
 	fgSizerSetup->Add( m_OrientLabel, 0, wxALIGN_CENTER_VERTICAL|wxRIGHT|wxLEFT, 5 );
 
 	m_OrientCtrl = new wxComboBox( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, NULL, 0 );
-	m_OrientCtrl->Append( _("0") );
-	m_OrientCtrl->Append( _("90") );
-	m_OrientCtrl->Append( _("180") );
-	m_OrientCtrl->Append( _("270") );
+	m_OrientCtrl->Append( _("0.0") );
+	m_OrientCtrl->Append( _("90.0") );
+	m_OrientCtrl->Append( _("-90.0") );
+	m_OrientCtrl->Append( _("180.0") );
 	fgSizerSetup->Add( m_OrientCtrl, 0, wxALIGN_CENTER_VERTICAL|wxEXPAND, 5 );
 
 	m_PositionXLabel = new wxStaticText( this, wxID_ANY, _("Position X:"), wxDefaultPosition, wxDefaultSize, 0 );

@@ -397,6 +397,9 @@ VECTOR2D OUTLINE_FONT::drawMarkup( KIGFX::GAL* aGal, const MARKUP::MARKUP_NODE& 
                                    const VECTOR2D& aPosition, const EDA_ANGLE& aAngle,
                                    TEXT_STYLE_FLAGS aTextStyle, int aLevel ) const
 {
+    if( !aGal )
+        return VECTOR2D( 0, 0 );
+
     VECTOR2D nextPosition = aPosition;
 
     TEXT_STYLE_FLAGS textStyle = aTextStyle;
@@ -417,28 +420,26 @@ VECTOR2D OUTLINE_FONT::drawMarkup( KIGFX::GAL* aGal, const MARKUP::MARKUP_NODE& 
             textStyle |= TEXT_STYLE::OVERBAR;
         }
 
-#ifdef OUTLINEFONT_DEBUG
-        std::cerr << "OUTLINE_FONT::drawMarkup( [aGal], " << aNode->asString() << ", " << aPosition
-                  << ", " << aAngle << ", " << TextStyleAsString( aTextStyle ) << ", " << aLevel
-                  << " ) const; textStyle " << TextStyleAsString( textStyle ) << std::endl;
-#endif
         if( aNode->has_content() )
         {
             std::string                 txt = aNode->string();
             std::vector<SHAPE_POLY_SET> glyphs;
             wxPoint                     pt( aPosition.x, aPosition.y );
-            // TODO better default for glyphSize; this is just a guess based on absolutely nothing
-            VECTOR2D glyphSize = aGal ? aGal->GetGlyphSize() : VECTOR2D( 16.0, 16.0 );
-            bool     mirrored = aGal ? aGal->IsTextMirrored() : false;
+            VECTOR2D                    glyphSize = aGal->GetGlyphSize();
+            bool                        mirrored = aGal->IsTextMirrored();
 
+#ifdef DEBUG
+            std::cerr << "OUTLINE_FONT::drawMarkup( [aGal], " << aNode->asString() << ", "
+                      << aPosition << ", " << aAngle << ", " << TextStyleAsString( aTextStyle )
+                      << ", " << aLevel << " ) const; txt \"" << txt << "\" pt " << pt.x << ","
+                      << pt.y << " glyphSize " << glyphSize << " textStyle {"
+                      << TextStyleAsString( textStyle ) << "}" << std::endl;
+#endif
             nextPosition =
                     GetTextAsPolygon( glyphs, txt, glyphSize, pt, aAngle, mirrored, textStyle );
 
-            if( aGal )
-            {
-                for( auto glyph : glyphs )
-                    aGal->DrawGlyph( glyph );
-            }
+            for( auto glyph : glyphs )
+                aGal->DrawGlyph( glyph );
         }
     }
 
@@ -525,7 +526,7 @@ VECTOR2D OUTLINE_FONT::drawSingleLineText( KIGFX::GAL* aGal, const UTF8& aText,
     MARKUP::MARKUP_PARSER markupParser( aText );
     auto                  markupRoot = markupParser.Parse();
 
-    VECTOR2D position(aPosition);
+    VECTOR2D position( aPosition );
     drawMarkup( aGal, markupRoot, position, aAngle );
 
     return position;

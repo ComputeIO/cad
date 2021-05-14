@@ -10,8 +10,6 @@
 #include <wx/artprov.h>
 #include <wx/xrc/xmlres.h>
 #include <wx/intl.h>
-class PCB_LAYER_BOX_SELECTOR;
-
 #include "dialog_shim.h"
 #include <wx/string.h>
 #include <wx/stattext.h>
@@ -67,8 +65,9 @@ class DIALOG_TEXT_ITEM_PROPERTIES_BASE : public DIALOG_SHIM
 		wxCheckBox* m_FontBold;
 		wxCheckBox* m_FontItalic;
 		wxHyperlinkCtrl* m_formattingHelp;
+		wxFlexGridSizer* fgSizerSetup;
 		wxStaticText* m_LayerLabel;
-		PCB_LAYER_BOX_SELECTOR* m_LayerSelectionCtrl;
+		wxBitmapComboBox* m_LayerSelectionCtrl;
 		wxCheckBox* m_Visible;
 		wxStaticText* m_SizeXLabel;
 		wxTextCtrl* m_SizeXCtrl;

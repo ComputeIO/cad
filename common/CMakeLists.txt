@@ -185,6 +185,7 @@ set( COMMON_DLG_SRCS
     dialogs/dialog_paste_special.cpp
     dialogs/dialog_paste_special_base.cpp
     dialogs/dialog_text_entry_base.cpp
+    dialogs/dialog_text_item_properties.cpp
     dialogs/dialog_text_item_properties_base.cpp
     dialogs/dialog_page_settings.cpp
     dialogs/dialog_print_generic.cpp

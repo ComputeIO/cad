@@ -43,7 +43,7 @@
 #include <bitmaps.h>
 #include <painter.h>
 #include <status_popup.h>
-#include <dialogs/dialog_text_properties.h>
+#include <dialogs/dialog_pcb_text_properties.h>
 #include <preview_items/arc_assistant.h>
 #include <board.h>
 #include <fp_shape.h>
@@ -527,7 +527,7 @@ int DRAWING_TOOL::PlaceText( const TOOL_EVENT& aEvent )
 
                     text = fpText;
 
-                    DIALOG_TEXT_PROPERTIES textDialog( m_frame, fpText );
+                    DIALOG_PCB_TEXT_PROPERTIES textDialog( m_frame, fpText );
                     bool cancelled;
 
                     RunMainStack( [&]()

@@ -1352,3 +1352,45 @@ TOOL_ACTION PCB_ACTIONS::dragFreeAngle( "pcbnew.InteractiveRouter.DragFreeAngle"
         _( "Drag (free angle)" ),
         _( "Drags the nearest joint in the track without restricting the track angle." ),
         BITMAPS::drag );
+
+
+// translate aLayer to its action
+TOOL_ACTION* PCB_ACTIONS::LayerToAction( PCB_LAYER_ID aLayer )
+{
+    switch( aLayer )
+    {
+    case F_Cu:      return &PCB_ACTIONS::layerTop;
+    case In1_Cu:    return &PCB_ACTIONS::layerInner1;
+    case In2_Cu:    return &PCB_ACTIONS::layerInner2;
+    case In3_Cu:    return &PCB_ACTIONS::layerInner3;
+    case In4_Cu:    return &PCB_ACTIONS::layerInner4;
+    case In5_Cu:    return &PCB_ACTIONS::layerInner5;
+    case In6_Cu:    return &PCB_ACTIONS::layerInner6;
+    case In7_Cu:    return &PCB_ACTIONS::layerInner7;
+    case In8_Cu:    return &PCB_ACTIONS::layerInner8;
+    case In9_Cu:    return &PCB_ACTIONS::layerInner9;
+    case In10_Cu:   return &PCB_ACTIONS::layerInner10;
+    case In11_Cu:   return &PCB_ACTIONS::layerInner11;
+    case In12_Cu:   return &PCB_ACTIONS::layerInner12;
+    case In13_Cu:   return &PCB_ACTIONS::layerInner13;
+    case In14_Cu:   return &PCB_ACTIONS::layerInner14;
+    case In15_Cu:   return &PCB_ACTIONS::layerInner15;
+    case In16_Cu:   return &PCB_ACTIONS::layerInner16;
+    case In17_Cu:   return &PCB_ACTIONS::layerInner17;
+    case In18_Cu:   return &PCB_ACTIONS::layerInner18;
+    case In19_Cu:   return &PCB_ACTIONS::layerInner19;
+    case In20_Cu:   return &PCB_ACTIONS::layerInner20;
+    case In21_Cu:   return &PCB_ACTIONS::layerInner21;
+    case In22_Cu:   return &PCB_ACTIONS::layerInner22;
+    case In23_Cu:   return &PCB_ACTIONS::layerInner23;
+    case In24_Cu:   return &PCB_ACTIONS::layerInner24;
+    case In25_Cu:   return &PCB_ACTIONS::layerInner25;
+    case In26_Cu:   return &PCB_ACTIONS::layerInner26;
+    case In27_Cu:   return &PCB_ACTIONS::layerInner27;
+    case In28_Cu:   return &PCB_ACTIONS::layerInner28;
+    case In29_Cu:   return &PCB_ACTIONS::layerInner29;
+    case In30_Cu:   return &PCB_ACTIONS::layerInner30;
+    case B_Cu:      return &PCB_ACTIONS::layerBottom;
+    default:        return nullptr;
+    }
+}

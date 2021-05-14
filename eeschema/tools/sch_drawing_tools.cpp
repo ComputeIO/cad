@@ -47,7 +47,7 @@
 #include <class_library.h>
 #include <eeschema_settings.h>
 //#include <dialogs/dialog_edit_label.h>
-#include <dialogs/dialog_text_item_properties.h>
+#include <dialogs/dialog_sch_text_properties.h>
 #include <dialogs/dialog_edit_line_style.h>
 #include <dialogs/dialog_junction_props.h>
 #include <dialogs/dialog_sheet_pin_properties.h>
@@ -892,7 +892,7 @@ SCH_TEXT* SCH_DRAWING_TOOLS::createNewText( const VECTOR2I& aPosition, int aType
     textItem->SetFlags( IS_NEW | IS_MOVED );
 
     //DIALOG_LABEL_EDITOR dlg( m_frame, textItem );
-    DIALOG_TEXT_ITEM_PROPERTIES dlg( m_frame, textItem );
+    DIALOG_SCH_TEXT_PROPERTIES dlg( m_frame, textItem );
 
     // Must be quasi modal for syntax help
     if( dlg.ShowQuasiModal() != wxID_OK || NoPrintableChars( textItem->GetText() ) )

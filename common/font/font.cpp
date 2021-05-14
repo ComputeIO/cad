@@ -279,7 +279,7 @@ void FONT::getLinePositions( const UTF8& aText, const VECTOR2D& aPosition,
     wxPoint origin( aPosition.x, aPosition.y );
     int     interline = GetInterline( aGlyphSize.y, aAttributes.GetLineSpacing() );
 #ifdef DEBUG
-    std::cerr << "attributes.line_spacing " << aAttributes.GetLineSpacing() << " glyph size "
+    std::cerr << "\"" << aText << "\" line spacing " << aAttributes.GetLineSpacing() << " glyph size "
               << aGlyphSize << " GetInterline() " << GetInterline( aGlyphSize.y )
               << " -> interline " << interline << std::endl;
 #endif
@@ -313,11 +313,6 @@ void FONT::getLinePositions( const UTF8& aText, const VECTOR2D& aPosition,
                   << " aPosition " << aPosition.x << "," << aPosition.y << " offset " << offset.x
                   << "," << offset.y << " lineOffset " << lineOffset.x << "," << lineOffset.y
                   << " interline " << interline << " textSize " << textSize << std::endl;
-#endif
-
-#if 0
-        // Rotate the position of the line around the origin of the multiline text block
-        RotatePoint( &pos, origin, aAttributes.GetAngle().AsTenthsOfADegree() );
 #endif
 
         aPositions.push_back( pos );

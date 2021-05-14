@@ -63,6 +63,7 @@ lib_id
 lib_name
 lib_symbols
 line
+line_spacing
 members
 mid
 mirror

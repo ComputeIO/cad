@@ -139,8 +139,7 @@ set( PCBNEW_DIALOGS
     dialogs/dialog_swap_layers_base.cpp
     dialogs/dialog_target_properties.cpp
     dialogs/dialog_target_properties_base.cpp
-    dialogs/dialog_text_properties.cpp
-    #dialogs/dialog_text_properties_base.cpp
+    dialogs/dialog_pcb_text_properties.cpp
     dialogs/dialog_track_via_properties.cpp
     dialogs/dialog_track_via_properties_base.cpp
     dialogs/dialog_track_via_size.cpp
