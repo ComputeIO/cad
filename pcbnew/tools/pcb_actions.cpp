@@ -1307,21 +1307,21 @@ TOOL_ACTION PCB_ACTIONS::routerTuneSingleTrace( "pcbnew.LengthTuner.TuneSingleTr
         AS_GLOBAL,
         // Don't be tempted to remove "Modern Toolset only".  It's in the legacy property name.
         '7', LEGACY_HK_NAME( "Tune Single Track (Modern Toolset only)" ),
-        _( "Tune length of a single track" ), "",
+        _( "Tune length of a single track" ), _( "Tune length of a single track" ),
         BITMAPS::ps_tune_length, AF_ACTIVATE, (void*) PNS::PNS_MODE_TUNE_SINGLE );
 
 TOOL_ACTION PCB_ACTIONS::routerTuneDiffPair( "pcbnew.LengthTuner.TuneDiffPair",
         AS_GLOBAL,
         // Don't be tempted to remove "Modern Toolset only".  It's in the legacy property name.
         '8', LEGACY_HK_NAME( "Tune Differential Pair Length (Modern Toolset only)" ),
-        _( "Tune length of a differential pair" ), "",
+        _( "Tune length of a differential pair" ), _( "Tune length of a differential pair" ),
         BITMAPS::ps_diff_pair_tune_length, AF_ACTIVATE, (void*) PNS::PNS_MODE_TUNE_DIFF_PAIR );
 
 TOOL_ACTION PCB_ACTIONS::routerTuneDiffPairSkew( "pcbnew.LengthTuner.TuneDiffPairSkew",
         AS_GLOBAL,
         // Don't be tempted to remove "Modern Toolset only".  It's in the legacy property name.
         '9', LEGACY_HK_NAME( "Tune Differential Pair Skew (Modern Toolset only)" ),
-        _( "Tune skew of a differential pair" ), "",
+        _( "Tune skew of a differential pair" ), _( "Tune skew of a differential pair" ),
         BITMAPS::ps_diff_pair_tune_phase, AF_ACTIVATE, (void*) PNS::PNS_MODE_TUNE_DIFF_PAIR_SKEW );
 
 TOOL_ACTION PCB_ACTIONS::routerInlineDrag( "pcbnew.InteractiveRouter.InlineDrag",
@@ -1354,43 +1354,12 @@ TOOL_ACTION PCB_ACTIONS::dragFreeAngle( "pcbnew.InteractiveRouter.DragFreeAngle"
         BITMAPS::drag );
 
 
-// translate aLayer to its action
-TOOL_ACTION* PCB_ACTIONS::LayerToAction( PCB_LAYER_ID aLayer )
-{
-    switch( aLayer )
-    {
-    case F_Cu:      return &PCB_ACTIONS::layerTop;
-    case In1_Cu:    return &PCB_ACTIONS::layerInner1;
-    case In2_Cu:    return &PCB_ACTIONS::layerInner2;
-    case In3_Cu:    return &PCB_ACTIONS::layerInner3;
-    case In4_Cu:    return &PCB_ACTIONS::layerInner4;
-    case In5_Cu:    return &PCB_ACTIONS::layerInner5;
-    case In6_Cu:    return &PCB_ACTIONS::layerInner6;
-    case In7_Cu:    return &PCB_ACTIONS::layerInner7;
-    case In8_Cu:    return &PCB_ACTIONS::layerInner8;
-    case In9_Cu:    return &PCB_ACTIONS::layerInner9;
-    case In10_Cu:   return &PCB_ACTIONS::layerInner10;
-    case In11_Cu:   return &PCB_ACTIONS::layerInner11;
-    case In12_Cu:   return &PCB_ACTIONS::layerInner12;
-    case In13_Cu:   return &PCB_ACTIONS::layerInner13;
-    case In14_Cu:   return &PCB_ACTIONS::layerInner14;
-    case In15_Cu:   return &PCB_ACTIONS::layerInner15;
-    case In16_Cu:   return &PCB_ACTIONS::layerInner16;
-    case In17_Cu:   return &PCB_ACTIONS::layerInner17;
-    case In18_Cu:   return &PCB_ACTIONS::layerInner18;
-    case In19_Cu:   return &PCB_ACTIONS::layerInner19;
-    case In20_Cu:   return &PCB_ACTIONS::layerInner20;
-    case In21_Cu:   return &PCB_ACTIONS::layerInner21;
-    case In22_Cu:   return &PCB_ACTIONS::layerInner22;
-    case In23_Cu:   return &PCB_ACTIONS::layerInner23;
-    case In24_Cu:   return &PCB_ACTIONS::layerInner24;
-    case In25_Cu:   return &PCB_ACTIONS::layerInner25;
-    case In26_Cu:   return &PCB_ACTIONS::layerInner26;
-    case In27_Cu:   return &PCB_ACTIONS::layerInner27;
-    case In28_Cu:   return &PCB_ACTIONS::layerInner28;
-    case In29_Cu:   return &PCB_ACTIONS::layerInner29;
-    case In30_Cu:   return &PCB_ACTIONS::layerInner30;
-    case B_Cu:      return &PCB_ACTIONS::layerBottom;
-    default:        return nullptr;
-    }
-}
+// LENGTH_TUNER_TOOL
+//
+TOOL_ACTION PCB_ACTIONS::lengthTunerSettingsDialog( "pcbnew.LengthTuner.Settings",
+        AS_CONTEXT,
+        // Don't be tempted to remove "Modern Toolset only".  It's in the legacy property name.
+        MD_CTRL + 'L', LEGACY_HK_NAME( "Length Tuning Settings (Modern Toolset only)" ),
+        _( "Length Tuning Settings..." ),
+        _( "Sets the length tuning parameters for currently routed item." ),
+        BITMAPS::router_len_tuner_setup );
