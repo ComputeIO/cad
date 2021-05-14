@@ -32,6 +32,7 @@
 #include <drc/drc_engine.h>
 #include <dialogs/dialog_board_statistics.h>
 #include <dialogs/dialog_constraints_reporter.h>
+#include <dialogs/dialog_pcbnew_simul.h>
 #include <dialogs/panel_setup_rules_base.h>
 #include <string_utils.h>
 #include "board_inspection_tool.h"
@@ -105,6 +106,13 @@ void BOARD_INSPECTION_TOOL::Reset( RESET_REASON aReason )
 int BOARD_INSPECTION_TOOL::ShowBoardStatistics( const TOOL_EVENT& aEvent )
 {
     DIALOG_BOARD_STATISTICS dialog( m_frame );
+    dialog.ShowModal();
+    return 0;
+}
+
+int BOARD_INSPECTION_TOOL::ShowSimulationDialog( const TOOL_EVENT& aEvent )
+{
+    DIALOG_PCBNEW_SIMUL dialog( m_frame );
     dialog.ShowModal();
     return 0;
 }
@@ -1842,6 +1850,7 @@ void BOARD_INSPECTION_TOOL::setTransitions()
 
     Go( &BOARD_INSPECTION_TOOL::ListNets,            PCB_ACTIONS::listNets.MakeEvent() );
     Go( &BOARD_INSPECTION_TOOL::ShowBoardStatistics, PCB_ACTIONS::boardStatistics.MakeEvent() );
+    Go( &BOARD_INSPECTION_TOOL::ShowSimulationDialog, PCB_ACTIONS::boardSimulation.MakeEvent() );
     Go( &BOARD_INSPECTION_TOOL::InspectClearance,    PCB_ACTIONS::inspectClearance.MakeEvent() );
     Go( &BOARD_INSPECTION_TOOL::InspectConstraints,  PCB_ACTIONS::inspectConstraints.MakeEvent() );
 

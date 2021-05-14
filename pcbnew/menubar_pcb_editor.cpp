@@ -384,6 +384,7 @@ void PCB_EDIT_FRAME::doReCreateMenuBar()
 
     inspectMenu->Add( PCB_ACTIONS::listNets );
     inspectMenu->Add( PCB_ACTIONS::boardStatistics );
+    inspectMenu->Add( PCB_ACTIONS::boardSimulation );
     inspectMenu->Add( ACTIONS::measureTool );
 
     inspectMenu->AppendSeparator();

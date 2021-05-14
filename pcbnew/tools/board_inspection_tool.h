@@ -55,6 +55,9 @@ public:
      */
     int ShowBoardStatistics( const TOOL_EVENT& aEvent );
 
+    ///< Show pcbnew simulation dialog
+    int ShowSimulationDialog( const TOOL_EVENT& aEvent );
+
     ///< Highlight net belonging to the item under the cursor.
     int HighlightNet( const TOOL_EVENT& aEvent );
 

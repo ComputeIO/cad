@@ -130,6 +130,7 @@ set( PCBNEW_DIALOGS
     dialogs/dialog_pad_properties.cpp
     dialogs/dialog_pad_properties_base.cpp
     dialogs/dialog_pad_primitives_properties_base.cpp
+    dialogs/dialog_pcbnew_simul.cpp
     dialogs/dialog_plot.cpp
     dialogs/dialog_plot_base.cpp
     dialogs/dialog_pns_diff_pair_dimensions.cpp
@@ -187,6 +188,8 @@ set( PCBNEW_DIALOGS
     dialogs/panel_setup_text_and_graphics_base.cpp
     dialogs/panel_setup_tracks_and_vias.cpp
     dialogs/panel_setup_tracks_and_vias_base.cpp
+    dialogs/panel_pcbnew_simul_DC_power.cpp
+    dialogs/panel_pcbnew_simul_DC_power_base.cpp
     footprint_wizard.cpp
     footprint_wizard_frame.cpp
     footprint_wizard_frame_functions.cpp
