@@ -36,6 +36,7 @@ double TransformPoint( double aCoordinate )
     return aCoordinate / IU_PER_MM;
 }
 
+
 void GMSH_MESHER::Load25DMesh()
 {
     gmsh::initialize();
@@ -45,6 +46,10 @@ void GMSH_MESHER::Load25DMesh()
 
     gmsh::model::add( "pcb" );
 
+    // TODO: better solution to track which elements belong to which surface
+    std::vector<std::pair<int, int>> fragments;
+    std::set<int>                    padHoleTags;
+    std::set<int>                    holeTags;
     int currentHeight = 0;
     m_board->GetDesignSettings().GetStackupDescriptor().SynchronizeWithBoard(
             &m_board->GetDesignSettings() );
@@ -71,25 +76,91 @@ void GMSH_MESHER::Load25DMesh()
         PCB_LAYER_ID layer = item->GetBrdLayerId();
         std::cout << "render layer " << layer << " with offset: " << currentHeight_mm << std::endl;
 
-        for( int regionId = 1; regionId < m_next_region_id; regionId++ )
+        for( const auto& idx : HolesTo2DPlaneSurfaces( layer, -currentHeight_mm ) )
         {
-            const std::vector<int> gmshRegionSurfaces =
-                    Mesh2DRegion( layer, -currentHeight_mm, regionId, true );
-            for( int surface : gmshRegionSurfaces )
+            fragments.emplace_back( 2, idx );
+            padHoleTags.emplace( idx );
+        }
+
+        for( const auto& pad_region : m_pad_regions )
+        {
+            for( const auto& idx :
+                 PadTo2DPlaneSurfaces( layer, -currentHeight_mm, pad_region.second ) )
             {
-                m_region_surfaces[regionId].push_back( surface );
+                fragments.emplace_back( 2, idx );
+            }
+        }
+
+        for( const auto& net_region : m_net_regions )
+        {
+            std::pair<std::vector<int>, std::vector<int>> netSurfaces =
+                    NetTo2DPlaneSurfaces( layer, -currentHeight_mm, net_region.second );
+            for( const auto& idx : netSurfaces.first )
+            {
+                fragments.emplace_back( 2, idx );
+            }
+            for( const auto& idx : netSurfaces.second )
+            {
+                fragments.emplace_back( 2, idx );
+                holeTags.emplace( idx );
             }
         }
     }
 
-    // we need to do synchronize when calling any non occ function!
-    gmsh::model::occ::synchronize();
+    std::cerr << "fragment:" << std::endl;
+    std::vector<std::pair<int, int>>              ov;
+    std::vector<std::vector<std::pair<int, int>>> ovv;
+    gmsh::model::occ::fragment( fragments, {}, ov, ovv );
 
-    for( auto& regions : m_region_surfaces )
+    // Debug output for fragment
+    std::cerr << "before/after volume relations:" << std::endl;
+    for( std::size_t i = 0; i < ovv.size(); i++ )
     {
-        gmsh::model::addPhysicalGroup( 2, regions.second );
-        //gmsh::model::setPhysicalName(2, ps, "My surface");
+        std::cerr << "parent (" << ov[i].second << ") -> child" << std::endl;
+        for( std::size_t j = 0; j < ovv[i].size(); j++ )
+        {
+            std::cerr << " (" << std::to_string( ovv[i][j].second ) << ")" << std::endl;
+        }
     }
+
+    std::cerr << "detect holes: " << std::endl;
+    std::vector<int> airRegion;
+    std::vector<int> otherRegions;
+    for( int i = 0; i < ov.size(); i++ )
+    {
+        bool set = false;
+        for( const auto& e : ovv[i] )
+        {
+            if( padHoleTags.count( e.second ) != 0 )
+            {
+                set = true;
+                break;
+            }
+            // TODO: zone tag has also be set
+            /*if(holeTags.count(e.second) != 0 && ovv[i].size() == 2) {
+                set = true;
+                break;
+            }*/
+        }
+        if( set )
+            //gmsh::model::occ::remove({ov[i]}, false);
+            airRegion.emplace_back( ov[i].second );
+        else
+            otherRegions.emplace_back( ov[i].second );
+    }
+
+    // we need to do synchronize when calling any non occ function!
+    std::cerr << "synchronize(): ";
+    gmsh::model::occ::synchronize();
+    std::cerr << "FINISHED" << std::endl;
+
+    //for(auto e : ov)
+    //    gmsh::model::addPhysicalGroup(2, {e.second});
+    if( !airRegion.empty() )
+        gmsh::model::addPhysicalGroup( 2, airRegion );
+    //gmsh::model::addPhysicalGroup(2, otherRegions);
+    for( auto e : otherRegions )
+        gmsh::model::addPhysicalGroup( 2, { e } );
 
     // generated 2.5d-mesh
     std::cerr << "generate mesh" << std::endl;
@@ -110,90 +181,30 @@ void GMSH_MESHER::Finalize()
 }
 
 
-std::vector<int> GMSH_MESHER::Mesh2DZone( PCB_LAYER_ID aLayer, double aOffsetZ, const ZONE* zone )
-{
-    SHAPE_POLY_SET polyset;
-    zone->TransformSolidAreasShapesToPolygon( aLayer, polyset );
-    polyset.Simplify( SHAPE_POLY_SET::POLYGON_MODE::PM_FAST );
-
-    return MeshShapePolySetToPlaneSurfaces( polyset, aOffsetZ );
-}
-
-
-std::vector<int> GMSH_MESHER::Mesh2DRegion( PCB_LAYER_ID aLayer, double aOffsetZ, int aRegionId,
-                                            bool substractHoles )
-{
-    SHAPE_POLY_SET polyset;
-    SHAPE_POLY_SET substractPolyset;
-
-    if( m_net_regions.count( aRegionId ) )
-    {
-        SetPolysetOfNetRegion( polyset, aRegionId, aLayer );
-
-        for( auto& padRegion : m_pad_regions )
-        {
-            SetPolysetOfPadRegion( substractPolyset, padRegion.first, aLayer );
-        }
-
-        if( substractHoles )
-        {
-            SetPolysetOfHolesOfNetRegion( substractPolyset, aRegionId, aLayer );
-        }
-    }
-    else
-    {
-        SetPolysetOfPadRegion( polyset, aRegionId, aLayer );
-
-        const auto& padRegion = m_pad_regions.find( aRegionId );
-        if( substractHoles && padRegion != m_pad_regions.end() )
-        {
-            SetPolysetOfPadDrill( substractPolyset, padRegion->second );
-        }
-    }
-
-    if( polyset.IsEmpty() )
-    {
-        return {};
-    }
-
-    if( !substractPolyset.IsEmpty() )
-    {
-        polyset.Simplify( SHAPE_POLY_SET::POLYGON_MODE::PM_FAST );
-        substractPolyset.Simplify( SHAPE_POLY_SET::POLYGON_MODE::PM_FAST );
-        polyset.BooleanSubtract( substractPolyset, SHAPE_POLY_SET::POLYGON_MODE::PM_FAST );
-    }
-
-    return MeshShapePolySetToPlaneSurfaces( polyset, aOffsetZ );
-}
-
-
-std::vector<int> GMSH_MESHER::MeshShapePolySetToPlaneSurfaces( const SHAPE_POLY_SET& aPolySet,
-                                                               double                aOffsetZ )
+std::pair<std::vector<int>, std::vector<int>>
+GMSH_MESHER::ShapePolySetToPlaneSurfaces( const SHAPE_POLY_SET& aPolySet, double aOffsetZ )
 {
     std::vector<int> gmshPlaneSurfaces;
+    std::vector<int> gmshHoleSurfaces;
     gmshPlaneSurfaces.reserve( aPolySet.OutlineCount() );
     for( int outline = 0; outline < aPolySet.OutlineCount(); outline++ )
     {
-        std::vector<int> gmshCurveLoops;
-        gmshCurveLoops.reserve( aPolySet.HoleCount( outline ) + 1 );
-
         const SHAPE_LINE_CHAIN& outlinePoints = aPolySet.COutline( outline );
-        gmshCurveLoops.emplace_back( MeshShapeLineChainToCurveLoop( outlinePoints, aOffsetZ ) );
+        int                     OutlineId = ShapeLineChainToCurveLoop( outlinePoints, aOffsetZ );
+        gmshPlaneSurfaces.emplace_back( gmsh::model::occ::addPlaneSurface( { OutlineId } ) );
 
         for( int hole = 0; hole < aPolySet.HoleCount( outline ); hole++ )
         {
             const SHAPE_LINE_CHAIN& holePoints = aPolySet.CHole( outline, hole );
-            gmshCurveLoops.emplace_back( MeshShapeLineChainToCurveLoop( holePoints, aOffsetZ ) );
+            int                     holeId = ShapeLineChainToCurveLoop( holePoints, aOffsetZ );
+            gmshHoleSurfaces.emplace_back( gmsh::model::occ::addPlaneSurface( { holeId } ) );
         }
-
-        gmshPlaneSurfaces.emplace_back( gmsh::model::occ::addPlaneSurface( gmshCurveLoops ) );
     }
 
-    return gmshPlaneSurfaces;
+    return { gmshPlaneSurfaces, gmshHoleSurfaces };
 }
 
-int GMSH_MESHER::MeshShapeLineChainToCurveLoop( const SHAPE_LINE_CHAIN& aLineChain,
-                                                double                  aOffsetZ )
+int GMSH_MESHER::ShapeLineChainToCurveLoop( const SHAPE_LINE_CHAIN& aLineChain, double aOffsetZ )
 {
     // Create gmsh points
     std::vector<int> gmshOutlinePoints;
@@ -212,34 +223,92 @@ int GMSH_MESHER::MeshShapeLineChainToCurveLoop( const SHAPE_LINE_CHAIN& aLineCha
         gmshClosedLinePoints.emplace_back( gmsh::model::occ::addLine(
                 gmshOutlinePoints.at( i ), gmshOutlinePoints.at( i + 1 ) ) );
     }
-    gmshClosedLinePoints.emplace_back( gmsh::model::occ::addLine(
-            gmshOutlinePoints.at( gmshOutlinePoints.size() - 1 ), gmshOutlinePoints.at( 0 ) ) );
+    gmshClosedLinePoints.emplace_back(
+            gmsh::model::occ::addLine( gmshOutlinePoints.back(), gmshOutlinePoints.at( 0 ) ) );
 
     // Create gmsh surface loop
     return gmsh::model::occ::addCurveLoop( gmshClosedLinePoints );
 }
 
-void GMSH_MESHER::SetPolysetOfNetRegion( SHAPE_POLY_SET& aPolyset, int aRegionId,
-                                         PCB_LAYER_ID aLayer ) const
-{
-    const auto& netRegion = m_net_regions.find( aRegionId );
-    if( netRegion == m_net_regions.end() )
-    {
-        return; // nothing found
-    }
 
-    int netcode = netRegion->second;
+std::vector<int> GMSH_MESHER::HolesTo2DPlaneSurfaces( PCB_LAYER_ID aLayer, double aOffsetZ )
+{
+    std::vector<int> gmshSurfaces;
+
     int maxError = m_board->GetDesignSettings().m_MaxError;
 
+    // Vias
+    for( const TRACK* track : m_board->Tracks() )
+    {
+        if( !track->IsOnLayer( aLayer ) || !VIA::ClassOf( track ) )
+            continue;
+
+        double radius = static_cast<const VIA*>( track )->GetDrill() / 2.;
+        gmshSurfaces.emplace_back( gmsh::model::occ::addDisk(
+                TransformPoint( track->GetPosition().x ), TransformPoint( track->GetPosition().y ),
+                aOffsetZ, TransformPoint( radius ), TransformPoint( radius ) ) );
+
+        // More accurate but with more points as well
+        /*SHAPE_POLY_SET polyset;
+        TransformCircleToPolygon( polyset, track->GetPosition(), radius, maxError, ERROR_INSIDE );
+        polyset.Simplify( SHAPE_POLY_SET::POLYGON_MODE::PM_FAST );
+
+        for(const auto& e : ShapePolySetToPlaneSurfaces(polyset, aOffsetZ).first) {
+            gmshSurfaces.emplace_back(e);
+        }*/
+    }
+
+    // Pads
+    for( const FOOTPRINT* footprint : m_board->Footprints() )
+    {
+        for( const PAD* pad : footprint->Pads() )
+        {
+            if( !pad->IsOnLayer( aLayer ) || pad->GetAttribute() == PAD_ATTRIB::SMD )
+                continue;
+
+            // TODO: oval hole, offset, rotation
+            gmshSurfaces.emplace_back( gmsh::model::occ::addDisk(
+                    TransformPoint( pad->GetPosition().x ), TransformPoint( pad->GetPosition().y ),
+                    aOffsetZ, TransformPoint( pad->GetDrillSizeX() ) / 2.,
+                    TransformPoint( pad->GetDrillSizeY() ) / 2. ) );
+        }
+    }
+
+    return gmshSurfaces;
+}
+
+
+std::vector<int> GMSH_MESHER::PadTo2DPlaneSurfaces( PCB_LAYER_ID aLayer, double aOffsetZ,
+                                                    const PAD* aPad )
+{
+    if( !aPad->IsOnLayer( aLayer ) )
+        return {};
+
+    int maxError = m_board->GetDesignSettings().m_MaxError;
+
+    SHAPE_POLY_SET polyset;
+    TransformPadWithClearanceToPolygon( polyset, aPad, aLayer, 0, maxError, ERROR_INSIDE );
+    polyset.Simplify( SHAPE_POLY_SET::POLYGON_MODE::PM_FAST );
+
+    return ShapePolySetToPlaneSurfaces( polyset, aOffsetZ ).first; // TODO
+}
+
+
+std::pair<std::vector<int>, std::vector<int>>
+GMSH_MESHER::NetTo2DPlaneSurfaces( PCB_LAYER_ID aLayer, double aOffsetZ, const int aNetcode )
+{
+    SHAPE_POLY_SET polyset;
+
     // inspired by board_items_to_polygon_shape_transform.cpp
+    int maxError = m_board->GetDesignSettings().m_MaxError;
 
     // convert tracks and vias:
     for( const TRACK* track : m_board->Tracks() )
     {
-        if( !track->IsOnLayer( aLayer ) || track->GetNetCode() != netcode )
+        if( !track->IsOnLayer( aLayer ) || track->GetNetCode() != aNetcode )
             continue;
 
-        track->TransformShapeWithClearanceToPolygon( aPolyset, aLayer, 0, maxError, ERROR_INSIDE );
+        track->TransformShapeWithClearanceToPolygon( polyset, aLayer, 0, maxError, ERROR_INSIDE );
     }
 
     // convert pads and other copper items in footprints
@@ -247,165 +316,29 @@ void GMSH_MESHER::SetPolysetOfNetRegion( SHAPE_POLY_SET& aPolyset, int aRegionId
     {
         for( const PAD* pad : footprint->Pads() )
         {
-            if( !pad->IsOnLayer( aLayer ) || pad->GetNetCode() != netcode )
+            if( !pad->IsOnLayer( aLayer ) || pad->GetNetCode() != aNetcode )
                 continue;
 
-            TransformPadWithClearanceToPolygon( aPolyset, pad, aLayer, 0, maxError, ERROR_INSIDE );
+            TransformPadWithClearanceToPolygon( polyset, pad, aLayer, 0, maxError, ERROR_INSIDE );
         }
 
         // TODO: footprints with drawsegments on copper?
-
         for( const ZONE* zone : footprint->Zones() )
         {
-            if( zone->IsFilled() && zone->IsOnLayer( aLayer ) )
-                zone->TransformSolidAreasShapesToPolygon( aLayer, aPolyset );
+            if( zone->IsFilled() && zone->IsOnLayer( aLayer ) && zone->GetNetCode() == aNetcode )
+                zone->TransformSolidAreasShapesToPolygon( aLayer, polyset );
         }
     }
 
-    // convert copper zones
     for( const ZONE* zone : m_board->Zones() )
     {
-        if( zone->IsFilled() && zone->IsOnLayer( aLayer ) && zone->GetNetCode() == netcode )
-            zone->TransformSolidAreasShapesToPolygon( aLayer, aPolyset );
-    }
-}
-
-
-void GMSH_MESHER::SetPolysetOfHolesOfNetRegion( SHAPE_POLY_SET& aPolyset, int aRegionId,
-                                                PCB_LAYER_ID aLayer ) const
-{
-    const auto& netRegion = m_net_regions.find( aRegionId );
-    if( netRegion == m_net_regions.end() )
-    {
-        return; // nothing found
+        if( zone->IsFilled() && zone->IsOnLayer( aLayer ) && zone->GetNetCode() == aNetcode )
+            zone->TransformSolidAreasShapesToPolygon( aLayer, polyset );
     }
 
-    int netcode = netRegion->second;
-    int maxError = m_board->GetDesignSettings().m_MaxError;
+    polyset.Simplify( SHAPE_POLY_SET::POLYGON_MODE::PM_FAST );
 
-    for( const TRACK* track : m_board->Tracks() )
-    {
-        // assuming proper zone fills and no overlapping vias and pads of different nets!!!
-        if( track->GetNetCode() != netcode || !track->IsOnLayer( aLayer )
-            || !VIA::ClassOf( track ) )
-            continue;
-
-        int radius = ( static_cast<const VIA*>( track )->GetDrill() / 2 );
-        TransformCircleToPolygon( aPolyset, track->GetPosition(), radius, maxError, ERROR_INSIDE );
-    }
-
-    for( const FOOTPRINT* footprint : m_board->Footprints() )
-    {
-        for( const PAD* pad : footprint->Pads() )
-        {
-            SetPolysetOfPadDrill( aPolyset, pad );
-        }
-    }
-}
-
-
-void GMSH_MESHER::SetPolysetOfHolewallOfNetRegion( SHAPE_POLY_SET& aPolyset, int aRegionId,
-                                                   int aThickness ) const
-{
-    const auto&    netRegion = m_net_regions.find( aRegionId );
-    SHAPE_POLY_SET substractPolyset;
-
-    if( netRegion == m_net_regions.end() )
-    {
-        const auto& padRegion = m_pad_regions.find( aRegionId );
-        if( padRegion == m_pad_regions.end() )
-        {
-            return;
-        }
-
-        SetPolysetOfPadDrill( aPolyset, padRegion->second, 0 );
-        SetPolysetOfPadDrill( substractPolyset, padRegion->second, aThickness );
-    }
-    else
-    {
-        int netcode = netRegion->second;
-        int maxError = m_board->GetDesignSettings().m_MaxError;
-
-        for( const TRACK* track : m_board->Tracks() )
-        {
-            // assuming proper zone fills and no overlapping vias and pads of different nets!!!
-            if( track->GetNetCode() != netcode || !VIA::ClassOf( track ) )
-                continue;
-
-            int radius = ( static_cast<const VIA*>( track )->GetDrill() / 2 );
-            TransformCircleToPolygon( aPolyset, track->GetPosition(), radius, maxError,
-                                      ERROR_INSIDE );
-            TransformCircleToPolygon( substractPolyset, track->GetPosition(), radius - aThickness,
-                                      maxError, ERROR_INSIDE );
-        }
-
-        for( const FOOTPRINT* footprint : m_board->Footprints() )
-        {
-            for( const PAD* pad : footprint->Pads() )
-            {
-                if( std::find_if( m_pad_regions.begin(), m_pad_regions.end(),
-                                  [pad]( const auto& mo ) {
-                                      return mo.second == pad;
-                                  } )
-                    != m_pad_regions.end() )
-                {
-                    continue; // pad is used in pad region
-                }
-
-                if( pad->GetNetCode() != netcode )
-                {
-                    continue;
-                }
-
-                SetPolysetOfPadDrill( aPolyset, pad, 0 );
-                SetPolysetOfPadDrill( substractPolyset, pad, aThickness );
-            }
-        }
-    }
-    aPolyset.Simplify( SHAPE_POLY_SET::POLYGON_MODE::PM_FAST );
-    substractPolyset.Simplify( SHAPE_POLY_SET::POLYGON_MODE::PM_FAST );
-
-    aPolyset.BooleanAdd( substractPolyset, SHAPE_POLY_SET::POLYGON_MODE::PM_FAST );
-
-    aPolyset.BooleanSubtract( substractPolyset, SHAPE_POLY_SET::POLYGON_MODE::PM_FAST );
-}
-
-void GMSH_MESHER::SetPolysetOfPadDrill( SHAPE_POLY_SET& aPolyset, const PAD* pad,
-                                        int thicknessModifier ) const
-{
-    if( pad->GetAttribute() == PAD_ATTRIB::SMD )
-        return;
-
-    int maxError = m_board->GetDesignSettings().m_MaxError;
-
-    switch( pad->GetDrillShape() )
-    {
-    case PAD_DRILL_SHAPE_CIRCLE:
-    case PAD_DRILL_SHAPE_OBLONG:
-        // TODO: correct position, todo oval + rotation correctly
-        TransformCircleToPolygon( aPolyset, pad->GetPosition() + pad->GetOffset(),
-                                  pad->GetDrillSizeX() / 2 - thicknessModifier, maxError,
-                                  ERROR_INSIDE );
-        break;
-    default: break;
-    }
-}
-
-
-void GMSH_MESHER::SetPolysetOfPadRegion( SHAPE_POLY_SET& aPolyset, int aRegionId,
-                                         PCB_LAYER_ID aLayer ) const
-{
-    const auto& padRegion = m_pad_regions.find( aRegionId );
-    if( padRegion == m_pad_regions.end() )
-    {
-        return; // nothing found
-    }
-
-    const PAD* pad = padRegion->second;
-    int        maxError = m_board->GetDesignSettings().m_MaxError;
-
-    if( pad->IsOnLayer( aLayer ) )
-        TransformPadWithClearanceToPolygon( aPolyset, pad, aLayer, 0, maxError, ERROR_INSIDE );
+    return ShapePolySetToPlaneSurfaces( polyset, aOffsetZ );
 }
 
 

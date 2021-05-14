@@ -64,30 +64,21 @@ public:
     void Finalize(); // TODO: automatically called after Load3DMesh?
 
 private:
-    std::vector<int> Mesh2DZone( PCB_LAYER_ID aLayer, double aOffsetZ, const ZONE* zone );
+    /**
+     * It seems the gmsh::model::occ::fragment code has problems with holes in nets, so we need this workaround
+     * @return first vector are outline surfaces, second vector are hole surfaces
+     */
+    std::pair<std::vector<int>, std::vector<int>>
+    ShapePolySetToPlaneSurfaces( const SHAPE_POLY_SET& aPolySet, double aOffsetZ );
 
-    std::vector<int> Mesh2DRegion( PCB_LAYER_ID aLayer, double aOffsetZ, int aRegionId,
-                                   bool substractHoles );
+    int ShapeLineChainToCurveLoop( const SHAPE_LINE_CHAIN& aLineChain, double aOffsetZ );
 
-    std::vector<int> MeshShapePolySetToPlaneSurfaces( const SHAPE_POLY_SET& aPolySet,
-                                                      double                aOffsetZ );
+    std::vector<int> HolesTo2DPlaneSurfaces( PCB_LAYER_ID aLayer, double aOffsetZ );
 
-    int MeshShapeLineChainToCurveLoop( const SHAPE_LINE_CHAIN& aLineChain, double aOffsetZ );
+    std::vector<int> PadTo2DPlaneSurfaces( PCB_LAYER_ID aLayer, double aOffsetZ, const PAD* aPad );
 
-    void SetPolysetOfNetRegion( SHAPE_POLY_SET& aPolyset, int aRegionId,
-                                PCB_LAYER_ID aLayer ) const;
-
-    void SetPolysetOfHolesOfNetRegion( SHAPE_POLY_SET& aPolyset, int aRegionId,
-                                       PCB_LAYER_ID aLayer ) const;
-
-    void SetPolysetOfHolewallOfNetRegion( SHAPE_POLY_SET& aPolyset, int aRegionId,
-                                          int aThickness ) const;
-
-    void SetPolysetOfPadDrill( SHAPE_POLY_SET& aPolyset, const PAD* pad,
-                               int thicknessModifier = 0 ) const;
-
-    void SetPolysetOfPadRegion( SHAPE_POLY_SET& aPolyset, int aRegionId,
-                                PCB_LAYER_ID aLayer ) const;
+    std::pair<std::vector<int>, std::vector<int>>
+    NetTo2DPlaneSurfaces( PCB_LAYER_ID aLayer, double aOffsetZ, const int aNetcode );
 
     void TransformPadWithClearanceToPolygon( SHAPE_POLY_SET& aCornerBuffer, const PAD* pad,
                                              PCB_LAYER_ID aLayer, int aClearance, int aMaxError,
