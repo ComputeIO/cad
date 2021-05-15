@@ -26,7 +26,7 @@ PANEL_PCBNEW_SIMUL_DC_POWER_BASE::PANEL_PCBNEW_SIMUL_DC_POWER_BASE( wxWindow* pa
 	m_grid1 = new wxGrid( this, wxID_ANY, wxDefaultPosition, wxDefaultSize, 0 );
 
 	// Grid
-	m_grid1->CreateGrid( 9, 3 );
+	m_grid1->CreateGrid( 5, 3 );
 	m_grid1->EnableEditing( true );
 	m_grid1->EnableGridLines( true );
 	m_grid1->EnableDragGridSize( false );
@@ -139,8 +139,8 @@ PANEL_PCBNEW_SIMUL_DC_POWER_BASE::PANEL_PCBNEW_SIMUL_DC_POWER_BASE( wxWindow* pa
 	bSizer1->Add( bSizer31, 1, wxEXPAND, 5 );
 
 	m_dataViewCtrl1 = new wxDataViewCtrl( this, wxID_ANY, wxDefaultPosition, wxDefaultSize, 0 );
-	m_dataViewCtrl1->SetMinSize( wxSize( -1,200 ) );
-	m_dataViewCtrl1->SetMaxSize( wxSize( -1,200 ) );
+	m_dataViewCtrl1->SetMinSize( wxSize( -1,100 ) );
+	m_dataViewCtrl1->SetMaxSize( wxSize( -1,100 ) );
 
 	bSizer1->Add( m_dataViewCtrl1, 0, wxEXPAND, 5 );
 
