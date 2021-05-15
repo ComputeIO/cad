@@ -24,7 +24,7 @@
 #ifndef FEM_DESCRIPTOR_H
 #define FEM_DESCRIPTOR_H
 
-#include <pcbnew/board.h>
+#include <board.h>
 #include "fem_port.h"
 #include "fem_result.h"
 #include <list>

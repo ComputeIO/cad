@@ -23,32 +23,6 @@ PANEL_PCBNEW_SIMUL_DC_POWER_BASE::PANEL_PCBNEW_SIMUL_DC_POWER_BASE( wxWindow* pa
 
 	bSizer32->Add( m_staticText3111, 0, wxALL, 5 );
 
-	m_grid1 = new wxGrid( this, wxID_ANY, wxDefaultPosition, wxDefaultSize, 0 );
-
-	// Grid
-	m_grid1->CreateGrid( 5, 3 );
-	m_grid1->EnableEditing( true );
-	m_grid1->EnableGridLines( true );
-	m_grid1->EnableDragGridSize( false );
-	m_grid1->SetMargins( 0, 0 );
-
-	// Columns
-	m_grid1->EnableDragColMove( false );
-	m_grid1->EnableDragColSize( true );
-	m_grid1->SetColLabelSize( 30 );
-	m_grid1->SetColLabelAlignment( wxALIGN_CENTER, wxALIGN_CENTER );
-
-	// Rows
-	m_grid1->EnableDragRowSize( true );
-	m_grid1->SetRowLabelSize( 80 );
-	m_grid1->SetRowLabelAlignment( wxALIGN_CENTER, wxALIGN_CENTER );
-
-	// Label Appearance
-
-	// Cell Defaults
-	m_grid1->SetDefaultCellAlignment( wxALIGN_LEFT, wxALIGN_TOP );
-	bSizer32->Add( m_grid1, 0, wxALL, 5 );
-
 	wxBoxSizer* bSizer2;
 	bSizer2 = new wxBoxSizer( wxHORIZONTAL );
 
@@ -64,6 +38,36 @@ PANEL_PCBNEW_SIMUL_DC_POWER_BASE::PANEL_PCBNEW_SIMUL_DC_POWER_BASE( wxWindow* pa
 
 	bSizer32->Add( bSizer2, 1, wxEXPAND, 5 );
 
+	m_staticText1111 = new wxStaticText( this, wxID_ANY, wxT("NOTE : Unit is V for sources, A for sinks"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_staticText1111->Wrap( -1 );
+	bSizer32->Add( m_staticText1111, 0, wxALL, 5 );
+
+	m_padGrid = new wxGrid( this, wxID_ANY, wxDefaultPosition, wxDefaultSize, 0 );
+
+	// Grid
+	m_padGrid->CreateGrid( 5, 5 );
+	m_padGrid->EnableEditing( true );
+	m_padGrid->EnableGridLines( true );
+	m_padGrid->EnableDragGridSize( false );
+	m_padGrid->SetMargins( 0, 0 );
+
+	// Columns
+	m_padGrid->EnableDragColMove( false );
+	m_padGrid->EnableDragColSize( true );
+	m_padGrid->SetColLabelSize( 30 );
+	m_padGrid->SetColLabelAlignment( wxALIGN_CENTER, wxALIGN_CENTER );
+
+	// Rows
+	m_padGrid->EnableDragRowSize( true );
+	m_padGrid->SetRowLabelSize( 80 );
+	m_padGrid->SetRowLabelAlignment( wxALIGN_CENTER, wxALIGN_CENTER );
+
+	// Label Appearance
+
+	// Cell Defaults
+	m_padGrid->SetDefaultCellAlignment( wxALIGN_LEFT, wxALIGN_TOP );
+	bSizer32->Add( m_padGrid, 0, wxALL|wxEXPAND, 5 );
+
 
 	bSizer1->Add( bSizer32, 1, wxEXPAND, 5 );
 
@@ -72,12 +76,6 @@ PANEL_PCBNEW_SIMUL_DC_POWER_BASE::PANEL_PCBNEW_SIMUL_DC_POWER_BASE( wxWindow* pa
 
 	wxBoxSizer* bSizer3;
 	bSizer3 = new wxBoxSizer( wxVERTICAL );
-
-	m_staticText311 = new wxStaticText( this, wxID_ANY, wxT("Simulation"), wxDefaultPosition, wxDefaultSize, 0 );
-	m_staticText311->Wrap( -1 );
-	m_staticText311->SetFont( wxFont( wxNORMAL_FONT->GetPointSize(), wxFONTFAMILY_DEFAULT, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_BOLD, false, wxEmptyString ) );
-
-	bSizer3->Add( m_staticText311, 0, wxALL, 5 );
 
 	wxString m_radioBox1Choices[] = { wxT("2.5D: Each layer is a 2D surface, vias are simulated using their resistance. Simulation is faster"), wxT("3D : Layers have thickness, vias are simulated based on their geometry. Simulation is slower") };
 	int m_radioBox1NChoices = sizeof( m_radioBox1Choices ) / sizeof( wxString );
@@ -153,11 +151,13 @@ PANEL_PCBNEW_SIMUL_DC_POWER_BASE::PANEL_PCBNEW_SIMUL_DC_POWER_BASE( wxWindow* pa
 
 	// Connect Events
 	m_netComboBox->Connect( wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler( PANEL_PCBNEW_SIMUL_DC_POWER_BASE::onNetSelect ), NULL, this );
+	m_button1->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( PANEL_PCBNEW_SIMUL_DC_POWER_BASE::OnRun ), NULL, this );
 }
 
 PANEL_PCBNEW_SIMUL_DC_POWER_BASE::~PANEL_PCBNEW_SIMUL_DC_POWER_BASE()
 {
 	// Disconnect Events
 	m_netComboBox->Disconnect( wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler( PANEL_PCBNEW_SIMUL_DC_POWER_BASE::onNetSelect ), NULL, this );
+	m_button1->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( PANEL_PCBNEW_SIMUL_DC_POWER_BASE::OnRun ), NULL, this );
 
 }

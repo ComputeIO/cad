@@ -15,9 +15,9 @@
 #include <wx/font.h>
 #include <wx/colour.h>
 #include <wx/settings.h>
-#include <wx/grid.h>
 #include <wx/combobox.h>
 #include <wx/sizer.h>
+#include <wx/grid.h>
 #include <wx/statline.h>
 #include <wx/radiobox.h>
 #include <wx/checkbox.h>
@@ -41,11 +41,11 @@ class PANEL_PCBNEW_SIMUL_DC_POWER_BASE : public wxPanel
 
 	protected:
 		wxStaticText* m_staticText3111;
-		wxGrid* m_grid1;
 		wxStaticText* m_staticText312;
 		wxComboBox* m_netComboBox;
+		wxStaticText* m_staticText1111;
+		wxGrid* m_padGrid;
 		wxStaticLine* m_staticline111;
-		wxStaticText* m_staticText311;
 		wxRadioBox* m_radioBox1;
 		wxCheckBox* m_checkBox2211;
 		wxStaticLine* m_staticline11;
@@ -62,6 +62,7 @@ class PANEL_PCBNEW_SIMUL_DC_POWER_BASE : public wxPanel
 
 		// Virtual event handlers, overide them in your derived class
 		virtual void onNetSelect( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnRun( wxCommandEvent& event ) { event.Skip(); }
 
 
 	public:

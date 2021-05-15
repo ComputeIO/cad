@@ -25,6 +25,7 @@
 #include <panel_pcbnew_simul_DC_power.h>
 #include <pcb_edit_frame.h>
 #include <widgets/paged_dialog.h>
+#include "fem/common/fem_descriptor.h"
 
 PANEL_PCBNEW_SIMUL_DC_POWER::PANEL_PCBNEW_SIMUL_DC_POWER( PAGED_DIALOG*   aParent,
                                                           PCB_EDIT_FRAME* aFrame ) :
@@ -37,4 +38,111 @@ PANEL_PCBNEW_SIMUL_DC_POWER::PANEL_PCBNEW_SIMUL_DC_POWER( PAGED_DIALOG*   aParen
   {
       m_netComboBox->Append( it->GetNetname() );
   }
+
+  m_padGrid->SetColLabelValue( 0, "Component" );
+  m_padGrid->SetColLabelValue( 1, "Pad" );
+  m_padGrid->SetColLabelValue( 2, "Type" );
+  m_padGrid->SetColLabelValue( 3, "Value" );
+  m_padGrid->SetColLabelValue( 4, "Unit" );
+}
+
+void PANEL_PCBNEW_SIMUL_DC_POWER::onNetSelect( wxCommandEvent& event )
+{
+    wxString      netName = m_netComboBox->GetStringSelection();
+    NETINFO_ITEM* net = m_board->FindNet( netName );
+
+    if( net == nullptr )
+        return;
+
+    int netCode = net->GetNetCode();
+    int nbRow = 0;
+
+    m_padGrid->DeleteRows( 0, m_padGrid->GetNumberRows() );
+
+    for( PAD* pad : m_board->GetPads() )
+    {
+        if( pad->GetNetCode() == netCode )
+        {
+            m_padGrid->AppendRows( 1 );
+            m_padGrid->SetCellValue( nbRow, 0, pad->GetParent()->GetReference() );
+            m_padGrid->SetCellValue( nbRow, 1, pad->GetName() );
+            m_padGrid->SetCellEditor( nbRow, 2,
+                                      new wxGridCellChoiceEditor( 3, m_portTypes, false ) );
+            m_padGrid->SetCellValue( nbRow, 2, "passive" );
+            m_padGrid->SetCellEditor( nbRow, 3, new wxGridCellFloatEditor() );
+            m_padGrid->SetCellValue( nbRow, 4, "-" );
+            m_padGrid->SetReadOnly( nbRow, 0 );
+            m_padGrid->SetReadOnly( nbRow, 1 );
+            m_padGrid->SetReadOnly( nbRow, 4 );
+            nbRow++;
+        }
+    }
+    m_padGrid->EnableCellEditControl( true );
+    m_padGrid->ShowCellEditControl();
+}
+
+void PANEL_PCBNEW_SIMUL_DC_POWER::OnRun( wxCommandEvent& event )
+{
+    FEM_DESCRIPTOR* descriptor = new FEM_DESCRIPTOR( FEM_SOLVER::SPARSELIZARD, m_board );
+
+
+    for( int i = 0; i < m_padGrid->GetNumberRows(); i++ )
+    {
+        wxString fieldFp = m_padGrid->GetCellValue( i, 0 );
+        wxString fieldPad = m_padGrid->GetCellValue( i, 1 );
+        wxString fieldType = m_padGrid->GetCellValue( i, 2 );
+        wxString fieldValue = m_padGrid->GetCellValue( i, 3 );
+
+        const FOOTPRINT* fp = m_board->FindFootprintByReference( fieldFp );
+
+        if( fp == nullptr )
+        {
+            std::cerr << "  Could not find footprint " << fieldFp << "." << std::endl;
+            continue;
+        }
+
+        const PAD* pad = fp->FindPadByName( fieldPad );
+
+        if( pad == nullptr )
+        {
+            std::cerr << "  Could not find pad " << fieldFp << "-" << fieldPad << "." << std::endl;
+            continue;
+        }
+
+        FEM_PORT*            port = new FEM_PORT( pad );
+        FEM_PORT_CONSTRAINT* constraint = new FEM_PORT_CONSTRAINT();
+
+        if( fieldType == "passive" )
+        {
+            port->m_type = FEM_PORT_TYPE::PASSIVE;
+        }
+        else if( fieldType == "sink" )
+        {
+            constraint->m_type = FEM_PORT_CONSTRAINT_TYPE::CURRENT;
+
+            if( fieldValue.ToDouble( &( constraint->m_value ) ) )
+                port->m_type = FEM_PORT_TYPE::PASSIVE;
+            else
+                port->m_type = FEM_PORT_TYPE::SINK;
+
+            constraint->m_value = -constraint->m_value;
+        }
+        else if( fieldType == "source" )
+        {
+            constraint->m_type = FEM_PORT_CONSTRAINT_TYPE::VOLTAGE;
+
+            if( fieldValue.ToDouble( &( constraint->m_value ) ) )
+                port->m_type = FEM_PORT_TYPE::PASSIVE;
+            else
+                port->m_type = FEM_PORT_TYPE::SINK;
+
+            break;
+        }
+        else
+        {
+            // ????
+        }
+
+        port->m_constraint = *constraint;
+    }
 }

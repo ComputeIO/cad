@@ -48,10 +48,14 @@ private:
     PCB_EDIT_FRAME* m_frame;
     BOARD* m_board;
 
+    wxString m_portTypes[3] = { wxT( "sink" ), wxT( "source" ), wxT( "passive" ) };
+
 public:
 public:
     PANEL_PCBNEW_SIMUL_DC_POWER( PAGED_DIALOG* aParent, PCB_EDIT_FRAME* aFrame );
     ~PANEL_PCBNEW_SIMUL_DC_POWER() override{};
+    void onNetSelect( wxCommandEvent& event ) override;
+    void OnRun( wxCommandEvent& event ) override;
 
 private:
     /*
