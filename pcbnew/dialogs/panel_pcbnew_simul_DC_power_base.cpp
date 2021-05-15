@@ -58,8 +58,8 @@ PANEL_PCBNEW_SIMUL_DC_POWER_BASE::PANEL_PCBNEW_SIMUL_DC_POWER_BASE( wxWindow* pa
 
 	bSizer2->Add( m_staticText312, 0, wxALL, 5 );
 
-	m_comboBox1 = new wxComboBox( this, wxID_ANY, wxT("Combo!"), wxDefaultPosition, wxDefaultSize, 0, NULL, 0 );
-	bSizer2->Add( m_comboBox1, 0, wxALL, 5 );
+	m_netComboBox = new wxComboBox( this, wxID_ANY, wxT("Combo!"), wxDefaultPosition, wxDefaultSize, 0, NULL, 0 );
+	bSizer2->Add( m_netComboBox, 0, wxALL, 5 );
 
 
 	bSizer32->Add( bSizer2, 1, wxEXPAND, 5 );
@@ -150,8 +150,14 @@ PANEL_PCBNEW_SIMUL_DC_POWER_BASE::PANEL_PCBNEW_SIMUL_DC_POWER_BASE( wxWindow* pa
 
 	this->SetSizer( bSizer1 );
 	this->Layout();
+
+	// Connect Events
+	m_netComboBox->Connect( wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler( PANEL_PCBNEW_SIMUL_DC_POWER_BASE::onNetSelect ), NULL, this );
 }
 
 PANEL_PCBNEW_SIMUL_DC_POWER_BASE::~PANEL_PCBNEW_SIMUL_DC_POWER_BASE()
 {
+	// Disconnect Events
+	m_netComboBox->Disconnect( wxEVT_COMMAND_COMBOBOX_SELECTED, wxCommandEventHandler( PANEL_PCBNEW_SIMUL_DC_POWER_BASE::onNetSelect ), NULL, this );
+
 }

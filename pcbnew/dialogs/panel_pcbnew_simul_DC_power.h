@@ -45,7 +45,8 @@ class wxCommandEvent;
 class PANEL_PCBNEW_SIMUL_DC_POWER : public PANEL_PCBNEW_SIMUL_DC_POWER_BASE
 {
 private:
-    PCB_EDIT_FRAME* m_Frame;
+    PCB_EDIT_FRAME* m_frame;
+    BOARD* m_board;
 
 public:
 public:

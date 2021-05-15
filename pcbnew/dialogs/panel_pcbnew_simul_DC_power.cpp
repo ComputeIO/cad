@@ -30,5 +30,11 @@ PANEL_PCBNEW_SIMUL_DC_POWER::PANEL_PCBNEW_SIMUL_DC_POWER( PAGED_DIALOG*   aParen
                                                           PCB_EDIT_FRAME* aFrame ) :
         PANEL_PCBNEW_SIMUL_DC_POWER_BASE( aParent->GetTreebook() )
 {
-    m_Frame = aFrame;
+    m_frame = aFrame;
+    m_board = aFrame->GetBoard();
+
+  for (auto it = m_board->BeginNets(); it!=m_board->EndNets(); ++it)
+  {
+      m_netComboBox->Append( it->GetNetname() );
+  }
 }

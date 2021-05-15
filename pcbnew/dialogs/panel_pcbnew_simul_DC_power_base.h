@@ -43,7 +43,7 @@ class PANEL_PCBNEW_SIMUL_DC_POWER_BASE : public wxPanel
 		wxStaticText* m_staticText3111;
 		wxGrid* m_grid1;
 		wxStaticText* m_staticText312;
-		wxComboBox* m_comboBox1;
+		wxComboBox* m_netComboBox;
 		wxStaticLine* m_staticline111;
 		wxStaticText* m_staticText311;
 		wxRadioBox* m_radioBox1;
@@ -59,6 +59,10 @@ class PANEL_PCBNEW_SIMUL_DC_POWER_BASE : public wxPanel
 		wxDirPickerCtrl* m_dirPicker11;
 		wxDataViewCtrl* m_dataViewCtrl1;
 		wxButton* m_button1;
+
+		// Virtual event handlers, overide them in your derived class
+		virtual void onNetSelect( wxCommandEvent& event ) { event.Skip(); }
+
 
 	public:
 
