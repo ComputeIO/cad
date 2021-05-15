@@ -55,61 +55,10 @@ class NETLIST_EXPORTER_PSPICE_SIM;
 
 #include "sim_plot_panel.h"
 #include "sim_panel_base.h"
+#include "sim_workbook.h"
 
 class SIM_THREAD_REPORTER;
 class TUNER_SLIDER;
-
-
-///< Trace descriptor class
-class TRACE_DESC
-{
-public:
-    TRACE_DESC( const NETLIST_EXPORTER_PSPICE_SIM& aExporter, const wxString& aName,
-            SIM_PLOT_TYPE aType, const wxString& aParam );
-
-    ///< Modifies an existing TRACE_DESC simulation type
-    TRACE_DESC( const NETLIST_EXPORTER_PSPICE_SIM& aExporter,
-            const TRACE_DESC& aDescription, SIM_PLOT_TYPE aNewType )
-        : TRACE_DESC( aExporter, aDescription.GetName(), aNewType, aDescription.GetParam() )
-    {
-    }
-
-    const wxString& GetTitle() const
-    {
-        return m_title;
-    }
-
-    const wxString& GetName() const
-    {
-        return m_name;
-    }
-
-    const wxString& GetParam() const
-    {
-        return m_param;
-    }
-
-    SIM_PLOT_TYPE GetType() const
-    {
-        return m_type;
-    }
-
-private:
-    // Three basic parameters
-    ///< Name of the measured net/device
-    wxString m_name;
-
-    ///< Type of the signal
-    SIM_PLOT_TYPE m_type;
-
-    ///< Name of the signal parameter
-    wxString m_param;
-
-    // Generated data
-    ///< Title displayed in the signal list/plot legend
-    wxString m_title;
-};
-
 
 /**
  * Implementing SIM_PLOT_FRAME_BASE
@@ -190,7 +139,29 @@ public:
 
 private:
     /**
-     * Give icons to menuitems of the main menubar
+     * Load the currently active workbook stored in the project settings. If there is none,
+     * generate a filename for the currently active workbook and store it in the project settings.
+     */
+    void initWorkbook();
+
+    /**
+     * Set the main window title bar text.
+     */
+    void updateTitle();
+
+    /**
+     * Update the workbook to match the changes in the frame.
+     */
+    void updateWorkbook();
+
+    /**
+     * Update the frame to match the changes to the workbook. Should be always called after the
+     * workbook was modified.
+     */
+    void updateFrame();
+
+    /**
+     * Give icons to menuitems of the main menubar.
      */
     void setIconsForMenuItems();
 
@@ -276,6 +247,7 @@ private:
     void menuNewPlot( wxCommandEvent& aEvent ) override;
     void menuOpenWorkbook( wxCommandEvent& event ) override;
     void menuSaveWorkbook( wxCommandEvent& event ) override;
+    void menuSaveWorkbookAs( wxCommandEvent& event ) override;
 
     void menuExit( wxCommandEvent& event ) override
     {
@@ -300,8 +272,10 @@ private:
     }
 
     // Event handlers
-    void onPlotChanged( wxAuiNotebookEvent& event ) override;
     void onPlotClose( wxAuiNotebookEvent& event ) override;
+    void onPlotClosed( wxAuiNotebookEvent& event ) override;
+    void onPlotChanged( wxAuiNotebookEvent& event ) override;
+    void onPlotDragged( wxAuiNotebookEvent& event ) override;
 
     void onSignalDblClick( wxMouseEvent& event ) override;
     void onSignalRClick( wxListEvent& event ) override;
@@ -313,6 +287,7 @@ private:
     void onTune( wxCommandEvent& event );
     void onShowNetlist( wxCommandEvent& event );
 
+    bool canCloseWindow( wxCloseEvent& aEvent ) override;
     void doCloseWindow() override;
 
     void onCursorUpdate( wxCommandEvent& aEvent );
@@ -339,19 +314,8 @@ private:
     std::shared_ptr<SPICE_SIMULATOR> m_simulator;
     SIM_THREAD_REPORTER* m_reporter;
 
-    typedef std::map<wxString, TRACE_DESC> TRACE_MAP;
-
-    struct PLOT_INFO
-    {
-        ///< Map of the traces displayed on the plot
-        TRACE_MAP m_traces;
-
-        ///< Spice directive used to execute the simulation
-        wxString m_simCommand;
-    };
-
-    ///< Map of plot panels and associated data
-    std::map<SIM_PANEL_BASE*, PLOT_INFO> m_plots;
+    ///< Stores the data that can be preserved across simulator sessions
+    std::unique_ptr<SIM_WORKBOOK> m_workbook;
 
     ///< List of currently displayed tuners
     std::list<TUNER_SLIDER*> m_tuners;
@@ -391,9 +355,6 @@ private:
 
     ///< A string to store the path of saved workbooks during a session
     static wxString m_savedWorkbooksPath;
-
-    ///< Info panel
-    SIM_PANEL_BASE* m_welcomePanel;
 
     // Variables for temporary storage:
     int m_splitterLeftRightSashPosition;
