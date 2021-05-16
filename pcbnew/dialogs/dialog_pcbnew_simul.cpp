@@ -45,7 +45,7 @@
 using std::placeholders::_1;
 
 DIALOG_PCBNEW_SIMUL::DIALOG_PCBNEW_SIMUL( PCB_EDIT_FRAME* aFrame ) :
-        PAGED_DIALOG( aFrame, _( "Board Setup" ), false,
+        PAGED_DIALOG( aFrame, _( "Simulation Setup" ), false,
                       _( "Import Settings from Another Board..." ) ),
         m_frame( aFrame )
 {
@@ -53,11 +53,8 @@ DIALOG_PCBNEW_SIMUL::DIALOG_PCBNEW_SIMUL( PCB_EDIT_FRAME* aFrame ) :
 
     m_DCpower = new PANEL_PCBNEW_SIMUL_DC_POWER( this, aFrame );
 
-    /*
-     * WARNING: If you change page names you MUST update calls to ShowBoardSetupDialog().
-     */
 
-    m_treebook->AddPage( new wxPanel( this ), _( "Board Stackup" ) );
+    m_treebook->AddPage( new wxPanel( this ), _( "Simulations" ) );
 
     /*
      * WARNING: Code currently relies on the layers setup coming before the physical stackup panel,
