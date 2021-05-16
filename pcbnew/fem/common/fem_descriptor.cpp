@@ -22,6 +22,7 @@
  */
 
 #include "fem_descriptor.h"
+#include "../sparselizard/sparselizard_solver.h"
 
 FEM_DESCRIPTOR::FEM_DESCRIPTOR( FEM_SOLVER aSolver, const BOARD* aBoard )
 {
@@ -123,4 +124,10 @@ bool FEM_DESCRIPTOR::RemoveResult( FEM_RESULT* aResult )
     // @TODO
 
     return false;
+}
+
+bool FEM_DESCRIPTOR::Run()
+{
+    Run_DC_CurrentDensity( this );
+    return true;
 }

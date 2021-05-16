@@ -101,20 +101,20 @@ PANEL_PCBNEW_SIMUL_DC_POWER_BASE::PANEL_PCBNEW_SIMUL_DC_POWER_BASE( wxWindow* pa
 
 	bSizer31->Add( m_staticText31, 0, wxALL, 5 );
 
-	m_checkBox212 = new wxCheckBox( this, wxID_ANY, wxT("Generate 3D map : potential drop"), wxDefaultPosition, wxDefaultSize, 0 );
-	m_checkBox212->SetValue(true);
-	bSizer31->Add( m_checkBox212, 0, wxALL, 5 );
+	m_mapPotential = new wxCheckBox( this, wxID_ANY, wxT("Generate 3D map : potential drop"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_mapPotential->SetValue(true);
+	bSizer31->Add( m_mapPotential, 0, wxALL, 5 );
 
-	m_checkBox22 = new wxCheckBox( this, wxID_ANY, wxT("Generate 3D map : current density"), wxDefaultPosition, wxDefaultSize, 0 );
-	m_checkBox22->SetValue(true);
-	bSizer31->Add( m_checkBox22, 0, wxALL, 5 );
+	m_mapCurrentDensity = new wxCheckBox( this, wxID_ANY, wxT("Generate 3D map : current density"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_mapCurrentDensity->SetValue(true);
+	bSizer31->Add( m_mapCurrentDensity, 0, wxALL, 5 );
 
-	m_checkBox221 = new wxCheckBox( this, wxID_ANY, wxT("Generate 3D map : power density density"), wxDefaultPosition, wxDefaultSize, 0 );
-	bSizer31->Add( m_checkBox221, 0, wxALL, 5 );
+	m_mapPowerDensity = new wxCheckBox( this, wxID_ANY, wxT("Generate 3D map : power density density"), wxDefaultPosition, wxDefaultSize, 0 );
+	bSizer31->Add( m_mapPowerDensity, 0, wxALL, 5 );
 
-	m_checkBox2111 = new wxCheckBox( this, wxID_ANY, wxT("Generate text report"), wxDefaultPosition, wxDefaultSize, 0 );
-	m_checkBox2111->SetValue(true);
-	bSizer31->Add( m_checkBox2111, 0, wxALL, 5 );
+	m_textReport = new wxCheckBox( this, wxID_ANY, wxT("Generate text report"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_textReport->SetValue(true);
+	bSizer31->Add( m_textReport, 0, wxALL, 5 );
 
 	m_staticText111 = new wxStaticText( this, wxID_ANY, wxT("NOTE: you can use gmsh to open 3D maps"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_staticText111->Wrap( -1 );

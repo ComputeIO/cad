@@ -50,10 +50,10 @@ class PANEL_PCBNEW_SIMUL_DC_POWER_BASE : public wxPanel
 		wxCheckBox* m_checkBox2211;
 		wxStaticLine* m_staticline11;
 		wxStaticText* m_staticText31;
-		wxCheckBox* m_checkBox212;
-		wxCheckBox* m_checkBox22;
-		wxCheckBox* m_checkBox221;
-		wxCheckBox* m_checkBox2111;
+		wxCheckBox* m_mapPotential;
+		wxCheckBox* m_mapCurrentDensity;
+		wxCheckBox* m_mapPowerDensity;
+		wxCheckBox* m_textReport;
 		wxStaticText* m_staticText111;
 		wxStaticText* m_staticText12;
 		wxDirPickerCtrl* m_dirPicker11;
