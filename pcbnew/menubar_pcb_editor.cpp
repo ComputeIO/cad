@@ -384,7 +384,9 @@ void PCB_EDIT_FRAME::doReCreateMenuBar()
 
     inspectMenu->Add( PCB_ACTIONS::listNets );
     inspectMenu->Add( PCB_ACTIONS::boardStatistics );
+#ifdef KICAD_SPARSELIZARD
     inspectMenu->Add( PCB_ACTIONS::boardSimulation );
+#endif
     inspectMenu->Add( ACTIONS::measureTool );
 
     inspectMenu->AppendSeparator();

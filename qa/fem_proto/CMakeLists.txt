@@ -7,9 +7,6 @@ add_definitions(-DBOOST_TEST_DYN_LINK -DPCBNEW -DFEM_PROTO -DTEST_APP_NO_MAIN)
 add_executable( fem_proto
     fem_proto_test.cpp
 
-    ../../pcbnew/fem/sparselizard/sparselizard_mesher.cpp
-    ../../pcbnew/fem/gmsh_mesher.cpp
-
     ../qa_utils/mocks.cpp
     ../pcbnew_utils/board_file_utils.cpp
     ../qa_utils/test_app_main.cpp
@@ -21,13 +18,6 @@ add_executable( fem_proto
 add_dependencies( fem_proto pcbcommon ${PCBNEW_IO_LIBRARIES} )
 
 add_executable( fem_currentDensity
-
-    ../../pcbnew/fem/common/fem_descriptor.cpp
-    ../../pcbnew/fem/common/fem_port.cpp
-    ../../pcbnew/fem/common/fem_result.cpp
-    ../../pcbnew/fem/sparselizard/sparselizard_DC_CurrentDensity.cpp
-    ../../pcbnew/fem/sparselizard/sparselizard_mesher.cpp
-    ../../pcbnew/fem/gmsh_mesher.cpp
     fem_currentDensity.cpp
 
     ../qa_utils/mocks.cpp
@@ -63,8 +53,6 @@ include_directories(
 )
 
 target_link_libraries( fem_proto
-    ${SPARSELIZARD_LIBRARIES}
-    ${GMSH_LIBRARIES}
     qa_pcbnew_utils
     3d-viewer
     connectivity
@@ -80,6 +68,7 @@ target_link_libraries( fem_proto
     idf3
     unit_test_utils
     ${PCBNEW_IO_LIBRARIES}
+    ${PCBNEW_FEM_LIBRARIES}
     ${wxWidgets_LIBRARIES}
     ${GDI_PLUS_LIBRARIES}
     ${PYTHON_LIBRARIES}
@@ -88,8 +77,6 @@ target_link_libraries( fem_proto
 )
 
 target_link_libraries( fem_currentDensity
-    ${SPARSELIZARD_LIBRARIES}
-    ${GMSH_LIBRARIES}
     qa_pcbnew_utils
     3d-viewer
     connectivity
@@ -105,6 +92,7 @@ target_link_libraries( fem_currentDensity
     idf3
     unit_test_utils
     ${PCBNEW_IO_LIBRARIES}
+    ${PCBNEW_FEM_LIBRARIES}
     ${wxWidgets_LIBRARIES}
     ${GDI_PLUS_LIBRARIES}
     ${PYTHON_LIBRARIES}

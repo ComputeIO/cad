@@ -486,7 +486,9 @@ public:
     static TOOL_ACTION appendBoard;
     static TOOL_ACTION showEeschema;
     static TOOL_ACTION boardStatistics;
+#ifdef KICAD_SPARSELIZARD
     static TOOL_ACTION boardSimulation;
+#endif
     static TOOL_ACTION boardReannotate;
     static TOOL_ACTION repairBoard;
     static TOOL_ACTION repairFootprint;

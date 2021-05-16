@@ -116,6 +116,7 @@ target_link_libraries( qa_pcbnew
     idf3
     markdown_lib
     ${PCBNEW_IO_LIBRARIES}
+    ${PCBNEW_FEM_LIBRARIES}
     ${wxWidgets_LIBRARIES}
     ${GDI_PLUS_LIBRARIES}
     ${PYTHON_LIBRARIES}

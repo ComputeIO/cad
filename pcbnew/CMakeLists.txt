@@ -295,9 +295,6 @@ set( PCBNEW_NETLIST_SRCS
 
 set( PCBNEW_CLASS_SRCS
     ${PCBNEW_DIALOGS}
-    ${SPARSELIZARD_LIBRARIES}
-    ${GMSH_LIBRARIES}
-    ${PCBNEW_FEM}
     ${PCBNEW_EXPORTERS}
     ${PCBNEW_DRC_SRCS}
     ${PCBNEW_IMPORT_GFX}
@@ -615,6 +612,13 @@ add_subdirectory( plugins/fabmaster )
 
 set( PCBNEW_IO_LIBRARIES pcad2kicadpcb altium2pcbnew cadstar2pcbnew fabmaster CACHE INTERNAL "")
 
+if( KICAD_SPARSELIZARD )
+    add_subdirectory( fem )
+
+    set( PCBNEW_FEM_LIBRARIES kicadfem CACHE INTERNAL "")
+endif()
+
+
 # a very small program launcher for pcbnew_kiface
 add_executable( pcbnew WIN32 MACOSX_BUNDLE
     ${CMAKE_SOURCE_DIR}/common/single_top.cpp
@@ -712,6 +716,7 @@ set( PCBNEW_KIFACE_LIBRARIES
     nanosvg
     markdown_lib
     ${PCBNEW_IO_LIBRARIES}
+    ${PCBNEW_FEM_LIBRARIES}
     ${wxWidgets_LIBRARIES}
     ${PYTHON_LIBRARIES}
     ${Boost_LIBRARIES}

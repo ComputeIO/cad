@@ -42,6 +42,9 @@
 #include <drc/drc_item.h>
 #include <pad.h>
 
+#ifdef KICAD_SPARSELIZARD
+#include <dialogs/dialog_pcbnew_simul.h>
+#endif
 
 BOARD_INSPECTION_TOOL::BOARD_INSPECTION_TOOL() :
         PCB_TOOL_BASE( "pcbnew.InspectionTool" ),
@@ -110,13 +113,14 @@ int BOARD_INSPECTION_TOOL::ShowBoardStatistics( const TOOL_EVENT& aEvent )
     return 0;
 }
 
+#ifdef KICAD_SPARSELIZARD
 int BOARD_INSPECTION_TOOL::ShowSimulationDialog( const TOOL_EVENT& aEvent )
 {
     DIALOG_PCBNEW_SIMUL dialog( m_frame );
     dialog.ShowModal();
     return 0;
 }
-
+#endif
 
 DRC_ENGINE BOARD_INSPECTION_TOOL::makeDRCEngine( bool* aCompileError, bool* aCourtyardError )
 {
@@ -1850,7 +1854,9 @@ void BOARD_INSPECTION_TOOL::setTransitions()
 
     Go( &BOARD_INSPECTION_TOOL::ListNets,            PCB_ACTIONS::listNets.MakeEvent() );
     Go( &BOARD_INSPECTION_TOOL::ShowBoardStatistics, PCB_ACTIONS::boardStatistics.MakeEvent() );
+#ifdef KICAD_SPARSELIZARD
     Go( &BOARD_INSPECTION_TOOL::ShowSimulationDialog, PCB_ACTIONS::boardSimulation.MakeEvent() );
+#endif
     Go( &BOARD_INSPECTION_TOOL::InspectClearance,    PCB_ACTIONS::inspectClearance.MakeEvent() );
     Go( &BOARD_INSPECTION_TOOL::InspectConstraints,  PCB_ACTIONS::inspectConstraints.MakeEvent() );
 

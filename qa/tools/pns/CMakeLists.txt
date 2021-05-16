@@ -134,6 +134,7 @@ target_link_libraries( qa_pns_regressions
     pcbcommon
     3d-viewer
     ${PCBNEW_IO_LIBRARIES}
+    ${PCBNEW_FEM_LIBRARIES}
     ${wxWidgets_LIBRARIES}
     ${GDI_PLUS_LIBRARIES}
     ${PYTHON_LIBRARIES}
