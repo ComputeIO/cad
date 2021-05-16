@@ -43,7 +43,7 @@
             <property name="minimum_size"></property>
             <property name="name">PANEL_PCBNEW_SIMUL_DC_POWER_BASE</property>
             <property name="pos"></property>
-            <property name="size">693,576</property>
+            <property name="size">686,705</property>
             <property name="subclass">; ; forward_declare</property>
             <property name="tooltip"></property>
             <property name="window_extra_style"></property>
@@ -506,7 +506,7 @@
                                 <property name="dock">Dock</property>
                                 <property name="dock_fixed">0</property>
                                 <property name="docking">Left</property>
-                                <property name="enabled">1</property>
+                                <property name="enabled">0</property>
                                 <property name="fg"></property>
                                 <property name="floatable">1</property>
                                 <property name="font"></property>
@@ -572,7 +572,7 @@
                                 <property name="dock">Dock</property>
                                 <property name="dock_fixed">0</property>
                                 <property name="docking">Left</property>
-                                <property name="enabled">1</property>
+                                <property name="enabled">0</property>
                                 <property name="fg"></property>
                                 <property name="floatable">1</property>
                                 <property name="font"></property>
@@ -958,7 +958,7 @@
                                 <property name="dock">Dock</property>
                                 <property name="dock_fixed">0</property>
                                 <property name="docking">Left</property>
-                                <property name="enabled">1</property>
+                                <property name="enabled">0</property>
                                 <property name="fg"></property>
                                 <property name="floatable">1</property>
                                 <property name="font"></property>

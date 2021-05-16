@@ -81,9 +81,13 @@ PANEL_PCBNEW_SIMUL_DC_POWER_BASE::PANEL_PCBNEW_SIMUL_DC_POWER_BASE( wxWindow* pa
 	int m_radioBox1NChoices = sizeof( m_radioBox1Choices ) / sizeof( wxString );
 	m_radioBox1 = new wxRadioBox( this, wxID_ANY, wxT("wxRadioBox"), wxDefaultPosition, wxDefaultSize, m_radioBox1NChoices, m_radioBox1Choices, 1, wxRA_SPECIFY_COLS );
 	m_radioBox1->SetSelection( 0 );
+	m_radioBox1->Enable( false );
+
 	bSizer3->Add( m_radioBox1, 0, wxALL, 5 );
 
 	m_checkBox2211 = new wxCheckBox( this, wxID_ANY, wxT("Report via stress analysis"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_checkBox2211->Enable( false );
+
 	bSizer3->Add( m_checkBox2211, 0, wxALL, 5 );
 
 
@@ -114,6 +118,8 @@ PANEL_PCBNEW_SIMUL_DC_POWER_BASE::PANEL_PCBNEW_SIMUL_DC_POWER_BASE( wxWindow* pa
 
 	m_textReport = new wxCheckBox( this, wxID_ANY, wxT("Generate text report"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_textReport->SetValue(true);
+	m_textReport->Enable( false );
+
 	bSizer31->Add( m_textReport, 0, wxALL, 5 );
 
 	m_staticText111 = new wxStaticText( this, wxID_ANY, wxT("NOTE: you can use gmsh to open 3D maps"), wxDefaultPosition, wxDefaultSize, 0 );
@@ -128,6 +134,8 @@ PANEL_PCBNEW_SIMUL_DC_POWER_BASE::PANEL_PCBNEW_SIMUL_DC_POWER_BASE( wxWindow* pa
 	bSizer41->Add( m_staticText12, 0, wxALL, 5 );
 
 	m_dirPicker11 = new wxDirPickerCtrl( this, wxID_ANY, wxEmptyString, wxT("Select a folder"), wxDefaultPosition, wxDefaultSize, wxDIRP_DEFAULT_STYLE );
+	m_dirPicker11->Enable( false );
+
 	bSizer41->Add( m_dirPicker11, 0, wxALL, 5 );
 
 
