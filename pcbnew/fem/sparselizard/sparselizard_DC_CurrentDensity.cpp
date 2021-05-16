@@ -72,6 +72,13 @@ double compute_DC_Voltage( expression v, int aPortA, int aPortB )
     return result;
 }
 
+double compute_DC_Potential( expression v, int aPortA )
+{
+    double result;
+    result = v.integrate( aPortA, 4 ) / expression( 1 ).integrate( aPortA, 4 );
+    return result;
+}
+
 double compute_DC_Resistance( expression v, expression j, int aPortA, int aPortB,
                               std::map<int, int> aRegionMap, int aNetCode )
 {
@@ -282,6 +289,14 @@ bool Run_DC_CurrentDensity( FEM_DESCRIPTOR* aDescriptor )
             std::cout << "--Result type : ";
             switch( resultValue->m_valueType )
             {
+            case FEM_VALUE_TYPE::POTENTIAL:
+            {
+                int portA = resultValue->GetPortA()->m_simulationID;
+                std::cout << "Potential at " << portA << endl;
+                resultValue->m_value = compute_DC_Potential( v, portA );
+                resultValue->m_valid = true;
+                break;
+            }
             case FEM_VALUE_TYPE::VOLTAGE:
             {
                 int portA = resultValue->GetPortA()->m_simulationID;

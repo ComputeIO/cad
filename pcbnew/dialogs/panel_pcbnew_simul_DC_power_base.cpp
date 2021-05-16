@@ -144,11 +144,31 @@ PANEL_PCBNEW_SIMUL_DC_POWER_BASE::PANEL_PCBNEW_SIMUL_DC_POWER_BASE( wxWindow* pa
 
 	bSizer1->Add( bSizer31, 0, wxEXPAND, 5 );
 
-	m_dataViewCtrl1 = new wxDataViewCtrl( this, wxID_ANY, wxDefaultPosition, wxDefaultSize, 0 );
-	m_dataViewCtrl1->SetMinSize( wxSize( -1,100 ) );
-	m_dataViewCtrl1->SetMaxSize( wxSize( -1,100 ) );
+	m_resultGrid = new wxGrid( this, wxID_ANY, wxDefaultPosition, wxDefaultSize, 0 );
 
-	bSizer1->Add( m_dataViewCtrl1, 1, wxEXPAND, 5 );
+	// Grid
+	m_resultGrid->CreateGrid( 5, 4 );
+	m_resultGrid->EnableEditing( true );
+	m_resultGrid->EnableGridLines( true );
+	m_resultGrid->EnableDragGridSize( false );
+	m_resultGrid->SetMargins( 0, 0 );
+
+	// Columns
+	m_resultGrid->EnableDragColMove( false );
+	m_resultGrid->EnableDragColSize( true );
+	m_resultGrid->SetColLabelSize( 30 );
+	m_resultGrid->SetColLabelAlignment( wxALIGN_CENTER, wxALIGN_CENTER );
+
+	// Rows
+	m_resultGrid->EnableDragRowSize( true );
+	m_resultGrid->SetRowLabelSize( 80 );
+	m_resultGrid->SetRowLabelAlignment( wxALIGN_CENTER, wxALIGN_CENTER );
+
+	// Label Appearance
+
+	// Cell Defaults
+	m_resultGrid->SetDefaultCellAlignment( wxALIGN_LEFT, wxALIGN_TOP );
+	bSizer1->Add( m_resultGrid, 0, wxALL, 5 );
 
 	m_button1 = new wxButton( this, wxID_ANY, wxT("Run"), wxDefaultPosition, wxDefaultSize, 0 );
 	bSizer1->Add( m_button1, 0, wxALL, 5 );

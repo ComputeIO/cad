@@ -22,7 +22,6 @@
 #include <wx/radiobox.h>
 #include <wx/checkbox.h>
 #include <wx/filepicker.h>
-#include <wx/dataview.h>
 #include <wx/bitmap.h>
 #include <wx/image.h>
 #include <wx/icon.h>
@@ -57,7 +56,7 @@ class PANEL_PCBNEW_SIMUL_DC_POWER_BASE : public wxPanel
 		wxStaticText* m_staticText111;
 		wxStaticText* m_staticText12;
 		wxDirPickerCtrl* m_dirPicker11;
-		wxDataViewCtrl* m_dataViewCtrl1;
+		wxGrid* m_resultGrid;
 		wxButton* m_button1;
 
 		// Virtual event handlers, overide them in your derived class
@@ -67,7 +66,7 @@ class PANEL_PCBNEW_SIMUL_DC_POWER_BASE : public wxPanel
 
 	public:
 
-		PANEL_PCBNEW_SIMUL_DC_POWER_BASE( wxWindow* parent, wxWindowID id = wxID_ANY, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( 686,705 ), long style = wxTAB_TRAVERSAL, const wxString& name = wxEmptyString );
+		PANEL_PCBNEW_SIMUL_DC_POWER_BASE( wxWindow* parent, wxWindowID id = wxID_ANY, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( 809,917 ), long style = wxTAB_TRAVERSAL, const wxString& name = wxEmptyString );
 		~PANEL_PCBNEW_SIMUL_DC_POWER_BASE();
 
 };

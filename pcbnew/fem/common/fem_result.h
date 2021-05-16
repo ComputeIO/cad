@@ -52,6 +52,7 @@ private:
 enum class FEM_VALUE_TYPE
 {
     TEMPERATURE,
+    POTENTIAL,
     CURRENT,
     DISSIPATED_POWER, // Power dissipated by a single port ! From a field expression, no P = U * I
     VOLTAGE,

@@ -44,6 +44,9 @@ PANEL_PCBNEW_SIMUL_DC_POWER::PANEL_PCBNEW_SIMUL_DC_POWER( PAGED_DIALOG*   aParen
   m_padGrid->SetColLabelValue( 2, "Type" );
   m_padGrid->SetColLabelValue( 3, "Value" );
   m_padGrid->SetColLabelValue( 4, "Unit" );
+
+  m_padGrid->DeleteRows( 0, m_padGrid->GetNumberRows() );
+  m_resultGrid->DeleteRows( 0, m_resultGrid->GetNumberRows() );
 }
 
 void PANEL_PCBNEW_SIMUL_DC_POWER::onNetSelect( wxCommandEvent& event )
@@ -85,6 +88,8 @@ void PANEL_PCBNEW_SIMUL_DC_POWER::OnRun( wxCommandEvent& event )
 {
     FEM_DESCRIPTOR* descriptor = new FEM_DESCRIPTOR( FEM_SOLVER::SPARSELIZARD, m_board );
     std::cout << m_padGrid->GetNumberRows() << std::endl;
+    m_resultGrid->DeleteRows( 0, m_resultGrid->GetNumberRows() );
+
     for( int i = 0; i < m_padGrid->GetNumberRows(); i++ )
     {
         wxString fieldFp = m_padGrid->GetCellValue( i, 0 );
@@ -152,10 +157,10 @@ void PANEL_PCBNEW_SIMUL_DC_POWER::OnRun( wxCommandEvent& event )
         switch( port->m_type )
         {
         case FEM_PORT_TYPE::SINK:
-            result = new FEM_RESULT_VALUE( FEM_VALUE_TYPE::VOLTAGE, port, port );
+            result = new FEM_RESULT_VALUE( FEM_VALUE_TYPE::POTENTIAL, port, nullptr );
             break;
         case FEM_PORT_TYPE::PASSIVE:
-            result = new FEM_RESULT_VALUE( FEM_VALUE_TYPE::VOLTAGE, port, port );
+            result = new FEM_RESULT_VALUE( FEM_VALUE_TYPE::POTENTIAL, port, nullptr );
             break;
         case FEM_PORT_TYPE::SOURCE:
             result = new FEM_RESULT_VALUE( FEM_VALUE_TYPE::CURRENT, port, nullptr );
@@ -164,7 +169,6 @@ void PANEL_PCBNEW_SIMUL_DC_POWER::OnRun( wxCommandEvent& event )
         }
         descriptor->AddPort( port );
         descriptor->AddResult( result );
-        std::cout << "port added 000" << std::endl;
     }
 
     wxFileName*      file;
@@ -190,4 +194,43 @@ void PANEL_PCBNEW_SIMUL_DC_POWER::OnRun( wxCommandEvent& event )
     }
 
     descriptor->Run();
+
+    m_resultGrid->DeleteRows( 0, m_resultGrid->GetNumberRows() );
+
+    // Fill the table
+    int nbRow = 0;
+    for( FEM_RESULT* result : descriptor->GetResults() )
+    {
+        if( result->GetType() != FEM_RESULT_TYPE::VALUE )
+            continue; // We only deal with values in this table !
+
+        FEM_RESULT_VALUE* resultValue = static_cast<FEM_RESULT_VALUE*>( result );
+
+        if( resultValue->GetPortA()->GetItem()->Type() != PCB_PAD_T )
+            continue; // For now, we only support pads
+
+        const PAD* pad = static_cast<const PAD*>( resultValue->GetPortA()->GetItem() );
+        wxString   resultString;
+        if( resultValue->m_valid )
+            resultString << resultValue->GetResult();
+        else
+            resultString << "?";
+
+        m_resultGrid->AppendRows( 1 );
+        m_resultGrid->SetCellValue( nbRow, 0, pad->GetParent()->GetReference() );
+        m_resultGrid->SetCellValue( nbRow, 1, pad->GetName() );
+        m_resultGrid->SetCellValue( nbRow, 2, resultString );
+
+        switch( resultValue->m_valueType )
+        {
+        case FEM_VALUE_TYPE::CURRENT: m_resultGrid->SetCellValue( nbRow, 3, "A" ); break;
+        case FEM_VALUE_TYPE::POTENTIAL: m_resultGrid->SetCellValue( nbRow, 3, "V" ); break;
+        default: m_resultGrid->SetCellValue( nbRow, 3, "?" ); break;
+        }
+        m_resultGrid->SetReadOnly( nbRow, 0 );
+        m_resultGrid->SetReadOnly( nbRow, 1 );
+        m_resultGrid->SetReadOnly( nbRow, 2 );
+        m_resultGrid->SetReadOnly( nbRow, 3 );
+        nbRow++;
+    }
 }
