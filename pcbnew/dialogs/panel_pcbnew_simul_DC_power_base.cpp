@@ -36,7 +36,7 @@ PANEL_PCBNEW_SIMUL_DC_POWER_BASE::PANEL_PCBNEW_SIMUL_DC_POWER_BASE( wxWindow* pa
 	bSizer2->Add( m_netComboBox, 0, wxALL, 5 );
 
 
-	bSizer32->Add( bSizer2, 1, wxEXPAND, 5 );
+	bSizer32->Add( bSizer2, 0, wxEXPAND, 5 );
 
 	m_staticText1111 = new wxStaticText( this, wxID_ANY, wxT("NOTE : Unit is V for sources, A for sinks"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_staticText1111->Wrap( -1 );
@@ -66,7 +66,7 @@ PANEL_PCBNEW_SIMUL_DC_POWER_BASE::PANEL_PCBNEW_SIMUL_DC_POWER_BASE( wxWindow* pa
 
 	// Cell Defaults
 	m_padGrid->SetDefaultCellAlignment( wxALIGN_LEFT, wxALIGN_TOP );
-	bSizer32->Add( m_padGrid, 0, wxALL|wxEXPAND, 5 );
+	bSizer32->Add( m_padGrid, 1, wxEXPAND, 5 );
 
 
 	bSizer1->Add( bSizer32, 1, wxEXPAND, 5 );
@@ -91,7 +91,7 @@ PANEL_PCBNEW_SIMUL_DC_POWER_BASE::PANEL_PCBNEW_SIMUL_DC_POWER_BASE( wxWindow* pa
 	bSizer3->Add( m_checkBox2211, 0, wxALL, 5 );
 
 
-	bSizer1->Add( bSizer3, 1, wxEXPAND, 5 );
+	bSizer1->Add( bSizer3, 0, 0, 5 );
 
 	m_staticline11 = new wxStaticLine( this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxLI_HORIZONTAL );
 	bSizer1->Add( m_staticline11, 0, wxEXPAND | wxALL, 5 );
@@ -142,13 +142,13 @@ PANEL_PCBNEW_SIMUL_DC_POWER_BASE::PANEL_PCBNEW_SIMUL_DC_POWER_BASE( wxWindow* pa
 	bSizer31->Add( bSizer41, 1, wxEXPAND, 5 );
 
 
-	bSizer1->Add( bSizer31, 1, wxEXPAND, 5 );
+	bSizer1->Add( bSizer31, 0, wxEXPAND, 5 );
 
 	m_dataViewCtrl1 = new wxDataViewCtrl( this, wxID_ANY, wxDefaultPosition, wxDefaultSize, 0 );
 	m_dataViewCtrl1->SetMinSize( wxSize( -1,100 ) );
 	m_dataViewCtrl1->SetMaxSize( wxSize( -1,100 ) );
 
-	bSizer1->Add( m_dataViewCtrl1, 0, wxEXPAND, 5 );
+	bSizer1->Add( m_dataViewCtrl1, 1, wxEXPAND, 5 );
 
 	m_button1 = new wxButton( this, wxID_ANY, wxT("Run"), wxDefaultPosition, wxDefaultSize, 0 );
 	bSizer1->Add( m_button1, 0, wxALL, 5 );
