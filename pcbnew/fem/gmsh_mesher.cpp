@@ -128,7 +128,7 @@ void GMSH_MESHER::Load25DMesh()
         int origTag = fragments.at( i ).second;
         if( padHoleTags.count( origTag ) )
         {
-            for( const auto ovTag : ovv.at( i ) )
+            for( const auto& ovTag : ovv.at( i ) )
             {
                 if( !assignedShapeId.count( ovTag.second ) )
                 {
@@ -146,7 +146,7 @@ void GMSH_MESHER::Load25DMesh()
         const auto& padRegionFound = padRegions.find( origTag );
         if( padRegionFound != padRegions.end() )
         {
-            for( const auto ovTag : ovv.at( i ) )
+            for( const auto& ovTag : ovv.at( i ) )
             {
                 if( !assignedShapeId.count( ovTag.second ) )
                 {
@@ -162,7 +162,7 @@ void GMSH_MESHER::Load25DMesh()
         int origTag = fragments.at( i ).second;
         if( holeTags.count( origTag ) )
         {
-            for( const auto ovTag : ovv.at( i ) )
+            for( const auto& ovTag : ovv.at( i ) )
             {
                 if( !assignedShapeId.count( ovTag.second ) )
                 {
@@ -179,7 +179,7 @@ void GMSH_MESHER::Load25DMesh()
         const auto& netRegionFound = netRegions.find( origTag );
         if( netRegionFound != netRegions.end() )
         {
-            for( const auto ovTag : ovv.at( i ) )
+            for( const auto& ovTag : ovv.at( i ) )
             {
                 if( !assignedShapeId.count( ovTag.second ) )
                 {
