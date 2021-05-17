@@ -158,7 +158,7 @@ private:
 
 public:
     wxDC* m_DC;
-    COLOR4D m_Color;
+    KIGFX::COLOR4D m_Color;
 
 private:
     TRANSFORM_PRM m_transform;

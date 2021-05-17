@@ -30,7 +30,7 @@
 #include <sch_symbol.h>
 
 #include <painter.h>
-#include <font/text_attributes.h>
+#include <eda_text.h>
 
 class LIB_RECTANGLE;
 class LIB_PIN;

@@ -426,14 +426,14 @@ VECTOR2D FONT::Draw( KIGFX::GAL* aGal, const UTF8& aText, const VECTOR2D& aPosit
 #endif
 
 #ifdef DEBUG
-    COLOR4D oldColor = aGal->GetStrokeColor();
+    KIGFX::COLOR4D oldColor = aGal->GetStrokeColor();
     if( drawDebugShapes )
     {
-        aGal->SetStrokeColor( COLOR4D( 1, 1, 0, 1 ) );
+        aGal->SetStrokeColor( KIGFX::COLOR4D( 1, 1, 0, 1 ) );
         aGal->DrawCircle( aPosition, dbg );
-        aGal->SetStrokeColor( COLOR4D( 1, 0, 1, 1 ) );
+        aGal->SetStrokeColor( KIGFX::COLOR4D( 1, 0, 1, 1 ) );
         aGal->DrawCircle( aOrigin, dbg * 0.8 );
-        aGal->SetStrokeColor( COLOR4D( 0, 0, 1, 1 ) );
+        aGal->SetStrokeColor( KIGFX::COLOR4D( 0, 0, 1, 1 ) );
         aGal->DrawCircle( position, dbg * 1.2 );
         aGal->SetStrokeColor( oldColor );
     }

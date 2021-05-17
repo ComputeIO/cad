@@ -88,8 +88,7 @@ EDA_TEXT_VJUSTIFY_T EDA_TEXT::MapVertJustify( int aVertJustify )
 
 
 EDA_TEXT::EDA_TEXT( const wxString& text ) :
-        m_text( text ),
-        m_e( 1 << TE_VISIBLE )
+        m_text( text )
 {
     int sz = Mils2iu( DEFAULT_SIZE_TEXT );
     SetTextSize( wxSize( sz, sz ) );
@@ -105,8 +104,7 @@ EDA_TEXT::EDA_TEXT( const wxString& text ) :
 
 EDA_TEXT::EDA_TEXT( const EDA_TEXT& aText ) :
         m_text( aText.m_text ),
-        m_font( aText.m_font ),
-        m_e( aText.m_e )
+        m_attributes( aText.m_attributes )
 {
     m_shown_text = UnescapeString( m_text );
     m_shown_text_has_text_var_refs = m_shown_text.Contains( wxT( "${" ) );
@@ -134,13 +132,6 @@ void EDA_TEXT::CopyText( const EDA_TEXT& aSrc )
 }
 
 
-void EDA_TEXT::SetEffects( const EDA_TEXT& aSrc )
-{
-    m_font = aSrc.m_font;
-    m_e = aSrc.m_e;
-}
-
-
 void EDA_TEXT::SwapText( EDA_TEXT& aTradingPartner )
 {
     std::swap( m_text, aTradingPartner.m_text );
@@ -151,8 +142,7 @@ void EDA_TEXT::SwapText( EDA_TEXT& aTradingPartner )
 
 void EDA_TEXT::SwapEffects( EDA_TEXT& aTradingPartner )
 {
-    std::swap( m_font, aTradingPartner.m_font );
-    std::swap( m_e, aTradingPartner.m_e );
+    std::swap( m_attributes, aTradingPartner.m_attributes );
 }
 
 
@@ -644,15 +634,6 @@ std::shared_ptr<SHAPE_COMPOUND> EDA_TEXT::GetEffectiveTextShape( ) const
 double EDA_TEXT::GetDrawRotation() const
 {
     return GetTextAngle();
-}
-
-
-KIFONT::FONT* EDA_TEXT::GetFont() const {
-    if (m_font)
-        return m_font;
-
-    // default to newstroke
-    return KIFONT::FONT::GetFont();
 }
 
 

@@ -31,6 +31,7 @@
 #include <harfbuzz/hb-ft.h>
 #include <bezier_curves.h>
 #include <geometry/shape_poly_set.h>
+#include <eda_text.h>
 #include <font/outline_font.h>
 #include FT_GLYPH_H
 #include FT_BBOX_H
@@ -214,10 +215,10 @@ VECTOR2D OUTLINE_FONT::Draw( KIGFX::GAL* aGal, const UTF8& aText, const VECTOR2D
     if( aGal )
     {
 #ifdef OUTLINEFONT_DEBUG
-        COLOR4D oldColor = aGal->GetStrokeColor();
+        KIGFX::COLOR4D oldColor = aGal->GetStrokeColor();
         if( drawDebugShapes )
         {
-            aGal->SetStrokeColor( COLOR4D( 1, 1, 0, 1 ) );
+            aGal->SetStrokeColor( KIGFX::COLOR4D( 1, 1, 0, 1 ) );
             aGal->DrawCircle( aPosition, dbg );
             aGal->SetStrokeColor( oldColor );
         }

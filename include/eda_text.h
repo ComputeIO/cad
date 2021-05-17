@@ -30,6 +30,7 @@
 
 #include <outline_mode.h>
 #include <eda_rect.h>
+#include <font/text_attributes.h>
 
 class OUTPUTFORMATTER;
 class SHAPE_COMPOUND;
@@ -63,24 +64,6 @@ class STROKE_FONT;
 #define CTL_OMIT_HIDE ( 1 << 6 )
 
 
-// Graphic Text justify:
-// Values -1,0,1 are used in computations, do not change them
-enum EDA_TEXT_HJUSTIFY_T
-{
-    GR_TEXT_HJUSTIFY_LEFT = -1,
-    GR_TEXT_HJUSTIFY_CENTER = 0,
-    GR_TEXT_HJUSTIFY_RIGHT = 1
-};
-
-
-enum EDA_TEXT_VJUSTIFY_T
-{
-    GR_TEXT_VJUSTIFY_TOP = -1,
-    GR_TEXT_VJUSTIFY_CENTER = 0,
-    GR_TEXT_VJUSTIFY_BOTTOM = 1
-};
-
-
 /**
  * This is the "default-of-the-default" hardcoded text size; individual
  * application define their own default policy starting with this
@@ -90,6 +73,7 @@ enum EDA_TEXT_VJUSTIFY_T
 #define DIM_ANCRE_TEXTE 2    // Anchor size for text
 
 
+#if 0
 /**
  * A container for text effects.
  *
@@ -116,7 +100,7 @@ struct TEXT_EFFECTS
     void Bit( int aBit, bool aValue ) { aValue ? bits |= ( 1 << aBit ) : bits &= ~( 1 << aBit ); }
     bool Bit( int aBit ) const { return bits & ( 1 << aBit ); }
 };
-
+#endif
 
 /**
  * A mix-in class (via multiple inheritance) that handles texts such as labels, parts,
@@ -171,8 +155,8 @@ public:
      * The TextThickness is that set by the user.  The EffectiveTextPenWidth also factors
      * in bold text and thickness clamping.
      */
-    void SetTextThickness( int aWidth ) { m_e.penwidth = aWidth; };
-    int  GetTextThickness() const { return m_e.penwidth; };
+    void SetTextThickness( int aWidth ) { m_attributes.SetStrokeWidth( aWidth ); };
+    int  GetTextThickness() const { return m_attributes.GetStrokeWidth(); };
 
     /**
      * The EffectiveTextPenWidth uses the text thickness if > 1 or aDefaultWidth.
@@ -184,51 +168,49 @@ public:
         // Higher level classes may be more restrictive than this by overloading
         // SetTextAngle() or merely calling EDA_TEXT::SetTextAngle() after clamping
         // aAngle before calling this lowest inline accessor.
-        m_e.angle = aAngle;
+        m_attributes.SetAngle( EDA_ANGLE( aAngle, EDA_ANGLE::TENTHS_OF_A_DEGREE ) );
     }
-    double GetTextAngle() const { return m_e.angle; }
+    virtual void SetTextAngle( EDA_ANGLE aAngle ) { m_attributes.SetAngle( aAngle ); }
 
-    double GetTextAngleDegrees() const { return GetTextAngle() / 10.0; }
-    double GetTextAngleRadians() const { return GetTextAngle() * M_PI / 1800; }
+    EDA_ANGLE GetTextEdaAngle() const { return m_attributes.GetAngle(); }
+    double GetTextAngle() const { return GetTextEdaAngle().AsTenthsOfADegree(); }
+    double GetTextAngleDegrees() const { return GetTextEdaAngle().AsDegrees(); }
+    double GetTextAngleRadians() const { return GetTextEdaAngle().AsRadians(); }
 
-    void SetItalic( bool isItalic ) { m_e.Bit( TE_ITALIC, isItalic ); }
-    bool IsItalic() const { return m_e.Bit( TE_ITALIC ); }
+    void SetItalic( bool aItalic ) { m_attributes.SetItalic( aItalic ); }
+    bool IsItalic() const { return m_attributes.IsItalic(); }
 
-    void SetBold( bool aBold ) { m_e.Bit( TE_BOLD, aBold ); }
-    bool IsBold() const { return m_e.Bit( TE_BOLD ); }
+    void SetBold( bool aBold ) { m_attributes.SetBold( aBold ); }
+    bool IsBold() const { return m_attributes.IsBold(); }
 
-    void SetVisible( bool aVisible ) { m_e.Bit( TE_VISIBLE, aVisible ); }
-    bool IsVisible() const { return m_e.Bit( TE_VISIBLE ); }
+    void SetVisible( bool aVisible ) { m_attributes.SetVisible( aVisible ); }
+    bool IsVisible() const { return m_attributes.IsVisible(); }
 
-    void SetMirrored( bool isMirrored ) { m_e.Bit( TE_MIRROR, isMirrored ); }
-    bool IsMirrored() const { return m_e.Bit( TE_MIRROR ); }
+    void SetMirrored( bool aMirrored ) { m_attributes.SetMirrored( aMirrored ); }
+    bool IsMirrored() const { return m_attributes.IsMirrored(); }
 
     /**
      * @param aAllow true if ok to use multiline option, false if ok to use only single line
      *               text.  (Single line is faster in calculations than multiline.)
      */
-    void SetMultilineAllowed( bool aAllow ) { m_e.Bit( TE_MULTILINE, aAllow ); }
-    bool IsMultilineAllowed() const { return m_e.Bit( TE_MULTILINE ); }
+    void SetMultilineAllowed( bool aAllow ) { m_attributes.SetMultiline( aAllow ); }
+    bool IsMultilineAllowed() const { return m_attributes.IsMultiline(); }
 
-    EDA_TEXT_HJUSTIFY_T GetHorizJustify() const { return EDA_TEXT_HJUSTIFY_T( m_e.hjustify ); };
-    EDA_TEXT_VJUSTIFY_T GetVertJustify() const { return EDA_TEXT_VJUSTIFY_T( m_e.vjustify ); };
+    EDA_TEXT_HJUSTIFY_T GetHorizJustify() const { return m_attributes.GetHorizJustify(); };
+    EDA_TEXT_VJUSTIFY_T GetVertJustify() const { return m_attributes.GetVertJustify(); };
 
-    void SetHorizJustify( EDA_TEXT_HJUSTIFY_T aType ) { m_e.hjustify = aType; };
-    void SetVertJustify( EDA_TEXT_VJUSTIFY_T aType ) { m_e.vjustify = aType; };
+    void SetHorizJustify( EDA_TEXT_HJUSTIFY_T aType ) { m_attributes.SetHorizJustify( aType ); }
+    void SetVertJustify( EDA_TEXT_VJUSTIFY_T aType ) { m_attributes.SetVertJustify( aType ); }
 
     /**
-     * Set the text effects from another instance.
+     * Set the text attributes from another instance.
      *
-     * #TEXT_EFFECTS is not exposed in the public API, but includes everything except the actual
-     * text string itself.
      */
-    void SetEffects( const EDA_TEXT& aSrc );
+    void SetEffects( const EDA_TEXT& aSrc ) { m_attributes = aSrc.m_attributes; }
 
     /**
-     * Swap the text effects of the two involved instances.
+     * Swap the text attributes of the two involved instances.
      *
-     * #TEXT_EFFECTS is not exposed in the public API, but includes everything except the actual
-     * text string itself.
      */
     void SwapEffects( EDA_TEXT& aTradingPartner );
 
@@ -249,25 +231,25 @@ public:
 
     bool IsDefaultFormatting() const;
 
-    void   SetLineSpacing( double aLineSpacing ) { m_e.lineSpacing = aLineSpacing; }
-    double GetLineSpacing() const { return m_e.lineSpacing; }
+    void   SetLineSpacing( double aLineSpacing ) { m_attributes.SetLineSpacing( aLineSpacing ); }
+    double GetLineSpacing() const { return m_attributes.GetLineSpacing(); }
 
-    void          SetTextSize( const wxSize& aNewSize ) { m_e.size = aNewSize; }
-    const wxSize& GetTextSize() const { return m_e.size; }
+    void          SetTextSize( const wxSize& aNewSize ) { m_attributes.SetSize( aNewSize ); }
+    const wxSize& GetTextSize() const { return m_attributes.GetTextSize(); }
 
-    void SetTextWidth( int aWidth ) { m_e.size.x = aWidth; }
-    int  GetTextWidth() const { return m_e.size.x; }
+    void SetTextWidth( int aWidth ) { m_attributes.SetWidth( aWidth ); }
+    int  GetTextWidth() const { return m_attributes.GetTextSize().x; }
 
-    void SetTextHeight( int aHeight ) { m_e.size.y = aHeight; }
-    int  GetTextHeight() const { return m_e.size.y; }
+    void SetTextHeight( int aHeight ) { m_attributes.SetHeight( aHeight ); }
+    int  GetTextHeight() const { return m_attributes.GetTextSize().y; }
 
-    void           SetTextPos( const wxPoint& aPoint ) { m_e.pos = aPoint; }
-    const wxPoint& GetTextPos() const { return m_e.pos; }
+    void           SetTextPos( const wxPoint& aPoint ) { m_pos = aPoint; }
+    const wxPoint& GetTextPos() const { return m_pos; }
 
-    void SetTextX( int aX ) { m_e.pos.x = aX; }
-    void SetTextY( int aY ) { m_e.pos.y = aY; }
+    void SetTextX( int aX ) { m_pos.x = aX; }
+    void SetTextY( int aY ) { m_pos.y = aY; }
 
-    void Offset( const wxPoint& aOffset ) { m_e.pos += aOffset; }
+    void Offset( const wxPoint& aOffset ) { m_pos += aOffset; }
 
     void Empty() { m_text.Empty(); }
 
@@ -384,9 +366,9 @@ public:
 
     virtual double GetDrawRotation() const;
 
-    KIFONT::FONT* GetFont() const;
+    KIFONT::FONT* GetFont() const { return m_attributes.GetFont(); }
 
-    void SetFont( KIFONT::FONT* aFont ) { m_font = aFont; }
+    void SetFont( KIFONT::FONT* aFont ) { m_attributes.SetFont( aFont ); }
 
 private:
     /**
@@ -402,21 +384,12 @@ private:
                              COLOR4D aColor, OUTLINE_MODE aFillMode, const wxString& aText,
                              const wxPoint& aPos );
 
-    wxString      m_text;
-    wxString      m_shown_text; // Cache of unescaped text for efficient access
-    bool          m_shown_text_has_text_var_refs;
-    KIFONT::FONT* m_font = nullptr;
+    wxString m_text;
+    wxString m_shown_text; // Cache of unescaped text for efficient access
+    bool     m_shown_text_has_text_var_refs;
 
-    TEXT_EFFECTS m_e; // Private bitflags for text styling.  API above
-                      // provides accessor funcs.
-    enum TE_FLAGS
-    {
-        TE_MIRROR,
-        TE_ITALIC,
-        TE_BOLD,
-        TE_MULTILINE,
-        TE_VISIBLE,
-    };
+    TEXT_ATTRIBUTES m_attributes;
+    wxPoint         m_pos;
 };
 
 

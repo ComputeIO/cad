@@ -28,6 +28,7 @@
 
 #include <gal/graphics_abstraction_layer.h>
 #include <gal/definitions.h>
+#include <eda_text.h>
 #include <font/font.h>
 #include <geometry/shape_poly_set.h>
 

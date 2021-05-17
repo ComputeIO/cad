@@ -439,14 +439,14 @@ VECTOR2D STROKE_FONT::drawSingleLineText( KIGFX::GAL* aGal, const UTF8& aText,
     {
         VECTOR2D debugPosition( aPosition );
         VECTOR2D offsetPosition( aPosition.x + xOffset, aPosition.y + yOffset );
-        COLOR4D  oldColor = aGal->GetStrokeColor();
+        KIGFX::COLOR4D  oldColor = aGal->GetStrokeColor();
         double   lw = aGal->GetLineWidth();
         aGal->SetLineWidth( debugLineWidth );
-        aGal->SetStrokeColor( COLOR4D( .7, .7, .7, .15 ) );
+        aGal->SetStrokeColor( KIGFX::COLOR4D( .7, .7, .7, .15 ) );
         aGal->DrawCircle( offsetPosition, 0.75 * dbg );
         //
         double hd = dbg / 4;
-        aGal->SetStrokeColor( COLOR4D( .8, .8, .8, .1 ) );
+        aGal->SetStrokeColor( KIGFX::COLOR4D( .8, .8, .8, .1 ) );
         // crosshair
         aGal->DrawLine( VECTOR2D( aPosition.x, aPosition.y - hd ),
                         VECTOR2D( aPosition.x, aPosition.y + hd ) );

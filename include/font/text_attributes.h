@@ -26,8 +26,27 @@
 #include <cmath>
 #include <math/vector2d.h>
 #include <eda_angle.h>
-#include <eda_text.h>
 #include <kicad_string.h>
+
+class EDA_TEXT;
+
+// Graphic Text justify:
+// Values -1,0,1 are used in computations, do not change them
+enum EDA_TEXT_HJUSTIFY_T
+{
+    GR_TEXT_HJUSTIFY_LEFT = -1,
+    GR_TEXT_HJUSTIFY_CENTER = 0,
+    GR_TEXT_HJUSTIFY_RIGHT = 1
+};
+
+
+enum EDA_TEXT_VJUSTIFY_T
+{
+    GR_TEXT_VJUSTIFY_TOP = -1,
+    GR_TEXT_VJUSTIFY_CENTER = 0,
+    GR_TEXT_VJUSTIFY_BOTTOM = 1
+};
+
 
 inline std::ostream& operator<<( std::ostream& os, EDA_TEXT_HJUSTIFY_T hj )
 {
@@ -52,6 +71,10 @@ inline std::ostream& operator<<( std::ostream& os, EDA_TEXT_VJUSTIFY_T vj )
     return os;
 }
 
+namespace KIFONT
+{
+class FONT;
+};
 
 class TEXT_ATTRIBUTES
 {
@@ -99,7 +122,15 @@ public:
     TEXT_ATTRIBUTES( const TEXT_ATTRIBUTES& aAttributes ) :
             m_orientation( aAttributes.GetOrientation() ),
             m_horizontal_alignment( aAttributes.GetHorizontalAlignment() ),
-            m_vertical_alignment( aAttributes.GetVerticalAlignment() )
+            m_vertical_alignment( aAttributes.GetVerticalAlignment() ),
+            m_angle( aAttributes.GetAngle() ),
+            m_line_spacing( aAttributes.GetLineSpacing() ),
+            m_stroke_width( aAttributes.GetStrokeWidth() ),
+            m_italic( aAttributes.IsItalic() ),
+            m_bold( aAttributes.IsBold() ),
+            m_visible( aAttributes.IsVisible() ),
+            m_mirrored( aAttributes.IsMirrored() ),
+            m_size( aAttributes.GetSize() )
     {
     }
 
@@ -150,12 +181,10 @@ public:
     }
 
 
-    void SetFrom( const TEXT_ATTRIBUTES& aAttributes )
-    {
-        m_orientation = aAttributes.GetOrientation();
-        m_horizontal_alignment = aAttributes.GetHorizontalAlignment();
-        m_vertical_alignment = aAttributes.GetVerticalAlignment();
-    }
+    KIFONT::FONT* GetFont() const;
+
+    void SetFont( KIFONT::FONT* aFont ) { m_font = aFont; }
+
 
     /**
      * Rotate counterclockwise.
@@ -418,9 +447,9 @@ public:
 
     std::string VerticalAlignmentToken() const { return ToToken( GetVerticalAlignment() ); }
 
-    void SetFlipY( bool aFlipY ) { m_flip_y = aFlipY; }
+    //void SetFlipY( bool aFlipY ) { m_flip_y = aFlipY; }
 
-    bool IsFlipY() const { return m_flip_y; }
+    //bool IsFlipY() const { return m_flip_y; }
 
     /**
      * Set stroke width.
@@ -474,6 +503,23 @@ public:
     bool IsBold() const { return m_bold; }
 
     /**
+     * Set visible state.
+     * @param aVisible true if visible, otherwise false
+     * @return old visible state
+     */
+    bool SetVisible( bool aVisible )
+    {
+        std::swap( aVisible, m_visible );
+        return aVisible;
+    }
+
+    /**
+     * Get visible state.
+     * @return true if visible, otherwise false
+     */
+    bool IsVisible() const { return m_visible; }
+
+    /**
      * Set mirrored state.
      * @param aMirrored true if mirrored, otherwise false
      * @return old mirrored state
@@ -489,6 +535,23 @@ public:
      * @return true if mirrored, otherwise false
      */
     bool IsMirrored() const { return m_mirrored; }
+
+    /**
+     * Set multiline state.
+     * @param aMultiline true if multiline, otherwise false
+     * @return old multiline state
+     */
+    bool SetMultiline( bool aMultiline )
+    {
+        std::swap( aMultiline, m_multiline );
+        return aMultiline;
+    }
+
+    /**
+     * Get multiline state.
+     * @return true if multiline, otherwise false
+     */
+    bool IsMultiline() const { return m_multiline; }
 
     /**
      * Set line spacing.
@@ -515,6 +578,8 @@ public:
     {
         VECTOR2D oldSize( m_size );
         m_size = VECTOR2D( aSize );
+        m_size_as_wxSize.x = m_size.x;
+        m_size_as_wxSize.y = m_size.y;
         return oldSize;
     }
 
@@ -545,7 +610,15 @@ public:
      */
     VECTOR2D GetSize() const { return VECTOR2D( m_size ); }
 
+    /**
+     * Like GetSize(), but uses wxSize.
+     * Used for compatibility with old code.
+     * @return font size.
+     */
+    const wxSize& GetTextSize() const { return m_size_as_wxSize; }
+
 private:
+    KIFONT::FONT*        m_font = nullptr;
     ORIENTATION          m_orientation = TEXT_ATTRIBUTES::ANGLE_0;
     HORIZONTAL_ALIGNMENT m_horizontal_alignment = TEXT_ATTRIBUTES::H_CENTER;
     VERTICAL_ALIGNMENT   m_vertical_alignment = TEXT_ATTRIBUTES::V_CENTER;
@@ -554,9 +627,12 @@ private:
     int                  m_stroke_width = 0;
     bool                 m_italic = false;
     bool                 m_bold = false;
+    bool                 m_visible = true;
     bool                 m_mirrored = false;
+    bool                 m_multiline = true;
     VECTOR2D             m_size;
-    bool                 m_flip_y = false;
+    //bool                 m_flip_y = false;
+    wxSize               m_size_as_wxSize;
 };
 
 
@@ -584,8 +660,12 @@ inline std::ostream& operator<<( std::ostream& os, const TEXT_ATTRIBUTES& attr )
        << " " << attr.GetAngle() << " (size " << attr.GetSize() << ")"
        << " (line_spacing " << attr.GetLineSpacing() << ")"
        << " (stroke_width " << attr.GetStrokeWidth() << ")" << ( attr.IsBold() ? " bold" : "" )
-       << ( attr.IsItalic() ? " italic" : "" ) << ( attr.IsMirrored() ? " mirrored" : "" )
-       << ( attr.IsFlipY() ? " flipY" : "" ) << ")";
+       << ( attr.IsItalic() ? " italic" : "" )
+       << ( attr.IsVisible() ? "" : " !visible" )
+       << ( attr.IsMirrored() ? " mirrored" : "" )
+       << ( attr.IsMultiline() ? " multiline" : " single_line" )
+            // << ( attr.IsFlipY() ? " flipY" : "" )
+       << ")";
 
     return os;
 }

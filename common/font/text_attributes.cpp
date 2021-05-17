@@ -18,8 +18,19 @@
  * with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <font/text_attributes.h>
+#include <eda_text.h>
 #include <vector>
+#include <font/font.h>
+
+
+KIFONT::FONT* TEXT_ATTRIBUTES::GetFont() const {
+    if (m_font)
+        return m_font;
+
+    // default to newstroke
+    return KIFONT::FONT::GetFont();
+}
+
 
 TEXT_ATTRIBUTES::ORIENTATION TEXT_ATTRIBUTES::ReadOrientation( const EDA_ANGLE& aAngle )
 {

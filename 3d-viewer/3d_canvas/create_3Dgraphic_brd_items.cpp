@@ -55,7 +55,6 @@
 #include <vector>
 #include <font/font.h>
 #include <font/outline_font.h>
-#include <font/text_attributes.h>
 #include <font/triangulate.h>
 
 // These variables are parameters used in addTextSegmToContainer.
