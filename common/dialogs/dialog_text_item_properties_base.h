@@ -50,8 +50,8 @@ class DIALOG_TEXT_ITEM_PROPERTIES_BASE : public DIALOG_SHIM
 		wxBoxSizer* m_MultiLineSizer;
 		wxStaticText* m_MultiLineLabel;
 		wxStyledTextCtrl* m_MultiLineText;
-		wxStaticText* m_NetlistLabel;
-		wxComboBox* m_NetlistValue;
+		wxStaticText* m_NetLabel;
+		wxComboBox* m_NetValue;
 		wxStaticText* m_ShapeLabel;
 		wxChoice* m_Shape;
 		wxStaticBitmap* m_ShapeBitmap;

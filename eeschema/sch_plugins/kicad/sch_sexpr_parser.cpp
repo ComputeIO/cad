@@ -619,7 +619,7 @@ void SCH_SEXPR_PARSER::parseEDA_TEXT( EDA_TEXT* aText )
                 case T_top: aText->SetVertJustify( GR_TEXT_VJUSTIFY_TOP ); break;
                 case T_bottom: aText->SetVertJustify( GR_TEXT_VJUSTIFY_BOTTOM ); break;
                 case T_mirror: aText->SetMirrored( true ); break;
-                default: Expecting( "left, right, top, bottom, or mirror" );
+                default: Expecting( "left, right, top, bottom, hcenter, vcenter, or mirror" );
                 }
             }
 

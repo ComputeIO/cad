@@ -61,6 +61,9 @@ DIALOG_SCH_TEXT_PROPERTIES::DIALOG_SCH_TEXT_PROPERTIES( SCH_EDIT_FRAME* aParent,
     m_Parent = aParent;
     m_CurrentText = aTextItem;
 
+    m_statusLine->Show( false );
+    m_cbLocked->Show( false );
+
     switch( m_CurrentText->Type() )
     {
     case SCH_GLOBAL_LABEL_T: SetTitle( _( "Global Label Properties" ) ); break;
@@ -81,22 +84,22 @@ DIALOG_SCH_TEXT_PROPERTIES::DIALOG_SCH_TEXT_PROPERTIES( SCH_EDIT_FRAME* aParent,
 
         m_SingleLineLabel->Show( false );
         m_SingleLineText->Show( false );
-        m_NetlistLabel->Show( false );
-        m_NetlistValue->Show( false );
+        m_NetLabel->Show( false );
+        m_NetValue->Show( false );
 
         //m_textEntrySizer->AddGrowableRow( 0 );
     }
     else if( m_CurrentText->Type() == SCH_GLOBAL_LABEL_T || m_CurrentText->Type() == SCH_LABEL_T )
     {
-        m_activeTextCtrl = m_NetlistValue;
-        m_activeTextEntry = m_NetlistValue;
+        m_activeTextCtrl = m_NetValue;
+        m_activeTextEntry = m_NetValue;
 
         m_SingleLineLabel->Show( false );
         m_SingleLineText->Show( false );
         m_MultiLineLabel->Show( false );
         m_MultiLineText->Show( false );
 
-        m_NetlistValue->SetValidator( m_netNameValidator );
+        m_NetValue->SetValidator( m_netNameValidator );
     }
     else
     {
@@ -105,13 +108,13 @@ DIALOG_SCH_TEXT_PROPERTIES::DIALOG_SCH_TEXT_PROPERTIES( SCH_EDIT_FRAME* aParent,
 
         m_MultiLineLabel->Show( false );
         m_MultiLineText->Show( false );
-        m_NetlistLabel->Show( false );
-        m_NetlistValue->Show( false );
+        m_NetLabel->Show( false );
+        m_NetValue->Show( false );
 
         if( m_CurrentText->Type() != SCH_TEXT_T )
             m_SingleLineText->SetValidator( m_netNameValidator );
 
-        m_NetlistValue->SetValidator( m_netNameValidator );
+        m_NetValue->SetValidator( m_netNameValidator );
     }
 
     SetInitialFocus( m_activeTextCtrl );
@@ -206,7 +209,7 @@ bool DIALOG_SCH_TEXT_PROPERTIES::TransferDataToWindow()
         m_activeTextEntry->SetValue( UnescapeString( m_CurrentText->GetText() ) );
     }
 
-    if( m_NetlistValue->IsShown() )
+    if( m_NetValue->IsShown() )
     {
         // Load the combobox with the existing labels of the same type
         std::set<wxString> existingLabels;
@@ -227,7 +230,7 @@ bool DIALOG_SCH_TEXT_PROPERTIES::TransferDataToWindow()
             existingLabelArray.push_back( label );
 
         // existingLabelArray.Sort();
-        m_NetlistValue->Append( existingLabelArray );
+        m_NetValue->Append( existingLabelArray );
     }
 
     EDA_ANGLE textAngle( m_CurrentText->GetTextAngle(), EDA_ANGLE::TENTHS_OF_A_DEGREE );

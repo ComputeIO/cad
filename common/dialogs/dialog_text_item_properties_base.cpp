@@ -71,20 +71,20 @@ DIALOG_TEXT_ITEM_PROPERTIES_BASE::DIALOG_TEXT_ITEM_PROPERTIES_BASE( wxWindow* pa
 
 	bMainSizer->Add( m_MultiLineSizer, 20, wxEXPAND|wxALL, 10 );
 
-	wxBoxSizer* m_NetlistSizer;
-	m_NetlistSizer = new wxBoxSizer( wxHORIZONTAL );
+	wxBoxSizer* m_NetSizer;
+	m_NetSizer = new wxBoxSizer( wxHORIZONTAL );
 
-	m_NetlistLabel = new wxStaticText( this, wxID_ANY, _("Netlist:"), wxDefaultPosition, wxDefaultSize, 0 );
-	m_NetlistLabel->Wrap( -1 );
-	m_NetlistSizer->Add( m_NetlistLabel, 0, wxALIGN_CENTER_VERTICAL|wxLEFT|wxRIGHT, 5 );
+	m_NetLabel = new wxStaticText( this, wxID_ANY, _("Net:"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_NetLabel->Wrap( -1 );
+	m_NetSizer->Add( m_NetLabel, 0, wxALIGN_CENTER_VERTICAL|wxLEFT|wxRIGHT, 5 );
 
-	m_NetlistValue = new wxComboBox( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, NULL, wxTE_PROCESS_ENTER );
-	m_NetlistValue->SetMinSize( wxSize( 445,-1 ) );
+	m_NetValue = new wxComboBox( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, NULL, wxTE_PROCESS_ENTER );
+	m_NetValue->SetMinSize( wxSize( 445,-1 ) );
 
-	m_NetlistSizer->Add( m_NetlistValue, 0, wxALIGN_CENTER_VERTICAL|wxEXPAND, 5 );
+	m_NetSizer->Add( m_NetValue, 0, wxALIGN_CENTER_VERTICAL|wxEXPAND, 5 );
 
 
-	bMainSizer->Add( m_NetlistSizer, 1, wxEXPAND, 5 );
+	bMainSizer->Add( m_NetSizer, 1, wxEXPAND, 5 );
 
 	wxBoxSizer* m_ShapeSizer;
 	m_ShapeSizer = new wxBoxSizer( wxHORIZONTAL );
