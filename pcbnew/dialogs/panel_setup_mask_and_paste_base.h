@@ -21,6 +21,7 @@
 #include <wx/string.h>
 #include <wx/stattext.h>
 #include <wx/sizer.h>
+#include <wx/statline.h>
 #include <wx/textctrl.h>
 #include <wx/panel.h>
 
@@ -36,6 +37,8 @@ class PANEL_SETUP_MASK_AND_PASTE_BASE : public wxPanel
 	protected:
 		wxStaticBitmap* m_bitmapWarning;
 		wxStaticText* m_staticTextInfoMaskMinWidth;
+		wxStaticText* m_staticTextInfoMaskMinWidth1;
+		wxStaticLine* m_staticline1;
 		wxStaticText* m_MaskMarginLabel;
 		wxTextCtrl* m_MaskMarginCtrl;
 		wxStaticText* m_MaskMarginUnits;
@@ -52,7 +55,7 @@ class PANEL_SETUP_MASK_AND_PASTE_BASE : public wxPanel
 
 	public:
 
-		PANEL_SETUP_MASK_AND_PASTE_BASE( wxWindow* parent, wxWindowID id = wxID_ANY, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( -1,-1 ), long style = wxTAB_TRAVERSAL, const wxString& name = wxEmptyString );
+		PANEL_SETUP_MASK_AND_PASTE_BASE( wxWindow* parent, wxWindowID id = wxID_ANY, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( 727,280 ), long style = wxTAB_TRAVERSAL, const wxString& name = wxEmptyString );
 		~PANEL_SETUP_MASK_AND_PASTE_BASE();
 
 };
