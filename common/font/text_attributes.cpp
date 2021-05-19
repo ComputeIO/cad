@@ -237,8 +237,8 @@ EDA_TEXT_VJUSTIFY_T TEXT_ATTRIBUTES::GetVertJustify() const
 
 void TEXT_ATTRIBUTES::SetHorizJustify( EDA_TEXT_HJUSTIFY_T aHorizJustify )
 {
-#ifdef OUTLINEFONT_DEBUG
-    std::cerr << "TEXT_ATTRIBUTES::SetHorizJustify( " << int( aHorizJustify ) << " )" << std::endl;
+#ifdef DEBUG
+    std::cerr << "TEXT_ATTRIBUTES::SetHorizJustify( " << aHorizJustify << " )" << std::endl;
 #endif
     switch( aHorizJustify )
     {
@@ -252,8 +252,8 @@ void TEXT_ATTRIBUTES::SetHorizJustify( EDA_TEXT_HJUSTIFY_T aHorizJustify )
 
 void TEXT_ATTRIBUTES::SetVertJustify( EDA_TEXT_VJUSTIFY_T aVertJustify )
 {
-#ifdef OUTLINEFONT_DEBUG
-    std::cerr << "TEXT_ATTRIBUTES::SetVertJustify( " << int( aVertJustify ) << " )" << std::endl;
+#ifdef DEBUG
+    std::cerr << "TEXT_ATTRIBUTES::SetVertJustify( " << aVertJustify << " )" << std::endl;
 #endif
     switch( aVertJustify )
     {
