@@ -3,7 +3,7 @@
  *
  * Copyright (C) 1992-2018 Jean-Pierre Charras jp.charras at wanadoo.fr
  * Copyright (C) 1992-2010 Lorenzo Marcantonio
- * Copyright (C) 2011 Wayne Stambaugh <stambaughw@verizon.net>
+ * Copyright (C) 2011 Wayne Stambaugh <stambaughw@gmail.com>
  * Copyright (C) 1992-2021 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * This program is free software; you can redistribute it and/or
@@ -32,10 +32,7 @@
 #define __DIALOG_PLOT_SCHEMATIC__
 
 #include <plotter.h>
-#include <sch_screen.h>
-#include <sch_edit_frame.h>
 #include <dialog_plot_schematic_base.h>
-#include <reporter.h>
 #include <widgets/unit_binder.h>
 
 enum PageFormatReq
@@ -54,15 +51,19 @@ enum class HPGL_PLOT_ORIGIN_AND_UNITS
 };
 
 class PDF_PLOTTER;
+class SCH_REPORTER;
+class SCH_EDIT_FRAME;
+class SCH_SCREEN;
+class SCH_SHEET_PATH;
+
 
 class DIALOG_PLOT_SCHEMATIC : public DIALOG_PLOT_SCHEMATIC_BASE
 {
 public:
-    // / Constructors
     DIALOG_PLOT_SCHEMATIC( SCH_EDIT_FRAME* parent );
 
     /**
-     * Return true if the project configutation was modified.
+     * Return true if the project configuration was modified.
      */
     bool PrjConfigChanged() { return m_configChanged; }
 
@@ -77,11 +78,9 @@ private:
     // common
     void getPlotOptions( RENDER_SETTINGS* aSettings );
 
-    bool getModeColor()
-    { return m_ModeColorOption->GetSelection() == 0; }
+    bool getModeColor() { return m_ModeColorOption->GetSelection() == 0; }
 
-    void setModeColor( bool aColor )
-    { m_ModeColorOption->SetSelection( aColor ? 0 : 1 ); }
+    void setModeColor( bool aColor ) { m_ModeColorOption->SetSelection( aColor ? 0 : 1 ); }
 
     COLOR_SETTINGS* getColorSettings();
 
@@ -95,42 +94,41 @@ private:
     bool getPlotDrawingSheet() { return m_plotDrawingSheet->GetValue(); }
     void setPlotDrawingSheet( bool aPlot) { m_plotDrawingSheet->SetValue( aPlot ); }
 
-    void PlotSchematic( bool aPlotAll );
+    void plotSchematic( bool aPlotAll );
 
     // PDF
-    void    createPDFFile( bool aPlotAll, bool aPlotDrawingSheet,
-                           RENDER_SETTINGS* aRenderSettings );
-    void    plotOneSheetPDF( PLOTTER* aPlotter, SCH_SCREEN* aScreen, bool aPlotDrawingSheet);
-    void    setupPlotPagePDF( PLOTTER* aPlotter, SCH_SCREEN* aScreen );
+    void createPDFFile( bool aPlotAll, bool aPlotDrawingSheet, RENDER_SETTINGS* aRenderSettings );
+    void plotOneSheetPDF( PLOTTER* aPlotter, SCH_SCREEN* aScreen, bool aPlotDrawingSheet);
+    void setupPlotPagePDF( PLOTTER* aPlotter, SCH_SCREEN* aScreen );
 
     /**
-    * Everything done, close the plot and restore the environment
-    * @param aPlotter the plotter to close and destroy
-    * @param aOldsheetpath the stored old sheet path for the current sheet before the plot started
-    */
-    void    restoreEnvironment( PDF_PLOTTER* aPlotter, SCH_SHEET_PATH& aOldsheetpath );
+     * Everything done, close the plot and restore the environment.
+     *
+     * @param aPlotter the plotter to close and destroy
+     * @param aOldsheetpath the stored old sheet path for the current sheet before the plot started
+     */
+    void restoreEnvironment( PDF_PLOTTER* aPlotter, SCH_SHEET_PATH& aOldsheetpath );
 
     // DXF
-    void    CreateDXFFile( bool aPlotAll, bool aPlotDrawingSheet,
-                           RENDER_SETTINGS* aRenderSettings );
-    bool    PlotOneSheetDXF( const wxString& aFileName, SCH_SCREEN* aScreen,
-                             RENDER_SETTINGS* aRenderSettings, wxPoint aPlotOffset, double aScale,
-                             bool aPlotFrameRef );
+    void createDxfFile( bool aPlotAll, bool aPlotDrawingSheet, RENDER_SETTINGS* aRenderSettings );
+    bool plotOneSheetDxf( const wxString& aFileName, SCH_SCREEN* aScreen,
+                          RENDER_SETTINGS* aRenderSettings, wxPoint aPlotOffset, double aScale,
+                          bool aPlotFrameRef );
 
-    // HPGL
-    HPGL_PLOT_ORIGIN_AND_UNITS GetPlotOriginAndUnits()
+    // HPGLGetPlotOriginAndUnits
+    HPGL_PLOT_ORIGIN_AND_UNITS getPlotOriginAndUnits()
     {
         switch( m_plotOriginOpt->GetSelection() )
         {
         case 0:
         default: return HPGL_PLOT_ORIGIN_AND_UNITS::PLOTTER_BOT_LEFT;
-        case 1: return HPGL_PLOT_ORIGIN_AND_UNITS::PLOTTER_CENTER;
-        case 2: return HPGL_PLOT_ORIGIN_AND_UNITS::USER_FIT_PAGE;
-        case 3: return HPGL_PLOT_ORIGIN_AND_UNITS::USER_FIT_CONTENT;
+        case 1:  return HPGL_PLOT_ORIGIN_AND_UNITS::PLOTTER_CENTER;
+        case 2:  return HPGL_PLOT_ORIGIN_AND_UNITS::USER_FIT_PAGE;
+        case 3:  return HPGL_PLOT_ORIGIN_AND_UNITS::USER_FIT_CONTENT;
         }
     }
 
-    void SetPlotOriginAndUnits( HPGL_PLOT_ORIGIN_AND_UNITS aOriginAndUnits )
+    void setPlotOriginAndUnits( HPGL_PLOT_ORIGIN_AND_UNITS aOriginAndUnits )
     {
         switch( aOriginAndUnits )
         {
@@ -154,8 +152,8 @@ private:
     }
 
     void createHPGLFile( bool aPlotAll, bool aPlotFrameRef, RENDER_SETTINGS* aRenderSettings );
-    void SetHPGLPenWidth();
-    bool Plot_1_Page_HPGL( const wxString& aFileName, SCH_SCREEN* aScreen,
+    void setHpglPenWidth();
+    bool plotOneSheetHpgl( const wxString& aFileName, SCH_SCREEN* aScreen,
                            const PAGE_INFO& aPageInfo, RENDER_SETTINGS* aRenderSettings,
                            wxPoint aPlot0ffset, double aScale, bool aPlotFrameRef,
                            HPGL_PLOT_ORIGIN_AND_UNITS aOriginAndUnits );
@@ -182,7 +180,25 @@ private:
      * @throw IO_ERROR on file I/O errors.
      */
     wxFileName createPlotFileName( const wxString& aPlotFileName, const wxString& aExtension,
-                                   REPORTER* aReporter = NULL );
+                                   REPORTER* aReporter = nullptr );
+
+    /**
+     * Determine the best absolute path to plot files given the contents of the path
+     * edit control.
+     *
+     * - If the path edit control results in an absolute path, use it as is.
+     * - If the path edit control is not an absolute path and the project file is valid, use
+         the project root path to normalize the contents of the path edit control.
+     * - If the path edit control is not an absolute path and the project file does not exist
+     *   and the screen file name is valid, use the screen file name path.
+     * - If the path edit control is not an absolute path and the project file does not exist
+     *   and the screen file name is empty, user the user's documents folder.
+     * - Fall back to the user's document path if any of the above conditions do not result
+     *   in a valid absolute path.
+     *
+     * @return a valid path to write the plot files.
+     */
+    wxString getOutputPath();
 
     SCH_EDIT_FRAME* m_parent;
     bool            m_configChanged;        // true if a project config param has changed
