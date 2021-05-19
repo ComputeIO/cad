@@ -101,7 +101,7 @@ public:
         m_layerColors[LAYER_SCHEMATIC_BACKGROUND] = aColor;
     }
 
-    float GetDanglineSymbolThickness() const { return (float) m_defaultPenWidth / 3.0F; }
+    float GetDanglingSymbolThickness() const { return (float) m_defaultPenWidth / 3.0F; }
 
     const COLOR4D& GetGridColor() override { return m_layerColors[LAYER_SCHEMATIC_GRID]; }
 
@@ -194,9 +194,7 @@ private:
     void triLine( const VECTOR2D& a, const VECTOR2D& b, const VECTOR2D& c );
 
     void doStrokeText( const wxString& aText, const VECTOR2D& aPosition,
-                       EDA_TEXT_HJUSTIFY_T aHorizontalJustify, EDA_TEXT_VJUSTIFY_T aVerticalJustify,
-                       const EDA_ANGLE& aAngle, KIFONT::FONT* aFont = nullptr,
-                       double aLineSpacing = 1.0 );
+                       const TEXT_ATTRIBUTES& aAttributes );
 
     void strokeText( const wxString& aText, const VECTOR2D& aPosition, const EDA_ANGLE& aAngle,
                      KIFONT::FONT* aFont = nullptr );
