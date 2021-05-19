@@ -63,6 +63,7 @@ DIALOG_SCH_TEXT_PROPERTIES::DIALOG_SCH_TEXT_PROPERTIES( SCH_EDIT_FRAME* aParent,
 
     m_statusLine->Show( false );
     m_cbLocked->Show( false );
+    m_LayerSelectionCtrl->Show( false );
 
     switch( m_CurrentText->Type() )
     {
@@ -234,7 +235,13 @@ bool DIALOG_SCH_TEXT_PROPERTIES::TransferDataToWindow()
     }
 
     EDA_ANGLE textAngle( m_CurrentText->GetTextAngle(), EDA_ANGLE::TENTHS_OF_A_DEGREE );
+#ifdef DEBUG
+    std::cerr << "text angle is " << textAngle;
+#endif
     textAngle.Normalize();
+#ifdef DEBUG
+    std::cerr << ", normalized " << textAngle << std::endl;
+#endif
 
     // Set text options
     switch( textAngle.AsDegrees() )
