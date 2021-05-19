@@ -2767,10 +2767,13 @@ SCH_TEXT* SCH_SEXPR_PARSER::parseSchText()
         switch( token )
         {
         case T_at:
+        {
             text->SetPosition( parseXY() );
 
-            switch( static_cast<int>( parseDouble( "text angle" ) ) )
+            int angle = static_cast<int>( parseDouble( "text angle" ) );
+            switch( angle )
             {
+#ifdef USE_SPIN_STYLE
             case 0: text->SetLabelSpinStyle( LABEL_SPIN_STYLE::RIGHT ); break;
             case 90: text->SetLabelSpinStyle( LABEL_SPIN_STYLE::UP ); break;
             case 180: text->SetLabelSpinStyle( LABEL_SPIN_STYLE::LEFT ); break;
@@ -2779,10 +2782,21 @@ SCH_TEXT* SCH_SEXPR_PARSER::parseSchText()
                 wxFAIL;
                 text->SetLabelSpinStyle( LABEL_SPIN_STYLE::RIGHT );
                 break;
+#else
+            case 0:
+            case 90:
+            case 180:
+            case 270: text->SetTextAngle( EDA_ANGLE( angle, EDA_ANGLE::DEGREES ) ); break;
+            default:
+                wxFAIL;
+                text->SetTextAngle( EDA_ANGLE::HORIZONTAL );
+                break;
+#endif
             }
 
             NeedRIGHT();
             break;
+        }
 
         case T_shape:
             if( text->Type() == SCH_TEXT_T || text->Type() == SCH_LABEL_T )
@@ -2815,18 +2829,22 @@ SCH_TEXT* SCH_SEXPR_PARSER::parseSchText()
             if( text->Type() == SCH_TEXT_T )
             {
                 if( text->GetHorizJustify() == GR_TEXT_HJUSTIFY_RIGHT
-                  && text->GetTextAngle() == TEXT_ANGLE_VERT )
+                    && text->GetTextAngle() == TEXT_ANGLE_VERT )
                 {
                     // The vertically aligned text angle is always 90 (labels use 270 for the
                     // down direction) combined with the text justification flags.
+#ifdef USE_SPIN_STYLE
                     text->SetLabelSpinStyle( LABEL_SPIN_STYLE::BOTTOM );
+#endif
                 }
                 else if( text->GetHorizJustify() == GR_TEXT_HJUSTIFY_RIGHT
-                       && text->GetTextAngle() == TEXT_ANGLE_HORIZ )
+                         && text->GetTextAngle() == TEXT_ANGLE_HORIZ )
                 {
                     // The horizontally aligned text angle is always 0 (labels use 180 for the
                     // left direction) combined with the text justification flags.
+#ifdef USE_SPIN_STYLE
                     text->SetLabelSpinStyle( LABEL_SPIN_STYLE::LEFT );
+#endif
                 }
             }
 
