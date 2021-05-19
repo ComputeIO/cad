@@ -29,7 +29,7 @@
 #include <eda_text.h>
 #include <sch_item.h>
 #include <sch_field.h>
-#include <sch_connection.h>   // for CONNECTION_TYPE
+#include <sch_connection.h> // for CONNECTION_TYPE
 
 
 class NETLIST_OBJECT_LIST;
@@ -44,32 +44,20 @@ class LABEL_SPIN_STYLE
 public:
     enum SPIN : int
     {
-        LEFT   = 0,
-        UP     = 1,
-        RIGHT  = 2,
+        LEFT = 0,
+        UP = 1,
+        RIGHT = 2,
         BOTTOM = 3
     };
 
-
     LABEL_SPIN_STYLE() = default;
-    constexpr LABEL_SPIN_STYLE( SPIN aSpin ) : m_spin( aSpin )
-    {
-    }
+    constexpr LABEL_SPIN_STYLE( SPIN aSpin ) : m_spin( aSpin ) {}
 
-    constexpr bool operator==( SPIN a ) const
-    {
-        return m_spin == a;
-    }
+    constexpr bool operator==( SPIN a ) const { return m_spin == a; }
 
-    constexpr bool operator!=( SPIN a ) const
-    {
-        return m_spin != a;
-    }
+    constexpr bool operator!=( SPIN a ) const { return m_spin != a; }
 
-    operator int() const
-    {
-        return static_cast<int>( m_spin );
-    }
+    operator int() const { return static_cast<int>( m_spin ); }
 
     LABEL_SPIN_STYLE RotateCW()
     {
@@ -77,10 +65,10 @@ public:
 
         switch( m_spin )
         {
-        case LABEL_SPIN_STYLE::LEFT:   newSpin = LABEL_SPIN_STYLE::UP;     break;
-        case LABEL_SPIN_STYLE::UP:     newSpin = LABEL_SPIN_STYLE::RIGHT;  break;
-        case LABEL_SPIN_STYLE::RIGHT:  newSpin = LABEL_SPIN_STYLE::BOTTOM; break;
-        case LABEL_SPIN_STYLE::BOTTOM: newSpin = LABEL_SPIN_STYLE::LEFT;   break;
+        case LABEL_SPIN_STYLE::LEFT: newSpin = LABEL_SPIN_STYLE::UP; break;
+        case LABEL_SPIN_STYLE::UP: newSpin = LABEL_SPIN_STYLE::RIGHT; break;
+        case LABEL_SPIN_STYLE::RIGHT: newSpin = LABEL_SPIN_STYLE::BOTTOM; break;
+        case LABEL_SPIN_STYLE::BOTTOM: newSpin = LABEL_SPIN_STYLE::LEFT; break;
         default: wxLogWarning( "RotateCCW encountered unknown current spin style" ); break;
         }
 
@@ -93,10 +81,10 @@ public:
 
         switch( m_spin )
         {
-        case LABEL_SPIN_STYLE::LEFT:   newSpin = LABEL_SPIN_STYLE::BOTTOM; break;
-        case LABEL_SPIN_STYLE::BOTTOM: newSpin = LABEL_SPIN_STYLE::RIGHT;  break;
-        case LABEL_SPIN_STYLE::RIGHT:  newSpin = LABEL_SPIN_STYLE::UP;     break;
-        case LABEL_SPIN_STYLE::UP:     newSpin = LABEL_SPIN_STYLE::LEFT;   break;
+        case LABEL_SPIN_STYLE::LEFT: newSpin = LABEL_SPIN_STYLE::BOTTOM; break;
+        case LABEL_SPIN_STYLE::BOTTOM: newSpin = LABEL_SPIN_STYLE::RIGHT; break;
+        case LABEL_SPIN_STYLE::RIGHT: newSpin = LABEL_SPIN_STYLE::UP; break;
+        case LABEL_SPIN_STYLE::UP: newSpin = LABEL_SPIN_STYLE::LEFT; break;
         default: wxLogWarning( "RotateCCW encountered unknown current spin style" ); break;
         }
 
@@ -112,10 +100,10 @@ public:
 
         switch( m_spin )
         {
-        case LABEL_SPIN_STYLE::UP:     newSpin = LABEL_SPIN_STYLE::BOTTOM; break;
-        case LABEL_SPIN_STYLE::BOTTOM: newSpin = LABEL_SPIN_STYLE::UP;     break;
-        case LABEL_SPIN_STYLE::LEFT:                                       break;
-        case LABEL_SPIN_STYLE::RIGHT:                                      break;
+        case LABEL_SPIN_STYLE::UP: newSpin = LABEL_SPIN_STYLE::BOTTOM; break;
+        case LABEL_SPIN_STYLE::BOTTOM: newSpin = LABEL_SPIN_STYLE::UP; break;
+        case LABEL_SPIN_STYLE::LEFT: break;
+        case LABEL_SPIN_STYLE::RIGHT: break;
         default: wxLogWarning( "MirrorVertically encountered unknown current spin style" ); break;
         }
 
@@ -131,10 +119,10 @@ public:
 
         switch( m_spin )
         {
-        case LABEL_SPIN_STYLE::LEFT:  newSpin = LABEL_SPIN_STYLE::RIGHT; break;
-        case LABEL_SPIN_STYLE::RIGHT: newSpin = LABEL_SPIN_STYLE::LEFT;  break;
-        case LABEL_SPIN_STYLE::UP:                                       break;
-        case LABEL_SPIN_STYLE::BOTTOM:                                   break;
+        case LABEL_SPIN_STYLE::LEFT: newSpin = LABEL_SPIN_STYLE::RIGHT; break;
+        case LABEL_SPIN_STYLE::RIGHT: newSpin = LABEL_SPIN_STYLE::LEFT; break;
+        case LABEL_SPIN_STYLE::UP: break;
+        case LABEL_SPIN_STYLE::BOTTOM: break;
         default: wxLogWarning( "MirrorHorizontally encountered unknown current spin style" ); break;
         }
 
@@ -150,8 +138,8 @@ private:
  */
 enum class PINSHEETLABEL_SHAPE
 {
-    PS_INPUT,           // use "PS_INPUT" instead of "INPUT" to avoid colliding
-                        // with a Windows header on msys2
+    PS_INPUT, // use "PS_INPUT" instead of "INPUT" to avoid colliding
+              // with a Windows header on msys2
     PS_OUTPUT,
     PS_BIDI,
     PS_TRISTATE,
@@ -159,7 +147,7 @@ enum class PINSHEETLABEL_SHAPE
 };
 
 
-extern const char* SheetLabelType[];    /* names of types of labels */
+extern const char* SheetLabelType[]; /* names of types of labels */
 
 
 class SCH_TEXT : public SCH_ITEM, public EDA_TEXT
@@ -176,17 +164,14 @@ public:
      */
     SCH_TEXT( const SCH_TEXT& aText );
 
-    ~SCH_TEXT() { }
+    ~SCH_TEXT() {}
 
     static inline bool ClassOf( const EDA_ITEM* aItem )
     {
         return aItem && SCH_TEXT_T == aItem->Type();
     }
 
-    virtual wxString GetClass() const override
-    {
-        return wxT( "SCH_TEXT" );
-    }
+    virtual wxString GetClass() const override { return wxT( "SCH_TEXT" ); }
 
     /**
      * Returns the set of contextual text variable tokens for this text item.
@@ -212,9 +197,9 @@ public:
      *                   values or int value
      */
     virtual void     SetLabelSpinStyle( LABEL_SPIN_STYLE aSpinStyle );
-    LABEL_SPIN_STYLE GetLabelSpinStyle() const  { return m_spin_style; }
+    LABEL_SPIN_STYLE GetLabelSpinStyle() const { return m_spin_style; }
 
-    PINSHEETLABEL_SHAPE GetShape() const        { return m_shape; }
+    PINSHEETLABEL_SHAPE GetShape() const { return m_shape; }
 
     void SetShape( PINSHEETLABEL_SHAPE aShape ) { m_shape = aShape; }
 
@@ -252,10 +237,7 @@ public:
 
     // Geometric transforms (used in block operations):
 
-    void Move( const wxPoint& aMoveVector ) override
-    {
-        EDA_TEXT::Offset( aMoveVector );
-    }
+    void Move( const wxPoint& aMoveVector ) override { EDA_TEXT::Offset( aMoveVector ); }
 
     void MirrorHorizontally( int aCenter ) override;
     void MirrorVertically( int aCenter ) override;
@@ -276,10 +258,10 @@ public:
 
     virtual bool IsReplaceable() const override { return true; }
 
-    void GetEndPoints( std::vector< DANGLING_END_ITEM >& aItemList ) override;
+    void GetEndPoints( std::vector<DANGLING_END_ITEM>& aItemList ) override;
 
     bool UpdateDanglingState( std::vector<DANGLING_END_ITEM>& aItemList,
-                              const SCH_SHEET_PATH* aPath = nullptr ) override;
+                              const SCH_SHEET_PATH*           aPath = nullptr ) override;
 
     bool IsDangling() const override { return m_isDangling; }
     void SetIsDangling( bool aIsDangling ) { m_isDangling = aIsDangling; }
@@ -291,7 +273,7 @@ public:
     BITMAPS GetMenuImage() const override;
 
     wxPoint GetPosition() const override { return EDA_TEXT::GetTextPos(); }
-    void SetPosition( const wxPoint& aPosition ) override { EDA_TEXT::SetTextPos( aPosition ); }
+    void    SetPosition( const wxPoint& aPosition ) override { EDA_TEXT::SetTextPos( aPosition ); }
 
     bool HitTest( const wxPoint& aPosition, int aAccuracy = 0 ) const override;
     bool HitTest( const EDA_RECT& aRect, bool aContained, int aAccuracy = 0 ) const override;
@@ -302,7 +284,7 @@ public:
 
     void GetMsgPanelInfo( EDA_DRAW_FRAME* aFrame, std::vector<MSG_PANEL_ITEM>& aList ) override;
 
-#if defined(DEBUG)
+#if defined( DEBUG )
     void Show( int nestLevel, std::ostream& os ) const override;
 #endif
 
@@ -338,17 +320,14 @@ public:
 
     // Do not create a copy constructor.  The one generated by the compiler is adequate.
 
-    ~SCH_LABEL() { }
+    ~SCH_LABEL() {}
 
     static inline bool ClassOf( const EDA_ITEM* aItem )
     {
         return aItem && SCH_LABEL_T == aItem->Type();
     }
 
-    wxString GetClass() const override
-    {
-        return wxT( "SCH_LABEL" );
-    }
+    wxString GetClass() const override { return wxT( "SCH_LABEL" ); }
 
     bool IsType( const KICAD_T aScanTypes[] ) const override;
 
@@ -358,8 +337,8 @@ public:
 
     bool CanConnect( const SCH_ITEM* aItem ) const override
     {
-        return aItem->Type() == SCH_LINE_T &&
-                ( aItem->GetLayer() == LAYER_WIRE || aItem->GetLayer() == LAYER_BUS );
+        return aItem->Type() == SCH_LINE_T
+               && ( aItem->GetLayer() == LAYER_WIRE || aItem->GetLayer() == LAYER_BUS );
     }
 
     wxString GetSelectMenuText( EDA_UNITS aUnits ) const override;
@@ -390,17 +369,14 @@ public:
 
     SCH_GLOBALLABEL( const SCH_GLOBALLABEL& aGlobalLabel );
 
-    ~SCH_GLOBALLABEL() { }
+    ~SCH_GLOBALLABEL() {}
 
     static inline bool ClassOf( const EDA_ITEM* aItem )
     {
         return aItem && SCH_GLOBAL_LABEL_T == aItem->Type();
     }
 
-    wxString GetClass() const override
-    {
-        return wxT( "SCH_GLOBALLABEL" );
-    }
+    wxString GetClass() const override { return wxT( "SCH_GLOBALLABEL" ); }
 
     EDA_ITEM* Clone() const override;
 
@@ -432,8 +408,8 @@ public:
      */
     const EDA_RECT GetBoundingBox() const override;
 
-    void CreateGraphicShape( const RENDER_SETTINGS* aRenderSettings,
-                             std::vector<wxPoint>& aPoints, const wxPoint& aPos ) const override;
+    void CreateGraphicShape( const RENDER_SETTINGS* aRenderSettings, std::vector<wxPoint>& aPoints,
+                             const wxPoint& aPos ) const override;
 
     void UpdateIntersheetRefProps();
     void AutoplaceFields( SCH_SCREEN* aScreen, bool aManual ) override;
@@ -444,8 +420,8 @@ public:
 
     bool CanConnect( const SCH_ITEM* aItem ) const override
     {
-        return aItem->Type() == SCH_LINE_T &&
-                ( aItem->GetLayer() == LAYER_WIRE || aItem->GetLayer() == LAYER_BUS );
+        return aItem->Type() == SCH_LINE_T
+               && ( aItem->GetLayer() == LAYER_WIRE || aItem->GetLayer() == LAYER_BUS );
     }
 
     wxString GetSelectMenuText( EDA_UNITS aUnits ) const override;
@@ -457,7 +433,7 @@ public:
     void Plot( PLOTTER* aPlotter ) const override;
 
     SCH_FIELD* GetIntersheetRefs() { return &m_intersheetRefsField; }
-    void SetIntersheetRefs( const SCH_FIELD& aField ) { m_intersheetRefsField = aField; }
+    void       SetIntersheetRefs( const SCH_FIELD& aField ) { m_intersheetRefsField = aField; }
 
     bool IsPointClickableAnchor( const wxPoint& aPos ) const override
     {
@@ -488,7 +464,7 @@ public:
 
     // Do not create a copy constructor.  The one generated by the compiler is adequate.
 
-    ~SCH_HIERLABEL() { }
+    ~SCH_HIERLABEL() {}
 
     void Print( const RENDER_SETTINGS* aSettings, const wxPoint& offset ) override;
 
@@ -497,10 +473,7 @@ public:
         return aItem && SCH_HIER_LABEL_T == aItem->Type();
     }
 
-    wxString GetClass() const override
-    {
-        return wxT( "SCH_HIERLABEL" );
-    }
+    wxString GetClass() const override { return wxT( "SCH_HIERLABEL" ); }
 
     void SetLabelSpinStyle( LABEL_SPIN_STYLE aSpinStyle ) override;
 
@@ -517,8 +490,8 @@ public:
 
     bool CanConnect( const SCH_ITEM* aItem ) const override
     {
-        return aItem->Type() == SCH_LINE_T &&
-                ( aItem->GetLayer() == LAYER_WIRE || aItem->GetLayer() == LAYER_BUS );
+        return aItem->Type() == SCH_LINE_T
+               && ( aItem->GetLayer() == LAYER_WIRE || aItem->GetLayer() == LAYER_BUS );
     }
 
     wxString GetSelectMenuText( EDA_UNITS aUnits ) const override;
