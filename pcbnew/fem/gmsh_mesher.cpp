@@ -156,6 +156,134 @@ void GMSH_MESHER::Load25DMesh()
 }
 
 
+void GMSH_MESHER::Load3DMesh()
+{
+    gmsh::initialize();
+
+    // (1: MeshAdapt, 2: Automatic, 3: Initial mesh only, 5: Delaunay, 6: Frontal-Delaunay, 7: BAMG, 8: Frontal-Delaunay for Quads, 9: Packing of Parallelograms)
+    gmsh::option::setNumber( "Mesh.Algorithm", 2 );
+
+    gmsh::model::add( "pcb" );
+
+    // TODO: better solution to track which elements belong to which surface
+    std::vector<std::pair<int, int>> fragments;
+
+    std::map<int, int> padRegions;
+    std::map<int, int> netRegions;
+    std::set<int>      padHoleTags;
+    std::set<int>      holeTags;
+    int                currentHeight = 0;
+    m_board->GetDesignSettings().GetStackupDescriptor().SynchronizeWithBoard(
+            &m_board->GetDesignSettings() );
+    for( const BOARD_STACKUP_ITEM* item :
+         m_board->GetDesignSettings().GetStackupDescriptor().GetList() )
+    {
+        if( item->GetType() != BS_ITEM_TYPE_COPPER && item->GetType() != BS_ITEM_TYPE_DIELECTRIC )
+        {
+            continue;
+        }
+
+        double currentHeight_mm = currentHeight / IU_PER_MM;
+        double currentThickness_mm = item->GetThickness( 0 ) / IU_PER_MM;
+
+        // We only model copper for now
+        if( item->GetType() != BS_ITEM_TYPE_COPPER )
+        {
+            for( int i = 0; i < item->GetSublayersCount(); i++ )
+            {
+                currentHeight += item->GetThickness( i );
+            }
+            continue;
+        }
+
+        PCB_LAYER_ID layer = item->GetBrdLayerId();
+        std::cout << "render layer " << layer << " with offset: " << currentHeight_mm
+                  << " - Thickness: " << currentThickness_mm << std::endl;
+
+        for( const auto& idx : PlaneSurfacesToVolumes(
+                     HolesTo2DPlaneSurfaces( layer, -currentHeight_mm ), currentThickness_mm ) )
+        {
+            fragments.emplace_back( 3, idx );
+            padHoleTags.emplace( idx );
+        }
+
+        for( const auto& pad_region : m_pad_regions )
+        {
+            for( const auto& idx : PlaneSurfacesToVolumes(
+                         PadTo2DPlaneSurfaces( layer, -currentHeight_mm, pad_region.second ),
+                         currentThickness_mm ) )
+            {
+                fragments.emplace_back( 3, idx );
+                padRegions.emplace( idx, pad_region.first );
+            }
+        }
+
+        for( const auto& net_region : m_net_regions )
+        {
+            std::pair<std::vector<int>, std::vector<int>> netSurfaces =
+                    NetTo2DPlaneSurfaces( layer, -currentHeight_mm, net_region.second );
+            for( const auto& idx :
+                 PlaneSurfacesToVolumes( netSurfaces.first, currentThickness_mm ) )
+            {
+                fragments.emplace_back( 3, idx );
+                netRegions.emplace( idx, net_region.first );
+            }
+            for( const auto& idx :
+                 PlaneSurfacesToVolumes( netSurfaces.second, currentThickness_mm ) )
+            {
+                fragments.emplace_back( 3, idx );
+                holeTags.emplace( idx );
+            }
+        }
+
+        currentHeight += item->GetThickness( 0 );
+    }
+
+    std::cerr << "fragment:" << std::endl;
+    std::vector<std::pair<int, int>>              ov;
+    std::vector<std::vector<std::pair<int, int>>> ovv;
+    gmsh::model::occ::fragment( fragments, {}, ov, ovv );
+    std::cerr << "RegionsToShapesAfterFragment:" << std::endl;
+
+    std::map<int, std::vector<int>> regionToShapeId = RegionsToShapesAfterFragment(
+            fragments, ov, ovv, padRegions, netRegions, padHoleTags, holeTags );
+
+    int airTag = m_next_region_id; // TODO
+
+    // remove air regions
+    const auto& airShapes = regionToShapeId.find( airTag );
+    if( airShapes != regionToShapeId.end() )
+    {
+        for( const auto& e : airShapes->second )
+        {
+            gmsh::model::occ::remove( { { 3, e } }, true );
+        }
+        regionToShapeId.erase( airShapes->first );
+    }
+
+    // we need to do synchronize when calling any non occ function!
+    std::cerr << "synchronize(): ";
+    gmsh::model::occ::synchronize();
+    std::cerr << "FINISHED" << std::endl;
+
+    for( const auto& kv : regionToShapeId )
+    {
+        gmsh::model::addPhysicalGroup( 3, kv.second, kv.first );
+    }
+
+    // generated 2.5d-mesh
+    std::cerr << "generate mesh" << std::endl;
+    gmsh::model::mesh::generate( 3 );
+    //std::cerr << "refine mesh" << std::endl;
+    //gmsh::model::mesh::refine();
+    //std::cerr << "set order mesh" << std::endl;
+    //gmsh::model::mesh::setOrder(2);
+    std::cerr << "finish mesh" << std::endl;
+
+    m_region_surfaces.clear();
+}
+
+
 void GMSH_MESHER::Finalize()
 {
     gmsh::finalize();
@@ -255,6 +383,30 @@ std::map<int, std::vector<int>> GMSH_MESHER::RegionsToShapesAfterFragment(
     }
 
     return regionToShapeId;
+}
+
+std::vector<int> GMSH_MESHER::PlaneSurfacesToVolumes( const std::vector<int> aSurfaces,
+                                                      double                 aExtrudeZ )
+{
+    std::vector<std::pair<int, int>> dimTags;
+    dimTags.reserve( aSurfaces.size() );
+    for( const int idx : aSurfaces )
+    {
+        dimTags.emplace_back( 2, idx );
+    }
+
+    std::vector<std::pair<int, int>> ov;
+    gmsh::model::occ::extrude( dimTags, 0, 0, aExtrudeZ, ov );
+
+    std::vector<int> ret;
+    for( const auto& idx : ov )
+    {
+        if( idx.first == 3 )
+        {
+            ret.emplace_back( idx.second );
+        }
+    }
+    return ret;
 }
 
 std::pair<std::vector<int>, std::vector<int>>

@@ -61,6 +61,8 @@ public:
 
     void Load25DMesh();
 
+    void Load3DMesh();
+
     void Finalize(); // TODO: automatically called after Load3DMesh?
 
 private:
@@ -71,6 +73,8 @@ private:
                                   const std::map<int, int>&                            padRegions,
                                   const std::map<int, int>&                            netRegions,
                                   const std::set<int>& padHoleTags, const std::set<int>& holeTags );
+
+    std::vector<int> PlaneSurfacesToVolumes( const std::vector<int> aSurfaces, double aExtrudeZ );
 
     /**
      * It seems the gmsh::model::occ::fragment code has problems with holes in nets, so we need this workaround
