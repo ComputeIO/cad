@@ -53,7 +53,7 @@ void GMSH_MESHER::Load25DMesh()
     std::map<int, int> netRegions;
     std::set<int>      padHoleTags;
     std::set<int>      holeTags;
-    int currentHeight = 0;
+    int                currentHeight = 0;
     m_board->GetDesignSettings().GetStackupDescriptor().SynchronizeWithBoard(
             &m_board->GetDesignSettings() );
     for( const BOARD_STACKUP_ITEM* item :
@@ -117,6 +117,58 @@ void GMSH_MESHER::Load25DMesh()
     std::vector<std::vector<std::pair<int, int>>> ovv;
     gmsh::model::occ::fragment( fragments, {}, ov, ovv );
 
+    std::map<int, std::vector<int>> regionToShapeId = RegionsToShapesAfterFragment(
+            fragments, ov, ovv, padRegions, netRegions, padHoleTags, holeTags );
+
+    int airTag = m_next_region_id; // TODO
+
+    // remove air regions
+    const auto& airShapes = regionToShapeId.find( airTag );
+    if( airShapes != regionToShapeId.end() )
+    {
+        for( const auto& e : airShapes->second )
+        {
+            gmsh::model::occ::remove( { { 2, e } }, true );
+        }
+        regionToShapeId.erase( airShapes->first );
+    }
+
+    // we need to do synchronize when calling any non occ function!
+    std::cerr << "synchronize(): ";
+    gmsh::model::occ::synchronize();
+    std::cerr << "FINISHED" << std::endl;
+
+    for( const auto& kv : regionToShapeId )
+    {
+        gmsh::model::addPhysicalGroup( 2, kv.second, kv.first );
+    }
+
+    // generated 2.5d-mesh
+    std::cerr << "generate mesh" << std::endl;
+    gmsh::model::mesh::generate( 2 );
+    //std::cerr << "refine mesh" << std::endl;
+    //gmsh::model::mesh::refine();
+    //std::cerr << "set order mesh" << std::endl;
+    //gmsh::model::mesh::setOrder(2);
+    std::cerr << "finish mesh" << std::endl;
+
+    m_region_surfaces.clear();
+}
+
+
+void GMSH_MESHER::Finalize()
+{
+    gmsh::finalize();
+}
+
+
+std::map<int, std::vector<int>> GMSH_MESHER::RegionsToShapesAfterFragment(
+        const std::vector<std::pair<int, int>>&              fragments,
+        const std::vector<std::pair<int, int>>&              ov,
+        const std::vector<std::vector<std::pair<int, int>>>& ovv,
+        const std::map<int, int>& padRegions, const std::map<int, int>& netRegions,
+        const std::set<int>& padHoleTags, const std::set<int>& holeTags )
+{
     std::map<int, std::vector<int>> regionToShapeId;
     std::set<int>                   assignedShapeId;
 
@@ -189,16 +241,6 @@ void GMSH_MESHER::Load25DMesh()
             }
         }
     }
-    // remove air regions
-    const auto& airShapes = regionToShapeId.find( airTag );
-    if( airShapes != regionToShapeId.end() )
-    {
-        for( const auto& e : airShapes->second )
-        {
-            gmsh::model::occ::remove( { { 2, e } }, true );
-        }
-        regionToShapeId.erase( airShapes->first );
-    }
 
     if( assignedShapeId.size() != ov.size() )
     {
@@ -212,34 +254,8 @@ void GMSH_MESHER::Load25DMesh()
         }
     }
 
-    // we need to do synchronize when calling any non occ function!
-    std::cerr << "synchronize(): ";
-    gmsh::model::occ::synchronize();
-    std::cerr << "FINISHED" << std::endl;
-
-    for( const auto& kv : regionToShapeId )
-    {
-        gmsh::model::addPhysicalGroup( 2, kv.second, kv.first );
-    }
-
-    // generated 2.5d-mesh
-    std::cerr << "generate mesh" << std::endl;
-    gmsh::model::mesh::generate( 2 );
-    //std::cerr << "refine mesh" << std::endl;
-    //gmsh::model::mesh::refine();
-    //std::cerr << "set order mesh" << std::endl;
-    //gmsh::model::mesh::setOrder(2);
-    std::cerr << "finish mesh" << std::endl;
-
-    m_region_surfaces.clear();
+    return regionToShapeId;
 }
-
-
-void GMSH_MESHER::Finalize()
-{
-    gmsh::finalize();
-}
-
 
 std::pair<std::vector<int>, std::vector<int>>
 GMSH_MESHER::ShapePolySetToPlaneSurfaces( const SHAPE_POLY_SET& aPolySet, double aOffsetZ )

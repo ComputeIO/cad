@@ -64,6 +64,14 @@ public:
     void Finalize(); // TODO: automatically called after Load3DMesh?
 
 private:
+    std::map<int, std::vector<int>>
+    RegionsToShapesAfterFragment( const std::vector<std::pair<int, int>>&              fragments,
+                                  const std::vector<std::pair<int, int>>&              ov,
+                                  const std::vector<std::vector<std::pair<int, int>>>& ovv,
+                                  const std::map<int, int>&                            padRegions,
+                                  const std::map<int, int>&                            netRegions,
+                                  const std::set<int>& padHoleTags, const std::set<int>& holeTags );
+
     /**
      * It seems the gmsh::model::occ::fragment code has problems with holes in nets, so we need this workaround
      * @return first vector are outline surfaces, second vector are hole surfaces
