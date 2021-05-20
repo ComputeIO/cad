@@ -1754,19 +1754,20 @@ void GERBER_PLOTTER::FlashRegularPolygon( const wxPoint& aShapePos,
 }
 
 
-void GERBER_PLOTTER::Text( const wxPoint& aPos, const COLOR4D aColor,
-                           const wxString& aText, double aOrient, const wxSize& aSize,
-                           enum EDA_TEXT_HJUSTIFY_T aH_justify,
-                           enum EDA_TEXT_VJUSTIFY_T aV_justify, int aWidth, bool aItalic,
-                           bool aBold, bool aMultilineAllowed, KIFONT::FONT* aFont, void* aData )
+void GERBER_PLOTTER::Text( const wxPoint& aPos, const COLOR4D aColor, const wxString& aText,
+                           double aOrient, const wxSize& aSize,
+                           TEXT_ATTRIBUTES::HORIZONTAL_ALIGNMENT aHorizontalAlignment,
+                           TEXT_ATTRIBUTES::VERTICAL_ALIGNMENT aVerticalAlignment, int aWidth,
+                           bool aItalic, bool aBold, bool aMultilineAllowed, KIFONT::FONT* aFont,
+                           void* aData )
 {
     GBR_METADATA* gbr_metadata = static_cast<GBR_METADATA*>( aData );
 
     if( gbr_metadata )
         formatNetAttribute( &gbr_metadata->m_NetlistMetadata );
 
-    PLOTTER::Text( aPos, aColor, aText, aOrient, aSize, aH_justify, aV_justify, aWidth, aItalic,
-                   aBold, aMultilineAllowed, aFont, aData );
+    PLOTTER::Text( aPos, aColor, aText, aOrient, aSize, aHorizontalAlignment, aVerticalAlignment,
+                   aWidth, aItalic, aBold, aMultilineAllowed, aFont, aData );
 }
 
 

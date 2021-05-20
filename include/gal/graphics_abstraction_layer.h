@@ -330,25 +330,25 @@ public:
     {
         // Fallback: use stroke font
 
+        bool     saveMirroredState = m_attributes.IsMirrored();
+        float    saveLineWidth = m_lineWidth;
+        VECTOR2D saveGlyphSize = m_attributes.GetSize();
+
         // Handle flipped view
         if( m_globalFlipX )
-            textProperties.m_mirrored = !textProperties.m_mirrored;
+            m_attributes.SetMirrored( !m_attributes.IsMirrored() );
 
         // Bitmap font is slightly smaller and slightly heavier than the stroke font so we
         // compensate a bit before stroking
-        float    saveLineWidth = m_lineWidth;
-        VECTOR2D saveGlyphSize = textProperties.m_glyphSize;
         {
             m_lineWidth *= 1.2f;
-            textProperties.m_glyphSize = textProperties.m_glyphSize * 0.8;
+            m_attributes.SetSize( m_attributes.GetSize() * 0.8 );
 
             StrokeText( aText, aPosition, aRotationAngle );
         }
         m_lineWidth = saveLineWidth;
-        textProperties.m_glyphSize = saveGlyphSize;
-
-        if( m_globalFlipX )
-            textProperties.m_mirrored = !textProperties.m_mirrored;
+        m_attributes.SetSize( saveGlyphSize );
+        m_attributes.SetMirrored( saveMirroredState );
     }
 
     /**
@@ -379,52 +379,52 @@ public:
      *
      * @param aGlyphSize is the new font glyph size.
      */
-    inline void     SetGlyphSize( const VECTOR2D aSize ) { textProperties.m_glyphSize = aSize; }
-    const VECTOR2D& GetGlyphSize() const { return textProperties.m_glyphSize; }
+    inline void SetGlyphSize( const VECTOR2D aSize ) { m_attributes.SetSize( aSize ); }
+    VECTOR2D GetGlyphSize() const { return m_attributes.GetSize(); }
 
     /**
      * Set bold property of current font.
      *
      * @param aBold tells if the font should be bold or not.
      */
-    inline void SetFontBold( const bool aBold ) { textProperties.m_bold = aBold; }
-    inline bool IsFontBold() const { return textProperties.m_bold; }
+    inline void SetFontBold( const bool aBold ) { m_attributes.SetBold( aBold ); }
+    inline bool IsFontBold() const { return m_attributes.IsBold(); }
 
     /**
      * Set italic property of current font.
      *
      * @param aItalic tells if the font should be italic or not.
      */
-    inline void SetFontItalic( bool aItalic ) { textProperties.m_italic = aItalic; }
-    inline bool IsFontItalic() const { return textProperties.m_italic; }
+    inline void SetFontItalic( bool aItalic ) { m_attributes.SetItalic( aItalic ); }
+    inline bool IsFontItalic() const { return m_attributes.IsItalic(); }
 
-    inline void SetFontUnderlined( bool aUnderlined ) { textProperties.m_underlined = aUnderlined; }
-    inline bool IsFontUnderlined() const { return textProperties.m_underlined; }
+    inline void SetFontUnderlined( bool aUnderlined ) { m_attributes.SetUnderlined( aUnderlined ); }
+    inline bool IsFontUnderlined() const { return m_attributes.IsUnderlined(); }
 
     /**
      * Set a mirrored property of text.
      *
      * @param aMirrored tells if the text should be mirrored or not.
      */
-    inline void SetTextMirrored( const bool aMirrored ) { textProperties.m_mirrored = aMirrored; }
-    inline bool IsTextMirrored() const { return textProperties.m_mirrored; }
+    inline void SetTextMirrored( const bool aMirrored ) { m_attributes.SetMirrored( aMirrored ); }
+    inline bool IsTextMirrored() const { return m_attributes.IsMirrored(); }
 
     /**
      * Set the horizontal justify for text drawing.
      *
      * @param aHorizontalJustify is the horizontal justify value.
      */
-    inline void SetHorizontalJustify( const EDA_TEXT_HJUSTIFY_T aHorizontalJustify )
+    inline void SetHorizontalAlignment( TEXT_ATTRIBUTES::HORIZONTAL_ALIGNMENT aHorizontalJustify )
     {
-        textProperties.m_horizontalJustify = aHorizontalJustify;
+        m_attributes.Align( aHorizontalJustify );
     }
 
     /**
      * Return current text horizontal justification setting.
      */
-    inline EDA_TEXT_HJUSTIFY_T GetHorizontalJustify() const
+    inline TEXT_ATTRIBUTES::HORIZONTAL_ALIGNMENT GetHorizontalAlignment() const
     {
-        return textProperties.m_horizontalJustify;
+        return m_attributes.GetHorizontalAlignment();
     }
 
     /**
@@ -432,17 +432,17 @@ public:
      *
      * @param aVerticalJustify is the vertical justify value.
      */
-    inline void SetVerticalJustify( const EDA_TEXT_VJUSTIFY_T aVerticalJustify )
+    inline void SetVerticalAlignment( const TEXT_ATTRIBUTES::VERTICAL_ALIGNMENT aVerticalJustify )
     {
-        textProperties.m_verticalJustify = aVerticalJustify;
+        m_attributes.Align( aVerticalJustify );
     }
 
     /**
      * Returns current text vertical justification setting.
      */
-    inline EDA_TEXT_VJUSTIFY_T GetVerticalJustify() const
+    inline TEXT_ATTRIBUTES::VERTICAL_ALIGNMENT GetVerticalAlignment() const
     {
-        return textProperties.m_verticalJustify;
+        return m_attributes.GetVerticalAlignment();
     }
 
 
@@ -1044,18 +1044,9 @@ protected:
     bool     m_fullscreenCursor;   ///< Shape of the cursor (fullscreen or small cross)
     VECTOR2D m_cursorPosition;     ///< Current cursor position (world coordinates)
 
-    KICURSOR             m_currentNativeCursor; ///< Current cursor
+    KICURSOR m_currentNativeCursor; ///< Current cursor
 private:
-    struct TEXT_PROPERTIES
-    {
-        VECTOR2D            m_glyphSize;         ///< Size of the glyphs
-        EDA_TEXT_HJUSTIFY_T m_horizontalJustify; ///< Horizontal justification
-        EDA_TEXT_VJUSTIFY_T m_verticalJustify;   ///< Vertical justification
-        bool                m_bold;
-        bool                m_italic;
-        bool                m_underlined;
-        bool                m_mirrored;
-    } textProperties;
+    TEXT_ATTRIBUTES m_attributes;
 };
 
 

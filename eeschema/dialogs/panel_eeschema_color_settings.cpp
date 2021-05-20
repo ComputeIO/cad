@@ -301,26 +301,26 @@ void PANEL_EESCHEMA_COLOR_SETTINGS::createPreviewItems()
     addItem( e2 );
 
     SCH_TEXT* t1 = new SCH_TEXT( MILS_POINT( 2850, 2250 ), wxT( "PLAIN TEXT" ) );
-    t1->SetLabelSpinStyle( LABEL_SPIN_STYLE::SPIN::LEFT );
+    t1->SetAlignedAngle( EDA_ANGLE::ANGLE_180 );
     addItem( t1 );
 
     SCH_LABEL* t2 = new SCH_LABEL( MILS_POINT( 1975, 1500 ), wxT( "LABEL_{0}" ) );
-    t2->SetLabelSpinStyle( LABEL_SPIN_STYLE::SPIN::RIGHT );
+    t2->SetAlignedAngle( EDA_ANGLE::ANGLE_0 );
     t2->SetIsDangling( false );
     addItem( t2 );
 
     SCH_LABEL* t3 = new SCH_LABEL( MILS_POINT( 1975, 2600 ), wxT( "LABEL_{1}" ) );
-    t3->SetLabelSpinStyle( LABEL_SPIN_STYLE::SPIN::RIGHT );
+    t3->SetAlignedAngle( EDA_ANGLE::ANGLE_0 );
     t3->SetIsDangling( false );
     addItem( t3 );
 
     SCH_GLOBALLABEL* t4 = new SCH_GLOBALLABEL( MILS_POINT( 1750, 1400 ), wxT( "GLOBAL[3..0]" ) );
-    t4->SetLabelSpinStyle( LABEL_SPIN_STYLE::SPIN::LEFT );
+    t4->SetAlignedAngle( EDA_ANGLE::ANGLE_180 );
     t4->SetIsDangling( false );
     addItem( t4 );
 
     SCH_HIERLABEL* t5 = new SCH_HIERLABEL( MILS_POINT( 3250, 1600 ), wxT( "HIER_LABEL" ) );
-    t5->SetLabelSpinStyle( LABEL_SPIN_STYLE::SPIN::RIGHT );
+    t5->SetAlignedAngle( EDA_ANGLE::ANGLE_0 );
     t5->SetIsDangling( false );
     addItem( t5 );
 
@@ -337,13 +337,13 @@ void PANEL_EESCHEMA_COLOR_SETTINGS::createPreviewItems()
 
         ref.SetText( wxT( "U1" ) );
         ref.SetPosition( MILS_POINT( p.x + 30, p.y + 260 ) );
-        ref.SetHorizJustify( GR_TEXT_HJUSTIFY_LEFT );
+        ref.Align( TEXT_ATTRIBUTES::H_LEFT );
 
         LIB_FIELD& value = part->GetValueField();
 
         value.SetText( wxT( "OPA604" ) );
         value.SetPosition( MILS_POINT( p.x + 30, p.y + 180 ) );
-        value.SetHorizJustify( GR_TEXT_HJUSTIFY_LEFT );
+        value.Align( TEXT_ATTRIBUTES::H_LEFT );
 
         part->SetShowPinNames( true );
         part->SetShowPinNumbers( true );

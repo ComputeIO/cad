@@ -45,7 +45,7 @@ class SCH_DRAWING_TOOLS : public EE_TOOL_BASE<SCH_EDIT_FRAME>
 {
 public:
     SCH_DRAWING_TOOLS();
-    ~SCH_DRAWING_TOOLS() override { }
+    ~SCH_DRAWING_TOOLS() override {}
 
     /// @copydoc TOOL_INTERACTIVE::Init()
     bool Init() override;
@@ -83,18 +83,21 @@ private:
     std::vector<PICKED_SYMBOL> m_symbolHistoryList;
     std::vector<PICKED_SYMBOL> m_powerHistoryList;
 
-    PINSHEETLABEL_SHAPE        m_lastSheetPinType;
-    PINSHEETLABEL_SHAPE        m_lastGlobalLabelShape;
-    LABEL_SPIN_STYLE           m_lastTextOrientation;
-    bool                       m_lastTextBold;
-    bool                       m_lastTextItalic;
+    PINSHEETLABEL_SHAPE                   m_lastSheetPinType;
+    PINSHEETLABEL_SHAPE                   m_lastGlobalLabelShape;
+    EDA_ANGLE                             m_lastTextAngle;
+    TEXT_ATTRIBUTES::HORIZONTAL_ALIGNMENT m_lastTextHorizontalAlignment;
+    TEXT_ATTRIBUTES::VERTICAL_ALIGNMENT   m_lastTextVerticalAlignment;
+    bool                                  m_lastTextBold = false;
+    bool                                  m_lastTextItalic = false;
+    KIFONT::FONT*                         m_lastFont = nullptr;
 
     ///< Re-entrancy guards
-    bool                       m_inPlaceSymbol;
-    bool                       m_inPlaceImage;
-    bool                       m_inSingleClickPlace;
-    bool                       m_inTwoClickPlace;
-    bool                       m_inDrawSheet;
+    bool m_inPlaceSymbol = false;
+    bool m_inPlaceImage = false;
+    bool m_inSingleClickPlace = false;
+    bool m_inTwoClickPlace = false;
+    bool m_inDrawSheet = false;
 
     std::unique_ptr<STATUS_TEXT_POPUP> m_statusPopup;
 };

@@ -120,8 +120,8 @@ size_t hash_fp_item( const EDA_ITEM* aItem, int aFlags )
         hash_combine( ret, text->IsMirrored() );
         hash_combine( ret, text->GetTextWidth() );
         hash_combine( ret, text->GetTextHeight() );
-        hash_combine( ret, text->GetHorizJustify() );
-        hash_combine( ret, text->GetVertJustify() );
+        hash_combine( ret, text->GetHorizontalAlignment() );
+        hash_combine( ret, text->GetVerticalAlignment() );
 
         if( aFlags & HASH_POS )
         {

@@ -614,10 +614,10 @@ void SCH_SEXPR_PARSER::parseEDA_TEXT( EDA_TEXT* aText )
             {
                 switch( token )
                 {
-                case T_left: aText->SetHorizJustify( GR_TEXT_HJUSTIFY_LEFT ); break;
-                case T_right: aText->SetHorizJustify( GR_TEXT_HJUSTIFY_RIGHT ); break;
-                case T_top: aText->SetVertJustify( GR_TEXT_VJUSTIFY_TOP ); break;
-                case T_bottom: aText->SetVertJustify( GR_TEXT_VJUSTIFY_BOTTOM ); break;
+                case T_left: aText->Align( TEXT_ATTRIBUTES::H_LEFT ); break;
+                case T_right: aText->Align( TEXT_ATTRIBUTES::H_RIGHT ); break;
+                case T_top: aText->Align( TEXT_ATTRIBUTES::V_TOP ); break;
+                case T_bottom: aText->Align( TEXT_ATTRIBUTES::V_BOTTOM ); break;
                 case T_mirror: aText->SetMirrored( true ); break;
                 default: Expecting( "left, right, top, bottom, hcenter, vcenter, or mirror" );
                 }
@@ -2773,16 +2773,6 @@ SCH_TEXT* SCH_SEXPR_PARSER::parseSchText()
             int angle = static_cast<int>( parseDouble( "text angle" ) );
             switch( angle )
             {
-#ifdef USE_SPIN_STYLE
-            case 0: text->SetLabelSpinStyle( LABEL_SPIN_STYLE::RIGHT ); break;
-            case 90: text->SetLabelSpinStyle( LABEL_SPIN_STYLE::UP ); break;
-            case 180: text->SetLabelSpinStyle( LABEL_SPIN_STYLE::LEFT ); break;
-            case 270: text->SetLabelSpinStyle( LABEL_SPIN_STYLE::BOTTOM ); break;
-            default:
-                wxFAIL;
-                text->SetLabelSpinStyle( LABEL_SPIN_STYLE::RIGHT );
-                break;
-#else
             case 0:
             case 90:
             case 180:
@@ -2791,7 +2781,6 @@ SCH_TEXT* SCH_SEXPR_PARSER::parseSchText()
                 wxFAIL;
                 text->SetTextAngle( EDA_ANGLE::HORIZONTAL );
                 break;
-#endif
             }
 
             NeedRIGHT();
@@ -2826,26 +2815,22 @@ SCH_TEXT* SCH_SEXPR_PARSER::parseSchText()
             parseEDA_TEXT( static_cast<EDA_TEXT*>( text.get() ) );
 
             // Spin style is defined differently for graphical text (#SCH_TEXT) objects.
-            if( text->Type() == SCH_TEXT_T )
+            if( text->Type() == SCH_TEXT_T
+                && text->GetHorizontalAlignment() == TEXT_ATTRIBUTES::H_RIGHT )
             {
-                if( text->GetHorizJustify() == GR_TEXT_HJUSTIFY_RIGHT
-                    && text->GetTextAngle() == TEXT_ANGLE_VERT )
+                if( text->GetTextAngle() == TEXT_ANGLE_VERT )
                 {
                     // The vertically aligned text angle is always 90 (labels use 270 for the
                     // down direction) combined with the text justification flags.
-#ifdef USE_SPIN_STYLE
-                    text->SetLabelSpinStyle( LABEL_SPIN_STYLE::BOTTOM );
-#endif
+                    text->SetTextAngle( EDA_ANGLE::ANGLE_270 );
                 }
-                else if( text->GetHorizJustify() == GR_TEXT_HJUSTIFY_RIGHT
-                         && text->GetTextAngle() == TEXT_ANGLE_HORIZ )
+                else if( text->GetTextAngle() == TEXT_ANGLE_HORIZ )
                 {
                     // The horizontally aligned text angle is always 0 (labels use 180 for the
                     // left direction) combined with the text justification flags.
-#ifdef USE_SPIN_STYLE
-                    text->SetLabelSpinStyle( LABEL_SPIN_STYLE::LEFT );
-#endif
+                    text->SetTextAngle( EDA_ANGLE::ANGLE_180 );
                 }
+
             }
 
             break;

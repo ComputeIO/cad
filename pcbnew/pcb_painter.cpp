@@ -553,19 +553,19 @@ void PCB_PAINTER::draw( const TRACK* aTrack, int aLayer )
             textPosition.y += penWidth / 1.4;
         }
 
-
-        m_gal->SetIsStroke( true );
-        m_gal->SetIsFill( false );
         m_gal->SetStrokeColor( color );
-        m_gal->SetLineWidth( penWidth );
-        m_gal->SetFontBold( false );
-        m_gal->SetFontItalic( false );
-        m_gal->SetFontUnderlined( false );
-        m_gal->SetTextMirrored( false );
-        m_gal->SetGlyphSize( VECTOR2D( textSize * 0.55, textSize * 0.55 ) );
-        m_gal->SetHorizontalJustify( GR_TEXT_HJUSTIFY_CENTER );
-        m_gal->SetVerticalJustify( GR_TEXT_VJUSTIFY_CENTER );
-        m_gal->BitmapText( netName, textPosition, textOrientation );
+        m_gal->SetFillColor( color );
+        EDA_TEXT netNameText;
+        netNameText.SetText( netName );
+        netNameText.SetTextSize( wxSize( textSize * 0.55, textSize * 0.55 ) );
+        netNameText.SetTextThickness( penWidth );
+        netNameText.Align( TEXT_ATTRIBUTES::H_CENTER, TEXT_ATTRIBUTES::V_CENTER );
+        netNameText.SetTextPos( textPosition );
+        netNameText.SetTextAngle( EDA_ANGLE( textOrientation, EDA_ANGLE::RADIANS ) );
+        KIFONT::FONT* font = netNameText.GetFont();
+        m_gal->SetIsStroke( font->IsStroke() );
+        m_gal->SetIsFill( font->IsOutline() );
+        font->Draw( m_gal, netNameText );
 
         return;
     }
@@ -691,7 +691,10 @@ void PCB_PAINTER::draw( const VIA* aVia, int aLayer )
 
         m_gal->SetGlyphSize( namesize );
         m_gal->SetLineWidth( namesize.x / 12.0 );
-        m_gal->BitmapText( netname, textpos, 0.0 );
+        TEXT_ATTRIBUTES attributes;
+        attributes.SetSize( namesize );
+        attributes.SetStrokeWidth( namesize.x / 12.0 );
+        attributes.GetFont()->Draw( m_gal, netname, textpos, attributes );
 
         m_gal->Restore();
 
@@ -851,8 +854,8 @@ void PCB_PAINTER::draw( const PAD* aPad, int aLayer )
                 size = maxSize;
 
             // Default font settings
-            m_gal->SetHorizontalJustify( GR_TEXT_HJUSTIFY_CENTER );
-            m_gal->SetVerticalJustify( GR_TEXT_VJUSTIFY_CENTER );
+            m_gal->SetHorizontalAlignment( TEXT_ATTRIBUTES::H_CENTER );
+            m_gal->SetVerticalAlignment( TEXT_ATTRIBUTES::V_CENTER );
             m_gal->SetFontBold( false );
             m_gal->SetFontItalic( false );
             m_gal->SetFontUnderlined( false );
@@ -892,7 +895,10 @@ void PCB_PAINTER::draw( const PAD* aPad, int aLayer )
 
                 m_gal->SetGlyphSize( namesize );
                 m_gal->SetLineWidth( namesize.x / 12.0 );
-                m_gal->BitmapText( netname, textpos, 0.0 );
+                TEXT_ATTRIBUTES attributes;
+                attributes.SetSize( namesize );
+                attributes.SetStrokeWidth( namesize.x / 12.0 );
+                attributes.GetFont()->Draw( m_gal, netname, textpos, attributes );
             }
 
             if( m_pcbSettings.m_padNumbers )
@@ -908,7 +914,10 @@ void PCB_PAINTER::draw( const PAD* aPad, int aLayer )
 
                 m_gal->SetGlyphSize( numsize );
                 m_gal->SetLineWidth( numsize.x / 12.0 );
-                m_gal->BitmapText( padName, textpos, 0.0 );
+                TEXT_ATTRIBUTES attributes;
+                attributes.SetSize( numsize );
+                attributes.SetStrokeWidth( numsize.x / 12.0 );
+                attributes.GetFont()->Draw( m_gal, padName, textpos, attributes );
             }
 
             m_gal->Restore();
@@ -1598,8 +1607,8 @@ void PCB_PAINTER::draw( const PCB_GROUP* aGroup, int aLayer )
             m_gal->SetFontItalic( true );
             m_gal->SetFontUnderlined( false );
             m_gal->SetTextMirrored( m_gal->IsFlippedX() );
-            m_gal->SetHorizontalJustify( GR_TEXT_HJUSTIFY_CENTER );
-            m_gal->SetVerticalJustify( GR_TEXT_VJUSTIFY_BOTTOM );
+            m_gal->SetHorizontalAlignment( TEXT_ATTRIBUTES::H_CENTER );
+            m_gal->SetVerticalAlignment( TEXT_ATTRIBUTES::V_BOTTOM );
             m_gal->SetIsFill( false );
             m_gal->SetGlyphSize( VECTOR2D( textSize, textSize ) );
             m_gal->SetLineWidth( penWidth );

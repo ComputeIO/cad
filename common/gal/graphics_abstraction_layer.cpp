@@ -149,13 +149,7 @@ bool GAL::updatedGalDisplayOptions( const GAL_DISPLAY_OPTIONS& aOptions )
 
 void GAL::SetTextAttributes( const EDA_TEXT* aText )
 {
-    SetGlyphSize( VECTOR2D( aText->GetTextSize() ) );
-    SetHorizontalJustify( aText->GetHorizJustify() );
-    SetVerticalJustify( aText->GetVertJustify() );
-    SetFontBold( aText->IsBold() );
-    SetFontItalic( aText->IsItalic() );
-    SetFontUnderlined( false );
-    SetTextMirrored( aText->IsMirrored() );
+    m_attributes = TEXT_ATTRIBUTES( aText );
 }
 
 
@@ -165,8 +159,8 @@ void GAL::ResetTextAttributes()
     // there is no built-in default
     SetGlyphSize( { 1.0, 1.0 } );
 
-    SetHorizontalJustify( GR_TEXT_HJUSTIFY_CENTER );
-    SetVerticalJustify( GR_TEXT_VJUSTIFY_CENTER );
+    SetHorizontalAlignment( TEXT_ATTRIBUTES::H_CENTER );
+    SetVerticalAlignment( TEXT_ATTRIBUTES::V_CENTER );
 
     SetFontBold( false );
     SetFontItalic( false );
@@ -286,8 +280,7 @@ void GAL::StrokeText( const wxString& aText, const VECTOR2D& aPosition, double a
 
     TEXT_ATTRIBUTES attributes;
     attributes.SetAngle( EDA_ANGLE( aRotationAngle, EDA_ANGLE::RADIANS ) );
-    attributes.SetHorizJustify( GetHorizontalJustify() );
-    attributes.SetVertJustify( GetVerticalJustify() );
+    attributes.Align( GetHorizontalAlignment(), GetVerticalAlignment() );
     attributes.SetLineSpacing( aLineSpacing );
 
 #ifdef DEBUG

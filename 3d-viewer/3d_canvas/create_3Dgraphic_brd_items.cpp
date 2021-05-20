@@ -182,19 +182,6 @@ void BOARD_ADAPTER::addShapeWithClearance( const PCB_TEXT* aText, CONTAINER_2D_B
         // color is not used, but we have to specify it anyway
         GRText( aText, COLOR4D::BLACK, addTextSegmToContainer );
     }
-    /*
-    // not actually used, but needed by GRText
-    const COLOR4D dummy_color;
-
-    // Use the actual text width to generate segments. The segment position depend on
-    // text thickness and justification
-    bool isBold = aText->IsBold();
-    int  penWidth = aText->GetEffectiveTextPenWidth();
-
-    GRText( nullptr, aText->GetTextPos(), dummy_color, aText->GetShownText(),
-            aText->GetTextAngle(), size, aText->GetHorizJustify(), aText->GetVertJustify(),
-            penWidth, aText->IsItalic(), isBold, addTextSegmToContainer );
-    */
 }
 
 
@@ -304,8 +291,8 @@ void BOARD_ADAPTER::addFootprintShapesWithClearance( const FOOTPRINT*   aFootpri
             size.x = -size.x;
 
         GRText( nullptr, text->GetTextPos(), BLACK, text->GetShownText(), text->GetDrawRotation(),
-                size, text->GetHorizJustify(), text->GetVertJustify(), penWidth, text->IsItalic(),
-                isBold, addTextSegmToContainer );
+                size, text->GetHorizontalAlignment(), text->GetVerticalAlignment(), penWidth,
+                text->IsItalic(), isBold, addTextSegmToContainer );
     }
 }
 

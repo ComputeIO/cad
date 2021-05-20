@@ -56,7 +56,7 @@ PLOTTER::PLOTTER()
     m_mirrorIsHorizontal = true;
     m_yaxisReversed = false;
     m_outputFile = nullptr;
-    m_colorMode = false;          // Starts as a BW plot
+    m_colorMode = false; // Starts as a BW plot
     m_negativeMode = false;
     // Temporary init to avoid not initialized vars, will be set later
     m_IUsPerDecimil = 1;   // will be set later to the actual value
@@ -609,13 +609,13 @@ void PLOTTER::PlotPoly( const SHAPE_LINE_CHAIN& aCornerList, FILL_TYPE aFill, in
 /**
  * Function PLOTTER::Text
  * same as GRText, but plot graphic text insteed of draw it
- *  @param aPos = text position (according to aH_justify, aV_justify)
+ *  @param aPos = text position (according to a{Horizontal,Vertical}Alignment)
  *  @param aColor (COLOR4D) = text color
  *  @param aText = text to draw
  *  @param aOrient = angle in 0.1 degree
  *  @param aSize = text size (size.x or size.y can be < 0 for mirrored texts)
- *  @param aH_justify = horizontal justification (Left, center, right)
- *  @param aV_justify = vertical justification (bottom, center, top)
+ *  @param aHorizontalAlignment = horizontal alignment (Left, Center, Right)
+ *  @param aVerticalAlignment = vertical alignment (Top, Center, Bottom)
  *  @param aPenWidth = line width (if = 0, use plot default line width)
  *  @param aItalic = true to simulate an italic font
  *  @param aBold = true to use a bold font Useful only with default width value (aWidth = 0)
@@ -624,16 +624,18 @@ void PLOTTER::PlotPoly( const SHAPE_LINE_CHAIN& aCornerList, FILL_TYPE aFill, in
  * not directly used here.
  */
 void PLOTTER::Text( const wxPoint& aPos, const COLOR4D aColor, const wxString& aText,
-                    double aOrient, const wxSize& aSize, enum EDA_TEXT_HJUSTIFY_T aH_justify,
-                    enum EDA_TEXT_VJUSTIFY_T aV_justify, int aPenWidth, bool aItalic, bool aBold,
-                    bool aMultilineAllowed, KIFONT::FONT* aFont, void* aData )
+                    double aOrient, const wxSize& aSize,
+                    TEXT_ATTRIBUTES::HORIZONTAL_ALIGNMENT aHorizontalAlignment,
+                    TEXT_ATTRIBUTES::VERTICAL_ALIGNMENT aVerticalAlignment, int aPenWidth,
+                    bool aItalic, bool aBold, bool aMultilineAllowed, KIFONT::FONT* aFont,
+                    void* aData )
 {
     SetColor( aColor );
     SetCurrentLineWidth( aPenWidth, aData );
     SetFont( aFont );
 
-    GRText( NULL, aPos, aColor, aText, aOrient, aSize, aH_justify, aV_justify, aPenWidth, aItalic,
-            aBold, nullptr, nullptr, this );
+    GRText( NULL, aPos, aColor, aText, aOrient, aSize, aHorizontalAlignment, aVerticalAlignment,
+            aPenWidth, aItalic, aBold, nullptr, nullptr, this );
 }
 
 

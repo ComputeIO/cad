@@ -55,7 +55,7 @@ public:
     bool TransferDataToWindow() override;
     bool TransferDataFromWindow() override;
 
-    SCH_BASE_FRAME* GetParent() { return dynamic_cast< SCH_BASE_FRAME* >( wxDialog::GetParent() ); }
+    SCH_BASE_FRAME* GetParent() { return dynamic_cast<SCH_BASE_FRAME*>( wxDialog::GetParent() ); }
 
     const wxString& GetText() const { return m_text; }
 
@@ -84,21 +84,43 @@ protected:
     UNIT_BINDER m_posY;
     UNIT_BINDER m_textSize;
 
-    int         m_fieldId;
-    bool        m_isPower;
-    wxString    m_text;
-    bool        m_isItalic;
-    bool        m_isBold;
-    wxPoint     m_position;
-    int         m_size;
-    bool        m_isVertical;
-    int         m_verticalJustification;
-    int         m_horizontalJustification;
-    bool        m_isVisible;
+    int      m_fieldId;
+    bool     m_isPower;
+    wxString m_text;
+    bool     m_isItalic;
+    bool     m_isBold;
+    wxPoint  m_position;
+    int      m_size;
+    bool     m_isVertical;
+    TEXT_ATTRIBUTES::HORIZONTAL_ALIGNMENT m_horizontalAlignment;
+    TEXT_ATTRIBUTES::VERTICAL_ALIGNMENT m_verticalAlignment;
+    bool     m_isVisible;
 
-    bool        m_firstFocus;
+    bool m_firstFocus;
 
     SCINTILLA_TRICKS* m_scintillaTricks;
+
+    static TEXT_ATTRIBUTES::HORIZONTAL_ALIGNMENT getHorizontalAlignment( int aChoice )
+    {
+        switch( aChoice )
+        {
+        default:
+        case 0: return TEXT_ATTRIBUTES::H_LEFT;
+        case 1: return TEXT_ATTRIBUTES::H_CENTER;
+        case 2: return TEXT_ATTRIBUTES::H_RIGHT;
+        }
+    }
+
+    static TEXT_ATTRIBUTES::VERTICAL_ALIGNMENT getVerticalAlignment( int aChoice )
+    {
+        switch( aChoice )
+        {
+        case 0: return TEXT_ATTRIBUTES::V_TOP;
+        default:
+        case 1: return TEXT_ATTRIBUTES::V_CENTER;
+        case 2: return TEXT_ATTRIBUTES::V_BOTTOM;
+        }
+    }
 };
 
 
@@ -141,7 +163,7 @@ public:
 
     ~DIALOG_SCH_EDIT_ONE_FIELD() {}
 
-    void onScintillaCharAdded( wxStyledTextEvent &aEvent );
+    void onScintillaCharAdded( wxStyledTextEvent& aEvent );
 
     void UpdateField( SCH_FIELD* aField, SCH_SHEET_PATH* aSheetPath );
 
@@ -149,4 +171,4 @@ private:
     const SCH_FIELD* m_field;
 };
 
-#endif    // DIALOG_EDIT_ONE_FIELD_H_
+#endif // DIALOG_EDIT_ONE_FIELD_H_

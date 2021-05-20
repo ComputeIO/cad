@@ -783,8 +783,8 @@ void SVG_PLOTTER::Text( const wxPoint&              aPos,
                         const wxString&             aText,
                         double                      aOrient,
                         const wxSize&               aSize,
-                        enum EDA_TEXT_HJUSTIFY_T    aH_justify,
-                        enum EDA_TEXT_VJUSTIFY_T    aV_justify,
+                        TEXT_ATTRIBUTES::HORIZONTAL_ALIGNMENT aHorizontalAlignment,
+                        TEXT_ATTRIBUTES::VERTICAL_ALIGNMENT   aVerticalAlignment,
                         int                         aWidth,
                         bool                        aItalic,
                         bool                        aBold,
@@ -799,33 +799,18 @@ void SVG_PLOTTER::Text( const wxPoint&              aPos,
     wxPoint text_pos = aPos;
     const char *hjust = "start";
 
-    switch( aH_justify )
+    switch( aHorizontalAlignment )
     {
-    case GR_TEXT_HJUSTIFY_CENTER:
-        hjust = "middle";
-        break;
-
-    case GR_TEXT_HJUSTIFY_RIGHT:
-        hjust = "end";
-        break;
-
-    case GR_TEXT_HJUSTIFY_LEFT:
-        hjust = "start";
-        break;
+    case TEXT_ATTRIBUTES::H_CENTER: hjust = "middle"; break;
+    case TEXT_ATTRIBUTES::H_RIGHT: hjust = "end"; break;
+    case TEXT_ATTRIBUTES::H_LEFT: hjust = "start"; break;
     }
 
-    switch( aV_justify )
+    switch( aVerticalAlignment )
     {
-    case GR_TEXT_VJUSTIFY_CENTER:
-        text_pos.y += aSize.y / 2;
-        break;
-
-    case GR_TEXT_VJUSTIFY_TOP:
-        text_pos.y += aSize.y;
-        break;
-
-    case GR_TEXT_VJUSTIFY_BOTTOM:
-        break;
+    case TEXT_ATTRIBUTES::V_CENTER: text_pos.y += aSize.y / 2; break;
+    case TEXT_ATTRIBUTES::V_TOP: text_pos.y += aSize.y; break;
+    case TEXT_ATTRIBUTES::V_BOTTOM: break;
     }
 
     wxSize text_size;
@@ -862,7 +847,7 @@ void SVG_PLOTTER::Text( const wxPoint&              aPos,
     fprintf( m_outputFile,
              "<g class=\"stroked-text\"><desc>%s</desc>\n",
              TO_UTF8( XmlEsc( aText ) ) );
-    PLOTTER::Text( aPos, aColor, aText, aOrient, aSize, aH_justify, aV_justify,
+    PLOTTER::Text( aPos, aColor, aText, aOrient, aSize, aHorizontalAlignment, aVerticalAlignment,
                    aWidth, aItalic, aBold, aMultilineAllowed, aFont, aData );
     fputs( "</g>", m_outputFile );
 }

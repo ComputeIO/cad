@@ -235,8 +235,8 @@ void SCH_FIELD::Print( const RENDER_SETTINGS* aSettings, const wxPoint& aOffset 
     EDA_RECT boundaryBox = GetBoundingBox();
     textpos = boundaryBox.Centre() + aOffset;
 
-    GRText( DC, textpos, color, GetShownText(), orient, GetTextSize(), GR_TEXT_HJUSTIFY_CENTER,
-            GR_TEXT_VJUSTIFY_CENTER, penWidth, IsItalic(), IsBold() );
+    GRText( DC, textpos, color, GetShownText(), orient, GetTextSize(), TEXT_ATTRIBUTES::H_CENTER,
+            TEXT_ATTRIBUTES::V_CENTER, penWidth, IsItalic(), IsBold() );
 }
 
 
@@ -306,11 +306,11 @@ bool SCH_FIELD::IsHorizJustifyFlipped() const
     wxPoint render_center = GetBoundingBox().Centre();
     wxPoint pos = GetPosition();
 
-    switch( GetHorizJustify() )
+    switch( GetHorizontalAlignment() )
     {
-    case GR_TEXT_HJUSTIFY_LEFT:
+    case TEXT_ATTRIBUTES::H_LEFT:
         return render_center.x < pos.x;
-    case GR_TEXT_HJUSTIFY_RIGHT:
+    case TEXT_ATTRIBUTES::H_RIGHT:
         return render_center.x > pos.x;
     default:
         return false;
@@ -675,12 +675,11 @@ void SCH_FIELD::Plot( PLOTTER* aPlotter ) const
      *   GetBoundingBox to know the text coordinate considered as centered
      */
     EDA_RECT BoundaryBox = GetBoundingBox();
-    EDA_TEXT_HJUSTIFY_T hjustify = GR_TEXT_HJUSTIFY_CENTER;
-    EDA_TEXT_VJUSTIFY_T vjustify = GR_TEXT_VJUSTIFY_CENTER;
     wxPoint  textpos = BoundaryBox.Centre();
 
-    aPlotter->Text( textpos, color, GetShownText(), orient, GetTextSize(),  hjustify, vjustify,
-                    penWidth, IsItalic(), IsBold() );
+    aPlotter->Text( textpos, color, GetShownText(), orient, GetTextSize(),
+                    TEXT_ATTRIBUTES::H_CENTER, TEXT_ATTRIBUTES::V_CENTER, penWidth, IsItalic(),
+                    IsBold() );
 }
 
 

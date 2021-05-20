@@ -204,8 +204,8 @@ private:
     ELECTRICAL_PINTYPE getKiCadPinType( const PART::PIN_TYPE& aPinType );
 
     int              getKiCadUnitNumberFromGate( const GATE_ID& aCadstarGateID );
-    LABEL_SPIN_STYLE getSpinStyle( const long long& aCadstarOrientation, bool aMirror );
-    LABEL_SPIN_STYLE getSpinStyleDeciDeg( const double& aOrientationDeciDeg );
+    EDA_ANGLE        getEdaAngle( const long long& aCadstarOrientation, bool aMirror );
+    const EDA_ANGLE& getCardinalAngle( const double& aOrientationDeciDeg );
     ALIGNMENT        mirrorX( const ALIGNMENT& aCadstarAlignment );
     ALIGNMENT        rotate180( const ALIGNMENT& aCadstarAlignment );
 

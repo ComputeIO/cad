@@ -251,8 +251,8 @@ bool GENDRILL_WRITER_BASE::genDrillMapFile( const wxString& aFullFileName, PLOT_
     // Plot title  "Info"
     wxString Text = wxT( "Drill Map:" );
     plotter->Text( wxPoint( plotX, plotY ), COLOR4D::UNSPECIFIED, Text, 0,
-            wxSize( KiROUND( charSize * charScale ), KiROUND( charSize * charScale ) ),
-            GR_TEXT_HJUSTIFY_LEFT, GR_TEXT_VJUSTIFY_CENTER, TextWidth, false, false );
+                   wxSize( KiROUND( charSize * charScale ), KiROUND( charSize * charScale ) ),
+                   TEXT_ATTRIBUTES::H_LEFT, TEXT_ATTRIBUTES::V_CENTER, TextWidth, false, false );
 
     // For some formats (PS, PDF SVG) we plot the drill size list on more than one column
     // because the list must be contained inside the printed page
@@ -311,8 +311,9 @@ bool GENDRILL_WRITER_BASE::genDrillMapFile( const wxString& aFullFileName, PLOT_
             msg += wxT( " (not plated)" );
 
         plotter->Text( wxPoint( plotX, y ), COLOR4D::UNSPECIFIED, msg, 0,
-                wxSize( KiROUND( charSize * charScale ), KiROUND( charSize * charScale ) ),
-                GR_TEXT_HJUSTIFY_LEFT, GR_TEXT_VJUSTIFY_CENTER, TextWidth, false, false );
+                       wxSize( KiROUND( charSize * charScale ), KiROUND( charSize * charScale ) ),
+                       TEXT_ATTRIBUTES::H_LEFT, TEXT_ATTRIBUTES::V_CENTER, TextWidth, false,
+                       false );
 
         intervalle = KiROUND( ( ( charSize * charScale ) + TextWidth ) * 1.2 );
 

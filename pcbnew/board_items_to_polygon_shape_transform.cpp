@@ -301,8 +301,9 @@ void FP_TEXT::TransformTextShapeWithClearanceToPolygon( SHAPE_POLY_SET& aCornerB
     if( IsMirrored() )
         size.x = -size.x;
 
-    GRText( NULL, GetTextPos(), BLACK, GetShownText(), GetDrawRotation(), size, GetHorizJustify(),
-            GetVertJustify(), penWidth, IsItalic(), IsBold(), addTextSegmToPoly, &prms );
+    GRText( NULL, GetTextPos(), BLACK, GetShownText(), GetDrawRotation(), size,
+            GetHorizontalAlignment(), GetVerticalAlignment(), penWidth, IsItalic(), IsBold(),
+            addTextSegmToPoly, &prms );
 }
 
 
@@ -399,8 +400,9 @@ void PCB_TEXT::TransformTextShapeWithClearanceToPolygon( SHAPE_POLY_SET& aCorner
     prms.m_error = aError;
     COLOR4D color;  // not actually used, but needed by GRText
 
-    GRText( NULL, GetTextPos(), color, GetShownText(), GetTextAngle(), size, GetHorizJustify(),
-            GetVertJustify(), penWidth, IsItalic(), IsBold(), addTextSegmToPoly, &prms );
+    GRText( NULL, GetTextPos(), color, GetShownText(), GetTextAngle(), size,
+            GetHorizontalAlignment(), GetVerticalAlignment(), penWidth, IsItalic(), IsBold(),
+            addTextSegmToPoly, &prms );
 }
 
 

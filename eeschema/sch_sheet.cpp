@@ -518,36 +518,32 @@ void SCH_SHEET::AutoplaceFields( SCH_SCREEN* aScreen, bool aManual )
     int    borderMargin = KiROUND( GetPenWidth() / 2.0 ) + 4;
     int    margin = borderMargin + KiROUND( std::max( textSize.x, textSize.y ) * 0.5 );
 
+    m_fields[ SHEETNAME ].Align( TEXT_ATTRIBUTES::H_LEFT, TEXT_ATTRIBUTES::V_BOTTOM );
+
     if( IsVerticalOrientation() )
     {
         m_fields[ SHEETNAME ].SetTextPos( m_pos + wxPoint( -margin, m_size.y ) );
-        m_fields[ SHEETNAME ].SetHorizJustify( GR_TEXT_HJUSTIFY_LEFT );
-        m_fields[ SHEETNAME ].SetVertJustify(GR_TEXT_VJUSTIFY_BOTTOM );
         m_fields[ SHEETNAME ].SetTextAngle( TEXT_ANGLE_VERT );
     }
     else
     {
         m_fields[ SHEETNAME ].SetTextPos( m_pos + wxPoint( 0, -margin ) );
-        m_fields[ SHEETNAME ].SetHorizJustify( GR_TEXT_HJUSTIFY_LEFT );
-        m_fields[ SHEETNAME ].SetVertJustify(GR_TEXT_VJUSTIFY_BOTTOM );
         m_fields[ SHEETNAME ].SetTextAngle( TEXT_ANGLE_HORIZ );
     }
 
     textSize = m_fields[ SHEETFILENAME ].GetTextSize();
     margin = borderMargin + KiROUND( std::max( textSize.x, textSize.y ) * 0.4 );
 
+    m_fields[ SHEETFILENAME ].Align( TEXT_ATTRIBUTES::H_LEFT, TEXT_ATTRIBUTES::V_TOP );
+
     if( IsVerticalOrientation() )
     {
         m_fields[ SHEETFILENAME ].SetTextPos( m_pos + wxPoint( m_size.x + margin, m_size.y ) );
-        m_fields[ SHEETFILENAME ].SetHorizJustify( GR_TEXT_HJUSTIFY_LEFT );
-        m_fields[ SHEETFILENAME ].SetVertJustify(GR_TEXT_VJUSTIFY_TOP );
         m_fields[ SHEETFILENAME ].SetTextAngle( TEXT_ANGLE_VERT );
     }
     else
     {
         m_fields[ SHEETFILENAME ].SetTextPos( m_pos + wxPoint( 0, m_size.y + margin ) );
-        m_fields[ SHEETFILENAME ].SetHorizJustify( GR_TEXT_HJUSTIFY_LEFT );
-        m_fields[ SHEETFILENAME ].SetVertJustify(GR_TEXT_VJUSTIFY_TOP );
         m_fields[ SHEETFILENAME ].SetTextAngle( TEXT_ANGLE_HORIZ );
     }
 

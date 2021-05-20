@@ -256,7 +256,7 @@ private:
     {
         double rotation;    ///<! GRAPHIC_DATA_3
         bool mirror;        ///<! GRAPHIC_DATA_4
-        EDA_TEXT_HJUSTIFY_T orient; ///<! GRAPHIC_DATA_5
+        TEXT_ATTRIBUTES::HORIZONTAL_ALIGNMENT orient; ///<! GRAPHIC_DATA_5
         // GRAPHIC_DATA_6 is
         // SIZE FONT HEIGHT WIDTH ITAL LINESPACE THICKNESS
         int height;         ///<! GRAPHIC_DATA_6[2]

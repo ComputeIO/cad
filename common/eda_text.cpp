@@ -37,7 +37,7 @@
 #include <basic_gal.h>        // for BASIC_GAL, basic_gal
 #include <convert_to_biu.h>   // for Mils2iu
 #include <eda_rect.h>         // for EDA_RECT
-#include <eda_text.h>         // for EDA_TEXT, TEXT_EFFECTS, GR_TEXT_VJUSTIF...
+#include <eda_text.h>         // for EDA_TEXT
 #include <gal/color4d.h>      // for COLOR4D, COLOR4D::BLACK
 #include <gr_text.h>          // for GRText
 #include <kicad_string.h>     // for UnescapeString
@@ -57,34 +57,6 @@
 
 class OUTPUTFORMATTER;
 class wxFindReplaceData;
-
-
-EDA_TEXT_HJUSTIFY_T EDA_TEXT::MapHorizJustify( int aHorizJustify )
-{
-    wxASSERT( aHorizJustify >= GR_TEXT_HJUSTIFY_LEFT && aHorizJustify <= GR_TEXT_HJUSTIFY_RIGHT );
-
-    if( aHorizJustify > GR_TEXT_HJUSTIFY_RIGHT )
-        return GR_TEXT_HJUSTIFY_RIGHT;
-
-    if( aHorizJustify < GR_TEXT_HJUSTIFY_LEFT )
-        return GR_TEXT_HJUSTIFY_LEFT;
-
-    return static_cast<EDA_TEXT_HJUSTIFY_T>( aHorizJustify );
-}
-
-
-EDA_TEXT_VJUSTIFY_T EDA_TEXT::MapVertJustify( int aVertJustify )
-{
-    wxASSERT( aVertJustify >= GR_TEXT_VJUSTIFY_TOP && aVertJustify <= GR_TEXT_VJUSTIFY_BOTTOM );
-
-    if( aVertJustify > GR_TEXT_VJUSTIFY_BOTTOM )
-        return GR_TEXT_VJUSTIFY_BOTTOM;
-
-    if( aVertJustify < GR_TEXT_VJUSTIFY_TOP )
-        return GR_TEXT_VJUSTIFY_TOP;
-
-    return static_cast<EDA_TEXT_VJUSTIFY_T>( aVertJustify );
-}
 
 
 EDA_TEXT::EDA_TEXT( const wxString& text ) :
@@ -140,7 +112,7 @@ void EDA_TEXT::SwapText( EDA_TEXT& aTradingPartner )
 }
 
 
-void EDA_TEXT::SwapEffects( EDA_TEXT& aTradingPartner )
+void EDA_TEXT::SwapAttributes( EDA_TEXT& aTradingPartner )
 {
     std::swap( m_attributes, aTradingPartner.m_attributes );
 }
@@ -302,35 +274,28 @@ EDA_RECT EDA_TEXT::GetTextBox( int aLine, bool aInvertY ) const
      * orientation). and must be recalculated for others justifications
      * also, note the V justification is relative to the first line
      */
-    switch( GetHorizJustify() )
+    switch( GetHorizontalAlignment() )
     {
-    case GR_TEXT_HJUSTIFY_LEFT:
+    case TEXT_ATTRIBUTES::H_LEFT:
         if( IsMirrored() )
             rect.SetX( rect.GetX() - rect.GetWidth() );
         break;
 
-    case GR_TEXT_HJUSTIFY_CENTER:
-        rect.SetX( rect.GetX() - (rect.GetWidth() / 2) );
-        break;
+    case TEXT_ATTRIBUTES::H_CENTER: rect.SetX( rect.GetX() - ( rect.GetWidth() / 2 ) ); break;
 
-    case GR_TEXT_HJUSTIFY_RIGHT:
+    case TEXT_ATTRIBUTES::H_RIGHT:
         if( !IsMirrored() )
             rect.SetX( rect.GetX() - rect.GetWidth() );
         break;
     }
 
-    switch( GetVertJustify() )
+    switch( GetVerticalAlignment() )
     {
-    case GR_TEXT_VJUSTIFY_TOP:
-        break;
+    case TEXT_ATTRIBUTES::V_TOP: break;
 
-    case GR_TEXT_VJUSTIFY_CENTER:
-        rect.SetY( rect.GetY() - ( dy / 2) );
-        break;
+    case TEXT_ATTRIBUTES::V_CENTER: rect.SetY( rect.GetY() - ( dy / 2 ) ); break;
 
-    case GR_TEXT_VJUSTIFY_BOTTOM:
-        rect.SetY( rect.GetY() - dy );
-        break;
+    case TEXT_ATTRIBUTES::V_BOTTOM: rect.SetY( rect.GetY() - dy ); break;
     }
 
     if( linecount > 1 )
@@ -338,17 +303,16 @@ EDA_RECT EDA_TEXT::GetTextBox( int aLine, bool aInvertY ) const
         int yoffset;
         linecount -= 1;
 
-        switch( GetVertJustify() )
+        switch( GetVerticalAlignment() )
         {
-        case GR_TEXT_VJUSTIFY_TOP:
-            break;
+        case TEXT_ATTRIBUTES::V_TOP: break;
 
-        case GR_TEXT_VJUSTIFY_CENTER:
+        case TEXT_ATTRIBUTES::V_CENTER:
             yoffset = linecount * GetInterline() / 2;
             rect.SetY( rect.GetY() - yoffset );
             break;
 
-        case GR_TEXT_VJUSTIFY_BOTTOM:
+        case TEXT_ATTRIBUTES::V_BOTTOM:
             yoffset = linecount * GetInterline();
             rect.SetY( rect.GetY() - yoffset );
             break;
@@ -421,18 +385,11 @@ void EDA_TEXT::GetLinePositions( std::vector<wxPoint>& aPositions, int aLineCoun
 
     if( aLineCount > 1 )
     {
-        switch( GetVertJustify() )
+        switch( GetVerticalAlignment() )
         {
-        case GR_TEXT_VJUSTIFY_TOP:
-            break;
-
-        case GR_TEXT_VJUSTIFY_CENTER:
-            pos.y -= ( aLineCount - 1 ) * offset.y / 2;
-            break;
-
-        case GR_TEXT_VJUSTIFY_BOTTOM:
-            pos.y -= ( aLineCount - 1 ) * offset.y;
-            break;
+        case TEXT_ATTRIBUTES::V_TOP: break;
+        case TEXT_ATTRIBUTES::V_CENTER: pos.y -= ( aLineCount - 1 ) * offset.y / 2; break;
+        case TEXT_ATTRIBUTES::V_BOTTOM: pos.y -= ( aLineCount - 1 ) * offset.y; break;
         }
     }
 
@@ -465,8 +422,8 @@ void EDA_TEXT::printOneLineOfText( const RENDER_SETTINGS* aSettings, const wxPoi
     if( IsMirrored() )
         size.x = -size.x;
 
-    GRText( DC, aOffset + aPos, aColor, aText, GetTextAngle(), size, GetHorizJustify(),
-            GetVertJustify(), penWidth, IsItalic(), IsBold() );
+    GRText( DC, aOffset + aPos, aColor, aText, GetTextAngle(), size, GetHorizontalAlignment(),
+            GetVerticalAlignment(), penWidth, IsItalic(), IsBold() );
 }
 
 
@@ -495,8 +452,8 @@ bool EDA_TEXT::IsDefaultFormatting() const
 {
     return ( IsVisible()
              && !IsMirrored()
-             && GetHorizJustify() == GR_TEXT_HJUSTIFY_CENTER
-             && GetVertJustify() == GR_TEXT_VJUSTIFY_CENTER
+             && GetHorizontalAlignment() == TEXT_ATTRIBUTES::H_CENTER
+             && GetVerticalAlignment() == TEXT_ATTRIBUTES::V_CENTER
              && GetTextThickness() == 0
              && !IsItalic()
              && !IsBold()
@@ -541,16 +498,24 @@ void EDA_TEXT::Format( OUTPUTFORMATTER* aFormatter, int aNestLevel, int aControl
     aFormatter->Print( 0, ")"); // (font
 
     if( IsMirrored() ||
-        GetHorizJustify() != GR_TEXT_HJUSTIFY_CENTER ||
-        GetVertJustify() != GR_TEXT_VJUSTIFY_CENTER )
+        GetHorizontalAlignment() != TEXT_ATTRIBUTES::H_CENTER ||
+        GetVerticalAlignment() != TEXT_ATTRIBUTES::V_CENTER )
     {
         aFormatter->Print( 0, " (justify");
 
-        if( GetHorizJustify() != GR_TEXT_HJUSTIFY_CENTER )
-            aFormatter->Print( 0, (GetHorizJustify() == GR_TEXT_HJUSTIFY_LEFT) ? " left" : " right" );
+        switch( GetHorizontalAlignment() )
+        {
+        case TEXT_ATTRIBUTES::H_CENTER: break;
+        case TEXT_ATTRIBUTES::H_LEFT: aFormatter->Print( 0, " left" ); break;
+        case TEXT_ATTRIBUTES::H_RIGHT: aFormatter->Print( 0, " right" ); break;
+        }
 
-        if( GetVertJustify() != GR_TEXT_VJUSTIFY_CENTER )
-            aFormatter->Print( 0, (GetVertJustify() == GR_TEXT_VJUSTIFY_TOP) ? " top" : " bottom" );
+        switch( GetVerticalAlignment() )
+        {
+        case TEXT_ATTRIBUTES::V_CENTER: break;
+        case TEXT_ATTRIBUTES::V_TOP: aFormatter->Print( 0, " top" ); break;
+        case TEXT_ATTRIBUTES::V_BOTTOM: aFormatter->Print( 0, " bottom" ); break;
+        }
 
         if( IsMirrored() )
             aFormatter->Print( 0, " mirror" );
@@ -602,15 +567,15 @@ std::vector<wxPoint> EDA_TEXT::TransformToSegmentList() const
         for( unsigned ii = 0; ii < strings_list.Count(); ii++ )
         {
             wxString txt = strings_list.Item( ii );
-            GRText( NULL, positions[ii], color, txt, GetDrawRotation(), size, GetHorizJustify(),
-                    GetVertJustify(), penWidth, IsItalic(), forceBold, addTextSegmToBuffer,
-                    &cornerBuffer );
+            GRText( NULL, positions[ii], color, txt, GetDrawRotation(), size,
+                    GetHorizontalAlignment(), GetVerticalAlignment(), penWidth, IsItalic(),
+                    forceBold, addTextSegmToBuffer, &cornerBuffer );
         }
     }
     else
     {
         GRText( NULL, GetTextPos(), color, GetShownText(), GetDrawRotation(), size,
-                GetHorizJustify(), GetVertJustify(), penWidth, IsItalic(), forceBold,
+                GetHorizontalAlignment(), GetVerticalAlignment(), penWidth, IsItalic(), forceBold,
                 addTextSegmToBuffer, &cornerBuffer );
     }
 
@@ -637,18 +602,39 @@ double EDA_TEXT::GetDrawRotation() const
 }
 
 
+void EDA_TEXT::SetDefaultAlignment()
+{
+    // Do nothing if alignment is H_CENTER
+    if( GetHorizontalAlignment() == TEXT_ATTRIBUTES::H_CENTER )
+        return;
+
+    switch( GetTextEdaAngle().AsDegrees() )
+    {
+        default:
+        case 0:
+        case 90:
+            SetHorizontalAlignment( TEXT_ATTRIBUTES::H_LEFT );
+            break;
+        case 180:
+        case 270:
+            SetHorizontalAlignment( TEXT_ATTRIBUTES::H_RIGHT );
+            break;
+    }
+}
+
+
 static struct EDA_TEXT_DESC
 {
     EDA_TEXT_DESC()
     {
-        ENUM_MAP<EDA_TEXT_HJUSTIFY_T>::Instance()
-                .Map( GR_TEXT_HJUSTIFY_LEFT,   _HKI( "Left" ) )
-                .Map( GR_TEXT_HJUSTIFY_CENTER, _HKI( "Center" ) )
-                .Map( GR_TEXT_HJUSTIFY_RIGHT,  _HKI( "Right" ) );
-        ENUM_MAP<EDA_TEXT_VJUSTIFY_T>::Instance()
-                .Map( GR_TEXT_VJUSTIFY_TOP,    _HKI( "Top" ) )
-                .Map( GR_TEXT_VJUSTIFY_CENTER, _HKI( "Center" ) )
-                .Map( GR_TEXT_VJUSTIFY_BOTTOM, _HKI( "Bottom" ) );
+        ENUM_MAP<TEXT_ATTRIBUTES::HORIZONTAL_ALIGNMENT>::Instance()
+                .Map( TEXT_ATTRIBUTES::H_LEFT,   _HKI( "Left" ) )
+                .Map( TEXT_ATTRIBUTES::H_CENTER, _HKI( "Center" ) )
+                .Map( TEXT_ATTRIBUTES::H_RIGHT,  _HKI( "Right" ) );
+        ENUM_MAP<TEXT_ATTRIBUTES::VERTICAL_ALIGNMENT>::Instance()
+                .Map( TEXT_ATTRIBUTES::V_TOP,    _HKI( "Top" ) )
+                .Map( TEXT_ATTRIBUTES::V_CENTER, _HKI( "Center" ) )
+                .Map( TEXT_ATTRIBUTES::V_BOTTOM, _HKI( "Bottom" ) );
 
         PROPERTY_MANAGER& propMgr = PROPERTY_MANAGER::Instance();
         REGISTER_TYPE( EDA_TEXT );
@@ -668,12 +654,14 @@ static struct EDA_TEXT_DESC
                     &EDA_TEXT::SetTextWidth, &EDA_TEXT::GetTextWidth, PROPERTY_DISPLAY::DISTANCE ) );
         propMgr.AddProperty( new PROPERTY<EDA_TEXT, int>( _HKI( "Height" ),
                     &EDA_TEXT::SetTextHeight, &EDA_TEXT::GetTextHeight, PROPERTY_DISPLAY::DISTANCE ) );
-        propMgr.AddProperty( new PROPERTY_ENUM<EDA_TEXT, EDA_TEXT_HJUSTIFY_T>( _HKI( "Horizontal Justification" ),
-                    &EDA_TEXT::SetHorizJustify, &EDA_TEXT::GetHorizJustify ) );
-        propMgr.AddProperty( new PROPERTY_ENUM<EDA_TEXT, EDA_TEXT_VJUSTIFY_T>( _HKI( "Vertical Justification" ),
-                    &EDA_TEXT::SetVertJustify, &EDA_TEXT::GetVertJustify ) );
+        propMgr.AddProperty( new PROPERTY_ENUM<EDA_TEXT, TEXT_ATTRIBUTES::HORIZONTAL_ALIGNMENT>(
+                _HKI( "Horizontal Justification" ), &EDA_TEXT::SetHorizontalAlignment,
+                &EDA_TEXT::GetHorizontalAlignment ) );
+        propMgr.AddProperty( new PROPERTY_ENUM<EDA_TEXT, TEXT_ATTRIBUTES::VERTICAL_ALIGNMENT>(
+                _HKI( "Vertical Justification" ), &EDA_TEXT::SetVerticalAlignment,
+                &EDA_TEXT::GetVerticalAlignment ) );
     }
 } _EDA_TEXT_DESC;
 
-ENUM_TO_WXANY( EDA_TEXT_HJUSTIFY_T )
-ENUM_TO_WXANY( EDA_TEXT_VJUSTIFY_T )
+ENUM_TO_WXANY( TEXT_ATTRIBUTES::HORIZONTAL_ALIGNMENT )
+ENUM_TO_WXANY( TEXT_ATTRIBUTES::VERTICAL_ALIGNMENT )

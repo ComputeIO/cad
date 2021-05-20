@@ -30,47 +30,6 @@
 
 class EDA_TEXT;
 
-// Graphic Text justify:
-// Values -1,0,1 are used in computations, do not change them
-enum EDA_TEXT_HJUSTIFY_T
-{
-    GR_TEXT_HJUSTIFY_LEFT = -1,
-    GR_TEXT_HJUSTIFY_CENTER = 0,
-    GR_TEXT_HJUSTIFY_RIGHT = 1
-};
-
-
-enum EDA_TEXT_VJUSTIFY_T
-{
-    GR_TEXT_VJUSTIFY_TOP = -1,
-    GR_TEXT_VJUSTIFY_CENTER = 0,
-    GR_TEXT_VJUSTIFY_BOTTOM = 1
-};
-
-
-inline std::ostream& operator<<( std::ostream& os, EDA_TEXT_HJUSTIFY_T hj )
-{
-    switch( hj )
-    {
-    case GR_TEXT_HJUSTIFY_LEFT: os << _( "Left" ); break;
-    case GR_TEXT_HJUSTIFY_CENTER: os << _( "Center" ); break;
-    default: os << _( "Right" );
-    }
-    return os;
-}
-
-
-inline std::ostream& operator<<( std::ostream& os, EDA_TEXT_VJUSTIFY_T vj )
-{
-    switch( vj )
-    {
-    case GR_TEXT_VJUSTIFY_TOP: os << _( "Top" ); break;
-    case GR_TEXT_VJUSTIFY_CENTER: os << _( "Center" ); break;
-    default: os << _( "Bottom" );
-    }
-    return os;
-}
-
 namespace KIFONT
 {
 class FONT;
@@ -104,32 +63,20 @@ public:
 
     // Constructors
 
-    TEXT_ATTRIBUTES( const EDA_ANGLE& aAngle, EDA_TEXT_HJUSTIFY_T aHorizontalJustify,
-                     EDA_TEXT_VJUSTIFY_T aVerticalJustify );
-
-
     TEXT_ATTRIBUTES( const EDA_TEXT& aText );
 
     TEXT_ATTRIBUTES( const EDA_TEXT* aText ) : TEXT_ATTRIBUTES( *aText ) {}
 
     TEXT_ATTRIBUTES() {}
 
-#ifdef EDA_TEXT_OVERHAUL
-    // LABEL_SPIN_STYLE only used in eeschema
-    TEXT_ATTRIBUTES( LABEL_SPIN_STYLE aSpin );
-#endif //EDA_TEXT_OVERHAUL
-
     TEXT_ATTRIBUTES( const TEXT_ATTRIBUTES& aAttributes ) :
             m_orientation( aAttributes.GetOrientation() ),
             m_horizontal_alignment( aAttributes.GetHorizontalAlignment() ),
             m_vertical_alignment( aAttributes.GetVerticalAlignment() ),
-            m_angle( aAttributes.GetAngle() ),
-            m_line_spacing( aAttributes.GetLineSpacing() ),
-            m_stroke_width( aAttributes.GetStrokeWidth() ),
-            m_italic( aAttributes.IsItalic() ),
-            m_bold( aAttributes.IsBold() ),
-            m_visible( aAttributes.IsVisible() ),
-            m_mirrored( aAttributes.IsMirrored() ),
+            m_angle( aAttributes.GetAngle() ), m_line_spacing( aAttributes.GetLineSpacing() ),
+            m_stroke_width( aAttributes.GetStrokeWidth() ), m_italic( aAttributes.IsItalic() ),
+            m_bold( aAttributes.IsBold() ), m_underlined( aAttributes.IsUnderlined() ),
+            m_visible( aAttributes.IsVisible() ), m_mirrored( aAttributes.IsMirrored() ),
             m_size( aAttributes.GetSize() )
     {
     }
@@ -187,38 +134,33 @@ public:
 
 
     /**
-     * Rotate counterclockwise.
+     * Rotate counterclockwise by 90 degrees.
      * @return the attributes after rotation
      */
     TEXT_ATTRIBUTES& RotateCCW();
 
 
     /**
-     * Rotate clockwise.
+     * Rotate clockwise by 90 degrees.
      * @return the attributes after rotation
      */
     TEXT_ATTRIBUTES& RotateCW();
 
+
     /**
-     * Spin counterclockwise.
-     * Flip-flops between 0 and 90 degrees.
-     * Changes text alignment to opposite when going from vertical to horizontal.
-     * This replicates the LABEL_SPIN_STYLE sequence of
-     * horizontal-left-aligned -> vertical-left-aligned -> horizontal-right-aligned
-     * -> vertical-right-aligned -> back to beginning
-     * @return the attributes after spin
+     * Spin counterclockwise by 90 degrees.
+     * Flip horizontal alignment (left<->right) when going from 270 to 0, or 90 to 180 degrees.
+     * Matches old "spin style" behaviour.
+     * @return the attributes after rotation
      */
     TEXT_ATTRIBUTES& SpinCCW();
 
 
     /**
-     * Spin clockwise.
-     * Flip-flops between 0 and 90 degrees.
-     * Changes text alignment to opposite when going from vertical to horizontal.
-     * This replicates the LABEL_SPIN_STYLE sequence of
-     * horizontal-left-aligned -> vertical-right-aligned -> horizontal-right-aligned
-     * -> vertical-left-aligned -> back to beginning
-     * @return the attributes after spin
+     * Spin clockwise by 90 degrees.
+     * Flip horizontal alignment (left<->right) when going from 180 to 90, or 0 to 270 degrees.
+     * Matches old "spin style" behaviour.
+     * @return the attributes after rotation
      */
     TEXT_ATTRIBUTES& SpinCW();
 
@@ -235,34 +177,6 @@ public:
         return *this;
     }
 
-
-    static HORIZONTAL_ALIGNMENT
-    HorizontalJustifyToAlignment( EDA_TEXT_HJUSTIFY_T aHorizontalJustify )
-    {
-        switch( aHorizontalJustify )
-        {
-        case GR_TEXT_HJUSTIFY_LEFT: return TEXT_ATTRIBUTES::H_LEFT; break;
-        case GR_TEXT_HJUSTIFY_CENTER: return TEXT_ATTRIBUTES::H_CENTER; break;
-        case GR_TEXT_HJUSTIFY_RIGHT: return TEXT_ATTRIBUTES::H_RIGHT; break;
-        default:
-            wxASSERT_MSG( 0 == 1, "Unknown horizontal justification value" );
-            return TEXT_ATTRIBUTES::H_CENTER;
-        }
-    }
-
-    static VERTICAL_ALIGNMENT VerticalJustifyToAlignment( EDA_TEXT_VJUSTIFY_T aVerticalJustify )
-    {
-        switch( aVerticalJustify )
-        {
-        case GR_TEXT_VJUSTIFY_TOP: return TEXT_ATTRIBUTES::V_TOP; break;
-        case GR_TEXT_VJUSTIFY_CENTER: return TEXT_ATTRIBUTES::V_CENTER; break;
-        case GR_TEXT_VJUSTIFY_BOTTOM: return TEXT_ATTRIBUTES::V_BOTTOM; break;
-        default:
-            wxASSERT_MSG( 0 == 1, "Unknown vertical justification value" );
-            return TEXT_ATTRIBUTES::V_CENTER;
-        }
-    }
-
     HORIZONTAL_ALIGNMENT GetHorizontalAlignment() const { return m_horizontal_alignment; }
 
     HORIZONTAL_ALIGNMENT OppositeHorizontalAlignment() const
@@ -273,10 +187,7 @@ public:
             return TEXT_ATTRIBUTES::H_LEFT;
         return m_horizontal_alignment;
     }
-
-    EDA_TEXT_HJUSTIFY_T GetHorizJustify() const;
-
-    void SetHorizJustify( EDA_TEXT_HJUSTIFY_T aType );
+    void FlipHorizontalAlignment() { Align( OppositeHorizontalAlignment() ); }
 
     VERTICAL_ALIGNMENT GetVerticalAlignment() const { return m_vertical_alignment; }
 
@@ -288,11 +199,6 @@ public:
             return TEXT_ATTRIBUTES::V_TOP;
         return m_vertical_alignment;
     }
-
-    EDA_TEXT_VJUSTIFY_T GetVertJustify() const;
-
-    void SetVertJustify( EDA_TEXT_VJUSTIFY_T aType );
-
 
     ORIENTATION GetOrientation() const { return m_orientation; }
 
@@ -447,10 +353,6 @@ public:
 
     std::string VerticalAlignmentToken() const { return ToToken( GetVerticalAlignment() ); }
 
-    //void SetFlipY( bool aFlipY ) { m_flip_y = aFlipY; }
-
-    //bool IsFlipY() const { return m_flip_y; }
-
     /**
      * Set stroke width.
      * @param aStrokeWidth new stroke width
@@ -554,6 +456,23 @@ public:
     bool IsMultiline() const { return m_multiline; }
 
     /**
+     * Set underlined state.
+     * @param aUnderlined true if underlined, otherwise false
+     * @return old underlined state
+     */
+    bool SetUnderlined( bool aUnderlined )
+    {
+        std::swap( aUnderlined, m_underlined );
+        return aUnderlined;
+    }
+
+    /**
+     * Get underlined state.
+     * @return true if underlined, otherwise false
+     */
+    bool IsUnderlined() const { return m_underlined; }
+
+    /**
      * Set line spacing.
      * @return old line spacing
      */
@@ -617,6 +536,22 @@ public:
      */
     const wxSize& GetTextSize() const { return m_size_as_wxSize; }
 
+    /**
+     * @return force the text rotation to be always between -90 .. 90 deg. Otherwise the text
+     *         is not easy to read if false, the text rotation is free.
+     */
+    bool IsKeepUpright() const { return m_keepUpright; }
+
+#ifdef DEBUG
+    void SetKeepUpright( bool aKeepUpright )
+    {
+        std::cerr << "SetKeepUpright( " << ( aKeepUpright ? "TRUE" : "false" ) << " )\n";
+        m_keepUpright = aKeepUpright;
+    }
+#else
+    void SetKeepUpright( bool aKeepUpright ) { m_keepUpright = aKeepUpright; }
+#endif
+
 private:
     KIFONT::FONT*        m_font = nullptr;
     ORIENTATION          m_orientation = TEXT_ATTRIBUTES::ANGLE_0;
@@ -627,12 +562,16 @@ private:
     int                  m_stroke_width = 0;
     bool                 m_italic = false;
     bool                 m_bold = false;
+    bool                 m_underlined = false;
     bool                 m_visible = true;
     bool                 m_mirrored = false;
     bool                 m_multiline = true;
     VECTOR2D             m_size;
-    //bool                 m_flip_y = false;
     wxSize               m_size_as_wxSize;
+    /**
+     * If true, keep rotation angle between -90...90 degrees for readability
+     */
+    bool m_keepUpright = false;
 };
 
 
@@ -660,12 +599,11 @@ inline std::ostream& operator<<( std::ostream& os, const TEXT_ATTRIBUTES& attr )
        << " " << attr.GetAngle() << " (size " << attr.GetSize() << ")"
        << " (line_spacing " << attr.GetLineSpacing() << ")"
        << " (stroke_width " << attr.GetStrokeWidth() << ")" << ( attr.IsBold() ? " bold" : "" )
-       << ( attr.IsItalic() ? " italic" : "" )
-       << ( attr.IsVisible() ? "" : " !visible" )
+       << ( attr.IsItalic() ? " italic" : "" ) << ( attr.IsVisible() ? "" : " !visible" )
        << ( attr.IsMirrored() ? " mirrored" : "" )
+       << ( attr.IsUnderlined() ? " underlined" : "" )
        << ( attr.IsMultiline() ? " multiline" : " single_line" )
-            // << ( attr.IsFlipY() ? " flipY" : "" )
-       << ")";
+       << ( attr.IsKeepUpright() ? " keep_upright" : "" ) << ")";
 
     return os;
 }

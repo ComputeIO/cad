@@ -113,8 +113,8 @@ void LIB_FIELD::print( const RENDER_SETTINGS* aSettings, const wxPoint& aOffset,
     wxPoint  text_pos = aTransform.TransformCoordinate( GetTextPos() ) + aOffset;
     wxString text = aData ? *static_cast<wxString*>( aData ) : GetText();
 
-    GRText( DC, text_pos, color, text, GetTextAngle(), GetTextSize(), GetHorizJustify(),
-            GetVertJustify(), penWidth, IsItalic(), IsBold() );
+    GRText( DC, text_pos, color, text, GetTextAngle(), GetTextSize(), GetHorizontalAlignment(),
+            GetVerticalAlignment(), penWidth, IsItalic(), IsBold() );
 }
 
 
@@ -275,21 +275,16 @@ void LIB_FIELD::Plot( PLOTTER* aPlotter, const wxPoint& aOffset, bool aFill,
     EDA_RECT BoundaryBox = GetBoundingBox();
     BoundaryBox.RevertYAxis();
 
-    EDA_TEXT_HJUSTIFY_T hjustify = GR_TEXT_HJUSTIFY_CENTER;
-    EDA_TEXT_VJUSTIFY_T vjustify = GR_TEXT_VJUSTIFY_CENTER;
     wxPoint textpos = aTransform.TransformCoordinate( BoundaryBox.Centre() ) + aOffset;
-
-    COLOR4D color;
+    int     penWidth = std::max( GetPenWidth(), aPlotter->RenderSettings()->GetMinPenWidth() );
+    COLOR4D color = COLOR4D::BLACK;
 
     if( aPlotter->GetColorMode() )
         color = aPlotter->RenderSettings()->GetLayerColor( GetDefaultLayer() );
-    else
-        color = COLOR4D::BLACK;
 
-    int penWidth = std::max( GetPenWidth(),aPlotter->RenderSettings()->GetMinPenWidth() );
-
-    aPlotter->Text( textpos, color, GetShownText(), orient, GetTextSize(), hjustify, vjustify,
-                    penWidth, IsItalic(), IsBold() );
+    aPlotter->Text( textpos, color, GetShownText(), orient, GetTextSize(),
+                    TEXT_ATTRIBUTES::H_CENTER, TEXT_ATTRIBUTES::V_CENTER, penWidth, IsItalic(),
+                    IsBold() );
 }
 
 

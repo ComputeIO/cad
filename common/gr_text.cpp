@@ -31,7 +31,7 @@
 
 #include <gr_basic.h>
 #include <plotter.h>
-#include <eda_text.h> // EDA_TEXT_HJUSTIFY_T and EDA_TEXT_VJUSTIFY_T
+#include <eda_text.h>
 #include <trigo.h>
 #include <base_screen.h>
 #include <gr_text.h>
@@ -113,8 +113,8 @@ int GraphicTextWidth( const wxString& aText, const wxSize& aSize, bool aItalic, 
  *  @param aText = text to draw
  *  @param aOrient = angle in 0.1 degree
  *  @param aSize = text size (size.x or size.y can be < 0 for mirrored texts)
- *  @param aH_justify = horizontal justification (Left, center, right)
- *  @param aV_justify = vertical justification (bottom, center, top)
+ *  @param aHorizontalAlignment = horizontal alignment (Left, Center, Right)
+ *  @param aVerticalAlignment = vertical alignment (Top, Center, Bottom)
  *  @param aWidth = line width (pen width) (use default width if aWidth = 0)
  *      if width < 0 : draw segments in sketch mode, width = abs(width)
  *      Use a value min(aSize.x, aSize.y) / 5 for a bold text
@@ -129,9 +129,10 @@ int GraphicTextWidth( const wxString& aText, const wxSize& aSize, bool aItalic, 
  *                  the text. NULL to draw this text.
  */
 void GRText( wxDC* aDC, const wxPoint& aPos, const COLOR4D& aColor, const wxString& aText,
-             double aOrient, const wxSize& aSize, enum EDA_TEXT_HJUSTIFY_T aH_justify,
-             enum EDA_TEXT_VJUSTIFY_T aV_justify, int aWidth, bool aItalic, bool aBold,
-             void ( *aCallback )( int x0, int y0, int xf, int yf, void* aData ),
+             double aOrient, const wxSize& aSize,
+             TEXT_ATTRIBUTES::HORIZONTAL_ALIGNMENT aHorizontalAlignment,
+             TEXT_ATTRIBUTES::VERTICAL_ALIGNMENT aVerticalAlignment, int aWidth, bool aItalic,
+             bool  aBold, void ( *aCallback )( int x0, int y0, int xf, int yf, void* aData ),
              void* aCallbackData, PLOTTER* aPlotter )
 {
     bool fill_mode = true;
@@ -151,8 +152,8 @@ void GRText( wxDC* aDC, const wxPoint& aPos, const COLOR4D& aColor, const wxStri
     EDA_TEXT dummy;
     dummy.SetItalic( aItalic );
     dummy.SetBold( aBold );
-    dummy.SetHorizJustify( aH_justify );
-    dummy.SetVertJustify( aV_justify );
+    dummy.SetHorizontalAlignment( aHorizontalAlignment );
+    dummy.SetVerticalAlignment( aVerticalAlignment );
 
     wxSize size = aSize;
     dummy.SetMirrored( size.x < 0 );
@@ -175,7 +176,7 @@ void GRText( wxDC* aDC, const wxPoint& aPos, const COLOR4D& aColor, const wxStri
 }
 
 
-void GRText( const EDA_TEXT* aText, const COLOR4D& aColor,
+void GRText( const EDA_TEXT* aText, const VECTOR2D& aPosition, const COLOR4D& aColor,
              void ( *aCallback )( int x0, int y0, int xf, int yf, void* aData ),
              void* aCallbackData, PLOTTER* aPlotter )
 {
@@ -195,21 +196,6 @@ void GRText( const EDA_TEXT* aText, const COLOR4D& aColor,
 
     basic_gal.SetIsFill( fill_mode );
     basic_gal.SetLineWidth( penWidth );
-
-    //EDA_TEXT dummy;
-    //dummy.SetItalic( aItalic );
-    //dummy.SetBold( aBold );
-    //dummy.SetHorizJustify( aH_justify );
-    //dummy.SetVertJustify( aV_justify );
-
-    //wxSize size = aSize;
-    //dummy.SetMirrored( size.x < 0 );
-
-    //if( size.x < 0 )
-    //    size.x = -size.x;
-
-    //dummy.SetTextSize( size );
-
     basic_gal.SetTextAttributes( aText );
     basic_gal.SetPlotter( aPlotter );
     basic_gal.SetCallback( aCallback, aCallbackData );
@@ -218,38 +204,5 @@ void GRText( const EDA_TEXT* aText, const COLOR4D& aColor,
     basic_gal.SetClipBox( nullptr );
 
     KIFONT::FONT* font = aPlotter && aPlotter->GetFont() ? aPlotter->GetFont() : aText->GetFont();
-
-#if 0
-    basic_gal.StrokeText( aText->GetShownText(), aText->GetTextPos(), aText->GetTextAngleRadians(),
-                          font, aText->GetLineSpacing() );
-#endif
-
-    //KIGFX::GAL* gal = static_cast<KIGFX::GAL*> &basic_gal;
-    font->Draw( &basic_gal, aText->GetShownText(), aText->GetTextPos(), TEXT_ATTRIBUTES( aText ) );
-}
-
-
-void GRHaloText( wxDC* aDC, const wxPoint& aPos, COLOR4D aBgColor, COLOR4D aColor1, COLOR4D aColor2,
-                 const wxString& aText, double aOrient, const wxSize& aSize,
-                 enum EDA_TEXT_HJUSTIFY_T aH_justify, enum EDA_TEXT_VJUSTIFY_T aV_justify,
-                 int aWidth, bool aItalic, bool aBold,
-                 void ( *aCallback )( int x0, int y0, int xf, int yf, void* aData ),
-                 void* aCallbackData, PLOTTER* aPlotter )
-{
-    // Swap color if contrast would be better
-    // TODO: Maybe calculate contrast some way other than brightness
-    if( aBgColor.GetBrightness() > 0.5 )
-    {
-        COLOR4D c = aColor1;
-        aColor1 = aColor2;
-        aColor2 = c;
-    }
-
-    // Draw the background
-    GRText( aDC, aPos, aColor1, aText, aOrient, aSize, aH_justify, aV_justify, aWidth, aItalic,
-            aBold, aCallback, aCallbackData, aPlotter );
-
-    // Draw the text
-    GRText( aDC, aPos, aColor2, aText, aOrient, aSize, aH_justify, aV_justify, aWidth / 4, aItalic,
-            aBold, aCallback, aCallbackData, aPlotter );
+    font->Draw( &basic_gal, aText->GetShownText(), aPosition, TEXT_ATTRIBUTES( aText ) );
 }

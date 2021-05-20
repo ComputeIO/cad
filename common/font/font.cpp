@@ -31,6 +31,7 @@
 #include <trigo.h>
 #include <parser/markup_parser.h>
 #include <sstream>
+#include <eda_text.h>
 
 std::string TextStyleAsString( TEXT_STYLE_FLAGS aFlags )
 {
@@ -279,8 +280,8 @@ void FONT::getLinePositions( const UTF8& aText, const VECTOR2D& aPosition,
     wxPoint origin( aPosition.x, aPosition.y );
     int     interline = GetInterline( aGlyphSize.y, aAttributes.GetLineSpacing() );
 #ifdef DEBUG
-    std::cerr << "\"" << aText << "\" line spacing " << aAttributes.GetLineSpacing() << " glyph size "
-              << aGlyphSize << " GetInterline() " << GetInterline( aGlyphSize.y )
+    std::cerr << "\"" << aText << "\" line spacing " << aAttributes.GetLineSpacing()
+              << " glyph size " << aGlyphSize << " GetInterline() " << GetInterline( aGlyphSize.y )
               << " -> interline " << interline << std::endl;
 #endif
 
@@ -391,8 +392,8 @@ void FONT::DrawText( KIGFX::GAL* aGal, const UTF8& aText, const VECTOR2D& aPosit
     std::cerr << "FONT::DrawText( " << ( aGal ? "[aGal]" : "nullptr" ) << ", \"" << aText << "\", "
               << aPosition << ", " << aAttributes << " )" << std::endl;
 #endif
-    aGal->SetHorizontalJustify( aAttributes.GetHorizJustify() );
-    aGal->SetVerticalJustify( aAttributes.GetVertJustify() );
+    aGal->SetHorizontalAlignment( aAttributes.GetHorizontalAlignment() );
+    aGal->SetVerticalAlignment( aAttributes.GetVerticalAlignment() );
     aGal->SetGlyphSize( aAttributes.GetSize() );
     aGal->SetFontItalic( aAttributes.IsItalic() );
     aGal->SetFontBold( aAttributes.IsBold() );
@@ -463,7 +464,27 @@ VECTOR2D FONT::Draw( KIGFX::GAL* aGal, const UTF8& aText, const VECTOR2D& aPosit
         aGal->Save();
         aGal->Translate( positions[i] );
         if( !angle.IsZero() )
-            aGal->Rotate( angle.Invert().AsRadians() );
+        {
+#ifdef DEBUG
+            std::cerr << "Nonzero angle " << angle;
+#endif
+            EDA_ANGLE rotationAngle;
+            if( aAttributes.IsKeepUpright() )
+            {
+#ifdef DEBUG
+                std::cerr << "Keeping upright, ";
+#endif
+                rotationAngle = angle.KeepUpright().Invert();
+            }
+            else
+            {
+                rotationAngle = angle.Invert();
+            }
+#ifdef DEBUG
+            std::cerr << "Rotating by " << rotationAngle << std::endl;
+#endif
+            aGal->Rotate( rotationAngle.AsRadians() );
+        }
         VECTOR2D lineBoundingBox = drawSingleLineText( aGal, strings_list[i], VECTOR2D( 0, 0 ) );
         aGal->Restore();
 
@@ -478,4 +499,17 @@ VECTOR2D FONT::Draw( KIGFX::GAL* aGal, const UTF8& aText, const VECTOR2D& aPosit
     //aGal->Restore();
 
     return boundingBox;
+}
+
+
+VECTOR2D FONT::Draw( KIGFX::GAL* aGal, const EDA_TEXT& aText ) const
+{
+    return Draw( aGal, aText.GetShownText(), aText.GetTextPos(), aText.GetAttributes() );
+}
+
+
+VECTOR2D FONT::BoundingBox( const EDA_TEXT& aText )
+{
+    // TODO: text style flags unconditionally set to 0 - are they even used?
+    return getBoundingBox( aText.GetShownText(), aText.GetTextSize(), 0, aText.GetAttributes() );
 }

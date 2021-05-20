@@ -135,15 +135,7 @@ public:
         return Draw( aGal, aText, aPosition, VECTOR2D( 0, 0 ), aAttributes );
     }
 
-
-#if 0
-    VECTOR2D Draw( KIGFX::GAL* aGal, const UTF8& aText, const VECTOR2D& aPosition,
-                   double aRotationAngle, double aLineSpacing ) const
-    {
-        return Draw( aGal, aText, aPosition, VECTOR2D( 0, 0 ),
-                     EDA_ANGLE( aRotationAngle, EDA_ANGLE::RADIANS ), aLineSpacing );
-    }
-#endif
+    VECTOR2D Draw( KIGFX::GAL* aGal, const EDA_TEXT& aText ) const;
 
     virtual void DrawText( KIGFX::GAL* aGal, const UTF8& aText, const VECTOR2D& aPosition,
                            const TEXT_ATTRIBUTES& aAttributes ) const;
@@ -241,14 +233,16 @@ public:
      */
     virtual VECTOR2D ComputeTextLineSize( const KIGFX::GAL* aGal, const UTF8& aText ) const = 0;
 
-    VECTOR2D
-    BoundingBox( const UTF8& aString, const VECTOR2D& aGlyphSize, TEXT_STYLE_FLAGS aTextStyle = 0,
-                 const TEXT_ATTRIBUTES& aAttributes = TEXT_ATTRIBUTES() )
+    VECTOR2D BoundingBox( const UTF8& aString, const VECTOR2D& aGlyphSize,
+                          TEXT_STYLE_FLAGS       aTextStyle = 0,
+                          const TEXT_ATTRIBUTES& aAttributes = TEXT_ATTRIBUTES() )
     {
         // TODO: add version of BoundingBox with a free angle - only
         // if needed, doesn't look like there are any uses like that
         return getBoundingBox( aString, aGlyphSize, aTextStyle, aAttributes );
     }
+
+    VECTOR2D BoundingBox( const EDA_TEXT& aText );
 
 protected:
     wxString m_fontName;     ///< Font name
@@ -279,7 +273,8 @@ protected:
      * @return bounding box width/height
      */
     virtual VECTOR2D drawSingleLineText( KIGFX::GAL* aGal, const UTF8& aText,
-                                         const VECTOR2D& aPosition, const EDA_ANGLE& aAngle = EDA_ANGLE() ) const = 0;
+                                         const VECTOR2D&  aPosition,
+                                         const EDA_ANGLE& aAngle = EDA_ANGLE() ) const = 0;
 
     void getLinePositions( const UTF8& aText, const VECTOR2D& aPosition, wxArrayString& aStringList,
                            std::vector<wxPoint>& aPositions, int& aLineCount,

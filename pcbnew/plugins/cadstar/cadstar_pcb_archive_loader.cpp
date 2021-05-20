@@ -1481,10 +1481,8 @@ void CADSTAR_PCB_ARCHIVE_LOADER::loadDimensions()
                 leaderDim->SetSuffix( wxEmptyString );
                 leaderDim->SetUnitsFormat( DIM_UNITS_FORMAT::NO_SUFFIX );
 
-                if( orientX == 1 )
-                    leaderDim->Text().SetHorizJustify( GR_TEXT_HJUSTIFY_RIGHT );
-                else
-                    leaderDim->Text().SetHorizJustify( GR_TEXT_HJUSTIFY_LEFT );
+                leaderDim->Text().Align( orientX == 1 ? TEXT_ATTRIBUTES::H_RIGHT
+                                                      : TEXT_ATTRIBUTES::H_LEFT );
 
                 leaderDim->SetExtensionOffset( 0 );
             }
@@ -2464,48 +2462,39 @@ void CADSTAR_PCB_ARCHIVE_LOADER::drawCadstarText( const TEXT& aCadstarText,
     {
     case ALIGNMENT::NO_ALIGNMENT: // Default for Single line text is Bottom Left
     case ALIGNMENT::BOTTOMLEFT:
-        txt->SetVertJustify( GR_TEXT_VJUSTIFY_BOTTOM );
-        txt->SetHorizJustify( GR_TEXT_HJUSTIFY_LEFT );
+        txt->Align( TEXT_ATTRIBUTES::H_LEFT, TEXT_ATTRIBUTES::V_BOTTOM );
         break;
 
     case ALIGNMENT::BOTTOMCENTER:
-        txt->SetVertJustify( GR_TEXT_VJUSTIFY_BOTTOM );
-        txt->SetHorizJustify( GR_TEXT_HJUSTIFY_CENTER );
+        txt->Align( TEXT_ATTRIBUTES::H_CENTER, TEXT_ATTRIBUTES::V_BOTTOM );
         break;
 
     case ALIGNMENT::BOTTOMRIGHT:
-        txt->SetVertJustify( GR_TEXT_VJUSTIFY_BOTTOM );
-        txt->SetHorizJustify( GR_TEXT_HJUSTIFY_RIGHT );
+        txt->Align( TEXT_ATTRIBUTES::H_RIGHT, TEXT_ATTRIBUTES::V_BOTTOM );
         break;
 
     case ALIGNMENT::CENTERLEFT:
-        txt->SetVertJustify( GR_TEXT_VJUSTIFY_CENTER );
-        txt->SetHorizJustify( GR_TEXT_HJUSTIFY_LEFT );
+        txt->Align( TEXT_ATTRIBUTES::H_LEFT, TEXT_ATTRIBUTES::V_CENTER );
         break;
 
     case ALIGNMENT::CENTERCENTER:
-        txt->SetVertJustify( GR_TEXT_VJUSTIFY_CENTER );
-        txt->SetHorizJustify( GR_TEXT_HJUSTIFY_CENTER );
+        txt->Align( TEXT_ATTRIBUTES::H_CENTER, TEXT_ATTRIBUTES::V_CENTER );
         break;
 
     case ALIGNMENT::CENTERRIGHT:
-        txt->SetVertJustify( GR_TEXT_VJUSTIFY_CENTER );
-        txt->SetHorizJustify( GR_TEXT_HJUSTIFY_RIGHT );
+        txt->Align( TEXT_ATTRIBUTES::H_RIGHT, TEXT_ATTRIBUTES::V_CENTER );
         break;
 
     case ALIGNMENT::TOPLEFT:
-        txt->SetVertJustify( GR_TEXT_VJUSTIFY_TOP );
-        txt->SetHorizJustify( GR_TEXT_HJUSTIFY_LEFT );
+        txt->Align( TEXT_ATTRIBUTES::H_LEFT, TEXT_ATTRIBUTES::V_TOP );
         break;
 
     case ALIGNMENT::TOPCENTER:
-        txt->SetVertJustify( GR_TEXT_VJUSTIFY_TOP );
-        txt->SetHorizJustify( GR_TEXT_HJUSTIFY_CENTER );
+        txt->Align( TEXT_ATTRIBUTES::H_CENTER, TEXT_ATTRIBUTES::V_TOP );
         break;
 
     case ALIGNMENT::TOPRIGHT:
-        txt->SetVertJustify( GR_TEXT_VJUSTIFY_TOP );
-        txt->SetHorizJustify( GR_TEXT_HJUSTIFY_RIGHT );
+        txt->Align( TEXT_ATTRIBUTES::H_RIGHT, TEXT_ATTRIBUTES::V_TOP );
         break;
 
     default:
@@ -3170,48 +3159,39 @@ void CADSTAR_PCB_ARCHIVE_LOADER::addAttribute( const ATTRIBUTE_LOCATION& aCadsta
         FixTextPositionNoAlignment( txt );
         KI_FALLTHROUGH;
     case ALIGNMENT::BOTTOMLEFT:
-        txt->SetVertJustify( GR_TEXT_VJUSTIFY_BOTTOM );
-        txt->SetHorizJustify( GR_TEXT_HJUSTIFY_LEFT );
+        txt->Align( TEXT_ATTRIBUTES::H_LEFT, TEXT_ATTRIBUTES::V_BOTTOM );
         break;
 
     case ALIGNMENT::BOTTOMCENTER:
-        txt->SetVertJustify( GR_TEXT_VJUSTIFY_BOTTOM );
-        txt->SetHorizJustify( GR_TEXT_HJUSTIFY_CENTER );
+        txt->Align( TEXT_ATTRIBUTES::H_CENTER, TEXT_ATTRIBUTES::V_BOTTOM );
         break;
 
     case ALIGNMENT::BOTTOMRIGHT:
-        txt->SetVertJustify( GR_TEXT_VJUSTIFY_BOTTOM );
-        txt->SetHorizJustify( GR_TEXT_HJUSTIFY_RIGHT );
+        txt->Align( TEXT_ATTRIBUTES::H_RIGHT, TEXT_ATTRIBUTES::V_BOTTOM );
         break;
 
     case ALIGNMENT::CENTERLEFT:
-        txt->SetVertJustify( GR_TEXT_VJUSTIFY_CENTER );
-        txt->SetHorizJustify( GR_TEXT_HJUSTIFY_LEFT );
+        txt->Align( TEXT_ATTRIBUTES::H_LEFT, TEXT_ATTRIBUTES::V_CENTER );
         break;
 
     case ALIGNMENT::CENTERCENTER:
-        txt->SetVertJustify( GR_TEXT_VJUSTIFY_CENTER );
-        txt->SetHorizJustify( GR_TEXT_HJUSTIFY_CENTER );
+        txt->Align( TEXT_ATTRIBUTES::H_CENTER, TEXT_ATTRIBUTES::V_CENTER );
         break;
 
     case ALIGNMENT::CENTERRIGHT:
-        txt->SetVertJustify( GR_TEXT_VJUSTIFY_CENTER );
-        txt->SetHorizJustify( GR_TEXT_HJUSTIFY_RIGHT );
+        txt->Align( TEXT_ATTRIBUTES::H_RIGHT, TEXT_ATTRIBUTES::V_CENTER );
         break;
 
     case ALIGNMENT::TOPLEFT:
-        txt->SetVertJustify( GR_TEXT_VJUSTIFY_TOP );
-        txt->SetHorizJustify( GR_TEXT_HJUSTIFY_LEFT );
+        txt->Align( TEXT_ATTRIBUTES::H_LEFT, TEXT_ATTRIBUTES::V_TOP );
         break;
 
     case ALIGNMENT::TOPCENTER:
-        txt->SetVertJustify( GR_TEXT_VJUSTIFY_TOP );
-        txt->SetHorizJustify( GR_TEXT_HJUSTIFY_CENTER );
+        txt->Align( TEXT_ATTRIBUTES::H_CENTER, TEXT_ATTRIBUTES::V_TOP );
         break;
 
     case ALIGNMENT::TOPRIGHT:
-        txt->SetVertJustify( GR_TEXT_VJUSTIFY_TOP );
-        txt->SetHorizJustify( GR_TEXT_HJUSTIFY_RIGHT );
+        txt->Align( TEXT_ATTRIBUTES::H_RIGHT, TEXT_ATTRIBUTES::V_TOP );
         break;
 
     default:

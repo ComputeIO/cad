@@ -272,23 +272,23 @@ void DS_DATA_MODEL_IO::format( DS_DATA_ITEM_TEXT* aItem, int aNestLevel ) const
     }
 
     // Write text justification
-    if( aItem->m_Hjustify != GR_TEXT_HJUSTIFY_LEFT ||
-        aItem->m_Vjustify != GR_TEXT_VJUSTIFY_CENTER )
+    if( aItem->m_Halign != TEXT_ATTRIBUTES::H_LEFT ||
+        aItem->m_Valign != TEXT_ATTRIBUTES::V_CENTER )
     {
         m_out->Print( 0, " (%s", getTokenName( T_justify ) );
 
         // Write T_center opt first, because it is
         // also a center for both m_Hjustify and m_Vjustify
-        if( aItem->m_Hjustify == GR_TEXT_HJUSTIFY_CENTER )
+        if( aItem->m_Halign == TEXT_ATTRIBUTES::H_CENTER )
             m_out->Print( 0, " %s", getTokenName( T_center ) );
 
-        if( aItem->m_Hjustify == GR_TEXT_HJUSTIFY_RIGHT )
+        if( aItem->m_Halign == TEXT_ATTRIBUTES::H_RIGHT )
             m_out->Print( 0, " %s", getTokenName( T_right ) );
 
-        if( aItem->m_Vjustify == GR_TEXT_VJUSTIFY_TOP )
+        if( aItem->m_Valign == TEXT_ATTRIBUTES::V_TOP )
             m_out->Print( 0, " %s", getTokenName( T_top ) );
 
-        if( aItem->m_Vjustify == GR_TEXT_VJUSTIFY_BOTTOM )
+        if( aItem->m_Valign == TEXT_ATTRIBUTES::V_BOTTOM )
             m_out->Print( 0, " %s", getTokenName( T_bottom ) );
 
         m_out->Print( 0, ")" );

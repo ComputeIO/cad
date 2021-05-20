@@ -40,7 +40,7 @@ FP_TEXT::FP_TEXT( FOOTPRINT* aParentFootprint, TEXT_TYPE text_type ) :
     FOOTPRINT* parentFootprint = static_cast<FOOTPRINT*>( m_parent );
 
     m_Type = text_type;
-    m_keepUpright = true;
+    SetKeepUpright( true );
 
     // Set text thickness to a default value
     SetTextThickness( Millimeter2iu( DEFAULT_TEXT_WIDTH ) );
@@ -110,7 +110,7 @@ void FP_TEXT::KeepUpright( double aOldOrientation, double aNewOrientation )
 
     if( needsFlipped )
     {
-        SetHorizJustify( static_cast<EDA_TEXT_HJUSTIFY_T>( -GetHorizJustify() ) );
+        FlipHorizontalAlignment();
         SetTextAngle( GetTextAngle() + 1800.0 );
         SetDrawCoord();
     }
@@ -241,7 +241,7 @@ double FP_TEXT::GetDrawRotation() const
     if( parentFootprint )
         rotation += parentFootprint->GetOrientation();
 
-    if( m_keepUpright )
+    if( IsKeepUpright() )
     {
         // Keep angle between 0 .. 90 deg. Otherwise the text is not easy to read
         while( rotation > 900 )

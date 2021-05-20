@@ -734,17 +734,17 @@ void SetEdaTextJustification( EDA_TEXT* text, ASCH_LABEL_JUSTIFICATION justifica
     case ASCH_LABEL_JUSTIFICATION::BOTTOM_LEFT:
     case ASCH_LABEL_JUSTIFICATION::BOTTOM_CENTER:
     case ASCH_LABEL_JUSTIFICATION::BOTTOM_RIGHT:
-        text->SetVertJustify( EDA_TEXT_VJUSTIFY_T::GR_TEXT_VJUSTIFY_BOTTOM );
+        text->Align( TEXT_ATTRIBUTES::V_BOTTOM );
         break;
     case ASCH_LABEL_JUSTIFICATION::CENTER_LEFT:
     case ASCH_LABEL_JUSTIFICATION::CENTER_CENTER:
     case ASCH_LABEL_JUSTIFICATION::CENTER_RIGHT:
-        text->SetVertJustify( EDA_TEXT_VJUSTIFY_T::GR_TEXT_VJUSTIFY_CENTER );
+        text->Align( TEXT_ATTRIBUTES::V_CENTER );
         break;
     case ASCH_LABEL_JUSTIFICATION::TOP_LEFT:
     case ASCH_LABEL_JUSTIFICATION::TOP_CENTER:
     case ASCH_LABEL_JUSTIFICATION::TOP_RIGHT:
-        text->SetVertJustify( EDA_TEXT_VJUSTIFY_T::GR_TEXT_VJUSTIFY_TOP );
+        text->Align( TEXT_ATTRIBUTES::V_TOP );
         break;
     }
 
@@ -755,17 +755,17 @@ void SetEdaTextJustification( EDA_TEXT* text, ASCH_LABEL_JUSTIFICATION justifica
     case ASCH_LABEL_JUSTIFICATION::BOTTOM_LEFT:
     case ASCH_LABEL_JUSTIFICATION::CENTER_LEFT:
     case ASCH_LABEL_JUSTIFICATION::TOP_LEFT:
-        text->SetHorizJustify( EDA_TEXT_HJUSTIFY_T::GR_TEXT_HJUSTIFY_LEFT );
+        text->Align( TEXT_ATTRIBUTES::H_LEFT );
         break;
     case ASCH_LABEL_JUSTIFICATION::BOTTOM_CENTER:
     case ASCH_LABEL_JUSTIFICATION::CENTER_CENTER:
     case ASCH_LABEL_JUSTIFICATION::TOP_CENTER:
-        text->SetHorizJustify( EDA_TEXT_HJUSTIFY_T::GR_TEXT_HJUSTIFY_CENTER );
+        text->Align( TEXT_ATTRIBUTES::H_CENTER );
         break;
     case ASCH_LABEL_JUSTIFICATION::BOTTOM_RIGHT:
     case ASCH_LABEL_JUSTIFICATION::CENTER_RIGHT:
     case ASCH_LABEL_JUSTIFICATION::TOP_RIGHT:
-        text->SetHorizJustify( EDA_TEXT_HJUSTIFY_T::GR_TEXT_HJUSTIFY_RIGHT );
+        text->Align( TEXT_ATTRIBUTES::H_RIGHT );
         break;
     }
 }
@@ -1375,8 +1375,6 @@ void SCH_ALTIUM_PLUGIN::ParseSheetEntry( const std::map<wxString, wxString>& aPr
 
     sheetPin->SetText( elem.name );
     sheetPin->SetShape( PINSHEETLABEL_SHAPE::PS_UNSPECIFIED );
-    //sheetPin->SetLabelSpinStyle( getSpinStyle( term.OrientAngle, false ) );
-    //sheetPin->SetPosition( getKiCadPoint( term.Position ) );
 
     wxPoint pos  = sheet->second->GetPosition();
     wxSize  size = sheet->second->GetSize();
@@ -1386,22 +1384,22 @@ void SCH_ALTIUM_PLUGIN::ParseSheetEntry( const std::map<wxString, wxString>& aPr
     default:
     case ASCH_SHEET_ENTRY_SIDE::LEFT:
         sheetPin->SetPosition( { pos.x, pos.y + elem.distanceFromTop } );
-        sheetPin->SetLabelSpinStyle( LABEL_SPIN_STYLE::LEFT );
+        sheetPin->SetAlignedAngle( EDA_ANGLE::ANGLE_180 );
         sheetPin->SetEdge( SHEET_SIDE::SHEET_LEFT_SIDE );
         break;
     case ASCH_SHEET_ENTRY_SIDE::RIGHT:
         sheetPin->SetPosition( { pos.x + size.x, pos.y + elem.distanceFromTop } );
-        sheetPin->SetLabelSpinStyle( LABEL_SPIN_STYLE::RIGHT );
+        sheetPin->SetAlignedAngle( EDA_ANGLE::ANGLE_0 );
         sheetPin->SetEdge( SHEET_SIDE::SHEET_RIGHT_SIDE );
         break;
     case ASCH_SHEET_ENTRY_SIDE::TOP:
         sheetPin->SetPosition( { pos.x + elem.distanceFromTop, pos.y } );
-        sheetPin->SetLabelSpinStyle( LABEL_SPIN_STYLE::UP );
+        sheetPin->SetAlignedAngle( EDA_ANGLE::ANGLE_90 );
         sheetPin->SetEdge( SHEET_SIDE::SHEET_TOP_SIDE );
         break;
     case ASCH_SHEET_ENTRY_SIDE::BOTTOM:
         sheetPin->SetPosition( { pos.x + elem.distanceFromTop, pos.y + size.y } );
-        sheetPin->SetLabelSpinStyle( LABEL_SPIN_STYLE::BOTTOM );
+        sheetPin->SetAlignedAngle( EDA_ANGLE::ANGLE_270 );
         sheetPin->SetEdge( SHEET_SIDE::SHEET_BOTTOM_SIDE );
         break;
     }
@@ -1701,22 +1699,22 @@ void SCH_ALTIUM_PLUGIN::ParsePowerPort( const std::map<wxString, wxString>& aPro
     case ASCH_RECORD_ORIENTATION::RIGHTWARDS:
         component->SetOrientation( COMPONENT_ORIENTATION_T::CMP_ORIENT_90 );
         valueField->SetTextAngle( -900. );
-        valueField->SetHorizJustify( EDA_TEXT_HJUSTIFY_T::GR_TEXT_HJUSTIFY_LEFT );
+        valueField->Align( TEXT_ATTRIBUTES::H_LEFT );
         break;
     case ASCH_RECORD_ORIENTATION::UPWARDS:
         component->SetOrientation( COMPONENT_ORIENTATION_T::CMP_ORIENT_180 );
         valueField->SetTextAngle( -1800. );
-        valueField->SetHorizJustify( EDA_TEXT_HJUSTIFY_T::GR_TEXT_HJUSTIFY_CENTER );
+        valueField->Align( TEXT_ATTRIBUTES::H_CENTER );
         break;
     case ASCH_RECORD_ORIENTATION::LEFTWARDS:
         component->SetOrientation( COMPONENT_ORIENTATION_T::CMP_ORIENT_270 );
         valueField->SetTextAngle( -2700. );
-        valueField->SetHorizJustify( EDA_TEXT_HJUSTIFY_T::GR_TEXT_HJUSTIFY_RIGHT );
+        valueField->Align( TEXT_ATTRIBUTES::H_RIGHT );
         break;
     case ASCH_RECORD_ORIENTATION::DOWNWARDS:
         component->SetOrientation( COMPONENT_ORIENTATION_T::CMP_ORIENT_0 );
         valueField->SetTextAngle( 0. );
-        valueField->SetHorizJustify( EDA_TEXT_HJUSTIFY_T::GR_TEXT_HJUSTIFY_CENTER );
+        valueField->Align( TEXT_ATTRIBUTES::H_CENTER );
         break;
     default:
         m_reporter->Report( _( "Pin has unexpected orientation." ), RPT_SEVERITY_WARNING );
@@ -1804,18 +1802,30 @@ void SCH_ALTIUM_PLUGIN::ParsePort( const ASCH_PORT& aElem )
     case ASCH_PORT_STYLE::RIGHT:
     case ASCH_PORT_STYLE::LEFT_RIGHT:
         if( ( startIsWireTerminal || startIsBusTerminal ) )
-            label->SetLabelSpinStyle( LABEL_SPIN_STYLE::RIGHT );
+        {
+            label->SetTextAngle( EDA_ANGLE( 0, EDA_ANGLE::DEGREES ) );
+            label->Align( TEXT_ATTRIBUTES::H_LEFT );
+        }
         else
-            label->SetLabelSpinStyle( LABEL_SPIN_STYLE::LEFT );
+        {
+            label->SetTextAngle( EDA_ANGLE( 180, EDA_ANGLE::DEGREES ) );
+            label->Align( TEXT_ATTRIBUTES::H_RIGHT );
+        }
         break;
     case ASCH_PORT_STYLE::NONE_VERTICAL:
     case ASCH_PORT_STYLE::TOP:
     case ASCH_PORT_STYLE::BOTTOM:
     case ASCH_PORT_STYLE::TOP_BOTTOM:
         if( ( startIsWireTerminal || startIsBusTerminal ) )
-            label->SetLabelSpinStyle( LABEL_SPIN_STYLE::UP );
+        {
+            label->SetTextAngle( EDA_ANGLE( 90, EDA_ANGLE::DEGREES ) );
+            label->Align( TEXT_ATTRIBUTES::H_LEFT );
+        }
         else
-            label->SetLabelSpinStyle( LABEL_SPIN_STYLE::BOTTOM );
+        {
+            label->SetTextAngle( EDA_ANGLE( 270, EDA_ANGLE::DEGREES ) );
+            label->Align( TEXT_ATTRIBUTES::H_RIGHT );
+        }
         break;
     }
 
@@ -1865,16 +1875,16 @@ void SCH_ALTIUM_PLUGIN::ParseNetLabel( const std::map<wxString, wxString>& aProp
     switch( elem.orientation )
     {
     case ASCH_RECORD_ORIENTATION::RIGHTWARDS:
-        label->SetLabelSpinStyle( LABEL_SPIN_STYLE::RIGHT );
+        label->SetAlignedAngle( EDA_ANGLE::ANGLE_0 );
         break;
     case ASCH_RECORD_ORIENTATION::UPWARDS:
-        label->SetLabelSpinStyle( LABEL_SPIN_STYLE::UP );
+        label->SetAlignedAngle( EDA_ANGLE::ANGLE_90 );
         break;
     case ASCH_RECORD_ORIENTATION::LEFTWARDS:
-        label->SetLabelSpinStyle( LABEL_SPIN_STYLE::LEFT );
+        label->SetAlignedAngle( EDA_ANGLE::ANGLE_180 );
         break;
     case ASCH_RECORD_ORIENTATION::DOWNWARDS:
-        label->SetLabelSpinStyle( LABEL_SPIN_STYLE::BOTTOM );
+        label->SetAlignedAngle( EDA_ANGLE::ANGLE_270 );
         break;
     default:
         break;
@@ -2103,9 +2113,7 @@ void SCH_ALTIUM_PLUGIN::ParseSheetName( const std::map<wxString, wxString>& aPro
     sheetNameField.SetPosition( elem.location + m_sheetOffset );
     sheetNameField.SetText( elem.text );
     sheetNameField.SetVisible( !elem.isHidden );
-
-    sheetNameField.SetHorizJustify( EDA_TEXT_HJUSTIFY_T::GR_TEXT_HJUSTIFY_LEFT );
-    sheetNameField.SetVertJustify( EDA_TEXT_VJUSTIFY_T::GR_TEXT_VJUSTIFY_BOTTOM );
+    sheetNameField.Align( TEXT_ATTRIBUTES::H_LEFT, TEXT_ATTRIBUTES::V_BOTTOM );
 
     SetFieldOrientation( sheetNameField, elem.orientation );
 }
@@ -2135,11 +2143,8 @@ void SCH_ALTIUM_PLUGIN::ParseFileName( const std::map<wxString, wxString>& aProp
     }
 
     filenameField.SetText( elem.text );
-
     filenameField.SetVisible( !elem.isHidden );
-
-    filenameField.SetHorizJustify( EDA_TEXT_HJUSTIFY_T::GR_TEXT_HJUSTIFY_LEFT );
-    filenameField.SetVertJustify( EDA_TEXT_VJUSTIFY_T::GR_TEXT_VJUSTIFY_BOTTOM );
+    filenameField.Align( TEXT_ATTRIBUTES::H_LEFT, TEXT_ATTRIBUTES::V_BOTTOM );
 
     SetFieldOrientation( filenameField, elem.orientation );
 }
@@ -2170,9 +2175,7 @@ void SCH_ALTIUM_PLUGIN::ParseDesignator( const std::map<wxString, wxString>& aPr
 
     refField->SetPosition( elem.location + m_sheetOffset );
     refField->SetVisible( true );
-
-    refField->SetHorizJustify( EDA_TEXT_HJUSTIFY_T::GR_TEXT_HJUSTIFY_LEFT );
-    refField->SetVertJustify( EDA_TEXT_VJUSTIFY_T::GR_TEXT_VJUSTIFY_BOTTOM );
+    refField->Align( TEXT_ATTRIBUTES::H_LEFT, TEXT_ATTRIBUTES::V_BOTTOM );
 
     SetFieldOrientation( *refField, elem.orientation );
 }
@@ -2253,9 +2256,8 @@ void SCH_ALTIUM_PLUGIN::ParseParameter( const std::map<wxString, wxString>& aPro
 
         wxString kicadText = AltiumSpecialStringsToKiCadVariables( elem.text, stringReplacement );
         field->SetText( kicadText );
-
         field->SetVisible( !elem.isHidden );
-        field->SetHorizJustify( EDA_TEXT_HJUSTIFY_T::GR_TEXT_HJUSTIFY_LEFT );
+        field->Align( TEXT_ATTRIBUTES::H_LEFT );
 
         switch( elem.orientation )
         {

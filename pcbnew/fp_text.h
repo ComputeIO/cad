@@ -103,20 +103,6 @@ public:
      */
     void KeepUpright( double aOldOrientation, double aNewOrientation );
 
-    /**
-     * @return force the text rotation to be always between -90 .. 90 deg. Otherwise the text
-     *         is not easy to read if false, the text rotation is free.
-     */
-    bool IsKeepUpright() const
-    {
-        return m_keepUpright;
-    }
-
-    void SetKeepUpright( bool aKeepUpright )
-    {
-        m_keepUpright = aKeepUpright;
-    }
-
     /// Rotate text, in footprint editor
     /// (for instance in footprint rotation transform)
     void Rotate( const wxPoint& aOffset, double aAngle ) override;
@@ -241,10 +227,6 @@ private:
 
     wxPoint   m_Pos0;       ///< text coordinates relative to the footprint anchor, orient 0.
                             ///< text coordinate ref point is the text center
-
-    bool      m_keepUpright;    ///< if true, keep rotation angle between -90 .. 90 deg.
-                                ///< to keep the text more easy to read
-
 };
 
 #endif // FP_TEXT_H

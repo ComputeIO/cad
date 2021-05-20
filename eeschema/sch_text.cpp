@@ -135,10 +135,10 @@ static int* getTemplateShape( PINSHEETLABEL_SHAPE aShape, EDA_ANGLE aAngle )
     switch( aAngle.AsDegrees() )
     {
     case 0:
-    default: direction = LABEL_SPIN_STYLE::RIGHT; break;
-    case 90: direction = LABEL_SPIN_STYLE::UP; break;
-    case 180: direction = LABEL_SPIN_STYLE::LEFT; break;
-    case 270: direction = LABEL_SPIN_STYLE::BOTTOM; break;
+    default: direction = 0; break;
+    case 90: direction = 1; break;
+    case 180: direction = 2; break;
+    case 270: direction = 3; break;
     }
 
     return TemplateShape[static_cast<int>( aShape )][direction];
@@ -147,20 +147,19 @@ static int* getTemplateShape( PINSHEETLABEL_SHAPE aShape, EDA_ANGLE aAngle )
 
 SCH_TEXT::SCH_TEXT( const wxPoint& pos, const wxString& text, KICAD_T aType ) :
         SCH_ITEM( NULL, aType ), EDA_TEXT( text ), m_shape( PINSHEETLABEL_SHAPE::PS_INPUT ),
-        m_isDangling( false ), m_connectionType( CONNECTION_TYPE::NONE ),
-        m_spin_style( LABEL_SPIN_STYLE::LEFT )
+        m_isDangling( false ), m_connectionType( CONNECTION_TYPE::NONE )
 {
     m_layer = LAYER_NOTES;
 
     SetTextPos( pos );
     SetMultilineAllowed( true );
+    SetKeepUpright( true );
 }
 
 
 SCH_TEXT::SCH_TEXT( const SCH_TEXT& aText ) :
         SCH_ITEM( aText ), EDA_TEXT( aText ), m_shape( aText.m_shape ),
-        m_isDangling( aText.m_isDangling ), m_connectionType( aText.m_connectionType ),
-        m_spin_style( aText.m_spin_style )
+        m_isDangling( aText.m_isDangling ), m_connectionType( aText.m_connectionType )
 {
 }
 
@@ -190,15 +189,19 @@ wxPoint SCH_TEXT::GetSchematicTextOffset( const RENDER_SETTINGS* aSettings ) con
     // add an offset to x (or y) position to aid readability of text on a wire or line
     int dist = GetTextOffset( aSettings ) + GetPenWidth();
 
-    switch( GetLabelSpinStyle() )
+    switch( GetTextEdaAngle().AsDegrees() )
     {
-    case LABEL_SPIN_STYLE::UP:
-    case LABEL_SPIN_STYLE::BOTTOM: text_offset.x = -dist; break; // Vert Orientation
     default:
-    case LABEL_SPIN_STYLE::LEFT:
-    case LABEL_SPIN_STYLE::RIGHT: text_offset.y = -dist; break; // Horiz Orientation
+    case 0: // Horizontal orientation
+    case 180: text_offset.y = -dist; break;
+    case 90: // Vertical orientation
+    case 270: text_offset.x = -dist; break;
     }
 
+#ifdef DEBUG
+    std::cerr << "SCH_TEXT::GetSchematicTextOffset( ... ) " << *this << " offset " << text_offset
+              << std::endl;
+#endif
     return text_offset;
 }
 
@@ -206,7 +209,7 @@ wxPoint SCH_TEXT::GetSchematicTextOffset( const RENDER_SETTINGS* aSettings ) con
 void SCH_TEXT::MirrorHorizontally( int aCenter )
 {
     // Text is NOT really mirrored; it is moved to a suitable horizontal position
-    SetLabelSpinStyle( GetLabelSpinStyle().MirrorY() );
+    MirrorAcrossYAxis();
 
     SetTextX( MIRRORVAL( GetTextPos().x, aCenter ) );
 }
@@ -215,7 +218,7 @@ void SCH_TEXT::MirrorHorizontally( int aCenter )
 void SCH_TEXT::MirrorVertically( int aCenter )
 {
     // Text is NOT really mirrored; it is moved to a suitable vertical position
-    SetLabelSpinStyle( GetLabelSpinStyle().MirrorX() );
+    MirrorAcrossXAxis();
 
     SetTextY( MIRRORVAL( GetTextPos().y, aCenter ) );
 }
@@ -236,59 +239,14 @@ void SCH_TEXT::Rotate( wxPoint aCenter )
 void SCH_TEXT::Rotate90( bool aClockwise )
 {
     if( aClockwise )
-        SetLabelSpinStyle( GetLabelSpinStyle().RotateCW() );
-    else
-        SetLabelSpinStyle( GetLabelSpinStyle().RotateCCW() );
-}
-
-
-void SCH_TEXT::MirrorSpinStyle( bool aLeftRight )
-{
-    if( aLeftRight )
-        SetLabelSpinStyle( GetLabelSpinStyle().MirrorY() );
-    else
-        SetLabelSpinStyle( GetLabelSpinStyle().MirrorX() );
-}
-
-
-void SCH_TEXT::SetLabelSpinStyle( LABEL_SPIN_STYLE aSpinStyle )
-{
-#ifdef DEBUG
-    std::cerr << "SCH_TEXT::SetLabelSpinStyle( " << aSpinStyle << " ) \"" << GetText() << "\""
-              << std::endl;
-#endif
-    m_spin_style = aSpinStyle;
-
-    // SetVertJustify( GR_TEXT_VJUSTIFY_BOTTOM );
-
-    // Assume "Right" and Left" mean which side of the anchor the text will be on
-    // Thus we want to left justify text up agaisnt the anchor if we are on the right
-    switch( aSpinStyle )
     {
-    default: wxASSERT_MSG( 1, "Bad spin style" ); break;
-
-    case LABEL_SPIN_STYLE::RIGHT: // Horiz Normal Orientation
-        //
-        m_spin_style = LABEL_SPIN_STYLE::RIGHT; // Handle the error spin style by resetting
-        SetTextAngle( TEXT_ANGLE_HORIZ );
-        //SetHorizJustify( GR_TEXT_HJUSTIFY_LEFT );
-        break;
-
-    case LABEL_SPIN_STYLE::UP: // Vert Orientation UP
-        SetTextAngle( TEXT_ANGLE_VERT );
-        //SetHorizJustify( GR_TEXT_HJUSTIFY_LEFT );
-        break;
-
-    case LABEL_SPIN_STYLE::LEFT: // Horiz Orientation - Right justified
-        SetTextAngle( TEXT_ANGLE_HORIZ );
-        //SetHorizJustify( GR_TEXT_HJUSTIFY_RIGHT );
-        break;
-
-    case LABEL_SPIN_STYLE::BOTTOM: //  Vert Orientation BOTTOM
-        SetTextAngle( TEXT_ANGLE_VERT );
-        //SetHorizJustify( GR_TEXT_HJUSTIFY_RIGHT );
-        break;
+        RotateCW();
     }
+    else
+    {
+        RotateCCW();
+    }
+    SetDefaultAlignment();
 }
 
 
@@ -297,10 +255,8 @@ void SCH_TEXT::SwapData( SCH_ITEM* aItem )
     SCH_TEXT* item = (SCH_TEXT*) aItem;
 
     std::swap( m_layer, item->m_layer );
-
     std::swap( m_shape, item->m_shape );
     std::swap( m_isDangling, item->m_isDangling );
-    std::swap( m_spin_style, item->m_spin_style );
 
     SwapText( *item );
     SwapEffects( *item );
@@ -338,9 +294,11 @@ int SCH_TEXT::GetTextOffset( const RENDER_SETTINGS* aSettings ) const
     else
         ratio = DEFAULT_TEXT_OFFSET_RATIO; // For previews (such as in Preferences), etc.
 
-    return KiROUND( ratio * GetTextSize().y );
-
-    return 0;
+    int ret = KiROUND( ratio * GetTextSize().y );
+#ifdef DEBUG
+    std::cerr << "SCH_TEXT::GetTextOffset( ... ) " << *this << " offset " << ret << std::endl;
+#endif
+    return ret;
 }
 
 
@@ -350,12 +308,25 @@ int SCH_TEXT::GetPenWidth() const
 }
 
 
+COLOR4D SCH_TEXT::doPrint( const RENDER_SETTINGS* aSettings, const wxPoint& aOffset, int aLayer )
+{
+    COLOR4D  color = aSettings->GetLayerColor( aLayer );
+    wxPoint  offset( aOffset + GetSchematicTextOffset( aSettings ) );
+    VECTOR2D position( GetTextPos().x + offset.x, GetTextPos().y + offset.y );
+#ifdef DEBUG
+    std::cerr << "SCH_TEXT::doPrint( ..., " << aOffset << ", " << aLayer << " ) \"" << GetText()
+              << "\"@" << GetTextPos() << " color " << color << " offset " << offset << " position "
+              << position << " angle " << GetTextEdaAngle() << " H alignment "
+              << GetHorizontalAlignment() << std::endl;
+#endif
+    GRText( this, position, color );
+    return color;
+}
+
+
 void SCH_TEXT::Print( const RENDER_SETTINGS* aSettings, const wxPoint& aOffset )
 {
-    COLOR4D color = aSettings->GetLayerColor( m_layer );
-    wxPoint text_offset = aOffset + GetSchematicTextOffset( aSettings );
-
-    EDA_TEXT::Print( aSettings, text_offset, color );
+    doPrint( aSettings, aOffset, m_layer );
 }
 
 
@@ -465,7 +436,10 @@ std::vector<wxPoint> SCH_TEXT::GetConnectionPoints() const
 
 const EDA_RECT SCH_TEXT::GetBoundingBox() const
 {
-    EDA_RECT rect = GetTextBox();
+    //EDA_RECT rect = GetTextBox();
+    VECTOR2D bbox = GetFont()->BoundingBox( *this );
+    wxSize   bboxSize( bbox.x, bbox.y );
+    EDA_RECT rect( GetTextPos(), bboxSize );
 
     if( GetTextAngle() != 0 ) // Rotate rect
     {
@@ -626,8 +600,9 @@ void SCH_TEXT::Plot( PLOTTER* aPlotter ) const
         {
             wxPoint textpos = positions[ii] + GetSchematicTextOffset( aPlotter->RenderSettings() );
             wxString& txt = strings_list.Item( ii );
-            aPlotter->Text( textpos, color, txt, GetTextAngle(), GetTextSize(), GetHorizJustify(),
-                            GetVertJustify(), penWidth, IsItalic(), IsBold() );
+            aPlotter->Text( textpos, color, txt, GetTextAngle(), GetTextSize(),
+                            GetHorizontalAlignment(), GetVerticalAlignment(), penWidth, IsItalic(),
+                            IsBold() );
         }
     }
     else
@@ -635,7 +610,8 @@ void SCH_TEXT::Plot( PLOTTER* aPlotter ) const
         wxPoint textpos = GetTextPos() + GetSchematicTextOffset( aPlotter->RenderSettings() );
 
         aPlotter->Text( textpos, color, GetShownText(), GetTextAngle(), GetTextSize(),
-                        GetHorizJustify(), GetVertJustify(), penWidth, IsItalic(), IsBold() );
+                        GetHorizontalAlignment(), GetVerticalAlignment(), penWidth, IsItalic(),
+                        IsBold() );
     }
 
     // Draw graphic symbol for global or hierarchical labels
@@ -663,16 +639,11 @@ void SCH_TEXT::GetMsgPanelInfo( EDA_DRAW_FRAME* aFrame, MSG_PANEL_ITEMS& aList )
     // Don't use GetShownText() here; we want to show the user the variable references
     aList.push_back( MSG_PANEL_ITEM( msg, UnescapeString( GetText() ) ) );
 
-    switch( GetLabelSpinStyle() )
-    {
-    case LABEL_SPIN_STYLE::LEFT: msg = _( "Align right" ); break;
-    case LABEL_SPIN_STYLE::UP: msg = _( "Align bottom" ); break;
-    case LABEL_SPIN_STYLE::RIGHT: msg = _( "Align left" ); break;
-    case LABEL_SPIN_STYLE::BOTTOM: msg = _( "Align top" ); break;
-    default: msg = wxT( "???" ); break;
-    }
-
+    msg = TEXT_ATTRIBUTES::ToString( GetHorizontalAlignment() );
     aList.push_back( MSG_PANEL_ITEM( _( "Justification" ), msg, BROWN ) );
+
+    msg = GetTextEdaAngle().AsDegreesString();
+    aList.push_back( MSG_PANEL_ITEM( _( "Angle" ), msg, BROWN ) );
 
     wxString textStyle[] = { _( "Normal" ), _( "Italic" ), _( "Bold" ), _( "Bold Italic" ) };
     int      style = 0;
@@ -790,7 +761,9 @@ bool SCH_LABEL::IsType( const KICAD_T aScanTypes[] ) const
 
 const EDA_RECT SCH_LABEL::GetBoundingBox() const
 {
-    EDA_RECT rect = GetTextBox();
+    VECTOR2D bbox = GetFont()->BoundingBox( *this );
+    wxSize   bboxSize( bbox.x, bbox.y );
+    EDA_RECT rect( GetTextPos(), bboxSize );
 
     rect.Offset( 0, -GetTextOffset() );
 
@@ -836,11 +809,11 @@ SCH_GLOBALLABEL::SCH_GLOBALLABEL( const wxPoint& pos, const wxString& text ) :
     m_isDangling = true;
     SetMultilineAllowed( false );
 
-    SetVertJustify( GR_TEXT_VJUSTIFY_CENTER );
+    Align( TEXT_ATTRIBUTES::V_CENTER );
 
     m_intersheetRefsField.SetText( wxT( "${INTERSHEET_REFS}" ) );
     m_intersheetRefsField.SetLayer( LAYER_GLOBLABEL );
-    m_intersheetRefsField.SetVertJustify( GR_TEXT_VJUSTIFY_CENTER );
+    m_intersheetRefsField.Align( TEXT_ATTRIBUTES::V_CENTER );
     m_fieldsAutoplaced = FIELDS_AUTOPLACED_AUTO;
 }
 
@@ -927,54 +900,22 @@ wxPoint SCH_GLOBALLABEL::GetSchematicTextOffset( const RENDER_SETTINGS* aSetting
     default: break;
     }
 
-    switch( GetLabelSpinStyle() )
+    switch( GetTextEdaAngle().AsDegrees() )
     {
     default:
-    case LABEL_SPIN_STYLE::LEFT: text_offset.x -= dist; break;
-    case LABEL_SPIN_STYLE::UP: text_offset.y -= dist; break;
-    case LABEL_SPIN_STYLE::RIGHT: text_offset.x += dist; break;
-    case LABEL_SPIN_STYLE::BOTTOM: text_offset.y += dist; break;
+    case 0: text_offset.x += dist; break;
+    case 90: text_offset.y -= dist; break;
+    case 180: text_offset.x -= dist; break;
+    case 270: text_offset.y += dist; break;
     }
 
-    return text_offset;
-}
-
-
-void SCH_GLOBALLABEL::SetLabelSpinStyle( LABEL_SPIN_STYLE aSpinStyle )
-{
 #ifdef DEBUG
-    std::cerr << "SCH_GLOBALLABEL::SetLabelSpinStyle( " << aSpinStyle << " ) \"" << GetText()
-              << "\"" << std::endl;
+    std::cerr << "SCH_GLOBALLABEL::GetSchematicTextOffset( ... ) \"" << GetText() << "\" angle "
+              << GetTextEdaAngle() << " H alignment " << GetHorizontalAlignment() << " dist "
+              << dist << " (" << GetTextOffset( aSettings ) << ") text_offset " << text_offset
+              << std::endl;
 #endif
-    m_spin_style = aSpinStyle;
-
-    switch( aSpinStyle )
-    {
-    default:
-        wxASSERT_MSG( 1, "Bad spin style" );
-        m_spin_style = LABEL_SPIN_STYLE::RIGHT;
-        KI_FALLTHROUGH;
-
-    case LABEL_SPIN_STYLE::RIGHT: // Horiz Normal Orientation
-        SetTextAngle( TEXT_ANGLE_HORIZ );
-        SetHorizJustify( GR_TEXT_HJUSTIFY_LEFT );
-        break;
-
-    case LABEL_SPIN_STYLE::UP: // Vert Orientation UP
-        SetTextAngle( TEXT_ANGLE_VERT );
-        SetHorizJustify( GR_TEXT_HJUSTIFY_LEFT );
-        break;
-
-    case LABEL_SPIN_STYLE::LEFT: // Horiz Orientation
-        SetTextAngle( TEXT_ANGLE_HORIZ );
-        SetHorizJustify( GR_TEXT_HJUSTIFY_RIGHT );
-        break;
-
-    case LABEL_SPIN_STYLE::BOTTOM: //  Vert Orientation BOTTOM
-        SetTextAngle( TEXT_ANGLE_VERT );
-        SetHorizJustify( GR_TEXT_HJUSTIFY_RIGHT );
-        break;
-    }
+    return text_offset;
 }
 
 
@@ -999,37 +940,39 @@ void SCH_GLOBALLABEL::Rotate90( bool aClockwise )
 #endif
     SCH_TEXT::Rotate90( aClockwise );
 
-    if( m_intersheetRefsField.GetTextAngle() == TEXT_ANGLE_VERT
-        && m_intersheetRefsField.GetHorizJustify() == GR_TEXT_HJUSTIFY_LEFT )
+    if( m_intersheetRefsField.GetTextAngle() == TEXT_ANGLE_VERT )
     {
-        if( !aClockwise )
-            m_intersheetRefsField.SetHorizJustify( GR_TEXT_HJUSTIFY_RIGHT );
+        if ( m_intersheetRefsField.GetHorizontalAlignment() == TEXT_ATTRIBUTES::H_LEFT )
+        {
+            if( !aClockwise )
+                m_intersheetRefsField.Align( TEXT_ATTRIBUTES::H_RIGHT );
 
-        m_intersheetRefsField.SetTextAngle( TEXT_ANGLE_HORIZ );
+            m_intersheetRefsField.SetTextAngle( TEXT_ANGLE_HORIZ );
+        }
+        else if( m_intersheetRefsField.GetHorizontalAlignment() == TEXT_ATTRIBUTES::H_RIGHT )
+        {
+            if( !aClockwise )
+                m_intersheetRefsField.Align( TEXT_ATTRIBUTES::H_LEFT );
+
+            m_intersheetRefsField.SetTextAngle( TEXT_ANGLE_HORIZ );
+        }
     }
-    else if( m_intersheetRefsField.GetTextAngle() == TEXT_ANGLE_VERT
-             && m_intersheetRefsField.GetHorizJustify() == GR_TEXT_HJUSTIFY_RIGHT )
+    else if( m_intersheetRefsField.GetTextAngle() == TEXT_ANGLE_HORIZ )
     {
-        if( !aClockwise )
-            m_intersheetRefsField.SetHorizJustify( GR_TEXT_HJUSTIFY_LEFT );
+        if ( m_intersheetRefsField.GetHorizontalAlignment() == TEXT_ATTRIBUTES::H_LEFT )
+        {
+            if( aClockwise )
+                m_intersheetRefsField.Align( TEXT_ATTRIBUTES::H_RIGHT );
 
-        m_intersheetRefsField.SetTextAngle( TEXT_ANGLE_HORIZ );
-    }
-    else if( m_intersheetRefsField.GetTextAngle() == TEXT_ANGLE_HORIZ
-             && m_intersheetRefsField.GetHorizJustify() == GR_TEXT_HJUSTIFY_LEFT )
-    {
-        if( aClockwise )
-            m_intersheetRefsField.SetHorizJustify( GR_TEXT_HJUSTIFY_LEFT );
+            m_intersheetRefsField.SetTextAngle( TEXT_ANGLE_VERT );
+        }
+        else if( m_intersheetRefsField.GetHorizontalAlignment() == TEXT_ATTRIBUTES::H_RIGHT )
+        {
+            if( aClockwise )
+                m_intersheetRefsField.Align( TEXT_ATTRIBUTES::H_LEFT );
 
-        m_intersheetRefsField.SetTextAngle( TEXT_ANGLE_VERT );
-    }
-    else if( m_intersheetRefsField.GetTextAngle() == TEXT_ANGLE_HORIZ
-             && m_intersheetRefsField.GetHorizJustify() == GR_TEXT_HJUSTIFY_RIGHT )
-    {
-        if( aClockwise )
-            m_intersheetRefsField.SetHorizJustify( GR_TEXT_HJUSTIFY_LEFT );
-
-        m_intersheetRefsField.SetTextAngle( TEXT_ANGLE_VERT );
+            m_intersheetRefsField.SetTextAngle( TEXT_ANGLE_VERT );
+        }
     }
 
     wxPoint pos = m_intersheetRefsField.GetTextPos();
@@ -1038,26 +981,37 @@ void SCH_GLOBALLABEL::Rotate90( bool aClockwise )
 }
 
 
-void SCH_GLOBALLABEL::MirrorSpinStyle( bool aLeftRight )
+void SCH_GLOBALLABEL::MirrorAcrossXAxis()
 {
-    SCH_TEXT::MirrorSpinStyle( aLeftRight );
+    SCH_TEXT::MirrorAcrossXAxis();
 
-    if( ( aLeftRight && m_intersheetRefsField.GetTextAngle() == TEXT_ANGLE_HORIZ )
-        || ( !aLeftRight && m_intersheetRefsField.GetTextAngle() == TEXT_ANGLE_VERT ) )
+    if( m_intersheetRefsField.GetTextAngle() == TEXT_ANGLE_HORIZ )
     {
-        if( m_intersheetRefsField.GetHorizJustify() == GR_TEXT_HJUSTIFY_LEFT )
-            m_intersheetRefsField.SetHorizJustify( GR_TEXT_HJUSTIFY_RIGHT );
-        else
-            m_intersheetRefsField.SetHorizJustify( GR_TEXT_HJUSTIFY_LEFT );
+        m_intersheetRefsField.FlipHorizontalAlignment();
     }
 
     wxPoint pos = m_intersheetRefsField.GetTextPos();
     wxPoint delta = GetPosition() - pos;
 
-    if( aLeftRight )
-        pos.x = GetPosition().x + delta.x;
-    else
-        pos.y = GetPosition().y + delta.y;
+    pos.x = GetPosition().x + delta.x;
+
+    m_intersheetRefsField.SetTextPos( pos );
+}
+
+
+void SCH_GLOBALLABEL::MirrorAcrossYAxis()
+{
+    SCH_TEXT::MirrorAcrossYAxis();
+
+    if( m_intersheetRefsField.GetTextAngle() == TEXT_ANGLE_VERT )
+    {
+        m_intersheetRefsField.FlipHorizontalAlignment();
+    }
+
+    wxPoint pos = m_intersheetRefsField.GetTextPos();
+    wxPoint delta = GetPosition() - pos;
+
+    pos.y = GetPosition().y + delta.y;
 
     m_intersheetRefsField.SetTextPos( pos );
 }
@@ -1068,10 +1022,7 @@ void SCH_GLOBALLABEL::MirrorHorizontally( int aCenter )
     wxPoint old_pos = GetPosition();
     SCH_TEXT::MirrorHorizontally( aCenter );
 
-    if( m_intersheetRefsField.GetHorizJustify() == GR_TEXT_HJUSTIFY_LEFT )
-        m_intersheetRefsField.SetHorizJustify( GR_TEXT_HJUSTIFY_RIGHT );
-    else
-        m_intersheetRefsField.SetHorizJustify( GR_TEXT_HJUSTIFY_LEFT );
+    m_intersheetRefsField.FlipHorizontalAlignment();
 
     wxPoint pos = m_intersheetRefsField.GetTextPos();
     wxPoint delta = old_pos - pos;
@@ -1112,36 +1063,41 @@ void SCH_GLOBALLABEL::AutoplaceFields( SCH_SCREEN* aScreen, bool aManual )
     int penOffset = GetPenWidth() / 2;
 
     // Set both axes to penOffset; we're going to overwrite the text axis below
-    wxPoint offset( -penOffset, -penOffset );
+    wxPoint                               offset( -penOffset, -penOffset );
+    EDA_ANGLE                             angle;
+    TEXT_ATTRIBUTES::HORIZONTAL_ALIGNMENT alignment;
+    int                                   offsetValue = labelLen + margin / 2;
 
-    switch( GetLabelSpinStyle() )
+    switch( GetTextEdaAngle().AsDegrees() )
     {
     default:
-    case LABEL_SPIN_STYLE::LEFT:
-        m_intersheetRefsField.SetTextAngle( TEXT_ANGLE_HORIZ );
-        m_intersheetRefsField.SetHorizJustify( GR_TEXT_HJUSTIFY_RIGHT );
-        offset.x = -( labelLen + margin / 2 );
+    case 0:
+        angle = EDA_ANGLE::ANGLE_0;
+        alignment = TEXT_ATTRIBUTES::H_LEFT;
+        offset.x = offsetValue;
         break;
 
-    case LABEL_SPIN_STYLE::UP:
-        m_intersheetRefsField.SetTextAngle( TEXT_ANGLE_VERT );
-        m_intersheetRefsField.SetHorizJustify( GR_TEXT_HJUSTIFY_LEFT );
-        offset.y = -( labelLen + margin / 2 );
+    case 90:
+        angle = EDA_ANGLE::ANGLE_90;
+        alignment = TEXT_ATTRIBUTES::H_LEFT;
+        offset.y = -offsetValue;
         break;
 
-    case LABEL_SPIN_STYLE::RIGHT:
-        m_intersheetRefsField.SetTextAngle( TEXT_ANGLE_HORIZ );
-        m_intersheetRefsField.SetHorizJustify( GR_TEXT_HJUSTIFY_LEFT );
-        offset.x = labelLen + margin / 2;
+    case 180:
+        angle = EDA_ANGLE::ANGLE_180;
+        alignment = TEXT_ATTRIBUTES::H_RIGHT;
+        offset.x = -offsetValue;
         break;
 
-    case LABEL_SPIN_STYLE::BOTTOM:
-        m_intersheetRefsField.SetTextAngle( TEXT_ANGLE_VERT );
-        m_intersheetRefsField.SetHorizJustify( GR_TEXT_HJUSTIFY_RIGHT );
-        offset.y = labelLen + margin / 2;
+    case 270:
+        angle = EDA_ANGLE::ANGLE_270;
+        alignment = TEXT_ATTRIBUTES::H_RIGHT;
+        offset.y = offsetValue;
         break;
     }
 
+    m_intersheetRefsField.SetTextAngle( angle );
+    m_intersheetRefsField.SetHorizontalAlignment( alignment );
     m_intersheetRefsField.SetTextPos( GetPosition() + offset );
 
     m_fieldsAutoplaced = FIELDS_AUTOPLACED_AUTO;
@@ -1204,14 +1160,15 @@ void SCH_GLOBALLABEL::Print( const RENDER_SETTINGS* aSettings, const wxPoint& aO
 
     SCH_CONNECTION* connection = Connection();
     int             layer = ( connection && connection->IsBus() ) ? LAYER_BUS : m_layer;
-    wxDC*           DC = aSettings->GetPrintDC();
-    COLOR4D         color = aSettings->GetLayerColor( layer );
-    int             penWidth = std::max( GetPenWidth(), aSettings->GetDefaultPenWidth() );
-    wxPoint         text_offset = aOffset + GetSchematicTextOffset( aSettings );
 
-    EDA_TEXT::Print( aSettings, text_offset, color );
+    doPrint( aSettings, aOffset, layer );
 
     CreateGraphicShape( aSettings, s_poly, GetTextPos() + aOffset );
+
+    wxDC*   DC = aSettings->GetPrintDC();
+    int     penWidth = std::max( GetPenWidth(), aSettings->GetDefaultPenWidth() );
+    COLOR4D color = aSettings->GetLayerColor( layer );
+
     GRPoly( nullptr, DC, s_poly.size(), &s_poly[0], false, penWidth, color, color );
 
     if( Schematic()->Settings().m_IntersheetRefsShow )
@@ -1233,10 +1190,14 @@ void SCH_GLOBALLABEL::Plot( PLOTTER* aPlotter ) const
 void SCH_GLOBALLABEL::CreateGraphicShape( const RENDER_SETTINGS* aRenderSettings,
                                           std::vector<wxPoint>& aPoints, const wxPoint& Pos ) const
 {
+    VECTOR2D bbox = GetFont()->BoundingBox( *this );
+
     int margin = GetTextOffset( aRenderSettings );
-    int halfSize = ( GetTextHeight() / 2 ) + margin;
-    int linewidth = GetPenWidth();
-    int symb_len = LenSize( GetShownText(), linewidth ) + 2 * margin;
+    //int halfSize = ( GetTextHeight() / 2 ) + margin;
+    int halfSize = ( bbox.y / 2 ) + margin;
+    int linewidth = GetFont()->IsOutline() ? 0 : GetPenWidth();
+    //int symb_len = LenSize( GetShownText(), linewidth ) + 2 * margin;
+    int symb_len = bbox.x + 2 * margin;
 
     int x = symb_len + linewidth + 3;
     int y = halfSize + linewidth + 3;
@@ -1273,16 +1234,8 @@ void SCH_GLOBALLABEL::CreateGraphicShape( const RENDER_SETTINGS* aRenderSettings
     default: break;
     }
 
-    int angle = 0;
-
-    switch( GetLabelSpinStyle() )
-    {
-    default:
-    case LABEL_SPIN_STYLE::LEFT: break;
-    case LABEL_SPIN_STYLE::UP: angle = -900; break;
-    case LABEL_SPIN_STYLE::RIGHT: angle = 1800; break;
-    case LABEL_SPIN_STYLE::BOTTOM: angle = 900; break;
-    }
+    // flip angle by 180 degrees
+    int angle = GetTextEdaAngle().RotateCW().RotateCW().AsTenthsOfADegree();
 
     // Rotate outlines and move corners in real position
     for( wxPoint& aPoint : aPoints )
@@ -1305,36 +1258,36 @@ const EDA_RECT SCH_GLOBALLABEL::GetBoundingBoxBase() const
     // the intersheets references, just the bounding box of the graphic shape
     int x = GetTextPos().x;
     int y = GetTextPos().y;
-    int penWidth = GetEffectiveTextPenWidth();
+    int penWidth = GetFont()->IsOutline() ? 0 : GetEffectiveTextPenWidth();
     int margin = GetTextOffset();
-    int height = ( ( GetTextHeight() * 15 ) / 10 ) + penWidth + margin;
-    int length = LenSize( GetShownText(), penWidth ) + height // add height for triangular shapes
-                 - margin; // margin added to height not needed here
 
-    int dx, dy;
+    VECTOR2D bbox = GetFont()->BoundingBox( *this );
 
-    switch( GetLabelSpinStyle() ) // respect orientation
+    int height = ( ( bbox.y * 15 ) / 10 ) + penWidth + margin;
+    int length = bbox.x + height // add height for triangular shapes
+                 - margin;       // margin added to height not needed here
+    int dx;
+    int dy;
+
+    switch( GetTextEdaAngle().AsDegrees() )
     {
-    default:
-    case LABEL_SPIN_STYLE::LEFT:
-        dx = -length;
-        dy = height;
-        y -= height / 2;
-        break;
-
-    case LABEL_SPIN_STYLE::UP:
-        dx = height;
-        dy = -length;
-        x -= height / 2;
-        break;
-
-    case LABEL_SPIN_STYLE::RIGHT:
+    case 0:
         dx = length;
         dy = height;
         y -= height / 2;
         break;
-
-    case LABEL_SPIN_STYLE::BOTTOM:
+    case 90:
+        dx = height;
+        dy = -length;
+        x -= height / 2;
+        break;
+    default:
+    case 180:
+        dx = -length;
+        dy = height;
+        y -= height / 2;
+        break;
+    case 270:
         dx = height;
         dy = length;
         x -= height / 2;
@@ -1394,66 +1347,22 @@ EDA_ITEM* SCH_HIERLABEL::Clone() const
 }
 
 
-void SCH_HIERLABEL::SetLabelSpinStyle( LABEL_SPIN_STYLE aSpinStyle )
-{
-#ifdef DEBUG
-    std::cerr << "SCH_HIERLABEL::SetLabelSpinStyle( " << aSpinStyle << " ) \"" << GetText() << "\""
-              << std::endl;
-#endif
-    m_spin_style = aSpinStyle;
-
-    // Assume "Right" and Left" mean which side of the port symbol the text will be on
-    // If we are left of the symbol, we want to right justify to line up with the symbol
-    switch( aSpinStyle )
-    {
-    default: wxLogWarning( "SetLabelSpinStyle bad spin style" ); break;
-
-    case LABEL_SPIN_STYLE::LEFT:
-        //
-        m_spin_style = LABEL_SPIN_STYLE::LEFT; // Handle the error spin style by resetting
-        SetTextAngle( TEXT_ANGLE_HORIZ );
-        SetHorizJustify( GR_TEXT_HJUSTIFY_RIGHT );
-        SetVertJustify( GR_TEXT_VJUSTIFY_CENTER );
-        break;
-
-    case LABEL_SPIN_STYLE::UP:
-        SetTextAngle( TEXT_ANGLE_VERT );
-        SetHorizJustify( GR_TEXT_HJUSTIFY_LEFT );
-        SetVertJustify( GR_TEXT_VJUSTIFY_CENTER );
-        break;
-
-    case LABEL_SPIN_STYLE::RIGHT:
-        SetTextAngle( TEXT_ANGLE_HORIZ );
-        SetHorizJustify( GR_TEXT_HJUSTIFY_LEFT );
-        SetVertJustify( GR_TEXT_VJUSTIFY_CENTER );
-        break;
-
-    case LABEL_SPIN_STYLE::BOTTOM:
-        SetTextAngle( TEXT_ANGLE_VERT );
-        SetHorizJustify( GR_TEXT_HJUSTIFY_RIGHT );
-        SetVertJustify( GR_TEXT_VJUSTIFY_CENTER );
-        break;
-    }
-}
-
-
-void SCH_HIERLABEL::Print( const RENDER_SETTINGS* aSettings, const wxPoint& offset )
+void SCH_HIERLABEL::Print( const RENDER_SETTINGS* aSettings, const wxPoint& aOffset )
 {
     wxCHECK_RET( Schematic(), "No parent SCHEMATIC set for SCH_LABEL!" );
 
-    static std::vector<wxPoint> Poly;
-
-    wxDC*           DC = aSettings->GetPrintDC();
     SCH_CONNECTION* conn = Connection();
     bool            isBus = conn && conn->IsBus();
-    COLOR4D         color = aSettings->GetLayerColor( isBus ? LAYER_BUS : m_layer );
+    int             layer = ( isBus ? LAYER_BUS : m_layer );
     int             penWidth = std::max( GetPenWidth(), aSettings->GetDefaultPenWidth() );
-    wxPoint         textOffset = offset + GetSchematicTextOffset( aSettings );
 
-    EDA_TEXT::Print( aSettings, textOffset, color );
+    COLOR4D color = doPrint( aSettings, aOffset, layer );
 
-    CreateGraphicShape( aSettings, Poly, GetTextPos() + offset );
-    GRPoly( nullptr, DC, Poly.size(), &Poly[0], false, penWidth, color, color );
+    static std::vector<wxPoint> Poly;
+    CreateGraphicShape( aSettings, Poly,
+                        GetTextPos() + aOffset + GetSchematicTextOffset( aSettings ) );
+    GRPoly( nullptr, aSettings->GetPrintDC(), Poly.size(), &Poly[0], false, penWidth, color,
+            color );
 }
 
 
@@ -1468,7 +1377,6 @@ void SCH_HIERLABEL::CreateGraphicShape( const RENDER_SETTINGS* aSettings,
                                         std::vector<wxPoint>& aPoints, const wxPoint& aPos,
                                         PINSHEETLABEL_SHAPE aShape ) const
 {
-    //int* Template = TemplateShape[static_cast<int>( aShape )][static_cast<int>( m_spin_style )];
     int* Template = getTemplateShape( aShape, GetTextEdaAngle() );
     int  halfSize = GetTextHeight() / 2;
     int  imax = *Template;
@@ -1503,31 +1411,28 @@ const EDA_RECT SCH_HIERLABEL::GetBoundingBox() const
 
     int dx, dy;
 
-    switch( GetLabelSpinStyle() )
+    switch( GetTextEdaAngle().AsDegrees() )
     {
-    default:
-    case LABEL_SPIN_STYLE::LEFT:
-        dx = -length;
-        dy = height;
-        x += Mils2iu( DANGLING_SYMBOL_SIZE );
-        y -= height / 2;
-        break;
-
-    case LABEL_SPIN_STYLE::UP:
-        dx = height;
-        dy = -length;
-        x -= height / 2;
-        y += Mils2iu( DANGLING_SYMBOL_SIZE );
-        break;
-
-    case LABEL_SPIN_STYLE::RIGHT:
+    case 0:
         dx = length;
         dy = height;
         x -= Mils2iu( DANGLING_SYMBOL_SIZE );
         y -= height / 2;
         break;
-
-    case LABEL_SPIN_STYLE::BOTTOM:
+    case 90:
+        dx = height;
+        dy = -length;
+        x -= height / 2;
+        y += Mils2iu( DANGLING_SYMBOL_SIZE );
+        break;
+    default:
+    case 180:
+        dx = -length;
+        dy = height;
+        x += Mils2iu( DANGLING_SYMBOL_SIZE );
+        y -= height / 2;
+        break;
+    case 270:
         dx = height;
         dy = length;
         x -= height / 2;
@@ -1548,13 +1453,13 @@ wxPoint SCH_HIERLABEL::GetSchematicTextOffset( const RENDER_SETTINGS* aSettings 
 
     dist += GetTextWidth();
 
-    switch( GetLabelSpinStyle() )
+    switch( GetTextEdaAngle().AsDegrees() )
     {
     default:
-    case LABEL_SPIN_STYLE::LEFT: text_offset.x = -dist; break;  // Orientation horiz normale
-    case LABEL_SPIN_STYLE::UP: text_offset.y = -dist; break;    // Orientation vert UP
-    case LABEL_SPIN_STYLE::RIGHT: text_offset.x = dist; break;  // Orientation horiz inverse
-    case LABEL_SPIN_STYLE::BOTTOM: text_offset.y = dist; break; // Orientation vert BOTTOM
+    case 0: text_offset.x = dist; break;
+    case 180: text_offset.x = -dist; break;
+    case 90: text_offset.y = -dist; break;
+    case 270: text_offset.y = dist; break;
     }
 
     return text_offset;

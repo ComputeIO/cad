@@ -216,8 +216,7 @@ std::vector<BOARD_ITEM*> DRAWING_TOOL::DrawSpecificationStackup(
     headStyle->SetItalic( false );
     headStyle->SetTextPos( wxPoint( 0, 0 ) );
     headStyle->SetText( "Layer" );
-    headStyle->SetHorizJustify( GR_TEXT_HJUSTIFY_LEFT );
-    headStyle->SetVertJustify( GR_TEXT_VJUSTIFY_TOP );
+    headStyle->Align( TEXT_ATTRIBUTES::H_LEFT, TEXT_ATTRIBUTES::V_TOP );
 
     // Style : data
     PCB_TEXT* dataStyle = new PCB_TEXT( static_cast<FOOTPRINT*>( m_frame->GetModel() ) );
@@ -227,8 +226,7 @@ std::vector<BOARD_ITEM*> DRAWING_TOOL::DrawSpecificationStackup(
     dataStyle->SetItalic( false );
     dataStyle->SetTextPos( wxPoint( 0, 0 ) );
     dataStyle->SetText( "Layer" );
-    dataStyle->SetHorizJustify( GR_TEXT_HJUSTIFY_LEFT );
-    dataStyle->SetVertJustify( GR_TEXT_VJUSTIFY_TOP );
+    dataStyle->Align( TEXT_ATTRIBUTES::H_LEFT, TEXT_ATTRIBUTES::V_TOP );
 
     //Get Layer names
     BOARD_DESIGN_SETTINGS&           dsnSettings = m_frame->GetDesignSettings();
@@ -352,8 +350,7 @@ std::vector<BOARD_ITEM*> DRAWING_TOOL::DrawBoardCharacteristics(
     headStyle->SetTextThickness( Millimeter2iu( 0.4 ) );
     headStyle->SetItalic( false );
     headStyle->SetTextPos( wxPoint( 0, 0 ) );
-    headStyle->SetHorizJustify( GR_TEXT_HJUSTIFY_LEFT );
-    headStyle->SetVertJustify( GR_TEXT_VJUSTIFY_TOP );
+    headStyle->Align( TEXT_ATTRIBUTES::H_LEFT, TEXT_ATTRIBUTES::V_TOP );
 
     // Style : Data
     PCB_TEXT* dataStyle = new PCB_TEXT( static_cast<FOOTPRINT*>( m_frame->GetModel() ) );
@@ -362,8 +359,7 @@ std::vector<BOARD_ITEM*> DRAWING_TOOL::DrawBoardCharacteristics(
     dataStyle->SetTextThickness( Millimeter2iu( 0.2 ) );
     dataStyle->SetItalic( false );
     dataStyle->SetTextPos( wxPoint( 0, 0 ) );
-    dataStyle->SetHorizJustify( GR_TEXT_HJUSTIFY_LEFT );
-    dataStyle->SetVertJustify( GR_TEXT_VJUSTIFY_TOP );
+    dataStyle->Align( TEXT_ATTRIBUTES::H_LEFT, TEXT_ATTRIBUTES::V_TOP );
 
     PCB_TEXT* t;
 

@@ -421,8 +421,13 @@ bool DIALOG_TEXT_PROPERTIES::TransferDataToWindow()
     m_FontBold->SetValue( m_edaText->IsBold() );
     m_FontItalic->SetValue( m_edaText->IsItalic() );
     m_FontLineSpacing->SetValue( wxNumberFormatter::ToString( m_edaText->GetLineSpacing(), 2 ) );
-    EDA_TEXT_HJUSTIFY_T hJustify = m_edaText->GetHorizJustify();
-    m_Justify->SetSelection( (int) hJustify + 1 );
+    switch( m_edaText->GetHorizontalAlignment() )
+    {
+    default:
+    case TEXT_ATTRIBUTES::H_LEFT: m_Justify->SetSelection( 0 );
+    case TEXT_ATTRIBUTES::H_CENTER: m_Justify->SetSelection( 1 );
+    case TEXT_ATTRIBUTES::H_RIGHT: m_Justify->SetSelection( 2 );
+    }
     m_OrientValue = m_edaText->GetTextAngle();
     m_orientation.SetDoubleValue( m_OrientValue );
     m_Mirrored->SetValue( m_edaText->IsMirrored() );
@@ -520,9 +525,9 @@ bool DIALOG_TEXT_PROPERTIES::TransferDataFromWindow()
 
     switch( m_Justify->GetSelection() )
     {
-    case 0: m_edaText->SetHorizJustify( GR_TEXT_HJUSTIFY_LEFT ); break;
-    case 1: m_edaText->SetHorizJustify( GR_TEXT_HJUSTIFY_CENTER ); break;
-    case 2: m_edaText->SetHorizJustify( GR_TEXT_HJUSTIFY_RIGHT ); break;
+    case 0: m_edaText->Align( TEXT_ATTRIBUTES::H_LEFT ); break;
+    case 1: m_edaText->Align( TEXT_ATTRIBUTES::H_CENTER ); break;
+    case 2: m_edaText->Align( TEXT_ATTRIBUTES::H_RIGHT ); break;
     default: break;
     }
 

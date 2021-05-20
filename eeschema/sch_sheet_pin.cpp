@@ -120,25 +120,25 @@ void SCH_SHEET_PIN::SetEdge( SHEET_SIDE aEdge )
     case SHEET_LEFT_SIDE:
         m_edge = aEdge;
         SetTextX( Sheet->m_pos.x );
-        SetLabelSpinStyle( LABEL_SPIN_STYLE::RIGHT ); // Orientation horiz inverse
+        SetAlignedAngle( EDA_ANGLE::ANGLE_0 );
         break;
 
     case SHEET_RIGHT_SIDE:
         m_edge = aEdge;
         SetTextX( Sheet->m_pos.x + Sheet->m_size.x );
-        SetLabelSpinStyle( LABEL_SPIN_STYLE::LEFT ); // Orientation horiz normal
+        SetAlignedAngle( EDA_ANGLE::ANGLE_180 );
         break;
 
     case SHEET_TOP_SIDE:
         m_edge = aEdge;
         SetTextY( Sheet->m_pos.y );
-        SetLabelSpinStyle( LABEL_SPIN_STYLE::BOTTOM ); // Orientation vert BOTTOM
+        SetAlignedAngle( EDA_ANGLE::ANGLE_270 );
         break;
 
     case SHEET_BOTTOM_SIDE:
         m_edge = aEdge;
         SetTextY( Sheet->m_pos.y + Sheet->m_size.y );
-        SetLabelSpinStyle( LABEL_SPIN_STYLE::UP ); // Orientation vert UP
+        SetAlignedAngle( EDA_ANGLE::ANGLE_90 );
         break;
 
     default:

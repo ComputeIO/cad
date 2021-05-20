@@ -826,8 +826,8 @@ void PDF_PLOTTER::Text( const wxPoint&              aPos,
                         const wxString&             aText,
                         double                      aOrient,
                         const wxSize&               aSize,
-                        enum EDA_TEXT_HJUSTIFY_T    aH_justify,
-                        enum EDA_TEXT_VJUSTIFY_T    aV_justify,
+                        TEXT_ATTRIBUTES::HORIZONTAL_ALIGNMENT aHorizontalAlignment,
+                        TEXT_ATTRIBUTES::VERTICAL_ALIGNMENT aVerticalAlignment,
                         int                         aWidth,
                         bool                        aItalic,
                         bool                        aBold,
@@ -850,10 +850,9 @@ void PDF_PLOTTER::Text( const wxPoint&              aPos,
     double ctm_a, ctm_b, ctm_c, ctm_d, ctm_e, ctm_f;
     double wideningFactor, heightFactor;
 
-    computeTextParameters( aPos, aText, aOrient, aSize, m_plotMirror, aH_justify,
-                           aV_justify, aWidth, aItalic, aBold,
-                           &wideningFactor, &ctm_a, &ctm_b, &ctm_c,
-                           &ctm_d, &ctm_e, &ctm_f, &heightFactor );
+    computeTextParameters( aPos, aText, aOrient, aSize, m_plotMirror, aHorizontalAlignment,
+                           aVerticalAlignment, aWidth, aItalic, aBold, &wideningFactor, &ctm_a,
+                           &ctm_b, &ctm_c, &ctm_d, &ctm_e, &ctm_f, &heightFactor );
 
     SetColor( aColor );
     SetCurrentLineWidth( aWidth, aData );
@@ -874,7 +873,7 @@ void PDF_PLOTTER::Text( const wxPoint&              aPos,
     fputs( "Q\n", workFile );
 
     // Plot the stroked text (if requested)
-    PLOTTER::Text( aPos, aColor, aText, aOrient, aSize, aH_justify, aV_justify, aWidth,
-                   aItalic, aBold, aMultilineAllowed, aFont, aData );
+    PLOTTER::Text( aPos, aColor, aText, aOrient, aSize, aHorizontalAlignment, aVerticalAlignment,
+                   aWidth, aItalic, aBold, aMultilineAllowed, aFont, aData );
 }
 

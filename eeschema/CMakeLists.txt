@@ -60,8 +60,6 @@ set( EESCHEMA_DLGS
     dialogs/dialog_lib_symbol_properties_base.cpp
     dialogs/dialog_edit_components_libid.cpp
     dialogs/dialog_edit_components_libid_base.cpp
-    #dialogs/dialog_edit_label.cpp
-    #dialogs/dialog_edit_label_base.cpp
     dialogs/dialog_edit_line_style.cpp
     dialogs/dialog_edit_line_style_base.cpp
     dialogs/dialog_edit_one_field.cpp

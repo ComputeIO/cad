@@ -223,8 +223,12 @@ bool DIALOG_DIMENSION_PROPERTIES::TransferDataToWindow()
 
     m_cbItalic->SetValue( text.IsItalic() );
     m_cbMirrored->SetValue( text.IsMirrored() );
-    EDA_TEXT_HJUSTIFY_T hJustify = text.GetHorizJustify();
-    m_cbJustification->SetSelection( (int) hJustify + 1 );
+    switch( text.GetHorizontalAlignment() )
+    {
+    case TEXT_ATTRIBUTES::H_LEFT:   m_cbJustification->SetSelection( 0 ); break;
+    case TEXT_ATTRIBUTES::H_CENTER: m_cbJustification->SetSelection( 1 ); break;
+    case TEXT_ATTRIBUTES::H_RIGHT:  m_cbJustification->SetSelection( 2 ); break;
+    }
 
     m_lineThickness.SetValue( m_dimension->GetLineThickness() );
     m_arrowLength.SetValue( m_dimension->GetArrowLength() );
@@ -342,8 +346,12 @@ void DIALOG_DIMENSION_PROPERTIES::updateDimensionFromDialog( DIMENSION_BASE* aTa
     text.SetTextThickness( m_textThickness.GetValue() );
     text.SetItalic( m_cbItalic->GetValue() );
     text.SetMirrored( m_cbMirrored->GetValue() );
-    int justification = m_cbJustification->GetSelection() - 1;
-    text.SetHorizJustify( static_cast<EDA_TEXT_HJUSTIFY_T>( justification ) );
+    switch( m_cbJustification->GetSelection() )
+    {
+    case 0: text.Align( TEXT_ATTRIBUTES::H_LEFT ); break;
+    case 1: text.Align( TEXT_ATTRIBUTES::H_CENTER ); break;
+    case 2: text.Align( TEXT_ATTRIBUTES::H_RIGHT ); break;
+    }
 
     aTarget->SetLineThickness( m_lineThickness.GetValue() );
     aTarget->SetArrowLength( m_arrowLength.GetValue() );

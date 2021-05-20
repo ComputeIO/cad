@@ -406,8 +406,8 @@ void BRDITEMS_PLOTTER::PlotFootprintTextItem( const FP_TEXT* aTextMod, COLOR4D a
     m_plotter->SetCurrentLineWidth( thickness );
 
     m_plotter->Text( pos, aColor, aTextMod->GetShownText(), orient, size,
-                     aTextMod->GetHorizJustify(), aTextMod->GetVertJustify(), thickness,
-                     aTextMod->IsItalic(), allow_bold, false, nullptr, &gbr_metadata );
+                     aTextMod->GetHorizontalAlignment(), aTextMod->GetVerticalAlignment(),
+                     thickness, aTextMod->IsItalic(), allow_bold, false, nullptr, &gbr_metadata );
 }
 
 
@@ -729,33 +729,7 @@ void BRDITEMS_PLOTTER::PlotPcbText( const PCB_TEXT* aText )
 
     m_plotter->SetCurrentLineWidth( thickness );
 
-#if 0
-    if( aText->IsMultilineAllowed() )
-    {
-        std::vector<wxPoint> positions;
-        wxArrayString strings_list;
-        wxStringSplit( shownText, strings_list, '\n' );
-        positions.reserve(  strings_list.Count() );
-
-        aText->GetLinePositions( positions, strings_list.Count() );
-
-        for( unsigned ii = 0; ii < strings_list.Count(); ii++ )
-        {
-            wxString& txt =  strings_list.Item( ii );
-            m_plotter->Text( positions[ii], color, txt, orient, size, aText->GetHorizJustify(),
-                             aText->GetVertJustify(), thickness, aText->IsItalic(),
-                             allow_bold, false, aText->GetFont(), &gbr_metadata );
-        }
-    }
-    else
-    {
-        m_plotter->Text( pos, color, shownText, orient, size, aText->GetHorizJustify(),
-                         aText->GetVertJustify(), thickness, aText->IsItalic(), allow_bold,
-                         false, aText->GetFont(), &gbr_metadata );
-    }
-#else
     m_plotter->Text( aText, color, &gbr_metadata );
-#endif
 }
 
 

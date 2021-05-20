@@ -133,8 +133,10 @@ void GRAPHICS_IMPORTER_PCBNEW::AddPolygon( const std::vector< VECTOR2D >& aVerti
 
 
 void GRAPHICS_IMPORTER_PCBNEW::AddText( const VECTOR2D& aOrigin, const wxString& aText,
-        double aHeight, double aWidth, double aThickness, double aOrientation,
-        EDA_TEXT_HJUSTIFY_T aHJustify, EDA_TEXT_VJUSTIFY_T aVJustify )
+                                        double aHeight, double aWidth, double aThickness,
+                                        double                                aOrientation,
+                                        TEXT_ATTRIBUTES::HORIZONTAL_ALIGNMENT aHJustify,
+                                        TEXT_ATTRIBUTES::VERTICAL_ALIGNMENT   aVJustify )
 {
     std::unique_ptr<BOARD_ITEM> boardItem;
     EDA_TEXT* textItem;
@@ -145,8 +147,7 @@ void GRAPHICS_IMPORTER_PCBNEW::AddText( const VECTOR2D& aOrigin, const wxString&
     textItem->SetTextAngle( aOrientation * 10.0 );      // Pcbnew uses the decidegree
     textItem->SetTextWidth( aWidth * ImportScalingFactor() );
     textItem->SetTextHeight( aHeight * ImportScalingFactor() );
-    textItem->SetVertJustify( aVJustify );
-    textItem->SetHorizJustify( aHJustify );
+    textItem->Align( aHJustify, aVJustify );
     textItem->SetText( aText );
 
     if( boardItem->Type() == PCB_FP_TEXT_T )

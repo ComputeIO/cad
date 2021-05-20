@@ -35,103 +35,6 @@
 class NETLIST_OBJECT_LIST;
 class HTML_MESSAGE_BOX;
 
-/*
- * Spin style for text items of all kinds on schematics
- * Basically a higher level abstraction of rotation and justification of text
- */
-class LABEL_SPIN_STYLE
-{
-public:
-    enum SPIN : int
-    {
-        LEFT = 0,
-        UP = 1,
-        RIGHT = 2,
-        BOTTOM = 3
-    };
-
-    LABEL_SPIN_STYLE() = default;
-    constexpr LABEL_SPIN_STYLE( SPIN aSpin ) : m_spin( aSpin ) {}
-
-    constexpr bool operator==( SPIN a ) const { return m_spin == a; }
-
-    constexpr bool operator!=( SPIN a ) const { return m_spin != a; }
-
-    operator int() const { return static_cast<int>( m_spin ); }
-
-    LABEL_SPIN_STYLE RotateCW()
-    {
-        SPIN newSpin = m_spin;
-
-        switch( m_spin )
-        {
-        case LABEL_SPIN_STYLE::LEFT: newSpin = LABEL_SPIN_STYLE::UP; break;
-        case LABEL_SPIN_STYLE::UP: newSpin = LABEL_SPIN_STYLE::RIGHT; break;
-        case LABEL_SPIN_STYLE::RIGHT: newSpin = LABEL_SPIN_STYLE::BOTTOM; break;
-        case LABEL_SPIN_STYLE::BOTTOM: newSpin = LABEL_SPIN_STYLE::LEFT; break;
-        default: wxLogWarning( "RotateCCW encountered unknown current spin style" ); break;
-        }
-
-        return LABEL_SPIN_STYLE( newSpin );
-    }
-
-    LABEL_SPIN_STYLE RotateCCW()
-    {
-        SPIN newSpin = m_spin;
-
-        switch( m_spin )
-        {
-        case LABEL_SPIN_STYLE::LEFT: newSpin = LABEL_SPIN_STYLE::BOTTOM; break;
-        case LABEL_SPIN_STYLE::BOTTOM: newSpin = LABEL_SPIN_STYLE::RIGHT; break;
-        case LABEL_SPIN_STYLE::RIGHT: newSpin = LABEL_SPIN_STYLE::UP; break;
-        case LABEL_SPIN_STYLE::UP: newSpin = LABEL_SPIN_STYLE::LEFT; break;
-        default: wxLogWarning( "RotateCCW encountered unknown current spin style" ); break;
-        }
-
-        return LABEL_SPIN_STYLE( newSpin );
-    }
-
-    /*
-     * Mirrors the label spin style across the X axis or simply swaps up and bottom
-     */
-    LABEL_SPIN_STYLE MirrorX()
-    {
-        SPIN newSpin = m_spin;
-
-        switch( m_spin )
-        {
-        case LABEL_SPIN_STYLE::UP: newSpin = LABEL_SPIN_STYLE::BOTTOM; break;
-        case LABEL_SPIN_STYLE::BOTTOM: newSpin = LABEL_SPIN_STYLE::UP; break;
-        case LABEL_SPIN_STYLE::LEFT: break;
-        case LABEL_SPIN_STYLE::RIGHT: break;
-        default: wxLogWarning( "MirrorVertically encountered unknown current spin style" ); break;
-        }
-
-        return LABEL_SPIN_STYLE( newSpin );
-    }
-
-    /*
-     * Mirrors the label spin style across the Y axis or simply swaps left and right
-     */
-    LABEL_SPIN_STYLE MirrorY()
-    {
-        SPIN newSpin = m_spin;
-
-        switch( m_spin )
-        {
-        case LABEL_SPIN_STYLE::LEFT: newSpin = LABEL_SPIN_STYLE::RIGHT; break;
-        case LABEL_SPIN_STYLE::RIGHT: newSpin = LABEL_SPIN_STYLE::LEFT; break;
-        case LABEL_SPIN_STYLE::UP: break;
-        case LABEL_SPIN_STYLE::BOTTOM: break;
-        default: wxLogWarning( "MirrorHorizontally encountered unknown current spin style" ); break;
-        }
-
-        return LABEL_SPIN_STYLE( newSpin );
-    }
-
-private:
-    SPIN m_spin;
-};
 
 /*
  * Shape/Type of #SCH_HIERLABEL and #SCH_GLOBALLABEL.
@@ -189,15 +92,84 @@ public:
      */
     bool IncrementLabel( int aIncrement );
 
+
     /**
-     * Set a spin or rotation angle, along with specific horizontal and vertical justification
-     * styles with each angle.
+     * Set angle and associated horizontal alignment.
      *
-     * @param aSpinStyle Spin style as per #LABEL_SPIN_STYLE storage class, may be the enum
-     *                   values or int value
+     * Angle/alignment associations correspond to old "spin style" assignments
+     * and are as follows:
+     *
+     * 0 degrees => TEXT_ATTRIBUTES::H_LEFT == LABEL_SPIN_STYLE::RIGHT (right?)
+     * 90 degrees => TEXT_ATTRIBUTES::H_LEFT == LABEL_SPIN_STYLE::UP
+     * 180 degrees => TEXT_ATTRIBUTES::H_RIGHT == LABEL_SPIN_STYLE::LEFT (sic)
+     * 270 degrees => TEXT_ATTRIBUTES::H_RIGHT == LABEL_SPIN_STYLE::BOTTOM
+     *
+     * 0 degrees, H_LEFT aligned is normal horizontal text, aligned left.
+     * 180 degrees, H_LEFT aligned is normal horizontal text,
+     * aligned right - assuming KeepUpright is set for the text item.
+     *
+     * @param aAngle New angle for the item
      */
-    virtual void     SetLabelSpinStyle( LABEL_SPIN_STYLE aSpinStyle );
-    LABEL_SPIN_STYLE GetLabelSpinStyle() const { return m_spin_style; }
+    void SetAlignedAngle( const EDA_ANGLE& aAngle )
+    {
+        SetTextAngle( aAngle );
+        switch( aAngle.AsDegrees() )
+        {
+        default:
+        case 0:
+        case 90: Align( TEXT_ATTRIBUTES::H_LEFT ); break;
+        case 180:
+        case 270: Align( TEXT_ATTRIBUTES::H_RIGHT ); break;
+        }
+    }
+
+    /**
+     * Set angle/horizontal alignment from legacy "spin style".
+     * Used in legacy reader.
+     *
+     * @param int corresponding to old spin style
+     */
+    void SetLegacySpinStyle( int aSpinStyle )
+    {
+        switch( aSpinStyle )
+        {
+            case 0: // LEFT
+                SetAlignedAngle( EDA_ANGLE::ANGLE_180 );
+                break;
+            case 1: // UP
+                SetAlignedAngle( EDA_ANGLE::ANGLE_90 );
+                break;
+            default:
+            case 2: // RIGHT
+                SetAlignedAngle( EDA_ANGLE::ANGLE_0 );
+                break;
+            case 3: // BOTTOM
+                SetAlignedAngle( EDA_ANGLE::ANGLE_270 );
+                break;
+        }
+    }
+
+    /**
+     * Get legacy "spin style" from angle.
+     * Ignores horizontal alignment.
+     * Used in legacy writer.
+     * @return int corresponding to old spin style
+     */
+    int GetLegacySpinStyle() const
+    {
+        switch( GetTextEdaAngle().AsDegrees() )
+        {
+            default:
+            case 0:
+                return 2; // RIGHT
+            case 90:
+                return 1; // UP
+            case 180:
+                return 0; // LEFT
+            case 270:
+                return 3; // BOTTOM
+        }
+    }
 
     PINSHEETLABEL_SHAPE GetShape() const { return m_shape; }
 
@@ -244,7 +216,18 @@ public:
     void Rotate( wxPoint aCenter ) override;
 
     virtual void Rotate90( bool aClockwise );
-    virtual void MirrorSpinStyle( bool aLeftRight );
+
+    virtual void MirrorAcrossXAxis()
+    {
+        SetTextAngle( GetTextEdaAngle().MirrorAcrossXAxis() );
+        FlipHorizontalAlignment();
+    }
+
+    virtual void MirrorAcrossYAxis()
+    {
+        SetTextAngle( GetTextEdaAngle().MirrorAcrossYAxis() );
+        FlipHorizontalAlignment();
+    }
 
     bool Matches( const wxFindReplaceData& aSearchData, void* aAuxData ) const override
     {
@@ -291,6 +274,8 @@ public:
     static HTML_MESSAGE_BOX* ShowSyntaxHelp( wxWindow* aParentWindow );
 
 protected:
+    COLOR4D doPrint( const RENDER_SETTINGS* aSettings, const wxPoint& aOffset, int aLayer );
+
     PINSHEETLABEL_SHAPE m_shape;
 
     /// True if not connected to another object if the object derive from SCH_TEXT
@@ -298,18 +283,6 @@ protected:
     bool m_isDangling;
 
     CONNECTION_TYPE m_connectionType;
-
-    /**
-     * The orientation of text and any associated drawing elements of derived objects.
-     *  - 0 is the horizontal and left justified.
-     *  - 1 is vertical and top justified.
-     *  - 2 is horizontal and right justified.  It is the equivalent of the mirrored 0 orientation.
-     *  - 3 is vertical and bottom justified. It is the equivalent of the mirrored 1 orientation.
-     *
-     * This is a duplication of m_Orient, m_HJustified, and m_VJustified in #EDA_TEXT but is
-     * easier to handle than 3 parameters when editing and reading and saving files.
-     */
-    LABEL_SPIN_STYLE m_spin_style;
 };
 
 
@@ -388,12 +361,12 @@ public:
 
     void Rotate( wxPoint aCenter ) override;
     void Rotate90( bool aClockwise ) override;
-    void MirrorSpinStyle( bool aLeftRight ) override;
+
+    void MirrorAcrossXAxis() override;
+    void MirrorAcrossYAxis() override;
 
     void MirrorHorizontally( int aCenter ) override;
     void MirrorVertically( int aCenter ) override;
-
-    void SetLabelSpinStyle( LABEL_SPIN_STYLE aSpinStyle ) override;
 
     wxPoint GetSchematicTextOffset( const RENDER_SETTINGS* aSettings ) const override;
 
@@ -474,8 +447,6 @@ public:
     }
 
     wxString GetClass() const override { return wxT( "SCH_HIERLABEL" ); }
-
-    void SetLabelSpinStyle( LABEL_SPIN_STYLE aSpinStyle ) override;
 
     wxPoint GetSchematicTextOffset( const RENDER_SETTINGS* aSettings ) const override;
 

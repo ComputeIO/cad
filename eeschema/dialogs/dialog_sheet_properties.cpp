@@ -215,10 +215,10 @@ static bool positioningChanged( const SCH_FIELD& a, const SCH_FIELD& b )
     if( a.GetPosition() != b.GetPosition() )
         return true;
 
-    if( a.GetHorizJustify() != b.GetHorizJustify() )
+    if( a.GetHorizontalAlignment() != b.GetHorizontalAlignment() )
         return true;
 
-    if( a.GetVertJustify() != b.GetVertJustify() )
+    if( a.GetVerticalAlignment() != b.GetVerticalAlignment() )
         return true;
 
     if( a.GetTextAngle() != b.GetTextAngle() )

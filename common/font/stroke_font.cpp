@@ -430,8 +430,8 @@ VECTOR2D STROKE_FONT::drawSingleLineText( KIGFX::GAL* aGal, const UTF8& aText,
               << overbar_italic_comp << ( italic ? " " : " !" ) << "italic "
               << ( underlined ? "" : "!" ) << "underlined " << ( mirrored ? "" : "!" )
               << "mirrored xOffset " << xOffset << " aGal{line width " << aGal->GetLineWidth()
-              << " hjustify " << aGal->GetHorizontalJustify() << " vjustify "
-              << aGal->GetVerticalJustify() << " zoom " << aGal->GetZoomFactor() << " scale "
+              << " hAlign " << aGal->GetHorizontalAlignment() << " vAlign "
+              << aGal->GetVerticalAlignment() << " zoom " << aGal->GetZoomFactor() << " scale "
               << aGal->GetWorldScale() << "}" << std::endl;
     int dbg = 40000;
 
@@ -465,21 +465,21 @@ VECTOR2D STROKE_FONT::drawSingleLineText( KIGFX::GAL* aGal, const UTF8& aText,
     //
     double xAdjust = half_thickness;
 
-    switch( aGal->GetHorizontalJustify() )
+    switch( aGal->GetHorizontalAlignment() )
     {
-    case GR_TEXT_HJUSTIFY_LEFT: break;
-    case GR_TEXT_HJUSTIFY_RIGHT: xAdjust += -textSize.x; break;
-    case GR_TEXT_HJUSTIFY_CENTER:
+    case TEXT_ATTRIBUTES::H_LEFT: break;
+    case TEXT_ATTRIBUTES::H_RIGHT: xAdjust += -textSize.x; break;
+    case TEXT_ATTRIBUTES::H_CENTER:
     default: xAdjust += -textSize.x / 2.0;
     }
 
     double lineHeight = textSize.y - GetInterline( baseGlyphSize.y );
     double yAdjust = 0.0;
-    switch( aGal->GetVerticalJustify() )
+    switch( aGal->GetVerticalAlignment() )
     {
-    case GR_TEXT_VJUSTIFY_TOP: yAdjust = lineHeight / 2; break;
-    case GR_TEXT_VJUSTIFY_BOTTOM: yAdjust = -lineHeight / 2; break;
-    case GR_TEXT_VJUSTIFY_CENTER:
+    case TEXT_ATTRIBUTES::V_TOP: yAdjust = lineHeight / 2; break;
+    case TEXT_ATTRIBUTES::V_BOTTOM: yAdjust = -lineHeight / 2; break;
+    case TEXT_ATTRIBUTES::V_CENTER:
     default: break;
     }
 

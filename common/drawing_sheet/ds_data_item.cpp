@@ -547,8 +547,8 @@ DS_DATA_ITEM_TEXT::DS_DATA_ITEM_TEXT( const wxString& aTextBase ) :
 {
     m_TextBase = aTextBase;
     m_IncrementLabel = 1;
-    m_Hjustify = GR_TEXT_HJUSTIFY_LEFT;
-    m_Vjustify = GR_TEXT_VJUSTIFY_CENTER;
+    m_Halign = TEXT_ATTRIBUTES::H_LEFT;
+    m_Valign = TEXT_ATTRIBUTES::V_CENTER;
     m_Italic = false;
     m_Bold = false;
     m_Orient = 0.0;
@@ -618,8 +618,7 @@ void DS_DATA_ITEM_TEXT::SyncDrawItems( DS_DRAW_ITEM_LIST* aCollector, KIGFX::VIE
         if( aView )
             aView->Add( text );
 
-        text->SetHorizJustify( m_Hjustify ) ;
-        text->SetVertJustify( m_Vjustify );
+        text->Align( m_Halign, m_Valign );
         text->SetTextAngle( m_Orient * 10 );    // graphic text orient unit = 0.1 degree
         text->SetMultilineAllowed( multilines );
 
@@ -719,8 +718,7 @@ void DS_DATA_ITEM_TEXT::SetConstrainedTextSize()
         DS_DRAW_ITEM_TEXT dummy( DS_DRAW_ITEM_TEXT( this, 0, m_FullText, wxPoint( 0, 0 ),
                                                     size_micron, linewidth, m_Italic, m_Bold ) );
         dummy.SetMultilineAllowed( true );
-        dummy.SetHorizJustify( m_Hjustify ) ;
-        dummy.SetVertJustify( m_Vjustify );
+        dummy.Align( m_Halign, m_Valign );
         dummy.SetTextAngle( m_Orient * 10 );
 
         EDA_RECT rect = dummy.GetTextBox();

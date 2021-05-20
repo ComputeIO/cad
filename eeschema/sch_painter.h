@@ -209,8 +209,7 @@ private:
 
     void strokeText( const EDA_TEXT* aText, const VECTOR2D& aPosition )
     {
-        strokeText( aText, aPosition,
-                    EDA_ANGLE( aText->GetTextAngleRadians(), EDA_ANGLE::RADIANS ) );
+        strokeText( aText, aPosition, aText->GetTextEdaAngle() );
     }
 
     void strokeText( const wxString& aText, const VECTOR2D& aPosition, double aAngle )

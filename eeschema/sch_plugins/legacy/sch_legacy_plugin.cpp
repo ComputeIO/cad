@@ -1423,7 +1423,7 @@ SCH_TEXT* SCH_LEGACY_PLUGIN::loadText( LINE_READER& aReader )
             spinStyle = 0;
     }
 
-    text->SetLabelSpinStyle( (LABEL_SPIN_STYLE::SPIN) spinStyle );
+    text->SetLegacySpinStyle( spinStyle );
 
     int size = Mils2Iu( parseInt( aReader, line, &line ) );
 
@@ -1698,20 +1698,24 @@ SCH_COMPONENT* SCH_LEGACY_PLUGIN::loadSymbol( LINE_READER& aReader )
                 parseQuotedString( name, aReader, line, &line, true );
 
                 if( hjustify == 'L' )
-                    field.SetHorizJustify( GR_TEXT_HJUSTIFY_LEFT );
+                    field.Align( TEXT_ATTRIBUTES::H_LEFT );
                 else if( hjustify == 'R' )
-                    field.SetHorizJustify( GR_TEXT_HJUSTIFY_RIGHT );
-                else if( hjustify != 'C' )
+                    field.Align( TEXT_ATTRIBUTES::H_RIGHT );
+                else if( hjustify == 'C' )
+                    field.Align( TEXT_ATTRIBUTES::H_CENTER );
+                else
                     SCH_PARSE_ERROR( "symbol field text horizontal justification must be "
                                      "L, R, or C", aReader, line );
 
                 // We are guaranteed to have a least one character here for older file formats
                 // otherwise an exception would have been raised..
                 if( textAttrs[0] == 'T' )
-                    field.SetVertJustify( GR_TEXT_VJUSTIFY_TOP );
+                    field.Align( TEXT_ATTRIBUTES::V_TOP );
                 else if( textAttrs[0] == 'B' )
-                    field.SetVertJustify( GR_TEXT_VJUSTIFY_BOTTOM );
-                else if( textAttrs[0] != 'C' )
+                    field.Align( TEXT_ATTRIBUTES::V_BOTTOM );
+                else if( textAttrs[0] == 'C' )
+                    field.Align( TEXT_ATTRIBUTES::V_CENTER );
+                else
                     SCH_PARSE_ERROR( "symbol field text vertical justification must be "
                                      "B, T, or C", aReader, line );
 
@@ -2110,16 +2114,16 @@ void SCH_LEGACY_PLUGIN::saveField( SCH_FIELD* aField )
 {
     char hjustify = 'C';
 
-    if( aField->GetHorizJustify() == GR_TEXT_HJUSTIFY_LEFT )
+    if( aField->GetHorizontalAlignment() == TEXT_ATTRIBUTES::H_LEFT )
         hjustify = 'L';
-    else if( aField->GetHorizJustify() == GR_TEXT_HJUSTIFY_RIGHT )
+    else if( aField->GetHorizontalAlignment() == TEXT_ATTRIBUTES::H_RIGHT )
         hjustify = 'R';
 
     char vjustify = 'C';
 
-    if( aField->GetVertJustify() == GR_TEXT_VJUSTIFY_BOTTOM )
+    if( aField->GetVerticalAlignment() == TEXT_ATTRIBUTES::V_BOTTOM )
         vjustify = 'B';
-    else if( aField->GetVertJustify() == GR_TEXT_VJUSTIFY_TOP )
+    else if( aField->GetVerticalAlignment() == TEXT_ATTRIBUTES::V_TOP )
         vjustify = 'T';
 
     m_out->Print( 0, "F %d %s %c %-3d %-3d %-3d %4.4X %c %c%c%c",
@@ -2364,7 +2368,7 @@ void SCH_LEGACY_PLUGIN::saveText( SCH_TEXT* aText )
         }
 
         // Local labels must have their spin style inverted for left and right
-        int spinStyle = static_cast<int>( aText->GetLabelSpinStyle() );
+        int spinStyle = aText->GetLegacySpinStyle();
 
         if( spinStyle == 0 )
             spinStyle = 2;
@@ -2386,7 +2390,7 @@ void SCH_LEGACY_PLUGIN::saveText( SCH_TEXT* aText )
 
         m_out->Print( 0, "Text %s %-4d %-4d %-4d %-4d %s %s %d\n%s\n", textType,
                       Iu2Mils( aText->GetPosition().x ), Iu2Mils( aText->GetPosition().y ),
-                      static_cast<int>( aText->GetLabelSpinStyle() ),
+                      aText->GetLegacySpinStyle(),
                       Iu2Mils( aText->GetTextWidth() ),
                       shapeLabelIt->second,
                       italics,
@@ -3087,11 +3091,11 @@ void SCH_LEGACY_PLUGIN_CACHE::loadField( std::unique_ptr<LIB_PART>& aPart,
         char textHJustify = parseChar( aReader, line, &line );
 
         if( textHJustify == 'C' )
-            field->SetHorizJustify( GR_TEXT_HJUSTIFY_CENTER );
+            field->Align( TEXT_ATTRIBUTES::H_CENTER );
         else if( textHJustify == 'L' )
-            field->SetHorizJustify( GR_TEXT_HJUSTIFY_LEFT );
+            field->Align( TEXT_ATTRIBUTES::H_LEFT );
         else if( textHJustify == 'R' )
-            field->SetHorizJustify( GR_TEXT_HJUSTIFY_RIGHT );
+            field->Align( TEXT_ATTRIBUTES::H_RIGHT );
         else
             SCH_PARSE_ERROR( "invalid field text horizontal justification", aReader, line );
 
@@ -3106,9 +3110,9 @@ void SCH_LEGACY_PLUGIN_CACHE::loadField( std::unique_ptr<LIB_PART>& aPart,
 
         switch( (wxChar) attributes[0] )
         {
-        case 'C': field->SetVertJustify( GR_TEXT_VJUSTIFY_CENTER ); break;
-        case 'B': field->SetVertJustify( GR_TEXT_VJUSTIFY_BOTTOM ); break;
-        case 'T': field->SetVertJustify( GR_TEXT_VJUSTIFY_TOP );    break;
+        case 'C': field->Align( TEXT_ATTRIBUTES::V_CENTER ); break;
+        case 'B': field->Align( TEXT_ATTRIBUTES::V_BOTTOM ); break;
+        case 'T': field->Align( TEXT_ATTRIBUTES::V_TOP ); break;
         default:  SCH_PARSE_ERROR( "invalid field text vertical justification", aReader, line );
         }
 
@@ -3395,18 +3399,18 @@ LIB_TEXT* SCH_LEGACY_PLUGIN_CACHE::loadText( std::unique_ptr<LIB_PART>& aPart,
         {
             switch( parseChar( aReader, line, &line ) )
             {
-            case 'L': text->SetHorizJustify( GR_TEXT_HJUSTIFY_LEFT );   break;
-            case 'C': text->SetHorizJustify( GR_TEXT_HJUSTIFY_CENTER ); break;
-            case 'R': text->SetHorizJustify( GR_TEXT_HJUSTIFY_RIGHT );  break;
+            case 'L': text->Align( TEXT_ATTRIBUTES::H_LEFT ); break;
+            case 'C': text->Align( TEXT_ATTRIBUTES::H_CENTER ); break;
+            case 'R': text->Align( TEXT_ATTRIBUTES::H_RIGHT ); break;
             default: SCH_PARSE_ERROR( "invalid horizontal text justication; expected L, C, or R",
                                       aReader, line );
             }
 
             switch( parseChar( aReader, line, &line ) )
             {
-            case 'T': text->SetVertJustify( GR_TEXT_VJUSTIFY_TOP );    break;
-            case 'C': text->SetVertJustify( GR_TEXT_VJUSTIFY_CENTER ); break;
-            case 'B': text->SetVertJustify( GR_TEXT_VJUSTIFY_BOTTOM ); break;
+            case 'T': text->Align( TEXT_ATTRIBUTES::V_TOP ); break;
+            case 'C': text->Align( TEXT_ATTRIBUTES::V_CENTER ); break;
+            case 'B': text->Align( TEXT_ATTRIBUTES::V_BOTTOM ); break;
             default: SCH_PARSE_ERROR( "invalid vertical text justication; expected T, C, or B",
                                       aReader, line );
             }
@@ -3965,16 +3969,16 @@ void SCH_LEGACY_PLUGIN_CACHE::saveField( const LIB_FIELD* aField, OUTPUTFORMATTE
 
     hjustify = 'C';
 
-    if( aField->GetHorizJustify() == GR_TEXT_HJUSTIFY_LEFT )
+    if( aField->GetHorizontalAlignment() == TEXT_ATTRIBUTES::H_LEFT )
         hjustify = 'L';
-    else if( aField->GetHorizJustify() == GR_TEXT_HJUSTIFY_RIGHT )
+    else if( aField->GetHorizontalAlignment() == TEXT_ATTRIBUTES::H_RIGHT )
         hjustify = 'R';
 
     vjustify = 'C';
 
-    if( aField->GetVertJustify() == GR_TEXT_VJUSTIFY_BOTTOM )
+    if( aField->GetVerticalAlignment() == TEXT_ATTRIBUTES::V_BOTTOM )
         vjustify = 'B';
-    else if( aField->GetVertJustify() == GR_TEXT_VJUSTIFY_TOP )
+    else if( aField->GetVerticalAlignment() == TEXT_ATTRIBUTES::V_TOP )
         vjustify = 'T';
 
     aFormatter.Print( 0, "F%d %s %d %d %d %c %c %c %c%c%c",
@@ -4118,16 +4122,16 @@ void SCH_LEGACY_PLUGIN_CACHE::saveText( const LIB_TEXT* aText, OUTPUTFORMATTER& 
 
     char hjustify = 'C';
 
-    if( aText->GetHorizJustify() == GR_TEXT_HJUSTIFY_LEFT )
+    if( aText->GetHorizontalAlignment() == TEXT_ATTRIBUTES::H_LEFT )
         hjustify = 'L';
-    else if( aText->GetHorizJustify() == GR_TEXT_HJUSTIFY_RIGHT )
+    else if( aText->GetHorizontalAlignment() == TEXT_ATTRIBUTES::H_RIGHT )
         hjustify = 'R';
 
     char vjustify = 'C';
 
-    if( aText->GetVertJustify() == GR_TEXT_VJUSTIFY_BOTTOM )
+    if( aText->GetVerticalAlignment() == TEXT_ATTRIBUTES::V_BOTTOM )
         vjustify = 'B';
-    else if( aText->GetVertJustify() == GR_TEXT_VJUSTIFY_TOP )
+    else if( aText->GetVerticalAlignment() == TEXT_ATTRIBUTES::V_TOP )
         vjustify = 'T';
 
     aFormatter.Print( 0, " %c %c\n", hjustify, vjustify );

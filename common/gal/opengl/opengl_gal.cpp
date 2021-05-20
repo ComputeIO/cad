@@ -1260,34 +1260,34 @@ void OPENGL_GAL::BitmapText( const wxString& aText, const VECTOR2D& aPosition,
     m_currentManager->Scale( sx, sy, 0 );
     m_currentManager->Translate( 0, -commonOffset, 0 );
 
-    switch( GetHorizontalJustify() )
+    switch( GetHorizontalAlignment() )
     {
-    case GR_TEXT_HJUSTIFY_CENTER: Translate( VECTOR2D( -textSize.x / 2.0, 0 ) ); break;
+    case TEXT_ATTRIBUTES::H_CENTER: Translate( VECTOR2D( -textSize.x / 2.0, 0 ) ); break;
 
-    case GR_TEXT_HJUSTIFY_RIGHT:
+    case TEXT_ATTRIBUTES::H_RIGHT:
         //if( !IsTextMirrored() )
         Translate( VECTOR2D( -textSize.x, 0 ) );
         break;
 
-    case GR_TEXT_HJUSTIFY_LEFT:
+    case TEXT_ATTRIBUTES::H_LEFT:
         //if( IsTextMirrored() )
         //Translate( VECTOR2D( -textSize.x, 0 ) );
         break;
     }
 
-    switch( GetVerticalJustify() )
+    switch( GetVerticalAlignment() )
     {
-    case GR_TEXT_VJUSTIFY_TOP:
+    case TEXT_ATTRIBUTES::V_TOP:
         Translate( VECTOR2D( 0, -textSize.y ) );
         overbarHeight = -textSize.y / 2.0;
         break;
 
-    case GR_TEXT_VJUSTIFY_CENTER:
+    case TEXT_ATTRIBUTES::V_CENTER:
         Translate( VECTOR2D( 0, -textSize.y / 2.0 ) );
         overbarHeight = 0;
         break;
 
-    case GR_TEXT_VJUSTIFY_BOTTOM: break;
+    case TEXT_ATTRIBUTES::V_BOTTOM: break;
     }
 
     int i = 0;

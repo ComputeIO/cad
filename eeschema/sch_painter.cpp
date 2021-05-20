@@ -166,23 +166,20 @@ bool SCH_PAINTER::Draw( const VIEW_ITEM* aItem, int aLayer )
         return false;
 
 #ifdef CONNECTIVITY_DEBUG
-
     auto sch_item = dynamic_cast<const SCH_ITEM*>( item );
     auto conn = sch_item ? sch_item->Connection( *g_CurrentSheet ) : nullptr;
 
     if( conn )
     {
-        auto pos = item->GetBoundingBox().Centre();
-        auto label = conn->Name( true );
-
-        m_gal->SetHorizontalJustify( GR_TEXT_HJUSTIFY_CENTER );
-        m_gal->SetVerticalJustify( GR_TEXT_VJUSTIFY_CENTER );
+        EDA_TEXT theText;
+        theText->SetText( conn->Name( true ) );
+        theText->Align( TEXT_ATTRIBUTES::H_CENTER, TEXT_ATTRIBUTES::V_CENTER );
+        theText->SetTextPos( item->GetBoundingBox().Centre() );
         m_gal->SetStrokeColor( COLOR4D( LIGHTRED ) );
         m_gal->SetLineWidth( Mils2ui( 2 ) );
         m_gal->SetGlyphSize( VECTOR2D( Mils2ui( 20 ), Mils2ui( 20 ) ) );
-        strokeText( conn->Name( true ), pos, 0.0 );
+        strokeText( theText );
     }
-
 #endif
 
     if( ADVANCED_CFG::GetCfg().m_DrawBoundingBoxes )
@@ -399,46 +396,48 @@ float SCH_PAINTER::getTextThickness( const LIB_TEXT* aItem, bool aDrawingShadows
 
 
 void SCH_PAINTER::doStrokeText( const wxString& aText, const VECTOR2D& aPosition,
-                                EDA_TEXT_HJUSTIFY_T aHorizontalJustify,
-                                EDA_TEXT_VJUSTIFY_T aVerticalJustify, const EDA_ANGLE& aAngle,
-                                KIFONT::FONT* aFont,
-                                double aLineSpacing )
+                                const TEXT_ATTRIBUTES& aAttributes )
 {
-    TEXT_ATTRIBUTES attributes;
-    attributes.SetHorizJustify( aHorizontalJustify );
-    attributes.SetVertJustify( aVerticalJustify );
-    attributes.SetAngle( aAngle );
-    attributes.SetLineSpacing( aLineSpacing );
-
-    if( !aFont )
-        aFont = KIFONT::FONT::GetFont();
-
 #ifdef DEBUG
     std::cerr << "SCH_PAINTER::doStrokeText( \"" << aText << "\", " << aPosition << ", "
-              << aHorizontalJustify << ", " << aVerticalJustify << ", " << aAngle << ", "
-              << aFont->Name() << " ) attributes " << attributes << std::endl;
+              << aAttributes << " )" << std::endl;
 #endif
+    KIFONT::FONT* font = aAttributes.GetFont();
+    if( !font )
+        font = KIFONT::FONT::GetFont();
 
-    m_gal->SetIsFill( aFont->IsOutline() );
-    m_gal->SetIsStroke( aFont->IsStroke() );
+    m_gal->SetIsFill( font->IsOutline() );
+    m_gal->SetIsStroke( font->IsStroke() );
 
-    aFont->Draw( m_gal, aText, aPosition, attributes );
+    font->Draw( m_gal, aText, aPosition, aAttributes );
 }
 
 
 void SCH_PAINTER::strokeText( const wxString& aText, const VECTOR2D& aPosition,
                               const EDA_ANGLE& aAngle, KIFONT::FONT* aFont )
 {
-    doStrokeText( aText, aPosition, m_gal->GetHorizontalJustify(), m_gal->GetVerticalJustify(),
-                  aAngle, aFont );
+    TEXT_ATTRIBUTES attributes;
+    attributes.SetAngle( aAngle );
+    attributes.SetFont( aFont );
+    //attributes.SetHorizJustify( aHorizontalJustify );
+    //attributes.SetVertJustify( aVerticalJustify );
+    //attributes.SetLineSpacing( aLineSpacing );
+
+    doStrokeText( aText, aPosition, attributes );
 }
 
 
 void SCH_PAINTER::strokeText( const EDA_TEXT* aText, const VECTOR2D& aPosition,
                               const EDA_ANGLE& aAngle )
 {
-    doStrokeText( aText->GetShownText(), aPosition, aText->GetHorizJustify(),
-                  aText->GetVertJustify(), aAngle, aText->GetFont(), aText->GetLineSpacing() );
+#ifdef DEBUG
+    std::cerr << "SCH_PAINTER::strokeText( " << *aText << ", " << aPosition << ", " << aAngle
+              << " )\n";
+#endif
+    TEXT_ATTRIBUTES attributes( *aText );
+    attributes.SetAngle( aAngle );
+
+    doStrokeText( aText->GetShownText(), aPosition, attributes );
 }
 
 
@@ -696,14 +695,6 @@ void SCH_PAINTER::draw( const LIB_FIELD* aField, int aLayer )
         m_gal->SetGlyphSize( VECTOR2D( aField->GetTextSize() ) );
         m_gal->SetFontItalic( aField->IsItalic() );
 
-#if 0
-        m_gal->SetHorizontalJustify( aField->GetHorizJustify() );
-        m_gal->SetVerticalJustify( aField->GetVertJustify() );
-#else
-        m_gal->SetHorizontalJustify( GR_TEXT_HJUSTIFY_CENTER );
-        m_gal->SetVerticalJustify( GR_TEXT_VJUSTIFY_CENTER );
-#endif
-
 #ifdef DEBUG
         std::cerr << "SCH_PAINTER::draw( LIB_FIELD*, " << aLayer << " ) " << std::endl;
         //m_gal->SetStrokeColor( COLOR4D( 0, 0, 1, .5 ) );
@@ -744,8 +735,6 @@ void SCH_PAINTER::draw( const LIB_TEXT* aText, int aLayer )
     EDA_RECT bBox = aText->GetBoundingBox();
     bBox.RevertYAxis();
 
-    m_gal->SetHorizontalJustify( GR_TEXT_HJUSTIFY_CENTER );
-    m_gal->SetVerticalJustify( GR_TEXT_VJUSTIFY_CENTER );
     m_gal->SetLineWidth( getTextThickness( aText, drawingShadows ) );
     m_gal->SetIsFill( false );
     m_gal->SetIsStroke( true );
@@ -796,7 +785,7 @@ void SCH_PAINTER::drawPinDanglingSymbol( const VECTOR2I& aPos, bool aDrawingShad
     m_gal->SetIsFill( false );
     m_gal->SetIsStroke( true );
     m_gal->SetLineWidth( aDrawingShadows ? getShadowWidth()
-                                         : m_schSettings.GetDanglineSymbolThickness() );
+                                         : m_schSettings.GetDanglingSymbolThickness() );
 
     m_gal->DrawCircle( aPos, TARGET_PIN_RADIUS );
 }
@@ -1066,36 +1055,41 @@ void SCH_PAINTER::draw( LIB_PIN* aPin, int aLayer )
     m_gal->SetLineWidth( thickness[i] );                                                           \
     m_gal->SetStrokeColor( colour[i] )
 
+    EDA_TEXT theText;
     switch( orient )
     {
     case PIN_LEFT:
         if( size[INSIDE] )
         {
             SET_DC( INSIDE );
-            m_gal->SetHorizontalJustify( GR_TEXT_HJUSTIFY_RIGHT );
-            m_gal->SetVerticalJustify( GR_TEXT_VJUSTIFY_CENTER );
-            strokeText( text[INSIDE], pos + VECTOR2D( -insideOffset - len, 0 ), 0 );
+            theText.Align( TEXT_ATTRIBUTES::H_RIGHT, TEXT_ATTRIBUTES::V_CENTER );
+            theText.SetText( text[INSIDE] );
+            theText.SetTextPos( pos + VECTOR2D( -insideOffset - len, 0 ) );
+            strokeText( &theText );
         }
         if( size[OUTSIDE] )
         {
             SET_DC( OUTSIDE );
-            m_gal->SetHorizontalJustify( GR_TEXT_HJUSTIFY_LEFT );
-            m_gal->SetVerticalJustify( GR_TEXT_VJUSTIFY_CENTER );
-            strokeText( text[OUTSIDE], pos + VECTOR2D( outsideOffset, 0 ), 0 );
+            theText.Align( TEXT_ATTRIBUTES::H_LEFT, TEXT_ATTRIBUTES::V_CENTER );
+            theText.SetText( text[OUTSIDE] );
+            theText.SetTextPos( pos + VECTOR2D( outsideOffset, 0 ) );
+            strokeText( &theText );
         }
         if( size[ABOVE] )
         {
             SET_DC( ABOVE );
-            m_gal->SetHorizontalJustify( GR_TEXT_HJUSTIFY_CENTER );
-            m_gal->SetVerticalJustify( GR_TEXT_VJUSTIFY_BOTTOM );
-            strokeText( text[ABOVE], pos + VECTOR2D( -len / 2.0, -aboveOffset ), 0 );
+            theText.Align( TEXT_ATTRIBUTES::H_CENTER, TEXT_ATTRIBUTES::V_BOTTOM );
+            theText.SetText( text[ABOVE] );
+            theText.SetTextPos( pos + VECTOR2D( -len / 2.0, -aboveOffset ) );
+            strokeText( &theText );
         }
         if( size[BELOW] )
         {
             SET_DC( BELOW );
-            m_gal->SetHorizontalJustify( GR_TEXT_HJUSTIFY_CENTER );
-            m_gal->SetVerticalJustify( GR_TEXT_VJUSTIFY_TOP );
-            strokeText( text[BELOW], pos + VECTOR2D( -len / 2.0, belowOffset ), 0 );
+            theText.Align( TEXT_ATTRIBUTES::H_CENTER, TEXT_ATTRIBUTES::V_TOP );
+            theText.SetText( text[BELOW] );
+            theText.SetTextPos( pos + VECTOR2D( -len / 2.0, belowOffset ) );
+            strokeText( &theText );
         }
         break;
 
@@ -1103,31 +1097,34 @@ void SCH_PAINTER::draw( LIB_PIN* aPin, int aLayer )
         if( size[INSIDE] )
         {
             SET_DC( INSIDE );
-            m_gal->SetHorizontalJustify( GR_TEXT_HJUSTIFY_LEFT );
-            m_gal->SetVerticalJustify( GR_TEXT_VJUSTIFY_CENTER );
-            m_gal->SetHorizontalJustify( GR_TEXT_HJUSTIFY_LEFT );
-            strokeText( text[INSIDE], pos + VECTOR2D( insideOffset + len, 0 ), 0 );
+            theText.Align( TEXT_ATTRIBUTES::H_LEFT, TEXT_ATTRIBUTES::V_CENTER );
+            theText.SetText( text[INSIDE] );
+            theText.SetTextPos( pos + VECTOR2D( insideOffset + len, 0 ) );
+            strokeText( &theText );
         }
         if( size[OUTSIDE] )
         {
             SET_DC( OUTSIDE );
-            m_gal->SetHorizontalJustify( GR_TEXT_HJUSTIFY_RIGHT );
-            m_gal->SetVerticalJustify( GR_TEXT_VJUSTIFY_CENTER );
-            strokeText( text[OUTSIDE], pos + VECTOR2D( -outsideOffset, 0 ), 0 );
+            theText.Align( TEXT_ATTRIBUTES::H_RIGHT, TEXT_ATTRIBUTES::V_CENTER );
+            theText.SetText( text[OUTSIDE] );
+            theText.SetTextPos( pos + VECTOR2D( -outsideOffset, 0 ) );
+            strokeText( &theText );
         }
         if( size[ABOVE] )
         {
             SET_DC( ABOVE );
-            m_gal->SetHorizontalJustify( GR_TEXT_HJUSTIFY_CENTER );
-            m_gal->SetVerticalJustify( GR_TEXT_VJUSTIFY_BOTTOM );
-            strokeText( text[ABOVE], pos + VECTOR2D( len / 2.0, -aboveOffset ), 0 );
+            theText.Align( TEXT_ATTRIBUTES::H_CENTER, TEXT_ATTRIBUTES::V_BOTTOM );
+            theText.SetText( text[ABOVE] );
+            theText.SetTextPos( pos + VECTOR2D( len / 2.0, -aboveOffset ) );
+            strokeText( &theText );
         }
         if( size[BELOW] )
         {
             SET_DC( BELOW );
-            m_gal->SetHorizontalJustify( GR_TEXT_HJUSTIFY_CENTER );
-            m_gal->SetVerticalJustify( GR_TEXT_VJUSTIFY_TOP );
-            strokeText( text[BELOW], pos + VECTOR2D( len / 2.0, belowOffset ), 0 );
+            theText.Align( TEXT_ATTRIBUTES::H_CENTER, TEXT_ATTRIBUTES::V_TOP );
+            theText.SetText( text[BELOW] );
+            theText.SetTextPos( pos + VECTOR2D( len / 2.0, belowOffset ) );
+            strokeText( &theText );
         }
         break;
 
@@ -1135,30 +1132,38 @@ void SCH_PAINTER::draw( LIB_PIN* aPin, int aLayer )
         if( size[INSIDE] )
         {
             SET_DC( INSIDE );
-            m_gal->SetHorizontalJustify( GR_TEXT_HJUSTIFY_RIGHT );
-            m_gal->SetVerticalJustify( GR_TEXT_VJUSTIFY_CENTER );
-            strokeText( text[INSIDE], pos + VECTOR2D( 0, insideOffset + len ), M_PI / 2 );
+            theText.Align( TEXT_ATTRIBUTES::H_RIGHT, TEXT_ATTRIBUTES::V_CENTER );
+            theText.SetText( text[INSIDE] );
+            theText.SetTextPos( pos + VECTOR2D( 0, insideOffset + len ) );
+            theText.SetTextAngle( EDA_ANGLE::ANGLE_90 );
+            strokeText( &theText );
         }
         if( size[OUTSIDE] )
         {
             SET_DC( OUTSIDE );
-            m_gal->SetHorizontalJustify( GR_TEXT_HJUSTIFY_LEFT );
-            m_gal->SetVerticalJustify( GR_TEXT_VJUSTIFY_CENTER );
-            strokeText( text[OUTSIDE], pos + VECTOR2D( 0, -outsideOffset ), M_PI / 2 );
+            theText.Align( TEXT_ATTRIBUTES::H_LEFT, TEXT_ATTRIBUTES::V_CENTER );
+            theText.SetText( text[OUTSIDE] );
+            theText.SetTextPos( pos + VECTOR2D( 0, -outsideOffset ) );
+            theText.SetTextAngle( EDA_ANGLE::ANGLE_90 );
+            strokeText( &theText );
         }
         if( size[ABOVE] )
         {
             SET_DC( ABOVE );
-            m_gal->SetHorizontalJustify( GR_TEXT_HJUSTIFY_CENTER );
-            m_gal->SetVerticalJustify( GR_TEXT_VJUSTIFY_BOTTOM );
-            strokeText( text[ABOVE], pos + VECTOR2D( -aboveOffset, len / 2.0 ), M_PI / 2 );
+            theText.Align( TEXT_ATTRIBUTES::H_CENTER, TEXT_ATTRIBUTES::V_BOTTOM );
+            theText.SetText( text[ABOVE] );
+            theText.SetTextPos( pos + VECTOR2D( -aboveOffset, len / 2.0 ) );
+            theText.SetTextAngle( EDA_ANGLE::ANGLE_90 );
+            strokeText( &theText );
         }
         if( size[BELOW] )
         {
             SET_DC( BELOW );
-            m_gal->SetHorizontalJustify( GR_TEXT_HJUSTIFY_CENTER );
-            m_gal->SetVerticalJustify( GR_TEXT_VJUSTIFY_TOP );
-            strokeText( text[BELOW], pos + VECTOR2D( belowOffset, len / 2.0 ), M_PI / 2 );
+            theText.Align( TEXT_ATTRIBUTES::H_CENTER, TEXT_ATTRIBUTES::V_TOP );
+            theText.SetText( text[BELOW] );
+            theText.SetTextPos( pos + VECTOR2D( belowOffset, len / 2.0 ) );
+            theText.SetTextAngle( EDA_ANGLE::ANGLE_90 );
+            strokeText( &theText );
         }
         break;
 
@@ -1166,30 +1171,38 @@ void SCH_PAINTER::draw( LIB_PIN* aPin, int aLayer )
         if( size[INSIDE] )
         {
             SET_DC( INSIDE );
-            m_gal->SetHorizontalJustify( GR_TEXT_HJUSTIFY_LEFT );
-            m_gal->SetVerticalJustify( GR_TEXT_VJUSTIFY_CENTER );
-            strokeText( text[INSIDE], pos + VECTOR2D( 0, -insideOffset - len ), M_PI / 2 );
+            theText.Align( TEXT_ATTRIBUTES::H_LEFT, TEXT_ATTRIBUTES::V_CENTER );
+            theText.SetText( text[INSIDE] );
+            theText.SetTextPos( pos + VECTOR2D( 0, -insideOffset - len ) );
+            theText.SetTextAngle( EDA_ANGLE::ANGLE_90 );
+            strokeText( &theText );
         }
         if( size[OUTSIDE] )
         {
             SET_DC( OUTSIDE );
-            m_gal->SetHorizontalJustify( GR_TEXT_HJUSTIFY_RIGHT );
-            m_gal->SetVerticalJustify( GR_TEXT_VJUSTIFY_CENTER );
-            strokeText( text[OUTSIDE], pos + VECTOR2D( 0, outsideOffset ), M_PI / 2 );
+            theText.Align( TEXT_ATTRIBUTES::H_RIGHT, TEXT_ATTRIBUTES::V_CENTER );
+            theText.SetText( text[OUTSIDE] );
+            theText.SetTextPos( pos + VECTOR2D( 0, outsideOffset ) );
+            theText.SetTextAngle( EDA_ANGLE::ANGLE_90 );
+            strokeText( &theText );
         }
         if( size[ABOVE] )
         {
             SET_DC( ABOVE );
-            m_gal->SetHorizontalJustify( GR_TEXT_HJUSTIFY_CENTER );
-            m_gal->SetVerticalJustify( GR_TEXT_VJUSTIFY_BOTTOM );
-            strokeText( text[ABOVE], pos + VECTOR2D( -aboveOffset, -len / 2.0 ), M_PI / 2 );
+            theText.Align( TEXT_ATTRIBUTES::H_CENTER, TEXT_ATTRIBUTES::V_BOTTOM );
+            theText.SetText( text[ABOVE] );
+            theText.SetTextPos( pos + VECTOR2D( -aboveOffset, -len / 2.0 ) );
+            theText.SetTextAngle( EDA_ANGLE::ANGLE_90 );
+            strokeText( &theText );
         }
         if( size[BELOW] )
         {
             SET_DC( BELOW );
-            m_gal->SetHorizontalJustify( GR_TEXT_HJUSTIFY_CENTER );
-            m_gal->SetVerticalJustify( GR_TEXT_VJUSTIFY_TOP );
-            strokeText( text[BELOW], pos + VECTOR2D( belowOffset, -len / 2.0 ), M_PI / 2 );
+            theText.Align( TEXT_ATTRIBUTES::H_CENTER, TEXT_ATTRIBUTES::V_TOP );
+            theText.SetText( text[BELOW] );
+            theText.SetTextPos( pos + VECTOR2D( belowOffset, -len / 2.0 ) );
+            theText.SetTextAngle( EDA_ANGLE::ANGLE_90 );
+            strokeText( &theText );
         }
         break;
 
@@ -1228,7 +1241,7 @@ void SCH_PAINTER::drawDanglingSymbol( const wxPoint& aPos, int aWidth, bool aDra
     m_gal->SetIsStroke( true );
     m_gal->SetIsFill( false );
     m_gal->SetLineWidth( aDrawingShadows ? getShadowWidth()
-                                         : m_schSettings.GetDanglineSymbolThickness() );
+                                         : m_schSettings.GetDanglingSymbolThickness() );
 
     m_gal->DrawRectangle( aPos - radius, aPos + radius );
 }
@@ -1339,6 +1352,10 @@ void SCH_PAINTER::draw( const SCH_TEXT* aText, int aLayer )
     if( drawingShadows && !aText->IsSelected() )
         return;
 
+#ifdef DEBUG
+    std::cerr << "SCH_PAINTER::draw( " << *aText << ", " << aLayer << " )" << std::endl;
+#endif
+
     switch( aText->Type() )
     {
     case SCH_SHEET_PIN_T: aLayer = LAYER_SHEETLABEL; break;
@@ -1366,14 +1383,22 @@ void SCH_PAINTER::draw( const SCH_TEXT* aText, int aLayer )
             return;
     }
 
-    m_gal->SetIsFill( false );
-    m_gal->SetIsStroke( true );
+    m_gal->SetIsFill( aText->GetFont()->IsOutline() );
+    m_gal->SetIsStroke( aText->GetFont()->IsStroke() );
+    if( aText->GetFont()->IsOutline() )
+    {
+        m_gal->SetFillColor( color );
+    }
+    else
+    {
+        m_gal->SetStrokeColor( color );
+    }
+
     m_gal->SetLineWidth( getTextThickness( aText, drawingShadows ) );
-    m_gal->SetStrokeColor( color );
     m_gal->SetTextAttributes( aText );
     m_gal->SetFontUnderlined( false );
 
-    VECTOR2D text_offset = aText->GetTextPos() + aText->GetSchematicTextOffset( &m_schSettings );
+    VECTOR2D offsetPosition = aText->GetTextPos() + aText->GetSchematicTextOffset( &m_schSettings );
     wxString shownText( aText->GetShownText() );
 
     if( drawingShadows )
@@ -1391,21 +1416,38 @@ void SCH_PAINTER::draw( const SCH_TEXT* aText, int aLayer )
             return;
         }
 
-        switch( aText->GetLabelSpinStyle() )
+        switch( aText->GetOrientation() )
         {
-        case LABEL_SPIN_STYLE::LEFT: text_offset.x += getShadowWidth() / 2; break;
-        case LABEL_SPIN_STYLE::UP: text_offset.y += getShadowWidth() / 2; break;
-        case LABEL_SPIN_STYLE::RIGHT: text_offset.x -= getShadowWidth() / 2; break;
-        case LABEL_SPIN_STYLE::BOTTOM: text_offset.y -= getShadowWidth() / 2; break;
+        default:
+        case TEXT_ATTRIBUTES::ANGLE_0: offsetPosition.x -= getShadowWidth() / 2; break;
+        case TEXT_ATTRIBUTES::ANGLE_90: offsetPosition.y += getShadowWidth() / 2; break;
+        case TEXT_ATTRIBUTES::ANGLE_180: offsetPosition.x += getShadowWidth() / 2; break;
+        case TEXT_ATTRIBUTES::ANGLE_270: offsetPosition.y -= getShadowWidth() / 2; break;
         }
     }
 
     if( !shownText.IsEmpty() )
     {
 #ifdef DEBUG
-        //m_gal->SetStrokeColor( COLOR4D( 1, 0, 1, .75 ) );
+        std::cerr << aText->GetText() << " @" << aText->GetTextPos() << " angle "
+                  << aText->GetTextEdaAngle() << " HAlign " << aText->GetHorizontalAlignment()
+                  << ", stroking @ offsetPosition " << offsetPosition << " diff "
+                  << ( offsetPosition - aText->GetTextPos() ) << std::endl;
 #endif
-        strokeText( aText, text_offset );
+        strokeText( aText, offsetPosition );
+    }
+
+    // Draw text origin indicator
+    if( aText->IsSelected() )
+    {
+        m_gal->SetLineWidth( drawingShadows ? getShadowWidth()
+                                            : m_schSettings.GetDanglingSymbolThickness() );
+        m_gal->SetIsFill( false );
+        m_gal->SetIsStroke( true );
+        // use contrasting color
+        m_gal->SetStrokeColor( color.Inverted() );
+        // TODO circle radius here just randomly picked now
+        m_gal->DrawCircle( aText->GetTextPos(), 10000 );
     }
 
     if( aText->IsDangling() )
@@ -1576,12 +1618,12 @@ void SCH_PAINTER::draw( const SCH_FIELD* aField, int aLayer )
     wxPoint  textpos = boundaryBox.Centre();
 
     m_gal->SetStrokeColor( color );
-    m_gal->SetIsStroke( true );
+    m_gal->SetFillColor( color );
+    m_gal->SetIsStroke( aField->GetFont()->IsStroke() );
 
     if( drawingShadows && eeconfig()->m_Selection.text_as_box )
     {
         m_gal->SetIsFill( true );
-        m_gal->SetFillColor( color );
         m_gal->SetLineWidth( m_gal->GetLineWidth() * 0.5 );
         boundaryBox.RevertYAxis();
 
@@ -1590,9 +1632,7 @@ void SCH_PAINTER::draw( const SCH_FIELD* aField, int aLayer )
     }
     else
     {
-        m_gal->SetHorizontalJustify( GR_TEXT_HJUSTIFY_CENTER );
-        m_gal->SetVerticalJustify( GR_TEXT_VJUSTIFY_CENTER );
-        m_gal->SetIsFill( false );
+        m_gal->SetIsFill( aField->GetFont()->IsOutline() );
         m_gal->SetGlyphSize( VECTOR2D( aField->GetTextSize() ) );
         m_gal->SetFontBold( aField->IsBold() );
         m_gal->SetFontItalic( aField->IsItalic() );
@@ -1621,6 +1661,10 @@ void SCH_PAINTER::draw( const SCH_FIELD* aField, int aLayer )
 
 void SCH_PAINTER::draw( SCH_GLOBALLABEL* aLabel, int aLayer )
 {
+#ifdef DEBUG
+    std::cerr << "SCH_PAINTER::draw( SCH_GLOBALLABEL{" << *aLabel << "}, " << aLayer << " )"
+              << std::endl;
+#endif
     bool drawingShadows = aLayer == LAYER_SELECTION_SHADOWS;
 
     if( !drawingShadows || aLabel->IsSelected() )

@@ -73,35 +73,6 @@ class STROKE_FONT;
 #define DIM_ANCRE_TEXTE 2    // Anchor size for text
 
 
-#if 0
-/**
- * A container for text effects.
- *
- * These fields are bundled so they can be easily copied together as a lot. The privacy
- * policy is established by client (incorporating) code.
- */
-struct TEXT_EFFECTS
-{
-    TEXT_EFFECTS( int aSetOfBits = 0 ) :
-            bits( aSetOfBits ), hjustify( GR_TEXT_HJUSTIFY_CENTER ),
-            vjustify( GR_TEXT_VJUSTIFY_CENTER ), penwidth( 0 ), angle( 0.0 ), lineSpacing( 1.0 )
-    {
-    }
-
-    int         bits;     ///< any set of booleans a client uses.
-    signed char hjustify; ///< horizontal justification
-    signed char vjustify; ///< vertical justification
-    wxSize      size;
-    int         penwidth;
-    double      angle; ///< now: 0.1 degrees; future: degrees
-    double      lineSpacing;
-    wxPoint     pos;
-
-    void Bit( int aBit, bool aValue ) { aValue ? bits |= ( 1 << aBit ) : bits &= ~( 1 << aBit ); }
-    bool Bit( int aBit ) const { return bits & ( 1 << aBit ); }
-};
-#endif
-
 /**
  * A mix-in class (via multiple inheritance) that handles texts such as labels, parts,
  * components, or footprints.  Because it's a mix-in class, care is used to provide
@@ -173,9 +144,9 @@ public:
     virtual void SetTextAngle( EDA_ANGLE aAngle ) { m_attributes.SetAngle( aAngle ); }
 
     EDA_ANGLE GetTextEdaAngle() const { return m_attributes.GetAngle(); }
-    double GetTextAngle() const { return GetTextEdaAngle().AsTenthsOfADegree(); }
-    double GetTextAngleDegrees() const { return GetTextEdaAngle().AsDegrees(); }
-    double GetTextAngleRadians() const { return GetTextEdaAngle().AsRadians(); }
+    double    GetTextAngle() const { return GetTextEdaAngle().AsTenthsOfADegree(); }
+    double    GetTextAngleDegrees() const { return GetTextEdaAngle().AsDegrees(); }
+    double    GetTextAngleRadians() const { return GetTextEdaAngle().AsRadians(); }
 
     void SetItalic( bool aItalic ) { m_attributes.SetItalic( aItalic ); }
     bool IsItalic() const { return m_attributes.IsItalic(); }
@@ -196,23 +167,76 @@ public:
     void SetMultilineAllowed( bool aAllow ) { m_attributes.SetMultiline( aAllow ); }
     bool IsMultilineAllowed() const { return m_attributes.IsMultiline(); }
 
-    EDA_TEXT_HJUSTIFY_T GetHorizJustify() const { return m_attributes.GetHorizJustify(); };
-    EDA_TEXT_VJUSTIFY_T GetVertJustify() const { return m_attributes.GetVertJustify(); };
+    void SetHorizontalAlignment( TEXT_ATTRIBUTES::HORIZONTAL_ALIGNMENT aHorizontalAlignment )
+    {
+        Align( aHorizontalAlignment );
+    }
 
-    void SetHorizJustify( EDA_TEXT_HJUSTIFY_T aType ) { m_attributes.SetHorizJustify( aType ); }
-    void SetVertJustify( EDA_TEXT_VJUSTIFY_T aType ) { m_attributes.SetVertJustify( aType ); }
+    void Align( TEXT_ATTRIBUTES::HORIZONTAL_ALIGNMENT aHorizontalAlignment )
+    {
+        m_attributes.Align( aHorizontalAlignment );
+    }
+
+    TEXT_ATTRIBUTES::HORIZONTAL_ALIGNMENT GetHorizontalAlignment() const
+    {
+        return m_attributes.GetHorizontalAlignment();
+    }
+
+    void FlipHorizontalAlignment()
+    {
+        switch( GetHorizontalAlignment() )
+        {
+        case TEXT_ATTRIBUTES::H_LEFT: SetHorizontalAlignment( TEXT_ATTRIBUTES::H_RIGHT ); break;
+        case TEXT_ATTRIBUTES::H_RIGHT: SetHorizontalAlignment( TEXT_ATTRIBUTES::H_LEFT ); break;
+        default: break;
+        }
+    }
+
+    void SetVerticalAlignment( TEXT_ATTRIBUTES::VERTICAL_ALIGNMENT aVerticalAlignment )
+    {
+        Align( aVerticalAlignment );
+    }
+
+    void Align( TEXT_ATTRIBUTES::VERTICAL_ALIGNMENT aVerticalAlignment )
+    {
+        m_attributes.Align( aVerticalAlignment );
+    }
+
+    TEXT_ATTRIBUTES::VERTICAL_ALIGNMENT GetVerticalAlignment() const
+    {
+        return m_attributes.GetVerticalAlignment();
+    }
+
+    void FlipVerticalAlignment()
+    {
+        switch( GetVerticalAlignment() )
+        {
+        case TEXT_ATTRIBUTES::V_TOP: SetVerticalAlignment( TEXT_ATTRIBUTES::V_BOTTOM ); break;
+        case TEXT_ATTRIBUTES::V_BOTTOM: SetVerticalAlignment( TEXT_ATTRIBUTES::V_TOP ); break;
+        default: break;
+        }
+    }
+
+    void Align( TEXT_ATTRIBUTES::HORIZONTAL_ALIGNMENT aHorizontalAlignment,
+                TEXT_ATTRIBUTES::VERTICAL_ALIGNMENT aVerticalAlignment )
+    {
+        Align( aHorizontalAlignment );
+        Align( aVerticalAlignment );
+    }
 
     /**
      * Set the text attributes from another instance.
      *
      */
-    void SetEffects( const EDA_TEXT& aSrc ) { m_attributes = aSrc.m_attributes; }
+    void        SetAttributes( const EDA_TEXT& aSrc ) { m_attributes = aSrc.m_attributes; }
+    inline void SetEffects( const EDA_TEXT& aSrc ) { SetAttributes( aSrc ); }
 
     /**
      * Swap the text attributes of the two involved instances.
      *
      */
-    void SwapEffects( EDA_TEXT& aTradingPartner );
+    void        SwapAttributes( EDA_TEXT& aTradingPartner );
+    inline void SwapEffects( EDA_TEXT& aTradingPartner ) { SwapAttributes( aTradingPartner ); }
 
     void SwapText( EDA_TEXT& aTradingPartner );
 
@@ -244,6 +268,7 @@ public:
     int  GetTextHeight() const { return m_attributes.GetTextSize().y; }
 
     void           SetTextPos( const wxPoint& aPoint ) { m_pos = aPoint; }
+    void           SetTextPos( const VECTOR2D& aPoint ) { m_pos.x = aPoint.x; m_pos.y = aPoint.y; }
     const wxPoint& GetTextPos() const { return m_pos; }
 
     void SetTextX( int aX ) { m_pos.x = aX; }
@@ -252,10 +277,6 @@ public:
     void Offset( const wxPoint& aOffset ) { m_pos += aOffset; }
 
     void Empty() { m_text.Empty(); }
-
-    static EDA_TEXT_HJUSTIFY_T MapHorizJustify( int aHorizJustify );
-
-    static EDA_TEXT_VJUSTIFY_T MapVertJustify( int aVertJustify );
 
     /**
      * Print this text object to the device context \a aDC.
@@ -370,9 +391,33 @@ public:
 
     void SetFont( KIFONT::FONT* aFont ) { m_attributes.SetFont( aFont ); }
 
+    /**
+     * @return force the text rotation to be always between -90 .. 90 deg. Otherwise the text
+     *         is not easy to read if false, the text rotation is free.
+     */
+    bool IsKeepUpright() const { return m_attributes.IsKeepUpright(); }
+
+    void SetKeepUpright( bool aKeepUpright ) { m_attributes.SetKeepUpright( aKeepUpright ); }
+
+    TEXT_ATTRIBUTES::ORIENTATION GetOrientation() const { return m_attributes.GetOrientation(); }
+
+    /**
+     * Set (horizontal) alignment according to angle.
+     * This simulates the old LABEL_SPIN_STYLE behaviour:
+     * Left alignment becomes Right alignment when rotating from 0 to 180 degrees,
+     * or from 90 to 270 degrees.
+     */
+    void SetDefaultAlignment();
+
+    void RotateCW() { m_attributes.RotateCW(); }
+
+    void RotateCCW() { m_attributes.RotateCCW(); }
+
+    const TEXT_ATTRIBUTES& GetAttributes() const { return m_attributes; }
+
 private:
     /**
-     * Print each line of this EDA_TEXT..
+     * Print each line of this EDA_TEXT.
      *
      * @param aOffset draw offset (usually (0,0)).
      * @param aColor text color.
@@ -390,7 +435,18 @@ private:
 
     TEXT_ATTRIBUTES m_attributes;
     wxPoint         m_pos;
+
+    friend std::ostream& operator<<( std::ostream&, const EDA_TEXT& );
 };
 
+
+inline std::ostream& operator<<( std::ostream& os, const EDA_TEXT& aText )
+{
+    os << "(eda_text \"" << aText.m_text << "\" (shown \"" << aText.m_shown_text << "\") "
+       << ( aText.m_shown_text_has_text_var_refs ? "has_text_var_refs " : "" ) << aText.m_attributes
+       << " (position " << aText.m_pos.x << " " << aText.m_pos.y << ")";
+
+    return os;
+}
 
 #endif //  EDA_TEXT_H_

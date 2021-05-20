@@ -83,18 +83,18 @@ bool DIALOG_LIB_EDIT_TEXT::TransferDataToWindow()
         m_CommonConvert->SetValue( m_graphicText->GetConvert() == 0 );
         m_orientChoice->SetSelection( m_graphicText->GetTextAngle() == TEXT_ANGLE_HORIZ ? 0 : 1 );
 
-        switch ( m_graphicText->GetHorizJustify() )
+        switch ( m_graphicText->GetHorizontalAlignment() )
         {
-        case GR_TEXT_HJUSTIFY_LEFT:   m_hAlignChoice->SetSelection( 0 ); break;
-        case GR_TEXT_HJUSTIFY_CENTER: m_hAlignChoice->SetSelection( 1 ); break;
-        case GR_TEXT_HJUSTIFY_RIGHT:  m_hAlignChoice->SetSelection( 2 ); break;
+        case TEXT_ATTRIBUTES::H_LEFT: m_hAlignChoice->SetSelection( 0 ); break;
+        case TEXT_ATTRIBUTES::H_CENTER: m_hAlignChoice->SetSelection( 1 ); break;
+        case TEXT_ATTRIBUTES::H_RIGHT: m_hAlignChoice->SetSelection( 2 ); break;
         }
 
-        switch ( m_graphicText->GetVertJustify() )
+        switch ( m_graphicText->GetVerticalAlignment() )
         {
-        case GR_TEXT_VJUSTIFY_TOP:    m_vAlignChoice->SetSelection( 0 ); break;
-        case GR_TEXT_VJUSTIFY_CENTER: m_vAlignChoice->SetSelection( 1 ); break;
-        case GR_TEXT_VJUSTIFY_BOTTOM: m_vAlignChoice->SetSelection( 2 ); break;
+        case TEXT_ATTRIBUTES::V_TOP: m_vAlignChoice->SetSelection( 0 ); break;
+        case TEXT_ATTRIBUTES::V_CENTER: m_vAlignChoice->SetSelection( 1 ); break;
+        case TEXT_ATTRIBUTES::V_BOTTOM: m_vAlignChoice->SetSelection( 2 ); break;
         }
     }
     else
@@ -143,16 +143,16 @@ bool DIALOG_LIB_EDIT_TEXT::TransferDataFromWindow()
 
         switch( m_hAlignChoice->GetSelection() )
         {
-        case 0: m_graphicText->SetHorizJustify( GR_TEXT_HJUSTIFY_LEFT );   break;
-        case 1: m_graphicText->SetHorizJustify( GR_TEXT_HJUSTIFY_CENTER ); break;
-        case 2: m_graphicText->SetHorizJustify( GR_TEXT_HJUSTIFY_RIGHT );  break;
+        case 0: m_graphicText->Align( TEXT_ATTRIBUTES::H_LEFT ); break;
+        case 1: m_graphicText->Align( TEXT_ATTRIBUTES::H_CENTER ); break;
+        case 2: m_graphicText->Align( TEXT_ATTRIBUTES::H_RIGHT ); break;
         }
 
         switch( m_vAlignChoice->GetSelection() )
         {
-        case 0: m_graphicText->SetVertJustify( GR_TEXT_VJUSTIFY_TOP );    break;
-        case 1: m_graphicText->SetVertJustify( GR_TEXT_VJUSTIFY_CENTER ); break;
-        case 2: m_graphicText->SetVertJustify( GR_TEXT_VJUSTIFY_BOTTOM ); break;
+        case 0: m_graphicText->Align( TEXT_ATTRIBUTES::V_TOP ); break;
+        case 1: m_graphicText->Align( TEXT_ATTRIBUTES::V_CENTER ); break;
+        case 2: m_graphicText->Align( TEXT_ATTRIBUTES::V_BOTTOM ); break;
         }
 
         // Record settings used for next time:

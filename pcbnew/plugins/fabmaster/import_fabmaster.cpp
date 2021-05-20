@@ -1066,11 +1066,11 @@ FABMASTER::GRAPHIC_TEXT* FABMASTER::processText( const FABMASTER::GRAPHIC_DATA& 
     new_text->mirror   = ( aData.graphic_data4 == "YES" );
 
     if( aData.graphic_data5 == "RIGHT" )
-        new_text->orient = GR_TEXT_HJUSTIFY_RIGHT;
+        new_text->orient = TEXT_ATTRIBUTES::H_RIGHT;
     else if( aData.graphic_data5 == "CENTER" )
-        new_text->orient = GR_TEXT_HJUSTIFY_CENTER;
+        new_text->orient = TEXT_ATTRIBUTES::H_CENTER;
     else
-        new_text->orient = GR_TEXT_HJUSTIFY_LEFT;
+        new_text->orient = TEXT_ATTRIBUTES::H_LEFT;
 
     std::vector<std::string> toks = split( aData.graphic_data6, " \t" );
 
@@ -1987,7 +1987,7 @@ bool FABMASTER::loadFootprints( BOARD* aBoard )
                     txt->SetTextThickness( lsrc->thickness );
                     txt->SetTextHeight( lsrc->height );
                     txt->SetTextWidth( lsrc->width );
-                    txt->SetHorizJustify( lsrc->orient );
+                    txt->Align( lsrc->orient );
                     txt->SetLocalCoord();
 
                     if( txt != &fp->Reference() )
@@ -2128,7 +2128,7 @@ bool FABMASTER::loadFootprints( BOARD* aBoard )
                         txt->SetTextThickness( lsrc->thickness );
                         txt->SetTextHeight( lsrc->height );
                         txt->SetTextWidth( lsrc->width );
-                        txt->SetHorizJustify( lsrc->orient );
+                        txt->Align( lsrc->orient );
                         txt->SetLocalCoord();
 
                         // FABMASTER doesn't have visibility flags but layers that are not silk should be hidden
@@ -2746,7 +2746,7 @@ bool FABMASTER::loadOutline( BOARD* aBoard, const std::unique_ptr<FABMASTER::TRA
             txt->SetTextThickness( src->thickness );
             txt->SetTextHeight( src->height );
             txt->SetTextWidth( src->width );
-            txt->SetHorizJustify( src->orient );
+            txt->Align( src->orient );
 
             aBoard->Add( txt, ADD_MODE::APPEND );
             break;
@@ -2861,7 +2861,7 @@ bool FABMASTER::loadGraphics( BOARD* aBoard )
                 txt->SetTextThickness( src->thickness );
                 txt->SetTextHeight( src->height );
                 txt->SetTextWidth( src->width );
-                txt->SetHorizJustify( src->orient );
+                txt->Align( src->orient );
                 aBoard->Add( txt, ADD_MODE::APPEND );
                 break;
             }

@@ -24,6 +24,7 @@
 #include <cassert>
 #include <cmath>
 #include <iostream>
+#include <iomanip>
 
 class EDA_ANGLE
 {
@@ -102,7 +103,7 @@ public:
         case TENTHS_OF_A_DEGREE: return "tenths-of-a-degree";
         case DEGREES: return "degrees";
         case RADIANS: return "radians";
-        default: return "unknown-angle-type" ; // assert( 1 == 0 );
+        default: return "unknown-angle-type"; // assert( 1 == 0 );
         }
     }
     inline std::string AngleType() const { return AngleType( m_initial_type ); }
@@ -121,9 +122,45 @@ public:
 
     bool IsVertical() const { return AsDegrees() == 90 || AsDegrees() == 270; }
 
-    EDA_ANGLE RotateCW() const { return EDA_ANGLE( AsDegrees() - 90, EDA_ANGLE::DEGREES ); }
+    /**
+     * Rotate clockwise by 90 degrees.
+     * Resulting angle is normalized to 0 <= angle < 360 degrees.
+     * @return new angle with applied rotation.
+     */
+    EDA_ANGLE RotateCW() const
+    {
+        return EDA_ANGLE( AsDegrees() - 90, EDA_ANGLE::DEGREES ).Normalize();
+    }
 
+    /**
+     * Rotate counterclockwise by 90 degrees.
+     * Resulting angle is normalized to 0 <= angle < 360 degrees.
+     * @return new angle with applied rotation.
+     */
     EDA_ANGLE RotateCCW() const { return EDA_ANGLE( AsDegrees() + 90, EDA_ANGLE::DEGREES ); }
+
+    /**
+     * Mirror across X axis (vertically).
+     * 0 and 180 degrees are unchanged, 90 becomes 270 and vice versa.
+     * Also works for arbitrary angles in between.
+     * @return new angle with applied mirroring.
+     */
+    EDA_ANGLE MirrorAcrossXAxis() const
+    {
+        return EDA_ANGLE( 0 - AsTenthsOfADegree(), EDA_ANGLE::TENTHS_OF_A_DEGREE ).Normalize();
+    }
+
+    /**
+     * Mirror across Y axis (horizontally).
+     * 90 and 270 degrees are unchanged, 0 becomes 180 and vice versa.
+     * Also works for arbitrary angles in between.
+     * @return new angle with applied mirroring.
+     */
+    EDA_ANGLE MirrorAcrossYAxis() const
+    {
+        return EDA_ANGLE( 1800 - AsTenthsOfADegree(), EDA_ANGLE::TENTHS_OF_A_DEGREE ).Normalize();
+    }
+
 
     EDA_ANGLE Add( const EDA_ANGLE& aAngle ) const
     {
@@ -183,9 +220,28 @@ public:
         return EDA_ANGLE( atan2( y, x ), EDA_ANGLE::RADIANS );
     }
 
-    inline void Normalize() { normalize( false ); }
+    inline EDA_ANGLE Normalize()
+    {
+        normalize( false );
+        return *this;
+    }
 
-    inline void Normalize720() { normalize( true ); }
+    inline EDA_ANGLE Normalize720()
+    {
+        normalize( true );
+        return *this;
+    }
+
+    EDA_ANGLE KeepUpright() const;
+
+    std::string AsDegreesString() const
+    {
+        std::stringstream ss;
+
+        // \u00b0 == Unicode character DEGREE SIGN
+        ss << std::fixed << std::setprecision( 1 ) << ( AsTenthsOfADegree() / 10.0 ) << "\u00b0";
+        return ss.str();
+    }
 
 private:
     // value is always stored in 1/10ths of a degree
@@ -195,85 +251,28 @@ private:
 
     ANGLE_TYPE m_initial_type;
 
-    void normalize( bool n720 = false )
-    {
-        if( GetInitialAngleType() == EDA_ANGLE::RADIANS )
-        {
-            m_radians = normalize( m_radians, EDA_ANGLE::RADIANS, n720 );
-            m_value = int( m_radians / TENTHS_OF_A_DEGREE_TO_RADIANS );
-        }
-        else
-        {
-            m_value = normalize( m_value, GetInitialAngleType(), n720 );
-        }
-    }
-
-    int normalize( int aValue, ANGLE_TYPE aAngleType, bool n720 = false ) const
-    {
-        int full_circle_upper;
-
-        switch( aAngleType )
-        {
-        case DEGREES: full_circle_upper = DEGREES_FULL_CIRCLE; break;
-        case TENTHS_OF_A_DEGREE: full_circle_upper = TENTHS_OF_A_DEGREE_FULL_CIRCLE; break;
-        case RADIANS:
-            /* ?? should not get here */
-            assert( 1 == 0 );
-        }
-
-        /* if n720 == false, clamp between 0..full_circle_upper
-         * if n720 == true, clamp between +/- full_circle_upper
-         */
-        int full_circle_lower = n720 ? 0 : -full_circle_upper;
-
-        while( aValue < full_circle_lower )
-        {
-            aValue += full_circle_upper;
-        }
-        while( aValue > full_circle_upper )
-        {
-            aValue -= full_circle_upper;
-        }
-        return aValue;
-    }
-
-    double normalize( double aValue, ANGLE_TYPE aAngleType, bool n720 = false ) const
-    {
-        double full_circle_upper;
-        switch( aAngleType )
-        {
-        case DEGREES: full_circle_upper = DEGREES_FULL_CIRCLE; break;
-        case TENTHS_OF_A_DEGREE: full_circle_upper = TENTHS_OF_A_DEGREE_FULL_CIRCLE; break;
-        case RADIANS: full_circle_upper = RADIANS_FULL_CIRCLE;
-        }
-
-        double full_circle_lower = n720 ? 0 : -full_circle_upper;
-
-        while( aValue < full_circle_lower )
-        {
-            aValue += full_circle_upper;
-        }
-        while( aValue > full_circle_upper )
-        {
-            aValue -= full_circle_upper;
-        }
-        return aValue;
-    }
+    void   normalize( bool n720 = false );
+    int    normalize( int aValue, ANGLE_TYPE aAngleType, bool n720 = false ) const;
+    double normalize( double aValue, ANGLE_TYPE aAngleType, bool n720 = false ) const;
 
     static constexpr int    TENTHS_OF_A_DEGREE_FULL_CIRCLE = 3600;
     static constexpr int    DEGREES_FULL_CIRCLE = 360;
     static constexpr double RADIANS_FULL_CIRCLE = 2 * M_PI;
 
-    static EDA_ANGLE m_horizontal;  //< 0 degrees
-    static EDA_ANGLE m_vertical;    //< 90 degrees
-    static EDA_ANGLE m_full_circle; //< 360 degrees
+    static EDA_ANGLE m_angle0;
+    static EDA_ANGLE m_angle90;
+    static EDA_ANGLE m_angle180;
+    static EDA_ANGLE m_angle270;
+    static EDA_ANGLE m_angle360;
 
 public:
-    static constexpr EDA_ANGLE& HORIZONTAL = m_horizontal;
-
-    static constexpr EDA_ANGLE& VERTICAL = m_vertical;
-
-    static constexpr EDA_ANGLE& FULL_CIRCLE = m_full_circle;
+    static constexpr EDA_ANGLE& HORIZONTAL = m_angle0;
+    static constexpr EDA_ANGLE& VERTICAL = m_angle90;
+    static constexpr EDA_ANGLE& FULL_CIRCLE = m_angle360;
+    static constexpr EDA_ANGLE& ANGLE_0 = m_angle0;
+    static constexpr EDA_ANGLE& ANGLE_90 = m_angle90;
+    static constexpr EDA_ANGLE& ANGLE_180 = m_angle180;
+    static constexpr EDA_ANGLE& ANGLE_270 = m_angle270;
 };
 
 

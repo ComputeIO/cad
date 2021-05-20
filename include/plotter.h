@@ -391,12 +391,12 @@ public:
                                       double aOrient, OUTLINE_MODE aTraceMode, void* aData ) = 0;
 
     /**
-     * Draws text with the plotter. For convenience it accept the color to use
+     * Draws text with the plotter. For convenience it accepts the color to use
      * for specific plotters (GERBER) aData is used to pass extra parameters
      */
     virtual void Text( const wxPoint& aPos, const COLOR4D aColor, const wxString& aText,
-                       double aOrient, const wxSize& aSize, enum EDA_TEXT_HJUSTIFY_T aH_justify,
-                       enum EDA_TEXT_VJUSTIFY_T aV_justify, int aWidth, bool aItalic, bool aBold,
+                       double aOrient, const wxSize& aSize, TEXT_ATTRIBUTES::HORIZONTAL_ALIGNMENT aHorizontalAlignment,
+                       TEXT_ATTRIBUTES::VERTICAL_ALIGNMENT aVerticalAlignment, int aWidth, bool aItalic, bool aBold,
                        bool aMultilineAllowed = false, KIFONT::FONT* aFont = nullptr,
                        void* aData = NULL );
 

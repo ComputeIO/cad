@@ -227,22 +227,22 @@ static inline char* ReadLine( LINE_READER* rdr, const char* caller )
 #endif
 
 
-static EDA_TEXT_HJUSTIFY_T horizJustify( const char* horizontal )
+static TEXT_ATTRIBUTES::HORIZONTAL_ALIGNMENT horizJustify( const char* horizontal )
 {
     if( !strcmp( "L", horizontal ) )
-        return GR_TEXT_HJUSTIFY_LEFT;
+        return TEXT_ATTRIBUTES::H_LEFT;
     if( !strcmp( "R", horizontal ) )
-        return GR_TEXT_HJUSTIFY_RIGHT;
-    return GR_TEXT_HJUSTIFY_CENTER;
+        return TEXT_ATTRIBUTES::H_RIGHT;
+    return TEXT_ATTRIBUTES::H_CENTER;
 }
 
-static EDA_TEXT_VJUSTIFY_T vertJustify( const char* vertical )
+static TEXT_ATTRIBUTES::VERTICAL_ALIGNMENT vertJustify( const char* vertical )
 {
     if( !strcmp( "T", vertical ) )
-        return GR_TEXT_VJUSTIFY_TOP;
+        return TEXT_ATTRIBUTES::V_TOP;
     if( !strcmp( "B", vertical ) )
-        return GR_TEXT_VJUSTIFY_BOTTOM;
-    return GR_TEXT_VJUSTIFY_CENTER;
+        return TEXT_ATTRIBUTES::V_BOTTOM;
+    return TEXT_ATTRIBUTES::V_CENTER;
 }
 
 
@@ -1820,10 +1820,10 @@ void LEGACY_PLUGIN::loadMODULE_TEXT( FP_TEXT* aText )
     aText->SetItalic( italic && *italic == 'I' );
 
     if( hjust )
-        aText->SetHorizJustify( horizJustify( hjust ) );
+        aText->Align( horizJustify( hjust ) );
 
     if( vjust )
-        aText->SetVertJustify( vertJustify( vjust ) );
+        aText->Align( vertJustify( vjust ) );
 
      // A protection against mal formed (or edited by hand) files:
     if( layer_num < FIRST_LAYER )
@@ -2147,15 +2147,15 @@ void LEGACY_PLUGIN::loadPCB_TEXT()
             pcbtxt->SetItalic( !strcmp( style, "Italic" ) );
 
             if( hJustify )
-                pcbtxt->SetHorizJustify( horizJustify( hJustify ) );
+                pcbtxt->Align( horizJustify( hJustify ) );
             else
             {
                 // boom, somebody changed a constructor, I was relying on this:
-                wxASSERT( pcbtxt->GetHorizJustify() == GR_TEXT_HJUSTIFY_CENTER );
+                wxASSERT( pcbtxt->GetHorizontalAlignment() == TEXT_ATTRIBUTES::H_CENTER );
             }
 
             if( vJustify )
-                pcbtxt->SetVertJustify( vertJustify( vJustify ) );
+                pcbtxt->Align( vertJustify( vJustify ) );
 
             if( layer_num < FIRST_COPPER_LAYER )
                 layer_num = FIRST_COPPER_LAYER;

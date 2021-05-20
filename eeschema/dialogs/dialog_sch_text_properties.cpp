@@ -43,9 +43,9 @@ class SCH_EDIT_FRAME;
 class SCH_TEXT;
 
 BITMAPS DIALOG_SCH_TEXT_PROPERTIES::label_icons[] = { BITMAPS::label_input, BITMAPS::label_output,
-                                                       BITMAPS::label_bidirectional,
-                                                       BITMAPS::label_tristate,
-                                                       BITMAPS::label_passive };
+                                                      BITMAPS::label_bidirectional,
+                                                      BITMAPS::label_tristate,
+                                                      BITMAPS::label_passive };
 
 //m_textSize( aParent, m_textSizeLabel, m_textSizeCtrl, m_textSizeUnits, false ),
 
@@ -256,11 +256,11 @@ bool DIALOG_SCH_TEXT_PROPERTIES::TransferDataToWindow()
     bool showJustify = m_CurrentText->IsMultilineAllowed();
     if( showJustify )
     {
-        switch( m_CurrentText->GetHorizJustify() )
+        switch( m_CurrentText->GetHorizontalAlignment() )
         {
-        case GR_TEXT_HJUSTIFY_LEFT: m_Justify->SetSelection( 0 ); break;
-        case GR_TEXT_HJUSTIFY_CENTER: m_Justify->SetSelection( 1 ); break;
-        case GR_TEXT_HJUSTIFY_RIGHT: m_Justify->SetSelection( 2 ); break;
+        case TEXT_ATTRIBUTES::H_LEFT: m_Justify->SetSelection( 0 ); break;
+        case TEXT_ATTRIBUTES::H_CENTER: m_Justify->SetSelection( 1 ); break;
+        case TEXT_ATTRIBUTES::H_RIGHT: m_Justify->SetSelection( 2 ); break;
         }
     }
     else
@@ -285,6 +285,8 @@ bool DIALOG_SCH_TEXT_PROPERTIES::TransferDataToWindow()
     m_Mirrored->SetValue( m_CurrentText->IsMirrored() );
 
     m_FontLineSpacing->SetValue( wxString::Format( "%.1f", m_CurrentText->GetLineSpacing() ) );
+
+    m_KeepUpright->SetValue( m_CurrentText->IsKeepUpright() );
 
     return true;
 }
@@ -394,13 +396,12 @@ bool DIALOG_SCH_TEXT_PROPERTIES::TransferDataFromWindow()
         return false;
     }
 
-    //m_CurrentText->SetLabelSpinStyle( (LABEL_SPIN_STYLE::SPIN) m_TextOrient->GetSelection() );
     switch( m_Justify->GetSelection() )
     {
     case 0:
-    default: m_CurrentText->SetHorizJustify( GR_TEXT_HJUSTIFY_LEFT ); break;
-    case 1: m_CurrentText->SetHorizJustify( GR_TEXT_HJUSTIFY_CENTER ); break;
-    case 2: m_CurrentText->SetHorizJustify( GR_TEXT_HJUSTIFY_RIGHT ); break;
+    default: m_CurrentText->Align( TEXT_ATTRIBUTES::H_LEFT ); break;
+    case 1: m_CurrentText->Align( TEXT_ATTRIBUTES::H_CENTER ); break;
+    case 2: m_CurrentText->Align( TEXT_ATTRIBUTES::H_RIGHT ); break;
     }
 
     switch( m_OrientCtrl->GetSelection() )
@@ -438,6 +439,8 @@ bool DIALOG_SCH_TEXT_PROPERTIES::TransferDataFromWindow()
         SCH_GLOBALLABEL* label = static_cast<SCH_GLOBALLABEL*>( m_CurrentText );
         label->UpdateIntersheetRefProps();
     }
+
+    m_CurrentText->SetKeepUpright( m_KeepUpright->GetValue() );
 
     return true;
 }

@@ -58,57 +58,17 @@ TEXT_ATTRIBUTES::TEXT_ATTRIBUTES( const EDA_TEXT& aText )
     {
         m_angle = angle;
     }
-    SetHorizJustify( aText.GetHorizJustify() );
-    SetVertJustify( aText.GetVertJustify() );
+    SetFont( aText.GetFont() );
+    Align( aText.GetHorizontalAlignment(), aText.GetVerticalAlignment() );
     SetBold( aText.IsBold() );
     SetItalic( aText.IsItalic() );
     SetMirrored( aText.IsMirrored() );
+    SetMultiline( aText.IsMultilineAllowed() );
     SetLineSpacing( aText.GetLineSpacing() );
+    SetSize( aText.GetTextSize() );
+    SetStrokeWidth( aText.GetTextThickness() );
+    SetKeepUpright( aText.IsKeepUpright() );
 }
-
-
-TEXT_ATTRIBUTES::TEXT_ATTRIBUTES( const EDA_ANGLE& aAngle, EDA_TEXT_HJUSTIFY_T aHorizontalJustify,
-                                  EDA_TEXT_VJUSTIFY_T aVerticalJustify )
-{
-    m_orientation = ReadOrientation( aAngle );
-    if( m_orientation == TEXT_ATTRIBUTES::FREE_ANGLE )
-    {
-        m_angle = EDA_ANGLE( aAngle );
-    }
-
-    m_horizontal_alignment = HorizontalJustifyToAlignment( aHorizontalJustify );
-    m_vertical_alignment = VerticalJustifyToAlignment( aVerticalJustify );
-}
-
-
-#ifdef EDA_TEXT_OVERHAUL
-TEXT_ATTRIBUTES::TEXT_ATTRIBUTES( LABEL_SPIN_STYLE aSpin ) :
-        m_vertical_alignment( TEXT_ATTRIBUTES::V_BOTTOM )
-{
-    switch( aSpin )
-    {
-    case LABEL_SPIN_STYLE::LEFT:
-        SetOrientation( TEXT_ATTRIBUTES::ANGLE_0 );
-        Align( TEXT_ATTRIBUTES::H_LEFT );
-        break;
-    case LABEL_SPIN_STYLE::UP:
-        SetOrientation( TEXT_ATTRIBUTES::ANGLE_90 );
-        Align( TEXT_ATTRIBUTES::H_LEFT );
-        break;
-    case LABEL_SPIN_STYLE::RIGHT:
-        SetOrientation( TEXT_ATTRIBUTES::ANGLE_0 );
-        Align( TEXT_ATTRIBUTES::H_RIGHT );
-        break;
-    case LABEL_SPIN_STYLE::BOTTOM:
-        SetOrientation( TEXT_ATTRIBUTES::ANGLE_90 );
-        Align( TEXT_ATTRIBUTES::H_RIGHT );
-        break;
-    default:
-        // can't happen TODO assert
-        break;
-    }
-}
-#endif //EDA_TEXT_OVERHAUL
 
 /**
  * Rotate counterclockwise.
@@ -147,16 +107,15 @@ TEXT_ATTRIBUTES& TEXT_ATTRIBUTES::RotateCW()
 
 TEXT_ATTRIBUTES& TEXT_ATTRIBUTES::SpinCCW()
 {
+    RotateCCW();
     switch( m_orientation )
     {
-    case TEXT_ATTRIBUTES::ANGLE_0: SetOrientation( TEXT_ATTRIBUTES::ANGLE_90 ); break;
-    case TEXT_ATTRIBUTES::ANGLE_90:
-        SetOrientation( TEXT_ATTRIBUTES::ANGLE_0 );
-        Align( OppositeHorizontalAlignment() );
+    case TEXT_ATTRIBUTES::ANGLE_0:
+    case TEXT_ATTRIBUTES::ANGLE_180:
+        FlipHorizontalAlignment();
         break;
     default:
-        // should not get here, TODO log anomaly
-        SetOrientation( TEXT_ATTRIBUTES::ANGLE_0 );
+        break;
     }
     return *this;
 }
@@ -164,16 +123,15 @@ TEXT_ATTRIBUTES& TEXT_ATTRIBUTES::SpinCCW()
 
 TEXT_ATTRIBUTES& TEXT_ATTRIBUTES::SpinCW()
 {
+    RotateCW();
     switch( m_orientation )
     {
-    case TEXT_ATTRIBUTES::ANGLE_0:
-        SetOrientation( TEXT_ATTRIBUTES::ANGLE_90 );
-        Align( OppositeHorizontalAlignment() );
+    case TEXT_ATTRIBUTES::ANGLE_90:
+    case TEXT_ATTRIBUTES::ANGLE_270:
+        FlipHorizontalAlignment();
         break;
-    case TEXT_ATTRIBUTES::ANGLE_90: SetOrientation( TEXT_ATTRIBUTES::ANGLE_0 ); break;
     default:
-        // should not get here, TODO log anomaly
-        SetOrientation( TEXT_ATTRIBUTES::ANGLE_0 );
+        break;
     }
     return *this;
 }
@@ -208,60 +166,6 @@ TEXT_ATTRIBUTES& TEXT_ATTRIBUTES::SetAngle( const EDA_ANGLE& aAngle )
     }
 
     return *this;
-}
-
-
-EDA_TEXT_HJUSTIFY_T TEXT_ATTRIBUTES::GetHorizJustify() const
-{
-    switch( m_horizontal_alignment )
-    {
-    case TEXT_ATTRIBUTES::H_LEFT: return EDA_TEXT_HJUSTIFY_T::GR_TEXT_HJUSTIFY_LEFT;
-    case TEXT_ATTRIBUTES::H_RIGHT: return EDA_TEXT_HJUSTIFY_T::GR_TEXT_HJUSTIFY_RIGHT;
-    case TEXT_ATTRIBUTES::H_CENTER:
-    default: return EDA_TEXT_HJUSTIFY_T::GR_TEXT_HJUSTIFY_CENTER;
-    }
-}
-
-
-EDA_TEXT_VJUSTIFY_T TEXT_ATTRIBUTES::GetVertJustify() const
-{
-    switch( m_vertical_alignment )
-    {
-    case TEXT_ATTRIBUTES::V_TOP: return EDA_TEXT_VJUSTIFY_T::GR_TEXT_VJUSTIFY_TOP;
-    case TEXT_ATTRIBUTES::V_BOTTOM: return EDA_TEXT_VJUSTIFY_T::GR_TEXT_VJUSTIFY_BOTTOM;
-    case TEXT_ATTRIBUTES::V_CENTER:
-    default: return EDA_TEXT_VJUSTIFY_T::GR_TEXT_VJUSTIFY_CENTER;
-    }
-}
-
-
-void TEXT_ATTRIBUTES::SetHorizJustify( EDA_TEXT_HJUSTIFY_T aHorizJustify )
-{
-#ifdef DEBUG
-    std::cerr << "TEXT_ATTRIBUTES::SetHorizJustify( " << aHorizJustify << " )" << std::endl;
-#endif
-    switch( aHorizJustify )
-    {
-    case EDA_TEXT_HJUSTIFY_T::GR_TEXT_HJUSTIFY_LEFT: Align( TEXT_ATTRIBUTES::H_LEFT ); break;
-    case EDA_TEXT_HJUSTIFY_T::GR_TEXT_HJUSTIFY_RIGHT: Align( TEXT_ATTRIBUTES::H_RIGHT ); break;
-    case EDA_TEXT_HJUSTIFY_T::GR_TEXT_HJUSTIFY_CENTER:
-    default: Align( TEXT_ATTRIBUTES::H_CENTER );
-    }
-}
-
-
-void TEXT_ATTRIBUTES::SetVertJustify( EDA_TEXT_VJUSTIFY_T aVertJustify )
-{
-#ifdef DEBUG
-    std::cerr << "TEXT_ATTRIBUTES::SetVertJustify( " << aVertJustify << " )" << std::endl;
-#endif
-    switch( aVertJustify )
-    {
-    case EDA_TEXT_VJUSTIFY_T::GR_TEXT_VJUSTIFY_TOP: Align( TEXT_ATTRIBUTES::V_TOP ); break;
-    case EDA_TEXT_VJUSTIFY_T::GR_TEXT_VJUSTIFY_BOTTOM: Align( TEXT_ATTRIBUTES::V_BOTTOM ); break;
-    case EDA_TEXT_VJUSTIFY_T::GR_TEXT_VJUSTIFY_CENTER:
-    default: Align( TEXT_ATTRIBUTES::V_CENTER );
-    }
 }
 
 

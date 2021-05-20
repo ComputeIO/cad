@@ -870,8 +870,8 @@ void DXF_PLOTTER::Text( const wxPoint&              aPos,
                         const wxString&             aText,
                         double                      aOrient,
                         const wxSize&               aSize,
-                        enum EDA_TEXT_HJUSTIFY_T    aH_justify,
-                        enum EDA_TEXT_VJUSTIFY_T    aV_justify,
+                        TEXT_ATTRIBUTES::HORIZONTAL_ALIGNMENT aHorizontalAlignment,
+                        TEXT_ATTRIBUTES::VERTICAL_ALIGNMENT aVerticalAlignment,
                         int                         aWidth,
                         bool                        aItalic,
                         bool                        aBold,
@@ -890,8 +890,9 @@ void DXF_PLOTTER::Text( const wxPoint&              aPos,
         // output text as graphics.
         // Perhaps multiline texts could be handled as DXF text entity
         // but I do not want spend time about this (JPC)
-        PLOTTER::Text( aPos, aColor, aText, aOrient, aSize, aH_justify, aV_justify,
-                       aWidth, aItalic, aBold, aMultilineAllowed, aFont, aData );
+        PLOTTER::Text( aPos, aColor, aText, aOrient, aSize, aHorizontalAlignment,
+                       aVerticalAlignment, aWidth, aItalic, aBold, aMultilineAllowed, aFont,
+                       aData );
     }
     else
     {
@@ -902,27 +903,27 @@ void DXF_PLOTTER::Text( const wxPoint&              aPos,
         wxString cname = getDXFColorName( m_currentColor );
         DPOINT size_dev = userToDeviceSize( aSize );
         int h_code = 0, v_code = 0;
-        switch( aH_justify )
+        switch( aHorizontalAlignment )
         {
-        case GR_TEXT_HJUSTIFY_LEFT:
+        case TEXT_ATTRIBUTES::H_LEFT:
             h_code = 0;
             break;
-        case GR_TEXT_HJUSTIFY_CENTER:
+        case TEXT_ATTRIBUTES::H_CENTER:
             h_code = 1;
             break;
-        case GR_TEXT_HJUSTIFY_RIGHT:
+        case TEXT_ATTRIBUTES::H_RIGHT:
             h_code = 2;
             break;
         }
-        switch( aV_justify )
+        switch( aVerticalAlignment )
         {
-        case GR_TEXT_VJUSTIFY_TOP:
+        case TEXT_ATTRIBUTES::V_TOP:
             v_code = 3;
             break;
-        case GR_TEXT_VJUSTIFY_CENTER:
+        case TEXT_ATTRIBUTES::V_CENTER:
             v_code = 2;
             break;
-        case GR_TEXT_VJUSTIFY_BOTTOM:
+        case TEXT_ATTRIBUTES::V_BOTTOM:
             v_code = 1;
             break;
         }

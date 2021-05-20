@@ -698,42 +698,39 @@ void EAGLE_PLUGIN::loadPlain( wxXmlNode* aGraphics )
                 {
                 case ETEXT::CENTER:
                     // this was the default in pcbtxt's constructor
+                    pcbtxt->Align( TEXT_ATTRIBUTES::H_CENTER, TEXT_ATTRIBUTES::V_CENTER );
                     break;
 
                 case ETEXT::CENTER_LEFT:
-                    pcbtxt->SetHorizJustify( GR_TEXT_HJUSTIFY_LEFT );
+                    pcbtxt->Align( TEXT_ATTRIBUTES::H_LEFT, TEXT_ATTRIBUTES::V_CENTER );
                     break;
 
                 case ETEXT::CENTER_RIGHT:
-                    pcbtxt->SetHorizJustify( GR_TEXT_HJUSTIFY_RIGHT );
+                    pcbtxt->Align( TEXT_ATTRIBUTES::H_RIGHT, TEXT_ATTRIBUTES::V_CENTER );
                     break;
 
                 case ETEXT::TOP_CENTER:
-                    pcbtxt->SetVertJustify( GR_TEXT_VJUSTIFY_TOP );
+                    pcbtxt->Align( TEXT_ATTRIBUTES::H_CENTER, TEXT_ATTRIBUTES::V_TOP );
                     break;
 
                 case ETEXT::TOP_LEFT:
-                    pcbtxt->SetHorizJustify( GR_TEXT_HJUSTIFY_LEFT );
-                    pcbtxt->SetVertJustify( GR_TEXT_VJUSTIFY_TOP );
+                    pcbtxt->Align( TEXT_ATTRIBUTES::H_LEFT, TEXT_ATTRIBUTES::V_TOP );
                     break;
 
                 case ETEXT::TOP_RIGHT:
-                    pcbtxt->SetHorizJustify( GR_TEXT_HJUSTIFY_RIGHT );
-                    pcbtxt->SetVertJustify( GR_TEXT_VJUSTIFY_TOP );
+                    pcbtxt->Align( TEXT_ATTRIBUTES::H_RIGHT, TEXT_ATTRIBUTES::V_TOP );
                     break;
 
                 case ETEXT::BOTTOM_CENTER:
-                    pcbtxt->SetVertJustify( GR_TEXT_VJUSTIFY_BOTTOM );
+                    pcbtxt->Align( TEXT_ATTRIBUTES::H_CENTER, TEXT_ATTRIBUTES::V_BOTTOM );
                     break;
 
                 case ETEXT::BOTTOM_LEFT:
-                    pcbtxt->SetHorizJustify( GR_TEXT_HJUSTIFY_LEFT );
-                    pcbtxt->SetVertJustify( GR_TEXT_VJUSTIFY_BOTTOM );
+                    pcbtxt->Align( TEXT_ATTRIBUTES::H_LEFT, TEXT_ATTRIBUTES::V_BOTTOM );
                     break;
 
                 case ETEXT::BOTTOM_RIGHT:
-                    pcbtxt->SetHorizJustify( GR_TEXT_HJUSTIFY_RIGHT );
-                    pcbtxt->SetVertJustify( GR_TEXT_VJUSTIFY_BOTTOM );
+                    pcbtxt->Align( TEXT_ATTRIBUTES::H_RIGHT, TEXT_ATTRIBUTES::V_BOTTOM );
                     break;
                 }
             }
@@ -1500,41 +1497,37 @@ void EAGLE_PLUGIN::orientFPText( FOOTPRINT* aFootprint, const EELEMENT& e, FP_TE
         switch( align )
         {
         case ETEXT::TOP_RIGHT:
-            aFPText->SetHorizJustify( GR_TEXT_HJUSTIFY_RIGHT );
-            aFPText->SetVertJustify( GR_TEXT_VJUSTIFY_TOP );
+            aFPText->Align( TEXT_ATTRIBUTES::H_RIGHT, TEXT_ATTRIBUTES::V_TOP );
             break;
 
         case ETEXT::BOTTOM_LEFT:
-            aFPText->SetHorizJustify( GR_TEXT_HJUSTIFY_LEFT );
-            aFPText->SetVertJustify( GR_TEXT_VJUSTIFY_BOTTOM );
+            aFPText->Align( TEXT_ATTRIBUTES::H_LEFT, TEXT_ATTRIBUTES::V_BOTTOM );
             break;
 
         case ETEXT::TOP_LEFT:
-            aFPText->SetHorizJustify( GR_TEXT_HJUSTIFY_LEFT );
-            aFPText->SetVertJustify( GR_TEXT_VJUSTIFY_TOP );
+            aFPText->Align( TEXT_ATTRIBUTES::H_LEFT, TEXT_ATTRIBUTES::V_TOP );
             break;
 
         case ETEXT::BOTTOM_RIGHT:
-            aFPText->SetHorizJustify( GR_TEXT_HJUSTIFY_RIGHT );
-            aFPText->SetVertJustify( GR_TEXT_VJUSTIFY_BOTTOM );
+            aFPText->Align( TEXT_ATTRIBUTES::H_RIGHT, TEXT_ATTRIBUTES::V_BOTTOM );
             break;
 
         case ETEXT::TOP_CENTER:
-            aFPText->SetHorizJustify( GR_TEXT_HJUSTIFY_CENTER );
-            aFPText->SetVertJustify( GR_TEXT_VJUSTIFY_TOP );
+            aFPText->Align( TEXT_ATTRIBUTES::H_CENTER, TEXT_ATTRIBUTES::V_TOP );
             break;
 
         case ETEXT::BOTTOM_CENTER:
-            aFPText->SetHorizJustify( GR_TEXT_HJUSTIFY_CENTER );
-            aFPText->SetVertJustify( GR_TEXT_VJUSTIFY_BOTTOM );
+            aFPText->Align( TEXT_ATTRIBUTES::H_CENTER, TEXT_ATTRIBUTES::V_BOTTOM );
             break;
 
         default:
-            ;
+            break; // TODO? aFPText->Align( TEXT_ATTRIBUTES::H_CENTER, TEXT_ATTRIBUTES::V_CENTER );
         }
     }
-    else    // Part is not smash so use Lib default for NAME/VALUE // the text is per the original package, sans <attribute>
+    else
     {
+        // Part is not smash so use Lib default for NAME/VALUE
+        // the text is per the original package, sans <attribute>
         double degrees = ( aFPText->GetTextAngle() + aFootprint->GetOrientation() ) / 10;
 
         // @todo there are a few more cases than these to contend with:
@@ -1542,8 +1535,7 @@ void EAGLE_PLUGIN::orientFPText( FOOTPRINT* aFootprint, const EELEMENT& e, FP_TE
          || ( aFPText->IsMirrored() && ( degrees == 360 ) ) )
         {
             // ETEXT::TOP_RIGHT:
-            aFPText->SetHorizJustify( GR_TEXT_HJUSTIFY_RIGHT );
-            aFPText->SetVertJustify( GR_TEXT_VJUSTIFY_TOP );
+            aFPText->Align( TEXT_ATTRIBUTES::H_RIGHT, TEXT_ATTRIBUTES::V_TOP );
         }
     }
 }
@@ -1844,42 +1836,39 @@ void EAGLE_PLUGIN::packageText( FOOTPRINT* aFootprint, wxXmlNode* aTree ) const
     {
     case ETEXT::CENTER:
         // this was the default in pcbtxt's constructor
+        txt->Align( TEXT_ATTRIBUTES::H_CENTER, TEXT_ATTRIBUTES::V_CENTER );
         break;
 
     case ETEXT::CENTER_LEFT:
-        txt->SetHorizJustify( GR_TEXT_HJUSTIFY_LEFT );
+        txt->Align( TEXT_ATTRIBUTES::H_LEFT, TEXT_ATTRIBUTES::V_CENTER );
         break;
 
     case ETEXT::CENTER_RIGHT:
-        txt->SetHorizJustify( GR_TEXT_HJUSTIFY_RIGHT );
+        txt->Align( TEXT_ATTRIBUTES::H_RIGHT, TEXT_ATTRIBUTES::V_CENTER );
         break;
 
     case ETEXT::TOP_CENTER:
-        txt->SetVertJustify( GR_TEXT_VJUSTIFY_TOP );
+        txt->Align( TEXT_ATTRIBUTES::H_CENTER, TEXT_ATTRIBUTES::V_TOP );
         break;
 
     case ETEXT::TOP_LEFT:
-        txt->SetHorizJustify( GR_TEXT_HJUSTIFY_LEFT );
-        txt->SetVertJustify( GR_TEXT_VJUSTIFY_TOP );
+        txt->Align( TEXT_ATTRIBUTES::H_LEFT, TEXT_ATTRIBUTES::V_TOP );
         break;
 
     case ETEXT::TOP_RIGHT:
-        txt->SetHorizJustify( GR_TEXT_HJUSTIFY_RIGHT );
-        txt->SetVertJustify( GR_TEXT_VJUSTIFY_TOP );
+        txt->Align( TEXT_ATTRIBUTES::H_RIGHT, TEXT_ATTRIBUTES::V_TOP );
         break;
 
     case ETEXT::BOTTOM_CENTER:
-        txt->SetVertJustify( GR_TEXT_VJUSTIFY_BOTTOM );
+        txt->Align( TEXT_ATTRIBUTES::H_CENTER, TEXT_ATTRIBUTES::V_BOTTOM );
         break;
 
     case ETEXT::BOTTOM_LEFT:
-        txt->SetHorizJustify( GR_TEXT_HJUSTIFY_LEFT );
-        txt->SetVertJustify( GR_TEXT_VJUSTIFY_BOTTOM );
+        txt->Align( TEXT_ATTRIBUTES::H_LEFT, TEXT_ATTRIBUTES::V_BOTTOM );
         break;
 
     case ETEXT::BOTTOM_RIGHT:
-        txt->SetHorizJustify( GR_TEXT_HJUSTIFY_RIGHT );
-        txt->SetVertJustify( GR_TEXT_VJUSTIFY_BOTTOM );
+        txt->Align( TEXT_ATTRIBUTES::H_RIGHT, TEXT_ATTRIBUTES::V_BOTTOM );
         break;
     }
 }

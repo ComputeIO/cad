@@ -660,7 +660,10 @@ int SCH_EDIT_TOOL::Mirror( const TOOL_EVENT& aEvent )
         case SCH_HIER_LABEL_T:
         {
             SCH_TEXT* textItem = static_cast<SCH_TEXT*>( item );
-            textItem->MirrorSpinStyle( !vertical );
+            if( vertical )
+                textItem->MirrorAcrossXAxis();
+            else
+                textItem->MirrorAcrossYAxis();
             break;
         }
 
@@ -691,9 +694,9 @@ int SCH_EDIT_TOOL::Mirror( const TOOL_EVENT& aEvent )
             SCH_FIELD* field = static_cast<SCH_FIELD*>( item );
 
             if( vertical )
-                field->SetVertJustify( (EDA_TEXT_VJUSTIFY_T)-field->GetVertJustify() );
+                field->FlipVerticalAlignment();
             else
-                field->SetHorizJustify( (EDA_TEXT_HJUSTIFY_T)-field->GetHorizJustify() );
+                field->FlipHorizontalAlignment();
 
             // Now that we're re-justifying a field, they're no longer autoplaced.
             static_cast<SCH_ITEM*>( item->GetParent() )->ClearFieldsAutoplaced();
@@ -1622,7 +1625,6 @@ int SCH_EDIT_TOOL::ChangeTextType( const TOOL_EVENT& aEvent )
             bool             selected    = text->IsSelected();
             SCH_TEXT*        newtext     = nullptr;
             const wxPoint&   position    = text->GetPosition();
-            LABEL_SPIN_STYLE orientation = text->GetLabelSpinStyle();
             wxString         txt         = UnescapeString( text->GetText() );
 
             // There can be characters in a SCH_TEXT object that can break labels so we have to
@@ -1657,12 +1659,13 @@ int SCH_EDIT_TOOL::ChangeTextType( const TOOL_EVENT& aEvent )
             //
             newtext->SetFlags( text->GetEditFlags() );
             newtext->SetShape( text->GetShape() );
-            newtext->SetLabelSpinStyle( orientation );
+            newtext->SetAlignedAngle( text->GetTextEdaAngle() );
             newtext->SetTextSize( text->GetTextSize() );
             newtext->SetTextThickness( text->GetTextThickness() );
             newtext->SetItalic( text->IsItalic() );
             newtext->SetBold( text->IsBold() );
             newtext->SetIsDangling( text->IsDangling() );
+            newtext->SetFont( text->GetFont() );
 
             if( selected )
                 m_toolMgr->RunAction( EE_ACTIONS::removeItemFromSel, true, text );
