@@ -54,6 +54,7 @@ void GMSH_MESHER::Load25DMesh()
     std::set<int>      padHoleTags;
     std::set<int>      holeTags;
     int                currentHeight = 0;
+    int                lastHeight = 0;
     m_board->GetDesignSettings().GetStackupDescriptor().SynchronizeWithBoard(
             &m_board->GetDesignSettings() );
     for( const BOARD_STACKUP_ITEM* item :
@@ -65,6 +66,8 @@ void GMSH_MESHER::Load25DMesh()
         }
 
         double currentHeight_mm = currentHeight / IU_PER_MM;
+        double lastHeight_mm = lastHeight / IU_PER_MM;
+        double holeHeight_mm = currentHeight_mm - lastHeight_mm;
 
         // We only model copper for now
         if( item->GetType() != BS_ITEM_TYPE_COPPER )
@@ -85,13 +88,24 @@ void GMSH_MESHER::Load25DMesh()
             padHoleTags.emplace( idx );
         }
 
+        std::set<const PAD*> ignoredPads;
         for( const auto& pad_region : m_pad_regions )
         {
+            ignoredPads.emplace( pad_region.second );
             for( const auto& idx :
                  PadTo2DPlaneSurfaces( layer, -currentHeight_mm, pad_region.second ) )
             {
                 fragments.emplace_back( 2, idx );
                 padRegions.emplace( idx, pad_region.first );
+            }
+
+            if( holeHeight_mm != 0. && pad_region.second->IsOnLayer( layer )
+                && pad_region.second->GetAttribute() != PAD_ATTRIB::SMD )
+            {
+                int padHoleSurface = PadHoleToCurveLoop( pad_region.second, -currentHeight_mm );
+                int extrudedSurface = CurveLoopToPlaneSurfaces( padHoleSurface, holeHeight_mm );
+                fragments.emplace_back( 2, extrudedSurface );
+                padRegions.emplace( extrudedSurface, pad_region.first );
             }
         }
 
@@ -109,7 +123,42 @@ void GMSH_MESHER::Load25DMesh()
                 fragments.emplace_back( 2, idx );
                 holeTags.emplace( idx );
             }
+
+            if( holeHeight_mm != 0. )
+            {
+                // Via holes
+                for( const TRACK* track : m_board->Tracks() )
+                {
+                    if( !track->IsOnLayer( layer ) || !VIA::ClassOf( track ) )
+                        continue;
+
+                    int viaHoleSurface = ViaHoleToCurveLoop( static_cast<const VIA*>( track ),
+                                                             -currentHeight_mm );
+                    int extrudedSurface = CurveLoopToPlaneSurfaces( viaHoleSurface, holeHeight_mm );
+                    fragments.emplace_back( 2, extrudedSurface );
+                    netRegions.emplace( extrudedSurface, net_region.first );
+                }
+
+                // Pad holes
+                for( const FOOTPRINT* footprint : m_board->Footprints() )
+                {
+                    for( const PAD* pad : footprint->Pads() )
+                    {
+                        if( !pad->IsOnLayer( layer ) || pad->GetAttribute() == PAD_ATTRIB::SMD
+                            || ignoredPads.count( pad ) != 0 )
+                            continue;
+
+                        int padHoleSurface = PadHoleToCurveLoop( pad, -currentHeight_mm );
+                        int extrudedSurface =
+                                CurveLoopToPlaneSurfaces( padHoleSurface, holeHeight_mm );
+                        fragments.emplace_back( 2, extrudedSurface );
+                        netRegions.emplace( extrudedSurface, net_region.first );
+                    }
+                }
+            }
         }
+
+        lastHeight = currentHeight;
     }
 
     std::cerr << "fragment:" << std::endl;
@@ -385,6 +434,23 @@ std::map<int, std::vector<int>> GMSH_MESHER::RegionsToShapesAfterFragment(
     return regionToShapeId;
 }
 
+int GMSH_MESHER::CurveLoopToPlaneSurfaces( const int aCurveLoop, double aExtrudeZ )
+{
+    std::vector<std::pair<int, int>> dimTags = { { 1, aCurveLoop } };
+
+    std::vector<std::pair<int, int>> ov;
+    gmsh::model::occ::extrude( dimTags, 0, 0, aExtrudeZ, ov );
+
+    for( const auto& idx : ov )
+    {
+        if( idx.first == 2 )
+        {
+            return idx.second;
+        }
+    }
+    return -1; // TODO: should never happen
+}
+
 std::vector<int> GMSH_MESHER::PlaneSurfacesToVolumes( const std::vector<int> aSurfaces,
                                                       double                 aExtrudeZ )
 {
@@ -505,6 +571,25 @@ std::vector<int> GMSH_MESHER::HolesTo2DPlaneSurfaces( PCB_LAYER_ID aLayer, doubl
     return gmshSurfaces;
 }
 
+int GMSH_MESHER::ViaHoleToCurveLoop( const VIA* aVia, double aOffsetZ, double aCopperOffset )
+{
+    double radius = aVia->GetDrill() / 2. - aCopperOffset;
+    std::cerr << radius << std::endl;
+    return gmsh::model::occ::addCircle( TransformPoint( aVia->GetPosition().x ),
+                                        TransformPoint( aVia->GetPosition().y ), aOffsetZ,
+                                        TransformPoint( radius ) );
+}
+
+int GMSH_MESHER::PadHoleToCurveLoop( const PAD* aPad, double aOffsetZ, double aCopperOffset )
+{
+    double radiusX = aPad->GetDrillSizeX() / 2. - aCopperOffset;
+    double radiusY = aPad->GetDrillSizeY() / 2. - aCopperOffset;
+
+    return gmsh::model::occ::addEllipse( TransformPoint( aPad->GetPosition().x ),
+                                         TransformPoint( aPad->GetPosition().y ), aOffsetZ,
+                                         TransformPoint( radiusX ), TransformPoint( radiusY ) );
+    // TODO: rotate
+}
 
 std::vector<int> GMSH_MESHER::PadTo2DPlaneSurfaces( PCB_LAYER_ID aLayer, double aOffsetZ,
                                                     const PAD* aPad )

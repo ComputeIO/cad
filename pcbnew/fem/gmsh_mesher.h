@@ -41,6 +41,7 @@ class SHAPE_LINE_CHAIN;
 class BOARD;
 class TRACK;
 class PAD;
+class VIA;
 class ZONE;
 
 
@@ -74,6 +75,8 @@ private:
                                   const std::map<int, int>&                            netRegions,
                                   const std::set<int>& padHoleTags, const std::set<int>& holeTags );
 
+    int CurveLoopToPlaneSurfaces( const int aCurveLoop, double aExtrudeZ );
+
     std::vector<int> PlaneSurfacesToVolumes( const std::vector<int> aSurfaces, double aExtrudeZ );
 
     /**
@@ -86,6 +89,10 @@ private:
     int ShapeLineChainToCurveLoop( const SHAPE_LINE_CHAIN& aLineChain, double aOffsetZ );
 
     std::vector<int> HolesTo2DPlaneSurfaces( PCB_LAYER_ID aLayer, double aOffsetZ );
+
+    int ViaHoleToCurveLoop( const VIA* aVia, double aOffsetZ, double aCopperOffset = 0 );
+
+    int PadHoleToCurveLoop( const PAD* aPad, double aOffsetZ, double aCopperOffset = 0 );
 
     std::vector<int> PadTo2DPlaneSurfaces( PCB_LAYER_ID aLayer, double aOffsetZ, const PAD* aPad );
 
