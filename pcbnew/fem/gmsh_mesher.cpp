@@ -527,6 +527,13 @@ GMSH_MESHER::NetTo2DPlaneSurfaces( PCB_LAYER_ID aLayer, double aOffsetZ, const i
 {
     SHAPE_POLY_SET polyset;
 
+    // including those outlines could lead to small meshing issues (as we need to subtract the shape again)
+    std::set<const PAD*> ignoredPads;
+    for( const auto& pad : m_pad_regions )
+    {
+        ignoredPads.emplace( pad.second );
+    }
+
     // inspired by board_items_to_polygon_shape_transform.cpp
     int maxError = m_board->GetDesignSettings().m_MaxError;
 
@@ -544,7 +551,8 @@ GMSH_MESHER::NetTo2DPlaneSurfaces( PCB_LAYER_ID aLayer, double aOffsetZ, const i
     {
         for( const PAD* pad : footprint->Pads() )
         {
-            if( !pad->IsOnLayer( aLayer ) || pad->GetNetCode() != aNetcode )
+            if( !pad->IsOnLayer( aLayer ) || pad->GetNetCode() != aNetcode
+                || ignoredPads.count( pad ) > 0 )
                 continue;
 
             TransformPadWithClearanceToPolygon( polyset, pad, aLayer, 0, maxError, ERROR_INSIDE );
