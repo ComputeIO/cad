@@ -320,7 +320,232 @@ void GMSH_MESHER::Load3DMesh()
         gmsh::model::addPhysicalGroup( 3, kv.second, kv.first );
     }
 
-    // generated 2.5d-mesh
+    // generated 3d-mesh
+    std::cerr << "generate mesh" << std::endl;
+    gmsh::model::mesh::generate( 3 );
+    //std::cerr << "refine mesh" << std::endl;
+    //gmsh::model::mesh::refine();
+    //std::cerr << "set order mesh" << std::endl;
+    //gmsh::model::mesh::setOrder(2);
+    std::cerr << "finish mesh" << std::endl;
+
+    m_region_surfaces.clear();
+}
+
+
+void GMSH_MESHER::Load3DMeshNew()
+{
+    gmsh::initialize();
+
+    // (1: MeshAdapt, 2: Automatic, 3: Initial mesh only, 5: Delaunay, 6: Frontal-Delaunay, 7: BAMG, 8: Frontal-Delaunay for Quads, 9: Packing of Parallelograms)
+    gmsh::option::setNumber( "Mesh.Algorithm", 2 );
+
+    gmsh::model::add( "pcb" );
+
+    // Generate stackup lookup structure
+    std::map<PCB_LAYER_ID, std::pair<int, int>> layerStackupHeight; // start:stop
+    std::vector<int>                            layerDielectric;
+
+    int    copperPlatingThickness = 35000; // nm
+    double copperPlatingThickness_mm = copperPlatingThickness / IU_PER_MM;
+
+    m_board->GetDesignSettings().GetStackupDescriptor().SynchronizeWithBoard(
+            &m_board->GetDesignSettings() );
+    int currentHeight = 0;
+    for( const BOARD_STACKUP_ITEM* item :
+         m_board->GetDesignSettings().GetStackupDescriptor().GetList() )
+    {
+        switch( item->GetType() )
+        {
+        case BS_ITEM_TYPE_COPPER:
+        {
+            PCB_LAYER_ID layer = item->GetBrdLayerId();
+            double       thickness = item->GetThickness( 0 );
+
+            double startHeight = currentHeight;
+            double endHeight = currentHeight - thickness;
+
+            layerStackupHeight.emplace( layer,
+                                        std::pair<double, double>{ startHeight, endHeight } );
+
+            currentHeight = endHeight;
+
+            switch( layer )
+            {
+            case F_Cu: layerDielectric.emplace_back( endHeight ); break;
+            case B_Cu: layerDielectric.emplace_back( startHeight ); break;
+            default:
+                layerDielectric.emplace_back( ( startHeight + endHeight )
+                                              / 2 ); // dielectric is in the middle
+                break;
+            }
+        }
+        break;
+        case BS_ITEM_TYPE_DIELECTRIC:
+            for( int i = 0; i < item->GetSublayersCount(); i++ )
+            {
+                currentHeight -= item->GetThickness( i );
+                if( i + 1 < item->GetSublayersCount() )
+                {
+                    layerDielectric.emplace_back( currentHeight );
+                }
+            }
+            break;
+        default: break;
+        }
+    }
+
+    std::clog << "-- Layer Stackup heights --" << std::endl;
+    for( const auto& elem : layerStackupHeight )
+    {
+        std::clog << " * " << wxString( LSET::Name( elem.first ) ) << " - " << elem.second.first
+                  << "nm to " << elem.second.second << "nm" << std::endl;
+    }
+    std::clog << "-- Layer Dielectric heights --" << std::endl;
+    for( const auto& height : layerDielectric )
+    {
+        std::clog << " * " << height << "nm" << std::endl;
+    }
+
+    // TODO: better solution to track which elements belong to which surface
+    std::vector<std::pair<int, int>> fragments;
+
+    std::map<int, int> padRegions;
+    std::map<int, int> netRegions;
+    std::set<int>      padHoleTags;
+    std::set<int>      holeTags;
+
+    // Pads
+    std::set<const PAD*> createdPads;
+    for( const auto& pad_region : m_pad_regions )
+    {
+        int        regionId = pad_region.first;
+        const PAD* pad = pad_region.second;
+        createdPads.emplace( pad );
+
+        // TODO: start/stop layers?
+        for( const auto& layers : layerStackupHeight )
+        {
+            if( pad->IsOnLayer( layers.first ) )
+            {
+                double start_mm = layers.second.first / IU_PER_MM;
+                double end_mm = layers.second.second / IU_PER_MM;
+                for( const auto& idx :
+                     PlaneSurfacesToVolumes( PadTo2DPlaneSurfaces( layers.first, start_mm, pad ),
+                                             end_mm - start_mm ) )
+                {
+                    fragments.emplace_back( 3, idx );
+                    padRegions.emplace( idx, regionId );
+                }
+            }
+        }
+
+        // Check if pad has a hole
+        if( pad->GetAttribute() == PAD_ATTRIB::SMD )
+            continue;
+
+        // TODO: get start/end layer from stackup!
+        PCB_LAYER_ID startLayer = F_Cu;
+        PCB_LAYER_ID endLayer = B_Cu;
+
+        double start_mm = layerStackupHeight.at( startLayer ).first / IU_PER_MM;
+        double end_mm = layerStackupHeight.at( endLayer ).second / IU_PER_MM;
+
+        // TODO: why does this not work?
+        //gmsh::model::occ::addCylinder( TransformPoint( pad->po)
+        //int padHoleCurvedLoop = PadHoleToCurveLoop( pad, start_mm );
+        //int padHolePlaneSurface = gmsh::model::occ::addPlaneSurface( { padHoleCurvedLoop } );
+
+        int padHolePlaneSurface = gmsh::model::occ::addDisk(
+                TransformPoint( pad->GetPosition().x ), TransformPoint( pad->GetPosition().y ),
+                start_mm, TransformPoint( pad->GetDrillSizeX() ) / 2.,
+                TransformPoint( pad->GetDrillSizeY() ) / 2. );
+
+        for( const auto& idx :
+             PlaneSurfacesToVolumes( { padHolePlaneSurface }, end_mm - start_mm ) )
+        {
+            fragments.emplace_back( 3, idx );
+            padRegions.emplace( idx, regionId );
+        }
+
+        // Drill the copper again :)
+        int padHolePlaneSurfaceAir = gmsh::model::occ::addDisk(
+                TransformPoint( pad->GetPosition().x ), TransformPoint( pad->GetPosition().y ),
+                start_mm, TransformPoint( pad->GetDrillSizeX() ) / 2. - copperPlatingThickness_mm,
+                TransformPoint( pad->GetDrillSizeY() ) / 2. - copperPlatingThickness_mm );
+
+        for( const auto& idx :
+             PlaneSurfacesToVolumes( { padHolePlaneSurfaceAir }, end_mm - start_mm ) )
+        {
+            fragments.emplace_back( 3, idx );
+            padHoleTags.emplace( idx );
+        }
+    }
+
+    // Net Regions
+    for( const auto& net_region : m_net_regions )
+    {
+        int regionId = net_region.first;
+        int netcode = net_region.second;
+
+        for( const auto& layers : layerStackupHeight )
+        {
+            double start_mm = layers.second.first / IU_PER_MM;
+            double end_mm = layers.second.second / IU_PER_MM;
+
+            // TODO: error?
+            /*std::pair<std::vector<int>, std::vector<int>> netSurfaces =
+                    NetTo2DPlaneSurfaces( layers.first, start_mm, netcode );
+            for( const auto& idx :
+                    PlaneSurfacesToVolumes( netSurfaces.first, end_mm-start_mm ) )
+            {
+                fragments.emplace_back( 3, idx );
+                netRegions.emplace( idx, regionId );
+            }
+            for( const auto& idx :
+                    PlaneSurfacesToVolumes( netSurfaces.second, end_mm-start_mm ) )
+            {
+                fragments.emplace_back( 3, idx );
+                holeTags.emplace( idx );
+            }*/
+        }
+
+        // TODO: holes
+    }
+
+    std::cerr << "fragment:" << std::endl;
+    std::vector<std::pair<int, int>>              ov;
+    std::vector<std::vector<std::pair<int, int>>> ovv;
+    gmsh::model::occ::fragment( fragments, {}, ov, ovv );
+    std::cerr << "RegionsToShapesAfterFragment:" << std::endl;
+
+    std::map<int, std::vector<int>> regionToShapeId = RegionsToShapesAfterFragment(
+            fragments, ov, ovv, padRegions, netRegions, padHoleTags, holeTags );
+
+    int airTag = m_next_region_id; // TODO
+
+    // remove air regions
+    const auto& airShapes = regionToShapeId.find( airTag );
+    if( airShapes != regionToShapeId.end() )
+    {
+        for( const auto& e : airShapes->second )
+        {
+            gmsh::model::occ::remove( { { 3, e } }, true );
+        }
+        regionToShapeId.erase( airShapes->first );
+    }
+
+    // we need to do synchronize when calling any non occ function!
+    std::cerr << "synchronize(): ";
+    gmsh::model::occ::synchronize();
+    std::cerr << "FINISHED" << std::endl;
+
+    for( const auto& kv : regionToShapeId )
+    {
+        gmsh::model::addPhysicalGroup( 3, kv.second, kv.first );
+    }
+
+    // generated 3d-mesh
     std::cerr << "generate mesh" << std::endl;
     gmsh::model::mesh::generate( 3 );
     //std::cerr << "refine mesh" << std::endl;
