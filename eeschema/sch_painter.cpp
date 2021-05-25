@@ -419,9 +419,6 @@ void SCH_PAINTER::strokeText( const wxString& aText, const VECTOR2D& aPosition,
     TEXT_ATTRIBUTES attributes;
     attributes.SetAngle( aAngle );
     attributes.SetFont( aFont );
-    //attributes.SetHorizJustify( aHorizontalJustify );
-    //attributes.SetVertJustify( aVerticalJustify );
-    //attributes.SetLineSpacing( aLineSpacing );
 
     doStrokeText( aText, aPosition, attributes );
 }
