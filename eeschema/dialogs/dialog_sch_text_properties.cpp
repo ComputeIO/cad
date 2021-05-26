@@ -425,10 +425,11 @@ bool DIALOG_SCH_TEXT_PROPERTIES::TransferDataFromWindow()
     m_CurrentText->SetBold( bold );
     m_CurrentText->SetItalic( italic );
 
-    int penWidth = m_FontBold->GetValue() ? GetPenSizeForBold( m_CurrentText->GetTextWidth() ) : 0;
+    int penWidth = bold ? GetPenSizeForBold( m_CurrentText->GetTextWidth() ) : 0;
     m_CurrentText->SetTextThickness( penWidth );
 
     m_CurrentText->SetLineSpacing( std::stod( m_FontLineSpacing->GetValue().ToStdString() ) );
+    m_CurrentText->SetPosition( wxPoint( m_positionX.GetValue(), m_positionY.GetValue() );
 
     m_Parent->UpdateItem( m_CurrentText );
     m_Parent->GetCanvas()->Refresh();
