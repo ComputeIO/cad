@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////
-// C++ code generated with wxFormBuilder (version 3.9.0 Nov  1 2020)
+// C++ code generated with wxFormBuilder (version Oct 26 2018)
 // http://www.wxformbuilder.org/
 //
 // PLEASE DO *NOT* EDIT THIS FILE!
@@ -161,9 +161,26 @@ DIALOG_PAGES_SETTINGS_BASE::DIALOG_PAGES_SETTINGS_BASE( wxWindow* parent, wxWind
 	fgSizer2->SetFlexibleDirection( wxBOTH );
 	fgSizer2->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
 
+	wxBoxSizer* bSizerDateTime;
+	bSizerDateTime = new wxBoxSizer( wxVERTICAL );
+
 	m_staticTextDate = new wxStaticText( this, wxID_ANY, _("Issue Date:"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_staticTextDate->Wrap( -1 );
-	fgSizer2->Add( m_staticTextDate, 0, wxALIGN_CENTER_VERTICAL|wxRIGHT|wxLEFT, 5 );
+	bSizerDateTime->Add( m_staticTextDate, 0, wxALL, 5 );
+
+	m_cbCurrentDate = new wxCheckBox( this, wxID_ANY, _("Use current date/time"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_cbCurrentDate->SetToolTip( _("If checked, current date/time will be used") );
+
+	bSizerDateTime->Add( m_cbCurrentDate, 0, wxBOTTOM|wxRIGHT|wxLEFT, 5 );
+
+	m_cbIncludeTimeInDate = new wxCheckBox( this, wxID_ANY, _("Include time in date string"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_cbIncludeTimeInDate->Enable( false );
+	m_cbIncludeTimeInDate->SetToolTip( _("If checked, time is will be included with date string (format : YY-MM-DD-T-HH-MM-SS)") );
+
+	bSizerDateTime->Add( m_cbIncludeTimeInDate, 0, wxALL, 5 );
+
+
+	fgSizer2->Add( bSizerDateTime, 1, wxEXPAND, 5 );
 
 	wxBoxSizer* bSizerDate;
 	bSizerDate = new wxBoxSizer( wxHORIZONTAL );
@@ -379,6 +396,8 @@ DIALOG_PAGES_SETTINGS_BASE::DIALOG_PAGES_SETTINGS_BASE( wxWindow* parent, wxWind
 	m_orientationComboBox->Connect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( DIALOG_PAGES_SETTINGS_BASE::OnPageOrientationChoice ), NULL, this );
 	m_userSizeYCtrl->Connect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( DIALOG_PAGES_SETTINGS_BASE::OnUserPageSizeYTextUpdated ), NULL, this );
 	m_userSizeXCtrl->Connect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( DIALOG_PAGES_SETTINGS_BASE::OnUserPageSizeXTextUpdated ), NULL, this );
+	m_cbCurrentDate->Connect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( DIALOG_PAGES_SETTINGS_BASE::OnCurrentDateChecked ), NULL, this );
+	m_cbIncludeTimeInDate->Connect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( DIALOG_PAGES_SETTINGS_BASE::OnIncludeTimeChecked ), NULL, this );
 	m_TextDate->Connect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( DIALOG_PAGES_SETTINGS_BASE::OnDateTextUpdated ), NULL, this );
 	m_ApplyDate->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( DIALOG_PAGES_SETTINGS_BASE::OnDateApplyClick ), NULL, this );
 	m_TextRevision->Connect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( DIALOG_PAGES_SETTINGS_BASE::OnRevisionTextUpdated ), NULL, this );
@@ -405,6 +424,8 @@ DIALOG_PAGES_SETTINGS_BASE::~DIALOG_PAGES_SETTINGS_BASE()
 	m_orientationComboBox->Disconnect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( DIALOG_PAGES_SETTINGS_BASE::OnPageOrientationChoice ), NULL, this );
 	m_userSizeYCtrl->Disconnect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( DIALOG_PAGES_SETTINGS_BASE::OnUserPageSizeYTextUpdated ), NULL, this );
 	m_userSizeXCtrl->Disconnect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( DIALOG_PAGES_SETTINGS_BASE::OnUserPageSizeXTextUpdated ), NULL, this );
+	m_cbCurrentDate->Disconnect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( DIALOG_PAGES_SETTINGS_BASE::OnCurrentDateChecked ), NULL, this );
+	m_cbIncludeTimeInDate->Disconnect( wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler( DIALOG_PAGES_SETTINGS_BASE::OnIncludeTimeChecked ), NULL, this );
 	m_TextDate->Disconnect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( DIALOG_PAGES_SETTINGS_BASE::OnDateTextUpdated ), NULL, this );
 	m_ApplyDate->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( DIALOG_PAGES_SETTINGS_BASE::OnDateApplyClick ), NULL, this );
 	m_TextRevision->Disconnect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( DIALOG_PAGES_SETTINGS_BASE::OnRevisionTextUpdated ), NULL, this );

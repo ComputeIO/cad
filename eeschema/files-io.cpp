@@ -50,6 +50,7 @@
 #include <sch_sheet_path.h>
 #include <schematic.h>
 #include <settings/settings_manager.h>
+#include <title_block.h>
 #include <tool/actions.h>
 #include <tool/tool_manager.h>
 #include <tools/sch_editor_control.h>
@@ -67,6 +68,37 @@ bool SCH_EDIT_FRAME::SaveEEFile( SCH_SHEET* aSheet, bool aSaveUnderNewName )
     wxFileName schematicFileName;
     wxFileName oldFileName;
     bool success;
+
+    if ( isAutoSaveRequired() )
+    {
+        // Update Date in Title_Block if current date is to be used.
+        TITLE_BLOCK tb;
+        tb = GetTitleBlock();
+        if ( tb.UpdateCurrentDate() )
+        {
+            SetTitleBlock( tb );
+            HardRedraw();
+        }
+
+        //Update current date in all sheets if selected
+        EESCHEMA_SETTINGS* eecfg = eeconfig();
+        if ( eecfg->m_PageSettings.export_date )
+        {
+            SCH_SCREENS ScreenList( Schematic().Root() );
+            for( SCH_SCREEN* screen = ScreenList.GetFirst(); screen; screen = ScreenList.GetNext() )
+            {
+                if( screen == aSheet->GetScreen() )
+                    continue;
+
+                TITLE_BLOCK tb2 = screen->GetTitleBlock();
+                tb2.SetBoolUseCurrentDate( tb.GetBoolUseCurrentDate() );
+                tb2.SetBoolIncludeTime( tb.GetBoolIncludeTime() );
+                tb2.SetDate( tb.GetDate() );
+                screen->SetTitleBlock( tb2 );
+            }
+        }
+
+    }
 
     if( aSheet == NULL )
         aSheet = GetCurrentSheet().Last();

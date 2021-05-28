@@ -51,6 +51,14 @@ void TITLE_BLOCK::Format( OUTPUTFORMATTER* aFormatter, int aNestLevel, int aCont
             aFormatter->Print( aNestLevel+1, "(date %s)\n",
                                aFormatter->Quotew( GetDate() ).c_str() );
 
+        if ( GetBoolUseCurrentDate() )
+            aFormatter->Print( aNestLevel+1, "(use_current_date %s)\n",
+                               aFormatter->Quotew( GetUseCurrentDate() ).c_str() );
+
+        if ( GetBoolIncludeTime() )
+            aFormatter->Print( aNestLevel+1, "(include_time %s)\n",
+                               aFormatter->Quotew( GetIncludeTime() ).c_str() );
+
         if( !GetRevision().IsEmpty() )
             aFormatter->Print( aNestLevel+1, "(rev %s)\n",
                                aFormatter->Quotew( GetRevision() ).c_str() );
@@ -73,6 +81,8 @@ void TITLE_BLOCK::Format( OUTPUTFORMATTER* aFormatter, int aNestLevel, int aCont
 void TITLE_BLOCK::GetContextualTextVars( wxArrayString* aVars )
 {
     aVars->push_back( wxT( "ISSUE_DATE" ) );
+    aVars->push_back( wxT( "USE_CURRENT_DATE" ) );
+    aVars->push_back( wxT( "INCLUDE_DATE" ) );
     aVars->push_back( wxT( "REVISION" ) );
     aVars->push_back( wxT( "TITLE" ) );
     aVars->push_back( wxT( "COMPANY" ) );
@@ -95,6 +105,16 @@ bool TITLE_BLOCK::TextVarResolver( wxString* aToken, const PROJECT* aProject ) c
     if( aToken->IsSameAs( wxT( "ISSUE_DATE" ) ) )
     {
         *aToken = GetDate();
+        tokenUpdated = true;
+    }
+    else if ( aToken->IsSameAs( wxT( "USE_CURRENT_DATE" ) ) )
+    {
+        *aToken = GetUseCurrentDate();
+        tokenUpdated = true;
+    }
+    else if ( aToken->IsSameAs( wxT( "INCLUDE_DATE" ) ) )
+    {
+        *aToken = GetIncludeTime();
         tokenUpdated = true;
     }
     else if( aToken->IsSameAs( wxT( "REVISION" ) ) )
@@ -140,5 +160,3 @@ bool TITLE_BLOCK::TextVarResolver( wxString* aToken, const PROJECT* aProject ) c
 
     return false;
 }
-
-

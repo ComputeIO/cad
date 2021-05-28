@@ -1603,6 +1603,16 @@ void SCH_SEXPR_PARSER::parseTITLE_BLOCK( TITLE_BLOCK& aTitleBlock )
             aTitleBlock.SetDate( FromUTF8() );
             break;
 
+        case T_use_current_date:
+            NextTok();
+            aTitleBlock.SetUseCurrentDate( FromUTF8() );
+            break;
+
+        case T_include_time:
+            NextTok();
+            aTitleBlock.SetIncludeTime( FromUTF8() );
+            break;
+
         case T_rev:
             NextTok();
             aTitleBlock.SetRevision( FromUTF8() );
@@ -1674,7 +1684,7 @@ void SCH_SEXPR_PARSER::parseTITLE_BLOCK( TITLE_BLOCK& aTitleBlock )
         }
 
         default:
-            Expecting( "title, date, rev, company, or comment" );
+            Expecting( "title, date, use_current_date, include_time, rev, company, or comment" );
         }
 
         NeedRIGHT();

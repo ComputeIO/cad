@@ -142,6 +142,7 @@ height
 hide
 hole_to_hole_min
 id
+include_time
 island
 island_removal_mode
 island_area_min
@@ -284,6 +285,7 @@ type
 units
 units_format
 unlocked
+use_current_date
 user
 user_diff_pair
 user_trace_width

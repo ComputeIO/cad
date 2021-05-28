@@ -63,6 +63,8 @@ void DIALOG_EESCHEMA_PAGE_SETTINGS::onTransferDataToWindow()
     m_TextSheetNumber->Show( true );
     m_PaperExport->Show( true );
     m_RevisionExport->Show( true );
+//    m_cbCurrentDate->Show( true );
+//    m_cbIncludeTimeInDate->Show( true );
     m_DateExport->Show( true );
     m_TitleExport->Show( true );
     m_CompanyExport->Show( true );
@@ -128,7 +130,11 @@ bool DIALOG_EESCHEMA_PAGE_SETTINGS::onSavePageSettings()
             tb2.SetRevision( m_tb.GetRevision() );
 
         if( m_DateExport->IsChecked() )
+        {
+            tb2.SetBoolUseCurrentDate( m_tb.GetBoolUseCurrentDate() );
+            tb2.SetBoolIncludeTime( m_tb.GetBoolIncludeTime() );
             tb2.SetDate( m_tb.GetDate() );
+        }
 
         if( m_TitleExport->IsChecked() )
             tb2.SetTitle( m_tb.GetTitle() );

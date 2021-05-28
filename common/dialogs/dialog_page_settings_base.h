@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////
-// C++ code generated with wxFormBuilder (version 3.9.0 Nov  1 2020)
+// C++ code generated with wxFormBuilder (version Oct 26 2018)
 // http://www.wxformbuilder.org/
 //
 // PLEASE DO *NOT* EDIT THIS FILE!
@@ -65,6 +65,8 @@ class DIALOG_PAGES_SETTINGS_BASE : public DIALOG_SHIM
 		wxStaticText* m_TextSheetCount;
 		wxStaticText* m_TextSheetNumber;
 		wxStaticText* m_staticTextDate;
+		wxCheckBox* m_cbCurrentDate;
+		wxCheckBox* m_cbIncludeTimeInDate;
 		wxTextCtrl* m_TextDate;
 		wxButton* m_ApplyDate;
 		wxDatePickerCtrl* m_PickDate;
@@ -117,6 +119,8 @@ class DIALOG_PAGES_SETTINGS_BASE : public DIALOG_SHIM
 		virtual void OnPageOrientationChoice( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnUserPageSizeYTextUpdated( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnUserPageSizeXTextUpdated( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnCurrentDateChecked( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnIncludeTimeChecked( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnDateTextUpdated( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnDateApplyClick( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnRevisionTextUpdated( wxCommandEvent& event ) { event.Skip(); }

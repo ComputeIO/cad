@@ -72,6 +72,8 @@ private:
 
     // event handler for texts in title block
     void OnRevisionTextUpdated( wxCommandEvent& event ) override;
+    void OnCurrentDateChecked( wxCommandEvent& event ) override;
+    void OnIncludeTimeChecked( wxCommandEvent& event ) override;
     void OnDateTextUpdated( wxCommandEvent& event ) override;
     void OnTitleTextUpdated( wxCommandEvent& event ) override;
     void OnCompanyTextUpdated( wxCommandEvent& event ) override;

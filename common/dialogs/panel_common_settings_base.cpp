@@ -312,18 +312,6 @@ PANEL_COMMON_SETTINGS_BASE::PANEL_COMMON_SETTINGS_BASE( wxWindow* parent, wxWind
 
 	rightSizer->Add( sbSizer5, 1, wxALL|wxEXPAND, 5 );
 
-	wxStaticBoxSizer* sbSizer6;
-	sbSizer6 = new wxStaticBoxSizer( new wxStaticBox( this, wxID_ANY, _("Date and Time format") ), wxVERTICAL );
-
-	m_cbIncludeTimeInDate = new wxCheckBox( sbSizer6->GetStaticBox(), wxID_ANY, _("Include time with date string"), wxDefaultPosition, wxDefaultSize, 0 );
-	m_cbIncludeTimeInDate->SetValue(true);
-	m_cbIncludeTimeInDate->SetToolTip( _("If checked, time is will be included with date string (format : YY-MM-DD-T-HH-MM-SS)") );
-
-	sbSizer6->Add( m_cbIncludeTimeInDate, 0, wxBOTTOM|wxRIGHT|wxLEFT, 5 );
-
-
-	rightSizer->Add( sbSizer6, 1, wxEXPAND, 5 );
-
 
 	bPanelSizer->Add( rightSizer, 0, wxALL|wxEXPAND, 5 );
 

@@ -152,7 +152,13 @@ bool DIALOG_PAGES_SETTINGS::TransferDataToWindow()
     }
 
     m_TextRevision->SetValue( m_tb.GetRevision() );
+    m_cbCurrentDate->SetValue(m_tb.GetBoolUseCurrentDate());
+    m_cbIncludeTimeInDate->SetValue(m_tb.GetBoolIncludeTime());
+    m_cbIncludeTimeInDate->Enable( m_cbCurrentDate->IsChecked() );
     m_TextDate->SetValue( m_tb.GetDate() );
+    m_TextDate->Enable( !m_cbCurrentDate->IsChecked() );
+    m_ApplyDate->Enable( !m_cbCurrentDate->IsChecked() );
+    m_PickDate->Enable( !m_cbCurrentDate->IsChecked() );
     m_TextTitle->SetValue( m_tb.GetTitle() );
     m_TextCompany->SetValue( m_tb.GetCompany() );
     m_TextComment1->SetValue( m_tb.GetComment( 0 ) );
@@ -170,6 +176,8 @@ bool DIALOG_PAGES_SETTINGS::TransferDataToWindow()
     m_TextSheetNumber->Show( false );
     m_PaperExport->Show( false );
     m_RevisionExport->Show( false );
+//    m_cbCurrentDate->Show( false );
+//    m_cbIncludeTimeInDate->Show( false );
     m_DateExport->Show( false );
     m_TitleExport->Show( false );
     m_CompanyExport->Show( false );
@@ -432,6 +440,41 @@ void DIALOG_PAGES_SETTINGS::OnComment9TextUpdated( wxCommandEvent& event )
     }
 }
 
+void DIALOG_PAGES_SETTINGS::OnCurrentDateChecked( wxCommandEvent& event )
+{
+    if ( m_initialized && m_cbCurrentDate->IsChecked() )
+    {
+        m_cbIncludeTimeInDate->Enable( true );
+        m_TextDate->Enable( false );
+        m_ApplyDate->Enable( false );
+        m_PickDate->Enable( false );
+
+        m_tb.SetBoolUseCurrentDate( true );
+    }
+    else
+    {
+        m_cbIncludeTimeInDate->Enable( false );
+        m_TextDate->Enable( true );
+        m_ApplyDate->Enable( true );
+        m_PickDate->Enable( true );
+
+        m_tb.SetBoolUseCurrentDate( false );
+    }
+    m_tb.UpdateCurrentDate();
+    m_TextDate->SetValue( m_tb.GetDate() );
+}
+
+void DIALOG_PAGES_SETTINGS::OnIncludeTimeChecked( wxCommandEvent& event )
+{
+    if ( m_initialized )
+    {
+        m_tb.SetBoolIncludeTime( m_cbIncludeTimeInDate->IsChecked() );
+        m_tb.UpdateCurrentDate();
+
+        m_TextDate->SetValue( m_tb.GetDate() );
+    }
+}
+
 
 void DIALOG_PAGES_SETTINGS::OnDateApplyClick( wxCommandEvent& event )
 {
@@ -539,6 +582,8 @@ bool DIALOG_PAGES_SETTINGS::SavePageSettings()
     m_parent->SetPageSettings( m_pageInfo );
 
     m_tb.SetRevision( m_TextRevision->GetValue() );
+    m_tb.SetBoolUseCurrentDate( m_cbCurrentDate->GetValue() );
+    m_tb.SetBoolIncludeTime( m_cbIncludeTimeInDate->GetValue() );
     m_tb.SetDate(     m_TextDate->GetValue() );
     m_tb.SetCompany(  m_TextCompany->GetValue() );
     m_tb.SetTitle(    m_TextTitle->GetValue() );

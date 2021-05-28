@@ -918,6 +918,18 @@ bool PCB_EDIT_FRAME::SavePcbFile( const wxString& aFileName, bool addToHistory,
     // please, keep it simple.  prompting goes elsewhere.
     wxFileName pcbFileName = aFileName;
 
+    if ( isAutoSaveRequired() )
+    {
+        // Update Date in Title_Block if current date is to be used.
+        TITLE_BLOCK tb;
+        tb = GetTitleBlock();
+        if ( tb.UpdateCurrentDate() )
+        {
+            SetTitleBlock( tb );
+            UpdateUserInterface();
+        }
+    }
+
     if( pcbFileName.GetExt() == LegacyPcbFileExtension )
         pcbFileName.SetExt( KiCadPcbFileExtension );
 
@@ -1188,4 +1200,3 @@ bool PCB_EDIT_FRAME::importFile( const wxString& aFileName, int aFileType )
 
     return false;
 }
-

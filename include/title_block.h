@@ -29,6 +29,7 @@
 #include <wx/string.h>
 #include <wx/arrstr.h>
 #include <ki_exception.h>
+#include <kicad_string.h>
 
 class OUTPUTFORMATTER;
 class PROJECT;
@@ -44,6 +45,8 @@ class TITLE_BLOCK
     enum TEXTS_IDX
     {
         TITLE_IDX = 0,
+        USE_CURRENT_DATE,
+        INCL_TIME,
         DATE_IDX,
         REVISION_IDX,
         COMPANY_IDX,
@@ -76,6 +79,60 @@ public:
     const wxString& GetDate() const
     {
         return getTbText( DATE_IDX );
+    }
+
+    void SetUseCurrentDate( const wxString& aUseCurrentDate )
+    {
+        setTbText( USE_CURRENT_DATE, aUseCurrentDate );
+    }
+
+    const wxString& GetUseCurrentDate() const
+    {
+        return getTbText( USE_CURRENT_DATE );
+    }
+
+    void SetBoolUseCurrentDate( bool aUseCurrentDate )
+    {
+        aUseCurrentDate ? SetUseCurrentDate( "1" ) : SetUseCurrentDate( "0" );
+    }
+
+    bool GetBoolUseCurrentDate() const
+    {
+        return GetUseCurrentDate().IsSameAs("1");
+    }
+
+    void SetIncludeTime( const wxString& aIncludeTime )
+    {
+        setTbText( INCL_TIME, aIncludeTime );
+    }
+
+    const wxString& GetIncludeTime() const
+    {
+        return getTbText( INCL_TIME );
+    }
+
+    void SetBoolIncludeTime( bool aIncludeTime )
+    {
+        aIncludeTime ? SetIncludeTime( "1" ) : SetIncludeTime( "0" );
+    }
+
+    bool GetBoolIncludeTime() const
+    {
+        return GetIncludeTime().IsSameAs("1");
+    }
+
+    bool UpdateCurrentDate()
+    {
+        if ( GetBoolUseCurrentDate() )
+        {
+            SetDate( DateAndTime( true, GetBoolIncludeTime() ) );
+            return true;
+        }
+        else
+        {
+            SetDate( wxEmptyString );
+            return false;
+        }
     }
 
     void SetRevision( const wxString& aRevision )

@@ -49,6 +49,7 @@ input_low
 inverted
 inverted_clock
 in_bom
+include_time
 iref
 italic
 junction
@@ -122,6 +123,7 @@ tri_state
 type
 unit
 unspecified
+use_current_date
 uuid
 value
 version

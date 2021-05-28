@@ -1004,6 +1004,16 @@ void PCB_PARSER::parseTITLE_BLOCK()
             titleBlock.SetDate( FromUTF8() );
             break;
 
+        case T_use_current_date:
+            NextTok();
+            titleBlock.SetUseCurrentDate( FromUTF8() );
+            break;
+
+        case T_include_time:
+            NextTok();
+            titleBlock.SetIncludeTime( FromUTF8() );
+            break;
+
         case T_rev:
             NextTok();
             titleBlock.SetRevision( FromUTF8() );

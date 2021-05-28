@@ -131,6 +131,9 @@ bool NoPrintableChars( wxString aString );
  */
 char* StrPurge( char* text );
 
+ const wxString CURRENTDATE = "currentdate";
+ const wxString CURRENTDATEWITHTIME = "currentdate with time";
+
 /**
  * Returns current date and time with local format or ISO format (YY-MM-DD-T-HH-MM-SS).
  *
