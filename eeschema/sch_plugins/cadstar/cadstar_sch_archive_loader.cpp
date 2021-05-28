@@ -266,7 +266,7 @@ void CADSTAR_SCH_ARCHIVE_LOADER::loadSheets()
         ReplaceIllegalFileNameChars( &filename );
         filename += wxT( "." ) + KiCadSchematicFileExtension;
 
-        wxFileName fn( filename );
+        wxFileName fn( m_schematic->Prj().GetProjectPath() + filename );
         m_rootSheet->GetScreen()->SetFileName( fn.GetFullPath() );
 
         m_sheetMap.insert( { rootSheetID, m_rootSheet } );
@@ -427,8 +427,13 @@ void CADSTAR_SCH_ARCHIVE_LOADER::loadSchematicSymbolInstances()
                 loadSymDefIntoLibrary( sym.SymdefID, &part, sym.GateID, kiPart );
             }
 
+            LIB_PART* scaledPart = getScaledLibPart( kiPart, sym.ScaleRatioNumerator,
+                                                     sym.ScaleRatioDenominator );
+
             double         symOrientDeciDeg = 0.0;
-            SCH_COMPONENT* component = loadSchematicSymbol( sym, *kiPart, symOrientDeciDeg );
+            SCH_COMPONENT* component = loadSchematicSymbol( sym, *scaledPart, symOrientDeciDeg );
+
+            delete scaledPart;
 
             if( copy )
                 delete kiPart;
@@ -584,9 +589,14 @@ void CADSTAR_SCH_ARCHIVE_LOADER::loadSchematicSymbolInstances()
                     wxASSERT( kiPart->GetValueField().GetText() == symbolInstanceNetName );
                 }
 
-                double returnedOrientation = 0.0;
-                SCH_COMPONENT* component = loadSchematicSymbol( sym, *kiPart, returnedOrientation );
+                LIB_PART* scaledPart = getScaledLibPart( kiPart, sym.ScaleRatioNumerator,
+                                                         sym.ScaleRatioDenominator );
+
+                double returnedOrient = 0.0;
+                SCH_COMPONENT* component = loadSchematicSymbol( sym, *scaledPart, returnedOrient );
                 m_powerSymMap.insert( { sym.ID, component } );
+
+                delete scaledPart;
             }
             else if( sym.SymbolVariant.Type == SYMBOLVARIANT::TYPE::SIGNALREF )
             {
@@ -641,8 +651,9 @@ void CADSTAR_SCH_ARCHIVE_LOADER::loadSchematicSymbolInstances()
 
             m_reporter->Report( wxString::Format( _( "Symbol '%s' is scaled in the original "
                                                      "CADSTAR schematic but this is not supported "
-                                                     "in KiCad. The symbol was loaded with 1:1 "
-                                                     "scale and may require manual fixing." ),
+                                                     "in KiCad. When the symbol is reloaded from "
+                                                     "the library, it will revert to the original "
+                                                     "1:1 scale." ),
                                                   symbolName,
                                                   sym.PartRef.RefID ),
                                 RPT_SEVERITY_ERROR );
@@ -1254,17 +1265,6 @@ void CADSTAR_SCH_ARCHIVE_LOADER::loadSymDefIntoLibrary( const SYMDEF_ID& aSymdef
         pin->SetNumber( pinNum );
         pin->SetName( pinName );
 
-        int oDeg = (int) NormalizeAngle180( getAngleTenthDegree( term.OrientAngle ) );
-
-        if( oDeg >= -450 && oDeg <= 450 )
-            pin->SetOrientation( 'R' ); // 0 degrees
-        else if( oDeg >= 450 && oDeg <= 1350 )
-            pin->SetOrientation( 'U' ); // 90 degrees
-        else if( oDeg >= 1350 || oDeg <= -1350 )
-            pin->SetOrientation( 'L' ); // 180 degrees
-        else
-            pin->SetOrientation( 'D' ); // -90 degrees
-
         if( aPart->IsPower() )
         {
             pin->SetVisible( false );
@@ -1274,6 +1274,8 @@ void CADSTAR_SCH_ARCHIVE_LOADER::loadSymDefIntoLibrary( const SYMDEF_ID& aSymdef
 
         aPart->AddDrawItem( pin );
     }
+
+    fixUpLibraryPins( aPart, gateNumber );
 
     if(aCadstarPart)
         m_pinNumsMap.insert( { aCadstarPart->ID + aGateID, pinNumMap } );
@@ -1696,10 +1698,8 @@ void CADSTAR_SCH_ARCHIVE_LOADER::loadSymbolFieldAttribute(
 
     ALIGNMENT alignment = aCadstarAttrLoc.Alignment;
 
-    double textAngle = aComponentOrientationDeciDeg
-        - getAngleTenthDegree( aCadstarAttrLoc.OrientAngle );
-
-    long long cadstarAngle = getCadstarAngle( textAngle );
+    double textAngle = getAngleTenthDegree( aCadstarAttrLoc.OrientAngle );
+    long long cadstarAngle = getCadstarAngle( textAngle - aComponentOrientationDeciDeg );
 
     if( aIsMirrored )
     {
@@ -1806,7 +1806,11 @@ CADSTAR_SCH_ARCHIVE_LOADER::POINT CADSTAR_SCH_ARCHIVE_LOADER::getLocationOfNetEl
         wxPoint libpinPosition =
                 Library.SymbolDefinitions.at( symdefid ).Terminals.at( termid ).Position;
         wxPoint libOrigin   = Library.SymbolDefinitions.at( symdefid ).Origin;
-        wxPoint pinOffset   = libpinPosition - libOrigin;
+
+        wxPoint pinOffset = libpinPosition - libOrigin;
+        pinOffset.x = ( pinOffset.x * sym.ScaleRatioNumerator ) / sym.ScaleRatioDenominator;
+        pinOffset.y = ( pinOffset.y * sym.ScaleRatioNumerator ) / sym.ScaleRatioDenominator;
+
         wxPoint pinPosition = symbolOrigin + pinOffset;
 
         double compAngleDeciDeg = getAngleTenthDegree( sym.OrientAngle );
@@ -2020,7 +2024,7 @@ void CADSTAR_SCH_ARCHIVE_LOADER::loadSheetAndChildSheets(
 
     filenameField.SetText( filename );
 
-    wxFileName fn( filename );
+    wxFileName fn( m_schematic->Prj().GetProjectPath() + filename );
     sheet->GetScreen()->SetFileName( fn.GetFullPath() );
     aParentSheet.Last()->GetScreen()->Append( sheet );
     instance.push_back( sheet );
@@ -2621,7 +2625,178 @@ SCH_TEXT* CADSTAR_SCH_ARCHIVE_LOADER::getKiCadSchText( const TEXT& aCadstarTextE
 }
 
 
-std::pair<wxPoint, wxSize> CADSTAR_SCH_ARCHIVE_LOADER::getFigureExtentsKiCad(
+LIB_PART* CADSTAR_SCH_ARCHIVE_LOADER::getScaledLibPart( const LIB_PART* aPart,
+                                                        long long aScalingFactorNumerator,
+                                                        long long aScalingFactorDenominator )
+{
+    LIB_PART* retval = new LIB_PART( *aPart );
+
+    if( aScalingFactorNumerator == aScalingFactorDenominator )
+        return retval; // 1:1 scale, nothing to do
+
+    auto scaleLen =
+        [&]( int aLength ) -> int
+        {
+            return( aLength * aScalingFactorNumerator ) / aScalingFactorDenominator;
+        };
+
+    auto scalePt =
+        [&]( wxPoint aCoord ) -> wxPoint
+        {
+            return wxPoint( scaleLen( aCoord.x ), scaleLen( aCoord.y ) );
+        };
+
+    auto scaleSize =
+        [&]( wxSize aSize ) -> wxSize
+        {
+            return wxSize( scaleLen( aSize.x ), scaleLen( aSize.y ) );
+        };
+
+    LIB_ITEMS_CONTAINER& items = retval->GetDrawItems();
+
+    for( auto& item : items )
+    {
+        switch( item.Type() )
+        {
+        case KICAD_T::LIB_ARC_T:
+        {
+            LIB_ARC& arc = static_cast<LIB_ARC&>( item );
+            arc.SetPosition( scalePt( arc.GetPosition() ) );
+            arc.SetStart( scalePt( arc.GetStart() ) );
+            arc.SetEnd( scalePt( arc.GetEnd() ) );
+            arc.CalcRadiusAngles(); // Maybe not needed?
+        }
+        break;
+
+        case KICAD_T::LIB_POLYLINE_T:
+        {
+            LIB_POLYLINE& poly = static_cast<LIB_POLYLINE&>( item );
+
+            std::vector<wxPoint> originalPts = poly.GetPolyPoints();
+            poly.ClearPoints();
+
+            for( wxPoint& pt : originalPts )
+                poly.AddPoint( scalePt( pt ) );
+        }
+        break;
+
+        case KICAD_T::LIB_PIN_T:
+        {
+            LIB_PIN& pin = static_cast<LIB_PIN&>( item );
+
+            pin.SetPosition( scalePt( pin.GetPosition() ) );
+            pin.SetLength( scaleLen( pin.GetLength() ) );
+        }
+        break;
+
+        case KICAD_T::LIB_TEXT_T:
+        {
+            LIB_TEXT& txt = static_cast<LIB_TEXT&>( item );
+
+            txt.SetPosition( scalePt( txt.GetPosition() ) );
+            txt.SetTextSize( scaleSize( txt.GetTextSize() ) );
+        }
+        break;
+
+        default: break;
+        }
+
+    }
+
+    return retval;
+}
+
+
+void CADSTAR_SCH_ARCHIVE_LOADER::fixUpLibraryPins( LIB_PART* aPartToFix, int aGateNumber )
+{
+    // Store a list of segments that are not connected to other segments and are vertical or horizontal
+    std::map<wxPoint, LIB_POLYLINE*> twoPointUniqueSegments;
+
+    LIB_ITEMS_CONTAINER::ITERATOR polylineiter = aPartToFix->GetDrawItems().begin( LIB_POLYLINE_T );
+
+    for( ; polylineiter != aPartToFix->GetDrawItems().end( LIB_POLYLINE_T ); ++polylineiter )
+    {
+        LIB_POLYLINE& polyline = static_cast<LIB_POLYLINE&>( *polylineiter );
+
+        if( aGateNumber > 0 && polyline.GetUnit() != aGateNumber )
+            continue;
+
+        const std::vector<wxPoint>& pts = polyline.GetPolyPoints();
+
+        bool isUnique = true;
+
+        auto removeSegment =
+            [&]( LIB_POLYLINE* aLineToRemove )
+            {
+                twoPointUniqueSegments.erase( aLineToRemove->GetPolyPoints().at( 0 ) );
+                twoPointUniqueSegments.erase( aLineToRemove->GetPolyPoints().at( 1 ) );
+                isUnique = false;
+            };
+
+        if( pts.size() == 2 )
+        {
+            const wxPoint& pt0 = pts.at( 0 );
+            const wxPoint& pt1 = pts.at( 1 );
+
+            if( twoPointUniqueSegments.count( pt0 ) )
+                removeSegment( twoPointUniqueSegments.at( pt0 ) );
+
+            if( twoPointUniqueSegments.count( pt1 ) )
+                removeSegment( twoPointUniqueSegments.at( pt1 ) );
+
+            if( isUnique && pt0 != pt1 )
+            {
+                if( pt0.x == pt1.x || pt0.y == pt1.y )
+                {
+                    twoPointUniqueSegments.insert( { pts.at( 0 ), &polyline } );
+                    twoPointUniqueSegments.insert( { pts.at( 1 ), &polyline } );
+                }
+            }
+        }
+    }
+
+    LIB_PINS pins;
+    aPartToFix->GetPins( pins, aGateNumber );
+
+
+    for( auto& pin : pins )
+    {
+        auto setPinOrientation =
+            [&]( double aAngleRad )
+            {
+                int oDeg = (int) NormalizeAngle180( wxRadToDeg( aAngleRad ) );
+
+                if( oDeg >= -45 && oDeg <= 45 )
+                    pin->SetOrientation( 'R' ); // 0 degrees
+                else if( oDeg >= 45 && oDeg <= 135 )
+                    pin->SetOrientation( 'U' ); // 90 degrees
+                else if( oDeg >= 135 || oDeg <= -135 )
+                    pin->SetOrientation( 'L' ); // 180 degrees
+                else
+                    pin->SetOrientation( 'D' ); // -90 degrees
+            };
+
+        if( twoPointUniqueSegments.count( pin->GetPosition() ) )
+        {
+            LIB_POLYLINE* poly = twoPointUniqueSegments.at( pin->GetPosition() );
+
+            wxPoint otherPt = poly->GetPolyPoints().at( 0 );
+
+            if( otherPt == pin->GetPosition() )
+                otherPt = poly->GetPolyPoints().at( 1 );
+
+            VECTOR2I vec( otherPt - pin->GetPosition() );
+
+            pin->SetLength( vec.EuclideanNorm() );
+            setPinOrientation( vec.Angle() );
+            int i = 0;
+        }
+    }
+}
+
+
+std::pair<wxPoint, wxSize>
+CADSTAR_SCH_ARCHIVE_LOADER::getFigureExtentsKiCad(
         const FIGURE& aCadstarFigure )
 {
     wxPoint upperLeft( Assignments.Settings.DesignLimit.x, 0 );
