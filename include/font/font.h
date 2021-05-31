@@ -124,7 +124,7 @@ public:
      * @param aText is the text to be drawn.
      * @param aPosition is the text position in world coordinates.
      * @param aRotationAngle is the text rotation angle
-     * @return bounding box width/height
+     * @return bounding box
      */
     VECTOR2D Draw( KIGFX::GAL* aGal, const UTF8& aText, const VECTOR2D& aPosition,
                    const VECTOR2D& aOrigin, const TEXT_ATTRIBUTES& aAttributes ) const;
@@ -148,7 +148,7 @@ public:
      * @param aPosition is the text position in world coordinates
      * @param aParse is true is aText should first be parsed for variable substition etc.,
      *     otherwise false (default is false)
-     * @return bounding box width/height
+     * @return bounding box
      */
     VECTOR2D DrawString( KIGFX::GAL* aGal, const UTF8& aText, const VECTOR2D& aPosition,
                          bool aParse, const VECTOR2D& aGlyphSize,
