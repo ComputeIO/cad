@@ -65,6 +65,7 @@ add_executable( test_pns
     ../qa_utils/utility_program.cpp
     ../qa_utils/mocks.cpp
     ../../common/base_units.cpp
+    playground.cpp
   )
 
 # Pcbnew tests, so pretend to be pcbnew (for units, etc)
@@ -92,12 +93,11 @@ target_link_libraries( test_pns
     tinyspline_lib
     nanosvg
     idf3
-    unit_test_utils
     ${PCBNEW_IO_LIBRARIES}
     ${wxWidgets_LIBRARIES}
     ${GDI_PLUS_LIBRARIES}
     ${PYTHON_LIBRARIES}
-    ${Boost_LIBRARIES}      # must follow GITHUB
+    ${Boost_LIBRARIES}
     ${PCBNEW_EXTRA_LIBS}    # -lrt must follow Boost
 )
 

@@ -791,6 +791,11 @@ void SCH_PAINTER::draw( LIB_PIN* aPin, int aLayer )
         return;
 
     bool drawingShadows = aLayer == LAYER_SELECTION_SHADOWS;
+#if 1
+    bool dangling = !m_schematic || aPin->HasFlag(IS_DANGLING );
+#else
+    bool dangling = aPin->HasFlag( IS_DANGLING );
+#endif
 
     if( drawingShadows && !aPin->IsSelected() )
         return;
@@ -806,7 +811,7 @@ void SCH_PAINTER::draw( LIB_PIN* aPin, int aLayer )
         }
         else
         {
-            if( aPin->HasFlag( IS_DANGLING ) && aPin->IsPowerConnection() )
+            if( dangling && aPin->IsPowerConnection() )
                 drawPinDanglingSymbol( pos, drawingShadows );
 
             return;
@@ -956,15 +961,18 @@ void SCH_PAINTER::draw( LIB_PIN* aPin, int aLayer )
     }
 
 
-    if( aPin->HasFlag( IS_DANGLING ) && ( aPin->IsVisible() || aPin->IsPowerConnection() ) )
+    if( dangling )
         drawPinDanglingSymbol( pos, drawingShadows );
 
     LIB_PART* libEntry = aPin->GetParent();
 
     // Draw the labels
-    if( drawingShadows && ( libEntry->Type() == LIB_PART_T || libEntry->IsSelected() )
-        && !eeconfig()->m_Selection.draw_selected_children )
+    if( drawingShadows
+            && ( libEntry->Type() == LIB_PART_T || libEntry->IsSelected() )
+            && !eeconfig()->m_Selection.draw_selected_children )
+    {
         return;
+    }
 
     int textOffset = libEntry->GetPinNameOffset();
 
@@ -1030,7 +1038,7 @@ void SCH_PAINTER::draw( LIB_PIN* aPin, int aLayer )
     }
 
     int   insideOffset = textOffset;
-    int   outsideOffset = 10;
+    int   outsideOffset = 2 * Mils2iu( PIN_TEXT_MARGIN ) + ( dangling ? TARGET_PIN_RADIUS / 2 : 0 );
     float lineThickness = (float) m_schSettings.GetDefaultPenWidth();
     float aboveOffset = Mils2iu( PIN_TEXT_MARGIN ) + ( thickness[ABOVE] + lineThickness ) / 2.0;
     float belowOffset = Mils2iu( PIN_TEXT_MARGIN ) + ( thickness[BELOW] + lineThickness ) / 2.0;
@@ -1758,12 +1766,13 @@ void SCH_PAINTER::draw( const SCH_SHEET* aSheet, int aLayer )
             wxPoint offset_pos = initial_pos;
 
             // For aesthetic reasons, the SHEET_PIN is drawn with a small offset of width / 2
+            int sheetPinOffset = KiROUND( width / 2.0 );
             switch( sheetPin->GetEdge() )
             {
-            case SHEET_TOP_SIDE: offset_pos.y += KiROUND( width / 2.0 ); break;
-            case SHEET_BOTTOM_SIDE: offset_pos.y -= KiROUND( width / 2.0 ); break;
-            case SHEET_RIGHT_SIDE: offset_pos.x -= KiROUND( width / 2.0 ); break;
-            case SHEET_LEFT_SIDE: offset_pos.x += KiROUND( width / 2.0 ); break;
+            case SHEET_SIDE::TOP: offset_pos.y += sheetPinOffset; break;
+            case SHEET_SIDE::BOTTOM: offset_pos.y -= sheetPinOffset; break;
+            case SHEET_SIDE::RIGHT: offset_pos.x -= sheetPinOffset; break;
+            case SHEET_SIDE::LEFT: offset_pos.x += sheetPinOffset; break;
             default: break;
             }
 

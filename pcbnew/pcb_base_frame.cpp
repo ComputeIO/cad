@@ -689,8 +689,7 @@ void PCB_BASE_FRAME::CommonSettingsChanged( bool aEnvVarsChanged, bool aTextVars
 
 void PCB_BASE_FRAME::OnModify()
 {
-    GetScreen()->SetModify();
-    GetScreen()->SetSave();
+    GetScreen()->SetContentModified();
 
     GetBoard()->IncrementTimeStamp();
 

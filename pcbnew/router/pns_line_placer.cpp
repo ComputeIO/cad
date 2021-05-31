@@ -132,9 +132,9 @@ bool LINE_PLACER::handleSelfIntersections()
     // closest to the beginning of the tail.
     for( const SHAPE_LINE_CHAIN::INTERSECTION& i : ips )
     {
-        if( i.our.Index() < n )
+        if( i.index_our < n )
         {
-            n = i.our.Index();
+            n = i.index_our;
             ipoint = i.p;
         }
     }
@@ -426,14 +426,120 @@ VECTOR2I closestProjectedPoint( const SHAPE_LINE_CHAIN& line, const VECTOR2I& p 
 }
 
 
+static bool cursorDistMinimum( const SHAPE_LINE_CHAIN& aL, const VECTOR2I& aCursor,  double lengthThreshold, int& theDist, VECTOR2I& aNearest )
+{
+    std::vector<int>      dists;
+    std::vector<VECTOR2I> pts;
+
+    if( aL.PointCount() == 0 )
+        return false;
+
+    VECTOR2I lastP = aL.CPoint(-1);
+    int accumulatedDist = 0;
+
+    dists.reserve( 2 * aL.PointCount() );
+
+    for( int i = 0; i < aL.SegmentCount(); i++ )
+    {
+        const SEG& s = aL.CSegment( i );
+
+        dists.push_back( ( aCursor - s.A ).EuclideanNorm() );
+        pts.push_back( s.A );
+        auto pn = s.NearestPoint( aCursor );
+
+        if( pn != s.A && pn != s.B )
+        {
+            dists.push_back( ( pn - aCursor ).EuclideanNorm() );
+            pts.push_back( pn );
+        }
+
+        accumulatedDist += s.Length();
+
+        if ( accumulatedDist > lengthThreshold )
+        {
+            lastP = s.B;
+            break;
+        }
+    }
+
+    dists.push_back( ( aCursor - lastP ).EuclideanNorm() );
+    pts.push_back( lastP );
+
+    int minDistLoc = std::numeric_limits<int>::max();
+    int minPLoc = -1;
+    int minDistGlob = std::numeric_limits<int>::max();
+    int minPGlob = -1;
+
+    for( int i = 0; i < dists.size(); i++ )
+    {
+        int d = dists[i];
+
+        if( d < minDistGlob )
+        {
+            minDistGlob = d;
+            minPGlob = i;
+        }
+    }
+
+    if( dists.size() >= 3 )
+    {
+        for( int i = 0; i < dists.size() - 3; i++ )
+        {
+            if( dists[i + 2] > dists[i + 1] && dists[i] > dists[i + 1] )
+            {
+                int d = dists[i + 1];
+                if( d < minDistLoc )
+                {
+                    minDistLoc = d;
+                    minPLoc    = i + 1;
+                }
+            }
+        }
+
+        if( dists.back() < minDistLoc && minPLoc >= 0 )
+        {
+            minDistLoc = dists.back();
+            minPLoc    = dists.size() - 1;
+        }
+    }
+    else
+    {
+        // Too few points: just use the global
+        minDistLoc = minDistGlob;
+        minPLoc    = minPGlob;
+    }
+
+// fixme: I didn't make my mind yet if local or global minimum feels better. I'm leaving both
+// in the code, enabling the global one by default
+    minPLoc = -1;
+
+    if( minPLoc < 0 )
+    {
+        theDist = minDistGlob;
+        aNearest = pts[minPGlob];
+        return true;
+    }
+    else
+    {
+        theDist = minDistLoc;
+        aNearest = pts[minPLoc];
+        return true;
+    }
+}
+
+
 bool LINE_PLACER::rhWalkOnly( const VECTOR2I& aP, LINE& aNewHead )
 {
     LINE initTrack( m_head );
     LINE walkFull( m_head );
-    int effort = 0;
-    bool rv = true, viaOk;
 
-    viaOk = buildInitialLine( aP, initTrack );
+    initTrack.RemoveVia();
+    walkFull.RemoveVia();
+
+    int effort = 0;
+    bool viaOk = false;
+
+    VECTOR2I walkP = aP;
 
     WALKAROUND walkaround( m_currentNode, Router() );
 
@@ -442,37 +548,92 @@ bool LINE_PLACER::rhWalkOnly( const VECTOR2I& aP, LINE& aNewHead )
     walkaround.SetLogger( Logger() );
     walkaround.SetIterationLimit( Settings().WalkaroundIterationLimit() );
 
-    WALKAROUND::RESULT wr = walkaround.Route( initTrack );
-    //WALKAROUND::WALKAROUND_STATUS wf = walkaround.Route( initTrack, walkFull, false );
+    int round = 0;
 
-    SHAPE_LINE_CHAIN l_cw = wr.lineCw.CLine();
-    SHAPE_LINE_CHAIN l_ccw = wr.lineCcw.CLine();
+    do {
+        viaOk = buildInitialLine( walkP, initTrack, round == 0 );
 
-    if( wr.statusCcw == WALKAROUND::ALMOST_DONE || wr.statusCw == WALKAROUND::ALMOST_DONE )
-    {
+        double initialLength = initTrack.CLine().Length();
+        double hugThresholdLength = initialLength * Settings().WalkaroundHugLengthThreshold();
 
-        VECTOR2I p_cw = closestProjectedPoint( l_cw, aP );
-        VECTOR2I p_ccw = closestProjectedPoint( l_ccw, aP );
+        WALKAROUND::RESULT wr = walkaround.Route( initTrack );
 
-        int idx_cw = l_cw.Split( p_cw );
-        int idx_ccw = l_ccw.Split( p_ccw );
+        SHAPE_LINE_CHAIN l_cw = wr.lineCw.CLine();
+        SHAPE_LINE_CHAIN l_ccw = wr.lineCcw.CLine();
 
-        l_cw = l_cw.Slice( 0, idx_cw );
-        l_ccw = l_ccw.Slice( 0, idx_ccw );
+        if( wr.statusCcw == WALKAROUND::DONE || wr.statusCw == WALKAROUND::DONE )
+        {
+            int len_cw = wr.statusCw == WALKAROUND::DONE ? l_cw.Length() : INT_MAX;
+            int len_ccw = wr.statusCcw == WALKAROUND::DONE ? l_ccw.Length() : INT_MAX;
 
-        //Dbg()->AddLine( wr.lineCw.CLine(), 3, 40000 );
+            Dbg()->AddLine( wr.lineCw.CLine(), CYAN, 10000, "wf-result-cw" );
+            Dbg()->AddLine( wr.lineCcw.CLine(), BLUE, 20000, "wf-result-ccw" );
 
-        //Dbg()->AddPoint( p_cw, 4 );
-        //Dbg()->AddPoint( p_ccw, 5 );
+            int bestLength = len_cw < len_ccw ? len_cw : len_ccw;
 
-        Dbg()->AddLine( wr.lineCw.CLine(), 4, 1000 );
-        Dbg()->AddLine( wr.lineCcw.CLine(), 5, 1000 );
+            if( bestLength > hugThresholdLength )
+            {
+                wr.statusCw = WALKAROUND::ALMOST_DONE;
+                wr.statusCcw = WALKAROUND::ALMOST_DONE;
+            }
 
-    }
+            SHAPE_LINE_CHAIN& bestLine = len_cw < len_ccw ? l_cw : l_ccw;
+            walkFull.SetShape( bestLine );
+        }
 
-    walkFull.SetShape( l_ccw.Length() < l_cw.Length() ? l_ccw : l_cw );
+        if( wr.statusCcw == WALKAROUND::ALMOST_DONE || wr.statusCw == WALKAROUND::ALMOST_DONE )
+        {
+            bool valid_cw = false, valid_ccw = false;
+            VECTOR2I p_cw, p_ccw;
+            int dist_ccw, dist_cw;
 
-    Dbg()->AddLine( walkFull.CLine(), 2, 100000, "walk-full" );
+            if( wr.statusCcw == WALKAROUND::ALMOST_DONE )
+            {
+                valid_ccw = cursorDistMinimum( l_ccw, aP, hugThresholdLength, dist_ccw, p_ccw );
+                if( valid_ccw )
+                {
+                    int idx_ccw = l_ccw.Split( p_ccw );
+                    l_ccw = l_ccw.Slice( 0, idx_ccw );
+                    Dbg()->AddPoint( p_ccw, BLUE, 500000, "hug-target-ccw" );
+                    Dbg()->AddLine( l_ccw, MAGENTA, 200000, "wh-result-ccw" );
+                }
+            }
+            if( wr.statusCw == WALKAROUND::ALMOST_DONE )
+            {
+                valid_cw = cursorDistMinimum( l_cw, aP, hugThresholdLength, dist_cw, p_cw );
+                if( valid_cw )
+                {
+                    int idx_cw = l_cw.Split( p_cw );
+                    l_cw = l_cw.Slice( 0, idx_cw );
+                    Dbg()->AddPoint( p_cw, YELLOW, 500000, "hug-target-cw" );
+                    Dbg()->AddLine( l_cw, BLUE, 200000, "wh-result-cw" );
+                }
+            }
+
+            if( dist_cw < dist_ccw && valid_cw )
+            {
+                walkFull.SetShape( l_cw );
+                walkP = p_cw;
+            }
+            else if ( valid_ccw )
+            {
+                walkFull.SetShape( l_ccw );
+                walkP = p_ccw;
+            }
+            else
+            {
+                return false;
+            }
+        }
+        else if ( wr.statusCcw == WALKAROUND::STUCK || wr.statusCw == WALKAROUND::STUCK )
+        {
+            return false;
+        }
+
+        round++;
+    } while( round < 2 && m_placingVia );
+
+    Dbg()->AddLine( walkFull.CLine(), GREEN, 200000, "walk-full" );
 
     switch( Settings().OptimizerEffort() )
     {
@@ -489,28 +650,22 @@ bool LINE_PLACER::rhWalkOnly( const VECTOR2I& aP, LINE& aNewHead )
     if( Settings().SmartPads() && !m_mouseTrailTracer.IsManuallyForced() )
         effort |= OPTIMIZER::SMART_PADS;
 
-    if( wr.statusCw == WALKAROUND::STUCK || wr.statusCcw == WALKAROUND::STUCK )
-    {
-        walkFull = walkFull.ClipToNearestObstacle( m_currentNode );
-        rv = true;
-    }
-    else if( m_placingVia && viaOk )
+    if( m_placingVia && viaOk )
     {
         walkFull.AppendVia( makeVia( walkFull.CPoint( -1 ) ) );
     }
 
     OPTIMIZER::Optimize( &walkFull, effort, m_currentNode );
 
+
     if( m_currentNode->CheckColliding( &walkFull ) )
     {
-        aNewHead = m_head;
         return false;
     }
 
-    m_head = walkFull;
     aNewHead = walkFull;
 
-    return rv;
+    return true;
 }
 
 
@@ -665,6 +820,8 @@ bool LINE_PLACER::optimizeTailHeadTransition()
 {
     LINE linetmp = Trace();
 
+    PNS_DBG( Dbg(), Message, "optimize HT" );
+
     if( OPTIMIZER::Optimize( &linetmp, OPTIMIZER::FANOUT_CLEANUP, m_currentNode ) )
     {
         if( linetmp.SegmentCount() < 1 )
@@ -674,6 +831,9 @@ bool LINE_PLACER::optimizeTailHeadTransition()
         m_p_start = linetmp.CLine().CPoint( 0 );
         m_direction = DIRECTION_45( linetmp.CSegment( 0 ) );
         m_tail.Line().Clear();
+
+        PNS_DBG( Dbg(), Message, wxString::Format( "Placer: optimize fanout-cleanup" ) );
+
 
         return true;
     }
@@ -704,11 +864,14 @@ bool LINE_PLACER::optimizeTailHeadTransition()
     // If so, replace the (threshold) last tail points and the head with
     // the optimized line
 
-    if( OPTIMIZER::Optimize( &new_head, OPTIMIZER::MERGE_OBTUSE, m_currentNode ) )
+
+    PNS_DBG( Dbg(), AddLine, new_head.CLine(), LIGHTCYAN, 10000, "ht-newline" );
+
+    if( OPTIMIZER::Optimize( &new_head, OPTIMIZER::MERGE_SEGMENTS, m_currentNode ) )
     {
         LINE tmp( m_tail, opt_line );
 
-        wxLogTrace( "PNS", "Placer: optimize tail-head [%d]", threshold );
+        PNS_DBG( Dbg(), Message, wxString::Format( "Placer: optimize tail-head [%d]", threshold ) );
 
         head.Clear();
         tail.Replace( -threshold, -1, new_head.CLine() );
@@ -738,10 +901,18 @@ void LINE_PLACER::routeStep( const VECTOR2I& aP )
                 m_head.ShapeCount(),
                 m_tail.ShapeCount() );
 
+    PNS_DBG( Dbg(), BeginGroup, "route-step" );
+
+    PNS_DBG( Dbg(), AddLine, m_tail.CLine(), WHITE, 10000, "tail-init" );
+    PNS_DBG( Dbg(), AddLine, m_head.CLine(), GREEN, 10000, "head-init" );
+
     for( i = 0; i < n_iter; i++ )
     {
         if( !go_back && Settings().FollowMouse() )
             reduceTail( aP );
+
+        PNS_DBG( Dbg(), AddLine, m_tail.CLine(), WHITE, 10000, "tail-after-reduce" );
+        PNS_DBG( Dbg(), AddLine, m_head.CLine(), GREEN, 10000, "head-after-reduce" );
 
         go_back = false;
 
@@ -751,10 +922,12 @@ void LINE_PLACER::routeStep( const VECTOR2I& aP )
         if( !new_head.Is45Degree() )
             fail = true;
 
-        if( !Settings().FollowMouse() )
-            return;
+        if( fail )
+            break;
 
         m_head = new_head;
+
+        PNS_DBG( Dbg(), AddLine, m_head.CLine(), LIGHTGREEN, 100000, "head-new" );
 
         if( handleSelfIntersections() )
         {
@@ -762,20 +935,40 @@ void LINE_PLACER::routeStep( const VECTOR2I& aP )
             go_back = true;
         }
 
+        PNS_DBG( Dbg(), AddLine, m_tail.CLine(), WHITE, 10000, "tail-after-si" );
+        PNS_DBG( Dbg(), AddLine, m_head.CLine(), GREEN, 10000, "head-after-si" );
+
         if( !go_back && handlePullback() )
         {
             n_iter++;
             go_back = true;
         }
+
+        PNS_DBG( Dbg(), AddLine, m_tail.CLine(), WHITE, 100000, "tail-after-pb" );
+        PNS_DBG( Dbg(), AddLine, m_head.CLine(), GREEN, 100000, "head-after-pb" );
     }
 
-    if( !fail )
+    if( fail )
     {
-        if( optimizeTailHeadTransition() )
-            return;
-
-        mergeHead();
+        m_head.RemoveVia();
+        m_head.Clear();
     }
+
+    if( !fail && Settings().FollowMouse() )
+    {
+        PNS_DBG( Dbg(), AddLine, m_tail.CLine(), WHITE, 10000, "tail-pre-merge" );
+        PNS_DBG( Dbg(), AddLine, m_head.CLine(), GREEN, 10000, "head-pre-merge" );
+
+        if( !optimizeTailHeadTransition() )
+        {
+            mergeHead();
+        }
+
+        PNS_DBG( Dbg(), AddLine, m_tail.CLine(), WHITE, 100000, "tail-post-merge" );
+        PNS_DBG( Dbg(), AddLine, m_head.CLine(), GREEN, 100000, "head-post-merge" );
+    }
+
+    PNS_DBGN( Dbg(), EndGroup );
 }
 
 
@@ -1365,7 +1558,7 @@ void LINE_PLACER::SetOrthoMode( bool aOrthoMode )
 }
 
 
-bool LINE_PLACER::buildInitialLine( const VECTOR2I& aP, LINE& aHead )
+bool LINE_PLACER::buildInitialLine( const VECTOR2I& aP, LINE& aHead, bool aForceNoVia )
 {
     SHAPE_LINE_CHAIN l;
     DIRECTION_45 guessedDir = m_mouseTrailTracer.GetPosture( aP );
@@ -1406,7 +1599,7 @@ bool LINE_PLACER::buildInitialLine( const VECTOR2I& aP, LINE& aHead )
     aHead.SetLayer( m_currentLayer );
     aHead.SetShape( l );
 
-    if( !m_placingVia )
+    if( !m_placingVia || aForceNoVia )
         return true;
 
     VIA v( makeVia( aP ) );

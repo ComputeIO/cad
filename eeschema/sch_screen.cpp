@@ -29,6 +29,8 @@
  * @brief Implementation of SCH_SCREEN and SCH_SCREENS classes.
  */
 
+#include <wx/filefn.h>
+
 #include <eda_rect.h>
 #include <id.h>
 #include <kicad_string.h>
@@ -100,6 +102,14 @@ void SCH_SCREEN::clearLibSymbols()
         delete libSymbol.second;
 
     m_libSymbols.clear();
+}
+
+
+void SCH_SCREEN::SetFileName( const wxString& aFileName )
+{
+    wxASSERT( aFileName.IsEmpty() || wxIsAbsolutePath( aFileName ) );
+
+    m_fileName = aFileName;
 }
 
 
@@ -286,7 +296,7 @@ void SCH_SCREEN::DeleteItem( SCH_ITEM* aItem )
     // Markers are not saved in the file, no need to flag as modified.
     // TODO: Maybe we should have a listing somewhere of items that aren't saved?
     if( aItem->Type() != SCH_MARKER_T )
-        SetModify();
+        SetContentModified();
 
     Remove( aItem );
 

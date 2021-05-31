@@ -1385,22 +1385,22 @@ void SCH_ALTIUM_PLUGIN::ParseSheetEntry( const std::map<wxString, wxString>& aPr
     case ASCH_SHEET_ENTRY_SIDE::LEFT:
         sheetPin->SetPosition( { pos.x, pos.y + elem.distanceFromTop } );
         sheetPin->SetAlignedAngle( EDA_ANGLE::ANGLE_180 );
-        sheetPin->SetEdge( SHEET_SIDE::SHEET_LEFT_SIDE );
+        sheetPin->SetEdge( SHEET_SIDE::LEFT );
         break;
     case ASCH_SHEET_ENTRY_SIDE::RIGHT:
         sheetPin->SetPosition( { pos.x + size.x, pos.y + elem.distanceFromTop } );
         sheetPin->SetAlignedAngle( EDA_ANGLE::ANGLE_0 );
-        sheetPin->SetEdge( SHEET_SIDE::SHEET_RIGHT_SIDE );
+        sheetPin->SetEdge( SHEET_SIDE::RIGHT );
         break;
     case ASCH_SHEET_ENTRY_SIDE::TOP:
         sheetPin->SetPosition( { pos.x + elem.distanceFromTop, pos.y } );
         sheetPin->SetAlignedAngle( EDA_ANGLE::ANGLE_90 );
-        sheetPin->SetEdge( SHEET_SIDE::SHEET_TOP_SIDE );
+        sheetPin->SetEdge( SHEET_SIDE::TOP );
         break;
     case ASCH_SHEET_ENTRY_SIDE::BOTTOM:
         sheetPin->SetPosition( { pos.x + elem.distanceFromTop, pos.y + size.y } );
         sheetPin->SetAlignedAngle( EDA_ANGLE::ANGLE_270 );
-        sheetPin->SetEdge( SHEET_SIDE::SHEET_BOTTOM_SIDE );
+        sheetPin->SetEdge( SHEET_SIDE::BOTTOM );
         break;
     }
 

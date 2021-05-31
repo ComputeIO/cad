@@ -57,12 +57,20 @@ public:
      */
     struct INTERSECTION
     {
-        /// segment belonging from the (this) argument of Intersect()
-        SEG our;
-        /// segment belonging from the aOther argument of Intersect()
-        SEG their;
         /// point of intersection between our and their.
         VECTOR2I p;
+        /// index of the intersecting corner/segment in the 'our' (== this) line
+        int index_our;
+        /// index of the intersecting corner/segment in the 'their' (Intersect() method parameter) line
+        int index_their;
+        /// when true, the corner [index_our] of the 'our' line lies exactly on 'their' line
+        bool is_corner_our;
+        /// when true, the corner [index_their] of the 'their' line lies exactly on 'our' line.
+        /// Note that when both is_corner_our and is_corner_their are set, the line chains touch with with corners
+        bool is_corner_their;
+        /// auxillary flag to avoid copying intersection info to intersection refining code, used by the refining
+        /// code (e.g. hull handling stuff in the P&S) to reject false intersection points.
+        bool valid;
     };
 
 
@@ -536,7 +544,7 @@ public:
      * @param aP the point to be looked for
      * @return index of the correspoinding point in the line chain or negative when not found.
      */
-    int Find( const VECTOR2I& aP ) const;
+    int Find( const VECTOR2I& aP, int aThreshold = 0 ) const;
 
     /**
      * Function FindSegment()
@@ -545,7 +553,7 @@ public:
      * @param aP the point to be looked for
      * @return index of the correspoinding segment in the line chain or negative when not found.
      */
-    int FindSegment( const VECTOR2I& aP ) const;
+    int FindSegment( const VECTOR2I& aP, int aThreshold = 1 ) const;
 
     /**
      * Function Slice()
@@ -593,7 +601,7 @@ public:
      * sorted with increasing path lengths from the starting point of aChain.
      * @return number of intersections found
      */
-    int Intersect( const SHAPE_LINE_CHAIN& aChain, INTERSECTIONS& aIp ) const;
+    int Intersect( const SHAPE_LINE_CHAIN& aChain, INTERSECTIONS& aIp, bool aExcludeColinearAndTouching = false ) const;
 
     /**
      * Function PathLength()
@@ -602,7 +610,7 @@ public:
      * belonging to our line.
      * @return: path length in Euclidean metric or -1 if aP does not belong to the line chain.
      */
-    int PathLength( const VECTOR2I& aP ) const;
+    int PathLength( const VECTOR2I& aP, int aIndex = -1 ) const;
 
     /**
      * Function CheckClearance()

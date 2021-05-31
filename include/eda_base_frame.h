@@ -202,7 +202,11 @@ public:
     virtual wxString help_name();
 
     void OnKicadAbout( wxCommandEvent& event );
-    void OnPreferences( wxCommandEvent& event );
+
+    /**
+     * Displays the preferences and settings of all opened editors paged dialog
+     */
+    void OnPreferences();
 
     void PrintMsg( const wxString& text );
 
@@ -498,7 +502,7 @@ public:
      *
      * @return true if the contents of the frame have not been saved
      */
-    virtual bool IsContentModified();
+    virtual bool IsContentModified() const;
 
     /**
      * Get the undecorated window size that can be used for restoring the window size.

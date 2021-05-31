@@ -467,8 +467,6 @@ bool DIFF_PAIR_PLACER::FindDpPrimitivePair( NODE* aWorld, const VECTOR2I& aP, IT
 {
     int netP, netN;
 
-    wxLogTrace( "PNS", "world %p", aWorld );
-
     bool result = aWorld->GetRuleResolver()->DpNetPair( aItem, netP, netN );
 
     if( !result )
@@ -485,12 +483,8 @@ bool DIFF_PAIR_PLACER::FindDpPrimitivePair( NODE* aWorld, const VECTOR2I& aP, IT
     int refNet = aItem->Net();
     int coupledNet = ( refNet == netP ) ? netN : netP;
 
-    wxLogTrace( "PNS", "result %d", !!result );
-
     OPT_VECTOR2I refAnchor = getDanglingAnchor( aWorld, aItem );
     ITEM* primRef = aItem;
-
-    wxLogTrace( "PNS", "refAnchor %p", aItem );
 
     if( !refAnchor )
     {
@@ -521,7 +515,7 @@ bool DIFF_PAIR_PLACER::FindDpPrimitivePair( NODE* aWorld, const VECTOR2I& aP, IT
 
             bool shapeMatches = true;
 
-            if( item->OfKind( ITEM::SOLID_T ) && item->Layers() != aItem->Layers() )
+            if( item->OfKind( ITEM::SOLID_T | ITEM::VIA_T ) && item->Layers() != aItem->Layers() )
             {
                 shapeMatches = false;
             }
@@ -592,6 +586,7 @@ bool DIFF_PAIR_PLACER::Start( const VECTOR2I& aP, ITEM* aStartItem )
     m_chainedPlacement = false;
     m_currentTraceOk = false;
     m_currentTrace = DIFF_PAIR();
+    m_currentTrace.SetNets( m_netP, m_netN );
 
     initPlacement();
 

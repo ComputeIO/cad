@@ -56,12 +56,8 @@ public:
 
     void InitDataPoints( const wxSize& aPageSizeInternalUnits );
 
-    void SetModify()        { m_flagModified = true; }
-    void ClrModify()        { m_flagModified = false; }
-    void SetSave()          { m_flagSave = true; }
-    void ClrSave()          { m_flagSave = false; }
-    bool IsModify() const   { return m_flagModified; }
-    bool IsSave() const     { return m_flagSave; }
+    void SetContentModified( bool aModified = true )    { m_flagModified = aModified; }
+    bool IsContentModified() const                      { return m_flagModified; }
 
     /**
      * Return the class name.
@@ -134,7 +130,6 @@ protected:
 
 private:
     bool        m_flagModified;     ///< Indicates current drawing has been modified.
-    bool        m_flagSave;         ///< Indicates automatic file save.
 
     /**
      * The cross hair position in logical (drawing) units.  The cross hair is not the cursor

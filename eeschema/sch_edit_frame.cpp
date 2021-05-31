@@ -782,8 +782,7 @@ void SCH_EDIT_FRAME::OnModify()
     if( !GetScreen() )
         return;
 
-    GetScreen()->SetModify();
-    GetScreen()->SetSave();
+    GetScreen()->SetContentModified();
 
     if( ADVANCED_CFG::GetCfg().m_RealTimeConnectivity && CONNECTION_GRAPH::m_allowRealTime )
         RecalculateConnections( NO_CLEANUP );
@@ -1099,13 +1098,7 @@ bool SCH_EDIT_FRAME::isAutoSaveRequired() const
 
     if( Schematic().IsValid() )
     {
-        SCH_SCREENS screenList( Schematic().Root() );
-
-        for( SCH_SCREEN* screen = screenList.GetFirst(); screen; screen = screenList.GetNext() )
-        {
-            if( screen->IsSave() )
-                return true;
-        }
+        return IsContentModified();
     }
 
     return false;
@@ -1224,7 +1217,7 @@ void SCH_EDIT_FRAME::AddItemToScreenAndUndoList( SCH_SCREEN* aScreen, SCH_ITEM* 
 
     aItem->ClearFlags( IS_NEW );
 
-    aScreen->SetModify();
+    aScreen->SetContentModified();
     UpdateItem( aItem );
 
     if( !aItem->IsMoving() && aItem->IsConnectable() )
@@ -1510,12 +1503,12 @@ void SCH_EDIT_FRAME::FixupJunctions()
     // Save the current sheet, to retrieve it later
     SCH_SHEET_PATH oldsheetpath = GetCurrentSheet();
 
-    bool modified = false;
-
     SCH_SHEET_LIST sheetList = Schematic().GetSheets();
 
     for( const SCH_SHEET_PATH& sheet : sheetList )
     {
+        size_t num_undos = m_undoList.m_CommandsList.size();
+
         // We require a set here to avoid adding multiple junctions to the same spot
         std::set<wxPoint> junctions;
 
@@ -1524,29 +1517,18 @@ void SCH_EDIT_FRAME::FixupJunctions()
 
         SCH_SCREEN* screen = GetCurrentSheet().LastScreen();
 
-        for( auto aItem : screen->Items().OfType( SCH_COMPONENT_T ) )
-        {
-            auto cmp = static_cast<SCH_COMPONENT*>( aItem );
+        EE_SELECTION allItems;
 
-            for( const SCH_PIN* pin : cmp->GetPins( &sheet ) )
-            {
-                auto pos = pin->GetPosition();
+        for( auto item : screen->Items() )
+            allItems.Add( item );
 
-                // Test if a _new_ junction is needed, and add it if missing
-                if( screen->IsJunctionNeeded( pos, true ) )
-                    junctions.insert( pos );
-            }
-        }
+        m_toolManager->RunAction( EE_ACTIONS::addNeededJunctions, true, &allItems );
 
-        for( const wxPoint& pos : junctions )
-            AddJunction( screen, pos, false, false );
-
-        if( junctions.size() )
-            modified = true;
+        // Check if we modified anything during this routine
+        // Needs to happen for every sheet to set the proper modified flag
+        if( m_undoList.m_CommandsList.size() > num_undos )
+            OnModify();
     }
-
-    if( modified )
-        OnModify();
 
     // Reselect the initial sheet:
     SetCurrentSheet( oldsheetpath );
@@ -1555,7 +1537,7 @@ void SCH_EDIT_FRAME::FixupJunctions()
 }
 
 
-bool SCH_EDIT_FRAME::IsContentModified()
+bool SCH_EDIT_FRAME::IsContentModified() const
 {
     return Schematic().GetSheets().IsModified();
 }
