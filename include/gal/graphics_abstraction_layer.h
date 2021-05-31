@@ -39,6 +39,7 @@
 #include <gal/gal_display_options.h>
 #include <newstroke_font.h>
 #include <font/stroke_font.h>
+#include <eda_rect.h>
 
 class SHAPE_LINE_CHAIN;
 class SHAPE_POLY_SET;
@@ -161,6 +162,9 @@ public:
      * @param aEndPoint     is the end point of the rectangle.
      */
     virtual void DrawRectangle( const VECTOR2D& aStartPoint, const VECTOR2D& aEndPoint ){};
+    void DrawRectangle( const EDA_RECT& aRect ) {
+        DrawRectangle( aRect.GetOrigin(), aRect.GetEnd() );
+    }
 
     /**
      * Draw a polygon.
