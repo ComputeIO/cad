@@ -456,9 +456,7 @@ VECTOR2D FONT::Draw( KIGFX::GAL* aGal, const UTF8& aText, const VECTOR2D& aPosit
     for( int i = 0; i < n; i++ )
     {
 #ifdef DEBUG
-        std::cerr << "FONT::Draw( aGal, \"" << aText << "\", " << aPosition << ", " << aOrigin
-                  << ", " << aAttributes << " ) const "
-                  << "drawing line #" << i << "/" << n << " \"" << strings_list[i] << "\" @"
+        std::cerr << "drawing line #" << i << "/" << n << " \"" << strings_list[i] << "\" @"
                   << positions[i].x << "," << positions[i].y << " angle " << angle << std::endl;
 #endif
         aGal->Save();
