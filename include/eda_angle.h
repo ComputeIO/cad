@@ -238,6 +238,7 @@ public:
     {
         std::stringstream ss;
 
+        // 1 decimal precision
         // \u00b0 == Unicode character DEGREE SIGN
         ss << std::fixed << std::setprecision( 1 ) << ( AsTenthsOfADegree() / 10.0 ) << "\u00b0";
         return ss.str();
@@ -279,6 +280,12 @@ public:
 inline EDA_ANGLE operator-( const EDA_ANGLE& aAngle )
 {
     return aAngle.Invert();
+}
+
+
+inline bool operator==( const EDA_ANGLE& aAngleA, const EDA_ANGLE& aAngleB )
+{
+    return aAngleA.AsTenthsOfADegree() == aAngleB.AsTenthsOfADegree();
 }
 
 
