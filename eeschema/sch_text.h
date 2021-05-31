@@ -273,6 +273,8 @@ public:
 
     static HTML_MESSAGE_BOX* ShowSyntaxHelp( wxWindow* aParentWindow );
 
+    virtual int SchematicLayer() const { return LAYER_NOTES; }
+
 protected:
     COLOR4D doPrint( const RENDER_SETTINGS* aSettings, const wxPoint& aOffset, int aLayer );
 
@@ -326,6 +328,8 @@ public:
     {
         return m_isDangling && GetPosition() == aPos;
     }
+
+    virtual int SchematicLayer() const override { return LAYER_LOCLABEL; }
 
 private:
     bool doIsConnected( const wxPoint& aPosition ) const override
@@ -419,6 +423,8 @@ public:
         m_intersheetRefsField.Move( aMoveVector );
     }
 
+    virtual int SchematicLayer() const override { return LAYER_GLOBLABEL; }
+
 private:
     bool doIsConnected( const wxPoint& aPosition ) const override
     {
@@ -475,6 +481,8 @@ public:
     {
         return m_isDangling && GetPosition() == aPos;
     }
+
+    virtual int SchematicLayer() const override { return LAYER_HIERLABEL; }
 
 private:
     bool doIsConnected( const wxPoint& aPosition ) const override

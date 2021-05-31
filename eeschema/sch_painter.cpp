@@ -458,13 +458,9 @@ void SCH_PAINTER::draw( const LIB_PART* aPart, int aLayer, bool aDrawFields, int
 
     for( const LIB_ITEM& item : drawnPart->GetDrawItems() )
     {
-        if( !aDrawFields && item.Type() == LIB_FIELD_T )
-            continue;
-
-        if( aUnit && item.GetUnit() && aUnit != item.GetUnit() )
-            continue;
-
-        if( aConvert && item.GetConvert() && aConvert != item.GetConvert() )
+        if( ( !aDrawFields && item.Type() == LIB_FIELD_T )
+            || ( aUnit && item.GetUnit() && aUnit != item.GetUnit() )
+            || ( aConvert && item.GetConvert() && aConvert != item.GetConvert() ) )
             continue;
 
         Draw( &item, aLayer );
@@ -723,19 +719,20 @@ void SCH_PAINTER::draw( const LIB_TEXT* aText, int aLayer )
 
     if( !aText->IsVisible() )
     {
-        if( m_schSettings.m_ShowHiddenText )
-            color = getRenderColor( aText, LAYER_HIDDEN, drawingShadows );
-        else
+        if( !m_schSettings.m_ShowHiddenText )
             return;
+
+        color = getRenderColor( aText, LAYER_HIDDEN, drawingShadows );
     }
 
     EDA_RECT bBox = aText->GetBoundingBox();
     bBox.RevertYAxis();
 
     m_gal->SetLineWidth( getTextThickness( aText, drawingShadows ) );
-    m_gal->SetIsFill( false );
-    m_gal->SetIsStroke( true );
+    m_gal->SetIsFill( aText->GetFont()->IsOutline() );
+    m_gal->SetIsStroke( aText->GetFont()->IsStroke() );
     m_gal->SetStrokeColor( color );
+    m_gal->SetFillColor( color );
     m_gal->SetGlyphSize( VECTOR2D( aText->GetTextSize() ) );
     m_gal->SetFontBold( aText->IsBold() );
     m_gal->SetFontItalic( aText->IsItalic() );
@@ -1350,17 +1347,14 @@ void SCH_PAINTER::draw( const SCH_TEXT* aText, int aLayer )
         return;
 
 #ifdef DEBUG
-    std::cerr << "SCH_PAINTER::draw( " << *aText << ", " << aLayer << " )" << std::endl;
+    std::cerr << "SCH_PAINTER::draw( " << *aText << ", " << aLayer << " )";
 #endif
+    aLayer = aText->SchematicLayer();
 
-    switch( aText->Type() )
-    {
-    case SCH_SHEET_PIN_T: aLayer = LAYER_SHEETLABEL; break;
-    case SCH_HIER_LABEL_T: aLayer = LAYER_HIERLABEL; break;
-    case SCH_GLOBAL_LABEL_T: aLayer = LAYER_GLOBLABEL; break;
-    case SCH_LABEL_T: aLayer = LAYER_LOCLABEL; break;
-    default: aLayer = LAYER_NOTES; break;
-    }
+#ifdef DEBUG
+    std::cerr << " drawing " << ( drawingShadows ? "shadows " : "" ) << " on layer " << aLayer
+              << std::endl;
+#endif
 
     COLOR4D color = getRenderColor( aText, aLayer, drawingShadows );
 
@@ -1425,13 +1419,16 @@ void SCH_PAINTER::draw( const SCH_TEXT* aText, int aLayer )
 
     if( !shownText.IsEmpty() )
     {
+        strokeText( aText, offsetPosition );
 #ifdef DEBUG
         std::cerr << aText->GetText() << " @" << aText->GetTextPos() << " angle "
                   << aText->GetTextEdaAngle() << " HAlign " << aText->GetHorizontalAlignment()
-                  << ", stroking @ offsetPosition " << offsetPosition << " diff "
+                  << ", drawing @ offsetPosition " << offsetPosition << " diff "
                   << ( offsetPosition - aText->GetTextPos() ) << std::endl;
+        m_gal->SetLineWidth( drawingShadows ? getShadowWidth()
+                                            : m_schSettings.GetDanglingSymbolThickness() );
+        m_gal->DrawCircle( offsetPosition, 15000 );
 #endif
-        strokeText( aText, offsetPosition );
     }
 
     // Draw text origin indicator
@@ -1445,6 +1442,10 @@ void SCH_PAINTER::draw( const SCH_TEXT* aText, int aLayer )
         m_gal->SetStrokeColor( color.Inverted() );
         // TODO circle radius here just randomly picked now
         m_gal->DrawCircle( aText->GetTextPos(), 10000 );
+#ifdef DEBUG
+        if( drawingShadows )
+            m_gal->DrawRectangle( aText->GetBoundingBox() );
+#endif
     }
 
     if( aText->IsDangling() )
