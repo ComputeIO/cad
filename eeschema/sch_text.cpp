@@ -226,6 +226,7 @@ void SCH_TEXT::MirrorVertically( int aCenter )
 
 void SCH_TEXT::Rotate( wxPoint aCenter )
 {
+#if 0 // TODO TESTING
     wxPoint pt = GetTextPos();
     RotatePoint( &pt, aCenter, 900 );
     wxPoint offset = pt - GetTextPos();
@@ -233,20 +234,59 @@ void SCH_TEXT::Rotate( wxPoint aCenter )
     Rotate90( false );
 
     SetTextPos( GetTextPos() + offset );
+#else
+    Rotate90( false );
+#endif
 }
 
 
 void SCH_TEXT::Rotate90( bool aClockwise )
 {
-    if( aClockwise )
+    switch( GetHorizontalAlignment() )
     {
-        RotateCW();
+    case TEXT_ATTRIBUTES::H_LEFT:
+    case TEXT_ATTRIBUTES::H_RIGHT:
+        if( IsKeepUpright() )
+        {
+            // simulate old "spin style" behaviour
+            if( aClockwise )
+            {
+                if( GetTextEdaAngle() == EDA_ANGLE::ANGLE_0
+                    || GetTextEdaAngle() == EDA_ANGLE::ANGLE_180 )
+                    FlipHorizontalAlignment();
+
+                if( GetTextEdaAngle() == EDA_ANGLE::ANGLE_0 )
+                    SetTextAngle( EDA_ANGLE::ANGLE_90 );
+                else
+                    SetTextAngle( EDA_ANGLE::ANGLE_0 );
+            }
+            else
+            {
+                if( GetTextEdaAngle() == EDA_ANGLE::ANGLE_90
+                    || GetTextEdaAngle() == EDA_ANGLE::ANGLE_270 )
+                    FlipHorizontalAlignment();
+                if( GetTextEdaAngle() == EDA_ANGLE::ANGLE_90 )
+                    SetTextAngle( EDA_ANGLE::ANGLE_0 );
+                else
+                    SetTextAngle( EDA_ANGLE::ANGLE_90 );
+            }
+        }
+        else
+        {
+            // TODO: do we need custom behaviour for when
+            // "Keep Upright" is not ticked?
+        }
+        break;
+    case TEXT_ATTRIBUTES::H_CENTER:
+        if( aClockwise )
+            RotateCW();
+        else
+            RotateCCW();
+        break;
     }
-    else
-    {
-        RotateCCW();
-    }
-    SetDefaultAlignment();
+
+
+    //SetDefaultAlignment();
 }
 
 
@@ -439,7 +479,25 @@ const EDA_RECT SCH_TEXT::GetBoundingBox() const
     //EDA_RECT rect = GetTextBox();
     VECTOR2D bbox = GetFont()->BoundingBox( *this );
     wxSize   bboxSize( bbox.x, bbox.y );
-    EDA_RECT rect( GetTextPos(), bboxSize );
+    wxPoint  bboxOrigin = GetTextPos();
+
+    switch( GetHorizontalAlignment() )
+    {
+    default:
+    case TEXT_ATTRIBUTES::H_LEFT: break;
+    case TEXT_ATTRIBUTES::H_CENTER: bboxOrigin.x -= ( bbox.x / 2 ); break;
+    case TEXT_ATTRIBUTES::H_RIGHT: bboxOrigin.x -= bbox.x; break;
+    }
+
+    switch( GetVerticalAlignment() )
+    {
+    default:
+    case TEXT_ATTRIBUTES::V_TOP: break;
+    case TEXT_ATTRIBUTES::V_CENTER: bboxOrigin.y -= ( bbox.y / 2 ); break;
+    case TEXT_ATTRIBUTES::V_BOTTOM: bboxOrigin.y -= bbox.y; break;
+    }
+
+    EDA_RECT rect( bboxOrigin, bboxSize );
 
     if( GetTextAngle() != 0 ) // Rotate rect
     {
@@ -785,6 +843,10 @@ const EDA_RECT SCH_LABEL::GetBoundingBox() const
     // Labels have a position point that is outside of the TextBox
     rect.Merge( GetPosition() );
 
+#ifdef DEBUG
+    std::cerr << "SCH_LABEL::GetBoundingBox() \"" << GetShownText() << "\"@" << GetTextPos() << " "
+              << GetTextAngle() << " bbox " << bbox << " rect " << rect << std::endl;
+#endif
     return rect;
 }
 
@@ -942,7 +1004,7 @@ void SCH_GLOBALLABEL::Rotate90( bool aClockwise )
 
     if( m_intersheetRefsField.GetTextAngle() == TEXT_ANGLE_VERT )
     {
-        if ( m_intersheetRefsField.GetHorizontalAlignment() == TEXT_ATTRIBUTES::H_LEFT )
+        if( m_intersheetRefsField.GetHorizontalAlignment() == TEXT_ATTRIBUTES::H_LEFT )
         {
             if( !aClockwise )
                 m_intersheetRefsField.Align( TEXT_ATTRIBUTES::H_RIGHT );
@@ -959,7 +1021,7 @@ void SCH_GLOBALLABEL::Rotate90( bool aClockwise )
     }
     else if( m_intersheetRefsField.GetTextAngle() == TEXT_ANGLE_HORIZ )
     {
-        if ( m_intersheetRefsField.GetHorizontalAlignment() == TEXT_ATTRIBUTES::H_LEFT )
+        if( m_intersheetRefsField.GetHorizontalAlignment() == TEXT_ATTRIBUTES::H_LEFT )
         {
             if( aClockwise )
                 m_intersheetRefsField.Align( TEXT_ATTRIBUTES::H_RIGHT );
@@ -1058,6 +1120,9 @@ void SCH_GLOBALLABEL::UpdateIntersheetRefProps()
 
 void SCH_GLOBALLABEL::AutoplaceFields( SCH_SCREEN* aScreen, bool aManual )
 {
+#ifdef DEBUG
+    std::cerr << "SCH_GLOBALLABEL::AutoplaceFields( ... )" << std::endl;
+#endif
     int margin = GetTextOffset();
     int labelLen = GetBoundingBoxBase().GetSizeMax();
     int penOffset = GetPenWidth() / 2;
@@ -1190,6 +1255,9 @@ void SCH_GLOBALLABEL::Plot( PLOTTER* aPlotter ) const
 void SCH_GLOBALLABEL::CreateGraphicShape( const RENDER_SETTINGS* aRenderSettings,
                                           std::vector<wxPoint>& aPoints, const wxPoint& Pos ) const
 {
+#ifdef DEBUG
+    std::cerr << "SCH_GLOBALLABEL::CreateGraphicShape( ... )" << std::endl;
+#endif
     VECTOR2D bbox = GetFont()->BoundingBox( *this );
 
     int margin = GetTextOffset( aRenderSettings );
@@ -1254,6 +1322,9 @@ void SCH_GLOBALLABEL::CreateGraphicShape( const RENDER_SETTINGS* aRenderSettings
 
 const EDA_RECT SCH_GLOBALLABEL::GetBoundingBoxBase() const
 {
+#ifdef DEBUG
+    std::cerr << "SCH_GLOBALLABEL::GetBoundingBoxBase()" << std::endl;
+#endif
     // build the bounding box on the global label only, without taking in account
     // the intersheets references, just the bounding box of the graphic shape
     int x = GetTextPos().x;
@@ -1400,6 +1471,10 @@ void SCH_HIERLABEL::CreateGraphicShape( const RENDER_SETTINGS* aSettings,
 
 const EDA_RECT SCH_HIERLABEL::GetBoundingBox() const
 {
+#ifdef DEBUG
+    std::cerr << "SCH_HIERLABEL::GetBoundingBox() \"" << GetShownText() << "\"@" << GetTextPos()
+              << " " << GetTextAngle() << std::endl;
+#endif
     int penWidth = GetEffectiveTextPenWidth();
     int margin = GetTextOffset();
 
@@ -1409,39 +1484,45 @@ const EDA_RECT SCH_HIERLABEL::GetBoundingBox() const
     int height = GetTextHeight() + penWidth + margin;
     int length = LenSize( GetShownText(), penWidth ) + height; // add height for triangular shapes
 
-    int dx, dy;
+    int dx = 0;
+    int dy = 0;
+    int symbolSizeOffset = Mils2iu( DANGLING_SYMBOL_SIZE );
+    int halfHeight = height / 2;
 
     switch( GetTextEdaAngle().AsDegrees() )
     {
     case 0:
         dx = length;
         dy = height;
-        x -= Mils2iu( DANGLING_SYMBOL_SIZE );
-        y -= height / 2;
+        x -= symbolSizeOffset;
+        y -= halfHeight;
         break;
     case 90:
         dx = height;
         dy = -length;
-        x -= height / 2;
-        y += Mils2iu( DANGLING_SYMBOL_SIZE );
+        x -= halfHeight;
+        y += symbolSizeOffset;
         break;
     default:
     case 180:
         dx = -length;
         dy = height;
-        x += Mils2iu( DANGLING_SYMBOL_SIZE );
-        y -= height / 2;
+        x += symbolSizeOffset;
+        y -= halfHeight;
         break;
     case 270:
         dx = height;
         dy = length;
-        x -= height / 2;
-        y -= Mils2iu( DANGLING_SYMBOL_SIZE );
+        x -= halfHeight;
+        y -= symbolSizeOffset;
         break;
     }
 
     EDA_RECT box( wxPoint( x, y ), wxSize( dx, dy ) );
     box.Normalize();
+#ifdef DEBUG
+    std::cerr << "bbox " << box << std::endl;
+#endif
     return box;
 }
 
