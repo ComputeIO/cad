@@ -429,7 +429,7 @@ bool DIALOG_SCH_TEXT_PROPERTIES::TransferDataFromWindow()
     m_CurrentText->SetTextThickness( penWidth );
 
     m_CurrentText->SetLineSpacing( std::stod( m_FontLineSpacing->GetValue().ToStdString() ) );
-    m_CurrentText->SetPosition( wxPoint( m_positionX.GetValue(), m_positionY.GetValue() );
+    m_CurrentText->SetPosition( wxPoint( m_positionX.GetValue(), m_positionY.GetValue() ) );
 
     m_Parent->UpdateItem( m_CurrentText );
     m_Parent->GetCanvas()->Refresh();
