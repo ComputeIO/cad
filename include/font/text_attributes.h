@@ -181,23 +181,36 @@ public:
 
     HORIZONTAL_ALIGNMENT OppositeHorizontalAlignment() const
     {
-        if( m_horizontal_alignment == TEXT_ATTRIBUTES::H_LEFT )
-            return TEXT_ATTRIBUTES::H_RIGHT;
-        if( m_horizontal_alignment == TEXT_ATTRIBUTES::H_RIGHT )
-            return TEXT_ATTRIBUTES::H_LEFT;
-        return m_horizontal_alignment;
+        return OppositeAlignment( m_horizontal_alignment );
     }
+
     void FlipHorizontalAlignment() { Align( OppositeHorizontalAlignment() ); }
 
     VERTICAL_ALIGNMENT GetVerticalAlignment() const { return m_vertical_alignment; }
 
     VERTICAL_ALIGNMENT OppositeVerticalAlignment() const
     {
-        if( m_vertical_alignment == TEXT_ATTRIBUTES::V_TOP )
-            return TEXT_ATTRIBUTES::V_BOTTOM;
-        if( m_vertical_alignment == TEXT_ATTRIBUTES::V_BOTTOM )
-            return TEXT_ATTRIBUTES::V_TOP;
-        return m_vertical_alignment;
+        return OppositeAlignment( m_vertical_alignment );
+    }
+
+    static HORIZONTAL_ALIGNMENT OppositeAlignment( HORIZONTAL_ALIGNMENT aHorizontalAlignment )
+    {
+        switch( aHorizontalAlignment )
+        {
+        case TEXT_ATTRIBUTES::H_LEFT: return TEXT_ATTRIBUTES::H_RIGHT;
+        case TEXT_ATTRIBUTES::H_RIGHT: return TEXT_ATTRIBUTES::H_LEFT;
+        default: return aHorizontalAlignment;
+        }
+    }
+
+    static VERTICAL_ALIGNMENT OppositeAlignment( VERTICAL_ALIGNMENT aVerticalAlignment )
+    {
+        switch( aVerticalAlignment )
+        {
+        case TEXT_ATTRIBUTES::V_TOP: return TEXT_ATTRIBUTES::V_BOTTOM;
+        case TEXT_ATTRIBUTES::V_BOTTOM: return TEXT_ATTRIBUTES::V_TOP;
+        default: return aVerticalAlignment;
+        }
     }
 
     ORIENTATION GetOrientation() const { return m_orientation; }

@@ -25,6 +25,7 @@
  */
 
 #include <common.h>
+#include <core/wx_stl_compat.h>
 #include <kicad_string.h>
 #include <font/stroke_font.h>
 #include <font/outline_font.h>
@@ -286,6 +287,17 @@ void FONT::getLinePositions( const UTF8& aText, const VECTOR2D& aPosition,
 #endif
 
     wxPoint offset( 0, 0 );
+    TEXT_ATTRIBUTES::VERTICAL_ALIGNMENT vAlignment = aAttributes.GetVerticalAlignment();
+    TEXT_ATTRIBUTES::HORIZONTAL_ALIGNMENT hAlignment = aAttributes.GetHorizontalAlignment();
+    EDA_ANGLE angle = aAttributes.GetAngle();
+
+    if( aAttributes.IsKeepUpright()
+        && aAttributes.GetAngle() > EDA_ANGLE::ANGLE_90 )
+    {
+        angle = angle.RotateCW().RotateCW();
+        hAlignment = TEXT_ATTRIBUTES::OppositeAlignment( hAlignment );
+        vAlignment = TEXT_ATTRIBUTES::OppositeAlignment( vAlignment );
+    }
 
     switch( aAttributes.GetVerticalAlignment() )
     {
@@ -301,7 +313,7 @@ void FONT::getLinePositions( const UTF8& aText, const VECTOR2D& aPosition,
         wxPoint  lineOffset( offset );
         lineOffset.y += i * interline;
 
-        switch( aAttributes.GetHorizontalAlignment() )
+        switch( hAlignment )
         {
         case TEXT_ATTRIBUTES::H_LEFT: break;
         case TEXT_ATTRIBUTES::H_CENTER: lineOffset.x = mirrorX * -textSize.x / 2; break;
@@ -309,11 +321,13 @@ void FONT::getLinePositions( const UTF8& aText, const VECTOR2D& aPosition,
         }
 
         wxPoint pos( aPosition.x + lineOffset.x, aPosition.y + lineOffset.y );
+        RotatePoint( &pos, origin, angle.AsTenthsOfADegree() );
+
 #ifdef DEBUG
-        std::cerr << "Line #" << i << "/" << aLineCount << " pos " << pos.x << "," << pos.y
-                  << " aPosition " << aPosition.x << "," << aPosition.y << " offset " << offset.x
-                  << "," << offset.y << " lineOffset " << lineOffset.x << "," << lineOffset.y
-                  << " interline " << interline << " textSize " << textSize << std::endl;
+        std::cerr << "Line #" << i << "/" << aLineCount << " pos " << pos << " aPosition "
+                  << aPosition << " origin " << origin << " offset " << offset << " lineOffset "
+                  << lineOffset << " interline " << interline << " textSize " << textSize
+                  << " mirrorX " << mirrorX << " angle " << angle << std::endl;
 #endif
 
         aPositions.push_back( pos );
@@ -461,6 +475,7 @@ VECTOR2D FONT::Draw( KIGFX::GAL* aGal, const UTF8& aText, const VECTOR2D& aPosit
 #endif
         aGal->Save();
         aGal->Translate( positions[i] );
+
         if( !angle.IsZero() )
         {
 #ifdef DEBUG
@@ -483,6 +498,7 @@ VECTOR2D FONT::Draw( KIGFX::GAL* aGal, const UTF8& aText, const VECTOR2D& aPosit
 #endif
             aGal->Rotate( rotationAngle.AsRadians() );
         }
+
         VECTOR2D lineBoundingBox = drawSingleLineText( aGal, strings_list[i], VECTOR2D( 0, 0 ) );
         aGal->Restore();
 

@@ -242,6 +242,7 @@ void SCH_TEXT::Rotate( wxPoint aCenter )
 
 void SCH_TEXT::Rotate90( bool aClockwise )
 {
+#ifdef SIMULATE_SPIN_STYLE
     switch( GetHorizontalAlignment() )
     {
     case TEXT_ATTRIBUTES::H_LEFT:
@@ -284,9 +285,13 @@ void SCH_TEXT::Rotate90( bool aClockwise )
             RotateCCW();
         break;
     }
-
-
+#else
+    if( aClockwise )
+        RotateCW();
+    else
+        RotateCCW();
     //SetDefaultAlignment();
+#endif // SIMULATE_SPIN_STYLE
 }
 
 
@@ -697,8 +702,11 @@ void SCH_TEXT::GetMsgPanelInfo( EDA_DRAW_FRAME* aFrame, MSG_PANEL_ITEMS& aList )
     // Don't use GetShownText() here; we want to show the user the variable references
     aList.push_back( MSG_PANEL_ITEM( msg, UnescapeString( GetText() ) ) );
 
-    msg = TEXT_ATTRIBUTES::ToString( GetHorizontalAlignment() );
-    aList.push_back( MSG_PANEL_ITEM( _( "Justification" ), msg, BROWN ) );
+    if( ShowAlignment() )
+    {
+        msg = TEXT_ATTRIBUTES::ToString( GetHorizontalAlignment() );
+        aList.push_back( MSG_PANEL_ITEM( _( "Justification" ), msg, BROWN ) );
+    }
 
     msg = GetTextEdaAngle().AsDegreesString();
     aList.push_back( MSG_PANEL_ITEM( _( "Angle" ), msg, BROWN ) );
@@ -762,7 +770,7 @@ void SCH_TEXT::Show( int nestLevel, std::ostream& os ) const
 
 
 SCH_LABEL::SCH_LABEL( const wxPoint& pos, const wxString& text ) :
-        SCH_TEXT( pos, text, SCH_LABEL_T )
+        SCH_LABEL_BASE( pos, text, SCH_LABEL_T )
 {
     m_layer = LAYER_LOCLABEL;
     m_shape = PINSHEETLABEL_SHAPE::PS_INPUT;
@@ -864,7 +872,7 @@ BITMAPS SCH_LABEL::GetMenuImage() const
 
 
 SCH_GLOBALLABEL::SCH_GLOBALLABEL( const wxPoint& pos, const wxString& text ) :
-        SCH_TEXT( pos, text, SCH_GLOBAL_LABEL_T ), m_intersheetRefsField( { 0, 0 }, 0, this )
+        SCH_LABEL_BASE( pos, text, SCH_GLOBAL_LABEL_T ), m_intersheetRefsField( { 0, 0 }, 0, this )
 {
     m_layer = LAYER_GLOBLABEL;
     m_shape = PINSHEETLABEL_SHAPE::PS_BIDI;
@@ -881,7 +889,7 @@ SCH_GLOBALLABEL::SCH_GLOBALLABEL( const wxPoint& pos, const wxString& text ) :
 
 
 SCH_GLOBALLABEL::SCH_GLOBALLABEL( const SCH_GLOBALLABEL& aGlobalLabel ) :
-        SCH_TEXT( aGlobalLabel ), m_intersheetRefsField( { 0, 0 }, 0, this )
+        SCH_LABEL_BASE( aGlobalLabel ), m_intersheetRefsField( { 0, 0 }, 0, this )
 {
     m_intersheetRefsField = aGlobalLabel.m_intersheetRefsField;
 
@@ -1403,7 +1411,7 @@ BITMAPS SCH_GLOBALLABEL::GetMenuImage() const
 
 
 SCH_HIERLABEL::SCH_HIERLABEL( const wxPoint& pos, const wxString& text, KICAD_T aType ) :
-        SCH_TEXT( pos, text, aType )
+        SCH_LABEL_BASE( pos, text, aType )
 {
     m_layer = LAYER_HIERLABEL;
     m_shape = PINSHEETLABEL_SHAPE::PS_INPUT;

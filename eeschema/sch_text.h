@@ -275,6 +275,8 @@ public:
 
     virtual int SchematicLayer() const { return LAYER_NOTES; }
 
+    virtual bool ShowAlignment() const { return true; }
+
 protected:
     COLOR4D doPrint( const RENDER_SETTINGS* aSettings, const wxPoint& aOffset, int aLayer );
 
@@ -288,7 +290,22 @@ protected:
 };
 
 
-class SCH_LABEL : public SCH_TEXT
+class SCH_LABEL_BASE : public SCH_TEXT
+{
+public:
+    SCH_LABEL_BASE( const wxPoint& aPos = wxPoint( 0, 0 ), const wxString& aText = wxEmptyString,
+                    KICAD_T aType = SCH_TEXT_T ) :
+            SCH_TEXT( aPos, aText, aType )
+    {
+    }
+
+    virtual bool ShowAlignment() const override { return false; }
+
+protected:
+};
+
+
+class SCH_LABEL : public SCH_LABEL_BASE
 {
 public:
     SCH_LABEL( const wxPoint& aPos = wxPoint( 0, 0 ), const wxString& aText = wxEmptyString );
@@ -339,7 +356,7 @@ private:
 };
 
 
-class SCH_GLOBALLABEL : public SCH_TEXT
+class SCH_GLOBALLABEL : public SCH_LABEL_BASE
 {
 public:
     SCH_GLOBALLABEL( const wxPoint& aPos = wxPoint( 0, 0 ), const wxString& aText = wxEmptyString );
@@ -435,7 +452,7 @@ private:
 };
 
 
-class SCH_HIERLABEL : public SCH_TEXT
+class SCH_HIERLABEL : public SCH_LABEL_BASE
 {
 public:
     SCH_HIERLABEL( const wxPoint& aPos = wxPoint( 0, 0 ), const wxString& aText = wxEmptyString,
