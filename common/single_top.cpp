@@ -174,10 +174,7 @@ struct APP_SINGLE_TOP : public wxApp
 
     int  OnExit() override
     {
-        // Fixes segfault when wxPython scripting is enabled.
-#if defined( KICAD_SCRIPTING_WXPYTHON )
         program.OnPgmExit();
-#endif
         return wxApp::OnExit();
     }
 
@@ -203,10 +200,6 @@ struct APP_SINGLE_TOP : public wxApp
             wxLogError( wxT( "Unhandled exception of unknown type" ) );
         }
 
-        // Works properly when wxPython scripting is disabled.
-#if !defined( KICAD_SCRIPTING_WXPYTHON )
-        program.OnPgmExit();
-#endif
         return ret;
     }
 
@@ -302,12 +295,12 @@ bool PGM_SINGLE_TOP::OnPgmInit()
     // i.e. they are single part link images so don't need to load a *.kiface.
 
     // Get the getter, it is statically linked into this binary image.
-    KIFACE_GETTER_FUNC* getter = &KIFACE_GETTER;
+    KIFACE_GETTER_FUNC* ki_getter = &KIFACE_GETTER;
 
     int  kiface_version;
 
     // Get the KIFACE.
-    KIFACE* kiface = getter( &kiface_version, KIFACE_VERSION, this );
+    KIFACE* kiface = ki_getter( &kiface_version, KIFACE_VERSION, this );
 
     // Trick the KIWAY into thinking it loaded a KIFACE, by recording the KIFACE
     // in the KIWAY.  It needs to be there for KIWAY::OnKiwayEnd() anyways.

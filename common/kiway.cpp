@@ -109,6 +109,7 @@ const wxString KIWAY::dso_search_path( FACE_T aFaceId )
     case FACE_PL_EDITOR:        name = KIFACE_PREFIX "pl_editor";           break;
     case FACE_PCB_CALCULATOR:   name = KIFACE_PREFIX "pcb_calculator";      break;
     case FACE_BMP2CMP:          name = KIFACE_PREFIX "bitmap2component";    break;
+    case FACE_PYTHON:           name = KIFACE_PREFIX "kipython";            break;
 
     default:
         wxASSERT_MSG( 0, wxT( "caller has a bug, passed a bad aFaceId" ) );
@@ -122,7 +123,6 @@ const wxString KIWAY::dso_search_path( FACE_T aFaceId )
     {
         // The 2 *.cpp program launchers: single_top.cpp and kicad.cpp expect
         // the *.kiface's to reside in same directory as their binaries do.
-        // Not so for python launcher, identified by KFCTL_PY_PROJECT_SUITE
         path = wxStandardPaths::Get().GetExecutablePath();
     }
 
@@ -165,6 +165,7 @@ const wxString KIWAY::dso_search_path( FACE_T aFaceId )
         switch( aFaceId )
         {
             case FACE_PL_EDITOR: dirName = "pagelayout_editor";   break;
+            case FACE_PYTHON:    dirName = "scripting";           break;
             default:             dirName = name + 1;              break;
         }
 
@@ -264,9 +265,9 @@ KIFACE*  KIWAY::KiFACE( FACE_T aFaceId, bool doLoad )
         }
         else
         {
-            KIFACE_GETTER_FUNC* getter = (KIFACE_GETTER_FUNC*) addr;
+            KIFACE_GETTER_FUNC* ki_getter = (KIFACE_GETTER_FUNC*) addr;
 
-            KIFACE* kiface = getter( &m_kiface_version[aFaceId], KIFACE_VERSION, m_program );
+            KIFACE* kiface = ki_getter( &m_kiface_version[aFaceId], KIFACE_VERSION, m_program );
 
             // KIFACE_GETTER_FUNC function comment (API) says the non-NULL is unconditional.
             wxASSERT_MSG( kiface,
@@ -337,6 +338,9 @@ KIWAY::FACE_T KIWAY::KifaceType( FRAME_T aFrameType )
     case FRAME_CVPCB:
     case FRAME_CVPCB_DISPLAY:
         return FACE_CVPCB;
+
+    case FRAME_PYTHON:
+        return FACE_PYTHON;
 
     case FRAME_GERBER:
         return FACE_GERBVIEW;

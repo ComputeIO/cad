@@ -50,6 +50,7 @@
 #include <lockfile.h>
 #include <menus_helpers.h>
 #include <pgm_base.h>
+#include <python_scripting.h>
 #include <settings/common_settings.h>
 #include <settings/settings_manager.h>
 #include <systemdirsappend.h>
@@ -284,6 +285,8 @@ bool PGM_BASE::InitPgm( bool aHeadless )
     loadCommonSettings();
 
     ReadPdfBrowserInfos();      // needs GetCommonSettings()
+
+    m_python_scripting = std::make_unique<SCRIPTING>();
 
 #ifdef __WXMAC__
     // Always show filters on Open dialog to be able to choose plugin

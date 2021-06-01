@@ -27,7 +27,8 @@
  * @brief Python wrapping helpers for wx structures/objects
  */
 
-#include <Python.h>
+#include <Python.h> // must be first to avoid wx/python typedef conflicts on msvc
+#include <macros.h>
 #include <wx/intl.h>
 #include <wx/string.h>
 #include <wx/arrstr.h>
@@ -44,15 +45,7 @@ PyObject* wxArrayString2PyList( const wxArrayString& lst )
 
     for( size_t i = 0; i < lst.GetCount(); i++ )
     {
-#if wxUSE_UNICODE
-        PyObject* pyStr = PyUnicode_FromWideChar( lst[i].c_str(),
-                                                  lst[i].Len()
-                                                  );
-#else
-        PyObject* pyStr = PyString_FromStringAndSize( lst[i].c_str(),
-                                                      lst[i].Len()
-                                                      );
-#endif
+        PyObject* pyStr = PyUnicode_FromString( lst[i].utf8_str() );
         PyList_Append( list, pyStr );
         Py_DECREF( pyStr );
     }
@@ -61,67 +54,40 @@ PyObject* wxArrayString2PyList( const wxArrayString& lst )
 }
 
 
-wxString* newWxStringFromPy( PyObject* src )
+wxString Py2wxString( PyObject* src )
 {
     bool        must_unref_str = false;
-
-    wxString*   result  = NULL;
-    PyObject*   obj     = src;
-
-#if wxUSE_UNICODE
     bool        must_unref_obj = false;
-    // Unicode string to python unicode string
+
+    wxString    result;
+
+    PyObject*   obj     = src;
     PyObject*   uni_str = src;
 
     // if not an str or unicode, try to str(src)
-#if PY_MAJOR_VERSION >= 3
     if( !PyBytes_Check( src ) && !PyUnicode_Check( src ) )
-#else
-    if( !PyString_Check( src ) && !PyUnicode_Check( src ) )
-#endif
     {
         obj = PyObject_Str( src );
-
-#if PY_MAJOR_VERSION >= 3
         uni_str = obj; // in case of Python 3 our string is already correctly encoded
-#endif
-
         must_unref_obj = true;
 
         if( PyErr_Occurred() )
-            return NULL;
+            return result;
     }
 
-#if PY_MAJOR_VERSION >= 3
     if( PyBytes_Check( obj ) )
-#else
-    if( PyString_Check( obj ) )
-#endif
     {
         uni_str = PyUnicode_FromEncodedObject( obj, wxPythonEncoding, "strict" );
         must_unref_str = true;
 
         if( PyErr_Occurred() )
-            return NULL;
+            return result;
     }
 
-    result = new wxString();
-#if PY_MAJOR_VERSION >= 3
     size_t len = PyUnicode_GET_LENGTH( uni_str );
-#else
-    size_t len = PyUnicode_GET_SIZE( uni_str );
-#endif
 
     if( len )
-    {
-#if PY_MAJOR_VERSION >= 3
-        PyUnicode_AsWideChar( uni_str,
-                              wxStringBuffer( *result, len ), len );
-#else
-        PyUnicode_AsWideChar( (PyUnicodeObject*) uni_str,
-                              wxStringBuffer( *result, len ), len );
-#endif
-    }
+        result = FROM_UTF8( PyUnicode_AsUTF8( uni_str ) );
 
     if( must_unref_str )
     {
@@ -133,64 +99,6 @@ wxString* newWxStringFromPy( PyObject* src )
         Py_DECREF( obj );
     }
 
-#else
-    // normal string (or object) to normal python string
-    PyObject* str = src;
-
-    if( PyUnicode_Check( src ) )    // if it's unicode convert to normal string
-    {
-        str = PyUnicode_AsEncodedString( src, wxPythonEncoding, "strict" );
-
-        if( PyErr_Occurred() )
-            return NULL;
-    }
-#if PY_MAJOR_VERSION >= 3
-    else if( !PyUnicode_Check( src ) )
-#else
-    else if( !PyString_Check( src ) )    // if it's not a string, str(obj)
-#endif
-    {
-        str = PyObject_Str( src );
-        must_unref_str = true;
-
-        if( PyErr_Occurred() )
-            return NULL;
-    }
-
-    // get the string pointer and size
-    char*       str_ptr;
-    Py_ssize_t  str_size;
-    PyString_AsStringAndSize( str, &str_ptr, &str_size );
-
-    // build the wxString from our pointer / size
-    result = new wxString( str_ptr, str_size );
-
-    if( must_unref_str )
-    {
-        Py_DECREF( str );
-    }
-
-#endif
-
-    return result;
-}
-
-
-wxString Py2wxString( PyObject* src )
-{
-    wxString    result;
-    wxString*   resPtr = newWxStringFromPy( src );
-
-    // In case of exception clear it and return an empty string
-    if( resPtr==NULL )
-    {
-        PyErr_Clear();
-        return wxEmptyString;
-    }
-
-    result = *resPtr;
-
-    delete resPtr;
 
     return result;
 }
@@ -198,14 +106,7 @@ wxString Py2wxString( PyObject* src )
 
 PyObject* wx2PyString( const wxString& src )
 {
-    PyObject* str;
-
-#if wxUSE_UNICODE
-    str = PyUnicode_FromWideChar( src.c_str(), src.Len() );
-#else
-    str = PyString_FromStringAndSize( src.c_str(), src.Len() );
-#endif
-    return str;
+    return PyUnicode_FromString( src.utf8_str() );
 }
 
 
