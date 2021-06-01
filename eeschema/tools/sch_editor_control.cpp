@@ -107,7 +107,7 @@ int SCH_EDITOR_CONTROL::PageSetup( const TOOL_EVENT& aEvent )
     m_frame->SaveCopyInUndoList( undoCmd, UNDO_REDO::PAGESETTINGS, false );
 
     DIALOG_EESCHEMA_PAGE_SETTINGS dlg( m_frame, wxSize( MAX_PAGE_SIZE_MILS, MAX_PAGE_SIZE_MILS ) );
-    dlg.SetWksFileName( BASE_SCREEN::m_PageLayoutDescrFileName );
+    dlg.SetWksFileName( BASE_SCREEN::m_DrawingSheetFileName );
 
     if( dlg.ShowModal() != wxID_OK )
         m_frame->RollbackSchematicFromUndo();
@@ -1693,11 +1693,11 @@ int SCH_EDITOR_CONTROL::Paste( const TOOL_EVENT& aEvent )
             const_cast<KIID&>( item->m_Uuid ) = KIID();
         }
 
-        item->SetFlags( IS_NEW | IS_PASTED | IS_MOVED );
+        item->SetFlags( IS_NEW | IS_PASTED | IS_MOVING );
         m_frame->AddItemToScreenAndUndoList( m_frame->GetScreen(), (SCH_ITEM*) item, i > 0 );
 
         // Reset flags for subsequent move operation
-        item->SetFlags( IS_NEW | IS_PASTED | IS_MOVED );
+        item->SetFlags( IS_NEW | IS_PASTED | IS_MOVING );
         // Start out hidden so the pasted items aren't "ghosted" in their original location
         // before being moved to the current location.
         getView()->Hide( item, true );

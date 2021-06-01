@@ -1,5 +1,6 @@
 #
 # Example python script to generate a BOM from a KiCad generic netlist
+# The KiCad generic xml netlist is expected to be encoded UTF-8
 #
 # Example: Sorted and Grouped HTML BOM
 #
@@ -48,7 +49,7 @@ net = kicad_netlist_reader.netlist(sys.argv[1])
 # Open a file to write to, if the file cannot be opened output to stdout
 # instead
 try:
-    f = open(sys.argv[2], 'w')
+    f = open(sys.argv[2], 'wb')
 except IOError:
     e = "Can't open output file for writing: " + sys.argv[2]
     print(__file__, ":", e, file=sys.stderr)
@@ -63,7 +64,8 @@ html = html.replace('<!--TOOL-->', net.getTool())
 html = html.replace('<!--COMPCOUNT-->', "<b>Component Count:</b>" + \
     str(len(components)))
 
-row = "<tr><th style='width:640px'>Ref</th>"
+row =""
+row += "<tr><th>Ref</th>"
 row += "<th>Qnty</th>"
 row += "<th>Value</th>" + "<th>Part</th>" + "<th>Datasheet</th>"
 row += "<th>Description</th>" + "<th>Vendor</th></tr>"
@@ -92,8 +94,13 @@ for group in grouped:
     row += "</td><td>" + c.getDatasheet()
     row += "</td><td>" + c.getDescription()
     row += "</td><td>" + c.getField("Vendor")+ "</td></tr>"
+    row += "\n"
 
     html = html.replace('<!--TABLEROW-->', row + "<!--TABLEROW-->")
 
-# Print the formatted html to the file
-print(html, file=f)
+# Write the formatted html to the file
+if sys.version_info[0] < 3:
+    f.write(html)
+else:
+    f.write(html.encode('utf-8'))
+f.close()
