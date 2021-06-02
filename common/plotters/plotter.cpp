@@ -46,6 +46,7 @@
 #include <geometry/geometry_utils.h>
 #include <bezier_curves.h>
 #include <math/util.h> // for KiROUND
+#include <font/font.h>
 
 PLOTTER::PLOTTER()
 {
@@ -630,6 +631,12 @@ void PLOTTER::Text( const wxPoint& aPos, const COLOR4D aColor, const wxString& a
                     bool aItalic, bool aBold, bool aMultilineAllowed, KIFONT::FONT* aFont,
                     void* aData )
 {
+#ifdef DEBUG
+    std::cerr << "PLOTTER::Text( " << aPos << ", " << aColor << ", \"" << aText << "\", " << aOrient
+              << ", " << aSize << ", " << aHorizontalAlignment << ", " << aVerticalAlignment << ", "
+              << aPenWidth << ", " << aItalic << ", " << aBold << ", " << aMultilineAllowed << ", "
+              << ( aFont ? aFont->Name() : "(default font)" ) << ", [aData] )" << std::endl;
+#endif
     SetColor( aColor );
     SetCurrentLineWidth( aPenWidth, aData );
     SetFont( aFont );
@@ -641,6 +648,14 @@ void PLOTTER::Text( const wxPoint& aPos, const COLOR4D aColor, const wxString& a
 
 void PLOTTER::Text( const EDA_TEXT* aText, const COLOR4D aColor, void* aData )
 {
+#ifdef DEBUG
+    std::cerr << "PLOTTER::Text( ";
+    if( aText )
+        std::cerr << *aText;
+    else
+        std::cerr << "nullptr";
+    std::cerr << ", " << aColor << ", [aData] )" << std::endl;
+#endif
     wxSize size = aText->GetTextSize();
     if( aText->IsMirrored() )
         size.x = -size.x;
