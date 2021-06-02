@@ -93,7 +93,7 @@ int GraphicTextWidth( const wxString& aText, const wxSize& aSize, bool italic, b
  *  @param aPos text position (according to h_justify, v_justify).
  *  @param aColor (COLOR4D) = text color.
  *  @param aText text to draw.
- *  @param aOrient angle in 0.1 degree.
+ *  @param aOrient angle
  *  @param aSize text size (size.x or size.y can be < 0 for mirrored texts).
  *  @param aH_justify horizontal justification (Left, center, right).
  *  @param aV_justify vertical justification (bottom, center, top).
@@ -111,7 +111,7 @@ int GraphicTextWidth( const wxString& aText, const wxSize& aSize, bool italic, b
  *                    the text. NULL to draw this text.
  */
 void GRText( wxDC* aDC, const wxPoint& aPos, const COLOR4D& aColor, const wxString& aText,
-             double aOrient, const wxSize& aSize,
+             const EDA_ANGLE& aOrient, const wxSize& aSize,
              TEXT_ATTRIBUTES::HORIZONTAL_ALIGNMENT aHorizontalAlignment,
              TEXT_ATTRIBUTES::VERTICAL_ALIGNMENT aVerticalAlignment, int aWidth, bool aItalic,
              bool aBold,
@@ -132,9 +132,16 @@ void GRText( wxDC* aDC, const wxPoint& aPos, const COLOR4D& aColor, const wxStri
  *  @param aPlotter = a pointer to a PLOTTER instance, when this function is used to plot
  *                    the text. NULL to draw this text.
  */
-void GRText( const EDA_TEXT* aText, const VECTOR2D& aPosition, const COLOR4D& aColor,
+void GRText( wxDC* aDC, const EDA_TEXT* aText, const VECTOR2D& aPosition, const COLOR4D& aColor,
              void ( *aCallback )( int x0, int y0, int xf, int yf, void* aData ) = nullptr,
              void* aCallbackData = nullptr, PLOTTER* aPlotter = nullptr );
+
+inline void GRText( const EDA_TEXT* aText, const VECTOR2D& aPosition, const COLOR4D& aColor,
+             void ( *aCallback )( int x0, int y0, int xf, int yf, void* aData ) = nullptr,
+             void* aCallbackData = nullptr, PLOTTER* aPlotter = nullptr )
+{
+    GRText( nullptr, aText, aPosition, aColor, aCallback, aCallbackData, aPlotter );
+}
 
 inline void GRText( const EDA_TEXT* aText, const COLOR4D& aColor,
                     void ( *aCallback )( int x0, int y0, int xf, int yf, void* aData ) = nullptr,
@@ -142,5 +149,9 @@ inline void GRText( const EDA_TEXT* aText, const COLOR4D& aColor,
 {
     GRText( aText, aText->GetTextPos(), aColor, aCallback, aCallbackData, aPlotter );
 }
+
+void GRText( const EDA_TEXT* aText,
+             void ( *aCallback )( int x0, int y0, int xf, int yf, void* aData ) = nullptr,
+             void* aCallbackData = nullptr, PLOTTER* aPlotter = nullptr );
 
 #endif /* __INCLUDE__DRAWTXT_H__ */

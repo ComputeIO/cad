@@ -259,9 +259,13 @@ void LIB_TEXT::Plot( PLOTTER* plotter, const wxPoint& offset, bool fill,
 
     int penWidth = std::max( GetEffectiveTextPenWidth(), settings->GetMinPenWidth() );
 
+#if 0
     plotter->Text( pos, color, GetText(), t1 ? TEXT_ANGLE_HORIZ : TEXT_ANGLE_VERT, GetTextSize(),
                    TEXT_ATTRIBUTES::H_CENTER, TEXT_ATTRIBUTES::V_CENTER, penWidth, IsItalic(),
                    IsBold() );
+#else
+    plotter->Text( this, color );
+#endif
 }
 
 
@@ -280,14 +284,14 @@ void LIB_TEXT::print( const RENDER_SETTINGS* aSettings, const wxPoint& aOffset, 
 
     // Calculate the text orientation, according to the symbol orientation/mirror (needed when
     // draw text in schematic)
-    int orient = (int) GetTextAngle();
+    EDA_ANGLE orient = GetTextEdaAngle();
 
     if( aTransform.y1 )  // Rotate symbol 90 degrees.
     {
-        if( orient == TEXT_ANGLE_HORIZ )
-            orient = TEXT_ANGLE_VERT;
+        if( orient == EDA_ANGLE::ANGLE_0 )
+            orient = EDA_ANGLE::ANGLE_90;
         else
-            orient = TEXT_ANGLE_HORIZ;
+            orient = EDA_ANGLE::ANGLE_0;
     }
 
     /*

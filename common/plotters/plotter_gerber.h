@@ -102,7 +102,7 @@ public:
     virtual void Text( const wxPoint&              aPos,
                        const COLOR4D               aColor,
                        const wxString&             aText,
-                       double                      aOrient,
+                       const EDA_ANGLE&            aOrient,
                        const wxSize&               aSize,
                        TEXT_ATTRIBUTES::HORIZONTAL_ALIGNMENT aHorizontalAlignment,
                        TEXT_ATTRIBUTES::VERTICAL_ALIGNMENT   aVerticalAlignment,

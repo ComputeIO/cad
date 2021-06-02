@@ -108,7 +108,7 @@ public:
     virtual void Text( const wxPoint&              aPos,
                        const COLOR4D               aColor,
                        const wxString&             aText,
-                       double                      aOrient,
+                       const EDA_ANGLE&            aOrient,
                        const wxSize&               aSize,
                        TEXT_ATTRIBUTES::HORIZONTAL_ALIGNMENT aHorizontalAlignment,
                        TEXT_ATTRIBUTES::VERTICAL_ALIGNMENT aVerticalAlignment,
@@ -119,6 +119,7 @@ public:
                        KIFONT::FONT*               aFont = nullptr,
                        void* aData = NULL ) override;
 
+    virtual void Text( const EDA_TEXT* aText, const COLOR4D aColor, void* aData = nullptr ) override;
 
     /**
      * Set the units to use for plotting the DXF file.

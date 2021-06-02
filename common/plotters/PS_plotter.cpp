@@ -441,7 +441,7 @@ void PS_PLOTTER::SetViewport( const wxPoint& aOffset, double aIusPerDecimil,
  */
 void PSLIKE_PLOTTER::computeTextParameters( const wxPoint&           aPos,
                                             const wxString&          aText,
-                                            int                      aOrient,
+                                            const EDA_ANGLE&         aOrient,
                                             const wxSize&            aSize,
                                             bool                     aMirror,
                                             TEXT_ATTRIBUTES::HORIZONTAL_ALIGNMENT aHorizontalAlignment,
@@ -468,36 +468,20 @@ void PSLIKE_PLOTTER::computeTextParameters( const wxPoint&           aPos,
 
     switch( aHorizontalAlignment )
     {
-    case TEXT_ATTRIBUTES::H_CENTER:
-        dx = -tw / 2;
-        break;
-
-    case TEXT_ATTRIBUTES::H_RIGHT:
-        dx = -tw;
-        break;
-
-    case TEXT_ATTRIBUTES::H_LEFT:
-        dx = 0;
-        break;
+    case TEXT_ATTRIBUTES::H_CENTER: dx = -tw / 2; break;
+    case TEXT_ATTRIBUTES::H_RIGHT: dx = -tw; break;
+    case TEXT_ATTRIBUTES::H_LEFT: dx = 0; break;
     }
 
     switch( aVerticalAlignment )
     {
-    case TEXT_ATTRIBUTES::V_CENTER:
-        dy = th / 2;
-        break;
-
-    case TEXT_ATTRIBUTES::V_TOP:
-        dy = th;
-        break;
-
-    case TEXT_ATTRIBUTES::V_BOTTOM:
-        dy = 0;
-        break;
+    case TEXT_ATTRIBUTES::V_CENTER: dy = th / 2; break;
+    case TEXT_ATTRIBUTES::V_TOP: dy = th; break;
+    case TEXT_ATTRIBUTES::V_BOTTOM: dy = 0; break;
     }
 
-    RotatePoint( &dx, &dy, aOrient );
-    RotatePoint( &tw, &th, aOrient );
+    RotatePoint( &dx, &dy, aOrient.AsTenthsOfADegree() );
+    RotatePoint( &tw, &th, aOrient.AsTenthsOfADegree() );
     start_pos.x += dx;
     start_pos.y += dy;
     DPOINT pos_dev = userToDeviceCoordinates( start_pos );
@@ -510,11 +494,10 @@ void PSLIKE_PLOTTER::computeTextParameters( const wxPoint&           aPos,
     if( m_plotMirror )
     {
         *wideningFactor = -*wideningFactor;
-        aOrient = -aOrient;
     }
 
     // The CTM transformation matrix
-    double alpha = DECIDEG2RAD( aOrient );
+    double alpha = m_plotMirror ? aOrient.Invert().AsRadians() : aOrient.AsRadians();
     double sinalpha = sin( alpha );
     double cosalpha = cos( alpha );
 
@@ -997,7 +980,7 @@ bool PS_PLOTTER::EndPlot()
 void PS_PLOTTER::Text( const wxPoint&              aPos,
                        const COLOR4D               aColor,
                        const wxString&             aText,
-                       double                      aOrient,
+                       const EDA_ANGLE&            aOrient,
                        const wxSize&               aSize,
                        TEXT_ATTRIBUTES::HORIZONTAL_ALIGNMENT aHorizontalAlignment,
                        TEXT_ATTRIBUTES::VERTICAL_ALIGNMENT   aVerticalAlignment,

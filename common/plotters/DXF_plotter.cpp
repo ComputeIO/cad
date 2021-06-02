@@ -781,7 +781,7 @@ void DXF_PLOTTER::FlashPadRoundRect( const wxPoint& aPadPos, const wxSize& aSize
 {
     SHAPE_POLY_SET outline;
     TransformRoundChamferedRectToPolygon( outline, aPadPos, aSize, aOrient,
-                                 aCornerRadius, 0.0, 0, GetPlotterArcHighDef(), ERROR_INSIDE );
+                                          aCornerRadius, 0.0, 0, GetPlotterArcHighDef(), ERROR_INSIDE );
 
     // TransformRoundRectToPolygon creates only one convex polygon
     SHAPE_LINE_CHAIN& poly = outline.Outline( 0 );
@@ -868,7 +868,7 @@ bool containsNonAsciiChars( const wxString& string )
 void DXF_PLOTTER::Text( const wxPoint&              aPos,
                         COLOR4D                     aColor,
                         const wxString&             aText,
-                        double                      aOrient,
+                        const EDA_ANGLE&            aOrient,
                         const wxSize&               aSize,
                         TEXT_ATTRIBUTES::HORIZONTAL_ALIGNMENT aHorizontalAlignment,
                         TEXT_ATTRIBUTES::VERTICAL_ALIGNMENT aVerticalAlignment,
@@ -966,7 +966,7 @@ void DXF_PLOTTER::Text( const wxPoint&              aPos,
                  origin_dev.x, origin_dev.x,
                  origin_dev.y, origin_dev.y,
                  size_dev.y, fabs( size_dev.x / size_dev.y ),
-                 aOrient / 10.0,
+                 aOrient.AsTenthsOfADegree() / 10.0,
                  aItalic ? DXF_OBLIQUE_ANGLE : 0,
                  size_dev.x < 0 ? 2 : 0, // X mirror flag
                 h_code, v_code );
@@ -1048,3 +1048,11 @@ void DXF_PLOTTER::Text( const wxPoint&              aPos,
     }
 }
 
+
+void DXF_PLOTTER::Text( const EDA_TEXT* aText, const COLOR4D aColor, void* aData )
+{
+    Text( aText->GetTextPos(), aColor, aText->GetShownText(), aText->GetTextEdaAngle(),
+          aText->GetTextSize(), aText->GetHorizontalAlignment(), aText->GetVerticalAlignment(),
+          aText->GetTextThickness(), aText->IsItalic(), aText->IsBold(),
+          aText->IsMultilineAllowed(), aText->GetFont(), aData );
+}

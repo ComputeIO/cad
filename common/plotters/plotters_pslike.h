@@ -93,7 +93,7 @@ public:
 protected:
     void computeTextParameters( const wxPoint&           aPos,
                                 const wxString&          aText,
-                                int                      aOrient,
+                                const EDA_ANGLE&         aOrient,
                                 const wxSize&            aSize,
                                 bool                     aMirror,
                                 TEXT_ATTRIBUTES::HORIZONTAL_ALIGNMENT aHorizontalAlignment,
@@ -179,7 +179,7 @@ public:
     virtual void Text( const wxPoint&              aPos,
                        const COLOR4D               aColor,
                        const wxString&             aText,
-                       double                      aOrient,
+                       const EDA_ANGLE&            aOrient,
                        const wxSize&               aSize,
                        TEXT_ATTRIBUTES::HORIZONTAL_ALIGNMENT aHorizontalAlignment,
                        TEXT_ATTRIBUTES::VERTICAL_ALIGNMENT   aVerticalAlignment,
@@ -298,7 +298,7 @@ public:
     virtual void Text( const wxPoint&              aPos,
                        const COLOR4D               aColor,
                        const wxString&             aText,
-                       double                      aOrient,
+                       const EDA_ANGLE&            aOrient,
                        const wxSize&               aSize,
                        TEXT_ATTRIBUTES::HORIZONTAL_ALIGNMENT aHorizontalAlignment,
                        TEXT_ATTRIBUTES::VERTICAL_ALIGNMENT   aVerticalAlignment,
@@ -308,6 +308,9 @@ public:
                        bool                        aMultilineAllowed = false,
                        KIFONT::FONT*               aFont = nullptr,
                        void* aData = NULL ) override;
+
+    virtual void Text( const EDA_TEXT* aText, const COLOR4D aColor, void* aData = nullptr ) override;
+
     /**
      * PDF images are handles as inline, not XObject streams...
      */
@@ -447,7 +450,7 @@ public:
     virtual void Text( const wxPoint&              aPos,
                        const COLOR4D               aColor,
                        const wxString&             aText,
-                       double                      aOrient,
+                       const EDA_ANGLE&            aOrient,
                        const wxSize&               aSize,
                        TEXT_ATTRIBUTES::HORIZONTAL_ALIGNMENT aHorizontalAlignment,
                        TEXT_ATTRIBUTES::VERTICAL_ALIGNMENT   aVerticalAlignment,
@@ -457,6 +460,8 @@ public:
                        bool                        aMultilineAllowed = false,
                        KIFONT::FONT*               aFont = nullptr,
                        void* aData = NULL ) override;
+
+    virtual void Text( const EDA_TEXT* aText, const COLOR4D aColor, void* aData = nullptr ) override;
 
 protected:
     FILL_TYPE      m_fillMode;          // true if the current contour

@@ -289,6 +289,12 @@ inline bool operator==( const EDA_ANGLE& aAngleA, const EDA_ANGLE& aAngleB )
 }
 
 
+inline bool operator!=( const EDA_ANGLE& aAngleA, const EDA_ANGLE& aAngleB )
+{
+    return aAngleA.AsTenthsOfADegree() != aAngleB.AsTenthsOfADegree();
+}
+
+
 inline bool operator<( const EDA_ANGLE& aAngleA, const EDA_ANGLE& aAngleB )
 {
     return aAngleA.AsTenthsOfADegree() < aAngleB.AsTenthsOfADegree();

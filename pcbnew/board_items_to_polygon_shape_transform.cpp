@@ -295,15 +295,15 @@ void FP_TEXT::TransformTextShapeWithClearanceToPolygon( SHAPE_POLY_SET& aCornerB
     prms.m_cornerBuffer = &aCornerBuffer;
     prms.m_textWidth  = GetEffectiveTextPenWidth() + ( 2 * aClearance );
     prms.m_error = aError;
+#if 0
     wxSize size = GetTextSize();
     int  penWidth = GetEffectiveTextPenWidth();
 
     if( IsMirrored() )
         size.x = -size.x;
+#endif
 
-    GRText( NULL, GetTextPos(), BLACK, GetShownText(), GetDrawRotation(), size,
-            GetHorizontalAlignment(), GetVerticalAlignment(), penWidth, IsItalic(), IsBold(),
-            addTextSegmToPoly, &prms );
+    GRText( this, BLACK, addTextSegmToPoly, &prms );
 }
 
 
@@ -388,21 +388,20 @@ void PCB_TEXT::TransformTextShapeWithClearanceToPolygon( SHAPE_POLY_SET& aCorner
                                                      PCB_LAYER_ID aLayer, int aClearanceValue,
                                                      int aError, ERROR_LOC aErrorLoc ) const
 {
+#if 0
     wxSize size = GetTextSize();
 
     if( IsMirrored() )
         size.x = -size.x;
+#endif
 
     int  penWidth = GetEffectiveTextPenWidth();
 
     prms.m_cornerBuffer = &aCornerBuffer;
     prms.m_textWidth = GetEffectiveTextPenWidth() + ( 2 * aClearanceValue );
     prms.m_error = aError;
-    COLOR4D color;  // not actually used, but needed by GRText
 
-    GRText( NULL, GetTextPos(), color, GetShownText(), GetTextAngle(), size,
-            GetHorizontalAlignment(), GetVerticalAlignment(), penWidth, IsItalic(), IsBold(),
-            addTextSegmToPoly, &prms );
+    GRText( this, addTextSegmToPoly, &prms );
 }
 
 

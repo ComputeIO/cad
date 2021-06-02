@@ -199,7 +199,6 @@ void SCH_FIELD::Print( const RENDER_SETTINGS* aSettings, const wxPoint& aOffset 
 {
     wxDC*    DC = aSettings->GetPrintDC();
     COLOR4D  color = aSettings->GetLayerColor( IsForceVisible() ? LAYER_HIDDEN : m_layer );
-    int      orient;
     wxPoint  textpos;
     int      penWidth = GetEffectiveTextPenWidth( aSettings->GetDefaultPenWidth() );
 
@@ -207,7 +206,7 @@ void SCH_FIELD::Print( const RENDER_SETTINGS* aSettings, const wxPoint& aOffset 
         return;
 
     // Calculate the text orientation according to the symbol orientation.
-    orient = GetTextAngle();
+    EDA_ANGLE orient = GetTextEdaAngle();
 
     if( m_parent && m_parent->Type() == SCH_COMPONENT_T )
     {
@@ -215,10 +214,10 @@ void SCH_FIELD::Print( const RENDER_SETTINGS* aSettings, const wxPoint& aOffset 
 
         if( parentSymbol && parentSymbol->GetTransform().y1 )  // Rotate symbol 90 degrees.
         {
-            if( orient == TEXT_ANGLE_HORIZ )
-                orient = TEXT_ANGLE_VERT;
+            if( orient == EDA_ANGLE::ANGLE_0 )
+                orient = EDA_ANGLE::ANGLE_90;
             else
-                orient = TEXT_ANGLE_HORIZ;
+                orient = EDA_ANGLE::ANGLE_0;
         }
     }
 
@@ -677,9 +676,13 @@ void SCH_FIELD::Plot( PLOTTER* aPlotter ) const
     EDA_RECT BoundaryBox = GetBoundingBox();
     wxPoint  textpos = BoundaryBox.Centre();
 
+#if 0
     aPlotter->Text( textpos, color, GetShownText(), orient, GetTextSize(),
                     TEXT_ATTRIBUTES::H_CENTER, TEXT_ATTRIBUTES::V_CENTER, penWidth, IsItalic(),
                     IsBold() );
+#else
+    aPlotter->Text( this, color );
+#endif
 }
 
 

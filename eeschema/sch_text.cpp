@@ -226,17 +226,7 @@ void SCH_TEXT::MirrorVertically( int aCenter )
 
 void SCH_TEXT::Rotate( wxPoint aCenter )
 {
-#if 0 // TODO TESTING
-    wxPoint pt = GetTextPos();
-    RotatePoint( &pt, aCenter, 900 );
-    wxPoint offset = pt - GetTextPos();
-
     Rotate90( false );
-
-    SetTextPos( GetTextPos() + offset );
-#else
-    Rotate90( false );
-#endif
 }
 
 
@@ -604,32 +594,7 @@ void SCH_TEXT::Plot( PLOTTER* aPlotter ) const
     penWidth = std::max( penWidth, settings->GetMinPenWidth() );
     aPlotter->SetCurrentLineWidth( penWidth );
 
-    if( IsMultilineAllowed() )
-    {
-        std::vector<wxPoint> positions;
-        wxArrayString        strings_list;
-        wxStringSplit( GetShownText(), strings_list, '\n' );
-        positions.reserve( strings_list.Count() );
-
-        GetLinePositions( positions, (int) strings_list.Count() );
-
-        for( unsigned ii = 0; ii < strings_list.Count(); ii++ )
-        {
-            wxPoint textpos = positions[ii] + GetSchematicTextOffset( aPlotter->RenderSettings() );
-            wxString& txt = strings_list.Item( ii );
-            aPlotter->Text( textpos, color, txt, GetTextAngle(), GetTextSize(),
-                            GetHorizontalAlignment(), GetVerticalAlignment(), penWidth, IsItalic(),
-                            IsBold() );
-        }
-    }
-    else
-    {
-        wxPoint textpos = GetTextPos() + GetSchematicTextOffset( aPlotter->RenderSettings() );
-
-        aPlotter->Text( textpos, color, GetShownText(), GetTextAngle(), GetTextSize(),
-                        GetHorizontalAlignment(), GetVerticalAlignment(), penWidth, IsItalic(),
-                        IsBold() );
-    }
+    aPlotter->Text( this, color );
 
     // Draw graphic symbol for global or hierarchical labels
     CreateGraphicShape( aPlotter->RenderSettings(), s_poly, GetTextPos() );

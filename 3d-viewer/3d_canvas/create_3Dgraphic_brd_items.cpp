@@ -282,17 +282,7 @@ void BOARD_ADAPTER::addFootprintShapesWithClearance( const FOOTPRINT*   aFootpri
 
     for( FP_TEXT* text : texts )
     {
-        s_textWidth = text->GetEffectiveTextPenWidth() + ( 2 * aInflateValue );
-        wxSize size = text->GetTextSize();
-        bool   isBold = text->IsBold();
-        int    penWidth = text->GetEffectiveTextPenWidth();
-
-        if( text->IsMirrored() )
-            size.x = -size.x;
-
-        GRText( nullptr, text->GetTextPos(), BLACK, text->GetShownText(), text->GetDrawRotation(),
-                size, text->GetHorizontalAlignment(), text->GetVerticalAlignment(), penWidth,
-                text->IsItalic(), isBold, addTextSegmToContainer );
+        GRText( text, text->GetTextPos(), BLACK, addTextSegmToContainer );
     }
 }
 

@@ -28,7 +28,7 @@
 #include <geometry/shape_poly_set.h>
 #include <geometry/geometry_utils.h>
 #include <wx/gdicmn.h>      // for wxPoint
-
+#include <eda_angle.h>
 
 // The chamfer positions of chamfered rect shape.
 // the position is relative to a pad with orientation = 0
@@ -100,7 +100,7 @@ void TransformOvalToPolygon( SHAPE_POLY_SET& aCornerBuffer, wxPoint aStart, wxPo
  * @param aPosition = the coordinate of the center of the rectangle
  * @param aSize = the size of the rectangle
  * @param aCornerRadius = radius of rounded corners (can be 0)
- * @param aRotation = rotation in 0.1 degrees of the rectangle
+ * @param aRotation = rotation angle
  * @param aChamferRatio = ratio between smaller rect size and chamfer value
  * @param aChamferCorners = identifier of the corners to chamfer:
  *  0 = no chamfer
@@ -114,9 +114,21 @@ void TransformOvalToPolygon( SHAPE_POLY_SET& aCornerBuffer, wxPoint aStart, wxPo
  */
 void TransformRoundChamferedRectToPolygon( SHAPE_POLY_SET& aCornerBuffer,
                                            const wxPoint& aPosition, const wxSize& aSize,
-                                           double aRotation, int aCornerRadius,
+                                           const EDA_ANGLE& aRotation, int aCornerRadius,
                                            double aChamferRatio, int aChamferCorners,
                                            int aError, ERROR_LOC aErrorLoc );
+
+inline void TransformRoundChamferedRectToPolygon( SHAPE_POLY_SET& aCornerBuffer,
+                                                  const wxPoint& aPosition, const wxSize& aSize,
+                                                  double aRotation, int aCornerRadius,
+                                                  double aChamferRatio, int aChamferCorners,
+                                                  int aError, ERROR_LOC aErrorLoc )
+{
+    TransformRoundChamferedRectToPolygon( aCornerBuffer, aPosition, aSize,
+                                          EDA_ANGLE( aRotation, EDA_ANGLE::RADIANS ), aCornerRadius,
+                                          aChamferRatio, aChamferCorners, aError, aErrorLoc );
+}
+
 
 /**
  * Function TransformArcToPolygon

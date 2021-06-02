@@ -1755,7 +1755,7 @@ void GERBER_PLOTTER::FlashRegularPolygon( const wxPoint& aShapePos,
 
 
 void GERBER_PLOTTER::Text( const wxPoint& aPos, const COLOR4D aColor, const wxString& aText,
-                           double aOrient, const wxSize& aSize,
+                           const EDA_ANGLE& aOrient, const wxSize& aSize,
                            TEXT_ATTRIBUTES::HORIZONTAL_ALIGNMENT aHorizontalAlignment,
                            TEXT_ATTRIBUTES::VERTICAL_ALIGNMENT aVerticalAlignment, int aWidth,
                            bool aItalic, bool aBold, bool aMultilineAllowed, KIFONT::FONT* aFont,

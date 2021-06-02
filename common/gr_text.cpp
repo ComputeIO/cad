@@ -112,7 +112,7 @@ int GraphicTextWidth( const wxString& aText, const wxSize& aSize, bool aItalic, 
  *  @param aPos = text position (according to h_justify, v_justify)
  *  @param aColor (COLOR4D) = text color
  *  @param aText = text to draw
- *  @param aOrient = angle in 0.1 degree
+ *  @param aOrient = angle
  *  @param aSize = text size (size.x or size.y can be < 0 for mirrored texts)
  *  @param aHorizontalAlignment = horizontal alignment (Left, Center, Right)
  *  @param aVerticalAlignment = vertical alignment (Top, Center, Bottom)
@@ -130,7 +130,7 @@ int GraphicTextWidth( const wxString& aText, const wxSize& aSize, bool aItalic, 
  *                  the text. NULL to draw this text.
  */
 void GRText( wxDC* aDC, const wxPoint& aPos, const COLOR4D& aColor, const wxString& aText,
-             double aOrient, const wxSize& aSize,
+             const EDA_ANGLE& aOrient, const wxSize& aSize,
              TEXT_ATTRIBUTES::HORIZONTAL_ALIGNMENT aHorizontalAlignment,
              TEXT_ATTRIBUTES::VERTICAL_ALIGNMENT aVerticalAlignment, int aWidth, bool aItalic,
              bool  aBold, void ( *aCallback )( int x0, int y0, int xf, int yf, void* aData ),
@@ -180,7 +180,7 @@ void GRText( wxDC* aDC, const wxPoint& aPos, const COLOR4D& aColor, const wxStri
 }
 
 
-void GRText( const EDA_TEXT* aText, const VECTOR2D& aPosition, const COLOR4D& aColor,
+void GRText( wxDC* aDC, const EDA_TEXT* aText, const VECTOR2D& aPosition, const COLOR4D& aColor,
              void ( *aCallback )( int x0, int y0, int xf, int yf, void* aData ),
              void* aCallbackData, PLOTTER* aPlotter )
 {
@@ -203,11 +203,20 @@ void GRText( const EDA_TEXT* aText, const VECTOR2D& aPosition, const COLOR4D& aC
     basic_gal.SetTextAttributes( aText );
     basic_gal.SetPlotter( aPlotter );
     basic_gal.SetCallback( aCallback, aCallbackData );
-    basic_gal.m_DC = nullptr;
+    basic_gal.m_DC = aDC;
     basic_gal.m_Color = aColor;
     basic_gal.SetClipBox( nullptr );
 
-    KIFONT::FONT* font = aPlotter && aPlotter->GetFont() ? aPlotter->GetFont() : aText->GetFont();
+    //KIFONT::FONT* font = aPlotter && aPlotter->GetFont() ? aPlotter->GetFont() : aText->GetFont();
+    KIFONT::FONT* font = aText->GetFont();
 
     font->Draw( &basic_gal, *aText, aPosition );
+}
+
+
+void GRText( const EDA_TEXT* aText,
+             void ( *aCallback )( int x0, int y0, int xf, int yf, void* aData ),
+             void* aCallbackData, PLOTTER* aPlotter )
+{
+    GRText( aText, aText->GetTextPos(), COLOR4D::BLACK, aCallback, aCallbackData, aPlotter );
 }

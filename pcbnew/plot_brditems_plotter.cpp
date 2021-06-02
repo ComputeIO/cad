@@ -378,7 +378,7 @@ void BRDITEMS_PLOTTER::PlotFootprintTextItem( const FP_TEXT* aTextMod, COLOR4D a
     // calculate some text parameters :
     wxSize  size      = aTextMod->GetTextSize();
     wxPoint pos       = aTextMod->GetTextPos();
-    double  orient    = aTextMod->GetDrawRotation();
+    EDA_ANGLE orient  = aTextMod->GetDrawRotation();
     int     thickness = aTextMod->GetEffectiveTextPenWidth();
 
     if( aTextMod->IsMirrored() )

@@ -422,7 +422,7 @@ void EDA_TEXT::printOneLineOfText( const RENDER_SETTINGS* aSettings, const wxPoi
     if( IsMirrored() )
         size.x = -size.x;
 
-    GRText( DC, aOffset + aPos, aColor, aText, GetTextAngle(), size, GetHorizontalAlignment(),
+    GRText( DC, aOffset + aPos, aColor, aText, GetTextEdaAngle(), size, GetHorizontalAlignment(),
             GetVerticalAlignment(), penWidth, IsItalic(), IsBold() );
 }
 
@@ -596,9 +596,9 @@ std::shared_ptr<SHAPE_COMPOUND> EDA_TEXT::GetEffectiveTextShape( ) const
 }
 
 
-double EDA_TEXT::GetDrawRotation() const
+EDA_ANGLE EDA_TEXT::GetDrawRotation() const
 {
-    return GetTextAngle();
+    return GetTextEdaAngle();
 }
 
 
@@ -620,6 +620,18 @@ void EDA_TEXT::SetDefaultAlignment()
             SetHorizontalAlignment( TEXT_ATTRIBUTES::H_RIGHT );
             break;
     }
+}
+
+
+void EDA_TEXT::Draw( KIGFX::GAL* aGal, const VECTOR2D& aPosition ) const
+{
+    GetFont()->Draw( aGal, *this, aPosition );
+}
+
+
+void EDA_TEXT::Draw( KIGFX::GAL* aGal ) const
+{
+    GetFont()->Draw( aGal, *this );
 }
 
 

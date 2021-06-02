@@ -250,7 +250,7 @@ bool GENDRILL_WRITER_BASE::genDrillMapFile( const wxString& aFullFileName, PLOT_
 
     // Plot title  "Info"
     wxString Text = wxT( "Drill Map:" );
-    plotter->Text( wxPoint( plotX, plotY ), COLOR4D::UNSPECIFIED, Text, 0,
+    plotter->Text( wxPoint( plotX, plotY ), COLOR4D::UNSPECIFIED, Text, EDA_ANGLE::ANGLE_0,
                    wxSize( KiROUND( charSize * charScale ), KiROUND( charSize * charScale ) ),
                    TEXT_ATTRIBUTES::H_LEFT, TEXT_ATTRIBUTES::V_CENTER, TextWidth, false, false );
 
@@ -310,7 +310,7 @@ bool GENDRILL_WRITER_BASE::genDrillMapFile( const wxString& aFullFileName, PLOT_
         if( tool.m_Hole_NotPlated )
             msg += wxT( " (not plated)" );
 
-        plotter->Text( wxPoint( plotX, y ), COLOR4D::UNSPECIFIED, msg, 0,
+        plotter->Text( wxPoint( plotX, y ), COLOR4D::UNSPECIFIED, msg, EDA_ANGLE::ANGLE_0,
                        wxSize( KiROUND( charSize * charScale ), KiROUND( charSize * charScale ) ),
                        TEXT_ATTRIBUTES::H_LEFT, TEXT_ATTRIBUTES::V_CENTER, TextWidth, false,
                        false );

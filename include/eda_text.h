@@ -41,6 +41,7 @@ namespace KIGFX
 {
 class RENDER_SETTINGS;
 class COLOR4D;
+class GAL;
 } // namespace KIGFX
 
 using KIGFX::COLOR4D;
@@ -385,7 +386,7 @@ public:
      */
     virtual void Format( OUTPUTFORMATTER* aFormatter, int aNestLevel, int aControlBits ) const;
 
-    virtual double GetDrawRotation() const;
+    virtual EDA_ANGLE GetDrawRotation() const;
 
     KIFONT::FONT* GetFont() const { return m_attributes.GetFont(); }
 
@@ -414,6 +415,10 @@ public:
     void RotateCCW() { m_attributes.RotateCCW(); }
 
     const TEXT_ATTRIBUTES& GetAttributes() const { return m_attributes; }
+
+    void Draw( KIGFX::GAL* aGal, const VECTOR2D& aPosition ) const;
+
+    void Draw( KIGFX::GAL* aGal ) const;
 
 private:
     /**

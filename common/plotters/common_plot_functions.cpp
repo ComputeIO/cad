@@ -114,10 +114,17 @@ void PlotDrawingSheet( PLOTTER* plotter, const PROJECT* aProject, const TITLE_BL
             {
                 DS_DRAW_ITEM_TEXT* text = (DS_DRAW_ITEM_TEXT*) item;
                 int penWidth = std::max( text->GetEffectiveTextPenWidth(), defaultPenWidth );
+#if 0
                 plotter->Text( text->GetTextPos(), plotColor, text->GetShownText(),
                                text->GetTextAngle(), text->GetTextSize(), text->GetHorizontalAlignment(),
                                text->GetVerticalAlignment(), penWidth, text->IsItalic(), text->IsBold(),
                                text->IsMultilineAllowed() );
+#else
+                int savePenWidth = text->GetTextThickness();
+                text->SetTextThickness( penWidth );
+                plotter->Text( text, plotColor );
+                text->SetTextThickness( savePenWidth );
+#endif
             }
             break;
 

@@ -157,8 +157,8 @@ public:
      * @return the text rotation for drawings and plotting the footprint rotation is taken
      *         in account.
      */
-    virtual double GetDrawRotation() const override;
-    double GetDrawRotationRadians() const { return GetDrawRotation() * M_PI/1800; }
+    virtual EDA_ANGLE GetDrawRotation() const override;
+    double GetDrawRotationRadians() const { return GetDrawRotation().AsRadians(); }
 
     // Virtual function
     const EDA_RECT GetBoundingBox() const override;

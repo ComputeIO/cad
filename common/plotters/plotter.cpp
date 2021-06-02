@@ -613,7 +613,7 @@ void PLOTTER::PlotPoly( const SHAPE_LINE_CHAIN& aCornerList, FILL_TYPE aFill, in
  *  @param aPos = text position (according to a{Horizontal,Vertical}Alignment)
  *  @param aColor (COLOR4D) = text color
  *  @param aText = text to draw
- *  @param aOrient = angle in 0.1 degree
+ *  @param aOrient = angle
  *  @param aSize = text size (size.x or size.y can be < 0 for mirrored texts)
  *  @param aHorizontalAlignment = horizontal alignment (Left, Center, Right)
  *  @param aVerticalAlignment = vertical alignment (Top, Center, Bottom)
@@ -625,7 +625,7 @@ void PLOTTER::PlotPoly( const SHAPE_LINE_CHAIN& aCornerList, FILL_TYPE aFill, in
  * not directly used here.
  */
 void PLOTTER::Text( const wxPoint& aPos, const COLOR4D aColor, const wxString& aText,
-                    double aOrient, const wxSize& aSize,
+                    const EDA_ANGLE& aOrient, const wxSize& aSize,
                     TEXT_ATTRIBUTES::HORIZONTAL_ALIGNMENT aHorizontalAlignment,
                     TEXT_ATTRIBUTES::VERTICAL_ALIGNMENT aVerticalAlignment, int aPenWidth,
                     bool aItalic, bool aBold, bool aMultilineAllowed, KIFONT::FONT* aFont,
@@ -639,7 +639,7 @@ void PLOTTER::Text( const wxPoint& aPos, const COLOR4D aColor, const wxString& a
 #endif
     SetColor( aColor );
     SetCurrentLineWidth( aPenWidth, aData );
-    SetFont( aFont );
+    SetFont( aFont ? aFont : KIFONT::FONT::GetFont() );
 
     GRText( NULL, aPos, aColor, aText, aOrient, aSize, aHorizontalAlignment, aVerticalAlignment,
             aPenWidth, aItalic, aBold, nullptr, nullptr, this );
