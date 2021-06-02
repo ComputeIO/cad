@@ -27,6 +27,7 @@
 #ifndef FONT_H_
 #define FONT_H_
 
+#include <iostream>
 #include <map>
 #include <algorithm>
 #include <wx/string.h>
@@ -135,7 +136,9 @@ public:
         return Draw( aGal, aText, aPosition, VECTOR2D( 0, 0 ), aAttributes );
     }
 
+    VECTOR2D Draw( KIGFX::GAL* aGal, const EDA_TEXT& aText, const VECTOR2D& aPosition ) const;
     VECTOR2D Draw( KIGFX::GAL* aGal, const EDA_TEXT& aText ) const;
+    VECTOR2D Draw( KIGFX::GAL* aGal, const EDA_TEXT* aText ) const { return Draw( aGal, *aText ); }
 
     virtual void DrawText( KIGFX::GAL* aGal, const UTF8& aText, const VECTOR2D& aPosition,
                            const TEXT_ATTRIBUTES& aAttributes ) const;
@@ -301,5 +304,19 @@ private:
                              const TEXT_ATTRIBUTES& aAttributes ) const;
 };
 } //namespace KIFONT
+
+inline std::ostream& operator<<(std::ostream& os, const KIFONT::FONT& aFont)
+{
+    os << "[Font \"" << aFont.Name() << "\"" << ( aFont.IsStroke() ? " stroke" : "" )
+       << ( aFont.IsOutline() ? " outline" : "" ) << ( aFont.IsBold() ? " bold" : "" )
+       << ( aFont.IsItalic() ? " italic" : "" ) << "]";
+    return os;
+}
+
+inline std::ostream& operator<<(std::ostream& os, const KIFONT::FONT* aFont)
+{
+    os << *aFont;
+    return os;
+}
 
 #endif // FONT_H_
