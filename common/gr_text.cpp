@@ -36,6 +36,7 @@
 #include <base_screen.h>
 #include <gr_text.h>
 #include <math/util.h> // for KiROUND
+#include <font/font.h> // for KiROUND
 
 #include <basic_gal.h>
 
@@ -162,6 +163,8 @@ void GRText( wxDC* aDC, const wxPoint& aPos, const COLOR4D& aColor, const wxStri
         size.x = -size.x;
 
     dummy.SetTextSize( size );
+    dummy.SetText( aText );
+    dummy.SetTextPos( aPos );
 
     basic_gal.SetTextAttributes( &dummy );
     basic_gal.SetPlotter( aPlotter );
@@ -170,9 +173,10 @@ void GRText( wxDC* aDC, const wxPoint& aPos, const COLOR4D& aColor, const wxStri
     basic_gal.m_Color = aColor;
     basic_gal.SetClipBox( nullptr );
 
-    KIFONT::FONT* font = aPlotter && aPlotter->GetFont() ? aPlotter->GetFont() : nullptr;
+    KIFONT::FONT* font =
+            aPlotter && aPlotter->GetFont() ? aPlotter->GetFont() : KIFONT::FONT::GetFont();
 
-    basic_gal.StrokeText( aText, VECTOR2D( aPos ), aOrient * M_PI / 1800, font );
+    font->Draw( &basic_gal, dummy );
 }
 
 
@@ -204,5 +208,6 @@ void GRText( const EDA_TEXT* aText, const VECTOR2D& aPosition, const COLOR4D& aC
     basic_gal.SetClipBox( nullptr );
 
     KIFONT::FONT* font = aPlotter && aPlotter->GetFont() ? aPlotter->GetFont() : aText->GetFont();
-    font->Draw( &basic_gal, aText->GetShownText(), aPosition, TEXT_ATTRIBUTES( aText ) );
+
+    font->Draw( &basic_gal, *aText, aPosition );
 }
