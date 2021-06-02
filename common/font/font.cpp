@@ -299,7 +299,7 @@ void FONT::getLinePositions( const UTF8& aText, const VECTOR2D& aPosition,
         vAlignment = TEXT_ATTRIBUTES::OppositeAlignment( vAlignment );
     }
 
-    switch( aAttributes.GetVerticalAlignment() )
+    switch( vAlignment )
     {
     case TEXT_ATTRIBUTES::V_TOP: offset.y += interline; break;
     case TEXT_ATTRIBUTES::V_CENTER: offset.y -= ( aLineCount - 2 ) * interline / 2; break;
@@ -435,7 +435,7 @@ VECTOR2D FONT::Draw( KIGFX::GAL* aGal, const UTF8& aText, const VECTOR2D& aPosit
     VECTOR2D  position( aPosition - aOrigin );
 #ifdef DEBUG
     std::cerr << "FONT::Draw( aGal, \"" << aText << "\", " << aPosition << ", " << aOrigin << ", "
-              << aAttributes << " ) const ; position " << position << std::endl;
+              << aAttributes << " ) const ; " << this << " position " << position << std::endl;
     bool   drawDebugShapes = false;
     double dbg = 200000;
 #endif
@@ -519,6 +519,12 @@ VECTOR2D FONT::Draw( KIGFX::GAL* aGal, const UTF8& aText, const VECTOR2D& aPosit
 VECTOR2D FONT::Draw( KIGFX::GAL* aGal, const EDA_TEXT& aText ) const
 {
     return Draw( aGal, aText.GetShownText(), aText.GetTextPos(), aText.GetAttributes() );
+}
+
+
+VECTOR2D FONT::Draw( KIGFX::GAL* aGal, const EDA_TEXT& aText, const VECTOR2D& aPosition ) const
+{
+    return Draw( aGal, aText.GetShownText(), aPosition, aText.GetAttributes() );
 }
 
 
