@@ -116,6 +116,8 @@ public:
 
     virtual void DrawPolyline( const VECTOR2D aPointList[], int aListSize ) override;
 
+    virtual void DrawPolyline( const SHAPE_LINE_CHAIN& aLineChain ) override;
+
     /**
      * Draw a polygon representing an outline font glyph.
      *
