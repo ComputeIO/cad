@@ -1435,7 +1435,7 @@ void SCH_PAINTER::draw( const SCH_TEXT* aText, int aLayer )
                   << ( offsetPosition - aText->GetTextPos() ) << std::endl;
         m_gal->SetLineWidth( drawingShadows ? getShadowWidth()
                                             : m_schSettings.GetDanglingSymbolThickness() );
-        m_gal->DrawCircle( offsetPosition, 15000 );
+        // m_gal->DrawCircle( offsetPosition, 15000 );
 #endif
     }
 
