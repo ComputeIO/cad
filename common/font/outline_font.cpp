@@ -564,6 +564,10 @@ BOX2I OUTLINE_FONT::getBoundingBox( const std::vector<SHAPE_POLY_SET>& aGlyphs )
 VECTOR2I OUTLINE_FONT::GetLinesAsPolygon( std::vector<SHAPE_POLY_SET>& aGlyphs,
                                           const EDA_TEXT*              aText ) const
 {
+#ifdef DEBUG
+    std::cerr << "OUTLINE_FONT::GetLinesAsPolygon( ..., " << aText << " ) const" << std::endl;
+#endif
+
     wxArrayString         strings;
     std::vector<wxPoint>  positions;
     int                   n;
