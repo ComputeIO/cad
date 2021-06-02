@@ -242,56 +242,10 @@ void SCH_TEXT::Rotate( wxPoint aCenter )
 
 void SCH_TEXT::Rotate90( bool aClockwise )
 {
-#ifdef SIMULATE_SPIN_STYLE
-    switch( GetHorizontalAlignment() )
-    {
-    case TEXT_ATTRIBUTES::H_LEFT:
-    case TEXT_ATTRIBUTES::H_RIGHT:
-        if( IsKeepUpright() )
-        {
-            // simulate old "spin style" behaviour
-            if( aClockwise )
-            {
-                if( GetTextEdaAngle() == EDA_ANGLE::ANGLE_0
-                    || GetTextEdaAngle() == EDA_ANGLE::ANGLE_180 )
-                    FlipHorizontalAlignment();
-
-                if( GetTextEdaAngle() == EDA_ANGLE::ANGLE_0 )
-                    SetTextAngle( EDA_ANGLE::ANGLE_90 );
-                else
-                    SetTextAngle( EDA_ANGLE::ANGLE_0 );
-            }
-            else
-            {
-                if( GetTextEdaAngle() == EDA_ANGLE::ANGLE_90
-                    || GetTextEdaAngle() == EDA_ANGLE::ANGLE_270 )
-                    FlipHorizontalAlignment();
-                if( GetTextEdaAngle() == EDA_ANGLE::ANGLE_90 )
-                    SetTextAngle( EDA_ANGLE::ANGLE_0 );
-                else
-                    SetTextAngle( EDA_ANGLE::ANGLE_90 );
-            }
-        }
-        else
-        {
-            // TODO: do we need custom behaviour for when
-            // "Keep Upright" is not ticked?
-        }
-        break;
-    case TEXT_ATTRIBUTES::H_CENTER:
-        if( aClockwise )
-            RotateCW();
-        else
-            RotateCCW();
-        break;
-    }
-#else
     if( aClockwise )
         RotateCW();
     else
         RotateCCW();
-    //SetDefaultAlignment();
-#endif // SIMULATE_SPIN_STYLE
 }
 
 
