@@ -638,7 +638,6 @@ void FOOTPRINT_WIZARD_FRAME::ReCreateVToolbar()
     // Currently, there is no vertical toolbar
 }
 
-#if defined(KICAD_SCRIPTING)
 void FOOTPRINT_WIZARD_FRAME::PythonPluginsReload()
 {
     // Reload the Python plugins
@@ -648,10 +647,7 @@ void FOOTPRINT_WIZARD_FRAME::PythonPluginsReload()
     auto brd_frame = static_cast<PCB_EDIT_FRAME*>( Kiway().Player( FRAME_PCB_EDITOR, false ) );
 
     if( brd_frame )
-        brd_frame->PythonPluginsReload();
+        brd_frame->GetToolManager()->RunAction( PCB_ACTIONS::pluginsReload );
     else
-        PythonPluginsReloadBase();
+        GetToolManager()->RunAction( PCB_ACTIONS::pluginsReload );
 }
-#endif
-
-

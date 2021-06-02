@@ -46,6 +46,7 @@
 #include <track.h>
 #include <wildcards_and_files_ext.h>
 #include <wx/dir.h>
+#include <wx/log.h>
 #include <wx_filename.h>
 #include <zone.h>
 #include <zones.h>
@@ -361,6 +362,8 @@ void PCB_IO::Save( const wxString& aFileName, BOARD* aBoard, const PROPERTIES* a
     Format( aBoard, 1 );
 
     m_out->Print( 0, ")\n" );
+
+    m_out = nullptr;
 }
 
 

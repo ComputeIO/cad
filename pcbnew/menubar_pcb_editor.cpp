@@ -32,6 +32,7 @@
 #include <pcb_edit_frame.h>
 #include <pcbnew_id.h>
 #include <pgm_base.h>
+#include <python_scripting.h>
 #include <tool/actions.h>
 #include <tool/tool_manager.h>
 #include <tools/pcb_actions.h>
@@ -406,32 +407,19 @@ void PCB_EDIT_FRAME::ReCreateMenuBar()
     update = toolsMenu->Add( ACTIONS::updateSchematicFromPcb );
     update->Enable( !Kiface().IsSingle() );
 
+    if( SCRIPTING::IsWxAvailable() )
+    {
+        toolsMenu->AppendSeparator();
+        toolsMenu->Add( PCB_ACTIONS::showPythonConsole );
+    }
 
-#if defined(KICAD_SCRIPTING_WXPYTHON)
-    toolsMenu->AppendSeparator();
-    toolsMenu->Add( PCB_ACTIONS::showPythonConsole );
-#endif
-
-#if defined(KICAD_SCRIPTING) && defined(KICAD_SCRIPTING_ACTION_MENU)
     ACTION_MENU* submenuActionPlugins = new ACTION_MENU( false, selTool );
     submenuActionPlugins->SetTitle( _( "External Plugins" ) );
     submenuActionPlugins->SetIcon( BITMAPS::puzzle_piece );
 
-    submenuActionPlugins->Add( _( "Refresh Plugins" ),
-                               _( "Reload all python plugins and refresh plugin menus" ),
-                               ID_TOOLBARH_PCB_ACTION_PLUGIN_REFRESH,
-                               BITMAPS::reload );
-#ifdef __APPLE__
-    submenuActionPlugins->Add( _( "Reveal Plugin Folder in Finder" ),
-                               _( "Reveals the plugins folder in a Finder window" ),
-                               ID_TOOLBARH_PCB_ACTION_PLUGIN_SHOW_FOLDER,
-                               BITMAPS::directory_open );
-#else
-    submenuActionPlugins->Add( _( "Open Plugin Directory" ),
-                               _( "Opens the directory in the default system file manager" ),
-                               ID_TOOLBARH_PCB_ACTION_PLUGIN_SHOW_FOLDER,
-                               BITMAPS::directory_open );
-#endif
+    submenuActionPlugins->Add( PCB_ACTIONS::pluginsReload );
+    submenuActionPlugins->Add( PCB_ACTIONS::pluginsShowFolder );
+
     // Populate the Action Plugin sub-menu: Must be done before Add
     // Since the object is cloned by Add
     submenuActionPlugins->AppendSeparator();
@@ -439,8 +427,6 @@ void PCB_EDIT_FRAME::ReCreateMenuBar()
 
     toolsMenu->AppendSeparator();
     toolsMenu->Add( submenuActionPlugins );
-#endif
-
 
     //-- Preferences menu ----------------------------------------------------
     //

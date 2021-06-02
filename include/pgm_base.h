@@ -38,6 +38,8 @@
 #include <wx/filename.h>
 #include <wx/gdicmn.h>
 
+#undef pid_t
+#include <pybind11/embed.h>
 
 class wxSingleInstanceChecker;
 class wxApp;
@@ -46,6 +48,7 @@ class wxWindow;
 
 class COMMON_SETTINGS;
 class SETTINGS_MANAGER;
+class SCRIPTING;
 
 /**
  * A small class to handle the list of existing translations.
@@ -304,6 +307,8 @@ protected:
 
     std::unique_ptr<SETTINGS_MANAGER> m_settings_manager;
 
+    std::unique_ptr<SCRIPTING> m_python_scripting;
+
     /// prevents multiple instances of a program from being run at the same time.
     wxSingleInstanceChecker* m_pgm_checker;
 
@@ -329,6 +334,7 @@ protected:
 
     /// Flag to indicate if the environment variable overwrite warning dialog should be shown.
     bool            m_show_env_var_dialog;
+
 };
 
 

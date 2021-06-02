@@ -137,6 +137,7 @@ set( EESCHEMA_WIDGETS
 
 
 set ( EESCHEMA_LIBEDIT_SRCS
+    symbol_editor/lib_logger.cpp
     symbol_editor/symbol_editor.cpp
     symbol_editor/symbol_editor_plotter.cpp
     symbol_editor/symbol_editor_settings.cpp
@@ -403,6 +404,7 @@ target_link_libraries( eeschema_kiface
     common
     sexpr
     markdown_lib
+    scripting
     ${wxWidgets_LIBRARIES}
     ${GDI_PLUS_LIBRARIES}
     )

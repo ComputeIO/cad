@@ -496,6 +496,7 @@ int BOARD_EDITOR_CONTROL::RepairBoard( const TOOL_EVENT& aEvent )
 {
     int      errors = 0;
     wxString details;
+    bool     quiet = aEvent.Parameter<bool>();
 
     /*******************************
      * Repair duplicate IDs and missing nets
@@ -598,9 +599,11 @@ int BOARD_EDITOR_CONTROL::RepairBoard( const TOOL_EVENT& aEvent )
         m_frame->OnModify();
 
         wxString msg = wxString::Format( _( "%d potential problems repaired." ), errors );
-        DisplayInfoMessage( m_frame, msg, details );
+
+        if( !quiet )
+            DisplayInfoMessage( m_frame, msg, details );
     }
-    else
+    else if( !quiet )
     {
         DisplayInfoMessage( m_frame, _( "No board problems found." ) );
     }
@@ -662,9 +665,7 @@ int BOARD_EDITOR_CONTROL::ToggleLayersManager( const TOOL_EVENT& aEvent )
 
 int BOARD_EDITOR_CONTROL::TogglePythonConsole( const TOOL_EVENT& aEvent )
 {
-#if defined( KICAD_SCRIPTING_WXPYTHON )
     m_frame->ScriptingConsoleEnableDisable();
-#endif
     return 0;
 }
 

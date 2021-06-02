@@ -27,6 +27,26 @@
 #include <cstdlib>
 #include <climits>
 #include <math/util.h>
+#include <wx/log.h>
+
+// Fix compatibility with wxWidgets version < 3.1.4
+#ifndef wxASCII_STR
+    #define wxASCII_STR(s) wxString::FromAscii(s)
+#endif
+
+void kimathLogDebug( const char* aFormatString, ... )
+{
+    if( wxLog::IsLevelEnabled( wxLOG_Debug, wxString::FromAscii( wxLOG_COMPONENT ) ) )
+    {
+        va_list argList;
+        va_start( argList, aFormatString );
+
+        wxVLogWarning( aFormatString, argList );
+
+        va_end( argList );
+    }
+}
+
 
 template<>
 int rescale( int aNumerator, int aValue, int aDenominator )
