@@ -34,13 +34,16 @@
 #include <widgets/lib_tree.h>
 #include <widgets/symbol_preview_widget.h>
 #include <wx/button.h>
+#include <wx/checkbox.h>
 #include <wx/clipbrd.h>
 #include <wx/dataview.h>
+#include <wx/log.h>
 #include <wx/panel.h>
 #include <wx/sizer.h>
 #include <wx/splitter.h>
 #include <wx/timer.h>
 #include <wx/utils.h>
+#include <wx/wxhtml.h>
 
 std::mutex DIALOG_CHOOSE_SYMBOL::g_Mutex;
 
@@ -553,3 +556,13 @@ void DIALOG_CHOOSE_SYMBOL::OnComponentSelected( wxCommandEvent& aEvent )
 }
 
 
+bool DIALOG_CHOOSE_SYMBOL::GetUseAllUnits() const
+{
+    return m_useUnits->GetValue();
+}
+
+
+bool DIALOG_CHOOSE_SYMBOL::GetKeepSymbol() const
+{
+    return m_keepSymbol->GetValue();
+}

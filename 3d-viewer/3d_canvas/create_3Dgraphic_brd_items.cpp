@@ -56,6 +56,7 @@
 #include <font/font.h>
 #include <font/outline_font.h>
 #include <font/triangulate.h>
+#include <wx/log.h>
 
 // These variables are parameters used in addTextSegmToContainer.
 // But addTextSegmToContainer is a call-back function,
