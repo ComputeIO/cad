@@ -247,7 +247,7 @@ bool Run_DC_CurrentDensity( FEM_DESCRIPTOR* aDescriptor )
     // Compute the static current everywhere:
     equations.generate();
     // Get A and b to solve Ax = b:
-
+    vec solv = sl::solve( equations.A(), equations.b() );
     sl::setdata( solv );
     /*
     v.setorder(sl::norm(sl::grad(v)), 1, 4);
