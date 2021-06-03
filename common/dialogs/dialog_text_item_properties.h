@@ -29,10 +29,16 @@ class EDA_TEXT;
 class DIALOG_TEXT_ITEM_PROPERTIES : public DIALOG_TEXT_ITEM_PROPERTIES_BASE
 {
 public:
-  DIALOG_TEXT_ITEM_PROPERTIES( wxWindow* aParent,
-                               EDA_TEXT* aText );
+    DIALOG_TEXT_ITEM_PROPERTIES( wxWindow* aParent );
+
+    DIALOG_TEXT_ITEM_PROPERTIES( wxWindow* aParent, EDA_TEXT* aEdaText );
+
+    void SetFontByName( const wxString& aFontName, bool aBold, bool aItalic );
+
+    void OnShowFontDialog( wxCommandEvent& aEvent ) override;
+
 protected:
-  EDA_TEXT* m_text;
+    EDA_TEXT* m_edaText;
 };
 
 #endif // DIALOG_TEXT_ITEM_PROPERTIES_H

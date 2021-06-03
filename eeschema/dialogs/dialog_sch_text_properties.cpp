@@ -38,6 +38,7 @@
 #include <bitmaps.h>
 #include <string>
 #include <dialog_sch_text_properties.h>
+#include <wx/fontdlg.h>
 
 class SCH_EDIT_FRAME;
 class SCH_TEXT;
@@ -124,7 +125,7 @@ DIALOG_SCH_TEXT_PROPERTIES::DIALOG_SCH_TEXT_PROPERTIES( SCH_EDIT_FRAME* aParent,
                        || m_CurrentText->Type() == SCH_HIER_LABEL_T;
     m_ShapeLabel->Show( selectShape );
     m_Shape->Show( selectShape );
-    m_ShapeBitmap->Show( selectShape );
+    //m_ShapeBitmap->Show( selectShape );
 
     bool showNote = m_CurrentText->Type() == SCH_GLOBAL_LABEL_T;
     if( showNote )
@@ -270,7 +271,7 @@ bool DIALOG_SCH_TEXT_PROPERTIES::TransferDataToWindow()
     }
 
     m_Shape->SetSelection( static_cast<int>( m_CurrentText->GetShape() ) );
-    setShapeBitmap();
+    //setShapeBitmap();
 
     m_FontCtrl->SetValue( m_CurrentText->GetFont()->Name() );
     m_FontBold->SetValue( m_CurrentText->IsBold() );
@@ -453,6 +454,7 @@ void DIALOG_SCH_TEXT_PROPERTIES::OnFormattingHelp( wxHyperlinkEvent& aEvent )
 }
 
 
+#if 0
 void DIALOG_SCH_TEXT_PROPERTIES::setShapeBitmap()
 {
     int selectedItem = m_Shape->GetSelection();
@@ -467,3 +469,4 @@ void DIALOG_SCH_TEXT_PROPERTIES::setShapeBitmap()
         m_ShapeBitmap->SetBitmap( KiBitmap( label_icons[selectedItem] ) );
     }
 }
+#endif

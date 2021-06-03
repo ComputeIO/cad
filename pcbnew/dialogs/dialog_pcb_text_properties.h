@@ -26,7 +26,7 @@
 
 #include <widgets/unit_binder.h>
 #include <wx/valnum.h>
-#include <dialog_text_item_properties_base.h>
+#include <dialog_text_item_properties.h>
 
 class PCB_BASE_EDIT_FRAME;
 class BOARD_ITEM;
@@ -35,7 +35,7 @@ class FP_TEXT;
 class PCB_TEXT;
 class PCB_LAYER_BOX_SELECTOR;
 
-class DIALOG_PCB_TEXT_PROPERTIES : public DIALOG_TEXT_ITEM_PROPERTIES_BASE
+class DIALOG_PCB_TEXT_PROPERTIES : public DIALOG_TEXT_ITEM_PROPERTIES
 {
 public:
     DIALOG_PCB_TEXT_PROPERTIES( PCB_BASE_EDIT_FRAME* aParent, BOARD_ITEM* aItem );
@@ -51,7 +51,7 @@ public:
 private:
     PCB_BASE_EDIT_FRAME* m_Parent;
     BOARD_ITEM*          m_item;        // FP_TEXT or PCB_TEXT
-    EDA_TEXT*            m_edaText;     // always non-null
+    //EDA_TEXT*            m_edaText;     // always non-null
     FP_TEXT*             m_fpText;      // only non-null for FP_TEXTs
     PCB_TEXT*            m_pcbText;     // only non-null for PCB_TEXTs
 
@@ -70,11 +70,7 @@ private:
 
     void OnFontFieldChange( wxCommandEvent& aEvent ) override;
 
-    void OnShowFontDialog( wxCommandEvent& aEvent ) override;
-
     void OnOkClick( wxCommandEvent& aEvent ) override;
-
-    void SetFontByName( const wxString& aFontName, bool aBold, bool aItalic );
 
     void OnCharHook( wxKeyEvent& aEvent ) override;
 };

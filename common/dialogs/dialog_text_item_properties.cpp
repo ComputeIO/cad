@@ -19,8 +19,76 @@
  */
 
 #include <dialogs/dialog_text_item_properties.h>
+#include <wx/fontdlg.h>
+#include <font/font.h>
+#include <eda_text.h>
+
+DIALOG_TEXT_ITEM_PROPERTIES::DIALOG_TEXT_ITEM_PROPERTIES( wxWindow* aParent ) :
+        DIALOG_TEXT_ITEM_PROPERTIES_BASE( aParent ),
+        m_edaText( nullptr )
+{
+}
+
 
 DIALOG_TEXT_ITEM_PROPERTIES::DIALOG_TEXT_ITEM_PROPERTIES( wxWindow* aParent, EDA_TEXT* aText ) :
-        DIALOG_TEXT_ITEM_PROPERTIES_BASE( aParent ), m_text( aText )
+        DIALOG_TEXT_ITEM_PROPERTIES_BASE( aParent ),
+        m_edaText( aText )
 {
+}
+
+
+void DIALOG_TEXT_ITEM_PROPERTIES::OnShowFontDialog( wxCommandEvent& aEvent )
+{
+    wxFontData fontData;
+
+    fontData.SetShowHelp( true );
+
+    wxFontDialog* fontDialog = new wxFontDialog( this, fontData );
+    if( fontDialog->ShowModal() == wxID_OK )
+    {
+        wxFont theFont = fontDialog->GetFontData().GetChosenFont();
+        bool   bold = false;
+        bool   italic = false;
+        switch( theFont.GetStyle() )
+        {
+        case wxFONTSTYLE_ITALIC:
+        case wxFONTSTYLE_SLANT: italic = true; break;
+        default: break;
+        }
+        switch( theFont.GetWeight() )
+        {
+        case wxFONTWEIGHT_BOLD: bold = true; break;
+        default: break;
+        }
+#ifdef OUTLINEFONT_DEBUG
+        std::cerr << "DIALOG_PCB_TEXT_PROPERTIES::OnShowFontDialog() face name \""
+                  << theFont.GetFaceName() << "\"" << ( bold ? "bold " : "" )
+                  << ( italic ? "italic " : "" ) << std::endl;
+#endif
+        KIFONT::FONT* font = KIFONT::FONT::GetFont( theFont.GetFaceName(), bold, italic );
+#ifdef OUTLINEFONT_DEBUG
+        std::cerr << "DIALOG_PCB_TEXT_PROPERTIES::OnShowFontDialog() face \"" << theFont.GetFaceName()
+                  << "\" font \"" << font->Name() << "\"" << std::endl;
+#endif
+        m_FontCtrl->SetValue( font->Name() );
+        m_FontBold->SetValue( bold );
+        m_FontItalic->SetValue( italic );
+    }
+}
+
+
+void DIALOG_TEXT_ITEM_PROPERTIES::SetFontByName( const wxString& aFontName, bool aBold, bool aItalic )
+{
+#ifdef OUTLINEFONT_DEBUG
+    std::cerr << "DIALOG_PCB_TEXT_PROPERTIES::SetFontByName( \"" << aFontName << "\", "
+              << ( aBold ? "true, " : "false, " ) << ( aItalic ? "true" : "false" ) << " )"
+              << std::endl;
+#endif
+    m_edaText->SetFont( KIFONT::FONT::GetFont( aFontName, aBold, aItalic ) );
+    m_FontCtrl->SetValue( m_edaText->GetFont()->Name() );
+    m_edaText->SetBold( aBold );
+    m_edaText->SetItalic( aBold );
+#ifdef OUTLINEFONT_DEBUG
+    std::cerr << "font is now \"" << m_edaText->GetFont()->Name() << "\"" << std::endl;
+#endif
 }

@@ -47,8 +47,11 @@ private:
     //void OnEnterKey( wxCommandEvent& aEvent ) override;
     void OnFormattingHelp( wxHyperlinkEvent& aEvent ) override;
 
-    void setShapeBitmap();
-    void OnShapeChoice( wxCommandEvent& aEvent ) override { setShapeBitmap(); }
+    //void setShapeBitmap();
+    void OnShapeChoice( wxCommandEvent& aEvent ) override
+    {
+        //setShapeBitmap();
+    }
 
     bool TransferDataToWindow() override;
     bool TransferDataFromWindow() override;
