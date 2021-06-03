@@ -107,7 +107,7 @@ double compute_DC_Power( expression v, expression j, int aPortA, int aPortB,
 bool Run_DC_CurrentDensity( FEM_DESCRIPTOR* aDescriptor )
 {
     const double copperResistivity = 1.68e-8 / ( 35e-6 );
-    const double interpolationOrder = 2;
+    const double interpolationOrder = 1;
 
     if( aDescriptor == nullptr )
         return false;
@@ -196,45 +196,31 @@ bool Run_DC_CurrentDensity( FEM_DESCRIPTOR* aDescriptor )
         rho | it->first = copperResistivity;
     }
 
-    for( FEM_PORT* port : aDescriptor->GetPorts() )
+    for( FEM_PORT* portA : aDescriptor->GetPorts() )
     {
-        if( port->GetItem() == nullptr )
+        if( portA->GetItem() == nullptr )
         {
             std::cerr << "Uninitialized port" << std::endl;
             continue;
         }
 
-        if( port->m_type != FEM_PORT_TYPE::PASSIVE ) // Don't constrain passive ports
+        if( portA->m_type != FEM_PORT_TYPE::PASSIVE ) // Don't constrain passive ports
         {
-            switch( port->m_constraint.m_type )
+            port V, I;
+            switch( portA->m_constraint.m_type )
             {
             case FEM_PORT_CONSTRAINT_TYPE::VOLTAGE:
-                v.setconstraint( port->m_simulationID, port->m_constraint.m_value );
-                std::cout << "Setting region " << port->m_simulationID << " to "
-                          << port->m_constraint.m_value << " V" << std::endl;
+                v.setport( portA->m_simulationID, V, I );
+                electrokinetics += V - portA->m_constraint.m_value;
+                std::cout << "Setting region " << portA->m_simulationID << " to "
+                          << portA->m_constraint.m_value << " V" << std::endl;
                 break;
             case FEM_PORT_CONSTRAINT_TYPE::CURRENT:
             {
-                int              portid = port->m_simulationID;
-                int              netCode = port->GetItem()->GetNetCode();
-                std::vector<int> regions = getAllRegionsWithNetcode( regionMap, netCode, portid );
-
-                if( regions.size() < 1 )
-                {
-                    // The port is the only region with aNetCode, it is not connected to anything
-                    std::cerr << "Port is not connected to any region" << std::endl;
-                    return 0;
-                }
-                int outsideOfPort = sl::selectunion( regions );
-                int line = sl::selectintersection( { portid, outsideOfPort } );
-
-                electrokinetics += sl::integral(
-                        line, sl::grad( sl::tf( v ) ) * 1 / rho * sl::grad( sl::dof( v ) )
-                                      - ( port->m_constraint.m_value ) * sl::tf( v )
-                                                / ( expression( 1 ).integrate( line, 4 ) ) );
-
-                std::cout << "Setting region " << port->m_simulationID << " divergence to "
-                          << port->m_constraint.m_value << " A" << std::endl;
+                v.setport( portA->m_simulationID, V, I );
+                electrokinetics += I - portA->m_constraint.m_value;
+                std::cout << "Setting region " << portA->m_simulationID << " divergence to "
+                          << portA->m_constraint.m_value << " A" << std::endl;
                 break;
             }
             default: std::cerr << "Source / Sink type not supported" << std::endl;
@@ -261,9 +247,21 @@ bool Run_DC_CurrentDensity( FEM_DESCRIPTOR* aDescriptor )
     // Compute the static current everywhere:
     electrokinetics.generate();
     // Get A and b to solve Ax = b:
-    vec solv = sl::solve( electrokinetics.A(), electrokinetics.b() );
+
+    sl::setdata( solv );
+    /*
+    v.setorder(sl::norm(sl::grad(v)), 1, 4);
+    
+    for (int i = 0; i <= 2; i++)
+    {
+        solv = sl::solve( electrokinetics.A(), electrokinetics.b() );
+        sl::adapt();
+    }*/
+
     int wholedomain = sl::selectall();
     v.setdata( wholedomain, solv );
+
+    sl::fieldorder( v ).write( wholedomain, "fieldOrder.pos" );
 
     std::cout << std::endl << "---------RESULTS---------" << std::endl;
 
