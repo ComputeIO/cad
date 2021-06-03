@@ -31,6 +31,9 @@
 
 #define USE_GMSH
 
+#define MIN_ORDER 1
+#define MAX_ORDER 3
+
 
 std::vector<int> getAllRegionsWithNetcode( std::map<int, int> aRegionMap, int aNetCode,
                                            int aIgnoredPort = -1 )
@@ -244,22 +247,22 @@ bool Run_DC_CurrentDensity( FEM_DESCRIPTOR* aDescriptor )
     //expression P = sl::compx(p)*sl::compx(p)+sl::compy(p)*sl::compy(p);          // power density
 
 
-    // Compute the static current everywhere:
-    equations.generate();
-    // Get A and b to solve Ax = b:
-    vec solv = sl::solve( equations.A(), equations.b() );
-    sl::setdata( solv );
-    /*
-    v.setorder(sl::norm(sl::grad(v)), 1, 4);
-    
-    for (int i = 0; i <= 2; i++)
-    {
-        solv = sl::solve( equations.A(), equations.b() );
-        sl::adapt();
-    }*/
+    int  nb_refinements = 0;
+    int  wholedomain = sl::selectall();
+    bool need_adapt = false;
 
-    int wholedomain = sl::selectall();
-    v.setdata( wholedomain, solv );
+    // Simple p-adaptivity loop:
+    v.setorder( sl::norm( sl::grad( v ) ), MIN_ORDER, MAX_ORDER + 1 );
+    for( int i = 0; i <= MAX_ORDER - MIN_ORDER; i++ )
+    {
+        equations.solve( "cholesky" );
+        need_adapt = sl::adapt();
+        if( !need_adapt )
+        {
+            break; // No adaptation was needed
+        };
+    }
+
 
     sl::fieldorder( v ).write( wholedomain, "fieldOrder.pos" );
 
@@ -397,15 +400,18 @@ bool Run_DC_CurrentDensity( FEM_DESCRIPTOR* aDescriptor )
                 break;
             case FEM_VIEW_TYPE::CURRENT:
 
-                j.write( wholedomain, std::string( resultView->m_filename.GetFullName() ), 2 );
+                j.write( wholedomain, std::string( resultView->m_filename.GetFullName() ),
+                         MAX_ORDER );
                 resultView->m_valid = true;
                 break;
             case FEM_VIEW_TYPE::VOLTAGE:
-                v.write( wholedomain, std::string( resultView->m_filename.GetFullName() ), 2 );
+                v.write( wholedomain, std::string( resultView->m_filename.GetFullName() ),
+                         MAX_ORDER );
                 resultView->m_valid = true;
                 break;
             case FEM_VIEW_TYPE::POWER:
-                p.write( wholedomain, std::string( resultView->m_filename.GetFullName() ), 2 );
+                p.write( wholedomain, std::string( resultView->m_filename.GetFullName() ),
+                         MAX_ORDER );
                 resultView->m_valid = true;
                 break;
             default:
