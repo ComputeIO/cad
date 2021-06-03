@@ -188,7 +188,7 @@ bool Run_DC_CurrentDensity( FEM_DESCRIPTOR* aDescriptor )
     field v( "h1" );
     // parameters
     parameter   rho; // resistivity
-    formulation electrokinetics;
+    formulation equations;
 
     for( std::map<int, int>::iterator it = regionMap.begin(); it != regionMap.end(); ++it )
     {
@@ -211,14 +211,14 @@ bool Run_DC_CurrentDensity( FEM_DESCRIPTOR* aDescriptor )
             {
             case FEM_PORT_CONSTRAINT_TYPE::VOLTAGE:
                 v.setport( portA->m_simulationID, V, I );
-                electrokinetics += V - portA->m_constraint.m_value;
+                equations += V - portA->m_constraint.m_value;
                 std::cout << "Setting region " << portA->m_simulationID << " to "
                           << portA->m_constraint.m_value << " V" << std::endl;
                 break;
             case FEM_PORT_CONSTRAINT_TYPE::CURRENT:
             {
                 v.setport( portA->m_simulationID, V, I );
-                electrokinetics += I - portA->m_constraint.m_value;
+                equations += I - portA->m_constraint.m_value;
                 std::cout << "Setting region " << portA->m_simulationID << " divergence to "
                           << portA->m_constraint.m_value << " A" << std::endl;
                 break;
@@ -233,7 +233,7 @@ bool Run_DC_CurrentDensity( FEM_DESCRIPTOR* aDescriptor )
 
     for( std::map<int, int>::iterator it = regionMap.begin(); it != regionMap.end(); ++it )
     {
-        electrokinetics +=
+        equations +=
                 sl::integral( it->first, sl::grad( sl::tf( v ) ) / rho * sl::grad( sl::dof( v ) ) );
     }
 
@@ -245,7 +245,7 @@ bool Run_DC_CurrentDensity( FEM_DESCRIPTOR* aDescriptor )
 
 
     // Compute the static current everywhere:
-    electrokinetics.generate();
+    equations.generate();
     // Get A and b to solve Ax = b:
 
     sl::setdata( solv );
@@ -254,7 +254,7 @@ bool Run_DC_CurrentDensity( FEM_DESCRIPTOR* aDescriptor )
     
     for (int i = 0; i <= 2; i++)
     {
-        solv = sl::solve( electrokinetics.A(), electrokinetics.b() );
+        solv = sl::solve( equations.A(), equations.b() );
         sl::adapt();
     }*/
 
