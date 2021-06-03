@@ -39,7 +39,9 @@
 #include <wildcards_and_files_ext.h>
 #include <reporter.h>
 #include <wx/stdpaths.h>
-
+#include <wx/msgdlg.h>
+#include <wx/dirdlg.h>
+#include <wx/filedlg.h>
 
 // list of allowed precision for EXCELLON files, for integer format:
 // Due to difference between inches and mm,
@@ -148,7 +150,7 @@ void DIALOG_GENDRILL::InitDisplayParams()
             {
                 if( pad->GetDrillSize().x != 0 )
                 {
-                    if( pad->GetAttribute() == PAD_ATTRIB_NPTH )
+                    if( pad->GetAttribute() == PAD_ATTRIB::NPTH )
                         m_notplatedPadsHoleCount++;
                     else
                         m_platedPadsHoleCount++;
@@ -158,7 +160,7 @@ void DIALOG_GENDRILL::InitDisplayParams()
             {
                 if( pad->GetDrillSize().x != 0 && pad->GetDrillSize().y != 0 )
                 {
-                    if( pad->GetAttribute() == PAD_ATTRIB_NPTH )
+                    if( pad->GetAttribute() == PAD_ATTRIB::NPTH )
                         m_notplatedPadsHoleCount++;
                     else
                         m_platedPadsHoleCount++;

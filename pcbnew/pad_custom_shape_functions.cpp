@@ -55,7 +55,7 @@ void PAD::AddPrimitivePoly( const SHAPE_POLY_SET& aPoly, int aThickness, bool aF
 void PAD::AddPrimitivePoly( const std::vector<wxPoint>& aPoly, int aThickness, bool aFilled )
 {
     PCB_SHAPE* item = new PCB_SHAPE();
-    item->SetShape( S_POLYGON );
+    item->SetShape( PCB_SHAPE_TYPE::POLYGON );
     item->SetFilled( aFilled );
     item->SetPolyPoints( aPoly );
     item->SetWidth( aThickness );
@@ -68,7 +68,7 @@ void PAD::AddPrimitivePoly( const std::vector<wxPoint>& aPoly, int aThickness, b
 void PAD::AddPrimitiveSegment( const wxPoint& aStart, const wxPoint& aEnd, int aThickness )
 {
     PCB_SHAPE* item = new PCB_SHAPE();
-    item->SetShape( S_SEGMENT );
+    item->SetShape( PCB_SHAPE_TYPE::SEGMENT );
     item->SetFilled( false );
     item->SetStart( aStart );
     item->SetEnd( aEnd );
@@ -83,7 +83,7 @@ void PAD::AddPrimitiveArc( const wxPoint& aCenter, const wxPoint& aStart, int aA
                            int aThickness )
 {
     PCB_SHAPE* item = new PCB_SHAPE();
-    item->SetShape( S_ARC );
+    item->SetShape( PCB_SHAPE_TYPE::ARC );
     item->SetFilled( false );
     item->SetCenter( aCenter );
     item->SetArcStart( aStart );
@@ -99,7 +99,7 @@ void PAD::AddPrimitiveCurve( const wxPoint& aStart, const wxPoint& aEnd, const w
                              const wxPoint& aCtrl2, int aThickness )
 {
     PCB_SHAPE* item = new PCB_SHAPE();
-    item->SetShape( S_CURVE );
+    item->SetShape( PCB_SHAPE_TYPE::CURVE );
     item->SetFilled( false );
     item->SetStart( aStart );
     item->SetEnd( aEnd );
@@ -115,7 +115,7 @@ void PAD::AddPrimitiveCurve( const wxPoint& aStart, const wxPoint& aEnd, const w
 void PAD::AddPrimitiveCircle( const wxPoint& aCenter, int aRadius, int aThickness, bool aFilled )
 {
     PCB_SHAPE* item = new PCB_SHAPE();
-    item->SetShape( S_CIRCLE );
+    item->SetShape( PCB_SHAPE_TYPE::CIRCLE );
     item->SetFilled( aFilled );
     item->SetStart( aCenter );
     item->SetEnd( wxPoint( aCenter.x + aRadius, aCenter.y ) );
@@ -130,7 +130,7 @@ void PAD::AddPrimitiveRect( const wxPoint& aStart, const wxPoint& aEnd, int aThi
                             bool aFilled)
 {
     PCB_SHAPE* item = new PCB_SHAPE();
-    item->SetShape( S_RECT );
+    item->SetShape( PCB_SHAPE_TYPE::RECT );
     item->SetFilled( aFilled );
     item->SetStart( aStart );
     item->SetEnd( aEnd );
@@ -200,7 +200,8 @@ void PAD::addPadPrimitivesToPolygon( SHAPE_POLY_SET* aMergedPolygon, PCB_LAYER_I
     }
 }
 
-void PAD::MergePrimitivesAsPolygon( SHAPE_POLY_SET* aMergedPolygon, PCB_LAYER_ID aLayer ) const
+void PAD::MergePrimitivesAsPolygon( SHAPE_POLY_SET* aMergedPolygon, PCB_LAYER_ID aLayer,
+                                    ERROR_LOC aErrorLoc ) const
 {
     BOARD* board = GetBoard();
     int    maxError = board ? board->GetDesignSettings().m_MaxError: ARC_HIGH_DEF;
@@ -211,7 +212,7 @@ void PAD::MergePrimitivesAsPolygon( SHAPE_POLY_SET* aMergedPolygon, PCB_LAYER_ID
     // The anchor pad is always at 0,0
     switch( GetAnchorPadShape() )
     {
-    case PAD_SHAPE_RECT:
+    case PAD_SHAPE::RECT:
     {
         SHAPE_RECT rect( -GetSize().x / 2, -GetSize().y / 2, GetSize().x, GetSize().y );
         aMergedPolygon->AddOutline( rect.Outline() );
@@ -219,13 +220,13 @@ void PAD::MergePrimitivesAsPolygon( SHAPE_POLY_SET* aMergedPolygon, PCB_LAYER_ID
         break;
 
     default:
-    case PAD_SHAPE_CIRCLE:
+    case PAD_SHAPE::CIRCLE:
         TransformCircleToPolygon( *aMergedPolygon, wxPoint( 0, 0 ), GetSize().x / 2, maxError,
                                   ERROR_INSIDE );
         break;
     }
 
-    addPadPrimitivesToPolygon( aMergedPolygon, aLayer, maxError, ERROR_INSIDE );
+    addPadPrimitivesToPolygon( aMergedPolygon, aLayer, maxError, aErrorLoc );
 }
 
 
@@ -263,7 +264,7 @@ bool PAD::GetBestAnchorPosition( VECTOR2I& aPos )
     int64_t minDist = std::numeric_limits<int64_t>::max();
     int64_t minDistEdge;
 
-    if( GetAnchorPadShape() == PAD_SHAPE_CIRCLE )
+    if( GetAnchorPadShape() == PAD_SHAPE::CIRCLE )
     {
         minDistEdge = GetSize().x;
     }

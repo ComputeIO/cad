@@ -190,7 +190,7 @@ void PCB_PAD::AddToFootprint( FOOTPRINT* aFootprint, int aRotation, bool aEncaps
 {
     PCB_PAD_SHAPE*  padShape;
     wxString        padShapeName = wxT( "Ellipse" );
-    PAD_ATTR_T      padType;
+    PAD_ATTRIB      padType;
     int             i;
     int             width = 0;
     int             height = 0;
@@ -200,8 +200,8 @@ void PCB_PAD::AddToFootprint( FOOTPRINT* aFootprint, int aRotation, bool aEncaps
     if( !m_IsHolePlated && m_Hole )
     {
         // mechanical hole
-        pad->SetShape( PAD_SHAPE_CIRCLE );
-        pad->SetAttribute( PAD_ATTRIB_NPTH );
+        pad->SetShape( PAD_SHAPE::CIRCLE );
+        pad->SetAttribute( PAD_ATTRIB::NPTH );
 
         pad->SetDrillShape( PAD_DRILL_SHAPE_CIRCLE );
         pad->SetDrillSize( wxSize( m_Hole, m_Hole ) );
@@ -220,7 +220,7 @@ void PCB_PAD::AddToFootprint( FOOTPRINT* aFootprint, int aRotation, bool aEncaps
     }
     else
     {
-        ( m_Hole ) ? padType = PAD_ATTRIB_PTH : padType = PAD_ATTRIB_SMD;
+        ( m_Hole ) ? padType = PAD_ATTRIB::PTH : padType = PAD_ATTRIB::SMD;
 
         // form layer mask
         for( i = 0; i < (int) m_Shapes.GetCount(); i++ )
@@ -252,7 +252,7 @@ void PCB_PAD::AddToFootprint( FOOTPRINT* aFootprint, int aRotation, bool aEncaps
             return;
         }
 
-        if( padType == PAD_ATTRIB_PTH )
+        if( padType == PAD_ATTRIB::PTH )
             // actually this is a thru-hole pad
             pad->SetLayerSet( LSET::AllCuMask() | LSET( 2, B_Mask, F_Mask ) );
 
@@ -263,16 +263,16 @@ void PCB_PAD::AddToFootprint( FOOTPRINT* aFootprint, int aRotation, bool aEncaps
             || padShapeName == wxT( "MtHole" ) )
         {
             if( width != height )
-                pad->SetShape( PAD_SHAPE_OVAL );
+                pad->SetShape( PAD_SHAPE::OVAL );
             else
-                pad->SetShape( PAD_SHAPE_CIRCLE );
+                pad->SetShape( PAD_SHAPE::CIRCLE );
         }
         else if( padShapeName == wxT( "Rect" ) )
-            pad->SetShape( PAD_SHAPE_RECT );
+            pad->SetShape( PAD_SHAPE::RECT );
         else if(  padShapeName == wxT( "RndRect" ) )
-            pad->SetShape( PAD_SHAPE_ROUNDRECT );
+            pad->SetShape( PAD_SHAPE::ROUNDRECT );
         else if( padShapeName == wxT( "Polygon" ) )
-            pad->SetShape( PAD_SHAPE_RECT ); // approximation
+            pad->SetShape( PAD_SHAPE::RECT ); // approximation
 
         pad->SetSize( wxSize( width, height ) );
         pad->SetDelta( wxSize( 0, 0 ) );

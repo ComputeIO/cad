@@ -1,10 +1,10 @@
 /*
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
- * Copyright (C) 2012 Jean-Pierre Charras, jean-pierre.charras@ujf-grenoble.fr
+ * Copyright (C) 2012 Jean-Pierre Charras, jp.charras at wanadoo.fr
  * Copyright (C) 2012 SoftPLC Corporation, Dick Hollenbeck <dick@softplc.com>
- * Copyright (C) 2012 Wayne Stambaugh <stambaughw@verizon.net>
- * Copyright (C) 1992-2019 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 2012 Wayne Stambaugh <stambaughw@gmail.com>
+ * Copyright (C) 1992-2021 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -612,8 +612,18 @@ double VIA::ViewGetLOD( int aLayer, KIGFX::VIEW* aView ) const
     }
     else if( IsHoleLayer( aLayer ) )
     {
-        if( !( visible & LSET::PhysicalLayersMask() ).any() )
-            return HIDE;
+        if( m_viaType == VIATYPE::BLIND_BURIED || m_viaType == VIATYPE::MICROVIA )
+        {
+            // Show a blind or micro via's hole if it crosses a visible layer
+            if( !( visible & GetLayerSet() ).any() )
+                return HIDE;
+        }
+        else
+        {
+            // Show a through via's hole if any physical layer is shown
+            if( !( visible & LSET::PhysicalLayersMask() ).any() )
+                return HIDE;
+        }
     }
     else if( IsNetnameLayer( aLayer ) )
     {
@@ -646,7 +656,9 @@ void TRACK::GetMsgPanelInfo( EDA_DRAW_FRAME* aFrame, std::vector<MSG_PANEL_ITEM>
     wxString  msg;
     BOARD*    board = GetBoard();
 
-    aList.emplace_back( _( "Type" ), _( "Track" ) );
+    aList.emplace_back( _( "Type" ),
+                        Type() == PCB_ARC_T ? ( "Track (arc)" ) : _( "Track" ) );
+
 
     GetMsgPanelInfoBase_Common( aFrame, aList );
 
@@ -654,8 +666,16 @@ void TRACK::GetMsgPanelInfo( EDA_DRAW_FRAME* aFrame, std::vector<MSG_PANEL_ITEM>
 
     aList.emplace_back( _( "Width" ), MessageTextFromValue( units, m_Width ) );
 
+    if( Type() == PCB_ARC_T )
+    {
+        double radius = static_cast<ARC*>( this )->GetRadius();
+        aList.emplace_back( _( "Radius" ), MessageTextFromValue( units, radius ) );
+    }
+
+    aList.emplace_back( _( "Segment Length" ), MessageTextFromValue( units, GetLength() ) );
+
     // Display full track length (in Pcbnew)
-    if( board )
+    if( board && GetNetCode() > 0 )
     {
         int    count;
         double trackLen;
@@ -663,7 +683,7 @@ void TRACK::GetMsgPanelInfo( EDA_DRAW_FRAME* aFrame, std::vector<MSG_PANEL_ITEM>
 
         std::tie( count, trackLen, lenPadToDie ) = board->GetTrackLength( *this );
 
-        aList.emplace_back( _( "Length" ), MessageTextFromValue( units, trackLen ) );
+        aList.emplace_back( _( "Routed Length" ), MessageTextFromValue( units, trackLen ) );
 
         if( lenPadToDie != 0 )
         {
@@ -879,7 +899,9 @@ bool VIA::HitTest( const EDA_RECT& aRect, bool aContained, int aAccuracy ) const
 
 wxString TRACK::GetSelectMenuText( EDA_UNITS aUnits ) const
 {
-    return wxString::Format( _("Track %s on %s, length %s" ),
+    return wxString::Format( Type() == PCB_ARC_T ?
+                                _("Track (arc) %s on %s, length %s" )
+                                : _("Track %s on %s, length %s" ),
                              GetNetnameMsg(),
                              GetLayerName(),
                              MessageTextFromValue( aUnits, GetLength() ) );
@@ -1011,8 +1033,8 @@ wxString TRACK::ShowState( int stateBits )
     if( stateBits & IN_EDIT )
         ret << wxT( " | IN_EDIT" );
 
-    if( stateBits & IS_DRAGGED )
-        ret << wxT( " | IS_DRAGGED" );
+    if( stateBits & IS_DRAGGING )
+        ret << wxT( " | IS_DRAGGING" );
 
     if( stateBits & DO_NOT_DRAW )
         ret << wxT( " | DO_NOT_DRAW" );

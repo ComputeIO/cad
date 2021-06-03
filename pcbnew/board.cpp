@@ -50,6 +50,7 @@
 #include <ratsnest/ratsnest_data.h>
 #include <tool/selection_conditions.h>
 #include <convert_drawsegment_list_to_polygon.h>
+#include <wx/log.h>
 
 // This is an odd place for this, but CvPcb won't link if it's in board_item.cpp like I first
 // tried it.
@@ -57,7 +58,7 @@ wxPoint BOARD_ITEM::ZeroOffset( 0, 0 );
 
 
 BOARD::BOARD() :
-        BOARD_ITEM_CONTAINER( (BOARD_ITEM*) NULL, PCB_T ),
+        BOARD_ITEM_CONTAINER( (BOARD_ITEM*) nullptr, PCB_T ),
         m_boardUse( BOARD_USE::NORMAL ),
         m_timeStamp( 1 ),
         m_paper( PAGE_INFO::A4 ),
@@ -279,7 +280,7 @@ void BOARD::Move( const wxPoint& aMoveVector )        // overload
         return SEARCH_RESULT::CONTINUE;
     };
 
-    Visit( inspector, NULL, top_level_board_stuff );
+    Visit( inspector, nullptr, top_level_board_stuff );
 }
 
 
@@ -299,7 +300,7 @@ TRACKS BOARD::TracksInNet( int aNetCode )
 
     // visit this BOARD's TRACKs and VIAs with above TRACK INSPECTOR which
     // appends all in aNetCode to ret.
-    Visit( inspector, NULL, GENERAL_COLLECTOR::Tracks );
+    Visit( inspector, nullptr, GENERAL_COLLECTOR::Tracks );
 
     return ret;
 }
@@ -562,9 +563,9 @@ bool BOARD::IsFootprintLayerVisible( PCB_LAYER_ID aLayer ) const
 
 void BOARD::Add( BOARD_ITEM* aBoardItem, ADD_MODE aMode )
 {
-    if( aBoardItem == NULL )
+    if( aBoardItem == nullptr )
     {
-        wxFAIL_MSG( wxT( "BOARD::Add() param error: aBoardItem NULL" ) );
+        wxFAIL_MSG( wxT( "BOARD::Add() param error: aBoardItem nullptr" ) );
         return;
     }
 
@@ -664,14 +665,37 @@ void BOARD::FinalizeBulkRemove( std::vector<BOARD_ITEM*>& aRemovedItems )
 
 void BOARD::Remove( BOARD_ITEM* aBoardItem, REMOVE_MODE aRemoveMode )
 {
-    // find these calls and fix them!  Don't send me no stinking' NULL.
+    // find these calls and fix them!  Don't send me no stinking' nullptr.
     wxASSERT( aBoardItem );
 
     switch( aBoardItem->Type() )
     {
     case PCB_NETINFO_T:
     {
-        NETINFO_ITEM* item = (NETINFO_ITEM*) aBoardItem;
+        NETINFO_ITEM* item        = static_cast<NETINFO_ITEM*>( aBoardItem );
+        NETINFO_ITEM* unconnected = m_NetInfo.GetNetItem( NETINFO_LIST::UNCONNECTED );
+
+        for( FOOTPRINT* fp : m_footprints )
+        {
+            for( PAD* pad : fp->Pads() )
+            {
+                if( pad->GetNet() == item )
+                    pad->SetNet( unconnected );
+            }
+        }
+
+        for( ZONE* zone : m_zones )
+        {
+            if( zone->GetNet() == item )
+                zone->SetNet( unconnected );
+        }
+
+        for( TRACK* track : m_tracks )
+        {
+            if( track->GetNet() == item )
+                track->SetNet( unconnected );
+        }
+
         m_NetInfo.RemoveNet( item );
         break;
     }
@@ -1269,7 +1293,7 @@ NETINFO_ITEM* BOARD::FindNet( int aNetcode ) const
 {
     // the first valid netcode is 1 and the last is m_NetInfo.GetCount()-1.
     // zero is reserved for "no connection" and is not actually a net.
-    // NULL is returned for non valid netcodes
+    // nullptr is returned for non valid netcodes
 
     wxASSERT( m_NetInfo.GetNetCount() > 0 );
 
@@ -1484,7 +1508,7 @@ PAD* BOARD::GetPad( const wxPoint& aPosition, LSET aLayerSet ) const
 
     for( FOOTPRINT* footprint : m_footprints )
     {
-        PAD* pad = NULL;
+        PAD* pad = nullptr;
 
         if( footprint->HitTest( aPosition ) )
             pad = footprint->GetPad( aPosition, aLayerSet );
@@ -1493,7 +1517,7 @@ PAD* BOARD::GetPad( const wxPoint& aPosition, LSET aLayerSet ) const
             return pad;
     }
 
-    return NULL;
+    return nullptr;
 }
 
 
@@ -1580,7 +1604,7 @@ PAD* BOARD::GetPad( std::vector<PAD*>& aPadList, const wxPoint& aPosition, LSET 
             }
 
             // Not found:
-            return 0;
+            return nullptr;
         }
 
         if( pad->GetPosition().x == aPosition.x )       // Must search considering Y coordinate
@@ -1616,7 +1640,7 @@ PAD* BOARD::GetPad( std::vector<PAD*>& aPadList, const wxPoint& aPosition, LSET 
         }
     }
 
-    return NULL;
+    return nullptr;
 }
 
 
@@ -1665,32 +1689,72 @@ std::tuple<int, double, double> BOARD::GetTrackLength( const TRACK& aTrack ) con
     double length = 0.0;
     double package_length = 0.0;
 
-    constexpr KICAD_T types[] = { PCB_TRACE_T, PCB_ARC_T, PCB_VIA_T, PCB_PAD_T, EOT };
+    constexpr KICAD_T types[]      = { PCB_TRACE_T, PCB_ARC_T, PCB_VIA_T, PCB_PAD_T, EOT };
     auto              connectivity = GetBoard()->GetConnectivity();
+    BOARD_STACKUP&    stackup      = GetDesignSettings().GetStackupDescriptor();
+    bool              useHeight    = GetDesignSettings().m_UseHeightForLengthCalcs;
 
     for( BOARD_CONNECTED_ITEM* item : connectivity->GetConnectedItems(
                  static_cast<const BOARD_CONNECTED_ITEM*>( &aTrack ), types ) )
     {
         count++;
 
-        if( TRACK* track = dyn_cast<TRACK*>( item ) )
+        if( TRACK* track = dynamic_cast<TRACK*>( item ) )
         {
-            bool inPad = false;
+            if( track->Type() == PCB_VIA_T && useHeight )
+            {
+                VIA* via = static_cast<VIA*>( track );
+                length += stackup.GetLayerDistance( via->TopLayer(), via->BottomLayer() );
+                continue;
+            }
+            else if( track->Type() == PCB_ARC_T )
+            {
+                // Note: we don't apply the clip-to-pad optimization if an arc ends in a pad
+                // Room for future improvement.
+                length += track->GetLength();
+                continue;
+            }
+
+            bool   inPad = false;
+            SEG    trackSeg( track->GetStart(), track->GetEnd() );
+            double segLen      = trackSeg.Length();
+            double segInPadLen = 0;
 
             for( auto pad_it : connectivity->GetConnectedPads( item ) )
             {
                 PAD* pad = static_cast<PAD*>( pad_it );
 
-                if( pad->HitTest( track->GetStart(), track->GetWidth() / 2 )
-                        && pad->HitTest( track->GetEnd(), track->GetWidth() / 2 ) )
+                bool hitStart = pad->HitTest( track->GetStart(), track->GetWidth() / 2 );
+                bool hitEnd   = pad->HitTest( track->GetEnd(), track->GetWidth() / 2 );
+
+                if( hitStart && hitEnd )
                 {
                     inPad = true;
                     break;
                 }
+                else if( hitStart || hitEnd )
+                {
+                    VECTOR2I loc;
+
+                    // We may not collide even if we passed the bounding-box hit test
+                    if( pad->GetEffectivePolygon()->Collide( trackSeg, 0, nullptr, &loc ) )
+                    {
+                        // Part 1: length of the seg to the intersection with the pad poly
+                        if( hitStart )
+                            trackSeg.A = loc;
+                        else
+                            trackSeg.B = loc;
+
+                        segLen = trackSeg.Length();
+
+                        // Part 2: length from the interesection to the pad anchor
+                        segInPadLen += ( loc - pad->GetPosition() ).EuclideanNorm();
+                    }
+                }
             }
 
             if( !inPad )
-                length += track->GetLength();
+                length += segLen + segInPadLen;
         }
         else if( PAD* pad = dyn_cast<PAD*>( item ) )
         {
@@ -1705,8 +1769,8 @@ std::tuple<int, double, double> BOARD::GetTrackLength( const TRACK& aTrack ) con
 FOOTPRINT* BOARD::GetFootprint( const wxPoint& aPosition, PCB_LAYER_ID aActiveLayer,
                                 bool aVisibleOnly, bool aIgnoreLocked ) const
 {
-    FOOTPRINT* footprint     = NULL;
-    FOOTPRINT* alt_footprint = NULL;
+    FOOTPRINT* footprint     = nullptr;
+    FOOTPRINT* alt_footprint = nullptr;
     int        min_dim       = 0x7FFFFFFF;
     int        alt_min_dim   = 0x7FFFFFFF;
     bool       current_layer_back = IsBackLayer( aActiveLayer );
@@ -1762,7 +1826,7 @@ FOOTPRINT* BOARD::GetFootprint( const wxPoint& aPosition, PCB_LAYER_ID aActiveLa
     if( alt_footprint)
         return alt_footprint;
 
-    return NULL;
+    return nullptr;
 }
 
 

@@ -28,6 +28,7 @@
 #include <track.h>
 #include <zone.h>
 #include <netinfo.h>
+#include <wx/log.h>
 
 
 // Constructor and destructor
@@ -83,10 +84,13 @@ NETINFO_ITEM* NETINFO_LIST::GetNetItem( const wxString& aNetName ) const
 
 void NETINFO_LIST::RemoveNet( NETINFO_ITEM* aNet )
 {
+    bool removed = false;
+
     for( NETCODES_MAP::iterator i = m_netCodes.begin(); i != m_netCodes.end(); ++i )
     {
         if ( i->second == aNet )
         {
+            removed = true;
             m_netCodes.erase(i);
             break;
         }
@@ -96,12 +100,15 @@ void NETINFO_LIST::RemoveNet( NETINFO_ITEM* aNet )
     {
         if ( i->second == aNet )
         {
+            wxASSERT_MSG( removed, "NETINFO_LIST::RemoveNet: target net found in m_netNames "
+                          "but not m_netCodes!" );
             m_netNames.erase(i);
             break;
         }
     }
 
-    m_newNetCode = std::min( m_newNetCode, aNet->m_netCode - 1 );
+    if( removed )
+        m_newNetCode = std::min( m_newNetCode, aNet->m_netCode - 1 );
 }
 
 

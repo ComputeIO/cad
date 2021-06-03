@@ -149,6 +149,8 @@ BOARD_DESIGN_SETTINGS::BOARD_DESIGN_SETTINGS( JSON_SETTINGS* aParent, const std:
     for( int errorCode = DRCE_FIRST; errorCode <= DRCE_LAST; ++errorCode )
         m_DRCSeverities[ errorCode ] = RPT_SEVERITY_ERROR;
 
+    m_DRCSeverities[ DRCE_DRILLED_HOLES_COLOCATED ] = RPT_SEVERITY_WARNING;
+
     m_DRCSeverities[ DRCE_MISSING_COURTYARD ] = RPT_SEVERITY_IGNORE;
     m_DRCSeverities[ DRCE_PTH_IN_COURTYARD ] = RPT_SEVERITY_IGNORE;
     m_DRCSeverities[ DRCE_NPTH_IN_COURTYARD ] = RPT_SEVERITY_IGNORE;
@@ -165,6 +167,7 @@ BOARD_DESIGN_SETTINGS::BOARD_DESIGN_SETTINGS( JSON_SETTINGS* aParent, const std:
     m_ZoneFillVersion = 6;                      // Use new algo by default to fill zones
     m_ZoneKeepExternalFillets = false;          // Use new algo by default.  Legacy boards might
                                                 // want to set it to true for old algo....
+    m_UseHeightForLengthCalcs = true;
 
     // Global mask margins:
     m_SolderMaskMargin  = Millimeter2iu( DEFAULT_SOLDERMASK_CLEARANCE );
@@ -196,6 +199,9 @@ BOARD_DESIGN_SETTINGS::BOARD_DESIGN_SETTINGS( JSON_SETTINGS* aParent, const std:
 
     m_params.emplace_back( new PARAM<bool>( "rules.allow_blind_buried_vias",
             &m_BlindBuriedViaAllowed, false ) );
+
+    m_params.emplace_back( new PARAM<bool>( "rules.use_height_for_length_calcs",
+            &m_UseHeightForLengthCalcs, true ) );
 
     m_params.emplace_back( new PARAM_SCALED<int>( "rules.min_clearance", &m_MinClearance,
             Millimeter2iu( DEFAULT_MINCLEARANCE ), Millimeter2iu( 0.01 ), Millimeter2iu( 25.0 ),
@@ -589,7 +595,7 @@ BOARD_DESIGN_SETTINGS::BOARD_DESIGN_SETTINGS( JSON_SETTINGS* aParent, const std:
             {
                 m_ZoneFillVersion = aVal ? 6 : 5;
             },
-            6 ) );
+            true ) );
 
     m_params.emplace_back( new PARAM<bool>( "zones_allow_external_fillets",
             &m_ZoneKeepExternalFillets, false ) );
@@ -714,6 +720,7 @@ void BOARD_DESIGN_SETTINGS::initFromOther( const BOARD_DESIGN_SETTINGS& aOther )
     m_AuxOrigin              = aOther.m_AuxOrigin;
     m_GridOrigin             = aOther.m_GridOrigin;
     m_HasStackup             = aOther.m_HasStackup;
+    m_UseHeightForLengthCalcs= aOther.m_UseHeightForLengthCalcs;
 
     m_trackWidthIndex        = aOther.m_trackWidthIndex;
     m_viaSizeIndex           = aOther.m_viaSizeIndex;

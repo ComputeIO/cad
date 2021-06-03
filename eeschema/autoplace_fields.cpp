@@ -23,17 +23,17 @@
  */
 
 /******************************************************************************
- * Field autoplacer: Tries to find an optimal place for component fields, and
- * places them there. There are two modes: "auto"-autoplace, and "manual" autoplace.
- * Auto mode is for when the process is run automatically, like when rotating parts,
- * and it avoids doing things that would be helpful for the final positioning but
- * annoying if they happened without permission.
+ * Field autoplacer: Tries to find an optimal place for symbol fields, and places them there.
+ * There are two modes: "auto"-autoplace, and "manual" autoplace.
+ * Auto mode is for when the process is run automatically, like when rotating parts, and it
+ * avoids doing things that would be helpful for the final positioning but annoying if they
+ * happened without permission.
  * Short description of the process:
  *
  * 1. Compute the dimensions of the fields' bounding box    ::computeFBoxSize
  * 2. Determine which side the fields will go on.           ::chooseSideForFields
  *      1. Sort the four sides in preference order,
- *          depending on the component's shape and
+ *          depending on the symbol's shape and
  *          orientation                                     ::getPreferredSides
  *      2. If in manual mode, sift out the sides that would
  *          cause fields to overlap other items             ::getCollidingSides
@@ -86,9 +86,13 @@ template<typename T> T round_n( const T& value, const T& n, bool aRoundUp )
 /**
  * Convert an integer to a horizontal justification; neg=L zero=C pos=R
  */
-EDA_TEXT_HJUSTIFY_T TO_HJUSTIFY( int x )
+TEXT_ATTRIBUTES::HORIZONTAL_ALIGNMENT TO_HJUSTIFY( int x )
 {
-    return static_cast<EDA_TEXT_HJUSTIFY_T>( x );
+    if( x < 0 )
+        return TEXT_ATTRIBUTES::H_LEFT;
+    if( x > 0 )
+        return TEXT_ATTRIBUTES::H_RIGHT;
+    return TEXT_ATTRIBUTES::H_CENTER;
 }
 
 
@@ -237,7 +241,7 @@ protected:
     }
 
     /**
-     * Count the number of pins on a side of the component.
+     * Count the number of pins on a side of the symbol.
      */
     unsigned pinsOnSide( SIDE aSide )
     {
@@ -256,9 +260,8 @@ protected:
     }
 
     /**
-     * Populate a list of all drawing items that *may* collide with the fields. That is,
-     * all drawing items, including other fields, that are not the current component or
-     * its own fields.
+     * Populate a list of all drawing items that *may* collide with the fields. That is, all
+     * drawing items, including other fields, that are not the current symbol or its own fields.
      */
     void getPossibleCollisions( std::vector<SCH_ITEM*>& aItems )
     {
@@ -306,8 +309,8 @@ protected:
     }
 
     /**
-     * Return a list with the preferred field sides for the component, in
-     * decreasing order of preference.
+     * Return a list with the preferred field sides for the symbol, in decreasing order of
+     * preference.
      */
     std::vector<SIDE_AND_NPINS> getPreferredSides()
     {
@@ -356,13 +359,13 @@ protected:
         }
         else
         {
-            // If the component is horizontally mirrored, swap left and right
+            // If the symbol is horizontally mirrored, swap left and right
             if( h_mirrored )
             {
                 std::swap( sides[0], sides[2] );
             }
 
-            // If the component is very long or is a power symbol, swap H and V
+            // If the symbol is very long or is a power symbol, swap H and V
             if( w/h > 3.0 )
             {
                 std::swap( sides[0], sides[1] );
@@ -458,7 +461,7 @@ protected:
     }
 
     /**
-     * Look where a component's pins are to pick a side to put the fields on
+     * Look where a symbol's pins are to pick a side to put the fields on
      * @param aAvoidCollisions - if true, pick last the sides where the label will collide
      *      with other items.
      */
@@ -501,10 +504,10 @@ protected:
     void justifyField( SCH_FIELD* aField, SIDE aFieldSide )
     {
         // Justification is set twice to allow IsHorizJustifyFlipped() to work correctly.
-        aField->SetHorizJustify( TO_HJUSTIFY( -aFieldSide.x ) );
-        aField->SetHorizJustify( TO_HJUSTIFY( -aFieldSide.x
+        aField->Align( TO_HJUSTIFY( -aFieldSide.x ) );
+        aField->Align( TO_HJUSTIFY( -aFieldSide.x
                                                  * ( aField->IsHorizJustifyFlipped() ? -1 : 1 ) ) );
-        aField->SetVertJustify( GR_TEXT_VJUSTIFY_CENTER );
+        aField->Align( TEXT_ATTRIBUTES::V_CENTER );
     }
 
     /**
@@ -589,31 +592,22 @@ protected:
      */
     int fieldHorizPlacement( SCH_FIELD *aField, const EDA_RECT &aFieldBox )
     {
-        int field_hjust;
-        int field_xcoord;
+        TEXT_ATTRIBUTES::HORIZONTAL_ALIGNMENT field_hjust;
 
         if( aField->IsHorizJustifyFlipped() )
-            field_hjust = -aField->GetHorizJustify();
+            field_hjust = aField->GetAttributes().OppositeHorizontalAlignment();
         else
-            field_hjust = aField->GetHorizJustify();
+            field_hjust = aField->GetHorizontalAlignment();
 
         switch( field_hjust )
         {
-        case GR_TEXT_HJUSTIFY_LEFT:
-            field_xcoord = aFieldBox.GetLeft();
-            break;
-        case GR_TEXT_HJUSTIFY_CENTER:
-            field_xcoord = aFieldBox.Centre().x;
-            break;
-        case GR_TEXT_HJUSTIFY_RIGHT:
-            field_xcoord = aFieldBox.GetRight();
-            break;
+        case TEXT_ATTRIBUTES::H_LEFT: return aFieldBox.GetLeft();
+        case TEXT_ATTRIBUTES::H_CENTER: return aFieldBox.Centre().x;
+        case TEXT_ATTRIBUTES::H_RIGHT: return aFieldBox.GetRight();
         default:
-            wxFAIL_MSG( "Unexpected value for SCH_FIELD::GetHorizJustify()" );
-            field_xcoord = aFieldBox.Centre().x; // Most are centered
+            wxFAIL_MSG( "Unexpected value for SCH_FIELD horizontal alignment" );
+            return aFieldBox.Centre().x; // Most are centered
         }
-
-        return field_xcoord;
     }
 
     /**

@@ -43,6 +43,8 @@
 #include <wx/stc/stc.h>
 #include <kiplatform/app.h>
 
+#include <wx/wx.h>      // for GetForegroundWindow() on wxMSW
+
 ///< Stores information about a mouse button state
 struct TOOL_DISPATCHER::BUTTON_STATE
 {
@@ -503,6 +505,18 @@ void TOOL_DISPATCHER::DispatchWxEvent( wxEvent& aEvent )
     else if( type == wxEVT_CHAR_HOOK || type == wxEVT_CHAR )
     {
         wxKeyEvent* ke = static_cast<wxKeyEvent*>( &aEvent );
+
+        wxLogTrace( kicadTraceKeyEvent, "TOOL_DISPATCHER::DispatchWxEvent %s", dump( *ke ) );
+
+        // Do not process wxEVT_CHAR_HOOK for a shift-modified key, as ACTION_MANAGER::RunHotKey
+        // will run the un-shifted key and that's not what we want.  Wait to get the translated
+        // key from wxEVT_CHAR.
+        // See https://gitlab.com/kicad/code/kicad/-/issues/1809
+        if( type == wxEVT_CHAR_HOOK && ke->GetModifiers() == wxMOD_SHIFT )
+        {
+            aEvent.Skip();
+            return;
+        }
 
         keyIsEscape = ( ke->GetKeyCode() == WXK_ESCAPE );
 

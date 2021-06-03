@@ -34,9 +34,12 @@
 #include <map>
 #include <memory>
 #include <search_stack.h>
+#include <settings/environment.h>
 #include <wx/filename.h>
 #include <wx/gdicmn.h>
 
+#undef pid_t
+#include <pybind11/embed.h>
 
 class wxSingleInstanceChecker;
 class wxApp;
@@ -45,6 +48,7 @@ class wxWindow;
 
 class COMMON_SETTINGS;
 class SETTINGS_MANAGER;
+class SCRIPTING;
 
 /**
  * A small class to handle the list of existing translations.
@@ -73,46 +77,6 @@ struct LANGUAGE_DESCR
  * An array containing all the languages that KiCad supports.
  */
 extern LANGUAGE_DESCR LanguagesList[];
-
-
-/**
- * A simple helper class to store environment variable values and the status of whether
- * or not they were defined externally to the process created when any of the KiCad
- * applications was launched.
- */
-class ENV_VAR_ITEM
-{
-public:
-    ENV_VAR_ITEM( const wxString& aValue = wxEmptyString, bool aIsDefinedExternally = false ) :
-        m_value( aValue ),
-        m_isDefinedExternally( aIsDefinedExternally )
-    {
-    }
-
-    ~ENV_VAR_ITEM() throw() {}    // tell SWIG no exception
-
-    bool GetDefinedExternally() const { return m_isDefinedExternally; }
-    void SetDefinedExternally( bool aIsDefinedExternally )
-    {
-        m_isDefinedExternally = aIsDefinedExternally;
-    }
-
-    const wxString& GetValue() const { return m_value; }
-    void SetValue( const wxString& aValue ) { m_value = aValue; }
-
-private:
-    /// The environment variable string value.
-    wxString m_value;
-
-    /// Flag to indicate if the environment variable was defined externally to the process.
-    bool m_isDefinedExternally;
-};
-
-
-typedef std::map<wxString, ENV_VAR_ITEM>                 ENV_VAR_MAP;
-typedef std::map<wxString, ENV_VAR_ITEM>::iterator       ENV_VAR_MAP_ITER;
-typedef std::map<wxString, ENV_VAR_ITEM>::const_iterator ENV_VAR_MAP_CITER;
-
 
 /**
  * Container for data for KiCad programs.
@@ -278,18 +242,13 @@ public:
     virtual bool SetLocalEnvVariable( const wxString& aName, const wxString& aValue );
 
     /**
-     * Set the internal local environment variable map to \a aEnvVarMap, updates the entries
-     * in the .kicad_common configuration file and sets the environment variable to the new
-     * settings.
-     *
-     * @param aEnvVarMap is a #ENV_VAR_MAP object containing the new environment variables.
+     * Updates the local environment with the contents of the current ENV_VAR_MAP stored in the
+     * COMMON_SETTINGS
+     * @see GetLocalEnvVariables()
      */
-    virtual void SetLocalEnvVariables( const ENV_VAR_MAP& aEnvVarMap );
+    virtual void SetLocalEnvVariables();
 
-    virtual const ENV_VAR_MAP& GetLocalEnvVariables() const
-    {
-        return m_local_env_vars;
-    }
+    virtual ENV_VAR_MAP& GetLocalEnvVariables() const;
 
     /**
      * Returns a bare naked wxApp which may come from wxPython, SINGLE_TOP, or kicad.exe.
@@ -310,9 +269,10 @@ public:
      *
      * @note Do not initialize anything relating to DSOs or projects.
      *
+     * @param aHeadless If true, run in headless mode (e.g. for unit tests)
      * @return true if success, false if failure and program is to terminate.
      */
-    bool InitPgm();
+    bool InitPgm( bool aHeadless = false );
 
     // The PGM_* classes can have difficulties at termination if they
     // are not destroyed soon enough.  Relying on a static destructor can be
@@ -347,6 +307,8 @@ protected:
 
     std::unique_ptr<SETTINGS_MANAGER> m_settings_manager;
 
+    std::unique_ptr<SCRIPTING> m_python_scripting;
+
     /// prevents multiple instances of a program from being run at the same time.
     wxSingleInstanceChecker* m_pgm_checker;
 
@@ -370,11 +332,9 @@ protected:
     wxString        m_editor_name;
     wxSize          m_help_size;
 
-    /// Local environment variable expansion settings such as KICAD6_FOOTPRINT_DIR, and KICAD6_3DMODEL_DIR.
-    ENV_VAR_MAP     m_local_env_vars;
-
     /// Flag to indicate if the environment variable overwrite warning dialog should be shown.
     bool            m_show_env_var_dialog;
+
 };
 
 

@@ -34,12 +34,14 @@
 #include <math/util.h>      // for KiROUND
 #include <sch_sheet.h>
 #include <sch_sheet_path.h>
+#include <sch_sheet_pin.h>
 #include <sch_symbol.h>
 #include <sch_painter.h>
 #include <schematic.h>
 #include <settings/color_settings.h>
 #include <trace_helpers.h>
 #include <pgm_base.h>
+#include <wx/log.h>
 
 
 const wxString SCH_SHEET::GetDefaultFieldName( int aFieldNdx )
@@ -356,10 +358,10 @@ bool SCH_SHEET::IsVerticalOrientation() const
     {
         switch( pin->GetEdge() )
         {
-        case SHEET_LEFT_SIDE:   leftRight++; break;
-        case SHEET_RIGHT_SIDE:  leftRight++; break;
-        case SHEET_TOP_SIDE:    topBottom++; break;
-        case SHEET_BOTTOM_SIDE: topBottom++; break;
+        case SHEET_SIDE::LEFT: leftRight++; break;
+        case SHEET_SIDE::RIGHT: leftRight++; break;
+        case SHEET_SIDE::TOP: topBottom++; break;
+        case SHEET_SIDE::BOTTOM: topBottom++; break;
         default:                             break;
         }
     }
@@ -406,9 +408,9 @@ int SCH_SHEET::GetMinWidth( bool aFromLeft ) const
 
     for( size_t i = 0; i < m_pins.size();  i++ )
     {
-        int edge = m_pins[i]->GetEdge();
+        SHEET_SIDE edge = m_pins[i]->GetEdge();
 
-        if( edge == SHEET_TOP_SIDE || edge == SHEET_BOTTOM_SIDE )
+        if( edge == SHEET_SIDE::TOP || edge == SHEET_SIDE::BOTTOM )
         {
             EDA_RECT pinRect = m_pins[i]->GetBoundingBox();
 
@@ -440,9 +442,9 @@ int SCH_SHEET::GetMinHeight( bool aFromTop ) const
 
     for( size_t i = 0; i < m_pins.size();  i++ )
     {
-        int edge = m_pins[i]->GetEdge();
+        SHEET_SIDE edge = m_pins[i]->GetEdge();
 
-        if( edge == SHEET_RIGHT_SIDE || edge == SHEET_LEFT_SIDE )
+        if( edge == SHEET_SIDE::RIGHT || edge == SHEET_SIDE::LEFT )
         {
             EDA_RECT pinRect = m_pins[i]->GetBoundingBox();
 
@@ -517,36 +519,32 @@ void SCH_SHEET::AutoplaceFields( SCH_SCREEN* aScreen, bool aManual )
     int    borderMargin = KiROUND( GetPenWidth() / 2.0 ) + 4;
     int    margin = borderMargin + KiROUND( std::max( textSize.x, textSize.y ) * 0.5 );
 
+    m_fields[ SHEETNAME ].Align( TEXT_ATTRIBUTES::H_LEFT, TEXT_ATTRIBUTES::V_BOTTOM );
+
     if( IsVerticalOrientation() )
     {
         m_fields[ SHEETNAME ].SetTextPos( m_pos + wxPoint( -margin, m_size.y ) );
-        m_fields[ SHEETNAME ].SetHorizJustify( GR_TEXT_HJUSTIFY_LEFT );
-        m_fields[ SHEETNAME ].SetVertJustify(GR_TEXT_VJUSTIFY_BOTTOM );
         m_fields[ SHEETNAME ].SetTextAngle( TEXT_ANGLE_VERT );
     }
     else
     {
         m_fields[ SHEETNAME ].SetTextPos( m_pos + wxPoint( 0, -margin ) );
-        m_fields[ SHEETNAME ].SetHorizJustify( GR_TEXT_HJUSTIFY_LEFT );
-        m_fields[ SHEETNAME ].SetVertJustify(GR_TEXT_VJUSTIFY_BOTTOM );
         m_fields[ SHEETNAME ].SetTextAngle( TEXT_ANGLE_HORIZ );
     }
 
     textSize = m_fields[ SHEETFILENAME ].GetTextSize();
     margin = borderMargin + KiROUND( std::max( textSize.x, textSize.y ) * 0.4 );
 
+    m_fields[ SHEETFILENAME ].Align( TEXT_ATTRIBUTES::H_LEFT, TEXT_ATTRIBUTES::V_TOP );
+
     if( IsVerticalOrientation() )
     {
         m_fields[ SHEETFILENAME ].SetTextPos( m_pos + wxPoint( m_size.x + margin, m_size.y ) );
-        m_fields[ SHEETFILENAME ].SetHorizJustify( GR_TEXT_HJUSTIFY_LEFT );
-        m_fields[ SHEETFILENAME ].SetVertJustify(GR_TEXT_VJUSTIFY_TOP );
         m_fields[ SHEETFILENAME ].SetTextAngle( TEXT_ANGLE_VERT );
     }
     else
     {
         m_fields[ SHEETFILENAME ].SetTextPos( m_pos + wxPoint( 0, m_size.y + margin ) );
-        m_fields[ SHEETFILENAME ].SetHorizJustify( GR_TEXT_HJUSTIFY_LEFT );
-        m_fields[ SHEETFILENAME ].SetVertJustify(GR_TEXT_VJUSTIFY_TOP );
         m_fields[ SHEETFILENAME ].SetTextAngle( TEXT_ANGLE_HORIZ );
     }
 
@@ -717,6 +715,18 @@ void SCH_SHEET::GetMsgPanelInfo( EDA_DRAW_FRAME* aFrame, MSG_PANEL_ITEMS& aList 
 }
 
 
+void SCH_SHEET::Move( const wxPoint& aMoveVector )
+{
+    m_pos += aMoveVector;
+
+    for( SCH_SHEET_PIN* pin : m_pins )
+        pin->Move( aMoveVector );
+
+    for( SCH_FIELD& field : m_fields )
+        field.Move( aMoveVector );
+}
+
+
 void SCH_SHEET::Rotate( wxPoint aCenter )
 {
     wxPoint prev = m_pos;
@@ -747,7 +757,7 @@ void SCH_SHEET::Rotate( wxPoint aCenter )
     }
     else
     {
-        // Move the fields to the new position because the component itself has moved.
+        // Move the fields to the new position because the parent itself has moved.
         for( SCH_FIELD& field : m_fields )
         {
             wxPoint pos = field.GetTextPos();
@@ -1137,7 +1147,7 @@ void SCH_SHEET::SetPageNumber( const SCH_SHEET_PATH& aInstance, const wxString& 
 int SCH_SHEET::ComparePageNum( const wxString& aPageNumberA, const wxString aPageNumberB )
 {
     if( aPageNumberA == aPageNumberB )
-        return 1;
+        return 0; // A == B
 
     // First sort numerically if the page numbers are integers
     long pageA, pageB;
@@ -1146,29 +1156,25 @@ int SCH_SHEET::ComparePageNum( const wxString& aPageNumberA, const wxString aPag
 
     if( isIntegerPageA && isIntegerPageB )
     {
-        if( pageA > pageB )
-            return 1;
-        else if( pageA == pageB )
-            return 0;
+        if( pageA < pageB )
+            return -1; //A < B
         else
-            return -1;
+            return 1; // A > B
     }
 
     // Numerical page numbers always before strings
     if( isIntegerPageA )
-        return -1;
+        return -1; //A < B
     else if( isIntegerPageB )
-        return 1;
+        return 1; // A > B
 
     // If not numeric, then sort as strings
     int result = aPageNumberA.Cmp( aPageNumberB );
 
-    if( result == 0 )
-        return 0;
-    else if( result > 0 )
-        return 1;
+    if( result > 0 )
+        return 1; // A > B
 
-    return -1;
+    return -1; //A < B
 }
 
 

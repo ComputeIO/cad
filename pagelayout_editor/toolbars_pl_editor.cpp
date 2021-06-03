@@ -21,6 +21,7 @@
 
 #include <bitmaps.h>
 #include <tool/action_toolbar.h>
+#include <wx/choice.h>
 
 #include "pl_editor_id.h"
 #include "pl_editor_frame.h"
@@ -140,17 +141,17 @@ void PL_EDITOR_FRAME::ReCreateVToolbar()
         m_drawToolBar->SetAuiManager( &m_auimgr );
     }
 
-    m_drawToolBar->Add( ACTIONS::selectionTool,              ACTION_TOOLBAR::TOGGLE );
+    m_drawToolBar->Add( ACTIONS::selectionTool,                 ACTION_TOOLBAR::TOGGLE );
 
     m_drawToolBar->AddScaledSeparator( this );
-    m_drawToolBar->Add( PL_ACTIONS::drawLine,                ACTION_TOOLBAR::TOGGLE );
-    m_drawToolBar->Add( PL_ACTIONS::drawRectangle,           ACTION_TOOLBAR::TOGGLE );
-    m_drawToolBar->Add( PL_ACTIONS::placeText,               ACTION_TOOLBAR::TOGGLE );
-    m_drawToolBar->Add( PL_ACTIONS::placeImage,              ACTION_TOOLBAR::TOGGLE );
-    m_drawToolBar->Add( PL_ACTIONS::appendImportedWorksheet, ACTION_TOOLBAR::TOGGLE );
+    m_drawToolBar->Add( PL_ACTIONS::drawLine,                   ACTION_TOOLBAR::TOGGLE );
+    m_drawToolBar->Add( PL_ACTIONS::drawRectangle,              ACTION_TOOLBAR::TOGGLE );
+    m_drawToolBar->Add( PL_ACTIONS::placeText,                  ACTION_TOOLBAR::TOGGLE );
+    m_drawToolBar->Add( PL_ACTIONS::placeImage,                 ACTION_TOOLBAR::TOGGLE );
+    m_drawToolBar->Add( PL_ACTIONS::appendImportedDrawingSheet, ACTION_TOOLBAR::TOGGLE );
 
     m_drawToolBar->AddScaledSeparator( this );
-    m_drawToolBar->Add( ACTIONS::deleteTool,                 ACTION_TOOLBAR::TOGGLE );
+    m_drawToolBar->Add( ACTIONS::deleteTool,                    ACTION_TOOLBAR::TOGGLE );
 
     m_drawToolBar->KiRealize();
 }

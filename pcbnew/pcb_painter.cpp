@@ -234,7 +234,7 @@ COLOR4D PCB_RENDER_SETTINGS::GetColor( const VIEW_ITEM* aItem, int aLayer ) cons
         int        holeLayer = aLayer;
         int        annularRingLayer = UNDEFINED_LAYER;
 
-        if( pad && pad->GetAttribute() == PAD_ATTRIB_PTH )
+        if( pad && pad->GetAttribute() == PAD_ATTRIB::PTH )
             annularRingLayer = LAYER_PADS_TH;
         else if( via && via->GetViaType() == VIATYPE::MICROVIA )
             annularRingLayer = LAYER_VIA_MICROVIA;
@@ -329,20 +329,61 @@ COLOR4D PCB_RENDER_SETTINGS::GetColor( const VIEW_ITEM* aItem, int aLayer ) cons
     }
 
     // Apply high-contrast dimming
-    if( m_hiContrastEnabled && !highlighted && !selected )
+    if( m_hiContrastEnabled && m_highContrastLayers.size() && !highlighted && !selected )
     {
         PCB_LAYER_ID primary = GetPrimaryHighContrastLayer();
         bool         isActive = m_highContrastLayers.count( aLayer );
 
-        if( originalLayer == LAYER_PADS_TH )
+        switch( originalLayer )
         {
+        case LAYER_PADS_TH:
             if( !static_cast<const PAD*>( item )->FlashLayer( primary ) )
                 isActive = false;
-        }
-        else if( originalLayer == LAYER_VIA_THROUGH )
-        {
+
+            break;
+
+        case LAYER_VIA_BBLIND:
+        case LAYER_VIA_MICROVIA:
+            // Target graphic is active if the via crosses the primary layer
+            if( static_cast<const VIA*>( item )->GetLayerSet().test( primary ) == 0 )
+                isActive = false;
+
+            break;
+
+        case LAYER_VIA_THROUGH:
             if( !static_cast<const VIA*>( item )->FlashLayer( primary ) )
                 isActive = false;
+
+            break;
+
+        case LAYER_PAD_PLATEDHOLES:
+        case LAYER_PAD_HOLEWALLS:
+        case LAYER_NON_PLATEDHOLES:
+            // Pad holes are active is any physical layer is active
+            if( LSET::PhysicalLayersMask().test( primary ) == 0 )
+                isActive = false;
+
+            break;
+
+        case LAYER_VIA_HOLES:
+        case LAYER_VIA_HOLEWALLS:
+            if( static_cast<const VIA*>( item )->GetViaType() == VIATYPE::BLIND_BURIED
+                || static_cast<const VIA*>( item )->GetViaType() == VIATYPE::MICROVIA )
+            {
+                // A blind or micro via's hole is active if it crosses the primary layer
+                if( static_cast<const VIA*>( item )->GetLayerSet().test( primary ) == 0 )
+                    isActive = false;
+            }
+            else
+            {
+                // A through via's hole is active if any physical layer is active
+                if( LSET::PhysicalLayersMask().test( primary ) == 0 )
+                    isActive = false;
+            }
+
+            break;
+
+        default: break;
         }
 
         if( !isActive )
@@ -512,19 +553,19 @@ void PCB_PAINTER::draw( const TRACK* aTrack, int aLayer )
             textPosition.y += penWidth / 1.4;
         }
 
-
-        m_gal->SetIsStroke( true );
-        m_gal->SetIsFill( false );
         m_gal->SetStrokeColor( color );
-        m_gal->SetLineWidth( penWidth );
-        m_gal->SetFontBold( false );
-        m_gal->SetFontItalic( false );
-        m_gal->SetFontUnderlined( false );
-        m_gal->SetTextMirrored( false );
-        m_gal->SetGlyphSize( VECTOR2D( textSize * 0.55, textSize * 0.55 ) );
-        m_gal->SetHorizontalJustify( GR_TEXT_HJUSTIFY_CENTER );
-        m_gal->SetVerticalJustify( GR_TEXT_VJUSTIFY_CENTER );
-        m_gal->BitmapText( netName, textPosition, textOrientation );
+        m_gal->SetFillColor( color );
+        EDA_TEXT netNameText;
+        netNameText.SetText( netName );
+        netNameText.SetTextSize( wxSize( textSize * 0.55, textSize * 0.55 ) );
+        netNameText.SetTextThickness( penWidth );
+        netNameText.Align( TEXT_ATTRIBUTES::H_CENTER, TEXT_ATTRIBUTES::V_CENTER );
+        netNameText.SetTextPos( textPosition );
+        netNameText.SetTextAngle( EDA_ANGLE( textOrientation, EDA_ANGLE::RADIANS ) );
+        KIFONT::FONT* font = netNameText.GetFont();
+        m_gal->SetIsStroke( font->IsStroke() );
+        m_gal->SetIsFill( font->IsOutline() );
+        font->Draw( m_gal, netNameText );
 
         return;
     }
@@ -650,7 +691,10 @@ void PCB_PAINTER::draw( const VIA* aVia, int aLayer )
 
         m_gal->SetGlyphSize( namesize );
         m_gal->SetLineWidth( namesize.x / 12.0 );
-        m_gal->BitmapText( netname, textpos, 0.0 );
+        TEXT_ATTRIBUTES attributes;
+        attributes.SetSize( namesize );
+        attributes.SetStrokeWidth( namesize.x / 12.0 );
+        attributes.GetFont()->Draw( m_gal, netname, textpos, attributes );
 
         m_gal->Restore();
 
@@ -779,7 +823,7 @@ void PCB_PAINTER::draw( const PAD* aPad, int aLayer )
             VECTOR2D position = padBBox.Centre();
             VECTOR2D padsize = VECTOR2D( padBBox.GetSize() );
 
-            if( aPad->GetShape() != PAD_SHAPE_CUSTOM )
+            if( aPad->GetShape() != PAD_SHAPE::CUSTOM )
             {
                 // Don't allow a 45º rotation to bloat a pad's bounding box unnecessarily
                 double limit = std::min( aPad->GetSize().x, aPad->GetSize().y ) * 1.1;
@@ -810,8 +854,8 @@ void PCB_PAINTER::draw( const PAD* aPad, int aLayer )
                 size = maxSize;
 
             // Default font settings
-            m_gal->SetHorizontalJustify( GR_TEXT_HJUSTIFY_CENTER );
-            m_gal->SetVerticalJustify( GR_TEXT_VJUSTIFY_CENTER );
+            m_gal->SetHorizontalAlignment( TEXT_ATTRIBUTES::H_CENTER );
+            m_gal->SetVerticalAlignment( TEXT_ATTRIBUTES::V_CENTER );
             m_gal->SetFontBold( false );
             m_gal->SetFontItalic( false );
             m_gal->SetFontUnderlined( false );
@@ -851,7 +895,10 @@ void PCB_PAINTER::draw( const PAD* aPad, int aLayer )
 
                 m_gal->SetGlyphSize( namesize );
                 m_gal->SetLineWidth( namesize.x / 12.0 );
-                m_gal->BitmapText( netname, textpos, 0.0 );
+                TEXT_ATTRIBUTES attributes;
+                attributes.SetSize( namesize );
+                attributes.SetStrokeWidth( namesize.x / 12.0 );
+                attributes.GetFont()->Draw( m_gal, netname, textpos, attributes );
             }
 
             if( m_pcbSettings.m_padNumbers )
@@ -867,7 +914,10 @@ void PCB_PAINTER::draw( const PAD* aPad, int aLayer )
 
                 m_gal->SetGlyphSize( numsize );
                 m_gal->SetLineWidth( numsize.x / 12.0 );
-                m_gal->BitmapText( padName, textpos, 0.0 );
+                TEXT_ATTRIBUTES attributes;
+                attributes.SetSize( numsize );
+                attributes.SetStrokeWidth( numsize.x / 12.0 );
+                attributes.GetFont()->Draw( m_gal, padName, textpos, attributes );
             }
 
             m_gal->Restore();
@@ -939,7 +989,7 @@ void PCB_PAINTER::draw( const PAD* aPad, int aLayer )
         std::shared_ptr<SHAPE_COMPOUND> shapes;
         bool                            simpleShapes = true;
 
-        if( margin.x != margin.y && aPad->GetShape() != PAD_SHAPE_CUSTOM )
+        if( margin.x != margin.y && aPad->GetShape() != PAD_SHAPE::CUSTOM )
         {
             // Our algorithms below (polygon inflation in particular) can't handle differential
             // inflation along separate axes.  So for those cases we build a dummy pad instead,
@@ -958,6 +1008,13 @@ void PCB_PAINTER::draw( const PAD* aPad, int aLayer )
         else
         {
             shapes = std::dynamic_pointer_cast<SHAPE_COMPOUND>( aPad->GetEffectiveShape() );
+        }
+
+        if( aPad->GetShape() == PAD_SHAPE::CUSTOM && ( margin.x || margin.y ) )
+        {
+            // We can't draw as shapes because we don't know which edges are internal and which
+            // are external (so we don't know when to apply the margin and when not to).
+            simpleShapes = false;
         }
 
         for( const SHAPE* shape : shapes->Shapes() )
@@ -1014,33 +1071,47 @@ void PCB_PAINTER::draw( const PAD* aPad, int aLayer )
                 case SH_RECT:
                 {
                     const SHAPE_RECT* r = (const SHAPE_RECT*) shape;
-                    VECTOR2I          position = r->GetPosition();
-                    VECTOR2I          effectiveSize = r->GetSize() + margin;
+                    VECTOR2I          pos = r->GetPosition();
+                    VECTOR2I          effectiveMargin = margin;
 
-                    // At this point, if margin.x < 0 the actual rectangle size is
-                    // smaller than SHAPE_RECT r (the pad size was not modifed)
-                    if( margin.x < 0 )
+                    // This is a bit of an encapsulation leak, but fixing it would be a lot of
+                    // work.  We don't want to apply margins to the "internal" rectangle of a
+                    // rounded rect.  Only the 4 segments that form the edges get the margin.
+                    if( aPad->GetShape() == PAD_SHAPE::ROUNDRECT )
+                        effectiveMargin = { 0, 0 };
+
+                    if( effectiveMargin.x < 0 )
                     {
+                        // A negative margin just produces a smaller rect.
+
+                        VECTOR2I effectiveSize = r->GetSize() + effectiveMargin;
+
                         if( effectiveSize.x > 0 && effectiveSize.y > 0 )
-                            m_gal->DrawRectangle( position - margin, position + effectiveSize );
+                            m_gal->DrawRectangle( pos - effectiveMargin, pos + effectiveSize );
+                    }
+                    else if( effectiveMargin.x > 0 )
+                    {
+                        // A positive margin produces a larger rect, but with rounded corners
+
+                        m_gal->DrawRectangle( r->GetPosition(), r->GetPosition() + r->GetSize() );
+
+                        // Use segments to produce the margin with rounded corners
+                        m_gal->DrawSegment( pos,
+                                            pos + VECTOR2I( r->GetWidth(), 0 ),
+                                            effectiveMargin.x * 2 );
+                        m_gal->DrawSegment( pos + VECTOR2I( r->GetWidth(), 0 ),
+                                            pos + r->GetSize(),
+                                            effectiveMargin.x * 2 );
+                        m_gal->DrawSegment( pos + r->GetSize(),
+                                            pos + VECTOR2I( 0, r->GetHeight() ),
+                                            effectiveMargin.x * 2 );
+                        m_gal->DrawSegment( pos + VECTOR2I( 0, r->GetHeight() ),
+                                            pos,
+                                            effectiveMargin.x * 2 );
                     }
                     else
                     {
                         m_gal->DrawRectangle( r->GetPosition(), r->GetPosition() + r->GetSize() );
-                    }
-
-                    // Now add on a rounded margin (using segments) if the margin > 0
-                    if( margin.x > 0 )
-                    {
-                        m_gal->DrawSegment( position, position + VECTOR2I( r->GetWidth(), 0 ),
-                                            margin.x * 2 );
-                        m_gal->DrawSegment( position + VECTOR2I( r->GetWidth(), 0 ),
-                                            position + r->GetSize(), margin.x * 2 );
-                        m_gal->DrawSegment( position + r->GetSize(),
-                                            position + VECTOR2I( 0, r->GetHeight() ),
-                                            margin.x * 2 );
-                        m_gal->DrawSegment( position + VECTOR2I( 0, r->GetHeight() ), position,
-                                            margin.x * 2 );
                     }
                 }
                 break;
@@ -1123,9 +1194,11 @@ void PCB_PAINTER::draw( const PAD* aPad, int aLayer )
                 else
                 {
                     SHAPE_POLY_SET polySet;
+
+                    // Use ERROR_INSIDE because it avoids Clipper and is therefore much faster.
                     aPad->TransformShapeWithClearanceToPolygon( polySet, ToLAYER_ID( aLayer ),
                                                                 clearance, bds.m_MaxError,
-                                                                ERROR_OUTSIDE );
+                                                                ERROR_INSIDE );
                     m_gal->DrawPolygon( polySet );
                 }
             }
@@ -1162,7 +1235,7 @@ void PCB_PAINTER::draw( const PCB_SHAPE* aShape, int aLayer )
 
     switch( aShape->GetShape() )
     {
-    case S_SEGMENT:
+    case PCB_SHAPE_TYPE::SEGMENT:
         if( sketch )
         {
             m_gal->DrawSegment( start, end, thickness );
@@ -1176,7 +1249,7 @@ void PCB_PAINTER::draw( const PCB_SHAPE* aShape, int aLayer )
         }
         break;
 
-    case S_RECT:
+    case PCB_SHAPE_TYPE::RECT:
     {
         std::vector<wxPoint> pts = aShape->GetRectCorners();
 
@@ -1214,7 +1287,7 @@ void PCB_PAINTER::draw( const PCB_SHAPE* aShape, int aLayer )
     }
     break;
 
-    case S_ARC:
+    case PCB_SHAPE_TYPE::ARC:
         if( sketch )
         {
             m_gal->DrawArcSegment(
@@ -1234,7 +1307,7 @@ void PCB_PAINTER::draw( const PCB_SHAPE* aShape, int aLayer )
         }
         break;
 
-    case S_CIRCLE:
+    case PCB_SHAPE_TYPE::CIRCLE:
         if( sketch )
         {
             m_gal->DrawCircle( start, aShape->GetRadius() - thickness / 2 );
@@ -1250,7 +1323,7 @@ void PCB_PAINTER::draw( const PCB_SHAPE* aShape, int aLayer )
         }
         break;
 
-    case S_POLYGON:
+    case PCB_SHAPE_TYPE::POLYGON:
     {
         SHAPE_POLY_SET&  shape = const_cast<PCB_SHAPE*>( aShape )->GetPolyShape();
         const FOOTPRINT* parentFootprint = aShape->GetParentFootprint();
@@ -1305,7 +1378,7 @@ void PCB_PAINTER::draw( const PCB_SHAPE* aShape, int aLayer )
     }
     break;
 
-    case S_CURVE:
+    case PCB_SHAPE_TYPE::CURVE:
         if( sketch )
         {
             // Use thickness as filter value to convert the curve to polyline when the curve
@@ -1328,7 +1401,8 @@ void PCB_PAINTER::draw( const PCB_SHAPE* aShape, int aLayer )
         }
         break;
 
-    case S_LAST: break;
+    case PCB_SHAPE_TYPE::LAST:
+        break;
     }
 }
 
@@ -1340,10 +1414,9 @@ void PCB_PAINTER::draw( const PCB_TEXT* aText, int aLayer )
     if( shownText.Length() == 0 )
         return;
 
-    const COLOR4D& color = m_pcbSettings.GetColor( aText, aText->GetLayer() );
-    //VECTOR2D position( aText->GetTextPos().x, aText->GetTextPos().y );
+    bool outlineMode = m_pcbSettings.m_sketchText || m_pcbSettings.m_sketchMode[aLayer];
 
-    if( m_pcbSettings.m_sketchText || m_pcbSettings.m_sketchMode[aLayer] )
+    if( outlineMode )
     {
         // Outline mode
         m_gal->SetLineWidth( m_pcbSettings.m_outlineWidth );
@@ -1354,14 +1427,31 @@ void PCB_PAINTER::draw( const PCB_TEXT* aText, int aLayer )
         m_gal->SetLineWidth( getLineThickness( aText->GetEffectiveTextPenWidth() ) );
     }
 
+    const COLOR4D& color = m_pcbSettings.GetColor( aText, aText->GetLayer() );
+    KIFONT::FONT*  font = aText->GetFont();
+
     m_gal->SetStrokeColor( color );
-    m_gal->SetIsFill( false );
-    m_gal->SetIsStroke( true );
+    m_gal->SetFillColor( color );
+    m_gal->SetIsFill( font->IsOutline() || !outlineMode );
+    m_gal->SetIsStroke( font->IsStroke() || outlineMode );
     m_gal->SetTextAttributes( aText );
 
-    //m_gal->StrokeText( shownText, position, aText->GetTextAngleRadians() );
-    aText->GetFont()->Draw( m_gal, shownText, aText->GetTextPos(), VECTOR2D( 0, 0 ),
-                            EDA_ANGLE( aText->GetTextAngleRadians(), EDA_ANGLE::RADIANS ) );
+    // TODO: make outline fonts respect outlineMode (currently always drawn filled)
+
+#if 0
+    font->Draw( m_gal, shownText, aText->GetTextPos(), VECTOR2D( 0, 0 ),
+                EDA_ANGLE( aText->GetTextAngleRadians(), EDA_ANGLE::RADIANS ) );
+#else
+    TEXT_ATTRIBUTES textAttributes( *aText );
+    textAttributes.SetSize( m_gal->GetGlyphSize() );
+    font->DrawText( m_gal, shownText, aText->GetTextPos(), textAttributes );
+#endif
+
+    //if( aLayer == LAYER_ANCHOR ) //if( aText->IsSelected() )
+    if( aText->IsSelected() )
+    {
+        drawAnchor( aText );
+    }
 }
 
 
@@ -1402,10 +1492,34 @@ void PCB_PAINTER::draw( const FP_TEXT* aText, int aLayer )
 }
 
 
+void PCB_PAINTER::drawAnchor( const EDA_ITEM* aItem )
+{
+    const COLOR4D color = m_pcbSettings.GetColor( aItem, LAYER_ANCHOR );
+
+    // Keep the size and width constant, not related to the scale because the anchor
+    // is just a marker on screen
+    double anchorSize = 5.0 / m_gal->GetWorldScale();      // 5 pixels size
+    double anchorThickness = 1.0 / m_gal->GetWorldScale(); // 1 pixels width
+
+    // Draw anchor
+    m_gal->SetIsFill( false );
+    m_gal->SetIsStroke( true );
+    m_gal->SetStrokeColor( color );
+    m_gal->SetLineWidth( anchorThickness );
+
+    VECTOR2D center = aItem->GetPosition();
+    m_gal->DrawLine( center - VECTOR2D( anchorSize, 0 ), center + VECTOR2D( anchorSize, 0 ) );
+    m_gal->DrawLine( center - VECTOR2D( 0, anchorSize ), center + VECTOR2D( 0, anchorSize ) );
+}
+
+
 void PCB_PAINTER::draw( const FOOTPRINT* aFootprint, int aLayer )
 {
     if( aLayer == LAYER_ANCHOR )
     {
+#if 1
+        drawAnchor( aFootprint );
+#else
         const COLOR4D color = m_pcbSettings.GetColor( aFootprint, aLayer );
 
         // Keep the size and width constant, not related to the scale because the anchor
@@ -1422,6 +1536,7 @@ void PCB_PAINTER::draw( const FOOTPRINT* aFootprint, int aLayer )
         VECTOR2D center = aFootprint->GetPosition();
         m_gal->DrawLine( center - VECTOR2D( anchorSize, 0 ), center + VECTOR2D( anchorSize, 0 ) );
         m_gal->DrawLine( center - VECTOR2D( 0, anchorSize ), center + VECTOR2D( 0, anchorSize ) );
+#endif
 
 #if 0 // For debug purpose only: draw the footing bounding box
         double bboxThickness = 1.0 / m_gal->GetWorldScale();
@@ -1492,8 +1607,8 @@ void PCB_PAINTER::draw( const PCB_GROUP* aGroup, int aLayer )
             m_gal->SetFontItalic( true );
             m_gal->SetFontUnderlined( false );
             m_gal->SetTextMirrored( m_gal->IsFlippedX() );
-            m_gal->SetHorizontalJustify( GR_TEXT_HJUSTIFY_CENTER );
-            m_gal->SetVerticalJustify( GR_TEXT_VJUSTIFY_BOTTOM );
+            m_gal->SetHorizontalAlignment( TEXT_ATTRIBUTES::H_CENTER );
+            m_gal->SetVerticalAlignment( TEXT_ATTRIBUTES::V_BOTTOM );
             m_gal->SetIsFill( false );
             m_gal->SetGlyphSize( VECTOR2D( textSize, textSize ) );
             m_gal->SetLineWidth( penWidth );

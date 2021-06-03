@@ -34,10 +34,20 @@
 #ifdef KICAD_USE_VALGRIND
 #include <valgrind/valgrind.h>
 #endif
+#ifdef KICAD_SANITIZE_THREADS
+#include <sanitizer/tsan_interface.h>
+#endif
+#ifdef KICAD_SANITIZE_ADDRESS
+#include <sanitizer/asan_interface.h>
+#endif
 
 #include <libcontext.h>
+#include <functional>
 #include <memory>
 #include <advanced_config.h>
+
+#include <trace_helpers.h>
+#include <wx/log.h>
 
 /**
  *  Implement a coroutine.
@@ -83,8 +93,31 @@ private:
                                     // call context holds a reference to the main stack context
     };
 
-    using CONTEXT_T = libcontext::fcontext_t;
-    using CALLEE_STORAGE = CONTEXT_T;
+    struct CONTEXT_T
+    {
+        libcontext::fcontext_t ctx;    // The context itself
+#ifdef KICAD_SANITIZE_THREADS
+        void* tsan_fiber;               // The TSAN fiber for this context
+        bool  own_tsan_fiber;           // Do we own this TSAN fiber? (we only delete fibers we own)
+#endif
+
+        CONTEXT_T() :
+            ctx( nullptr )
+#ifdef KICAD_SANITIZE_THREADS
+            ,tsan_fiber( nullptr )
+            ,own_tsan_fiber( true )
+#endif
+            {}
+
+        ~CONTEXT_T()
+        {
+#ifdef KICAD_SANITIZE_THREADS
+            // Only destroy the fiber when we own it
+            if( own_tsan_fiber )
+                __tsan_destroy_fiber( tsan_fiber );
+#endif
+        }
+    };
 
     class CALL_CONTEXT
     {
@@ -96,8 +129,8 @@ private:
 
         ~CALL_CONTEXT()
         {
-            if ( m_mainStackContext )
-                libcontext::release_fcontext( *m_mainStackContext );
+            if( m_mainStackContext )
+                libcontext::release_fcontext( m_mainStackContext->ctx );
         }
 
 
@@ -111,7 +144,12 @@ private:
             m_mainStackFunction = std::move( aFunc );
             INVOCATION_ARGS args{ INVOCATION_ARGS::CONTINUE_AFTER_ROOT, aCor, this };
 
-            libcontext::jump_fcontext( &aCor->m_callee, *m_mainStackContext,
+#ifdef KICAD_SANITIZE_THREADS
+            // Tell TSAN we are changing fibers
+            __tsan_switch_to_fiber( m_mainStackContext->tsan_fiber, 0 );
+#endif
+
+            libcontext::jump_fcontext( &( aCor->m_callee.ctx ), m_mainStackContext->ctx,
                 reinterpret_cast<intptr_t>( &args ) );
         }
 
@@ -151,13 +189,16 @@ public:
     COROUTINE( std::function<ReturnType(ArgType)> aEntry ) :
         m_func( std::move( aEntry ) ),
         m_running( false ),
-        m_args( 0 ),
-        m_caller( nullptr ),
+        m_args( nullptr ),
+        m_caller(),
         m_callContext( nullptr ),
-        m_callee( nullptr ),
+        m_callee(),
         m_retVal( 0 )
 #ifdef KICAD_USE_VALGRIND
-        ,valgrind_stack( 0 )
+        ,m_valgrind_stack( 0 )
+#endif
+#ifdef KICAD_SANITIZE_ADDRESS
+        ,asan_stack( nullptr )
 #endif
     {
         m_stacksize = ADVANCED_CFG::GetCfg().m_CoroutineStackSize;
@@ -166,12 +207,14 @@ public:
     ~COROUTINE()
     {
 #ifdef KICAD_USE_VALGRIND
-        VALGRIND_STACK_DEREGISTER( valgrind_stack );
+        VALGRIND_STACK_DEREGISTER( m_valgrind_stack );
 #endif
-        if(m_caller)
-            libcontext::release_fcontext( m_caller );
-        if(m_callee)
-            libcontext::release_fcontext( m_callee );
+
+        if( m_caller.ctx )
+            libcontext::release_fcontext( m_caller.ctx );
+
+        if( m_callee.ctx )
+            libcontext::release_fcontext( m_callee.ctx );
     }
 
 public:
@@ -222,6 +265,15 @@ public:
     {
         CALL_CONTEXT ctx;
         INVOCATION_ARGS args{ INVOCATION_ARGS::FROM_ROOT, this, &ctx };
+
+#ifdef KICAD_SANITIZE_THREADS
+        // Get the TSAN fiber for the current stack here
+        m_caller.tsan_fiber     = __tsan_get_current_fiber();
+        m_caller.own_tsan_fiber = false;
+#endif
+
+        wxLogTrace( kicadTraceCoroutineStack,  "COROUTINE::Call (from root)" );
+
         ctx.Continue( doCall( &args, aArg ) );
 
         return Running();
@@ -238,6 +290,9 @@ public:
     bool Call( const COROUTINE& aCor, ArgType aArg )
     {
         INVOCATION_ARGS args{ INVOCATION_ARGS::FROM_ROUTINE, this, aCor.m_callContext };
+
+        wxLogTrace( kicadTraceCoroutineStack, "COROUTINE::Call (from routine)" );
+
         doCall( &args, aArg );
         // we will not be asked to continue
 
@@ -256,6 +311,15 @@ public:
     {
         CALL_CONTEXT ctx;
         INVOCATION_ARGS args{ INVOCATION_ARGS::FROM_ROOT, this, &ctx };
+
+#ifdef KICAD_SANITIZE_THREADS
+        // Get the TSAN fiber for the current stack here
+        m_caller.tsan_fiber     = __tsan_get_current_fiber();
+        m_caller.own_tsan_fiber = false;
+#endif
+
+        wxLogTrace( kicadTraceCoroutineStack, "COROUTINE::Resume (from root)" );
+
         ctx.Continue( doResume( &args ) );
 
         return Running();
@@ -272,6 +336,9 @@ public:
     bool Resume( const COROUTINE& aCor )
     {
         INVOCATION_ARGS args{ INVOCATION_ARGS::FROM_ROUTINE, this, aCor.m_callContext };
+
+        wxLogTrace( kicadTraceCoroutineStack, "COROUTINE::Resume (from routine)" );
+
         doResume( &args );
         // we will not be asked to continue
 
@@ -298,7 +365,7 @@ private:
     INVOCATION_ARGS* doCall( INVOCATION_ARGS* aInvArgs, ArgType aArgs )
     {
         assert( m_func );
-        assert( !m_callee );
+        assert( !( m_callee.ctx ) );
 
         m_args = &aArgs;
 
@@ -319,11 +386,21 @@ private:
         stackSize -= size_t( ( (ptrdiff_t) m_stack.get() + stackSize ) - (ptrdiff_t) sp );
 
 #ifdef KICAD_USE_VALGRIND
-        valgrind_stack = VALGRIND_STACK_REGISTER( sp, m_stack.get() );
+        m_valgrind_stack = VALGRIND_STACK_REGISTER( sp, m_stack.get() );
 #endif
 #endif
 
-        m_callee = libcontext::make_fcontext( sp, stackSize, callerStub );
+#ifdef KICAD_SANITIZE_THREADS
+        // Create a new fiber to go with the new context
+        m_callee.tsan_fiber     = __tsan_create_fiber( 0 );
+        m_callee.own_tsan_fiber = true;
+
+        __tsan_set_fiber_name( m_callee.tsan_fiber, "Coroutine fiber" );
+#endif
+
+        wxLogTrace( kicadTraceCoroutineStack, "COROUTINE::doCall" );
+
+        m_callee.ctx = libcontext::make_fcontext( sp, stackSize, callerStub );
         m_running = true;
 
         // off we go!
@@ -357,8 +434,15 @@ private:
 
     INVOCATION_ARGS* jumpIn( INVOCATION_ARGS* args )
     {
+#ifdef KICAD_SANITIZE_THREADS
+        // Tell TSAN we are changing fibers to the callee
+        __tsan_switch_to_fiber( m_callee.tsan_fiber, 0 );
+#endif
+
+        wxLogTrace( kicadTraceCoroutineStack, "COROUTINE::jumpIn" );
+
         args = reinterpret_cast<INVOCATION_ARGS*>(
-            libcontext::jump_fcontext( &m_caller, m_callee,
+            libcontext::jump_fcontext( &( m_caller.ctx ), m_callee.ctx,
                                        reinterpret_cast<intptr_t>( args ) )
             );
 
@@ -370,8 +454,15 @@ private:
         INVOCATION_ARGS args{ INVOCATION_ARGS::FROM_ROUTINE, nullptr, nullptr };
         INVOCATION_ARGS* ret;
 
+#ifdef KICAD_SANITIZE_THREADS
+        // Tell TSAN we are changing fibers back to the caller
+        __tsan_switch_to_fiber( m_caller.tsan_fiber, 0 );
+#endif
+
+        wxLogTrace( kicadTraceCoroutineStack, "COROUTINE::jumpOut" );
+
         ret = reinterpret_cast<INVOCATION_ARGS*>(
-            libcontext::jump_fcontext( &m_callee, m_caller,
+            libcontext::jump_fcontext( &( m_callee.ctx ), m_caller.ctx,
                                        reinterpret_cast<intptr_t>( &args ) )
             );
 
@@ -403,12 +494,15 @@ private:
     CALL_CONTEXT* m_callContext;
 
     ///< saved coroutine context
-    CALLEE_STORAGE m_callee;
+    CONTEXT_T m_callee;
 
     ReturnType m_retVal;
 
 #ifdef KICAD_USE_VALGRIND
-    uint32_t valgrind_stack;
+    uint32_t m_valgrind_stack;
+#endif
+#ifdef KICAD_SANITIZE_ADDRESS
+    void* asan_stack;
 #endif
 };
 

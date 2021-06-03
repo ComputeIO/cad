@@ -131,6 +131,37 @@ void BASIC_GAL::DrawPolyline( const VECTOR2D aPointList[], int aListSize )
 }
 
 
+void BASIC_GAL::DrawPolyline( const SHAPE_LINE_CHAIN& aLineChain )
+{
+#ifdef DEBUG
+    std::cerr << "BASIC_GAL::DrawPolyline( " << aLineChain << " ";
+    if( m_DC )
+        std::cerr << "DC ";
+    if( m_isFillEnabled )
+        std::cerr << "fill ";
+    if( m_plotter )
+        std::cerr << "plotter ";
+    if( m_callback )
+        std::cerr << "callback ";
+    std::cerr << " )" << std::endl;
+#endif
+    if( aLineChain.PointCount() < 2 )
+        return;
+
+    std::vector<wxPoint> polyline_corners;
+
+    for( int i = 0; i < aLineChain.PointCount(); i++ )
+    {
+        polyline_corners.emplace_back( (wxPoint) transform( aLineChain.CPoint( i ) ) );
+    }
+
+    if( aLineChain.IsClosed() )
+        polyline_corners.emplace_back( (wxPoint) transform( aLineChain.CPoint( 0 ) ) );
+
+    doDrawPolyline( polyline_corners );
+}
+
+
 void BASIC_GAL::DrawLine( const VECTOR2D& aStartPoint, const VECTOR2D& aEndPoint )
 {
     VECTOR2D startVector = transform( aStartPoint );

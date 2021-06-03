@@ -135,6 +135,9 @@ bool ZONE_FILLER::Fill( std::vector<ZONE*>& aZones, bool aCheck, wxWindow* aPare
             zone->CacheBoundingBox();
             m_worstClearance = std::max( m_worstClearance, zone->GetLocalClearance() );
         }
+
+        // Rules may depend on insideCourtyard() or other expressions
+        footprint->BuildPolyCourtyards();
     }
 
     // Sort by priority to reduce deferrals waiting on higher priority zones.
@@ -508,7 +511,7 @@ bool hasThermalConnection( PAD* pad, const ZONE* aZone )
 {
     // Rejects non-standard pads with tht-only thermal reliefs
     if( aZone->GetPadConnection( pad ) == ZONE_CONNECTION::THT_THERMAL
-            && pad->GetAttribute() != PAD_ATTRIB_PTH )
+            && pad->GetAttribute() != PAD_ATTRIB::PTH )
     {
         return false;
     }
@@ -536,7 +539,7 @@ bool hasThermalConnection( PAD* pad, const ZONE* aZone )
  */
 void ZONE_FILLER::addKnockout( PAD* aPad, PCB_LAYER_ID aLayer, int aGap, SHAPE_POLY_SET& aHoles )
 {
-    if( aPad->GetShape() == PAD_SHAPE_CUSTOM )
+    if( aPad->GetShape() == PAD_SHAPE::CUSTOM )
     {
         SHAPE_POLY_SET poly;
         aPad->TransformShapeWithClearanceToPolygon( poly, aLayer, aGap, m_maxError,
@@ -631,7 +634,7 @@ void ZONE_FILLER::knockoutThermalReliefs( const ZONE* aZone, PCB_LAYER_ID aLayer
 
                 // Note: drill size represents finish size, which means the actual holes size is
                 // the plating thickness larger.
-                if( pad->GetAttribute() == PAD_ATTRIB_PTH )
+                if( pad->GetAttribute() == PAD_ATTRIB::PTH )
                     gap += pad->GetBoard()->GetDesignSettings().GetHolePlatingThickness();
 
                 pad->TransformHoleWithClearanceToPolygon( holes, gap, m_maxError, ERROR_OUTSIDE );
@@ -705,7 +708,7 @@ void ZONE_FILLER::buildCopperItemClearances( const ZONE* aZone, PCB_LAYER_ID aLa
 
                         // Note: drill size represents finish size, which means the actual hole
                         // size is the plating thickness larger.
-                        if( aPad->GetAttribute() == PAD_ATTRIB_PTH )
+                        if( aPad->GetAttribute() == PAD_ATTRIB::PTH )
                             gap += aPad->GetBoard()->GetDesignSettings().GetHolePlatingThickness();
 
                         aPad->TransformHoleWithClearanceToPolygon( aHoles, gap, m_maxError,
@@ -1303,13 +1306,15 @@ void ZONE_FILLER::buildThermalSpokes( const ZONE* aZone, PCB_LAYER_ID aLayer,
             double  padAngle = pad->GetOrientation();
             PAD     dummy_pad( *pad );
             dummy_pad.SetOrientation( 0.0 );
-            dummy_pad.SetPosition( { 0, 0 } );
+
+            // Spokes are from center of pad, not from hole
+            dummy_pad.SetPosition( -pad->GetOffset() );
 
             BOX2I reliefBB = dummy_pad.GetBoundingBox();
             reliefBB.Inflate( thermalReliefGap + epsilon );
 
             // For circle pads, the thermal spoke orientation is 45 deg
-            if( pad->GetShape() == PAD_SHAPE_CIRCLE )
+            if( pad->GetShape() == PAD_SHAPE::CIRCLE )
                 padAngle = s_RoundPadThermalSpokeAngle;
 
             for( int i = 0; i < 4; i++ )

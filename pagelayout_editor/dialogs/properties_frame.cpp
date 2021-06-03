@@ -242,18 +242,18 @@ void PROPERTIES_FRAME::CopyPrmsFromItemToPanel( DS_DATA_ITEM* aItem )
 		m_checkBoxBold->SetValue( item->m_Bold );
 		m_checkBoxItalic->SetValue( item->m_Italic );
 
-        switch( item->m_Hjustify )
+        switch( item->m_Halign )
         {
-        case GR_TEXT_HJUSTIFY_LEFT:   m_choiceHjustify->SetSelection( 0 ); break;
-        case GR_TEXT_HJUSTIFY_CENTER: m_choiceHjustify->SetSelection( 1 ); break;
-        case GR_TEXT_HJUSTIFY_RIGHT:  m_choiceHjustify->SetSelection( 2 ); break;
+        case TEXT_ATTRIBUTES::H_LEFT: m_choiceHjustify->SetSelection( 0 ); break;
+        case TEXT_ATTRIBUTES::H_CENTER: m_choiceHjustify->SetSelection( 1 ); break;
+        case TEXT_ATTRIBUTES::H_RIGHT: m_choiceHjustify->SetSelection( 2 ); break;
         }
 
-        switch( item->m_Vjustify )
+        switch( item->m_Valign )
         {
-        case GR_TEXT_VJUSTIFY_TOP:    m_choiceVjustify->SetSelection( 0 ); break;
-        case GR_TEXT_VJUSTIFY_CENTER: m_choiceVjustify->SetSelection( 1 ); break;
-        case GR_TEXT_VJUSTIFY_BOTTOM: m_choiceVjustify->SetSelection( 2 ); break;
+        case TEXT_ATTRIBUTES::V_TOP: m_choiceVjustify->SetSelection( 0 ); break;
+        case TEXT_ATTRIBUTES::V_CENTER: m_choiceVjustify->SetSelection( 1 ); break;
+        case TEXT_ATTRIBUTES::V_BOTTOM: m_choiceVjustify->SetSelection( 2 ); break;
         }
 
         // Text size
@@ -358,7 +358,7 @@ void PROPERTIES_FRAME::OnAcceptPrms( wxCommandEvent& event )
     m_parent->OnModify();
 
     // Rebuild the draw list with the new parameters
-    m_parent->GetCanvas()->DisplayWorksheet();
+    m_parent->GetCanvas()->DisplayDrawingSheet();
     m_parent->GetCanvas()->Refresh();
 }
 
@@ -374,7 +374,7 @@ void PROPERTIES_FRAME::OnSetDefaultValues( wxCommandEvent& event )
     CopyPrmsFromGeneralToPanel();
 
     // Rebuild the draw list with the new parameters
-    m_parent->GetCanvas()->DisplayWorksheet();
+    m_parent->GetCanvas()->DisplayDrawingSheet();
     m_parent->GetCanvas()->Refresh();
 }
 
@@ -449,16 +449,16 @@ bool PROPERTIES_FRAME::CopyPrmsFromPanelToItem( DS_DATA_ITEM* aItem )
 
         switch( m_choiceHjustify->GetSelection() )
         {
-        case 0: item->m_Hjustify = GR_TEXT_HJUSTIFY_LEFT; break;
-        case 1: item->m_Hjustify = GR_TEXT_HJUSTIFY_CENTER; break;
-        case 2: item->m_Hjustify = GR_TEXT_HJUSTIFY_RIGHT; break;
+        case 0: item->m_Halign = TEXT_ATTRIBUTES::H_LEFT; break;
+        case 1: item->m_Halign = TEXT_ATTRIBUTES::H_CENTER; break;
+        case 2: item->m_Halign = TEXT_ATTRIBUTES::H_RIGHT; break;
         }
 
         switch( m_choiceVjustify->GetSelection() )
         {
-        case 0: item->m_Vjustify = GR_TEXT_VJUSTIFY_TOP; break;
-        case 1: item->m_Vjustify = GR_TEXT_VJUSTIFY_CENTER; break;
-        case 2: item->m_Vjustify = GR_TEXT_VJUSTIFY_BOTTOM; break;
+        case 0: item->m_Valign = TEXT_ATTRIBUTES::V_TOP; break;
+        case 1: item->m_Valign = TEXT_ATTRIBUTES::V_CENTER; break;
+        case 2: item->m_Valign = TEXT_ATTRIBUTES::V_BOTTOM; break;
         }
 
         msg = m_textCtrlRotation->GetValue();

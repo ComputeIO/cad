@@ -29,6 +29,8 @@
  * @brief Implementation of SCH_SCREEN and SCH_SCREENS classes.
  */
 
+#include <wx/filefn.h>
+
 #include <eda_rect.h>
 #include <id.h>
 #include <kicad_string.h>
@@ -49,6 +51,7 @@
 #include <sch_line.h>
 #include <sch_marker.h>
 #include <sch_sheet.h>
+#include <sch_sheet_pin.h>
 #include <sch_text.h>
 #include <schematic.h>
 #include <symbol_lib_table.h>
@@ -99,6 +102,14 @@ void SCH_SCREEN::clearLibSymbols()
         delete libSymbol.second;
 
     m_libSymbols.clear();
+}
+
+
+void SCH_SCREEN::SetFileName( const wxString& aFileName )
+{
+    wxASSERT( aFileName.IsEmpty() || wxIsAbsolutePath( aFileName ) );
+
+    m_fileName = aFileName;
 }
 
 
@@ -285,7 +296,7 @@ void SCH_SCREEN::DeleteItem( SCH_ITEM* aItem )
     // Markers are not saved in the file, no need to flag as modified.
     // TODO: Maybe we should have a listing somewhere of items that aren't saved?
     if( aItem->Type() != SCH_MARKER_T )
-        SetModify();
+        SetContentModified();
 
     Remove( aItem );
 
@@ -753,6 +764,9 @@ void SCH_SCREEN::Print( const RENDER_SETTINGS* aSettings )
 
 void SCH_SCREEN::Plot( PLOTTER* aPlotter ) const
 {
+#ifdef DEBUG
+    std::cerr << "SCH_SCREEN::Plot( " << *aPlotter << " )" << std::endl;
+#endif
     // Ensure links are up to date, even if a library was reloaded for some reason:
     std::vector< SCH_ITEM* > junctions;
     std::vector< SCH_ITEM* > bitmaps;

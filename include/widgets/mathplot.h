@@ -307,7 +307,7 @@ public:
     const wxBrush& GetBrush() const { return m_brush; };
 
     /** Set layer brush
-     *  @param brush brush, will be copied to internal class member	*/
+     *  @param brush brush, will be copied to internal class member */
     void SetBrush( wxBrush brush ) { m_brush = brush; };
 
 protected:
@@ -1731,11 +1731,16 @@ public:
     /** Default constructor (sets location and rotation to (0,0,0))
      */
     mpMovableObject() :
+        m_flags( 0 ),
         m_reference_x( 0 ),
         m_reference_y( 0 ),
         m_reference_phi( 0 ),
         m_shape_xs( 0 ),
-        m_shape_ys( 0 )
+        m_shape_ys( 0 ),
+        m_bbox_min_x( 0 ),
+        m_bbox_max_x( 0 ),
+        m_bbox_min_y( 0 ),
+        m_bbox_max_y( 0 )
     {
         m_type = mpLAYER_PLOT;
     }
@@ -1957,6 +1962,8 @@ public:
     {
         m_min_x = m_max_x =
                       m_min_y = m_max_y = 0;
+        m_scaledBitmap_offset_x = 0;
+        m_scaledBitmap_offset_y = 0;
         m_validImg = false;
         m_type = mpLAYER_BITMAP;
     }

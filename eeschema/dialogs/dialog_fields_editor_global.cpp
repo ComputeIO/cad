@@ -42,6 +42,7 @@
 #include <widgets/wx_grid.h>
 #include <wx/grid.h>
 #include <wx/msgdlg.h>
+#include <wx/textdlg.h>
 
 #include "dialog_fields_editor_global.h"
 
@@ -1146,8 +1147,8 @@ void DIALOG_FIELDS_EDITOR_GLOBAL::OnTableCellClick( wxGridEvent& event )
         {
             SCH_EDITOR_CONTROL* editor = m_parent->GetToolManager()->GetTool<SCH_EDITOR_CONTROL>();
 
-            editor->FindComponentAndItem( refs[0].GetRef() + refs[0].GetRefNumber(), true,
-                                          HIGHLIGHT_COMPONENT, wxEmptyString );
+            editor->FindSymbolAndItem( refs[ 0 ].GetRef() + refs[ 0 ].GetRefNumber(), true,
+                                       HIGHLIGHT_COMPONENT, wxEmptyString );
         }
     }
     else

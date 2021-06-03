@@ -224,15 +224,15 @@ void TransformRoundRectToPolygon( SHAPE_POLY_SET& aCornerBuffer, const wxSize& a
 
     auto genArc =
             [&]( const wxPoint& aCenter, int aStart, int aEnd )
-    {
-        for( int angle = aStart + delta; angle < aEnd; angle += delta )
-        {
-            wxPoint pt( -radius, 0 );
-            RotatePoint( &pt, angle );
-            pt += aCenter;
-            outline.Append( pt.x, pt.y );
-        }
-    };
+            {
+                for( int angle = aStart + delta; angle < aEnd; angle += delta )
+                {
+                    wxPoint pt( -radius, 0 );
+                    RotatePoint( &pt, angle );
+                    pt += aCenter;
+                    outline.Append( pt.x, pt.y );
+                }
+            };
 
     outline.NewOutline();
 
@@ -279,7 +279,7 @@ void TransformRoundRectToPolygon( SHAPE_POLY_SET& aCornerBuffer, const wxSize& a
 
 
 void TransformRoundChamferedRectToPolygon( SHAPE_POLY_SET& aCornerBuffer, const wxPoint& aPosition,
-                                           const wxSize& aSize, double aRotation,
+                                           const wxSize& aSize, const EDA_ANGLE& aRotation,
                                            int aCornerRadius, double aChamferRatio,
                                            int aChamferCorners, int aError, ERROR_LOC aErrorLoc )
 {
@@ -338,9 +338,15 @@ void TransformRoundChamferedRectToPolygon( SHAPE_POLY_SET& aCornerBuffer, const 
         }
     }
 
-    // Rotate and move the outline:
-    if( aRotation != 0.0 )
-        outline.Rotate( DECIDEG2RAD( -aRotation ), VECTOR2I( 0, 0 ) );
+    if( aRotation == EDA_ANGLE::ANGLE_0 )
+    {
+        // Do nothing
+    }
+    else
+    {
+        // Rotate and move the outline:
+        outline.Rotate( -aRotation.AsRadians(), VECTOR2I( 0, 0 ) );
+    }
 
     outline.Move( VECTOR2I( aPosition ) );
 

@@ -82,6 +82,22 @@ enum class PLOT_FORMAT
     LAST_FORMAT = SVG
 };
 
+inline std::ostream& operator<<(std::ostream& os, const PLOT_FORMAT& aPlotFormat)
+{
+    switch( aPlotFormat )
+    {
+    case PLOT_FORMAT::HPGL: os << "HPGL"; break;
+    case PLOT_FORMAT::GERBER: os << "GERBER"; break;
+    case PLOT_FORMAT::POST: os << "POST"; break;
+    case PLOT_FORMAT::DXF: os << "DXF"; break;
+    case PLOT_FORMAT::PDF: os << "PDF"; break;
+    case PLOT_FORMAT::SVG: os << "SVG"; break;
+    default: os << "*Unknown*";
+    }
+
+    return os;
+}
+
 /**
  * Which kind of text to output with the PSLIKE plotters.
  *
@@ -391,14 +407,17 @@ public:
                                       double aOrient, OUTLINE_MODE aTraceMode, void* aData ) = 0;
 
     /**
-     * Draws text with the plotter. For convenience it accept the color to use
+     * Draws text with the plotter. For convenience it accepts the color to use
      * for specific plotters (GERBER) aData is used to pass extra parameters
      */
     virtual void Text( const wxPoint& aPos, const COLOR4D aColor, const wxString& aText,
-                       double aOrient, const wxSize& aSize, enum EDA_TEXT_HJUSTIFY_T aH_justify,
-                       enum EDA_TEXT_VJUSTIFY_T aV_justify, int aWidth, bool aItalic, bool aBold,
-                       bool aMultilineAllowed = false, KIFONT::FONT* aFont = nullptr,
-                       void* aData = NULL );
+                       const EDA_ANGLE& aOrient, const wxSize& aSize,
+                       TEXT_ATTRIBUTES::HORIZONTAL_ALIGNMENT aHorizontalAlignment,
+                       TEXT_ATTRIBUTES::VERTICAL_ALIGNMENT aVerticalAlignment, int aWidth,
+                       bool aItalic, bool aBold, bool aMultilineAllowed = false,
+                       KIFONT::FONT* aFont = nullptr, void* aData = NULL );
+
+    virtual void Text( const EDA_TEXT* aText, const COLOR4D aColor, void* aData = nullptr );
 
     /**
      * Draw a marker (used for the drill map)
@@ -580,6 +599,15 @@ protected: // variables used in most of plotters:
 
     RENDER_SETTINGS* m_renderSettings;
 };
+
+
+inline std::ostream& operator<<( std::ostream& os, const PLOTTER& aPlotter )
+{
+    os << "[PLOTTER " << aPlotter.GetPlotterType()
+       << ( aPlotter.GetColorMode() ? " color" : " b/w" ) << "]";
+
+    return os;
+}
 
 
 class TITLE_BLOCK;

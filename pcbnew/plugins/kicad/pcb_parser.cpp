@@ -54,6 +54,8 @@
 #include <plugins/kicad/pcb_parser.h>
 #include <convert_basic_shapes_to_polygon.h>    // for RECT_CHAMFER_POSITIONS definition
 #include <template_fieldnames.h>
+#include <math/util.h>                           // KiROUND, Clamp
+#include <wx/log.h>
 
 using namespace PCB_KEYS_T;
 
@@ -166,6 +168,40 @@ double PCB_PARSER::parseDouble()
 }
 
 
+int PCB_PARSER::parseBoardUnits()
+{
+    // There should be no major rounding issues here, since the values in
+    // the file are in mm and get converted to nano-meters.
+    // See test program tools/test-nm-biu-to-ascii-mm-round-tripping.cpp
+    // to confirm or experiment.  Use a similar strategy in both places, here
+    // and in the test program. Make that program with:
+    // $ make test-nm-biu-to-ascii-mm-round-tripping
+    auto retval = parseDouble() * IU_PER_MM;
+
+    // N.B. we currently represent board units as integers.  Any values that are
+    // larger or smaller than those board units represent undefined behavior for
+    // the system.  We limit values to the largest that is visible on the screen
+    // This is the diagonal distance of the full screen ~1.5m
+    double int_limit = std::numeric_limits<int>::max() * 0.7071; // 0.7071 = roughly 1/sqrt(2)
+    return KiROUND( Clamp<double>( -int_limit, retval, int_limit ) );
+}
+
+
+int PCB_PARSER::parseBoardUnits( const char* aExpected )
+{
+    auto retval = parseDouble( aExpected ) * IU_PER_MM;
+
+    // N.B. we currently represent board units as integers.  Any values that are
+    // larger or smaller than those board units represent undefined behavior for
+    // the system.  We limit values to the largest that is visible on the screen
+    double int_limit = std::numeric_limits<int>::max() * 0.7071;
+
+    // Use here #KiROUND, not EKIROUND (see comments about them) when having a function as
+    // argument, because it will be called twice with #KIROUND.
+    return KiROUND( Clamp<double>( -int_limit, retval, int_limit ) );
+}
+
+
 bool PCB_PARSER::parseBool()
 {
     T token = NextTok();
@@ -261,7 +297,8 @@ void PCB_PARSER::parseEDA_TEXT( EDA_TEXT* aText )
 
     // Prior to v5.0 text size was omitted from file format if equal to 60mils
     // Now, it is always explicitly written to file
-    bool foundTextSize = false;
+    bool     foundTextSize = false;
+    wxString faceName;
 
     for( token = NextTok();  token != T_RIGHT;  token = NextTok() )
     {
@@ -282,20 +319,7 @@ void PCB_PARSER::parseEDA_TEXT( EDA_TEXT* aText )
                     {
                         // parser treats double-quoted strings as symbols
                         NeedSYMBOL();
-                        wxString faceName = FromUTF8();
-                        KIFONT::FONT* font = KIFONT::FONT::GetFont( faceName );
-                        if( font )
-                        {
-                            aText->SetFont( font );
-                        }
-                        else
-                        {
-                            // TODO: notify user about missing font
-#ifdef DEBUG
-                            std::cerr << "parseEDA_TEXT: could not find font face \""
-                                      << faceName << "\"" << std::endl;
-#endif
-                        }
+                        faceName = FromUTF8();
                         NeedRIGHT();
                     }
                     break;
@@ -310,6 +334,11 @@ void PCB_PARSER::parseEDA_TEXT( EDA_TEXT* aText )
 
                         foundTextSize = true;
                     }
+                    break;
+
+                case T_line_spacing:
+                    aText->SetLineSpacing( parseDouble( "line spacing" ) );
+                    NeedRIGHT();
                     break;
 
                 case T_thickness:
@@ -329,6 +358,14 @@ void PCB_PARSER::parseEDA_TEXT( EDA_TEXT* aText )
                     Expecting( "face, size, thickness, bold, or italic" );
                 }
             }
+
+            if( !faceName.IsEmpty() )
+            {
+                // TODO: notify user about missing font
+                aText->SetFont(
+                    KIFONT::FONT::GetFont( faceName, aText->IsBold(), aText->IsItalic() ) );
+            }
+
             break;
 
         case T_justify:
@@ -340,19 +377,19 @@ void PCB_PARSER::parseEDA_TEXT( EDA_TEXT* aText )
                 switch( token )
                 {
                 case T_left:
-                    aText->SetHorizJustify( GR_TEXT_HJUSTIFY_LEFT );
+                    aText->Align( TEXT_ATTRIBUTES::H_LEFT );
                     break;
 
                 case T_right:
-                    aText->SetHorizJustify( GR_TEXT_HJUSTIFY_RIGHT );
+                    aText->Align( TEXT_ATTRIBUTES::H_RIGHT );
                     break;
 
                 case T_top:
-                    aText->SetVertJustify( GR_TEXT_VJUSTIFY_TOP );
+                    aText->Align( TEXT_ATTRIBUTES::V_TOP );
                     break;
 
                 case T_bottom:
-                    aText->SetVertJustify( GR_TEXT_VJUSTIFY_BOTTOM );
+                    aText->Align( TEXT_ATTRIBUTES::V_BOTTOM );
                     break;
 
                 case T_mirror:
@@ -522,6 +559,9 @@ BOARD_ITEM* PCB_PARSER::Parse()
     case T_module:      // legacy token
     case T_footprint:
         item = (BOARD_ITEM*) parseFOOTPRINT( initial_comments.release() );
+
+        // Locking a footprint has no meaning outside of a board.
+        item->SetLocked( false );
         break;
 
     default:
@@ -2177,8 +2217,18 @@ PCB_SHAPE* PCB_PARSER::parsePCB_SHAPE()
     switch( CurTok() )
     {
     case T_gr_arc:
-        shape->SetShape( S_ARC );
-        NeedLEFT();
+        shape->SetShape( PCB_SHAPE_TYPE::ARC );
+        token = NextTok();
+
+        if( token == T_locked )
+        {
+            shape->SetLocked( true );
+            token = NextTok();
+        }
+
+        if( token != T_LEFT )
+            Expecting( T_LEFT );
+
         token = NextTok();
 
         // the start keyword actually gives the arc center
@@ -2203,8 +2253,18 @@ PCB_SHAPE* PCB_PARSER::parsePCB_SHAPE()
         break;
 
     case T_gr_circle:
-        shape->SetShape( S_CIRCLE );
-        NeedLEFT();
+        shape->SetShape( PCB_SHAPE_TYPE::CIRCLE );
+        token = NextTok();
+
+        if( token == T_locked )
+        {
+            shape->SetLocked( true );
+            token = NextTok();
+        }
+
+        if( token != T_LEFT )
+            Expecting( T_LEFT );
+
         token = NextTok();
 
         if( token != T_center )
@@ -2228,8 +2288,18 @@ PCB_SHAPE* PCB_PARSER::parsePCB_SHAPE()
         break;
 
     case T_gr_curve:
-        shape->SetShape( S_CURVE );
-        NeedLEFT();
+        shape->SetShape( PCB_SHAPE_TYPE::CURVE );
+        token = NextTok();
+
+        if( token == T_locked )
+        {
+            shape->SetLocked( true );
+            token = NextTok();
+        }
+
+        if( token != T_LEFT )
+            Expecting( T_LEFT );
+
         token = NextTok();
 
         if( token != T_pts )
@@ -2243,8 +2313,18 @@ PCB_SHAPE* PCB_PARSER::parsePCB_SHAPE()
         break;
 
     case T_gr_rect:
-        shape->SetShape( S_RECT );
-        NeedLEFT();
+        shape->SetShape( PCB_SHAPE_TYPE::RECT );
+        token = NextTok();
+
+        if( token == T_locked )
+        {
+            shape->SetLocked( true );
+            token = NextTok();
+        }
+
+        if( token != T_LEFT )
+            Expecting( T_LEFT );
+
         token = NextTok();
 
         if( token != T_start )
@@ -2268,7 +2348,17 @@ PCB_SHAPE* PCB_PARSER::parsePCB_SHAPE()
 
     case T_gr_line:
         // Default PCB_SHAPE type is S_SEGMENT.
-        NeedLEFT();
+        token = NextTok();
+
+        if( token == T_locked )
+        {
+            shape->SetLocked( true );
+            token = NextTok();
+        }
+
+        if( token != T_LEFT )
+            Expecting( T_LEFT );
+
         token = NextTok();
 
         if( token != T_start )
@@ -2292,9 +2382,19 @@ PCB_SHAPE* PCB_PARSER::parsePCB_SHAPE()
 
     case T_gr_poly:
     {
-        shape->SetShape( S_POLYGON );
+        shape->SetShape( PCB_SHAPE_TYPE::POLYGON );
         shape->SetWidth( 0 ); // this is the default value. will be (perhaps) modified later
-        NeedLEFT();
+        token = NextTok();
+
+        if( token == T_locked )
+        {
+            shape->SetLocked( true );
+            token = NextTok();
+        }
+
+        if( token != T_LEFT )
+            Expecting( T_LEFT );
+
         token = NextTok();
 
         if( token != T_pts )
@@ -2372,12 +2472,13 @@ PCB_SHAPE* PCB_PARSER::parsePCB_SHAPE()
             }
             break;
 
-        /// We continue to parse the status field but it is no longer written
+        // We continue to parse the status field but it is no longer written
         case T_status:
             shape->SetStatus( static_cast<STATUS_FLAGS>( parseHex() ) );
             NeedRIGHT();
             break;
 
+        // Continue to process "(locked)" format which was output during 5.99 development
         case T_locked:
             shape->SetLocked( true );
             NeedRIGHT();
@@ -2393,12 +2494,13 @@ PCB_SHAPE* PCB_PARSER::parsePCB_SHAPE()
         // Legacy versions didn't have a filled flag but allowed some shapes to indicate they
         // should be filled by specifying a 0 stroke-width.
         if( shape->GetWidth() == 0
-                && ( shape->GetShape() == S_RECT || shape->GetShape() == S_CIRCLE ) )
+            && ( shape->GetShape() == PCB_SHAPE_TYPE::RECT
+                 || shape->GetShape() == PCB_SHAPE_TYPE::CIRCLE ) )
         {
             shape->SetFilled( true );
         }
         // Polygons on non-Edge_Cuts layers were always filled
-        else if( shape->GetShape() == S_POLYGON && shape->GetLayer() != Edge_Cuts )
+        else if( shape->GetShape() == PCB_SHAPE_TYPE::POLYGON && shape->GetLayer() != Edge_Cuts )
         {
             shape->SetFilled( true );
         }
@@ -2490,11 +2592,19 @@ DIMENSION_BASE* PCB_PARSER::parseDIMENSION()
                  wxT( "Cannot parse " ) + GetTokenString( CurTok() ) + wxT( " as DIMENSION." ) );
 
     T token;
-
+    bool locked = false;
     std::unique_ptr<DIMENSION_BASE> dimension;
 
+    token = NextTok();
+
+    if( token == T_locked )
+    {
+        locked = true;
+        token = NextTok();
+    }
+
     // skip value that used to be saved
-    if( NextTok() != T_LEFT )
+    if( token != T_LEFT )
         NeedLEFT();
 
     token = NextTok();
@@ -2878,6 +2988,9 @@ DIMENSION_BASE* PCB_PARSER::parseDIMENSION()
                        "arrow1b, arrow2a, or arrow2b" );
         }
     }
+
+    if( locked )
+        dimension->SetLocked( true );
 
     dimension->Update();
 
@@ -3349,8 +3462,18 @@ FP_SHAPE* PCB_PARSER::parseFP_SHAPE()
     switch( CurTok() )
     {
     case T_fp_arc:
-        shape->SetShape( S_ARC );
-        NeedLEFT();
+        shape->SetShape( PCB_SHAPE_TYPE::ARC );
+        token = NextTok();
+
+        if( token == T_locked )
+        {
+            shape->SetLocked( true );
+            token = NextTok();
+        }
+
+        if( token != T_LEFT )
+            Expecting( T_LEFT );
+
         token = NextTok();
 
         // the start keyword actually gives the arc center
@@ -3385,8 +3508,18 @@ FP_SHAPE* PCB_PARSER::parseFP_SHAPE()
         break;
 
     case T_fp_circle:
-        shape->SetShape( S_CIRCLE );
-        NeedLEFT();
+        shape->SetShape( PCB_SHAPE_TYPE::CIRCLE );
+        token = NextTok();
+
+        if( token == T_locked )
+        {
+            shape->SetLocked( true );
+            token = NextTok();
+        }
+
+        if( token != T_LEFT )
+            Expecting( T_LEFT );
+
         token = NextTok();
 
         if( token != T_center )
@@ -3409,8 +3542,18 @@ FP_SHAPE* PCB_PARSER::parseFP_SHAPE()
         break;
 
     case T_fp_curve:
-        shape->SetShape( S_CURVE );
-        NeedLEFT();
+        shape->SetShape( PCB_SHAPE_TYPE::CURVE );
+        token = NextTok();
+
+        if( token == T_locked )
+        {
+            shape->SetLocked( true );
+            token = NextTok();
+        }
+
+        if( token != T_LEFT )
+            Expecting( T_LEFT );
+
         token = NextTok();
 
         if( token != T_pts )
@@ -3424,8 +3567,18 @@ FP_SHAPE* PCB_PARSER::parseFP_SHAPE()
         break;
 
     case T_fp_rect:
-        shape->SetShape( S_RECT );
-        NeedLEFT();
+        shape->SetShape( PCB_SHAPE_TYPE::RECT );
+        token = NextTok();
+
+        if( token == T_locked )
+        {
+            shape->SetLocked( true );
+            token = NextTok();
+        }
+
+        if( token != T_LEFT )
+            Expecting( T_LEFT );
+
         token = NextTok();
 
         if( token != T_start )
@@ -3450,7 +3603,17 @@ FP_SHAPE* PCB_PARSER::parseFP_SHAPE()
 
     case T_fp_line:
         // Default PCB_SHAPE type is S_SEGMENT.
-        NeedLEFT();
+        token = NextTok();
+
+        if( token == T_locked )
+        {
+            shape->SetLocked( true );
+            token = NextTok();
+        }
+
+        if( token != T_LEFT )
+            Expecting( T_LEFT );
+
         token = NextTok();
 
         if( token != T_start )
@@ -3475,8 +3638,18 @@ FP_SHAPE* PCB_PARSER::parseFP_SHAPE()
 
     case T_fp_poly:
     {
-        shape->SetShape( S_POLYGON );
-        NeedLEFT();
+        shape->SetShape( PCB_SHAPE_TYPE::POLYGON );
+        token = NextTok();
+
+        if( token == T_locked )
+        {
+            shape->SetLocked( true );
+            token = NextTok();
+        }
+
+        if( token != T_LEFT )
+            Expecting( T_LEFT );
+
         token = NextTok();
 
         if( token != T_pts )
@@ -3550,12 +3723,13 @@ FP_SHAPE* PCB_PARSER::parseFP_SHAPE()
 
             break;
 
-        /// We continue to parse the status field but it is no longer written
+        // We continue to parse the status field but it is no longer written
         case T_status:
             shape->SetStatus( static_cast<STATUS_FLAGS>( parseHex() ) );
             NeedRIGHT();
             break;
 
+        // Continue to process "(locked)" format which was output during 5.99 development
         case T_locked:
             shape->SetLocked( true );
             NeedRIGHT();
@@ -3571,12 +3745,13 @@ FP_SHAPE* PCB_PARSER::parseFP_SHAPE()
         // Legacy versions didn't have a filled flag but allowed some shapes to indicate they
         // should be filled by specifying a 0 stroke-width.
         if( shape->GetWidth() == 0
-                && ( shape->GetShape() == S_RECT || shape->GetShape() == S_CIRCLE ) )
+            && ( shape->GetShape() == PCB_SHAPE_TYPE::RECT
+                 || shape->GetShape() == PCB_SHAPE_TYPE::CIRCLE ) )
         {
             shape->SetFilled( true );
         }
         // Polygons on non-Edge_Cuts layers were always filled
-        else if( shape->GetShape() == S_POLYGON && shape->GetLayer() != Edge_Cuts )
+        else if( shape->GetShape() == PCB_SHAPE_TYPE::POLYGON && shape->GetLayer() != Edge_Cuts )
         {
             shape->SetFilled( true );
         }
@@ -3614,11 +3789,11 @@ PAD* PCB_PARSER::parsePAD( FOOTPRINT* aParent )
     switch( token )
     {
     case T_thru_hole:
-        pad->SetAttribute( PAD_ATTRIB_PTH );
+        pad->SetAttribute( PAD_ATTRIB::PTH );
         break;
 
     case T_smd:
-        pad->SetAttribute( PAD_ATTRIB_SMD );
+        pad->SetAttribute( PAD_ATTRIB::SMD );
 
         // Default PAD object is thru hole with drill.
         // SMD pads have no hole
@@ -3626,7 +3801,7 @@ PAD* PCB_PARSER::parsePAD( FOOTPRINT* aParent )
         break;
 
     case T_connect:
-        pad->SetAttribute( PAD_ATTRIB_CONN );
+        pad->SetAttribute( PAD_ATTRIB::CONN );
 
         // Default PAD object is thru hole with drill.
         // CONN pads have no hole
@@ -3634,7 +3809,7 @@ PAD* PCB_PARSER::parsePAD( FOOTPRINT* aParent )
         break;
 
     case T_np_thru_hole:
-        pad->SetAttribute( PAD_ATTRIB_NPTH );
+        pad->SetAttribute( PAD_ATTRIB::NPTH );
         break;
 
     default:
@@ -3646,29 +3821,29 @@ PAD* PCB_PARSER::parsePAD( FOOTPRINT* aParent )
     switch( token )
     {
     case T_circle:
-        pad->SetShape( PAD_SHAPE_CIRCLE );
+        pad->SetShape( PAD_SHAPE::CIRCLE );
         break;
 
     case T_rect:
-        pad->SetShape( PAD_SHAPE_RECT );
+        pad->SetShape( PAD_SHAPE::RECT );
         break;
 
     case T_oval:
-        pad->SetShape( PAD_SHAPE_OVAL );
+        pad->SetShape( PAD_SHAPE::OVAL );
         break;
 
     case T_trapezoid:
-        pad->SetShape( PAD_SHAPE_TRAPEZOID );
+        pad->SetShape( PAD_SHAPE::TRAPEZOID );
         break;
 
     case T_roundrect:
-        // Note: the shape can be PAD_SHAPE_ROUNDRECT or PAD_SHAPE_CHAMFERED_RECT
+        // Note: the shape can be PAD_SHAPE::ROUNDRECT or PAD_SHAPE::CHAMFERED_RECT
         // (if chamfer parameters are found later in pad descr.)
-        pad->SetShape( PAD_SHAPE_ROUNDRECT );
+        pad->SetShape( PAD_SHAPE::ROUNDRECT );
         break;
 
     case T_custom:
-        pad->SetShape( PAD_SHAPE_CUSTOM );
+        pad->SetShape( PAD_SHAPE::CUSTOM );
         break;
 
     default:
@@ -3677,6 +3852,12 @@ PAD* PCB_PARSER::parsePAD( FOOTPRINT* aParent )
 
     for( token = NextTok();  token != T_RIGHT;  token = NextTok() )
     {
+        if( token == T_locked )
+        {
+            pad->SetLocked( true );
+            token = NextTok();
+        }
+
         if( token != T_LEFT )
             Expecting( T_LEFT );
 
@@ -3769,7 +3950,7 @@ PAD* PCB_PARSER::parsePAD( FOOTPRINT* aParent )
                 // than 0 used to fix a bunch of debug assertions even though it is defined as a
                 // through hole pad.  Wouldn't a though hole pad with no drill be a surface mount
                 // pad (or a conn pad which is a smd pad with no solder paste)?
-                if( ( pad->GetAttribute() != PAD_ATTRIB_SMD ) && ( pad->GetAttribute() != PAD_ATTRIB_CONN ) )
+                if( ( pad->GetAttribute() != PAD_ATTRIB::SMD ) && ( pad->GetAttribute() != PAD_ATTRIB::CONN ) )
                     pad->SetDrillSize( drillSize );
                 else
                     pad->SetDrillSize( wxSize( 0, 0 ) );
@@ -3877,7 +4058,7 @@ PAD* PCB_PARSER::parsePAD( FOOTPRINT* aParent )
             pad->SetChamferRectRatio( parseDouble( "chamfer ratio" ) );
 
             if( pad->GetChamferRectRatio() > 0 )
-                pad->SetShape( PAD_SHAPE_CHAMFERED_RECT );
+                pad->SetShape( PAD_SHAPE::CHAMFERED_RECT );
 
             NeedRIGHT();
             break;
@@ -3919,7 +4100,7 @@ PAD* PCB_PARSER::parsePAD( FOOTPRINT* aParent )
             }
 
             if( pad->GetChamferPositions() != RECT_NO_CHAMFER )
-                pad->SetShape( PAD_SHAPE_CHAMFERED_RECT );
+                pad->SetShape( PAD_SHAPE::CHAMFERED_RECT );
         }
             break;
 
@@ -3932,31 +4113,31 @@ PAD* PCB_PARSER::parsePAD( FOOTPRINT* aParent )
                 switch( token )
                 {
                 case T_pad_prop_bga:
-                    pad->SetProperty( PAD_PROP_BGA );
+                    pad->SetProperty( PAD_PROP::BGA );
                     break;
 
                 case T_pad_prop_fiducial_glob:
-                    pad->SetProperty( PAD_PROP_FIDUCIAL_GLBL );
+                    pad->SetProperty( PAD_PROP::FIDUCIAL_GLBL );
                     break;
 
                 case T_pad_prop_fiducial_loc:
-                    pad->SetProperty( PAD_PROP_FIDUCIAL_LOCAL );
+                    pad->SetProperty( PAD_PROP::FIDUCIAL_LOCAL );
                     break;
 
                 case T_pad_prop_testpoint:
-                    pad->SetProperty( PAD_PROP_TESTPOINT );
+                    pad->SetProperty( PAD_PROP::TESTPOINT );
                     break;
 
                 case T_pad_prop_castellated:
-                    pad->SetProperty( PAD_PROP_CASTELLATED );
+                    pad->SetProperty( PAD_PROP::CASTELLATED );
                     break;
 
                 case T_pad_prop_heatsink:
-                    pad->SetProperty( PAD_PROP_HEATSINK );
+                    pad->SetProperty( PAD_PROP::HEATSINK );
                     break;
 
                 case T_none:
-                    pad->SetProperty( PAD_PROP_NONE );
+                    pad->SetProperty( PAD_PROP::NONE );
                     break;
 
                 case T_RIGHT:
@@ -4048,6 +4229,7 @@ PAD* PCB_PARSER::parsePAD( FOOTPRINT* aParent )
             NeedRIGHT();
             break;
 
+        // Continue to process "(locked)" format which was output during 5.99 development
         case T_locked:
             pad->SetLocked( true );
             NeedRIGHT();
@@ -4095,7 +4277,7 @@ bool PCB_PARSER::parsePAD_option( PAD* aPad )
                     break;
 
                 case T_rect:
-                    aPad->SetAnchorPadShape( PAD_SHAPE_RECT );
+                    aPad->SetAnchorPadShape( PAD_SHAPE::RECT );
                     break;
 
                 default:
@@ -4214,6 +4396,12 @@ ARC* PCB_PARSER::parseARC()
 
     for( token = NextTok(); token != T_RIGHT; token = NextTok() )
     {
+        if( token == T_locked )
+        {
+            arc->SetLocked( true );
+            token = NextTok();
+        }
+
         if( token != T_LEFT )
             Expecting( T_LEFT );
 
@@ -4259,11 +4447,12 @@ ARC* PCB_PARSER::parseARC()
             const_cast<KIID&>( arc->m_Uuid ) = CurStrToKIID();
             break;
 
-        /// We continue to parse the status field but it is no longer written
+        // We continue to parse the status field but it is no longer written
         case T_status:
             arc->SetStatus( static_cast<STATUS_FLAGS>( parseHex() ) );
             break;
 
+        // Continue to process "(locked)" format which was output during 5.99 development
         case T_locked:
             arc->SetLocked( true );
             break;
@@ -4291,6 +4480,12 @@ TRACK* PCB_PARSER::parseTRACK()
 
     for( token = NextTok();  token != T_RIGHT;  token = NextTok() )
     {
+        if( token == T_locked )
+        {
+            track->SetLocked( true );
+            token = NextTok();
+        }
+
         if( token != T_LEFT )
             Expecting( T_LEFT );
 
@@ -4330,11 +4525,12 @@ TRACK* PCB_PARSER::parseTRACK()
             const_cast<KIID&>( track->m_Uuid ) = CurStrToKIID();
             break;
 
-        /// We continue to parse the status field but it is no longer written
+        // We continue to parse the status field but it is no longer written
         case T_status:
             track->SetStatus( static_cast<STATUS_FLAGS>( parseHex() ) );
             break;
 
+        // Continue to process "(locked)" format which was output during 5.99 development
         case T_locked:
             track->SetLocked( true );
             break;
@@ -4362,6 +4558,12 @@ VIA* PCB_PARSER::parseVIA()
 
     for( token = NextTok();  token != T_RIGHT;  token = NextTok() )
     {
+        if( token == T_locked )
+        {
+            via->SetLocked( true );
+            token = NextTok();
+        }
+
         if( token == T_LEFT )
             token = NextTok();
 
@@ -4436,12 +4638,13 @@ VIA* PCB_PARSER::parseVIA()
             NeedRIGHT();
             break;
 
-        /// We continue to parse the status field but it is no longer written
+        // We continue to parse the status field but it is no longer written
         case T_status:
             via->SetStatus( static_cast<STATUS_FLAGS>( parseHex() ) );
             NeedRIGHT();
             break;
 
+        // Continue to process "(locked)" format which was output during 5.99 development
         case T_locked:
             via->SetLocked( true );
             NeedRIGHT();
@@ -4495,6 +4698,12 @@ ZONE* PCB_PARSER::parseZONE( BOARD_ITEM_CONTAINER* aParent )
 
     for( token = NextTok();  token != T_RIGHT;  token = NextTok() )
     {
+        if( token == T_locked )
+        {
+            zone->SetLocked( true );
+            token = NextTok();
+        }
+
         if( token == T_LEFT )
             token = NextTok();
 

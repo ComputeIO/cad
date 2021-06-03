@@ -2,7 +2,7 @@
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
  * Copyright (C) 2013-2018 CERN
- * Copyright (C) 2013-2020 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 2013-2021 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * @author Tomasz Wlostowski <tomasz.wlostowski@cern.ch>
  * @author Maciej Suminski <maciej.suminski@cern.ch>
@@ -35,7 +35,8 @@
 #include <math/vector2d.h>
 #include <widgets/msgpanel.h>
 #include <memory>
-#include <cursors.h>
+
+#include <gal/cursors.h>
 
 class BOARD;
 class EDA_DRAW_FRAME;
@@ -190,11 +191,11 @@ public:
     /**
      * Set the current cursor shape for this panel.
      */
-    void SetCurrentCursor( KICURSOR cursor );
+    void SetCurrentCursor( KICURSOR aCursor );
 
     /**
      * Return the bounding box of the view that should be used if model is not valid.
-     * For example, the worksheet bounding box for an empty PCB
+     * For example, the drawing sheet bounding box for an empty PCB
      *
      * @return the default bounding box for the panel.
      */
@@ -225,6 +226,13 @@ public:
      */
     void ClearDebugOverlay();
 
+    /**
+     * used on wxMSW: true after a wxEVT_MOUSE_CAPTURE_LOST was received
+     * false after the mouse is recaptured.
+     * Used to avoid calling twice a CaptureMouse(), not accepted by wxMSW
+     */
+    bool m_MouseCapturedLost;
+
 protected:
     virtual void onPaint( wxPaintEvent& WXUNUSED( aEvent ) );
     void onSize( wxSizeEvent& aEvent );
@@ -232,12 +240,8 @@ protected:
     void onLostFocus( wxFocusEvent& aEvent );
     void onRefreshTimer( wxTimerEvent& aEvent );
     void onShowTimer( wxTimerEvent& aEvent );
-    void onSetCursor( wxSetCursorEvent& event );
 
     static const int MinRefreshPeriod = 17;      ///< 60 FPS.
-
-    wxCursor                    m_currentCursor;    ///< Current mouse cursor shape id.
-    KICURSOR   m_currentKiCursor;
 
     wxWindow*                m_parent;           ///< Pointer to the parent window
     EDA_DRAW_FRAME*          m_edaFrame;         ///< Parent EDA_DRAW_FRAME (if available)

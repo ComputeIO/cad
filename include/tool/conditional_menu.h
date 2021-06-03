@@ -30,7 +30,6 @@
 #include <tool/selection_conditions.h>
 #include <tool/action_menu.h>
 #include <list>
-#include <wx/wx.h>
 
 class PCB_SELECTION_TOOL;
 class TOOL_ACTION;
@@ -154,6 +153,7 @@ private:
         // Separator
         ENTRY( SELECTION_CONDITION aCondition, int aOrder ) :
             m_type( SEPARATOR ), m_icon( static_cast<BITMAPS>( 0 ) ),
+            m_data(),
             m_condition( aCondition ),
             m_order( aOrder ),
             m_isCheckmarkEntry( false )

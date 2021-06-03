@@ -32,7 +32,7 @@ MEANDER_PLACER_BASE::MEANDER_PLACER_BASE( ROUTER* aRouter ) :
 {
     m_world = NULL;
     m_currentWidth = 0;
-    m_padToDieLenth = 0;
+    m_padToDieLength = 0;
 }
 
 
@@ -258,6 +258,32 @@ VECTOR2I MEANDER_PLACER_BASE::getSnappedStartPoint( LINKED_ITEM* aStartItem, VEC
             return arc->Anchor( 1 );
         }
     }
+}
+
+
+long long int MEANDER_PLACER_BASE::lineLength( const ITEM_SET& aLine ) const
+{
+    long long int total = 0;
+
+    for( int idx = 0; idx < aLine.Size(); idx++ )
+    {
+        const ITEM* item = aLine[idx];
+
+        if( const LINE* l = dyn_cast<const LINE*>( item ) )
+        {
+            total += l->CLine().Length();
+        }
+        else if( item->OfKind( ITEM::VIA_T ) && idx > 0 && idx < aLine.Size() - 1 )
+        {
+            int layerPrev = aLine[idx - 1]->Layer();
+            int layerNext = aLine[idx + 1]->Layer();
+
+            if( layerPrev != layerNext )
+                total += m_router->GetInterface()->StackupHeight( layerPrev, layerNext );
+        }
+    }
+
+    return total;
 }
 
 }

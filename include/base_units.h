@@ -36,7 +36,6 @@
 
 #include <eda_units.h>
 #include <convert_to_biu.h>
-#include <math/util.h>      // for KiROUND
 #include <math/vector2d.h>
 
 //TODO: Abstract Base Units to a single class
@@ -57,22 +56,15 @@
 #define ALLOW_BOLD_THICKNESS IsBold()
 #endif
 
-
-/// Convert mm to mils.
-inline int Mm2mils( double x ) { return KiROUND( x * 1000./25.4 ); }
-
-/// Convert mils to mm.
-inline int Mils2mm( double x ) { return KiROUND( x * 25.4 / 1000. ); }
-
-/** Helper function Double2Str to print a float number without
- * using scientific notation and no trailing 0
- * We want to avoid scientific notation in S-expr files (not easy to read)
- * for floating numbers.
- * So we cannot always just use the %g or the %f format to print a fp number
- * this helper function uses the %f format when needed, or %g when %f is
- * not well working and then removes trailing 0
+/**
+ *  Convert mm to mils.
  */
-std::string Double2Str( double aValue );
+int Mm2mils( double x );
+
+/**
+ *  Convert mils to mm.
+ */
+int Mils2mm( double x );
 
 /**
  * Function To_User_Unit
@@ -83,13 +75,6 @@ std::string Double2Str( double aValue );
  * @param aValue The value in internal units to convert.
  */
 double To_User_Unit( EDA_UNITS aUnit, double aValue );
-
-/**
- * Function AngleToStringDegrees
- * is a helper to convert the \a double \a aAngle (in internal unit)
- * to a string in degrees
- */
-wxString AngleToStringDegrees( double aAngle );
 
 /**
  * Function MessageTextFromValue

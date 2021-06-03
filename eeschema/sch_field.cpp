@@ -23,14 +23,14 @@
  */
 
 /*
- * Fields are texts attached to a component, having a special meaning
- * Fields 0 and 1 are very important: reference and value
+ * Fields are texts attached to a symbol, some of which have a special meaning.
+ * Fields 0 and 1 are very important: reference and value.
  * Field 2 is used as default footprint name.
- * Field 3 is reserved (not currently used
- * Fields 4 and more are user fields.
- * They can be renamed and can appear in reports
+ * Field 3 is used to point to a datasheet (usually a URL).
+ * Fields 4+ are user fields.  They can be renamed and can appear in reports.
  */
 
+#include <wx/log.h>
 #include <wx/menu.h>
 #include <common.h>     // for ExpandTextVars
 #include <eda_item.h>
@@ -200,7 +200,6 @@ void SCH_FIELD::Print( const RENDER_SETTINGS* aSettings, const wxPoint& aOffset 
 {
     wxDC*    DC = aSettings->GetPrintDC();
     COLOR4D  color = aSettings->GetLayerColor( IsForceVisible() ? LAYER_HIDDEN : m_layer );
-    int      orient;
     wxPoint  textpos;
     int      penWidth = GetEffectiveTextPenWidth( aSettings->GetDefaultPenWidth() );
 
@@ -208,7 +207,7 @@ void SCH_FIELD::Print( const RENDER_SETTINGS* aSettings, const wxPoint& aOffset 
         return;
 
     // Calculate the text orientation according to the symbol orientation.
-    orient = GetTextAngle();
+    EDA_ANGLE orient = GetTextEdaAngle();
 
     if( m_parent && m_parent->Type() == SCH_COMPONENT_T )
     {
@@ -216,10 +215,10 @@ void SCH_FIELD::Print( const RENDER_SETTINGS* aSettings, const wxPoint& aOffset 
 
         if( parentSymbol && parentSymbol->GetTransform().y1 )  // Rotate symbol 90 degrees.
         {
-            if( orient == TEXT_ANGLE_HORIZ )
-                orient = TEXT_ANGLE_VERT;
+            if( orient == EDA_ANGLE::ANGLE_0 )
+                orient = EDA_ANGLE::ANGLE_90;
             else
-                orient = TEXT_ANGLE_HORIZ;
+                orient = EDA_ANGLE::ANGLE_0;
         }
     }
 
@@ -236,8 +235,8 @@ void SCH_FIELD::Print( const RENDER_SETTINGS* aSettings, const wxPoint& aOffset 
     EDA_RECT boundaryBox = GetBoundingBox();
     textpos = boundaryBox.Centre() + aOffset;
 
-    GRText( DC, textpos, color, GetShownText(), orient, GetTextSize(), GR_TEXT_HJUSTIFY_CENTER,
-            GR_TEXT_VJUSTIFY_CENTER, penWidth, IsItalic(), IsBold() );
+    GRText( DC, textpos, color, GetShownText(), orient, GetTextSize(), TEXT_ATTRIBUTES::H_CENTER,
+            TEXT_ATTRIBUTES::V_CENTER, penWidth, IsItalic(), IsBold() );
 }
 
 
@@ -307,11 +306,11 @@ bool SCH_FIELD::IsHorizJustifyFlipped() const
     wxPoint render_center = GetBoundingBox().Centre();
     wxPoint pos = GetPosition();
 
-    switch( GetHorizJustify() )
+    switch( GetHorizontalAlignment() )
     {
-    case GR_TEXT_HJUSTIFY_LEFT:
+    case TEXT_ATTRIBUTES::H_LEFT:
         return render_center.x < pos.x;
-    case GR_TEXT_HJUSTIFY_RIGHT:
+    case TEXT_ATTRIBUTES::H_RIGHT:
         return render_center.x > pos.x;
     default:
         return false;
@@ -394,29 +393,53 @@ bool SCH_FIELD::IsReplaceable() const
 
 bool SCH_FIELD::Replace( const wxFindReplaceData& aSearchData, void* aAuxData )
 {
-    bool isReplaced = false;
+    wxString text;
+    bool     resolve = false;    // Replace in source text, not shown text
+    bool     isReplaced = false;
 
     if( m_parent && m_parent->Type() == SCH_COMPONENT_T )
     {
         SCH_COMPONENT* parentSymbol = static_cast<SCH_COMPONENT*>( m_parent );
 
-        if( m_id == REFERENCE_FIELD )
+        switch( m_id )
         {
-            wxCHECK_MSG( aAuxData != NULL, false,
-                         wxT( "Cannot replace reference designator without valid sheet path." ) );
+        case REFERENCE_FIELD:
+            wxCHECK_MSG( aAuxData, false, wxT( "Need sheetpath to replace in refdes." ) );
 
             if( !( aSearchData.GetFlags() & FR_REPLACE_REFERENCES ) )
                 return false;
 
-            wxString text = parentSymbol->GetRef((SCH_SHEET_PATH*) aAuxData );
-
+            text = parentSymbol->GetRef( (SCH_SHEET_PATH*) aAuxData );
             isReplaced = EDA_ITEM::Replace( aSearchData, text );
 
             if( isReplaced )
-                parentSymbol->SetRef((SCH_SHEET_PATH*) aAuxData, text );
-        }
-        else
-        {
+                parentSymbol->SetRef( (SCH_SHEET_PATH*) aAuxData, text );
+
+            break;
+
+        case VALUE_FIELD:
+            wxCHECK_MSG( aAuxData, false, wxT( "Need sheetpath to replace in value field." ) );
+
+            text = parentSymbol->GetValue((SCH_SHEET_PATH*) aAuxData, resolve );
+            isReplaced = EDA_ITEM::Replace( aSearchData, text );
+
+            if( isReplaced )
+                parentSymbol->SetValue( (SCH_SHEET_PATH*) aAuxData, text );
+
+            break;
+
+        case FOOTPRINT_FIELD:
+            wxCHECK_MSG( aAuxData, false, wxT( "Need sheetpath to replace in footprint field." ) );
+
+            text = parentSymbol->GetFootprint((SCH_SHEET_PATH*) aAuxData, resolve );
+            isReplaced = EDA_ITEM::Replace( aSearchData, text );
+
+            if( isReplaced )
+                parentSymbol->SetFootprint( (SCH_SHEET_PATH*) aAuxData, text );
+
+            break;
+
+        default:
             isReplaced = EDA_TEXT::Replace( aSearchData );
         }
     }
@@ -652,20 +675,23 @@ void SCH_FIELD::Plot( PLOTTER* aPlotter ) const
      *   GetBoundingBox to know the text coordinate considered as centered
      */
     EDA_RECT BoundaryBox = GetBoundingBox();
-    EDA_TEXT_HJUSTIFY_T hjustify = GR_TEXT_HJUSTIFY_CENTER;
-    EDA_TEXT_VJUSTIFY_T vjustify = GR_TEXT_VJUSTIFY_CENTER;
     wxPoint  textpos = BoundaryBox.Centre();
 
-    aPlotter->Text( textpos, color, GetShownText(), orient, GetTextSize(),  hjustify, vjustify,
-                    penWidth, IsItalic(), IsBold() );
+#if 0
+    aPlotter->Text( textpos, color, GetShownText(), orient, GetTextSize(),
+                    TEXT_ATTRIBUTES::H_CENTER, TEXT_ATTRIBUTES::V_CENTER, penWidth, IsItalic(),
+                    IsBold() );
+#else
+    aPlotter->Text( this, color );
+#endif
 }
 
 
 void SCH_FIELD::SetPosition( const wxPoint& aPosition )
 {
-    // Actual positions are calculated by the rotation/mirror transform of the
-    // parent component of the field.  The inverse transform is used to calculate
-    // the position relative to the parent component.
+    // Actual positions are calculated by the rotation/mirror transform of the parent symbol
+    // of the field.  The inverse transform is used to calculate the position relative to the
+    // parent symbol.
     if( m_parent && m_parent->Type() == SCH_COMPONENT_T )
     {
         SCH_COMPONENT* parentSymbol = static_cast<SCH_COMPONENT*>( m_parent );

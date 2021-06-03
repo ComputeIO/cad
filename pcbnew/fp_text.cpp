@@ -40,7 +40,7 @@ FP_TEXT::FP_TEXT( FOOTPRINT* aParentFootprint, TEXT_TYPE text_type ) :
     FOOTPRINT* parentFootprint = static_cast<FOOTPRINT*>( m_parent );
 
     m_Type = text_type;
-    m_keepUpright = true;
+    SetKeepUpright( true );
 
     // Set text thickness to a default value
     SetTextThickness( Millimeter2iu( DEFAULT_TEXT_WIDTH ) );
@@ -80,7 +80,7 @@ bool FP_TEXT::TextHitTest( const wxPoint& aPoint, int aAccuracy ) const
 
     rect.Inflate( aAccuracy );
 
-    RotatePoint( &location, GetTextPos(), -GetDrawRotation() );
+    RotatePoint( &location, GetTextPos(), -GetDrawRotation().AsTenthsOfADegree() );
 
     return rect.Contains( location );
 }
@@ -95,7 +95,7 @@ bool FP_TEXT::TextHitTest( const EDA_RECT& aRect, bool aContains, int aAccuracy 
     if( aContains )
         return rect.Contains( GetBoundingBox() );
     else
-        return rect.Intersects( GetTextBox(), GetDrawRotation() );
+        return rect.Intersects( GetTextBox(), GetDrawRotation().AsTenthsOfADegree() );
 }
 
 
@@ -110,7 +110,7 @@ void FP_TEXT::KeepUpright( double aOldOrientation, double aNewOrientation )
 
     if( needsFlipped )
     {
-        SetHorizJustify( static_cast<EDA_TEXT_HJUSTIFY_T>( -GetHorizJustify() ) );
+        FlipHorizontalAlignment();
         SetTextAngle( GetTextAngle() + 1800.0 );
         SetDrawCoord();
     }
@@ -223,7 +223,7 @@ void FP_TEXT::SetLocalCoord()
 
 const EDA_RECT FP_TEXT::GetBoundingBox() const
 {
-    double   angle = GetDrawRotation();
+    double   angle = GetDrawRotation().AsTenthsOfADegree();
     EDA_RECT text_area = GetTextBox();
 
     if( angle )
@@ -233,15 +233,15 @@ const EDA_RECT FP_TEXT::GetBoundingBox() const
 }
 
 
-double FP_TEXT::GetDrawRotation() const
+EDA_ANGLE FP_TEXT::GetDrawRotation() const
 {
     FOOTPRINT* parentFootprint = static_cast<FOOTPRINT*>( m_parent );
-    double     rotation = GetTextAngle();
+    double rotation = GetTextAngle();
 
     if( parentFootprint )
         rotation += parentFootprint->GetOrientation();
 
-    if( m_keepUpright )
+    if( IsKeepUpright() )
     {
         // Keep angle between 0 .. 90 deg. Otherwise the text is not easy to read
         while( rotation > 900 )
@@ -255,7 +255,7 @@ double FP_TEXT::GetDrawRotation() const
         NORMALIZE_ANGLE_POS( rotation );
     }
 
-    return rotation;
+    return EDA_ANGLE( rotation, EDA_ANGLE::TENTHS_OF_A_DEGREE );
 }
 
 
@@ -278,7 +278,7 @@ void FP_TEXT::GetMsgPanelInfo( EDA_DRAW_FRAME* aFrame, std::vector<MSG_PANEL_ITE
     aList.emplace_back( _( "Type" ), text_type_msg[m_Type] );
 
     if( IsLocked() )
-        aList.emplace_back( _( "Status" ), _( "locked" ) );
+        aList.emplace_back( _( "Status" ), _( "Locked" ) );
 
     aList.emplace_back( _( "Display" ), IsVisible() ? _( "Yes" ) : _( "No" ) );
 
@@ -336,11 +336,11 @@ EDA_ITEM* FP_TEXT::Clone() const
 
 const BOX2I FP_TEXT::ViewBBox() const
 {
-    double   angle = GetDrawRotation();
+    EDA_ANGLE angle = GetDrawRotation();
     EDA_RECT text_area = GetTextBox();
 
-    if( angle != 0.0 )
-        text_area = text_area.GetBoundingBoxRotated( GetTextPos(), angle );
+    if( angle != EDA_ANGLE::ANGLE_0 )
+        text_area = text_area.GetBoundingBoxRotated( GetTextPos(), angle.AsTenthsOfADegree() );
 
     return BOX2I( text_area.GetPosition(), text_area.GetSize() );
 }

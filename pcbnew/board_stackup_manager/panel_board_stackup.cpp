@@ -2,7 +2,7 @@
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
  * Copyright (C) 2019 Jean-Pierre Charras, jp.charras at wanadoo.fr
- * Copyright (C) 2019-2020 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 2019-2021 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -29,6 +29,7 @@
 #include <dialogs/dialog_color_picker.h>
 #include <widgets/paged_dialog.h>
 #include <widgets/layer_box_selector.h>
+#include <wx/log.h>
 #include <wx/rawbmp.h>
 #include <math/util.h>      // for KiROUND
 
@@ -43,6 +44,8 @@
 #include <wx/richmsgdlg.h>
 #include <wx/choicdlg.h>
 #include <wx/dcclient.h>
+
+#include <locale_io.h>
 
 // Some wx widget ID to know what widget has fired a event:
 #define ID_INCREMENT 256    // space between 2 ID type. Bigger than the layer count max
@@ -87,8 +90,6 @@ PANEL_SETUP_BOARD_STACKUP::PANEL_SETUP_BOARD_STACKUP( PAGED_DIALOG* aParent, PCB
     // Calculates a good size for color swatches (icons) in this dialog
     wxClientDC dc( this );
     m_colorSwatchesSize = dc.GetTextExtent( "XX" );
-    m_colorComboSize = dc.GetTextExtent( wxString::Format( "XXX %s XXX",
-                                         wxGetTranslation( NotSpecifiedPrm() ) ) );
     m_colorIconsSize = dc.GetTextExtent( "XXXX" );
 
     // Calculates a good size for wxTextCtrl to enter Epsilon R and Loss tan
@@ -114,6 +115,7 @@ PANEL_SETUP_BOARD_STACKUP::PANEL_SETUP_BOARD_STACKUP( PAGED_DIALOG* aParent, PCB
 
     buildLayerStackPanel( true );
     synchronizeWithBoard( true );
+    computeBoardThickness();
 
     m_choiceCopperLayers->Bind( wxEVT_CHOICE,
             [&]( wxCommandEvent& )
@@ -208,6 +210,7 @@ void PANEL_SETUP_BOARD_STACKUP::onAddDielectricLayer( wxCommandEvent& event )
     brd_stackup_item->AddDielectricPrms( new_sublayer+1 );
 
     rebuildLayerStackPanel();
+    computeBoardThickness();
 }
 
 
@@ -258,6 +261,7 @@ void PANEL_SETUP_BOARD_STACKUP::onRemoveDielectricLayer( wxCommandEvent& event )
     brd_stackup_item->RemoveDielectricPrms( sublayer );
 
     rebuildLayerStackPanel();
+    computeBoardThickness();
 }
 
 
@@ -272,12 +276,12 @@ void PANEL_SETUP_BOARD_STACKUP::onRemoveDielUI( wxUpdateUIEvent& event )
 
         if( item->GetSublayersCount() > 1 )
         {
-            m_buttonRemoveDielectricLayer->Enable( true );
+            event.Enable( true );
             return;
         }
     }
 
-    m_buttonRemoveDielectricLayer->Enable( false );
+    event.Enable( false );
 }
 
 
@@ -296,6 +300,7 @@ void PANEL_SETUP_BOARD_STACKUP::onExportToClipboard( wxCommandEvent& event )
         // This data objects are held by the clipboard,
         // so do not delete them in the app.
         wxTheClipboard->SetData( new wxTextDataObject( report ) );
+        wxTheClipboard->Flush(); // Allow data to be available after closing KiCad
         wxTheClipboard->Close();
     }
 }
@@ -310,14 +315,12 @@ wxColor PANEL_SETUP_BOARD_STACKUP::GetSelectedColor( int aRow ) const
 
     if( idx != GetColorUserDefinedListIdx() ) // a standard color is selected
         return GetColorStandardList()[idx].m_Color;
-    else if( m_UserColors.count( aRow ) )
-        return m_UserColors.at( aRow );
-    else
-        return wxNullColour;
+
+    return m_rowUiItemsList[aRow].m_UserColor;
 }
 
 
-void PANEL_SETUP_BOARD_STACKUP::onUpdateThicknessValue( wxUpdateUIEvent& event )
+void PANEL_SETUP_BOARD_STACKUP::computeBoardThickness()
 {
     int thickness = 0;
 
@@ -337,8 +340,9 @@ void PANEL_SETUP_BOARD_STACKUP::onUpdateThicknessValue( wxUpdateUIEvent& event )
 
     wxString thicknessStr = StringFromValue( m_units, thickness, true );
 
-    if( m_tcCTValue->GetValue() != thicknessStr )
-        m_tcCTValue->SetValue( thicknessStr );
+    // The text in the event will translate to the value for the text control
+    // and is only updated if it changed
+    m_tcCTValue->SetValue( thicknessStr );
 }
 
 
@@ -371,8 +375,6 @@ void PANEL_SETUP_BOARD_STACKUP::synchronizeWithBoard( bool aFullSync )
         m_choiceCopperLayers->SetSelection( ( m_board->GetCopperLayerCount() / 2 ) - 1 );
         m_impedanceControlled->SetValue( brd_stackup.m_HasDielectricConstrains );
     }
-
-    int row = 0;
 
     for( BOARD_STACKUP_ROW_UI_ITEM& ui_row_item : m_rowUiItemsList )
     {
@@ -425,12 +427,15 @@ void PANEL_SETUP_BOARD_STACKUP::synchronizeWithBoard( bool aFullSync )
             if( item->GetColor().StartsWith( "#" ) )  // User defined color
             {
                 wxColour color( item->GetColor() );
-                m_UserColors[row] = color;
+                ui_row_item.m_UserColor = color;
                 color_idx = GetColorUserDefinedListIdx();
 
                 if( bm_combo )      // Update user color shown in the wxBitmapComboBox
                 {
-                    bm_combo->SetString( color_idx, color.GetAsString( wxC2S_HTML_SYNTAX ) );
+                    wxString label = wxString::Format( _( "Custom (%s)" ),
+                                                       color.GetAsString( wxC2S_HTML_SYNTAX ) );
+
+                    bm_combo->SetString( color_idx, label );
                     wxBitmap layerbmp( m_colorSwatchesSize.x, m_colorSwatchesSize.y );
                     LAYER_SELECTOR::DrawColorSwatch( layerbmp, COLOR4D(), COLOR4D( color ) );
                     bm_combo->SetItemBitmap( color_idx, layerbmp );
@@ -679,13 +684,17 @@ BOARD_STACKUP_ROW_UI_ITEM PANEL_SETUP_BOARD_STACKUP::createRowData( int aRow,
 
     if( item->IsColorEditable() )
     {
-        int color_idx = 0;
+        int color_idx      = 0;
+        int user_color_idx = GetColorUserDefinedListIdx();
+
+        // Always init the user-defined color for a row
+        ui_row_item.m_UserColor = GetColorStandardList()[user_color_idx].m_Color;
 
         if( item->GetColor().StartsWith( "#" ) )  // User defined color
         {
             wxColour color( item->GetColor() );
-            m_UserColors[row] = color;
-            color_idx = GetColorUserDefinedListIdx();
+            ui_row_item.m_UserColor = color;
+            color_idx = user_color_idx;
         }
         else
         {
@@ -700,8 +709,6 @@ BOARD_STACKUP_ROW_UI_ITEM PANEL_SETUP_BOARD_STACKUP::createRowData( int aRow,
         }
 
         wxBitmapComboBox* bm_combo = createBmComboBox( item, row );
-        m_colorComboSize.y = bm_combo->GetSize().y;
-        bm_combo->SetMinSize( m_colorComboSize );
         m_fgGridSizer->Add( bm_combo, 0, wxLEFT|wxRIGHT|wxALIGN_CENTER_VERTICAL, 2 );
         bm_combo->SetSelection( color_idx );
         ui_row_item.m_ColorCtrl = bm_combo;
@@ -774,7 +781,6 @@ void PANEL_SETUP_BOARD_STACKUP::rebuildLayerStackPanel()
     }
 
     m_rowUiItemsList.clear();
-    m_UserColors.clear();
 
     // In order to recreate a clean grid layer list, we have to delete and
     // recreate the sizer m_fgGridSizer (just deleting items in this size is not enough)
@@ -1015,8 +1021,7 @@ bool PANEL_SETUP_BOARD_STACKUP::transferDataFromUIToStackup()
 
                 if( idx == GetColorUserDefinedListIdx() )
                 {
-                    wxASSERT( m_UserColors.count( row ) );
-                    wxColour color = m_UserColors[row];
+                    wxColour color = ui_item.m_UserColor;
                     item->SetColor( color.GetAsString( wxC2S_HTML_SYNTAX ) );
                 }
                 else
@@ -1053,6 +1058,10 @@ bool PANEL_SETUP_BOARD_STACKUP::TransferDataFromWindow()
     BOARD_STACKUP& brd_stackup = m_brdSettings->GetStackupDescriptor();
 
     STRING_FORMATTER old_stackup;
+
+    // FormatBoardStackup() (using FormatInternalUnits()) expects a "C" locale
+    // to execute some tests. So switch to the suitable locale
+    LOCALE_IO dummy;
     brd_stackup.FormatBoardStackup( &old_stackup, m_board, 0 );
 
     brd_stackup.m_FinishType = m_stackup.m_FinishType;
@@ -1108,6 +1117,7 @@ void PANEL_SETUP_BOARD_STACKUP::ImportSettingsFrom( BOARD* aBoard )
     m_board = savedBrd;
 
     rebuildLayerStackPanel();
+    computeBoardThickness();
 }
 
 
@@ -1142,20 +1152,28 @@ void PANEL_SETUP_BOARD_STACKUP::onColorSelected( wxCommandEvent& event )
 
     if( GetColorStandardListCount()-1 == idx )   // Set user color is the last option in list
     {
-        COLOR4D defaultColor( GetColorStandardList()[GetColorUserDefinedListIdx()].m_Color );
-        COLOR4D currentColor(
-                m_UserColors.count( row ) ? m_UserColors[row] : COLOR4D( 0.5, 0.5, 0.5, 1.0 ) );
+        wxColour userColour = m_rowUiItemsList[row].m_UserColor;
+        COLOR4D  currentColor( userColour.IsOk() ? userColour : COLOR4D( 0.5, 0.5, 0.5, 1.0 ) );
+        COLOR4D  defaultColor( GetColorStandardList()[GetColorUserDefinedListIdx()].m_Color );
 
         DIALOG_COLOR_PICKER dlg( this, currentColor, false, nullptr, defaultColor );
+
+        // Give a time-slice to close the menu before opening the dialog.
+        // (Only matters on some versions of GTK.)
+        wxSafeYield();
 
         if( dlg.ShowModal() == wxID_OK )
         {
             wxBitmapComboBox* combo = static_cast<wxBitmapComboBox*>( FindWindowById( item_id ) );
 
-            wxColour color    = dlg.GetColor().ToColour();
-            m_UserColors[row] = color;
+            wxColour color = dlg.GetColor().ToColour();
 
-            combo->SetString( idx, color.GetAsString( wxC2S_HTML_SYNTAX ) );
+            m_rowUiItemsList[row].m_UserColor = color;
+
+            wxString label = wxString::Format( _( "Custom (%s)" ),
+                                               color.GetAsString( wxC2S_HTML_SYNTAX ) );
+
+            combo->SetString( idx, label );
 
             wxBitmap layerbmp( m_colorSwatchesSize.x, m_colorSwatchesSize.y );
             LAYER_SELECTOR::DrawColorSwatch( layerbmp, COLOR4D( 0, 0, 0, 0 ),
@@ -1270,6 +1288,8 @@ void PANEL_SETUP_BOARD_STACKUP::onThicknessChange( wxCommandEvent& event )
     int idx = GetSublayerId( row );
 
     item->SetThickness( ValueFromString( m_frame->GetUserUnits(), value ), idx );
+
+    computeBoardThickness();
 }
 
 
@@ -1309,6 +1329,8 @@ wxColor PANEL_SETUP_BOARD_STACKUP::getColorIconItem( int aRow )
         break;
     }
 
+    wxASSERT_MSG( color.IsOk(), "Invalid color in PCB stackup" );
+
     return color;
 }
 
@@ -1318,6 +1340,7 @@ void PANEL_SETUP_BOARD_STACKUP::updateIconColor( int aRow )
     if( aRow >= 0 )
     {
         wxStaticBitmap* st_bitmap = m_rowUiItemsList[aRow].m_Icon;
+
         // explicit depth important under MSW
         wxBitmap bmp( m_colorIconsSize.x, m_colorIconsSize.y / 2, 28 );
         drawBitmap( bmp, getColorIconItem( aRow ) );
@@ -1341,6 +1364,7 @@ wxBitmapComboBox* PANEL_SETUP_BOARD_STACKUP::createBmComboBox( BOARD_STACKUP_ITE
     wxBitmapComboBox* combo = new wxBitmapComboBox( m_scGridWin, ID_ITEM_COLOR + aRow,
                                                     wxEmptyString, wxDefaultPosition,
                                                     wxDefaultSize, 0, nullptr, wxCB_READONLY );
+
     // Fills the combo box with choice list + bitmaps
     const FAB_LAYER_COLOR* color_list = GetColorStandardList();
 
@@ -1359,14 +1383,10 @@ wxBitmapComboBox* PANEL_SETUP_BOARD_STACKUP::createBmComboBox( BOARD_STACKUP_ITE
         else    // Append the user color, if specified, else add a default user color
         {
             if( aStackupItem && aStackupItem->GetColor().StartsWith( "#" ) )
-            {
                 curr_color = wxColour( aStackupItem->GetColor() );
-                label = aStackupItem->GetColor();
-            }
-            else
-            {
-                label = curr_color.GetAsString( wxC2S_HTML_SYNTAX );
-            }
+
+            label = wxString::Format( _( "Custom (%s)" ),
+                                      curr_color.GetAsString( wxC2S_HTML_SYNTAX ) );
         }
 
         wxBitmap layerbmp( m_colorSwatchesSize.x, m_colorSwatchesSize.y );
@@ -1375,14 +1395,20 @@ wxBitmapComboBox* PANEL_SETUP_BOARD_STACKUP::createBmComboBox( BOARD_STACKUP_ITE
         combo->Append( label, layerbmp );
     }
 
-#ifdef __WXGTK__
-    // Adjust the minimal width. On GTK, the size calculated by wxWidgets is not good
-    // bitmaps are ignored
-    combo->Fit();
-    int min_width = combo->GetSize().x;
-    min_width += m_colorSwatchesSize.x;
-    combo->SetMinSize( wxSize( min_width, -1 ) );
-#endif
+    // Ensure the size of the widget is enough to show the text and the icon
+    // We have to have a selected item when doing this, because otherwise GTK
+    // will just choose a random size that might not fit the actual data
+    // (such as in cases where the font size is very large). So we select
+    // the longest item (which should be the last item), and size it that way.
+    int sel = combo->GetSelection();
+    combo->SetSelection( combo->GetCount() - 1 );
+
+    combo->SetMinSize( wxSize( -1, -1 ) );
+    wxSize bestSize = combo->GetBestSize();
+
+    bestSize.x = bestSize.x + m_colorSwatchesSize.x;
+    combo->SetMinSize( bestSize );
+    combo->SetSelection( sel );
 
     // add the wxBitmapComboBox to wxControl list, to be able to disconnect the event
     // on exit

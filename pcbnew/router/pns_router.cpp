@@ -182,7 +182,7 @@ bool ROUTER::StartDragging( const VECTOR2I& aP, ITEM_SET aStartItems, int aDragM
 
 bool ROUTER::isStartingPointRoutable( const VECTOR2I& aWhere, ITEM* aStartItem, int aLayer )
 {
-    if( Settings().CanViolateDRC() && Settings().Mode() == RM_MarkObstacles )
+    if( Settings().AllowDRCViolations() )
         return true;
 
     if( m_mode == PNS_MODE_ROUTE_DIFF_PAIR )
@@ -208,7 +208,7 @@ bool ROUTER::isStartingPointRoutable( const VECTOR2I& aWhere, ITEM* aStartItem, 
             {
                 PAD* pad = static_cast<PAD*>( parent );
 
-                if( pad->GetAttribute() == PAD_ATTRIB_NPTH )
+                if( pad->GetAttribute() == PAD_ATTRIB::NPTH )
                     SetFailureReason( _( "Cannot start routing from a non-plated hole." ) );
             }
                 break;

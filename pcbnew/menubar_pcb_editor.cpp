@@ -32,6 +32,7 @@
 #include <pcb_edit_frame.h>
 #include <pcbnew_id.h>
 #include <pgm_base.h>
+#include <python_scripting.h>
 #include <tool/actions.h>
 #include <tool/tool_manager.h>
 #include <tools/pcb_actions.h>
@@ -193,6 +194,7 @@ void PCB_EDIT_FRAME::ReCreateMenuBar()
     editMenu->Add( ACTIONS::cut );
     editMenu->Add( ACTIONS::copy );
     editMenu->Add( ACTIONS::paste );
+    editMenu->Add( ACTIONS::pasteSpecial );
     editMenu->Add( ACTIONS::doDelete );
 
     editMenu->AppendSeparator();
@@ -297,6 +299,18 @@ void PCB_EDIT_FRAME::ReCreateMenuBar()
     placeMenu->Add( PCB_ACTIONS::drawVia );
     placeMenu->Add( PCB_ACTIONS::drawZone );
     placeMenu->Add( PCB_ACTIONS::drawRuleArea );
+
+    ACTION_MENU* muwaveSubmenu = new ACTION_MENU( false, selTool );
+    muwaveSubmenu->SetTitle( _( "Add Microwave Shape" ) );
+    muwaveSubmenu->SetIcon( BITMAPS::mw_add_line );
+    muwaveSubmenu->Add( PCB_ACTIONS::microwaveCreateLine );
+    muwaveSubmenu->Add( PCB_ACTIONS::microwaveCreateGap );
+    muwaveSubmenu->Add( PCB_ACTIONS::microwaveCreateStub );
+    muwaveSubmenu->Add( PCB_ACTIONS::microwaveCreateStubArc );
+    muwaveSubmenu->Add( PCB_ACTIONS::microwaveCreateFunctionShape );
+    placeMenu->Add( muwaveSubmenu );
+
+    placeMenu->AppendSeparator();
     placeMenu->Add( PCB_ACTIONS::placeText );
     placeMenu->Add( PCB_ACTIONS::drawLine );
     placeMenu->Add( PCB_ACTIONS::drawArc );
@@ -393,32 +407,19 @@ void PCB_EDIT_FRAME::ReCreateMenuBar()
     update = toolsMenu->Add( ACTIONS::updateSchematicFromPcb );
     update->Enable( !Kiface().IsSingle() );
 
+    if( SCRIPTING::IsWxAvailable() )
+    {
+        toolsMenu->AppendSeparator();
+        toolsMenu->Add( PCB_ACTIONS::showPythonConsole );
+    }
 
-#if defined(KICAD_SCRIPTING_WXPYTHON)
-    toolsMenu->AppendSeparator();
-    toolsMenu->Add( PCB_ACTIONS::showPythonConsole );
-#endif
-
-#if defined(KICAD_SCRIPTING) && defined(KICAD_SCRIPTING_ACTION_MENU)
     ACTION_MENU* submenuActionPlugins = new ACTION_MENU( false, selTool );
     submenuActionPlugins->SetTitle( _( "External Plugins" ) );
     submenuActionPlugins->SetIcon( BITMAPS::puzzle_piece );
 
-    submenuActionPlugins->Add( _( "Refresh Plugins" ),
-                               _( "Reload all python plugins and refresh plugin menus" ),
-                               ID_TOOLBARH_PCB_ACTION_PLUGIN_REFRESH,
-                               BITMAPS::reload );
-#ifdef __APPLE__
-    submenuActionPlugins->Add( _( "Reveal Plugin Folder in Finder" ),
-                               _( "Reveals the plugins folder in a Finder window" ),
-                               ID_TOOLBARH_PCB_ACTION_PLUGIN_SHOW_FOLDER,
-                               BITMAPS::directory_open );
-#else
-    submenuActionPlugins->Add( _( "Open Plugin Directory" ),
-                               _( "Opens the directory in the default system file manager" ),
-                               ID_TOOLBARH_PCB_ACTION_PLUGIN_SHOW_FOLDER,
-                               BITMAPS::directory_open );
-#endif
+    submenuActionPlugins->Add( PCB_ACTIONS::pluginsReload );
+    submenuActionPlugins->Add( PCB_ACTIONS::pluginsShowFolder );
+
     // Populate the Action Plugin sub-menu: Must be done before Add
     // Since the object is cloned by Add
     submenuActionPlugins->AppendSeparator();
@@ -426,8 +427,6 @@ void PCB_EDIT_FRAME::ReCreateMenuBar()
 
     toolsMenu->AppendSeparator();
     toolsMenu->Add( submenuActionPlugins );
-#endif
-
 
     //-- Preferences menu ----------------------------------------------------
     //
@@ -436,10 +435,7 @@ void PCB_EDIT_FRAME::ReCreateMenuBar()
     prefsMenu->Add( ACTIONS::configurePaths );
     prefsMenu->Add( ACTIONS::showFootprintLibTable );
 
-    prefsMenu->Add( _( "Preferences..." ) + "\tCtrl+,",
-                    _( "Show preferences for all open tools" ),
-                    wxID_PREFERENCES,
-                    BITMAPS::preference );
+    prefsMenu->Add( ACTIONS::openPreferences );
 
     prefsMenu->AppendSeparator();
     AddMenuLanguageList( prefsMenu, selTool );

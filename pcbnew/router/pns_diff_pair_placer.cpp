@@ -55,6 +55,7 @@ DIFF_PAIR_PLACER::DIFF_PAIR_PLACER( ROUTER* aRouter ) :
     m_snapOnTarget = false;
     m_currentEndItem = NULL;
     m_currentMode = RM_MarkObstacles;
+    m_currentTraceOk = false;
     m_idle = true;
 }
 
@@ -127,8 +128,6 @@ bool DIFF_PAIR_PLACER::propagateDpHeadForces ( const VECTOR2I& aP, VECTOR2I& aNe
         virtHead.SetDiameter( m_sizes.DiffPairGap() + 2 * m_sizes.DiffPairWidth() );
     }
 
-    VECTOR2I lead( 0, 0 );// = aP - m_currentStart ;
-    VECTOR2I force;
     bool solidsOnly = true;
 
     if( m_currentMode == RM_MarkObstacles )
@@ -142,7 +141,42 @@ bool DIFF_PAIR_PLACER::propagateDpHeadForces ( const VECTOR2I& aP, VECTOR2I& aNe
     }
 
     // fixme: I'm too lazy to do it well. Circular approximaton will do for the moment.
-    if( virtHead.PushoutForce( m_currentNode, lead, force, solidsOnly, 40 ) )
+
+    // Note: this code is lifted from VIA::PushoutForce and then optimized for this use case and to
+    // check proper clearances to the diff pair line.  It can be removed if some specialized
+    // pushout for traces / diff pairs is implemented.  Just calling VIA::PushoutForce does not work
+    // as the via may have different resolved clearance to items than the diff pair should.
+    int      maxIter  = 40;
+    int      iter     = 0;
+    bool     collided = false;
+    VECTOR2I force, totalForce;
+    std::set<ITEM*> handled;
+
+    while( iter < maxIter )
+    {
+        NODE::OPT_OBSTACLE obs = m_currentNode->CheckColliding( &virtHead, solidsOnly ?
+                                                                           ITEM::SOLID_T :
+                                                                           ITEM::ANY_T  );
+        if( !obs || handled.count( obs->m_item ) )
+            break;
+
+        int clearance = m_currentNode->GetClearance( obs->m_item, &m_currentTrace.PLine() );
+
+        if( obs->m_item->Shape()->Collide( virtHead.Shape(), clearance, &force ) )
+        {
+            collided = true;
+            totalForce += force;
+            virtHead.SetPos( virtHead.Pos() + force );
+        }
+
+        handled.insert( obs->m_item );
+
+        iter++;
+    }
+
+    bool succeeded = ( !collided || iter != maxIter );
+
+    if( succeeded )
     {
         aNewP = aP + force;
         return true;
@@ -433,8 +467,6 @@ bool DIFF_PAIR_PLACER::FindDpPrimitivePair( NODE* aWorld, const VECTOR2I& aP, IT
 {
     int netP, netN;
 
-    wxLogTrace( "PNS", "world %p", aWorld );
-
     bool result = aWorld->GetRuleResolver()->DpNetPair( aItem, netP, netN );
 
     if( !result )
@@ -443,7 +475,7 @@ bool DIFF_PAIR_PLACER::FindDpPrimitivePair( NODE* aWorld, const VECTOR2I& aP, IT
         {
             *aErrorMsg = _( "Unable to find complementary differential pair "
                             "nets. Make sure the names of the nets belonging "
-                            "to a differential pair end with either _N/_P or +/-." );
+                            "to a differential pair end with either N/P or +/-." );
         }
         return false;
     }
@@ -451,12 +483,8 @@ bool DIFF_PAIR_PLACER::FindDpPrimitivePair( NODE* aWorld, const VECTOR2I& aP, IT
     int refNet = aItem->Net();
     int coupledNet = ( refNet == netP ) ? netN : netP;
 
-    wxLogTrace( "PNS", "result %d", !!result );
-
     OPT_VECTOR2I refAnchor = getDanglingAnchor( aWorld, aItem );
     ITEM* primRef = aItem;
-
-    wxLogTrace( "PNS", "refAnchor %p", aItem );
 
     if( !refAnchor )
     {
@@ -487,7 +515,7 @@ bool DIFF_PAIR_PLACER::FindDpPrimitivePair( NODE* aWorld, const VECTOR2I& aP, IT
 
             bool shapeMatches = true;
 
-            if( item->OfKind( ITEM::SOLID_T ) && item->Layers() != aItem->Layers() )
+            if( item->OfKind( ITEM::SOLID_T | ITEM::VIA_T ) && item->Layers() != aItem->Layers() )
             {
                 shapeMatches = false;
             }
@@ -556,6 +584,9 @@ bool DIFF_PAIR_PLACER::Start( const VECTOR2I& aP, ITEM* aStartItem )
     m_currentEnd = p;
     m_placingVia = false;
     m_chainedPlacement = false;
+    m_currentTraceOk = false;
+    m_currentTrace = DIFF_PAIR();
+    m_currentTrace.SetNets( m_netP, m_netN );
 
     initPlacement();
 
@@ -631,7 +662,7 @@ bool DIFF_PAIR_PLACER::routeHead( const VECTOR2I& aP )
         gwsTarget.SetFitVias( m_placingVia, m_sizes.ViaDiameter(), viaGap() );
 
         // far from the initial segment extension line -> allow a 45-degree obtuse turn
-        if( lead_dist > m_sizes.DiffPairGap() + m_sizes.DiffPairWidth() )
+        if( lead_dist > ( m_sizes.DiffPairGap() + m_sizes.DiffPairWidth() ) / 2 )
         {
             gwsTarget.BuildForCursor( fp );
         }
@@ -640,13 +671,13 @@ bool DIFF_PAIR_PLACER::routeHead( const VECTOR2I& aP )
         else
         {
             gwsTarget.BuildForCursor( fpProj );
-            gwsTarget.FilterByOrientation( DIRECTION_45::ANG_STRAIGHT | DIRECTION_45::ANG_HALF_FULL, DIRECTION_45( dirV ) );
+            gwsTarget.FilterByOrientation( DIRECTION_45::ANG_STRAIGHT | DIRECTION_45::ANG_HALF_FULL,
+                                           DIRECTION_45( dirV ) );
         }
 
         m_snapOnTarget = false;
     }
 
-    m_currentTrace = DIFF_PAIR();
     m_currentTrace.SetGap( gap() );
     m_currentTrace.SetLayer( m_currentLayer );
 
@@ -654,6 +685,7 @@ bool DIFF_PAIR_PLACER::routeHead( const VECTOR2I& aP )
 
     if( result )
     {
+        m_currentTraceOk = true;
         m_currentTrace.SetNets( m_netP, m_netN );
         m_currentTrace.SetWidth( m_sizes.DiffPairWidth() );
         m_currentTrace.SetGap( m_sizes.DiffPairGap() );
@@ -667,7 +699,7 @@ bool DIFF_PAIR_PLACER::routeHead( const VECTOR2I& aP )
         return true;
     }
 
-    return false;
+    return m_currentTraceOk;
 }
 
 
@@ -713,11 +745,10 @@ void DIFF_PAIR_PLACER::UpdateSizes( const SIZES_SETTINGS& aSizes )
 
 bool DIFF_PAIR_PLACER::FixRoute( const VECTOR2I& aP, ITEM* aEndItem, bool aForceFinish )
 {
-    if( !m_fitOk && !Settings().CanViolateDRC() )
+    if( !m_fitOk && !Settings().AllowDRCViolations() )
         return false;
 
-    if( m_currentTrace.CP().SegmentCount() < 1 ||
-            m_currentTrace.CN().SegmentCount() < 1 )
+    if( m_currentTrace.CP().SegmentCount() < 1 || m_currentTrace.CN().SegmentCount() < 1 )
         return false;
 
     if( m_currentTrace.CP().SegmentCount() > 1 )
@@ -725,7 +756,8 @@ bool DIFF_PAIR_PLACER::FixRoute( const VECTOR2I& aP, ITEM* aEndItem, bool aForce
 
     TOPOLOGY topo( m_lastNode );
 
-    if( !m_snapOnTarget && !m_currentTrace.EndsWithVias() && !aForceFinish )
+    if( !m_snapOnTarget && !m_currentTrace.EndsWithVias() && !aForceFinish &&
+        !Settings().GetFixAllSegments() )
     {
         SHAPE_LINE_CHAIN newP( m_currentTrace.CP() );
         SHAPE_LINE_CHAIN newN( m_currentTrace.CN() );

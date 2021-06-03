@@ -50,25 +50,37 @@ public:
 
     bool IsOutline() const override { return true; }
 
+    bool IsBold() const override { return mFace && ( mFace->style_flags & FT_STYLE_FLAG_BOLD ); }
+
+    bool IsItalic() const override
+    {
+        return mFace && ( mFace->style_flags & FT_STYLE_FLAG_ITALIC );
+    }
+
     /**
      * Load an outline font. TrueType (.ttf) and OpenType (.otf)
      * are supported.
      * @param aFontFileName is the name of the font file
+     * @param aBold is true if font should be bold, otherwise false
+     * @param aItalic is true if font should be italic, otherwise false
      * @return true if the font was successfully loaded, otherwise false.
      */
-    bool LoadFont( const wxString& aFontFileName ) override;
+    bool LoadFont( const wxString& aFontFileName, bool aBold, bool aItalic ) override;
 
+#if 0
     /**
      * Draw a string.
      *
      * @param aGal
      * @param aText is the text to be drawn.
      * @param aPosition is the text position in world coordinates.
-     * @param aRotationAngle is the text rotation angle
+     * @param aOrigin is the item origin
+     * @param aAttributes contains text attributes (angle, line spacing, ...)
      * @return bounding box width/height
      */
     VECTOR2D Draw( KIGFX::GAL* aGal, const UTF8& aText, const VECTOR2D& aPosition,
-                   const VECTOR2D& aOrigin, const EDA_ANGLE& aRotationAngle ) const override;
+                   const VECTOR2D& aOrigin, const TEXT_ATTRIBUTES& aAttributes ) const override;
+#endif
 
     /**
      * Compute the boundary limits of aText (the bounding box of all shapes).
@@ -95,9 +107,10 @@ public:
      * Compute the distance (interline) between 2 lines of text (for multiline texts).
      *
      * @param aGlyphHeight is the height (vertical size) of the text.
+     * @param aLineSpacing is the line spacing multiplier (defaults to 1.0)
      * @return the interline.
      */
-    double GetInterline( double aGlyphHeight ) const override;
+    double GetInterline( double aGlyphHeight = 0.0, double aLineSpacing = 1.0 ) const override;
 
     /**
      * Compute the X and Y size of a given text. The text is expected to be
@@ -118,11 +131,11 @@ public:
      * Like GetTextAsPolygon, but handles multiple lines.
      * TODO: Combine with GetTextAsPolygon, maybe with a boolean parameter,
      * but it's possible a non-line-breaking version isn't even needed
+     *
+     * @param aGlyphs returns text glyphs
+     * @param aText the text item
      */
-    VECTOR2I GetLinesAsPolygon( std::vector<SHAPE_POLY_SET>& aGlyphs, const UTF8& aText,
-                                const VECTOR2D& aGlyphSize, const wxPoint& aPosition,
-                                const TEXT_ATTRIBUTES& aAttributes, bool aIsMirrored,
-                                TEXT_STYLE_FLAGS aTextStyle = 0 ) const;
+    VECTOR2I GetLinesAsPolygon( std::vector<SHAPE_POLY_SET>& aGlyphs, const EDA_TEXT* aText ) const;
 
     const FT_Face& GetFace() const { return mFace; }
 
@@ -161,11 +174,11 @@ private:
      *
      * @param aText is the text to be drawn.
      * @param aPosition is text position.
-     * @param aAngle is text angle.
+     * @param aAngle is text angle (defaults to 0)
      * @return bounding box width/height
      */
     VECTOR2D drawSingleLineText( KIGFX::GAL* aGal, const UTF8& aText, const VECTOR2D& aPosition,
-                                 const EDA_ANGLE& aAngle ) const override;
+                                 const EDA_ANGLE& aAngle = EDA_ANGLE() ) const override;
 
     VECTOR2D drawMarkup( KIGFX::GAL* aGal, const MARKUP::MARKUP_NODE& aNode,
                          const VECTOR2D& aPosition, const EDA_ANGLE& aAngle,

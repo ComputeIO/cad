@@ -24,7 +24,7 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
 
-#include <eda_item.h>
+#include <kicad_string.h>
 #include <locale_io.h>
 #include <macros.h>
 #include <drawing_sheet/ds_painter.h>
@@ -33,7 +33,6 @@
 #include <drawing_sheet/ds_data_model.h>
 #include <math/vector2d.h>
 #include <drawing_sheet/drawing_sheet_reader_lexer.h>
-#include <convert_to_biu.h>
 
 #include <wx/msgdlg.h>
 
@@ -47,7 +46,7 @@ static const char* getTokenName( T aTok )
     return DRAWING_SHEET_READER_LEXER::TokenName( aTok );
 }
 
-// A basic helper class to write a page layout description
+// A basic helper class to write a drawing sheet file
 // Not used alone, a file writer or a string writer should be derived to use it.
 // Therefore the constructor is protected.
 class DS_DATA_MODEL_IO
@@ -59,7 +58,7 @@ protected:
     virtual ~DS_DATA_MODEL_IO() {}
 
 public:
-    void Format( DS_DATA_MODEL* aModel ) const;
+    void Format( DS_DATA_MODEL* aDrawingSheet ) const;
 
     void Format( DS_DATA_MODEL* aModel, DS_DATA_ITEM* aItem, int aNestLevel ) const;
 
@@ -75,7 +74,7 @@ private:
 };
 
 
-// A helper class to write a page layout description to a file
+// A helper class to write a drawing sheet to a file
 class DS_DATA_MODEL_FILEIO : public DS_DATA_MODEL_IO
 {
     FILE_OUTPUTFORMATTER * m_fileout;
@@ -91,7 +90,7 @@ public:
         }
         catch( const IO_ERROR& ioe )
         {
-            wxMessageBox( ioe.What(), _( "Error writing page layout design file" ) );
+            wxMessageBox( ioe.What(), _( "Error writing drawing sheet file" ) );
         }
     }
 
@@ -102,7 +101,7 @@ public:
 };
 
 
-// A helper class to write a page layout description to a string
+// A helper class to write a drawing sheet to a string
 class DS_DATA_MODEL_STRINGIO : public DS_DATA_MODEL_IO
 {
     STRING_FORMATTER * m_writer;
@@ -119,7 +118,7 @@ public:
         }
         catch( const IO_ERROR& ioe )
         {
-            wxMessageBox( ioe.What(), _( "Error writing page layout design file" ) );
+            wxMessageBox( ioe.What(), _( "Error writing drawing sheet file" ) );
         }
     }
 
@@ -188,7 +187,7 @@ void DS_DATA_MODEL_IO::Format( DS_DATA_MODEL* aModel, DS_DATA_ITEM* aItem, int a
 }
 
 
-void DS_DATA_MODEL_IO::Format( DS_DATA_MODEL* aPageLayout ) const
+void DS_DATA_MODEL_IO::Format( DS_DATA_MODEL* aDrawingSheet ) const
 {
     LOCALE_IO   toggle;     // switch on/off the locale "C" notation
 
@@ -199,30 +198,30 @@ void DS_DATA_MODEL_IO::Format( DS_DATA_MODEL* aPageLayout ) const
     // Write default values:
     m_out->Print( nestLevel, "(%s ", getTokenName( T_setup ) );
     m_out->Print( 0, "(textsize %s %s)",
-                  double2Str( aPageLayout->m_DefaultTextSize.x ).c_str(),
-                  double2Str( aPageLayout->m_DefaultTextSize.y ).c_str() );
+                  double2Str( aDrawingSheet->m_DefaultTextSize.x ).c_str(),
+                  double2Str( aDrawingSheet->m_DefaultTextSize.y ).c_str() );
     m_out->Print( 0, "(linewidth %s)",
-                  double2Str( aPageLayout->m_DefaultLineWidth ).c_str() );
+                  double2Str( aDrawingSheet->m_DefaultLineWidth ).c_str() );
     m_out->Print( 0, "(textlinewidth %s)",
-                  double2Str( aPageLayout->m_DefaultTextThickness ).c_str() );
+                  double2Str( aDrawingSheet->m_DefaultTextThickness ).c_str() );
     m_out->Print( 0, "\n" );
 
     // Write margin values
     m_out->Print( nestLevel, "(%s %s)", getTokenName( T_left_margin ),
-                  double2Str( aPageLayout->GetLeftMargin() ).c_str() );
+                  double2Str( aDrawingSheet->GetLeftMargin() ).c_str() );
     m_out->Print( 0, "(%s %s)", getTokenName( T_right_margin ),
-                  double2Str( aPageLayout->GetRightMargin() ).c_str() );
+                  double2Str( aDrawingSheet->GetRightMargin() ).c_str() );
     m_out->Print( 0, "(%s %s)", getTokenName( T_top_margin ),
-                  double2Str( aPageLayout->GetTopMargin() ).c_str() );
+                  double2Str( aDrawingSheet->GetTopMargin() ).c_str() );
     m_out->Print( 0, "(%s %s)", getTokenName( T_bottom_margin ),
-                  double2Str( aPageLayout->GetBottomMargin() ).c_str() );
+                  double2Str( aDrawingSheet->GetBottomMargin() ).c_str() );
     m_out->Print( 0, ")\n" );
 
-    // Save the graphical items on the page layout
-    for( unsigned ii = 0; ii < aPageLayout->GetCount(); ii++ )
+    // Save the graphical items on the drawing sheet
+    for( unsigned ii = 0; ii < aDrawingSheet->GetCount(); ii++ )
     {
-        DS_DATA_ITEM* item = aPageLayout->GetItem( ii );
-        Format( aPageLayout, item, nestLevel );
+        DS_DATA_ITEM* item = aDrawingSheet->GetItem( ii );
+        Format( aDrawingSheet, item, nestLevel );
     }
 
     m_out->Print( 0, ")\n" );
@@ -273,23 +272,23 @@ void DS_DATA_MODEL_IO::format( DS_DATA_ITEM_TEXT* aItem, int aNestLevel ) const
     }
 
     // Write text justification
-    if( aItem->m_Hjustify != GR_TEXT_HJUSTIFY_LEFT ||
-        aItem->m_Vjustify != GR_TEXT_VJUSTIFY_CENTER )
+    if( aItem->m_Halign != TEXT_ATTRIBUTES::H_LEFT ||
+        aItem->m_Valign != TEXT_ATTRIBUTES::V_CENTER )
     {
         m_out->Print( 0, " (%s", getTokenName( T_justify ) );
 
         // Write T_center opt first, because it is
         // also a center for both m_Hjustify and m_Vjustify
-        if( aItem->m_Hjustify == GR_TEXT_HJUSTIFY_CENTER )
+        if( aItem->m_Halign == TEXT_ATTRIBUTES::H_CENTER )
             m_out->Print( 0, " %s", getTokenName( T_center ) );
 
-        if( aItem->m_Hjustify == GR_TEXT_HJUSTIFY_RIGHT )
+        if( aItem->m_Halign == TEXT_ATTRIBUTES::H_RIGHT )
             m_out->Print( 0, " %s", getTokenName( T_right ) );
 
-        if( aItem->m_Vjustify == GR_TEXT_VJUSTIFY_TOP )
+        if( aItem->m_Valign == TEXT_ATTRIBUTES::V_TOP )
             m_out->Print( 0, " %s", getTokenName( T_top ) );
 
-        if( aItem->m_Vjustify == GR_TEXT_VJUSTIFY_BOTTOM )
+        if( aItem->m_Valign == TEXT_ATTRIBUTES::V_BOTTOM )
             m_out->Print( 0, " %s", getTokenName( T_bottom ) );
 
         m_out->Print( 0, ")" );
@@ -305,6 +304,9 @@ void DS_DATA_MODEL_IO::format( DS_DATA_ITEM_TEXT* aItem, int aNestLevel ) const
                       double2Str(aItem->m_BoundingBoxSize.y ).c_str() );
 
     formatRepeatParameters( aItem );
+
+    if( !aItem->m_Info.IsEmpty() )
+        m_out->Print( 0, " (comment %s)\n", m_out->Quotew( aItem->m_Info ).c_str() );
 
     m_out->Print( 0, ")\n" );
 }
@@ -328,6 +330,9 @@ void DS_DATA_MODEL_IO::format( DS_DATA_MODEL* aModel, DS_DATA_ITEM* aItem, int a
 
     formatRepeatParameters( aItem );
 
+    if( !aItem->m_Info.IsEmpty() )
+        m_out->Print( 0, " (comment %s)\n", m_out->Quotew( aItem->m_Info ).c_str() );
+
     m_out->Print( 0, ")\n" );
 }
 
@@ -348,6 +353,9 @@ void DS_DATA_MODEL_IO::format( DS_DATA_ITEM_POLYGONS* aItem, int aNestLevel ) co
 
     if( aItem->m_LineWidth )
         m_out->Print( 0, " (linewidth %s)\n", double2Str( aItem->m_LineWidth ).c_str() );
+
+    if( !aItem->m_Info.IsEmpty() )
+        m_out->Print( 0, " (comment %s)\n", m_out->Quotew( aItem->m_Info ).c_str() );
 
     // Write polygon corners list
     for( int kk = 0; kk < aItem->GetPolyCount(); kk++ )
@@ -395,6 +403,9 @@ void DS_DATA_MODEL_IO::format( DS_DATA_ITEM_BITMAP* aItem, int aNestLevel ) cons
 
     formatRepeatParameters( aItem );
     m_out->Print( 0,"\n");
+
+    if( !aItem->m_Info.IsEmpty() )
+        m_out->Print( 0, " (comment %s)\n", m_out->Quotew( aItem->m_Info ).c_str() );
 
     // Write image in png readable format
     m_out->Print( aNestLevel, "(%s\n", getTokenName( T_pngdata ) );

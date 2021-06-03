@@ -29,6 +29,8 @@
 #include <geometry/seg.h>
 #include <geometry/shape_line_chain.h>
 
+#include <wx/log.h>
+
 #include "pns_arc.h"
 #include "pns_item.h"
 #include "pns_line.h"
@@ -39,6 +41,7 @@
 #include "pns_index.h"
 #include "pns_debug_decorator.h"
 #include "pns_router.h"
+#include "pns_utils.h"
 
 
 namespace PNS {
@@ -169,8 +172,7 @@ void NODE::unlinkParent()
 OBSTACLE_VISITOR::OBSTACLE_VISITOR( const ITEM* aItem ) :
     m_item( aItem ),
     m_node( NULL ),
-    m_override( NULL ),
-    m_extraClearance( 0 )
+    m_override( NULL )
 {
 }
 
@@ -201,7 +203,6 @@ struct NODE::DEFAULT_OBSTACLE_VISITOR : public OBSTACLE_VISITOR
     int        m_kindMask;          ///<  (solids, vias, segments, etc...)
     int        m_limitCount;
     int        m_matchCount;
-    int        m_extraClearance;
     bool       m_differentNetsOnly;
 
     DEFAULT_OBSTACLE_VISITOR( NODE::OBSTACLES& aTab, const ITEM* aItem, int aKindMask,
@@ -211,13 +212,8 @@ struct NODE::DEFAULT_OBSTACLE_VISITOR : public OBSTACLE_VISITOR
         m_kindMask( aKindMask ),
         m_limitCount( -1 ),
         m_matchCount( 0 ),
-        m_extraClearance( 0 ),
         m_differentNetsOnly( aDifferentNetsOnly )
     {
-        if( aItem && aItem->Kind() == ITEM::LINE_T )
-        {
-             m_extraClearance += static_cast<const LINE*>( aItem )->Width() / 2;
-        }
     }
 
     virtual ~DEFAULT_OBSTACLE_VISITOR()
@@ -305,14 +301,14 @@ NODE::OPT_OBSTACLE NODE::NearestObstacle( const LINE* aLine, int aKindMask,
     nearest.m_distFirst = INT_MAX;
 
     auto updateNearest =
-            [&]( VECTOR2I pt, ITEM* obstacle, const SHAPE_LINE_CHAIN& hull, bool isHole )
+            [&]( const SHAPE_LINE_CHAIN::INTERSECTION& pt, ITEM* obstacle, const SHAPE_LINE_CHAIN& hull, bool isHole )
             {
-                int dist = aLine->CLine().PathLength( pt );
+                int dist = aLine->CLine().PathLength( pt.p, pt.index_their );
 
                 if( dist < nearest.m_distFirst )
                 {
                     nearest.m_distFirst = dist;
-                    nearest.m_ipFirst = pt;
+                    nearest.m_ipFirst = pt.p;
                     nearest.m_item = obstacle;
                     nearest.m_hull = hull;
 
@@ -326,6 +322,7 @@ NODE::OPT_OBSTACLE NODE::NearestObstacle( const LINE* aLine, int aKindMask,
     std::vector<SHAPE_LINE_CHAIN::INTERSECTION> intersectingPts;
     int layer = aLine->Layer();
 
+
     for( const OBSTACLE& obstacle : obstacleList )
     {
         if( aRestrictedSet && aRestrictedSet->find( obstacle.m_item ) == aRestrictedSet->end() )
@@ -333,13 +330,18 @@ NODE::OPT_OBSTACLE NODE::NearestObstacle( const LINE* aLine, int aKindMask,
 
         int clearance = GetClearance( obstacle.m_item, aLine ) + aLine->Width() / 2;
         obstacleHull = obstacle.m_item->Hull( clearance + PNS_HULL_MARGIN, 0, layer );
-        debugDecorator->AddLine( obstacleHull, 2 );
+        //debugDecorator->AddLine( obstacleHull, 2, 40000, "obstacle-hull-test" );
+        //debugDecorator->AddLine( aLine->CLine(), 5, 40000, "obstacle-test-line" );
 
         intersectingPts.clear();
-        obstacleHull.Intersect( aLine->CLine(), intersectingPts );
+        HullIntersection( obstacleHull, aLine->CLine(), intersectingPts );
 
-        for( const SHAPE_LINE_CHAIN::INTERSECTION& ip : intersectingPts )
-            updateNearest( ip.p, obstacle.m_item, obstacleHull, false );
+        for( const auto& ip : intersectingPts )
+        {
+            //debugDecorator->AddPoint( ip.p, ip.valid?3:6, 100000, (const char *) wxString::Format("obstacle-isect-point-%d" ).c_str() );
+            if(ip.valid)
+                updateNearest( ip, obstacle.m_item, obstacleHull, false );
+        }
 
         if( aLine->EndsWithVia() )
         {
@@ -354,26 +356,28 @@ NODE::OPT_OBSTACLE NODE::NearestObstacle( const LINE* aLine, int aKindMask,
                 viaClearance = holeClearance;
 
             obstacleHull = obstacle.m_item->Hull( viaClearance + PNS_HULL_MARGIN, 0, layer );
-            debugDecorator->AddLine( obstacleHull, 3 );
+            //debugDecorator->AddLine( obstacleHull, 3 );
 
             intersectingPts.clear();
-            obstacleHull.Intersect( aLine->CLine(), intersectingPts );
+            HullIntersection( obstacleHull, aLine->CLine(), intersectingPts );
+
+//            obstacleHull.Intersect( aLine->CLine(), intersectingPts, true );
 
             for( const SHAPE_LINE_CHAIN::INTERSECTION& ip : intersectingPts )
-                updateNearest( ip.p, obstacle.m_item, obstacleHull, false );
+                updateNearest( ip, obstacle.m_item, obstacleHull, false );
         }
 
         if( obstacle.m_item->Hole() )
         {
             clearance = GetHoleClearance( obstacle.m_item, aLine ) + aLine->Width() / 2;
             obstacleHull = obstacle.m_item->HoleHull( clearance + PNS_HULL_MARGIN, 0, layer );
-            debugDecorator->AddLine( obstacleHull, 4 );
+            //debugDecorator->AddLine( obstacleHull, 4 );
 
             intersectingPts.clear();
-            obstacleHull.Intersect( aLine->CLine(), intersectingPts );
+            HullIntersection( obstacleHull, aLine->CLine(), intersectingPts );
 
             for( const SHAPE_LINE_CHAIN::INTERSECTION& ip : intersectingPts )
-                updateNearest( ip.p, obstacle.m_item, obstacleHull, true );
+                updateNearest( ip, obstacle.m_item, obstacleHull, true );
 
             if( aLine->EndsWithVia() )
             {
@@ -392,19 +396,21 @@ NODE::OPT_OBSTACLE NODE::NearestObstacle( const LINE* aLine, int aKindMask,
                     viaClearance = holeToHole;
 
                 obstacleHull = obstacle.m_item->Hull( viaClearance + PNS_HULL_MARGIN, 0, layer );
-                debugDecorator->AddLine( obstacleHull, 5 );
+                //debugDecorator->AddLine( obstacleHull, 5 );
 
                 intersectingPts.clear();
-                obstacleHull.Intersect( aLine->CLine(), intersectingPts );
+                HullIntersection( obstacleHull, aLine->CLine(), intersectingPts );
 
                 for( const SHAPE_LINE_CHAIN::INTERSECTION& ip : intersectingPts )
-                    updateNearest( ip.p, obstacle.m_item, obstacleHull, true );
+                    updateNearest( ip, obstacle.m_item, obstacleHull, true );
             }
         }
     }
 
     if( nearest.m_distFirst == INT_MAX )
         nearest.m_item = obstacleList[0].m_item;
+
+    // debugDecorator->AddLine( nearest.m_hull, YELLOW, 60000, "obstacle-nearest-hull" );
 
     return nearest;
 }
@@ -892,7 +898,9 @@ void NODE::followLine( LINKED_ITEM* aCurrent, bool aScanDirection, int& aPos, in
 
         if( count && guard == p )
         {
-            aSegments[aPos] = NULL;
+            if( aPos >= 0 && aPos < aLimit )
+                aSegments[aPos] = NULL;
+
             aGuardHit = true;
             break;
         }
@@ -904,7 +912,7 @@ void NODE::followLine( LINKED_ITEM* aCurrent, bool aScanDirection, int& aPos, in
 
         aCurrent = jt->NextSegment( aCurrent );
 
-        prevReversed = ( jt->Pos() == aCurrent->Anchor( aScanDirection ) );
+        prevReversed = ( aCurrent && jt->Pos() == aCurrent->Anchor( aScanDirection ) );
     }
 }
 
@@ -921,7 +929,8 @@ const LINE NODE::AssembleLine( LINKED_ITEM* aSeg, int* aOriginSegmentIndex,
     LINE pl;
     bool guardHit = false;
 
-    int i_start = MaxVerts / 2, i_end = i_start + 1;
+    int i_start = MaxVerts / 2;
+    int i_end   = i_start + 1;
 
     pl.SetWidth( aSeg->Width() );
     pl.SetLayers( aSeg->Layers() );
@@ -933,8 +942,8 @@ const LINE NODE::AssembleLine( LINKED_ITEM* aSeg, int* aOriginSegmentIndex,
 
     if( !guardHit )
     {
-        followLine( aSeg, true, i_end, MaxVerts, corners.data(), segs.data(), arcReversed.data(), guardHit,
-                    aStopAtLockedJoints );
+        followLine( aSeg, true, i_end, MaxVerts, corners.data(), segs.data(), arcReversed.data(),
+                    guardHit, aStopAtLockedJoints );
     }
 
     int n = 0;
@@ -942,21 +951,37 @@ const LINE NODE::AssembleLine( LINKED_ITEM* aSeg, int* aOriginSegmentIndex,
     LINKED_ITEM* prev_seg = NULL;
     bool originSet = false;
 
+    SHAPE_LINE_CHAIN& line = pl.Line();
+
     for( int i = i_start + 1; i < i_end; i++ )
     {
         const VECTOR2I& p  = corners[i];
         LINKED_ITEM*    li = segs[i];
 
         if( !li || li->Kind() != ITEM::ARC_T )
-            pl.Line().Append( p );
+            line.Append( p );
 
         if( li && prev_seg != li )
         {
+            int segIdxIncrement = 1;
+
             if( li->Kind() == ITEM::ARC_T )
             {
                 const ARC*       arc = static_cast<const ARC*>( li );
                 const SHAPE_ARC* sa  = static_cast<const SHAPE_ARC*>( arc->Shape() );
-                pl.Line().Append( arcReversed[i] ? sa->Reversed() : *sa );
+
+                int      nSegs     = line.PointCount();
+                VECTOR2I last      = nSegs ? line.CPoint( -1 ) : VECTOR2I();
+                ssize_t  lastShape = nSegs ? line.CShapes()[nSegs - 1] : -1;
+
+                line.Append( arcReversed[i] ? sa->Reversed() : *sa );
+
+                segIdxIncrement = line.PointCount() - nSegs - 1;
+
+                // Are we adding an arc after an arc? add the hidden segment if the arcs overlap.
+                // If they don't overlap, don't add this, as it will have been added as a segment.
+                if( lastShape >= 0 && last == line.CPoint( nSegs ) )
+                    segIdxIncrement++;
             }
 
             pl.Link( li );
@@ -964,11 +989,13 @@ const LINE NODE::AssembleLine( LINKED_ITEM* aSeg, int* aOriginSegmentIndex,
             // latter condition to avoid loops
             if( li == aSeg && aOriginSegmentIndex && !originSet )
             {
+                wxASSERT( n < line.SegmentCount() ||
+                          ( n == line.SegmentCount() && li->Kind() == ITEM::SEGMENT_T ) );
                 *aOriginSegmentIndex = n;
                 originSet = true;
             }
 
-            n++;
+            n += segIdxIncrement;
         }
 
         prev_seg = li;
@@ -1336,12 +1363,12 @@ void NODE::ClearRanks( int aMarkerMask )
 
 void NODE::RemoveByMarker( int aMarker )
 {
-    std::list<ITEM*> garbage;
+    std::vector<ITEM*> garbage;
 
     for( ITEM* item : *m_index )
     {
         if( item->Marker() & aMarker )
-            garbage.push_back( item );
+            garbage.emplace_back( item );
     }
 
     for( ITEM* item : garbage )

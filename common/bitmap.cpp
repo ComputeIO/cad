@@ -25,6 +25,7 @@
 
 #include <wx/image.h>
 #include <wx/bitmap.h>
+#include <wx/gdicmn.h>
 #include <wx/mstream.h>
 #include <wx/menu.h>
 #include <wx/menuitem.h>
@@ -101,9 +102,9 @@ BITMAP_STORE* GetBitmapStore()
 }
 
 
-wxBitmap KiBitmap( BITMAPS aBitmap )
+wxBitmap KiBitmap( BITMAPS aBitmap, int aHeightTag )
 {
-    return GetBitmapStore()->GetBitmap( aBitmap );
+    return GetBitmapStore()->GetBitmap( aBitmap, aHeightTag );
 }
 
 
@@ -201,7 +202,7 @@ wxBitmap* KiBitmapNew( BITMAPS aBitmap )
 
 
 bool SaveCanvasImageToFile( EDA_DRAW_FRAME* aFrame, const wxString& aFileName,
-                            wxBitmapType aBitmapType )
+                            BITMAP_TYPE aBitmapType )
 {
     wxCHECK( aFrame != nullptr, false );
 
@@ -220,7 +221,15 @@ bool SaveCanvasImageToFile( EDA_DRAW_FRAME* aFrame, const wxString& aFileName,
 
     wxImage image = bitmap.ConvertToImage();
 
-    if( !image.SaveFile( aFileName, aBitmapType ) )
+    wxBitmapType type = wxBITMAP_TYPE_PNG;
+    switch( aBitmapType )
+    {
+    case BITMAP_TYPE::PNG: type = wxBITMAP_TYPE_PNG; break;
+    case BITMAP_TYPE::BMP: type = wxBITMAP_TYPE_BMP; break;
+    case BITMAP_TYPE::JPG: type = wxBITMAP_TYPE_JPEG; break;
+    }
+
+    if( !image.SaveFile( aFileName, type ) )
         retv = false;
 
     image.Destroy();
@@ -230,7 +239,7 @@ bool SaveCanvasImageToFile( EDA_DRAW_FRAME* aFrame, const wxString& aFileName,
 
 void AddBitmapToMenuItem( wxMenuItem* aMenu, const wxBitmap& aImage )
 {
-    // Retrieve the global applicaton show icon option:
+    // Retrieve the global application show icon option:
     bool useImagesInMenus = Pgm().GetCommonSettings()->m_Appearance.use_icons_in_menus;
 
     wxItemKind menu_type = aMenu->GetKind();

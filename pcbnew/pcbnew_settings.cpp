@@ -1,7 +1,7 @@
 /*
 * This program source code file is part of KiCad, a free EDA CAD application.
 *
-* Copyright (C) 2020 KiCad Developers, see AUTHORS.txt for contributors.
+* Copyright (C) 2020-2021 KiCad Developers, see AUTHORS.txt for contributors.
 *
 * This program is free software; you can redistribute it and/or
 * modify it under the terms of the GNU General Public License
@@ -20,6 +20,8 @@
 * or you may write to the Free Software Foundation, Inc.,
 * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 */
+
+#include <pybind11/pybind11.h>
 
 #include <common.h>
 #include <footprint_editor_settings.h>
@@ -191,6 +193,9 @@ PCBNEW_SETTINGS::PCBNEW_SETTINGS()
     m_params.emplace_back( new PARAM<bool>( "pcb_display.origin_invert_y_axis",
             &m_Display.m_DisplayInvertYAxis, false ) );
 
+    m_params.emplace_back( new PARAM<bool>( "pcb_display.live_3d_refresh",
+            &m_Display.m_Live3DRefresh, false ) );
+
     m_params.emplace_back( new PARAM<bool>( "cleanup.cleanup_vias",
             &m_Cleanup.cleanup_vias, true ) );
 
@@ -207,7 +212,7 @@ PCBNEW_SETTINGS::PCBNEW_SETTINGS()
             &m_Cleanup.cleanup_short_circuits, true ) );
 
     m_params.emplace_back( new PARAM<bool>( "cleanup.cleanup_tracks_in_pad",
-            &m_Cleanup.cleanup_tracks_in_pad, true ) );
+            &m_Cleanup.cleanup_tracks_in_pad, false ) );
 
     m_params.emplace_back( new PARAM<bool>( "drc_dialog.refill_zones",
             &m_DrcDialog.refill_zones, true ) );
@@ -427,8 +432,6 @@ PCBNEW_SETTINGS::PCBNEW_SETTINGS()
             &m_Reannotate.remove_front_prefix, false ) );
     m_params.emplace_back( new PARAM<bool>( "reannotate_dialog.annotate_remove_back_prefix",
             &m_Reannotate.remove_back_prefix, false ) );
-    m_params.emplace_back( new PARAM<bool>( "reannotate_dialog.annotate_update_schematic",
-            &m_Reannotate.update_schematic, true ) );
     m_params.emplace_back( new PARAM<bool>( "reannotate_dialog.annotate_exclude_locked",
             &m_Reannotate.exclude_locked, false ) );
 
@@ -454,7 +457,6 @@ PCBNEW_SETTINGS::PCBNEW_SETTINGS()
     m_params.emplace_back( new PARAM<wxString>( "reannotate_dialog.annotate_report_file_name",
             &m_Reannotate.report_file_name, "" ) );
 
-#if defined(KICAD_SCRIPTING) && defined(KICAD_SCRIPTING_ACTION_MENU)
     m_params.emplace_back( new PARAM_LAMBDA<nlohmann::json>( "action_plugins",
             [&]() -> nlohmann::json
             {
@@ -487,7 +489,6 @@ PCBNEW_SETTINGS::PCBNEW_SETTINGS()
                 }
             },
             nlohmann::json::array() ) );
-#endif
 
     addParamsForWindow( &m_FootprintViewer, "footprint_viewer" );
 
@@ -794,3 +795,17 @@ bool PCBNEW_SETTINGS::MigrateFromLegacy( wxConfigBase* aCfg )
 
     return ret;
 }
+
+//namespace py = pybind11;
+//
+//PYBIND11_MODULE( pcbnew, m )
+//{
+//    py::class_<PCBNEW_SETTINGS>( m, "settings" )
+//            .def_readwrite( "Use45DegreeGraphicSegments", &PCBNEW_SETTINGS::m_Use45DegreeGraphicSegments )
+//            .def_readwrite( "FlipLeftRight", &PCBNEW_SETTINGS::m_FlipLeftRight )
+//            .def_readwrite( "AddUnlockedPads", &PCBNEW_SETTINGS::m_AddUnlockedPads)
+//            .def_readwrite( "UsePolarCoords", &PCBNEW_SETTINGS::m_PolarCoords)
+//            .def_readwrite( "RotationAngle", &PCBNEW_SETTINGS::m_RotationAngle)
+//            .def_readwrite( "ShowPageLimits", &PCBNEW_SETTINGS::m_ShowPageLimits)
+//            ;
+//}

@@ -30,6 +30,13 @@
 #include <netinfo.h>
 #include <wx/arrstr.h>
 #include <wx/display.h>
+#include <wx/valtext.h>
+#include <wx/listbox.h>
+#include <wx/stattext.h>
+#include <wx/sizer.h>
+#include <wx/textctrl.h>
+#include <wx/panel.h>
+
 
 wxDEFINE_EVENT( NET_SELECTED, wxCommandEvent );
 
@@ -83,22 +90,22 @@ public:
         m_filterCtrl->SetValidator( *m_filterValidator );
         mainSizer->Add( m_filterCtrl, 0, wxEXPAND, 0 );
 
-        m_listBox = new wxListBox( this, wxID_ANY, wxDefaultPosition, wxDefaultSize, 0, 0,
+        m_listBox = new wxListBox( this, wxID_ANY, wxDefaultPosition, wxDefaultSize, 0, nullptr,
                                    wxLB_SINGLE|wxLB_NEEDED_SB );
         mainSizer->Add( m_listBox, 0, wxEXPAND|wxTOP, 2 );
 
         SetSizer( mainSizer );
         Layout();
 
-        Connect( wxEVT_IDLE, wxIdleEventHandler( NET_SELECTOR_COMBOPOPUP::onIdle ), NULL, this );
-        Connect( wxEVT_CHAR_HOOK, wxKeyEventHandler( NET_SELECTOR_COMBOPOPUP::onKeyDown ), NULL, this );
-        Connect( wxEVT_LEFT_DOWN, wxMouseEventHandler( NET_SELECTOR_COMBOPOPUP::onMouseClick ), NULL, this );
-        m_listBox->Connect( wxEVT_LEFT_DOWN, wxMouseEventHandler( NET_SELECTOR_COMBOPOPUP::onMouseClick ), NULL, this );
-        m_filterCtrl->Connect( wxEVT_TEXT, wxCommandEventHandler( NET_SELECTOR_COMBOPOPUP::onFilterEdit ), NULL, this );
-        m_filterCtrl->Connect( wxEVT_TEXT_ENTER, wxCommandEventHandler( NET_SELECTOR_COMBOPOPUP::onEnter ), NULL, this );
+        Connect( wxEVT_IDLE, wxIdleEventHandler( NET_SELECTOR_COMBOPOPUP::onIdle ), nullptr, this );
+        Connect( wxEVT_CHAR_HOOK, wxKeyEventHandler( NET_SELECTOR_COMBOPOPUP::onKeyDown ), nullptr, this );
+        Connect( wxEVT_LEFT_DOWN, wxMouseEventHandler( NET_SELECTOR_COMBOPOPUP::onMouseClick ), nullptr, this );
+        m_listBox->Connect( wxEVT_LEFT_DOWN, wxMouseEventHandler( NET_SELECTOR_COMBOPOPUP::onMouseClick ), nullptr, this );
+        m_filterCtrl->Connect( wxEVT_TEXT, wxCommandEventHandler( NET_SELECTOR_COMBOPOPUP::onFilterEdit ), nullptr, this );
+        m_filterCtrl->Connect( wxEVT_TEXT_ENTER, wxCommandEventHandler( NET_SELECTOR_COMBOPOPUP::onEnter ), nullptr, this );
 
         // <enter> in a ListBox comes in as a double-click on GTK
-        m_listBox->Connect( wxEVT_COMMAND_LISTBOX_DOUBLECLICKED, wxCommandEventHandler( NET_SELECTOR_COMBOPOPUP::onEnter ), NULL, this );
+        m_listBox->Connect( wxEVT_COMMAND_LISTBOX_DOUBLECLICKED, wxCommandEventHandler( NET_SELECTOR_COMBOPOPUP::onEnter ), nullptr, this );
 
         return true;
     }
@@ -305,8 +312,8 @@ protected:
     void rebuildList()
     {
         wxArrayString netNames;
-        wxString      netstring = m_filterCtrl->GetValue().MakeLower();
-        wxString      filter = netstring;
+        wxString      netstring = m_filterCtrl->GetValue().Trim().Trim( false );
+        wxString      filter = netstring.Lower();
 
         m_unescapedNetNameMap.clear();
 
@@ -333,10 +340,10 @@ protected:
         if( filter.IsEmpty() || wxString( NO_NET ).MakeLower().Matches( filter ) )
             netNames.insert( netNames.begin(), NO_NET );
 
-        if( !filter.IsEmpty() && netNames.IsEmpty() )
+        if( !filter.IsEmpty() && !m_netinfoList->GetNetItem( netstring ) )
         {
             wxString newnet = wxString::Format( "%s: %s", CREATE_NET, netstring );
-            netNames.insert( netNames.begin(), newnet );
+            netNames.insert( netNames.end(), newnet );
         }
 
         if( !m_indeterminateLabel.IsEmpty() )
@@ -548,13 +555,13 @@ NET_SELECTOR::NET_SELECTOR( wxWindow *parent, wxWindowID id, const wxPoint &pos,
     m_netSelectorPopup = new NET_SELECTOR_COMBOPOPUP();
     SetPopupControl( m_netSelectorPopup );
 
-    Connect( wxEVT_CHAR_HOOK, wxKeyEventHandler( NET_SELECTOR::onKeyDown ), NULL, this );
+    Connect( wxEVT_CHAR_HOOK, wxKeyEventHandler( NET_SELECTOR::onKeyDown ), nullptr, this );
 }
 
 
 NET_SELECTOR::~NET_SELECTOR()
 {
-    Disconnect( wxEVT_CHAR_HOOK, wxKeyEventHandler( NET_SELECTOR::onKeyDown ), NULL, this );
+    Disconnect( wxEVT_CHAR_HOOK, wxKeyEventHandler( NET_SELECTOR::onKeyDown ), nullptr, this );
 }
 
 

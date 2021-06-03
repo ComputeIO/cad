@@ -55,6 +55,8 @@ Load() TODO's
 #include <wx/string.h>
 #include <wx/xml/xml.h>
 #include <wx/filename.h>
+#include <wx/log.h>
+#include <wx/wfstream.h>
 
 #include <convert_basic_shapes_to_polygon.h>
 #include <core/arraydim.h>
@@ -327,11 +329,12 @@ BOARD* EAGLE_PLUGIN::Load( const wxString& aFileName, BOARD* aAppendToMe,
 
     try
     {
-        // Load the document
-        wxXmlDocument xmlDocument;
         wxFileName fn = aFileName;
+        // Load the document
+        wxFFileInputStream stream( fn.GetFullPath() );
+        wxXmlDocument xmlDocument;
 
-        if( !xmlDocument.Load( fn.GetFullPath() ) )
+        if( !stream.IsOk() || !xmlDocument.Load( stream ) )
         {
             THROW_IO_ERROR( wxString::Format( _( "Unable to read file \"%s\"" ),
                                               fn.GetFullPath() ) );
@@ -618,7 +621,7 @@ void EAGLE_PLUGIN::loadPlain( wxXmlNode* aGraphics )
                 {
                     wxPoint center = ConvertArcCenter( start, end, *w.curve );
 
-                    shape->SetShape( S_ARC );
+                    shape->SetShape( PCB_SHAPE_TYPE::ARC );
                     shape->SetStart( center );
                     shape->SetEnd( start );
                     shape->SetAngle( *w.curve * -10.0 ); // KiCad rotates the other way
@@ -696,42 +699,39 @@ void EAGLE_PLUGIN::loadPlain( wxXmlNode* aGraphics )
                 {
                 case ETEXT::CENTER:
                     // this was the default in pcbtxt's constructor
+                    pcbtxt->Align( TEXT_ATTRIBUTES::H_CENTER, TEXT_ATTRIBUTES::V_CENTER );
                     break;
 
                 case ETEXT::CENTER_LEFT:
-                    pcbtxt->SetHorizJustify( GR_TEXT_HJUSTIFY_LEFT );
+                    pcbtxt->Align( TEXT_ATTRIBUTES::H_LEFT, TEXT_ATTRIBUTES::V_CENTER );
                     break;
 
                 case ETEXT::CENTER_RIGHT:
-                    pcbtxt->SetHorizJustify( GR_TEXT_HJUSTIFY_RIGHT );
+                    pcbtxt->Align( TEXT_ATTRIBUTES::H_RIGHT, TEXT_ATTRIBUTES::V_CENTER );
                     break;
 
                 case ETEXT::TOP_CENTER:
-                    pcbtxt->SetVertJustify( GR_TEXT_VJUSTIFY_TOP );
+                    pcbtxt->Align( TEXT_ATTRIBUTES::H_CENTER, TEXT_ATTRIBUTES::V_TOP );
                     break;
 
                 case ETEXT::TOP_LEFT:
-                    pcbtxt->SetHorizJustify( GR_TEXT_HJUSTIFY_LEFT );
-                    pcbtxt->SetVertJustify( GR_TEXT_VJUSTIFY_TOP );
+                    pcbtxt->Align( TEXT_ATTRIBUTES::H_LEFT, TEXT_ATTRIBUTES::V_TOP );
                     break;
 
                 case ETEXT::TOP_RIGHT:
-                    pcbtxt->SetHorizJustify( GR_TEXT_HJUSTIFY_RIGHT );
-                    pcbtxt->SetVertJustify( GR_TEXT_VJUSTIFY_TOP );
+                    pcbtxt->Align( TEXT_ATTRIBUTES::H_RIGHT, TEXT_ATTRIBUTES::V_TOP );
                     break;
 
                 case ETEXT::BOTTOM_CENTER:
-                    pcbtxt->SetVertJustify( GR_TEXT_VJUSTIFY_BOTTOM );
+                    pcbtxt->Align( TEXT_ATTRIBUTES::H_CENTER, TEXT_ATTRIBUTES::V_BOTTOM );
                     break;
 
                 case ETEXT::BOTTOM_LEFT:
-                    pcbtxt->SetHorizJustify( GR_TEXT_HJUSTIFY_LEFT );
-                    pcbtxt->SetVertJustify( GR_TEXT_VJUSTIFY_BOTTOM );
+                    pcbtxt->Align( TEXT_ATTRIBUTES::H_LEFT, TEXT_ATTRIBUTES::V_BOTTOM );
                     break;
 
                 case ETEXT::BOTTOM_RIGHT:
-                    pcbtxt->SetHorizJustify( GR_TEXT_HJUSTIFY_RIGHT );
-                    pcbtxt->SetVertJustify( GR_TEXT_VJUSTIFY_BOTTOM );
+                    pcbtxt->Align( TEXT_ATTRIBUTES::H_RIGHT, TEXT_ATTRIBUTES::V_BOTTOM );
                     break;
                 }
             }
@@ -788,7 +788,7 @@ void EAGLE_PLUGIN::loadPlain( wxXmlNode* aGraphics )
                     PCB_SHAPE* shape = new PCB_SHAPE( m_board );
                     m_board->Add( shape, ADD_MODE::APPEND );
 
-                    shape->SetShape( S_CIRCLE );
+                    shape->SetShape( PCB_SHAPE_TYPE::CIRCLE );
                     shape->SetFilled( false );
                     shape->SetLayer( layer );
                     shape->SetStart( wxPoint( kicad_x( c.x ), kicad_y( c.y ) ) );
@@ -838,7 +838,7 @@ void EAGLE_PLUGIN::loadPlain( wxXmlNode* aGraphics )
         {
             m_xpath->push( "hole" );
 
-            // Fabricate a FOOTPRINT with a single PAD_ATTRIB_NPTH pad.
+            // Fabricate a FOOTPRINT with a single PAD_ATTRIB::NPTH pad.
             // Use m_hole_count to gen up a unique name.
 
             FOOTPRINT* footprint = new FOOTPRINT( m_board );
@@ -1498,41 +1498,37 @@ void EAGLE_PLUGIN::orientFPText( FOOTPRINT* aFootprint, const EELEMENT& e, FP_TE
         switch( align )
         {
         case ETEXT::TOP_RIGHT:
-            aFPText->SetHorizJustify( GR_TEXT_HJUSTIFY_RIGHT );
-            aFPText->SetVertJustify( GR_TEXT_VJUSTIFY_TOP );
+            aFPText->Align( TEXT_ATTRIBUTES::H_RIGHT, TEXT_ATTRIBUTES::V_TOP );
             break;
 
         case ETEXT::BOTTOM_LEFT:
-            aFPText->SetHorizJustify( GR_TEXT_HJUSTIFY_LEFT );
-            aFPText->SetVertJustify( GR_TEXT_VJUSTIFY_BOTTOM );
+            aFPText->Align( TEXT_ATTRIBUTES::H_LEFT, TEXT_ATTRIBUTES::V_BOTTOM );
             break;
 
         case ETEXT::TOP_LEFT:
-            aFPText->SetHorizJustify( GR_TEXT_HJUSTIFY_LEFT );
-            aFPText->SetVertJustify( GR_TEXT_VJUSTIFY_TOP );
+            aFPText->Align( TEXT_ATTRIBUTES::H_LEFT, TEXT_ATTRIBUTES::V_TOP );
             break;
 
         case ETEXT::BOTTOM_RIGHT:
-            aFPText->SetHorizJustify( GR_TEXT_HJUSTIFY_RIGHT );
-            aFPText->SetVertJustify( GR_TEXT_VJUSTIFY_BOTTOM );
+            aFPText->Align( TEXT_ATTRIBUTES::H_RIGHT, TEXT_ATTRIBUTES::V_BOTTOM );
             break;
 
         case ETEXT::TOP_CENTER:
-            aFPText->SetHorizJustify( GR_TEXT_HJUSTIFY_CENTER );
-            aFPText->SetVertJustify( GR_TEXT_VJUSTIFY_TOP );
+            aFPText->Align( TEXT_ATTRIBUTES::H_CENTER, TEXT_ATTRIBUTES::V_TOP );
             break;
 
         case ETEXT::BOTTOM_CENTER:
-            aFPText->SetHorizJustify( GR_TEXT_HJUSTIFY_CENTER );
-            aFPText->SetVertJustify( GR_TEXT_VJUSTIFY_BOTTOM );
+            aFPText->Align( TEXT_ATTRIBUTES::H_CENTER, TEXT_ATTRIBUTES::V_BOTTOM );
             break;
 
         default:
-            ;
+            break; // TODO? aFPText->Align( TEXT_ATTRIBUTES::H_CENTER, TEXT_ATTRIBUTES::V_CENTER );
         }
     }
-    else    // Part is not smash so use Lib default for NAME/VALUE // the text is per the original package, sans <attribute>
+    else
     {
+        // Part is not smash so use Lib default for NAME/VALUE
+        // the text is per the original package, sans <attribute>
         double degrees = ( aFPText->GetTextAngle() + aFootprint->GetOrientation() ) / 10;
 
         // @todo there are a few more cases than these to contend with:
@@ -1540,8 +1536,7 @@ void EAGLE_PLUGIN::orientFPText( FOOTPRINT* aFootprint, const EELEMENT& e, FP_TE
          || ( aFPText->IsMirrored() && ( degrees == 360 ) ) )
         {
             // ETEXT::TOP_RIGHT:
-            aFPText->SetHorizJustify( GR_TEXT_HJUSTIFY_RIGHT );
-            aFPText->SetVertJustify( GR_TEXT_VJUSTIFY_TOP );
+            aFPText->Align( TEXT_ATTRIBUTES::H_RIGHT, TEXT_ATTRIBUTES::V_TOP );
         }
     }
 }
@@ -1647,14 +1642,14 @@ void EAGLE_PLUGIN::packageWire( FOOTPRINT* aFootprint, wxXmlNode* aTree ) const
 
     if( !w.curve )
     {
-        dwg = new FP_SHAPE( aFootprint, S_SEGMENT );
+        dwg = new FP_SHAPE( aFootprint, PCB_SHAPE_TYPE::SEGMENT );
 
         dwg->SetStart0( start );
         dwg->SetEnd0( end );
     }
     else
     {
-        dwg = new FP_SHAPE( aFootprint, S_ARC );
+        dwg = new FP_SHAPE( aFootprint, PCB_SHAPE_TYPE::ARC );
         wxPoint center = ConvertArcCenter( start, end, *w.curve );
 
         dwg->SetStart0( center );
@@ -1706,28 +1701,28 @@ void EAGLE_PLUGIN::packagePad( FOOTPRINT* aFootprint, wxXmlNode* aTree )
         switch( *e.shape )
         {
         case EPAD::ROUND:
-            pad->SetShape( PAD_SHAPE_CIRCLE );
+            pad->SetShape( PAD_SHAPE::CIRCLE );
             break;
 
         case EPAD::OCTAGON:
             // no KiCad octagonal pad shape, use PAD_CIRCLE for now.
             // pad->SetShape( PAD_OCTAGON );
-            wxASSERT( pad->GetShape() == PAD_SHAPE_CIRCLE );    // verify set in PAD constructor
-            pad->SetShape( PAD_SHAPE_CHAMFERED_RECT );
+            wxASSERT( pad->GetShape() == PAD_SHAPE::CIRCLE );    // verify set in PAD constructor
+            pad->SetShape( PAD_SHAPE::CHAMFERED_RECT );
             pad->SetChamferPositions( RECT_CHAMFER_ALL );
             pad->SetChamferRectRatio( 0.25 );
             break;
 
         case EPAD::LONG:
-            pad->SetShape( PAD_SHAPE_OVAL );
+            pad->SetShape( PAD_SHAPE::OVAL );
             break;
 
         case EPAD::SQUARE:
-            pad->SetShape( PAD_SHAPE_RECT );
+            pad->SetShape( PAD_SHAPE::RECT );
             break;
 
         case EPAD::OFFSET:
-            pad->SetShape( PAD_SHAPE_OVAL );
+            pad->SetShape( PAD_SHAPE::OVAL );
             break;
         }
     }
@@ -1750,7 +1745,7 @@ void EAGLE_PLUGIN::packagePad( FOOTPRINT* aFootprint, wxXmlNode* aTree )
         pad->SetSize( wxSize( KiROUND( diameter ), KiROUND( diameter ) ) );
     }
 
-    if( pad->GetShape() == PAD_SHAPE_OVAL )
+    if( pad->GetShape() == PAD_SHAPE::OVAL )
     {
         // The Eagle "long" pad is wider than it is tall,
         // m_elongation is percent elongation
@@ -1842,42 +1837,39 @@ void EAGLE_PLUGIN::packageText( FOOTPRINT* aFootprint, wxXmlNode* aTree ) const
     {
     case ETEXT::CENTER:
         // this was the default in pcbtxt's constructor
+        txt->Align( TEXT_ATTRIBUTES::H_CENTER, TEXT_ATTRIBUTES::V_CENTER );
         break;
 
     case ETEXT::CENTER_LEFT:
-        txt->SetHorizJustify( GR_TEXT_HJUSTIFY_LEFT );
+        txt->Align( TEXT_ATTRIBUTES::H_LEFT, TEXT_ATTRIBUTES::V_CENTER );
         break;
 
     case ETEXT::CENTER_RIGHT:
-        txt->SetHorizJustify( GR_TEXT_HJUSTIFY_RIGHT );
+        txt->Align( TEXT_ATTRIBUTES::H_RIGHT, TEXT_ATTRIBUTES::V_CENTER );
         break;
 
     case ETEXT::TOP_CENTER:
-        txt->SetVertJustify( GR_TEXT_VJUSTIFY_TOP );
+        txt->Align( TEXT_ATTRIBUTES::H_CENTER, TEXT_ATTRIBUTES::V_TOP );
         break;
 
     case ETEXT::TOP_LEFT:
-        txt->SetHorizJustify( GR_TEXT_HJUSTIFY_LEFT );
-        txt->SetVertJustify( GR_TEXT_VJUSTIFY_TOP );
+        txt->Align( TEXT_ATTRIBUTES::H_LEFT, TEXT_ATTRIBUTES::V_TOP );
         break;
 
     case ETEXT::TOP_RIGHT:
-        txt->SetHorizJustify( GR_TEXT_HJUSTIFY_RIGHT );
-        txt->SetVertJustify( GR_TEXT_VJUSTIFY_TOP );
+        txt->Align( TEXT_ATTRIBUTES::H_RIGHT, TEXT_ATTRIBUTES::V_TOP );
         break;
 
     case ETEXT::BOTTOM_CENTER:
-        txt->SetVertJustify( GR_TEXT_VJUSTIFY_BOTTOM );
+        txt->Align( TEXT_ATTRIBUTES::H_CENTER, TEXT_ATTRIBUTES::V_BOTTOM );
         break;
 
     case ETEXT::BOTTOM_LEFT:
-        txt->SetHorizJustify( GR_TEXT_HJUSTIFY_LEFT );
-        txt->SetVertJustify( GR_TEXT_VJUSTIFY_BOTTOM );
+        txt->Align( TEXT_ATTRIBUTES::H_LEFT, TEXT_ATTRIBUTES::V_BOTTOM );
         break;
 
     case ETEXT::BOTTOM_RIGHT:
-        txt->SetHorizJustify( GR_TEXT_HJUSTIFY_RIGHT );
-        txt->SetVertJustify( GR_TEXT_VJUSTIFY_BOTTOM );
+        txt->Align( TEXT_ATTRIBUTES::H_RIGHT, TEXT_ATTRIBUTES::V_BOTTOM );
         break;
     }
 }
@@ -1924,7 +1916,7 @@ void EAGLE_PLUGIN::packageRectangle( FOOTPRINT* aFootprint, wxXmlNode* aTree ) c
             return;
         }
 
-        FP_SHAPE* dwg = new FP_SHAPE( aFootprint, S_POLYGON );
+        FP_SHAPE* dwg = new FP_SHAPE( aFootprint, PCB_SHAPE_TYPE::POLYGON );
 
         aFootprint->Add( dwg );
 
@@ -2039,7 +2031,7 @@ void EAGLE_PLUGIN::packagePolygon( FOOTPRINT* aFootprint, wxXmlNode* aTree ) con
             return;
         }
 
-        FP_SHAPE* dwg = new FP_SHAPE( aFootprint, S_POLYGON );
+        FP_SHAPE* dwg = new FP_SHAPE( aFootprint, PCB_SHAPE_TYPE::POLYGON );
 
         aFootprint->Add( dwg );
 
@@ -2109,7 +2101,7 @@ void EAGLE_PLUGIN::packageCircle( FOOTPRINT* aFootprint, wxXmlNode* aTree ) cons
             return;
         }
 
-        FP_SHAPE* gr = new FP_SHAPE( aFootprint, S_CIRCLE );
+        FP_SHAPE* gr = new FP_SHAPE( aFootprint, PCB_SHAPE_TYPE::CIRCLE );
 
         // with == 0 means filled circle
         if( width <= 0 )
@@ -2142,12 +2134,12 @@ void EAGLE_PLUGIN::packageHole( FOOTPRINT* aFootprint, wxXmlNode* aTree, bool aC
 {
     EHOLE   e( aTree );
 
-    // we add a PAD_ATTRIB_NPTH pad to this footprint.
+    // we add a PAD_ATTRIB::NPTH pad to this footprint.
     PAD* pad = new PAD( aFootprint );
     aFootprint->Add( pad );
 
-    pad->SetShape( PAD_SHAPE_CIRCLE );
-    pad->SetAttribute( PAD_ATTRIB_NPTH );
+    pad->SetShape( PAD_SHAPE::CIRCLE );
+    pad->SetAttribute( PAD_ATTRIB::NPTH );
 
     // Mechanical purpose only:
     // no offset, no net name, no pad name allowed
@@ -2189,8 +2181,8 @@ void EAGLE_PLUGIN::packageSMD( FOOTPRINT* aFootprint, wxXmlNode* aTree ) const
     aFootprint->Add( pad );
     transferPad( e, pad );
 
-    pad->SetShape( PAD_SHAPE_RECT );
-    pad->SetAttribute( PAD_ATTRIB_SMD );
+    pad->SetShape( PAD_SHAPE::RECT );
+    pad->SetAttribute( PAD_ATTRIB::SMD );
 
     wxSize padSize( e.dx.ToPcbUnits(), e.dy.ToPcbUnits() );
     pad->SetSize( padSize );
@@ -2218,7 +2210,7 @@ void EAGLE_PLUGIN::packageSMD( FOOTPRINT* aFootprint, wxXmlNode* aTree ) const
         if( e.roundness )
             roundRatio = std::fmax( *e.roundness / 200.0, roundRatio );
 
-        pad->SetShape( PAD_SHAPE_ROUNDRECT );
+        pad->SetShape( PAD_SHAPE::ROUNDRECT );
         pad->SetRoundRectRadiusRatio( roundRatio );
     }
 
@@ -2772,10 +2764,11 @@ void EAGLE_PLUGIN::cacheLib( const wxString& aLibPath )
             string filename = (const char*) aLibPath.char_str( wxConvFile );
 
             // Load the document
-            wxXmlDocument xmlDocument;
             wxFileName fn( filename );
+            wxFFileInputStream stream( fn.GetFullPath() );
+            wxXmlDocument xmlDocument;
 
-            if( !xmlDocument.Load( fn.GetFullPath() ) )
+            if( !stream.IsOk() || !xmlDocument.Load( stream ) )
                 THROW_IO_ERROR( wxString::Format( _( "Unable to read file \"%s\"" ),
                                                   fn.GetFullPath() ) );
 

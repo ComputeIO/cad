@@ -165,7 +165,23 @@ bool DRC_TEST_PROVIDER_COPPER_CLEARANCE::Run()
                 if( !reportProgress( ii++, count, delta ) )
                     return false;
 
-                m_copperTree.Insert( item, m_largestClearance );
+                LSET layers = item->GetLayerSet();
+
+                // Special-case pad holes which pierce all the copper layers
+                if( item->Type() == PCB_PAD_T )
+                {
+                    PAD* pad = static_cast<PAD*>( item );
+
+                    if( pad->GetDrillSizeX() > 0 && pad->GetDrillSizeY() > 0 )
+                        layers |= LSET::AllCuMask();
+                }
+
+                for( PCB_LAYER_ID layer : layers.Seq() )
+                {
+                    if( IsCopperLayer( layer ) )
+                        m_copperTree.Insert( item, layer, m_largestClearance );
+                }
+
                 return true;
             };
 
@@ -250,7 +266,7 @@ bool DRC_TEST_PROVIDER_COPPER_CLEARANCE::testTrackAgainstItem( TRACK* track, SHA
     {
         PAD* pad = static_cast<PAD*>( other );
 
-        if( pad->GetAttribute() == PAD_ATTRIB_NPTH && !pad->FlashLayer( layer ) )
+        if( pad->GetAttribute() == PAD_ATTRIB::NPTH && !pad->FlashLayer( layer ) )
             testClearance = false;
     }
 
@@ -400,7 +416,7 @@ void DRC_TEST_PROVIDER_COPPER_CLEARANCE::testItemAgainstZones( BOARD_ITEM* aItem
 
                     // Note: drill size represents finish size, which means the actual hole
                     // size is the plating thickness larger.
-                    if( pad->GetAttribute() == PAD_ATTRIB_PTH )
+                    if( pad->GetAttribute() == PAD_ATTRIB::PTH )
                         size += m_board->GetDesignSettings().GetHolePlatingThickness();
 
                     itemShape = std::make_shared<SHAPE_SEGMENT>( hole->GetSeg(), size );
@@ -500,18 +516,21 @@ bool DRC_TEST_PROVIDER_COPPER_CLEARANCE::testPadAgainstItem( PAD* pad, SHAPE* pa
     bool testShorting = !m_drcEngine->IsErrorLimitExceeded( DRCE_SHORTING_ITEMS );
     bool testHoles = !m_drcEngine->IsErrorLimitExceeded( DRCE_HOLE_CLEARANCE );
 
-    FOOTPRINT* padParent = static_cast<FOOTPRINT*>( pad->GetParent() );
-    bool       isNetTie = padParent->IsNetTie();
-
-    // Graphic items are allowed to act as net-ties within their own footprint
-    if( isNetTie
-            && ( other->Type() == PCB_FP_SHAPE_T || other->Type() == PCB_PAD_T )
-            && other->GetParent() == padParent )
+    // Disable some tests *within* a single footprint
+    if( other->GetParent() == pad->GetParent() )
     {
-        testClearance = false;
+        FOOTPRINT* fp = static_cast<FOOTPRINT*>( pad->GetParent() );
+
+        // Graphic items are allowed to act as net-ties within their own footprint
+        if( fp->IsNetTie() && ( other->Type() == PCB_FP_SHAPE_T || other->Type() == PCB_PAD_T ) )
+            testClearance = false;
+
+        // No hole testing within a footprint
+        testHoles = false;
     }
 
-    if( pad->GetAttribute() == PAD_ATTRIB_NPTH && !pad->FlashLayer( layer ) )
+    // A NPTH has no cylinder, but it may still have pads on some layers
+    if( pad->GetAttribute() == PAD_ATTRIB::NPTH && !pad->FlashLayer( layer ) )
         testClearance = false;
 
     if( !IsCopperLayer( layer ) )
@@ -609,7 +628,7 @@ bool DRC_TEST_PROVIDER_COPPER_CLEARANCE::testPadAgainstItem( PAD* pad, SHAPE* pa
         if( pad->GetNetCode() && otherPad->GetNetCode() == pad->GetNetCode() )
             testClearance = false;
 
-        if( otherPad->GetAttribute() == PAD_ATTRIB_NPTH && !otherPad->FlashLayer( layer ) )
+        if( otherPad->GetAttribute() == PAD_ATTRIB::NPTH && !otherPad->FlashLayer( layer ) )
             testClearance = false;
     }
 

@@ -137,11 +137,18 @@ protected:
 
     VECTOR2I getSnappedStartPoint( LINKED_ITEM* aStartItem, VECTOR2I aStartPoint );
 
+    /**
+     * Calculate the total length of the line represented by an item set (tracks and vias)
+     * @param aLine
+     * @return
+     */
+    long long int lineLength( const ITEM_SET& aLine ) const;
+
     ///< Pointer to world to search colliding items.
     NODE* m_world;
 
     ///< Total length added by pad to die size.
-    int m_padToDieLenth;
+    int m_padToDieLength;
 
     ///< Width of the meandered trace(s).
     int m_currentWidth;

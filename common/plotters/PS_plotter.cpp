@@ -441,11 +441,11 @@ void PS_PLOTTER::SetViewport( const wxPoint& aOffset, double aIusPerDecimil,
  */
 void PSLIKE_PLOTTER::computeTextParameters( const wxPoint&           aPos,
                                             const wxString&          aText,
-                                            int                      aOrient,
+                                            const EDA_ANGLE&         aOrient,
                                             const wxSize&            aSize,
                                             bool                     aMirror,
-                                            enum EDA_TEXT_HJUSTIFY_T aH_justify,
-                                            enum EDA_TEXT_VJUSTIFY_T aV_justify,
+                                            TEXT_ATTRIBUTES::HORIZONTAL_ALIGNMENT aHorizontalAlignment,
+                                            TEXT_ATTRIBUTES::VERTICAL_ALIGNMENT   aVerticalAlignment,
                                             int                      aWidth,
                                             bool                     aItalic,
                                             bool                     aBold,
@@ -458,6 +458,12 @@ void PSLIKE_PLOTTER::computeTextParameters( const wxPoint&           aPos,
                                             double                   *ctm_f,
                                             double                   *heightFactor )
 {
+#ifdef DEBUG
+    std::cerr << "PSLIKE_PLOTTER::computeTextParameters( " << aPos << ", \"" << aText << "\", "
+              << aOrient << ", " << aSize.x << ";" << aSize.y << ", " << ( aMirror ? "t" : "f" )
+              << ", " << aWidth << ", " << ( aItalic ? "t" : "f" ) << ", " << ( aBold ? "t" : "f" )
+              << ", ... )\n";
+#endif
     // Compute the starting position (compensated for alignment)
     wxPoint start_pos = aPos;
 
@@ -466,42 +472,29 @@ void PSLIKE_PLOTTER::computeTextParameters( const wxPoint&           aPos,
     int th = aSize.y;
     int dx, dy;
 
-    switch( aH_justify )
+    switch( aHorizontalAlignment )
     {
-    case GR_TEXT_HJUSTIFY_CENTER:
-        dx = -tw / 2;
-        break;
-
-    case GR_TEXT_HJUSTIFY_RIGHT:
-        dx = -tw;
-        break;
-
-    case GR_TEXT_HJUSTIFY_LEFT:
-        dx = 0;
-        break;
+    case TEXT_ATTRIBUTES::H_CENTER: dx = -tw / 2; break;
+    case TEXT_ATTRIBUTES::H_RIGHT: dx = -tw; break;
+    case TEXT_ATTRIBUTES::H_LEFT: dx = 0; break;
     }
 
-    switch( aV_justify )
+    switch( aVerticalAlignment )
     {
-    case GR_TEXT_VJUSTIFY_CENTER:
-        dy = th / 2;
-        break;
-
-    case GR_TEXT_VJUSTIFY_TOP:
-        dy = th;
-        break;
-
-    case GR_TEXT_VJUSTIFY_BOTTOM:
-        dy = 0;
-        break;
+    case TEXT_ATTRIBUTES::V_CENTER: dy = th / 2; break;
+    case TEXT_ATTRIBUTES::V_TOP: dy = th; break;
+    case TEXT_ATTRIBUTES::V_BOTTOM: dy = 0; break;
     }
 
-    RotatePoint( &dx, &dy, aOrient );
-    RotatePoint( &tw, &th, aOrient );
+    RotatePoint( &dx, &dy, aOrient.AsTenthsOfADegree() );
+    RotatePoint( &tw, &th, aOrient.AsTenthsOfADegree() );
     start_pos.x += dx;
     start_pos.y += dy;
     DPOINT pos_dev = userToDeviceCoordinates( start_pos );
     DPOINT sz_dev = userToDeviceSize( aSize );
+#ifdef DEBUG
+    std::cerr << "sz_dev.x " << sz_dev.x << " .y " << sz_dev.y << std::endl;
+#endif
 
     // Now returns the final values... the widening factor
     *wideningFactor = sz_dev.x / sz_dev.y;
@@ -510,11 +503,10 @@ void PSLIKE_PLOTTER::computeTextParameters( const wxPoint&           aPos,
     if( m_plotMirror )
     {
         *wideningFactor = -*wideningFactor;
-        aOrient = -aOrient;
     }
 
     // The CTM transformation matrix
-    double alpha = DECIDEG2RAD( aOrient );
+    double alpha = m_plotMirror ? aOrient.Invert().AsRadians() : aOrient.AsRadians();
     double sinalpha = sin( alpha );
     double cosalpha = cos( alpha );
 
@@ -997,10 +989,10 @@ bool PS_PLOTTER::EndPlot()
 void PS_PLOTTER::Text( const wxPoint&              aPos,
                        const COLOR4D               aColor,
                        const wxString&             aText,
-                       double                      aOrient,
+                       const EDA_ANGLE&            aOrient,
                        const wxSize&               aSize,
-                       enum EDA_TEXT_HJUSTIFY_T    aH_justify,
-                       enum EDA_TEXT_VJUSTIFY_T    aV_justify,
+                       TEXT_ATTRIBUTES::HORIZONTAL_ALIGNMENT aHorizontalAlignment,
+                       TEXT_ATTRIBUTES::VERTICAL_ALIGNMENT   aVerticalAlignment,
                        int                         aWidth,
                        bool                        aItalic,
                        bool                        aBold,
@@ -1019,8 +1011,8 @@ void PS_PLOTTER::Text( const wxPoint&              aPos,
         fprintf( m_outputFile, "%s %g %g phantomshow\n", ps_test.c_str(), pos_dev.x, pos_dev.y );
     }
 
-    PLOTTER::Text( aPos, aColor, aText, aOrient, aSize, aH_justify, aV_justify, aWidth,
-                   aItalic, aBold, aMultilineAllowed, aFont, aData );
+    PLOTTER::Text( aPos, aColor, aText, aOrient, aSize, aHorizontalAlignment, aVerticalAlignment,
+                   aWidth, aItalic, aBold, aMultilineAllowed, aFont, aData );
 }
 
 

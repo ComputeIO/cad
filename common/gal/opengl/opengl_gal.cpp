@@ -50,10 +50,10 @@
 
 #include <macros.h>
 
-#ifdef __WXDEBUG__
+#ifdef KICAD_GAL_PROFILE
 #include <profile.h>
 #include <wx/log.h>
-#endif /* __WXDEBUG__ */
+#endif /* KICAD_GAL_PROFILE */
 
 #include <functional>
 #include <limits>
@@ -68,7 +68,7 @@ using namespace KIGFX;
 // and the schematic is a hierarchy and when using cross-probing
 // When the cross probing from pcbnew to eeschema switches to a sheet, the bitmaps cache
 // becomes broken (in fact the associated texture).
-// I hope (JPC) it will be fixed later, but a slighty slower refresh is better than a crash
+// I hope (JPC) it will be fixed later, but a slightly slower refresh is better than a crash
 #define DISABLE_BITMAP_CACHE
 
 // The current font is "Ubuntu Mono" available under Ubuntu Font Licence 1.0
@@ -200,16 +200,10 @@ OPENGL_GAL::OPENGL_GAL( GAL_DISPLAY_OPTIONS& aDisplayOptions, wxWindow* aParent,
         GAL( aDisplayOptions ),
         HIDPI_GL_CANVAS( aParent, wxID_ANY, (int*) glAttributes, wxDefaultPosition, wxDefaultSize,
                          wxEXPAND, aName ),
-        m_mouseListener( aMouseListener ),
-        m_paintListener( aPaintListener ),
-        m_currentManager( nullptr ),
-        m_cachedManager( nullptr ),
-        m_nonCachedManager( nullptr ),
-        m_overlayManager( nullptr ),
-        m_mainBuffer( 0 ),
-        m_overlayBuffer( 0 ),
-        m_isContextLocked( false ),
-        m_lockClientCookie( 0 )
+        m_mouseListener( aMouseListener ), m_paintListener( aPaintListener ),
+        m_currentManager( nullptr ), m_cachedManager( nullptr ), m_nonCachedManager( nullptr ),
+        m_overlayManager( nullptr ), m_mainBuffer( 0 ), m_overlayBuffer( 0 ),
+        m_isContextLocked( false ), m_lockClientCookie( 0 )
 {
     if( m_glMainContext == NULL )
     {
@@ -236,6 +230,10 @@ OPENGL_GAL::OPENGL_GAL( GAL_DISPLAY_OPTIONS& aDisplayOptions, wxWindow* aParent,
     m_isInitialized = false;
     m_isGrouping = false;
     m_groupCounter = 0;
+
+    // Connect the native cursor handler
+    Connect( wxEVT_SET_CURSOR, wxSetCursorEventHandler( OPENGL_GAL::onSetNativeCursor ), NULL,
+             this );
 
     // Connecting the event handlers
     Connect( wxEVT_PAINT, wxPaintEventHandler( OPENGL_GAL::onPaint ) );
@@ -403,15 +401,16 @@ double OPENGL_GAL::getWorldPixelSize() const
 VECTOR2D OPENGL_GAL::getScreenPixelSize() const
 {
     double sf = GetScaleFactor();
-    return VECTOR2D( 2.0 / (double) ( m_screenSize.x * sf ), 2.0 / (double) ( m_screenSize.y * sf ) );
+    return VECTOR2D( 2.0 / (double) ( m_screenSize.x * sf ),
+                     2.0 / (double) ( m_screenSize.y * sf ) );
 }
 
 
 void OPENGL_GAL::beginDrawing()
 {
-#ifdef __WXDEBUG__
+#ifdef KICAD_GAL_PROFILE
     PROF_COUNTER totalRealTime( "OPENGL_GAL::beginDrawing()", true );
-#endif /* __WXDEBUG__ */
+#endif /* KICAD_GAL_PROFILE */
 
     wxASSERT_MSG( m_isContextLocked, "GAL_DRAWING_CONTEXT RAII object should have locked context. "
                                      "Calling GAL::beginDrawing() directly is not allowed." );
@@ -428,8 +427,8 @@ void OPENGL_GAL::beginDrawing()
     glLoadIdentity();
 
     // Create the screen transformation (Do the RH-LH conversion here)
-    glOrtho( 0, (GLint) m_screenSize.x, (GLsizei) m_screenSize.y, 0,
-             -m_depthRange.x, -m_depthRange.y );
+    glOrtho( 0, (GLint) m_screenSize.x, (GLsizei) m_screenSize.y, 0, -m_depthRange.x,
+             -m_depthRange.y );
 
     if( !m_isFramebufferInitialized )
     {
@@ -550,11 +549,11 @@ void OPENGL_GAL::beginDrawing()
     // Unbind buffers - set compositor for direct drawing
     m_compositor->SetBuffer( OPENGL_COMPOSITOR::DIRECT_RENDERING );
 
-#ifdef __WXDEBUG__
+#ifdef KICAD_GAL_PROFILE
     totalRealTime.Stop();
     wxLogTrace( traceGalProfile, wxT( "OPENGL_GAL::beginDrawing(): %.1f ms" ),
                 totalRealTime.msecs() );
-#endif /* __WXDEBUG__ */
+#endif /* KICAD_GAL_PROFILE */
 }
 
 
@@ -562,9 +561,9 @@ void OPENGL_GAL::endDrawing()
 {
     wxASSERT_MSG( m_isContextLocked, "What happened to the context lock?" );
 
-#ifdef __WXDEBUG__
+#ifdef KICAD_GAL_PROFILE
     PROF_COUNTER totalRealTime( "OPENGL_GAL::endDrawing()", true );
-#endif /* __WXDEBUG__ */
+#endif /* KICAD_GAL_PROFILE */
 
     // Cached & non-cached containers are rendered to the same buffer
     m_compositor->SetBuffer( m_mainBuffer );
@@ -591,11 +590,11 @@ void OPENGL_GAL::endDrawing()
 
     SwapBuffers();
 
-#ifdef __WXDEBUG__
+#ifdef KICAD_GAL_PROFILE
     totalRealTime.Stop();
     wxLogTrace( traceGalProfile, wxT( "OPENGL_GAL::endDrawing(): %.1f ms" ),
                 totalRealTime.msecs() );
-#endif /* __WXDEBUG__ */
+#endif /* KICAD_GAL_PROFILE */
 }
 
 
@@ -614,8 +613,9 @@ void OPENGL_GAL::unlockContext( int aClientCookie )
     wxASSERT_MSG( m_isContextLocked, "Context not locked.  A GAL_CONTEXT_LOCKER RAII object must "
                                      "be stacked rather than making separate lock/unlock calls." );
 
-    wxASSERT_MSG( m_lockClientCookie == aClientCookie, "Context was locked by a different client. "
-                                                       "Should not be possible with RAII objects." );
+    wxASSERT_MSG( m_lockClientCookie == aClientCookie,
+                  "Context was locked by a different client. "
+                  "Should not be possible with RAII objects." );
 
     m_isContextLocked = false;
 
@@ -1260,37 +1260,34 @@ void OPENGL_GAL::BitmapText( const wxString& aText, const VECTOR2D& aPosition,
     m_currentManager->Scale( sx, sy, 0 );
     m_currentManager->Translate( 0, -commonOffset, 0 );
 
-    switch( GetHorizontalJustify() )
+    switch( GetHorizontalAlignment() )
     {
-    case GR_TEXT_HJUSTIFY_CENTER:
-        Translate( VECTOR2D( -textSize.x / 2.0, 0 ) );
-        break;
+    case TEXT_ATTRIBUTES::H_CENTER: Translate( VECTOR2D( -textSize.x / 2.0, 0 ) ); break;
 
-    case GR_TEXT_HJUSTIFY_RIGHT:
+    case TEXT_ATTRIBUTES::H_RIGHT:
         //if( !IsTextMirrored() )
         Translate( VECTOR2D( -textSize.x, 0 ) );
         break;
 
-    case GR_TEXT_HJUSTIFY_LEFT:
+    case TEXT_ATTRIBUTES::H_LEFT:
         //if( IsTextMirrored() )
         //Translate( VECTOR2D( -textSize.x, 0 ) );
         break;
     }
 
-    switch( GetVerticalJustify() )
+    switch( GetVerticalAlignment() )
     {
-    case GR_TEXT_VJUSTIFY_TOP:
+    case TEXT_ATTRIBUTES::V_TOP:
         Translate( VECTOR2D( 0, -textSize.y ) );
         overbarHeight = -textSize.y / 2.0;
         break;
 
-    case GR_TEXT_VJUSTIFY_CENTER:
+    case TEXT_ATTRIBUTES::V_CENTER:
         Translate( VECTOR2D( 0, -textSize.y / 2.0 ) );
         overbarHeight = 0;
         break;
 
-    case GR_TEXT_VJUSTIFY_BOTTOM:
-        break;
+    case TEXT_ATTRIBUTES::V_BOTTOM: break;
     }
 
     int i = 0;
@@ -1359,8 +1356,8 @@ void OPENGL_GAL::DrawGrid()
     m_nonCachedManager->EnableDepthTest( false );
 
     // sub-pixel lines all render the same
-    float minorLineWidth = std::fmax( 1.0f,
-                                      m_gridLineWidth ) * getWorldPixelSize() / GetScaleFactor();
+    float minorLineWidth =
+            std::fmax( 1.0f, m_gridLineWidth ) * getWorldPixelSize() / GetScaleFactor();
     float majorLineWidth = minorLineWidth * 2.0f;
 
     // Draw the axis and grid
@@ -1620,22 +1617,28 @@ void OPENGL_GAL::EndGroup()
 
 void OPENGL_GAL::DrawGroup( int aGroupNumber )
 {
-    if( m_groups[aGroupNumber] )
-        m_cachedManager->DrawItem( *m_groups[aGroupNumber] );
+    auto group = m_groups.find( aGroupNumber );
+
+    if( group != m_groups.end() )
+        m_cachedManager->DrawItem( *group->second );
 }
 
 
 void OPENGL_GAL::ChangeGroupColor( int aGroupNumber, const COLOR4D& aNewColor )
 {
-    if( m_groups[aGroupNumber] )
-        m_cachedManager->ChangeItemColor( *m_groups[aGroupNumber], aNewColor );
+    auto group = m_groups.find( aGroupNumber );
+
+    if( group != m_groups.end() )
+        m_cachedManager->ChangeItemColor( *group->second, aNewColor );
 }
 
 
 void OPENGL_GAL::ChangeGroupDepth( int aGroupNumber, int aDepth )
 {
-    if( m_groups[aGroupNumber] )
-        m_cachedManager->ChangeItemDepth( *m_groups[aGroupNumber], aDepth );
+    auto group = m_groups.find( aGroupNumber );
+
+    if( group != m_groups.end() )
+        m_cachedManager->ChangeItemDepth( *group->second, aDepth );
 }
 
 
@@ -1662,9 +1665,9 @@ void OPENGL_GAL::SetTarget( RENDER_TARGET aTarget )
     switch( aTarget )
     {
     default:
-    case TARGET_CACHED:    m_currentManager = m_cachedManager;    break;
+    case TARGET_CACHED: m_currentManager = m_cachedManager; break;
     case TARGET_NONCACHED: m_currentManager = m_nonCachedManager; break;
-    case TARGET_OVERLAY:   m_currentManager = m_overlayManager;   break;
+    case TARGET_OVERLAY: m_currentManager = m_overlayManager; break;
     }
 
     m_currentTarget = aTarget;
@@ -1687,9 +1690,7 @@ void OPENGL_GAL::ClearTarget( RENDER_TARGET aTarget )
     // Cached and noncached items are rendered to the same buffer
     default:
     case TARGET_CACHED:
-    case TARGET_NONCACHED:
-        m_compositor->SetBuffer( m_mainBuffer );
-        break;
+    case TARGET_NONCACHED: m_compositor->SetBuffer( m_mainBuffer ); break;
 
     case TARGET_OVERLAY:
         if( m_overlayBuffer )
@@ -1714,8 +1715,29 @@ bool OPENGL_GAL::HasTarget( RENDER_TARGET aTarget )
     default:
     case TARGET_CACHED:
     case TARGET_NONCACHED: return true;
-    case TARGET_OVERLAY:   return ( m_overlayBuffer != 0 );
+    case TARGET_OVERLAY: return ( m_overlayBuffer != 0 );
     }
+}
+
+
+bool OPENGL_GAL::SetNativeCursorStyle( KICURSOR aCursor )
+{
+    // Store the current cursor type and get the wxCursor for it
+    if( !GAL::SetNativeCursorStyle( aCursor ) )
+        return false;
+
+    m_currentwxCursor = CURSOR_STORE::GetCursor( m_currentNativeCursor );
+
+    // Update the cursor in the wx control
+    HIDPI_GL_CANVAS::SetCursor( m_currentwxCursor );
+
+    return true;
+}
+
+
+void OPENGL_GAL::onSetNativeCursor( wxSetCursorEvent& aEvent )
+{
+    aEvent.SetCursor( m_currentwxCursor );
 }
 
 
@@ -1748,8 +1770,8 @@ void OPENGL_GAL::drawLineQuad( const VECTOR2D& aStartPoint, const VECTOR2D& aEnd
 
     auto v1 = m_currentManager->GetTransformation()
               * glm::vec4( aStartPoint.x, aStartPoint.y, 0.0, 0.0 );
-    auto v2 = m_currentManager->GetTransformation()
-              * glm::vec4( aEndPoint.x, aEndPoint.y, 0.0, 0.0 );
+    auto v2 =
+            m_currentManager->GetTransformation() * glm::vec4( aEndPoint.x, aEndPoint.y, 0.0, 0.0 );
 
     VECTOR2D vs( v2.x - v1.x, v2.y - v1.y );
 
@@ -1902,14 +1924,16 @@ void OPENGL_GAL::drawPolyline( const std::function<VECTOR2D( int )>& aPointGette
     wxCHECK( aPointCount >= 2, /* return */ );
 
     m_currentManager->Color( m_strokeColor );
-    int i;
 
-    for( i = 1; i < aPointCount; ++i )
+    auto start = aPointGetter( 0 );
+
+    for( int i = 1; i < aPointCount; ++i )
     {
-        auto start = aPointGetter( i - 1 );
         auto end = aPointGetter( i );
 
         drawLineQuad( start, end );
+
+        start = end;
     }
 }
 
@@ -1934,7 +1958,7 @@ int OPENGL_GAL::drawBitmapChar( unsigned long aChar )
 
     const FONT_GLYPH_TYPE* glyph = LookupGlyph( aChar );
 
-    // If the glyph is not found (happens for many esotheric unicode chars)
+    // If the glyph is not found (happens for many esoteric unicode chars)
     // shows a '?' instead.
     if( !glyph )
         glyph = LookupGlyph( '?' );
@@ -2165,7 +2189,7 @@ void OPENGL_GAL::init()
 
     if( m_tesselator == NULL )
         throw std::runtime_error( "Could not create the m_tesselator" );
-    // End initialzation checks
+    // End initialization checks
 
     GLenum err = glewInit();
 
@@ -2323,6 +2347,10 @@ void OPENGL_GAL::fillPolygonAsTriangles( const SHAPE_POLY_SET& aPolyList )
                                  const VECTOR2D& aVertex2, const VECTOR2D& aVertex3,
                                  void* aCallbackData )
     {
+#if 0 //def DEBUG
+        std::cerr << "OPENGL_GAL::fillPolygonAsTriangles( ... ) " << aVertex1 << " " << aVertex2
+                  << " " << aVertex3 << std::endl;
+#endif
         m_currentManager->Vertex( aVertex1.x, aVertex1.y, m_layerDepth );
         m_currentManager->Vertex( aVertex2.x, aVertex2.y, m_layerDepth );
         m_currentManager->Vertex( aVertex3.x, aVertex3.y, m_layerDepth );

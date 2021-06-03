@@ -65,6 +65,8 @@
 #include <wildcards_and_files_ext.h>
 #include <drawing_sheet/ds_proxy_undo_item.h>
 #include <footprint_edit_frame.h>
+#include <wx/filedlg.h>
+#include <wx/log.h>
 
 using namespace std::placeholders;
 
@@ -331,7 +333,7 @@ int BOARD_EDITOR_CONTROL::PageSettings( const TOOL_EVENT& aEvent )
 
     DIALOG_PAGES_SETTINGS dlg( m_frame, IU_PER_MILS,
                                wxSize( MAX_PAGE_SIZE_PCBNEW_MILS, MAX_PAGE_SIZE_PCBNEW_MILS ) );
-    dlg.SetWksFileName( BASE_SCREEN::m_PageLayoutDescrFileName );
+    dlg.SetWksFileName( BASE_SCREEN::m_DrawingSheetFileName );
 
     if( dlg.ShowModal() != wxID_OK )
         m_frame->RollbackFromUndo();
@@ -495,6 +497,7 @@ int BOARD_EDITOR_CONTROL::RepairBoard( const TOOL_EVENT& aEvent )
 {
     int      errors = 0;
     wxString details;
+    bool     quiet = aEvent.Parameter<bool>();
 
     /*******************************
      * Repair duplicate IDs and missing nets
@@ -597,9 +600,11 @@ int BOARD_EDITOR_CONTROL::RepairBoard( const TOOL_EVENT& aEvent )
         m_frame->OnModify();
 
         wxString msg = wxString::Format( _( "%d potential problems repaired." ), errors );
-        DisplayInfoMessage( m_frame, msg, details );
+
+        if( !quiet )
+            DisplayInfoMessage( m_frame, msg, details );
     }
-    else
+    else if( !quiet )
     {
         DisplayInfoMessage( m_frame, _( "No board problems found." ) );
     }
@@ -661,9 +666,7 @@ int BOARD_EDITOR_CONTROL::ToggleLayersManager( const TOOL_EVENT& aEvent )
 
 int BOARD_EDITOR_CONTROL::TogglePythonConsole( const TOOL_EVENT& aEvent )
 {
-#if defined( KICAD_SCRIPTING_WXPYTHON )
     m_frame->ScriptingConsoleEnableDisable();
-#endif
     return 0;
 }
 
@@ -950,7 +953,7 @@ int BOARD_EDITOR_CONTROL::PlaceFootprint( const TOOL_EVENT& aEvent )
     while( TOOL_EVENT* evt = Wait() )
     {
         setCursor();
-        cursorPos = controls->GetCursorPosition( !evt->Modifier( MD_ALT ) );
+        cursorPos = controls->GetCursorPosition( !evt->DisableGridSnapping() );
 
         if( reselect && fp )
             m_toolMgr->RunAction( PCB_ACTIONS::selectItem, true, fp );
@@ -1144,7 +1147,9 @@ int BOARD_EDITOR_CONTROL::modifyLockSelected( MODIFY_MODE aMode )
     if( modified )
     {
         commit.Push( aMode == ON ? _( "Lock" ) : _( "Unlock" ) );
-        m_toolMgr->PostEvent( EVENTS::SelectedItemsModified );
+
+        m_toolMgr->PostEvent( EVENTS::SelectedEvent );
+        m_frame->UpdateMsgPanel();
         m_frame->OnModify();
     }
 
@@ -1190,7 +1195,7 @@ int BOARD_EDITOR_CONTROL::PlaceTarget( const TOOL_EVENT& aEvent )
     while( TOOL_EVENT* evt = Wait() )
     {
         setCursor();
-        cursorPos = controls->GetCursorPosition( !evt->Modifier( MD_ALT ) );
+        cursorPos = controls->GetCursorPosition( !evt->DisableGridSnapping() );
 
         if( evt->IsCancelInteractive() )
         {

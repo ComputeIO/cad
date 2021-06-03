@@ -69,10 +69,8 @@
 #define WXPYTHON_VERSION                "@WXPYTHON_VERSION@"
 #endif
 
-#if defined( KICAD_SCRIPTING )
 #define PYTHON_VERSION_MAJOR             @PYTHON_VERSION_MAJOR@
 #define PYTHON_VERSION_MINOR             @PYTHON_VERSION_MINOR@
-#endif
 
 /// A file extension with a leading '.' is a suffix, and this one is used on
 /// top level program modules which implement the KIFACE.
@@ -83,13 +81,20 @@
 #define PYTHON_DEST                     "@PYTHON_DEST@"
 
 /// Allows scripts install directory to be referenced by the program code.
-#define KICAD_DATA                     "@KICAD_DATA@"
+#define KICAD_DATA                      "@KICAD_DATA@"
+
+/// Allows KiCad stock EDA library data (templates, symbols, footprints, 3dmodels)
+/// directory to be referenced by the program code.
+#define KICAD_LIBRARY_DATA              "@KICAD_LIBRARY_DATA@"
+
+/// Allows documentation install directory to be referenced by the program code.
+#define KICAD_DOCS                      "@KICAD_DOCS@"
 
 // Plugins directory
-#define KICAD_PLUGINDIR						"@CMAKE_INSTALL_FULL_LIBDIR@"
+#define KICAD_PLUGINDIR                 "@CMAKE_INSTALL_FULL_LIBDIR@"
 
 /// ngspice version string detected by pkg-config when available.
-#cmakedefine NGSPICE_BUILD_VERSION           "@NGSPICE_BUILD_VERSION@"
+#cmakedefine NGSPICE_BUILD_VERSION      "@NGSPICE_BUILD_VERSION@"
 
 /// When pkg-config config is not available for ngspice, use ngspice/config.h for version.
 #cmakedefine NGSPICE_HAVE_CONFIG_H

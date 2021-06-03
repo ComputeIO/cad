@@ -592,6 +592,9 @@ void ZONE::GetMsgPanelInfo( EDA_DRAW_FRAME* aFrame, std::vector<MSG_PANEL_ITEM>&
         aList.emplace_back( _( "Priority" ), wxString::Format( "%d", GetPriority() ) );
     }
 
+    if( IsLocked() )
+        aList.emplace_back( _( "Status" ), _( "Locked" ) );
+
     wxString layerDesc;
     int count = 0;
 
@@ -1418,7 +1421,7 @@ static struct ZONE_DESC
                     //&ZONE::SetIsFilled, &ZONE::IsFilled ) );
         propMgr.AddProperty( new PROPERTY<ZONE, wxString>( _HKI( "Name" ),
                     &ZONE::SetZoneName, &ZONE::GetZoneName ) );
-        propMgr.AddProperty( new PROPERTY<ZONE, int>( _HKI( "Clearance" ),
+        propMgr.AddProperty( new PROPERTY<ZONE, int>( _HKI( "Clearance Override" ),
                     &ZONE::SetLocalClearance, &ZONE::GetLocalClearance,
                     PROPERTY_DISPLAY::DISTANCE ) );
         propMgr.AddProperty( new PROPERTY<ZONE, int>( _HKI( "Min Width" ),
@@ -1426,10 +1429,10 @@ static struct ZONE_DESC
                     PROPERTY_DISPLAY::DISTANCE ) );
         propMgr.AddProperty( new PROPERTY_ENUM<ZONE, ZONE_CONNECTION>( _HKI( "Pad Connections" ),
                     &ZONE::SetPadConnection, &ZONE::GetPadConnection ) );
-        propMgr.AddProperty( new PROPERTY<ZONE, int>( _HKI( "Thermal Clearance" ),
+        propMgr.AddProperty( new PROPERTY<ZONE, int>( _HKI( "Thermal Relief Gap" ),
                     &ZONE::SetThermalReliefGap, &ZONE::GetThermalReliefGap,
                     PROPERTY_DISPLAY::DISTANCE ) );
-        propMgr.AddProperty( new PROPERTY<ZONE, int>( _HKI( "Thermal Spoke Width" ),
+        propMgr.AddProperty( new PROPERTY<ZONE, int>( _HKI( "Thermal Relief Width" ),
                     &ZONE::SetThermalReliefSpokeWidth, &ZONE::GetThermalReliefSpokeWidth,
                     PROPERTY_DISPLAY::DISTANCE ) );
     }

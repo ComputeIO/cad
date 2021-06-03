@@ -53,13 +53,17 @@ class DIALOG_TEXT_PROPERTIES_BASE : public DIALOG_SHIM
 		wxStaticText* m_FontLabel;
 		wxTextCtrl* m_FontCtrl;
 		wxButton* m_FontSelectionButton;
+		wxBoxSizer* m_FontProperties;
+		wxCheckBox* m_FontBold;
+		wxCheckBox* m_FontItalic;
 		wxStaticText* m_LayerLabel;
 		PCB_LAYER_BOX_SELECTOR* m_LayerSelectionCtrl;
 		wxCheckBox* m_Visible;
 		wxStaticText* m_SizeXLabel;
 		wxTextCtrl* m_SizeXCtrl;
 		wxStaticText* m_SizeXUnits;
-		wxCheckBox* m_Italic;
+		wxStaticText* m_FontLineSpacingLabel;
+		wxTextCtrl* m_FontLineSpacing;
 		wxStaticText* m_SizeYLabel;
 		wxTextCtrl* m_SizeYCtrl;
 		wxStaticText* m_SizeYUnits;
@@ -88,6 +92,7 @@ class DIALOG_TEXT_PROPERTIES_BASE : public DIALOG_SHIM
 		virtual void OnInitDlg( wxInitDialogEvent& event ) { event.Skip(); }
 		virtual void OnSetFocusText( wxFocusEvent& event ) { event.Skip(); }
 		virtual void OnOkClick( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnFontFieldChange( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnShowFontDialog( wxCommandEvent& event ) { event.Skip(); }
 
 

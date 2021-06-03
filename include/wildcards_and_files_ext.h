@@ -32,10 +32,9 @@
 #ifndef INCLUDE_WILDCARDS_AND_FILES_EXT_H_
 #define INCLUDE_WILDCARDS_AND_FILES_EXT_H_
 
-#include <wx/wx.h>
-
 #include <string>
 #include <vector>
+#include <wx/string.h>
 
 /**
  * \defgroup file_extensions File Extension Definitions
@@ -134,7 +133,7 @@ extern const std::string LegacyPcbFileExtension;
 extern const std::string KiCadPcbFileExtension;
 #define PcbFileExtension    KiCadPcbFileExtension       // symlink choice
 extern const std::string KiCadSymbolLibFileExtension;
-extern const std::string PageLayoutDescrFileExtension;
+extern const std::string DrawingSheetFileExtension;
 extern const std::string DesignRulesFileExtension;
 
 extern const std::string LegacyFootprintLibPathExtension;
@@ -150,7 +149,7 @@ extern const std::string KiCadFootprintLibPathExtension;
 extern const std::string GedaPcbFootprintLibFileExtension;
 extern const std::string EagleFootprintLibPathExtension;
 extern const std::string ComponentFileExtension;
-extern const std::string PageLayoutDescrFileExtension;
+extern const std::string DrawingSheetFileExtension;
 extern const std::string SpecctraDsnFileExtension;
 extern const std::string IpcD356FileExtension;
 
@@ -178,7 +177,7 @@ bool IsProtelExtension( const wxString& ext );
 extern wxString AllFilesWildcard();
 
 extern wxString ComponentFileWildcard();
-extern wxString PageLayoutDescrFileWildcard();
+extern wxString DrawingSheetFileWildcard();
 extern wxString SchematicSymbolFileWildcard();
 extern wxString KiCadSymbolLibFileWildcard();
 extern wxString LegacySymbolLibFileWildcard();

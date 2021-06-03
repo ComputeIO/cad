@@ -37,6 +37,7 @@
 #include <pcbnew_id.h>
 #include <pcbnew_settings.h>
 #include "footprint_wizard_frame.h"
+#include <wx/listbox.h>
 #include <wx/tokenzr.h>
 #include <wx/numformatter.h>
 #include <wildcards_and_files_ext.h>
@@ -565,16 +566,11 @@ void FOOTPRINT_WIZARD_FRAME::OnActivate( wxActivateEvent& event )
 }
 
 
-/**
- * Function Update3DView
- * must be called after a footprint selection
- * Updates the 3D view and 3D frame title.
- */
-void FOOTPRINT_WIZARD_FRAME::Update3DView( bool aForceReload, const wxString* aTitle )
+void FOOTPRINT_WIZARD_FRAME::Update3DView( bool aMarkDirty, bool aRefresh, const wxString* aTitle )
 {
     wxString frm3Dtitle;
     frm3Dtitle.Printf( _( "ModView: 3D Viewer [%s]" ), m_wizardName );
-    PCB_BASE_FRAME::Update3DView( aForceReload, &frm3Dtitle );
+    PCB_BASE_FRAME::Update3DView( aMarkDirty, aRefresh, &frm3Dtitle );
 }
 
 
@@ -643,7 +639,6 @@ void FOOTPRINT_WIZARD_FRAME::ReCreateVToolbar()
     // Currently, there is no vertical toolbar
 }
 
-#if defined(KICAD_SCRIPTING)
 void FOOTPRINT_WIZARD_FRAME::PythonPluginsReload()
 {
     // Reload the Python plugins
@@ -653,10 +648,7 @@ void FOOTPRINT_WIZARD_FRAME::PythonPluginsReload()
     auto brd_frame = static_cast<PCB_EDIT_FRAME*>( Kiway().Player( FRAME_PCB_EDITOR, false ) );
 
     if( brd_frame )
-        brd_frame->PythonPluginsReload();
+        brd_frame->GetToolManager()->RunAction( PCB_ACTIONS::pluginsReload );
     else
-        PythonPluginsReloadBase();
+        GetToolManager()->RunAction( PCB_ACTIONS::pluginsReload );
 }
-#endif
-
-

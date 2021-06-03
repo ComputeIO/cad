@@ -33,6 +33,7 @@
 
 #include <wx/event.h>
 #include <wx/clipbrd.h>
+#include <wx/app.h>
 
 #include <view/view.h>
 #include <eda_base_frame.h>
@@ -400,6 +401,9 @@ bool TOOL_MANAGER::runTool( TOOL_BASE* aTool )
 
     TOOL_ID id = aTool->GetId();
 
+    wxLogTrace( kicadTraceToolStack, "TOOL_MANAGER::runTool - running tool %s",
+                                     aTool->GetName() );
+
     if( aTool->GetType() == INTERACTIVE )
         static_cast<TOOL_INTERACTIVE*>( aTool )->resetTransitions();
 
@@ -754,7 +758,7 @@ bool TOOL_MANAGER::dispatchInternal( TOOL_EVENT& aEvent )
                     handled = true;
 
                     if( !st->cofunc->Running() )
-                        finishTool( st ); // The couroutine has finished immediately?
+                        finishTool( st ); // The coroutine has finished immediately?
 
                     // if it is a message, continue processing
                     finished = !( aEvent.Category() == TC_MESSAGE );
@@ -976,6 +980,8 @@ bool TOOL_MANAGER::SaveClipboard( const std::string& aTextUTF8 )
         // Store the UTF8 string as unicode string in clipboard:
         wxTheClipboard->SetData( new wxTextDataObject( wxString( aTextUTF8.c_str(),
                                                                  wxConvUTF8 ) ) );
+
+        wxTheClipboard->Flush(); // Allow data to be available after closing KiCad
         wxTheClipboard->Close();
 
         return true;

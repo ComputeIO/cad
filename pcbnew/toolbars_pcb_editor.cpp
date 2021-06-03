@@ -46,10 +46,9 @@
 #include <tools/pcb_actions.h>
 #include <tools/pcb_selection_tool.h>
 #include <wx/wupdlock.h>
+#include <wx/dcmemory.h>
 
-#if defined(KICAD_SCRIPTING) || defined(KICAD_SCRIPTING_WXPYTHON)
-#include <python_scripting.h>
-#endif
+#include "../scripting/python_scripting.h"
 
 
 /* Data to build the layer pair indicator button */
@@ -295,17 +294,12 @@ void PCB_EDIT_FRAME::ReCreateHToolbar()
     m_mainToolBar->Add( PCB_ACTIONS::showEeschema );
 
     // Access to the scripting console
-#if defined(KICAD_SCRIPTING_WXPYTHON)
-    if( IsWxPythonLoaded() )
+    if( SCRIPTING::IsWxAvailable() )
     {
         m_mainToolBar->AddScaledSeparator( this );
         m_mainToolBar->Add( PCB_ACTIONS::showPythonConsole, ACTION_TOOLBAR::TOGGLE );
-
-#if defined(KICAD_SCRIPTING) && defined(KICAD_SCRIPTING_ACTION_MENU)
         AddActionPluginTools();
-#endif
     }
-#endif
 
     // Go through and ensure the comboboxes are the correct size, since the strings in the
     // box could have changed widths.
@@ -352,6 +346,10 @@ void PCB_EDIT_FRAME::ReCreateOptToolbar()
     m_optionsToolBar->Add( PCB_ACTIONS::ratsnestLineMode,     ACTION_TOOLBAR::TOGGLE );
 
     m_optionsToolBar->AddScaledSeparator( this );
+    m_optionsToolBar->Add( ACTIONS::highContrastMode,         ACTION_TOOLBAR::TOGGLE );
+    m_optionsToolBar->Add( PCB_ACTIONS::toggleNetHighlight,   ACTION_TOOLBAR::TOGGLE );
+
+    m_optionsToolBar->AddScaledSeparator( this );
     m_optionsToolBar->Add( PCB_ACTIONS::zoneDisplayEnable,    ACTION_TOOLBAR::TOGGLE );
     m_optionsToolBar->Add( PCB_ACTIONS::zoneDisplayDisable,   ACTION_TOOLBAR::TOGGLE );
     m_optionsToolBar->Add( PCB_ACTIONS::zoneDisplayOutlines,  ACTION_TOOLBAR::TOGGLE );
@@ -360,7 +358,6 @@ void PCB_EDIT_FRAME::ReCreateOptToolbar()
     m_optionsToolBar->Add( PCB_ACTIONS::padDisplayMode,       ACTION_TOOLBAR::TOGGLE );
     m_optionsToolBar->Add( PCB_ACTIONS::viaDisplayMode,       ACTION_TOOLBAR::TOGGLE );
     m_optionsToolBar->Add( PCB_ACTIONS::trackDisplayMode,     ACTION_TOOLBAR::TOGGLE );
-    m_optionsToolBar->Add( ACTIONS::highContrastMode,         ACTION_TOOLBAR::TOGGLE );
 
     // Tools to show/hide toolbars:
     m_optionsToolBar->AddScaledSeparator( this );
@@ -394,7 +391,7 @@ void PCB_EDIT_FRAME::ReCreateVToolbar()
     static ACTION_GROUP* dimensionGroup = nullptr;
     static ACTION_GROUP* originGroup    = nullptr;
     static ACTION_GROUP* routingGroup   = nullptr;
-    static ACTION_GROUP* microwaveGroup = nullptr;
+    static ACTION_GROUP* tuneGroup      = nullptr;
 
     if( !dimensionGroup )
     {
@@ -419,25 +416,22 @@ void PCB_EDIT_FRAME::ReCreateVToolbar()
                                           &PCB_ACTIONS::routeDiffPair } );
     }
 
-    if( !microwaveGroup )
+    if( !tuneGroup )
     {
-        microwaveGroup = new ACTION_GROUP( "group.pcbMicrowave",
-                                           { &PCB_ACTIONS::microwaveCreateLine,
-                                             &PCB_ACTIONS::microwaveCreateGap,
-                                             &PCB_ACTIONS::microwaveCreateStub,
-                                             &PCB_ACTIONS::microwaveCreateStubArc,
-                                             &PCB_ACTIONS::microwaveCreateFunctionShape } );
+        tuneGroup = new ACTION_GROUP( "group.pcbTune", 
+                                      { &PCB_ACTIONS::routerTuneSingleTrace,
+                                        &PCB_ACTIONS::routerTuneDiffPair,
+                                        &PCB_ACTIONS::routerTuneDiffPairSkew } );
     }
 
     m_drawToolBar->Add( ACTIONS::selectionTool,            ACTION_TOOLBAR::TOGGLE );
-    m_drawToolBar->Add( PCB_ACTIONS::highlightNetTool,     ACTION_TOOLBAR::TOGGLE );
     m_drawToolBar->Add( PCB_ACTIONS::localRatsnestTool,    ACTION_TOOLBAR::TOGGLE );
 
     m_drawToolBar->AddScaledSeparator( this );
     m_drawToolBar->Add( PCB_ACTIONS::placeFootprint,       ACTION_TOOLBAR::TOGGLE );
     m_drawToolBar->AddGroup( routingGroup,                 ACTION_TOOLBAR::TOGGLE );
+    m_drawToolBar->AddGroup( tuneGroup,                    ACTION_TOOLBAR::TOGGLE );
     m_drawToolBar->Add( PCB_ACTIONS::drawVia,              ACTION_TOOLBAR::TOGGLE );
-    m_drawToolBar->AddGroup( microwaveGroup,               ACTION_TOOLBAR::TOGGLE );
     m_drawToolBar->Add( PCB_ACTIONS::drawZone,             ACTION_TOOLBAR::TOGGLE );
     m_drawToolBar->Add( PCB_ACTIONS::drawRuleArea,         ACTION_TOOLBAR::TOGGLE );
 
@@ -458,14 +452,36 @@ void PCB_EDIT_FRAME::ReCreateVToolbar()
 
     PCB_SELECTION_TOOL* selTool   = m_toolManager->GetTool<PCB_SELECTION_TOOL>();
 
-    std::unique_ptr<ACTION_MENU> routeMenu = std::make_unique<ACTION_MENU>( false, selTool );
-    routeMenu->Add( PCB_ACTIONS::routerHighlightMode,  ACTION_MENU::CHECK );
-    routeMenu->Add( PCB_ACTIONS::routerShoveMode,      ACTION_MENU::CHECK );
-    routeMenu->Add( PCB_ACTIONS::routerWalkaroundMode, ACTION_MENU::CHECK );
+    auto makeRouteMenu =
+            [&]()
+            {
+                std::unique_ptr<ACTION_MENU> routeMenu =
+                        std::make_unique<ACTION_MENU>( false, selTool );
 
-    routeMenu->AppendSeparator();
-    routeMenu->Add( PCB_ACTIONS::routerSettingsDialog );
-    m_drawToolBar->AddToolContextMenu( PCB_ACTIONS::routeSingleTrack, std::move( routeMenu ) );
+                routeMenu->Add( PCB_ACTIONS::routerHighlightMode,  ACTION_MENU::CHECK );
+                routeMenu->Add( PCB_ACTIONS::routerShoveMode,      ACTION_MENU::CHECK );
+                routeMenu->Add( PCB_ACTIONS::routerWalkaroundMode, ACTION_MENU::CHECK );
+
+                routeMenu->AppendSeparator();
+                routeMenu->Add( PCB_ACTIONS::routerSettingsDialog );
+
+                return routeMenu;
+            };
+
+    m_drawToolBar->AddToolContextMenu( PCB_ACTIONS::routeSingleTrack, makeRouteMenu() );
+    m_drawToolBar->AddToolContextMenu( PCB_ACTIONS::routeDiffPair, makeRouteMenu() );
+
+    auto makeTuneMenu = 
+        [&]()
+        {
+            std::unique_ptr<ACTION_MENU> tuneMenu = std::make_unique<ACTION_MENU>( false, selTool );
+            tuneMenu->Add( PCB_ACTIONS::lengthTunerSettingsDialog );
+            return tuneMenu;
+        };
+
+    m_drawToolBar->AddToolContextMenu( PCB_ACTIONS::routerTuneSingleTrace, makeTuneMenu() );
+    m_drawToolBar->AddToolContextMenu( PCB_ACTIONS::routerTuneDiffPair, makeTuneMenu() );
+    m_drawToolBar->AddToolContextMenu( PCB_ACTIONS::routerTuneDiffPairSkew, makeTuneMenu() );
 
     std::unique_ptr<ACTION_MENU> zoneMenu = std::make_unique<ACTION_MENU>( false, selTool );
     zoneMenu->Add( PCB_ACTIONS::zoneFillAll );
@@ -505,6 +521,14 @@ void PCB_EDIT_FRAME::ReCreateAuxiliaryToolbar()
     UpdateTrackWidthSelectBox( m_SelTrackWidthBox );
     m_auxiliaryToolBar->AddControl( m_SelTrackWidthBox );
 
+    m_auxiliaryToolBar->AddTool( ID_AUX_TOOLBAR_PCB_SELECT_AUTO_WIDTH, wxEmptyString,
+                                 KiScaledBitmap( BITMAPS::auto_track_width, this ),
+                                 _( "When routing from an existing track use its width instead "
+                                    "of the current width setting" ),
+                                 wxITEM_CHECK );
+
+    m_auxiliaryToolBar->AddScaledSeparator( this );
+
     // Creates box to display and choose vias diameters:
 
     if( m_SelViaSizeBox == nullptr )
@@ -513,14 +537,6 @@ void PCB_EDIT_FRAME::ReCreateAuxiliaryToolbar()
 
     UpdateViaSizeSelectBox( m_SelViaSizeBox );
     m_auxiliaryToolBar->AddControl( m_SelViaSizeBox );
-    m_auxiliaryToolBar->AddScaledSeparator( this );
-
-    // Creates box to display and choose strategy to handle tracks an vias sizes:
-    m_auxiliaryToolBar->AddTool( ID_AUX_TOOLBAR_PCB_SELECT_AUTO_WIDTH, wxEmptyString,
-                                 KiScaledBitmap( BITMAPS::auto_track_width, this ),
-                                 _( "When routing from an existing track use its width instead "
-                                    "of the current width setting" ),
-                                 wxITEM_CHECK );
 
     // Add the box to display and select the current grid size:
     m_auxiliaryToolBar->AddScaledSeparator( this );

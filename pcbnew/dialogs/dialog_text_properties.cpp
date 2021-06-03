@@ -36,9 +36,12 @@
 #include <wx/valnum.h>
 #include <math/util.h> // for KiROUND
 #include <wx/fontdlg.h>
+#include <wx/numformatter.h>
+
+#define OUTLINEFONT_DEBUG
 
 DIALOG_TEXT_PROPERTIES::DIALOG_TEXT_PROPERTIES( PCB_BASE_EDIT_FRAME* aParent, BOARD_ITEM* aItem ) :
-        DIALOG_TEXT_PROPERTIES_BASE( aParent ), m_Parent( aParent ), m_item( aItem ),
+        DIALOG_TEXT_ITEM_PROPERTIES_BASE( aParent ), m_Parent( aParent ), m_item( aItem ),
         m_edaText( nullptr ), m_fpText( nullptr ), m_pcbText( nullptr ),
         m_textWidth( aParent, m_SizeXLabel, m_SizeXCtrl, m_SizeXUnits ),
         m_textHeight( aParent, m_SizeYLabel, m_SizeYCtrl, m_SizeYUnits ),
@@ -69,9 +72,9 @@ DIALOG_TEXT_PROPERTIES::DIALOG_TEXT_PROPERTIES( PCB_BASE_EDIT_FRAME* aParent, BO
 
         switch( m_fpText->GetType() )
         {
-        case FP_TEXT::TEXT_is_REFERENCE: m_TextLabel->SetLabel( _( "Reference:" ) ); break;
-        case FP_TEXT::TEXT_is_VALUE: m_TextLabel->SetLabel( _( "Value:" ) ); break;
-        case FP_TEXT::TEXT_is_DIVERS: m_TextLabel->SetLabel( _( "Text:" ) ); break;
+        case FP_TEXT::TEXT_is_REFERENCE: m_SingleLineLabel->SetLabel( _( "Reference:" ) ); break;
+        case FP_TEXT::TEXT_is_VALUE: m_SingleLineLabel->SetLabel( _( "Value:" ) ); break;
+        case FP_TEXT::TEXT_is_DIVERS: m_SingleLineLabel->SetLabel( _( "Text:" ) ); break;
         }
 
         SetInitialFocus( m_SingleLineText );
@@ -107,14 +110,17 @@ DIALOG_TEXT_PROPERTIES::DIALOG_TEXT_PROPERTIES( PCB_BASE_EDIT_FRAME* aParent, BO
     SetTitle( title );
     m_hash_key = title;
 
+	m_pcbLayerSelector = new PCB_LAYER_BOX_SELECTOR( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, NULL, 0 );
+    fgSizerSetup->Replace( m_LayerSelectionCtrl, m_pcbLayerSelector );
+
     // Configure the layers list selector.  Note that footprints are built outside the current
     // board and so we may need to show all layers if the text is on an unactivated layer.
     if( !m_Parent->GetBoard()->IsLayerEnabled( m_item->GetLayer() ) )
-        m_LayerSelectionCtrl->ShowNonActivatedLayers( true );
+        m_pcbLayerSelector->ShowNonActivatedLayers( true );
 
-    m_LayerSelectionCtrl->SetLayersHotkeys( false );
-    m_LayerSelectionCtrl->SetBoardFrame( m_Parent );
-    m_LayerSelectionCtrl->Resync();
+    m_pcbLayerSelector->SetLayersHotkeys( false );
+    m_pcbLayerSelector->SetBoardFrame( m_Parent );
+    m_pcbLayerSelector->Resync();
 
     m_OrientValue = 0.0;
     m_orientation.SetUnits( EDA_UNITS::DEGREES );
@@ -136,10 +142,10 @@ DIALOG_TEXT_PROPERTIES::DIALOG_TEXT_PROPERTIES( PCB_BASE_EDIT_FRAME* aParent, BO
 
     // We can't set the tab order through wxWidgets due to shortcomings in their mnemonics
     // implementation on MSW
-    m_tabOrder = { m_LayerLabel,    m_LayerSelectionCtrl, m_SizeXCtrl,     m_SizeYCtrl,
+    m_tabOrder = { m_LayerLabel,    m_pcbLayerSelector, m_SizeXCtrl,     m_SizeYCtrl,
                    m_ThicknessCtrl, m_PositionXCtrl,      m_PositionYCtrl, m_Visible,
-                   m_Italic,        m_JustifyChoice,      m_OrientCtrl,    m_Mirrored,
-                   m_KeepUpright,   m_sdbSizerOK,         m_sdbSizerCancel };
+                   m_Justify,       m_OrientCtrl,         m_Mirrored,      m_KeepUpright,
+                   m_sdbSizerOK,    m_sdbSizerCancel };
 
     // wxTextCtrls fail to generate wxEVT_CHAR events when the wxTE_MULTILINE flag is set,
     // so we have to listen to wxEVT_CHAR_HOOK events instead.
@@ -148,6 +154,8 @@ DIALOG_TEXT_PROPERTIES::DIALOG_TEXT_PROPERTIES( PCB_BASE_EDIT_FRAME* aParent, BO
     // If this item has a custom font, display font name
     // Default font is named "" so it's OK to always display font name
     m_FontCtrl->SetValue( m_edaText->GetFont()->Name() );
+    m_FontBold->SetValue( m_edaText->IsBold() );
+    m_FontItalic->SetValue( m_edaText->IsItalic() );
 
     finishDialogSettings();
 }
@@ -222,7 +230,7 @@ void DIALOG_TEXT_PROPERTIES::OnCharHook( wxKeyEvent& aEvent )
 }
 
 
-#ifdef DEBUG
+#ifdef OUTLINEFONT_DEBUG
 std::ostream& operator<<( std::ostream& os, const wxFont& aFont )
 {
     os << "(font " << aFont.GetFaceName() << " [" << aFont.GetNativeFontInfoDesc() << ","
@@ -242,15 +250,30 @@ std::ostream& operator<<( std::ostream& os, const wxFont& aFont )
     case wxFONTWEIGHT_BOLD: os << "bold"; break;
     default: os << "unknown style";
     }
-    if (aFont.GetUnderlined())
+    if( aFont.GetUnderlined() )
         os << ",underlined";
-    if (aFont.IsFixedWidth())
+    if( aFont.IsFixedWidth() )
         os << ",fixed-width";
-    os << "," << (aFont.IsOk() ? "OK" : "not-ok") << ")" << std::endl;
+    os << "," << ( aFont.IsOk() ? "OK" : "not-ok" ) << ")" << std::endl;
 
     return os;
 }
 #endif
+
+
+void DIALOG_TEXT_PROPERTIES::OnFontFieldChange( wxCommandEvent& aEvent )
+{
+#if 0
+    bool enableOutlineFontControls = !m_FontCtrl->GetValue().IsEmpty();
+
+    m_FontBold->Enable( enableOutlineFontControls );
+    m_FontItalic->Enable( enableOutlineFontControls );
+    m_FontLineSpacingLabel->Enable( enableOutlineFontControls );
+    m_FontLineSpacing->Enable( enableOutlineFontControls );
+#endif
+
+    aEvent.Skip();
+}
 
 
 void DIALOG_TEXT_PROPERTIES::OnShowFontDialog( wxCommandEvent& aEvent )
@@ -263,27 +286,60 @@ void DIALOG_TEXT_PROPERTIES::OnShowFontDialog( wxCommandEvent& aEvent )
     if( fontDialog->ShowModal() == wxID_OK )
     {
         wxFont theFont = fontDialog->GetFontData().GetChosenFont();
-        KIFONT::FONT* font = KIFONT::FONT::GetFont( theFont.GetFaceName() );
+        bool   bold = false;
+        bool   italic = false;
+        switch( theFont.GetStyle() )
+        {
+        case wxFONTSTYLE_ITALIC:
+        case wxFONTSTYLE_SLANT: italic = true; break;
+        default: break;
+        }
+        switch( theFont.GetWeight() )
+        {
+        case wxFONTWEIGHT_BOLD: bold = true; break;
+        default: break;
+        }
+#ifdef OUTLINEFONT_DEBUG
+        std::cerr << "DIALOG_TEXT_PROPERTIES::OnShowFontDialog() face name \""
+                  << theFont.GetFaceName() << "\"" << ( bold ? "bold " : "" )
+                  << ( italic ? "italic " : "" ) << std::endl;
+#endif
+        KIFONT::FONT* font = KIFONT::FONT::GetFont( theFont.GetFaceName(), bold, italic );
+#ifdef OUTLINEFONT_DEBUG
+        std::cerr << "DIALOG_TEXT_PROPERTIES::OnShowFontDialog() face \"" << theFont.GetFaceName()
+                  << "\" font \"" << font->Name() << "\"" << std::endl;
+#endif
         m_FontCtrl->SetValue( font->Name() );
+        m_FontBold->SetValue( bold );
+        m_FontItalic->SetValue( italic );
     }
 }
 
 
 void DIALOG_TEXT_PROPERTIES::OnOkClick( wxCommandEvent& aEvent )
 {
-    SetFontByName( m_FontCtrl->GetValue() );
+    bool requestingOutlineFont = !m_FontCtrl->GetValue().IsEmpty();
+    bool bold = requestingOutlineFont ? m_FontBold->GetValue() : false;
+    bool italic = requestingOutlineFont ? m_FontItalic->GetValue() : false;
+
+    SetFontByName( m_FontCtrl->GetValue(), bold, italic );
+
     aEvent.Skip();
 }
 
 
-void DIALOG_TEXT_PROPERTIES::SetFontByName( const wxString& aFontName )
+void DIALOG_TEXT_PROPERTIES::SetFontByName( const wxString& aFontName, bool aBold, bool aItalic )
 {
-#ifdef DEBUG
-    std::cerr << "chosen font is \"" << aFontName << "\", ";
+#ifdef OUTLINEFONT_DEBUG
+    std::cerr << "DIALOG_TEXT_PROPERTIES::SetFontByName( \"" << aFontName << "\", "
+              << ( aBold ? "true, " : "false, " ) << ( aItalic ? "true" : "false" ) << " )"
+              << std::endl;
 #endif
-    m_edaText->SetFont( KIFONT::FONT::GetFont( aFontName ) );
+    m_edaText->SetFont( KIFONT::FONT::GetFont( aFontName, aBold, aItalic ) );
     m_FontCtrl->SetValue( m_edaText->GetFont()->Name() );
-#ifdef DEBUG
+    m_edaText->SetBold( aBold );
+    m_edaText->SetItalic( aBold );
+#ifdef OUTLINEFONT_DEBUG
     std::cerr << "font is now \"" << m_edaText->GetFont()->Name() << "\"" << std::endl;
 #endif
 }
@@ -353,7 +409,7 @@ bool DIALOG_TEXT_PROPERTIES::TransferDataToWindow()
 
     m_cbLocked->SetValue( m_item->IsLocked() );
 
-    m_LayerSelectionCtrl->SetLayerSelection( m_item->GetLayer() );
+    m_pcbLayerSelector->SetLayerSelection( m_item->GetLayer() );
 
     m_textWidth.SetValue( m_edaText->GetTextSize().x );
     m_textHeight.SetValue( m_edaText->GetTextSize().y );
@@ -362,9 +418,16 @@ bool DIALOG_TEXT_PROPERTIES::TransferDataToWindow()
     m_posY.SetValue( m_edaText->GetTextPos().y );
 
     m_Visible->SetValue( m_edaText->IsVisible() );
-    m_Italic->SetValue( m_edaText->IsItalic() );
-    EDA_TEXT_HJUSTIFY_T hJustify = m_edaText->GetHorizJustify();
-    m_JustifyChoice->SetSelection( (int) hJustify + 1 );
+    m_FontBold->SetValue( m_edaText->IsBold() );
+    m_FontItalic->SetValue( m_edaText->IsItalic() );
+    m_FontLineSpacing->SetValue( wxNumberFormatter::ToString( m_edaText->GetLineSpacing(), 2 ) );
+    switch( m_edaText->GetHorizontalAlignment() )
+    {
+    default:
+    case TEXT_ATTRIBUTES::H_LEFT: m_Justify->SetSelection( 0 );
+    case TEXT_ATTRIBUTES::H_CENTER: m_Justify->SetSelection( 1 );
+    case TEXT_ATTRIBUTES::H_RIGHT: m_Justify->SetSelection( 2 );
+    }
     m_OrientValue = m_edaText->GetTextAngle();
     m_orientation.SetDoubleValue( m_OrientValue );
     m_Mirrored->SetValue( m_edaText->IsMirrored() );
@@ -372,13 +435,13 @@ bool DIALOG_TEXT_PROPERTIES::TransferDataToWindow()
     if( m_fpText )
         m_KeepUpright->SetValue( m_fpText->IsKeepUpright() );
 
-    return DIALOG_TEXT_PROPERTIES_BASE::TransferDataToWindow();
+    return DIALOG_TEXT_ITEM_PROPERTIES_BASE::TransferDataToWindow();
 }
 
 
 bool DIALOG_TEXT_PROPERTIES::TransferDataFromWindow()
 {
-    if( !DIALOG_TEXT_PROPERTIES_BASE::TransferDataFromWindow() )
+    if( !DIALOG_TEXT_ITEM_PROPERTIES_BASE::TransferDataFromWindow() )
         return false;
 
     if( !m_textWidth.Validate( TEXTS_MIN_SIZE, TEXTS_MAX_SIZE )
@@ -423,7 +486,7 @@ bool DIALOG_TEXT_PROPERTIES::TransferDataFromWindow()
 
     m_item->SetLocked( m_cbLocked->GetValue() );
 
-    m_item->SetLayer( ToLAYER_ID( m_LayerSelectionCtrl->GetLayerSelection() ) );
+    m_item->SetLayer( ToLAYER_ID( m_pcbLayerSelector->GetLayerSelection() ) );
 
     m_edaText->SetTextSize( wxSize( m_textWidth.GetValue(), m_textHeight.GetValue() ) );
     m_edaText->SetTextThickness( m_thickness.GetValue() );
@@ -442,8 +505,17 @@ bool DIALOG_TEXT_PROPERTIES::TransferDataFromWindow()
         m_edaText->SetTextThickness( maxPenWidth );
     }
 
+    double lineSpacing;
+    if( !m_FontLineSpacing->GetValue().ToDouble( &lineSpacing ) )
+    {
+        // error in reading line spacing, defaulting to 1.0
+        lineSpacing = 1.0;
+    }
+
     m_edaText->SetVisible( m_Visible->GetValue() );
-    m_edaText->SetItalic( m_Italic->GetValue() );
+    m_edaText->SetBold( m_FontBold->GetValue() );
+    m_edaText->SetItalic( m_FontItalic->GetValue() );
+    m_edaText->SetLineSpacing( lineSpacing );
     m_OrientValue = m_orientation.GetDoubleValue();
     m_edaText->SetTextAngle( m_OrientValue );
     m_edaText->SetMirrored( m_Mirrored->GetValue() );
@@ -451,11 +523,11 @@ bool DIALOG_TEXT_PROPERTIES::TransferDataFromWindow()
     if( m_fpText )
         m_fpText->SetKeepUpright( m_KeepUpright->GetValue() );
 
-    switch( m_JustifyChoice->GetSelection() )
+    switch( m_Justify->GetSelection() )
     {
-    case 0: m_edaText->SetHorizJustify( GR_TEXT_HJUSTIFY_LEFT ); break;
-    case 1: m_edaText->SetHorizJustify( GR_TEXT_HJUSTIFY_CENTER ); break;
-    case 2: m_edaText->SetHorizJustify( GR_TEXT_HJUSTIFY_RIGHT ); break;
+    case 0: m_edaText->Align( TEXT_ATTRIBUTES::H_LEFT ); break;
+    case 1: m_edaText->Align( TEXT_ATTRIBUTES::H_CENTER ); break;
+    case 2: m_edaText->Align( TEXT_ATTRIBUTES::H_RIGHT ); break;
     default: break;
     }
 

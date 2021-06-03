@@ -201,21 +201,14 @@ public:
      */
     wxString GetDesignRulesPath();
 
+    APPEARANCE_CONTROLS* GetAppearancePanel() { return m_appearancePanel; }
+
+    /**
+     * Notify the frame that the layer Alpha is being changed
+     */
+    virtual void OnLayerAlphaChanged();
+
 protected:
-    /// User defined rotation angle (in tenths of a degree).
-    int m_rotationAngle;
-
-    /// Is undo/redo operation currently blocked?
-    bool m_undoRedoBlocked;
-
-    void unitsChangeRefresh() override;
-
-    /// AUI panel for changing the selection tool filter controls
-    PANEL_SELECTION_FILTER* m_selectionFilterPanel;
-
-    /// AUI panel for controlling layer and object visibility and appearance
-    APPEARANCE_CONTROLS* m_appearancePanel;
-
     /**
      * Prompts a user to select global or project library tables
      *
@@ -224,6 +217,15 @@ protected:
     FP_LIB_TABLE* selectLibTable( bool aOptional = false );
 
     void handleActivateEvent( wxActivateEvent& aEvent ) override;
+
+    void unitsChangeRefresh() override;
+
+protected:
+    int                     m_rotationAngle;        // Rotation step (in tenths of a degree)
+    bool                    m_undoRedoBlocked;
+
+    PANEL_SELECTION_FILTER* m_selectionFilterPanel;
+    APPEARANCE_CONTROLS*    m_appearancePanel;
 };
 
 #endif

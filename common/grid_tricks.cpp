@@ -29,7 +29,7 @@
 #include <widgets/grid_readonly_text_helpers.h>
 
 
-// It works for table data on clipboard for an Excell spreadsheet,
+// It works for table data on clipboard for an Excel spreadsheet,
 // why not us too for now.
 #define COL_SEP     wxT( '\t' )
 #define ROW_SEP     wxT( '\n' )
@@ -636,6 +636,7 @@ void GRID_TRICKS::cutcopy( bool doCopy, bool doDelete )
     if( doCopy )
     {
         wxTheClipboard->SetData( new wxTextDataObject( txt ) );
+        wxTheClipboard->Flush(); // Allow data to be available after closing KiCad
         wxTheClipboard->Close();
     }
 

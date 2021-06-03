@@ -28,6 +28,7 @@
 
 #include <gal/graphics_abstraction_layer.h>
 #include <gal/definitions.h>
+#include <eda_text.h>
 #include <font/font.h>
 #include <geometry/shape_poly_set.h>
 
@@ -73,6 +74,9 @@ GAL::GAL( GAL_DISPLAY_OPTIONS& aDisplayOptions ) : m_options( aDisplayOptions )
     m_fullscreenCursor = false;
     m_forceDisplayCursor = false;
     SetCursorEnabled( false );
+
+    // Initialize the native widget to an arrow cursor
+    SetNativeCursorStyle( KICURSOR::ARROW );
 
     // Initialize text properties
     ResetTextAttributes();
@@ -145,13 +149,7 @@ bool GAL::updatedGalDisplayOptions( const GAL_DISPLAY_OPTIONS& aOptions )
 
 void GAL::SetTextAttributes( const EDA_TEXT* aText )
 {
-    SetGlyphSize( VECTOR2D( aText->GetTextSize() ) );
-    SetHorizontalJustify( aText->GetHorizJustify() );
-    SetVerticalJustify( aText->GetVertJustify() );
-    SetFontBold( aText->IsBold() );
-    SetFontItalic( aText->IsItalic() );
-    SetFontUnderlined( false );
-    SetTextMirrored( aText->IsMirrored() );
+    m_attributes = TEXT_ATTRIBUTES( aText );
 }
 
 
@@ -161,8 +159,8 @@ void GAL::ResetTextAttributes()
     // there is no built-in default
     SetGlyphSize( { 1.0, 1.0 } );
 
-    SetHorizontalJustify( GR_TEXT_HJUSTIFY_CENTER );
-    SetVerticalJustify( GR_TEXT_VJUSTIFY_CENTER );
+    SetHorizontalAlignment( TEXT_ATTRIBUTES::H_CENTER );
+    SetVerticalAlignment( TEXT_ATTRIBUTES::V_CENTER );
 
     SetFontBold( false );
     SetFontItalic( false );
@@ -206,6 +204,21 @@ void GAL::ComputeWorldScreenMatrix()
 
     m_worldScreenMatrix = translation * rotate * flip * scale * lookat;
     m_screenWorldMatrix = m_worldScreenMatrix.Inverse();
+}
+
+
+BOX2D GAL::GetVisibleWorldExtents() const
+{
+    const MATRIX3x3D& matrix = GetScreenWorldMatrix();
+
+    VECTOR2D halfSize = VECTOR2D( matrix.GetScale().x * m_screenSize.x * 0.5,
+                                  matrix.GetScale().y * m_screenSize.y * 0.5 );
+
+    BOX2D extents;
+    extents.SetOrigin( GetLookAtPoint() - halfSize );
+    extents.SetSize( halfSize * 2 );
+
+    return extents;
 }
 
 
@@ -257,15 +270,25 @@ COLOR4D GAL::getCursorColor() const
 
 
 void GAL::StrokeText( const wxString& aText, const VECTOR2D& aPosition, double aRotationAngle,
-                      KIFONT::FONT* aFont )
+                      KIFONT::FONT* aFont, double aLineSpacing )
 {
-#ifdef DEBUG
-    std::cerr << "GAL::StrokeText( " << aText << ", " << aPosition << ", " << aRotationAngle
-              << " ) m_lineWidth " << GetLineWidth() << std::endl;
-#endif
+    if( aText.IsEmpty() )
+        return;
+
     if( !aFont )
         aFont = KIFONT::FONT::GetFont();
-    aFont->Draw( this, aText, aPosition, aRotationAngle );
+
+    TEXT_ATTRIBUTES attributes;
+    attributes.SetAngle( EDA_ANGLE( aRotationAngle, EDA_ANGLE::RADIANS ) );
+    attributes.Align( GetHorizontalAlignment(), GetVerticalAlignment() );
+    attributes.SetLineSpacing( aLineSpacing );
+
+#ifdef DEBUG
+    std::cerr << "GAL::StrokeText( \"" << aText << "\", " << aPosition << ", " << aRotationAngle
+              << ", font{" << aFont->Name() << "}, " << aLineSpacing << " ) m_lineWidth "
+              << GetLineWidth() << " attributes " << attributes << std::endl;
+#endif
+    aFont->Draw( this, aText, aPosition, attributes );
 }
 
 
@@ -278,4 +301,15 @@ void GAL::DrawGlyphs( const std::vector<SHAPE_POLY_SET> aGlyphs )
         DrawGlyph( glyph, nth, total );
         nth++;
     }
+}
+
+
+bool GAL::SetNativeCursorStyle( KICURSOR aCursor )
+{
+    if( m_currentNativeCursor == aCursor )
+        return false;
+
+    m_currentNativeCursor = aCursor;
+
+    return true;
 }

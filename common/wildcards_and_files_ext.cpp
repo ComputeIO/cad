@@ -30,6 +30,8 @@
 #include <regex>
 #include <wildcards_and_files_ext.h>
 #include <wx/regex.h>
+#include <wx/wx.h>
+
 
 bool compareFileExtensions( const std::string& aExtension,
         const std::vector<std::string>& aReference, bool aCaseSensitive )
@@ -141,7 +143,7 @@ const std::string ArchiveFileExtension( "zip" );
 
 const std::string LegacyPcbFileExtension( "brd" );
 const std::string KiCadPcbFileExtension( "kicad_pcb" );
-const std::string PageLayoutDescrFileExtension( "kicad_wks" );
+const std::string DrawingSheetFileExtension( "kicad_wks" );
 const std::string DesignRulesFileExtension( "kicad_dru" );
 
 const std::string PdfFileExtension( "pdf" );
@@ -351,13 +353,13 @@ wxString GedaPcbFootprintLibFileWildcard()
 }
 
 
-wxString PageLayoutDescrFileWildcard()
+wxString DrawingSheetFileWildcard()
 {
-    return _( "Page layout design files" ) + AddFileExtListToFilter( { "kicad_wks" } );
+    return _( "Drawing sheet files" ) + AddFileExtListToFilter( { "kicad_wks" } );
 }
 
 
-// Wildcard for cvpcb component to footprint link file
+// Wildcard for cvpcb symbol to footprint link file
 wxString ComponentFileWildcard()
 {
     return _( "KiCad symbol footprint link files" ) + AddFileExtListToFilter( { "cmp" } );

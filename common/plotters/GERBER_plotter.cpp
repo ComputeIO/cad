@@ -31,6 +31,7 @@
 #include <math/util.h>      // for KiROUND
 #include <render_settings.h>
 #include <trigo.h>
+#include <wx/log.h>
 
 #include <build_version.h>
 
@@ -91,13 +92,13 @@ static bool polyCompare( const std::vector<wxPoint>& aPolygon,
 
 GERBER_PLOTTER::GERBER_PLOTTER()
 {
-    workFile  = NULL;
-    finalFile = NULL;
+    workFile  = nullptr;
+    finalFile = nullptr;
     m_currentApertureIdx = -1;
     m_apertureAttribute = 0;
 
     // number of digits after the point (number of digits of the mantissa
-    // Be carefull: the Gerber coordinates are stored in an integer
+    // Be careful: the Gerber coordinates are stored in an integer
     // so 6 digits (inches) or 5 digits (mm) is a good value
     // To avoid overflow, 7 digits (inches) or 6 digits is a max.
     // with lower values than 6 digits (inches) or 5 digits (mm),
@@ -166,14 +167,14 @@ void GERBER_PLOTTER::ClearAllAttributes()
     else
         fputs( "G04 #@! TD*\n", m_outputFile );
 
-    m_objectAttributesDictionnary.clear();
+    m_objectAttributesDictionary.clear();
 }
 
 
 void GERBER_PLOTTER::clearNetAttribute()
 {
     // disable a Gerber net attribute (exists only in X2 with net attributes mode).
-    if( m_objectAttributesDictionnary.empty() )     // No net attribute or not X2 mode
+    if( m_objectAttributesDictionary.empty() )     // No net attribute or not X2 mode
         return;
 
     // Remove all net attributes from object attributes dictionary
@@ -182,7 +183,7 @@ void GERBER_PLOTTER::clearNetAttribute()
     else
         fputs( "G04 #@! TD*\n", m_outputFile );
 
-    m_objectAttributesDictionnary.clear();
+    m_objectAttributesDictionary.clear();
 }
 
 
@@ -205,7 +206,7 @@ void GERBER_PLOTTER::formatNetAttribute( GBR_NETLIST_METADATA* aData )
     // print a Gerber net attribute record.
     // it is added to the object attributes dictionary
     // On file, only modified or new attributes are printed.
-    if( aData == NULL )
+    if( aData == nullptr )
         return;
 
     if( !m_useNetAttributes )
@@ -216,7 +217,7 @@ void GERBER_PLOTTER::formatNetAttribute( GBR_NETLIST_METADATA* aData )
     bool clearDict;
     std::string short_attribute_string;
 
-    if( !FormatNetAttribute( short_attribute_string, m_objectAttributesDictionnary,
+    if( !FormatNetAttribute( short_attribute_string, m_objectAttributesDictionary,
                         aData, clearDict, useX1StructuredComment ) )
         return;
 
@@ -253,7 +254,7 @@ bool GERBER_PLOTTER::StartPlot()
     m_outputFile = workFile;
     wxASSERT( m_outputFile );
 
-    if( m_outputFile == NULL )
+    if( m_outputFile == nullptr )
         return false;
 
     for( unsigned ii = 0; ii < m_headerExtraLines.GetCount(); ii++ )
@@ -386,7 +387,7 @@ bool GERBER_PLOTTER::EndPlot()
     fclose( workFile );
     fclose( finalFile );
     ::wxRemoveFile( m_workFilename );
-    m_outputFile = 0;
+    m_outputFile = nullptr;
 
     return true;
 }
@@ -1754,19 +1755,31 @@ void GERBER_PLOTTER::FlashRegularPolygon( const wxPoint& aShapePos,
 }
 
 
-void GERBER_PLOTTER::Text( const wxPoint& aPos, const COLOR4D aColor,
-                           const wxString& aText, double aOrient, const wxSize& aSize,
-                           enum EDA_TEXT_HJUSTIFY_T aH_justify,
-                           enum EDA_TEXT_VJUSTIFY_T aV_justify, int aWidth, bool aItalic,
-                           bool aBold, bool aMultilineAllowed, KIFONT::FONT* aFont, void* aData )
+void GERBER_PLOTTER::Text( const wxPoint& aPos, const COLOR4D aColor, const wxString& aText,
+                           const EDA_ANGLE& aOrient, const wxSize& aSize,
+                           TEXT_ATTRIBUTES::HORIZONTAL_ALIGNMENT aHorizontalAlignment,
+                           TEXT_ATTRIBUTES::VERTICAL_ALIGNMENT aVerticalAlignment, int aWidth,
+                           bool aItalic, bool aBold, bool aMultilineAllowed, KIFONT::FONT* aFont,
+                           void* aData )
 {
     GBR_METADATA* gbr_metadata = static_cast<GBR_METADATA*>( aData );
 
     if( gbr_metadata )
         formatNetAttribute( &gbr_metadata->m_NetlistMetadata );
 
-    PLOTTER::Text( aPos, aColor, aText, aOrient, aSize, aH_justify, aV_justify, aWidth, aItalic,
-                   aBold, aMultilineAllowed, aFont, aData );
+    PLOTTER::Text( aPos, aColor, aText, aOrient, aSize, aHorizontalAlignment, aVerticalAlignment,
+                   aWidth, aItalic, aBold, aMultilineAllowed, aFont, aData );
+}
+
+
+void GERBER_PLOTTER::Text( const EDA_TEXT* aText, const COLOR4D aColor, void* aData )
+{
+    GBR_METADATA* gbr_metadata = static_cast<GBR_METADATA*>( aData );
+
+    if( gbr_metadata )
+        formatNetAttribute( &gbr_metadata->m_NetlistMetadata );
+
+    PLOTTER::Text( aText, aColor, aData );
 }
 
 

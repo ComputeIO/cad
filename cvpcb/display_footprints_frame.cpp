@@ -54,6 +54,7 @@
 #include <tools/pcb_viewer_tools.h>       // shared tools with other pcbnew frames
 #include <tools/cvpcb_fpviewer_selection_tool.h>
 #include <widgets/infobar.h>
+#include <wx/choice.h>
 #include <wx/debug.h>
 
 
@@ -497,7 +498,7 @@ void DISPLAY_FOOTPRINTS_FRAME::InitDisplay()
     UpdateStatusBar();
 
     GetCanvas()->Refresh();
-    Update3DView( true );
+    Update3DView( true, true );
 }
 
 

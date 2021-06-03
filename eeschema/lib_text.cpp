@@ -138,29 +138,20 @@ void LIB_TEXT::NormalizeJustification( bool inverse )
     wxPoint  delta( 0, 0 );
     EDA_RECT bbox = GetTextBox();
 
-    if( GetTextAngle() == 0.0 )
+    switch( GetHorizontalAlignment() )
     {
-        if( GetHorizJustify() == GR_TEXT_HJUSTIFY_LEFT )
-            delta.x = bbox.GetWidth() / 2;
-        else if( GetHorizJustify() == GR_TEXT_HJUSTIFY_RIGHT )
-            delta.x = - bbox.GetWidth() / 2;
-
-        if( GetVertJustify() == GR_TEXT_VJUSTIFY_TOP )
-            delta.y = - bbox.GetHeight() / 2;
-        else if( GetVertJustify() == GR_TEXT_VJUSTIFY_BOTTOM )
-            delta.y = bbox.GetHeight() / 2;
+        case TEXT_ATTRIBUTES::H_LEFT: delta.x = bbox.GetWidth() / 2; break;
+        case TEXT_ATTRIBUTES::H_RIGHT: delta.x = -bbox.GetWidth() / 2; break;
+        default: break;
     }
-    else
-    {
-        if( GetHorizJustify() == GR_TEXT_HJUSTIFY_LEFT )
-            delta.y = bbox.GetWidth() / 2;
-        else if( GetHorizJustify() == GR_TEXT_HJUSTIFY_RIGHT )
-            delta.y = - bbox.GetWidth() / 2;
 
-        if( GetVertJustify() == GR_TEXT_VJUSTIFY_TOP )
-            delta.x = + bbox.GetHeight() / 2;
-        else if( GetVertJustify() == GR_TEXT_VJUSTIFY_BOTTOM )
-            delta.x = - bbox.GetHeight() / 2;
+    int multiplier = GetTextAngle() == 0.0 ? 1 : -1;
+
+    switch( GetVerticalAlignment() )
+    {
+        case TEXT_ATTRIBUTES::V_TOP: delta.y = multiplier * -bbox.GetHeight() / 2; break;
+        case TEXT_ATTRIBUTES::V_BOTTOM: delta.y = multiplier * bbox.GetHeight() / 2; break;
+        default: break;
     }
 
     if( inverse )
@@ -181,17 +172,11 @@ void LIB_TEXT::MirrorHorizontal( const wxPoint& center )
 
     if( GetTextAngle() == 0.0 )
     {
-        if( GetHorizJustify() == GR_TEXT_HJUSTIFY_LEFT )
-            SetHorizJustify( GR_TEXT_HJUSTIFY_RIGHT );
-        else if( GetHorizJustify() == GR_TEXT_HJUSTIFY_RIGHT )
-            SetHorizJustify( GR_TEXT_HJUSTIFY_LEFT );
+        FlipHorizontalAlignment();
     }
     else
     {
-        if( GetVertJustify() == GR_TEXT_VJUSTIFY_TOP )
-            SetVertJustify( GR_TEXT_VJUSTIFY_BOTTOM );
-        else if( GetVertJustify() == GR_TEXT_VJUSTIFY_BOTTOM )
-            SetVertJustify( GR_TEXT_VJUSTIFY_TOP );
+        FlipVerticalAlignment();
     }
 
     SetTextX( x );
@@ -210,17 +195,11 @@ void LIB_TEXT::MirrorVertical( const wxPoint& center )
 
     if( GetTextAngle() == 0.0 )
     {
-        if( GetVertJustify() == GR_TEXT_VJUSTIFY_TOP )
-            SetVertJustify( GR_TEXT_VJUSTIFY_BOTTOM );
-        else if( GetVertJustify() == GR_TEXT_VJUSTIFY_BOTTOM )
-            SetVertJustify( GR_TEXT_VJUSTIFY_TOP );
+        FlipVerticalAlignment();
     }
     else
     {
-        if( GetHorizJustify() == GR_TEXT_HJUSTIFY_LEFT )
-            SetHorizJustify( GR_TEXT_HJUSTIFY_RIGHT );
-        else if( GetHorizJustify() == GR_TEXT_HJUSTIFY_RIGHT )
-            SetHorizJustify( GR_TEXT_HJUSTIFY_LEFT );
+        FlipHorizontalAlignment();
     }
 
     SetTextY( y );
@@ -244,17 +223,8 @@ void LIB_TEXT::Rotate( const wxPoint& center, bool aRotateCCW )
     else
     {
         // 180º of rotation is a mirror
-
-        if( GetHorizJustify() == GR_TEXT_HJUSTIFY_LEFT )
-            SetHorizJustify( GR_TEXT_HJUSTIFY_RIGHT );
-        else if( GetHorizJustify() == GR_TEXT_HJUSTIFY_RIGHT )
-            SetHorizJustify( GR_TEXT_HJUSTIFY_LEFT );
-
-        if( GetVertJustify() == GR_TEXT_VJUSTIFY_TOP )
-            SetVertJustify( GR_TEXT_VJUSTIFY_BOTTOM );
-        else if( GetVertJustify() == GR_TEXT_VJUSTIFY_BOTTOM )
-            SetVertJustify( GR_TEXT_VJUSTIFY_TOP );
-
+        FlipHorizontalAlignment();
+        FlipVerticalAlignment();
         SetTextAngle( 0 );
     }
 
@@ -289,9 +259,13 @@ void LIB_TEXT::Plot( PLOTTER* plotter, const wxPoint& offset, bool fill,
 
     int penWidth = std::max( GetEffectiveTextPenWidth(), settings->GetMinPenWidth() );
 
+#if 0
     plotter->Text( pos, color, GetText(), t1 ? TEXT_ANGLE_HORIZ : TEXT_ANGLE_VERT, GetTextSize(),
-                   GR_TEXT_HJUSTIFY_CENTER, GR_TEXT_VJUSTIFY_CENTER, penWidth, IsItalic(),
+                   TEXT_ATTRIBUTES::H_CENTER, TEXT_ATTRIBUTES::V_CENTER, penWidth, IsItalic(),
                    IsBold() );
+#else
+    plotter->Text( this, color );
+#endif
 }
 
 
@@ -310,14 +284,14 @@ void LIB_TEXT::print( const RENDER_SETTINGS* aSettings, const wxPoint& aOffset, 
 
     // Calculate the text orientation, according to the symbol orientation/mirror (needed when
     // draw text in schematic)
-    int orient = (int) GetTextAngle();
+    EDA_ANGLE orient = GetTextEdaAngle();
 
     if( aTransform.y1 )  // Rotate symbol 90 degrees.
     {
-        if( orient == TEXT_ANGLE_HORIZ )
-            orient = TEXT_ANGLE_VERT;
+        if( orient == EDA_ANGLE::ANGLE_0 )
+            orient = EDA_ANGLE::ANGLE_90;
         else
-            orient = TEXT_ANGLE_HORIZ;
+            orient = EDA_ANGLE::ANGLE_0;
     }
 
     /*
@@ -339,8 +313,8 @@ void LIB_TEXT::print( const RENDER_SETTINGS* aSettings, const wxPoint& aOffset, 
     // Calculate pos according to mirror/rotation.
     txtpos = aTransform.TransformCoordinate( txtpos ) + aOffset;
 
-    GRText( DC, txtpos, color, GetShownText(), orient, GetTextSize(), GR_TEXT_HJUSTIFY_CENTER,
-            GR_TEXT_VJUSTIFY_CENTER, penWidth, IsItalic(), IsBold() );
+    GRText( DC, txtpos, color, GetShownText(), orient, GetTextSize(), TEXT_ATTRIBUTES::H_CENTER,
+            TEXT_ATTRIBUTES::V_CENTER, penWidth, IsItalic(), IsBold() );
 }
 
 

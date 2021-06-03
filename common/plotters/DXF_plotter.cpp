@@ -356,7 +356,7 @@ bool DXF_PLOTTER::StartPlot()
        - Greys (251 - 255)
      */
 
-    wxASSERT( numLayers < NBCOLORS );
+    wxASSERT( numLayers <= NBCOLORS );
 
     for( EDA_COLOR_T i = BLACK; i < numLayers; i = static_cast<EDA_COLOR_T>( int( i ) + 1 )  )
     {
@@ -478,7 +478,7 @@ void DXF_PLOTTER::Circle( const wxPoint& centre, int diameter, FILL_TYPE fill, i
 /**
  * DXF polygon: doesn't fill it but at least it close the filled ones
  * DXF does not know thick outline.
- * It does not know thhick segments, therefore filled polygons with thick outline
+ * It does not know thick segments, therefore filled polygons with thick outline
  * are converted to inflated polygon by aWidth/2
  */
 void DXF_PLOTTER::PlotPoly( const std::vector<wxPoint>& aCornerList,
@@ -709,7 +709,7 @@ void DXF_PLOTTER::FlashPadCircle( const wxPoint& pos, int diametre,
 
 
 /**
- * DXF rectangular pad: alwayd done in sketch mode
+ * DXF rectangular pad: always done in sketch mode
  */
 void DXF_PLOTTER::FlashPadRect( const wxPoint& pos, const wxSize& padsize,
                                 double orient, OUTLINE_MODE trace_mode, void* aData )
@@ -781,7 +781,7 @@ void DXF_PLOTTER::FlashPadRoundRect( const wxPoint& aPadPos, const wxSize& aSize
 {
     SHAPE_POLY_SET outline;
     TransformRoundChamferedRectToPolygon( outline, aPadPos, aSize, aOrient,
-                                 aCornerRadius, 0.0, 0, GetPlotterArcHighDef(), ERROR_INSIDE );
+                                          aCornerRadius, 0.0, 0, GetPlotterArcHighDef(), ERROR_INSIDE );
 
     // TransformRoundRectToPolygon creates only one convex polygon
     SHAPE_LINE_CHAIN& poly = outline.Outline( 0 );
@@ -868,10 +868,10 @@ bool containsNonAsciiChars( const wxString& string )
 void DXF_PLOTTER::Text( const wxPoint&              aPos,
                         COLOR4D                     aColor,
                         const wxString&             aText,
-                        double                      aOrient,
+                        const EDA_ANGLE&            aOrient,
                         const wxSize&               aSize,
-                        enum EDA_TEXT_HJUSTIFY_T    aH_justify,
-                        enum EDA_TEXT_VJUSTIFY_T    aV_justify,
+                        TEXT_ATTRIBUTES::HORIZONTAL_ALIGNMENT aHorizontalAlignment,
+                        TEXT_ATTRIBUTES::VERTICAL_ALIGNMENT aVerticalAlignment,
                         int                         aWidth,
                         bool                        aItalic,
                         bool                        aBold,
@@ -890,8 +890,9 @@ void DXF_PLOTTER::Text( const wxPoint&              aPos,
         // output text as graphics.
         // Perhaps multiline texts could be handled as DXF text entity
         // but I do not want spend time about this (JPC)
-        PLOTTER::Text( aPos, aColor, aText, aOrient, aSize, aH_justify, aV_justify,
-                       aWidth, aItalic, aBold, aMultilineAllowed, aFont, aData );
+        PLOTTER::Text( aPos, aColor, aText, aOrient, aSize, aHorizontalAlignment,
+                       aVerticalAlignment, aWidth, aItalic, aBold, aMultilineAllowed, aFont,
+                       aData );
     }
     else
     {
@@ -902,27 +903,27 @@ void DXF_PLOTTER::Text( const wxPoint&              aPos,
         wxString cname = getDXFColorName( m_currentColor );
         DPOINT size_dev = userToDeviceSize( aSize );
         int h_code = 0, v_code = 0;
-        switch( aH_justify )
+        switch( aHorizontalAlignment )
         {
-        case GR_TEXT_HJUSTIFY_LEFT:
+        case TEXT_ATTRIBUTES::H_LEFT:
             h_code = 0;
             break;
-        case GR_TEXT_HJUSTIFY_CENTER:
+        case TEXT_ATTRIBUTES::H_CENTER:
             h_code = 1;
             break;
-        case GR_TEXT_HJUSTIFY_RIGHT:
+        case TEXT_ATTRIBUTES::H_RIGHT:
             h_code = 2;
             break;
         }
-        switch( aV_justify )
+        switch( aVerticalAlignment )
         {
-        case GR_TEXT_VJUSTIFY_TOP:
+        case TEXT_ATTRIBUTES::V_TOP:
             v_code = 3;
             break;
-        case GR_TEXT_VJUSTIFY_CENTER:
+        case TEXT_ATTRIBUTES::V_CENTER:
             v_code = 2;
             break;
-        case GR_TEXT_VJUSTIFY_BOTTOM:
+        case TEXT_ATTRIBUTES::V_BOTTOM:
             v_code = 1;
             break;
         }
@@ -965,7 +966,7 @@ void DXF_PLOTTER::Text( const wxPoint&              aPos,
                  origin_dev.x, origin_dev.x,
                  origin_dev.y, origin_dev.y,
                  size_dev.y, fabs( size_dev.x / size_dev.y ),
-                 aOrient / 10.0,
+                 aOrient.AsTenthsOfADegree() / 10.0,
                  aItalic ? DXF_OBLIQUE_ANGLE : 0,
                  size_dev.x < 0 ? 2 : 0, // X mirror flag
                 h_code, v_code );
@@ -1002,7 +1003,7 @@ void DXF_PLOTTER::Text( const wxPoint&              aPos,
                but today I'm lazy and I have no idea on how to coerce a Unicode
                wxString to spit out latin1 encoded text ...
 
-               Atleast stdio is *supposed* to do output buffering, so there is
+               At least stdio is *supposed* to do output buffering, so there is
                hope is not too slow */
             wchar_t ch = aText[i];
 
@@ -1047,3 +1048,11 @@ void DXF_PLOTTER::Text( const wxPoint&              aPos,
     }
 }
 
+
+void DXF_PLOTTER::Text( const EDA_TEXT* aText, const COLOR4D aColor, void* aData )
+{
+    Text( aText->GetTextPos(), aColor, aText->GetShownText(), aText->GetTextEdaAngle(),
+          aText->GetTextSize(), aText->GetHorizontalAlignment(), aText->GetVerticalAlignment(),
+          aText->GetTextThickness(), aText->IsItalic(), aText->IsBold(),
+          aText->IsMultilineAllowed(), aText->GetFont(), aData );
+}

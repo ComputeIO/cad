@@ -30,7 +30,9 @@
 #include <trace_helpers.h>
 #include <trigo.h>
 #include <i18n_utility.h>
+#include <wx/log.h>
 
+#include <wx/fdrepdlg.h>
 
 EDA_ITEM::EDA_ITEM( EDA_ITEM* parent, KICAD_T idType ) :
         m_status( 0 ),
@@ -232,6 +234,9 @@ std::ostream& EDA_ITEM::NestedSpace( int nestLevel, std::ostream& os )
 }
 
 #endif
+
+
+
 
 
 static struct EDA_ITEM_DESC

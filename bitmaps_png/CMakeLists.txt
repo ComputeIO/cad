@@ -565,14 +565,40 @@ set( BMAPS_128
     icon_pcbcalculator
     )
 
+# Images in this section are generated at whatever resolution is set in the source SVG file
+# Use Inkscape Document Properties > Custom Size to set (make sure units are pixels)
+# These are used for images in the UI that are not-square or very large (infographics, etc)
 set( BMAPS_OTHER
+    att_bridge
+    att_pi
+    att_splitter
+    att_tee
+    c_microstrip
+    coax
+    color_code_multiplier
+    color_code_tolerance
+    color_code_value
+    color_code_value_and_name
+    cpw
+    cpw_back
+    label_bidirectional
+    label_input
+    label_output
+    label_passive
+    label_tristate
+    microstrip
+    microstrip_zodd_zeven
     pads_npth
-    pads_npth_top_bottom
-    pads_npth_top
     pads_npth_bottom
+    pads_npth_top
+    pads_npth_top_bottom
     pads_remove_unused
     pads_remove_unused_keep_bottom
     pads_reset_unused
+    rectwaveguide
+    regul
+    regul_3pins
+    stripline
     stroke_dash
     stroke_dashdot
     stroke_dot
@@ -580,6 +606,8 @@ set( BMAPS_OTHER
     tune_diff_pair_length_legend
     tune_diff_pair_skew_legend
     tune_single_track_length_legend
+    twistedpair
+    viacalc
     )
 
 

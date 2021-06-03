@@ -30,7 +30,6 @@
 #include <deque>
 
 #include <core/typeinfo.h>
-#include <wx/fdrepdlg.h>
 #include <view/view_item.h>
 #include <kiid.h>
 
@@ -51,15 +50,15 @@ enum class SEARCH_RESULT
 enum FIND_REPLACE_FLAGS
 {
     // The last wxFindReplaceFlag enum is wxFR_MATCHCASE = 0x4.
-    FR_CURRENT_SHEET_ONLY = wxFR_MATCHCASE << 1,   // Search the current sheet only.
-    FR_SEARCH_ALL_FIELDS  = wxFR_MATCHCASE << 2,   // Search hidden fields too.
-    FR_SEARCH_ALL_PINS    = wxFR_MATCHCASE << 3,   // Search pin name and number.
-    FR_MATCH_WILDCARD     = wxFR_MATCHCASE << 4,   // Use simple wild card matching (* & ?).
-    FR_SEARCH_WRAP        = wxFR_MATCHCASE << 5,   // Wrap around the start or end of search.
-    FR_SEARCH_REPLACE     = wxFR_MATCHCASE << 7,   // Search for a item that has replaceable text.
-    FR_REPLACE_ITEM_FOUND = wxFR_MATCHCASE << 8,   // Indicates an item with replaceable text has
+    FR_CURRENT_SHEET_ONLY = 0x4 << 1,   // Search the current sheet only.
+    FR_SEARCH_ALL_FIELDS  = 0x4 << 2,   // Search hidden fields too.
+    FR_SEARCH_ALL_PINS    = 0x4 << 3,   // Search pin name and number.
+    FR_MATCH_WILDCARD     = 0x4 << 4,   // Use simple wild card matching (* & ?).
+    FR_SEARCH_WRAP        = 0x4 << 5,   // Wrap around the start or end of search.
+    FR_SEARCH_REPLACE     = 0x4 << 7,   // Search for a item that has replaceable text.
+    FR_REPLACE_ITEM_FOUND = 0x4 << 8,   // Indicates an item with replaceable text has
                                                    // been found.
-    FR_REPLACE_REFERENCES = wxFR_MATCHCASE << 9    // Don't replace in references.
+    FR_REPLACE_REFERENCES = 0x4 << 9    // Don't replace in references.
 };
 
 
@@ -103,10 +102,10 @@ typedef const INSPECTOR_FUNC& INSPECTOR;
 #define IS_CHANGED     (1 << 0)    ///< Item was edited, and modified
 #define IS_LINKED      (1 << 1)    ///< Used in calculation to mark linked items (temporary use)
 #define IN_EDIT        (1 << 2)    ///< Item currently edited
-#define IS_MOVED       (1 << 3)    ///< Item being moved
+#define IS_MOVING      (1 << 3)    ///< Item being moved
 #define IS_NEW         (1 << 4)    ///< New item, just created
-#define IS_RESIZED     (1 << 5)    ///< Item being resized
-#define IS_DRAGGED     (1 << 6)    ///< Item being dragged
+#define IS_RESIZING    (1 << 5)    ///< Item being resized
+#define IS_DRAGGING    (1 << 6)    ///< Item being dragged
 #define IS_DELETED     (1 << 7)
 #define IS_WIRE_IMAGE  (1 << 8)    ///< Item to be drawn as wireframe while editing
 #define STARTPOINT     (1 << 9)    ///< When a line is selected, these flags indicate which
@@ -167,12 +166,12 @@ public:
 
     inline bool IsModified() const { return m_flags & IS_CHANGED; }
     inline bool IsNew() const { return m_flags & IS_NEW; }
-    inline bool IsMoving() const { return m_flags & IS_MOVED; }
-    inline bool IsDragging() const { return m_flags & IS_DRAGGED; }
+    inline bool IsMoving() const { return m_flags & IS_MOVING; }
+    inline bool IsDragging() const { return m_flags & IS_DRAGGING; }
     inline bool IsWireImage() const { return m_flags & IS_WIRE_IMAGE; }
     inline bool IsSelected() const { return m_flags & SELECTED; }
     inline bool IsEntered() const { return m_flags & ENTERED; }
-    inline bool IsResized() const { return m_flags & IS_RESIZED; }
+    inline bool IsResized() const { return m_flags & IS_RESIZING; }
     inline bool IsBrightened() const { return m_flags & BRIGHTENED; }
 
     inline void SetWireImage() { SetFlags( IS_WIRE_IMAGE ); }
@@ -207,8 +206,8 @@ public:
 
     STATUS_FLAGS GetEditFlags() const
     {
-        constexpr int mask = ( IS_NEW | IS_PASTED | IS_MOVED | IS_RESIZED | IS_DRAGGED |
-                               IS_WIRE_IMAGE | STRUCT_DELETED );
+        constexpr int mask = ( IS_NEW | IS_PASTED | IS_MOVING | IS_RESIZING | IS_DRAGGING
+                               | IS_WIRE_IMAGE | STRUCT_DELETED );
 
         return m_flags & mask;
     }

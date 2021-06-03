@@ -36,6 +36,7 @@
 #include <kiface_i.h>
 #include <wildcards_and_files_ext.h>
 #include <connection_graph.h>
+#include <wx/log.h>
 
 
 BACK_ANNOTATE::BACK_ANNOTATE( SCH_EDIT_FRAME* aFrame, REPORTER& aReporter, bool aRelinkFootprints,
@@ -414,17 +415,16 @@ void BACK_ANNOTATE::applyChangelist()
 }
 
 
-static LABEL_SPIN_STYLE orientLabel( SCH_PIN* aPin )
+static EDA_ANGLE orientLabel( SCH_PIN* aPin )
 {
-    LABEL_SPIN_STYLE spin = LABEL_SPIN_STYLE::RIGHT;
+    EDA_ANGLE angle = EDA_ANGLE::ANGLE_180;
 
-    // Initial orientation from the pin
     switch( aPin->GetLibPin()->GetOrientation() )
     {
-    case PIN_UP:    spin = LABEL_SPIN_STYLE::BOTTOM; break;
-    case PIN_DOWN:  spin = LABEL_SPIN_STYLE::UP;     break;
-    case PIN_LEFT:  spin = LABEL_SPIN_STYLE::RIGHT;  break;
-    case PIN_RIGHT: spin = LABEL_SPIN_STYLE::LEFT;   break;
+        case PIN_UP:    angle = EDA_ANGLE::ANGLE_270; break;
+        case PIN_DOWN:  angle = EDA_ANGLE::ANGLE_90;     break;
+        case PIN_LEFT:  angle = EDA_ANGLE::ANGLE_0;  break;
+        case PIN_RIGHT: angle = EDA_ANGLE::ANGLE_180;   break;
     }
 
     // Reorient based on the actual symbol orientation now
@@ -432,33 +432,32 @@ static LABEL_SPIN_STYLE orientLabel( SCH_PIN* aPin )
     {
         int flag;
         int n_rots;
-        int mirror_x;
-        int mirror_y;
+        bool mirror_x;
+        bool mirror_y;
     }
     orientations[] =
     {
-        { CMP_ORIENT_0,                  0, 0, 0 },
-        { CMP_ORIENT_90,                 1, 0, 0 },
-        { CMP_ORIENT_180,                2, 0, 0 },
-        { CMP_ORIENT_270,                3, 0, 0 },
-        { CMP_MIRROR_X + CMP_ORIENT_0,   0, 1, 0 },
-        { CMP_MIRROR_X + CMP_ORIENT_90,  1, 1, 0 },
-        { CMP_MIRROR_Y,                  0, 0, 1 },
-        { CMP_MIRROR_X + CMP_ORIENT_270, 3, 1, 0 },
-        { CMP_MIRROR_Y + CMP_ORIENT_0,   0, 0, 1 },
-        { CMP_MIRROR_Y + CMP_ORIENT_90,  1, 0, 1 },
-        { CMP_MIRROR_Y + CMP_ORIENT_180, 2, 0, 1 },
-        { CMP_MIRROR_Y + CMP_ORIENT_270, 3, 0, 1 }
+        { CMP_ORIENT_0,                  0, false, false },
+        { CMP_ORIENT_90,                 1, false, false },
+        { CMP_ORIENT_180,                2, false, false },
+        { CMP_ORIENT_270,                3, false, false },
+        { CMP_MIRROR_X + CMP_ORIENT_0,   0, true,  false },
+        { CMP_MIRROR_X + CMP_ORIENT_90,  1, true,  false },
+        { CMP_MIRROR_Y,                  0, false, true },
+        { CMP_MIRROR_X + CMP_ORIENT_270, 3, true,  false },
+        { CMP_MIRROR_Y + CMP_ORIENT_0,   0, false, true },
+        { CMP_MIRROR_Y + CMP_ORIENT_90,  1, false, true },
+        { CMP_MIRROR_Y + CMP_ORIENT_180, 2, false, true },
+        { CMP_MIRROR_Y + CMP_ORIENT_270, 3, false, true }
     };
-
-    ORIENT o = orientations[ 0 ];
 
     SCH_COMPONENT* parentSymbol = aPin->GetParentSymbol();
 
     if( !parentSymbol )
-        return spin;
+        return angle;
 
-    int symbolOrientation = parentSymbol->GetOrientation();
+    ORIENT o = orientations[ 0 ];
+    int    symbolOrientation = parentSymbol->GetOrientation();
 
     for( auto& i : orientations )
     {
@@ -470,15 +469,15 @@ static LABEL_SPIN_STYLE orientLabel( SCH_PIN* aPin )
     }
 
     for( int i = 0; i < o.n_rots; i++ )
-        spin = spin.RotateCCW();
+        angle = angle.RotateCCW();
 
     if( o.mirror_x )
-        spin = spin.MirrorX();
+        angle = angle.MirrorAcrossXAxis();
 
     if( o.mirror_y )
-        spin = spin.MirrorY();
+        angle = angle.MirrorAcrossYAxis();
 
-    return spin;
+    return angle;
 }
 
 
@@ -548,8 +547,8 @@ void BACK_ANNOTATE::processNetNameChange( const wxString& aRef, SCH_PIN* aPin,
 
     case SCH_PIN_T:
     {
-        SCH_PIN*         schPin = static_cast<SCH_PIN*>( driver );
-        LABEL_SPIN_STYLE spin   = orientLabel( schPin );
+        SCH_PIN*  schPin = static_cast<SCH_PIN*>( driver );
+        EDA_ANGLE angle = orientLabel( schPin );
 
         if( schPin->IsPowerConnection() )
         {
@@ -569,7 +568,7 @@ void BACK_ANNOTATE::processNetNameChange( const wxString& aRef, SCH_PIN* aPin,
             SCH_LABEL* label = new SCH_LABEL( driver->GetPosition(), aNewName );
             label->SetParent( &m_frame->Schematic() );
             label->SetTextSize( wxSize( settings.m_DefaultTextSize, settings.m_DefaultTextSize ) );
-            label->SetLabelSpinStyle( spin );
+            label->SetAlignedAngle( angle );
             label->SetFlags( IS_NEW );
 
             SCH_SCREEN* screen = aConnection->Sheet().LastScreen();

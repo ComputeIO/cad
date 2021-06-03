@@ -547,6 +547,9 @@ APPEARANCE_CONTROLS::APPEARANCE_CONTROLS( PCB_BASE_FRAME* aParent, wxWindow* aFo
     rebuildObjects();
     OnBoardChanged();
 
+    // Grid visibility is loaded and set to the GAL before we are constructed
+    SetObjectVisible( LAYER_GRID, m_frame->IsGridVisible() );
+
     Bind( wxEVT_COMMAND_MENU_SELECTED, &APPEARANCE_CONTROLS::OnLayerContextMenu, this,
           ID_CHANGE_COLOR, ID_LAST_VALUE );
 }
@@ -2814,8 +2817,7 @@ void APPEARANCE_CONTROLS::onReadOnlySwatch()
     button->Bind( wxEVT_COMMAND_HYPERLINK, std::function<void( wxHyperlinkEvent& aEvent )>(
             [&]( wxHyperlinkEvent& aEvent )
             {
-                 wxCommandEvent dummy;
-                 m_frame->OnPreferences( dummy );
+                m_frame->OnPreferences();
             } ) );
 
     infobar->RemoveAllButtons();

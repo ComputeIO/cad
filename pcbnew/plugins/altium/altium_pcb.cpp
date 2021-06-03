@@ -44,6 +44,7 @@
 #include <trigo.h>
 #include <utf.h>
 #include <wx/docview.h>
+#include <wx/log.h>
 #include <wx/mstream.h>
 #include <wx/wfstream.h>
 #include <wx/zstream.h>
@@ -701,13 +702,13 @@ void ALTIUM_PCB::HelperCreateBoardOutline( const std::vector<ALTIUM_VERTICE>& aV
 
             if( !last->isRound && !cur->isRound )
             {
-                shape->SetShape( S_SEGMENT );
+                shape->SetShape( PCB_SHAPE_TYPE::SEGMENT );
                 shape->SetStart( last->position );
                 shape->SetEnd( cur->position );
             }
             else if( cur->isRound )
             {
-                shape->SetShape( S_ARC );
+                shape->SetShape( PCB_SHAPE_TYPE::ARC );
                 shape->SetAngle( -NormalizeAngleDegreesPos( cur->endangle - cur->startangle ) * 10. );
 
                 double  startradiant   = DEG2RAD( cur->startangle );
@@ -725,7 +726,7 @@ void ALTIUM_PCB::HelperCreateBoardOutline( const std::vector<ALTIUM_VERTICE>& aV
                     wxPoint arcEnd       = cur->center + arcEndOffset;
 
                     PCB_SHAPE* shape2 = new PCB_SHAPE( m_board );
-                    shape2->SetShape( S_SEGMENT );
+                    shape2->SetShape( PCB_SHAPE_TYPE::SEGMENT );
                     m_board->Add( shape2, ADD_MODE::APPEND );
                     shape2->SetWidth( m_board->GetDesignSettings().GetLineThickness( Edge_Cuts ) );
                     shape2->SetLayer( Edge_Cuts );
@@ -1004,7 +1005,7 @@ void ALTIUM_PCB::HelperParseDimensions6Leader( const ADIMENSION6& aElem )
         {
             PCB_SHAPE* shape = new PCB_SHAPE( m_board );
             m_board->Add( shape, ADD_MODE::APPEND );
-            shape->SetShape( S_SEGMENT );
+            shape->SetShape( PCB_SHAPE_TYPE::SEGMENT );
             shape->SetLayer( klayer );
             shape->SetWidth( aElem.linewidth );
             shape->SetStart( last );
@@ -1025,7 +1026,7 @@ void ALTIUM_PCB::HelperParseDimensions6Leader( const ADIMENSION6& aElem )
 
                 PCB_SHAPE* shape1 = new PCB_SHAPE( m_board );
                 m_board->Add( shape1, ADD_MODE::APPEND );
-                shape1->SetShape( S_SEGMENT );
+                shape1->SetShape( PCB_SHAPE_TYPE::SEGMENT );
                 shape1->SetLayer( klayer );
                 shape1->SetWidth( aElem.linewidth );
                 shape1->SetStart( referencePoint0 );
@@ -1035,7 +1036,7 @@ void ALTIUM_PCB::HelperParseDimensions6Leader( const ADIMENSION6& aElem )
 
                 PCB_SHAPE* shape2 = new PCB_SHAPE( m_board );
                 m_board->Add( shape2, ADD_MODE::APPEND );
-                shape2->SetShape( S_SEGMENT );
+                shape2->SetShape( PCB_SHAPE_TYPE::SEGMENT );
                 shape2->SetLayer( klayer );
                 shape2->SetWidth( aElem.linewidth );
                 shape2->SetStart( referencePoint0 );
@@ -1057,8 +1058,7 @@ void ALTIUM_PCB::HelperParseDimensions6Leader( const ADIMENSION6& aElem )
     text->SetLayer( klayer );
     text->SetTextSize( wxSize( aElem.textheight, aElem.textheight ) ); // TODO: parse text width
     text->SetTextThickness( aElem.textlinewidth );
-    text->SetHorizJustify( EDA_TEXT_HJUSTIFY_T::GR_TEXT_HJUSTIFY_LEFT );
-    text->SetVertJustify( EDA_TEXT_VJUSTIFY_T::GR_TEXT_VJUSTIFY_BOTTOM );
+    text->Align( TEXT_ATTRIBUTES::H_LEFT, TEXT_ATTRIBUTES::V_BOTTOM );
 }
 
 void ALTIUM_PCB::HelperParseDimensions6Datum( const ADIMENSION6& aElem )
@@ -1076,7 +1076,7 @@ void ALTIUM_PCB::HelperParseDimensions6Datum( const ADIMENSION6& aElem )
     {
         PCB_SHAPE* shape = new PCB_SHAPE( m_board );
         m_board->Add( shape, ADD_MODE::APPEND );
-        shape->SetShape( S_SEGMENT );
+        shape->SetShape( PCB_SHAPE_TYPE::SEGMENT );
         shape->SetLayer( klayer );
         shape->SetWidth( aElem.linewidth );
         shape->SetStart( aElem.referencePoint.at( i ) );
@@ -1502,7 +1502,7 @@ void ALTIUM_PCB::ParseShapeBasedRegions6Data( const CFB::CompoundFileReader& aRe
 
                 PCB_SHAPE* shape = new PCB_SHAPE( m_board );
                 m_board->Add( shape, ADD_MODE::APPEND );
-                shape->SetShape( S_POLYGON );
+                shape->SetShape( PCB_SHAPE_TYPE::POLYGON );
                 shape->SetFilled( true );
                 shape->SetLayer( klayer );
                 shape->SetWidth( 0 );
@@ -1635,12 +1635,12 @@ void ALTIUM_PCB::ParseArcs6Data( const CFB::CompoundFileReader& aReader,
 
             if( elem.startangle == 0. && elem.endangle == 360. )
             { // TODO: other variants to define circle?
-                shape.SetShape( S_CIRCLE );
+                shape.SetShape( PCB_SHAPE_TYPE::CIRCLE );
                 shape.SetArcStart( elem.center - wxPoint( 0, elem.radius ) );
             }
             else
             {
-                shape.SetShape( S_ARC );
+                shape.SetShape( PCB_SHAPE_TYPE::ARC );
                 shape.SetAngle( -NormalizeAngleDegreesPos( elem.endangle - elem.startangle ) * 10. );
 
                 double  startradiant   = DEG2RAD( elem.startangle );
@@ -1719,12 +1719,12 @@ void ALTIUM_PCB::ParseArcs6Data( const CFB::CompoundFileReader& aReader,
 
             if( elem.startangle == 0. && elem.endangle == 360. )
             { // TODO: other variants to define circle?
-                shape->SetShape( S_CIRCLE );
+                shape->SetShape( PCB_SHAPE_TYPE::CIRCLE );
                 shape->SetArcStart( elem.center - wxPoint( 0, elem.radius ) );
             }
             else
             {
-                shape->SetShape( S_ARC );
+                shape->SetShape( PCB_SHAPE_TYPE::ARC );
                 shape->SetAngle( -NormalizeAngleDegreesPos( elem.endangle - elem.startangle ) * 10. );
 
                 double  startradiant   = DEG2RAD( elem.startangle );
@@ -1797,7 +1797,7 @@ void ALTIUM_PCB::ParsePads6Data( const CFB::CompoundFileReader& aReader,
 
         if( elem.holesize == 0 )
         {
-            pad->SetAttribute( PAD_ATTR_T::PAD_ATTRIB_SMD );
+            pad->SetAttribute( PAD_ATTRIB::SMD );
         }
         else
         {
@@ -1808,8 +1808,8 @@ void ALTIUM_PCB::ParsePads6Data( const CFB::CompoundFileReader& aReader,
                             "Pad '%s' of Footprint %s is not marked as multilayer, but it is an THT pad",
                             elem.name, footprint->GetReference() ) );
             }
-            pad->SetAttribute( elem.plated ? PAD_ATTR_T::PAD_ATTRIB_PTH :
-                                             PAD_ATTR_T::PAD_ATTRIB_NPTH );
+            pad->SetAttribute( elem.plated ? PAD_ATTRIB::PTH :
+                                             PAD_ATTRIB::NPTH );
             if( !elem.sizeAndShape || elem.sizeAndShape->holeshape == ALTIUM_PAD_HOLE_SHAPE::ROUND )
             {
                 pad->SetDrillShape( PAD_DRILL_SHAPE_T::PAD_DRILL_SHAPE_CIRCLE );
@@ -1886,27 +1886,27 @@ void ALTIUM_PCB::ParsePads6Data( const CFB::CompoundFileReader& aReader,
         switch( elem.topshape )
         {
         case ALTIUM_PAD_SHAPE::RECT:
-            pad->SetShape( PAD_SHAPE_T::PAD_SHAPE_RECT );
+            pad->SetShape( PAD_SHAPE::RECT );
             break;
         case ALTIUM_PAD_SHAPE::CIRCLE:
             if( elem.sizeAndShape
                     && elem.sizeAndShape->alt_shape[0] == ALTIUM_PAD_SHAPE_ALT::ROUNDRECT )
             {
-                pad->SetShape( PAD_SHAPE_T::PAD_SHAPE_ROUNDRECT ); // 100 = round, 0 = rectangular
+                pad->SetShape( PAD_SHAPE::ROUNDRECT ); // 100 = round, 0 = rectangular
                 double ratio = elem.sizeAndShape->cornerradius[0] / 200.;
                 pad->SetRoundRectRadiusRatio( ratio );
             }
             else if( elem.topsize.x == elem.topsize.y )
             {
-                pad->SetShape( PAD_SHAPE_T::PAD_SHAPE_CIRCLE );
+                pad->SetShape( PAD_SHAPE::CIRCLE );
             }
             else
             {
-                pad->SetShape( PAD_SHAPE_T::PAD_SHAPE_OVAL );
+                pad->SetShape( PAD_SHAPE::OVAL );
             }
             break;
         case ALTIUM_PAD_SHAPE::OCTAGONAL:
-            pad->SetShape( PAD_SHAPE_T::PAD_SHAPE_CHAMFERED_RECT );
+            pad->SetShape( PAD_SHAPE::CHAMFERED_RECT );
             pad->SetChamferPositions( RECT_CHAMFER_ALL );
             pad->SetChamferRectRatio( 0.25 );
             break;
@@ -2003,7 +2003,7 @@ void ALTIUM_PCB::HelperParsePad6NonCopper( const APAD6& aElem )
     {
         // filled rect
         PCB_SHAPE* shape = HelperCreateAndAddDrawsegment( aElem.component );
-        shape->SetShape( S_POLYGON );
+        shape->SetShape( PCB_SHAPE_TYPE::POLYGON );
         shape->SetFilled( true );
         shape->SetLayer( klayer );
         shape->SetWidth( 0 );
@@ -2042,14 +2042,14 @@ void ALTIUM_PCB::HelperParsePad6NonCopper( const APAD6& aElem )
                 wxPoint p22 = aElem.position + wxPoint( -offsetX, -offsetY );
                 wxPoint p21 = aElem.position + wxPoint( -offsetX, offsetY );
 
-                shape->SetShape( S_POLYGON );
+                shape->SetShape( PCB_SHAPE_TYPE::POLYGON );
                 shape->SetFilled( true );
                 shape->SetPolyPoints( { p11, p12, p22, p21 } );
             }
             else if( aElem.topsize.x == aElem.topsize.y )
             {
                 // circle
-                shape->SetShape( S_CIRCLE );
+                shape->SetShape( PCB_SHAPE_TYPE::CIRCLE );
                 shape->SetFilled( true );
                 shape->SetCenter( aElem.position );
                 shape->SetWidth( aElem.topsize.x / 2 );
@@ -2058,7 +2058,7 @@ void ALTIUM_PCB::HelperParsePad6NonCopper( const APAD6& aElem )
             else if( aElem.topsize.x < aElem.topsize.y )
             {
                 // short vertical line
-                shape->SetShape( S_SEGMENT );
+                shape->SetShape( PCB_SHAPE_TYPE::SEGMENT );
                 wxPoint pointOffset( 0, ( aElem.topsize.y - aElem.topsize.x ) / 2 );
                 shape->SetStart( aElem.position + pointOffset );
                 shape->SetEnd( aElem.position - pointOffset );
@@ -2066,7 +2066,7 @@ void ALTIUM_PCB::HelperParsePad6NonCopper( const APAD6& aElem )
             else
             {
                 // short horizontal line
-                shape->SetShape( S_SEGMENT );
+                shape->SetShape( PCB_SHAPE_TYPE::SEGMENT );
                 wxPoint pointOffset( ( aElem.topsize.x - aElem.topsize.y ) / 2, 0 );
                 shape->SetStart( aElem.position + pointOffset );
                 shape->SetEnd( aElem.position - pointOffset );
@@ -2081,7 +2081,7 @@ void ALTIUM_PCB::HelperParsePad6NonCopper( const APAD6& aElem )
         {
             // filled circle
             PCB_SHAPE* shape = HelperCreateAndAddDrawsegment( aElem.component );
-            shape->SetShape( S_CIRCLE );
+            shape->SetShape( PCB_SHAPE_TYPE::CIRCLE );
             shape->SetFilled( true );
             shape->SetLayer( klayer );
             shape->SetCenter( aElem.position );
@@ -2093,7 +2093,7 @@ void ALTIUM_PCB::HelperParsePad6NonCopper( const APAD6& aElem )
         {
             // short line
             PCB_SHAPE* shape = HelperCreateAndAddDrawsegment( aElem.component );
-            shape->SetShape( S_SEGMENT );
+            shape->SetShape( PCB_SHAPE_TYPE::SEGMENT );
             shape->SetLayer( klayer );
             shape->SetWidth( std::min( aElem.topsize.x, aElem.topsize.y ) );
 
@@ -2121,7 +2121,7 @@ void ALTIUM_PCB::HelperParsePad6NonCopper( const APAD6& aElem )
     {
         // filled octagon
         PCB_SHAPE* shape = HelperCreateAndAddDrawsegment( aElem.component );
-        shape->SetShape( S_POLYGON );
+        shape->SetShape( PCB_SHAPE_TYPE::POLYGON );
         shape->SetFilled( true );
         shape->SetLayer( klayer );
         shape->SetWidth( 0 );
@@ -2230,7 +2230,7 @@ void ALTIUM_PCB::ParseTracks6Data( const CFB::CompoundFileReader& aReader,
         if( elem.is_keepout || IsAltiumLayerAPlane( elem.layer ) )
         {
             PCB_SHAPE shape( nullptr ); // just a helper to get the graphic
-            shape.SetShape( S_SEGMENT );
+            shape.SetShape( PCB_SHAPE_TYPE::SEGMENT );
             shape.SetStart( elem.start );
             shape.SetEnd( elem.end );
             shape.SetWidth( elem.width );
@@ -2294,7 +2294,7 @@ void ALTIUM_PCB::ParseTracks6Data( const CFB::CompoundFileReader& aReader,
         else
         {
             PCB_SHAPE* shape = HelperCreateAndAddDrawsegment( elem.component );
-            shape->SetShape( S_SEGMENT );
+            shape->SetShape( PCB_SHAPE_TYPE::SEGMENT );
             shape->SetStart( elem.start );
             shape->SetEnd( elem.end );
             shape->SetWidth( elem.width );
@@ -2436,8 +2436,7 @@ void ALTIUM_PCB::ParseTexts6Data( const CFB::CompoundFileReader& aReader,
 
         if( elem.isDesignator || elem.isComment ) // That's just a bold assumption
         {
-            tx->SetHorizJustify( EDA_TEXT_HJUSTIFY_T::GR_TEXT_HJUSTIFY_LEFT );
-            tx->SetVertJustify( EDA_TEXT_VJUSTIFY_T::GR_TEXT_VJUSTIFY_BOTTOM );
+            tx->Align( TEXT_ATTRIBUTES::H_LEFT, TEXT_ATTRIBUTES::V_BOTTOM );
         }
         else
         {
@@ -2446,17 +2445,17 @@ void ALTIUM_PCB::ParseTexts6Data( const CFB::CompoundFileReader& aReader,
             case ALTIUM_TEXT_POSITION::LEFT_TOP:
             case ALTIUM_TEXT_POSITION::LEFT_CENTER:
             case ALTIUM_TEXT_POSITION::LEFT_BOTTOM:
-                tx->SetHorizJustify( EDA_TEXT_HJUSTIFY_T::GR_TEXT_HJUSTIFY_LEFT );
+                tx->Align( TEXT_ATTRIBUTES::H_LEFT );
                 break;
             case ALTIUM_TEXT_POSITION::CENTER_TOP:
             case ALTIUM_TEXT_POSITION::CENTER_CENTER:
             case ALTIUM_TEXT_POSITION::CENTER_BOTTOM:
-                tx->SetHorizJustify( EDA_TEXT_HJUSTIFY_T::GR_TEXT_HJUSTIFY_CENTER );
+                tx->Align( TEXT_ATTRIBUTES::H_CENTER );
                 break;
             case ALTIUM_TEXT_POSITION::RIGHT_TOP:
             case ALTIUM_TEXT_POSITION::RIGHT_CENTER:
             case ALTIUM_TEXT_POSITION::RIGHT_BOTTOM:
-                tx->SetHorizJustify( EDA_TEXT_HJUSTIFY_T::GR_TEXT_HJUSTIFY_RIGHT );
+                tx->Align( TEXT_ATTRIBUTES::H_RIGHT );
                 break;
             default:
                 wxLogError( "Unexpected horizontal Text Position. This should never happen." );
@@ -2468,17 +2467,17 @@ void ALTIUM_PCB::ParseTexts6Data( const CFB::CompoundFileReader& aReader,
             case ALTIUM_TEXT_POSITION::LEFT_TOP:
             case ALTIUM_TEXT_POSITION::CENTER_TOP:
             case ALTIUM_TEXT_POSITION::RIGHT_TOP:
-                tx->SetVertJustify( EDA_TEXT_VJUSTIFY_T::GR_TEXT_VJUSTIFY_TOP );
+                tx->Align( TEXT_ATTRIBUTES::V_TOP );
                 break;
             case ALTIUM_TEXT_POSITION::LEFT_CENTER:
             case ALTIUM_TEXT_POSITION::CENTER_CENTER:
             case ALTIUM_TEXT_POSITION::RIGHT_CENTER:
-                tx->SetVertJustify( EDA_TEXT_VJUSTIFY_T::GR_TEXT_VJUSTIFY_CENTER );
+                tx->Align( TEXT_ATTRIBUTES::V_CENTER );
                 break;
             case ALTIUM_TEXT_POSITION::LEFT_BOTTOM:
             case ALTIUM_TEXT_POSITION::CENTER_BOTTOM:
             case ALTIUM_TEXT_POSITION::RIGHT_BOTTOM:
-                tx->SetVertJustify( EDA_TEXT_VJUSTIFY_T::GR_TEXT_VJUSTIFY_BOTTOM );
+                tx->Align( TEXT_ATTRIBUTES::V_BOTTOM );
                 break;
             default:
                 wxLogError( "Unexpected vertical text position. This should never happen." );
@@ -2560,7 +2559,7 @@ void ALTIUM_PCB::ParseFills6Data( const CFB::CompoundFileReader& aReader,
             PCB_SHAPE* shape = new PCB_SHAPE( m_board );
             m_board->Add( shape, ADD_MODE::APPEND );
 
-            shape->SetShape( S_POLYGON );
+            shape->SetShape( PCB_SHAPE_TYPE::POLYGON );
             shape->SetFilled( true );
             shape->SetLayer( klayer );
             shape->SetWidth( 0 );

@@ -57,6 +57,10 @@ DRC_ITEM DRC_ITEM::itemsNotAllowed( DRCE_ALLOWED_ITEMS,
         _( "Items not allowed" ),
         wxT( "items_not_allowed" ) );
 
+DRC_ITEM DRC_ITEM::textOnEdgeCuts( DRCE_TEXT_ON_EDGECUTS,
+        _( "Text (or dimension) on Edge.Cuts layer" ),
+        wxT( "text_on_edge_cuts" ) );
+
 DRC_ITEM DRC_ITEM::clearance( DRCE_CLEARANCE,
         _( "Clearance violation" ),
         wxT( "clearance" ) );
@@ -92,6 +96,10 @@ DRC_ITEM DRC_ITEM::holeClearance( DRCE_HOLE_CLEARANCE,
 DRC_ITEM DRC_ITEM::holeNearHole( DRCE_DRILLED_HOLES_TOO_CLOSE,
         _( "Drilled holes too close together" ),
         wxT( "hole_near_hole" ) );
+
+DRC_ITEM DRC_ITEM::holesCoLocated( DRCE_DRILLED_HOLES_COLOCATED,
+        _( "Drilled holes co-located" ),
+        wxT( "holes_co_located" ) );
 
 DRC_ITEM DRC_ITEM::trackWidth( DRCE_TRACK_WIDTH,
         _( "Track width" ),
@@ -249,6 +257,7 @@ std::shared_ptr<DRC_ITEM> DRC_ITEM::Create( int aErrorCode )
     case DRCE_UNCONNECTED_ITEMS:        return std::make_shared<DRC_ITEM>( unconnectedItems );
     case DRCE_SHORTING_ITEMS:           return std::make_shared<DRC_ITEM>( shortingItems );
     case DRCE_ALLOWED_ITEMS:            return std::make_shared<DRC_ITEM>( itemsNotAllowed );
+    case DRCE_TEXT_ON_EDGECUTS:         return std::make_shared<DRC_ITEM>( textOnEdgeCuts );
     case DRCE_CLEARANCE:                return std::make_shared<DRC_ITEM>( clearance );
     case DRCE_TRACKS_CROSSING:          return std::make_shared<DRC_ITEM>( tracksCrossing );
     case DRCE_COPPER_EDGE_CLEARANCE:    return std::make_shared<DRC_ITEM>( copperEdgeClearance );
@@ -257,10 +266,11 @@ std::shared_ptr<DRC_ITEM> DRC_ITEM::Create( int aErrorCode )
     case DRCE_DANGLING_VIA:             return std::make_shared<DRC_ITEM>( viaDangling );
     case DRCE_DANGLING_TRACK:           return std::make_shared<DRC_ITEM>( trackDangling );
     case DRCE_DRILLED_HOLES_TOO_CLOSE:  return std::make_shared<DRC_ITEM>( holeNearHole );
+    case DRCE_DRILLED_HOLES_COLOCATED:  return std::make_shared<DRC_ITEM>( holesCoLocated );
     case DRCE_HOLE_CLEARANCE:           return std::make_shared<DRC_ITEM>( holeClearance );
     case DRCE_TRACK_WIDTH:              return std::make_shared<DRC_ITEM>( trackWidth );
-    case DRCE_ANNULAR_WIDTH:                  return std::make_shared<DRC_ITEM>( annularWidth );
-    case DRCE_DRILL_OUT_OF_RANGE:          return std::make_shared<DRC_ITEM>( drillTooSmall );
+    case DRCE_ANNULAR_WIDTH:            return std::make_shared<DRC_ITEM>( annularWidth );
+    case DRCE_DRILL_OUT_OF_RANGE:       return std::make_shared<DRC_ITEM>( drillTooSmall );
     case DRCE_VIA_DIAMETER:             return std::make_shared<DRC_ITEM>( viaDiameter );
     case DRCE_PADSTACK:                 return std::make_shared<DRC_ITEM>( padstack );
     case DRCE_MICROVIA_DRILL_OUT_OF_RANGE: return std::make_shared<DRC_ITEM>( microviaDrillTooSmall );

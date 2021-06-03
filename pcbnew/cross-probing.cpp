@@ -48,6 +48,7 @@
 #include <tools/pcb_actions.h>
 #include <tools/pcb_selection_tool.h>
 #include <netlist_reader/netlist_reader.h>
+#include <wx/log.h>
 
 /* Execute a remote command send by Eeschema via a socket,
  * port KICAD_PCB_PORT_SERVICE_NUMBER
@@ -546,7 +547,7 @@ void PCB_EDIT_FRAME::KiwayMailIn( KIWAY_EXPRESS& mail )
 
             BOARD_NETLIST_UPDATER updater( this, GetBoard() );
             updater.SetLookupByTimestamp( false );
-            updater.SetDeleteUnusedComponents ( false );
+            updater.SetDeleteUnusedFootprints( false );
             updater.SetReplaceFootprints( false );
             updater.SetDeleteSinglePadNets( false );
             updater.SetWarnPadNoNetInNetlist( false );

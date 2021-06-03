@@ -37,6 +37,7 @@
 #include <convert_to_biu.h>
 #include <pgm_base.h>
 #include <settings/settings_manager.h>
+#include <wx/log.h>
 
 /**
  *  Trace mask used to enable or disable the trace output of this class.
@@ -111,6 +112,7 @@ BOARD_ADAPTER::BOARD_ADAPTER() :
     SetFlag( FL_RENDER_OPENGL_HOLES_DISABLE_ON_MOVE, false );
 
     SetFlag( FL_USE_SELECTION, true );
+    SetFlag( FL_HIGHLIGHT_ROLLOVER_ITEM, true );
 
     m_BgColorBot         = SFVEC4F( 0.4, 0.4, 0.5, 1.0 );
     m_BgColorTop         = SFVEC4F( 0.8, 0.8, 0.9, 1.0 );
@@ -242,10 +244,10 @@ bool BOARD_ADAPTER::IsFootprintShown( FOOTPRINT_ATTR_T aFPAttributes ) const
 // !TODO: define the actual copper thickness by user from board stackup
 #define COPPER_THICKNESS Millimeter2iu( 0.035 )   // for 35 um
 // The solder mask layer (and silkscreen) thickness
-#define TECH_LAYER_THICKNESS Millimeter2iu( 0.04 )
+#define TECH_LAYER_THICKNESS Millimeter2iu( 0.025 )
 // The solder paste thickness is chosen bigger than the solder mask layer
 // to be sure is covers the mask when overlapping.
-#define SOLDERPASTE_LAYER_THICKNESS Millimeter2iu( 0.08 )
+#define SOLDERPASTE_LAYER_THICKNESS Millimeter2iu( 0.04 )
 
 int BOARD_ADAPTER::GetHolePlatingThickness() const noexcept
 {

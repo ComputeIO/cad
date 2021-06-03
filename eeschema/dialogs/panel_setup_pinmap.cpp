@@ -33,7 +33,9 @@
 #include <panel_setup_pinmap.h>
 #include <erc.h>
 #include <id.h>
+#include <wx/bmpbuttn.h>
 #include <wx/statline.h>
+#include <wx/stattext.h>
 
 
 // Control identifiers for events

@@ -27,6 +27,7 @@
 #include <ee_actions.h>
 #include <bitmaps.h>
 #include <eda_item.h>
+#include <wx/log.h>
 #include "symbol_editor_move_tool.h"
 #include "symbol_editor_pin_tool.h"
 
@@ -366,7 +367,7 @@ int SYMBOL_EDITOR_MOVE_TOOL::Main( const TOOL_EVENT& aEvent )
 void SYMBOL_EDITOR_MOVE_TOOL::moveItem( EDA_ITEM* aItem, VECTOR2I aDelta )
 {
     static_cast<LIB_ITEM*>( aItem )->Offset( mapCoords( aDelta ) );
-    aItem->SetFlags( IS_MOVED );
+    aItem->SetFlags( IS_MOVING );
 }
 
 

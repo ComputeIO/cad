@@ -30,6 +30,7 @@
 #include <tool/tool_action.h>
 #include <tool/actions.h>
 #include <core/optional.h>
+#include <layers_id_colors_and_visibility.h>
 
 class TOOL_EVENT;
 class TOOL_MANAGER;
@@ -201,6 +202,7 @@ public:
     /// Activation of the Push and Shove settings dialogs
     static TOOL_ACTION routerSettingsDialog;
     static TOOL_ACTION routerDiffPairDialog;
+    static TOOL_ACTION lengthTunerSettingsDialog;
 
     /// Actions to enable switching modes via hotkey assignments
     static TOOL_ACTION routerHighlightMode;
@@ -313,6 +315,10 @@ public:
 
     /// Duplicate zone onto another layer
     static TOOL_ACTION zoneDuplicate;
+
+    /// Scripting Actions
+    static TOOL_ACTION pluginsReload;
+    static TOOL_ACTION pluginsShowFolder;
 
     // Global edit tool
     static TOOL_ACTION boardSetup;
@@ -440,17 +446,17 @@ public:
     static TOOL_ACTION boardStatistics;
     static TOOL_ACTION boardReannotate;
     static TOOL_ACTION repairBoard;
+    static TOOL_ACTION repairFootprint;
     static TOOL_ACTION inspectClearance;
     static TOOL_ACTION inspectConstraints;
 
-
     // Appearance controls
-    static TOOL_ACTION clearHighlight;
-    static TOOL_ACTION highlightNet;
-    static TOOL_ACTION toggleLastNetHighlight;
-    static TOOL_ACTION highlightNetTool;
-    static TOOL_ACTION highlightNetSelection;
-    static TOOL_ACTION highlightItem;
+    static TOOL_ACTION clearHighlight;          // Turns off highlight and resets previous highlight
+    static TOOL_ACTION highlightNet;            // Highlights a net by code (cross-probe highlight)
+    static TOOL_ACTION toggleLastNetHighlight;  // Toggles between current and previous highlight
+    static TOOL_ACTION toggleNetHighlight;      // Toggles between highlight off and highlight on
+    static TOOL_ACTION highlightNetSelection;   // Turns on highlight and takes net from selection
+    static TOOL_ACTION highlightItem;           // Select component via cross-probe
     static TOOL_ACTION hideNet;
     static TOOL_ACTION showNet;
 
@@ -475,6 +481,8 @@ public:
     static TOOL_ACTION convertToLines;
     static TOOL_ACTION convertToArc;
     static TOOL_ACTION convertToTracks;
+
+    static TOOL_ACTION* LayerToAction( PCB_LAYER_ID aLayer );
 };
 
 #endif

@@ -43,6 +43,7 @@
 #include <sch_item.h>
 #include <sch_line.h>
 #include <sch_sheet.h>
+#include <sch_sheet_pin.h>
 #include <schematic.h>
 #include <tool/tool_event.h>
 #include <tool/tool_manager.h>
@@ -478,7 +479,7 @@ int EE_SELECTION_TOOL::Main( const TOOL_EVENT& aEvent )
             {
                 EE_SELECTION saved_selection = m_selection;
 
-                for( const auto& item : m_selection )
+                for( const auto& item : saved_selection )
                     RemoveItemFromSel( item, true );
 
                 SelectPoint( evt->Position(), EE_COLLECTOR::AllItems, nullptr,
@@ -527,7 +528,7 @@ int EE_SELECTION_TOOL::Main( const TOOL_EVENT& aEvent )
         else if( evt->IsDrag( BUT_LEFT ) )
         {
             // Is another tool already moving a new object?  Don't allow a drag start
-            if( !m_selection.Empty() && m_selection[0]->HasFlag( IS_NEW | IS_MOVED ) )
+            if( !m_selection.Empty() && m_selection[0]->HasFlag( IS_NEW | IS_MOVING ) )
             {
                 evt->SetPassEvent();
                 continue;
@@ -1348,7 +1349,7 @@ EDA_ITEM* EE_SELECTION_TOOL::GetNode( VECTOR2I aPosition )
 
 int EE_SELECTION_TOOL::SelectNode( const TOOL_EVENT& aEvent )
 {
-    VECTOR2I cursorPos = getViewControls()->GetCursorPosition( !aEvent.Modifier( MD_ALT ) );
+    VECTOR2I cursorPos = getViewControls()->GetCursorPosition( false );
 
     SelectPoint( cursorPos, nodeTypes  );
 

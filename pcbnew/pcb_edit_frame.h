@@ -27,8 +27,6 @@
 #include "undo_redo_container.h"
 #include "zones.h"
 #include <mail_type.h>
-#include <map>
-#include <unordered_map>
 
 class ACTION_PLUGIN;
 class PCB_SCREEN;
@@ -91,30 +89,15 @@ public:
      *
      * @return true if the any changes have not been saved
      */
-    bool IsContentModified() override;
-
-    /**
-     * Reload the Python plugins if they are newer than the already loaded, and load new
-     * plugins if any.
-     * Do nothing if KICAD_SCRIPTING is not defined.
-     */
-    void PythonPluginsReload();
-
-    /**
-     * Open the plugins folder in the default system file browser.
-     * Do nothing if KICAD_SCRIPTING is not defined.
-     */
-    void PythonPluginsShowFolder();
+    bool IsContentModified() const override;
 
     /**
      * Synchronize the environment variables from KiCad's environment into the Python interpreter.
-     * Do nothing if KICAD_SCRIPTING is not defined.
      */
     void PythonSyncEnvironmentVariables();
 
     /**
      * Synchronize the project name from KiCad's environment into the Python interpreter.
-     * Do nothing if KICAD_SCRIPTING is not defined.
      */
     void PythonSyncProjectName();
 
@@ -123,6 +106,8 @@ public:
      * (layer and items visibility, colors ...)
      */
     void UpdateUserInterface();
+
+    void HardRedraw() override;
 
     /**
      * Execute a remote command send by Eeschema via a socket, port KICAD_PCB_PORT_SERVICE_NUMBER
@@ -171,8 +156,6 @@ public:
     // Configurations:
     void Process_Config( wxCommandEvent& event );
 
-#if defined(KICAD_SCRIPTING) && defined(KICAD_SCRIPTING_ACTION_MENU)
-
     /**
      * Return true if button visibility action plugin setting was set to true
      * or it is unset and plugin defaults to true.
@@ -184,8 +167,6 @@ public:
      * in settings
      */
     std::vector<ACTION_PLUGIN*> GetOrderedActionPlugins();
-
-#endif
 
     /**
      * Save changes to the project settings to the project (.pro) file.
@@ -267,13 +248,6 @@ public:
      * Change the currently active layer to \a aLayer and also update the #APPEARANCE_CONTROLS.
      */
     void SetActiveLayer( PCB_LAYER_ID aLayer ) override;
-
-    APPEARANCE_CONTROLS* GetAppearancePanel() { return m_appearancePanel; }
-
-    /**
-     * Update the UI to reflect changes to the current layer's transparency.
-     */
-    void OnUpdateLayerAlpha( wxUpdateUIEvent& aEvent ) override;
 
     void OnDisplayOptionsChanged() override;
 
@@ -594,14 +568,6 @@ public:
     bool FetchNetlistFromSchematic( NETLIST& aNetlist, const wxString& aAnnotateMessage );
 
     /**
-     * Send a command to Eeschema to re-annotate the schematic.
-     *
-     * @param aNetlist a #NETLIST filled in by the caller.
-     * @return false if failed due to standalone mode, true if a reply.
-     */
-    bool ReannotateSchematic( std::string& aNetlist );
-
-    /**
      * Test if standalone mode.
      *
      * @return true if in standalone, opens Eeschema, and opens the schematic for this project
@@ -625,13 +591,6 @@ public:
      * @param aRunDragCommand is set to true if the drag command was invoked by this call.
      */
     void OnNetlistChanged( BOARD_NETLIST_UPDATER& aUpdater, bool* aRunDragCommand );
-
-#if defined( KICAD_SCRIPTING_WXPYTHON )
-    /**
-     * Enable or disable the scripting console.
-     */
-    void ScriptingConsoleEnableDisable();
-#endif
 
     /**
      * Send a message to the schematic editor so that it may move its cursor
@@ -718,7 +677,6 @@ protected:
      */
     void SwitchCanvas( EDA_DRAW_PANEL_GAL::GAL_TYPE aCanvasType ) override;
 
-#if defined(KICAD_SCRIPTING) && defined(KICAD_SCRIPTING_ACTION_MENU)
     /**
      * Fill action menu with all registered action plugins
      */
@@ -750,26 +708,6 @@ protected:
      */
     void OnActionPluginButton( wxCommandEvent& aEvent );
 
-    /**
-     * Refresh plugin list (reload Python plugins).
-     *
-     * @param aEvent sent by wx
-     */
-    void OnActionPluginRefresh( wxCommandEvent& aEvent)
-    {
-       PythonPluginsReload();
-    }
-
-    /**
-     * Refresh plugin list (reload Python plugins).
-     *
-     * @param aEvent sent by wx
-     */
-    void OnActionPluginShowFolder( wxCommandEvent& aEvent)
-    {
-       PythonPluginsShowFolder();
-    }
-#endif
 
     /**
      * Has meaning only if KICAD_SCRIPTING_WXPYTHON option is not defined.

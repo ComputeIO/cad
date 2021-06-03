@@ -109,7 +109,7 @@ void PCB_TEXT::GetMsgPanelInfo( EDA_DRAW_FRAME* aFrame, std::vector<MSG_PANEL_IT
     aList.emplace_back( _( "PCB Text" ), UnescapeString( GetText() ) );
 
     if( IsLocked() )
-        aList.emplace_back( _( "Status" ), _( "locked" ) );
+        aList.emplace_back( _( "Status" ), _( "Locked" ) );
 
     aList.emplace_back( _( "Layer" ), GetLayerName() );
 
@@ -120,6 +120,12 @@ void PCB_TEXT::GetMsgPanelInfo( EDA_DRAW_FRAME* aFrame, std::vector<MSG_PANEL_IT
     aList.emplace_back( _( "Thickness" ), MessageTextFromValue( units, GetTextThickness() ) );
     aList.emplace_back( _( "Width" ), MessageTextFromValue( units, GetTextWidth() ) );
     aList.emplace_back( _( "Height" ), MessageTextFromValue( units, GetTextHeight() ) );
+
+    std::ostringstream alignment;
+    alignment << GetHorizontalAlignment();
+    aList.emplace_back( _( "Justification" ), alignment.str() );
+
+    aList.emplace_back( _( "Line Spacing" ), wxString::Format( "%f", GetLineSpacing() ) );
 }
 
 
@@ -134,17 +140,36 @@ const EDA_RECT PCB_TEXT::GetBoundingBox() const
 }
 
 
+bool PCB_TEXT::TextHitTest( const wxPoint& aPoint, int aAccuracy ) const
+{
+    return EDA_TEXT::TextHitTest( aPoint, aAccuracy );
+}
+
+
+bool PCB_TEXT::TextHitTest( const EDA_RECT& aRect, bool aContains, int aAccuracy ) const
+{
+    EDA_RECT rect = aRect;
+
+    rect.Inflate( aAccuracy );
+
+    if( aContains )
+        return rect.Contains( GetBoundingBox() );
+    else
+        return rect.Intersects( GetTextBox(), GetDrawRotation().AsTenthsOfADegree() );
+}
+
+
 void PCB_TEXT::Rotate( const wxPoint& aRotCentre, double aAngle )
 {
     wxPoint pt = GetTextPos();
-#ifdef DEBUG
+#ifdef OUTLINEFONT_DEBUG
     std::cerr << "PCB_TEXT::Rotate( {" << aRotCentre.x << "," << aRotCentre.y << "}, " << aAngle
               << " ) " << GetShownText() << "@" << pt << " angle " << GetTextAngle();
 #endif
     RotatePoint( &pt, aRotCentre, aAngle );
     SetTextPos( pt );
     double angle = GetTextAngle() + aAngle;
-#ifdef DEBUG
+#ifdef OUTLINEFONT_DEBUG
     std::cerr << "->" << pt << " angle " << angle << std::endl;
 #endif
     SetTextAngle( angle );

@@ -28,32 +28,33 @@
 
 /**
  * The set of pad shapes, used with PAD::{Set,Get}Shape()
+ * DO NOT REORDER, legacy_plugin is dependent on the integer values
  */
-enum PAD_SHAPE_T
+enum class PAD_SHAPE : int
 {
-    PAD_SHAPE_CIRCLE,
-    PAD_SHAPE_RECT,
-    PAD_SHAPE_OVAL,
-    PAD_SHAPE_TRAPEZOID,
-    PAD_SHAPE_ROUNDRECT,
+    CIRCLE,
+    RECT,
+    OVAL,
+    TRAPEZOID,
+    ROUNDRECT,
 
     // Rectangle with a chamfered corner ( and with rounded other corners).
-    PAD_SHAPE_CHAMFERED_RECT,
-    PAD_SHAPE_CUSTOM            // A shape defined by user, using a set of basic shapes
-                                // (thick segments, circles, arcs, polygons.
+    CHAMFERED_RECT,
+    CUSTOM            // A shape defined by user, using a set of basic shapes
+                      // (thick segments, circles, arcs, polygons.
 };
 
-static inline std::string PAD_SHAPE_T_asString( PAD_SHAPE_T a )
+static inline std::string PAD_SHAPE_T_asString( PAD_SHAPE a )
 {
     switch( a )
     {
-    case PAD_SHAPE_CIRCLE:         return "PAD_SHAPE_CIRCLE";
-    case PAD_SHAPE_RECT:           return "PAD_SHAPE_RECT";
-    case PAD_SHAPE_OVAL:           return "PAD_SHAPE_OVAL";
-    case PAD_SHAPE_TRAPEZOID:      return "PAD_SHAPE_TRAPEZOID";
-    case PAD_SHAPE_ROUNDRECT:      return "PAD_SHAPE_ROUNDRECT";
-    case PAD_SHAPE_CHAMFERED_RECT: return "PAD_SHAPE_CHAMFERED_RECT";
-    case PAD_SHAPE_CUSTOM:         return "PAD_SHAPE_CUSTOM";
+    case PAD_SHAPE::CIRCLE:         return "PAD_SHAPE::CIRCLE";
+    case PAD_SHAPE::RECT:           return "PAD_SHAPE::RECT";
+    case PAD_SHAPE::OVAL:           return "PAD_SHAPE::OVAL";
+    case PAD_SHAPE::TRAPEZOID:      return "PAD_SHAPE::TRAPEZOID";
+    case PAD_SHAPE::ROUNDRECT:      return "PAD_SHAPE::ROUNDRECT";
+    case PAD_SHAPE::CHAMFERED_RECT: return "PAD_SHAPE::CHAMFERED_RECT";
+    case PAD_SHAPE::CUSTOM:         return "PAD_SHAPE::CUSTOM";
     }
 
     return "";  // Just to quiet GCC.
@@ -75,14 +76,14 @@ enum PAD_DRILL_SHAPE_T
  *
  * The double name is for convenience of Python devs
  */
-enum PAD_ATTR_T
+enum class PAD_ATTRIB
 {
-    PAD_ATTRIB_PTH,     ///< Plated through hole pad
-    PAD_ATTRIB_SMD,     ///< Smd pad, appears on the solder paste layer (default)
-    PAD_ATTRIB_CONN,    ///< Like smd, does not appear on the solder paste layer (default)
+    PTH,     ///< Plated through hole pad
+    SMD,     ///< Smd pad, appears on the solder paste layer (default)
+    CONN,    ///< Like smd, does not appear on the solder paste layer (default)
                         ///< note also has a special attribute in Gerber X files
                         ///< Used for edgecard connectors for instance
-    PAD_ATTRIB_NPTH,    ///< like PAD_PTH, but not plated
+    NPTH,    ///< like PAD_PTH, but not plated
                         ///< mechanical use only, no connection allowed
 };
 
@@ -91,15 +92,15 @@ enum PAD_ATTR_T
  * Ghe set of pad properties used in Gerber files (Draw files, and P&P files)
  * to define some properties in fabrication or test files.
  */
-enum PAD_PROP_T
+enum class PAD_PROP
 {
-    PAD_PROP_NONE,                  ///< no special fabrication property
-    PAD_PROP_BGA,                   ///< Smd pad, used in BGA footprints
-    PAD_PROP_FIDUCIAL_GLBL,         ///< a fiducial (usually a smd) for the full board
-    PAD_PROP_FIDUCIAL_LOCAL,        ///< a fiducial (usually a smd) local to the parent footprint
-    PAD_PROP_TESTPOINT,             ///< a test point pad
-    PAD_PROP_HEATSINK,              ///< a pad used as heat sink, usually in SMD footprints
-    PAD_PROP_CASTELLATED            ///< a pad with a castellated through hole
+    NONE,                  ///< no special fabrication property
+    BGA,                   ///< Smd pad, used in BGA footprints
+    FIDUCIAL_GLBL,         ///< a fiducial (usually a smd) for the full board
+    FIDUCIAL_LOCAL,        ///< a fiducial (usually a smd) local to the parent footprint
+    TESTPOINT,             ///< a test point pad
+    HEATSINK,              ///< a pad used as heat sink, usually in SMD footprints
+    CASTELLATED            ///< a pad with a castellated through hole
 };
 
 

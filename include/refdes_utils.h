@@ -1,7 +1,7 @@
 /*
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
- * Copyright (C) 2019 KiCad Developers, see CHANGELOG.TXT for contributors.
+ * Copyright (C) 2019-2021 KiCad Developers, see CHANGELOG.TXT for contributors.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -38,10 +38,31 @@ namespace UTIL
  * Get the (non-numeric) prefix from a refdes - e.g.
  *      R1    -> R
  *      IC34  -> IC
+ *      U?    -> U
  * @param  aRefDes full refdes
  * @return         the prefix, or empty string if nothing found
  */
-wxString GetReferencePrefix( const wxString& aRefDes );
+wxString GetRefDesPrefix( const wxString& aRefDes );
+
+/**
+ * Return an unannotated refdes from either a prefix or an existing refdes.
+ *      R    -> R?
+ *      IC34 -> IC?
+ *      U?   -> U?
+ * @param aRefDes
+ * @return
+ */
+wxString GetRefDesUnannotated( const wxString& aRefDes );
+
+/**
+ * Get the numeric suffix from a refdes - e.g.
+ *      R1    -> 1
+ *      IC34  -> 34
+ *      R?    -> -1
+ * @param  aRefDes full refdes
+ * @return         the suffix, or -1 if nothing found
+ */
+int GetRefDesNumber( const wxString& aRefDes );
 
 /**
  * Acts just like the strcmp function but treats numbers within the string text

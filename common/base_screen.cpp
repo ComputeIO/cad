@@ -29,7 +29,7 @@
 #include <trace_helpers.h>
 
 
-wxString BASE_SCREEN::m_PageLayoutDescrFileName;   // the name of the page layout descr file.
+wxString BASE_SCREEN::m_DrawingSheetFileName;   // the name of the drawing sheet file.
 
 
 BASE_SCREEN::BASE_SCREEN( EDA_ITEM* aParent, KICAD_T aType ) :
@@ -40,7 +40,6 @@ BASE_SCREEN::BASE_SCREEN( EDA_ITEM* aParent, KICAD_T aType ) :
     m_Center            = true;
 
     m_flagModified      = false;     // Set when any change is made on board.
-    m_flagSave          = false;     // Used in auto save set when an auto save is required.
 }
 
 

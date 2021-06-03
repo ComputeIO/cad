@@ -40,7 +40,6 @@
 namespace PNS {
 
 
-static DEBUG_DECORATOR *g_dbg;
 /**
  *  Cost Estimator Methods
  */
@@ -271,6 +270,21 @@ bool RESTRICT_VERTEX_RANGE_CONSTRAINT::Check( int aVertex1, int aVertex2, const 
 {
     return true;
 }
+
+
+bool CORNER_COUNT_LIMIT_CONSTRAINT::Check( int aVertex1, int aVertex2, const LINE* aOriginLine,
+                                                const SHAPE_LINE_CHAIN& aCurrentPath,
+                                                const SHAPE_LINE_CHAIN& aReplacement )
+{
+    LINE newPath( *aOriginLine, aCurrentPath );
+    newPath.Line().Replace( aVertex1, aVertex2, aReplacement );
+    int cc = newPath.CountCorners( m_angleMask );
+    if( cc >= m_minCorners && cc <= m_maxCorners )
+        return true;
+
+    return false;
+}
+
 
 /**
  * Determine if a point is located within a given polygon
@@ -561,7 +575,8 @@ bool OPTIMIZER::mergeFull( LINE* aLine )
 
 bool OPTIMIZER::mergeColinear( LINE* aLine )
 {
-    SHAPE_LINE_CHAIN& line = aLine->Line();
+    SHAPE_LINE_CHAIN&          line   = aLine->Line();
+    const std::vector<ssize_t> shapes = line.CShapes();
 
     int nSegs = line.SegmentCount();
 
@@ -570,16 +585,32 @@ bool OPTIMIZER::mergeColinear( LINE* aLine )
         SEG s1 = line.CSegment( segIdx );
         SEG s2 = line.CSegment( segIdx + 1 );
 
+        // Skip zero-length segs caused by abutting arcs
+        if( s1.SquaredLength() == 0 || s2.SquaredLength() == 0 )
+            continue;
+
         if( s1.Collinear( s2 ) )
-            line.Replace( segIdx, segIdx + 1, s1.A );
+        {
+            // We should not see a collinear vertex inside an arc
+            wxASSERT( shapes[segIdx + 1] < 0 );
+            line.Remove( segIdx + 1 );
+        }
     }
 
     return line.SegmentCount() < nSegs;
 }
 
 
-bool OPTIMIZER::Optimize( LINE* aLine, LINE* aResult )
+bool OPTIMIZER::Optimize( LINE* aLine, LINE* aResult, LINE* aRoot )
 {
+    DEBUG_DECORATOR* dbg = ROUTER::GetInstance()->GetInterface()->GetDebugDecorator();
+
+    if( aRoot )
+    {
+        PNS_DBG( dbg, AddLine, aRoot->CLine(), BLUE, 100000, "root-line" );
+    }
+
+
     if( !aResult )
     {
         aResult = aLine;
@@ -592,6 +623,14 @@ bool OPTIMIZER::Optimize( LINE* aLine, LINE* aResult )
 
     bool hasArcs = aLine->ArcCount();
     bool rv = false;
+
+    if( (m_effortLevel & LIMIT_CORNER_COUNT) && aRoot )
+    {
+        const int angleMask = DIRECTION_45::ANG_OBTUSE;
+        int rootObtuseCorners = aRoot->CountCorners( angleMask );
+        auto c = new CORNER_COUNT_LIMIT_CONSTRAINT( m_world, rootObtuseCorners, aLine->SegmentCount(), angleMask );
+        AddConstraint( c );
+    }
 
     if( m_effortLevel & PRESERVE_VERTEX )
     {
@@ -785,10 +824,10 @@ OPTIMIZER::BREAKOUT_LIST OPTIMIZER::rectBreakouts( int aWidth, const SHAPE* aSha
     VECTOR2I d_vert  = VECTOR2I( 0, s.y / 2 + aWidth );
     VECTOR2I d_horiz = VECTOR2I( s.x / 2 + aWidth, 0 );
 
-    breakouts.push_back( SHAPE_LINE_CHAIN( { c, c + d_horiz } ) );
-    breakouts.push_back( SHAPE_LINE_CHAIN( { c, c - d_horiz } ) );
-    breakouts.push_back( SHAPE_LINE_CHAIN( { c, c + d_vert } ) );
-    breakouts.push_back( SHAPE_LINE_CHAIN( { c, c - d_vert } ) );
+    breakouts.emplace_back( SHAPE_LINE_CHAIN( { c, c + d_horiz } ) );
+    breakouts.emplace_back( SHAPE_LINE_CHAIN( { c, c - d_horiz } ) );
+    breakouts.emplace_back( SHAPE_LINE_CHAIN( { c, c + d_vert } ) );
+    breakouts.emplace_back( SHAPE_LINE_CHAIN( { c, c - d_vert } ) );
 
     if( aPermitDiagonal )
     {
@@ -797,25 +836,25 @@ OPTIMIZER::BREAKOUT_LIST OPTIMIZER::rectBreakouts( int aWidth, const SHAPE* aSha
 
         if( s.x >= s.y )
         {
-            breakouts.push_back(
+            breakouts.emplace_back(
                     SHAPE_LINE_CHAIN( { c, c + d_offset, c + d_offset + VECTOR2I( l, l ) } ) );
-            breakouts.push_back(
+            breakouts.emplace_back(
                     SHAPE_LINE_CHAIN( { c, c + d_offset, c + d_offset - VECTOR2I( -l, l ) } ) );
-            breakouts.push_back(
+            breakouts.emplace_back(
                     SHAPE_LINE_CHAIN( { c, c - d_offset, c - d_offset + VECTOR2I( -l, l ) } ) );
-            breakouts.push_back(
+            breakouts.emplace_back(
                     SHAPE_LINE_CHAIN( { c, c - d_offset, c - d_offset - VECTOR2I( l, l ) } ) );
         }
         else
         {
             // fixme: this could be done more efficiently
-            breakouts.push_back(
+            breakouts.emplace_back(
                     SHAPE_LINE_CHAIN( { c, c + d_offset, c + d_offset + VECTOR2I( l, l ) } ) );
-            breakouts.push_back(
+            breakouts.emplace_back(
                     SHAPE_LINE_CHAIN( { c, c - d_offset, c - d_offset - VECTOR2I( -l, l ) } ) );
-            breakouts.push_back(
+            breakouts.emplace_back(
                     SHAPE_LINE_CHAIN( { c, c + d_offset, c + d_offset + VECTOR2I( -l, l ) } ) );
-            breakouts.push_back(
+            breakouts.emplace_back(
                     SHAPE_LINE_CHAIN( { c, c - d_offset, c - d_offset - VECTOR2I( l, l ) } ) );
         }
     }
@@ -1040,8 +1079,6 @@ bool OPTIMIZER::runSmartPads( LINE* aLine )
 bool OPTIMIZER::Optimize( LINE* aLine, int aEffortLevel, NODE* aWorld, const VECTOR2I aV )
 {
     OPTIMIZER opt( aWorld );
-
-    g_dbg = ROUTER::GetInstance()->GetInterface()->GetDebugDecorator();
 
     opt.SetEffortLevel( aEffortLevel );
     opt.SetCollisionMask( -1 );
@@ -1453,7 +1490,7 @@ void Tighten( NODE *aNode, const SHAPE_LINE_CHAIN& aOldLine, const LINE& aNewLin
 
     SHAPE_LINE_CHAIN current ( aNewLine.CLine() );
 
-    for( int step = 0; step < 3; step++)
+    for( int step = 0; step < 3; step++ )
     {
         current.Simplify();
 
@@ -1461,16 +1498,16 @@ void Tighten( NODE *aNode, const SHAPE_LINE_CHAIN& aOldLine, const LINE& aNewLin
         {
             SHAPE_LINE_CHAIN l_in, l_out;
 
-            l_in = current.Slice(i, i+3);
+            l_in = current.Slice( i, i + 3 );
 
-            for( int dir = 0; dir < 1; dir++)
+            for( int dir = 0; dir <= 1; dir++ )
             {
                 if( tightenSegment( dir ? true : false, aNode, aNewLine, l_in, l_out ) )
                 {
                     SHAPE_LINE_CHAIN opt = current;
                     opt.Replace(i, i + 3, l_out);
-                    auto optArea = std::abs(shovedArea( aOldLine, opt ));
-                    auto prevArea = std::abs(shovedArea( aOldLine, current ));
+                    auto optArea  = std::abs( shovedArea( aOldLine, opt ) );
+                    auto prevArea = std::abs( shovedArea( aOldLine, current ) );
 
                     if( optArea < prevArea )
                         current = opt;

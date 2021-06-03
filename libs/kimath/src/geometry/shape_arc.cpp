@@ -386,6 +386,15 @@ VECTOR2I SHAPE_ARC::GetCenter() const
 }
 
 
+double SHAPE_ARC::GetLength() const
+{
+    double radius = GetRadius();
+    double includedAngle  = std::abs( GetCentralAngle() );
+
+    return radius * M_PI * includedAngle / 180.0;
+}
+
+
 double SHAPE_ARC::GetCentralAngle() const
 {
     VECTOR2I center = GetCenter();
@@ -489,6 +498,16 @@ void SHAPE_ARC::Mirror( bool aX, bool aY, const VECTOR2I& aVector )
         m_end.y = -m_end.y + 2 * aVector.y;
         m_mid.y = -m_mid.y + 2 * aVector.y;
     }
+
+    update_bbox();
+}
+
+
+void SHAPE_ARC::Mirror( const SEG& axis )
+{
+    m_start = axis.ReflectPoint( m_start );
+    m_end = axis.ReflectPoint( m_end );
+    m_mid = axis.ReflectPoint( m_mid );
 
     update_bbox();
 }

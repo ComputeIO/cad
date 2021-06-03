@@ -98,24 +98,32 @@ install( TARGETS kicad
 if( APPLE )
     # "install( CODE ... )" will launch its own CMake, so no variables from
     # this CMake instance are accessible... use helper to transfer
-    if( KICAD_SCRIPTING OR KICAD_SCRIPTING_MODULES )
-        set( SCRIPTING_HELPER "1" )
-    else()
-        set( SCRIPTING_HELPER "0" )
-    endif()
-
+    set( SCRIPTING_HELPER "1" )
+    
     if( KICAD_SPICE )
         set( SPICE_HELPER "1" )
     else()
         set( SPICE_HELPER "0" )
     endif()
 
+    if( PYTHON_FRAMEWORK )
+        set( PYTHON_FRAMEWORK_HELPER "1" )
+    else()
+        set( PYTHON_FRAMEWORK_HELPER "0" )
+    endif()
+
+    if( MACOS_EXTRA_BUNDLE_FIX_DIRS )
+        set( BUNDLE_FIX_DIRS ${BUNDLE_FIX_DIRS} ${MACOS_EXTRA_BUNDLE_FIX_DIRS} ) # TODO: where should we document MACOS_EXTRA_BUNDLE_FIX_DIRS?
+    endif()
+
     if( KICAD_USE_OCC )
-        set( KICAD_BUNDLE_LIBS ${OCC_LIBRARY_DIR} )
+        set( BUNDLE_FIX_DIRS ${BUNDLE_FIX_DIRS} ${OCC_LIBRARY_DIR} )
     endif()
 
     # make main bundle relocatable
     install( CODE "
+        set( BUNDLE_FIX_DIRS ${BUNDLE_FIX_DIRS} ) # pull in the variable from above, so we can append if needed
+
         # find all kicad libs and modules
         file( GLOB PLUGINS_KIFACE ${OSX_BUNDLE_INSTALL_KIFACE_DIR}/*.kiface )
         file( GLOB_RECURSE PLUGINS_SO ${OSX_BUNDLE_INSTALL_PLUGIN_DIR}/*.so )
@@ -130,23 +138,53 @@ if( APPLE )
 
         # Find python if it is requested
         if( ${SCRIPTING_HELPER} )
-            file( GLOB WXPYTHON_DIR RELATIVE ${OSX_BUNDLE_INSTALL_LIB_DIR}/${PYTHON_LIB_DIR} ${OSX_BUNDLE_INSTALL_LIB_DIR}/${PYTHON_LIB_DIR}/wx-?.?-osx_cocoa )
-            file( GLOB PYTHON_SCRIPTING_SO ${OSX_BUNDLE_INSTALL_LIB_DIR}/${PYTHON_LIB_DIR}/*.so )
-            set( BUNDLE_FIX_LIBS \${BUNDLE_FIX_LIBS} \${PYTHON_SCRIPTING_SO} )
-            file( GLOB PYTHON_SCRIPTING_SO ${OSX_BUNDLE_INSTALL_LIB_DIR}/${PYTHON_LIB_DIR}/\${WXPYTHON_DIR}/wx/*.so )
-            set( BUNDLE_FIX_LIBS \${BUNDLE_FIX_LIBS} \${PYTHON_SCRIPTING_SO} )
+            # file( GLOB WXPYTHON_DIR RELATIVE ${OSX_BUNDLE_BUILD_DIR}/${OSX_BUNDLE_PYTHON_SITE_PACKAGES_DIR} ${OSX_BUNDLE_INSTALL_PYTHON_SITE_PACKAGES_DIR}/wx-?.?-osx_cocoa )
+            # file( GLOB PYTHON_SCRIPTING_SO ${OSX_BUNDLE_INSTALL_PYTHON_SITE_PACKAGES_DIR}/*.so )
+            # set( BUNDLE_FIX_LIBS \${BUNDLE_FIX_LIBS} \${PYTHON_SCRIPTING_SO} )
+            # file( GLOB PYTHON_SCRIPTING_SO ${OSX_BUNDLE_INSTALL_PYTHON_SITE_PACKAGES_DIR}/\${WXPYTHON_DIR}/wx/*.so )
+            # set( BUNDLE_FIX_LIBS \${BUNDLE_FIX_LIBS} \${PYTHON_SCRIPTING_SO} )
         endif()
 
         # override default embedded path settings
         ${OSX_BUNDLE_OVERRIDE_PATHS}
 
         # do all the work
-        include( BundleUtilities )
+        include( ${CMAKE_MODULE_PATH}/BundleUtilities.cmake )
 
-        fixup_bundle( ${OSX_BUNDLE_INSTALL_BIN_DIR}/kicad
-            \"\${BUNDLE_FIX_LIBS}\"
-            \" ${KICAD_BUNDLE_LIBS}\"
+        if ( ${PYTHON_FRAMEWORK_HELPER} )
+            # This idea here is to repair anything that fixup_bundle doesn't handle
+            # properly for our setup with both Python.framework *and* symlinked subapps
+            # that's needed for *running* here
+
+            # Anything that's needed strictly for packaging and making redistributable
+            # macOS builds can be defined in kicad-mac-builder
+
+            # Of course, making it all work right here would be even slicker,
+            # but if wishes were horses...
+
+            # It would be awesome if we find a better solution (or BundleUtilities works for our corner case better)
+
+            execute_process( COMMAND cp -RP ${PYTHON_FRAMEWORK} ${OSX_BUNDLE_INSTALL_LIB_DIR}/)
+            # We're using cp -RP because CMake's COPY_RESOLVED_BUNDLE... and COPY_DIRECTORY don't handle symlinks correctly
+
+            # Add any .so files in the site-packages directory to the list of things to fixup during fixup_bundle
+            file( GLOB_RECURSE PYTHON_SITE_PACKAGES_LIBS ${OSX_BUNDLE_INSTALL_PYTHON_SITE_PACKAGES_DIR}/*.so )
+            set( BUNDLE_FIX_LIBS \${BUNDLE_FIX_LIBS} \${PYTHON_SITE_PACKAGES_LIBS} )
+
+            fixup_bundle( ${OSX_BUNDLE_INSTALL_BIN_DIR}/kicad
+                \"\${BUNDLE_FIX_LIBS}\"
+                \"\${BUNDLE_FIX_DIRS}\"
+                IGNORE_ITEM \"Python;python;python3;python3.8;pythonw;pythonw3;pythonw3.8\"
+                )
+
+            # BundleUtilities clobbers the rpaths and install_names that we carefully setup in Python.framework, even if
+            # we mark Python things as IGNORE_ITEMs.  We'll refix them later.
+        else()
+            fixup_bundle( ${OSX_BUNDLE_INSTALL_BIN_DIR}/kicad
+                \"\${BUNDLE_FIX_LIBS}\"
+                \"\${BUNDLE_FIX_DIRS}\"
             )
+        endif()
 
         if( ${SPICE_HELPER} )
             execute_process( COMMAND install_name_tool -id @executable_path/../PlugIns/sim/libngspice.0.dylib libngspice.0.dylib
@@ -180,6 +218,12 @@ if( APPLE )
         move_to_main_bundle( \"pcb_calculator.app\" \"PCB Calculator.app\" )
         move_to_main_bundle( \"pcbnew.app\" \"Pcbnew.app\" )
         move_to_main_bundle( \"pl_editor.app\" \"Page Layout Editor.app\" )
+
+        if ( ${PYTHON_FRAMEWORK_HELPER} )
+            include( ${CMAKE_MODULE_PATH}/RefixupMacOS.cmake )
+            refix_kicad_bundle(${OSX_BUNDLE_INSTALL_DIR})
+        endif( )
+
         " COMPONENT Runtime
         )
 endif()

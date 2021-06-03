@@ -79,6 +79,17 @@ public:
     double m_DrawArcCenterMaxAngle;
 
     /**
+     * Maximum angle between the tangent line of an arc track and a connected straight track
+     * in order to commence arc dragging. Units are degrees.
+     */
+    double m_MaxTangentAngleDeviation;
+
+    /**
+     * Maximum track length to keep after doing an arc track resizing operation. Units are mm.
+     */
+    double m_MaxTrackLengthToKeep;
+
+    /**
      * Extra fill clearance for zone fills.  Note that for zone tests this is essentially
      * additive with m_DRCEpsilon.  Units are mm.
      */
@@ -86,7 +97,7 @@ public:
 
     /**
      * Epsilon for DRC tests.  Note that for zone tests this is essentially additive with
-     * m_extraClearance.  Units are mm.
+     * m_ExtraClearance.  Units are mm.
      */
     double m_DRCEpsilon;
 
@@ -123,12 +134,6 @@ public:
     bool m_DrawTriangulationOutlines;
 
     /**
-     * When true, enable Altium Schematic import (*.SchDoc)
-     * the current implementation is highly incomplete
-     */
-    bool m_PluginAltiumSch;
-
-    /**
      * Sets an absolute minimum pen width for plotting.  Some formats (PDF, for example) don't
      * like ultra-thin lines.  Units are mm.
      */
@@ -159,11 +164,6 @@ public:
      * Draw GAL bounding boxes in painters
      */
     bool m_DrawBoundingBoxes;
-
-    /**
-     * Enable detection of dark mode and automatic switch to dark-mode icon theme
-     */
-    bool m_AllowDarkMode;
 
     /**
      * Enable exporting board editor netlist to a file for troubleshooting purposes.

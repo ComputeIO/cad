@@ -25,10 +25,10 @@
 #ifndef PICKER_TOOL_H
 #define PICKER_TOOL_H
 
-#include <boost/optional/optional.hpp>
+#include <core/optional.h>
+#include <gal/cursors.h>
 #include <math/vector2d.h>
 #include <tool/tool_interactive.h>
-#include <cursors.h>
 
 class EDA_DRAW_FRAME;
 
@@ -56,6 +56,8 @@ public:
     {
         reset();
     }
+
+    virtual ~PICKER_TOOL_BASE() = default;
 
     inline void SetCursor( KICURSOR aCursor ) { m_cursor = aCursor; }
 

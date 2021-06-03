@@ -25,6 +25,8 @@
 
 #include <geometry/shape_compound.h>
 
+#include <wx/log.h>
+
 #include "pns_arc.h"
 #include "pns_line.h"
 #include "pns_node.h"
@@ -56,21 +58,70 @@ void SHOVE::replaceItems( ITEM* aOld, std::unique_ptr< ITEM > aNew )
     m_currentNode->Replace( aOld, std::move( aNew ) );
 }
 
-void SHOVE::replaceLine( LINE& aOld, LINE& aNew )
+void SHOVE::replaceLine( LINE& aOld, LINE& aNew, bool aIncludeInChangedArea, NODE* aNode )
 {
-    OPT_BOX2I changed_area = ChangedArea( aOld, aNew );
-
-    if( changed_area )
+    if( aIncludeInChangedArea )
     {
-        if( Dbg() )
+        OPT_BOX2I changed_area = ChangedArea( aOld, aNew );
+
+        if( changed_area )
         {
-            Dbg()->AddBox( *changed_area, 3, "shove-changed-area" );
-        }
+            if( Dbg() )
+            {
+                Dbg()->AddBox( *changed_area, BLUE, "shove-changed-area" );
+            }
 
         m_affectedArea = m_affectedArea ? m_affectedArea->Merge( *changed_area ) : *changed_area;
+        }
     }
 
-    m_currentNode->Replace( aOld, aNew );
+    bool  foundPredecessor = false;
+    LINE* rootLine = nullptr;
+
+    // Keep track of the 'root lines', i.e. the unmodified (pre-shove) versions
+    // of the affected tracks in a map. The optimizer can then query the pre-shove shape
+    // for each shoved line and perform additional constraint checks (i.e. prevent overzealous optimizations)
+
+    // Check if the shoved line already has an ancestor (e.g. line from a previous shove iteration/cursor movement)
+    for( auto link : aOld.Links() )
+    {
+        auto oldLineIter = m_rootLineHistory.find( link );
+        if( oldLineIter != m_rootLineHistory.end() )
+        {
+            rootLine = oldLineIter->second;
+            foundPredecessor = true;
+            break;
+        }
+    }
+
+    // If found, use it, otherwise, create new entry in the map (we have a genuine new 'root' line)
+    if( !foundPredecessor )
+    {
+        for( auto link : aOld.Links() )
+        {
+            if( ! rootLine )
+            {
+                rootLine = aOld.Clone();
+            }
+            m_rootLineHistory[link] = rootLine;
+        }
+    }
+
+    // Now update the NODE (calling Replace invalidates the Links() in a LINE)
+    if( aNode )
+    {
+        aNode->Replace( aOld, aNew );
+    }
+    else
+    {
+        m_currentNode->Replace( aOld, aNew );
+    }
+
+    // point the Links() of the new line to its oldest ancestor
+    for( auto link : aNew.Links() )
+    {
+        m_rootLineHistory[ link ] = rootLine;
+    }
 }
 
 int SHOVE::getClearance( const ITEM* aA, const ITEM* aB ) const
@@ -115,6 +166,16 @@ SHOVE::SHOVE( NODE* aWorld, ROUTER* aRouter ) :
 
 SHOVE::~SHOVE()
 {
+    std::unordered_set<LINE*> alreadyDeleted;
+    for( auto it : m_rootLineHistory )
+    {
+        auto it2 = alreadyDeleted.find( it.second );
+        if( it2 == alreadyDeleted.end() )
+        {
+            alreadyDeleted.insert( it.second );
+            delete it.second;
+        }
+    }
 }
 
 
@@ -218,7 +279,7 @@ SHOVE::SHOVE_STATUS SHOVE::shoveLineToHullSet( const LINE& aCurLine, const LINE&
 
             if( ! l.Walkaround( hull, path, clockwise ) )
             {
-                wxLogTrace("PNS", "Fail-Walk %s %s %d\n", hull.Format().c_str(), l.CLine().Format().c_str(), clockwise? 1:0);
+                PNS_DBG( Dbg(), Message, wxString::Format( "Fail-Walk %s %s %d\n", hull.Format().c_str(), l.CLine().Format().c_str(), clockwise? 1:0) );
                 return SH_INCOMPLETE;
             }
 
@@ -247,19 +308,19 @@ SHOVE::SHOVE_STATUS SHOVE::shoveLineToHullSet( const LINE& aCurLine, const LINE&
 
         if( ( vFirst < 0 || vLast < 0 ) && !path.CompareGeometry( aObstacleLine.CLine() ) )
         {
-            wxLogTrace( "PNS", "attempt %d fail vfirst-last", attempt );
+            PNS_DBG( Dbg(), Message, wxString::Format( "attempt %d fail vfirst-last", attempt ) );
             continue;
         }
 
         if( path.CPoint( -1 ) != obs.CPoint( -1 ) || path.CPoint( 0 ) != obs.CPoint( 0 ) )
         {
-            wxLogTrace( "PNS", "attempt %d fail vend-start\n", attempt );
+            PNS_DBG( Dbg(), Message, wxString::Format( "attempt %d fail vend-start\n", attempt ) );
             continue;
         }
 
         if( !checkShoveDirection( aCurLine, aObstacleLine, l ) )
         {
-            wxLogTrace( "PNS", "attempt %d fail direction-check", attempt );
+            PNS_DBG( Dbg(), Message, wxString::Format( "attempt %d fail direction-check", attempt ) );
             aResultLine.SetShape( l.CLine() );
 
             continue;
@@ -267,7 +328,7 @@ SHOVE::SHOVE_STATUS SHOVE::shoveLineToHullSet( const LINE& aCurLine, const LINE&
 
         if( path.SelfIntersecting() )
         {
-            wxLogTrace( "PNS", "attempt %d fail self-intersect", attempt );
+            PNS_DBG( Dbg(), Message, wxString::Format( "attempt %d fail self-intersect", attempt ) );
             continue;
         }
 
@@ -276,7 +337,7 @@ SHOVE::SHOVE_STATUS SHOVE::shoveLineToHullSet( const LINE& aCurLine, const LINE&
 #ifdef DEBUG
         char str[128];
         sprintf( str, "att-%d-shoved", attempt );
-        Dbg()->AddLine( l.CLine(), 3, 20000, str );
+        Dbg()->AddLine( l.CLine(), BLUE, 20000, str );
 #endif
 
         if(( aCurLine.Marker() & MK_HEAD ) && !colliding )
@@ -292,7 +353,7 @@ SHOVE::SHOVE_STATUS SHOVE::shoveLineToHullSet( const LINE& aCurLine, const LINE&
 
         if( colliding )
         {
-            wxLogTrace( "PNS", "attempt %d fail coll-check", attempt );
+            PNS_DBG( Dbg(), Message, wxString::Format( "attempt %d fail coll-check", attempt ) );
             continue;
         }
 
@@ -377,7 +438,7 @@ SHOVE::SHOVE_STATUS SHOVE::ShoveObstacleLine( const LINE& aCurLine, const LINE& 
 #ifdef DEBUG
         char str[128];
         sprintf( str, "current-cl-%d", clearance );
-        Dbg()->AddLine( aCurLine.CLine(), 5, 20000, str );
+        Dbg()->AddLine( aCurLine.CLine(), BLUE, 20000, str );
 #endif
 
         rv = shoveLineToHullSet( aCurLine, aObstacleLine, aResultLine, hulls );
@@ -422,10 +483,10 @@ SHOVE::SHOVE_STATUS SHOVE::onCollidingSegment( LINE& aCurrent, SEGMENT* aObstacl
     if( Dbg() )
     {
         Dbg()->BeginGroup( wxString::Format( "on-colliding-segment-iter-%d", m_iter ).ToStdString() );
-        Dbg()->AddSegment( tmp.Seg(), 0, "obstacle-segment" );
-        Dbg()->AddLine( aCurrent.CLine(), 1, 10000, "current-line" );
-        Dbg()->AddLine( obstacleLine.CLine(), 2, 10000, "obstacle-line" );
-        Dbg()->AddLine( shovedLine.CLine(), 3, 10000, "shoved-line" );
+        Dbg()->AddSegment( tmp.Seg(), WHITE, "obstacle-segment" );
+        Dbg()->AddLine( aCurrent.CLine(), RED, 10000, "current-line" );
+        Dbg()->AddLine( obstacleLine.CLine(), GREEN, 10000, "obstacle-line" );
+        Dbg()->AddLine( shovedLine.CLine(), BLUE, 10000, "shoved-line" );
         if( rv == SH_OK )
             Dbg()->Message("Shove success");
         else
@@ -489,10 +550,10 @@ SHOVE::SHOVE_STATUS SHOVE::onCollidingArc( LINE& aCurrent, ARC* aObstacleArc )
     if ( Dbg() )
     {
         Dbg()->BeginGroup( wxString::Format( "on-colliding-arc-iter-%d", m_iter ).ToStdString() );
-        Dbg()->AddLine( tmp.CLine(), 0, 10000, "obstacle-segment" );
-        Dbg()->AddLine( aCurrent.CLine(), 1, 10000, "current-line" );
-        Dbg()->AddLine( obstacleLine.CLine(), 2, 10000, "obstacle-line" );
-        Dbg()->AddLine( shovedLine.CLine(), 3, 10000, "shoved-line" );
+        Dbg()->AddLine( tmp.CLine(), WHITE, 10000, "obstacle-segment" );
+        Dbg()->AddLine( aCurrent.CLine(), RED, 10000, "current-line" );
+        Dbg()->AddLine( obstacleLine.CLine(), GREEN, 10000, "obstacle-line" );
+        Dbg()->AddLine( shovedLine.CLine(), BLUE, 10000, "shoved-line" );
         Dbg()->EndGroup();
     }
 
@@ -530,10 +591,10 @@ SHOVE::SHOVE_STATUS SHOVE::onCollidingLine( LINE& aCurrent, LINE& aObstacle )
     SHOVE_STATUS rv = ShoveObstacleLine( aCurrent, aObstacle, shovedLine );
 
     Dbg()->BeginGroup( "on-colliding-line" );
-    Dbg()->AddLine( aObstacle.CLine(), 1, 100000, "obstacle-line" );
-    Dbg()->AddLine( aCurrent.CLine(), 2, 150000, "current-line" );
-    Dbg()->AddLine( shovedLine.CLine(), 3, 200000, "shoved-line" );
-    
+    Dbg()->AddLine( aObstacle.CLine(), RED, 100000, "obstacle-line" );
+    Dbg()->AddLine( aCurrent.CLine(), GREEN, 150000, "current-line" );
+    Dbg()->AddLine( shovedLine.CLine(), BLUE, 200000, "shoved-line" );
+
     if( rv == SH_OK )
     {
         if( shovedLine.Marker() & MK_HEAD )
@@ -672,8 +733,8 @@ SHOVE::SHOVE_STATUS SHOVE::onCollidingSolid( LINE& aCurrent, ITEM* aObstacle )
     if( Dbg() )
     {
         Dbg()->BeginGroup( "on-colliding-solid" );
-        Dbg()->AddLine( aCurrent.CLine(), 1, 10000, "current-line" );
-        Dbg()->AddLine( walkaroundLine.CLine(), 3, 10000, "walk-line" );
+        Dbg()->AddLine( aCurrent.CLine(), RED, 10000, "current-line" );
+        Dbg()->AddLine( walkaroundLine.CLine(), BLUE, 10000, "walk-line" );
         Dbg()->EndGroup();
     }
 
@@ -768,7 +829,7 @@ SHOVE::SHOVE_STATUS SHOVE::pushOrShoveVia( VIA* aVia, const VECTOR2I& aForce, in
 
     if( !jt )
     {
-        wxLogTrace( "PNS", "weird, can't find the center-of-via joint\n" );
+        PNS_DBG( Dbg(), Message, wxString::Format( "weird, can't find the center-of-via joint\n" ) );
         return SH_INCOMPLETE;
     }
 
@@ -885,11 +946,13 @@ SHOVE::SHOVE_STATUS SHOVE::pushOrShoveVia( VIA* aVia, const VECTOR2I& aForce, in
 SHOVE::SHOVE_STATUS SHOVE::onCollidingVia( ITEM* aCurrent, VIA* aObstacleVia )
 {
     int clearance = getClearance( aCurrent, aObstacleVia );
-    LINE_PAIR_VEC draggedLines;
     VECTOR2I mtv;
     int rank = -1;
 
-    SHAPE_COMPOUND shape;
+    bool lineCollision = false;
+    bool viaCollision = false;
+    VECTOR2I mtvLine, mtvVia;
+
 
     if( aCurrent->OfKind( ITEM::LINE_T ) )
     {
@@ -900,36 +963,32 @@ SHOVE::SHOVE_STATUS SHOVE::onCollidingVia( ITEM* aCurrent, VIA* aObstacleVia )
         m_logger.Log( currentLine, 4, "current" );
 #endif
 
-        shape.AddShape( currentLine->Shape()->Clone() );
+        lineCollision = aObstacleVia->Shape()->Collide( currentLine->Shape(), clearance + currentLine->Width() / 2, &mtvLine );
 
-        // SHAPE_LINE_CHAIN collisions don't currently pay any attention to the line-chain's
-        // width, so we have to add it to the clearance.
-        clearance += currentLine->Width() / 2;
-
-        // Add a second shape for the via (if any)
+        // Check the via if present. Via takes priority.
         if( currentLine->EndsWithVia() )
         {
             const VIA& currentVia = currentLine->Via();
             int        viaClearance = getClearance( &currentVia, aObstacleVia );
-            int        holeClearance = getHoleClearance( &currentVia, aObstacleVia );
-            int        effectiveRadius = std::max( currentVia.Diameter() / 2 + viaClearance,
-                                                   currentVia.Drill() / 2 + holeClearance );
 
-            // Since we have to run the collision with the line's clearance + 1/2 its width (as
-            // it's the only way to take the SHAPE_LINE_CHAIN's width into account), we need to
-            // subtract that clearance back out of the via's effective radius.
-            shape.AddShape( new SHAPE_CIRCLE( currentVia.Pos(), effectiveRadius - clearance ) );
+            viaCollision = aObstacleVia->Shape()->Collide( currentVia.Shape(), viaClearance, &mtvVia );
         }
     }
     else if( aCurrent->OfKind( ITEM::SOLID_T ) )
     {
-        shape.AddShape( aCurrent->Shape()->Clone() );
+       // TODO: is this possible at all? We don't shove solids.
+       return SH_INCOMPLETE;
     }
 
-    aObstacleVia->Shape()->Collide( &shape, clearance + PNS_HULL_MARGIN, &mtv );
-    rank = aCurrent->Rank() + 10000;
+    // fixme: we may have a sign issue in Collide(CIRCLE, LINE_CHAIN)
+    if( viaCollision )
+        mtv = mtvVia;
+    else if ( lineCollision )
+        mtv = -mtvLine;
+    else
+        mtv = VECTOR2I(0, 0);
 
-    return pushOrShoveVia( aObstacleVia, mtv, rank );
+    return pushOrShoveVia( aObstacleVia, -mtv, rank );
 }
 
 
@@ -1137,7 +1196,7 @@ SHOVE::SHOVE_STATUS SHOVE::shoveIteration( int aIter )
         {
         case ITEM::VIA_T:
         {
-            wxLogTrace( "PNS", "iter %d: reverse-collide-via", aIter );
+            PNS_DBG( Dbg(), Message, wxString::Format( "iter %d: reverse-collide-via", aIter ) );
 
             if( currentLine.EndsWithVia() )
             {
@@ -1153,7 +1212,7 @@ SHOVE::SHOVE_STATUS SHOVE::shoveIteration( int aIter )
 
         case ITEM::SEGMENT_T:
         {
-            wxLogTrace( "PNS", "iter %d: reverse-collide-segment ", aIter );
+            PNS_DBG( Dbg(), Message, wxString::Format( "iter %d: reverse-collide-segment ", aIter ) );
             LINE revLine = assembleLine( static_cast<SEGMENT*>( ni ) );
 
             popLineStack();
@@ -1167,7 +1226,7 @@ SHOVE::SHOVE_STATUS SHOVE::shoveIteration( int aIter )
         case ITEM::ARC_T:
         {
             //TODO(snh): Handle Arc shove separate from track
-            wxLogTrace( "PNS", "iter %d: reverse-collide-arc ", aIter );
+            PNS_DBG( Dbg(), Message, wxString::Format( "iter %d: reverse-collide-arc ", aIter ) );
             LINE revLine = assembleLine( static_cast<ARC*>( ni ) );
 
             popLineStack();
@@ -1189,7 +1248,7 @@ SHOVE::SHOVE_STATUS SHOVE::shoveIteration( int aIter )
         switch( ni->Kind() )
         {
         case ITEM::SEGMENT_T:
-            wxLogTrace( "PNS", "iter %d: collide-segment ", aIter );
+            PNS_DBG( Dbg(), Message, wxString::Format( "iter %d: collide-segment ", aIter ) );
 
             st = onCollidingSegment( currentLine, (SEGMENT*) ni );
 
@@ -1200,7 +1259,7 @@ SHOVE::SHOVE_STATUS SHOVE::shoveIteration( int aIter )
 
             //TODO(snh): Customize Arc collide
         case ITEM::ARC_T:
-            wxLogTrace( "PNS", "iter %d: collide-arc ", aIter );
+            PNS_DBG( Dbg(), Message, wxString::Format( "iter %d: collide-arc ", aIter ) );
 
             st = onCollidingArc( currentLine, static_cast<ARC*>( ni ) );
 
@@ -1210,7 +1269,7 @@ SHOVE::SHOVE_STATUS SHOVE::shoveIteration( int aIter )
             break;
 
         case ITEM::VIA_T:
-            wxLogTrace( "PNS", "iter %d: shove-via ", aIter );
+            PNS_DBG( Dbg(), Message, wxString::Format( "iter %d: shove-via ", aIter ) );
             st = onCollidingVia( &currentLine, (VIA*) ni );
 
             if( st == SH_TRY_WALK )
@@ -1219,7 +1278,7 @@ SHOVE::SHOVE_STATUS SHOVE::shoveIteration( int aIter )
             break;
 
         case ITEM::SOLID_T:
-            wxLogTrace( "PNS", "iter %d: walk-solid ", aIter );
+            PNS_DBG( Dbg(), Message, wxString::Format( "iter %d: walk-solid ", aIter ) );
             st = onCollidingSolid( currentLine, (SOLID*) ni );
             break;
 
@@ -1244,8 +1303,8 @@ SHOVE::SHOVE_STATUS SHOVE::shoveMainLoop()
 
     m_affectedArea = OPT_BOX2I();
 
-    wxLogTrace( "PNS", "ShoveStart [root: %d jts, current: %d jts]", m_root->JointCount(),
-           m_currentNode->JointCount() );
+    PNS_DBG( Dbg(), Message, wxString::Format( "ShoveStart [root: %d jts, current: %d jts]", m_root->JointCount(),
+           m_currentNode->JointCount() ) );
 
     int iterLimit = Settings().ShoveIterationLimit();
     TIME_LIMIT timeLimit = Settings().ShoveTimeLimit();
@@ -1301,7 +1360,7 @@ SHOVE::SHOVE_STATUS SHOVE::ShoveLines( const LINE& aCurrentHead )
     m_multiLineMode = false;
 
     if( Dbg() )
-    {    
+    {
         Dbg()->Message( wxString::Format( "Shove start, lc = %d", aCurrentHead.SegmentCount() ) );
     }
 
@@ -1347,7 +1406,7 @@ SHOVE::SHOVE_STATUS SHOVE::ShoveLines( const LINE& aCurrentHead )
     {
 
         Dbg()->BeginGroup( "initial" );
-        Dbg()->AddLine(head.CLine(), 5, head.Width(), "head" );
+        Dbg()->AddLine(head.CLine(), CYAN, head.Width(), "head" );
         Dbg()->EndGroup();
     }
 
@@ -1381,8 +1440,8 @@ SHOVE::SHOVE_STATUS SHOVE::ShoveLines( const LINE& aCurrentHead )
 
     m_currentNode->RemoveByMarker( MK_HEAD );
 
-    wxLogTrace( "PNS", "Shove status : %s after %d iterations",
-           ( ( st == SH_OK || st == SH_HEAD_MODIFIED ) ? "OK" : "FAILURE"), m_iter );
+    PNS_DBG( Dbg(), Message, wxString::Format( "Shove status : %s after %d iterations",
+           ( ( st == SH_OK || st == SH_HEAD_MODIFIED ) ? "OK" : "FAILURE"), m_iter ) );
 
     if( st == SH_OK || st == SH_HEAD_MODIFIED )
     {
@@ -1474,8 +1533,8 @@ SHOVE::SHOVE_STATUS SHOVE::ShoveMultiLines( const ITEM_SET& aHeadSet )
 
     m_currentNode->RemoveByMarker( MK_HEAD );
 
-    wxLogTrace( "PNS", "Shove status : %s after %d iterations",
-           ( st == SH_OK ? "OK" : "FAILURE"), m_iter );
+    PNS_DBG( Dbg(), Message, wxString::Format( "Shove status : %s after %d iterations",
+           ( st == SH_OK ? "OK" : "FAILURE"), m_iter ) );
 
     if( st == SH_OK )
     {
@@ -1579,6 +1638,23 @@ SHOVE::SHOVE_STATUS SHOVE::ShoveDraggingVia( const VIA_HANDLE aOldVia, const VEC
 }
 
 
+LINE* SHOVE::findRootLine( LINE *aLine )
+{
+    for( auto link : aLine->Links() )
+    {
+        if( auto seg = dyn_cast<SEGMENT*>( link ) )
+        {
+            auto it = m_rootLineHistory.find( seg );
+
+            if( it != m_rootLineHistory.end() )
+                return it->second;
+        }
+    }
+
+    return nullptr;
+}
+
+
 void SHOVE::runOptimizer( NODE* aNode )
 {
     OPTIMIZER optimizer( aNode );
@@ -1622,11 +1698,13 @@ void SHOVE::runOptimizer( NODE* aNode )
         break;
     }
 
+    optFlags |= OPTIMIZER::LIMIT_CORNER_COUNT;
+
     if( area )
     {
         if( Dbg() )
         {
-            Dbg()->AddBox( *area, 1, "opt-area" );
+            Dbg()->AddBox( *area, BLUE, "opt-area" );
         }
 
         optFlags |= OPTIMIZER::RESTRICT_AREA;
@@ -1648,12 +1726,12 @@ void SHOVE::runOptimizer( NODE* aNode )
             if( !( line.Marker() & MK_HEAD ) )
             {
                 LINE optimized;
+                LINE* root = findRootLine( &line );
 
-                if( optimizer.Optimize( &line, &optimized ) )
+                if( optimizer.Optimize( &line, &optimized, root ) )
                 {
-                    aNode->Remove( line );
-                    line.SetShape( optimized.CLine() );
-                    aNode->Add( line );
+                    replaceLine( line, optimized, false, aNode );
+                    line = optimized; // keep links in the lines in the queue up to date
                 }
             }
         }

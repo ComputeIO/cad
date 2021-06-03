@@ -245,7 +245,7 @@ TOOL_ACTION PCB_ACTIONS::getAndPlace( "pcbnew.InteractiveEdit.FindMove",
         'T', LEGACY_HK_NAME( "Get and Move Footprint" ),
         _( "Get and Move Footprint" ),
         _( "Selects a footprint by reference designator and places it under the cursor for moving"),
-        BITMAPS::move );
+        BITMAPS::move, AF_ACTIVATE );
 
 TOOL_ACTION PCB_ACTIONS::move( "pcbnew.InteractiveMove.move",
         AS_GLOBAL,
@@ -539,6 +539,22 @@ TOOL_ACTION PCB_ACTIONS::defaultPadProperties( "pcbnew.PadTool.defaultPadPropert
         BITMAPS::options_pad );
 
 
+// SCRIPTING TOOL
+//
+TOOL_ACTION PCB_ACTIONS::pluginsReload( "pcbnew.ScriptingTool.pluginsReload",
+        AS_GLOBAL, 0, "",
+        _( "Refresh Plugins" ), _( "Reload all python plugins and refresh plugin menus" ),
+        BITMAPS::reload );
+
+TOOL_ACTION PCB_ACTIONS::pluginsShowFolder( "pcbnew.ScriptingTool.pluginsShowFolder",
+        AS_GLOBAL, 0, "",
+#ifdef __WXMAC__
+        _( "Reveal Plugin Folder in Finder" ), _( "Reveals the plugins folder in a Finder window" ),
+#else
+        _( "Open Plugin Directory" ), _( "Opens the directory in the default system file manager" ),
+#endif
+        BITMAPS::directory_open );
+
 // BOARD_EDITOR_CONTROL
 //
 TOOL_ACTION PCB_ACTIONS::boardSetup( "pcbnew.EditorControl.boardSetup",
@@ -701,19 +717,19 @@ TOOL_ACTION PCB_ACTIONS::toggleLastNetHighlight( "pcbnew.EditorControl.toggleLas
         _( "Toggle Last Net Highlight" ), _( "Toggle between last two highlighted nets" ) );
 
 TOOL_ACTION PCB_ACTIONS::clearHighlight( "pcbnew.EditorControl.clearHighlight",
-        AS_GLOBAL, 0, "",
+        AS_GLOBAL, '~', "",
         _( "Clear Net Highlighting" ), _( "Clear any existing net highlighting" ) );
 
-TOOL_ACTION PCB_ACTIONS::highlightNetTool( "pcbnew.EditorControl.highlightNetTool",
-        AS_GLOBAL, 0, "",
-        _( "Highlight Nets" ), _( "Highlight all copper items of a net" ),
-        BITMAPS::net_highlight, AF_ACTIVATE );
+TOOL_ACTION PCB_ACTIONS::toggleNetHighlight( "pcbnew.EditorControl.toggleNetHighlight",
+        AS_GLOBAL, MD_CTRL + '`', "",
+        _( "Toggle Net Highlight" ), _( "Toggle net highlighting" ),
+        BITMAPS::net_highlight );
 
 TOOL_ACTION PCB_ACTIONS::highlightNetSelection( "pcbnew.EditorControl.highlightNetSelection",
         AS_GLOBAL,
         // Don't be tempted to remove "Modern Toolset only".  It's in the legacy property name.
         '`', LEGACY_HK_NAME( "Toggle Highlight of Selected Net (Modern Toolset only)" ),
-        _( "Highlight Net" ), _( "Highlight all copper items of a net" ),
+        _( "Highlight Net" ), _( "Highlight all copper items on the selected net(s)" ),
         BITMAPS::net_highlight );
 
 TOOL_ACTION PCB_ACTIONS::highlightItem( "pcbnew.EditorControl.highlightItem",
@@ -1072,6 +1088,12 @@ TOOL_ACTION PCB_ACTIONS::repairBoard( "pcbnew.Control.repairBoard",
         _( "Run various diagnostics and attempt to repair board" ),
         BITMAPS::rescue );
 
+TOOL_ACTION PCB_ACTIONS::repairFootprint( "pcbnew.ModuleEditor.repairFootprint",
+        AS_GLOBAL, 0, "",
+        _( "Repair Footprint" ),
+        _( "Run various diagnostics and attempt to repair footprint" ),
+        BITMAPS::rescue );
+
 
 // PLACEMENT_TOOL
 //
@@ -1307,21 +1329,21 @@ TOOL_ACTION PCB_ACTIONS::routerTuneSingleTrace( "pcbnew.LengthTuner.TuneSingleTr
         AS_GLOBAL,
         // Don't be tempted to remove "Modern Toolset only".  It's in the legacy property name.
         '7', LEGACY_HK_NAME( "Tune Single Track (Modern Toolset only)" ),
-        _( "Tune length of a single track" ), "",
+        _( "Tune length of a single track" ), _( "Tune length of a single track" ),
         BITMAPS::ps_tune_length, AF_ACTIVATE, (void*) PNS::PNS_MODE_TUNE_SINGLE );
 
 TOOL_ACTION PCB_ACTIONS::routerTuneDiffPair( "pcbnew.LengthTuner.TuneDiffPair",
         AS_GLOBAL,
         // Don't be tempted to remove "Modern Toolset only".  It's in the legacy property name.
         '8', LEGACY_HK_NAME( "Tune Differential Pair Length (Modern Toolset only)" ),
-        _( "Tune length of a differential pair" ), "",
+        _( "Tune length of a differential pair" ), _( "Tune length of a differential pair" ),
         BITMAPS::ps_diff_pair_tune_length, AF_ACTIVATE, (void*) PNS::PNS_MODE_TUNE_DIFF_PAIR );
 
 TOOL_ACTION PCB_ACTIONS::routerTuneDiffPairSkew( "pcbnew.LengthTuner.TuneDiffPairSkew",
         AS_GLOBAL,
         // Don't be tempted to remove "Modern Toolset only".  It's in the legacy property name.
         '9', LEGACY_HK_NAME( "Tune Differential Pair Skew (Modern Toolset only)" ),
-        _( "Tune skew of a differential pair" ), "",
+        _( "Tune skew of a differential pair" ), _( "Tune skew of a differential pair" ),
         BITMAPS::ps_diff_pair_tune_phase, AF_ACTIVATE, (void*) PNS::PNS_MODE_TUNE_DIFF_PAIR_SKEW );
 
 TOOL_ACTION PCB_ACTIONS::routerInlineDrag( "pcbnew.InteractiveRouter.InlineDrag",
@@ -1352,3 +1374,14 @@ TOOL_ACTION PCB_ACTIONS::dragFreeAngle( "pcbnew.InteractiveRouter.DragFreeAngle"
         _( "Drag (free angle)" ),
         _( "Drags the nearest joint in the track without restricting the track angle." ),
         BITMAPS::drag );
+
+
+// LENGTH_TUNER_TOOL
+//
+TOOL_ACTION PCB_ACTIONS::lengthTunerSettingsDialog( "pcbnew.LengthTuner.Settings",
+        AS_CONTEXT,
+        // Don't be tempted to remove "Modern Toolset only".  It's in the legacy property name.
+        MD_CTRL + 'L', LEGACY_HK_NAME( "Length Tuning Settings (Modern Toolset only)" ),
+        _( "Length Tuning Settings..." ),
+        _( "Sets the length tuning parameters for currently routed item." ),
+        BITMAPS::router_len_tuner_setup );

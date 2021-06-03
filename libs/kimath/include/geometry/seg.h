@@ -33,7 +33,6 @@
 #include <type_traits>                  // for swap
 
 #include <core/optional.h>
-#include <math/util.h>                  // for rescale
 #include <math/vector2d.h>
 
 typedef OPT<VECTOR2I> OPT_VECTOR2I;
@@ -159,6 +158,14 @@ public:
     int LineDistance( const VECTOR2I& aP, bool aDetermineSide = false ) const;
 
     /**
+      * Determine the smallest angle between two segments (result in degrees)
+      *
+      * @param aOther point to determine the orientation wrs to self
+      * @return smallest angle between this and aOther (degrees)
+      */
+    double AngleDegrees( const SEG& aOther ) const;
+
+    /**
       * Compute a point on the segment (this) that is closest to point \a aP.
       *
       * @return the nearest point
@@ -173,6 +180,13 @@ public:
     const VECTOR2I NearestPoint( const SEG &aSeg ) const;
 
     /**
+      * Reflect a point using this segment as axis.
+      *
+      * @return the reflected point
+      */
+    const VECTOR2I ReflectPoint( const VECTOR2I& aP ) const;
+
+    /**
      * Compute intersection point of segment (this) with segment \a aSeg.
      *
      * @param aSeg: segment to intersect with
@@ -183,6 +197,8 @@ public:
      */
     OPT_VECTOR2I Intersect( const SEG& aSeg, bool aIgnoreEndpoints = false,
                             bool aLines = false ) const;
+
+    bool Intersects( const SEG& aSeg ) const;
 
     /**
      * Compute the intersection point of lines passing through ends of (this) and \a aSeg.
@@ -223,7 +239,7 @@ public:
      */
     int Distance( const SEG& aSeg ) const
     {
-        return sqrt( SquaredDistance( aSeg ) );
+        return KiROUND( sqrt( SquaredDistance( aSeg ) ) );
     }
 
     ecoord SquaredDistance( const VECTOR2I& aP ) const
@@ -239,7 +255,7 @@ public:
      */
     int Distance( const VECTOR2I& aP ) const
     {
-        return sqrt( SquaredDistance( aP ) );
+        return KiROUND( sqrt( SquaredDistance( aP ) ) );
     }
 
     void CanonicalCoefs( ecoord& qA, ecoord& qB, ecoord& qC ) const
@@ -381,26 +397,13 @@ public:
 private:
     bool ccw( const VECTOR2I& aA, const VECTOR2I& aB, const VECTOR2I &aC ) const;
 
+    bool intersects( const SEG& aSeg, bool aIgnoreEndpoints = false, bool aLines = false,
+                     VECTOR2I* aPt = nullptr ) const;
+
 private:
     ///< index withing the parent shape (used when m_is_local == false)
     int m_index;
 };
-
-inline VECTOR2I SEG::LineProject( const VECTOR2I& aP ) const
-{
-    VECTOR2I d = B - A;
-    ecoord l_squared = d.Dot( d );
-
-    if( l_squared == 0 )
-        return A;
-
-    ecoord t = d.Dot( aP - A );
-
-    int xp = rescale( t, ecoord{ d.x }, l_squared );
-    int yp = rescale( t, ecoord{ d.y }, l_squared );
-
-    return A + VECTOR2I( xp, yp );
-}
 
 inline int SEG::LineDistance( const VECTOR2I& aP, bool aDetermineSide ) const
 {
@@ -408,7 +411,7 @@ inline int SEG::LineDistance( const VECTOR2I& aP, bool aDetermineSide ) const
     ecoord q = ecoord{ B.x } - A.x;
     ecoord r = -p * A.x - q * A.y;
 
-    ecoord dist = ( p * aP.x + q * aP.y + r ) / sqrt( p * p + q * q );
+    ecoord dist = KiROUND( ( p * aP.x + q * aP.y + r ) / sqrt( p * p + q * q ) );
 
     return aDetermineSide ? dist : std::abs( dist );
 }
@@ -417,27 +420,6 @@ inline SEG::ecoord SEG::TCoef( const VECTOR2I& aP ) const
 {
     VECTOR2I d = B - A;
     return d.Dot( aP - A);
-}
-
-inline const VECTOR2I SEG::NearestPoint( const VECTOR2I& aP ) const
-{
-    VECTOR2I d = B - A;
-    ecoord l_squared = d.Dot( d );
-
-    if( l_squared == 0 )
-        return A;
-
-    ecoord t = d.Dot( aP - A );
-
-    if( t < 0 )
-        return A;
-    else if( t > l_squared )
-        return B;
-
-    int xp = rescale( t, (ecoord)d.x, l_squared );
-    int yp = rescale( t, (ecoord)d.y, l_squared );
-
-    return A + VECTOR2I( xp, yp );
 }
 
 inline std::ostream& operator<<( std::ostream& aStream, const SEG& aSeg )

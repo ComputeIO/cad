@@ -26,6 +26,7 @@
 // base64 code.
 #define wxUSE_BASE64 1
 #include <wx/base64.h>
+#include <wx/log.h>
 #include <wx/mstream.h>
 #include <advanced_config.h>
 #include <pgm_base.h>
@@ -40,6 +41,7 @@
 #include <sch_no_connect.h>
 #include <sch_text.h>
 #include <sch_sheet.h>
+#include <sch_sheet_pin.h>
 #include <schematic.h>
 #include <sch_plugins/kicad/sch_sexpr_plugin.h>
 #include <sch_screen.h>
@@ -212,12 +214,12 @@ static double getSheetPinAngle( SHEET_SIDE aSide )
 
     switch( aSide )
     {
-    case SHEET_UNDEFINED_SIDE:
-    case SHEET_LEFT_SIDE:       retv = 180.0;  break;
-    case SHEET_RIGHT_SIDE:      retv = 0.0;    break;
-    case SHEET_TOP_SIDE:        retv = 90.0;   break;
-    case SHEET_BOTTOM_SIDE:     retv = 270.0;  break;
-    default:   wxFAIL;          retv = 0.0;    break;
+    case SHEET_SIDE::UNDEFINED:
+    case SHEET_SIDE::LEFT:     retv = 180.0; break;
+    case SHEET_SIDE::RIGHT:    retv = 0.0; break;
+    case SHEET_SIDE::TOP:      retv = 90.0; break;
+    case SHEET_SIDE::BOTTOM:   retv = 270.0; break;
+    default:   wxFAIL;              retv = 0.0;    break;
     }
 
     return retv;
@@ -454,6 +456,8 @@ SCH_SHEET* SCH_SEXPR_PLUGIN::Load( const wxString& aFileName, SCHEMATIC* aSchema
 
     wxASSERT( m_currentPath.size() == 1 );  // only the project path should remain
 
+    m_currentPath.pop(); // Clear the path stack for next call to Load
+
     return sheet;
 }
 
@@ -587,6 +591,8 @@ void SCH_SEXPR_PLUGIN::Format( SCH_SHEET* aSheet )
     m_out->Print( 0, "(kicad_sch (version %d) (generator eeschema)\n\n",
                   SEXPR_SCHEMATIC_FILE_VERSION );
 
+    m_out->Print( 1, "(uuid %s)\n\n", TO_UTF8( screen->m_uuid.AsString() ) );
+
     screen->GetPageSettings().Format( m_out, 1, 0 );
     m_out->Print( 0, "\n" );
     screen->GetTitleBlock().Format( m_out, 1, 0 );
@@ -693,91 +699,32 @@ void SCH_SEXPR_PLUGIN::Format( SCH_SHEET* aSheet )
     {
         SCH_SHEET_LIST sheetPaths( aSheet, true );
 
-        m_out->Print( 0, "\n" );
-        m_out->Print( 1, "(sheet_instances\n" );
+        SCH_REFERENCE_LIST symbolInstances;
 
         for( const SCH_SHEET_PATH& sheetPath : sheetPaths )
-        {
-            SCH_SHEET* sheet = sheetPath.Last();
+            sheetPath.GetSymbols( symbolInstances, true, true );
 
-            wxCHECK2( sheet, continue );
+        symbolInstances.SortByReferenceOnly();
 
-            m_out->Print( 2, "(path %s (page %s))\n",
-                          m_out->Quotew( sheetPath.PathAsString() ).c_str(),
-                          m_out->Quotew( sheet->GetPageNumber( sheetPath ) ).c_str() );
-        }
-
-        m_out->Print( 1, ")\n" );  // Close sheet instances token.
-        m_out->Print( 0, "\n" );
-        m_out->Print( 1, "(symbol_instances\n" );
-
-        for( const SCH_SHEET_PATH& sheetPath : sheetPaths )
-        {
-            SCH_REFERENCE_LIST instances;
-
-            sheetPath.GetSymbols( instances, true, true );
-            instances.SortByReferenceOnly();
-
-            for( size_t i = 0; i < instances.GetCount(); i++ )
-            {
-                m_out->Print( 2, "(path %s\n",
-                              m_out->Quotew( instances[i].GetPath() ).c_str() );
-                m_out->Print( 3, "(reference %s) (unit %d) (value %s) (footprint %s)\n",
-                              m_out->Quotew( instances[i].GetRef() ).c_str(),
-                              instances[i].GetUnit(),
-                              m_out->Quotew( instances[i].GetValue() ).c_str(),
-                              m_out->Quotew( instances[i].GetFootprint() ).c_str() );
-                m_out->Print( 2, ")\n" );
-            }
-        }
-
-        m_out->Print( 1, ")\n" );  // Close symbol instances token.
+        saveInstances( sheetPaths.GetSheetInstances(), symbolInstances.GetSymbolInstances(), 1 );
     }
     else
     {
         // Schematic files (SCH_SCREEN objects) can be shared so we have to save and restore
         // symbol and sheet instance data even if the file being saved is not the root sheet
         // because it is possible that the file is the root sheet of another project.
-        if( screen->m_sheetInstances.size() )
-        {
-            m_out->Print( 0, "\n" );
-            m_out->Print( 1, "(sheet_instances\n" );
-
-            for( const SCH_SHEET_INSTANCE& instance : screen->m_sheetInstances )
-            {
-                m_out->Print( 2, "(path %s (page %s))\n",
-                              m_out->Quotew( instance.m_Path.AsString() ).c_str(),
-                              m_out->Quotew( instance.m_PageNumber ).c_str() );
-            }
-
-            m_out->Print( 1, ")\n" );  // Close sheet instances token.
-        }
-
-        if( screen->m_symbolInstances.size() )
-        {
-            m_out->Print( 0, "\n" );
-            m_out->Print( 1, "(symbol_instances\n" );
-
-            for( const SYMBOL_INSTANCE_REFERENCE& instance : screen->m_symbolInstances )
-            {
-                m_out->Print( 2, "(path %s (reference %s) (unit %d))\n",
-                              m_out->Quotew( instance.m_Path.AsString() ).c_str(),
-                              m_out->Quotew( instance.m_Reference ).c_str(),
-                              instance.m_Unit );
-            }
-
-            m_out->Print( 1, ")\n" );  // Close instances token.
-        }
+        saveInstances( screen->m_sheetInstances, screen->m_symbolInstances, 1 );
     }
 
     m_out->Print( 0, ")\n" );
 }
 
 
-void SCH_SEXPR_PLUGIN::Format( EE_SELECTION* aSelection, SCH_SHEET_PATH* aSheetPath, 
+void SCH_SEXPR_PLUGIN::Format( EE_SELECTION* aSelection, SCH_SHEET_PATH* aSelectionPath,
+                               SCH_SHEET_LIST* aFullSheetHierarchy,
                                OUTPUTFORMATTER* aFormatter )
 {
-    wxCHECK( aSelection && aFormatter, /* void */ );
+    wxCHECK( aSelection && aSelectionPath && aFullSheetHierarchy && aFormatter, /* void */ );
 
     LOCALE_IO toggle;
 
@@ -822,6 +769,12 @@ void SCH_SEXPR_PLUGIN::Format( EE_SELECTION* aSelection, SCH_SHEET_PATH* aSheetP
         m_out->Print( 0, ")\n\n" );
     }
 
+    // Store the selected sheets instance information
+    SCH_SHEET_LIST selectedSheets;
+    selectedSheets.push_back( *aSelectionPath ); // Include the "root" of the selection
+
+    SCH_REFERENCE_LIST selectedSymbols;
+
     for( i = 0; i < aSelection->GetSize(); ++i )
     {
         item = (SCH_ITEM*) aSelection->GetItem( i );
@@ -829,7 +782,10 @@ void SCH_SEXPR_PLUGIN::Format( EE_SELECTION* aSelection, SCH_SHEET_PATH* aSheetP
         switch( item->Type() )
         {
         case SCH_COMPONENT_T:
-            saveSymbol( static_cast<SCH_COMPONENT*>( item ), aSheetPath, 0 );
+            saveSymbol( static_cast<SCH_COMPONENT*>( item ), aSelectionPath, 0 );
+
+            aSelectionPath->AppendSymbol( selectedSymbols, static_cast<SCH_COMPONENT*>( item ),
+                                          true, true );
             break;
 
         case SCH_BITMAP_T:
@@ -838,6 +794,16 @@ void SCH_SEXPR_PLUGIN::Format( EE_SELECTION* aSelection, SCH_SHEET_PATH* aSheetP
 
         case SCH_SHEET_T:
             saveSheet( static_cast< SCH_SHEET* >( item ), 0 );
+
+            {
+                SCH_SHEET_PATH subSheetPath = *aSelectionPath;
+                subSheetPath.push_back( static_cast<SCH_SHEET*>( item ) );
+
+                aFullSheetHierarchy->GetSheetsWithinPath( selectedSheets, subSheetPath );
+                aFullSheetHierarchy->GetSymbolsWithinPath( selectedSymbols, subSheetPath, true,
+                                                          true );
+            }
+
             break;
 
         case SCH_JUNCTION_T:
@@ -868,6 +834,30 @@ void SCH_SEXPR_PLUGIN::Format( EE_SELECTION* aSelection, SCH_SHEET_PATH* aSheetP
             wxASSERT( "Unexpected schematic object type in SCH_SEXPR_PLUGIN::Format()" );
         }
     }
+
+    // Make all instance information relative to the selection path
+    KIID_PATH selectionPath = aSelectionPath->PathWithoutRootUuid();
+
+    selectedSheets.SortByPageNumbers();
+    std::vector<SCH_SHEET_INSTANCE> sheetinstances = selectedSheets.GetSheetInstances();
+
+    for( SCH_SHEET_INSTANCE& sheetInstance : sheetinstances )
+    {
+        wxASSERT_MSG( sheetInstance.m_Path.MakeRelativeTo( selectionPath ),
+                      "Sheet is not inside the selection path?" );
+    }
+
+
+    selectedSymbols.SortByReferenceOnly();
+    std::vector<SYMBOL_INSTANCE_REFERENCE> symbolInstances = selectedSymbols.GetSymbolInstances();
+
+    for( SYMBOL_INSTANCE_REFERENCE& symbolInstance : symbolInstances )
+    {
+        wxASSERT_MSG( symbolInstance.m_Path.MakeRelativeTo( selectionPath ),
+                      "Symbol is not inside the selection path?" );
+    }
+
+    saveInstances( sheetinstances, symbolInstances, 0 );
 }
 
 
@@ -1244,17 +1234,6 @@ void SCH_SEXPR_PLUGIN::saveText( SCH_TEXT* aText, int aNestLevel )
 {
     wxCHECK_RET( aText != nullptr && m_out != nullptr, "" );
 
-    double angle;
-
-    switch( aText->GetLabelSpinStyle() )
-    {
-    case LABEL_SPIN_STYLE::RIGHT:    angle = 0.0;    break;
-    case LABEL_SPIN_STYLE::UP:       angle = 90.0;   break;
-    case LABEL_SPIN_STYLE::LEFT:     angle = 180.0;  break;
-    case LABEL_SPIN_STYLE::BOTTOM:   angle = 270.0;  break;
-    default:      wxFAIL;            angle = 0.0;    break;
-    }
-
     m_out->Print( aNestLevel, "(%s %s",
                   getTextTypeToken( aText->Type() ),
                   m_out->Quotew( aText->GetText() ).c_str() );
@@ -1267,7 +1246,7 @@ void SCH_SEXPR_PLUGIN::saveText( SCH_TEXT* aText, int aNestLevel )
         m_out->Print( 0, " (at %s %s %s)",
                       FormatInternalUnits( aText->GetPosition().x ).c_str(),
                       FormatInternalUnits( aText->GetPosition().y ).c_str(),
-                      FormatAngle( angle * 10.0 ).c_str() );
+                      FormatAngle( aText->GetTextAngle() ).c_str() );
     }
     else
     {
@@ -1313,6 +1292,52 @@ void SCH_SEXPR_PLUGIN::saveBusAlias( std::shared_ptr<BUS_ALIAS> aAlias, int aNes
     m_out->Print( aNestLevel, "(bus_alias %s (members %s))\n",
                   m_out->Quotew( aAlias->GetName() ).c_str(),
                   TO_UTF8( members ) );
+}
+
+
+void SCH_SEXPR_PLUGIN::saveInstances( const std::vector<SCH_SHEET_INSTANCE>& aSheets,
+                                      const std::vector<SYMBOL_INSTANCE_REFERENCE>& aSymbols,
+                                      int aNestLevel )
+{
+    if( aSheets.size() )
+    {
+        m_out->Print( 0, "\n" );
+        m_out->Print( aNestLevel, "(sheet_instances\n" );
+
+        for( const SCH_SHEET_INSTANCE& instance : aSheets )
+        {
+            wxString path = instance.m_Path.AsString();
+
+            if( path.IsEmpty() )
+                path = wxT( "/" ); // Root path
+
+            m_out->Print( aNestLevel + 1, "(path %s (page %s))\n",
+                          m_out->Quotew( path ).c_str(),
+                          m_out->Quotew( instance.m_PageNumber ).c_str() );
+        }
+
+        m_out->Print( aNestLevel, ")\n" ); // Close sheet instances token.
+    }
+
+    if( aSymbols.size() )
+    {
+        m_out->Print( 0, "\n" );
+        m_out->Print( aNestLevel, "(symbol_instances\n" );
+
+        for( const SYMBOL_INSTANCE_REFERENCE& instance : aSymbols )
+        {
+            m_out->Print( aNestLevel + 1, "(path %s\n",
+                          m_out->Quotew( instance.m_Path.AsString() ).c_str() );
+            m_out->Print( aNestLevel + 2, "(reference %s) (unit %d) (value %s) (footprint %s)\n",
+                          m_out->Quotew( instance.m_Reference ).c_str(),
+                          instance.m_Unit,
+                          m_out->Quotew( instance.m_Value ).c_str(),
+                          m_out->Quotew( instance.m_Footprint ).c_str() );
+            m_out->Print( aNestLevel + 1, ")\n" );
+        }
+
+        m_out->Print( aNestLevel, ")\n" ); // Close symbol instances token.
+    }
 }
 
 
@@ -2091,7 +2116,7 @@ void SCH_SEXPR_PLUGIN::cacheLib( const wxString& aLibraryFileName, const PROPERT
         // Because m_cache is rebuilt, increment PART_LIBS::s_modify_generation
         // to modify the hash value that indicate component to symbol links
         // must be updated.
-        PART_LIBS::s_modify_generation++;
+        PART_LIBS::IncrementModifyGeneration();
 
         if( !isBuffering( aProperties ) )
             m_cache->Load();
@@ -2240,7 +2265,7 @@ bool SCH_SEXPR_PLUGIN::DeleteSymbolLib( const wxString& aLibraryPath,
     if( m_cache && m_cache->IsFile( aLibraryPath ) )
     {
         delete m_cache;
-        m_cache = 0;
+        m_cache = nullptr;
     }
 
     return true;

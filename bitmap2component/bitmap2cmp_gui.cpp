@@ -35,6 +35,12 @@
 #include <wildcards_and_files_ext.h>
 #include <wx/clipbrd.h>
 #include <wx/rawbmp.h>
+#include <wx/filedlg.h>
+#include <wx/rawbmp.h>
+#include <wx/msgdlg.h>
+#include <wx/dcclient.h>
+#include <wx/log.h>
+
 
 #include "bitmap2cmp_gui_base.h"
 
@@ -691,6 +697,7 @@ void BM2CMP_FRAME::OnExportToClipboard( wxCommandEvent& event )
         // This data objects are held by the clipboard,
         // so do not delete them in the app.
         wxTheClipboard->SetData( new wxTextDataObject( buffer.c_str() ) );
+        wxTheClipboard->Flush(); // Allow data to be available after closing KiCad
         wxTheClipboard->Close();
     }
     else
@@ -730,15 +737,14 @@ void BM2CMP_FRAME::OnExportLogo()
         path = ::wxGetCwd();
 
     wxFileDialog fileDlg( this, _( "Create Logo File" ), path, wxEmptyString,
-                          PageLayoutDescrFileWildcard(),
-                          wxFD_SAVE | wxFD_OVERWRITE_PROMPT );
+                          DrawingSheetFileWildcard(), wxFD_SAVE | wxFD_OVERWRITE_PROMPT );
     int          diag = fileDlg.ShowModal();
 
     if( diag != wxID_OK )
         return;
 
     fn = fileDlg.GetPath();
-    fn.SetExt( PageLayoutDescrFileExtension );
+    fn.SetExt( DrawingSheetFileExtension );
     m_ConvertedFileName = fn.GetFullPath();
 
     FILE*    outfile;

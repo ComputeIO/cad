@@ -27,6 +27,7 @@ using namespace std::placeholders;
 #include <pcbnew_settings.h>
 
 #include <tools/pcb_grid_helper.h>
+#include <wx/log.h>
 
 #include "pns_kicad_iface.h"
 #include "pns_tool_base.h"
@@ -264,7 +265,7 @@ void TOOL_BASE::updateStartItem( const TOOL_EVENT& aEvent, bool aIgnorePads )
     GAL*     gal = m_toolMgr->GetView()->GetGAL();
 
     controls()->ForceCursorPosition( false );
-    m_gridHelper->SetUseGrid( gal->GetGridSnapping() && !aEvent.Modifier( MD_ALT )  );
+    m_gridHelper->SetUseGrid( gal->GetGridSnapping() && !aEvent.DisableGridSnapping()  );
     m_gridHelper->SetSnap( !aEvent.Modifier( MD_SHIFT ) );
 
     if( aEvent.IsMotion() || aEvent.IsClick() )
@@ -278,9 +279,7 @@ void TOOL_BASE::updateStartItem( const TOOL_EVENT& aEvent, bool aIgnorePads )
         m_startItem = nullptr;
 
     m_startSnapPoint = snapToItem( m_startItem, p );
-
-    if( checkSnap( m_startItem ) )
-        controls()->ForceCursorPosition( true, m_startSnapPoint );
+    controls()->ForceCursorPosition( true, m_startSnapPoint );
 }
 
 
@@ -289,7 +288,7 @@ void TOOL_BASE::updateEndItem( const TOOL_EVENT& aEvent )
     int  layer;
     GAL* gal = m_toolMgr->GetView()->GetGAL();
 
-    m_gridHelper->SetUseGrid( gal->GetGridSnapping() && !aEvent.Modifier( MD_ALT )  );
+    m_gridHelper->SetUseGrid( gal->GetGridSnapping() && !aEvent.DisableGridSnapping()  );
     m_gridHelper->SetSnap( !aEvent.Modifier( MD_SHIFT ) );
 
     controls()->ForceCursorPosition( false );
@@ -322,7 +321,7 @@ void TOOL_BASE::updateEndItem( const TOOL_EVENT& aEvent )
             break;
     }
 
-    if( checkSnap( endItem ) )
+    if( m_gridHelper->GetSnap() && checkSnap( endItem ) )
     {
         m_endItem = endItem;
         m_endSnapPoint = snapToItem( endItem, mousePos );

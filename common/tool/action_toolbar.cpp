@@ -27,6 +27,7 @@
 #include <bitmaps.h>
 #include <eda_draw_frame.h>
 #include <functional>
+#include <kiplatform/ui.h>
 #include <math/util.h>
 #include <memory>
 #include <pgm_base.h>
@@ -41,6 +42,14 @@
 #include <wx/popupwin.h>
 #include <wx/renderer.h>
 #include <wx/sizer.h>
+#include <wx/dcclient.h>
+#include <wx/settings.h>
+
+
+wxBitmap MakeDisabledBitmap( const wxBitmap& aSource )
+{
+    return aSource.ConvertToDisabled( KIPLATFORM::UI::IsDarkTheme() ? 70 : 255 );
+}
 
 
 ACTION_GROUP::ACTION_GROUP( std::string aName, const std::vector<const TOOL_ACTION*>& aActions )
@@ -103,7 +112,7 @@ ACTION_TOOLBAR_PALETTE::ACTION_TOOLBAR_PALETTE( wxWindow* aParent, bool aVertica
 void ACTION_TOOLBAR_PALETTE::AddAction( const TOOL_ACTION& aAction )
 {
     wxBitmap normalBmp   = KiScaledBitmap( aAction.GetIcon(), this );
-    wxBitmap disabledBmp = normalBmp.ConvertToDisabled();
+    wxBitmap disabledBmp = MakeDisabledBitmap( normalBmp );
 
     int padding = ( m_buttonSize.GetWidth() - normalBmp.GetWidth() ) / 2;
 
@@ -174,11 +183,8 @@ ACTION_TOOLBAR::ACTION_TOOLBAR( EDA_BASE_FRAME* parent, wxWindowID id, const wxP
 
 #if !wxCHECK_VERSION( 3, 1, 0 )
     // Custom art provider makes dark mode work on wx < 3.1
-    if( ADVANCED_CFG::GetCfg().m_AllowDarkMode )
-    {
-        WX_AUI_TOOLBAR_ART* newArt = new WX_AUI_TOOLBAR_ART();
-        SetArtProvider( newArt );
-    }
+    WX_AUI_TOOLBAR_ART* newArt = new WX_AUI_TOOLBAR_ART();
+    SetArtProvider( newArt );
 #endif
 
     Connect( wxEVT_COMMAND_TOOL_CLICKED, wxAuiToolBarEventHandler( ACTION_TOOLBAR::onToolEvent ),
@@ -214,10 +220,12 @@ void ACTION_TOOLBAR::Add( const TOOL_ACTION& aAction, bool aIsToggleEntry, bool 
     wxASSERT( GetParent() );
     wxASSERT_MSG( !( aIsCancellable && !aIsToggleEntry ), "aIsCancellable requires aIsToggleEntry" );
 
-    int       toolId = aAction.GetUIId();
+    int      toolId = aAction.GetUIId();
+    wxBitmap bmp    = KiScaledBitmap( aAction.GetIcon(), GetParent() );
 
-    AddTool( toolId, wxEmptyString, KiScaledBitmap( aAction.GetIcon(), GetParent() ),
-             aAction.GetDescription(), aIsToggleEntry ? wxITEM_CHECK : wxITEM_NORMAL );
+    AddTool( toolId, wxEmptyString, bmp, MakeDisabledBitmap( bmp ),
+             aIsToggleEntry ? wxITEM_CHECK : wxITEM_NORMAL,
+             aAction.GetDescription(), wxEmptyString, nullptr );
 
     m_toolKinds[ toolId ]       = aIsToggleEntry;
     m_toolActions[ toolId ]     = &aAction;
@@ -227,10 +235,11 @@ void ACTION_TOOLBAR::Add( const TOOL_ACTION& aAction, bool aIsToggleEntry, bool 
 
 void ACTION_TOOLBAR::AddButton( const TOOL_ACTION& aAction )
 {
-    int       toolId = aAction.GetUIId();
+    int      toolId = aAction.GetUIId();
+    wxBitmap bmp    = KiScaledBitmap( aAction.GetIcon(), GetParent() );
 
-    AddTool( toolId, wxEmptyString, KiScaledBitmap( aAction.GetIcon(), GetParent() ),
-             aAction.GetName(), wxITEM_NORMAL );
+    AddTool( toolId, wxEmptyString, bmp, MakeDisabledBitmap( bmp ),
+             wxITEM_NORMAL, aAction.GetDescription(), wxEmptyString, nullptr );
 
     m_toolKinds[ toolId ] = false;
     m_toolActions[ toolId ] = &aAction;
@@ -267,6 +276,7 @@ void ACTION_TOOLBAR::AddGroup( ACTION_GROUP* aGroup, bool aIsToggleEntry )
 {
     int                groupId       = aGroup->GetUIId();
     const TOOL_ACTION* defaultAction = aGroup->GetDefaultAction();
+    wxBitmap           bmp           = KiScaledBitmap( defaultAction->GetIcon(), GetParent() );
 
     wxASSERT( GetParent() );
     wxASSERT( defaultAction );
@@ -276,8 +286,9 @@ void ACTION_TOOLBAR::AddGroup( ACTION_GROUP* aGroup, bool aIsToggleEntry )
     m_actionGroups[ groupId ] = aGroup;
 
     // Add the main toolbar item representing the group
-    AddTool( groupId, wxEmptyString, KiScaledBitmap( defaultAction->GetIcon(), GetParent() ),
-             wxEmptyString, aIsToggleEntry ? wxITEM_CHECK : wxITEM_NORMAL );
+    AddTool( groupId, wxEmptyString, bmp, MakeDisabledBitmap( bmp ),
+             aIsToggleEntry ? wxITEM_CHECK : wxITEM_NORMAL,
+             wxEmptyString, wxEmptyString, nullptr );
 
     // Select the default action
     doSelectAction( aGroup, *defaultAction );
@@ -312,7 +323,7 @@ void ACTION_TOOLBAR::doSelectAction( ACTION_GROUP* aGroup, const TOOL_ACTION& aA
     // Update the item information
     item->SetShortHelp( aAction.GetDescription() );
     item->SetBitmap( KiScaledBitmap( aAction.GetIcon(), GetParent() ) );
-    item->SetDisabledBitmap( item->GetBitmap().ConvertToDisabled() );
+    item->SetDisabledBitmap( MakeDisabledBitmap( item->GetBitmap() ) );
 
     // Register a new handler with the new UI conditions
     if( m_toolManager )
@@ -391,7 +402,7 @@ void ACTION_TOOLBAR::SetToolBitmap( const TOOL_ACTION& aAction, const wxBitmap& 
     wxAuiToolBarItem* tb_item = wxAuiToolBar::FindTool( toolId );
 
     if( tb_item )
-        tb_item->SetDisabledBitmap( aBitmap.ConvertToDisabled() );
+        tb_item->SetDisabledBitmap( MakeDisabledBitmap( aBitmap ) );
 }
 
 
@@ -805,7 +816,7 @@ void ACTION_TOOLBAR::RefreshBitmaps()
         wxBitmap bmp = KiScaledBitmap( pair.second->GetIcon(), GetParent() );
 
         tool->SetBitmap( bmp );
-        tool->SetDisabledBitmap( bmp.ConvertToDisabled() );
+        tool->SetDisabledBitmap( MakeDisabledBitmap( bmp ) );
     }
 
     Refresh();

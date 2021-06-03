@@ -36,6 +36,7 @@ using namespace std::placeholders;
 #include <dialogs/dialog_pns_diff_pair_dimensions.h>
 #include <dialogs/dialog_track_via_size.h>
 #include <widgets/infobar.h>
+#include <widgets/appearance_controls.h>
 #include <confirm.h>
 #include <bitmaps.h>
 #include <tool/action_menu.h>
@@ -434,18 +435,24 @@ bool ROUTER_TOOL::Init()
     m_diffPairMenu->SetTool( this );
     m_menu.AddSubMenu( m_diffPairMenu );
 
+    auto notRoutingCond =
+            [this]( const SELECTION& )
+            {
+                return !m_router->RoutingInProgress();
+            };
+
     menu.AddItem( ACTIONS::cancelInteractive,        SELECTION_CONDITIONS::ShowAlways );
 
     menu.AddSeparator();
 
-    menu.AddItem( PCB_ACTIONS::routeSingleTrack,     SELECTION_CONDITIONS::ShowAlways );
-    menu.AddItem( PCB_ACTIONS::routeDiffPair,        SELECTION_CONDITIONS::ShowAlways );
+    menu.AddItem( PCB_ACTIONS::routeSingleTrack,     notRoutingCond );
+    menu.AddItem( PCB_ACTIONS::routeDiffPair,        notRoutingCond );
     menu.AddItem( ACT_EndTrack,                      SELECTION_CONDITIONS::ShowAlways );
     menu.AddItem( ACT_UndoLastSegment,               SELECTION_CONDITIONS::ShowAlways );
-    menu.AddItem( PCB_ACTIONS::breakTrack,           SELECTION_CONDITIONS::ShowAlways );
+    menu.AddItem( PCB_ACTIONS::breakTrack,           notRoutingCond );
 
-    menu.AddItem( PCB_ACTIONS::drag45Degree,         SELECTION_CONDITIONS::ShowAlways );
-    menu.AddItem( PCB_ACTIONS::dragFreeAngle,        SELECTION_CONDITIONS::ShowAlways );
+    menu.AddItem( PCB_ACTIONS::drag45Degree,         notRoutingCond );
+    menu.AddItem( PCB_ACTIONS::dragFreeAngle,        notRoutingCond );
 
 //        Add( ACT_AutoEndRoute );  // fixme: not implemented yet. Sorry.
     menu.AddItem( ACT_PlaceThroughVia,               SELECTION_CONDITIONS::ShowAlways );
@@ -546,7 +553,7 @@ void ROUTER_TOOL::handleCommonEvents( TOOL_EVENT& aEvent )
 {
     if( aEvent.Category() == TC_VIEW || aEvent.Category() == TC_MOUSE )
     {
-        auto viewAreaD = getView()->GetBoundary();
+        BOX2D viewAreaD = getView()->GetGAL()->GetVisibleWorldExtents();
         m_router->SetVisibleViewArea( BOX2I( viewAreaD.GetOrigin(), viewAreaD.GetSize() ) );
     }
 
@@ -603,7 +610,6 @@ void ROUTER_TOOL::switchLayerOnViaPlacement()
 
     m_router->SwitchLayer( *newLayer );
     m_lastTargetLayer = *newLayer;
-    frame()->SetActiveLayer( ToLAYER_ID( *newLayer ) );
 }
 
 
@@ -994,22 +1000,26 @@ int ROUTER_TOOL::handleLayerSwitch( const TOOL_EVENT& aEvent, bool aForceVia )
 
 bool ROUTER_TOOL::prepareInteractive()
 {
-    int routingLayer = getStartLayer( m_startItem );
+    PCB_EDIT_FRAME* editFrame = getEditFrame<PCB_EDIT_FRAME>();
+    int             routingLayer = getStartLayer( m_startItem );
 
     if( !IsCopperLayer( routingLayer ) )
     {
-        frame()->ShowInfoBarError( _( "Tracks on Copper layers only." ) );
+        editFrame->ShowInfoBarError( _( "Tracks on Copper layers only." ) );
         return false;
     }
 
-    PCB_EDIT_FRAME* editFrame = getEditFrame<PCB_EDIT_FRAME>();
-
     editFrame->SetActiveLayer( ToLAYER_ID( routingLayer ) );
+
+    if( !getView()->IsLayerVisible( routingLayer ) )
+    {
+        editFrame->GetAppearancePanel()->SetLayerVisible( routingLayer, true );
+        editFrame->GetCanvas()->Refresh();
+    }
 
     if( m_startItem && m_startItem->Net() > 0 )
         highlightNet( true, m_startItem->Net() );
 
-    controls()->ForceCursorPosition( false );
     controls()->SetAutoPan( true );
 
     PNS::SIZES_SETTINGS sizes( m_router->Sizes() );
@@ -1094,7 +1104,7 @@ void ROUTER_TOOL::performRouting()
 
         if( evt->IsMotion() )
         {
-            m_router->SetOrthoMode( evt->Modifier( MD_CTRL ) );
+            m_router->SetOrthoMode( evt->Modifier( MD_SHIFT ) );
             updateEndItem( *evt );
             m_router->Move( m_endSnapPoint, m_endItem );
         }
@@ -1119,7 +1129,17 @@ void ROUTER_TOOL::performRouting()
                 switchLayerOnViaPlacement();
 
             // Synchronize the indicated layer
-            frame()->SetActiveLayer( ToLAYER_ID( m_router->GetCurrentLayer() ) );
+            PCB_LAYER_ID    routingLayer = ToLAYER_ID( m_router->GetCurrentLayer() );
+            PCB_EDIT_FRAME* editFrame = getEditFrame<PCB_EDIT_FRAME>();
+
+            editFrame->SetActiveLayer( routingLayer );
+
+            if( !getView()->IsLayerVisible( routingLayer ) )
+            {
+                editFrame->GetAppearancePanel()->SetLayerVisible( routingLayer, true );
+                editFrame->GetCanvas()->Refresh();
+            }
+
             updateEndItem( *evt );
             m_router->Move( m_endSnapPoint, m_endItem );
             m_startItem = nullptr;
@@ -1333,7 +1353,7 @@ int ROUTER_TOOL::MainLoop( const TOOL_EVENT& aEvent )
 
             if( evt->HasPosition() )
             {
-                if( evt->Modifier( MD_CTRL ) )
+                if( evt->Modifier( MD_SHIFT ) )
                     performDragging( PNS::DM_ANY );
                 else
                     performRouting();
@@ -1592,7 +1612,7 @@ int ROUTER_TOOL::InlineDrag( const TOOL_EVENT& aEvent )
     VECTOR2I p0 = controls()->GetCursorPosition( false );
     VECTOR2I p = p0;
 
-    m_gridHelper->SetUseGrid( gal->GetGridSnapping() && !aEvent.Modifier( MD_ALT )  );
+    m_gridHelper->SetUseGrid( gal->GetGridSnapping() && !aEvent.DisableGridSnapping()  );
     m_gridHelper->SetSnap( !aEvent.Modifier( MD_SHIFT ) );
 
     if( startItem )
@@ -1632,7 +1652,6 @@ int ROUTER_TOOL::InlineDrag( const TOOL_EVENT& aEvent )
 
     m_gridHelper->SetAuxAxes( true, p );
     controls()->ShowCursor( true );
-    controls()->ForceCursorPosition( false );
     controls()->SetAutoPan( true );
     frame()->UndoRedoBlock( true );
 
@@ -1647,6 +1666,10 @@ int ROUTER_TOOL::InlineDrag( const TOOL_EVENT& aEvent )
 
     // Set initial cursor
     setCursor();
+
+    // Set the initial visible area
+    BOX2D viewAreaD = getView()->GetGAL()->GetVisibleWorldExtents();
+    m_router->SetVisibleViewArea( BOX2I( viewAreaD.GetOrigin(), viewAreaD.GetSize() ) );
 
     // Send an initial movement to prime the collision detection
     m_router->Move( p, nullptr );
@@ -1787,7 +1810,7 @@ int ROUTER_TOOL::InlineBreakTrack( const TOOL_EVENT& aEvent )
     TOOL_MANAGER* toolManager = frame()->GetToolManager();
     GAL*          gal = toolManager->GetView()->GetGAL();
 
-    m_gridHelper->SetUseGrid( gal->GetGridSnapping() && !aEvent.Modifier( MD_ALT )  );
+    m_gridHelper->SetUseGrid( gal->GetGridSnapping() && !aEvent.DisableGridSnapping()  );
     m_gridHelper->SetSnap( !aEvent.Modifier( MD_SHIFT ) );
 
     if( toolManager->IsContextMenuActive() )

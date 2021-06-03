@@ -145,7 +145,17 @@ wxString PATHS::GetStockDataPath( bool aRespectRunFromBuildDir )
     if( aRespectRunFromBuildDir && wxGetEnv( wxT( "KICAD_RUN_FROM_BUILD_DIR" ), nullptr ) )
     {
         // Allow debugging from build dir by placing relevant files/folders in the build root
+#if defined( __WXMAC__ )
+        wxFileName fn = wxStandardPaths::Get().GetExecutablePath();
+
+        fn.RemoveLastDir();
+        fn.RemoveLastDir();
+        fn.RemoveLastDir();
+        fn.RemoveLastDir();
+        path = fn.GetPath();
+#else
         path = Pgm().GetExecutablePath() + wxT( ".." );
+#endif
     }
     else
     {
@@ -157,6 +167,22 @@ wxString PATHS::GetStockDataPath( bool aRespectRunFromBuildDir )
         path = wxString::FromUTF8Unchecked( KICAD_DATA );
 #endif
     }
+
+    return path;
+}
+
+
+wxString PATHS::GetStockEDALibraryPath()
+{
+    wxString path;
+
+#if defined( __WXMAC__ )
+    path = GetOSXKicadMachineDataDir();
+#elif defined( __WXMSW__ )
+    path = GetStockDataPath( false );
+#else
+    path = wxString::FromUTF8Unchecked( KICAD_LIBRARY_DATA );
+#endif
 
     return path;
 }
@@ -178,6 +204,7 @@ wxString PATHS::GetStockPluginsPath()
 
 #if defined( __WXMSW__ )
     fn.AssignDir( Pgm().GetExecutablePath() );
+    fn.AppendDir( wxT( "scripting" ) );
 #else
     fn.AssignDir( PATHS::GetStockDataPath( false ) );
 #endif
@@ -201,7 +228,8 @@ wxString PATHS::GetStockPlugins3DPath()
 #elif defined( __WXMAC__ )
     fn.Assign( wxStandardPaths::Get().GetPluginsDir(), wxEmptyString );
 #else
-    fn.Assign( PATHS::GetStockPluginsPath() );
+    fn.AssignDir( Pgm().GetExecutablePath() );
+    fn.AppendDir( wxT( "plugins" ) );
 #endif
 
     fn.AppendDir( "3d" );
@@ -219,6 +247,22 @@ wxString PATHS::GetUserCachePath()
     tmp.AppendDir( SETTINGS_MANAGER::GetSettingsVersion() );
 
     return tmp.GetPathWithSep();
+}
+
+
+wxString PATHS::GetDocumentationPath()
+{
+    wxString path;
+
+#if defined( __WXMAC__ )
+    path = GetOSXKicadDataDir();
+#elif defined( __WXMSW__ )
+    path = Pgm().GetExecutablePath() + "../share/doc/kicad";
+#else
+    path = wxString::FromUTF8Unchecked( KICAD_DOCS );
+#endif
+
+    return path;
 }
 
 

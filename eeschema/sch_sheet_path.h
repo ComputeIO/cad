@@ -108,6 +108,7 @@ class SCH_SHEET;
 class SCH_SCREEN;
 class SCH_MARKER;
 class SCH_ITEM;
+class SCH_COMPONENT;
 class SCH_REFERENCE_LIST;
 
 
@@ -194,7 +195,7 @@ public:
 
     const SCH_SHEET* GetSheet( unsigned aIndex ) const
     {
-        SCH_SHEET* retv = NULL;
+        SCH_SHEET* retv = nullptr;
 
         if( aIndex < size() )
             retv = at( aIndex );
@@ -211,6 +212,24 @@ public:
      *   or 0 if same
      */
     int Cmp( const SCH_SHEET_PATH& aSheetPathToTest ) const;
+
+    /**
+     * Compare sheets by their page number and then by their name. Finally
+     * compare using #Cmp()
+     *
+     * @return -1 if aSheetPathToTest is greater than this (should appear later in the sort order)
+     *          0 if aSheetPathToTest is equal to this
+     *          1 if aSheetPathToTest is less than this (should appear earlier in the sort order)
+     */
+    int ComparePageNumAndName( const SCH_SHEET_PATH& aSheetPathToTest ) const;
+
+    /**
+     * Check if this path is contained inside aSheetPathToTest.
+     *
+     * @param aSheetPathToTest is the sheet path to compare against.
+     * @return true if this path is contained inside or equal to aSheetPathToTest.
+     */
+    bool IsContainedWithin( const SCH_SHEET_PATH& aSheetPathToTest ) const;
 
     /**
      * Return a pointer to the last #SCH_SHEET of the list.
@@ -266,6 +285,20 @@ public:
     void UpdateAllScreenReferences();
 
     /**
+     * Append a #SCH_REFERENCE object to \a aReferences based on \a aSymbol
+     *
+     * @param aReferences List of references to populate.
+     * @param aSymbol A symbol to add to aReferences
+     * @param aIncludePowerSymbols set to false to only get normal symbols.
+     * @param aForceIncludeOrphanSymbols set to true to include symbols having no symbol found
+     *                                   in lib.   The normal option is false, and set to true
+     *                                   only to build the full list of symbols.
+     */
+    void AppendSymbol( SCH_REFERENCE_LIST& aReferences, SCH_COMPONENT* aSymbol,
+                       bool aIncludePowerSymbols = true,
+                       bool aForceIncludeOrphanSymbols = false ) const;
+
+    /**
      * Adds #SCH_REFERENCE object to \a aReferences for each symbol in the sheet.
      *
      * @param aReferences List of references to populate.
@@ -276,6 +309,19 @@ public:
      */
     void GetSymbols( SCH_REFERENCE_LIST& aReferences, bool aIncludePowerSymbols = true,
                      bool aForceIncludeOrphanSymbols = false ) const;
+
+    /**
+     * Append a #SCH_REFERENCE_LIST object to \a aRefList based on \a aSymbol,
+     * storing same-reference set of multi-unit parts together.
+     *
+     * The map key for each element will be the reference designator.
+     *
+     * @param aRefList Map of reference designators to reference lists
+     * @param aSymbol A symbol to add to aRefList
+     * @param aIncludePowerSymbols Set to false to only get normal symbols.
+     */
+    void AppendMultiUnitSymbol( SCH_MULTI_UNIT_REFERENCE_MAP& aRefList, SCH_COMPONENT* aSymbol,
+                                bool aIncludePowerSymbols = true ) const;
 
     /**
      * Add a #SCH_REFERENCE_LIST object to \a aRefList for each same-reference set of
@@ -299,6 +345,24 @@ public:
      * @return true if \a aFileName will cause recursion in the sheet path.  Otherwise false.
      */
     bool TestForRecursion( const wxString& aSrcFileName, const wxString& aDestFileName );
+
+    /**
+     * Make the sheet file name relative to it's parent sheet.
+     *
+     * This should only be called when changing the parent sheet path such performing a save
+     * as or a new schematic without a project in stand alone mode.  The sheet file name is
+     * only made relative if the current file name is relative.  Absolute sheet file name paths
+     * are a user choice so do not change them.
+     *
+     * Sheet file name paths are set according to the following criteria:
+     *  - If the sheet file name path is in the same as the parent sheet file name path, set
+     *    the sheet file name to just the file name and extension with no path.
+     *  - If the sheet file name path can be made relative to the parent sheet file name path,
+     *    set the sheet file name using the relative path.
+     *  - If the sheet file name path cannot be converted to a relative path, then fall back to
+     *    the absolute file name path.
+     */
+    void MakeFilePathRelativeToParentSheet();
 
     bool operator==( const SCH_SHEET_PATH& d1 ) const;
 
@@ -395,6 +459,30 @@ public:
                      bool aForceIncludeOrphanSymbols = false ) const;
 
     /**
+     * Add a #SCH_REFERENCE object to \a aReferences for each symbol in the list of sheets that are
+     * contained within \a aSheetPath as well as recursively downwards inside aSheetPath.
+     *
+     * @param aReferences List of references to populate.
+     * @param aSheetPath Path to return symbols from
+     * @param aIncludePowerSymbols Set to false to only get normal symbols.
+     * @param aForceIncludeOrphanSymbols Set to true to include symbols having no symbol found
+     *                                   in lib.   The normal option is false, and set to true
+     *                                   only to build the full list of symbols.
+     */
+    void GetSymbolsWithinPath( SCH_REFERENCE_LIST& aReferences, const SCH_SHEET_PATH& aSheetPath,
+                               bool aIncludePowerSymbols = true,
+                               bool aForceIncludeOrphanSymbols = false ) const;
+
+    /**
+     * Add a #SCH_SHEET_PATH object to \a aSheets for each sheet in the list that are
+     * contained within \a aSheetPath as well as recursively downwards inside aSheetPath.
+     *
+     * @param aReferences List of sheets to populate.
+     * @param aSheetPath Path to return sheets from
+     */
+    void GetSheetsWithinPath( SCH_SHEET_PATHS& aSheets, const SCH_SHEET_PATH& aSheetPath ) const;
+
+    /**
      * Add a #SCH_REFERENCE_LIST object to \a aRefList for each same-reference set of
      * multi-unit parts in the list of sheets. The map key for each element will be the
      * reference designator.
@@ -423,6 +511,11 @@ public:
     SCH_SHEET_PATH* FindSheetForScreen( const SCH_SCREEN* aScreen );
 
     /**
+     * Return a #SCH_SHEET_LIST with a copy of all the #SCH_SHEET_PATH using a particular screen.
+     */
+    SCH_SHEET_LIST FindAllSheetsForScreen( const SCH_SCREEN* aScreen ) const;
+
+    /**
      * Build the list of sheets and their sheet path from \a aSheet.
      *
      * If \a aSheet is the root sheet, the full sheet path and sheet list are built.
@@ -440,6 +533,9 @@ public:
 
     /**
      * Sort the list of sheets by page number. This should be called after #BuildSheetList
+     *
+     * If page numbers happen to be equal, then it compares the sheet names to ensure deterministic
+     * ordering.
      *
      * @param aUpdateVirtualPageNums If true, updates the virtual page numbers to match the new
      * ordering
@@ -467,6 +563,8 @@ public:
     void UpdateSheetInstances( const std::vector<SCH_SHEET_INSTANCE>& aSheetInstances );
 
     std::vector<KIID_PATH> GetPaths() const;
+
+    std::vector<SCH_SHEET_INSTANCE> GetSheetInstances() const;
 
     /**
      * Check all of the sheet instance for empty page numbers.

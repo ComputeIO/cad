@@ -41,29 +41,27 @@
 #include <sch_bus_entry.h>
 #include <sch_text.h>
 #include <sch_sheet.h>
+#include <sch_sheet_pin.h>
 #include <sch_bitmap.h>
 #include <schematic.h>
 #include <class_library.h>
 #include <eeschema_settings.h>
-#include <dialogs/dialog_edit_label.h>
+#include <dialogs/dialog_sch_text_properties.h>
 #include <dialogs/dialog_edit_line_style.h>
 #include <dialogs/dialog_junction_props.h>
 #include <dialogs/dialog_sheet_pin_properties.h>
 #include <kicad_string.h>
 #include <wildcards_and_files_ext.h>
+#include <wx/filedlg.h>
+
 
 SCH_DRAWING_TOOLS::SCH_DRAWING_TOOLS() :
         EE_TOOL_BASE<SCH_EDIT_FRAME>( "eeschema.InteractiveDrawing" ),
         m_lastSheetPinType( PINSHEETLABEL_SHAPE::PS_INPUT ),
         m_lastGlobalLabelShape( PINSHEETLABEL_SHAPE::PS_INPUT ),
-        m_lastTextOrientation( LABEL_SPIN_STYLE::LEFT ),
-        m_lastTextBold( false ),
-        m_lastTextItalic( false ),
-        m_inPlaceSymbol( false ),
-        m_inPlaceImage( false ),
-        m_inSingleClickPlace( false ),
-        m_inTwoClickPlace( false ),
-        m_inDrawSheet( false )
+        m_lastTextAngle( EDA_ANGLE::ANGLE_0 ),
+        m_lastTextHorizontalAlignment( TEXT_ATTRIBUTES::H_LEFT ),
+        m_lastTextVerticalAlignment( TEXT_ATTRIBUTES::V_BOTTOM )
 {
 }
 
@@ -82,6 +80,24 @@ bool SCH_DRAWING_TOOLS::Init()
     ctxMenu.AddItem( EE_ACTIONS::leaveSheet, belowRootSheetCondition, 2 );
 
     return true;
+}
+
+
+EDA_RECT SCH_DRAWING_TOOLS::GetCanvasFreeAreaPixels()
+{
+    // calculate thearea of the canvas in pixels that create no autopan when
+    // is inside this area the mouse cursor
+    wxSize canvas_size = m_frame->GetCanvas()->GetSize();
+    EDA_RECT canvas_area( wxPoint( 0, 0 ), canvas_size );
+    const KIGFX::VC_SETTINGS& v_settings = getViewControls()->GetSettings();
+
+    if( v_settings.m_autoPanEnabled )
+        canvas_area.Inflate( - v_settings.m_autoPanMargin );
+
+    // Gives a margin of 2 pixels
+    canvas_area.Inflate( -2 );
+
+    return canvas_area;
 }
 
 
@@ -125,10 +141,11 @@ int SCH_DRAWING_TOOLS::PlaceSymbol( const TOOL_EVENT& aEvent )
                 m_selectionTool->AddItemToSel( aSymbol );
 
                 aSymbol->SetParent( m_frame->GetScreen() );
-                aSymbol->SetFlags( IS_NEW );
+                aSymbol->SetFlags( IS_NEW | IS_MOVING );
                 m_frame->AddItemToScreenAndUndoList( m_frame->GetScreen(), aSymbol, false );
 
-                aSymbol->SetFlags( IS_MOVED );
+                // Set IS_MOVING again, as AddItemToScreenAndUndoList() will have cleared it.
+                aSymbol->SetFlags( IS_MOVING );
                 m_toolMgr->RunAction( ACTIONS::refreshPreview );
             };
 
@@ -165,7 +182,7 @@ int SCH_DRAWING_TOOLS::PlaceSymbol( const TOOL_EVENT& aEvent )
     while( TOOL_EVENT* evt = Wait() )
     {
         setCursor();
-        VECTOR2I cursorPos = getViewControls()->GetCursorPosition( !evt->Modifier( MD_ALT ) );
+        VECTOR2I cursorPos = getViewControls()->GetCursorPosition( !evt->DisableGridSnapping() );
 
         if( evt->IsCancelInteractive() )
         {
@@ -189,7 +206,11 @@ int SCH_DRAWING_TOOLS::PlaceSymbol( const TOOL_EVENT& aEvent )
             }
 
             if( symbol )
-                cleanup();
+            {
+                m_frame->ShowInfoBarMsg( _( "Press <ESC> to cancel symbol creation." ) );
+                evt->SetPassEvent( false );
+                continue;
+            }
 
             if( evt->IsMoveTool() )
             {
@@ -208,13 +229,30 @@ int SCH_DRAWING_TOOLS::PlaceSymbol( const TOOL_EVENT& aEvent )
             {
                 m_toolMgr->RunAction( EE_ACTIONS::clearSelection, true );
 
+                // Store the mouse position: if it is outside the canvas,
+                // (happens when clicking on a toolbar tool) one cannot
+                // use the last stored cursor position to place the new symbol
+                // (Current mouse pos after closing the dialog will be used)
+                KIGFX::VIEW_CONTROLS* controls = getViewControls();
+                VECTOR2D initialMousePos = controls->GetMousePosition(false);
+                // Build the rectangle area acceptable to move the cursor without
+                // having an auto-pan
+                EDA_RECT canvas_area = GetCanvasFreeAreaPixels();
+
                 // Pick the footprint to be placed
                 bool footprintPreviews = m_frame->eeconfig()->m_Appearance.footprint_preview;
                 PICKED_SYMBOL sel = m_frame->PickSymbolFromLibTree( &filter, *historyList, true,
                                                                     1, 1, footprintPreviews );
+                // Restore cursor position after closing the dialog,
+                // but only if it has meaning (i.e inside the canvas)
+                VECTOR2D newMousePos = controls->GetMousePosition(false);
 
-                // Restore cursor after dialog
-                getViewControls()->WarpCursor( getViewControls()->GetCursorPosition(), true );
+                if( canvas_area.Contains( wxPoint( initialMousePos ) ) )
+                    controls->WarpCursor( controls->GetCursorPosition(), true );
+                else if( !canvas_area.Contains( wxPoint( newMousePos ) ) )
+                    // The mouse is outside the canvas area, after closing the dialog,
+                    // thus can creating autopan issues. Warp the mouse to the canvas centre
+                    controls->WarpCursor( canvas_area.Centre(), false );
 
                 LIB_PART* part = sel.LibId.IsValid() ? m_frame->GetLibPart( sel.LibId ) : nullptr;
 
@@ -239,6 +277,7 @@ int SCH_DRAWING_TOOLS::PlaceSymbol( const TOOL_EVENT& aEvent )
                                       &m_selectionTool->GetSelection() );
 
                 m_view->Update( symbol );
+                m_frame->GetScreen()->Update( symbol );
                 m_frame->OnModify();
 
                 SCH_COMPONENT* nextSymbol = nullptr;
@@ -376,7 +415,7 @@ int SCH_DRAWING_TOOLS::PlaceImage( const TOOL_EVENT& aEvent )
     while( TOOL_EVENT* evt = Wait() )
     {
         setCursor();
-        cursorPos = getViewControls()->GetCursorPosition( !evt->Modifier( MD_ALT ) );
+        cursorPos = getViewControls()->GetCursorPosition( !evt->DisableGridSnapping() );
 
         if( evt->IsCancelInteractive() )
         {
@@ -406,7 +445,11 @@ int SCH_DRAWING_TOOLS::PlaceImage( const TOOL_EVENT& aEvent )
             }
 
             if( image )
-                cleanup();
+            {
+                m_frame->ShowInfoBarMsg( _( "Press <ESC> to cancel image creation." ) );
+                evt->SetPassEvent( false );
+                continue;
+            }
 
             if( evt->IsMoveTool() )
             {
@@ -424,6 +467,17 @@ int SCH_DRAWING_TOOLS::PlaceImage( const TOOL_EVENT& aEvent )
             if( !image )
             {
                 m_toolMgr->RunAction( EE_ACTIONS::clearSelection, true );
+
+                // Store the mouse position: if it is outside the canvas,
+                // (happens when clicking on a toolbar tool) one cannot
+                // use the last stored cursor position to place the new symbol
+                // (Current mouse pos after closing the dialog will be used)
+                KIGFX::VIEW_CONTROLS* controls = getViewControls();
+                VECTOR2D initialMousePos = controls->GetMousePosition(false);
+                // Build the rectangle area acceptable to move the cursor without
+                // having an auto-pan
+                EDA_RECT canvas_area = GetCanvasFreeAreaPixels();
+
                 wxFileDialog dlg( m_frame, _( "Choose Image" ), wxEmptyString, wxEmptyString,
                                   _( "Image Files" ) + wxS( " " ) + wxImage::GetImageExtWildcard(),
                                   wxFD_OPEN );
@@ -431,8 +485,18 @@ int SCH_DRAWING_TOOLS::PlaceImage( const TOOL_EVENT& aEvent )
                 if( dlg.ShowModal() != wxID_OK )
                     continue;
 
-                // Restore cursor after dialog
-                getViewControls()->WarpCursor( getViewControls()->GetCursorPosition(), true );
+                // Restore cursor position after closing the dialog,
+                // but only if it has meaning (i.e inside the canvas)
+                VECTOR2D newMousePos = controls->GetMousePosition( false );
+
+                if( canvas_area.Contains( wxPoint( initialMousePos ) ) )
+                    controls->WarpCursor( controls->GetCursorPosition(), true );
+                else if( !canvas_area.Contains( wxPoint( newMousePos ) ) )
+                    // The mouse is outside the canvas area, after closing the dialog,
+                    // thus can creating autopan issues. Warp the mouse to the canvas centre
+                    controls->WarpCursor( canvas_area.Centre(), false );
+
+                cursorPos = controls->GetMousePosition( true );
 
                 wxString fullFilename = dlg.GetPath();
 
@@ -447,7 +511,7 @@ int SCH_DRAWING_TOOLS::PlaceImage( const TOOL_EVENT& aEvent )
                     continue;
                 }
 
-                image->SetFlags( IS_NEW | IS_MOVED );
+                image->SetFlags( IS_NEW | IS_MOVING );
 
                 m_frame->SaveCopyForRepeatItem( image );
 
@@ -617,7 +681,7 @@ int SCH_DRAWING_TOOLS::SingleClickPlace( const TOOL_EVENT& aEvent )
     {
         setCursor();
         grid.SetSnap( !evt->Modifier( MD_SHIFT ) );
-        grid.SetUseGrid( getView()->GetGAL()->GetGridSnapping() && !evt->Modifier( MD_ALT ) );
+        grid.SetUseGrid( getView()->GetGAL()->GetGridSnapping() && !evt->DisableGridSnapping() );
 
         cursorPos = evt->IsPrime() ? (wxPoint) evt->Position()
                                    : (wxPoint) controls->GetMousePosition();
@@ -819,11 +883,15 @@ SCH_TEXT* SCH_DRAWING_TOOLS::createNewText( const VECTOR2I& aPosition, int aType
     textItem->SetParent( schematic );
     textItem->SetBold( m_lastTextBold );
     textItem->SetItalic( m_lastTextItalic );
-    textItem->SetLabelSpinStyle( m_lastTextOrientation );
+    textItem->SetTextAngle( m_lastTextAngle );
+    textItem->Align( m_lastTextHorizontalAlignment );
+    textItem->Align( m_lastTextVerticalAlignment );
+    textItem->SetFont( m_lastFont );
     textItem->SetTextSize( wxSize( settings.m_DefaultTextSize, settings.m_DefaultTextSize ) );
-    textItem->SetFlags( IS_NEW | IS_MOVED );
+    textItem->SetFlags( IS_NEW | IS_MOVING );
 
-    DIALOG_LABEL_EDITOR dlg( m_frame, textItem );
+    //DIALOG_LABEL_EDITOR dlg( m_frame, textItem );
+    DIALOG_SCH_TEXT_PROPERTIES dlg( m_frame, textItem );
 
     // Must be quasi modal for syntax help
     if( dlg.ShowQuasiModal() != wxID_OK || NoPrintableChars( textItem->GetText() ) )
@@ -834,7 +902,10 @@ SCH_TEXT* SCH_DRAWING_TOOLS::createNewText( const VECTOR2I& aPosition, int aType
 
     m_lastTextBold = textItem->IsBold();
     m_lastTextItalic = textItem->IsItalic();
-    m_lastTextOrientation = textItem->GetLabelSpinStyle();
+    m_lastTextAngle = textItem->GetTextEdaAngle();
+    m_lastTextHorizontalAlignment = textItem->GetHorizontalAlignment();
+    m_lastTextVerticalAlignment = textItem->GetVerticalAlignment();
+    m_lastFont = textItem->GetFont();
 
     if( textItem->Type() == SCH_GLOBAL_LABEL_T || textItem->Type() == SCH_HIER_LABEL_T )
         m_lastGlobalLabelShape = textItem->GetShape();
@@ -975,7 +1046,7 @@ int SCH_DRAWING_TOOLS::TwoClickPlace( const TOOL_EVENT& aEvent )
     {
         setCursor();
         grid.SetSnap( !evt->Modifier( MD_SHIFT ) );
-        grid.SetUseGrid( getView()->GetGAL()->GetGridSnapping() && !evt->Modifier( MD_ALT ) );
+        grid.SetUseGrid( getView()->GetGAL()->GetGridSnapping() && !evt->DisableGridSnapping() );
 
         VECTOR2I cursorPos = evt->IsPrime() ? evt->Position() : controls->GetMousePosition();
         cursorPos = grid.BestSnapAnchor( cursorPos, snapLayer, item );
@@ -1003,7 +1074,11 @@ int SCH_DRAWING_TOOLS::TwoClickPlace( const TOOL_EVENT& aEvent )
             }
 
             if( item )
-                cleanup();
+            {
+                m_frame->ShowInfoBarMsg( _( "Press <ESC> to cancel item creation." ) );
+                evt->SetPassEvent( false );
+                continue;
+            }
 
             if( evt->IsPointEditor() )
             {
@@ -1085,7 +1160,7 @@ int SCH_DRAWING_TOOLS::TwoClickPlace( const TOOL_EVENT& aEvent )
 
                 if( item )
                 {
-                    item->SetFlags( IS_NEW | IS_MOVED );
+                    item->SetFlags( IS_NEW | IS_MOVING );
                     item->AutoplaceFields( /* aScreen */ nullptr, /* aManual */ false );
                     updatePreview();
 
@@ -1101,7 +1176,7 @@ int SCH_DRAWING_TOOLS::TwoClickPlace( const TOOL_EVENT& aEvent )
             // ... and second click places:
             else
             {
-                item->ClearFlags( IS_MOVED );
+                item->ClearFlags( IS_MOVING );
                 m_frame->AddItemToScreenAndUndoList( m_frame->GetScreen(), (SCH_ITEM*) item, false );
                 item = nullptr;
 
@@ -1201,7 +1276,7 @@ int SCH_DRAWING_TOOLS::DrawSheet( const TOOL_EVENT& aEvent )
     {
         setCursor();
 
-        VECTOR2I cursorPos = getViewControls()->GetCursorPosition( !evt->Modifier( MD_ALT ) );
+        VECTOR2I cursorPos = getViewControls()->GetCursorPosition( !evt->DisableGridSnapping() );
 
         if( evt->IsCancelInteractive() )
         {
@@ -1225,7 +1300,11 @@ int SCH_DRAWING_TOOLS::DrawSheet( const TOOL_EVENT& aEvent )
             }
 
             if( sheet )
-                cleanup();
+            {
+                m_frame->ShowInfoBarMsg( _( "Press <ESC> to cancel sheet creation." ) );
+                evt->SetPassEvent( false );
+                continue;
+            }
 
             if( evt->IsPointEditor() )
             {
@@ -1250,7 +1329,7 @@ int SCH_DRAWING_TOOLS::DrawSheet( const TOOL_EVENT& aEvent )
 
             sheet = new SCH_SHEET( m_frame->GetCurrentSheet().Last(),
                                    static_cast<wxPoint>( cursorPos ) );
-            sheet->SetFlags( IS_NEW | IS_RESIZED );
+            sheet->SetFlags( IS_NEW | IS_RESIZING );
             sheet->SetScreen( NULL );
             sheet->SetBorderWidth( cfg->m_Drawing.default_line_thickness );
             sheet->SetBorderColor( cfg->m_Drawing.default_sheet_border_color );
@@ -1269,6 +1348,24 @@ int SCH_DRAWING_TOOLS::DrawSheet( const TOOL_EVENT& aEvent )
             m_view->ClearPreview();
             getViewControls()->SetAutoPan( false );
             getViewControls()->CaptureCursor( false );
+
+            // Find the list of paths in the hierarchy that refer to the destination sheet where
+            // the new sheet will be drawn
+            SCH_SCREEN*    currentScreen = m_frame->GetCurrentSheet().LastScreen();
+            SCH_SHEET_LIST hierarchy = m_frame->Schematic().GetSheets();
+            SCH_SHEET_LIST instances = hierarchy.FindAllSheetsForScreen( currentScreen );
+            instances.SortByPageNumbers();
+
+            int pageNum = static_cast<int>( hierarchy.size() ) + 1;
+
+            // Set a page number for all the instances of the new sheet in the hierarchy
+            for( SCH_SHEET_PATH& instance : instances )
+            {
+                SCH_SHEET_PATH sheetPath = instance;
+                sheetPath.push_back( sheet );
+                sheet->AddInstance( sheetPath.Path() );
+                sheet->SetPageNumber( sheetPath, wxString::Format( "%d", pageNum++ ) );
+            }
 
             if( m_frame->EditSheetProperties( static_cast<SCH_SHEET*>( sheet ),
                                               &m_frame->GetCurrentSheet(), nullptr ) )

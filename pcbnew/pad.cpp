@@ -44,6 +44,7 @@
 #include <convert_basic_shapes_to_polygon.h>
 #include <widgets/msgpanel.h>
 #include <pcb_painter.h>
+#include <wx/log.h>
 
 #include <memory>
 
@@ -63,12 +64,12 @@ PAD::PAD( FOOTPRINT* parent ) :
         m_pos = GetParent()->GetPosition();
     }
 
-    SetShape( PAD_SHAPE_CIRCLE );                   // Default pad shape is PAD_CIRCLE.
-    SetAnchorPadShape( PAD_SHAPE_CIRCLE );          // Default shape for custom shaped pads
+    SetShape( PAD_SHAPE::CIRCLE );                   // Default pad shape is PAD_CIRCLE.
+    SetAnchorPadShape( PAD_SHAPE::CIRCLE );          // Default shape for custom shaped pads
                                                     // is PAD_CIRCLE.
     SetDrillShape( PAD_DRILL_SHAPE_CIRCLE );        // Default pad drill shape is a circle.
-    m_attribute           = PAD_ATTRIB_PTH;         // Default pad type is plated through hole
-    SetProperty( PAD_PROP_NONE );                   // no special fabrication property
+    m_attribute           = PAD_ATTRIB::PTH;         // Default pad type is plated through hole
+    SetProperty( PAD_PROP::NONE );                   // no special fabrication property
     m_localClearance      = 0;
     m_localSolderMaskMargin  = 0;
     m_localSolderPasteMargin = 0;
@@ -214,11 +215,11 @@ bool PAD::FlashLayer( int aLayer ) const
         return false;
 
     /// We don't remove the copper from non-PTH pads
-    if( GetAttribute() != PAD_ATTRIB_PTH )
+    if( GetAttribute() != PAD_ATTRIB::PTH )
         return IsOnLayer( static_cast<PCB_LAYER_ID>( aLayer ) );
 
     /// Heatsink pads always get copper
-    if( GetProperty() == PAD_PROP_HEATSINK )
+    if( GetProperty() == PAD_PROP::HEATSINK )
         return IsOnLayer( static_cast<PCB_LAYER_ID>( aLayer ) );
 
     if( !m_removeUnconnectedLayer )
@@ -229,8 +230,7 @@ bool PAD::FlashLayer( int aLayer ) const
     if( m_keepTopBottomLayer && ( aLayer == F_Cu || aLayer == B_Cu ) )
         return IsOnLayer( static_cast<PCB_LAYER_ID>( aLayer ) );
 
-    return board->GetConnectivity()->IsConnectedOnLayer( this, static_cast<int>( aLayer ),
-            types );
+    return board->GetConnectivity()->IsConnectedOnLayer( this, static_cast<int>( aLayer ), types );
 }
 
 
@@ -322,18 +322,18 @@ void PAD::BuildEffectiveShapes( PCB_LAYER_ID aLayer ) const
                };
 
     wxPoint shapePos = ShapePos();  // Fetch only once; rotation involves trig
-    PAD_SHAPE_T effectiveShape = GetShape();
+    PAD_SHAPE effectiveShape = GetShape();
 
-    if( GetShape() == PAD_SHAPE_CUSTOM )
+    if( GetShape() == PAD_SHAPE::CUSTOM )
         effectiveShape = GetAnchorPadShape();
 
     switch( effectiveShape )
     {
-    case PAD_SHAPE_CIRCLE:
+    case PAD_SHAPE::CIRCLE:
         add( new SHAPE_CIRCLE( shapePos, m_size.x / 2 ) );
         break;
 
-    case PAD_SHAPE_OVAL:
+    case PAD_SHAPE::OVAL:
         if( m_size.x == m_size.y ) // the oval pad is in fact a circle
             add( new SHAPE_CIRCLE( shapePos, m_size.x / 2 ) );
         else
@@ -346,11 +346,11 @@ void PAD::BuildEffectiveShapes( PCB_LAYER_ID aLayer ) const
         }
         break;
 
-    case PAD_SHAPE_RECT:
-    case PAD_SHAPE_TRAPEZOID:
-    case PAD_SHAPE_ROUNDRECT:
+    case PAD_SHAPE::RECT:
+    case PAD_SHAPE::TRAPEZOID:
+    case PAD_SHAPE::ROUNDRECT:
     {
-        int     r = ( effectiveShape == PAD_SHAPE_ROUNDRECT ) ? GetRoundRectCornerRadius() : 0;
+        int     r = ( effectiveShape == PAD_SHAPE::ROUNDRECT ) ? GetRoundRectCornerRadius() : 0;
         wxPoint half_size( m_size.x / 2, m_size.y / 2 );
         wxSize  trap_delta( 0, 0 );
 
@@ -368,7 +368,7 @@ void PAD::BuildEffectiveShapes( PCB_LAYER_ID aLayer ) const
                 break;
             }
         }
-        else if( effectiveShape == PAD_SHAPE_TRAPEZOID )
+        else if( effectiveShape == PAD_SHAPE::TRAPEZOID )
         {
             trap_delta = m_deltaSize / 2;
         }
@@ -421,7 +421,7 @@ void PAD::BuildEffectiveShapes( PCB_LAYER_ID aLayer ) const
     }
         break;
 
-    case PAD_SHAPE_CHAMFERED_RECT:
+    case PAD_SHAPE::CHAMFERED_RECT:
     {
         SHAPE_POLY_SET outline;
 
@@ -439,7 +439,7 @@ void PAD::BuildEffectiveShapes( PCB_LAYER_ID aLayer ) const
         break;
     }
 
-    if( GetShape() == PAD_SHAPE_CUSTOM )
+    if( GetShape() == PAD_SHAPE::CUSTOM )
     {
         for( const std::shared_ptr<PCB_SHAPE>& primitive : m_editPrimitives )
         {
@@ -557,18 +557,18 @@ void PAD::SetLocalCoord()
 }
 
 
-void PAD::SetAttribute( PAD_ATTR_T aAttribute )
+void PAD::SetAttribute( PAD_ATTRIB aAttribute )
 {
     m_attribute = aAttribute;
 
-    if( aAttribute == PAD_ATTRIB_SMD )
+    if( aAttribute == PAD_ATTRIB::SMD )
         m_drill = wxSize( 0, 0 );
 
     SetDirty();
 }
 
 
-void PAD::SetProperty( PAD_PROP_T aProperty )
+void PAD::SetProperty( PAD_PROP aProperty )
 {
     m_property = aProperty;
 
@@ -869,29 +869,32 @@ void PAD::GetMsgPanelInfo( EDA_DRAW_FRAME* aFrame, std::vector<MSG_PANEL_ITEM>& 
 
     aList.emplace_back( _( "NetClass" ), UnescapeString( GetNetClass()->GetName() ) );
 
-    if( GetAttribute() == PAD_ATTRIB_SMD || GetAttribute() == PAD_ATTRIB_CONN )
+    if( IsLocked() )
+        aList.emplace_back( _( "Status" ), _( "Locked" ) );
+
+    if( GetAttribute() == PAD_ATTRIB::SMD || GetAttribute() == PAD_ATTRIB::CONN )
         aList.emplace_back( _( "Layer" ), layerMaskDescribe() );
 
     // Show the pad shape, attribute and property
     wxString props = ShowPadAttr();
 
-    if( GetProperty() != PAD_PROP_NONE )
+    if( GetProperty() != PAD_PROP::NONE )
         props += ',';
 
     switch( GetProperty() )
     {
-    case PAD_PROP_NONE:                                           break;
-    case PAD_PROP_BGA:            props += _("BGA" );             break;
-    case PAD_PROP_FIDUCIAL_GLBL:  props += _("Fiducial global" ); break;
-    case PAD_PROP_FIDUCIAL_LOCAL: props += _("Fiducial local" );  break;
-    case PAD_PROP_TESTPOINT:      props += _("Test point" );      break;
-    case PAD_PROP_HEATSINK:       props += _("Heat sink" );       break;
-    case PAD_PROP_CASTELLATED:    props += _("Castellated" );     break;
+    case PAD_PROP::NONE:                                           break;
+    case PAD_PROP::BGA:            props += _("BGA" );             break;
+    case PAD_PROP::FIDUCIAL_GLBL:  props += _("Fiducial global" ); break;
+    case PAD_PROP::FIDUCIAL_LOCAL: props += _("Fiducial local" );  break;
+    case PAD_PROP::TESTPOINT:      props += _("Test point" );      break;
+    case PAD_PROP::HEATSINK:       props += _("Heat sink" );       break;
+    case PAD_PROP::CASTELLATED:    props += _("Castellated" );     break;
     }
 
     aList.emplace_back( ShowPadShape(), props );
 
-    if( ( GetShape() == PAD_SHAPE_CIRCLE || GetShape() == PAD_SHAPE_OVAL ) && m_size.x == m_size.y )
+    if( ( GetShape() == PAD_SHAPE::CIRCLE || GetShape() == PAD_SHAPE::OVAL ) && m_size.x == m_size.y )
     {
         aList.emplace_back( _( "Diameter" ), MessageTextFromValue( units, m_size.x ) );
     }
@@ -1003,7 +1006,7 @@ int PAD::Compare( const PAD* padref, const PAD* padcmp )
 {
     int diff;
 
-    if( ( diff = padref->GetShape() - padcmp->GetShape() ) != 0 )
+    if( ( diff = static_cast<int>( padref->GetShape() ) - static_cast<int>( padcmp->GetShape() ) ) != 0 )
         return diff;
 
     if( ( diff = padref->GetDrillShape() - padcmp->GetDrillShape() ) != 0)
@@ -1071,13 +1074,13 @@ wxString PAD::ShowPadShape() const
 {
     switch( GetShape() )
     {
-    case PAD_SHAPE_CIRCLE:         return _( "Circle" );
-    case PAD_SHAPE_OVAL:           return _( "Oval" );
-    case PAD_SHAPE_RECT:           return _( "Rect" );
-    case PAD_SHAPE_TRAPEZOID:      return _( "Trap" );
-    case PAD_SHAPE_ROUNDRECT:      return _( "Roundrect" );
-    case PAD_SHAPE_CHAMFERED_RECT: return _( "Chamferedrect" );
-    case PAD_SHAPE_CUSTOM:         return _( "CustomShape" );
+    case PAD_SHAPE::CIRCLE:         return _( "Circle" );
+    case PAD_SHAPE::OVAL:           return _( "Oval" );
+    case PAD_SHAPE::RECT:           return _( "Rect" );
+    case PAD_SHAPE::TRAPEZOID:      return _( "Trap" );
+    case PAD_SHAPE::ROUNDRECT:      return _( "Roundrect" );
+    case PAD_SHAPE::CHAMFERED_RECT: return _( "Chamferedrect" );
+    case PAD_SHAPE::CUSTOM:         return _( "CustomShape" );
     default:                       return wxT( "???" );
     }
 }
@@ -1087,10 +1090,10 @@ wxString PAD::ShowPadAttr() const
 {
     switch( GetAttribute() )
     {
-    case PAD_ATTRIB_PTH:    return _( "PTH" );
-    case PAD_ATTRIB_SMD:    return _( "SMD" );
-    case PAD_ATTRIB_CONN:   return _( "Conn" );
-    case PAD_ATTRIB_NPTH:   return _( "NPTH" );
+    case PAD_ATTRIB::PTH:    return _( "PTH" );
+    case PAD_ATTRIB::SMD:    return _( "SMD" );
+    case PAD_ATTRIB::CONN:   return _( "Conn" );
+    case PAD_ATTRIB::NPTH:   return _( "NPTH" );
     default:                return wxT( "???" );
     }
 }
@@ -1100,7 +1103,7 @@ wxString PAD::GetSelectMenuText( EDA_UNITS aUnits ) const
 {
     if( GetName().IsEmpty() )
     {
-        if( GetAttribute() == PAD_ATTRIB_SMD || GetAttribute() == PAD_ATTRIB_CONN )
+        if( GetAttribute() == PAD_ATTRIB::SMD || GetAttribute() == PAD_ATTRIB::CONN )
         {
             return wxString::Format( _( "Pad of %s on %s" ),
                                      GetParent()->GetReference(),
@@ -1114,7 +1117,7 @@ wxString PAD::GetSelectMenuText( EDA_UNITS aUnits ) const
     }
     else
     {
-        if( GetAttribute() == PAD_ATTRIB_SMD || GetAttribute() == PAD_ATTRIB_CONN )
+        if( GetAttribute() == PAD_ATTRIB::SMD || GetAttribute() == PAD_ATTRIB::CONN )
         {
             return wxString::Format( _( "Pad %s of %s on %s" ),
                                      GetName(),
@@ -1148,13 +1151,13 @@ void PAD::ViewGetLayers( int aLayers[], int& aCount ) const
     aCount = 0;
 
     // These 2 types of pads contain a hole
-    if( m_attribute == PAD_ATTRIB_PTH )
+    if( m_attribute == PAD_ATTRIB::PTH )
     {
         aLayers[aCount++] = LAYER_PAD_PLATEDHOLES;
         aLayers[aCount++] = LAYER_PAD_HOLEWALLS;
     }
 
-    if( m_attribute == PAD_ATTRIB_NPTH )
+    if( m_attribute == PAD_ATTRIB::NPTH )
         aLayers[aCount++] = LAYER_NON_PLATEDHOLES;
 
     if( IsOnLayer( F_Cu ) && IsOnLayer( B_Cu ) )
@@ -1169,7 +1172,7 @@ void PAD::ViewGetLayers( int aLayers[], int& aCount ) const
 
         // Is this a PTH pad that has only front copper?  If so, we need to also display the
         // net name on the PTH netname layer so that it isn't blocked by the drill hole.
-        if( m_attribute == PAD_ATTRIB_PTH )
+        if( m_attribute == PAD_ATTRIB::PTH )
             aLayers[aCount++] = LAYER_PAD_NETNAMES;
         else
             aLayers[aCount++] = LAYER_PAD_FR_NETNAMES;
@@ -1180,7 +1183,7 @@ void PAD::ViewGetLayers( int aLayers[], int& aCount ) const
 
         // Is this a PTH pad that has only back copper?  If so, we need to also display the
         // net name on the PTH netname layer so that it isn't blocked by the drill hole.
-        if( m_attribute == PAD_ATTRIB_PTH )
+        if( m_attribute == PAD_ATTRIB::PTH )
             aLayers[aCount++] = LAYER_PAD_NETNAMES;
         else
             aLayers[aCount++] = LAYER_PAD_BK_NETNAMES;
@@ -1238,7 +1241,7 @@ double PAD::ViewGetLOD( int aLayer, KIGFX::VIEW* aView ) const
         visible = board->GetVisibleLayers() & board->GetEnabledLayers();
 
     // Handle Render tab switches
-    if( ( GetAttribute() == PAD_ATTRIB_PTH || GetAttribute() == PAD_ATTRIB_NPTH )
+    if( ( GetAttribute() == PAD_ATTRIB::PTH || GetAttribute() == PAD_ATTRIB::NPTH )
          && !aView->IsLayerVisible( LAYER_PADS_TH ) )
     {
         return HIDE;
@@ -1293,7 +1296,7 @@ double PAD::ViewGetLOD( int aLayer, KIGFX::VIEW* aView ) const
     }
 
     if( aLayer == LAYER_PADS_TH
-            && GetShape() != PAD_SHAPE_CUSTOM
+            && GetShape() != PAD_SHAPE::CUSTOM
             && GetSizeX() <= GetDrillSizeX()
             && GetSizeY() <= GetDrillSizeY() )
     {
@@ -1373,11 +1376,11 @@ void PAD::ImportSettingsFrom( const PAD& aMasterPad )
 
     switch( aMasterPad.GetShape() )
     {
-    case PAD_SHAPE_TRAPEZOID:
+    case PAD_SHAPE::TRAPEZOID:
         SetDelta( aMasterPad.GetDelta() );
         break;
 
-    case PAD_SHAPE_CIRCLE:
+    case PAD_SHAPE::CIRCLE:
         // ensure size.y == size.x
         SetSize( wxSize( GetSize().x, GetSize().x ) );
         break;
@@ -1388,8 +1391,8 @@ void PAD::ImportSettingsFrom( const PAD& aMasterPad )
 
     switch( aMasterPad.GetAttribute() )
     {
-    case PAD_ATTRIB_SMD:
-    case PAD_ATTRIB_CONN:
+    case PAD_ATTRIB::SMD:
+    case PAD_ATTRIB::CONN:
         // These pads do not have hole (they are expected to be only on one
         // external copper layer)
         SetDrillSize( wxSize( 0, 0 ) );
@@ -1431,39 +1434,39 @@ static struct PAD_DESC
 {
     PAD_DESC()
     {
-        ENUM_MAP<PAD_ATTR_T>::Instance()
-                .Map( PAD_ATTRIB_PTH,             _HKI( "Through-hole" ) )
-                .Map( PAD_ATTRIB_SMD,             _HKI( "SMD" ) )
-                .Map( PAD_ATTRIB_CONN,            _HKI( "Edge connector" ) )
-                .Map( PAD_ATTRIB_NPTH,            _HKI( "NPTH, mechanical" ) );
+        ENUM_MAP<PAD_ATTRIB>::Instance()
+                .Map( PAD_ATTRIB::PTH,             _HKI( "Through-hole" ) )
+                .Map( PAD_ATTRIB::SMD,             _HKI( "SMD" ) )
+                .Map( PAD_ATTRIB::CONN,            _HKI( "Edge connector" ) )
+                .Map( PAD_ATTRIB::NPTH,            _HKI( "NPTH, mechanical" ) );
 
-        ENUM_MAP<PAD_SHAPE_T>::Instance()
-                .Map( PAD_SHAPE_CIRCLE,           _HKI( "Circle" ) )
-                .Map( PAD_SHAPE_RECT,             _HKI( "Rectangle" ) )
-                .Map( PAD_SHAPE_OVAL,             _HKI( "Oval" ) )
-                .Map( PAD_SHAPE_TRAPEZOID,        _HKI( "Trapezoid" ) )
-                .Map( PAD_SHAPE_ROUNDRECT,        _HKI( "Rounded rectangle" ) )
-                .Map( PAD_SHAPE_CHAMFERED_RECT,   _HKI( "Chamfered rectangle" ) )
-                .Map( PAD_SHAPE_CUSTOM,           _HKI( "Custom" ) );
+        ENUM_MAP<PAD_SHAPE>::Instance()
+                .Map( PAD_SHAPE::CIRCLE,           _HKI( "Circle" ) )
+                .Map( PAD_SHAPE::RECT,             _HKI( "Rectangle" ) )
+                .Map( PAD_SHAPE::OVAL,             _HKI( "Oval" ) )
+                .Map( PAD_SHAPE::TRAPEZOID,        _HKI( "Trapezoid" ) )
+                .Map( PAD_SHAPE::ROUNDRECT,        _HKI( "Rounded rectangle" ) )
+                .Map( PAD_SHAPE::CHAMFERED_RECT,   _HKI( "Chamfered rectangle" ) )
+                .Map( PAD_SHAPE::CUSTOM,           _HKI( "Custom" ) );
 
-        ENUM_MAP<PAD_PROP_T>::Instance()
-                .Map( PAD_PROP_NONE,              _HKI( "None" ) )
-                .Map( PAD_PROP_BGA,               _HKI( "BGA pad" ) )
-                .Map( PAD_PROP_FIDUCIAL_GLBL,     _HKI( "Fiducial, global to board" ) )
-                .Map( PAD_PROP_FIDUCIAL_LOCAL,    _HKI( "Fiducial, local to footprint" ) )
-                .Map( PAD_PROP_TESTPOINT,         _HKI( "Test point pad" ) )
-                .Map( PAD_PROP_HEATSINK,          _HKI( "Heatsink pad" ) )
-                .Map( PAD_PROP_CASTELLATED,       _HKI( "Castellated pad" ) );
+        ENUM_MAP<PAD_PROP>::Instance()
+                .Map( PAD_PROP::NONE,              _HKI( "None" ) )
+                .Map( PAD_PROP::BGA,               _HKI( "BGA pad" ) )
+                .Map( PAD_PROP::FIDUCIAL_GLBL,     _HKI( "Fiducial, global to board" ) )
+                .Map( PAD_PROP::FIDUCIAL_LOCAL,    _HKI( "Fiducial, local to footprint" ) )
+                .Map( PAD_PROP::TESTPOINT,         _HKI( "Test point pad" ) )
+                .Map( PAD_PROP::HEATSINK,          _HKI( "Heatsink pad" ) )
+                .Map( PAD_PROP::CASTELLATED,       _HKI( "Castellated pad" ) );
 
         PROPERTY_MANAGER& propMgr = PROPERTY_MANAGER::Instance();
         REGISTER_TYPE( PAD );
         propMgr.InheritsAfter( TYPE_HASH( PAD ), TYPE_HASH( BOARD_CONNECTED_ITEM ) );
 
-        auto padType = new PROPERTY_ENUM<PAD, PAD_ATTR_T>( _HKI( "Pad Type" ),
+        auto padType = new PROPERTY_ENUM<PAD, PAD_ATTRIB>( _HKI( "Pad Type" ),
                     &PAD::SetAttribute, &PAD::GetAttribute );
         propMgr.AddProperty( padType );
 
-        auto shape = new PROPERTY_ENUM<PAD, PAD_SHAPE_T>( _HKI( "Shape" ),
+        auto shape = new PROPERTY_ENUM<PAD, PAD_SHAPE>( _HKI( "Shape" ),
                     &PAD::SetShape, &PAD::GetShape );
         propMgr.AddProperty( shape );
 
@@ -1491,21 +1494,21 @@ static struct PAD_DESC
         propMgr.AddProperty( new PROPERTY<PAD, int>( _HKI( "Pad To Die Length" ),
                     &PAD::SetPadToDieLength, &PAD::GetPadToDieLength,
                     PROPERTY_DISPLAY::DISTANCE ) );
-        propMgr.AddProperty( new PROPERTY<PAD, int>( _HKI( "Local Soldermask Margin" ),
+        propMgr.AddProperty( new PROPERTY<PAD, int>( _HKI( "Soldermask Margin Override" ),
                     &PAD::SetLocalSolderMaskMargin, &PAD::GetLocalSolderMaskMargin,
                     PROPERTY_DISPLAY::DISTANCE ) );
-        propMgr.AddProperty( new PROPERTY<PAD, int>( _HKI( "Local Solderpaste Margin" ),
+        propMgr.AddProperty( new PROPERTY<PAD, int>( _HKI( "Solderpaste Margin Override" ),
                     &PAD::SetLocalSolderPasteMargin, &PAD::GetLocalSolderPasteMargin,
                     PROPERTY_DISPLAY::DISTANCE ) );
-        propMgr.AddProperty( new PROPERTY<PAD, double>( _HKI( "Local Solderpaste Margin Ratio" ),
+        propMgr.AddProperty( new PROPERTY<PAD, double>( _HKI( "Solderpaste Margin Ratio Override" ),
                     &PAD::SetLocalSolderPasteMarginRatio, &PAD::GetLocalSolderPasteMarginRatio ) );
-        propMgr.AddProperty( new PROPERTY<PAD, int>( _HKI( "Thermal Relief Spoke Width" ),
+        propMgr.AddProperty( new PROPERTY<PAD, int>( _HKI( "Thermal Relief Width" ),
                     &PAD::SetThermalSpokeWidth, &PAD::GetThermalSpokeWidth,
                     PROPERTY_DISPLAY::DISTANCE ) );
-        propMgr.AddProperty( new PROPERTY<PAD, int>( _HKI( "Thermal Relief" ),
+        propMgr.AddProperty( new PROPERTY<PAD, int>( _HKI( "Thermal Relief Gap" ),
                     &PAD::SetThermalGap, &PAD::GetThermalGap,
                     PROPERTY_DISPLAY::DISTANCE ) );
-        propMgr.AddProperty( new PROPERTY_ENUM<PAD, PAD_PROP_T>( _HKI( "Fabrication Property" ),
+        propMgr.AddProperty( new PROPERTY_ENUM<PAD, PAD_PROP>( _HKI( "Fabrication Property" ),
                     &PAD::SetProperty, &PAD::GetProperty ) );
 
         auto roundRadiusRatio = new PROPERTY<PAD, double>( _HKI( "Round Radius Ratio" ),
@@ -1513,11 +1516,11 @@ static struct PAD_DESC
         roundRadiusRatio->SetAvailableFunc(
                     [=]( INSPECTABLE* aItem ) -> bool
                     {
-                        return aItem->Get( shape ) == PAD_SHAPE_ROUNDRECT;
+                        return aItem->Get( shape ) == static_cast<int>( PAD_SHAPE::ROUNDRECT );
                     } );
         propMgr.AddProperty( roundRadiusRatio );
 
-        propMgr.AddProperty( new PROPERTY<PAD, int>( _HKI( "Local Clearance" ),
+        propMgr.AddProperty( new PROPERTY<PAD, int>( _HKI( "Clearance Override" ),
                     &PAD::SetLocalClearance, &PAD::GetLocalClearance,
                     PROPERTY_DISPLAY::DISTANCE ) );
         propMgr.AddProperty( new PROPERTY<PAD, wxString>( _HKI( "Parent" ),
@@ -1527,6 +1530,6 @@ static struct PAD_DESC
     }
 } _PAD_DESC;
 
-ENUM_TO_WXANY( PAD_ATTR_T );
-ENUM_TO_WXANY( PAD_SHAPE_T );
-ENUM_TO_WXANY( PAD_PROP_T );
+ENUM_TO_WXANY( PAD_ATTRIB );
+ENUM_TO_WXANY( PAD_SHAPE );
+ENUM_TO_WXANY( PAD_PROP );

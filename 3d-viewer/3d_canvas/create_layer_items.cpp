@@ -49,6 +49,7 @@
 #include <core/arraydim.h>
 #include <algorithm>
 #include <atomic>
+#include <wx/log.h>
 
 #ifdef PRINT_STATISTICS_3D_VIEWER
 #include <profile.h>
@@ -269,7 +270,9 @@ void BOARD_ADAPTER::createLayers( REPORTER* aStatusReporter )
                 const VIA*    via               = static_cast<const VIA*>( track );
                 const VIATYPE viatype           = via->GetViaType();
                 const float   holediameter      = via->GetDrillValue() * BiuTo3dUnits();
-                const float   thickness         = GetCopperThickness();
+
+                // holes and layer copper extend half info cylinder wall to hide transition
+                const float   thickness         = GetHolePlatingThickness() * BiuTo3dUnits() / 2.0f;
                 const float   hole_inner_radius = ( holediameter / 2.0f );
                 const float   ring_radius       = via->GetWidth() * BiuTo3dUnits() / 2.0f;
 
@@ -455,8 +458,8 @@ void BOARD_ADAPTER::createLayers( REPORTER* aStatusReporter )
                 continue;
 
             // The hole in the body is inflated by copper thickness, if not plated, no copper
-            const int inflate = ( pad->GetAttribute () != PAD_ATTRIB_NPTH ) ?
-                                GetHolePlatingThickness() : 0;
+            const int inflate = ( pad->GetAttribute () != PAD_ATTRIB::NPTH ) ?
+                                GetHolePlatingThickness() / 2 : 0;
 
             m_holeCount++;
             m_averageHoleDiameter += ( ( pad->GetDrillSize().x +
@@ -489,7 +492,7 @@ void BOARD_ADAPTER::createLayers( REPORTER* aStatusReporter )
             // The hole in the body is inflated by copper thickness.
             const int inflate = GetHolePlatingThickness();
 
-            if( pad->GetAttribute () != PAD_ATTRIB_NPTH )
+            if( pad->GetAttribute () != PAD_ATTRIB::NPTH )
             {
                 if( GetFlag( FL_CLIP_SILK_ON_VIA_ANNULUS ) && GetFlag( FL_USE_REALISTIC_MODE ) )
                 {

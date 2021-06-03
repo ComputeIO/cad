@@ -31,7 +31,7 @@ namespace PNS
 
 enum class MAGNETIC_OPTIONS
 {
-    NO_EFFECT,
+    NO_EFFECT = 0,
     CAPTURE_CURSOR_IN_TRACK_TOOL,
     CAPTURE_ALWAYS
 };
@@ -57,9 +57,7 @@ enum class TRACK_DRAG_ACTION
     DRAG_FREE_ANGLE
 };
 
-#if defined(KICAD_SCRIPTING) && defined(KICAD_SCRIPTING_ACTION_MENU)
 typedef std::vector<std::pair<wxString, bool>> ACTION_PLUGIN_SETTINGS_LIST;
-#endif
 
 
 class PCBNEW_SETTINGS : public APP_SETTINGS_BASE
@@ -195,7 +193,6 @@ public:
         bool     sort_on_fp_location;
         bool     remove_front_prefix;
         bool     remove_back_prefix;
-        bool     update_schematic;
         bool     exclude_locked;
         int      grid_index;
         int      sort_code;
@@ -306,9 +303,7 @@ public:
 
     wxString m_lastFootprint3dDir;
 
-#if defined(KICAD_SCRIPTING) && defined(KICAD_SCRIPTING_ACTION_MENU)
     ACTION_PLUGIN_SETTINGS_LIST m_VisibleActionPlugins;
-#endif
 
 protected:
 

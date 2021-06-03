@@ -68,7 +68,7 @@ int PCB_VIEWER_TOOLS::Show3DViewer( const TOOL_EVENT& aEvent )
      || frame()->IsType( FRAME_FOOTPRINT_VIEWER_MODAL )
      || frame()->IsType( FRAME_FOOTPRINT_WIZARD ) )
     {
-        frame()->Update3DView( true );
+        frame()->Update3DView( true, true );
 
         // A stronger version of Raise() which promotes the window to its parent's level.
         KIPLATFORM::UI::ReparentQuasiModal( draw3DFrame );
@@ -101,7 +101,7 @@ int PCB_VIEWER_TOOLS::ShowPadNumbers( const TOOL_EVENT& aEvent )
     for( FOOTPRINT* fp : board()->Footprints() )
     {
         for( PAD* pad : fp->Pads() )
-            view()->Update( pad, KIGFX::GEOMETRY );
+            view()->Update( pad, KIGFX::REPAINT );
     }
 
     canvas()->Refresh();
@@ -120,7 +120,7 @@ int PCB_VIEWER_TOOLS::PadDisplayMode( const TOOL_EVENT& aEvent )
     for( FOOTPRINT* fp : board()->Footprints() )
     {
         for( PAD* pad : fp->Pads() )
-            view()->Update( pad, KIGFX::GEOMETRY );
+            view()->Update( pad, KIGFX::REPAINT );
     }
 
     canvas()->Refresh();
@@ -141,7 +141,7 @@ int PCB_VIEWER_TOOLS::GraphicOutlines( const TOOL_EVENT& aEvent )
         for( BOARD_ITEM* item : fp->GraphicalItems() )
         {
             if( item->Type() == PCB_FP_SHAPE_T )
-                view()->Update( item, KIGFX::GEOMETRY );
+                view()->Update( item, KIGFX::REPAINT );
         }
     }
 
@@ -150,7 +150,7 @@ int PCB_VIEWER_TOOLS::GraphicOutlines( const TOOL_EVENT& aEvent )
         KICAD_T t = item->Type();
 
         if( t == PCB_SHAPE_T || BaseType( t ) == PCB_DIMENSION_T || t == PCB_TARGET_T )
-            view()->Update( item, KIGFX::GEOMETRY );
+            view()->Update( item, KIGFX::REPAINT );
     }
 
     canvas()->Refresh();
@@ -168,13 +168,13 @@ int PCB_VIEWER_TOOLS::TextOutlines( const TOOL_EVENT& aEvent )
 
     for( FOOTPRINT* fp : board()->Footprints() )
     {
-        view()->Update( &fp->Reference(), KIGFX::GEOMETRY );
-        view()->Update( &fp->Value(), KIGFX::GEOMETRY );
+        view()->Update( &fp->Reference(), KIGFX::REPAINT );
+        view()->Update( &fp->Value(), KIGFX::REPAINT );
 
         for( BOARD_ITEM* item : fp->GraphicalItems() )
         {
             if( item->Type() == PCB_FP_TEXT_T )
-                view()->Update( item, KIGFX::GEOMETRY );
+                view()->Update( item, KIGFX::REPAINT );
         }
     }
 
@@ -183,7 +183,7 @@ int PCB_VIEWER_TOOLS::TextOutlines( const TOOL_EVENT& aEvent )
         KICAD_T t = item->Type();
 
         if( t == PCB_TEXT_T || BaseType( t ) == PCB_DIMENSION_T )
-            view()->Update( item, KIGFX::GEOMETRY );
+            view()->Update( item, KIGFX::REPAINT );
     }
 
     canvas()->Refresh();
@@ -222,10 +222,10 @@ int PCB_VIEWER_TOOLS::MeasureTool( const TOOL_EVENT& aEvent )
     controls.ShowCursor( true );
     controls.SetAutoPan( false );
     controls.CaptureCursor( false );
-    
-    auto setCursor = 
+
+    auto setCursor =
             [&]()
-            { 
+            {
                 frame()->GetCanvas()->SetCurrentCursor( KICURSOR::MEASURE );
             };
 
@@ -236,7 +236,7 @@ int PCB_VIEWER_TOOLS::MeasureTool( const TOOL_EVENT& aEvent )
     {
         setCursor();
         grid.SetSnap( !evt->Modifier( MD_SHIFT ) );
-        grid.SetUseGrid( view.GetGAL()->GetGridSnapping() && !evt->Modifier( MD_ALT ) );
+        grid.SetUseGrid( view.GetGAL()->GetGridSnapping() && !evt->DisableGridSnapping() );
         const VECTOR2I cursorPos = grid.BestSnapAnchor( controls.GetMousePosition(), nullptr );
         controls.ForceCursorPosition(true, cursorPos );
 
@@ -252,7 +252,9 @@ int PCB_VIEWER_TOOLS::MeasureTool( const TOOL_EVENT& aEvent )
         if( evt->IsCancelInteractive() )
         {
             if( originSet )
+            {
                 clearRuler();
+            }
             else
             {
                 frame()->PopTool( tool );
@@ -297,7 +299,7 @@ int PCB_VIEWER_TOOLS::MeasureTool( const TOOL_EVENT& aEvent )
         // move or drag when origin set updates rules
         else if( originSet && ( evt->IsMotion() || evt->IsDrag( BUT_LEFT ) ) )
         {
-            twoPtMgr.SetAngleSnap( evt->Modifier( MD_CTRL ) );
+            twoPtMgr.SetAngleSnap( evt->Modifier( MD_SHIFT ) );
             twoPtMgr.SetEnd( cursorPos );
 
             view.SetVisible( &ruler, true );
@@ -328,6 +330,8 @@ int PCB_VIEWER_TOOLS::MeasureTool( const TOOL_EVENT& aEvent )
     view.Remove( &ruler );
 
     frame()->GetCanvas()->SetCurrentCursor( KICURSOR::ARROW );
+    controls.SetAutoPan( false );
+    controls.CaptureCursor( false );
     return 0;
 }
 

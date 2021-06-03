@@ -53,8 +53,8 @@ target_link_libraries( qa_pcbnew_tools
     idf3
     common
     qa_utils
-    unit_test_utils
     markdown_lib
+    scripting
     ${PCBNEW_IO_LIBRARIES}
     ${wxWidgets_LIBRARIES}
     ${GDI_PLUS_LIBRARIES}

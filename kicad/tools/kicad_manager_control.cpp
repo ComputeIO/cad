@@ -30,7 +30,9 @@
 #include <tools/kicad_manager_control.h>
 #include <dialogs/dialog_template_selector.h>
 #include <gestfich.h>
+#include <wx/checkbox.h>
 #include <wx/dir.h>
+#include <wx/filedlg.h>
 
 
 ///< Helper widget to select whether a new directory should be created for a project.
@@ -392,7 +394,7 @@ public:
             pcbnew->SaveFileAs( m_projectDirPath, m_projectName, m_newProjectDirPath,
                                 m_newProjectName, aSrcFilePath, m_errors );
         }
-        else if( ext == PageLayoutDescrFileExtension )
+        else if( ext == DrawingSheetFileExtension )
         {
             KIFACE* pleditor = m_frame->Kiway().KiFACE( KIWAY::FACE_PL_EDITOR );
             pleditor->SaveFileAs( m_projectDirPath, m_projectName, m_newProjectDirPath,
@@ -410,8 +412,12 @@ public:
         else
         {
             // Everything we don't recognize just gets a straight copy.
-            wxString destPath = destFile.GetPath();
+            wxString destPath = destFile.GetPathWithSep();
             wxString destName = destFile.GetName();
+            wxUniChar  pathSep = wxFileName::GetPathSeparator();
+
+            wxString srcProjectFootprintLib = pathSep + m_projectName + ".pretty" + pathSep;
+            wxString newProjectFootprintLib = pathSep + m_newProjectName + ".pretty" + pathSep;
 
             if( destPath.StartsWith( m_projectDirPath ) )
             {
@@ -421,6 +427,10 @@ public:
 
             if( destName == m_projectName )
                 destFile.SetName( m_newProjectName );
+
+            destPath.Replace( srcProjectFootprintLib, newProjectFootprintLib, true );
+            destFile.SetPath( destPath );
+
 
             KiCopyFile( aSrcFilePath, destFile.GetFullPath(), m_errors );
         }

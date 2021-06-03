@@ -2,7 +2,7 @@
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
  * Copyright (C) 2019 CERN
- * Copyright (C) 2019 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 2021 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -584,6 +584,11 @@ TOOL_ACTION ACTIONS::updateSchematicFromPcb( "common.Control.updateSchematicFrom
         _( "Update Schematic from PCB..." ), _( "Update schematic with changes made to PCB" ),
         BITMAPS::update_sch_from_pcb );
 
+TOOL_ACTION ACTIONS::openPreferences( "common.SuiteControl.openPreferences",
+        AS_GLOBAL, MD_CTRL + ',', "",
+        _( "Preferences..." ), _( "Show preferences for all open tools" ),
+        BITMAPS::preference );
+
 TOOL_ACTION ACTIONS::configurePaths( "common.SuiteControl.configurePaths",
         AS_GLOBAL, 0, "",
         _( "Configure Paths..." ), _( "Edit path configuration environment variables" ),
@@ -625,6 +630,11 @@ TOOL_ACTION ACTIONS::getInvolved( "common.SuiteControl.getInvolved",
         _( "Get Involved" ),
         _( "Open \"Contribute to KiCad\" in a web browser" ),
         BITMAPS::info );
+
+TOOL_ACTION ACTIONS::donate( "common.SuiteControl.donate",
+        AS_GLOBAL, 0, "",
+        _( "Donate" ),
+        _( "Open \"Donate to KiCad\" in a web browser" ) );
 
 TOOL_ACTION ACTIONS::reportBug( "common.SuiteControl.reportBug",
         AS_GLOBAL, 0, "",

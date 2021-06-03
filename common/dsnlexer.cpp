@@ -30,6 +30,7 @@
 #include <cctype>
 
 #include <dsnlexer.h>
+#include <wx/translation.h>
 
 #define FMT_CLIPBOARD       _( "clipboard" )
 
@@ -71,10 +72,10 @@ void DSNLEXER::init()
 DSNLEXER::DSNLEXER( const KEYWORD* aKeywordTable, unsigned aKeywordCount,
                     FILE* aFile, const wxString& aFilename ) :
     iOwnReaders( true ),
-    start( NULL ),
-    next( NULL ),
-    limit( NULL ),
-    reader( NULL ),
+    start( nullptr ),
+    next( nullptr ),
+    limit( nullptr ),
+    reader( nullptr ),
     keywords( aKeywordTable ),
     keywordCount( aKeywordCount )
 {
@@ -87,10 +88,10 @@ DSNLEXER::DSNLEXER( const KEYWORD* aKeywordTable, unsigned aKeywordCount,
 DSNLEXER::DSNLEXER( const KEYWORD* aKeywordTable, unsigned aKeywordCount,
                     const std::string& aClipboardTxt, const wxString& aSource ) :
     iOwnReaders( true ),
-    start( NULL ),
-    next( NULL ),
-    limit( NULL ),
-    reader( NULL ),
+    start( nullptr ),
+    next( nullptr ),
+    limit( nullptr ),
+    reader( nullptr ),
     keywords( aKeywordTable ),
     keywordCount( aKeywordCount )
 {
@@ -104,10 +105,10 @@ DSNLEXER::DSNLEXER( const KEYWORD* aKeywordTable, unsigned aKeywordCount,
 DSNLEXER::DSNLEXER( const KEYWORD* aKeywordTable, unsigned aKeywordCount,
                     LINE_READER* aLineReader ) :
     iOwnReaders( false ),
-    start( NULL ),
-    next( NULL ),
-    limit( NULL ),
-    reader( NULL ),
+    start( nullptr ),
+    next( nullptr ),
+    limit( nullptr ),
+    reader( nullptr ),
     keywords( aKeywordTable ),
     keywordCount( aKeywordCount )
 {
@@ -121,10 +122,10 @@ static const KEYWORD empty_keywords[1] = {};
 
 DSNLEXER::DSNLEXER( const std::string& aSExpression, const wxString& aSource ) :
     iOwnReaders( true ),
-    start( NULL ),
-    next( NULL ),
-    limit( NULL ),
-    reader( NULL ),
+    start( nullptr ),
+    next( nullptr ),
+    limit( nullptr ),
+    reader( nullptr ),
     keywords( empty_keywords ),
     keywordCount( 0 )
 {
@@ -198,7 +199,7 @@ void DSNLEXER::PushReader( LINE_READER* aLineReader )
 
 LINE_READER* DSNLEXER::PopReader()
 {
-    LINE_READER*    ret = 0;
+    LINE_READER* ret = nullptr;
 
     if( readerStack.size() )
     {
@@ -216,7 +217,7 @@ LINE_READER* DSNLEXER::PopReader()
         }
         else
         {
-            reader = 0;
+            reader = nullptr;
             start  = dummy;
             limit  = dummy;
         }
@@ -680,7 +681,7 @@ L_read:
     {
         /*  get the dash out of a <pin_reference> which is embedded for example
             like:  U2-14 or "U2"-"14"
-            This is detectable by a non-space immediately preceeding the dash.
+            This is detectable by a non-space immediately preceding the dash.
         */
         if( *cur == '-' && cur>start && !isSpace( cur[-1] ) )
         {
@@ -778,7 +779,7 @@ exit:   // single point of exit, no returns elsewhere please.
 
 wxArrayString* DSNLEXER::ReadCommentLines()
 {
-    wxArrayString*  ret = 0;
+    wxArrayString*  ret = nullptr;
     bool            cmt_setting = SetCommentsAreTokens( true );
     int             tok = NextTok();
 

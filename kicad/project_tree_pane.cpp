@@ -28,9 +28,10 @@
 #include <wx/regex.h>
 #include <wx/stdpaths.h>
 #include <wx/string.h>
+#include <wx/msgdlg.h>
+#include <wx/textdlg.h>
 
 #include <bitmaps.h>
-#include <common.h>
 #include <gestfich.h>
 #include <macros.h>
 #include <menus_helpers.h>
@@ -71,7 +72,7 @@ static const wxChar* s_allowedExtensionsToList[] = {
     wxT( "^[^$].*\\.brd$" ),       // Legacy Pcbnew files
     wxT( "^[^$].*\\.kicad_pcb$" ), // S format Pcbnew board files
     wxT( "^[^$].*\\.kicad_dru$" ), // Design rule files
-    wxT( "^[^$].*\\.kicad_wks$" ), // S format kicad page layout help_textr files
+    wxT( "^[^$].*\\.kicad_wks$" ), // S format kicad drawing sheet files
     wxT( "^[^$].*\\.kicad_mod$" ), // S format kicad footprint files, currently not listed
     wxT( "^.*\\.net$" ),           // pcbnew netlist file
     wxT( "^.*\\.cir$" ),           // Spice netlist file
@@ -144,7 +145,7 @@ PROJECT_TREE_PANE::PROJECT_TREE_PANE( KICAD_MANAGER_FRAME* parent ) :
     m_selectedItem = nullptr;
     m_watcherNeedReset = false;
 
-    m_watcher = NULL;
+    m_watcher = nullptr;
     Connect( wxEVT_FSWATCHER,
              wxFileSystemWatcherEventHandler( PROJECT_TREE_PANE::onFileSystemEvent ) );
 
@@ -163,11 +164,18 @@ PROJECT_TREE_PANE::PROJECT_TREE_PANE( KICAD_MANAGER_FRAME* parent ) :
 
 PROJECT_TREE_PANE::~PROJECT_TREE_PANE()
 {
+    shutdownFileWatcher();
+}
+
+
+void PROJECT_TREE_PANE::shutdownFileWatcher()
+{
     if( m_watcher )
     {
         m_watcher->RemoveAll();
-        m_watcher->SetOwner( NULL );
+        m_watcher->SetOwner( nullptr );
         delete m_watcher;
+        m_watcher = nullptr;
     }
 }
 
@@ -281,7 +289,7 @@ wxString PROJECT_TREE_PANE::GetFileExt( TREE_FILE_TYPE type )
     case TREE_FILE_TYPE::DRILL_NC:              return "nc";
     case TREE_FILE_TYPE::DRILL_XNC:             return "xnc";
     case TREE_FILE_TYPE::SVG:                   return SVGFileExtension;
-    case TREE_FILE_TYPE::PAGE_LAYOUT_DESCR:     return PageLayoutDescrFileExtension;
+    case TREE_FILE_TYPE::DRAWING_SHEET:         return DrawingSheetFileExtension;
     case TREE_FILE_TYPE::FOOTPRINT_FILE:        return KiCadFootprintFileExtension;
     case TREE_FILE_TYPE::SCHEMATIC_LIBFILE:     return LegacySymbolLibFileExtension;
     case TREE_FILE_TYPE::SEXPR_SYMBOL_LIB_FILE: return KiCadSymbolLibFileExtension;
@@ -839,8 +847,8 @@ void PROJECT_TREE_PANE::onDeleteFile( wxCommandEvent& event )
     }
     else
     {
-        msg = wxString::Format( _( "Are you sure you want to delete %lu items?" ),
-                                tree_data.size() );
+        msg = wxString::Format( _( "Are you sure you want to delete %d items?" ),
+                                (int)tree_data.size() );
         caption = _( "Delete Multiple Items" );
     }
 
@@ -1022,48 +1030,48 @@ wxTreeItemId PROJECT_TREE_PANE::findSubdirTreeItem( const wxString& aSubDir )
         return m_root;
 
     // The subdir is in the main tree or in a subdir: Locate it
-    wxTreeItemIdValue  cookie;
-    wxTreeItemId       root_id = m_root;
-    std::stack < wxTreeItemId > subdirs_id;
+    wxTreeItemIdValue        cookie;
+    wxTreeItemId             root_id = m_root;
+    std::stack<wxTreeItemId> subdirs_id;
 
-    wxTreeItemId kid = m_TreeProject->GetFirstChild( root_id, cookie );
+    wxTreeItemId child = m_TreeProject->GetFirstChild( root_id, cookie );
 
     while( true )
     {
-        if( ! kid.IsOk() )
+        if( ! child.IsOk() )
         {
             if( subdirs_id.empty() )    // all items were explored
             {
-                root_id = kid;          // Not found: return an invalid wxTreeItemId
+                root_id = child;          // Not found: return an invalid wxTreeItemId
                 break;
             }
             else
             {
                 root_id = subdirs_id.top();
                 subdirs_id.pop();
-                kid = m_TreeProject->GetFirstChild( root_id, cookie );
+                child = m_TreeProject->GetFirstChild( root_id, cookie );
 
-                if( ! kid.IsOk() )
+                if( !child.IsOk() )
                     continue;
             }
         }
 
-        PROJECT_TREE_ITEM* itemData = GetItemIdData( kid );
+        PROJECT_TREE_ITEM* itemData = GetItemIdData( child );
 
         if( itemData && ( itemData->GetType() == TREE_FILE_TYPE::DIRECTORY ) )
         {
             if( itemData->GetFileName() == aSubDir )    // Found!
             {
-                root_id = kid;
+                root_id = child;
                 break;
             }
 
-            // kid is a subdir, push in list to explore it later
+            // child is a subdir, push in list to explore it later
             if( itemData->IsPopulated() )
-                subdirs_id.push( kid );
+                subdirs_id.push( child );
         }
 
-        kid = m_TreeProject->GetNextChild( root_id, cookie );
+        child = m_TreeProject->GetNextChild( root_id, cookie );
     }
 
     return root_id;
@@ -1072,6 +1080,10 @@ wxTreeItemId PROJECT_TREE_PANE::findSubdirTreeItem( const wxString& aSubDir )
 
 void PROJECT_TREE_PANE::onFileSystemEvent( wxFileSystemWatcherEvent& event )
 {
+    // No need to process events when we're shutting down
+    if( !m_watcher )
+        return;
+
     const wxFileName& pathModified = event.GetPath();
     wxString subdir = pathModified.GetPath();
     wxString fn = pathModified.GetFullPath();
@@ -1293,6 +1305,9 @@ void PROJECT_TREE_PANE::FileWatcherReset()
 
 void PROJECT_TREE_PANE::EmptyTreePrj()
 {
+    // Make sure we don't try to inspect the tree after we've deleted its items.
+    shutdownFileWatcher();
+
     m_TreeProject->DeleteAllItems();
 }
 

@@ -25,7 +25,7 @@
 
 /*
  * the class DS_DATA_ITEM (and derived) defines
- * a basic shape of a page layout ( frame references and title block )
+ * a basic shape of a drawing sheet (frame references and title block)
  * Basic shapes are line, rect and texts
  * the DS_DATA_ITEM coordinates units is the mm, and are relative to
  * one of 4 page corners.
@@ -42,10 +42,10 @@
  *  Items with m_RepeatCount > 1 are created m_RepeatCount times
  *
  * the DS_DATA_MODEL is created only once.
- * the DS_DRAW_ITEM_LIST is created each time the page layout is plot/drawn
+ * the DS_DRAW_ITEM_LIST is created each time the drawing sheet is plotted/drawn
  *
  * the DS_DATA_MODEL instance is created from a S expression which
- * describes the page layout (can be the default page layout or a custom file).
+ * describes the drawing sheet (can be the default drawing sheet or a custom file).
  */
 
 #include <gr_text.h>
@@ -525,7 +525,7 @@ bool DS_DATA_ITEM_POLYGONS::IsInsidePage( int ii ) const
         return false;
 
     pos = GetStartPos( ii );
-    pos += m_maxCoord;  // rignt bottom pos of bounding box
+    pos += m_maxCoord;  // right bottom pos of bounding box
 
     if( model.m_RB_Corner.x < pos.x || model.m_RB_Corner.y < pos.y )
         return false;
@@ -547,8 +547,8 @@ DS_DATA_ITEM_TEXT::DS_DATA_ITEM_TEXT( const wxString& aTextBase ) :
 {
     m_TextBase = aTextBase;
     m_IncrementLabel = 1;
-    m_Hjustify = GR_TEXT_HJUSTIFY_LEFT;
-    m_Vjustify = GR_TEXT_VJUSTIFY_CENTER;
+    m_Halign = TEXT_ATTRIBUTES::H_LEFT;
+    m_Valign = TEXT_ATTRIBUTES::V_CENTER;
     m_Italic = false;
     m_Bold = false;
     m_Orient = 0.0;
@@ -618,8 +618,7 @@ void DS_DATA_ITEM_TEXT::SyncDrawItems( DS_DRAW_ITEM_LIST* aCollector, KIGFX::VIE
         if( aView )
             aView->Add( text );
 
-        text->SetHorizJustify( m_Hjustify ) ;
-        text->SetVertJustify( m_Vjustify );
+        text->Align( m_Halign, m_Valign );
         text->SetTextAngle( m_Orient * 10 );    // graphic text orient unit = 0.1 degree
         text->SetMultilineAllowed( multilines );
 
@@ -719,8 +718,7 @@ void DS_DATA_ITEM_TEXT::SetConstrainedTextSize()
         DS_DRAW_ITEM_TEXT dummy( DS_DRAW_ITEM_TEXT( this, 0, m_FullText, wxPoint( 0, 0 ),
                                                     size_micron, linewidth, m_Italic, m_Bold ) );
         dummy.SetMultilineAllowed( true );
-        dummy.SetHorizJustify( m_Hjustify ) ;
-        dummy.SetVertJustify( m_Vjustify );
+        dummy.Align( m_Halign, m_Valign );
         dummy.SetTextAngle( m_Orient * 10 );
 
         EDA_RECT rect = dummy.GetTextBox();

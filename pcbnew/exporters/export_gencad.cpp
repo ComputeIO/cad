@@ -46,6 +46,7 @@
 #include <project/project_file.h> // LAST_PATH_TYPE
 
 #include <wx/app.h>
+#include <wx/filedlg.h>
 
 static bool CreateHeaderInfoData( FILE* aFile, PCB_EDIT_FRAME* frame );
 static void CreateArtworksSection( FILE* aFile );
@@ -406,7 +407,7 @@ static void CreatePadsShapesSection( FILE* aFile, BOARD* aPcb )
     }
 
     // Emit component pads
-    PAD* old_pad = 0;
+    PAD* old_pad = nullptr;
     int  pad_name_number = 0;
 
     for( unsigned i = 0; i<pads.size(); ++i )
@@ -436,7 +437,7 @@ static void CreatePadsShapesSection( FILE* aFile, BOARD* aPcb )
             wxASSERT_MSG( false, "Pad type not implemented" );
             KI_FALLTHROUGH;
 
-        case PAD_SHAPE_CIRCLE:
+        case PAD_SHAPE::CIRCLE:
             fprintf( aFile, " ROUND %g\n",
                      pad->GetDrillSize().x / SCALE_FACTOR );
             /* Circle is center, radius */
@@ -446,7 +447,7 @@ static void CreatePadsShapesSection( FILE* aFile, BOARD* aPcb )
                      pad->GetSize().x / (SCALE_FACTOR * 2) );
             break;
 
-        case PAD_SHAPE_RECT:
+        case PAD_SHAPE::RECT:
             fprintf( aFile, " RECTANGULAR %g\n",
                      pad->GetDrillSize().x / SCALE_FACTOR );
 
@@ -457,13 +458,13 @@ static void CreatePadsShapesSection( FILE* aFile, BOARD* aPcb )
                      dx / (SCALE_FACTOR / 2), dy / (SCALE_FACTOR / 2) );
             break;
 
-        case PAD_SHAPE_ROUNDRECT:
-        case PAD_SHAPE_OVAL:
+        case PAD_SHAPE::ROUNDRECT:
+        case PAD_SHAPE::OVAL:
             {
                 const wxSize& size = pad->GetSize();
                 int radius;
 
-                if( pad->GetShape() == PAD_SHAPE_ROUNDRECT )
+                if( pad->GetShape() == PAD_SHAPE::ROUNDRECT )
                     radius = pad->GetRoundRectCornerRadius();
                 else
                     radius = std::min( size.x, size.y ) / 2;
@@ -545,7 +546,7 @@ static void CreatePadsShapesSection( FILE* aFile, BOARD* aPcb )
             }
             break;
 
-        case PAD_SHAPE_TRAPEZOID:
+        case PAD_SHAPE::TRAPEZOID:
             {
                 fprintf( aFile, " POLYGON %g\n", pad->GetDrillSize().x / SCALE_FACTOR );
 
@@ -570,7 +571,7 @@ static void CreatePadsShapesSection( FILE* aFile, BOARD* aPcb )
             }
             break;
 
-        case PAD_SHAPE_CUSTOM:
+        case PAD_SHAPE::CUSTOM:
             {
                 fprintf( aFile, " POLYGON %g\n", pad->GetDrillSize().x / SCALE_FACTOR );
 
@@ -1176,7 +1177,7 @@ static void FootprintWriteShape( FILE* aFile, FOOTPRINT* aFootprint, const wxStr
             {
                 switch( shape->GetShape() )
                 {
-                case S_SEGMENT:
+                case PCB_SHAPE_TYPE::SEGMENT:
                     fprintf( aFile, "LINE %g %g %g %g\n",
                              shape->m_Start0.x / SCALE_FACTOR,
                              -shape->m_Start0.y / SCALE_FACTOR,
@@ -1184,7 +1185,7 @@ static void FootprintWriteShape( FILE* aFile, FOOTPRINT* aFootprint, const wxStr
                              -shape->m_End0.y / SCALE_FACTOR );
                     break;
 
-                case S_RECT:
+                case PCB_SHAPE_TYPE::RECT:
                 {
                     fprintf( aFile, "LINE %g %g %g %g\n",
                              shape->m_Start0.x / SCALE_FACTOR,
@@ -1209,7 +1210,7 @@ static void FootprintWriteShape( FILE* aFile, FOOTPRINT* aFootprint, const wxStr
                 }
                     break;
 
-                case S_CIRCLE:
+                case PCB_SHAPE_TYPE::CIRCLE:
                 {
                     int radius = KiROUND( GetLineLength( shape->m_End0, shape->m_Start0 ) );
                     fprintf( aFile, "CIRCLE %g %g %g\n",
@@ -1219,7 +1220,7 @@ static void FootprintWriteShape( FILE* aFile, FOOTPRINT* aFootprint, const wxStr
                     break;
                 }
 
-                case S_ARC:
+                case PCB_SHAPE_TYPE::ARC:
                 {
                     int arcendx, arcendy;
                     arcendx = shape->m_End0.x - shape->m_Start0.x;
@@ -1238,7 +1239,7 @@ static void FootprintWriteShape( FILE* aFile, FOOTPRINT* aFootprint, const wxStr
                     break;
                 }
 
-                case S_POLYGON:
+                case PCB_SHAPE_TYPE::POLYGON:
                     // Not exported (TODO)
                     break;
 

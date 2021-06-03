@@ -188,7 +188,7 @@ typedef unsigned LAYER_MSK;
 static const char delims[] = " \t\r\n";
 
 
-static bool inline isSpace( int c ) { return strchr( delims, c ) != 0; }
+static bool inline isSpace( int c ) { return strchr( delims, c ) != nullptr; }
 
 #define MASK(x)             (1<<(x))
 
@@ -227,22 +227,22 @@ static inline char* ReadLine( LINE_READER* rdr, const char* caller )
 #endif
 
 
-static EDA_TEXT_HJUSTIFY_T horizJustify( const char* horizontal )
+static TEXT_ATTRIBUTES::HORIZONTAL_ALIGNMENT horizJustify( const char* horizontal )
 {
     if( !strcmp( "L", horizontal ) )
-        return GR_TEXT_HJUSTIFY_LEFT;
+        return TEXT_ATTRIBUTES::H_LEFT;
     if( !strcmp( "R", horizontal ) )
-        return GR_TEXT_HJUSTIFY_RIGHT;
-    return GR_TEXT_HJUSTIFY_CENTER;
+        return TEXT_ATTRIBUTES::H_RIGHT;
+    return TEXT_ATTRIBUTES::H_CENTER;
 }
 
-static EDA_TEXT_VJUSTIFY_T vertJustify( const char* vertical )
+static TEXT_ATTRIBUTES::VERTICAL_ALIGNMENT vertJustify( const char* vertical )
 {
     if( !strcmp( "T", vertical ) )
-        return GR_TEXT_VJUSTIFY_TOP;
+        return TEXT_ATTRIBUTES::V_TOP;
     if( !strcmp( "B", vertical ) )
-        return GR_TEXT_VJUSTIFY_BOTTOM;
-    return GR_TEXT_VJUSTIFY_CENTER;
+        return TEXT_ATTRIBUTES::V_BOTTOM;
+    return TEXT_ATTRIBUTES::V_CENTER;
 }
 
 
@@ -382,14 +382,21 @@ BOARD* LEGACY_PLUGIN::Load( const wxString& aFileName, BOARD* aAppendToMe,
 
     init( aProperties );
 
-    m_board = aAppendToMe ? aAppendToMe : new BOARD();
+    std::unique_ptr<BOARD> boardDeleter;
+
+    if( aAppendToMe )
+    {
+        m_board = aAppendToMe;
+    }
+    else
+    {
+        boardDeleter = std::make_unique<BOARD>();
+        m_board = boardDeleter.get();
+    }
 
     // Give the filename to the board if it's new
     if( !aAppendToMe )
         m_board->SetFileName( aFileName );
-
-    // delete on exception, iff I own m_board, according to aAppendToMe
-    std::unique_ptr<BOARD> deleter( aAppendToMe ? NULL : m_board );
 
     FILE_LINE_READER    reader( aFileName );
 
@@ -399,7 +406,7 @@ BOARD* LEGACY_PLUGIN::Load( const wxString& aFileName, BOARD* aAppendToMe,
 
     loadAllSections( bool( aAppendToMe ) );
 
-    deleter.release();
+    (void)boardDeleter.release(); // give it up so we dont delete it on exit
     return m_board;
 }
 
@@ -1420,10 +1427,10 @@ void LEGACY_PLUGIN::loadPAD( FOOTPRINT* aFootprint )
 
             switch( padchar )
             {
-            case 'C':   padshape = PAD_SHAPE_CIRCLE;      break;
-            case 'R':   padshape = PAD_SHAPE_RECT;        break;
-            case 'O':   padshape = PAD_SHAPE_OVAL;        break;
-            case 'T':   padshape = PAD_SHAPE_TRAPEZOID;   break;
+            case 'C':   padshape = static_cast<int>( PAD_SHAPE::CIRCLE );      break;
+            case 'R':   padshape = static_cast<int>( PAD_SHAPE::RECT );        break;
+            case 'O':   padshape = static_cast<int>( PAD_SHAPE::OVAL );        break;
+            case 'T':   padshape = static_cast<int>( PAD_SHAPE::TRAPEZOID );   break;
             default:
                 m_error.Printf( _( "Unknown padshape '%c=0x%02x' on line: %d of footprint: \"%s\"" ),
                                 padchar,
@@ -1455,7 +1462,7 @@ void LEGACY_PLUGIN::loadPAD( FOOTPRINT* aFootprint )
             // chances are both were ASCII, but why take chances?
 
             pad->SetName( padname );
-            pad->SetShape( PAD_SHAPE_T( padshape ) );
+            pad->SetShape( static_cast<PAD_SHAPE>( padshape ) );
             pad->SetSize( wxSize( size_x, size_y ) );
             pad->SetDelta( wxSize( delta_x, delta_y ) );
             pad->SetOrientation( orient );
@@ -1496,18 +1503,18 @@ void LEGACY_PLUGIN::loadPAD( FOOTPRINT* aFootprint )
             // e.g. "At SMD N 00888000"
             // sscanf( PtLine, "%s %s %X", BufLine, BufCar, &m_layerMask );
 
-            PAD_ATTR_T  attribute;
+            PAD_ATTRIB  attribute;
 
             data = strtok_r( line + SZ( "At" ), delims, &saveptr );
 
             if( !strcmp( data, "SMD" ) )
-                attribute = PAD_ATTRIB_SMD;
+                attribute = PAD_ATTRIB::SMD;
             else if( !strcmp( data, "CONN" ) )
-                attribute = PAD_ATTRIB_CONN;
+                attribute = PAD_ATTRIB::CONN;
             else if( !strcmp( data, "HOLE" ) )
-                attribute = PAD_ATTRIB_NPTH;
+                attribute = PAD_ATTRIB::NPTH;
             else
-                attribute = PAD_ATTRIB_PTH;
+                attribute = PAD_ATTRIB::PTH;
 
             strtok_r( NULL, delims, &saveptr );  // skip unused prm
             data = strtok_r( NULL, delims, &saveptr );
@@ -1618,15 +1625,15 @@ void LEGACY_PLUGIN::loadPAD( FOOTPRINT* aFootprint )
 
 void LEGACY_PLUGIN::loadFP_SHAPE( FOOTPRINT* aFootprint )
 {
-    PCB_SHAPE_TYPE_T shape;
+    PCB_SHAPE_TYPE shape;
     char*            line = m_reader->Line();     // obtain current (old) line
 
     switch( line[1] )
     {
-    case 'S':   shape = S_SEGMENT;   break;
-    case 'C':   shape = S_CIRCLE;    break;
-    case 'A':   shape = S_ARC;       break;
-    case 'P':   shape = S_POLYGON;   break;
+    case 'S': shape = PCB_SHAPE_TYPE::SEGMENT; break;
+    case 'C': shape = PCB_SHAPE_TYPE::CIRCLE; break;
+    case 'A': shape = PCB_SHAPE_TYPE::ARC; break;
+    case 'P': shape = PCB_SHAPE_TYPE::POLYGON; break;
     default:
         m_error.Printf( _( "Unknown FP_SHAPE type:'%c=0x%02x' on line:%d of footprint:\"%s\"" ),
                         (unsigned char) line[1],
@@ -1647,7 +1654,7 @@ void LEGACY_PLUGIN::loadFP_SHAPE( FOOTPRINT* aFootprint )
 
     switch( shape )
     {
-    case S_ARC:
+    case PCB_SHAPE_TYPE::ARC:
         {
             BIU     start0_x = biuParse( line + SZ( "DA" ), &data );
             BIU     start0_y = biuParse( data, &data );
@@ -1667,8 +1674,8 @@ void LEGACY_PLUGIN::loadFP_SHAPE( FOOTPRINT* aFootprint )
         }
         break;
 
-    case S_SEGMENT:
-    case S_CIRCLE:
+    case PCB_SHAPE_TYPE::SEGMENT:
+        case PCB_SHAPE_TYPE::CIRCLE:
         {
             // e.g. "DS -7874 -10630 7874 -10630 50 20\r\n"
             BIU     start0_x = biuParse( line + SZ( "DS" ), &data );
@@ -1684,7 +1691,7 @@ void LEGACY_PLUGIN::loadFP_SHAPE( FOOTPRINT* aFootprint )
         }
         break;
 
-    case S_POLYGON:
+    case PCB_SHAPE_TYPE::POLYGON:
         {
             // e.g. "DP %d %d %d %d %d %d %d\n"
             BIU start0_x = biuParse( line + SZ( "DP" ), &data );
@@ -1820,10 +1827,10 @@ void LEGACY_PLUGIN::loadMODULE_TEXT( FP_TEXT* aText )
     aText->SetItalic( italic && *italic == 'I' );
 
     if( hjust )
-        aText->SetHorizJustify( horizJustify( hjust ) );
+        aText->Align( horizJustify( hjust ) );
 
     if( vjust )
-        aText->SetVertJustify( vertJustify( vjust ) );
+        aText->Align( vertJustify( vjust ) );
 
      // A protection against mal formed (or edited by hand) files:
     if( layer_num < FIRST_LAYER )
@@ -1923,7 +1930,7 @@ void LEGACY_PLUGIN::loadPCB_LINE()
             if( width < 0 )
                 width = 0;
 
-            dseg->SetShape( PCB_SHAPE_TYPE_T( shape ) );
+            dseg->SetShape( static_cast<PCB_SHAPE_TYPE>( shape ) );
             dseg->SetFilled( false );
             dseg->SetWidth( width );
             dseg->SetStart( wxPoint( start_x, start_y ) );
@@ -2147,15 +2154,15 @@ void LEGACY_PLUGIN::loadPCB_TEXT()
             pcbtxt->SetItalic( !strcmp( style, "Italic" ) );
 
             if( hJustify )
-                pcbtxt->SetHorizJustify( horizJustify( hJustify ) );
+                pcbtxt->Align( horizJustify( hJustify ) );
             else
             {
                 // boom, somebody changed a constructor, I was relying on this:
-                wxASSERT( pcbtxt->GetHorizJustify() == GR_TEXT_HJUSTIFY_CENTER );
+                wxASSERT( pcbtxt->GetHorizontalAlignment() == TEXT_ATTRIBUTES::H_CENTER );
             }
 
             if( vJustify )
-                pcbtxt->SetVertJustify( vertJustify( vJustify ) );
+                pcbtxt->Align( vertJustify( vJustify ) );
 
             if( layer_num < FIRST_COPPER_LAYER )
                 layer_num = FIRST_COPPER_LAYER;
@@ -3344,7 +3351,7 @@ bool LEGACY_PLUGIN::FootprintLibDelete( const wxString& aLibraryPath,
     if( m_cache && m_cache->m_lib_path == aLibraryPath )
     {
         delete m_cache;
-        m_cache = 0;
+        m_cache = nullptr;
     }
 
     return true;
@@ -3373,8 +3380,7 @@ LEGACY_PLUGIN::LEGACY_PLUGIN() :
     m_props( nullptr ),
     m_reader( nullptr ),
     m_fp( nullptr ),
-    m_cache( nullptr ),
-    m_mapping( new NETINFO_MAPPING() )
+    m_cache( nullptr )
 {
     init( NULL );
 }
@@ -3383,5 +3389,4 @@ LEGACY_PLUGIN::LEGACY_PLUGIN() :
 LEGACY_PLUGIN::~LEGACY_PLUGIN()
 {
     delete m_cache;
-    delete m_mapping;
 }

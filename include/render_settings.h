@@ -165,6 +165,21 @@ public:
     }
 
     /**
+     * Turns on highlighting and highlights multiple nets
+     * @param aHighlight is a set of netcodes to highlight
+     * @param aEnabled tells if highlighting should be enabled.
+     */
+    inline void SetHighlight( std::set<int>& aHighlight, bool aEnabled = true )
+    {
+        m_highlightEnabled  = aEnabled;
+
+        if( aEnabled )
+            m_highlightNetcodes = aHighlight;
+        else
+            m_highlightNetcodes.clear();
+    }
+
+    /**
      * Turns on/off high contrast display mode.
      */
     void SetHighContrast( bool aEnabled ) { m_hiContrastEnabled = aEnabled; }
@@ -256,7 +271,7 @@ public:
     void SetSelectFactor( float aFactor ) { m_selectFactor = aFactor; }
     void SetHighContrastFactor( float aFactor ) { m_hiContrastFactor = aFactor; }
 
-    // TODO: these can go away once the worksheet is moved to Cairo-based printing
+    // TODO: these can go away once the drawing sheet is moved to Cairo-based printing
     wxDC* GetPrintDC() const { return m_printDC; }
     void SetPrintDC( wxDC* aDC ) { m_printDC = aDC; }
 
@@ -297,7 +312,7 @@ protected:
     bool          m_showPageLimits;
     bool          m_isPrinting;
 
-    wxDC*         m_printDC;              // This can go away once the worksheet is moved to
+    wxDC*         m_printDC;              // This can go away once the drawing sheet is moved to
                                           // Cairo-based printing.
 };
 

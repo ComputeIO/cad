@@ -22,16 +22,20 @@
  * or you may write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
+#include <convert_to_biu.h>
 #include <pcb_edit_frame.h>
-#include <layers_id_colors_and_visibility.h>
 #include <settings/color_settings.h>
 
 #include <board.h>
 #include <pcb_layer_box_selector.h>
 #include <tools/pcb_actions.h>
 
+
+// class to display a layer list in a wxBitmapComboBox.
+
+
 // translate aLayer to its action
-static TOOL_ACTION* layer2action( PCB_LAYER_ID aLayer )
+static TOOL_ACTION* layerToAction( PCB_LAYER_ID aLayer )
 {
     switch( aLayer )
     {
@@ -72,8 +76,6 @@ static TOOL_ACTION* layer2action( PCB_LAYER_ID aLayer )
 }
 
 
-// class to display a layer list in a wxBitmapComboBox.
-
 // Reload the Layers
 void PCB_LAYER_BOX_SELECTOR::Resync()
 {
@@ -102,7 +104,7 @@ void PCB_LAYER_BOX_SELECTOR::Resync()
 
         if( m_layerhotkeys )
         {
-            TOOL_ACTION* action = layer2action( layerid );
+            TOOL_ACTION* action = layerToAction( layerid );
 
             if( action )
                 layername = AddHotkeyName( layername, action->GetHotKey(), IS_COMMENT );
@@ -136,17 +138,17 @@ void PCB_LAYER_BOX_SELECTOR::Resync()
 // Returns true if the layer id is enabled (i.e. is it should be displayed)
 bool PCB_LAYER_BOX_SELECTOR::isLayerEnabled( LAYER_NUM aLayer ) const
 {
-    BOARD* board = m_boardFrame->GetBoard();
+    wxASSERT( m_boardFrame );
 
-    return board->IsLayerEnabled( ToLAYER_ID( aLayer ) );
+    return m_boardFrame->GetBoard()->IsLayerEnabled( ToLAYER_ID( aLayer ) );
 }
 
 
 LSET PCB_LAYER_BOX_SELECTOR::getEnabledLayers() const
 {
-    BOARD* board = m_boardFrame->GetBoard();
+    wxASSERT( m_boardFrame );
 
-    return board->GetEnabledLayers();
+    return m_boardFrame->GetBoard()->GetEnabledLayers();
 }
 
 
@@ -162,7 +164,7 @@ COLOR4D PCB_LAYER_BOX_SELECTOR::getLayerColor( LAYER_NUM aLayer ) const
 // Returns the name of the layer id
 wxString PCB_LAYER_BOX_SELECTOR::getLayerName( LAYER_NUM aLayer ) const
 {
-    BOARD* board = m_boardFrame->GetBoard();
+    wxASSERT( m_boardFrame );
 
-    return board->GetLayerName( ToLAYER_ID( aLayer ) );
+    return m_boardFrame->GetBoard()->GetLayerName( ToLAYER_ID( aLayer ) );
 }

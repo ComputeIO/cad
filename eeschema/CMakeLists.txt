@@ -60,8 +60,6 @@ set( EESCHEMA_DLGS
     dialogs/dialog_lib_symbol_properties_base.cpp
     dialogs/dialog_edit_components_libid.cpp
     dialogs/dialog_edit_components_libid_base.cpp
-    dialogs/dialog_edit_label.cpp
-    dialogs/dialog_edit_label_base.cpp
     dialogs/dialog_edit_line_style.cpp
     dialogs/dialog_edit_line_style_base.cpp
     dialogs/dialog_edit_one_field.cpp
@@ -85,8 +83,6 @@ set( EESCHEMA_DLGS
     dialogs/dialog_migrate_buses_base.cpp
     dialogs/dialog_netlist.cpp
     dialogs/dialog_netlist_base.cpp
-    dialogs/dialog_paste_special.cpp
-    dialogs/dialog_paste_special_base.cpp
     dialogs/dialog_pin_properties.cpp
     dialogs/dialog_pin_properties_base.cpp
     dialogs/dialog_plot_schematic.cpp
@@ -97,6 +93,7 @@ set( EESCHEMA_DLGS
     dialogs/dialog_rescue_each_base.cpp
     dialogs/dialog_sch_import_settings.cpp
     dialogs/dialog_sch_import_settings_base.cpp
+    dialogs/dialog_sch_text_properties.cpp
     dialogs/dialog_sheet_pin_properties.cpp
     dialogs/dialog_sheet_pin_properties_base.cpp
     dialogs/dialog_sheet_properties.cpp
@@ -140,6 +137,7 @@ set( EESCHEMA_WIDGETS
 
 
 set ( EESCHEMA_LIBEDIT_SRCS
+    symbol_editor/lib_logger.cpp
     symbol_editor/symbol_editor.cpp
     symbol_editor/symbol_editor_plotter.cpp
     symbol_editor/symbol_editor_settings.cpp
@@ -194,11 +192,6 @@ set( EESCHEMA_SRCS
     menubar.cpp
     pin_number.cpp
     pin_type.cpp
-    plotters/plot_schematic_DXF.cpp
-    plotters/plot_schematic_HPGL.cpp
-    plotters/plot_schematic_PDF.cpp
-    plotters/plot_schematic_PS.cpp
-    plotters/plot_schematic_SVG.cpp
     sch_draw_panel.cpp
     project_rescue.cpp
     sch_base_frame.cpp
@@ -264,7 +257,6 @@ set( EESCHEMA_SRCS
     tools/symbol_editor_edit_tool.cpp
     tools/symbol_editor_move_tool.cpp
     tools/symbol_editor_pin_tool.cpp
-    tools/reannotate.cpp
     tools/sch_drawing_tools.cpp
     tools/sch_edit_tool.cpp
     tools/sch_editor_control.cpp
@@ -295,6 +287,7 @@ if( KICAD_SPICE )
         sim/sim_plot_frame_base.cpp
         sim/sim_plot_panel.cpp
         sim/sim_panel_base.cpp
+        sim/sim_workbook.cpp
         sim/spice_simulator.cpp
         sim/spice_value.cpp
         dialogs/dialog_signal_list.cpp
@@ -411,6 +404,7 @@ target_link_libraries( eeschema_kiface
     common
     sexpr
     markdown_lib
+    scripting
     ${wxWidgets_LIBRARIES}
     ${GDI_PLUS_LIBRARIES}
     )
@@ -478,15 +472,13 @@ if( APPLE )
         )
 
     if( KICAD_SPICE )
-        # bundle libngspice, codemodels and scripts
+        # bundle libngspice and codemodels
         get_filename_component( REAL_LIBNGSPICE ${NGSPICE_LIBRARY} REALPATH )
         get_filename_component( LIBNGSPICE_PATH ${REAL_LIBNGSPICE} DIRECTORY )
         install( FILES "${REAL_LIBNGSPICE}"
                  DESTINATION "${OSX_BUNDLE_INSTALL_PLUGIN_DIR}/sim" )
         install( DIRECTORY "${LIBNGSPICE_PATH}/ngspice"
                  DESTINATION "${OSX_BUNDLE_INSTALL_PLUGIN_DIR}/sim" )
-        install( DIRECTORY "${LIBNGSPICE_PATH}/../share/ngspice/scripts"
-                 DESTINATION "${OSX_BUNDLE_INSTALL_PLUGIN_DIR}/sim/ngspice" )
     endif()
 else()
     install( TARGETS eeschema

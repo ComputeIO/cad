@@ -84,9 +84,9 @@ void FOOTPRINT_EDIT_FRAME::LoadFootprintFromLibrary( LIB_ID aFPID )
     if( m_zoomSelectBox->GetSelection() == 0 )
         Zoom_Automatique( false );
 
-    Update3DView( true );
+    Update3DView( true, true );
 
-    GetScreen()->ClrModify();
+    GetScreen()->SetContentModified( false );
 
     UpdateView();
     GetCanvas()->Refresh();
@@ -252,7 +252,7 @@ bool FOOTPRINT_EDIT_FRAME::OpenProjectFiles( const std::vector<wxString>& aFileS
     if( GetBoard()->GetFirstFootprint() )
         GetBoard()->GetFirstFootprint()->ClearFlags();
 
-    GetScreen()->ClrModify();
+    GetScreen()->SetContentModified( false );
     Zoom_Automatique( false );
     GetCanvas()->Refresh();
 

@@ -24,6 +24,7 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
 
+#include <advanced_config.h>
 #include <limits>
 #include <board.h>
 #include <footprint.h>
@@ -102,6 +103,35 @@ bool EDIT_TOOL::Init()
     // Find the selection tool, so they can cooperate
     m_selectionTool = m_toolMgr->GetTool<PCB_SELECTION_TOOL>();
 
+    auto propertiesCondition =
+            [&]( const SELECTION& aSel )
+            {
+                if( aSel.GetSize() == 0 )
+                {
+                    if( getView()->IsLayerVisible( LAYER_SCHEMATIC_DRAWINGSHEET ) )
+                    {
+                        DS_PROXY_VIEW_ITEM* ds = frame()->GetCanvas()->GetDrawingSheet();
+                        VECTOR2D            cursor = getViewControls()->GetCursorPosition( false );
+
+                        if( ds && ds->HitTestDrawingSheetItems( getView(), (wxPoint) cursor ) )
+                            return true;
+                    }
+
+                    return false;
+                }
+
+                if( aSel.GetSize() == 1 )
+                    return true;
+
+                for( EDA_ITEM* item : aSel )
+                {
+                    if( !dynamic_cast<TRACK*>( item ) )
+                        return false;
+                }
+
+                return true;
+            };
+
     auto inFootprintEditor =
             [ this ]( const SELECTION& aSelection )
             {
@@ -133,43 +163,44 @@ bool EDIT_TOOL::Init()
     // Add context menu entries that are displayed when selection tool is active
     CONDITIONAL_MENU& menu = m_selectionTool->GetToolMenu().GetMenu();
 
-    menu.AddItem( PCB_ACTIONS::move, SELECTION_CONDITIONS::NotEmpty && notMovingCondition );
-    menu.AddItem( PCB_ACTIONS::inlineBreakTrack, SELECTION_CONDITIONS::Count( 1 )
-                  && SELECTION_CONDITIONS::OnlyTypes( GENERAL_COLLECTOR::Tracks ) );
-    menu.AddItem( PCB_ACTIONS::drag45Degree, SELECTION_CONDITIONS::Count( 1 )
-                  && SELECTION_CONDITIONS::OnlyTypes( GENERAL_COLLECTOR::DraggableItems ) );
-    menu.AddItem( PCB_ACTIONS::dragFreeAngle, SELECTION_CONDITIONS::Count( 1 )
-                  && SELECTION_CONDITIONS::OnlyTypes( GENERAL_COLLECTOR::DraggableItems )
-                  && !SELECTION_CONDITIONS::OnlyType( PCB_FOOTPRINT_T ) );
-    menu.AddItem( PCB_ACTIONS::filletTracks, SELECTION_CONDITIONS::OnlyTypes( GENERAL_COLLECTOR::Tracks ) );
-    menu.AddItem( PCB_ACTIONS::rotateCcw, SELECTION_CONDITIONS::NotEmpty );
-    menu.AddItem( PCB_ACTIONS::rotateCw, SELECTION_CONDITIONS::NotEmpty );
-    menu.AddItem( PCB_ACTIONS::flip, SELECTION_CONDITIONS::NotEmpty );
-    menu.AddItem( PCB_ACTIONS::mirror, inFootprintEditor && SELECTION_CONDITIONS::NotEmpty );
+    menu.AddItem( PCB_ACTIONS::move,              SELECTION_CONDITIONS::NotEmpty
+                                                      && notMovingCondition );
+    menu.AddItem( PCB_ACTIONS::inlineBreakTrack,  SELECTION_CONDITIONS::Count( 1 )
+                                                      && SELECTION_CONDITIONS::OnlyTypes( GENERAL_COLLECTOR::Tracks ) );
+    menu.AddItem( PCB_ACTIONS::drag45Degree,      SELECTION_CONDITIONS::Count( 1 )
+                                                      && SELECTION_CONDITIONS::OnlyTypes( GENERAL_COLLECTOR::DraggableItems ) );
+    menu.AddItem( PCB_ACTIONS::dragFreeAngle,     SELECTION_CONDITIONS::Count( 1 )
+                                                      && SELECTION_CONDITIONS::OnlyTypes( GENERAL_COLLECTOR::DraggableItems )
+                                                      && !SELECTION_CONDITIONS::OnlyType( PCB_FOOTPRINT_T ) );
+    menu.AddItem( PCB_ACTIONS::filletTracks,      SELECTION_CONDITIONS::OnlyTypes( GENERAL_COLLECTOR::Tracks ) );
+    menu.AddItem( PCB_ACTIONS::rotateCcw,         SELECTION_CONDITIONS::NotEmpty );
+    menu.AddItem( PCB_ACTIONS::rotateCw,          SELECTION_CONDITIONS::NotEmpty );
+    menu.AddItem( PCB_ACTIONS::flip,              SELECTION_CONDITIONS::NotEmpty );
+    menu.AddItem( PCB_ACTIONS::mirror,            inFootprintEditor && SELECTION_CONDITIONS::NotEmpty );
 
-    menu.AddItem( PCB_ACTIONS::properties, SELECTION_CONDITIONS::Count( 1 )
-                      || SELECTION_CONDITIONS::OnlyTypes( GENERAL_COLLECTOR::Tracks ) );
+    menu.AddItem( PCB_ACTIONS::properties,        propertiesCondition );
 
     // Footprint actions
     menu.AddSeparator();
-    menu.AddItem( PCB_ACTIONS::editFpInFpEditor, singleFootprintCondition );
-    menu.AddItem( PCB_ACTIONS::updateFootprint, singleFootprintCondition );
-    menu.AddItem( PCB_ACTIONS::changeFootprint, singleFootprintCondition );
+    menu.AddItem( PCB_ACTIONS::editFpInFpEditor,  singleFootprintCondition );
+    menu.AddItem( PCB_ACTIONS::updateFootprint,   singleFootprintCondition );
+    menu.AddItem( PCB_ACTIONS::changeFootprint,   singleFootprintCondition );
 
     // Add the submenu for create array and special move
     auto specialToolsSubMenu = std::make_shared<SPECIAL_TOOLS_CONTEXT_MENU>( this );
     menu.AddSeparator();
     m_selectionTool->GetToolMenu().AddSubMenu( specialToolsSubMenu );
-    menu.AddMenu( specialToolsSubMenu.get(), SELECTION_CONDITIONS::NotEmpty, 100 );
+    menu.AddMenu( specialToolsSubMenu.get(),      SELECTION_CONDITIONS::NotEmpty, 100 );
 
     menu.AddSeparator( 150 );
-    menu.AddItem( ACTIONS::cut, SELECTION_CONDITIONS::NotEmpty, 150 );
-    menu.AddItem( ACTIONS::copy, SELECTION_CONDITIONS::NotEmpty, 150 );
+    menu.AddItem( ACTIONS::cut,                   SELECTION_CONDITIONS::NotEmpty, 150 );
+    menu.AddItem( ACTIONS::copy,                  SELECTION_CONDITIONS::NotEmpty, 150 );
     // Selection tool handles the context menu for some other tools, such as the Picker.
     // Don't add things like Paste when another tool is active.
-    menu.AddItem( ACTIONS::paste, noActiveToolCondition, 150 );
-    menu.AddItem( ACTIONS::duplicate, SELECTION_CONDITIONS::NotEmpty, 150 );
-    menu.AddItem( ACTIONS::doDelete, SELECTION_CONDITIONS::NotEmpty, 150 );
+    menu.AddItem( ACTIONS::paste,                 noActiveToolCondition, 150 );
+    menu.AddItem( ACTIONS::pasteSpecial,          noActiveToolCondition, 150 );
+    menu.AddItem( ACTIONS::duplicate,             SELECTION_CONDITIONS::NotEmpty, 150 );
+    menu.AddItem( ACTIONS::doDelete,              SELECTION_CONDITIONS::NotEmpty, 150 );
 
     menu.AddSeparator( 150 );
     menu.AddItem( ACTIONS::selectAll, noItemsCondition, 150 );
@@ -180,6 +211,11 @@ bool EDIT_TOOL::Init()
 
 int EDIT_TOOL::GetAndPlace( const TOOL_EVENT& aEvent )
 {
+    // GetAndPlace makes sense only in board editor, although it is also called
+    // in fpeditor, that shares the same EDIT_TOOL list
+    if( !getEditFrame<PCB_BASE_FRAME>()->IsType( FRAME_PCB_EDITOR ) )
+        return 0;
+
     PCB_SELECTION_TOOL* selectionTool = m_toolMgr->GetTool<PCB_SELECTION_TOOL>();
     FOOTPRINT*          fp = getEditFrame<PCB_BASE_FRAME>()->GetFootprintFromBoardByReference();
 
@@ -256,8 +292,7 @@ int EDIT_TOOL::Drag( const TOOL_EVENT& aEvent )
                     BOARD_ITEM* item = aCollector[ i ];
 
                     // We don't operate on pads; convert them to footprint selections
-                    if( !sTool->IsFootprintEditor() && item->IsLocked() && item->Type() == PCB_PAD_T
-                            && !item->GetParent()->IsLocked() )
+                    if( !sTool->IsFootprintEditor() && item->Type() == PCB_PAD_T )
                     {
                         aCollector.Remove( item );
 
@@ -266,9 +301,9 @@ int EDIT_TOOL::Drag( const TOOL_EVENT& aEvent )
                     }
                 }
 
-                sTool->FilterCollectorForGroups( aCollector );
+                sTool->FilterCollectorForHierarchy( aCollector, true );
             },
-            !m_isFootprintEditor /* prompt user regarding locked items */ );
+            true /* prompt user regarding locked items */ );
 
     if( selection.Empty() )
         return 0;
@@ -298,6 +333,15 @@ int EDIT_TOOL::DragArcTrack( const TOOL_EVENT& aEvent )
     Activate();
 
     ARC* theArc = static_cast<ARC*>( selection.Front() );
+    double arcAngleDegrees = std::abs( theArc->GetAngle() ) / 10.0;
+
+    if( arcAngleDegrees + ADVANCED_CFG::GetCfg().m_MaxTangentAngleDeviation >= 180.0 )
+    {
+        frame()->ShowInfoBarError(
+                wxString::Format( _( "Unable to resize arc tracks %.1f degrees or greater." ),
+                                  180.0 - ADVANCED_CFG::GetCfg().m_MaxTangentAngleDeviation ) );
+        return 0; // don't bother with > 180 degree arcs
+    }
 
     KIGFX::VIEW_CONTROLS* controls = getViewControls();
 
@@ -308,9 +352,6 @@ int EDIT_TOOL::DragArcTrack( const TOOL_EVENT& aEvent )
     VECTOR2I arcCenter = theArc->GetCenter();
     SEG      tanStart = SEG( arcCenter, theArc->GetStart() ).PerpendicularSeg( theArc->GetStart() );
     SEG      tanEnd = SEG( arcCenter, theArc->GetEnd() ).PerpendicularSeg( theArc->GetEnd() );
-
-    if( tanStart.ApproxParallel( tanEnd ) )
-        return 0; // don't bother with 180 degree arcs
 
     //Ensure the tangent segments are in the correct orientation
     VECTOR2I tanIntersect = tanStart.IntersectLines( tanEnd ).get();
@@ -325,7 +366,22 @@ int EDIT_TOOL::DragArcTrack( const TOOL_EVENT& aEvent )
         [&]( const VECTOR2I& aAnchor, const SEG& aCollinearSeg ) -> TRACK*
         {
             auto conn = board()->GetConnectivity();
-            auto itemsOnAnchor = conn->GetConnectedItemsAtAnchor( theArc, aAnchor, track_types );
+
+            // Allow items at a distance within the width of the arc track
+            int allowedDeviation = theArc->GetWidth();
+
+            std::vector<BOARD_CONNECTED_ITEM*> itemsOnAnchor;
+
+            for( int i = 0; i < 3; i++ )
+            {
+                itemsOnAnchor = conn->GetConnectedItemsAtAnchor( theArc, aAnchor, track_types,
+                                                                 allowedDeviation );
+                allowedDeviation /= 2;
+
+                if( itemsOnAnchor.size() == 1 )
+                    break;
+            }
+
             TRACK* retval = nullptr;
 
             if( itemsOnAnchor.size() == 1 && itemsOnAnchor.front()->Type() == PCB_TRACE_T )
@@ -333,9 +389,12 @@ int EDIT_TOOL::DragArcTrack( const TOOL_EVENT& aEvent )
                 retval = static_cast<TRACK*>( itemsOnAnchor.front() );
                 SEG trackSeg( retval->GetStart(), retval->GetEnd() );
 
-                //Ensure it is collinear
-                if( !trackSeg.ApproxCollinear( aCollinearSeg ) )
+                // Allow deviations in colinearity as defined in ADVANCED_CFG
+                if( trackSeg.AngleDegrees( aCollinearSeg )
+                    > ADVANCED_CFG::GetCfg().m_MaxTangentAngleDeviation )
+                {
                     retval = nullptr;
+                }
             }
 
             if( !retval )
@@ -361,17 +420,20 @@ int EDIT_TOOL::DragArcTrack( const TOOL_EVENT& aEvent )
     TRACK* trackOnStartCopy = new TRACK( *trackOnStart );
     TRACK* trackOnEndCopy = new TRACK( *trackOnEnd );
 
-    if( trackOnStart->GetLength() > tanStart.Length() )
+    if( trackOnStart->GetLength() != 0 )
     {
         tanStart.A = trackOnStart->GetStart();
         tanStart.B = trackOnStart->GetEnd();
     }
 
-    if( trackOnEnd->GetLength() > tanEnd.Length() )
+    if( trackOnEnd->GetLength() != 0 )
     {
         tanEnd.A = trackOnEnd->GetStart();
         tanEnd.B = trackOnEnd->GetEnd();
     }
+
+    // Recalculate intersection point
+    tanIntersect = tanStart.IntersectLines( tanEnd ).get();
 
     auto isTrackStartClosestToArcStart =
         [&]( TRACK* aPointA ) -> bool
@@ -530,42 +592,63 @@ int EDIT_TOOL::DragArcTrack( const TOOL_EVENT& aEvent )
 
     // Ensure we only do one commit operation on each object
     auto processTrack =
-        [&]( TRACK* aTrack, TRACK* aTrackCopy )
+        [&]( TRACK* aTrack, TRACK* aTrackCopy, int aMaxLengthIU ) -> bool
         {
             if( aTrack->IsNew() )
             {
                 getView()->Remove( aTrack );
 
-                if( aTrack->GetStart() == aTrack->GetEnd() )
+                if( aTrack->GetLength() <= aMaxLengthIU )
                 {
                     delete aTrack;
                     delete aTrackCopy;
                     aTrack = nullptr;
                     aTrackCopy = nullptr;
+                    return false;
                 }
                 else
                 {
                     m_commit->Add( aTrack );
                     delete aTrackCopy;
                     aTrackCopy = nullptr;
+                    return true;
                 }
             }
-            else  if( aTrack->GetStart() == aTrack->GetEnd() )
+            else if( aTrack->GetLength() <= aMaxLengthIU )
             {
                 aTrack->SwapData( aTrackCopy ); //restore the original before notifying COMMIT
                 m_commit->Remove( aTrack );
                 delete aTrackCopy;
                 aTrackCopy = nullptr;
+                return false;
             }
             else
             {
                 m_commit->Modified( aTrack, aTrackCopy );
             }
+
+            return true;
         };
 
-    processTrack( trackOnStart, trackOnStartCopy );
-    processTrack( trackOnEnd, trackOnEndCopy );
-    processTrack( theArc, theArcCopy );
+    // Ammend the end points of the arc if we delete the joining tracks
+    wxPoint newStart = trackOnStart->GetStart();
+    wxPoint newEnd = trackOnEnd->GetStart();
+
+    if( isStartTrackOnStartPt )
+        newStart = trackOnStart->GetEnd();
+
+    if( isEndTrackOnStartPt )
+        newEnd = trackOnEnd->GetEnd();
+
+    int maxLengthIU = KiROUND( ADVANCED_CFG::GetCfg().m_MaxTrackLengthToKeep * IU_PER_MM );
+
+    if( !processTrack( trackOnStart, trackOnStartCopy, maxLengthIU ) )
+        theArc->SetStart( newStart );
+
+    if( !processTrack( trackOnEnd, trackOnEndCopy, maxLengthIU ) )
+        theArc->SetEnd( newEnd );
+
+    processTrack( theArc, theArcCopy, 0 ); // only delete the arc if start and end points coincide
 
     // Should we commit?
     if( restore_state )
@@ -744,6 +827,10 @@ int EDIT_TOOL::doMoveSelection( TOOL_EVENT aEvent, bool aPickReference )
     TOOL_EVENT* evt = &aEvent;
     VECTOR2I    prevPos;
 
+    bool hasMouseMoved = false;
+    bool hasRedrawn3D  = false;
+    bool allowRedraw3D = editFrame->GetDisplayOptions().m_Live3DRefresh;
+
     // Prime the pump
     m_toolMgr->RunAction( ACTIONS::refreshPreview );
 
@@ -753,7 +840,10 @@ int EDIT_TOOL::doMoveSelection( TOOL_EVENT aEvent, bool aPickReference )
         VECTOR2I movement;
         editFrame->GetCanvas()->SetCurrentCursor( KICURSOR::MOVING );
         grid.SetSnap( !evt->Modifier( MD_SHIFT ) );
-        grid.SetUseGrid( getView()->GetGAL()->GetGridSnapping() && !evt->Modifier( MD_ALT ) );
+        grid.SetUseGrid( getView()->GetGAL()->GetGridSnapping() && !evt->DisableGridSnapping() );
+
+        if( evt->IsMotion() || evt->IsDrag( BUT_LEFT ) )
+            hasMouseMoved = true;
 
         if( evt->IsAction( &PCB_ACTIONS::move ) || evt->IsMotion() || evt->IsDrag( BUT_LEFT )
                 || evt->IsAction( &ACTIONS::refreshPreview )
@@ -761,6 +851,8 @@ int EDIT_TOOL::doMoveSelection( TOOL_EVENT aEvent, bool aPickReference )
         {
             if( m_dragging && evt->Category() == TC_MOUSE )
             {
+                bool redraw3D = false;
+
                 VECTOR2I mousePos( controls->GetMousePosition() );
 
                 m_cursor = grid.BestSnapAnchor( mousePos, item_layers, sel_items );
@@ -793,6 +885,15 @@ int EDIT_TOOL::doMoveSelection( TOOL_EVENT aEvent, bool aPickReference )
                     // group and not its descendants.
                     if( !item->GetParent() || !item->GetParent()->IsSelected() )
                         static_cast<BOARD_ITEM*>( item )->Move( movement );
+
+                    if( !redraw3D && item->Type() == PCB_FOOTPRINT_T )
+                        redraw3D = true;
+                }
+
+                if( redraw3D && allowRedraw3D )
+                {
+                    editFrame->Update3DView( false, true );
+                    hasRedrawn3D = true;
                 }
 
                 m_toolMgr->PostEvent( EVENTS::SelectedItemsMoved );
@@ -917,12 +1018,14 @@ int EDIT_TOOL::doMoveSelection( TOOL_EVENT aEvent, bool aPickReference )
         }
 
         // Dispatch TOOL_ACTIONs
-        else if( evt->IsAction( &ACTIONS::doDelete ) )
+        else if( evt->IsAction( &ACTIONS::doDelete ) || evt->IsAction( &ACTIONS::cut ) )
         {
+            evt->SetPassEvent();
             break; // finish -- there is no further processing for removed items
         }
         else if( evt->IsAction( &ACTIONS::duplicate ) )
         {
+            evt->SetPassEvent();
             break; // finish -- Duplicate tool will start a new Move with the dup'ed items
         }
         else if( evt->IsAction( &PCB_ACTIONS::moveExact ) )
@@ -936,8 +1039,10 @@ int EDIT_TOOL::doMoveSelection( TOOL_EVENT aEvent, bool aPickReference )
 
             break; // finish -- we moved exactly, so we are finished
         }
-        else if( evt->IsMouseUp( BUT_LEFT ) || evt->IsClick( BUT_LEFT ) )
+        else if( hasMouseMoved && ( evt->IsMouseUp( BUT_LEFT ) || evt->IsClick( BUT_LEFT ) ) )
         {
+            // Ignore mouse up and click events until we receive at least one mouse move or
+            // mouse drag event
             break; // finish
         }
         else
@@ -953,6 +1058,9 @@ int EDIT_TOOL::doMoveSelection( TOOL_EVENT aEvent, bool aPickReference )
 
     m_dragging = false;
     editFrame->UndoRedoBlock( false );
+
+    if( hasRedrawn3D && restore_state )
+        editFrame->Update3DView( false, true );
 
     // Discard reference point when selection is "dropped" onto the board
     selection.ClearReferencePoint();
@@ -1312,35 +1420,9 @@ int EDIT_TOOL::Rotate( const TOOL_EVENT& aEvent )
     PCB_SELECTION& selection = m_selectionTool->RequestSelection(
             []( const VECTOR2I& aPt, GENERAL_COLLECTOR& aCollector, PCB_SELECTION_TOOL* sTool )
             {
-                std::set<BOARD_ITEM*> added_items;
-
-                // Iterate from the back so we don't have to worry about removals.
-                for( int i = aCollector.GetCount() - 1; i >= 0; --i )
-                {
-                    BOARD_ITEM* item = aCollector[i];
-
-                    // We don't operate on pads; convert them to footprint selections
-                    if( !sTool->IsFootprintEditor() && item->Type() == PCB_PAD_T
-                                    && !item->GetParent()->IsLocked() )
-                    {
-                        aCollector.Remove( item );
-
-                        if( item->GetParent() && !aCollector.HasItem( item->GetParent() ) )
-                            added_items.insert( item->GetParent() );
-                    }
-
-                    // We can't rotate both a footprint and its text in the same operation, so if
-                    // both are selected, remove the text
-                    if( item->Type() == PCB_FP_TEXT_T && aCollector.HasItem( item->GetParent() ) )
-                        aCollector.Remove( item );
-                }
-
-                for( BOARD_ITEM* item : added_items )
-                    aCollector.Append( item );
-
-                sTool->FilterCollectorForGroups( aCollector );
+                sTool->FilterCollectorForHierarchy( aCollector, true );
             },
-            !m_dragging && !m_isFootprintEditor /* prompt user regarding locked items */ );
+            !m_dragging /* prompt user regarding locked items */ );
 
     if( selection.Empty() )
         return 0;
@@ -1421,7 +1503,7 @@ static wxPoint mirrorPointX( const wxPoint& aPoint, const wxPoint& aMirrorPoint 
  */
 static void mirrorPadX( PAD& aPad, const wxPoint& aMirrorPoint )
 {
-    if( aPad.GetShape() == PAD_SHAPE_CUSTOM )
+    if( aPad.GetShape() == PAD_SHAPE::CUSTOM )
         aPad.FlipPrimitives( true );  // mirror primitives left to right
 
     wxPoint tmpPt = mirrorPointX( aPad.GetPosition(), aMirrorPoint );
@@ -1452,30 +1534,9 @@ int EDIT_TOOL::Mirror( const TOOL_EVENT& aEvent )
     PCB_SELECTION& selection = m_selectionTool->RequestSelection(
             []( const VECTOR2I& aPt, GENERAL_COLLECTOR& aCollector, PCB_SELECTION_TOOL* sTool )
             {
-                std::set<BOARD_ITEM*> added_items;
-
-                // Iterate from the back so we don't have to worry about removals.
-                for( int i = aCollector.GetCount() - 1; i >= 0; --i )
-                {
-                    BOARD_ITEM* item = aCollector[i];
-
-                    // We don't operate on pads; convert them to footprint selections
-                    if( !sTool->IsFootprintEditor() && item->Type() == PCB_PAD_T
-                                    && !item->GetParent()->IsLocked() )
-                    {
-                        aCollector.Remove( item );
-
-                        if( item->GetParent() && !aCollector.HasItem( item->GetParent() ) )
-                            added_items.insert( item->GetParent() );
-                    }
-                }
-
-                for( BOARD_ITEM* item : added_items )
-                    aCollector.Append( item );
-
-                sTool->FilterCollectorForGroups( aCollector );
+                sTool->FilterCollectorForHierarchy( aCollector, true );
             },
-            !m_dragging && !m_isFootprintEditor /* prompt user regarding locked items */ );
+            !m_dragging /* prompt user regarding locked items */ );
 
     if( selection.Empty() )
         return 0;
@@ -1571,35 +1632,9 @@ int EDIT_TOOL::Flip( const TOOL_EVENT& aEvent )
     PCB_SELECTION& selection = m_selectionTool->RequestSelection(
             []( const VECTOR2I& aPt, GENERAL_COLLECTOR& aCollector, PCB_SELECTION_TOOL* sTool )
             {
-                std::set<BOARD_ITEM*> added_items;
-
-                // Iterate from the back so we don't have to worry about removals.
-                for( int i = aCollector.GetCount() - 1; i >= 0; --i )
-                {
-                    BOARD_ITEM* item = aCollector[i];
-
-                    // We don't operate on pads; convert them to footprint selections
-                    if( !sTool->IsFootprintEditor() && item->Type() == PCB_PAD_T
-                                    && !item->GetParent()->IsLocked() )
-                    {
-                        aCollector.Remove( item );
-
-                        if( item->GetParent() && !aCollector.HasItem( item->GetParent() ) )
-                            added_items.insert( item->GetParent() );
-                    }
-
-                    // We can't flip both a footprint and its text in the same operation, so if
-                    // both are selected, remove the text
-                    if( item->Type() == PCB_FP_TEXT_T && aCollector.HasItem( item->GetParent() ) )
-                        aCollector.Remove( item );
-                }
-
-                for( BOARD_ITEM* item : added_items )
-                    aCollector.Append( item );
-
-                sTool->FilterCollectorForGroups( aCollector );
+                sTool->FilterCollectorForHierarchy( aCollector, true );
             },
-            !m_dragging && !m_isFootprintEditor/* prompt user regarding locked items */ );
+            !m_dragging /* prompt user regarding locked items */ );
 
     if( selection.Empty() )
         return 0;
@@ -1867,8 +1902,6 @@ int EDIT_TOOL::MoveExact( const TOOL_EVENT& aEvent )
     const PCB_SELECTION& selection = m_selectionTool->RequestSelection(
             []( const VECTOR2I& aPt, GENERAL_COLLECTOR& aCollector, PCB_SELECTION_TOOL* sTool )
             {
-                std::set<BOARD_ITEM*> added_items;
-
                 // Iterate from the back so we don't have to worry about removals.
                 for( int i = aCollector.GetCount() - 1; i >= 0; --i )
                 {
@@ -1876,23 +1909,11 @@ int EDIT_TOOL::MoveExact( const TOOL_EVENT& aEvent )
 
                     if( item->Type() == PCB_MARKER_T )
                         aCollector.Remove( item );
-
-                    // We don't operate on pads; convert them to footprint selections
-                    if( !sTool->IsFootprintEditor() && item->Type() == PCB_PAD_T )
-                    {
-                        aCollector.Remove( item );
-
-                        if( item->GetParent() && !aCollector.HasItem( item->GetParent() ) )
-                            added_items.insert( item->GetParent() );
-                    }
                 }
 
-                for( BOARD_ITEM* item : added_items )
-                    aCollector.Append( item );
-
-                sTool->FilterCollectorForGroups( aCollector );
+                sTool->FilterCollectorForHierarchy( aCollector, true );
             },
-            !m_isFootprintEditor /* prompt user regarding locked items */ );
+            true /* prompt user regarding locked items */ );
 
     if( selection.Empty() )
         return 0;
@@ -1991,28 +2012,16 @@ int EDIT_TOOL::Duplicate( const TOOL_EVENT& aEvent )
     const PCB_SELECTION& selection = m_selectionTool->RequestSelection(
                 []( const VECTOR2I&, GENERAL_COLLECTOR& aCollector, PCB_SELECTION_TOOL* sTool )
                 {
-                    std::set<BOARD_ITEM*> added_items;
-
                     // Iterate from the back so we don't have to worry about removals.
                     for( int i = aCollector.GetCount() - 1; i >= 0; --i )
                     {
                         BOARD_ITEM* item = aCollector[i];
 
-                        // We don't operate on pads; convert them to footprint selections
-                        if( !sTool->IsFootprintEditor() && item->Type() == PCB_PAD_T
-                                        && !item->GetParent()->IsLocked() )
-                        {
+                        if( item->Type() == PCB_MARKER_T )
                             aCollector.Remove( item );
-
-                            if( item->GetParent() && !aCollector.HasItem( item->GetParent() ) )
-                                added_items.insert( item->GetParent() );
-                        }
                     }
 
-                    for( BOARD_ITEM* item : added_items )
-                        aCollector.Append( item );
-
-                    sTool->FilterCollectorForGroups( aCollector );
+                    sTool->FilterCollectorForHierarchy( aCollector, true );
                 } );
 
     if( selection.Empty() )
@@ -2080,17 +2089,9 @@ int EDIT_TOOL::Duplicate( const TOOL_EVENT& aEvent )
                 dupe_item = static_cast<PCB_GROUP*>( orig_item )->DeepDuplicate();
                 break;
 
-            case PCB_PAD_T:
-            case PCB_FP_TEXT_T:
-            case PCB_FP_SHAPE_T:
-            case PCB_FP_ZONE_T:
-            case PCB_MARKER_T:
-                // Silently drop these items (such as footprint texts) from duplication
-                break;
-
             default:
-                wxASSERT_MSG( false,
-                              wxString::Format( "Unknown item type %d", orig_item->Type() ) );
+                wxASSERT_MSG( false, wxString::Format( "Unhandled item type %d",
+                                                       orig_item->Type() ) );
                 break;
             }
         }
@@ -2158,28 +2159,7 @@ int EDIT_TOOL::CreateArray( const TOOL_EVENT& aEvent )
     const auto& selection = m_selectionTool->RequestSelection(
                 []( const VECTOR2I&, GENERAL_COLLECTOR& aCollector, PCB_SELECTION_TOOL* sTool )
                 {
-                    std::set<BOARD_ITEM*> added_items;
-
-                    // Iterate from the back so we don't have to worry about removals.
-                    for( int i = aCollector.GetCount() - 1; i >= 0; --i )
-                    {
-                        BOARD_ITEM* item = aCollector[i];
-
-                        // We don't operate on pads; convert them to footprint selections
-                        if( !sTool->IsFootprintEditor() && item->Type() == PCB_PAD_T
-                                        && !item->GetParent()->IsLocked() )
-                        {
-                            aCollector.Remove( item );
-
-                            if( item->GetParent() && !aCollector.HasItem( item->GetParent() ) )
-                                added_items.insert( item->GetParent() );
-                        }
-                    }
-
-                    for( BOARD_ITEM* item : added_items )
-                        aCollector.Append( item );
-
-                    sTool->FilterCollectorForGroups( aCollector );
+                    sTool->FilterCollectorForHierarchy( aCollector, true );
                 } );
 
     if( selection.Empty() )
@@ -2232,11 +2212,11 @@ bool EDIT_TOOL::updateModificationPoint( PCB_SELECTION& aSelection )
         auto pos = item->GetPosition();
         aSelection.SetReferencePoint( VECTOR2I( pos.x, pos.y ) );
     }
-    // ...otherwise modify items with regard to the grid-snapped cursor position
+    // ...otherwise modify items with regard to the grid-snapped center position
     else
     {
-        m_cursor = getViewControls()->GetCursorPosition( true );
-        aSelection.SetReferencePoint( m_cursor );
+        PCB_GRID_HELPER grid( m_toolMgr, frame()->GetMagneticItemsSettings() );
+        aSelection.SetReferencePoint( grid.BestSnapAnchor( aSelection.GetCenter(), nullptr ) );
     }
 
     return true;

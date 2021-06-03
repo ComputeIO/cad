@@ -29,6 +29,7 @@
 #include <project/project_archiver.h>
 #include <reporter.h>
 #include <wildcards_and_files_ext.h>
+#include <wx/log.h>
 
 
 #define ZipFileExtension wxT( "zip" )
@@ -137,6 +138,10 @@ bool PROJECT_ARCHIVER::Unarchive( const wxString& aSrcFile, const wxString& aDes
                     wxMkdir( currPath );
             }
         }
+
+        // Directory entries need only be created, not extracted (0 size)
+        if( entry->IsDir() )
+            continue;
 
         wxTempFileOutputStream outputFileStream( fullname );
 

@@ -35,6 +35,7 @@
 #include <wildcards_and_files_ext.h>
 #include <project/project_file.h>
 #include "eda_doc.h"
+#include <wx/settings.h>
 
 
 enum
@@ -386,21 +387,21 @@ wxString FIELDS_GRID_TABLE<T>::GetValue( int aRow, int aCol )
         return StringFromBool( field.IsVisible() );
 
     case FDC_H_ALIGN:
-        switch ( field.GetHorizJustify() )
+        switch ( field.GetHorizontalAlignment() )
         {
-        case GR_TEXT_HJUSTIFY_LEFT:   return _( "Left" );
-        case GR_TEXT_HJUSTIFY_CENTER: return _( "Center" );
-        case GR_TEXT_HJUSTIFY_RIGHT:  return _( "Right" );
+        case TEXT_ATTRIBUTES::H_LEFT: return _( "Left" );
+        case TEXT_ATTRIBUTES::H_CENTER: return _( "Center" );
+        case TEXT_ATTRIBUTES::H_RIGHT: return _( "Right" );
         }
 
         break;
 
     case FDC_V_ALIGN:
-        switch ( field.GetVertJustify() )
+        switch ( field.GetVerticalAlignment() )
         {
-        case GR_TEXT_VJUSTIFY_TOP:    return _( "Top" );
-        case GR_TEXT_VJUSTIFY_CENTER: return _( "Center" );
-        case GR_TEXT_VJUSTIFY_BOTTOM: return _( "Bottom" );
+        case TEXT_ATTRIBUTES::V_TOP: return _( "Top" );
+        case TEXT_ATTRIBUTES::V_CENTER: return _( "Center" );
+        case TEXT_ATTRIBUTES::V_BOTTOM: return _( "Bottom" );
         }
 
         break;
@@ -497,22 +498,22 @@ void FIELDS_GRID_TABLE<T>::SetValue( int aRow, int aCol, const wxString &aValue 
 
     case FDC_H_ALIGN:
         if( aValue == _( "Left" ) )
-            field.SetHorizJustify( GR_TEXT_HJUSTIFY_LEFT );
+            field.Align( TEXT_ATTRIBUTES::H_LEFT );
         else if( aValue == _( "Center" ) )
-            field.SetHorizJustify( GR_TEXT_HJUSTIFY_CENTER );
+            field.Align( TEXT_ATTRIBUTES::H_CENTER );
         else if( aValue == _( "Right" ) )
-            field.SetHorizJustify( GR_TEXT_HJUSTIFY_RIGHT );
+            field.Align( TEXT_ATTRIBUTES::H_RIGHT );
         else
             wxFAIL_MSG( wxT( "unknown horizontal alignment: " ) + aValue );
         break;
 
     case FDC_V_ALIGN:
         if( aValue == _( "Top" ) )
-            field.SetVertJustify( GR_TEXT_VJUSTIFY_TOP );
+            field.Align( TEXT_ATTRIBUTES::V_TOP );
         else if( aValue == _( "Center" ) )
-            field.SetVertJustify( GR_TEXT_VJUSTIFY_CENTER );
+            field.Align( TEXT_ATTRIBUTES::V_CENTER );
         else if( aValue == _( "Bottom" ) )
-            field.SetVertJustify( GR_TEXT_VJUSTIFY_BOTTOM );
+            field.Align( TEXT_ATTRIBUTES::V_BOTTOM );
         else
             wxFAIL_MSG( wxT( "unknown vertical alignment: " ) + aValue);
         break;

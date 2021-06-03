@@ -73,12 +73,12 @@ target_link_libraries( qa_pcbnew
     gal
     common
     gal
+    scripting
     qa_utils
     dxflib_qcad
     tinyspline_lib
     nanosvg
     idf3
-    unit_test_utils
     markdown_lib
     ${PCBNEW_IO_LIBRARIES}
     ${wxWidgets_LIBRARIES}

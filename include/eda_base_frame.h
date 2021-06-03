@@ -35,8 +35,6 @@
 #include <vector>
 
 #include <wx/socket.h>
-#include <wx/log.h>
-#include <wx/wxhtml.h>
 #include <wx/laywin.h>
 #include <wx/aui/aui.h>
 #include <wx/docview.h>
@@ -106,6 +104,8 @@ public:
                     const wxPoint& aPos, const wxSize& aSize, long aStyle,
                     const wxString& aFrameName, KIWAY* aKiway );
 
+    EDA_BASE_FRAME( FRAME_T aFrameType, KIWAY* aKiway );
+
     ~EDA_BASE_FRAME();
 
     /**
@@ -144,7 +144,7 @@ public:
      * function to capture and filter these keys when they are used as hotkeys, and skip it if
      * the key is not used as hotkey (otherwise the key events will be not sent to menus).
      */
-    virtual void OnCharHook( wxKeyEvent& event );
+    virtual void OnCharHook( wxKeyEvent& aKeyEvent );
 
     /**
      * The #TOOL_DISPATCHER needs these to work around some issues in wxWidgets where the menu
@@ -190,6 +190,7 @@ public:
     int GetAutoSaveInterval() const { return m_autoSaveInterval; }
 
     bool IsType( FRAME_T aType ) const { return m_ident == aType; }
+    FRAME_T GetFrameType() const { return m_ident; }
 
     /**
      * Return a #SEARCH_STACK pertaining to entire program.
@@ -201,7 +202,11 @@ public:
     virtual wxString help_name();
 
     void OnKicadAbout( wxCommandEvent& event );
-    void OnPreferences( wxCommandEvent& event );
+
+    /**
+     * Displays the preferences and settings of all opened editors paged dialog
+     */
+    void OnPreferences();
 
     void PrintMsg( const wxString& text );
 
@@ -497,7 +502,7 @@ public:
      *
      * @return true if the contents of the frame have not been saved
      */
-    virtual bool IsContentModified();
+    virtual bool IsContentModified() const;
 
     /**
      * Get the undecorated window size that can be used for restoring the window size.
@@ -644,6 +649,11 @@ private:
      * call #SaveSettings() anywhere, except in this one function found only in this class.
      */
     void windowClosing( wxCloseEvent& event );
+
+    /**
+     * Collect common initialization functions used in all CTORs
+     */
+    void commonInit( FRAME_T aFrameType );
 
     wxWindow* findQuasiModalDialog();
 

@@ -42,6 +42,7 @@
 #include <wx_filename.h>
 
 #include <wx/dir.h>
+#include <wx/log.h>
 #include <wx/filename.h>
 #include <wx/wfstream.h>
 #include <boost/ptr_container/ptr_map.hpp>
@@ -462,7 +463,7 @@ FOOTPRINT* GPCB_FPL_CACHE::parseFOOTPRINT( LINE_READER* aLineReader )
 
             FP_SHAPE* shape = new FP_SHAPE( footprint.get() );
             shape->SetLayer( F_SilkS );
-            shape->SetShape( S_SEGMENT );
+            shape->SetShape( PCB_SHAPE_TYPE::SEGMENT );
             shape->SetStart0( wxPoint( parseInt( parameters[2], conv_unit ),
                                        parseInt( parameters[3], conv_unit ) ) );
             shape->SetEnd0( wxPoint( parseInt( parameters[4], conv_unit ),
@@ -486,7 +487,7 @@ FOOTPRINT* GPCB_FPL_CACHE::parseFOOTPRINT( LINE_READER* aLineReader )
             // Pcbnew does know ellipse so we must have Width = Height
             FP_SHAPE* shape = new FP_SHAPE( footprint.get() );
             shape->SetLayer( F_SilkS );
-            shape->SetShape( S_ARC );
+            shape->SetShape( PCB_SHAPE_TYPE::ARC );
             footprint->Add( shape );
 
             // for and arc: ibuf[3] = ibuf[4]. Pcbnew does not know ellipses
@@ -506,7 +507,7 @@ FOOTPRINT* GPCB_FPL_CACHE::parseFOOTPRINT( LINE_READER* aLineReader )
 
             // Geda PCB does not support circles.
             if( sweep_angle == -3600.0 )
-                shape->SetShape( S_CIRCLE );
+                shape->SetShape( PCB_SHAPE_TYPE::CIRCLE );
 
             // Angle value is clockwise in gpcb and Pcbnew.
             shape->SetAngle( sweep_angle );
@@ -540,8 +541,8 @@ FOOTPRINT* GPCB_FPL_CACHE::parseFOOTPRINT( LINE_READER* aLineReader )
             static const LSET pad_front( 3, F_Cu, F_Mask, F_Paste );
             static const LSET pad_back(  3, B_Cu, B_Mask, B_Paste );
 
-            pad->SetShape( PAD_SHAPE_RECT );
-            pad->SetAttribute( PAD_ATTRIB_SMD );
+            pad->SetShape( PAD_SHAPE::RECT );
+            pad->SetAttribute( PAD_ATTRIB::SMD );
             pad->SetLayerSet( pad_front );
 
             if( testFlags( parameters[paramCnt-2], 0x0080, wxT( "onsolder" ) ) )
@@ -599,9 +600,9 @@ FOOTPRINT* GPCB_FPL_CACHE::parseFOOTPRINT( LINE_READER* aLineReader )
             if( !testFlags( parameters[paramCnt-2], 0x0100, wxT( "square" ) ) )
             {
                 if( pad->GetSize().x == pad->GetSize().y )
-                    pad->SetShape( PAD_SHAPE_CIRCLE );
+                    pad->SetShape( PAD_SHAPE::CIRCLE );
                 else
-                    pad->SetShape( PAD_SHAPE_OVAL );
+                    pad->SetShape( PAD_SHAPE::OVAL );
             }
 
             footprint->Add( pad );
@@ -625,14 +626,14 @@ FOOTPRINT* GPCB_FPL_CACHE::parseFOOTPRINT( LINE_READER* aLineReader )
 
             PAD* pad = new PAD( footprint.get() );
 
-            pad->SetShape( PAD_SHAPE_CIRCLE );
+            pad->SetShape( PAD_SHAPE::CIRCLE );
 
             static const LSET pad_set = LSET::AllCuMask() | LSET( 3, F_SilkS, F_Mask, B_Mask );
 
             pad->SetLayerSet( pad_set );
 
             if( testFlags( parameters[paramCnt-2], 0x0100, wxT( "square" ) ) )
-                pad->SetShape( PAD_SHAPE_RECT );
+                pad->SetShape( PAD_SHAPE::RECT );
 
             // Set the pad name:
             // Pcbnew pad name is used for electrical connection calculations.
@@ -679,8 +680,8 @@ FOOTPRINT* GPCB_FPL_CACHE::parseFOOTPRINT( LINE_READER* aLineReader )
             padPos += footprint->GetPosition();
             pad->SetPosition( padPos );
 
-            if( pad->GetShape() == PAD_SHAPE_CIRCLE  &&  pad->GetSize().x != pad->GetSize().y )
-                pad->SetShape( PAD_SHAPE_OVAL );
+            if( pad->GetShape() == PAD_SHAPE::CIRCLE  &&  pad->GetSize().x != pad->GetSize().y )
+                pad->SetShape( PAD_SHAPE::OVAL );
 
             footprint->Add( pad );
             continue;
@@ -818,20 +819,20 @@ bool GPCB_FPL_CACHE::testFlags( const wxString& aFlag, long aMask, const wxChar*
 
 
 GPCB_PLUGIN::GPCB_PLUGIN() :
-    m_cache( 0 ),
+    m_cache( nullptr ),
     m_ctl( 0 )
 {
-    m_reader = NULL;
-    init( 0 );
+    m_reader = nullptr;
+    init( nullptr );
 }
 
 
 GPCB_PLUGIN::GPCB_PLUGIN( int aControlFlags ) :
-    m_cache( 0 ),
+    m_cache( nullptr ),
     m_ctl( aControlFlags )
 {
-    m_reader = NULL;
-    init( 0 );
+    m_reader = nullptr;
+    init( nullptr );
 }
 
 
@@ -915,7 +916,7 @@ const FOOTPRINT* GPCB_PLUGIN::getFootprint( const wxString& aLibraryPath,
     FOOTPRINT_MAP::const_iterator it = mods.find( TO_UTF8( aFootprintName ) );
 
     if( it == mods.end() )
-        return NULL;
+        return nullptr;
 
     return it->second->GetFootprint();
 }
@@ -1036,7 +1037,7 @@ bool GPCB_PLUGIN::FootprintLibDelete( const wxString& aLibraryPath, const PROPER
     if( m_cache && m_cache->GetPath() == aLibraryPath )
     {
         delete m_cache;
-        m_cache = NULL;
+        m_cache = nullptr;
     }
 
     return true;
@@ -1053,7 +1054,7 @@ bool GPCB_PLUGIN::IsFootprintLibWritable( const wxString& aLibraryPath )
 {
     LOCALE_IO   toggle;
 
-    init( NULL );
+    init( nullptr );
 
     validateCache( aLibraryPath );
 

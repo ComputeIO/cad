@@ -55,9 +55,7 @@ void PCB_EDIT_FRAME::InstallPreferences( PAGED_DIALOG* aParent,
     book->AddSubPage( new PANEL_DISPLAY_OPTIONS( this, aParent ), _( "Display Options" ) );
     book->AddSubPage( new PANEL_EDIT_OPTIONS( this, aParent ), _( "Editing Options" ) );
     book->AddSubPage( new PANEL_PCBNEW_COLOR_SETTINGS( this, book ), _( "Colors" ) );
-#if defined(KICAD_SCRIPTING) && defined(KICAD_SCRIPTING_ACTION_MENU)
     book->AddSubPage( new PANEL_PCBNEW_ACTION_PLUGINS( this, aParent ), _( "Action Plugins" ) );
-#endif
     book->AddSubPage( new PANEL_PCBNEW_DISPLAY_ORIGIN( this, aParent ), _( "Origins & Axes" ) );
 
     aHotkeysPanel->AddHotKeys( GetToolManager() );
@@ -69,15 +67,18 @@ bool PCB_EDIT_FRAME::LoadProjectSettings()
     PROJECT_FILE&           project       = Prj().GetProjectFile();
     PROJECT_LOCAL_SETTINGS& localSettings = Prj().GetLocalSettings();
 
-    BASE_SCREEN::m_PageLayoutDescrFileName = project.m_BoardPageLayoutDescrFile;
+    BASE_SCREEN::m_DrawingSheetFileName = project.m_BoardDrawingSheetFile;
 
     // Load the drawing sheet description file, from the filename stored in
-    // BASE_SCREEN::m_PageLayoutDescrFileName, read in config project file
+    // BASE_SCREEN::m_DrawingSheetFileName, read in config project file
     // If empty, or not existing, the default descr is loaded
-    wxString filename = DS_DATA_MODEL::MakeFullFileName( BASE_SCREEN::m_PageLayoutDescrFileName,
+    wxString filename = DS_DATA_MODEL::MakeFullFileName( BASE_SCREEN::m_DrawingSheetFileName,
                                                          Prj().GetProjectPath() );
 
-    DS_DATA_MODEL::GetTheInstance().LoadDrawingSheet( filename );
+    if( !DS_DATA_MODEL::GetTheInstance().LoadDrawingSheet( filename ) )
+    {
+        ShowInfoBarError( _( "Error loading drawing sheet" ), true );
+    }
 
     // Load render settings that aren't stored in PCB_DISPLAY_OPTIONS
 
@@ -163,7 +164,7 @@ void PCB_EDIT_FRAME::SaveProjectSettings()
     PROJECT_LOCAL_SETTINGS& localSettings = Prj().GetLocalSettings();
 
     // TODO: Can this be pulled out of BASE_SCREEN?
-    project.m_BoardPageLayoutDescrFile = BASE_SCREEN::m_PageLayoutDescrFileName;
+    project.m_BoardDrawingSheetFile = BASE_SCREEN::m_DrawingSheetFileName;
 
     project.m_LayerPresets = m_appearancePanel->GetUserLayerPresets();
 
@@ -237,6 +238,6 @@ void PCB_EDIT_FRAME::SaveProjectSettings()
      * The explicit save action in PCB_EDIT_FRAME::SavePcbFile will call SaveProject directly,
      * so if the user does choose to save the board, the project file will get created then.
      */
-    if( !Prj().IsNullProject() && ( fn.Exists() || GetBoard()->m_LegacyDesignSettingsLoaded ) )
+    if( !Prj().IsNullProject() && fn.Exists() )
         GetSettingsManager()->SaveProject();
 }

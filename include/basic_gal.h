@@ -61,14 +61,16 @@ class BASIC_GAL: public KIGFX::GAL
 {
 public:
     BASIC_GAL( KIGFX::GAL_DISPLAY_OPTIONS& aDisplayOptions ) :
-        GAL( aDisplayOptions )
+        GAL( aDisplayOptions ),
+        m_DC( nullptr ),
+        m_Color( RED ),
+        m_transform(),
+        m_clipBox(),
+        m_isClipped( false ),
+        m_callback( nullptr ),
+        m_callbackData( nullptr ),
+        m_plotter( nullptr )
     {
-        m_DC = nullptr;
-        m_Color = RED;
-        m_plotter = nullptr;
-        m_callback = nullptr;
-        m_callbackData = nullptr;
-        m_isClipped = false;
     }
 
     void SetPlotter( PLOTTER* aPlotter )
@@ -114,6 +116,8 @@ public:
 
     virtual void DrawPolyline( const VECTOR2D aPointList[], int aListSize ) override;
 
+    virtual void DrawPolyline( const SHAPE_LINE_CHAIN& aLineChain ) override;
+
     /**
      * Draw a polygon representing an outline font glyph.
      *
@@ -158,7 +162,7 @@ private:
 
 public:
     wxDC* m_DC;
-    COLOR4D m_Color;
+    KIGFX::COLOR4D m_Color;
 
 private:
     TRANSFORM_PRM m_transform;

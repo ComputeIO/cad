@@ -17,7 +17,7 @@
  * with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <unit_test_utils/unit_test_utils.h>
+#include <qa_utils/wx_utils/unit_test_utils.h>
 #include "eeschema_test_utils.h"
 
 #include <connection_graph.h>
@@ -287,6 +287,12 @@ BOOST_AUTO_TEST_CASE( PrefixBusAlias )
 BOOST_AUTO_TEST_CASE( GroupBusMatching )
 {
     doNetlistTest( "group_bus_matching" );
+}
+
+
+BOOST_AUTO_TEST_CASE( TopLevelHierPins )
+{
+    doNetlistTest( "top_level_hier_pins" );
 }
 
 

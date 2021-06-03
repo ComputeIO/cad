@@ -26,6 +26,7 @@
 #include <wx/textctrl.h>
 #include <wx/valtext.h>
 #include <wx/radiobut.h>
+#include <wx/scrolwin.h>
 #include <wx/panel.h>
 
 ///////////////////////////////////////////////////////////////////////////
@@ -57,6 +58,9 @@ class PANEL_SETUP_CONSTRAINTS_BASE : public wxPanel
 		wxRadioButton* m_rbOutlinePolygonFastest;
 		wxStaticBitmap* m_filletBitmap;
 		wxCheckBox* m_allowExternalFilletsOpt;
+		wxStaticLine* m_staticline15;
+		wxStaticText* m_staticText33;
+		wxCheckBox* m_useHeightForLengthCalcs;
 		wxStaticText* m_staticText23;
 		wxStaticBitmap* m_bitmapClearance;
 		wxStaticText* m_clearanceTitle;
@@ -122,6 +126,7 @@ class PANEL_SETUP_CONSTRAINTS_BASE : public wxPanel
 
 
 	public:
+		wxScrolledWindow* m_scrolledWindow;
 
 		PANEL_SETUP_CONSTRAINTS_BASE( wxWindow* parent, wxWindowID id = wxID_ANY, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( -1,-1 ), long style = wxTAB_TRAVERSAL, const wxString& name = wxEmptyString );
 		~PANEL_SETUP_CONSTRAINTS_BASE();

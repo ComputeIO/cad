@@ -198,7 +198,7 @@ int GERBER_WRITER::createDrillFile( wxString& aFullFilename, bool aIsNpth,
             last_item_is_via = false;
             const PAD* pad = dyn_cast<const PAD*>( hole_descr.m_ItemParent );
 
-            if( pad->GetProperty() == PAD_PROP_CASTELLATED )
+            if( pad->GetProperty() == PAD_PROP::CASTELLATED )
                 gbr_metadata.SetApertureAttrib( GBR_APERTURE_METADATA::GBR_APERTURE_ATTRIB_CASTELLATEDDRILL );
             else
             {
@@ -291,7 +291,7 @@ void GERBER_WRITER::SetFormat( int aRightDigits )
 
 
 const wxString GERBER_WRITER::getDrillFileName( DRILL_LAYER_PAIR aPair, bool aNPTH,
-                                         bool aMerge_PTH_NPTH ) const
+                                                bool aMerge_PTH_NPTH ) const
 {
     // Gerber files extension is always .gbr.
     // Therefore, to mark drill files, add "-drl" to the filename.

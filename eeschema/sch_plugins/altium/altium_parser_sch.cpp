@@ -27,6 +27,8 @@
 #include <convert_to_biu.h>
 #include <ki_exception.h>
 
+#include <wx/log.h>
+
 #include "plugins/altium/altium_parser.h"
 #include "sch_plugins/altium/altium_parser_sch.h"
 
@@ -74,6 +76,20 @@ T PropertiesReadEnum( const std::map<wxString, wxString>& aProperties, const wxS
         return aDefault;
     else
         return static_cast<T>( value );
+}
+
+
+ASCH_STORAGE_FILE::ASCH_STORAGE_FILE( ALTIUM_PARSER& aReader )
+{
+    aReader.Skip( 5 );
+    filename = aReader.ReadWxString();
+    uint32_t dataSize = aReader.Read<uint32_t>();
+    data = aReader.ReadVector( dataSize );
+
+    if( aReader.HasParsingError() )
+    {
+        THROW_IO_ERROR( "Storage stream was not parsed correctly" );
+    }
 }
 
 
@@ -540,6 +556,26 @@ ASCH_JUNCTION::ASCH_JUNCTION( const std::map<wxString, wxString>& aProperties )
     location = wxPoint( PropertiesReadKiCadUnitFrac( aProperties, "LOCATION.X" ),
             -PropertiesReadKiCadUnitFrac( aProperties, "LOCATION.Y" ) );
 }
+
+
+ASCH_IMAGE::ASCH_IMAGE( const std::map<wxString, wxString>& aProperties )
+{
+    wxASSERT( PropertiesReadRecord( aProperties ) == ALTIUM_SCH_RECORD::IMAGE );
+
+    indexinsheet = ALTIUM_PARSER::PropertiesReadInt( aProperties, "INDEXINSHEET", 0 );
+    ownerpartid = ALTIUM_PARSER::PropertiesReadInt( aProperties, "OWNERPARTID", -1 );
+
+    filename = ALTIUM_PARSER::PropertiesReadString( aProperties, "FILENAME", "" );
+
+    location = wxPoint( PropertiesReadKiCadUnitFrac( aProperties, "LOCATION.X" ),
+                        -PropertiesReadKiCadUnitFrac( aProperties, "LOCATION.Y" ) );
+    corner = wxPoint( PropertiesReadKiCadUnitFrac( aProperties, "CORNER.X" ),
+                      -PropertiesReadKiCadUnitFrac( aProperties, "CORNER.Y" ) );
+
+    embedimage = ALTIUM_PARSER::PropertiesReadBool( aProperties, "EMBEDIMAGE", false );
+    keepaspect = ALTIUM_PARSER::PropertiesReadBool( aProperties, "KEEPASPECT", false );
+}
+
 
 ASCH_SHEET_FONT::ASCH_SHEET_FONT( const std::map<wxString, wxString>& aProperties, int aId )
 {

@@ -53,6 +53,7 @@
 #include <settings/settings_manager.h>
 #include <advanced_config.h>
 #include <sim/sim_plot_frame.h>
+#include <sim/spice_settings.h>
 #include <tool/action_manager.h>
 #include <tool/action_toolbar.h>
 #include <tool/common_control.h>
@@ -77,6 +78,9 @@
 #include <widgets/infobar.h>
 #include <wildcards_and_files_ext.h>
 #include <wx/cmdline.h>
+#include <wx/app.h>
+#include <wx/filedlg.h>
+
 #include <gal/graphics_abstraction_layer.h>
 #include <drawing_sheet/ds_proxy_view_item.h>
 
@@ -241,7 +245,6 @@ SCH_EDIT_FRAME::SCH_EDIT_FRAME( KIWAY* aKiway, wxWindow* aParent ) :
 
     // After schematic has been linked to project, SCHEMATIC_SETTINGS works
     m_defaults = &m_schematic->Settings();
-    LoadProjectSettings();
 
     setupTools();
     setupUIConditions();
@@ -275,6 +278,8 @@ SCH_EDIT_FRAME::SCH_EDIT_FRAME( KIWAY* aKiway, wxWindow* aParent ) :
     resolveCanvasType();
     SwitchCanvas( m_canvasType );
 
+    LoadProjectSettings();
+
     initScreenZoom();
 
     // This is used temporarily to fix a client size issue on GTK that causes zoom to fit
@@ -306,6 +311,9 @@ SCH_EDIT_FRAME::SCH_EDIT_FRAME( KIWAY* aKiway, wxWindow* aParent ) :
 
 SCH_EDIT_FRAME::~SCH_EDIT_FRAME()
 {
+    // Ensure m_canvasType is up to date, to save it in config
+    m_canvasType = GetCanvas()->GetBackend();
+
     // Shutdown all running tools
     if( m_toolManager )
     {
@@ -676,6 +684,9 @@ void SCH_EDIT_FRAME::doCloseWindow()
     if( FindHierarchyNavigator() )
         FindHierarchyNavigator()->Close( true );
 
+    if( Kiway().Player( FRAME_SIMULATOR, false ) )
+        Prj().GetProjectFile().m_SchematicSettings->m_NgspiceSimulatorSettings->SaveToFile();
+
     SCH_SCREENS screens( Schematic().Root() );
     wxFileName fn;
 
@@ -771,8 +782,7 @@ void SCH_EDIT_FRAME::OnModify()
     if( !GetScreen() )
         return;
 
-    GetScreen()->SetModify();
-    GetScreen()->SetSave();
+    GetScreen()->SetContentModified();
 
     if( ADVANCED_CFG::GetCfg().m_RealTimeConnectivity && CONNECTION_GRAPH::m_allowRealTime )
         RecalculateConnections( NO_CLEANUP );
@@ -1070,6 +1080,11 @@ void SCH_EDIT_FRAME::PrintPage( const RENDER_SETTINGS* aSettings )
 {
     wxString fileName = Prj().AbsolutePath( GetScreen()->GetFileName() );
 
+    const wxBrush& brush =
+            wxBrush( GetColorSettings()->GetColor( LAYER_SCHEMATIC_BACKGROUND ).ToColour() );
+    aSettings->GetPrintDC()->SetBackground( brush );
+    aSettings->GetPrintDC()->Clear();
+
     aSettings->GetPrintDC()->SetLogicalFunction( wxCOPY );
     GetScreen()->Print( aSettings );
     PrintDrawingSheet( aSettings, GetScreen(), IU_PER_MILS, fileName );
@@ -1083,13 +1098,7 @@ bool SCH_EDIT_FRAME::isAutoSaveRequired() const
 
     if( Schematic().IsValid() )
     {
-        SCH_SCREENS screenList( Schematic().Root() );
-
-        for( SCH_SCREEN* screen = screenList.GetFirst(); screen; screen = screenList.GetNext() )
-        {
-            if( screen->IsSave() )
-                return true;
-        }
+        return IsContentModified();
     }
 
     return false;
@@ -1208,7 +1217,7 @@ void SCH_EDIT_FRAME::AddItemToScreenAndUndoList( SCH_SCREEN* aScreen, SCH_ITEM* 
 
     aItem->ClearFlags( IS_NEW );
 
-    aScreen->SetModify();
+    aScreen->SetContentModified();
     UpdateItem( aItem );
 
     if( !aItem->IsMoving() && aItem->IsConnectable() )
@@ -1276,8 +1285,10 @@ void SCH_EDIT_FRAME::initScreenZoom()
 void SCH_EDIT_FRAME::RecalculateConnections( SCH_CLEANUP_FLAGS aCleanupFlags )
 {
     SCHEMATIC_SETTINGS& settings = Schematic().Settings();
-    SCH_SHEET_LIST list = Schematic().GetSheets();
+    SCH_SHEET_LIST      list = Schematic().GetSheets();
+#ifdef PROFILE
     PROF_COUNTER   timer;
+#endif
 
     // Ensure schematic graph is accurate
     if( aCleanupFlags == LOCAL_CLEANUP )
@@ -1290,8 +1301,10 @@ void SCH_EDIT_FRAME::RecalculateConnections( SCH_CLEANUP_FLAGS aCleanupFlags )
             SchematicCleanUp( sheet.LastScreen() );
     }
 
+#ifdef PROFILE
     timer.Stop();
     wxLogTrace( "CONN_PROFILE", "SchematicCleanUp() %0.4f ms", timer.msecs() );
+#endif
 
     if( settings.m_IntersheetRefsShow )
         RecomputeIntersheetRefs();
@@ -1490,12 +1503,12 @@ void SCH_EDIT_FRAME::FixupJunctions()
     // Save the current sheet, to retrieve it later
     SCH_SHEET_PATH oldsheetpath = GetCurrentSheet();
 
-    bool modified = false;
-
     SCH_SHEET_LIST sheetList = Schematic().GetSheets();
 
     for( const SCH_SHEET_PATH& sheet : sheetList )
     {
+        size_t num_undos = m_undoList.m_CommandsList.size();
+
         // We require a set here to avoid adding multiple junctions to the same spot
         std::set<wxPoint> junctions;
 
@@ -1504,29 +1517,18 @@ void SCH_EDIT_FRAME::FixupJunctions()
 
         SCH_SCREEN* screen = GetCurrentSheet().LastScreen();
 
-        for( auto aItem : screen->Items().OfType( SCH_COMPONENT_T ) )
-        {
-            auto cmp = static_cast<SCH_COMPONENT*>( aItem );
+        EE_SELECTION allItems;
 
-            for( const SCH_PIN* pin : cmp->GetPins( &sheet ) )
-            {
-                auto pos = pin->GetPosition();
+        for( auto item : screen->Items() )
+            allItems.Add( item );
 
-                // Test if a _new_ junction is needed, and add it if missing
-                if( screen->IsJunctionNeeded( pos, true ) )
-                    junctions.insert( pos );
-            }
-        }
+        m_toolManager->RunAction( EE_ACTIONS::addNeededJunctions, true, &allItems );
 
-        for( const wxPoint& pos : junctions )
-            AddJunction( screen, pos, false, false );
-
-        if( junctions.size() )
-            modified = true;
+        // Check if we modified anything during this routine
+        // Needs to happen for every sheet to set the proper modified flag
+        if( m_undoList.m_CommandsList.size() > num_undos )
+            OnModify();
     }
-
-    if( modified )
-        OnModify();
 
     // Reselect the initial sheet:
     SetCurrentSheet( oldsheetpath );
@@ -1535,7 +1537,7 @@ void SCH_EDIT_FRAME::FixupJunctions()
 }
 
 
-bool SCH_EDIT_FRAME::IsContentModified()
+bool SCH_EDIT_FRAME::IsContentModified() const
 {
     return Schematic().GetSheets().IsModified();
 }
@@ -1603,7 +1605,7 @@ void SCH_EDIT_FRAME::onSize( wxSizeEvent& aEvent )
 }
 
 
-void SCH_EDIT_FRAME::UpdateSymbolFromEditor( const LIB_PART& aSymbol )
+void SCH_EDIT_FRAME::SaveSymbolToSchematic( const LIB_PART& aSymbol )
 {
     wxString msg;
     bool appendToUndo = false;
@@ -1642,7 +1644,12 @@ void SCH_EDIT_FRAME::UpdateSymbolFromEditor( const LIB_PART& aSymbol )
         }
 
         symbol->SetLibSymbol( aSymbol.Flatten().release() );
-        symbol->UpdateFields( true, true );
+        symbol->UpdateFields( &GetCurrentSheet(),
+                              true, /* update style */
+                              true, /* update ref */
+                              true, /* update other fields */
+                              false, /* reset ref */
+                              false /* reset other fields */ );
 
         currentScreen->Append( symbol );
         selectionTool->SelectHighlightItem( symbol );

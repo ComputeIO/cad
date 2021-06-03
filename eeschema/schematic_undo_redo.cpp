@@ -351,9 +351,6 @@ void SCH_EDIT_FRAME::PutDataInPreviousState( PICKED_ITEMS_LIST* aList )
         }
     }
 
-    EE_SELECTION_TOOL* selTool = m_toolManager->GetTool<EE_SELECTION_TOOL>();
-    selTool->RebuildSelection();
-
     // Bitmaps are cached in Opengl: clear the cache, because
     // the cache data can be invalid
     GetCanvas()->GetView()->RecacheAllItems();
@@ -380,8 +377,11 @@ void SCH_EDIT_FRAME::RollbackSchematicFromUndo()
         delete undo;
 
         SetSheetNumberAndCount();
+        UpdateHierarchyNavigator();
 
         TestDanglingEnds();
+
+        m_toolManager->GetTool<EE_SELECTION_TOOL>()->RebuildSelection();
     }
 
     SyncView();

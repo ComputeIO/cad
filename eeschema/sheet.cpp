@@ -2,7 +2,7 @@
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
  * Copyright (C) 2015 Jean-Pierre Charras, jp.charras at wanadoo.fr
- * Copyright (C) 2004-2020 KiCad Developers, see change_log.txt for contributors.
+ * Copyright (C) 2004-2021 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -28,7 +28,6 @@
 #include <project.h>
 #include <wildcards_and_files_ext.h>
 #include <tool/tool_manager.h>
-#include <wx/clipbrd.h>
 #include <sch_edit_frame.h>
 #include <sch_plugins/legacy/sch_legacy_plugin.h>
 #include <sch_sheet.h>
@@ -39,6 +38,10 @@
 #include <symbol_lib_table.h>
 #include <dialogs/dialog_sheet_properties.h>
 #include <tool/actions.h>
+
+#include <wx/clipbrd.h>
+#include <wx/dcmemory.h>
+#include <wx/log.h>
 
 
 bool SCH_EDIT_FRAME::CheckSheetForRecursion( SCH_SHEET* aSheet, SCH_SHEET_PATH* aHierarchy )
@@ -93,7 +96,7 @@ bool SCH_EDIT_FRAME::checkForNoFullyDefinedLibIds( SCH_SHEET* aSheet )
 void SCH_EDIT_FRAME::InitSheet( SCH_SHEET* aSheet, const wxString& aNewFilename )
 {
     aSheet->SetScreen( new SCH_SCREEN( &Schematic() ) );
-    aSheet->GetScreen()->SetModify();
+    aSheet->GetScreen()->SetContentModified();
     aSheet->GetScreen()->SetFileName( aNewFilename );
 }
 
@@ -108,7 +111,6 @@ bool SCH_EDIT_FRAME::LoadSheetFromFile( SCH_SHEET* aSheet, SCH_SHEET_PATH* aHier
     wxFileName  tmp;
     wxFileName  currentSheetFileName;
     bool        libTableChanged = false;
-    SCH_SCREEN* currentScreen = aHierarchy->LastScreen();
     SCH_IO_MGR::SCH_FILE_T schFileType = SCH_IO_MGR::GuessPluginTypeFromSchPath( aFileName );
     SCH_PLUGIN::SCH_PLUGIN_RELEASER pi( SCH_IO_MGR::FindPlugin( schFileType ) );
     std::unique_ptr< SCH_SHEET> newSheet = std::make_unique<SCH_SHEET>( &Schematic() );
@@ -204,11 +206,11 @@ bool SCH_EDIT_FRAME::LoadSheetFromFile( SCH_SHEET* aSheet, SCH_SHEET_PATH* aHier
     wxMessageDialog::ButtonLabel cancelButtonLabel( _( "Cancel Load" ) );
 
     if( fileName.GetPathWithSep() == Prj().GetProjectPath()
-          && !prjScreens.HasSchematic( fullFilename ) )
+      && !prjScreens.HasSchematic( fullFilename ) )
     {
         // A schematic in the current project path that isn't part of the current project.
         // It's possible the user copied this schematic from another project so the library
-        // links may not be avaible.  Even this is check is no guarantee that all symbol
+        // links may not be available.  Even this is check is no guarantee that all symbol
         // library links are valid but it's better than nothing.
         for( const auto& name : names )
         {
@@ -280,7 +282,7 @@ bool SCH_EDIT_FRAME::LoadSheetFromFile( SCH_SHEET* aSheet, SCH_SHEET_PATH* aHier
                 {
                     msg.Printf( _( "An error occurred loading the symbol library table \"%s\"." ),
                                 symLibTableFn.GetFullPath() );
-                    DisplayErrorMessage( NULL, msg, ioe.What() );
+                    DisplayErrorMessage( nullptr, msg, ioe.What() );
                     return false;
                 }
             }
@@ -433,16 +435,6 @@ bool SCH_EDIT_FRAME::LoadSheetFromFile( SCH_SHEET* aSheet, SCH_SHEET_PATH* aHier
     SCH_SCREEN* newScreen = newSheet->GetScreen();
     wxCHECK_MSG( newScreen, false, "No screen defined for sheet." );
 
-    // Set all sheets loaded into the correct sheet file paths.
-
-    for( SCH_ITEM* aItem : currentScreen->Items().OfType( SCH_SHEET_T ) )
-    {
-        SCH_SHEET* sheet = static_cast<SCH_SHEET*>( aItem );
-
-        if( wxFileName( sheet->GetFileName() ).IsRelative( wxPATH_UNIX ) )
-            sheet->SetFileName( topLevelSheetPath + sheet->GetFileName() );
-    }
-
     if( libTableChanged )
     {
         Prj().SchSymbolLibTable()->Save( Prj().GetProjectPath() +
@@ -465,7 +457,7 @@ bool SCH_EDIT_FRAME::LoadSheetFromFile( SCH_SHEET* aSheet, SCH_SHEET_PATH* aHier
 bool SCH_EDIT_FRAME::EditSheetProperties( SCH_SHEET* aSheet, SCH_SHEET_PATH* aHierarchy,
                                           bool* aClearAnnotationNewItems )
 {
-    if( aSheet == NULL || aHierarchy == NULL )
+    if( aSheet == nullptr || aHierarchy == nullptr )
         return false;
 
     // Get the new texts
@@ -525,6 +517,9 @@ void SCH_EDIT_FRAME::DrawCurrentSheetToClipboard()
     dc.SetUserScale( scale, scale );
 
     GetRenderSettings()->SetPrintDC( &dc );
+    // Init the color of the layer actually used to print the drawing sheet:
+    GetRenderSettings()->SetLayerColor( LAYER_DRAWINGSHEET,
+                GetRenderSettings()->GetLayerColor( LAYER_SCHEMATIC_DRAWINGSHEET ) );
 
     PrintPage( GetRenderSettings() );
 
@@ -536,6 +531,7 @@ void SCH_EDIT_FRAME::DrawCurrentSheetToClipboard()
             // This data objects are held by the clipboard, so do not delete them in the app.
             wxBitmapDataObject* clipbrd_data = new wxBitmapDataObject( image );
             wxTheClipboard->SetData( clipbrd_data );
+            wxTheClipboard->Flush(); // Allow data to be available after closing KiCad
             wxTheClipboard->Close();
         }
     }
@@ -572,7 +568,7 @@ bool SCH_EDIT_FRAME::AllowCaseSensitiveFileNameClashes( const wxString& aSchemat
                                  wxYES_NO | wxNO_DEFAULT | wxICON_QUESTION );
         dlg.ShowCheckBox( _( "Do not show this message again." ) );
         dlg.SetYesNoLabels( wxMessageDialog::ButtonLabel( _( "Create New Sheet" ) ),
-                                wxMessageDialog::ButtonLabel( _( "Discard New Sheet" ) ) );
+                            wxMessageDialog::ButtonLabel( _( "Discard New Sheet" ) ) );
 
         if( dlg.ShowModal() == wxID_NO )
             return false;

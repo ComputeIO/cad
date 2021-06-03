@@ -76,7 +76,7 @@ size_t hash_fp_item( const EDA_ITEM* aItem, int aFlags )
     {
         const PAD* pad = static_cast<const PAD*>( aItem );
 
-        ret = hash<int>{}( pad->GetShape() << 16 );
+        ret = hash<int>{}( static_cast<int>( pad->GetShape() ) << 16 );
         hash_combine( ret, pad->GetDrillShape() << 18 );
         hash_combine( ret, pad->GetSize().x << 8 );
         hash_combine( ret, pad->GetSize().y << 9 );
@@ -120,8 +120,8 @@ size_t hash_fp_item( const EDA_ITEM* aItem, int aFlags )
         hash_combine( ret, text->IsMirrored() );
         hash_combine( ret, text->GetTextWidth() );
         hash_combine( ret, text->GetTextHeight() );
-        hash_combine( ret, text->GetHorizJustify() );
-        hash_combine( ret, text->GetVertJustify() );
+        hash_combine( ret, text->GetHorizontalAlignment() );
+        hash_combine( ret, text->GetVerticalAlignment() );
 
         if( aFlags & HASH_POS )
         {

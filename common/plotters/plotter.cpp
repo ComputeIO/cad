@@ -45,22 +45,23 @@
 #include <geometry/shape_line_chain.h>
 #include <geometry/geometry_utils.h>
 #include <bezier_curves.h>
-#include <math/util.h>      // for KiROUND
+#include <math/util.h> // for KiROUND
+#include <font/font.h>
 
-PLOTTER::PLOTTER( )
+PLOTTER::PLOTTER()
 {
     m_plotScale = 1;
-    m_currentPenWidth = -1;       // To-be-set marker
-    m_penState = 'Z';             // End-of-path idle
-    m_plotMirror = false;       // Plot mirror option flag
+    m_currentPenWidth = -1; // To-be-set marker
+    m_penState = 'Z';       // End-of-path idle
+    m_plotMirror = false;   // Plot mirror option flag
     m_mirrorIsHorizontal = true;
     m_yaxisReversed = false;
-    m_outputFile = 0;
-    m_colorMode = false;          // Starts as a BW plot
+    m_outputFile = nullptr;
+    m_colorMode = false; // Starts as a BW plot
     m_negativeMode = false;
     // Temporary init to avoid not initialized vars, will be set later
-    m_IUsPerDecimil = 1;        // will be set later to the actual value
-    m_iuPerDeviceUnit = 1;        // will be set later to the actual value
+    m_IUsPerDecimil = 1;   // will be set later to the actual value
+    m_iuPerDeviceUnit = 1; // will be set later to the actual value
     m_renderSettings = nullptr;
 }
 
@@ -84,7 +85,7 @@ bool PLOTTER::OpenFile( const wxString& aFullFilename )
     m_outputFile = wxFopen( m_filename, wxT( "wt" ) );
 
     if( m_outputFile == NULL )
-        return false ;
+        return false;
 
     return true;
 }
@@ -158,7 +159,7 @@ void PLOTTER::Arc( const wxPoint& centre, double StAngle, double EndAngle, int r
                    FILL_TYPE fill, int width )
 {
     wxPoint   start, end;
-    const int delta = 50;   // increment (in 0.1 degrees) to draw circles
+    const int delta = 50; // increment (in 0.1 degrees) to draw circles
 
     if( StAngle > EndAngle )
         std::swap( StAngle, EndAngle );
@@ -201,11 +202,11 @@ void PLOTTER::Arc( const wxPoint& centre, double StAngle, double EndAngle, int r
 
 
 void PLOTTER::BezierCurve( const wxPoint& aStart, const wxPoint& aControl1,
-                           const wxPoint& aControl2, const wxPoint& aEnd,
-                           int aTolerance, int aLineThickness )
+                           const wxPoint& aControl2, const wxPoint& aEnd, int aTolerance,
+                           int aLineThickness )
 {
     // Generic fallback: Quadratic Bezier curve plotted as a polyline
-    int minSegLen = aLineThickness;  // The segment min length to approximate a bezier curve
+    int minSegLen = aLineThickness; // The segment min length to approximate a bezier curve
 
     std::vector<wxPoint> ctrlPoints;
     ctrlPoints.push_back( aStart );
@@ -221,17 +222,16 @@ void PLOTTER::BezierCurve( const wxPoint& aStart, const wxPoint& aControl1,
     SetCurrentLineWidth( aLineThickness );
     MoveTo( aStart );
 
-    for( unsigned ii = 1; ii < approxPoints.size()-1; ii++ )
+    for( unsigned ii = 1; ii < approxPoints.size() - 1; ii++ )
         LineTo( approxPoints[ii] );
 
     FinishTo( aEnd );
 }
 
 
-void PLOTTER::PlotImage(const wxImage & aImage, const wxPoint& aPos, double aScaleFactor )
+void PLOTTER::PlotImage( const wxImage& aImage, const wxPoint& aPos, double aScaleFactor )
 {
-    wxSize size( aImage.GetWidth() * aScaleFactor,
-	         aImage.GetHeight() * aScaleFactor );
+    wxSize size( aImage.GetWidth() * aScaleFactor, aImage.GetHeight() * aScaleFactor );
 
     wxPoint start = aPos;
     start.x -= size.x / 2;
@@ -247,9 +247,9 @@ void PLOTTER::PlotImage(const wxImage & aImage, const wxPoint& aPos, double aSca
 
 void PLOTTER::markerSquare( const wxPoint& position, int radius )
 {
-    double r = KiROUND( radius / 1.4142 );
-    std::vector< wxPoint > corner_list;
-    wxPoint corner;
+    double               r = KiROUND( radius / 1.4142 );
+    std::vector<wxPoint> corner_list;
+    wxPoint              corner;
     corner.x = position.x + r;
     corner.y = position.y + r;
     corner_list.push_back( corner );
@@ -278,14 +278,13 @@ void PLOTTER::markerCircle( const wxPoint& position, int radius )
 
 void PLOTTER::markerLozenge( const wxPoint& position, int radius )
 {
-    std::vector< wxPoint > corner_list;
-    wxPoint corner;
+    std::vector<wxPoint> corner_list;
+    wxPoint              corner;
     corner.x = position.x;
     corner.y = position.y + radius;
     corner_list.push_back( corner );
     corner.x = position.x + radius;
-    corner.y = position.y,
-    corner_list.push_back( corner );
+    corner.y = position.y, corner_list.push_back( corner );
     corner.x = position.x;
     corner.y = position.y - radius;
     corner_list.push_back( corner );
@@ -340,72 +339,72 @@ void PLOTTER::Marker( const wxPoint& position, int diametre, unsigned aShapeId )
        If Visual C++ supported the 0b literals they would be optimally
        and easily encoded as an integer array. We have to do with octal */
     static const unsigned char marker_patterns[MARKER_COUNT] = {
-	// Bit order:  O Square Lozenge - | \ /
-	// First choice: simple shapes
-	0003,  // X
-	0100,  // O
-	0014,  // +
-	0040,  // Sq
-	0020,  // Lz
-	// Two simple shapes
-	0103,  // X O
-	0017,  // X +
-	0043,  // X Sq
-	0023,  // X Lz
-	0114,  // O +
-	0140,  // O Sq
-	0120,  // O Lz
-	0054,  // + Sq
-	0034,  // + Lz
-	0060,  // Sq Lz
-	// Three simple shapes
-	0117,  // X O +
-	0143,  // X O Sq
-	0123,  // X O Lz
-	0057,  // X + Sq
-	0037,  // X + Lz
-	0063,  // X Sq Lz
-	0154,  // O + Sq
-	0134,  // O + Lz
-	0074,  // + Sq Lz
-	// Four simple shapes
-	0174,  // O Sq Lz +
-	0163,  // X O Sq Lz
-	0157,  // X O Sq +
-	0137,  // X O Lz +
-	0077,  // X Sq Lz +
-	// This draws *everything *
-	0177,  // X O Sq Lz +
-	// Here we use the single bars... so the cross is forbidden
-	0110,  // O -
-	0104,  // O |
-	0101,  // O /
-	0050,  // Sq -
-	0044,  // Sq |
-	0041,  // Sq /
-	0030,  // Lz -
-	0024,  // Lz |
-	0021,  // Lz /
-	0150,  // O Sq -
-	0144,  // O Sq |
-	0141,  // O Sq /
-	0130,  // O Lz -
-	0124,  // O Lz |
-	0121,  // O Lz /
-	0070,  // Sq Lz -
-	0064,  // Sq Lz |
-	0061,  // Sq Lz /
-	0170,  // O Sq Lz -
-	0164,  // O Sq Lz |
-	0161,  // O Sq Lz /
-	// Last resort: the backlash component (easy to confound)
-	0102,  // \ O
-	0042,  // \ Sq
-	0022,  // \ Lz
-	0142,  // \ O Sq
-	0122,  // \ O Lz
-	0062,  // \ Sq Lz
-	0162   // \ O Sq Lz
+        // Bit order:  O Square Lozenge - | \ /
+        // First choice: simple shapes
+        0003, // X
+        0100, // O
+        0014, // +
+        0040, // Sq
+        0020, // Lz
+        // Two simple shapes
+        0103, // X O
+        0017, // X +
+        0043, // X Sq
+        0023, // X Lz
+        0114, // O +
+        0140, // O Sq
+        0120, // O Lz
+        0054, // + Sq
+        0034, // + Lz
+        0060, // Sq Lz
+        // Three simple shapes
+        0117, // X O +
+        0143, // X O Sq
+        0123, // X O Lz
+        0057, // X + Sq
+        0037, // X + Lz
+        0063, // X Sq Lz
+        0154, // O + Sq
+        0134, // O + Lz
+        0074, // + Sq Lz
+        // Four simple shapes
+        0174, // O Sq Lz +
+        0163, // X O Sq Lz
+        0157, // X O Sq +
+        0137, // X O Lz +
+        0077, // X Sq Lz +
+        // This draws *everything *
+        0177, // X O Sq Lz +
+        // Here we use the single bars... so the cross is forbidden
+        0110, // O -
+        0104, // O |
+        0101, // O /
+        0050, // Sq -
+        0044, // Sq |
+        0041, // Sq /
+        0030, // Lz -
+        0024, // Lz |
+        0021, // Lz /
+        0150, // O Sq -
+        0144, // O Sq |
+        0141, // O Sq /
+        0130, // O Lz -
+        0124, // O Lz |
+        0121, // O Lz /
+        0070, // Sq Lz -
+        0064, // Sq Lz |
+        0061, // Sq Lz /
+        0170, // O Sq Lz -
+        0164, // O Sq Lz |
+        0161, // O Sq Lz /
+        // Last resort: the backlash component (easy to confound)
+        0102, // \ O
+        0042, // \ Sq
+        0022, // \ Lz
+        0142, // \ O Sq
+        0122, // \ O Lz
+        0062, // \ Sq Lz
+        0162  // \ O Sq Lz
     };
     if( aShapeId >= MARKER_COUNT )
     {
@@ -414,22 +413,22 @@ void PLOTTER::Marker( const wxPoint& position, int diametre, unsigned aShapeId )
     }
     else
     {
-	// Decode the pattern and draw the corresponding parts
-	unsigned char pat = marker_patterns[aShapeId];
-	if( pat & 0001 )
-	    markerSlash( position, radius );
-	if( pat & 0002 )
-	    markerBackSlash( position, radius );
-	if( pat & 0004 )
-	    markerVBar( position, radius );
-	if( pat & 0010 )
-	    markerHBar( position, radius );
-	if( pat & 0020 )
-	    markerLozenge( position, radius );
-	if( pat & 0040 )
-	    markerSquare( position, radius );
-	if( pat & 0100 )
-	    markerCircle( position, radius );
+        // Decode the pattern and draw the corresponding parts
+        unsigned char pat = marker_patterns[aShapeId];
+        if( pat & 0001 )
+            markerSlash( position, radius );
+        if( pat & 0002 )
+            markerBackSlash( position, radius );
+        if( pat & 0004 )
+            markerVBar( position, radius );
+        if( pat & 0010 )
+            markerHBar( position, radius );
+        if( pat & 0020 )
+            markerLozenge( position, radius );
+        if( pat & 0040 )
+            markerSquare( position, radius );
+        if( pat & 0100 )
+            markerCircle( position, radius );
     }
 }
 
@@ -437,7 +436,7 @@ void PLOTTER::Marker( const wxPoint& position, int diametre, unsigned aShapeId )
 void PLOTTER::segmentAsOval( const wxPoint& start, const wxPoint& end, int width,
                              OUTLINE_MODE tracemode )
 {
-    wxPoint center( (start.x + end.x) / 2, (start.y + end.y) / 2 );
+    wxPoint center( ( start.x + end.x ) / 2, ( start.y + end.y ) / 2 );
     wxSize  size( end.x - start.x, end.y - start.y );
     double  orient;
 
@@ -459,7 +458,7 @@ void PLOTTER::sketchOval( const wxPoint& pos, const wxSize& aSize, double orient
 {
     SetCurrentLineWidth( width );
     width = m_currentPenWidth;
-    int radius, deltaxy, cx, cy;
+    int    radius, deltaxy, cx, cy;
     wxSize size( aSize );
 
     if( size.x > size.y )
@@ -468,8 +467,8 @@ void PLOTTER::sketchOval( const wxPoint& pos, const wxSize& aSize, double orient
         orient = AddAngles( orient, 900 );
     }
 
-    deltaxy = size.y - size.x;       /* distance between centers of the oval */
-    radius   = ( size.x - width ) / 2;
+    deltaxy = size.y - size.x; /* distance between centers of the oval */
+    radius = ( size.x - width ) / 2;
     cx = -radius;
     cy = -deltaxy / 2;
     RotatePoint( &cx, &cy, orient );
@@ -491,15 +490,12 @@ void PLOTTER::sketchOval( const wxPoint& pos, const wxSize& aSize, double orient
     cx = 0;
     cy = deltaxy / 2;
     RotatePoint( &cx, &cy, orient );
-    Arc( wxPoint( cx + pos.x, cy + pos.y ),
-         orient + 1800, orient + 3600,
-         radius, FILL_TYPE::NO_FILL );
+    Arc( wxPoint( cx + pos.x, cy + pos.y ), orient + 1800, orient + 3600, radius,
+         FILL_TYPE::NO_FILL );
     cx = 0;
     cy = -deltaxy / 2;
     RotatePoint( &cx, &cy, orient );
-    Arc( wxPoint( cx + pos.x, cy + pos.y ),
-         orient, orient + 1800,
-         radius, FILL_TYPE::NO_FILL );
+    Arc( wxPoint( cx + pos.x, cy + pos.y ), orient, orient + 1800, radius, FILL_TYPE::NO_FILL );
 }
 
 
@@ -527,39 +523,39 @@ void PLOTTER::ThickSegment( const wxPoint& start, const wxPoint& end, int width,
 }
 
 
-void PLOTTER::ThickArc( const wxPoint& centre, double StAngle, double EndAngle,
-                        int radius, int width, OUTLINE_MODE tracemode, void* aData )
+void PLOTTER::ThickArc( const wxPoint& centre, double StAngle, double EndAngle, int radius,
+                        int width, OUTLINE_MODE tracemode, void* aData )
 {
     if( tracemode == FILLED )
         Arc( centre, StAngle, EndAngle, radius, FILL_TYPE::NO_FILL, width );
     else
     {
         SetCurrentLineWidth( -1 );
-        Arc( centre, StAngle, EndAngle,
-             radius - ( width - m_currentPenWidth ) / 2, FILL_TYPE::NO_FILL, -1 );
-        Arc( centre, StAngle, EndAngle,
-             radius + ( width - m_currentPenWidth ) / 2, FILL_TYPE::NO_FILL, -1 );
+        Arc( centre, StAngle, EndAngle, radius - ( width - m_currentPenWidth ) / 2,
+             FILL_TYPE::NO_FILL, -1 );
+        Arc( centre, StAngle, EndAngle, radius + ( width - m_currentPenWidth ) / 2,
+             FILL_TYPE::NO_FILL, -1 );
     }
 }
 
 
-void PLOTTER::ThickRect( const wxPoint& p1, const wxPoint& p2, int width,
-                         OUTLINE_MODE tracemode, void* aData )
+void PLOTTER::ThickRect( const wxPoint& p1, const wxPoint& p2, int width, OUTLINE_MODE tracemode,
+                         void* aData )
 {
     if( tracemode == FILLED )
         Rect( p1, p2, FILL_TYPE::NO_FILL, width );
     else
     {
         SetCurrentLineWidth( -1 );
-        wxPoint offsetp1( p1.x - (width - m_currentPenWidth) / 2,
-                          p1.y - (width - m_currentPenWidth) / 2 );
-        wxPoint offsetp2( p2.x + (width - m_currentPenWidth) / 2,
-			  p2.y + (width - m_currentPenWidth) / 2 );
+        wxPoint offsetp1( p1.x - ( width - m_currentPenWidth ) / 2,
+                          p1.y - ( width - m_currentPenWidth ) / 2 );
+        wxPoint offsetp2( p2.x + ( width - m_currentPenWidth ) / 2,
+                          p2.y + ( width - m_currentPenWidth ) / 2 );
         Rect( offsetp1, offsetp2, FILL_TYPE::NO_FILL, -1 );
-        offsetp1.x += (width - m_currentPenWidth);
-        offsetp1.y += (width - m_currentPenWidth);
-        offsetp2.x -= (width - m_currentPenWidth);
-        offsetp2.y -= (width - m_currentPenWidth);
+        offsetp1.x += ( width - m_currentPenWidth );
+        offsetp1.y += ( width - m_currentPenWidth );
+        offsetp2.x -= ( width - m_currentPenWidth );
+        offsetp2.y -= ( width - m_currentPenWidth );
         Rect( offsetp1, offsetp2, FILL_TYPE::NO_FILL, -1 );
     }
 }
@@ -595,9 +591,13 @@ void PLOTTER::FilledCircle( const wxPoint& pos, int diametre, OUTLINE_MODE trace
 }
 
 
-void PLOTTER::PlotPoly( const SHAPE_LINE_CHAIN& aCornerList, FILL_TYPE aFill,
-                       int aWidth, void * aData )
+void PLOTTER::PlotPoly( const SHAPE_LINE_CHAIN& aCornerList, FILL_TYPE aFill, int aWidth,
+                        void* aData )
 {
+#ifdef DEBUG
+    std::cerr << "PLOTTER::PlotPoly( [SHAPE_LINE_CHAIN], " << aFill << ", " << aWidth << ", ... )"
+              << std::endl;
+#endif
     std::vector<wxPoint> cornerList;
     cornerList.reserve( aCornerList.PointCount() );
 
@@ -611,18 +611,16 @@ void PLOTTER::PlotPoly( const SHAPE_LINE_CHAIN& aCornerList, FILL_TYPE aFill,
 }
 
 
-
-
 /**
  * Function PLOTTER::Text
  * same as GRText, but plot graphic text insteed of draw it
- *  @param aPos = text position (according to aH_justify, aV_justify)
+ *  @param aPos = text position (according to a{Horizontal,Vertical}Alignment)
  *  @param aColor (COLOR4D) = text color
  *  @param aText = text to draw
- *  @param aOrient = angle in 0.1 degree
+ *  @param aOrient = angle
  *  @param aSize = text size (size.x or size.y can be < 0 for mirrored texts)
- *  @param aH_justify = horizontal justification (Left, center, right)
- *  @param aV_justify = vertical justification (bottom, center, top)
+ *  @param aHorizontalAlignment = horizontal alignment (Left, Center, Right)
+ *  @param aVerticalAlignment = vertical alignment (Top, Center, Bottom)
  *  @param aPenWidth = line width (if = 0, use plot default line width)
  *  @param aItalic = true to simulate an italic font
  *  @param aBold = true to use a bold font Useful only with default width value (aWidth = 0)
@@ -630,24 +628,45 @@ void PLOTTER::PlotPoly( const SHAPE_LINE_CHAIN& aCornerList, FILL_TYPE aFill,
  *  @param aData = a parameter used by some plotters in SetCurrentLineWidth(),
  * not directly used here.
  */
-void PLOTTER::Text( const wxPoint&              aPos,
-                    const COLOR4D               aColor,
-                    const wxString&             aText,
-                    double                      aOrient,
-                    const wxSize&               aSize,
-                    enum EDA_TEXT_HJUSTIFY_T    aH_justify,
-                    enum EDA_TEXT_VJUSTIFY_T    aV_justify,
-                    int                         aPenWidth,
-                    bool                        aItalic,
-                    bool                        aBold,
-                    bool                        aMultilineAllowed,
-                    KIFONT::FONT*               aFont,
-                    void*                       aData )
+void PLOTTER::Text( const wxPoint& aPos, const COLOR4D aColor, const wxString& aText,
+                    const EDA_ANGLE& aOrient, const wxSize& aSize,
+                    TEXT_ATTRIBUTES::HORIZONTAL_ALIGNMENT aHorizontalAlignment,
+                    TEXT_ATTRIBUTES::VERTICAL_ALIGNMENT aVerticalAlignment, int aPenWidth,
+                    bool aItalic, bool aBold, bool aMultilineAllowed, KIFONT::FONT* aFont,
+                    void* aData )
 {
+#ifdef DEBUG
+    std::cerr << "PLOTTER::Text( " << aPos << ", " << aColor << ", \"" << aText << "\", " << aOrient
+              << ", " << aSize << ", " << aHorizontalAlignment << ", " << aVerticalAlignment << ", "
+              << aPenWidth << ", " << aItalic << ", " << aBold << ", " << aMultilineAllowed << ", "
+              << ( aFont ? aFont->Name() : "(default font)" ) << ", [aData] )" << std::endl;
+#endif
     SetColor( aColor );
     SetCurrentLineWidth( aPenWidth, aData );
-    SetFont( aFont );
+    SetFont( aFont ? aFont : KIFONT::FONT::GetFont() );
 
-    GRText( NULL, aPos, aColor, aText, aOrient, aSize, aH_justify, aV_justify, aPenWidth,
-            aItalic, aBold, nullptr, nullptr, this );
+    GRText( NULL, aPos, aColor, aText, aOrient, aSize, aHorizontalAlignment, aVerticalAlignment,
+            aPenWidth, aItalic, aBold, nullptr, nullptr, this );
+}
+
+
+void PLOTTER::Text( const EDA_TEXT* aText, const COLOR4D aColor, void* aData )
+{
+#ifdef DEBUG
+    std::cerr << "PLOTTER::Text( ";
+    if( aText )
+        std::cerr << *aText;
+    else
+        std::cerr << "nullptr";
+    std::cerr << ", " << aColor << ", [aData] )" << std::endl;
+#endif
+    wxSize size = aText->GetTextSize();
+    if( aText->IsMirrored() )
+        size.x = -size.x;
+
+    SetColor( aColor );
+    SetCurrentLineWidth( aText->GetEffectiveTextPenWidth(), aData );
+    SetFont( aText->GetFont() );
+
+    GRText( aText, aColor, nullptr, nullptr, this );
 }

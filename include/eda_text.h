@@ -30,6 +30,7 @@
 
 #include <outline_mode.h>
 #include <eda_rect.h>
+#include <font/text_attributes.h>
 
 class OUTPUTFORMATTER;
 class SHAPE_COMPOUND;
@@ -40,6 +41,7 @@ namespace KIGFX
 {
 class RENDER_SETTINGS;
 class COLOR4D;
+class GAL;
 } // namespace KIGFX
 
 using KIGFX::COLOR4D;
@@ -63,24 +65,6 @@ class STROKE_FONT;
 #define CTL_OMIT_HIDE ( 1 << 6 )
 
 
-// Graphic Text justify:
-// Values -1,0,1 are used in computations, do not change them
-enum EDA_TEXT_HJUSTIFY_T
-{
-    GR_TEXT_HJUSTIFY_LEFT = -1,
-    GR_TEXT_HJUSTIFY_CENTER = 0,
-    GR_TEXT_HJUSTIFY_RIGHT = 1
-};
-
-
-enum EDA_TEXT_VJUSTIFY_T
-{
-    GR_TEXT_VJUSTIFY_TOP = -1,
-    GR_TEXT_VJUSTIFY_CENTER = 0,
-    GR_TEXT_VJUSTIFY_BOTTOM = 1
-};
-
-
 /**
  * This is the "default-of-the-default" hardcoded text size; individual
  * application define their own default policy starting with this
@@ -88,33 +72,6 @@ enum EDA_TEXT_VJUSTIFY_T
  */
 #define DEFAULT_SIZE_TEXT 50 // default text height (in mils, i.e. 1/1000")
 #define DIM_ANCRE_TEXTE 2    // Anchor size for text
-
-
-/**
- * A container for text effects.
- *
- * These fields are bundled so they can be easily copied together as a lot. The privacy
- * policy is established by client (incorporating) code.
- */
-struct TEXT_EFFECTS
-{
-    TEXT_EFFECTS( int aSetOfBits = 0 ) :
-            bits( aSetOfBits ), hjustify( GR_TEXT_HJUSTIFY_CENTER ),
-            vjustify( GR_TEXT_VJUSTIFY_CENTER ), penwidth( 0 ), angle( 0.0 )
-    {
-    }
-
-    int         bits;     ///< any set of booleans a client uses.
-    signed char hjustify; ///< horizontal justification
-    signed char vjustify; ///< vertical justification
-    wxSize      size;
-    int         penwidth;
-    double      angle; ///< now: 0.1 degrees; future: degrees
-    wxPoint     pos;
-
-    void Bit( int aBit, bool aValue ) { aValue ? bits |= ( 1 << aBit ) : bits &= ~( 1 << aBit ); }
-    bool Bit( int aBit ) const { return bits & ( 1 << aBit ); }
-};
 
 
 /**
@@ -170,8 +127,8 @@ public:
      * The TextThickness is that set by the user.  The EffectiveTextPenWidth also factors
      * in bold text and thickness clamping.
      */
-    void SetTextThickness( int aWidth ) { m_e.penwidth = aWidth; };
-    int  GetTextThickness() const { return m_e.penwidth; };
+    void SetTextThickness( int aWidth ) { m_attributes.SetStrokeWidth( aWidth ); };
+    int  GetTextThickness() const { return m_attributes.GetStrokeWidth(); };
 
     /**
      * The EffectiveTextPenWidth uses the text thickness if > 1 or aDefaultWidth.
@@ -183,53 +140,104 @@ public:
         // Higher level classes may be more restrictive than this by overloading
         // SetTextAngle() or merely calling EDA_TEXT::SetTextAngle() after clamping
         // aAngle before calling this lowest inline accessor.
-        m_e.angle = aAngle;
+        m_attributes.SetAngle( EDA_ANGLE( aAngle, EDA_ANGLE::TENTHS_OF_A_DEGREE ) );
     }
-    double GetTextAngle() const { return m_e.angle; }
+    virtual void SetTextAngle( EDA_ANGLE aAngle ) { m_attributes.SetAngle( aAngle ); }
 
-    double GetTextAngleDegrees() const { return GetTextAngle() / 10.0; }
-    double GetTextAngleRadians() const { return GetTextAngle() * M_PI / 1800; }
+    EDA_ANGLE GetTextEdaAngle() const { return m_attributes.GetAngle(); }
+    double    GetTextAngle() const { return GetTextEdaAngle().AsTenthsOfADegree(); }
+    double    GetTextAngleDegrees() const { return GetTextEdaAngle().AsDegrees(); }
+    double    GetTextAngleRadians() const { return GetTextEdaAngle().AsRadians(); }
 
-    void SetItalic( bool isItalic ) { m_e.Bit( TE_ITALIC, isItalic ); }
-    bool IsItalic() const { return m_e.Bit( TE_ITALIC ); }
+    void SetItalic( bool aItalic ) { m_attributes.SetItalic( aItalic ); }
+    bool IsItalic() const { return m_attributes.IsItalic(); }
 
-    void SetBold( bool aBold ) { m_e.Bit( TE_BOLD, aBold ); }
-    bool IsBold() const { return m_e.Bit( TE_BOLD ); }
+    void SetBold( bool aBold ) { m_attributes.SetBold( aBold ); }
+    bool IsBold() const { return m_attributes.IsBold(); }
 
-    void SetVisible( bool aVisible ) { m_e.Bit( TE_VISIBLE, aVisible ); }
-    bool IsVisible() const { return m_e.Bit( TE_VISIBLE ); }
+    void SetVisible( bool aVisible ) { m_attributes.SetVisible( aVisible ); }
+    bool IsVisible() const { return m_attributes.IsVisible(); }
 
-    void SetMirrored( bool isMirrored ) { m_e.Bit( TE_MIRROR, isMirrored ); }
-    bool IsMirrored() const { return m_e.Bit( TE_MIRROR ); }
+    void SetMirrored( bool aMirrored ) { m_attributes.SetMirrored( aMirrored ); }
+    bool IsMirrored() const { return m_attributes.IsMirrored(); }
 
     /**
      * @param aAllow true if ok to use multiline option, false if ok to use only single line
      *               text.  (Single line is faster in calculations than multiline.)
      */
-    void SetMultilineAllowed( bool aAllow ) { m_e.Bit( TE_MULTILINE, aAllow ); }
-    bool IsMultilineAllowed() const { return m_e.Bit( TE_MULTILINE ); }
+    void SetMultilineAllowed( bool aAllow ) { m_attributes.SetMultiline( aAllow ); }
+    bool IsMultilineAllowed() const { return m_attributes.IsMultiline(); }
 
-    EDA_TEXT_HJUSTIFY_T GetHorizJustify() const { return EDA_TEXT_HJUSTIFY_T( m_e.hjustify ); };
-    EDA_TEXT_VJUSTIFY_T GetVertJustify() const { return EDA_TEXT_VJUSTIFY_T( m_e.vjustify ); };
+    void SetHorizontalAlignment( TEXT_ATTRIBUTES::HORIZONTAL_ALIGNMENT aHorizontalAlignment )
+    {
+        Align( aHorizontalAlignment );
+    }
 
-    void SetHorizJustify( EDA_TEXT_HJUSTIFY_T aType ) { m_e.hjustify = aType; };
-    void SetVertJustify( EDA_TEXT_VJUSTIFY_T aType ) { m_e.vjustify = aType; };
+    void Align( TEXT_ATTRIBUTES::HORIZONTAL_ALIGNMENT aHorizontalAlignment )
+    {
+        m_attributes.Align( aHorizontalAlignment );
+    }
+
+    TEXT_ATTRIBUTES::HORIZONTAL_ALIGNMENT GetHorizontalAlignment() const
+    {
+        return m_attributes.GetHorizontalAlignment();
+    }
+
+    void FlipHorizontalAlignment()
+    {
+        switch( GetHorizontalAlignment() )
+        {
+        case TEXT_ATTRIBUTES::H_LEFT: SetHorizontalAlignment( TEXT_ATTRIBUTES::H_RIGHT ); break;
+        case TEXT_ATTRIBUTES::H_RIGHT: SetHorizontalAlignment( TEXT_ATTRIBUTES::H_LEFT ); break;
+        default: break;
+        }
+    }
+
+    void SetVerticalAlignment( TEXT_ATTRIBUTES::VERTICAL_ALIGNMENT aVerticalAlignment )
+    {
+        Align( aVerticalAlignment );
+    }
+
+    void Align( TEXT_ATTRIBUTES::VERTICAL_ALIGNMENT aVerticalAlignment )
+    {
+        m_attributes.Align( aVerticalAlignment );
+    }
+
+    TEXT_ATTRIBUTES::VERTICAL_ALIGNMENT GetVerticalAlignment() const
+    {
+        return m_attributes.GetVerticalAlignment();
+    }
+
+    void FlipVerticalAlignment()
+    {
+        switch( GetVerticalAlignment() )
+        {
+        case TEXT_ATTRIBUTES::V_TOP: SetVerticalAlignment( TEXT_ATTRIBUTES::V_BOTTOM ); break;
+        case TEXT_ATTRIBUTES::V_BOTTOM: SetVerticalAlignment( TEXT_ATTRIBUTES::V_TOP ); break;
+        default: break;
+        }
+    }
+
+    void Align( TEXT_ATTRIBUTES::HORIZONTAL_ALIGNMENT aHorizontalAlignment,
+                TEXT_ATTRIBUTES::VERTICAL_ALIGNMENT aVerticalAlignment )
+    {
+        Align( aHorizontalAlignment );
+        Align( aVerticalAlignment );
+    }
 
     /**
-     * Set the text effects from another instance.
+     * Set the text attributes from another instance.
      *
-     * #TEXT_EFFECTS is not exposed in the public API, but includes everything except the actual
-     * text string itself.
      */
-    void SetEffects( const EDA_TEXT& aSrc );
+    void        SetAttributes( const EDA_TEXT& aSrc ) { m_attributes = aSrc.m_attributes; }
+    inline void SetEffects( const EDA_TEXT& aSrc ) { SetAttributes( aSrc ); }
 
     /**
-     * Swap the text effects of the two involved instances.
+     * Swap the text attributes of the two involved instances.
      *
-     * #TEXT_EFFECTS is not exposed in the public API, but includes everything except the actual
-     * text string itself.
      */
-    void SwapEffects( EDA_TEXT& aTradingPartner );
+    void        SwapAttributes( EDA_TEXT& aTradingPartner );
+    inline void SwapEffects( EDA_TEXT& aTradingPartner ) { SwapAttributes( aTradingPartner ); }
 
     void SwapText( EDA_TEXT& aTradingPartner );
 
@@ -248,28 +256,28 @@ public:
 
     bool IsDefaultFormatting() const;
 
-    void          SetTextSize( const wxSize& aNewSize ) { m_e.size = aNewSize; }
-    const wxSize& GetTextSize() const { return m_e.size; }
+    void   SetLineSpacing( double aLineSpacing ) { m_attributes.SetLineSpacing( aLineSpacing ); }
+    double GetLineSpacing() const { return m_attributes.GetLineSpacing(); }
 
-    void SetTextWidth( int aWidth ) { m_e.size.x = aWidth; }
-    int  GetTextWidth() const { return m_e.size.x; }
+    void   SetTextSize( const wxSize& aNewSize ) { m_attributes.SetSize( aNewSize ); }
+    wxSize GetTextSize() const { return m_attributes.GetTextSize(); }
 
-    void SetTextHeight( int aHeight ) { m_e.size.y = aHeight; }
-    int  GetTextHeight() const { return m_e.size.y; }
+    void SetTextWidth( int aWidth ) { m_attributes.SetWidth( aWidth ); }
+    int  GetTextWidth() const { return GetTextSize().GetWidth(); }
 
-    void           SetTextPos( const wxPoint& aPoint ) { m_e.pos = aPoint; }
-    const wxPoint& GetTextPos() const { return m_e.pos; }
+    void SetTextHeight( int aHeight ) { m_attributes.SetHeight( aHeight ); }
+    int  GetTextHeight() const { return GetTextSize().GetHeight(); }
 
-    void SetTextX( int aX ) { m_e.pos.x = aX; }
-    void SetTextY( int aY ) { m_e.pos.y = aY; }
+    void           SetTextPos( const wxPoint& aPoint ) { m_pos = aPoint; }
+    void           SetTextPos( const VECTOR2D& aPoint ) { m_pos.x = aPoint.x; m_pos.y = aPoint.y; }
+    const wxPoint& GetTextPos() const { return m_pos; }
 
-    void Offset( const wxPoint& aOffset ) { m_e.pos += aOffset; }
+    void SetTextX( int aX ) { m_pos.x = aX; }
+    void SetTextY( int aY ) { m_pos.y = aY; }
+
+    void Offset( const wxPoint& aOffset ) { m_pos += aOffset; }
 
     void Empty() { m_text.Empty(); }
-
-    static EDA_TEXT_HJUSTIFY_T MapHorizJustify( int aHorizJustify );
-
-    static EDA_TEXT_VJUSTIFY_T MapVertJustify( int aVertJustify );
 
     /**
      * Print this text object to the device context \a aDC.
@@ -378,15 +386,48 @@ public:
      */
     virtual void Format( OUTPUTFORMATTER* aFormatter, int aNestLevel, int aControlBits ) const;
 
-    virtual double GetDrawRotation() const;
+    virtual EDA_ANGLE GetDrawRotation() const;
 
-    KIFONT::FONT* GetFont() const;
+    KIFONT::FONT* GetFont() const { return m_attributes.GetFont(); }
 
-    void SetFont( KIFONT::FONT* aFont ) { m_font = aFont; }
+    void SetFont( KIFONT::FONT* aFont ) { m_attributes.SetFont( aFont ); }
+
+    /**
+     * @return force the text rotation to be always between -90 .. 90 deg. Otherwise the text
+     *         is not easy to read if false, the text rotation is free.
+     */
+    bool IsKeepUpright() const { return m_attributes.IsKeepUpright(); }
+
+    void SetKeepUpright( bool aKeepUpright ) { m_attributes.SetKeepUpright( aKeepUpright ); }
+
+    TEXT_ATTRIBUTES::ORIENTATION GetOrientation() const { return m_attributes.GetOrientation(); }
+
+    /**
+     * Set (horizontal) alignment according to angle.
+     * This simulates the old LABEL_SPIN_STYLE behaviour:
+     * Left alignment becomes Right alignment when rotating from 0 to 180 degrees,
+     * or from 90 to 270 degrees.
+     */
+    void SetDefaultAlignment();
+
+    void RotateCW() { m_attributes.RotateCW(); }
+
+    void RotateCCW() { m_attributes.RotateCCW(); }
+
+    const TEXT_ATTRIBUTES& GetAttributes() const { return m_attributes; }
+
+    void Draw( KIGFX::GAL* aGal, const VECTOR2D& aPosition, const TEXT_ATTRIBUTES& aAttributes ) const;
+
+    void Draw( KIGFX::GAL* aGal, const VECTOR2D& aPosition ) const
+    {
+        Draw( aGal, aPosition, GetAttributes() );
+    }
+
+    void Draw( KIGFX::GAL* aGal ) const { Draw( aGal, GetTextPos() ); }
 
 private:
     /**
-     * Print each line of this EDA_TEXT..
+     * Print each line of this EDA_TEXT.
      *
      * @param aOffset draw offset (usually (0,0)).
      * @param aColor text color.
@@ -398,22 +439,24 @@ private:
                              COLOR4D aColor, OUTLINE_MODE aFillMode, const wxString& aText,
                              const wxPoint& aPos );
 
-    wxString      m_text;
-    wxString      m_shown_text; // Cache of unescaped text for efficient access
-    bool          m_shown_text_has_text_var_refs;
-    KIFONT::FONT* m_font = nullptr;
+    wxString m_text;
+    wxString m_shown_text; // Cache of unescaped text for efficient access
+    bool     m_shown_text_has_text_var_refs;
 
-    TEXT_EFFECTS m_e; // Private bitflags for text styling.  API above
-                      // provides accessor funcs.
-    enum TE_FLAGS
-    {
-        TE_MIRROR,
-        TE_ITALIC,
-        TE_BOLD,
-        TE_MULTILINE,
-        TE_VISIBLE,
-    };
+    TEXT_ATTRIBUTES m_attributes;
+    wxPoint         m_pos;
+
+    friend std::ostream& operator<<( std::ostream&, const EDA_TEXT& );
 };
 
+
+inline std::ostream& operator<<( std::ostream& os, const EDA_TEXT& aText )
+{
+    os << "(eda_text \"" << aText.m_text << "\" (shown \"" << aText.m_shown_text << "\") "
+       << ( aText.m_shown_text_has_text_var_refs ? "has_text_var_refs " : "" ) << aText.m_attributes
+       << " (position " << aText.m_pos.x << " " << aText.m_pos.y << ")";
+
+    return os;
+}
 
 #endif //  EDA_TEXT_H_

@@ -38,7 +38,11 @@
 #include <dialogs/dialog_text_entry.h>
 #include <validators.h>
 #include <bitmaps.h>
+
 #include <wx/tokenzr.h>
+#include <wx/filedlg.h>
+#include <wx/dcclient.h>
+
 #include <bitset>
 
 struct DIALOG_NET_INSPECTOR::COLUMN_DESC
@@ -199,7 +203,7 @@ public:
 
     bool TotalLengthChanged() const
     {
-        return BoardWireLengthChanged() | ViaLengthChanged() | ChipWireLengthChanged();
+        return BoardWireLengthChanged() || ViaLengthChanged() || ChipWireLengthChanged();
     }
 
     LIST_ITEM* Parent() const
@@ -1038,6 +1042,7 @@ std::vector<CN_ITEM*> DIALOG_NET_INSPECTOR::relevantConnectivityItems() const
 
     const auto type_bits = std::bitset<MAX_STRUCT_TYPE_ID>()
             .set( PCB_TRACE_T )
+            .set( PCB_ARC_T )
             .set( PCB_VIA_T )
             .set( PCB_PAD_T );
 
@@ -1372,23 +1377,7 @@ unsigned int DIALOG_NET_INSPECTOR::calculateViaLength( const TRACK* aTrack ) con
     if( bds.m_HasStackup )
     {
         const BOARD_STACKUP& stackup = bds.GetStackupDescriptor();
-
-        std::pair<PCB_LAYER_ID, int> layer_dist[2] = { std::make_pair( via.TopLayer(), 0 ),
-                                                       std::make_pair( via.BottomLayer(), 0 ) };
-
-        for( const BOARD_STACKUP_ITEM* i : stackup.GetList() )
-        {
-            for( std::pair<PCB_LAYER_ID, int>& j : layer_dist )
-            {
-                if( j.first != UNDEFINED_LAYER )
-                    j.second += i->GetThickness();
-
-                if( j.first == i->GetBrdLayerId() )
-                    j.first = UNDEFINED_LAYER;
-            }
-        }
-
-        return std::abs( layer_dist[0].second - layer_dist[1].second );
+        return stackup.GetLayerDistance( via.TopLayer(), via.BottomLayer() );
     }
     else
     {
@@ -1885,7 +1874,9 @@ void DIALOG_NET_INSPECTOR::onRenameNet( wxCommandEvent& aEvent )
         // is easier.
         auto removed_item = m_data_model->deleteItem( m_data_model->findItem( net ) );
 
+        m_brd->GetNetInfo().RemoveNet( net );
         net->SetNetname( fullNetName );
+        m_brd->GetNetInfo().AppendNet( net );
         m_frame->OnModify();
 
         if( netFilterMatches( net ) )
@@ -1928,6 +1919,19 @@ void DIALOG_NET_INSPECTOR::onDeleteNet( wxCommandEvent& aEvent )
                         || IsOK( this, wxString::Format( _( "Net '%s' is in use.  Delete anyway?" ),
                                                          i->GetNetName() ) ) )
                 {
+                    // This is a bit hacky, but it will do for now, since this is the only path
+                    // outside the netlist updater where you can remove a net from a BOARD.
+                    int removedCode = i->GetNetCode();
+
+                    m_frame->GetCanvas()->GetView()->UpdateAllItemsConditionally( KIGFX::REPAINT,
+                            [removedCode]( KIGFX::VIEW_ITEM* aItem ) -> bool
+                            {
+                                if( auto bci = dynamic_cast<BOARD_CONNECTED_ITEM*>( aItem ) )
+                                    return bci->GetNetCode() == removedCode;
+
+                                return false;
+                            } );
+
                     m_brd->Remove( i->GetNet() );
                     m_frame->OnModify();
 

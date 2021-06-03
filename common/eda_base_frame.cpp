@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2017 Jean-Pierre Charras, jp.charras at wanadoo.fr
  * Copyright (C) 2013 Wayne Stambaugh <stambaughw@gmail.com>
- * Copyright (C) 1992-2020 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 1992-2021 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -52,7 +52,10 @@
 #include <widgets/paged_dialog.h>
 #include <widgets/infobar.h>
 #include <widgets/wx_aui_art_providers.h>
+#include <wx/app.h>
+#include <wx/config.h>
 #include <wx/display.h>
+#include <wx/msgdlg.h>
 #include <wx/stdpaths.h>
 #include <wx/string.h>
 #include <kiplatform/app.h>
@@ -91,7 +94,6 @@ static const wxSize defaultSize( FRAME_T aFrameType )
 
 BEGIN_EVENT_TABLE( EDA_BASE_FRAME, wxFrame )
     EVT_MENU( wxID_ABOUT, EDA_BASE_FRAME::OnKicadAbout )
-    EVT_MENU( wxID_PREFERENCES, EDA_BASE_FRAME::OnPreferences )
 
     EVT_CHAR_HOOK( EDA_BASE_FRAME::OnCharHook )
     EVT_MENU_OPEN( EDA_BASE_FRAME::OnMenuEvent )
@@ -103,28 +105,24 @@ BEGIN_EVENT_TABLE( EDA_BASE_FRAME, wxFrame )
     EVT_SYS_COLOUR_CHANGED( EDA_BASE_FRAME::onSystemColorChange )
 END_EVENT_TABLE()
 
-EDA_BASE_FRAME::EDA_BASE_FRAME( wxWindow* aParent, FRAME_T aFrameType,
-                                const wxString& aTitle, const wxPoint& aPos, const wxSize& aSize,
-                                long aStyle, const wxString& aFrameName, KIWAY* aKiway ) :
-        wxFrame( aParent, wxID_ANY, aTitle, aPos, aSize, aStyle, aFrameName ),
-        TOOLS_HOLDER(),
-        KIWAY_HOLDER( aKiway, KIWAY_HOLDER::FRAME ),
-        m_ident( aFrameType ),
-        m_maximizeByDefault( false ),
-        m_infoBar( nullptr ),
-        m_settingsManager( nullptr ),
-        m_fileHistory( nullptr ),
-        m_hasAutoSave( false ),
-        m_autoSaveState( false ),
-        m_autoSaveInterval(-1 ),
-        m_undoRedoCountMax( DEFAULT_MAX_UNDO_ITEMS ),
-        m_userUnits( EDA_UNITS::MILLIMETRES ),
-        m_isClosing( false ),
-        m_isNonUserClose( false )
+
+void EDA_BASE_FRAME::commonInit( FRAME_T aFrameType )
 {
-    m_autoSaveTimer = new wxTimer( this, ID_AUTO_SAVE_TIMER );
-    m_mruPath       = PATHS::GetDefaultUserProjectsPath();
-    m_frameSize     = defaultSize( aFrameType );
+    m_ident             = aFrameType;
+    m_maximizeByDefault = false;
+    m_infoBar           = nullptr;
+    m_settingsManager   = nullptr;
+    m_fileHistory       = nullptr;
+    m_hasAutoSave       = false;
+    m_autoSaveState     = false;
+    m_autoSaveInterval  = -1;
+    m_undoRedoCountMax  = DEFAULT_MAX_UNDO_ITEMS;
+    m_userUnits         = EDA_UNITS::MILLIMETRES;
+    m_isClosing         = false;
+    m_isNonUserClose    = false;
+    m_autoSaveTimer     = new wxTimer( this, ID_AUTO_SAVE_TIMER );
+    m_mruPath           = PATHS::GetDefaultUserProjectsPath();
+    m_frameSize         = defaultSize( aFrameType );
 
     m_auimgr.SetArtProvider( new WX_AUI_DOCK_ART() );
 
@@ -144,6 +142,25 @@ EDA_BASE_FRAME::EDA_BASE_FRAME( wxWindow* aParent, FRAME_T aFrameType,
     Connect( wxEVT_CLOSE_WINDOW, wxCloseEventHandler( EDA_BASE_FRAME::windowClosing ) );
 
     initExitKey();
+
+}
+
+EDA_BASE_FRAME::EDA_BASE_FRAME( FRAME_T aFrameType, KIWAY* aKiway ) :
+        wxFrame(),
+        TOOLS_HOLDER(),
+        KIWAY_HOLDER( aKiway, KIWAY_HOLDER::FRAME )
+{
+    commonInit( aFrameType );
+}
+
+EDA_BASE_FRAME::EDA_BASE_FRAME( wxWindow* aParent, FRAME_T aFrameType,
+                                const wxString& aTitle, const wxPoint& aPos, const wxSize& aSize,
+                                long aStyle, const wxString& aFrameName, KIWAY* aKiway ) :
+        wxFrame( aParent, wxID_ANY, aTitle, aPos, aSize, aStyle, aFrameName ),
+        TOOLS_HOLDER(),
+        KIWAY_HOLDER( aKiway, KIWAY_HOLDER::FRAME )
+{
+    commonInit( aFrameType );
 }
 
 
@@ -304,12 +321,13 @@ bool EDA_BASE_FRAME::doAutoSave()
 }
 
 
-void EDA_BASE_FRAME::OnCharHook( wxKeyEvent& event )
+void EDA_BASE_FRAME::OnCharHook( wxKeyEvent& aKeyEvent )
 {
-    wxLogTrace( kicadTraceKeyEvent, "EDA_BASE_FRAME::OnCharHook %s", dump( event ) );
+    wxLogTrace( kicadTraceKeyEvent, "EDA_BASE_FRAME::OnCharHook %s", dump( aKeyEvent ) );
+
     // Key events can be filtered here.
     // Currently no filtering is made.
-    event.Skip();
+    aKeyEvent.Skip();
 }
 
 
@@ -423,6 +441,7 @@ void EDA_BASE_FRAME::AddStandardHelpMenu( wxMenuBar* aMenuBar )
     helpMenu->Add( ACTIONS::gettingStarted );
     helpMenu->Add( ACTIONS::listHotKeys );
     helpMenu->Add( ACTIONS::getInvolved );
+    helpMenu->Add( ACTIONS::donate );
     helpMenu->Add( ACTIONS::reportBug );
 
     helpMenu->AppendSeparator();
@@ -547,17 +566,25 @@ void EDA_BASE_FRAME::LoadWindowState( const WINDOW_STATE& aState )
         wxDisplay display( aState.display );
         wxRect clientSize = display.GetClientArea();
 
+#ifndef _WIN32
         // The percentage size (represented in decimal) of the region around the screen's border where
         // an upper corner is not allowed
-#define SCREEN_BORDER_REGION 0.10
+        #define SCREEN_BORDER_REGION 0.10
+#else
+        // Windows uses a very rectangular clearly defined display region, there is no ambigious "screen border region"
+        // GetClientArea already accounts for the taskbar stealing display space
+        #define SCREEN_BORDER_REGION 0
+#endif
 
-        int yLim      = clientSize.y + ( clientSize.height * ( 1.0 - SCREEN_BORDER_REGION ) );
+        int yLimTop   = clientSize.y + ( clientSize.height * ( SCREEN_BORDER_REGION ) );
+        int yLimBottom = clientSize.y + ( clientSize.height * ( 1.0 - SCREEN_BORDER_REGION ) );
         int xLimLeft  = clientSize.x + ( clientSize.width  * SCREEN_BORDER_REGION );
         int xLimRight = clientSize.x + ( clientSize.width  * ( 1.0 - SCREEN_BORDER_REGION ) );
 
         if( upperLeft.x  > xLimRight ||  // Upper left corner too close to right edge of screen
             upperRight.x < xLimLeft  ||  // Upper right corner too close to left edge of screen
-            upperRight.y > yLim )        // Upper corner too close to the bottom of the screen
+            upperLeft.y < yLimTop ||   // Upper corner too close to the bottom of the screen
+            upperLeft.y > yLimBottom )
         {
             m_framePos = wxDefaultPosition;
             wxLogTrace( traceDisplayLocation, "Resetting to default position" );
@@ -651,7 +678,7 @@ void EDA_BASE_FRAME::SaveWindowSettings( WINDOW_SETTINGS* aCfg )
         Pgm().GetCommonSettings()->m_System.autosave_interval = m_autoSaveInterval;
 
     // Once this is fully implemented, wxAuiManager will be used to maintain
-    // the persistance of the main frame and all it's managed windows and
+    // the persistence of the main frame and all it's managed windows and
     // all of the legacy frame persistence position code can be removed.
     aCfg->perspective = m_auimgr.SavePerspective().ToStdString();
 
@@ -749,7 +776,7 @@ void EDA_BASE_FRAME::FinishAUIInitialization()
     m_auimgr.Update();
 #else
     // Call Update() to fix all pane default sizes, especially the "InfoBar" pane before
-    // hidding it.
+    // hiding it.
     m_auimgr.Update();
 
     // We don't want the infobar displayed right away
@@ -781,7 +808,7 @@ void EDA_BASE_FRAME::ShowInfoBarError( const wxString& aErrorMsg, bool aShowClos
     if( aCallback )
         m_infoBar->SetCallback( aCallback );
 
-    GetInfoBar()->ShowMessageFor( aErrorMsg, 8000, wxICON_ERROR );
+    GetInfoBar()->ShowMessageFor( aErrorMsg, 6000, wxICON_ERROR );
 }
 
 
@@ -792,7 +819,7 @@ void EDA_BASE_FRAME::ShowInfoBarWarning( const wxString& aWarningMsg, bool aShow
     if( aShowCloseButton )
         m_infoBar->AddCloseButton();
 
-    GetInfoBar()->ShowMessageFor( aWarningMsg, 8000, wxICON_WARNING );
+    GetInfoBar()->ShowMessageFor( aWarningMsg, 6000, wxICON_WARNING );
 }
 
 
@@ -803,7 +830,7 @@ void EDA_BASE_FRAME::ShowInfoBarMsg( const wxString& aMsg, bool aShowCloseButton
     if( aShowCloseButton )
         m_infoBar->AddCloseButton();
 
-    GetInfoBar()->ShowMessageFor( aMsg, 10000, wxICON_INFORMATION );
+    GetInfoBar()->ShowMessageFor( aMsg, 8000, wxICON_INFORMATION );
 }
 
 
@@ -890,7 +917,7 @@ void EDA_BASE_FRAME::OnKicadAbout( wxCommandEvent& event )
 }
 
 
-void EDA_BASE_FRAME::OnPreferences( wxCommandEvent& event )
+void EDA_BASE_FRAME::OnPreferences()
 {
     PAGED_DIALOG dlg( this, _( "Preferences" ), true );
     wxTreebook* book = dlg.GetTreebook();
@@ -1015,7 +1042,7 @@ void EDA_BASE_FRAME::CheckForAutoSaveFile( const wxFileName& aFileName )
 }
 
 
-bool EDA_BASE_FRAME::IsContentModified()
+bool EDA_BASE_FRAME::IsContentModified() const
 {
     // This function should be overridden in child classes
     return false;

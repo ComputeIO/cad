@@ -44,13 +44,13 @@ static bool empty( const wxTextEntryBase* aCtrl )
 }
 
 
-static void setStringSelection( wxRadioBox* aCtrl, const wxString& aStr )
+static void setStringSelection( wxChoice* aCtrl, const wxString& aStr )
 {
     aCtrl->SetSelection( aCtrl->FindString( aStr ) );
 }
 
 
-static wxString getStringSelection( const wxRadioBox* aCtrl )
+static wxString getStringSelection( const wxChoice* aCtrl )
 {
     return aCtrl->GetString( aCtrl->GetSelection() );
 }
@@ -300,8 +300,9 @@ bool DIALOG_SIM_SETTINGS::TransferDataFromWindow()
     if( previousSimCommand != m_simCommand )
     {
         m_simCommand.Trim();
-        updateNetlistOpts();
     }
+
+    updateNetlistOpts();
 
     return true;
 }
@@ -331,6 +332,18 @@ bool DIALOG_SIM_SETTINGS::TransferDataToWindow()
                                           ngspiceSettings->GetModelMode() ) );
             break;
         }
+    }
+
+    if( !m_dcSource1->GetCount() )
+    {
+        wxChar type1 = getStringSelection( m_dcSourceType1 ).Upper().GetChar( 0 );
+        updateDCSources( type1, m_dcSource1 );
+    }
+
+    if( !m_dcSource2->GetCount() )
+    {
+        wxChar type2 = getStringSelection( m_dcSourceType2 ).Upper().GetChar( 0 );
+        updateDCSources( type2, m_dcSource2 );
     }
 
     if( m_simCommand.IsEmpty() && !empty( m_customTxt ) )
@@ -583,7 +596,6 @@ void DIALOG_SIM_SETTINGS::updateDCUnits( wxChar aType, wxChoice* aSource,
     aEndValUnit->SetLabel( unit );
     aStepUnit->SetLabel( unit );
 
-    m_pgDC->Fit();
     m_pgDC->Refresh();
 }
 

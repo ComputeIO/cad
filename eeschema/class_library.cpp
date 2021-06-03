@@ -44,6 +44,7 @@
 #include <class_library.h>
 #include <sch_plugins/legacy/sch_legacy_plugin.h>
 
+#include <wx/log.h>
 #include <wx/progdlg.h>
 #include <wx/tokenzr.h>
 #include <wx/regex.h>
@@ -56,7 +57,7 @@
 PART_LIB::PART_LIB( SCH_LIB_TYPE aType, const wxString& aFileName, SCH_IO_MGR::SCH_FILE_T aPluginType ) :
     // start @ != 0 so each additional library added
     // is immediately detectable, zero would not be.
-    m_mod_hash( PART_LIBS::s_modify_generation ),
+    m_mod_hash( PART_LIBS::GetModifyGeneration() ),
     m_pluginType( aPluginType )
 {
     type = aType;
@@ -413,7 +414,8 @@ void PART_LIBS::FindLibraryNearEntries( std::vector<LIB_PART*>& aCandidates,
 }
 
 
-int PART_LIBS::s_modify_generation = 1;     // starts at 1 and goes up
+int        PART_LIBS::s_modify_generation = 1;     // starts at 1 and goes up
+std::mutex PART_LIBS::s_generationMutex;
 
 
 int PART_LIBS::GetModifyHash()
@@ -428,7 +430,7 @@ int PART_LIBS::GetModifyHash()
     // Rebuilding the cache (m_cache) does not change the GetModHash() value,
     // but changes PART_LIBS::s_modify_generation.
     // Take this change in account:
-    hash += PART_LIBS::s_modify_generation;
+    hash += PART_LIBS::GetModifyGeneration();
 
     return hash;
 }
@@ -564,7 +566,7 @@ void PART_LIBS::LoadAllLibraries( PROJECT* aProject, bool aShowProgress )
     wxString cache_name = CacheName( aProject->GetProjectFullName() );
     PART_LIB* cache_lib;
 
-    if( !cache_name.IsEmpty() )
+    if( !aProject->IsNullProject() && !cache_name.IsEmpty() )
     {
         try
         {

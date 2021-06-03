@@ -30,6 +30,7 @@
 #include <tool/tool_manager.h>
 #include <widgets/button_row_panel.h>
 #include <widgets/ui_common.h>
+#include <wx/filedlg.h>
 #include <wx/panel.h>
 #include <wx/sizer.h>
 #include <wx/srchctrl.h>
@@ -43,7 +44,7 @@ static const wxSize default_dialog_size { 500, 350 };
  * Helper function to add a filter box to a panel, with some
  * sensible defaults for that purpose.
  *
- * @param  aParent          The panrent widget/panel
+ * @param  aParent          The parent widget/panel
  * @param  aDescriptiveText The text to show when the box is empty.
  * @return                  A newly constructed filter box - the caller owns it
  */
@@ -243,9 +244,14 @@ void PANEL_HOTKEYS_EDITOR::dumpHotkeys()
             stream << wxT( "| " ) << hk.m_Actions[0]->GetLabel() << endl;
 
             if( hk.m_EditKeycode > 0 )
-                stream << wxT( "  | `" ) << KeyNameFromKeyCode( hk.m_EditKeycode ) << '`' << endl;
+            {
+                stream << wxT( "  | kbd:[" ) << KeyNameFromKeyCode( hk.m_EditKeycode ) << ']'
+                       << endl;
+            }
             else
+            {
                 stream << wxT( "  |" ) << endl;
+            }
 
             stream << wxT( "  | " ) << hk.m_Actions[0]->GetDescription( false ) << endl;
         }

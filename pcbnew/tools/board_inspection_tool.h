@@ -29,6 +29,7 @@
 #include <dialogs/dialog_HTML_reporter_base.h>
 #include <dialogs/dialog_constraints_reporter.h>
 #include <pcb_edit_frame.h>
+#include <rc_item.h>
 #include <tools/pcb_actions.h>
 #include <tools/pcb_tool_base.h>
 
@@ -111,10 +112,20 @@ public:
     ///< Show the ratsnest for a given net.
     int ShowNet( const TOOL_EVENT& aEvent );
 
+    void InspectDRCError( const std::shared_ptr<RC_ITEM>& aDRCItem );
+
     ///< Show the clearance resolution for two selected items.
     int InspectClearance( const TOOL_EVENT& aEvent );
 
     int InspectConstraints( const TOOL_EVENT& aEvent );
+
+    /**
+     * @return true if a net or nets to highlight have been set
+     */
+    bool IsNetHighlightSet() const
+    {
+        return !m_currentlyHighlighted.empty();
+    }
 
 private:
     ///< Event handler to recalculate dynamic ratsnest.
@@ -152,7 +163,8 @@ private:
     PCB_EDIT_FRAME* m_frame;    // Pointer to the currently used edit frame.
 
     bool m_probingSchToPcb;     // Recursion guard when cross-probing to Eeschema
-    int  m_lastNetcode;         // Used for toggling between last two highlighted nets
+    std::set<int> m_currentlyHighlighted; // Active net being highlighted, or -1 when off
+    std::set<int> m_lastHighlighted;      // Used for toggling between last two highlighted nets
 
     CONNECTIVITY_DATA* m_dynamicData;      // Cached connectivity data from the selection
 

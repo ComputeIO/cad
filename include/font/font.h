@@ -27,6 +27,7 @@
 #ifndef FONT_H_
 #define FONT_H_
 
+#include <iostream>
 #include <map>
 #include <algorithm>
 #include <wx/string.h>
@@ -94,8 +95,11 @@ public:
 
     virtual bool IsStroke() const { return false; }
     virtual bool IsOutline() const { return false; }
+    virtual bool IsBold() const { return false; }
+    virtual bool IsItalic() const { return false; }
 
-    static FONT* GetFont( const wxString& aFontName = "" );
+    static FONT* GetFont( const wxString& aFontName = "", bool aBold = false,
+                          bool aItalic = false );
     static bool  IsOutline( const wxString& aFontName );
 
     const wxString&    Name() const;
@@ -105,12 +109,14 @@ public:
      * Load a font.
      *
      * @param aFontName is the name of the font. If empty, Newstroke is loaded by default.
+     * @param aBool is true if a bold version of the font should be loaded,
+     *        otherwise false (default).
+     * @param aItalic is true if an italic version of the font should be loaded,
+     *        otherwise false (default).
      * @return True, if the font was successfully loaded, else false.
      */
-    virtual bool LoadFont( const wxString& aFontName = "" ) = 0;
-
-    virtual void DrawText( KIGFX::GAL* aGal, const UTF8& aText, const VECTOR2D& aPosition,
-                           const TEXT_ATTRIBUTES& aAttributes ) const;
+    virtual bool LoadFont( const wxString& aFontName = "", bool aBold = false,
+                           bool aItalic = false ) = 0;
 
     /**
      * Draw a string.
@@ -119,17 +125,23 @@ public:
      * @param aText is the text to be drawn.
      * @param aPosition is the text position in world coordinates.
      * @param aRotationAngle is the text rotation angle
-     * @return bounding box width/height
+     * @return bounding box
      */
-    virtual VECTOR2D Draw( KIGFX::GAL* aGal, const UTF8& aText, const VECTOR2D& aPosition,
-                           const VECTOR2D& aOrigin, const EDA_ANGLE& aRotationAngle ) const = 0;
+    VECTOR2D Draw( KIGFX::GAL* aGal, const UTF8& aText, const VECTOR2D& aPosition,
+                   const VECTOR2D& aOrigin, const TEXT_ATTRIBUTES& aAttributes ) const;
 
     VECTOR2D Draw( KIGFX::GAL* aGal, const UTF8& aText, const VECTOR2D& aPosition,
-                   double aRotationAngle ) const
+                   const TEXT_ATTRIBUTES& aAttributes ) const
     {
-        return Draw( aGal, aText, aPosition, VECTOR2D( 0, 0 ),
-                     EDA_ANGLE( aRotationAngle, EDA_ANGLE::RADIANS ) );
+        return Draw( aGal, aText, aPosition, VECTOR2D( 0, 0 ), aAttributes );
     }
+
+    VECTOR2D Draw( KIGFX::GAL* aGal, const EDA_TEXT& aText, const VECTOR2D& aPosition ) const;
+    VECTOR2D Draw( KIGFX::GAL* aGal, const EDA_TEXT& aText ) const;
+    VECTOR2D Draw( KIGFX::GAL* aGal, const EDA_TEXT* aText ) const { return Draw( aGal, *aText ); }
+
+    virtual void DrawText( KIGFX::GAL* aGal, const UTF8& aText, const VECTOR2D& aPosition,
+                           const TEXT_ATTRIBUTES& aAttributes ) const;
 
     /**
      * Draw a string.
@@ -139,21 +151,21 @@ public:
      * @param aPosition is the text position in world coordinates
      * @param aParse is true is aText should first be parsed for variable substition etc.,
      *     otherwise false (default is false)
-     * @return bounding box width/height
+     * @return bounding box
      */
     VECTOR2D DrawString( KIGFX::GAL* aGal, const UTF8& aText, const VECTOR2D& aPosition,
                          bool aParse, const VECTOR2D& aGlyphSize,
                          const TEXT_ATTRIBUTES& aAttributes ) const
     {
-        return doDrawString( aGal, aText, aPosition, aParse, aGlyphSize, aAttributes,
-                             aAttributes.GetAngle() );
+        return doDrawString( aGal, aText, aPosition, aParse, aGlyphSize, aAttributes );
     }
 
     VECTOR2D DrawString( KIGFX::GAL* aGal, const UTF8& aText, const VECTOR2D& aPosition,
                          bool aParse, const VECTOR2D& aGlyphSize, const EDA_ANGLE& aAngle ) const
     {
-        return doDrawString( aGal, aText, aPosition, aParse, aGlyphSize, TEXT_ATTRIBUTES(),
-                             aAngle );
+        TEXT_ATTRIBUTES attributes;
+        attributes.SetAngle( aAngle );
+        return doDrawString( aGal, aText, aPosition, aParse, aGlyphSize, attributes );
     }
 
     VECTOR2D DrawString( KIGFX::GAL* aGal, const UTF8& aText, const VECTOR2D& aPosition )
@@ -210,9 +222,10 @@ public:
      * Compute the distance (interline) between 2 lines of text (for multiline texts).
      *
      * @param aGlyphHeight is the height (vertical size) of the text.
+     * @param aLineSpacing is the line spacing multiplier (defaults to 1.0)
      * @return the interline.
      */
-    virtual double GetInterline( double aGlyphHeight ) const = 0;
+    virtual double GetInterline( double aGlyphHeight, double aLineSpacing = 1.0 ) const = 0;
 
     /**
      * Compute the X and Y size of a given text. The text is expected to be
@@ -223,15 +236,16 @@ public:
      */
     virtual VECTOR2D ComputeTextLineSize( const KIGFX::GAL* aGal, const UTF8& aText ) const = 0;
 
-    VECTOR2D
-    BoundingBox( const UTF8& aString, const VECTOR2D& aGlyphSize, TEXT_STYLE_FLAGS aTextStyle = 0,
-                 const TEXT_ATTRIBUTES& aAttributes = TEXT_ATTRIBUTES() )
+    VECTOR2D BoundingBox( const UTF8& aString, const VECTOR2D& aGlyphSize,
+                          TEXT_STYLE_FLAGS       aTextStyle = 0,
+                          const TEXT_ATTRIBUTES& aAttributes = TEXT_ATTRIBUTES() )
     {
         // TODO: add version of BoundingBox with a free angle - only
         // if needed, doesn't look like there are any uses like that
-        return getBoundingBox( aString, aGlyphSize, aTextStyle, aAttributes,
-                               aAttributes.GetAngle() );
+        return getBoundingBox( aString, aGlyphSize, aTextStyle, aAttributes );
     }
+
+    VECTOR2D BoundingBox( const EDA_TEXT& aText );
 
 protected:
     wxString m_fontName;     ///< Font name
@@ -263,15 +277,18 @@ protected:
      */
     virtual VECTOR2D drawSingleLineText( KIGFX::GAL* aGal, const UTF8& aText,
                                          const VECTOR2D&  aPosition,
-                                         const EDA_ANGLE& aAngle ) const = 0;
+                                         const EDA_ANGLE& aAngle = EDA_ANGLE() ) const = 0;
 
     void getLinePositions( const UTF8& aText, const VECTOR2D& aPosition, wxArrayString& aStringList,
                            std::vector<wxPoint>& aPositions, int& aLineCount,
                            std::vector<VECTOR2D>& aBoundingBoxes, const VECTOR2D& aGlyphSize,
-                           const TEXT_ATTRIBUTES& aAttributes, const EDA_ANGLE& aAngle ) const;
+                           const TEXT_ATTRIBUTES& aAttributes ) const;
 
     virtual VECTOR2D getBoundingBox( const UTF8& aString, const VECTOR2D& aGlyphSize,
                                      TEXT_STYLE_FLAGS aTextStyle = 0 ) const = 0;
+
+protected:
+    static wxString getFontNameForFontconfig( const wxString& aFontName, bool aBold, bool aItalic );
 
 private:
     static FONT*                     s_defaultFont;
@@ -281,11 +298,25 @@ private:
 
     VECTOR2D doDrawString( KIGFX::GAL* aGal, const UTF8& aText, const VECTOR2D& aPosition,
                            bool aParse, const VECTOR2D& aGlyphSize,
-                           const TEXT_ATTRIBUTES& aAttributes, const EDA_ANGLE& aAngle ) const;
+                           const TEXT_ATTRIBUTES& aAttributes ) const;
     VECTOR2D getBoundingBox( const UTF8& aText, const VECTOR2D& aGlyphSize,
-                             TEXT_STYLE_FLAGS aTextStyle, const TEXT_ATTRIBUTES& aAttributes,
-                             const EDA_ANGLE& aAngle ) const;
+                             TEXT_STYLE_FLAGS       aTextStyle,
+                             const TEXT_ATTRIBUTES& aAttributes ) const;
 };
 } //namespace KIFONT
+
+inline std::ostream& operator<<(std::ostream& os, const KIFONT::FONT& aFont)
+{
+    os << "[Font \"" << aFont.Name() << "\"" << ( aFont.IsStroke() ? " stroke" : "" )
+       << ( aFont.IsOutline() ? " outline" : "" ) << ( aFont.IsBold() ? " bold" : "" )
+       << ( aFont.IsItalic() ? " italic" : "" ) << "]";
+    return os;
+}
+
+inline std::ostream& operator<<(std::ostream& os, const KIFONT::FONT* aFont)
+{
+    os << *aFont;
+    return os;
+}
 
 #endif // FONT_H_

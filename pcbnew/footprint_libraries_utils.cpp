@@ -1052,7 +1052,7 @@ bool FOOTPRINT_EDIT_FRAME::SaveFootprintAs( FOOTPRINT* aFootprint )
 
 bool FOOTPRINT_EDIT_FRAME::RevertFootprint()
 {
-    if( GetScreen()->IsModify() && m_revertModule )
+    if( GetScreen()->IsContentModified() && m_revertModule )
     {
         wxString msg = wxString::Format( _( "Revert \"%s\" to last version saved?" ),
                                          GetLoadedFPID().GetLibItemName().wx_str() );
@@ -1064,10 +1064,10 @@ bool FOOTPRINT_EDIT_FRAME::RevertFootprint()
 
             Zoom_Automatique( false );
 
-            Update3DView( true );
+            Update3DView( true, true );
 
             ClearUndoRedoList();
-            GetScreen()->ClrModify();
+            GetScreen()->SetContentModified( false );
 
             UpdateView();
             GetCanvas()->Refresh();

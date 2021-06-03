@@ -35,6 +35,7 @@
 #include "../common_ogl/ogl_utils.h"
 #include "../3d_math.h"
 #include <wx/debug.h>
+#include <wx/log.h>
 #include <chrono>
 #include <memory>
 
@@ -486,7 +487,7 @@ void MODEL_3D::DrawBbox() const
                     reinterpret_cast<const void*>( offsetof( VERTEX, m_color ) ) );
 
     glDrawElements( GL_LINES, bbox_idx_count, m_bbox_index_buffer_type,
-                    reinterpret_cast<const void*>( 0 ) );
+                    reinterpret_cast<const void*>( NULL ) );
 }
 
 

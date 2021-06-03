@@ -154,7 +154,6 @@ struct KIFACE
 
 #define KFCTL_STANDALONE        (1<<0)  ///< Running as a standalone Top.
 #define KFCTL_CPP_PROJECT_SUITE (1<<1)  ///< Running under C++ project mgr, possibly with others.
-#define KFCTL_PY_PROJECT_SUITE  (1<<2)  ///< Running under python project mgr, possibly with others.
 
 
     /**
@@ -272,6 +271,7 @@ public:
         FACE_PL_EDITOR,
         FACE_PCB_CALCULATOR,
         FACE_BMP2CMP,
+        FACE_PYTHON,
 
         KIWAY_FACE_COUNT
     };
@@ -383,6 +383,7 @@ public:
      * @param aTop is the top most wxFrame in the entire program.
      */
     void SetTop( wxFrame* aTop );
+    wxFrame* GetTop() { return m_top; }
 
     void OnKiCadExit();
 

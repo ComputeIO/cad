@@ -62,7 +62,7 @@ int GRAPHICS_IMPORTER_PCBNEW::MapLineWidth( double aLineWidth )
 void GRAPHICS_IMPORTER_PCBNEW::AddLine( const VECTOR2D& aOrigin, const VECTOR2D& aEnd, double aWidth )
 {
     std::unique_ptr<PCB_SHAPE> line( createDrawing() );
-    line->SetShape( S_SEGMENT );
+    line->SetShape( PCB_SHAPE_TYPE::SEGMENT );
     line->SetLayer( GetLayer() );
     line->SetWidth( MapLineWidth( aWidth ) );
     line->SetStart( MapCoordinate( aOrigin ) );
@@ -78,7 +78,7 @@ void GRAPHICS_IMPORTER_PCBNEW::AddLine( const VECTOR2D& aOrigin, const VECTOR2D&
 void GRAPHICS_IMPORTER_PCBNEW::AddCircle( const VECTOR2D& aCenter, double aRadius, double aWidth, bool aFilled )
 {
     std::unique_ptr<PCB_SHAPE> circle( createDrawing() );
-    circle->SetShape( S_CIRCLE );
+    circle->SetShape( PCB_SHAPE_TYPE::CIRCLE );
     circle->SetFilled( aFilled );
     circle->SetLayer( GetLayer() );
     circle->SetWidth( MapLineWidth( aWidth ) );
@@ -96,7 +96,7 @@ void GRAPHICS_IMPORTER_PCBNEW::AddArc( const VECTOR2D& aCenter, const VECTOR2D& 
                                        double aAngle, double aWidth )
 {
     std::unique_ptr<PCB_SHAPE> arc( createDrawing() );
-    arc->SetShape( S_ARC );
+    arc->SetShape( PCB_SHAPE_TYPE::ARC );
     arc->SetLayer( GetLayer() );
     arc->SetWidth( MapLineWidth( aWidth ) );
     arc->SetCenter( MapCoordinate( aCenter) );
@@ -119,7 +119,7 @@ void GRAPHICS_IMPORTER_PCBNEW::AddPolygon( const std::vector< VECTOR2D >& aVerti
         convertedPoints.emplace_back( MapCoordinate( precisePoint ) );
 
     std::unique_ptr<PCB_SHAPE> polygon( createDrawing() );
-    polygon->SetShape( S_POLYGON );
+    polygon->SetShape( PCB_SHAPE_TYPE::POLYGON );
     polygon->SetFilled( GetLayer() != Edge_Cuts );
     polygon->SetLayer( GetLayer() );
     polygon->SetPolyPoints( convertedPoints );
@@ -133,8 +133,10 @@ void GRAPHICS_IMPORTER_PCBNEW::AddPolygon( const std::vector< VECTOR2D >& aVerti
 
 
 void GRAPHICS_IMPORTER_PCBNEW::AddText( const VECTOR2D& aOrigin, const wxString& aText,
-        double aHeight, double aWidth, double aThickness, double aOrientation,
-        EDA_TEXT_HJUSTIFY_T aHJustify, EDA_TEXT_VJUSTIFY_T aVJustify )
+                                        double aHeight, double aWidth, double aThickness,
+                                        double                                aOrientation,
+                                        TEXT_ATTRIBUTES::HORIZONTAL_ALIGNMENT aHJustify,
+                                        TEXT_ATTRIBUTES::VERTICAL_ALIGNMENT   aVJustify )
 {
     std::unique_ptr<BOARD_ITEM> boardItem;
     EDA_TEXT* textItem;
@@ -145,8 +147,7 @@ void GRAPHICS_IMPORTER_PCBNEW::AddText( const VECTOR2D& aOrigin, const wxString&
     textItem->SetTextAngle( aOrientation * 10.0 );      // Pcbnew uses the decidegree
     textItem->SetTextWidth( aWidth * ImportScalingFactor() );
     textItem->SetTextHeight( aHeight * ImportScalingFactor() );
-    textItem->SetVertJustify( aVJustify );
-    textItem->SetHorizJustify( aHJustify );
+    textItem->Align( aHJustify, aVJustify );
     textItem->SetText( aText );
 
     if( boardItem->Type() == PCB_FP_TEXT_T )
@@ -160,7 +161,7 @@ void GRAPHICS_IMPORTER_PCBNEW::AddSpline( const VECTOR2D& aStart, const VECTOR2D
                 const VECTOR2D& BezierControl2, const VECTOR2D& aEnd, double aWidth )
 {
     std::unique_ptr<PCB_SHAPE> spline( createDrawing() );
-    spline->SetShape( S_CURVE );
+    spline->SetShape( PCB_SHAPE_TYPE::CURVE );
     spline->SetLayer( GetLayer() );
     spline->SetWidth( MapLineWidth( aWidth ) );
     spline->SetStart( MapCoordinate( aStart ) );

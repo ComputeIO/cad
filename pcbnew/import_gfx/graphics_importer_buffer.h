@@ -218,8 +218,8 @@ class IMPORTED_TEXT : public IMPORTED_SHAPE
 {
 public:
     IMPORTED_TEXT( const VECTOR2D& aOrigin, const wxString& aText, double aHeight, double aWidth,
-                   double aThickness, double aOrientation, EDA_TEXT_HJUSTIFY_T aHJustify,
-                   EDA_TEXT_VJUSTIFY_T aVJustify ) :
+                   double aThickness, double aOrientation, TEXT_ATTRIBUTES::HORIZONTAL_ALIGNMENT aHJustify,
+                   TEXT_ATTRIBUTES::VERTICAL_ALIGNMENT aVJustify ) :
         m_origin( aOrigin ),
         m_text( aText ),
         m_height( aHeight ),
@@ -254,14 +254,14 @@ public:
     }
 
 private:
-    VECTOR2D            m_origin;
-    const wxString      m_text;
-    double              m_height;
-    double              m_width;
-    double              m_thickness;
-    double              m_orientation;
-    EDA_TEXT_HJUSTIFY_T m_hJustify;
-    EDA_TEXT_VJUSTIFY_T m_vJustify;
+    VECTOR2D                              m_origin;
+    const wxString                        m_text;
+    double                                m_height;
+    double                                m_width;
+    double                                m_thickness;
+    double                                m_orientation;
+    TEXT_ATTRIBUTES::HORIZONTAL_ALIGNMENT m_hJustify;
+    TEXT_ATTRIBUTES::VERTICAL_ALIGNMENT   m_vJustify;
 };
 
 
@@ -329,9 +329,10 @@ public:
 
     void AddPolygon( const std::vector< VECTOR2D >& aVertices, double aWidth ) override;
 
-    void AddText( const VECTOR2D& aOrigin, const wxString& aText,
-                  double aHeight, double aWidth, double aThickness, double aOrientation,
-                  EDA_TEXT_HJUSTIFY_T aHJustify, EDA_TEXT_VJUSTIFY_T aVJustify ) override;
+    void AddText( const VECTOR2D& aOrigin, const wxString& aText, double aHeight, double aWidth,
+                  double aThickness, double aOrientation,
+                  TEXT_ATTRIBUTES::HORIZONTAL_ALIGNMENT aHJustify,
+                  TEXT_ATTRIBUTES::VERTICAL_ALIGNMENT   aVJustify ) override;
 
     void AddSpline( const VECTOR2D& aStart, const VECTOR2D& BezierControl1,
                     const VECTOR2D& BezierControl2, const VECTOR2D& aEnd , double aWidth ) override;

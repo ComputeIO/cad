@@ -37,27 +37,20 @@
 #include <wx/snglinst.h>
 #include <wx/stdpaths.h>
 #include <wx/sysopt.h>
-#include <wx/richmsgdlg.h>
 #include <wx/filedlg.h>
 #include <wx/tooltip.h>
 
-#include <build_version.h>
 #include <config_params.h>
 #include <confirm.h>
 #include <core/arraydim.h>
-#include <dialogs/dialog_configure_paths.h>
 #include <eda_base_frame.h>
 #include <eda_draw_frame.h>
-#include <gal/gal_display_options.h>
 #include <gestfich.h>
-#include <hotkeys_basic.h>
 #include <id.h>
-#include <kiplatform/environment.h>
 #include <lockfile.h>
-#include <macros.h>
 #include <menus_helpers.h>
-#include <paths.h>
 #include <pgm_base.h>
+#include <python_scripting.h>
 #include <settings/common_settings.h>
 #include <settings/settings_manager.h>
 #include <systemdirsappend.h>
@@ -76,6 +69,7 @@
 LANGUAGE_DESCR LanguagesList[] =
 {
     { wxLANGUAGE_DEFAULT,    ID_LANGUAGE_DEFAULT,    _( "Default" ),    false },
+    { wxLANGUAGE_INDONESIAN, ID_LANGUAGE_INDONESIAN, wxT( "Bahasa Indonesia" ), true },
     { wxLANGUAGE_CATALAN,    ID_LANGUAGE_CATALAN,    wxT( "Català" ),   true },
     { wxLANGUAGE_CZECH,      ID_LANGUAGE_CZECH,      wxT( "Čeština" ),  true },
     { wxLANGUAGE_DANISH,     ID_LANGUAGE_DANISH,     wxT( "Dansk" ),    true },
@@ -84,7 +78,6 @@ LANGUAGE_DESCR LanguagesList[] =
     { wxLANGUAGE_ENGLISH,    ID_LANGUAGE_ENGLISH,    wxT( "English" ),  true },
     { wxLANGUAGE_SPANISH,    ID_LANGUAGE_SPANISH,    wxT( "Español" ),  true },
     { wxLANGUAGE_FRENCH,     ID_LANGUAGE_FRENCH,     wxT( "Français" ), true },
-    { wxLANGUAGE_INDONESIAN, ID_LANGUAGE_INDONESIAN, wxT( "Indonesia" ), true },
     { wxLANGUAGE_ITALIAN,    ID_LANGUAGE_ITALIAN,    wxT( "Italiano" ), true },
     { wxLANGUAGE_LITHUANIAN, ID_LANGUAGE_LITHUANIAN, wxT( "Lietuvių" ), true },
     { wxLANGUAGE_HUNGARIAN,  ID_LANGUAGE_HUNGARIAN,  wxT( "Magyar" ),   true },
@@ -93,9 +86,9 @@ LANGUAGE_DESCR LanguagesList[] =
     { wxLANGUAGE_PORTUGUESE, ID_LANGUAGE_PORTUGUESE, wxT( "Português" ),true },
     { wxLANGUAGE_RUSSIAN,    ID_LANGUAGE_RUSSIAN,    wxT( "Русский" ),  true },
     { wxLANGUAGE_SERBIAN,    ID_LANGUAGE_SERBIAN,    wxT( "Српски"),    true },
-    { wxLANGUAGE_FINNISH,    ID_LANGUAGE_FINNISH,    wxT( "Suomalainen" ),  true },
-    { wxLANGUAGE_VIETNAMESE, ID_LANGUAGE_VIETNAMESE, wxT( "Tiếng việt" ), true },
-    { wxLANGUAGE_TURKISH,    ID_LANGUAGE_TURKISH,    wxT( "Türk" ),     true },
+    { wxLANGUAGE_FINNISH,    ID_LANGUAGE_FINNISH,    wxT( "Suomi" ),    true },
+    { wxLANGUAGE_VIETNAMESE, ID_LANGUAGE_VIETNAMESE, wxT( "Tiếng Việt" ), true },
+    { wxLANGUAGE_TURKISH,    ID_LANGUAGE_TURKISH,    wxT( "Türkçe" ),   true },
     { wxLANGUAGE_CHINESE_SIMPLIFIED, ID_LANGUAGE_CHINESE_SIMPLIFIED,
             wxT( "简体中文" ), true },
     { wxLANGUAGE_CHINESE_TRADITIONAL, ID_LANGUAGE_CHINESE_TRADITIONAL,
@@ -108,8 +101,8 @@ LANGUAGE_DESCR LanguagesList[] =
 
 PGM_BASE::PGM_BASE()
 {
-    m_pgm_checker = NULL;
-    m_locale = NULL;
+    m_pgm_checker = nullptr;
+    m_locale = nullptr;
     m_Printing = false;
     m_ModalDialogCount = 0;
 
@@ -131,10 +124,10 @@ void PGM_BASE::Destroy()
 {
     // unlike a normal destructor, this is designed to be called more than once safely:
     delete m_pgm_checker;
-    m_pgm_checker = 0;
+    m_pgm_checker = nullptr;
 
     delete m_locale;
-    m_locale = 0;
+    m_locale = nullptr;
 }
 
 
@@ -210,7 +203,7 @@ const wxString PGM_BASE::AskUserForPreferredEditor( const wxString& aDefaultEdit
 }
 
 
-bool PGM_BASE::InitPgm()
+bool PGM_BASE::InitPgm( bool aHeadless )
 {
     wxFileName pgm_name( App().argv[0] );
 
@@ -272,158 +265,16 @@ bool PGM_BASE::InitPgm()
     SetLanguagePath();
     SetDefaultLanguage( tmp );
 
-    m_settings_manager = std::make_unique<SETTINGS_MANAGER>();
+    m_settings_manager = std::make_unique<SETTINGS_MANAGER>( aHeadless );
 
     // Something got in the way of settings load: can't continue
     if( !m_settings_manager->IsOK() )
         return false;
 
-    wxFileName baseSharePath;
-#ifdef __WXMAC__
-    baseSharePath.AssignDir( PATHS::GetOSXKicadMachineDataDir() );
-#else
-    baseSharePath.AssignDir( PATHS::GetStockDataPath( false ) );
-#endif
+    // Set up built-in environment variables (and override them from the system enviroment if set)
+    GetCommonSettings()->InitializeEnvironment();
 
-    // KICAD6_FOOTPRINT_DIR
-    wxString envVarName = wxT( "KICAD6_FOOTPRINT_DIR" );
-    ENV_VAR_ITEM envVarItem;
-    wxString envValue;
-    wxFileName tmpFileName;
-
-    if( wxGetEnv( envVarName, &envValue ) == true && !envValue.IsEmpty() )
-    {
-        tmpFileName.AssignDir( envValue );
-        envVarItem.SetDefinedExternally( true );
-        wxLogTrace( traceEnvVars, "PGM_BASE::InitPgm: Found entry %s externally", envVarName );
-    }
-    else
-    {
-        tmpFileName = baseSharePath;
-        tmpFileName.AppendDir( "modules" );
-        envVarItem.SetDefinedExternally( false );
-    }
-
-    envVarItem.SetValue( tmpFileName.GetPath() );
-    wxLogTrace( traceEnvVars, "PGM_BASE::InitPgm: Setting entry %s = %s",
-                envVarName, envVarItem.GetValue() );
-    m_local_env_vars[ envVarName ] = envVarItem;
-
-    // KICAD6_3DMODEL_DIR
-    envVarName = wxT( "KICAD6_3DMODEL_DIR" );
-
-    if( wxGetEnv( envVarName, &envValue ) == true && !envValue.IsEmpty() )
-    {
-        tmpFileName.AssignDir( envValue );
-        envVarItem.SetDefinedExternally( true );
-        wxLogTrace( traceEnvVars, "PGM_BASE::InitPgm: Found entry %s externally", envVarName );
-    }
-    else
-    {
-        tmpFileName = baseSharePath;
-        tmpFileName.AppendDir( "3dmodels" );
-        envVarItem.SetDefinedExternally( false );
-    }
-
-    envVarItem.SetValue( tmpFileName.GetFullPath() );
-    wxLogTrace( traceEnvVars, "PGM_BASE::InitPgm: Setting entry %s = %s",
-                envVarName, envVarItem.GetValue() );
-    m_local_env_vars[ envVarName ] = envVarItem;
-
-    // KICAD6_TEMPLATE_DIR
-    envVarName = "KICAD6_TEMPLATE_DIR";
-
-    if( wxGetEnv( envVarName, &envValue ) == true && !envValue.IsEmpty() )
-    {
-        tmpFileName.AssignDir( envValue );
-        envVarItem.SetDefinedExternally( true );
-        wxLogTrace( traceEnvVars, "PGM_BASE::InitPgm: Found entry %s externally", envVarName );
-    }
-    else
-    {
-        // Attempt to find the best default template path.
-        SEARCH_STACK bases;
-        SEARCH_STACK templatePaths;
-
-        SystemDirsAppend( &bases );
-
-        for( unsigned i = 0; i < bases.GetCount(); ++i )
-        {
-            wxFileName fn( bases[i], wxEmptyString );
-
-            // Add KiCad template file path to search path list.
-            fn.AppendDir( "template" );
-
-            // Only add path if exists and can be read by the user.
-            if( fn.DirExists() && fn.IsDirReadable() )
-            {
-                wxLogTrace( tracePathsAndFiles, "Checking template path '%s' exists",
-                            fn.GetPath() );
-                templatePaths.AddPaths( fn.GetPath() );
-            }
-        }
-
-        if( templatePaths.IsEmpty() )
-        {
-            tmpFileName = baseSharePath;
-            tmpFileName.AppendDir( "template" );
-        }
-        else
-        {
-            // Take the first one.  There may be more but this will likely be the best option.
-            tmpFileName.AssignDir( templatePaths[0] );
-        }
-
-        envVarItem.SetDefinedExternally( false );
-    }
-
-    envVarItem.SetValue( tmpFileName.GetPath() );
-    wxLogTrace( traceEnvVars, "PGM_BASE::InitPgm: Setting entry %s = %s", envVarName,
-                envVarItem.GetValue() );
-    m_local_env_vars[ envVarName ] = envVarItem;
-
-    // KICAD_USER_TEMPLATE_DIR
-    envVarName = "KICAD_USER_TEMPLATE_DIR";
-
-    if( wxGetEnv( envVarName, &envValue ) == true && !envValue.IsEmpty() )
-    {
-        tmpFileName.AssignDir( envValue );
-        envVarItem.SetDefinedExternally( true );
-        wxLogTrace( traceEnvVars, "PGM_BASE::InitPgm: Found entry %s externally", envVarName );
-    }
-    else
-    {
-        // Default user template path.
-        tmpFileName.AssignDir( PATHS::GetUserTemplatesPath() );
-        envVarItem.SetDefinedExternally( false );
-    }
-
-    envVarItem.SetValue( tmpFileName.GetPath() );
-    wxLogTrace( traceEnvVars, "PGM_BASE::InitPgm: Setting entry %s = %s",
-                envVarName, envVarItem.GetValue() );
-    m_local_env_vars[ envVarName ] = envVarItem;
-
-    // KICAD_SYMBOLS
-    envVarName = wxT( "KICAD6_SYMBOL_DIR" );
-
-    if( wxGetEnv( envVarName, &envValue ) == true && !envValue.IsEmpty() )
-    {
-        tmpFileName.AssignDir( envValue );
-        envVarItem.SetDefinedExternally( true );
-        wxLogTrace( traceEnvVars, "PGM_BASE::InitPgm: Found entry %s externally", envVarName );
-    }
-    else
-    {
-        tmpFileName = baseSharePath;
-        tmpFileName.AppendDir( "library" );
-        envVarItem.SetDefinedExternally( false );
-    }
-
-    envVarItem.SetValue( tmpFileName.GetPath() );
-    wxLogTrace( traceEnvVars, "PGM_BASE::InitPgm: Setting entry %s = %s",
-                envVarName, envVarItem.GetValue() );
-    m_local_env_vars[ envVarName ] = envVarItem;
-
+    // Load common settings from disk after setting up env vars
     GetSettingsManager().Load( GetCommonSettings() );
 
     // Init user language *before* calling loadCommonSettings, because
@@ -434,6 +285,8 @@ bool PGM_BASE::InitPgm()
     loadCommonSettings();
 
     ReadPdfBrowserInfos();      // needs GetCommonSettings()
+
+    m_python_scripting = std::make_unique<SCRIPTING>();
 
 #ifdef __WXMAC__
     // Always show filters on Open dialog to be able to choose plugin
@@ -503,28 +356,26 @@ void PGM_BASE::loadCommonSettings()
     m_show_env_var_dialog = GetCommonSettings()->m_Env.show_warning_dialog;
     m_editor_name = GetCommonSettings()->m_System.editor_name;
 
-    for( const auto& it : GetCommonSettings()->m_Env.vars )
+    for( const std::pair<wxString, ENV_VAR_ITEM> it : GetCommonSettings()->m_Env.vars )
     {
-        wxString key( it.first.c_str(), wxConvUTF8 );
         wxLogTrace( traceEnvVars, "PGM_BASE::loadCommonSettings: Found entry %s = %s",
-                    key, it.second );
+                    it.first, it.second.GetValue() );
 
         // Do not store the env var PROJECT_VAR_NAME ("KIPRJMOD") definition if for some reason
         // it is found in config. (It is reserved and defined as project path)
-        if( key == PROJECT_VAR_NAME )
+        if( it.first == PROJECT_VAR_NAME )
             continue;
 
-        if( m_local_env_vars[ key ].GetDefinedExternally() )
+        // Don't set bogus empty entries in the environment
+        if( it.first.IsEmpty() )
             continue;
 
-        wxLogTrace( traceEnvVars, "PGM_BASE::loadCommonSettings: Updating entry %s = %s",
-                    key, it.second );
+        // Do not overwrite vars set by the system environment with values from the settings file
+        if( it.second.GetDefinedExternally() )
+            continue;
 
-        m_local_env_vars[ key ] = ENV_VAR_ITEM( it.second, wxGetEnv( it.first, nullptr ) );
+        SetLocalEnvVariable( it.first, it.second.GetValue() );
     }
-
-    for( auto& m_local_env_var : m_local_env_vars )
-        SetLocalEnvVariable( m_local_env_var.first, m_local_env_var.second.GetValue() );
 }
 
 
@@ -536,36 +387,6 @@ void PGM_BASE::SaveCommonSettings()
     {
         GetCommonSettings()->m_System.working_dir = wxGetCwd();
         GetCommonSettings()->m_Env.show_warning_dialog = m_show_env_var_dialog;
-
-        // remove only the old env vars that do not exist in list.
-        // We do not clear the full list because some are defined externally,
-        // and we cannot modify or delete them
-        std::map<std::string, wxString>& curr_vars = GetCommonSettings()->m_Env.vars;
-
-        for( auto it = curr_vars.begin(); it != curr_vars.end(); )
-        {
-            const std::string& key = it->first;
-
-            if( m_local_env_vars.find( key ) == m_local_env_vars.end() )
-                it = curr_vars.erase( it );     // This entry no longer exists in new list
-            else
-                it++;
-        }
-
-       // Save the local environment variables.
-        for( auto& m_local_env_var : m_local_env_vars )
-        {
-            if( m_local_env_var.second.GetDefinedExternally() )
-                continue;
-
-            wxLogTrace( traceEnvVars,
-                        "PGM_BASE::SaveCommonSettings: Saving environment variable config "
-                        "entry %s as %s",
-                        m_local_env_var.first, m_local_env_var.second.GetValue() );
-
-            std::string key( m_local_env_var.first.ToUTF8() );
-            GetCommonSettings()->m_Env.vars[ key ] = m_local_env_var.second.GetValue();
-        }
     }
 }
 
@@ -784,6 +605,14 @@ bool PGM_BASE::SetLocalEnvVariable( const wxString& aName, const wxString& aValu
 {
     wxString env;
 
+    if( aName.IsEmpty() )
+    {
+        wxLogTrace( traceEnvVars,
+                    "PGM_BASE::SetLocalEnvVariable: Attempt to set empty variable to value %s",
+                    aValue );
+        return false;
+    }
+
     // Check to see if the environment variable is already set.
     if( wxGetEnv( aName, &env ) )
     {
@@ -801,16 +630,11 @@ bool PGM_BASE::SetLocalEnvVariable( const wxString& aName, const wxString& aValu
 }
 
 
-void PGM_BASE::SetLocalEnvVariables( const ENV_VAR_MAP& aEnvVarMap )
+void PGM_BASE::SetLocalEnvVariables()
 {
-    m_local_env_vars.clear();
-    m_local_env_vars = aEnvVarMap;
-
-    SaveCommonSettings();
-
     // Overwrites externally defined environment variable until the next time the application
     // is run.
-    for( auto& m_local_env_var : m_local_env_vars )
+    for( const std::pair<wxString, ENV_VAR_ITEM> m_local_env_var : GetCommonSettings()->m_Env.vars )
     {
         wxLogTrace( traceEnvVars,
                     "PGM_BASE::SetLocalEnvVariables: Setting local environment variable %s to %s",
@@ -818,4 +642,10 @@ void PGM_BASE::SetLocalEnvVariables( const ENV_VAR_MAP& aEnvVarMap )
                     m_local_env_var.second.GetValue() );
         wxSetEnv( m_local_env_var.first, m_local_env_var.second.GetValue() );
     }
+}
+
+
+ENV_VAR_MAP& PGM_BASE::GetLocalEnvVariables() const
+{
+    return GetCommonSettings()->m_Env.vars;
 }

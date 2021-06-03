@@ -2,7 +2,7 @@
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
  * Copyright (C) 2019 CERN
- * Copyright (C) 2019 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 2019-2021 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -36,6 +36,7 @@ using namespace std::placeholders;
 #include <sch_line.h>
 #include <sch_bitmap.h>
 #include <sch_sheet.h>
+#include <sch_sheet_pin.h>
 #include <symbol_edit_frame.h>
 #include <lib_arc.h>
 #include <lib_circle.h>
@@ -309,7 +310,7 @@ int EE_POINT_EDITOR::Main( const TOOL_EVENT& aEvent )
                 modified = true;
             }
 
-            bool snap = !evt->Modifier( MD_ALT );
+            bool snap = !evt->DisableGridSnapping();
 
             if( item->Type() == LIB_ARC_T && getEditedPointIndex() == ARC_CENTER )
                 snap = false;
@@ -590,11 +591,11 @@ void EE_POINT_EDITOR::updateParentItem() const
 
             switch( pin->GetEdge() )
             {
-            case SHEET_LEFT_SIDE:      pos.x = topLeft.x;  break;
-            case SHEET_RIGHT_SIDE:     pos.x = topRight.x; break;
-            case SHEET_TOP_SIDE:       pos.y = topLeft.y;  break;
-            case SHEET_BOTTOM_SIDE:    pos.y = botLeft.y;  break;
-            case SHEET_UNDEFINED_SIDE: break;
+            case SHEET_SIDE::LEFT: pos.x = topLeft.x; break;
+            case SHEET_SIDE::RIGHT: pos.x = topRight.x; break;
+            case SHEET_SIDE::TOP: pos.y = topLeft.y; break;
+            case SHEET_SIDE::BOTTOM: pos.y = botLeft.y; break;
+            case SHEET_SIDE::UNDEFINED: break;
             }
 
             pin->SetPosition( pos );
@@ -832,7 +833,7 @@ int EE_POINT_EDITOR::addCorner( const TOOL_EVENT& aEvent )
     if( !polyLine )
         return false;
 
-    VECTOR2I cursorPos = getViewControls()->GetCursorPosition( !aEvent.Modifier( MD_ALT ) );
+    VECTOR2I cursorPos = getViewControls()->GetCursorPosition( !aEvent.DisableGridSnapping() );
     polyLine->AddCorner( mapCoords( cursorPos ) );
 
     updateItem( polyLine, true );

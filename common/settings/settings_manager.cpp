@@ -912,6 +912,12 @@ void SETTINGS_MANAGER::SaveProjectAs( const wxString& aFullPath )
 {
     wxString oldName = Prj().GetProjectFullName();
 
+    if( aFullPath.IsSameAs( oldName ) )
+    {
+        SaveProject( aFullPath );
+        return;
+    }
+
     // Changing this will cause UnloadProject to not save over the "old" project when loading below
     Prj().setProjectFullName( aFullPath );
 
@@ -929,6 +935,27 @@ void SETTINGS_MANAGER::SaveProjectAs( const wxString& aFullPath )
 
     m_projects[fn.GetFullPath()] = m_projects[oldName];
     m_projects.erase( oldName );
+}
+
+
+void SETTINGS_MANAGER::SaveProjectCopy( const wxString& aFullPath )
+{
+    PROJECT_FILE* project = m_project_files.at( Prj().GetProjectFullName() );
+    wxString      oldName = project->GetFilename();
+    wxFileName    fn( aFullPath );
+
+    bool readOnly = project->IsReadOnly();
+    project->SetReadOnly( false );
+
+    project->SetFilename( fn.GetName() );
+    project->SaveToFile( fn.GetPath() );
+    project->SetFilename( oldName );
+
+    Prj().GetLocalSettings().SetFilename( fn.GetName() );
+    Prj().GetLocalSettings().SaveToFile( fn.GetPath() );
+    Prj().GetLocalSettings().SetFilename( oldName );
+
+    project->SetReadOnly( readOnly );
 }
 
 

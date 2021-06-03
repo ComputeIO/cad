@@ -32,7 +32,7 @@
 
 class DS_DRAW_ITEM_TEXT;            // Forward declaration
 
-#define TB_DEFAULT_TEXTSIZE 1.5     // default worksheet text size in mm
+#define TB_DEFAULT_TEXTSIZE 1.5     // default drawing sheet text size in mm
 
 namespace KIGFX
 {
@@ -203,15 +203,13 @@ protected:
     std::vector<DS_DRAW_ITEM_BASE*> m_drawItems;
 
 public:
-    wxString       m_Name;                  // a item name used in page layout
-                                            // editor to identify items
-    wxString       m_Info;                  // a comment, only useful in drawing sheet editor
+    wxString       m_Name;               // a name used in drawing sheet editor to identify items
+    wxString       m_Info;               // a comment, only useful in drawing sheet editor
     POINT_COORD    m_Pos;
     POINT_COORD    m_End;
     double         m_LineWidth;
-    int            m_RepeatCount;           // repeat count for duplicate items
-    DPOINT         m_IncrementVector;       // For duplicate items: move vector
-                                            // for position increment
+    int            m_RepeatCount;        // repeat count for duplicate items
+    DPOINT         m_IncrementVector;    // for duplicate items: move vector for position increment
     int            m_IncrementLabel;
 };
 
@@ -337,18 +335,19 @@ public:
     bool ReplaceAntiSlashSequence();
 
 public:
-    wxString            m_TextBase;             // The basic text, with format symbols
-    wxString            m_FullText;             // The expanded text, shown on screen
-    double              m_Orient;               // Orientation in degrees
-    EDA_TEXT_HJUSTIFY_T m_Hjustify;
-    EDA_TEXT_VJUSTIFY_T m_Vjustify;
-    bool                m_Italic;
-    bool                m_Bold;
-    DSIZE               m_TextSize;
-    DSIZE               m_BoundingBoxSize;      // When not null, this is the max size of the
+    wxString                              m_TextBase; // The basic text, with format symbols
+    wxString                              m_FullText; // The expanded text, shown on screen
+    double                                m_Orient;   // Orientation in degrees
+    TEXT_ATTRIBUTES::HORIZONTAL_ALIGNMENT m_Halign;
+    TEXT_ATTRIBUTES::VERTICAL_ALIGNMENT   m_Valign;
+    bool                                  m_Italic;
+    bool                                  m_Bold;
+    DSIZE                                 m_TextSize;
+
+    DSIZE m_BoundingBoxSize;                    // When not null, this is the max size of the
                                                 // full text.  The text size will be modified
                                                 // to keep the full text inside this bound.
-    DSIZE               m_ConstrainedTextSize;  // Actual text size, if constrained by
+    DSIZE m_ConstrainedTextSize;                // Actual text size, if constrained by
                                                 // the m_BoundingBoxSize constraint
 };
 

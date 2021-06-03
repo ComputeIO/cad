@@ -33,6 +33,8 @@
 #include <settings/common_settings.h>
 #include <settings/settings_manager.h>
 
+#include <wx/filedlg.h>
+
 static constexpr int dpi_scaling_precision = 1;
 static constexpr double dpi_scaling_increment = 0.5;
 
@@ -71,14 +73,6 @@ PANEL_COMMON_SETTINGS::PANEL_COMMON_SETTINGS( DIALOG_SHIM* aDialog, wxWindow* aP
     m_antialiasingFallback->Show( false );
     m_antialiasingFallbackLabel->Show( false );
 #endif
-
-    if( !ADVANCED_CFG::GetCfg().m_AllowDarkMode )
-    {
-        m_rbIconThemeLight->Hide();
-        m_rbIconThemeDark->Hide();
-        m_rbIconThemeAuto->Hide();
-        m_stIconTheme->Hide();
-    }
 
     m_textEditorBtn->SetBitmap( KiBitmap( BITMAPS::small_folder ) );
     m_pdfViewerBtn->SetBitmap( KiBitmap( BITMAPS::small_folder ) );
@@ -320,8 +314,6 @@ void PANEL_COMMON_SETTINGS::OnPDFViewerClick( wxCommandEvent& event )
 
 void PANEL_COMMON_SETTINGS::onUpdateUIPdfPath( wxUpdateUIEvent& event )
 {
-    bool enabled = m_otherPDFViewer->GetValue();
-    m_PDFViewerPath->Enable( enabled );
-    m_pdfViewerBtn->Enable( enabled );
+    // Used by both the m_pdfViewerBtn and m_PDFViewerPath
+    event.Enable( m_otherPDFViewer->GetValue() );
 }
-

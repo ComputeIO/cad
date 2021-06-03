@@ -1,6 +1,6 @@
 * Copyright (C) 1992-2015 Jean-Pierre Charras
-* Copyright (C) 1992-2019 Kicad Developers Team
-* under GNU General Public License (see copyright.txt)
+* Copyright (C) 1992-2021 KiCad Developers Team
+* under GNU General Public License (see LICENSE.README)
 
 == Main Authors
 Jean-Pierre Charras <jean-pierre.charras[at]wanadoo-dot-fr>
@@ -49,6 +49,7 @@ Kevin Cozens <kevin[at]ve3syb-dot-ca>
 Ian McInerney <ian.s.mcinerney[at]ieee-dot-org>
 Thomas Pointhuber <thomas.pointhuber[at]gmx-dot-at>
 Roberto Fernandez Bautista <roberto.fer.bau[at]gmail-dot-com>
+Mikołaj Wielgus <wielgusmikolaj[at]gmail-dot-com>
 
 See git repo on GitLab for contributors at
 https://gitlab.com/kicad/code/kicad/-/graphs/master

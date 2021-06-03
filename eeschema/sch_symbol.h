@@ -89,7 +89,7 @@ public:
      * @param unit is unit for symbols that have multiple parts per package.
      * @param convert is the alternate body style for the schematic symbols.
      * @param pos is the position of the symbol.
-     * @param setNewItemFlag is used to set the symbol #IS_NEW and #IS_MOVED flags.
+     * @param setNewItemFlag is used to set the symbol #IS_NEW and #IS_MOVING flags.
      */
     SCH_COMPONENT( const LIB_PART& aPart, const LIB_ID& aLibId, const SCH_SHEET_PATH* aSheet,
                    int unit = 0, int convert = 0,
@@ -405,10 +405,15 @@ public:
     /**
      * Restore fields to the original library values.
      *
-     * @param aResetStyle selects whether fields should reset the position and text attribute.
-     * @param aResetRef selects whether the reference field should be restored.
+     * @param aUpdateStyle selects whether fields should update the position and text attributes.
+     * @param aUpdateRef selects whether the reference field should be updated.
+     * @param aUpdateOtherFields selects whether non-reference fields should be updated.
+     * @param aResetRef selects whether the reference should be reset to the library value.
+     * @param aResetOtherFields selects whether non-reference fields should be reset to library
+     *                          values.
      */
-    void UpdateFields( bool aResetStyle, bool aResetRef = false );
+    void UpdateFields( const SCH_SHEET_PATH* aPath, bool aUpdateStyle, bool aUpdateRef,
+                       bool aUpdateOtherFields, bool aResetRef, bool aResetOtherFields );
 
     /**
      * Return the number of fields in this symbol.
@@ -668,12 +673,12 @@ private:
     LIB_ID      m_lib_id;       ///< Name and library the symbol was loaded from, i.e. 74xx:74LS00.
     int         m_unit;         ///< The unit for multiple part per package symbols.
     int         m_convert;      ///< The alternate body style for symbols that have more than
-                                ///< one body style defined.  Primarily used for symbols that
-                                ///< have a De Morgan conversion.
-    wxString    m_prefix;       ///< C, R, U, Q etc - the first character which typically indicates
-                                ///< what the symbol is. Determined, upon placement, from the
-                                ///< library symbol.  Created upon file load, by the first
-                                ///<  non-digits in the reference fields.
+                                ///<   one body style defined.  Primarily used for symbols that
+                                ///<   have a De Morgan conversion.
+    wxString    m_prefix;       ///< C, R, U, Q etc - the first character(s) which typically
+                                ///<   indicate what the symbol is. Determined, upon placement,
+                                ///<   from the library symbol.  Created upon file load, by the
+                                ///<   first non-digits in the reference fields.
 
     /**
      * The name used to look up a symbol in the symbol library embedded in a schematic.

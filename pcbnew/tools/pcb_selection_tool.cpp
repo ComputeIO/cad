@@ -53,6 +53,7 @@ using namespace std::placeholders;
 #include <connectivity/connectivity_data.h>
 #include <footprint_viewer_frame.h>
 #include <id.h>
+#include <wx/log.h>
 #include "tool_event_utils.h"
 #include "pcb_selection_tool.h"
 #include "pcb_actions.h"
@@ -104,6 +105,7 @@ PCB_SELECTION_TOOL::PCB_SELECTION_TOOL() :
         m_multiple( false ),
         m_skip_heuristics( false ),
         m_highlight_modifier( false ),
+        m_nonModifiedCursor( KICURSOR::ARROW ),
         m_enteredGroup( nullptr ),
         m_priv( std::make_unique<PRIV>() )
 {
@@ -259,6 +261,27 @@ void PCB_SELECTION_TOOL::setModifiersState( bool aShiftState, bool aCtrlState, b
 }
 
 
+void PCB_SELECTION_TOOL::OnIdle( wxIdleEvent& aEvent )
+{
+    if( m_frame->ToolStackIsEmpty() && !m_multiple )
+    {
+        wxMouseState keyboardState = wxGetMouseState();
+
+        setModifiersState( keyboardState.ShiftDown(), keyboardState.ControlDown(),
+                           keyboardState.AltDown() );
+
+        if( m_additive )
+            m_frame->GetCanvas()->SetCurrentCursor( KICURSOR::ADD );
+        else if( m_subtractive )
+            m_frame->GetCanvas()->SetCurrentCursor( KICURSOR::SUBTRACT );
+        else if( m_exclusive_or )
+            m_frame->GetCanvas()->SetCurrentCursor( KICURSOR::XOR );
+        else
+            m_frame->GetCanvas()->SetCurrentCursor( m_nonModifiedCursor );
+    }
+}
+
+
 int PCB_SELECTION_TOOL::Main( const TOOL_EVENT& aEvent )
 {
     // Main loop: keep receiving events
@@ -334,7 +357,7 @@ int PCB_SELECTION_TOOL::Main( const TOOL_EVENT& aEvent )
         else if( evt->IsDrag( BUT_LEFT ) )
         {
             // Is another tool already moving a new object?  Don't allow a drag start
-            if( !m_selection.Empty() && m_selection[0]->HasFlag( IS_NEW | IS_MOVED ) )
+            if( !m_selection.Empty() && m_selection[0]->HasFlag( IS_NEW | IS_MOVING ) )
             {
                 evt->SetPassEvent();
                 continue;
@@ -418,9 +441,6 @@ int PCB_SELECTION_TOOL::Main( const TOOL_EVENT& aEvent )
                 ExitGroup();
 
             ClearSelection();
-
-            if( evt->FirstResponder() == this )
-                m_toolMgr->RunAction( PCB_ACTIONS::clearHighlight );
         }
         else
         {
@@ -430,25 +450,18 @@ int PCB_SELECTION_TOOL::Main( const TOOL_EVENT& aEvent )
 
         if( m_frame->ToolStackIsEmpty() )
         {
-            //move cursor prediction
+            // move cursor prediction
             if( !modifier_enabled
                     && dragAction == MOUSE_DRAG_ACTION::DRAG_SELECTED
                     && !m_selection.Empty()
                     && evt->HasPosition()
                     && selectionContains( evt->Position() ) )
             {
-                m_frame->GetCanvas()->SetCurrentCursor( KICURSOR::MOVING );
+                m_nonModifiedCursor = KICURSOR::MOVING;
             }
             else
             {
-                if( m_additive )
-                    m_frame->GetCanvas()->SetCurrentCursor( KICURSOR::ADD );
-                else if( m_subtractive )
-                    m_frame->GetCanvas()->SetCurrentCursor( KICURSOR::SUBTRACT );
-                else if( m_exclusive_or )
-                    m_frame->GetCanvas()->SetCurrentCursor( KICURSOR::XOR );
-                else
-                    m_frame->GetCanvas()->SetCurrentCursor( KICURSOR::ARROW );
+                m_nonModifiedCursor = KICURSOR::ARROW;
             }
         }
     }
@@ -692,7 +705,7 @@ bool PCB_SELECTION_TOOL::selectPoint( const VECTOR2I& aWhere, bool aOnDrag,
     // Apply the stateful filter
     FilterCollectedItems( collector );
 
-    FilterCollectorForGroups( collector );
+    FilterCollectorForHierarchy( collector, false );
 
     // Apply some ugly heuristics to avoid disambiguation menus whenever possible
     if( collector.GetCount() > 1 && !m_skip_heuristics )
@@ -794,8 +807,8 @@ bool PCB_SELECTION_TOOL::selectMultiple()
         if( view->IsMirroredX() )
             windowSelection = !windowSelection;
 
-        m_frame->GetCanvas()->SetCurrentCursor(
-                windowSelection ? KICURSOR::SELECT_WINDOW : KICURSOR::SELECT_LASSO );
+        m_frame->GetCanvas()->SetCurrentCursor( windowSelection ? KICURSOR::SELECT_WINDOW
+                                                                : KICURSOR::SELECT_LASSO );
 
         if( evt->IsCancelInteractive() || evt->IsActivate() )
         {
@@ -857,7 +870,7 @@ bool PCB_SELECTION_TOOL::selectMultiple()
             // Apply the stateful filter
             FilterCollectedItems( collector );
 
-            FilterCollectorForGroups( collector );
+            FilterCollectorForHierarchy( collector, true );
 
             for( EDA_ITEM* i : collector )
             {
@@ -954,6 +967,9 @@ int PCB_SELECTION_TOOL::SelectAll( const TOOL_EVENT& aEvent )
     // Filter the view items based on the selection box
     BOX2I selectionBox;
 
+    // Intermediate step to allow filtering against hierarchy
+    GENERAL_COLLECTOR collection;
+
     selectionBox.SetMaximum();
     view->Query( selectionBox, selectedItems );         // Get the list of selected items
 
@@ -964,8 +980,13 @@ int PCB_SELECTION_TOOL::SelectAll( const TOOL_EVENT& aEvent )
         if( !item || !Selectable( item ) || !itemPassesFilter( item ) )
             continue;
 
-        select( item );
+        collection.Append( item );
     }
+
+    FilterCollectorForHierarchy( collection, true );
+
+    for( EDA_ITEM* item : collection )
+        select( static_cast<BOARD_ITEM*>( item ) );
 
     m_frame->GetCanvas()->ForceRefresh();
 
@@ -2062,7 +2083,7 @@ bool PCB_SELECTION_TOOL::Selectable( const BOARD_ITEM* aItem, bool checkVisibili
 
         pad = static_cast<const PAD*>( aItem );
 
-        if( pad->GetAttribute() == PAD_ATTRIB_PTH || pad->GetAttribute() == PAD_ATTRIB_NPTH )
+        if( pad->GetAttribute() == PAD_ATTRIB::PTH || pad->GetAttribute() == PAD_ATTRIB::NPTH )
         {
             // Check render mode (from the Items tab) first
             if( !board()->IsElementVisible( LAYER_PADS_TH ) )
@@ -2500,37 +2521,62 @@ void PCB_SELECTION_TOOL::GuessSelectionCandidates( GENERAL_COLLECTOR& aCollector
 }
 
 
-void PCB_SELECTION_TOOL::FilterCollectorForGroups( GENERAL_COLLECTOR& aCollector ) const
+void PCB_SELECTION_TOOL::FilterCollectorForHierarchy( GENERAL_COLLECTOR& aCollector,
+                                                      bool aMultiselect ) const
 {
     std::unordered_set<BOARD_ITEM*> toAdd;
 
-    // If any element is a member of a group, replace those elements with the top containing group.
+    // Set TEMP_SELECTED on all parents which are included in the GENERAL_COLLECTOR.  This
+    // algorithm is O3n, whereas checking for the parent inclusion could potentially be On^2.
+
+    for( int j = 0; j < aCollector.GetCount(); j++ )
+    {
+        if( aCollector[j]->GetParent() )
+            aCollector[j]->GetParent()->ClearFlags( TEMP_SELECTED );
+    }
+
+    if( aMultiselect )
+    {
+        for( int j = 0; j < aCollector.GetCount(); j++ )
+            aCollector[j]->SetFlags( TEMP_SELECTED );
+    }
+
     for( int j = 0; j < aCollector.GetCount(); )
     {
         BOARD_ITEM* item = aCollector[j];
         BOARD_ITEM* parent = item->GetParent();
+        BOARD_ITEM* start = item;
 
-        // Ignore footprint groups in board editor
         if( !m_isFootprintEditor && parent && parent->Type() == PCB_FOOTPRINT_T )
-        {
-            ++j;
-            continue;
-        }
+            start = parent;
 
-        PCB_GROUP*  aTop = PCB_GROUP::TopLevelGroup( item, m_enteredGroup, m_isFootprintEditor );
+        // If any element is a member of a group, replace those elements with the top containing
+        // group.
+        PCB_GROUP*  aTop = PCB_GROUP::TopLevelGroup( start, m_enteredGroup, m_isFootprintEditor );
 
         if( aTop )
         {
             if( aTop != item )
             {
                 toAdd.insert( aTop );
+                aTop->SetFlags( TEMP_SELECTED );
+
                 aCollector.Remove( item );
                 continue;
             }
         }
-        else if( m_enteredGroup && !PCB_GROUP::WithinScope( item, m_enteredGroup ) )
+        else if( m_enteredGroup
+                    && !PCB_GROUP::WithinScope( item, m_enteredGroup, m_isFootprintEditor ) )
         {
             // If a group is entered, disallow selections of objects outside the group.
+            aCollector.Remove( item );
+            continue;
+        }
+
+        // Footprints are a bit easier as they can't be nested.
+        if( parent && parent->GetFlags() & TEMP_SELECTED )
+        {
+            // Remove children of selected items
             aCollector.Remove( item );
             continue;
         }

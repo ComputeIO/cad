@@ -99,7 +99,7 @@ bool COMPONENT_DRAGGER::Start( const VECTOR2I& aP, ITEM_SET& aPrimitives )
             {
                 LINKED_ITEM* li = static_cast<LINKED_ITEM*>( extraJoint->LinkList()[0].item );
 
-                if( li->Collide( solid, 0, m_world ) )
+                if( li->Collide( solid, nullptr, m_world ) )
                     addLinked( solid, li, extraJoint->Pos() - solid->Pos() );
             }
         }
@@ -145,7 +145,7 @@ bool COMPONENT_DRAGGER::Drag( const VECTOR2I& aP )
         l_new.ClearLinks();
         l_new.DragCorner( cn.p_next, cn.origLine.CLine().Find( cn.p_orig ) );
 
-        Dbg()->AddLine( l_new.CLine(), 4, 100000 );
+        PNS_DBG( Dbg(), AddLine, l_new.CLine(), BLUE, 100000, "cdrag-new-fanout" );
         m_draggedItems.Add( l_new );
 
         auto l_orig( cn.origLine );
@@ -163,7 +163,8 @@ bool COMPONENT_DRAGGER::FixRoute()
     if( node )
     {
         bool ok;
-        if( Settings().CanViolateDRC() )
+
+        if( Settings().AllowDRCViolations() )
             ok = true;
         else
             ok = !node->CheckColliding( m_draggedItems );

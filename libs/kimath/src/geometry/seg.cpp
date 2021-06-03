@@ -27,6 +27,7 @@
 #include <geometry/seg.h>
 #include <math/util.h>      // for rescale
 #include <math/vector2d.h>  // for VECTOR2I, VECTOR2
+#include <trigo.h>          // for RAD2DEG
 
 template <typename T>
 int sgn( T aVal )
@@ -37,8 +38,7 @@ int sgn( T aVal )
 
 SEG::ecoord SEG::SquaredDistance( const SEG& aSeg ) const
 {
-    // fixme: rather inefficient....
-    if( Intersect( aSeg ) )
+    if( Intersects( aSeg ) )
         return 0;
 
     const VECTOR2I pts[4] =
@@ -52,11 +52,22 @@ SEG::ecoord SEG::SquaredDistance( const SEG& aSeg ) const
     ecoord m = VECTOR2I::ECOORD_MAX;
 
     for( int i = 0; i < 4; i++ )
-    {
         m = std::min( m, pts[i].SquaredEuclideanNorm() );
-    }
 
     return m;
+}
+
+
+double SEG::AngleDegrees( const SEG& aOther ) const
+{
+    VECTOR2I thisVec = A - B;
+    VECTOR2I otherVec = aOther.A - aOther.B;
+
+    double thisVecAngle = NormalizeAngle180( RAD2DECIDEG( thisVec.Angle() ) );
+    double otherVecAngle = NormalizeAngle180( RAD2DECIDEG( otherVec.Angle() ) );
+    double angleDegrees = std::abs( NormalizeAngle180( thisVecAngle - otherVecAngle ) ) / 10.0;
+
+    return std::min( 180.0 - angleDegrees, angleDegrees );
 }
 
 
@@ -67,27 +78,27 @@ const VECTOR2I SEG::NearestPoint( const SEG& aSeg ) const
 
     const VECTOR2I pts_origin[4] =
     {
-            aSeg.NearestPoint( A ),
-            aSeg.NearestPoint( B ),
-            NearestPoint( aSeg.A ),
-            NearestPoint( aSeg.B )
+        aSeg.NearestPoint( A ),
+        aSeg.NearestPoint( B ),
+        NearestPoint( aSeg.A ),
+        NearestPoint( aSeg.B )
     };
 
 
     const VECTOR2I* pts_out[4] =
     {
-            &A,
-            &B,
-            &pts_origin[2],
-            &pts_origin[3]
+        &A,
+        &B,
+        &pts_origin[2],
+        &pts_origin[3]
     };
 
     const ecoord pts_dist[4] =
     {
-            ( pts_origin[0] - A ).SquaredEuclideanNorm(),
-            ( pts_origin[1] - B ).SquaredEuclideanNorm(),
-            ( pts_origin[2] - aSeg.A ).SquaredEuclideanNorm(),
-            ( pts_origin[3] - aSeg.B ).SquaredEuclideanNorm()
+        ( pts_origin[0] - A ).SquaredEuclideanNorm(),
+        ( pts_origin[1] - B ).SquaredEuclideanNorm(),
+        ( pts_origin[2] - aSeg.A ).SquaredEuclideanNorm(),
+        ( pts_origin[3] - aSeg.B ).SquaredEuclideanNorm()
     };
 
     int min_i = 0;
@@ -102,7 +113,7 @@ const VECTOR2I SEG::NearestPoint( const SEG& aSeg ) const
 }
 
 
-OPT_VECTOR2I SEG::Intersect( const SEG& aSeg, bool aIgnoreEndpoints, bool aLines ) const
+bool SEG::intersects( const SEG& aSeg, bool aIgnoreEndpoints, bool aLines, VECTOR2I* aPt ) const
 {
     const VECTOR2I  e( B - A );
     const VECTOR2I  f( aSeg.B - aSeg.A );
@@ -113,21 +124,41 @@ OPT_VECTOR2I SEG::Intersect( const SEG& aSeg, bool aIgnoreEndpoints, bool aLines
     ecoord q = e.Cross( ac );
 
     if( d == 0 )
-        return OPT_VECTOR2I();
+        return false;
 
     if( !aLines && d > 0 && ( q < 0 || q > d || p < 0 || p > d ) )
-        return OPT_VECTOR2I();
+        return false;
 
     if( !aLines && d < 0 && ( q < d || p < d || p > 0 || q > 0 ) )
-        return OPT_VECTOR2I();
+        return false;
 
     if( !aLines && aIgnoreEndpoints && ( q == 0 || q == d ) && ( p == 0 || p == d ) )
+        return false;
+
+    if( aPt )
+    {
+        *aPt = VECTOR2I( aSeg.A.x + rescale( q, (ecoord) f.x, d ),
+                         aSeg.A.y + rescale( q, (ecoord) f.y, d ) );
+    }
+
+    return true;
+}
+
+
+bool SEG::Intersects( const SEG& aSeg ) const
+{
+    return intersects( aSeg );
+}
+
+
+OPT_VECTOR2I SEG::Intersect( const SEG& aSeg, bool aIgnoreEndpoints, bool aLines ) const
+{
+    VECTOR2I ip;
+
+    if( intersects( aSeg, aIgnoreEndpoints, aLines, &ip ) )
+        return ip;
+    else
         return OPT_VECTOR2I();
-
-    VECTOR2I ip( aSeg.A.x + rescale( q, (ecoord) f.x, d ),
-                 aSeg.A.y + rescale( q, (ecoord) f.y, d ) );
-
-     return ip;
 }
 
 
@@ -189,5 +220,63 @@ bool SEG::Collide( const SEG& aSeg, int aClearance, int* aActual ) const
 
 bool SEG::Contains( const VECTOR2I& aP ) const
 {
-    return SquaredDistance( aP ) <= 1;       // 1 * 1 to be pedantic
+    return Distance( aP ) <= 1;
+}
+
+
+const VECTOR2I SEG::NearestPoint( const VECTOR2I& aP ) const
+{
+    VECTOR2I d = B - A;
+    ecoord   l_squared = d.Dot( d );
+
+    if( l_squared == 0 )
+        return A;
+
+    ecoord t = d.Dot( aP - A );
+
+    if( t < 0 )
+        return A;
+    else if( t > l_squared )
+        return B;
+
+    int xp = rescale( t, (ecoord) d.x, l_squared );
+    int yp = rescale( t, (ecoord) d.y, l_squared );
+
+    return A + VECTOR2I( xp, yp );
+}
+
+
+const VECTOR2I SEG::ReflectPoint( const VECTOR2I& aP ) const
+{
+    VECTOR2I                d = B - A;
+    VECTOR2I::extended_type l_squared = d.Dot( d );
+    VECTOR2I::extended_type t = d.Dot( aP - A );
+    VECTOR2I                c;
+
+    if( !l_squared )
+        c = aP;
+    else
+    {
+        c.x = A.x + rescale( t, static_cast<VECTOR2I::extended_type>( d.x ), l_squared );
+        c.y = A.y + rescale( t, static_cast<VECTOR2I::extended_type>( d.y ), l_squared );
+    }
+
+    return 2 * c - aP;
+}
+
+
+VECTOR2I SEG::LineProject( const VECTOR2I& aP ) const
+{
+    VECTOR2I d = B - A;
+    ecoord   l_squared = d.Dot( d );
+
+    if( l_squared == 0 )
+        return A;
+
+    ecoord t = d.Dot( aP - A );
+
+    int xp = rescale( t, ecoord{ d.x }, l_squared );
+    int yp = rescale( t, ecoord{ d.y }, l_squared );
+
+    return A + VECTOR2I( xp, yp );
 }

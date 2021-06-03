@@ -28,9 +28,9 @@
 #include <core/typeinfo.h>
 #include <math/vector2d.h>
 #include <eda_text.h>
-#include <bitmap_base.h>
 #include "widgets/msgpanel.h"
 #include <geometry/shape_poly_set.h>
+#include <eda_item.h>
 #include <eda_units.h>
 
 #include <algorithm>
@@ -392,7 +392,7 @@ public:
 
     ~DS_DRAW_ITEM_LIST()
     {
-        // Items in the m_graphicList are owned by their respective WORKSHEET_DATAITEMs.
+        // Items in the m_graphicList are owned by their respective DS_DATA_ITEMs.
         // for( DS_DRAW_ITEM_BASE* item : m_graphicList )
         //     delete item;
     }
@@ -512,7 +512,7 @@ public:
     void Print( const RENDER_SETTINGS* aSettings );
 
     /**
-     * Drawing or plot the page layout.
+     * Drawing or plot the drawing sheet.
      *
      * Before calling this function, some parameters should be initialized by calling:
      *   SetPenSize( aPenWidth );

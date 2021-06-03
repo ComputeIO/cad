@@ -31,6 +31,7 @@
 #include <tool/tool_manager.h>
 #include <view/view.h>
 #include <wildcards_and_files_ext.h>
+#include <wx/filedlg.h>
 
 #include "gerbview_actions.h"
 #include "gerbview_control.h"
@@ -111,7 +112,7 @@ int GERBVIEW_CONTROL::ExportToPcbnew( const TOOL_EVENT& aEvent )
         return 0;
     }
 
-    wxString     fileDialogName( wxT( "noname." ) + KiCadPcbFileExtension );
+    wxString     fileDialogName( NAMELESS_PROJECT + wxT( "." ) + KiCadPcbFileExtension );
     wxString     path = m_frame->GetMruPath();
 
     wxFileDialog filedlg( m_frame, _( "Board File Name" ), path, fileDialogName, PcbFileWildcard(),

@@ -111,10 +111,18 @@ void LIB_FIELD::print( const RENDER_SETTINGS* aSettings, const wxPoint& aOffset,
     COLOR4D  color = aSettings->GetLayerColor( IsVisible() ? GetDefaultLayer() : LAYER_HIDDEN );
     int      penWidth = std::max( GetPenWidth(), aSettings->GetDefaultPenWidth() );
     wxPoint  text_pos = aTransform.TransformCoordinate( GetTextPos() ) + aOffset;
-    wxString text = aData ? *static_cast<wxString*>( aData ) : GetText();
 
-    GRText( DC, text_pos, color, text, GetTextAngle(), GetTextSize(), GetHorizJustify(),
-            GetVertJustify(), penWidth, IsItalic(), IsBold() );
+    if( aData )
+    {
+        wxString text = *static_cast<wxString*>( aData );
+
+        GRText( DC, text_pos, color, text, GetTextEdaAngle(), GetTextSize(),
+                GetHorizontalAlignment(), GetVerticalAlignment(), penWidth, IsItalic(), IsBold() );
+    }
+    else
+    {
+        GRText( DC, this, text_pos, color );
+    }
 }
 
 
@@ -275,21 +283,25 @@ void LIB_FIELD::Plot( PLOTTER* aPlotter, const wxPoint& aOffset, bool aFill,
     EDA_RECT BoundaryBox = GetBoundingBox();
     BoundaryBox.RevertYAxis();
 
-    EDA_TEXT_HJUSTIFY_T hjustify = GR_TEXT_HJUSTIFY_CENTER;
-    EDA_TEXT_VJUSTIFY_T vjustify = GR_TEXT_VJUSTIFY_CENTER;
     wxPoint textpos = aTransform.TransformCoordinate( BoundaryBox.Centre() ) + aOffset;
-
-    COLOR4D color;
+    int     penWidth = std::max( GetPenWidth(), aPlotter->RenderSettings()->GetMinPenWidth() );
+    COLOR4D color = COLOR4D::BLACK;
 
     if( aPlotter->GetColorMode() )
         color = aPlotter->RenderSettings()->GetLayerColor( GetDefaultLayer() );
-    else
-        color = COLOR4D::BLACK;
 
-    int penWidth = std::max( GetPenWidth(),aPlotter->RenderSettings()->GetMinPenWidth() );
-
-    aPlotter->Text( textpos, color, GetShownText(), orient, GetTextSize(), hjustify, vjustify,
-                    penWidth, IsItalic(), IsBold() );
+#if 0
+    aPlotter->Text( textpos, color, GetShownText(), orient, GetTextSize(),
+                    TEXT_ATTRIBUTES::H_CENTER, TEXT_ATTRIBUTES::V_CENTER, penWidth, IsItalic(),
+                    IsBold() );
+#else
+#ifdef DEBUG
+    std::cerr << "LIB_FIELD::Plot( [aPlotter " << aPlotter->GetPlotterType() << "], " << aOffset
+              << ", " << ( aFill ? "t" : "f" ) << ", [aTransform] ) shown text \"" << GetShownText()
+              << "\"" << std::endl;
+#endif
+    aPlotter->Text( this, color );
+#endif
 }
 
 

@@ -132,7 +132,7 @@ static TICK_FORMAT getTickFormatForScale( double aScale, double& aTickSpace, EDA
 
 /**
  * Draw labelled ticks on a line. Ticks are spaced according to a
- * maximum density. Miror ticks are not labelled.
+ * maximum density. Minor ticks are not labelled.
  *
  * @param aGal the GAL to draw on
  * @param aOrigin start of line to draw ticks on
@@ -173,11 +173,11 @@ void drawTicksAlongLine( KIGFX::VIEW* aView, const VECTOR2D& aOrigin, const VECT
 
     if( aLine.Angle() > 0 )
     {
-        gal->SetHorizontalJustify( GR_TEXT_HJUSTIFY_LEFT );
+        gal->SetHorizontalAlignment( TEXT_ATTRIBUTES::H_LEFT );
     }
     else
     {
-        gal->SetHorizontalJustify( GR_TEXT_HJUSTIFY_RIGHT );
+        gal->SetHorizontalAlignment( TEXT_ATTRIBUTES::H_RIGHT );
         labelAngle += M_PI;
     }
 

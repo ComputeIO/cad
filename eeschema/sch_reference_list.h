@@ -92,8 +92,8 @@ public:
      * Attempt to split the reference designator into a name (U) and number (1).
      *
      * If the last character is '?' or not a digit, the reference is tagged as not annotated.
-     * For symbols with multiple parts per package that are not already annotated, sets m_unit
-     * to a max value (0x7FFFFFFF).
+     * For symbols with multiple parts per package that are not already annotated, keeps the unit
+     * number the same. E.g. U?A or U?B
      */
     void Split();
 
@@ -149,14 +149,19 @@ public:
      */
     bool IsSameInstance( const SCH_REFERENCE& other ) const
     {
-        // JEY TODO: should this be checking unit as well?
+        // Only compare symbol and path.
+        // We may have changed the unit number or the designator but
+        // can still be referencing the same instance.
         return GetSymbol() == other.GetSymbol()
                && GetSheetPath().Path() == other.GetSheetPath().Path();
     }
 
     bool IsUnitsLocked()
     {
-        return m_libPart->UnitsLocked();
+        if( m_libPart )
+            return m_libPart->UnitsLocked();
+        else
+            return true; // Assume units locked when we don't have a library
     }
 
 private:
@@ -221,7 +226,7 @@ public:
         flatList.clear();
     }
 
-    unsigned GetCount() const { return flatList.size(); }
+    size_t GetCount() const { return flatList.size(); }
 
     SCH_REFERENCE& GetItem( int aIdx ) { return flatList[aIdx]; }
     const SCH_REFERENCE& GetItem( int aIdx ) const { return flatList[aIdx]; }
@@ -234,6 +239,13 @@ public:
      * @param aIndex is the index of the item to be removed.
      */
     void RemoveItem( unsigned int aIndex );
+
+    /**
+     * Return true if aItem exists in this list
+     * @param aItem Reference to check
+     * @return true if aItem exists in this list
+     */
+    bool Contains( const SCH_REFERENCE& aItem );
 
     /* Sort functions:
      * Sort functions are used to sort symbols for annotation or BOM generation.  Because
@@ -248,8 +260,7 @@ public:
      * Attempt to split all reference designators into a name (U) and number (1).
      *
      * If the last character is '?' or not a digit, the reference is tagged as not annotated.
-     * For symbols with multiple parts per package that are not already annotated, set m_unit
-     * to a max value (0x7FFFFFFF).
+     * For symbols with multiple parts, keeps the unit number intact
      * @see SCH_REFERENCE::Split()
      */
     void SplitReferences()
@@ -274,6 +285,14 @@ public:
     }
 
     /**
+     * Replace any duplicate reference designators with the next available number after the
+     * present number. Multi-unit symbols are reannotated together.
+     *
+     * @param aAdditionalReferences Additional references to check for duplicates
+     */
+    void ReannotateDuplicates( const SCH_REFERENCE_LIST& aAdditionalReferences );
+
+    /**
      * Set the reference designators in the list that have not been annotated.
      *
      * If a the sheet number is 2 and \a aSheetIntervalId is 100, then the first reference
@@ -288,9 +307,15 @@ public:
      * @param aLockedUnitMap A SCH_MULTI_UNIT_REFERENCE_MAP of reference designator wxStrings
      *      to SCH_REFERENCE_LISTs. May be an empty map. If not empty, any multi-unit parts
      *      found in this map will be annotated as a group rather than individually.
+     * @param aAdditionalRefs Additional references to use for checking that there a reference
+     *      designator doesn't already exist. The caller must ensure that none of the references
+     *      in aAdditionalRefs exist in this list.
+     * @param aStartAtCurrent Use m_numRef for each reference as the start number (overrides
+            aStartNumber)
      */
     void Annotate( bool aUseSheetNum, int aSheetIntervalId, int aStartNumber,
-                   SCH_MULTI_UNIT_REFERENCE_MAP aLockedUnitMap );
+                   SCH_MULTI_UNIT_REFERENCE_MAP aLockedUnitMap,
+                   const SCH_REFERENCE_LIST& aAdditionalRefs, bool aStartAtCurrent = false );
 
     /**
      * Check for annotations errors.
@@ -415,6 +440,8 @@ public:
      * @param aMinValue The minimum value for the current search.
      */
     int GetLastReference( int aIndex, int aMinValue ) const;
+
+    std::vector<SYMBOL_INSTANCE_REFERENCE> GetSymbolInstances() const;
 
 #if defined(DEBUG)
     void Show( const char* aPrefix = "" )

@@ -31,6 +31,7 @@
 #include <drawing_sheet/ds_painter.h>
 #include <drawing_sheet/drawing_sheet_reader_lexer.h>
 #include <wx/ffile.h>
+#include <wx/log.h>
 
 #include <wx/file.h>
 #include <wx/mstream.h>
@@ -672,24 +673,24 @@ void DRAWING_SHEET_READER_PARSER::parseText( DS_DATA_ITEM_TEXT* aItem )
                 switch( token )
                 {
                 case T_center:
-                    aItem->m_Hjustify = GR_TEXT_HJUSTIFY_CENTER;
-                    aItem->m_Vjustify = GR_TEXT_VJUSTIFY_CENTER;
+                    aItem->m_Halign = TEXT_ATTRIBUTES::H_CENTER;
+                    aItem->m_Valign = TEXT_ATTRIBUTES::V_CENTER;
                     break;
 
                 case T_left:
-                    aItem->m_Hjustify = GR_TEXT_HJUSTIFY_LEFT;
+                    aItem->m_Halign = TEXT_ATTRIBUTES::H_LEFT;
                     break;
 
                 case T_right:
-                    aItem->m_Hjustify = GR_TEXT_HJUSTIFY_RIGHT;
+                    aItem->m_Halign = TEXT_ATTRIBUTES::H_RIGHT;
                     break;
 
                 case T_top:
-                    aItem->m_Vjustify = GR_TEXT_VJUSTIFY_TOP;
+                    aItem->m_Valign = TEXT_ATTRIBUTES::V_TOP;
                     break;
 
                 case T_bottom:
-                    aItem->m_Vjustify = GR_TEXT_VJUSTIFY_BOTTOM;
+                    aItem->m_Valign = TEXT_ATTRIBUTES::V_BOTTOM;
                     break;
 
                 default:
@@ -760,7 +761,7 @@ double DRAWING_SHEET_READER_PARSER::parseDouble()
     return val;
 }
 
-// defaultDrawingSheet is the default page layout description using the S expr.
+// defaultDrawingSheet is the default drawing sheet using the S expr.
 extern const char defaultDrawingSheet[];
 
 void DS_DATA_MODEL::SetDefaultLayout()
@@ -774,7 +775,7 @@ wxString DS_DATA_MODEL::DefaultLayout()
     return wxString( defaultDrawingSheet );
 }
 
-// emptyDrawingSheet is a "empty" page layout description using the S expr.
+// emptyDrawingSheet is a "empty" drawing sheet using the S expr.
 // there is a 0 length line to fool something somewhere.
 extern const char emptyDrawingSheet[];
 
@@ -808,7 +809,7 @@ void DS_DATA_MODEL::SetPageLayout( const char* aPageLayout, bool Append, const w
 }
 
 
-void DS_DATA_MODEL::LoadDrawingSheet( const wxString& aFullFileName, bool Append )
+bool DS_DATA_MODEL::LoadDrawingSheet( const wxString& aFullFileName, bool Append )
 {
     wxString fullFileName = aFullFileName;
 
@@ -817,14 +818,21 @@ void DS_DATA_MODEL::LoadDrawingSheet( const wxString& aFullFileName, bool Append
         if( fullFileName.IsEmpty() )
             wxGetEnv( wxT( "KICAD_WKSFILE" ), &fullFileName );
 
-        if( fullFileName.IsEmpty() || !wxFileExists( fullFileName ) )
+
+        if( fullFileName.IsEmpty() )
         {
             #if 0
             if( !fullFileName.IsEmpty() )
                 wxLogMessage( wxT( "Drawing sheet file <%s> not found" ), fullFileName.GetData() );
             #endif
             SetDefaultLayout();
-            return;
+            return true; // we assume its fine / default init
+        }
+
+        if( !wxFileExists( fullFileName ) )
+        {
+            SetDefaultLayout();
+            return false;
         }
     }
 
@@ -834,14 +842,17 @@ void DS_DATA_MODEL::LoadDrawingSheet( const wxString& aFullFileName, bool Append
     {
         if( !Append )
             SetDefaultLayout();
-        return;
+        return false;
     }
 
     size_t filelen = wksFile.Length();
-    char * buffer = new char[filelen+10];
+    std::unique_ptr<char[]> buffer = std::make_unique<char[]>(filelen+10);
 
-    if( wksFile.Read( buffer, filelen ) != filelen )
-        wxLogMessage( _("The file \"%s\" was not fully read"), fullFileName.GetData() );
+    if( wksFile.Read( buffer.get(), filelen ) != filelen )
+    {
+        wxLogMessage( _( "The file \"%s\" was not fully read" ), fullFileName.GetData() );
+        return false;
+    }
     else
     {
         buffer[filelen]=0;
@@ -849,7 +860,7 @@ void DS_DATA_MODEL::LoadDrawingSheet( const wxString& aFullFileName, bool Append
         if( ! Append )
             ClearList();
 
-        DRAWING_SHEET_READER_PARSER pl_parser( buffer, fullFileName );
+        DRAWING_SHEET_READER_PARSER pl_parser( buffer.get(), fullFileName );
 
         try
         {
@@ -858,8 +869,14 @@ void DS_DATA_MODEL::LoadDrawingSheet( const wxString& aFullFileName, bool Append
         catch( const IO_ERROR& ioe )
         {
             wxLogMessage( ioe.What() );
+            return false;
+        }
+        catch( const std::bad_alloc& )
+        {
+            wxLogMessage( "Memory exhaustion reading drawing sheet" );
+            return false;
         }
     }
 
-    delete[] buffer;
+    return true;
 }

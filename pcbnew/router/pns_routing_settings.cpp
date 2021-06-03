@@ -45,13 +45,14 @@ ROUTING_SETTINGS::ROUTING_SETTINGS( JSON_SETTINGS* aParent, const std::string& a
     m_walkaroundIterationLimit = 40;
     m_jumpOverObstacles = false;
     m_smoothDraggedSegments = true;
-    m_canViolateDRC = false;
+    m_allowDRCViolations = false;
     m_freeAngleMode = false;
     m_inlineDragEnabled = false;
     m_snapToTracks = false;
     m_snapToPads = false;
-    m_optimizeDraggedTrack = true;
+    m_optimizeEntireDraggedTrack = false;
     m_cornerMode = CORNER_MODE::MITERED_45;
+    m_walkaroundHugLengthThreshold = 1.5;
     m_autoPosture = true;
     m_fixAllSegments = true;
 
@@ -85,12 +86,13 @@ ROUTING_SETTINGS::ROUTING_SETTINGS( JSON_SETTINGS* aParent, const std::string& a
 
     m_params.emplace_back( new PARAM<bool>( "smooth_dragged_segments",   &m_smoothDraggedSegments, true ) );
 
-    m_params.emplace_back( new PARAM<bool>( "can_violate_drc",  &m_canViolateDRC,     false ) );
+    m_params.emplace_back( new PARAM<bool>( "can_violate_drc", &m_allowDRCViolations, false ) );
     m_params.emplace_back( new PARAM<bool>( "free_angle_mode",  &m_freeAngleMode,     false ) );
     m_params.emplace_back( new PARAM<bool>( "inline_drag",      &m_inlineDragEnabled, false ) );
     m_params.emplace_back( new PARAM<bool>( "snap_to_tracks",   &m_snapToTracks,      false ) );
     m_params.emplace_back( new PARAM<bool>( "snap_to_pads",     &m_snapToPads,        false ) );
-    m_params.emplace_back( new PARAM<bool>( "optimize_dragged_track", &m_optimizeDraggedTrack, true ) );
+    m_params.emplace_back( new PARAM<bool>( "optimize_dragged_track",
+                                            &m_optimizeEntireDraggedTrack, false ) );
 
     m_params.emplace_back( new PARAM<bool>( "auto_posture",     &m_autoPosture,       true ) );
     m_params.emplace_back( new PARAM<bool>( "fix_all_segments", &m_fixAllSegments,    true ) );
@@ -98,6 +100,8 @@ ROUTING_SETTINGS::ROUTING_SETTINGS( JSON_SETTINGS* aParent, const std::string& a
     m_params.emplace_back( new PARAM_ENUM<CORNER_MODE>( "corner_mode", &m_cornerMode,
                            CORNER_MODE::MITERED_45, CORNER_MODE::ROUNDED_90,
                            CORNER_MODE::MITERED_45 ) );
+
+    m_params.emplace_back( new PARAM<double>( "walkaround_hug_length_threshold",     &m_walkaroundHugLengthThreshold,     1.5 ) );
 
     LoadFromFile();
 }

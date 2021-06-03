@@ -21,6 +21,8 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
 
+#include <mutex>
+
 #include <class_library.h>
 #include <confirm.h>
 #include <dialogs/panel_eeschema_color_settings.h>
@@ -87,12 +89,15 @@ bool SCH_EDIT_FRAME::LoadProjectSettings()
                                     LIB_PART::GetSubpartFirstId() );
 
     // Load the drawing sheet description file, from the filename stored in
-    // BASE_SCREEN::m_PageLayoutDescrFileName, read in config project file
+    // BASE_SCREEN::m_DrawingSheetFileName, read in config project file
     // If empty, or not existing, the default descr is loaded
-    wxString filename = DS_DATA_MODEL::MakeFullFileName( BASE_SCREEN::m_PageLayoutDescrFileName,
+    wxString filename = DS_DATA_MODEL::MakeFullFileName( BASE_SCREEN::m_DrawingSheetFileName,
                                                          Prj().GetProjectPath() );
 
-    DS_DATA_MODEL::GetTheInstance().LoadDrawingSheet( filename );
+    if( !DS_DATA_MODEL::GetTheInstance().LoadDrawingSheet( filename ) )
+    {
+        ShowInfoBarError( _( "Error loading drawing sheet" ), true );
+    }
 
     return true;
 }
@@ -224,8 +229,13 @@ void SYMBOL_EDIT_FRAME::InstallPreferences( PAGED_DIALOG* aParent,
 }
 
 
+static std::mutex s_symbolTableMutex;
+
+
 SYMBOL_LIB_TABLE* PROJECT::SchSymbolLibTable()
 {
+    std::lock_guard<std::mutex> lock( s_symbolTableMutex );
+
     // This is a lazy loading function, it loads the project specific table when
     // that table is asked for, not before.
     SYMBOL_LIB_TABLE* tbl = (SYMBOL_LIB_TABLE*) GetElem( ELEM_SYMBOL_LIB_TABLE );

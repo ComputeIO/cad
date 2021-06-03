@@ -66,8 +66,8 @@ DIALOG_EDIT_ONE_FIELD::DIALOG_EDIT_ONE_FIELD( SCH_BASE_FRAME* aParent, const wxS
     m_position = aTextItem->GetTextPos();
     m_size = aTextItem->GetTextWidth();
     m_isVertical = ( aTextItem->GetTextAngle() == TEXT_ANGLE_VERT );
-    m_verticalJustification = aTextItem->GetVertJustify() + 1;
-    m_horizontalJustification = aTextItem->GetHorizJustify() + 1;
+    m_verticalAlignment = aTextItem->GetVerticalAlignment();
+    m_horizontalAlignment = aTextItem->GetHorizontalAlignment();
     m_isVisible = aTextItem->IsVisible();
 }
 
@@ -81,9 +81,7 @@ DIALOG_EDIT_ONE_FIELD::~DIALOG_EDIT_ONE_FIELD()
 void DIALOG_EDIT_ONE_FIELD::init()
 {
     SCH_BASE_FRAME* parent = GetParent();
-    bool isSymbolEditor = parent->IsType( FRAME_SCH_SYMBOL_EDITOR );
-
-    m_TextCtrl->SetValidator( SCH_FIELD_VALIDATOR( isSymbolEditor, m_fieldId, &m_text ) );
+    bool isSymbolEditor = parent && parent->IsType( FRAME_SCH_SYMBOL_EDITOR );
 
     // Disable options for graphic text editing which are not needed for fields.
     m_CommonConvert->Show( false );
@@ -100,13 +98,16 @@ void DIALOG_EDIT_ONE_FIELD::init()
 
     if( use_validator )
     {
-        m_StyledTextCtrl->Show( false );
+        m_TextCtrl->SetValidator( SCH_FIELD_VALIDATOR( isSymbolEditor, m_fieldId, &m_text ) );
         SetInitialFocus( m_TextCtrl );
+
+        m_StyledTextCtrl->Show( false );
     }
     else
     {
-        m_TextCtrl->Show( false );
         SetInitialFocus( m_StyledTextCtrl );
+
+        m_TextCtrl->Show( false );
     }
 
     // Show the footprint selection dialog if this is the footprint field.
@@ -209,8 +210,18 @@ bool DIALOG_EDIT_ONE_FIELD::TransferDataToWindow()
     m_posY.SetValue( m_position.y );
     m_textSize.SetValue( m_size );
     m_orientChoice->SetSelection( m_isVertical ? 1 : 0 );
-    m_hAlignChoice->SetSelection( m_horizontalJustification );
-    m_vAlignChoice->SetSelection( m_verticalJustification );
+    switch( m_horizontalAlignment )
+    {
+    case TEXT_ATTRIBUTES::H_LEFT: m_hAlignChoice->SetSelection( 0 ); break;
+    case TEXT_ATTRIBUTES::H_CENTER: m_hAlignChoice->SetSelection( 1 ); break;
+    case TEXT_ATTRIBUTES::H_RIGHT: m_hAlignChoice->SetSelection( 2 ); break;
+    }
+    switch( m_verticalAlignment )
+    {
+    case TEXT_ATTRIBUTES::V_TOP: m_vAlignChoice->SetSelection( 0 ); break;
+    case TEXT_ATTRIBUTES::V_CENTER: m_vAlignChoice->SetSelection( 1 ); break;
+    case TEXT_ATTRIBUTES::V_BOTTOM: m_vAlignChoice->SetSelection( 2 ); break;
+    }
     m_visible->SetValue( m_isVisible );
     m_italic->SetValue( m_isItalic );
     m_bold->SetValue( m_isBold );
@@ -247,8 +258,8 @@ bool DIALOG_EDIT_ONE_FIELD::TransferDataFromWindow()
     m_isVertical = m_orientChoice->GetSelection() == 1;
     m_position = wxPoint( m_posX.GetValue(), m_posY.GetValue() );
     m_size = m_textSize.GetValue();
-    m_horizontalJustification = m_hAlignChoice->GetSelection();
-    m_verticalJustification = m_vAlignChoice->GetSelection();
+    m_horizontalAlignment = getHorizontalAlignment( m_hAlignChoice->GetSelection() );
+    m_verticalAlignment = getVerticalAlignment( m_vAlignChoice->GetSelection() );
     m_isVisible = m_visible->GetValue();
     m_isItalic = m_italic->GetValue();
     m_isBold = m_bold->GetValue();
@@ -265,8 +276,7 @@ void DIALOG_EDIT_ONE_FIELD::updateText( EDA_TEXT* aText )
     aText->SetTextAngle( m_isVertical ? TEXT_ANGLE_VERT : TEXT_ANGLE_HORIZ );
     aText->SetItalic( m_isItalic );
     aText->SetBold( m_isBold );
-    aText->SetHorizJustify( EDA_TEXT::MapHorizJustify( m_horizontalJustification - 1 ) );
-    aText->SetVertJustify( EDA_TEXT::MapVertJustify( m_verticalJustification - 1 ) );
+    aText->Align( m_horizontalAlignment, m_verticalAlignment );
 }
 
 
@@ -323,7 +333,8 @@ DIALOG_SCH_EDIT_ONE_FIELD::DIALOG_SCH_EDIT_ONE_FIELD( SCH_BASE_FRAME* aParent,
             m_isPower = true;
     }
 
-    m_StyledTextCtrl->Bind( wxEVT_STC_CHARADDED, &DIALOG_SCH_EDIT_ONE_FIELD::onScintillaCharAdded, this );
+    m_StyledTextCtrl->Bind( wxEVT_STC_CHARADDED,
+                            &DIALOG_SCH_EDIT_ONE_FIELD::onScintillaCharAdded, this );
 
     init();
 }
@@ -439,16 +450,10 @@ void DIALOG_SCH_EDIT_ONE_FIELD::UpdateField( SCH_FIELD* aField, SCH_SHEET_PATH* 
 
     bool positioningModified = false;
 
-    if( aField->GetTextPos() != m_position )
-        positioningModified = true;
-
-    if( ( aField->GetTextAngle() == TEXT_ANGLE_VERT ) != m_isVertical )
-        positioningModified = true;
-
-    if( aField->GetHorizJustify() != EDA_TEXT::MapHorizJustify( m_horizontalJustification - 1 ) )
-        positioningModified = true;
-
-    if( aField->GetVertJustify() != EDA_TEXT::MapVertJustify( m_verticalJustification - 1 ) )
+    if( aField->GetTextPos() != m_position
+        || ( aField->GetTextAngle() == TEXT_ANGLE_VERT ) != m_isVertical
+        || aField->GetHorizontalAlignment() != m_horizontalAlignment
+        || aField->GetVerticalAlignment() != m_verticalAlignment )
         positioningModified = true;
 
     // convert any text variable cross-references to their UUIDs
@@ -469,6 +474,7 @@ void DIALOG_SCH_EDIT_ONE_FIELD::UpdateField( SCH_FIELD* aField, SCH_SHEET_PATH* 
         {
             wxString ref = symbol->GetRef( aSheetPath );
             int      unit = symbol->GetUnit();
+            LIB_ID   libId = symbol->GetLibId();
 
             for( SCH_SHEET_PATH& sheet : editFrame->Schematic().GetSheets() )
             {
@@ -476,7 +482,7 @@ void DIALOG_SCH_EDIT_ONE_FIELD::UpdateField( SCH_FIELD* aField, SCH_SHEET_PATH* 
                 std::vector<SCH_COMPONENT*> otherUnits;
                 constexpr bool              appendUndo = true;
 
-                CollectOtherUnits( ref, unit, sheet, &otherUnits );
+                CollectOtherUnits( ref, unit, libId, sheet, &otherUnits );
 
                 for( SCH_COMPONENT* otherUnit : otherUnits )
                 {

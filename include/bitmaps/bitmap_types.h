@@ -32,12 +32,18 @@
 class wxBitmap;     // only to define wxBitmap
 class EDA_DRAW_FRAME;
 class wxWindow;
+class wxString;
 struct BITMAP_OPAQUE;
 class BITMAP_STORE;
 
 enum class BITMAPS : unsigned int;
 
-#include <wx/gdicmn.h>  // wxBitmapType
+enum class BITMAP_TYPE
+{
+    PNG,
+    JPG,
+    BMP
+};
 
 BITMAP_STORE* GetBitmapStore();
 
@@ -45,8 +51,9 @@ BITMAP_STORE* GetBitmapStore();
  * Construct a wxBitmap from an image identifier
  * Returns the image from the active theme if the image has multiple theme variants.
  * @param aBitmap is from the BITMAPS enum in bitmaps_list.h
+ * @param aHeightTag is the requested height tag for multi-res bitmaps (-1 for any)
  */
-wxBitmap KiBitmap( BITMAPS aBitmap );
+wxBitmap KiBitmap( BITMAPS aBitmap, int aHeightTag = -1 );
 
 /**
  * Compatibility shim for pcb_calculator until its images are pulled into the PNG pipeline
@@ -102,6 +109,6 @@ wxBitmap* KiBitmapNew( BITMAPS aBitmap );
  * @return True if the file was successfully saved or false if the file failed to be saved.
  */
 bool SaveCanvasImageToFile( EDA_DRAW_FRAME* aFrame, const wxString& aFileName,
-                            wxBitmapType aBitmapType = wxBITMAP_TYPE_PNG );
+                            BITMAP_TYPE aBitmapType = BITMAP_TYPE::PNG );
 
 #endif  // BITMAP_TYPES_H_

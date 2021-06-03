@@ -54,6 +54,7 @@
 #include <convert_basic_shapes_to_polygon.h>
 #include <geometry/geometry_utils.h>
 #include <pcbnew_settings.h>
+#include <wx/log.h>
 
 #include "specctra.h"
 
@@ -87,7 +88,7 @@ bool PCB_EDIT_FRAME::ExportSpecctraFile( const wxString& aFullFilename )
     wxString        errorText;
 
     BASE_SCREEN*    screen = GetScreen();
-    bool            wasModified = screen->IsModify();
+    bool            wasModified = screen->IsContentModified();
 
     db.SetPCB( SPECCTRA_DB::MakePCB() );
 
@@ -122,7 +123,7 @@ bool PCB_EDIT_FRAME::ExportSpecctraFile( const wxString& aFullFilename )
     // modified flag, yet their actions cancel each other out, so it should
     // be ok to clear the modify flag.
     if( !wasModified )
-        screen->ClrModify();
+        screen->SetContentModified( false );
 
     if( ok )
     {
@@ -199,7 +200,7 @@ static POINT mapPt( const wxPoint& pt )
  */
 static bool isRoundKeepout( PAD* aPad )
 {
-    if( aPad->GetShape() == PAD_SHAPE_CIRCLE )
+    if( aPad->GetShape() == PAD_SHAPE::CIRCLE )
     {
         if( aPad->GetDrillSize().x >= aPad->GetSize().x )
             return true;
@@ -291,7 +292,7 @@ PADSTACK* SPECCTRA_DB::makePADSTACK( BOARD* aBoard, PAD* aPad )
 
     switch( aPad->GetShape() )
     {
-    case PAD_SHAPE_CIRCLE:
+    case PAD_SHAPE::CIRCLE:
         {
             double diameter = scale( aPad->GetSize().x );
 
@@ -319,7 +320,7 @@ PADSTACK* SPECCTRA_DB::makePADSTACK( BOARD* aBoard, PAD* aPad )
         }
         break;
 
-    case PAD_SHAPE_RECT:
+    case PAD_SHAPE::RECT:
         {
             double  dx  = scale( aPad->GetSize().x ) / 2.0;
             double  dy  = scale( aPad->GetSize().y ) / 2.0;
@@ -355,7 +356,7 @@ PADSTACK* SPECCTRA_DB::makePADSTACK( BOARD* aBoard, PAD* aPad )
         }
         break;
 
-    case PAD_SHAPE_OVAL:
+    case PAD_SHAPE::OVAL:
         {
             double  dx  = scale( aPad->GetSize().x ) / 2.0;
             double  dy  = scale( aPad->GetSize().y ) / 2.0;
@@ -406,7 +407,7 @@ PADSTACK* SPECCTRA_DB::makePADSTACK( BOARD* aBoard, PAD* aPad )
         }
         break;
 
-    case PAD_SHAPE_TRAPEZOID:
+    case PAD_SHAPE::TRAPEZOID:
         {
             double  dx  = scale( aPad->GetSize().x ) / 2.0;
             double  dy  = scale( aPad->GetSize().y ) / 2.0;
@@ -458,8 +459,8 @@ PADSTACK* SPECCTRA_DB::makePADSTACK( BOARD* aBoard, PAD* aPad )
         }
         break;
 
-    case PAD_SHAPE_CHAMFERED_RECT:
-    case PAD_SHAPE_ROUNDRECT:
+    case PAD_SHAPE::CHAMFERED_RECT:
+    case PAD_SHAPE::ROUNDRECT:
         {
             // Export the shape as as polygon, round rect does not exist as primitive
             const int circleToSegmentsCount = 36;
@@ -479,7 +480,7 @@ PADSTACK* SPECCTRA_DB::makePADSTACK( BOARD* aBoard, PAD* aPad )
             psize.x += extra_clearance*2;
             psize.y += extra_clearance*2;
             rradius += extra_clearance;
-            bool doChamfer = aPad->GetShape() == PAD_SHAPE_CHAMFERED_RECT;
+            bool doChamfer = aPad->GetShape() == PAD_SHAPE::CHAMFERED_RECT;
 
             TransformRoundChamferedRectToPolygon( cornerBuffer, wxPoint(0,0), psize,
                                          0, rradius,
@@ -531,7 +532,7 @@ PADSTACK* SPECCTRA_DB::makePADSTACK( BOARD* aBoard, PAD* aPad )
         }
         break;
 
-    case PAD_SHAPE_CUSTOM:
+    case PAD_SHAPE::CUSTOM:
         {
             std::vector<wxPoint> polygonal_shape;
             SHAPE_POLY_SET pad_shape;
@@ -710,7 +711,7 @@ IMAGE* SPECCTRA_DB::makeIMAGE( BOARD* aBoard, FOOTPRINT* aFootprint )
 
         switch( graphic->GetShape() )
         {
-        case S_SEGMENT:
+        case PCB_SHAPE_TYPE::SEGMENT:
             outline = new SHAPE( image, T_outline );
 
             image->Append( outline );
@@ -723,7 +724,7 @@ IMAGE* SPECCTRA_DB::makeIMAGE( BOARD* aBoard, FOOTPRINT* aFootprint )
             path->AppendPoint( mapPt( graphic->GetEnd0() ) );
             break;
 
-        case S_CIRCLE:
+        case PCB_SHAPE_TYPE::CIRCLE:
             {
                 // this is best done by 4 QARC's but freerouter does not yet support QARCs.
                 // for now, support by using line segments.
@@ -765,8 +766,8 @@ IMAGE* SPECCTRA_DB::makeIMAGE( BOARD* aBoard, FOOTPRINT* aFootprint )
             }
             break;
 
-        case S_RECT:
-        case S_ARC:
+        case PCB_SHAPE_TYPE::RECT:
+        case PCB_SHAPE_TYPE::ARC:
         default:
             continue;
         }

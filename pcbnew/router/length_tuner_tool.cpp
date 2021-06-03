@@ -50,13 +50,6 @@ static TOOL_ACTION ACT_EndTuning( "pcbnew.LengthTuner.EndTuning",
         WXK_END, LEGACY_HK_NAME( "Stop laying the current track." ),
         _( "End Track" ), _( "Stops laying the current meander." ) );
 
-static TOOL_ACTION ACT_Settings( "pcbnew.LengthTuner.Settings",
-        AS_CONTEXT,
-        // Don't be tempted to remove "Modern Toolset only".  It's in the legacy property name.
-        MD_CTRL + 'L', LEGACY_HK_NAME( "Length Tuning Settings (Modern Toolset only)" ),
-        _( "Length Tuning Settings..." ), _( "Sets the length tuning parameters for currently routed item." ),
-        BITMAPS::router_len_tuner_setup );
-
 static TOOL_ACTION ACT_SpacingIncrease( "pcbnew.LengthTuner.SpacingIncrease",
         AS_CONTEXT,
         '1', LEGACY_HK_NAME( "Increase meander spacing by one step." ),
@@ -88,6 +81,9 @@ static TOOL_ACTION ACT_AmplDecrease( "pcbnew.LengthTuner.AmplDecrease",
 LENGTH_TUNER_TOOL::LENGTH_TUNER_TOOL() :
     TOOL_BASE( "pcbnew.LengthTuner" )
 {
+    // set the initial tune mode for the settings dialog, 
+    // in case the dialog is opened before the tool is activated the first time
+    m_lastTuneMode = PNS::ROUTER_MODE::PNS_MODE_TUNE_SINGLE;
 }
 
 
@@ -104,15 +100,15 @@ bool LENGTH_TUNER_TOOL::Init()
     menu.SetIcon( BITMAPS::router_len_tuner );
     menu.DisplayTitle( true );
 
-    menu.AddItem( ACTIONS::cancelInteractive, SELECTION_CONDITIONS::ShowAlways );
+    menu.AddItem( ACTIONS::cancelInteractive,             SELECTION_CONDITIONS::ShowAlways );
 
     menu.AddSeparator();
 
-    menu.AddItem( ACT_SpacingIncrease,        SELECTION_CONDITIONS::ShowAlways );
-    menu.AddItem( ACT_SpacingDecrease,        SELECTION_CONDITIONS::ShowAlways );
-    menu.AddItem( ACT_AmplIncrease,           SELECTION_CONDITIONS::ShowAlways );
-    menu.AddItem( ACT_AmplDecrease,           SELECTION_CONDITIONS::ShowAlways );
-    menu.AddItem( ACT_Settings,               SELECTION_CONDITIONS::ShowAlways );
+    menu.AddItem( ACT_SpacingIncrease,                    SELECTION_CONDITIONS::ShowAlways );
+    menu.AddItem( ACT_SpacingDecrease,                    SELECTION_CONDITIONS::ShowAlways );
+    menu.AddItem( ACT_AmplIncrease,                       SELECTION_CONDITIONS::ShowAlways );
+    menu.AddItem( ACT_AmplDecrease,                       SELECTION_CONDITIONS::ShowAlways );
+    menu.AddItem( PCB_ACTIONS::lengthTunerSettingsDialog, SELECTION_CONDITIONS::ShowAlways );
 
     return true;
 }
@@ -150,7 +146,9 @@ void LENGTH_TUNER_TOOL::performTuning()
     controls()->ForceCursorPosition( false );
     controls()->SetAutoPan( true );
 
-    if( !m_router->StartRouting( m_startSnapPoint, m_startItem, 0 ) )
+    int layer = m_startItem ? m_startItem->Layer() : static_cast<int>( frame()->GetActiveLayer() );
+
+    if( !m_router->StartRouting( m_startSnapPoint, m_startItem, layer ) )
     {
         frame()->ShowInfoBarMsg( m_router->FailureReason() );
         highlightNet( false );
@@ -232,7 +230,7 @@ void LENGTH_TUNER_TOOL::performTuning()
             m_router->Move( end, NULL );
             updateStatusPopup( statusPopup );
         }
-        else if( evt->IsAction( &ACT_Settings ) )
+        else if( evt->IsAction( &PCB_ACTIONS::lengthTunerSettingsDialog ) )
         {
             statusPopup.Hide();
             TOOL_EVENT dummy;
@@ -253,9 +251,12 @@ void LENGTH_TUNER_TOOL::performTuning()
 
 void LENGTH_TUNER_TOOL::setTransitions()
 {
-    Go( &LENGTH_TUNER_TOOL::MainLoop, PCB_ACTIONS::routerTuneSingleTrace.MakeEvent() );
-    Go( &LENGTH_TUNER_TOOL::MainLoop, PCB_ACTIONS::routerTuneDiffPair.MakeEvent() );
-    Go( &LENGTH_TUNER_TOOL::MainLoop, PCB_ACTIONS::routerTuneDiffPairSkew.MakeEvent() );
+    Go( &LENGTH_TUNER_TOOL::MainLoop,              PCB_ACTIONS::routerTuneSingleTrace.MakeEvent() );
+    Go( &LENGTH_TUNER_TOOL::MainLoop,              PCB_ACTIONS::routerTuneDiffPair.MakeEvent() );
+    Go( &LENGTH_TUNER_TOOL::MainLoop,              PCB_ACTIONS::routerTuneDiffPairSkew.MakeEvent() );
+
+    // in case tool is inactive, otherwise the event is handled in the tool loop
+    Go( &LENGTH_TUNER_TOOL::meanderSettingsDialog, PCB_ACTIONS::lengthTunerSettingsDialog.MakeEvent() );
 }
 
 
@@ -268,7 +269,8 @@ int LENGTH_TUNER_TOOL::MainLoop( const TOOL_EVENT& aEvent )
     frame()->PushTool( tool );
     Activate();
 
-    m_router->SetMode( aEvent.Parameter<PNS::ROUTER_MODE>() );
+    m_lastTuneMode = aEvent.Parameter<PNS::ROUTER_MODE>();
+    m_router->SetMode( m_lastTuneMode );
 
     controls()->ShowCursor( true );
 
@@ -290,6 +292,14 @@ int LENGTH_TUNER_TOOL::MainLoop( const TOOL_EVENT& aEvent )
         {
             break; // Finish
         }
+        else if( evt->Action() == TA_UNDO_REDO_PRE )
+        {
+            m_router->ClearWorld();
+        }
+        else if( evt->Action() == TA_UNDO_REDO_POST || evt->Action() == TA_MODEL_CHANGE )
+        {
+            m_router->SyncWorld();
+        }
         else if( evt->IsMotion() )
         {
             updateStartItem( *evt );
@@ -299,7 +309,7 @@ int LENGTH_TUNER_TOOL::MainLoop( const TOOL_EVENT& aEvent )
             updateStartItem( *evt );
             performTuning();
         }
-        else if( evt->IsAction( &ACT_Settings ) )
+        else if( evt->IsAction( &PCB_ACTIONS::lengthTunerSettingsDialog ) )
         {
             TOOL_EVENT dummy;
             meanderSettingsDialog( dummy );
@@ -327,7 +337,7 @@ int LENGTH_TUNER_TOOL::meanderSettingsDialog( const TOOL_EVENT& aEvent )
     PNS::MEANDER_PLACER_BASE* placer = static_cast<PNS::MEANDER_PLACER_BASE*>( m_router->Placer() );
 
     PNS::MEANDER_SETTINGS settings = placer ? placer->MeanderSettings() : m_savedMeanderSettings;
-    DIALOG_PNS_LENGTH_TUNING_SETTINGS settingsDlg( frame(), settings, m_router->Mode() );
+    DIALOG_PNS_LENGTH_TUNING_SETTINGS settingsDlg( frame(), settings, m_lastTuneMode );
 
     if( settingsDlg.ShowModal() == wxID_OK )
     {

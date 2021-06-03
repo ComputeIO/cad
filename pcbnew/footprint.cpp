@@ -50,7 +50,7 @@ FOOTPRINT::FOOTPRINT( BOARD* parent ) :
         m_visibleBBoxCacheTimeStamp( 0 ),
         m_textExcludedBBoxCacheTimeStamp( 0 ),
         m_hullCacheTimeStamp( 0 ),
-        m_initial_comments( 0 )
+        m_initial_comments( nullptr )
 {
     m_attributes   = 0;
     m_layer        = F_Cu;
@@ -123,7 +123,7 @@ FOOTPRINT::FOOTPRINT( const FOOTPRINT& aFootprint ) :
     {
         PAD* newPad = static_cast<PAD*>( pad->Clone() );
         ptrMap[ pad ] = newPad;
-        Add( newPad );
+        Add( newPad, ADD_MODE::APPEND ); // Append to ensure indexes are identical
     }
 
     // Copy zones
@@ -131,7 +131,7 @@ FOOTPRINT::FOOTPRINT( const FOOTPRINT& aFootprint ) :
     {
         FP_ZONE* newZone = static_cast<FP_ZONE*>( zone->Clone() );
         ptrMap[ zone ] = newZone;
-        Add( newZone );
+        Add( newZone, ADD_MODE::APPEND ); // Append to ensure indexes are identical
 
         // Ensure the net info is OK and especially uses the net info list
         // living in the current board
@@ -145,7 +145,7 @@ FOOTPRINT::FOOTPRINT( const FOOTPRINT& aFootprint ) :
     {
         BOARD_ITEM* newItem = static_cast<BOARD_ITEM*>( item->Clone() );
         ptrMap[ item ] = newItem;
-        Add( newItem );
+        Add( newItem, ADD_MODE::APPEND ); // Append to ensure indexes are identical
     }
 
     // Copy groups
@@ -153,7 +153,7 @@ FOOTPRINT::FOOTPRINT( const FOOTPRINT& aFootprint ) :
     {
         PCB_GROUP* newGroup = static_cast<PCB_GROUP*>( group->Clone() );
         ptrMap[ group ] = newGroup;
-        Add( newGroup );
+        Add( newGroup, ADD_MODE::APPEND ); // Append to ensure indexes are identical
     }
 
     // Rebuild groups
@@ -849,7 +849,7 @@ void FOOTPRINT::GetMsgPanelInfo( EDA_DRAW_FRAME* aFrame, std::vector<MSG_PANEL_I
     wxString attrs;
 
     if( IsLocked() )
-        addToken( &status, _( "locked" ) );
+        addToken( &status, _( "Locked" ) );
 
     if( m_fpStatus & FP_is_PLACED )
         addToken( &status, _( "autoplaced" ) );
@@ -962,7 +962,7 @@ PAD* FOOTPRINT::FindPadByName( const wxString& aPadName ) const
             return pad;
     }
 
-    return NULL;
+    return nullptr;
 }
 
 
@@ -978,7 +978,7 @@ PAD* FOOTPRINT::GetPad( const wxPoint& aPosition, LSET aLayerMask )
             return pad;
     }
 
-    return NULL;
+    return nullptr;
 }
 
 
@@ -1010,7 +1010,7 @@ unsigned FOOTPRINT::GetPadCount( INCLUDE_NPTH_T aIncludeNPTH ) const
 
     for( PAD* pad : m_pads )
     {
-        if( pad->GetAttribute() == PAD_ATTRIB_NPTH )
+        if( pad->GetAttribute() == PAD_ATTRIB::NPTH )
             continue;
 
         cnt++;
@@ -1040,7 +1040,7 @@ unsigned FOOTPRINT::GetUniquePadCount( INCLUDE_NPTH_T aIncludeNPTH ) const
         if( !aIncludeNPTH )
         {
             // skip NPTH
-            if( pad->GetAttribute() == PAD_ATTRIB_NPTH )
+            if( pad->GetAttribute() == PAD_ATTRIB::NPTH )
             {
                 continue;
             }
@@ -1614,8 +1614,8 @@ BOARD_ITEM* FOOTPRINT::Duplicate() const
 
 BOARD_ITEM* FOOTPRINT::DuplicateItem( const BOARD_ITEM* aItem, bool aAddToFootprint )
 {
-    BOARD_ITEM* new_item = NULL;
-    FP_ZONE* new_zone = NULL;
+    BOARD_ITEM* new_item = nullptr;
+    FP_ZONE* new_zone = nullptr;
 
     switch( aItem->Type() )
     {
@@ -1705,7 +1705,9 @@ wxString FOOTPRINT::GetNextPadName( const wxString& aLastPadName ) const
     for( PAD* pad : m_pads )
         usedNames.insert( pad->GetName() );
 
-    wxString prefix = UTIL::GetReferencePrefix( aLastPadName );
+    // Pad names aren't technically reference designators, but the formatting is close enough
+    // for these to give us what we need.
+    wxString prefix = UTIL::GetRefDesPrefix( aLastPadName );
     int      num = GetTrailingInt( aLastPadName );
 
     while( usedNames.count( wxString::Format( "%s%d", prefix, num ) ) )
@@ -1720,8 +1722,8 @@ void FOOTPRINT::IncrementReference( int aDelta )
     const wxString& refdes = GetReference();
 
     SetReference( wxString::Format( wxT( "%s%i" ),
-                  UTIL::GetReferencePrefix( refdes ),
-                  GetTrailingInt( refdes ) + aDelta ) );
+                                    UTIL::GetRefDesPrefix( refdes ),
+                                    GetTrailingInt( refdes ) + aDelta ) );
 }
 
 
@@ -1789,14 +1791,14 @@ double FOOTPRINT::GetCoverageArea( const BOARD_ITEM* aItem, const GENERAL_COLLEC
 
         switch( shape->GetShape() )
         {
-        case S_SEGMENT:
-        case S_ARC:
-        case S_CURVE:
+        case PCB_SHAPE_TYPE::SEGMENT:
+        case PCB_SHAPE_TYPE::ARC:
+        case PCB_SHAPE_TYPE::CURVE:
             return shape->GetWidth() * shape->GetWidth();
 
-        case S_RECT:
-        case S_CIRCLE:
-        case S_POLYGON:
+        case PCB_SHAPE_TYPE::RECT:
+        case PCB_SHAPE_TYPE::CIRCLE:
+        case PCB_SHAPE_TYPE::POLYGON:
         {
             if( !shape->IsFilled() )
                 return shape->GetWidth() * shape->GetWidth();
@@ -1993,7 +1995,7 @@ bool FOOTPRINT::HasThroughHolePads() const
 {
     for( PAD* pad : Pads() )
     {
-        if( pad->GetAttribute() != PAD_ATTRIB_SMD )
+        if( pad->GetAttribute() != PAD_ATTRIB::SMD )
             return true;
     }
 
@@ -2075,18 +2077,18 @@ static struct FOOTPRINT_DESC
         propMgr.AddProperty( new PROPERTY<FOOTPRINT, double>( _HKI( "Orientation" ),
                     &FOOTPRINT::SetOrientationDegrees, &FOOTPRINT::GetOrientationDegrees,
                     PROPERTY_DISPLAY::DEGREE ) );
-        propMgr.AddProperty( new PROPERTY<FOOTPRINT, int>( _HKI( "Local Clearance" ),
+        propMgr.AddProperty( new PROPERTY<FOOTPRINT, int>( _HKI( "Clearance Override" ),
                     &FOOTPRINT::SetLocalClearance, &FOOTPRINT::GetLocalClearance,
                     PROPERTY_DISPLAY::DISTANCE ) );
-        propMgr.AddProperty( new PROPERTY<FOOTPRINT, int>( _HKI( "Local Solderpaste Margin" ),
+        propMgr.AddProperty( new PROPERTY<FOOTPRINT, int>( _HKI( "Solderpaste Margin Override" ),
                     &FOOTPRINT::SetLocalSolderPasteMargin, &FOOTPRINT::GetLocalSolderPasteMargin,
                     PROPERTY_DISPLAY::DISTANCE ) );
-        propMgr.AddProperty( new PROPERTY<FOOTPRINT, double>( _HKI( "Local Solderpaste Margin Ratio" ),
+        propMgr.AddProperty( new PROPERTY<FOOTPRINT, double>( _HKI( "Solderpaste Margin Ratio Override" ),
                     &FOOTPRINT::SetLocalSolderPasteMarginRatio, &FOOTPRINT::GetLocalSolderPasteMarginRatio ) );
-        propMgr.AddProperty( new PROPERTY<FOOTPRINT, int>( _HKI( "Thermal Width" ),
+        propMgr.AddProperty( new PROPERTY<FOOTPRINT, int>( _HKI( "Thermal Relief Width" ),
                     &FOOTPRINT::SetThermalWidth, &FOOTPRINT::GetThermalWidth,
                     PROPERTY_DISPLAY::DISTANCE ) );
-        propMgr.AddProperty( new PROPERTY<FOOTPRINT, int>( _HKI( "Thermal Gap" ),
+        propMgr.AddProperty( new PROPERTY<FOOTPRINT, int>( _HKI( "Thermal Relief Gap" ),
                     &FOOTPRINT::SetThermalGap, &FOOTPRINT::GetThermalGap,
                     PROPERTY_DISPLAY::DISTANCE ) );
         // TODO zone connection, FPID?

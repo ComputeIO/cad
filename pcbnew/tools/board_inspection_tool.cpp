@@ -36,8 +36,9 @@
 #include <dialogs/dialog_constraints_reporter.h>
 #include <kicad_string.h>
 #include "board_inspection_tool.h"
+#include <pcbnew_settings.h>
 #include <widgets/appearance_controls.h>
-
+#include <drc/drc_item.h>
 
 void DIALOG_INSPECTION_REPORTER::OnErrorLinkClicked( wxHtmlLinkEvent& event )
 {
@@ -53,8 +54,7 @@ BOARD_INSPECTION_TOOL::BOARD_INSPECTION_TOOL() :
         m_frame( nullptr )
 {
     m_probingSchToPcb = false;
-    m_lastNetcode = -1;
-    m_dynamicData = nullptr;
+    m_dynamicData     = nullptr;
 }
 
 
@@ -68,7 +68,8 @@ public:
 
         Add( PCB_ACTIONS::showNet );
         Add( PCB_ACTIONS::hideNet );
-        // Add( PCB_ACTIONS::highlightNet );
+        Add( PCB_ACTIONS::highlightNetSelection );
+        Add( PCB_ACTIONS::clearHighlight );
     }
 
 private:
@@ -154,7 +155,7 @@ void BOARD_INSPECTION_TOOL::reportZoneConnection( ZONE* aZone, PAD* aPad, REPORT
     // Resolve complex connection types into simple types
     if( connection == ZONE_CONNECTION::THT_THERMAL )
     {
-        if( aPad->GetAttribute() == PAD_ATTRIB_PTH )
+        if( aPad->GetAttribute() == PAD_ATTRIB::PTH )
         {
             connection = ZONE_CONNECTION::THERMAL;
         }
@@ -253,6 +254,91 @@ void BOARD_INSPECTION_TOOL::reportClearance( DRC_CONSTRAINT_T aClearanceType, PC
 }
 
 
+void BOARD_INSPECTION_TOOL::InspectDRCError( const std::shared_ptr<RC_ITEM>& aDRCItem )
+{
+    BOARD_ITEM*  a = m_frame->GetBoard()->GetItem( aDRCItem->GetMainItemID() );
+    BOARD_ITEM*  b = m_frame->GetBoard()->GetItem( aDRCItem->GetAuxItemID() );
+    PCB_LAYER_ID layer = m_frame->GetActiveLayer();
+
+    if( !a || !b )
+        return;
+
+    if( m_inspectClearanceDialog == nullptr )
+    {
+        m_inspectClearanceDialog = std::make_unique<DIALOG_INSPECTION_REPORTER>( m_frame );
+        m_inspectClearanceDialog->SetTitle( _( "Clearance Report" ) );
+
+        m_inspectClearanceDialog->Connect( wxEVT_CLOSE_WINDOW,
+                    wxCommandEventHandler( BOARD_INSPECTION_TOOL::onInspectClearanceDialogClosed ),
+                    nullptr, this );
+    }
+
+    WX_HTML_REPORT_BOX* r = m_inspectClearanceDialog->m_Reporter;
+    r->SetUnits( m_frame->GetUserUnits() );
+    r->Clear();
+
+    switch( aDRCItem->GetErrorCode() )
+    {
+    case DRCE_COPPER_EDGE_CLEARANCE:
+        r->Report( "<h7>" + _( "Edge clearance resolution for:" ) + "</h7>" );
+
+        r->Report( wxString::Format( "<ul><li>%s</li><li>%s</li></ul>",
+                                     EscapeHTML( getItemDescription( a ) ),
+                                     EscapeHTML( getItemDescription( b ) ) ) );
+
+        reportClearance( EDGE_CLEARANCE_CONSTRAINT, layer, a, b, r );
+        break;
+
+    case DRCE_CLEARANCE:
+        if( a->Type() == PCB_TRACE_T || a->Type() == PCB_ARC_T )
+        {
+            layer = a->GetLayer();
+        }
+        else if( b->Type() == PCB_TRACE_T || b->Type() == PCB_ARC_T )
+        {
+            layer = b->GetLayer();
+        }
+        else if( a->Type() == PCB_PAD_T && static_cast<PAD*>( a )->GetAttribute() == PAD_ATTRIB::SMD )
+        {
+            PAD* pad = static_cast<PAD*>( a );
+
+            if( pad->IsOnLayer( F_Cu ) )
+                layer = F_Cu;
+            else
+                layer = B_Cu;
+        }
+        else if( b->Type() == PCB_PAD_T && static_cast<PAD*>( a )->GetAttribute() == PAD_ATTRIB::SMD )
+        {
+            PAD* pad = static_cast<PAD*>( b );
+
+            if( pad->IsOnLayer( F_Cu ) )
+                layer = F_Cu;
+            else
+                layer = B_Cu;
+        }
+
+        r->Report( "<h7>" + _( "Clearance resolution for:" ) + "</h7>" );
+
+        r->Report( wxString::Format( "<ul><li>%s %s</li><li>%s</li><li>%s</li></ul>",
+                                     _( "Layer" ),
+                                     EscapeHTML( m_frame->GetBoard()->GetLayerName( layer ) ),
+                                     EscapeHTML( getItemDescription( a ) ),
+                                     EscapeHTML( getItemDescription( b ) ) ) );
+
+        reportClearance( CLEARANCE_CONSTRAINT, layer, a, b, r );
+        break;
+
+    default:
+        return;
+    }
+
+    r->Flush();
+
+    m_inspectClearanceDialog->Raise();
+    m_inspectClearanceDialog->Show( true );
+}
+
+
 int BOARD_INSPECTION_TOOL::InspectClearance( const TOOL_EVENT& aEvent )
 {
     PCB_SELECTION_TOOL*  selTool = m_toolMgr->GetTool<PCB_SELECTION_TOOL>();
@@ -328,7 +414,7 @@ int BOARD_INSPECTION_TOOL::InspectClearance( const TOOL_EVENT& aEvent )
     {
         layer = b->GetLayer();
     }
-    else if( a->Type() == PCB_PAD_T && static_cast<PAD*>( a )->GetAttribute() == PAD_ATTRIB_SMD )
+    else if( a->Type() == PCB_PAD_T && static_cast<PAD*>( a )->GetAttribute() == PAD_ATTRIB::SMD )
     {
         PAD* pad = static_cast<PAD*>( a );
 
@@ -337,7 +423,7 @@ int BOARD_INSPECTION_TOOL::InspectClearance( const TOOL_EVENT& aEvent )
         else
             layer = B_Cu;
     }
-    else if( b->Type() == PCB_PAD_T && static_cast<PAD*>( a )->GetAttribute() == PAD_ATTRIB_SMD )
+    else if( b->Type() == PCB_PAD_T && static_cast<PAD*>( a )->GetAttribute() == PAD_ATTRIB::SMD )
     {
         PAD* pad = static_cast<PAD*>( b );
 
@@ -713,7 +799,8 @@ int BOARD_INSPECTION_TOOL::CrossProbePcbToSch( const TOOL_EVENT& aEvent )
     else
         m_frame->SendMessageToEESCHEMA( nullptr );
 
-    m_frame->Update3DView( false );
+    // Update 3D viewer highlighting
+    m_frame->Update3DView( false, frame()->GetDisplayOptions().m_Live3DRefresh );
 
     return 0;
 }
@@ -732,13 +819,14 @@ int BOARD_INSPECTION_TOOL::HighlightItem( const TOOL_EVENT& aEvent )
     }
     m_probingSchToPcb = false;
 
-    bool request3DviewRedraw = true;
+    bool request3DviewRedraw = frame()->GetDisplayOptions().m_Live3DRefresh;
 
     if( item && item->Type() != PCB_FOOTPRINT_T )
         request3DviewRedraw = false;
 
+    // Update 3D viewer highlighting
     if( request3DviewRedraw )
-        m_frame->Update3DView( false );
+        m_frame->Update3DView( false, true );
 
     return 0;
 }
@@ -756,21 +844,35 @@ int BOARD_INSPECTION_TOOL::HighlightItem( const TOOL_EVENT& aEvent )
     if( aUseSelection )
     {
         const PCB_SELECTION& selection = selectionTool->GetSelection();
+        std::set<int> netcodes;
 
         for( auto item : selection )
         {
             if( auto ci = dyn_cast<BOARD_CONNECTED_ITEM*>( item ) )
-            {
-                int item_net = ci->GetNetCode();
-
-                if( net < 0 )
-                    net = item_net;
-                else if( net != item_net )  // more than one net selected: do nothing
-                    return false;
-            }
+                netcodes.insert( ci->GetNetCode() );
         }
 
-        enableHighlight = ( net >= 0 && !settings->GetHighlightNetCodes().count( net ) );
+        enableHighlight = !netcodes.empty();
+
+        if( enableHighlight && netcodes.size() > 1 )
+        {
+            // If we are doing a multi-highlight, cross-probing back and other stuff is not
+            // yet supported
+            settings->SetHighlight( netcodes );
+            board->ResetNetHighLight();
+
+            for( int multiNet : netcodes )
+                board->SetHighLightNet( multiNet, true );
+
+            board->HighLightON();
+            m_toolMgr->GetView()->UpdateAllLayersColor();
+            m_currentlyHighlighted = netcodes;
+            return true;
+        }
+        else if( enableHighlight )
+        {
+            net = *netcodes.begin();
+        }
     }
 
     // If we didn't get a net to highlight from the selection, use the cursor
@@ -840,7 +942,7 @@ int BOARD_INSPECTION_TOOL::HighlightItem( const TOOL_EVENT& aEvent )
     if( enableHighlight != settings->IsHighlightEnabled() || !netcodes.count( net ) )
     {
         if( !netcodes.empty() )
-            m_lastNetcode = *netcodes.begin();
+            m_lastHighlighted = netcodes;
 
         settings->SetHighlight( enableHighlight, net );
         m_toolMgr->GetView()->UpdateAllLayersColor();
@@ -849,6 +951,7 @@ int BOARD_INSPECTION_TOOL::HighlightItem( const TOOL_EVENT& aEvent )
     // Store the highlighted netcode in the current board (for dialogs for instance)
     if( enableHighlight && net >= 0 )
     {
+        m_currentlyHighlighted = netcodes;
         board->SetHighLightNet( net );
         board->HighLightON();
 
@@ -864,6 +967,7 @@ int BOARD_INSPECTION_TOOL::HighlightItem( const TOOL_EVENT& aEvent )
     }
     else
     {
+        m_currentlyHighlighted.clear();
         board->ResetNetHighLight();
         m_frame->SetMsgPanel( board );
         m_frame->SendCrossProbeNetName( "" );
@@ -881,16 +985,30 @@ int BOARD_INSPECTION_TOOL::HighlightNet( const TOOL_EVENT& aEvent )
 
     if( netcode > 0 )
     {
-        m_lastNetcode = highlighted.empty() ? -1 : *highlighted.begin();
+        m_lastHighlighted = highlighted;
         settings->SetHighlight( true, netcode );
         m_toolMgr->GetView()->UpdateAllLayersColor();
+        m_currentlyHighlighted.clear();
+        m_currentlyHighlighted.insert( netcode );
+    }
+    else if( aEvent.IsAction( &PCB_ACTIONS::highlightNetSelection ) )
+    {
+        // Highlight selection (cursor position will be ignored)
+        highlightNet( getViewControls()->GetMousePosition(), true );
     }
     else if( aEvent.IsAction( &PCB_ACTIONS::toggleLastNetHighlight ) )
     {
-        int temp = highlighted.empty() ? -1 : *highlighted.begin();
-        settings->SetHighlight( true, m_lastNetcode );
+        std::set<int> temp = highlighted;
+        settings->SetHighlight( m_lastHighlighted );
         m_toolMgr->GetView()->UpdateAllLayersColor();
-        m_lastNetcode = temp;
+        m_currentlyHighlighted = m_lastHighlighted;
+        m_lastHighlighted      = temp;
+    }
+    else if( aEvent.IsAction( &PCB_ACTIONS::toggleNetHighlight ) )
+    {
+        bool turnOn = highlighted.empty() && !m_currentlyHighlighted.empty();
+        settings->SetHighlight( m_currentlyHighlighted, turnOn );
+        m_toolMgr->GetView()->UpdateAllLayersColor();
     }
     else    // Highlight the net belonging to the item under the cursor
     {
@@ -906,6 +1024,9 @@ int BOARD_INSPECTION_TOOL::ClearHighlight( const TOOL_EVENT& aEvent )
     BOARD*                  board = static_cast<BOARD*>( m_toolMgr->GetModel() );
     KIGFX::RENDER_SETTINGS* settings = m_toolMgr->GetView()->GetPainter()->GetSettings();
 
+    m_currentlyHighlighted.clear();
+    m_lastHighlighted.clear();
+
     board->ResetNetHighLight();
     settings->SetHighlight( false );
     m_toolMgr->GetView()->UpdateAllLayersColor();
@@ -914,7 +1035,7 @@ int BOARD_INSPECTION_TOOL::ClearHighlight( const TOOL_EVENT& aEvent )
     return 0;
 }
 
-
+#if 0
 int BOARD_INSPECTION_TOOL::HighlightNetTool( const TOOL_EVENT& aEvent )
 {
     std::string      tool = aEvent.GetCommandStr().get();
@@ -946,22 +1067,22 @@ int BOARD_INSPECTION_TOOL::HighlightNetTool( const TOOL_EVENT& aEvent )
 
     return 0;
 }
-
+#endif
 
 int BOARD_INSPECTION_TOOL::LocalRatsnestTool( const TOOL_EVENT& aEvent )
 {
     std::string       tool = aEvent.GetCommandStr().get();
     PCB_PICKER_TOOL*  picker = m_toolMgr->GetTool<PCB_PICKER_TOOL>();
     BOARD*            board = getModel<BOARD>();
-    auto&             opt = displayOptions();
 
     // Deactivate other tools; particularly important if another PICKER is currently running
     Activate();
 
     picker->SetClickHandler(
-        [this, board, opt]( const VECTOR2D& pt ) -> bool
+        [this, board]( const VECTOR2D& pt ) -> bool
         {
-        PCB_SELECTION_TOOL* selectionTool = m_toolMgr->GetTool<PCB_SELECTION_TOOL>();
+            const PCB_DISPLAY_OPTIONS& opt = displayOptions();
+            PCB_SELECTION_TOOL* selectionTool = m_toolMgr->GetTool<PCB_SELECTION_TOOL>();
 
             m_toolMgr->RunAction( PCB_ACTIONS::selectionClear, true );
             m_toolMgr->RunAction( PCB_ACTIONS::selectionCursor, true, EDIT_TOOL::PadFilter );
@@ -1010,8 +1131,10 @@ int BOARD_INSPECTION_TOOL::LocalRatsnestTool( const TOOL_EVENT& aEvent )
         } );
 
     picker->SetFinalizeHandler(
-        [board, opt] ( int aCondition )
+        [this, board]( int aCondition )
         {
+            const PCB_DISPLAY_OPTIONS& opt = displayOptions();
+
             if( aCondition != PCB_PICKER_TOOL::END_ACTIVATE )
             {
                 for( FOOTPRINT* fp : board->Footprints() )
@@ -1257,22 +1380,18 @@ void BOARD_INSPECTION_TOOL::setTransitions()
     Go( &BOARD_INSPECTION_TOOL::UpdateSelectionRatsnest,
         PCB_ACTIONS::updateLocalRatsnest.MakeEvent() );
 
-    Go( &BOARD_INSPECTION_TOOL::ListNets,               PCB_ACTIONS::listNets.MakeEvent() );
-    Go( &BOARD_INSPECTION_TOOL::ShowStatisticsDialog,   PCB_ACTIONS::boardStatistics.MakeEvent() );
-    Go( &BOARD_INSPECTION_TOOL::InspectClearance,       PCB_ACTIONS::inspectClearance.MakeEvent() );
-    Go( &BOARD_INSPECTION_TOOL::InspectConstraints,
-        PCB_ACTIONS::inspectConstraints.MakeEvent() );
+    Go( &BOARD_INSPECTION_TOOL::ListNets,             PCB_ACTIONS::listNets.MakeEvent() );
+    Go( &BOARD_INSPECTION_TOOL::ShowStatisticsDialog, PCB_ACTIONS::boardStatistics.MakeEvent() );
+    Go( &BOARD_INSPECTION_TOOL::InspectClearance,     PCB_ACTIONS::inspectClearance.MakeEvent() );
+    Go( &BOARD_INSPECTION_TOOL::InspectConstraints,   PCB_ACTIONS::inspectConstraints.MakeEvent() );
 
-    Go( &BOARD_INSPECTION_TOOL::HighlightNet,           PCB_ACTIONS::highlightNet.MakeEvent() );
-    Go( &BOARD_INSPECTION_TOOL::HighlightNet,
-        PCB_ACTIONS::highlightNetSelection.MakeEvent() );
-    Go( &BOARD_INSPECTION_TOOL::HighlightNet,
-        PCB_ACTIONS::toggleLastNetHighlight.MakeEvent() );
-    Go( &BOARD_INSPECTION_TOOL::ClearHighlight,         PCB_ACTIONS::clearHighlight.MakeEvent() );
-    Go( &BOARD_INSPECTION_TOOL::HighlightNetTool,       PCB_ACTIONS::highlightNetTool.MakeEvent() );
-    Go( &BOARD_INSPECTION_TOOL::ClearHighlight,         ACTIONS::cancelInteractive.MakeEvent() );
-    Go( &BOARD_INSPECTION_TOOL::HighlightItem,          PCB_ACTIONS::highlightItem.MakeEvent() );
+    Go( &BOARD_INSPECTION_TOOL::HighlightNet,   PCB_ACTIONS::highlightNet.MakeEvent() );
+    Go( &BOARD_INSPECTION_TOOL::HighlightNet,   PCB_ACTIONS::highlightNetSelection.MakeEvent() );
+    Go( &BOARD_INSPECTION_TOOL::HighlightNet,   PCB_ACTIONS::toggleLastNetHighlight.MakeEvent() );
+    Go( &BOARD_INSPECTION_TOOL::ClearHighlight, PCB_ACTIONS::clearHighlight.MakeEvent() );
+    Go( &BOARD_INSPECTION_TOOL::HighlightNet,   PCB_ACTIONS::toggleNetHighlight.MakeEvent() );
+    Go( &BOARD_INSPECTION_TOOL::HighlightItem,  PCB_ACTIONS::highlightItem.MakeEvent() );
 
-    Go( &BOARD_INSPECTION_TOOL::HideNet,                PCB_ACTIONS::hideNet.MakeEvent() );
-    Go( &BOARD_INSPECTION_TOOL::ShowNet,                PCB_ACTIONS::showNet.MakeEvent() );
+    Go( &BOARD_INSPECTION_TOOL::HideNet,        PCB_ACTIONS::hideNet.MakeEvent() );
+    Go( &BOARD_INSPECTION_TOOL::ShowNet,        PCB_ACTIONS::showNet.MakeEvent() );
 }

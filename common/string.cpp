@@ -27,6 +27,7 @@
  */
 
 #include <clocale>
+#include <cmath>
 #include <macros.h>
 #include <richio.h>                        // StrPrintf
 #include <kicad_string.h>
@@ -519,13 +520,13 @@ bool WildCompareString( const wxString& pattern, const wxString& string_to_tst,
                         bool case_sensitive )
 {
     const wxChar* cp = NULL, * mp = NULL;
-    const wxChar* wild, * string;
+    const wxChar* wild, * str;
     wxString      _pattern, _string_to_tst;
 
     if( case_sensitive )
     {
-        wild   = pattern.GetData();
-        string = string_to_tst.GetData();
+        wild = pattern.GetData();
+        str = string_to_tst.GetData();
     }
     else
     {
@@ -534,35 +535,36 @@ bool WildCompareString( const wxString& pattern, const wxString& string_to_tst,
         _string_to_tst = string_to_tst;
         _string_to_tst.MakeUpper();
         wild   = _pattern.GetData();
-        string = _string_to_tst.GetData();
+        str = _string_to_tst.GetData();
     }
 
-    while( ( *string ) && ( *wild != '*' ) )
+    while( ( *str ) && ( *wild != '*' ) )
     {
-        if( ( *wild != *string ) && ( *wild != '?' ) )
+        if( ( *wild != *str ) && ( *wild != '?' ) )
             return false;
 
-        wild++; string++;
+        wild++;
+        str++;
     }
 
-    while( *string )
+    while( *str )
     {
         if( *wild == '*' )
         {
             if( !*++wild )
                 return 1;
             mp = wild;
-            cp = string + 1;
+            cp = str + 1;
         }
-        else if( ( *wild == *string ) || ( *wild == '?' ) )
+        else if( ( *wild == *str ) || ( *wild == '?' ) )
         {
             wild++;
-            string++;
+            str++;
         }
         else
         {
             wild   = mp;
-            string = cp++;
+            str = cp++;
         }
     }
 
@@ -865,4 +867,45 @@ void StripTrailingZeros( wxString& aStringValue, unsigned aTrailingZeroAllowed )
                 break;
         }
     }
+}
+
+
+std::string Double2Str( double aValue )
+{
+    char    buf[50];
+    int     len;
+
+    if( aValue != 0.0 && std::fabs( aValue ) <= 0.0001 )
+    {
+        // For these small values, %f works fine,
+        // and %g gives an exponent
+        len = sprintf( buf,  "%.16f", aValue );
+
+        while( --len > 0 && buf[len] == '0' )
+            buf[len] = '\0';
+
+        if( buf[len] == '.' )
+            buf[len] = '\0';
+        else
+            ++len;
+    }
+    else
+    {
+        // For these values, %g works fine, and sometimes %f
+        // gives a bad value (try aValue = 1.222222222222, with %.16f format!)
+        len = sprintf( buf, "%.10g", aValue );
+    }
+
+    return std::string( buf, len );
+}
+
+
+wxString AngleToStringDegrees( double aAngle )
+{
+    wxString text;
+
+    text.Printf( wxT( "%.3f" ), aAngle / 10.0 );
+    StripTrailingZeros( text, 1 );
+
+    return text;
 }

@@ -71,6 +71,7 @@
 #include <widgets/symbol_tree_pane.h>
 #include <wildcards_and_files_ext.h>
 #include <panel_sym_lib_table.h>
+#include <wx/choicdlg.h>
 
 
 bool SYMBOL_EDIT_FRAME::m_showDeMorgan = false;
@@ -222,6 +223,11 @@ SYMBOL_EDIT_FRAME::SYMBOL_EDIT_FRAME( KIWAY* aKiway, wxWindow* aParent ) :
 
     KIPLATFORM::APP::SetShutdownBlockReason( this, _( "Library changes are unsaved" ) );
 
+    // Catch unhandled accelerator command characters that were no handled by the library tree
+    // panel.
+    Bind( wxEVT_CHAR, &TOOL_DISPATCHER::DispatchWxEvent, m_toolDispatcher );
+    Bind( wxEVT_CHAR_HOOK, &TOOL_DISPATCHER::DispatchWxEvent, m_toolDispatcher );
+
     // Ensure the window is on top
     Raise();
 }
@@ -280,6 +286,12 @@ void SYMBOL_EDIT_FRAME::SaveSettings( APP_SETTINGS_BASE* aCfg )
 }
 
 
+APP_SETTINGS_BASE* SYMBOL_EDIT_FRAME::config() const
+{
+    return static_cast<APP_SETTINGS_BASE*>( GetSettings() );
+}
+
+
 COLOR_SETTINGS* SYMBOL_EDIT_FRAME::GetColorSettings() const
 {
     SETTINGS_MANAGER& mgr = Pgm().GetSettingsManager();
@@ -296,7 +308,7 @@ void SYMBOL_EDIT_FRAME::setupTools()
     // Create the manager and dispatcher & route draw panel events to the dispatcher
     m_toolManager = new TOOL_MANAGER;
     m_toolManager->SetEnvironment( GetScreen(), GetCanvas()->GetView(),
-                                   GetCanvas()->GetViewControls(), config(), this );
+                                   GetCanvas()->GetViewControls(), GetSettings(), this );
     m_actions = new EE_ACTIONS();
     m_toolDispatcher = new TOOL_DISPATCHER( m_toolManager );
 
@@ -505,7 +517,7 @@ bool SYMBOL_EDIT_FRAME::canCloseWindow( wxCloseEvent& aEvent )
         {
         case wxID_YES:
             if( schframe && GetCurPart() )  // Should be always the case
-                schframe->UpdateSymbolFromEditor( *GetCurPart() );
+                schframe->SaveSymbolToSchematic( *GetCurPart());
 
             return true;
 
@@ -598,12 +610,7 @@ void SYMBOL_EDIT_FRAME::OnExitKiCad( wxCommandEvent& event )
 
 void SYMBOL_EDIT_FRAME::OnUpdatePartNumber( wxUpdateUIEvent& event )
 {
-    if( !m_unitSelectBox )
-        return;
-
-    // Using the typical event.Enable() call doesn't seem to work with wxGTK
-    // so use the pointer to alias combobox to directly enable or disable.
-    m_unitSelectBox->Enable( m_my_part && m_my_part->GetUnitCount() > 1 );
+    event.Enable( m_my_part && m_my_part->GetUnitCount() > 1 );
 }
 
 
@@ -774,7 +781,7 @@ SYMBOL_LIBRARY_MANAGER& SYMBOL_EDIT_FRAME::GetLibManager()
 
 void SYMBOL_EDIT_FRAME::OnModify()
 {
-    GetScreen()->SetModify();
+    GetScreen()->SetContentModified();
     storeCurrentPart();
 
     m_treePane->GetLibTree()->RefreshLibTree();
@@ -1036,7 +1043,7 @@ bool SYMBOL_EDIT_FRAME::backupFile( const wxFileName& aOriginalFile, const wxStr
 
 void SYMBOL_EDIT_FRAME::storeCurrentPart()
 {
-    if( m_my_part && !GetCurLib().IsEmpty() && GetScreen()->IsModify() )
+    if( m_my_part && !GetCurLib().IsEmpty() && GetScreen()->IsContentModified() )
         m_libMgr->UpdatePart( m_my_part, GetCurLib() ); // UpdatePart() makes a copy
 }
 
@@ -1223,12 +1230,12 @@ bool SYMBOL_EDIT_FRAME::HasLibModifications() const
 }
 
 
-bool SYMBOL_EDIT_FRAME::IsContentModified()
+bool SYMBOL_EDIT_FRAME::IsContentModified() const
 {
     wxCHECK( m_libMgr, false );
 
     // Test if the currently edited part is modified
-    if( GetScreen() && GetScreen()->IsModify() && GetCurPart() )
+    if( GetScreen() && GetScreen()->IsContentModified() && GetCurPart() )
         return true;
 
     // Test if any library has been modified

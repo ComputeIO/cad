@@ -28,7 +28,6 @@
 #include <board_item.h>
 #include <eda_units.h>
 #include <convert_to_biu.h>
-#include <math/util.h>      // for KiROUND
 #include <math_for_graphics.h>
 #include <trigo.h>
 #include <geometry/shape_poly_set.h>
@@ -49,7 +48,7 @@ protected:
     wxPoint              m_end;          // Line end point or circle and arc start point
     wxPoint              m_thirdPoint;   // Used only for Arcs: arc end point
 
-    PCB_SHAPE_TYPE_T     m_shape;        // Shape: line, Circle, Arc
+    PCB_SHAPE_TYPE       m_shape;        // Shape: line, Circle, Arc
     double               m_angle;        // Used only for Arcs: Arc angle in 1/10 deg
     wxPoint              m_bezierC1;     // Bezier Control Point 1
     wxPoint              m_bezierC2;     // Bezier Control Point 2
@@ -97,17 +96,17 @@ public:
     {
         switch( m_shape )
         {
-        case S_RECT:
-        case S_CIRCLE:
-        case S_POLYGON:
+        case PCB_SHAPE_TYPE::RECT:
+        case PCB_SHAPE_TYPE::CIRCLE:
+        case PCB_SHAPE_TYPE::POLYGON:
             return m_filled;
 
-        case S_SEGMENT:
-        case S_ARC:
-        case S_CURVE:
+        case PCB_SHAPE_TYPE::SEGMENT:
+        case PCB_SHAPE_TYPE::ARC:
+        case PCB_SHAPE_TYPE::CURVE:
             return false;
 
-        case S_LAST:        // Make CLang compiler happy
+        case PCB_SHAPE_TYPE::LAST: // Make CLang compiler happy
             return false;
         }
 
@@ -126,8 +125,8 @@ public:
     virtual void SetAngle( double aAngle, bool aUpdateEnd = true );
     double GetAngle() const { return m_angle; }
 
-    void SetShape( PCB_SHAPE_TYPE_T aShape )       { m_shape = aShape; }
-    PCB_SHAPE_TYPE_T GetShape() const              { return m_shape; }
+    void SetShape( PCB_SHAPE_TYPE aShape )          { m_shape = aShape; }
+    PCB_SHAPE_TYPE GetShape() const                 { return m_shape; }
 
     void SetBezControl1( const wxPoint& aPoint )    { m_bezierC1 = aPoint; }
     const wxPoint& GetBezControl1() const           { return m_bezierC1; }
@@ -198,13 +197,7 @@ public:
      * returns the radius of this item
      * Has meaning only for arc and circle
      */
-    int GetRadius() const
-    {
-        double radius = GetLineLength( m_start, m_end );
-
-        // don't allow degenerate arcs
-        return std::max( 1, KiROUND( radius ) );
-    }
+    int GetRadius() const;
 
     /**
      * Initialize the start arc point. can be used for circles

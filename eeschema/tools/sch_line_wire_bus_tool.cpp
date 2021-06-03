@@ -58,6 +58,7 @@
 #include <sch_line.h>
 #include <sch_screen.h>
 #include <sch_sheet.h>
+#include <sch_sheet_pin.h>
 #include <sch_text.h>
 #include <schematic.h>
 #include <ee_actions.h>
@@ -287,7 +288,7 @@ int SCH_LINE_WIRE_BUS_TOOL::DrawSegments( const TOOL_EVENT& aEvent )
     {
         EE_GRID_HELPER   grid( m_toolMgr );
         grid.SetSnap( !aEvent.Modifier( MD_SHIFT ) );
-        grid.SetUseGrid( getView()->GetGAL()->GetGridSnapping() && !aEvent.Modifier( MD_ALT ) );
+        grid.SetUseGrid( getView()->GetGAL()->GetGridSnapping() && !aEvent.DisableGridSnapping() );
 
         VECTOR2D cursorPos = grid.BestSnapAnchor( aEvent.Position(), LAYER_CONNECTABLE, nullptr );
         startSegments( params->layer, cursorPos );
@@ -372,9 +373,9 @@ SCH_LINE* SCH_LINE_WIRE_BUS_TOOL::doUnfoldBus( const wxString& aNet, wxPoint aPo
 
     m_busUnfold.label = new SCH_LABEL( m_busUnfold.entry->GetEnd(), aNet );
     m_busUnfold.label->SetTextSize( wxSize( cfg.m_DefaultTextSize, cfg.m_DefaultTextSize ) );
-    m_busUnfold.label->SetLabelSpinStyle( LABEL_SPIN_STYLE::RIGHT );
+    m_busUnfold.label->SetAlignedAngle( EDA_ANGLE::ANGLE_0 );
     m_busUnfold.label->SetParent( m_frame->GetScreen() );
-    m_busUnfold.label->SetFlags( IS_NEW | IS_MOVED );
+    m_busUnfold.label->SetFlags( IS_NEW | IS_MOVING );
 
     m_busUnfold.in_progress = true;
     m_busUnfold.origin = aPos;
@@ -419,13 +420,13 @@ void SCH_LINE_WIRE_BUS_TOOL::computeBreakPoint( const std::pair<SCH_LINE*, SCH_L
     int iDy = segment->GetEndPoint().y - segment->GetStartPoint().y;
 
     const SCH_SHEET_PIN* connectedPin = getSheetPin( segment->GetStartPoint() );
-    SHEET_SIDE           force = connectedPin ? connectedPin->GetEdge() : SHEET_UNDEFINED_SIDE;
+    SHEET_SIDE force = connectedPin ? connectedPin->GetEdge() : SHEET_SIDE::UNDEFINED;
 
-    if( force == SHEET_LEFT_SIDE || force == SHEET_RIGHT_SIDE )
+    if( force == SHEET_SIDE::LEFT || force == SHEET_SIDE::RIGHT )
     {
         if( aPosition.x == connectedPin->GetPosition().x )  // push outside sheet boundary
         {
-            int direction = ( force == SHEET_LEFT_SIDE ) ? -1 : 1;
+            int direction = ( force == SHEET_SIDE::LEFT ) ? -1 : 1;
             aPosition.x += KiROUND( getView()->GetGAL()->GetGridSize().x * direction );
         }
 
@@ -465,23 +466,10 @@ void SCH_LINE_WIRE_BUS_TOOL::computeBreakPoint( const std::pair<SCH_LINE*, SCH_L
 
 int SCH_LINE_WIRE_BUS_TOOL::doDrawSegments( const std::string& aTool, int aType, bool aQuitOnDraw )
 {
-    SCH_SCREEN*      screen = m_frame->GetScreen();
-    SCH_LINE*        segment = nullptr;
-    EE_GRID_HELPER   grid( m_toolMgr );
-
+    SCH_SCREEN*           screen = m_frame->GetScreen();
+    SCH_LINE*             segment = nullptr;
+    EE_GRID_HELPER        grid( m_toolMgr );
     KIGFX::VIEW_CONTROLS* controls = getViewControls();
-
-    controls->ShowCursor( true );
-
-    Activate();
-
-    // Add the new label to the selection so the rotate command operates on it
-    if( m_busUnfold.label )
-        m_selectionTool->AddItemToSel( m_busUnfold.label, true );
-
-    // Continue the existing wires if we've started (usually by immediate action preference)
-    if( !m_wires.empty() )
-        segment = m_wires.back();
 
     auto setCursor =
             [&]()
@@ -496,6 +484,46 @@ int SCH_LINE_WIRE_BUS_TOOL::doDrawSegments( const std::string& aTool, int aType,
                     m_frame->GetCanvas()->SetCurrentCursor( KICURSOR::LINE_WIRE );
             };
 
+    auto cleanup =
+            [&] ()
+            {
+                m_toolMgr->RunAction( EE_ACTIONS::clearSelection, true );
+
+                for( SCH_LINE* wire : m_wires )
+                    delete wire;
+
+                m_wires.clear();
+                segment = nullptr;
+
+                if( m_busUnfold.entry )
+                    m_frame->RemoveFromScreen( m_busUnfold.entry, screen );
+
+                if( m_busUnfold.label && !m_busUnfold.label_placed )
+                    m_selectionTool->RemoveItemFromSel( m_busUnfold.label, true );
+
+                if( m_busUnfold.label && m_busUnfold.label_placed )
+                    m_frame->RemoveFromScreen( m_busUnfold.label, screen );
+
+                delete m_busUnfold.entry;
+                delete m_busUnfold.label;
+                m_busUnfold = {};
+
+                m_view->ClearPreview();
+                m_view->ShowPreview( false );
+            };
+
+    controls->ShowCursor( true );
+
+    Activate();
+
+    // Add the new label to the selection so the rotate command operates on it
+    if( m_busUnfold.label )
+        m_selectionTool->AddItemToSel( m_busUnfold.label, true );
+
+    // Continue the existing wires if we've started (usually by immediate action preference)
+    if( !m_wires.empty() )
+        segment = m_wires.back();
+
     // Set initial cursor
     setCursor();
 
@@ -507,7 +535,7 @@ int SCH_LINE_WIRE_BUS_TOOL::doDrawSegments( const std::string& aTool, int aType,
         setCursor();
         grid.SetMask( GRID_HELPER::ALL );
         grid.SetSnap( !evt->Modifier( MD_SHIFT ) );
-        grid.SetUseGrid( getView()->GetGAL()->GetGridSnapping() && !evt->Modifier( MD_ALT ) );
+        grid.SetUseGrid( getView()->GetGAL()->GetGridSnapping() && !evt->DisableGridSnapping() );
 
         if( segment )
         {
@@ -527,34 +555,6 @@ int SCH_LINE_WIRE_BUS_TOOL::doDrawSegments( const std::string& aTool, int aType,
 
         bool forceHV = m_frame->eeconfig()->m_Drawing.hv_lines_only;
 
-        auto cleanup =
-                [&] ()
-                {
-                    m_toolMgr->RunAction( EE_ACTIONS::clearSelection, true );
-
-                    for( SCH_LINE* wire : m_wires )
-                        delete wire;
-
-                    m_wires.clear();
-                    segment = nullptr;
-
-                    if( m_busUnfold.entry )
-                        m_frame->RemoveFromScreen( m_busUnfold.entry, screen );
-
-                    if( m_busUnfold.label && !m_busUnfold.label_placed )
-                        m_selectionTool->RemoveItemFromSel( m_busUnfold.label, true );
-
-                    if( m_busUnfold.label && m_busUnfold.label_placed )
-                        m_frame->RemoveFromScreen( m_busUnfold.label, screen );
-
-                    delete m_busUnfold.entry;
-                    delete m_busUnfold.label;
-                    m_busUnfold = {};
-
-                    m_view->ClearPreview();
-                    m_view->ShowPreview( false );
-                };
-
         //------------------------------------------------------------------------
         // Handle cancel:
         //
@@ -573,7 +573,11 @@ int SCH_LINE_WIRE_BUS_TOOL::doDrawSegments( const std::string& aTool, int aType,
         else if( evt->IsActivate() )
         {
             if( segment || m_busUnfold.in_progress )
-                cleanup();
+            {
+                m_frame->ShowInfoBarMsg( _( "Press <ESC> to cancel drawing." ) );
+                evt->SetPassEvent( false );
+                continue;
+            }
 
             if( evt->IsMoveTool() )
             {
@@ -647,7 +651,7 @@ int SCH_LINE_WIRE_BUS_TOOL::doDrawSegments( const std::string& aTool, int aType,
 
                     // Create a new segment, and chain it after the current segment.
                     segment = new SCH_LINE( *segment );
-                    segment->SetFlags( IS_NEW | IS_MOVED );
+                    segment->SetFlags( IS_NEW | IS_MOVING );
                     segment->SetStartPoint( cursorPos );
                     m_wires.push_back( segment );
 
@@ -786,7 +790,7 @@ SCH_LINE* SCH_LINE_WIRE_BUS_TOOL::startSegments( int aType, const VECTOR2D& aPos
 
     // Give segments a parent so they find the default line/wire/bus widths
     segment->SetParent( &m_frame->Schematic() );
-    segment->SetFlags( IS_NEW | IS_MOVED );
+    segment->SetFlags( IS_NEW | IS_MOVING );
     m_wires.push_back( segment );
 
     m_selectionTool->AddItemToSel( segment, true /*quiet mode*/ );
@@ -796,7 +800,7 @@ SCH_LINE* SCH_LINE_WIRE_BUS_TOOL::startSegments( int aType, const VECTOR2D& aPos
     if( m_frame->eeconfig()->m_Drawing.hv_lines_only )
     {
         segment = new SCH_LINE( *segment );
-        segment->SetFlags( IS_NEW | IS_MOVED );
+        segment->SetFlags( IS_NEW | IS_MOVING );
         m_wires.push_back( segment );
 
         m_selectionTool->AddItemToSel( segment, true /*quiet mode*/ );
@@ -904,7 +908,7 @@ void SCH_LINE_WIRE_BUS_TOOL::finishSegments()
     // Add the new wires
     for( SCH_LINE* wire : m_wires )
     {
-        wire->ClearFlags( IS_NEW | IS_MOVED );
+        wire->ClearFlags( IS_NEW | IS_MOVING );
         m_frame->AddToScreen( wire, screen );
     }
 
@@ -1012,6 +1016,8 @@ int SCH_LINE_WIRE_BUS_TOOL::AddJunctionsIfNeeded( const TOOL_EVENT& aEvent )
 
     return 0;
 }
+
+
 void SCH_LINE_WIRE_BUS_TOOL::setTransitions()
 {
     Go( &SCH_LINE_WIRE_BUS_TOOL::AddJunctionsIfNeeded, EE_ACTIONS::addNeededJunctions.MakeEvent() );

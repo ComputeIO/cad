@@ -59,6 +59,12 @@
 #include <wx/snglinst.h>
 #include <dialogs/dialog_grid_settings.h>
 #include <widgets/ui_common.h>
+#include <wx/dirdlg.h>
+#include <wx/filedlg.h>
+#include <wx/msgdlg.h>
+
+#include <wx/snglinst.h>
+#include <wx/fdrepdlg.h>
 
 #define FR_HISTORY_LIST_CNT     10   ///< Maximum size of the find/replace history stacks.
 
@@ -190,6 +196,35 @@ bool EDA_DRAW_FRAME::LockFile( const wxString& aFileName )
     m_file_checker = ::LockFile( aFileName );
 
     return bool( m_file_checker );
+}
+
+
+void EDA_DRAW_FRAME::ScriptingConsoleEnableDisable()
+{
+    KIWAY_PLAYER* frame = Kiway().Player( FRAME_PYTHON, false );
+
+    if( !frame )
+    {
+        frame = Kiway().Player( FRAME_PYTHON, true, Kiway().GetTop() );
+
+        // If we received an error in the CTOR due to Python-ness, don't crash
+        if( !frame )
+            return;
+
+        if( !frame->IsVisible() )
+            frame->Show( true );
+
+        // On Windows, Raise() does not bring the window on screen, when iconized
+        if( frame->IsIconized() )
+            frame->Iconize( false );
+
+        frame->Raise();
+
+        return;
+    }
+
+    frame->Show( !frame->IsVisible() );
+
 }
 
 
@@ -822,7 +857,7 @@ void EDA_DRAW_FRAME::FocusOnLocation( const wxPoint& aPos )
         // If a dialog partly obscures the window, then center on the uncovered area.
         if( dialog )
         {
-            wxRect dialogRect( GetCanvas()->ScreenToClient( dialog->GetScreenPosition() ),
+            BOX2D dialogRect( GetCanvas()->ScreenToClient( dialog->GetScreenPosition() ),
                                dialog->GetSize() );
             GetCanvas()->GetView()->SetCenter( aPos, dialogRect );
         }

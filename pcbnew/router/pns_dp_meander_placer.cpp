@@ -29,6 +29,7 @@
 #include "pns_dp_meander_placer.h"
 #include "pns_diff_pair.h"
 #include "pns_router.h"
+#include "pns_solid.h"
 
 namespace PNS {
 
@@ -99,12 +100,30 @@ bool DP_MEANDER_PLACER::Start( const VECTOR2I& aP, ITEM* aStartItem )
         !m_originPair.NLine().SegmentCount() )
         return false;
 
-    m_tunedPathP = topo.AssembleTrivialPath( m_originPair.PLine().GetLink( 0 ) );
-    m_tunedPathN = topo.AssembleTrivialPath( m_originPair.NLine().GetLink( 0 ) );
+    SOLID* padA = nullptr;
+    SOLID* padB = nullptr;
 
-    m_padToDieP = GetTotalPadToDieLength( m_originPair.PLine() );
-    m_padToDieN = GetTotalPadToDieLength( m_originPair.NLine() );
-    m_padToDieLenth = std::max( m_padToDieP, m_padToDieN );
+    m_tunedPathP = topo.AssembleTuningPath( m_originPair.PLine().GetLink( 0 ), &padA, &padB );
+
+    m_padToDieP = 0;
+
+    if( padA )
+        m_padToDieP += padA->GetPadToDie();
+
+    if( padB )
+        m_padToDieP += padB->GetPadToDie();
+
+    m_tunedPathN = topo.AssembleTuningPath( m_originPair.NLine().GetLink( 0 ), &padA, &padB );
+
+    m_padToDieN = 0;
+
+    if( padA )
+        m_padToDieN += padA->GetPadToDie();
+
+    if( padB )
+        m_padToDieN += padB->GetPadToDie();
+
+    m_padToDieLength = std::max( m_padToDieP, m_padToDieN );
 
     m_world->Remove( m_originPair.PLine() );
     m_world->Remove( m_originPair.NLine() );
@@ -122,22 +141,8 @@ void DP_MEANDER_PLACER::release()
 
 long long int DP_MEANDER_PLACER::origPathLength() const
 {
-    long long int totalP = m_padToDieLenth;
-    long long int totalN = m_padToDieLenth;
-
-    for( const ITEM* item : m_tunedPathP.CItems() )
-    {
-        if( const LINE* l = dyn_cast<const LINE*>( item ) )
-            totalP += l->CLine().Length();
-
-    }
-
-    for( const ITEM* item : m_tunedPathN.CItems() )
-    {
-        if( const LINE* l = dyn_cast<const LINE*>( item ) )
-            totalN += l->CLine().Length();
-    }
-
+    long long int totalP = m_padToDieLength + lineLength( m_tunedPathP );
+    long long int totalN = m_padToDieLength + lineLength( m_tunedPathN );
     return std::max( totalP, totalN );
 }
 
@@ -187,12 +192,6 @@ bool DP_MEANDER_PLACER::Move( const VECTOR2I& aP, ITEM* aEndItem )
     if( coupledSegments.size() == 0 )
         return false;
 
-    //Router()->DisplayDebugLine( tuned.CP(), 5, 20000 );
-    //Router()->DisplayDebugLine( tuned.CN(), 4, 20000 );
-
-    //Router()->DisplayDebugLine( m_originPair.CP(), 5, 20000 );
-    //Router()->DisplayDebugLine( m_originPair.CN(), 4, 20000 );
-
     m_result = MEANDERED_LINE( this, true );
     m_result.SetWidth( tuned.Width() );
 
@@ -206,13 +205,13 @@ bool DP_MEANDER_PLACER::Move( const VECTOR2I& aP, ITEM* aEndItem )
     for( const ITEM* item : m_tunedPathP.CItems() )
     {
         if( const LINE* l = dyn_cast<const LINE*>( item ) )
-            Dbg()->AddLine( l->CLine(), 5, 10000 );
+            PNS_DBG( Dbg(), AddLine, l->CLine(), YELLOW, 10000, "tuned-path-p" );
     }
 
     for( const ITEM* item : m_tunedPathN.CItems() )
     {
         if( const LINE* l = dyn_cast<const LINE*>( item ) )
-            Dbg()->AddLine( l->CLine(), 5, 10000 );
+            PNS_DBG( Dbg(), AddLine, l->CLine(), YELLOW, 10000, "tuned-path-n" );
     }
 
     int curIndexP = 0, curIndexN = 0;
@@ -221,7 +220,7 @@ bool DP_MEANDER_PLACER::Move( const VECTOR2I& aP, ITEM* aEndItem )
     {
         SEG base = baselineSegment( sp );
 
-        Dbg()->AddSegment( base, 3 );
+        PNS_DBG( Dbg(), AddSegment, base, GREEN, "dp-baseline" );
 
         while( sp.indexP >= curIndexP )
         {

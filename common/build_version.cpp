@@ -96,7 +96,21 @@ wxString GetVersionInfoData( const wxString& aTitle, bool aHtml, bool aBrief )
             << " build";
 
     wxPlatformInfo platform;
-    aMsg << "Application: " << aTitle << eol << eol;
+    aMsg << "Application: " << aTitle;
+
+    #if defined( KICAD_BUILD_ARCH_X64 )
+    aMsg << " (64-bit)";
+    #elif defined( KICAD_BUILD_ARCH_X86 )
+    aMsg << " (32-bit)";
+    #elif defined( KICAD_BUILD_ARCH_ARM )
+    aMsg << " (ARM 32-bit)";
+    #elif defined( KICAD_BUILD_ARCH_ARM64 )
+    aMsg << " (ARM 64-bit)";
+    #endif
+
+    aMsg << eol << eol;
+
+
     aMsg << "Version: " << version << eol << eol;
     aMsg << "Libraries:" << eol;
 
@@ -194,48 +208,6 @@ wxString GetVersionInfoData( const wxString& aTitle, bool aHtml, bool aBrief )
     // Add build settings config (build options):
     aMsg << "Build settings:" << eol;
 
-    aMsg << indent4 << "KICAD_SCRIPTING=";
-#ifdef KICAD_SCRIPTING
-    aMsg << ON;
-#else
-    aMsg << OFF;
-#endif
-
-    aMsg << indent4 << "KICAD_SCRIPTING_MODULES=";
-#ifdef KICAD_SCRIPTING_MODULES
-    aMsg << ON;
-#else
-    aMsg << OFF;
-#endif
-
-    aMsg << indent4 << "KICAD_SCRIPTING_PYTHON3=";
-#ifdef KICAD_SCRIPTING_PYTHON3
-    aMsg << ON;
-#else
-    aMsg << OFF;
-#endif
-
-    aMsg << indent4 << "KICAD_SCRIPTING_WXPYTHON=";
-#ifdef KICAD_SCRIPTING_WXPYTHON
-    aMsg << ON;
-#else
-    aMsg << OFF;
-#endif
-
-    aMsg << indent4 << "KICAD_SCRIPTING_WXPYTHON_PHOENIX=";
-#ifdef KICAD_SCRIPTING_WXPYTHON_PHOENIX
-    aMsg << ON;
-#else
-    aMsg << OFF;
-#endif
-
-    aMsg << indent4 << "KICAD_SCRIPTING_ACTION_MENU=";
-#ifdef KICAD_SCRIPTING_ACTION_MENU
-    aMsg << ON;
-#else
-    aMsg << OFF;
-#endif
-
 #ifdef KICAD_USE_OCE
     aMsg << indent4 << "KICAD_USE_OCE=" << ON;
 #endif
@@ -269,8 +241,15 @@ wxString GetVersionInfoData( const wxString& aTitle, bool aHtml, bool aBrief )
 #endif
 #endif
 
-    aMsg << indent4 << "KICAD_SANITIZE=";
-#ifdef KICAD_SANITIZE
+    aMsg << indent4 << "KICAD_SANITIZE_ADDRESS=";
+#ifdef KICAD_SANITIZE_ADDRESS
+    aMsg << ON;
+#else
+    aMsg << OFF;
+#endif
+
+    aMsg << indent4 << "KICAD_SANITIZE_THREADS=";
+#ifdef KICAD_SANITIZE_THREADS
     aMsg << ON;
 #else
     aMsg << OFF;

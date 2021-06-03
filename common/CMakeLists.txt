@@ -19,7 +19,6 @@ include_directories(
     ${INC_AFTER}
     )
 
-
 if( NOT APPLE )     # windows and linux use openssl under curl
     find_package( OpenSSL REQUIRED )
     include_directories( SYSTEM ${OPENSSL_INCLUDE_DIR} )
@@ -33,6 +32,7 @@ set( GAL_SRCS
     newstroke_font.cpp
     painter.cpp
     gal/color4d.cpp
+    gal/cursors.cpp
     gal/dpi_scaling.cpp
     gal/gal_display_options.cpp
     gal/graphics_abstraction_layer.cpp
@@ -181,7 +181,11 @@ set( COMMON_DLG_SRCS
     dialogs/dialog_migrate_settings.cpp
     dialogs/dialog_migrate_settings_base.cpp
     dialogs/dialog_page_settings_base.cpp
+    dialogs/dialog_paste_special.cpp
+    dialogs/dialog_paste_special_base.cpp
     dialogs/dialog_text_entry_base.cpp
+    dialogs/dialog_text_item_properties.cpp
+    dialogs/dialog_text_item_properties_base.cpp
     dialogs/dialog_page_settings.cpp
     dialogs/dialog_print_generic.cpp
     dialogs/dialog_print_generic_base.cpp
@@ -336,7 +340,6 @@ set( COMMON_SRCS
     common.cpp
     config_params.cpp
     confirm.cpp
-    cursors.cpp
     dialog_shim.cpp
     gr_text.cpp
     dsnlexer.cpp
@@ -498,6 +501,8 @@ target_link_libraries( common
     kimath
     kiplatform
     gal
+    scripting
+    pybind11::embed
     ${Boost_LIBRARIES}
     ${CURL_LIBRARIES}
     ${OPENSSL_LIBRARIES}        # empty on Apple
@@ -547,7 +552,7 @@ set( PCB_COMMON_SRCS
     ${CMAKE_SOURCE_DIR}/pcbnew/pad.cpp
     ${CMAKE_SOURCE_DIR}/pcbnew/pcb_target.cpp
     ${CMAKE_SOURCE_DIR}/pcbnew/pcb_text.cpp
-    ${CMAKE_SOURCE_DIR}/pcbnew/board_stackup_manager/class_board_stackup.cpp
+    ${CMAKE_SOURCE_DIR}/pcbnew/board_stackup_manager/board_stackup.cpp
     ${CMAKE_SOURCE_DIR}/pcbnew/fp_text.cpp
     ${CMAKE_SOURCE_DIR}/pcbnew/track.cpp
     ${CMAKE_SOURCE_DIR}/pcbnew/zone.cpp
@@ -705,61 +710,3 @@ make_lexer(
 add_executable( dsntest EXCLUDE_FROM_ALL dsnlexer.cpp )
 target_link_libraries( dsntest common ${wxWidgets_LIBRARIES} rt )
 
-
-# _kiway.so
-if( false ) # future
-#if( KICAD_SCRIPTING OR KICAD_SCRIPTING_MODULES )
-
-    set( SWIG_FLAGS
-        -I${CMAKE_CURRENT_SOURCE_DIR}/../include
-        )
-
-    if( DEBUG )
-        set( SWIG_FLAGS ${SWIG_FLAGS} -DDEBUG )
-    endif()
-
-    # call SWIG in C++ mode: https://cmake.org/cmake/help/v3.2/module/UseSWIG.html
-    set_source_files_properties( swig/kiway.i PROPERTIES CPLUSPLUS ON )
-
-    # collect CFLAGS , and pass them to swig later
-    get_directory_property( DirDefs DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} COMPILE_DEFINITIONS )
-    foreach( d ${DirDefs} )
-        set( SWIG_FLAGS ${SWIG_FLAGS} -D${d} )
-    endforeach()
-
-    set( CMAKE_SWIG_FLAGS ${SWIG_FLAGS} )
-
-    include_directories( BEFORE ${INC_BEFORE} )
-    include_directories(
-        ${CMAKE_SOURCE_DIR}/common
-        ${INC_AFTER}
-        )
-
-    set( SWIG_MODULE_kiway_EXTRA_DEPS
-        ${CMAKE_SOURCE_DIR}/common/swig/ki_exception.i
-        ${CMAKE_SOURCE_DIR}/common/swig/kicad.i
-        )
-
-    swig_add_module( kiway python
-        swig/kiway.i
-        )
-
-    swig_link_libraries( kiway
-        common
-        ${wxWidgets_LIBRARIES}
-        ${PYTHON_LIBRARIES}
-        )
-
-    set_source_files_properties( ${swig_generated_file_fullname} PROPERTIES
-        # See section 16.3 "The SWIG runtime code"
-        # http://www.swig.org/Doc3.0/SWIGDocumentation.html#Modules_nn2
-        COMPILE_FLAGS "-DSWIG_TYPE_TABLE=WXPYTHON_TYPE_TABLE -Wno-delete-non-virtual-dtor"
-        )
-
-    if( MAKE_LINK_MAPS )
-        set_target_properties( _kiway PROPERTIES
-            LINK_FLAGS "-Wl,-cref,-Map=_kiway.so.map"
-            )
-    endif()
-
-endif()

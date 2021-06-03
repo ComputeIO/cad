@@ -20,6 +20,9 @@
 #ifndef PATHS_H
 #define PATHS_H
 
+#include <wx/filename.h>
+#include <wx/string.h>
+
 /**
  * Helper class to centralize the paths used throughout kicad
  */
@@ -73,6 +76,12 @@ public:
     static wxString GetStockDataPath( bool aRespectRunFromBuildDir = true );
 
     /**
+     * Gets the stock (install) EDA library data path, which is the base path for
+     * templates, schematic symbols, footprints, and 3D models.
+     */
+    static wxString GetStockEDALibraryPath();
+
+    /**
      * Gets the stock (install) scripting path
      */
     static wxString GetStockScriptingPath();
@@ -91,6 +100,11 @@ public:
      * Gets the stock (install) 3d viewer pluginspath
      */
     static wxString GetUserCachePath();
+
+    /**
+     * Gets the documentation path, which is the base path for help files
+     */
+    static wxString GetDocumentationPath();
 
     /**
      * Attempts to create a given path if it does not exist

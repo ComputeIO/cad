@@ -112,19 +112,19 @@ TRIANGLE_DISPLAY_LIST::TRIANGLE_DISPLAY_LIST( unsigned int aNrReservedTriangles 
 TRIANGLE_DISPLAY_LIST::~TRIANGLE_DISPLAY_LIST()
 {
     delete m_layer_top_segment_ends;
-    m_layer_top_segment_ends = 0;
+    m_layer_top_segment_ends = nullptr;
 
     delete m_layer_top_triangles;
-    m_layer_top_triangles = 0;
+    m_layer_top_triangles = nullptr;
 
     delete m_layer_middle_contourns_quads;
-    m_layer_middle_contourns_quads = 0;
+    m_layer_middle_contourns_quads = nullptr;
 
     delete m_layer_bot_triangles;
-    m_layer_bot_triangles = 0;
+    m_layer_bot_triangles = nullptr;
 
     delete m_layer_bot_segment_ends;
-    m_layer_bot_segment_ends = 0;
+    m_layer_bot_segment_ends = nullptr;
 }
 
 
@@ -647,8 +647,6 @@ GLuint OPENGL_RENDER_LIST::generate_top_or_bot_seg_ends(
 
             glEnable( GL_TEXTURE_2D );
             glBindTexture( GL_TEXTURE_2D, aTextureId );
-
-            setBlendfunction();
 
             glAlphaFunc( GL_GREATER, 0.2f );
             glEnable( GL_ALPHA_TEST );

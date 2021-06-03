@@ -19,6 +19,7 @@
  */
 
 #include <id.h>
+#include <kiplatform/ui.h>
 #include <widgets/infobar.h>
 #include "wx/artprov.h"
 #include <wx/aui/framemanager.h>
@@ -27,6 +28,7 @@
 #include <wx/sizer.h>
 #include <wx/timer.h>
 #include <wx/hyperlink.h>
+#include <wx/bmpbuttn.h>
 #include <eda_base_frame.h>
 
 
@@ -54,7 +56,10 @@ WX_INFOBAR::WX_INFOBAR( wxWindow* aParent, wxAuiManager* aMgr, wxWindowID aWinid
 
 #ifdef __WXMAC__
     // wxWidgets hard-codes wxSYS_COLOUR_INFOBK to { 0xFF, 0xFF, 0xD3 } on Mac.
-    SetBackgroundColour( wxColour( 255, 249, 189 ) );
+    if( KIPLATFORM::UI::IsDarkTheme() )
+        SetBackgroundColour( wxColour( 28, 27, 20 ) );
+    else
+        SetBackgroundColour( wxColour( 255, 249, 189 ) );
 #endif
 
     SetShowHideEffects( wxSHOW_EFFECT_ROLL_TO_BOTTOM, wxSHOW_EFFECT_ROLL_TO_TOP );
@@ -195,7 +200,7 @@ void WX_INFOBAR::onSize( wxSizeEvent& aEvent )
     // Calculate the horizontal size: because the infobar is shown on top of the draw canvas
     // it is adjusted to the canvas width.
     // On Mac, the canvas is the parent
-    // On other OS the parent is EDA_BASE_FRAME thta contains the canvas
+    // On other OS the parent is EDA_BASE_FRAME that contains the canvas
     int parentWidth = m_parent->GetClientSize().GetWidth();
     EDA_BASE_FRAME* frame = dynamic_cast<EDA_BASE_FRAME*>( m_parent );
 

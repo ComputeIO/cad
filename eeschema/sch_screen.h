@@ -37,6 +37,7 @@
 #include <base_screen.h>
 #include <eda_item.h>
 #include <core/typeinfo.h>
+#include <kiid.h>
 #include <kiway_holder.h>
 #include <layers_id_colors_and_visibility.h>
 #include <marker_base.h>
@@ -127,7 +128,15 @@ public:
     const PAGE_INFO& GetPageSettings() const                { return m_paper; }
     void SetPageSettings( const PAGE_INFO& aPageSettings )  { m_paper = aPageSettings; }
 
-    void SetFileName( const wxString& aFileName )           { m_fileName = aFileName; }
+    /**
+     * Set the file name for this screen to \a aFileName.
+     *
+     * @note Screen file names must be absolute or empty.  Absolute file names do not have to
+     *       exist yet in the case of a new schematic file but file names cannot be relative.
+     *
+     * @param aFileName is the absolute file name and path of the screen.
+     */
+    void SetFileName( const wxString& aFileName );
 
     const wxString& GetFileName() const                     { return m_fileName; }
 
@@ -196,8 +205,6 @@ public:
      */
     SCH_ITEM* GetItem( const wxPoint& aPosition, int aAccuracy = 0,
                        KICAD_T aType = SCH_LOCATE_ANY_T ) const;
-
-    void Place( SCH_EDIT_FRAME* frame, wxDC* DC ) { };
 
     /**
      * Initialize the #LIB_PART reference for each #SCH_COMPONENT found in this schematic
@@ -457,6 +464,10 @@ public:
         return m_sheetInstances;
     }
 
+    const KIID& GetUuid() const { return m_uuid; }
+
+    void AssignNewUuid() { m_uuid = KIID(); }
+
 #if defined(DEBUG)
     void Show( int nestLevel, std::ostream& os ) const override;
 #endif
@@ -521,6 +532,14 @@ private:
      */
     std::vector<SYMBOL_INSTANCE_REFERENCE> m_symbolInstances;
     std::vector<SCH_SHEET_INSTANCE> m_sheetInstances;
+
+    /**
+     * A unique identifier for each schematic file.
+     *
+     * As of right now, this only has meaning for the root schematic.  In the future, it may
+     * be useful to detect unexpected hierarchy changes.
+     */
+    KIID m_uuid;
 };
 
 

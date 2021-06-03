@@ -196,9 +196,6 @@ void DXF_IMPORT_PLUGIN::reportMsg( const wxString& aMessage )
 
 void DXF_IMPORT_PLUGIN::addSpline( const DL_SplineData& aData )
 {
-    if( m_currentBlock != nullptr )
-        return;
-
     // Called when starting reading a spline
     m_curr_entity.Clear();
     m_curr_entity.m_EntityParseStatus = 1;
@@ -217,9 +214,6 @@ void DXF_IMPORT_PLUGIN::addSpline( const DL_SplineData& aData )
 
 void DXF_IMPORT_PLUGIN::addControlPoint( const DL_ControlPointData& aData )
 {
-    if( m_currentBlock != nullptr )
-        return;
-
     // Called for every spline control point, when reading a spline entity
     m_curr_entity.m_SplineControlPointList.emplace_back( aData.x , aData.y,
                                                                          aData.w );
@@ -228,9 +222,6 @@ void DXF_IMPORT_PLUGIN::addControlPoint( const DL_ControlPointData& aData )
 
 void DXF_IMPORT_PLUGIN::addFitPoint( const DL_FitPointData& aData )
 {
-    if( m_currentBlock != nullptr )
-        return;
-
     // Called for every spline fit point, when reading a spline entity
     // we store only the X,Y coord values in a VECTOR2D
     m_curr_entity.m_SplineFitPointList.emplace_back( aData.x, aData.y );
@@ -239,9 +230,6 @@ void DXF_IMPORT_PLUGIN::addFitPoint( const DL_FitPointData& aData )
 
 void DXF_IMPORT_PLUGIN::addKnot( const DL_KnotData& aData)
 {
-    if( m_currentBlock != nullptr )
-        return;
-
     // Called for every spline knot value, when reading a spline entity
     m_curr_entity.m_SplineKnotsList.push_back( aData.k );
 }
@@ -514,9 +502,6 @@ void DXF_IMPORT_PLUGIN::addCircle( const DL_CircleData& aData )
 
 void DXF_IMPORT_PLUGIN::addArc( const DL_ArcData& aData )
 {
-    if( m_currentBlock != nullptr )
-        return;
-
     DXF_ARBITRARY_AXIS arbAxis      = getArbitraryAxis( getExtrusion() );
     VECTOR3D           centerCoords = ocsToWcs( arbAxis, VECTOR3D( aData.cx, aData.cy, aData.cz ) );
 
@@ -593,21 +578,21 @@ void DXF_IMPORT_PLUGIN::addText( const DL_TextData& aData )
     VECTOR2D topLeft(0.0, 0.0);
     VECTOR2D topRight(0.0, 0.0);
 
-    EDA_TEXT_HJUSTIFY_T hJustify = GR_TEXT_HJUSTIFY_LEFT;
-    EDA_TEXT_VJUSTIFY_T vJustify = GR_TEXT_VJUSTIFY_BOTTOM;
+    TEXT_ATTRIBUTES::HORIZONTAL_ALIGNMENT hJustify = TEXT_ATTRIBUTES::H_LEFT;
+    TEXT_ATTRIBUTES::VERTICAL_ALIGNMENT   vJustify = TEXT_ATTRIBUTES::V_BOTTOM;
 
     switch( aData.vJustification )
     {
     case 0: //DRW_Text::VBaseLine:
     case 1: //DRW_Text::VBottom:
-        vJustify = GR_TEXT_VJUSTIFY_BOTTOM;
+        vJustify = TEXT_ATTRIBUTES::V_BOTTOM;
 
         topLeft.y = textHeight;
         topRight.y = textHeight;
         break;
 
     case 2: //DRW_Text::VMiddle:
-        vJustify = GR_TEXT_VJUSTIFY_CENTER;
+        vJustify = TEXT_ATTRIBUTES::V_CENTER;
 
         bottomRight.y = -textHeight / 2.0;
         bottomLeft.y = -textHeight / 2.0;
@@ -616,7 +601,7 @@ void DXF_IMPORT_PLUGIN::addText( const DL_TextData& aData )
         break;
 
     case 3: //DRW_Text::VTop:
-        vJustify = GR_TEXT_VJUSTIFY_TOP;
+        vJustify = TEXT_ATTRIBUTES::V_TOP;
 
         bottomLeft.y = -textHeight;
         bottomRight.y = -textHeight;
@@ -628,7 +613,7 @@ void DXF_IMPORT_PLUGIN::addText( const DL_TextData& aData )
     case 0: //DRW_Text::HLeft:
     case 3: //DRW_Text::HAligned:    // no equivalent options in text pcb.
     case 5: //DRW_Text::HFit:       // no equivalent options in text pcb.
-        hJustify = GR_TEXT_HJUSTIFY_LEFT;
+        hJustify = TEXT_ATTRIBUTES::H_LEFT;
 
         bottomRight.x = textWidth;
         topRight.x = textWidth;
@@ -636,7 +621,7 @@ void DXF_IMPORT_PLUGIN::addText( const DL_TextData& aData )
 
     case 1: //DRW_Text::HCenter:
     case 4: //DRW_Text::HMiddle:     // no equivalent options in text pcb.
-        hJustify = GR_TEXT_HJUSTIFY_CENTER;
+        hJustify = TEXT_ATTRIBUTES::H_CENTER;
 
         bottomLeft.x = -textWidth / 2.0;
         topLeft.x = -textWidth / 2.0;
@@ -645,7 +630,7 @@ void DXF_IMPORT_PLUGIN::addText( const DL_TextData& aData )
         break;
 
     case 2: //DRW_Text::HRight:
-        hJustify = GR_TEXT_HJUSTIFY_RIGHT;
+        hJustify = TEXT_ATTRIBUTES::H_RIGHT;
 
         bottomLeft.x = -textWidth;
         topLeft.x = -textWidth;
@@ -760,19 +745,19 @@ void DXF_IMPORT_PLUGIN::addMText( const DL_MTextData& aData )
     VECTOR2D textpos( mapX( textposCoords.x ), mapY( textposCoords.y ) );
 
     // Initialize text justifications:
-    EDA_TEXT_HJUSTIFY_T hJustify = GR_TEXT_HJUSTIFY_LEFT;
-    EDA_TEXT_VJUSTIFY_T vJustify = GR_TEXT_VJUSTIFY_BOTTOM;
+    TEXT_ATTRIBUTES::HORIZONTAL_ALIGNMENT hJustify = TEXT_ATTRIBUTES::H_LEFT;
+    TEXT_ATTRIBUTES::VERTICAL_ALIGNMENT vJustify = TEXT_ATTRIBUTES::V_BOTTOM;
 
     if( aData.attachmentPoint <= 3 )
     {
-        vJustify = GR_TEXT_VJUSTIFY_TOP;
+        vJustify = TEXT_ATTRIBUTES::V_TOP;
 
         bottomLeft.y = -textHeight;
         bottomRight.y = -textHeight;
     }
     else if( aData.attachmentPoint <= 6 )
     {
-        vJustify = GR_TEXT_VJUSTIFY_CENTER;
+        vJustify = TEXT_ATTRIBUTES::V_CENTER;
 
         bottomRight.y = -textHeight / 2.0;
         bottomLeft.y = -textHeight / 2.0;
@@ -781,7 +766,7 @@ void DXF_IMPORT_PLUGIN::addMText( const DL_MTextData& aData )
     }
     else
     {
-        vJustify = GR_TEXT_VJUSTIFY_BOTTOM;
+        vJustify = TEXT_ATTRIBUTES::V_BOTTOM;
 
         topLeft.y = textHeight;
         topRight.y = textHeight;
@@ -789,14 +774,14 @@ void DXF_IMPORT_PLUGIN::addMText( const DL_MTextData& aData )
 
     if( aData.attachmentPoint % 3 == 1 )
     {
-        hJustify = GR_TEXT_HJUSTIFY_LEFT;
+        hJustify = TEXT_ATTRIBUTES::H_LEFT;
 
         bottomRight.x = textWidth;
         topRight.x = textWidth;
     }
     else if( aData.attachmentPoint % 3 == 2 )
     {
-        hJustify = GR_TEXT_HJUSTIFY_CENTER;
+        hJustify = TEXT_ATTRIBUTES::H_CENTER;
 
         bottomLeft.x = -textWidth / 2.0;
         topLeft.x = -textWidth / 2.0;
@@ -805,7 +790,7 @@ void DXF_IMPORT_PLUGIN::addMText( const DL_MTextData& aData )
     }
     else
     {
-        hJustify = GR_TEXT_HJUSTIFY_RIGHT;
+        hJustify = TEXT_ATTRIBUTES::H_RIGHT;
 
         bottomLeft.x = -textWidth;
         topLeft.x = -textWidth;
@@ -950,9 +935,6 @@ double DXF_IMPORT_PLUGIN::getCurrentUnitScale()
 
 void DXF_IMPORT_PLUGIN::setVariableInt( const std::string& key, int value, int code )
 {
-    if( m_currentBlock != nullptr )
-        return;
-
     // Called for every int variable in the DXF file (e.g. "$INSUNITS").
 
     if( key == "$DWGCODEPAGE" )

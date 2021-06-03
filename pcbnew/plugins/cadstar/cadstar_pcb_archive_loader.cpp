@@ -622,7 +622,8 @@ void CADSTAR_PCB_ARCHIVE_LOADER::loadDesignRules()
     ds.m_TrackMinWidth = getKiCadLength( Assignments.Technology.MinRouteWidth );
     ds.m_ViasMinSize = ds.m_TrackMinWidth; // Not specified, assumed same as track width
     ds.m_ViasMinAnnulus = ds.m_TrackMinWidth / 2; // Not specified, assumed half track width
-    ds.m_MinThroughDrill = 0; // CADSTAR does not specify a minimum hole size
+    ds.m_MinThroughDrill = PCB_IU_PER_MM * 0.0508; // CADSTAR does not specify a minimum hole size
+                                                   // so set to minimum permitted in KiCad (2 mils)
     ds.m_HoleClearance = ds.m_CopperEdgeClearance; // Not specified, assumed same as edge
 
     auto applyNetClassRule = [&]( wxString aID, NETCLASS* aNetClassPtr,
@@ -661,9 +662,10 @@ void CADSTAR_PCB_ARCHIVE_LOADER::loadComponentLibrary()
 
         footprint->SetFPID( libID );
         loadLibraryFigures( component, footprint );
-        loadLibraryCoppers( component, footprint );
         loadLibraryAreas( component, footprint );
         loadLibraryPads( component, footprint );
+        loadLibraryCoppers( component, footprint ); // Load coppers after pads to ensure correct
+                                                    // ordering of pads in footprint->Pads()
 
         m_libraryMap.insert( std::make_pair( key, footprint ) );
     }
@@ -690,15 +692,104 @@ void CADSTAR_PCB_ARCHIVE_LOADER::loadLibraryFigures( const SYMDEF_PCB& aComponen
 
 void CADSTAR_PCB_ARCHIVE_LOADER::loadLibraryCoppers( const SYMDEF_PCB& aComponent, FOOTPRINT* aFootprint )
 {
+    int totalCopperPads = 0;
+
     for( COMPONENT_COPPER compCopper : aComponent.ComponentCoppers )
     {
         int lineThickness = getKiCadLength( getCopperCode( compCopper.CopperCodeID ).CopperWidth );
+        PCB_LAYER_ID copperLayer = getKiCadLayer( compCopper.LayerID );
 
-        drawCadstarShape( compCopper.Shape, getKiCadLayer( compCopper.LayerID ), lineThickness,
-                          wxString::Format( "Component %s:%s -> Copper element",
-                                            aComponent.ReferenceName,
-                                            aComponent.Alternate ),
-                          aFootprint );
+        if( compCopper.AssociatedPadIDs.size() > 0 && LSET::AllCuMask().Contains( copperLayer )
+            && compCopper.Shape.Type == SHAPE_TYPE::SOLID )
+        {
+            // The copper is associated with pads and in an electrical layer which means it can
+            // have a net associated with it. Load as a pad instead.
+            // Note: we can only handle SOLID copper shapes. If the copper shape is an outline or
+            // hatched or outline, then we give up and load as a graphical shape instead.
+
+            // Find the first non-PCB-only pad. If there are none, use the first one
+            COMPONENT_PAD anchorPad;
+            bool          found = false;
+
+            for( PAD_ID padID : compCopper.AssociatedPadIDs )
+            {
+                anchorPad = aComponent.ComponentPads.at( padID );
+
+                if( !anchorPad.PCBonlyPad )
+                {
+                    found = true;
+                    break;
+                }
+            }
+
+            if( !found )
+                anchorPad = aComponent.ComponentPads.at( compCopper.AssociatedPadIDs.front() );
+
+
+            PAD* pad = new PAD( aFootprint );
+            pad->SetAttribute( PAD_ATTRIB::SMD );
+            pad->SetLayerSet( LSET( 1, copperLayer ) );
+            pad->SetName( anchorPad.Identifier.IsEmpty()
+                                  ? wxString::Format( wxT( "%ld" ), anchorPad.ID )
+                                  : anchorPad.Identifier );
+
+            // Custom pad shape with an anchor at the position of one of the associated
+            // pads and same size as the pad. Shape circle as it fits inside a rectangle
+            // but not the other way round
+            PADCODE anchorpadcode = getPadCode( anchorPad.PadCodeID );
+            int     anchorSize = getKiCadLength( anchorpadcode.Shape.Size );
+            wxPoint anchorPos = getKiCadPoint( anchorPad.Position );
+
+            pad->SetShape( PAD_SHAPE::CUSTOM );
+            pad->SetAnchorPadShape( PAD_SHAPE::CIRCLE );
+            pad->SetSize( { anchorSize, anchorSize } );
+            pad->SetPosition( anchorPos );
+            pad->SetLocalCoord();
+            pad->SetLocked( true ); // Cadstar pads are always locked with respect to the footprint
+
+            SHAPE_POLY_SET shapePolys = getPolySetFromCadstarShape( compCopper.Shape,
+                                                                    lineThickness,
+                                                                    aFootprint );
+            shapePolys.Move( aFootprint->GetPosition() - anchorPos );
+            pad->AddPrimitivePoly( shapePolys, 0, true );
+
+            aFootprint->Add( pad, ADD_MODE::APPEND ); // Append so that we get the correct behaviour
+                                                      // when finding pads by PAD_ID. See loadNets()
+
+            m_librarycopperpads[aComponent.ID][anchorPad.ID].push_back( aFootprint->Pads().size() );
+            totalCopperPads++;
+
+            // Now renumber all the associated pads if they are PCB Only
+            int numRenames = 0;
+            COMPONENT_PAD associatedPad;
+
+            for( PAD_ID padID : compCopper.AssociatedPadIDs )
+            {
+                associatedPad = aComponent.ComponentPads.at( padID );
+
+                if( associatedPad.PCBonlyPad )
+                {
+                    PAD* assocPad = getPadReference( aFootprint, padID );
+                    assocPad->SetName( pad->GetName() );
+                    ++numRenames;
+                }
+            }
+
+            if( numRenames < compCopper.AssociatedPadIDs.size() - 1 )
+            {
+                // This is an older design of thermal pad. The schematic will
+                // have multiple pins for the same pad, so lets use the
+                // "allow thermal pads" hack
+                aFootprint->SetKeywords( wxT( "allow thermal pads" ) );
+            }
+        }
+        else
+        {
+            drawCadstarShape( compCopper.Shape, copperLayer, lineThickness,
+                              wxString::Format( "Component %s:%s -> Copper element",
+                                                aComponent.ReferenceName, aComponent.Alternate ),
+                              aFootprint );
+        }
     }
 }
 
@@ -755,7 +846,7 @@ void CADSTAR_PCB_ARCHIVE_LOADER::loadLibraryPads( const SYMDEF_PCB& aComponent,
     for( std::pair<PAD_ID, COMPONENT_PAD> padPair : aComponent.ComponentPads )
     {
         PAD* pad = getKiCadPad( padPair.second, aFootprint );
-        aFootprint->Add( pad, ADD_MODE::INSERT ); // insert so that we get correct behaviour
+        aFootprint->Add( pad, ADD_MODE::APPEND ); // Append so that we get correct behaviour
                                                   // when finding pads by PAD_ID - see loadNets()
     }
 }
@@ -772,20 +863,20 @@ PAD* CADSTAR_PCB_ARCHIVE_LOADER::getKiCadPad( const COMPONENT_PAD& aCadstarPad, 
     switch( aCadstarPad.Side )
     {
     case PAD_SIDE::MAXIMUM: //Bottom side
-        pad->SetAttribute( PAD_ATTR_T::PAD_ATTRIB_SMD );
+        pad->SetAttribute( PAD_ATTRIB::SMD );
         padLayerSet |= LSET( 3, B_Cu, B_Paste, B_Mask );
         break;
 
     case PAD_SIDE::MINIMUM: //TOP side
-        pad->SetAttribute( PAD_ATTR_T::PAD_ATTRIB_SMD );
+        pad->SetAttribute( PAD_ATTRIB::SMD );
         padLayerSet |= LSET( 3, F_Cu, F_Paste, F_Mask );
         break;
 
     case PAD_SIDE::THROUGH_HOLE:
         if( csPadcode.Plated )
-            pad->SetAttribute( PAD_ATTR_T::PAD_ATTRIB_PTH );
+            pad->SetAttribute( PAD_ATTRIB::PTH );
         else
-            pad->SetAttribute( PAD_ATTR_T::PAD_ATTRIB_NPTH );
+            pad->SetAttribute( PAD_ATTRIB::NPTH );
 
         padLayerSet = LSET::AllCuMask() | LSET( 4, F_Mask, B_Mask, F_Paste, B_Paste );
         break;
@@ -802,7 +893,7 @@ PAD* CADSTAR_PCB_ARCHIVE_LOADER::getKiCadPad( const COMPONENT_PAD& aCadstarPad, 
     for( auto& reassign : csPadcode.Reassigns )
     {
         PCB_LAYER_ID kiLayer = getKiCadLayer( reassign.first );
-        PAD_SHAPE shape = reassign.second;
+        CADSTAR_PAD_SHAPE shape = reassign.second;
 
         if( shape.Size == 0 )
         {
@@ -856,7 +947,7 @@ PAD* CADSTAR_PCB_ARCHIVE_LOADER::getKiCadPad( const COMPONENT_PAD& aCadstarPad, 
             // Through-hole, zero sized pad?. Lets load this just on the F_Mask for now to
             // prevent DRC errors.
             // TODO: This could be a custom padstack, update when KiCad supports padstacks
-            pad->SetAttribute( PAD_ATTR_T::PAD_ATTRIB_SMD );
+            pad->SetAttribute( PAD_ATTRIB::SMD );
             pad->SetLayerSet( LSET( 1, F_Mask ) );
         }
 
@@ -871,13 +962,13 @@ PAD* CADSTAR_PCB_ARCHIVE_LOADER::getKiCadPad( const COMPONENT_PAD& aCadstarPad, 
     {
     case PAD_SHAPE_TYPE::ANNULUS:
         //todo fix: use custom shape instead (Donught shape, i.e. a circle with a hole)
-        pad->SetShape( PAD_SHAPE_T::PAD_SHAPE_CIRCLE );
+        pad->SetShape( PAD_SHAPE::CIRCLE );
         pad->SetSize( { getKiCadLength( csPadcode.Shape.Size ),
                 getKiCadLength( csPadcode.Shape.Size ) } );
         break;
 
     case PAD_SHAPE_TYPE::BULLET:
-        pad->SetShape( PAD_SHAPE_T::PAD_SHAPE_CHAMFERED_RECT );
+        pad->SetShape( PAD_SHAPE::CHAMFERED_RECT );
         pad->SetSize( { getKiCadLength( (long long) csPadcode.Shape.Size
                                         + (long long) csPadcode.Shape.LeftLength
                                         + (long long) csPadcode.Shape.RightLength ),
@@ -892,7 +983,7 @@ PAD* CADSTAR_PCB_ARCHIVE_LOADER::getKiCadPad( const COMPONENT_PAD& aCadstarPad, 
         break;
 
     case PAD_SHAPE_TYPE::CIRCLE:
-        pad->SetShape( PAD_SHAPE_T::PAD_SHAPE_CIRCLE );
+        pad->SetShape( PAD_SHAPE::CIRCLE );
         pad->SetSize( { getKiCadLength( csPadcode.Shape.Size ),
                 getKiCadLength( csPadcode.Shape.Size ) } );
         break;
@@ -902,7 +993,7 @@ PAD* CADSTAR_PCB_ARCHIVE_LOADER::getKiCadPad( const COMPONENT_PAD& aCadstarPad, 
         // Cadstar diamond shape is a square rotated 45 degrees
         // We convert it in KiCad to a square with chamfered edges
         int sizeOfSquare = (double) getKiCadLength( csPadcode.Shape.Size ) * sqrt(2.0);
-        pad->SetShape( PAD_SHAPE_T::PAD_SHAPE_RECT );
+        pad->SetShape( PAD_SHAPE::RECT );
         pad->SetChamferRectRatio( 0.5 );
         pad->SetSize( { sizeOfSquare, sizeOfSquare } );
 
@@ -912,7 +1003,7 @@ PAD* CADSTAR_PCB_ARCHIVE_LOADER::getKiCadPad( const COMPONENT_PAD& aCadstarPad, 
         break;
 
     case PAD_SHAPE_TYPE::FINGER:
-        pad->SetShape( PAD_SHAPE_T::PAD_SHAPE_OVAL );
+        pad->SetShape( PAD_SHAPE::OVAL );
         pad->SetSize( { getKiCadLength( (long long) csPadcode.Shape.Size
                                         + (long long) csPadcode.Shape.LeftLength
                                         + (long long) csPadcode.Shape.RightLength ),
@@ -923,7 +1014,7 @@ PAD* CADSTAR_PCB_ARCHIVE_LOADER::getKiCadPad( const COMPONENT_PAD& aCadstarPad, 
         break;
 
     case PAD_SHAPE_TYPE::OCTAGON:
-        pad->SetShape( PAD_SHAPE_CHAMFERED_RECT );
+        pad->SetShape( PAD_SHAPE::CHAMFERED_RECT );
         pad->SetChamferPositions( RECT_CHAMFER_POSITIONS::RECT_CHAMFER_ALL );
         pad->SetChamferRectRatio( 0.25 );
         pad->SetSize( { getKiCadLength( csPadcode.Shape.Size ),
@@ -931,7 +1022,7 @@ PAD* CADSTAR_PCB_ARCHIVE_LOADER::getKiCadPad( const COMPONENT_PAD& aCadstarPad, 
         break;
 
     case PAD_SHAPE_TYPE::RECTANGLE:
-        pad->SetShape( PAD_SHAPE_T::PAD_SHAPE_RECT );
+        pad->SetShape( PAD_SHAPE::RECT );
         pad->SetSize( { getKiCadLength( (long long) csPadcode.Shape.Size
                                         + (long long) csPadcode.Shape.LeftLength
                                         + (long long) csPadcode.Shape.RightLength ),
@@ -942,7 +1033,7 @@ PAD* CADSTAR_PCB_ARCHIVE_LOADER::getKiCadPad( const COMPONENT_PAD& aCadstarPad, 
         break;
 
     case PAD_SHAPE_TYPE::ROUNDED_RECT:
-        pad->SetShape( PAD_SHAPE_T::PAD_SHAPE_RECT );
+        pad->SetShape( PAD_SHAPE::RECT );
         pad->SetRoundRectCornerRadius( getKiCadLength( csPadcode.Shape.InternalFeature ) );
         pad->SetSize( { getKiCadLength( (long long) csPadcode.Shape.Size
                                         + (long long) csPadcode.Shape.LeftLength
@@ -955,7 +1046,7 @@ PAD* CADSTAR_PCB_ARCHIVE_LOADER::getKiCadPad( const COMPONENT_PAD& aCadstarPad, 
 
 
     case PAD_SHAPE_TYPE::SQUARE:
-        pad->SetShape( PAD_SHAPE_T::PAD_SHAPE_RECT );
+        pad->SetShape( PAD_SHAPE::RECT );
         pad->SetSize( { getKiCadLength( csPadcode.Shape.Size ),
                 getKiCadLength( csPadcode.Shape.Size ) } );
         break;
@@ -1013,7 +1104,7 @@ PAD* CADSTAR_PCB_ARCHIVE_LOADER::getKiCadPad( const COMPONENT_PAD& aCadstarPad, 
                                                        ERROR_LOC::ERROR_INSIDE );
 
             PCB_SHAPE* padShape = new PCB_SHAPE;
-            padShape->SetShape( S_POLYGON );
+            padShape->SetShape( PCB_SHAPE_TYPE::POLYGON );
             padShape->SetFilled( true );
             padShape->SetPolyShape( padOutline );
             padShape->SetWidth( 0 );
@@ -1025,9 +1116,9 @@ PAD* CADSTAR_PCB_ARCHIVE_LOADER::getKiCadPad( const COMPONENT_PAD& aCadstarPad, 
 
             if( editedPadOutline.Contains( { 0, 0 } ) )
             {
-                pad->SetAnchorPadShape( PAD_SHAPE_T::PAD_SHAPE_RECT );
+                pad->SetAnchorPadShape( PAD_SHAPE::RECT );
                 pad->SetSize( wxSize( { 4, 4 } ) );
-                pad->SetShape( PAD_SHAPE_T::PAD_SHAPE_CUSTOM );
+                pad->SetShape( PAD_SHAPE::CUSTOM );
                 pad->AddPrimitive( padShape );
                 padOffset   = { 0, 0 };
             }
@@ -1083,6 +1174,13 @@ PAD* CADSTAR_PCB_ARCHIVE_LOADER::getKiCadPad( const COMPONENT_PAD& aCadstarPad, 
     }
 
     return pad;
+}
+
+
+PAD*& CADSTAR_PCB_ARCHIVE_LOADER::getPadReference( FOOTPRINT*   aFootprint,
+                                                   const PAD_ID aCadstarPadID )
+{
+    return aFootprint->Pads().at( aCadstarPadID - (long long) 1 );
 }
 
 
@@ -1383,10 +1481,8 @@ void CADSTAR_PCB_ARCHIVE_LOADER::loadDimensions()
                 leaderDim->SetSuffix( wxEmptyString );
                 leaderDim->SetUnitsFormat( DIM_UNITS_FORMAT::NO_SUFFIX );
 
-                if( orientX == 1 )
-                    leaderDim->Text().SetHorizJustify( GR_TEXT_HJUSTIFY_RIGHT );
-                else
-                    leaderDim->Text().SetHorizJustify( GR_TEXT_HJUSTIFY_LEFT );
+                leaderDim->Text().Align( orientX == 1 ? TEXT_ATTRIBUTES::H_RIGHT
+                                                      : TEXT_ATTRIBUTES::H_LEFT );
 
                 leaderDim->SetExtensionOffset( 0 );
             }
@@ -1506,7 +1602,7 @@ void CADSTAR_PCB_ARCHIVE_LOADER::loadComponents()
                     if( pinName.empty() )
                         pinName = wxString::Format( wxT( "%ld" ), pin.ID );
 
-                    footprint->Pads().at( pin.ID - (long long) 1 )->SetName( pinName );
+                    getPadReference( footprint, pin.ID )->SetName( pinName );
                 }
             }
         }
@@ -1534,7 +1630,7 @@ void CADSTAR_PCB_ARCHIVE_LOADER::loadComponents()
                     csPad.Side = padEx.Side;
 
                 // Find the pad in the footprint definition
-                PAD* kiPad = footprint->Pads().at( padEx.ID - (long long) 1 );
+                PAD*     kiPad = getPadReference( footprint, padEx.ID );
                 wxString padName = kiPad->GetName();
 
                 if( kiPad )
@@ -1542,7 +1638,9 @@ void CADSTAR_PCB_ARCHIVE_LOADER::loadComponents()
 
                 kiPad = getKiCadPad( csPad, footprint );
                 kiPad->SetName( padName );
-                footprint->Pads().at( padEx.ID - (long long) 1 ) = kiPad;
+
+                // Change the pointer in the footprint to the newly created pad
+                getPadReference( footprint, padEx.ID ) = kiPad;
             }
         }
 
@@ -1867,7 +1965,7 @@ void CADSTAR_PCB_ARCHIVE_LOADER::loadCoppers()
                 {
                     SHAPE_POLY_SET segment;
 
-                    if( seg->GetShape() == PCB_SHAPE_TYPE_T::S_ARC )
+                    if( seg->GetShape() == PCB_SHAPE_TYPE::ARC )
                     {
                         TransformArcToPolygon( segment, seg->GetStart(), seg->GetArcMid(),
                                                seg->GetEnd(), copperWidth, ARC_HIGH_DEF,
@@ -2034,8 +2132,26 @@ void CADSTAR_PCB_ARCHIVE_LOADER::loadNets()
             {
                 // The below works because we have added the pads in the correct order to the
                 // footprint and the PAD_ID in Cadstar is a sequential, numerical ID
-                PAD* pad = footprint->Pads().at( pin.PadID - (long) 1 );
+                PAD* pad = getPadReference( footprint, pin.PadID );
                 pad->SetNet( getKiCadNet( net.ID ) );
+
+                // also set the net to any copper pads (i.e. copper elements that we have imported
+                // as pads instead:
+                SYMDEF_ID symdefid = Layout.Components.at( pin.ComponentID ).SymdefID;
+
+                if( m_librarycopperpads.find( symdefid ) != m_librarycopperpads.end() )
+                {
+                    ASSOCIATED_COPPER_PADS assocPads = m_librarycopperpads.at( symdefid );
+
+                    if( assocPads.find( pin.PadID ) != assocPads.end() )
+                    {
+                        for( PAD_ID copperPadID : assocPads.at( pin.PadID ) )
+                        {
+                            PAD* copperpad = getPadReference( footprint, copperPadID );
+                            copperpad->SetNet( getKiCadNet( net.ID ) );
+                        }
+                    }
+                }
 
                 // padsize is used for calculating route offset (as done in CADSTAR post processor)
                 int padsize = std::min( pad->GetSizeX(), pad->GetSizeY() );
@@ -2047,7 +2163,7 @@ void CADSTAR_PCB_ARCHIVE_LOADER::loadNets()
         // at the junction in order to correctly apply the same "route offset" operation that the
         // CADSTAR post processor applies when generating Manufacturing output
         auto getJunctionSize =
-            [&]( NETELEMENT_ID aJptNetElemId, NET_PCB::CONNECTION_PCB aConnectionToIgnore ) -> int
+            [&]( NETELEMENT_ID aJptNetElemId, const NET_PCB::CONNECTION_PCB& aConnectionToIgnore ) -> int
             {
                 int jptsize = 0;
 
@@ -2204,44 +2320,32 @@ void CADSTAR_PCB_ARCHIVE_LOADER::loadNetTracks( const NET_ID&         aCadstarNe
                                                 const NET_PCB::ROUTE& aCadstarRoute,
                                                 long aStartWidth, long aEndWidth )
 {
+    if( aCadstarRoute.RouteVertices.size() == 0 )
+        return;
+
     std::vector<PCB_SHAPE*> shapes;
+    std::vector<NET_PCB::ROUTE_VERTEX> routeVertices = aCadstarRoute.RouteVertices;
 
-    std::vector<NET_PCB::ROUTE_VERTEX> offsetedVertices = aCadstarRoute.RouteVertices;
-    POINT newStartPoint = aCadstarRoute.StartPoint;
-    auto  begin = offsetedVertices.begin();
-
-    // First iterate through the points and apply route offset to start and end points only
-    // the rest of route offseting will happen in makeTracksFromDrawsegments
-    for( auto it = begin, end = offsetedVertices.end(); it != end; ++it )
+    // Add thin route at front so that route offseting works as expected
+    if( aStartWidth < routeVertices.front().RouteWidth )
     {
-        auto next = std::next( it );
-
-        if( it == offsetedVertices.begin() )
-        {
-            // second point of the route (first point is given by aCadstarRoute.StartPoint)
-            int offsetAmount = ( it->RouteWidth / 2 ) - ( aStartWidth / 2 );
-
-            if( aStartWidth < it->RouteWidth )
-                applyRouteOffset( &newStartPoint, it->Vertex.End, offsetAmount );
-        }
-
-        if( next == end )
-        {
-            // last point of the route
-            int offsetAmount = ( it->RouteWidth / 2 ) - ( aEndWidth / 2 );
-            POINT referencePoint = newStartPoint;
-
-            if( it != begin )
-                referencePoint = std::prev( it )->Vertex.End;
-
-            if( aEndWidth < it->RouteWidth )
-                applyRouteOffset( &it->Vertex.End, referencePoint, offsetAmount );
-        }
+        NET_PCB::ROUTE_VERTEX newFrontVertex = aCadstarRoute.RouteVertices.front();
+        newFrontVertex.RouteWidth = aStartWidth;
+        newFrontVertex.Vertex.End = aCadstarRoute.StartPoint;
+        routeVertices.insert( routeVertices.begin(), newFrontVertex );
     }
 
-    POINT prevEnd = newStartPoint;
+    // Add thin route at the back if required
+    if( aEndWidth < routeVertices.back().RouteWidth )
+    {
+        NET_PCB::ROUTE_VERTEX newBackVertex = aCadstarRoute.RouteVertices.back();
+        newBackVertex.RouteWidth = aEndWidth;
+        routeVertices.push_back( newBackVertex );
+    }
 
-    for( const NET_PCB::ROUTE_VERTEX& v : offsetedVertices )
+    POINT prevEnd = aCadstarRoute.StartPoint;
+
+    for( const NET_PCB::ROUTE_VERTEX& v : routeVertices )
     {
         PCB_SHAPE* shape = getDrawSegmentFromVertex( prevEnd, v.Vertex );
         shape->SetLayer( getKiCadLayer( aCadstarRoute.LayerID ) );
@@ -2251,9 +2355,8 @@ void CADSTAR_PCB_ARCHIVE_LOADER::loadNetTracks( const NET_ID&         aCadstarNe
         prevEnd = v.Vertex.End;
     }
 
-    //Todo add real netcode to the tracks
-    std::vector<TRACK*> tracks =
-            makeTracksFromDrawsegments( shapes, m_board, getKiCadNet( aCadstarNetID ) );
+    NETINFO_ITEM*       net = getKiCadNet( aCadstarNetID );
+    std::vector<TRACK*> tracks = makeTracksFromDrawsegments( shapes, m_board, net );
 
     //cleanup
     for( PCB_SHAPE* shape : shapes )
@@ -2359,48 +2462,39 @@ void CADSTAR_PCB_ARCHIVE_LOADER::drawCadstarText( const TEXT& aCadstarText,
     {
     case ALIGNMENT::NO_ALIGNMENT: // Default for Single line text is Bottom Left
     case ALIGNMENT::BOTTOMLEFT:
-        txt->SetVertJustify( GR_TEXT_VJUSTIFY_BOTTOM );
-        txt->SetHorizJustify( GR_TEXT_HJUSTIFY_LEFT );
+        txt->Align( TEXT_ATTRIBUTES::H_LEFT, TEXT_ATTRIBUTES::V_BOTTOM );
         break;
 
     case ALIGNMENT::BOTTOMCENTER:
-        txt->SetVertJustify( GR_TEXT_VJUSTIFY_BOTTOM );
-        txt->SetHorizJustify( GR_TEXT_HJUSTIFY_CENTER );
+        txt->Align( TEXT_ATTRIBUTES::H_CENTER, TEXT_ATTRIBUTES::V_BOTTOM );
         break;
 
     case ALIGNMENT::BOTTOMRIGHT:
-        txt->SetVertJustify( GR_TEXT_VJUSTIFY_BOTTOM );
-        txt->SetHorizJustify( GR_TEXT_HJUSTIFY_RIGHT );
+        txt->Align( TEXT_ATTRIBUTES::H_RIGHT, TEXT_ATTRIBUTES::V_BOTTOM );
         break;
 
     case ALIGNMENT::CENTERLEFT:
-        txt->SetVertJustify( GR_TEXT_VJUSTIFY_CENTER );
-        txt->SetHorizJustify( GR_TEXT_HJUSTIFY_LEFT );
+        txt->Align( TEXT_ATTRIBUTES::H_LEFT, TEXT_ATTRIBUTES::V_CENTER );
         break;
 
     case ALIGNMENT::CENTERCENTER:
-        txt->SetVertJustify( GR_TEXT_VJUSTIFY_CENTER );
-        txt->SetHorizJustify( GR_TEXT_HJUSTIFY_CENTER );
+        txt->Align( TEXT_ATTRIBUTES::H_CENTER, TEXT_ATTRIBUTES::V_CENTER );
         break;
 
     case ALIGNMENT::CENTERRIGHT:
-        txt->SetVertJustify( GR_TEXT_VJUSTIFY_CENTER );
-        txt->SetHorizJustify( GR_TEXT_HJUSTIFY_RIGHT );
+        txt->Align( TEXT_ATTRIBUTES::H_RIGHT, TEXT_ATTRIBUTES::V_CENTER );
         break;
 
     case ALIGNMENT::TOPLEFT:
-        txt->SetVertJustify( GR_TEXT_VJUSTIFY_TOP );
-        txt->SetHorizJustify( GR_TEXT_HJUSTIFY_LEFT );
+        txt->Align( TEXT_ATTRIBUTES::H_LEFT, TEXT_ATTRIBUTES::V_TOP );
         break;
 
     case ALIGNMENT::TOPCENTER:
-        txt->SetVertJustify( GR_TEXT_VJUSTIFY_TOP );
-        txt->SetHorizJustify( GR_TEXT_HJUSTIFY_CENTER );
+        txt->Align( TEXT_ATTRIBUTES::H_CENTER, TEXT_ATTRIBUTES::V_TOP );
         break;
 
     case ALIGNMENT::TOPRIGHT:
-        txt->SetVertJustify( GR_TEXT_VJUSTIFY_TOP );
-        txt->SetHorizJustify( GR_TEXT_HJUSTIFY_RIGHT );
+        txt->Align( TEXT_ATTRIBUTES::H_RIGHT, TEXT_ATTRIBUTES::V_TOP );
         break;
 
     default:
@@ -2502,12 +2596,12 @@ void CADSTAR_PCB_ARCHIVE_LOADER::drawCadstarShape( const SHAPE& aCadstarShape,
 
         if( isFootprint( aContainer ) )
         {
-            shape = new FP_SHAPE( (FOOTPRINT*) aContainer, S_POLYGON );
+            shape = new FP_SHAPE( (FOOTPRINT*) aContainer, PCB_SHAPE_TYPE::POLYGON );
         }
         else
         {
             shape = new PCB_SHAPE( aContainer );
-            shape->SetShape( S_POLYGON );
+            shape->SetShape( PCB_SHAPE_TYPE::POLYGON );
         }
 
         shape->SetFilled( true );
@@ -2629,12 +2723,12 @@ PCB_SHAPE* CADSTAR_PCB_ARCHIVE_LOADER::getDrawSegmentFromVertex( const POINT& aC
 
         if( isFootprint( aContainer ) )
         {
-            ds = new FP_SHAPE( static_cast<FOOTPRINT*>( aContainer ), S_SEGMENT );
+            ds = new FP_SHAPE( static_cast<FOOTPRINT*>( aContainer ), PCB_SHAPE_TYPE::SEGMENT );
         }
         else
         {
             ds = new PCB_SHAPE( aContainer );
-            ds->SetShape( S_SEGMENT );
+            ds->SetShape( PCB_SHAPE_TYPE::SEGMENT );
         }
 
         ds->SetStart( startPoint );
@@ -2651,12 +2745,12 @@ PCB_SHAPE* CADSTAR_PCB_ARCHIVE_LOADER::getDrawSegmentFromVertex( const POINT& aC
 
         if( isFootprint( aContainer ) )
         {
-            ds = new FP_SHAPE((FOOTPRINT*) aContainer, S_ARC );
+            ds = new FP_SHAPE( (FOOTPRINT*) aContainer, PCB_SHAPE_TYPE::ARC );
         }
         else
         {
             ds = new PCB_SHAPE( aContainer );
-            ds->SetShape( S_ARC );
+            ds->SetShape( PCB_SHAPE_TYPE::ARC );
         }
 
         ds->SetArcStart( startPoint );
@@ -2799,7 +2893,7 @@ SHAPE_LINE_CHAIN CADSTAR_PCB_ARCHIVE_LOADER::getLineChainFromDrawsegments( const
     {
         switch( ds->GetShape() )
         {
-        case S_ARC:
+        case PCB_SHAPE_TYPE::ARC:
         {
             if( ds->GetClass() == wxT( "MGRAPHIC" ) )
             {
@@ -2814,7 +2908,7 @@ SHAPE_LINE_CHAIN CADSTAR_PCB_ARCHIVE_LOADER::getLineChainFromDrawsegments( const
             }
         }
         break;
-        case S_SEGMENT:
+        case PCB_SHAPE_TYPE::SEGMENT:
             if( ds->GetClass() == wxT( "MGRAPHIC" ) )
             {
                 FP_SHAPE* em = (FP_SHAPE*) ds;
@@ -2856,14 +2950,31 @@ std::vector<TRACK*> CADSTAR_PCB_ARCHIVE_LOADER::makeTracksFromDrawsegments(
 {
     std::vector<TRACK*> tracks;
     TRACK*              prevTrack = nullptr;
+    TRACK*              track = nullptr;
+
+    auto addTrack = [&]( TRACK* aTrack )
+                    {
+                        // Ignore zero length tracks in the same way as the CADSTAR postprocessor
+                        // does when generating gerbers. Note that CADSTAR reports these as "Route
+                        // offset errors" when running a DRC within CADSTAR, so we shouldn't be
+                        // getting this in general, however it is used to remove any synthetic
+                        // points added to aDrawSegments by the caller of this function.
+                        if( aTrack->GetLength() != 0 )
+                        {
+                            tracks.push_back( aTrack );
+                            aParentContainer->Add( aTrack, ADD_MODE::APPEND );
+                        }
+                        else
+                        {
+                            delete aTrack;
+                        }
+                    };
 
     for( PCB_SHAPE* ds : aDrawsegments )
     {
-        TRACK* track;
-
         switch( ds->GetShape() )
         {
-        case S_ARC:
+        case PCB_SHAPE_TYPE::ARC:
             if( ds->GetClass() == wxT( "MGRAPHIC" ) )
             {
                 FP_SHAPE* em = (FP_SHAPE*) ds;
@@ -2876,7 +2987,7 @@ std::vector<TRACK*> CADSTAR_PCB_ARCHIVE_LOADER::makeTracksFromDrawsegments(
                 track = new ARC( aParentContainer, &arc );
             }
             break;
-        case S_SEGMENT:
+        case PCB_SHAPE_TYPE::SEGMENT:
             if( ds->GetClass() == wxT( "MGRAPHIC" ) )
             {
                 FP_SHAPE* em = (FP_SHAPE*) ds;
@@ -2915,6 +3026,8 @@ std::vector<TRACK*> CADSTAR_PCB_ARCHIVE_LOADER::makeTracksFromDrawsegments(
         // Apply route offsetting, mimmicking the behaviour of the CADSTAR post processor
         if( prevTrack != nullptr )
         {
+            track->SetStart( prevTrack->GetEnd() ); // remove discontinuities if possible
+
             int offsetAmount = ( track->GetWidth() / 2 ) - ( prevTrack->GetWidth() / 2 );
 
             if( offsetAmount > 0 )
@@ -2931,12 +3044,32 @@ std::vector<TRACK*> CADSTAR_PCB_ARCHIVE_LOADER::makeTracksFromDrawsegments(
                 applyRouteOffset( &newEnd, prevTrack->GetStart(), -offsetAmount );
                 prevTrack->SetEnd( newEnd );
             } // don't do anything if offsetAmount == 0
+
+            // Add a synthetic track of the thinnest width between the tracks
+            // to ensure KiCad features works as expected on the imported design
+            // (KiCad expects tracks are contigous segments)
+            if( track->GetStart() != prevTrack->GetEnd() )
+            {
+                int    minWidth = std::min( track->GetWidth(), prevTrack->GetWidth() );
+                TRACK* synthTrack = new TRACK( aParentContainer );
+                synthTrack->SetStart( prevTrack->GetEnd() );
+                synthTrack->SetEnd( track->GetStart() );
+                synthTrack->SetWidth( minWidth );
+                synthTrack->SetLocked( track->IsLocked() );
+                synthTrack->SetNet( track->GetNet() );
+                synthTrack->SetLayer( track->GetLayer() );
+                addTrack( synthTrack );
+            }
         }
 
+        if( prevTrack )
+            addTrack( prevTrack );
+
         prevTrack = track;
-        tracks.push_back( track );
-        aParentContainer->Add( track, ADD_MODE::APPEND );
     }
+
+    if( track )
+        addTrack( track );
 
     return tracks;
 }
@@ -3026,48 +3159,39 @@ void CADSTAR_PCB_ARCHIVE_LOADER::addAttribute( const ATTRIBUTE_LOCATION& aCadsta
         FixTextPositionNoAlignment( txt );
         KI_FALLTHROUGH;
     case ALIGNMENT::BOTTOMLEFT:
-        txt->SetVertJustify( GR_TEXT_VJUSTIFY_BOTTOM );
-        txt->SetHorizJustify( GR_TEXT_HJUSTIFY_LEFT );
+        txt->Align( TEXT_ATTRIBUTES::H_LEFT, TEXT_ATTRIBUTES::V_BOTTOM );
         break;
 
     case ALIGNMENT::BOTTOMCENTER:
-        txt->SetVertJustify( GR_TEXT_VJUSTIFY_BOTTOM );
-        txt->SetHorizJustify( GR_TEXT_HJUSTIFY_CENTER );
+        txt->Align( TEXT_ATTRIBUTES::H_CENTER, TEXT_ATTRIBUTES::V_BOTTOM );
         break;
 
     case ALIGNMENT::BOTTOMRIGHT:
-        txt->SetVertJustify( GR_TEXT_VJUSTIFY_BOTTOM );
-        txt->SetHorizJustify( GR_TEXT_HJUSTIFY_RIGHT );
+        txt->Align( TEXT_ATTRIBUTES::H_RIGHT, TEXT_ATTRIBUTES::V_BOTTOM );
         break;
 
     case ALIGNMENT::CENTERLEFT:
-        txt->SetVertJustify( GR_TEXT_VJUSTIFY_CENTER );
-        txt->SetHorizJustify( GR_TEXT_HJUSTIFY_LEFT );
+        txt->Align( TEXT_ATTRIBUTES::H_LEFT, TEXT_ATTRIBUTES::V_CENTER );
         break;
 
     case ALIGNMENT::CENTERCENTER:
-        txt->SetVertJustify( GR_TEXT_VJUSTIFY_CENTER );
-        txt->SetHorizJustify( GR_TEXT_HJUSTIFY_CENTER );
+        txt->Align( TEXT_ATTRIBUTES::H_CENTER, TEXT_ATTRIBUTES::V_CENTER );
         break;
 
     case ALIGNMENT::CENTERRIGHT:
-        txt->SetVertJustify( GR_TEXT_VJUSTIFY_CENTER );
-        txt->SetHorizJustify( GR_TEXT_HJUSTIFY_RIGHT );
+        txt->Align( TEXT_ATTRIBUTES::H_RIGHT, TEXT_ATTRIBUTES::V_CENTER );
         break;
 
     case ALIGNMENT::TOPLEFT:
-        txt->SetVertJustify( GR_TEXT_VJUSTIFY_TOP );
-        txt->SetHorizJustify( GR_TEXT_HJUSTIFY_LEFT );
+        txt->Align( TEXT_ATTRIBUTES::H_LEFT, TEXT_ATTRIBUTES::V_TOP );
         break;
 
     case ALIGNMENT::TOPCENTER:
-        txt->SetVertJustify( GR_TEXT_VJUSTIFY_TOP );
-        txt->SetHorizJustify( GR_TEXT_HJUSTIFY_CENTER );
+        txt->Align( TEXT_ATTRIBUTES::H_CENTER, TEXT_ATTRIBUTES::V_TOP );
         break;
 
     case ALIGNMENT::TOPRIGHT:
-        txt->SetVertJustify( GR_TEXT_VJUSTIFY_TOP );
-        txt->SetHorizJustify( GR_TEXT_HJUSTIFY_RIGHT );
+        txt->Align( TEXT_ATTRIBUTES::H_RIGHT, TEXT_ATTRIBUTES::V_TOP );
         break;
 
     default:

@@ -98,7 +98,7 @@ public:
     ITEM_SET( ITEM* aInitialItem = NULL, bool aBecomeOwner = false )
     {
         if( aInitialItem )
-            m_items.push_back( ENTRY( aInitialItem, aBecomeOwner ) );
+            m_items.emplace_back( ENTRY( aInitialItem, aBecomeOwner ) );
     }
 
     ITEM_SET( const ITEM_SET& aOther )
@@ -119,7 +119,7 @@ public:
         int n = 0;
 
         if( aKindMask == -1 || aKindMask == ITEM::ANY_T )
-            return m_items.size();
+            return static_cast<int>( m_items.size() );
 
         for( ITEM* item : m_items )
         {
@@ -162,25 +162,30 @@ public:
 
     int Size() const
     {
-        return m_items.size();
+        return static_cast<int>( m_items.size() );
     }
 
     void Add( const LINE& aLine );
     void Prepend( const LINE& aLine );
 
-    ITEM* operator[] ( int index ) const
+    ITEM* operator[]( size_t aIndex ) const
     {
-        return m_items[index].item;
+        return m_items[aIndex].item;
     }
+
+    ENTRIES::iterator begin() { return m_items.begin(); }
+    ENTRIES::iterator end() { return m_items.end(); }
+    ENTRIES::const_iterator cbegin() const { return m_items.cbegin(); }
+    ENTRIES::const_iterator cend() const { return m_items.cend(); }
 
     void Add( ITEM* aItem, bool aBecomeOwner = false )
     {
-        m_items.push_back( ENTRY( aItem, aBecomeOwner ) );
+        m_items.emplace_back( ENTRY( aItem, aBecomeOwner ) );
     }
 
     void Prepend( ITEM* aItem, bool aBecomeOwner = false )
     {
-         m_items.insert( m_items.begin(), ENTRY( aItem, aBecomeOwner ) );
+         m_items.emplace( m_items.begin(), ENTRY( aItem, aBecomeOwner ) );
     }
 
     void Clear()

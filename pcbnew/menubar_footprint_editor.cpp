@@ -4,7 +4,7 @@
  * Copyright (C) 2015 Jean-Pierre Charras, jp.charras at wanadoo.fr
  * Copyright (C) 2015 SoftPLC Corporation, Dick Hollenbeck <dick@softplc.com>
  * Copyright (C) 2015 Wayne Stambaugh <stambaughw@gmail.com>
- * Copyright (C) 1992-2020 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 1992-2021 KiCad Developers, see AUTHORS.txt for contributors.
 *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -51,10 +51,7 @@ void FOOTPRINT_EDIT_FRAME::ReCreateMenuBar()
     fileMenu->Add( ACTIONS::newLibrary );
     fileMenu->Add( ACTIONS::addLibrary );
     fileMenu->Add( PCB_ACTIONS::newFootprint );
-
-#ifdef KICAD_SCRIPTING
     fileMenu->Add( PCB_ACTIONS::createFootprint );
-#endif
 
     fileMenu->AppendSeparator();
 
@@ -218,6 +215,9 @@ void FOOTPRINT_EDIT_FRAME::ReCreateMenuBar()
                     ID_ADD_FOOTPRINT_TO_BOARD,
                     BITMAPS::insert_module_board );
 
+    toolsMenu->AppendSeparator();
+    toolsMenu->Add( PCB_ACTIONS::repairFootprint );
+
 
     //-- Preferences menu -------------------------------------------------
     //
@@ -225,10 +225,7 @@ void FOOTPRINT_EDIT_FRAME::ReCreateMenuBar()
 
     prefsMenu->Add( ACTIONS::configurePaths );
     prefsMenu->Add( ACTIONS::showFootprintLibTable );
-    prefsMenu->Add( _( "Preferences..." ) + "\tCtrl+,",
-                    _( "Show preferences for all open tools" ),
-                    wxID_PREFERENCES,
-                    BITMAPS::preference );
+    prefsMenu->Add( ACTIONS::openPreferences );
 
     prefsMenu->AppendSeparator();
     AddMenuLanguageList( prefsMenu, selTool );

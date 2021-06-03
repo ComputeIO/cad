@@ -42,6 +42,8 @@
 #include <drc/drc_rule.h>
 #include <drc/drc_engine.h>
 
+#include <wx/log.h>
+
 #include <memory>
 
 #include <advanced_config.h>
@@ -81,6 +83,8 @@ public:
                                   PNS::CONSTRAINT* aConstraint ) override;
     virtual wxString NetName( int aNet ) override;
 
+    int ClearanceEpsilon() const { return m_clearanceEpsilon; }
+
 private:
     int holeRadius( const PNS::ITEM* aItem ) const;
     int matchDpSuffix( const wxString& aNetName, wxString& aComplementNet, wxString& aBaseDpName );
@@ -88,9 +92,9 @@ private:
 private:
     PNS::ROUTER_IFACE* m_routerIface;
     BOARD*             m_board;
-    TRACK              m_dummyTrack;
-    ARC                m_dummyArc;
-    VIA                m_dummyVia;
+    TRACK              m_dummyTracks[2];
+    ARC                m_dummyArcs[2];
+    VIA                m_dummyVias[2];
     int                m_clearanceEpsilon;
 
     std::map<std::pair<const PNS::ITEM*, const PNS::ITEM*>, int> m_clearanceCache;
@@ -103,9 +107,9 @@ PNS_PCBNEW_RULE_RESOLVER::PNS_PCBNEW_RULE_RESOLVER( BOARD* aBoard,
                                                     PNS::ROUTER_IFACE* aRouterIface ) :
     m_routerIface( aRouterIface ),
     m_board( aBoard ),
-    m_dummyTrack( aBoard ),
-    m_dummyArc( aBoard ),
-    m_dummyVia( aBoard )
+    m_dummyTracks{ { aBoard }, { aBoard } },
+    m_dummyArcs{ { aBoard }, { aBoard } },
+    m_dummyVias{ { aBoard }, { aBoard } }
 {
     if( aBoard )
         m_clearanceEpsilon = aBoard->GetDesignSettings().GetDRCEpsilon();
@@ -163,7 +167,7 @@ bool isCopper( const PNS::ITEM* aItem )
     if( parent && parent->Type() == PCB_PAD_T )
     {
         PAD* pad = static_cast<PAD*>( parent );
-        return pad->IsOnCopperLayer() && pad->GetAttribute() != PAD_ATTRIB_NPTH;
+        return pad->IsOnCopperLayer() && pad->GetAttribute() != PAD_ATTRIB::NPTH;
     }
 
     return true;
@@ -217,10 +221,10 @@ bool PNS_PCBNEW_RULE_RESOLVER::QueryConstraint( PNS::CONSTRAINT_TYPE aType,
     {
         switch( aItemA->Kind() )
         {
-        case PNS::ITEM::ARC_T:     parentA = &m_dummyArc;   break;
-        case PNS::ITEM::VIA_T:     parentA = &m_dummyVia;   break;
-        case PNS::ITEM::SEGMENT_T: parentA = &m_dummyTrack; break;
-        case PNS::ITEM::LINE_T:    parentA = &m_dummyTrack; break;
+        case PNS::ITEM::ARC_T:     parentA = &m_dummyArcs[0];   break;
+        case PNS::ITEM::VIA_T:     parentA = &m_dummyVias[0];   break;
+        case PNS::ITEM::SEGMENT_T: parentA = &m_dummyTracks[0]; break;
+        case PNS::ITEM::LINE_T:    parentA = &m_dummyTracks[0]; break;
         default: break;
         }
 
@@ -235,10 +239,10 @@ bool PNS_PCBNEW_RULE_RESOLVER::QueryConstraint( PNS::CONSTRAINT_TYPE aType,
     {
         switch( aItemB->Kind() )
         {
-        case PNS::ITEM::ARC_T:     parentB = &m_dummyArc;   break;
-        case PNS::ITEM::VIA_T:     parentB = &m_dummyVia;   break;
-        case PNS::ITEM::SEGMENT_T: parentB = &m_dummyTrack; break;
-        case PNS::ITEM::LINE_T:    parentB = &m_dummyTrack; break;
+        case PNS::ITEM::ARC_T:     parentB = &m_dummyArcs[1];   break;
+        case PNS::ITEM::VIA_T:     parentB = &m_dummyVias[1];   break;
+        case PNS::ITEM::SEGMENT_T: parentB = &m_dummyTracks[1]; break;
+        case PNS::ITEM::LINE_T:    parentB = &m_dummyTracks[1]; break;
         default: break;
         }
 
@@ -369,6 +373,25 @@ bool PNS_KICAD_IFACE_BASE::inheritTrackWidth( PNS::ITEM* aItem, int* aInheritedW
 
     assert( aItem->Owner() != NULL );
 
+    auto tryGetTrackWidth =
+        []( PNS::ITEM* aPnsItem ) -> int
+        {
+            switch( aPnsItem->Kind() )
+            {
+            case PNS::ITEM::SEGMENT_T: return static_cast<PNS::SEGMENT*>( aPnsItem )->Width();
+            case PNS::ITEM::ARC_T: return static_cast<PNS::ARC*>( aPnsItem )->Width();
+            default: return -1;
+            }
+        };
+
+    int itemTrackWidth = tryGetTrackWidth( aItem );
+
+    if( itemTrackWidth > 0 )
+    {
+        *aInheritedWidth = itemTrackWidth;
+        return true;
+    }
+
     switch( aItem->Kind() )
     {
     case PNS::ITEM::VIA_T:
@@ -378,10 +401,6 @@ bool PNS_KICAD_IFACE_BASE::inheritTrackWidth( PNS::ITEM* aItem, int* aInheritedW
     case PNS::ITEM::SOLID_T:
         p = static_cast<PNS::SOLID*>( aItem )->Pos();
         break;
-
-    case PNS::ITEM::SEGMENT_T:
-        *aInheritedWidth = static_cast<PNS::SEGMENT*>( aItem )->Width();
-        return true;
 
     default:
         return false;
@@ -394,11 +413,12 @@ bool PNS_KICAD_IFACE_BASE::inheritTrackWidth( PNS::ITEM* aItem, int* aInheritedW
     int mval = INT_MAX;
 
     PNS::ITEM_SET linkedSegs = jt->Links();
-    linkedSegs.ExcludeItem( aItem ).FilterKinds( PNS::ITEM::SEGMENT_T );
+    linkedSegs.ExcludeItem( aItem ).FilterKinds( PNS::ITEM::SEGMENT_T | PNS::ITEM::ARC_T );
 
     for( PNS::ITEM* item : linkedSegs.Items() )
     {
-        int w = static_cast<PNS::SEGMENT*>( item )->Width();
+        int w = tryGetTrackWidth( item );
+        assert( w > 0 );
         mval = std::min( w, mval );
     }
 
@@ -430,14 +450,14 @@ bool PNS_KICAD_IFACE_BASE::ImportSizes( PNS::SIZES_SETTINGS& aSizes, PNS::ITEM* 
         if( m_ruleResolver->QueryConstraint( PNS::CONSTRAINT_TYPE::CT_WIDTH, aStartItem, nullptr,
                                              aStartItem->Layer(), &constraint ) )
         {
-            trackWidth = constraint.m_Value.Opt();
-            found = true;    // Note: allowed to override anything, including bds.m_TrackMinWidth
+            trackWidth = std::max( trackWidth, constraint.m_Value.Opt() );
+            found = true;
         }
     }
 
     if( !found )
     {
-        trackWidth = bds.GetCurrentTrackWidth();
+        trackWidth = std::max( trackWidth, bds.GetCurrentTrackWidth() );
     }
 
     aSizes.SetTrackWidth( trackWidth );
@@ -450,13 +470,13 @@ bool PNS_KICAD_IFACE_BASE::ImportSizes( PNS::SIZES_SETTINGS& aSizes, PNS::ITEM* 
         if( m_ruleResolver->QueryConstraint( PNS::CONSTRAINT_TYPE::CT_VIA_DIAMETER, aStartItem,
                                              nullptr, aStartItem->Layer(), &constraint ) )
         {
-            viaDiameter = constraint.m_Value.Opt();
+            viaDiameter = std::max( viaDiameter, constraint.m_Value.Opt() );
         }
 
         if( m_ruleResolver->QueryConstraint( PNS::CONSTRAINT_TYPE::CT_VIA_HOLE, aStartItem,
                                              nullptr, aStartItem->Layer(), &constraint ) )
         {
-            viaDrill = constraint.m_Value.Opt();
+            viaDrill = std::max( viaDrill, constraint.m_Value.Opt() );
         }
     }
     else
@@ -472,19 +492,26 @@ bool PNS_KICAD_IFACE_BASE::ImportSizes( PNS::SIZES_SETTINGS& aSizes, PNS::ITEM* 
     int diffPairGap = bds.m_MinClearance;
     int diffPairViaGap = bds.m_MinClearance;
 
+    found = false;
+
+    // First try to pick up diff pair width from starting track, if enabled
+    if( bds.m_UseConnectedTrackWidth && aStartItem )
+        found = inheritTrackWidth( aStartItem, &diffPairWidth );
+
+    // Next, pick up gap from netclass, and width also if we didn't get a starting width above
     if( bds.UseNetClassDiffPair() && aStartItem )
     {
-        if( m_ruleResolver->QueryConstraint( PNS::CONSTRAINT_TYPE::CT_WIDTH, aStartItem,
-                                             nullptr, aStartItem->Layer(), &constraint ) )
+        if( !found && m_ruleResolver->QueryConstraint( PNS::CONSTRAINT_TYPE::CT_WIDTH, aStartItem,
+                                                       nullptr, aStartItem->Layer(), &constraint ) )
         {
-            diffPairWidth = constraint.m_Value.Opt();
+            diffPairWidth = std::max( diffPairWidth, constraint.m_Value.Opt() );
         }
 
         if( m_ruleResolver->QueryConstraint( PNS::CONSTRAINT_TYPE::CT_DIFF_PAIR_GAP, aStartItem,
                                              nullptr, aStartItem->Layer(), &constraint ) )
         {
-            diffPairGap = constraint.m_Value.Opt();
-            diffPairViaGap = constraint.m_Value.Opt();
+            diffPairGap = std::max( diffPairGap, constraint.m_Value.Opt() );
+            diffPairViaGap = std::max( diffPairViaGap, constraint.m_Value.Opt() );
         }
     }
     else
@@ -514,6 +541,17 @@ bool PNS_KICAD_IFACE_BASE::ImportSizes( PNS::SIZES_SETTINGS& aSizes, PNS::ITEM* 
     aSizes.ClearLayerPairs();
 
     return true;
+}
+
+
+int PNS_KICAD_IFACE_BASE::StackupHeight( int aFirstLayer, int aSecondLayer ) const
+{
+    if( !m_board || !m_board->GetDesignSettings().m_UseHeightForLengthCalcs )
+        return 0;
+
+    BOARD_STACKUP& stackup = m_board->GetDesignSettings().GetStackupDescriptor();
+
+    return stackup.GetLayerDistance( ToLAYER_ID( aFirstLayer ), ToLAYER_ID( aSecondLayer ) );
 }
 
 
@@ -670,7 +708,7 @@ public:
 
     ~PNS_PCBNEW_DEBUG_DECORATOR()
     {
-        Clear();
+        PNS_PCBNEW_DEBUG_DECORATOR::Clear();
         delete m_items;
     }
 
@@ -689,23 +727,27 @@ public:
         m_view->Add( m_items );
     }
 
-    virtual void AddPoint( VECTOR2I aP, int aColor, int aSize, const std::string aName ) override
-    {
+    virtual void AddPoint( VECTOR2I aP, const COLOR4D& aColor, int aSize,
+                           const std::string        aName,
+                           const SRC_LOCATION_INFO& aSrcLoc = SRC_LOCATION_INFO() ) override
+        {
         SHAPE_LINE_CHAIN l;
 
         l.Append( aP - VECTOR2I( -aSize, -aSize ) );
         l.Append( aP + VECTOR2I( -aSize, -aSize ) );
 
-        AddLine( l, aColor, 10000 );
+        AddLine( l, aColor, 10000, aName );
 
         l.Clear();
         l.Append( aP - VECTOR2I( aSize, -aSize ) );
         l.Append( aP + VECTOR2I( aSize, -aSize ) );
 
-        AddLine( l, aColor, 10000 );
+        AddLine( l, aColor, 10000, aName );
     }
 
-    void AddBox( BOX2I aB, int aColor, const std::string aName = "" ) override
+    virtual void AddBox( BOX2I aB, const COLOR4D& aColor,
+                         const std::string        aName,
+                         const SRC_LOCATION_INFO& aSrcLoc = SRC_LOCATION_INFO() ) override
     {
         SHAPE_LINE_CHAIN l;
 
@@ -718,44 +760,33 @@ public:
         l.Append( o.x, o.y + s.y );
         l.Append( o );
 
-        AddLine( l, aColor, 10000 );
+        AddLine( l, aColor, 10000, aName, aSrcLoc );
     }
 
-    void AddSegment( SEG aS, int aColor, const std::string aName = "" ) override
+    virtual void AddSegment( SEG aS, const COLOR4D& aColor,
+                             const std::string        aName,
+                             const SRC_LOCATION_INFO& aSrcLoc = SRC_LOCATION_INFO() ) override
     {
         SHAPE_LINE_CHAIN l;
 
         l.Append( aS.A );
         l.Append( aS.B );
 
-        AddLine( l, aColor, 10000 );
+        AddLine( l, aColor, 10000, aName, aSrcLoc );
     }
 
-    void AddDirections( VECTOR2D aP, int aMask, int aColor,
-                        const std::string aName = "" ) override
-    {
-        BOX2I b( aP - VECTOR2I( 10000, 10000 ), VECTOR2I( 20000, 20000 ) );
 
-        AddBox( b, aColor );
-        for( int i = 0; i < 8; i++ )
-        {
-            if( ( 1 << i ) & aMask )
-            {
-                VECTOR2I v = DIRECTION_45( ( DIRECTION_45::Directions ) i ).ToVector() * 100000;
-                AddSegment( SEG( aP, aP + v ), aColor );
-            }
-        }
-    }
-
-    void AddLine( const SHAPE_LINE_CHAIN& aLine, int aType, int aWidth,
-                  const std::string aName = "" ) override
+    virtual void AddLine( const SHAPE_LINE_CHAIN& aLine, const COLOR4D& aColor,
+                          int aWidth, const std::string aName,
+                          const SRC_LOCATION_INFO& aSrcLoc = SRC_LOCATION_INFO() ) override
     {
         if( !m_view )
             return;
 
         ROUTER_PREVIEW_ITEM* pitem = new ROUTER_PREVIEW_ITEM( NULL, m_view );
 
-        pitem->Line( aLine, aWidth, aType );
+        pitem->SetColor( aColor );
+        pitem->Line( aLine, aWidth );
         m_items->Add( pitem ); // Should not be needed, as m_items has been passed as a parent group in alloc;
         m_view->Update( m_items );
     }
@@ -827,12 +858,12 @@ std::unique_ptr<PNS::SOLID> PNS_KICAD_IFACE_BASE::syncPad( PAD* aPad )
 
     switch( aPad->GetAttribute() )
     {
-    case PAD_ATTRIB_PTH:
-    case PAD_ATTRIB_NPTH:
+    case PAD_ATTRIB::PTH:
+    case PAD_ATTRIB::NPTH:
         break;
 
-    case PAD_ATTRIB_CONN:
-    case PAD_ATTRIB_SMD:
+    case PAD_ATTRIB::CONN:
+    case PAD_ATTRIB::SMD:
         {
             LSET lmsk = aPad->GetLayerSet();
             bool is_copper = false;
@@ -843,7 +874,7 @@ std::unique_ptr<PNS::SOLID> PNS_KICAD_IFACE_BASE::syncPad( PAD* aPad )
                 {
                     is_copper = true;
 
-                    if( aPad->GetAttribute() != PAD_ATTRIB_NPTH )
+                    if( aPad->GetAttribute() != PAD_ATTRIB::NPTH )
                         layers = LAYER_RANGE( i );
 
                     break;
@@ -866,7 +897,7 @@ std::unique_ptr<PNS::SOLID> PNS_KICAD_IFACE_BASE::syncPad( PAD* aPad )
     {
         SHAPE_SEGMENT* slot = (SHAPE_SEGMENT*) aPad->GetEffectiveHoleShape()->Clone();
 
-        if( aPad->GetAttribute() != PAD_ATTRIB_NPTH )
+        if( aPad->GetAttribute() != PAD_ATTRIB::NPTH )
         {
             BOARD_DESIGN_SETTINGS& bds = m_board->GetDesignSettings();
             slot->SetWidth( slot->GetWidth() + bds.GetHolePlatingThickness() * 2 );
@@ -875,7 +906,7 @@ std::unique_ptr<PNS::SOLID> PNS_KICAD_IFACE_BASE::syncPad( PAD* aPad )
         solid->SetHole( slot );
     }
 
-    if( aPad->GetAttribute() == PAD_ATTRIB_NPTH )
+    if( aPad->GetAttribute() == PAD_ATTRIB::NPTH )
         solid->SetRoutable( false );
 
     solid->SetLayers( layers );
@@ -1116,7 +1147,7 @@ bool PNS_KICAD_IFACE_BASE::syncGraphicalItem( PNS::NODE* aWorld, PCB_SHAPE* aIte
             || IsCopperLayer( aItem->GetLayer() ) )
     {
         // TODO: where do we handle filled polygons on copper layers?
-        if( aItem->GetShape() == S_POLYGON && aItem->IsFilled() )
+        if( aItem->GetShape() == PCB_SHAPE_TYPE::POLYGON && aItem->IsFilled() )
             return false;
 
         for( SHAPE* shape : aItem->MakeEffectiveShapes() )
@@ -1329,7 +1360,7 @@ void PNS_KICAD_IFACE_BASE::SyncWorld( PNS::NODE *aWorld )
     m_ruleResolver = new PNS_PCBNEW_RULE_RESOLVER( m_board, this );
 
     aWorld->SetRuleResolver( m_ruleResolver );
-    aWorld->SetMaxClearance( 4 * worstClearance );
+    aWorld->SetMaxClearance( worstClearance + m_ruleResolver->ClearanceEpsilon() );
 }
 
 
@@ -1638,6 +1669,8 @@ void PNS_KICAD_IFACE::SetView( KIGFX::VIEW* aView )
 
     auto dec = new PNS_PCBNEW_DEBUG_DECORATOR();
     m_debugDecorator = dec;
+
+    dec->SetDebugEnabled( ADVANCED_CFG::GetCfg().m_ShowRouterDebugGraphics );
 
     if( ADVANCED_CFG::GetCfg().m_ShowRouterDebugGraphics )
         dec->SetView( m_view );

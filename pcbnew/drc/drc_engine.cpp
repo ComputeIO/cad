@@ -176,7 +176,7 @@ void DRC_ENGINE::loadImplicitRules()
     rule->AddConstraint( courtyardClearanceConstraint );
 
     DRC_CONSTRAINT diffPairGapConstraint( DIFF_PAIR_GAP_CONSTRAINT );
-    diffPairGapConstraint.Value().SetMin( bds.GetDefault()->GetClearance() );
+    diffPairGapConstraint.Value().SetMin( bds.m_MinClearance );
     rule->AddConstraint( diffPairGapConstraint );
 
     rule = createImplicitRule( _( "board setup constraints" ) );
@@ -237,8 +237,7 @@ void DRC_ENGINE::loadImplicitRules()
                     netclassRule->m_Name = wxString::Format( _( "netclass '%s'" ), ncName );
                     netclassRule->m_Implicit = true;
 
-                    expr = wxString::Format( "A.NetClass == '%s'",
-                                             ncName );
+                    expr = wxString::Format( "A.NetClass == '%s'", ncName );
                     netclassRule->m_Condition = new DRC_RULE_CONDITION( expr );
                     netclassClearanceRules.push_back( netclassRule );
 
@@ -259,37 +258,41 @@ void DRC_ENGINE::loadImplicitRules()
                     }
                 }
 
-                if( nc->GetDiffPairWidth() || nc->GetDiffPairGap() )
+                if( nc->GetDiffPairWidth() )
                 {
                     netclassRule = new DRC_RULE;
                     netclassRule->m_Name = wxString::Format( _( "netclass '%s' (diff pair)" ),
                                                              ncName );
                     netclassRule->m_Implicit = true;
 
-                    expr = wxString::Format( "A.NetClass == '%s' && A.inDiffPair('*')",
-                                             ncName );
+                    expr = wxString::Format( "A.NetClass == '%s' && A.inDiffPair('*')", ncName );
                     netclassRule->m_Condition = new DRC_RULE_CONDITION( expr );
                     netclassItemSpecificRules.push_back( netclassRule );
 
-                    if( nc->GetDiffPairWidth() )
-                    {
-                        DRC_CONSTRAINT constraint( TRACK_WIDTH_CONSTRAINT );
-                        constraint.Value().SetMin( bds.m_TrackMinWidth );
-                        constraint.Value().SetOpt( nc->GetDiffPairWidth() );
-                        netclassRule->AddConstraint( constraint );
-                    }
-
-                    if( nc->GetDiffPairGap() )
-                    {
-                        DRC_CONSTRAINT constraint( DIFF_PAIR_GAP_CONSTRAINT );
-                        constraint.Value().SetMin( bds.m_MinClearance );
-                        constraint.Value().SetOpt( nc->GetDiffPairGap() );
-                        netclassRule->AddConstraint( constraint );
-                    }
+                    DRC_CONSTRAINT constraint( TRACK_WIDTH_CONSTRAINT );
+                    constraint.Value().SetMin( bds.m_TrackMinWidth );
+                    constraint.Value().SetOpt( nc->GetDiffPairWidth() );
+                    netclassRule->AddConstraint( constraint );
                 }
 
                 if( nc->GetDiffPairGap() )
                 {
+                    netclassRule = new DRC_RULE;
+                    netclassRule->m_Name = wxString::Format( _( "netclass '%s' (diff pair)" ),
+                                                             ncName );
+                    netclassRule->m_Implicit = true;
+
+                    expr = wxString::Format( "A.NetClass == '%s'", ncName );
+                    netclassRule->m_Condition = new DRC_RULE_CONDITION( expr );
+                    netclassItemSpecificRules.push_back( netclassRule );
+
+                    DRC_CONSTRAINT constraint( DIFF_PAIR_GAP_CONSTRAINT );
+                    constraint.Value().SetMin( bds.m_MinClearance );
+                    constraint.Value().SetOpt( nc->GetDiffPairGap() );
+                    netclassRule->AddConstraint( constraint );
+
+                    // The diffpair gap overrides the netclass min clearance, but not the board
+                    // min clearance.
                     netclassRule = new DRC_RULE;
                     netclassRule->m_Name = wxString::Format( _( "netclass '%s' (diff pair)" ),
                                                              ncName );
@@ -300,10 +303,10 @@ void DRC_ENGINE::loadImplicitRules()
                     netclassRule->m_Condition = new DRC_RULE_CONDITION( expr );
                     netclassItemSpecificRules.push_back( netclassRule );
 
-                    DRC_CONSTRAINT constraint( CLEARANCE_CONSTRAINT );
-                    constraint.Value().SetMin( std::max( bds.m_MinClearance,
-                                                         nc->GetDiffPairGap() ) );
-                    netclassRule->AddConstraint( constraint );
+                    DRC_CONSTRAINT min_clearanceConstraint( CLEARANCE_CONSTRAINT );
+                    min_clearanceConstraint.Value().SetMin( std::max( bds.m_MinClearance,
+                                                                  nc->GetDiffPairGap() ) );
+                    netclassRule->AddConstraint( min_clearanceConstraint );
                 }
 
                 if( nc->GetViaDiameter() || nc->GetViaDrill() )
@@ -733,7 +736,7 @@ void DRC_ENGINE::RunTests( EDA_UNITS aUnits, bool aReportAllTrackErrors, bool aT
 
         m_board->m_CopperZoneRTrees[ zone ] = std::make_unique<DRC_RTREE>();
 
-        for( int layer : zone->GetLayerSet().Seq() )
+        for( PCB_LAYER_ID layer : zone->GetLayerSet().Seq() )
         {
             if( IsCopperLayer( layer ) )
                 m_board->m_CopperZoneRTrees[ zone ]->Insert( zone, layer );
@@ -777,8 +780,8 @@ DRC_CONSTRAINT DRC_ENGINE::EvalRules( DRC_CONSTRAINT_T aConstraintId, const BOAR
     const DRC_CONSTRAINT* constraintRef = nullptr;
     bool                  implicit = false;
 
-    // Local overrides take precedence
-    if( aConstraintId == CLEARANCE_CONSTRAINT || aConstraintId == HOLE_CLEARANCE_CONSTRAINT )
+    // Local overrides take precedence over everything *except* board min clearance
+    if( aConstraintId == CLEARANCE_CONSTRAINT )
     {
         int overrideA = 0;
         int overrideB = 0;
@@ -805,8 +808,19 @@ DRC_CONSTRAINT DRC_ENGINE::EvalRules( DRC_CONSTRAINT_T aConstraintId, const BOAR
 
         if( overrideA || overrideB )
         {
+            int override = std::max( overrideA, overrideB );
+
+            if( override < m_designSettings->m_MinClearance )
+            {
+                override = m_designSettings->m_MinClearance;
+
+                REPORT( "" )
+                REPORT( wxString::Format( _( "Board minimum clearance: %s." ),
+                                          EscapeHTML( MessageTextFromValue( UNITS, override ) ) ) )
+            }
+
             DRC_CONSTRAINT constraint( aConstraintId, m_msg );
-            constraint.m_Value.SetMin( std::max( overrideA, overrideB ) );
+            constraint.m_Value.SetMin( override );
             return constraint;
         }
     }
@@ -1272,7 +1286,7 @@ std::shared_ptr<SHAPE> DRC_ENGINE::GetShape( BOARD_ITEM* aItem, PCB_LAYER_ID aLa
     {
         PAD* aPad = static_cast<PAD*>( aItem );
 
-        if( aPad->GetAttribute() == PAD_ATTRIB_PTH )
+        if( aPad->GetAttribute() == PAD_ATTRIB::PTH )
         {
             BOARD_DESIGN_SETTINGS& bds = aPad->GetBoard()->GetDesignSettings();
 

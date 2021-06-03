@@ -84,11 +84,7 @@ VECTOR2I PCB_GRID_HELPER::AlignToSegment( const VECTOR2I& aPoint, const SEG& aSe
     if( !m_enableSnap )
         return aPoint;
 
-    const VECTOR2D gridOffset( GetOrigin() );
-    const VECTOR2D gridSize( GetGrid() );
-
-    VECTOR2I nearest( KiROUND( ( aPoint.x - gridOffset.x ) / gridSize.x ) * gridSize.x + gridOffset.x,
-                      KiROUND( ( aPoint.y - gridOffset.y ) / gridSize.y ) * gridSize.y + gridOffset.y );
+    VECTOR2I nearest = Align( aPoint );
 
     pts[0] = aSeg.A;
     pts[1] = aSeg.B;
@@ -202,7 +198,9 @@ VECTOR2I PCB_GRID_HELPER::BestSnapAnchor( const VECTOR2I& aOrigin, BOARD_ITEM* a
         item.push_back( aReferenceItem );
     }
     else
+    {
         layers = LSET::AllLayersMask();
+    }
 
     return BestSnapAnchor( aOrigin, layers, item );
 }
@@ -522,7 +520,7 @@ void PCB_GRID_HELPER::computeAnchors( BOARD_ITEM* aItem, const VECTOR2I& aRefPos
 
             switch( shape->GetShape() )
             {
-                case S_CIRCLE:
+                case PCB_SHAPE_TYPE::CIRCLE:
                 {
                     int r = ( start - end ).EuclideanNorm();
 
@@ -534,14 +532,14 @@ void PCB_GRID_HELPER::computeAnchors( BOARD_ITEM* aItem, const VECTOR2I& aRefPos
                     break;
                 }
 
-                case S_ARC:
+                case PCB_SHAPE_TYPE::ARC:
                     addAnchor( shape->GetArcStart(), CORNER | SNAPPABLE, shape );
                     addAnchor( shape->GetArcEnd(), CORNER | SNAPPABLE, shape );
                     addAnchor( shape->GetArcMid(), CORNER | SNAPPABLE, shape );
                     addAnchor( shape->GetCenter(), ORIGIN | SNAPPABLE, shape );
                     break;
 
-                case S_RECT:
+                case PCB_SHAPE_TYPE::RECT:
                 {
                     VECTOR2I point2( end.x, start.y );
                     VECTOR2I point3( start.x, end.y );
@@ -561,19 +559,28 @@ void PCB_GRID_HELPER::computeAnchors( BOARD_ITEM* aItem, const VECTOR2I& aRefPos
                     break;
                 }
 
-                case S_SEGMENT:
+                case PCB_SHAPE_TYPE::SEGMENT:
                     addAnchor( start, CORNER | SNAPPABLE, shape );
                     addAnchor( end, CORNER | SNAPPABLE, shape );
                     addAnchor( shape->GetCenter(), CORNER | SNAPPABLE, shape );
                     break;
 
-                case S_POLYGON:
+                case PCB_SHAPE_TYPE::POLYGON:
+                {
+                    SHAPE_LINE_CHAIN lc;
+                    lc.SetClosed( true );
+
                     for( const wxPoint& p : shape->BuildPolyPointsList() )
+                    {
                         addAnchor( p, CORNER | SNAPPABLE, shape );
+                        lc.Append( p );
+                    }
 
+                    addAnchor( lc.NearestPoint( aRefPos ), OUTLINE, aItem );
                     break;
+                }
 
-                case S_CURVE:
+                case PCB_SHAPE_TYPE::CURVE:
                     addAnchor( start, CORNER | SNAPPABLE, shape );
                     addAnchor( end, CORNER | SNAPPABLE, shape );
                     KI_FALLTHROUGH;
@@ -673,6 +680,16 @@ void PCB_GRID_HELPER::computeAnchors( BOARD_ITEM* aItem, const VECTOR2I& aRefPos
         case PCB_TEXT_T:
             addAnchor( aItem->GetPosition(), ORIGIN, aItem );
             break;
+
+        case PCB_GROUP_T:
+        {
+            const PCB_GROUP* group = static_cast<const PCB_GROUP*>( aItem );
+
+            for( BOARD_ITEM* item : group->GetItems() )
+                computeAnchors( item, aRefPos, aFrom );
+
+            break;
+        }
 
         default:
             break;

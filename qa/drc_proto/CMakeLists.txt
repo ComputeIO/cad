@@ -35,7 +35,7 @@ add_executable( drc_proto
     ../../pcbnew/drc/drc_rule_parser.cpp
     ../../pcbnew/drc/drc_test_provider.cpp
     ../../pcbnew/drc/drc_test_provider_copper_clearance.cpp
-    ../../pcbnew/drc/drc_test_provider_hole_clearance.cpp
+    ../../pcbnew/drc/drc_test_provider_hole_to_hole.cpp
     ../../pcbnew/drc/drc_test_provider_edge_clearance.cpp
     ../../pcbnew/drc/drc_test_provider_hole_size.cpp
     ../../pcbnew/drc/drc_test_provider_disallow.cpp
@@ -98,7 +98,6 @@ target_link_libraries( drc_proto
     tinyspline_lib
     nanosvg
     idf3
-    unit_test_utils
     ${PCBNEW_IO_LIBRARIES}
     ${wxWidgets_LIBRARIES}
     ${GDI_PLUS_LIBRARIES}

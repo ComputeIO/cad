@@ -92,7 +92,9 @@ public:
     ~DIALOG_GLOBAL_EDIT_TEXT_AND_GRAPHICS() override;
 
 protected:
-    void OnUpdateUI( wxUpdateUIEvent& event ) override;
+    void onActionButtonChange( wxCommandEvent& event ) override;
+    void onSpecifiedValueUpdateUI( wxUpdateUIEvent& event ) override;
+
     void OnLayerFilterSelect( wxCommandEvent& event ) override
     {
         m_layerFilterOpt->SetValue( true );
@@ -109,7 +111,7 @@ protected:
     bool TransferDataToWindow() override;
     bool TransferDataFromWindow() override;
 
-    void visitItem( BOARD_COMMIT& aCommit, BOARD_ITEM* aItem );
+    void visitItem( BOARD_COMMIT& aCommit, BOARD_ITEM* aItem, FOOTPRINT* aParentItem );
     void processItem( BOARD_COMMIT& aCommit, BOARD_ITEM* aItem );
 };
 
@@ -260,17 +262,22 @@ bool DIALOG_GLOBAL_EDIT_TEXT_AND_GRAPHICS::TransferDataToWindow()
 }
 
 
-void DIALOG_GLOBAL_EDIT_TEXT_AND_GRAPHICS::OnUpdateUI( wxUpdateUIEvent&  )
+void DIALOG_GLOBAL_EDIT_TEXT_AND_GRAPHICS::onActionButtonChange( wxCommandEvent& event )
 {
-    m_lineWidth.Enable( m_setToSpecifiedValues->GetValue() );
-    m_textWidth.Enable( m_setToSpecifiedValues->GetValue() );
-    m_textHeight.Enable( m_setToSpecifiedValues->GetValue() );
-    m_thickness.Enable( m_setToSpecifiedValues->GetValue() );
-    m_Italic->Enable( m_setToSpecifiedValues->GetValue() );
-    m_Visible->Enable( m_setToSpecifiedValues->GetValue() );
-    m_LayerLabel->Enable( m_setToSpecifiedValues->GetValue() );
-    m_LayerCtrl->Enable( m_setToSpecifiedValues->GetValue() );
-    m_keepUpright->Enable( m_setToSpecifiedValues->GetValue() );
+    // Update the UNIT_BINDER controls if the action to take is changed
+    bool enable = m_setToSpecifiedValues->GetValue();
+
+    m_lineWidth.Enable( enable );
+    m_textWidth.Enable( enable );
+    m_textHeight.Enable( enable );
+    m_thickness.Enable( enable );
+}
+
+
+void DIALOG_GLOBAL_EDIT_TEXT_AND_GRAPHICS::onSpecifiedValueUpdateUI( wxUpdateUIEvent& event )
+{
+    // Update the UI for the elements inside the use specified values sizer
+    event.Enable( m_setToSpecifiedValues->GetValue() );
 }
 
 
@@ -341,9 +348,11 @@ void DIALOG_GLOBAL_EDIT_TEXT_AND_GRAPHICS::processItem( BOARD_COMMIT& aCommit, B
 }
 
 
-void DIALOG_GLOBAL_EDIT_TEXT_AND_GRAPHICS::visitItem( BOARD_COMMIT& aCommit, BOARD_ITEM* aItem )
+void DIALOG_GLOBAL_EDIT_TEXT_AND_GRAPHICS::visitItem( BOARD_COMMIT& aCommit, BOARD_ITEM* aItem,
+                                                      FOOTPRINT* aParentItem = nullptr )
 {
-    if( m_selectedItemsFilter->GetValue() && !m_selection.Contains( aItem ) )
+    if( m_selectedItemsFilter->GetValue() && !m_selection.Contains( aItem )
+        && ( aParentItem == nullptr || !m_selection.Contains( aParentItem ) ) )
         return;
 
     if( m_layerFilterOpt->GetValue() && m_layerFilter->GetLayerSelection() != UNDEFINED_LAYER )
@@ -392,10 +401,10 @@ bool DIALOG_GLOBAL_EDIT_TEXT_AND_GRAPHICS::TransferDataFromWindow()
     for( FOOTPRINT* fp : m_parent->GetBoard()->Footprints() )
     {
         if( m_references->GetValue() )
-            visitItem( commit, &fp->Reference() );
+            visitItem( commit, &fp->Reference(), fp );
 
         if( m_values->GetValue() )
-            visitItem( commit, &fp->Value() );
+            visitItem( commit, &fp->Value(), fp );
 
         // Go through all other footprint items
         for( BOARD_ITEM* boardItem : fp->GraphicalItems() )
@@ -407,16 +416,16 @@ bool DIALOG_GLOBAL_EDIT_TEXT_AND_GRAPHICS::TransferDataFromWindow()
                 const wxString text = dynamic_cast<EDA_TEXT*>( boardItem )->GetText();
 
                 if( m_references->GetValue() && text == wxT( "${REFERENCE}" ) )
-                    visitItem( commit, boardItem );
+                    visitItem( commit, boardItem, fp );
                 else if( m_values->GetValue() && text == wxT( "${VALUE}" ) )
-                    visitItem( commit, boardItem );
+                    visitItem( commit, boardItem, fp );
                 else if( m_otherFields->GetValue() )
-                    visitItem( commit, boardItem );
+                    visitItem( commit, boardItem, fp );
             }
             else if( boardItem->Type() == PCB_FP_SHAPE_T )
             {
                 if( m_footprintGraphics->GetValue() )
-                    visitItem( commit, boardItem );
+                    visitItem( commit, boardItem, fp );
             }
         }
     }

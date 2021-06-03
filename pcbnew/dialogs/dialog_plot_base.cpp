@@ -90,10 +90,10 @@ DIALOG_PLOT_BASE::DIALOG_PLOT_BASE( wxWindow* parent, wxWindowID id, const wxStr
 
 	gbSizer1->Add( m_plotInvisibleText, wxGBPosition( 3, 0 ), wxGBSpan( 1, 1 ), wxALIGN_CENTER_VERTICAL, 5 );
 
-	m_excludeEdgeLayerOpt = new wxCheckBox( sbOptionsSizer->GetStaticBox(), wxID_ANY, _("Exclude PCB edge layer from other layers"), wxDefaultPosition, wxDefaultSize, 0 );
-	m_excludeEdgeLayerOpt->SetToolTip( _("Do not plot the contents of the PCB edge layer on any other layers.") );
+	m_includeEdgeLayerOpt = new wxCheckBox( sbOptionsSizer->GetStaticBox(), wxID_ANY, _("Plot Edge.Cuts on all layers"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_includeEdgeLayerOpt->SetToolTip( _("Do not plot the contents of the PCB edge layer on any other layers.") );
 
-	gbSizer1->Add( m_excludeEdgeLayerOpt, wxGBPosition( 4, 0 ), wxGBSpan( 1, 1 ), wxALIGN_CENTER_VERTICAL, 5 );
+	gbSizer1->Add( m_includeEdgeLayerOpt, wxGBPosition( 4, 0 ), wxGBSpan( 1, 1 ), wxALIGN_CENTER_VERTICAL, 5 );
 
 	m_sketchPadsOnFabLayers = new wxCheckBox( sbOptionsSizer->GetStaticBox(), ID_ALLOW_PRINT_PAD_ON_SILKSCREEN, _("Sketch pads on fab layers"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_sketchPadsOnFabLayers->SetToolTip( _("Include pad outlines on F.Fab and B.Fab layers when plotting") );
@@ -166,16 +166,16 @@ DIALOG_PLOT_BASE::DIALOG_PLOT_BASE( wxWindow* parent, wxWindowID id, const wxStr
 	wxBoxSizer* bSizerWarningText;
 	bSizerWarningText = new wxBoxSizer( wxVERTICAL );
 
-	m_staticTextAlert = new wxStaticText( this, wxID_ANY, _("Global solder mask min width and/or margin are not set to 0.  Most board houses"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_staticTextAlert = new wxStaticText( this, wxID_ANY, _("Global solder mask min width and/or margin are not set to 0. "), wxDefaultPosition, wxDefaultSize, 0 );
 	m_staticTextAlert->Wrap( -1 );
-	bSizerWarningText->Add( m_staticTextAlert, 0, wxTOP|wxRIGHT|wxLEFT, 5 );
+	bSizerWarningText->Add( m_staticTextAlert, 0, wxTOP|wxLEFT, 5 );
+
+	m_staticTextAlert1 = new wxStaticText( this, wxID_ANY, _("Most board houses expect 0 and use their constraints, especially for solder mask min width."), wxDefaultPosition, wxDefaultSize, 0 );
+	m_staticTextAlert1->Wrap( 580 );
+	bSizerWarningText->Add( m_staticTextAlert1, 0, wxTOP|wxBOTTOM|wxLEFT, 5 );
 
 	wxBoxSizer* bSizerSecondLine;
 	bSizerSecondLine = new wxBoxSizer( wxHORIZONTAL );
-
-	m_staticTextAlert1 = new wxStaticText( this, wxID_ANY, _("expect 0 and use their constraints, especially for solder mask min width."), wxDefaultPosition, wxDefaultSize, 0 );
-	m_staticTextAlert1->Wrap( 580 );
-	bSizerSecondLine->Add( m_staticTextAlert1, 0, wxTOP, 2 );
 
 
 	bSizerSecondLine->Add( 0, 0, 1, wxEXPAND, 5 );

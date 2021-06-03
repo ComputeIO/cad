@@ -151,29 +151,29 @@ bool DRC_TEST_PROVIDER_EDGE_CLEARANCE::Run()
             {
                 PCB_SHAPE* shape = static_cast<PCB_SHAPE*>( item );
 
-                if( shape->GetShape() == S_RECT )
+                if( shape->GetShape() == PCB_SHAPE_TYPE::RECT )
                 {
                     // A single rectangle for the board would make the RTree useless, so
                     // convert to 4 edges
                     edges.emplace_back( static_cast<PCB_SHAPE*>( shape->Clone() ) );
-                    edges.back()->SetShape( S_SEGMENT );
+                    edges.back()->SetShape( PCB_SHAPE_TYPE::SEGMENT );
                     edges.back()->SetEndX( shape->GetStartX() );
                     edges.back()->SetWidth( 0 );
                     edges.emplace_back( static_cast<PCB_SHAPE*>( shape->Clone() ) );
-                    edges.back()->SetShape( S_SEGMENT );
+                    edges.back()->SetShape( PCB_SHAPE_TYPE::SEGMENT );
                     edges.back()->SetEndY( shape->GetStartY() );
                     edges.back()->SetWidth( 0 );
                     edges.emplace_back( static_cast<PCB_SHAPE*>( shape->Clone() ) );
-                    edges.back()->SetShape( S_SEGMENT );
+                    edges.back()->SetShape( PCB_SHAPE_TYPE::SEGMENT );
                     edges.back()->SetStartX( shape->GetEndX() );
                     edges.back()->SetWidth( 0 );
                     edges.emplace_back( static_cast<PCB_SHAPE*>( shape->Clone() ) );
-                    edges.back()->SetShape( S_SEGMENT );
+                    edges.back()->SetShape( PCB_SHAPE_TYPE::SEGMENT );
                     edges.back()->SetStartY( shape->GetEndY() );
                     edges.back()->SetWidth( 0 );
                     return true;
                 }
-                else if( shape->GetShape() == S_POLYGON )
+                else if( shape->GetShape() == PCB_SHAPE_TYPE::POLYGON )
                 {
                     // Same for polygons
                     SHAPE_LINE_CHAIN poly = shape->GetPolyShape().Outline( 0 );
@@ -182,7 +182,7 @@ bool DRC_TEST_PROVIDER_EDGE_CLEARANCE::Run()
                     {
                         SEG seg = poly.CSegment( ii );
                         edges.emplace_back( static_cast<PCB_SHAPE*>( shape->Clone() ) );
-                        edges.back()->SetShape( S_SEGMENT );
+                        edges.back()->SetShape( PCB_SHAPE_TYPE::SEGMENT );
                         edges.back()->SetStart((wxPoint) seg.A );
                         edges.back()->SetEnd((wxPoint) seg.B );
                         edges.back()->SetWidth( 0 );
@@ -208,7 +208,13 @@ bool DRC_TEST_PROVIDER_EDGE_CLEARANCE::Run()
     forEachGeometryItem( s_allBasicItemsButZones, LSET::AllCuMask(), queryBoardGeometryItems );
 
     for( const std::unique_ptr<PCB_SHAPE>& edge : edges )
-        edgesTree.Insert( edge.get(), m_largestClearance );
+    {
+        for( PCB_LAYER_ID layer : { Edge_Cuts, Margin } )
+        {
+            if( edge->IsOnLayer( layer ) )
+                edgesTree.Insert( edge.get(), layer, m_largestClearance );
+        }
+    }
 
     wxString val;
     wxGetEnv( "WXTRACE", &val );
@@ -233,28 +239,31 @@ bool DRC_TEST_PROVIDER_EDGE_CLEARANCE::Run()
 
         const std::shared_ptr<SHAPE>& itemShape = item->GetEffectiveShape();
 
-        if( testCopper && item->IsOnCopperLayer() )
+        for( PCB_LAYER_ID testLayer : { Edge_Cuts, Margin } )
         {
-            edgesTree.QueryColliding( item, UNDEFINED_LAYER, Edge_Cuts, nullptr,
-                    [&]( BOARD_ITEM* edge ) -> bool
-                    {
-                        return testAgainstEdge( item, itemShape.get(), edge,
-                                                EDGE_CLEARANCE_CONSTRAINT,
-                                                DRCE_COPPER_EDGE_CLEARANCE );
-                    },
-                    m_largestClearance );
-        }
+            if( testCopper && item->IsOnCopperLayer() )
+            {
+                edgesTree.QueryColliding( item, UNDEFINED_LAYER, testLayer, nullptr,
+                        [&]( BOARD_ITEM* edge ) -> bool
+                        {
+                            return testAgainstEdge( item, itemShape.get(), edge,
+                                                    EDGE_CLEARANCE_CONSTRAINT,
+                                                    DRCE_COPPER_EDGE_CLEARANCE );
+                        },
+                        m_largestClearance );
+            }
 
-        if( testSilk && ( item->GetLayer() == F_SilkS || item->GetLayer() == B_SilkS ) )
-        {
-            edgesTree.QueryColliding( item, UNDEFINED_LAYER, Edge_Cuts, nullptr,
-                    [&]( BOARD_ITEM* edge ) -> bool
-                    {
-                        return testAgainstEdge( item, itemShape.get(), edge,
-                                                SILK_CLEARANCE_CONSTRAINT,
-                                                DRCE_SILK_MASK_CLEARANCE );
-                    },
-                    m_largestClearance );
+            if( testSilk && ( item->GetLayer() == F_SilkS || item->GetLayer() == B_SilkS ) )
+            {
+                edgesTree.QueryColliding( item, UNDEFINED_LAYER, testLayer, nullptr,
+                        [&]( BOARD_ITEM* edge ) -> bool
+                        {
+                            return testAgainstEdge( item, itemShape.get(), edge,
+                                                    SILK_CLEARANCE_CONSTRAINT,
+                                                    DRCE_SILK_MASK_CLEARANCE );
+                        },
+                        m_largestClearance );
+            }
         }
     }
 

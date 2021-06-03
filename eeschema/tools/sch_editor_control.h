@@ -111,6 +111,7 @@ public:
     int Cut( const TOOL_EVENT& aEvent );
     int Copy( const TOOL_EVENT& aEvent );
     int Paste( const TOOL_EVENT& aEvent );
+    int Duplicate( const TOOL_EVENT& aEvent );
 
     int EditWithSymbolEditor( const TOOL_EVENT& aEvent );
     int ShowCvpcb( const TOOL_EVENT& aEvent );
@@ -134,26 +135,25 @@ public:
     int ToggleHiddenPins( const TOOL_EVENT& aEvent );
     int ToggleHiddenFields( const TOOL_EVENT& aEvent );
     int ToggleForceHV( const TOOL_EVENT& aEvent );
+    int TogglePythonConsole( const TOOL_EVENT& aEvent );
 
     void AssignFootprints( const std::string& aChangedSetOfReferences );
 
     /**
-     * Find a component in the schematic and an item in this component.
+     * Find a symbol in the schematic and an item in this symobl.
      *
-     * @param aReference The component reference designator to find.
+     * @param aReference The symbol reference designator to find.
      * @param aSearchHierarchy If false, search the current sheet only.  Otherwise,
      *                         the entire hierarchy
      * @param aSearchType A #SCH_SEARCH_T value used to determine what to search for.
      * @param aSearchText The text to search for, either in value, reference or elsewhere.
      */
-    SCH_ITEM* FindComponentAndItem( const wxString& aReference,
-                                    bool            aSearchHierarchy,
-                                    SCH_SEARCH_T    aSearchType,
-                                    const wxString& aSearchText );
+    SCH_ITEM* FindSymbolAndItem( const wxString& aReference, bool aSearchHierarchy,
+                                 SCH_SEARCH_T aSearchType, const wxString& aSearchText );
 
 private:
-    ///< copy selection to clipboard
-    bool doCopy();
+    ///< copy selection to clipboard or to m_localClipboard if aUseLocalClipboard is true
+    bool doCopy( bool aUseLocalClipboard = false );
 
     bool rescueProject( RESCUER& aRescuer, bool aRunningOnDemand );
 
@@ -161,8 +161,16 @@ private:
 
     void doCrossProbeSchToPcb( const TOOL_EVENT& aEvent, bool aForce );
 
-    void updatePastedInstances( const SCH_SHEET_PATH& aPastePath, const KIID_PATH& aClipPath,
-                                SCH_SHEET* aSheet, bool aForceKeepAnnotations );
+    void updatePastedSymbol( SCH_COMPONENT* aSymbol, SCH_SCREEN* aPasteScreen,
+                             const SCH_SHEET_PATH& aPastePath, const KIID_PATH& aClipPath,
+                             bool aForceKeepAnnotations );
+
+    SCH_SHEET_PATH updatePastedSheet( const SCH_SHEET_PATH& aPastePath, const KIID_PATH& aClipPath,
+                                      SCH_SHEET* aSheet, bool aForceKeepAnnotations,
+                                      SCH_SHEET_LIST* aPastedSheetsSoFar,
+                                      SCH_REFERENCE_LIST* aPastedSymbolsSoFar );
+
+    void setClipboardInstances( const SCH_SCREEN* aPastedScreen );
 
     /**
      * Read the footprint info from each line in the stuff file by reference designator.
@@ -184,9 +192,8 @@ private:
      *                         field if \a aForceVisibilityState is true.
      * @return bool = true if success.
      */
-    bool processCmpToFootprintLinkFile( const wxString& aFullFilename,
-                                        bool            aForceVisibilityState,
-                                        bool            aVisibilityState );
+    bool processCmpToFootprintLinkFile( const wxString& aFullFilename, bool aForceVisibilityState,
+                                        bool aVisibilityState );
 
     ///< Set up handlers for various events.
     void setTransitions() override;
@@ -206,11 +213,18 @@ private:
     bool      m_probingPcbToSch; // Recursion guard when cross-probing to PcbNew
     EDA_ITEM* m_pickerItem;      // Current item for picker highlighting.
 
+    // Temporary storage location for Duplicate action
+    std::string m_localClipboard;
+
     // A map of sheet filename --> screens for the clipboard contents.  We use these to hook up
     // cut/paste operations for unsaved sheet content.
     std::map<wxString, SCH_SCREEN*> m_supplementaryClipboard;
-    SCH_REFERENCE_LIST              m_supplementaryClipboardInstances;
-    KIID_PATH                       m_supplementaryClipboardPath;
+
+    // A map of KIID_PATH --> symbol instances for the clipboard contents.
+    std::map<KIID_PATH, SYMBOL_INSTANCE_REFERENCE> m_clipboardSymbolInstances;
+
+    // A map of KIID_PATH --> sheet instances for the clipboard contents.
+    std::map<KIID_PATH, SCH_SHEET_INSTANCE> m_clipboardSheetInstances;
 };
 
 

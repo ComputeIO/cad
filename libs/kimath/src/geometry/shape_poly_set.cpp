@@ -1725,11 +1725,9 @@ SEG::ecoord SHAPE_POLY_SET::SquaredDistanceToPolygon( VECTOR2I aPoint, int aPoly
 SEG::ecoord SHAPE_POLY_SET::SquaredDistanceToPolygon( const SEG& aSegment, int aPolygonIndex,
                                                       VECTOR2I* aNearest ) const
 {
-    // We calculate the min dist between the segment and each outline segment.  However, if the
-    // segment to test is inside the outline, and does not cross any edge, it can be seen outside
-    // the polygon.  Therefore test if a segment end is inside (testing only one end is enough).
-    // Use an accuracy of "1" to say that we don't care if it's exactly on the edge or not.
-    if( containsSingle( aSegment.A, aPolygonIndex, 1 ) )
+    // Check if the segment is fully-contained.  If so, its midpoint is a good-enough nearest point.
+    if( containsSingle( aSegment.A, aPolygonIndex, 1 ) &&
+        containsSingle( aSegment.B, aPolygonIndex, 1 ) )
     {
         if( aNearest )
             *aNearest = ( aSegment.A + aSegment.B ) / 2;
@@ -1739,6 +1737,9 @@ SEG::ecoord SHAPE_POLY_SET::SquaredDistanceToPolygon( const SEG& aSegment, int a
 
     CONST_SEGMENT_ITERATOR iterator = CIterateSegmentsWithHoles( aPolygonIndex );
     SEG::ecoord            minDistance = (*iterator).SquaredDistance( aSegment );
+
+    if( aNearest && minDistance == 0 )
+        *aNearest = ( *iterator ).NearestPoint( aSegment );
 
     for( iterator++; iterator && minDistance > 0; iterator++ )
     {

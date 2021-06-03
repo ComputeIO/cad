@@ -72,6 +72,8 @@ public:
     /// @copydoc TOOL_BASE::Reset()
     void Reset( RESET_REASON aReason ) override;
 
+    void OnIdle( wxIdleEvent& aEvent );
+
     /**
      * The main loop.
      */
@@ -184,9 +186,13 @@ public:
      */
     void ExitGroup( bool aSelectGroup = false );
 
-    void FilterCollectorForGroups( GENERAL_COLLECTOR& aCollector ) const;
-
     PCB_GROUP* GetEnteredGroup() { return m_enteredGroup; }
+
+    /**
+     * In general we don't want to select both a parent and any of it's children.  This includes
+     * both footprints and their items, and groups and their members.
+     */
+    void FilterCollectorForHierarchy( GENERAL_COLLECTOR& aCollector, bool aMultiselect ) const;
 
     ///< Apply the SELECTION_FILTER_OPTIONS to a collection of items
     void FilterCollectedItems( GENERAL_COLLECTOR& aCollector );
@@ -360,26 +366,29 @@ private:
 
     void unhighlightInternal( BOARD_ITEM* aItem, int aHighlightMode, bool aUsingOverlay );
 
-    PCB_BASE_FRAME*  m_frame;     // Pointer to the parent frame
-    PCB_SELECTION    m_selection; // Current state of selection
+private:
+    PCB_BASE_FRAME*          m_frame;                // Pointer to the parent frame
+    PCB_SELECTION            m_selection;            // Current state of selection
 
     SELECTION_FILTER_OPTIONS m_filter;
 
-    bool m_additive;              // Items should be added to selection (instead of replacing)
-    bool m_subtractive;           // Items should be removed from selection
-    bool m_exclusive_or;          // Items' selection state should be toggled
-    bool m_multiple;              // Multiple selection mode is active
-    bool m_skip_heuristics;       // Heuristics are not allowed when choosing item under cursor
-    bool m_highlight_modifier;    // select highlight net on left click
+    bool                     m_additive;             // Add to selection (instead of replacing)
+    bool                     m_subtractive;          // Remove from selection
+    bool                     m_exclusive_or;         // Items' selection state should be toggled
+    bool                     m_multiple;             // Multiple selection mode is active
+    bool                     m_skip_heuristics;      // Heuristics are not allowed when choosing
+                                                     // item under cursor
+    bool                     m_highlight_modifier;   // select highlight net on left click
 
-    PCB_GROUP*        m_enteredGroup;          // If non-null, selections are limited to
-                                               // members of this group
-    KIGFX::VIEW_GROUP m_enteredGroupOverlay;   // Overlay for the entered group's frame.
+    KICURSOR                 m_nonModifiedCursor;    // Cursor in the absence of shift/ctrl/alt
 
+    PCB_GROUP*               m_enteredGroup;         // If non-null, selections are limited to
+                                                     // members of this group
+    KIGFX::VIEW_GROUP        m_enteredGroupOverlay;  // Overlay for the entered group's frame.
 
     /// Private state (opaque pointer/compilation firewall)
     class PRIV;
-    std::unique_ptr<PRIV> m_priv;
+    std::unique_ptr<PRIV>    m_priv;
 };
 
 #endif /* PCB_SELECTION_TOOL_H */

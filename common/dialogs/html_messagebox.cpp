@@ -23,6 +23,7 @@
  */
 
 #include <wx/clipbrd.h>
+#include <wx/log.h>
 #include <kicad_string.h>
 #include <dialogs/html_messagebox.h>
 
@@ -150,6 +151,7 @@ void HTML_MESSAGE_BOX::OnCharHook( wxKeyEvent& aEvent )
         if( wxTheClipboard->Open() )
         {
             wxTheClipboard->SetData( new wxTextDataObject( m_htmlWindow->SelectionToText() ) );
+            wxTheClipboard->Flush(); // Allow data to be available after closing KiCad
             wxTheClipboard->Close();
         }
 

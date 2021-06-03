@@ -73,7 +73,7 @@ class DIALOG_GLOBAL_EDIT_TEXT_AND_GRAPHICS : public DIALOG_GLOBAL_EDIT_TEXT_AND_
     UNIT_BINDER            m_textSize;
     UNIT_BINDER            m_lineWidth;
 
-    bool                   m_hasChange;
+    bool                   m_appendUndo;
 
 public:
     DIALOG_GLOBAL_EDIT_TEXT_AND_GRAPHICS( SCH_EDIT_FRAME* parent );
@@ -94,7 +94,7 @@ protected:
     bool TransferDataFromWindow() override;
 
     void visitItem( const SCH_SHEET_PATH& aSheetPath, SCH_ITEM* aItem );
-    void processItem( const SCH_SHEET_PATH& aSheetPath, SCH_ITEM* aItem );
+    void processItem( const SCH_SHEET_PATH& aSheetPath, SCH_ITEM* aItem, SCH_ITEM* aParentItem );
 };
 
 
@@ -104,7 +104,7 @@ DIALOG_GLOBAL_EDIT_TEXT_AND_GRAPHICS::DIALOG_GLOBAL_EDIT_TEXT_AND_GRAPHICS( SCH_
         m_lineWidth( parent, m_lineWidthLabel, m_LineWidthCtrl, m_lineWidthUnits, true )
 {
     m_parent = parent;
-    m_hasChange = false;
+    m_appendUndo = false;
 
     // TODO(JE) remove once real-time connectivity is a given
     if( !ADVANCED_CFG::GetCfg().m_RealTimeConnectivity || !CONNECTION_GRAPH::m_allowRealTime )
@@ -224,51 +224,57 @@ void DIALOG_GLOBAL_EDIT_TEXT_AND_GRAPHICS::OnUpdateUI( wxUpdateUIEvent&  )
 
 
 void DIALOG_GLOBAL_EDIT_TEXT_AND_GRAPHICS::processItem( const SCH_SHEET_PATH& aSheetPath,
-                                                        SCH_ITEM* aItem )
+                                                        SCH_ITEM*             aItem,
+                                                        SCH_ITEM* aParentItem = nullptr )
 {
+    if( m_selectedFilterOpt->GetValue() && !m_selection.Contains( aItem )
+        && ( aParentItem == nullptr || !m_selection.Contains( aParentItem ) ) )
+    {
+        return;
+    }
+
     EDA_TEXT* eda_text = dynamic_cast<EDA_TEXT*>( aItem );
     SCH_TEXT* sch_text = dynamic_cast<SCH_TEXT*>( aItem );
     SCH_LINE* lineItem = dynamic_cast<SCH_LINE*>( aItem );
 
-    m_parent->SaveCopyInUndoList( aSheetPath.LastScreen(), aItem, UNDO_REDO::CHANGED, m_hasChange );
+    m_parent->SaveCopyInUndoList( aSheetPath.LastScreen(), aItem, UNDO_REDO::CHANGED, m_appendUndo );
+    m_appendUndo = true;
 
     if( eda_text )
     {
         if( !m_textSize.IsIndeterminate() )
-        {
             eda_text->SetTextSize( wxSize( m_textSize.GetValue(), m_textSize.GetValue() ) );
-            m_hasChange = true;
-        }
 
         if( m_hAlign->GetStringSelection() != INDETERMINATE_ACTION )
         {
-            eda_text->SetHorizJustify( EDA_TEXT::MapHorizJustify( m_hAlign->GetSelection() - 1 ) );
-            m_hasChange = true;
+            switch( m_hAlign->GetSelection() )
+            {
+                default:
+                case 0: eda_text->Align( TEXT_ATTRIBUTES::H_LEFT ); break;
+                case 1: eda_text->Align( TEXT_ATTRIBUTES::H_CENTER ); break;
+                case 2: eda_text->Align( TEXT_ATTRIBUTES::H_RIGHT ); break;
+            }
         }
 
         if( m_vAlign->GetStringSelection() != INDETERMINATE_ACTION )
         {
-            eda_text->SetVertJustify( EDA_TEXT::MapVertJustify( m_vAlign->GetSelection() - 1 ) );
-            m_hasChange = true;
+            switch( m_vAlign->GetSelection() )
+            {
+                default:
+                case 0: eda_text->Align( TEXT_ATTRIBUTES::V_TOP ); break;
+                case 1: eda_text->Align( TEXT_ATTRIBUTES::V_CENTER ); break;
+                case 2: eda_text->Align( TEXT_ATTRIBUTES::V_BOTTOM ); break;
+            }
         }
 
         if( m_Visible->Get3StateValue() != wxCHK_UNDETERMINED )
-        {
             eda_text->SetVisible( m_Visible->GetValue() );
-            m_hasChange = true;
-        }
 
         if( m_Italic->Get3StateValue() != wxCHK_UNDETERMINED )
-        {
             eda_text->SetItalic( m_Italic->GetValue() );
-            m_hasChange = true;
-        }
 
         if( m_Bold->Get3StateValue() != wxCHK_UNDETERMINED )
-        {
             eda_text->SetBold( m_Bold->GetValue() );
-            m_hasChange = true;
-        }
     }
 
     // No else!  Labels are both.
@@ -276,18 +282,22 @@ void DIALOG_GLOBAL_EDIT_TEXT_AND_GRAPHICS::processItem( const SCH_SHEET_PATH& aS
     {
         if( m_orientation->GetStringSelection() != INDETERMINATE_ACTION )
         {
-            sch_text->SetLabelSpinStyle( (LABEL_SPIN_STYLE::SPIN) m_orientation->GetSelection() );
-            m_hasChange = true;
+            switch( m_orientation->GetSelection() )
+            {
+                default:
+                case 0: sch_text->SetTextAngle( EDA_ANGLE( 0, EDA_ANGLE::DEGREES ) ); break;
+                case 1: sch_text->SetTextAngle( EDA_ANGLE( 90, EDA_ANGLE::DEGREES ) ); break;
+                case 2: sch_text->SetTextAngle( EDA_ANGLE( 180, EDA_ANGLE::DEGREES ) ); break;
+                case 3: sch_text->SetTextAngle( EDA_ANGLE( 270, EDA_ANGLE::DEGREES ) ); break;
+            }
+
         }
     }
 
     if( lineItem )
     {
         if( !m_lineWidth.IsIndeterminate() )
-        {
             lineItem->SetLineWidth( m_lineWidth.GetValue() );
-            m_hasChange = true;
-        }
 
         if( m_lineStyle->GetStringSelection() != INDETERMINATE_ACTION )
         {
@@ -295,26 +305,16 @@ void DIALOG_GLOBAL_EDIT_TEXT_AND_GRAPHICS::processItem( const SCH_SHEET_PATH& aS
                 lineItem->SetLineStyle( PLOT_DASH_TYPE::DEFAULT );
             else
                 lineItem->SetLineStyle( m_lineStyle->GetSelection() );
-
-            m_hasChange = true;
         }
 
         if( m_setColor->GetValue() )
-        {
             lineItem->SetLineColor( m_colorSwatch->GetSwatchColor() );
-            m_hasChange = true;
-        }
     }
 }
 
 void DIALOG_GLOBAL_EDIT_TEXT_AND_GRAPHICS::visitItem( const SCH_SHEET_PATH& aSheetPath,
                                                       SCH_ITEM* aItem )
 {
-    if( m_selectedFilterOpt->GetValue() && !m_selection.Contains( aItem ) )
-    {
-        return;
-    }
-
     if( m_netFilterOpt->GetValue() && !m_netFilter->GetValue().IsEmpty() )
     {
         SCH_CONNECTION* connection = aItem->Connection( &aSheetPath );
@@ -365,25 +365,25 @@ void DIALOG_GLOBAL_EDIT_TEXT_AND_GRAPHICS::visitItem( const SCH_SHEET_PATH& aShe
 
     if( aItem->Type() == SCH_COMPONENT_T )
     {
-        SCH_COMPONENT* component = (SCH_COMPONENT*) aItem;
+        SCH_COMPONENT* symbol = (SCH_COMPONENT*) aItem;
 
         if( m_references->GetValue() )
-            processItem( aSheetPath, component->GetField( REFERENCE_FIELD ) );
+            processItem( aSheetPath, symbol->GetField( REFERENCE_FIELD ), aItem );
 
         if( m_values->GetValue() )
-            processItem( aSheetPath, component->GetField( VALUE_FIELD ) );
+            processItem( aSheetPath, symbol->GetField( VALUE_FIELD ), aItem );
 
         if( m_otherFields->GetValue() )
         {
-            for( int i = 2; i < component->GetFieldCount(); ++i )
+            for( int i = 2; i < symbol->GetFieldCount(); ++i )
             {
-                SCH_FIELD&      field = component->GetFields()[i];
+                SCH_FIELD&      field = symbol->GetFields()[i];
                 const wxString& fieldName = field.GetName();
 
                 if( !m_fieldnameFilterOpt->GetValue() || m_fieldnameFilter->GetValue().IsEmpty()
                         || WildCompareString( m_fieldnameFilter->GetValue(), fieldName, false ) )
                 {
-                    processItem( aSheetPath, &field );
+                    processItem( aSheetPath, &field, aItem );
                 }
             }
         }
@@ -393,7 +393,7 @@ void DIALOG_GLOBAL_EDIT_TEXT_AND_GRAPHICS::visitItem( const SCH_SHEET_PATH& aShe
         SCH_SHEET* sheet = static_cast<SCH_SHEET*>( aItem );
 
         if( m_sheetTitles->GetValue() )
-            processItem( aSheetPath, &sheet->GetFields()[ SHEETNAME ] );
+            processItem( aSheetPath, &sheet->GetFields()[SHEETNAME], aItem );
 
         if( m_sheetFields->GetValue() )
         {
@@ -407,7 +407,7 @@ void DIALOG_GLOBAL_EDIT_TEXT_AND_GRAPHICS::visitItem( const SCH_SHEET_PATH& aShe
                 if( !m_fieldnameFilterOpt->GetValue() || m_fieldnameFilter->GetValue().IsEmpty()
                         || WildCompareString( m_fieldnameFilter->GetValue(), fieldName, false ) )
                 {
-                    processItem( aSheetPath, &field );
+                    processItem( aSheetPath, &field, aItem );
                 }
             }
         }
@@ -415,22 +415,13 @@ void DIALOG_GLOBAL_EDIT_TEXT_AND_GRAPHICS::visitItem( const SCH_SHEET_PATH& aShe
         if( m_sheetBorders->GetValue() )
         {
             if( !m_lineWidth.IsIndeterminate() )
-            {
                 sheet->SetBorderWidth( m_lineWidth.GetValue() );
-                m_hasChange = true;
-            }
 
             if( m_setColor->GetValue() )
-            {
                 sheet->SetBorderColor( m_colorSwatch->GetSwatchColor() );
-                m_hasChange = true;
-            }
 
             if( m_setBgColor->GetValue() )
-            {
                 sheet->SetBackgroundColor( m_bgColorSwatch->GetSwatchColor() );
-                m_hasChange = true;
-            }
         }
     }
     else if( aItem->Type() == SCH_JUNCTION_T )
@@ -442,19 +433,15 @@ void DIALOG_GLOBAL_EDIT_TEXT_AND_GRAPHICS::visitItem( const SCH_SHEET_PATH& aShe
             if( item->GetLayer() == LAYER_BUS )
             {
                 if( m_buses->GetValue() && m_setColor->GetValue() )
-                {
                     junction->SetColor( m_colorSwatch->GetSwatchColor() );
-                    m_hasChange = true;
-                }
+
                 break;
             }
             else if( item->GetLayer() == LAYER_WIRE )
             {
                 if( m_wires->GetValue() && m_setColor->GetValue() )
-                {
                     junction->SetColor( m_colorSwatch->GetSwatchColor() );
-                    m_hasChange = true;
-                }
+
                 break;
             }
         }
@@ -489,12 +476,12 @@ bool DIALOG_GLOBAL_EDIT_TEXT_AND_GRAPHICS::TransferDataFromWindow()
         if( screen )
         {
             m_parent->SetCurrentSheet( sheetPath );
-            m_hasChange = false;
+            m_appendUndo = false;
 
-            for( auto item : screen->Items() )
+            for( SCH_ITEM* item : screen->Items() )
                 visitItem( sheetPath, item );
 
-            if( m_hasChange )
+            if( m_appendUndo )
             {
                 m_parent->OnModify();
                 m_parent->HardRedraw();

@@ -56,6 +56,7 @@
 #include <tools/pcb_picker_tool.h>
 #include <tools/pcb_selection_tool.h>
 #include <wildcards_and_files_ext.h>
+#include <wx/listbox.h>
 #include <wx/tokenzr.h>
 
 using namespace std::placeholders;
@@ -695,7 +696,7 @@ void FOOTPRINT_VIEWER_FRAME::ClickOnFootprintList( wxCommandEvent& aEvent )
         updateView();
 
         GetCanvas()->Refresh();
-        Update3DView( true );
+        Update3DView( true, true );
     }
 
     // The m_fpList has now the focus, in order to be able to use arrow keys
@@ -974,11 +975,11 @@ bool FOOTPRINT_VIEWER_FRAME::ShowModal( wxString* aFootprint, wxWindow* aParent 
 }
 
 
-void FOOTPRINT_VIEWER_FRAME::Update3DView( bool aForceReload, const wxString* aTitle )
+void FOOTPRINT_VIEWER_FRAME::Update3DView( bool aMarkDirty, bool aRefresh, const wxString* aTitle )
 {
     wxString title = wxString::Format( _( "3D Viewer" ) + wxT( " \u2014 %s" ),
                                        getCurFootprintName() );
-    PCB_BASE_FRAME::Update3DView( aForceReload, &title );
+    PCB_BASE_FRAME::Update3DView( aMarkDirty, aRefresh, &title );
 }
 
 
@@ -1065,7 +1066,7 @@ void FOOTPRINT_VIEWER_FRAME::SelectAndViewFootprint( int aMode )
         if( footprint )
             GetBoard()->Add( footprint, ADD_MODE::APPEND );
 
-        Update3DView( true );
+        Update3DView( true, true );
 
         updateView();
     }

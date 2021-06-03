@@ -37,6 +37,8 @@
 #include <parser/markup_parser.h>
 #include <cmath>
 #include <kicad_string.h>
+#include <geometry/shape_line_chain.h>
+#include <trigo.h>
 
 using namespace KIFONT;
 
@@ -49,7 +51,7 @@ STROKE_FONT::STROKE_FONT() : m_glyphs( nullptr ), m_glyphBoundingBoxes( nullptr 
 }
 
 
-bool STROKE_FONT::LoadFont( const wxString& aFontName )
+bool STROKE_FONT::LoadFont( const wxString& aFontName, bool aBold, bool aItalic )
 {
     if( aFontName.empty() )
     {
@@ -362,16 +364,11 @@ bool STROKE_FONT::loadHersheyFont( const wxString& aFontName )
 }
 
 
-double STROKE_FONT::GetInterline( double aGlyphHeight ) const
+double STROKE_FONT::GetInterline( double aGlyphHeight, double aLineSpacing ) const
 {
     // Do not add the glyph thickness to the interline.  This makes bold text line-spacing
     // different from normal text, which is poor typography.
-    double ret = aGlyphHeight * INTERLINE_PITCH_RATIO;
-#ifdef FOOBAR //DEBUG
-    std::cerr << "STROKE_FONT::GetInterline( " << aGlyphHeight << " ) const --> " << ret
-              << std::endl;
-#endif
-    return ret;
+    return ( aGlyphHeight * aLineSpacing * INTERLINE_PITCH_RATIO );
 }
 
 
@@ -393,177 +390,27 @@ BOX2D STROKE_FONT::computeBoundingBox( const GLYPH* aGLYPH, double aGlyphWidth )
 }
 
 
-VECTOR2D STROKE_FONT::Draw( KIGFX::GAL* aGal, const UTF8& aText, const VECTOR2D& aPosition,
-                            const VECTOR2D& aOrigin, const EDA_ANGLE& aRotationAngle ) const
-{
-    if( aText.empty() )
-        return VECTOR2D( 0.0, 0.0 );
-
-#ifdef DEBUG
-    std::cerr << "STROKE_FONT::Draw( " << ( aGal ? "[aGal]" : "nullptr" ) << ", \"" << aText
-              << "\", " << aPosition << ", " << aOrigin << ", " << aRotationAngle << " )"
-              << " aGal line width " << ( aGal ? aGal->GetLineWidth() : 0.0f ) << std::endl;
-    // debug circle width
-    double dbg = 200000;
-    bool   drawDebugShapes = false;
-    double debugLineWidth = 1000.0;
-#endif
-
-    if( aGal )
-    {
-        // Context needs to be saved before any transformations
-        aGal->Save();
-
-#ifdef DEBUG
-        double  lw = aGal->GetLineWidth();
-        COLOR4D oldColor = aGal->GetStrokeColor();
-        if( drawDebugShapes )
-        {
-            aGal->SetLineWidth( debugLineWidth );
-            //aGal->SetIsStroke( true );
-            aGal->SetStrokeColor( COLOR4D( 0, 1, 0.6, 0.5 ) );
-            aGal->DrawCircle( aOrigin, dbg );
-        }
-#endif
-        //aGal->Translate( aOrigin );
-        aGal->Translate( aPosition - aOrigin );
-#ifdef DEBUG
-        if( drawDebugShapes )
-        {
-            aGal->SetStrokeColor( COLOR4D( 0.7, 0.8, 0.6, 0.5 ) );
-            aGal->DrawCircle( VECTOR2D( 0, 0 ), 1.35 * dbg );
-        }
-#endif
-        aGal->Rotate( aRotationAngle.Invert().AsRadians() );
-#ifdef DEBUG
-        if( drawDebugShapes )
-        {
-            aGal->SetStrokeColor( COLOR4D( 0.2, 0.3, 0.4, 0.5 ) );
-            aGal->DrawCircle( VECTOR2D( 0, 0 ), 1.3 * dbg );
-
-            aGal->SetStrokeColor( COLOR4D( 0.4, 0.5, 0.6, 0.5 ) );
-
-            aGal->DrawSegment( VECTOR2D( 0, 0 ), VECTOR2D( 1.3 * dbg, 0 ), 10.0 );
-        }
-#endif
-
-#ifdef DEBUG
-        if( drawDebugShapes )
-        {
-            aGal->SetStrokeColor( COLOR4D( 0.8, 0.6, 0.4, 0.5 ) );
-            aGal->DrawCircle( VECTOR2D( 0, 0 ), 1.2 * dbg );
-
-            aGal->SetStrokeColor( COLOR4D( 0.4, 0.3, 0.2, 0.5 ) );
-            aGal->DrawSegment( VECTOR2D( 0, 0 ), VECTOR2D( 1.2 * dbg, 0 ), 10.0 );
-
-            aGal->SetStrokeColor( oldColor );
-            aGal->SetLineWidth( lw );
-        }
-#endif
-    }
-
-    // Single line height
-    // TODO: default glyphSize for !aGal is just a guess!
-    //int            lineHeight = KiROUND( GetInterline( glyphSize.y ) );
-
-    if( aGal )
-    {
-#if 0
-        const VECTOR2D glyphSize = aGal ? VECTOR2D( aGal->GetGlyphSize() ) : VECTOR2D( 16.0, 16.0 );
-        switch( aGal->GetVerticalJustify() )
-        {
-        case GR_TEXT_VJUSTIFY_TOP: aGal->Translate( VECTOR2D( 0, glyphSize.y ) ); break;
-
-        case GR_TEXT_VJUSTIFY_CENTER: aGal->Translate( VECTOR2D( 0, glyphSize.y / 2.0 ) ); break;
-
-        case GR_TEXT_VJUSTIFY_BOTTOM: break;
-
-        default: break;
-        }
-#endif
-
-        aGal->SetIsStroke( true );
-        //aGal->SetIsFill( false );
-
-        if( aGal->IsFontBold() )
-        {
-            aGal->SetLineWidth( aGal->GetLineWidth() * BOLD_FACTOR );
-        }
-    }
-
-#if 1
-    VECTOR2D boundingBox( 0.0, 0.0 );
-    // Split multiline strings into separate ones and draw them line by line
-    wxArrayString        strings_list;
-    std::vector<wxPoint> positions;
-
-    wxStringSplit( aText, strings_list, '\n' );
-
-    int n = strings_list.Count();
-    //double lineHeight = aGal->GetGlyphSize().y + GetInterline( aGal->GetGlyphSize().y );
-    double lineHeight = GetInterline( aGal->GetGlyphSize().y );
-
-    // multiline text alignment needs a lot more work
-    double xAdjust = 0.0;
-
-    //
-    EDA_TEXT_HJUSTIFY_T hjustify = GR_TEXT_HJUSTIFY_LEFT; //aGal->GetHorizontalJustify();
-#ifdef DEBUG
-    std::cerr << "hjustify = " << hjustify << std::endl;
-#endif
-    for( int i = 0; i < n; i++ )
-    {
-        VECTOR2D lineBoundingBox = drawSingleLineText( aGal, strings_list[i] );
-        boundingBox.x = fmax( boundingBox.x, lineBoundingBox.x );
-        boundingBox.y += lineBoundingBox.y;
-        switch( hjustify )
-        {
-        case GR_TEXT_HJUSTIFY_LEFT: xAdjust = 0; break;
-        case GR_TEXT_HJUSTIFY_RIGHT: xAdjust = -lineBoundingBox.x; break;
-        case GR_TEXT_HJUSTIFY_CENTER:
-        default: xAdjust = -lineBoundingBox.x / 2.0;
-        }
-
-#ifdef DEBUG
-        std::cerr << "xAdjust = " << xAdjust << ", lineHeight = " << lineHeight << std::endl;
-#endif
-#ifdef SOMETHING_IS_FISHY_HERE
-        if( aGal )
-            aGal->Translate( VECTOR2D( xAdjust, lineHeight ) );
-#else
-        if( aGal )
-            aGal->Translate( VECTOR2D( 0, lineHeight ) );
-#endif
-    }
-#else
-    VECTOR2D boundingBox = drawSingleLineText( aGal, aText );
-#endif
-
-    if( aGal )
-        aGal->Restore();
-
-    return boundingBox;
-}
-
-
 VECTOR2D STROKE_FONT::drawSingleLineText( KIGFX::GAL* aGal, const UTF8& aText,
                                           const VECTOR2D& aPosition, const EDA_ANGLE& aAngle ) const
 {
 #ifdef DEBUG
-    std::cerr << "drawSingleLineText(...," << aText << ",...) aGal line width "
-              << ( aGal ? aGal->GetLineWidth() : 0.0f ) << std::endl;
+    std::cerr << "STROKE_FONT::drawSingleLineText( [aGal], " << aText << ", " << aPosition << ", "
+              << aAngle << " ) "
+              << "aGal line width " << ( aGal ? aGal->GetLineWidth() : 0.0f ) << std::endl;
     bool   drawDebugShapes = false;
-    double debugLineWidth = 15000.0;
+    double debugLineWidth = 1500.0;
 #endif
-    // TODO default for baseGlyphSize just a guess
-    VECTOR2D baseGlyphSize( aGal ? aGal->GetGlyphSize() : VECTOR2D( 16.0, 16.0 ) );
-    bool     underlined = aGal && aGal->IsFontUnderlined();
-    bool     italic = aGal && aGal->IsFontItalic();
-    bool     mirrored = aGal && aGal->IsTextMirrored();
+    if( !aGal || aText.empty() )
+        return VECTOR2D( 0, 0 );
+
+    VECTOR2D baseGlyphSize( aGal->GetGlyphSize() );
+    bool     underlined = aGal->IsFontUnderlined();
+    bool     italic = aGal->IsFontItalic();
+    bool     mirrored = aGal->IsTextMirrored();
     double   italic_tilt = italic ? ( mirrored ? -ITALIC_TILT : ITALIC_TILT ) : 0;
     double   overbar_italic_comp = computeOverbarVerticalPosition( aGal ) * italic_tilt;
     VECTOR2D textSize = ComputeTextLineSize( aGal, aText );
-    double   half_thickness = aGal ? aGal->GetLineWidth() / 2 : 1;
+    double   half_thickness = aGal->GetLineWidth() / 2;
     double   xOffset = 0.0;
     double   yOffset = 0.0;
 
@@ -577,103 +424,90 @@ VECTOR2D STROKE_FONT::drawSingleLineText( KIGFX::GAL* aGal, const UTF8& aText,
     }
 
 #ifdef DEBUG
-    std::cerr << "STROKE_FONT::drawSingleLineText( " << ( aGal ? "[aGal]" : "nullptr" ) << ", \""
-              << aText << "\", " << aPosition << ", " << aAngle << " )\n"
-              << "baseGlyphSize " << baseGlyphSize << " textSize " << textSize << " half_thickness "
-              << half_thickness << " overbar_italic_comp " << overbar_italic_comp
-              << ( italic ? " " : " !" ) << "italic" << ( underlined ? " " : " !" ) << "underlined"
-              << ( mirrored ? " " : " !" ) << "mirrored"
-              << " xOffset " << xOffset;
-    if( aGal )
-    {
-        std::cerr << " aGal line width " << aGal->GetLineWidth() << " hjustify "
-                  << aGal->GetHorizontalJustify() << " vjustify " << aGal->GetVerticalJustify()
-                  << " zoom " << aGal->GetZoomFactor() << " scale " << aGal->GetWorldScale();
-    }
-    std::cerr << std::endl;
+    std::cerr << "STROKE_FONT::drawSingleLineText( [aGal], \"" << aText << "\", " << aPosition
+              << ", " << aAngle << " )\nbaseGlyphSize " << baseGlyphSize << " textSize " << textSize
+              << " half_thickness " << half_thickness << " overbar_italic_comp "
+              << overbar_italic_comp << ( italic ? " " : " !" ) << "italic "
+              << ( underlined ? "" : "!" ) << "underlined " << ( mirrored ? "" : "!" )
+              << "mirrored xOffset " << xOffset << " aGal{line width " << aGal->GetLineWidth()
+              << " hAlign " << aGal->GetHorizontalAlignment() << " vAlign "
+              << aGal->GetVerticalAlignment() << " zoom " << aGal->GetZoomFactor() << " scale "
+              << aGal->GetWorldScale() << "}" << std::endl;
     int dbg = 40000;
-#endif
 
-#ifdef DEBUG
-    if( aGal && drawDebugShapes )
+    if( drawDebugShapes )
     {
-        COLOR4D oldColor = aGal->GetStrokeColor();
-        double  lw = aGal->GetLineWidth();
+        VECTOR2D debugPosition( aPosition );
+        VECTOR2D offsetPosition( aPosition.x + xOffset, aPosition.y + yOffset );
+        KIGFX::COLOR4D  oldColor = aGal->GetStrokeColor();
+        double   lw = aGal->GetLineWidth();
         aGal->SetLineWidth( debugLineWidth );
-        aGal->SetStrokeColor( COLOR4D( 1, 0, 0, 1 ) );
-        aGal->DrawCircle( VECTOR2D( 0, 0 ), 2.2 * dbg );
-        if( mirrored )
-            aGal->SetStrokeColor( COLOR4D( 1, 1, 0, 1 ) );
-        else
-            aGal->SetStrokeColor( COLOR4D( 1, 0, 1, 1 ) );
-        aGal->DrawCircle( VECTOR2D( 0, 0 ), 0.8 * dbg );
-        aGal->DrawCircle( VECTOR2D( xOffset, yOffset ), 1.1 * dbg );
-        aGal->DrawRectangle( VECTOR2D( -dbg / 2, -dbg / 2 ), VECTOR2D( dbg, dbg ) );
+        aGal->SetStrokeColor( KIGFX::COLOR4D( .7, .7, .7, .15 ) );
+        aGal->DrawCircle( debugPosition, 0.25 * dbg );
+        aGal->DrawCircle( offsetPosition, 0.75 * dbg );
+        //
+        double hd = dbg / 4;
+        aGal->SetStrokeColor( KIGFX::COLOR4D( .8, .8, .8, .1 ) );
+        // crosshair
+        aGal->DrawLine( VECTOR2D( aPosition.x, aPosition.y - hd ),
+                        VECTOR2D( aPosition.x, aPosition.y + hd ) );
+        aGal->DrawLine( VECTOR2D( aPosition.x - hd, aPosition.y ),
+                        VECTOR2D( aPosition.x + hd, aPosition.y ) );
         aGal->SetLineWidth( lw );
         aGal->SetStrokeColor( oldColor );
     }
 #endif
 
-    if( aGal )
+    // First adjust: the text X position is corrected by half_thickness
+    // because when the text with thickness is draw, its full size is textSize,
+    // but the position of lines is half_thickness to textSize - half_thickness
+    // so we must translate the coordinates by half_thickness on the X axis
+    // to place the text inside the 0 to textSize X area.
+    //
+    double xAdjust = half_thickness;
+
+    switch( aGal->GetHorizontalAlignment() )
     {
-        // Context needs to be saved before any transformations
-        aGal->Save();
-        // First adjust: the text X position is corrected by half_thickness
-        // because when the text with thickness is draw, its full size is textSize,
-        // but the position of lines is half_thickness to textSize - half_thickness
-        // so we must translate the coordinates by half_thickness on the X axis
-        // to place the text inside the 0 to textSize X area.
-        //
-        aGal->Translate( VECTOR2D( half_thickness, 0 ) );
-
-        double xAdjust = 0.0;
-
-        switch( aGal->GetHorizontalJustify() )
-        {
-        case GR_TEXT_HJUSTIFY_LEFT: break;
-        case GR_TEXT_HJUSTIFY_RIGHT: xAdjust = -textSize.x; break;
-        case GR_TEXT_HJUSTIFY_CENTER:
-        default: xAdjust = -textSize.x / 2.0;
-        }
-
-        double lineHeight = textSize.y - GetInterline( baseGlyphSize.y );
-        double yAdjust = 0.0;
-        switch( aGal->GetVerticalJustify() )
-        {
-        case GR_TEXT_VJUSTIFY_TOP: yAdjust = lineHeight / 2; break;
-        case GR_TEXT_VJUSTIFY_BOTTOM: yAdjust = -lineHeight / 2; break;
-        case GR_TEXT_VJUSTIFY_CENTER:
-        default: break;
-        }
-        // there's a weird 1/4 line height offset coming from somewhere;
-        // let's compensate it - TODO: find out where it comes from
-        yAdjust += GetInterline( baseGlyphSize.y ) / 4;
-#ifdef DEBUG
-        std::cerr << "Compensating for vertical placement bug by " << yAdjust << std::endl;
-#endif
-        VECTOR2D hv( xAdjust, yAdjust );
-#ifdef DEBUG
-        std::cerr << "Adjusting by " << hv << std::endl;
-        double lw = aGal->GetLineWidth();
-        if( drawDebugShapes )
-        {
-            aGal->SetLineWidth( debugLineWidth * 1.1 );
-            aGal->DrawRectangle( VECTOR2D( 0, 0 ), hv );
-            aGal->DrawRectangle( VECTOR2D( -textSize.x / 2, -textSize.y / 2 ), textSize );
-        }
-#endif
-        aGal->Translate( hv );
-#ifdef DEBUG
-        if( drawDebugShapes )
-        {
-            COLOR4D oldColor = aGal->GetStrokeColor();
-            aGal->SetStrokeColor( COLOR4D( 0, 1, 0, 1 ) );
-            aGal->DrawRectangle( VECTOR2D( -textSize.x / 2, -textSize.y / 2 ), textSize );
-            aGal->SetLineWidth( lw );
-            aGal->SetStrokeColor( oldColor );
-        }
-#endif
+    case TEXT_ATTRIBUTES::H_LEFT: break;
+    case TEXT_ATTRIBUTES::H_RIGHT: xAdjust += -textSize.x; break;
+    case TEXT_ATTRIBUTES::H_CENTER:
+    default: xAdjust += -textSize.x / 2.0;
     }
+
+    double lineHeight = textSize.y - GetInterline( baseGlyphSize.y );
+    double yAdjust = 0.0;
+    switch( aGal->GetVerticalAlignment() )
+    {
+    case TEXT_ATTRIBUTES::V_TOP: yAdjust = lineHeight / 2; break;
+    case TEXT_ATTRIBUTES::V_BOTTOM: yAdjust = -lineHeight / 2; break;
+    case TEXT_ATTRIBUTES::V_CENTER:
+    default: break;
+    }
+
+#ifdef SHOULD_THIS_BE_DONE_AFTER_ALL
+    // there's a weird 1/4 line height offset coming from somewhere;
+    // let's compensate it - TODO: find out where it comes from
+    yAdjust += GetInterline( baseGlyphSize.y ) / 4;
+#endif
+
+    VECTOR2D hv( xAdjust, yAdjust );
+#ifdef DEBUG
+    std::cerr << "Adjusting by " << hv << std::endl;
+    if( false ) //drawDebugShapes )
+    {
+        std::cerr << "Getting line width, ";
+        double lw = aGal->GetLineWidth();
+        std::cerr << "Line width is " << lw << std::endl;
+        aGal->SetLineWidth( debugLineWidth * 1.1 );
+        std::cerr << "Drawing rectangle " << aPosition << ", " << hv << std::endl;
+        aGal->DrawRectangle( aPosition, hv );
+        VECTOR2D ts( aPosition.x + ( -textSize.x / 2 ), aPosition.y + ( -textSize.y / 2 ) );
+        std::cerr << "Drawing rectangle " << ts << ", " << textSize << std::endl;
+        aGal->DrawRectangle( ts, textSize );
+        aGal->SetLineWidth( lw );
+    }
+    std::cerr << "Parsing markup next" << hv << std::endl;
+#endif
 
     MARKUP::MARKUP_PARSER markup_parser( aText );
     markup_parser.Parse();
@@ -685,10 +519,10 @@ VECTOR2D STROKE_FONT::drawSingleLineText( KIGFX::GAL* aGal, const UTF8& aText,
     bool     in_overbar = false;
     bool     in_super_or_subscript = false;
     VECTOR2D glyphSize = baseGlyphSize;
+    int      char_count = 0;
 
-    // Allocate only once (for performance)
-    std::vector<VECTOR2D> ptListScaled;
-    int                   char_count = 0;
+    std::vector<SHAPE_LINE_CHAIN> glyphParts;
+    SHAPE_LINE_CHAIN              charGlyph;
 
     for( UTF8::uni_iter chIt = aText.ubegin(), end = aText.uend(); chIt < end; ++chIt )
     {
@@ -788,7 +622,7 @@ VECTOR2D STROKE_FONT::drawSingleLineText( KIGFX::GAL* aGal, const UTF8& aText,
 
             if( !last_had_overbar )
             {
-                if( aGal && aGal->IsFontItalic() )
+                if( italic )
                     overbar_start_x += overbar_italic_comp;
 
                 last_had_overbar = true;
@@ -797,8 +631,7 @@ VECTOR2D STROKE_FONT::drawSingleLineText( KIGFX::GAL* aGal, const UTF8& aText,
             VECTOR2D startOverbar( overbar_start_x, overbar_start_y );
             VECTOR2D endOverbar( overbar_end_x, overbar_end_y );
 
-            if( aGal )
-                aGal->DrawLine( startOverbar, endOverbar );
+            aGal->DrawLine( startOverbar, endOverbar );
         }
         else
         {
@@ -811,49 +644,80 @@ VECTOR2D STROKE_FONT::drawSingleLineText( KIGFX::GAL* aGal, const UTF8& aText,
             VECTOR2D startUnderline( xOffset, -vOffset );
             VECTOR2D endUnderline( xOffset + glyphSize.x * bbox.GetEnd().x, -vOffset );
 
-            if( aGal )
-                aGal->DrawLine( startUnderline, endUnderline );
+            aGal->DrawLine( startUnderline, endUnderline );
         }
 
+        VECTOR2D pos( aPosition.x + xOffset, aPosition.y + yOffset );
+#ifdef DEBUG
+        std::cerr << "Glyph has " << glyph->size() << " point lists. glyphSize == " << glyphSize
+                  << ". ";
+        int n = 0;
+#endif
         for( const std::vector<VECTOR2D>* ptList : *glyph )
         {
-            int ptCount = 0;
-            ptListScaled.clear();
+#ifdef DEBUG
+            std::cerr << "Point list #" << n << " has " << ptList->size() << " points. ";
+            n = n + 1;
+#endif
+            charGlyph.Clear();
 
 #ifdef DEBUG
-            if( aGal && drawDebugShapes )
-            {
-                COLOR4D oldColor = aGal->GetStrokeColor();
-                if( mirrored )
-                    aGal->SetStrokeColor( COLOR4D( 0, 1, 1, 1 ) );
-                else
-                    aGal->SetStrokeColor( COLOR4D( 1, 0, 0, 1 ) );
-                aGal->DrawCircle( VECTOR2D( xOffset, yOffset ), 20000 );
-                aGal->SetStrokeColor( oldColor );
-            }
+            int ptn = 0;
 #endif
             for( const VECTOR2D& pt : *ptList )
             {
-                VECTOR2D scaledPt( pt.x * glyphSize.x + xOffset, pt.y * glyphSize.y + yOffset );
+                VECTOR2D point( pt );
+                if( !aAngle.AsDegrees() == 0 )
+                {
+#ifdef DEBUG
+                    std::cerr << "Rotating point, angle is " << aAngle << std::endl;
+#endif
+                    // Rotate point
+                    RotatePoint( &point.x, &point.y, 0, 0,
+                                 (double) aAngle.AsTenthsOfADegree() );
+                }
 
-                scaledPt.x += -scaledPt.y * italic_tilt;
+                double x = point.x * glyphSize.x + pos.x;
+                double y = point.y * glyphSize.y + pos.y;
+                x += -y * italic_tilt;
+                point = VECTOR2D( x, y );
 
-                ptListScaled.push_back( scaledPt );
-                ptCount++;
+#ifdef DEBUG
+                std::cerr << "Point #" << ptn << " is " << point << " ";
+                ptn = ptn + 1;
+#endif
+                charGlyph.Append( point );
+#ifdef DEBUG
+                std::cerr << "Glyph is " << charGlyph << " ";
+#endif
             }
 
-            if( aGal )
-            {
-                aGal->DrawPolyline( &ptListScaled[0], ptCount );
-            }
+            charGlyph.SetClosed( false );
+#ifdef DEBUG
+            std::cerr << "Glyph is " << charGlyph << " ";
+#endif
+            glyphParts.push_back( charGlyph );
+#ifdef DEBUG
+            std::cerr << "glyphParts size is " << glyphParts.size() << std::endl;
+#endif
         }
 
         char_count++;
         xOffset += glyphSize.x * bbox.GetEnd().x;
     }
 
-    if( aGal )
-        aGal->Restore();
+#ifdef DEBUG
+    std::cerr << "Drawing glyphParts;";
+    int n = 0;
+#endif
+    for( const SHAPE_LINE_CHAIN& g : glyphParts )
+    {
+#ifdef DEBUG
+        std::cerr << "Drawing polyline " << n << ": " << g << std::endl;
+        n = n + 1;
+#endif
+        aGal->DrawPolyline( g );
+    }
 
     return VECTOR2D( xOffset, yOffset );
 }
@@ -993,7 +857,7 @@ VECTOR2D STROKE_FONT::StringBoundaryLimits( const KIGFX::GAL* aGal, const UTF8& 
     if( aGal && aGal->IsFontItalic() )
         string_bbox.x += string_bbox.y * STROKE_FONT::ITALIC_TILT;
 
-#if 0 //def DEBUG
+#if 0 //def OUTLINEFONT_DEBUG
     std::cerr << "STROKE_FONT::StringBoundaryLimits( " << ( aGal ? "aGal" : "nullptr" ) << ", \""
               << aText << "\", " << aGlyphSize << ", " << aGlyphThickness << " ) bbox "
               << string_bbox << " lines " << line_count << " interline "
@@ -1008,7 +872,7 @@ VECTOR2D STROKE_FONT::getBoundingBox( const UTF8& aString, const VECTOR2D& aGlyp
 {
     // TODO: take glyph thickness into account!
     VECTOR2D bbox = StringBoundaryLimits( nullptr, aString, aGlyphSize, 0 );
-#ifdef DEBUG
+#ifdef OUTLINEFONT_DEBUG
     std::cerr << "STROKE_FONT::getBoundingBox( " << aString << ", " << aGlyphSize << ", "
               << aTextStyle << " ) returns " << bbox << std::endl;
 #endif

@@ -781,7 +781,7 @@ DIALOG_PAD_PROPERTIES_BASE::DIALOG_PAD_PROPERTIES_BASE( wxWindow* parent, wxWind
 	m_localSettingsPanel->SetSizer( bSizerPanelClearance );
 	m_localSettingsPanel->Layout();
 	bSizerPanelClearance->Fit( m_localSettingsPanel );
-	m_notebook->AddPage( m_localSettingsPanel, _("Local Clearance and Settings"), false );
+	m_notebook->AddPage( m_localSettingsPanel, _("Clearance Overrides and Settings"), false );
 	m_panelCustomShapePrimitives = new wxPanel( m_notebook, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
 	m_bSizerPanelPrimitives = new wxBoxSizer( wxVERTICAL );
 
@@ -949,7 +949,7 @@ DIALOG_PAD_PROPERTIES_BASE::DIALOG_PAD_PROPERTIES_BASE( wxWindow* parent, wxWind
 	page7Sizer->Fit( page7 );
 	m_stackupImagesBook->AddPage( page7, _("a page"), false );
 
-	bSizerDisplayPad->Add( m_stackupImagesBook, 0, wxEXPAND|wxBOTTOM|wxRIGHT|wxLEFT, 5 );
+	bSizerDisplayPad->Add( m_stackupImagesBook, 0, wxEXPAND|wxBOTTOM|wxRIGHT|wxLEFT, 6 );
 
 	m_boardViewPanel = new wxPanel( this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
 	m_padPreviewSizer = new wxBoxSizer( wxVERTICAL );

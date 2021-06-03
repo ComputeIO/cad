@@ -90,6 +90,11 @@ public:
      */
     void ReleaseFile();
 
+    /**
+     * Toggles the scripting console visibility
+     */
+    void ScriptingConsoleEnableDisable();
+
     wxFindReplaceData& GetFindReplaceData() { return *m_findReplaceData; }
     wxArrayString& GetFindHistoryList() { return m_findStringHistoryList; }
 
@@ -190,14 +195,6 @@ public:
      * It is overloaded by derived classes to return #SCH_SCREEN or #PCB_SCREEN.
      */
     virtual BASE_SCREEN* GetScreen() const  { return m_currentScreen; }
-
-    /**
-     * Execute a remote command sent via socket (to port KICAD_PCB_PORT_SERVICE_NUMBER,
-     * currently 4242).
-     *
-     * Subclasses should override to implement actual command handlers.
-     */
-    virtual void ExecuteRemoteCommand( const char* cmdline ){}
 
     void EraseMsgBox();
 
@@ -346,11 +343,6 @@ public:
      */
     virtual void DisplayGridMsg();
 
-    /* interprocess communication */
-    void CreateServer( int service, bool local = true );
-    void OnSockRequest( wxSocketEvent& evt );
-    void OnSockRequestServer( wxSocketEvent& evt );
-
     void LoadSettings( APP_SETTINGS_BASE* aCfg ) override;
     void SaveSettings( APP_SETTINGS_BASE* aCfg ) override;
 
@@ -438,11 +430,10 @@ public:
     /**
      * Returns bbox of document with option to not include some items.
      *
-     * Used most commonly by "Zoom to Fit" and "Zoom to Objects".  In Eeschema
-     * for "Zoom to Fit", it's passed "true" to include worksheet border.  It's
-     * passed false by "Zoom To Objects" to ignore worksheet border.  In Pcbnew,
-     * false makes it ignore any items outside the PCB edge such as fabrication
-     * notes.
+     * Used most commonly by "Zoom to Fit" and "Zoom to Objects".  In Eeschema for "Zoom to Fit"
+     * it's passed "true" to include drawing sheet border, and "false" by "Zoom To Objects" to
+     * ignore drawing sheet border.  In Pcbnew, false makes it ignore any items outside the PCB
+     * edge such as fabrication notes.
      *
      * @param aIncludeAllVisible True to include everything visible in bbox calculations,
      *                           false to ignore some visible items (program dependent).
@@ -500,7 +491,7 @@ protected:
                                             // to screens
     bool               m_polarCoords;       // For those frames that support polar coordinates
 
-    bool               m_showBorderAndTitleBlock;  // Show the worksheet (border and title block).
+    bool               m_showBorderAndTitleBlock;  // Show the drawing sheet (border & title block).
     long               m_firstRunDialogSetting;    // Show first run dialog on startup
 
     wxChoice*          m_gridSelectBox;

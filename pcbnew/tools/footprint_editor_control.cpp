@@ -110,9 +110,7 @@ bool FOOTPRINT_EDITOR_CONTROL::Init()
 
     ctxMenu.AddSeparator();
     ctxMenu.AddItem( PCB_ACTIONS::newFootprint,      libSelectedCondition );
-#ifdef KICAD_SCRIPTING
     ctxMenu.AddItem( PCB_ACTIONS::createFootprint,   libSelectedCondition );
-#endif
 
     ctxMenu.AddSeparator();
     ctxMenu.AddItem( ACTIONS::save,                  libSelectedCondition || libInferredCondition );
@@ -158,7 +156,7 @@ int FOOTPRINT_EDITOR_CONTROL::NewFootprint( const TOOL_EVENT& aEvent )
     newFootprint->ClearFlags();
 
     m_frame->Zoom_Automatique( false );
-    m_frame->GetScreen()->SetModify();
+    m_frame->GetScreen()->SetContentModified();
 
     // If selected from the library tree then go ahead and save it there
     if( !selected.GetLibNickname().empty() )
@@ -171,7 +169,7 @@ int FOOTPRINT_EDITOR_CONTROL::NewFootprint( const TOOL_EVENT& aEvent )
     }
 
     m_frame->UpdateView();
-    m_frame->Update3DView( true );
+    m_frame->Update3DView( true, true );
 
     m_frame->SyncLibraryTree( false );
     return 0;
@@ -218,7 +216,7 @@ int FOOTPRINT_EDITOR_CONTROL::CreateFootprint( const TOOL_EVENT& aEvent )
             newFootprint->ClearFlags();
 
             m_frame->Zoom_Automatique( false );
-            m_frame->GetScreen()->SetModify();
+            m_frame->GetScreen()->SetContentModified();
 
             // If selected from the library tree then go ahead and save it there
             if( !selected.GetLibNickname().empty() )
@@ -232,7 +230,7 @@ int FOOTPRINT_EDITOR_CONTROL::CreateFootprint( const TOOL_EVENT& aEvent )
 
             m_frame->UpdateView();
             canvas()->Refresh();
-            m_frame->Update3DView( true );
+            m_frame->Update3DView( true, true );
 
             m_frame->SyncLibraryTree( false );
         }
@@ -510,6 +508,85 @@ void FOOTPRINT_EDITOR_CONTROL::DestroyCheckerDialog()
 }
 
 
+int FOOTPRINT_EDITOR_CONTROL::RepairFootprint( const TOOL_EVENT& aEvent )
+{
+    FOOTPRINT* footprint = board()->Footprints().front();
+    int        errors = 0;
+    wxString   details;
+
+    /*******************************
+     * Repair duplicate IDs and missing nets
+     */
+
+    std::set<KIID> ids;
+    int            duplicates = 0;
+
+    auto processItem =
+            [&]( EDA_ITEM* aItem )
+            {
+                if( ids.count( aItem->m_Uuid ) )
+                {
+                    duplicates++;
+                    const_cast<KIID&>( aItem->m_Uuid ) = KIID();
+                }
+
+                ids.insert( aItem->m_Uuid );
+            };
+
+    // Footprint IDs are the most important, so give them the first crack at "claiming" a
+    // particular KIID.
+
+    processItem( footprint );
+
+    // After that the principal use is for DRC marker pointers, which are most likely to pads.
+
+    for( PAD* pad : footprint->Pads() )
+        processItem( pad );
+
+    // From here out I don't think order matters much.
+
+    processItem( &footprint->Reference() );
+    processItem( &footprint->Value() );
+
+    for( BOARD_ITEM* item : footprint->GraphicalItems() )
+        processItem( item );
+
+    for( ZONE* zone : footprint->Zones() )
+        processItem( zone );
+
+    for( PCB_GROUP* group : footprint->Groups() )
+        processItem( group );
+
+    if( duplicates )
+    {
+        errors += duplicates;
+        details += wxString::Format( _( "%d duplicate IDs replaced.\n" ), duplicates );
+    }
+
+    /*******************************
+     * Your test here
+     */
+
+    /*******************************
+     * Inform the user
+     */
+
+    if( errors )
+    {
+        m_frame->OnModify();
+
+        wxString msg = wxString::Format( _( "%d potential problems repaired." ), errors );
+        DisplayInfoMessage( m_frame, msg, details );
+    }
+    else
+    {
+        DisplayInfoMessage( m_frame, _( "No footprint problems found." ) );
+    }
+
+    return 0;
+}
+
+
 void FOOTPRINT_EDITOR_CONTROL::setTransitions()
 {
     Go( &FOOTPRINT_EDITOR_CONTROL::NewFootprint,         PCB_ACTIONS::newFootprint.MakeEvent() );
@@ -531,6 +608,7 @@ void FOOTPRINT_EDITOR_CONTROL::setTransitions()
     Go( &FOOTPRINT_EDITOR_CONTROL::CleanupGraphics,      PCB_ACTIONS::cleanupGraphics.MakeEvent() );
 
     Go( &FOOTPRINT_EDITOR_CONTROL::CheckFootprint,       PCB_ACTIONS::checkFootprint.MakeEvent() );
+    Go( &FOOTPRINT_EDITOR_CONTROL::RepairFootprint,      PCB_ACTIONS::repairFootprint.MakeEvent() );
 
     Go( &FOOTPRINT_EDITOR_CONTROL::PinLibrary,           ACTIONS::pinLibrary.MakeEvent() );
     Go( &FOOTPRINT_EDITOR_CONTROL::UnpinLibrary,         ACTIONS::unpinLibrary.MakeEvent() );

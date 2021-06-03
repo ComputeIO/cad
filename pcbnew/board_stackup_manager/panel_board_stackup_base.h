@@ -60,11 +60,9 @@ class PANEL_SETUP_BOARD_STACKUP_BASE : public wxPanel
 		wxButton* m_buttonExport;
 
 		// Virtual event handlers, overide them in your derived class
-		virtual void OnUpdateUI( wxUpdateUIEvent& event ) { event.Skip(); }
 		virtual void onAddDielectricLayer( wxCommandEvent& event ) { event.Skip(); }
 		virtual void onRemoveDielectricLayer( wxCommandEvent& event ) { event.Skip(); }
 		virtual void onRemoveDielUI( wxUpdateUIEvent& event ) { event.Skip(); }
-		virtual void onUpdateThicknessValue( wxUpdateUIEvent& event ) { event.Skip(); }
 		virtual void onExportToClipboard( wxCommandEvent& event ) { event.Skip(); }
 
 

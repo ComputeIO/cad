@@ -32,6 +32,7 @@
 #include <sch_item.h>
 #include <sch_symbol.h>
 #include <sch_sheet.h>
+#include <sch_sheet_pin.h>
 #include <sch_line.h>
 #include <sch_edit_frame.h>
 #include <eeschema_id.h>
@@ -81,13 +82,6 @@ bool SCH_MOVE_TOOL::Init()
 }
 
 
-/* TODO - Tom/Jeff
-  - add preferences option "Move origin: always cursor / item origin"
-  - add preferences option "Default drag action: drag items / move"
-  - add preferences option "Drag always selects"
-  */
-
-
 int SCH_MOVE_TOOL::Main( const TOOL_EVENT& aEvent )
 {
     EESCHEMA_SETTINGS*    cfg = Pgm().GetSettingsManager().GetAppSettings<EESCHEMA_SETTINGS>();
@@ -110,7 +104,7 @@ int SCH_MOVE_TOOL::Main( const TOOL_EVENT& aEvent )
     {
         if( m_isDrag != wasDragging )
         {
-            auto sel = m_selectionTool->GetSelection().Front();
+            EDA_ITEM* sel = m_selectionTool->GetSelection().Front();
 
             if( sel && !sel->IsNew() )
             {
@@ -166,7 +160,7 @@ int SCH_MOVE_TOOL::Main( const TOOL_EVENT& aEvent )
     {
         m_frame->GetCanvas()->SetCurrentCursor( KICURSOR::MOVING );
         grid.SetSnap( !evt->Modifier( MD_SHIFT ) );
-        grid.SetUseGrid( getView()->GetGAL()->GetGridSnapping() && !evt->Modifier( MD_ALT ) );
+        grid.SetUseGrid( getView()->GetGAL()->GetGridSnapping() && !evt->DisableGridSnapping() );
 
         if( evt->IsAction( &EE_ACTIONS::moveActivate )
                 || evt->IsAction( &EE_ACTIONS::restartMove )
@@ -370,11 +364,25 @@ int SCH_MOVE_TOOL::Main( const TOOL_EVENT& aEvent )
         //
         else if( evt->IsCancelInteractive() || evt->IsActivate() )
         {
-            if( m_moveInProgress && evt->IsCancelInteractive() )
-                evt->SetPassEvent( false );
-
             if( m_moveInProgress )
+            {
+                if( evt->IsActivate() )
+                {
+                    // Allowing other tools to activate during a move runs the risk of race
+                    // conditions in which we try to spool up both event loops at once.
+
+                    if( m_isDrag )
+                        m_frame->ShowInfoBarMsg( _( "Press <ESC> to cancel drag." ) );
+                    else
+                        m_frame->ShowInfoBarMsg( _( "Press <ESC> to cancel move." ) );
+
+                    evt->SetPassEvent( false );
+                    continue;
+                }
+
+                evt->SetPassEvent( false );
                 restore_state = true;
+            }
 
             break;
         }
@@ -397,7 +405,7 @@ int SCH_MOVE_TOOL::Main( const TOOL_EVENT& aEvent )
             if( selection.Front()->IsNew() )
             {
                 // This doesn't really make sense; we'll just end up dragging a stack of
-                // objects so Duplicate() is going to ignore this and we'll just carry on.
+                // objects so we ignore the duplicate and just carry on.
                 continue;
             }
 
@@ -517,7 +525,7 @@ void SCH_MOVE_TOOL::getConnectedDragItems( SCH_ITEM* aOriginalItem, wxPoint aPoi
         }
     }
 
-    for( SCH_ITEM *test : itemsOverlapping )
+    for( SCH_ITEM* test : itemsOverlapping )
     {
         if( test == aOriginalItem || test->IsSelected() || !test->CanConnect( aOriginalItem ) )
             continue;
@@ -533,21 +541,21 @@ void SCH_MOVE_TOOL::getConnectedDragItems( SCH_ITEM* aOriginalItem, wxPoint aPoi
             if( ptHasUnselectedJunction )
                 break;
 
-            SCH_LINE* testLine = static_cast<SCH_LINE*>( test );
+            SCH_LINE* line = static_cast<SCH_LINE*>( test );
 
-            if( testLine->GetStartPoint() == aPoint )
+            if( line->GetStartPoint() == aPoint )
             {
-                if( !testLine->HasFlag( TEMP_SELECTED ) )
-                    aList.push_back( testLine );
+                if( !line->HasFlag(TEMP_SELECTED ) )
+                    aList.push_back( line );
 
-                testLine->SetFlags( STARTPOINT | TEMP_SELECTED );
+                line->SetFlags(STARTPOINT | TEMP_SELECTED );
             }
-            else if( testLine->GetEndPoint() == aPoint )
+            else if( line->GetEndPoint() == aPoint )
             {
-                if( !testLine->HasFlag( TEMP_SELECTED ) )
-                    aList.push_back( testLine );
+                if( !line->HasFlag(TEMP_SELECTED ) )
+                    aList.push_back( line );
 
-                testLine->SetFlags( ENDPOINT | TEMP_SELECTED );
+                line->SetFlags(ENDPOINT | TEMP_SELECTED );
             }
             else
             {
@@ -566,14 +574,16 @@ void SCH_MOVE_TOOL::getConnectedDragItems( SCH_ITEM* aOriginalItem, wxPoint aPoi
                     if( label->IsSelected() )
                         continue;   // These will be moved on their own because they're selected
 
-                    if( label->CanConnect( testLine )
-                            && testLine->HitTest( label->GetPosition(), 1 ) )
+                    if( label->HasFlag( TEMP_SELECTED ) )
+                        continue;
+
+                    if( label->CanConnect( line ) && line->HitTest( label->GetPosition(), 1 ) )
                     {
-                        if( !label->HasFlag( TEMP_SELECTED ) )
-                            aList.push_back( label );
+                        label->SetFlags( TEMP_SELECTED );
+                        aList.push_back( label );
 
                         SPECIAL_CASE_LABEL_INFO info;
-                        info.attachedLine = testLine;
+                        info.attachedLine = line;
                         info.originalLabelPos = label->GetPosition();
                         m_specialCaseLabels[label] = info;
                     }
@@ -584,10 +594,6 @@ void SCH_MOVE_TOOL::getConnectedDragItems( SCH_ITEM* aOriginalItem, wxPoint aPoi
         }
 
         case SCH_SHEET_T:
-            // Dragging a sheet just because it's connected to something else feels a bit like
-            // the tail wagging the dog, but this could be moved down to the next case.
-            break;
-
         case SCH_COMPONENT_T:
         case SCH_JUNCTION_T:
             if( test->IsConnected( aPoint ) )
@@ -622,37 +628,71 @@ void SCH_MOVE_TOOL::getConnectedDragItems( SCH_ITEM* aOriginalItem, wxPoint aPoi
         case SCH_LABEL_T:
         case SCH_GLOBAL_LABEL_T:
         case SCH_HIER_LABEL_T:
+            // Performance optimization:
+            if( test->HasFlag( TEMP_SELECTED ) )
+                break;
+
+            // Select labels that are connected to a wire (or bus) being moved.
+            if( aOriginalItem->Type() == SCH_LINE_T && test->CanConnect( aOriginalItem ) )
+            {
+                SCH_TEXT* label = static_cast<SCH_TEXT*>( test );
+                SCH_LINE* line = static_cast<SCH_LINE*>( aOriginalItem );
+                bool      oneEndFixed = !line->HasFlag( STARTPOINT ) || !line->HasFlag( ENDPOINT );
+
+                if( line->HitTest( label->GetTextPos(), 1 ) )
+                {
+                    label->SetFlags( TEMP_SELECTED );
+                    aList.push_back( label );
+
+                    if( oneEndFixed )
+                    {
+                        SPECIAL_CASE_LABEL_INFO info;
+                        info.attachedLine = line;
+                        info.originalLabelPos = label->GetPosition();
+                        m_specialCaseLabels[ label ] = info;
+                    }
+                }
+            }
+
+            break;
+
         case SCH_BUS_WIRE_ENTRY_T:
         case SCH_BUS_BUS_ENTRY_T:
             // Performance optimization:
             if( test->HasFlag( TEMP_SELECTED ) )
                 break;
 
-            // Select labels and bus entries that are connected to a wire being moved.
-            if( aOriginalItem->Type() == SCH_LINE_T )
+            // Select bus entries that are connected to a bus being moved.
+            if( aOriginalItem->Type() == SCH_LINE_T && test->CanConnect( aOriginalItem ) )
             {
-                std::vector<wxPoint> connections = test->GetConnectionPoints();
+                SCH_LINE* line = static_cast<SCH_LINE*>( aOriginalItem );
+                bool      oneEndFixed = !line->HasFlag( STARTPOINT ) || !line->HasFlag( ENDPOINT );
 
-                for( wxPoint& point : connections )
+                if( oneEndFixed )
                 {
-                    if( aOriginalItem->HitTest( point, 1 ) )
+                    // This is only going to end in tears, so don't go there
+                    continue;
+                }
+
+                for( wxPoint& point : test->GetConnectionPoints() )
+                {
+                    if( line->HitTest( point, 1 ) )
                     {
                         test->SetFlags( TEMP_SELECTED );
                         aList.push_back( test );
 
                         // A bus entry needs its wire & label as well
-                        if( testType == SCH_BUS_WIRE_ENTRY_T || testType == SCH_BUS_BUS_ENTRY_T )
-                        {
-                            std::vector<wxPoint> ends = test->GetConnectionPoints();
-                            wxPoint              otherEnd;
+                        std::vector<wxPoint> ends = test->GetConnectionPoints();
+                        wxPoint              otherEnd;
 
-                            if( ends[0] == point )
-                                otherEnd = ends[1];
-                            else
-                                otherEnd = ends[0];
+                        if( ends[0] == point )
+                            otherEnd = ends[1];
+                        else
+                            otherEnd = ends[0];
 
-                            getConnectedDragItems( test, otherEnd, aList );
-                        }
+                        getConnectedDragItems( test, otherEnd, aList );
+
+                        // No need to test the other end of the bus entry
                         break;
                     }
                 }
@@ -736,7 +776,7 @@ void SCH_MOVE_TOOL::moveItem( EDA_ITEM* aItem, const VECTOR2I& aDelta )
     }
 
     getView()->Hide( aItem, false );
-    aItem->SetFlags( IS_MOVED );
+    aItem->SetFlags( IS_MOVING );
 }
 
 
@@ -792,7 +832,7 @@ int SCH_MOVE_TOOL::AlignElements( const TOOL_EVENT& aEvent )
                         append_undo = true;
 
                         moveItem( dragItem, gridpt );
-                        dragItem->ClearFlags( IS_MOVED );
+                        dragItem->ClearFlags( IS_MOVING );
                         updateItem( dragItem, true );
                     }
                 }
@@ -809,7 +849,7 @@ int SCH_MOVE_TOOL::AlignElements( const TOOL_EVENT& aEvent )
 
                 moveItem( item, gridpt );
                 updateItem( item, true );
-                item->ClearFlags( IS_MOVED );
+                item->ClearFlags( IS_MOVING );
             }
         }
         else
@@ -849,7 +889,7 @@ int SCH_MOVE_TOOL::AlignElements( const TOOL_EVENT& aEvent )
                     append_undo = true;
 
                     moveItem( dragItem, most_common );
-                    dragItem->ClearFlags( IS_MOVED );
+                    dragItem->ClearFlags( IS_MOVING );
                     updateItem( dragItem, true );
                 }
             }

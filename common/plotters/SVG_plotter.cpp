@@ -781,10 +781,10 @@ bool SVG_PLOTTER::EndPlot()
 void SVG_PLOTTER::Text( const wxPoint&              aPos,
                         const COLOR4D               aColor,
                         const wxString&             aText,
-                        double                      aOrient,
+                        const EDA_ANGLE&            aOrient,
                         const wxSize&               aSize,
-                        enum EDA_TEXT_HJUSTIFY_T    aH_justify,
-                        enum EDA_TEXT_VJUSTIFY_T    aV_justify,
+                        TEXT_ATTRIBUTES::HORIZONTAL_ALIGNMENT aHorizontalAlignment,
+                        TEXT_ATTRIBUTES::VERTICAL_ALIGNMENT   aVerticalAlignment,
                         int                         aWidth,
                         bool                        aItalic,
                         bool                        aBold,
@@ -799,33 +799,18 @@ void SVG_PLOTTER::Text( const wxPoint&              aPos,
     wxPoint text_pos = aPos;
     const char *hjust = "start";
 
-    switch( aH_justify )
+    switch( aHorizontalAlignment )
     {
-    case GR_TEXT_HJUSTIFY_CENTER:
-        hjust = "middle";
-        break;
-
-    case GR_TEXT_HJUSTIFY_RIGHT:
-        hjust = "end";
-        break;
-
-    case GR_TEXT_HJUSTIFY_LEFT:
-        hjust = "start";
-        break;
+    case TEXT_ATTRIBUTES::H_CENTER: hjust = "middle"; break;
+    case TEXT_ATTRIBUTES::H_RIGHT: hjust = "end"; break;
+    case TEXT_ATTRIBUTES::H_LEFT: hjust = "start"; break;
     }
 
-    switch( aV_justify )
+    switch( aVerticalAlignment )
     {
-    case GR_TEXT_VJUSTIFY_CENTER:
-        text_pos.y += aSize.y / 2;
-        break;
-
-    case GR_TEXT_VJUSTIFY_TOP:
-        text_pos.y += aSize.y;
-        break;
-
-    case GR_TEXT_VJUSTIFY_BOTTOM:
-        break;
+    case TEXT_ATTRIBUTES::V_CENTER: text_pos.y += aSize.y / 2; break;
+    case TEXT_ATTRIBUTES::V_TOP: text_pos.y += aSize.y; break;
+    case TEXT_ATTRIBUTES::V_BOTTOM: break;
     }
 
     wxSize text_size;
@@ -837,14 +822,11 @@ void SVG_PLOTTER::Text( const wxPoint&              aPos,
     DPOINT text_pos_dev = userToDeviceCoordinates( text_pos );
     DPOINT sz_dev = userToDeviceSize( text_size );
 
-    if( aOrient != 0 ) {
-        fprintf( m_outputFile,
-                 "<g transform=\"rotate(%f %f %f)\">\n",
-                 - aOrient * 0.1, anchor_pos_dev.x, anchor_pos_dev.y );
-    }
+    if( aOrient != EDA_ANGLE::ANGLE_0 )
+        fprintf( m_outputFile, "<g transform=\"rotate(%f %f %f)\">\n",
+                 -aOrient.AsTenthsOfADegree() * 0.1, anchor_pos_dev.x, anchor_pos_dev.y );
 
-    fprintf( m_outputFile,
-             "<text x=\"%f\" y=\"%f\"\n", text_pos_dev.x, text_pos_dev.y );
+    fprintf( m_outputFile, "<text x=\"%f\" y=\"%f\"\n", text_pos_dev.x, text_pos_dev.y );
 
     /// If the text is mirrored, we should also mirror the hidden text to match
     if( aSize.x < 0 )
@@ -853,16 +835,23 @@ void SVG_PLOTTER::Text( const wxPoint&              aPos,
     fprintf( m_outputFile,
              "textLength=\"%f\" font-size=\"%f\" lengthAdjust=\"spacingAndGlyphs\"\n"
              "text-anchor=\"%s\" opacity=\"0\">%s</text>\n",
-             sz_dev.x, sz_dev.y,
-             hjust, TO_UTF8( XmlEsc( aText ) ) );
+             sz_dev.x, sz_dev.y, hjust, TO_UTF8( XmlEsc( aText ) ) );
 
-    if( aOrient != 0 )
+    if( aOrient != EDA_ANGLE::ANGLE_0 )
         fputs( "</g>\n", m_outputFile );
 
-    fprintf( m_outputFile,
-             "<g class=\"stroked-text\"><desc>%s</desc>\n",
+    fprintf( m_outputFile, "<g class=\"stroked-text\"><desc>%s</desc>\n",
              TO_UTF8( XmlEsc( aText ) ) );
-    PLOTTER::Text( aPos, aColor, aText, aOrient, aSize, aH_justify, aV_justify,
+    PLOTTER::Text( aPos, aColor, aText, aOrient, aSize, aHorizontalAlignment, aVerticalAlignment,
                    aWidth, aItalic, aBold, aMultilineAllowed, aFont, aData );
     fputs( "</g>", m_outputFile );
+}
+
+
+void SVG_PLOTTER::Text( const EDA_TEXT* aText, const COLOR4D aColor, void* aData )
+{
+    Text( aText->GetTextPos(), aColor, aText->GetShownText(), aText->GetTextEdaAngle(),
+          aText->GetTextSize(), aText->GetHorizontalAlignment(), aText->GetVerticalAlignment(),
+          aText->GetTextThickness(), aText->IsItalic(), aText->IsBold(),
+          aText->IsMultilineAllowed(), aText->GetFont(), aData );
 }

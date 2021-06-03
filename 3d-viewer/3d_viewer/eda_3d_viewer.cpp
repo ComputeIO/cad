@@ -2,7 +2,7 @@
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
  * Copyright (C) 2015-2016 Mario Luzeiro <mrluzeiro@ua.pt>
- * Copyright (C) 1992-2020 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 1992-2021 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -35,7 +35,7 @@
 #include <3d_viewer/tools/3d_controller.h>
 #include <3d_viewer/tools/3d_conditions.h>
 #include <bitmaps.h>
-#include <board_stackup_manager/class_board_stackup.h>
+#include <board_stackup_manager/board_stackup.h>
 #include <board_stackup_manager/stackup_predefined_prms.h>
 #include <board.h>
 #include <core/arraydim.h>
@@ -52,6 +52,7 @@
 #include <tool/action_toolbar.h>
 #include <widgets/infobar.h>
 #include <wildcards_and_files_ext.h>
+#include <wx/filedlg.h>
 
 /**
  * Flag to enable 3D viewer main frame window debug tracing.
@@ -508,6 +509,7 @@ void EDA_3D_VIEWER::LoadSettings( APP_SETTINGS_BASE *aCfg )
         // OpenGL options
         TRANSFER_SETTING( FL_RENDER_OPENGL_COPPER_THICKNESS,          opengl_copper_thickness );
         TRANSFER_SETTING( FL_RENDER_OPENGL_SHOW_MODEL_BBOX,           opengl_show_model_bbox );
+        TRANSFER_SETTING( FL_HIGHLIGHT_ROLLOVER_ITEM,                 opengl_highlight_on_rollover );
         TRANSFER_SETTING( FL_RENDER_OPENGL_AA_DISABLE_ON_MOVE,        opengl_AA_disableOnMove );
         TRANSFER_SETTING( FL_RENDER_OPENGL_THICKNESS_DISABLE_ON_MOVE,
                           opengl_thickness_disableOnMove );
@@ -680,8 +682,8 @@ void EDA_3D_VIEWER::SaveSettings( APP_SETTINGS_BASE *aCfg )
         TRANSFER_SETTING( opengl_AA_disableOnMove,        FL_RENDER_OPENGL_AA_DISABLE_ON_MOVE );
         TRANSFER_SETTING( opengl_copper_thickness,        FL_RENDER_OPENGL_COPPER_THICKNESS );
         TRANSFER_SETTING( opengl_show_model_bbox,         FL_RENDER_OPENGL_SHOW_MODEL_BBOX );
-        TRANSFER_SETTING( opengl_thickness_disableOnMove,
-                          FL_RENDER_OPENGL_THICKNESS_DISABLE_ON_MOVE );
+        TRANSFER_SETTING( opengl_highlight_on_rollover,   FL_HIGHLIGHT_ROLLOVER_ITEM );
+        TRANSFER_SETTING( opengl_thickness_disableOnMove, FL_RENDER_OPENGL_THICKNESS_DISABLE_ON_MOVE );
         TRANSFER_SETTING( opengl_vias_disableOnMove,      FL_RENDER_OPENGL_VIAS_DISABLE_ON_MOVE );
         TRANSFER_SETTING( opengl_holes_disableOnMove,     FL_RENDER_OPENGL_HOLES_DISABLE_ON_MOVE );
 

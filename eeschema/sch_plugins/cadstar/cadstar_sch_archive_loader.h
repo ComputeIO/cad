@@ -176,9 +176,13 @@ private:
             const wxPoint& aTransformCentre = { 0, 0 }, const bool& aMirrorInvert = false );
 
     //Helper functions for loading text elements
-    void      applyTextSettings( const TEXTCODE_ID& aCadstarTextCodeID,
-                 const ALIGNMENT& aCadstarAlignment, const JUSTIFICATION& aCadstarJustification,
-                 EDA_TEXT* aKiCadTextItem );
+    void applyTextSettings( EDA_TEXT* aKiCadTextItem,
+                            const TEXTCODE_ID& aCadstarTextCodeID,
+                            const ALIGNMENT&     aCadstarAlignment,
+                            const JUSTIFICATION& aCadstarJustification,
+                            const long long aCadstarOrientAngle = 0,
+                            bool aMirrored = false );
+
     SCH_TEXT* getKiCadSchText( const TEXT& aCadstarTextElement );
 
 
@@ -200,10 +204,18 @@ private:
     ELECTRICAL_PINTYPE getKiCadPinType( const PART::PIN_TYPE& aPinType );
 
     int              getKiCadUnitNumberFromGate( const GATE_ID& aCadstarGateID );
-    LABEL_SPIN_STYLE getSpinStyle( const long long& aCadstarOrientation, bool aMirror );
-    LABEL_SPIN_STYLE getSpinStyleDeciDeg( const double& aOrientationDeciDeg );
+    EDA_ANGLE        getEdaAngle( const long long& aCadstarOrientation, bool aMirror );
+    const EDA_ANGLE& getCardinalAngle( const double& aOrientationDeciDeg );
+    ALIGNMENT        mirrorX( const ALIGNMENT& aCadstarAlignment );
+    ALIGNMENT        rotate180( const ALIGNMENT& aCadstarAlignment );
 
     //General Graphical manipulation functions
+
+    LIB_PART* getScaledLibPart( const LIB_PART* aPart, long long aScalingFactorNumerator,
+                                long long aScalingFactorDenominator );
+
+    void fixUpLibraryPins( LIB_PART* aPartToFix, int aGateNumber );
+
     std::pair<wxPoint, wxSize> getFigureExtentsKiCad( const FIGURE& aCadstarFigure );
 
     wxPoint getKiCadPoint( wxPoint aCadstarPoint );
@@ -255,6 +267,13 @@ private:
     double getAngleDegrees( const long long& aCadstarAngle )
     {
         return getAngleTenthDegree( aCadstarAngle ) / 10.0;
+    }
+
+
+    long long getCadstarAngle( const double& aAngleTenthDegree )
+    {
+        return KiROUND( ( aAngleTenthDegree / getAngleTenthDegree( aAngleTenthDegree ) )
+                        * aAngleTenthDegree );
     }
 
     /**

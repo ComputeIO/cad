@@ -31,6 +31,7 @@
 #include "tools/placement_tool.h"
 #include "tools/pcb_point_editor.h"
 #include "tools/pcb_selection_tool.h"
+#include <python/scripting/pcb_scripting_tool.h>
 #include <3d_viewer/eda_3d_viewer.h>
 #include <bitmaps.h>
 #include <board.h>
@@ -76,6 +77,7 @@
 #include <widgets/panel_selection_filter.h>
 #include <widgets/progress_reporter.h>
 #include <wildcards_and_files_ext.h>
+#include <wx/filedlg.h>
 
 
 BEGIN_EVENT_TABLE( FOOTPRINT_EDIT_FRAME, PCB_BASE_FRAME )
@@ -250,11 +252,6 @@ FOOTPRINT_EDIT_FRAME::FOOTPRINT_EDIT_FRAME( KIWAY* aKiway, wxWindow* aParent,
 
     ActivateGalCanvas();
 
-    m_auimgr.GetArtProvider()->SetColour( wxAUI_DOCKART_ACTIVE_CAPTION_TEXT_COLOUR,
-                                          wxSystemSettings::GetColour( wxSYS_COLOUR_BTNTEXT ) );
-    m_auimgr.GetArtProvider()->SetColour( wxAUI_DOCKART_INACTIVE_CAPTION_TEXT_COLOUR,
-                                          wxSystemSettings::GetColour( wxSYS_COLOUR_BTNTEXT ) );
-
     FinishAUIInitialization();
 
     if( m_settings->m_LibWidth > 0 )
@@ -288,6 +285,11 @@ FOOTPRINT_EDIT_FRAME::FOOTPRINT_EDIT_FRAME( KIWAY* aKiway, wxWindow* aParent,
     // Default shutdown reason until a file is loaded
     KIPLATFORM::APP::SetShutdownBlockReason( this, _( "Footprint changes are unsaved" ) );
 
+    // Catch unhandled accelerator command characters that were no handled by the library tree
+    // panel.
+    Bind( wxEVT_CHAR, &TOOL_DISPATCHER::DispatchWxEvent, m_toolDispatcher );
+    Bind( wxEVT_CHAR_HOOK, &TOOL_DISPATCHER::DispatchWxEvent, m_toolDispatcher );
+
     // Ensure the window is on top
     Raise();
     Show( true );
@@ -316,9 +318,9 @@ FOOTPRINT_EDIT_FRAME::~FOOTPRINT_EDIT_FRAME()
 }
 
 
-bool FOOTPRINT_EDIT_FRAME::IsContentModified()
+bool FOOTPRINT_EDIT_FRAME::IsContentModified() const
 {
-    return GetScreen() && GetScreen()->IsModify() && GetBoard() && GetBoard()->GetFirstFootprint();
+    return GetScreen() && GetScreen()->IsContentModified() && GetBoard() && GetBoard()->GetFirstFootprint();
 }
 
 
@@ -408,7 +410,7 @@ void FOOTPRINT_EDIT_FRAME::ClearModify()
     if( GetBoard()->GetFirstFootprint() )
         m_footprintNameWhenLoaded = GetBoard()->GetFirstFootprint()->GetFPID().GetLibItemName();
 
-    GetScreen()->ClrModify();
+    GetScreen()->SetContentModified( false );
 }
 
 
@@ -736,7 +738,7 @@ void FOOTPRINT_EDIT_FRAME::ShowChangedLanguage()
 void FOOTPRINT_EDIT_FRAME::OnModify()
 {
     PCB_BASE_FRAME::OnModify();
-    Update3DView( true );
+    Update3DView( true, true );
     m_treePane->GetLibTree()->RefreshLibTree();
 
     if( !GetTitle().StartsWith( "*" ) )
@@ -811,10 +813,10 @@ void FOOTPRINT_EDIT_FRAME::initLibraryTree()
     FP_LIB_TABLE*   fpTable = Prj().PcbFootprintLibs();
 
     WX_PROGRESS_REPORTER progressReporter( this, _( "Loading Footprint Libraries" ), 2 );
+
     if( GFootprintList.GetCount() == 0 )
-    {
         GFootprintList.ReadCacheFromFile( Prj().GetProjectPath() + "fp-info-cache" );
-    }
+
     GFootprintList.ReadFootprintFiles( fpTable, NULL, &progressReporter );
     progressReporter.Show( false );
 
@@ -901,12 +903,6 @@ void FOOTPRINT_EDIT_FRAME::OnDisplayOptionsChanged()
 }
 
 
-void FOOTPRINT_EDIT_FRAME::OnUpdateLayerAlpha( wxUpdateUIEvent & )
-{
-    m_appearancePanel->OnLayerAlphaChanged();
-}
-
-
 void FOOTPRINT_EDIT_FRAME::InstallPreferences( PAGED_DIALOG* aParent,
                                                PANEL_HOTKEYS_EDITOR* aHotkeysPanel )
 {
@@ -949,6 +945,7 @@ void FOOTPRINT_EDIT_FRAME::setupTools()
     m_toolManager->RegisterTool( new PCB_VIEWER_TOOLS );
     m_toolManager->RegisterTool( new GROUP_TOOL );
     m_toolManager->RegisterTool( new CONVERT_TOOL );
+    m_toolManager->RegisterTool( new SCRIPTING_TOOL );
 
     m_toolManager->GetTool<PCB_SELECTION_TOOL>()->SetIsFootprintEditor( true );
     m_toolManager->GetTool<EDIT_TOOL>()->SetIsFootprintEditor( true );
@@ -959,6 +956,7 @@ void FOOTPRINT_EDIT_FRAME::setupTools()
     m_toolManager->GetTool<PCB_PICKER_TOOL>()->SetIsFootprintEditor( true );
     m_toolManager->GetTool<POSITION_RELATIVE_TOOL>()->SetIsFootprintEditor( true );
     m_toolManager->GetTool<GROUP_TOOL>()->SetIsFootprintEditor( true );
+    m_toolManager->GetTool<SCRIPTING_TOOL>()->SetIsFootprintEditor( true );
 
     m_toolManager->GetTool<PCB_VIEWER_TOOLS>()->SetFootprintFrame( true );
     m_toolManager->InitTools();
@@ -1025,6 +1023,9 @@ void FOOTPRINT_EDIT_FRAME::setupUIConditions()
     mgr->SetConditions( ACTIONS::zoomTool,               CHECK( cond.CurrentTool( ACTIONS::zoomTool ) ) );
     mgr->SetConditions( ACTIONS::selectionTool,          CHECK( cond.CurrentTool( ACTIONS::selectionTool ) ) );
 
+    mgr->SetConditions( PCB_ACTIONS::checkFootprint,     ENABLE( cond.HasItems() ) );
+    mgr->SetConditions( PCB_ACTIONS::repairFootprint,    ENABLE( cond.HasItems() ) );
+
 
     auto highContrastCond =
             [this] ( const SELECTION& )
@@ -1033,10 +1034,10 @@ void FOOTPRINT_EDIT_FRAME::setupUIConditions()
             };
 
     auto boardFlippedCond =
-        [this]( const SELECTION& )
-        {
-            return GetCanvas()->GetView()->IsMirroredX();
-        };
+            [this]( const SELECTION& )
+            {
+                return GetCanvas()->GetView()->IsMirroredX();
+            };
 
     auto footprintTreeCond =
             [this] (const SELECTION& )

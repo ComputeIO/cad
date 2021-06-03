@@ -2,7 +2,7 @@
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
  * Copyright (C) 2015-2020 Mario Luzeiro <mrluzeiro@ua.pt>
- * Copyright (C) 2015-2020 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 2015-2021 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -30,6 +30,7 @@
 #include <footprint.h>
 #include <3d_math.h>
 #include <math/util.h>      // for KiROUND
+#include <wx/log.h>
 
 #include <base_units.h>
 
@@ -62,7 +63,7 @@ RENDER_3D_LEGACY::RENDER_3D_LEGACY( BOARD_ADAPTER& aAdapter, CAMERA& aCamera ) :
     m_circleTexture = 0;
     m_grid = 0;
     m_lastGridType = GRID3D_TYPE::NONE;
-    m_currentIntersectedBoardItem = nullptr;
+    m_currentRollOverItem = nullptr;
     m_boardWithHoles = nullptr;
 
     m_3dModelMap.clear();
@@ -982,22 +983,24 @@ bool RENDER_3D_LEGACY::initializeOpenGL()
     if( !circleImage )
         return false;
 
+    unsigned int circleRadius = ( SIZE_OF_CIRCLE_TEXTURE / 2 ) - 4;
+
     circleImage->CircleFilled( ( SIZE_OF_CIRCLE_TEXTURE / 2 ) - 0,
                                ( SIZE_OF_CIRCLE_TEXTURE / 2 ) - 0,
-                               ( SIZE_OF_CIRCLE_TEXTURE / 2 ) - 4,
+                               circleRadius,
                                0xFF );
 
-    IMAGE* circleImage_Copy = new IMAGE( *circleImage );
+    IMAGE* circleImageBlured = new IMAGE( circleImage->GetWidth(), circleImage->GetHeight() );
 
-    circleImage->EfxFilter( circleImage_Copy, IMAGE_FILTER::BLUR_3X3 );
+    circleImageBlured->EfxFilter_SkipCenter( circleImage, IMAGE_FILTER::GAUSSIAN_BLUR, circleRadius - 8 );
 
-    m_circleTexture = OglLoadTexture( *circleImage );
+    m_circleTexture = OglLoadTexture( *circleImageBlured );
 
-    delete circleImage_Copy;
-    circleImage_Copy = 0;
+    delete circleImageBlured;
+    circleImageBlured = nullptr;
 
     delete circleImage;
-    circleImage = 0;
+    circleImage = nullptr;
 
     init_lights();
 
@@ -1177,16 +1180,24 @@ void RENDER_3D_LEGACY::render3dModelsSelected( bool aRenderTopOrBot, bool aRende
     // Go for all footprints
     for( FOOTPRINT* fp : m_boardAdapter.GetBoard()->Footprints() )
     {
-        const bool isIntersected = ( fp == m_currentIntersectedBoardItem );
+        const bool isIntersected = fp == m_currentRollOverItem;
+        bool highlight = false;
 
-        if( m_boardAdapter.GetFlag( FL_USE_SELECTION ) && !isIntersected
-          && ( ( aRenderSelectedOnly && !fp->IsSelected() )
-             || ( !aRenderSelectedOnly && fp->IsSelected() ) ) )
+        if( m_boardAdapter.GetFlag( FL_USE_SELECTION ) )
         {
-            continue;
+            if( isIntersected )
+            {
+                if( aRenderSelectedOnly )
+                    highlight = m_boardAdapter.GetFlag( FL_HIGHLIGHT_ROLLOVER_ITEM );
+            }
+            else if( ( aRenderSelectedOnly && !fp->IsSelected() )
+                     || ( !aRenderSelectedOnly && fp->IsSelected() ) )
+            {
+                continue;
+            }
         }
 
-        if( isIntersected && aRenderSelectedOnly )
+        if( highlight )
         {
             glEnable( GL_POLYGON_OFFSET_LINE );
             glPolygonOffset( 8.0, 1.0 );
@@ -1206,7 +1217,7 @@ void RENDER_3D_LEGACY::render3dModelsSelected( bool aRenderTopOrBot, bool aRende
             }
         }
 
-        if( isIntersected && aRenderSelectedOnly )
+        if( highlight )
         {
             // Restore
             glDisable( GL_POLYGON_OFFSET_LINE );
@@ -1280,12 +1291,12 @@ void RENDER_3D_LEGACY::renderFootprint( const FOOTPRINT* aFootprint, bool aRende
                     // values have changed.  cache the matrix somewhere.
                     glm::mat4 mtx( 1 );
                     mtx = glm::translate( mtx, { sM.m_Offset.x, sM.m_Offset.y, sM.m_Offset.z } );
-                    mtx = glm::rotate(
-                            mtx, glm::radians( (float) -sM.m_Rotation.z ), { 0.0f, 0.0f, 1.0f } );
-                    mtx = glm::rotate(
-                            mtx, glm::radians( (float) -sM.m_Rotation.y ), { 0.0f, 1.0f, 0.0f } );
-                    mtx = glm::rotate(
-                            mtx, glm::radians( (float) -sM.m_Rotation.x ), { 1.0f, 0.0f, 0.0f } );
+                    mtx = glm::rotate( mtx, glm::radians( (float) -sM.m_Rotation.z ),
+                                       { 0.0f, 0.0f, 1.0f } );
+                    mtx = glm::rotate( mtx, glm::radians( (float) -sM.m_Rotation.y ),
+                                       { 0.0f, 1.0f, 0.0f } );
+                    mtx = glm::rotate( mtx, glm::radians( (float) -sM.m_Rotation.x ),
+                                       { 1.0f, 0.0f, 0.0f } );
                     mtx = glm::scale( mtx, { sM.m_Scale.x, sM.m_Scale.y, sM.m_Scale.z } );
                     glMultMatrixf( glm::value_ptr( mtx ) );
 

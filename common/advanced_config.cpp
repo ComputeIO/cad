@@ -122,14 +122,22 @@ static const wxChar DrawArcAccuracy[] = wxT( "DrawArcAccuracy" );
 static const wxChar DrawArcCenterStartEndMaxAngle[] = wxT( "DrawArcCenterStartEndMaxAngle" );
 
 /**
+ * For arc track interactive drag-resizing
+ * Maximum angle between the tangent line of an arc track and a connected straight track
+ * in order to commence arc dragging. Units are degrees.
+ */
+static const wxChar MaxTangentTrackAngleDeviation[] = wxT( "MaxTangentTrackAngleDeviation" );
+
+/**
+ * For arc track interactive drag-resizing
+ * Maximum track length to keep after doing an arc track resizing operation. Units are mm.
+ */
+static const wxChar MaxTrackLengthToKeep[] = wxT( "MaxTrackLengthToKeep" );
+
+/**
  * When true, GAL will stroke the triangulations (only used in OpenGL) with a visible color
  */
 static const wxChar StrokeTriangulation[] = wxT( "StrokeTriangulation" );
-
-/**
- * When true, enable Altium Schematic import (*.SchDoc)
- */
-static const wxChar PluginAltiumSch[] = wxT( "PluginAltiumSch" );
 
 /**
  * Absolute minimum pen width to send to the plotter.  PDF seems happy enough with 0.0212mm
@@ -150,8 +158,6 @@ static const wxChar SmallDrillMarkSize[] = wxT( "SmallDrillMarkSize" );
 static const wxChar HotkeysDumper[] = wxT( "HotkeysDumper" );
 
 static const wxChar DrawBoundingBoxes[] = wxT( "DrawBoundingBoxes" );
-
-static const wxChar AllowDarkMode[] = wxT( "AllowDarkMode" );
 
 static const wxChar ShowPcbnewExportNetlist[] = wxT( "ShowPcbnewExportNetlist" );
 
@@ -237,8 +243,9 @@ ADVANCED_CFG::ADVANCED_CFG()
     m_ShowRouterDebugGraphics   = false;
     m_DrawArcAccuracy           = 10.0;
     m_DrawArcCenterMaxAngle     = 50.0;
+    m_MaxTangentAngleDeviation  = 1.0;
+    m_MaxTrackLengthToKeep      = 0.0001;
     m_DrawTriangulationOutlines = false;
-    m_PluginAltiumSch           = false;
 
     m_ExtraClearance            = 0.0001;
     m_DRCEpsilon                = 0.0001;   // 0.1um is small enough not to materially violate
@@ -255,7 +262,6 @@ ADVANCED_CFG::ADVANCED_CFG()
     m_SmallDrillMarkSize        = 0.35;
     m_HotkeysDumper             = false;
     m_DrawBoundingBoxes         = false;
-    m_AllowDarkMode             = false;
     m_ShowPcbnewExportNetlist   = false;
 
     loadFromConfigFile();
@@ -323,11 +329,14 @@ void ADVANCED_CFG::loadSettings( wxConfigBase& aCfg )
     configParams.push_back( new PARAM_CFG_DOUBLE( true, AC_KEYS::DrawArcCenterStartEndMaxAngle,
                                                   &m_DrawArcCenterMaxAngle, 50.0, 0.0, 100000.0 ) );
 
+    configParams.push_back( new PARAM_CFG_DOUBLE( true, AC_KEYS::MaxTangentTrackAngleDeviation,
+                                                  &m_MaxTangentAngleDeviation, 1.0, 0.0, 90.0 ) );
+
+    configParams.push_back( new PARAM_CFG_DOUBLE( true, AC_KEYS::MaxTrackLengthToKeep,
+                                                  &m_MaxTrackLengthToKeep, 0.0005, 0.0, 1.0 ) );
+
     configParams.push_back( new PARAM_CFG_BOOL( true, AC_KEYS::StrokeTriangulation,
                                                 &m_DrawTriangulationOutlines, false ) );
-
-    configParams.push_back( new PARAM_CFG_BOOL( true, AC_KEYS::PluginAltiumSch,
-                                                &m_PluginAltiumSch, false ) );
 
     configParams.push_back( new PARAM_CFG_DOUBLE( true, AC_KEYS::MinPlotPenWidth,
                                                   &m_MinPlotPenWidth, 0.0212, 0.0, 1.0 ) );
@@ -346,15 +355,6 @@ void ADVANCED_CFG::loadSettings( wxConfigBase& aCfg )
 
     configParams.push_back( new PARAM_CFG_BOOL( true, AC_KEYS::DrawBoundingBoxes,
                                                 &m_DrawBoundingBoxes, false ) );
-
-#if defined( __WXGTK__ ) || defined( __WXMSW__ )
-    bool defaultDarkMode = true;
-#else
-    bool defaultDarkMode = false;
-#endif
-
-    configParams.push_back( new PARAM_CFG_BOOL( true, AC_KEYS::AllowDarkMode,
-                                                &m_AllowDarkMode, defaultDarkMode ) );
 
     configParams.push_back( new PARAM_CFG_BOOL( true, AC_KEYS::ShowPcbnewExportNetlist,
                                                 &m_ShowPcbnewExportNetlist, false ) );

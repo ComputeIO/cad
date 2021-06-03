@@ -56,12 +56,8 @@ public:
 
     void InitDataPoints( const wxSize& aPageSizeInternalUnits );
 
-    void SetModify()        { m_flagModified = true; }
-    void ClrModify()        { m_flagModified = false; }
-    void SetSave()          { m_flagSave = true; }
-    void ClrSave()          { m_flagSave = false; }
-    bool IsModify() const   { return m_flagModified; }
-    bool IsSave() const     { return m_flagSave; }
+    void SetContentModified( bool aModified = true )    { m_flagModified = aModified; }
+    bool IsContentModified() const                      { return m_flagModified; }
 
     /**
      * Return the class name.
@@ -86,8 +82,8 @@ public:
     void Show( int nestLevel, std::ostream& os ) const override;
 #endif
 
-    static wxString m_PageLayoutDescrFileName;  ///< the name of the page layout descr file,
-                                                ///< or emty to used the default pagelayout
+    static wxString m_DrawingSheetFileName;  ///< the name of the drawing sheet file, or empty
+                                             ///< to use the default drawing sheet
 
     wxPoint     m_DrawOrg;          ///< offsets for drawing the circuit on the screen
 
@@ -134,7 +130,6 @@ protected:
 
 private:
     bool        m_flagModified;     ///< Indicates current drawing has been modified.
-    bool        m_flagSave;         ///< Indicates automatic file save.
 
     /**
      * The cross hair position in logical (drawing) units.  The cross hair is not the cursor

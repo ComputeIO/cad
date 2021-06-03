@@ -65,7 +65,8 @@ class HIERARCHY_NAVIG_DLG;
 
 // @todo Move this to transform alone with all of the transform manipulation code.
 /// enum used in RotationMiroir()
-enum COMPONENT_ORIENTATION_T {
+enum COMPONENT_ORIENTATION_T
+{
     CMP_NORMAL,                     // Normal orientation, no rotation or mirror
     CMP_ROTATE_CLOCKWISE,           // Rotate -90
     CMP_ROTATE_COUNTERCLOCKWISE,    // Rotate +90
@@ -78,8 +79,18 @@ enum COMPONENT_ORIENTATION_T {
 };
 
 
+/** Schematic annotation scope options. */
+enum ANNOTATE_SCOPE_T
+{
+    ANNOTATE_ALL,           ///< Annotate the full schematic
+    ANNOTATE_CURRENT_SHEET, ///< Annotate the current sheet
+    ANNOTATE_SELECTION      ///< Annotate the selection
+};
+
+
 /** Schematic annotation order options. */
-enum ANNOTATE_ORDER_T {
+enum ANNOTATE_ORDER_T
+{
     SORT_BY_X_POSITION,     ///< Annotate by X position from left to right.
     SORT_BY_Y_POSITION,     ///< Annotate by Y position from top to bottom.
     UNSORTED,               ///< Annotate by position of component in the schematic sheet
@@ -88,7 +99,8 @@ enum ANNOTATE_ORDER_T {
 
 
 /** Schematic annotation type options. */
-enum ANNOTATE_OPTION_T {
+enum ANNOTATE_ALGO_T
+{
     INCREMENTAL_BY_REF,     ///< Annotate incrementally using the first free reference number.
     SHEET_NUMBER_X_100,     ///< Annotate using the first free reference number starting at
                             ///< the sheet number * 100.
@@ -98,13 +110,15 @@ enum ANNOTATE_OPTION_T {
 
 
 /// Schematic search type used by the socket link with Pcbnew
-enum SCH_SEARCH_T {
+enum SCH_SEARCH_T
+{
     HIGHLIGHT_PIN,
     HIGHLIGHT_COMPONENT
 };
 
 
-enum SCH_CLEANUP_FLAGS {
+enum SCH_CLEANUP_FLAGS
+{
     NO_CLEANUP,
     LOCAL_CLEANUP,
     GLOBAL_CLEANUP
@@ -161,7 +175,7 @@ public:
      *
      * @return true if the any changes have not been saved
      */
-    bool IsContentModified() override;
+    bool IsContentModified() const override;
 
     /**
      * Must be called after a schematic change in order to set the "modify" flag of the
@@ -358,18 +372,19 @@ public:
     /**
      * Clear the current component annotation.
      *
-     * @param aCurrentSheetOnly Clear only the annotation for the current sheet if true.
-     *                          Otherwise clear the entire schematic annotation.
+     * @param aCurrentSheetOnly Where to clear the annotation. See #ANNOTATE_SCOPE_T
+     * @param appendUndo true to add the action to the previous undo list
      */
-    void DeleteAnnotation( bool aCurrentSheetOnly, bool* appendUndo );
+    void DeleteAnnotation( ANNOTATE_SCOPE_T aAnnotateScope, bool* appendUndo );
 
     /**
-     * Annotate the symbols in the schematic that are not currently annotated.
+     * Annotate the symbols in the schematic that are not currently annotated. Multi-unit symbols
+     * are annotated together. E.g. if two components were R8A and R8B, they may become R3A and
+     * R3B, but not R3A and R3C or R3C and R4D.
      *
-     * @param aAnnotateSchematic Annotate the entire schematic if true.  Otherwise annotate
-     *                           the current sheet only.
+     * @param aAnnotateScope See #ANNOTATE_SCOPE_T
      * @param aSortOption Define the annotation order.  See #ANNOTATE_ORDER_T.
-     * @param aAlgoOption Define the annotation style.  See #ANNOTATE_OPTION_T.
+     * @param aAlgoOption Define the annotation style.  See #ANNOTATE_ALGO_T.
      * @param aStartNumber The start number for non-sheet-based annotation styles.
      * @param aResetAnnotation Clear any previous annotation if true.  Otherwise, keep the
      *                         existing component annotation.
@@ -377,22 +392,15 @@ public:
      *                          Otherwise, keep the existing time stamps.  This option
      *                          could change previous annotation because time stamps are
      *                          used to handle annotation in complex hierarchies.
-     * @param aLockUnits    When both aLockUnits and aResetAnnotation are true, all unit
-     *                      associations should be kept when reannotating. That is, if two
-     *                      components were R8A and R8B, they may become R3A and R3B, but not
-     *                      R3A and R3C or R3C and R4D.
-     *                      When aResetAnnotation is true but aLockUnits is false, the usual
-     *                      behavior of annotating each part individually is performed.
-     *                      When aResetAnnotation is false, this option has no effect.
      * @param aReporter A sink for error messages.  Use NULL_REPORTER if you don't need errors.
      *
      * When the sheet number is used in annotation, each sheet annotation starts from sheet
      * number * 100.  In other words the first sheet uses 100 to 199, the second sheet uses
      * 200 to 299, and so on.
      */
-    void AnnotateSymbols( bool aAnnotateSchematic, ANNOTATE_ORDER_T aSortOption,
-                          ANNOTATE_OPTION_T aAlgoOption, int aStartNumber, bool aResetAnnotation,
-                          bool aRepairTimestamps, bool aLockUnits, REPORTER& aReporter );
+    void AnnotateSymbols( ANNOTATE_SCOPE_T aAnnotateScope, ANNOTATE_ORDER_T aSortOption,
+                          ANNOTATE_ALGO_T aAlgoOption, int aStartNumber, bool aResetAnnotation,
+                          bool aRepairTimestamps, REPORTER& aReporter );
 
     /**
      * Check for annotation errors.
@@ -407,10 +415,11 @@ public:
      *
      * @return Number of annotation errors found.
      * @param aReporter A handler for error reporting.
-     * @param aOneSheetOnly Check the current sheet only if true.  Otherwise check the entire
+     * @param aAnnotateScope See #ANNOTATE_SCOPE_T Check the current sheet only if true.  Otherwise check the entire
      *                      schematic.
      */
-    int CheckAnnotate( ANNOTATION_ERROR_HANDLER aErrorHandler, bool aOneSheetOnly = false );
+    int CheckAnnotate( ANNOTATION_ERROR_HANDLER aErrorHandler,
+                       ANNOTATE_SCOPE_T         aAnnotateScope = ANNOTATE_ALL );
 
     /**
      * Run a modal version of the annotate dialog for a specific purpose.
@@ -815,7 +824,7 @@ public:
      *
      * @param aSymbol is the #LIB_PART to update.
      */
-    void UpdateSymbolFromEditor( const LIB_PART& aSymbol );
+    void SaveSymbolToSchematic( const LIB_PART& aSymbol );
 
     /**
      * Update the schematic's page reference map for all global labels, and refresh the labels
