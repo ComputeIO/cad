@@ -510,8 +510,6 @@ public:
     {
         VECTOR2D oldSize( m_size );
         m_size = VECTOR2D( aSize );
-        m_size_as_wxSize.x = m_size.x;
-        m_size_as_wxSize.y = m_size.y;
         return oldSize;
     }
 
@@ -544,10 +542,11 @@ public:
 
     /**
      * Like GetSize(), but uses wxSize.
-     * Used for compatibility with old code.
      * @return font size.
      */
-    const wxSize& GetTextSize() const { return m_size_as_wxSize; }
+    wxSize GetTextSize() const {
+        return wxSize( m_size.x, m_size.y );
+    }
 
     /**
      * @return force the text rotation to be always between -90 .. 90 deg. Otherwise the text
@@ -580,7 +579,7 @@ private:
     bool                 m_mirrored = false;
     bool                 m_multiline = true;
     VECTOR2D             m_size;
-    wxSize               m_size_as_wxSize;
+
     /**
      * If true, keep rotation angle between -90...90 degrees for readability
      */

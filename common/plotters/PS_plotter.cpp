@@ -458,6 +458,12 @@ void PSLIKE_PLOTTER::computeTextParameters( const wxPoint&           aPos,
                                             double                   *ctm_f,
                                             double                   *heightFactor )
 {
+#ifdef DEBUG
+    std::cerr << "PSLIKE_PLOTTER::computeTextParameters( " << aPos << ", \"" << aText << "\", "
+              << aOrient << ", " << aSize.x << ";" << aSize.y << ", " << ( aMirror ? "t" : "f" )
+              << ", " << aWidth << ", " << ( aItalic ? "t" : "f" ) << ", " << ( aBold ? "t" : "f" )
+              << ", ... )\n";
+#endif
     // Compute the starting position (compensated for alignment)
     wxPoint start_pos = aPos;
 
@@ -486,6 +492,9 @@ void PSLIKE_PLOTTER::computeTextParameters( const wxPoint&           aPos,
     start_pos.y += dy;
     DPOINT pos_dev = userToDeviceCoordinates( start_pos );
     DPOINT sz_dev = userToDeviceSize( aSize );
+#ifdef DEBUG
+    std::cerr << "sz_dev.x " << sz_dev.x << " .y " << sz_dev.y << std::endl;
+#endif
 
     // Now returns the final values... the widening factor
     *wideningFactor = sz_dev.x / sz_dev.y;

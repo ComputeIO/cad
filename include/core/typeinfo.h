@@ -26,6 +26,7 @@
 #ifndef __KICAD_TYPEINFO_H
 #define __KICAD_TYPEINFO_H
 
+#include <iostream>
 
 #ifndef SWIG
 #include <type_traits>
@@ -268,6 +269,160 @@ constexpr KICAD_T BaseType( const KICAD_T aType )
     default:
         return aType;
     }
+}
+
+
+inline std::ostream& operator<<( std::ostream& os, KICAD_T aType )
+{
+    switch( aType )
+    {
+    case KICAD_T::NOT_USED: os << "NOT_USED"; break;
+    //case KICAD_T::EOT: os << "EOT"; break;
+    case KICAD_T::TYPE_NOT_INIT: os << "EOT/TYPE_NOT_INIT"; break;
+    case KICAD_T::PCB_T: os << "PCB_T"; break;
+    case KICAD_T::SCREEN_T: os << "SCREEN_T"; break;
+
+    // Items in pcb
+    case KICAD_T::PCB_FOOTPRINT_T: os << "PCB_FOOTPRINT_T"; break;
+    case KICAD_T::PCB_PAD_T: os << "PCB_PAD_T"; break;
+    case KICAD_T::PCB_SHAPE_T: os << "PCB_SHAPE_T"; break;
+    case KICAD_T::PCB_TEXT_T: os << "PCB_TEXT_T"; break;
+    case KICAD_T::PCB_FP_TEXT_T: os << "PCB_FP_TEXT_T"; break;
+    case KICAD_T::PCB_FP_SHAPE_T: os << "PCB_FP_SHAPE_T"; break;
+    case KICAD_T::PCB_FP_ZONE_T: os << "PCB_FP_ZONE_T"; break;
+    case KICAD_T::PCB_TRACE_T: os << "PCB_TRACE_T"; break;
+    case KICAD_T::PCB_VIA_T: os << "PCB_VIA_T"; break;
+    case KICAD_T::PCB_ARC_T: os << "PCB_ARC_T"; break;
+    case KICAD_T::PCB_MARKER_T: os << "PCB_MARKER_T"; break;
+    case KICAD_T::PCB_DIMENSION_T: os << "PCB_DIMENSION_T"; break;
+    case KICAD_T::PCB_DIM_ALIGNED_T: os << "PCB_DIM_ALIGNED_T"; break;
+    case KICAD_T::PCB_DIM_LEADER_T: os << "PCB_DIM_LEADER_T"; break;
+    case KICAD_T::PCB_DIM_CENTER_T: os << "PCB_DIM_CENTER_T"; break;
+    case KICAD_T::PCB_DIM_ORTHOGONAL_T: os << "PCB_DIM_ORTHOGONAL_T"; break;
+    case KICAD_T::PCB_TARGET_T: os << "PCB_TARGET_T"; break;
+    case KICAD_T::PCB_ZONE_T: os << "PCB_ZONE_T"; break;
+    case KICAD_T::PCB_ITEM_LIST_T: os << "PCB_ITEM_LIST_T"; break;
+    case KICAD_T::PCB_NETINFO_T: os << "PCB_NETINFO_T"; break;
+    case KICAD_T::PCB_GROUP_T: os << "PCB_GROUP_T"; break;
+
+    case KICAD_T::PCB_LOCATE_STDVIA_T: os << "PCB_LOCATE_STDVIA_T"; break;
+    case KICAD_T::PCB_LOCATE_UVIA_T: os << "PCB_LOCATE_UVIA_T"; break;
+    case KICAD_T::PCB_LOCATE_BBVIA_T: os << "PCB_LOCATE_BBVIA_T"; break;
+    case KICAD_T::PCB_LOCATE_TEXT_T: os << "PCB_LOCATE_TEXT_T"; break;
+    case KICAD_T::PCB_LOCATE_GRAPHIC_T: os << "PCB_LOCATE_GRAPHIC_T"; break;
+    case KICAD_T::PCB_LOCATE_HOLE_T: os << "PCB_LOCATE_HOLE_T"; break;
+    case KICAD_T::PCB_LOCATE_PTH_T: os << "PCB_LOCATE_PTH_T"; break;
+    case KICAD_T::PCB_LOCATE_NPTH_T: os << "PCB_LOCATE_NPTH_T"; break;
+    case KICAD_T::PCB_LOCATE_BOARD_EDGE_T: os << "PCB_LOCATE_BOARD_EDGE_T"; break;
+
+    // Schematic draw Items.  The order of these items effects the sort order.
+    // It is currently ordered to mimic the old Eeschema locate behavior where
+    // the smallest item is the selected item.
+    case KICAD_T::SCH_MARKER_T: os << "SCH_MARKER_T"; break;
+    case KICAD_T::SCH_JUNCTION_T: os << "SCH_JUNCTION_T"; break;
+    case KICAD_T::SCH_NO_CONNECT_T: os << "SCH_NO_CONNECT_T"; break;
+    case KICAD_T::SCH_BUS_WIRE_ENTRY_T: os << "SCH_BUS_WIRE_ENTRY_T"; break;
+    case KICAD_T::SCH_BUS_BUS_ENTRY_T: os << "SCH_BUS_BUS_ENTRY_T"; break;
+    case KICAD_T::SCH_LINE_T: os << "SCH_LINE_T"; break;
+    case KICAD_T::SCH_BITMAP_T: os << "SCH_BITMAP_T"; break;
+    case KICAD_T::SCH_TEXT_T: os << "SCH_TEXT_T"; break;
+    case KICAD_T::SCH_LABEL_T: os << "SCH_LABEL_T"; break;
+    case KICAD_T::SCH_GLOBAL_LABEL_T: os << "SCH_GLOBAL_LABEL_T"; break;
+    case KICAD_T::SCH_HIER_LABEL_T: os << "SCH_HIER_LABEL_T"; break;
+    case KICAD_T::SCH_FIELD_T: os << "SCH_FIELD_T"; break;
+    case KICAD_T::SCH_COMPONENT_T: os << "SCH_COMPONENT_T"; break;
+    case KICAD_T::SCH_SHEET_PIN_T: os << "SCH_SHEET_PIN_T"; break;
+    case KICAD_T::SCH_SHEET_T: os << "SCH_SHEET_T"; break;
+    case KICAD_T::SCH_PIN_T: os << "SCH_PIN_T"; break;
+
+    // Be prudent with these types:
+    // they should be used only to locate a specific field type among SCH_FIELD_Ts
+    // N.B. If you add a type here, be sure to add it below to the BaseType()
+    case KICAD_T::SCH_FIELD_LOCATE_REFERENCE_T: os << "SCH_FIELD_LOCATE_REFERENCE_T"; break;
+    case KICAD_T::SCH_FIELD_LOCATE_VALUE_T: os << "SCH_FIELD_LOCATE_VALUE_T"; break;
+    case KICAD_T::SCH_FIELD_LOCATE_FOOTPRINT_T: os << "SCH_FIELD_LOCATE_FOOTPRINT_T"; break;
+    case KICAD_T::SCH_FIELD_LOCATE_DATASHEET_T: os << "SCH_FIELD_LOCATE_DATASHEET_T"; break;
+
+    // Same for picking wires and buses from SCH_LINE_T items
+    case KICAD_T::SCH_LINE_LOCATE_WIRE_T: os << "SCH_LINE_LOCATE_WIRE_T"; break;
+    case KICAD_T::SCH_LINE_LOCATE_BUS_T: os << "SCH_LINE_LOCATE_BUS_T"; break;
+    case KICAD_T::SCH_LINE_LOCATE_GRAPHIC_LINE_T: os << "SCH_LINE_LOCATE_GRAPHIC_LINE_T"; break;
+
+    // Same for picking labels attached to wires and/or buses
+    case KICAD_T::SCH_LABEL_LOCATE_WIRE_T: os << "SCH_LABEL_LOCATE_WIRE_T"; break;
+    case KICAD_T::SCH_LABEL_LOCATE_BUS_T: os << "SCH_LABEL_LOCATE_BUS_T"; break;
+
+    // Same for picking components which are power symbols
+    case KICAD_T::SCH_COMPONENT_LOCATE_POWER_T: os << "SCH_COMPONENT_LOCATE_POWER_T"; break;
+
+    // matches any type
+    case KICAD_T::SCH_LOCATE_ANY_T: os << "SCH_LOCATE_ANY_T"; break;
+
+    // General
+    case KICAD_T::SCH_SCREEN_T: os << "SCH_SCREEN_T"; break;
+
+    case KICAD_T::SCHEMATIC_T: os << "SCHEMATIC_T"; break;
+
+    /*
+     * Draw items in library component.
+     *
+     * The order of these items effects the sort order for items inside the
+     * "DRAW/ENDDRAW" section of the component definition in a library file.
+     * If you add a new draw item, type, please make sure you add it so the
+     * sort order is logical.
+     */
+    case KICAD_T::LIB_PART_T: os << "LIB_PART_T"; break;
+    case KICAD_T::LIB_ALIAS_T: os << "LIB_ALIAS_T"; break;
+    case KICAD_T::LIB_ARC_T: os << "LIB_ARC_T"; break;
+    case KICAD_T::LIB_CIRCLE_T: os << "LIB_CIRCLE_T"; break;
+    case KICAD_T::LIB_TEXT_T: os << "LIB_TEXT_T"; break;
+    case KICAD_T::LIB_RECTANGLE_T: os << "LIB_RECTANGLE_T"; break;
+    case KICAD_T::LIB_POLYLINE_T: os << "LIB_POLYLINE_T"; break;
+    case KICAD_T::LIB_BEZIER_T: os << "LIB_BEZIER_T"; break;
+    case KICAD_T::LIB_PIN_T: os << "LIB_PIN_T"; break;
+
+    /*
+     * Fields are not saved inside the "DRAW/ENDDRAW".  Add new draw item
+     * types before this line.
+     */
+    case KICAD_T::LIB_FIELD_T: os << "LIB_FIELD_T"; break;
+
+    /*
+     * For GerbView: item types:
+     */
+    case KICAD_T::GERBER_LAYOUT_T: os << "GERBER_LAYOUT_T"; break;
+    case KICAD_T::GERBER_DRAW_ITEM_T: os << "GERBER_DRAW_ITEM_T"; break;
+    case KICAD_T::GERBER_IMAGE_T: os << "GERBER_IMAGE_T"; break;
+
+    /*
+     * For Pl_Editor: item types:
+     */
+    case KICAD_T::WSG_LINE_T: os << "WSG_LINE_T"; break;
+    case KICAD_T::WSG_RECT_T: os << "WSG_RECT_T"; break;
+    case KICAD_T::WSG_POLY_T: os << "WSG_POLY_T"; break;
+    case KICAD_T::WSG_TEXT_T: os << "WSG_TEXT_T"; break;
+    case KICAD_T::WSG_BITMAP_T: os << "WSG_BITMAP_T"; break;
+    case KICAD_T::WSG_PAGE_T: os << "WSG_PAGE_T"; break;
+
+    // serialized layout used in undo/redo commands
+    case KICAD_T::WS_PROXY_UNDO_ITEM_T: os << "WS_PROXY_UNDO_ITEM_T"; break;
+    case KICAD_T::WS_PROXY_UNDO_ITEM_PLUS_T: os << "WS_PROXY_UNDO_ITEM_PLUS_T"; break;
+
+    /*
+     * FOR PROJECT::_ELEMs
+     */
+    case KICAD_T::SYMBOL_LIB_TABLE_T: os << "SYMBOL_LIB_TABLE_T"; break;
+    case KICAD_T::FP_LIB_TABLE_T: os << "FP_LIB_TABLE_T"; break;
+    case KICAD_T::PART_LIBS_T: os << "PART_LIBS_T"; break;
+    case KICAD_T::SEARCH_STACK_T: os << "SEARCH_STACK_T"; break;
+    case KICAD_T::S3D_CACHE_T: os << "S3D_CACHE_T"; break;
+
+    // End value
+    case KICAD_T::MAX_STRUCT_TYPE_ID: os << "MAX_STRUCT_TYPE_ID"; break;
+    default: os << "*Unknown*";
+    }
+
+    return os;
 }
 
 #endif // __KICAD_TYPEINFO_H

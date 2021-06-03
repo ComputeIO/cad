@@ -259,14 +259,14 @@ public:
     void   SetLineSpacing( double aLineSpacing ) { m_attributes.SetLineSpacing( aLineSpacing ); }
     double GetLineSpacing() const { return m_attributes.GetLineSpacing(); }
 
-    void          SetTextSize( const wxSize& aNewSize ) { m_attributes.SetSize( aNewSize ); }
-    const wxSize& GetTextSize() const { return m_attributes.GetTextSize(); }
+    void   SetTextSize( const wxSize& aNewSize ) { m_attributes.SetSize( aNewSize ); }
+    wxSize GetTextSize() const { return m_attributes.GetTextSize(); }
 
     void SetTextWidth( int aWidth ) { m_attributes.SetWidth( aWidth ); }
-    int  GetTextWidth() const { return m_attributes.GetTextSize().x; }
+    int  GetTextWidth() const { return GetTextSize().GetWidth(); }
 
     void SetTextHeight( int aHeight ) { m_attributes.SetHeight( aHeight ); }
-    int  GetTextHeight() const { return m_attributes.GetTextSize().y; }
+    int  GetTextHeight() const { return GetTextSize().GetHeight(); }
 
     void           SetTextPos( const wxPoint& aPoint ) { m_pos = aPoint; }
     void           SetTextPos( const VECTOR2D& aPoint ) { m_pos.x = aPoint.x; m_pos.y = aPoint.y; }
@@ -416,9 +416,14 @@ public:
 
     const TEXT_ATTRIBUTES& GetAttributes() const { return m_attributes; }
 
-    void Draw( KIGFX::GAL* aGal, const VECTOR2D& aPosition ) const;
+    void Draw( KIGFX::GAL* aGal, const VECTOR2D& aPosition, const TEXT_ATTRIBUTES& aAttributes ) const;
 
-    void Draw( KIGFX::GAL* aGal ) const;
+    void Draw( KIGFX::GAL* aGal, const VECTOR2D& aPosition ) const
+    {
+        Draw( aGal, aPosition, GetAttributes() );
+    }
+
+    void Draw( KIGFX::GAL* aGal ) const { Draw( aGal, GetTextPos() ); }
 
 private:
     /**

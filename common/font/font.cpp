@@ -454,6 +454,8 @@ VECTOR2D FONT::Draw( KIGFX::GAL* aGal, const UTF8& aText, const VECTOR2D& aPosit
     }
 #endif
 
+    VECTOR2D glyphSize = aAttributes.GetSize();
+
     // Context needs to be saved before any transformations
     //aGal->Save();
 
@@ -464,7 +466,7 @@ VECTOR2D FONT::Draw( KIGFX::GAL* aGal, const UTF8& aText, const VECTOR2D& aPosit
     int                   n;
 
     getLinePositions( aText, position, strings_list, positions, n, boundingBoxes,
-                      aGal->GetGlyphSize(), aAttributes );
+                      glyphSize, aAttributes );
 
     VECTOR2D boundingBox( 0, 0 );
     for( int i = 0; i < n; i++ )
@@ -505,7 +507,7 @@ VECTOR2D FONT::Draw( KIGFX::GAL* aGal, const UTF8& aText, const VECTOR2D& aPosit
         // expand bounding box of whole text
         boundingBox.x = std::max( boundingBox.x, lineBoundingBox.x );
 
-        double lineHeight = GetInterline( aGal->GetGlyphSize().y, aAttributes.GetLineSpacing() );
+        double lineHeight = GetInterline( glyphSize.y, aAttributes.GetLineSpacing() );
         boundingBox.y += lineHeight;
     }
 
@@ -518,7 +520,8 @@ VECTOR2D FONT::Draw( KIGFX::GAL* aGal, const UTF8& aText, const VECTOR2D& aPosit
 
 VECTOR2D FONT::Draw( KIGFX::GAL* aGal, const EDA_TEXT& aText ) const
 {
-    return Draw( aGal, aText.GetShownText(), aText.GetTextPos(), aText.GetAttributes() );
+    VECTOR2D textPos( aText.GetTextPos().x, aText.GetTextPos().y );
+    return Draw( aGal, aText.GetShownText(), textPos, aText.GetAttributes() );
 }
 
 

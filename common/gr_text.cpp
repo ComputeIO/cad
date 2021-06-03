@@ -136,6 +136,17 @@ void GRText( wxDC* aDC, const wxPoint& aPos, const COLOR4D& aColor, const wxStri
              bool  aBold, void ( *aCallback )( int x0, int y0, int xf, int yf, void* aData ),
              void* aCallbackData, PLOTTER* aPlotter )
 {
+#ifdef DEBUG
+    std::cerr << "GRText( ..., " << aPos << ", " << aColor << ", \"" << aText << "\", " << aOrient
+              << ", " << aSize << ", " << aHorizontalAlignment << ", " << aVerticalAlignment << ", "
+              << aWidth << ", " << ( aItalic ? "italic, " : "!italic, " )
+              << ( aBold ? "bold, " : "!bold, " ) << " ..., ";
+    if( aPlotter )
+        std::cerr << aPlotter;
+    else
+        std::cerr << "nullptr";
+    std::cerr << " )" << std::endl;
+#endif
     bool fill_mode = true;
 
     if( aWidth == 0 && aBold ) // Use default values if aWidth == 0
@@ -150,23 +161,23 @@ void GRText( wxDC* aDC, const wxPoint& aPos, const COLOR4D& aColor, const wxStri
     basic_gal.SetIsFill( fill_mode );
     basic_gal.SetLineWidth( aWidth );
 
-    EDA_TEXT dummy;
-    dummy.SetItalic( aItalic );
-    dummy.SetBold( aBold );
-    dummy.SetHorizontalAlignment( aHorizontalAlignment );
-    dummy.SetVerticalAlignment( aVerticalAlignment );
+    EDA_TEXT textProxy;
+    textProxy.SetItalic( aItalic );
+    textProxy.SetBold( aBold );
+    textProxy.SetHorizontalAlignment( aHorizontalAlignment );
+    textProxy.SetVerticalAlignment( aVerticalAlignment );
 
     wxSize size = aSize;
-    dummy.SetMirrored( size.x < 0 );
+    textProxy.SetMirrored( size.x < 0 );
 
     if( size.x < 0 )
         size.x = -size.x;
 
-    dummy.SetTextSize( size );
-    dummy.SetText( aText );
-    dummy.SetTextPos( aPos );
+    textProxy.SetTextSize( size );
+    textProxy.SetText( aText );
+    textProxy.SetTextPos( aPos );
 
-    basic_gal.SetTextAttributes( &dummy );
+    basic_gal.SetTextAttributes( &textProxy );
     basic_gal.SetPlotter( aPlotter );
     basic_gal.SetCallback( aCallback, aCallbackData );
     basic_gal.m_DC = aDC;
@@ -176,7 +187,7 @@ void GRText( wxDC* aDC, const wxPoint& aPos, const COLOR4D& aColor, const wxStri
     KIFONT::FONT* font =
             aPlotter && aPlotter->GetFont() ? aPlotter->GetFont() : KIFONT::FONT::GetFont();
 
-    font->Draw( &basic_gal, dummy );
+    font->Draw( &basic_gal, textProxy );
 }
 
 
@@ -184,21 +195,24 @@ void GRText( wxDC* aDC, const EDA_TEXT* aText, const VECTOR2D& aPosition, const 
              void ( *aCallback )( int x0, int y0, int xf, int yf, void* aData ),
              void* aCallbackData, PLOTTER* aPlotter )
 {
-    bool fill_mode = true;
-
+#ifdef DEBUG
+    std::cerr << "GRText( ..., " << *aText << ", " << aPosition << ", " << aColor << ", ... )";
+#endif
     int    penWidth = aText->GetEffectiveTextPenWidth();
-    wxSize size = aText->GetTextSize();
 
     if( penWidth == 0 ) // Use default values if aWidth == 0
-        penWidth = GetPenSizeForBold( std::min( size.x, size.y ) );
+    {
+        penWidth = GetPenSizeForBold( std::min( aText->GetTextSize().x, aText->GetTextSize().y ) );
+    }
 
+    bool fill_mode = true;
     if( penWidth < 0 )
     {
         penWidth = std::abs( penWidth );
         fill_mode = false;
     }
 
-    basic_gal.SetIsFill( fill_mode );
+    basic_gal.SetIsFill( fill_mode || aText->GetFont()->IsOutline() );
     basic_gal.SetLineWidth( penWidth );
     basic_gal.SetTextAttributes( aText );
     basic_gal.SetPlotter( aPlotter );
@@ -207,10 +221,7 @@ void GRText( wxDC* aDC, const EDA_TEXT* aText, const VECTOR2D& aPosition, const 
     basic_gal.m_Color = aColor;
     basic_gal.SetClipBox( nullptr );
 
-    //KIFONT::FONT* font = aPlotter && aPlotter->GetFont() ? aPlotter->GetFont() : aText->GetFont();
-    KIFONT::FONT* font = aText->GetFont();
-
-    font->Draw( &basic_gal, *aText, aPosition );
+    aText->Draw( &basic_gal, aPosition );
 }
 
 

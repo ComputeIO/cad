@@ -401,9 +401,7 @@ void BRDITEMS_PLOTTER::PlotFootprintTextItem( const FP_TEXT* aTextMod, COLOR4D a
 
     m_plotter->SetCurrentLineWidth( thickness );
 
-    m_plotter->Text( pos, aColor, aTextMod->GetShownText(), orient, size,
-                     aTextMod->GetHorizontalAlignment(), aTextMod->GetVerticalAlignment(),
-                     thickness, aTextMod->IsItalic(), allow_bold, false, nullptr, &gbr_metadata );
+    m_plotter->Text( aTextMod, aColor, &gbr_metadata );
 }
 
 

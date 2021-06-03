@@ -601,6 +601,15 @@ protected: // variables used in most of plotters:
 };
 
 
+inline std::ostream& operator<<( std::ostream& os, const PLOTTER& aPlotter )
+{
+    os << "[PLOTTER " << aPlotter.GetPlotterType()
+       << ( aPlotter.GetColorMode() ? " color" : " b/w" ) << "]";
+
+    return os;
+}
+
+
 class TITLE_BLOCK;
 
 void PlotDrawingSheet( PLOTTER* plotter, const PROJECT* aProject, const TITLE_BLOCK& aTitleBlock,

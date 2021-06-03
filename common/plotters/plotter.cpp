@@ -594,6 +594,10 @@ void PLOTTER::FilledCircle( const wxPoint& pos, int diametre, OUTLINE_MODE trace
 void PLOTTER::PlotPoly( const SHAPE_LINE_CHAIN& aCornerList, FILL_TYPE aFill, int aWidth,
                         void* aData )
 {
+#ifdef DEBUG
+    std::cerr << "PLOTTER::PlotPoly( [SHAPE_LINE_CHAIN], " << aFill << ", " << aWidth << ", ... )"
+              << std::endl;
+#endif
     std::vector<wxPoint> cornerList;
     cornerList.reserve( aCornerList.PointCount() );
 

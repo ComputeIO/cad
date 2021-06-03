@@ -424,8 +424,7 @@ void SCH_PAINTER::strokeText( const wxString& aText, const VECTOR2D& aPosition,
 }
 
 
-void SCH_PAINTER::strokeText( const EDA_TEXT* aText, const VECTOR2D& aPosition,
-                              const EDA_ANGLE& aAngle )
+void SCH_PAINTER::strokeText( const EDA_TEXT* aText, const VECTOR2D& aPosition, const EDA_ANGLE& aAngle )
 {
 #ifdef DEBUG
     std::cerr << "SCH_PAINTER::strokeText( " << *aText << ", " << aPosition << ", " << aAngle
@@ -434,7 +433,16 @@ void SCH_PAINTER::strokeText( const EDA_TEXT* aText, const VECTOR2D& aPosition,
     TEXT_ATTRIBUTES attributes( *aText );
     attributes.SetAngle( aAngle );
 
-    doStrokeText( aText->GetShownText(), aPosition, attributes );
+    aText->Draw( m_gal, aPosition, attributes );
+}
+
+
+void SCH_PAINTER::strokeText( const EDA_TEXT* aText, const VECTOR2D& aPosition )
+{
+#ifdef DEBUG
+    std::cerr << "SCH_PAINTER::strokeText( " << *aText << ", " << aPosition << " )\n";
+#endif
+    aText->Draw( m_gal, aPosition );
 }
 
 
@@ -1598,7 +1606,7 @@ void SCH_PAINTER::draw( const SCH_FIELD* aField, int aLayer )
     }
 
     // Calculate the text orientation according to the parent orientation.
-    EDA_ANGLE orient( aField->GetTextAngle(), EDA_ANGLE::TENTHS_OF_A_DEGREE );
+    EDA_ANGLE orient( aField->GetTextEdaAngle() );
 
     if( aField->GetParent() && aField->GetParent()->Type() == SCH_COMPONENT_T
         && static_cast<SCH_COMPONENT*>( aField->GetParent() )->GetTransform().y1 )
@@ -1610,6 +1618,10 @@ void SCH_PAINTER::draw( const SCH_FIELD* aField, int aLayer )
             orient = EDA_ANGLE::HORIZONTAL;
     }
 
+    m_gal->SetStrokeColor( color );
+    m_gal->SetFillColor( color );
+    m_gal->SetIsStroke( aField->GetFont()->IsStroke() );
+
     /*
      * Calculate the text justification, according to the symbol orientation/mirror.
      * This is a bit complicated due to cumulative calculations:
@@ -1620,21 +1632,31 @@ void SCH_PAINTER::draw( const SCH_FIELD* aField, int aLayer )
      *   to calculate so the easier way is to use no justifications (centered text) and use
      *   GetBoundingBox to know the text coordinate considered as centered
      */
-    EDA_RECT boundaryBox = aField->GetBoundingBox();
-    wxPoint  textpos = boundaryBox.Centre();
-
-    m_gal->SetStrokeColor( color );
-    m_gal->SetFillColor( color );
-    m_gal->SetIsStroke( aField->GetFont()->IsStroke() );
+    EDA_RECT boundingBox = aField->GetBoundingBox();
+    wxPoint textpos;
+    switch( aField->GetHorizontalAlignment() )
+    {
+    case TEXT_ATTRIBUTES::H_LEFT: textpos.x = boundingBox.GetOrigin().x; break;
+    case TEXT_ATTRIBUTES::H_CENTER: textpos.x = boundingBox.Centre().x; break;
+    case TEXT_ATTRIBUTES::H_RIGHT: textpos.x = boundingBox.GetEnd().x; break;
+    }
+    switch( aField->GetVerticalAlignment() )
+    {
+    // TODO: top aligned text should sit at boundingBox.GetOrigin().y - text height
+    case TEXT_ATTRIBUTES::V_TOP: textpos.y = boundingBox.GetOrigin().y; break;
+    case TEXT_ATTRIBUTES::V_CENTER: textpos.y = boundingBox.Centre().y; break;
+    case TEXT_ATTRIBUTES::V_BOTTOM: textpos.y = boundingBox.GetEnd().y; break;
+    }
 
     if( drawingShadows && eeconfig()->m_Selection.text_as_box )
     {
         m_gal->SetIsFill( true );
         m_gal->SetLineWidth( m_gal->GetLineWidth() * 0.5 );
-        boundaryBox.RevertYAxis();
 
-        m_gal->DrawRectangle( mapCoords( boundaryBox.GetPosition() ),
-                              mapCoords( boundaryBox.GetEnd() ) );
+        boundingBox.RevertYAxis();
+
+        m_gal->DrawRectangle( mapCoords( boundingBox.GetPosition() ),
+                              mapCoords( boundingBox.GetEnd() ) );
     }
     else
     {
@@ -1648,19 +1670,16 @@ void SCH_PAINTER::draw( const SCH_FIELD* aField, int aLayer )
 
 #ifdef DEBUG
         std::cerr << "textpos " << textpos << " item @" << aField->GetTextPos() << std::endl;
-        //m_gal->SetStrokeColor( COLOR4D( 1, 0, 0, .5 ) );
 #endif
-        strokeText( aField->GetShownText(), textpos, orient );
+        strokeText( aField, textpos, orient );
     }
 
-    // Draw the umbilical line
     if( aField->IsMoving() )
     {
-        wxPoint parentPos = aField->GetParentPosition();
-
+        // Draw the umbilical line
         m_gal->SetLineWidth( m_schSettings.m_outlineWidth );
         m_gal->SetStrokeColor( m_colorUmbilical );
-        m_gal->DrawLine( textpos, parentPos );
+        m_gal->DrawLine( textpos, aField->GetParentPosition() );
     }
 }
 

@@ -443,6 +443,7 @@ VECTOR2D STROKE_FONT::drawSingleLineText( KIGFX::GAL* aGal, const UTF8& aText,
         double   lw = aGal->GetLineWidth();
         aGal->SetLineWidth( debugLineWidth );
         aGal->SetStrokeColor( KIGFX::COLOR4D( .7, .7, .7, .15 ) );
+        aGal->DrawCircle( debugPosition, 0.25 * dbg );
         aGal->DrawCircle( offsetPosition, 0.75 * dbg );
         //
         double hd = dbg / 4;
@@ -647,10 +648,22 @@ VECTOR2D STROKE_FONT::drawSingleLineText( KIGFX::GAL* aGal, const UTF8& aText,
         }
 
         VECTOR2D pos( aPosition.x + xOffset, aPosition.y + yOffset );
+#ifdef DEBUG
+        std::cerr << "Glyph has " << glyph->size() << " point lists. glyphSize == " << glyphSize
+                  << ". ";
+        int n = 0;
+#endif
         for( const std::vector<VECTOR2D>* ptList : *glyph )
         {
+#ifdef DEBUG
+            std::cerr << "Point list #" << n << " has " << ptList->size() << " points. ";
+            n = n + 1;
+#endif
             charGlyph.Clear();
 
+#ifdef DEBUG
+            int ptn = 0;
+#endif
             for( const VECTOR2D& pt : *ptList )
             {
                 VECTOR2D point( pt );
@@ -669,21 +682,41 @@ VECTOR2D STROKE_FONT::drawSingleLineText( KIGFX::GAL* aGal, const UTF8& aText,
                 x += -y * italic_tilt;
                 point = VECTOR2D( x, y );
 
+#ifdef DEBUG
+                std::cerr << "Point #" << ptn << " is " << point << " ";
+                ptn = ptn + 1;
+#endif
                 charGlyph.Append( point );
+#ifdef DEBUG
+                std::cerr << "Glyph is " << charGlyph << " ";
+#endif
             }
 
             charGlyph.SetClosed( false );
+#ifdef DEBUG
+            std::cerr << "Glyph is " << charGlyph << " ";
+#endif
             glyphParts.push_back( charGlyph );
+#ifdef DEBUG
+            std::cerr << "glyphParts size is " << glyphParts.size() << std::endl;
+#endif
         }
 
         char_count++;
         xOffset += glyphSize.x * bbox.GetEnd().x;
     }
 
+#ifdef DEBUG
+    std::cerr << "Drawing glyphParts;";
+    int n = 0;
+#endif
     for( const SHAPE_LINE_CHAIN& g : glyphParts )
     {
-        if( g.PointCount() >= 2 )
-            aGal->DrawPolyline( g );
+#ifdef DEBUG
+        std::cerr << "Drawing polyline " << n << ": " << g << std::endl;
+        n = n + 1;
+#endif
+        aGal->DrawPolyline( g );
     }
 
     return VECTOR2D( xOffset, yOffset );

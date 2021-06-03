@@ -764,6 +764,9 @@ void SCH_SCREEN::Print( const RENDER_SETTINGS* aSettings )
 
 void SCH_SCREEN::Plot( PLOTTER* aPlotter ) const
 {
+#ifdef DEBUG
+    std::cerr << "SCH_SCREEN::Plot( " << *aPlotter << " )" << std::endl;
+#endif
     // Ensure links are up to date, even if a library was reloaded for some reason:
     std::vector< SCH_ITEM* > junctions;
     std::vector< SCH_ITEM* > bitmaps;

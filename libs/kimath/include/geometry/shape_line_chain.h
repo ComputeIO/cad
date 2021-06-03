@@ -26,7 +26,7 @@
 #ifndef __SHAPE_LINE_CHAIN
 #define __SHAPE_LINE_CHAIN
 
-
+#include <iostream>
 #include <clipper.hpp>
 #include <geometry/seg.h>
 #include <geometry/shape.h>
@@ -804,5 +804,13 @@ private:
     mutable BOX2I m_bbox;
 };
 
+
+inline std::ostream& operator<<( std::ostream& os, const SHAPE_LINE_CHAIN& aLineChain )
+{
+    os << "[SHAPE_LINE_CHAIN " << aLineChain.ShapeCount() << " " << aLineChain.SegmentCount() << " "
+       << aLineChain.PointCount() << "]";
+
+    return os;
+}
 
 #endif // __SHAPE_LINE_CHAIN

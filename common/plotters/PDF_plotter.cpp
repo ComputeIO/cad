@@ -309,14 +309,18 @@ void PDF_PLOTTER::Arc( const wxPoint& centre, double StAngle, double EndAngle, i
 }
 
 
-void PDF_PLOTTER::PlotPoly( const std::vector< wxPoint >& aCornerList,
-                           FILL_TYPE aFill, int aWidth, void * aData )
+void PDF_PLOTTER::PlotPoly( const std::vector<wxPoint>& aCornerList, FILL_TYPE aFill, int aWidth,
+                            void* aData )
 {
     wxASSERT( workFile );
 
     if( aCornerList.size() <= 1 )
         return;
 
+#ifdef DEBUG
+    std::cerr << "PDF_PLOTTER::PlotPoly( aCornerList, " << aFill << ", " << aWidth << ", ... )"
+              << std::endl;
+#endif
     SetCurrentLineWidth( aWidth );
 
     DPOINT pos = userToDeviceCoordinates( aCornerList[0] );
@@ -880,9 +884,22 @@ void PDF_PLOTTER::Text( const wxPoint&              aPos,
 
 void PDF_PLOTTER::Text( const EDA_TEXT* aText, const COLOR4D aColor, void* aData )
 {
+#ifdef DEBUG
+    std::cerr << "PDF_PLOTTER::Text( " << *aText << ", " << aColor << ", [aData] ) \""
+              << aText->GetShownText() << "\" size " << aText->GetTextSize() << " w "
+              << aText->GetTextWidth() << " h " << aText->GetTextHeight() << std::endl;
+#endif
     // PDF files do not like 0 sized texts which create broken files.
-    //if( aSize.x == 0 || aSize.y == 0 )
-    //    return;
+    if( aText->GetTextWidth() == 0 || aText->GetTextHeight() == 0 )
+        return;
+
+    // Also ignore empty text
+    if( aText->GetShownText().IsEmpty() )
+        return;
+
+#ifdef DEBUG
+    std::cerr << "Plotting \"" << aText->GetShownText() << "\"... ";
+#endif
 
     // Render phantom text (which will be searchable) behind the stroke font.  This won't
     // be pixel-accurate, but it doesn't matter for searching.
@@ -901,8 +918,11 @@ void PDF_PLOTTER::Text( const EDA_TEXT* aText, const COLOR4D aColor, void* aData
                            aText->IsBold(), &wideningFactor, &ctm_a, &ctm_b, &ctm_c, &ctm_d, &ctm_e,
                            &ctm_f, &heightFactor );
 
+    int textWidth = aText->GetTextWidth();
+    if( !textWidth )
+        textWidth = m_renderSettings->GetDefaultPenWidth();
+    SetCurrentLineWidth( textWidth, aData );
     SetColor( aColor );
-    SetCurrentLineWidth( aText->GetTextWidth(), aData );
 
     /* We use the full CTM instead of the text matrix because the same
        coordinate system will be used for the overlining. Also the %f
@@ -915,6 +935,14 @@ void PDF_PLOTTER::Text( const EDA_TEXT* aText, const COLOR4D aColor, void* aData
     // The text must be escaped correctly
     std:: string txt_pdf = encodeStringForPlotter( aText->GetShownText() );
     fprintf( workFile, "%s Tj ET\n", txt_pdf.c_str() );
+
+#ifdef DEBUG //FOOFAA
+    fprintf( stderr, "q %f %f %f %f %g %g cm BT %s %g Tf %d Tr %g Tz ",
+             ctm_a, ctm_b, ctm_c, ctm_d, ctm_e, ctm_f,
+             fontname, heightFactor, render_mode, wideningFactor * 100 );
+
+    fprintf( stderr, "%s Tj ET\n", txt_pdf.c_str() );
+#endif
 
     // Restore the CTM
     fputs( "Q\n", workFile );

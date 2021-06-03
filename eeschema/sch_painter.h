@@ -198,24 +198,25 @@ private:
 
     void strokeText( const wxString& aText, const VECTOR2D& aPosition, const EDA_ANGLE& aAngle,
                      KIFONT::FONT* aFont = nullptr );
-    void strokeText( const EDA_TEXT* aText, const VECTOR2D& aPosition, const EDA_ANGLE& aAngle );
 
+    void strokeText( const EDA_TEXT* aText, const VECTOR2D& aPosition, const EDA_ANGLE& aAngle );
+#if 0
     void strokeText( const EDA_TEXT* aText, const EDA_ANGLE& aAngle )
     {
         strokeText( aText, aText->GetTextPos(), aAngle );
     }
+#endif
 
     void strokeText( const EDA_TEXT* aText ) { strokeText( aText, aText->GetTextPos() ); }
 
-    void strokeText( const EDA_TEXT* aText, const VECTOR2D& aPosition )
-    {
-        strokeText( aText, aPosition, aText->GetTextEdaAngle() );
-    }
+    void strokeText( const EDA_TEXT* aText, const VECTOR2D& aPosition );
 
+#if 0
     void strokeText( const wxString& aText, const VECTOR2D& aPosition, double aAngle )
     {
         strokeText( aText, aPosition, EDA_ANGLE( aAngle, EDA_ANGLE::RADIANS ) );
     }
+#endif
 
     SCH_RENDER_SETTINGS m_schSettings;
 

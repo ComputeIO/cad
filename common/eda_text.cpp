@@ -623,15 +623,15 @@ void EDA_TEXT::SetDefaultAlignment()
 }
 
 
-void EDA_TEXT::Draw( KIGFX::GAL* aGal, const VECTOR2D& aPosition ) const
+void EDA_TEXT::Draw( KIGFX::GAL* aGal, const VECTOR2D& aPosition, const TEXT_ATTRIBUTES& aAttributes ) const
 {
+#ifdef DEBUG
+    std::cerr << "EDA_TEXT::Draw( [aGal], " << aPosition << ", " << aAttributes << " ) " << *this
+              << std::endl;
+#endif
+    aGal->SetGlyphSize( aAttributes.GetSize() );
+
     GetFont()->Draw( aGal, *this, aPosition );
-}
-
-
-void EDA_TEXT::Draw( KIGFX::GAL* aGal ) const
-{
-    GetFont()->Draw( aGal, *this );
 }
 
 

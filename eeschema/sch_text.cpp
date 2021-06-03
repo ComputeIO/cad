@@ -583,6 +583,9 @@ bool SCH_TEXT::HitTest( const EDA_RECT& aRect, bool aContained, int aAccuracy ) 
 
 void SCH_TEXT::Plot( PLOTTER* aPlotter ) const
 {
+#ifdef DEBUG
+    std::cerr << "SCH_TEXT::Plot( " << aPlotter << " ) " << *this << std::endl;
+#endif
     static std::vector<wxPoint> s_poly;
 
     RENDER_SETTINGS* settings = aPlotter->RenderSettings();
