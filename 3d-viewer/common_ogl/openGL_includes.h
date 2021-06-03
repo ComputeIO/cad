@@ -30,8 +30,6 @@
 #ifndef OPENGL_INCLUDES_H
 #define OPENGL_INCLUDES_H
 
-#include <wx/wx.h>
-
 #ifdef __APPLE__
 // Apple, in their infinite wisdom, has decided to mark OpenGL as deprecated.
 // Luckily we can silence warnings about its deprecation.
@@ -39,6 +37,13 @@
 #include <OpenGL/gl.h>
 #include <OpenGL/glu.h>
 #else
+
+#ifdef _WIN32
+// required for the windows gl.h to work
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+#endif
+
 #include <GL/gl.h>
 #include <GL/glu.h>
 #endif
