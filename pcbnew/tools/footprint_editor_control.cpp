@@ -34,6 +34,8 @@
 #include <widgets/infobar.h>
 #include <bitmaps.h>
 #include <footprint.h>
+#include <pcb_group.h>
+#include <zone.h>
 #include <project.h>
 #include <fp_lib_table.h>
 #include <dialogs/dialog_cleanup_graphics.h>

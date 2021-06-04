@@ -30,6 +30,7 @@ using namespace std::placeholders;
 #include <footprint.h>
 #include <fp_shape.h>
 #include <pad.h>
+#include <zone.h>
 #include <pcb_edit_frame.h>
 #include <pcbnew_id.h>
 #include <dialogs/dialog_pns_settings.h>
@@ -530,12 +531,8 @@ void ROUTER_TOOL::saveRouterDebugLog()
 
     for( auto evt : events)
     {
-        wxString id = "null";
-        if( evt.item && evt.item->Parent() )
-            id = evt.item->Parent()->m_Uuid.AsString();
-
         fprintf( f, "event %d %d %d %s\n", evt.p.x, evt.p.y, evt.type,
-                   (const char*) id.c_str() );
+                 (const char*) evt.uuid.c_str() );
     }
 
     fclose( f );

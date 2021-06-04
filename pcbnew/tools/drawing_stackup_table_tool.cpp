@@ -35,7 +35,9 @@
 #include <bitmaps.h>
 #include <painter.h>
 #include <board.h>
+#include <footprint.h>
 #include <fp_shape.h>
+#include <pcb_group.h>
 #include <pcb_text.h>
 #include <kicad_string.h>
 #include <wx/utils.h>

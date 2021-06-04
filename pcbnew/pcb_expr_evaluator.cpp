@@ -25,7 +25,9 @@
 #include <cstdio>
 #include <memory>
 #include <board.h>
+#include <drc/drc_rtree.h>
 #include <track.h>
+#include <pcb_group.h>
 #include <geometry/shape_segment.h>
 #include <pcb_expr_evaluator.h>
 #include <wx/log.h>

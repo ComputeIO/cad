@@ -1044,7 +1044,7 @@ TOOL_ACTION PCB_ACTIONS::layerAlphaInc( "pcbnew.Control.layerAlphaInc",
         AS_GLOBAL,
         // Don't be tempted to remove "Modern Toolset only".  It's in the legacy property name.
         '}', LEGACY_HK_NAME( "Increment Layer Transparency (Modern Toolset only)" ),
-        _( "Increase Layer Opacity" ), _( "Make the current layer more transparent" ),
+        _( "Increase Layer Opacity" ), _( "Make the current layer less transparent" ),
         BITMAPS::contrast_mode );
 
 TOOL_ACTION PCB_ACTIONS::layerAlphaDec( "pcbnew.Control.layerAlphaDec",
