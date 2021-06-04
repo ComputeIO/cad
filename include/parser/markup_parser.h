@@ -76,6 +76,10 @@ struct supPrefix : string<'^', '{'>
 {
 };
 
+struct tildePrefix : string<'^', '{'>
+{
+};
+
 struct closeBrace : string<'}'>
 {
 };
@@ -98,6 +102,7 @@ struct variable : seq<varPrefix, opt<varNamespace>, varName, closeBrace>
 
 struct subscript;
 struct superscript;
+struct overbar;
 
 /**
  * anyString =
@@ -107,7 +112,8 @@ struct superscript;
  * special even if it is not followed by an open brace
  */
 struct anyString : plus<sor<utf8::not_one<'~', '$', '_', '^'>, seq<not_at<subPrefix>, string<'_'>>,
-                            seq<not_at<supPrefix>, string<'^'>>>>
+                            seq<not_at<supPrefix>, string<'^'>>,
+                            seq<not_at<tildePrefix>, string<'^'>>>>
 {
 };
 
@@ -116,6 +122,10 @@ struct prefixedSuperscript : seq<supPrefix, superscript>
 };
 
 struct prefixedSubscript : seq<subPrefix, subscript>
+{
+};
+
+struct prefixedOverbar : seq<tildePrefix, overbar>
 {
 };
 
@@ -142,12 +152,18 @@ struct tildeString : plus<seq<not_at<subPrefix>, identifier_other>>
 {
 };
 
+struct overbar
+        : until<closeBrace, sor<variable, quotedTilde, quotedDollar, anyStringWithinBraces>>
+{
+};
+
 /**
  * Finally, the full grammar
  *
  */
-struct grammar : star<sor<quotedDollar, quotedTilde, variable, prefixedSubscript,
-                          prefixedSuperscript, seq<string<'~'>, tildeString>, anyString>>
+struct grammar : star<sor<quotedDollar, quotedTilde, variable, prefixedSubscript, prefixedSuperscript,
+                          seq<string<'~'>, string<'{'>, overbar>, seq<string<'~'>, tildeString>,
+                          anyString>>
 {
 };
 
@@ -156,7 +172,7 @@ using selector = parse_tree::selector<
         Rule,
         parse_tree::store_content::on<dollar, tilde, varNamespaceName, varName, tildeString,
                                       anyString, anyStringWithinBraces>,
-        parse_tree::discard_empty::on<superscript, subscript>>;
+        parse_tree::discard_empty::on<superscript, subscript, overbar>>;
 
 typedef std::unique_ptr<MARKUP::NODE, std::default_delete<MARKUP::NODE>> MARKUP_NODE;
 
