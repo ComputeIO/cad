@@ -1,8 +1,7 @@
 /*
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
- * Copyright (C) 2007, 2008, 2012 Alexander Lunev <al.lunev@yahoo.com>
- * Copyright (C) 2012 KiCad Developers, see CHANGELOG.TXT for contributors.
+ * Copyright (C) 1992-2021 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -22,28 +21,38 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
 
-#ifndef PCB_KEEPOUT_H_
-#define PCB_KEEPOUT_H_
+#ifndef PCB_ITEM_CONTAINERS_H_
+#define PCB_ITEM_CONTAINERS_H_
 
-#include <pcad/pcb_polygon.h>
+#include <macros_swig.h>
 
-class BOARD;
-class wxString;
-class XNODE;
+// Board-level items
+class FOOTPRINT;
+class TRACK;
+class PCB_GROUP;
+class PCB_MARKER;
+class ZONE;
 
-namespace PCAD2KICAD {
+DECL_VEC_FOR_SWIG( MARKERS, PCB_MARKER* )
+DECL_VEC_FOR_SWIG( ZONES, ZONE* )
+DECL_DEQ_FOR_SWIG( TRACKS, TRACK* )
+DECL_DEQ_FOR_SWIG( FOOTPRINTS, FOOTPRINT* )
+// Dequeue rather than Vector just so we can use moveUnflaggedItems in pcbnew_control.cpp
+DECL_DEQ_FOR_SWIG( GROUPS, PCB_GROUP* )
 
-class PCB_KEEPOUT : public PCB_POLYGON
-{
-public:
-    PCB_KEEPOUT( PCB_CALLBACKS* aCallbacks, BOARD* aBoard, int aPCadLayer );
-    ~PCB_KEEPOUT();
 
-    virtual bool Parse( XNODE*          aNode,
-                        const wxString& aDefaultMeasurementUnit,
-                        const wxString& aActualConversion ) override;
-};
+// Shared with board and footprint
+class BOARD_ITEM;
 
-} // namespace PCAD2KICAD
+DECL_DEQ_FOR_SWIG( DRAWINGS, BOARD_ITEM* )
 
-#endif    // PCB_KEEPOUT_H_
+
+// Footprint-level items
+class FP_ZONE;
+class PAD;
+
+DECL_DEQ_FOR_SWIG( PADS, PAD* )
+DECL_VEC_FOR_SWIG( FP_ZONES, FP_ZONE* )
+DECL_VEC_FOR_SWIG( FP_GROUPS, PCB_GROUP* )
+
+#endif // PCB_ITEM_CONTAINERS_H_

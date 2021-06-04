@@ -80,7 +80,7 @@ std::string NODE::typeString() const
 
 bool NODE::isOverbar() const
 {
-    return is<MARKUP::tildeString>();
+    return is<MARKUP::tildeString>() || is<MARKUP::overbar>();
 }
 
 bool NODE::isSubscript() const
