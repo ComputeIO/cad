@@ -70,6 +70,13 @@ struct GMSH_MESHER_REGIONS
 };
 
 
+struct GMSH_MESHER_STACKUP
+{
+    std::map<PCB_LAYER_ID, std::pair<int, int>> m_layers;     // start:stop
+    std::vector<int>                            m_dielectric; // transition position
+};
+
+
 class GMSH_MESHER
 {
 public:
@@ -94,6 +101,9 @@ public:
     void Finalize(); // TODO: automatically called after Load3DMesh?
 
 private:
+    void GenerateStackupLookupTable( GMSH_MESHER_STACKUP& stackup,
+                                     bool                 copperIsZero = false ) const;
+
     std::map<int, std::vector<int>>
     RegionsToShapesAfterFragment( const std::vector<std::pair<int, int>>&              fragments,
                                   const std::vector<std::pair<int, int>>&              ov,

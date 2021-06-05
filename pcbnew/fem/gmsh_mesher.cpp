@@ -335,69 +335,11 @@ void GMSH_MESHER::Load3DMeshNew()
     gmsh::model::add( "pcb" );
 
     // Generate stackup lookup structure
-    std::map<PCB_LAYER_ID, std::pair<int, int>> layerStackupHeight; // start:stop
-    std::vector<int>                            layerDielectric;
+    GMSH_MESHER_STACKUP stackup;
+    GenerateStackupLookupTable( stackup, false );
 
     int    copperPlatingThickness = 35000; // nm
     double copperPlatingThickness_mm = copperPlatingThickness / IU_PER_MM;
-
-    m_board->GetDesignSettings().GetStackupDescriptor().SynchronizeWithBoard(
-            &m_board->GetDesignSettings() );
-    int currentHeight = 0;
-    for( const BOARD_STACKUP_ITEM* item :
-         m_board->GetDesignSettings().GetStackupDescriptor().GetList() )
-    {
-        switch( item->GetType() )
-        {
-        case BS_ITEM_TYPE_COPPER:
-        {
-            PCB_LAYER_ID layer = item->GetBrdLayerId();
-            double       thickness = item->GetThickness( 0 );
-
-            double startHeight = currentHeight;
-            double endHeight = currentHeight - thickness;
-
-            layerStackupHeight.emplace( layer,
-                                        std::pair<double, double>{ startHeight, endHeight } );
-
-            currentHeight = endHeight;
-
-            switch( layer )
-            {
-            case F_Cu: layerDielectric.emplace_back( endHeight ); break;
-            case B_Cu: layerDielectric.emplace_back( startHeight ); break;
-            default:
-                layerDielectric.emplace_back( ( startHeight + endHeight )
-                                              / 2 ); // dielectric is in the middle
-                break;
-            }
-        }
-        break;
-        case BS_ITEM_TYPE_DIELECTRIC:
-            for( int i = 0; i < item->GetSublayersCount(); i++ )
-            {
-                currentHeight -= item->GetThickness( i );
-                if( i + 1 < item->GetSublayersCount() )
-                {
-                    layerDielectric.emplace_back( currentHeight );
-                }
-            }
-            break;
-        default: break;
-        }
-    }
-
-    std::clog << "-- Layer Stackup heights --" << std::endl;
-    for( const auto& elem : layerStackupHeight )
-    {
-        std::clog << " * " << wxString( LSET::Name( elem.first ) ) << " - " << elem.second.first
-                  << "nm to " << elem.second.second << "nm" << std::endl;
-    }
-    std::clog << "-- Layer Dielectric heights --" << std::endl;
-    for( const auto& height : layerDielectric )
-    {
-        std::clog << " * " << height << "nm" << std::endl;
-    }
 
     std::vector<std::pair<int, int>> fragments;
     GMSH_MESHER_REGIONS              regions;
@@ -411,7 +353,7 @@ void GMSH_MESHER::Load3DMeshNew()
         createdPads.emplace( pad );
 
         // TODO: start/stop layers?
-        for( const auto& layers : layerStackupHeight )
+        for( const auto& layers : stackup.m_layers )
         {
             if( pad->IsOnLayer( layers.first ) )
             {
@@ -435,8 +377,8 @@ void GMSH_MESHER::Load3DMeshNew()
         PCB_LAYER_ID startLayer = F_Cu;
         PCB_LAYER_ID endLayer = B_Cu;
 
-        double start_mm = layerStackupHeight.at( startLayer ).first / IU_PER_MM;
-        double end_mm = layerStackupHeight.at( endLayer ).second / IU_PER_MM;
+        double start_mm = stackup.m_layers.at( startLayer ).first / IU_PER_MM;
+        double end_mm = stackup.m_layers.at( endLayer ).second / IU_PER_MM;
 
         int padHolePlaneSurface = gmsh::model::occ::addDisk(
                 TransformPoint( pad->GetPosition().x ), TransformPoint( pad->GetPosition().y ),
@@ -471,7 +413,7 @@ void GMSH_MESHER::Load3DMeshNew()
         int regionId = net_region.first;
         int netcode = net_region.second;
 
-        for( const auto& layers : layerStackupHeight )
+        for( const auto& layers : stackup.m_layers )
         {
             double start_mm = layers.second.first / IU_PER_MM;
             double end_mm = layers.second.second / IU_PER_MM;
@@ -501,8 +443,8 @@ void GMSH_MESHER::Load3DMeshNew()
 
             const VIA* via = static_cast<const VIA*>( track );
 
-            double start_mm = layerStackupHeight.at( via->TopLayer() ).first / IU_PER_MM;
-            double end_mm = layerStackupHeight.at( via->BottomLayer() ).second / IU_PER_MM;
+            double start_mm = stackup.m_layers.at( via->TopLayer() ).first / IU_PER_MM;
+            double end_mm = stackup.m_layers.at( via->BottomLayer() ).second / IU_PER_MM;
 
             int maxError = m_board->GetDesignSettings().m_MaxError;
 
@@ -549,8 +491,8 @@ void GMSH_MESHER::Load3DMeshNew()
                 PCB_LAYER_ID startLayer = F_Cu;
                 PCB_LAYER_ID endLayer = B_Cu;
 
-                double start_mm = layerStackupHeight.at( startLayer ).first / IU_PER_MM;
-                double end_mm = layerStackupHeight.at( endLayer ).second / IU_PER_MM;
+                double start_mm = stackup.m_layers.at( startLayer ).first / IU_PER_MM;
+                double end_mm = stackup.m_layers.at( endLayer ).second / IU_PER_MM;
 
                 int padHolePlaneSurface =
                         gmsh::model::occ::addDisk( TransformPoint( pad->GetPosition().x ),
@@ -621,6 +563,71 @@ void GMSH_MESHER::Load3DMeshNew()
 void GMSH_MESHER::Finalize()
 {
     gmsh::finalize();
+}
+
+
+void GMSH_MESHER::GenerateStackupLookupTable( GMSH_MESHER_STACKUP& stackup,
+                                              bool                 copperIsZero ) const
+{
+    stackup.m_layers.clear();
+    stackup.m_dielectric.clear();
+
+    m_board->GetDesignSettings().GetStackupDescriptor().SynchronizeWithBoard(
+            &m_board->GetDesignSettings() );
+    int currentHeight = 0;
+    for( const BOARD_STACKUP_ITEM* item :
+         m_board->GetDesignSettings().GetStackupDescriptor().GetList() )
+    {
+        switch( item->GetType() )
+        {
+        case BS_ITEM_TYPE_COPPER:
+        {
+            PCB_LAYER_ID layer = item->GetBrdLayerId();
+            double       thickness = item->GetThickness( 0 );
+
+            double startHeight = currentHeight;
+            double endHeight = copperIsZero ? currentHeight : currentHeight - thickness;
+
+            stackup.m_layers.emplace( layer, std::pair<double, double>{ startHeight, endHeight } );
+
+            currentHeight = endHeight;
+
+            switch( layer )
+            {
+            case F_Cu: stackup.m_dielectric.emplace_back( endHeight ); break;
+            case B_Cu: stackup.m_dielectric.emplace_back( startHeight ); break;
+            default:
+                stackup.m_dielectric.emplace_back( ( startHeight + endHeight )
+                                                   / 2 ); // dielectric is in the middle
+                break;
+            }
+        }
+        break;
+        case BS_ITEM_TYPE_DIELECTRIC:
+            for( int i = 0; i < item->GetSublayersCount(); i++ )
+            {
+                currentHeight -= item->GetThickness( i );
+                if( i + 1 < item->GetSublayersCount() )
+                {
+                    stackup.m_dielectric.emplace_back( currentHeight );
+                }
+            }
+            break;
+        default: break;
+        }
+    }
+
+    std::clog << "-- Layer Stackup heights --" << std::endl;
+    for( const auto& elem : stackup.m_layers )
+    {
+        std::clog << " * " << wxString( LSET::Name( elem.first ) ) << " - " << elem.second.first
+                  << "nm to " << elem.second.second << "nm" << std::endl;
+    }
+    std::clog << "-- Layer Dielectric heights --" << std::endl;
+    for( const auto& height : stackup.m_dielectric )
+    {
+        std::clog << " * " << height << "nm" << std::endl;
+    }
 }
 
 
