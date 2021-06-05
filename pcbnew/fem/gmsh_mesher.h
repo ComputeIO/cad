@@ -99,8 +99,6 @@ public:
 
     void Load3DMesh();
 
-    void Load3DMeshNew(); // Second try for better code
-
     void Finalize(); // TODO: automatically called after Load3DMesh?
 
 private:
