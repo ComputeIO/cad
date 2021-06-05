@@ -46,13 +46,9 @@ void GMSH_MESHER::Load25DMesh()
 
     gmsh::model::add( "pcb" );
 
-    // TODO: better solution to track which elements belong to which surface
     std::vector<std::pair<int, int>> fragments;
+    GMSH_MESHER_REGIONS              regions;
 
-    std::map<int, int> padRegions;
-    std::map<int, int> netRegions;
-    std::set<int>      padHoleTags;
-    std::set<int>      holeTags;
     int                currentHeight = 0;
     int                lastHeight = 0;
     m_board->GetDesignSettings().GetStackupDescriptor().SynchronizeWithBoard(
@@ -85,7 +81,7 @@ void GMSH_MESHER::Load25DMesh()
         for( const auto& idx : HolesTo2DPlaneSurfaces( layer, -currentHeight_mm ) )
         {
             fragments.emplace_back( 2, idx );
-            padHoleTags.emplace( idx );
+            regions.m_drills.emplace( idx );
         }
 
         std::set<const PAD*> ignoredPads;
@@ -96,7 +92,7 @@ void GMSH_MESHER::Load25DMesh()
                  PadTo2DPlaneSurfaces( layer, -currentHeight_mm, pad_region.second ) )
             {
                 fragments.emplace_back( 2, idx );
-                padRegions.emplace( idx, pad_region.first );
+                regions.m_pads.emplace( idx, pad_region.first );
             }
 
             if( holeHeight_mm != 0. && pad_region.second->IsOnLayer( layer )
@@ -105,7 +101,7 @@ void GMSH_MESHER::Load25DMesh()
                 int padHoleSurface = PadHoleToCurveLoop( pad_region.second, -currentHeight_mm );
                 int extrudedSurface = CurveLoopToPlaneSurfaces( padHoleSurface, holeHeight_mm );
                 fragments.emplace_back( 2, extrudedSurface );
-                padRegions.emplace( extrudedSurface, pad_region.first );
+                regions.m_pads.emplace( extrudedSurface, pad_region.first );
             }
         }
 
@@ -116,12 +112,12 @@ void GMSH_MESHER::Load25DMesh()
             for( const auto& idx : netSurfaces.first )
             {
                 fragments.emplace_back( 2, idx );
-                netRegions.emplace( idx, net_region.first );
+                regions.m_nets.emplace( idx, net_region.first );
             }
             for( const auto& idx : netSurfaces.second )
             {
                 fragments.emplace_back( 2, idx );
-                holeTags.emplace( idx );
+                regions.m_net_holes.emplace( idx );
             }
 
             if( holeHeight_mm != 0. )
@@ -136,7 +132,7 @@ void GMSH_MESHER::Load25DMesh()
                                                              -currentHeight_mm );
                     int extrudedSurface = CurveLoopToPlaneSurfaces( viaHoleSurface, holeHeight_mm );
                     fragments.emplace_back( 2, extrudedSurface );
-                    netRegions.emplace( extrudedSurface, net_region.first );
+                    regions.m_nets.emplace( extrudedSurface, net_region.first );
                 }
 
                 // Pad holes
@@ -152,7 +148,7 @@ void GMSH_MESHER::Load25DMesh()
                         int extrudedSurface =
                                 CurveLoopToPlaneSurfaces( padHoleSurface, holeHeight_mm );
                         fragments.emplace_back( 2, extrudedSurface );
-                        netRegions.emplace( extrudedSurface, net_region.first );
+                        regions.m_nets.emplace( extrudedSurface, net_region.first );
                     }
                 }
             }
@@ -166,8 +162,8 @@ void GMSH_MESHER::Load25DMesh()
     std::vector<std::vector<std::pair<int, int>>> ovv;
     gmsh::model::occ::fragment( fragments, {}, ov, ovv );
 
-    std::map<int, std::vector<int>> regionToShapeId = RegionsToShapesAfterFragment(
-            fragments, ov, ovv, padRegions, netRegions, padHoleTags, holeTags );
+    std::map<int, std::vector<int>> regionToShapeId =
+            RegionsToShapesAfterFragment( fragments, ov, ovv, regions );
 
     int airTag = m_next_region_id; // TODO
 
@@ -214,13 +210,9 @@ void GMSH_MESHER::Load3DMesh()
 
     gmsh::model::add( "pcb" );
 
-    // TODO: better solution to track which elements belong to which surface
     std::vector<std::pair<int, int>> fragments;
+    GMSH_MESHER_REGIONS              regions;
 
-    std::map<int, int> padRegions;
-    std::map<int, int> netRegions;
-    std::set<int>      padHoleTags;
-    std::set<int>      holeTags;
     int                currentHeight = 0;
     m_board->GetDesignSettings().GetStackupDescriptor().SynchronizeWithBoard(
             &m_board->GetDesignSettings() );
@@ -253,7 +245,7 @@ void GMSH_MESHER::Load3DMesh()
                      HolesTo2DPlaneSurfaces( layer, -currentHeight_mm ), currentThickness_mm ) )
         {
             fragments.emplace_back( 3, idx );
-            padHoleTags.emplace( idx );
+            regions.m_drills.emplace( idx );
         }
 
         for( const auto& pad_region : m_pad_regions )
@@ -263,7 +255,7 @@ void GMSH_MESHER::Load3DMesh()
                          currentThickness_mm ) )
             {
                 fragments.emplace_back( 3, idx );
-                padRegions.emplace( idx, pad_region.first );
+                regions.m_pads.emplace( idx, pad_region.first );
             }
         }
 
@@ -275,13 +267,13 @@ void GMSH_MESHER::Load3DMesh()
                  PlaneSurfacesToVolumes( netSurfaces.first, currentThickness_mm ) )
             {
                 fragments.emplace_back( 3, idx );
-                netRegions.emplace( idx, net_region.first );
+                regions.m_nets.emplace( idx, net_region.first );
             }
             for( const auto& idx :
                  PlaneSurfacesToVolumes( netSurfaces.second, currentThickness_mm ) )
             {
                 fragments.emplace_back( 3, idx );
-                holeTags.emplace( idx );
+                regions.m_net_holes.emplace( idx );
             }
         }
 
@@ -294,8 +286,8 @@ void GMSH_MESHER::Load3DMesh()
     gmsh::model::occ::fragment( fragments, {}, ov, ovv );
     std::cerr << "RegionsToShapesAfterFragment:" << std::endl;
 
-    std::map<int, std::vector<int>> regionToShapeId = RegionsToShapesAfterFragment(
-            fragments, ov, ovv, padRegions, netRegions, padHoleTags, holeTags );
+    std::map<int, std::vector<int>> regionToShapeId =
+            RegionsToShapesAfterFragment( fragments, ov, ovv, regions );
 
     int airTag = m_next_region_id; // TODO
 
@@ -407,13 +399,8 @@ void GMSH_MESHER::Load3DMeshNew()
         std::clog << " * " << height << "nm" << std::endl;
     }
 
-    // TODO: better solution to track which elements belong to which surface
     std::vector<std::pair<int, int>> fragments;
-
-    std::map<int, int> padRegions;
-    std::map<int, int> netRegions;
-    std::set<int>      padHoleTags;
-    std::set<int>      holeTags;
+    GMSH_MESHER_REGIONS              regions;
 
     // Pads
     std::set<const PAD*> createdPads;
@@ -435,7 +422,7 @@ void GMSH_MESHER::Load3DMeshNew()
                                              end_mm - start_mm ) )
                 {
                     fragments.emplace_back( 3, idx );
-                    padRegions.emplace( idx, regionId );
+                    regions.m_pads.emplace( idx, regionId );
                 }
             }
         }
@@ -460,7 +447,7 @@ void GMSH_MESHER::Load3DMeshNew()
              PlaneSurfacesToVolumes( { padHolePlaneSurface }, end_mm - start_mm ) )
         {
             fragments.emplace_back( 3, idx );
-            padRegions.emplace( idx, regionId );
+            regions.m_pads.emplace( idx, regionId );
         }
 
         // Drill the copper again :)
@@ -496,13 +483,13 @@ void GMSH_MESHER::Load3DMeshNew()
                     PlaneSurfacesToVolumes( netSurfaces.first, end_mm-start_mm ) )
             {
                 fragments.emplace_back( 3, idx );
-                netRegions.emplace( idx, regionId );
+                regions.m_nets.emplace( idx, regionId );
             }
             for( const auto& idx :
                     PlaneSurfacesToVolumes( netSurfaces.second, end_mm-start_mm ) )
             {
                 fragments.emplace_back( 3, idx );
-                holeTags.emplace( idx );
+                regions.m_net_holes.emplace( idx );
             }
         }
 
@@ -531,7 +518,7 @@ void GMSH_MESHER::Load3DMeshNew()
                          end_mm - start_mm ) )
             {
                 fragments.emplace_back( 3, idx );
-                netRegions.emplace( idx, regionId );
+                regions.m_nets.emplace( idx, regionId );
             }
 
             // Drill the copper again :)
@@ -545,7 +532,7 @@ void GMSH_MESHER::Load3DMeshNew()
                                          end_mm - start_mm ) )
             {
                 fragments.emplace_back( 3, idx );
-                padHoleTags.emplace( idx );
+                regions.m_drills.emplace( idx );
             }
         }
 
@@ -575,7 +562,7 @@ void GMSH_MESHER::Load3DMeshNew()
                      PlaneSurfacesToVolumes( { padHolePlaneSurface }, end_mm - start_mm ) )
                 {
                     fragments.emplace_back( 3, idx );
-                    padRegions.emplace( idx, regionId );
+                    regions.m_nets.emplace( idx, regionId );
                 }
 
                 // TODO: Drill the copper again :)
@@ -589,8 +576,8 @@ void GMSH_MESHER::Load3DMeshNew()
     gmsh::model::occ::fragment( fragments, {}, ov, ovv );
     std::cerr << "RegionsToShapesAfterFragment:" << std::endl;
 
-    std::map<int, std::vector<int>> regionToShapeId = RegionsToShapesAfterFragment(
-            fragments, ov, ovv, padRegions, netRegions, padHoleTags, holeTags );
+    std::map<int, std::vector<int>> regionToShapeId =
+            RegionsToShapesAfterFragment( fragments, ov, ovv, regions );
 
     int airTag = m_next_region_id; // TODO
 
@@ -637,23 +624,22 @@ void GMSH_MESHER::Finalize()
 }
 
 
-std::map<int, std::vector<int>> GMSH_MESHER::RegionsToShapesAfterFragment(
-        const std::vector<std::pair<int, int>>&              fragments,
-        const std::vector<std::pair<int, int>>&              ov,
-        const std::vector<std::vector<std::pair<int, int>>>& ovv,
-        const std::map<int, int>& padRegions, const std::map<int, int>& netRegions,
-        const std::set<int>& padHoleTags, const std::set<int>& holeTags )
+std::map<int, std::vector<int>>
+GMSH_MESHER::RegionsToShapesAfterFragment( const std::vector<std::pair<int, int>>& fragments,
+                                           const std::vector<std::pair<int, int>>& ov,
+                                           const std::vector<std::vector<std::pair<int, int>>>& ovv,
+                                           const GMSH_MESHER_REGIONS& regions )
 {
     std::map<int, std::vector<int>> regionToShapeId;
     std::set<int>                   assignedShapeId;
 
     int airTag = m_next_region_id; // TODO
 
-    // holes
+    // Priority 1: shapes which denote a drill (are converted to air)
     for( std::size_t i = 0; i < fragments.size(); i++ )
     {
         int origTag = fragments.at( i ).second;
-        if( padHoleTags.count( origTag ) )
+        if( regions.m_drills.count( origTag ) )
         {
             for( const auto& ovTag : ovv.at( i ) )
             {
@@ -665,13 +651,14 @@ std::map<int, std::vector<int>> GMSH_MESHER::RegionsToShapesAfterFragment(
             }
         }
     }
-    // pads
+
+    // Priority 2: shapes which denote a pad
     for( std::size_t i = 0; i < fragments.size(); i++ )
     {
         int origTag = fragments.at( i ).second;
 
-        const auto& padRegionFound = padRegions.find( origTag );
-        if( padRegionFound != padRegions.end() )
+        const auto& padRegionFound = regions.m_pads.find( origTag );
+        if( padRegionFound != regions.m_pads.end() )
         {
             for( const auto& ovTag : ovv.at( i ) )
             {
@@ -683,11 +670,12 @@ std::map<int, std::vector<int>> GMSH_MESHER::RegionsToShapesAfterFragment(
             }
         }
     }
-    // region holes
+
+    // Priority 3: shapes which denote holes in net regions (because fracture does not like holes)
     for( std::size_t i = 0; i < fragments.size(); i++ )
     {
         int origTag = fragments.at( i ).second;
-        if( holeTags.count( origTag ) )
+        if( regions.m_net_holes.count( origTag ) )
         {
             for( const auto& ovTag : ovv.at( i ) )
             {
@@ -699,12 +687,13 @@ std::map<int, std::vector<int>> GMSH_MESHER::RegionsToShapesAfterFragment(
             }
         }
     }
-    // regions
+
+    // Priority 4: shapes which denote a net region
     for( std::size_t i = 0; i < fragments.size(); i++ )
     {
         int         origTag = fragments.at( i ).second;
-        const auto& netRegionFound = netRegions.find( origTag );
-        if( netRegionFound != netRegions.end() )
+        const auto& netRegionFound = regions.m_nets.find( origTag );
+        if( netRegionFound != regions.m_nets.end() )
         {
             for( const auto& ovTag : ovv.at( i ) )
             {
@@ -716,6 +705,9 @@ std::map<int, std::vector<int>> GMSH_MESHER::RegionsToShapesAfterFragment(
             }
         }
     }
+
+    // TODO: Priority 5: shapes which denote dielectrics
+    // TODO: Priority 6: shapes which denote air
 
     if( assignedShapeId.size() != ov.size() )
     {

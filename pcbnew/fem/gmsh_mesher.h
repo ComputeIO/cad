@@ -45,6 +45,31 @@ class VIA;
 class ZONE;
 
 
+/**
+ * Helper structure to track where shapes belong to so they are correctly assigned after fracture.
+ */
+struct GMSH_MESHER_REGIONS
+{
+    // Priority 1: shapes which denote a drill (are converted to air)
+    std::set<int> m_drills;
+
+    // Priority 2: shapes which denote a pad
+    std::map<int, int> m_pads; // region-id -> shapes
+
+    // Priority 3: shapes which denote holes in net regions (because fracture does not like holes)
+    std::set<int> m_net_holes;
+
+    // Priority 4: shapes which denote a net region
+    std::map<int, int> m_nets; // region-id -> shapes
+
+    // Priority 5: shapes which denote dielectrics
+    std::map<int, int> m_dielectrics;
+
+    // Priority 6: shapes which denote air
+    std::set<int> m_air;
+};
+
+
 class GMSH_MESHER
 {
 public:
@@ -73,9 +98,7 @@ private:
     RegionsToShapesAfterFragment( const std::vector<std::pair<int, int>>&              fragments,
                                   const std::vector<std::pair<int, int>>&              ov,
                                   const std::vector<std::vector<std::pair<int, int>>>& ovv,
-                                  const std::map<int, int>&                            padRegions,
-                                  const std::map<int, int>&                            netRegions,
-                                  const std::set<int>& padHoleTags, const std::set<int>& holeTags );
+                                  const GMSH_MESHER_REGIONS&                           regions );
 
     int CurveLoopToPlaneSurfaces( const int aCurveLoop, double aExtrudeZ );
 
