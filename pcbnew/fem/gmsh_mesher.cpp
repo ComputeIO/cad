@@ -517,26 +517,36 @@ void GMSH_MESHER::Load3DMeshNew()
             double start_mm = layerStackupHeight.at( via->TopLayer() ).first / IU_PER_MM;
             double end_mm = layerStackupHeight.at( via->BottomLayer() ).second / IU_PER_MM;
 
-            int copperIdx = gmsh::model::occ::addCylinder(
-                    TransformPoint( via->GetPosition().x ), TransformPoint( via->GetPosition().y ),
-                    start_mm, 0, 0, end_mm - start_mm, TransformPoint( via->GetDrill() ) / 2. );
+            int maxError = m_board->GetDesignSettings().m_MaxError;
 
-            fragments.emplace_back( 3, copperIdx );
-            netRegions.emplace( copperIdx, regionId );
+            double radius = via->GetDrillValue() / 2.;
+
+            SHAPE_POLY_SET copperPolyset;
+            TransformCircleToPolygon( copperPolyset, via->GetPosition(), radius, maxError,
+                                      ERROR_INSIDE );
+            copperPolyset.Simplify( SHAPE_POLY_SET::POLYGON_MODE::PM_FAST );
+
+            for( const auto& idx : PlaneSurfacesToVolumes(
+                         ShapePolySetToPlaneSurfaces( copperPolyset, start_mm ).first,
+                         end_mm - start_mm ) )
+            {
+                fragments.emplace_back( 3, idx );
+                netRegions.emplace( idx, regionId );
+            }
 
             // Drill the copper again :)
-            // TODO: this leads to curvation errors in some cases!
-            /*int drillIdx = gmsh::model::occ::addCylinder(
-                    TransformPoint( via->GetPosition().x ),
-                    TransformPoint( via->GetPosition().y ),
-                    start_mm,
-                    0,
-                    0,
-                    end_mm - start_mm,
-                    TransformPoint( via->GetDrill() ) / 2. - copperPlatingThickness_mm);
+            SHAPE_POLY_SET holePolyset;
+            TransformCircleToPolygon( holePolyset, via->GetPosition(),
+                                      radius - copperPlatingThickness, maxError, ERROR_INSIDE );
+            holePolyset.Simplify( SHAPE_POLY_SET::POLYGON_MODE::PM_FAST );
 
-            fragments.emplace_back( 3, drillIdx );
-            padHoleTags.emplace( drillIdx );*/
+            for( const auto& idx :
+                 PlaneSurfacesToVolumes( ShapePolySetToPlaneSurfaces( holePolyset, start_mm ).first,
+                                         end_mm - start_mm ) )
+            {
+                fragments.emplace_back( 3, idx );
+                padHoleTags.emplace( idx );
+            }
         }
 
         // Pad holes
@@ -579,9 +589,6 @@ void GMSH_MESHER::Load3DMeshNew()
     gmsh::model::occ::fragment( fragments, {}, ov, ovv );
     std::cerr << "RegionsToShapesAfterFragment:" << std::endl;
 
-    // gmsh::model::occ::removeAllDuplicates
-    // gmsh::model::occ::healShapes()
-
     std::map<int, std::vector<int>> regionToShapeId = RegionsToShapesAfterFragment(
             fragments, ov, ovv, padRegions, netRegions, padHoleTags, holeTags );
 
@@ -597,6 +604,9 @@ void GMSH_MESHER::Load3DMeshNew()
         }
         regionToShapeId.erase( airShapes->first );
     }
+
+    // gmsh::model::occ::removeAllDuplicates();
+    // gmsh::model::occ::healShapes()
 
     // we need to do synchronize when calling any non occ function!
     std::cerr << "synchronize(): ";
@@ -825,7 +835,7 @@ std::vector<int> GMSH_MESHER::HolesTo2DPlaneSurfaces( PCB_LAYER_ID aLayer, doubl
         if( !track->IsOnLayer( aLayer ) || !VIA::ClassOf( track ) )
             continue;
 
-        double radius = static_cast<const VIA*>( track )->GetDrill() / 2.;
+        double radius = static_cast<const VIA*>( track )->GetDrillValue() / 2.;
         gmshSurfaces.emplace_back( gmsh::model::occ::addDisk(
                 TransformPoint( track->GetPosition().x ), TransformPoint( track->GetPosition().y ),
                 aOffsetZ, TransformPoint( radius ), TransformPoint( radius ) ) );
@@ -861,8 +871,7 @@ std::vector<int> GMSH_MESHER::HolesTo2DPlaneSurfaces( PCB_LAYER_ID aLayer, doubl
 
 int GMSH_MESHER::ViaHoleToCurveLoop( const VIA* aVia, double aOffsetZ, double aCopperOffset )
 {
-    double radius = aVia->GetDrill() / 2. - aCopperOffset;
-    std::cerr << radius << std::endl;
+    double radius = aVia->GetDrillValue() / 2. - aCopperOffset;
     return gmsh::model::occ::addCircle( TransformPoint( aVia->GetPosition().x ),
                                         TransformPoint( aVia->GetPosition().y ), aOffsetZ,
                                         TransformPoint( radius ) );
