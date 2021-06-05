@@ -128,6 +128,13 @@ bool FEM_DESCRIPTOR::RemoveResult( FEM_RESULT* aResult )
 
 bool FEM_DESCRIPTOR::Run()
 {
-    Run_DC_CurrentDensity( this );
-    return true;
+    switch( m_solver )
+    {
+    case FEM_SOLVER::SPARSELIZARD:
+    {
+        SPARSELIZARD_SOLVER* solver = new SPARSELIZARD_SOLVER();
+        return solver->Run_DC( this );
+    }
+    default: return false;
+    }
 }

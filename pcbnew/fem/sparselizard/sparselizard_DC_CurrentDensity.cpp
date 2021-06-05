@@ -34,6 +34,10 @@
 #define MIN_ORDER 1
 #define MAX_ORDER 3
 
+SPARSELIZARD_SOLVER::SPARSELIZARD_SOLVER()
+{
+}
+
 
 std::vector<int> getAllRegionsWithNetcode( std::map<int, int> aRegionMap, int aNetCode,
                                            int aIgnoredPort = -1 )
@@ -51,7 +55,8 @@ std::vector<int> getAllRegionsWithNetcode( std::map<int, int> aRegionMap, int aN
 }
 
 
-double compute_DC_Current( expression j, int aPort, std::map<int, int> aRegionMap, int aNetCode )
+double SPARSELIZARD_SOLVER::computeCurrentDC( int aPort, std::map<int, int> aRegionMap,
+                                              int aNetCode )
 {
     std::vector<int> regions = getAllRegionsWithNetcode( aRegionMap, aNetCode, aPort );
 
@@ -63,31 +68,31 @@ double compute_DC_Current( expression j, int aPort, std::map<int, int> aRegionMa
     }
     int outsideOfPort = sl::selectunion( regions );
     int line = sl::selectintersection( { aPort, outsideOfPort } );
-    return ( sl::normal( aPort ) * sl::on( outsideOfPort, j ) ).integrate( line, 4 );
+    return ( sl::normal( aPort ) * sl::on( outsideOfPort, m_j ) ).integrate( line, 4 );
 }
 
 
-double compute_DC_Voltage( expression v, int aPortA, int aPortB )
+double SPARSELIZARD_SOLVER::computeVoltageDC( int aPortA, int aPortB )
 {
     double result;
-    result = v.integrate( aPortA, 4 ) / expression( 1 ).integrate( aPortA, 4 );
-    result -= v.integrate( aPortB, 4 ) / expression( 1 ).integrate( aPortB, 4 );
+    result = m_v.integrate( aPortA, 4 ) / expression( 1 ).integrate( aPortA, 4 );
+    result -= m_v.integrate( aPortB, 4 ) / expression( 1 ).integrate( aPortB, 4 );
     return result;
 }
 
-double compute_DC_Potential( expression v, int aPortA )
+double SPARSELIZARD_SOLVER::computePotentialDC( int aPortA )
 {
     double result;
-    result = v.integrate( aPortA, 4 ) / expression( 1 ).integrate( aPortA, 4 );
+    result = m_v.integrate( aPortA, 4 ) / expression( 1 ).integrate( aPortA, 4 );
     return result;
 }
 
-double compute_DC_Resistance( expression v, expression j, int aPortA, int aPortB,
-                              std::map<int, int> aRegionMap, int aNetCode )
+double SPARSELIZARD_SOLVER::computeResistanceDC( int aPortA, int aPortB,
+                                                 std::map<int, int> aRegionMap, int aNetCode )
 {
     double V, I;
-    V = compute_DC_Voltage( v, aPortA, aPortB );
-    I = compute_DC_Current( j, aPortA, aRegionMap, aNetCode );
+    V = computeVoltageDC( aPortA, aPortB );
+    I = computeCurrentDC( aPortA, aRegionMap, aNetCode );
 
     if( ( I == 0 ) && ( V == 0 ) )
         return 0; // Should be nan, we could not get the resistance
@@ -97,18 +102,35 @@ double compute_DC_Resistance( expression v, expression j, int aPortA, int aPortB
     return V / I;
 }
 
-double compute_DC_Power( expression v, expression j, int aPortA, int aPortB,
-                         std::map<int, int> aRegionMap, int aNetCode )
+double SPARSELIZARD_SOLVER::computePowerDC( int aPortA, int aPortB, std::map<int, int> aRegionMap,
+                                            int aNetCode )
 {
     double V, I;
-    V = compute_DC_Voltage( v, aPortA, aPortB );
-    I = compute_DC_Current( j, aPortA, aRegionMap, aNetCode );
+    V = computeVoltageDC( aPortA, aPortB );
+    I = computeCurrentDC( aPortA, aRegionMap, aNetCode );
 
     return V * I;
 }
 
-bool Run_DC_CurrentDensity( FEM_DESCRIPTOR* aDescriptor )
+void SPARSELIZARD_SOLVER::setVoltageDC( formulation* m_equations, int aRegion, double aV )
 {
+    //formulation m_equations = *( static_cast< formulation* > ( m_eqPrt) );
+    port V, I;
+    m_v.setport( aRegion, V, I );
+    ( *m_equations ) += V - aV;
+}
+
+void SPARSELIZARD_SOLVER::setCurrentDC( formulation* m_equations, int aRegion, double aI )
+{
+    port V, I;
+    m_v.setport( aRegion, V, I );
+    ( *m_equations ) += I - aI;
+}
+
+
+bool SPARSELIZARD_SOLVER::Run_DC( FEM_DESCRIPTOR* aDescriptor )
+{
+    std::cout << "entering solver " << std::endl;
     const double copperResistivity = 1.68e-8 / ( 35e-6 );
     const double interpolationOrder = 1;
 
@@ -188,14 +210,14 @@ bool Run_DC_CurrentDensity( FEM_DESCRIPTOR* aDescriptor )
 
     std::cout << std::endl << "---------SIMULATION---------" << std::endl;
     // Create the electric potential field v
-    field v( "h1" );
+    m_v = field( "h1" );
+    formulation m_equations;
     // parameters
     parameter   rho; // resistivity
-    formulation equations;
 
     for( std::map<int, int>::iterator it = regionMap.begin(); it != regionMap.end(); ++it )
     {
-        v.setorder( it->first, interpolationOrder );
+        m_v.setorder( it->first, interpolationOrder );
         rho | it->first = copperResistivity;
     }
 
@@ -213,17 +235,11 @@ bool Run_DC_CurrentDensity( FEM_DESCRIPTOR* aDescriptor )
             switch( portA->m_constraint.m_type )
             {
             case FEM_PORT_CONSTRAINT_TYPE::VOLTAGE:
-                v.setport( portA->m_simulationID, V, I );
-                equations += V - portA->m_constraint.m_value;
-                std::cout << "Setting region " << portA->m_simulationID << " to "
-                          << portA->m_constraint.m_value << " V" << std::endl;
+                setVoltageDC( &m_equations, portA->m_simulationID, portA->m_simulationID );
                 break;
             case FEM_PORT_CONSTRAINT_TYPE::CURRENT:
             {
-                v.setport( portA->m_simulationID, V, I );
-                equations += I - portA->m_constraint.m_value;
-                std::cout << "Setting region " << portA->m_simulationID << " divergence to "
-                          << portA->m_constraint.m_value << " A" << std::endl;
+                setCurrentDC( &m_equations, portA->m_simulationID, portA->m_constraint.m_value );
                 break;
             }
             default: std::cerr << "Source / Sink type not supported" << std::endl;
@@ -236,15 +252,14 @@ bool Run_DC_CurrentDensity( FEM_DESCRIPTOR* aDescriptor )
 
     for( std::map<int, int>::iterator it = regionMap.begin(); it != regionMap.end(); ++it )
     {
-        equations +=
-                sl::integral( it->first, sl::grad( sl::tf( v ) ) / rho * sl::grad( sl::dof( v ) ) );
+        m_equations += sl::integral( it->first,
+                                     sl::grad( sl::tf( m_v ) ) / rho * sl::grad( sl::dof( m_v ) ) );
     }
 
     // Expression for the electric field E [V/m] and current density j [A/m^2]:
-    expression E = -sl::grad( v ); // electric field
-    expression j = E / rho;        // current density
-    expression p = sl::doubledotproduct( j, E ); // power density
-    //expression P = sl::compx(p)*sl::compx(p)+sl::compy(p)*sl::compy(p);          // power density
+    m_E = -sl::grad( m_v );                 // electric field
+    m_j = m_E / rho;                        // current density
+    m_p = sl::doubledotproduct( m_j, m_E ); // power density
 
 
     int  nb_refinements = 0;
@@ -252,10 +267,10 @@ bool Run_DC_CurrentDensity( FEM_DESCRIPTOR* aDescriptor )
     bool need_adapt = false;
 
     // Simple p-adaptivity loop:
-    v.setorder( sl::norm( sl::grad( v ) ), MIN_ORDER, MAX_ORDER + 1 );
+    m_v.setorder( sl::norm( sl::grad( m_v ) ), MIN_ORDER, MAX_ORDER + 1 );
     for( int i = 0; i <= MAX_ORDER - MIN_ORDER; i++ )
     {
-        equations.solve( "cholesky" );
+        m_equations.solve( "cholesky" );
         need_adapt = sl::adapt();
         if( !need_adapt )
         {
@@ -264,7 +279,7 @@ bool Run_DC_CurrentDensity( FEM_DESCRIPTOR* aDescriptor )
     }
 
 
-    sl::fieldorder( v ).write( wholedomain, "fieldOrder.pos" );
+    sl::fieldorder( m_v ).write( wholedomain, "fieldOrder.pos" );
 
     std::cout << std::endl << "---------RESULTS---------" << std::endl;
 
@@ -294,7 +309,7 @@ bool Run_DC_CurrentDensity( FEM_DESCRIPTOR* aDescriptor )
             {
                 int portA = resultValue->GetPortA()->m_simulationID;
                 std::cout << "Potential at " << portA << endl;
-                resultValue->m_value = compute_DC_Potential( v, portA );
+                resultValue->m_value = computePotentialDC( portA );
                 resultValue->m_valid = true;
                 break;
             }
@@ -303,7 +318,7 @@ bool Run_DC_CurrentDensity( FEM_DESCRIPTOR* aDescriptor )
                 int portA = resultValue->GetPortA()->m_simulationID;
                 int portB = resultValue->GetPortB()->m_simulationID;
                 std::cout << "Voltage from " << portB << " to " << portA << endl;
-                resultValue->m_value = compute_DC_Voltage( v, portA, portB );
+                resultValue->m_value = computeVoltageDC( portA, portB );
                 resultValue->m_valid = true;
                 break;
             }
@@ -324,7 +339,7 @@ bool Run_DC_CurrentDensity( FEM_DESCRIPTOR* aDescriptor )
                 }
                 else
                 {
-                    resultValue->m_value = compute_DC_Current( j, port, regionMap, netCode );
+                    resultValue->m_value = computeCurrentDC( port, regionMap, netCode );
                 }
                 resultValue->m_valid = true;
                 break;
@@ -336,8 +351,7 @@ bool Run_DC_CurrentDensity( FEM_DESCRIPTOR* aDescriptor )
                 int netCode = resultValue->GetPortA()->GetItem()->GetNetCode();
                 std::cout << "Resistance between " << portB << " and " << portA << endl;
                 // Find the region with same potential as
-                resultValue->m_value =
-                        compute_DC_Resistance( v, j, portA, portB, regionMap, netCode );
+                resultValue->m_value = computeResistanceDC( portA, portB, regionMap, netCode );
                 resultValue->m_valid = true;
                 break;
             }
@@ -348,7 +362,7 @@ bool Run_DC_CurrentDensity( FEM_DESCRIPTOR* aDescriptor )
                 if( resultValue->GetPortA()->m_type == FEM_PORT_TYPE::PASSIVE )
                 {
                     int port = resultValue->GetPortA()->m_simulationID;
-                    resultValue->m_value = ( sl::on( port, p ) ).integrate( port, 4 );
+                    resultValue->m_value = ( sl::on( port, m_p ) ).integrate( port, 4 );
                     resultValue->m_valid = true;
                 }
                 else
@@ -379,8 +393,7 @@ bool Run_DC_CurrentDensity( FEM_DESCRIPTOR* aDescriptor )
                 }
                 else
                 {
-                    resultValue->m_value =
-                            compute_DC_Power( v, j, portA, portB, regionMap, netCode );
+                    resultValue->m_value = computePowerDC( portA, portB, regionMap, netCode );
                     resultValue->m_valid = true;
                 }
                 break;
@@ -400,18 +413,18 @@ bool Run_DC_CurrentDensity( FEM_DESCRIPTOR* aDescriptor )
                 break;
             case FEM_VIEW_TYPE::CURRENT:
 
-                j.write( wholedomain, std::string( resultView->m_filename.GetFullName() ),
-                         MAX_ORDER );
+                m_j.write( wholedomain, std::string( resultView->m_filename.GetFullName() ),
+                           MAX_ORDER );
                 resultView->m_valid = true;
                 break;
             case FEM_VIEW_TYPE::VOLTAGE:
-                v.write( wholedomain, std::string( resultView->m_filename.GetFullName() ),
-                         MAX_ORDER );
+                m_v.write( wholedomain, std::string( resultView->m_filename.GetFullName() ),
+                           MAX_ORDER );
                 resultView->m_valid = true;
                 break;
             case FEM_VIEW_TYPE::POWER:
-                p.write( wholedomain, std::string( resultView->m_filename.GetFullName() ),
-                         MAX_ORDER );
+                m_p.write( wholedomain, std::string( resultView->m_filename.GetFullName() ),
+                           MAX_ORDER );
                 resultView->m_valid = true;
                 break;
             default:

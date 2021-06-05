@@ -209,7 +209,7 @@ void runFEMCurrentDensity( const BOARD* aBoard )
     if( !descriptor->AddResult( r_powerView ) )
         std::cerr << "Could not add view result to descriptor " << std::endl;
 
-    Run_DC_CurrentDensity( descriptor );
+    descriptor->Run();
 
     if( r_voltage->m_valid )
         std::cout << "Voltage between J1-Pad1 and J2-Pad1: " << r_voltage->GetResult() << std::endl;

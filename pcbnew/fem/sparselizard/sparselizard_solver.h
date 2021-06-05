@@ -25,8 +25,36 @@
 #define KICAD_SPARSELIZARD_SOLVER_H
 
 #include "../common/fem_descriptor.h"
+#include <sparselizard/sparselizard.h>
 
 
-bool Run_DC_CurrentDensity( FEM_DESCRIPTOR* aDescriptor );
+class SPARSELIZARD_SOLVER
+{
+public:
+    SPARSELIZARD_SOLVER();
+    bool Run_DC( FEM_DESCRIPTOR* aDescriptor );
 
+    double computeCurrentDC( int aPort, std::map<int, int> aRegionMap, int aNetCode );
+    double computeVoltageDC( int aPortA, int aPortB );
+    double computePotentialDC( int aPortA );
+    double computeResistanceDC( int aPortA, int aPortB, std::map<int, int> aRegionMap,
+                                int aNetCode );
+    double computePowerDC( int aPortA, int aPortB, std::map<int, int> aRegionMap, int aNetCode );
+
+    void setVoltageDC( formulation* m_equations, int aRegion, double aV );
+    void setCurrentDC( formulation* m_equations, int region, double aI );
+
+    // Holds all equations
+    //formulation m_equations; // For some reasons, this lead to a segfault on constructor
+
+    // Electric potential field
+    field m_v;
+    // Expressions, derived from the electric potential field
+    expression m_E; // Electriec field
+    expression m_j; // current density
+    expression m_p; // power density
+
+
+private:
+};
 #endif
