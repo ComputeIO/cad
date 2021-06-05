@@ -41,11 +41,11 @@ public:
                                 int aNetCode );
     double computePowerDC( int aPortA, int aPortB, std::map<int, int> aRegionMap, int aNetCode );
 
-    void setVoltageDC( formulation* m_equations, int aRegion, double aV );
-    void setCurrentDC( formulation* m_equations, int region, double aI );
+    void setVoltageDC( int aRegion, double aV );
+    void setCurrentDC( int region, double aI );
 
     // Holds all equations
-    //formulation m_equations; // For some reasons, this lead to a segfault on constructor
+    formulation *m_equations; // For some reasons, this lead to a segfault on constructor if not using a pointer
 
     // Electric potential field
     field m_v;

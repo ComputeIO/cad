@@ -112,19 +112,20 @@ double SPARSELIZARD_SOLVER::computePowerDC( int aPortA, int aPortB, std::map<int
     return V * I;
 }
 
-void SPARSELIZARD_SOLVER::setVoltageDC( formulation* m_equations, int aRegion, double aV )
+void SPARSELIZARD_SOLVER::setVoltageDC( int aRegion, double aV )
 {
-    //formulation m_equations = *( static_cast< formulation* > ( m_eqPrt) );
     port V, I;
     m_v.setport( aRegion, V, I );
     ( *m_equations ) += V - aV;
+    std::cout << "Voltage on region " << aRegion << ": " << aV << std::endl;
 }
 
-void SPARSELIZARD_SOLVER::setCurrentDC( formulation* m_equations, int aRegion, double aI )
+void SPARSELIZARD_SOLVER::setCurrentDC( int aRegion, double aI )
 {
     port V, I;
     m_v.setport( aRegion, V, I );
     ( *m_equations ) += I - aI;
+    std::cout << "Current from region " << aRegion << ": " << aI << std::endl;
 }
 
 
@@ -211,7 +212,8 @@ bool SPARSELIZARD_SOLVER::Run_DC( FEM_DESCRIPTOR* aDescriptor )
     std::cout << std::endl << "---------SIMULATION---------" << std::endl;
     // Create the electric potential field v
     m_v = field( "h1" );
-    formulation m_equations;
+    formulation eq;
+    m_equations = &eq;
     // parameters
     parameter   rho; // resistivity
 
@@ -235,11 +237,11 @@ bool SPARSELIZARD_SOLVER::Run_DC( FEM_DESCRIPTOR* aDescriptor )
             switch( portA->m_constraint.m_type )
             {
             case FEM_PORT_CONSTRAINT_TYPE::VOLTAGE:
-                setVoltageDC( &m_equations, portA->m_simulationID, portA->m_simulationID );
+                setVoltageDC( portA->m_simulationID, portA->m_constraint.m_value );
                 break;
             case FEM_PORT_CONSTRAINT_TYPE::CURRENT:
             {
-                setCurrentDC( &m_equations, portA->m_simulationID, portA->m_constraint.m_value );
+                setCurrentDC( portA->m_simulationID, portA->m_constraint.m_value );
                 break;
             }
             default: std::cerr << "Source / Sink type not supported" << std::endl;
@@ -252,8 +254,8 @@ bool SPARSELIZARD_SOLVER::Run_DC( FEM_DESCRIPTOR* aDescriptor )
 
     for( std::map<int, int>::iterator it = regionMap.begin(); it != regionMap.end(); ++it )
     {
-        m_equations += sl::integral( it->first,
-                                     sl::grad( sl::tf( m_v ) ) / rho * sl::grad( sl::dof( m_v ) ) );
+        ( *m_equations ) += sl::integral( it->first, sl::grad( sl::tf( m_v ) ) / rho
+                                                             * sl::grad( sl::dof( m_v ) ) );
     }
 
     // Expression for the electric field E [V/m] and current density j [A/m^2]:
@@ -270,7 +272,7 @@ bool SPARSELIZARD_SOLVER::Run_DC( FEM_DESCRIPTOR* aDescriptor )
     m_v.setorder( sl::norm( sl::grad( m_v ) ), MIN_ORDER, MAX_ORDER + 1 );
     for( int i = 0; i <= MAX_ORDER - MIN_ORDER; i++ )
     {
-        m_equations.solve( "cholesky" );
+        m_equations->solve( "cholesky" );
         need_adapt = sl::adapt();
         if( !need_adapt )
         {
