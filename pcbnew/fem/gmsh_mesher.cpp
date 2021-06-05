@@ -451,11 +451,6 @@ void GMSH_MESHER::Load3DMeshNew()
         double start_mm = layerStackupHeight.at( startLayer ).first / IU_PER_MM;
         double end_mm = layerStackupHeight.at( endLayer ).second / IU_PER_MM;
 
-        // TODO: why does this not work?
-        //gmsh::model::occ::addCylinder( TransformPoint( pad->po)
-        //int padHoleCurvedLoop = PadHoleToCurveLoop( pad, start_mm );
-        //int padHolePlaneSurface = gmsh::model::occ::addPlaneSurface( { padHoleCurvedLoop } );
-
         int padHolePlaneSurface = gmsh::model::occ::addDisk(
                 TransformPoint( pad->GetPosition().x ), TransformPoint( pad->GetPosition().y ),
                 start_mm, TransformPoint( pad->GetDrillSizeX() ) / 2.,
@@ -469,7 +464,8 @@ void GMSH_MESHER::Load3DMeshNew()
         }
 
         // Drill the copper again :)
-        int padHolePlaneSurfaceAir = gmsh::model::occ::addDisk(
+        // TODO: this leads to curvation errors in some cases!
+        /*int padHolePlaneSurfaceAir = gmsh::model::occ::addDisk(
                 TransformPoint( pad->GetPosition().x ), TransformPoint( pad->GetPosition().y ),
                 start_mm, TransformPoint( pad->GetDrillSizeX() ) / 2. - copperPlatingThickness_mm,
                 TransformPoint( pad->GetDrillSizeY() ) / 2. - copperPlatingThickness_mm );
@@ -479,7 +475,7 @@ void GMSH_MESHER::Load3DMeshNew()
         {
             fragments.emplace_back( 3, idx );
             padHoleTags.emplace( idx );
-        }
+        }*/
     }
 
     // Net Regions
@@ -494,7 +490,7 @@ void GMSH_MESHER::Load3DMeshNew()
             double end_mm = layers.second.second / IU_PER_MM;
 
             // TODO: error?
-            /*std::pair<std::vector<int>, std::vector<int>> netSurfaces =
+            std::pair<std::vector<int>, std::vector<int>> netSurfaces =
                     NetTo2DPlaneSurfaces( layers.first, start_mm, netcode );
             for( const auto& idx :
                     PlaneSurfacesToVolumes( netSurfaces.first, end_mm-start_mm ) )
@@ -507,10 +503,74 @@ void GMSH_MESHER::Load3DMeshNew()
             {
                 fragments.emplace_back( 3, idx );
                 holeTags.emplace( idx );
-            }*/
+            }
         }
 
-        // TODO: holes
+        // Via holes
+        for( const TRACK* track : m_board->Tracks() )
+        {
+            if( track->GetNetCode() != netcode || !VIA::ClassOf( track ) )
+                continue;
+
+            const VIA* via = static_cast<const VIA*>( track );
+
+            double start_mm = layerStackupHeight.at( via->TopLayer() ).first / IU_PER_MM;
+            double end_mm = layerStackupHeight.at( via->BottomLayer() ).second / IU_PER_MM;
+
+            int copperIdx = gmsh::model::occ::addCylinder(
+                    TransformPoint( via->GetPosition().x ), TransformPoint( via->GetPosition().y ),
+                    start_mm, 0, 0, end_mm - start_mm, TransformPoint( via->GetDrill() ) / 2. );
+
+            fragments.emplace_back( 3, copperIdx );
+            netRegions.emplace( copperIdx, regionId );
+
+            // Drill the copper again :)
+            // TODO: this leads to curvation errors in some cases!
+            /*int drillIdx = gmsh::model::occ::addCylinder(
+                    TransformPoint( via->GetPosition().x ),
+                    TransformPoint( via->GetPosition().y ),
+                    start_mm,
+                    0,
+                    0,
+                    end_mm - start_mm,
+                    TransformPoint( via->GetDrill() ) / 2. - copperPlatingThickness_mm);
+
+            fragments.emplace_back( 3, drillIdx );
+            padHoleTags.emplace( drillIdx );*/
+        }
+
+        // Pad holes
+        for( const FOOTPRINT* footprint : m_board->Footprints() )
+        {
+            for( const PAD* pad : footprint->Pads() )
+            {
+                if( pad->GetNetCode() != netcode || createdPads.count( pad ) != 0
+                    || pad->GetAttribute() == PAD_ATTRIB::SMD )
+                    continue;
+
+                // TODO: get start/end layer from stackup!
+                PCB_LAYER_ID startLayer = F_Cu;
+                PCB_LAYER_ID endLayer = B_Cu;
+
+                double start_mm = layerStackupHeight.at( startLayer ).first / IU_PER_MM;
+                double end_mm = layerStackupHeight.at( endLayer ).second / IU_PER_MM;
+
+                int padHolePlaneSurface =
+                        gmsh::model::occ::addDisk( TransformPoint( pad->GetPosition().x ),
+                                                   TransformPoint( pad->GetPosition().y ), start_mm,
+                                                   TransformPoint( pad->GetDrillSizeX() ) / 2.,
+                                                   TransformPoint( pad->GetDrillSizeY() ) / 2. );
+
+                for( const auto& idx :
+                     PlaneSurfacesToVolumes( { padHolePlaneSurface }, end_mm - start_mm ) )
+                {
+                    fragments.emplace_back( 3, idx );
+                    padRegions.emplace( idx, regionId );
+                }
+
+                // TODO: Drill the copper again :)
+            }
+        }
     }
 
     std::cerr << "fragment:" << std::endl;
@@ -518,6 +578,9 @@ void GMSH_MESHER::Load3DMeshNew()
     std::vector<std::vector<std::pair<int, int>>> ovv;
     gmsh::model::occ::fragment( fragments, {}, ov, ovv );
     std::cerr << "RegionsToShapesAfterFragment:" << std::endl;
+
+    // gmsh::model::occ::removeAllDuplicates
+    // gmsh::model::occ::healShapes()
 
     std::map<int, std::vector<int>> regionToShapeId = RegionsToShapesAfterFragment(
             fragments, ov, ovv, padRegions, netRegions, padHoleTags, holeTags );
