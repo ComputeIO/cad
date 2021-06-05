@@ -46,6 +46,8 @@ void GMSH_MESHER::Load25DMesh()
 
     gmsh::model::add( "pcb" );
 
+    int maxError = m_board->GetDesignSettings().m_MaxError;
+
     std::vector<std::pair<int, int>> fragments;
     GMSH_MESHER_REGIONS              regions;
 
@@ -89,7 +91,7 @@ void GMSH_MESHER::Load25DMesh()
         {
             ignoredPads.emplace( pad_region.second );
             for( const auto& idx :
-                 PadTo2DPlaneSurfaces( layer, -currentHeight_mm, pad_region.second ) )
+                 PadTo2DPlaneSurfaces( layer, -currentHeight_mm, pad_region.second, maxError ) )
             {
                 fragments.emplace_back( 2, idx );
                 regions.m_pads.emplace( idx, pad_region.first );
@@ -108,7 +110,7 @@ void GMSH_MESHER::Load25DMesh()
         for( const auto& net_region : m_net_regions )
         {
             std::pair<std::vector<int>, std::vector<int>> netSurfaces =
-                    NetTo2DPlaneSurfaces( layer, -currentHeight_mm, net_region.second );
+                    NetTo2DPlaneSurfaces( layer, -currentHeight_mm, net_region.second, maxError );
             for( const auto& idx : netSurfaces.first )
             {
                 fragments.emplace_back( 2, idx );
@@ -210,6 +212,8 @@ void GMSH_MESHER::Load3DMesh()
 
     gmsh::model::add( "pcb" );
 
+    int maxError = m_board->GetDesignSettings().m_MaxError;
+
     std::vector<std::pair<int, int>> fragments;
     GMSH_MESHER_REGIONS              regions;
 
@@ -250,9 +254,10 @@ void GMSH_MESHER::Load3DMesh()
 
         for( const auto& pad_region : m_pad_regions )
         {
-            for( const auto& idx : PlaneSurfacesToVolumes(
-                         PadTo2DPlaneSurfaces( layer, -currentHeight_mm, pad_region.second ),
-                         currentThickness_mm ) )
+            for( const auto& idx :
+                 PlaneSurfacesToVolumes( PadTo2DPlaneSurfaces( layer, -currentHeight_mm,
+                                                               pad_region.second, maxError ),
+                                         currentThickness_mm ) )
             {
                 fragments.emplace_back( 3, idx );
                 regions.m_pads.emplace( idx, pad_region.first );
@@ -262,7 +267,7 @@ void GMSH_MESHER::Load3DMesh()
         for( const auto& net_region : m_net_regions )
         {
             std::pair<std::vector<int>, std::vector<int>> netSurfaces =
-                    NetTo2DPlaneSurfaces( layer, -currentHeight_mm, net_region.second );
+                    NetTo2DPlaneSurfaces( layer, -currentHeight_mm, net_region.second, maxError );
             for( const auto& idx :
                  PlaneSurfacesToVolumes( netSurfaces.first, currentThickness_mm ) )
             {
@@ -336,10 +341,10 @@ void GMSH_MESHER::Load3DMeshNew()
 
     // Generate stackup lookup structure
     GMSH_MESHER_STACKUP stackup;
+    stackup.m_copper_plating_thickness = 35000; // nm
     GenerateStackupLookupTable( stackup, false );
 
-    int    copperPlatingThickness = 35000; // nm
-    double copperPlatingThickness_mm = copperPlatingThickness / IU_PER_MM;
+    int maxError = m_board->GetDesignSettings().m_MaxError;
 
     std::vector<std::pair<int, int>> fragments;
     GMSH_MESHER_REGIONS              regions;
@@ -348,168 +353,16 @@ void GMSH_MESHER::Load3DMeshNew()
     std::set<const PAD*> createdPads;
     for( const auto& pad_region : m_pad_regions )
     {
-        int        regionId = pad_region.first;
         const PAD* pad = pad_region.second;
+        GeneratePad3D( pad_region.first, pad, stackup, maxError, fragments, regions );
         createdPads.emplace( pad );
-
-        // TODO: start/stop layers?
-        for( const auto& layers : stackup.m_layers )
-        {
-            if( pad->IsOnLayer( layers.first ) )
-            {
-                double start_mm = layers.second.first / IU_PER_MM;
-                double end_mm = layers.second.second / IU_PER_MM;
-                for( const auto& idx :
-                     PlaneSurfacesToVolumes( PadTo2DPlaneSurfaces( layers.first, start_mm, pad ),
-                                             end_mm - start_mm ) )
-                {
-                    fragments.emplace_back( 3, idx );
-                    regions.m_pads.emplace( idx, regionId );
-                }
-            }
-        }
-
-        // Check if pad has a hole
-        if( pad->GetAttribute() == PAD_ATTRIB::SMD )
-            continue;
-
-        // TODO: get start/end layer from stackup!
-        PCB_LAYER_ID startLayer = F_Cu;
-        PCB_LAYER_ID endLayer = B_Cu;
-
-        double start_mm = stackup.m_layers.at( startLayer ).first / IU_PER_MM;
-        double end_mm = stackup.m_layers.at( endLayer ).second / IU_PER_MM;
-
-        int padHolePlaneSurface = gmsh::model::occ::addDisk(
-                TransformPoint( pad->GetPosition().x ), TransformPoint( pad->GetPosition().y ),
-                start_mm, TransformPoint( pad->GetDrillSizeX() ) / 2.,
-                TransformPoint( pad->GetDrillSizeY() ) / 2. );
-
-        for( const auto& idx :
-             PlaneSurfacesToVolumes( { padHolePlaneSurface }, end_mm - start_mm ) )
-        {
-            fragments.emplace_back( 3, idx );
-            regions.m_pads.emplace( idx, regionId );
-        }
-
-        // Drill the copper again :)
-        // TODO: this leads to curvation errors in some cases!
-        /*int padHolePlaneSurfaceAir = gmsh::model::occ::addDisk(
-                TransformPoint( pad->GetPosition().x ), TransformPoint( pad->GetPosition().y ),
-                start_mm, TransformPoint( pad->GetDrillSizeX() ) / 2. - copperPlatingThickness_mm,
-                TransformPoint( pad->GetDrillSizeY() ) / 2. - copperPlatingThickness_mm );
-
-        for( const auto& idx :
-             PlaneSurfacesToVolumes( { padHolePlaneSurfaceAir }, end_mm - start_mm ) )
-        {
-            fragments.emplace_back( 3, idx );
-            padHoleTags.emplace( idx );
-        }*/
     }
 
     // Net Regions
     for( const auto& net_region : m_net_regions )
     {
-        int regionId = net_region.first;
-        int netcode = net_region.second;
-
-        for( const auto& layers : stackup.m_layers )
-        {
-            double start_mm = layers.second.first / IU_PER_MM;
-            double end_mm = layers.second.second / IU_PER_MM;
-
-            // TODO: error?
-            std::pair<std::vector<int>, std::vector<int>> netSurfaces =
-                    NetTo2DPlaneSurfaces( layers.first, start_mm, netcode );
-            for( const auto& idx :
-                    PlaneSurfacesToVolumes( netSurfaces.first, end_mm-start_mm ) )
-            {
-                fragments.emplace_back( 3, idx );
-                regions.m_nets.emplace( idx, regionId );
-            }
-            for( const auto& idx :
-                    PlaneSurfacesToVolumes( netSurfaces.second, end_mm-start_mm ) )
-            {
-                fragments.emplace_back( 3, idx );
-                regions.m_net_holes.emplace( idx );
-            }
-        }
-
-        // Via holes
-        for( const TRACK* track : m_board->Tracks() )
-        {
-            if( track->GetNetCode() != netcode || !VIA::ClassOf( track ) )
-                continue;
-
-            const VIA* via = static_cast<const VIA*>( track );
-
-            double start_mm = stackup.m_layers.at( via->TopLayer() ).first / IU_PER_MM;
-            double end_mm = stackup.m_layers.at( via->BottomLayer() ).second / IU_PER_MM;
-
-            int maxError = m_board->GetDesignSettings().m_MaxError;
-
-            double radius = via->GetDrillValue() / 2.;
-
-            SHAPE_POLY_SET copperPolyset;
-            TransformCircleToPolygon( copperPolyset, via->GetPosition(), radius, maxError,
-                                      ERROR_INSIDE );
-            copperPolyset.Simplify( SHAPE_POLY_SET::POLYGON_MODE::PM_FAST );
-
-            for( const auto& idx : PlaneSurfacesToVolumes(
-                         ShapePolySetToPlaneSurfaces( copperPolyset, start_mm ).first,
-                         end_mm - start_mm ) )
-            {
-                fragments.emplace_back( 3, idx );
-                regions.m_nets.emplace( idx, regionId );
-            }
-
-            // Drill the copper again :)
-            SHAPE_POLY_SET holePolyset;
-            TransformCircleToPolygon( holePolyset, via->GetPosition(),
-                                      radius - copperPlatingThickness, maxError, ERROR_INSIDE );
-            holePolyset.Simplify( SHAPE_POLY_SET::POLYGON_MODE::PM_FAST );
-
-            for( const auto& idx :
-                 PlaneSurfacesToVolumes( ShapePolySetToPlaneSurfaces( holePolyset, start_mm ).first,
-                                         end_mm - start_mm ) )
-            {
-                fragments.emplace_back( 3, idx );
-                regions.m_drills.emplace( idx );
-            }
-        }
-
-        // Pad holes
-        for( const FOOTPRINT* footprint : m_board->Footprints() )
-        {
-            for( const PAD* pad : footprint->Pads() )
-            {
-                if( pad->GetNetCode() != netcode || createdPads.count( pad ) != 0
-                    || pad->GetAttribute() == PAD_ATTRIB::SMD )
-                    continue;
-
-                // TODO: get start/end layer from stackup!
-                PCB_LAYER_ID startLayer = F_Cu;
-                PCB_LAYER_ID endLayer = B_Cu;
-
-                double start_mm = stackup.m_layers.at( startLayer ).first / IU_PER_MM;
-                double end_mm = stackup.m_layers.at( endLayer ).second / IU_PER_MM;
-
-                int padHolePlaneSurface =
-                        gmsh::model::occ::addDisk( TransformPoint( pad->GetPosition().x ),
-                                                   TransformPoint( pad->GetPosition().y ), start_mm,
-                                                   TransformPoint( pad->GetDrillSizeX() ) / 2.,
-                                                   TransformPoint( pad->GetDrillSizeY() ) / 2. );
-
-                for( const auto& idx :
-                     PlaneSurfacesToVolumes( { padHolePlaneSurface }, end_mm - start_mm ) )
-                {
-                    fragments.emplace_back( 3, idx );
-                    regions.m_nets.emplace( idx, regionId );
-                }
-
-                // TODO: Drill the copper again :)
-            }
-        }
+        GenerateNet3D( net_region.first, net_region.second, createdPads, stackup, maxError,
+                       fragments, regions );
     }
 
     std::cerr << "fragment:" << std::endl;
@@ -627,6 +480,141 @@ void GMSH_MESHER::GenerateStackupLookupTable( GMSH_MESHER_STACKUP& stackup,
     for( const auto& height : stackup.m_dielectric )
     {
         std::clog << " * " << height << "nm" << std::endl;
+    }
+}
+
+
+void GMSH_MESHER::GeneratePad3D( int aRegionId, const PAD* aPad,
+                                 const GMSH_MESHER_STACKUP& aStackup, int aMaxError,
+                                 std::vector<std::pair<int, int>>& aFragments,
+                                 GMSH_MESHER_REGIONS&              aRegions )
+{
+    for( const auto& layers : aStackup.m_layers )
+    {
+        if( aPad->IsOnLayer( layers.first ) )
+        {
+            double start_mm = layers.second.first / IU_PER_MM;
+            double end_mm = layers.second.second / IU_PER_MM;
+            for( const auto& idx : PlaneSurfacesToVolumes(
+                         PadTo2DPlaneSurfaces( layers.first, start_mm, aPad, aMaxError ),
+                         end_mm - start_mm ) )
+            {
+                aFragments.emplace_back( 3, idx );
+                aRegions.m_pads.emplace( idx, aRegionId );
+            }
+        }
+    }
+
+    // Check if pad has a hole
+    if( aPad->GetAttribute() == PAD_ATTRIB::SMD )
+        return;
+
+    // TODO: get start/end layer from stackup!
+    PCB_LAYER_ID startLayer = F_Cu;
+    PCB_LAYER_ID endLayer = B_Cu;
+
+    // TODO: oval holes
+    GenerateDrill3D( aRegionId, aStackup, aMaxError, startLayer, endLayer, aPad->GetPosition(),
+                     aPad->GetDrillSizeX(), aFragments, aRegions, aRegions.m_pads );
+}
+
+
+void GMSH_MESHER::GenerateNet3D( int aRegionId, int aNetcode,
+                                 const std::set<const PAD*>& aIgnoredPads,
+                                 const GMSH_MESHER_STACKUP& aStackup, int aMaxError,
+                                 std::vector<std::pair<int, int>>& aFragments,
+                                 GMSH_MESHER_REGIONS&              aRegions )
+{
+    for( const auto& layers : aStackup.m_layers )
+    {
+        double start_mm = layers.second.first / IU_PER_MM;
+        double end_mm = layers.second.second / IU_PER_MM;
+
+        // TODO: error?
+        std::pair<std::vector<int>, std::vector<int>> netSurfaces =
+                NetTo2DPlaneSurfaces( layers.first, start_mm, aNetcode, aMaxError );
+        for( const auto& idx : PlaneSurfacesToVolumes( netSurfaces.first, end_mm - start_mm ) )
+        {
+            aFragments.emplace_back( 3, idx );
+            aRegions.m_nets.emplace( idx, aRegionId );
+        }
+        for( const auto& idx : PlaneSurfacesToVolumes( netSurfaces.second, end_mm - start_mm ) )
+        {
+            aFragments.emplace_back( 3, idx );
+            aRegions.m_net_holes.emplace( idx );
+        }
+    }
+
+    // Via holes
+    for( const TRACK* track : m_board->Tracks() )
+    {
+        if( track->GetNetCode() != aNetcode || !VIA::ClassOf( track ) )
+            continue;
+
+        const VIA* via = static_cast<const VIA*>( track );
+
+        GenerateDrill3D( aRegionId, aStackup, aMaxError, via->TopLayer(), via->BottomLayer(),
+                         via->GetPosition(), via->GetDrillValue(), aFragments, aRegions,
+                         aRegions.m_nets );
+    }
+
+    // Pad holes
+    for( const FOOTPRINT* footprint : m_board->Footprints() )
+    {
+        for( const PAD* pad : footprint->Pads() )
+        {
+            if( pad->GetNetCode() != aNetcode || aIgnoredPads.count( pad ) != 0
+                || pad->GetAttribute() == PAD_ATTRIB::SMD )
+                continue;
+
+            // TODO: get start/end layer from stackup!
+            PCB_LAYER_ID startLayer = F_Cu;
+            PCB_LAYER_ID endLayer = B_Cu;
+
+            // TODO: oval holes
+            GenerateDrill3D( aRegionId, aStackup, aMaxError, startLayer, endLayer,
+                             pad->GetPosition(), pad->GetDrillSizeX(), aFragments, aRegions,
+                             aRegions.m_nets );
+        }
+    }
+}
+
+
+void GMSH_MESHER::GenerateDrill3D( int aRegionId, const GMSH_MESHER_STACKUP& aStackup,
+                                   int aMaxError, PCB_LAYER_ID aLayerStart, PCB_LAYER_ID aLayerEnd,
+                                   wxPoint aPosition, int aDrillSize,
+                                   std::vector<std::pair<int, int>>& aFragments,
+                                   GMSH_MESHER_REGIONS&              aRegions,
+                                   std::map<int, int>&               aRegionMapper )
+{
+    // TODO: oval holes
+    double radius = aDrillSize / 2;
+
+    double start_mm = aStackup.m_layers.at( aLayerStart ).first / IU_PER_MM;
+    double end_mm = aStackup.m_layers.at( aLayerEnd ).second / IU_PER_MM;
+
+    SHAPE_POLY_SET copperPolyset;
+    TransformCircleToPolygon( copperPolyset, aPosition, radius, aMaxError, ERROR_INSIDE );
+    copperPolyset.Simplify( SHAPE_POLY_SET::POLYGON_MODE::PM_FAST );
+
+    for( const auto& idx : PlaneSurfacesToVolumes(
+                 ShapePolySetToPlaneSurfaces( copperPolyset, start_mm ).first, end_mm - start_mm ) )
+    {
+        aFragments.emplace_back( 3, idx );
+        aRegionMapper.emplace( idx, aRegionId );
+    }
+
+    // Drill the copper again :)
+    SHAPE_POLY_SET holePolyset;
+    TransformCircleToPolygon( holePolyset, aPosition, radius - aStackup.m_copper_plating_thickness,
+                              aMaxError, ERROR_INSIDE );
+    holePolyset.Simplify( SHAPE_POLY_SET::POLYGON_MODE::PM_FAST );
+
+    for( const auto& idx : PlaneSurfacesToVolumes(
+                 ShapePolySetToPlaneSurfaces( holePolyset, start_mm ).first, end_mm - start_mm ) )
+    {
+        aFragments.emplace_back( 3, idx );
+        aRegions.m_drills.emplace( idx );
     }
 }
 
@@ -888,15 +876,13 @@ int GMSH_MESHER::PadHoleToCurveLoop( const PAD* aPad, double aOffsetZ, double aC
 }
 
 std::vector<int> GMSH_MESHER::PadTo2DPlaneSurfaces( PCB_LAYER_ID aLayer, double aOffsetZ,
-                                                    const PAD* aPad )
+                                                    const PAD* aPad, int aMaxError )
 {
     if( !aPad->IsOnLayer( aLayer ) )
         return {};
 
-    int maxError = m_board->GetDesignSettings().m_MaxError;
-
     SHAPE_POLY_SET polyset;
-    TransformPadWithClearanceToPolygon( polyset, aPad, aLayer, 0, maxError, ERROR_INSIDE );
+    TransformPadWithClearanceToPolygon( polyset, aPad, aLayer, 0, aMaxError, ERROR_INSIDE );
     polyset.Simplify( SHAPE_POLY_SET::POLYGON_MODE::PM_FAST );
 
     return ShapePolySetToPlaneSurfaces( polyset, aOffsetZ ).first; // TODO
@@ -904,7 +890,8 @@ std::vector<int> GMSH_MESHER::PadTo2DPlaneSurfaces( PCB_LAYER_ID aLayer, double 
 
 
 std::pair<std::vector<int>, std::vector<int>>
-GMSH_MESHER::NetTo2DPlaneSurfaces( PCB_LAYER_ID aLayer, double aOffsetZ, const int aNetcode )
+GMSH_MESHER::NetTo2DPlaneSurfaces( PCB_LAYER_ID aLayer, double aOffsetZ, const int aNetcode,
+                                   int aMaxError )
 {
     SHAPE_POLY_SET polyset;
 
@@ -916,15 +903,13 @@ GMSH_MESHER::NetTo2DPlaneSurfaces( PCB_LAYER_ID aLayer, double aOffsetZ, const i
     }
 
     // inspired by board_items_to_polygon_shape_transform.cpp
-    int maxError = m_board->GetDesignSettings().m_MaxError;
-
     // convert tracks and vias:
     for( const TRACK* track : m_board->Tracks() )
     {
         if( !track->IsOnLayer( aLayer ) || track->GetNetCode() != aNetcode )
             continue;
 
-        track->TransformShapeWithClearanceToPolygon( polyset, aLayer, 0, maxError, ERROR_INSIDE );
+        track->TransformShapeWithClearanceToPolygon( polyset, aLayer, 0, aMaxError, ERROR_INSIDE );
     }
 
     // convert pads and other copper items in footprints
@@ -936,7 +921,7 @@ GMSH_MESHER::NetTo2DPlaneSurfaces( PCB_LAYER_ID aLayer, double aOffsetZ, const i
                 || ignoredPads.count( pad ) > 0 )
                 continue;
 
-            TransformPadWithClearanceToPolygon( polyset, pad, aLayer, 0, maxError, ERROR_INSIDE );
+            TransformPadWithClearanceToPolygon( polyset, pad, aLayer, 0, aMaxError, ERROR_INSIDE );
         }
 
         // TODO: footprints with drawsegments on copper?

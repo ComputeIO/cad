@@ -54,13 +54,13 @@ struct GMSH_MESHER_REGIONS
     std::set<int> m_drills;
 
     // Priority 2: shapes which denote a pad
-    std::map<int, int> m_pads; // region-id -> shapes
+    std::map<int, int> m_pads; // shape -> region-id
 
     // Priority 3: shapes which denote holes in net regions (because fracture does not like holes)
     std::set<int> m_net_holes;
 
     // Priority 4: shapes which denote a net region
-    std::map<int, int> m_nets; // region-id -> shapes
+    std::map<int, int> m_nets; // shape -> region-id
 
     // Priority 5: shapes which denote dielectrics
     std::map<int, int> m_dielectrics;
@@ -73,7 +73,10 @@ struct GMSH_MESHER_REGIONS
 struct GMSH_MESHER_STACKUP
 {
     std::map<PCB_LAYER_ID, std::pair<int, int>> m_layers;     // start:stop
-    std::vector<int>                            m_dielectric; // transition position
+
+    std::vector<int> m_dielectric; // transition position
+
+    int m_copper_plating_thickness;
 };
 
 
@@ -104,6 +107,20 @@ private:
     void GenerateStackupLookupTable( GMSH_MESHER_STACKUP& stackup,
                                      bool                 copperIsZero = false ) const;
 
+    void GeneratePad3D( int aRegionId, const PAD* aPad, const GMSH_MESHER_STACKUP& aStackup,
+                        int aMaxError, std::vector<std::pair<int, int>>& aFragments,
+                        GMSH_MESHER_REGIONS& aRegions );
+
+    void GenerateNet3D( int aRegionId, int aNetcode, const std::set<const PAD*>& aIgnoredPads,
+                        const GMSH_MESHER_STACKUP& aStackup, int aMaxError,
+                        std::vector<std::pair<int, int>>& aFragments,
+                        GMSH_MESHER_REGIONS&              aRegions );
+
+    void GenerateDrill3D( int aRegionId, const GMSH_MESHER_STACKUP& aStackup, int aMaxError,
+                          PCB_LAYER_ID aLayerStart, PCB_LAYER_ID aLayerEnd, wxPoint aPosition,
+                          int aDrillSize, std::vector<std::pair<int, int>>& aFragments,
+                          GMSH_MESHER_REGIONS& aRegions, std::map<int, int>& aRegionMapper );
+
     std::map<int, std::vector<int>>
     RegionsToShapesAfterFragment( const std::vector<std::pair<int, int>>&              fragments,
                                   const std::vector<std::pair<int, int>>&              ov,
@@ -129,10 +146,11 @@ private:
 
     int PadHoleToCurveLoop( const PAD* aPad, double aOffsetZ, double aCopperOffset = 0 );
 
-    std::vector<int> PadTo2DPlaneSurfaces( PCB_LAYER_ID aLayer, double aOffsetZ, const PAD* aPad );
+    std::vector<int> PadTo2DPlaneSurfaces( PCB_LAYER_ID aLayer, double aOffsetZ, const PAD* aPad,
+                                           int aMaxError );
 
     std::pair<std::vector<int>, std::vector<int>>
-    NetTo2DPlaneSurfaces( PCB_LAYER_ID aLayer, double aOffsetZ, const int aNetcode );
+    NetTo2DPlaneSurfaces( PCB_LAYER_ID aLayer, double aOffsetZ, const int aNetcode, int aMaxError );
 
     void TransformPadWithClearanceToPolygon( SHAPE_POLY_SET& aCornerBuffer, const PAD* pad,
                                              PCB_LAYER_ID aLayer, int aClearance, int aMaxError,
