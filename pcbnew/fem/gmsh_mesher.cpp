@@ -37,6 +37,34 @@ double TransformPoint( double aCoordinate )
 }
 
 
+std::vector<int> GMSH_MESHER::AddDielectricRegions()
+{
+    if( !m_dielectric_regions.empty() )
+    {
+        return m_dielectric_regions;
+    }
+
+    m_board->GetDesignSettings().GetStackupDescriptor().SynchronizeWithBoard(
+            &m_board->GetDesignSettings() );
+    for( const BOARD_STACKUP_ITEM* item :
+         m_board->GetDesignSettings().GetStackupDescriptor().GetList() )
+    {
+        switch( item->GetType() )
+        {
+        case BS_ITEM_TYPE_DIELECTRIC:
+            for( int i = 0; i < item->GetSublayersCount(); i++ )
+            {
+                m_dielectric_regions.emplace_back( m_next_region_id++ );
+            }
+            break;
+        default: break;
+        }
+    }
+
+    return m_dielectric_regions;
+}
+
+
 void GMSH_MESHER::Load25DMesh()
 {
     gmsh::initialize();
@@ -167,10 +195,8 @@ void GMSH_MESHER::Load25DMesh()
     std::map<int, std::vector<int>> regionToShapeId =
             RegionsToShapesAfterFragment( fragments, ov, ovv, regions );
 
-    int airTag = m_next_region_id; // TODO
-
     // remove air regions
-    const auto& airShapes = regionToShapeId.find( airTag );
+    const auto& airShapes = regionToShapeId.find( m_air_region );
     if( airShapes != regionToShapeId.end() )
     {
         for( const auto& e : airShapes->second )
@@ -209,6 +235,9 @@ void GMSH_MESHER::Load3DMesh()
 
     // (1: MeshAdapt, 2: Automatic, 3: Initial mesh only, 5: Delaunay, 6: Frontal-Delaunay, 7: BAMG, 8: Frontal-Delaunay for Quads, 9: Packing of Parallelograms)
     gmsh::option::setNumber( "Mesh.Algorithm", 2 );
+    gmsh::option::setNumber( "Geometry.OCCParallel", 1 );
+    //gmsh::option::setNumber( "Geometry.OCCBooleanPreserveNumbering", 0 ); // TODO: leads to missing faces
+    // Geometry.AutoCoherence
 
     gmsh::model::add( "pcb" );
 
@@ -217,7 +246,7 @@ void GMSH_MESHER::Load3DMesh()
     stackup.m_copper_plating_thickness = 35000; // nm
     GenerateStackupLookupTable( stackup, false );
 
-    int maxError = m_board->GetDesignSettings().m_MaxError;
+    int maxError = m_board->GetDesignSettings().m_MaxError * 8;
 
     std::vector<std::pair<int, int>> fragments;
     GMSH_MESHER_REGIONS              regions;
@@ -238,6 +267,37 @@ void GMSH_MESHER::Load3DMesh()
                        fragments, regions );
     }
 
+    // Dielectric Regions
+    if( !m_dielectric_regions.empty() )
+    {
+        SHAPE_POLY_SET boardOutlinePolyset;
+        bool           success =
+                const_cast<BOARD*>( m_board )->GetBoardPolygonOutlines( boardOutlinePolyset );
+        if( success )
+        {
+            for( size_t i = 0; i < m_dielectric_regions.size(); i++ )
+            {
+                GenerateDielectric3D( m_dielectric_regions.at( i ), boardOutlinePolyset, i, stackup,
+                                      maxError, fragments, regions );
+            }
+        }
+    }
+
+    // Air Regions
+    if( m_air_region != -1 )
+    {
+        EDA_RECT boundingBox = m_board->GetBoardEdgesBoundingBox();
+        // TODO: Error in 'element' object: can not define a negative or 0 curvature order
+        // TODO: define size externally?
+        if( boundingBox.IsValid() )
+        {
+            wxSize boundingBoxSize = boundingBox.GetSize() * 4;
+            int    boundingBoxHeight = std::min( boundingBoxSize.x, boundingBoxSize.y );
+            GenerateAir3D( boundingBox.Centre(), boundingBoxSize, boundingBoxHeight, fragments,
+                           regions );
+        }
+    }
+
     std::cerr << "fragment:" << std::endl;
     std::vector<std::pair<int, int>>              ov;
     std::vector<std::vector<std::pair<int, int>>> ovv;
@@ -247,17 +307,18 @@ void GMSH_MESHER::Load3DMesh()
     std::map<int, std::vector<int>> regionToShapeId =
             RegionsToShapesAfterFragment( fragments, ov, ovv, regions );
 
-    int airTag = m_next_region_id; // TODO
-
-    // remove air regions
-    const auto& airShapes = regionToShapeId.find( airTag );
-    if( airShapes != regionToShapeId.end() )
+    if( m_air_region == -1 )
     {
-        for( const auto& e : airShapes->second )
+        // remove air regions
+        const auto& airShapes = regionToShapeId.find( m_air_region );
+        if( airShapes != regionToShapeId.end() )
         {
-            gmsh::model::occ::remove( { { 3, e } }, true );
+            for( const auto& e : airShapes->second )
+            {
+                gmsh::model::occ::remove( { { 3, e } }, true );
+            }
+            regionToShapeId.erase( airShapes->first );
         }
-        regionToShapeId.erase( airShapes->first );
     }
 
     // gmsh::model::occ::removeAllDuplicates();
@@ -492,6 +553,46 @@ void GMSH_MESHER::GenerateDrill3D( int aRegionId, const GMSH_MESHER_STACKUP& aSt
 }
 
 
+void GMSH_MESHER::GenerateDielectric3D( int aRegionId, const SHAPE_POLY_SET& aPolyset, int aLayerId,
+                                        const GMSH_MESHER_STACKUP& aStackup, int aMaxError,
+                                        std::vector<std::pair<int, int>>& aFragments,
+                                        GMSH_MESHER_REGIONS&              aRegions )
+{
+    double start_mm = aStackup.m_dielectric.at( aLayerId ) / IU_PER_MM;
+    double end_mm = aStackup.m_dielectric.at( aLayerId + 1 ) / IU_PER_MM;
+
+    std::pair<std::vector<int>, std::vector<int>> dielectricSurfaces =
+            ShapePolySetToPlaneSurfaces( aPolyset, start_mm );
+    for( const auto& idx : PlaneSurfacesToVolumes( dielectricSurfaces.first, end_mm - start_mm ) )
+    {
+        aFragments.emplace_back( 3, idx );
+        aRegions.m_dielectrics.emplace( idx, aRegionId );
+    }
+    for( const auto& idx : PlaneSurfacesToVolumes( dielectricSurfaces.second, end_mm - start_mm ) )
+    {
+        aFragments.emplace_back( 3, idx );
+        aRegions.m_drills.emplace( idx );
+    }
+}
+
+
+void GMSH_MESHER::GenerateAir3D( const wxPoint aCenter, const wxSize aSize, const int aHeight,
+                                 std::vector<std::pair<int, int>>& aFragments,
+                                 GMSH_MESHER_REGIONS&              aRegions )
+{
+    double width_mm = aSize.x / IU_PER_MM;
+    double length_mm = aSize.y / IU_PER_MM;
+    double height_mm = aHeight / IU_PER_MM;
+    double x_mm = aCenter.x / IU_PER_MM - width_mm / 2;
+    double y_mm = aCenter.y / IU_PER_MM - length_mm / 2;
+
+    int idx =
+            gmsh::model::occ::addBox( x_mm, y_mm, -height_mm / 2, width_mm, length_mm, height_mm );
+    aFragments.emplace_back( 3, idx );
+    aRegions.m_air.emplace( idx );
+}
+
+
 std::map<int, std::vector<int>>
 GMSH_MESHER::RegionsToShapesAfterFragment( const std::vector<std::pair<int, int>>& fragments,
                                            const std::vector<std::pair<int, int>>& ov,
@@ -500,8 +601,6 @@ GMSH_MESHER::RegionsToShapesAfterFragment( const std::vector<std::pair<int, int>
 {
     std::map<int, std::vector<int>> regionToShapeId;
     std::set<int>                   assignedShapeId;
-
-    int airTag = m_next_region_id; // TODO
 
     // Priority 1: shapes which denote a drill (are converted to air)
     for( std::size_t i = 0; i < fragments.size(); i++ )
@@ -513,7 +612,7 @@ GMSH_MESHER::RegionsToShapesAfterFragment( const std::vector<std::pair<int, int>
             {
                 if( !assignedShapeId.count( ovTag.second ) )
                 {
-                    regionToShapeId[airTag].emplace_back( ovTag.second );
+                    regionToShapeId[m_air_region].emplace_back( ovTag.second );
                     assignedShapeId.emplace( ovTag.second );
                 }
             }
@@ -549,7 +648,7 @@ GMSH_MESHER::RegionsToShapesAfterFragment( const std::vector<std::pair<int, int>
             {
                 if( !assignedShapeId.count( ovTag.second ) )
                 {
-                    regionToShapeId[airTag].emplace_back( ovTag.second );
+                    regionToShapeId[m_air_region].emplace_back( ovTag.second );
                     assignedShapeId.emplace( ovTag.second );
                 }
             }
@@ -574,8 +673,40 @@ GMSH_MESHER::RegionsToShapesAfterFragment( const std::vector<std::pair<int, int>
         }
     }
 
-    // TODO: Priority 5: shapes which denote dielectrics
-    // TODO: Priority 6: shapes which denote air
+    // Priority 5: shapes which denote dielectrics
+    for( std::size_t i = 0; i < fragments.size(); i++ )
+    {
+        int         origTag = fragments.at( i ).second;
+        const auto& dielectricsRegionFound = regions.m_dielectrics.find( origTag );
+        if( dielectricsRegionFound != regions.m_dielectrics.end() )
+        {
+            for( const auto& ovTag : ovv.at( i ) )
+            {
+                if( !assignedShapeId.count( ovTag.second ) )
+                {
+                    regionToShapeId[dielectricsRegionFound->second].emplace_back( ovTag.second );
+                    assignedShapeId.emplace( ovTag.second );
+                }
+            }
+        }
+    }
+
+    // Priority 6: shapes which denote air
+    for( std::size_t i = 0; i < fragments.size(); i++ )
+    {
+        int origTag = fragments.at( i ).second;
+        if( regions.m_air.count( origTag ) )
+        {
+            for( const auto& ovTag : ovv.at( i ) )
+            {
+                if( !assignedShapeId.count( ovTag.second ) )
+                {
+                    regionToShapeId[m_air_region].emplace_back( ovTag.second );
+                    assignedShapeId.emplace( ovTag.second );
+                }
+            }
+        }
+    }
 
     if( assignedShapeId.size() != ov.size() )
     {
@@ -585,7 +716,9 @@ GMSH_MESHER::RegionsToShapesAfterFragment( const std::vector<std::pair<int, int>
         {
             int ovTag = ov[i].second;
             if( !assignedShapeId.count( ovTag ) )
-                regionToShapeId[airTag + 1].emplace_back( ov[i].second );
+            {
+                regionToShapeId[m_next_region_id].emplace_back( ov[i].second );
+            }
         }
     }
 

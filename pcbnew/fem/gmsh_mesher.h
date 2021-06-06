@@ -83,7 +83,10 @@ struct GMSH_MESHER_STACKUP
 class GMSH_MESHER
 {
 public:
-    GMSH_MESHER( const BOARD* aBoard ) : m_next_region_id( 1 ), m_board( aBoard ) {}
+    GMSH_MESHER( const BOARD* aBoard ) :
+            m_next_region_id( 1 ), m_air_region( -1 ), m_board( aBoard )
+    {
+    }
 
     int AddNetRegion( int aNetcode )
     {
@@ -93,6 +96,17 @@ public:
     int AddPadRegion( const PAD* aPad )
     {
         return m_pad_regions.emplace( m_next_region_id++, aPad ).first->first;
+    }
+
+    std::vector<int> AddDielectricRegions();
+
+    int AddAirRegion()
+    {
+        if( m_air_region == -1 )
+        {
+            m_air_region = m_next_region_id++;
+        }
+        return m_air_region;
     }
 
     void Load25DMesh();
@@ -118,6 +132,15 @@ private:
                           PCB_LAYER_ID aLayerStart, PCB_LAYER_ID aLayerEnd, wxPoint aPosition,
                           int aDrillSize, std::vector<std::pair<int, int>>& aFragments,
                           GMSH_MESHER_REGIONS& aRegions, std::map<int, int>& aRegionMapper );
+
+    void GenerateDielectric3D( int aRegionId, const SHAPE_POLY_SET& aPolyset, int aLayerId,
+                               const GMSH_MESHER_STACKUP& aStackup, int aMaxError,
+                               std::vector<std::pair<int, int>>& aFragments,
+                               GMSH_MESHER_REGIONS&              aRegions );
+
+    void GenerateAir3D( const wxPoint aCenter, const wxSize aSize, const int aHeight,
+                        std::vector<std::pair<int, int>>& aFragments,
+                        GMSH_MESHER_REGIONS&              aRegions );
 
     std::map<int, std::vector<int>>
     RegionsToShapesAfterFragment( const std::vector<std::pair<int, int>>&              fragments,
@@ -158,6 +181,8 @@ private:
 
     std::map<int, int>        m_net_regions;
     std::map<int, const PAD*> m_pad_regions;
+    std::vector<int>          m_dielectric_regions;
+    int                       m_air_region;
 
     std::map<int, std::vector<int>> m_region_surfaces;
 
