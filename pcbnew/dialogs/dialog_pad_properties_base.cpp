@@ -150,43 +150,43 @@ DIALOG_PAD_PROPERTIES_BASE::DIALOG_PAD_PROPERTIES_BASE( wxWindow* parent, wxWind
 	m_trapProps->Layout();
 	fgSizerTrapProps->Fit( m_trapProps );
 	m_shapePropsBook->AddPage( m_trapProps, _("a page"), false );
-	m_roundingProps = new wxPanel( m_shapePropsBook, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
+	m_roudingProps = new wxPanel( m_shapePropsBook, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
 	fgSizerRoundingProps = new wxFlexGridSizer( 0, 3, 4, 0 );
 	fgSizerRoundingProps->AddGrowableCol( 1 );
 	fgSizerRoundingProps->SetFlexibleDirection( wxBOTH );
 	fgSizerRoundingProps->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
 
-	m_staticTextCornerSizeRatio = new wxStaticText( m_roundingProps, wxID_ANY, _("Corner size:"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_staticTextCornerSizeRatio = new wxStaticText( m_roudingProps, wxID_ANY, _("Corner size:"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_staticTextCornerSizeRatio->Wrap( -1 );
 	m_staticTextCornerSizeRatio->SetToolTip( _("Corner radius in percent  of the pad width.\nThe width is the smaller value between size X and size Y.\nThe max value is 50 percent.") );
 
 	fgSizerRoundingProps->Add( m_staticTextCornerSizeRatio, 0, wxALIGN_CENTER_VERTICAL|wxRIGHT, 5 );
 
-	m_tcCornerSizeRatio = new TEXT_CTRL_EVAL( m_roundingProps, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
+	m_tcCornerSizeRatio = new TEXT_CTRL_EVAL( m_roudingProps, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
 	fgSizerRoundingProps->Add( m_tcCornerSizeRatio, 0, wxEXPAND|wxALIGN_CENTER_VERTICAL|wxLEFT, 5 );
 
-	m_staticTextCornerSizeRatioUnit = new wxStaticText( m_roundingProps, wxID_ANY, _("%"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_staticTextCornerSizeRatioUnit = new wxStaticText( m_roudingProps, wxID_ANY, _("%"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_staticTextCornerSizeRatioUnit->Wrap( -1 );
 	fgSizerRoundingProps->Add( m_staticTextCornerSizeRatioUnit, 0, wxALIGN_CENTER_VERTICAL|wxRIGHT|wxLEFT, 5 );
 
-	m_cornerRadiusLabel = new wxStaticText( m_roundingProps, wxID_ANY, _("Corner radius:"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_cornerRadiusLabel = new wxStaticText( m_roudingProps, wxID_ANY, _("Corner radius:"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_cornerRadiusLabel->Wrap( -1 );
 	m_cornerRadiusLabel->SetToolTip( _("Corner radius.\nCan be no more than half pad width.\nThe width is the smaller value between size X and size Y.\nNote: IPC norm gives a max value = 0.25mm.") );
 
 	fgSizerRoundingProps->Add( m_cornerRadiusLabel, 0, wxALIGN_CENTER_VERTICAL|wxRIGHT, 5 );
 
-	m_tcCornerRadius = new wxTextCtrl( m_roundingProps, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
+	m_tcCornerRadius = new wxTextCtrl( m_roudingProps, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
 	fgSizerRoundingProps->Add( m_tcCornerRadius, 0, wxEXPAND|wxALIGN_CENTER_VERTICAL|wxLEFT, 5 );
 
-	m_cornerRadiusUnits = new wxStaticText( m_roundingProps, wxID_ANY, _("mm"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_cornerRadiusUnits = new wxStaticText( m_roudingProps, wxID_ANY, _("mm"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_cornerRadiusUnits->Wrap( -1 );
 	fgSizerRoundingProps->Add( m_cornerRadiusUnits, 0, wxALIGN_CENTER_VERTICAL|wxRIGHT|wxLEFT, 5 );
 
 
-	m_roundingProps->SetSizer( fgSizerRoundingProps );
-	m_roundingProps->Layout();
-	fgSizerRoundingProps->Fit( m_roundingProps );
-	m_shapePropsBook->AddPage( m_roundingProps, _("a page"), false );
+	m_roudingProps->SetSizer( fgSizerRoundingProps );
+	m_roudingProps->Layout();
+	fgSizerRoundingProps->Fit( m_roudingProps );
+	m_shapePropsBook->AddPage( m_roudingProps, _("a page"), false );
 	m_chamferProps = new wxPanel( m_shapePropsBook, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL );
 	wxFlexGridSizer* fgSizerChamferProps;
 	fgSizerChamferProps = new wxFlexGridSizer( 0, 3, 4, 0 );

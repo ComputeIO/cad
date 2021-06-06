@@ -88,7 +88,7 @@ class DIALOG_PAD_PROPERTIES_BASE : public DIALOG_SHIM
 		wxStaticText* m_trapDeltaUnits;
 		wxStaticText* m_trapAxisLabel;
 		wxChoice* m_trapAxisCtrl;
-		wxPanel* m_roundingProps;
+		wxPanel* m_roudingProps;
 		wxFlexGridSizer* fgSizerRoundingProps;
 		wxStaticText* m_staticTextCornerSizeRatio;
 		TEXT_CTRL_EVAL* m_tcCornerSizeRatio;
