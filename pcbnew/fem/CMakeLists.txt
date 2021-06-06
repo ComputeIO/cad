@@ -1,5 +1,5 @@
 
-# Sources for the pcbnew PLUGIN called ALTIUM_DESIGNER_PLUGIN, ALTIUM_CIRCUIT_STUDIO_PLUGIN and ALTIUM_CIRCUIT_MAKER_PLUGIN
+# Sources for the pcbnew fem codebase
 
 set( PCBNEW_FEM_SRCS
     common/fem_descriptor.cpp

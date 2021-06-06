@@ -195,15 +195,6 @@ set( PCBNEW_DIALOGS
     footprint_wizard_frame_functions.cpp
     )
 
-set ( PCBNEW_FEM
-    fem/common/fem_descriptor.cpp
-    fem/common/fem_port.cpp
-    fem/common/fem_result.cpp
-    fem/sparselizard/sparselizard_DC_CurrentDensity.cpp
-    fem/sparselizard/sparselizard_mesher.cpp
-    fem/gmsh_mesher.cpp
-)
-
 if( KICAD_SCRIPTING AND KICAD_SCRIPTING_ACTION_MENU )
     set( PCBNEW_DIALOGS ${PCBNEW_DIALOGS}
         dialogs/panel_pcbnew_action_plugins.cpp
@@ -294,7 +285,6 @@ set( PCBNEW_NETLIST_SRCS
     )
 
 set( PCBNEW_CLASS_SRCS
-    ${PCBNEW_FEM}
     ${PCBNEW_DIALOGS}
     ${PCBNEW_EXPORTERS}
     ${PCBNEW_DRC_SRCS}

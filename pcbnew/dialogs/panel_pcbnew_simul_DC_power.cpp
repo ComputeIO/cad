@@ -25,7 +25,10 @@
 #include <panel_pcbnew_simul_DC_power.h>
 #include <pcb_edit_frame.h>
 #include <widgets/paged_dialog.h>
+
+#ifdef KICAD_SPARSELIZARD // we are in a different compilation unit. Thus, this hack
 #include "fem/common/fem_descriptor.h"
+#endif
 
 PANEL_PCBNEW_SIMUL_DC_POWER::PANEL_PCBNEW_SIMUL_DC_POWER( PAGED_DIALOG*   aParent,
                                                           PCB_EDIT_FRAME* aFrame ) :
@@ -86,6 +89,7 @@ void PANEL_PCBNEW_SIMUL_DC_POWER::onNetSelect( wxCommandEvent& event )
 
 void PANEL_PCBNEW_SIMUL_DC_POWER::OnRun( wxCommandEvent& event )
 {
+#ifdef KICAD_SPARSELIZARD // we are in a different compilation unit. Thus, this hack
     FEM_DESCRIPTOR* descriptor = new FEM_DESCRIPTOR( FEM_SOLVER::SPARSELIZARD, m_board );
     m_resultGrid->DeleteRows( 0, m_resultGrid->GetNumberRows() );
 
@@ -229,4 +233,5 @@ void PANEL_PCBNEW_SIMUL_DC_POWER::OnRun( wxCommandEvent& event )
         m_resultGrid->SetReadOnly( nbRow, 3 );
         nbRow++;
     }
+#endif
 }
