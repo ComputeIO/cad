@@ -36,6 +36,19 @@
 
 SPARSELIZARD_SOLVER::SPARSELIZARD_SOLVER()
 {
+    m_reporter = new STDOUT_REPORTER();
+}
+
+SPARSELIZARD_SOLVER::SPARSELIZARD_SOLVER( REPORTER* aReporter )
+{
+    if( aReporter == nullptr )
+    {
+        m_reporter = new STDOUT_REPORTER();
+    }
+    else
+    {
+        m_reporter = aReporter;
+    }
 }
 
 
@@ -117,7 +130,6 @@ void SPARSELIZARD_SOLVER::setVoltageDC( int aRegion, double aV )
     port V, I;
     m_v.setport( aRegion, V, I );
     ( *m_equations ) += V - aV;
-    std::cout << "Voltage on region " << aRegion << ": " << aV << std::endl;
 }
 
 void SPARSELIZARD_SOLVER::setCurrentDC( int aRegion, double aI )
@@ -125,13 +137,11 @@ void SPARSELIZARD_SOLVER::setCurrentDC( int aRegion, double aI )
     port V, I;
     m_v.setport( aRegion, V, I );
     ( *m_equations ) += I - aI;
-    std::cout << "Current from region " << aRegion << ": " << aI << std::endl;
 }
 
 
 bool SPARSELIZARD_SOLVER::Run_DC( FEM_DESCRIPTOR* aDescriptor )
 {
-    std::cout << "entering solver " << std::endl;
     const double copperResistivity = 1.68e-8 / ( 35e-6 );
     const double interpolationOrder = 1;
 
@@ -146,7 +156,7 @@ bool SPARSELIZARD_SOLVER::Run_DC( FEM_DESCRIPTOR* aDescriptor )
 #else
     SPARSELIZARD_MESHER mesher( aDescriptor->GetBoard() );
 #endif
-    std::cout << "Trying to add ports" << std::endl;
+    m_reporter->Report( "Setting up ports and regions...", RPT_SEVERITY_INFO );
 
     std::list<int> netlist;
     std::map<int, int> regionMap; // RegionID, netcode
@@ -155,7 +165,7 @@ bool SPARSELIZARD_SOLVER::Run_DC( FEM_DESCRIPTOR* aDescriptor )
     {
         if( port->GetItem() == nullptr )
         {
-            std::cerr << "Uninitialized port" << std::endl;
+            m_reporter->Report( "A FEM_PORT is NULL", RPT_SEVERITY_ERROR );
             continue;
         }
 
@@ -187,12 +197,13 @@ bool SPARSELIZARD_SOLVER::Run_DC( FEM_DESCRIPTOR* aDescriptor )
         regionMap.insert( std::make_pair( regionId, netID ) );
     }
 
-    std::cout << "Number of ports in simulation: " << regionMap.size() - netlist.size()
-              << std::endl;
-    std::cout << "Number of regions in simulation: " << regionMap.size() << std::endl;
+    m_reporter->Report( "Number of ports in simulation: "
+                                + to_string( ( regionMap.size() - netlist.size() ) ),
+                        RPT_SEVERITY_INFO );
+    m_reporter->Report( "Number of regions in simulation: " + to_string( regionMap.size() ),
+                        RPT_SEVERITY_INFO );
 
-
-    std::cout << std::endl << "---------SPARSELIZARD---------" << std::endl;
+    m_reporter->Report( "SPARSELIZARD: Loading mesh...", RPT_SEVERITY_ACTION );
 
 #ifdef USE_GMSH
     mesher.Load25DMesh();
@@ -206,10 +217,11 @@ bool SPARSELIZARD_SOLVER::Run_DC( FEM_DESCRIPTOR* aDescriptor )
     mymesh.load( shapes );
 #endif
 
+    m_reporter->Report( "SPARSELIZARD: mesh loaded.", RPT_SEVERITY_INFO );
+
     mymesh.write( "mymesh.msh" );
 
-
-    std::cout << std::endl << "---------SIMULATION---------" << std::endl;
+    m_reporter->Report( "Setting up simulation ports...", RPT_SEVERITY_ACTION );
     // Create the electric potential field v
     m_v = field( "h1" );
     formulation eq;
@@ -227,7 +239,7 @@ bool SPARSELIZARD_SOLVER::Run_DC( FEM_DESCRIPTOR* aDescriptor )
     {
         if( portA->GetItem() == nullptr )
         {
-            std::cerr << "Uninitialized port" << std::endl;
+            m_reporter->Report( "A FEM_PORT is NULL", RPT_SEVERITY_ERROR );
             continue;
         }
 
@@ -244,7 +256,7 @@ bool SPARSELIZARD_SOLVER::Run_DC( FEM_DESCRIPTOR* aDescriptor )
                 setCurrentDC( portA->m_simulationID, portA->m_constraint.m_value );
                 break;
             }
-            default: std::cerr << "Source / Sink type not supported" << std::endl;
+            default: m_reporter->Report( "Source / Sink type not supported", RPT_SEVERITY_ERROR );
             }
         }
         else
@@ -270,6 +282,10 @@ bool SPARSELIZARD_SOLVER::Run_DC( FEM_DESCRIPTOR* aDescriptor )
 
     // Simple p-adaptivity loop:
     m_v.setorder( sl::norm( sl::grad( m_v ) ), MIN_ORDER, MAX_ORDER + 1 );
+
+
+    m_reporter->Report( "SPARSELIZARD: Simulating...", RPT_SEVERITY_ACTION );
+
     for( int i = 0; i <= MAX_ORDER - MIN_ORDER; i++ )
     {
         m_equations->solve( "cholesky" );
@@ -280,16 +296,16 @@ bool SPARSELIZARD_SOLVER::Run_DC( FEM_DESCRIPTOR* aDescriptor )
         };
     }
 
+    m_reporter->Report( "SPARSELIZARD: End of simulation.", RPT_SEVERITY_INFO );
 
     sl::fieldorder( m_v ).write( wholedomain, "fieldOrder.pos" );
-
-    std::cout << std::endl << "---------RESULTS---------" << std::endl;
 
     for( FEM_RESULT* result : aDescriptor->GetResults() )
     {
         if( result == nullptr )
         {
-            std::cerr << "Uninitialized result - null" << std::endl;
+            m_reporter->Report( "A FEM_RESULT is NULL", RPT_SEVERITY_ERROR );
+            ;
             continue;
         }
 
@@ -301,16 +317,15 @@ bool SPARSELIZARD_SOLVER::Run_DC( FEM_DESCRIPTOR* aDescriptor )
 
             if( resultValue->IsInitialized() == false )
             {
-                std::cerr << "Uninitialized result" << std::endl;
+                m_reporter->Report( "A result is unitialized", RPT_SEVERITY_ERROR );
+                ;
                 continue;
             }
-            std::cout << "--Result type : ";
             switch( resultValue->m_valueType )
             {
             case FEM_VALUE_TYPE::POTENTIAL:
             {
                 int portA = resultValue->GetPortA()->m_simulationID;
-                std::cout << "Potential at " << portA << endl;
                 resultValue->m_value = computePotentialDC( portA );
                 resultValue->m_valid = true;
                 break;
@@ -319,7 +334,6 @@ bool SPARSELIZARD_SOLVER::Run_DC( FEM_DESCRIPTOR* aDescriptor )
             {
                 int portA = resultValue->GetPortA()->m_simulationID;
                 int portB = resultValue->GetPortB()->m_simulationID;
-                std::cout << "Voltage from " << portB << " to " << portA << endl;
                 resultValue->m_value = computeVoltageDC( portA, portB );
                 resultValue->m_valid = true;
                 break;
@@ -327,14 +341,13 @@ bool SPARSELIZARD_SOLVER::Run_DC( FEM_DESCRIPTOR* aDescriptor )
             case FEM_VALUE_TYPE::CURRENT:
             {
                 int port = resultValue->GetPortA()->m_simulationID;
-                std::cout << "Current through " << port << endl;
                 int netCode = resultValue->GetPortA()->GetItem()->GetNetCode();
 
                 if( resultValue->GetPortA()->m_type == FEM_PORT_TYPE::PASSIVE )
                 {
-                    std::cerr << "Computing current on passive port "
-                              << resultValue->GetPortA()->m_simulationID << ". Result is 0."
-                              << std::endl;
+                    m_reporter->Report( "Cannot get current flowing through a passive port ( net "
+                                        "current is 0 )",
+                                        RPT_SEVERITY_ERROR );
                     // On passive port, all current that flows into the port, also flows out of the port
                     // Therefore the closed loop integral of the current density over is 0.
                     resultValue->m_value = 0;
@@ -351,8 +364,6 @@ bool SPARSELIZARD_SOLVER::Run_DC( FEM_DESCRIPTOR* aDescriptor )
                 int portA = resultValue->GetPortA()->m_simulationID;
                 int portB = resultValue->GetPortB()->m_simulationID;
                 int netCode = resultValue->GetPortA()->GetItem()->GetNetCode();
-                std::cout << "Resistance between " << portB << " and " << portA << endl;
-                // Find the region with same potential as
                 resultValue->m_value = computeResistanceDC( portA, portB, regionMap, netCode );
                 resultValue->m_valid = true;
                 break;
@@ -360,17 +371,15 @@ bool SPARSELIZARD_SOLVER::Run_DC( FEM_DESCRIPTOR* aDescriptor )
             case FEM_VALUE_TYPE::DISSIPATED_POWER:
             {
                 int port = resultValue->GetPortA()->m_simulationID;
-                std::cout << "Power dissipated by passive port " << port << endl;
                 if( resultValue->GetPortA()->m_type == FEM_PORT_TYPE::PASSIVE )
                 {
-                    int port = resultValue->GetPortA()->m_simulationID;
                     resultValue->m_value = ( sl::on( port, m_p ) ).integrate( port, 4 );
                     resultValue->m_valid = true;
                 }
                 else
                 {
-                    std::cerr << " Copper a sink / source port does not dissipate power" << port
-                              << endl;
+                    m_reporter->Report( "Copper on a sink / source port does not dissipate power",
+                                        RPT_SEVERITY_ERROR );
                     resultValue->m_value = 0;
                     resultValue->m_valid = true;
                 }
@@ -381,15 +390,12 @@ bool SPARSELIZARD_SOLVER::Run_DC( FEM_DESCRIPTOR* aDescriptor )
                 int portA = resultValue->GetPortA()->m_simulationID;
                 int portB = resultValue->GetPortB()->m_simulationID;
                 int netCode = resultValue->GetPortA()->GetItem()->GetNetCode();
-                std::cout << "Total power on port " << portA << " using " << portB
-                          << " as reference." << std::endl;
-                // Find the region with same potential as
 
                 if( resultValue->GetPortA()->m_type == FEM_PORT_TYPE::PASSIVE )
                 {
-                    std::cerr << " Cannot get power flowing through a passive port ( net current "
-                                 "is 0 ) "
-                              << std::endl;
+                    m_reporter->Report(
+                            "Cannot get power flowing through a passive port ( net current is 0 )",
+                            RPT_SEVERITY_ERROR );
                     resultValue->m_value = 0;
                     resultValue->m_valid = true;
                 }
@@ -400,7 +406,9 @@ bool SPARSELIZARD_SOLVER::Run_DC( FEM_DESCRIPTOR* aDescriptor )
                 }
                 break;
             }
-            default: std::cerr << "Result type not supported by DC simulation" << std::endl; break;
+            default:
+                m_reporter->Report( "Result type is not supported by DC simulation",
+                                    RPT_SEVERITY_ERROR );
             }
         }
         break;
@@ -411,10 +419,10 @@ bool SPARSELIZARD_SOLVER::Run_DC( FEM_DESCRIPTOR* aDescriptor )
             switch( resultView->m_viewType )
             {
             case FEM_VIEW_TYPE::TEMPERATURE:
-                std::cerr << "Temperature is not supported by DC simulation" << std::endl;
+                m_reporter->Report( "Temperature is not supported by DC simulation",
+                                    RPT_SEVERITY_ERROR );
                 break;
             case FEM_VIEW_TYPE::CURRENT:
-
                 m_j.write( wholedomain, std::string( resultView->m_filename.GetFullName() ),
                            MAX_ORDER );
                 resultView->m_valid = true;
@@ -430,18 +438,21 @@ bool SPARSELIZARD_SOLVER::Run_DC( FEM_DESCRIPTOR* aDescriptor )
                 resultView->m_valid = true;
                 break;
             default:
-                std::cerr << "Result type not supported by DC simulation" << std::endl;
+                m_reporter->Report( "Result type not supported by DC simulation",
+                                    RPT_SEVERITY_ERROR );
                 break;
             }
             if( resultView->m_valid )
             {
-                std::cout << "Filed created: " << resultView->m_filename.GetFullName() << std::endl;
+                m_reporter->Report( "Filed created: " + resultView->m_filename.GetFullName(),
+                                    RPT_SEVERITY_ACTION );
             }
         }
         break;
-        default: std::cerr << "Result type not supported by DC simulation" << std::endl;
+        default:
+            m_reporter->Report( "Result type not supported by DC simulation", RPT_SEVERITY_ERROR );
         }
     }
-    cout << "---------END OF SPARSELIZARD---------" << std::endl << std::endl;
+    m_reporter->Report( "Finished", RPT_SEVERITY_INFO );
     return true;
 }

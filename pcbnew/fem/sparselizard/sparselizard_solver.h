@@ -26,12 +26,14 @@
 
 #include "../common/fem_descriptor.h"
 #include <sparselizard/sparselizard.h>
-
+#include <reporter.h>
 
 class SPARSELIZARD_SOLVER
 {
 public:
     SPARSELIZARD_SOLVER();
+    SPARSELIZARD_SOLVER( REPORTER* aReporter );
+
     bool Run_DC( FEM_DESCRIPTOR* aDescriptor );
 
     double computeCurrentDC( int aPort, std::map<int, int> aRegionMap, int aNetCode );
@@ -53,6 +55,8 @@ public:
     expression m_E; // Electriec field
     expression m_j; // current density
     expression m_p; // power density
+
+    REPORTER* m_reporter;
 
 
 private:
