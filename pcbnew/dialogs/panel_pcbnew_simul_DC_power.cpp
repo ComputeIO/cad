@@ -87,7 +87,6 @@ void PANEL_PCBNEW_SIMUL_DC_POWER::onNetSelect( wxCommandEvent& event )
 void PANEL_PCBNEW_SIMUL_DC_POWER::OnRun( wxCommandEvent& event )
 {
     FEM_DESCRIPTOR* descriptor = new FEM_DESCRIPTOR( FEM_SOLVER::SPARSELIZARD, m_board );
-    std::cout << m_padGrid->GetNumberRows() << std::endl;
     m_resultGrid->DeleteRows( 0, m_resultGrid->GetNumberRows() );
 
     for( int i = 0; i < m_padGrid->GetNumberRows(); i++ )
@@ -115,11 +114,8 @@ void PANEL_PCBNEW_SIMUL_DC_POWER::OnRun( wxCommandEvent& event )
 
         FEM_PORT*            port = new FEM_PORT( pad );
         FEM_PORT_CONSTRAINT* constraint = new FEM_PORT_CONSTRAINT();
-        std::cout << fieldType << std::endl;
-        std::cout << fieldValue << std::endl;
         double valtemp;
         fieldValue.ToDouble( &valtemp );
-        std::cout << valtemp << std::endl;
 
         if( fieldType == "passive" )
         {
