@@ -142,7 +142,7 @@ void SPARSELIZARD_SOLVER::setCurrentDC( int aRegion, double aI )
 
 bool SPARSELIZARD_SOLVER::Run_DC( FEM_DESCRIPTOR* aDescriptor )
 {
-    const double copperResistivity = 1.68e-8 / ( 35e-6 );
+    const double copperResistivity = 1.72e-8 / ( 35e-6 );
     const double interpolationOrder = 1;
 
     if( aDescriptor == nullptr )
