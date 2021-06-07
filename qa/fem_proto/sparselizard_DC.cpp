@@ -43,6 +43,22 @@ public:
 };
 
 
+/**
+ * Function testTrackResistance
+ *
+ * Simulates a track resistance using sparselizard.
+ * If the result does not match the theoretical return false. Otherwise, return true.
+ * 
+ * if overshoot is true, then two extra tracks are added beyond the measurements ports. The result should not change.
+ * 
+ * @param rho = copper resisitivity
+ * @param L = track length, in meters
+ * @param h = track height, in meters
+ * @param w = track width, in meters
+ * @param max_error = maximum relative error before failure
+ * @param overshoot = True: add two other tracks.
+ */
+
 bool testTrackResistance( double rho, double L, double h, double w, double max_error,
                           bool overshoot = false )
 {
