@@ -43,12 +43,16 @@ public:
 };
 
 
-bool testTrackResistance( double rho, double L, double h, double w, double max_error )
+bool testTrackResistance( double rho, double L, double h, double w, double max_error,
+                          bool overshoot = false )
 {
     double correct_value = rho * L / ( h * w );
 
     BOARD*     board = new BOARD();
     FOOTPRINT* fp = new FOOTPRINT( board );
+
+
+    FEM_DESCRIPTOR* descriptor = new FEM_DESCRIPTOR( FEM_SOLVER::SPARSELIZARD, board );
 
     PAD* pad1 = new PAD( fp );
     pad1->SetShape( PAD_SHAPE::RECT );
@@ -91,18 +95,57 @@ bool testTrackResistance( double rho, double L, double h, double w, double max_e
     pad3->SetDrillSizeX( 0 );
     pad3->SetDrillSizeY( 0 );
 
+
+    PAD* pad4;
+    PAD* pad5;
+    if( overshoot )
+    {
+        pad4 = new PAD( fp );
+        pad4->SetShape( PAD_SHAPE::RECT );
+        pad4->SetSizeX( From_User_Unit( EDA_UNITS::MILLIMETRES, L * 1000 ) );
+        pad4->SetSizeY( From_User_Unit( EDA_UNITS::MILLIMETRES, w * 1000 ) );
+        pad4->SetX( From_User_Unit( EDA_UNITS::MILLIMETRES, -( L * 2 * 1000 ) / 2 - 1 ) );
+        pad4->SetY( From_User_Unit( EDA_UNITS::MILLIMETRES, 0 ) );
+        pad4->SetNetCode( 1, true );
+        pad4->SetAttribute( PAD_ATTRIB::SMD );
+        pad4->SetLayer( PCB_LAYER_ID::F_Cu );
+        pad4->SetLayerSet( pad1->SMDMask() );
+        pad4->SetDrillSizeX( 0 );
+        pad4->SetDrillSizeY( 0 );
+
+        FEM_PORT* port4 = new FEM_PORT( pad4 );
+        port4->m_type = FEM_PORT_TYPE::PASSIVE;
+        descriptor->AddPort( port4 );
+
+        pad5 = new PAD( fp );
+        pad5->SetShape( PAD_SHAPE::RECT );
+        pad5->SetSizeX( From_User_Unit( EDA_UNITS::MILLIMETRES, L * 1000 ) );
+        pad5->SetSizeY( From_User_Unit( EDA_UNITS::MILLIMETRES, w * 1000 ) );
+        pad5->SetX( From_User_Unit( EDA_UNITS::MILLIMETRES, ( L * 2 * 1000 ) / 2 + 1 ) );
+        pad5->SetY( From_User_Unit( EDA_UNITS::MILLIMETRES, 0 ) );
+        pad5->SetNetCode( 1, true );
+        pad5->SetAttribute( PAD_ATTRIB::SMD );
+        pad5->SetLayer( PCB_LAYER_ID::F_Cu );
+        pad5->SetLayerSet( pad1->SMDMask() );
+        pad5->SetDrillSizeX( 0 );
+        pad5->SetDrillSizeY( 0 );
+
+        FEM_PORT* port5 = new FEM_PORT( pad5 );
+        port5->m_type = FEM_PORT_TYPE::PASSIVE;
+        descriptor->AddPort( port5 );
+    }
+
     TRACK* track = new TRACK( board );
     track->SetWidth( From_User_Unit( EDA_UNITS::MILLIMETRES, 1 ) );
-    track->SetStart( wxPoint( From_User_Unit( EDA_UNITS::MILLIMETRES, -120 ),
-                              From_User_Unit( EDA_UNITS::MILLIMETRES, 10 ) ) );
-    track->SetEnd( wxPoint( From_User_Unit( EDA_UNITS::MILLIMETRES, -120 ),
-                            From_User_Unit( EDA_UNITS::MILLIMETRES, -10 ) ) );
+    track->SetStart( wxPoint( From_User_Unit( EDA_UNITS::MILLIMETRES, -L * 3 / 2 * 1000 ),
+                              From_User_Unit( EDA_UNITS::MILLIMETRES, w * 2 * 1000 ) ) );
+    track->SetEnd( wxPoint( From_User_Unit( EDA_UNITS::MILLIMETRES, -L * 3 / 2 * 1000 ),
+                            From_User_Unit( EDA_UNITS::MILLIMETRES, w * 3 * 1000 ) ) );
     track->SetNetCode( 1, true );
 
     board->Add( fp );
     board->Add( track ); // Should be removed
 
-    FEM_DESCRIPTOR* descriptor = new FEM_DESCRIPTOR( FEM_SOLVER::SPARSELIZARD, board );
     descriptor->m_reporter = new NULL_REPORTER(); // Don't report
 
     FEM_PORT*            port1 = new FEM_PORT( pad1 );
@@ -165,6 +208,7 @@ BOOST_AUTO_TEST_CASE( TestTrackResistance )
     double w = 30e-3;          // track width
     double max_error = 0.0001; // 0.01%
     BOOST_CHECK_EQUAL( testTrackResistance( rho, L, h, w, max_error ), true );
+    BOOST_CHECK_EQUAL( testTrackResistance( rho, L, h, w, max_error, true ), true );
 
     rho = 1.72e-8; // copper resistivity
     L = 2e-3;      // track length
