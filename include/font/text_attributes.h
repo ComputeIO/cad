@@ -554,15 +554,7 @@ public:
      */
     bool IsKeepUpright() const { return m_keepUpright; }
 
-#ifdef DEBUG
-    void SetKeepUpright( bool aKeepUpright )
-    {
-        std::cerr << "SetKeepUpright( " << ( aKeepUpright ? "TRUE" : "false" ) << " )\n";
-        m_keepUpright = aKeepUpright;
-    }
-#else
     void SetKeepUpright( bool aKeepUpright ) { m_keepUpright = aKeepUpright; }
-#endif
 
 private:
     KIFONT::FONT*        m_font = nullptr;
