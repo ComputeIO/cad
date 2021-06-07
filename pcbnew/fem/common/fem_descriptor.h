@@ -62,6 +62,7 @@ public:
     bool       SetSolver( FEM_SOLVER );
 
     const BOARD* GetBoard();
+    REPORTER*    m_reporter;
 
 private:
     std::list<FEM_PORT*>   m_ports;

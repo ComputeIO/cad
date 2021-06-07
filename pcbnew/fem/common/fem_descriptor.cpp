@@ -132,7 +132,7 @@ bool FEM_DESCRIPTOR::Run()
     {
     case FEM_SOLVER::SPARSELIZARD:
     {
-        SPARSELIZARD_SOLVER* solver = new SPARSELIZARD_SOLVER();
+        SPARSELIZARD_SOLVER* solver = new SPARSELIZARD_SOLVER( m_reporter );
         return solver->Run_DC( this );
     }
     default: return false;

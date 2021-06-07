@@ -93,6 +93,7 @@ bool testTrackResistance( double rho, double L, double h, double w, double max_e
     board->Add( track ); // Should be removed
 
     FEM_DESCRIPTOR* descriptor = new FEM_DESCRIPTOR( FEM_SOLVER::SPARSELIZARD, board );
+    descriptor->m_reporter = new NULL_REPORTER(); // Don't report
 
     FEM_PORT*            port1 = new FEM_PORT( pad1 );
     FEM_PORT_CONSTRAINT* constraint1 = new FEM_PORT_CONSTRAINT();
