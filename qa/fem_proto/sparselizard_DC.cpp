@@ -21,6 +21,10 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
 
+
+#include <unit_test_utils/unit_test_utils.h>
+// Code under test
+
 #include <iostream>
 #include <string>
 
@@ -31,6 +35,12 @@
 #include <pcbnew/fem/sparselizard/sparselizard_solver.h>
 
 #include <pcbnew/board.h>
+
+class TEST_SPARSELIZARD_DC
+{
+public:
+    TEST_SPARSELIZARD_DC(){};
+};
 
 
 bool testTrackResistance( double rho, double L, double h, double w, double max_error )
@@ -131,71 +141,48 @@ bool testTrackResistance( double rho, double L, double h, double w, double max_e
 
     if( r_resistance->m_valid )
     {
-        if( abs( r_resistance->GetResult() - correct_value ) / correct_value < max_error )
-        {
-            std::cout << "test passed" << std::endl;
-            return true;
-        }
-        else
+        if( abs( r_resistance->GetResult() - correct_value ) / correct_value > max_error )
         {
             std::cout << "test failed: R=" << r_resistance->GetResult() << " instead of "
                       << correct_value << std::endl;
             return false;
         }
+        return true;
     }
+    return false;
 }
 
-int main( int argc, char** argv )
+/**
+ * Declare the test suite
+ */
+BOOST_FIXTURE_TEST_SUITE( SparselizardDC, class TEST_SPARSELIZARD_DC )
+
+BOOST_AUTO_TEST_CASE( TestTrackResistance )
 {
-    wxInitialize( argc, argv );
-    Pgm().InitPgm();
-
-
     double rho = 1.72e-8;      // copper resistivity
     double L = 200e-3;         // track length
     double h = 35e-6;          // track height
     double w = 30e-3;          // track width
     double max_error = 0.0001; // 0.01%
-
-    if( !testTrackResistance( rho, L, h, w, max_error ) )
-    {
-        std::cout << "TEST FAILED." << std::endl;
-    }
+    BOOST_CHECK_EQUAL( testTrackResistance( rho, L, h, w, max_error ), true );
 
     rho = 1.72e-8; // copper resistivity
     L = 2e-3;      // track length
     h = 35e-6;     // track height
     w = 30e-3;     // track width
-
-    if( !testTrackResistance( rho, L, h, w, max_error ) )
-    {
-        std::cout << "TEST FAILED." << std::endl;
-    }
+    BOOST_CHECK_EQUAL( testTrackResistance( rho, L, h, w, max_error ), true );
 
     rho = 1.72e-8; // copper resistivity
     L = 200e-3;    // track length
     h = 17e-6;     // track height
     w = 30e-3;     // track width
-
-    if( !testTrackResistance( rho, L, h, w, max_error ) )
-    {
-        std::cout << "TEST FAILED." << std::endl;
-    }
+    BOOST_CHECK_EQUAL( testTrackResistance( rho, L, h, w, max_error ), true );
 
     rho = 1.72e-8; // copper resistivity
     L = 200e-3;    // track length
     h = 35e-6;     // track height
     w = 0.1e-3;    // track width
-
-    double correct_value = rho * L / ( h * w );
-
-    if( !testTrackResistance( rho, L, h, w, max_error ) )
-    {
-        std::cout << "TEST FAILED." << std::endl;
-    }
-
-    Pgm().Destroy();
-    wxUninitialize();
-
-    return 0;
+    BOOST_CHECK_EQUAL( testTrackResistance( rho, L, h, w, max_error ), true );
 }
+
+BOOST_AUTO_TEST_SUITE_END()
