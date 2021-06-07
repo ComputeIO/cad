@@ -61,6 +61,7 @@
 #include <tools/ee_actions.h>
 #include <tools/ee_inspection_tool.h>
 #include <paths.h>
+#include <wx_filename.h>  // For ::ResolvePossibleSymlinks
 
 bool SCH_EDIT_FRAME::SaveEEFile( SCH_SHEET* aSheet, bool aSaveUnderNewName )
 {
@@ -108,6 +109,9 @@ bool SCH_EDIT_FRAME::SaveEEFile( SCH_SHEET* aSheet, bool aSaveUnderNewName )
         if( schematicFileName.GetExt().IsEmpty() )
             schematicFileName.SetExt( KiCadSchematicFileExtension );
     }
+
+    // Write through symlinks, don't replace them
+    WX_FILENAME::ResolvePossibleSymlinks( schematicFileName );
 
     if( !IsWritable( schematicFileName ) )
         return false;
