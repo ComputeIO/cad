@@ -225,6 +225,7 @@ set( PCBNEW_MICROWAVE_SRCS
     )
 
 set( PCBNEW_DRC_SRCS
+    drc/drc_results_provider.cpp
     drc/drc_test_provider.cpp
     drc/drc_test_provider_annulus.cpp
     drc/drc_test_provider_disallow.cpp
@@ -442,6 +443,7 @@ add_custom_command( OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/pcbnew_wrap.cxx
     DEPENDS plotcontroller.h
     DEPENDS exporters/gendrill_Excellon_writer.h
     DEPENDS exporters/export_vrml.h
+    DEPENDS python/swig/pcb_item_containers.i
     DEPENDS python/swig/pcbnew.i
     DEPENDS python/swig/board.i
     DEPENDS python/swig/board_connected_item.i

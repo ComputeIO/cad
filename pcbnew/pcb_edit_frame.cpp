@@ -28,6 +28,7 @@
 #include <3d_viewer/eda_3d_viewer.h>
 #include <fp_lib_table.h>
 #include <bitmaps.h>
+#include <confirm.h>
 #include <trace_helpers.h>
 #include <pcbnew_id.h>
 #include <pcbnew_settings.h>
@@ -40,6 +41,7 @@
 #include <convert_to_biu.h>
 #include <invoke_pcb_dialog.h>
 #include <board.h>
+#include <board_design_settings.h>
 #include <footprint.h>
 #include <drawing_sheet/ds_proxy_view_item.h>
 #include <connectivity/connectivity_data.h>

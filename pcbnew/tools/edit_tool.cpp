@@ -27,6 +27,7 @@
 #include <advanced_config.h>
 #include <limits>
 #include <board.h>
+#include <board_design_settings.h>
 #include <footprint.h>
 #include <fp_shape.h>
 #include <collectors.h>
@@ -253,7 +254,8 @@ bool EDIT_TOOL::invokeInlineRouter( int aDragMode )
 
     if( theRouter->CanInlineDrag( aDragMode ) )
     {
-        m_toolMgr->RunAction( PCB_ACTIONS::routerInlineDrag, true, aDragMode );
+        m_toolMgr->RunAction( PCB_ACTIONS::routerInlineDrag, true,
+                              static_cast<intptr_t>( aDragMode ) );
         return true;
     }
 

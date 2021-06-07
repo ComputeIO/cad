@@ -36,6 +36,7 @@
 #include <wx/valnum.h>
 #include <math/util.h> // for KiROUND
 #include <wx/numformatter.h>
+#include <pcbnew.h>
 
 #define OUTLINEFONT_DEBUG
 
