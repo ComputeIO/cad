@@ -142,7 +142,7 @@ void SPARSELIZARD_SOLVER::setCurrentDC( int aRegion, double aI )
 
 bool SPARSELIZARD_SOLVER::Run_DC( FEM_DESCRIPTOR* aDescriptor )
 {
-    const double copperResistivity = 1.72e-8 / ( 35e-6 );
+    const double copperResistivity = 1.72e-8;
     const double interpolationOrder = 1;
 
     if( aDescriptor == nullptr )
@@ -206,7 +206,15 @@ bool SPARSELIZARD_SOLVER::Run_DC( FEM_DESCRIPTOR* aDescriptor )
     m_reporter->Report( "SPARSELIZARD: Loading mesh...", RPT_SEVERITY_ACTION );
 
 #ifdef USE_GMSH
-    mesher.Load25DMesh();
+    switch( aDescriptor->m_dim )
+    {
+    case FEM_SIMULATION_DIMENSION::SIMUL2D5: mesher.Load25DMesh(); break;
+    case FEM_SIMULATION_DIMENSION::SIMUL3D: mesher.Load3DMesh(); break;
+    default:
+        m_reporter->Report( "Simulation dimension is not supported", RPT_SEVERITY_ERROR );
+        return false;
+    }
+
     mesh mymesh( "gmsh:api", SPARSELIZARD_VERBOSITY );
     mesher.Finalize();
 #else
@@ -232,7 +240,16 @@ bool SPARSELIZARD_SOLVER::Run_DC( FEM_DESCRIPTOR* aDescriptor )
     for( std::map<int, int>::iterator it = regionMap.begin(); it != regionMap.end(); ++it )
     {
         m_v.setorder( it->first, interpolationOrder );
-        rho | it->first = copperResistivity;
+        switch( aDescriptor->m_dim )
+        {
+        case FEM_SIMULATION_DIMENSION::SIMUL2D5:
+            rho | it->first = copperResistivity / ( 35e-6 );
+            break;
+        case FEM_SIMULATION_DIMENSION::SIMUL3D: rho | it->first = copperResistivity; break;
+        default:
+            m_reporter->Report( "Simulation dimension is not supported", RPT_SEVERITY_ERROR );
+            return false;
+        }
     }
 
     for( FEM_PORT* portA : aDescriptor->GetPorts() )

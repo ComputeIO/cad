@@ -39,6 +39,13 @@ enum class FEM_SIMULATION_TYPE
     DC_THERMAL
 };
 
+enum class FEM_SIMULATION_DIMENSION
+{
+    SIMUL2D,
+    SIMUL2D5,
+    SIMUL3D
+};
+
 enum class FEM_SOLVER
 {
     SPARSELIZARD
@@ -63,6 +70,9 @@ public:
 
     const BOARD* GetBoard();
     REPORTER*    m_reporter;
+
+    bool                     m_requiresDielectric;
+    FEM_SIMULATION_DIMENSION m_dim;
 
 private:
     std::list<FEM_PORT*>   m_ports;

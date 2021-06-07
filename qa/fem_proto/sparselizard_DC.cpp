@@ -60,7 +60,7 @@ public:
  */
 
 bool testTrackResistance( double rho, double L, double h, double w, double max_error,
-                          bool overshoot = false )
+                          FEM_SIMULATION_DIMENSION aDim, bool overshoot = false )
 {
     double correct_value = rho * L / ( h * w );
 
@@ -69,6 +69,7 @@ bool testTrackResistance( double rho, double L, double h, double w, double max_e
 
 
     FEM_DESCRIPTOR* descriptor = new FEM_DESCRIPTOR( FEM_SOLVER::SPARSELIZARD, board );
+    descriptor->m_dim = aDim;
 
     PAD* pad1 = new PAD( fp );
     pad1->SetShape( PAD_SHAPE::RECT );
@@ -152,7 +153,7 @@ bool testTrackResistance( double rho, double L, double h, double w, double max_e
     }
 
     TRACK* track = new TRACK( board );
-    track->SetWidth( From_User_Unit( EDA_UNITS::MILLIMETRES, 1 ) );
+    track->SetWidth( From_User_Unit( EDA_UNITS::MILLIMETRES, w * 1000 ) );
     track->SetStart( wxPoint( From_User_Unit( EDA_UNITS::MILLIMETRES, -L * 3 / 2 * 1000 ),
                               From_User_Unit( EDA_UNITS::MILLIMETRES, w * 2 * 1000 ) ) );
     track->SetEnd( wxPoint( From_User_Unit( EDA_UNITS::MILLIMETRES, -L * 3 / 2 * 1000 ),
@@ -216,33 +217,40 @@ bool testTrackResistance( double rho, double L, double h, double w, double max_e
  */
 BOOST_FIXTURE_TEST_SUITE( SparselizardDC, class TEST_SPARSELIZARD_DC )
 
-BOOST_AUTO_TEST_CASE( TestTrackResistance )
+void trackResistanceTest( FEM_SIMULATION_DIMENSION aDim )
 {
     double rho = 1.72e-8;      // copper resistivity
     double L = 200e-3;         // track length
     double h = 35e-6;          // track height
     double w = 30e-3;          // track width
     double max_error = 0.0001; // 0.01%
-    BOOST_CHECK_EQUAL( testTrackResistance( rho, L, h, w, max_error ), true );
-    BOOST_CHECK_EQUAL( testTrackResistance( rho, L, h, w, max_error, true ), true );
+    BOOST_CHECK_EQUAL( testTrackResistance( rho, L, h, w, max_error, aDim ), true );
+    BOOST_CHECK_EQUAL( testTrackResistance( rho, L, h, w, max_error, aDim, true ), true );
 
     rho = 1.72e-8; // copper resistivity
     L = 2e-3;      // track length
     h = 35e-6;     // track height
     w = 30e-3;     // track width
-    BOOST_CHECK_EQUAL( testTrackResistance( rho, L, h, w, max_error ), true );
+    BOOST_CHECK_EQUAL( testTrackResistance( rho, L, h, w, max_error, aDim ), true );
 
     rho = 1.72e-8; // copper resistivity
     L = 200e-3;    // track length
     h = 17e-6;     // track height
     w = 30e-3;     // track width
-    BOOST_CHECK_EQUAL( testTrackResistance( rho, L, h, w, max_error ), true );
+    BOOST_CHECK_EQUAL( testTrackResistance( rho, L, h, w, max_error, aDim ), true );
 
     rho = 1.72e-8; // copper resistivity
-    L = 200e-3;    // track length
+    L = 200e-6;    // track length
     h = 35e-6;     // track height
-    w = 0.1e-3;    // track width
-    BOOST_CHECK_EQUAL( testTrackResistance( rho, L, h, w, max_error ), true );
+    w = 35e-6;     // track width
+    BOOST_CHECK_EQUAL( testTrackResistance( rho, L, h, w, max_error, aDim, true ), true );
+}
+
+
+BOOST_AUTO_TEST_CASE( TestTrackResistance )
+{
+    trackResistanceTest( FEM_SIMULATION_DIMENSION::SIMUL2D5 );
+    trackResistanceTest( FEM_SIMULATION_DIMENSION::SIMUL3D );
 }
 
 BOOST_AUTO_TEST_SUITE_END()

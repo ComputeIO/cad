@@ -193,6 +193,9 @@ void PANEL_PCBNEW_SIMUL_DC_POWER::OnRun( wxCommandEvent& event )
         descriptor->AddResult( view );
     }
 
+    descriptor->m_requiresDielectric = false;
+    descriptor->m_dim = FEM_SIMULATION_DIMENSION::SIMUL2D5;
+    descriptor->m_reporter = new STDOUT_REPORTER();
     descriptor->Run();
 
     m_resultGrid->DeleteRows( 0, m_resultGrid->GetNumberRows() );
