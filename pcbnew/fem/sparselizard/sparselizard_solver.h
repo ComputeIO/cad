@@ -24,6 +24,8 @@
 #ifndef KICAD_SPARSELIZARD_SOLVER_H
 #define KICAD_SPARSELIZARD_SOLVER_H
 
+#define SPARSELIZARD_VERBOSITY 0
+
 #include "../common/fem_descriptor.h"
 #include <sparselizard/sparselizard.h>
 #include <reporter.h>

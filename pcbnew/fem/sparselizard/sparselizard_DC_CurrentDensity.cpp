@@ -207,7 +207,7 @@ bool SPARSELIZARD_SOLVER::Run_DC( FEM_DESCRIPTOR* aDescriptor )
 
 #ifdef USE_GMSH
     mesher.Load25DMesh();
-    mesh mymesh( "gmsh:api" );
+    mesh mymesh( "gmsh:api", SPARSELIZARD_VERBOSITY );
     mesher.Finalize();
 #else
     std::vector<shape> shapes;
@@ -219,7 +219,7 @@ bool SPARSELIZARD_SOLVER::Run_DC( FEM_DESCRIPTOR* aDescriptor )
 
     m_reporter->Report( "SPARSELIZARD: mesh loaded.", RPT_SEVERITY_INFO );
 
-    mymesh.write( "mymesh.msh" );
+    mymesh.write( "mymesh.msh", SPARSELIZARD_VERBOSITY );
 
     m_reporter->Report( "Setting up simulation ports...", RPT_SEVERITY_ACTION );
     // Create the electric potential field v
@@ -289,7 +289,7 @@ bool SPARSELIZARD_SOLVER::Run_DC( FEM_DESCRIPTOR* aDescriptor )
     for( int i = 0; i <= MAX_ORDER - MIN_ORDER; i++ )
     {
         m_equations->solve( "cholesky" );
-        need_adapt = sl::adapt();
+        need_adapt = sl::adapt( SPARSELIZARD_VERBOSITY );
         if( !need_adapt )
         {
             break; // No adaptation was needed
