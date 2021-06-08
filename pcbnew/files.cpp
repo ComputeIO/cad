@@ -60,6 +60,7 @@
 #include <tool/tool_manager.h>
 #include <tools/pcb_actions.h>
 #include "footprint_info_impl.h"
+#include <wx_filename.h>  // For ::ResolvePossibleSymlinks()
 
 #include <wx/wupdlock.h>
 #include <wx/filedlg.h>
@@ -942,6 +943,9 @@ bool PCB_EDIT_FRAME::SavePcbFile( const wxString& aFileName, bool addToHistory,
 
     if( pcbFileName.GetExt() == LegacyPcbFileExtension )
         pcbFileName.SetExt( KiCadPcbFileExtension );
+
+    // Write through symlinks, don't replace them
+    WX_FILENAME::ResolvePossibleSymlinks( pcbFileName );
 
     if( !IsWritable( pcbFileName ) )
     {

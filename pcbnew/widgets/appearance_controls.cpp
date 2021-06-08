@@ -43,8 +43,14 @@
 #include <widgets/indicator_icon.h>
 #include <widgets/infobar.h>
 #include <widgets/wx_grid.h>
+#include <wx/bmpbuttn.h>
+#include <wx/checkbox.h>
 #include <wx/hyperlink.h>
+#include <wx/radiobut.h>
+#include <wx/sizer.h>
+#include <wx/slider.h>
 #include <wx/statline.h>
+#include <wx/textdlg.h>
 
 
 NET_GRID_TABLE::NET_GRID_TABLE( PCB_BASE_FRAME* aFrame, wxColor aBackgroundColor ) :
@@ -2821,7 +2827,8 @@ void APPEARANCE_CONTROLS::onReadOnlySwatch()
     button->Bind( wxEVT_COMMAND_HYPERLINK, std::function<void( wxHyperlinkEvent& aEvent )>(
             [&]( wxHyperlinkEvent& aEvent )
             {
-                m_frame->OnPreferences();
+                 wxCommandEvent dummy;
+                 m_frame->OnPreferences( dummy );
             } ) );
 
     infobar->RemoveAllButtons();

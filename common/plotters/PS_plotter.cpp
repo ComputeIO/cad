@@ -2,7 +2,7 @@
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
  * Copyright (C) 2017 Jean-Pierre Charras, jp.charras at wanadoo.fr
- * Copyright (C) 2020 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 2020-2021 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -46,6 +46,7 @@ extern const double hvbo_widths[256];
 
 const double PSLIKE_PLOTTER::postscriptTextAscent = 0.718;
 
+
 // return a id used to select a ps macro (see StartPlot() ) from a FILL_TYPE
 // fill mode, for arc, rect, circle and poly draw primitives
 static int getFillId( FILL_TYPE aFill )
@@ -60,9 +61,7 @@ static int getFillId( FILL_TYPE aFill )
 }
 
 
-// Common routines for PostScript-like plotting engines
-
-void PSLIKE_PLOTTER::SetColor( COLOR4D color )
+void PSLIKE_PLOTTER::SetColor( const COLOR4D& color )
 {
     if( m_colorMode )
     {
@@ -112,7 +111,7 @@ void PSLIKE_PLOTTER::FlashPadOval( const wxPoint& aPadPos, const wxSize& aSize,
 
     if( aTraceMode == FILLED )
         ThickSegment( wxPoint( aPadPos.x + x0, aPadPos.y + y0 ),
-                      wxPoint( aPadPos.x + x1, aPadPos.y + y1 ), size.x, aTraceMode, NULL );
+                      wxPoint( aPadPos.x + x1, aPadPos.y + y1 ), size.x, aTraceMode, nullptr );
     else
         sketchOval( aPadPos, size, aPadOrient, -1 );
 }
@@ -122,7 +121,9 @@ void PSLIKE_PLOTTER::FlashPadCircle( const wxPoint& aPadPos, int aDiameter,
                                      OUTLINE_MODE aTraceMode, void* aData )
 {
     if( aTraceMode == FILLED )
+    {
         Circle( aPadPos, aDiameter, FILL_TYPE::FILLED_SHAPE, 0 );
+    }
     else    // Plot a ring:
     {
         SetCurrentLineWidth( USE_DEFAULT_LINE_WIDTH );
@@ -195,7 +196,9 @@ void PSLIKE_PLOTTER::FlashPadRoundRect( const wxPoint& aPadPos, const wxSize& aS
     wxSize size( aSize );
 
     if( aTraceMode == FILLED )
+    {
         SetCurrentLineWidth( 0 );
+    }
     else
     {
         SetCurrentLineWidth( USE_DEFAULT_LINE_WIDTH );
@@ -231,7 +234,9 @@ void PSLIKE_PLOTTER::FlashPadCustom( const wxPoint& aPadPos, const wxSize& aSize
     wxSize size( aSize );
 
     if( aTraceMode == FILLED )
+    {
         SetCurrentLineWidth( 0 );
+    }
     else
     {
         SetCurrentLineWidth( USE_DEFAULT_LINE_WIDTH );
@@ -304,9 +309,8 @@ void PSLIKE_PLOTTER::FlashPadTrapez( const wxPoint& aPadPos, const wxPoint *aCor
 }
 
 
-void PSLIKE_PLOTTER::FlashRegularPolygon( const wxPoint& aShapePos,
-                            int aRadius, int aCornerCount,
-                            double aOrient, OUTLINE_MODE aTraceMode, void* aData )
+void PSLIKE_PLOTTER::FlashRegularPolygon( const wxPoint& aShapePos, int aRadius, int aCornerCount,
+                                          double aOrient, OUTLINE_MODE aTraceMode, void* aData )
 {
     // Do nothing
     wxASSERT( 0 );
@@ -352,12 +356,6 @@ std::string PSLIKE_PLOTTER::encodeStringForPlotter( const wxString& aUnicode )
 }
 
 
-/**
- * Sister function for the GraphicTextWidth in drawtxt.cpp
- * Does the same processing (i.e. calculates a text string width) but
- * using postscript metrics for the Helvetica font (optionally used for
- * PS and PDF plotting
- */
 int PSLIKE_PLOTTER::returnPostscriptTextWidth( const wxString& aText, int aXSize,
                                                bool aItalic, bool aBold )
 {
@@ -381,12 +379,6 @@ int PSLIKE_PLOTTER::returnPostscriptTextWidth( const wxString& aText, int aXSize
 }
 
 
-/**
- * Computes the x coordinates for the overlining in a string of text.
- * Fills the passed vector with couples of (start, stop) values to be
- * used in the text coordinate system (use computeTextParameters to
- * obtain the parameters to establish such a system)
- */
 void PSLIKE_PLOTTER::postscriptOverlinePositions( const wxString& aText, int aXSize,
                                                   bool aItalic, bool aBold,
                                                   std::vector<int> *pos_pairs )
@@ -417,8 +409,9 @@ void PSLIKE_PLOTTER::postscriptOverlinePositions( const wxString& aText, int aXS
         pos_pairs->push_back( KiROUND( aXSize * tally / postscriptTextAscent ) );
 }
 
+
 void PS_PLOTTER::SetViewport( const wxPoint& aOffset, double aIusPerDecimil,
-                  double aScale, bool aMirror )
+                              double aScale, bool aMirror )
 {
     wxASSERT( !m_outputFile );
     m_plotMirror = aMirror;
@@ -433,12 +426,6 @@ void PS_PLOTTER::SetViewport( const wxPoint& aOffset, double aIusPerDecimil,
 }
 
 
-/** This is the core for postscript/PDF text alignment
- * It computes the transformation matrix to generate a user space
- * system aligned with the text. Even the PS uses the concat
- * operator to simplify PDF generation (concat is everything PDF
- * has to modify the CTM. Lots of parameters, both in and out.
- */
 void PSLIKE_PLOTTER::computeTextParameters( const wxPoint&           aPos,
                                             const wxString&          aText,
                                             const EDA_ANGLE&         aOrient,
@@ -522,8 +509,6 @@ void PSLIKE_PLOTTER::computeTextParameters( const wxPoint&           aPos,
 }
 
 
-/* Set the current line width (in IUs) for the next plot
- */
 void PS_PLOTTER::SetCurrentLineWidth( int aWidth, void* aData )
 {
     wxASSERT( m_outputFile );
@@ -553,9 +538,6 @@ void PS_PLOTTER::emitSetRGBColor( double r, double g, double b )
 }
 
 
-/**
- * PostScript supports dashed lines
- */
 void PS_PLOTTER::SetDash( PLOT_DASH_TYPE dashed )
 {
     switch( dashed )
@@ -660,11 +642,7 @@ void PS_PLOTTER::PlotPoly( const std::vector< wxPoint >& aCornerList,
 }
 
 
-/**
- * PostScript-likes at the moment are the only plot engines supporting bitmaps...
- */
-void PS_PLOTTER::PlotImage( const wxImage & aImage, const wxPoint& aPos,
-                            double aScaleFactor )
+void PS_PLOTTER::PlotImage( const wxImage& aImage, const wxPoint& aPos, double aScaleFactor )
 {
     wxSize pix_size;                // size of the bitmap in pixels
     pix_size.x = aImage.GetWidth();
@@ -704,6 +682,7 @@ void PS_PLOTTER::PlotImage( const wxImage & aImage, const wxPoint& aPos,
         fputs( "false 3 colorimage\n", m_outputFile );
     else
         fputs( "image\n", m_outputFile );
+
     // Single data source, 3 colors, Output RGB data (hexadecimal)
     // (or the same downscaled to gray)
     int jj = 0;
@@ -802,19 +781,6 @@ void PS_PLOTTER::PenTo( const wxPoint& pos, char plume )
 }
 
 
-/**
- * The code within this function (and the CloseFilePS function)
- * creates postscript files whose contents comply with Adobe's
- * Document Structuring Convention, as documented by assorted
- * details described within the following URLs:
- *
- * http://en.wikipedia.org/wiki/Document_Structuring_Conventions
- * http://partners.adobe.com/public/developer/en/ps/5001.DSC_Spec.pdf
- *
- *
- * BBox is the boundary box (position and size of the "client rectangle"
- * for drawings (page - margins) in mils (0.001 inch)
- */
 bool PS_PLOTTER::StartPlot()
 {
     wxASSERT( m_outputFile );
@@ -870,10 +836,10 @@ bool PS_PLOTTER::StartPlot()
     "/KicadFont-Oblique /Helvetica-Oblique reencodefont definefont pop\n",
     "/KicadFont-BoldOblique /Helvetica-BoldOblique reencodefont definefont pop\n",
     "%%EndProlog\n",
-    NULL
+    nullptr
     };
 
-    time_t time1970 = time( NULL );
+    time_t time1970 = time( nullptr );
 
     fputs( "%!PS-Adobe-3.0\n", m_outputFile );    // Print header
 
@@ -939,7 +905,7 @@ bool PS_PLOTTER::StartPlot()
 
     // Now specify various other details.
 
-    for( int ii = 0; PSMacro[ii] != NULL; ii++ )
+    for( int ii = 0; PSMacro[ii] != nullptr; ii++ )
     {
         fputs( PSMacro[ii], m_outputFile );
     }
@@ -979,7 +945,7 @@ bool PS_PLOTTER::EndPlot()
            "grestore\n"
            "%%EOF\n", m_outputFile );
     fclose( m_outputFile );
-    m_outputFile = NULL;
+    m_outputFile = nullptr;
 
     return true;
 }
@@ -1054,6 +1020,7 @@ const double hv_widths[256] = {
     0.611, 0.556, 0.556, 0.556, 0.556, 0.500, 0.556, 0.500
 };
 
+
 /**
  * Character widths for Helvetica-Bold
  */
@@ -1092,6 +1059,7 @@ const double hvb_widths[256] = {
     0.611, 0.611, 0.611, 0.611, 0.611, 0.556, 0.611, 0.556
 };
 
+
 /**
  * Character widths for Helvetica-Oblique
  */
@@ -1129,6 +1097,7 @@ const double hvo_widths[256] = {
     0.556, 0.556, 0.556, 0.556, 0.556, 0.556, 0.556, 0.584,
     0.611, 0.556, 0.556, 0.556, 0.556, 0.500, 0.556, 0.500
 };
+
 
 /**
  * Character widths for Helvetica-BoldOblique

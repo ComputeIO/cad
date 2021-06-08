@@ -8,8 +8,8 @@
  *
  * Copyright (C) 2018 Jean-Pierre Charras, jp.charras at wanadoo.fr
  * Copyright (C) 2012 SoftPLC Corporation, Dick Hollenbeck <dick@softplc.com>
- * Copyright (C) 2012 Wayne Stambaugh <stambaughw@verizon.net>
- * Copyright (C) 1992-2018 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 2012 Wayne Stambaugh <stambaughw@gmail.com>
+ * Copyright (C) 1992-2021 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -42,9 +42,8 @@
 
 
 /**
- * Function GetPensizeForBold
- * @return the "best" value for a pen size to draw/plot a bold text
- * @param aTextSize = the char size (height or width)
+ * @param aTextSize is the char size (height or width).
+ * @return the "best" value for a pen size to draw/plot a bold text.
  */
 int GetPenSizeForBold( int aTextSize )
 {
@@ -59,13 +58,13 @@ int GetPenSizeForNormal( int aTextSize )
 
 
 /**
- * Function  Clamp_Text_PenSize
  * Don't allow text to become cluttered up in its own fatness.  Bold fonts are generally around
  * aSize/5 in width, so we limit them to aSize/4, and normal text to aSize/6.
- * @param aPenSize = the pen size to clamp
- * @param aSize the char size (height or width)
- * @param aBold = true if text accept bold pen size
- * @return the max pen size allowed
+ *
+ * @param aPenSize is the pen size to clamp.
+ * @param aSize is the character size (height or width).
+ * @param aBold use true if text accept bold pen size.
+ * @return the max pen size allowed.
  */
 int Clamp_Text_PenSize( int aPenSize, int aSize, bool aBold )
 {
@@ -106,7 +105,6 @@ int GraphicTextWidth( const wxString& aText, const wxSize& aSize, bool aItalic, 
 
 
 /**
- * Function GRText
  * Draw a graphic text (like footprint texts)
  *  @param aDC = the current Device Context. NULL if draw within a 3D GL Canvas
  *  @param aPos = text position (according to h_justify, v_justify)
@@ -118,15 +116,15 @@ int GraphicTextWidth( const wxString& aText, const wxSize& aSize, bool aItalic, 
  *  @param aVerticalAlignment = vertical alignment (Top, Center, Bottom)
  *  @param aWidth = line width (pen width) (use default width if aWidth = 0)
  *      if width < 0 : draw segments in sketch mode, width = abs(width)
- *      Use a value min(aSize.x, aSize.y) / 5 for a bold text
- *  @param aItalic = true to simulate an italic font
- *  @param aBold = true to use a bold font. Useful only with default width value (aWidth = 0)
+ *      Use a value min(aSize.x, aSize.y) / 5 for a bold text.
+ *  @param aItalic is the true to simulate an italic font.
+ *  @param aBold use true to use a bold font. Useful only with default width value (aWidth = 0).
  *  @param aCallback( int x0, int y0, int xf, int yf, void* aData ) is a function called
  *                  (if non null) to draw each segment. used to draw 3D texts or for plotting.
  *                  NULL for normal drawings
- *  @param aCallbackData = is the auxiliary parameter aData for the callback function.
- *                         can be nullptr if no auxiliary parameter is needed
- *  @param aPlotter = a pointer to a PLOTTER instance, when this function is used to plot
+ *  @param aCallbackData is the auxiliary parameter aData for the callback function.
+ *                       can be nullptr if no auxiliary parameter is needed
+ *  @param aPlotter is a PLOTTER instance, when this function is used to plot
  *                  the text. NULL to draw this text.
  */
 void GRText( wxDC* aDC, const wxPoint& aPos, const COLOR4D& aColor, const wxString& aText,
