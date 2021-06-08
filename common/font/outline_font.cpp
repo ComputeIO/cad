@@ -44,7 +44,7 @@ using namespace KIFONT;
 
 FT_Library OUTLINE_FONT::mFreeType = nullptr;
 
-OUTLINE_FONT::OUTLINE_FONT() : mFaceSize( 16 ), mSubscriptSize( 10 )
+OUTLINE_FONT::OUTLINE_FONT() : mFaceSize( 16 ), mSubscriptSize( 13 )
 {
     if( !mFreeType )
     {
