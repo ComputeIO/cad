@@ -33,8 +33,12 @@
 
 #include <pcbnew_utils/board_file_utils.h>
 #include <pcbnew/fem/sparselizard/sparselizard_solver.h>
-
+#include <pcb_edit_frame.h>
 #include <pcbnew/board.h>
+#include <pcb_shape.h>
+#include <io_mgr.h>
+#include <board_commit.h>
+#include "../pcbnew_utils/include/pcbnew_utils/board_file_utils.h"
 
 class TEST_SPARSELIZARD_DC
 {
@@ -59,8 +63,8 @@ public:
  * @param overshoot = True: add two other tracks.
  */
 
-bool testTrackResistance( double rho, double L, double h, double w, double max_error,
-                          FEM_SIMULATION_DIMENSION aDim, bool overshoot = false )
+bool simulTrackResistance( double rho, double L, double h, double w, double max_error,
+                           FEM_SIMULATION_DIMENSION aDim, bool overshoot = false )
 {
     double correct_value = rho * L / ( h * w );
 
@@ -224,26 +228,26 @@ void trackResistanceTest( FEM_SIMULATION_DIMENSION aDim )
     double h = 35e-6;          // track height
     double w = 30e-3;          // track width
     double max_error = 0.0001; // 0.01%
-    BOOST_CHECK_EQUAL( testTrackResistance( rho, L, h, w, max_error, aDim ), true );
-    BOOST_CHECK_EQUAL( testTrackResistance( rho, L, h, w, max_error, aDim, true ), true );
+    BOOST_CHECK_EQUAL( simulTrackResistance( rho, L, h, w, max_error, aDim ), true );
+    BOOST_CHECK_EQUAL( simulTrackResistance( rho, L, h, w, max_error, aDim, true ), true );
 
     rho = 1.72e-8; // copper resistivity
     L = 2e-3;      // track length
     h = 35e-6;     // track height
     w = 30e-3;     // track width
-    BOOST_CHECK_EQUAL( testTrackResistance( rho, L, h, w, max_error, aDim ), true );
+    BOOST_CHECK_EQUAL( simulTrackResistance( rho, L, h, w, max_error, aDim ), true );
 
     rho = 1.72e-8; // copper resistivity
     L = 200e-3;    // track length
     h = 17e-6;     // track height
     w = 30e-3;     // track width
-    BOOST_CHECK_EQUAL( testTrackResistance( rho, L, h, w, max_error, aDim ), true );
+    BOOST_CHECK_EQUAL( simulTrackResistance( rho, L, h, w, max_error, aDim ), true );
 
     rho = 1.72e-8; // copper resistivity
     L = 200e-6;    // track length
     h = 35e-6;     // track height
     w = 35e-6;     // track width
-    BOOST_CHECK_EQUAL( testTrackResistance( rho, L, h, w, max_error, aDim, true ), true );
+    BOOST_CHECK_EQUAL( simulTrackResistance( rho, L, h, w, max_error, aDim, true ), true );
 }
 
 
@@ -251,6 +255,108 @@ BOOST_AUTO_TEST_CASE( TestTrackResistance )
 {
     trackResistanceTest( FEM_SIMULATION_DIMENSION::SIMUL2D5 );
     trackResistanceTest( FEM_SIMULATION_DIMENSION::SIMUL3D );
+}
+
+bool simulPlaneCapacitance( double x, double y, double epsilonr, double d )
+{
+    double epsilon0 = 8.8541878128e-12;
+    double correctValue = epsilon0 * epsilonr * x * y / d;
+
+    BOARD*     board = new BOARD();
+    FOOTPRINT* fp1 = new FOOTPRINT( board );
+    FOOTPRINT* fp2 = new FOOTPRINT( board );
+
+    FEM_DESCRIPTOR* descriptor = new FEM_DESCRIPTOR( FEM_SOLVER::SPARSELIZARD, board );
+    descriptor->m_reporter = new STDOUT_REPORTER();
+    descriptor->m_dim = FEM_SIMULATION_DIMENSION::SIMUL3D;
+    descriptor->m_requiresDielectric = true;
+
+    PAD* pad1 = new PAD( fp1 );
+    pad1->SetShape( PAD_SHAPE::RECT );
+    pad1->SetSizeX( From_User_Unit( EDA_UNITS::MILLIMETRES, x * 1000 ) );
+    pad1->SetSizeY( From_User_Unit( EDA_UNITS::MILLIMETRES, y * 1000 ) );
+    pad1->SetX( From_User_Unit( EDA_UNITS::MILLIMETRES, 0 ) );
+    pad1->SetY( From_User_Unit( EDA_UNITS::MILLIMETRES, 0 ) );
+    pad1->SetNetCode( 1, true );
+    pad1->SetAttribute( PAD_ATTRIB::SMD );
+    pad1->SetLayer( PCB_LAYER_ID::F_Cu );
+    pad1->SetLayerSet( pad1->SMDMask() );
+    pad1->SetDrillSizeX( 0 );
+    pad1->SetDrillSizeY( 0 );
+
+    PAD* pad2 = new PAD( fp2 );
+    pad2->SetShape( PAD_SHAPE::RECT );
+    pad2->SetSizeX( From_User_Unit( EDA_UNITS::MILLIMETRES, x * 1000 ) );
+    pad2->SetSizeY( From_User_Unit( EDA_UNITS::MILLIMETRES, y * 1000 ) );
+    pad2->SetX( From_User_Unit( EDA_UNITS::MILLIMETRES, 0 ) );
+    pad2->SetY( From_User_Unit( EDA_UNITS::MILLIMETRES, 0 ) );
+    pad2->SetNetCode( 1, true );
+    pad2->SetAttribute( PAD_ATTRIB::SMD );
+    pad2->SetLayer( PCB_LAYER_ID::F_Cu );
+    pad2->SetLayerSet( pad2->SMDMask() );
+    pad2->SetDrillSizeX( 0 );
+    pad2->SetDrillSizeY( 0 );
+
+    const wxPoint center = wxPoint( 0, 0 );
+    pad2->Flip( center, false );
+
+
+    board->Add( fp1 );
+    board->Add( fp2 );
+
+    PCB_SHAPE* rect = new PCB_SHAPE;
+    rect->SetShape( PCB_SHAPE_TYPE::RECT );
+    rect->SetFilled( false );
+    rect->SetStartX( From_User_Unit( EDA_UNITS::MILLIMETRES, -x / 2 * 1000 ) );
+    rect->SetStartY( From_User_Unit( EDA_UNITS::MILLIMETRES, -y / 2 * 1000 ) );
+    rect->SetEndX( From_User_Unit( EDA_UNITS::MILLIMETRES, x / 2 * 1000 ) );
+    rect->SetEndY( From_User_Unit( EDA_UNITS::MILLIMETRES, y / 2 * 1000 ) );
+    rect->SetWidth( From_User_Unit( EDA_UNITS::MILLIMETRES, 0.05 ) );
+    rect->SetLayer( PCB_LAYER_ID::Edge_Cuts );
+    board->Add( rect );
+
+    TRACK* track = new TRACK( board );
+    track->SetWidth( From_User_Unit( EDA_UNITS::MILLIMETRES, x ) );
+    track->SetStart( wxPoint( From_User_Unit( EDA_UNITS::MILLIMETRES, -x * 3 / 2 * 1000 ),
+                              From_User_Unit( EDA_UNITS::MILLIMETRES, y * 2 * 1000 ) ) );
+    track->SetEnd( wxPoint( From_User_Unit( EDA_UNITS::MILLIMETRES, -x * 3 / 2 * 1000 ),
+                            From_User_Unit( EDA_UNITS::MILLIMETRES, y * 3 * 1000 ) ) );
+    track->SetNetCode( 1, true );
+
+    board->Add( track ); // Should be removed
+
+    FEM_PORT*            port1 = new FEM_PORT( pad1 );
+    FEM_PORT_CONSTRAINT* constraint1 = new FEM_PORT_CONSTRAINT();
+
+    constraint1->m_type = FEM_PORT_CONSTRAINT_TYPE::VOLTAGE;
+    constraint1->m_value = 1; // 1 V
+    port1->m_type = FEM_PORT_TYPE::SOURCE;
+    port1->m_constraint = *constraint1;
+    descriptor->AddPort( port1 );
+
+    FEM_PORT*            port2 = new FEM_PORT( pad2 );
+    FEM_PORT_CONSTRAINT* constraint2 = new FEM_PORT_CONSTRAINT();
+
+    constraint2->m_type = FEM_PORT_CONSTRAINT_TYPE::VOLTAGE;
+    constraint2->m_value = 0; // 0 V
+    port2->m_type = FEM_PORT_TYPE::SOURCE;
+    port2->m_constraint = *constraint2;
+    descriptor->AddPort( port2 );
+
+
+    descriptor->Run();
+
+    return true;
+}
+
+BOOST_AUTO_TEST_CASE( TestPlaneCapacitance )
+{
+    BOOST_CHECK_EQUAL( 1, 1 );
+    double epsilonr = 4.4;
+    double d = 1.45;
+    double x = 5e-3;
+    double y = 10e-3;
+    simulPlaneCapacitance( x, y, epsilonr, d );
 }
 
 BOOST_AUTO_TEST_SUITE_END()

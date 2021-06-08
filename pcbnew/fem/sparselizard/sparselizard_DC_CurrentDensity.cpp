@@ -144,6 +144,8 @@ bool SPARSELIZARD_SOLVER::Run_DC( FEM_DESCRIPTOR* aDescriptor )
 {
     const double copperResistivity = 1.72e-8;
     const double interpolationOrder = 1;
+    const double epsilon0 = 8.8541878128e-12;
+
 
     if( aDescriptor == nullptr )
         return false;
@@ -205,6 +207,16 @@ bool SPARSELIZARD_SOLVER::Run_DC( FEM_DESCRIPTOR* aDescriptor )
 
     m_reporter->Report( "SPARSELIZARD: Loading mesh...", RPT_SEVERITY_ACTION );
 
+    std::vector<int> dielectric_regions;
+    if( aDescriptor->m_requiresDielectric )
+    {
+        dielectric_regions = mesher.AddDielectricRegions();
+        for( int region : dielectric_regions )
+        {
+            std::cout << "dielectric : " << region << std::endl;
+        }
+    }
+
 #ifdef USE_GMSH
     switch( aDescriptor->m_dim )
     {
@@ -236,6 +248,13 @@ bool SPARSELIZARD_SOLVER::Run_DC( FEM_DESCRIPTOR* aDescriptor )
     m_equations = &eq;
     // parameters
     parameter   rho; // resistivity
+    parameter   epsilon; // permittivity
+
+    for( int region : dielectric_regions )
+    {
+        m_v.setorder( region, interpolationOrder );
+        epsilon | region = 4.4 * epsilon0;
+    }
 
     for( std::map<int, int>::iterator it = regionMap.begin(); it != regionMap.end(); ++it )
     {
@@ -286,7 +305,11 @@ bool SPARSELIZARD_SOLVER::Run_DC( FEM_DESCRIPTOR* aDescriptor )
         ( *m_equations ) += sl::integral( it->first, sl::grad( sl::tf( m_v ) ) / rho
                                                              * sl::grad( sl::dof( m_v ) ) );
     }
-
+    for( int region : dielectric_regions )
+    {
+        ( *m_equations ) += sl::integral( region, epsilon * sl::grad( sl::dof( m_v ) )
+                                                          * sl::grad( sl::tf( m_v ) ) );
+    }
     // Expression for the electric field E [V/m] and current density j [A/m^2]:
     m_E = -sl::grad( m_v );                 // electric field
     m_j = m_E / rho;                        // current density
@@ -317,6 +340,7 @@ bool SPARSELIZARD_SOLVER::Run_DC( FEM_DESCRIPTOR* aDescriptor )
 
     sl::fieldorder( m_v ).write( wholedomain, "fieldOrder.pos" );
 
+    m_v.write( wholedomain, std::string( "potential.pos" ), MAX_ORDER );
     for( FEM_RESULT* result : aDescriptor->GetResults() )
     {
         if( result == nullptr )
