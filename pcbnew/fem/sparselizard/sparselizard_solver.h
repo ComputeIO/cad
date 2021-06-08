@@ -30,6 +30,21 @@
 #include <sparselizard/sparselizard.h>
 #include <reporter.h>
 
+class SPARSELIZARD_DIELECTRIC
+{
+public:
+    double epsilonr; // permittivity
+    double regionID;
+};
+
+class SPARSELIZARD_CONDUCTOR
+{
+public:
+    int    netCode;
+    double rho; // resistivity
+    double regionID;
+};
+
 class SPARSELIZARD_SOLVER
 {
 public:
@@ -38,15 +53,17 @@ public:
 
     bool Run_DC( FEM_DESCRIPTOR* aDescriptor );
 
-    double computeCurrentDC( int aPort, std::map<int, int> aRegionMap, int aNetCode );
+    double computeCurrentDC( int aPort, int aNetCode );
     double computeVoltageDC( int aPortA, int aPortB );
     double computePotentialDC( int aPortA );
-    double computeResistanceDC( int aPortA, int aPortB, std::map<int, int> aRegionMap,
-                                int aNetCode );
-    double computePowerDC( int aPortA, int aPortB, std::map<int, int> aRegionMap, int aNetCode );
+    double computeResistanceDC( int aPortA, int aPortB, int aNetCode );
+    double computePowerDC( int aPortA, int aPortB, int aNetCode );
 
     void setVoltageDC( int aRegion, double aV );
     void setCurrentDC( int region, double aI );
+
+    std::vector<int> getAllRegionsWithNetcode( int aNetCode, int aIgnoredPort );
+    std::vector<int> getAllRegionsWithNetcode( int aNetCode );
 
     // Holds all equations
     formulation *m_equations; // For some reasons, this lead to a segfault on constructor if not using a pointer
@@ -59,6 +76,9 @@ public:
     expression m_p; // power density
 
     REPORTER* m_reporter;
+
+    std::vector<SPARSELIZARD_DIELECTRIC> m_dielectrics;
+    std::vector<SPARSELIZARD_CONDUCTOR>  m_conductors;
 
 
 private:
