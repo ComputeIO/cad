@@ -66,7 +66,7 @@ public:
 bool simulTrackResistance( double rho, double L, double h, double w, double max_error,
                            FEM_SIMULATION_DIMENSION aDim, bool overshoot = false )
 {
-    double correct_value = rho * L / ( h * w );
+    double correctValue = rho * L / ( h * w );
 
     BOARD*     board = new BOARD();
     FOOTPRINT* fp = new FOOTPRINT( board );
@@ -205,10 +205,10 @@ bool simulTrackResistance( double rho, double L, double h, double w, double max_
 
     if( r_resistance->m_valid )
     {
-        if( abs( r_resistance->GetResult() - correct_value ) / correct_value > max_error )
+        if( abs( r_resistance->GetResult() - correctValue ) / correctValue > max_error )
         {
             std::cout << "test failed: R=" << r_resistance->GetResult() << " instead of "
-                      << correct_value << std::endl;
+                      << correctValue << std::endl;
             return false;
         }
         return true;
@@ -257,7 +257,7 @@ BOOST_AUTO_TEST_CASE( TestTrackResistance )
     trackResistanceTest( FEM_SIMULATION_DIMENSION::SIMUL3D );
 }
 
-bool simulPlaneCapacitance( double x, double y, double epsilonr, double d )
+bool simulPlaneCapacitance( double x, double y, double epsilonr, double d, double aMaxError )
 {
     double epsilon0 = 8.8541878128e-12;
     double correctValue = epsilon0 * epsilonr * x * y / d;
@@ -328,8 +328,8 @@ bool simulPlaneCapacitance( double x, double y, double epsilonr, double d )
     FEM_PORT*            port1 = new FEM_PORT( pad1 );
     FEM_PORT_CONSTRAINT* constraint1 = new FEM_PORT_CONSTRAINT();
 
-    constraint1->m_type = FEM_PORT_CONSTRAINT_TYPE::VOLTAGE;
-    constraint1->m_value = 1; // 1 V
+    constraint1->m_type = FEM_PORT_CONSTRAINT_TYPE::CHARGE;
+    constraint1->m_value = 1; // 1 C
     port1->m_type = FEM_PORT_TYPE::SOURCE;
     port1->m_constraint = *constraint1;
     descriptor->AddPort( port1 );
@@ -338,13 +338,33 @@ bool simulPlaneCapacitance( double x, double y, double epsilonr, double d )
     FEM_PORT_CONSTRAINT* constraint2 = new FEM_PORT_CONSTRAINT();
 
     constraint2->m_type = FEM_PORT_CONSTRAINT_TYPE::VOLTAGE;
-    constraint2->m_value = 0; // 0 V
+    constraint2->m_value = 0; // 0V
     port2->m_type = FEM_PORT_TYPE::SOURCE;
     port2->m_constraint = *constraint2;
     descriptor->AddPort( port2 );
 
+    FEM_RESULT_VALUE* r_capacitance =
+            new FEM_RESULT_VALUE( FEM_VALUE_TYPE::CAPACITANCE, port1, port2 );
+
+    if( !( r_capacitance )->IsInitialized() )
+        std::cerr << "Could not initialize capacitance result. " << std::endl;
+
+    if( !descriptor->AddResult( r_capacitance ) )
+        std::cerr << "Could not add capacitance result to descriptor " << std::endl;
 
     descriptor->Run();
+
+    if( r_capacitance->m_valid )
+    {
+        if( abs( r_capacitance->GetResult() - correctValue ) / correctValue > aMaxError )
+        {
+            std::cout << "test failed: C=" << r_capacitance->GetResult() << " instead of "
+                      << correctValue << std::endl;
+            return false;
+        }
+        return true;
+    }
+    return false;
 
     return true;
 }
@@ -356,7 +376,8 @@ BOOST_AUTO_TEST_CASE( TestPlaneCapacitance )
     double d = 1.45;
     double x = 5e-3;
     double y = 10e-3;
-    simulPlaneCapacitance( x, y, epsilonr, d );
+    double maxError = 0.0001;
+    simulPlaneCapacitance( x, y, epsilonr, d, maxError );
 }
 
 BOOST_AUTO_TEST_SUITE_END()

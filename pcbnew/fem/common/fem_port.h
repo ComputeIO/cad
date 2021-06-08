@@ -39,7 +39,8 @@ enum class FEM_PORT_CONSTRAINT_TYPE
     VOLTAGE,
     CURRENT,
     POWER,
-    SPICE // unused
+    CHARGE, // static charge in Coulomb
+    SPICE   // unused
 };
 
 class FEM_PORT_CONSTRAINT

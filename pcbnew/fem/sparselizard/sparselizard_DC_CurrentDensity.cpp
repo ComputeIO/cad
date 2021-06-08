@@ -81,6 +81,9 @@ double SPARSELIZARD_SOLVER::computeCurrentDC( int aPort, int aNetCode )
     }
     int outsideOfPort = sl::selectunion( regions );
     int line = sl::selectintersection( { aPort, outsideOfPort } );
+    std::cout << "Current is: "
+              << ( sl::normal( aPort ) * sl::on( outsideOfPort, m_j ) ).integrate( line, 4 )
+              << std::endl;
     return ( sl::normal( aPort ) * sl::on( outsideOfPort, m_j ) ).integrate( line, 4 );
 }
 
@@ -123,6 +126,13 @@ double SPARSELIZARD_SOLVER::computePowerDC( int aPortA, int aPortB, int aNetCode
     return V * I;
 }
 
+double SPARSELIZARD_SOLVER::computeCapacitanceDC( int aPortA, int aPortB )
+{
+    double V = computeVoltageDC( aPortA, aPortB );
+
+    return ( ( 1 / expression( 1 ).integrate( aPortA, 4 ) ) / V );
+}
+
 void SPARSELIZARD_SOLVER::setVoltageDC( int aRegion, double aV )
 {
     port V, I;
@@ -136,6 +146,15 @@ void SPARSELIZARD_SOLVER::setCurrentDC( int aRegion, double aI )
     m_v.setport( aRegion, V, I );
     ( *m_equations ) += I - aI;
 }
+
+void SPARSELIZARD_SOLVER::setChargeDC( int aRegion, double aQ )
+{
+    port V, Q;
+    m_v.setport( aRegion, V, Q );
+    ( *m_equations ) += Q - aQ / expression( 1 ).integrate( aRegion, 4 );
+    std::cout << "Setting charge on region : " << aQ << std::endl;
+}
+
 
 void SPARSELIZARD_SOLVER::setConstraints( FEM_DESCRIPTOR* aDescriptor )
 {
@@ -160,6 +179,11 @@ void SPARSELIZARD_SOLVER::setConstraints( FEM_DESCRIPTOR* aDescriptor )
                 setCurrentDC( portA->m_simulationID, portA->m_constraint.m_value );
                 break;
             }
+            case FEM_PORT_CONSTRAINT_TYPE::CHARGE:
+            {
+                setChargeDC( portA->m_simulationID, portA->m_constraint.m_value );
+                break;
+            }
             default: m_reporter->Report( "Source / Sink type not supported", RPT_SEVERITY_ERROR );
             }
         }
@@ -175,6 +199,7 @@ bool SPARSELIZARD_SOLVER::setParameters( FEM_DESCRIPTOR* aDescriptor )
     {
         m_v.setorder( dielectric.regionID, MIN_ORDER );
         ( *m_epsilon ) | dielectric.regionID = dielectric.epsilonr * EPSILON0;
+        std::cout << "epsilon : " << dielectric.epsilonr << std::endl;
     }
 
     for( SPARSELIZARD_CONDUCTOR conductor : m_conductors )
@@ -216,6 +241,8 @@ void SPARSELIZARD_SOLVER::setEquations()
 void SPARSELIZARD_SOLVER::writeResults( FEM_DESCRIPTOR* aDescriptor )
 {
     int  wholedomain = sl::selectall();
+    //static int k = 0;
+    //m_j.write( wholedomain, to_string(k++) +".pos", MAX_ORDER );
     sl::fieldorder( m_v ).write( wholedomain, "fieldOrder.pos" );        //TODO: remove
     m_v.write( wholedomain, std::string( "potential.pos" ), MAX_ORDER ); //TODO: remove
 
@@ -224,7 +251,6 @@ void SPARSELIZARD_SOLVER::writeResults( FEM_DESCRIPTOR* aDescriptor )
         if( result == nullptr )
         {
             m_reporter->Report( "A FEM_RESULT is NULL", RPT_SEVERITY_ERROR );
-            ;
             continue;
         }
 
@@ -323,6 +349,15 @@ void SPARSELIZARD_SOLVER::writeResults( FEM_DESCRIPTOR* aDescriptor )
                     resultValue->m_value = computePowerDC( portA, portB, netCode );
                     resultValue->m_valid = true;
                 }
+                break;
+            }
+            case FEM_VALUE_TYPE::CAPACITANCE:
+            {
+                int portA = resultValue->GetPortA()->m_simulationID;
+                int portB = resultValue->GetPortB()->m_simulationID;
+
+                resultValue->m_value = computeCapacitanceDC( portA, portB );
+                resultValue->m_valid = true;
                 break;
             }
             default:

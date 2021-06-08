@@ -43,6 +43,8 @@ public:
     int    netCode;
     double rho; // resistivity
     double regionID;
+    port   primalPort;
+    port   dualPort;
 };
 
 class SPARSELIZARD_SOLVER
@@ -58,9 +60,11 @@ public:
     double computePotentialDC( int aPortA );
     double computeResistanceDC( int aPortA, int aPortB, int aNetCode );
     double computePowerDC( int aPortA, int aPortB, int aNetCode );
+    double computeCapacitanceDC( int aPortA, int aPortB );
 
     void setVoltageDC( int aRegion, double aV );
-    void setCurrentDC( int region, double aI );
+    void setCurrentDC( int aRegion, double aI );
+    void setChargeDC( int aRegion, double aQ );
 
     std::vector<int> getAllRegionsWithNetcode( int aNetCode, int aIgnoredPort );
     std::vector<int> getAllRegionsWithNetcode( int aNetCode );
