@@ -717,7 +717,7 @@ VECTOR2I OUTLINE_FONT::GetTextAsPolygon( std::vector<SHAPE_POLY_SET>& aGlyphs, c
             if( IsSubscript( aTextStyle ) )
                 offset.y += glyphSize.y * 0.1;
             else if( IsSuperscript( aTextStyle ) )
-                offset.y -= glyphSize.y * 0.45;
+                offset.y -= glyphSize.y * 0.2;
 
             for( const VECTOR2D& v : points )
             {
