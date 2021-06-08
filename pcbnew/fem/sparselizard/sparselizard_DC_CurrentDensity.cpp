@@ -212,7 +212,7 @@ bool SPARSELIZARD_SOLVER::setParameters( FEM_DESCRIPTOR* aDescriptor )
         switch( aDescriptor->m_dim )
         {
         case FEM_SIMULATION_DIMENSION::SIMUL2D5:
-            ( *m_rho ) | conductor.regionID = conductor.rho / ( 35e-6 );
+            ( *m_rho ) | conductor.regionID = conductor.rho / ( 35e-3 );
             break;
         case FEM_SIMULATION_DIMENSION::SIMUL3D:
             ( *m_rho ) | conductor.regionID = conductor.rho;
@@ -477,7 +477,7 @@ SPARSELIZARD_CONDUCTOR SPARSELIZARD_SOLVER::findConductor( FEM_PORT* aPort )
 
 bool SPARSELIZARD_SOLVER::Run_DC( FEM_DESCRIPTOR* aDescriptor )
 {
-    const double copperResistivity = 1.72e-8;
+    const double copperResistivity = 1.72e-8 * 1000; 
     const double interpolationOrder = 1;
 
 
