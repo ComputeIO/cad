@@ -166,7 +166,7 @@ public:
                        KIFONT::FONT*               aFont = nullptr,
                        void*                       aData = nullptr ) override;
 
-    virtual void Text( const EDA_TEXT* aText, const COLOR4D aColor, void* aData = nullptr ) override;
+    virtual void Text( const EDA_TEXT* aText, const COLOR4D& aColor, void* aData = nullptr ) override;
 
     /**
      * Set the units to use for plotting the DXF file.

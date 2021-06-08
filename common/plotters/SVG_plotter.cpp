@@ -831,7 +831,7 @@ void SVG_PLOTTER::Text( const wxPoint&              aPos,
 }
 
 
-void SVG_PLOTTER::Text( const EDA_TEXT* aText, const COLOR4D aColor, void* aData )
+void SVG_PLOTTER::Text( const EDA_TEXT* aText, const COLOR4D& aColor, void* aData )
 {
     Text( aText->GetTextPos(), aColor, aText->GetShownText(), aText->GetTextEdaAngle(),
           aText->GetTextSize(), aText->GetHorizontalAlignment(), aText->GetVerticalAlignment(),

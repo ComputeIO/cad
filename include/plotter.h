@@ -420,14 +420,14 @@ public:
      * Draws text with the plotter. For convenience it accepts the color to use
      * for specific plotters (GERBER) aData is used to pass extra parameters
      */
-    virtual void Text( const wxPoint& aPos, const COLOR4D aColor, const wxString& aText,
+    virtual void Text( const wxPoint& aPos, const COLOR4D& aColor, const wxString& aText,
                        const EDA_ANGLE& aOrient, const wxSize& aSize,
                        TEXT_ATTRIBUTES::HORIZONTAL_ALIGNMENT aHorizontalAlignment,
                        TEXT_ATTRIBUTES::VERTICAL_ALIGNMENT aVerticalAlignment, int aWidth,
                        bool aItalic, bool aBold, bool aMultilineAllowed = false,
                        KIFONT::FONT* aFont = nullptr, void* aData = nullptr );
 
-    virtual void Text( const EDA_TEXT* aText, const COLOR4D aColor, void* aData = nullptr );
+    virtual void Text( const EDA_TEXT* aText, const COLOR4D& aColor, void* aData = nullptr );
 
     /**
      * Draw a marker (used for the drill map).

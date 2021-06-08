@@ -44,9 +44,6 @@ extern const double hvb_widths[256];
 extern const double hvo_widths[256];
 extern const double hvbo_widths[256];
 
-const double PSLIKE_PLOTTER::postscriptTextAscent = 0.718;
-
-
 // return a id used to select a ps macro (see StartPlot() ) from a FILL_TYPE
 // fill mode, for arc, rect, circle and poly draw primitives
 static int getFillId( FILL_TYPE aFill )
@@ -953,7 +950,7 @@ bool PS_PLOTTER::EndPlot()
 
 
 void PS_PLOTTER::Text( const wxPoint&              aPos,
-                       const COLOR4D               aColor,
+                       const COLOR4D&              aColor,
                        const wxString&             aText,
                        const EDA_ANGLE&            aOrient,
                        const wxSize&               aSize,

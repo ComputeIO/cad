@@ -878,7 +878,7 @@ void PDF_PLOTTER::Text( const wxPoint&              aPos,
 }
 
 
-void PDF_PLOTTER::Text( const EDA_TEXT* aText, const COLOR4D aColor, void* aData )
+void PDF_PLOTTER::Text( const EDA_TEXT* aText, const COLOR4D& aColor, void* aData )
 {
 #ifdef DEBUG
     std::cerr << "PDF_PLOTTER::Text( " << *aText << ", " << aColor << ", [aData] ) \""

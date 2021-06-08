@@ -1924,7 +1924,7 @@ void GERBER_PLOTTER::FlashRegularPolygon( const wxPoint& aShapePos, int aDiamete
 }
 
 
-void GERBER_PLOTTER::Text( const wxPoint& aPos, const COLOR4D aColor, const wxString& aText,
+void GERBER_PLOTTER::Text( const wxPoint& aPos, const COLOR4D& aColor, const wxString& aText,
                            const EDA_ANGLE& aOrient, const wxSize& aSize,
                            TEXT_ATTRIBUTES::HORIZONTAL_ALIGNMENT aHorizontalAlignment,
                            TEXT_ATTRIBUTES::VERTICAL_ALIGNMENT aVerticalAlignment, int aWidth,
@@ -1941,7 +1941,7 @@ void GERBER_PLOTTER::Text( const wxPoint& aPos, const COLOR4D aColor, const wxSt
 }
 
 
-void GERBER_PLOTTER::Text( const EDA_TEXT* aText, const COLOR4D aColor, void* aData )
+void GERBER_PLOTTER::Text( const EDA_TEXT* aText, const COLOR4D& aColor, void* aData )
 {
     GBR_METADATA* gbr_metadata = static_cast<GBR_METADATA*>( aData );
 

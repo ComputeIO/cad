@@ -635,7 +635,7 @@ void PLOTTER::PlotPoly( const SHAPE_LINE_CHAIN& aCornerList, FILL_TYPE aFill, in
  *  @param aData = a parameter used by some plotters in SetCurrentLineWidth(),
  * not directly used here.
  */
-void PLOTTER::Text( const wxPoint& aPos, const COLOR4D aColor, const wxString& aText,
+void PLOTTER::Text( const wxPoint& aPos, const COLOR4D& aColor, const wxString& aText,
                     const EDA_ANGLE& aOrient, const wxSize& aSize,
                     TEXT_ATTRIBUTES::HORIZONTAL_ALIGNMENT aHorizontalAlignment,
                     TEXT_ATTRIBUTES::VERTICAL_ALIGNMENT aVerticalAlignment, int aPenWidth,
@@ -657,7 +657,7 @@ void PLOTTER::Text( const wxPoint& aPos, const COLOR4D aColor, const wxString& a
 }
 
 
-void PLOTTER::Text( const EDA_TEXT* aText, const COLOR4D aColor, void* aData )
+void PLOTTER::Text( const EDA_TEXT* aText, const COLOR4D& aColor, void* aData )
 {
 #ifdef DEBUG
     std::cerr << "PLOTTER::Text( ";

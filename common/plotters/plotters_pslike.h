@@ -134,7 +134,7 @@ protected:
     virtual void emitSetRGBColor( double r, double g, double b ) = 0;
 
     /// Height of the postscript font (from the AFM)
-    static const double postscriptTextAscent; // = 0.718;
+    static constexpr double postscriptTextAscent = 0.718;
 
     /**
      * Sister function for the GraphicTextWidth in drawtxt.cpp
@@ -229,7 +229,7 @@ public:
                        bool                        aBold,
                        bool                        aMultilineAllowed = false,
                        KIFONT::FONT*               aFont = nullptr,
-                       void* aData = nullptr ) override;
+                       void*                       aData = nullptr ) override;
 
 protected:
     virtual void emitSetRGBColor( double r, double g, double b ) override;
@@ -349,7 +349,7 @@ public:
                        KIFONT::FONT*               aFont = nullptr,
                        void*                       aData = nullptr ) override;
 
-    virtual void Text( const EDA_TEXT* aText, const COLOR4D aColor, void* aData = nullptr ) override;
+    virtual void Text( const EDA_TEXT* aText, const COLOR4D& aColor, void* aData = nullptr ) override;
 
     /**
      * PDF images are handles as inline, not XObject streams...
@@ -516,7 +516,7 @@ public:
                        KIFONT::FONT*               aFont = nullptr,
                        void*                       aData = nullptr ) override;
 
-    virtual void Text( const EDA_TEXT* aText, const COLOR4D aColor, void* aData = nullptr ) override;
+    virtual void Text( const EDA_TEXT* aText, const COLOR4D& aColor, void* aData = nullptr ) override;
 
 protected:
     /**
