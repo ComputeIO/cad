@@ -33,6 +33,7 @@
 
 #define MIN_ORDER 1
 #define MAX_ORDER 3
+#define EPSILON0 8.8541878128e-12;
 
 SPARSELIZARD_SOLVER::SPARSELIZARD_SOLVER()
 {
@@ -136,148 +137,8 @@ void SPARSELIZARD_SOLVER::setCurrentDC( int aRegion, double aI )
     ( *m_equations ) += I - aI;
 }
 
-
-bool SPARSELIZARD_SOLVER::Run_DC( FEM_DESCRIPTOR* aDescriptor )
+void SPARSELIZARD_SOLVER::setConstraints( FEM_DESCRIPTOR* aDescriptor )
 {
-    const double copperResistivity = 1.72e-8;
-    const double interpolationOrder = 1;
-    const double epsilon0 = 8.8541878128e-12;
-
-
-    if( aDescriptor == nullptr )
-        return false;
-
-    if( aDescriptor->GetBoard() == nullptr )
-        return false;
-
-#ifdef USE_GMSH
-    GMSH_MESHER mesher( aDescriptor->GetBoard() );
-#else
-    SPARSELIZARD_MESHER mesher( aDescriptor->GetBoard() );
-#endif
-    m_reporter->Report( "Setting up ports and regions...", RPT_SEVERITY_INFO );
-
-    std::list<int> netlist;
-
-    for( FEM_PORT* port : aDescriptor->GetPorts() )
-    {
-        if( port->GetItem() == nullptr )
-        {
-            m_reporter->Report( "A FEM_PORT is NULL", RPT_SEVERITY_ERROR );
-            continue;
-        }
-
-        std::list<int>::iterator it;
-        it = std::find( netlist.begin(), netlist.end(), port->GetItem()->GetNetCode() );
-        if( it == netlist.end() )
-        {
-            netlist.push_back( port->GetItem()->GetNetCode() );
-        }
-
-        switch( port->GetItem()->Type() )
-        {
-        case PCB_PAD_T:
-            port->m_simulationID =
-                    mesher.AddPadRegion( static_cast<const PAD*>( port->GetItem() ) );
-
-            SPARSELIZARD_CONDUCTOR conductor;
-            conductor.rho = copperResistivity;
-            conductor.regionID = port->m_simulationID;
-            conductor.netCode = static_cast<const PAD*>( port->GetItem() )->GetNetCode();
-            m_conductors.push_back( conductor );
-
-            break;
-        default: break;
-        }
-    }
-
-    m_reporter->Report( "Number of ports in simulation: " + to_string( m_conductors.size() ),
-                        RPT_SEVERITY_INFO );
-
-    // Add copper zones / tracks
-
-    for( int netID : netlist )
-    {
-        SPARSELIZARD_CONDUCTOR conductor;
-        conductor.rho = copperResistivity;
-        conductor.regionID = mesher.AddNetRegion( netID );
-        conductor.netCode = netID;
-        m_conductors.push_back( conductor );
-    }
-
-    if( aDescriptor->m_requiresDielectric )
-    {
-        for( int region : mesher.AddDielectricRegions() )
-        {
-            SPARSELIZARD_DIELECTRIC dielectric;
-            dielectric.epsilonr = 4.4;
-            dielectric.regionID = region;
-            m_dielectrics.push_back( dielectric );
-        }
-    }
-
-
-    m_reporter->Report( "Number of regions in simulation: "
-                                + to_string( m_conductors.size() + m_dielectrics.size() ),
-                        RPT_SEVERITY_INFO );
-
-    m_reporter->Report( "SPARSELIZARD: Loading mesh...", RPT_SEVERITY_ACTION );
-
-
-#ifdef USE_GMSH
-    switch( aDescriptor->m_dim )
-    {
-    case FEM_SIMULATION_DIMENSION::SIMUL2D5: mesher.Load25DMesh(); break;
-    case FEM_SIMULATION_DIMENSION::SIMUL3D: mesher.Load3DMesh(); break;
-    default:
-        m_reporter->Report( "Simulation dimension is not supported", RPT_SEVERITY_ERROR );
-        return false;
-    }
-
-    mesh mymesh( "gmsh:api", SPARSELIZARD_VERBOSITY );
-    mesher.Finalize();
-#else
-    std::vector<shape> shapes;
-    mesher.Get2DShapes( shapes, PCB_LAYER_ID::F_Cu, true );
-    mesh mymesh;
-    mymesh.split( 2 );
-    mymesh.load( shapes );
-#endif
-
-    m_reporter->Report( "SPARSELIZARD: mesh loaded.", RPT_SEVERITY_INFO );
-
-    mymesh.write( "mymesh.msh", SPARSELIZARD_VERBOSITY );
-
-    m_reporter->Report( "Setting up simulation ports...", RPT_SEVERITY_ACTION );
-    // Create the electric potential field v
-    m_v = field( "h1" );
-    formulation eq;
-    m_equations = &eq;
-    // parameters
-    parameter   rho; // resistivity
-    parameter   epsilon; // permittivity
-
-    for( SPARSELIZARD_DIELECTRIC dielectric : m_dielectrics )
-    {
-        m_v.setorder( dielectric.regionID, interpolationOrder );
-        epsilon | dielectric.regionID = dielectric.epsilonr * epsilon0;
-    }
-
-    for( SPARSELIZARD_CONDUCTOR conductor : m_conductors )
-    {
-        m_v.setorder( conductor.regionID, interpolationOrder );
-        switch( aDescriptor->m_dim )
-        {
-        case FEM_SIMULATION_DIMENSION::SIMUL2D5:
-            rho | conductor.regionID = conductor.rho / ( 35e-6 );
-            break;
-        case FEM_SIMULATION_DIMENSION::SIMUL3D: rho | conductor.regionID = conductor.rho; break;
-        default:
-            m_reporter->Report( "Simulation dimension is not supported", RPT_SEVERITY_ERROR );
-            return false;
-        }
-    }
-
     for( FEM_PORT* portA : aDescriptor->GetPorts() )
     {
         if( portA->GetItem() == nullptr )
@@ -306,51 +167,58 @@ bool SPARSELIZARD_SOLVER::Run_DC( FEM_DESCRIPTOR* aDescriptor )
         {
         }
     }
+}
+
+bool SPARSELIZARD_SOLVER::setParameters( FEM_DESCRIPTOR* aDescriptor )
+{
+    for( SPARSELIZARD_DIELECTRIC dielectric : m_dielectrics )
+    {
+        m_v.setorder( dielectric.regionID, MIN_ORDER );
+        ( *m_epsilon ) | dielectric.regionID = dielectric.epsilonr * EPSILON0;
+    }
 
     for( SPARSELIZARD_CONDUCTOR conductor : m_conductors )
     {
-        ( *m_equations ) += sl::integral(
-                conductor.regionID, sl::grad( sl::tf( m_v ) ) / rho * sl::grad( sl::dof( m_v ) ) );
+        m_v.setorder( conductor.regionID, MIN_ORDER );
+        switch( aDescriptor->m_dim )
+        {
+        case FEM_SIMULATION_DIMENSION::SIMUL2D5:
+            ( *m_rho ) | conductor.regionID = conductor.rho / ( 35e-6 );
+            break;
+        case FEM_SIMULATION_DIMENSION::SIMUL3D:
+            ( *m_rho ) | conductor.regionID = conductor.rho;
+            break;
+        default:
+            m_reporter->Report( "Simulation dimension is not supported", RPT_SEVERITY_ERROR );
+            return false;
+        }
+    }
+    return true;
+}
+
+void SPARSELIZARD_SOLVER::setEquations()
+{
+    for( SPARSELIZARD_CONDUCTOR conductor : m_conductors )
+    {
+        ( *m_equations ) +=
+                sl::integral( conductor.regionID,
+                              sl::grad( sl::tf( m_v ) ) / ( *m_rho ) * sl::grad( sl::dof( m_v ) ) );
     }
 
     for( SPARSELIZARD_DIELECTRIC dielectric : m_dielectrics )
     {
         ( *m_equations ) +=
-                sl::integral( dielectric.regionID,
-                              epsilon * sl::grad( sl::dof( m_v ) ) * sl::grad( sl::tf( m_v ) ) );
+                sl::integral( dielectric.regionID, ( *m_epsilon ) * sl::grad( sl::dof( m_v ) )
+                                                           * sl::grad( sl::tf( m_v ) ) );
     }
+}
 
-    // Expression for the electric field E [V/m] and current density j [A/m^2]:
-    m_E = -sl::grad( m_v );                 // electric field
-    m_j = m_E / rho;                        // current density
-    m_p = sl::doubledotproduct( m_j, m_E ); // power density
-
-
-    int  nb_refinements = 0;
+void SPARSELIZARD_SOLVER::writeResults( FEM_DESCRIPTOR* aDescriptor )
+{
     int  wholedomain = sl::selectall();
-    bool need_adapt = false;
+    sl::fieldorder( m_v ).write( wholedomain, "fieldOrder.pos" );        //TODO: remove
+    m_v.write( wholedomain, std::string( "potential.pos" ), MAX_ORDER ); //TODO: remove
 
-    // Simple p-adaptivity loop:
-    m_v.setorder( sl::norm( sl::grad( m_v ) ), MIN_ORDER, MAX_ORDER + 1 );
-
-
-    m_reporter->Report( "SPARSELIZARD: Simulating...", RPT_SEVERITY_ACTION );
-
-    for( int i = 0; i <= MAX_ORDER - MIN_ORDER; i++ )
-    {
-        m_equations->solve( "cholesky" );
-        need_adapt = sl::adapt( SPARSELIZARD_VERBOSITY );
-        if( !need_adapt )
-        {
-            break; // No adaptation was needed
-        };
-    }
-
-    m_reporter->Report( "SPARSELIZARD: End of simulation.", RPT_SEVERITY_INFO );
-
-    sl::fieldorder( m_v ).write( wholedomain, "fieldOrder.pos" );
-
-    m_v.write( wholedomain, std::string( "potential.pos" ), MAX_ORDER );
     for( FEM_RESULT* result : aDescriptor->GetResults() )
     {
         if( result == nullptr )
@@ -504,6 +372,162 @@ bool SPARSELIZARD_SOLVER::Run_DC( FEM_DESCRIPTOR* aDescriptor )
             m_reporter->Report( "Result type not supported by DC simulation", RPT_SEVERITY_ERROR );
         }
     }
+}
+
+
+bool SPARSELIZARD_SOLVER::Run_DC( FEM_DESCRIPTOR* aDescriptor )
+{
+    const double copperResistivity = 1.72e-8;
+    const double interpolationOrder = 1;
+
+
+    if( aDescriptor == nullptr )
+        return false;
+
+    if( aDescriptor->GetBoard() == nullptr )
+        return false;
+
+#ifdef USE_GMSH
+    GMSH_MESHER mesher( aDescriptor->GetBoard() );
+#else
+    SPARSELIZARD_MESHER mesher( aDescriptor->GetBoard() );
+#endif
+    m_reporter->Report( "Setting up ports and regions...", RPT_SEVERITY_INFO );
+
+    std::list<int> netlist;
+
+    for( FEM_PORT* port : aDescriptor->GetPorts() )
+    {
+        if( port->GetItem() == nullptr )
+        {
+            m_reporter->Report( "A FEM_PORT is NULL", RPT_SEVERITY_ERROR );
+            continue;
+        }
+
+        std::list<int>::iterator it;
+        it = std::find( netlist.begin(), netlist.end(), port->GetItem()->GetNetCode() );
+        if( it == netlist.end() )
+        {
+            netlist.push_back( port->GetItem()->GetNetCode() );
+        }
+
+        switch( port->GetItem()->Type() )
+        {
+        case PCB_PAD_T:
+            port->m_simulationID =
+                    mesher.AddPadRegion( static_cast<const PAD*>( port->GetItem() ) );
+
+            SPARSELIZARD_CONDUCTOR conductor;
+            conductor.rho = copperResistivity;
+            conductor.regionID = port->m_simulationID;
+            conductor.netCode = static_cast<const PAD*>( port->GetItem() )->GetNetCode();
+            m_conductors.push_back( conductor );
+
+            break;
+        default: break;
+        }
+    }
+
+    m_reporter->Report( "Number of ports in simulation: " + to_string( m_conductors.size() ),
+                        RPT_SEVERITY_INFO );
+
+    // Add copper zones / tracks
+
+    for( int netID : netlist )
+    {
+        SPARSELIZARD_CONDUCTOR conductor;
+        conductor.rho = copperResistivity;
+        conductor.regionID = mesher.AddNetRegion( netID );
+        conductor.netCode = netID;
+        m_conductors.push_back( conductor );
+    }
+
+    if( aDescriptor->m_requiresDielectric )
+    {
+        for( int region : mesher.AddDielectricRegions() )
+        {
+            SPARSELIZARD_DIELECTRIC dielectric;
+            dielectric.epsilonr = 4.4;
+            dielectric.regionID = region;
+            m_dielectrics.push_back( dielectric );
+        }
+    }
+
+    m_reporter->Report( "Number of regions in simulation: "
+                                + to_string( m_conductors.size() + m_dielectrics.size() ),
+                        RPT_SEVERITY_INFO );
+
+    m_reporter->Report( "SPARSELIZARD: Loading mesh...", RPT_SEVERITY_ACTION );
+
+
+#ifdef USE_GMSH
+    switch( aDescriptor->m_dim )
+    {
+    case FEM_SIMULATION_DIMENSION::SIMUL2D5: mesher.Load25DMesh(); break;
+    case FEM_SIMULATION_DIMENSION::SIMUL3D: mesher.Load3DMesh(); break;
+    default:
+        m_reporter->Report( "Simulation dimension is not supported", RPT_SEVERITY_ERROR );
+        return false;
+    }
+
+    mesh mymesh( "gmsh:api", SPARSELIZARD_VERBOSITY );
+    mesher.Finalize();
+#else
+    std::vector<shape>  shapes;
+    mesher.Get2DShapes( shapes, PCB_LAYER_ID::F_Cu, true );
+    mesh mymesh;
+    mymesh.split( 2 );
+    mymesh.load( shapes );
+#endif
+
+    m_reporter->Report( "SPARSELIZARD: mesh loaded.", RPT_SEVERITY_INFO );
+
+    mymesh.write( "mymesh.msh", SPARSELIZARD_VERBOSITY );
+
+    // Create the electric potential field v
+    m_v = field( "h1" );
+    formulation eq;
+    m_equations = &eq;
+    // parameters
+    parameter rho;     // resistivity
+    parameter epsilon; // permittivity
+
+    m_rho = &rho;
+    m_epsilon = &epsilon;
+    m_reporter->Report( "Setting up simulation parameters...", RPT_SEVERITY_ACTION );
+    if( !setParameters( aDescriptor ) )
+        return false;
+    m_reporter->Report( "Setting up simulation ports...", RPT_SEVERITY_ACTION );
+    setConstraints( aDescriptor );
+    m_reporter->Report( "Setting up simulation equations...", RPT_SEVERITY_ACTION );
+    setEquations();
+    // Expression for the electric field E [V/m] and current density j [A/m^2]:
+    m_E = -sl::grad( m_v );                 // electric field
+    m_j = m_E / ( *m_rho );                 // current density
+    m_p = sl::doubledotproduct( m_j, m_E ); // power density
+
+
+    int  nb_refinements = 0;
+    bool need_adapt = false;
+
+    m_v.setorder( sl::norm( sl::grad( m_v ) ), MIN_ORDER, MAX_ORDER + 1 );
+
+
+    m_reporter->Report( "SPARSELIZARD: Simulating...", RPT_SEVERITY_ACTION );
+
+    // Simple p-adaptivity loop:
+    for( int i = 0; i <= MAX_ORDER - MIN_ORDER; i++ )
+    {
+        m_equations->solve( "cholesky" );
+        need_adapt = sl::adapt( SPARSELIZARD_VERBOSITY );
+        if( !need_adapt )
+        {
+            break; // No adaptation was needed
+        };
+    }
+
+    m_reporter->Report( "SPARSELIZARD: End of simulation.", RPT_SEVERITY_INFO );
+    writeResults( aDescriptor );
     m_reporter->Report( "Finished", RPT_SEVERITY_INFO );
     return true;
 }

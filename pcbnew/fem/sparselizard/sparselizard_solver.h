@@ -65,6 +65,11 @@ public:
     std::vector<int> getAllRegionsWithNetcode( int aNetCode, int aIgnoredPort );
     std::vector<int> getAllRegionsWithNetcode( int aNetCode );
 
+
+    void setEquations();
+    void setConstraints( FEM_DESCRIPTOR* aDescriptor );
+    bool setParameters( FEM_DESCRIPTOR* aDescriptor );
+    void writeResults( FEM_DESCRIPTOR* aDescriptor );
     // Holds all equations
     formulation *m_equations; // For some reasons, this lead to a segfault on constructor if not using a pointer
 
@@ -74,6 +79,9 @@ public:
     expression m_E; // Electriec field
     expression m_j; // current density
     expression m_p; // power density
+    // Parameters
+    parameter* m_rho;     // resistivity
+    parameter* m_epsilon; // permittivity
 
     REPORTER* m_reporter;
 
