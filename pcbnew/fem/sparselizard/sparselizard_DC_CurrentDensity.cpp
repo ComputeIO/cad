@@ -69,45 +69,33 @@ std::vector<int> SPARSELIZARD_SOLVER::getAllRegionsWithNetcode( int aNetCode,
 }
 
 
-double SPARSELIZARD_SOLVER::computeCurrentDC( int aPort, int aNetCode )
+double SPARSELIZARD_SOLVER::computeCurrentDC( SPARSELIZARD_CONDUCTOR aCon )
 {
-    std::vector<int> regions = getAllRegionsWithNetcode( aNetCode, aPort );
-
-    if( regions.size() < 1 )
-    {
-        // The port is the only region with aNetCode, it is not connected to anything
-        std::cerr << "Port is not connected to any region" << std::endl;
-        return 0;
-    }
-    int outsideOfPort = sl::selectunion( regions );
-    int line = sl::selectintersection( { aPort, outsideOfPort } );
-    std::cout << "Current is: "
-              << ( sl::normal( aPort ) * sl::on( outsideOfPort, m_j ) ).integrate( line, 4 )
-              << std::endl;
-    return ( sl::normal( aPort ) * sl::on( outsideOfPort, m_j ) ).integrate( line, 4 );
+    port I;
+    I = aCon.dualPort;
+    return I.getvalue();
 }
 
 
-double SPARSELIZARD_SOLVER::computeVoltageDC( int aPortA, int aPortB )
+double SPARSELIZARD_SOLVER::computeVoltageDC( SPARSELIZARD_CONDUCTOR aConA,
+                                              SPARSELIZARD_CONDUCTOR aConB )
 {
-    double result;
-    result = m_v.integrate( aPortA, 4 ) / expression( 1 ).integrate( aPortA, 4 );
-    result -= m_v.integrate( aPortB, 4 ) / expression( 1 ).integrate( aPortB, 4 );
-    return result;
+    return computePotentialDC( aConA ) - computePotentialDC( aConB );
 }
 
-double SPARSELIZARD_SOLVER::computePotentialDC( int aPortA )
+double SPARSELIZARD_SOLVER::computePotentialDC( SPARSELIZARD_CONDUCTOR aCon )
 {
-    double result;
-    result = m_v.integrate( aPortA, 4 ) / expression( 1 ).integrate( aPortA, 4 );
-    return result;
+    port V;
+    V = aCon.primalPort;
+    return V.getvalue();
 }
 
-double SPARSELIZARD_SOLVER::computeResistanceDC( int aPortA, int aPortB, int aNetCode )
+double SPARSELIZARD_SOLVER::computeResistanceDC( SPARSELIZARD_CONDUCTOR aConA,
+                                                 SPARSELIZARD_CONDUCTOR aConB )
 {
     double V, I;
-    V = computeVoltageDC( aPortA, aPortB );
-    I = computeCurrentDC( aPortA, aNetCode );
+    V = computeVoltageDC( aConA, aConB );
+    I = computeCurrentDC( aConA );
 
     if( ( I == 0 ) && ( V == 0 ) )
         return 0; // Should be nan, we could not get the resistance
@@ -117,42 +105,51 @@ double SPARSELIZARD_SOLVER::computeResistanceDC( int aPortA, int aPortB, int aNe
     return V / I;
 }
 
-double SPARSELIZARD_SOLVER::computePowerDC( int aPortA, int aPortB, int aNetCode )
+double SPARSELIZARD_SOLVER::computePowerDC( SPARSELIZARD_CONDUCTOR aConA,
+                                            SPARSELIZARD_CONDUCTOR aConB )
 {
     double V, I;
-    V = computeVoltageDC( aPortA, aPortB );
-    I = computeCurrentDC( aPortA, aNetCode );
+    V = computeVoltageDC( aConA, aConB );
+    I = computeCurrentDC( aConA );
 
     return V * I;
 }
 
-double SPARSELIZARD_SOLVER::computeCapacitanceDC( int aPortA, int aPortB )
+double SPARSELIZARD_SOLVER::computeCapacitanceDC( SPARSELIZARD_CONDUCTOR aConA,
+                                                  SPARSELIZARD_CONDUCTOR aConB )
 {
-    double V = computeVoltageDC( aPortA, aPortB );
-
-    return ( ( 1 / expression( 1 ).integrate( aPortA, 4 ) ) / V );
+    port QA, QB;
+    QA = aConA.dualPort;
+    QB = aConB.dualPort;
+    double V = computeVoltageDC( aConA, aConB );
+    return ( QA.getvalue() - QB.getvalue() ) / V;
 }
 
-void SPARSELIZARD_SOLVER::setVoltageDC( int aRegion, double aV )
+void SPARSELIZARD_SOLVER::setVoltageDC( SPARSELIZARD_CONDUCTOR aCon, double aV )
 {
     port V, I;
-    m_v.setport( aRegion, V, I );
+    V = aCon.primalPort;
+    I = aCon.dualPort;
+    m_v.setport( aCon.regionID, V, I );
     ( *m_equations ) += V - aV;
 }
 
-void SPARSELIZARD_SOLVER::setCurrentDC( int aRegion, double aI )
+void SPARSELIZARD_SOLVER::setCurrentDC( SPARSELIZARD_CONDUCTOR aCon, double aI )
 {
     port V, I;
-    m_v.setport( aRegion, V, I );
+    V = aCon.primalPort;
+    I = aCon.dualPort;
+    m_v.setport( aCon.regionID, V, I );
     ( *m_equations ) += I - aI;
 }
 
-void SPARSELIZARD_SOLVER::setChargeDC( int aRegion, double aQ )
+void SPARSELIZARD_SOLVER::setChargeDC( SPARSELIZARD_CONDUCTOR aCon, double aQ )
 {
     port V, Q;
-    m_v.setport( aRegion, V, Q );
-    ( *m_equations ) += Q - aQ / expression( 1 ).integrate( aRegion, 4 );
-    std::cout << "Setting charge on region : " << aQ << std::endl;
+    V = aCon.primalPort;
+    Q = aCon.dualPort;
+    m_v.setport( aCon.regionID, V, Q );
+    ( *m_equations ) += Q - aQ / ( expression( 1 ).integrate( aCon.regionID, 4 ) );
 }
 
 
@@ -166,22 +163,29 @@ void SPARSELIZARD_SOLVER::setConstraints( FEM_DESCRIPTOR* aDescriptor )
             continue;
         }
 
+
         if( portA->m_type != FEM_PORT_TYPE::PASSIVE ) // Don't constrain passive ports
         {
-            port V, I;
+            SPARSELIZARD_CONDUCTOR region = findConductor( portA );
+            if( region.regionID == 0 )
+            {
+                m_reporter->Report( "Could not match conductor with port", RPT_SEVERITY_ERROR );
+                continue;
+            }
+
             switch( portA->m_constraint.m_type )
             {
             case FEM_PORT_CONSTRAINT_TYPE::VOLTAGE:
-                setVoltageDC( portA->m_simulationID, portA->m_constraint.m_value );
+                setVoltageDC( region, portA->m_constraint.m_value );
                 break;
             case FEM_PORT_CONSTRAINT_TYPE::CURRENT:
             {
-                setCurrentDC( portA->m_simulationID, portA->m_constraint.m_value );
+                setCurrentDC( region, portA->m_constraint.m_value );
                 break;
             }
             case FEM_PORT_CONSTRAINT_TYPE::CHARGE:
             {
-                setChargeDC( portA->m_simulationID, portA->m_constraint.m_value );
+                setChargeDC( region, portA->m_constraint.m_value );
                 break;
             }
             default: m_reporter->Report( "Source / Sink type not supported", RPT_SEVERITY_ERROR );
@@ -266,27 +270,47 @@ void SPARSELIZARD_SOLVER::writeResults( FEM_DESCRIPTOR* aDescriptor )
                 ;
                 continue;
             }
+
             switch( resultValue->m_valueType )
             {
             case FEM_VALUE_TYPE::POTENTIAL:
             {
-                int portA = resultValue->GetPortA()->m_simulationID;
-                resultValue->m_value = computePotentialDC( portA );
+                SPARSELIZARD_CONDUCTOR regionA = findConductor( resultValue->GetPortA() );
+                if( regionA.regionID == 0 )
+                {
+                    m_reporter->Report( "Could not match conductor with port", RPT_SEVERITY_ERROR );
+                    continue;
+                }
+                resultValue->m_value = computePotentialDC( regionA );
                 resultValue->m_valid = true;
                 break;
             }
             case FEM_VALUE_TYPE::VOLTAGE:
             {
-                int portA = resultValue->GetPortA()->m_simulationID;
-                int portB = resultValue->GetPortB()->m_simulationID;
-                resultValue->m_value = computeVoltageDC( portA, portB );
+                SPARSELIZARD_CONDUCTOR regionA = findConductor( resultValue->GetPortA() );
+                if( regionA.regionID == 0 )
+                {
+                    m_reporter->Report( "Could not match conductor with port", RPT_SEVERITY_ERROR );
+                    continue;
+                }
+                SPARSELIZARD_CONDUCTOR regionB = findConductor( resultValue->GetPortB() );
+                if( regionA.regionID == 0 )
+                {
+                    m_reporter->Report( "Could not match conductor with port", RPT_SEVERITY_ERROR );
+                    continue;
+                }
+                resultValue->m_value = computeVoltageDC( regionA, regionB );
                 resultValue->m_valid = true;
                 break;
             }
             case FEM_VALUE_TYPE::CURRENT:
             {
-                int port = resultValue->GetPortA()->m_simulationID;
-                int netCode = resultValue->GetPortA()->GetItem()->GetNetCode();
+                SPARSELIZARD_CONDUCTOR regionA = findConductor( resultValue->GetPortA() );
+                if( regionA.regionID == 0 )
+                {
+                    m_reporter->Report( "Could not match conductor with port", RPT_SEVERITY_ERROR );
+                    continue;
+                }
 
                 if( resultValue->GetPortA()->m_type == FEM_PORT_TYPE::PASSIVE )
                 {
@@ -299,17 +323,26 @@ void SPARSELIZARD_SOLVER::writeResults( FEM_DESCRIPTOR* aDescriptor )
                 }
                 else
                 {
-                    resultValue->m_value = computeCurrentDC( port, netCode );
+                    resultValue->m_value = computeCurrentDC( regionA );
                 }
                 resultValue->m_valid = true;
                 break;
             }
             case FEM_VALUE_TYPE::RESISTANCE:
             {
-                int portA = resultValue->GetPortA()->m_simulationID;
-                int portB = resultValue->GetPortB()->m_simulationID;
-                int netCode = resultValue->GetPortA()->GetItem()->GetNetCode();
-                resultValue->m_value = computeResistanceDC( portA, portB, netCode );
+                SPARSELIZARD_CONDUCTOR regionA = findConductor( resultValue->GetPortA() );
+                if( regionA.regionID == 0 )
+                {
+                    m_reporter->Report( "Could not match conductor with port", RPT_SEVERITY_ERROR );
+                    continue;
+                }
+                SPARSELIZARD_CONDUCTOR regionB = findConductor( resultValue->GetPortB() );
+                if( regionA.regionID == 0 )
+                {
+                    m_reporter->Report( "Could not match conductor with port", RPT_SEVERITY_ERROR );
+                    continue;
+                }
+                resultValue->m_value = computeResistanceDC( regionA, regionB );
                 resultValue->m_valid = true;
                 break;
             }
@@ -332,9 +365,18 @@ void SPARSELIZARD_SOLVER::writeResults( FEM_DESCRIPTOR* aDescriptor )
             }
             case FEM_VALUE_TYPE::POWER:
             {
-                int portA = resultValue->GetPortA()->m_simulationID;
-                int portB = resultValue->GetPortB()->m_simulationID;
-                int netCode = resultValue->GetPortA()->GetItem()->GetNetCode();
+                SPARSELIZARD_CONDUCTOR regionA = findConductor( resultValue->GetPortA() );
+                if( regionA.regionID == 0 )
+                {
+                    m_reporter->Report( "Could not match conductor with port", RPT_SEVERITY_ERROR );
+                    continue;
+                }
+                SPARSELIZARD_CONDUCTOR regionB = findConductor( resultValue->GetPortB() );
+                if( regionA.regionID == 0 )
+                {
+                    m_reporter->Report( "Could not match conductor with port", RPT_SEVERITY_ERROR );
+                    continue;
+                }
 
                 if( resultValue->GetPortA()->m_type == FEM_PORT_TYPE::PASSIVE )
                 {
@@ -346,17 +388,27 @@ void SPARSELIZARD_SOLVER::writeResults( FEM_DESCRIPTOR* aDescriptor )
                 }
                 else
                 {
-                    resultValue->m_value = computePowerDC( portA, portB, netCode );
+                    resultValue->m_value = computePowerDC( regionA, regionB );
                     resultValue->m_valid = true;
                 }
                 break;
             }
             case FEM_VALUE_TYPE::CAPACITANCE:
             {
-                int portA = resultValue->GetPortA()->m_simulationID;
-                int portB = resultValue->GetPortB()->m_simulationID;
+                SPARSELIZARD_CONDUCTOR regionA = findConductor( resultValue->GetPortA() );
+                if( regionA.regionID == 0 )
+                {
+                    m_reporter->Report( "Could not match conductor with port", RPT_SEVERITY_ERROR );
+                    continue;
+                }
+                SPARSELIZARD_CONDUCTOR regionB = findConductor( resultValue->GetPortB() );
+                if( regionA.regionID == 0 )
+                {
+                    m_reporter->Report( "Could not match conductor with port", RPT_SEVERITY_ERROR );
+                    continue;
+                }
 
-                resultValue->m_value = computeCapacitanceDC( portA, portB );
+                resultValue->m_value = computeCapacitanceDC( regionA, regionB );
                 resultValue->m_valid = true;
                 break;
             }
@@ -409,6 +461,19 @@ void SPARSELIZARD_SOLVER::writeResults( FEM_DESCRIPTOR* aDescriptor )
     }
 }
 
+SPARSELIZARD_CONDUCTOR SPARSELIZARD_SOLVER::findConductor( FEM_PORT* aPort )
+{
+    for( SPARSELIZARD_CONDUCTOR cond : m_conductors )
+    {
+        if( cond.femPort == aPort )
+        {
+            return cond;
+        }
+    }
+    SPARSELIZARD_CONDUCTOR dummy;
+    dummy.regionID = 0;
+    return dummy;
+}
 
 bool SPARSELIZARD_SOLVER::Run_DC( FEM_DESCRIPTOR* aDescriptor )
 {
@@ -431,34 +496,40 @@ bool SPARSELIZARD_SOLVER::Run_DC( FEM_DESCRIPTOR* aDescriptor )
 
     std::list<int> netlist;
 
-    for( FEM_PORT* port : aDescriptor->GetPorts() )
+    for( FEM_PORT* portA : aDescriptor->GetPorts() )
     {
-        if( port->GetItem() == nullptr )
+        if( portA->GetItem() == nullptr )
         {
             m_reporter->Report( "A FEM_PORT is NULL", RPT_SEVERITY_ERROR );
             continue;
         }
 
         std::list<int>::iterator it;
-        it = std::find( netlist.begin(), netlist.end(), port->GetItem()->GetNetCode() );
+        it = std::find( netlist.begin(), netlist.end(), portA->GetItem()->GetNetCode() );
         if( it == netlist.end() )
         {
-            netlist.push_back( port->GetItem()->GetNetCode() );
+            netlist.push_back( portA->GetItem()->GetNetCode() );
         }
 
-        switch( port->GetItem()->Type() )
+        switch( portA->GetItem()->Type() )
         {
         case PCB_PAD_T:
-            port->m_simulationID =
-                    mesher.AddPadRegion( static_cast<const PAD*>( port->GetItem() ) );
+        {
+            portA->m_simulationID =
+                    mesher.AddPadRegion( static_cast<const PAD*>( portA->GetItem() ) );
 
             SPARSELIZARD_CONDUCTOR conductor;
             conductor.rho = copperResistivity;
-            conductor.regionID = port->m_simulationID;
-            conductor.netCode = static_cast<const PAD*>( port->GetItem() )->GetNetCode();
+            conductor.regionID = portA->m_simulationID;
+            conductor.netCode = static_cast<const PAD*>( portA->GetItem() )->GetNetCode();
+            port prim;
+            port dual;
+            conductor.primalPort = prim;
+            conductor.dualPort = dual;
+            conductor.femPort = portA;
             m_conductors.push_back( conductor );
-
             break;
+        }
         default: break;
         }
     }

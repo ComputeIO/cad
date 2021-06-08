@@ -45,6 +45,7 @@ public:
     double regionID;
     port   primalPort;
     port   dualPort;
+    FEM_PORT* femPort;
 };
 
 class SPARSELIZARD_SOLVER
@@ -55,20 +56,22 @@ public:
 
     bool Run_DC( FEM_DESCRIPTOR* aDescriptor );
 
-    double computeCurrentDC( int aPort, int aNetCode );
-    double computeVoltageDC( int aPortA, int aPortB );
-    double computePotentialDC( int aPortA );
-    double computeResistanceDC( int aPortA, int aPortB, int aNetCode );
-    double computePowerDC( int aPortA, int aPortB, int aNetCode );
-    double computeCapacitanceDC( int aPortA, int aPortB );
+    double computeCurrentDC( SPARSELIZARD_CONDUCTOR aConA );
+    double computeVoltageDC( SPARSELIZARD_CONDUCTOR aConA, SPARSELIZARD_CONDUCTOR aConB );
+    double computePotentialDC( SPARSELIZARD_CONDUCTOR aConA );
+    double computeResistanceDC( SPARSELIZARD_CONDUCTOR aConA, SPARSELIZARD_CONDUCTOR aConB );
+    double computePowerDC( SPARSELIZARD_CONDUCTOR aConA, SPARSELIZARD_CONDUCTOR aConB );
+    double computeCapacitanceDC( SPARSELIZARD_CONDUCTOR aConA, SPARSELIZARD_CONDUCTOR aConB );
 
-    void setVoltageDC( int aRegion, double aV );
-    void setCurrentDC( int aRegion, double aI );
-    void setChargeDC( int aRegion, double aQ );
+    void setVoltageDC( SPARSELIZARD_CONDUCTOR aCon, double aV );
+    void setCurrentDC( SPARSELIZARD_CONDUCTOR aCon, double aI );
+    void setChargeDC( SPARSELIZARD_CONDUCTOR aCon, double aQ );
 
     std::vector<int> getAllRegionsWithNetcode( int aNetCode, int aIgnoredPort );
     std::vector<int> getAllRegionsWithNetcode( int aNetCode );
 
+
+    SPARSELIZARD_CONDUCTOR findConductor( FEM_PORT* aPort );
 
     void setEquations();
     void setConstraints( FEM_DESCRIPTOR* aDescriptor );
