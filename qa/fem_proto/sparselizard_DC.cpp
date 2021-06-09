@@ -352,6 +352,37 @@ bool simulPlaneCapacitance( double x, double y, double epsilonr, double d, doubl
     FOOTPRINT* fp1 = new FOOTPRINT( board );
     FOOTPRINT* fp2 = new FOOTPRINT( board );
 
+
+    // Init board stackup
+    board->GetDesignSettings().GetStackupDescriptor().SynchronizeWithBoard(
+            &board->GetDesignSettings() );
+
+    BOARD_STACKUP& stackup = board->GetDesignSettings().GetStackupDescriptor();
+
+    bool nextIsDielectric = false;
+    int  i = 0;
+    for( BOARD_STACKUP_ITEM* layer : stackup.GetList() )
+    {
+        if( nextIsDielectric )
+        {
+            std::cout << " Dielectric: " << i << std::endl;
+            layer->SetThickness( From_User_Unit( EDA_UNITS::MILLIMETRES, d * 1000 ) );
+            nextIsDielectric = false;
+        }
+        if( layer->GetBrdLayerId() == PCB_LAYER_ID::F_Cu )
+        {
+            std::cout << " F_Cu: " << i << std::endl;
+            layer->SetThickness( From_User_Unit( EDA_UNITS::MILLIMETRES, 0.035 ) );
+            nextIsDielectric = true;
+        }
+        if( layer->GetBrdLayerId() == PCB_LAYER_ID::B_Cu )
+        {
+            std::cout << " B_Cu: " << i << std::endl;
+            layer->SetThickness( From_User_Unit( EDA_UNITS::MILLIMETRES, 0.035 ) );
+        }
+        i++;
+    }
+
     FEM_DESCRIPTOR* descriptor = new FEM_DESCRIPTOR( FEM_SOLVER::SPARSELIZARD, board );
     descriptor->m_reporter = new STDOUT_REPORTER();
     descriptor->m_dim = FEM_SIMULATION_DIMENSION::SIMUL3D;
@@ -414,7 +445,7 @@ bool simulPlaneCapacitance( double x, double y, double epsilonr, double d, doubl
     FEM_PORT*            port1 = new FEM_PORT( pad1 );
     FEM_PORT_CONSTRAINT* constraint1 = new FEM_PORT_CONSTRAINT();
 
-    constraint1->m_type = FEM_PORT_CONSTRAINT_TYPE::VOLTAGE;
+    constraint1->m_type = FEM_PORT_CONSTRAINT_TYPE::CHARGE;
     constraint1->m_value = 1; // 1 C
     port1->m_type = FEM_PORT_TYPE::SOURCE;
     port1->m_constraint = *constraint1;
@@ -424,7 +455,7 @@ bool simulPlaneCapacitance( double x, double y, double epsilonr, double d, doubl
     FEM_PORT_CONSTRAINT* constraint2 = new FEM_PORT_CONSTRAINT();
 
     constraint2->m_type = FEM_PORT_CONSTRAINT_TYPE::VOLTAGE;
-    constraint2->m_value = 0; // 0V
+    constraint2->m_value = 0; // 0 V
     port2->m_type = FEM_PORT_TYPE::SOURCE;
     port2->m_constraint = *constraint2;
     descriptor->AddPort( port2 );
@@ -510,10 +541,12 @@ void currentConservationTest( FEM_SIMULATION_DIMENSION aDim )
 
 void planeCapacitanceTest()
 {
-    double epsilonr = 4.4;
+    double epsilonr = 1;
     double d = 1.45e-3;
     double x = 5e-3;
     double y = 10e-3;
+    x = 1;
+    y = 1;
     double maxError = 0.0001;
     BOOST_CHECK_EQUAL( simulPlaneCapacitance( x, y, epsilonr, d, maxError ), true );
 }
@@ -524,16 +557,15 @@ BOOST_AUTO_TEST_CASE( TestTrackResistance )
     trackResistanceTest( FEM_SIMULATION_DIMENSION::SIMUL3D );
 }
 
-
-BOOST_AUTO_TEST_CASE( TestPlaneCapacitance )
-{
-    planeCapacitanceTest();
-}
-
 BOOST_AUTO_TEST_CASE( TestCurrentConservation )
 {
     currentConservationTest( FEM_SIMULATION_DIMENSION::SIMUL2D5 );
     currentConservationTest( FEM_SIMULATION_DIMENSION::SIMUL3D );
+}
+
+BOOST_AUTO_TEST_CASE( TestPlaneCapacitance )
+{
+    planeCapacitanceTest();
 }
 
 BOOST_AUTO_TEST_SUITE_END()

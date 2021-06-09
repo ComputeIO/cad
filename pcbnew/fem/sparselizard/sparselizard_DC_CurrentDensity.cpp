@@ -33,7 +33,7 @@
 
 #define MIN_ORDER 1
 #define MAX_ORDER 3
-#define EPSILON0 8.8541878128e-12
+#define EPSILON0 8.8541878128e-12 / 1000
 
 SPARSELIZARD_SOLVER::SPARSELIZARD_SOLVER()
 {
@@ -122,13 +122,13 @@ double SPARSELIZARD_SOLVER::computeCapacitanceDC( SPARSELIZARD_CONDUCTOR aConA,
     QA = aConA.dualPort;
     QB = aConB.dualPort;
     double V = computeVoltageDC( aConA, aConB );
-    double CA = QA.getvalue() * expression( 1 ).integrate( aConA.regionID, 4 );
-    double CB = QB.getvalue() * expression( 1 ).integrate( aConA.regionID, 4 );
+    double CA = QA.getvalue();
+    double CB = QB.getvalue();
     std::cout << "total charges on A: " << CA << std::endl;
     std::cout << "total charges on B: " << CB << std::endl;
     std::cout << "Potential on A : " << aConA.primalPort.getvalue() << std::endl;
     std::cout << "Potential on B : " << aConB.primalPort.getvalue() << std::endl;
-    return ( CA - CB ) / V;
+    return CA / V;
 }
 
 void SPARSELIZARD_SOLVER::setVoltageDC( SPARSELIZARD_CONDUCTOR aCon, double aV )
@@ -157,11 +157,9 @@ void SPARSELIZARD_SOLVER::setChargeDC( SPARSELIZARD_CONDUCTOR aCon, double aQ )
     V = aCon.primalPort;
     Q = aCon.dualPort;
     m_v.setport( aCon.regionID, V, Q );
-    ( *m_equations ) += Q - aQ / ( expression( 1 ).integrate( aCon.regionID, 4 ) );
+    //( *m_equations ) += Q - aQ / ( expression( 1 ).integrate( aCon.regionID, 4 ) );
+    ( *m_equations ) += Q - aQ;
     std::cout << "Setting total charge : " << aQ << std::endl;
-    std::cout << "Charge density : " << aQ / ( expression( 1 ).integrate( aCon.regionID, 4 ) )
-              << std::endl;
-    std::cout << "Area : " << ( expression( 1 ).integrate( aCon.regionID, 4 ) ) << std::endl;
 }
 
 
@@ -568,7 +566,7 @@ bool SPARSELIZARD_SOLVER::Run_DC( FEM_DESCRIPTOR* aDescriptor )
         for( int region : mesher.AddDielectricRegions() )
         {
             SPARSELIZARD_DIELECTRIC dielectric;
-            dielectric.epsilonr = 4.4;
+            dielectric.epsilonr = 1;
             dielectric.regionID = region;
             m_dielectrics.push_back( dielectric );
             dielectricRegions.push_back( dielectric.regionID );
@@ -643,7 +641,8 @@ bool SPARSELIZARD_SOLVER::Run_DC( FEM_DESCRIPTOR* aDescriptor )
     // Simple p-adaptivity loop:
     for( int i = 0; i <= MAX_ORDER - MIN_ORDER; i++ )
     {
-        m_equations->solve( "cholesky" );
+        //m_equations->solve( "cholesky" );
+        m_equations->solve();
         need_adapt = sl::adapt( SPARSELIZARD_VERBOSITY );
         if( !need_adapt )
         {
@@ -655,6 +654,7 @@ bool SPARSELIZARD_SOLVER::Run_DC( FEM_DESCRIPTOR* aDescriptor )
 
     m_v.write( sl::selectunion( conductorRegions ), std::string( "potential.pos" ),
                MAX_ORDER ); //TODO: remove
+    m_j.write( sl::selectunion( conductorRegions ), "currentDensity.pos" ); //TODO: remove
     writeResults( aDescriptor );
     m_reporter->Report( "Finished", RPT_SEVERITY_INFO );
     return true;
