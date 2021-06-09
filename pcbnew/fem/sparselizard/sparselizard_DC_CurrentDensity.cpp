@@ -95,7 +95,7 @@ double SPARSELIZARD_SOLVER::computeResistanceDC( SPARSELIZARD_CONDUCTOR aConA,
 {
     double V, I;
     V = computeVoltageDC( aConA, aConB );
-    I = computeCurrentDC( aConA );
+    I = computeCurrentDC( aConB );
 
     if( ( I == 0 ) && ( V == 0 ) )
         return 0; // Should be nan, we could not get the resistance
