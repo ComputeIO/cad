@@ -33,7 +33,7 @@
 
 #define MIN_ORDER 1
 #define MAX_ORDER 3
-#define EPSILON0 8.8541878128e-12;
+#define EPSILON0 8.8541878128e-12
 
 SPARSELIZARD_SOLVER::SPARSELIZARD_SOLVER()
 {
@@ -122,7 +122,13 @@ double SPARSELIZARD_SOLVER::computeCapacitanceDC( SPARSELIZARD_CONDUCTOR aConA,
     QA = aConA.dualPort;
     QB = aConB.dualPort;
     double V = computeVoltageDC( aConA, aConB );
-    return ( QA.getvalue() - QB.getvalue() ) / V;
+    double CA = QA.getvalue() * expression( 1 ).integrate( aConA.regionID, 4 );
+    double CB = QB.getvalue() * expression( 1 ).integrate( aConA.regionID, 4 );
+    std::cout << "total charges on A: " << CA << std::endl;
+    std::cout << "total charges on B: " << CB << std::endl;
+    std::cout << "Potential on A : " << aConA.primalPort.getvalue() << std::endl;
+    std::cout << "Potential on B : " << aConB.primalPort.getvalue() << std::endl;
+    return ( CA - CB ) / V;
 }
 
 void SPARSELIZARD_SOLVER::setVoltageDC( SPARSELIZARD_CONDUCTOR aCon, double aV )
@@ -130,7 +136,9 @@ void SPARSELIZARD_SOLVER::setVoltageDC( SPARSELIZARD_CONDUCTOR aCon, double aV )
     port V, I;
     V = aCon.primalPort;
     I = aCon.dualPort;
+    V.setvalue( aV );
     m_v.setport( aCon.regionID, V, I );
+    //m_v.setconstraint( aCon.regionID, aV );
     ( *m_equations ) += V - aV;
 }
 
@@ -150,6 +158,10 @@ void SPARSELIZARD_SOLVER::setChargeDC( SPARSELIZARD_CONDUCTOR aCon, double aQ )
     Q = aCon.dualPort;
     m_v.setport( aCon.regionID, V, Q );
     ( *m_equations ) += Q - aQ / ( expression( 1 ).integrate( aCon.regionID, 4 ) );
+    std::cout << "Setting total charge : " << aQ << std::endl;
+    std::cout << "Charge density : " << aQ / ( expression( 1 ).integrate( aCon.regionID, 4 ) )
+              << std::endl;
+    std::cout << "Area : " << ( expression( 1 ).integrate( aCon.regionID, 4 ) ) << std::endl;
 }
 
 
@@ -203,7 +215,7 @@ bool SPARSELIZARD_SOLVER::setParameters( FEM_DESCRIPTOR* aDescriptor )
     {
         m_v.setorder( dielectric.regionID, MIN_ORDER );
         ( *m_epsilon ) | dielectric.regionID = dielectric.epsilonr * EPSILON0;
-        std::cout << "epsilon : " << dielectric.epsilonr << std::endl;
+        std::cout << "epsilon : " << ( dielectric.epsilonr * EPSILON0 ) << std::endl;
     }
 
     for( SPARSELIZARD_CONDUCTOR conductor : m_conductors )
@@ -237,8 +249,8 @@ void SPARSELIZARD_SOLVER::setEquations()
     for( SPARSELIZARD_DIELECTRIC dielectric : m_dielectrics )
     {
         ( *m_equations ) +=
-                sl::integral( dielectric.regionID, ( *m_epsilon ) * sl::grad( sl::dof( m_v ) )
-                                                           * sl::grad( sl::tf( m_v ) ) );
+                sl::integral( dielectric.regionID, sl::grad( sl::tf( m_v ) ) * ( *m_epsilon )
+                                                           * sl::grad( sl::dof( m_v ) ) );
     }
 }
 
@@ -248,7 +260,6 @@ void SPARSELIZARD_SOLVER::writeResults( FEM_DESCRIPTOR* aDescriptor )
     //static int k = 0;
     //m_j.write( wholedomain, to_string(k++) +".pos", MAX_ORDER );
     sl::fieldorder( m_v ).write( wholedomain, "fieldOrder.pos" );        //TODO: remove
-    m_v.write( wholedomain, std::string( "potential.pos" ), MAX_ORDER ); //TODO: remove
 
     for( FEM_RESULT* result : aDescriptor->GetResults() )
     {
@@ -477,8 +488,10 @@ SPARSELIZARD_CONDUCTOR SPARSELIZARD_SOLVER::findConductor( FEM_PORT* aPort )
 
 bool SPARSELIZARD_SOLVER::Run_DC( FEM_DESCRIPTOR* aDescriptor )
 {
-    const double copperResistivity = 1.72e-8 * 1000; 
-    const double interpolationOrder = 1;
+    const double copperResistivity = 1.72e-8 * 1000; //1e-30;//
+
+    std::vector<int> conductorRegions;
+    std::vector<int> dielectricRegions;
 
 
     if( aDescriptor == nullptr )
@@ -528,6 +541,7 @@ bool SPARSELIZARD_SOLVER::Run_DC( FEM_DESCRIPTOR* aDescriptor )
             conductor.dualPort = dual;
             conductor.femPort = portA;
             m_conductors.push_back( conductor );
+            conductorRegions.push_back( portA->m_simulationID );
             break;
         }
         default: break;
@@ -546,6 +560,7 @@ bool SPARSELIZARD_SOLVER::Run_DC( FEM_DESCRIPTOR* aDescriptor )
         conductor.regionID = mesher.AddNetRegion( netID );
         conductor.netCode = netID;
         m_conductors.push_back( conductor );
+        conductorRegions.push_back( conductor.regionID );
     }
 
     if( aDescriptor->m_requiresDielectric )
@@ -556,11 +571,15 @@ bool SPARSELIZARD_SOLVER::Run_DC( FEM_DESCRIPTOR* aDescriptor )
             dielectric.epsilonr = 4.4;
             dielectric.regionID = region;
             m_dielectrics.push_back( dielectric );
+            dielectricRegions.push_back( dielectric.regionID );
         }
     }
 
-    m_reporter->Report( "Number of regions in simulation: "
-                                + to_string( m_conductors.size() + m_dielectrics.size() ),
+    m_reporter->Report( "Number of conducting regions in simulation: "
+                                + to_string( m_conductors.size() ),
+                        RPT_SEVERITY_INFO );
+    m_reporter->Report( "Number of dielectric regions in simulation: "
+                                + to_string( m_dielectrics.size() ),
                         RPT_SEVERITY_INFO );
 
     m_reporter->Report( "SPARSELIZARD: Loading mesh...", RPT_SEVERITY_ACTION );
@@ -633,6 +652,9 @@ bool SPARSELIZARD_SOLVER::Run_DC( FEM_DESCRIPTOR* aDescriptor )
     }
 
     m_reporter->Report( "SPARSELIZARD: End of simulation.", RPT_SEVERITY_INFO );
+
+    m_v.write( sl::selectunion( conductorRegions ), std::string( "potential.pos" ),
+               MAX_ORDER ); //TODO: remove
     writeResults( aDescriptor );
     m_reporter->Report( "Finished", RPT_SEVERITY_INFO );
     return true;

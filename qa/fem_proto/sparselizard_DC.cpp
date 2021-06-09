@@ -328,7 +328,7 @@ bool simulPlaneCapacitance( double x, double y, double epsilonr, double d, doubl
     FEM_PORT*            port1 = new FEM_PORT( pad1 );
     FEM_PORT_CONSTRAINT* constraint1 = new FEM_PORT_CONSTRAINT();
 
-    constraint1->m_type = FEM_PORT_CONSTRAINT_TYPE::CHARGE;
+    constraint1->m_type = FEM_PORT_CONSTRAINT_TYPE::VOLTAGE;
     constraint1->m_value = 1; // 1 C
     port1->m_type = FEM_PORT_TYPE::SOURCE;
     port1->m_constraint = *constraint1;
@@ -373,7 +373,7 @@ BOOST_AUTO_TEST_CASE( TestPlaneCapacitance )
 {
     BOOST_CHECK_EQUAL( 1, 1 );
     double epsilonr = 4.4;
-    double d = 1.45;
+    double d = 1.45e-3;
     double x = 5e-3;
     double y = 10e-3;
     double maxError = 0.0001;
