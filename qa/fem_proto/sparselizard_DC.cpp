@@ -66,6 +66,9 @@ bool testCurrentConservation( double x, double y, double d, double I, double nbS
     BOARD*     board = new BOARD();
     FOOTPRINT* fp = new FOOTPRINT( board );
 
+    // Init board stackup
+    board->GetDesignSettings().GetStackupDescriptor().SynchronizeWithBoard(
+            &board->GetDesignSettings() );
 
     FEM_DESCRIPTOR* descriptor = new FEM_DESCRIPTOR( FEM_SOLVER::SPARSELIZARD, board );
     descriptor->m_dim = aDim;
@@ -179,7 +182,21 @@ bool simulTrackResistance( double rho, double L, double h, double w, double max_
     BOARD*     board = new BOARD();
     FOOTPRINT* fp = new FOOTPRINT( board );
 
+    // Init board stackup
+    board->GetDesignSettings().GetStackupDescriptor().SynchronizeWithBoard(
+            &board->GetDesignSettings() );
 
+
+    BOARD_STACKUP& stackup = board->GetDesignSettings().GetStackupDescriptor();
+    
+    for( BOARD_STACKUP_ITEM* layer : stackup.GetList() )
+    {
+        if( layer->GetBrdLayerId() == PCB_LAYER_ID::F_Cu )
+        {
+            layer->SetThickness( From_User_Unit( EDA_UNITS::MILLIMETRES, h * 1000 ) );
+            break;
+        }
+    }
     FEM_DESCRIPTOR* descriptor = new FEM_DESCRIPTOR( FEM_SOLVER::SPARSELIZARD, board );
     descriptor->m_dim = aDim;
 
@@ -491,6 +508,16 @@ void currentConservationTest( FEM_SIMULATION_DIMENSION aDim )
     BOOST_CHECK_EQUAL( testCurrentConservation( x, y, d, I, nbSink, maxError, aDim ), true );
 }
 
+void planeCapacitanceTest()
+{
+    double epsilonr = 4.4;
+    double d = 1.45e-3;
+    double x = 5e-3;
+    double y = 10e-3;
+    double maxError = 0.0001;
+    BOOST_CHECK_EQUAL( simulPlaneCapacitance( x, y, epsilonr, d, maxError ), true );
+}
+
 BOOST_AUTO_TEST_CASE( TestTrackResistance )
 {
     trackResistanceTest( FEM_SIMULATION_DIMENSION::SIMUL2D5 );
@@ -500,12 +527,7 @@ BOOST_AUTO_TEST_CASE( TestTrackResistance )
 
 BOOST_AUTO_TEST_CASE( TestPlaneCapacitance )
 {
-    double epsilonr = 4.4;
-    double d = 1.45e-3;
-    double x = 5e-3;
-    double y = 10e-3;
-    double maxError = 0.0001;
-    simulPlaneCapacitance( x, y, epsilonr, d, maxError );
+    planeCapacitanceTest();
 }
 
 BOOST_AUTO_TEST_CASE( TestCurrentConservation )
