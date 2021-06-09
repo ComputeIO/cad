@@ -143,7 +143,7 @@ bool testCurrentConservation( double x, double y, double d, double I, double nbS
 
     if( r_current->m_valid )
     {
-        if( abs( r_current->GetResult() - nbSources * I ) / ( nbSources * I ) > max_error )
+        if( abs( -r_current->GetResult() - nbSources * I ) / ( nbSources * I ) > max_error )
         {
             std::cout << "test failed: I=" << -r_current->GetResult() << " instead of "
                       << nbSources * I << std::endl;
