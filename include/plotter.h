@@ -39,6 +39,7 @@
 #include <outline_mode.h>
 #include <gal/color4d.h>
 #include <eda_item.h> // FILL_TYPE
+
 #include <render_settings.h>
 
 class COLOR_SETTINGS;

@@ -60,7 +60,7 @@ public:
               KICAD_T aType = SCH_TEXT_T );
 
     /**
-     * Clones \a aText into a new object.  All members are copied as is except
+     * Clone \a aText into a new object.  All members are copied as is except
      * for the #m_isDangling member which is set to false.  This prevents newly
      * copied objects derived from #SCH_TEXT from having their connection state
      * improperly set.
@@ -77,7 +77,7 @@ public:
     virtual wxString GetClass() const override { return wxT( "SCH_TEXT" ); }
 
     /**
-     * Returns the set of contextual text variable tokens for this text item.
+     * Return the set of contextual text variable tokens for this text item.
      *
      * @param[out] aVars
      */
@@ -213,7 +213,7 @@ public:
 
     void MirrorHorizontally( int aCenter ) override;
     void MirrorVertically( int aCenter ) override;
-    void Rotate( wxPoint aCenter ) override;
+    void Rotate( const wxPoint& aCenter ) override;
 
     virtual void Rotate90( bool aClockwise );
 
@@ -380,7 +380,7 @@ public:
 
     void RunOnChildren( const std::function<void( SCH_ITEM* )>& aFunction ) override;
 
-    void Rotate( wxPoint aCenter ) override;
+    void Rotate( const wxPoint& aCenter ) override;
     void Rotate90( bool aClockwise ) override;
 
     void MirrorAcrossXAxis() override;

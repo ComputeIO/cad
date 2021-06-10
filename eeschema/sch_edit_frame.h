@@ -42,7 +42,6 @@
 #include <sch_base_frame.h>
 #include <sch_text.h> // enum PINSHEETLABEL_SHAPE
 #include <template_fieldnames.h>
-#include <undo_redo_container.h>
 
 class STATUS_TEXT_POPUP;
 
@@ -695,7 +694,7 @@ public:
     /**
      * Create a new entry in undo list of commands.
      *
-     * @param aItemsList is the the list of items modified by the command to undo/
+     * @param aItemsList is the list of items modified by the command to undo/
      * @param aTypeCommand is the command type (see enum UNDO_REDO).
      * @param aAppend set to true to add the item to the previous undo list.
      */

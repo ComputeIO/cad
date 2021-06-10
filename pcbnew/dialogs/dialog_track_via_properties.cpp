@@ -308,7 +308,7 @@ DIALOG_TRACK_VIA_PROPERTIES::DIALOG_TRACK_VIA_PROPERTIES( PCB_BASE_FRAME* aParen
             m_DesignRuleWidthsCtrl->Append( msg );
 
             if( widthSelection == wxNOT_FOUND && m_trackWidth.GetValue() == width )
-                widthSelection = ii;
+                widthSelection = ii - 1;
         }
 
         m_DesignRuleWidthsCtrl->SetSelection( widthSelection );
@@ -670,7 +670,7 @@ void DIALOG_TRACK_VIA_PROPERTIES::onViaEdit( wxCommandEvent& aEvent )
 
     if( m_vias )
     {
-        if( m_ViaTypeChoice->GetSelection() != 0 ) // check if selected type isnt through.
+        if( m_ViaTypeChoice->GetSelection() != 0 ) // check if selected type isn't through.
         {
             m_ViaStartLayer->Enable();
             m_ViaEndLayer->Enable();

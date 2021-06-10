@@ -22,7 +22,6 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
 
-#include <pgm_base.h>
 #include <eda_item.h>
 #include <gr_text.h>
 #include <kicad_string.h>
@@ -421,7 +420,7 @@ wxString LIB_FIELD::GetSelectMenuText( EDA_UNITS aUnits ) const
 }
 
 
-void LIB_FIELD::BeginEdit( const wxPoint aPosition )
+void LIB_FIELD::BeginEdit( const wxPoint& aPosition )
 {
     SetTextPos( aPosition );
 }

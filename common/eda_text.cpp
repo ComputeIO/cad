@@ -2,7 +2,7 @@
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
  * Copyright (C) 2016 Jean-Pierre Charras, jp.charras at wanadoo.fr
- * Copyright (C) 2004-2017 KiCad Developers, see change_log.txt for contributors.
+ * Copyright (C) 2004-2021 KiCad Developers, see change_log.txt for contributors.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -41,7 +41,7 @@
 #include <gal/color4d.h>      // for COLOR4D, COLOR4D::BLACK
 #include <gr_text.h>          // for GRText
 #include <kicad_string.h>     // for UnescapeString
-#include <math/util.h>          // for KiROUND
+#include <math/util.h>        // for KiROUND
 #include <math/vector2d.h>    // for VECTOR2D
 #include <richio.h>
 #include <render_settings.h>
@@ -408,7 +408,7 @@ void EDA_TEXT::GetLinePositions( std::vector<wxPoint>& aPositions, int aLineCoun
 }
 
 void EDA_TEXT::printOneLineOfText( const RENDER_SETTINGS* aSettings, const wxPoint& aOffset,
-                                   COLOR4D aColor, OUTLINE_MODE aFillMode,
+                                   const COLOR4D& aColor, OUTLINE_MODE aFillMode,
                                    const wxString& aText, const wxPoint &aPos )
 {
     wxDC* DC = aSettings->GetPrintDC();
@@ -487,7 +487,8 @@ void EDA_TEXT::Format( OUTPUTFORMATTER* aFormatter, int aNestLevel, int aControl
         aFormatter->Print( 0, " (line_spacing %.2f)", GetLineSpacing() );
 
     if( GetTextThickness() )
-        aFormatter->Print( 0, " (thickness %s)", FormatInternalUnits( GetTextThickness() ).c_str() );
+        aFormatter->Print( 0, " (thickness %s)",
+                           FormatInternalUnits( GetTextThickness() ).c_str() );
 
     if( IsBold() )
         aFormatter->Print( 0, " bold" );
@@ -503,12 +504,18 @@ void EDA_TEXT::Format( OUTPUTFORMATTER* aFormatter, int aNestLevel, int aControl
     {
         aFormatter->Print( 0, " (justify");
 
+<<<<<<< HEAD
         switch( GetHorizontalAlignment() )
         {
         case TEXT_ATTRIBUTES::H_CENTER: break;
         case TEXT_ATTRIBUTES::H_LEFT: aFormatter->Print( 0, " left" ); break;
         case TEXT_ATTRIBUTES::H_RIGHT: aFormatter->Print( 0, " right" ); break;
         }
+=======
+        if( GetHorizJustify() != GR_TEXT_HJUSTIFY_CENTER )
+            aFormatter->Print( 0,
+                               ( GetHorizJustify() == GR_TEXT_HJUSTIFY_LEFT ) ? " left" : " right" );
+>>>>>>> upstream/master
 
         switch( GetVerticalAlignment() )
         {
@@ -519,6 +526,7 @@ void EDA_TEXT::Format( OUTPUTFORMATTER* aFormatter, int aNestLevel, int aControl
 
         if( IsMirrored() )
             aFormatter->Print( 0, " mirror" );
+
         aFormatter->Print( 0, ")" ); // (justify
     }
 
@@ -653,7 +661,9 @@ static struct EDA_TEXT_DESC
         propMgr.AddProperty( new PROPERTY<EDA_TEXT, wxString>( _HKI( "Text" ),
                     &EDA_TEXT::SetText, &EDA_TEXT::GetText ) );
         propMgr.AddProperty( new PROPERTY<EDA_TEXT, int>( _HKI( "Thickness" ),
-                    &EDA_TEXT::SetTextThickness, &EDA_TEXT::GetTextThickness, PROPERTY_DISPLAY::DISTANCE ) );
+                                                          &EDA_TEXT::SetTextThickness,
+                                                          &EDA_TEXT::GetTextThickness,
+                                                          PROPERTY_DISPLAY::DISTANCE ) );
         propMgr.AddProperty( new PROPERTY<EDA_TEXT, bool>( _HKI( "Italic" ),
                     &EDA_TEXT::SetItalic, &EDA_TEXT::IsItalic ) );
         propMgr.AddProperty( new PROPERTY<EDA_TEXT, bool>( _HKI( "Bold" ),
@@ -663,9 +673,13 @@ static struct EDA_TEXT_DESC
         propMgr.AddProperty( new PROPERTY<EDA_TEXT, bool>( _HKI( "Visible" ),
                     &EDA_TEXT::SetVisible, &EDA_TEXT::IsVisible ) );
         propMgr.AddProperty( new PROPERTY<EDA_TEXT, int>( _HKI( "Width" ),
-                    &EDA_TEXT::SetTextWidth, &EDA_TEXT::GetTextWidth, PROPERTY_DISPLAY::DISTANCE ) );
+                                                          &EDA_TEXT::SetTextWidth,
+                                                          &EDA_TEXT::GetTextWidth,
+                                                          PROPERTY_DISPLAY::DISTANCE ) );
         propMgr.AddProperty( new PROPERTY<EDA_TEXT, int>( _HKI( "Height" ),
-                    &EDA_TEXT::SetTextHeight, &EDA_TEXT::GetTextHeight, PROPERTY_DISPLAY::DISTANCE ) );
+                                                          &EDA_TEXT::SetTextHeight,
+                                                          &EDA_TEXT::GetTextHeight,
+                                                          PROPERTY_DISPLAY::DISTANCE ) );
         propMgr.AddProperty( new PROPERTY_ENUM<EDA_TEXT, TEXT_ATTRIBUTES::HORIZONTAL_ALIGNMENT>(
                 _HKI( "Horizontal Justification" ), &EDA_TEXT::SetHorizontalAlignment,
                 &EDA_TEXT::GetHorizontalAlignment ) );

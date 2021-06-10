@@ -157,7 +157,7 @@ public:
 private:
     void doDrawPolyline( const std::vector<wxPoint>& aLocalPointList, bool aFill = false );
 
-    // Apply the roation/translation transform to aPoint
+    // Apply the rotation/translation transform to aPoint
     const VECTOR2D transform( const VECTOR2D& aPoint ) const;
 
 public:

@@ -225,7 +225,7 @@ void SCH_TEXT::MirrorVertically( int aCenter )
 }
 
 
-void SCH_TEXT::Rotate( wxPoint aCenter )
+void SCH_TEXT::Rotate( const wxPoint& aCenter )
 {
     Rotate90( false );
 }
@@ -237,6 +237,48 @@ void SCH_TEXT::Rotate90( bool aClockwise )
         RotateCW();
     else
         RotateCCW();
+}
+
+
+void SCH_TEXT::SetLabelSpinStyle( LABEL_SPIN_STYLE aSpinStyle )
+{
+    m_spin_style = aSpinStyle;
+
+    // Assume "Right" and Left" mean which side of the anchor the text will be on
+    // Thus we want to left justify text up against the anchor if we are on the right
+    switch( aSpinStyle )
+    {
+    default:
+        wxASSERT_MSG( 1, "Bad spin style" );
+        break;
+
+    case LABEL_SPIN_STYLE::RIGHT: // Horiz Normal Orientation
+        //
+        m_spin_style = LABEL_SPIN_STYLE::RIGHT; // Handle the error spin style by resetting
+        SetTextAngle( TEXT_ANGLE_HORIZ );
+        SetHorizJustify( GR_TEXT_HJUSTIFY_LEFT );
+        SetVertJustify( GR_TEXT_VJUSTIFY_BOTTOM );
+        break;
+
+    case LABEL_SPIN_STYLE::UP: // Vert Orientation UP
+        SetTextAngle( TEXT_ANGLE_VERT );
+        SetHorizJustify( GR_TEXT_HJUSTIFY_LEFT );
+        SetVertJustify( GR_TEXT_VJUSTIFY_BOTTOM );
+        break;
+
+    case LABEL_SPIN_STYLE::LEFT: // Horiz Orientation - Right justified
+        SetTextAngle( TEXT_ANGLE_HORIZ );
+        SetHorizJustify( GR_TEXT_HJUSTIFY_RIGHT );
+        SetVertJustify( GR_TEXT_VJUSTIFY_BOTTOM );
+        break;
+
+    case LABEL_SPIN_STYLE::BOTTOM: //  Vert Orientation BOTTOM
+        SetTextAngle( TEXT_ANGLE_VERT );
+        SetHorizJustify( GR_TEXT_HJUSTIFY_RIGHT );
+        SetVertJustify( GR_TEXT_VJUSTIFY_BOTTOM );
+        break;
+    }
+>>>>>>> upstream/master
 }
 
 
@@ -365,8 +407,9 @@ bool SCH_TEXT::UpdateDanglingState( std::vector<DANGLING_END_ITEM>& aItemList,
 
             break;
 
-
-        case BUS_START_END: m_connectionType = CONNECTION_TYPE::BUS; KI_FALLTHROUGH;
+        case BUS_START_END:
+            m_connectionType = CONNECTION_TYPE::BUS;
+            KI_FALLTHROUGH;
 
         case WIRE_START_END:
         {
@@ -912,7 +955,7 @@ wxPoint SCH_GLOBALLABEL::GetSchematicTextOffset( const RENDER_SETTINGS* aSetting
 }
 
 
-void SCH_GLOBALLABEL::Rotate( wxPoint aCenter )
+void SCH_GLOBALLABEL::Rotate( const wxPoint& aCenter )
 {
     wxPoint pt = GetTextPos();
     RotatePoint( &pt, aCenter, 900 );

@@ -727,7 +727,7 @@ void SCH_SHEET::Move( const wxPoint& aMoveVector )
 }
 
 
-void SCH_SHEET::Rotate( wxPoint aCenter )
+void SCH_SHEET::Rotate( const wxPoint& aCenter )
 {
     wxPoint prev = m_pos;
 

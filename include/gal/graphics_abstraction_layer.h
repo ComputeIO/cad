@@ -134,7 +134,11 @@ public:
      * @param aEndAngle     is the end angle of the arc.
      */
     virtual void DrawArc( const VECTOR2D& aCenterPoint, double aRadius, double aStartAngle,
+<<<<<<< HEAD
                           double aEndAngle ){};
+=======
+                          double aEndAngle ) {};
+>>>>>>> upstream/master
 
     /**
      * Draw an arc segment.
@@ -153,7 +157,11 @@ public:
      * @param aWidth        is the thickness of the arc (pen size).
      */
     virtual void DrawArcSegment( const VECTOR2D& aCenterPoint, double aRadius, double aStartAngle,
+<<<<<<< HEAD
                                  double aEndAngle, double aWidth ){};
+=======
+                                 double aEndAngle, double aWidth ) {};
+>>>>>>> upstream/master
 
     /**
      * Draw a rectangle.
@@ -756,6 +764,7 @@ public:
                || ( m_gridVisibility
                     && m_options.m_gridSnapping == KIGFX::GRID_SNAPPING::WITH_GRID );
     }
+
     /**
      * Set the origin point for the grid.
      *
@@ -849,7 +858,7 @@ public:
     /**
      * Compute the point position in world coordinates from given screen coordinates.
      *
-     * @param aPoint the pointposition in screen coordinates.
+     * @param aPoint the point position in screen coordinates.
      * @return the point position in world coordinates.
      */
     inline VECTOR2D ToWorld( const VECTOR2D& aPoint ) const
@@ -860,7 +869,7 @@ public:
     /**
      * Compute the point position in screen coordinates from given world coordinates.
      *
-     * @param aPoint the pointposition in world coordinates.
+     * @param aPoint the point position in world coordinates.
      * @return the point position in screen coordinates.
      */
     inline VECTOR2D ToScreen( const VECTOR2D& aPoint ) const
@@ -1049,6 +1058,7 @@ protected:
     VECTOR2D m_cursorPosition;     ///< Current cursor position (world coordinates)
 
     KICURSOR m_currentNativeCursor; ///< Current cursor
+
 private:
     TEXT_ATTRIBUTES m_attributes;
 };
