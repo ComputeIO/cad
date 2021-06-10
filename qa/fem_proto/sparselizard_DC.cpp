@@ -146,6 +146,16 @@ bool testCurrentConservation( double x, double y, double d, double I, double nbS
 
     if( r_current->m_valid )
     {
+        if( I == 0 )
+        {
+            if( r_current->GetResult() != 0 )
+            {
+                std::cout << "test failed: I=" << -r_current->GetResult() << " instead of "
+                          << nbSources * I << std::endl;
+                return false;
+            }
+            return true;
+        }
         if( abs( -r_current->GetResult() - nbSources * I ) / ( nbSources * I ) > max_error )
         {
             std::cout << "test failed: I=" << -r_current->GetResult() << " instead of "
@@ -367,26 +377,29 @@ bool simulPlaneCapacitance( double x, double y, double epsilonr, double d, doubl
         {
             std::cout << " Dielectric: " << i << std::endl;
             layer->SetThickness( From_User_Unit( EDA_UNITS::MILLIMETRES, d * 1000 ) );
+            layer->SetEpsilonR( epsilonr );
             nextIsDielectric = false;
         }
         if( layer->GetBrdLayerId() == PCB_LAYER_ID::F_Cu )
         {
             std::cout << " F_Cu: " << i << std::endl;
-            layer->SetThickness( From_User_Unit( EDA_UNITS::MILLIMETRES, 0.035 ) );
+            layer->SetThickness( From_User_Unit( EDA_UNITS::MILLIMETRES, 1 ) );
             nextIsDielectric = true;
         }
         if( layer->GetBrdLayerId() == PCB_LAYER_ID::B_Cu )
         {
             std::cout << " B_Cu: " << i << std::endl;
-            layer->SetThickness( From_User_Unit( EDA_UNITS::MILLIMETRES, 0.035 ) );
+            layer->SetThickness( From_User_Unit( EDA_UNITS::MILLIMETRES, 1 ) );
         }
         i++;
     }
 
     FEM_DESCRIPTOR* descriptor = new FEM_DESCRIPTOR( FEM_SOLVER::SPARSELIZARD, board );
-    descriptor->m_reporter = new STDOUT_REPORTER();
+    descriptor->m_reporter = new NULL_REPORTER();
     descriptor->m_dim = FEM_SIMULATION_DIMENSION::SIMUL3D;
     descriptor->m_requiresDielectric = true;
+    descriptor->m_simulateDielectric = true;
+    descriptor->m_simulateConductor = false;
 
     PAD* pad1 = new PAD( fp1 );
     pad1->SetShape( PAD_SHAPE::RECT );
@@ -446,7 +459,7 @@ bool simulPlaneCapacitance( double x, double y, double epsilonr, double d, doubl
     FEM_PORT_CONSTRAINT* constraint1 = new FEM_PORT_CONSTRAINT();
 
     constraint1->m_type = FEM_PORT_CONSTRAINT_TYPE::CHARGE;
-    constraint1->m_value = 1; // 1 C
+    constraint1->m_value = 1e-9; // C
     port1->m_type = FEM_PORT_TYPE::SOURCE;
     port1->m_constraint = *constraint1;
     descriptor->AddPort( port1 );
@@ -454,8 +467,8 @@ bool simulPlaneCapacitance( double x, double y, double epsilonr, double d, doubl
     FEM_PORT*            port2 = new FEM_PORT( pad2 );
     FEM_PORT_CONSTRAINT* constraint2 = new FEM_PORT_CONSTRAINT();
 
-    constraint2->m_type = FEM_PORT_CONSTRAINT_TYPE::VOLTAGE;
-    constraint2->m_value = 0; // 0 V
+    constraint2->m_type = FEM_PORT_CONSTRAINT_TYPE::CHARGE;
+    constraint2->m_value = -1e-9; // 0 V
     port2->m_type = FEM_PORT_TYPE::SOURCE;
     port2->m_constraint = *constraint2;
     descriptor->AddPort( port2 );
@@ -491,7 +504,7 @@ void trackResistanceTest( FEM_SIMULATION_DIMENSION aDim )
     double L = 200e-3;         // track length
     double h = 35e-6;          // track height
     double w = 30e-3;          // track width
-    double max_error = 0.0001; // 0.01%
+    double max_error = 1e-9;
     BOOST_CHECK_EQUAL( simulTrackResistance( rho, L, h, w, max_error, aDim ), true );
     BOOST_CHECK_EQUAL( simulTrackResistance( rho, L, h, w, max_error, aDim, true ), true );
 
@@ -521,7 +534,7 @@ void currentConservationTest( FEM_SIMULATION_DIMENSION aDim )
     double x = 5e-3;
     double y = 5e-3;
     double d = 15e-3;
-    double maxError = 0.0001;
+    double maxError = 1e-9;
     BOOST_CHECK_EQUAL( testCurrentConservation( x, y, d, I, nbSink, maxError, aDim ), true );
 
     I = 0;
@@ -532,7 +545,7 @@ void currentConservationTest( FEM_SIMULATION_DIMENSION aDim )
     BOOST_CHECK_EQUAL( testCurrentConservation( x, y, d, I, nbSink, maxError, aDim ), true );
 
     I = 1;
-    nbSink = 5;
+    nbSink = 4;
     x = 5e-3;
     y = 5e-3;
     d = 15e-3;
@@ -542,12 +555,28 @@ void currentConservationTest( FEM_SIMULATION_DIMENSION aDim )
 void planeCapacitanceTest()
 {
     double epsilonr = 1;
-    double d = 1.45e-3;
+    double d = 1.5e-3;
     double x = 5e-3;
     double y = 10e-3;
-    x = 1;
-    y = 1;
-    double maxError = 0.0001;
+    double maxError = 1e-9;
+    BOOST_CHECK_EQUAL( simulPlaneCapacitance( x, y, epsilonr, d, maxError ), true );
+
+    epsilonr = 4.4;
+    d = 1.5e-3;
+    x = 5e-3;
+    y = 10e-3;
+    BOOST_CHECK_EQUAL( simulPlaneCapacitance( x, y, epsilonr, d, maxError ), true );
+
+    epsilonr = 1;
+    d = 1.5e-3;
+    x = 10e-3;
+    y = 10e-3;
+    BOOST_CHECK_EQUAL( simulPlaneCapacitance( x, y, epsilonr, d, maxError ), true );
+
+    epsilonr = 1;
+    d = 1.5;
+    x = 10e-3;
+    y = 10e-3;
     BOOST_CHECK_EQUAL( simulPlaneCapacitance( x, y, epsilonr, d, maxError ), true );
 }
 
@@ -557,15 +586,15 @@ BOOST_AUTO_TEST_CASE( TestTrackResistance )
     trackResistanceTest( FEM_SIMULATION_DIMENSION::SIMUL3D );
 }
 
-BOOST_AUTO_TEST_CASE( TestCurrentConservation )
-{
-    currentConservationTest( FEM_SIMULATION_DIMENSION::SIMUL2D5 );
-    currentConservationTest( FEM_SIMULATION_DIMENSION::SIMUL3D );
-}
-
 BOOST_AUTO_TEST_CASE( TestPlaneCapacitance )
 {
     planeCapacitanceTest();
+}
+
+BOOST_AUTO_TEST_CASE( TestCurrentConservation )
+{
+    //currentConservationTest( FEM_SIMULATION_DIMENSION::SIMUL2D5 );
+    //currentConservationTest( FEM_SIMULATION_DIMENSION::SIMUL3D );
 }
 
 BOOST_AUTO_TEST_SUITE_END()

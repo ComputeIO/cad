@@ -72,6 +72,8 @@ public:
     REPORTER*    m_reporter;
 
     bool                     m_requiresDielectric;
+    bool                     m_simulateDielectric;
+    bool                     m_simulateConductor;
     FEM_SIMULATION_DIMENSION m_dim;
 
 private:

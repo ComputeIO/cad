@@ -27,6 +27,7 @@
 #define SPARSELIZARD_VERBOSITY 0
 
 #include "../common/fem_descriptor.h"
+#include "../common/fem_constants.h"
 #include <sparselizard/sparselizard.h>
 #include <reporter.h>
 
@@ -42,7 +43,8 @@ class SPARSELIZARD_CONDUCTOR
 public:
     int    netCode;
     double rho; // resistivity
-    double regionID;
+    int       regionID;
+    int       boundaryID; // used for capacitances
     port   primalPort;
     port   dualPort;
     FEM_PORT* femPort;
@@ -71,9 +73,9 @@ public:
     std::vector<int> getAllRegionsWithNetcode( int aNetCode );
 
 
-    SPARSELIZARD_CONDUCTOR findConductor( FEM_PORT* aPort );
+    SPARSELIZARD_CONDUCTOR* findConductor( FEM_PORT* aPort );
 
-    void setEquations();
+    void setEquations( FEM_DESCRIPTOR* aDescriptor );
     void setConstraints( FEM_DESCRIPTOR* aDescriptor );
     bool setParameters( FEM_DESCRIPTOR* aDescriptor );
     void writeResults( FEM_DESCRIPTOR* aDescriptor );
@@ -92,9 +94,13 @@ public:
 
     REPORTER* m_reporter;
 
-    std::vector<SPARSELIZARD_DIELECTRIC> m_dielectrics;
-    std::vector<SPARSELIZARD_CONDUCTOR>  m_conductors;
+    std::vector<SPARSELIZARD_DIELECTRIC*> m_dielectrics;
+    std::vector<SPARSELIZARD_CONDUCTOR*>  m_conductors;
 
+    FEM_CONSTANTS m_constants;
+
+    std::vector<int> m_dielectricRegions;
+    std::vector<int> m_conductorRegions;
 
 private:
 };

@@ -3,6 +3,7 @@
 
 set( PCBNEW_FEM_SRCS
     common/fem_descriptor.cpp
+    common/fem_constants.cpp
     common/fem_port.cpp
     common/fem_result.cpp
     sparselizard/sparselizard_DC_CurrentDensity.cpp
