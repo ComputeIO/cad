@@ -25,6 +25,7 @@
 
 class PCB_EDIT_FRAME;
 class PANEL_PCBNEW_SIMUL_DC_POWER;
+class PANEL_PCBNEW_SIMUL_DC_PLANE_CAPACITANCE;
 
 
 class DIALOG_PCBNEW_SIMUL : public PAGED_DIALOG
@@ -39,6 +40,7 @@ protected:
     PCB_EDIT_FRAME* m_frame;
 
     PANEL_PCBNEW_SIMUL_DC_POWER* m_DCpower;
+    PANEL_PCBNEW_SIMUL_DC_PLANE_CAPACITANCE* m_DCPlaneCapacitance;
 
     // event handlers
     void OnPageChange( wxBookCtrlEvent& event );

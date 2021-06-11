@@ -190,6 +190,8 @@ set( PCBNEW_DIALOGS
     dialogs/panel_setup_tracks_and_vias_base.cpp
     dialogs/panel_pcbnew_simul_DC_power.cpp
     dialogs/panel_pcbnew_simul_DC_power_base.cpp
+    dialogs/panel_pcbnew_simul_DC_plane_capacitance.cpp
+    dialogs/panel_pcbnew_simul_DC_plane_capacitance_base.cpp
     footprint_wizard.cpp
     footprint_wizard_frame.cpp
     footprint_wizard_frame_functions.cpp

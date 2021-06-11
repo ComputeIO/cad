@@ -574,7 +574,7 @@ void planeCapacitanceTest()
     BOOST_CHECK_EQUAL( simulPlaneCapacitance( x, y, epsilonr, d, maxError ), true );
 
     epsilonr = 1;
-    d = 1.5;
+    d = 10e-3;
     x = 10e-3;
     y = 10e-3;
     BOOST_CHECK_EQUAL( simulPlaneCapacitance( x, y, epsilonr, d, maxError ), true );

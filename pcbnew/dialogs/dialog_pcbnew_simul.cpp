@@ -18,6 +18,7 @@
  */
 #include <pcb_edit_frame.h>
 #include <panel_pcbnew_simul_DC_power.h>
+#include <panel_pcbnew_simul_DC_plane_capacitance.h>
 #include <panel_setup_text_and_graphics.h>
 #include <panel_setup_constraints.h>
 #include <dialogs/panel_setup_netclasses.h>
@@ -52,6 +53,7 @@ DIALOG_PCBNEW_SIMUL::DIALOG_PCBNEW_SIMUL( PCB_EDIT_FRAME* aFrame ) :
     BOARD* board = aFrame->GetBoard();
 
     m_DCpower = new PANEL_PCBNEW_SIMUL_DC_POWER( this, aFrame );
+    m_DCPlaneCapacitance = new PANEL_PCBNEW_SIMUL_DC_PLANE_CAPACITANCE( this, aFrame );
 
 
     m_treebook->AddPage( new wxPanel( this ), _( "Simulations" ) );
@@ -63,6 +65,7 @@ DIALOG_PCBNEW_SIMUL::DIALOG_PCBNEW_SIMUL( PCB_EDIT_FRAME* aFrame ) :
      * that the order of these pages should be changed.
      */
     m_treebook->AddPage( m_DCpower, _( "DC Power Analysis" ) );
+    m_treebook->AddPage( m_DCPlaneCapacitance, _( "Plane Capacitance" ) );
 
     // Connect Events
     m_treebook->Connect( wxEVT_TREEBOOK_PAGE_CHANGED,
