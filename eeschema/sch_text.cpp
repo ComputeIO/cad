@@ -240,48 +240,6 @@ void SCH_TEXT::Rotate90( bool aClockwise )
 }
 
 
-void SCH_TEXT::SetLabelSpinStyle( LABEL_SPIN_STYLE aSpinStyle )
-{
-    m_spin_style = aSpinStyle;
-
-    // Assume "Right" and Left" mean which side of the anchor the text will be on
-    // Thus we want to left justify text up against the anchor if we are on the right
-    switch( aSpinStyle )
-    {
-    default:
-        wxASSERT_MSG( 1, "Bad spin style" );
-        break;
-
-    case LABEL_SPIN_STYLE::RIGHT: // Horiz Normal Orientation
-        //
-        m_spin_style = LABEL_SPIN_STYLE::RIGHT; // Handle the error spin style by resetting
-        SetTextAngle( TEXT_ANGLE_HORIZ );
-        SetHorizJustify( GR_TEXT_HJUSTIFY_LEFT );
-        SetVertJustify( GR_TEXT_VJUSTIFY_BOTTOM );
-        break;
-
-    case LABEL_SPIN_STYLE::UP: // Vert Orientation UP
-        SetTextAngle( TEXT_ANGLE_VERT );
-        SetHorizJustify( GR_TEXT_HJUSTIFY_LEFT );
-        SetVertJustify( GR_TEXT_VJUSTIFY_BOTTOM );
-        break;
-
-    case LABEL_SPIN_STYLE::LEFT: // Horiz Orientation - Right justified
-        SetTextAngle( TEXT_ANGLE_HORIZ );
-        SetHorizJustify( GR_TEXT_HJUSTIFY_RIGHT );
-        SetVertJustify( GR_TEXT_VJUSTIFY_BOTTOM );
-        break;
-
-    case LABEL_SPIN_STYLE::BOTTOM: //  Vert Orientation BOTTOM
-        SetTextAngle( TEXT_ANGLE_VERT );
-        SetHorizJustify( GR_TEXT_HJUSTIFY_RIGHT );
-        SetVertJustify( GR_TEXT_VJUSTIFY_BOTTOM );
-        break;
-    }
->>>>>>> upstream/master
-}
-
-
 void SCH_TEXT::SwapData( SCH_ITEM* aItem )
 {
     SCH_TEXT* item = (SCH_TEXT*) aItem;

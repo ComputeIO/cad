@@ -318,7 +318,7 @@ void DIALOG_SCH_TEXT_PROPERTIES::onScintillaCharAdded( wxStyledTextEvent& aEvent
             wxString           ref = te->GetRange( refStart, start - 1 );
             SCH_SHEET_LIST     sheets = m_Parent->Schematic().GetSheets();
             SCH_REFERENCE_LIST refs;
-            SCH_COMPONENT*     refSymbol = nullptr;
+            SCH_SYMBOL*        refSymbol = nullptr;
 
             sheets.GetSymbols( refs );
 

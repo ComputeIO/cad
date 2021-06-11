@@ -504,18 +504,12 @@ void EDA_TEXT::Format( OUTPUTFORMATTER* aFormatter, int aNestLevel, int aControl
     {
         aFormatter->Print( 0, " (justify");
 
-<<<<<<< HEAD
         switch( GetHorizontalAlignment() )
         {
         case TEXT_ATTRIBUTES::H_CENTER: break;
         case TEXT_ATTRIBUTES::H_LEFT: aFormatter->Print( 0, " left" ); break;
         case TEXT_ATTRIBUTES::H_RIGHT: aFormatter->Print( 0, " right" ); break;
         }
-=======
-        if( GetHorizJustify() != GR_TEXT_HJUSTIFY_CENTER )
-            aFormatter->Print( 0,
-                               ( GetHorizJustify() == GR_TEXT_HJUSTIFY_LEFT ) ? " left" : " right" );
->>>>>>> upstream/master
 
         switch( GetVerticalAlignment() )
         {

@@ -436,7 +436,7 @@ private:
      * @param aPos the position of this line ).
      */
     void printOneLineOfText( const RENDER_SETTINGS* aSettings, const wxPoint& aOffset,
-                             COLOR4D aColor, OUTLINE_MODE aFillMode, const wxString& aText,
+                             const COLOR4D& aColor, OUTLINE_MODE aFillMode, const wxString& aText,
                              const wxPoint& aPos );
 
     wxString m_text;

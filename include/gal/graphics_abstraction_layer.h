@@ -134,11 +134,7 @@ public:
      * @param aEndAngle     is the end angle of the arc.
      */
     virtual void DrawArc( const VECTOR2D& aCenterPoint, double aRadius, double aStartAngle,
-<<<<<<< HEAD
-                          double aEndAngle ){};
-=======
                           double aEndAngle ) {};
->>>>>>> upstream/master
 
     /**
      * Draw an arc segment.
@@ -157,11 +153,7 @@ public:
      * @param aWidth        is the thickness of the arc (pen size).
      */
     virtual void DrawArcSegment( const VECTOR2D& aCenterPoint, double aRadius, double aStartAngle,
-<<<<<<< HEAD
-                                 double aEndAngle, double aWidth ){};
-=======
                                  double aEndAngle, double aWidth ) {};
->>>>>>> upstream/master
 
     /**
      * Draw a rectangle.

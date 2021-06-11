@@ -330,7 +330,7 @@ inline std::ostream& operator<<( std::ostream& os, KICAD_T aType )
     case KICAD_T::SCH_GLOBAL_LABEL_T: os << "SCH_GLOBAL_LABEL_T"; break;
     case KICAD_T::SCH_HIER_LABEL_T: os << "SCH_HIER_LABEL_T"; break;
     case KICAD_T::SCH_FIELD_T: os << "SCH_FIELD_T"; break;
-    case KICAD_T::SCH_COMPONENT_T: os << "SCH_COMPONENT_T"; break;
+    case KICAD_T::SCH_SYMBOL_T: os << "SCH_SYMBOL_T"; break;
     case KICAD_T::SCH_SHEET_PIN_T: os << "SCH_SHEET_PIN_T"; break;
     case KICAD_T::SCH_SHEET_T: os << "SCH_SHEET_T"; break;
     case KICAD_T::SCH_PIN_T: os << "SCH_PIN_T"; break;
@@ -352,8 +352,8 @@ inline std::ostream& operator<<( std::ostream& os, KICAD_T aType )
     case KICAD_T::SCH_LABEL_LOCATE_WIRE_T: os << "SCH_LABEL_LOCATE_WIRE_T"; break;
     case KICAD_T::SCH_LABEL_LOCATE_BUS_T: os << "SCH_LABEL_LOCATE_BUS_T"; break;
 
-    // Same for picking components which are power symbols
-    case KICAD_T::SCH_COMPONENT_LOCATE_POWER_T: os << "SCH_COMPONENT_LOCATE_POWER_T"; break;
+    // Same for picking power symbols
+    case KICAD_T::SCH_SYMBOL_LOCATE_POWER_T: os << "SCH_SYMBOL_LOCATE_POWER_T"; break;
 
     // matches any type
     case KICAD_T::SCH_LOCATE_ANY_T: os << "SCH_LOCATE_ANY_T"; break;
