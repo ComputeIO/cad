@@ -44,7 +44,7 @@
 #include <sch_bitmap.h>
 #include <sch_bus_entry.h>
 #include <sch_symbol.h>
-#include <sch_edit_frame.h> // CMP_ORIENT_XXX
+#include <sch_edit_frame.h>          // SYM_ORIENT_XXX
 #include <sch_field.h>
 #include <sch_line.h>
 #include <sch_junction.h>
@@ -2150,19 +2150,19 @@ void SCH_SEXPR_PARSER::ParseSchematic( SCH_SHEET* aSheet, bool aIsCopyableOnly, 
 }
 
 
-SCH_COMPONENT* SCH_SEXPR_PARSER::parseSchematicSymbol()
+SCH_SYMBOL* SCH_SEXPR_PARSER::parseSchematicSymbol()
 {
     wxCHECK_MSG( CurTok() == T_symbol, nullptr,
                  wxT( "Cannot parse " ) + GetTokenString( CurTok() ) + wxT( " as a symbol." ) );
 
-    T                              token;
-    wxString                       tmp;
-    wxString                       error;
-    wxString                       libName;
-    SCH_FIELD*                     field;
-    std::unique_ptr<SCH_COMPONENT> symbol = std::make_unique<SCH_COMPONENT>();
-    TRANSFORM                      transform;
-    std::set<int>                  fieldIDsRead;
+    T token;
+    wxString tmp;
+    wxString error;
+    wxString libName;
+    SCH_FIELD* field;
+    std::unique_ptr<SCH_SYMBOL> symbol = std::make_unique<SCH_SYMBOL>();
+    TRANSFORM transform;
+    std::set<int> fieldIDsRead;
 
     // We'll reset this if we find a fields_autoplaced token
     symbol->ClearFieldsAutoplaced();
@@ -2239,9 +2239,9 @@ SCH_COMPONENT* SCH_SEXPR_PARSER::parseSchematicSymbol()
             token = NextTok();
 
             if( token == T_x )
-                symbol->SetOrientation( CMP_MIRROR_X );
+                symbol->SetOrientation( SYM_MIRROR_X );
             else if( token == T_y )
-                symbol->SetOrientation( CMP_MIRROR_Y );
+                symbol->SetOrientation( SYM_MIRROR_Y );
             else
                 Expecting( "x or y" );
 

@@ -186,8 +186,8 @@ bool SCH_PAINTER::Draw( const VIEW_ITEM* aItem, int aLayer )
     {
         BOX2I box = item->GetBoundingBox();
 
-        if( item->Type() == SCH_COMPONENT_T )
-            box = static_cast<const SCH_COMPONENT*>( item )->GetBodyBoundingBox();
+        if( item->Type() == SCH_SYMBOL_T )
+            box = static_cast<const SCH_SYMBOL*>( item )->GetBodyBoundingBox();
 
         m_gal->SetIsFill( false );
         m_gal->SetIsStroke( true );
@@ -199,30 +199,30 @@ bool SCH_PAINTER::Draw( const VIEW_ITEM* aItem, int aLayer )
 
     switch( item->Type() )
     {
-        HANDLE_ITEM( LIB_PART_T, LIB_PART );
-        HANDLE_ITEM( LIB_RECTANGLE_T, LIB_RECTANGLE );
-        HANDLE_ITEM( LIB_POLYLINE_T, LIB_POLYLINE );
-        HANDLE_ITEM( LIB_CIRCLE_T, LIB_CIRCLE );
-        HANDLE_ITEM( LIB_PIN_T, LIB_PIN );
-        HANDLE_ITEM( LIB_ARC_T, LIB_ARC );
-        HANDLE_ITEM( LIB_FIELD_T, LIB_FIELD );
-        HANDLE_ITEM( LIB_TEXT_T, LIB_TEXT );
-        HANDLE_ITEM( LIB_BEZIER_T, LIB_BEZIER );
-        HANDLE_ITEM( SCH_COMPONENT_T, SCH_COMPONENT );
-        HANDLE_ITEM( SCH_JUNCTION_T, SCH_JUNCTION );
-        HANDLE_ITEM( SCH_LINE_T, SCH_LINE );
-        HANDLE_ITEM( SCH_TEXT_T, SCH_TEXT );
-        HANDLE_ITEM( SCH_LABEL_T, SCH_TEXT );
-        HANDLE_ITEM( SCH_FIELD_T, SCH_FIELD );
-        HANDLE_ITEM( SCH_HIER_LABEL_T, SCH_HIERLABEL );
-        HANDLE_ITEM( SCH_GLOBAL_LABEL_T, SCH_GLOBALLABEL );
-        HANDLE_ITEM( SCH_SHEET_T, SCH_SHEET );
-        HANDLE_ITEM( SCH_SHEET_PIN_T, SCH_HIERLABEL );
-        HANDLE_ITEM( SCH_NO_CONNECT_T, SCH_NO_CONNECT );
-        HANDLE_ITEM( SCH_BUS_WIRE_ENTRY_T, SCH_BUS_ENTRY_BASE );
-        HANDLE_ITEM( SCH_BUS_BUS_ENTRY_T, SCH_BUS_ENTRY_BASE );
-        HANDLE_ITEM( SCH_BITMAP_T, SCH_BITMAP );
-        HANDLE_ITEM( SCH_MARKER_T, SCH_MARKER );
+    HANDLE_ITEM( LIB_PART_T, LIB_PART );
+    HANDLE_ITEM( LIB_RECTANGLE_T, LIB_RECTANGLE );
+    HANDLE_ITEM( LIB_POLYLINE_T, LIB_POLYLINE );
+    HANDLE_ITEM( LIB_CIRCLE_T, LIB_CIRCLE );
+    HANDLE_ITEM( LIB_PIN_T, LIB_PIN );
+    HANDLE_ITEM( LIB_ARC_T, LIB_ARC );
+    HANDLE_ITEM( LIB_FIELD_T, LIB_FIELD );
+    HANDLE_ITEM( LIB_TEXT_T, LIB_TEXT );
+    HANDLE_ITEM( LIB_BEZIER_T, LIB_BEZIER );
+    HANDLE_ITEM( SCH_SYMBOL_T, SCH_SYMBOL );
+    HANDLE_ITEM( SCH_JUNCTION_T, SCH_JUNCTION );
+    HANDLE_ITEM( SCH_LINE_T, SCH_LINE );
+    HANDLE_ITEM( SCH_TEXT_T, SCH_TEXT );
+    HANDLE_ITEM( SCH_LABEL_T, SCH_TEXT );
+    HANDLE_ITEM( SCH_FIELD_T, SCH_FIELD );
+    HANDLE_ITEM( SCH_HIER_LABEL_T, SCH_HIERLABEL );
+    HANDLE_ITEM( SCH_GLOBAL_LABEL_T, SCH_GLOBALLABEL );
+    HANDLE_ITEM( SCH_SHEET_T, SCH_SHEET );
+    HANDLE_ITEM( SCH_SHEET_PIN_T, SCH_HIERLABEL );
+    HANDLE_ITEM( SCH_NO_CONNECT_T, SCH_NO_CONNECT );
+    HANDLE_ITEM( SCH_BUS_WIRE_ENTRY_T, SCH_BUS_ENTRY_BASE );
+    HANDLE_ITEM( SCH_BUS_BUS_ENTRY_T, SCH_BUS_ENTRY_BASE );
+    HANDLE_ITEM( SCH_BITMAP_T, SCH_BITMAP );
+    HANDLE_ITEM( SCH_MARKER_T, SCH_MARKER );
 
     default: return false;
     }
@@ -1480,20 +1480,24 @@ static void orientPart( LIB_PART* part, int orientation )
         int n_rots;
         int mirror_x;
         int mirror_y;
-    } orientations[] = { { CMP_ORIENT_0, 0, 0, 0 },
-                         { CMP_ORIENT_90, 1, 0, 0 },
-                         { CMP_ORIENT_180, 2, 0, 0 },
-                         { CMP_ORIENT_270, 3, 0, 0 },
-                         { CMP_MIRROR_X + CMP_ORIENT_0, 0, 1, 0 },
-                         { CMP_MIRROR_X + CMP_ORIENT_90, 1, 1, 0 },
-                         { CMP_MIRROR_Y, 0, 0, 1 },
-                         { CMP_MIRROR_X + CMP_ORIENT_270, 3, 1, 0 },
-                         { CMP_MIRROR_Y + CMP_ORIENT_0, 0, 0, 1 },
-                         { CMP_MIRROR_Y + CMP_ORIENT_90, 1, 0, 1 },
-                         { CMP_MIRROR_Y + CMP_ORIENT_180, 2, 0, 1 },
-                         { CMP_MIRROR_Y + CMP_ORIENT_270, 3, 0, 1 } };
+    }
+    orientations[] =
+    {
+        { SYM_ORIENT_0,                  0, 0, 0 },
+        { SYM_ORIENT_90,                 1, 0, 0 },
+        { SYM_ORIENT_180,                2, 0, 0 },
+        { SYM_ORIENT_270,                3, 0, 0 },
+        { SYM_MIRROR_X + SYM_ORIENT_0,   0, 1, 0 },
+        { SYM_MIRROR_X + SYM_ORIENT_90,  1, 1, 0 },
+        { SYM_MIRROR_Y,                  0, 0, 1 },
+        { SYM_MIRROR_X + SYM_ORIENT_270, 3, 1, 0 },
+        { SYM_MIRROR_Y + SYM_ORIENT_0,   0, 0, 1 },
+        { SYM_MIRROR_Y + SYM_ORIENT_90,  1, 0, 1 },
+        { SYM_MIRROR_Y + SYM_ORIENT_180, 2, 0, 1 },
+        { SYM_MIRROR_Y + SYM_ORIENT_270, 3, 0, 1 }
+    };
 
-    ORIENT o = orientations[0];
+    ORIENT o = orientations[ 0 ];
 
     for( auto& i : orientations )
     {
@@ -1518,7 +1522,7 @@ static void orientPart( LIB_PART* part, int orientation )
 }
 
 
-void SCH_PAINTER::draw( SCH_COMPONENT* aSymbol, int aLayer )
+void SCH_PAINTER::draw( SCH_SYMBOL* aSymbol, int aLayer )
 {
     int unit = aSymbol->GetUnitSelection( &m_schematic->CurrentSheet() );
     int convert = aSymbol->GetConvert();
@@ -1562,7 +1566,7 @@ void SCH_PAINTER::draw( SCH_COMPONENT* aSymbol, int aLayer )
 
     draw( &tempPart, aLayer, false, aSymbol->GetUnit(), aSymbol->GetConvert() );
 
-    // The fields are SCH_COMPONENT-specific so don't need to be copied/oriented/translated
+    // The fields are SCH_SYMBOL-specific so don't need to be copied/oriented/translated
     for( const SCH_FIELD& field : aSymbol->GetFields() )
         draw( &field, aLayer );
 }
@@ -1608,8 +1612,8 @@ void SCH_PAINTER::draw( const SCH_FIELD* aField, int aLayer )
     // Calculate the text orientation according to the parent orientation.
     EDA_ANGLE orient( aField->GetTextEdaAngle() );
 
-    if( aField->GetParent() && aField->GetParent()->Type() == SCH_COMPONENT_T
-        && static_cast<SCH_COMPONENT*>( aField->GetParent() )->GetTransform().y1 )
+    if( aField->GetParent() && aField->GetParent()->Type() == SCH_SYMBOL_T
+        && ( static_cast<SCH_SYMBOL*>( aField->GetParent() )->GetTransform().y1 ) )
     {
         // Rotate symbol 90 degrees.
         if( orient.IsZero() )

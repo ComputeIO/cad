@@ -317,7 +317,7 @@ void BACK_ANNOTATE::applyChangelist()
     {
         SCH_REFERENCE& ref = item.first;
         PCB_FP_DATA&   fpData = *item.second;
-        SCH_COMPONENT* symbol = ref.GetSymbol();
+        SCH_SYMBOL*    symbol = ref.GetSymbol();
         SCH_SCREEN*    screen = ref.GetSheetPath().LastScreen();
         wxString       oldFootprint = ref.GetFootprint();
         wxString       oldValue = ref.GetValue();
@@ -437,21 +437,21 @@ static EDA_ANGLE orientLabel( SCH_PIN* aPin )
     }
     orientations[] =
     {
-        { CMP_ORIENT_0,                  0, false, false },
-        { CMP_ORIENT_90,                 1, false, false },
-        { CMP_ORIENT_180,                2, false, false },
-        { CMP_ORIENT_270,                3, false, false },
-        { CMP_MIRROR_X + CMP_ORIENT_0,   0, true,  false },
-        { CMP_MIRROR_X + CMP_ORIENT_90,  1, true,  false },
-        { CMP_MIRROR_Y,                  0, false, true },
-        { CMP_MIRROR_X + CMP_ORIENT_270, 3, true,  false },
-        { CMP_MIRROR_Y + CMP_ORIENT_0,   0, false, true },
-        { CMP_MIRROR_Y + CMP_ORIENT_90,  1, false, true },
-        { CMP_MIRROR_Y + CMP_ORIENT_180, 2, false, true },
-        { CMP_MIRROR_Y + CMP_ORIENT_270, 3, false, true }
+        { SYM_ORIENT_0,                  0, false, false },
+        { SYM_ORIENT_90,                 1, false, false },
+        { SYM_ORIENT_180,                2, false, false },
+        { SYM_ORIENT_270,                3, false, false },
+        { SYM_MIRROR_X + SYM_ORIENT_0,   0, true,  false },
+        { SYM_MIRROR_X + SYM_ORIENT_90,  1, true,  false },
+        { SYM_MIRROR_Y,                  0, false, true },
+        { SYM_MIRROR_X + SYM_ORIENT_270, 3, true,  false },
+        { SYM_MIRROR_Y + SYM_ORIENT_0,   0, false, true },
+        { SYM_MIRROR_Y + SYM_ORIENT_90,  1, false, true },
+        { SYM_MIRROR_Y + SYM_ORIENT_180, 2, false, true },
+        { SYM_MIRROR_Y + SYM_ORIENT_270, 3, false, true }
     };
 
-    SCH_COMPONENT* parentSymbol = aPin->GetParentSymbol();
+    SCH_SYMBOL* parentSymbol = aPin->GetParentSymbol();
 
     if( !parentSymbol )
         return angle;

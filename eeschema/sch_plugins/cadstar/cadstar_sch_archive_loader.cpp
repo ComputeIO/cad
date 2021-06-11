@@ -34,7 +34,7 @@
 #include <macros.h>
 #include <kicad_string.h>
 #include <sch_bus_entry.h>
-#include <sch_edit_frame.h> //COMPONENT_ORIENTATION_T
+#include <sch_edit_frame.h> //SYMBOL_ORIENTATION_T
 #include <sch_io_mgr.h>
 #include <sch_junction.h>
 #include <sch_line.h>
@@ -137,11 +137,11 @@ void CADSTAR_SCH_ARCHIVE_LOADER::Load( SCHEMATIC* aSchematic, SCH_SHEET* aRootSh
         {
             EDA_RECT bbox;
 
-            // Only use the visible fields of the components to calculate their bounding box
+            // Only use the visible fields of the symbols to calculate their bounding box
             // (hidden fields could be very long and artificially enlarge the sheet bounding box)
-            if( item->Type() == SCH_COMPONENT_T )
+            if( item->Type() == SCH_SYMBOL_T )
             {
-                SCH_COMPONENT* comp = static_cast<SCH_COMPONENT*>( item );
+                SCH_SYMBOL* comp = static_cast<SCH_SYMBOL*>( item );
                 bbox = comp->GetBodyBoundingBox();
 
                 for( const SCH_FIELD& field : comp->GetFields() )
@@ -429,15 +429,15 @@ void CADSTAR_SCH_ARCHIVE_LOADER::loadSchematicSymbolInstances()
             LIB_PART* scaledPart = getScaledLibPart( kiPart, sym.ScaleRatioNumerator,
                                                      sym.ScaleRatioDenominator );
 
-            double         symOrientDeciDeg = 0.0;
-            SCH_COMPONENT* component = loadSchematicSymbol( sym, *scaledPart, symOrientDeciDeg );
+            double      symOrientDeciDeg = 0.0;
+            SCH_SYMBOL* symbol = loadSchematicSymbol( sym, *scaledPart, symOrientDeciDeg );
 
             delete scaledPart;
 
             if( copy )
                 delete kiPart;
 
-            SCH_FIELD* refField = component->GetField( REFERENCE_FIELD );
+            SCH_FIELD* refField = symbol->GetField( REFERENCE_FIELD );
 
             sym.ComponentRef.Designator.Replace( wxT( "\n" ), wxT( "\\n" ) );
             sym.ComponentRef.Designator.Replace( wxT( "\r" ), wxT( "\\r" ) );
@@ -450,13 +450,13 @@ void CADSTAR_SCH_ARCHIVE_LOADER::loadSchematicSymbolInstances()
 
             if( sym.HasPartRef )
             {
-                SCH_FIELD* partField = component->FindField( PartNameFieldName );
+                SCH_FIELD* partField = symbol->FindField( PartNameFieldName );
 
                 if( !partField )
                 {
-                    int fieldID = component->GetFieldCount();
-                    partField = component->AddField(
-                            SCH_FIELD( wxPoint(), fieldID, component, PartNameFieldName ) );
+                    int fieldID = symbol->GetFieldCount();
+                    partField = symbol->AddField( SCH_FIELD( wxPoint(), fieldID, symbol,
+                                                             PartNameFieldName ) );
                 }
 
                 wxASSERT( partField->GetName() == PartNameFieldName );
@@ -479,14 +479,14 @@ void CADSTAR_SCH_ARCHIVE_LOADER::loadSchematicSymbolInstances()
 
                 if( attrVal.HasLocation )
                 {
-                    wxString   attrName = getAttributeName( attrVal.AttributeID );
-                    SCH_FIELD* attrField = component->FindField( attrName );
+                    wxString attrName = getAttributeName( attrVal.AttributeID );
+                    SCH_FIELD* attrField = symbol->FindField( attrName );
 
                     if( !attrField )
                     {
-                        int fieldID = component->GetFieldCount();
-                        attrField = component->AddField(
-                                SCH_FIELD( wxPoint(), fieldID, component, attrName ) );
+                        int fieldID = symbol->GetFieldCount();
+                        attrField = symbol->AddField( SCH_FIELD( wxPoint(), fieldID,
+                                                                 symbol, attrName ) );
                     }
 
                     wxASSERT( attrField->GetName() == attrName );
@@ -592,8 +592,8 @@ void CADSTAR_SCH_ARCHIVE_LOADER::loadSchematicSymbolInstances()
                                                          sym.ScaleRatioDenominator );
 
                 double returnedOrient = 0.0;
-                SCH_COMPONENT* component = loadSchematicSymbol( sym, *scaledPart, returnedOrient );
-                m_powerSymMap.insert( { sym.ID, component } );
+                SCH_SYMBOL* symbol = loadSchematicSymbol( sym, *scaledPart, returnedOrient );
+                m_powerSymMap.insert( { sym.ID, symbol } );
 
                 delete scaledPart;
             }
@@ -635,7 +635,7 @@ void CADSTAR_SCH_ARCHIVE_LOADER::loadSchematicSymbolInstances()
         else
         {
             m_reporter->Report( wxString::Format( _( "Symbol ID '%s' is of an unknown type. It is "
-                                                     "neither a component or a net power / symbol. "
+                                                     "neither a symbol or a net power / symbol. "
                                                      "The symbol was not loaded." ),
                                                   sym.ID ),
                                 RPT_SEVERITY_ERROR );
@@ -868,7 +868,7 @@ void CADSTAR_SCH_ARCHIVE_LOADER::loadNets()
             if( start.x == UNDEFINED_VALUE || end.x == UNDEFINED_VALUE )
                 continue;
 
-            // Connections in CADSTAR are always implied between components even if the route
+            // Connections in CADSTAR are always implied between symbols even if the route
             // doesn't start and end exactly at the connection points
             if( conn.Path.size() < 1 || conn.Path.front() != start )
                 conn.Path.insert( conn.Path.begin(), start );
@@ -1561,10 +1561,9 @@ void CADSTAR_SCH_ARCHIVE_LOADER::applyToLibraryFieldAttribute(
 }
 
 
-SCH_COMPONENT*
-CADSTAR_SCH_ARCHIVE_LOADER::loadSchematicSymbol( const SYMBOL&   aCadstarSymbol,
-                                                 const LIB_PART& aKiCadPart,
-                                                 double&         aComponentOrientationDeciDeg )
+SCH_SYMBOL* CADSTAR_SCH_ARCHIVE_LOADER::loadSchematicSymbol( const SYMBOL& aCadstarSymbol,
+                                                             const LIB_PART& aKiCadPart,
+                                                             double& aComponentOrientationDeciDeg )
 {
     LIB_ID libId( m_libraryFileName.GetName(), aKiCadPart.GetName() );
     int    unit = getKiCadUnitNumberFromGate( aCadstarSymbol.GateID );
@@ -1573,14 +1572,14 @@ CADSTAR_SCH_ARCHIVE_LOADER::loadSchematicSymbol( const SYMBOL&   aCadstarSymbol,
     SCH_SHEET*     kiSheet = m_sheetMap.at( aCadstarSymbol.LayerID );
     m_rootSheet->LocatePathOfScreen( kiSheet->GetScreen(), &sheetpath );
 
-    SCH_COMPONENT* component = new SCH_COMPONENT( aKiCadPart, libId, &sheetpath, unit );
+    SCH_SYMBOL* symbol = new SCH_SYMBOL( aKiCadPart, libId, &sheetpath, unit );
 
     if( aCadstarSymbol.IsComponent )
     {
-        component->SetRef( &sheetpath, aCadstarSymbol.ComponentRef.Designator );
+        symbol->SetRef( &sheetpath, aCadstarSymbol.ComponentRef.Designator );
     }
 
-    component->SetPosition( getKiCadPoint( aCadstarSymbol.Origin ) );
+    symbol->SetPosition( getKiCadPoint( aCadstarSymbol.Origin ) );
 
     double compAngleDeciDeg = getAngleTenthDegree( aCadstarSymbol.OrientAngle );
     int    compOrientation = 0;
@@ -1588,7 +1587,7 @@ CADSTAR_SCH_ARCHIVE_LOADER::loadSchematicSymbol( const SYMBOL&   aCadstarSymbol,
     if( aCadstarSymbol.Mirror )
     {
         compAngleDeciDeg = -compAngleDeciDeg;
-        compOrientation += COMPONENT_ORIENTATION_T::CMP_MIRROR_Y;
+        compOrientation += SYMBOL_ORIENTATION_T::SYM_MIRROR_Y;
     }
 
     compOrientation += getComponentOrientation( compAngleDeciDeg, aComponentOrientationDeciDeg );
@@ -1605,7 +1604,7 @@ CADSTAR_SCH_ARCHIVE_LOADER::loadSchematicSymbol( const SYMBOL&   aCadstarSymbol,
                             RPT_SEVERITY_ERROR );
     }
 
-    component->SetOrientation( compOrientation );
+    symbol->SetOrientation( compOrientation );
 
     if( m_sheetMap.find( aCadstarSymbol.LayerID ) == m_sheetMap.end() )
     {
@@ -1616,7 +1615,7 @@ CADSTAR_SCH_ARCHIVE_LOADER::loadSchematicSymbol( const SYMBOL&   aCadstarSymbol,
                                               aCadstarSymbol.LayerID ),
                             RPT_SEVERITY_ERROR );
 
-        delete component;
+        delete symbol;
         return nullptr;
     }
 
@@ -1633,7 +1632,7 @@ CADSTAR_SCH_ARCHIVE_LOADER::loadSchematicSymbol( const SYMBOL&   aCadstarSymbol,
         for( auto& term : termNumMap )
         {
             wxString pinNum = term.second;
-            pinNumToLibPinMap.insert( { pinNum, component->GetPartRef()->GetPin( term.second ) } );
+            pinNumToLibPinMap.insert( { pinNum, symbol->GetPartRef()->GetPin( term.second ) } );
         }
 
         auto replacePinNumber = [&]( wxString aOldPinNum, wxString aNewPinNum )
@@ -1661,12 +1660,12 @@ CADSTAR_SCH_ARCHIVE_LOADER::loadSchematicSymbol( const SYMBOL&   aCadstarSymbol,
             replacePinNumber( termNumMap.at( pin.TerminalID ), pin.NameOrLabel );
         }
 
-        component->UpdatePins();
+        symbol->UpdatePins();
     }
 
-    kiSheet->GetScreen()->Append( component );
+    kiSheet->GetScreen()->Append( symbol );
 
-    return component;
+    return symbol;
 }
 
 
@@ -1684,8 +1683,8 @@ void CADSTAR_SCH_ARCHIVE_LOADER::loadSymbolFieldAttribute(
 
     if( aIsMirrored )
     {
-        // In KiCad, the angle of the symbol instance affects the position of the symbol fields because
-        // there is a distinction on x-axis and y-axis mirroring
+        // In KiCad, the angle of the symbol instance affects the position of the symbol
+        // fields because there is a distinction on x-axis and y-axis mirroring
         double angleDeciDeg = NormalizeAnglePos( aComponentOrientationDeciDeg );
         int    quadrant = KiROUND( angleDeciDeg / 900.0 );
         quadrant %= 4;
@@ -1708,28 +1707,28 @@ void CADSTAR_SCH_ARCHIVE_LOADER::loadSymbolFieldAttribute(
 int CADSTAR_SCH_ARCHIVE_LOADER::getComponentOrientation( double  aOrientAngleDeciDeg,
                                                          double& aReturnedOrientationDeciDeg )
 {
-    int compOrientation = COMPONENT_ORIENTATION_T::CMP_ORIENT_0;
+    int compOrientation = SYMBOL_ORIENTATION_T::SYM_ORIENT_0;
 
     int oDeg = (int) NormalizeAngle180( aOrientAngleDeciDeg );
 
     if( oDeg >= -450 && oDeg <= 450 )
     {
-        compOrientation = COMPONENT_ORIENTATION_T::CMP_ORIENT_0;
+        compOrientation             = SYMBOL_ORIENTATION_T::SYM_ORIENT_0;
         aReturnedOrientationDeciDeg = 0.0;
     }
     else if( oDeg >= 450 && oDeg <= 1350 )
     {
-        compOrientation = COMPONENT_ORIENTATION_T::CMP_ORIENT_90;
+        compOrientation             = SYMBOL_ORIENTATION_T::SYM_ORIENT_90;
         aReturnedOrientationDeciDeg = 900.0;
     }
     else if( oDeg >= 1350 || oDeg <= -1350 )
     {
-        compOrientation = COMPONENT_ORIENTATION_T::CMP_ORIENT_180;
+        compOrientation             = SYMBOL_ORIENTATION_T::SYM_ORIENT_180;
         aReturnedOrientationDeciDeg = 1800.0;
     }
     else
     {
-        compOrientation = COMPONENT_ORIENTATION_T::CMP_ORIENT_270;
+        compOrientation             = SYMBOL_ORIENTATION_T::SYM_ORIENT_270;
         aReturnedOrientationDeciDeg = 2700.0;
     }
 
