@@ -354,10 +354,17 @@ void SPARSELIZARD_SOLVER::writeResults( FEM_DESCRIPTOR* aDescriptor )
             }
             case FEM_VALUE_TYPE::DISSIPATED_POWER:
             {
-                int port = resultValue->GetPortA()->m_simulationID;
-                if( resultValue->GetPortA()->m_type == FEM_PORT_TYPE::PASSIVE )
+                SPARSELIZARD_CONDUCTOR* regionA = findConductor( resultValue->GetPortA() );
+                if( regionA == nullptr )
                 {
-                    resultValue->m_value = ( sl::on( port, m_p ) ).integrate( port, 4 );
+                    m_reporter->Report( "Could not match conductor with port", RPT_SEVERITY_ERROR );
+                    continue;
+                }
+
+                if( regionA->femPort->m_type == FEM_PORT_TYPE::PASSIVE )
+                {
+                    resultValue->m_value =
+                            ( sl::on( regionA->regionID, m_p ) ).integrate( regionA->regionID, 4 );
                     resultValue->m_valid = true;
                 }
                 else
@@ -531,13 +538,11 @@ bool SPARSELIZARD_SOLVER::Run_DC( FEM_DESCRIPTOR* aDescriptor )
         }
         case PCB_PAD_T:
         {
-            portA->m_simulationID =
-                    mesher.AddPadRegion( static_cast<const PAD*>( portA->GetItem() ) );
-
             SPARSELIZARD_CONDUCTOR* conductor = new SPARSELIZARD_CONDUCTOR();
             conductor->type = PCB_PAD_T;
             conductor->rho = m_constants.rho_Cu();
-            conductor->regionID = portA->m_simulationID;
+            conductor->regionID =
+                    mesher.AddPadRegion( static_cast<const PAD*>( portA->GetItem() ) );
             conductor->netCode = static_cast<const PAD*>( portA->GetItem() )->GetNetCode();
             port prim;
             port dual;
@@ -545,7 +550,7 @@ bool SPARSELIZARD_SOLVER::Run_DC( FEM_DESCRIPTOR* aDescriptor )
             conductor->dualPort = dual;
             conductor->femPort = portA;
             m_conductors.push_back( conductor );
-            m_conductorRegions.push_back( portA->m_simulationID );
+            m_conductorRegions.push_back( conductor->regionID );
 
             std::list<int>::iterator it;
             it = std::find( netlist.begin(), netlist.end(), conductor->netCode );

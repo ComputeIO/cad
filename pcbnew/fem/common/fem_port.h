@@ -58,11 +58,8 @@ public:
     const BOARD_ITEM*           GetItem();
     FEM_PORT_TYPE               m_type;
     FEM_PORT_CONSTRAINT         m_constraint;
-    bool                        IsMeshed();
-    int                         m_simulationID;
 
 private:
-    bool m_meshed;
     const BOARD_ITEM* m_item;
 };
 
