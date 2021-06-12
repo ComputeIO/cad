@@ -53,9 +53,9 @@ public:
 class FEM_PORT
 {
 public:
-    FEM_PORT( const BOARD_CONNECTED_ITEM* aItem );
+    FEM_PORT( const BOARD_ITEM* aItem );
 
-    const BOARD_CONNECTED_ITEM* GetItem();
+    const BOARD_ITEM*           GetItem();
     FEM_PORT_TYPE               m_type;
     FEM_PORT_CONSTRAINT         m_constraint;
     bool                        IsMeshed();
@@ -63,7 +63,7 @@ public:
 
 private:
     bool m_meshed;
-    const BOARD_CONNECTED_ITEM* m_item;
+    const BOARD_ITEM* m_item;
 };
 
 #endif

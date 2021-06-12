@@ -23,12 +23,12 @@
 
 #include "fem_port.h"
 
-FEM_PORT::FEM_PORT( const BOARD_CONNECTED_ITEM* aItem )
+FEM_PORT::FEM_PORT( const BOARD_ITEM* aItem )
 {
     m_item = aItem;
 }
 
-const BOARD_CONNECTED_ITEM* FEM_PORT::GetItem()
+const BOARD_ITEM* FEM_PORT::GetItem()
 {
     return m_item;
 }

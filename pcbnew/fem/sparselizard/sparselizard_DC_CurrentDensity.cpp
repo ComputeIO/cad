@@ -119,6 +119,7 @@ double SPARSELIZARD_SOLVER::computeCapacitanceDC( SPARSELIZARD_CONDUCTOR aConA,
 {
     double QA = aConA.dualPort.getvalue();
     double V = computeVoltageDC( aConA, aConB );
+    std::cout << "The computed capacitance is " << QA / V << std::endl;
     return QA / V;
 }
 
@@ -509,21 +510,32 @@ bool SPARSELIZARD_SOLVER::Run_DC( FEM_DESCRIPTOR* aDescriptor )
             continue;
         }
 
-        std::list<int>::iterator it;
-        it = std::find( netlist.begin(), netlist.end(), portA->GetItem()->GetNetCode() );
-        if( it == netlist.end() )
-        {
-            netlist.push_back( portA->GetItem()->GetNetCode() );
-        }
-
         switch( portA->GetItem()->Type() )
         {
+        case PCB_NETINFO_T:
+        {
+            SPARSELIZARD_CONDUCTOR* conductor = new SPARSELIZARD_CONDUCTOR();
+            conductor->type = PCB_NETINFO_T;
+            conductor->rho = m_constants.rho_Cu();
+            conductor->netCode = static_cast<const NETINFO_ITEM*>( portA->GetItem() )->GetNetCode();
+            conductor->regionID = mesher.AddNetRegion( conductor->netCode );
+            m_conductors.push_back( conductor );
+            m_conductorRegions.push_back( conductor->regionID );
+
+            port prim;
+            port dual;
+            conductor->primalPort = prim;
+            conductor->dualPort = dual;
+            conductor->femPort = portA;
+            break;
+        }
         case PCB_PAD_T:
         {
             portA->m_simulationID =
                     mesher.AddPadRegion( static_cast<const PAD*>( portA->GetItem() ) );
 
             SPARSELIZARD_CONDUCTOR* conductor = new SPARSELIZARD_CONDUCTOR();
+            conductor->type = PCB_PAD_T;
             conductor->rho = m_constants.rho_Cu();
             conductor->regionID = portA->m_simulationID;
             conductor->netCode = static_cast<const PAD*>( portA->GetItem() )->GetNetCode();
@@ -534,9 +546,20 @@ bool SPARSELIZARD_SOLVER::Run_DC( FEM_DESCRIPTOR* aDescriptor )
             conductor->femPort = portA;
             m_conductors.push_back( conductor );
             m_conductorRegions.push_back( portA->m_simulationID );
+
+            std::list<int>::iterator it;
+            it = std::find( netlist.begin(), netlist.end(), conductor->netCode );
+            if( it == netlist.end() )
+            {
+                netlist.push_back( conductor->netCode );
+            }
             break;
         }
-        default: break;
+        default:
+            m_reporter->Report( "Cannot set port on this KICAD_T Type:"
+                                        + to_string( portA->GetItem()->Type() ),
+                                RPT_SEVERITY_ERROR );
+            break;
         }
     }
 
@@ -548,6 +571,7 @@ bool SPARSELIZARD_SOLVER::Run_DC( FEM_DESCRIPTOR* aDescriptor )
     for( int netID : netlist )
     {
         SPARSELIZARD_CONDUCTOR* conductor = new SPARSELIZARD_CONDUCTOR();
+        conductor->type = PCB_NETINFO_T; // We just assume it is like a PCB_NETINFO
         conductor->rho = m_constants.rho_Cu();
         conductor->regionID = mesher.AddNetRegion( netID );
         conductor->netCode = netID;
@@ -606,11 +630,36 @@ bool SPARSELIZARD_SOLVER::Run_DC( FEM_DESCRIPTOR* aDescriptor )
     {
         if( cond->femPort != nullptr )
         {
-            std::vector<int> everythingElse = m_conductorRegions;
-            std::remove( everythingElse.begin(), everythingElse.end(), cond->regionID );
-            everythingElse.pop_back();
-            cond->boundaryID =
-                    sl::selectintersection( { cond->regionID, sl::selectunion( everythingElse ) } );
+            switch( cond->type )
+            {
+            case PCB_NETINFO_T:
+            {
+                std::vector<int> everythingElse;
+                everythingElse.insert( everythingElse.end(), m_conductorRegions.begin(),
+                                       m_conductorRegions.end() );
+                everythingElse.insert( everythingElse.end(), m_dielectricRegions.begin(),
+                                       m_dielectricRegions.end() );
+                std::remove( everythingElse.begin(), everythingElse.end(), cond->regionID );
+                everythingElse.pop_back();
+                cond->boundaryID = sl::selectintersection(
+                        { cond->regionID, sl::selectunion( everythingElse ) } );
+                break;
+            }
+            case PCB_PAD_T:
+            {
+                std::vector<int> everythingElse = m_conductorRegions;
+                std::remove( everythingElse.begin(), everythingElse.end(), cond->regionID );
+                everythingElse.pop_back();
+                cond->boundaryID = sl::selectintersection(
+                        { cond->regionID, sl::selectunion( everythingElse ) } );
+                break;
+            }
+            default:
+                m_reporter->Report( "Cannot find boundary on this KICAD_T Type:"
+                                            + to_string( cond->type ),
+                                    RPT_SEVERITY_ERROR );
+                break;
+            }
         }
     }
 

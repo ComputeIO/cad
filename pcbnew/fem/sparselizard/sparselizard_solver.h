@@ -41,6 +41,7 @@ public:
 class SPARSELIZARD_CONDUCTOR
 {
 public:
+    KICAD_T   type;
     int    netCode;
     double rho; // resistivity
     int       regionID;
