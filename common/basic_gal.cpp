@@ -59,12 +59,19 @@ const VECTOR2D BASIC_GAL::transform( const VECTOR2D& aPoint ) const
 // system.
 void BASIC_GAL::doDrawPolyline( const std::vector<wxPoint>& aLocalPointList, bool aFill )
 {
+#ifdef DEBUG
+    std::cerr << "BASIC_GAL::doDrawPolyline( ..., " << ( aFill ? "t" : "f" ) << " ) "
+              << aLocalPointList.size() << " pts, "
+              << ( m_DC ? ( m_isFillEnabled ? "DC fill " : "DC no_fill " ) : "!DC " )
+              << ( m_plotter ? "plotter " : "!plotter " )
+              << ( m_callback ? "callback " : "!callback " ) << std::endl;
+#endif
     if( m_DC )
     {
         if( m_isFillEnabled )
         {
             GRPoly( m_isClipped ? &m_clipBox : NULL, m_DC, aLocalPointList.size(),
-                    &aLocalPointList[0], 0, GetLineWidth(), m_Color, m_Color );
+                    &aLocalPointList[0], 0, 0, m_Color, m_Color );
         }
         else
         {
@@ -195,6 +202,14 @@ void BASIC_GAL::DrawLine( const VECTOR2D& aStartPoint, const VECTOR2D& aEndPoint
 
 void BASIC_GAL::DrawGlyph( const SHAPE_POLY_SET& aPolySet, int aNth, int aTotal )
 {
+#ifdef DEBUG
+    std::cerr << "BASIC_GAL::DrawGlyph( [aPolySet], " << aNth << ", " << aTotal << " ) ";
+    if (m_plotter)
+        std::cerr << m_plotter->GetPlotterType();
+    else
+        std::cerr << "!plotter";
+    std::cerr << ( m_DC ? " DC " : " !DC " ) << std::endl;
+#endif
     if( m_plotter )
     {
         switch( m_plotter->GetPlotterType() )
@@ -276,6 +291,9 @@ void BASIC_GAL::DrawGlyph( const SHAPE_POLY_SET& aPolySet, int aNth, int aTotal 
     }
     else
     {
+#if 1
+        const wxBrush& saveBrush = m_DC->GetBrush();
+
         for( int iOutline = 0; iOutline < aPolySet.OutlineCount(); ++iOutline )
         {
             const SHAPE_LINE_CHAIN& outline = aPolySet.COutline( iOutline );
@@ -284,8 +302,10 @@ void BASIC_GAL::DrawGlyph( const SHAPE_POLY_SET& aPolySet, int aNth, int aTotal 
             for( int i = 0; i < outline.PointCount(); i++ )
                 outline_with_transform.emplace_back( (wxPoint) transform( outline.CPoint( i ) ) );
 
+            m_DC->SetBrush( saveBrush );
             doDrawPolyline( outline_with_transform, true );
 
+            m_DC->SetBrush( *wxWHITE_BRUSH );
             for( int iHole = 0; iHole < aPolySet.HoleCount( iOutline ); iHole++ )
             {
                 const SHAPE_LINE_CHAIN& hole = aPolySet.CHole( iOutline, iHole );
@@ -296,5 +316,35 @@ void BASIC_GAL::DrawGlyph( const SHAPE_POLY_SET& aPolySet, int aNth, int aTotal 
                 doDrawPolyline( hole_with_transform, true );
             }
         }
+
+        m_DC->SetBrush( saveBrush );
+#else
+        // TODO move this to the appropriate plotter (PDF?) class
+        auto triangleCallback = [&]( int aPolygonIndex, const VECTOR2D& aVertex1,
+                                     const VECTOR2D& aVertex2, const VECTOR2D& aVertex3,
+                                     void* aCallbackData )
+        {
+            std::vector<wxPoint> corners;
+            corners.emplace_back( (wxPoint) transform( aVertex1 ) );
+            corners.emplace_back( (wxPoint) transform( aVertex2 ) );
+            corners.emplace_back( (wxPoint) transform( aVertex3 ) );
+            // m_plotter->PlotPoly( corners, FILL_TYPE::FILLED_SHAPE, 0 );
+            doDrawPolyline( corners, true );
+        };
+
+        if( m_DC )
+        {
+            const wxPen& savePen = m_DC->GetPen();
+            const wxBrush& saveBrush = m_DC->GetBrush();
+            m_DC->SetPen( wxNullPen );
+            // TODO: support other colors
+            m_DC->SetBrush( *wxBLACK_BRUSH );
+            Triangulate( aPolySet, triangleCallback );
+            m_DC->SetPen( savePen );
+            m_DC->SetBrush( saveBrush );
+        } else {
+            Triangulate( aPolySet, triangleCallback );
+        }
+#endif
     }
 }

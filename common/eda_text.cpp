@@ -50,6 +50,7 @@
 #include <geometry/shape_segment.h>
 #include <geometry/shape_compound.h>
 #include <font/font.h>
+#include <output_operators.h>
 
 #include <wx/debug.h>           // for wxASSERT
 #include <wx/string.h>          // wxString, wxArrayString
@@ -353,6 +354,11 @@ bool EDA_TEXT::TextHitTest( const EDA_RECT& aRect, bool aContains, int aAccuracy
 void EDA_TEXT::Print( const RENDER_SETTINGS* aSettings, const wxPoint& aOffset,
                       COLOR4D aColor, OUTLINE_MODE aFillMode )
 {
+#ifdef DEBUG
+    std::cerr << "EDA_TEXT::Print( " << aSettings << ", " << aOffset << ", " << aColor << ", "
+              << ( aFillMode ? "t" : "f" ) << "  ) \"" << GetShownText() << "\"" << std::endl;
+#endif
+
     if( IsMultilineAllowed() )
     {
         std::vector<wxPoint> positions;
@@ -411,6 +417,12 @@ void EDA_TEXT::printOneLineOfText( const RENDER_SETTINGS* aSettings, const wxPoi
                                    const COLOR4D& aColor, OUTLINE_MODE aFillMode,
                                    const wxString& aText, const wxPoint &aPos )
 {
+#ifdef DEBUG
+    std::cerr << "EDA_TEXT::printOneLineOfText( " << aSettings << ", " << aOffset << ", " << aColor
+              << ", " << ( aFillMode ? "t" : "f" ) << " , \"" << aText << "\", " << aPos << " )"
+              << std::endl;
+#endif
+
     wxDC* DC = aSettings->GetPrintDC();
     int   penWidth = std::max( GetEffectiveTextPenWidth(), aSettings->GetDefaultPenWidth() );
 

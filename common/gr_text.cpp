@@ -194,7 +194,8 @@ void GRText( wxDC* aDC, const EDA_TEXT* aText, const VECTOR2D& aPosition, const 
              void* aCallbackData, PLOTTER* aPlotter )
 {
 #ifdef DEBUG
-    std::cerr << "GRText( ..., " << *aText << ", " << aPosition << ", " << aColor << ", ... )";
+    std::cerr << "GRText( " << ( aDC ? "[wxDC]" : "nullptr" ) << ", " << *aText << ", " << aPosition
+              << ", " << aColor << ", ... )";
 #endif
     int    penWidth = aText->GetEffectiveTextPenWidth();
 

@@ -309,7 +309,7 @@ COLOR4D SCH_TEXT::doPrint( const RENDER_SETTINGS* aSettings, const wxPoint& aOff
               << position << " angle " << GetTextEdaAngle() << " H alignment "
               << GetHorizontalAlignment() << std::endl;
 #endif
-    GRText( this, position, color );
+    GRText( aSettings->GetPrintDC(), this, position, color );
     return color;
 }
 
