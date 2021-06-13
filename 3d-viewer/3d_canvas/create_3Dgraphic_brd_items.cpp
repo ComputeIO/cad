@@ -186,9 +186,9 @@ void BOARD_ADAPTER::addShapeWithClearance( const PCB_TEXT* aText, CONTAINER_2D_B
 }
 
 
-void BOARD_ADAPTER::addShapeWithClearance( const DIMENSION_BASE* aDimension,
-                                           CONTAINER_2D_BASE* aDstContainer, PCB_LAYER_ID aLayerId,
-                                           int aClearanceValue )
+void BOARD_ADAPTER::addShapeWithClearance( const PCB_DIMENSION_BASE* aDimension,
+                                           CONTAINER_2D_BASE* aDstContainer,
+                                           PCB_LAYER_ID aLayerId, int aClearanceValue )
 {
     addShapeWithClearance( &aDimension->Text(), aDstContainer, aLayerId, aClearanceValue );
 
@@ -288,7 +288,7 @@ void BOARD_ADAPTER::addFootprintShapesWithClearance( const FOOTPRINT*   aFootpri
 }
 
 
-void BOARD_ADAPTER::createTrack( const TRACK* aTrack, CONTAINER_2D_BASE* aDstContainer,
+void BOARD_ADAPTER::createTrack( const PCB_TRACK* aTrack, CONTAINER_2D_BASE* aDstContainer,
                                  int aClearanceValue )
 {
     SFVEC2F start3DU( aTrack->GetStart().x * m_biuTo3Dunits,
@@ -305,11 +305,11 @@ void BOARD_ADAPTER::createTrack( const TRACK* aTrack, CONTAINER_2D_BASE* aDstCon
 
     case PCB_ARC_T:
     {
-        const ARC* arc = static_cast<const ARC*>( aTrack );
-        VECTOR2D   center( arc->GetCenter() );
-        double     arc_angle = arc->GetAngle();
-        double     radius = arc->GetRadius();
-        int arcsegcount = GetArcToSegmentCount( radius, Millimeter2iu( 0.005 ), arc_angle / 10 );
+        const PCB_ARC* arc = static_cast<const PCB_ARC*>( aTrack );
+        VECTOR2D center( arc->GetCenter() );
+        double arc_angle = arc->GetAngle();
+        double radius = arc->GetRadius();
+        int arcsegcount = GetArcToSegmentCount( radius, Millimeter2iu( 0.005), arc_angle/10 );
         int circlesegcount;
 
         // We need a circle to segment count. However, the arc angle can be small, and the

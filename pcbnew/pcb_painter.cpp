@@ -25,7 +25,7 @@
 
 #include <board.h>
 #include <board_design_settings.h>
-#include <track.h>
+#include <pcb_track.h>
 #include <pcb_group.h>
 #include <footprint.h>
 #include <pad.h>
@@ -34,7 +34,7 @@
 #include <zone.h>
 #include <pcb_text.h>
 #include <pcb_marker.h>
-#include <dimension.h>
+#include <pcb_dimension.h>
 #include <pcb_target.h>
 #include <advanced_config.h>
 #include <core/arraydim.h>
@@ -230,10 +230,10 @@ COLOR4D PCB_RENDER_SETTINGS::GetColor( const VIEW_ITEM* aItem, int aLayer ) cons
     {
         // Careful that we don't end up with the same colour for the annular ring and the hole
         // when printing in B&W.
-        const PAD* pad = dynamic_cast<const PAD*>( item );
-        const VIA* via = dynamic_cast<const VIA*>( item );
-        int        holeLayer = aLayer;
-        int        annularRingLayer = UNDEFINED_LAYER;
+        const PAD*     pad = dynamic_cast<const PAD*>( item );
+        const PCB_VIA* via = dynamic_cast<const PCB_VIA*>( item );
+        int            holeLayer = aLayer;
+        int            annularRingLayer = UNDEFINED_LAYER;
 
         if( pad && pad->GetAttribute() == PAD_ATTRIB::PTH )
             annularRingLayer = LAYER_PADS_TH;
@@ -346,13 +346,13 @@ COLOR4D PCB_RENDER_SETTINGS::GetColor( const VIEW_ITEM* aItem, int aLayer ) cons
         case LAYER_VIA_BBLIND:
         case LAYER_VIA_MICROVIA:
             // Target graphic is active if the via crosses the primary layer
-            if( static_cast<const VIA*>( item )->GetLayerSet().test( primary ) == 0 )
+            if( static_cast<const PCB_VIA*>( item )->GetLayerSet().test( primary ) == 0 )
                 isActive = false;
 
             break;
 
         case LAYER_VIA_THROUGH:
-            if( !static_cast<const VIA*>( item )->FlashLayer( primary ) )
+            if( !static_cast<const PCB_VIA*>( item )->FlashLayer( primary ) )
                 isActive = false;
 
             break;
@@ -368,11 +368,11 @@ COLOR4D PCB_RENDER_SETTINGS::GetColor( const VIEW_ITEM* aItem, int aLayer ) cons
 
         case LAYER_VIA_HOLES:
         case LAYER_VIA_HOLEWALLS:
-            if( static_cast<const VIA*>( item )->GetViaType() == VIATYPE::BLIND_BURIED
-                || static_cast<const VIA*>( item )->GetViaType() == VIATYPE::MICROVIA )
+            if( static_cast<const PCB_VIA*>( item )->GetViaType() == VIATYPE::BLIND_BURIED
+                    || static_cast<const PCB_VIA*>( item )->GetViaType() == VIATYPE::MICROVIA )
             {
                 // A blind or micro via's hole is active if it crosses the primary layer
-                if( static_cast<const VIA*>( item )->GetLayerSet().test( primary ) == 0 )
+                if( static_cast<const PCB_VIA*>( item )->GetLayerSet().test( primary ) == 0 )
                     isActive = false;
             }
             else
@@ -440,7 +440,7 @@ VECTOR2D PCB_PAINTER::getDrillSize( const PAD* aPad ) const
 }
 
 
-int PCB_PAINTER::getDrillSize( const VIA* aVia ) const
+int PCB_PAINTER::getDrillSize( const PCB_VIA* aVia ) const
 {
     return aVia->GetDrillValue();
 }
@@ -468,11 +468,17 @@ bool PCB_PAINTER::Draw( const VIEW_ITEM* aItem, int aLayer )
     // the "cast" applied in here clarifies which overloaded draw() is called
     switch( item->Type() )
     {
-    case PCB_TRACE_T: draw( static_cast<const TRACK*>( item ), aLayer ); break;
+    case PCB_TRACE_T:
+        draw( static_cast<const PCB_TRACK*>( item ), aLayer );
+        break;
 
-    case PCB_ARC_T: draw( static_cast<const ARC*>( item ), aLayer ); break;
+    case PCB_ARC_T:
+        draw( static_cast<const PCB_ARC*>( item ), aLayer );
+        break;
 
-    case PCB_VIA_T: draw( static_cast<const VIA*>( item ), aLayer ); break;
+    case PCB_VIA_T:
+        draw( static_cast<const PCB_VIA*>( item ), aLayer );
+        break;
 
     case PCB_PAD_T: draw( static_cast<const PAD*>( item ), aLayer ); break;
 
@@ -494,7 +500,9 @@ bool PCB_PAINTER::Draw( const VIEW_ITEM* aItem, int aLayer )
     case PCB_DIM_ALIGNED_T:
     case PCB_DIM_CENTER_T:
     case PCB_DIM_ORTHOGONAL_T:
-    case PCB_DIM_LEADER_T: draw( static_cast<const DIMENSION_BASE*>( item ), aLayer ); break;
+    case PCB_DIM_LEADER_T:
+        draw( static_cast<const PCB_DIMENSION_BASE*>( item ), aLayer );
+        break;
 
     case PCB_TARGET_T: draw( static_cast<const PCB_TARGET*>( item ) ); break;
 
@@ -509,7 +517,7 @@ bool PCB_PAINTER::Draw( const VIEW_ITEM* aItem, int aLayer )
 }
 
 
-void PCB_PAINTER::draw( const TRACK* aTrack, int aLayer )
+void PCB_PAINTER::draw( const PCB_TRACK* aTrack, int aLayer )
 {
     VECTOR2D start( aTrack->GetStart() );
     VECTOR2D end( aTrack->GetEnd() );
@@ -600,7 +608,7 @@ void PCB_PAINTER::draw( const TRACK* aTrack, int aLayer )
 }
 
 
-void PCB_PAINTER::draw( const ARC* aArc, int aLayer )
+void PCB_PAINTER::draw( const PCB_ARC* aArc, int aLayer )
 {
     VECTOR2D center( aArc->GetCenter() );
     int      width = aArc->GetWidth();
@@ -646,7 +654,7 @@ void PCB_PAINTER::draw( const ARC* aArc, int aLayer )
 }
 
 
-void PCB_PAINTER::draw( const VIA* aVia, int aLayer )
+void PCB_PAINTER::draw( const PCB_VIA* aVia, int aLayer )
 {
     BOARD*                 board = aVia->GetBoard();
     BOARD_DESIGN_SETTINGS& bds = board->GetDesignSettings();
@@ -1698,7 +1706,7 @@ void PCB_PAINTER::draw( const ZONE* aZone, int aLayer )
 }
 
 
-void PCB_PAINTER::draw( const DIMENSION_BASE* aDimension, int aLayer )
+void PCB_PAINTER::draw( const PCB_DIMENSION_BASE* aDimension, int aLayer )
 {
     const COLOR4D& strokeColor = m_pcbSettings.GetColor( aDimension, aLayer );
 

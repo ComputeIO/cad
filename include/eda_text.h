@@ -426,6 +426,8 @@ public:
     void Draw( KIGFX::GAL* aGal ) const { Draw( aGal, GetTextPos() ); }
 
 private:
+    void cacheShownText();
+
     /**
      * Print each line of this EDA_TEXT.
      *

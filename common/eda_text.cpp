@@ -65,13 +65,7 @@ EDA_TEXT::EDA_TEXT( const wxString& text ) :
 {
     int sz = Mils2iu( DEFAULT_SIZE_TEXT );
     SetTextSize( wxSize( sz, sz ) );
-    m_shown_text_has_text_var_refs = false;
-
-    if( !text.IsEmpty() )
-    {
-        m_shown_text = UnescapeString( text );
-        m_shown_text_has_text_var_refs = m_shown_text.Contains( wxT( "${" ) );
-    }
+    cacheShownText();
 }
 
 
@@ -79,8 +73,7 @@ EDA_TEXT::EDA_TEXT( const EDA_TEXT& aText ) :
         m_text( aText.m_text ),
         m_attributes( aText.m_attributes )
 {
-    m_shown_text = UnescapeString( m_text );
-    m_shown_text_has_text_var_refs = m_shown_text.Contains( wxT( "${" ) );
+    cacheShownText();
 }
 
 
@@ -92,8 +85,7 @@ EDA_TEXT::~EDA_TEXT()
 void EDA_TEXT::SetText( const wxString& aText )
 {
     m_text = aText;
-    m_shown_text = UnescapeString( aText );
-    m_shown_text_has_text_var_refs = m_shown_text.Contains( wxT( "${" ) );
+    cacheShownText();
 }
 
 
@@ -143,10 +135,24 @@ int EDA_TEXT::GetEffectiveTextPenWidth( int aDefaultWidth ) const
 bool EDA_TEXT::Replace( const wxFindReplaceData& aSearchData )
 {
     bool retval = EDA_ITEM::Replace( aSearchData, m_text );
-    m_shown_text = UnescapeString( m_text );
-    m_shown_text_has_text_var_refs = m_shown_text.Contains( wxT( "${" ) );
+    cacheShownText();
 
     return retval;
+}
+
+
+void EDA_TEXT::cacheShownText()
+{
+    if( m_text.IsEmpty() || m_text == wxT( "~" ) )     // ~ is legacy empty-string token
+    {
+        m_shown_text = wxEmptyString;
+        m_shown_text_has_text_var_refs = false;
+    }
+    else
+    {
+        m_shown_text = UnescapeString( m_text );
+        m_shown_text_has_text_var_refs = m_shown_text.Contains( wxT( "${" ) );
+    }
 }
 
 
@@ -213,7 +219,7 @@ EDA_RECT EDA_TEXT::GetTextBox( int aLine, bool aInvertY ) const
     // because only this line can change the bounding box
     for( unsigned ii = 1; ii < text.size(); ii++ )
     {
-        if( text[ii-1] == '~' && text[ii] != '~' )
+        if( text[ii-1] == '~' && text[ii] == '{' )
         {
             hasOverBar = true;
             break;
