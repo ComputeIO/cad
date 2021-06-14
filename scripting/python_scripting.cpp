@@ -87,11 +87,10 @@ bool SCRIPTING::IsModuleLoaded( std::string& aModule )
     auto locals = pybind11::dict( "modulename"_a = aModule );
 
     pybind11::exec( R"(
-import sys
-loaded = False
-if modulename in sys.modules:
-    loaded = True
-
+        import sys
+        loaded = False
+        if modulename in sys.modules:
+            loaded = True
     )", pybind11::globals(), locals );
 
     return locals["loaded"].cast<bool>();
@@ -113,7 +112,7 @@ bool SCRIPTING::scriptingSetup()
     pyHome.Normalize();
 
     // MUST be called before Py_Initialize so it will to create valid default lib paths
-    if( !wxGetEnv( wxT( "KICAD_RUN_FROM_BUILD_DIR" ), nullptr ) )
+    if( !wxGetEnv( wxT( "KICAD_USE_EXTERNAL_PYTHONHOME" ), nullptr ) )
     {
         Py_SetPythonHome( pyHome.GetFullPath().c_str() );
     }
