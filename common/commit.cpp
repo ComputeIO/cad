@@ -208,7 +208,7 @@ CHANGE_TYPE COMMIT::convert( UNDO_REDO aType ) const
 
     default:
         assert( false );
-        // fall through
+        BOOST_FALLTHROUGH;
 
     case UNDO_REDO::CHANGED:
         return CHT_MODIFY;
