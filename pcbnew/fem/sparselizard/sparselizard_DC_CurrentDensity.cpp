@@ -247,6 +247,10 @@ void SPARSELIZARD_SOLVER::setEquations( FEM_DESCRIPTOR* aDescriptor )
                                                                 * sl::grad( sl::tf( m_v ) ) );
         }
     }
+    // Expression for the electric field E [V/m] and current density j [A/m^2]:
+    m_E = -sl::grad( m_v );                 // electric field
+    m_j = m_E / ( *m_rho );                 // current density
+    m_p = sl::doubledotproduct( m_j, m_E ); // power density
 }
 
 void SPARSELIZARD_SOLVER::writeResults( FEM_DESCRIPTOR* aDescriptor )
@@ -486,27 +490,8 @@ SPARSELIZARD_CONDUCTOR* SPARSELIZARD_SOLVER::findConductor( FEM_PORT* aPort )
     return nullptr;
 }
 
-bool SPARSELIZARD_SOLVER::Run_DC( FEM_DESCRIPTOR* aDescriptor )
+void SPARSELIZARD_SOLVER::SetRegions( FEM_DESCRIPTOR* aDescriptor, GMSH_MESHER* aMesher )
 {
-    if( !m_constants.SetUnitScaling( EDA_UNITS::MILLIMETRES ) )
-    {
-        m_reporter->Report( "Cannot get constants in this unit system", RPT_SEVERITY_ERROR );
-        return false;
-    }
-
-    if( aDescriptor == nullptr )
-        return false;
-
-    if( aDescriptor->GetBoard() == nullptr )
-        return false;
-
-#ifdef USE_GMSH
-    GMSH_MESHER mesher( aDescriptor->GetBoard() );
-#else
-    SPARSELIZARD_MESHER mesher( aDescriptor->GetBoard() );
-#endif
-    m_reporter->Report( "Setting up ports and regions...", RPT_SEVERITY_INFO );
-
     std::list<int> netlist;
 
     for( FEM_PORT* portA : aDescriptor->GetPorts() )
@@ -525,7 +510,7 @@ bool SPARSELIZARD_SOLVER::Run_DC( FEM_DESCRIPTOR* aDescriptor )
             conductor->type = PCB_NETINFO_T;
             conductor->rho = m_constants.rho_Cu();
             conductor->netCode = static_cast<const NETINFO_ITEM*>( portA->GetItem() )->GetNetCode();
-            conductor->regionID = mesher.AddNetRegion( conductor->netCode );
+            conductor->regionID = aMesher->AddNetRegion( conductor->netCode );
             m_conductors.push_back( conductor );
             m_conductorRegions.push_back( conductor->regionID );
 
@@ -542,7 +527,7 @@ bool SPARSELIZARD_SOLVER::Run_DC( FEM_DESCRIPTOR* aDescriptor )
             conductor->type = PCB_PAD_T;
             conductor->rho = m_constants.rho_Cu();
             conductor->regionID =
-                    mesher.AddPadRegion( static_cast<const PAD*>( portA->GetItem() ) );
+                    aMesher->AddPadRegion( static_cast<const PAD*>( portA->GetItem() ) );
             conductor->netCode = static_cast<const PAD*>( portA->GetItem() )->GetNetCode();
             port prim;
             port dual;
@@ -578,7 +563,7 @@ bool SPARSELIZARD_SOLVER::Run_DC( FEM_DESCRIPTOR* aDescriptor )
         SPARSELIZARD_CONDUCTOR* conductor = new SPARSELIZARD_CONDUCTOR();
         conductor->type = PCB_NETINFO_T; // We just assume it is like a PCB_NETINFO
         conductor->rho = m_constants.rho_Cu();
-        conductor->regionID = mesher.AddNetRegion( netID );
+        conductor->regionID = aMesher->AddNetRegion( netID );
         conductor->netCode = netID;
         conductor->femPort = nullptr;
         m_conductors.push_back( conductor );
@@ -587,7 +572,7 @@ bool SPARSELIZARD_SOLVER::Run_DC( FEM_DESCRIPTOR* aDescriptor )
 
     if( aDescriptor->m_requiresDielectric )
     {
-        for( int region : mesher.AddDielectricRegions() )
+        for( int region : aMesher->AddDielectricRegions() )
         {
             SPARSELIZARD_DIELECTRIC* dielectric = new SPARSELIZARD_DIELECTRIC();
             dielectric->epsilonr = 1;
@@ -603,34 +588,10 @@ bool SPARSELIZARD_SOLVER::Run_DC( FEM_DESCRIPTOR* aDescriptor )
     m_reporter->Report( "Number of dielectric regions in simulation: "
                                 + to_string( m_dielectrics.size() ),
                         RPT_SEVERITY_INFO );
+}
 
-    m_reporter->Report( "SPARSELIZARD: Loading mesh...", RPT_SEVERITY_ACTION );
-
-
-#ifdef USE_GMSH
-    switch( aDescriptor->m_dim )
-    {
-    case FEM_SIMULATION_DIMENSION::SIMUL2D5: mesher.Load25DMesh(); break;
-    case FEM_SIMULATION_DIMENSION::SIMUL3D: mesher.Load3DMesh(); break;
-    default:
-        m_reporter->Report( "Simulation dimension is not supported", RPT_SEVERITY_ERROR );
-        return false;
-    }
-
-    mesh mymesh( "gmsh:api", SPARSELIZARD_VERBOSITY );
-    mesher.Finalize();
-#else
-    std::vector<shape>  shapes;
-    mesher.Get2DShapes( shapes, PCB_LAYER_ID::F_Cu, true );
-    mesh mymesh;
-    mymesh.split( 2 );
-    mymesh.load( shapes );
-#endif
-
-    m_reporter->Report( "SPARSELIZARD: mesh loaded.", RPT_SEVERITY_INFO );
-
-    mymesh.write( "mymesh.msh", SPARSELIZARD_VERBOSITY );
-
+void SPARSELIZARD_SOLVER::SetBoundaries()
+{
     for( SPARSELIZARD_CONDUCTOR* cond : m_conductors )
     {
         if( cond->femPort != nullptr )
@@ -667,38 +628,14 @@ bool SPARSELIZARD_SOLVER::Run_DC( FEM_DESCRIPTOR* aDescriptor )
             }
         }
     }
+}
 
-    // Create the electric potential field v
-    m_v = field( "h1" );
-    formulation eq;
-    m_equations = &eq;
-    // parameters
-    parameter rho;     // resistivity
-    parameter epsilon; // permittivity
-
-    m_rho = &rho;
-    m_epsilon = &epsilon;
-    m_reporter->Report( "Setting up simulation parameters...", RPT_SEVERITY_ACTION );
-    if( !setParameters( aDescriptor ) )
-        return false;
-    m_reporter->Report( "Setting up simulation ports...", RPT_SEVERITY_ACTION );
-    setConstraints( aDescriptor );
-    m_reporter->Report( "Setting up simulation equations...", RPT_SEVERITY_ACTION );
-    setEquations( aDescriptor );
-    // Expression for the electric field E [V/m] and current density j [A/m^2]:
-    m_E = -sl::grad( m_v );                 // electric field
-    m_j = m_E / ( *m_rho );                 // current density
-    m_p = sl::doubledotproduct( m_j, m_E ); // power density
-
-
+void SPARSELIZARD_SOLVER::simulate()
+{
     int  nb_refinements = 0;
     bool need_adapt = false;
 
     m_v.setorder( sl::norm( sl::grad( m_v ) ), MIN_ORDER, MAX_ORDER + 1 );
-
-
-    m_reporter->Report( "SPARSELIZARD: Simulating...", RPT_SEVERITY_ACTION );
-
     // Simple p-adaptivity loop:
     for( int i = 0; i <= MAX_ORDER - MIN_ORDER; i++ )
     {
@@ -710,6 +647,82 @@ bool SPARSELIZARD_SOLVER::Run_DC( FEM_DESCRIPTOR* aDescriptor )
             break; // No adaptation was needed
         };
     }
+}
+
+bool SPARSELIZARD_SOLVER::Run_DC( FEM_DESCRIPTOR* aDescriptor )
+{
+    if( !m_constants.SetUnitScaling( EDA_UNITS::MILLIMETRES ) )
+    {
+        m_reporter->Report( "Cannot get constants in this unit system", RPT_SEVERITY_ERROR );
+        return false;
+    }
+
+    if( aDescriptor == nullptr )
+        return false;
+
+    if( aDescriptor->GetBoard() == nullptr )
+        return false;
+
+#ifdef USE_GMSH
+    GMSH_MESHER mesher( aDescriptor->GetBoard() );
+#else
+    SPARSELIZARD_MESHER mesher( aDescriptor->GetBoard() );
+#endif
+
+    m_reporter->Report( "Setting up ports and regions...", RPT_SEVERITY_INFO );
+    SetRegions( aDescriptor, &mesher );
+    m_reporter->Report( "SPARSELIZARD: Loading mesh...", RPT_SEVERITY_ACTION );
+
+
+#ifdef USE_GMSH
+    switch( aDescriptor->m_dim )
+    {
+    case FEM_SIMULATION_DIMENSION::SIMUL2D5: mesher.Load25DMesh(); break;
+    case FEM_SIMULATION_DIMENSION::SIMUL3D: mesher.Load3DMesh(); break;
+    default:
+        m_reporter->Report( "Simulation dimension is not supported", RPT_SEVERITY_ERROR );
+        return false;
+    }
+
+    mesh mymesh( "gmsh:api", SPARSELIZARD_VERBOSITY );
+    mesher.Finalize();
+#else
+    std::vector<shape>  shapes;
+    mesher.Get2DShapes( shapes, PCB_LAYER_ID::F_Cu, true );
+    mesh mymesh;
+    mymesh.split( 2 );
+    mymesh.load( shapes );
+#endif
+
+    m_reporter->Report( "SPARSELIZARD: mesh loaded.", RPT_SEVERITY_INFO );
+
+    mymesh.write( "mymesh.msh", SPARSELIZARD_VERBOSITY );
+
+    SetBoundaries();
+
+    // Create the electric potential field v
+    m_v = field( "h1" );
+    formulation eq;
+    m_equations = &eq;
+
+    // parameters
+    parameter rho;     // resistivity
+    parameter epsilon; // permittivity
+    m_rho = &rho;
+    m_epsilon = &epsilon;
+    m_reporter->Report( "Setting up simulation parameters...", RPT_SEVERITY_ACTION );
+
+    if( !setParameters( aDescriptor ) )
+        return false;
+
+    m_reporter->Report( "Setting up simulation ports...", RPT_SEVERITY_ACTION );
+    setConstraints( aDescriptor );
+
+    m_reporter->Report( "Setting up simulation equations...", RPT_SEVERITY_ACTION );
+    setEquations( aDescriptor );
+
+    m_reporter->Report( "SPARSELIZARD: Simulating...", RPT_SEVERITY_ACTION );
+    simulate();
 
     m_reporter->Report( "SPARSELIZARD: End of simulation.", RPT_SEVERITY_INFO );
     ( -sl::grad( m_v ) )

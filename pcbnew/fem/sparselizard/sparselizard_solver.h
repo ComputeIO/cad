@@ -29,6 +29,7 @@
 #include "../common/fem_descriptor.h"
 #include "../common/fem_constants.h"
 #include <sparselizard/sparselizard.h>
+#include "../gmsh_mesher.h"
 #include <reporter.h>
 
 class SPARSELIZARD_DIELECTRIC
@@ -58,6 +59,10 @@ public:
     SPARSELIZARD_SOLVER( REPORTER* aReporter );
 
     bool Run_DC( FEM_DESCRIPTOR* aDescriptor );
+
+    void SetRegions( FEM_DESCRIPTOR* aDescriptor, GMSH_MESHER* aMesher );
+    void SetBoundaries();
+    void simulate();
 
     double computeCurrentDC( SPARSELIZARD_CONDUCTOR aConA );
     double computeVoltageDC( SPARSELIZARD_CONDUCTOR aConA, SPARSELIZARD_CONDUCTOR aConB );
