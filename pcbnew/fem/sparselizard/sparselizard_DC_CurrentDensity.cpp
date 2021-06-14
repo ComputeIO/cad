@@ -572,13 +572,36 @@ void SPARSELIZARD_SOLVER::SetRegions( FEM_DESCRIPTOR* aDescriptor, GMSH_MESHER* 
 
     if( aDescriptor->m_requiresDielectric )
     {
+        // TODO : we are already going through this loop in aMesher->AddDielectricRegions().
+        // Maybe we could optimize a little
+
+        std::vector<double> epsilonr;
+
+        for( const BOARD_STACKUP_ITEM* item :
+             aDescriptor->GetBoard()->GetDesignSettings().GetStackupDescriptor().GetList() )
+        {
+            switch( item->GetType() )
+            {
+            case BS_ITEM_TYPE_DIELECTRIC:
+                for( int i = 0; i < item->GetSublayersCount(); i++ )
+                {
+                    epsilonr.emplace_back( item->GetEpsilonR( i ) );
+                }
+                break;
+            default: break;
+            }
+        }
+
+        int i = 0;
+
         for( int region : aMesher->AddDielectricRegions() )
         {
             SPARSELIZARD_DIELECTRIC* dielectric = new SPARSELIZARD_DIELECTRIC();
-            dielectric->epsilonr = 1;
+            dielectric->epsilonr = epsilonr.at( i );
             dielectric->regionID = region;
             m_dielectrics.push_back( dielectric );
             m_dielectricRegions.push_back( dielectric->regionID );
+            i++;
         }
     }
 
