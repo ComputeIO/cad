@@ -46,7 +46,6 @@ class SYMBOL_PREVIEW_WIDGET;
 class FOOTPRINT_PREVIEW_WIDGET;
 class FOOTPRINT_SELECT_WIDGET;
 class LIB_ALIAS;
-class LIB_PART;
 class SCH_BASE_FRAME;
 class SCH_DRAW_PANEL;
 
@@ -114,7 +113,7 @@ public:
     /**
      * To be called after this dialog returns from ShowModal().
      *
-     * For multi-unit symbols, if the user selects the component itself rather than picking
+     * For multi-unit symbols, if the user selects the symbol itself rather than picking
      * an individual unit, 0 will be returned in aUnit.
      * Beware that this is an invalid unit number - this should be replaced with whatever
      * default is desired (usually 1).

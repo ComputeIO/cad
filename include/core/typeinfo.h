@@ -174,7 +174,7 @@ enum KICAD_T
      * If you add a new draw item, type, please make sure you add it so the
      * sort order is logical.
      */
-    LIB_PART_T,
+    LIB_SYMBOL_T,
     LIB_ALIAS_T,
     LIB_ARC_T,
     LIB_CIRCLE_T,
@@ -371,7 +371,7 @@ inline std::ostream& operator<<( std::ostream& os, KICAD_T aType )
      * If you add a new draw item, type, please make sure you add it so the
      * sort order is logical.
      */
-    case KICAD_T::LIB_PART_T: os << "LIB_PART_T"; break;
+    case KICAD_T::LIB_SYMBOL_T: os << "LIB_SYMBOL_T"; break;
     case KICAD_T::LIB_ALIAS_T: os << "LIB_ALIAS_T"; break;
     case KICAD_T::LIB_ARC_T: os << "LIB_ARC_T"; break;
     case KICAD_T::LIB_CIRCLE_T: os << "LIB_CIRCLE_T"; break;

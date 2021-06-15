@@ -116,7 +116,7 @@ private:
         for( int ii = 0; ii < symbol->GetPartRef()->GetUnitCount(); ii++ )
         {
             wxString num_unit;
-            num_unit.Printf( _( "Unit %s" ), LIB_PART::SubReference( ii + 1, false ) );
+            num_unit.Printf( _( "Unit %s" ), LIB_SYMBOL::SubReference( ii + 1, false ) );
 
             wxMenuItem * item = Append( ID_POPUP_SCH_SELECT_UNIT1 + ii, num_unit, wxEmptyString,
                                         wxITEM_CHECK );
@@ -1171,7 +1171,7 @@ int SCH_EDIT_TOOL::AutoplaceFields( const TOOL_EVENT& aEvent )
 int SCH_EDIT_TOOL::ChangeSymbols( const TOOL_EVENT& aEvent )
 {
     SCH_SYMBOL* selectedSymbol = nullptr;
-    EE_SELECTION& selection = m_selectionTool->RequestSelection( EE_COLLECTOR::ComponentsOnly );
+    EE_SELECTION& selection = m_selectionTool->RequestSelection( EE_COLLECTOR::SymbolsOnly );
 
     if( !selection.Empty() )
         selectedSymbol = dynamic_cast<SCH_SYMBOL*>( selection.Front() );
@@ -1194,7 +1194,7 @@ int SCH_EDIT_TOOL::ChangeSymbols( const TOOL_EVENT& aEvent )
 
 int SCH_EDIT_TOOL::ConvertDeMorgan( const TOOL_EVENT& aEvent )
 {
-    EE_SELECTION& selection = m_selectionTool->RequestSelection( EE_COLLECTOR::ComponentsOnly );
+    EE_SELECTION& selection = m_selectionTool->RequestSelection( EE_COLLECTOR::SymbolsOnly );
 
     if( selection.Empty() )
         return 0;

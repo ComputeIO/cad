@@ -58,8 +58,8 @@ set( EESCHEMA_DLGS
     dialogs/dialog_choose_symbol.cpp
     dialogs/dialog_lib_symbol_properties.cpp
     dialogs/dialog_lib_symbol_properties_base.cpp
-    dialogs/dialog_edit_components_libid.cpp
-    dialogs/dialog_edit_components_libid_base.cpp
+    dialogs/dialog_edit_symbols_libid.cpp
+    dialogs/dialog_edit_symbols_libid_base.cpp
     dialogs/dialog_edit_line_style.cpp
     dialogs/dialog_edit_line_style_base.cpp
     dialogs/dialog_edit_one_field.cpp
@@ -77,8 +77,8 @@ set( EESCHEMA_DLGS
     dialogs/dialog_lib_edit_pin_table_base.cpp
     dialogs/dialog_lib_edit_text.cpp
     dialogs/dialog_lib_edit_text_base.cpp
-    dialogs/dialog_lib_new_component.cpp
-    dialogs/dialog_lib_new_component_base.cpp
+    dialogs/dialog_lib_new_symbol.cpp
+    dialogs/dialog_lib_new_symbol_base.cpp
     dialogs/dialog_migrate_buses.cpp
     dialogs/dialog_migrate_buses_base.cpp
     dialogs/dialog_netlist.cpp

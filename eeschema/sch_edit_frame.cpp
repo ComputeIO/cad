@@ -1606,7 +1606,7 @@ void SCH_EDIT_FRAME::onSize( wxSizeEvent& aEvent )
 }
 
 
-void SCH_EDIT_FRAME::SaveSymbolToSchematic( const LIB_PART& aSymbol )
+void SCH_EDIT_FRAME::SaveSymbolToSchematic( const LIB_SYMBOL& aSymbol )
 {
     wxString msg;
     bool appendToUndo = false;
@@ -1617,7 +1617,7 @@ void SCH_EDIT_FRAME::SaveSymbolToSchematic( const LIB_PART& aSymbol )
 
     wxCHECK( selectionTool, /* void */ );
 
-    EE_SELECTION& selection = selectionTool->RequestSelection( EE_COLLECTOR::ComponentsOnly );
+    EE_SELECTION& selection = selectionTool->RequestSelection( EE_COLLECTOR::SymbolsOnly );
 
     if( selection.Empty() )
         return;
@@ -1634,8 +1634,8 @@ void SCH_EDIT_FRAME::SaveSymbolToSchematic( const LIB_PART& aSymbol )
 
         wxCHECK( symbol, /* void */ );
 
-        // This needs to be done before the LIB_PART is changed to prevent stale library symbols in
-        // the schematic file.
+        // This needs to be done before the LIB_SYMBOL is changed to prevent stale library
+        // symbols in the schematic file.
         currentScreen->Remove( symbol );
 
         if( !symbol->IsNew() )

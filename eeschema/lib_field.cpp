@@ -40,7 +40,7 @@
 #include <settings/color_settings.h>
 
 
-LIB_FIELD::LIB_FIELD(LIB_PART * aParent, int idfield ) :
+LIB_FIELD::LIB_FIELD( LIB_SYMBOL* aParent, int idfield ) :
     LIB_ITEM( LIB_FIELD_T, aParent )
 {
     Init( idfield );
@@ -137,7 +137,7 @@ bool LIB_FIELD::HitTest( const wxPoint& aPosition, int aAccuracy ) const
     // Reference designator text has one or 2 additional character (displays U? or U?A)
     if( m_id == REFERENCE_FIELD )
     {
-        const LIB_PART*  parent = dynamic_cast<const LIB_PART*>( m_parent );
+        const LIB_SYMBOL* parent = dynamic_cast<const LIB_SYMBOL*>( m_parent );
 
         wxString extended_text = tmp_text.GetText();
         extended_text.Append('?');
@@ -268,10 +268,10 @@ void LIB_FIELD::Plot( PLOTTER* aPlotter, const wxPoint& aOffset, bool aFill,
     if( GetText().IsEmpty() )
         return;
 
-    // Calculate the text orientation, according to the component orientation/mirror
+    // Calculate the text orientation, according to the symbol orientation/mirror.
     int orient = (int) GetTextAngle();
 
-    if( aTransform.y1 )  // Rotate component 90 deg.
+    if( aTransform.y1 )  // Rotate symbol 90 deg.
     {
         if( orient == TEXT_ANGLE_HORIZ )
             orient = TEXT_ANGLE_VERT;
@@ -315,7 +315,7 @@ wxString LIB_FIELD::GetFullText( int unit ) const
     wxCHECK( GetParent(), text );
 
     if( GetParent()->IsMulti() )
-        text << LIB_PART::SubReference( unit );
+        text << LIB_SYMBOL::SubReference( unit );
 
     return text;
 }
