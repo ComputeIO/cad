@@ -291,17 +291,6 @@ bool simulTrackResistance( double rho, double L, double h, double w, double max_
         descriptor->AddPort( port5 );
     }
 
-    TRACK* track = new TRACK( board );
-    track->SetWidth( From_User_Unit( EDA_UNITS::MILLIMETRES, w * 1000 ) );
-    track->SetStart( wxPoint( From_User_Unit( EDA_UNITS::MILLIMETRES, -L * 3 / 2 * 1000 ),
-                              From_User_Unit( EDA_UNITS::MILLIMETRES, w * 2 * 1000 ) ) );
-    track->SetEnd( wxPoint( From_User_Unit( EDA_UNITS::MILLIMETRES, -L * 3 / 2 * 1000 ),
-                            From_User_Unit( EDA_UNITS::MILLIMETRES, w * 3 * 1000 ) ) );
-    track->SetNetCode( 1, true );
-
-    board->Add( fp );
-    board->Add( track ); // Should be removed
-
     descriptor->m_reporter = new NULL_REPORTER(); // Don't report
 
     FEM_PORT*            port1 = new FEM_PORT( pad1 );
@@ -444,16 +433,6 @@ bool simulPlaneCapacitance( double x, double y, double epsilonr, double d, doubl
     rect->SetWidth( From_User_Unit( EDA_UNITS::MILLIMETRES, 0.05 ) );
     rect->SetLayer( PCB_LAYER_ID::Edge_Cuts );
     board->Add( rect );
-
-    TRACK* track = new TRACK( board );
-    track->SetWidth( From_User_Unit( EDA_UNITS::MILLIMETRES, x ) );
-    track->SetStart( wxPoint( From_User_Unit( EDA_UNITS::MILLIMETRES, -x * 3 / 2 * 1000 ),
-                              From_User_Unit( EDA_UNITS::MILLIMETRES, y * 2 * 1000 ) ) );
-    track->SetEnd( wxPoint( From_User_Unit( EDA_UNITS::MILLIMETRES, -x * 3 / 2 * 1000 ),
-                            From_User_Unit( EDA_UNITS::MILLIMETRES, y * 3 * 1000 ) ) );
-    track->SetNetCode( 1, true );
-
-    board->Add( track ); // Should be removed
 
     FEM_PORT*            port1 = new FEM_PORT( pad1 );
     FEM_PORT_CONSTRAINT* constraint1 = new FEM_PORT_CONSTRAINT();

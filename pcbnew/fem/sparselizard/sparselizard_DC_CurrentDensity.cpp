@@ -720,6 +720,22 @@ bool SPARSELIZARD_SOLVER::Run_DC( FEM_DESCRIPTOR* aDescriptor )
 
     m_reporter->Report( "SPARSELIZARD: mesh loaded.", RPT_SEVERITY_INFO );
 
+    // Remove empty regions ( Can happen when adding nets )
+    for( SPARSELIZARD_CONDUCTOR* cond : m_conductors )
+    {
+        if( !sl::isdefined( cond->regionID ) )
+        {
+            m_reporter->Report( "SPARSELIZARD: Removing empty region "
+                                        + to_string( cond->regionID ),
+                                RPT_SEVERITY_ACTION );
+            std::remove( m_conductors.begin(), m_conductors.end(), cond );
+            m_conductors.pop_back();
+            std::remove( m_conductorRegions.begin(), m_conductorRegions.end(), cond->regionID );
+            m_conductorRegions.pop_back();
+        }
+    }
+
+
     mymesh.write( "mymesh.msh", SPARSELIZARD_VERBOSITY );
 
     SetBoundaries();
