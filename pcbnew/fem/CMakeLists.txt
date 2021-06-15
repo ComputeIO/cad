@@ -6,7 +6,7 @@ set( PCBNEW_FEM_SRCS
     common/fem_constants.cpp
     common/fem_port.cpp
     common/fem_result.cpp
-    sparselizard/sparselizard_DC_CurrentDensity.cpp
+    sparselizard/sparselizard_solver.cpp
     sparselizard/sparselizard_mesher.cpp
     gmsh_mesher.cpp
     )
