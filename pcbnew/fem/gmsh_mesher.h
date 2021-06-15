@@ -69,6 +69,13 @@ struct GMSH_MESHER_REGIONS
     std::set<int> m_air;
 };
 
+struct GMSH_MESHER_LAYER
+{
+    int    regionID;
+    double permittivity;
+    double resistivity;
+    double lossTangent;
+};
 
 struct GMSH_MESHER_STACKUP
 {
@@ -98,7 +105,7 @@ public:
         return m_pad_regions.emplace( m_next_region_id++, aPad ).first->first;
     }
 
-    std::vector<int> AddDielectricRegions();
+    std::vector<GMSH_MESHER_LAYER> AddDielectricRegions();
 
     int AddAirRegion()
     {

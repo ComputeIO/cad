@@ -444,23 +444,23 @@ void SPARSELIZARD_SOLVER::writeResults( FEM_DESCRIPTOR* aDescriptor )
                                     RPT_SEVERITY_ERROR );
                 break;
             case FEM_VIEW_TYPE::CURRENT:
-                m_j.write( m_conductorRegions, std::string( resultView->m_filename.GetFullName() ),
-                           MAX_ORDER );
+                m_j.write( sl::selectunion( m_conductorRegions ),
+                           std::string( resultView->m_filename.GetFullName() ), MAX_ORDER );
                 resultView->m_valid = true;
                 break;
             case FEM_VIEW_TYPE::VOLTAGE:
-                m_v.write( m_conductorRegions, std::string( resultView->m_filename.GetFullName() ),
-                           MAX_ORDER );
+                m_v.write( sl::selectunion( m_conductorRegions ),
+                           std::string( resultView->m_filename.GetFullName() ), MAX_ORDER );
                 resultView->m_valid = true;
                 break;
             case FEM_VIEW_TYPE::POWER:
-                m_p.write( m_conductorRegions, std::string( resultView->m_filename.GetFullName() ),
-                           MAX_ORDER );
+                m_p.write( sl::selectunion( m_conductorRegions ),
+                           std::string( resultView->m_filename.GetFullName() ), MAX_ORDER );
                 resultView->m_valid = true;
                 break;
             case FEM_VIEW_TYPE::ELECTRIC_FIELD:
-                m_v.write( m_dielectricRegions, std::string( resultView->m_filename.GetFullName() ),
-                           MAX_ORDER );
+                m_v.write( sl::selectunion( m_dielectricRegions ),
+                           std::string( resultView->m_filename.GetFullName() ), MAX_ORDER );
                 resultView->m_valid = true;
                 break;
             default:
@@ -575,36 +575,14 @@ void SPARSELIZARD_SOLVER::SetRegions( FEM_DESCRIPTOR* aDescriptor, GMSH_MESHER* 
 
     if( aDescriptor->m_requiresDielectric )
     {
-        // TODO : we are already going through this loop in aMesher->AddDielectricRegions().
-        // Maybe we could optimize a little
-
-        std::vector<double> epsilonr;
-
-        for( const BOARD_STACKUP_ITEM* item :
-             aDescriptor->GetBoard()->GetDesignSettings().GetStackupDescriptor().GetList() )
-        {
-            switch( item->GetType() )
-            {
-            case BS_ITEM_TYPE_DIELECTRIC:
-                for( int i = 0; i < item->GetSublayersCount(); i++ )
-                {
-                    epsilonr.emplace_back( item->GetEpsilonR( i ) );
-                }
-                break;
-            default: break;
-            }
-        }
-
-        int i = 0;
-
-        for( int region : aMesher->AddDielectricRegions() )
+        for( GMSH_MESHER_LAYER region : aMesher->AddDielectricRegions() )
         {
             SPARSELIZARD_DIELECTRIC* dielectric = new SPARSELIZARD_DIELECTRIC();
-            dielectric->epsilonr = epsilonr.at( i );
-            dielectric->regionID = region;
+            dielectric->epsilonr = region.permittivity;
+            dielectric->regionID = region.regionID;
+            dielectric->lossTangent = region.lossTangent;
             m_dielectrics.push_back( dielectric );
             m_dielectricRegions.push_back( dielectric->regionID );
-            i++;
         }
     }
 

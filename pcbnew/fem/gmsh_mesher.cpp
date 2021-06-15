@@ -37,12 +37,10 @@ double TransformPoint( double aCoordinate )
 }
 
 
-std::vector<int> GMSH_MESHER::AddDielectricRegions()
+std::vector<GMSH_MESHER_LAYER> GMSH_MESHER::AddDielectricRegions()
 {
-    if( !m_dielectric_regions.empty() )
-    {
-        return m_dielectric_regions;
-    }
+    std::vector<GMSH_MESHER_LAYER> layerList;
+    m_dielectric_regions.empty();
 
     m_board->GetDesignSettings().GetStackupDescriptor().SynchronizeWithBoard(
             &m_board->GetDesignSettings() );
@@ -54,6 +52,12 @@ std::vector<int> GMSH_MESHER::AddDielectricRegions()
         case BS_ITEM_TYPE_DIELECTRIC:
             for( int i = 0; i < item->GetSublayersCount(); i++ )
             {
+                GMSH_MESHER_LAYER layer;
+                layer.regionID = m_next_region_id;
+                layer.permittivity = item->GetEpsilonR( i );
+                layer.lossTangent = item->GetLossTangent( i );
+                layerList.emplace_back( layer );
+
                 m_dielectric_regions.emplace_back( m_next_region_id++ );
             }
             break;
@@ -61,7 +65,7 @@ std::vector<int> GMSH_MESHER::AddDielectricRegions()
         }
     }
 
-    return m_dielectric_regions;
+    return layerList;
 }
 
 
