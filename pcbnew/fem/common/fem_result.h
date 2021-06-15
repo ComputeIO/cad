@@ -90,10 +90,13 @@ private:
 
 enum class FEM_VIEW_TYPE
 {
+    // Show in copper only
     TEMPERATURE,
     CURRENT,
     VOLTAGE,
     POWER,
+    // Show in dielectric only
+    ELECTRIC_FIELD,
     NB_TYPE,
 };
 

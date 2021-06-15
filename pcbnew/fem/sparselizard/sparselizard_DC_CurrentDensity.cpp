@@ -256,8 +256,6 @@ void SPARSELIZARD_SOLVER::setEquations( FEM_DESCRIPTOR* aDescriptor )
 void SPARSELIZARD_SOLVER::writeResults( FEM_DESCRIPTOR* aDescriptor )
 {
     int  wholedomain = sl::selectall();
-    //static int k = 0;
-    //m_j.write( wholedomain, to_string(k++) +".pos", MAX_ORDER );
     sl::fieldorder( m_v ).write( wholedomain, "fieldOrder.pos" );        //TODO: remove
 
     for( FEM_RESULT* result : aDescriptor->GetResults() )
@@ -446,17 +444,22 @@ void SPARSELIZARD_SOLVER::writeResults( FEM_DESCRIPTOR* aDescriptor )
                                     RPT_SEVERITY_ERROR );
                 break;
             case FEM_VIEW_TYPE::CURRENT:
-                m_j.write( wholedomain, std::string( resultView->m_filename.GetFullName() ),
+                m_j.write( m_conductorRegions, std::string( resultView->m_filename.GetFullName() ),
                            MAX_ORDER );
                 resultView->m_valid = true;
                 break;
             case FEM_VIEW_TYPE::VOLTAGE:
-                m_v.write( wholedomain, std::string( resultView->m_filename.GetFullName() ),
+                m_v.write( m_conductorRegions, std::string( resultView->m_filename.GetFullName() ),
                            MAX_ORDER );
                 resultView->m_valid = true;
                 break;
             case FEM_VIEW_TYPE::POWER:
-                m_p.write( wholedomain, std::string( resultView->m_filename.GetFullName() ),
+                m_p.write( m_conductorRegions, std::string( resultView->m_filename.GetFullName() ),
+                           MAX_ORDER );
+                resultView->m_valid = true;
+                break;
+            case FEM_VIEW_TYPE::ELECTRIC_FIELD:
+                m_v.write( m_dielectricRegions, std::string( resultView->m_filename.GetFullName() ),
                            MAX_ORDER );
                 resultView->m_valid = true;
                 break;
