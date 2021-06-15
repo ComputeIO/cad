@@ -251,6 +251,9 @@ bool simulTrackResistance( double rho, double L, double h, double w, double max_
     pad3->SetDrillSizeX( 0 );
     pad3->SetDrillSizeY( 0 );
 
+    fp->Add( pad1 );
+    fp->Add( pad2 );
+    fp->Add( pad3 );
 
     PAD* pad4;
     PAD* pad5;
@@ -289,7 +292,13 @@ bool simulTrackResistance( double rho, double L, double h, double w, double max_
         FEM_PORT* port5 = new FEM_PORT( pad5 );
         port5->m_type = FEM_PORT_TYPE::PASSIVE;
         descriptor->AddPort( port5 );
+
+
+        fp->Add( pad4 );
+        fp->Add( pad5 );
     }
+
+    board->Add( fp );
 
     descriptor->m_reporter = new NULL_REPORTER(); // Don't report
 
@@ -310,11 +319,6 @@ bool simulTrackResistance( double rho, double L, double h, double w, double max_
     port2->m_type = FEM_PORT_TYPE::SOURCE;
     port2->m_constraint = *constraint2;
     descriptor->AddPort( port2 );
-
-
-    FEM_PORT* port3 = new FEM_PORT( pad3 );
-    port3->m_type = FEM_PORT_TYPE::PASSIVE;
-    descriptor->AddPort( port3 );
 
     FEM_RESULT_VALUE* r_resistance =
             new FEM_RESULT_VALUE( FEM_VALUE_TYPE::RESISTANCE, port1, port2 );

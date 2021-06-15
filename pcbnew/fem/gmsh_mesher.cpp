@@ -483,6 +483,34 @@ void GMSH_MESHER::GenerateNet3D( int aRegionId, int aNetcode,
         }
     }
 
+
+    // When adding a net, add all pads in the net
+    // A missing pad, even if passive, could cut a whole net zone.
+    for( const auto& pad : m_board->GetPads() )
+    {
+        for( const auto& net_region : m_net_regions )
+        {
+            if( pad->GetNetCode() == net_region.second )
+            {
+                // We might have already added this pad
+                bool alreadyAdded = false;
+                for( const auto& pad_region : m_pad_regions )
+                {
+                    if( pad_region.second->m_Uuid == pad->m_Uuid )
+                    {
+                        alreadyAdded = true;
+                        break;
+                    }
+                }
+
+                if( !alreadyAdded )
+                {
+                    GeneratePad3D( aRegionId, pad, aStackup, aMaxError, aFragments, aRegions );
+                }
+            }
+        }
+    }
+
     // Via holes
     for( const TRACK* track : m_board->Tracks() )
     {
