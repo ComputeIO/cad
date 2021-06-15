@@ -674,6 +674,7 @@ void SPARSELIZARD_SOLVER::simulate()
 
 bool SPARSELIZARD_SOLVER::Run_DC( FEM_DESCRIPTOR* aDescriptor )
 {
+    m_reporter->Report( "Sparselizard version: " + sl::getversionname(), RPT_SEVERITY_INFO );
     if( !m_constants.SetUnitScaling( EDA_UNITS::MILLIMETRES ) )
     {
         m_reporter->Report( "Cannot get constants in this unit system", RPT_SEVERITY_ERROR );
