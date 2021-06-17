@@ -65,6 +65,22 @@ enum class FEM_VALUE_TYPE
     REQUIRES_2_PORTS = VOLTAGE
 };
 
+typedef struct FEM_LINE_PARAMETERS
+{
+    double R; // Resistance per unit length
+    double L; // Inductance per unit length
+    double C; // Capacitance per unit length
+    double G; // Conductance per unit length
+
+    double Q; // Quality factor
+
+    double alpha; // attenuation constant
+    double beta;  // phase constant
+    // If we wanted the propagation constant : gamme = alpha + j * beta
+
+    double omega; // angular frequency for which the parameters are valid.
+} FEM_LINE_PARAMETERS;
+
 
 class FEM_RESULT_VALUE : public FEM_RESULT
 {
@@ -97,6 +113,7 @@ enum class FEM_VIEW_TYPE
     POWER,
     // Show in dielectric only
     ELECTRIC_FIELD,
+    MAGNETIC_FIELD,
     NB_TYPE,
 };
 

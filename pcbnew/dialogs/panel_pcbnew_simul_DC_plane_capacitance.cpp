@@ -50,6 +50,7 @@ void PANEL_PCBNEW_SIMUL_DC_PLANE_CAPACITANCE::OnRun( wxCommandEvent& event )
     FEM_DESCRIPTOR* descriptor = new FEM_DESCRIPTOR( FEM_SOLVER::SPARSELIZARD, m_board );
     descriptor->m_reporter = new STDOUT_REPORTER();
     descriptor->m_dim = FEM_SIMULATION_DIMENSION::SIMUL3D;
+    descriptor->m_simulationType = FEM_SIMULATION_TYPE::DC;
     descriptor->m_requiresDielectric = true;
     descriptor->m_simulateDielectric = true;
     descriptor->m_simulateConductor = false;

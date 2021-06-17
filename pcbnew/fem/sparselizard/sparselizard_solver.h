@@ -24,7 +24,7 @@
 #ifndef KICAD_SPARSELIZARD_SOLVER_H
 #define KICAD_SPARSELIZARD_SOLVER_H
 
-#define SPARSELIZARD_VERBOSITY 0
+#define SPARSELIZARD_VERBOSITY 1
 
 #include "../common/fem_descriptor.h"
 #include "../common/fem_constants.h"
@@ -86,18 +86,28 @@ public:
     void setConstraints( FEM_DESCRIPTOR* aDescriptor );
     bool setParameters( FEM_DESCRIPTOR* aDescriptor );
     void writeResults( FEM_DESCRIPTOR* aDescriptor );
+
+    int m_boundary;
     // Holds all equations
     formulation *m_equations; // For some reasons, this lead to a segfault on constructor if not using a pointer
 
     // Electric potential field
     field m_v;
+    // Magnetic vector potential field
+    field m_A;
+    // Magnetic field
     // Expressions, derived from the electric potential field
     expression m_E; // Electriec field
     expression m_j; // current density
     expression m_p; // power density
+    // Expressions, derived from the magnetic field
+    expression m_B; // Magnetic flux density
+    expression m_H; // Magnetic field
+
     // Parameters
     parameter* m_rho;     // resistivity
     parameter* m_epsilon; // permittivity
+    parameter* m_mu;      // permeability
 
     REPORTER* m_reporter;
 

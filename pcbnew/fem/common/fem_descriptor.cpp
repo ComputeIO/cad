@@ -28,8 +28,9 @@ FEM_DESCRIPTOR::FEM_DESCRIPTOR( FEM_SOLVER aSolver, const BOARD* aBoard )
 {
     m_board = aBoard;
     SetSolver( aSolver );
-    m_requiresDielectric = false;
-    m_simulateDielectric = false;
+    m_requiresAir = true;
+    m_requiresDielectric = true;
+    m_simulateDielectric = true;
     m_simulateConductor = true;
 }
 

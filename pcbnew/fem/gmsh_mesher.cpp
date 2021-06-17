@@ -295,7 +295,10 @@ void GMSH_MESHER::Load3DMesh()
         // TODO: define size externally?
         if( boundingBox.IsValid() )
         {
-            wxSize boundingBoxSize = boundingBox.GetSize() * 4;
+            wxSize boundingBoxSize =
+                    boundingBox.GetSize()
+                    + wxSize( 1.6 * 40 * IU_PER_MM,
+                              1.6 * 40 * IU_PER_MM ); // 20 times the board thickness on each side
             int    boundingBoxHeight = std::min( boundingBoxSize.x, boundingBoxSize.y );
             GenerateAir3D( boundingBox.Centre(), boundingBoxSize, boundingBoxHeight, fragments,
                            regions );
@@ -335,14 +338,18 @@ void GMSH_MESHER::Load3DMesh()
 
     for( const auto& kv : regionToShapeId )
     {
+        for( auto kvv : kv.second )
+        {
+            std::cout << "Region added: " << kvv << " dim: " << kv.first << std::endl;
+        }
         gmsh::model::addPhysicalGroup( 3, kv.second, kv.first );
     }
 
     // generated 3d-mesh
     std::cerr << "generate mesh" << std::endl;
     gmsh::model::mesh::generate( 3 );
-    //std::cerr << "refine mesh" << std::endl;
-    //gmsh::model::mesh::refine();
+    std::cerr << "refine mesh" << std::endl;
+    gmsh::model::mesh::refine();
     //std::cerr << "set order mesh" << std::endl;
     //gmsh::model::mesh::setOrder(2);
     std::cerr << "finish mesh" << std::endl;
@@ -622,6 +629,150 @@ void GMSH_MESHER::GenerateAir3D( const wxPoint aCenter, const wxSize aSize, cons
             gmsh::model::occ::addBox( x_mm, y_mm, -height_mm / 2, width_mm, length_mm, height_mm );
     aFragments.emplace_back( 3, idx );
     aRegions.m_air.emplace( idx );
+    std::cout << "Air tag is : " << idx << std::endl;
+
+    if( m_boundary_region != -1 )
+    {
+        //Create a new box, just to be sure we don't intefere with the first one that will be modified later.
+        //idx = gmsh::model::occ::addBox( x_mm -1 , y_mm -1 , -height_mm / 2 -1 , width_mm+ 2, length_mm +2, height_mm+2   );
+
+        int p000, p001, p010, p011, p100, p101, p110, p111;
+
+
+        p000 = gmsh::model::occ::addPoint( x_mm, y_mm, -height_mm / 2 );
+        p001 = gmsh::model::occ::addPoint( x_mm, y_mm, height_mm / 2 );
+        p010 = gmsh::model::occ::addPoint( x_mm, y_mm + length_mm, -height_mm / 2 );
+        p011 = gmsh::model::occ::addPoint( x_mm, y_mm + length_mm, height_mm / 2 );
+        p100 = gmsh::model::occ::addPoint( x_mm + width_mm, y_mm, -height_mm / 2 );
+        p101 = gmsh::model::occ::addPoint( x_mm + width_mm, y_mm, height_mm / 2 );
+        p110 = gmsh::model::occ::addPoint( x_mm + width_mm, y_mm + length_mm, -height_mm / 2 );
+        p111 = gmsh::model::occ::addPoint( x_mm + width_mm, y_mm + length_mm, height_mm / 2 );
+
+        int l0, l1, l2, l3;
+
+        l0 = gmsh::model::occ::addLine( p000, p001 );
+        l1 = gmsh::model::occ::addLine( p001, p011 );
+        l2 = gmsh::model::occ::addLine( p011, p010 );
+        l3 = gmsh::model::occ::addLine( p010, p000 );
+        int l4, l5, l6, l7;
+
+        l4 = gmsh::model::occ::addLine( p100, p101 );
+        l5 = gmsh::model::occ::addLine( p101, p111 );
+        l6 = gmsh::model::occ::addLine( p111, p110 );
+        l7 = gmsh::model::occ::addLine( p110, p100 );
+
+        int l8, l9, l10, l11;
+
+        l8 = l0; //gmsh::model::occ::addLine( p000, p001 ); //l0
+        l9 = gmsh::model::occ::addLine( p001, p101 );
+        l10 = -l4; //gmsh::model::occ::addLine( p101, p100 ); // -l4
+        l11 = gmsh::model::occ::addLine( p100, p000 );
+
+        int l12, l13, l14, l15;
+        l12 = -l2; //gmsh::model::occ::addLine( p010, p011 );
+        l13 = gmsh::model::occ::addLine( p011, p111 );
+        l14 = l6; //gmsh::model::occ::addLine( p111, p110 );
+        l15 = gmsh::model::occ::addLine( p110, p010 );
+
+        int l16, l17, l18, l19;
+        l16 = -l3;  //gmsh::model::occ::addLine( p000, p010 );
+        l17 = -l15; //gmsh::model::occ::addLine( p010, p110 );
+        l18 = l7;   //gmsh::model::occ::addLine( p110, p100 );
+        l19 = l11;  //gmsh::model::occ::addLine( p100, p000 );
+
+        int l20, l21, l22, l23;
+        l20 = l1;  //gmsh::model::occ::addLine( p001, p011 );
+        l21 = l13; //gmsh::model::occ::addLine( p011, p111 );
+        l22 = -l5; //gmsh::model::occ::addLine( p111, p101 );
+        l23 = -l9; //gmsh::model::occ::addLine( p101, p001 );
+
+        int cl1, cl2, cl3, cl4, cl5, cl6;
+
+        cl1 = gmsh::model::occ::addCurveLoop( { l0, l1, l2, l3 } );
+        cl2 = gmsh::model::occ::addCurveLoop( { l4, l5, l6, l7 } );
+        cl3 = gmsh::model::occ::addCurveLoop( { l8, l9, l10, l11 } );
+        cl4 = gmsh::model::occ::addCurveLoop( { l12, l13, l14, l15 } );
+        cl5 = gmsh::model::occ::addCurveLoop( { l16, l17, l18, l19 } );
+        cl6 = gmsh::model::occ::addCurveLoop( { l20, l21, l22, l23 } );
+
+        int s1, s2, s3, s4, s5, s6;
+
+        s1 = gmsh::model::occ::addPlaneSurface( { cl1 } );
+        s2 = gmsh::model::occ::addPlaneSurface( { cl2 } );
+        s3 = gmsh::model::occ::addPlaneSurface( { cl3 } );
+        s4 = gmsh::model::occ::addPlaneSurface( { cl4 } );
+        s5 = gmsh::model::occ::addPlaneSurface( { cl5 } );
+        s6 = gmsh::model::occ::addPlaneSurface( { cl6 } );
+
+
+        gmsh::model::occ::synchronize();
+        int sl1 = gmsh::model::occ::addSurfaceLoop( { s1, s3, s2, s4, s5, s6 } );
+        std::cout << "SURFACE LOOP ID : " << sl1 << std::endl;
+        std::vector<std::pair<int, int>> outDimTags;
+        std::vector<std::pair<int, int>> outDimTags2;
+        std::pair<int, int>              dimTag = { 2, 0 };
+
+        dimTag.second = s1;
+        outDimTags.push_back( dimTag );
+        dimTag.second = s2;
+        outDimTags.push_back( dimTag );
+        dimTag.second = s3;
+        outDimTags.push_back( dimTag );
+        dimTag.second = s4;
+        outDimTags.push_back( dimTag );
+        dimTag.second = s5;
+        outDimTags.push_back( dimTag );
+        dimTag.second = s6;
+        outDimTags.push_back( dimTag );
+        /*
+        dimTag.second = s1;
+        gmsh::model::occ::extrude( { dimTag }, width_mm, 0, 0,  outDimTags2 );
+        for ( auto dt : outDimTags2)
+        {
+            std::cout << "VOLUME ID : " << dt.second << std::endl;
+            aFragments.emplace_back( 3, dt.second );
+            aRegions.m_air.emplace( dt.second );
+        }
+        */
+
+
+        if( outDimTags.empty() )
+        {
+            std::cerr << "We could not find the boundary region !" << std::endl;
+        }
+        else
+        {
+            for( auto dt : outDimTags )
+            {
+                std::cout << "Boundary tag is : " << dt.second << std::endl;
+                aFragments.emplace_back( 2, dt.second );
+                aRegions.m_boundary.emplace( dt.second );
+            }
+        }
+        /*
+        std::pair<int, int> dimTag = { 3, idx };
+        std::vector< std::pair<int, int> > dimTags, outDimTags;
+        dimTags.push_back( dimTag );
+
+        gmsh::model::occ::synchronize();
+        gmsh::model::getBoundary( dimTags, outDimTags, true, false, false );
+        gmsh::model::occ::synchronize();
+
+        if ( outDimTags.empty() )
+        {
+            std::cerr  << "We could not find the boundary region !" << std::endl;
+        }
+        else
+        {
+            for ( auto dt : outDimTags)
+            {
+                std::cout  << "Boundary tag is : " << dt.second << std::endl;
+                aFragments.emplace_back( 2, dt.second );
+                aRegions.m_boundary.emplace( dt.second );
+            }
+        }
+        */
+    }
 }
 
 
@@ -740,6 +891,32 @@ GMSH_MESHER::RegionsToShapesAfterFragment( const std::vector<std::pair<int, int>
         }
     }
 
+    // Priority 7: Domain boundaries
+    if( m_boundary_region != -1 )
+    {
+        for( std::size_t i = 0; i < fragments.size(); i++ )
+        {
+            int origTag = fragments.at( i ).second;
+            if( regions.m_boundary.count( origTag ) )
+            {
+                std::cerr << "Yep, the boundary is found here" << std::endl;
+                for( const auto& ovTag : ovv.at( i ) )
+                {
+                    if( !assignedShapeId.count( ovTag.second ) )
+                    {
+                        regionToShapeId[m_boundary_region].emplace_back( ovTag.second );
+                        assignedShapeId.emplace( ovTag.second );
+                        std::cout << "The boundary ID is: " << m_boundary_region << std::endl;
+                    }
+                }
+            }
+        }
+        for( auto kvv : regionToShapeId[m_boundary_region] )
+        {
+            std::cout << "Region added: " << kvv << " dim: " << m_boundary_region << std::endl;
+        }
+        gmsh::model::addPhysicalGroup( 2, regionToShapeId[m_boundary_region], m_boundary_region );
+    }
     if( assignedShapeId.size() != ov.size() )
     {
         std::cerr << "!!!!!!!!!!!!!!!!!!!!! SOMETHING WAS NOT ASSIGNED !!!!!!!!!!!!!!" << std::endl;
@@ -749,7 +926,8 @@ GMSH_MESHER::RegionsToShapesAfterFragment( const std::vector<std::pair<int, int>
             int ovTag = ov[i].second;
             if( !assignedShapeId.count( ovTag ) )
             {
-                regionToShapeId[m_next_region_id].emplace_back( ov[i].second );
+                regionToShapeId[m_next_region_id].emplace_back( ovTag );
+                std::cerr << "Was not assigned: Region " << ovTag << std::endl;
             }
         }
     }

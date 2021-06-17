@@ -33,10 +33,9 @@
 
 enum class FEM_SIMULATION_TYPE
 {
-    DC_CURRENT_DENSITY,
-    DC_RESISTANCE,
-    DC_VOLTAGE_DROP,
-    DC_THERMAL
+    DC,
+    AC,
+    TRANSIENT
 };
 
 enum class FEM_SIMULATION_DIMENSION
@@ -71,10 +70,12 @@ public:
     const BOARD* GetBoard();
     REPORTER*    m_reporter;
 
+    bool                     m_requiresAir;
     bool                     m_requiresDielectric;
     bool                     m_simulateDielectric;
     bool                     m_simulateConductor;
     FEM_SIMULATION_DIMENSION m_dim;
+    FEM_SIMULATION_TYPE      m_simulationType;
 
 private:
     std::list<FEM_PORT*>   m_ports;

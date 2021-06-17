@@ -204,12 +204,15 @@ bool SPARSELIZARD_SOLVER::setParameters( FEM_DESCRIPTOR* aDescriptor )
     for( SPARSELIZARD_DIELECTRIC* dielectric : m_dielectrics )
     {
         m_v.setorder( dielectric->regionID, MIN_ORDER );
+        m_A.setorder( dielectric->regionID, MIN_ORDER );
         ( *m_epsilon ) | dielectric->regionID = dielectric->epsilonr * m_constants.epsilon0();
+        ( *m_mu ) | dielectric->regionID = 1;
     }
 
     for( SPARSELIZARD_CONDUCTOR* conductor : m_conductors )
     {
         m_v.setorder( conductor->regionID, MIN_ORDER );
+        m_A.setorder( conductor->regionID, MIN_ORDER );
         switch( aDescriptor->m_dim )
         {
         case FEM_SIMULATION_DIMENSION::SIMUL2D5:
@@ -222,41 +225,90 @@ bool SPARSELIZARD_SOLVER::setParameters( FEM_DESCRIPTOR* aDescriptor )
             m_reporter->Report( "Simulation dimension is not supported", RPT_SEVERITY_ERROR );
             return false;
         }
+        ( *m_mu ) | conductor->regionID = 1;
     }
     return true;
 }
 
 void SPARSELIZARD_SOLVER::setEquations( FEM_DESCRIPTOR* aDescriptor )
 {
-    if( aDescriptor->m_simulateConductor )
+    switch( aDescriptor->m_simulationType )
     {
-        for( SPARSELIZARD_CONDUCTOR* conductor : m_conductors )
+    case FEM_SIMULATION_TYPE::DC:
+        m_A.setgauge( sl::selectall() );
+        if( aDescriptor->m_simulateConductor )
         {
-            ( *m_equations ) +=
-                    sl::integral( conductor->regionID, sl::grad( sl::tf( m_v ) ) / ( *m_rho )
-                                                               * sl::grad( sl::dof( m_v ) ) );
+            std::cout << "Setting conductors..." << std::endl;
+            m_A.setconstraint( m_boundary );
+            for( SPARSELIZARD_CONDUCTOR* conductor : m_conductors )
+            {
+                // Divergence of current density ( E / rho ) = 0
+                ( *m_equations ) +=
+                        sl::integral( conductor->regionID, sl::grad( sl::tf( m_v ) ) / ( *m_rho )
+                                                                   * sl::grad( sl::dof( m_v ) ) );
+                // Ampere's law
+                /*
+                ( *m_equations ) += sl::integral(
+                        conductor->regionID,
+                        1 / ( *m_mu ) * sl::curl( sl::dof( m_A ) ) * sl::curl( sl::tf( m_A ) )
+                                + 1 / ( *m_rho ) * sl::grad( sl::dof( m_v ) ) * sl::tf( m_A ) );*/
+                ( *m_equations ) += sl::integral(
+                        conductor->regionID,
+                        1 / ( *m_mu ) * sl::curl( sl::dof( m_A ) ) * sl::curl( sl::tf( m_A ) )
+                                + 1 / ( *m_rho ) * sl::grad( sl::dof( m_v ) ) * sl::tf( m_A )
+                                + 1 / ( *m_rho ) * sl::dt( sl::dof( m_A ) ) * sl::tf( m_A ) );
+                // No magnetic flux can cross the domain
+            }
         }
-    }
+        std::cout << "Setting dielectrics..." << std::endl;
 
-    if( aDescriptor->m_simulateDielectric )
-    {
-        for( SPARSELIZARD_DIELECTRIC* dielectric : m_dielectrics )
+        if( aDescriptor->m_simulateDielectric )
         {
-            ( *m_equations ) +=
-                    sl::integral( dielectric->regionID, -( *m_epsilon ) * sl::grad( sl::dof( m_v ) )
-                                                                * sl::grad( sl::tf( m_v ) ) );
+            for( SPARSELIZARD_DIELECTRIC* dielectric : m_dielectrics )
+            {
+                // Gauss' Law
+                ( *m_equations ) += sl::integral( dielectric->regionID,
+                                                  -( *m_epsilon ) * sl::grad( sl::dof( m_v ) )
+                                                          * sl::grad( sl::tf( m_v ) ) );
+                // Ampere's law
+                ( *m_equations ) += sl::integral( dielectric->regionID,
+                                                  1 / ( *m_mu ) * sl::curl( sl::dof( m_A ) )
+                                                          * sl::curl( sl::tf( m_A ) ) );
+            }
         }
+        std::cout << "Equations OK" << std::endl;
+
+        // Expression for the electric field E [V/m] and current density j [A/m^2]:
+        m_E = -sl::grad( m_v );                 // electric field
+        m_j = m_E / ( *m_rho );                 // current density
+        m_p = sl::doubledotproduct( m_j, m_E ); // power density
+
+        break;
+    case FEM_SIMULATION_TYPE::AC:
+        if( aDescriptor->m_simulateConductor )
+        {
+            for( SPARSELIZARD_CONDUCTOR* conductor : m_conductors )
+            {
+                //( *m_equations ) += sl::integral(conductor->regionID, 1/( *m_mu )* sl::curl(sl::dof(m_A)) * sl::curl(sl::tf(m_A)) ); // Gauss's law for magnetism
+            }
+        }
+
+        if( aDescriptor->m_simulateDielectric )
+        {
+            for( SPARSELIZARD_DIELECTRIC* dielectric : m_dielectrics )
+            {
+                //( *m_equations ) += sl::integral(dielectric->regionID, 1/( *m_mu )* sl::curl(sl::dof(m_A)) * sl::curl(sl::tf(m_A)) ); // Gauss's law for magnetism
+            }
+        }
+        break;
+    default: m_reporter->Report( "Simulation type is not supported", RPT_SEVERITY_ERROR ); return;
     }
-    // Expression for the electric field E [V/m] and current density j [A/m^2]:
-    m_E = -sl::grad( m_v );                 // electric field
-    m_j = m_E / ( *m_rho );                 // current density
-    m_p = sl::doubledotproduct( m_j, m_E ); // power density
 }
 
 void SPARSELIZARD_SOLVER::writeResults( FEM_DESCRIPTOR* aDescriptor )
 {
     int  wholedomain = sl::selectall();
-    sl::fieldorder( m_v ).write( wholedomain, "fieldOrder.pos" );        //TODO: remove
+    //sl::fieldorder( m_v ).write( wholedomain, "fieldOrder.pos" );        //TODO: remove
 
     for( FEM_RESULT* result : aDescriptor->GetResults() )
     {
@@ -463,6 +515,12 @@ void SPARSELIZARD_SOLVER::writeResults( FEM_DESCRIPTOR* aDescriptor )
                            std::string( resultView->m_filename.GetFullName() ), MAX_ORDER );
                 resultView->m_valid = true;
                 break;
+            case FEM_VIEW_TYPE::MAGNETIC_FIELD:
+                ( sl::curl( m_A ) )
+                        .write( sl::selectunion( m_dielectricRegions ),
+                                std::string( resultView->m_filename.GetFullName() ), MAX_ORDER );
+                resultView->m_valid = true;
+                break;
             default:
                 m_reporter->Report( "Result type not supported by DC simulation",
                                     RPT_SEVERITY_ERROR );
@@ -546,6 +604,7 @@ void SPARSELIZARD_SOLVER::SetRegions( FEM_DESCRIPTOR* aDescriptor, GMSH_MESHER* 
             {
                 netlist.push_back( conductor->netCode );
             }
+            std::cout << "Conductor ( PAD ) id: " << conductor->regionID << std::endl;
             break;
         }
         default:
@@ -557,6 +616,9 @@ void SPARSELIZARD_SOLVER::SetRegions( FEM_DESCRIPTOR* aDescriptor, GMSH_MESHER* 
     }
 
     m_reporter->Report( "Number of ports in simulation: " + to_string( m_conductors.size() ),
+                        RPT_SEVERITY_INFO );
+    m_reporter->Report( "Number of ports in simulation: "
+                                + to_string( aDescriptor->GetPorts().size() ),
                         RPT_SEVERITY_INFO );
 
     // Add copper zones / tracks
@@ -575,15 +637,30 @@ void SPARSELIZARD_SOLVER::SetRegions( FEM_DESCRIPTOR* aDescriptor, GMSH_MESHER* 
 
     if( aDescriptor->m_requiresDielectric )
     {
+        SPARSELIZARD_DIELECTRIC* dielectric;
         for( GMSH_MESHER_LAYER region : aMesher->AddDielectricRegions() )
         {
-            SPARSELIZARD_DIELECTRIC* dielectric = new SPARSELIZARD_DIELECTRIC();
+            dielectric = new SPARSELIZARD_DIELECTRIC();
             dielectric->epsilonr = region.permittivity;
             dielectric->regionID = region.regionID;
             dielectric->lossTangent = region.lossTangent;
             m_dielectrics.push_back( dielectric );
             m_dielectricRegions.push_back( dielectric->regionID );
         }
+    }
+
+    if( aDescriptor->m_requiresAir )
+    {
+        SPARSELIZARD_DIELECTRIC* air;
+        air = new SPARSELIZARD_DIELECTRIC();
+        air->epsilonr = 1;
+        air->regionID = aMesher->AddAirRegion();
+        air->lossTangent = 0;
+        m_dielectrics.push_back( air );
+        m_dielectricRegions.push_back( air->regionID );
+
+        m_boundary = aMesher->AddDomainBoundaryRegion();
+        std::cout << "boundary will be on region " << m_boundary << std::endl;
     }
 
     m_reporter->Report( "Number of conducting regions in simulation: "
@@ -638,9 +715,13 @@ void SPARSELIZARD_SOLVER::simulate()
 {
     int  nb_refinements = 0;
     bool need_adapt = false;
+    m_equations->solve();
+    //m_equations->solve( "cholesky" );
 
-    m_v.setorder( sl::norm( sl::grad( m_v ) ), MIN_ORDER, MAX_ORDER + 1 );
+    //m_v.setorder( sl::norm( sl::grad( m_v ) ), MIN_ORDER, MAX_ORDER + 1 );
+    //m_H.setorder( sl::norm( sl::grad( m_H ) ), MIN_ORDER, MAX_ORDER + 1 );
     // Simple p-adaptivity loop:
+    /*
     for( int i = 0; i <= MAX_ORDER - MIN_ORDER; i++ )
     {
         //m_equations->solve( "cholesky" );
@@ -651,6 +732,7 @@ void SPARSELIZARD_SOLVER::simulate()
             break; // No adaptation was needed
         };
     }
+    */
 }
 
 bool SPARSELIZARD_SOLVER::Run_DC( FEM_DESCRIPTOR* aDescriptor )
@@ -701,14 +783,19 @@ bool SPARSELIZARD_SOLVER::Run_DC( FEM_DESCRIPTOR* aDescriptor )
 
     m_reporter->Report( "SPARSELIZARD: mesh loaded.", RPT_SEVERITY_INFO );
 
+    //m_boundary = aMesher->AddDomainBoundaryRegion();
+    //std::cout << "Boundary will be on region: "<< m_boundary << std::endl;m_boundary
+
+    std::cout << "Boundary will be on region: " << m_boundary << std::endl;
+
     // Remove empty regions ( Can happen when adding nets )
     for( SPARSELIZARD_CONDUCTOR* cond : m_conductors )
     {
         if( !sl::isdefined( cond->regionID ) )
         {
-            m_reporter->Report( "SPARSELIZARD: Removing empty region "
+            m_reporter->Report( "SPARSELIZARD: Removing undefined region "
                                         + to_string( cond->regionID ),
-                                RPT_SEVERITY_ACTION );
+                                RPT_SEVERITY_ERROR );
             std::remove( m_conductors.begin(), m_conductors.end(), cond );
             m_conductors.pop_back();
             std::remove( m_conductorRegions.begin(), m_conductorRegions.end(), cond->regionID );
@@ -720,17 +807,41 @@ bool SPARSELIZARD_SOLVER::Run_DC( FEM_DESCRIPTOR* aDescriptor )
     mymesh.write( "mymesh.msh", SPARSELIZARD_VERBOSITY );
 
     SetBoundaries();
+    for( auto cond : m_conductors )
+    {
+        std::cout << "conductor: " << cond->regionID << std::endl;
+        std::cout << "conductor boundary: " << cond->boundaryID << std::endl;
+    }
+    spanningtree spantree( { m_boundary } );
+
+    std::cout << " spantree OK " << std::endl;
 
     // Create the electric potential field v
-    m_v = field( "h1" );
+    switch( aDescriptor->m_simulationType )
+    {
+    case FEM_SIMULATION_TYPE::DC:
+        m_v = field( "h1" );
+        m_A = field( "hcurl", { 1 }, spantree );
+        break;
+    case FEM_SIMULATION_TYPE::AC:
+        m_v = field( "h1", { 2, 3 } );
+        m_A = field( "hcurl", { 2, 3 } );
+        break;
+    default:
+        m_reporter->Report( "Simulation type is not supported", RPT_SEVERITY_ERROR );
+        return false;
+    }
+
     formulation eq;
     m_equations = &eq;
 
     // parameters
     parameter rho;     // resistivity
     parameter epsilon; // permittivity
+    parameter mu;      // permeability
     m_rho = &rho;
     m_epsilon = &epsilon;
+    m_mu = &mu;
     m_reporter->Report( "Setting up simulation parameters...", RPT_SEVERITY_ACTION );
 
     if( !setParameters( aDescriptor ) )
@@ -750,8 +861,9 @@ bool SPARSELIZARD_SOLVER::Run_DC( FEM_DESCRIPTOR* aDescriptor )
             .write( sl::selectunion( m_dielectricRegions ), std::string( "Efield.pos" ),
                     MAX_ORDER ); //TODO: remove
     m_v.write( sl::selectunion( m_conductorRegions ), std::string( "potential.pos" ),
-               MAX_ORDER );                                                   //TODO: remove
-    m_j.write( sl::selectunion( m_conductorRegions ), "currentDensity.pos" ); //TODO: remove
+               MAX_ORDER ); //TODO: remove
+    m_j.write( sl::selectunion( m_conductorRegions ), "currentDensity.pos",
+               MAX_ORDER ); //TODO: remove
     writeResults( aDescriptor );
     m_reporter->Report( "Finished", RPT_SEVERITY_INFO );
     return true;

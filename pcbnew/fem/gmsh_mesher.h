@@ -67,6 +67,9 @@ struct GMSH_MESHER_REGIONS
 
     // Priority 6: shapes which denote air
     std::set<int> m_air;
+
+    // Priority 7: shapes which denote domain boundary
+    std::set<int> m_boundary;
 };
 
 struct GMSH_MESHER_LAYER
@@ -91,7 +94,7 @@ class GMSH_MESHER
 {
 public:
     GMSH_MESHER( const BOARD* aBoard ) :
-            m_next_region_id( 1 ), m_air_region( -1 ), m_board( aBoard )
+            m_next_region_id( 1 ), m_air_region( -1 ), m_boundary_region( -1 ), m_board( aBoard )
     {
     }
 
@@ -114,6 +117,15 @@ public:
             m_air_region = m_next_region_id++;
         }
         return m_air_region;
+    }
+
+    int AddDomainBoundaryRegion()
+    {
+        if( m_boundary_region == -1 )
+        {
+            m_boundary_region = m_next_region_id++;
+        }
+        return m_boundary_region;
     }
 
     void Load25DMesh();
@@ -189,6 +201,7 @@ private:
     std::map<int, int>        m_net_regions;
     std::map<int, const PAD*> m_pad_regions;
     std::vector<int>          m_dielectric_regions;
+    int                       m_boundary_region;
     int                       m_air_region;
 
     std::map<int, std::vector<int>> m_region_surfaces;
