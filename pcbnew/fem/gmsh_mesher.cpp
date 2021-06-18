@@ -338,10 +338,6 @@ void GMSH_MESHER::Load3DMesh()
 
     for( const auto& kv : regionToShapeId )
     {
-        for( auto kvv : kv.second )
-        {
-            std::cout << "Region added: " << kvv << " dim: " << kv.first << std::endl;
-        }
         gmsh::model::addPhysicalGroup( 3, kv.second, kv.first );
     }
 
@@ -629,13 +625,9 @@ void GMSH_MESHER::GenerateAir3D( const wxPoint aCenter, const wxSize aSize, cons
             gmsh::model::occ::addBox( x_mm, y_mm, -height_mm / 2, width_mm, length_mm, height_mm );
     aFragments.emplace_back( 3, idx );
     aRegions.m_air.emplace( idx );
-    std::cout << "Air tag is : " << idx << std::endl;
 
     if( m_boundary_region != -1 )
     {
-        //Create a new box, just to be sure we don't intefere with the first one that will be modified later.
-        //idx = gmsh::model::occ::addBox( x_mm -1 , y_mm -1 , -height_mm / 2 -1 , width_mm+ 2, length_mm +2, height_mm+2   );
-
         int p000, p001, p010, p011, p100, p101, p110, p111;
 
         //double meshsize = std::min( 5, std::min( width_mm/30, std::min( length_mm/20, height_mm/20 ) )  );
@@ -731,16 +723,6 @@ void GMSH_MESHER::GenerateAir3D( const wxPoint aCenter, const wxSize aSize, cons
         outDimTags.push_back( dimTag );
         dimTag.second = s6;
         outDimTags.push_back( dimTag );
-        /*
-        dimTag.second = s1;
-        gmsh::model::occ::extrude( { dimTag }, width_mm, 0, 0,  outDimTags2 );
-        for ( auto dt : outDimTags2)
-        {
-            std::cout << "VOLUME ID : " << dt.second << std::endl;
-            aFragments.emplace_back( 3, dt.second );
-            aRegions.m_air.emplace( dt.second );
-        }
-        */
 
 
         if( outDimTags.empty() )
@@ -751,34 +733,10 @@ void GMSH_MESHER::GenerateAir3D( const wxPoint aCenter, const wxSize aSize, cons
         {
             for( auto dt : outDimTags )
             {
-                std::cout << "Boundary tag is : " << dt.second << std::endl;
                 aFragments.emplace_back( 2, dt.second );
                 aRegions.m_boundary.emplace( dt.second );
             }
         }
-        /*
-        std::pair<int, int> dimTag = { 3, idx };
-        std::vector< std::pair<int, int> > dimTags, outDimTags;
-        dimTags.push_back( dimTag );
-
-        gmsh::model::occ::synchronize();
-        gmsh::model::getBoundary( dimTags, outDimTags, true, false, false );
-        gmsh::model::occ::synchronize();
-
-        if ( outDimTags.empty() )
-        {
-            std::cerr  << "We could not find the boundary region !" << std::endl;
-        }
-        else
-        {
-            for ( auto dt : outDimTags)
-            {
-                std::cout  << "Boundary tag is : " << dt.second << std::endl;
-                aFragments.emplace_back( 2, dt.second );
-                aRegions.m_boundary.emplace( dt.second );
-            }
-        }
-        */
     }
 }
 
@@ -906,21 +864,15 @@ GMSH_MESHER::RegionsToShapesAfterFragment( const std::vector<std::pair<int, int>
             int origTag = fragments.at( i ).second;
             if( regions.m_boundary.count( origTag ) )
             {
-                std::cerr << "Yep, the boundary is found here" << std::endl;
                 for( const auto& ovTag : ovv.at( i ) )
                 {
                     if( !assignedShapeId.count( ovTag.second ) )
                     {
                         regionToShapeId[m_boundary_region].emplace_back( ovTag.second );
                         assignedShapeId.emplace( ovTag.second );
-                        std::cout << "The boundary ID is: " << m_boundary_region << std::endl;
                     }
                 }
             }
-        }
-        for( auto kvv : regionToShapeId[m_boundary_region] )
-        {
-            std::cout << "Region added: " << kvv << " dim: " << m_boundary_region << std::endl;
         }
         gmsh::model::addPhysicalGroup( 2, regionToShapeId[m_boundary_region], m_boundary_region );
     }
