@@ -31,7 +31,7 @@
 
 #define USE_GMSH
 
-#define MIN_ORDER 1
+#define MIN_ORDER 2
 #define MAX_ORDER 3
 
 SPARSELIZARD_SOLVER::SPARSELIZARD_SOLVER()
@@ -203,16 +203,22 @@ bool SPARSELIZARD_SOLVER::setParameters( FEM_DESCRIPTOR* aDescriptor )
 {
     for( SPARSELIZARD_DIELECTRIC* dielectric : m_dielectrics )
     {
-        m_v.setorder( dielectric->regionID, MIN_ORDER );
-        m_A.setorder( dielectric->regionID, MIN_ORDER );
-        ( *m_epsilon ) | dielectric->regionID = dielectric->epsilonr * m_constants.epsilon0();
-        ( *m_mu ) | dielectric->regionID = 1;
+        m_v.setorder( dielectric->regionID, 1 );
+
+        if( aDescriptor->m_simulateElectricField )
+            ( *m_epsilon ) | dielectric->regionID = dielectric->epsilonr * m_constants.epsilon0();
+
+
+        if( aDescriptor->m_simulateMagneticField )
+        {
+            m_A.setorder( dielectric->regionID, 0 );
+            ( *m_mu ) | dielectric->regionID = 1;
+        }
     }
 
     for( SPARSELIZARD_CONDUCTOR* conductor : m_conductors )
     {
-        m_v.setorder( conductor->regionID, MIN_ORDER );
-        m_A.setorder( conductor->regionID, MIN_ORDER );
+        m_v.setorder( conductor->regionID, 1 );
         switch( aDescriptor->m_dim )
         {
         case FEM_SIMULATION_DIMENSION::SIMUL2D5:
@@ -225,57 +231,69 @@ bool SPARSELIZARD_SOLVER::setParameters( FEM_DESCRIPTOR* aDescriptor )
             m_reporter->Report( "Simulation dimension is not supported", RPT_SEVERITY_ERROR );
             return false;
         }
-        ( *m_mu ) | conductor->regionID = 1;
+
+        if( aDescriptor->m_simulateMagneticField )
+        {
+            ( *m_mu ) | conductor->regionID = 1;
+            m_A.setorder( conductor->regionID, 0 );
+        }
     }
     return true;
 }
 
 void SPARSELIZARD_SOLVER::setEquations( FEM_DESCRIPTOR* aDescriptor )
 {
+    if( aDescriptor->m_simulateMagneticField )
+    {
+        m_A.setgauge( sl::selectall() );
+    }
+
     switch( aDescriptor->m_simulationType )
     {
     case FEM_SIMULATION_TYPE::DC:
-        m_A.setgauge( sl::selectall() );
         if( aDescriptor->m_simulateConductor )
         {
             std::cout << "Setting conductors..." << std::endl;
-            m_A.setconstraint( m_boundary );
             for( SPARSELIZARD_CONDUCTOR* conductor : m_conductors )
             {
                 // Divergence of current density ( E / rho ) = 0
                 ( *m_equations ) +=
                         sl::integral( conductor->regionID, sl::grad( sl::tf( m_v ) ) / ( *m_rho )
                                                                    * sl::grad( sl::dof( m_v ) ) );
-                // Ampere's law
-                /*
-                ( *m_equations ) += sl::integral(
-                        conductor->regionID,
-                        1 / ( *m_mu ) * sl::curl( sl::dof( m_A ) ) * sl::curl( sl::tf( m_A ) )
-                                + 1 / ( *m_rho ) * sl::grad( sl::dof( m_v ) ) * sl::tf( m_A ) );*/
-                ( *m_equations ) += sl::integral(
-                        conductor->regionID,
-                        1 / ( *m_mu ) * sl::curl( sl::dof( m_A ) ) * sl::curl( sl::tf( m_A ) )
-                                + 1 / ( *m_rho ) * sl::grad( sl::dof( m_v ) ) * sl::tf( m_A )
-                                + 1 / ( *m_rho ) * sl::dt( sl::dof( m_A ) ) * sl::tf( m_A ) );
-                // No magnetic flux can cross the domain
+
+
+                if( aDescriptor->m_simulateMagneticField )
+                {
+                    // Ampere's law
+                    ( *m_equations ) += sl::integral(
+                            conductor->regionID,
+                            1 / ( *m_mu ) * sl::curl( sl::dof( m_A ) ) * sl::curl( sl::tf( m_A ) )
+                                    + 1 / ( *m_rho ) * sl::grad( sl::dof( m_v ) ) * sl::tf( m_A ) );
+                    // No magnetic flux can cross the domain
+                    m_A.setconstraint( m_boundary, 0 );
+                }
             }
         }
         std::cout << "Setting dielectrics..." << std::endl;
 
-        if( aDescriptor->m_simulateDielectric )
+        for( SPARSELIZARD_DIELECTRIC* dielectric : m_dielectrics )
         {
-            for( SPARSELIZARD_DIELECTRIC* dielectric : m_dielectrics )
+            if( aDescriptor->m_simulateElectricField )
             {
                 // Gauss' Law
                 ( *m_equations ) += sl::integral( dielectric->regionID,
                                                   -( *m_epsilon ) * sl::grad( sl::dof( m_v ) )
                                                           * sl::grad( sl::tf( m_v ) ) );
+            }
+            if( aDescriptor->m_simulateMagneticField )
+            {
                 // Ampere's law
                 ( *m_equations ) += sl::integral( dielectric->regionID,
                                                   1 / ( *m_mu ) * sl::curl( sl::dof( m_A ) )
                                                           * sl::curl( sl::tf( m_A ) ) );
             }
         }
+
         std::cout << "Equations OK" << std::endl;
 
         // Expression for the electric field E [V/m] and current density j [A/m^2]:
@@ -285,6 +303,7 @@ void SPARSELIZARD_SOLVER::setEquations( FEM_DESCRIPTOR* aDescriptor )
 
         break;
     case FEM_SIMULATION_TYPE::AC:
+        /*
         if( aDescriptor->m_simulateConductor )
         {
             for( SPARSELIZARD_CONDUCTOR* conductor : m_conductors )
@@ -299,9 +318,13 @@ void SPARSELIZARD_SOLVER::setEquations( FEM_DESCRIPTOR* aDescriptor )
             {
                 //( *m_equations ) += sl::integral(dielectric->regionID, 1/( *m_mu )* sl::curl(sl::dof(m_A)) * sl::curl(sl::tf(m_A)) ); // Gauss's law for magnetism
             }
-        }
+        }*/
         break;
-    default: m_reporter->Report( "Simulation type is not supported", RPT_SEVERITY_ERROR ); return;
+
+    default:
+        m_reporter->Report( "Simulation type is not supported (while setting equations)",
+                            RPT_SEVERITY_ERROR );
+        return;
     }
 }
 
@@ -511,15 +534,35 @@ void SPARSELIZARD_SOLVER::writeResults( FEM_DESCRIPTOR* aDescriptor )
                 resultView->m_valid = true;
                 break;
             case FEM_VIEW_TYPE::ELECTRIC_FIELD:
-                m_v.write( sl::selectunion( m_dielectricRegions ),
-                           std::string( resultView->m_filename.GetFullName() ), MAX_ORDER );
-                resultView->m_valid = true;
+                if( aDescriptor->m_simulateElectricField )
+                {
+                    m_v.write( sl::selectunion( m_dielectricRegions ),
+                               std::string( resultView->m_filename.GetFullName() ), MAX_ORDER );
+                    resultView->m_valid = true;
+                }
+                else
+                {
+                    m_reporter->Report( "You asked for a electric field plot. But electric field "
+                                        "was not simulated ( m_simulateElectricField ).",
+                                        RPT_SEVERITY_ERROR );
+                }
                 break;
             case FEM_VIEW_TYPE::MAGNETIC_FIELD:
-                ( sl::curl( m_A ) )
-                        .write( sl::selectunion( m_dielectricRegions ),
-                                std::string( resultView->m_filename.GetFullName() ), MAX_ORDER );
-                resultView->m_valid = true;
+                if( aDescriptor->m_simulateMagneticField )
+                {
+                    ( sl::curl( m_A ) )
+                            .write( sl::selectunion( m_dielectricRegions ),
+                                    std::string( resultView->m_filename.GetFullName() ),
+                                    MAX_ORDER );
+                    m_A.write( wholedomain, "a.pos", MAX_ORDER );
+                    resultView->m_valid = true;
+                }
+                else
+                {
+                    m_reporter->Report( "You asked for a magnetic field plot. But magnetic field "
+                                        "was not simulated ( m_simulateMagneticField ).",
+                                        RPT_SEVERITY_ERROR );
+                }
                 break;
             default:
                 m_reporter->Report( "Result type not supported by DC simulation",
@@ -694,7 +737,11 @@ void SPARSELIZARD_SOLVER::SetBoundaries()
             }
             case PCB_PAD_T:
             {
-                std::vector<int> everythingElse = m_conductorRegions;
+                std::vector<int> everythingElse;
+                everythingElse.insert( everythingElse.end(), m_conductorRegions.begin(),
+                                       m_conductorRegions.end() );
+                everythingElse.insert( everythingElse.end(), m_dielectricRegions.begin(),
+                                       m_dielectricRegions.end() );
                 std::remove( everythingElse.begin(), everythingElse.end(), cond->regionID );
                 everythingElse.pop_back();
                 cond->boundaryID = sl::selectintersection(
@@ -716,7 +763,7 @@ void SPARSELIZARD_SOLVER::simulate()
     int  nb_refinements = 0;
     bool need_adapt = false;
     m_equations->solve();
-    //m_equations->solve( "cholesky" );
+    //m_equations->solve( "cholesky" ); // Don't use cholesky with sparselizard ports !
 
     //m_v.setorder( sl::norm( sl::grad( m_v ) ), MIN_ORDER, MAX_ORDER + 1 );
     //m_H.setorder( sl::norm( sl::grad( m_H ) ), MIN_ORDER, MAX_ORDER + 1 );
@@ -812,7 +859,6 @@ bool SPARSELIZARD_SOLVER::Run_DC( FEM_DESCRIPTOR* aDescriptor )
         std::cout << "conductor: " << cond->regionID << std::endl;
         std::cout << "conductor boundary: " << cond->boundaryID << std::endl;
     }
-    spanningtree spantree( { m_boundary } );
 
     std::cout << " spantree OK " << std::endl;
 
@@ -821,14 +867,20 @@ bool SPARSELIZARD_SOLVER::Run_DC( FEM_DESCRIPTOR* aDescriptor )
     {
     case FEM_SIMULATION_TYPE::DC:
         m_v = field( "h1" );
-        m_A = field( "hcurl", { 1 }, spantree );
+        if( aDescriptor->m_simulateMagneticField )
+        {
+            spanningtree spantree( { m_boundary } );
+            m_A = field( "hcurl", spantree );
+            spantree.write( "spantree.pos" );
+        }
         break;
     case FEM_SIMULATION_TYPE::AC:
         m_v = field( "h1", { 2, 3 } );
         m_A = field( "hcurl", { 2, 3 } );
         break;
     default:
-        m_reporter->Report( "Simulation type is not supported", RPT_SEVERITY_ERROR );
+        m_reporter->Report( "Simulation type is not supported (while setting fields",
+                            RPT_SEVERITY_ERROR );
         return false;
     }
 
@@ -864,6 +916,11 @@ bool SPARSELIZARD_SOLVER::Run_DC( FEM_DESCRIPTOR* aDescriptor )
                MAX_ORDER ); //TODO: remove
     m_j.write( sl::selectunion( m_conductorRegions ), "currentDensity.pos",
                MAX_ORDER ); //TODO: remove
+
+    if( aDescriptor->m_requiresAir )
+    {
+        expression( 1 ).write( m_boundary, "boundary.pos", 1 );
+    }
     writeResults( aDescriptor );
     m_reporter->Report( "Finished", RPT_SEVERITY_INFO );
     return true;

@@ -297,8 +297,8 @@ void GMSH_MESHER::Load3DMesh()
         {
             wxSize boundingBoxSize =
                     boundingBox.GetSize()
-                    + wxSize( 1.6 * 40 * IU_PER_MM,
-                              1.6 * 40 * IU_PER_MM ); // 20 times the board thickness on each side
+                    + wxSize( 1.6 * 20 * IU_PER_MM,
+                              1.6 * 20 * IU_PER_MM ); // 20 times the board thickness on each side
             int    boundingBoxHeight = std::min( boundingBoxSize.x, boundingBoxSize.y );
             GenerateAir3D( boundingBox.Centre(), boundingBoxSize, boundingBoxHeight, fragments,
                            regions );
@@ -638,15 +638,22 @@ void GMSH_MESHER::GenerateAir3D( const wxPoint aCenter, const wxSize aSize, cons
 
         int p000, p001, p010, p011, p100, p101, p110, p111;
 
+        //double meshsize = std::min( 5, std::min( width_mm/30, std::min( length_mm/20, height_mm/20 ) )  );
+        double meshsize = 50;
+        std::cout << "Mesh size for boundary is " << meshsize << std::endl;
+        // The mesh size cannot be bigger than 5 mm on the boundary corners
+        // If the board is small, ensure that there is at least 10 mesh element in the smaller dimension
 
-        p000 = gmsh::model::occ::addPoint( x_mm, y_mm, -height_mm / 2 );
-        p001 = gmsh::model::occ::addPoint( x_mm, y_mm, height_mm / 2 );
-        p010 = gmsh::model::occ::addPoint( x_mm, y_mm + length_mm, -height_mm / 2 );
-        p011 = gmsh::model::occ::addPoint( x_mm, y_mm + length_mm, height_mm / 2 );
-        p100 = gmsh::model::occ::addPoint( x_mm + width_mm, y_mm, -height_mm / 2 );
-        p101 = gmsh::model::occ::addPoint( x_mm + width_mm, y_mm, height_mm / 2 );
-        p110 = gmsh::model::occ::addPoint( x_mm + width_mm, y_mm + length_mm, -height_mm / 2 );
-        p111 = gmsh::model::occ::addPoint( x_mm + width_mm, y_mm + length_mm, height_mm / 2 );
+        p000 = gmsh::model::occ::addPoint( x_mm, y_mm, -height_mm / 2, meshsize );
+        p001 = gmsh::model::occ::addPoint( x_mm, y_mm, height_mm / 2, meshsize );
+        p010 = gmsh::model::occ::addPoint( x_mm, y_mm + length_mm, -height_mm / 2, meshsize );
+        p011 = gmsh::model::occ::addPoint( x_mm, y_mm + length_mm, height_mm / 2, meshsize );
+        p100 = gmsh::model::occ::addPoint( x_mm + width_mm, y_mm, -height_mm / 2, meshsize );
+        p101 = gmsh::model::occ::addPoint( x_mm + width_mm, y_mm, height_mm / 2, meshsize );
+        p110 = gmsh::model::occ::addPoint( x_mm + width_mm, y_mm + length_mm, -height_mm / 2,
+                                           meshsize );
+        p111 = gmsh::model::occ::addPoint( x_mm + width_mm, y_mm + length_mm, height_mm / 2,
+                                           meshsize );
 
         int l0, l1, l2, l3;
 
@@ -1006,8 +1013,9 @@ int GMSH_MESHER::ShapeLineChainToCurveLoop( const SHAPE_LINE_CHAIN& aLineChain, 
     gmshOutlinePoints.reserve( aLineChain.GetPointCount() );
     for( auto point : aLineChain.CPoints() )
     {
+        double meshSize = 5;
         gmshOutlinePoints.emplace_back( gmsh::model::occ::addPoint(
-                TransformPoint( point.x ), TransformPoint( point.y ), aOffsetZ ) );
+                TransformPoint( point.x ), TransformPoint( point.y ), aOffsetZ, meshSize ) );
     }
 
     // Create gmsh lines

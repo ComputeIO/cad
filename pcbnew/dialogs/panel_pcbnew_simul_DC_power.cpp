@@ -197,7 +197,9 @@ void PANEL_PCBNEW_SIMUL_DC_POWER::OnRun( wxCommandEvent& event )
     view = new FEM_RESULT_VIEW( FEM_VIEW_TYPE::MAGNETIC_FIELD, *file );
     descriptor->AddResult( view );
 
-    descriptor->m_requiresDielectric = true;
+    descriptor->m_requiresDielectric = false;
+    descriptor->m_simulateMagneticField = false;
+    descriptor->m_simulateElectricField = true;
     descriptor->m_requiresAir = true;
     descriptor->m_dim = FEM_SIMULATION_DIMENSION::SIMUL3D;
     descriptor->m_simulationType = FEM_SIMULATION_TYPE::DC;

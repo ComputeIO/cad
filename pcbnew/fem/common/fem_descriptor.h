@@ -71,6 +71,8 @@ public:
     REPORTER*    m_reporter;
 
     bool                     m_requiresAir;
+    bool                     m_simulateElectricField;
+    bool                     m_simulateMagneticField;
     bool                     m_requiresDielectric;
     bool                     m_simulateDielectric;
     bool                     m_simulateConductor;

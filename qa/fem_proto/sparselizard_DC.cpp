@@ -210,6 +210,7 @@ bool simulTrackResistance( double rho, double L, double h, double w, double max_
     }
     FEM_DESCRIPTOR* descriptor = new FEM_DESCRIPTOR( FEM_SOLVER::SPARSELIZARD, board );
     descriptor->m_dim = aDim;
+    descriptor->m_simulationType = FEM_SIMULATION_TYPE::DC;
 
     PAD* pad1 = new PAD( fp );
     pad1->SetShape( PAD_SHAPE::RECT );
@@ -389,13 +390,13 @@ bool simulPlaneCapacitance( double x, double y, double epsilonr, double d, doubl
     }
 
     FEM_DESCRIPTOR* descriptor = new FEM_DESCRIPTOR( FEM_SOLVER::SPARSELIZARD, board );
-    descriptor->m_reporter = new NULL_REPORTER();
+    descriptor->m_reporter = new STDOUT_REPORTER();
     descriptor->m_dim = FEM_SIMULATION_DIMENSION::SIMUL3D;
     descriptor->m_simulationType = FEM_SIMULATION_TYPE::DC;
     descriptor->m_requiresDielectric = true;
-    descriptor->m_requiresAir = true;
-    descriptor->m_simulateDielectric = true;
+    descriptor->m_requiresAir = false;
     descriptor->m_simulateConductor = false;
+    descriptor->m_simulateElectricField = true;
 
     PAD* pad1 = new PAD( fp1 );
     pad1->SetShape( PAD_SHAPE::RECT );
@@ -453,8 +454,8 @@ bool simulPlaneCapacitance( double x, double y, double epsilonr, double d, doubl
     FEM_PORT*            port2 = new FEM_PORT( pad2 );
     FEM_PORT_CONSTRAINT* constraint2 = new FEM_PORT_CONSTRAINT();
 
-    constraint2->m_type = FEM_PORT_CONSTRAINT_TYPE::CHARGE;
-    constraint2->m_value = -1e-9; // 0 V
+    constraint2->m_type = FEM_PORT_CONSTRAINT_TYPE::VOLTAGE;
+    constraint2->m_value = 0; // 0 V
     port2->m_type = FEM_PORT_TYPE::SOURCE;
     port2->m_constraint = *constraint2;
     descriptor->AddPort( port2 );
@@ -490,7 +491,7 @@ void trackResistanceTest( FEM_SIMULATION_DIMENSION aDim )
     double L = 200e-3;         // track length
     double h = 35e-6;          // track height
     double w = 30e-3;          // track width
-    double max_error = 1e-9;
+    double max_error = 1e-8;
     BOOST_CHECK_EQUAL( simulTrackResistance( rho, L, h, w, max_error, aDim ), true );
     BOOST_CHECK_EQUAL( simulTrackResistance( rho, L, h, w, max_error, aDim, true ), true );
 
@@ -568,8 +569,8 @@ void planeCapacitanceTest()
 
 BOOST_AUTO_TEST_CASE( TestTrackResistance )
 {
-    //trackResistanceTest( FEM_SIMULATION_DIMENSION::SIMUL2D5 );
-    //trackResistanceTest( FEM_SIMULATION_DIMENSION::SIMUL3D );
+    trackResistanceTest( FEM_SIMULATION_DIMENSION::SIMUL2D5 );
+    trackResistanceTest( FEM_SIMULATION_DIMENSION::SIMUL3D );
 }
 
 BOOST_AUTO_TEST_CASE( TestPlaneCapacitance )
