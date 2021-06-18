@@ -253,7 +253,6 @@ void SPARSELIZARD_SOLVER::setEquations( FEM_DESCRIPTOR* aDescriptor )
     case FEM_SIMULATION_TYPE::DC:
         if( aDescriptor->m_simulateConductor )
         {
-            std::cout << "Setting conductors..." << std::endl;
             for( SPARSELIZARD_CONDUCTOR* conductor : m_conductors )
             {
                 // Divergence of current density ( E / rho ) = 0
@@ -274,7 +273,6 @@ void SPARSELIZARD_SOLVER::setEquations( FEM_DESCRIPTOR* aDescriptor )
                 }
             }
         }
-        std::cout << "Setting dielectrics..." << std::endl;
 
         for( SPARSELIZARD_DIELECTRIC* dielectric : m_dielectrics )
         {
@@ -294,7 +292,6 @@ void SPARSELIZARD_SOLVER::setEquations( FEM_DESCRIPTOR* aDescriptor )
             }
         }
 
-        std::cout << "Equations OK" << std::endl;
 
         // Expression for the electric field E [V/m] and current density j [A/m^2]:
         m_E = -sl::grad( m_v );                 // electric field
@@ -647,7 +644,6 @@ void SPARSELIZARD_SOLVER::SetRegions( FEM_DESCRIPTOR* aDescriptor, GMSH_MESHER* 
             {
                 netlist.push_back( conductor->netCode );
             }
-            std::cout << "Conductor ( PAD ) id: " << conductor->regionID << std::endl;
             break;
         }
         default:
@@ -703,7 +699,6 @@ void SPARSELIZARD_SOLVER::SetRegions( FEM_DESCRIPTOR* aDescriptor, GMSH_MESHER* 
         m_dielectricRegions.push_back( air->regionID );
 
         m_boundary = aMesher->AddDomainBoundaryRegion();
-        std::cout << "boundary will be on region " << m_boundary << std::endl;
     }
 
     m_reporter->Report( "Number of conducting regions in simulation: "
@@ -830,11 +825,6 @@ bool SPARSELIZARD_SOLVER::Run_DC( FEM_DESCRIPTOR* aDescriptor )
 
     m_reporter->Report( "SPARSELIZARD: mesh loaded.", RPT_SEVERITY_INFO );
 
-    //m_boundary = aMesher->AddDomainBoundaryRegion();
-    //std::cout << "Boundary will be on region: "<< m_boundary << std::endl;m_boundary
-
-    std::cout << "Boundary will be on region: " << m_boundary << std::endl;
-
     // Remove empty regions ( Can happen when adding nets )
     for( SPARSELIZARD_CONDUCTOR* cond : m_conductors )
     {
@@ -854,13 +844,6 @@ bool SPARSELIZARD_SOLVER::Run_DC( FEM_DESCRIPTOR* aDescriptor )
     mymesh.write( "mymesh.msh", SPARSELIZARD_VERBOSITY );
 
     SetBoundaries();
-    for( auto cond : m_conductors )
-    {
-        std::cout << "conductor: " << cond->regionID << std::endl;
-        std::cout << "conductor boundary: " << cond->boundaryID << std::endl;
-    }
-
-    std::cout << " spantree OK " << std::endl;
 
     // Create the electric potential field v
     switch( aDescriptor->m_simulationType )
