@@ -34,6 +34,9 @@
 #define MIN_ORDER 2
 #define MAX_ORDER 3
 
+#define MAG_SMOOTH_PORT 1e-7
+#define MAG_SMOOTH_DIELECTRIC 1e-10
+
 SPARSELIZARD_SOLVER::SPARSELIZARD_SOLVER()
 {
     m_reporter = new STDOUT_REPORTER();
@@ -128,10 +131,15 @@ void SPARSELIZARD_SOLVER::setVoltageDC( SPARSELIZARD_CONDUCTOR aCon, double aV )
     port V, I;
     V = aCon.primalPort;
     I = aCon.dualPort;
-    V.setvalue( aV );
-    m_v.setport( aCon.boundaryID, V, I );
-    //m_v.setconstraint( aCon.regionID, aV );
+    m_v.setport( aCon.boundaryConductorID, V, I );
     ( *m_equations ) += V - aV;
+    /*
+    port VH, IH;
+    VH = aCon.primalPortHack;
+    IH = aCon.dualPortHack;
+    m_v.setport( aCon.boundaryDielectricID, VH, IH );
+    ( *m_equations) += I + IH;
+    */
 }
 
 void SPARSELIZARD_SOLVER::setCurrentDC( SPARSELIZARD_CONDUCTOR aCon, double aI )
@@ -139,8 +147,16 @@ void SPARSELIZARD_SOLVER::setCurrentDC( SPARSELIZARD_CONDUCTOR aCon, double aI )
     port V, I;
     V = aCon.primalPort;
     I = aCon.dualPort;
-    m_v.setport( aCon.boundaryID, V, I );
+    m_v.setport( aCon.boundaryConductorID, V, I );
     ( *m_equations ) += I - aI;
+
+    /*
+    port VH, IH;
+    VH = aCon.primalPortHack;
+    IH = aCon.dualPortHack;
+    m_v.setport( aCon.boundaryDielectricID, VH, IH );
+    ( *m_equations) += I + IH;
+    */
 }
 
 void SPARSELIZARD_SOLVER::setChargeDC( SPARSELIZARD_CONDUCTOR aCon, double aQ )
@@ -245,16 +261,20 @@ void SPARSELIZARD_SOLVER::setEquations( FEM_DESCRIPTOR* aDescriptor )
 {
     if( aDescriptor->m_simulateMagneticField )
     {
-        m_A.setgauge( sl::selectall() );
+        //m_A.setgauge( sl::selectall() );
+        // No magnetic flux can cross the domain
+        m_A.setconstraint( m_boundary );
     }
-
+    std::cout << "Setting equations..." << std::endl;
     switch( aDescriptor->m_simulationType )
     {
     case FEM_SIMULATION_TYPE::DC:
         if( aDescriptor->m_simulateConductor )
         {
+            std::cout << "Setting equations on conductors..." << std::endl;
             for( SPARSELIZARD_CONDUCTOR* conductor : m_conductors )
             {
+                std::cout << "Gauss..." << std::endl;
                 // Divergence of current density ( E / rho ) = 0
                 ( *m_equations ) +=
                         sl::integral( conductor->regionID, sl::grad( sl::tf( m_v ) ) / ( *m_rho )
@@ -263,16 +283,27 @@ void SPARSELIZARD_SOLVER::setEquations( FEM_DESCRIPTOR* aDescriptor )
 
                 if( aDescriptor->m_simulateMagneticField )
                 {
+                    std::cout << "Ampere..." << std::endl;
                     // Ampere's law
                     ( *m_equations ) += sl::integral(
                             conductor->regionID,
                             1 / ( *m_mu ) * sl::curl( sl::dof( m_A ) ) * sl::curl( sl::tf( m_A ) )
                                     + 1 / ( *m_rho ) * sl::grad( sl::dof( m_v ) ) * sl::tf( m_A ) );
-                    // No magnetic flux can cross the domain
-                    m_A.setconstraint( m_boundary, 0 );
+
+                    if( conductor->femPort != nullptr )
+                    {
+                        if( conductor->femPort->m_type != FEM_PORT_TYPE::PASSIVE )
+                        {
+                            ( *m_equations ) += sl::integral( conductor->regionID,
+                                                              MAG_SMOOTH_PORT * sl::dof( m_A )
+                                                                      * sl::tf( m_A ) );
+                            std::cout << "Dispersion on port..." << std::endl;
+                        }
+                    }
                 }
             }
         }
+        std::cout << "Setting equations on dielectrics..." << std::endl;
 
         for( SPARSELIZARD_DIELECTRIC* dielectric : m_dielectrics )
         {
@@ -289,6 +320,9 @@ void SPARSELIZARD_SOLVER::setEquations( FEM_DESCRIPTOR* aDescriptor )
                 ( *m_equations ) += sl::integral( dielectric->regionID,
                                                   1 / ( *m_mu ) * sl::curl( sl::dof( m_A ) )
                                                           * sl::curl( sl::tf( m_A ) ) );
+                ( *m_equations ) +=
+                        sl::integral( dielectric->regionID,
+                                      MAG_SMOOTH_DIELECTRIC * sl::dof( m_A ) * sl::tf( m_A ) );
             }
         }
 
@@ -619,6 +653,11 @@ void SPARSELIZARD_SOLVER::SetRegions( FEM_DESCRIPTOR* aDescriptor, GMSH_MESHER* 
             port dual;
             conductor->primalPort = prim;
             conductor->dualPort = dual;
+            port primHack;
+            port dualHack;
+            conductor->primalPortHack = primHack;
+            conductor->dualPortHack = dualHack;
+
             conductor->femPort = portA;
             break;
         }
@@ -634,6 +673,11 @@ void SPARSELIZARD_SOLVER::SetRegions( FEM_DESCRIPTOR* aDescriptor, GMSH_MESHER* 
             port dual;
             conductor->primalPort = prim;
             conductor->dualPort = dual;
+            port primHack;
+            port dualHack;
+            conductor->primalPortHack = primHack;
+            conductor->dualPortHack = dualHack;
+
             conductor->femPort = portA;
             m_conductors.push_back( conductor );
             m_conductorRegions.push_back( conductor->regionID );
@@ -735,12 +779,16 @@ void SPARSELIZARD_SOLVER::SetBoundaries()
                 std::vector<int> everythingElse;
                 everythingElse.insert( everythingElse.end(), m_conductorRegions.begin(),
                                        m_conductorRegions.end() );
-                everythingElse.insert( everythingElse.end(), m_dielectricRegions.begin(),
-                                       m_dielectricRegions.end() );
                 std::remove( everythingElse.begin(), everythingElse.end(), cond->regionID );
                 everythingElse.pop_back();
-                cond->boundaryID = sl::selectintersection(
+                cond->boundaryConductorID = sl::selectintersection(
                         { cond->regionID, sl::selectunion( everythingElse ) } );
+
+                std::vector<int> everythingElse2;
+                everythingElse2.insert( everythingElse2.end(), m_dielectricRegions.begin(),
+                                        m_dielectricRegions.end() );
+                cond->boundaryDielectricID = sl::selectintersection(
+                        { cond->regionID, sl::selectunion( everythingElse2 ) } );
                 break;
             }
             default:

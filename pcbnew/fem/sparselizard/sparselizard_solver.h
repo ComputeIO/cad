@@ -48,8 +48,12 @@ public:
     double rho; // resistivity
     int       regionID;
     int       boundaryID; // used for capacitances
+    int       boundaryConductorID;
+    int       boundaryDielectricID;
     port   primalPort;
     port   dualPort;
+    port      primalPortHack; // This port is used to hack physics
+    port      dualPortHack;
     FEM_PORT* femPort;
 };
 
