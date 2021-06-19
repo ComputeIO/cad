@@ -580,8 +580,8 @@ BOOST_AUTO_TEST_CASE( TestPlaneCapacitance )
 
 BOOST_AUTO_TEST_CASE( TestCurrentConservation )
 {
-    //currentConservationTest( FEM_SIMULATION_DIMENSION::SIMUL2D5 );
-    //currentConservationTest( FEM_SIMULATION_DIMENSION::SIMUL3D );
+    currentConservationTest( FEM_SIMULATION_DIMENSION::SIMUL2D5 );
+    currentConservationTest( FEM_SIMULATION_DIMENSION::SIMUL3D );
 }
 
 BOOST_AUTO_TEST_SUITE_END()
