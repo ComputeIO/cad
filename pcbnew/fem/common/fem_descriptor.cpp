@@ -132,6 +132,7 @@ bool FEM_DESCRIPTOR::RemoveResult( FEM_RESULT* aResult )
 
 bool FEM_DESCRIPTOR::Run()
 {
+    PrintInfo();
     switch( m_solver )
     {
     case FEM_SOLVER::SPARSELIZARD:
@@ -141,4 +142,68 @@ bool FEM_DESCRIPTOR::Run()
     }
     default: return false;
     }
+}
+
+void FEM_DESCRIPTOR::PrintInfo()
+{
+    wxString str;
+    str = "-- FEM SIMULATION --\n";
+    str += "Solver: ";
+
+    switch( m_solver )
+    {
+    case FEM_SOLVER::SPARSELIZARD:
+        str += "Sparselizard - version ";
+        str += std::to_string( sl::getversion() );
+        str += " (";
+        str += sl::getversionname();
+        str += ")\n";
+        break;
+    default: str += "/!\\ unknown\n";
+    }
+    str += "\n";
+
+    str += "Simulation type: ";
+
+    switch( m_simulationType )
+    {
+    case FEM_SIMULATION_TYPE::DC: str += "DC\n"; break;
+    case FEM_SIMULATION_TYPE::AC: str += "AC\n"; break;
+    case FEM_SIMULATION_TYPE::TRANSIENT: str += "transient\n"; break;
+    default: str += "/!\\ unknown\n";
+    }
+
+    str += "Simulation dimension: ";
+    switch( m_dim )
+    {
+    case FEM_SIMULATION_DIMENSION::SIMUL3D: str += "3D\n"; break;
+    case FEM_SIMULATION_DIMENSION::SIMUL2D5: str += "2.5D\n"; break;
+    case FEM_SIMULATION_DIMENSION::SIMUL2D: str += "2D\n"; break;
+    default: str += "/!\\ unknown\n";
+    }
+    str += "\n";
+
+    str += "Dielectric is meshed: ";
+    str += ( m_requiresDielectric ? "Yes\n" : "No\n" );
+    str += "Air is meshed: ";
+    str += ( m_requiresAir ? "Yes\n" : "No\n" );
+    str += "Simulation happens in conductor: ";
+    str += ( m_simulateConductor ? "Yes\n" : "No\n" );
+    str += "Simulation happens in dielectric/air: ";
+    str += ( m_simulateDielectric ? "Yes\n" : "No\n" );
+    str += "Simulation electric field (in dielectric/air): ";
+    str += ( m_simulateElectricField ? "Yes\n" : "No\n" );
+    str += "Simulation magnetic field (everywhere): ";
+    str += ( m_simulateMagneticField ? "Yes\n" : "No\n" );
+
+    str += "\n";
+    str += "Number of ports in simulation: ";
+    str += std::to_string( m_ports.size() );
+    str += "\n";
+    str += "Number of results in simulation: ";
+    str += std::to_string( m_results.size() );
+    str += "\n";
+
+
+    m_reporter->Report( str, RPT_SEVERITY_INFO );
 }
