@@ -132,8 +132,19 @@ void SPARSELIZARD_SOLVER::setVoltageDC( SPARSELIZARD_CONDUCTOR aCon, double aV )
     port V, I;
     V = aCon.primalPort;
     I = aCon.dualPort;
-    m_v.setport( aCon.boundaryConductorID, V, I );
-    ( *m_equations ) += V - aV;
+
+    if( !sl::isempty( aCon.boundaryConductorID ) )
+    {
+        m_v.setport( aCon.boundaryConductorID, V, I );
+        ( *m_equations ) += V - aV;
+    }
+    else
+    {
+        // This might happen if the copper is isolated
+        m_v.setconstraint( aCon.regionID, aV );
+        V.setvalue( aV );
+        I.setvalue( 0 );
+    }
     /*
     port VH, IH;
     VH = aCon.primalPortHack;
@@ -148,8 +159,19 @@ void SPARSELIZARD_SOLVER::setCurrentDC( SPARSELIZARD_CONDUCTOR aCon, double aI )
     port V, I;
     V = aCon.primalPort;
     I = aCon.dualPort;
-    m_v.setport( aCon.boundaryConductorID, V, I );
-    ( *m_equations ) += I - aI;
+
+    if( !sl::isempty( aCon.boundaryConductorID ) )
+    {
+        m_v.setport( aCon.boundaryConductorID, V, I );
+        ( *m_equations ) += I - aI;
+    }
+    else
+    {
+        // This might happen if the copper is isolated
+        m_reporter->Report( "Current source on non-connected copper.", RPT_SEVERITY_ERROR );
+        V.setvalue( 0 );
+        I.setvalue( 0 );
+    }
 
     /*
     port VH, IH;
@@ -162,12 +184,10 @@ void SPARSELIZARD_SOLVER::setCurrentDC( SPARSELIZARD_CONDUCTOR aCon, double aI )
 
 void SPARSELIZARD_SOLVER::setChargeDC( SPARSELIZARD_CONDUCTOR aCon, double aQ )
 {
-    int dielectrics = sl::selectunion( m_dielectricRegions );
-    aCon.boundaryID = sl::selectintersection( { aCon.regionID, dielectrics } );
     port V, Q;
     V = aCon.primalPort;
     Q = aCon.dualPort;
-    m_v.setport( aCon.boundaryID, V, Q );
+    m_v.setport( aCon.boundaryDielectricID, V, Q );
     ( *m_equations ) += Q - aQ;
 }
 
