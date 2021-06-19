@@ -40,6 +40,7 @@
 SPARSELIZARD_SOLVER::SPARSELIZARD_SOLVER()
 {
     m_reporter = new STDOUT_REPORTER();
+    m_verbosity = 99;
 }
 
 SPARSELIZARD_SOLVER::SPARSELIZARD_SOLVER( REPORTER* aReporter )
@@ -52,6 +53,7 @@ SPARSELIZARD_SOLVER::SPARSELIZARD_SOLVER( REPORTER* aReporter )
     {
         m_reporter = aReporter;
     }
+    m_verbosity = 99;
 }
 
 
@@ -122,7 +124,6 @@ double SPARSELIZARD_SOLVER::computeCapacitanceDC( SPARSELIZARD_CONDUCTOR aConA,
 {
     double QA = aConA.dualPort.getvalue();
     double V = computeVoltageDC( aConA, aConB );
-    std::cout << "The computed capacitance is " << QA / V << std::endl;
     return QA / V;
 }
 
@@ -265,16 +266,14 @@ void SPARSELIZARD_SOLVER::setEquations( FEM_DESCRIPTOR* aDescriptor )
         // No magnetic flux can cross the domain
         m_A.setconstraint( m_boundary );
     }
-    std::cout << "Setting equations..." << std::endl;
+
     switch( aDescriptor->m_simulationType )
     {
     case FEM_SIMULATION_TYPE::DC:
         if( aDescriptor->m_simulateConductor )
         {
-            std::cout << "Setting equations on conductors..." << std::endl;
             for( SPARSELIZARD_CONDUCTOR* conductor : m_conductors )
             {
-                std::cout << "Gauss..." << std::endl;
                 // Divergence of current density ( E / rho ) = 0
                 ( *m_equations ) +=
                         sl::integral( conductor->regionID, sl::grad( sl::tf( m_v ) ) / ( *m_rho )
@@ -283,7 +282,6 @@ void SPARSELIZARD_SOLVER::setEquations( FEM_DESCRIPTOR* aDescriptor )
 
                 if( aDescriptor->m_simulateMagneticField )
                 {
-                    std::cout << "Ampere..." << std::endl;
                     // Ampere's law
                     ( *m_equations ) += sl::integral(
                             conductor->regionID,
@@ -297,13 +295,11 @@ void SPARSELIZARD_SOLVER::setEquations( FEM_DESCRIPTOR* aDescriptor )
                             ( *m_equations ) += sl::integral( conductor->regionID,
                                                               MAG_SMOOTH_PORT * sl::dof( m_A )
                                                                       * sl::tf( m_A ) );
-                            std::cout << "Dispersion on port..." << std::endl;
                         }
                     }
                 }
             }
         }
-        std::cout << "Setting equations on dielectrics..." << std::endl;
 
         for( SPARSELIZARD_DIELECTRIC* dielectric : m_dielectrics )
         {
@@ -602,8 +598,9 @@ void SPARSELIZARD_SOLVER::writeResults( FEM_DESCRIPTOR* aDescriptor )
             }
             if( resultView->m_valid )
             {
-                m_reporter->Report( "Filed created: " + resultView->m_filename.GetFullName(),
-                                    RPT_SEVERITY_ACTION );
+                if( m_verbosity >= 0 )
+                    m_reporter->Report( "Filed created: " + resultView->m_filename.GetFullName(),
+                                        RPT_SEVERITY_ACTION );
             }
         }
         break;
@@ -698,11 +695,10 @@ void SPARSELIZARD_SOLVER::SetRegions( FEM_DESCRIPTOR* aDescriptor, GMSH_MESHER* 
         }
     }
 
-    m_reporter->Report( "Number of ports in simulation: " + to_string( m_conductors.size() ),
-                        RPT_SEVERITY_INFO );
-    m_reporter->Report( "Number of ports in simulation: "
-                                + to_string( aDescriptor->GetPorts().size() ),
-                        RPT_SEVERITY_INFO );
+
+    if( m_verbosity >= 0 )
+        m_reporter->Report( "Number of ports in simulation: " + to_string( m_conductors.size() ),
+                            RPT_SEVERITY_INFO );
 
     // Add copper zones / tracks
 
@@ -745,12 +741,15 @@ void SPARSELIZARD_SOLVER::SetRegions( FEM_DESCRIPTOR* aDescriptor, GMSH_MESHER* 
         m_boundary = aMesher->AddDomainBoundaryRegion();
     }
 
-    m_reporter->Report( "Number of conducting regions in simulation: "
-                                + to_string( m_conductors.size() ),
-                        RPT_SEVERITY_INFO );
-    m_reporter->Report( "Number of dielectric regions in simulation: "
-                                + to_string( m_dielectrics.size() ),
-                        RPT_SEVERITY_INFO );
+    if( m_verbosity >= 0 )
+    {
+        m_reporter->Report( "Number of conducting regions in simulation: "
+                                    + to_string( m_conductors.size() ),
+                            RPT_SEVERITY_INFO );
+        m_reporter->Report( "Number of dielectric regions in simulation: "
+                                    + to_string( m_dielectrics.size() ),
+                            RPT_SEVERITY_INFO );
+    }
 }
 
 void SPARSELIZARD_SOLVER::SetBoundaries()
@@ -827,7 +826,6 @@ void SPARSELIZARD_SOLVER::simulate()
 
 bool SPARSELIZARD_SOLVER::Run_DC( FEM_DESCRIPTOR* aDescriptor )
 {
-    m_reporter->Report( "Sparselizard version: " + sl::getversionname(), RPT_SEVERITY_INFO );
     if( !m_constants.SetUnitScaling( EDA_UNITS::MILLIMETRES ) )
     {
         m_reporter->Report( "Cannot get constants in this unit system", RPT_SEVERITY_ERROR );
@@ -846,9 +844,13 @@ bool SPARSELIZARD_SOLVER::Run_DC( FEM_DESCRIPTOR* aDescriptor )
     SPARSELIZARD_MESHER mesher( aDescriptor->GetBoard() );
 #endif
 
-    m_reporter->Report( "Setting up ports and regions...", RPT_SEVERITY_INFO );
+    if( m_verbosity >= 0 )
+        m_reporter->Report( "Setting up ports and regions...", RPT_SEVERITY_INFO );
+
     SetRegions( aDescriptor, &mesher );
-    m_reporter->Report( "SPARSELIZARD: Loading mesh...", RPT_SEVERITY_ACTION );
+
+    if( m_verbosity >= 0 )
+        m_reporter->Report( "SPARSELIZARD: Loading mesh...", RPT_SEVERITY_ACTION );
 
 
 #ifdef USE_GMSH
@@ -871,7 +873,8 @@ bool SPARSELIZARD_SOLVER::Run_DC( FEM_DESCRIPTOR* aDescriptor )
     mymesh.load( shapes );
 #endif
 
-    m_reporter->Report( "SPARSELIZARD: mesh loaded.", RPT_SEVERITY_INFO );
+    if( m_verbosity >= 0 )
+        m_reporter->Report( "SPARSELIZARD: mesh loaded.", RPT_SEVERITY_INFO );
 
     // Remove empty regions ( Can happen when adding nets )
     for( SPARSELIZARD_CONDUCTOR* cond : m_conductors )
@@ -925,21 +928,33 @@ bool SPARSELIZARD_SOLVER::Run_DC( FEM_DESCRIPTOR* aDescriptor )
     m_rho = &rho;
     m_epsilon = &epsilon;
     m_mu = &mu;
-    m_reporter->Report( "Setting up simulation parameters...", RPT_SEVERITY_ACTION );
+
+    if( m_verbosity >= 0 )
+        m_reporter->Report( "Setting up simulation parameters...", RPT_SEVERITY_ACTION );
 
     if( !setParameters( aDescriptor ) )
         return false;
 
-    m_reporter->Report( "Setting up simulation ports...", RPT_SEVERITY_ACTION );
+    if( m_verbosity >= 0 )
+        m_reporter->Report( "Setting up simulation ports...", RPT_SEVERITY_ACTION );
+
     setConstraints( aDescriptor );
 
-    m_reporter->Report( "Setting up simulation equations...", RPT_SEVERITY_ACTION );
+
+    if( m_verbosity >= 0 )
+        m_reporter->Report( "Setting up simulation equations...", RPT_SEVERITY_ACTION );
+
     setEquations( aDescriptor );
 
-    m_reporter->Report( "SPARSELIZARD: Simulating...", RPT_SEVERITY_ACTION );
+
+    if( m_verbosity >= 0 )
+        m_reporter->Report( "SPARSELIZARD: Simulating...", RPT_SEVERITY_ACTION );
+
     simulate();
 
-    m_reporter->Report( "SPARSELIZARD: End of simulation.", RPT_SEVERITY_INFO );
+    if( m_verbosity >= 0 )
+        m_reporter->Report( "SPARSELIZARD: End of simulation.", RPT_SEVERITY_INFO );
+
     ( -sl::grad( m_v ) )
             .write( sl::selectunion( m_dielectricRegions ), std::string( "Efield.pos" ),
                     MAX_ORDER ); //TODO: remove
@@ -953,6 +968,9 @@ bool SPARSELIZARD_SOLVER::Run_DC( FEM_DESCRIPTOR* aDescriptor )
         expression( 1 ).write( m_boundary, "boundary.pos", 1 );
     }
     writeResults( aDescriptor );
-    m_reporter->Report( "Finished", RPT_SEVERITY_INFO );
+
+    if( m_verbosity > 0 )
+        m_reporter->Report( "SPARSELIZARD: Finished", RPT_SEVERITY_INFO );
+
     return true;
 }

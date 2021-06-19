@@ -91,6 +91,9 @@ public:
     bool setParameters( FEM_DESCRIPTOR* aDescriptor );
     void writeResults( FEM_DESCRIPTOR* aDescriptor );
 
+
+    int m_verbosity;
+
     int m_boundary;
     // Holds all equations
     formulation *m_equations; // For some reasons, this lead to a segfault on constructor if not using a pointer

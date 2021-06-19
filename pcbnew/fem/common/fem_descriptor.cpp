@@ -132,12 +132,17 @@ bool FEM_DESCRIPTOR::RemoveResult( FEM_RESULT* aResult )
 
 bool FEM_DESCRIPTOR::Run()
 {
-    PrintInfo();
+    if( m_verbosity >= 0 )
+    {
+        PrintInfo();
+    }
+
     switch( m_solver )
     {
     case FEM_SOLVER::SPARSELIZARD:
     {
         SPARSELIZARD_SOLVER* solver = new SPARSELIZARD_SOLVER( m_reporter );
+        solver->m_verbosity = m_verbosity - 1;
         return solver->Run_DC( this );
     }
     default: return false;
@@ -157,7 +162,13 @@ void FEM_DESCRIPTOR::PrintInfo()
         str += std::to_string( sl::getversion() );
         str += " (";
         str += sl::getversionname();
-        str += ")\n";
+        str += ")";
+
+        if( sl::getsubversion() != 0 )
+        {
+            str += " non-official release";
+        }
+        str += "\n";
         break;
     default: str += "/!\\ unknown\n";
     }
@@ -187,13 +198,13 @@ void FEM_DESCRIPTOR::PrintInfo()
     str += ( m_requiresDielectric ? "Yes\n" : "No\n" );
     str += "Air is meshed: ";
     str += ( m_requiresAir ? "Yes\n" : "No\n" );
-    str += "Simulation happens in conductor: ";
+    str += "Simulation in conductor: ";
     str += ( m_simulateConductor ? "Yes\n" : "No\n" );
-    str += "Simulation happens in dielectric/air: ";
+    str += "Simulation in dielectric/air: ";
     str += ( m_simulateDielectric ? "Yes\n" : "No\n" );
-    str += "Simulation electric field (in dielectric/air): ";
+    str += "Simulation of electric field (in dielectric/air): ";
     str += ( m_simulateElectricField ? "Yes\n" : "No\n" );
-    str += "Simulation magnetic field (everywhere): ";
+    str += "Simulation of magnetic field (everywhere): ";
     str += ( m_simulateMagneticField ? "Yes\n" : "No\n" );
 
     str += "\n";

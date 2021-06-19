@@ -197,16 +197,15 @@ void PANEL_PCBNEW_SIMUL_DC_POWER::OnRun( wxCommandEvent& event )
     view = new FEM_RESULT_VIEW( FEM_VIEW_TYPE::MAGNETIC_FIELD, *file );
     descriptor->AddResult( view );
 
+    descriptor->m_verbosity = 0;
     descriptor->m_requiresDielectric = false;
-    descriptor->m_simulateMagneticField = true;
+    descriptor->m_simulateMagneticField = false;
     descriptor->m_simulateElectricField = true;
     descriptor->m_requiresAir = true;
     descriptor->m_dim = FEM_SIMULATION_DIMENSION::SIMUL3D;
     descriptor->m_simulationType = FEM_SIMULATION_TYPE::DC;
     descriptor->m_reporter = new STDOUT_REPORTER();
 
-    std::cout << "Number of ports before calling SL: " << descriptor->GetPorts().size()
-              << std::endl;
     descriptor->Run();
 
     m_resultGrid->DeleteRows( 0, m_resultGrid->GetNumberRows() );

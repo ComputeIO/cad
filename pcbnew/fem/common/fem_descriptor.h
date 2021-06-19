@@ -79,6 +79,8 @@ public:
     FEM_SIMULATION_DIMENSION m_dim;
     FEM_SIMULATION_TYPE      m_simulationType;
 
+    int m_verbosity;
+
 
     void PrintInfo();
 
