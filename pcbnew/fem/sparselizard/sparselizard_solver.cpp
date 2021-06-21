@@ -914,8 +914,11 @@ bool SPARSELIZARD_SOLVER::Run_DC( FEM_DESCRIPTOR* aDescriptor )
 
     mymesh.write( "mymesh.msh", SPARSELIZARD_VERBOSITY );
 
+    m_reporter->Report( "Computing region boundaries...", RPT_SEVERITY_ACTION );
     SetBoundaries();
 
+
+    m_reporter->Report( "Done.", RPT_SEVERITY_ACTION );
     // Create the electric potential field v
     switch( aDescriptor->m_simulationType )
     {
@@ -938,6 +941,7 @@ bool SPARSELIZARD_SOLVER::Run_DC( FEM_DESCRIPTOR* aDescriptor )
         return false;
     }
 
+    m_reporter->Report( "Field defined.", RPT_SEVERITY_ACTION );
     formulation eq;
     m_equations = &eq;
 

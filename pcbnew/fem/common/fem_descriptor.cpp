@@ -32,6 +32,7 @@ FEM_DESCRIPTOR::FEM_DESCRIPTOR( FEM_SOLVER aSolver, const BOARD* aBoard )
     m_requiresDielectric = false;
     m_simulateDielectric = true;
     m_simulateConductor = true;
+    m_verbosity = 99;
 }
 
 bool FEM_DESCRIPTOR::SetSolver( FEM_SOLVER aSolver )

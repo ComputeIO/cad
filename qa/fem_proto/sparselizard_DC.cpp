@@ -52,6 +52,193 @@ public:
  */
 BOOST_FIXTURE_TEST_SUITE( SparselizardDC, class TEST_SPARSELIZARD_DC )
 
+
+bool testSetGet( FEM_SIMULATION_DIMENSION aDim )
+{
+    std::cout << "SET GET " <<std::endl;
+    double max_error = 1e-9;
+    double potential = 5;
+    double current = 1;
+    // Declare two pads
+    BOARD*     board = new BOARD();
+    FOOTPRINT* fp = new FOOTPRINT( board );
+
+
+    // Init board stackup
+    board->GetDesignSettings().GetStackupDescriptor().SynchronizeWithBoard(
+            &board->GetDesignSettings() );
+    
+    PAD* pad1 = new PAD( fp );
+    pad1->SetShape( PAD_SHAPE::RECT );
+    pad1->SetSizeX( From_User_Unit( EDA_UNITS::MILLIMETRES, 2 ) );
+    pad1->SetSizeY( From_User_Unit( EDA_UNITS::MILLIMETRES, 2 ) );
+    pad1->SetX( From_User_Unit( EDA_UNITS::MILLIMETRES, -4 ) );
+    pad1->SetY( From_User_Unit( EDA_UNITS::MILLIMETRES, 0 ) );
+    pad1->SetNetCode( 1, true );
+    pad1->SetAttribute( PAD_ATTRIB::SMD );
+    pad1->SetLayer( PCB_LAYER_ID::F_Cu );
+    pad1->SetLayerSet( pad1->SMDMask() );
+    pad1->SetDrillSizeX( 0 );
+    pad1->SetDrillSizeY( 0 );
+    
+    PAD* pad2 = new PAD( fp );
+    pad2->SetShape( PAD_SHAPE::RECT );
+    pad2->SetSizeX( From_User_Unit( EDA_UNITS::MILLIMETRES, 2 ) );
+    pad2->SetSizeY( From_User_Unit( EDA_UNITS::MILLIMETRES, 2 ) );
+    pad2->SetX( From_User_Unit( EDA_UNITS::MILLIMETRES, 4 ) );
+    pad2->SetY( From_User_Unit( EDA_UNITS::MILLIMETRES, 0 ) );
+    pad2->SetNetCode( 1, true );
+    pad2->SetAttribute( PAD_ATTRIB::SMD );
+    pad2->SetLayer( PCB_LAYER_ID::F_Cu );
+    pad2->SetLayerSet( pad2->SMDMask() );
+    pad2->SetDrillSizeX( 0 );
+    pad2->SetDrillSizeY( 0 );
+
+    fp->Add( pad1 );
+    fp->Add( pad2 );
+    board->Add( fp );
+
+    TRACK* track = new TRACK( board );
+    track->SetWidth( From_User_Unit( EDA_UNITS::MILLIMETRES, 3 ) );
+    track->SetStart( wxPoint( From_User_Unit( EDA_UNITS::MILLIMETRES, -5 ),
+                              From_User_Unit( EDA_UNITS::MILLIMETRES, 0 ) ) );
+    track->SetEnd( wxPoint( From_User_Unit( EDA_UNITS::MILLIMETRES, 5 ),
+                            From_User_Unit( EDA_UNITS::MILLIMETRES, 0 ) ) );
+    track->SetNetCode( 1, true );
+    board->Add( track );
+
+    //Declare two ports
+
+    FEM_DESCRIPTOR* descriptor = new FEM_DESCRIPTOR( FEM_SOLVER::SPARSELIZARD, board );
+    descriptor->m_reporter = new STDOUT_REPORTER(); // Don't report
+    descriptor->m_simulationType = FEM_SIMULATION_TYPE::DC;
+    descriptor->m_dim = aDim;
+    descriptor->m_requiresDielectric = false;
+    descriptor->m_requiresAir = false;
+    descriptor->m_simulateConductor = false;
+    descriptor->m_simulateDielectric = false;
+    descriptor->m_simulateElectricField = false;
+    descriptor->m_simulateMagneticField = false;
+
+    FEM_PORT*            port1 = new FEM_PORT( pad1 );
+    FEM_PORT_CONSTRAINT* constraint1 = new FEM_PORT_CONSTRAINT();
+
+    constraint1->m_type = FEM_PORT_CONSTRAINT_TYPE::VOLTAGE;
+    constraint1->m_value = potential;
+    port1->m_type = FEM_PORT_TYPE::SOURCE;
+    port1->m_constraint = *constraint1;
+    descriptor->AddPort( port1 );
+    
+    FEM_PORT*            port2 = new FEM_PORT( pad2 );
+    FEM_PORT_CONSTRAINT* constraint2 = new FEM_PORT_CONSTRAINT();
+    port2->m_type = FEM_PORT_TYPE::PASSIVE;
+    port2->m_constraint = *constraint2;
+    //descriptor->AddPort( port2 );
+
+
+    FEM_RESULT_VALUE* r_voltage1 =
+            new FEM_RESULT_VALUE( FEM_VALUE_TYPE::POTENTIAL, port1, nullptr );
+    FEM_RESULT_VALUE* r_voltage2 =
+            new FEM_RESULT_VALUE( FEM_VALUE_TYPE::POTENTIAL, port2, nullptr );
+
+    if( !( ( r_voltage1 )->IsInitialized() && ( r_voltage2 )->IsInitialized() )  )
+        std::cerr << "Could not initialize voltage result. " << std::endl;
+
+    if( !( descriptor->AddResult( r_voltage1 ) && descriptor->AddResult( r_voltage2 ) ) )
+        std::cerr << "Could not add voltage result to descriptor " << std::endl;
+
+    descriptor->Run();
+
+    return false;
+
+    if( r_voltage1->m_valid )
+    {
+        if( abs( r_voltage1->GetResult() - potential ) / potential > max_error )
+        {
+            std::cout << "test failed: V=" << r_voltage1->GetResult() << " instead of "
+                      << potential << std::endl;
+            return false;
+        }
+    }
+    else
+    {
+        return false;
+    }
+
+    if( r_voltage2->m_valid )
+    {
+        if( abs( r_voltage2->GetResult() - potential ) / potential > max_error )
+        {
+            std::cout << "test failed: V=" << r_voltage2->GetResult() << " instead of "
+                      << potential << std::endl;
+            return false;
+        }
+    }
+    else
+    {
+        return false;
+    }
+
+
+    constraint1->m_type = FEM_PORT_CONSTRAINT_TYPE::VOLTAGE;
+    constraint1->m_value = 0;
+    port1->m_type = FEM_PORT_TYPE::SOURCE;
+    port1->m_constraint = *constraint1;
+
+    constraint2->m_type = FEM_PORT_CONSTRAINT_TYPE::CURRENT;
+    constraint2->m_value = current;
+    port2->m_type = FEM_PORT_TYPE::SOURCE;
+    port2->m_constraint = *constraint2;
+
+
+    FEM_RESULT_VALUE* r_current1 =
+            new FEM_RESULT_VALUE( FEM_VALUE_TYPE::CURRENT, port1, nullptr );
+    FEM_RESULT_VALUE* r_current2 =
+            new FEM_RESULT_VALUE( FEM_VALUE_TYPE::CURRENT, port2, nullptr );
+
+    if( !( ( r_current1 )->IsInitialized() && ( r_current2 )->IsInitialized() )  )
+        std::cerr << "Could not initialize voltage result. " << std::endl;
+
+    if( !( descriptor->AddResult( r_current1 ) && descriptor->AddResult( r_current2 ) ) )
+        std::cerr << "Could not add voltage result to descriptor " << std::endl;
+
+    descriptor->Run();
+
+    if( r_current1->m_valid )
+    {
+        if( abs( r_current1->GetResult() - current ) / current > max_error )
+        {
+            std::cout << "test failed: I=" << r_current1->GetResult() << " instead of "
+                      << 2*current << std::endl;
+            return false;
+        }
+    }
+    else
+    {
+        return false;
+    }
+
+    if( r_current2->m_valid )
+    {
+        if( abs( r_current2->GetResult() - current ) / current > max_error )
+        {
+            std::cout << "test failed: I=" << r_current2->GetResult() << " instead of "
+                      << current << std::endl;
+            return false;
+        }
+    }
+    else
+    {
+        return false;
+    }
+
+    return true;
+
+
+
+}
+
+
 /**
  * Function testCurrentConservation
  *
@@ -567,21 +754,26 @@ void planeCapacitanceTest()
     BOOST_CHECK_EQUAL( simulPlaneCapacitance( x, y, epsilonr, d, maxError ), true );
 }
 
+BOOST_AUTO_TEST_CASE( TestSetGet )
+{
+    BOOST_CHECK_EQUAL( testSetGet( FEM_SIMULATION_DIMENSION::SIMUL3D ), true );
+}
+
 BOOST_AUTO_TEST_CASE( TestTrackResistance )
 {
-    trackResistanceTest( FEM_SIMULATION_DIMENSION::SIMUL2D5 );
-    trackResistanceTest( FEM_SIMULATION_DIMENSION::SIMUL3D );
+    //trackResistanceTest( FEM_SIMULATION_DIMENSION::SIMUL2D5 );
+    //trackResistanceTest( FEM_SIMULATION_DIMENSION::SIMUL3D );
 }
 
 BOOST_AUTO_TEST_CASE( TestPlaneCapacitance )
 {
-    planeCapacitanceTest();
+    //planeCapacitanceTest();
 }
 
 BOOST_AUTO_TEST_CASE( TestCurrentConservation )
 {
-    currentConservationTest( FEM_SIMULATION_DIMENSION::SIMUL2D5 );
-    currentConservationTest( FEM_SIMULATION_DIMENSION::SIMUL3D );
+    //currentConservationTest( FEM_SIMULATION_DIMENSION::SIMUL2D5 );
+    //currentConservationTest( FEM_SIMULATION_DIMENSION::SIMUL3D );
 }
 
 BOOST_AUTO_TEST_SUITE_END()
