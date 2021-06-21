@@ -204,8 +204,6 @@ private:
     int                       m_boundary_region;
     int                       m_air_region;
 
-    std::map<int, std::vector<int>> m_region_surfaces;
-
     const BOARD* m_board;
 };
 

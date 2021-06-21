@@ -227,9 +227,9 @@ void GMSH_MESHER::Load25DMesh()
     //gmsh::model::mesh::refine();
     //std::cerr << "set order mesh" << std::endl;
     //gmsh::model::mesh::setOrder(2);
-    std::cerr << "finish mesh" << std::endl;
+    std::cerr << "finish mesh (stored in 'kicad_pcb_25d.msh')" << std::endl;
 
-    m_region_surfaces.clear();
+    gmsh::write( "kicad_pcb_25d.msh" );
 }
 
 
@@ -348,9 +348,9 @@ void GMSH_MESHER::Load3DMesh()
     gmsh::model::mesh::refine();
     //std::cerr << "set order mesh" << std::endl;
     //gmsh::model::mesh::setOrder(2);
-    std::cerr << "finish mesh" << std::endl;
+    std::cerr << "finish mesh (stored in 'kicad_pcb_3d.msh')" << std::endl;
 
-    m_region_surfaces.clear();
+    gmsh::write( "kicad_pcb_3d.msh" );
 }
 
 
