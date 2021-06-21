@@ -756,18 +756,18 @@ void planeCapacitanceTest()
 
 BOOST_AUTO_TEST_CASE( TestSetGet )
 {
-    BOOST_CHECK_EQUAL( testSetGet( FEM_SIMULATION_DIMENSION::SIMUL3D ), true );
+    //BOOST_CHECK_EQUAL( testSetGet( FEM_SIMULATION_DIMENSION::SIMUL3D ), true );
 }
 
 BOOST_AUTO_TEST_CASE( TestTrackResistance )
 {
-    //trackResistanceTest( FEM_SIMULATION_DIMENSION::SIMUL2D5 );
-    //trackResistanceTest( FEM_SIMULATION_DIMENSION::SIMUL3D );
+    trackResistanceTest( FEM_SIMULATION_DIMENSION::SIMUL2D5 );
+    trackResistanceTest( FEM_SIMULATION_DIMENSION::SIMUL3D );
 }
 
 BOOST_AUTO_TEST_CASE( TestPlaneCapacitance )
 {
-    //planeCapacitanceTest();
+    planeCapacitanceTest();
 }
 
 BOOST_AUTO_TEST_CASE( TestCurrentConservation )
