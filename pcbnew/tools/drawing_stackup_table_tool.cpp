@@ -236,6 +236,8 @@ std::vector<BOARD_ITEM*> DRAWING_TOOL::DrawSpecificationStackup(
     //Get Layer names
     BOARD_DESIGN_SETTINGS&           dsnSettings = m_frame->GetDesignSettings();
     BOARD_STACKUP&                   stackup     = dsnSettings.GetStackupDescriptor();
+    stackup.SynchronizeWithBoard( &dsnSettings );
+
     std::vector<BOARD_STACKUP_ITEM*> layers      = stackup.GetList();
 
     std::vector<PCB_TEXT*> colLayer;
@@ -287,8 +289,18 @@ std::vector<BOARD_ITEM*> DRAWING_TOOL::DrawSpecificationStackup(
     {
         for( j = 0; j < layers.at( i )->GetSublayersCount(); j++ )
         {
+            // Layer names are empty untill we close at least once the board setup dialog.
+            // If the user did not open the dialog, then get the names from the board.
+            // But dielectric layer names will be missing.
             t = static_cast<PCB_TEXT*>( dataStyle->Duplicate() );
-            t->SetText( layers.at( i )->GetLayerName() );
+            if( layers.at( i )->GetLayerName().IsEmpty() )
+            {
+                t->SetText( m_frame->GetBoard()->GetLayerName( layers.at( i )->GetBrdLayerId() ) );
+            }
+            else
+            {
+                t->SetText( layers.at( i )->GetLayerName() );
+            }
             colLayer.push_back( t );
 
             t = static_cast<PCB_TEXT*>( dataStyle->Duplicate() );
