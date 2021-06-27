@@ -24,7 +24,7 @@
 
 #include <base_units.h>
 #include <bitmaps.h>
-#include <class_library.h>
+#include <symbol_library.h>
 #include <confirm.h>
 #include <connection_graph.h>
 #include <dialogs/dialog_schematic_find.h>
@@ -117,7 +117,7 @@ SEARCH_STACK* PROJECT::SchSearchS()
 
         try
         {
-            PART_LIBS::LibNamesAndPaths( this, false, &libDir );
+            SYMBOL_LIBS::LibNamesAndPaths( this, false, &libDir );
         }
         catch( const IO_ERROR& )
         {
@@ -145,18 +145,18 @@ SEARCH_STACK* PROJECT::SchSearchS()
 }
 
 
-PART_LIBS* PROJECT::SchLibs()
+SYMBOL_LIBS* PROJECT::SchLibs()
 {
-    PART_LIBS* libs = (PART_LIBS*) GetElem( PROJECT::ELEM_SCH_PART_LIBS );
+    SYMBOL_LIBS* libs = (SYMBOL_LIBS*) GetElem( PROJECT::ELEM_SCH_SYMBOL_LIBS );
 
-    wxASSERT( !libs || libs->Type() == PART_LIBS_T );
+    wxASSERT( !libs || libs->Type() == SYMBOL_LIBS_T );
 
     if( !libs )
     {
-        libs = new PART_LIBS();
+        libs = new SYMBOL_LIBS();
 
-        // Make PROJECT the new PART_LIBS owner.
-        SetElem( PROJECT::ELEM_SCH_PART_LIBS, libs );
+        // Make PROJECT the new SYMBOL_LIBS owner.
+        SetElem( PROJECT::ELEM_SCH_SYMBOL_LIBS, libs );
 
         try
         {
@@ -958,7 +958,7 @@ void SCH_EDIT_FRAME::NewProject()
         if( create_me.FileExists() )
         {
             wxString msg;
-            msg.Printf( _( "Schematic file \"%s\" already exists." ), create_me.GetFullName() );
+            msg.Printf( _( "Schematic file '%s' already exists." ), create_me.GetFullName() );
             DisplayError( this, msg );
             return ;
         }
@@ -1249,11 +1249,7 @@ void SCH_EDIT_FRAME::UpdateTitle()
 {
     wxString title;
 
-    if( GetScreen()->GetFileName().IsEmpty() )
-    {
-        title = _( "[no file]" ) + wxT( " \u2014 " ) + _( "Schematic Editor" );
-    }
-    else
+    if( !GetScreen()->GetFileName().IsEmpty() )
     {
         wxFileName fn( Prj().AbsolutePath( GetScreen()->GetFileName() ) );
         bool       readOnly = false;
@@ -1264,13 +1260,24 @@ void SCH_EDIT_FRAME::UpdateTitle()
         else
             unsaved = true;
 
-        title.Printf( wxT( "%s%s [%s] %s%s\u2014 " ) + _( "Schematic Editor" ),
-                      IsContentModified() ? "*" : "",
-                      fn.GetName(),
-                      GetCurrentSheet().PathHumanReadable( false ),
-                      readOnly ? _( "[Read Only]" ) + wxS( " " ) : "",
-                      unsaved ? _( "[Unsaved]" ) + wxS( " " ) : "" );
+        if( IsContentModified() )
+            title = wxT( "*" );
+
+        title += fn.GetName();
+        title += wxString::Format( wxT( " [%s]" ), GetCurrentSheet().PathHumanReadable( false ) );
+
+        if( readOnly )
+            title += wxS( " " ) + _( "[Read Only]" );
+
+        if( unsaved )
+            title += wxS( " " ) +  _( "[Unsaved]" );
     }
+    else
+    {
+        title = _( "[no schematic loaded]" );
+    }
+
+    title += wxT( " \u2014 " ) + _( "Schematic Editor" );
 
     SetTitle( title );
 }

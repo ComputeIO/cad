@@ -2,7 +2,7 @@
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
  * Copyright (C) 2014-2017 CERN
- * Copyright (C) 2014-2020 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 2014-2021 KiCad Developers, see AUTHORS.txt for contributors.
  * @author Tomasz Włostowski <tomasz.wlostowski@cern.ch>
  *
  * This program is free software: you can redistribute it and/or modify it
@@ -768,6 +768,13 @@ void ZONE_FILLER::buildCopperItemClearances( const ZONE* aZone, PCB_LAYER_ID aLa
                     }
                     else
                     {
+                        // Gives more clearance to arcs (the arc to area conv is not perfect)
+                        // extra_margin is not enought here
+                        // This is a workaround, that can be removed when (if?) the arcs
+                        // issues are fixed
+                        if( aTrack->Type() == PCB_ARC_T )
+                            gap += Millimeter2iu( 0.004 );
+
                         aTrack->TransformShapeWithClearanceToPolygon( aHoles, aLayer, gap,
                                                                       m_maxError, ERROR_OUTSIDE );
                     }
@@ -1563,9 +1570,9 @@ bool ZONE_FILLER::addHatchFillTypeOnZone( const ZONE* aZone, PCB_LAYER_ID aLayer
                     // enough.
                     int pad_width = std::min( pad->GetSize().x, pad->GetSize().y );
                     int slot_width = std::min( pad->GetDrillSize().x, pad->GetDrillSize().y );
-                    int min_annulus = ( pad_width - slot_width ) / 2;
+                    int min_annular_ring_width = ( pad_width - slot_width ) / 2;
                     int clearance = std::max( min_apron_radius - pad_width / 2,
-                                              outline_margin - min_annulus );
+                                              outline_margin - min_annular_ring_width );
 
                     clearance = std::max( 0, clearance - linethickness / 2 );
                     pad->TransformShapeWithClearanceToPolygon( aprons, aLayer, clearance,

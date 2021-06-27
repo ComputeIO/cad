@@ -22,7 +22,7 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
 
-#include <class_library.h>
+#include <symbol_library.h>
 #include <confirm.h>
 #include <widgets/infobar.h>
 #include <connection_graph.h>
@@ -850,7 +850,7 @@ static bool highlightNet( TOOL_MANAGER* aToolMgr, const VECTOR2D& aPosition )
                 if( item->Type() == SCH_FIELD_T )
                     symbol = dynamic_cast<SCH_SYMBOL*>( item->GetParent() );
 
-                if( symbol && symbol->GetPartRef() && symbol->GetPartRef()->IsPower() )
+                if( symbol && symbol->GetLibSymbolRef() && symbol->GetLibSymbolRef()->IsPower() )
                 {
                     std::vector<SCH_PIN*> pins = symbol->GetPins();
 
@@ -1016,7 +1016,7 @@ int SCH_EDITOR_CONTROL::UpdateNetHighlighting( const TOOL_EVENT& aEvent )
         if( item->Type() == SCH_SYMBOL_T )
             symbol = static_cast<SCH_SYMBOL*>( item );
 
-        if( symbol && symbol->GetPartRef() && symbol->GetPartRef()->IsPower() )
+        if( symbol && symbol->GetLibSymbolRef() && symbol->GetLibSymbolRef()->IsPower() )
             itemConn = symbol->Connection();
         else
             itemConn = item->Connection();
@@ -1084,7 +1084,7 @@ int SCH_EDITOR_CONTROL::UpdateNetHighlighting( const TOOL_EVENT& aEvent )
                 }
             }
 
-            if( symbol->GetPartRef() && symbol->GetPartRef()->IsPower() )
+            if( symbol->GetLibSymbolRef() && symbol->GetLibSymbolRef()->IsPower() )
             {
                 std::vector<SCH_FIELD>& fields = symbol->GetFields();
 
@@ -1623,6 +1623,9 @@ int SCH_EDITOR_CONTROL::Paste( const TOOL_EVENT& aEvent )
                 number = baseName.Last() + number;
                 baseName.RemoveLast();
             }
+            // Update hierarchy to include any other sheets we already added, avoiding
+            // duplicate sheet names
+            hierarchy = m_frame->Schematic().GetSheets();
 
             //@todo: it might be better to just iterate through the sheet names
             // in this screen instead of the whole hierarchy.

@@ -44,7 +44,7 @@
 #include <sch_sheet_pin.h>
 #include <sch_bitmap.h>
 #include <schematic.h>
-#include <class_library.h>
+#include <symbol_library.h>
 #include <eeschema_settings.h>
 #include <dialogs/dialog_sch_text_properties.h>
 #include <dialogs/dialog_edit_line_style.h>
@@ -119,7 +119,7 @@ int SCH_DRAWING_TOOLS::PlaceSymbol( const TOOL_EVENT& aEvent )
     else if (aEvent.IsAction( &EE_ACTIONS::placePower ) )
     {
         historyList = &m_powerHistoryList;
-        filter.FilterPowerParts( true );
+        filter.FilterPowerSymbols( true );
     }
     else
     {
@@ -255,7 +255,7 @@ int SCH_DRAWING_TOOLS::PlaceSymbol( const TOOL_EVENT& aEvent )
                     controls->WarpCursor( canvas_area.Centre(), false );
 
                 LIB_SYMBOL* libSymbol = sel.LibId.IsValid() ?
-                                        m_frame->GetLibPart( sel.LibId ) : nullptr;
+                                        m_frame->GetLibSymbol( sel.LibId ) : nullptr;
 
                 if( !libSymbol )
                     continue;
@@ -348,11 +348,13 @@ int SCH_DRAWING_TOOLS::PlaceSymbol( const TOOL_EVENT& aEvent )
             evt->SetPassEvent();
         }
 
-        // Enable autopanning and cursor capture only when there is a footprint to be placed
+        // Enable autopanning and cursor capture only when there is a symbol to be placed
         getViewControls()->SetAutoPan( symbol != nullptr );
         getViewControls()->CaptureCursor( symbol != nullptr );
     }
 
+    getViewControls()->SetAutoPan( false );
+    getViewControls()->CaptureCursor( false );
     m_frame->GetCanvas()->SetCurrentCursor( KICURSOR::ARROW );
     m_inPlaceSymbol = false;
     return 0;
@@ -564,11 +566,13 @@ int SCH_DRAWING_TOOLS::PlaceImage( const TOOL_EVENT& aEvent )
             evt->SetPassEvent();
         }
 
-        // Enable autopanning and cursor capture only when there is a footprint to be placed
+        // Enable autopanning and cursor capture only when there is an image to be placed
         getViewControls()->SetAutoPan( image != nullptr );
         getViewControls()->CaptureCursor( image != nullptr );
     }
 
+    getViewControls()->SetAutoPan( false );
+    getViewControls()->CaptureCursor( false );
     m_frame->GetCanvas()->SetCurrentCursor( KICURSOR::ARROW );
     m_inPlaceImage = false;
     return 0;
@@ -1178,7 +1182,8 @@ int SCH_DRAWING_TOOLS::TwoClickPlace( const TOOL_EVENT& aEvent )
             else
             {
                 item->ClearFlags( IS_MOVING );
-                m_frame->AddItemToScreenAndUndoList( m_frame->GetScreen(), (SCH_ITEM*) item, false );
+                m_frame->AddItemToScreenAndUndoList( m_frame->GetScreen(), (SCH_ITEM*) item,
+                                                     false );
                 item = nullptr;
 
                 m_view->ClearPreview();
@@ -1222,13 +1227,15 @@ int SCH_DRAWING_TOOLS::TwoClickPlace( const TOOL_EVENT& aEvent )
             evt->SetPassEvent();
         }
 
-        // Enable autopanning and cursor capture only when there is a footprint to be placed
+        // Enable autopanning and cursor capture only when there is an item to be placed
         controls->SetAutoPan( item != nullptr );
         controls->CaptureCursor( item != nullptr );
     }
 
-    m_frame->GetCanvas()->SetCurrentCursor( KICURSOR::ARROW );
+    controls->SetAutoPan( false );
+    controls->CaptureCursor( false );
     controls->ForceCursorPosition( false );
+    m_frame->GetCanvas()->SetCurrentCursor( KICURSOR::ARROW );
     m_inTwoClickPlace = false;
     return 0;
 }
@@ -1408,6 +1415,8 @@ int SCH_DRAWING_TOOLS::DrawSheet( const TOOL_EVENT& aEvent )
         getViewControls()->CaptureCursor( sheet != nullptr );
     }
 
+    getViewControls()->SetAutoPan( false );
+    getViewControls()->CaptureCursor( false );
     m_frame->GetCanvas()->SetCurrentCursor( KICURSOR::ARROW );
     m_inDrawSheet = false;
     return 0;

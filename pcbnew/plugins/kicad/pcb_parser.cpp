@@ -28,13 +28,11 @@
  */
 
 #include <cerrno>
-#include <common.h>
 #include <confirm.h>
 #include <macros.h>
 #include <title_block.h>
 #include <trigo.h>
 
-#include <advanced_config.h>
 #include <board.h>
 #include <board_design_settings.h>
 #include <pcb_dimension.h>
@@ -54,10 +52,10 @@
 #include <zones.h>
 #include <plugins/kicad/pcb_parser.h>
 #include <convert_basic_shapes_to_polygon.h>    // for RECT_CHAMFER_POSITIONS definition
-#include <template_fieldnames.h>
 #include <math/util.h>                           // KiROUND, Clamp
 #include <kicad_string.h>
 #include <wx/log.h>
+#include <widgets/progress_reporter.h>
 
 using namespace PCB_KEYS_T;
 
@@ -103,6 +101,28 @@ void PCB_PARSER::init()
         std::string key = StrPrintf( "Inner%d.Cu", i );
 
         m_layerMasks[ key ] = LSET( PCB_LAYER_ID( In15_Cu - i ) );
+    }
+}
+
+
+void PCB_PARSER::checkpoint()
+{
+    const unsigned PROGRESS_DELTA = 250;
+
+    if( m_progressReporter )
+    {
+        unsigned curLine = m_lineReader->LineNumber();
+
+        if( curLine > m_lastProgressLine + PROGRESS_DELTA )
+        {
+            m_progressReporter->SetCurrentProgress( ( (double) curLine )
+                                                            / std::max( 1U, m_lineCount ) );
+
+            if( !m_progressReporter->KeepRefreshing() )
+                THROW_IO_ERROR( ( "Open cancelled by user." ) );
+
+            m_lastProgressLine = curLine;
+        }
     }
 }
 
@@ -295,8 +315,8 @@ void PCB_PARSER::parseEDA_TEXT( EDA_TEXT* aText )
     wxCHECK_RET( CurTok() == T_effects,
                  wxT( "Cannot parse " ) + GetTokenString( CurTok() ) + wxT( " as EDA_TEXT." ) );
 
-    // In version 20210606 the notation for overbars was changed from `~...~` to `~{...}`. We need to convert
-    // the old syntax to the new one.
+    // In version 20210606 the notation for overbars was changed from `~...~` to `~{...}`.
+    // We need to convert the old syntax to the new one.
     if( m_requiredVersion < 20210606 )
         aText->SetText( ConvertToNewOverbarNotation( aText->GetText() ) );
 
@@ -611,6 +631,8 @@ BOARD* PCB_PARSER::parseBOARD_unchecked()
 
     for( token = NextTok();  token != T_RIGHT;  token = NextTok() )
     {
+        checkpoint();
+
         if( token != T_LEFT )
             Expecting( T_LEFT );
 
@@ -1733,7 +1755,7 @@ void PCB_PARSER::parseSetup()
             break;
 
         case T_via_min_annulus:
-            designSettings.m_ViasMinAnnulus = parseBoardUnits( T_via_min_annulus );
+            designSettings.m_ViasMinAnnularWidth = parseBoardUnits( T_via_min_annulus );
             m_board->m_LegacyDesignSettingsLoaded = true;
             NeedRIGHT();
             break;
@@ -2115,6 +2137,11 @@ void PCB_PARSER::parseNETINFO_ITEM()
     NeedSYMBOLorNUMBER();
     wxString name = FromUTF8();
 
+    // Convert overbar syntax from `~...~` to `~{...}`.  These were left out of the first merge
+    // so the version is a bit later.
+    if( m_requiredVersion < 20210615 )
+        name = ConvertToNewOverbarNotation( name );
+
     NeedRIGHT();
 
     // net 0 should be already in list, so store this net
@@ -2189,7 +2216,14 @@ void PCB_PARSER::parseNETCLASS()
 
         case T_add_net:
             NeedSYMBOLorNUMBER();
-            nc->Add( FromUTF8() );
+
+            // Convert overbar syntax from `~...~` to `~{...}`.  These were left out of the
+            // first merge so the version is a bit later.
+            if( m_requiredVersion < 20210615 )
+                nc->Add( ConvertToNewOverbarNotation( FromUTF8() ) );
+            else
+                nc->Add( FromUTF8() );
+
             break;
 
         default:
@@ -3979,29 +4013,32 @@ PAD* PCB_PARSER::parsePAD( FOOTPRINT* aParent )
         case T_net:
             if( ! pad->SetNetCode( getNetCode( parseInt( "net number" ) ), /* aNoAssert */ true ) )
             {
-                wxLogError( wxString::Format( _( "Invalid net ID in\n"
-                                                 "file: '%s'\n"
-                                                 "line: %d\n"
-                                                 "offset: %d" ),
-                                              CurSource(),
-                                              CurLineNumber(),
-                                              CurOffset() ) );
+                wxLogError( _( "Invalid net ID in\nfile: %s\nline: %d offset: %d" ),
+                            CurSource(),
+                            CurLineNumber(),
+                            CurOffset() );
             }
 
             NeedSYMBOLorNUMBER();
 
             // Test validity of the netname in file for netcodes expected having a net name
-            if( m_board && pad->GetNetCode() > 0 &&
-                FromUTF8() != m_board->FindNet( pad->GetNetCode() )->GetNetname() )
+            if( m_board && pad->GetNetCode() > 0 )
             {
-                pad->SetNetCode( NETINFO_LIST::ORPHANED, /* aNoAssert */ true );
-                wxLogError( wxString::Format( _( "Net name doesn't match net ID in\n"
-                                                 "file: '%s'\n"
-                                                 "line: %d\n"
-                                                 "offset: %d" ),
-                                              CurSource(),
-                                              CurLineNumber(),
-                                              CurOffset() ) );
+                wxString netName( FromUTF8() );
+
+                // Convert overbar syntax from `~...~` to `~{...}`.  These were left out of the
+                // first merge so the version is a bit later.
+                if( m_requiredVersion < 20210615 )
+                    netName = ConvertToNewOverbarNotation( netName );
+
+                if( netName != m_board->FindNet( pad->GetNetCode() )->GetNetname() )
+                {
+                    pad->SetNetCode( NETINFO_LIST::ORPHANED, /* aNoAssert */ true );
+                    wxLogError( _( "Net name doesn't match ID in\nfile: %s\nline: %d offset: %d" ),
+                                 CurSource(),
+                                 CurLineNumber(),
+                                 CurOffset() );
+                }
             }
 
             NeedRIGHT();

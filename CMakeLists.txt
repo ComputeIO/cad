@@ -60,12 +60,12 @@ option( KICAD_SCRIPTING_WXPYTHON
 mark_as_advanced( KICAD_SCRIPTING_WXPYTHON )
 
 option( KICAD_USE_OCE
-    "Build tools and plugins related to OpenCascade Community Edition (default ON)"
-    ON )
+    "Build tools and plugins related to OpenCascade Community Edition (default OFF)"
+    OFF )
 
 option( KICAD_USE_OCC
-    "Build tools and plugins related to OpenCascade Technology (overrides KICAD_USE_OCE, default OFF)"
-    OFF )
+    "Build tools and plugins related to OpenCascade Technology (overrides KICAD_USE_OCE, default ON)"
+    ON )
 
 option( KICAD_INSTALL_DEMOS
     "Install KiCad demos and examples (default ON)"
@@ -136,6 +136,10 @@ cmake_dependent_option( KICAD_USE_BUNDLED_GLEW
 
 option( KICAD_DRC_PROTO
     "Build the DRC prototype QA tool"
+    OFF )
+
+option( KICAD_BUILD_PNS_DEBUG_TOOL
+    "Build the P&S debugging/playground QA tool"
     OFF )
 
 option( KICAD_GAL_PROFILE
@@ -785,7 +789,7 @@ include_directories( BEFORE SYSTEM ${PYBIND11_INCLUDE_DIR} )
 set( PythonInterp_FIND_VERSION 3.6 )
 set( PythonLibs_FIND_VERSION 3.6 )
 
-find_package( PythonInterp )
+find_package( PythonInterp ${PythonInterp_FIND_VERSION} )
 
 check_find_package_result( PYTHONINTERP_FOUND "Python Interpreter" )
 

@@ -36,12 +36,9 @@
 #include <pcb_edit_frame.h>
 #include <eda_dde.h>
 #include <macros.h>
-#include <wx/file.h>
-#include <wx/log.h>
 #include <wx/snglinst.h>
 #include <gestfich.h>
 #include <paths.h>
-#include <pcbnew.h>
 #include <pcbnew_settings.h>
 #include <settings/settings_manager.h>
 #include <class_draw_panel_gal.h>
@@ -52,7 +49,6 @@
 #include <footprint_preview_panel.h>
 #include <footprint_info_impl.h>
 #include <dialogs/dialog_configure_paths.h>
-#include <paths.h>
 #include <python_scripting.h>
 
 #include "invoke_pcb_dialog.h"
@@ -355,7 +351,7 @@ void IFACE::SaveFileAs( const wxString& aProjectBasePath, const wxString& aSrcPr
             if( !aErrors.empty() )
                 aErrors += "\n";
 
-            msg.Printf( _( "Cannot copy file \"%s\"." ), destFile.GetFullPath() );
+            msg.Printf( _( "Cannot copy file '%s'." ), destFile.GetFullPath() );
             aErrors += msg;
         }
     }

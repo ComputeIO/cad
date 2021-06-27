@@ -34,7 +34,7 @@
 
 
 /**
- * Illegal file name characters used to insure file names will be valid on all supported
+ * Illegal file name characters used to ensure file names will be valid on all supported
  * platforms.  This is the list of illegal file name characters for Windows which includes
  * the illegal file name characters for Linux and OSX.
  */
@@ -54,9 +54,9 @@ wxString ConvertToNewOverbarNotation( const wxString& aOldStr )
     {
         if( *chIt == '~' )
         {
-            wxString::const_iterator lookahead = chIt;
+            wxString::const_iterator lookahead = chIt + 1;
 
-            if( ++lookahead != aOldStr.end() && *lookahead == '~' )
+            if( lookahead != aOldStr.end() && *lookahead == '~' )
             {
                 if( ++lookahead != aOldStr.end() && *lookahead == '{' )
                 {
@@ -68,7 +68,14 @@ wxString ConvertToNewOverbarNotation( const wxString& aOldStr )
 
                 // Two subsequent tildes mean a tilde.
                 newStr << "~";
+                ++chIt;
                 continue;
+            }
+            else if( lookahead != aOldStr.end() && *lookahead == '{' )
+            {
+                // Could mean the user wants "{" with an overbar, but more likely this
+                // is a case of double notation conversion.  Bail out.
+                return aOldStr;
             }
             else
             {
@@ -85,6 +92,12 @@ wxString ConvertToNewOverbarNotation( const wxString& aOldStr )
 
                 continue;
             }
+        }
+        else if( ( *chIt == ' ' || *chIt == '}' || *chIt == ')' ) && inOverbar )
+        {
+            // Spaces were used to terminate overbar as well
+            newStr << "}";
+            inOverbar = false;
         }
 
         newStr << *chIt;
@@ -205,33 +218,36 @@ wxString UnescapeString( const wxString& aSource )
 
     for( size_t i = 0; i < sourceLen; ++i )
     {
-        if( ( aSource[i] == '$' || aSource[i] == '^' || aSource[i] == '_' )
+        wxUniChar ch = aSource[i];
+        if( ( ch == '$' || ch == '^' || ch == '_' )
                 && i + 1 < sourceLen && aSource[i+1] == '{' )
         {
             for( ; i < sourceLen; ++i )
             {
-                newbuf += aSource[i];
+                ch = aSource[i];
+                newbuf += ch;
 
-                if( aSource[i] == '}' )
+                if( ch == '}' )
                     break;
             }
         }
-        else if( aSource[i] == '{' )
+        else if( ch == '{' )
         {
             wxString token;
             int      depth = 1;
 
             for( i = i + 1; i < sourceLen; ++i )
             {
-                if( aSource[i] == '{' )
+                ch = aSource[i];
+                if( ch == '{' )
                     depth++;
-                else if( aSource[i] == '}' )
+                else if( ch == '}' )
                     depth--;
 
                 if( depth <= 0 )
                     break;
                 else
-                    token.append( aSource[i] );
+                    token.append( ch );
             }
 
             if(      token == wxS( "dblquote" ) )  newbuf.append( wxS( "\"" ) );
@@ -255,7 +271,7 @@ wxString UnescapeString( const wxString& aSource )
         }
         else
         {
-            newbuf.append( aSource[i] );
+            newbuf.append( ch );
         }
     }
 

@@ -44,7 +44,7 @@
 #include <schematic.h>
 #include <sch_plugins/kicad/sch_sexpr_plugin.h>
 #include <sch_screen.h>
-#include <class_library.h>
+#include <symbol_library.h>
 #include <lib_arc.h>
 #include <lib_bezier.h>
 #include <lib_circle.h>
@@ -61,6 +61,7 @@
 #include <ee_selection.h>
 #include <kicad_string.h>
 #include <wx_filename.h>       // for ::ResolvePossibleSymlinks()
+#include <widgets/progress_reporter.h>
 
 
 using namespace TSCHEMATIC_T;
@@ -365,7 +366,8 @@ public:
 };
 
 
-SCH_SEXPR_PLUGIN::SCH_SEXPR_PLUGIN()
+SCH_SEXPR_PLUGIN::SCH_SEXPR_PLUGIN() :
+    m_progressReporter( nullptr )
 {
     init( NULL );
 }
@@ -386,6 +388,7 @@ void SCH_SEXPR_PLUGIN::init( SCHEMATIC* aSchematic, const PROPERTIES* aPropertie
     m_out             = nullptr;
     m_nextFreeFieldId = 100; // number arbitrarily > MANDATORY_FIELDS or SHEET_MANDATORY_FIELDS
 }
+
 
 SCH_SHEET* SCH_SEXPR_PLUGIN::Load( const wxString& aFileName, SCHEMATIC* aSchematic,
                                    SCH_SHEET* aAppendToMe, const PROPERTIES* aProperties )
@@ -481,10 +484,10 @@ void SCH_SEXPR_PLUGIN::loadHierarchy( SCH_SHEET* aSheet )
         // Save the current path so that it gets restored when descending and ascending the
         // sheet hierarchy which allows for sheet schematic files to be nested in folders
         // relative to the last path a schematic was loaded from.
-        wxLogTrace( traceSchLegacyPlugin, "Saving path    \"%s\"", m_currentPath.top() );
+        wxLogTrace( traceSchLegacyPlugin, "Saving path    '%s'", m_currentPath.top() );
         m_currentPath.push( fileName.GetPath() );
-        wxLogTrace( traceSchLegacyPlugin, "Current path   \"%s\"", m_currentPath.top() );
-        wxLogTrace( traceSchLegacyPlugin, "Loading        \"%s\"", fileName.GetFullPath() );
+        wxLogTrace( traceSchLegacyPlugin, "Current path   '%s'", m_currentPath.top() );
+        wxLogTrace( traceSchLegacyPlugin, "Loading        '%s'", fileName.GetFullPath() );
 
         m_rootSheet->SearchHierarchy( fileName.GetFullPath(), &screen );
 
@@ -518,10 +521,10 @@ void SCH_SEXPR_PLUGIN::loadHierarchy( SCH_SHEET* aSheet )
 
             // This was moved out of the try{} block so that any sheets definitionsthat
             // the plugin fully parsed before the exception was raised will be loaded.
-            for( auto aItem : aSheet->GetScreen()->Items().OfType( SCH_SHEET_T ) )
+            for( SCH_ITEM* aItem : aSheet->GetScreen()->Items().OfType( SCH_SHEET_T ) )
             {
                 wxCHECK2( aItem->Type() == SCH_SHEET_T, /* do nothing */ );
-                auto sheet = static_cast<SCH_SHEET*>( aItem );
+                SCH_SHEET* sheet = static_cast<SCH_SHEET*>( aItem );
 
                 // Recursion starts here.
                 loadHierarchy( sheet );
@@ -538,7 +541,22 @@ void SCH_SEXPR_PLUGIN::loadFile( const wxString& aFileName, SCH_SHEET* aSheet )
 {
     FILE_LINE_READER reader( aFileName );
 
-    SCH_SEXPR_PARSER parser( &reader );
+    size_t lineCount = 0;
+
+    if( m_progressReporter )
+    {
+        m_progressReporter->Report( wxString::Format( _( "Loading %s..." ), aFileName ) );
+
+        if( !m_progressReporter->KeepRefreshing() )
+            THROW_IO_ERROR( ( "Open cancelled by user." ) );
+
+        while( reader.ReadLine() )
+            lineCount++;
+
+        reader.Rewind();
+    }
+
+    SCH_SEXPR_PARSER parser( &reader, m_progressReporter, lineCount );
 
     parser.ParseSchematic( aSheet );
 }
@@ -1470,7 +1488,7 @@ LIB_SYMBOL* SCH_SEXPR_PLUGIN_CACHE::removeSymbol( LIB_SYMBOL* aSymbol )
 
 void SCH_SEXPR_PLUGIN_CACHE::AddSymbol( const LIB_SYMBOL* aSymbol )
 {
-    // aSymbol is cloned in PART_LIB::AddPart().  The cache takes ownership of aSymbol.
+    // aSymbol is cloned in SYMBOL_LIB::AddSymbol().  The cache takes ownership of aSymbol.
     wxString name = aSymbol->GetName();
     LIB_SYMBOL_MAP::iterator it = m_symbols.find( name );
 
@@ -1501,7 +1519,7 @@ void SCH_SEXPR_PLUGIN_CACHE::Load()
     wxCHECK2( wxLocale::GetInfo( wxLOCALE_DECIMAL_POINT, wxLOCALE_CAT_NUMBER ) == ".",
               LOCALE_IO toggle );
 
-    wxLogTrace( traceSchLegacyPlugin, "Loading sexpr symbol library file \"%s\"",
+    wxLogTrace( traceSchLegacyPlugin, "Loading sexpr symbol library file '%s'",
                 m_libFileName.GetFullPath() );
 
     FILE_LINE_READER reader( m_libFileName.GetFullPath() );
@@ -1645,9 +1663,9 @@ void SCH_SEXPR_PLUGIN_CACHE::SaveSymbol( LIB_SYMBOL* aSymbol, OUTPUTFORMATTER& a
         saveDcmInfoAsFields( aSymbol, aFormatter, nextFreeFieldId, aNestLevel );
 
         // Save the draw items grouped by units.
-        std::vector<PART_UNITS> units = aSymbol->GetUnitDrawItems();
+        std::vector<LIB_SYMBOL_UNITS> units = aSymbol->GetUnitDrawItems();
         std::sort( units.begin(), units.end(),
-                   []( const PART_UNITS& a, const PART_UNITS& b )
+                   []( const LIB_SYMBOL_UNITS& a, const LIB_SYMBOL_UNITS& b )
                    {
                         if( a.m_unit == b.m_unit )
                             return a.m_convert < b.m_convert;
@@ -2099,10 +2117,10 @@ void SCH_SEXPR_PLUGIN::cacheLib( const wxString& aLibraryFileName, const PROPERT
         delete m_cache;
         m_cache = new SCH_SEXPR_PLUGIN_CACHE( aLibraryFileName );
 
-        // Because m_cache is rebuilt, increment PART_LIBS::s_modify_generation
+        // Because m_cache is rebuilt, increment SYMBOL_LIBS::s_modify_generation
         // to modify the hash value that indicate symbol to symbol links
         // must be updated.
-        PART_LIBS::IncrementModifyGeneration();
+        SYMBOL_LIBS::IncrementModifyGeneration();
 
         if( !isBuffering( aProperties ) )
             m_cache->Load();
@@ -2300,7 +2318,7 @@ bool SCH_SEXPR_PLUGIN::IsSymbolLibWritable( const wxString& aLibraryPath )
 }
 
 
-LIB_SYMBOL* SCH_SEXPR_PLUGIN::ParsePart( LINE_READER& aReader, int aFileVersion )
+LIB_SYMBOL* SCH_SEXPR_PLUGIN::ParseLibSymbol( LINE_READER& aReader, int aFileVersion )
 {
     LOCALE_IO toggle;     // toggles on, then off, the C locale.
     LIB_SYMBOL_MAP map;
@@ -2313,7 +2331,7 @@ LIB_SYMBOL* SCH_SEXPR_PLUGIN::ParsePart( LINE_READER& aReader, int aFileVersion 
 }
 
 
-void SCH_SEXPR_PLUGIN::FormatPart( LIB_SYMBOL* symbol, OUTPUTFORMATTER & formatter )
+void SCH_SEXPR_PLUGIN::FormatLibSymbol( LIB_SYMBOL* symbol, OUTPUTFORMATTER & formatter )
 {
 
     LOCALE_IO toggle;     // toggles on, then off, the C locale.

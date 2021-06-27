@@ -23,7 +23,7 @@
 
 #include <mutex>
 
-#include <class_library.h>
+#include <symbol_library.h>
 #include <confirm.h>
 #include <dialogs/panel_eeschema_color_settings.h>
 #include <dialogs/panel_eeschema_display_options.h>
@@ -97,7 +97,7 @@ bool SCH_EDIT_FRAME::LoadProjectSettings()
 
     if( !DS_DATA_MODEL::GetTheInstance().LoadDrawingSheet( filename ) )
     {
-        ShowInfoBarError( _( "Error loading drawing sheet" ), true );
+        ShowInfoBarError( _( "Error loading drawing sheet." ), true );
     }
 
     return true;
@@ -268,7 +268,7 @@ SYMBOL_LIB_TABLE* PROJECT::SchSymbolLibTable()
             catch( const IO_ERROR& ioe )
             {
                 wxString msg;
-                msg.Printf( _( "An error occurred loading the symbol library table \"%s\"." ),
+                msg.Printf( _( "Error loading the symbol library table '%s'." ),
                             fn.GetFullPath() );
                 DisplayErrorMessage( NULL, msg, ioe.What() );
             }

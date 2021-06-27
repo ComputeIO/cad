@@ -55,15 +55,46 @@
 #include <sch_plugins/kicad/sch_sexpr_parser.h>
 #include <template_fieldnames.h>
 #include <trigo.h>
+#include <widgets/progress_reporter.h>
 
 
 using namespace TSCHEMATIC_T;
 
 
-SCH_SEXPR_PARSER::SCH_SEXPR_PARSER( LINE_READER* aLineReader ) :
-        SCHEMATIC_LEXER( aLineReader ), m_requiredVersion( 0 ), m_fieldId( 0 ), m_unit( 1 ),
-        m_convert( 1 )
+SCH_SEXPR_PARSER::SCH_SEXPR_PARSER( LINE_READER* aLineReader, PROGRESS_REPORTER* aProgressReporter,
+                                    unsigned aLineCount ) :
+    SCHEMATIC_LEXER( aLineReader ),
+    m_requiredVersion( 0 ),
+    m_fieldId( 0 ),
+    m_unit( 1 ),
+    m_convert( 1 ),
+    m_progressReporter( aProgressReporter ),
+    m_lineReader( aLineReader ),
+    m_lastProgressLine( 0 ),
+    m_lineCount( aLineCount )
 {
+}
+
+
+void SCH_SEXPR_PARSER::checkpoint()
+{
+    const unsigned PROGRESS_DELTA = 250;
+
+    if( m_progressReporter )
+    {
+        unsigned curLine = m_lineReader->LineNumber();
+
+        if( curLine > m_lastProgressLine + PROGRESS_DELTA )
+        {
+            m_progressReporter->SetCurrentProgress( ( (double) curLine )
+                                                            / std::max( 1U, m_lineCount ) );
+
+            if( !m_progressReporter->KeepRefreshing() )
+                THROW_IO_ERROR( ( "Open cancelled by user." ) );
+
+            m_lastProgressLine = curLine;
+        }
+    }
 }
 
 
@@ -570,14 +601,14 @@ void SCH_SEXPR_PARSER::parseFill( FILL_PARAMS& aFill )
 }
 
 
-void SCH_SEXPR_PARSER::parseEDA_TEXT( EDA_TEXT* aText )
+void SCH_SEXPR_PARSER::parseEDA_TEXT( EDA_TEXT* aText, bool aConvertOverbarSyntax )
 {
     wxCHECK_RET( aText && CurTok() == T_effects,
                  wxT( "Cannot parse " ) + GetTokenString( CurTok() ) + wxT( " as EDA_TEXT." ) );
 
-    // In version 20210606 the notation for overbars was changed from `~...~` to `~{...}`. We need to convert
-    // the old syntax to the new one.
-    if( m_requiredVersion < 20210606 )
+    // In version 20210606 the notation for overbars was changed from `~...~` to `~{...}`.
+    // We need to convert the old syntax to the new one.
+    if( aConvertOverbarSyntax && m_requiredVersion < 20210606 )
         aText->SetText( ConvertToNewOverbarNotation( aText->GetText() ) );
 
     T token;
@@ -800,7 +831,10 @@ LIB_FIELD* SCH_SEXPR_PARSER::parseProperty( std::unique_ptr<LIB_SYMBOL>& aSymbol
             NeedRIGHT();
             break;
 
-        case T_effects: parseEDA_TEXT( static_cast<EDA_TEXT*>( field.get() ) ); break;
+        //TODO OLA case T_effects: parseEDA_TEXT( static_cast<EDA_TEXT*>( field.get() ) ); break;
+        case T_effects:
+            parseEDA_TEXT( static_cast<EDA_TEXT*>( field.get() ), field->GetId() == VALUE_FIELD );
+            break;
 
         default: Expecting( "id, at or effects" );
         }
@@ -1245,7 +1279,11 @@ LIB_PIN* SCH_SEXPR_PARSER::parsePin()
                 THROW_IO_ERROR( error );
             }
 
-            pin->SetName( FromUTF8() );
+            if( m_requiredVersion < 20210606 )
+                pin->SetName( ConvertToNewOverbarNotation( FromUTF8() ) );
+            else
+                pin->SetName( FromUTF8() );
+
             token = NextTok();
 
             if( token != T_RIGHT )
@@ -1258,7 +1296,7 @@ LIB_PIN* SCH_SEXPR_PARSER::parsePin()
                     // so duplicate parsing is not required.
                     EDA_TEXT text;
 
-                    parseEDA_TEXT( &text );
+                    parseEDA_TEXT( &text, true );
                     pin->SetNameTextSize( text.GetTextHeight() );
                     NeedRIGHT();
                 }
@@ -1293,7 +1331,7 @@ LIB_PIN* SCH_SEXPR_PARSER::parsePin()
                     // so duplicate parsing is not required.
                     EDA_TEXT text;
 
-                    parseEDA_TEXT( &text );
+                    parseEDA_TEXT( &text, false );
                     pin->SetNumberTextSize( text.GetTextHeight() );
                     NeedRIGHT();
                 }
@@ -1500,7 +1538,9 @@ LIB_TEXT* SCH_SEXPR_PARSER::parseText()
             NeedRIGHT();
             break;
 
-        case T_effects: parseEDA_TEXT( static_cast<EDA_TEXT*>( text.get() ) ); break;
+        case T_effects:
+            parseEDA_TEXT( static_cast<EDA_TEXT*>( text.get() ), true );
+            break;
 
         default: Expecting( "at or effects" );
         }
@@ -1733,7 +1773,9 @@ SCH_FIELD* SCH_SEXPR_PARSER::parseSchField( SCH_ITEM* aParent )
             NeedRIGHT();
             break;
 
-        case T_effects: parseEDA_TEXT( static_cast<EDA_TEXT*>( field.get() ) ); break;
+        case T_effects:
+            parseEDA_TEXT( static_cast<EDA_TEXT*>( field.get() ), field->GetId() == VALUE_FIELD );
+            break;
 
         default: Expecting( "at or effects" );
         }
@@ -1817,7 +1859,9 @@ SCH_SHEET_PIN* SCH_SEXPR_PARSER::parseSchSheetPin( SCH_SHEET* aSheet )
             break;
         }
 
-        case T_effects: parseEDA_TEXT( static_cast<EDA_TEXT*>( sheetPin.get() ) ); break;
+        case T_effects:
+            parseEDA_TEXT( static_cast<EDA_TEXT*>( sheetPin.get() ), true );
+            break;
 
         case T_uuid:
             NeedSYMBOL();
@@ -2027,6 +2071,8 @@ void SCH_SEXPR_PARSER::ParseSchematic( SCH_SHEET* aSheet, bool aIsCopyableOnly, 
             Expecting( T_LEFT );
 
         token = NextTok();
+
+        checkpoint();
 
         if( !aIsCopyableOnly && token == T_page && m_requiredVersion <= 20200506 )
             token = T_paper;
@@ -2855,7 +2901,7 @@ SCH_TEXT* SCH_SEXPR_PARSER::parseSchText()
             break;
 
         case T_effects:
-            parseEDA_TEXT( static_cast<EDA_TEXT*>( text.get() ) );
+            parseEDA_TEXT( static_cast<EDA_TEXT*>( text.get() ), true );
 
             // Spin style is defined differently for graphical text (#SCH_TEXT) objects.
             if( text->Type() == SCH_TEXT_T
@@ -2924,11 +2970,20 @@ void SCH_SEXPR_PARSER::parseBusAlias( SCH_SCREEN* aScreen )
                  wxT( "Cannot parse " ) + GetTokenString( CurTok() ) + wxT( " as a bus alias." ) );
     wxCHECK( aScreen, /* void */ );
 
-    T    token;
-    auto busAlias = std::make_shared<BUS_ALIAS>( aScreen );
+    T token;
+    std::shared_ptr<BUS_ALIAS> busAlias = std::make_shared<BUS_ALIAS>( aScreen );
+    wxString alias;
+    wxString member;
 
     NeedSYMBOL();
-    busAlias->SetName( FromUTF8() );
+
+    alias = FromUTF8();
+
+    if( m_requiredVersion < 20210621 )
+        alias = ConvertToNewOverbarNotation( alias );
+
+    busAlias->SetName( alias );
+
     NeedLEFT();
     token = NextTok();
 
@@ -2942,7 +2997,13 @@ void SCH_SEXPR_PARSER::parseBusAlias( SCH_SCREEN* aScreen )
         if( !IsSymbol( token ) )
             Expecting( "quoted string" );
 
-        busAlias->AddMember( FromUTF8() );
+        member = FromUTF8();
+
+        if( m_requiredVersion < 20210621 )
+            member = ConvertToNewOverbarNotation( member );
+
+        busAlias->AddMember( member );
+
         token = NextTok();
     }
 

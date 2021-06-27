@@ -41,6 +41,9 @@
 #include <properties.h>
 #include <trace_helpers.h>
 #include <trigo.h>
+#include <confirm.h>
+#include <widgets/progress_reporter.h>
+#include <wx_filename.h>       // For ::ResolvePossibleSymlinks()
 
 #include <general.h>
 #include <sch_bitmap.h>
@@ -59,7 +62,7 @@
 #include <template_fieldnames.h>
 #include <sch_screen.h>
 #include <schematic.h>
-#include <class_library.h>
+#include <symbol_library.h>
 #include <lib_arc.h>
 #include <lib_bezier.h>
 #include <lib_circle.h>
@@ -70,10 +73,8 @@
 #include <lib_text.h>
 #include <eeschema_id.h>       // for MAX_UNIT_COUNT_PER_PACKAGE definition
 #include <symbol_lib_table.h>  // for PropPowerSymsOnly definition.
-#include <confirm.h>
 #include <tool/selection.h>
 #include <default_values.h>    // For some default values
-#include <wx_filename.h>       // For ::ResolvePossibleSymlinks()
 
 
 #define Mils2Iu( x ) Mils2iu( x )
@@ -582,7 +583,11 @@ public:
 };
 
 
-SCH_LEGACY_PLUGIN::SCH_LEGACY_PLUGIN()
+SCH_LEGACY_PLUGIN::SCH_LEGACY_PLUGIN() :
+    m_progressReporter( nullptr ),
+    m_lineReader( nullptr ),
+    m_lastProgressLine( 0 ),
+    m_lineCount( 0 )
 {
     init( NULL );
 }
@@ -601,6 +606,28 @@ void SCH_LEGACY_PLUGIN::init( SCHEMATIC* aSchematic, const PROPERTIES* aProperti
     m_schematic = aSchematic;
     m_cache     = nullptr;
     m_out       = nullptr;
+}
+
+
+void SCH_LEGACY_PLUGIN::checkpoint()
+{
+    const unsigned PROGRESS_DELTA = 250;
+
+    if( m_progressReporter )
+    {
+        unsigned curLine = m_lineReader->LineNumber();
+
+        if( curLine > m_lastProgressLine + PROGRESS_DELTA )
+        {
+            m_progressReporter->SetCurrentProgress( ( (double) curLine )
+                                                            / std::max( 1U, m_lineCount ) );
+
+            if( !m_progressReporter->KeepRefreshing() )
+                THROW_IO_ERROR( ( "Open cancelled by user." ) );
+
+            m_lastProgressLine = curLine;
+        }
+    }
 }
 
 
@@ -691,10 +718,10 @@ void SCH_LEGACY_PLUGIN::loadHierarchy( SCH_SHEET* aSheet )
         // Save the current path so that it gets restored when descending and ascending the
         // sheet hierarchy which allows for sheet schematic files to be nested in folders
         // relative to the last path a schematic was loaded from.
-        wxLogTrace( traceSchLegacyPlugin, "Saving path    \"%s\"", m_currentPath.top() );
+        wxLogTrace( traceSchLegacyPlugin, "Saving path    '%s'", m_currentPath.top() );
         m_currentPath.push( fileName.GetPath() );
-        wxLogTrace( traceSchLegacyPlugin, "Current path   \"%s\"", m_currentPath.top() );
-        wxLogTrace( traceSchLegacyPlugin, "Loading        \"%s\"", fileName.GetFullPath() );
+        wxLogTrace( traceSchLegacyPlugin, "Current path   '%s'", m_currentPath.top() );
+        wxLogTrace( traceSchLegacyPlugin, "Loading        '%s'", fileName.GetFullPath() );
 
         m_rootSheet->SearchHierarchy( fileName.GetFullPath(), &screen );
 
@@ -753,6 +780,22 @@ void SCH_LEGACY_PLUGIN::loadFile( const wxString& aFileName, SCH_SCREEN* aScreen
 {
     FILE_LINE_READER reader( aFileName );
 
+    if( m_progressReporter )
+    {
+        m_progressReporter->Report( wxString::Format( _( "Loading %s..." ), aFileName ) );
+
+        if( !m_progressReporter->KeepRefreshing() )
+            THROW_IO_ERROR( ( "Open cancelled by user." ) );
+
+        m_lineReader = &reader;
+        m_lineCount = 0;
+
+        while( reader.ReadLine() )
+            m_lineCount++;
+
+        reader.Rewind();
+    }
+
     loadHeader( reader, aScreen );
 
     LoadContent( reader, aScreen, m_version );
@@ -782,6 +825,8 @@ void SCH_LEGACY_PLUGIN::LoadContent( LINE_READER& aReader, SCH_SCREEN* aScreen, 
 
     while( aReader.ReadLine() )
     {
+        checkpoint();
+
         char* line = aReader.Line();
 
         while( *line == ' ' )
@@ -842,6 +887,8 @@ void SCH_LEGACY_PLUGIN::loadHeader( LINE_READER& aReader, SCH_SCREEN* aScreen )
     // Skip all lines until the end of header "EELAYER END" is found
     while( aReader.ReadLine() )
     {
+        checkpoint();
+
         line = aReader.Line();
 
         while( *line == ' ' )
@@ -2545,7 +2592,7 @@ LIB_SYMBOL* SCH_LEGACY_PLUGIN_CACHE::removeSymbol( LIB_SYMBOL* aSymbol )
 
 void SCH_LEGACY_PLUGIN_CACHE::AddSymbol( const LIB_SYMBOL* aSymbol )
 {
-    // aSymbol is cloned in PART_LIB::AddPart().  The cache takes ownership of aSymbol.
+    // aSymbol is cloned in SYMBOL_LIB::AddSymbol().  The cache takes ownership of aSymbol.
     wxString name = aSymbol->GetName();
     LIB_SYMBOL_MAP::iterator it = m_symbols.find( name );
 
@@ -2570,15 +2617,15 @@ void SCH_LEGACY_PLUGIN_CACHE::Load()
 
     wxCHECK_RET( m_libFileName.IsAbsolute(),
                  wxString::Format( "Cannot use relative file paths in legacy plugin to "
-                                   "open library \"%s\".", m_libFileName.GetFullPath() ) );
+                                   "open library '%s'.", m_libFileName.GetFullPath() ) );
 
-    wxLogTrace( traceSchLegacyPlugin, "Loading legacy symbol file \"%s\"",
+    wxLogTrace( traceSchLegacyPlugin, "Loading legacy symbol file '%s'",
                 m_libFileName.GetFullPath() );
 
     FILE_LINE_READER reader( m_libFileName.GetFullPath() );
 
     if( !reader.ReadLine() )
-        THROW_IO_ERROR( _( "unexpected end of file" ) );
+        THROW_IO_ERROR( _( "Unexpected end of file." ) );
 
     const char* line = reader.Line();
 
@@ -3205,7 +3252,7 @@ void SCH_LEGACY_PLUGIN_CACHE::loadDrawEntries( std::unique_ptr<LIB_SYMBOL>& aSym
         line = aReader.ReadLine();
     }
 
-    SCH_PARSE_ERROR( "file ended prematurely loading symbol draw element", aReader, line );
+    SCH_PARSE_ERROR( "File ended prematurely loading symbol draw element.", aReader, line );
 }
 
 
@@ -3721,7 +3768,7 @@ void SCH_LEGACY_PLUGIN_CACHE::loadFootprintFilters( std::unique_ptr<LIB_SYMBOL>&
         line = aReader.ReadLine();
     }
 
-    SCH_PARSE_ERROR( "file ended prematurely while loading footprint filters", aReader, line );
+    SCH_PARSE_ERROR( "File ended prematurely while loading footprint filters.", aReader, line );
 }
 
 
@@ -3915,7 +3962,8 @@ void SCH_LEGACY_PLUGIN_CACHE::saveArc( LIB_ARC* aArc, OUTPUTFORMATTER& aFormatte
     aFormatter.Print( 0, "A %d %d %d %d %d %d %d %d %c %d %d %d %d\n",
                       Iu2Mils( aArc->GetPosition().x ), Iu2Mils( aArc->GetPosition().y ),
                       Iu2Mils( aArc->GetRadius() ), x1, x2, aArc->GetUnit(), aArc->GetConvert(),
-                      Iu2Mils( aArc->GetWidth() ), fill_tab[ static_cast<int>( aArc->GetFillMode() ) ],
+                      Iu2Mils( aArc->GetWidth() ),
+                               fill_tab[ static_cast<int>( aArc->GetFillMode() ) ],
                       Iu2Mils( aArc->GetStart().x ), Iu2Mils( aArc->GetStart().y ),
                       Iu2Mils( aArc->GetEnd().x ), Iu2Mils( aArc->GetEnd().y ) );
 }
@@ -3944,7 +3992,8 @@ void SCH_LEGACY_PLUGIN_CACHE::saveCircle( LIB_CIRCLE* aCircle,
     aFormatter.Print( 0, "C %d %d %d %d %d %d %c\n",
                       Iu2Mils( aCircle->GetPosition().x ), Iu2Mils( aCircle->GetPosition().y ),
                       Iu2Mils( aCircle->GetRadius() ), aCircle->GetUnit(), aCircle->GetConvert(),
-                      Iu2Mils( aCircle->GetWidth() ), fill_tab[static_cast<int>( aCircle->GetFillMode() )] );
+                      Iu2Mils( aCircle->GetWidth() ),
+                               fill_tab[static_cast<int>( aCircle->GetFillMode() )] );
 }
 
 
@@ -4219,10 +4268,10 @@ void SCH_LEGACY_PLUGIN::cacheLib( const wxString& aLibraryFileName, const PROPER
         delete m_cache;
         m_cache = new SCH_LEGACY_PLUGIN_CACHE( aLibraryFileName );
 
-        // Because m_cache is rebuilt, increment PART_LIBS::s_modify_generation
+        // Because m_cache is rebuilt, increment SYMBOL_LIBS::s_modify_generation
         // to modify the hash value that indicate symbol to symbol links
         // must be updated.
-        PART_LIBS::IncrementModifyGeneration();
+        SYMBOL_LIBS::IncrementModifyGeneration();
 
         if( !isBuffering( aProperties ) )
             m_cache->Load();

@@ -222,6 +222,9 @@ PL_EDITOR_FRAME::PL_EDITOR_FRAME( KIWAY* aKiway, wxWindow* aParent ) :
 
 PL_EDITOR_FRAME::~PL_EDITOR_FRAME()
 {
+    // Ensure m_canvasType is up to date, to save it in config
+    m_canvasType = GetCanvas()->GetBackend();
+
     // Shutdown all running tools
     if( m_toolManager )
         m_toolManager->ShutdownAllTools();
@@ -329,7 +332,7 @@ bool PL_EDITOR_FRAME::OpenProjectFiles( const std::vector<wxString>& aFileSet, i
 
     if( !LoadDrawingSheetFile( fn ) )
     {
-        wxMessageBox( wxString::Format( _( "Error when loading file \"%s\"" ), fn ) );
+        wxMessageBox( wxString::Format( _( "Error loading drawing sheet '%s'." ), fn ) );
         return false;
     }
     else
@@ -544,8 +547,13 @@ void PL_EDITOR_FRAME::UpdateTitleAndInfo()
     wxString title;
     wxFileName file( GetCurrentFileName() );
 
-    title.Printf( wxT( "%s \u2014 " ) + _( "Drawing Sheet Editor" ),
-                  file.IsOk() ? file.GetName() : _( "no file selected" ) );
+    if( file.IsOk() )
+        title = file.GetName();
+    else
+        title = _( "[no drawing sheet loaded]" );
+
+    title += wxT( " \u2014 " ) + _( "Drawing Sheet Editor" ),
+
     SetTitle( title );
 }
 

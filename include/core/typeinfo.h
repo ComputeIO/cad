@@ -216,7 +216,7 @@ enum KICAD_T
      */
     SYMBOL_LIB_TABLE_T,
     FP_LIB_TABLE_T,
-    PART_LIBS_T,
+    SYMBOL_LIBS_T,
     SEARCH_STACK_T,
     S3D_CACHE_T,
 
@@ -413,7 +413,7 @@ inline std::ostream& operator<<( std::ostream& os, KICAD_T aType )
      */
     case KICAD_T::SYMBOL_LIB_TABLE_T: os << "SYMBOL_LIB_TABLE_T"; break;
     case KICAD_T::FP_LIB_TABLE_T: os << "FP_LIB_TABLE_T"; break;
-    case KICAD_T::PART_LIBS_T: os << "PART_LIBS_T"; break;
+    case KICAD_T::SYMBOL_LIBS_T: os << "SYMBOL_LIBS_T"; break;
     case KICAD_T::SEARCH_STACK_T: os << "SEARCH_STACK_T"; break;
     case KICAD_T::S3D_CACHE_T: os << "S3D_CACHE_T"; break;
 

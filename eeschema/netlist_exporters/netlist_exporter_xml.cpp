@@ -28,7 +28,7 @@
 #include <build_version.h>
 #include <common.h>     // for ExpandTextVars
 #include <sch_base_frame.h>
-#include <class_library.h>
+#include <symbol_library.h>
 #include <kicad_string.h>
 #include <connection_graph.h>
 #include <refdes_utils.h>
@@ -297,9 +297,9 @@ XNODE* NETLIST_EXPORTER_XML::makeSymbols( unsigned aCtl )
             // "logical" library name, which is in anticipation of a better search algorithm
             // for parts based on "logical_lib.part" and where logical_lib is merely the library
             // name minus path and extension.
-            if( symbol->GetPartRef() )
+            if( symbol->GetLibSymbolRef() )
                 xlibsource->AddAttribute( "lib",
-                                          symbol->GetPartRef()->GetLibId().GetLibNickname() );
+                                          symbol->GetLibSymbolRef()->GetLibId().GetLibNickname() );
 
             // We only want the symbol name, not the full LIB_ID.
             xlibsource->AddAttribute( "part", symbol->GetLibId().GetLibItemName() );
@@ -695,7 +695,7 @@ XNODE* NETLIST_EXPORTER_XML::makeListOfNets( unsigned aCtl )
                        wxString refB = b.m_Pin->GetParentSymbol()->GetRef( &b.m_Sheet );
 
                        if( refA == refB )
-                           return a.m_Pin->GetNumber() < b.m_Pin->GetNumber();
+                           return a.m_Pin->GetShownNumber() < b.m_Pin->GetShownNumber();
 
                        return refA < refB;
                    } );
@@ -710,14 +710,15 @@ XNODE* NETLIST_EXPORTER_XML::makeListOfNets( unsigned aCtl )
                             wxString refA = a.m_Pin->GetParentSymbol()->GetRef( &a.m_Sheet );
                             wxString refB = b.m_Pin->GetParentSymbol()->GetRef( &b.m_Sheet );
 
-                            return refA == refB && a.m_Pin->GetNumber() == b.m_Pin->GetNumber();
+                            return refA == refB
+                                        && a.m_Pin->GetShownNumber() == b.m_Pin->GetShownNumber();
                         } ),
                 net_record->m_Nodes.end() );
 
         for( const NET_NODE& netNode : net_record->m_Nodes )
         {
             wxString refText = netNode.m_Pin->GetParentSymbol()->GetRef( &netNode.m_Sheet );
-            wxString pinText = netNode.m_Pin->GetNumber();
+            wxString pinText = netNode.m_Pin->GetShownNumber();
 
             // Skip power symbols and virtual symbols
             if( refText[0] == wxChar( '#' ) )
@@ -741,8 +742,7 @@ XNODE* NETLIST_EXPORTER_XML::makeListOfNets( unsigned aCtl )
             wxString pinName = netNode.m_Pin->GetShownName();
             wxString pinType = netNode.m_Pin->GetCanonicalElectricalTypeName();
 
-            //  ~ is a char used to code empty strings in libs.
-            if( pinName != "~" && !pinName.IsEmpty() )
+            if( !pinName.IsEmpty() )
                 xnode->AddAttribute( "pinfunction", pinName );
 
             if( netNode.m_NoConnect )
@@ -774,5 +774,5 @@ XNODE* NETLIST_EXPORTER_XML::node( const wxString& aName,
 static bool sortPinsByNumber( LIB_PIN* aPin1, LIB_PIN* aPin2 )
 {
     // return "lhs < rhs"
-    return UTIL::RefDesStringCompare( aPin1->GetNumber(), aPin2->GetNumber() ) < 0;
+    return UTIL::RefDesStringCompare( aPin1->GetShownNumber(), aPin2->GetShownNumber() ) < 0;
 }

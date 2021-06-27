@@ -632,7 +632,7 @@ bool FOOTPRINT_EDIT_FRAME::canCloseWindow( wxCloseEvent& aEvent )
         }
     }
 
-    return true;
+    return PCB_BASE_EDIT_FRAME::canCloseWindow( aEvent );
 }
 
 
@@ -756,11 +756,12 @@ void FOOTPRINT_EDIT_FRAME::UpdateTitle()
 
     if( IsCurrentFPFromBoard() )
     {
-        title = wxString::Format( _( "%s%s [from %s.%s]" ) + wxT( " \u2014 " ),
-                                  IsContentModified() ? "*" : "",
-                                  footprint->GetReference(),
-                                  Prj().GetProjectName(),
-                                  PcbFileExtension );
+        if( IsContentModified() )
+            title = wxT( "*" );
+
+        title += footprint->GetReference();
+        title += wxS( " " ) + wxString::Format( _( "[from %s]" ),
+                                                Prj().GetProjectName() + "." + PcbFileExtension );
     }
     else if( fpid.IsValid() )
     {
@@ -774,21 +775,29 @@ void FOOTPRINT_EDIT_FRAME::UpdateTitle()
         }
 
         // Note: don't used GetLoadedFPID(); footprint name may have been edited
-        title += wxString::Format( wxT( "%s%s %s\u2014 " ),
-                                   IsContentModified() ? "*" : "",
-                                   FROM_UTF8( footprint->GetFPID().Format().c_str() ),
-                                   writable ? "" : _( "[Read Only]" ) + wxS( " " ) );
+        if( IsContentModified() )
+            title = wxT( "*" );
+
+        title += FROM_UTF8( footprint->GetFPID().Format().c_str() );
+
+        if( !writable )
+            title += wxS( " " ) + _( "[Read Only]" );
     }
     else if( !fpid.GetLibItemName().empty() )
     {
         // Note: don't used GetLoadedFPID(); footprint name may have been edited
-        title += wxString::Format( wxT( "%s%s %s \u2014 " ),
-                                   IsContentModified() ? "*" : "",
-                                   FROM_UTF8( footprint->GetFPID().GetLibItemName().c_str() ),
-                                   _( "[Unsaved]" ) );
+        if( IsContentModified() )
+            title = wxT( "*" );
+
+        title += FROM_UTF8( footprint->GetFPID().GetLibItemName().c_str() );
+        title += wxS( " " ) + _( "[Unsaved]" );
+    }
+    else
+    {
+        title = _( "[no footprint loaded]" );
     }
 
-    title += _( "Footprint Editor" );
+    title += wxT( " \u2014 " ) + _( "Footprint Editor" );
 
     SetTitle( title );
 }

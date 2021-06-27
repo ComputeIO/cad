@@ -626,7 +626,7 @@ void CADSTAR_PCB_ARCHIVE_LOADER::loadDesignRules()
 
     ds.m_TrackMinWidth = getKiCadLength( Assignments.Technology.MinRouteWidth );
     ds.m_ViasMinSize = ds.m_TrackMinWidth; // Not specified, assumed same as track width
-    ds.m_ViasMinAnnulus = ds.m_TrackMinWidth / 2; // Not specified, assumed half track width
+    ds.m_ViasMinAnnularWidth = ds.m_TrackMinWidth / 2; // Not specified, assumed half track width
     ds.m_MinThroughDrill = PCB_IU_PER_MM * 0.0508; // CADSTAR does not specify a minimum hole size
                                                    // so set to minimum permitted in KiCad (2 mils)
     ds.m_HoleClearance = ds.m_CopperEdgeClearance; // Not specified, assumed same as edge
@@ -1171,9 +1171,9 @@ PAD* CADSTAR_PCB_ARCHIVE_LOADER::getKiCadPad( const COMPONENT_PAD& aCadstarPad, 
     //log warnings:
     if( m_padcodesTested.find( csPadcode.ID ) == m_padcodesTested.end() && !errorMSG.IsEmpty() )
     {
-        wxLogError( wxString::Format(
-                _( "The CADSTAR pad definition '%s' has import errors: %s" ),
-                csPadcode.Name, errorMSG) );
+        wxLogError( _( "The CADSTAR pad definition '%s' has import errors: %s" ),
+                    csPadcode.Name,
+                    errorMSG );
 
         m_padcodesTested.insert( csPadcode.ID );
     }
@@ -1361,9 +1361,8 @@ void CADSTAR_PCB_ARCHIVE_LOADER::loadDimensions()
             default:
                 // Radius and diameter dimensions are LEADERDIM (even if not actually leader)
                 // Angular dimensions are always ANGLEDIM
-                wxLogError( wxString::Format(
-                        _( "Unexpected Dimension type (ID %s). This was not imported" ),
-                        csDim.ID ) );
+                wxLogError(  _( "Unexpected Dimension type (ID %s). This was not imported." ),
+                             csDim.ID );
                 continue;
             }
             break;
@@ -1495,10 +1494,9 @@ void CADSTAR_PCB_ARCHIVE_LOADER::loadDimensions()
 
         case DIMENSION::TYPE::ANGLEDIM:
             //TODO: update import when KiCad supports angular dimensions
-            wxLogError( wxString::Format(
-                    _( "Dimension ID %s is an angular dimension which has no KiCad equivalent. "
-                       "The object was not imported." ),
-                    csDim.ID ) );
+            wxLogError( _( "Dimension %s is an angular dimension which has no KiCad equivalent. "
+                           "The object was not imported." ),
+                        csDim.ID );
             break;
         }
     }
@@ -1913,11 +1911,10 @@ void CADSTAR_PCB_ARCHIVE_LOADER::loadTemplates()
 
         if( netid.IsEmpty() )
         {
-            wxLogError( wxString::Format(
-                    _( "The CADSTAR layer '%s' is defined as a power plane layer. However no "
-                       "net with such name exists. The layer has been loaded but no copper zone "
-                       "was created." ),
-                    powerPlaneLayerName ) );
+            wxLogError( _( "The CADSTAR layer '%s' is defined as a power plane layer. However no "
+                           "net with such name exists. The layer has been loaded but no copper "
+                           "zone was created." ),
+                        powerPlaneLayerName );
         }
         else
         {
@@ -2385,12 +2382,13 @@ int CADSTAR_PCB_ARCHIVE_LOADER::loadNetVia(
     via->SetLocked( aCadstarVia.Fixed );
 
     if( csViaCode.Shape.ShapeType != PAD_SHAPE_TYPE::CIRCLE )
-        wxLogError( wxString::Format(
-                _( "The CADSTAR via code '%s' has different shape from a circle defined. "
-                   "KiCad only supports circular vias so this via type has been changed to "
-                   "be a via with circular shape of %.2f mm diameter." ),
-                csViaCode.Name,
-                (double) ( (double) getKiCadLength( csViaCode.Shape.Size ) / 1E6 ) ) );
+    {
+        wxLogError( _( "The CADSTAR via code '%s' has different shape from a circle defined. "
+                       "KiCad only supports circular vias so this via type has been changed to "
+                       "be a via with circular shape of %.2f mm diameter." ),
+                    csViaCode.Name,
+                    (double) ( (double) getKiCadLength( csViaCode.Shape.Size ) / 1E6 ) );
+    }
 
     via->SetWidth( getKiCadLength( csViaCode.Shape.Size ) );
 

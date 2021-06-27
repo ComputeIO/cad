@@ -2,6 +2,8 @@
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
  * Copyright (C) 2013-2019 CERN
+ * Copyright (C) 2021 KiCad Developers, see AUTHORS.txt for contributors.
+ *
  * @author Tomasz Wlostowski <tomasz.wlostowski@cern.ch>
  * @author Maciej Suminski <maciej.suminski@cern.ch>
  *
@@ -453,18 +455,6 @@ bool PCB_PAINTER::Draw( const VIEW_ITEM* aItem, int aLayer )
     if( !item )
         return false;
 
-    if( ADVANCED_CFG::GetCfg().m_DrawBoundingBoxes )
-    {
-        // Show bounding boxes of painted objects for debugging.
-        EDA_RECT box = item->GetBoundingBox();
-        m_gal->SetIsFill( false );
-        m_gal->SetIsStroke( true );
-        m_gal->SetStrokeColor( item->IsSelected() ? COLOR4D( 1.0, 0.2, 0.2, 1 )
-                                                  : COLOR4D( 0.2, 0.2, 0.2, 1 ) );
-        m_gal->SetLineWidth( Mils2iu( 3 ) );
-        m_gal->DrawRectangle( box.GetOrigin(), box.GetEnd() );
-    }
-
     // the "cast" applied in here clarifies which overloaded draw() is called
     switch( item->Type() )
     {
@@ -511,6 +501,40 @@ bool PCB_PAINTER::Draw( const VIEW_ITEM* aItem, int aLayer )
     default:
         // Painter does not know how to draw the object
         return false;
+    }
+
+    // Draw bounding boxes after drawing objects so they can be seen.
+    if( ADVANCED_CFG::GetCfg().m_DrawBoundingBoxes )
+    {
+        // Show bounding boxes of painted objects for debugging.
+        EDA_RECT box = item->GetBoundingBox();
+        m_gal->SetIsFill( false );
+        m_gal->SetIsStroke( true );
+
+        if( item->Type() == PCB_FOOTPRINT_T )
+            m_gal->SetStrokeColor( item->IsSelected() ? COLOR4D( 1.0, 0.2, 0.2, 1 ) :
+                                   COLOR4D( MAGENTA ) );
+        else
+            m_gal->SetStrokeColor( item->IsSelected() ? COLOR4D( 1.0, 0.2, 0.2, 1 ) :
+                                   COLOR4D( 0.2, 0.2, 0.2, 1 ) );
+
+        m_gal->SetLineWidth( 1.5 / m_gal->GetWorldScale() );
+        m_gal->DrawRectangle( box.GetOrigin(), box.GetEnd() );
+
+        if( item->Type() == PCB_FOOTPRINT_T )
+        {
+            m_gal->SetStrokeColor( item->IsSelected() ? COLOR4D( 1.0, 0.2, 0.2, 1 ) :
+                                   COLOR4D( CYAN ) );
+
+            const FOOTPRINT* fp = static_cast<const FOOTPRINT*>( item );
+
+            if( fp )
+            {
+                SHAPE_POLY_SET convex = fp->GetBoundingHull();
+
+                m_gal->DrawPolyline( convex.COutline( 0 ) );
+            }
+        }
     }
 
     return true;
@@ -651,6 +675,22 @@ void PCB_PAINTER::draw( const PCB_ARC* aArc, int aLayer )
         m_gal->DrawArcSegment( center, radius, start_angle, start_angle + angle,
                                width + clearance * 2 );
     }
+
+// Debug only: enable this code only to test the TransformArcToPolygon function
+// and display the polygon outline created by it.
+// arcs on F_Cu are approximated with ERROR_INSIDE, others with ERROR_OUTSIDE
+#if 0
+    SHAPE_POLY_SET cornerBuffer;
+    int error_value = aArc->GetBoard()->GetDesignSettings().m_MaxError;
+    ERROR_LOC errorloc = aLayer == F_Cu ? ERROR_LOC::ERROR_INSIDE : ERROR_LOC::ERROR_OUTSIDE;
+    TransformArcToPolygon( cornerBuffer, aArc->GetStart(), aArc->GetMid(),
+                           aArc->GetEnd(), width, error_value, errorloc );
+    m_gal->SetLineWidth( m_pcbSettings.m_outlineWidth );
+    m_gal->SetIsFill( false );
+    m_gal->SetIsStroke( true );
+    m_gal->SetStrokeColor( color );
+    m_gal->DrawPolygon( cornerBuffer );
+#endif
 }
 
 
@@ -691,9 +731,11 @@ void PCB_PAINTER::draw( const PCB_VIA* aVia, int aLayer )
         VECTOR2D textpos( 0.0, 0.0 );
 
         wxString netname = UnescapeString( aVia->GetShortNetname() );
+
         // calculate the size of net name text:
         double tsize = 1.5 * size / netname.Length();
         tsize = std::min( tsize, size );
+
         // Use a smaller text size to handle interline, pen size..
         tsize *= 0.7;
         VECTOR2D namesize( tsize, tsize );
@@ -769,22 +811,22 @@ void PCB_PAINTER::draw( const PCB_VIA* aVia, int aLayer )
         if( !sketchMode )
             m_gal->SetLineWidth( ( aVia->GetWidth() - aVia->GetDrillValue() ) / 2.0 );
 
-        m_gal->DrawArc( center, radius, M_PI / 2.0, M_PI );
-        m_gal->DrawArc( center, radius, 3.0 * M_PI / 2.0, 2.0 * M_PI );
+        m_gal->DrawArc( center, radius, M_PI * -0.375, M_PI * 0.375 );
+        m_gal->DrawArc( center, radius, M_PI * 0.625, M_PI * 1.375 );
 
         if( sketchMode )
             m_gal->SetStrokeColor( m_pcbSettings.GetColor( aVia, layerTop ) );
         else
             m_gal->SetFillColor( m_pcbSettings.GetColor( aVia, layerTop ) );
 
-        m_gal->DrawArc( center, radius, 0.0, M_PI / 2.0 );
+        m_gal->DrawArc( center, radius, M_PI * 1.375, M_PI * 1.625 );
 
         if( sketchMode )
             m_gal->SetStrokeColor( m_pcbSettings.GetColor( aVia, layerBottom ) );
         else
             m_gal->SetFillColor( m_pcbSettings.GetColor( aVia, layerBottom ) );
 
-        m_gal->DrawArc( center, radius, M_PI, 3.0 * M_PI / 2.0 );
+        m_gal->DrawArc( center, radius, M_PI * 0.375, M_PI * 0.625 );
     }
 
     // Clearance lines
@@ -892,6 +934,7 @@ void PCB_PAINTER::draw( const PAD* aPad, int aLayer )
                 // calculate the size of net name text:
                 double tsize = 1.5 * padsize.x / netname.Length();
                 tsize = std::min( tsize, size );
+
                 // Use a smaller text size to handle interline, pen size..
                 tsize *= 0.7;
                 VECTOR2D namesize( tsize, tsize );
@@ -910,6 +953,7 @@ void PCB_PAINTER::draw( const PAD* aPad, int aLayer )
                 textpos.y = -textpos.y;
                 double tsize = 1.5 * padsize.x / padName.Length();
                 tsize = std::min( tsize, size );
+
                 // Use a smaller text size to handle interline, pen size..
                 tsize *= 0.7;
                 tsize = std::min( tsize, size );
@@ -992,7 +1036,8 @@ void PCB_PAINTER::draw( const PAD* aPad, int aLayer )
         std::shared_ptr<SHAPE_COMPOUND> shapes;
         bool                            simpleShapes = true;
 
-        if( margin.x != margin.y && aPad->GetShape() != PAD_SHAPE::CUSTOM )
+        if( ( margin.x != margin.y && aPad->GetShape() != PAD_SHAPE::CUSTOM )
+            || ( aPad->GetShape() == PAD_SHAPE::ROUNDRECT && ( margin.x < 0 || margin.y < 0 ) ) )
         {
             // Our algorithms below (polygon inflation in particular) can't handle differential
             // inflation along separate axes.  So for those cases we build a dummy pad instead,
@@ -1004,7 +1049,18 @@ void PCB_PAINTER::draw( const PAD* aPad, int aLayer )
                 return;
 
             dummyPad.reset( static_cast<PAD*>( aPad->Duplicate() ) );
+            int initial_radius = dummyPad->GetRoundRectCornerRadius();
+
             dummyPad->SetSize( pad_size + margin + margin );
+
+            if( dummyPad->GetShape() == PAD_SHAPE::ROUNDRECT )
+            {
+                // To keep the right margin around the corners, we need to modify the corner radius.
+                // We must have only one radius correction, so use the smallest absolute margin.
+                int radius_margin = std::max( margin.x, margin.y );     // radius_margin is < 0
+                dummyPad->SetRoundRectCornerRadius( std::max( initial_radius + radius_margin, 0 ) );
+            }
+
             shapes = std::dynamic_pointer_cast<SHAPE_COMPOUND>( dummyPad->GetEffectiveShape() );
             margin.x = margin.y = 0;
         }
@@ -1077,16 +1133,9 @@ void PCB_PAINTER::draw( const PAD* aPad, int aLayer )
                     VECTOR2I          pos = r->GetPosition();
                     VECTOR2I          effectiveMargin = margin;
 
-                    // This is a bit of an encapsulation leak, but fixing it would be a lot of
-                    // work.  We don't want to apply margins to the "internal" rectangle of a
-                    // rounded rect.  Only the 4 segments that form the edges get the margin.
-                    if( aPad->GetShape() == PAD_SHAPE::ROUNDRECT )
-                        effectiveMargin = { 0, 0 };
-
                     if( effectiveMargin.x < 0 )
                     {
                         // A negative margin just produces a smaller rect.
-
                         VECTOR2I effectiveSize = r->GetSize() + effectiveMargin;
 
                         if( effectiveSize.x > 0 && effectiveSize.y > 0 )
@@ -1095,7 +1144,6 @@ void PCB_PAINTER::draw( const PAD* aPad, int aLayer )
                     else if( effectiveMargin.x > 0 )
                     {
                         // A positive margin produces a larger rect, but with rounded corners
-
                         m_gal->DrawRectangle( r->GetPosition(), r->GetPosition() + r->GetSize() );
 
                         // Use segments to produce the margin with rounded corners
@@ -1122,7 +1170,25 @@ void PCB_PAINTER::draw( const PAD* aPad, int aLayer )
                 case SH_SIMPLE:
                 {
                     const SHAPE_SIMPLE* poly = static_cast<const SHAPE_SIMPLE*>( shape );
-                    m_gal->DrawPolygon( poly->Vertices() );
+
+                    if( margin.x < 0 )  // The poly shape must be deflated
+                    {
+                        int maxError = bds.m_MaxError;
+                        int numSegs = GetArcToSegmentCount( -margin.x, maxError, 360.0 );
+                        SHAPE_POLY_SET outline;
+                        outline.NewOutline();
+
+                        for( int ii = 0; ii < poly->PointCount(); ++ii )
+                            outline.Append( poly->CPoint( ii ) );
+
+                        outline.Deflate( -margin.x, numSegs );
+
+                        m_gal->DrawPolygon( outline );
+                    }
+                    else
+                    {
+                        m_gal->DrawPolygon( poly->Vertices() );
+                    }
 
                     // Now add on a rounded margin (using segments) if the margin > 0
                     if( margin.x > 0 )
@@ -1145,7 +1211,6 @@ void PCB_PAINTER::draw( const PAD* aPad, int aLayer )
         else
         {
             // This is expensive.  Avoid if possible.
-
             SHAPE_POLY_SET polySet;
             aPad->TransformShapeWithClearanceToPolygon( polySet, ToLAYER_ID( aLayer ), margin.x,
                                                         bds.m_MaxError, ERROR_INSIDE );
@@ -1520,9 +1585,6 @@ void PCB_PAINTER::draw( const FOOTPRINT* aFootprint, int aLayer )
 {
     if( aLayer == LAYER_ANCHOR )
     {
-#if 1
-        drawAnchor( aFootprint );
-#else
         const COLOR4D color = m_pcbSettings.GetColor( aFootprint, aLayer );
 
         // Keep the size and width constant, not related to the scale because the anchor
@@ -1539,20 +1601,6 @@ void PCB_PAINTER::draw( const FOOTPRINT* aFootprint, int aLayer )
         VECTOR2D center = aFootprint->GetPosition();
         m_gal->DrawLine( center - VECTOR2D( anchorSize, 0 ), center + VECTOR2D( anchorSize, 0 ) );
         m_gal->DrawLine( center - VECTOR2D( 0, anchorSize ), center + VECTOR2D( 0, anchorSize ) );
-#endif
-
-#if 0 // For debug purpose only: draw the footing bounding box
-        double bboxThickness = 1.0 / m_gal->GetWorldScale();
-        m_gal->SetLineWidth( bboxThickness );
-        EDA_RECT rect = aFootprint->GetBoundingBox();
-        m_gal->DrawRectangle( VECTOR2D( rect.GetOrigin() ), VECTOR2D( rect.GetEnd() ) );
-
-        double bboxThickness = 3.0 / m_gal->GetWorldScale();
-        m_gal->SetLineWidth( bboxThickness );
-        SHAPE_POLY_SET convex = aFootprint->GetBoundingHull();
-
-        m_gal->DrawPolyline( convex.COutline( 0 ) );
-#endif
     }
 }
 
@@ -1623,7 +1671,7 @@ void PCB_PAINTER::draw( const PCB_GROUP* aGroup, int aLayer )
 
 void PCB_PAINTER::draw( const ZONE* aZone, int aLayer )
 {
-    /**
+    /*
      * aLayer will be the virtual zone layer (LAYER_ZONE_START, ... in GAL_LAYER_ID)
      * This is used for draw ordering in the GAL.
      * The color for the zone comes from the associated copper layer ( aLayer - LAYER_ZONE_START )
@@ -1748,6 +1796,7 @@ void PCB_PAINTER::draw( const PCB_DIMENSION_BASE* aDimension, int aLayer )
         default: break;
         }
     }
+
     // Draw text
     const PCB_TEXT& text = aDimension->Text();
     VECTOR2D        position( text.GetTextPos().x, text.GetTextPos().y );

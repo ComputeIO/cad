@@ -83,15 +83,29 @@ PCB_BASE_FRAME::~PCB_BASE_FRAME()
 }
 
 
-EDA_3D_VIEWER* PCB_BASE_FRAME::Get3DViewerFrame()
+bool PCB_BASE_FRAME::canCloseWindow( wxCloseEvent& aEvent )
 {
-    return dynamic_cast<EDA_3D_VIEWER*>( FindWindowByName( QUALIFIED_VIEWER3D_FRAMENAME( this ) ) );
+    // Close modeless dialogs.  They're trouble when they get destroyed after the frame and/or
+    // board.
+    wxWindow* viewer3D = Get3DViewerFrame();
+
+    if( viewer3D )
+        viewer3D->Close( true );
+
+    return true;
+}
+
+
+EDA_3D_VIEWER_FRAME* PCB_BASE_FRAME::Get3DViewerFrame()
+{
+    wxWindow* frame = FindWindowByName( QUALIFIED_VIEWER3D_FRAMENAME( this ) );
+    return dynamic_cast<EDA_3D_VIEWER_FRAME*>( frame );
 }
 
 
 void PCB_BASE_FRAME::Update3DView( bool aMarkDirty, bool aRefresh, const wxString* aTitle )
 {
-    EDA_3D_VIEWER* draw3DFrame = Get3DViewerFrame();
+    EDA_3D_VIEWER_FRAME* draw3DFrame = Get3DViewerFrame();
 
     if( draw3DFrame )
     {
@@ -134,7 +148,7 @@ FP_LIB_TABLE* PROJECT::PcbFootprintLibs()
         }
         catch( const IO_ERROR& ioe )
         {
-            DisplayErrorMessage( nullptr, _( "Error loading project footprint libraries" ),
+            DisplayErrorMessage( nullptr, _( "Error loading project footprint libraries." ),
                                  ioe.What() );
         }
     }
@@ -415,12 +429,12 @@ void PCB_BASE_FRAME::ShowChangedLanguage()
 }
 
 
-EDA_3D_VIEWER* PCB_BASE_FRAME::CreateAndShow3D_Frame()
+EDA_3D_VIEWER_FRAME* PCB_BASE_FRAME::CreateAndShow3D_Frame()
 {
-    EDA_3D_VIEWER* draw3DFrame = Get3DViewerFrame();
+    EDA_3D_VIEWER_FRAME* draw3DFrame = Get3DViewerFrame();
 
     if( !draw3DFrame )
-        draw3DFrame = new EDA_3D_VIEWER( &Kiway(), this, _( "3D Viewer" ) );
+        draw3DFrame = new EDA_3D_VIEWER_FRAME( &Kiway(), this, _( "3D Viewer" ) );
 
     // Raising the window does not show the window on Windows if iconized. This should work
     // on any platform.
@@ -681,7 +695,7 @@ void PCB_BASE_FRAME::CommonSettingsChanged( bool aEnvVarsChanged, bool aTextVars
     RecreateToolbars();
 
     // The 3D viewer isn't in the Kiway, so send its update manually
-    EDA_3D_VIEWER* viewer = Get3DViewerFrame();
+    EDA_3D_VIEWER_FRAME* viewer = Get3DViewerFrame();
 
     if( viewer )
         viewer->CommonSettingsChanged( aEnvVarsChanged, aTextVarsChanged );

@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2004 Jean-Pierre Charras, jaen-pierre.charras@gipsa-lab.inpg.com
  * Copyright (C) 2008 Wayne Stambaugh <stambaughw@gmail.com>
- * Copyright (C) 1992-2020 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 1992-2021 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -187,7 +187,7 @@ int ExecuteFile( wxWindow* frame, const wxString& ExecFile, const wxString& para
 #endif
 
     wxString msg;
-    msg.Printf( _( "Command \"%s\" could not found" ), fullFileName );
+    msg.Printf( _( "Command '%s' could not be found." ), fullFileName );
     DisplayError( frame, msg, 20 );
     return -1;
 }
@@ -212,12 +212,18 @@ bool OpenPDF( const wxString& file )
     else
     {
         // wxLaunchDefaultApplication on Unix systems is run as an external process passing
-        // the filename to the appropriate application as a command argument.  Spaces in the
-        // path and/or file name will cause argument parsing issues so always quote the file
-        // name and path.  This is applicable to all Unix platforms.
+        // the filename to the appropriate application as a command argument.
+        // depending on wxWidgets version, spaces in the path and/or file name will cause
+        // argument parsing issues so always quote the filename and path.
+        // This is applicable to all Unix platforms with wxWidgets version < 3.1.0.
         // See https://github.com/wxWidgets/wxWidgets/blob/master/src/unix/utilsx11.cpp#L2654
 #ifdef __WXGTK__
-        filename = wxT( "\"" ) + filename + wxT( "\"" );
+    #if !wxCHECK_VERSION( 3, 1, 0 )
+    // Quote in case there are spaces in the path.
+    // Not needed on 3.1.4, but needed in 3.0 versions
+    // Moreover, on Linux, on 3.1.4 wx version, adding quotes breaks wxLaunchDefaultApplication
+    AddDelimiterString( filename );
+    #endif
 #endif
 
         if( wxLaunchDefaultApplication( filename ) )
@@ -239,14 +245,14 @@ bool OpenPDF( const wxString& file )
         else
         {
             wxString msg;
-            msg.Printf( _( "Problem while running the PDF viewer\nCommand is \"%s\"" ), command );
+            msg.Printf( _( "Problem while running the PDF viewer.\nCommand is '%s'." ), command );
             DisplayError( NULL, msg );
         }
     }
     else
     {
         wxString msg;
-        msg.Printf( _( "Unable to find a PDF viewer for \"%s\"" ), file );
+        msg.Printf( _( "Unable to find a PDF viewer for '%s'." ), file );
         DisplayError( NULL, msg );
     }
 

@@ -473,7 +473,7 @@ public:
             if( !m_errors.empty() )
                 m_errors += "\n";
 
-            msg.Printf( _( "Cannot copy folder \"%s\"." ), destDir.GetFullPath() );
+            msg.Printf( _( "Cannot copy folder '%s'." ), destDir.GetFullPath() );
             m_errors += msg;
         }
 
@@ -529,14 +529,14 @@ int KICAD_MANAGER_CONTROL::SaveProjectAs( const TOOL_EVENT& aEvent )
 
     if( wxDirExists( newProjectDir.GetFullPath() ) )
     {
-        msg.Printf( _( "\"%s\" already exists." ), newProjectDir.GetFullPath() );
+        msg.Printf( _( "'%s' already exists." ), newProjectDir.GetFullPath() );
         DisplayErrorMessage( m_frame, msg );
         return -1;
     }
 
     if( !wxMkdir( newProjectDir.GetFullPath() ) )
     {
-        msg.Printf( _( "Directory \"%s\" could not be created.\n\n"
+        msg.Printf( _( "Directory '%s' could not be created.\n\n"
                        "Please make sure you have write permissions and try again." ),
                     newProjectDir.GetPath() );
         DisplayErrorMessage( m_frame, msg );
@@ -545,7 +545,7 @@ int KICAD_MANAGER_CONTROL::SaveProjectAs( const TOOL_EVENT& aEvent )
 
     if( !newProjectDir.IsDirWritable() )
     {
-        msg.Printf( _( "Cannot write to folder \"%s\"." ), newProjectDir.GetFullPath() );
+        msg.Printf( _( "Cannot write to folder '%s'." ), newProjectDir.GetFullPath() );
         wxMessageDialog msgDlg( m_frame, msg, _( "Error!" ), wxICON_ERROR | wxOK | wxCENTER );
         msgDlg.SetExtendedMessage( _( "Please check your access permissions to this folder "
                                       "and try again." ) );
@@ -665,18 +665,13 @@ int KICAD_MANAGER_CONTROL::ShowPlayer( const TOOL_EVENT& aEvent )
                 filepath = legacy_board.GetFullPath();
         }
 
-        // Show the frame (and update widgets to set valid sizes),
-        // after creating player and before calling OpenProjectFiles().
-        // Useful because loading a complex board and building its internal data can be
-        // time consuming
-        player->Show( true );
-        wxSafeYield();
-
         if( !filepath.IsEmpty() )
         {
             if( !player->OpenProjectFiles( std::vector<wxString>( 1, filepath ) ) )
                 return -1;
         }
+
+        player->Show( true );
     }
 
     // Needed on Windows, other platforms do not use it, but it creates no issue

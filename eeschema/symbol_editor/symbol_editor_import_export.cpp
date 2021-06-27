@@ -26,14 +26,14 @@
 #include <confirm.h>
 #include <symbol_lib_table.h>
 #include <symbol_edit_frame.h>
-#include <class_library.h>
+#include <symbol_library.h>
 #include <wildcards_and_files_ext.h>
 #include <symbol_library_manager.h>
 #include <wx/filename.h>
 #include <wx/filedlg.h>
 
 
-void SYMBOL_EDIT_FRAME::ImportPart()
+void SYMBOL_EDIT_FRAME::ImportSymbol()
 {
     wxString msg;
     wxString libName = getTargetLib();
@@ -68,21 +68,21 @@ void SYMBOL_EDIT_FRAME::ImportPart()
     SCH_IO_MGR::SCH_FILE_T piType = SCH_IO_MGR::GuessPluginTypeFromLibPath( fn.GetFullPath() );
     SCH_PLUGIN::SCH_PLUGIN_RELEASER pi( SCH_IO_MGR::FindPlugin( piType ) );
 
-    // TODO dialog to select the part to be imported if there is more than one
+    // TODO dialog to select the symbol to be imported if there is more than one
     try
     {
         pi->EnumerateSymbolLib( symbols, fn.GetFullPath() );
     }
     catch( const IO_ERROR& ioe )
     {
-        msg.Printf( _( "Cannot import symbol library \"%s\"." ), fn.GetFullPath() );
+        msg.Printf( _( "Cannot import symbol library '%s'." ), fn.GetFullPath() );
         DisplayErrorMessage( this, msg, ioe.What() );
         return;
     }
 
     if( symbols.empty() )
     {
-        msg.Printf( _( "Symbol library file \"%s\" is empty." ), fn.GetFullPath() );
+        msg.Printf( _( "Symbol library file '%s' is empty." ), fn.GetFullPath() );
         DisplayError( this,  msg );
         return;
     }
@@ -90,23 +90,23 @@ void SYMBOL_EDIT_FRAME::ImportPart()
     wxString symbolName = symbols[0];
     LIB_SYMBOL* entry = pi->LoadSymbol( fn.GetFullPath(), symbolName );
 
-    if( m_libMgr->PartExists( symbols[0], libName ) )
+    if( m_libMgr->SymbolExists( symbols[0], libName ) )
     {
-        msg.Printf( _( "Symbol \"%s\" already exists in library \"%s\"." ), symbolName, libName );
+        msg.Printf( _( "Symbol %s already exists in library '%s'." ), symbolName, libName );
         DisplayError( this,  msg );
         return;
     }
 
-    m_libMgr->UpdatePart( entry, libName );
+    m_libMgr->UpdateSymbol( entry, libName );
     SyncLibraries( false );
-    LoadPart( symbolName, libName, 1 );
+    LoadSymbol( symbolName, libName, 1 );
 }
 
 
-void SYMBOL_EDIT_FRAME::ExportPart()
+void SYMBOL_EDIT_FRAME::ExportSymbol()
 {
     wxString msg, title;
-    LIB_SYMBOL* symbol = getTargetPart();
+    LIB_SYMBOL* symbol = getTargetSymbol();
 
     if( !symbol )
     {
@@ -140,7 +140,7 @@ void SYMBOL_EDIT_FRAME::ExportPart()
         }
         catch( const IO_ERROR& ioe )
         {
-            msg.Printf( _( "Error occurred attempting to load symbol library file \"%s\"" ),
+            msg.Printf( _( "Error occurred attempting to load symbol library file '%s'." ),
                         fn.GetFullPath() );
             DisplayErrorMessage( this, msg, ioe.What() );
             return;
@@ -148,7 +148,7 @@ void SYMBOL_EDIT_FRAME::ExportPart()
 
         if( old_symbol )
         {
-            msg.Printf( _( "Symbol \"%s\" already exists in \"%s\"." ),
+            msg.Printf( _( "Symbol %s already exists in library '%s'." ),
                         symbol->GetName(),
                         fn.GetFullName() );
 
@@ -163,7 +163,7 @@ void SYMBOL_EDIT_FRAME::ExportPart()
 
     if( fn.Exists() && !fn.IsDirWritable() )
     {
-        msg.Printf( _( "Write permissions are required to save library \"%s\"." ),
+        msg.Printf( _( "Write permissions are required to save library '%s'." ),
                     fn.GetFullPath() );
         DisplayError( this, msg );
         return;
@@ -181,16 +181,16 @@ void SYMBOL_EDIT_FRAME::ExportPart()
     }
     catch( const IO_ERROR& ioe )
     {
-        msg.Printf( _( "Failed to create symbol library file \"%s\"" ), fn.GetFullPath() );
+        msg.Printf( _( "Failed to create symbol library file '%s'." ), fn.GetFullPath() );
         DisplayErrorMessage( this, msg, ioe.What() );
-        msg.Printf( _( "Error creating symbol library \"%s\"" ), fn.GetFullName() );
+        msg.Printf( _( "Error creating symbol library '%s'." ), fn.GetFullName() );
         SetStatusText( msg );
         return;
     }
 
     m_mruPath = fn.GetPath();
 
-    msg.Printf( _( "Symbol \"%s\" saved in library \"%s\"" ), symbol->GetName(), fn.GetFullPath() );
+    msg.Printf( _( "Symbol %s saved to library '%s'." ), symbol->GetName(), fn.GetFullPath() );
     SetStatusText( msg );
 
     // See if the user wants it added to a library table (global or project)

@@ -33,7 +33,7 @@
 #include <sch_symbol.h>
 #include <lib_field.h>
 #include <template_fieldnames.h>
-#include <class_library.h>
+#include <symbol_library.h>
 #include <sch_validators.h>
 #include <schematic.h>
 #include <dialog_edit_one_field.h>
@@ -320,14 +320,14 @@ DIALOG_SCH_EDIT_ONE_FIELD::DIALOG_SCH_EDIT_ONE_FIELD( SCH_BASE_FRAME* aParent,
 
     m_textLabel->SetLabel( m_field->GetName() + ":" );
 
-    // The library symbol may have been removed so using SCH_SYMBOL::GetPartRef() here
+    // The library symbol may have been removed so using SCH_SYMBOL::GetLibSymbolRef() here
     // could result in a segfault.  If the library symbol is no longer available, the
     // schematic fields can still edit so set the power symbol flag to false.  This may not
     // be entirely accurate if the power library is missing but it's better then a segfault.
     if( aField->GetParent() && aField->GetParent()->Type() == SCH_SYMBOL_T )
     {
-        const SCH_SYMBOL* symbol = (SCH_SYMBOL*) aField->GetParent();
-        const LIB_SYMBOL* libSymbol = GetParent()->GetLibPart( symbol->GetLibId(), true );
+        const SCH_SYMBOL* symbol = static_cast<SCH_SYMBOL*>( aField->GetParent() );
+        const LIB_SYMBOL* libSymbol = GetParent()->GetLibSymbol( symbol->GetLibId(), true );
 
         if( libSymbol && libSymbol->IsPower() )
             m_isPower = true;

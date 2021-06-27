@@ -5,7 +5,7 @@
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
  * Copyright (C) 2018 Jean-Pierre Charras, jp.charras at wanadoo.fr
- * Copyright (C) 1992-2020 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 1992-2021 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -43,6 +43,14 @@ void TransformCircleToPolygon( SHAPE_LINE_CHAIN& aCornerBuffer, wxPoint aCenter,
 {
     wxPoint corner_position;
     int     numSegs = GetArcToSegmentCount( aRadius, aError, 360.0 );
+
+    // The shape will be built with a even number of segs. Reason: the horizontal
+    // diameter begins and ends to points on the actual circle, or circle
+    // expanded by aError if aErrorLoc == ERROR_OUTSIDE.
+    // This is used by Arc to Polygon shape convert.
+    if( numSegs & 1 )
+        numSegs++;
+
     int     delta = 3600 / numSegs;           // rotate angle in 0.1 degree
     int     radius = aRadius;
 
@@ -67,6 +75,14 @@ void TransformCircleToPolygon( SHAPE_POLY_SET& aCornerBuffer, wxPoint aCenter, i
 {
     wxPoint corner_position;
     int     numSegs = GetArcToSegmentCount( aRadius, aError, 360.0 );
+
+    // The shape will be built with a even number of segs. Reason: the horizontal
+    // diameter begins and ends to points on the actual circle, or circle
+    // expanded by aError if aErrorLoc == ERROR_OUTSIDE.
+    // This is used by Arc to Polygon shape convert.
+    if( numSegs & 1 )
+        numSegs++;
+
     int     delta = 3600 / numSegs;           // rotate angle in 0.1 degree
     int     radius = aRadius;
 
@@ -361,42 +377,65 @@ void TransformArcToPolygon( SHAPE_POLY_SET& aCornerBuffer, wxPoint aStart, wxPoi
     SHAPE_ARC        arc( aStart, aMid, aEnd, aWidth );
     SHAPE_LINE_CHAIN arcSpine = arc.ConvertToPolyline( aError );
     int              radial_offset = ( aWidth + 1 ) / 2;
+    SHAPE_POLY_SET   polyshape;
+    std::vector<VECTOR2I> outside_pts;
 
     /// We start by making rounded ends on the arc
-    TransformCircleToPolygon( aCornerBuffer,
+    TransformCircleToPolygon( polyshape,
             wxPoint( arcSpine.GetPoint( 0 ).x, arcSpine.GetPoint( 0 ).y ), radial_offset, aError,
             aErrorLoc );
 
-    TransformCircleToPolygon( aCornerBuffer,
+    TransformCircleToPolygon( polyshape,
             wxPoint( arcSpine.GetPoint( -1 ).x, arcSpine.GetPoint( -1 ).y ), radial_offset, aError,
             aErrorLoc );
+
+    // The circle polygon is built with a even number of segments, so the
+    // horizontal diameter has 2 corners on the biggest diameter
+    // Rotate these 2 corners to match the start and ens points of inner and outer
+    // end points of the arc appoximation outlines, build below.
+    // The final shape is much better.
+    double arc_angle_end_deg = arc.GetStartAngle();
+
+    if( arc_angle_end_deg != 0 & arc_angle_end_deg != 180.0 )
+        polyshape.Outline(0).Rotate( arc_angle_end_deg * M_PI/180.0, arcSpine.GetPoint( 0 ) );
+
+    arc_angle_end_deg = arc.GetEndAngle();
+
+    if( arc_angle_end_deg != 0 & arc_angle_end_deg != 180.0 )
+        polyshape.Outline(1).Rotate( arc_angle_end_deg * M_PI/180.0, arcSpine.GetPoint( -1 ) );
 
     if( aErrorLoc == ERROR_OUTSIDE )
         radial_offset += aError;
     else
-        radial_offset -= aError;
+        radial_offset -= aError/2;
 
     if( radial_offset < 0 )
         radial_offset = 0;
-
-    std::vector<VECTOR2I> outside_pts;
-    SHAPE_POLY_SET        polyshape;
 
     polyshape.NewOutline();
 
     VECTOR2I center = arc.GetCenter();
     int      radius = ( arc.GetP0() - center ).EuclideanNorm();
+    int last_index = arcSpine.GetPointCount() -1;
 
-    for( std::size_t ii = 0; ii < arcSpine.GetPointCount(); ++ii )
+    for( std::size_t ii = 0; ii <= last_index; ++ii )
     {
         VECTOR2I offset = arcSpine.GetPoint( ii ) - center;
+        int curr_rd = radius;
 
-        polyshape.Append( offset.Resize( radius - radial_offset ) + center );
-        outside_pts.emplace_back( offset.Resize( radius + radial_offset ) + center );
+        // This correction gives a better position of intermediate points of the sides of arc.
+        if( ii > 0 && ii < last_index )
+            curr_rd += aError/2;
+
+        polyshape.Append( offset.Resize( curr_rd - radial_offset ) + center );
+        outside_pts.emplace_back( offset.Resize( curr_rd + radial_offset ) + center );
     }
 
     for( auto it = outside_pts.rbegin(); it != outside_pts.rend(); ++it )
         polyshape.Append( *it );
+
+    // Can be removed, but usefull to display the outline:
+    polyshape.Simplify( SHAPE_POLY_SET::PM_FAST );
 
     aCornerBuffer.Append( polyshape );
 

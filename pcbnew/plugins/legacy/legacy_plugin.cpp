@@ -88,6 +88,7 @@
 #include <trigo.h>
 #include <confirm.h>
 #include <math/util.h>      // for KiROUND
+#include <widgets/progress_reporter.h>
 
 typedef LEGACY_PLUGIN::BIU      BIU;
 
@@ -193,6 +194,29 @@ static const char delims[] = " \t\r\n";
 static bool inline isSpace( int c ) { return strchr( delims, c ) != nullptr; }
 
 #define MASK(x)             (1<<(x))
+
+
+void LEGACY_PLUGIN::checkpoint()
+{
+    const unsigned PROGRESS_DELTA = 250;
+
+    if( m_progressReporter )
+    {
+        unsigned curLine = m_reader->LineNumber();
+
+        if( curLine > m_lastProgressLine + PROGRESS_DELTA )
+        {
+            m_progressReporter->SetCurrentProgress( ( (double) curLine )
+                                                            / std::max( 1U, m_lineCount ) );
+
+            if( !m_progressReporter->KeepRefreshing() )
+                THROW_IO_ERROR( ( "Open cancelled by user." ) );
+
+            m_lastProgressLine = curLine;
+        }
+    }
+}
+
 
 //-----<BOARD Load Functions>---------------------------------------------------
 
@@ -378,7 +402,8 @@ static inline long hexParse( const char* next, const char** out = NULL )
 
 
 BOARD* LEGACY_PLUGIN::Load( const wxString& aFileName, BOARD* aAppendToMe,
-                            const PROPERTIES* aProperties, PROJECT* aProject )
+                            const PROPERTIES* aProperties, PROJECT* aProject,
+                            PROGRESS_REPORTER* aProgressReporter )
 {
     LOCALE_IO   toggle;     // toggles on, then off, the C locale.
 
@@ -402,13 +427,30 @@ BOARD* LEGACY_PLUGIN::Load( const wxString& aFileName, BOARD* aAppendToMe,
 
     FILE_LINE_READER    reader( aFileName );
 
-    m_reader = &reader;          // member function accessibility
+    m_reader = &reader;
+    m_progressReporter = aProgressReporter;
 
     checkVersion();
+
+    if( m_progressReporter )
+    {
+        m_lineCount = 0;
+
+        m_progressReporter->Report( wxString::Format( _( "Loading %s..." ), aFileName ) );
+
+        if( !m_progressReporter->KeepRefreshing() )
+            THROW_IO_ERROR( ( "Open cancelled by user." ) );
+
+        while( reader.ReadLine() )
+            m_lineCount++;
+
+        reader.Rewind();
+    }
 
     loadAllSections( bool( aAppendToMe ) );
 
     (void)boardDeleter.release(); // give it up so we dont delete it on exit
+    m_progressReporter = nullptr;
     return m_board;
 }
 
@@ -426,6 +468,8 @@ void LEGACY_PLUGIN::loadAllSections( bool doAppend )
 
     while( ( line = READLINE( m_reader ) ) != NULL )
     {
+        checkpoint();
+
         // put the more frequent ones at the top, but realize TRACKs are loaded as a group
 
         if( TESTLINE( "$MODULE" ) )
@@ -1541,8 +1585,10 @@ void LEGACY_PLUGIN::loadPAD( FOOTPRINT* aFootprint )
             ReadDelimitedText( buf, data, sizeof(buf) );
 
             if( m_board )
+            {
                 wxASSERT( m_board->FindNet( getNetCode( netcode ) )->GetNetname()
-                          == FROM_UTF8( StrPurge( buf ) ) );
+                          == ConvertToNewOverbarNotation( FROM_UTF8( StrPurge( buf ) ) ) );
+            }
         }
 
         else if( TESTLINE( "Po" ) )         // (Po)sition
@@ -1791,6 +1837,7 @@ void LEGACY_PLUGIN::loadMODULE_TEXT( FP_TEXT* aText )
     txt_end = data + ReadDelimitedText( &m_field, data );
     m_field.Replace( "%V", "${VALUE}" );
     m_field.Replace( "%R", "${REFERENCE}" );
+    m_field = ConvertToNewOverbarNotation( m_field );
     aText->SetText( m_field );
 
     // after switching to strtok, there's no easy coming back because of the
@@ -2039,7 +2086,10 @@ void LEGACY_PLUGIN::loadNETINFO_ITEM()
             ReadDelimitedText( buf, data, sizeof(buf) );
 
             if( net == NULL )
-                net = new NETINFO_ITEM( m_board, FROM_UTF8( buf ), netCode );
+            {
+                net = new NETINFO_ITEM( m_board, ConvertToNewOverbarNotation( FROM_UTF8( buf ) ),
+                                        netCode );
+            }
             else
             {
                 THROW_IO_ERROR( "Two net definitions in  '$EQUIPOT' block" );
@@ -2114,7 +2164,7 @@ void LEGACY_PLUGIN::loadPCB_TEXT()
         if( TESTLINE( "Te" ) )          // Text line (or first line for multi line texts)
         {
             ReadDelimitedText( text, line + SZ( "Te" ), sizeof(text) );
-            pcbtxt->SetText( FROM_UTF8( text ) );
+            pcbtxt->SetText( ConvertToNewOverbarNotation( FROM_UTF8( text ) ) );
         }
 
         else if( TESTLINE( "nl" ) )     // next line of the current text
@@ -2194,6 +2244,8 @@ void LEGACY_PLUGIN::loadTrackList( int aStructType )
 
     while( ( line = READLINE( m_reader ) ) != NULL )
     {
+        checkpoint();
+
         // read two lines per loop iteration, each loop is one TRACK or VIA
         // example first line:
         // e.g. "Po 0 23994 28800 24400 28800 150 -1"  for a track
@@ -2352,7 +2404,7 @@ void LEGACY_PLUGIN::loadNETCLASS()
         {
             // e.g. "AddNet "V3.3D"\n"
             ReadDelimitedText( buf, line + SZ( "AddNet" ), sizeof(buf) );
-            netname = FROM_UTF8( buf );
+            netname = ConvertToNewOverbarNotation( FROM_UTF8( buf ) );
             nc->Add( netname );
         }
 
@@ -3380,6 +3432,9 @@ LEGACY_PLUGIN::LEGACY_PLUGIN() :
     m_cu_count( 16 ),               // for FootprintLoad()
     m_board( nullptr ),
     m_props( nullptr ),
+    m_progressReporter( nullptr ),
+    m_lastProgressLine( 0 ),
+    m_lineCount( 0 ),
     m_reader( nullptr ),
     m_fp( nullptr ),
     m_cache( nullptr )

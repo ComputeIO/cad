@@ -46,8 +46,8 @@
 #include <pad.h>
 #include <footprint.h>
 #include <board.h>
-#include <track.h>
 
+#include <pcb_track.h>
 #include <pcb_painter.h>
 #include <pcb_edit_frame.h>
 
@@ -100,10 +100,7 @@ BOARD* PCB_TEST_FRAME_BASE::LoadAndDisplayBoard( const std::string& filename )
     }
     catch( const IO_ERROR& ioe )
     {
-        wxString msg = wxString::Format( _( "Error loading board.\n%s" ),
-                ioe.Problem() );
-
-        printf( "%s\n", (const char*) msg.mb_str() );
+        printf( "Board Loading Error: '%s'\n", ioe.Problem() );
         return nullptr;
     }
 

@@ -55,7 +55,7 @@ DIALOG_LABEL_EDITOR::DIALOG_LABEL_EDITOR( SCH_EDIT_FRAME* aParent, SCH_TEXT* aTe
 
     m_valueMultiLine->SetEOLMode( wxSTC_EOL_LF );
 
-    m_scintillaTricks = new SCINTILLA_TRICKS( m_valueMultiLine, wxT( "()" ) );
+    m_scintillaTricks = new SCINTILLA_TRICKS( m_valueMultiLine, wxT( "{}" ) );
 
     if( m_CurrentText->IsMultilineAllowed() )
     {
@@ -126,15 +126,6 @@ DIALOG_LABEL_EDITOR::DIALOG_LABEL_EDITOR( SCH_EDIT_FRAME* aParent, SCH_TEXT* aTe
     Layout();
 
     m_valueMultiLine->Bind( wxEVT_STC_CHARADDED, &DIALOG_LABEL_EDITOR::onScintillaCharAdded, this );
-
-    int    size = wxNORMAL_FONT->GetPointSize();
-    wxFont fixedFont( size, wxFONTFAMILY_TELETYPE, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL );
-
-    for( size_t i = 0; i < wxSTC_STYLE_MAX; ++i )
-        m_valueMultiLine->StyleSetFont( i, fixedFont );
-
-    // Addresses a bug in wx3.0 where styles are not correctly set
-    m_valueMultiLine->StyleClearAll();
 
     // DIALOG_SHIM needs a unique hash_key because classname is not sufficient because the
     // various versions have different controls so we want to store sizes for each version.
@@ -342,6 +333,10 @@ bool DIALOG_LABEL_EDITOR::TransferDataFromWindow()
 
     if( !text.IsEmpty() )
     {
+#ifdef __WXMAC__
+        // On macOS CTRL+Enter produces '\r' instead of '\n' regardless of EOL setting
+        text.Replace( "\r", "\n" );
+#endif
         m_CurrentText->SetText( text );
     }
     else if( !m_CurrentText->IsNew() )

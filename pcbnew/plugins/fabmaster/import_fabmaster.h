@@ -45,6 +45,7 @@
 
 enum PCB_LAYER_ID : int;
 class BOARD;
+class PROGRESS_REPORTER;
 
 class FABMASTER
 {
@@ -52,15 +53,23 @@ public:
 
     using single_row = std::vector<std::string>;
     FABMASTER() :
-        has_pads( false ), has_comps( false ), has_graphic( false ),
-        has_nets( false ), has_pins( false )
+        has_pads( false ),
+        has_comps( false ),
+        has_graphic( false ),
+        has_nets( false ),
+        has_pins( false ),
+        m_progressReporter( nullptr ),
+        m_doneCount( 0 ),
+        m_lastProgressCount( 0 ),
+        m_totalCount( 0 )
+
     {}
 
     bool Read( const std::string& aFile );
 
     bool Process();
 
-    bool LoadBoard( BOARD* aBoard );
+    bool LoadBoard( BOARD* aBoard, PROGRESS_REPORTER* aProgressReporter );
 
 private:
 
@@ -497,6 +506,8 @@ private:
 
     section_type detectType( size_t aOffset );
 
+    void checkpoint();
+
     int execute_recordbuffer( int filetype );
     int getColFromName( size_t aRow, const std::string& aStr );
     SYMTYPE parseSymType( const std::string& aSymType );
@@ -572,6 +583,10 @@ private:
 
     SHAPE_POLY_SET loadShapePolySet( const graphic_element& aLine);
 
+    PROGRESS_REPORTER*  m_progressReporter;  ///< optional; may be nullptr
+    unsigned            m_doneCount;
+    unsigned            m_lastProgressCount;
+    unsigned            m_totalCount;         ///< for progress reporting
 };
 
 

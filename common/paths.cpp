@@ -153,6 +153,8 @@ wxString PATHS::GetStockDataPath( bool aRespectRunFromBuildDir )
         fn.RemoveLastDir();
         fn.RemoveLastDir();
         path = fn.GetPath();
+#elif defined( __WXMSW__ )
+        path = getWindowsKiCadRoot();
 #else
         path = Pgm().GetExecutablePath() + wxT( ".." );
 #endif
@@ -162,7 +164,7 @@ wxString PATHS::GetStockDataPath( bool aRespectRunFromBuildDir )
 #if defined( __WXMAC__ )
         path = GetOSXKicadDataDir();
 #elif defined( __WXMSW__ )
-        path = Pgm().GetExecutablePath() + wxT( "../share/kicad" );
+        path = getWindowsKiCadRoot() + wxT( "share/kicad" );
 #else
         path = wxString::FromUTF8Unchecked( KICAD_DATA );
 #endif
@@ -257,7 +259,7 @@ wxString PATHS::GetDocumentationPath()
 #if defined( __WXMAC__ )
     path = GetOSXKicadDataDir();
 #elif defined( __WXMSW__ )
-    path = Pgm().GetExecutablePath() + "../share/doc/kicad";
+    path = getWindowsKiCadRoot() + "share/doc/kicad";
 #else
     path = wxString::FromUTF8Unchecked( KICAD_DOCS );
 #endif
@@ -343,5 +345,16 @@ wxString PATHS::GetOSXKicadDataDir()
     }
 
     return ddir.GetPath();
+}
+#endif
+
+
+#ifdef __WXWINDOWS__
+wxString PATHS::getWindowsKiCadRoot()
+{
+    wxFileName root( Pgm().GetExecutablePath() + "/../" );
+    root.Normalize();
+
+    return root.GetPathWithSep();
 }
 #endif

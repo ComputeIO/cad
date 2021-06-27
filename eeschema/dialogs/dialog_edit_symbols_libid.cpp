@@ -532,7 +532,7 @@ bool DIALOG_EDIT_SYMBOLS_LIBID::validateLibIds()
         if( !id.IsValid() )
         {
             wxString msg;
-            msg.Printf( _( "Symbol library identifier \"%s\" is not valid." ), new_libid );
+            msg.Printf( _( "Symbol library identifier %s is not valid." ), new_libid );
             wxMessageBox( msg );
 
             m_grid->SetFocus();
@@ -724,7 +724,7 @@ bool DIALOG_EDIT_SYMBOLS_LIBID::TransferDataFromWindow()
             {
                 wxString msg;
 
-                msg.Printf( _( "Error occurred loading symbol %s from library %s.\n\n%s" ),
+                msg.Printf( _( "Error loading symbol %s from library %s.\n\n%s" ),
                             id.GetLibItemName().wx_str(),
                             id.GetLibNickname().wx_str(),
                             ioe.What() );

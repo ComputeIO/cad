@@ -36,7 +36,7 @@
 #include <widgets/wx_grid.h>
 #include <settings/settings_manager.h>
 #include <ee_collectors.h>
-#include <class_library.h>
+#include <symbol_library.h>
 #include <fields_grid_table.h>
 #include <sch_edit_frame.h>
 #include <sch_reference_list.h>
@@ -282,9 +282,9 @@ DIALOG_SYMBOL_PROPERTIES::DIALOG_SYMBOL_PROPERTIES( SCH_EDIT_FRAME* aParent,
         m_dataModel( nullptr )
 {
     m_symbol = aSymbol;
-    m_part = m_symbol->GetPartRef().get();
+    m_part = m_symbol->GetLibSymbolRef().get();
 
-    // GetPartRef() now points to the cached part in the schematic, which should always be
+    // GetLibSymbolRef() now points to the cached part in the schematic, which should always be
     // there for usual cases, but can be null when opening old schematics not storing the part
     // so we need to handle m_part == nullptr
     wxASSERT( m_part );
@@ -659,7 +659,7 @@ bool DIALOG_SYMBOL_PROPERTIES::TransferDataFromWindow()
     for( unsigned i = 0;  i < m_fields->size();  ++i )
         m_fields->at( i ).Offset( m_symbol->GetPosition() );
 
-    LIB_SYMBOL* entry = GetParent()->GetLibPart( m_symbol->GetLibId() );
+    LIB_SYMBOL* entry = GetParent()->GetLibSymbol( m_symbol->GetLibId() );
 
     if( entry && entry->IsPower() )
         m_fields->at( VALUE_FIELD ).SetText( m_symbol->GetLibId().GetLibItemName() );

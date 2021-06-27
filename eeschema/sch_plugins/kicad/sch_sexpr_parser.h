@@ -34,7 +34,7 @@
 
 #include <convert_to_biu.h>                      // IU_PER_MM
 
-#include <class_library.h>
+#include <symbol_library.h>
 #include <schematic_lexer.h>
 #include <sch_file_versions.h>
 #include <default_values.h>    // For some default values
@@ -83,6 +83,13 @@ class SCH_SEXPR_PARSER : public SCHEMATIC_LEXER
     int m_unit;             ///< The current unit being parsed.
     int m_convert;          ///< The current body style being parsed.
     wxString m_symbolName;  ///< The current symbol name.
+
+    PROGRESS_REPORTER* m_progressReporter;  // optional; may be nullptr
+    const LINE_READER* m_lineReader;        // for progress reporting
+    unsigned           m_lastProgressLine;
+    unsigned           m_lineCount;         // for progress reporting
+
+    void checkpoint();
 
     void parseHeader( TSCHEMATIC_T::T aHeaderType, int aFileVersion );
 
@@ -153,7 +160,7 @@ class SCH_SEXPR_PARSER : public SCHEMATIC_LEXER
 
     void parseFill( FILL_PARAMS& aFill );
 
-    void parseEDA_TEXT( EDA_TEXT* aText );
+    void parseEDA_TEXT( EDA_TEXT* aText, bool aConvertOverbarSyntax );
     void parsePinNames( std::unique_ptr<LIB_SYMBOL>& aSymbol );
 
     LIB_FIELD* parseProperty( std::unique_ptr<LIB_SYMBOL>& aSymbol );
@@ -184,7 +191,8 @@ class SCH_SEXPR_PARSER : public SCHEMATIC_LEXER
     void parseBusAlias( SCH_SCREEN* aScreen );
 
 public:
-    SCH_SEXPR_PARSER( LINE_READER* aLineReader = nullptr );
+    SCH_SEXPR_PARSER( LINE_READER* aLineReader = nullptr,
+                      PROGRESS_REPORTER* aProgressReporter = nullptr, unsigned aLineCount = 0 );
 
     void ParseLib( LIB_SYMBOL_MAP& aSymbolLibMap );
 

@@ -39,7 +39,8 @@
 
 
 ZONE_FILLER_TOOL::ZONE_FILLER_TOOL() :
-    PCB_TOOL_BASE( "pcbnew.ZoneFiller" )
+    PCB_TOOL_BASE( "pcbnew.ZoneFiller" ),
+    m_fillInProgress( false )
 {
 }
 
@@ -56,8 +57,10 @@ void ZONE_FILLER_TOOL::Reset( RESET_REASON aReason )
 
 void ZONE_FILLER_TOOL::CheckAllZones( wxWindow* aCaller, PROGRESS_REPORTER* aReporter )
 {
-    if( !getEditFrame<PCB_EDIT_FRAME>()->m_ZoneFillsDirty )
+    if( !getEditFrame<PCB_EDIT_FRAME>()->m_ZoneFillsDirty || m_fillInProgress )
         return;
+
+    m_fillInProgress = true;
 
     std::vector<ZONE*> toFill;
 
@@ -86,6 +89,7 @@ void ZONE_FILLER_TOOL::CheckAllZones( wxWindow* aCaller, PROGRESS_REPORTER* aRep
     }
 
     canvas()->Refresh();
+    m_fillInProgress = false;
 }
 
 
@@ -102,6 +106,11 @@ void ZONE_FILLER_TOOL::FillAllZones( wxWindow* aCaller, PROGRESS_REPORTER* aRepo
     BOARD_COMMIT       commit( this );
     std::vector<ZONE*> toFill;
 
+    if( m_fillInProgress )
+        return;
+
+    m_fillInProgress = true;
+
     for( ZONE* zone : board()->Zones() )
         toFill.push_back( zone );
 
@@ -117,7 +126,7 @@ void ZONE_FILLER_TOOL::FillAllZones( wxWindow* aCaller, PROGRESS_REPORTER* aRepo
 
         button->Bind( wxEVT_COMMAND_HYPERLINK,
                       std::function<void( wxHyperlinkEvent& aEvent )>(
-                              [&]( wxHyperlinkEvent& aEvent )
+                              [frame]( wxHyperlinkEvent& aEvent )
                               {
                                   frame->ShowBoardSetupDialog( _( "Rules" ) );
                               } ) );
@@ -150,6 +159,7 @@ void ZONE_FILLER_TOOL::FillAllZones( wxWindow* aCaller, PROGRESS_REPORTER* aRepo
         frame->UpdateUserInterface();
 
     canvas()->Refresh();
+    m_fillInProgress = false;
 
     // wxWidgets has keyboard focus issues after the progress reporter.  Re-setting the focus
     // here doesn't work, so we delay it to an idle event.
@@ -159,6 +169,14 @@ void ZONE_FILLER_TOOL::FillAllZones( wxWindow* aCaller, PROGRESS_REPORTER* aRepo
 
 int ZONE_FILLER_TOOL::ZoneFill( const TOOL_EVENT& aEvent )
 {
+    if( m_fillInProgress )
+    {
+        wxBell();
+        return -1;
+    }
+
+    m_fillInProgress = true;
+
     std::vector<ZONE*> toFill;
 
     BOARD_COMMIT commit( this );
@@ -187,6 +205,7 @@ int ZONE_FILLER_TOOL::ZoneFill( const TOOL_EVENT& aEvent )
         commit.Revert();
 
     canvas()->Refresh();
+    m_fillInProgress = false;
     return 0;
 }
 

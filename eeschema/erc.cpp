@@ -584,7 +584,7 @@ int ERC_TESTER::TestMultUnitPinConflicts()
                         continue;
 
                     wxString name = pin->GetParentSymbol()->GetRef( &subgraph->m_sheet ) +
-                                      + ":" + pin->GetNumber();
+                                      + ":" + pin->GetShownNumber();
 
                     if( !pinToNetMap.count( name ) )
                     {
@@ -597,7 +597,9 @@ int ERC_TESTER::TestMultUnitPinConflicts()
 
                         ercItem->SetErrorMessage( wxString::Format(
                                 _( "Pin %s is connected to both %s and %s" ),
-                                pin->GetNumber(), netName, pinToNetMap[name].first ) );
+                                pin->GetShownNumber(),
+                                netName,
+                                pinToNetMap[name].first ) );
 
                         ercItem->SetItems( pin, pinToNetMap[name].second );
                         ercItem->SetIsSheetSpecific();
@@ -690,7 +692,7 @@ int ERC_TESTER::TestLibSymbolIssues()
 
             wxCHECK2( symbol, continue );
 
-            LIB_SYMBOL* libSymbolInSchematic = symbol->GetPartRef().get();
+            LIB_SYMBOL* libSymbolInSchematic = symbol->GetLibSymbolRef().get();
 
             wxCHECK2( libSymbolInSchematic, continue );
 
@@ -706,7 +708,7 @@ int ERC_TESTER::TestLibSymbolIssues()
                 ercItem->SetErrorMessage( msg );
 
                 markers.emplace_back( new SCH_MARKER( ercItem, symbol->GetPosition() ) );
-                break;
+                continue;
             }
             else if( !libTable->HasLibrary( libName, true ) )
             {
@@ -717,11 +719,11 @@ int ERC_TESTER::TestLibSymbolIssues()
                 ercItem->SetErrorMessage( msg );
 
                 markers.emplace_back( new SCH_MARKER( ercItem, symbol->GetPosition() ) );
-                break;
+                continue;
             }
 
             wxString    symbolName = symbol->GetLibId().GetLibItemName();
-            LIB_SYMBOL* libSymbol = SchGetLibPart( symbol->GetLibId(), libTable );
+            LIB_SYMBOL* libSymbol = SchGetLibSymbol( symbol->GetLibId(), libTable );
 
             if( libSymbol == nullptr )
             {
@@ -733,7 +735,7 @@ int ERC_TESTER::TestLibSymbolIssues()
                 ercItem->SetErrorMessage( msg );
 
                 markers.emplace_back( new SCH_MARKER( ercItem, symbol->GetPosition() ) );
-                break;
+                continue;
             }
 
             std::unique_ptr<LIB_SYMBOL> flattenedSymbol = libSymbol->Flatten();

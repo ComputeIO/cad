@@ -41,7 +41,7 @@
 #include <core/mirror.h>
 #include <kiway.h>
 #include <general.h>
-#include <class_library.h>
+#include <symbol_library.h>
 #include <sch_symbol.h>
 #include <sch_field.h>
 #include <schematic.h>
@@ -377,7 +377,7 @@ bool SCH_FIELD::IsReplaceable() const
 
         if( m_id == VALUE_FIELD )
         {
-            if( parentSymbol->GetPartRef() && parentSymbol->GetPartRef()->IsPower() )
+            if( parentSymbol->GetLibSymbolRef() && parentSymbol->GetLibSymbolRef()->IsPower() )
                 return false;
         }
     }

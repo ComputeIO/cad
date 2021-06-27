@@ -155,6 +155,15 @@ EDA_DRAW_FRAME::EDA_DRAW_FRAME( KIWAY* aKiway, wxWindow* aParent, FRAME_T aFrame
                                          wxSize( m_frameSize.x, m_msgFrameHeight ) );
 
     m_messagePanel->SetBackgroundColour( COLOR4D( LIGHTGRAY ).ToColour() );
+
+#if wxCHECK_VERSION( 3, 1, 3 )
+    Bind( wxEVT_DPI_CHANGED,
+          [&]( wxDPIChangedEvent& )
+          {
+              wxMoveEvent dummy;
+              OnMove( dummy );
+          } );
+#endif
 }
 
 
@@ -531,6 +540,8 @@ void EDA_DRAW_FRAME::DisplayUnitsMsg()
 
 void EDA_DRAW_FRAME::OnSize( wxSizeEvent& SizeEv )
 {
+    EDA_BASE_FRAME::OnSize( SizeEv );
+
     m_frameSize = GetClientSize( );
 
     SizeEv.Skip();

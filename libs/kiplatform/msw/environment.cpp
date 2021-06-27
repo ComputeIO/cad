@@ -23,6 +23,7 @@
 #include <wx/filename.h>
 #include <wx/stdpaths.h>
 #include <wx/string.h>
+#include <wx/app.h>
 
 #include <Windows.h>
 #include <shellapi.h>
@@ -69,12 +70,28 @@ bool KIPLATFORM::ENV::IsNetworkPath( const wxString& aPath )
 
 wxString KIPLATFORM::ENV::GetDocumentsPath()
 {
+    // If called by a python script in stand-alone (outside kicad), wxStandardPaths::Get()
+    // complains about not existing app. so use a dummy app
+    if( wxTheApp ==  nullptr )
+    {
+        wxApp dummy;
+        return wxStandardPaths::Get().GetDocumentsDir();
+    }
+
     return wxStandardPaths::Get().GetDocumentsDir();
 }
 
 
 wxString KIPLATFORM::ENV::GetUserConfigPath()
 {
+    // If called by a python script in stand-alone (outside kicad), wxStandardPaths::Get()
+    // complains about not existing app. so use a dummy app
+    if( wxTheApp ==  nullptr )
+    {
+        wxApp dummy;
+        return wxStandardPaths::Get().GetUserConfigDir();
+    }
+
     return wxStandardPaths::Get().GetUserConfigDir();
 }
 
@@ -84,6 +101,17 @@ wxString KIPLATFORM::ENV::GetUserCachePath()
     // Unfortunately AppData/Local is the closest analog to "Cache" directories of other platforms
 
     // Make sure we dont include the "appinfo" (appended app name)
+
+    // If called by a python script in stand-alone (outside kicad), wxStandardPaths::Get()
+    // complains about not existing app. so use a dummy app
+    if( wxTheApp ==  nullptr )
+    {
+        wxApp dummy;
+        wxStandardPaths::Get().UseAppInfo( wxStandardPaths::AppInfo_None );
+
+        return wxStandardPaths::Get().GetUserLocalDataDir();
+   }
+
     wxStandardPaths::Get().UseAppInfo( wxStandardPaths::AppInfo_None );
 
     return wxStandardPaths::Get().GetUserLocalDataDir();
