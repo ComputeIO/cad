@@ -50,7 +50,6 @@
 #include <geometry/shape_segment.h>
 #include <geometry/shape_compound.h>
 #include <font/font.h>
-#include <output_operators.h>
 
 #include <wx/debug.h>           // for wxASSERT
 #include <wx/string.h>          // wxString, wxArrayString
