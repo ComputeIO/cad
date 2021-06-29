@@ -52,6 +52,7 @@ void PANEL_PCBNEW_SIMUL_DC_PLANE_CAPACITANCE::OnRun( wxCommandEvent& event )
     descriptor->m_dim = FEM_SIMULATION_DIMENSION::SIMUL3D;
     descriptor->m_simulationType = FEM_SIMULATION_TYPE::DC;
     descriptor->m_requiresDielectric = true;
+    descriptor->m_requiresAir = true;
     descriptor->m_simulateConductor = false;
     descriptor->m_simulateElectricField = true;
 
