@@ -53,6 +53,7 @@ void PANEL_PCBNEW_SIMUL_DC_PLANE_CAPACITANCE::OnRun( wxCommandEvent& event )
     descriptor->m_simulationType = FEM_SIMULATION_TYPE::DC;
     descriptor->m_requiresDielectric = true;
     descriptor->m_simulateConductor = false;
+    descriptor->m_simulateElectricField = true;
 
     wxString net1Name = m_net1ComboBox->GetStringSelection();
     wxString net2Name = m_net2ComboBox->GetStringSelection();
@@ -90,8 +91,8 @@ void PANEL_PCBNEW_SIMUL_DC_PLANE_CAPACITANCE::OnRun( wxCommandEvent& event )
     FEM_PORT*            port2 = new FEM_PORT( net2 );
     FEM_PORT_CONSTRAINT* constraint2 = new FEM_PORT_CONSTRAINT();
 
-    constraint2->m_type = FEM_PORT_CONSTRAINT_TYPE::VOLTAGE;
-    constraint2->m_value = 0; // V
+    constraint2->m_type = FEM_PORT_CONSTRAINT_TYPE::CHARGE;
+    constraint2->m_value = -1e-9; // V
     port2->m_type = FEM_PORT_TYPE::SOURCE;
     port2->m_constraint = *constraint2;
     descriptor->AddPort( port2 );
@@ -124,7 +125,7 @@ void PANEL_PCBNEW_SIMUL_DC_PLANE_CAPACITANCE::OnRun( wxCommandEvent& event )
     }
 
     m_resultText->SetLabel( "Simulated capacitance is "
-                            + std::to_string( r_capacitance->m_value ) );
+                            + std::to_string( r_capacitance->m_value * 10e9 ) + "nF" );
 
 #endif
 }

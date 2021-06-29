@@ -187,8 +187,20 @@ void SPARSELIZARD_SOLVER::setChargeDC( SPARSELIZARD_CONDUCTOR aCon, double aQ )
     port V, Q;
     V = aCon.primalPort;
     Q = aCon.dualPort;
-    m_v.setport( aCon.boundaryDielectricID, V, Q );
-    ( *m_equations ) += Q - aQ;
+
+    m_reporter->Report( "Setting charge", RPT_SEVERITY_ERROR );
+    if( !sl::isempty( aCon.boundaryID ) )
+    {
+        m_v.setport( aCon.boundaryID, V, Q );
+        ( *m_equations ) += Q - aQ;
+    }
+    else
+    {
+        // This might happen if the copper is isolated
+        m_reporter->Report( "Setting charge on an empty zone ???", RPT_SEVERITY_ERROR );
+        V.setvalue( 0 );
+        Q.setvalue( 0 );
+    }
 }
 
 
@@ -211,7 +223,6 @@ void SPARSELIZARD_SOLVER::setConstraints( FEM_DESCRIPTOR* aDescriptor )
                 m_reporter->Report( "Could not match conductor with port", RPT_SEVERITY_ERROR );
                 continue;
             }
-
             switch( portA->m_constraint.m_type )
             {
             case FEM_PORT_CONSTRAINT_TYPE::VOLTAGE:
