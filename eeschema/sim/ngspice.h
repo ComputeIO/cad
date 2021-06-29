@@ -30,6 +30,7 @@
 #include "spice_simulator.h"
 
 #include <wx/dynlib.h>
+#define XSPICE // must be defined to define XSPICE typedefs from sharedspice.h to get digital EVT results from NGSPICE
 #include <ngspice/sharedspice.h>
 
 // We have an issue here where NGSPICE incorrectly used bool for years
@@ -88,6 +89,10 @@ public:
     ///< @copydoc SPICE_SIMULATOR::GetPhasePlot()
     std::vector<double> GetPhasePlot( const std::string& aName, int aMaxLen = -1 ) override;
 
+    ///< @copydoc SPICE_SIMULATOR::GetEvtNodeInfo()
+    pevt_shared_data GetEvtNodeInfo( const char* aName );
+
+    ///< @copydoc SPICE_SIMULATOR::GetSettingCommands()
     std::vector<std::string> GetSettingCommands() const override;
 
     ///< @copydoc SPICE_SIMULATOR::GetNetlist()
@@ -109,6 +114,7 @@ private:
     typedef char** ( *ngSpice_AllPlots )( void );
     typedef char** ( *ngSpice_AllVecs )( char* plotname );
     typedef bool ( *ngSpice_Running )( void );
+    typedef pevt_shared_data ( *ngGet_Evt_NodeInfo )( const char* nodename );
 
     ///< Handle to DLL functions
     ngSpice_Init m_ngSpice_Init;
@@ -119,6 +125,7 @@ private:
     ngSpice_AllPlots m_ngSpice_AllPlots;
     ngSpice_AllVecs m_ngSpice_AllVecs;
     ngSpice_Running m_ngSpice_Running;
+    ngGet_Evt_NodeInfo m_ngGet_Evt_NodeInfo;
 
     wxDynamicLibrary m_dll;
 
@@ -150,6 +157,12 @@ private:
 
     ///< current netlist
     std::string m_netlist;
+
+    /**
+     * @return aSignalName data expanded to equal the size of time axis data
+     */
+    virtual std::vector<double> ConvertEventsToTime( std::vector<double>& aTimeData,
+                                                     const char*          aSignalName ) override;
 };
 
 #endif /* NGSPICE_H */

@@ -82,7 +82,7 @@ SCH_SYMBOL* NETLIST_EXPORTER_BASE::findNextSymbol( EDA_ITEM* aItem, SCH_SHEET_PA
 
     // Power symbols and other symbols which have the reference starting with "#" are not
     // included in netlist (pseudo or virtual symbols)
-    ref = symbol->GetRef( aSheetPath );
+    ref = symbol->GetRef( aSheetPath, m_splitMultiDevices );
 
     if( ref[0] == wxChar( '#' ) )
         return nullptr;
@@ -95,8 +95,8 @@ SCH_SYMBOL* NETLIST_EXPORTER_BASE::findNextSymbol( EDA_ITEM* aItem, SCH_SHEET_PA
     if( !symbol->GetLibSymbolRef() )
         return nullptr;
 
-    // If symbol is a "multi parts per package" type
-    if( symbol->GetLibSymbolRef()->GetUnitCount() > 1 )
+    // If component is a "multi parts per package" type
+    if(!m_splitMultiDevices && symbol->GetLibSymbolRef()->GetUnitCount() > 1 )
     {
         // test if this reference has already been processed, and if so skip
         if( m_referencesAlreadyFound.Lookup( ref ) )
@@ -122,8 +122,8 @@ void NETLIST_EXPORTER_BASE::CreatePinList( SCH_SYMBOL* aSymbol,
                                            SCH_SHEET_PATH* aSheetPath,
                                            bool aKeepUnconnectedPins )
 {
-    wxString ref( aSymbol->GetRef( aSheetPath ) );
-
+    wxString ref = aSymbol->GetRef( aSheetPath, m_splitMultiDevices ) ;
+   
     // Power symbols and other symbols which have the reference starting with "#" are not
     // included in netlist (pseudo or virtual symbols)
 
@@ -221,7 +221,7 @@ void NETLIST_EXPORTER_BASE::findAllUnitsOfSymbol( SCH_SYMBOL* aSchSymbol, LIB_SY
                                                   SCH_SHEET_PATH* aSheetPath,
                                                   bool aKeepUnconnectedPins )
 {
-    wxString    ref = aSchSymbol->GetRef( aSheetPath );
+    wxString ref = aSchSymbol->GetRef( aSheetPath, m_splitMultiDevices );
     wxString    ref2;
 
     SCH_SHEET_LIST    sheetList = m_schematic->GetSheets();
@@ -235,7 +235,7 @@ void NETLIST_EXPORTER_BASE::findAllUnitsOfSymbol( SCH_SYMBOL* aSchSymbol, LIB_SY
         {
             SCH_SYMBOL* comp2 = static_cast<SCH_SYMBOL*>( item );
 
-            ref2 = comp2->GetRef( &sheet );
+            ref2 =  comp2->GetRef( &sheet, m_splitMultiDevices );
 
             if( ref2.CmpNoCase( ref ) != 0 )
                 continue;

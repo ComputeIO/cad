@@ -104,6 +104,7 @@ public:
     NETLIST_EXPORTER_PSPICE( SCHEMATIC_IFACE* aSchematic ) :
             NETLIST_EXPORTER_BASE( aSchematic )
     {
+         m_splitMultiDevices = true;
     }
 
     virtual ~NETLIST_EXPORTER_PSPICE()
