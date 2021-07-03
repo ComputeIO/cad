@@ -550,6 +550,15 @@ public:
     ///< Return the area of this poly set
     double Area();
 
+    ///< Count the number of arc shapes present
+    int ArcCount() const;
+
+    ///< Appends all the arcs in this polyset to \a aArcBuffer
+    void GetArcs( std::vector<SHAPE_ARC>& aArcBuffer ) const;
+
+    ///< Removes all arc references from all the outlines and holes in the polyset
+    void ClearArcs();
+
     ///< Appends a vertex at the end of the given outline/hole (default: the last outline)
     /**
      * Add a new vertex to the contour indexed by \p aOutline and \p aHole (defaults to the
@@ -570,6 +579,16 @@ public:
 
     ///< Append a vertex at the end of the given outline/hole (default: the last outline)
     void Append( const VECTOR2I& aP, int aOutline = -1, int aHole = -1 );
+
+    /**
+     * Append a new arc to the contour indexed by \p aOutline and \p aHole (defaults to the
+     * outline of the last polygon).
+     * @param aArc      The arc to be inserted
+     * @param aOutline  Index of the polygon
+     * @param aHole     Index of the hole (-1 for the main outline)
+     * @return the number of points in the arc (including the interpolated points from the arc)
+     */
+    int Append( SHAPE_ARC& aArc, int aOutline = -1, int aHole = -1 );
 
     /**
      * Adds a vertex in the globally indexed position \a aGlobalIndex.
@@ -1328,7 +1347,9 @@ public:
 private:
     void fractureSingle( POLYGON& paths );
     void unfractureSingle ( POLYGON& path );
-    void importTree( ClipperLib::PolyTree* tree );
+    void importTree( ClipperLib::PolyTree*               tree,
+                     const std::vector<CLIPPER_Z_VALUE>& aZValueBuffer,
+                     const std::vector<SHAPE_ARC>&       aArcBuffe );
 
     /**
      * This is the engine to execute all polygon boolean transforms (AND, OR, ... and polygon
