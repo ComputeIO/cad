@@ -63,7 +63,7 @@ bool FILENAME_RESOLVER::Set3DConfigDir( const wxString& aConfigDir )
     if( aConfigDir.empty() )
         return false;
 
-    wxFileName cfgdir( ExpandEnvVarSubstitutions( aConfigDir, m_project ), "" );
+    wxFileName cfgdir( ExpandPathVariable( aConfigDir ), "" );
 
     cfgdir.Normalize();
 
@@ -179,7 +179,7 @@ bool FILENAME_RESOLVER::createPathList()
     {
         for( const wxString& curr_path : epaths )
         {
-            wxString pathVal = ExpandEnvVarSubstitutions( curr_path, m_project );
+            wxString pathVal = ExpandPathVariable( curr_path );
 
             if( pathVal.empty() )
             {
@@ -238,6 +238,17 @@ bool FILENAME_RESOLVER::UpdatePathList( const std::vector< SEARCH_PATH >& aPathL
 }
 
 
+wxString FILENAME_RESOLVER::ExpandPathVariable( const wxString& aFileName )
+{
+    // Note: variable expansion must be performed using a threadsafe
+    // wrapper for the getenv() system call. If we allow the
+    // wxFileName::Normalize() routine to perform expansion then
+    // we will have a race condition since wxWidgets does not assure
+    // a threadsafe wrapper for getenv().
+    return ExpandEnvVarSubstitutions( aFileName, m_project );
+}
+
+
 wxString FILENAME_RESOLVER::ResolvePath( const wxString& aFileName )
 {
     std::lock_guard<std::mutex> lock( mutex_resolver );
@@ -256,12 +267,7 @@ wxString FILENAME_RESOLVER::ResolvePath( const wxString& aFileName )
     tname.Replace( wxT( "/" ), wxT( "\\" ) );
     #endif
 
-    // Note: variable expansion must be performed using a threadsafe
-    // wrapper for the getenv() system call. If we allow the
-    // wxFileName::Normalize() routine to perform expansion then
-    // we will have a race condition since wxWidgets does not assure
-    // a threadsafe wrapper for getenv().
-    tname = ExpandEnvVarSubstitutions( tname, m_project );
+    tname = ExpandPathVariable( tname );
 
     wxFileName tmpFN( tname );
 
@@ -329,7 +335,7 @@ wxString FILENAME_RESOLVER::ResolvePath( const wxString& aFileName )
         tmpFN.Assign( sPL->m_Pathexp, "" );
         wxString fullPath = tmpFN.GetPathWithSep() + tname;
 
-        fullPath = ExpandEnvVarSubstitutions( fullPath, m_project );
+        fullPath = ExpandPathVariable( fullPath );
 
         if( wxFileName::FileExists( fullPath ) )
         {
@@ -348,7 +354,7 @@ wxString FILENAME_RESOLVER::ResolvePath( const wxString& aFileName )
         wxString fullPath( "${KICAD6_3DMODEL_DIR}" );
         fullPath.Append( fpath.GetPathSeparator() );
         fullPath.Append( tname );
-        fullPath = ExpandEnvVarSubstitutions( fullPath, m_project );
+        fullPath = ExpandPathVariable( fullPath );
         fpath.Assign( fullPath );
 
         if( fpath.Normalize() && fpath.FileExists() )
@@ -391,7 +397,7 @@ wxString FILENAME_RESOLVER::ResolvePath( const wxString& aFileName )
             wxFileName fpath( wxFileName::DirName( sPL->m_Pathexp ) );
             wxString fullPath = fpath.GetPathWithSep() + relpath;
 
-            fullPath = ExpandEnvVarSubstitutions( fullPath, m_project );
+            fullPath = ExpandPathVariable( fullPath );
 
             if( wxFileName::FileExists( fullPath ) )
             {
@@ -438,7 +444,7 @@ bool FILENAME_RESOLVER::addPath( const SEARCH_PATH& aPath )
         tpath.m_Pathvar.erase( tpath.m_Pathvar.length() - 1 );
     #endif
 
-    wxFileName path( ExpandEnvVarSubstitutions( tpath.m_Pathvar, m_project ), "" );
+    wxFileName path( ExpandPathVariable( tpath.m_Pathvar ), "" );
 
     path.Normalize();
 
@@ -714,7 +720,7 @@ void FILENAME_RESOLVER::checkEnvVarPath( const wxString& aPath )
     SEARCH_PATH lpath;
     lpath.m_Alias = envar;
     lpath.m_Pathvar = lpath.m_Alias;
-    wxFileName tmpFN( ExpandEnvVarSubstitutions( lpath.m_Alias, m_project ), "" );
+    wxFileName tmpFN( ExpandPathVariable( lpath.m_Alias ), "" );
 
     wxUniChar psep = tmpFN.GetPathSeparator();
     tmpFN.Normalize();
@@ -761,7 +767,7 @@ wxString FILENAME_RESOLVER::ShortenPath( const wxString& aFullPathName )
         // in the case of aliases, ensure that we use the most recent definition
         if( sL->m_Alias.StartsWith( "${" ) || sL->m_Alias.StartsWith( "$(" ) )
         {
-            wxString tpath = ExpandEnvVarSubstitutions( sL->m_Alias, m_project );
+            wxString tpath = ExpandPathVariable( sL->m_Alias );
 
             if( tpath.empty() )
             {
