@@ -218,6 +218,7 @@ enum KICAD_T
     SYMBOL_LIBS_T,
     SEARCH_STACK_T,
     S3D_CACHE_T,
+    FILENAME_RESOLVER_T,
 
     // End value
     MAX_STRUCT_TYPE_ID

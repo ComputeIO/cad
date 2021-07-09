@@ -25,6 +25,7 @@
 
 #include <symbol_library.h>
 #include <confirm.h>
+#include <default_values.h> // For some default values
 #include <dialogs/panel_eeschema_color_settings.h>
 #include <dialogs/panel_eeschema_display_options.h>
 #include <dialogs/panel_eeschema_editing_options.h>
@@ -33,6 +34,7 @@
 #include <dialogs/panel_sym_editing_options.h>
 #include <dialogs/dialog_schematic_setup.h>
 #include <kiway.h>
+#include <filename_resolver.h>
 #include <symbol_edit_frame.h>
 #include <dialogs/panel_gal_display_options.h>
 #include <panel_hotkeys_editor.h>
@@ -231,6 +233,22 @@ void SYMBOL_EDIT_FRAME::InstallPreferences( PAGED_DIALOG* aParent,
 
 
 static std::mutex s_symbolTableMutex;
+
+
+FILENAME_RESOLVER* PROJECT::GetFilenameResolver()
+{
+    FILENAME_RESOLVER* fnr = (FILENAME_RESOLVER*) GetElem( ELEM_FILENAME_RESOLVER );
+
+    if( !fnr )
+    {
+        fnr = new FILENAME_RESOLVER();
+        fnr->SetProject( this );
+        fnr->SetProgramBase( &Pgm() );
+    }
+    wxASSERT( fnr->Type() == FILENAME_RESOLVER_T );
+
+    return fnr;
+}
 
 
 SYMBOL_LIB_TABLE* PROJECT::SchSymbolLibTable()

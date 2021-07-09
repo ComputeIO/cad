@@ -33,6 +33,7 @@
 #include <map>
 #include <vector>
 #include <wx/string.h>
+#include <project.h>
 
 class PGM_BASE;
 
@@ -44,18 +45,26 @@ struct SEARCH_PATH
     wxString m_Description;     // description of the aliased path
 };
 
-
 /**
- * Provide an extensible class to resolve 3D model paths.
+ * Provide an extensible class to resolve 3D or SPICE model paths.
  *
  * Initially the legacy behavior will be implemented and an incomplete path would be checked
- * against the project directory or the KICAD6_3DMODEL_DIR environment variable. In the future a
- * configurable set of search paths may be specified.
+ * against the project directory or the KICAD6_3DMODEL_DIR / MY_SYMBOL_LIB_DIR environment variable.
+ * In the future, a configurable set of search paths may be specified.
  */
-class FILENAME_RESOLVER
+class FILENAME_RESOLVER : public PROJECT::_ELEM
 {
 public:
     FILENAME_RESOLVER();
+
+    virtual ~FILENAME_RESOLVER()
+    {
+    }
+
+    KICAD_T Type() noexcept override
+    {
+        return FILENAME_RESOLVER_T;
+    }
 
     /**
      * Set the user's configuration directory for 3D models.
@@ -94,6 +103,16 @@ public:
      * @param aWriteFullList indicates whether env vars should also be written out or not
      */
     bool WritePathList( const wxString& aDir, const wxString& aFilename, bool aWriteFullList );
+
+    /**
+     * ExpandPathVariable
+     * If aFileName contains a valid and defined path variable, than
+     * the content of aFileName is returned with the path variable
+     * replaced with its content.
+     * If aFileName doesn't contain a valid and defined path variable,
+     * than the content of aFileName is returned.
+     */
+    wxString ExpandPathVariable( const wxString& aFileName );
 
     /**
      * Determines the full path of the given file name.

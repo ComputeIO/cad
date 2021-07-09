@@ -205,6 +205,7 @@ public:
         ELEM_SCH_SEARCH_STACK,
         ELEM_3DCACHE,
         ELEM_SYMBOL_LIB_TABLE,
+        ELEM_FILENAME_RESOLVER,
 
         ELEM_COUNT
     };
@@ -293,8 +294,10 @@ public:
     /// Accessor for project symbol library table.
     SYMBOL_LIB_TABLE* SchSymbolLibTable();
 
-    /// Accessor for 3D path resolver
-    FILENAME_RESOLVER* Get3DFilenameResolver() { return nullptr; }
+    /**
+     * Accessor for the path resolver.
+     */
+    FILENAME_RESOLVER* GetFilenameResolver();
 #endif
 
 private:
