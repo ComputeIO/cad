@@ -84,7 +84,10 @@ DIALOG_SCHEMATIC_SETUP::DIALOG_SCHEMATIC_SETUP( SCH_EDIT_FRAME* aFrame ) :
                          wxBookCtrlEventHandler( DIALOG_SCHEMATIC_SETUP::OnPageChange ), NULL, this );
 
     if( Prj().IsReadOnly() )
-        m_infoBar->ShowMessage( _( "Project is missing or read-only. Changes will not be saved." ) );
+    {
+        m_infoBar->ShowMessage( _( "Project is missing or read-only. Changes will not be saved." ),
+                                wxICON_WARNING );
+    }
 
     finishDialogSettings();
 }
@@ -147,7 +150,7 @@ void DIALOG_SCHEMATIC_SETUP::OnAuxiliaryAction( wxCommandEvent& event )
     if( !m_frame->GetSettingsManager()->LoadProject( projectFn.GetFullPath(), false ) )
     {
         wxString msg = wxString::Format( _( "Error importing settings from project:\n"
-                                            "Project file %s could not be loaded" ),
+                                            "Project file %s could not be loaded." ),
                                          projectFn.GetFullPath() );
         DisplayErrorMessage( this, msg );
 

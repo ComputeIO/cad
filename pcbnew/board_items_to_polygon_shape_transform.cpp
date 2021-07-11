@@ -314,6 +314,11 @@ void FP_TEXT::TransformShapeWithClearanceToPolygon( SHAPE_POLY_SET& aCornerBuffe
                                                     bool aIgnoreLineWidth ) const
 {
     EDA_TEXT::TransformBoundingBoxWithClearanceToPolygon( &aCornerBuffer, aClearance );
+
+    const FOOTPRINT* parentFootprint = static_cast<const FOOTPRINT*>( m_parent );
+
+    if( parentFootprint )
+        aCornerBuffer.Rotate( GetDrawRotation().AsRadians(), GetTextPos() );
 }
 
 
@@ -603,7 +608,7 @@ void PAD::TransformShapeWithClearanceToPolygon( SHAPE_POLY_SET& aCornerBuffer,
         if( dx == dy || ( GetShape() == PAD_SHAPE::CIRCLE ) )
         {
             TransformCircleToPolygon( aCornerBuffer, padShapePos, dx + aClearanceValue, aError,
-                                      aErrorLoc );
+                                      aErrorLoc, pad_min_seg_per_circle_count );
         }
         else
         {
@@ -613,7 +618,8 @@ void PAD::TransformShapeWithClearanceToPolygon( SHAPE_POLY_SET& aCornerBuffer,
             RotatePoint( &delta, angle );
 
             TransformOvalToPolygon( aCornerBuffer, padShapePos - delta, padShapePos + delta,
-                                    ( half_width + aClearanceValue ) * 2, aError, aErrorLoc );
+                                    ( half_width + aClearanceValue ) * 2, aError, aErrorLoc,
+                                    pad_min_seg_per_circle_count );
         }
 
         break;
@@ -647,7 +653,10 @@ void PAD::TransformShapeWithClearanceToPolygon( SHAPE_POLY_SET& aCornerBuffer,
             int clearance = aClearanceValue;
 
             if( aErrorLoc == ERROR_OUTSIDE )
-                clearance += GetCircleToPolyCorrection( aError );
+            {
+                int actual_error = CircleToEndSegmentDeltaRadius( clearance, numSegs );
+                clearance += GetCircleToPolyCorrection( actual_error );
+            }
 
             outline.Inflate( clearance, numSegs );
         }
@@ -722,7 +731,10 @@ void PAD::TransformShapeWithClearanceToPolygon( SHAPE_POLY_SET& aCornerBuffer,
             int clearance = aClearanceValue;
 
             if( aErrorLoc == ERROR_OUTSIDE )
-                clearance += GetCircleToPolyCorrection( aError );
+            {
+                int actual_error = CircleToEndSegmentDeltaRadius( clearance, numSegs );
+                clearance += GetCircleToPolyCorrection( actual_error );
+            }
 
             outline.Inflate( clearance, numSegs );
             outline.Simplify( SHAPE_POLY_SET::PM_FAST );

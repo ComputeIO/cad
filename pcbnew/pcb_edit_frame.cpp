@@ -551,20 +551,9 @@ void PCB_EDIT_FRAME::setupUIConditions()
     mgr->SetConditions( PCB_ACTIONS::viaDisplayMode, CHECK( !cond.ViaFillDisplay() ) );
     mgr->SetConditions( PCB_ACTIONS::trackDisplayMode, CHECK( !cond.TrackFillDisplay() ) );
 
-    auto pythonConsoleCond =
-        [] ( const SELECTION& )
-        {
-            if( SCRIPTING::IsWxAvailable() )
-            {
-                wxWindow* console = PCB_EDIT_FRAME::findPythonConsole();
-                return console && console->IsShown();
-            }
-
-            return false;
-        };
-
-    mgr->SetConditions( PCB_ACTIONS::showPythonConsole,  CHECK( pythonConsoleCond ) );
-
+    if( SCRIPTING::IsWxAvailable() )
+        mgr->SetConditions( PCB_ACTIONS::showPythonConsole, CHECK( cond.ScriptingConsoleVisible() ) );
+    
     auto enableZoneControlConition =
         [this] ( const SELECTION& )
         {
@@ -1485,7 +1474,7 @@ void PCB_EDIT_FRAME::RunEeschema()
             }
             catch( const IO_ERROR& err )
             {
-                wxMessageBox( _( "Eeschema failed to load:\n" ) + err.What(),
+                wxMessageBox( _( "Eeschema failed to load." ) + wxS( "\n" ) + err.What(),
                               _( "KiCad Error" ), wxOK | wxICON_ERROR, this );
                 return;
             }

@@ -59,6 +59,7 @@ class PCB_TARGET;
 class PCB_VIA;
 class ZONE;
 class FP_3DMODEL;
+class SHAPE_LINE_CHAIN;
 struct LAYER;
 class PROGRESS_REPORTER;
 
@@ -272,6 +273,15 @@ private:
     std::pair<wxString, wxString> parseProperty();
 
     /**
+     * Parses possible outline points and stores them into \p aPoly.  This accepts points
+     * for DRAWSEGMENT polygons, EDGEMODULE polygons and ZONE_CONTAINER polygons.  Points
+     * and arcs are added to the most recent outline
+     *
+     * @param aPoly polygon container to add points and arcs
+     */
+    void parseOutlinePoints( SHAPE_LINE_CHAIN& aPoly );
+
+    /**
      * Parse the common settings for any object derived from #EDA_TEXT.
      *
      * @param aText A point to the #EDA_TEXT object to save the parsed settings into.
@@ -367,13 +377,13 @@ private:
     // We don't want to rely on group declarations being last in the file, so
     // we store info about the group declarations here during parsing and then resolve
     // them into BOARD_ITEM* after we've parsed the rest of the file.
-    typedef struct
+    struct GROUP_INFO
     {
         BOARD_ITEM*       parent;
         wxString          name;
         KIID              uuid;
         std::vector<KIID> memberUuids;
-    } GROUP_INFO;
+    };
 
     std::vector<GROUP_INFO> m_groupInfos;
 };

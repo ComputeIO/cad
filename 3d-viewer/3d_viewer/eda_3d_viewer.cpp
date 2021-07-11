@@ -92,7 +92,7 @@ EDA_3D_VIEWER_FRAME::EDA_3D_VIEWER_FRAME( KIWAY *aKiway, PCB_BASE_FRAME *aParent
         m_mainToolBar( nullptr ),
         m_canvas( nullptr ),
         m_currentCamera( m_trackBallCamera ),
-        m_trackBallCamera( RANGE_SCALE_3D )
+        m_trackBallCamera( RANGE_SCALE_3D, 0.66f )
 {
     wxLogTrace( m_logTrace, "EDA_3D_VIEWER_FRAME::EDA_3D_VIEWER_FRAME %s", aTitle );
 
@@ -735,7 +735,7 @@ void EDA_3D_VIEWER_FRAME::takeScreenshot( wxCommandEvent& event )
         {
             wxString msg;
 
-            msg.Printf( _( "Insufficient permissions required to save file\n%s" ), fullFileName );
+            msg.Printf( _( "Insufficient permissions to save file '%s'." ), fullFileName );
             wxMessageBox( msg, _( "Error" ), wxOK | wxICON_ERROR, this );
             return;
         }

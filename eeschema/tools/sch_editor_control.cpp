@@ -26,7 +26,7 @@
 #include <confirm.h>
 #include <widgets/infobar.h>
 #include <connection_graph.h>
-#include <dialogs/dialog_fields_editor_global.h>
+#include <dialogs/dialog_symbol_fields_table.h>
 #include <dialogs/dialog_eeschema_page_settings.h>
 #include <dialogs/dialog_paste_special.h>
 #include <dialogs/dialog_plot_schematic.h>
@@ -633,8 +633,7 @@ int SCH_EDITOR_CONTROL::SimProbe( const TOOL_EVENT& aEvent )
             [this, simFrame]( const VECTOR2D& aPosition )
             {
                 EE_SELECTION_TOOL* selTool = m_toolMgr->GetTool<EE_SELECTION_TOOL>();
-                EDA_ITEM*          item = nullptr;
-                selTool->SelectPoint( aPosition, wiresAndPins, &item );
+                EDA_ITEM*          item = selTool->GetNode( aPosition );
 
                 if( !item )
                     return false;
@@ -1167,17 +1166,22 @@ int SCH_EDITOR_CONTROL::Undo( const TOOL_EVENT& aEvent )
 
     /* Get the old list */
     PICKED_ITEMS_LIST* List = m_frame->PopCommandFromUndoList();
+    size_t num_undos = m_frame->m_undoList.m_CommandsList.size();
 
     /* Undo the command */
     m_frame->PutDataInPreviousState( List );
 
-    /* Put the old list in RedoList */
-    List->ReversePickersListOrder();
-    m_frame->PushCommandToRedoList( List );
-
     m_frame->SetSheetNumberAndCount();
     m_frame->TestDanglingEnds();
     m_frame->OnPageSettingsChange();
+
+    // If we modified anything during cleanup we don't want it going on the undolist
+    while( m_frame->m_undoList.m_CommandsList.size() > num_undos )
+        delete m_frame->PopCommandFromUndoList();
+
+    // Now push the old command to the RedoList
+    List->ReversePickersListOrder();
+    m_frame->PushCommandToRedoList( List );
 
     m_toolMgr->GetTool<EE_SELECTION_TOOL>()->RebuildSelection();
 
@@ -1537,7 +1541,7 @@ int SCH_EDITOR_CONTROL::Paste( const TOOL_EVENT& aEvent )
 
             if( hierarchy.TestForRecursion( sheetHierarchy, destFn.GetFullPath( wxPATH_UNIX ) ) )
             {
-                auto msg = wxString::Format( _( "The pasted sheet \"%s\"\n"
+                auto msg = wxString::Format( _( "The pasted sheet '%s'\n"
                                                 "was dropped because the destination already has "
                                                 "the sheet or one of its subsheets as a parent." ),
                                              sheet->GetFileName() );
@@ -1811,7 +1815,7 @@ int SCH_EDITOR_CONTROL::ShowCvpcb( const TOOL_EVENT& aEvent )
 
 int SCH_EDITOR_CONTROL::EditSymbolFields( const TOOL_EVENT& aEvent )
 {
-    DIALOG_FIELDS_EDITOR_GLOBAL dlg( m_frame );
+    DIALOG_SYMBOL_FIELDS_TABLE dlg( m_frame );
     dlg.ShowQuasiModal();
     return 0;
 }

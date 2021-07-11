@@ -658,9 +658,9 @@ bool PCB_EDIT_FRAME::OpenProjectFiles( const std::vector<wxString>& aFileSet, in
     }
     else
     {
-        BOARD* loadedBoard = nullptr;   // it will be set to non-NULL if loaded OK
-
+        BOARD*           loadedBoard = nullptr;   // it will be set to non-NULL if loaded OK
         PLUGIN::RELEASER pi( IO_MGR::PluginFind( pluginType ) );
+        wxString         msg;
 
         LAYER_REMAPPABLE_PLUGIN* layerRemappablePlugin =
             dynamic_cast< LAYER_REMAPPABLE_PLUGIN* >( (PLUGIN*) pi );
@@ -701,21 +701,31 @@ bool PCB_EDIT_FRAME::OpenProjectFiles( const std::vector<wxString>& aFileSet, in
             printf( "PLUGIN::Load(): %u usecs\n", stopTime - startTime );
 #endif
         }
+        catch( const FUTURE_FORMAT_ERROR& ffe )
+        {
+            msg.Printf( _( "Error loading PCB '%s'." ), fullFileName );
+            progressReporter.Hide();
+            DisplayErrorMessage( this, msg, ffe.Problem() );
+
+            failedLoad = true;
+        }
         catch( const IO_ERROR& ioe )
         {
             if( ioe.Problem() != wxT( "CANCEL" ) )
             {
-                DisplayErrorMessage( this, wxString::Format( _( "Error loading PCB '%s'." ),
-                                                             fullFileName ),
-                                     ioe.What() );
+                msg.Printf( _( "Error loading PCB '%s'." ), fullFileName );
+                progressReporter.Hide();
+                DisplayErrorMessage( this, msg, ioe.What() );
             }
 
             failedLoad = true;
         }
         catch( const std::bad_alloc& )
         {
-            DisplayErrorMessage( this, wxString::Format( _( "Memory exhausted loading PCB '%s'" ),
-                                                         fullFileName ) );
+            msg.Printf( _( "Memory exhausted loading PCB '%s'" ), fullFileName );
+            progressReporter.Hide();
+            DisplayErrorMessage( this, msg, wxEmptyString );
+
             failedLoad = true;
         }
 
@@ -942,7 +952,7 @@ bool PCB_EDIT_FRAME::SavePcbFile( const wxString& aFileName, bool addToHistory,
 
     if( !IsWritable( pcbFileName ) )
     {
-        wxString msg = wxString::Format( _( "No access rights to write to file \"%s\"" ),
+        wxString msg = wxString::Format( _( "Insufficient permissions to write file '%s'." ),
                                          pcbFileName.GetFullPath() );
 
         DisplayError( this, msg );
@@ -1081,7 +1091,7 @@ bool PCB_EDIT_FRAME::SavePcbCopy( const wxString& aFileName, bool aCreateProject
 
     if( !IsWritable( pcbFileName ) )
     {
-        DisplayError( this, wxString::Format( _( "No access rights to write to file '%s'." ),
+        DisplayError( this, wxString::Format( _( "Insufficient permissions to write file '%s'." ),
                                               pcbFileName.GetFullPath() ) );
         return false;
     }

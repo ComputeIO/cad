@@ -402,6 +402,9 @@ PCBNEW_SETTINGS::PCBNEW_SETTINGS()
     m_params.emplace_back( new PARAM<bool>( "place_file.include_board_edge",
             &m_PlaceFile.include_board_edge, false ) );
 
+    m_params.emplace_back( new PARAM<bool>( "place_file.use_place_file_origin",
+            &m_PlaceFile.use_aux_origin, true ) );
+
     m_params.emplace_back( new PARAM<int>( "plot.all_layers_on_one_page",
             &m_Plot.all_layers_on_one_page, 1 ) );
 
@@ -758,8 +761,6 @@ bool PCBNEW_SETTINGS::MigrateFromLegacy( wxConfigBase* aCfg )
     migrateLegacyColor( "Color4DGrid",               LAYER_GRID );
     migrateLegacyColor( "Color4DNoNetPadMarker",     LAYER_NO_CONNECTS );
     migrateLegacyColor( "Color4DNonPlatedEx",        LAYER_NON_PLATEDHOLES );
-    migrateLegacyColor( "Color4DPadBackEx",          LAYER_PAD_BK );
-    migrateLegacyColor( "Color4DPadFrontEx",         LAYER_PAD_FR );
     migrateLegacyColor( "Color4DPadThruHoleEx",      LAYER_PADS_TH );
     migrateLegacyColor( "Color4DPCBBackground",      LAYER_PCB_BACKGROUND );
     migrateLegacyColor( "Color4DPCBCursor",          LAYER_CURSOR );

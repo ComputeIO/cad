@@ -55,6 +55,7 @@
 #include <wx/listbox.h>
 
 #include <default_values.h>
+#include <kicad_string.h>
 
 // Save previous symbol library viewer state.
 wxString SYMBOL_VIEWER_FRAME::m_libraryName;
@@ -361,8 +362,8 @@ void SYMBOL_VIEWER_FRAME::updatePreviewSymbol()
         if( parent )
             parentName = parent->GetName();
 
-        AppendMsgPanel( _( "Name" ), m_previewItem->GetName() );
-        AppendMsgPanel( _( "Parent" ),  parentName );
+        AppendMsgPanel( _( "Name" ), UnescapeString( m_previewItem->GetName() ) );
+        AppendMsgPanel( _( "Parent" ),  UnescapeString( parentName ) );
         AppendMsgPanel( _( "Description" ), m_previewItem->GetDescription() );
         AppendMsgPanel( _( "Keywords" ), m_previewItem->GetKeyWords() );
     }
@@ -476,7 +477,7 @@ bool SYMBOL_VIEWER_FRAME::ReCreateLibList()
 
     m_libList->Clear();
 
-    std::vector< wxString > libs = Prj().SchSymbolLibTable()->GetLogicalLibs();
+    std::vector<wxString> libs = Prj().SchSymbolLibTable()->GetLogicalLibs();
 
     // Remove not allowed libs from main list, if the allowed lib list is not empty
     if( m_allowedLibs.GetCount() )
@@ -512,12 +513,12 @@ bool SYMBOL_VIEWER_FRAME::ReCreateLibList()
     wxArrayString libNames;
 
     for( const auto& name : libs )
-        libNames.Add( name );
+        libNames.Add( UnescapeString( name ) );
 
     m_libList->Append( libNames );
 
     // Search for a previous selection:
-    int index = m_libList->FindString( m_libraryName );
+    int index = m_libList->FindString( UnescapeString( m_libraryName ) );
 
     if( index != wxNOT_FOUND )
     {
@@ -566,9 +567,14 @@ bool SYMBOL_VIEWER_FRAME::ReCreateSymbolList()
         return true;
     }
 
-    m_symbolList->Append( aliasNames );
+    wxArrayString unescapedNames;
 
-    int  index = m_symbolList->FindString( m_entryName );
+    for( const wxString& name : aliasNames )
+        unescapedNames.Add( UnescapeString( name ) );
+
+    m_symbolList->Append( unescapedNames );
+
+    int  index = m_symbolList->FindString( UnescapeString( m_entryName ) );
     bool changed = false;
 
     if( index == wxNOT_FOUND )
@@ -600,7 +606,7 @@ void SYMBOL_VIEWER_FRAME::ClickOnLibList( wxCommandEvent& event )
 
     m_selection_changed = true;
 
-    SetSelectedLibrary( m_libList->GetString( ii ) );
+    SetSelectedLibrary( EscapeString( m_libList->GetString( ii ), CTX_LIBID ) );
 }
 
 
@@ -617,7 +623,7 @@ void SYMBOL_VIEWER_FRAME::SetSelectedLibrary( const wxString& aLibraryName )
     // Ensure the corresponding line in m_libList is selected
     // (which is not necessary the case if SetSelectedLibrary is called
     // by another caller than ClickOnLibList.
-    m_libList->SetStringSelection( m_libraryName, true );
+    m_libList->SetStringSelection( UnescapeString( m_libraryName ), true );
 
     // The m_libList has now the focus, in order to be able to use arrow keys
     // to navigate inside the list.
@@ -636,7 +642,7 @@ void SYMBOL_VIEWER_FRAME::ClickOnCmpList( wxCommandEvent& event )
 
     m_selection_changed = true;
 
-    SetSelectedSymbol( m_symbolList->GetString( ii ));
+    SetSelectedSymbol( EscapeString( m_symbolList->GetString( ii ), CTX_LIBID ) );
 
     // The m_symbolList has now the focus, in order to be able to use arrow keys
     // to navigate inside the list.
@@ -655,7 +661,7 @@ void SYMBOL_VIEWER_FRAME::SetSelectedSymbol( const wxString& aSymbolName )
         // Ensure the corresponding line in m_symbolList is selected
         // (which is not necessarily the case if SetSelectedSymbol is called
         // by another caller than ClickOnCmpList.
-        m_symbolList->SetStringSelection( aSymbolName, true );
+        m_symbolList->SetStringSelection( UnescapeString( aSymbolName ), true );
         DisplayLibInfos();
 
         if( m_selection_changed )
@@ -801,9 +807,14 @@ const BOX2I SYMBOL_VIEWER_FRAME::GetDocumentExtents( bool aIncludeAllVisible ) c
 void SYMBOL_VIEWER_FRAME::FinishModal()
 {
     if( m_symbolList->GetSelection() >= 0 )
-        DismissModal( true, m_libraryName + ':' + m_symbolList->GetStringSelection() );
+    {
+        DismissModal( true, m_libraryName + ':'
+                                + EscapeString( m_symbolList->GetStringSelection(), CTX_LIBID ) );
+    }
     else
+    {
         DismissModal( false );
+    }
 
     Close( true );
 }

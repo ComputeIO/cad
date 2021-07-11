@@ -169,13 +169,13 @@ void FP_CACHE::Save( FOOTPRINT* aFootprint )
 
     if( !m_lib_path.DirExists() && !m_lib_path.Mkdir() )
     {
-        THROW_IO_ERROR( wxString::Format( _( "Cannot create footprint library path \"%s\"" ),
+        THROW_IO_ERROR( wxString::Format( _( "Cannot create footprint library '%s'." ),
                                           m_lib_raw_path ) );
     }
 
     if( !m_lib_path.IsDirWritable() )
     {
-        THROW_IO_ERROR( wxString::Format( _( "Footprint library path \"%s\" is read only" ),
+        THROW_IO_ERROR( wxString::Format( _( "Footprint library '%s' is read only." ),
                                           m_lib_raw_path ) );
     }
 
@@ -195,7 +195,7 @@ void FP_CACHE::Save( FOOTPRINT* aFootprint )
         // Allow file output stream to go out of scope to close the file stream before
         // renaming the file.
         {
-            wxLogTrace( traceKicadPcbPlugin, wxT( "Creating temporary library file %s" ),
+            wxLogTrace( traceKicadPcbPlugin, wxT( "Creating temporary library file '%s'." ),
                     tempFileName );
 
             FILE_OUTPUTFORMATTER formatter( tempFileName );
@@ -213,9 +213,9 @@ void FP_CACHE::Save( FOOTPRINT* aFootprint )
 
         if( !wxRenameFile( tempFileName, fn.GetFullPath() ) )
         {
-            wxString msg = wxString::Format(
-                    _( "Cannot rename temporary file \"%s\" to footprint library file \"%s\"" ),
-                    tempFileName, fn.GetFullPath() );
+            wxString msg = wxString::Format( _( "Cannot rename temporary file '%s' to '%s'" ),
+                                             tempFileName,
+                                             fn.GetFullPath() );
             THROW_IO_ERROR( msg );
         }
 #endif
@@ -239,8 +239,7 @@ void FP_CACHE::Load()
 
     if( !dir.IsOpened() )
     {
-        wxString msg = wxString::Format( _( "Footprint library path '%s' does not exist "
-                                            "(or is not a directory)." ),
+        wxString msg = wxString::Format( _( "Footprint library '%s' not found." ),
                                          m_lib_raw_path );
         THROW_IO_ERROR( msg );
     }
@@ -296,7 +295,7 @@ void FP_CACHE::Remove( const wxString& aFootprintName )
 
     if( it == m_footprints.end() )
     {
-        wxString msg = wxString::Format( _( "library \"%s\" has no footprint \"%s\" to delete" ),
+        wxString msg = wxString::Format( _( "Library '%s' has no footprint '%s'." ),
                                          m_lib_raw_path,
                                          aFootprintName );
         THROW_IO_ERROR( msg );
@@ -831,28 +830,56 @@ void PCB_IO::format( const PCB_SHAPE* aShape, int aNestLevel ) const
         {
             const SHAPE_POLY_SET& poly = aShape->GetPolyShape();
             const SHAPE_LINE_CHAIN& outline = poly.Outline( 0 );
-            const int pointsCount = outline.PointCount();
 
-            m_out->Print( aNestLevel, "(gr_poly%s (pts\n",
-                          locked.c_str() );
+            m_out->Print( aNestLevel, "(gr_poly%s\n", locked.c_str() );
+            m_out->Print( aNestLevel+1, "(pts\n" );
 
-            for( int ii = 0; ii < pointsCount; ++ii )
+            bool need_newline = false;
+
+            for( int ii = 0; ii < outline.PointCount();  ++ii )
             {
-                int nestLevel = 0;
+                int nestLevel = ii == 0 ? aNestLevel + 2 : 0;
 
-                if( ii && ( !( ii%4 ) || !ADVANCED_CFG::GetCfg().m_CompactSave ) )
+                if( ii && ( !( ii % 4 ) || !ADVANCED_CFG::GetCfg().m_CompactSave ) )
                 {
                     // newline every 4 pts.
-                    nestLevel = aNestLevel + 1;
+                    nestLevel = aNestLevel + 2;
                     m_out->Print( 0, "\n" );
+                    need_newline = false;
                 }
 
-                m_out->Print( nestLevel, "%s(xy %s)",
-                              nestLevel ? "" : " ",
-                              FormatInternalUnits( outline.CPoint( ii ) ).c_str() );
+                int ind = outline.ArcIndex( ii );
+
+                if( ind < 0 )
+                {
+                    m_out->Print( nestLevel, "%s(xy %s)",
+                                  nestLevel ? "" : " ",
+                                  FormatInternalUnits( outline.CPoint( ii ) ).c_str() );
+                    need_newline = true;
+                }
+                else
+                {
+                    const SHAPE_ARC& arc = outline.Arc( ind );
+                    m_out->Print( aNestLevel, "%s(arc (start %s) (mid %s) (end %s))",
+                            nestLevel ? "" : " ",
+                            FormatInternalUnits( arc.GetP0() ).c_str(),
+                            FormatInternalUnits( arc.GetArcMid() ).c_str(),
+                            FormatInternalUnits( arc.GetP1() ).c_str() );
+                    need_newline = true;
+
+                    do
+                    {
+                        ++ii;
+                    } while( ii < outline.PointCount() && outline.ArcIndex( ii ) == ind );
+
+                    --ii;
+                }
             }
 
-            m_out->Print( 0, ")" );
+            if( need_newline )
+                m_out->Print( 0, "\n" );
+
+            m_out->Print( aNestLevel+1, ")" );
         }
         else
         {
@@ -938,12 +965,11 @@ void PCB_IO::format( const FP_SHAPE* aFPShape, int aNestLevel ) const
         {
             const SHAPE_POLY_SET& poly = aFPShape->GetPolyShape();
             const SHAPE_LINE_CHAIN& outline = poly.Outline( 0 );
-            int pointsCount = outline.PointCount();
 
             m_out->Print( aNestLevel, "(fp_poly%s (pts",
                           locked.c_str() );
 
-            for( int ii = 0; ii < pointsCount; ++ii )
+            for( int ii = 0; ii < outline.PointCount();  ++ii )
             {
                 int nestLevel = 0;
 
@@ -954,9 +980,29 @@ void PCB_IO::format( const FP_SHAPE* aFPShape, int aNestLevel ) const
                     m_out->Print( 0, "\n" );
                 }
 
-                m_out->Print( nestLevel, "%s(xy %s)",
-                              nestLevel ? "" : " ",
-                              FormatInternalUnits( outline.CPoint( ii ) ).c_str() );
+                int ind = outline.ArcIndex( ii );
+
+                if( ind < 0 )
+                {
+                    m_out->Print( nestLevel, "%s(xy %s)",
+                                  nestLevel ? "" : " ", FormatInternalUnits( outline.CPoint( ii ) ).c_str() );
+                }
+                else
+                {
+                    auto& arc = outline.Arc( ind );
+                    m_out->Print( aNestLevel, "%s(arc (start %s) (mid %s) (end %s))",
+                            nestLevel ? "" : " ",
+                            FormatInternalUnits( arc.GetP0() ).c_str(),
+                            FormatInternalUnits( arc.GetArcMid() ).c_str(),
+                            FormatInternalUnits( arc.GetP1() ).c_str() );
+
+                    do
+                    {
+                        ++ii;
+                    } while( ii < outline.PointCount() && outline.ArcIndex( ii ) == ind );
+
+                    --ii;
+                }
             }
 
             m_out->Print( 0, ")" );
@@ -1039,7 +1085,7 @@ void PCB_IO::format( const FOOTPRINT* aFootprint, int aNestLevel ) const
 
     if( m_ctl & CTL_OMIT_LIBNAME )
         m_out->Print( aNestLevel, "(footprint %s",
-                      m_out->Quotes( aFootprint->GetFPID().GetLibItemNameAndRev() ).c_str() );
+                      m_out->Quotes( aFootprint->GetFPID().GetLibItemName() ).c_str() );
     else
         m_out->Print( aNestLevel, "(footprint %s",
                       m_out->Quotes( aFootprint->GetFPID().Format() ).c_str() );
@@ -2020,63 +2066,62 @@ void PCB_IO::format( const ZONE* aZone, int aNestLevel ) const
 
     m_out->Print( 0, ")\n" );
 
-    int newLine = 0;
-
     if( aZone->GetNumCorners() )
     {
-        bool new_polygon = true;
-        bool is_closed   = false;
+        SHAPE_POLY_SET::POLYGON poly = aZone->Outline()->Polygon(0);
 
-        for( auto iterator = aZone->CIterateWithHoles(); iterator; ++iterator )
+        for( auto& chain : poly )
         {
-            if( new_polygon )
-            {
-                newLine = 0;
-                m_out->Print( aNestLevel + 1, "(polygon\n" );
-                m_out->Print( aNestLevel + 2, "(pts\n" );
-                new_polygon = false;
-                is_closed = false;
-            }
+            m_out->Print( aNestLevel + 1, "(polygon\n" );
+            m_out->Print( aNestLevel + 2, "(pts" );
 
-            if( newLine == 0 )
-                m_out->Print( aNestLevel + 3, "(xy %s %s)",
-                              FormatInternalUnits( iterator->x ).c_str(),
-                              FormatInternalUnits( iterator->y ).c_str() );
-            else
-                m_out->Print( 0, " (xy %s %s)",
-                              FormatInternalUnits( iterator->x ).c_str(),
-                              FormatInternalUnits( iterator->y ).c_str() );
+            bool need_newline = true;
 
-            if( newLine < 4 && ADVANCED_CFG::GetCfg().m_CompactSave )
+            for( int ii = 0; ii < chain.PointCount(); ++ii )
             {
-                newLine += 1;
-            }
-            else
-            {
-                newLine = 0;
-                m_out->Print( 0, "\n" );
-            }
+                int nestLevel = 0;
 
-            if( iterator.IsEndContour() )
-            {
-                is_closed = true;
-
-                if( newLine != 0 )
+                if( !( ii % 4 ) || !ADVANCED_CFG::GetCfg().m_CompactSave )   // newline every 4 pts
+                {
+                    nestLevel = aNestLevel + 3;
                     m_out->Print( 0, "\n" );
+                    need_newline = false;
+                }
 
-                m_out->Print( aNestLevel + 2, ")\n" );
-                m_out->Print( aNestLevel + 1, ")\n" );
-                new_polygon = true;
+                int ind = chain.ArcIndex( ii );
+
+                if( ind < 0 )
+                {
+                    m_out->Print( nestLevel, "%s(xy %s)",
+                                  nestLevel ? "" : " ",
+                                  FormatInternalUnits( chain.CPoint( ii ) ).c_str() );
+                    need_newline = true;
+                }
+                else
+                {
+                    auto& arc = chain.Arc( ind );
+                    m_out->Print( aNestLevel, "%s(arc (start %s) (mid %s) (end %s))",
+                            nestLevel ? "" : " ",
+                            FormatInternalUnits( arc.GetP0() ).c_str(),
+                            FormatInternalUnits( arc.GetArcMid() ).c_str(),
+                            FormatInternalUnits( arc.GetP1() ).c_str() );
+                    need_newline = true;
+
+                    do
+                    {
+                        ++ii;
+                    } while( ii < chain.PointCount() && chain.ArcIndex( ii ) == ind );
+
+                    --ii;
+                }
             }
-        }
 
-        if( !is_closed )    // Should not happen, but...
-        {
-            if( newLine != 0 )
+            if( need_newline )
                 m_out->Print( 0, "\n" );
 
             m_out->Print( aNestLevel + 2, ")\n" );
             m_out->Print( aNestLevel + 1, ")\n" );
+
         }
     }
 
@@ -2084,65 +2129,66 @@ void PCB_IO::format( const ZONE* aZone, int aNestLevel ) const
     for( PCB_LAYER_ID layer : aZone->GetLayerSet().Seq() )
     {
         const SHAPE_POLY_SET& fv = aZone->GetFilledPolysList( layer );
-        newLine                  = 0;
 
-        if( !fv.IsEmpty() )
+        for( int ii = 0; ii < fv.OutlineCount(); ++ii )
         {
-            int  poly_index  = 0;
-            bool new_polygon = true;
-            bool is_closed   = false;
+            m_out->Print( aNestLevel + 1, "(filled_polygon\n" );
+            m_out->Print( aNestLevel + 2, "(layer %s)\n",
+                    m_out->Quotew( LSET::Name( layer ) ).c_str() );
 
-            for( auto it = fv.CIterate(); it; ++it )
+            if( aZone->IsIsland( layer, ii ) )
+                m_out->Print( aNestLevel + 2, "(island)\n" );
+
+            m_out->Print( aNestLevel + 2, "(pts" );
+
+            const SHAPE_LINE_CHAIN& chain = fv.COutline( ii );
+
+            bool need_newline = true;
+
+            for( int jj = 0; jj < chain.PointCount(); ++jj )
             {
-                if( new_polygon )
+                int nestLevel = 0;
+
+                if( !( jj%4 ) || !ADVANCED_CFG::GetCfg().m_CompactSave )   // newline every 4 pts
                 {
-                    newLine = 0;
-                    m_out->Print( aNestLevel + 1, "(filled_polygon\n" );
-                    m_out->Print( aNestLevel + 2, "(layer %s)\n",
-                                  m_out->Quotew( LSET::Name( layer ) ).c_str() );
-
-                    if( aZone->IsIsland( layer, poly_index ) )
-                        m_out->Print( aNestLevel + 2, "(island)\n" );
-
-                    m_out->Print( aNestLevel + 2, "(pts\n" );
-                    new_polygon = false;
-                    is_closed   = false;
-                    poly_index++;
-                }
-
-                if( newLine == 0 )
-                    m_out->Print( aNestLevel + 3, "(xy %s %s)",
-                            FormatInternalUnits( it->x ).c_str(),
-                            FormatInternalUnits( it->y ).c_str() );
-                else
-                    m_out->Print( 0, " (xy %s %s)", FormatInternalUnits( it->x ).c_str(),
-                            FormatInternalUnits( it->y ).c_str() );
-
-                if( newLine < 4 && ADVANCED_CFG::GetCfg().m_CompactSave )
-                {
-                    newLine += 1;
-                }
-                else
-                {
-                    newLine = 0;
+                    nestLevel = aNestLevel + 3;
                     m_out->Print( 0, "\n" );
+                    need_newline = false;
                 }
 
-                if( it.IsEndContour() )
+                int ind = chain.ArcIndex( jj );
+
+                if( ind < 0 )
                 {
-                    is_closed = true;
+                    m_out->Print( nestLevel, "%s(xy %s)",
+                                  nestLevel ? "" : " ",
+                                  FormatInternalUnits( chain.CPoint( jj ) ).c_str() );
+                    need_newline = true;
+                }
+                else
+                {
+                    auto& arc = chain.Arc( ind );
+                    m_out->Print( aNestLevel, "%s(arc (start %s) (mid %s) (end %s))",
+                            nestLevel ? "" : " ",
+                            FormatInternalUnits( arc.GetP0() ).c_str(),
+                            FormatInternalUnits( arc.GetArcMid() ).c_str(),
+                            FormatInternalUnits( arc.GetP1() ).c_str() );
+                    need_newline = true;
 
-                    if( newLine != 0 )
-                        m_out->Print( 0, "\n" );
+                    do
+                    {
+                        ++jj;
+                    } while( jj < chain.PointCount() && chain.ArcIndex( jj ) == ind );
 
-                    m_out->Print( aNestLevel + 2, ")\n" );
-                    m_out->Print( aNestLevel + 1, ")\n" );
-                    new_polygon = true;
+                    --jj;
                 }
             }
 
-            if( !is_closed ) // Should not happen, but...
-                m_out->Print( aNestLevel + 1, ")\n" );
+            if( need_newline )
+                m_out->Print( 0, "\n" );
+
+            m_out->Print( aNestLevel+2, ")\n" );
+            m_out->Print( aNestLevel+1, ")\n" );
         }
 
         // Save the filling segments list
@@ -2200,7 +2246,7 @@ BOARD* PCB_IO::Load( const wxString& aFileName, BOARD* aAppendToMe, const PROPER
         aProgressReporter->Report( wxString::Format( _( "Loading %s..." ), aFileName ) );
 
         if( !aProgressReporter->KeepRefreshing() )
-            THROW_IO_ERROR( ( "Open cancelled by user." ) );
+            THROW_IO_ERROR( _( "Open cancelled by user." ) );
 
         while( reader.ReadLine() )
             lineCount++;
@@ -2249,9 +2295,8 @@ BOARD* PCB_IO::DoLoad( LINE_READER& aReader, BOARD* aAppendToMe, const PROPERTIE
     if( !board )
     {
         // The parser loaded something that was valid, but wasn't a board.
-        THROW_PARSE_ERROR( _( "this file does not contain a PCB" ),
-                m_parser->CurSource(), m_parser->CurLine(),
-                m_parser->CurLineNumber(), m_parser->CurOffset() );
+        THROW_PARSE_ERROR( _( "This file does not contain a PCB." ), m_parser->CurSource(),
+                           m_parser->CurLine(), m_parser->CurLineNumber(), m_parser->CurOffset() );
     }
 
     return board;
@@ -2400,7 +2445,7 @@ void PCB_IO::FootprintSave( const wxString& aLibraryPath, const FOOTPRINT* aFoot
     {
         if( !m_cache->Exists() )
         {
-            const wxString msg = wxString::Format( _( "Library \"%s\" does not exist.\n"
+            const wxString msg = wxString::Format( _( "Library '%s' does not exist.\n"
                                                       "Would you like to create it?"),
                                                       aLibraryPath );
 
@@ -2412,7 +2457,7 @@ void PCB_IO::FootprintSave( const wxString& aLibraryPath, const FOOTPRINT* aFoot
         }
         else
         {
-            wxString msg = wxString::Format( _( "Library \"%s\" is read only" ), aLibraryPath );
+            wxString msg = wxString::Format( _( "Library '%s' is read only." ), aLibraryPath );
             THROW_IO_ERROR( msg );
         }
     }
@@ -2430,13 +2475,13 @@ void PCB_IO::FootprintSave( const wxString& aLibraryPath, const FOOTPRINT* aFoot
 
     if( !fn.IsOk() )
     {
-        THROW_IO_ERROR( wxString::Format( _( "Footprint file name \"%s\" is not valid." ),
+        THROW_IO_ERROR( wxString::Format( _( "Footprint file name '%s' is not valid." ),
                                           fn.GetFullPath() ) );
     }
 
     if( fn.FileExists() && !fn.IsFileWritable() )
     {
-        THROW_IO_ERROR( wxString::Format( _( "No write permissions to delete file \"%s\"" ),
+        THROW_IO_ERROR( wxString::Format( _( "Insufficient permissions to delete '%s'." ),
                                           fn.GetFullPath() ) );
     }
 
@@ -2488,7 +2533,7 @@ void PCB_IO::FootprintDelete( const wxString& aLibraryPath, const wxString& aFoo
 
     if( !m_cache->IsWritable() )
     {
-        THROW_IO_ERROR( wxString::Format( _( "Library \"%s\" is read only." ),
+        THROW_IO_ERROR( wxString::Format( _( "Library '%s' is read only." ),
                                           aLibraryPath.GetData() ) );
     }
 
@@ -2507,7 +2552,7 @@ void PCB_IO::FootprintLibCreate( const wxString& aLibraryPath, const PROPERTIES*
 {
     if( wxDir::Exists( aLibraryPath ) )
     {
-        THROW_IO_ERROR( wxString::Format( _( "Cannot overwrite library path \"%s\"." ),
+        THROW_IO_ERROR( wxString::Format( _( "Cannot overwrite library path '%s'." ),
                                           aLibraryPath.GetData() ) );
     }
 
@@ -2532,8 +2577,7 @@ bool PCB_IO::FootprintLibDelete( const wxString& aLibraryPath, const PROPERTIES*
 
     if( !fn.IsDirWritable() )
     {
-        THROW_IO_ERROR( wxString::Format( _( "User does not have permission to delete directory "
-                                             "\"%s\"." ),
+        THROW_IO_ERROR( wxString::Format( _( "Insufficient permissions to delete folder '%s'." ),
                                           aLibraryPath.GetData() ) );
     }
 
@@ -2541,8 +2585,7 @@ bool PCB_IO::FootprintLibDelete( const wxString& aLibraryPath, const PROPERTIES*
 
     if( dir.HasSubDirs() )
     {
-        THROW_IO_ERROR( wxString::Format( _( "Library directory \"%s\" has unexpected "
-                                             "sub-directories." ),
+        THROW_IO_ERROR( wxString::Format( _( "Library folder '%s' has unexpected sub-folders." ),
                                           aLibraryPath.GetData() ) );
     }
 
@@ -2561,9 +2604,10 @@ bool PCB_IO::FootprintLibDelete( const wxString& aLibraryPath, const PROPERTIES*
 
             if( tmp.GetExt() != KiCadFootprintFileExtension )
             {
-                THROW_IO_ERROR( wxString::Format( _( "Unexpected file \"%s\" was found in "
-                                                     "library path \"%s\"." ),
-                                                  files[i].GetData(), aLibraryPath.GetData() ) );
+                THROW_IO_ERROR( wxString::Format( _( "Unexpected file '%s' found in library "
+                                                     "path '%s'." ),
+                                                  files[i].GetData(),
+                                                  aLibraryPath.GetData() ) );
             }
         }
 
@@ -2571,14 +2615,14 @@ bool PCB_IO::FootprintLibDelete( const wxString& aLibraryPath, const PROPERTIES*
             wxRemoveFile( files[i] );
     }
 
-    wxLogTrace( traceKicadPcbPlugin, wxT( "Removing footprint library \"%s\"." ),
+    wxLogTrace( traceKicadPcbPlugin, wxT( "Removing footprint library '%s'." ),
                 aLibraryPath.GetData() );
 
     // Some of the more elaborate wxRemoveFile() crap puts up its own wxLog dialog
     // we don't want that.  we want bare metal portability with no UI here.
     if( !wxRmdir( aLibraryPath ) )
     {
-        THROW_IO_ERROR( wxString::Format( _( "Footprint library \"%s\" cannot be deleted." ),
+        THROW_IO_ERROR( wxString::Format( _( "Footprint library '%s' cannot be deleted." ),
                                           aLibraryPath.GetData() ) );
     }
 

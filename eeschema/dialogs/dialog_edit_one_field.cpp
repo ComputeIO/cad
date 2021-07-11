@@ -39,6 +39,8 @@
 #include <dialog_edit_one_field.h>
 #include <sch_text.h>
 #include <scintilla_tricks.h>
+#include <wildcards_and_files_ext.h>
+
 
 DIALOG_EDIT_ONE_FIELD::DIALOG_EDIT_ONE_FIELD( SCH_BASE_FRAME* aParent, const wxString& aTitle,
                                               const EDA_TEXT* aTextItem ) :
@@ -57,7 +59,11 @@ DIALOG_EDIT_ONE_FIELD::DIALOG_EDIT_ONE_FIELD( SCH_BASE_FRAME* aParent, const wxS
     m_fieldId = VALUE_FIELD;
     m_isPower = false;
 
-    m_scintillaTricks = new SCINTILLA_TRICKS( m_StyledTextCtrl, wxT( "{}" ) );
+    m_scintillaTricks = new SCINTILLA_TRICKS( m_StyledTextCtrl, wxT( "{}" ), true,
+            [this]()
+            {
+                wxPostEvent( this, wxCommandEvent( wxEVT_COMMAND_BUTTON_CLICKED, wxID_OK ) );
+            } );
     m_StyledTextCtrl->SetEOLMode( wxSTC_EOL_LF );   // Normalize EOL across platforms
 
     m_text = aTextItem->GetText();
@@ -254,6 +260,18 @@ bool DIALOG_EDIT_ONE_FIELD::TransferDataFromWindow()
             return false;
         }
     }
+    else if( m_fieldId == SHEETFILENAME_V )
+    {
+        wxFileName fn( m_text );
+
+        // It's annoying to throw up nag dialogs when the extension isn't right.  Just
+        // fix it.
+        if( fn.GetExt().CmpNoCase( KiCadSchematicFileExtension ) != 0 )
+        {
+            fn.SetExt( KiCadSchematicFileExtension );
+            m_text = fn.GetFullPath();
+        }
+    }
 
     m_isVertical = m_orientChoice->GetSelection() == 1;
     m_position = wxPoint( m_posX.GetValue(), m_posY.GetValue() );
@@ -286,6 +304,9 @@ DIALOG_LIB_EDIT_ONE_FIELD::DIALOG_LIB_EDIT_ONE_FIELD( SCH_BASE_FRAME* aParent,
         DIALOG_EDIT_ONE_FIELD( aParent, aTitle, aField )
 {
     m_fieldId = aField->GetId();
+
+    if( m_fieldId == VALUE_FIELD )
+        m_text = UnescapeString( aField->GetText() );
 
     // When in the library editor, power symbols can be renamed.
     m_isPower = false;

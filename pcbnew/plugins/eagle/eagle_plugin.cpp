@@ -1036,8 +1036,9 @@ void EAGLE_PLUGIN::loadLibrary( wxXmlNode* aLib, const wxString* aLibName )
             wxString lib = aLibName ? *aLibName : m_lib_path;
             const wxString& pkg = pack_ref;
 
-            wxString emsg = wxString::Format(
-                    _( "<package> name: \"%s\" duplicated in eagle <library>: \"%s\"" ), pkg, lib );
+            wxString emsg = wxString::Format( _( "<package> '%s' duplicated in <library> '%s'" ),
+                                              pkg,
+                                              lib );
             THROW_IO_ERROR( emsg );
         }
 
@@ -2860,8 +2861,10 @@ void EAGLE_PLUGIN::cacheLib( const wxString& aLibPath )
             wxXmlDocument xmlDocument;
 
             if( !stream.IsOk() || !xmlDocument.Load( stream ) )
-                THROW_IO_ERROR( wxString::Format( _( "Unable to read file \"%s\"" ),
+            {
+                THROW_IO_ERROR( wxString::Format( _( "Unable to read file '%s'." ),
                                                   fn.GetFullPath() ) );
+            }
 
             doc = xmlDocument.GetRoot();
 

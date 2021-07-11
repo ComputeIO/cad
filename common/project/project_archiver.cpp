@@ -88,7 +88,7 @@ bool PROJECT_ARCHIVER::Unarchive( const wxString& aSrcFile, const wxString& aDes
 
     if( !stream.IsOk() )
     {
-        aReporter.Report( _( "Could not open archive file\n" ), RPT_SEVERITY_ERROR );
+        aReporter.Report( _( "Could not open archive file." ), RPT_SEVERITY_ERROR );
         return false;
     }
 
@@ -97,7 +97,7 @@ bool PROJECT_ARCHIVER::Unarchive( const wxString& aSrcFile, const wxString& aDes
 
     if( !archiveClassFactory )
     {
-        aReporter.Report( _( "Invalid archive file format\n" ), RPT_SEVERITY_ERROR );
+        aReporter.Report( _( "Invalid archive file format." ), RPT_SEVERITY_ERROR );
         return false;
     }
 
@@ -108,7 +108,7 @@ bool PROJECT_ARCHIVER::Unarchive( const wxString& aSrcFile, const wxString& aDes
     for( wxArchiveEntry* entry = archiveStream->GetNextEntry(); entry;
          entry = archiveStream->GetNextEntry() )
     {
-        fileStatus.Printf( _( "Extracting file \"%s\"\n" ), entry->GetName() );
+        fileStatus.Printf( _( "Extracting file '%s'." ), entry->GetName() );
         aReporter.Report( fileStatus, RPT_SEVERITY_INFO );
 
         wxString fullname = aDestDir + entry->GetName();
@@ -148,10 +148,10 @@ bool PROJECT_ARCHIVER::Unarchive( const wxString& aSrcFile, const wxString& aDes
         if( CopyStreamData( *archiveStream, outputFileStream, entry->GetSize() ) )
             outputFileStream.Commit();
         else
-            aReporter.Report( _( "Error extracting file!\n" ), RPT_SEVERITY_ERROR );
+            aReporter.Report( _( "Error extracting file!" ), RPT_SEVERITY_ERROR );
     }
 
-    aReporter.Report( wxT( "Extracted project\n" ), RPT_SEVERITY_INFO );
+    aReporter.Report( wxT( "Extracted project." ), RPT_SEVERITY_INFO );
     return true;
 }
 
@@ -205,7 +205,7 @@ bool PROJECT_ARCHIVER::Archive( const wxString& aSrcDir, const wxString& aDestFi
 
     if( !ostream.IsOk() )   // issue to create the file. Perhaps not writable dir
     {
-        msg.Printf( _( "Unable to create archive file \"%s\"\n" ), aDestFile );
+        msg.Printf( _( "Failed to create file '%s'." ), aDestFile );
         aReporter.Report( msg, RPT_SEVERITY_ERROR );
         return false;
     }
@@ -251,7 +251,7 @@ bool PROJECT_ARCHIVER::Archive( const wxString& aSrcDir, const wxString& aDestFi
 
             if( aVerbose )
             {
-                msg.Printf( _( "Archive file \"%s\"\n" ), currFilename );
+                msg.Printf( _( "Archived file '%s'." ), currFilename );
                 aReporter.Report( msg, RPT_SEVERITY_INFO );
             }
 
@@ -261,7 +261,7 @@ bool PROJECT_ARCHIVER::Archive( const wxString& aSrcDir, const wxString& aDestFi
         {
             if( aVerbose )
             {
-                msg.Printf( _( "Archive file \"%s\": Failed!\n" ), currFilename );
+                msg.Printf( _( "Failed to archive file '%s'." ), currFilename );
                 aReporter.Report( msg, RPT_SEVERITY_ERROR );
             }
 
@@ -287,13 +287,15 @@ bool PROJECT_ARCHIVER::Archive( const wxString& aSrcDir, const wxString& aDestFi
 
     if( zipstream.Close() )
     {
-        msg.Printf( _( "Zip archive \"%s\" created (%s uncompressed, %s compressed)\n" ), aDestFile,
-                    reportSize( uncompressedBytes ), reportSize( zipBytesCnt ) );
+        msg.Printf( _( "Zip archive '%s' created (%s uncompressed, %s compressed)." ),
+                    aDestFile,
+                    reportSize( uncompressedBytes ),
+                    reportSize( zipBytesCnt ) );
         aReporter.Report( msg, RPT_SEVERITY_INFO );
     }
     else
     {
-        msg.Printf( wxT( "Unable to create archive \"%s\"\n" ), aDestFile );
+        msg.Printf( wxT( "Failed to create file '%s'." ), aDestFile );
         aReporter.Report( msg, RPT_SEVERITY_ERROR );
         success = false;
     }

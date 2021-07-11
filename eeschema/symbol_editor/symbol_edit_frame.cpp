@@ -72,6 +72,7 @@
 #include <wildcards_and_files_ext.h>
 #include <panel_sym_lib_table.h>
 #include <wx/choicdlg.h>
+#include <kicad_string.h>
 
 
 bool SYMBOL_EDIT_FRAME::m_showDeMorgan = false;
@@ -260,7 +261,7 @@ SYMBOL_EDIT_FRAME::~SYMBOL_EDIT_FRAME()
 
 void SYMBOL_EDIT_FRAME::LoadSettings( APP_SETTINGS_BASE* aCfg )
 {
-    wxCHECK_RET( m_settings, "Call to SYMBOL_EDIT_FRAME::LoadSettings with null m_settings" );
+    wxCHECK_RET( m_settings, "Call to SYMBOL_EDIT_FRAME::LoadSettings with null m_boardAdapter" );
 
     SCH_BASE_FRAME::LoadSettings( GetSettings() );
 
@@ -275,7 +276,7 @@ void SYMBOL_EDIT_FRAME::LoadSettings( APP_SETTINGS_BASE* aCfg )
 
 void SYMBOL_EDIT_FRAME::SaveSettings( APP_SETTINGS_BASE* aCfg )
 {
-    wxCHECK_RET( m_settings, "Call to SYMBOL_EDIT_FRAME::LoadSettings with null m_settings" );
+    wxCHECK_RET( m_settings, "Call to SYMBOL_EDIT_FRAME::LoadSettings with null m_boardAdapter" );
 
     GetGalDisplayOptions().m_axesEnabled = true;
 
@@ -748,10 +749,10 @@ void SYMBOL_EDIT_FRAME::SetCurSymbol( LIB_SYMBOL* aSymbol, bool aUpdateZoom )
         wxString link;
 
         msg.Printf( _( "Symbol %s is derived from %s.  Symbol graphics will not be editable." ),
-                    symbolName,
-                    parentSymbolName );
+                    UnescapeString( symbolName ),
+                    UnescapeString( parentSymbolName ) );
 
-        link.Printf( _( "Open %s" ), parentSymbolName );
+        link.Printf( _( "Open %s" ), UnescapeString( parentSymbolName ) );
 
         wxHyperlinkCtrl* button = new wxHyperlinkCtrl( infobar, wxID_ANY, link, wxEmptyString );
         button->Bind( wxEVT_COMMAND_HYPERLINK, std::function<void( wxHyperlinkEvent& aEvent )>(
@@ -822,7 +823,7 @@ bool SYMBOL_EDIT_FRAME::AddLibraryFile( bool aCreateNew )
 
     if( m_libMgr->LibraryExists( libName ) )
     {
-        DisplayError( this, wxString::Format( _( "Library \"%s\" already exists" ), libName ) );
+        DisplayError( this, wxString::Format( _( "Library '%s' already exists." ), libName ) );
         return false;
     }
 
@@ -831,7 +832,7 @@ bool SYMBOL_EDIT_FRAME::AddLibraryFile( bool aCreateNew )
         if( !m_libMgr->CreateLibrary( fn.GetFullPath(), libTable ) )
         {
             DisplayError( this, wxString::Format( _( "Could not create the library file '%s'.\n"
-                                                     "Check write permission." ),
+                                                     "Make sure you have write permissions and try again." ),
                                                   fn.GetFullPath() ) );
             return false;
         }
@@ -1031,7 +1032,7 @@ bool SYMBOL_EDIT_FRAME::backupFile( const wxFileName& aOriginalFile, const wxStr
 
         if( !wxCopyFile( aOriginalFile.GetFullPath(), backupFileName.GetFullPath() ) )
         {
-            DisplayError( this, wxString::Format( _( "Failed to save backup to \"%s\"" ),
+            DisplayError( this, wxString::Format( _( "Failed to save backup to '%s'." ),
                                                   backupFileName.GetFullPath() ) );
             return false;
         }

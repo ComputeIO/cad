@@ -89,7 +89,7 @@ static void getSymbols( SCHEMATIC* aSchematic, std::vector<SCH_SYMBOL*>& aSymbol
 static LIB_SYMBOL* findSymbol( const wxString& aName, SYMBOL_LIBS* aLibs, bool aCached )
 {
     LIB_SYMBOL *symbol = NULL;
-    wxString new_name = LIB_ID::FixIllegalChars( aName );
+    wxString new_name = LIB_ID::FixIllegalChars( aName, false );
 
     for( SYMBOL_LIB& each_lib : *aLibs )
     {
@@ -150,7 +150,7 @@ void RESCUE_CASE_CANDIDATE::FindRescues( RESCUER& aRescuer,
     for( SCH_SYMBOL* eachSymbol : *( aRescuer.GetSymbols() ) )
     {
         symbol_name = eachSymbol->GetLibId().GetLibItemName();
-        search_name = LIB_ID::FixIllegalChars( symbol_name );
+        search_name = LIB_ID::FixIllegalChars( symbol_name, false );
 
         if( last_symbol_name != symbol_name )
         {
@@ -205,7 +205,7 @@ bool RESCUE_CASE_CANDIDATE::PerformAction( RESCUER* aRescuer )
 
         LIB_ID libId;
 
-        libId.SetLibItemName( m_new_name, false );
+        libId.SetLibItemName( m_new_name );
         eachSymbol->SetLibId( libId );
         eachSymbol->ClearFlags();
         aRescuer->LogRescue( eachSymbol, m_requested_name, m_new_name );
@@ -255,7 +255,7 @@ void RESCUE_CACHE_CANDIDATE::FindRescues( RESCUER& aRescuer,
     for( SCH_SYMBOL* eachSymbol : *( aRescuer.GetSymbols() ) )
     {
         symbol_name = eachSymbol->GetLibId().GetLibItemName();
-        search_name = LIB_ID::FixIllegalChars( symbol_name );
+        search_name = LIB_ID::FixIllegalChars( symbol_name, false );
 
         if( old_symbol_name != symbol_name )
         {
@@ -329,7 +329,7 @@ bool RESCUE_CACHE_CANDIDATE::PerformAction( RESCUER* aRescuer )
 
         LIB_ID libId;
 
-        libId.SetLibItemName( m_new_name, false );
+        libId.SetLibItemName( m_new_name );
         eachSymbol->SetLibId( libId );
         eachSymbol->ClearFlags();
         aRescuer->LogRescue( eachSymbol, m_requested_name, m_new_name );
@@ -426,7 +426,7 @@ void RESCUE_SYMBOL_LIB_TABLE_CANDIDATE::FindRescues(
             }
 
             // Fix illegal LIB_ID name characters.
-            wxString new_name = LIB_ID::FixIllegalChars( symbol_id.GetLibItemName() );
+            wxString new_name = LIB_ID::FixIllegalChars( symbol_id.GetLibItemName(), false );
 
             // Differentiate symbol name in the rescue library by appending the symbol library
             // table nickname to the symbol name to prevent name clashes in the rescue library.
@@ -550,7 +550,7 @@ void RESCUER::UndoRescues()
     {
         LIB_ID libId;
 
-        libId.SetLibItemName( each_logitem.old_name, false );
+        libId.SetLibItemName( each_logitem.old_name );
         each_logitem.symbol->SetLibId( libId );
         each_logitem.symbol->ClearFlags();
     }

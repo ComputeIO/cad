@@ -33,6 +33,7 @@
 #include <cstdio>
 #include <istream>                           // for operator<<, operator>>
 #include <limits>                            // for numeric_limits
+#include <map>
 #include <memory>
 #include <set>
 #include <string>                            // for char_traits, operator!=
@@ -54,7 +55,6 @@
 #include <geometry/shape_segment.h>
 #include <geometry/shape_circle.h>
 
-using namespace ClipperLib;
 
 SHAPE_POLY_SET::SHAPE_POLY_SET() :
     SHAPE( SH_POLY_SET )
@@ -230,6 +230,29 @@ int SHAPE_POLY_SET::Append( int x, int y, int aOutline, int aHole, bool aAllowDu
     assert( idx < (int) m_polys[aOutline].size() );
 
     m_polys[aOutline][idx].Append( x, y, aAllowDuplication );
+
+    return m_polys[aOutline][idx].PointCount();
+}
+
+
+int SHAPE_POLY_SET::Append( SHAPE_ARC& aArc, int aOutline, int aHole )
+{
+    assert( m_polys.size() );
+
+    if( aOutline < 0 )
+        aOutline += m_polys.size();
+
+    int idx;
+
+    if( aHole < 0 )
+        idx = 0;
+    else
+        idx = aHole + 1;
+
+    assert( aOutline < (int) m_polys.size() );
+    assert( idx < (int) m_polys[aOutline].size() );
+
+    m_polys[aOutline][idx].Append( aArc );
 
     return m_polys[aOutline][idx].PointCount();
 }
@@ -467,6 +490,43 @@ double SHAPE_POLY_SET::Area()
 }
 
 
+int SHAPE_POLY_SET::ArcCount() const
+{
+    int retval = 0;
+
+    for( const POLYGON& poly : m_polys )
+    {
+        for( size_t i = 0; i < poly.size(); i++ )
+            retval += poly[i].ArcCount();
+    }
+
+    return retval;
+}
+
+
+void SHAPE_POLY_SET::GetArcs( std::vector<SHAPE_ARC>& aArcBuffer ) const
+{
+    for( const POLYGON& poly : m_polys )
+    {
+        for( size_t i = 0; i < poly.size(); i++ )
+        {
+            for( SHAPE_ARC arc : poly[i].m_arcs )
+                aArcBuffer.push_back( arc );
+        }
+    }
+}
+
+
+void SHAPE_POLY_SET::ClearArcs()
+{
+    for( POLYGON& poly : m_polys )
+    {
+        for( size_t i = 0; i < poly.size(); i++ )
+            poly[i].ClearArcs();
+    }
+}
+
+
 void SHAPE_POLY_SET::booleanOp( ClipperLib::ClipType aType, const SHAPE_POLY_SET& aOtherShape,
                                 POLYGON_MODE aFastMode )
 {
@@ -477,66 +537,183 @@ void SHAPE_POLY_SET::booleanOp( ClipperLib::ClipType aType, const SHAPE_POLY_SET
 void SHAPE_POLY_SET::booleanOp( ClipperLib::ClipType aType, const SHAPE_POLY_SET& aShape,
                                 const SHAPE_POLY_SET& aOtherShape, POLYGON_MODE aFastMode )
 {
-    Clipper c;
+    if( ( aShape.OutlineCount() > 1 || aOtherShape.OutlineCount() > 0 )
+        && ( aShape.ArcCount() > 0 || aOtherShape.ArcCount() > 0 ) )
+    {
+        wxFAIL_MSG( "Boolean ops on curved polygons are not supported. You should call "
+                    "ClearArcs() before carrying out the boolean operation." );
+    }
+
+    ClipperLib::Clipper c;
 
     c.StrictlySimple( aFastMode == PM_STRICTLY_SIMPLE );
 
+    std::vector<CLIPPER_Z_VALUE> zValues;
+    std::vector<SHAPE_ARC> arcBuffer;
+    std::map<VECTOR2I, CLIPPER_Z_VALUE> newIntersectPoints;
+
     for( const POLYGON& poly : aShape.m_polys )
     {
-        for( size_t i = 0 ; i < poly.size(); i++ )
-            c.AddPath( poly[i].convertToClipper( i == 0 ), ptSubject, true );
+        for( size_t i = 0; i < poly.size(); i++ )
+        {
+            c.AddPath( poly[i].convertToClipper( i == 0, zValues, arcBuffer ),
+                       ClipperLib::ptSubject, true );
+        }
     }
 
     for( const POLYGON& poly : aOtherShape.m_polys )
     {
         for( size_t i = 0; i < poly.size(); i++ )
-            c.AddPath( poly[i].convertToClipper( i == 0 ), ptClip, true );
+        {
+            c.AddPath( poly[i].convertToClipper( i == 0, zValues, arcBuffer ),
+                       ClipperLib::ptClip, true );
+        }
     }
 
-    PolyTree solution;
+    ClipperLib::PolyTree solution;
 
-    c.Execute( aType, solution, pftNonZero, pftNonZero );
+    ClipperLib::ZFillCallback callback =
+            [&]( ClipperLib::IntPoint & e1bot, ClipperLib::IntPoint & e1top,
+                ClipperLib::IntPoint & e2bot, ClipperLib::IntPoint & e2top,
+                ClipperLib::IntPoint & pt )
+            {
+                auto arcIndex =
+                    [&]( const ssize_t& aZvalue, const ssize_t& aCompareVal = -1 ) -> ssize_t
+                    {
+                        ssize_t retval;
 
-    importTree( &solution );
+                        retval = zValues.at( aZvalue ).m_SecondArcIdx;
+
+                        if( retval == -1 || ( aCompareVal > 0 && retval != aCompareVal ) )
+                            retval = zValues.at( aZvalue ).m_FirstArcIdx;
+
+                        return retval;
+                    };
+
+                auto arcSegment =
+                    [&]( const ssize_t& aBottomZ, const ssize_t aTopZ ) -> ssize_t
+                    {
+                        ssize_t retval = arcIndex( aBottomZ );
+
+                        if( retval != -1 )
+                        {
+                            if( retval != arcIndex( aTopZ, retval ) )
+                                retval = -1; // Not an arc segment as the two indices do not match
+                        }
+
+                        return retval;
+                    };
+
+                ssize_t e1ArcSegmentIndex = arcSegment( e1bot.Z, e1top.Z );
+                ssize_t e2ArcSegmentIndex = arcSegment( e2bot.Z, e2top.Z );
+
+                CLIPPER_Z_VALUE newZval;
+
+                if( e1ArcSegmentIndex != -1 )
+                {
+                    newZval.m_FirstArcIdx = e1ArcSegmentIndex;
+                    newZval.m_SecondArcIdx = e2ArcSegmentIndex;
+                }
+                else
+                {
+                    newZval.m_FirstArcIdx = e2ArcSegmentIndex;
+                    newZval.m_SecondArcIdx = -1;
+                }
+
+                size_t z_value_ptr = zValues.size();
+                zValues.push_back( newZval );
+
+                // Only worry about arc segments for later processing
+                if( newZval.m_FirstArcIdx != -1 )
+                    newIntersectPoints.insert( { VECTOR2I( pt.X, pt.Y ), newZval } );
+
+                pt.Z = z_value_ptr;
+                //@todo amend X,Y values to true intersection between arcs or arc and segment
+            };
+
+    c.ZFillFunction( callback ); // register callback
+
+    c.Execute( aType, solution, ClipperLib::pftNonZero, ClipperLib::pftNonZero );
+
+    importTree( &solution, zValues, arcBuffer );
+
+    // amend arcs for the intersection points
+    for( auto& poly : m_polys )
+    {
+        for( size_t i = 0; i < poly.size(); i++ )
+        {
+            for( int j = 0; j < poly[i].PointCount(); j++ )
+            {
+                const VECTOR2I& pt = poly[i].CPoint( j );
+
+                if( newIntersectPoints.find( pt ) != newIntersectPoints.end() )
+                {
+                    const std::pair<ssize_t, ssize_t>& shape = poly[i].CShapes()[j];
+                    CLIPPER_Z_VALUE                    zval = newIntersectPoints.at( pt );
+
+                    // Fixup arc end points to match the new intersection points found in clipper
+                    //@todo consider editing the intersection point to be the "true" arc intersection
+                    if( poly[i].IsSharedPt( j ) )
+                    {
+                        poly[i].amendArcEnd( shape.first, pt );
+                        poly[i].amendArcStart( shape.second, pt );
+                    }
+                    else if( poly[i].IsArcStart( j ) )
+                    {
+                        poly[i].amendArcStart( shape.first, pt );
+                    }
+                    else if( poly[i].IsArcEnd( j ) )
+                    {
+                        poly[i].amendArcEnd( shape.first, pt );
+                    }
+                    else
+                    {
+                        poly[i].splitArc( j );
+                    }
+                }
+            }
+        }
+
+    }
 }
 
 
 void SHAPE_POLY_SET::BooleanAdd( const SHAPE_POLY_SET& b, POLYGON_MODE aFastMode )
 {
-    booleanOp( ctUnion, b, aFastMode );
+    booleanOp( ClipperLib::ctUnion, b, aFastMode );
 }
 
 
 void SHAPE_POLY_SET::BooleanSubtract( const SHAPE_POLY_SET& b, POLYGON_MODE aFastMode )
 {
-    booleanOp( ctDifference, b, aFastMode );
+    booleanOp( ClipperLib::ctDifference, b, aFastMode );
 }
 
 
 void SHAPE_POLY_SET::BooleanIntersection( const SHAPE_POLY_SET& b, POLYGON_MODE aFastMode )
 {
-    booleanOp( ctIntersection, b, aFastMode );
+    booleanOp( ClipperLib::ctIntersection, b, aFastMode );
 }
 
 
 void SHAPE_POLY_SET::BooleanAdd( const SHAPE_POLY_SET& a, const SHAPE_POLY_SET& b,
                                  POLYGON_MODE aFastMode )
 {
-    booleanOp( ctUnion, a, b, aFastMode );
+    booleanOp( ClipperLib::ctUnion, a, b, aFastMode );
 }
 
 
 void SHAPE_POLY_SET::BooleanSubtract( const SHAPE_POLY_SET& a, const SHAPE_POLY_SET& b,
                                       POLYGON_MODE aFastMode )
 {
-    booleanOp( ctDifference, a, b, aFastMode );
+    booleanOp( ClipperLib::ctDifference, a, b, aFastMode );
 }
 
 
 void SHAPE_POLY_SET::BooleanIntersection( const SHAPE_POLY_SET& a, const SHAPE_POLY_SET& b,
                                           POLYGON_MODE aFastMode )
 {
-    booleanOp( ctIntersection, a, b, aFastMode );
+    booleanOp( ClipperLib::ctIntersection, a, b, aFastMode );
 }
 
 
@@ -551,6 +728,7 @@ void SHAPE_POLY_SET::InflateWithLinkedHoles( int aFactor, int aCircleSegmentsCou
 
 void SHAPE_POLY_SET::Inflate( int aAmount, int aCircleSegCount, CORNER_STRATEGY aCornerStrategy )
 {
+    using namespace ClipperLib;
     // A static table to avoid repetitive calculations of the coefficient
     // 1.0 - cos( M_PI / aCircleSegCount )
     // aCircleSegCount is most of time <= 64 and usually 8, 12, 16, 32
@@ -595,10 +773,16 @@ void SHAPE_POLY_SET::Inflate( int aAmount, int aCircleSegCount, CORNER_STRATEGY 
         break;
     }
 
+    std::vector<CLIPPER_Z_VALUE> zValues;
+    std::vector<SHAPE_ARC>       arcBuffer;
+
     for( const POLYGON& poly : m_polys )
     {
         for( size_t i = 0; i < poly.size(); i++ )
-            c.AddPath( poly[i].convertToClipper( i == 0 ), joinType, etClosedPolygon );
+        {
+            c.AddPath( poly[i].convertToClipper( i == 0, zValues, arcBuffer ),
+                       joinType, etClosedPolygon );
+        }
     }
 
     PolyTree solution;
@@ -629,24 +813,27 @@ void SHAPE_POLY_SET::Inflate( int aAmount, int aCircleSegCount, CORNER_STRATEGY 
     c.MiterFallback = miterFallback;
     c.Execute( solution, aAmount );
 
-    importTree( &solution );
+    importTree( &solution, zValues, arcBuffer );
 }
 
 
-void SHAPE_POLY_SET::importTree( PolyTree* tree )
+void SHAPE_POLY_SET::importTree( ClipperLib::PolyTree*               tree,
+                                 const std::vector<CLIPPER_Z_VALUE>& aZValueBuffer,
+                                 const std::vector<SHAPE_ARC>&       aArcBuffer )
 {
     m_polys.clear();
 
-    for( PolyNode* n = tree->GetFirst(); n; n = n->GetNext() )
+    for( ClipperLib::PolyNode* n = tree->GetFirst(); n; n = n->GetNext() )
     {
         if( !n->IsHole() )
         {
             POLYGON paths;
             paths.reserve( n->Childs.size() + 1 );
-            paths.push_back( n->Contour );
+
+            paths.emplace_back( n->Contour, aZValueBuffer, aArcBuffer );
 
             for( unsigned int i = 0; i < n->Childs.size(); i++ )
-                paths.push_back( n->Childs[i]->Contour );
+                paths.emplace_back( n->Childs[i]->Contour, aZValueBuffer, aArcBuffer );
 
             m_polys.push_back( paths );
         }
@@ -1063,7 +1250,7 @@ void SHAPE_POLY_SET::Simplify( POLYGON_MODE aFastMode )
 {
     SHAPE_POLY_SET empty;
 
-    booleanOp( ctUnion, empty, aFastMode );
+    booleanOp( ClipperLib::ctUnion, empty, aFastMode );
 }
 
 
@@ -2137,7 +2324,9 @@ void SHAPE_POLY_SET::CacheTriangulation( bool aPartition )
     if( aPartition )
     {
         // This partitions into regularly-sized grids (1cm in pcbnew)
-        partitionPolyIntoRegularCellGrid( *this, 1e7, tmpSet );
+        SHAPE_POLY_SET flattened( *this );
+        flattened.ClearArcs();
+        partitionPolyIntoRegularCellGrid( flattened, 1e7, tmpSet );
     }
     else
     {

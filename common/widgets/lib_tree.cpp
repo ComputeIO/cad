@@ -30,8 +30,10 @@
 #include <wx/html/htmlwin.h>
 #include <tool/tool_interactive.h>
 #include <tool/tool_manager.h>
+#include <wx/srchctrl.h>
 #include <wx/settings.h>
 #include <wx/statbmp.h>
+#include <wx/timer.h>
 
 
 LIB_TREE::LIB_TREE( wxWindow* aParent, LIB_TABLE* aLibTable,
@@ -51,12 +53,18 @@ LIB_TREE::LIB_TREE( wxWindow* aParent, LIB_TABLE* aLibTable,
     {
         auto search_sizer = new wxBoxSizer( wxHORIZONTAL );
 
-        m_query_ctrl = new wxTextCtrl( this, wxID_ANY, wxEmptyString, wxDefaultPosition,
-                                       wxDefaultSize, wxTE_PROCESS_ENTER );
+        m_query_ctrl = new wxSearchCtrl( this, wxID_ANY, wxEmptyString, wxDefaultPosition,
+                                         wxDefaultSize );
+
+        m_query_ctrl->ShowCancelButton( true );
+
+        m_debounceTimer = new wxTimer( this );
 
 // Additional visual cue for GTK, which hides the placeholder text on focus
 #ifdef __WXGTK__
-        auto bitmap = new wxStaticBitmap( this, wxID_ANY, wxArtProvider::GetBitmap( wxART_FIND, wxART_FRAME_ICON ) );
+        auto bitmap = new wxStaticBitmap( this, wxID_ANY,
+                                          wxArtProvider::GetBitmap( wxART_FIND,
+                                                                    wxART_FRAME_ICON ) );
 
         search_sizer->Add( bitmap, 0, wxALIGN_CENTER | wxRIGHT, 5 );
 #endif
@@ -65,8 +73,17 @@ LIB_TREE::LIB_TREE( wxWindow* aParent, LIB_TABLE* aLibTable,
         sizer->Add( search_sizer, 0, wxEXPAND, 5 );
 
         m_query_ctrl->Bind( wxEVT_TEXT, &LIB_TREE::onQueryText, this );
+
+#if wxCHECK_VERSION( 3, 1, 1 )
+        m_query_ctrl->Bind( wxEVT_SEARCH, &LIB_TREE::onQueryEnter, this );
+#else
         m_query_ctrl->Bind( wxEVT_TEXT_ENTER, &LIB_TREE::onQueryEnter, this );
+#endif
+
         m_query_ctrl->Bind( wxEVT_CHAR_HOOK, &LIB_TREE::onQueryCharHook, this );
+
+
+        Bind( wxEVT_TIMER, &LIB_TREE::onDebounceTimer, this, m_debounceTimer->GetId() );
     }
 
     // Tree control
@@ -112,7 +129,7 @@ LIB_TREE::LIB_TREE( wxWindow* aParent, LIB_TABLE* aLibTable,
     // handler will intermittently fire.
     if( m_query_ctrl )
     {
-        m_query_ctrl->SetHint( _( "Filter" ) );
+        m_query_ctrl->SetDescriptiveText( _( "Filter" ) );
         m_query_ctrl->SetFocus();
         m_query_ctrl->SetValue( wxEmptyString );
 
@@ -319,7 +336,7 @@ void LIB_TREE::setState( const STATE& aState )
 
 void LIB_TREE::onQueryText( wxCommandEvent& aEvent )
 {
-    Regenerate( false );
+    m_debounceTimer->StartOnce( 200 );
 
     // Required to avoid interaction with SetHint()
     // See documentation for wxTextEntry::SetHint
@@ -331,6 +348,12 @@ void LIB_TREE::onQueryEnter( wxCommandEvent& aEvent )
 {
     if( GetSelectedLibId().IsValid() )
         postSelectEvent();
+}
+
+
+void LIB_TREE::onDebounceTimer( wxTimerEvent& aEvent )
+{
+    Regenerate( false );
 }
 
 

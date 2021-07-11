@@ -41,6 +41,8 @@
 #include <pcb_group.h>
 #include <pcb_target.h>
 #include <footprint.h>
+#include <geometry/shape_line_chain.h>
+
 #include <netclass.h>
 #include <pad.h>
 #include <pcb_track.h>
@@ -171,7 +173,7 @@ double PCB_PARSER::parseDouble()
     if( errno )
     {
         wxString error;
-        error.Printf( _( "Invalid floating point number in\nfile: \"%s\"\nline: %d\noffset: %d" ),
+        error.Printf( _( "Invalid floating point number in\nfile: '%s'\nline: %d\noffset: %d" ),
                       CurSource(), CurLineNumber(), CurOffset() );
 
         THROW_IO_ERROR( error );
@@ -180,7 +182,7 @@ double PCB_PARSER::parseDouble()
     if( CurText() == tmp )
     {
         wxString error;
-        error.Printf( _( "Missing floating point number in\nfile: \"%s\"\nline: %d\noffset: %d" ),
+        error.Printf( _( "Missing floating point number in\nfile: '%s'\nline: %d\noffset: %d" ),
                       CurSource(), CurLineNumber(), CurOffset() );
 
         THROW_IO_ERROR( error );
@@ -280,6 +282,91 @@ wxPoint PCB_PARSER::parseXY()
     NeedRIGHT();
 
     return pt;
+}
+
+
+void PCB_PARSER::parseOutlinePoints( SHAPE_LINE_CHAIN& aPoly )
+{
+    if( CurTok() != T_LEFT )
+        NeedLEFT();
+
+    T token = NextTok();
+
+    switch( token )
+    {
+    case T_xy:
+    {
+        int x = parseBoardUnits( "X coordinate" );
+        int y = parseBoardUnits( "Y coordinate" );
+
+        NeedRIGHT();
+
+        aPoly.Append( x, y );
+        break;
+    }
+    case T_arc:
+    {
+        bool has_start = false;
+        bool has_mid   = false;
+        bool has_end   = false;
+
+        VECTOR2I arc_start, arc_mid, arc_end;
+
+        for( token = NextTok(); token != T_RIGHT; token = NextTok() )
+        {
+            if( token != T_LEFT )
+                Expecting( T_LEFT );
+
+            token = NextTok();
+
+            switch( token )
+            {
+            case T_start:
+                arc_start.x = parseBoardUnits( "start x" );
+                arc_start.y = parseBoardUnits( "start y" );
+                has_start = true;
+                break;
+
+            case T_mid:
+                arc_mid.x = parseBoardUnits( "mid x" );
+                arc_mid.y = parseBoardUnits( "mid y" );
+                has_mid = true;
+                break;
+
+            case T_end:
+                arc_end.x = parseBoardUnits( "end x" );
+                arc_end.y = parseBoardUnits( "end y" );
+                has_end = true;
+                break;
+
+            default:
+                Expecting( "start, mid or end" );
+            }
+
+            NeedRIGHT();
+        }
+
+        if( !has_start )
+            Expecting( "start" );
+
+        if( !has_mid )
+            Expecting( "mid" );
+
+        if( !has_end )
+            Expecting( "end" );
+
+        SHAPE_ARC arc( arc_start, arc_mid, arc_end, 0 );
+
+        aPoly.Append( arc );
+
+        if( token != T_RIGHT )
+            Expecting( T_RIGHT );
+
+        break;
+    }
+    default:
+        Expecting( "xy or arc" );
+    }
 }
 
 
@@ -593,7 +680,7 @@ BOARD_ITEM* PCB_PARSER::Parse()
 
     default:
         wxString err;
-        err.Printf( _( "Unknown token \"%s\"" ), FromUTF8() );
+        err.Printf( _( "Unknown token '%s'" ), FromUTF8() );
         THROW_PARSE_ERROR( err, CurSource(), CurLine(), CurLineNumber(), CurOffset() );
     }
 
@@ -759,7 +846,7 @@ BOARD* PCB_PARSER::parseBOARD_unchecked()
 
         default:
             wxString err;
-            err.Printf( _( "Unknown token \"%s\"" ), FromUTF8() );
+            err.Printf( _( "Unknown token '%s'" ), FromUTF8() );
             THROW_PARSE_ERROR( err, CurSource(), CurLine(), CurLineNumber(), CurOffset() );
         }
     }
@@ -1030,7 +1117,7 @@ void PCB_PARSER::parsePAGE_INFO()
     if( !pageInfo.SetType( pageType ) )
     {
         wxString err;
-        err.Printf( _( "Page type \"%s\" is not valid " ), FromUTF8() );
+        err.Printf( _( "Page type '%s' is not valid." ), FromUTF8() );
         THROW_PARSE_ERROR( err, CurSource(), CurLine(), CurLineNumber(), CurOffset() );
     }
 
@@ -1560,13 +1647,12 @@ void PCB_PARSER::parseLayers()
 
             if( it == m_layerIndices.end() )
             {
-                wxString error = wxString::Format(
-                    _( "Layer \"%s\" in file \"%s\" at line %d, is not in fixed layer hash" ),
-                    layer.m_name,
-                    CurSource(),
-                    CurLineNumber(),
-                    CurOffset()
-                    );
+                wxString error;
+                error.Printf( _( "Layer '%s' in file '%s' at line %d is not in fixed layer hash." ),
+                              layer.m_name,
+                              CurSource(),
+                              CurLineNumber(),
+                              CurOffset() );
 
                 THROW_IO_ERROR( error );
             }
@@ -2139,7 +2225,7 @@ void PCB_PARSER::parseNETINFO_ITEM()
 
     // Convert overbar syntax from `~...~` to `~{...}`.  These were left out of the first merge
     // so the version is a bit later.
-    if( m_requiredVersion < 20210615 )
+    if( m_requiredVersion < 20210606 )
         name = ConvertToNewOverbarNotation( name );
 
     NeedRIGHT();
@@ -2219,7 +2305,7 @@ void PCB_PARSER::parseNETCLASS()
 
             // Convert overbar syntax from `~...~` to `~{...}`.  These were left out of the
             // first merge so the version is a bit later.
-            if( m_requiredVersion < 20210615 )
+            if( m_requiredVersion < 20210606 )
                 nc->Add( ConvertToNewOverbarNotation( FromUTF8() ) );
             else
                 nc->Add( FromUTF8() );
@@ -2242,8 +2328,11 @@ void PCB_PARSER::parseNETCLASS()
         // unique_ptr will delete nc on this code path
 
         wxString error;
-        error.Printf( _( "Duplicate NETCLASS name \"%s\" in file \"%s\" at line %d, offset %d" ),
-                      nc->GetName().GetData(), CurSource().GetData(), CurLineNumber(), CurOffset() );
+        error.Printf( _( "Duplicate NETCLASS name '%s' in file '%s' at line %d, offset %d." ),
+                      nc->GetName().GetData(),
+                      CurSource().GetData(),
+                      CurLineNumber(),
+                      CurOffset() );
         THROW_IO_ERROR( error );
     }
 }
@@ -2429,6 +2518,10 @@ PCB_SHAPE* PCB_PARSER::parsePCB_SHAPE()
     {
         shape->SetShape( PCB_SHAPE_TYPE::POLYGON );
         shape->SetWidth( 0 ); // this is the default value. will be (perhaps) modified later
+        shape->SetPolyPoints( {} );
+
+        SHAPE_LINE_CHAIN& outline = shape->GetPolyShape().Outline( 0 );
+
         token = NextTok();
 
         if( token == T_locked )
@@ -2445,12 +2538,10 @@ PCB_SHAPE* PCB_PARSER::parsePCB_SHAPE()
         if( token != T_pts )
             Expecting( T_pts );
 
-        std::vector< wxPoint > pts;
-
         while( (token = NextTok() ) != T_RIGHT )
-            pts.push_back( parseXY() );
-
-        shape->SetPolyPoints( pts );
+        {
+            parseOutlinePoints( outline );
+        }
     }
         break;
 
@@ -3086,8 +3177,10 @@ FOOTPRINT* PCB_PARSER::parseFOOTPRINT_unchecked( wxArrayString* aInitialComments
     if( !name.IsEmpty() && fpid.Parse( name, true ) >= 0 )
     {
         wxString error;
-        error.Printf( _( "Invalid footprint ID in\nfile: \"%s\"\nline: %d\noffset: %d" ),
-                      CurSource(), CurLineNumber(), CurOffset() );
+        error.Printf( _( "Invalid footprint ID in\nfile: '%s'\nline: %d\noffset: %d." ),
+                      CurSource(),
+                      CurLineNumber(),
+                      CurOffset() );
         THROW_IO_ERROR( error );
     }
 
@@ -3684,6 +3777,9 @@ FP_SHAPE* PCB_PARSER::parseFP_SHAPE()
     case T_fp_poly:
     {
         shape->SetShape( PCB_SHAPE_TYPE::POLYGON );
+        shape->SetPolyPoints( {} );
+        SHAPE_LINE_CHAIN& outline = shape->GetPolyShape().Outline( 0 );
+
         token = NextTok();
 
         if( token == T_locked )
@@ -3700,12 +3796,8 @@ FP_SHAPE* PCB_PARSER::parseFP_SHAPE()
         if( token != T_pts )
             Expecting( T_pts );
 
-        std::vector< wxPoint > pts;
-
         while( (token = NextTok() ) != T_RIGHT )
-            pts.push_back( parseXY() );
-
-        shape->SetPolyPoints( pts );
+            parseOutlinePoints( outline );
     }
         break;
 
@@ -4028,7 +4120,7 @@ PAD* PCB_PARSER::parsePAD( FOOTPRINT* aParent )
 
                 // Convert overbar syntax from `~...~` to `~{...}`.  These were left out of the
                 // first merge so the version is a bit later.
-                if( m_requiredVersion < 20210615 )
+                if( m_requiredVersion < 20210606 )
                     netName = ConvertToNewOverbarNotation( netName );
 
                 if( netName != m_board->FindNet( pad->GetNetCode() )->GetNetname() )
@@ -4486,8 +4578,10 @@ PCB_ARC* PCB_PARSER::parseARC()
         case T_net:
             if( !arc->SetNetCode( getNetCode( parseInt( "net number" ) ), /* aNoAssert */ true ) )
                 THROW_IO_ERROR( wxString::Format(
-                        _( "Invalid net ID in\nfile: \"%s\"\nline: %d\noffset: %d" ), CurSource(),
-                        CurLineNumber(), CurOffset() ) );
+                        _( "Invalid net ID in\nfile: '%s'\nline: %d\noffset: %d." ),
+                        CurSource(),
+                        CurLineNumber(),
+                        CurOffset() ) );
             break;
 
         case T_tstamp:
@@ -4564,7 +4658,7 @@ PCB_TRACK* PCB_PARSER::parsePCB_TRACK()
         case T_net:
             if( !track->SetNetCode( getNetCode( parseInt( "net number" ) ), /* aNoAssert */ true ) )
                 THROW_IO_ERROR( wxString::Format(
-                        _( "Invalid net ID in\nfile: \"%s\"\nline: %d\noffset: %d" ), CurSource(),
+                        _( "Invalid net ID in\nfile: '%s'\nline: %d\noffset: %d." ), CurSource(),
                         CurLineNumber(), CurOffset() ) );
             break;
 
@@ -4768,8 +4862,10 @@ ZONE* PCB_PARSER::parseZONE( BOARD_ITEM_CONTAINER* aParent )
 
             if( !zone->SetNetCode( tmp, /* aNoAssert */ true ) )
                 THROW_IO_ERROR( wxString::Format(
-                        _( "Invalid net ID in\nfile: \"%s\"\nline: %d\noffset: %d" ), CurSource(),
-                        CurLineNumber(), CurOffset() ) );
+                        _( "Invalid net ID in\n file: '%s;\nline: %d\noffset: %d." ),
+                        CurSource(),
+                        CurLineNumber(),
+                        CurOffset() ) );
 
             NeedRIGHT();
             break;
@@ -5091,7 +5187,7 @@ ZONE* PCB_PARSER::parseZONE( BOARD_ITEM_CONTAINER* aParent )
 
         case T_polygon:
             {
-                std::vector< wxPoint > corners;
+                SHAPE_LINE_CHAIN outline;
 
                 NeedLEFT();
                 token = NextTok();
@@ -5100,15 +5196,15 @@ ZONE* PCB_PARSER::parseZONE( BOARD_ITEM_CONTAINER* aParent )
                     Expecting( T_pts );
 
                 for( token = NextTok(); token != T_RIGHT; token = NextTok() )
-                {
-                    corners.push_back( parseXY() );
-                }
+                    parseOutlinePoints( outline );
 
                 NeedRIGHT();
 
+                outline.SetClosed( true );
+
                 // Remark: The first polygon is the main outline.
                 // Others are holes inside the main outline.
-                zone->AddPolygon( corners );
+                zone->AddPolygon( outline );
             }
             break;
 
@@ -5153,14 +5249,13 @@ ZONE* PCB_PARSER::parseZONE( BOARD_ITEM_CONTAINER* aParent )
                 SHAPE_POLY_SET& poly = pts.at( filledLayer );
 
                 int idx = poly.NewOutline();
+                SHAPE_LINE_CHAIN& chain = poly.Outline( idx );
 
                 if( island )
                     zone->SetIsIsland( filledLayer, idx );
 
                 for( token = NextTok();  token != T_RIGHT;  token = NextTok() )
-                {
-                    poly.Append( parseXY() );
-                }
+                    parseOutlinePoints( chain );
 
                 NeedRIGHT();
 

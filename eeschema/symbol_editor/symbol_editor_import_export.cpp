@@ -31,6 +31,7 @@
 #include <symbol_library_manager.h>
 #include <wx/filename.h>
 #include <wx/filedlg.h>
+#include <kicad_string.h>
 
 
 void SYMBOL_EDIT_FRAME::ImportSymbol()
@@ -149,7 +150,7 @@ void SYMBOL_EDIT_FRAME::ExportSymbol()
         if( old_symbol )
         {
             msg.Printf( _( "Symbol %s already exists in library '%s'." ),
-                        symbol->GetName(),
+                        UnescapeString( symbol->GetName() ),
                         fn.GetFullName() );
 
             KIDIALOG errorDlg( this, msg, _( "Confirmation" ), wxOK | wxCANCEL | wxICON_WARNING );
@@ -163,7 +164,7 @@ void SYMBOL_EDIT_FRAME::ExportSymbol()
 
     if( fn.Exists() && !fn.IsDirWritable() )
     {
-        msg.Printf( _( "Write permissions are required to save library '%s'." ),
+        msg.Printf( _( "Insufficient permissions to save library '%s'." ),
                     fn.GetFullPath() );
         DisplayError( this, msg );
         return;
@@ -190,7 +191,9 @@ void SYMBOL_EDIT_FRAME::ExportSymbol()
 
     m_mruPath = fn.GetPath();
 
-    msg.Printf( _( "Symbol %s saved to library '%s'." ), symbol->GetName(), fn.GetFullPath() );
+    msg.Printf( _( "Symbol %s saved to library '%s'." ),
+                UnescapeString( symbol->GetName() ),
+                fn.GetFullPath() );
     SetStatusText( msg );
 
     // See if the user wants it added to a library table (global or project)

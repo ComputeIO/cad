@@ -88,7 +88,7 @@ enum class ALTIUM_SCH_RECORD
     RECORD_46           = 46,
     RECORD_47           = 47,
     RECORD_48           = 48,
-    RECORD_209          = 209,
+    NOTE                = 209,
     RECORD_215          = 215,
     RECORD_216          = 216,
     RECORD_217          = 217,
@@ -236,6 +236,14 @@ enum class ASCH_LABEL_JUSTIFICATION
 };
 
 
+enum class ASCH_TEXT_FRAME_ALIGNMENT
+{
+    LEFT    = 1,
+    CENTER  = 2,
+    RIGHT   = 3
+};
+
+
 struct ASCH_LABEL
 {
     int ownerindex;
@@ -251,6 +259,33 @@ struct ASCH_LABEL
     ASCH_LABEL_JUSTIFICATION justification;
 
     explicit ASCH_LABEL( const std::map<wxString, wxString>& aProperties );
+};
+
+
+struct ASCH_TEXT_FRAME
+{
+    wxPoint location;
+    wxSize  size;
+
+    wxString text;
+
+    int  fontId;
+    bool isWordWrapped;
+    bool border;
+    int  textMargin;
+    int  areaColor;
+
+    ASCH_TEXT_FRAME_ALIGNMENT alignment;
+
+    explicit ASCH_TEXT_FRAME( const std::map<wxString, wxString>& aProperties );
+};
+
+
+struct ASCH_NOTE : ASCH_TEXT_FRAME
+{
+    wxString author;
+
+    explicit ASCH_NOTE( const std::map<wxString, wxString>& aProperties );
 };
 
 
@@ -485,6 +520,7 @@ struct ASCH_PORT
     int ownerpartid;
 
     wxString name;
+    wxString harnessType;
 
     wxPoint location;
     int     width;
@@ -672,6 +708,27 @@ struct ASCH_DESIGNATOR
     wxPoint location;
 
     explicit ASCH_DESIGNATOR( const std::map<wxString, wxString>& aProperties );
+};
+
+
+struct ASCH_IMPLEMENTATION
+{
+    int ownerindex;
+
+    wxString name;
+    wxString type;
+    wxString libname;
+
+    bool isCurrent;
+
+    explicit ASCH_IMPLEMENTATION( const std::map<wxString, wxString>& aProperties );
+};
+
+
+struct ASCH_IMPLEMENTATION_LIST
+{
+    int ownerindex;
+    explicit ASCH_IMPLEMENTATION_LIST( const std::map<wxString, wxString>& aProperties );
 };
 
 

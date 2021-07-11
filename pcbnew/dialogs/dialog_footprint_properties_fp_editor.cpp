@@ -116,8 +116,7 @@ DIALOG_FOOTPRINT_PROPERTIES_FP_EDITOR::DIALOG_FOOTPRINT_PROPERTIES_FP_EDITOR( FO
     m_FootprintNameCtrl->SetValidator( FOOTPRINT_NAME_VALIDATOR() );
 
     // Set font sizes
-    wxFont infoFont = wxSystemSettings::GetFont( wxSYS_DEFAULT_GUI_FONT );
-    infoFont.SetSymbolicSize( wxFONTSIZE_SMALL );
+    wxFont infoFont = KIUI::GetInfoFont();
 #if __WXMAC__
     m_allow90Label->SetFont( infoFont );
     m_allow180Label->SetFont( infoFont );
@@ -610,7 +609,7 @@ bool DIALOG_FOOTPRINT_PROPERTIES_FP_EDITOR::TransferDataFromWindow()
     commit.Modify( m_footprint );
 
     LIB_ID fpID = m_footprint->GetFPID();
-    fpID.SetLibItemName( m_FootprintNameCtrl->GetValue(), false );
+    fpID.SetLibItemName( m_FootprintNameCtrl->GetValue() );
     m_footprint->SetFPID( fpID );
 
     m_footprint->SetDescription( m_DocCtrl->GetValue() );

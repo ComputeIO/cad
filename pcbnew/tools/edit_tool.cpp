@@ -408,6 +408,7 @@ int EDIT_TOOL::DragArcTrack( const TOOL_EVENT& aEvent )
                 retval->SetNet( theArc->GetNet() );
                 retval->SetLayer( theArc->GetLayer() );
                 retval->SetWidth( theArc->GetWidth() );
+                retval->SetLocked( theArc->IsLocked() );
                 retval->SetFlags( IS_NEW );
                 getView()->Add( retval );
             }
@@ -511,6 +512,8 @@ int EDIT_TOOL::DragArcTrack( const TOOL_EVENT& aEvent )
     int cSegTanEndSide = cSegTanEnd.Side( theArc->GetMid() );
     int cSegChordSide = cSegChord.Side( theArc->GetMid() );
 
+    bool hasMouseMoved = false;
+
     // Start the tool loop
     //====================
     while( TOOL_EVENT* evt = Wait() )
@@ -577,7 +580,11 @@ int EDIT_TOOL::DragArcTrack( const TOOL_EVENT& aEvent )
         getView()->Update( theArc );
 
         //Handle events
-        if( evt->IsCancelInteractive() || evt->IsActivate() )
+        if( evt->IsMotion() || evt->IsDrag( BUT_LEFT ) )
+        {
+            hasMouseMoved = true;
+        }
+        else if( evt->IsCancelInteractive() || evt->IsActivate() )
         {
             restore_state = true; // Canceling the tool means that items have to be restored
             break;                // Finish
@@ -587,8 +594,9 @@ int EDIT_TOOL::DragArcTrack( const TOOL_EVENT& aEvent )
             restore_state = true; // Perform undo locally
             break;                // Finish
         }
-        else if( evt->IsMouseUp( BUT_LEFT ) || evt->IsClick( BUT_LEFT )
-                 || evt->IsDblClick( BUT_LEFT ) )
+        else if( hasMouseMoved
+                 && ( evt->IsMouseUp( BUT_LEFT ) || evt->IsClick( BUT_LEFT )
+                      || evt->IsDblClick( BUT_LEFT ) ) )
         {
             break; // Finish
         }
@@ -1179,7 +1187,7 @@ int EDIT_TOOL::FilletTracks( const TOOL_EVENT& aEvent )
                         aCollector.Remove( item );
                 }
             },
-            !m_dragging /* prompt user regarding locked items */ );
+            true /* prompt user regarding locked items */ );
 
     if( selection.Size() < 2 )
     {
@@ -1222,8 +1230,7 @@ int EDIT_TOOL::FilletTracks( const TOOL_EVENT& aEvent )
     {
         PCB_TRACK* track = dyn_cast<PCB_TRACK*>( *it );
 
-        if( !track || track->Type() != PCB_TRACE_T || track->IsLocked()
-                || track->GetLength() == 0 )
+        if( !track || track->Type() != PCB_TRACE_T || track->GetLength() == 0 )
         {
             continue;
         }
@@ -1330,6 +1337,7 @@ int EDIT_TOOL::FilletTracks( const TOOL_EVENT& aEvent )
             tArc->SetLayer( track1->GetLayer() );
             tArc->SetWidth( track1->GetWidth() );
             tArc->SetNet( track1->GetNet() );
+            tArc->SetLocked( track1->IsLocked() );
             m_commit->Add( tArc );
             itemsToAddToSelection.push_back( tArc );
 

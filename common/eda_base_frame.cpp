@@ -35,11 +35,11 @@
 #include <menus_helpers.h>
 #include <panel_hotkeys_editor.h>
 #include <paths.h>
+#include <confirm.h>
 #include <pgm_base.h>
 #include <settings/app_settings.h>
 #include <settings/common_settings.h>
 #include <settings/settings_manager.h>
-#include <pgm_base.h>
 #include <project/project_local_settings.h>
 #include <tool/action_manager.h>
 #include <tool/action_menu.h>
@@ -55,7 +55,6 @@
 #include <wx/app.h>
 #include <wx/config.h>
 #include <wx/display.h>
-#include <wx/msgdlg.h>
 #include <wx/stdpaths.h>
 #include <wx/string.h>
 #include <wx/treebook.h>
@@ -926,12 +925,12 @@ wxString EDA_BASE_FRAME::GetFileFromHistory( int cmdId, const wxString& type,
         wxString fn = aFileHistory->GetHistoryFile( i );
 
         if( wxFileName::FileExists( fn ) )
+        {
             return fn;
+        }
         else
         {
-            wxString msg = wxString::Format( _( "File \"%s\" was not found." ), fn );
-            wxMessageBox( msg );
-
+            DisplayErrorMessage( this, wxString::Format( _( "File '%s' was not found." ), fn ) );
             aFileHistory->RemoveFileFromHistory( i );
         }
     }
@@ -1036,17 +1035,17 @@ bool EDA_BASE_FRAME::IsWritable( const wxFileName& aFileName )
 
     if( fn.IsDir() && !fn.IsDirWritable() )
     {
-        msg.Printf( _( "You do not have write permissions to folder '%s'." ),
+        msg.Printf( _( "Insufficient permissions to folder '%s'." ),
                     fn.GetPath() );
     }
     else if( !fn.FileExists() && !fn.IsDirWritable() )
     {
-        msg.Printf( _( "You do not have write permissions to save file '%s' to folder '%s'." ),
+        msg.Printf( _( "Insufficient permissions to save file '%s'." ),
                     fn.GetFullName(), fn.GetPath() );
     }
     else if( fn.FileExists() && !fn.IsFileWritable() )
     {
-        msg.Printf( _( "You do not have write permissions to save file '%s'." ),
+        msg.Printf( _( "Insufficient permissions to save file '%s'." ),
                     fn.GetFullPath() );
     }
 

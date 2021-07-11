@@ -37,7 +37,7 @@
 #include <lib_id.h>
 #include <thread>
 #include <utility>
-
+#include <kiface_i.h>
 
 FOOTPRINT_INFO* FOOTPRINT_LIST::GetFootprintInfo( const wxString& aLibNickname,
                                                   const wxString& aFootprintName )
@@ -63,7 +63,7 @@ FOOTPRINT_INFO* FOOTPRINT_LIST::GetFootprintInfo( const wxString& aFootprintName
     LIB_ID fpid;
 
     wxCHECK_MSG( fpid.Parse( aFootprintName ) < 0, NULL,
-                 wxString::Format( wxT( "\"%s\" is not a valid LIB_ID." ), aFootprintName ) );
+                 wxString::Format( wxT( "'%s' is not a valid LIB_ID." ), aFootprintName ) );
 
     return GetFootprintInfo( fpid.GetLibNickname(), fpid.GetLibItemName() );
 }
@@ -123,9 +123,13 @@ static FOOTPRINT_LIST* get_instance_from_id( KIWAY& aKiway, int aId )
 
     try
     {
-        KIFACE* kiface = aKiway.KiFACE( KIWAY::FACE_PCB );
+        ptr = Kiface().IfaceOrAddress( aId );
 
-        ptr = kiface->IfaceOrAddress( aId );
+        if( !ptr )
+        {
+            KIFACE* kiface = aKiway.KiFACE( KIWAY::FACE_PCB );
+            ptr = kiface->IfaceOrAddress( aId );
+        }
 
         return static_cast<FOOTPRINT_LIST*>( ptr );
     }

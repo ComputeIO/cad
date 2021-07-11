@@ -77,7 +77,7 @@ DIALOG_SCH_TEXT_PROPERTIES::DIALOG_SCH_TEXT_PROPERTIES( SCH_EDIT_FRAME* aParent,
 
     m_MultiLineText->SetEOLMode( wxSTC_EOL_LF );
 
-    m_scintillaTricks = new SCINTILLA_TRICKS( m_MultiLineText, wxT( "()" ) );
+    m_scintillaTricks = new SCINTILLA_TRICKS( m_MultiLineText, wxT( "()" ), false );
 
     if( m_CurrentText->IsMultilineAllowed() )
     {

@@ -176,10 +176,12 @@ int MEANDER_SHAPE::cornerRadius() const
 int MEANDER_SHAPE::spacing( ) const
 {
     if( !m_dual )
-        return std::max( 2 * m_width, Settings().m_spacing );
+    {
+        return std::max( m_width + m_placer->Clearance(), Settings().m_spacing );
+    }
     else
     {
-        int sp = 2 * ( m_width + std::abs( m_baselineOffset ) );
+        int sp = m_width + m_placer->Clearance() + ( 2 * std::abs( m_baselineOffset ) );
         return std::max( sp, Settings().m_spacing );
     }
 }
@@ -291,7 +293,6 @@ void MEANDER_SHAPE::uShape( int aSides, int aCorner, int aTop )
 SHAPE_LINE_CHAIN MEANDER_SHAPE::genMeanderShape( VECTOR2D aP, VECTOR2D aDir,
         bool aSide, MEANDER_TYPE aType, int aAmpl, int aBaselineOffset )
 {
-    const MEANDER_SETTINGS& st = Settings();
     int cr = cornerRadius();
     int offset = aBaselineOffset;
     int spc = spacing();
@@ -361,7 +362,7 @@ SHAPE_LINE_CHAIN MEANDER_SHAPE::genMeanderShape( VECTOR2D aP, VECTOR2D aDir,
         miter( cr - offset, false );
         uShape( aAmpl - 2 * cr + std::abs( offset ), cr + offset, spc - 2 * cr );
         miter( cr - offset, false );
-        lc.Append( aP + dir_v_b + aDir.Resize( 2 * st.m_spacing ) );
+        lc.Append( aP + dir_v_b + aDir.Resize( 2 * spc ) );
         break;
     }
 

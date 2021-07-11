@@ -130,7 +130,7 @@ bool CVPCB_MAINFRAME::ReadNetListAndFpFiles( const std::string& aNetlist )
                     if( component->GetFPID().IsLegacy() )
                     {
                         // get this first here, it's possibly obsoleted if we get it too soon.
-                        FP_LIB_TABLE*   tbl = Prj().PcbFootprintLibs( Kiway() );
+                        FP_LIB_TABLE*   tbl = Prj().PcbFootprintLibs();
 
                         int guess = guessNickname( tbl, (LIB_ID*) &component->GetFPID() );
 
@@ -141,19 +141,17 @@ bool CVPCB_MAINFRAME::ReadNetListAndFpFiles( const std::string& aNetlist )
                             break;
 
                         case 1:
-                            msg += wxString::Format( _(
-                                    "Component \"%s\" footprint \"%s\" was <b>not found</b> in any library.\n" ),
-                                    component->GetReference(),
-                                    component->GetFPID().GetLibItemName().wx_str()
-                                    );
+                            msg += wxString::Format( _( "Component '%s' footprint '%s' <b>not "
+                                                        "found</b> in any library.\n" ),
+                                                     component->GetReference(),
+                                                     component->GetFPID().GetLibItemName().wx_str() );
                             break;
 
                         case 2:
-                            msg += wxString::Format( _(
-                                    "Component \"%s\" footprint \"%s\" was found in <b>multiple</b> libraries.\n" ),
-                                    component->GetReference(),
-                                    component->GetFPID().GetLibItemName().wx_str()
-                                    );
+                            msg += wxString::Format( _( "Component '%s' footprint '%s' was found "
+                                                        "in <b>multiple</b> libraries.\n" ),
+                                                     component->GetReference(),
+                                                     component->GetFPID().GetLibItemName().wx_str() );
                             break;
                         }
                     }

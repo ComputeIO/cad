@@ -36,6 +36,7 @@
 #include <trigo.h>
 #include <refdes_utils.h>
 #include <wx/log.h>
+#include <kicad_string.h>
 
 /**
  * Convert a wxString to UTF8 and replace any control characters with a ~,
@@ -791,9 +792,9 @@ void SCH_SYMBOL::UpdateFields( const SCH_SHEET_PATH* aPath, bool aUpdateStyle, b
             else if( id == VALUE_FIELD )
             {
                 if( aResetOtherFields )
-                    SetValue( m_lib_id.GetLibItemName() );      // fetch alias-specific value
+                    SetValue( UnescapeString( m_lib_id.GetLibItemName() ) ); // alias-specific value
                 else
-                    SetValue( libField->GetText() );
+                    SetValue( UnescapeString( libField->GetText() ) );
             }
             else if( id == FOOTPRINT_FIELD )
             {
@@ -803,7 +804,7 @@ void SCH_SYMBOL::UpdateFields( const SCH_SHEET_PATH* aPath, bool aUpdateStyle, b
             else if( id == DATASHEET_FIELD )
             {
                 if( aResetOtherFields )
-                    schField->SetText( GetDatasheet() );        // fetch alias-specific value
+                    schField->SetText( GetDatasheet() ); // alias-specific value
                 else if( aUpdateOtherFields )
                     schField->SetText( libField->GetText() );
             }
@@ -933,15 +934,18 @@ bool SCH_SYMBOL::ResolveTextVar( wxString* token, int aDepth ) const
 {
     SCHEMATIC* schematic = Schematic();
 
+    // SCH_SYMOL object has no context outside a schematic.
+    wxCHECK( schematic, false );
+
     for( int i = 0; i < MANDATORY_FIELDS; ++i )
     {
         if( token->IsSameAs( m_fields[ i ].GetCanonicalName().Upper() ) )
         {
-            if( i == REFERENCE_FIELD && schematic )
+            if( i == REFERENCE_FIELD )
                 *token = GetRef( &schematic->CurrentSheet(), true );
-            else if( i == VALUE_FIELD && schematic )
+            else if( i == VALUE_FIELD )
                 *token = GetValue( &schematic->CurrentSheet(), true );
-            else if( i == FOOTPRINT_FIELD && schematic )
+            else if( i == FOOTPRINT_FIELD )
                 *token = GetFootprint( &schematic->CurrentSheet(), true );
             else
                 *token = m_fields[ i ].GetShownText( aDepth + 1 );
@@ -960,14 +964,24 @@ bool SCH_SYMBOL::ResolveTextVar( wxString* token, int aDepth ) const
         }
     }
 
+    for( const TEMPLATE_FIELDNAME& templateFieldname :
+            schematic->Settings().m_TemplateFieldNames.GetTemplateFieldNames() )
+    {
+        if( token->IsSameAs( templateFieldname.m_Name )
+            || token->IsSameAs( templateFieldname.m_Name.Upper() ) )
+        {
+            // If we didn't find it in the fields list then it isn't set on this symbol.
+            // Just return an empty string.
+            *token = wxEmptyString;
+            return true;
+        }
+    }
+
     if( token->IsSameAs( wxT( "FOOTPRINT_LIBRARY" ) ) )
     {
         wxString footprint;
 
-        if( schematic )
-            footprint = GetFootprint( &schematic->CurrentSheet(), true );
-        else
-            footprint = m_fields[ FOOTPRINT_FIELD ].GetShownText();
+        footprint = GetFootprint( &schematic->CurrentSheet(), true );
 
         wxArrayString parts = wxSplit( footprint, ':' );
 
@@ -978,10 +992,7 @@ bool SCH_SYMBOL::ResolveTextVar( wxString* token, int aDepth ) const
     {
         wxString footprint;
 
-        if( schematic )
-            footprint = GetFootprint( &schematic->CurrentSheet(), true );
-        else
-            footprint = m_fields[ FOOTPRINT_FIELD ].GetShownText();
+        footprint = GetFootprint( &schematic->CurrentSheet(), true );
 
         wxArrayString parts = wxSplit( footprint, ':' );
 
@@ -992,10 +1003,7 @@ bool SCH_SYMBOL::ResolveTextVar( wxString* token, int aDepth ) const
     {
         int unit;
 
-        if( schematic )
-            unit = GetUnitSelection( &schematic->CurrentSheet() );
-        else
-            unit = GetUnit();
+        unit = GetUnitSelection( &schematic->CurrentSheet() );
 
         *token = LIB_SYMBOL::SubReference( unit );
         return true;
@@ -1360,12 +1368,13 @@ void SCH_SYMBOL::GetMsgPanelInfo( EDA_DRAW_FRAME* aFrame, MSG_PANEL_ITEMS& aList
             aList.push_back( MSG_PANEL_ITEM( msg, GetValue( currentSheet, true ) ) );
 
 #if 0       // Display symbol flags, for debug only
-            aList.push_back( MSG_PANEL_ITEM( _( "flags" ), wxString::Format( "%X",
-                                                                             GetEditFlags() ) ) );
+            aList.push_back( MSG_PANEL_ITEM( _( "flags" ),
+                                             wxString::Format( "%X", GetEditFlags() ) ) );
 #endif
 
             // Display symbol reference in library and library
-            aList.push_back( MSG_PANEL_ITEM( _( "Name" ), GetLibId().GetLibItemName() ) );
+            aList.push_back( MSG_PANEL_ITEM( _( "Name" ),
+                                             UnescapeString( GetLibId().GetLibItemName() ) ) );
 
             if( !m_part->IsRoot() )
             {
@@ -1376,7 +1385,7 @@ void SCH_SYMBOL::GetMsgPanelInfo( EDA_DRAW_FRAME* aFrame, MSG_PANEL_ITEMS& aList
                 if( parent )
                     msg = parent->GetName();
 
-                aList.push_back( MSG_PANEL_ITEM( _( "Alias of" ), msg ) );
+                aList.push_back( MSG_PANEL_ITEM( _( "Alias of" ), UnescapeString( msg ) ) );
             }
             else if( !m_lib_id.GetLibNickname().empty() )
             {

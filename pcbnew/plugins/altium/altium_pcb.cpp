@@ -860,7 +860,7 @@ void ALTIUM_PCB::ParseClasses6Data( const CFB::CompoundFileReader& aReader,
             {
                 // Name conflict, this is likely a bad board file.
                 // unique_ptr will delete nc on this code path
-                THROW_IO_ERROR( wxString::Format( _( "Duplicated Netclass name \"%s\"" ), elem.name ) );
+                THROW_IO_ERROR( wxString::Format( _( "Duplicate netclass name '%s'." ), elem.name ) );
             }
         }
     }
@@ -1257,9 +1257,7 @@ void ALTIUM_PCB::ParseModelsData( const CFB::CompoundFileReader& aReader,
     ALTIUM_PARSER reader( aReader, aEntry );
 
     if( reader.GetRemainingBytes() == 0 )
-    {
-        return; // fast path: no 3d-models present which need to be imported -> no directory needs to be created
-    }
+        return;
 
     wxString projectPath = wxPathOnly( m_board->GetFileName() );
     // TODO: set KIPRJMOD always after import (not only when loading project)?
@@ -1270,6 +1268,7 @@ void ALTIUM_PCB::ParseModelsData( const CFB::CompoundFileReader& aReader,
 
     wxFileName altiumModelsPath = wxFileName::DirName( projectPath );
     wxString   kicadModelPrefix = "${KIPRJMOD}/" + altiumModelDir + "/";
+
     if( !altiumModelsPath.AppendDir( altiumModelDir ) )
     {
         THROW_IO_ERROR( "Cannot construct directory path for step models" );
@@ -1280,21 +1279,28 @@ void ALTIUM_PCB::ParseModelsData( const CFB::CompoundFileReader& aReader,
     {
         if( !altiumModelsPath.Mkdir() )
         {
-            wxLogError( _( "Cannot create directory '%s'. No 3D-models will be imported." ),
+            wxLogError( _( "Failed to create folder '%s'." ) + wxS( " " )
+                      + _( "No 3D-models will be imported." ),
                         altiumModelsPath.GetFullPath() );
             return;
         }
     }
 
     int idx = 0;
+
     while( reader.GetRemainingBytes() >= 4 /* TODO: use Header section of file */ )
     {
         checkpoint();
         AMODEL elem( reader );
 
-        wxString stepPath = aRootDir + std::to_string( idx++ );
+        wxString   stepPath = wxString::Format( aRootDir + "%d", idx );
+        wxString   storageName = elem.name.IsEmpty() ? wxString::Format( "%d", idx ) : elem.name;
+        wxFileName storagePath( altiumModelsPath.GetPath(), storageName );
+
+        idx++;
 
         const CFB::COMPOUND_FILE_ENTRY* stepEntry = FindStream( aReader, stepPath.c_str() );
+
         if( stepEntry == nullptr )
         {
             wxLogError( _( "File not found: '%s'. 3D-model not imported." ), stepPath );
@@ -1307,10 +1313,9 @@ void ALTIUM_PCB::ParseModelsData( const CFB::CompoundFileReader& aReader,
         // read file into buffer
         aReader.ReadFile( stepEntry, 0, stepContent.get(), stepSize );
 
-        wxFileName storagePath( altiumModelsPath.GetPath(), elem.name );
         if( !storagePath.IsDirWritable() )
         {
-            wxLogError( _( "You do not have write permissions to save file '%s'." ),
+            wxLogError( _( "Insufficient permissions to save file '%s'." ),
                         storagePath.GetFullPath() );
             continue;
         }
@@ -1383,10 +1388,15 @@ void ALTIUM_PCB::ParsePolygons6Data( const CFB::CompoundFileReader& aReader,
 
         if( linechain.PointCount() < 2 )
         {
-            wxLogError( _( "Polygon has only %d point extracted from %ld vertices. At least 2 "
-                           "points are required." ),
-                        linechain.PointCount(),
-                        elem.vertices.size() );
+            // We have found multiple Altium files with polygon records containing nothing but two
+            // coincident vertices.  These polygons do not appear when opening the file in Altium.
+            // https://gitlab.com/kicad/code/kicad/-/issues/8183
+            //
+            // wxLogError( _( "Polygon has only %d point extracted from %ld vertices. At least 2 "
+            //                "points are required." ),
+            //             linechain.PointCount(),
+            //             elem.vertices.size() );
+
             m_polygons.emplace_back( nullptr );
             continue;
         }
@@ -1564,10 +1574,14 @@ void ALTIUM_PCB::ParseShapeBasedRegions6Data( const CFB::CompoundFileReader& aRe
 
             if( linechain.PointCount() < 2 )
             {
-                wxLogError(  _( "ShapeBasedRegion has only %d point extracted from %ld vertices. "
-                                "At least 2 points are required." ),
-                             linechain.PointCount(),
-                             elem.outline.size() );
+                // We have found multiple Altium files with polygon records containing nothing but
+                // two coincident vertices.  These polygons do not appear when opening the file in
+                // Altium.  https://gitlab.com/kicad/code/kicad/-/issues/8183
+                //
+                // wxLogError( _( "ShapeBasedRegion has only %d point extracted from %ld vertices. "
+                //                "At least 2 points are required." ),
+                //              linechain.PointCount(),
+                //              elem.outline.size() );
                 continue;
             }
 
@@ -1626,10 +1640,15 @@ void ALTIUM_PCB::ParseShapeBasedRegions6Data( const CFB::CompoundFileReader& aRe
 
                 if( linechain.PointCount() < 2 )
                 {
-                    wxLogError( _( "Polygon has only %d point extracted from %ld vertices. At "
-                                   "least 2 points are required." ),
-                                linechain.PointCount(),
-                                elem.outline.size() );
+                    // We have found multiple Altium files with polygon records containing nothing
+                    // but two coincident vertices.  These polygons do not appear when opening the
+                    // file in Altium.  https://gitlab.com/kicad/code/kicad/-/issues/8183
+                    //
+                    // wxLogError( _( "Polygon has only %d point extracted from %ld vertices. At "
+                    //                "least 2 points are required." ),
+                    //             linechain.PointCount(),
+                    //             elem.outline.size() );
+
                     continue;
                 }
 

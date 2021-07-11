@@ -411,8 +411,13 @@ void DIALOG_PLOT::OnOutputDirectoryBrowseClicked( wxCommandEvent& event )
 PLOT_FORMAT DIALOG_PLOT::getPlotFormat()
 {
     // plot format id's are ordered like displayed in m_plotFormatOpt
-    static const PLOT_FORMAT plotFmt[] = { PLOT_FORMAT::GERBER, PLOT_FORMAT::POST, PLOT_FORMAT::SVG,
-        PLOT_FORMAT::DXF, PLOT_FORMAT::HPGL, PLOT_FORMAT::PDF };
+    static const PLOT_FORMAT plotFmt[] = {
+            PLOT_FORMAT::GERBER,
+            PLOT_FORMAT::POST,
+            PLOT_FORMAT::SVG,
+            PLOT_FORMAT::DXF,
+            PLOT_FORMAT::HPGL,
+            PLOT_FORMAT::PDF };
 
     return plotFmt[m_plotFormatOpt->GetSelection()];
 }
@@ -904,7 +909,7 @@ void DIALOG_PLOT::Plot( wxCommandEvent& event )
         }
         else
         {
-            msg.Printf( _( "Unable to create file '%s'." ), fn.GetFullPath() );
+            msg.Printf( _( "Failed to create file '%s'." ), fn.GetFullPath() );
             reporter.Report( msg, RPT_SEVERITY_ERROR );
         }
 

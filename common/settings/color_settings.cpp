@@ -133,8 +133,6 @@ COLOR_SETTINGS::COLOR_SETTINGS( wxString aFilename ) :
     CLR( "board.grid",                     LAYER_GRID               );
     CLR( "board.grid_axes",                LAYER_GRID_AXES          );
     CLR( "board.no_connect",               LAYER_NO_CONNECTS        );
-    CLR( "board.pad_back",                 LAYER_PAD_BK             );
-    CLR( "board.pad_front",                LAYER_PAD_FR             );
     CLR( "board.pad_plated_hole",          LAYER_PAD_PLATEDHOLES    );
     CLR( "board.pad_through_hole",         LAYER_PADS_TH            );
     CLR( "board.plated_hole",              LAYER_NON_PLATEDHOLES    );
@@ -298,7 +296,7 @@ bool COLOR_SETTINGS::migrateSchema0to1()
     COLOR_SETTINGS* fpsettings = m_manager->AddNewColorSettings( filename );
 
     // Start out with a clone
-    fpsettings->Set( "", At( "" ) );
+    fpsettings->m_internals->CloneFrom( *m_internals );
 
     // Footprint editor now just looks at the "board" namespace
     fpsettings->Set( "board", fpsettings->At( "fpedit" ) );

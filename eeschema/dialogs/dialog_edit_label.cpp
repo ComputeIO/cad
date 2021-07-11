@@ -55,7 +55,11 @@ DIALOG_LABEL_EDITOR::DIALOG_LABEL_EDITOR( SCH_EDIT_FRAME* aParent, SCH_TEXT* aTe
 
     m_valueMultiLine->SetEOLMode( wxSTC_EOL_LF );
 
-    m_scintillaTricks = new SCINTILLA_TRICKS( m_valueMultiLine, wxT( "{}" ) );
+    m_scintillaTricks = new SCINTILLA_TRICKS( m_valueMultiLine, wxT( "{}" ), false,
+            [this]()
+            {
+                wxPostEvent( this, wxCommandEvent( wxEVT_COMMAND_BUTTON_CLICKED, wxID_OK ) );
+            } );
 
     if( m_CurrentText->IsMultilineAllowed() )
     {
@@ -111,7 +115,7 @@ DIALOG_LABEL_EDITOR::DIALOG_LABEL_EDITOR( SCH_EDIT_FRAME* aParent, SCH_TEXT* aTe
 
     if( m_CurrentText->Type() == SCH_GLOBAL_LABEL_T )
     {
-        wxFont infoFont = wxSystemSettings::GetFont( wxSYS_DEFAULT_GUI_FONT );
+        wxFont infoFont = KIUI::GetInfoFont();
         infoFont.SetSymbolicSize( wxFONTSIZE_X_SMALL );
         m_note1->SetFont( infoFont );
         m_note2->SetFont( infoFont );

@@ -63,6 +63,7 @@
 #include <kiface_i.h>
 #include <default_values.h>
 #include <advanced_config.h>
+#include <kicad_string.h>
 #include "sch_painter.h"
 
 namespace KIGFX
@@ -696,11 +697,7 @@ void SCH_PAINTER::draw( const LIB_FIELD* aField, int aLayer )
         m_gal->SetGlyphSize( VECTOR2D( aField->GetTextSize() ) );
         m_gal->SetFontItalic( aField->IsItalic() );
 
-#ifdef DEBUG
-        std::cerr << "SCH_PAINTER::draw( LIB_FIELD*, " << aLayer << " ) " << std::endl;
-        //m_gal->SetStrokeColor( COLOR4D( 0, 0, 1, .5 ) );
-#endif
-        strokeText( aField, pos );
+        strokeText( UnescapeString( aField->GetText() ), pos, aField->GetTextEdaAngle(), aField->GetFont() );
     }
 
     // Draw the umbilical line

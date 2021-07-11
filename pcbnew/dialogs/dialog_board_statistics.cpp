@@ -87,8 +87,7 @@ DIALOG_BOARD_STATISTICS::DIALOG_BOARD_STATISTICS( PCB_EDIT_FRAME* aParentFrame )
     m_checkBoxSubtractHoles->SetValue( s_savedDialogState.subtractHoles );
 
     // Make labels for grids
-    wxFont headingFont = wxSystemSettings::GetFont( wxSYS_DEFAULT_GUI_FONT );
-    headingFont.SetSymbolicSize( wxFONTSIZE_SMALL );
+    wxFont headingFont = KIUI::GetInfoFont();
     m_gridComponents->SetCellValue( ROW_LABEL, COL_FRONT_SIDE, _( "Front Side" ) );
     m_gridComponents->SetCellFont( ROW_LABEL, COL_FRONT_SIDE, headingFont );
     m_gridComponents->SetCellValue( ROW_LABEL, COL_BOTTOM_SIDE, _( "Back Side" ) );
@@ -324,13 +323,13 @@ void DIALOG_BOARD_STATISTICS::getDataFromPCB()
         for( int i = 0; i < polySet.OutlineCount(); i++ )
         {
             SHAPE_LINE_CHAIN& outline = polySet.Outline( i );
-            m_boardArea += std::fabs( outline.Area() );
+            m_boardArea += outline.Area();
 
             // If checkbox "subtract holes" is checked
             if( m_checkBoxSubtractHoles->GetValue() )
             {
                 for( int j = 0; j < polySet.HoleCount( i ); j++ )
-                    m_boardArea -= std::fabs( polySet.Hole( i, j ).Area() );
+                    m_boardArea -= polySet.Hole( i, j ).Area();
             }
 
             if( boundingBoxCreated )
@@ -642,7 +641,7 @@ void DIALOG_BOARD_STATISTICS::saveReportClicked( wxCommandEvent& aEvent )
 
     if( outFile == NULL )
     {
-        msg.Printf( _( "Unable to create file '%s'." ), saveFileDialog.GetPath() );
+        msg.Printf( _( "Failed to create file '%s'." ), saveFileDialog.GetPath() );
         DisplayErrorMessage( this, msg );
         return;
     }
