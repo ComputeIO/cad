@@ -24,6 +24,7 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
 
+#include <wx/debug.h>
 #include <wx/stc/stc.h>
 
 #include <project/project_file.h>
@@ -116,14 +117,15 @@ wxString SIM_PLOT_FRAME::m_savedWorkbooksPath;
 SIM_PLOT_FRAME::SIM_PLOT_FRAME( KIWAY* aKiway, wxWindow* aParent ) :
         SIM_PLOT_FRAME_BASE( aParent ),
         m_lastSimPlot( nullptr ),
-        m_plotNumber( 0 )
+        m_plotNumber( 0 ),
+        m_simFinished( false )
 {
     SetKiway( this, aKiway );
-    m_signalsIconColorList = NULL;
+    m_signalsIconColorList = nullptr;
 
     m_schematicFrame = (SCH_EDIT_FRAME*) Kiway().Player( FRAME_SCH, false );
 
-    if( m_schematicFrame == NULL )
+    if( m_schematicFrame == nullptr )
         throw std::runtime_error( "There is no schematic window" );
 
     // Give an icon
@@ -164,12 +166,11 @@ SIM_PLOT_FRAME::SIM_PLOT_FRAME( KIWAY* aKiway, wxWindow* aParent ) :
 
     updateNetlistExporter();
 
-    Connect( EVT_SIM_UPDATE, wxCommandEventHandler( SIM_PLOT_FRAME::onSimUpdate ), NULL, this );
-    Connect( EVT_SIM_REPORT, wxCommandEventHandler( SIM_PLOT_FRAME::onSimReport ), NULL, this );
-    Connect( EVT_SIM_STARTED, wxCommandEventHandler( SIM_PLOT_FRAME::onSimStarted ), NULL, this );
-    Connect( EVT_SIM_FINISHED, wxCommandEventHandler( SIM_PLOT_FRAME::onSimFinished ), NULL, this );
-    Connect( EVT_SIM_CURSOR_UPDATE, wxCommandEventHandler( SIM_PLOT_FRAME::onCursorUpdate ),
-             NULL, this );
+    Bind( EVT_SIM_UPDATE, &SIM_PLOT_FRAME::onSimUpdate, this );
+    Bind( EVT_SIM_REPORT, &SIM_PLOT_FRAME::onSimReport, this );
+    Bind( EVT_SIM_STARTED, &SIM_PLOT_FRAME::onSimStarted, this );
+    Bind( EVT_SIM_FINISHED, &SIM_PLOT_FRAME::onSimFinished, this );
+    Bind( EVT_SIM_CURSOR_UPDATE, &SIM_PLOT_FRAME::onCursorUpdate, this );
 
     // Toolbar buttons
     m_toolSimulate = m_toolBar->AddTool( ID_SIM_RUN, _( "Run/Stop Simulation" ),
@@ -183,16 +184,28 @@ SIM_PLOT_FRAME::SIM_PLOT_FRAME( KIWAY* aKiway, wxWindow* aParent ) :
     m_toolSettings = m_toolBar->AddTool( wxID_ANY, _( "Sim Parameters" ),
             KiBitmap( BITMAPS::config ), _( "Simulation parameters and settings" ), wxITEM_NORMAL );
 
-    Connect( m_toolSimulate->GetId(), wxEVT_COMMAND_TOOL_CLICKED,
-             wxCommandEventHandler( SIM_PLOT_FRAME::onSimulate ), NULL, this );
-    Connect( m_toolAddSignals->GetId(), wxEVT_COMMAND_TOOL_CLICKED,
-             wxCommandEventHandler( SIM_PLOT_FRAME::onAddSignal ), NULL, this );
-    Connect( m_toolProbe->GetId(), wxEVT_COMMAND_TOOL_CLICKED,
-             wxCommandEventHandler( SIM_PLOT_FRAME::onProbe ), NULL, this );
-    Connect( m_toolTune->GetId(), wxEVT_COMMAND_TOOL_CLICKED,
-             wxCommandEventHandler( SIM_PLOT_FRAME::onTune ), NULL, this );
-    Connect( m_toolSettings->GetId(), wxEVT_COMMAND_TOOL_CLICKED,
-             wxCommandEventHandler( SIM_PLOT_FRAME::onSettings ), NULL, this );
+    // Start all toolbar buttons except settings as disabled
+    m_toolSimulate->Enable( false );
+    m_toolAddSignals->Enable( false );
+    m_toolProbe->Enable( false );
+    m_toolTune->Enable( false );
+    m_toolSettings->Enable( true );
+
+    Bind( wxEVT_UPDATE_UI, &SIM_PLOT_FRAME::menuSimulateUpdate, this, m_toolSimulate->GetId() );
+    Bind( wxEVT_UPDATE_UI, &SIM_PLOT_FRAME::menuAddSignalsUpdate, this,
+          m_toolAddSignals->GetId() );
+    Bind( wxEVT_UPDATE_UI, &SIM_PLOT_FRAME::menuProbeUpdate, this, m_toolProbe->GetId() );
+    Bind( wxEVT_UPDATE_UI, &SIM_PLOT_FRAME::menuTuneUpdate, this, m_toolTune->GetId() );
+
+    Bind( wxEVT_COMMAND_TOOL_CLICKED, &SIM_PLOT_FRAME::onSimulate, this, m_toolSimulate->GetId() );
+    Bind( wxEVT_COMMAND_TOOL_CLICKED, &SIM_PLOT_FRAME::onAddSignal, this,
+          m_toolAddSignals->GetId() );
+    Bind( wxEVT_COMMAND_TOOL_CLICKED, &SIM_PLOT_FRAME::onProbe, this, m_toolProbe->GetId() );
+    Bind( wxEVT_COMMAND_TOOL_CLICKED, &SIM_PLOT_FRAME::onTune, this, m_toolTune->GetId() );
+    Bind( wxEVT_COMMAND_TOOL_CLICKED, &SIM_PLOT_FRAME::onSettings, this, m_toolSettings->GetId() );
+
+    Bind( EVT_WORKBOOK_MODIFIED, &SIM_PLOT_FRAME::onWorkbookModified, this );
+    Bind( EVT_WORKBOOK_CLR_MODIFIED, &SIM_PLOT_FRAME::onWorkbookClrModified, this );
 
     // Bind toolbar buttons event to existing menu event handlers, so they behave the same
     Bind( wxEVT_COMMAND_MENU_SELECTED, &SIM_PLOT_FRAME::onSimulate, this,
@@ -202,7 +215,8 @@ SIM_PLOT_FRAME::SIM_PLOT_FRAME( KIWAY* aKiway, wxWindow* aParent ) :
     Bind( wxEVT_COMMAND_MENU_SELECTED, &SIM_PLOT_FRAME::onTune, this, m_tuneValue->GetId() );
     Bind( wxEVT_COMMAND_MENU_SELECTED, &SIM_PLOT_FRAME::onShowNetlist, this,
           m_showNetlist->GetId() );
-    Bind( wxEVT_COMMAND_MENU_SELECTED, &SIM_PLOT_FRAME::onSettings, this, m_settings->GetId() );
+    Bind( wxEVT_COMMAND_MENU_SELECTED, &SIM_PLOT_FRAME::onSettings, this,
+          m_boardAdapter->GetId() );
 
     m_toolBar->Realize();
 
@@ -226,6 +240,7 @@ SIM_PLOT_FRAME::SIM_PLOT_FRAME( KIWAY* aKiway, wxWindow* aParent ) :
     Raise();
 
     initWorkbook();
+    updateTitle();
 }
 
 
@@ -354,12 +369,6 @@ void SIM_PLOT_FRAME::updateTitle()
 }
 
 
-void SIM_PLOT_FRAME::updateFrame()
-{
-    updateTitle();
-}
-
-
 // A small helper struct to handle bitmaps initialisation in menus
 struct BM_MENU_INIT_ITEM
 {
@@ -452,6 +461,9 @@ void SIM_PLOT_FRAME::setSubWindowsSashSize()
 
 void SIM_PLOT_FRAME::StartSimulation( const wxString& aSimCommand )
 {
+    wxCHECK_RET( m_exporter->CommandToSimType( getCurrentSimCommand() ) != ST_UNKNOWN,
+            "Unknown simulation type" );
+
     STRING_FORMATTER formatter;
 
     if( !m_settingsDlg )
@@ -461,26 +473,14 @@ void SIM_PLOT_FRAME::StartSimulation( const wxString& aSimCommand )
     updateNetlistExporter();
 
     if( aSimCommand.IsEmpty() )
-    {
-        SIM_PANEL_BASE* plotPanel = currentPlotWindow();
-
-        if( plotPanel && m_workbook->GetPageIndex( plotPanel ) != wxNOT_FOUND )
-            m_exporter->SetSimCommand( m_workbook->GetSimCommand( plotPanel ) );
-    }
+        m_exporter->SetSimCommand( getCurrentSimCommand() );
     else
-    {
         m_exporter->SetSimCommand( aSimCommand );
-    }
+
 
     if( !m_exporter->Format( &formatter, m_settingsDlg->GetNetlistOptions() ) )
     {
         DisplayErrorMessage( this, _( "There were errors during netlist export, aborted." ) );
-        return;
-    }
-
-    if( m_exporter->GetSimType() == ST_UNKNOWN )
-    {
-        DisplayInfoMessage( this, _( "You need to select the simulation settings first." ) );
         return;
     }
 
@@ -494,12 +494,6 @@ void SIM_PLOT_FRAME::StartSimulation( const wxString& aSimCommand )
 void SIM_PLOT_FRAME::StopSimulation()
 {
     m_simulator->Stop();
-}
-
-
-bool SIM_PLOT_FRAME::IsSimulationRunning()
-{
-    return m_simulator ? m_simulator->IsRunning() : false;
 }
 
 
@@ -530,7 +524,6 @@ SIM_PANEL_BASE* SIM_PLOT_FRAME::NewPlotPanel( wxString aSimCommand )
 
     m_workbook->AddPage( dynamic_cast<wxWindow*>( plotPanel ), pageTitle, true );
 
-    updateFrame();
     return plotPanel;
 }
 
@@ -549,7 +542,7 @@ void SIM_PLOT_FRAME::AddCurrentPlot( const wxString& aDeviceName, const wxString
 
 void SIM_PLOT_FRAME::AddTuner( SCH_SYMBOL* aSymbol )
 {
-    SIM_PANEL_BASE* plotPanel = currentPlotWindow();
+    SIM_PANEL_BASE* plotPanel = getCurrentPlotWindow();
 
     if( !plotPanel )
         return;
@@ -598,9 +591,9 @@ void SIM_PLOT_FRAME::RemoveTuner( TUNER_SLIDER* aTuner, bool aErase )
 }
 
 
-SIM_PLOT_PANEL* SIM_PLOT_FRAME::CurrentPlot() const
+SIM_PLOT_PANEL* SIM_PLOT_FRAME::GetCurrentPlot() const
 {
-    SIM_PANEL_BASE* curPage = currentPlotWindow();
+    SIM_PANEL_BASE* curPage = getCurrentPlotWindow();
 
     return ( ( !curPage || curPage->GetType() == ST_UNKNOWN ) ?
                      nullptr :
@@ -640,7 +633,7 @@ void SIM_PLOT_FRAME::addPlot( const wxString& aName, SIM_PLOT_TYPE aType, const 
     }
 
     // Create a new plot if the current one displays a different type
-    SIM_PLOT_PANEL* plotPanel = CurrentPlot();
+    SIM_PLOT_PANEL* plotPanel = GetCurrentPlot();
 
     if( !plotPanel || plotPanel->GetType() != simType )
     {
@@ -654,7 +647,7 @@ void SIM_PLOT_FRAME::addPlot( const wxString& aName, SIM_PLOT_TYPE aType, const 
         return;
 
     bool updated = false;
-    SIM_PLOT_TYPE xAxisType = GetXAxisType( simType );
+    SIM_PLOT_TYPE xAxisType = getXAxisType( simType );
 
     if( xAxisType == SPT_LIN_FREQUENCY || xAxisType == SPT_LOG_FREQUENCY )
     {
@@ -680,7 +673,7 @@ void SIM_PLOT_FRAME::addPlot( const wxString& aName, SIM_PLOT_TYPE aType, const 
 
 void SIM_PLOT_FRAME::removePlot( const wxString& aPlotName )
 {
-    SIM_PLOT_PANEL* plotPanel = CurrentPlot();
+    SIM_PLOT_PANEL* plotPanel = GetCurrentPlot();
 
     if( !plotPanel )
         return;
@@ -692,7 +685,6 @@ void SIM_PLOT_FRAME::removePlot( const wxString& aPlotName )
     updateSignalList();
     wxCommandEvent dummy;
     onCursorUpdate( dummy );
-    updateFrame();
 }
 
 
@@ -798,14 +790,12 @@ bool SIM_PLOT_FRAME::updatePlot( const wxString& aName, SIM_PLOT_TYPE aType, con
                 offset += inner;
             }
 
-            updateFrame();
             return true;
         }
     }
 
     m_workbook->AddTrace( aPlotPanel, aName, size, data_x.data(), data_y.data(), aType, aParam );
 
-    updateFrame();
     return true;
 }
 
@@ -814,7 +804,7 @@ void SIM_PLOT_FRAME::updateSignalList()
 {
     m_signals->ClearAll();
 
-    SIM_PLOT_PANEL* plotPanel = CurrentPlot();
+    SIM_PLOT_PANEL* plotPanel = GetCurrentPlot();
 
     if( !plotPanel )
         return;
@@ -833,7 +823,7 @@ void SIM_PLOT_FRAME::updateSignalList()
     else
         m_signalsIconColorList->RemoveAll();
 
-    for( const auto& trace : CurrentPlot()->GetTraces() )
+    for( const auto& trace : GetCurrentPlot()->GetTraces() )
     {
         wxBitmap bitmap( isize, isize );
         bmDC.SelectObject( bitmap );
@@ -925,10 +915,7 @@ bool SIM_PLOT_FRAME::loadWorkbook( const wxString& aPath )
             file.GetCurrentLine()+1 ) )
 
     if( !file.Open() )
-    {
-        updateFrame();
         return false;
-    }
 
     long plotsCount;
 
@@ -937,7 +924,6 @@ bool SIM_PLOT_FRAME::loadWorkbook( const wxString& aPath )
         DISPLAY_LOAD_ERROR( "Error loading workbook: Line %d is not an integer." );
         file.Close();
 
-        updateFrame();
         return false;
     }
 
@@ -950,7 +936,6 @@ bool SIM_PLOT_FRAME::loadWorkbook( const wxString& aPath )
             DISPLAY_LOAD_ERROR( "Error loading workbook: Line %d is not an integer." );
             file.Close();
 
-            updateFrame();
             return false;
         }
 
@@ -963,14 +948,13 @@ bool SIM_PLOT_FRAME::loadWorkbook( const wxString& aPath )
         {
             wxThread::This()->Sleep( 50 );
         }
-        while( IsSimulationRunning() );
+        while( m_simulator->IsRunning() );
 
         if( !file.GetNextLine().ToLong( &tracesCount ) )
         {
             DISPLAY_LOAD_ERROR( "Error loading workbook: Line %d is not an integer." );
             file.Close();
 
-            updateFrame();
             return false;
         }
 
@@ -985,7 +969,6 @@ bool SIM_PLOT_FRAME::loadWorkbook( const wxString& aPath )
                         );
                 file.Close();
 
-                updateFrame();
                 return false;
             }
 
@@ -996,7 +979,6 @@ bool SIM_PLOT_FRAME::loadWorkbook( const wxString& aPath )
                 DISPLAY_LOAD_ERROR( "Error loading workbook: Line %d is empty." );
                 file.Close();
 
-                updateFrame();
                 return false;
             }
 
@@ -1007,7 +989,6 @@ bool SIM_PLOT_FRAME::loadWorkbook( const wxString& aPath )
                 DISPLAY_LOAD_ERROR( "Error loading workbook: Line %d is empty." );
                 file.Close();
 
-                updateFrame();
                 return false;
             }
 
@@ -1019,8 +1000,6 @@ bool SIM_PLOT_FRAME::loadWorkbook( const wxString& aPath )
 
     // Successfully loading a workbook does not count as modyfying it.
     m_workbook->ClrModified();
-
-    updateFrame();
     return true;
 }
 
@@ -1086,13 +1065,10 @@ bool SIM_PLOT_FRAME::saveWorkbook( const wxString& aPath )
         m_simulator->Settings()->SetWorkbookFilename( filename.GetFullName() );
 
     m_workbook->ClrModified();
-    updateFrame();
-
     return res;
 }
 
-
-SIM_PLOT_TYPE SIM_PLOT_FRAME::GetXAxisType( SIM_TYPE aType ) const
+SIM_PLOT_TYPE SIM_PLOT_FRAME::getXAxisType( SIM_TYPE aType ) const
 {
     switch( aType )
     {
@@ -1112,10 +1088,7 @@ void SIM_PLOT_FRAME::menuNewPlot( wxCommandEvent& aEvent )
     SIM_TYPE type = m_exporter->GetSimType();
 
     if( SIM_PANEL_BASE::IsPlottable( type ) )
-    {
         NewPlotPanel( m_exporter->GetUsedSimCommand() );
-        updateFrame();
-    }
 }
 
 
@@ -1182,7 +1155,7 @@ void SIM_PLOT_FRAME::menuSaveWorkbookAs( wxCommandEvent& event )
 
 void SIM_PLOT_FRAME::menuSaveImage( wxCommandEvent& event )
 {
-    if( !CurrentPlot() )
+    if( !GetCurrentPlot() )
         return;
 
     wxFileDialog saveDlg( this, _( "Save Plot as Image" ), "", "", PngFileWildcard(),
@@ -1191,13 +1164,13 @@ void SIM_PLOT_FRAME::menuSaveImage( wxCommandEvent& event )
     if( saveDlg.ShowModal() == wxID_CANCEL )
         return;
 
-    CurrentPlot()->GetPlotWin()->SaveScreenshot( saveDlg.GetPath(), wxBITMAP_TYPE_PNG );
+    GetCurrentPlot()->GetPlotWin()->SaveScreenshot( saveDlg.GetPath(), wxBITMAP_TYPE_PNG );
 }
 
 
 void SIM_PLOT_FRAME::menuSaveCsv( wxCommandEvent& event )
 {
-    if( !CurrentPlot() )
+    if( !GetCurrentPlot() )
         return;
 
     const wxChar SEPARATOR = ';';
@@ -1211,7 +1184,7 @@ void SIM_PLOT_FRAME::menuSaveCsv( wxCommandEvent& event )
     wxFFile out( saveDlg.GetPath(), "wb" );
     bool timeWritten = false;
 
-    for( const auto& t : CurrentPlot()->GetTraces() )
+    for( const auto& t : GetCurrentPlot()->GetTraces() )
     {
         const TRACE* trace = t.second;
 
@@ -1240,28 +1213,28 @@ void SIM_PLOT_FRAME::menuSaveCsv( wxCommandEvent& event )
 
 void SIM_PLOT_FRAME::menuZoomIn( wxCommandEvent& event )
 {
-    if( CurrentPlot() )
-        CurrentPlot()->GetPlotWin()->ZoomIn();
+    if( GetCurrentPlot() )
+        GetCurrentPlot()->GetPlotWin()->ZoomIn();
 }
 
 
 void SIM_PLOT_FRAME::menuZoomOut( wxCommandEvent& event )
 {
-    if( CurrentPlot() )
-        CurrentPlot()->GetPlotWin()->ZoomOut();
+    if( GetCurrentPlot() )
+        GetCurrentPlot()->GetPlotWin()->ZoomOut();
 }
 
 
 void SIM_PLOT_FRAME::menuZoomFit( wxCommandEvent& event )
 {
-    if( CurrentPlot() )
-        CurrentPlot()->GetPlotWin()->Fit();
+    if( GetCurrentPlot() )
+        GetCurrentPlot()->GetPlotWin()->Fit();
 }
 
 
 void SIM_PLOT_FRAME::menuShowGrid( wxCommandEvent& event )
 {
-    SIM_PLOT_PANEL* plot = CurrentPlot();
+    SIM_PLOT_PANEL* plot = GetCurrentPlot();
 
     if( plot )
         plot->ShowGrid( !plot->IsGridShown() );
@@ -1270,7 +1243,7 @@ void SIM_PLOT_FRAME::menuShowGrid( wxCommandEvent& event )
 
 void SIM_PLOT_FRAME::menuShowGridUpdate( wxUpdateUIEvent& event )
 {
-    SIM_PLOT_PANEL* plot = CurrentPlot();
+    SIM_PLOT_PANEL* plot = GetCurrentPlot();
 
     event.Check( plot ? plot->IsGridShown() : false );
 }
@@ -1278,7 +1251,7 @@ void SIM_PLOT_FRAME::menuShowGridUpdate( wxUpdateUIEvent& event )
 
 void SIM_PLOT_FRAME::menuShowLegend( wxCommandEvent& event )
 {
-    SIM_PLOT_PANEL* plot = CurrentPlot();
+    SIM_PLOT_PANEL* plot = GetCurrentPlot();
 
     if( plot )
         plot->ShowLegend( !plot->IsLegendShown() );
@@ -1287,14 +1260,14 @@ void SIM_PLOT_FRAME::menuShowLegend( wxCommandEvent& event )
 
 void SIM_PLOT_FRAME::menuShowLegendUpdate( wxUpdateUIEvent& event )
 {
-    SIM_PLOT_PANEL* plot = CurrentPlot();
+    SIM_PLOT_PANEL* plot = GetCurrentPlot();
     event.Check( plot ? plot->IsLegendShown() : false );
 }
 
 
 void SIM_PLOT_FRAME::menuShowDotted( wxCommandEvent& event )
 {
-    SIM_PLOT_PANEL* plot = CurrentPlot();
+    SIM_PLOT_PANEL* plot = GetCurrentPlot();
 
     if( plot )
         plot->SetDottedCurrentPhase( !plot->GetDottedCurrentPhase() );
@@ -1303,7 +1276,7 @@ void SIM_PLOT_FRAME::menuShowDotted( wxCommandEvent& event )
 
 void SIM_PLOT_FRAME::menuShowDottedUpdate( wxUpdateUIEvent& event )
 {
-    SIM_PLOT_PANEL* plot = CurrentPlot();
+    SIM_PLOT_PANEL* plot = GetCurrentPlot();
 
     event.Check( plot ? plot->GetDottedCurrentPhase() : false );
 }
@@ -1331,6 +1304,30 @@ void SIM_PLOT_FRAME::menuWhiteBackground( wxCommandEvent& event )
 }
 
 
+void SIM_PLOT_FRAME::menuSimulateUpdate( wxUpdateUIEvent& event )
+{
+    event.Enable( m_exporter->CommandToSimType( getCurrentSimCommand() ) != ST_UNKNOWN );
+}
+
+
+void SIM_PLOT_FRAME::menuAddSignalsUpdate( wxUpdateUIEvent& event )
+{
+    event.Enable( m_simFinished );
+}
+
+
+void SIM_PLOT_FRAME::menuProbeUpdate( wxUpdateUIEvent& event )
+{
+    event.Enable( m_simFinished );
+}
+
+
+void SIM_PLOT_FRAME::menuTuneUpdate( wxUpdateUIEvent& event )
+{
+    event.Enable( m_simFinished );
+}
+
+
 void SIM_PLOT_FRAME::onPlotClose( wxAuiNotebookEvent& event )
 {
     int idx = event.GetSelection();
@@ -1345,7 +1342,6 @@ void SIM_PLOT_FRAME::onPlotClose( wxAuiNotebookEvent& event )
 
 void SIM_PLOT_FRAME::onPlotClosed( wxAuiNotebookEvent& event )
 {
-    updateFrame();
 }
 
 
@@ -1354,14 +1350,11 @@ void SIM_PLOT_FRAME::onPlotChanged( wxAuiNotebookEvent& event )
     updateSignalList();
     wxCommandEvent dummy;
     onCursorUpdate( dummy );
-
-    updateFrame();
 }
 
 
 void SIM_PLOT_FRAME::onPlotDragged( wxAuiNotebookEvent& event )
 {
-    updateFrame();
 }
 
 
@@ -1393,9 +1386,21 @@ void SIM_PLOT_FRAME::onSignalRClick( wxListEvent& event )
 }
 
 
+void SIM_PLOT_FRAME::onWorkbookModified( wxCommandEvent& event )
+{
+    updateTitle();
+}
+
+
+void SIM_PLOT_FRAME::onWorkbookClrModified( wxCommandEvent& event )
+{
+    updateTitle();
+}
+
+
 void SIM_PLOT_FRAME::onSimulate( wxCommandEvent& event )
 {
-    if( IsSimulationRunning() )
+    if( m_simulator->IsRunning() )
         StopSimulation();
     else
         StartSimulation();
@@ -1404,7 +1409,7 @@ void SIM_PLOT_FRAME::onSimulate( wxCommandEvent& event )
 
 void SIM_PLOT_FRAME::onSettings( wxCommandEvent& event )
 {
-    SIM_PANEL_BASE* plotPanelWindow = currentPlotWindow();
+    SIM_PANEL_BASE* plotPanelWindow = getCurrentPlotWindow();
 
     if( !m_settingsDlg )
         m_settingsDlg = new DIALOG_SIM_SETTINGS( this, m_simulator->Settings() );
@@ -1450,20 +1455,15 @@ void SIM_PLOT_FRAME::onSettings( wxCommandEvent& event )
         }
 
         m_simulator->Init();
-        updateFrame();
     }
 }
 
 
 void SIM_PLOT_FRAME::onAddSignal( wxCommandEvent& event )
 {
-    if( IsSimulationRunning() )
-    {
-        DisplayInfoMessage( this, _( "Simulator is running. Try later" ) );
-        return;
-    }
+    wxCHECK_RET( m_simFinished, "No simulation results available" );
 
-    SIM_PLOT_PANEL* plotPanel = CurrentPlot();
+    SIM_PLOT_PANEL* plotPanel = GetCurrentPlot();
 
     if( !plotPanel || !m_exporter || plotPanel->GetType() != m_exporter->GetSimType() )
     {
@@ -1478,14 +1478,10 @@ void SIM_PLOT_FRAME::onAddSignal( wxCommandEvent& event )
 
 void SIM_PLOT_FRAME::onProbe( wxCommandEvent& event )
 {
-    if( m_schematicFrame == NULL )
-        return;
+    wxCHECK_RET( m_simFinished, "No simulation results available" );
 
-    if( IsSimulationRunning() )
-    {
-        DisplayInfoMessage( this, _( "Simulator is running. Try later" ) );
+    if( m_schematicFrame == nullptr )
         return;
-    }
 
     m_schematicFrame->GetToolManager()->RunAction( EE_ACTIONS::simProbe );
     m_schematicFrame->Raise();
@@ -1494,7 +1490,9 @@ void SIM_PLOT_FRAME::onProbe( wxCommandEvent& event )
 
 void SIM_PLOT_FRAME::onTune( wxCommandEvent& event )
 {
-    if( m_schematicFrame == NULL )
+    wxCHECK_RET( m_simFinished, "No simulation results available" );
+
+    if( m_schematicFrame == nullptr )
         return;
 
     m_schematicFrame->GetToolManager()->RunAction( EE_ACTIONS::simTune );
@@ -1591,7 +1589,7 @@ bool SIM_PLOT_FRAME::canCloseWindow( wxCloseEvent& aEvent )
 
 void SIM_PLOT_FRAME::doCloseWindow()
 {
-    if( IsSimulationRunning() )
+    if( m_simulator->IsRunning() )
         m_simulator->Stop();
 
     // Cancel a running simProbe or simTune tool
@@ -1605,7 +1603,7 @@ void SIM_PLOT_FRAME::doCloseWindow()
 void SIM_PLOT_FRAME::onCursorUpdate( wxCommandEvent& event )
 {
     wxSize size = m_cursors->GetClientSize();
-    SIM_PLOT_PANEL* plotPanel = CurrentPlot();
+    SIM_PLOT_PANEL* plotPanel = GetCurrentPlot();
     m_cursors->ClearAll();
 
     if( !plotPanel )
@@ -1667,12 +1665,12 @@ void SIM_PLOT_FRAME::onSimFinished( wxCommandEvent& aEvent )
     if( simType == ST_UNKNOWN )
         return;
 
-    SIM_PANEL_BASE* plotPanelWindow = currentPlotWindow();
+    SIM_PANEL_BASE* plotPanelWindow = getCurrentPlotWindow();
 
     if( !plotPanelWindow || plotPanelWindow->GetType() != simType )
         plotPanelWindow = NewPlotPanel( m_exporter->GetUsedSimCommand() );
 
-    if( IsSimulationRunning() )
+    if( m_simulator->IsRunning() )
         return;
 
     // If there are any signals plotted, update them
@@ -1710,7 +1708,6 @@ void SIM_PLOT_FRAME::onSimFinished( wxCommandEvent& aEvent )
         updateSignalList();
         plotPanel->GetPlotWin()->UpdateAll();
         plotPanel->ResetScales();
-        updateFrame();
     }
     else if( simType == ST_OP )
     {
@@ -1743,15 +1740,17 @@ void SIM_PLOT_FRAME::onSimFinished( wxCommandEvent& aEvent )
             // @todo display calculated values on the schematic
         }
     }
+
+    m_simFinished = true;
 }
 
 
 void SIM_PLOT_FRAME::onSimUpdate( wxCommandEvent& aEvent )
 {
-    if( IsSimulationRunning() )
+    if( m_simulator->IsRunning() )
         StopSimulation();
 
-    if( CurrentPlot() != m_lastSimPlot )
+    if( GetCurrentPlot() != m_lastSimPlot )
     {
         // We need to rerun simulation, as the simulator currently stores
         // results for another plot
@@ -1781,7 +1780,7 @@ SIM_PLOT_FRAME::SIGNAL_CONTEXT_MENU::SIGNAL_CONTEXT_MENU( const wxString& aSigna
         m_signal( aSignal ),
         m_plotFrame( aPlotFrame )
 {
-    SIM_PLOT_PANEL* plot = m_plotFrame->CurrentPlot();
+    SIM_PLOT_PANEL* plot = m_plotFrame->GetCurrentPlot();
 
     AddMenuItem( this, HIDE_SIGNAL, _( "Hide Signal" ), _( "Erase the signal from plot screen" ),
                  KiBitmap( BITMAPS::trash ) );
@@ -1800,7 +1799,7 @@ SIM_PLOT_FRAME::SIGNAL_CONTEXT_MENU::SIGNAL_CONTEXT_MENU( const wxString& aSigna
 
 void SIM_PLOT_FRAME::SIGNAL_CONTEXT_MENU::onMenuEvent( wxMenuEvent& aEvent )
 {
-    SIM_PLOT_PANEL* plot = m_plotFrame->CurrentPlot();
+    SIM_PLOT_PANEL* plot = m_plotFrame->GetCurrentPlot();
 
     switch( aEvent.GetId() )
     {

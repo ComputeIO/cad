@@ -71,7 +71,6 @@ public:
 
     void StartSimulation( const wxString& aSimCommand = wxEmptyString );
     void StopSimulation();
-    bool IsSimulationRunning();
 
     /**
      * Create a new plot panel for a given simulation type and adds it to the main notebook.
@@ -113,7 +112,7 @@ public:
     /**
      * Return the currently opened plot panel (or NULL if there is none).
      */
-    SIM_PLOT_PANEL* CurrentPlot() const;
+    SIM_PLOT_PANEL* GetCurrentPlot() const;
 
     /**
      * Return the netlist exporter object used for simulations.
@@ -150,23 +149,9 @@ private:
     void updateTitle();
 
     /**
-     * Update the frame to match the changes to the workbook. Should be always called after the
-     * workbook was modified.
-     */
-    void updateFrame();
-
-    /**
      * Give icons to menuitems of the main menubar.
      */
     void setIconsForMenuItems();
-
-    /**
-     * Return the currently opened plot panel (or NULL if there is none).
-     */
-    SIM_PANEL_BASE* currentPlotWindow() const
-    {
-        return dynamic_cast<SIM_PANEL_BASE*>( m_workbook->GetCurrentPage() );
-    }
 
     /**
      * Add a new plot to the current panel.
@@ -234,9 +219,28 @@ private:
     bool saveWorkbook( const wxString& aPath );
 
     /**
+     * Return the currently opened plot panel (or NULL if there is none).
+     */
+    SIM_PANEL_BASE* getCurrentPlotWindow() const
+    {
+        return dynamic_cast<SIM_PANEL_BASE*>( m_workbook->GetCurrentPage() );
+    }
+
+    /**
+     *
+     */
+    wxString getCurrentSimCommand() const
+    {
+        if( getCurrentPlotWindow() == nullptr )
+            return m_exporter->GetSheetSimCommand();
+        else
+            return m_workbook->GetSimCommand( getCurrentPlotWindow() );
+    }
+
+    /**
      * Return X axis for a given simulation type.
      */
-    SIM_PLOT_TYPE GetXAxisType( SIM_TYPE aType ) const;
+    SIM_PLOT_TYPE getXAxisType( SIM_TYPE aType ) const;
 
     // Menu handlers
     void menuNewPlot( wxCommandEvent& aEvent ) override;
@@ -260,11 +264,16 @@ private:
     void menuShowLegendUpdate( wxUpdateUIEvent& event ) override;
     void menuShowDotted( wxCommandEvent& event ) override;
     void menuShowDottedUpdate( wxUpdateUIEvent& event ) override;
-	void menuWhiteBackground( wxCommandEvent& event ) override;
-	void menuShowWhiteBackgroundUpdate( wxUpdateUIEvent& event ) override
+    void menuWhiteBackground( wxCommandEvent& event ) override;
+    void menuShowWhiteBackgroundUpdate( wxUpdateUIEvent& event ) override
     {
         event.Check( m_plotUseWhiteBg );
     }
+
+    void menuSimulateUpdate( wxUpdateUIEvent& event ) override;
+    void menuAddSignalsUpdate( wxUpdateUIEvent& event ) override;
+    void menuProbeUpdate( wxUpdateUIEvent& event ) override;
+    void menuTuneUpdate( wxUpdateUIEvent& event ) override;
 
     // Event handlers
     void onPlotClose( wxAuiNotebookEvent& event ) override;
@@ -274,6 +283,9 @@ private:
 
     void onSignalDblClick( wxMouseEvent& event ) override;
     void onSignalRClick( wxListEvent& event ) override;
+
+    void onWorkbookModified( wxCommandEvent& event );
+    void onWorkbookClrModified( wxCommandEvent& event );
 
     void onSimulate( wxCommandEvent& event );
     void onSettings( wxCommandEvent& event );
@@ -355,6 +367,7 @@ private:
     int m_splitterTuneValuesSashPosition;
     bool m_plotUseWhiteBg;
     unsigned int m_plotNumber;
+    bool m_simFinished;
 };
 
 // Commands
