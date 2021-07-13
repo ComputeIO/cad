@@ -293,11 +293,11 @@ void GAL::StrokeText( const wxString& aText, const VECTOR2D& aPosition, double a
 }
 
 
-void GAL::DrawGlyphs( const std::vector<SHAPE_POLY_SET> aGlyphs )
+void GAL::DrawGlyphs( const KIFONT::GLYPH_LIST& aGlyphs )
 {
     int nth = 0;
     int total = aGlyphs.size();
-    for( const SHAPE_POLY_SET& glyph : aGlyphs )
+    for( auto glyph : aGlyphs )
     {
         DrawGlyph( glyph, nth, total );
         nth++;

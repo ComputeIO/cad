@@ -1684,7 +1684,7 @@ void CAIRO_GAL_BASE::DrawGrid()
 }
 
 
-void CAIRO_GAL_BASE::DrawGlyph( const SHAPE_POLY_SET& aPolySet, int aNth, int aTotal )
+void CAIRO_GAL_BASE::DrawGlyph( const KIFONT::GLYPH& aGlyph, int aNth, int aTotal )
 {
     if( aNth == 0 )
     {
@@ -1738,7 +1738,7 @@ void CAIRO_GAL_BASE::DrawGlyph( const SHAPE_POLY_SET& aPolySet, int aNth, int aT
 #endif
     };
 
-    Triangulate( aPolySet, triangleCallback );
+    Triangulate( aGlyph, triangleCallback );
 
     if( aNth == aTotal - 1 )
     {

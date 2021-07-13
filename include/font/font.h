@@ -33,7 +33,9 @@
 #include <wx/string.h>
 
 #include <utf8.h>
+#include <font/glyph.h>
 #include <font/text_attributes.h>
+#include <parser/markup_parser.h>
 
 namespace KIGFX
 {
@@ -247,6 +249,10 @@ public:
 
     VECTOR2D BoundingBox( const EDA_TEXT& aText );
 
+    virtual VECTOR2I GetTextAsPolygon( GLYPH_LIST& aGlyphs, const UTF8& aText,
+                                       const VECTOR2D& aGlyphSize, const wxPoint& aPosition,
+                                       const EDA_ANGLE& aAngle, bool aIsMirrored,
+                                       TEXT_STYLE_FLAGS aTextStyle = 0 ) const = 0;
 protected:
     wxString m_fontName;     ///< Font name
     wxString m_fontFileName; ///< Font file name
@@ -277,7 +283,7 @@ protected:
      */
     virtual VECTOR2D drawSingleLineText( KIGFX::GAL* aGal, const UTF8& aText,
                                          const VECTOR2D&  aPosition,
-                                         const EDA_ANGLE& aAngle = EDA_ANGLE() ) const = 0;
+                                         const EDA_ANGLE& aAngle = EDA_ANGLE() ) const;
 
     void getLinePositions( const UTF8& aText, const VECTOR2D& aPosition, wxArrayString& aStringList,
                            std::vector<wxPoint>& aPositions, int& aLineCount,
@@ -287,9 +293,16 @@ protected:
     virtual VECTOR2D getBoundingBox( const UTF8& aString, const VECTOR2D& aGlyphSize,
                                      TEXT_STYLE_FLAGS aTextStyle = 0 ) const = 0;
 
-protected:
+    VECTOR2D drawMarkup( GLYPH_LIST& aGlyphs, const MARKUP::MARKUP_NODE& aNode,
+                         const VECTOR2D& aPosition, const VECTOR2D& aGlyphSize, bool aIsMirrored,
+                         const EDA_ANGLE& aAngle, TEXT_STYLE_FLAGS aTextStyle = 0,
+                         int aLevel = 0 ) const;
+
     static wxString getFontNameForFontconfig( const wxString& aFontName, bool aBold, bool aItalic );
 
+    VECTOR2D drawMarkup( KIGFX::GAL* aGal, const MARKUP::MARKUP_NODE& aNode,
+                         const VECTOR2D& aPosition, const EDA_ANGLE& aAngle,
+                         TEXT_STYLE_FLAGS aTextStyle = 0, int aLevel = 0 ) const;
 private:
     static FONT*                     s_defaultFont;
     static std::map<wxString, FONT*> s_fontMap;

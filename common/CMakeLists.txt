@@ -300,6 +300,7 @@ set( PLUGINS_EAGLE_SRCS
 set( FONT_SRCS
     parser/markup_parser.cpp
     font/font.cpp
+    font/glyph.cpp
     font/stroke_font.cpp
 	font/outline_font.cpp
 	font/outline_decomposer.cpp

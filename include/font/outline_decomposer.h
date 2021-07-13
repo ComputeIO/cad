@@ -33,15 +33,13 @@
 #include FT_OUTLINE_H
 #include <math/box2.h>
 #include <math/vector2d.h>
+#include <font/glyph.h>
 
 namespace KIFONT
 {
 typedef std::vector<VECTOR2D>     GLYPH_POINTS;
 typedef std::vector<GLYPH_POINTS> GLYPH_POINTS_LIST;
-
-typedef std::vector<std::vector<VECTOR2D>*> GLYPH;
-typedef std::vector<GLYPH*>                 GLYPH_LIST;
-typedef std::vector<BOX2D>                  GLYPH_BOUNDING_BOX_LIST;
+typedef std::vector<BOX2D>        GLYPH_BOUNDING_BOX_LIST;
 
 typedef struct
 {

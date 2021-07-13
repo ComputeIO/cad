@@ -119,11 +119,11 @@ public:
     virtual void DrawPolyline( const SHAPE_LINE_CHAIN& aLineChain ) override;
 
     /**
-     * Draw a polygon representing an outline font glyph.
+     * Draw a polygon representing a font glyph.
      *
-     * @param aPointList is the list of the polygon points.
+     * @param aGlyph is the glyph to be drawn.
      */
-    virtual void DrawGlyph( const SHAPE_POLY_SET& aPolySet, int aNth, int aTotal ) override;
+    virtual void DrawGlyph( const KIFONT::GLYPH& aGlyph, int aNth, int aTotal ) override;
 
     /**
      * Start and end points are defined as 2D-Vectors.

@@ -1000,6 +1000,17 @@ void OPENGL_GAL::DrawPolyline( const std::deque<VECTOR2D>& aPointList )
 }
 
 
+void OPENGL_GAL::DrawPolyline( const std::vector<VECTOR2D>& aPointList )
+{
+    drawPolyline(
+            [&]( int idx )
+            {
+                return aPointList[idx];
+            },
+            aPointList.size() );
+}
+
+
 void OPENGL_GAL::DrawPolyline( const VECTOR2D aPointList[], int aListSize )
 {
     drawPolyline(
@@ -2340,9 +2351,22 @@ void OPENGL_GAL::ComputeWorldScreenMatrix()
 }
 
 
-void OPENGL_GAL::DrawGlyph( const SHAPE_POLY_SET& aPolySet, int aNth, int aTotal )
+void OPENGL_GAL::DrawGlyph( const KIFONT::GLYPH& aGlyph, int aNth, int aTotal )
 {
-    fillPolygonAsTriangles( aPolySet );
+#ifdef DEBUG
+    std::cerr << "OPENGL_GAL::DrawGlyph( [aGlyph], " << aNth << ", " <<  aTotal << " )" << std::endl;
+#endif
+    if( aGlyph.IsStroke() )
+    {
+        for( auto pointList : aGlyph.GetPoints() )
+        {
+            DrawPolyline( pointList );
+        }
+    }
+    else if( aGlyph.IsOutline() )
+    {
+        fillPolygonAsTriangles( aGlyph.GetPolylist() );
+    }
 }
 
 

@@ -105,7 +105,7 @@ void BOARD_ADAPTER::addShapeWithClearance( const PCB_TEXT* aText, CONTAINER_2D_B
     if( font->IsOutline() )
     {
         const KIFONT::OUTLINE_FONT* outlineFont = dynamic_cast<const KIFONT::OUTLINE_FONT*>( font );
-        std::vector<SHAPE_POLY_SET> glyphs;
+        KIFONT::GLYPH_LIST          glyphs;
         VECTOR2I                    textSize = outlineFont->GetLinesAsPolygon( glyphs, aText );
         int                         textHeight = 0;
         double                      textWidth = 0;
@@ -161,7 +161,7 @@ void BOARD_ADAPTER::addShapeWithClearance( const PCB_TEXT* aText, CONTAINER_2D_B
             aDstContainer->Add( new TRIANGLE_2D( v1, v2, v3, *aText ) );
         };
 
-        for( SHAPE_POLY_SET& glyph : glyphs )
+        for( auto glyph : glyphs )
         {
             // TODO: triangulate all glyphs in one go - needed for adding a label background rect
             bool callbackFlag = true;
@@ -171,7 +171,7 @@ void BOARD_ADAPTER::addShapeWithClearance( const PCB_TEXT* aText, CONTAINER_2D_B
                maxX = std::numeric_limits<double>::lowest();
                 maxY = std::numeric_limits<double>::lowest();
 #endif
-            Triangulate( glyph, triangleCallback, &callbackFlag );
+                Triangulate( glyph, triangleCallback, &callbackFlag );
         }
 #ifdef DEBUG
         std::cerr << "[" << minX << "," << minY << "]->"

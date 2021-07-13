@@ -286,13 +286,12 @@ void FONT::getLinePositions( const UTF8& aText, const VECTOR2D& aPosition,
               << " -> interline " << interline << std::endl;
 #endif
 
-    wxPoint offset( 0, 0 );
-    TEXT_ATTRIBUTES::VERTICAL_ALIGNMENT vAlignment = aAttributes.GetVerticalAlignment();
+    wxPoint                               offset( 0, 0 );
+    TEXT_ATTRIBUTES::VERTICAL_ALIGNMENT   vAlignment = aAttributes.GetVerticalAlignment();
     TEXT_ATTRIBUTES::HORIZONTAL_ALIGNMENT hAlignment = aAttributes.GetHorizontalAlignment();
-    EDA_ANGLE angle = aAttributes.GetAngle();
+    EDA_ANGLE                             angle = aAttributes.GetAngle();
 
-    if( aAttributes.IsKeepUpright()
-        && aAttributes.GetAngle() > EDA_ANGLE::ANGLE_90 )
+    if( aAttributes.IsKeepUpright() && aAttributes.GetAngle() > EDA_ANGLE::ANGLE_90 )
     {
         angle = angle.RotateCW().RotateCW();
         hAlignment = TEXT_ATTRIBUTES::OppositeAlignment( hAlignment );
@@ -465,8 +464,8 @@ VECTOR2D FONT::Draw( KIGFX::GAL* aGal, const UTF8& aText, const VECTOR2D& aPosit
     std::vector<VECTOR2D> boundingBoxes;
     int                   n;
 
-    getLinePositions( aText, position, strings_list, positions, n, boundingBoxes,
-                      glyphSize, aAttributes );
+    getLinePositions( aText, position, strings_list, positions, n, boundingBoxes, glyphSize,
+                      aAttributes );
 
     VECTOR2D boundingBox( 0, 0 );
     for( int i = 0; i < n; i++ )
@@ -535,4 +534,138 @@ VECTOR2D FONT::BoundingBox( const EDA_TEXT& aText )
 {
     // TODO: text style flags unconditionally set to 0 - are they even used?
     return getBoundingBox( aText.GetShownText(), aText.GetTextSize(), 0, aText.GetAttributes() );
+}
+
+
+/**
+   @return position of cursor for drawing next substring
+ */
+VECTOR2D FONT::drawMarkup( GLYPH_LIST& aGlyphs, const MARKUP::MARKUP_NODE& aNode,
+                           const VECTOR2D& aPosition, const VECTOR2D& aGlyphSize, bool aIsMirrored,
+                           const EDA_ANGLE& aAngle, TEXT_STYLE_FLAGS aTextStyle, int aLevel ) const
+{
+    VECTOR2D nextPosition = aPosition;
+
+    TEXT_STYLE_FLAGS textStyle = aTextStyle;
+
+    if( !aNode->is_root() )
+    {
+        if( aNode->isSubscript() )
+        {
+            textStyle = TEXT_STYLE::SUBSCRIPT;
+        }
+        else if( aNode->isSuperscript() )
+        {
+            textStyle = TEXT_STYLE::SUPERSCRIPT;
+        }
+
+        if( aNode->isOverbar() )
+        {
+            textStyle |= TEXT_STYLE::OVERBAR;
+        }
+
+#ifdef OUTLINEFONT_DEBUG
+        std::cerr << "FONT::drawMarkup( [aGlyphs], " << aNode->asString() << ", " << aPosition
+                  << ", " << aGlyphSize << ", " << aAngle << ", " << TextStyleAsString( aTextStyle )
+                  << ", " << aLevel << " ) const; textStyle " << TextStyleAsString( textStyle )
+                  << std::endl;
+#endif
+        if( aNode->has_content() )
+        {
+            std::string txt = aNode->string();
+            //std::vector<SHAPE_POLY_SET> glyphs;
+            wxPoint pt( aPosition.x, aPosition.y );
+
+            nextPosition = GetTextAsPolygon( aGlyphs, txt, aGlyphSize, pt, aAngle, aIsMirrored,
+                                             textStyle );
+        }
+    }
+
+    for( const auto& child : aNode->children )
+    {
+        nextPosition = drawMarkup( aGlyphs, child, nextPosition, aGlyphSize, aIsMirrored, aAngle,
+                                   textStyle, aLevel + 1 );
+    }
+
+    return nextPosition;
+}
+
+
+VECTOR2D FONT::drawSingleLineText( KIGFX::GAL* aGal, const UTF8& aText, const VECTOR2D& aPosition,
+                                   const EDA_ANGLE& aAngle ) const
+{
+#ifdef DEBUG
+    std::cerr << "FONT::drawSingleLineText( aGal, \"" << aText << "\", " << aPosition
+              << " )";
+#endif
+
+    MARKUP::MARKUP_PARSER markupParser( aText );
+    auto                  markupRoot = markupParser.Parse();
+
+    return drawMarkup( aGal, markupRoot, aPosition, aAngle );
+}
+
+
+/**
+   @return position of cursor for drawing next substring
+ */
+VECTOR2D FONT::drawMarkup( KIGFX::GAL* aGal, const MARKUP::MARKUP_NODE& aNode,
+                           const VECTOR2D& aPosition, const EDA_ANGLE& aAngle,
+                           TEXT_STYLE_FLAGS aTextStyle, int aLevel ) const
+{
+    if( !aGal )
+        return VECTOR2D( 0, 0 );
+
+    VECTOR2D nextPosition = aPosition;
+
+    TEXT_STYLE_FLAGS textStyle = aTextStyle;
+
+    if( !aNode->is_root() )
+    {
+        if( aNode->isSubscript() )
+        {
+            textStyle = TEXT_STYLE::SUBSCRIPT;
+        }
+        else if( aNode->isSuperscript() )
+        {
+            textStyle = TEXT_STYLE::SUPERSCRIPT;
+        }
+
+        if( aNode->isOverbar() )
+        {
+            textStyle |= TEXT_STYLE::OVERBAR;
+        }
+
+        if( aNode->has_content() )
+        {
+            std::string txt = aNode->string();
+            GLYPH_LIST  glyphs;
+            wxPoint     pt( aPosition.x, aPosition.y );
+            VECTOR2D    glyphSize = aGal->GetGlyphSize();
+            bool        mirrored = aGal->IsTextMirrored();
+
+#ifdef DEBUG
+            std::cerr << "FONT::drawMarkup( [aGal], " << aNode->asString() << ", "
+                      << aPosition << ", " << aAngle << ", " << TextStyleAsString( aTextStyle )
+                      << ", " << aLevel << " ) const; txt \"" << txt << "\" pt " << pt.x << ","
+                      << pt.y << " glyphSize " << glyphSize << " textStyle {"
+                      << TextStyleAsString( textStyle ) << "}" << std::endl;
+#endif
+            nextPosition =
+                    GetTextAsPolygon( glyphs, txt, glyphSize, pt, aAngle, mirrored, textStyle );
+
+            for( auto glyph : glyphs )
+                aGal->DrawGlyph( glyph );
+        }
+    }
+
+    for( const auto& child : aNode->children )
+    {
+        nextPosition = drawMarkup( aGal, child, nextPosition, aAngle, textStyle, aLevel + 1 );
+    }
+
+#ifdef DEBUG
+    std::cerr << " returns " << nextPosition << std::endl;
+#endif
+    return nextPosition;
 }

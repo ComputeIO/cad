@@ -23,6 +23,7 @@
 
 #include <earcut.hpp>
 #include <math/vector2d.h>
+#include <font/glyph.h>
 #include <geometry/shape_poly_set.h>
 #include <functional>
 
@@ -50,7 +51,16 @@ typedef std::function<void( int, const VECTOR2I& aPoint1, const VECTOR2I& aPoint
 void Triangulate( const SHAPE_POLY_SET& aPolylist, TRIANGULATE_CALLBACK aCallback,
                   void* aCallbackData = nullptr );
 
-void TriangulateWithBackground( const SHAPE_POLY_SET& aPolylist, const SHAPE_POLY_SET& aBackground,
-                                TRIANGULATE_CALLBACK aCallback, void* aCallbackData = nullptr );
+void Triangulate( const KIFONT::GLYPH& aGlyph, TRIANGULATE_CALLBACK aCallback,
+                  void* aCallbackData = nullptr );
+
+void Triangulate( const std::shared_ptr<KIFONT::GLYPH>& aGlyph, TRIANGULATE_CALLBACK aCallback,
+                  void* aCallbackData = nullptr );
+
+/*
+void TriangulateWithBackground( const KIFONT::GLYPH_LIST& aGlyphList,
+                                const SHAPE_POLY_SET& aBackground, TRIANGULATE_CALLBACK aCallback,
+                                void* aCallbackData = nullptr );
+*/
 
 #endif // TRIANGULATE_H

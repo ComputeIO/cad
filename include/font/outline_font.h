@@ -35,6 +35,7 @@
 //#include <gal/opengl/opengl_freetype.h>
 #include <harfbuzz/hb.h>
 #include <font/font.h>
+#include <font/glyph.h>
 #include <font/outline_decomposer.h>
 #include <parser/markup_parser.h>
 
@@ -122,10 +123,10 @@ public:
     VECTOR2D ComputeTextLineSize( const KIGFX::GAL* aGal, const UTF8& aText ) const override;
 
 
-    VECTOR2I GetTextAsPolygon( std::vector<SHAPE_POLY_SET>& aGlyphs, const UTF8& aText,
+    VECTOR2I GetTextAsPolygon( GLYPH_LIST& aGlyphs, const UTF8& aText,
                                const VECTOR2D& aGlyphSize, const wxPoint& aPosition,
                                const EDA_ANGLE& aAngle, bool aIsMirrored,
-                               TEXT_STYLE_FLAGS aTextStyle = 0 ) const;
+                               TEXT_STYLE_FLAGS aTextStyle = 0 ) const override;
 
     /**
      * Like GetTextAsPolygon, but handles multiple lines.
@@ -135,7 +136,7 @@ public:
      * @param aGlyphs returns text glyphs
      * @param aText the text item
      */
-    VECTOR2I GetLinesAsPolygon( std::vector<SHAPE_POLY_SET>& aGlyphs, const EDA_TEXT* aText ) const;
+    VECTOR2I GetLinesAsPolygon( GLYPH_LIST& aGlyphs, const EDA_TEXT* aText ) const;
 
     const FT_Face& GetFace() const { return mFace; }
 
@@ -168,28 +169,7 @@ private:
 
     bool loadFontSimple( const wxString& aFontFileName );
 
-    /**
-     * Draw a single line of text. Multiline texts should be split before using the
-     * function.
-     *
-     * @param aText is the text to be drawn.
-     * @param aPosition is text position.
-     * @param aAngle is text angle (defaults to 0)
-     * @return bounding box width/height
-     */
-    VECTOR2D drawSingleLineText( KIGFX::GAL* aGal, const UTF8& aText, const VECTOR2D& aPosition,
-                                 const EDA_ANGLE& aAngle = EDA_ANGLE() ) const override;
-
-    VECTOR2D drawMarkup( KIGFX::GAL* aGal, const MARKUP::MARKUP_NODE& aNode,
-                         const VECTOR2D& aPosition, const EDA_ANGLE& aAngle,
-                         TEXT_STYLE_FLAGS aTextStyle = 0, int aLevel = 0 ) const;
-
-    VECTOR2D drawMarkup( std::vector<SHAPE_POLY_SET>& aGlyphs, const MARKUP::MARKUP_NODE& aNode,
-                         const VECTOR2D& aPosition, const VECTOR2D& aGlyphSize, bool aIsMirrored,
-                         const EDA_ANGLE& aAngle, TEXT_STYLE_FLAGS aTextStyle = 0,
-                         int aLevel = 0 ) const;
-
-    BOX2I getBoundingBox( const std::vector<SHAPE_POLY_SET>& aGlyphs ) const;
+    BOX2I getBoundingBox( const GLYPH_LIST& aGlyphs ) const;
 };
 } //namespace KIFONT
 

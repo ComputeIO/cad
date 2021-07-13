@@ -114,6 +114,7 @@ public:
      * @param aPointList is a list of 2D-Vectors containing the polyline points.
      */
     virtual void DrawPolyline( const std::deque<VECTOR2D>& aPointList ){};
+    virtual void DrawPolyline( const std::vector<VECTOR2D>& aPointList ){};
     virtual void DrawPolyline( const VECTOR2D aPointList[], int aListSize ){};
     virtual void DrawPolyline( const SHAPE_LINE_CHAIN& aLineChain ){};
 
@@ -181,9 +182,13 @@ public:
      *
      * @param aPointList is the list of the polygon points.
      */
-    virtual void DrawGlyph( const SHAPE_POLY_SET& aPolySet, int aNth = 0, int aTotal = 1 ) = 0;
+    virtual void DrawGlyph( const KIFONT::GLYPH& aGlyph, int aNth = 0, int aTotal = 1 ) = 0;
+    void DrawGlyph( const std::shared_ptr<KIFONT::GLYPH>& aGlyph, int aNth = 0, int aTotal = 1 )
+    {
+        DrawGlyph( *aGlyph, aNth, aTotal );
+    }
 
-    void DrawGlyphs( const std::vector<SHAPE_POLY_SET> aGlyphs );
+    void DrawGlyphs( const KIFONT::GLYPH_LIST& aGlyphs );
 
     /**
      * Draw a cubic bezier spline.
