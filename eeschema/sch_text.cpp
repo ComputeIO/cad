@@ -87,6 +87,7 @@ bool IncrementLabelMember( wxString& name, int aIncrement )
             return true;
         }
     }
+
     return false;
 }
 
@@ -147,7 +148,7 @@ static int* getTemplateShape( PINSHEETLABEL_SHAPE aShape, EDA_ANGLE aAngle )
 
 
 SCH_TEXT::SCH_TEXT( const wxPoint& pos, const wxString& text, KICAD_T aType ) :
-        SCH_ITEM( NULL, aType ), EDA_TEXT( text ), m_shape( PINSHEETLABEL_SHAPE::PS_INPUT ),
+        SCH_ITEM( nullptr, aType ), EDA_TEXT( text ), m_shape( PINSHEETLABEL_SHAPE::PS_INPUT ),
         m_isDangling( false ), m_connectionType( CONNECTION_TYPE::NONE )
 {
     m_layer = LAYER_NOTES;
@@ -686,7 +687,7 @@ void SCH_TEXT::GetMsgPanelInfo( EDA_DRAW_FRAME* aFrame, MSG_PANEL_ITEMS& aList )
     }
 }
 
-#if defined( DEBUG )
+#if defined(DEBUG)
 
 void SCH_TEXT::Show( int nestLevel, std::ostream& os ) const
 {
@@ -864,7 +865,7 @@ SEARCH_RESULT SCH_GLOBALLABEL::Visit( INSPECTOR aInspector, void* testData,
         // If caller wants to inspect my type
         if( stype == SCH_LOCATE_ANY_T || stype == Type() )
         {
-            if( SEARCH_RESULT::QUIT == aInspector( this, NULL ) )
+            if( SEARCH_RESULT::QUIT == aInspector( this, nullptr ) )
                 return SEARCH_RESULT::QUIT;
         }
 

@@ -288,7 +288,7 @@ int SYMBOL_EDITOR_EDIT_TOOL::DoDelete( const TOOL_EVENT& aEvent )
                 wxString name = pin->GetName();
                 LIB_PIN* next_pin = symbol->GetNextPin();
 
-                while( next_pin != NULL )
+                while( next_pin != nullptr )
                 {
                     pin = next_pin;
                     next_pin = symbol->GetNextPin( pin );
@@ -468,7 +468,7 @@ int SYMBOL_EDITOR_EDIT_TOOL::Properties( const TOOL_EVENT& aEvent )
 
 void SYMBOL_EDITOR_EDIT_TOOL::editGraphicProperties( LIB_ITEM* aItem )
 {
-    if( aItem == NULL )
+    if( aItem == nullptr )
         return;
 
     DIALOG_LIB_EDIT_DRAW_ITEM dlg( m_frame, aItem );
@@ -492,7 +492,7 @@ void SYMBOL_EDITOR_EDIT_TOOL::editGraphicProperties( LIB_ITEM* aItem )
 
 void SYMBOL_EDITOR_EDIT_TOOL::editTextProperties( LIB_ITEM* aItem )
 {
-    if ( ( aItem == NULL ) || ( aItem->Type() != LIB_TEXT_T ) )
+    if ( ( aItem == nullptr ) || ( aItem->Type() != LIB_TEXT_T ) )
         return;
 
     DIALOG_LIB_EDIT_TEXT dlg( m_frame, (LIB_TEXT*) aItem );
@@ -508,7 +508,7 @@ void SYMBOL_EDITOR_EDIT_TOOL::editTextProperties( LIB_ITEM* aItem )
 
 void SYMBOL_EDITOR_EDIT_TOOL::editFieldProperties( LIB_FIELD* aField )
 {
-    if( aField == NULL )
+    if( aField == nullptr )
         return;
 
     wxString    caption;
@@ -519,8 +519,10 @@ void SYMBOL_EDITOR_EDIT_TOOL::editFieldProperties( LIB_FIELD* aField )
     // current symbol.  Set the dialog message to inform the user.
     if( aField->GetId() == VALUE_FIELD )
         caption = _( "Edit Symbol Name" );
-    else
+    else if( aField->GetId() < MANDATORY_FIELDS )
         caption.Printf( _( "Edit %s Field" ), TitleCaps( aField->GetName() ) );
+    else
+        caption.Printf( _( "Edit '%s' Field" ), aField->GetName() );
 
     DIALOG_LIB_EDIT_ONE_FIELD dlg( m_frame, caption, aField );
 

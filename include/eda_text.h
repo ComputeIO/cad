@@ -148,8 +148,8 @@ public:
     void SetBold( bool aBold ) { m_attributes.SetBold( aBold ); }
     bool IsBold() const { return m_attributes.IsBold(); }
 
-    void SetVisible( bool aVisible ) { m_attributes.SetVisible( aVisible ); }
-    bool IsVisible() const { return m_attributes.IsVisible(); }
+    virtual void SetVisible( bool aVisible ) { m_attributes.SetVisible( aVisible ); }
+    virtual bool IsVisible() const { return m_attributes.IsVisible(); }
 
     void SetMirrored( bool aMirrored ) { m_attributes.SetMirrored( aMirrored ); }
     bool IsMirrored() const { return m_attributes.IsMirrored(); }

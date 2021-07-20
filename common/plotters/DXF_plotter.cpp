@@ -391,7 +391,7 @@ bool DXF_PLOTTER::EndPlot()
            "  0\n"
            "EOF\n", m_outputFile );
     fclose( m_outputFile );
-    m_outputFile = NULL;
+    m_outputFile = nullptr;
 
     return true;
 }
@@ -493,7 +493,7 @@ void DXF_PLOTTER::PlotPoly( const std::vector<wxPoint>& aCornerList,
         MoveTo( aCornerList[0] );
 
         for( unsigned ii = 1; ii < aCornerList.size(); ii++ )
-            ThickSegment( aCornerList[ii-1], aCornerList[ii], aWidth, FILLED, NULL );
+            ThickSegment( aCornerList[ii-1], aCornerList[ii], aWidth, FILLED, nullptr );
 
         return;
     }
@@ -623,9 +623,6 @@ void DXF_PLOTTER::ThickSegment( const wxPoint& aStart, const wxPoint& aEnd, int 
 }
 
 
-/* Plot an arc in DXF format
- * Filling is not supported
- */
 void DXF_PLOTTER::Arc( const wxPoint& centre, double StAngle, double EndAngle, int radius,
                        FILL_TYPE fill, int width )
 {
@@ -754,7 +751,7 @@ void DXF_PLOTTER::FlashPadRoundRect( const wxPoint& aPadPos, const wxSize& aSize
 {
     SHAPE_POLY_SET outline;
     TransformRoundChamferedRectToPolygon( outline, aPadPos, aSize, aOrient, aCornerRadius,
-                                          0.0, 0, GetPlotterArcHighDef(), ERROR_INSIDE );
+                                          0.0, 0, 0, GetPlotterArcHighDef(), ERROR_INSIDE );
 
     // TransformRoundRectToPolygon creates only one convex polygon
     SHAPE_LINE_CHAIN& poly = outline.Outline( 0 );

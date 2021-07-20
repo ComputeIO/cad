@@ -4,7 +4,7 @@
  * Copyright (C) 2018 Jean-Pierre Charras, jean-pierre.charras@ujf-grenoble.fr
  * Copyright (C) 2012 SoftPLC Corporation, Dick Hollenbeck <dick@softplc.com>
  * Copyright (C) 2011 Wayne Stambaugh <stambaughw@gmail.com>
- * Copyright (C) 1992-2020 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 1992-2021 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -153,7 +153,7 @@ FP_LIB_TABLE* PROJECT::PcbFootprintLibs()
         }
         catch( ... )
         {
-            DisplayErrorMessage( NULL, _( "Error loading project footprint library table." ) );
+            DisplayErrorMessage( nullptr, _( "Error loading project footprint library table." ) );
         }
     }
 
@@ -452,11 +452,19 @@ EDA_3D_VIEWER_FRAME* PCB_BASE_FRAME::CreateAndShow3D_Frame()
     if( wxWindow::FindFocus() != draw3DFrame )
         draw3DFrame->SetFocus();
 
+    // Allocate a slice of time to display the 3D frame
+    // a call to wxSafeYield() should be enough (and better), but on Linux we need
+    // to call wxYield()
+    // otherwise the activity messages are not displayed during the first board loading
+    wxYield();
+
+    // Note, the caller is responsible to load/update the board 3D view.
+    // after frame creation the board is not automatically created.
+
     return draw3DFrame;
 }
 
 
-// Note: virtual, overridden in PCB_EDIT_FRAME;
 void PCB_BASE_FRAME::SwitchLayer( wxDC* DC, PCB_LAYER_ID layer )
 {
     PCB_LAYER_ID preslayer = GetActiveLayer();
@@ -524,9 +532,6 @@ GENERAL_COLLECTORS_GUIDE PCB_BASE_FRAME::GetCollectorsGuide()
 }
 
 
-/*
- * Display the grid status.
- */
 void PCB_BASE_FRAME::DisplayGridMsg()
 {
     wxString line;
@@ -539,9 +544,6 @@ void PCB_BASE_FRAME::DisplayGridMsg()
 }
 
 
-/*
- * Update the status bar information.
- */
 void PCB_BASE_FRAME::UpdateStatusBar()
 {
     EDA_DRAW_FRAME::UpdateStatusBar();
@@ -681,6 +683,7 @@ FOOTPRINT_EDITOR_SETTINGS* PCB_BASE_FRAME::GetFootprintEditorSettings() const
 {
     return Pgm().GetSettingsManager().GetAppSettings<FOOTPRINT_EDITOR_SETTINGS>();
 }
+
 
 MAGNETIC_SETTINGS* PCB_BASE_FRAME::GetMagneticItemsSettings()
 {

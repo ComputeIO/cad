@@ -49,7 +49,7 @@ cmake_dependent_option( BUILD_SMALL_DEBUG_FILES "In debug build: create smaller 
 #
 # KiCad build options should be added below.
 #
-# If you add a new build option, please add it's state to the
+# If you add a new build option, please add its state to the
 # OnCopyVersionInfo() function in common/dialog_about/dialog_about.cpp
 # so that build option settings can be included in bug reports.
 #
@@ -144,6 +144,12 @@ option( KICAD_BUILD_PNS_DEBUG_TOOL
 
 option( KICAD_GAL_PROFILE
     "Enable profiling info for GAL"
+    OFF )
+
+cmake_dependent_option( KICAD_WIN32_INSTALL_PDBS
+    "Installs debug pdb to the bin folder, DO NOT USE (NOR REQUIRED) FOR DEBUGGING THE SOURCE ON MSVC. This is purely for release building.
+    MSVC can find the PDBs without this."
+    OFF "WIN32"
     OFF )
 
 # Global setting: exports are explicit

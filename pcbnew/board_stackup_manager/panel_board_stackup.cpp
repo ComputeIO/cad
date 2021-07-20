@@ -44,9 +44,11 @@
 #include <wx/richmsgdlg.h>
 #include <wx/dcclient.h>
 #include <wx/treebook.h>
+#include <wx/textdlg.h>
 
 #include <locale_io.h>
 #include <dialog_helpers.h>
+
 
 // Some wx widget ID to know what widget has fired a event:
 #define ID_INCREMENT 256    // space between 2 ID type. Bigger than the layer count max
@@ -117,20 +119,102 @@ PANEL_SETUP_BOARD_STACKUP::PANEL_SETUP_BOARD_STACKUP( PAGED_DIALOG* aParent, PCB
     buildLayerStackPanel( true );
     synchronizeWithBoard( true );
     computeBoardThickness();
-
-    m_choiceCopperLayers->Bind( wxEVT_CHOICE,
-            [&]( wxCommandEvent& )
-            {
-                updateCopperLayerCount();
-                showOnlyActiveLayers();
-                Layout();
-            } );
 }
 
 
 PANEL_SETUP_BOARD_STACKUP::~PANEL_SETUP_BOARD_STACKUP()
 {
     disconnectEvents();
+}
+
+
+void PANEL_SETUP_BOARD_STACKUP::onCopperLayersSelCount( wxCommandEvent& event )
+{
+    updateCopperLayerCount();
+    showOnlyActiveLayers();
+    computeBoardThickness();
+    Layout();
+}
+
+
+void PANEL_SETUP_BOARD_STACKUP::onAdjustDielectricThickness( wxCommandEvent& event )
+{
+    // The list of items that can be modified:
+    std::vector< BOARD_STACKUP_ROW_UI_ITEM* > items_candidate;
+
+    // Some dielectric layers can have a locked thickness, so calculate the min
+    // acceptable thickness
+    int min_thickness = 0;
+
+    for( BOARD_STACKUP_ROW_UI_ITEM& ui_item : m_rowUiItemsList )
+    {
+        BOARD_STACKUP_ITEM* item = ui_item.m_Item;
+
+        if( !item->IsThicknessEditable() || !ui_item.m_isEnabled )
+            continue;
+
+        // We are looking for locked thickness items only:
+        wxCheckBox* cb_box = dynamic_cast<wxCheckBox*> ( ui_item.m_ThicknessLockCtrl );
+
+        if( cb_box && !cb_box->GetValue() )
+        {
+            items_candidate.push_back( &ui_item );
+            continue;
+        }
+
+        wxTextCtrl* textCtrl = static_cast<wxTextCtrl*>( ui_item.m_ThicknessCtrl );
+        wxString txt = textCtrl->GetValue();
+
+        int item_thickness = ValueFromString( m_frame->GetUserUnits(), txt );
+        min_thickness += item_thickness;
+    }
+
+    wxString title;
+
+    if( min_thickness == 0 )
+        title.Printf( _( "Enter board thickness in %s" ),
+                      GetAbbreviatedUnitsLabel( m_frame->GetUserUnits() ) );
+    else
+        title.Printf( _( "Enter expected board thickness in %s (min value %s)" ),
+                      GetAbbreviatedUnitsLabel( m_frame->GetUserUnits() ),
+                      StringFromValue( m_frame->GetUserUnits(), min_thickness ) );
+
+    wxTextEntryDialog dlg( this, title, _( "Adjust not locked dielectric thickness layers" ) );
+
+    if( dlg.ShowModal() != wxID_OK )
+        return;
+
+    wxString result = dlg.GetValue();
+
+    int iu_thickness = ValueFromString( m_frame->GetUserUnits(), result );
+
+    if( iu_thickness <= min_thickness )
+    {
+        wxMessageBox( wxString::Format( _("Too small value (min value %s %s). Aborted" ),
+                      StringFromValue( m_frame->GetUserUnits(), min_thickness ),
+                      GetAbbreviatedUnitsLabel( m_frame->GetUserUnits() ) ) );
+        return;
+    }
+
+    // Now adjust not locked dielectric thickness layers:
+
+    if( items_candidate.size() )
+    {
+        int thickness_layer = ( iu_thickness - min_thickness ) / items_candidate.size();
+        wxString txt = StringFromValue( m_frame->GetUserUnits(), thickness_layer );
+
+        for( BOARD_STACKUP_ROW_UI_ITEM* ui_item : items_candidate )
+        {
+            wxTextCtrl* textCtrl = static_cast<wxTextCtrl*>( ui_item->m_ThicknessCtrl );
+            textCtrl->SetValue( txt );
+        }
+    }
+    else
+    {
+        wxMessageBox( _( "All dielectric  thickness layers are locked" ) );
+    }
+
+    computeBoardThickness();
 }
 
 
@@ -145,7 +229,7 @@ void PANEL_SETUP_BOARD_STACKUP::disconnectEvents()
         {
             cb->Disconnect( wxEVT_COMMAND_COMBOBOX_SELECTED,
                             wxCommandEventHandler( PANEL_SETUP_BOARD_STACKUP::onColorSelected ),
-                            NULL, this );
+                            nullptr, this );
         }
 
         wxButton* matButt = dynamic_cast<wxButton*>( item );
@@ -154,7 +238,7 @@ void PANEL_SETUP_BOARD_STACKUP::disconnectEvents()
         {
             matButt->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED,
                                  wxCommandEventHandler( PANEL_SETUP_BOARD_STACKUP::onMaterialChange ),
-                                 NULL, this );
+                                 nullptr, this );
         }
 
         wxTextCtrl* textCtrl = dynamic_cast<wxTextCtrl*>( item );
@@ -163,7 +247,7 @@ void PANEL_SETUP_BOARD_STACKUP::disconnectEvents()
         {
             textCtrl->Disconnect( wxEVT_COMMAND_TEXT_UPDATED,
                                   wxCommandEventHandler( PANEL_SETUP_BOARD_STACKUP::onThicknessChange ),
-                                  NULL, this );
+                                  nullptr, this );
         }
     }
 }
@@ -309,7 +393,7 @@ void PANEL_SETUP_BOARD_STACKUP::onExportToClipboard( wxCommandEvent& event )
     if( !transferDataFromUIToStackup() )
         return;
 
-    // Build a ascii representation of stackup and copy it in the clipboard
+    // Build a ASCII representation of stackup and copy it in the clipboard
     wxString report = BuildStackupReport( m_stackup, m_units );
 
     wxLogNull doNotLog; // disable logging of failed clipboard actions
@@ -549,8 +633,7 @@ void PANEL_SETUP_BOARD_STACKUP::showOnlyActiveLayers()
 }
 
 
-void PANEL_SETUP_BOARD_STACKUP::addMaterialChooser( wxWindowID aId,
-                                                    const wxString * aMaterialName,
+void PANEL_SETUP_BOARD_STACKUP::addMaterialChooser( wxWindowID aId, const wxString* aMaterialName,
                                                     BOARD_STACKUP_ROW_UI_ITEM& aUiRowItem )
 {
 	wxBoxSizer* bSizerMat = new wxBoxSizer( wxHORIZONTAL );
@@ -569,12 +652,12 @@ void PANEL_SETUP_BOARD_STACKUP::addMaterialChooser( wxWindowID aId,
 	bSizerMat->Add( textCtrl, 0, wxALIGN_CENTER_VERTICAL|wxLEFT, 5 );
 
 	wxButton* m_buttonMat = new wxButton( m_scGridWin, aId, _( "..." ), wxDefaultPosition,
-                                         wxDefaultSize, wxBU_EXACTFIT );
+                                          wxDefaultSize, wxBU_EXACTFIT );
 	bSizerMat->Add( m_buttonMat, 0, wxALIGN_CENTER_VERTICAL, 2 );
 
     m_buttonMat->Connect( wxEVT_COMMAND_BUTTON_CLICKED,
                           wxCommandEventHandler( PANEL_SETUP_BOARD_STACKUP::onMaterialChange ),
-                          NULL, this );
+                          nullptr, this );
     m_controlItemsList.push_back( m_buttonMat );
 
     aUiRowItem.m_MaterialCtrl = textCtrl;
@@ -679,7 +762,7 @@ BOARD_STACKUP_ROW_UI_ITEM PANEL_SETUP_BOARD_STACKUP::createRowData( int aRow,
         m_controlItemsList.push_back( textCtrl );
         textCtrl->Connect( wxEVT_COMMAND_TEXT_UPDATED,
                            wxCommandEventHandler( PANEL_SETUP_BOARD_STACKUP::onThicknessChange ),
-                           NULL, this );
+                           nullptr, this );
         ui_row_item.m_ThicknessCtrl = textCtrl;
 
         if( item->GetType() == BS_ITEM_TYPE_DIELECTRIC )
@@ -902,17 +985,6 @@ void PANEL_SETUP_BOARD_STACKUP::buildLayerStackPanel( bool aCreatedInitialStacku
 // Transfer current UI settings to m_stackup but not to the board
 bool PANEL_SETUP_BOARD_STACKUP::transferDataFromUIToStackup()
 {
-    // First, verify the list of layers currently in stackup: if it doesn't match the list
-    // of layers set in PANEL_SETUP_LAYERS prompt the user to update the stackup
-    LSET layersList = m_panelLayers->GetUILayerMask() & BOARD_STACKUP::StackupAllowedBrdLayers();
-
-    if( m_enabledLayers != layersList )
-        OnLayersOptionsChanged( m_panelLayers->GetUILayerMask() );
-
-    // The board thickness and the thickness from stackup settings should be compatible
-    // so verify that compatibility
-    int stackup_thickness = 0;
-
     wxString txt;
     wxString error_msg;
     bool success = true;
@@ -950,7 +1022,8 @@ bool PANEL_SETUP_BOARD_STACKUP::transferDataFromUIToStackup()
             else
             {
                 success = false;
-                error_msg << _( "Incorrect value for Epsilon R (Epsilon R must be positive or null if not used)" );
+                error_msg << _( "Incorrect value for Epsilon R (Epsilon R must be positive or "
+                                "null if not used)" );
             }
         }
 
@@ -970,7 +1043,8 @@ bool PANEL_SETUP_BOARD_STACKUP::transferDataFromUIToStackup()
                 if( !error_msg.IsEmpty() )
                     error_msg << "\n";
 
-                error_msg << _( "Incorrect value for Loss tg (Loss tg must be positive or null if not used)" );
+                error_msg << _( "Incorrect value for Loss tg (Loss tg must be positive or null "
+                                "if not used)" );
             }
         }
 
@@ -1008,7 +1082,6 @@ bool PANEL_SETUP_BOARD_STACKUP::transferDataFromUIToStackup()
 
             int new_thickness = ValueFromString( m_frame->GetUserUnits(), txt );
             item->SetThickness( new_thickness, sub_item );
-            stackup_thickness += new_thickness;
 
             if( new_thickness < 0 )
             {
@@ -1196,8 +1269,7 @@ void PANEL_SETUP_BOARD_STACKUP::onColorSelected( wxCommandEvent& event )
             combo->SetString( idx, label );
 
             wxBitmap layerbmp( m_colorSwatchesSize.x, m_colorSwatchesSize.y );
-            LAYER_SELECTOR::DrawColorSwatch( layerbmp, COLOR4D( 0, 0, 0, 0 ),
-                                             COLOR4D( color ) );
+            LAYER_SELECTOR::DrawColorSwatch( layerbmp, COLOR4D( 0, 0, 0, 0 ), COLOR4D( color ) );
             combo->SetItemBitmap( combo->GetCount()-1, layerbmp );
         }
     }
@@ -1436,7 +1508,7 @@ wxBitmapComboBox* PANEL_SETUP_BOARD_STACKUP::createBmComboBox( BOARD_STACKUP_ITE
 
     combo->Connect( wxEVT_COMMAND_COMBOBOX_SELECTED,
                     wxCommandEventHandler( PANEL_SETUP_BOARD_STACKUP::onColorSelected ),
-                    NULL, this );
+                    nullptr, this );
 
     return combo;
 }
@@ -1460,7 +1532,7 @@ void drawBitmap( wxBitmap& aBitmap, wxColor aColor )
         }
 
         p = rowStart;
-        p.OffsetY(data, 1);
+        p.OffsetY( data, 1 );
     }
 }
 

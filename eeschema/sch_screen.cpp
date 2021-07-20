@@ -203,7 +203,7 @@ void SCH_SCREEN::Append( SCH_SCREEN* aScreen )
 {
     wxCHECK_RET( aScreen, "Invalid screen object." );
 
-    // No need to descend the hierarchy.  Once the top level screen is copied, all of it's
+    // No need to descend the hierarchy.  Once the top level screen is copied, all of its
     // children are copied as well.
     for( auto aItem : aScreen->m_rtree )
         Append( aItem );
@@ -371,7 +371,7 @@ std::set<SCH_ITEM*> SCH_SCREEN::MarkConnections( SCH_LINE* aSegment )
             SCH_LINE* line = static_cast<SCH_LINE*>( item );
 
             if( ( test_item->IsEndPoint( line->GetStartPoint() )
-                        && !GetPin( line->GetStartPoint(), NULL, true ) )
+                        && !GetPin( line->GetStartPoint(), nullptr, true ) )
              || ( test_item->IsEndPoint( line->GetEndPoint() )
                         && !GetPin( line->GetEndPoint(), nullptr, true ) ) )
             {
@@ -509,7 +509,7 @@ bool SCH_SCREEN::IsTerminalPoint( const wxPoint& aPosition, int aLayer ) const
         if( GetItem( aPosition, 1, SCH_JUNCTION_T ) )
             return true;
 
-        if( GetPin( aPosition, NULL, true ) )
+        if( GetPin( aPosition, nullptr, true ) )
             return true;
 
         if( GetWire( aPosition ) )
@@ -835,8 +835,8 @@ void SCH_SCREEN::ClearDrawingState()
 LIB_PIN* SCH_SCREEN::GetPin( const wxPoint& aPosition, SCH_SYMBOL** aSymbol,
                              bool aEndPointOnly ) const
 {
-    SCH_SYMBOL*  candidate = NULL;
-    LIB_PIN*     pin = NULL;
+    SCH_SYMBOL*  candidate = nullptr;
+    LIB_PIN*     pin = nullptr;
 
     for( SCH_ITEM* item : Items().Overlapping( SCH_SYMBOL_T, aPosition ) )
     {
@@ -844,7 +844,7 @@ LIB_PIN* SCH_SCREEN::GetPin( const wxPoint& aPosition, SCH_SYMBOL** aSymbol,
 
         if( aEndPointOnly )
         {
-            pin = NULL;
+            pin = nullptr;
 
             if( !candidate->GetLibSymbolRef() )
                 continue;
@@ -1024,7 +1024,7 @@ SCH_LINE* SCH_SCREEN::GetLine( const wxPoint& aPosition, int aAccuracy, int aLay
         }
     }
 
-    return NULL;
+    return nullptr;
 }
 
 
@@ -1047,7 +1047,7 @@ SCH_TEXT* SCH_SCREEN::GetLabel( const wxPoint& aPosition, int aAccuracy ) const
         }
     }
 
-    return NULL;
+    return nullptr;
 }
 
 
@@ -1108,7 +1108,7 @@ SCH_SCREEN* SCH_SCREENS::GetFirst()
     if( m_screens.size() > 0 )
         return m_screens[0];
 
-    return NULL;
+    return nullptr;
 }
 
 
@@ -1126,7 +1126,7 @@ SCH_SCREEN* SCH_SCREENS::GetScreen( unsigned int aIndex ) const
     if( aIndex < m_screens.size() )
         return m_screens[ aIndex ];
 
-    return NULL;
+    return nullptr;
 }
 
 
@@ -1135,13 +1135,13 @@ SCH_SHEET* SCH_SCREENS::GetSheet( unsigned int aIndex ) const
     if( aIndex < m_sheets.size() )
         return m_sheets[ aIndex ];
 
-    return NULL;
+    return nullptr;
 }
 
 
 void SCH_SCREENS::addScreenToList( SCH_SCREEN* aScreen, SCH_SHEET* aSheet )
 {
-    if( aScreen == NULL )
+    if( aScreen == nullptr )
         return;
 
     for( const SCH_SCREEN* screen : m_screens )

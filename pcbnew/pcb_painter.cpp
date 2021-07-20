@@ -746,7 +746,7 @@ void PCB_PAINTER::draw( const PCB_VIA* aVia, int aLayer )
 
         // Default font settings
         m_gal->ResetTextAttributes();
-        m_gal->SetStrokeColor( m_pcbSettings.GetColor( NULL, aLayer ) );
+        m_gal->SetStrokeColor( m_pcbSettings.GetColor( nullptr, aLayer ) );
 
         // Set the text position to the pad shape position (the pad position is not the best place)
         VECTOR2D textpos( 0.0, 0.0 );
@@ -990,6 +990,7 @@ void PCB_PAINTER::draw( const PAD* aPad, int aLayer )
 
             m_gal->Restore();
         }
+
         return;
     }
     else if( aLayer == LAYER_PAD_HOLEWALLS )
@@ -1135,8 +1136,9 @@ void PCB_PAINTER::draw( const PAD* aPad, int aLayer )
 
                     if( effectiveWidth > 0 )
                         m_gal->DrawSegment( seg->GetSeg().A, seg->GetSeg().B, effectiveWidth );
+
+                    break;
                 }
-                break;
 
                 case SH_CIRCLE:
                 {
@@ -1145,8 +1147,9 @@ void PCB_PAINTER::draw( const PAD* aPad, int aLayer )
 
                     if( effectiveRadius > 0 )
                         m_gal->DrawCircle( circle->GetCenter(), effectiveRadius );
+
+                    break;
                 }
-                break;
 
                 case SH_RECT:
                 {
@@ -1185,8 +1188,9 @@ void PCB_PAINTER::draw( const PAD* aPad, int aLayer )
                     {
                         m_gal->DrawRectangle( r->GetPosition(), r->GetPosition() + r->GetSize() );
                     }
+
+                    break;
                 }
-                break;
 
                 case SH_SIMPLE:
                 {
@@ -1220,8 +1224,9 @@ void PCB_PAINTER::draw( const PAD* aPad, int aLayer )
                             m_gal->DrawSegment( seg.A, seg.B, margin.x * 2 );
                         }
                     }
+
+                    break;
                 }
-                break;
 
                 default:
                     // Better not get here; we already pre-flighted the shapes...
@@ -1338,6 +1343,7 @@ void PCB_PAINTER::draw( const PCB_SHAPE* aShape, int aLayer )
 
             m_gal->DrawSegment( start, end, thickness );
         }
+
         break;
 
     case PCB_SHAPE_TYPE::RECT:
@@ -1375,8 +1381,9 @@ void PCB_PAINTER::draw( const PCB_SHAPE* aShape, int aLayer )
                 m_gal->DrawPolygon( poly );
             }
         }
+
+        break;
     }
-    break;
 
     case PCB_SHAPE_TYPE::ARC:
         if( sketch )
@@ -1466,17 +1473,19 @@ void PCB_PAINTER::draw( const PCB_SHAPE* aShape, int aLayer )
 
         if( parentFootprint )
             m_gal->Restore();
+
+        break;
     }
-    break;
 
     case PCB_SHAPE_TYPE::CURVE:
         if( sketch )
         {
             // Use thickness as filter value to convert the curve to polyline when the curve
             // is not supported
-            m_gal->DrawCurve( VECTOR2D( aShape->GetStart() ), VECTOR2D( aShape->GetBezControl1() ),
-                              VECTOR2D( aShape->GetBezControl2() ), VECTOR2D( aShape->GetEnd() ),
-                              thickness );
+            m_gal->DrawCurve( VECTOR2D( aShape->GetStart() ),
+                              VECTOR2D( aShape->GetBezierC1() ),
+                              VECTOR2D( aShape->GetBezierC2() ),
+                              VECTOR2D( aShape->GetEnd() ), thickness );
         }
         else
         {
@@ -1486,10 +1495,12 @@ void PCB_PAINTER::draw( const PCB_SHAPE* aShape, int aLayer )
 
             // Use thickness as filter value to convert the curve to polyline when the curve
             // is not supported
-            m_gal->DrawCurve( VECTOR2D( aShape->GetStart() ), VECTOR2D( aShape->GetBezControl1() ),
-                              VECTOR2D( aShape->GetBezControl2() ), VECTOR2D( aShape->GetEnd() ),
-                              thickness );
+            m_gal->DrawCurve( VECTOR2D( aShape->GetStart() ),
+                              VECTOR2D( aShape->GetBezierC1() ),
+                              VECTOR2D( aShape->GetBezierC2() ),
+                              VECTOR2D( aShape->GetEnd() ), thickness );
         }
+
         break;
 
     case PCB_SHAPE_TYPE::LAST:

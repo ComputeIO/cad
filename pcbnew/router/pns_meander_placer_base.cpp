@@ -2,7 +2,7 @@
  * KiRouter - a push-and-(sometimes-)shove PCB router
  *
  * Copyright (C) 2013-2015 CERN
- * Copyright (C) 2016 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 2016-2021 KiCad Developers, see AUTHORS.txt for contributors.
  * Author: Tomasz Wlostowski <tomasz.wlostowski@cern.ch>
  *
  * This program is free software: you can redistribute it and/or modify it
@@ -30,7 +30,7 @@ namespace PNS {
 MEANDER_PLACER_BASE::MEANDER_PLACER_BASE( ROUTER* aRouter ) :
         PLACEMENT_ALGO( aRouter )
 {
-    m_world = NULL;
+    m_world = nullptr;
     m_currentWidth = 0;
     m_padToDieLength = 0;
 }
@@ -61,7 +61,7 @@ void MEANDER_PLACER_BASE::SpacingStep( int aSign )
 
 int MEANDER_PLACER_BASE::Clearance()
 {
-    // Asumption: All tracks are part of the same net class.
+    // Assumption: All tracks are part of the same net class.
     // It shouldn't matter which track we pick. They should all have the same clearance if
     // they are part of the same net class. Therefore, pick the first one on the list.
     ITEM*           itemToCheck = Traces().CItems().front().item;

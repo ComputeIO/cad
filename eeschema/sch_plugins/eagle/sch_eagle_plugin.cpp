@@ -387,7 +387,7 @@ void SCH_EAGLE_PLUGIN::checkpoint()
                                                             / std::max( 1U, m_totalCount ) );
 
             if( !m_progressReporter->KeepRefreshing() )
-                THROW_IO_ERROR( ( "Open cancelled by user." ) );
+                THROW_IO_ERROR( ( "Open canceled by user." ) );
 
             m_lastProgressCount = m_doneCount;
         }
@@ -409,7 +409,7 @@ SCH_SHEET* SCH_EAGLE_PLUGIN::Load( const wxString& aFileName, SCHEMATIC* aSchema
         m_progressReporter->Report( wxString::Format( _( "Loading %s..." ), aFileName ) );
 
         if( !m_progressReporter->KeepRefreshing() )
-            THROW_IO_ERROR( ( "Open cancelled by user." ) );
+            THROW_IO_ERROR( ( "Open canceled by user." ) );
     }
 
     // Load the document
@@ -448,7 +448,7 @@ SCH_SHEET* SCH_EAGLE_PLUGIN::Load( const wxString& aFileName, SCHEMATIC* aSchema
 
     SYMBOL_LIB_TABLE* libTable = m_schematic->Prj().SchSymbolLibTable();
 
-    wxCHECK_MSG( libTable, NULL, "Could not load symbol lib table." );
+    wxCHECK_MSG( libTable, nullptr, "Could not load symbol lib table." );
 
     m_pi.set( SCH_IO_MGR::FindPlugin( SCH_IO_MGR::SCH_KICAD ) );
     m_properties = std::make_unique<PROPERTIES>();
@@ -477,7 +477,7 @@ SCH_SHEET* SCH_EAGLE_PLUGIN::Load( const wxString& aFileName, SCHEMATIC* aSchema
         }
 
         // Reload the symbol library table.
-        m_schematic->Prj().SetElem( PROJECT::ELEM_SYMBOL_LIB_TABLE, NULL );
+        m_schematic->Prj().SetElem( PROJECT::ELEM_SYMBOL_LIB_TABLE, nullptr );
         m_schematic->Prj().SchSymbolLibTable();
     }
 
@@ -1360,8 +1360,8 @@ void SCH_EAGLE_PLUGIN::loadInstance( wxXmlNode* aInstanceNode )
     {
         if( attributeNode->GetName() == "attribute" )
         {
-            auto       attr = EATTR( attributeNode );
-            SCH_FIELD* field = NULL;
+            auto       attr  = EATTR( attributeNode );
+            SCH_FIELD* field = nullptr;
 
             if( attr.name.Lower() == "name" )
             {
@@ -1594,7 +1594,6 @@ bool SCH_EAGLE_PLUGIN::loadSymbol( wxXmlNode* aSymbolNode, std::unique_ptr<LIB_S
                 }
             }
 
-
             if( aDevice->connects.size() != 0 )
             {
                 for( const auto& connect : aDevice->connects )
@@ -1641,7 +1640,8 @@ bool SCH_EAGLE_PLUGIN::loadSymbol( wxXmlNode* aSymbolNode, std::unique_ptr<LIB_S
         }
         else if( nodeName == "text" )
         {
-            std::unique_ptr<LIB_TEXT> libtext( loadSymbolText( aSymbol, currentNode, aGateNumber ) );
+            std::unique_ptr<LIB_TEXT> libtext( loadSymbolText( aSymbol, currentNode,
+                                                               aGateNumber ) );
 
             if( libtext->GetText().Upper() == ">NAME" )
             {
@@ -2228,7 +2228,6 @@ void SCH_EAGLE_PLUGIN::adjustNetLabels()
             if( segAttached && !onIntersection( labelPos ) )
                 continue; // label is placed correctly
 
-
             // Move the label to the nearest wire
             if( !segAttached )
             {
@@ -2238,7 +2237,6 @@ void SCH_EAGLE_PLUGIN::adjustNetLabels()
                 if( !segAttached ) // we cannot do anything
                     continue;
             }
-
 
             // Create a vector pointing in the direction of the wire, 50 mils long
             VECTOR2I wireDirection( segAttached->B - segAttached->A );

@@ -405,7 +405,7 @@ double SCH_SEXPR_PARSER::parseDouble()
     char* tmp;
 
     // In case the file got saved with the wrong locale.
-    if( strchr( CurText(), ',' ) != NULL )
+    if( strchr( CurText(), ',' ) != nullptr )
     {
         THROW_PARSE_ERROR( _( "Floating point number with incorrect locale" ), CurSource(),
                            CurLine(), CurLineNumber(), CurOffset() );
@@ -1078,8 +1078,8 @@ LIB_BEZIER* SCH_SEXPR_PARSER::parseBezier()
 LIB_CIRCLE* SCH_SEXPR_PARSER::parseCircle()
 {
     wxCHECK_MSG( CurTok() == T_circle, nullptr,
-                 wxT( "Cannot parse " ) + GetTokenString( CurTok() )
-                         + wxT( " as a circle token." ) );
+                 wxT( "Cannot parse " ) + GetTokenString( CurTok() ) +
+                 wxT( " as a circle token." ) );
 
     T                           token;
     FILL_PARAMS                 fill;
@@ -1412,8 +1412,8 @@ LIB_POLYLINE* SCH_SEXPR_PARSER::parsePolyLine()
 LIB_RECTANGLE* SCH_SEXPR_PARSER::parseRectangle()
 {
     wxCHECK_MSG( CurTok() == T_rectangle, nullptr,
-                 wxT( "Cannot parse " ) + GetTokenString( CurTok() )
-                         + wxT( " as a rectangle token." ) );
+                 wxT( "Cannot parse " ) + GetTokenString( CurTok() ) +
+                 wxT( " as a rectangle token." ) );
 
     T                              token;
     FILL_PARAMS                    fill;
@@ -1702,8 +1702,8 @@ SCH_FIELD* SCH_SEXPR_PARSER::parseSchField( SCH_ITEM* aParent )
     // Empty property values are valid.
     wxString value = FromUTF8();
 
-    std::unique_ptr<SCH_FIELD> field =
-            std::make_unique<SCH_FIELD>( wxDefaultPosition, -1, aParent, name );
+    std::unique_ptr<SCH_FIELD> field = std::make_unique<SCH_FIELD>( wxDefaultPosition, -1,
+                                                                    aParent, name );
 
     field->SetText( value );
     field->SetVisible( true );
@@ -2275,7 +2275,7 @@ SCH_SYMBOL* SCH_SEXPR_PARSER::parseSchematicSymbol()
             break;
 
         case T_property:
-            // The field parent symbol must be set and it's orientation must be set before
+            // The field parent symbol must be set and its orientation must be set before
             // the field positions are set.
             field = parseSchField( symbol.get() );
 
