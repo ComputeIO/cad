@@ -545,8 +545,8 @@ VECTOR2I OUTLINE_FONT::GetTextAsPolygon( GLYPH_LIST& aGlyphs, const UTF8& aText,
         std::cerr << "[Glyph '" << glyphName << "' pos ";
         std::cerr << pos.x_advance << "," << pos.y_advance << "," << pos.x_offset << ","
                   << pos.y_offset;
-        std::cerr << " codepoint " << codepoint << ", " << faceGlyph->outline.n_contours << " contours "
-                  << faceGlyph->outline.n_points << " points]->";
+        std::cerr << " codepoint " << codepoint << ", " << faceGlyph->outline.n_contours
+                  << " contours " << faceGlyph->outline.n_points << " points]->";
         std::cerr << "{" << contours.size() << " contours ";
         for( int foofaa = 0; foofaa < (int) contours.size(); foofaa++ )
         {
@@ -670,23 +670,17 @@ VECTOR2I OUTLINE_FONT::GetTextAsPolygon( GLYPH_LIST& aGlyphs, const UTF8& aText,
         SHAPE_POLY_SET   overbarGlyph;
         SHAPE_LINE_CHAIN overbar;
 
-        std::vector<VECTOR2D> tmp;
-        int                   left = extentBottomLeft.x;
-        int                   right = extentTopRight.x;
-        int                   top = extentBottomLeft.y - 800;
-        int                   barHeight = -800;
+        int left = extentBottomLeft.x;
+        int right = extentTopRight.x;
+        int top = extentBottomLeft.y - 800;
+        int barHeight = -3200;
 
-        tmp.push_back( VECTOR2D( left, top ) );
-        tmp.push_back( VECTOR2D( right, top ) );
-        tmp.push_back( VECTOR2D( right, top + barHeight ) );
-        tmp.push_back( VECTOR2D( left, top + barHeight ) );
-
-        for( const VECTOR2D& pt : tmp )
-        {
-            overbar.Append( pt );
-        }
-
+        overbar.Append( VECTOR2D( left, top ) );
+        overbar.Append( VECTOR2D( right, top ) );
+        overbar.Append( VECTOR2D( right, top + barHeight ) );
+        overbar.Append( VECTOR2D( left, top + barHeight ) );
         overbar.SetClosed( true );
+
         overbarGlyph.AddOutline( overbar );
 
         aGlyphs.push_back( std::make_shared<OUTLINE_GLYPH>( overbarGlyph ) );
