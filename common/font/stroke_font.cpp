@@ -861,6 +861,23 @@ VECTOR2I STROKE_FONT::GetTextAsPolygon( GLYPH_LIST& aGlyphs, const UTF8& aText,
 {
     std::shared_ptr<GLYPH> glyph = nullptr;
     wxPoint cursor( aPosition );
+    VECTOR2D glyphSize( aGlyphSize );
+
+    if( aTextStyle & TEXT_STYLE::SUBSCRIPT || aTextStyle & TEXT_STYLE::SUPERSCRIPT )
+    {
+        glyphSize.x *= 0.7;
+        glyphSize.y *= 0.7;
+
+        if( aTextStyle & TEXT_STYLE::SUBSCRIPT )
+        {
+            cursor.y += glyphSize.y * 0.3;
+        }
+        else
+        {
+            cursor.y -= glyphSize.y * 0.5;
+        }
+    }
+
     for( UTF8::uni_iter i = aText.ubegin(), end = aText.uend(); i < end; ++i )
     {
         // Index into bounding boxes table
@@ -872,17 +889,33 @@ VECTOR2I STROKE_FONT::GetTextAsPolygon( GLYPH_LIST& aGlyphs, const UTF8& aText,
             dd = substitute - ' ';
         }
 
-        glyph = m_glyphs->at( dd )->Resize( aGlyphSize )->Translate( cursor );
-        //cursor.x += ( glyph->BoundingBox().GetWidth() + aGlyphSize.x );
+        glyph = m_glyphs->at( dd )->Resize( glyphSize )->Translate( cursor );
+
         if( dd == 0 )
         {
-            cursor.x += aGlyphSize.x * 0.6;
+            // 'space' character - draw nothing, advance cursor position
+            cursor.x += glyphSize.x * 0.6;
         }
         else
         {
-            cursor.x = glyph->BoundingBox().GetEnd().x + aGlyphSize.x * 0.15;
+            cursor.x = glyph->BoundingBox().GetEnd().x + glyphSize.x * 0.15;
         }
         aGlyphs.push_back( glyph );
+    }
+
+    if( aTextStyle & TEXT_STYLE::OVERBAR )
+    {
+        auto overbarGlyph = std::make_shared<STROKE_GLYPH>();
+
+        int left = aPosition.x;
+        int right = cursor.x;
+        int barY = cursor.y - glyphSize.y * 1.2;
+
+        overbarGlyph->AddPoint( VECTOR2D( left, barY ) );
+        overbarGlyph->AddPoint( VECTOR2D( right, barY ) );
+        overbarGlyph->Finalize();
+
+        aGlyphs.push_back( overbarGlyph );
     }
 
 #ifdef DEBUG
