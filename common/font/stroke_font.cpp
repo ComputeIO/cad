@@ -400,6 +400,16 @@ VECTOR2D STROKE_FONT::StringBoundaryLimits( const KIGFX::GAL* aGal, const UTF8& 
                                             const VECTOR2D& aGlyphSize,
                                             double          aGlyphThickness ) const
 {
+#if 1
+    // TODO do we need to parse every time - have we already parsed?
+    MARKUP::MARKUP_PARSER markupParser( aText );
+    auto                  root = markupParser.Parse();
+
+    GLYPH_LIST glyphs; // ignored
+    //bool isMirrored = false; // TODO is this needed/does this information exist here?
+    VECTOR2D boundingBox = drawMarkup( glyphs, root, VECTOR2D( 0, 0 ), aGlyphSize );
+    return boundingBox;
+#else
     // TODO: needs to be redone using MarkupParser
 
     VECTOR2D string_bbox;
@@ -505,6 +515,7 @@ VECTOR2D STROKE_FONT::StringBoundaryLimits( const KIGFX::GAL* aGal, const UTF8& 
               << GetInterline( aGlyphSize.y ) << std::endl;
 #endif
     return string_bbox;
+#endif
 }
 
 
@@ -588,5 +599,5 @@ VECTOR2I STROKE_FONT::GetTextAsPolygon( GLYPH_LIST& aGlyphs, const UTF8& aText,
 #ifdef DEBUG
     std::cerr << "cursor[" << aText << "@" << aPosition << ":" << cursor.x << "," << cursor.y << "]";
 #endif
-    return VECTOR2I( cursor.x, cursor.y );
+    return VECTOR2I( cursor.x, cursor.y + glyphSize.y );
 }

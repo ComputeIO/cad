@@ -440,11 +440,8 @@ VECTOR2I OUTLINE_FONT::GetLinesAsPolygon( GLYPH_LIST& aGlyphs, const EDA_TEXT* a
         auto                  markupRoot = markupParser.Parse();
         GLYPH_LIST            lineGlyphs;
 
-        //VECTOR2D position( 0, 0 ); //position(aPosition);
-        //drawMarkup( aGal, markupRoot, position, aAngle );
-
         ret = drawMarkup( lineGlyphs, markupRoot, positions[i], aText->GetTextSize(),
-                          aText->IsMirrored(), attributes.GetAngle() );
+                          attributes.GetAngle(), aText->IsMirrored() );
 
         for( auto glyph : lineGlyphs )
         {

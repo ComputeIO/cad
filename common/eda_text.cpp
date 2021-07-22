@@ -458,7 +458,7 @@ wxString EDA_TEXT::GetTextStyleName() const
     if( IsBold() )
         style += 2;
 
-    wxString stylemsg[4] = {
+    static const wxString stylemsg[4] = {
         _("Normal"),
         _("Italic"),
         _("Bold"),

@@ -294,9 +294,9 @@ protected:
                                      TEXT_STYLE_FLAGS aTextStyle = 0 ) const = 0;
 
     VECTOR2D drawMarkup( GLYPH_LIST& aGlyphs, const MARKUP::MARKUP_NODE& aNode,
-                         const VECTOR2D& aPosition, const VECTOR2D& aGlyphSize, bool aIsMirrored,
-                         const EDA_ANGLE& aAngle, TEXT_STYLE_FLAGS aTextStyle = 0,
-                         int aLevel = 0 ) const;
+                         const VECTOR2D& aPosition, const VECTOR2D& aGlyphSize,
+                         const EDA_ANGLE& aAngle = EDA_ANGLE::ANGLE_0, bool aIsMirrored = false,
+                         TEXT_STYLE_FLAGS aTextStyle = 0, int aLevel = 0 ) const;
 
     static wxString getFontNameForFontconfig( const wxString& aFontName, bool aBold, bool aItalic );
 

@@ -541,8 +541,9 @@ VECTOR2D FONT::BoundingBox( const EDA_TEXT& aText )
    @return position of cursor for drawing next substring
  */
 VECTOR2D FONT::drawMarkup( GLYPH_LIST& aGlyphs, const MARKUP::MARKUP_NODE& aNode,
-                           const VECTOR2D& aPosition, const VECTOR2D& aGlyphSize, bool aIsMirrored,
-                           const EDA_ANGLE& aAngle, TEXT_STYLE_FLAGS aTextStyle, int aLevel ) const
+                           const VECTOR2D& aPosition, const VECTOR2D& aGlyphSize,
+                           const EDA_ANGLE& aAngle, bool aIsMirrored, TEXT_STYLE_FLAGS aTextStyle,
+                           int aLevel ) const
 {
     VECTOR2D nextPosition = aPosition;
 
@@ -564,12 +565,6 @@ VECTOR2D FONT::drawMarkup( GLYPH_LIST& aGlyphs, const MARKUP::MARKUP_NODE& aNode
             textStyle |= TEXT_STYLE::OVERBAR;
         }
 
-#ifdef OUTLINEFONT_DEBUG
-        std::cerr << "FONT::drawMarkup( [aGlyphs], " << aNode->asString() << ", " << aPosition
-                  << ", " << aGlyphSize << ", " << aAngle << ", " << TextStyleAsString( aTextStyle )
-                  << ", " << aLevel << " ) const; textStyle " << TextStyleAsString( textStyle )
-                  << std::endl;
-#endif
         if( aNode->has_content() )
         {
             std::string txt = aNode->string();
@@ -583,7 +578,7 @@ VECTOR2D FONT::drawMarkup( GLYPH_LIST& aGlyphs, const MARKUP::MARKUP_NODE& aNode
 
     for( const auto& child : aNode->children )
     {
-        nextPosition = drawMarkup( aGlyphs, child, nextPosition, aGlyphSize, aIsMirrored, aAngle,
+        nextPosition = drawMarkup( aGlyphs, child, nextPosition, aGlyphSize, aAngle, aIsMirrored,
                                    textStyle, aLevel + 1 );
     }
 
@@ -644,13 +639,6 @@ VECTOR2D FONT::drawMarkup( KIGFX::GAL* aGal, const MARKUP::MARKUP_NODE& aNode,
             VECTOR2D    glyphSize = aGal->GetGlyphSize();
             bool        mirrored = aGal->IsTextMirrored();
 
-#ifdef DEBUG
-            std::cerr << "FONT::drawMarkup( [aGal], " << aNode->asString() << ", "
-                      << aPosition << ", " << aAngle << ", " << TextStyleAsString( aTextStyle )
-                      << ", " << aLevel << " ) const; txt \"" << txt << "\" pt " << pt.x << ","
-                      << pt.y << " glyphSize " << glyphSize << " textStyle {"
-                      << TextStyleAsString( textStyle ) << "}" << std::endl;
-#endif
             nextPosition =
                     GetTextAsPolygon( glyphs, txt, glyphSize, pt, aAngle, mirrored, textStyle );
 
