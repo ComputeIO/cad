@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////
-// C++ code generated with wxFormBuilder (version Dec 21 2020)
+// C++ code generated with wxFormBuilder (version Oct 26 2018)
 // http://www.wxformbuilder.org/
 //
 // PLEASE DO *NOT* EDIT THIS FILE!
@@ -18,7 +18,7 @@ DIALOG_LIB_EDIT_PIN_TABLE_BASE::DIALOG_LIB_EDIT_PIN_TABLE_BASE( wxWindow* parent
 	wxBoxSizer* top_sizer;
 	top_sizer = new wxBoxSizer( wxVERTICAL );
 
-	m_grid = new WX_GRID( this, wxID_ANY, wxDefaultPosition, wxSize( 800,400 ), 0 );
+	m_grid = new WX_GRID( this, wxID_ANY, wxDefaultPosition, wxSize( -1,-1 ), 0 );
 
 	// Grid
 	m_grid->CreateGrid( 5, 11 );

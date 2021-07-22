@@ -139,7 +139,7 @@
                         <property name="row_sizes"></property>
                         <property name="rows">5</property>
                         <property name="show">1</property>
-                        <property name="size">800,400</property>
+                        <property name="size">-1,-1</property>
                         <property name="subclass">WX_GRID; widgets/wx_grid.h; forward_declare</property>
                         <property name="toolbar_pane">0</property>
                         <property name="tooltip"></property>

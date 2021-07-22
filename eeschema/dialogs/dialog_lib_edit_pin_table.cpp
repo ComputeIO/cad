@@ -509,6 +509,11 @@ DIALOG_LIB_EDIT_PIN_TABLE::DIALOG_LIB_EDIT_PIN_TABLE( SYMBOL_EDIT_FRAME* parent,
     // Connect Events
     m_grid->Connect( wxEVT_GRID_COL_SORT,
                      wxGridEventHandler( DIALOG_LIB_EDIT_PIN_TABLE::OnColSort ), nullptr, this );
+
+    // Using sizers will reset the default window size to the minimum size based on
+    // widget minimum sizes. Therefore the default sizes set in wxFormBuilder aren't
+    // respected. Set a default size here instead.
+    this->SetSize(850, 400);
 }
 
 
