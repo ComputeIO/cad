@@ -39,7 +39,7 @@
 #include <wx/txtstrm.h>
 #include <wx/wfstream.h>
 
-static const wxSize default_dialog_size { 500, 350 };
+static const wxSize default_dialog_size { 900, 500 };
 
 /**
  * Helper function to add a filter box to a panel, with some
