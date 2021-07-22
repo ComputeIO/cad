@@ -407,8 +407,12 @@ VECTOR2D STROKE_FONT::StringBoundaryLimits( const KIGFX::GAL* aGal, const UTF8& 
 
     GLYPH_LIST glyphs; // ignored
     //bool isMirrored = false; // TODO is this needed/does this information exist here?
-    VECTOR2D boundingBox = drawMarkup( glyphs, root, VECTOR2D( 0, 0 ), aGlyphSize );
-    return boundingBox;
+    BOX2I boundingBox;
+    (void) drawMarkup( &boundingBox, glyphs, root, VECTOR2D( 0, 0 ), aGlyphSize );
+#ifdef DEBUG
+    std::cerr << "STROKE_FONT::StringBoundaryLimits( ... ) returns " << boundingBox.GetSize() << std::endl;
+#endif
+    return boundingBox.GetSize();
 #else
     // TODO: needs to be redone using MarkupParser
 
@@ -523,16 +527,11 @@ VECTOR2D STROKE_FONT::getBoundingBox( const UTF8& aString, const VECTOR2D& aGlyp
                                       TEXT_STYLE_FLAGS aTextStyle ) const
 {
     // TODO: take glyph thickness into account!
-    VECTOR2D bbox = StringBoundaryLimits( nullptr, aString, aGlyphSize, 0 );
-#ifdef OUTLINEFONT_DEBUG
-    std::cerr << "STROKE_FONT::getBoundingBox( " << aString << ", " << aGlyphSize << ", "
-              << aTextStyle << " ) returns " << bbox << std::endl;
-#endif
-    return bbox;
+    return StringBoundaryLimits( nullptr, aString, aGlyphSize, 0 );
 }
 
 
-VECTOR2I STROKE_FONT::GetTextAsPolygon( GLYPH_LIST& aGlyphs, const UTF8& aText,
+VECTOR2I STROKE_FONT::GetTextAsPolygon( BOX2I* aBoundingBox, GLYPH_LIST& aGlyphs, const UTF8& aText,
                                         const VECTOR2D& aGlyphSize, const wxPoint& aPosition,
                                         const EDA_ANGLE& aAngle, bool aIsMirrored,
                                         TEXT_STYLE_FLAGS aTextStyle ) const
@@ -581,13 +580,14 @@ VECTOR2I STROKE_FONT::GetTextAsPolygon( GLYPH_LIST& aGlyphs, const UTF8& aText,
         aGlyphs.push_back( glyph );
     }
 
+    int barY = 0;
     if( aTextStyle & TEXT_STYLE::OVERBAR )
     {
         auto overbarGlyph = std::make_shared<STROKE_GLYPH>();
 
         int left = aPosition.x;
         int right = cursor.x;
-        int barY = cursor.y - ComputeOverbarVerticalPosition( glyphSize.y );
+        barY = cursor.y - ComputeOverbarVerticalPosition( glyphSize.y );
 
         overbarGlyph->AddPoint( VECTOR2D( left, barY ) );
         overbarGlyph->AddPoint( VECTOR2D( right, barY ) );
@@ -599,5 +599,15 @@ VECTOR2I STROKE_FONT::GetTextAsPolygon( GLYPH_LIST& aGlyphs, const UTF8& aText,
 #ifdef DEBUG
     std::cerr << "cursor[" << aText << "@" << aPosition << ":" << cursor.x << "," << cursor.y << "]";
 #endif
-    return VECTOR2I( cursor.x, cursor.y + glyphSize.y );
+
+    if( aBoundingBox )
+    {
+        aBoundingBox->SetOrigin( aPosition.x, aPosition.y );
+        aBoundingBox->SetEnd( cursor.x, cursor.y + std::max( glyphSize.y, (double) barY ) );
+#ifdef DEBUG
+        std::cerr << "aBoundingBox[" << aBoundingBox->GetOrigin() << " " << aBoundingBox->GetSize() << "]";
+#endif
+    }
+
+    return VECTOR2I( cursor.x, aPosition.y );
 }

@@ -123,7 +123,7 @@ public:
     VECTOR2D ComputeTextLineSize( const KIGFX::GAL* aGal, const UTF8& aText ) const override;
 
 
-    VECTOR2I GetTextAsPolygon( GLYPH_LIST& aGlyphs, const UTF8& aText,
+    VECTOR2I GetTextAsPolygon( BOX2I* aBoundingBox, GLYPH_LIST& aGlyphs, const UTF8& aText,
                                const VECTOR2D& aGlyphSize, const wxPoint& aPosition,
                                const EDA_ANGLE& aAngle, bool aIsMirrored,
                                TEXT_STYLE_FLAGS aTextStyle = 0 ) const override;

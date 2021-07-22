@@ -169,109 +169,6 @@ FT_Error OUTLINE_FONT::loadFace( const wxString& aFontFileName )
 }
 
 
-#if 0
-/**
- * Draw a string.
- *
- * @param aGal
- * @param aText is the text to be drawn.
- * @param aPosition is the text position in world coordinates.
- * @param aAngle is the text rotation angle
- */
-VECTOR2D OUTLINE_FONT::Draw( KIGFX::GAL* aGal, const UTF8& aText, const VECTOR2D& aPosition,
-                             const VECTOR2D& aOrigin, const TEXT_ATTRIBUTES& aAttributes ) const
-{
-#ifdef DEBUG
-    std::cerr << "OUTLINE_FONT::Draw( aGal, \"" << aText << "\", " << aPosition << ", " << aOrigin
-              << ", " << aAttributes << " ) const\n";
-    bool   drawDebugShapes = false;
-    double dbg = 200000;
-#endif
-    if( aText.empty() )
-        return VECTOR2D( 0, 0 );
-
-    EDA_ANGLE angle = aAttributes.GetAngle();
-
-    // FT_Select_Charmap( mFace, FT_Encoding::FT_ENCODING_UNICODE );
-
-    // FT_Set_Char_Size(
-    //   <handle to face object>,
-    //   <char_width in 1/64th of points>,
-    //   <char_height in 1/64th of points>,
-    //   <horizontal device resolution>,
-    //   <vertical device resolution>
-    // )
-    // handle == variable (reference)
-    // If only one of char_width/char_height == 0, it defaults to "same as the non-zero one"
-    // Ditto if only one of horizontal/vertical resolution == 0
-    // If both horizontal/vertical resolution == 0, 72 dpi is default
-    //
-    // 16 * 64 is chosen as an arbitrary default for width/height
-    // TODO: come up with a non-arbitrary default (and/or use a better
-    // value for H/V reso)
-
-    //FT_Set_Char_Size( mFace, 0, 16 * 64, 0, 0 );
-
-    if( aGal )
-    {
-#ifdef OUTLINEFONT_DEBUG
-        KIGFX::COLOR4D oldColor = aGal->GetStrokeColor();
-        if( drawDebugShapes )
-        {
-            aGal->SetStrokeColor( KIGFX::COLOR4D( 1, 1, 0, 1 ) );
-            aGal->DrawCircle( aPosition, dbg );
-            aGal->SetStrokeColor( oldColor );
-        }
-#endif
-        // Context needs to be saved before any transformations
-        aGal->Save();
-        //aGal->Translate( aPosition );
-        aGal->Rotate( angle.Invert().AsRadians() );
-    }
-
-    // Split multiline strings into separate ones and draw them line by line
-    wxArrayString         strings_list;
-    std::vector<wxPoint>  positions;
-    std::vector<VECTOR2D> boundingBoxes;
-    int n;
-
-    getLinePositions( aText, aPosition, strings_list, positions, n, boundingBoxes,
-                      aGal->GetGlyphSize(), aAttributes );
-
-    VECTOR2D boundingBox( 0, 0 );
-    int      y = 0;
-    for( int i = 0; i < n; i++ )
-    {
-#ifdef DEBUG
-        std::cerr << "OUTLINE_FONT::Draw( aGal, \"" << aText << "\", " << aPosition << ", "
-                  << aOrigin << ", " << aAttributes << " ) const "
-                  << "drawing line #" << i << "/" << n << " \"" << strings_list[i] << "\" @0," << y << std::endl;
-#endif
-        //wxPoint  linePosition( 0, y );
-        VECTOR2D lineBoundingBox = drawSingleLineText( aGal, strings_list[i], positions[i] );
-
-        // expand bounding box of whole text
-        boundingBox.x = std::max( boundingBox.x, lineBoundingBox.x );
-
-        if( aGal )
-        {
-            double lineHeight =
-                    GetInterline( aGal->GetGlyphSize().y, aAttributes.GetLineSpacing() );
-            //aGal->Translate( VECTOR2D( 0, lineHeight ) );
-            y += lineHeight;
-            boundingBox.y += lineHeight;
-        }
-    }
-
-    if( aGal ) {
-        // undo rotation
-        aGal->Restore();
-    }
-
-    return boundingBox;
-}
-#endif
-
 /**
  * Compute the boundary limits of aText (the bounding box of all shapes).
  *
@@ -452,7 +349,7 @@ VECTOR2I OUTLINE_FONT::GetLinesAsPolygon( GLYPH_LIST& aGlyphs, const EDA_TEXT* a
 }
 
 
-VECTOR2I OUTLINE_FONT::GetTextAsPolygon( GLYPH_LIST& aGlyphs, const UTF8& aText,
+VECTOR2I OUTLINE_FONT::GetTextAsPolygon( BOX2I* aBoundingBox, GLYPH_LIST& aGlyphs, const UTF8& aText,
                                          const VECTOR2D& aGlyphSize, const wxPoint& aPosition,
                                          const EDA_ANGLE& aOrientation, bool aIsMirrored,
                                          TEXT_STYLE_FLAGS aTextStyle ) const
@@ -686,6 +583,13 @@ VECTOR2I OUTLINE_FONT::GetTextAsPolygon( GLYPH_LIST& aGlyphs, const UTF8& aText,
     hb_buffer_destroy( buf );
 
     VECTOR2I cursorDisplacement( -cursorEnd.x * scaleFactor.x, cursorEnd.y * scaleFactor.y );
+
+    if( aBoundingBox )
+    {
+        aBoundingBox->SetOrigin( aPosition.x, aPosition.y );
+        aBoundingBox->SetEnd( cursorDisplacement );
+    }
+
     return VECTOR2I( aPosition.x + cursorDisplacement.x, aPosition.y + cursorDisplacement.y );
 }
 

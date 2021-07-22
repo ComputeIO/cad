@@ -232,7 +232,6 @@ VECTOR2D FONT::doDrawString( KIGFX::GAL* aGal, const UTF8& aText, const VECTOR2D
         }
         else
         {
-            //drawSingleLineText( aGal, strings.Item( i ), positions[i], aRotationAngle );
             lineBoundingBox = Draw( aGal, strings.Item( i ), positions[i], aPosition, aAttributes );
         }
 
@@ -468,6 +467,7 @@ VECTOR2D FONT::Draw( KIGFX::GAL* aGal, const UTF8& aText, const VECTOR2D& aPosit
                       aAttributes );
 
     VECTOR2D boundingBox( 0, 0 );
+    BOX2I lineBoundingBox;
     for( int i = 0; i < n; i++ )
     {
 #ifdef DEBUG
@@ -500,11 +500,11 @@ VECTOR2D FONT::Draw( KIGFX::GAL* aGal, const UTF8& aText, const VECTOR2D& aPosit
             aGal->Rotate( rotationAngle.AsRadians() );
         }
 
-        VECTOR2D lineBoundingBox = drawSingleLineText( aGal, strings_list[i], VECTOR2D( 0, 0 ) );
+        (void) drawSingleLineText( aGal, &lineBoundingBox, strings_list[i], VECTOR2D( 0, 0 ) );
         aGal->Restore();
 
         // expand bounding box of whole text
-        boundingBox.x = std::max( boundingBox.x, lineBoundingBox.x );
+        boundingBox.x = std::max( boundingBox.x, (double) lineBoundingBox.GetWidth() );
 
         double lineHeight = GetInterline( glyphSize.y, aAttributes.GetLineSpacing() );
         boundingBox.y += lineHeight;
@@ -540,10 +540,10 @@ VECTOR2D FONT::BoundingBox( const EDA_TEXT& aText )
 /**
    @return position of cursor for drawing next substring
  */
-VECTOR2D FONT::drawMarkup( GLYPH_LIST& aGlyphs, const MARKUP::MARKUP_NODE& aNode,
-                           const VECTOR2D& aPosition, const VECTOR2D& aGlyphSize,
-                           const EDA_ANGLE& aAngle, bool aIsMirrored, TEXT_STYLE_FLAGS aTextStyle,
-                           int aLevel ) const
+VECTOR2D FONT::drawMarkup( BOX2I* aBoundingBox, GLYPH_LIST& aGlyphs,
+                           const MARKUP::MARKUP_NODE& aNode, const VECTOR2D& aPosition,
+                           const VECTOR2D& aGlyphSize, const EDA_ANGLE& aAngle, bool aIsMirrored,
+                           TEXT_STYLE_FLAGS aTextStyle, int aLevel ) const
 {
     VECTOR2D nextPosition = aPosition;
 
@@ -571,24 +571,47 @@ VECTOR2D FONT::drawMarkup( GLYPH_LIST& aGlyphs, const MARKUP::MARKUP_NODE& aNode
             //std::vector<SHAPE_POLY_SET> glyphs;
             wxPoint pt( aPosition.x, aPosition.y );
 
-            nextPosition = GetTextAsPolygon( aGlyphs, txt, aGlyphSize, pt, aAngle, aIsMirrored,
+            BOX2I bbox;
+            nextPosition = GetTextAsPolygon( &bbox, aGlyphs, txt, aGlyphSize, pt, aAngle, aIsMirrored,
                                              textStyle );
+
+            if( aBoundingBox )
+            {
+                BOX2I boundingBox;
+                boundingBox = aBoundingBox->Merge( bbox );
+                aBoundingBox->SetOrigin( boundingBox.GetOrigin() );
+                aBoundingBox->SetSize( boundingBox.GetSize() );
+            }
         }
     }
 
     for( const auto& child : aNode->children )
     {
-        nextPosition = drawMarkup( aGlyphs, child, nextPosition, aGlyphSize, aAngle, aIsMirrored,
-                                   textStyle, aLevel + 1 );
+        nextPosition = drawMarkup( aBoundingBox, aGlyphs, child, nextPosition, aGlyphSize, aAngle,
+                                   aIsMirrored, textStyle, aLevel + 1 );
     }
 
+#ifdef DEBUG
+    std::cerr << "FONT::drawMarkup( ... ) nextPosition " << nextPosition;
+    if( aBoundingBox )
+    {
+        std::cerr << ", aBoundingBox " << aBoundingBox->GetOrigin() << " " << aBoundingBox->GetSize();
+    }
+    std::cerr << std::endl;
+#endif
     return nextPosition;
 }
 
 
-VECTOR2D FONT::drawSingleLineText( KIGFX::GAL* aGal, const UTF8& aText, const VECTOR2D& aPosition,
-                                   const EDA_ANGLE& aAngle ) const
+VECTOR2D FONT::drawSingleLineText( KIGFX::GAL* aGal, BOX2I* aBoundingBox, const UTF8& aText,
+                                   const VECTOR2D& aPosition, const EDA_ANGLE& aAngle ) const
 {
+    if( !aGal )
+    {
+        // do nothing, cursor does not move
+        return aPosition;
+    }
+
 #ifdef DEBUG
     std::cerr << "FONT::drawSingleLineText( aGal, \"" << aText << "\", " << aPosition
               << " )";
@@ -597,63 +620,12 @@ VECTOR2D FONT::drawSingleLineText( KIGFX::GAL* aGal, const UTF8& aText, const VE
     MARKUP::MARKUP_PARSER markupParser( aText );
     auto                  markupRoot = markupParser.Parse();
 
-    return drawMarkup( aGal, markupRoot, aPosition, aAngle );
-}
+    GLYPH_LIST glyphs;
+    VECTOR2D   nextPosition =
+            drawMarkup( aBoundingBox, glyphs, markupRoot, aPosition, aGal->GetGlyphSize(), aAngle );
 
+    for( auto glyph : glyphs )
+        aGal->DrawGlyph( glyph );
 
-/**
-   @return position of cursor for drawing next substring
- */
-VECTOR2D FONT::drawMarkup( KIGFX::GAL* aGal, const MARKUP::MARKUP_NODE& aNode,
-                           const VECTOR2D& aPosition, const EDA_ANGLE& aAngle,
-                           TEXT_STYLE_FLAGS aTextStyle, int aLevel ) const
-{
-    if( !aGal )
-        return VECTOR2D( 0, 0 );
-
-    VECTOR2D nextPosition = aPosition;
-
-    TEXT_STYLE_FLAGS textStyle = aTextStyle;
-
-    if( !aNode->is_root() )
-    {
-        if( aNode->isSubscript() )
-        {
-            textStyle = TEXT_STYLE::SUBSCRIPT;
-        }
-        else if( aNode->isSuperscript() )
-        {
-            textStyle = TEXT_STYLE::SUPERSCRIPT;
-        }
-
-        if( aNode->isOverbar() )
-        {
-            textStyle |= TEXT_STYLE::OVERBAR;
-        }
-
-        if( aNode->has_content() )
-        {
-            std::string txt = aNode->string();
-            GLYPH_LIST  glyphs;
-            wxPoint     pt( aPosition.x, aPosition.y );
-            VECTOR2D    glyphSize = aGal->GetGlyphSize();
-            bool        mirrored = aGal->IsTextMirrored();
-
-            nextPosition =
-                    GetTextAsPolygon( glyphs, txt, glyphSize, pt, aAngle, mirrored, textStyle );
-
-            for( auto glyph : glyphs )
-                aGal->DrawGlyph( glyph );
-        }
-    }
-
-    for( const auto& child : aNode->children )
-    {
-        nextPosition = drawMarkup( aGal, child, nextPosition, aAngle, textStyle, aLevel + 1 );
-    }
-
-#ifdef DEBUG
-    std::cerr << " returns " << nextPosition << std::endl;
-#endif
     return nextPosition;
 }
