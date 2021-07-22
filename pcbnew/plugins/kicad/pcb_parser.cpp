@@ -2363,7 +2363,7 @@ PCB_SHAPE* PCB_PARSER::parsePCB_SHAPE()
     switch( CurTok() )
     {
     case T_gr_arc:
-        shape->SetShape( PCB_SHAPE_TYPE::ARC );
+        shape->SetShape( SHAPE_T::ARC );
         token = NextTok();
 
         if( token == T_locked )
@@ -2399,7 +2399,7 @@ PCB_SHAPE* PCB_PARSER::parsePCB_SHAPE()
         break;
 
     case T_gr_circle:
-        shape->SetShape( PCB_SHAPE_TYPE::CIRCLE );
+        shape->SetShape( SHAPE_T::CIRCLE );
         token = NextTok();
 
         if( token == T_locked )
@@ -2434,7 +2434,7 @@ PCB_SHAPE* PCB_PARSER::parsePCB_SHAPE()
         break;
 
     case T_gr_curve:
-        shape->SetShape( PCB_SHAPE_TYPE::CURVE );
+        shape->SetShape( SHAPE_T::BEZIER );
         token = NextTok();
 
         if( token == T_locked )
@@ -2459,7 +2459,7 @@ PCB_SHAPE* PCB_PARSER::parsePCB_SHAPE()
         break;
 
     case T_gr_rect:
-        shape->SetShape( PCB_SHAPE_TYPE::RECT );
+        shape->SetShape( SHAPE_T::RECT );
         token = NextTok();
 
         if( token == T_locked )
@@ -2528,7 +2528,7 @@ PCB_SHAPE* PCB_PARSER::parsePCB_SHAPE()
 
     case T_gr_poly:
     {
-        shape->SetShape( PCB_SHAPE_TYPE::POLYGON );
+        shape->SetShape( SHAPE_T::POLY );
         shape->SetWidth( 0 ); // this is the default value. will be (perhaps) modified later
         shape->SetPolyPoints( {} );
 
@@ -2644,12 +2644,11 @@ PCB_SHAPE* PCB_PARSER::parsePCB_SHAPE()
         // Legacy versions didn't have a filled flag but allowed some shapes to indicate they
         // should be filled by specifying a 0 stroke-width.
         if( shape->GetWidth() == 0
-            && ( shape->GetShape() == PCB_SHAPE_TYPE::RECT
-                 || shape->GetShape() == PCB_SHAPE_TYPE::CIRCLE ) )
+            && ( shape->GetShape() == SHAPE_T::RECT || shape->GetShape() == SHAPE_T::CIRCLE ) )
         {
             shape->SetFilled( true );
         }
-        else if( shape->GetShape() == PCB_SHAPE_TYPE::POLYGON && shape->GetLayer() != Edge_Cuts )
+        else if( shape->GetShape() == SHAPE_T::POLY && shape->GetLayer() != Edge_Cuts )
         {
             // Polygons on non-Edge_Cuts layers were always filled.
             shape->SetFilled( true );
@@ -3617,7 +3616,7 @@ FP_SHAPE* PCB_PARSER::parseFP_SHAPE()
     switch( CurTok() )
     {
     case T_fp_arc:
-        shape->SetShape( PCB_SHAPE_TYPE::ARC );
+        shape->SetShape( SHAPE_T::ARC );
         token = NextTok();
 
         if( token == T_locked )
@@ -3663,7 +3662,7 @@ FP_SHAPE* PCB_PARSER::parseFP_SHAPE()
         break;
 
     case T_fp_circle:
-        shape->SetShape( PCB_SHAPE_TYPE::CIRCLE );
+        shape->SetShape( SHAPE_T::CIRCLE );
         token = NextTok();
 
         if( token == T_locked )
@@ -3697,7 +3696,7 @@ FP_SHAPE* PCB_PARSER::parseFP_SHAPE()
         break;
 
     case T_fp_curve:
-        shape->SetShape( PCB_SHAPE_TYPE::CURVE );
+        shape->SetShape( SHAPE_T::BEZIER );
         token = NextTok();
 
         if( token == T_locked )
@@ -3715,14 +3714,14 @@ FP_SHAPE* PCB_PARSER::parseFP_SHAPE()
             Expecting( T_pts );
 
         shape->SetStart0( parseXY() );
-        shape->SetBezierC1_0( parseXY());
-        shape->SetBezierC2_0( parseXY());
+        shape->SetBezierC1_0( parseXY() );
+        shape->SetBezierC2_0( parseXY() );
         shape->SetEnd0( parseXY() );
         NeedRIGHT();
         break;
 
     case T_fp_rect:
-        shape->SetShape( PCB_SHAPE_TYPE::RECT );
+        shape->SetShape( SHAPE_T::RECT );
         token = NextTok();
 
         if( token == T_locked )
@@ -3793,7 +3792,7 @@ FP_SHAPE* PCB_PARSER::parseFP_SHAPE()
 
     case T_fp_poly:
     {
-        shape->SetShape( PCB_SHAPE_TYPE::POLYGON );
+        shape->SetShape( SHAPE_T::POLY );
         shape->SetPolyPoints( {} );
         SHAPE_LINE_CHAIN& outline = shape->GetPolyShape().Outline( 0 );
 
@@ -3900,13 +3899,12 @@ FP_SHAPE* PCB_PARSER::parseFP_SHAPE()
         // Legacy versions didn't have a filled flag but allowed some shapes to indicate they
         // should be filled by specifying a 0 stroke-width.
         if( shape->GetWidth() == 0
-            && ( shape->GetShape() == PCB_SHAPE_TYPE::RECT
-                 || shape->GetShape() == PCB_SHAPE_TYPE::CIRCLE ) )
+            && ( shape->GetShape() == SHAPE_T::RECT || shape->GetShape() == SHAPE_T::CIRCLE ) )
         {
             shape->SetFilled( true );
         }
         // Polygons on non-Edge_Cuts layers were always filled
-        else if( shape->GetShape() == PCB_SHAPE_TYPE::POLYGON && shape->GetLayer() != Edge_Cuts )
+        else if( shape->GetShape() == SHAPE_T::POLY && shape->GetLayer() != Edge_Cuts )
         {
             shape->SetFilled( true );
         }
@@ -4325,46 +4323,46 @@ PAD* PCB_PARSER::parsePAD( FOOTPRINT* aParent )
                 // because they are the same as a PCB_SHAPE.
                 // However it could be better to write a specific parser, to avoid possible issues
                 // if the PCB_SHAPE parser is modified.
-                PCB_SHAPE* dummysegm = nullptr;
+                PCB_SHAPE* dummyShape = nullptr;
 
                 switch( token )
                 {
                 case T_gr_arc:
-                    dummysegm = parsePCB_SHAPE();
-                    pad->AddPrimitiveArc( dummysegm->GetCenter(), dummysegm->GetArcStart(),
-                                          dummysegm->GetAngle(), dummysegm->GetWidth() );
+                    dummyShape = parsePCB_SHAPE();
+                    pad->AddPrimitiveArc( dummyShape->GetCenter(), dummyShape->GetArcStart(),
+                                          dummyShape->GetAngle(), dummyShape->GetWidth() );
                     break;
 
                 case T_gr_line:
-                    dummysegm = parsePCB_SHAPE();
-                    pad->AddPrimitiveSegment( dummysegm->GetStart(), dummysegm->GetEnd(),
-                                              dummysegm->GetWidth() );
+                    dummyShape = parsePCB_SHAPE();
+                    pad->AddPrimitiveSegment( dummyShape->GetStart(), dummyShape->GetEnd(),
+                                              dummyShape->GetWidth() );
                     break;
 
                 case T_gr_circle:
-                    dummysegm = parsePCB_SHAPE();
-                    pad->AddPrimitiveCircle( dummysegm->GetCenter(), dummysegm->GetRadius(),
-                                             dummysegm->GetWidth(), dummysegm->IsFilled() );
+                    dummyShape = parsePCB_SHAPE();
+                    pad->AddPrimitiveCircle( dummyShape->GetCenter(), dummyShape->GetRadius(),
+                                             dummyShape->GetWidth(), dummyShape->IsFilled() );
                     break;
 
                 case T_gr_rect:
-                    dummysegm = parsePCB_SHAPE();
-                    pad->AddPrimitiveRect( dummysegm->GetStart(), dummysegm->GetEnd(),
-                                           dummysegm->GetWidth(), dummysegm->IsFilled() );
+                    dummyShape = parsePCB_SHAPE();
+                    pad->AddPrimitiveRect( dummyShape->GetStart(), dummyShape->GetEnd(),
+                                           dummyShape->GetWidth(), dummyShape->IsFilled() );
                     break;
 
 
                 case T_gr_poly:
-                    dummysegm = parsePCB_SHAPE();
-                    pad->AddPrimitivePoly( dummysegm->BuildPolyPointsList(), dummysegm->GetWidth(),
-                                           dummysegm->IsFilled() );
+                    dummyShape = parsePCB_SHAPE();
+                    pad->AddPrimitivePoly( dummyShape->BuildPolyPointsList(), dummyShape->GetWidth(),
+                                           dummyShape->IsFilled() );
                     break;
 
                 case T_gr_curve:
-                    dummysegm = parsePCB_SHAPE();
-                    pad->AddPrimitiveCurve( dummysegm->GetStart(), dummysegm->GetEnd(),
-                                            dummysegm->GetBezierC1(),
-                                            dummysegm->GetBezierC2(), dummysegm->GetWidth() );
+                    dummyShape = parsePCB_SHAPE();
+                    pad->AddPrimitiveCurve( dummyShape->GetStart(), dummyShape->GetEnd(),
+                                            dummyShape->GetBezierC1(),
+                                            dummyShape->GetBezierC2(), dummyShape->GetWidth() );
                     break;
 
                 default:
@@ -4372,7 +4370,7 @@ PAD* PCB_PARSER::parsePAD( FOOTPRINT* aParent )
                     break;
                 }
 
-                delete dummysegm;
+                delete dummyShape;
             }
 
             break;
