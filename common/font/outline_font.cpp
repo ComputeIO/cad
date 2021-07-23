@@ -192,7 +192,7 @@ VECTOR2D OUTLINE_FONT::StringBoundaryLimits( const KIGFX::GAL* aGal, const UTF8&
     //hb_glyph_position_t* glyphPos = hb_buffer_get_glyph_positions( buf, &glyphCount );
 
     hb_ft_font_set_funcs( referencedFont );
-    hb_shape( referencedFont, buf, NULL, 0 );
+    hb_shape( referencedFont, buf, nullptr, 0 );
 
     int width = 0;
     int height = mFace->size->metrics.height;
@@ -377,7 +377,7 @@ VECTOR2I OUTLINE_FONT::GetTextAsPolygon( BOX2I* aBoundingBox, GLYPH_LIST& aGlyph
 
     referencedFont = hb_ft_font_create_referenced( face );
     hb_ft_font_set_funcs( referencedFont );
-    hb_shape( referencedFont, buf, NULL, 0 );
+    hb_shape( referencedFont, buf, nullptr, 0 );
 
     const double   mirror_factor = ( aIsMirrored ? 1 : -1 );
     const VECTOR2D scaleFactor( glyphSize.x * mirror_factor / scaler, glyphSize.y / scaler );
@@ -612,7 +612,7 @@ VECTOR2D OUTLINE_FONT::getBoundingBox( const UTF8& aString, const VECTOR2D& aGly
 
     hb_font_t* referencedFont = hb_ft_font_create_referenced( face );
     hb_ft_font_set_funcs( referencedFont );
-    hb_shape( referencedFont, buf, NULL, 0 );
+    hb_shape( referencedFont, buf, nullptr, 0 );
 
     unsigned int     glyphCount;
     hb_glyph_info_t* glyphInfo = hb_buffer_get_glyph_infos( buf, &glyphCount );
@@ -686,7 +686,7 @@ void OUTLINE_FONT::RenderToOpenGLCanvas( KIGFX::OPENGL_GAL& aGal, const UTF8& aS
     hb_font_t*           referencedFont = hb_ft_font_create_referenced( mFace );
 
     hb_ft_font_set_funcs( referencedFont );
-    hb_shape( referencedFont, buf, NULL, 0 );
+    hb_shape( referencedFont, buf, nullptr, 0 );
 
     const double mirror_factor = ( aIsMirrored ? 1 : -1 );
     const double x_scaleFactor = mirror_factor * aGlyphSize.x / mScaler;

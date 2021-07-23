@@ -590,14 +590,14 @@ std::vector<wxPoint> EDA_TEXT::TransformToSegmentList() const
         for( unsigned ii = 0; ii < strings_list.Count(); ii++ )
         {
             wxString txt = strings_list.Item( ii );
-            GRText( NULL, positions[ii], color, txt, GetDrawRotation(), size,
+            GRText( nullptr, positions[ii], color, txt, GetDrawRotation(), size,
                     GetHorizontalAlignment(), GetVerticalAlignment(), penWidth, IsItalic(),
                     forceBold, addTextSegmToBuffer, &cornerBuffer );
         }
     }
     else
     {
-        GRText( NULL, GetTextPos(), color, GetShownText(), GetDrawRotation(), size,
+        GRText( nullptr, GetTextPos(), color, GetShownText(), GetDrawRotation(), size,
                 GetHorizontalAlignment(), GetVerticalAlignment(), penWidth, IsItalic(), forceBold,
                 addTextSegmToBuffer, &cornerBuffer );
     }
