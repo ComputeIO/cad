@@ -114,6 +114,8 @@ public:
      */
     virtual void DrawPolyline( const std::deque<VECTOR2D>& aPointList ) override;
 
+    virtual void DrawPolyline( const std::vector<VECTOR2D>& aPointList ) override;
+
     virtual void DrawPolyline( const VECTOR2D aPointList[], int aListSize ) override;
 
     virtual void DrawPolyline( const SHAPE_LINE_CHAIN& aLineChain ) override;

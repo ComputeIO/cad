@@ -58,8 +58,7 @@ const VECTOR2D BASIC_GAL::transform( const VECTOR2D& aPoint ) const
 void BASIC_GAL::doDrawPolyline( const std::vector<wxPoint>& aLocalPointList, bool aFill )
 {
 #ifdef DEBUG
-    std::cerr << "BASIC_GAL::doDrawPolyline( ... ) "
-              << aLocalPointList.size() << " pts, "
+    std::cerr << "BASIC_GAL::doDrawPolyline( ... ) " << aLocalPointList.size() << " pts, "
               << ( m_DC ? ( m_isFillEnabled ? "DC fill " : "DC no_fill " ) : "!DC " )
               << ( m_plotter ? "plotter " : "!plotter " )
               << ( m_callback ? "callback " : "!callback " ) << std::endl;
@@ -75,7 +74,7 @@ void BASIC_GAL::doDrawPolyline( const std::vector<wxPoint>& aLocalPointList, boo
         {
             for( unsigned ii = 1; ii < aLocalPointList.size(); ++ii )
             {
-                GRCSegm( m_isClipped ? &m_clipBox : nullptr, m_DC, aLocalPointList[ ii - 1],
+                GRCSegm( m_isClipped ? &m_clipBox : nullptr, m_DC, aLocalPointList[ii - 1],
                          aLocalPointList[ii], GetLineWidth(), m_Color );
             }
         }
@@ -109,6 +108,20 @@ void BASIC_GAL::doDrawPolyline( const std::vector<wxPoint>& aLocalPointList, boo
 
 
 void BASIC_GAL::DrawPolyline( const std::deque<VECTOR2D>& aPointList )
+{
+    if( aPointList.size() < 2 )
+        return;
+
+    std::vector<wxPoint> polyline_corners;
+
+    for( const VECTOR2D& pt : aPointList )
+        polyline_corners.emplace_back( (wxPoint) transform( pt ) );
+
+    doDrawPolyline( polyline_corners );
+}
+
+
+void BASIC_GAL::DrawPolyline( const std::vector<VECTOR2D>& aPointList )
 {
     if( aPointList.size() < 2 )
         return;
@@ -217,7 +230,12 @@ void BASIC_GAL::DrawGlyph( const KIFONT::GLYPH& aGlyph, int aNth, int aTotal )
         {
             if( aGlyph.IsStroke() )
             {
-
+                m_plotter->SetLayerPolarity( true );
+                for( auto pointList : aGlyph.GetPoints() )
+                {
+                    DrawPolyline( pointList );
+                }
+                m_plotter->PenFinish();
             }
             else if( aGlyph.IsOutline() )
             {
@@ -273,7 +291,16 @@ void BASIC_GAL::DrawGlyph( const KIFONT::GLYPH& aGlyph, int aNth, int aTotal )
         case PLOT_FORMAT::HPGL:
         case PLOT_FORMAT::SVG:
         {
-            if( aGlyph.IsOutline() )
+            if( aGlyph.IsStroke() )
+            {
+                //m_plotter->SetLayerPolarity( true );
+                for( auto pointList : aGlyph.GetPoints() )
+                {
+                    DrawPolyline( pointList );
+                }
+                m_plotter->PenFinish();
+            }
+            else
             {
                 // TODO move this to the appropriate plotter (PDF?) class
                 auto triangleCallback = [&]( int aPolygonIndex, const VECTOR2D& aVertex1,
@@ -301,33 +328,54 @@ void BASIC_GAL::DrawGlyph( const KIFONT::GLYPH& aGlyph, int aNth, int aTotal )
     else
     {
 #if 1
-        auto polylist = aGlyph.GetPolylist();
-        const wxBrush& saveBrush = m_DC->GetBrush();
-
-        for( int iOutline = 0; iOutline < polylist.OutlineCount(); ++iOutline )
+        if( aGlyph.IsStroke() )
         {
-            const SHAPE_LINE_CHAIN& outline = polylist.COutline( iOutline );
-            std::vector<wxPoint>    outline_with_transform;
-
-            for( int i = 0; i < outline.PointCount(); i++ )
-                outline_with_transform.emplace_back( (wxPoint) transform( outline.CPoint( i ) ) );
-
-            m_DC->SetBrush( saveBrush );
-            doDrawPolyline( outline_with_transform, true );
-
-            m_DC->SetBrush( *wxWHITE_BRUSH );
-            for( int iHole = 0; iHole < polylist.HoleCount( iOutline ); iHole++ )
+            for( auto pointList : aGlyph.GetPoints() )
             {
-                const SHAPE_LINE_CHAIN& hole = polylist.CHole( iOutline, iHole );
-                std::vector<wxPoint>    hole_with_transform;
-                for( int i = 0; i < hole.PointCount(); i++ )
-                    hole_with_transform.emplace_back( (wxPoint) transform( hole.CPoint( i ) ) );
-
-                doDrawPolyline( hole_with_transform, true );
+                DrawPolyline( pointList );
             }
         }
+        else
+        {
+            if( m_DC )
+            {
+            auto           polylist = aGlyph.GetPolylist();
+            const wxBrush& saveBrush = m_DC->GetBrush();
 
-        m_DC->SetBrush( saveBrush );
+            for( int iOutline = 0; iOutline < polylist.OutlineCount(); ++iOutline )
+            {
+                const SHAPE_LINE_CHAIN& outline = polylist.COutline( iOutline );
+                std::vector<wxPoint>    outline_with_transform;
+
+                for( int i = 0; i < outline.PointCount(); i++ )
+                    outline_with_transform.emplace_back(
+                            (wxPoint) transform( outline.CPoint( i ) ) );
+
+                m_DC->SetBrush( saveBrush );
+                doDrawPolyline( outline_with_transform, true );
+
+                m_DC->SetBrush( *wxWHITE_BRUSH );
+                for( int iHole = 0; iHole < polylist.HoleCount( iOutline ); iHole++ )
+                {
+                    const SHAPE_LINE_CHAIN& hole = polylist.CHole( iOutline, iHole );
+                    std::vector<wxPoint>    hole_with_transform;
+                    for( int i = 0; i < hole.PointCount(); i++ )
+                        hole_with_transform.emplace_back( (wxPoint) transform( hole.CPoint( i ) ) );
+
+                    doDrawPolyline( hole_with_transform, true );
+                }
+            }
+
+            m_DC->SetBrush( saveBrush );
+            }
+            else
+            {
+#ifdef DEBUG
+                std::cerr << "BASIC_GAL::DrawGlyph( [aGlyph], " << aNth << ", " << aTotal
+                          << " ) m_DC is null?" << std::endl;
+#endif
+            }
+        }
 #else
         // TODO move this to the appropriate plotter (PDF?) class
         auto triangleCallback = [&]( int aPolygonIndex, const VECTOR2D& aVertex1,
