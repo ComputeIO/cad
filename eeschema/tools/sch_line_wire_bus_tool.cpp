@@ -760,6 +760,9 @@ int SCH_LINE_WIRE_BUS_TOOL::doDrawSegments( const std::string& aTool, int aType,
         {
             if( segment || m_busUnfold.in_progress )
                 cleanup();
+            else
+                // Pass delete event on so selected items are deleted
+                evt->SetPassEvent();
         }
         else
         {
