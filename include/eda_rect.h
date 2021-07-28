@@ -147,7 +147,10 @@ public:
         m_pos.y += dy;
     }
 
-    void Offset( const wxPoint& offset ) { m_pos += offset; }
+    void Offset( const wxPoint& offset )
+    {
+        m_pos += offset;
+    }
 
     void SetX( int val )
     {

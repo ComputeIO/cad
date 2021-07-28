@@ -168,16 +168,6 @@ public:
     }
 
     /**
-     * Draw a polygon.
-     *
-     * @param aPointList is the list of the polygon points.
-     */
-    virtual void DrawPolygon( const std::deque<VECTOR2D>& aPointList ){};
-    virtual void DrawPolygon( const VECTOR2D aPointList[], int aListSize ){};
-    virtual void DrawPolygon( const SHAPE_POLY_SET& aPolySet ){};
-    virtual void DrawPolygon( const SHAPE_LINE_CHAIN& aPolySet ){};
-
-    /**
      * Draw a polygon representing an outline font glyph.
      *
      * @param aPointList is the list of the polygon points.
@@ -189,6 +179,16 @@ public:
     }
 
     void DrawGlyphs( const KIFONT::GLYPH_LIST& aGlyphs );
+
+    /**
+     * Draw a polygon.
+     *
+     * @param aPointList is the list of the polygon points.
+     */
+    virtual void DrawPolygon( const std::deque<VECTOR2D>& aPointList ) {};
+    virtual void DrawPolygon( const VECTOR2D aPointList[], int aListSize ) {};
+    virtual void DrawPolygon( const SHAPE_POLY_SET& aPolySet, bool aStrokeTriangulation = false ) {};
+    virtual void DrawPolygon( const SHAPE_LINE_CHAIN& aPolySet ) {};
 
     /**
      * Draw a cubic bezier spline.

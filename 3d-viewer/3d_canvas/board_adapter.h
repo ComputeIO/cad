@@ -339,10 +339,10 @@ public:
     SFVEC4F GetItemColor( int aItemId ) const;
 
     /**
-     * @param aColor the color mapped.
+     * @param[in] aColor is the color mapped.
      * @return the color in SFVEC3F format
      */
-    SFVEC4F GetColor( COLOR4D aColor ) const;
+    SFVEC4F GetColor( const COLOR4D& aColor ) const;
 
     /**
      * Get the top z position.
@@ -568,7 +568,7 @@ private:
                        int aClearanceValue );
 
     void createPadWithClearance( const PAD *aPad, CONTAINER_2D_BASE* aDstContainer,
-                                 PCB_LAYER_ID aLayer, wxSize aClearanceValue ) const;
+                                 PCB_LAYER_ID aLayer, const wxSize& aClearanceValue ) const;
 
     OBJECT_2D* createPadWithDrill( const PAD* aPad, int aInflateValue );
 

@@ -284,7 +284,6 @@ void CADSTAR_PCB_ARCHIVE_LOADER::loadBoardStackup()
     wxASSERT( totalCopperLayers == cadstarBoardStackup.size() );
     wxASSERT( cadstarBoardStackup.back().ConstructionLayers.size() == 0 );
 
-
     // Create a new stackup from default stackup list
     BOARD_STACKUP& stackup = m_board->GetDesignSettings().GetStackupDescriptor();
     stackup.RemoveAll();
@@ -695,7 +694,8 @@ void CADSTAR_PCB_ARCHIVE_LOADER::loadLibraryFigures( const SYMDEF_PCB& aComponen
 }
 
 
-void CADSTAR_PCB_ARCHIVE_LOADER::loadLibraryCoppers( const SYMDEF_PCB& aComponent, FOOTPRINT* aFootprint )
+void CADSTAR_PCB_ARCHIVE_LOADER::loadLibraryCoppers( const SYMDEF_PCB& aComponent,
+                                                     FOOTPRINT* aFootprint )
 {
     int totalCopperPads = 0;
 
@@ -729,7 +729,6 @@ void CADSTAR_PCB_ARCHIVE_LOADER::loadLibraryCoppers( const SYMDEF_PCB& aComponen
 
             if( !found )
                 anchorPad = aComponent.ComponentPads.at( compCopper.AssociatedPadIDs.front() );
-
 
             PAD* pad = new PAD( aFootprint );
             pad->SetAttribute( PAD_ATTRIB::SMD );
@@ -1066,7 +1065,6 @@ PAD* CADSTAR_PCB_ARCHIVE_LOADER::getKiCadPad( const COMPONENT_PAD& aCadstarPad, 
     if( csPadcode.ReliefWidth != UNDEFINED_VALUE )
         pad->SetThermalSpokeWidth( getKiCadLength( csPadcode.ReliefWidth ) );
 
-
     if( csPadcode.DrillDiameter != UNDEFINED_VALUE )
     {
         if( csPadcode.SlotLength != UNDEFINED_VALUE )
@@ -1091,7 +1089,6 @@ PAD* CADSTAR_PCB_ARCHIVE_LOADER::getKiCadPad( const COMPONENT_PAD& aCadstarPad, 
         pad->SetDrillSize( { 0, 0 } );
     }
 
-
     if( csPadcode.SlotOrientation != 0 )
     {
         LSET lset = pad->GetLayerSet();
@@ -1114,8 +1111,8 @@ PAD* CADSTAR_PCB_ARCHIVE_LOADER::getKiCadPad( const COMPONENT_PAD& aCadstarPad, 
             padShape->SetPolyShape( padOutline );
             padShape->SetWidth( 0 );
             padShape->Move( padOffset - drillOffset );
-            padShape->Rotate( wxPoint( 0, 0 ), 1800.0 - getAngleTenthDegree( csPadcode.SlotOrientation ) );
-
+            padShape->Rotate( wxPoint( 0, 0 ),
+                              1800.0 - getAngleTenthDegree( csPadcode.SlotOrientation ) );
 
             SHAPE_POLY_SET editedPadOutline = padShape->GetPolyShape();
 
@@ -1141,7 +1138,6 @@ PAD* CADSTAR_PCB_ARCHIVE_LOADER::getKiCadPad( const COMPONENT_PAD& aCadstarPad, 
                                    "pad shape. The hole has been moved to the center of the pad." ),
                                 csPadcode.Name );
             }
-
         }
         else
         {
@@ -1262,8 +1258,8 @@ void CADSTAR_PCB_ARCHIVE_LOADER::loadFigures()
     {
         FIGURE& fig = figPair.second;
         drawCadstarShape( fig.Shape, getKiCadLayer( fig.LayerID ),
-                getLineThickness( fig.LineCodeID ), wxString::Format( "FIGURE %s", fig.ID ), m_board,
-                fig.GroupID );
+                getLineThickness( fig.LineCodeID ), wxString::Format( "FIGURE %s", fig.ID ),
+                          m_board, fig.GroupID );
 
         //TODO process "swaprule" (doesn't seem to apply to Layout Figures?)
         //TODO process re-use block when KiCad Supports it
@@ -1991,7 +1987,6 @@ void CADSTAR_PCB_ARCHIVE_LOADER::loadCoppers()
                 rawPolys.Inflate( copperWidth / 2, 32 );
             }
 
-
             if( pouredZone->HasFilledPolysForLayer( getKiCadLayer( csCopper.LayerID ) ) )
             {
                 rawPolys.BooleanAdd( pouredZone->RawPolysList( getKiCadLayer( csCopper.LayerID )),
@@ -2127,7 +2122,8 @@ void CADSTAR_PCB_ARCHIVE_LOADER::loadNets()
             else if( ( pin.PadID - (long) 1 ) > footprint->Pads().size() )
             {
                 wxLogWarning( wxString::Format( _( "The net '%s' references non-existent pad index"
-                                                   " '%d' in component '%s'. This has been ignored." ),
+                                                   " '%d' in component '%s'. This has been "
+                                                   "ignored." ),
                                                 netnameForErrorReporting,
                                                 pin.PadID,
                                                 footprint->GetReference() ) );
@@ -2581,11 +2577,11 @@ void CADSTAR_PCB_ARCHIVE_LOADER::drawCadstarShape( const SHAPE& aCadstarShape,
     case SHAPE_TYPE::OUTLINE:
         ///TODO update this when Polygons in KiCad can be defined with no fill
         drawCadstarVerticesAsShapes( aCadstarShape.Vertices, aKiCadLayer, aLineThickness,
-                                     aContainer, aCadstarGroupID, aMoveVector, aRotationAngle, aScalingFactor,
-                                     aTransformCentre, aMirrorInvert );
+                                     aContainer, aCadstarGroupID, aMoveVector, aRotationAngle,
+                                     aScalingFactor, aTransformCentre, aMirrorInvert );
         drawCadstarCutoutsAsShapes( aCadstarShape.Cutouts, aKiCadLayer, aLineThickness,
-                                    aContainer, aCadstarGroupID, aMoveVector, aRotationAngle, aScalingFactor,
-                                    aTransformCentre, aMirrorInvert );
+                                    aContainer, aCadstarGroupID, aMoveVector, aRotationAngle,
+                                    aScalingFactor, aTransformCentre, aMirrorInvert );
         break;
 
     case SHAPE_TYPE::HATCHED:
@@ -2881,7 +2877,8 @@ SHAPE_POLY_SET CADSTAR_PCB_ARCHIVE_LOADER::getPolySetFromCadstarShape( const SHA
     }
 
     if( aLineThickness > 0 )
-        polySet.Inflate( aLineThickness / 2, 32, SHAPE_POLY_SET::CORNER_STRATEGY::ROUND_ALL_CORNERS );
+        polySet.Inflate( aLineThickness / 2, 32,
+                         SHAPE_POLY_SET::CORNER_STRATEGY::ROUND_ALL_CORNERS );
 
 #ifdef DEBUG
     for( int i = 0; i < polySet.OutlineCount(); ++i )
@@ -2993,7 +2990,8 @@ std::vector<PCB_TRACK*> CADSTAR_PCB_ARCHIVE_LOADER::makeTracksFromShapes(
             if( shape->GetClass() == wxT( "MGRAPHIC" ) )
             {
                 FP_SHAPE* fp_shape = (FP_SHAPE*) shape;
-                SHAPE_ARC arc( fp_shape->GetStart0(), fp_shape->GetEnd0(), fp_shape->GetAngle() / 10.0 );
+                SHAPE_ARC arc( fp_shape->GetStart0(), fp_shape->GetEnd0(),
+                               fp_shape->GetAngle() / 10.0 );
                 track = new PCB_ARC( aParentContainer, &arc );
             }
             else
@@ -3669,7 +3667,8 @@ void CADSTAR_PCB_ARCHIVE_LOADER::calculateZonePriorities()
 }
 
 
-FOOTPRINT* CADSTAR_PCB_ARCHIVE_LOADER::getFootprintFromCadstarID( const COMPONENT_ID& aCadstarComponentID )
+FOOTPRINT* CADSTAR_PCB_ARCHIVE_LOADER::getFootprintFromCadstarID(
+        const COMPONENT_ID& aCadstarComponentID )
 {
     if( m_componentMap.find( aCadstarComponentID ) == m_componentMap.end() )
         return nullptr;
@@ -3678,7 +3677,7 @@ FOOTPRINT* CADSTAR_PCB_ARCHIVE_LOADER::getFootprintFromCadstarID( const COMPONEN
 }
 
 
-wxPoint CADSTAR_PCB_ARCHIVE_LOADER::getKiCadPoint( wxPoint aCadstarPoint )
+wxPoint CADSTAR_PCB_ARCHIVE_LOADER::getKiCadPoint( const wxPoint& aCadstarPoint )
 {
     wxPoint retval;
 
@@ -3689,9 +3688,8 @@ wxPoint CADSTAR_PCB_ARCHIVE_LOADER::getKiCadPoint( wxPoint aCadstarPoint )
 }
 
 
-double CADSTAR_PCB_ARCHIVE_LOADER::getPolarAngle( wxPoint aPoint )
+double CADSTAR_PCB_ARCHIVE_LOADER::getPolarAngle( const wxPoint& aPoint )
 {
-
     return NormalizeAnglePos( ArcTangente( aPoint.y, aPoint.x ) );
 }
 
@@ -3778,7 +3776,8 @@ NETINFO_ITEM* CADSTAR_PCB_ARCHIVE_LOADER::getKiCadNet( const NET_ID& aCadstarNet
 }
 
 
-PCB_LAYER_ID CADSTAR_PCB_ARCHIVE_LOADER::getKiCadCopperLayerID( unsigned int aLayerNum, bool aDetectMaxLayer )
+PCB_LAYER_ID CADSTAR_PCB_ARCHIVE_LOADER::getKiCadCopperLayerID( unsigned int aLayerNum,
+                                                                bool aDetectMaxLayer )
 {
     if( aDetectMaxLayer && aLayerNum == Assignments.Technology.MaxPhysicalLayer )
         return PCB_LAYER_ID::B_Cu;
@@ -3822,6 +3821,7 @@ PCB_LAYER_ID CADSTAR_PCB_ARCHIVE_LOADER::getKiCadCopperLayerID( unsigned int aLa
     return PCB_LAYER_ID::UNDEFINED_LAYER;
 }
 
+
 bool CADSTAR_PCB_ARCHIVE_LOADER::isLayerSet( const LAYER_ID& aCadstarLayerID )
 {
     wxCHECK( Assignments.Layerdefs.Layers.find( aCadstarLayerID )
@@ -3855,7 +3855,8 @@ PCB_LAYER_ID CADSTAR_PCB_ARCHIVE_LOADER::getKiCadLayer( const LAYER_ID& aCadstar
             return PCB_LAYER_ID::UNDEFINED_LAYER;
     }
 
-    wxCHECK( m_layermap.find( aCadstarLayerID ) != m_layermap.end(), PCB_LAYER_ID::UNDEFINED_LAYER );
+    wxCHECK( m_layermap.find( aCadstarLayerID ) != m_layermap.end(),
+             PCB_LAYER_ID::UNDEFINED_LAYER );
 
     return m_layermap.at( aCadstarLayerID );
 }

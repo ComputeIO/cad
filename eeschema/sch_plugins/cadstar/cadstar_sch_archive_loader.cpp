@@ -1973,7 +1973,7 @@ void CADSTAR_SCH_ARCHIVE_LOADER::loadFigure(
 
 
 void CADSTAR_SCH_ARCHIVE_LOADER::loadSheetAndChildSheets(
-        LAYER_ID aCadstarSheetID, wxPoint aPosition, wxSize aSheetSize,
+        LAYER_ID aCadstarSheetID, const wxPoint& aPosition, wxSize aSheetSize,
         const SCH_SHEET_PATH& aParentSheet )
 {
     wxCHECK_MSG( m_sheetMap.find( aCadstarSheetID ) == m_sheetMap.end(), ,
@@ -2800,7 +2800,7 @@ std::pair<wxPoint, wxSize> CADSTAR_SCH_ARCHIVE_LOADER::getFigureExtentsKiCad(
 }
 
 
-wxPoint CADSTAR_SCH_ARCHIVE_LOADER::getKiCadPoint( wxPoint aCadstarPoint )
+wxPoint CADSTAR_SCH_ARCHIVE_LOADER::getKiCadPoint( const wxPoint& aCadstarPoint )
 {
     wxPoint retval;
 
@@ -2811,8 +2811,8 @@ wxPoint CADSTAR_SCH_ARCHIVE_LOADER::getKiCadPoint( wxPoint aCadstarPoint )
 }
 
 
-wxPoint CADSTAR_SCH_ARCHIVE_LOADER::getKiCadLibraryPoint( wxPoint aCadstarPoint,
-                                                          wxPoint aCadstarCentre )
+wxPoint CADSTAR_SCH_ARCHIVE_LOADER::getKiCadLibraryPoint( const wxPoint& aCadstarPoint,
+                                                          const wxPoint& aCadstarCentre )
 {
     wxPoint retval;
 
@@ -2857,13 +2857,13 @@ wxPoint CADSTAR_SCH_ARCHIVE_LOADER::applyTransform(
 }
 
 
-double CADSTAR_SCH_ARCHIVE_LOADER::getPolarAngle( wxPoint aPoint )
+double CADSTAR_SCH_ARCHIVE_LOADER::getPolarAngle( const wxPoint& aPoint )
 {
     return NormalizeAnglePos( ArcTangente( aPoint.y, aPoint.x ) );
 }
 
 
-double CADSTAR_SCH_ARCHIVE_LOADER::getPolarRadius( wxPoint aPoint )
+double CADSTAR_SCH_ARCHIVE_LOADER::getPolarRadius( const wxPoint& aPoint )
 {
     return sqrt( ( (double) aPoint.x * (double) aPoint.x )
                  + ( (double) aPoint.y * (double) aPoint.y ) );

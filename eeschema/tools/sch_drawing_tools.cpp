@@ -109,8 +109,8 @@ int SCH_DRAWING_TOOLS::PlaceSymbol( const TOOL_EVENT& aEvent )
 
     if( m_inPlaceSymbol )
         return 0;
-    else
-        m_inPlaceSymbol = true;
+
+    REENTRANCY_GUARD guard( &m_inPlaceSymbol );
 
     if( aEvent.IsAction( &EE_ACTIONS::placeSymbol ) )
     {
@@ -356,7 +356,7 @@ int SCH_DRAWING_TOOLS::PlaceSymbol( const TOOL_EVENT& aEvent )
     getViewControls()->SetAutoPan( false );
     getViewControls()->CaptureCursor( false );
     m_frame->GetCanvas()->SetCurrentCursor( KICURSOR::ARROW );
-    m_inPlaceSymbol = false;
+
     return 0;
 }
 
@@ -369,8 +369,8 @@ int SCH_DRAWING_TOOLS::PlaceImage( const TOOL_EVENT& aEvent )
 
     if( m_inPlaceImage )
         return 0;
-    else
-        m_inPlaceImage = true;
+
+    REENTRANCY_GUARD guard( &m_inPlaceImage );
 
     m_toolMgr->RunAction( EE_ACTIONS::clearSelection, true );
     getViewControls()->ShowCursor( true );
@@ -477,6 +477,7 @@ int SCH_DRAWING_TOOLS::PlaceImage( const TOOL_EVENT& aEvent )
                 // (Current mouse pos after closing the dialog will be used)
                 KIGFX::VIEW_CONTROLS* controls = getViewControls();
                 VECTOR2D initialMousePos = controls->GetMousePosition(false);
+
                 // Build the rectangle area acceptable to move the cursor without
                 // having an auto-pan
                 EDA_RECT canvas_area = GetCanvasFreeAreaPixels();
@@ -574,7 +575,7 @@ int SCH_DRAWING_TOOLS::PlaceImage( const TOOL_EVENT& aEvent )
     getViewControls()->SetAutoPan( false );
     getViewControls()->CaptureCursor( false );
     m_frame->GetCanvas()->SetCurrentCursor( KICURSOR::ARROW );
-    m_inPlaceImage = false;
+
     return 0;
 }
 
@@ -590,6 +591,8 @@ int SCH_DRAWING_TOOLS::SingleClickPlace( const TOOL_EVENT& aEvent )
 
     if( m_inSingleClickPlace )
         return 0;
+
+    REENTRANCY_GUARD guard( &m_inSingleClickPlace );
 
     if( type == SCH_JUNCTION_T && aEvent.HasPosition() )
     {
@@ -649,8 +652,6 @@ int SCH_DRAWING_TOOLS::SingleClickPlace( const TOOL_EVENT& aEvent )
         wxASSERT_MSG( false, "Unknown item type in SCH_DRAWING_TOOLS::SingleClickPlace" );
         return 0;
     }
-
-    m_inSingleClickPlace = true;
 
     m_toolMgr->RunAction( EE_ACTIONS::clearSelection, true );
     getViewControls()->ShowCursor( true );
@@ -846,7 +847,7 @@ int SCH_DRAWING_TOOLS::SingleClickPlace( const TOOL_EVENT& aEvent )
 
     m_frame->GetCanvas()->SetCurrentCursor( KICURSOR::ARROW );
     controls->ForceCursorPosition( false );
-    m_inSingleClickPlace = false;
+
     return 0;
 }
 
@@ -878,6 +879,7 @@ SCH_TEXT* SCH_DRAWING_TOOLS::createNewText( const VECTOR2I& aPosition, int aType
 
         if( settings.m_IntersheetRefsShow )
             static_cast<SCH_GLOBALLABEL*>( textItem )->GetIntersheetRefs()->SetVisible( true );
+
         break;
 
     default:
@@ -981,8 +983,8 @@ int SCH_DRAWING_TOOLS::TwoClickPlace( const TOOL_EVENT& aEvent )
 
     if( m_inTwoClickPlace )
         return 0;
-    else
-        m_inTwoClickPlace = true;
+
+    REENTRANCY_GUARD guard( &m_inTwoClickPlace );
 
     bool isText        = aEvent.IsAction( &EE_ACTIONS::placeSchematicText );
     bool isGlobalLabel = aEvent.IsAction( &EE_ACTIONS::placeGlobalLabel );
@@ -1234,7 +1236,6 @@ int SCH_DRAWING_TOOLS::TwoClickPlace( const TOOL_EVENT& aEvent )
     controls->CaptureCursor( false );
     controls->ForceCursorPosition( false );
     m_frame->GetCanvas()->SetCurrentCursor( KICURSOR::ARROW );
-    m_inTwoClickPlace = false;
     return 0;
 }
 
@@ -1245,8 +1246,8 @@ int SCH_DRAWING_TOOLS::DrawSheet( const TOOL_EVENT& aEvent )
 
     if( m_inDrawSheet )
         return 0;
-    else
-        m_inDrawSheet = true;
+
+    REENTRANCY_GUARD guard( &m_inDrawSheet );
 
     m_toolMgr->RunAction( EE_ACTIONS::clearSelection, true );
     getViewControls()->ShowCursor( true );
@@ -1416,12 +1417,12 @@ int SCH_DRAWING_TOOLS::DrawSheet( const TOOL_EVENT& aEvent )
     getViewControls()->SetAutoPan( false );
     getViewControls()->CaptureCursor( false );
     m_frame->GetCanvas()->SetCurrentCursor( KICURSOR::ARROW );
-    m_inDrawSheet = false;
+
     return 0;
 }
 
 
-void SCH_DRAWING_TOOLS::sizeSheet( SCH_SHEET* aSheet, VECTOR2I aPos )
+void SCH_DRAWING_TOOLS::sizeSheet( SCH_SHEET* aSheet, const VECTOR2I& aPos )
 {
     wxPoint pos = aSheet->GetPosition();
     wxPoint size = (wxPoint) aPos - pos;

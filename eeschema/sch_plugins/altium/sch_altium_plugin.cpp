@@ -56,6 +56,7 @@
 #include <compoundfilereader.h>
 #include <kicad_string.h>
 #include <sch_edit_frame.h>
+#include <trigo.h>
 #include <wildcards_and_files_ext.h>
 #include <wx/mstream.h>
 #include <wx/log.h>
@@ -294,8 +295,8 @@ void SCH_ALTIUM_PLUGIN::ParseStorage( const CFB::CompoundFileReader& aReader )
     ALTIUM_PARSER reader( aReader, file );
 
     std::map<wxString, wxString> properties = reader.ReadProperties();
-    wxString header = ALTIUM_PARSER::PropertiesReadString( properties, "HEADER", "" );
-    int      weight = ALTIUM_PARSER::PropertiesReadInt( properties, "WEIGHT", 0 );
+    wxString header = ALTIUM_PARSER::ReadString( properties, "HEADER", "" );
+    int      weight = ALTIUM_PARSER::ReadInt( properties, "WEIGHT", 0 );
 
     if( weight < 0 )
         THROW_IO_ERROR( "Storage weight is negative!" );
@@ -337,7 +338,7 @@ void SCH_ALTIUM_PLUGIN::ParseFileHeader( const CFB::CompoundFileReader& aReader 
     {
         std::map<wxString, wxString> properties = reader.ReadProperties();
 
-        int               recordId = ALTIUM_PARSER::PropertiesReadInt( properties, "RECORD", 0 );
+        int               recordId = ALTIUM_PARSER::ReadInt( properties, "RECORD", 0 );
         ALTIUM_SCH_RECORD record   = static_cast<ALTIUM_SCH_RECORD>( recordId );
 
         if( record != ALTIUM_SCH_RECORD::HEADER )
@@ -355,7 +356,7 @@ void SCH_ALTIUM_PLUGIN::ParseFileHeader( const CFB::CompoundFileReader& aReader 
     {
         std::map<wxString, wxString> properties = reader.ReadProperties();
 
-        int               recordId = ALTIUM_PARSER::PropertiesReadInt( properties, "RECORD", 0 );
+        int               recordId = ALTIUM_PARSER::ReadInt( properties, "RECORD", 0 );
         ALTIUM_SCH_RECORD record   = static_cast<ALTIUM_SCH_RECORD>( recordId );
 
         // see: https://github.com/vadmium/python-altium/blob/master/format.md
@@ -738,7 +739,7 @@ void SCH_ALTIUM_PLUGIN::ParsePin( const std::map<wxString, wxString>& aPropertie
 }
 
 
-void SetEdaTextJustification( EDA_TEXT* text, ASCH_LABEL_JUSTIFICATION justification )
+void SetTextPositioning( EDA_TEXT* text, ASCH_LABEL_JUSTIFICATION justification, ASCH_RECORD_ORIENTATION orientation )
 {
     switch( justification )
     {
@@ -781,6 +782,22 @@ void SetEdaTextJustification( EDA_TEXT* text, ASCH_LABEL_JUSTIFICATION justifica
         text->Align( TEXT_ATTRIBUTES::H_RIGHT );
         break;
     }
+
+    switch( orientation )
+    {
+    case ASCH_RECORD_ORIENTATION::RIGHTWARDS:
+        text->SetTextAngle( EDA_ANGLE::ANGLE_0 );
+        break;
+    case ASCH_RECORD_ORIENTATION::LEFTWARDS:
+        text->SetTextAngle( EDA_ANGLE::ANGLE_180 );
+        break;
+    case ASCH_RECORD_ORIENTATION::UPWARDS:
+        text->SetTextAngle( EDA_ANGLE::ANGLE_90 );
+        break;
+    case ASCH_RECORD_ORIENTATION::DOWNWARDS:
+        text->SetTextAngle( EDA_ANGLE::ANGLE_270 );
+        break;
+    }
 }
 
 
@@ -806,7 +823,7 @@ void SCH_ALTIUM_PLUGIN::ParseLabel( const std::map<wxString, wxString>& aPropert
         wxString  kicadText = AltiumSpecialStringsToKiCadVariables( elem.text, variableMap );
         SCH_TEXT* textItem = new SCH_TEXT( elem.location + m_sheetOffset, kicadText );
 
-        SetEdaTextJustification( textItem, elem.justification );
+        SetTextPositioning( textItem, elem.justification, elem.orientation );
 
         size_t fontId = static_cast<int>( elem.fontId );
 
@@ -842,7 +859,7 @@ void SCH_ALTIUM_PLUGIN::ParseLabel( const std::map<wxString, wxString>& aPropert
 
         textItem->SetPosition( GetRelativePosition( elem.location + m_sheetOffset, symbol ) );
         textItem->SetText( elem.text );
-        SetEdaTextJustification( textItem, elem.justification );
+        SetTextPositioning( textItem, elem.justification, elem.orientation );
 
         size_t fontId = static_cast<int>( elem.fontId );
 
@@ -1297,16 +1314,21 @@ void SCH_ALTIUM_PLUGIN::ParseArc( const std::map<wxString, wxString>& aPropertie
         }
         else
         {
+            if( fmod( 360.0 + elem.endAngle - elem.startAngle, 360.0 ) > 180.0 )
+            {
+                m_reporter->Report( _( "Arcs in Symbols cannot exceed 180 degrees." ),
+                                    RPT_SEVERITY_ERROR );
+                return;
+            }
+
             LIB_ARC* arc = new LIB_ARC( libSymbolIt->second );
             libSymbolIt->second->AddDrawItem( arc );
-
             arc->SetUnit( elem.ownerpartid );
-
-            // TODO: correct?
             arc->SetPosition( GetRelativePosition( elem.center + m_sheetOffset, symbol ) );
             arc->SetRadius( elem.radius );
             arc->SetFirstRadiusAngle( elem.startAngle * 10. );
             arc->SetSecondRadiusAngle( elem.endAngle * 10. );
+            arc->CalcEndPoints();
         }
     }
 }
@@ -1757,7 +1779,7 @@ void SCH_ALTIUM_PLUGIN::ParsePowerPort( const std::map<wxString, wxString>& aPro
         libSymbol->SetName( elem.text );
         libSymbol->GetReferenceField().SetText( "#PWR" );
         libSymbol->GetValueField().SetText( elem.text );
-        libSymbol->GetValueField().SetVisible( true ); // TODO: why does this not work?
+        libSymbol->GetValueField().SetVisible( true );
         libSymbol->SetDescription( wxString::Format( _( "Power symbol creates a global "
                                                         "label with name '%s'" ), elem.text ) );
         libSymbol->SetKeyWords( "power-flag" );
@@ -1796,9 +1818,9 @@ void SCH_ALTIUM_PLUGIN::ParsePowerPort( const std::map<wxString, wxString>& aPro
     symbol->SetLibSymbol( new LIB_SYMBOL( *libSymbol ) );
 
     SCH_FIELD* valueField = symbol->GetField( VALUE_FIELD );
+    valueField->SetVisible( elem.showNetName );
 
-    // TODO: Why do I need to set those a second time?
-    valueField->SetVisible( true );
+    // TODO: Why do I need to set this a second time?
     valueField->SetPosition( libSymbol->GetValueField().GetPosition() );
 
     symbol->SetPosition( elem.location + m_sheetOffset );
@@ -2169,19 +2191,6 @@ void SCH_ALTIUM_PLUGIN::ParseSheet( const std::map<wxString, wxString>& aPropert
 }
 
 
-void SetFieldOrientation( SCH_FIELD& aField, ASCH_RECORD_ORIENTATION aOrientation )
-{
-    switch( aOrientation )
-    {
-    default:
-    case ASCH_RECORD_ORIENTATION::RIGHTWARDS: aField.SetTextAngle( 0 );    break;
-    case ASCH_RECORD_ORIENTATION::UPWARDS:    aField.SetTextAngle( 900 );  break;
-    case ASCH_RECORD_ORIENTATION::LEFTWARDS:  aField.SetTextAngle( 1800 ); break;
-    case ASCH_RECORD_ORIENTATION::DOWNWARDS:  aField.SetTextAngle( 2700 ); break;
-    }
-}
-
-
 void SCH_ALTIUM_PLUGIN::ParseSheetName( const std::map<wxString, wxString>& aProperties )
 {
     ASCH_SHEET_NAME elem( aProperties );
@@ -2201,9 +2210,7 @@ void SCH_ALTIUM_PLUGIN::ParseSheetName( const std::map<wxString, wxString>& aPro
     sheetNameField.SetPosition( elem.location + m_sheetOffset );
     sheetNameField.SetText( elem.text );
     sheetNameField.SetVisible( !elem.isHidden );
-    sheetNameField.Align( TEXT_ATTRIBUTES::H_LEFT, TEXT_ATTRIBUTES::V_BOTTOM );
-
-    SetFieldOrientation( sheetNameField, elem.orientation );
+    SetTextPositioning( &sheetNameField, ASCH_LABEL_JUSTIFICATION::BOTTOM_LEFT, elem.orientation );
 }
 
 
@@ -2235,9 +2242,7 @@ void SCH_ALTIUM_PLUGIN::ParseFileName( const std::map<wxString, wxString>& aProp
 
     filenameField.SetText( elem.text );
     filenameField.SetVisible( !elem.isHidden );
-    filenameField.Align( TEXT_ATTRIBUTES::H_LEFT, TEXT_ATTRIBUTES::V_BOTTOM );
-
-    SetFieldOrientation( filenameField, elem.orientation );
+    SetTextPositioning( &filenameField, ASCH_LABEL_JUSTIFICATION::BOTTOM_LEFT, elem.orientation );
 }
 
 
@@ -2266,9 +2271,7 @@ void SCH_ALTIUM_PLUGIN::ParseDesignator( const std::map<wxString, wxString>& aPr
 
     refField->SetPosition( elem.location + m_sheetOffset );
     refField->SetVisible( true );
-    refField->Align( TEXT_ATTRIBUTES::H_LEFT, TEXT_ATTRIBUTES::V_BOTTOM );
-
-    SetFieldOrientation( *refField, elem.orientation );
+    SetTextPositioning( refField, elem.justification, elem.orientation );
 }
 
 
@@ -2343,17 +2346,10 @@ void SCH_ALTIUM_PLUGIN::ParseParameter( const std::map<wxString, wxString>& aPro
         }
 
         SCH_SYMBOL* symbol = m_symbols.at( libSymbolIt->first );
-
-        // TODO: location not correct?
-        const wxPoint position = elem.location + m_sheetOffset;
-
-        SCH_FIELD* field = nullptr;
+        SCH_FIELD*  field = nullptr;
 
         if( elem.name.Upper() == "COMMENT" )
-        {
             field = symbol->GetField( VALUE_FIELD );
-            field->SetPosition( position );
-        }
         else
         {
             int      fieldIdx = symbol->GetFieldCount();
@@ -2362,22 +2358,14 @@ void SCH_ALTIUM_PLUGIN::ParseParameter( const std::map<wxString, wxString>& aPro
             if( fieldName == "VALUE" )
                 fieldName = "ALTIUM_VALUE";
 
-            field = symbol->AddField( { position, fieldIdx, symbol, fieldName } );
+            field = symbol->AddField( SCH_FIELD( wxPoint(), fieldIdx, symbol, fieldName ) );
         }
 
         wxString kicadText = AltiumSpecialStringsToKiCadVariables( elem.text, variableMap );
         field->SetText( kicadText );
+        field->SetPosition( elem.location + m_sheetOffset );
         field->SetVisible( !elem.isHidden );
-        field->Align( TEXT_ATTRIBUTES::H_LEFT );
-
-        switch( elem.orientation )
-        {
-        case ASCH_RECORD_ORIENTATION::RIGHTWARDS: field->SetTextAngle( 0 );   break;
-        case ASCH_RECORD_ORIENTATION::UPWARDS:    field->SetTextAngle( 90 );  break;
-        case ASCH_RECORD_ORIENTATION::LEFTWARDS:  field->SetTextAngle( 180 ); break;
-        case ASCH_RECORD_ORIENTATION::DOWNWARDS:  field->SetTextAngle( 270 ); break;
-        default:                                                              break;
-        }
+        SetTextPositioning( field, elem.justification, elem.orientation );
     }
 }
 

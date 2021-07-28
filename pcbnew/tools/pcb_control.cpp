@@ -24,6 +24,7 @@
  */
 
 #include "edit_tool.h"
+#include <pgm_base.h>
 #include "pcb_actions.h"
 #include "pcb_control.h"
 #include "pcb_picker_tool.h"
@@ -52,10 +53,11 @@
 #include <properties.h>
 #include <settings/color_settings.h>
 #include <tool/tool_manager.h>
-#include <view/view_controls.h>
 #include <footprint_viewer_frame.h>
 #include <footprint_edit_frame.h>
 #include <widgets/progress_reporter.h>
+#include <widgets/infobar.h>
+#include <wx/hyperlink.h>
 
 using namespace std::placeholders;
 
@@ -123,7 +125,7 @@ template<class T> void Flip( T& aValue )
 
 int PCB_CONTROL::TrackDisplayMode( const TOOL_EVENT& aEvent )
 {
-    auto opts = displayOptions();
+    PCB_DISPLAY_OPTIONS opts = displayOptions();
 
     Flip( opts.m_DisplayPcbTrackFill );
     m_frame->SetDisplayOptions( opts );
@@ -142,7 +144,7 @@ int PCB_CONTROL::TrackDisplayMode( const TOOL_EVENT& aEvent )
 
 int PCB_CONTROL::ToggleRatsnest( const TOOL_EVENT& aEvent )
 {
-    auto opts = displayOptions();
+    PCB_DISPLAY_OPTIONS opts = displayOptions();
 
     if( aEvent.IsAction( &PCB_ACTIONS::showRatsnest ) )
     {
@@ -168,7 +170,7 @@ int PCB_CONTROL::ToggleRatsnest( const TOOL_EVENT& aEvent )
 
 int PCB_CONTROL::ViaDisplayMode( const TOOL_EVENT& aEvent )
 {
-    auto opts = displayOptions();
+    PCB_DISPLAY_OPTIONS opts = displayOptions();
 
     Flip( opts.m_DisplayViaFill );
     m_frame->SetDisplayOptions( opts );
@@ -185,27 +187,82 @@ int PCB_CONTROL::ViaDisplayMode( const TOOL_EVENT& aEvent )
 }
 
 
+/**
+ * We have bug reports indicating that some new users confuse zone filling/unfilling with the
+ * display modes.  This will put up a warning if they show zone fills when one or more zones
+ * are unfilled.
+ */
+void PCB_CONTROL::unfilledZoneCheck()
+{
+    if( Pgm().GetCommonSettings()->m_DoNotShowAgain.zone_fill_warning )
+        return;
+
+    bool unfilledZones = false;
+
+    for( const ZONE* zone : board()->Zones() )
+    {
+        if( !zone->IsFilled() )
+        {
+            unfilledZones = true;
+            break;
+        }
+    }
+
+    if( unfilledZones )
+    {
+        WX_INFOBAR*      infobar = frame()->GetInfoBar();
+        wxHyperlinkCtrl* button = new wxHyperlinkCtrl( infobar, wxID_ANY, _( "Don't show again" ),
+                                                       wxEmptyString );
+
+        button->Bind( wxEVT_COMMAND_HYPERLINK, std::function<void( wxHyperlinkEvent& aEvent )>(
+                [&]( wxHyperlinkEvent& aEvent )
+                {
+                    Pgm().GetCommonSettings()->m_DoNotShowAgain.zone_fill_warning = true;
+                    frame()->GetInfoBar()->Dismiss();
+                } ) );
+
+        infobar->RemoveAllButtons();
+        infobar->AddButton( button );
+
+        wxString msg;
+        msg.Printf( _( "Not all zones are filled. Use Edit > Fill All Zones (%s) "
+                      "if you wish to see all fills." ),
+                    KeyNameFromKeyCode( PCB_ACTIONS::zoneFillAll.GetHotKey() ) );
+
+        infobar->ShowMessageFor( msg, 10000, wxICON_WARNING  );
+    }
+}
+
+
 int PCB_CONTROL::ZoneDisplayMode( const TOOL_EVENT& aEvent )
 {
-    auto opts = displayOptions();
+    PCB_DISPLAY_OPTIONS opts = displayOptions();
 
     // Apply new display options to the GAL canvas
-    if( aEvent.IsAction( &PCB_ACTIONS::zoneDisplayEnable ) )
+    if( aEvent.IsAction( &PCB_ACTIONS::zoneDisplayFilled ) )
     {
+        unfilledZoneCheck();
+
         opts.m_ZoneDisplayMode = ZONE_DISPLAY_MODE::SHOW_FILLED;
     }
-    else if( aEvent.IsAction( &PCB_ACTIONS::zoneDisplayDisable ) )
+    else if( aEvent.IsAction( &PCB_ACTIONS::zoneDisplayOutline ) )
     {
         opts.m_ZoneDisplayMode = ZONE_DISPLAY_MODE::SHOW_ZONE_OUTLINE;
     }
-    else if( aEvent.IsAction( &PCB_ACTIONS::zoneDisplayOutlines ) )
+    else if( aEvent.IsAction( &PCB_ACTIONS::zoneDisplayFractured ) )
     {
-        opts.m_ZoneDisplayMode = ZONE_DISPLAY_MODE::SHOW_FILLED_OUTLINE;
+        opts.m_ZoneDisplayMode = ZONE_DISPLAY_MODE::SHOW_FRACTURE_BORDERS;
+    }
+    else if( aEvent.IsAction( &PCB_ACTIONS::zoneDisplayTriangulated ) )
+    {
+        opts.m_ZoneDisplayMode = ZONE_DISPLAY_MODE::SHOW_TRIANGULATION;
     }
     else if( aEvent.IsAction( &PCB_ACTIONS::zoneDisplayToggle ) )
     {
-        int nextMode = ( static_cast<int>( opts.m_ZoneDisplayMode ) + 1 ) % 3;
-        opts.m_ZoneDisplayMode = static_cast<ZONE_DISPLAY_MODE>( nextMode );
+        if( opts.m_ZoneDisplayMode == ZONE_DISPLAY_MODE::SHOW_FILLED )
+            opts.m_ZoneDisplayMode = ZONE_DISPLAY_MODE::SHOW_ZONE_OUTLINE;
+        else
+            opts.m_ZoneDisplayMode = ZONE_DISPLAY_MODE::SHOW_FILLED;
     }
     else
     {
@@ -225,7 +282,7 @@ int PCB_CONTROL::ZoneDisplayMode( const TOOL_EVENT& aEvent )
 
 int PCB_CONTROL::HighContrastMode( const TOOL_EVENT& aEvent )
 {
-    auto opts = displayOptions();
+    PCB_DISPLAY_OPTIONS opts = displayOptions();
 
     opts.m_ContrastModeDisplay =
             ( opts.m_ContrastModeDisplay == HIGH_CONTRAST_MODE::NORMAL ) ?
@@ -240,7 +297,7 @@ int PCB_CONTROL::HighContrastMode( const TOOL_EVENT& aEvent )
 
 int PCB_CONTROL::HighContrastModeCycle( const TOOL_EVENT& aEvent )
 {
-    auto opts = displayOptions();
+    PCB_DISPLAY_OPTIONS opts = displayOptions();
 
     switch( opts.m_ContrastModeDisplay )
     {
@@ -1176,9 +1233,10 @@ void PCB_CONTROL::setTransitions()
     Go( &PCB_CONTROL::ToggleRatsnest,        PCB_ACTIONS::showRatsnest.MakeEvent() );
     Go( &PCB_CONTROL::ToggleRatsnest,        PCB_ACTIONS::ratsnestLineMode.MakeEvent() );
     Go( &PCB_CONTROL::ViaDisplayMode,        PCB_ACTIONS::viaDisplayMode.MakeEvent() );
-    Go( &PCB_CONTROL::ZoneDisplayMode,       PCB_ACTIONS::zoneDisplayEnable.MakeEvent() );
-    Go( &PCB_CONTROL::ZoneDisplayMode,       PCB_ACTIONS::zoneDisplayDisable.MakeEvent() );
-    Go( &PCB_CONTROL::ZoneDisplayMode,       PCB_ACTIONS::zoneDisplayOutlines.MakeEvent() );
+    Go( &PCB_CONTROL::ZoneDisplayMode,       PCB_ACTIONS::zoneDisplayFilled.MakeEvent() );
+    Go( &PCB_CONTROL::ZoneDisplayMode,       PCB_ACTIONS::zoneDisplayOutline.MakeEvent() );
+    Go( &PCB_CONTROL::ZoneDisplayMode,       PCB_ACTIONS::zoneDisplayFractured.MakeEvent() );
+    Go( &PCB_CONTROL::ZoneDisplayMode,       PCB_ACTIONS::zoneDisplayTriangulated.MakeEvent() );
     Go( &PCB_CONTROL::ZoneDisplayMode,       PCB_ACTIONS::zoneDisplayToggle.MakeEvent() );
     Go( &PCB_CONTROL::HighContrastMode,      ACTIONS::highContrastMode.MakeEvent() );
     Go( &PCB_CONTROL::HighContrastModeCycle, ACTIONS::highContrastModeCycle.MakeEvent() );

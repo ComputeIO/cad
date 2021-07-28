@@ -181,7 +181,7 @@ PCBNEW_SETTINGS::PCBNEW_SETTINGS()
 
     m_params.emplace_back( new PARAM_ENUM<ZONE_DISPLAY_MODE>( "pcb_display.zone_mode",
             &m_Display.m_ZoneDisplayMode, ZONE_DISPLAY_MODE::SHOW_FILLED,
-            ZONE_DISPLAY_MODE::SHOW_FILLED_OUTLINE, ZONE_DISPLAY_MODE::SHOW_FILLED ) );
+            ZONE_DISPLAY_MODE::SHOW_TRIANGULATION, ZONE_DISPLAY_MODE::SHOW_FILLED ) );
 
     m_params.emplace_back( new PARAM<int>( "pcb_display.origin_mode",
             reinterpret_cast<int*>( &m_Display.m_DisplayOrigin ),
@@ -195,6 +195,9 @@ PCBNEW_SETTINGS::PCBNEW_SETTINGS()
 
     m_params.emplace_back( new PARAM<bool>( "pcb_display.live_3d_refresh",
             &m_Display.m_Live3DRefresh, false ) );
+
+    m_params.emplace_back( new PARAM<bool>( "pcb_display.show_page_borders",
+            &m_ShowPageLimits, true ) );
 
     m_params.emplace_back( new PARAM<bool>( "cleanup.cleanup_vias",
             &m_Cleanup.cleanup_vias, true ) );
@@ -232,7 +235,8 @@ PCBNEW_SETTINGS::PCBNEW_SETTINGS()
     m_params.emplace_back( new PARAM<bool>( "gen_drill.minimal_header",
             &m_GenDrill.minimal_header, false ) );
 
-    m_params.emplace_back( new PARAM<bool>( "gen_drill.mirror", &m_GenDrill.mirror, false ) );
+    m_params.emplace_back( new PARAM<bool>( "gen_drill.mirror",
+            &m_GenDrill.mirror, false ) );
 
     m_params.emplace_back( new PARAM<bool>( "gen_drill.unit_drill_is_inch",
             &m_GenDrill.unit_drill_is_inch, true ) );
@@ -240,8 +244,8 @@ PCBNEW_SETTINGS::PCBNEW_SETTINGS()
     m_params.emplace_back( new PARAM<bool>( "gen_drill.use_route_for_oval_holes",
             &m_GenDrill.use_route_for_oval_holes, true ) );
 
-    m_params.emplace_back( new PARAM<int>(
-            "gen_drill.drill_file_type", &m_GenDrill.drill_file_type, 0 ) );
+    m_params.emplace_back( new PARAM<int>( "gen_drill.drill_file_type",
+            &m_GenDrill.drill_file_type, 0 ) );
 
     m_params.emplace_back( new PARAM<int>( "gen_drill.map_file_type",
             &m_GenDrill.map_file_type, 1 ) );
