@@ -50,7 +50,7 @@ class PNS_LOG_VIEWER_FRAME_BASE : public wxFrame
 		wxTreeListCtrl* m_itemList;
 		wxStatusBar* m_statusBar;
 
-		// Virtual event handlers, overide them in your derived class
+		// Virtual event handlers, override them in your derived class
 		virtual void onReload( wxCommandEvent& event ) { event.Skip(); }
 		virtual void onExit( wxCommandEvent& event ) { event.Skip(); }
 		virtual void onBtnRewindLeft( wxCommandEvent& event ) { event.Skip(); }

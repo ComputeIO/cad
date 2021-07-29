@@ -64,7 +64,7 @@ class PANEL_SETUP_FORMATTING_BASE : public wxPanel
 		wxStaticText* m_suffixLabel;
 		wxTextCtrl* m_suffixCtrl;
 
-		// Virtual event handlers, overide them in your derived class
+		// Virtual event handlers, override them in your derived class
 		virtual void onCheckBoxIref( wxCommandEvent& event ) { event.Skip(); }
 
 
