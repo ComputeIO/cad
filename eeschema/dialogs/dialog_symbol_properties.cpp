@@ -28,7 +28,7 @@
 #include <grid_tricks.h>
 #include <confirm.h>
 #include <kiface_i.h>
-#include <pin_number.h>
+#include <pin_numbers.h>
 #include <kicad_string.h>
 #include <menus_helpers.h>
 #include <widgets/grid_icon_text_helpers.h>
@@ -248,7 +248,7 @@ public:
         case COL_NUMBER:
         case COL_BASE_NAME:
         case COL_ALT_NAME:
-            res = cmp( PinNumbers::Compare( lhStr, rhStr ), 0 );
+            res = cmp( PIN_NUMBERS::Compare( lhStr, rhStr ), 0 );
             break;
         case COL_TYPE:
         case COL_SHAPE:
@@ -287,7 +287,7 @@ DIALOG_SYMBOL_PROPERTIES::DIALOG_SYMBOL_PROPERTIES( SCH_EDIT_FRAME* aParent,
     // GetLibSymbolRef() now points to the cached part in the schematic, which should always be
     // there for usual cases, but can be null when opening old schematics not storing the part
     // so we need to handle m_part == nullptr
-    wxASSERT( m_part );
+    // wxASSERT( m_part );
 
     m_fields = new FIELDS_GRID_TABLE<SCH_FIELD>( this, aParent, m_fieldsGrid, m_part );
 
@@ -317,7 +317,7 @@ DIALOG_SYMBOL_PROPERTIES::DIALOG_SYMBOL_PROPERTIES( SCH_EDIT_FRAME* aParent,
     m_fieldsGrid->PushEventHandler( new FIELDS_GRID_TRICKS( m_fieldsGrid, this ) );
 
     // Show/hide columns according to user's preference
-    auto cfg = dynamic_cast<EESCHEMA_SETTINGS*>( Kiface().KifaceSettings() );
+    EESCHEMA_SETTINGS* cfg = dynamic_cast<EESCHEMA_SETTINGS*>( Kiface().KifaceSettings() );
 
     if( cfg )
     {
@@ -331,8 +331,8 @@ DIALOG_SYMBOL_PROPERTIES::DIALOG_SYMBOL_PROPERTIES( SCH_EDIT_FRAME* aParent,
         // free-form alternate assignments as well.  (We won't know how to map the alternates
         // back and forth when the conversion is changed.)
         m_pinTablePage->Disable();
-        m_pinTablePage->SetToolTip(
-                _( "Alternate pin assignments are not available for DeMorgan symbols." ) );
+        m_pinTablePage->SetToolTip( _( "Alternate pin assignments are not available for DeMorgan "
+                                       "symbols." ) );
     }
     else
     {
@@ -374,7 +374,7 @@ DIALOG_SYMBOL_PROPERTIES::DIALOG_SYMBOL_PROPERTIES( SCH_EDIT_FRAME* aParent,
 
 DIALOG_SYMBOL_PROPERTIES::~DIALOG_SYMBOL_PROPERTIES()
 {
-    auto cfg = dynamic_cast<EESCHEMA_SETTINGS*>( Kiface().KifaceSettings() );
+    EESCHEMA_SETTINGS* cfg = dynamic_cast<EESCHEMA_SETTINGS*>( Kiface().KifaceSettings() );
 
     if( cfg )
         cfg->m_Appearance.edit_component_visible_columns = m_fieldsGrid->GetShownColumns();
@@ -497,7 +497,7 @@ bool DIALOG_SYMBOL_PROPERTIES::TransferDataToWindow()
     }
 
     // Set the symbol's library name.
-    m_tcLibraryID->SetLabelText( m_symbol->GetLibId().Format() );
+    m_tcLibraryID->SetLabelText( UnescapeString( m_symbol->GetLibId().Format() ) );
 
     Layout();
 
@@ -1048,7 +1048,7 @@ void DIALOG_SYMBOL_PROPERTIES::OnUpdateUI( wxUpdateUIEvent& event )
 
 void DIALOG_SYMBOL_PROPERTIES::OnSizeGrid( wxSizeEvent& event )
 {
-    auto new_size = event.GetSize().GetX();
+    int new_size = event.GetSize().GetX();
 
     if( m_width != new_size )
     {
