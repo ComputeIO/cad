@@ -198,6 +198,16 @@ public:
      */
     static wxString TypeToName( SIM_TYPE aType, bool aShortName );
 
+    /**
+     * Convert digital events to a time plot
+     *
+     * @param aTimedata is the X axis coordinate of each data point, i.e. monotonically increasing
+     * @param aSignalName is the name of the signal being plotted
+     * @return aSignalName data expanded to equal the size of time axis data
+     */
+    virtual std::vector<double> ConvertEventsToTime( std::vector<double>& aTimeData,
+                                                     const char*          aSignalName ) = 0;
+
 protected:
     ///< Reporter object to receive simulation log.
     SPICE_REPORTER* m_reporter;

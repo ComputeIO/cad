@@ -751,6 +751,10 @@ bool SIM_PLOT_FRAME::updatePlot( const wxString& aName, SIM_PLOT_TYPE aType, con
         return false;
     }
 
+    // Expand Y data to fit X data.
+    if( size - data_y.size() != 0 )
+        data_y = m_simulator->ConvertEventsToTime( data_x, (const char*) spiceVector.c_str() );
+
     if( data_y.size() != size )
         return false;
 

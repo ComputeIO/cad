@@ -305,7 +305,7 @@ bool NETLIST_EXPORTER_PSPICE::ProcessNetlist( unsigned aCtl )
 
             spiceItem.m_primitive = GetSpiceField( SF_PRIMITIVE, symbol, aCtl )[0];
             spiceItem.m_model     = GetSpiceField( SF_MODEL, symbol, aCtl );
-            spiceItem.m_refName   = symbol->GetRef( &sheet );
+            spiceItem.m_refName   = symbol->GetRef( &sheet, m_splitMultiDevices );
 
             // Duplicate references will result in simulation errors
             if( refNames.count( spiceItem.m_refName ) )
