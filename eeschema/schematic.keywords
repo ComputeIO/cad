@@ -54,6 +54,7 @@ iref
 italic
 junction
 justify
+keep_upright
 kicad_sch
 kicad_symbol_lib
 label

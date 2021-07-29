@@ -519,6 +519,9 @@ void EDA_TEXT::Format( OUTPUTFORMATTER* aFormatter, int aNestLevel, int aControl
 
     aFormatter->Print( 0, ")"); // (font
 
+    if( !IsKeepUpright() )
+        aFormatter->Print( 0, " (keep_upright no)" );
+
     if( IsMirrored() ||
         GetHorizontalAlignment() != TEXT_ATTRIBUTES::H_CENTER ||
         GetVerticalAlignment() != TEXT_ATTRIBUTES::V_CENTER )

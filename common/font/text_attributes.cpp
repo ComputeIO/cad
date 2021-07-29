@@ -159,6 +159,9 @@ TEXT_ATTRIBUTES& TEXT_ATTRIBUTES::Align( VERTICAL_ALIGNMENT aVerticalAlignment )
 
 TEXT_ATTRIBUTES& TEXT_ATTRIBUTES::SetAngle( const EDA_ANGLE& aAngle )
 {
+#ifdef DEBUG
+    std::cerr << "TEXT_ATTRIBUTES::SetAngle( " << aAngle << " )" << std::endl;
+#endif
     m_orientation = ReadOrientation( aAngle );
     if( m_orientation == TEXT_ATTRIBUTES::FREE_ANGLE )
     {

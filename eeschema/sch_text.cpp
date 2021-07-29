@@ -645,16 +645,37 @@ void SCH_TEXT::GetMsgPanelInfo( EDA_DRAW_FRAME* aFrame, MSG_PANEL_ITEMS& aList )
     msg = GetTextEdaAngle().AsDegreesString();
     aList.push_back( MSG_PANEL_ITEM( _( "Angle" ), msg, BROWN ) );
 
-    wxString textStyle[] = { _( "Normal" ), _( "Italic" ), _( "Bold" ), _( "Bold Italic" ) };
-    int      style = 0;
-
-    if( IsItalic() )
-        style = 1;
+    std::stringstream ss;
 
     if( IsBold() )
-        style += 2;
+    {
+        if( IsItalic() )
+        {
+            ss << _( "Bold Italic" );
+        }
+        else
+        {
+            ss << _( "Bold" );
+        }
+    }
+    else
+    {
+        if( IsItalic() )
+        {
+            ss << _( "Italic" );
+        }
+        else
+        {
+            ss << _("Normal");
+        }
+    }
 
-    aList.push_back( MSG_PANEL_ITEM( _( "Style" ), textStyle[style] ) );
+    if( IsKeepUpright() )
+    {
+        ss << ", " << _("Keep Upright");
+    }
+
+    aList.push_back( MSG_PANEL_ITEM( _( "Style" ), ss.str() ) );
 
     // Display electrical type if it is relevant
     if( Type() == SCH_GLOBAL_LABEL_T || Type() == SCH_HIER_LABEL_T || Type() == SCH_SHEET_PIN_T )
