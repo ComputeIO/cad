@@ -56,7 +56,7 @@ class PANEL_3D_COLORS_BASE : public wxPanel
 		COLOR_SWATCH* m_boardBody;
 		wxButton* m_loadStackup;
 
-		// Virtual event handlers, overide them in your derived class
+		// Virtual event handlers, override them in your derived class
 		virtual void OnLoadColorsFromBoardStackup( wxCommandEvent& event ) { event.Skip(); }
 
 

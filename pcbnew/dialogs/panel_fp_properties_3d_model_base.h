@@ -46,7 +46,7 @@ class PANEL_FP_PROPERTIES_3D_MODEL_BASE : public wxPanel
 		wxButton* m_buttonConfig3DPaths;
 		wxBoxSizer* bLowerSizer3D;
 
-		// Virtual event handlers, overide them in your derived class
+		// Virtual event handlers, override them in your derived class
 		virtual void OnUpdateUI( wxUpdateUIEvent& event ) { event.Skip(); }
 		virtual void On3DModelCellChanged( wxGridEvent& event ) { event.Skip(); }
 		virtual void On3DModelSelected( wxGridEvent& event ) { event.Skip(); }
