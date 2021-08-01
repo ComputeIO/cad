@@ -49,6 +49,8 @@
 
 #include <macros.h>
 
+#include <wx/setup.h>
+
 #ifdef KICAD_GAL_PROFILE
 #include <profile.h>
 #include <wx/log.h>
@@ -2213,7 +2215,12 @@ void OPENGL_GAL::init()
 
     GLenum err = glewInit();
 
-    if( GLEW_OK != err )
+    if( GLEW_OK != err
+#if wxCHECK_VERSION( 3, 1, 5 ) and wxUSE_GLCANVAS_EGL != 0
+      // REVISIT: Remove if upstream EGL becomes able detect EGL at runtime
+      && GLEW_ERROR_NO_GLX_DISPLAY != err
+#endif
+    )
         throw std::runtime_error( (const char*) glewGetErrorString( err ) );
 
     // Check the OpenGL version (minimum 2.1 is required)
