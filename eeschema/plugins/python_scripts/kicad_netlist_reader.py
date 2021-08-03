@@ -42,7 +42,7 @@ excluded_fields = [
 # with a value of "NU" (Normally Uninstalled).
 # See netlist.getInterestingComponents(), or
 #
-# 2) blacklisting it in any of the three following lists:
+# 2) blacklisting it in any of the four following lists:
 
 
 # regular expressions which match component 'Reference' fields of components that
@@ -65,7 +65,20 @@ excluded_values = [
 # regular expressions which match component 'Footprint' fields of components that
 # are to be excluded from the BOM.
 excluded_footprints = [
-    #'MOUNTHOLE'
+    #'MOUNTHOLE',
+    #'Library:TSSOP14'
+    ]
+
+# components, having "user field" with the following names (not regex) are to be
+# excluded from the BOM. Field value must be not empty in order to be excluded.
+# Empty fields are not excluded. For instance:
+# "DNP" = "TRUE" <- excluded
+# "DNP" = "" <- not excluded.
+# Usual cases are: Do Not Populate, Do Not Fit, Not Fitted...
+excluded_dnp_fields = [
+    'DNP', # Do Not Populate
+    #'DNF'  # Do Not Fit
+    #'NF'  # Not Fitted
     ]
 
 #-----</Configure>---------------------------------------------------------------
@@ -449,6 +462,7 @@ class netlist():
         self.excluded_references = []
         self.excluded_values = []
         self.excluded_footprints = []
+        self.excluded_dnp_fields = []
 
         if fname != "":
             self.load(fname)
@@ -577,7 +591,7 @@ class netlist():
     def getInterestingComponents(self):
         """Return a subset of all components, those that should show up in the BOM.
         Omit those that should not, by consulting the blacklists:
-        excluded_values, excluded_refs, and excluded_footprints, which hold one
+        excluded_values, excluded_refs, excluded_footprints and excluded_dnp_fields, which hold one
         or more regular expressions.  If any of the regular expressions match
         the corresponding field's value in a component, then the component is excluded.
         """
@@ -586,6 +600,7 @@ class netlist():
         del self.excluded_references[:]
         del self.excluded_values[:]
         del self.excluded_footprints[:]
+        del self.excluded_dnp_fields[:]
 
         for rex in excluded_references:
             self.excluded_references.append( re.compile( rex ) )
@@ -595,6 +610,9 @@ class netlist():
 
         for rex in excluded_footprints:
             self.excluded_footprints.append( re.compile( rex ) )
+
+        for string in excluded_dnp_fields:
+            self.excluded_dnp_fields.append( string )
 
         # the subset of components to return, considered as "interesting".
         ret = []
@@ -618,13 +636,19 @@ class netlist():
                     if mods.match(c.getFootprint()):
                         exclude = True
                         break;
-
             if not exclude:
-                # This is a fairly personal way to flag DNS (Do Not Stuff).  NU for
-                # me means Normally Uninstalled.  You can 'or in' another expression here.
+                for flds in self.excluded_dnp_fields:
+                   if c.getField( flds ) != '':
+                        exclude = True
+                        break;
+                        
+            if not exclude:
+                # This is a fairly personal way to flag DNS (Do Not Stuff). NU for me means
+                # Normally Uninstalled.
+                # You can 'or in' another expression here.
                 if c.getField( "Installed" ) == 'NU':
                     exclude = True
-
+                    
             if not exclude:
                 ret.append(c)
 
