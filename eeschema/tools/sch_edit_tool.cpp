@@ -34,7 +34,7 @@
 #include <confirm.h>
 #include <eda_item.h>
 #include <reporter.h>
-#include <kicad_string.h>
+#include <string_utils.h>
 #include <sch_item.h>
 #include <sch_symbol.h>
 #include <sch_sheet.h>
@@ -189,10 +189,10 @@ bool SCH_EDIT_TOOL::Init()
                 if( SCH_LINE_WIRE_BUS_TOOL::IsDrawingLineWireOrBus( aSel ) )
                     return false;
 
-                SCH_ITEM* item = (SCH_ITEM*) aSel.Front();
-
                 if( aSel.GetSize() > 1 )
                     return true;
+
+                SCH_ITEM* item = (SCH_ITEM*) aSel.Front();
 
                 switch( item->Type() )
                 {
@@ -256,6 +256,18 @@ bool SCH_EDIT_TOOL::Init()
                 }
             };
 
+    auto autoplaceCondition =
+            [] ( const SELECTION& aSel )
+            {
+                for( const EDA_ITEM* item : aSel )
+                {
+                    if( item->IsType( EE_COLLECTOR::FieldOwners ) )
+                        return true;
+                }
+
+                return false;
+            };
+
     static KICAD_T toLabelTypes[] = { SCH_GLOBAL_LABEL_T, SCH_HIER_LABEL_T, SCH_TEXT_T, EOT };
     auto toLabelCondition = E_C::Count( 1 ) && E_C::OnlyTypes( toLabelTypes );
 
@@ -270,9 +282,6 @@ bool SCH_EDIT_TOOL::Init()
 
     static KICAD_T entryTypes[] = { SCH_BUS_WIRE_ENTRY_T, SCH_BUS_BUS_ENTRY_T, EOT };
     auto entryCondition = E_C::MoreThan( 0 ) && E_C::OnlyTypes( entryTypes );
-
-    static KICAD_T fieldParentTypes[] = { SCH_SYMBOL_T, SCH_SHEET_T, SCH_GLOBAL_LABEL_T, EOT };
-    auto singleFieldParentCondition = E_C::Count( 1 ) && E_C::OnlyTypes( fieldParentTypes );
 
     auto singleSheetCondition =  E_C::Count( 1 ) && E_C::OnlyType( SCH_SHEET_T );
 
@@ -324,7 +333,7 @@ bool SCH_EDIT_TOOL::Init()
     drawMenu.AddItem( EE_ACTIONS::editReference,    E_C::SingleSymbol, 200 );
     drawMenu.AddItem( EE_ACTIONS::editValue,        E_C::SingleSymbol, 200 );
     drawMenu.AddItem( EE_ACTIONS::editFootprint,    E_C::SingleSymbol, 200 );
-    drawMenu.AddItem( EE_ACTIONS::autoplaceFields,  singleFieldParentCondition, 200 );
+    drawMenu.AddItem( EE_ACTIONS::autoplaceFields,  autoplaceCondition, 200 );
     drawMenu.AddItem( EE_ACTIONS::toggleDeMorgan,   E_C::SingleDeMorganSymbol, 200 );
 
     std::shared_ptr<SYMBOL_UNIT_MENU> symUnitMenu2 = std::make_shared<SYMBOL_UNIT_MENU>();
@@ -354,7 +363,7 @@ bool SCH_EDIT_TOOL::Init()
     selToolMenu.AddItem( EE_ACTIONS::editReference,    E_C::SingleSymbol, 200 );
     selToolMenu.AddItem( EE_ACTIONS::editValue,        E_C::SingleSymbol, 200 );
     selToolMenu.AddItem( EE_ACTIONS::editFootprint,    E_C::SingleSymbol, 200 );
-    selToolMenu.AddItem( EE_ACTIONS::autoplaceFields,  singleFieldParentCondition, 200 );
+    selToolMenu.AddItem( EE_ACTIONS::autoplaceFields,  autoplaceCondition, 200 );
     selToolMenu.AddItem( EE_ACTIONS::toggleDeMorgan,   E_C::SingleSymbol, 200 );
 
     std::shared_ptr<SYMBOL_UNIT_MENU> symUnitMenu3 = std::make_shared<SYMBOL_UNIT_MENU>();
@@ -1160,14 +1169,17 @@ int SCH_EDIT_TOOL::AutoplaceFields( const TOOL_EVENT& aEvent )
     if( selection.Empty() )
         return 0;
 
-    SCH_ITEM* item = static_cast<SCH_ITEM*>( selection.Front() );
+    for( EDA_ITEM* item : selection )
+    {
+        SCH_ITEM* sch_item = static_cast<SCH_ITEM*>( item );
 
-    if( !item->IsNew() )
-        saveCopyInUndoList( item, UNDO_REDO::CHANGED );
+        if( !sch_item->IsNew() )
+            saveCopyInUndoList( sch_item, UNDO_REDO::CHANGED );
 
-    item->AutoplaceFields( m_frame->GetScreen(), /* aManual */ true );
+        sch_item->AutoplaceFields( m_frame->GetScreen(), /* aManual */ true );
+        updateItem( sch_item, true );
+    }
 
-    updateItem( item, true );
     m_frame->OnModify();
 
     if( selection.IsHover() )
@@ -1599,12 +1611,12 @@ int SCH_EDIT_TOOL::BreakWire( const TOOL_EVENT& aEvent )
 
     std::vector<SCH_LINE*> lines;
 
-    for( auto& item : selection )
+    for( EDA_ITEM* item : selection )
     {
         if( SCH_LINE* line = dyn_cast<SCH_LINE*>( item ) )
         {
             if( !line->IsEndPoint( cursorPos ) )
-            lines.push_back( line );
+                lines.push_back( line );
         }
     }
 

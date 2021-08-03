@@ -34,7 +34,7 @@
 #include <project_rescue.h>
 #include <erc.h>
 #include <invoke_sch_dialog.h>
-#include <kicad_string.h>
+#include <string_utils.h>
 #include <kiway.h>
 #include <kiway_player.h>
 #include <netlist_exporters/netlist_exporter_pspice.h>
@@ -933,8 +933,8 @@ int SCH_EDITOR_CONTROL::AssignNetclass( const TOOL_EVENT& aEvent )
         }
         else if( conn->IsBus() && conn->Members().size() == 0 )
         {
-            m_frame->ShowInfoBarError(
-                    _( "Bus must have at least one member to assign a netclass to members." ) );
+            m_frame->ShowInfoBarError( _( "Bus must have at least one member to assign a netclass "
+                                          "to members." ) );
             highlightNet( m_toolMgr, CLEAR );
             return 0;
         }

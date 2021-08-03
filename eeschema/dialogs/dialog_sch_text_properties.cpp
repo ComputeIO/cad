@@ -20,7 +20,7 @@
  * with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
+#include <string_utils.h>
 #include <sch_edit_frame.h>
 #include <base_units.h>
 #include <sch_validators.h>
@@ -32,7 +32,6 @@
 #include <sch_reference_list.h>
 #include <schematic.h>
 #include <dialogs/html_messagebox.h>
-#include <kicad_string.h>
 #include <tool/actions.h>
 #include <scintilla_tricks.h>
 #include <bitmaps.h>

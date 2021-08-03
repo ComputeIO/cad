@@ -25,7 +25,7 @@
 
 #include <reporter.h>
 #include <widgets/progress_reporter.h>
-#include <kicad_string.h>
+#include <string_utils.h>
 #include <board_design_settings.h>
 #include <drc/drc_engine.h>
 #include <drc/drc_rtree.h>
@@ -679,7 +679,6 @@ void DRC_ENGINE::RunTests( EDA_UNITS aUnits, bool aReportAllTrackErrors, bool aT
 {
     m_userUnits = aUnits;
 
-    // Note: set these first.  The phase counts may be dependent on some of them.
     m_reportAllTrackErrors = aReportAllTrackErrors;
     m_testFootprints = aTestFootprints;
 

@@ -25,8 +25,8 @@
  */
 
 #include <common.h>
+#include <string_utils.h>
 #include <core/wx_stl_compat.h>
-#include <kicad_string.h>
 #include <font/stroke_font.h>
 #include <font/outline_font.h>
 #include <trigo.h>

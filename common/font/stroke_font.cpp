@@ -29,6 +29,7 @@
 #include <gal/graphics_abstraction_layer.h>
 #include <math/util.h> // for KiROUND
 #include <wx/string.h>
+#include <wx/filename.h>
 #include <wx/textfile.h>
 #include <gr_text.h>
 #include <settings/settings_manager.h>
@@ -37,7 +38,6 @@
 #include <font/stroke_font.h>
 #include <parser/markup_parser.h>
 #include <cmath>
-#include <kicad_string.h>
 #include <geometry/shape_line_chain.h>
 #include <geometry/shape_poly_set.h>
 #include <trigo.h>

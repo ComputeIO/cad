@@ -63,15 +63,23 @@
 #include <kiface_i.h>
 #include <default_values.h>
 #include <advanced_config.h>
-#include <kicad_string.h>
+#include <string_utils.h>
 #include "sch_painter.h"
 
 namespace KIGFX
 {
 SCH_RENDER_SETTINGS::SCH_RENDER_SETTINGS() :
-        m_ShowUnit( 0 ), m_ShowConvert( 0 ), m_ShowHiddenText( true ), m_ShowHiddenPins( true ),
-        m_ShowPinsElectricalType( true ), m_ShowDisabled( false ), m_ShowGraphicsDisabled( false ),
-        m_ShowUmbilicals( true ), m_OverrideItemColors( false ), m_TextOffsetRatio( 0.08 ),
+        m_ShowUnit( 0 ),
+        m_ShowConvert( 0 ),
+        m_ShowHiddenText( true ),
+        m_ShowHiddenPins( true ),
+        m_ShowPinsElectricalType( true ),
+        m_ShowDisabled( false ),
+        m_ShowGraphicsDisabled( false ),
+        m_ShowUmbilicals( true ),
+        m_OverrideItemColors( false ),
+        m_LabelSizeRatio( DEFAULT_LABEL_SIZE_RATIO ),
+        m_TextOffsetRatio( DEFAULT_TEXT_OFFSET_RATIO ),
         m_DefaultWireThickness( DEFAULT_WIRE_THICKNESS * IU_PER_MILS ),
         m_DefaultBusThickness( DEFAULT_BUS_THICKNESS * IU_PER_MILS ),
         m_PinSymbolSize( DEFAULT_TEXT_SIZE * IU_PER_MILS / 2 ),

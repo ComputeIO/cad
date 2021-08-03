@@ -29,7 +29,7 @@
 #include <confirm.h>
 #include <kiface_i.h>
 #include <pin_numbers.h>
-#include <kicad_string.h>
+#include <string_utils.h>
 #include <menus_helpers.h>
 #include <widgets/grid_icon_text_helpers.h>
 #include <widgets/grid_combobox.h>
@@ -497,7 +497,7 @@ bool DIALOG_SYMBOL_PROPERTIES::TransferDataToWindow()
     }
 
     // Set the symbol's library name.
-    m_tcLibraryID->SetLabelText( UnescapeString( m_symbol->GetLibId().Format() ) );
+    m_tcLibraryID->SetValue( UnescapeString( m_symbol->GetLibId().Format() ) );
 
     Layout();
 

@@ -26,7 +26,6 @@
 #include <cmath>
 #include <math/vector2d.h>
 #include <eda_angle.h>
-#include <kicad_string.h>
 
 class EDA_TEXT;
 

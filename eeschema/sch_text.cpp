@@ -34,7 +34,7 @@
 #include <widgets/msgpanel.h>
 #include <font/stroke_font.h>
 #include <bitmaps.h>
-#include <kicad_string.h>
+#include <string_utils.h>
 #include <sch_text.h>
 #include <schematic.h>
 #include <settings/color_settings.h>
@@ -290,6 +290,23 @@ int SCH_TEXT::GetTextOffset( const RENDER_SETTINGS* aSettings ) const
     std::cerr << "SCH_TEXT::GetTextOffset( ... ) " << *this << " offset " << ret << std::endl;
 #endif
     return ret;
+}
+
+
+int SCH_TEXT::GetLabelBoxExpansion( const RENDER_SETTINGS* aSettings ) const
+{
+    double ratio;
+
+    if( aSettings )
+        ratio = static_cast<const SCH_RENDER_SETTINGS*>( aSettings )->m_LabelSizeRatio;
+    else if( Schematic() )
+        ratio = Schematic()->Settings().m_LabelSizeRatio;
+    else
+        ratio = DEFAULT_LABEL_SIZE_RATIO; // For previews (such as in Preferences), etc.
+
+    return KiROUND( ratio * GetTextSize().y );
+
+    return 0;
 }
 
 
@@ -909,15 +926,17 @@ void SCH_GLOBALLABEL::RunOnChildren( const std::function<void( SCH_ITEM* )>& aFu
 
 wxPoint SCH_GLOBALLABEL::GetSchematicTextOffset( const RENDER_SETTINGS* aSettings ) const
 {
-    wxPoint text_offset;
-    int     dist = GetTextOffset( aSettings );
+    int horiz = GetLabelBoxExpansion( aSettings );
+
+    // Center the text on the center line of "E" instead of "R" to make room for an overbar
+    int vert = GetTextHeight() * 0.0715;
 
     switch( m_shape )
     {
     case PINSHEETLABEL_SHAPE::PS_INPUT:
     case PINSHEETLABEL_SHAPE::PS_BIDI:
     case PINSHEETLABEL_SHAPE::PS_TRISTATE:
-        dist += GetTextHeight() * 3 / 4; // Use three-quarters-height as proxy for triangle size
+        horiz += GetTextHeight() * 3 / 4;  // Use three-quarters-height as proxy for triangle size
         break;
 
     case PINSHEETLABEL_SHAPE::PS_OUTPUT:
@@ -928,19 +947,11 @@ wxPoint SCH_GLOBALLABEL::GetSchematicTextOffset( const RENDER_SETTINGS* aSetting
     switch( GetTextEdaAngle().AsDegrees() )
     {
     default:
-    case 0: text_offset.x += dist; break;
-    case 90: text_offset.y -= dist; break;
-    case 180: text_offset.x -= dist; break;
-    case 270: text_offset.y += dist; break;
+    case 0: return wxPoint( -horiz, vert ); break;
+    case 90: return wxPoint( vert, -horiz); break;
+    case 180: return wxPoint( horiz, vert ); break;
+    case 270: return wxPoint( vert, horiz ); break;
     }
-
-#ifdef DEBUG
-    std::cerr << "SCH_GLOBALLABEL::GetSchematicTextOffset( ... ) \"" << GetText() << "\" angle "
-              << GetTextEdaAngle() << " H alignment " << GetHorizontalAlignment() << " dist "
-              << dist << " (" << GetTextOffset( aSettings ) << ") text_offset " << text_offset
-              << std::endl;
-#endif
-    return text_offset;
 }
 
 
@@ -1221,17 +1232,15 @@ void SCH_GLOBALLABEL::CreateGraphicShape( const RENDER_SETTINGS* aRenderSettings
 #ifdef DEBUG
     std::cerr << "SCH_GLOBALLABEL::CreateGraphicShape( ... )" << std::endl;
 #endif
+    // TODO the code has been modified in upstream and does not use bbox;
+    // figure out which parts assume stroke font and change those
     VECTOR2D bbox = GetFont()->BoundingBox( *this );
-
-    int margin = GetTextOffset( aRenderSettings );
-    //int halfSize = ( GetTextHeight() / 2 ) + margin;
-    int halfSize = ( bbox.y / 2 ) + margin;
-    int linewidth = GetFont()->IsOutline() ? 0 : GetPenWidth();
-    //int symb_len = LenSize( GetShownText(), linewidth ) + 2 * margin;
-    int symb_len = bbox.x + 2 * margin;
-
-    int x = symb_len + linewidth + 3;
-    int y = halfSize + linewidth + 3;
+    int      margin = GetLabelBoxExpansion( aRenderSettings );
+    int      halfSize = ( GetTextHeight() / 2 ) + margin;
+    int      linewidth = GetPenWidth();
+    int      symb_len = LenSize( GetShownText(), linewidth ) + 2 * margin;
+    int      x = symb_len + linewidth + 3;
+    int      y = halfSize + linewidth + 3;
 
     aPoints.clear();
 

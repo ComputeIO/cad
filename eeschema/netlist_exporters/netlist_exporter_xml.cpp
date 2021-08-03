@@ -29,7 +29,7 @@
 #include <common.h>     // for ExpandTextVars
 #include <sch_base_frame.h>
 #include <symbol_library.h>
-#include <kicad_string.h>
+#include <string_utils.h>
 #include <connection_graph.h>
 #include <refdes_utils.h>
 #include <wx/wfstream.h>
@@ -297,12 +297,23 @@ XNODE* NETLIST_EXPORTER_XML::makeSymbols( unsigned aCtl )
             // "logical" library name, which is in anticipation of a better search algorithm
             // for parts based on "logical_lib.part" and where logical_lib is merely the library
             // name minus path and extension.
-            if( symbol->GetLibSymbolRef() )
-                xlibsource->AddAttribute( "lib",
-                                          symbol->GetLibSymbolRef()->GetLibId().GetLibNickname() );
+            wxString libName;
+            wxString partName;
+
+            if( symbol->UseLibIdLookup() )
+            {
+                libName = symbol->GetLibId().GetLibNickname();
+                partName = symbol->GetLibId().GetLibItemName();
+            }
+            else
+            {
+                partName = symbol->GetSchSymbolLibraryName();
+            }
+
+            xlibsource->AddAttribute( "lib", libName );
 
             // We only want the symbol name, not the full LIB_ID.
-            xlibsource->AddAttribute( "part", symbol->GetLibId().GetLibItemName() );
+            xlibsource->AddAttribute( "part", partName );
 
             xlibsource->AddAttribute( "description", symbol->GetDescription() );
 

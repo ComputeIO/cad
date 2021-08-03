@@ -21,7 +21,7 @@
 #ifndef __GERBVIEW_PAINTER_H
 #define __GERBVIEW_PAINTER_H
 
-#include <layers_id_colors_and_visibility.h>
+#include <layer_ids.h>
 #include <painter.h>
 
 #include <dcode.h>
@@ -128,6 +128,9 @@ public:
     {
         return m_diffMode;
     }
+
+    /// Clear all highlight selections (dcode, net, component, attribute selection)
+    void ClearHighlightSelections();
 
     /// If set to anything but an empty string, will highlight items with matching component
     wxString m_componentHighlightString;

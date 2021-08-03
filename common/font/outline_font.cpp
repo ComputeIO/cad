@@ -25,7 +25,6 @@
  */
 
 #include <limits>
-#include <kicad_string.h>
 #include <pgm_base.h>
 #include <settings/settings_manager.h>
 #include <harfbuzz/hb-ft.h>

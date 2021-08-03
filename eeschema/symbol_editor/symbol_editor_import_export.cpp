@@ -31,7 +31,7 @@
 #include <symbol_library_manager.h>
 #include <wx/filename.h>
 #include <wx/filedlg.h>
-#include <kicad_string.h>
+#include <string_utils.h>
 
 
 void SYMBOL_EDIT_FRAME::ImportSymbol()
@@ -94,8 +94,13 @@ void SYMBOL_EDIT_FRAME::ImportSymbol()
     if( m_libMgr->SymbolExists( symbols[0], libName ) )
     {
         msg.Printf( _( "Symbol %s already exists in library '%s'." ), symbolName, libName );
-        DisplayError( this,  msg );
-        return;
+
+        KIDIALOG errorDlg( this, msg, _( "Confirmation" ), wxOK | wxCANCEL | wxICON_WARNING );
+        errorDlg.SetOKLabel( _( "Overwrite" ) );
+        errorDlg.DoNotShowCheckbox( __FILE__, __LINE__ );
+
+        if( errorDlg.ShowModal() == wxID_CANCEL )
+            return;
     }
 
     m_libMgr->UpdateSymbol( entry, libName );

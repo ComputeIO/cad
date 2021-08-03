@@ -41,11 +41,12 @@
 #include <drc/drc_item.h>
 #include <fp_lib_table.h>
 #include <io_mgr.h>
-#include <kicad_string.h>
+#include <string_utils.h>
 #include <macros.h>
 #include <pcbnew_scripting_helpers.h>
 #include <project.h>
 #include <settings/settings_manager.h>
+#include <specctra.h>
 #include <project/project_local_settings.h>
 #include <wildcards_and_files_ext.h>
 #include <locale_io.h>
@@ -269,6 +270,22 @@ bool ExportSpecctraDSN( wxString& aFullFilename )
         return false;
     }
 }
+
+
+bool ExportSpecctraDSN( BOARD* aBoard, wxString& aFullFilename )
+{
+    try
+    {
+        ExportBoardToSpecctraFile( aBoard, aFullFilename );
+    }
+    catch( ... )
+    {
+        return false;
+    }
+
+    return true;
+}
+
 
 bool ExportVRML( const wxString& aFullFileName, double aMMtoWRMLunit, bool aExport3DFiles,
                  bool aUseRelativePaths, const wxString& a3D_Subdir, double aXRef, double aYRef )

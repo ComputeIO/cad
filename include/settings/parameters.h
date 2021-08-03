@@ -55,12 +55,6 @@ public:
     virtual void SetDefault() = 0;
 
     /**
-     * Checks whether or not this param has been changed from its default value
-     * @return true if the parameter in memory matches its default value
-     */
-    virtual bool IsDefault() const = 0;
-
-    /**
      * Checks whether the parameter in memory matches the one in a given JSON file
      * @param aSettings is a JSON_SETTINGS to check the JSON file contents of
      * @return true if the parameter in memory matches its value in the file
@@ -142,11 +136,6 @@ public:
     void SetDefault() override
     {
         *m_ptr = m_default;
-    }
-
-    bool IsDefault() const override
-    {
-        return *m_ptr == m_default;
     }
 
     bool MatchesFile( JSON_SETTINGS* aSettings ) const override
@@ -268,11 +257,6 @@ public:
         *m_ptr = m_default;
     }
 
-    bool IsDefault() const override
-    {
-        return *m_ptr == m_default;
-    }
-
     bool MatchesFile( JSON_SETTINGS* aSettings ) const override
     {
         if( OPT<int> val = aSettings->Get<int>( m_path ) )
@@ -326,11 +310,6 @@ public:
     void SetDefault() override
     {
         m_setter( m_default );
-    }
-
-    bool IsDefault() const override
-    {
-        return m_getter() == m_default;
     }
 
     bool MatchesFile( JSON_SETTINGS* aSettings ) const override;
@@ -414,11 +393,6 @@ public:
         *m_ptr = m_default;
     }
 
-    bool IsDefault() const override
-    {
-        return *m_ptr == m_default;
-    }
-
     bool MatchesFile( JSON_SETTINGS* aSettings ) const override
     {
         if( OPT<double> optval = aSettings->Get<double>( m_path ) )
@@ -461,11 +435,6 @@ public:
     void SetDefault() override
     {
         *m_ptr = m_default;
-    }
-
-    bool IsDefault() const override
-    {
-        return *m_ptr == m_default;
     }
 
     bool MatchesFile( JSON_SETTINGS* aSettings ) const override;
@@ -559,11 +528,6 @@ public:
         *m_ptr = m_default;
     }
 
-    bool IsDefault() const override
-    {
-        return *m_ptr == m_default;
-    }
-
     bool MatchesFile( JSON_SETTINGS* aSettings ) const override;
 
 private:
@@ -594,11 +558,6 @@ public:
     virtual void SetDefault() override
     {
         *m_ptr = m_default;
-    }
-
-    bool IsDefault() const override
-    {
-        return *m_ptr == m_default;
     }
 
     bool MatchesFile( JSON_SETTINGS* aSettings ) const override;

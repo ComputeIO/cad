@@ -40,7 +40,7 @@
 #include <eda_text.h>         // for EDA_TEXT
 #include <gal/color4d.h>      // for COLOR4D, COLOR4D::BLACK
 #include <gr_text.h>          // for GRText
-#include <kicad_string.h>     // for UnescapeString
+#include <string_utils.h>     // for UnescapeString
 #include <math/util.h>        // for KiROUND
 #include <math/vector2d.h>    // for VECTOR2D
 #include <richio.h>

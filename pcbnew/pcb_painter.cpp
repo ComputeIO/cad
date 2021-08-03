@@ -32,7 +32,7 @@
 #include <footprint.h>
 #include <pad.h>
 #include <pcb_shape.h>
-#include <kicad_string.h>
+#include <string_utils.h>
 #include <zone.h>
 #include <pcb_text.h>
 #include <pcb_marker.h>
@@ -41,7 +41,7 @@
 #include <advanced_config.h>
 #include <core/arraydim.h>
 
-#include <layers_id_colors_and_visibility.h>
+#include <layer_ids.h>
 #include <pcb_painter.h>
 #include <pcb_display_options.h>
 #include <project/net_settings.h>
@@ -1517,7 +1517,10 @@ void PCB_PAINTER::draw( const PCB_TEXT* aText, int aLayer )
     if( shownText.Length() == 0 )
         return;
 
-    bool outlineMode = m_pcbSettings.m_sketchText || m_pcbSettings.m_sketchMode[aLayer];
+    bool           outlineMode = m_pcbSettings.m_sketchText || m_pcbSettings.m_sketchMode[aLayer];
+    const COLOR4D& color = m_pcbSettings.GetColor( aText, aText->GetLayer() );
+    VECTOR2D       position( aText->GetTextPos().x, aText->GetTextPos().y );
+    KIFONT::FONT*  font = aText->GetFont();
 
     if( outlineMode )
     {
@@ -1529,9 +1532,6 @@ void PCB_PAINTER::draw( const PCB_TEXT* aText, int aLayer )
         // Filled mode
         m_gal->SetLineWidth( getLineThickness( aText->GetEffectiveTextPenWidth() ) );
     }
-
-    const COLOR4D& color = m_pcbSettings.GetColor( aText, aText->GetLayer() );
-    KIFONT::FONT*  font = aText->GetFont();
 
     m_gal->SetStrokeColor( color );
     m_gal->SetFillColor( color );
@@ -1727,7 +1727,7 @@ void PCB_PAINTER::draw( const ZONE* aZone, int aLayer )
 
     if( m_pcbSettings.m_zoneOutlines && outline && outline->OutlineCount() > 0 )
     {
-        m_gal->SetStrokeColor( color.WithAlpha( 1.0 ) );
+        m_gal->SetStrokeColor( color.a > 0.0 ? color.WithAlpha( 1.0 ) : color );
         m_gal->SetIsFill( false );
         m_gal->SetIsStroke( true );
         m_gal->SetLineWidth( m_pcbSettings.m_outlineWidth );
