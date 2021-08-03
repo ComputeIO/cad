@@ -628,13 +628,6 @@ void SCH_SEXPR_PARSER::parseEDA_TEXT( EDA_TEXT* aText, bool aConvertOverbarSynta
 
                 case T_italic: aText->SetItalic( true ); break;
 
-                case T_keep_upright:
-                {
-                    aText->SetKeepUpright( parseBool() );
-                    NeedRIGHT();
-                    break;
-                }
-
                 case T_line_spacing:
                 {
                     aText->SetLineSpacing( parseDouble( "line spacing" ) );
@@ -642,7 +635,7 @@ void SCH_SEXPR_PARSER::parseEDA_TEXT( EDA_TEXT* aText, bool aConvertOverbarSynta
                     break;
                 }
 
-                default: Expecting( "face, size, thickness, line_spacing, bold, italic, or keep_upright" );
+                default: Expecting( "face, size, thickness, line_spacing, bold, or italic" );
                 }
             }
 
@@ -664,9 +657,16 @@ void SCH_SEXPR_PARSER::parseEDA_TEXT( EDA_TEXT* aText, bool aConvertOverbarSynta
 
             break;
 
+        case T_keep_upright:
+            {
+                aText->SetKeepUpright( parseBool() );
+                NeedRIGHT();
+                break;
+            }
+
         case T_hide: aText->SetVisible( false ); break;
 
-        default: Expecting( "font, justify, or hide" );
+        default: Expecting( "font, justify, keep_upright, or hide" );
         }
     }
 }
