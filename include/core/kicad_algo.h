@@ -28,6 +28,7 @@
 #include <algorithm>
 #include <functional> // std::function
 #include <utility>    // std::pair
+#include <wx/debug.h> // wxCHECK_MSG
 
 namespace alg
 {
@@ -112,6 +113,44 @@ bool pair_contains( const std::pair<_Type, _Type> __pair, _Value __value )
 {
     return __pair.first == static_cast<_Type>( __value )
            || __pair.second == static_cast<_Type>( __value );
+}
+
+/**
+ * @brief Test if __val lies within __minval and __maxval in a wrapped range.
+ *
+ * @param  __val     A value to test
+ * @param  __minval  Lowest permissible value within the wrapped range
+ * @param  __maxval  Highest permissible value within the wrapped range
+ * @param  __wrap    Value at which the range wraps around itself (must be positive)
+ * @return true if @p __val lies in the wrapped range
+ */
+template <class T>
+bool within_wrapped_range( T __val, T __minval, T __maxval, T __wrap )
+{
+    wxCHECK_MSG( __wrap > 0, false, "Wrap must be positive!" );
+
+    while( __maxval >= __wrap )
+        __maxval -= __wrap;
+
+    while( __maxval < 0 )
+        __maxval += __wrap;
+
+    while( __minval >= __wrap )
+        __minval -= __wrap;
+
+    while( __minval < 0 )
+        __minval += __wrap;
+
+    while( __val < 0 )
+        __val += __wrap;
+
+    while( __val >= __wrap )
+        __val -= __wrap;
+
+    if( __maxval > __minval )
+        return __val >= __minval && __val <= __maxval;
+    else
+        return __val >= __minval || __val <= __maxval;
 }
 
 
