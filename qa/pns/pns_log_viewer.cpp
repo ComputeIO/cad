@@ -238,6 +238,35 @@ void PNS_LOG_VIEWER_OVERLAY::AnnotatedPolyline( const SHAPE_LINE_CHAIN& aL, std:
 }
 
 
+void PNS_LOG_VIEWER_OVERLAY::AnnotatedPoint( const VECTOR2I p, int size, std::string name, bool aShowVertexNumbers )
+{
+    Line( p + VECTOR2D( size, size ), p - VECTOR2D( size, size ) );
+    Line( p + VECTOR2D( -size, size ), p - VECTOR2D( -size, size ) );
+
+    //if( aShowVertexNumbers)
+      //  m_labelMgr->Add( aL, GetStrokeColor() );
+}
+
+
+void PNS_LOG_VIEWER_OVERLAY::Arc( const SHAPE_ARC& arc )
+{
+    double   radius = arc.GetRadius();
+    double   start_angle = DEG2RAD( arc.GetStartAngle() );
+    double   angle = DEG2RAD( arc.GetCentralAngle() );
+
+    KIGFX::VIEW_OVERLAY::SetLineWidth( arc.GetWidth() / 10 );
+    KIGFX::VIEW_OVERLAY::Arc( arc.GetCenter(), radius, start_angle, start_angle + angle );
+
+    COLOR4D prevStrokeCol = KIGFX::VIEW_OVERLAY::GetStrokeColor();
+    COLOR4D lightStrokeCol = prevStrokeCol.WithAlpha(0.5);
+    KIGFX::VIEW_OVERLAY::SetStrokeColor( lightStrokeCol );
+
+    KIGFX::VIEW_OVERLAY::SetLineWidth( arc.GetWidth() );
+    KIGFX::VIEW_OVERLAY::Arc( arc.GetCenter(), radius, start_angle, start_angle + angle );
+
+    KIGFX::VIEW_OVERLAY::SetStrokeColor( prevStrokeCol );
+}
+
 void PNS_LOG_VIEWER_OVERLAY::DrawAnnotations()
 {
     m_labelMgr->Redraw( this );
