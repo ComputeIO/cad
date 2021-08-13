@@ -61,6 +61,7 @@ public:
 
                     unsigned lateSwapsEnabled;
                     glXQueryDrawable( dpy, drawable, GLX_LATE_SWAPS_TEAR_EXT, &lateSwapsEnabled );
+
                     if( !lateSwapsEnabled )
                     {
                         aVal = 0;
