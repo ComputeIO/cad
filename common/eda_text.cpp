@@ -88,6 +88,12 @@ void EDA_TEXT::SetText( const wxString& aText )
 }
 
 
+void EDA_TEXT::SetTextAngle( const EDA_ANGLE& aAngle )
+{
+    m_attributes.SetAngle( aAngle );
+}
+
+
 void EDA_TEXT::CopyText( const EDA_TEXT& aSrc )
 {
     m_text = aSrc.m_text;
