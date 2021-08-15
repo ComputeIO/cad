@@ -170,7 +170,7 @@ VECTOR2D FONT::doDrawString( KIGFX::GAL* aGal, const UTF8& aText, const VECTOR2D
                              bool aParse, const VECTOR2D& aGlyphSize,
                              const TEXT_ATTRIBUTES& aAttributes ) const
 {
-#ifdef OUTLINEFONT_DEBUG
+#ifdef DEBUG
     std::cerr << "FONT::doDrawString( aGal, \"" << aText << "\", " << aPosition << ", "
               << ", " << ( aParse ? "true" : "false" ) << ", "
               << ", " << aGlyphSize << ", " << aAttributes << " ) const" << std::endl;
@@ -332,7 +332,7 @@ void FONT::getLinePositions( const UTF8& aText, const VECTOR2D& aPosition,
     }
 
 #ifdef DEBUG
-    std::cerr << std::fixed << "FONT::getLinePositions ( \"" << aText << "\", " << aPosition
+    std::cerr << std::fixed << "... FONT::getLinePositions ( \"" << aText << "\", " << aPosition
               << ", ..., " << aGlyphSize << ", " << aAttributes << " ) "
               << " offset " << offset.x << "," << offset.y << " interline " << interline
               << " returns " << aLineCount << " lines:" << std::endl;
@@ -364,7 +364,7 @@ VECTOR2D FONT::getBoundingBox( const UTF8& aText, const VECTOR2D& aGlyphSize,
         /* ... */
     }
 
-#ifdef OUTLINEFONT_DEBUG
+#ifdef DEBUG
     std::cerr << "FONT::getBoundingBox( \"" << aText << "\", " << aGlyphSize << ", " << aTextStyle
               << ", " << aAttributes << " )" << std::endl;
 #endif
@@ -500,7 +500,8 @@ VECTOR2D FONT::Draw( KIGFX::GAL* aGal, const UTF8& aText, const VECTOR2D& aPosit
             aGal->Rotate( rotationAngle.AsRadians() );
         }
 
-        (void) drawSingleLineText( aGal, &lineBoundingBox, strings_list[i], VECTOR2D( 0, 0 ) );
+        (void) drawSingleLineText( aGal, &lineBoundingBox, strings_list[i], VECTOR2D( 0, 0 ),
+                                   aAttributes.GetAngle(), aAttributes.IsMirrored() );
         aGal->Restore();
 
         // expand bounding box of whole text
@@ -604,7 +605,8 @@ VECTOR2D FONT::drawMarkup( BOX2I* aBoundingBox, GLYPH_LIST& aGlyphs,
 
 
 VECTOR2D FONT::drawSingleLineText( KIGFX::GAL* aGal, BOX2I* aBoundingBox, const UTF8& aText,
-                                   const VECTOR2D& aPosition, const EDA_ANGLE& aAngle ) const
+                                   const VECTOR2D& aPosition, const EDA_ANGLE& aAngle,
+                                   bool aIsMirrored ) const
 {
     if( !aGal )
     {
@@ -621,8 +623,8 @@ VECTOR2D FONT::drawSingleLineText( KIGFX::GAL* aGal, BOX2I* aBoundingBox, const 
     auto                  markupRoot = markupParser.Parse();
 
     GLYPH_LIST glyphs;
-    VECTOR2D   nextPosition =
-            drawMarkup( aBoundingBox, glyphs, markupRoot, aPosition, aGal->GetGlyphSize(), aAngle );
+    VECTOR2D   nextPosition = drawMarkup( aBoundingBox, glyphs, markupRoot, aPosition,
+                                          aGal->GetGlyphSize(), aAngle, aIsMirrored );
 
     for( auto glyph : glyphs )
         aGal->DrawGlyph( glyph );

@@ -566,7 +566,7 @@ VECTOR2I STROKE_FONT::GetTextAsPolygon( BOX2I* aBoundingBox, GLYPH_LIST& aGlyphs
             dd = substitute - ' ';
         }
 
-        glyph = m_glyphs->at( dd )->Resize( glyphSize )->Translate( cursor );
+        glyph = m_glyphs->at( dd )->Resize( glyphSize )->Translate( cursor )->Mirror( aIsMirrored );
 
         if( dd == 0 )
         {
