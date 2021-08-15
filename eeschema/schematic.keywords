@@ -39,6 +39,7 @@ font
 footprint
 free
 global_label
+hcenter
 hide
 hierarchical_label
 hint_alt_swap
@@ -127,6 +128,7 @@ unit
 unspecified
 uuid
 value
+vcenter
 version
 width
 wire
