@@ -307,11 +307,13 @@ protected:
      * @param aText is the text to be drawn.
      * @param aPosition is text position.
      * @param aAngle is text angle.
+     * @param aIsMirrored is true if text should be drawn mirrored, false otherwise.
      * @return new cursor position
      */
     virtual VECTOR2D drawSingleLineText( KIGFX::GAL* aGal, BOX2I* aBoundingBox, const UTF8& aText,
                                          const VECTOR2D&  aPosition,
-                                         const EDA_ANGLE& aAngle = EDA_ANGLE() ) const;
+                                         const EDA_ANGLE& aAngle = EDA_ANGLE(),
+                                         bool aIsMirrored = false ) const;
 
     void getLinePositions( const UTF8& aText, const VECTOR2D& aPosition, wxArrayString& aStringList,
                            std::vector<wxPoint>& aPositions, int& aLineCount,

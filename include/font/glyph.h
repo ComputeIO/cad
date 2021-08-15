@@ -40,9 +40,10 @@ public:
     virtual void                   AddPoint( const VECTOR2D& aPoint ) = 0;
     virtual void                   RaisePen() = 0;
     virtual void                   Finalize() = 0;
-    virtual BOX2D                  BoundingBox() const = 0;
+    virtual BOX2D                  BoundingBox() = 0;
     virtual std::shared_ptr<GLYPH> Resize( const VECTOR2D& aGlyphSize ) const = 0;
     virtual std::shared_ptr<GLYPH> Translate( const VECTOR2D& aOffset ) const = 0;
+    virtual std::shared_ptr<GLYPH> Mirror( bool aMirror ) const = 0;
     virtual const SHAPE_POLY_SET&  GetPolylist() const = 0;
     virtual const std::vector<std::vector<VECTOR2D>>& GetPoints() const = 0;
 
@@ -65,7 +66,7 @@ public:
     void  AddPoint( const VECTOR2D& aPoint ) override { wxASSERT( 0 == 1 ); }
     void  RaisePen() override { wxASSERT( 0 == 1 ); }
     void  Finalize() override { wxASSERT( 0 == 1 ); }
-    BOX2D BoundingBox() const override
+    BOX2D BoundingBox() override
     {
         wxASSERT( 0 == 1 );
         return BOX2D();
@@ -76,6 +77,11 @@ public:
         return nullptr;
     }
     std::shared_ptr<GLYPH> Translate( const VECTOR2D& aOffset ) const override
+    {
+        wxASSERT( 0 == 1 );
+        return nullptr;
+    }
+    std::shared_ptr<GLYPH> Mirror( bool aMirror ) const override
     {
         wxASSERT( 0 == 1 );
         return nullptr;
@@ -104,11 +110,13 @@ public:
 
     void Finalize() override;
 
-    BOX2D BoundingBox() const override;
+    BOX2D BoundingBox() override;
 
     std::shared_ptr<GLYPH> Resize( const VECTOR2D& aGlyphSize ) const override;
 
     std::shared_ptr<GLYPH> Translate( const VECTOR2D& aOffset ) const override;
+
+    std::shared_ptr<GLYPH> Mirror( bool aMirror ) const override;
 
     bool IsStroke() const override { return true; }
 
@@ -124,6 +132,7 @@ public:
 private:
     bool                               m_penIsDown = false;
     std::vector<std::vector<VECTOR2D>> m_pointLists;
+    BOX2D                              m_boundingBox;
     //
     SHAPE_POLY_SET dummy;
 };
