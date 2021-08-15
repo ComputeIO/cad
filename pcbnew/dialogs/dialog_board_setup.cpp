@@ -38,7 +38,7 @@
 #include <settings/settings_manager.h>
 #include <widgets/infobar.h>
 #include <widgets/resettable_panel.h>
-#include <widgets/progress_reporter.h>
+#include <widgets/wx_progress_reporters.h>
 #include <wildcards_and_files_ext.h>
 
 #include "dialog_board_setup.h"
@@ -88,10 +88,11 @@ DIALOG_BOARD_SETUP::DIALOG_BOARD_SETUP( PCB_EDIT_FRAME* aFrame ) :
      */
     m_treebook->AddSubPage( m_layers,  _( "Board Editor Layers" ) );
     m_layerSetupPage = 1;
-    m_treebook->AddSubPage( m_physicalStackup,  _( "Physical Stackup" ) );
 
+    m_treebook->AddSubPage( m_physicalStackup,  _( "Physical Stackup" ) );
     // Change this value if m_physicalStackup is not the page 2 of m_treebook
     m_physicalStackupPage = 2;  // The page number (from 0) to select the m_physicalStackup panel
+
     m_treebook->AddSubPage( m_boardFinish, _( "Board Finish" ) );
     m_treebook->AddSubPage( m_maskAndPaste,  _( "Solder Mask/Paste" ) );
 

@@ -478,11 +478,25 @@ void SHAPE_LINE_CHAIN::Replace( int aStartIndex, int aEndIndex, const SHAPE_LINE
 
     SHAPE_LINE_CHAIN newLine = aLine;
 
+    // Zero points to add?
+    if( newLine.PointCount() == 0 )
+    {
+        Remove( aStartIndex, aEndIndex );
+        return;
+    }
+
     // Remove coincident points in the new line
     if( newLine.m_points.front() == m_points[aStartIndex] )
     {
         aStartIndex++;
         newLine.Remove( 0 );
+
+        // Zero points to add?
+        if( newLine.PointCount() == 0 )
+        {
+            Remove( aStartIndex, aEndIndex );
+            return;
+        }
     }
 
     if( newLine.m_points.back() == m_points[aEndIndex] && aEndIndex > 0 )
@@ -493,7 +507,8 @@ void SHAPE_LINE_CHAIN::Replace( int aStartIndex, int aEndIndex, const SHAPE_LINE
 
     Remove( aStartIndex, aEndIndex );
 
-    if( !newLine.PointCount() )
+    // Zero points to add?
+    if( newLine.PointCount() == 0 )
         return;
 
     // The total new arcs index is added to the new arc indices
@@ -1042,6 +1057,12 @@ void SHAPE_LINE_CHAIN::Append( const SHAPE_ARC& aArc )
 
 void SHAPE_LINE_CHAIN::Insert( size_t aVertex, const VECTOR2I& aP )
 {
+    if( aVertex == m_points.size() )
+    {
+        Append( aP );
+        return;
+    }
+
     wxCHECK( aVertex < m_points.size(), /* void */ );
 
     if( aVertex > 0 && IsPtOnArc( aVertex ) )

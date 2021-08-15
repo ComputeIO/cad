@@ -30,12 +30,13 @@
 
 
 ///! Update the schema version whenever a migration is required
-const int colorsSchemaVersion = 2;
+const int colorsSchemaVersion = 3;
 
 
 COLOR_SETTINGS::COLOR_SETTINGS( const wxString& aFilename ) :
         JSON_SETTINGS( std::move( aFilename ), SETTINGS_LOC::COLORS, colorsSchemaVersion ),
-        m_overrideSchItemColors( false )
+        m_overrideSchItemColors( false ),
+        m_useBoardStackupColors( true )
 {
 
     m_params.emplace_back( new PARAM<wxString>( "meta.name", &m_displayName, "KiCad Default" ) );
@@ -62,6 +63,9 @@ COLOR_SETTINGS::COLOR_SETTINGS( const wxString& aFilename ) :
 
     m_params.emplace_back( new PARAM<bool>( "schematic.override_item_colors",
                                             &m_overrideSchItemColors, false ) );
+
+    m_params.emplace_back( new PARAM<bool>( "3d_viewer.use_board_stackup_colors",
+                                            &m_overrideSchItemColors, true ) );
 
 #define CLR( x, y ) \
     wxASSERT( s_defaultTheme.count( y ) ); \
@@ -227,6 +231,26 @@ COLOR_SETTINGS::COLOR_SETTINGS( const wxString& aFilename ) :
 
                 return true;
             } );
+
+    registerMigration( 2, 3,
+            [&]()
+            {
+                // We don't support opacity in some 3D colors but some versions of 5.99 let
+                // you set it.
+
+                for( std::string path : { "3d_viewer.background_top",
+                                          "3d_viewer.background_bottom",
+                                          "3d_viewer.copper",
+                                          "3d_viewer.silkscreen_top",
+                                          "3d_viewer.silkscreen_bottom",
+                                          "3d_viewer.solderpaste" } )
+                {
+                    if( OPT<COLOR4D> optval = Get<COLOR4D>( path ) )
+                        Set( path, optval->WithAlpha( 1.0 ) );
+                }
+
+                return true;
+            } );
 }
 
 
@@ -251,6 +275,7 @@ void COLOR_SETTINGS::initFromOther( const COLOR_SETTINGS& aOther )
 {
     m_displayName           = aOther.m_displayName;
     m_overrideSchItemColors = aOther.m_overrideSchItemColors;
+    m_useBoardStackupColors = aOther.m_useBoardStackupColors;
     m_colors                = aOther.m_colors;
     m_defaultColors         = aOther.m_defaultColors;
     m_writeFile             = aOther.m_writeFile;
