@@ -105,8 +105,8 @@ set( EESCHEMA_DLGS
     dialogs/dialog_symbol_properties_base.cpp
     dialogs/dialog_symbol_remap.cpp
     dialogs/dialog_symbol_remap_base.cpp
-    dialogs/dialog_text_and_label_properties.cpp
-    dialogs/dialog_text_and_label_properties_base.cpp
+    #dialogs/dialog_text_and_label_properties.cpp
+    #dialogs/dialog_text_and_label_properties_base.cpp
     dialogs/dialog_update_from_pcb.cpp
     dialogs/dialog_update_from_pcb_base.cpp
     dialogs/dialog_update_symbol_fields.cpp
