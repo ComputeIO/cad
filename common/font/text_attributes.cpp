@@ -105,6 +105,7 @@ TEXT_ATTRIBUTES& TEXT_ATTRIBUTES::RotateCW()
 }
 
 
+#if 0
 TEXT_ATTRIBUTES& TEXT_ATTRIBUTES::SpinCCW()
 {
     RotateCCW();
@@ -135,6 +136,7 @@ TEXT_ATTRIBUTES& TEXT_ATTRIBUTES::SpinCW()
     }
     return *this;
 }
+#endif
 
 
 TEXT_ATTRIBUTES& TEXT_ATTRIBUTES::Align( HORIZONTAL_ALIGNMENT aHorizontalAlignment )
@@ -172,25 +174,35 @@ TEXT_ATTRIBUTES& TEXT_ATTRIBUTES::SetAngle( const EDA_ANGLE& aAngle )
 TEXT_ATTRIBUTES::HORIZONTAL_ALIGNMENT
 TEXT_ATTRIBUTES::ReadHorizontalAlignment( std::string aString )
 {
-    const char& c = aString.at( 0 );
-    if( c == 'R' || c == 'r' )
+    switch ( aString.at( 0 ) )
+    {
+    case 'R':
+    case 'r':
         return TEXT_ATTRIBUTES::H_RIGHT;
 
-    if( c == 'C' || c == 'c' )
+    case 'C':
+    case 'c':
         return TEXT_ATTRIBUTES::H_CENTER;
 
-    return TEXT_ATTRIBUTES::H_LEFT;
+    default:
+        return TEXT_ATTRIBUTES::H_LEFT;
+    }
 }
 
 
 TEXT_ATTRIBUTES::VERTICAL_ALIGNMENT TEXT_ATTRIBUTES::ReadVerticalAlignment( std::string aString )
 {
-    const char& c = aString.at( 0 );
-    if( c == 'T' || c == 't' )
+    switch ( aString.at( 0 ) )
+    {
+    case 'T':
+    case 't':
         return TEXT_ATTRIBUTES::V_TOP;
 
-    if( c == 'C' || c == 'c' )
+    case 'C':
+    case 'c':
         return TEXT_ATTRIBUTES::V_CENTER;
 
-    return TEXT_ATTRIBUTES::V_BOTTOM;
+    default:
+        return TEXT_ATTRIBUTES::V_BOTTOM;
+    }
 }

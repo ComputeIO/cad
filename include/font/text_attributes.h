@@ -146,6 +146,7 @@ public:
     TEXT_ATTRIBUTES& RotateCW();
 
 
+#if 0
     /**
      * Spin counterclockwise by 90 degrees.
      * Flip horizontal alignment (left<->right) when going from 270 to 0, or 90 to 180 degrees.
@@ -162,7 +163,7 @@ public:
      * @return the attributes after rotation
      */
     TEXT_ATTRIBUTES& SpinCW();
-
+#endif
 
     TEXT_ATTRIBUTES& Align( HORIZONTAL_ALIGNMENT aHorizontalAlignment );
 
