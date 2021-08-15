@@ -647,8 +647,10 @@ void SCH_SEXPR_PARSER::parseEDA_TEXT( EDA_TEXT* aText, bool aConvertOverbarSynta
                 switch( token )
                 {
                 case T_left: aText->Align( TEXT_ATTRIBUTES::H_LEFT ); break;
+                case T_hcenter: aText->Align( TEXT_ATTRIBUTES::H_CENTER ); break;
                 case T_right: aText->Align( TEXT_ATTRIBUTES::H_RIGHT ); break;
                 case T_top: aText->Align( TEXT_ATTRIBUTES::V_TOP ); break;
+                case T_vcenter: aText->Align( TEXT_ATTRIBUTES::V_CENTER ); break;
                 case T_bottom: aText->Align( TEXT_ATTRIBUTES::V_BOTTOM ); break;
                 case T_mirror: aText->SetMirrored( true ); break;
                 default: Expecting( "left, right, top, bottom, hcenter, vcenter, or mirror" );
