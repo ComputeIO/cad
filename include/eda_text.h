@@ -128,14 +128,14 @@ public:
      */
     int GetEffectiveTextPenWidth( int aDefaultWidth = 0 ) const;
 
+    virtual void SetTextAngle( EDA_ANGLE aAngle ) { m_attributes.SetAngle( aAngle ); }
     virtual void SetTextAngle( double aAngle )
     {
         // Higher level classes may be more restrictive than this by overloading
         // SetTextAngle() or merely calling EDA_TEXT::SetTextAngle() after clamping
         // aAngle before calling this lowest inline accessor.
-        m_attributes.SetAngle( EDA_ANGLE( aAngle, EDA_ANGLE::TENTHS_OF_A_DEGREE ) );
+        SetTextAngle( EDA_ANGLE( aAngle, EDA_ANGLE::TENTHS_OF_A_DEGREE ) );
     }
-    virtual void SetTextAngle( EDA_ANGLE aAngle ) { m_attributes.SetAngle( aAngle ); }
 
     EDA_ANGLE GetTextEdaAngle() const { return m_attributes.GetAngle(); }
     double    GetTextAngle() const { return GetTextEdaAngle().AsTenthsOfADegree(); }
