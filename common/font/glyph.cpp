@@ -63,30 +63,20 @@ void STROKE_GLYPH::Finalize()
 }
 
 
-BOX2D STROKE_GLYPH::BoundingBox() const
+BOX2D STROKE_GLYPH::BoundingBox()
 {
-    VECTOR2D min;
-    VECTOR2D max;
-
-    bool firstPoint = true;
-    for( auto pointList : m_pointLists )
+    if( m_boundingBox.GetWidth() == 0 && m_boundingBox.GetHeight() == 0 )
     {
-        for( const VECTOR2D& point : pointList )
+        for( auto pointList : m_pointLists )
         {
-            if( firstPoint )
+            for( const VECTOR2D& point : pointList )
             {
-                min = point;
-                max = point;
-                firstPoint = false;
+                m_boundingBox.Merge( point );
             }
-            min.x = std::min( min.x, point.x );
-            min.y = std::min( min.y, point.y );
-            max.x = std::max( max.x, point.x );
-            max.y = std::max( max.y, point.y );
         }
     }
 
-    return BOX2D( min, max - min );
+    return m_boundingBox;
 }
 
 
@@ -97,14 +87,9 @@ std::shared_ptr<GLYPH> STROKE_GLYPH::Resize( const VECTOR2D& aGlyphSize ) const
     {
         for( VECTOR2D& point : pointList )
         {
-#ifdef DEBUG
-            std::cerr << point << "->";
-#endif
             point.x = point.x * aGlyphSize.x;
             point.y = point.y * aGlyphSize.y;
-#ifdef DEBUG
-            std::cerr << point << ",";
-#endif
+            glyph->m_boundingBox.Merge( point );
         }
     }
 
@@ -119,14 +104,31 @@ std::shared_ptr<GLYPH> STROKE_GLYPH::Translate( const VECTOR2D& aOffset ) const
     {
         for( VECTOR2D& point : pointList )
         {
-#ifdef DEBUG
-            std::cerr << point << "=>";
-#endif
             point.x += aOffset.x;
             point.y += aOffset.y;
-#ifdef DEBUG
-            std::cerr << point << ";";
-#endif
+            glyph->m_boundingBox.Merge( point );
+        }
+    }
+
+    return glyph;
+}
+
+
+std::shared_ptr<GLYPH> STROKE_GLYPH::Mirror( bool aMirror ) const
+{
+    // TODO figure out a way to not make a copy if aMirror is false
+    auto glyph = std::make_shared<STROKE_GLYPH>( *this );
+
+    if( aMirror )
+    {
+        double horizontalCenter = glyph->BoundingBox().GetLeft() + glyph->BoundingBox().GetWidth() / 2.0;
+
+        for( std::vector<VECTOR2D>& pointList : glyph->m_pointLists )
+        {
+            for( VECTOR2D& point : pointList )
+            {
+                point.x += ( horizontalCenter - point.x);
+            }
         }
     }
 
