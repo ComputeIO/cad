@@ -655,7 +655,7 @@ VECTOR2D OUTLINE_FONT::getBoundingBox( const UTF8& aString, const VECTOR2D& aGly
 
     hb_buffer_destroy( buf );
 
-#ifdef OUTLINEFONT_DEBUG
+#ifdef DEBUG
     std::cerr << "OUTLINE_FONT::getBoundingBox( \"" << aString << "\", " << aGlyphSize << ", "
               << aTextStyle << " ) returns " << boundingBox << std::endl;
 #endif
