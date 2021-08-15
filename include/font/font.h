@@ -315,6 +315,24 @@ protected:
                                          const EDA_ANGLE& aAngle = EDA_ANGLE(),
                                          bool aIsMirrored = false ) const;
 
+    /**
+     * Computes the bounding box for a single line of text.
+     * Multiline texts should be split before using the function.
+     *
+     * @param aBoundingBox is a pointer to a BOX2I variable which will be set to the bounding box, or nullptr
+     * @param aText is the text to be drawn.
+     * @param aPosition is text position.
+     * @param aGlyphSize is glyph size.
+     * @param aAngle is text angle.
+     * @param aIsMirrored is true if text should be drawn mirrored, false otherwise.
+     * @return new cursor position
+     */
+    VECTOR2D boundingBoxSingleLine( BOX2I* aBoundingBox, const UTF8& aText,
+                                    const VECTOR2D&  aPosition,
+                                    const VECTOR2D&  aGlyphSize,
+                                    const EDA_ANGLE& aAngle = EDA_ANGLE(),
+                                    bool aIsMirrored = false ) const;
+
     void getLinePositions( const UTF8& aText, const VECTOR2D& aPosition, wxArrayString& aStringList,
                            std::vector<wxPoint>& aPositions, int& aLineCount,
                            std::vector<VECTOR2D>& aBoundingBoxes, const VECTOR2D& aGlyphSize,
