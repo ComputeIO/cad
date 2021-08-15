@@ -128,7 +128,7 @@ public:
      */
     int GetEffectiveTextPenWidth( int aDefaultWidth = 0 ) const;
 
-    virtual void SetTextAngle( EDA_ANGLE aAngle ) { m_attributes.SetAngle( aAngle ); }
+    virtual void SetTextAngle( const EDA_ANGLE& aAngle );
     virtual void SetTextAngle( double aAngle )
     {
         // Higher level classes may be more restrictive than this by overloading
@@ -449,7 +449,7 @@ inline std::ostream& operator<<( std::ostream& os, const EDA_TEXT& aText )
 {
     os << "(eda_text \"" << aText.m_text << "\" (shown \"" << aText.m_shown_text << "\") "
        << ( aText.m_shown_text_has_text_var_refs ? "has_text_var_refs " : "" ) << aText.m_attributes
-       << " (position " << aText.m_pos.x << " " << aText.m_pos.y << ")";
+       << " (position " << aText.m_pos.x << " " << aText.m_pos.y << "))";
 
     return os;
 }
