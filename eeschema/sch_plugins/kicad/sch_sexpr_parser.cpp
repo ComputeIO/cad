@@ -2855,6 +2855,10 @@ SCH_TEXT* SCH_SEXPR_PARSER::parseSchText()
         case T_effects:
             parseEDA_TEXT( static_cast<EDA_TEXT*>( text.get() ), true );
 
+#if 0
+            // NOTE: This song and dance should not be done at all anymore
+            // since "spin style" is now obsolete
+
             // Spin style is defined differently for graphical text (#SCH_TEXT) objects.
             if( text->Type() == SCH_TEXT_T
                 && text->GetHorizontalAlignment() == TEXT_ATTRIBUTES::H_RIGHT )
@@ -2873,6 +2877,7 @@ SCH_TEXT* SCH_SEXPR_PARSER::parseSchText()
                 }
 
             }
+#endif
 
             break;
 
