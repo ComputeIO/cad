@@ -518,12 +518,18 @@ void PCB_PARSER::parseEDA_TEXT( EDA_TEXT* aText )
 
             break;
 
+        case T_keep_upright:
+            {
+                aText->SetKeepUpright( parseBool() );
+                NeedRIGHT();
+                break;
+            }
+
         case T_hide:
             aText->SetVisible( false );
             break;
 
-        default:
-            Expecting( "font, justify, or hide" );
+        default: Expecting( "font, justify, keep_upright, or hide" );
         }
     }
 
