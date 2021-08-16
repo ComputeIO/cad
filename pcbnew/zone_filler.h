@@ -23,13 +23,13 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
 
-#ifndef __ZONE_FILLER_H
-#define __ZONE_FILLER_H
+#ifndef ZONE_FILLER_H
+#define ZONE_FILLER_H
 
 #include <vector>
 #include <zone.h>
 
-class WX_PROGRESS_REPORTER;
+class PROGRESS_REPORTER;
 class BOARD;
 class COMMIT;
 class SHAPE_POLY_SET;
@@ -43,7 +43,6 @@ public:
     ~ZONE_FILLER();
 
     void SetProgressReporter( PROGRESS_REPORTER* aReporter );
-    void InstallNewProgressReporter( wxWindow* aParent, const wxString& aTitle, int aNumPhases );
 
     /**
      * Fills the given list of zones.  Invalidates connectivity - it is up to the caller to obtain
@@ -61,6 +60,8 @@ private:
 
     void addKnockout( BOARD_ITEM* aItem, PCB_LAYER_ID aLayer, int aGap, bool aIgnoreLineWidth,
                       SHAPE_POLY_SET& aHoles );
+
+    void addHoleKnockout( PAD* aPad, int aGap, SHAPE_POLY_SET& aHoles );
 
     void knockoutThermalReliefs( const ZONE* aZone, PCB_LAYER_ID aLayer, SHAPE_POLY_SET& aFill );
 
@@ -102,7 +103,7 @@ private:
      * @param aRawPolys: A reference to a SHAPE_POLY_SET buffer to store
      * filled solid areas polygons (with holes)
      * @param aFinalPolys: A reference to a SHAPE_POLY_SET buffer to store polygons with no holes
-     * (holes are linked to main outline by overlapping segments, and these polygons are shrinked
+     * (holes are linked to main outline by overlapping segments, and these polygons are shrunk
      * by aZone->GetMinThickness() / 2 to be drawn with a outline thickness = aZone->GetMinThickness()
      * aFinalPolys are polygons that will be drawn on screen and plotted
      */
@@ -124,8 +125,6 @@ private:
     bool                  m_brdOutlinesValid;   // true if m_boardOutline is well-formed
     COMMIT*               m_commit;
     PROGRESS_REPORTER*    m_progressReporter;
-
-    std::unique_ptr<WX_PROGRESS_REPORTER> m_uniqueReporter;
 
     int                   m_maxError;
     int                   m_worstClearance;

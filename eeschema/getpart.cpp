@@ -24,13 +24,12 @@
  */
 
 #include <algorithm>
-#include <class_library.h>
+#include <symbol_library.h>
 #include <confirm.h>
 #include <eeschema_id.h>
 #include <general.h>
 #include <kiway.h>
 #include <symbol_viewer_frame.h>
-#include <pgm_base.h>
 #include <sch_symbol.h>
 #include <sch_edit_frame.h>
 #include <symbol_lib_table.h>
@@ -95,7 +94,7 @@ PICKED_SYMBOL SCH_BASE_FRAME::PickSymbolFromLibTree( const SCHLIB_FILTER* aFilte
     std::unique_lock<std::mutex> dialogLock( DIALOG_CHOOSE_SYMBOL::g_Mutex, std::defer_lock );
     SYMBOL_LIB_TABLE*            libs = Prj().SchSymbolLibTable();
 
-    // One DIALOG_CHOOSE_SYMBOL dialog at a time.  User probaby can't handle more anyway.
+    // One DIALOG_CHOOSE_SYMBOL dialog at a time.  User probably can't handle more anyway.
     if( !dialogLock.try_lock() )
         return PICKED_SYMBOL();
 
@@ -117,22 +116,23 @@ PICKED_SYMBOL SCH_BASE_FRAME::PickSymbolFromLibTree( const SCHLIB_FILTER* aFilte
 
         adapter->AssignIntrinsicRanks();
 
-        if( aFilter->GetFilterPowerParts() )
-            adapter->SetFilter( SYMBOL_TREE_MODEL_ADAPTER::CMP_FILTER_POWER );
+        if( aFilter->GetFilterPowerSymbols() )
+            adapter->SetFilter( SYMBOL_TREE_MODEL_ADAPTER::SYM_FILTER_POWER );
     }
 
     std::vector< LIB_TREE_ITEM* > history_list;
 
     for( const PICKED_SYMBOL& i : aHistoryList )
     {
-        LIB_PART* symbol = GetLibPart( i.LibId );
+        LIB_SYMBOL* symbol = GetLibSymbol( i.LibId );
 
         // This can be null, for example when a symbol has been deleted from a library
         if( symbol )
             history_list.push_back( symbol );
     }
 
-    adapter->DoAddLibrary( "-- " + _( "Recently Used" ) + " --", wxEmptyString, history_list, true );
+    adapter->DoAddLibrary( "-- " + _( "Recently Used" ) + " --", wxEmptyString, history_list,
+                           true );
 
     if( !aHistoryList.empty() )
         adapter->SetPreselectNode( aHistoryList[0].LibId, aHistoryList[0].Unit );
@@ -148,7 +148,7 @@ PICKED_SYMBOL SCH_BASE_FRAME::PickSymbolFromLibTree( const SCHLIB_FILTER* aFilte
 
     wxString dialogTitle;
 
-    if( adapter->GetFilter() == SYMBOL_TREE_MODEL_ADAPTER::CMP_FILTER_POWER )
+    if( adapter->GetFilter() == SYMBOL_TREE_MODEL_ADAPTER::SYM_FILTER_POWER )
         dialogTitle.Printf( _( "Choose Power Symbol (%d items loaded)" ), adapter->GetItemCount() );
     else
         dialogTitle.Printf( _( "Choose Symbol (%d items loaded)" ), adapter->GetItemCount() );
@@ -195,14 +195,14 @@ PICKED_SYMBOL SCH_BASE_FRAME::PickSymbolFromLibTree( const SCHLIB_FILTER* aFilte
 }
 
 
-void SCH_EDIT_FRAME::SelectUnit( SCH_COMPONENT* aSymbol, int aUnit )
+void SCH_EDIT_FRAME::SelectUnit( SCH_SYMBOL* aSymbol, int aUnit )
 {
-    LIB_PART* part = GetLibPart( aSymbol->GetLibId() );
+    LIB_SYMBOL* symbol = GetLibSymbol( aSymbol->GetLibId() );
 
-    if( !part )
+    if( !symbol )
         return;
 
-    int unitCount = part->GetUnitCount();
+    int unitCount = symbol->GetUnitCount();
 
     if( unitCount <= 1 || aSymbol->GetUnit() == aUnit )
         return;
@@ -210,7 +210,7 @@ void SCH_EDIT_FRAME::SelectUnit( SCH_COMPONENT* aSymbol, int aUnit )
     if( aUnit > unitCount )
         aUnit = unitCount;
 
-    STATUS_FLAGS savedFlags = aSymbol->GetFlags();
+    EDA_ITEM_FLAGS savedFlags = aSymbol->GetFlags();
 
     if( !aSymbol->GetEditFlags() )    // No command in progress: save in undo list
         SaveCopyInUndoList( GetScreen(), aSymbol, UNDO_REDO::CHANGED, false );
@@ -234,24 +234,25 @@ void SCH_EDIT_FRAME::SelectUnit( SCH_COMPONENT* aSymbol, int aUnit )
 }
 
 
-void SCH_EDIT_FRAME::ConvertPart( SCH_COMPONENT* aSymbol )
+void SCH_EDIT_FRAME::ConvertPart( SCH_SYMBOL* aSymbol )
 {
-    if( !aSymbol || !aSymbol->GetPartRef() )
+    if( !aSymbol || !aSymbol->GetLibSymbolRef() )
         return;
 
     wxString msg;
 
-    if( !aSymbol->GetPartRef()->HasConversion() )
+    if( !aSymbol->GetLibSymbolRef()->HasConversion() )
     {
-        LIB_ID id = aSymbol->GetPartRef()->GetLibId();
+        LIB_ID id = aSymbol->GetLibSymbolRef()->GetLibId();
 
-        msg.Printf( _( "No alternate body style found for symbol \"%s\" in library \"%s\"." ),
-                    id.GetLibItemName().wx_str(), id.GetLibNickname().wx_str() );
+        msg.Printf( _( "No alternate body style found for symbol '%s' in library '%s'." ),
+                    id.GetLibItemName().wx_str(),
+                    id.GetLibNickname().wx_str() );
         DisplayError( this,  msg );
         return;
     }
 
-    STATUS_FLAGS savedFlags = aSymbol->GetFlags();
+    EDA_ITEM_FLAGS savedFlags = aSymbol->GetFlags();
 
     aSymbol->SetConvert( aSymbol->GetConvert() + 1 );
 

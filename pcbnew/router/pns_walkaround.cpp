@@ -2,7 +2,7 @@
  * KiRouter - a push-and-(sometimes-)shove PCB router
  *
  * Copyright (C) 2013-2014 CERN
- * Copyright (C) 2016-2020 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 2016-2021 KiCad Developers, see AUTHORS.txt for contributors.
  * Author: Tomasz Wlostowski <tomasz.wlostowski@cern.ch>
  *
  * This program is free software: you can redistribute it and/or modify it
@@ -40,7 +40,8 @@ void WALKAROUND::start( const LINE& aInitialPath )
 
 NODE::OPT_OBSTACLE WALKAROUND::nearestObstacle( const LINE& aPath )
 {
-    NODE::OPT_OBSTACLE obs = m_world->NearestObstacle( &aPath, m_itemMask, m_restrictedSet.empty() ? NULL : &m_restrictedSet );
+    NODE::OPT_OBSTACLE obs = m_world->NearestObstacle(
+            &aPath, m_itemMask, m_restrictedSet.empty() ? nullptr : &m_restrictedSet );
 
     if( m_restrictedSet.empty() )
         return obs;
@@ -60,26 +61,35 @@ WALKAROUND::WALKAROUND_STATUS WALKAROUND::singleStep( LINE& aPath, bool aWinding
     if( !current_obs )
         return DONE;
 
+    VECTOR2I initialLast = aPath.CPoint( -1 );
+
     SHAPE_LINE_CHAIN path_walk;
 
-    bool s_cw = aPath.Walkaround( current_obs->m_hull, path_walk,
-                      aWindingDirection );
+    bool s_cw = aPath.Walkaround( current_obs->m_hull, path_walk, aWindingDirection );
 
     PNS_DBG( Dbg(), BeginGroup, "hull/walk" );
     char name[128];
-    snprintf(name, sizeof(name), "hull-%s-%d", aWindingDirection ? "cw" : "ccw", m_iteration );
-    PNS_DBG( Dbg(), AddLine, current_obs->m_hull, RED, 1, name);
-    snprintf(name, sizeof(name), "path-%s-%d", aWindingDirection ? "cw" : "ccw", m_iteration );
+    snprintf( name, sizeof( name ), "hull-%s-%d", aWindingDirection ? "cw" : "ccw", m_iteration );
+    PNS_DBG( Dbg(), AddLine, current_obs->m_hull, RED, 1, name );
+    snprintf( name, sizeof( name ), "path-%s-%d", aWindingDirection ? "cw" : "ccw", m_iteration );
     PNS_DBG( Dbg(), AddLine, aPath.CLine(), GREEN, 1, name );
-    snprintf(name, sizeof(name), "result-%s-%d", aWindingDirection ? "cw" : "ccw", m_iteration );
+    snprintf( name, sizeof( name ), "result-%s-%d", aWindingDirection ? "cw" : "ccw", m_iteration );
     PNS_DBG( Dbg(), AddLine, path_walk, BLUE, 10000, name );
     PNS_DBG( Dbg(), Message, wxString::Format( "Stat cw %d", !!s_cw ) );
     PNS_DBGN( Dbg(), EndGroup );
 
-    current_obs = nearestObstacle( LINE( aPath, path_walk ) );
-
     path_walk.Simplify();
     aPath.SetShape( path_walk );
+
+    // If the end of the line is inside an obstacle, additional walkaround iterations are not
+    // going to help.  Exit now to prevent pegging the iteration limiter and causing lag.
+    if( current_obs && current_obs->m_hull.PointInside( initialLast ) &&
+        !current_obs->m_hull.PointOnEdge( initialLast ) )
+    {
+        return ALMOST_DONE;
+    }
+
+    current_obs = nearestObstacle( LINE( aPath, path_walk ) );
 
     return IN_PROGRESS;
 }
@@ -95,7 +105,8 @@ const WALKAROUND::RESULT WALKAROUND::Route( const LINE& aInitialPath )
     // special case for via-in-the-middle-of-track placement
     if( aInitialPath.PointCount() <= 1 )
     {
-        if( aInitialPath.EndsWithVia() && m_world->CheckColliding( &aInitialPath.Via(), m_itemMask ) )
+        if( aInitialPath.EndsWithVia() && m_world->CheckColliding( &aInitialPath.Via(),
+                                                                   m_itemMask ) )
             return RESULT( STUCK, STUCK );
 
         return RESULT( DONE, DONE, aInitialPath, aInitialPath );
@@ -114,9 +125,18 @@ const WALKAROUND::RESULT WALKAROUND::Route( const LINE& aInitialPath )
         s_cw = m_forceCw ? IN_PROGRESS : STUCK;
         s_ccw = m_forceCw ? STUCK : IN_PROGRESS;
         m_forceSingleDirection = true;
-    } else {
+    }
+    else
+    {
         m_forceSingleDirection = false;
     }
+
+    // In some situations, there isn't a trivial path (or even a path at all).  Hitting the
+    // iteration limit causes lag, so we can exit out early if the walkaround path gets very long
+    // compared with the initial path.  If the length exceeds the initial length times this factor,
+    // fail out.
+    const int maxWalkDistFactor = 10;
+    long long lengthLimit       = aInitialPath.CLine().Length() * maxWalkDistFactor;
 
     while( m_iteration < m_iterationLimit )
     {
@@ -139,6 +159,10 @@ const WALKAROUND::RESULT WALKAROUND::Route( const LINE& aInitialPath )
         }
 
         if( s_cw != IN_PROGRESS && s_ccw != IN_PROGRESS )
+            break;
+
+        // Safety valve
+        if( path_cw.Line().Length() > lengthLimit && path_ccw.Line().Length() > lengthLimit )
             break;
 
         m_iteration++;
@@ -166,12 +190,14 @@ const WALKAROUND::RESULT WALKAROUND::Route( const LINE& aInitialPath )
         result.statusCw = ALMOST_DONE;
     }
 
-    if( result.lineCcw.SegmentCount() < 1 || result.lineCcw.CPoint( 0 ) != aInitialPath.CPoint( 0 ) )
+    if( result.lineCcw.SegmentCount() < 1 ||
+        result.lineCcw.CPoint( 0 ) != aInitialPath.CPoint( 0 ) )
     {
         result.statusCcw = STUCK;
     }
 
-    if( result.lineCcw.PointCount() > 0 && result.lineCcw.CPoint( -1 ) != aInitialPath.CPoint( -1 ) )
+    if( result.lineCcw.PointCount() > 0 &&
+        result.lineCcw.CPoint( -1 ) != aInitialPath.CPoint( -1 ) )
     {
         result.statusCcw = ALMOST_DONE;
     }
@@ -180,9 +206,8 @@ const WALKAROUND::RESULT WALKAROUND::Route( const LINE& aInitialPath )
 }
 
 
-
-WALKAROUND::WALKAROUND_STATUS WALKAROUND::Route( const LINE& aInitialPath,
-        LINE& aWalkPath, bool aOptimize )
+WALKAROUND::WALKAROUND_STATUS WALKAROUND::Route( const LINE& aInitialPath, LINE& aWalkPath,
+                                                 bool aOptimize )
 {
     LINE path_cw( aInitialPath ), path_ccw( aInitialPath );
     WALKAROUND_STATUS s_cw = IN_PROGRESS, s_ccw = IN_PROGRESS;
@@ -191,7 +216,8 @@ WALKAROUND::WALKAROUND_STATUS WALKAROUND::Route( const LINE& aInitialPath,
     // special case for via-in-the-middle-of-track placement
     if( aInitialPath.PointCount() <= 1 )
     {
-        if( aInitialPath.EndsWithVia() && m_world->CheckColliding( &aInitialPath.Via(), m_itemMask ) )
+        if( aInitialPath.EndsWithVia() && m_world->CheckColliding( &aInitialPath.Via(),
+                                                                   m_itemMask ) )
             return STUCK;
 
         aWalkPath = aInitialPath;
@@ -210,7 +236,9 @@ WALKAROUND::WALKAROUND_STATUS WALKAROUND::Route( const LINE& aInitialPath,
         s_cw = m_forceCw ? IN_PROGRESS : STUCK;
         s_ccw = m_forceCw ? STUCK : IN_PROGRESS;
         m_forceSingleDirection = true;
-    } else {
+    }
+    else
+    {
         m_forceSingleDirection = false;
     }
 
@@ -263,8 +291,10 @@ WALKAROUND::WALKAROUND_STATUS WALKAROUND::Route( const LINE& aInitialPath,
 
     if( aWalkPath.SegmentCount() < 1 )
         return STUCK;
+
     if( aWalkPath.CPoint( -1 ) != aInitialPath.CPoint( -1 ) )
         return ALMOST_DONE;
+
     if( aWalkPath.CPoint( 0 ) != aInitialPath.CPoint( 0 ) )
         return STUCK;
 
@@ -278,5 +308,4 @@ WALKAROUND::WALKAROUND_STATUS WALKAROUND::Route( const LINE& aInitialPath,
 
     return st;
 }
-
 }

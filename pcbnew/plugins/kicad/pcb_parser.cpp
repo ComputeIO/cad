@@ -28,23 +28,24 @@
  */
 
 #include <cerrno>
-#include <common.h>
 #include <confirm.h>
 #include <macros.h>
 #include <title_block.h>
 #include <trigo.h>
 
-#include <advanced_config.h>
 #include <board.h>
-#include <dimension.h>
+#include <board_design_settings.h>
+#include <pcb_dimension.h>
 #include <pcb_shape.h>
 #include <fp_shape.h>
 #include <pcb_group.h>
 #include <pcb_target.h>
 #include <footprint.h>
+#include <geometry/shape_line_chain.h>
+
 #include <netclass.h>
 #include <pad.h>
-#include <track.h>
+#include <pcb_track.h>
 #include <zone.h>
 #include <plugins/kicad/kicad_plugin.h>
 #include <pcb_plot_params_parser.h>
@@ -53,9 +54,10 @@
 #include <zones.h>
 #include <plugins/kicad/pcb_parser.h>
 #include <convert_basic_shapes_to_polygon.h>    // for RECT_CHAMFER_POSITIONS definition
-#include <template_fieldnames.h>
 #include <math/util.h>                           // KiROUND, Clamp
+#include <string_utils.h>
 #include <wx/log.h>
+#include <progress_reporter.h>
 
 using namespace PCB_KEYS_T;
 
@@ -105,6 +107,28 @@ void PCB_PARSER::init()
 }
 
 
+void PCB_PARSER::checkpoint()
+{
+    const unsigned PROGRESS_DELTA = 250;
+
+    if( m_progressReporter )
+    {
+        unsigned curLine = m_lineReader->LineNumber();
+
+        if( curLine > m_lastProgressLine + PROGRESS_DELTA )
+        {
+            m_progressReporter->SetCurrentProgress( ( (double) curLine )
+                                                            / std::max( 1U, m_lineCount ) );
+
+            if( !m_progressReporter->KeepRefreshing() )
+                THROW_IO_ERROR( ( "Open cancelled by user." ) );
+
+            m_lastProgressLine = curLine;
+        }
+    }
+}
+
+
 void PCB_PARSER::skipCurrent()
 {
     int curr_level = 0;
@@ -149,7 +173,7 @@ double PCB_PARSER::parseDouble()
     if( errno )
     {
         wxString error;
-        error.Printf( _( "Invalid floating point number in\nfile: \"%s\"\nline: %d\noffset: %d" ),
+        error.Printf( _( "Invalid floating point number in\nfile: '%s'\nline: %d\noffset: %d" ),
                       CurSource(), CurLineNumber(), CurOffset() );
 
         THROW_IO_ERROR( error );
@@ -158,7 +182,7 @@ double PCB_PARSER::parseDouble()
     if( CurText() == tmp )
     {
         wxString error;
-        error.Printf( _( "Missing floating point number in\nfile: \"%s\"\nline: %d\noffset: %d" ),
+        error.Printf( _( "Missing floating point number in\nfile: '%s'\nline: %d\noffset: %d" ),
                       CurSource(), CurLineNumber(), CurOffset() );
 
         THROW_IO_ERROR( error );
@@ -261,6 +285,91 @@ wxPoint PCB_PARSER::parseXY()
 }
 
 
+void PCB_PARSER::parseOutlinePoints( SHAPE_LINE_CHAIN& aPoly )
+{
+    if( CurTok() != T_LEFT )
+        NeedLEFT();
+
+    T token = NextTok();
+
+    switch( token )
+    {
+    case T_xy:
+    {
+        int x = parseBoardUnits( "X coordinate" );
+        int y = parseBoardUnits( "Y coordinate" );
+
+        NeedRIGHT();
+
+        aPoly.Append( x, y );
+        break;
+    }
+    case T_arc:
+    {
+        bool has_start = false;
+        bool has_mid   = false;
+        bool has_end   = false;
+
+        VECTOR2I arc_start, arc_mid, arc_end;
+
+        for( token = NextTok(); token != T_RIGHT; token = NextTok() )
+        {
+            if( token != T_LEFT )
+                Expecting( T_LEFT );
+
+            token = NextTok();
+
+            switch( token )
+            {
+            case T_start:
+                arc_start.x = parseBoardUnits( "start x" );
+                arc_start.y = parseBoardUnits( "start y" );
+                has_start = true;
+                break;
+
+            case T_mid:
+                arc_mid.x = parseBoardUnits( "mid x" );
+                arc_mid.y = parseBoardUnits( "mid y" );
+                has_mid = true;
+                break;
+
+            case T_end:
+                arc_end.x = parseBoardUnits( "end x" );
+                arc_end.y = parseBoardUnits( "end y" );
+                has_end = true;
+                break;
+
+            default:
+                Expecting( "start, mid or end" );
+            }
+
+            NeedRIGHT();
+        }
+
+        if( !has_start )
+            Expecting( "start" );
+
+        if( !has_mid )
+            Expecting( "mid" );
+
+        if( !has_end )
+            Expecting( "end" );
+
+        SHAPE_ARC arc( arc_start, arc_mid, arc_end, 0 );
+
+        aPoly.Append( arc );
+
+        if( token != T_RIGHT )
+            Expecting( T_RIGHT );
+
+        break;
+    }
+    default:
+        Expecting( "xy or arc" );
+    }
+}
+
+
 void PCB_PARSER::parseXY( int* aX, int* aY )
 {
     wxPoint pt = parseXY();
@@ -292,6 +401,11 @@ void PCB_PARSER::parseEDA_TEXT( EDA_TEXT* aText )
 {
     wxCHECK_RET( CurTok() == T_effects,
                  wxT( "Cannot parse " ) + GetTokenString( CurTok() ) + wxT( " as EDA_TEXT." ) );
+
+    // In version 20210606 the notation for overbars was changed from `~...~` to `~{...}`.
+    // We need to convert the old syntax to the new one.
+    if( m_requiredVersion < 20210606 )
+        aText->SetText( ConvertToNewOverbarNotation( aText->GetText() ) );
 
     T token;
 
@@ -325,16 +439,16 @@ void PCB_PARSER::parseEDA_TEXT( EDA_TEXT* aText )
                     break;
 
                 case T_size:
-                    {
-                        wxSize sz;
-                        sz.SetHeight( parseBoardUnits( "text height" ) );
-                        sz.SetWidth( parseBoardUnits( "text width" ) );
-                        aText->SetTextSize( sz );
-                        NeedRIGHT();
+                {
+                    wxSize sz;
+                    sz.SetHeight( parseBoardUnits( "text height" ) );
+                    sz.SetWidth( parseBoardUnits( "text width" ) );
+                    aText->SetTextSize( sz );
+                    NeedRIGHT();
 
-                        foundTextSize = true;
-                    }
+                    foundTextSize = true;
                     break;
+                }
 
                 case T_line_spacing:
                     aText->SetLineSpacing( parseDouble( "line spacing" ) );
@@ -401,14 +515,21 @@ void PCB_PARSER::parseEDA_TEXT( EDA_TEXT* aText )
                 }
 
             }
+
             break;
+
+        case T_keep_upright:
+            {
+                aText->SetKeepUpright( parseBool() );
+                NeedRIGHT();
+                break;
+            }
 
         case T_hide:
             aText->SetVisible( false );
             break;
 
-        default:
-            Expecting( "font, justify, or hide" );
+        default: Expecting( "font, justify, keep_upright, or hide" );
         }
     }
 
@@ -425,7 +546,7 @@ void PCB_PARSER::parseEDA_TEXT( EDA_TEXT* aText )
 
 FP_3DMODEL* PCB_PARSER::parse3DModel()
 {
-    wxCHECK_MSG( CurTok() == T_model, NULL,
+    wxCHECK_MSG( CurTok() == T_model, nullptr,
                  wxT( "Cannot parse " ) + GetTokenString( CurTok() ) + wxT( " as FP_3DMODEL." ) );
 
     T token;
@@ -550,7 +671,7 @@ BOARD_ITEM* PCB_PARSER::Parse()
     switch( NextTok() )
     {
     case T_kicad_pcb:
-        if( m_board == NULL )
+        if( m_board == nullptr )
             m_board = new BOARD();
 
         item = (BOARD_ITEM*) parseBOARD();
@@ -566,7 +687,7 @@ BOARD_ITEM* PCB_PARSER::Parse()
 
     default:
         wxString err;
-        err.Printf( _( "Unknown token \"%s\"" ), FromUTF8() );
+        err.Printf( _( "Unknown token '%s'" ), FromUTF8() );
         THROW_PARSE_ERROR( err, CurSource(), CurLine(), CurLineNumber(), CurOffset() );
     }
 
@@ -604,6 +725,8 @@ BOARD* PCB_PARSER::parseBOARD_unchecked()
 
     for( token = NextTok();  token != T_RIGHT;  token = NextTok() )
     {
+        checkpoint();
+
         if( token != T_LEFT )
             Expecting( T_LEFT );
 
@@ -614,6 +737,23 @@ BOARD* PCB_PARSER::parseBOARD_unchecked()
 
         switch( token )
         {
+        case T_host:            // legacy token
+            NeedSYMBOL();
+            m_board->SetGenerator( FromUTF8() );
+
+            // Older formats included build data
+            if( m_requiredVersion < BOARD_FILE_HOST_VERSION )
+                NeedSYMBOL();
+
+            NeedRIGHT();
+            break;
+
+        case T_generator:
+            NeedSYMBOL();
+            m_board->SetGenerator( FromUTF8() );
+            NeedRIGHT();
+            break;
+
         case T_general:
             parseGeneralSection();
             break;
@@ -678,7 +818,7 @@ BOARD* PCB_PARSER::parseBOARD_unchecked()
             break;
 
         case T_segment:
-            item = parseTRACK();
+            item = parsePCB_TRACK();
             m_board->Add( item, ADD_MODE::BULK_APPEND );
             bulkAddedItems.push_back( item );
             break;
@@ -694,7 +834,7 @@ BOARD* PCB_PARSER::parseBOARD_unchecked()
             break;
 
         case T_via:
-            item = parseVIA();
+            item = parsePCB_VIA();
             m_board->Add( item, ADD_MODE::BULK_APPEND );
             bulkAddedItems.push_back( item );
             break;
@@ -713,7 +853,7 @@ BOARD* PCB_PARSER::parseBOARD_unchecked()
 
         default:
             wxString err;
-            err.Printf( _( "Unknown token \"%s\"" ), FromUTF8() );
+            err.Printf( _( "Unknown token '%s'" ), FromUTF8() );
             THROW_PARSE_ERROR( err, CurSource(), CurLine(), CurLineNumber(), CurOffset() );
         }
     }
@@ -758,11 +898,11 @@ BOARD* PCB_PARSER::parseBOARD_unchecked()
                                 }
                             };
 
-        for( auto segm : m_board->Tracks() )
+        for( PCB_TRACK* track : m_board->Tracks() )
         {
-            if( segm->Type() == PCB_VIA_T )
+            if( track->Type() == PCB_VIA_T )
             {
-                VIA*         via = (VIA*) segm;
+                PCB_VIA*     via = static_cast<PCB_VIA*>( track );
                 PCB_LAYER_ID top_layer, bottom_layer;
 
                 if( via->GetViaType() == VIATYPE::THROUGH )
@@ -787,7 +927,9 @@ BOARD* PCB_PARSER::parseBOARD_unchecked()
                 }
             }
             else
-                visitItem( segm );
+            {
+                visitItem( track );
+            }
         }
 
         for( BOARD_ITEM* zone : m_board->Zones() )
@@ -851,6 +993,9 @@ void PCB_PARSER::resolveGroups( BOARD_ITEM* aParent )
         group->SetName( aGrp.name );
         const_cast<KIID&>( group->m_Uuid ) = aGrp.uuid;
 
+        if( aGrp.locked )
+            group->SetLocked( true );
+
         if( aGrp.parent->Type() == PCB_FOOTPRINT_T )
             static_cast<FOOTPRINT*>( aGrp.parent )->Add( group );
         else
@@ -886,6 +1031,7 @@ void PCB_PARSER::resolveGroups( BOARD_ITEM* aParent )
                 case PCB_FP_TEXT_T:
                 case PCB_FP_SHAPE_T:
                 case PCB_FP_ZONE_T:
+                case PCB_PAD_T:
                     if( item->GetParent() == group->GetParent() )
                         group->AddItem( item );
 
@@ -922,27 +1068,12 @@ void PCB_PARSER::parseHeader()
         m_requiredVersion = parseInt( FromUTF8().mb_str( wxConvUTF8 ) );
         m_tooRecent = ( m_requiredVersion > SEXPR_BOARD_FILE_VERSION );
         NeedRIGHT();
-
-        NeedLEFT();
-        NeedSYMBOL();
-        NeedSYMBOL();
-
-        // Older formats included build data
-        if( m_requiredVersion < BOARD_FILE_HOST_VERSION )
-            NeedSYMBOL();
-
-        NeedRIGHT();
     }
     else
     {
         m_requiredVersion = 20201115;   // Last version before we started writing version #s
                                         // in footprint files as well as board files.
         m_tooRecent = ( m_requiredVersion > SEXPR_BOARD_FILE_VERSION );
-
-        // Skip the host name and host build version information.
-        NeedSYMBOL();
-        NeedSYMBOL();
-        NeedRIGHT();
     }
 
     m_board->SetFileFormatVersionAtLoad( m_requiredVersion );
@@ -997,7 +1128,7 @@ void PCB_PARSER::parsePAGE_INFO()
     if( !pageInfo.SetType( pageType ) )
     {
         wxString err;
-        err.Printf( _( "Page type \"%s\" is not valid " ), FromUTF8() );
+        err.Printf( _( "Page type '%s' is not valid." ), FromUTF8() );
         THROW_PARSE_ERROR( err, CurSource(), CurLine(), CurLineNumber(), CurOffset() );
     }
 
@@ -1077,63 +1208,64 @@ void PCB_PARSER::parseTITLE_BLOCK()
             break;
 
         case T_comment:
+        {
+            int commentNumber = parseInt( "comment" );
+
+            switch( commentNumber )
             {
-                int commentNumber = parseInt( "comment" );
+            case 1:
+                NextTok();
+                titleBlock.SetComment( 0, FromUTF8() );
+                break;
 
-                switch( commentNumber )
-                {
-                case 1:
-                    NextTok();
-                    titleBlock.SetComment( 0, FromUTF8() );
-                    break;
+            case 2:
+                NextTok();
+                titleBlock.SetComment( 1, FromUTF8() );
+                break;
 
-                case 2:
-                    NextTok();
-                    titleBlock.SetComment( 1, FromUTF8() );
-                    break;
+            case 3:
+                NextTok();
+                titleBlock.SetComment( 2, FromUTF8() );
+                break;
 
-                case 3:
-                    NextTok();
-                    titleBlock.SetComment( 2, FromUTF8() );
-                    break;
+            case 4:
+                NextTok();
+                titleBlock.SetComment( 3, FromUTF8() );
+                break;
 
-                case 4:
-                    NextTok();
-                    titleBlock.SetComment( 3, FromUTF8() );
-                    break;
+            case 5:
+                NextTok();
+                titleBlock.SetComment( 4, FromUTF8() );
+                break;
 
-                case 5:
-                    NextTok();
-                    titleBlock.SetComment( 4, FromUTF8() );
-                    break;
+            case 6:
+                NextTok();
+                titleBlock.SetComment( 5, FromUTF8() );
+                break;
 
-                case 6:
-                    NextTok();
-                    titleBlock.SetComment( 5, FromUTF8() );
-                    break;
+            case 7:
+                NextTok();
+                titleBlock.SetComment( 6, FromUTF8() );
+                break;
 
-                case 7:
-                    NextTok();
-                    titleBlock.SetComment( 6, FromUTF8() );
-                    break;
+            case 8:
+                NextTok();
+                titleBlock.SetComment( 7, FromUTF8() );
+                break;
 
-                case 8:
-                    NextTok();
-                    titleBlock.SetComment( 7, FromUTF8() );
-                    break;
+            case 9:
+                NextTok();
+                titleBlock.SetComment( 8, FromUTF8() );
+                break;
 
-                case 9:
-                    NextTok();
-                    titleBlock.SetComment( 8, FromUTF8() );
-                    break;
-
-                default:
-                    wxString err;
-                    err.Printf( wxT( "%d is not a valid title block comment number" ), commentNumber );
-                    THROW_PARSE_ERROR( err, CurSource(), CurLine(), CurLineNumber(), CurOffset() );
-                }
+            default:
+                wxString err;
+                err.Printf( wxT( "%d is not a valid title block comment number" ), commentNumber );
+                THROW_PARSE_ERROR( err, CurSource(), CurLine(), CurLineNumber(), CurOffset() );
             }
+
             break;
+        }
 
         default:
             Expecting( "title, date, rev, company, or comment" );
@@ -1301,7 +1433,9 @@ void PCB_PARSER::parseBoardStackup()
             stackup.Add( item );
         }
         else
+        {
             Expecting( "layer_name" );
+        }
 
         bool has_next_sublayer = true;
         int sublayer_idx = 0;       // the index of dielectric sub layers
@@ -1346,6 +1480,7 @@ void PCB_PARSER::parseBoardStackup()
 
                             NeedRIGHT();
                         }
+
                         break;
 
                     case T_material:
@@ -1401,9 +1536,9 @@ void PCB_PARSER::parseBoardStackup()
 
 void PCB_PARSER::createOldLayerMapping( std::unordered_map< std::string, std::string >& aMap )
 {
-    // N.B. This mapping only includes Italian, Polish and French as they were the only languages that
-    // mapped the layer names as of cc2022b1ac739aa673d2a0b7a2047638aa7a47b3 (kicad-i18n) when the
-    // bug was fixed in KiCad source.
+    // N.B. This mapping only includes Italian, Polish and French as they were the only languages
+    // that mapped the layer names as of cc2022b1ac739aa673d2a0b7a2047638aa7a47b3 (kicad-i18n)
+    // when the bug was fixed in KiCad source.
 
     // Italian
     aMap["Adesivo.Retro"] = "B.Adhes";
@@ -1527,19 +1662,18 @@ void PCB_PARSER::parseLayers()
 
             if( it == m_layerIndices.end() )
             {
-                wxString error = wxString::Format(
-                    _( "Layer \"%s\" in file \"%s\" at line %d, is not in fixed layer hash" ),
-                    layer.m_name,
-                    CurSource(),
-                    CurLineNumber(),
-                    CurOffset()
-                    );
+                wxString error;
+                error.Printf( _( "Layer '%s' in file '%s' at line %d is not in fixed layer hash." ),
+                              layer.m_name,
+                              CurSource(),
+                              CurLineNumber(),
+                              CurOffset() );
 
                 THROW_IO_ERROR( error );
             }
 
-            // If we are here, then we have found a translated layer name.  Put it in the maps so that
-            // items on this layer get the appropriate layer ID number
+            // If we are here, then we have found a translated layer name.  Put it in the maps
+            // so that items on this layer get the appropriate layer ID number.
             m_layerIndices[ UTF8( layer.m_name ) ] = it->second;
             m_layerMasks[   UTF8( layer.m_name ) ] = it->second;
             layer.m_name = it->first;
@@ -1566,8 +1700,7 @@ void PCB_PARSER::parseLayers()
     // We need at least 2 copper layers and there must be an even number of them.
     if( copperLayerCount < 2 || (copperLayerCount % 2) != 0 )
     {
-        wxString err = wxString::Format(
-            _( "%d is not a valid layer count" ), copperLayerCount );
+        wxString err = wxString::Format( _( "%d is not a valid layer count" ), copperLayerCount );
 
         THROW_PARSE_ERROR( err, CurSource(), CurLine(), CurLineNumber(), CurOffset() );
     }
@@ -1722,7 +1855,7 @@ void PCB_PARSER::parseSetup()
             break;
 
         case T_via_min_annulus:
-            designSettings.m_ViasMinAnnulus = parseBoardUnits( T_via_min_annulus );
+            designSettings.m_ViasMinAnnularWidth = parseBoardUnits( T_via_min_annulus );
             m_board->m_LegacyDesignSettingsLoaded = true;
             NeedRIGHT();
             break;
@@ -1753,19 +1886,19 @@ void PCB_PARSER::parseSetup()
             break;
 
         case T_user_via:
-            {
-                int viaSize = parseBoardUnits( "user via size" );
-                int viaDrill = parseBoardUnits( "user via drill" );
+        {
+            int viaSize = parseBoardUnits( "user via size" );
+            int viaDrill = parseBoardUnits( "user via drill" );
 
-                // Make room for the netclass value
-                if( designSettings.m_ViasDimensionsList.empty() )
-                    designSettings.m_ViasDimensionsList.emplace_back( VIA_DIMENSION( 0, 0 ) );
+            // Make room for the netclass value
+            if( designSettings.m_ViasDimensionsList.empty() )
+                designSettings.m_ViasDimensionsList.emplace_back( VIA_DIMENSION( 0, 0 ) );
 
-                designSettings.m_ViasDimensionsList.emplace_back( VIA_DIMENSION( viaSize, viaDrill ) );
-                m_board->m_LegacyDesignSettingsLoaded = true;
-                NeedRIGHT();
-            }
+            designSettings.m_ViasDimensionsList.emplace_back( VIA_DIMENSION( viaSize, viaDrill ) );
+            m_board->m_LegacyDesignSettingsLoaded = true;
+            NeedRIGHT();
             break;
+        }
 
         case T_uvia_size:
             defaultNetClass->SetuViaDiameter( parseBoardUnits( T_uvia_size ) );
@@ -1808,14 +1941,17 @@ void PCB_PARSER::parseSetup()
                 int width = parseBoardUnits( "user diff-pair width" );
                 int gap = parseBoardUnits( "user diff-pair gap" );
                 int viaGap = parseBoardUnits( "user diff-pair via gap" );
-                designSettings.m_DiffPairDimensionsList.emplace_back( DIFF_PAIR_DIMENSION( width, gap, viaGap ) );
+                designSettings.m_DiffPairDimensionsList.emplace_back(
+                        DIFF_PAIR_DIMENSION( width, gap, viaGap ) );
                 m_board->m_LegacyDesignSettingsLoaded = true;
                 NeedRIGHT();
             }
+
             break;
 
         case T_segment_width:   // note: legacy (pre-6.0) token
-            designSettings.m_LineThickness[ LAYER_CLASS_COPPER ] = parseBoardUnits( T_segment_width );
+            designSettings.m_LineThickness[ LAYER_CLASS_COPPER ] =
+                    parseBoardUnits( T_segment_width );
             m_board->m_LegacyDesignSettingsLoaded = true;
             NeedRIGHT();
             break;
@@ -1827,33 +1963,39 @@ void PCB_PARSER::parseSetup()
             break;
 
         case T_mod_edge_width:  // note: legacy (pre-6.0) token
-            designSettings.m_LineThickness[ LAYER_CLASS_SILK ] = parseBoardUnits( T_mod_edge_width );
+            designSettings.m_LineThickness[ LAYER_CLASS_SILK ] =
+                    parseBoardUnits( T_mod_edge_width );
             m_board->m_LegacyDesignSettingsLoaded = true;
             NeedRIGHT();
             break;
 
         case T_pcb_text_width:  // note: legacy (pre-6.0) token
-            designSettings.m_TextThickness[ LAYER_CLASS_COPPER ] = parseBoardUnits( T_pcb_text_width );
+            designSettings.m_TextThickness[ LAYER_CLASS_COPPER ] =
+                    parseBoardUnits( T_pcb_text_width );
             m_board->m_LegacyDesignSettingsLoaded = true;
             NeedRIGHT();
             break;
 
         case T_mod_text_width:  // note: legacy (pre-6.0) token
-            designSettings.m_TextThickness[ LAYER_CLASS_SILK ] = parseBoardUnits( T_mod_text_width );
+            designSettings.m_TextThickness[ LAYER_CLASS_SILK ] =
+                    parseBoardUnits( T_mod_text_width );
             m_board->m_LegacyDesignSettingsLoaded = true;
             NeedRIGHT();
             break;
 
         case T_pcb_text_size:   // note: legacy (pre-6.0) token
             designSettings.m_TextSize[ LAYER_CLASS_COPPER ].x = parseBoardUnits( "pcb text width" );
-            designSettings.m_TextSize[ LAYER_CLASS_COPPER ].y = parseBoardUnits( "pcb text height" );
+            designSettings.m_TextSize[ LAYER_CLASS_COPPER ].y =
+                    parseBoardUnits( "pcb text height" );
             m_board->m_LegacyDesignSettingsLoaded = true;
             NeedRIGHT();
             break;
 
         case T_mod_text_size:   // note: legacy (pre-6.0) token
-            designSettings.m_TextSize[ LAYER_CLASS_SILK ].x = parseBoardUnits( "footprint text width" );
-            designSettings.m_TextSize[ LAYER_CLASS_SILK ].y = parseBoardUnits( "footprint text height" );
+            designSettings.m_TextSize[ LAYER_CLASS_SILK ].x =
+                    parseBoardUnits( "footprint text width" );
+            designSettings.m_TextSize[ LAYER_CLASS_SILK ].y =
+                    parseBoardUnits( "footprint text height" );
             m_board->m_LegacyDesignSettingsLoaded = true;
             NeedRIGHT();
             break;
@@ -1864,24 +2006,24 @@ void PCB_PARSER::parseSetup()
             break;
 
         case T_pad_size:
-            {
-                wxSize sz;
-                sz.SetWidth( parseBoardUnits( "master pad width" ) );
-                sz.SetHeight( parseBoardUnits( "master pad height" ) );
-                designSettings.m_Pad_Master.SetSize( sz );
-                m_board->m_LegacyDesignSettingsLoaded = true;
-                NeedRIGHT();
-            }
+        {
+            wxSize sz;
+            sz.SetWidth( parseBoardUnits( "master pad width" ) );
+            sz.SetHeight( parseBoardUnits( "master pad height" ) );
+            designSettings.m_Pad_Master->SetSize( sz );
+            m_board->m_LegacyDesignSettingsLoaded = true;
+            NeedRIGHT();
             break;
+        }
 
         case T_pad_drill:
-            {
-                int drillSize = parseBoardUnits( T_pad_drill );
-                designSettings.m_Pad_Master.SetDrillSize( wxSize( drillSize, drillSize ) );
-                m_board->m_LegacyDesignSettingsLoaded = true;
-                NeedRIGHT();
-            }
+        {
+            int drillSize = parseBoardUnits( T_pad_drill );
+            designSettings.m_Pad_Master->SetDrillSize( wxSize( drillSize, drillSize ) );
+            m_board->m_LegacyDesignSettingsLoaded = true;
+            NeedRIGHT();
             break;
+        }
 
         case T_pad_to_mask_clearance:
             designSettings.m_SolderMaskMargin = parseBoardUnits( T_pad_to_mask_clearance );
@@ -1904,41 +2046,42 @@ void PCB_PARSER::parseSetup()
             break;
 
         case T_aux_axis_origin:
-            {
-                int x = parseBoardUnits( "auxiliary origin X" );
-                int y = parseBoardUnits( "auxiliary origin Y" );
-                designSettings.m_AuxOrigin = wxPoint( x, y );
-                // Aux origin still stored in board for the moment
-                //m_board->m_LegacyDesignSettingsLoaded = true;
-                NeedRIGHT();
-            }
+        {
+            int x = parseBoardUnits( "auxiliary origin X" );
+            int y = parseBoardUnits( "auxiliary origin Y" );
+            designSettings.m_AuxOrigin = wxPoint( x, y );
+
+            // Aux origin still stored in board for the moment
+            //m_board->m_LegacyDesignSettingsLoaded = true;
+            NeedRIGHT();
             break;
+        }
 
         case T_grid_origin:
-            {
-                int x = parseBoardUnits( "grid origin X" );
-                int y = parseBoardUnits( "grid origin Y" );
-                designSettings.m_GridOrigin = wxPoint( x, y );
-                // Grid origin still stored in board for the moment
-                //m_board->m_LegacyDesignSettingsLoaded = true;
-                NeedRIGHT();
-            }
+        {
+            int x = parseBoardUnits( "grid origin X" );
+            int y = parseBoardUnits( "grid origin Y" );
+            designSettings.m_GridOrigin = wxPoint( x, y );
+            // Grid origin still stored in board for the moment
+            //m_board->m_LegacyDesignSettingsLoaded = true;
+            NeedRIGHT();
             break;
+        }
 
         // Stored in board prior to 6.0
         case T_visible_elements:
-            {
-                // Make sure to start with DefaultVisible so all new layers are set
-                m_board->m_LegacyVisibleItems = GAL_SET::DefaultVisible();
+        {
+            // Make sure to start with DefaultVisible so all new layers are set
+            m_board->m_LegacyVisibleItems = GAL_SET::DefaultVisible();
 
-                int visible = parseHex() | MIN_VISIBILITY_MASK;
+            int visible = parseHex() | MIN_VISIBILITY_MASK;
 
-                for( size_t i = 0; i < sizeof( int ) * CHAR_BIT; i++ )
-                    m_board->m_LegacyVisibleItems.set( i, visible & ( 1u << i ) );
+            for( size_t i = 0; i < sizeof( int ) * CHAR_BIT; i++ )
+                m_board->m_LegacyVisibleItems.set( i, visible & ( 1u << i ) );
 
-                NeedRIGHT();
-            }
+            NeedRIGHT();
             break;
+        }
 
         case T_max_error:
             designSettings.m_MaxError = parseBoardUnits( T_max_error );
@@ -1953,19 +2096,19 @@ void PCB_PARSER::parseSetup()
             break;
 
         case T_pcbplotparams:
-            {
-                PCB_PLOT_PARAMS plotParams;
-                PCB_PLOT_PARAMS_PARSER parser( reader );
-                // parser must share the same current line as our current PCB parser
-                // synchronize it.
-                parser.SyncLineReaderWith( *this );
+        {
+            PCB_PLOT_PARAMS        plotParams;
+            PCB_PLOT_PARAMS_PARSER parser( reader );
+            // parser must share the same current line as our current PCB parser
+            // synchronize it.
+            parser.SyncLineReaderWith( *this );
 
-                plotParams.Parse( &parser );
-                SyncLineReaderWith( parser );
+            plotParams.Parse( &parser );
+            SyncLineReaderWith( parser );
 
-                m_board->SetPlotOptions( plotParams );
-            }
+            m_board->SetPlotOptions( plotParams );
             break;
+        }
 
         default:
             Unexpected( CurText() );
@@ -2104,6 +2247,11 @@ void PCB_PARSER::parseNETINFO_ITEM()
     NeedSYMBOLorNUMBER();
     wxString name = FromUTF8();
 
+    // Convert overbar syntax from `~...~` to `~{...}`.  These were left out of the first merge
+    // so the version is a bit later.
+    if( m_requiredVersion < 20210606 )
+        name = ConvertToNewOverbarNotation( name );
+
     NeedRIGHT();
 
     // net 0 should be already in list, so store this net
@@ -2178,7 +2326,14 @@ void PCB_PARSER::parseNETCLASS()
 
         case T_add_net:
             NeedSYMBOLorNUMBER();
-            nc->Add( FromUTF8() );
+
+            // Convert overbar syntax from `~...~` to `~{...}`.  These were left out of the
+            // first merge so the version is a bit later.
+            if( m_requiredVersion < 20210606 )
+                nc->Add( ConvertToNewOverbarNotation( FromUTF8() ) );
+            else
+                nc->Add( FromUTF8() );
+
             break;
 
         default:
@@ -2197,8 +2352,9 @@ void PCB_PARSER::parseNETCLASS()
         // unique_ptr will delete nc on this code path
 
         wxString error;
-        error.Printf( _( "Duplicate NETCLASS name \"%s\" in file \"%s\" at line %d, offset %d" ),
-                      nc->GetName().GetData(), CurSource().GetData(), CurLineNumber(), CurOffset() );
+        error.Printf( _( "Duplicate NETCLASS name '%s' in file '%s' at line %d, offset %d." ),
+                      nc->GetName().GetData(), CurSource().GetData(), CurLineNumber(),
+                      CurOffset() );
         THROW_IO_ERROR( error );
     }
 }
@@ -2207,7 +2363,7 @@ void PCB_PARSER::parseNETCLASS()
 PCB_SHAPE* PCB_PARSER::parsePCB_SHAPE()
 {
     wxCHECK_MSG( CurTok() == T_gr_arc || CurTok() == T_gr_circle || CurTok() == T_gr_curve ||
-                 CurTok() == T_gr_rect || CurTok() == T_gr_line || CurTok() == T_gr_poly, NULL,
+                 CurTok() == T_gr_rect || CurTok() == T_gr_line || CurTok() == T_gr_poly, nullptr,
                  wxT( "Cannot parse " ) + GetTokenString( CurTok() ) + wxT( " as PCB_SHAPE." ) );
 
     T token;
@@ -2217,7 +2373,7 @@ PCB_SHAPE* PCB_PARSER::parsePCB_SHAPE()
     switch( CurTok() )
     {
     case T_gr_arc:
-        shape->SetShape( PCB_SHAPE_TYPE::ARC );
+        shape->SetShape( SHAPE_T::ARC );
         token = NextTok();
 
         if( token == T_locked )
@@ -2253,7 +2409,7 @@ PCB_SHAPE* PCB_PARSER::parsePCB_SHAPE()
         break;
 
     case T_gr_circle:
-        shape->SetShape( PCB_SHAPE_TYPE::CIRCLE );
+        shape->SetShape( SHAPE_T::CIRCLE );
         token = NextTok();
 
         if( token == T_locked )
@@ -2288,7 +2444,7 @@ PCB_SHAPE* PCB_PARSER::parsePCB_SHAPE()
         break;
 
     case T_gr_curve:
-        shape->SetShape( PCB_SHAPE_TYPE::CURVE );
+        shape->SetShape( SHAPE_T::BEZIER );
         token = NextTok();
 
         if( token == T_locked )
@@ -2306,14 +2462,14 @@ PCB_SHAPE* PCB_PARSER::parsePCB_SHAPE()
             Expecting( T_pts );
 
         shape->SetStart( parseXY() );
-        shape->SetBezControl1( parseXY() );
-        shape->SetBezControl2( parseXY() );
+        shape->SetBezierC1( parseXY());
+        shape->SetBezierC2( parseXY());
         shape->SetEnd( parseXY() );
         NeedRIGHT();
         break;
 
     case T_gr_rect:
-        shape->SetShape( PCB_SHAPE_TYPE::RECT );
+        shape->SetShape( SHAPE_T::RECT );
         token = NextTok();
 
         if( token == T_locked )
@@ -2382,8 +2538,12 @@ PCB_SHAPE* PCB_PARSER::parsePCB_SHAPE()
 
     case T_gr_poly:
     {
-        shape->SetShape( PCB_SHAPE_TYPE::POLYGON );
+        shape->SetShape( SHAPE_T::POLY );
         shape->SetWidth( 0 ); // this is the default value. will be (perhaps) modified later
+        shape->SetPolyPoints( {} );
+
+        SHAPE_LINE_CHAIN& outline = shape->GetPolyShape().Outline( 0 );
+
         token = NextTok();
 
         if( token == T_locked )
@@ -2400,14 +2560,13 @@ PCB_SHAPE* PCB_PARSER::parsePCB_SHAPE()
         if( token != T_pts )
             Expecting( T_pts );
 
-        std::vector< wxPoint > pts;
-
         while( (token = NextTok() ) != T_RIGHT )
-            pts.push_back( parseXY() );
+        {
+            parseOutlinePoints( outline );
+        }
 
-        shape->SetPolyPoints( pts );
-    }
         break;
+    }
 
     default:
         Expecting( "gr_arc, gr_circle, gr_curve, gr_line, gr_poly, or gp_rect" );
@@ -2470,11 +2629,12 @@ PCB_SHAPE* PCB_PARSER::parsePCB_SHAPE()
                     Expecting( "yes, none, solid" );
                 }
             }
+
             break;
 
         // We continue to parse the status field but it is no longer written
         case T_status:
-            shape->SetStatus( static_cast<STATUS_FLAGS>( parseHex() ) );
+            shape->SetStatus( static_cast<EDA_ITEM_FLAGS>( parseHex() ) );
             NeedRIGHT();
             break;
 
@@ -2494,14 +2654,13 @@ PCB_SHAPE* PCB_PARSER::parsePCB_SHAPE()
         // Legacy versions didn't have a filled flag but allowed some shapes to indicate they
         // should be filled by specifying a 0 stroke-width.
         if( shape->GetWidth() == 0
-            && ( shape->GetShape() == PCB_SHAPE_TYPE::RECT
-                 || shape->GetShape() == PCB_SHAPE_TYPE::CIRCLE ) )
+            && ( shape->GetShape() == SHAPE_T::RECT || shape->GetShape() == SHAPE_T::CIRCLE ) )
         {
             shape->SetFilled( true );
         }
-        // Polygons on non-Edge_Cuts layers were always filled
-        else if( shape->GetShape() == PCB_SHAPE_TYPE::POLYGON && shape->GetLayer() != Edge_Cuts )
+        else if( shape->GetShape() == SHAPE_T::POLY && shape->GetLayer() != Edge_Cuts )
         {
+            // Polygons on non-Edge_Cuts layers were always filled.
             shape->SetFilled( true );
         }
     }
@@ -2519,7 +2678,7 @@ PCB_SHAPE* PCB_PARSER::parsePCB_SHAPE()
 
 PCB_TEXT* PCB_PARSER::parsePCB_TEXT()
 {
-    wxCHECK_MSG( CurTok() == T_gr_text, NULL,
+    wxCHECK_MSG( CurTok() == T_gr_text, nullptr,
                  wxT( "Cannot parse " ) + GetTokenString( CurTok() ) + wxT( " as PCB_TEXT." ) );
 
     T token;
@@ -2586,14 +2745,14 @@ PCB_TEXT* PCB_PARSER::parsePCB_TEXT()
 }
 
 
-DIMENSION_BASE* PCB_PARSER::parseDIMENSION()
+PCB_DIMENSION_BASE* PCB_PARSER::parseDIMENSION()
 {
-    wxCHECK_MSG( CurTok() == T_dimension, NULL,
+    wxCHECK_MSG( CurTok() == T_dimension, nullptr,
                  wxT( "Cannot parse " ) + GetTokenString( CurTok() ) + wxT( " as DIMENSION." ) );
 
     T token;
     bool locked = false;
-    std::unique_ptr<DIMENSION_BASE> dimension;
+    std::unique_ptr<PCB_DIMENSION_BASE> dimension;
 
     token = NextTok();
 
@@ -2615,7 +2774,7 @@ DIMENSION_BASE* PCB_PARSER::parseDIMENSION()
     if( token == T_width )
     {
         isLegacyDimension = true;
-        dimension = std::make_unique<ALIGNED_DIMENSION>( nullptr );
+        dimension = std::make_unique<PCB_DIM_ALIGNED>( nullptr );
         dimension->SetLineThickness( parseBoardUnits( "dimension width value" ) );
         NeedRIGHT();
     }
@@ -2627,19 +2786,19 @@ DIMENSION_BASE* PCB_PARSER::parseDIMENSION()
         switch( NextTok() )
         {
         case T_aligned:
-            dimension = std::make_unique<ALIGNED_DIMENSION>( nullptr );
+            dimension = std::make_unique<PCB_DIM_ALIGNED>( nullptr );
             break;
 
         case T_orthogonal:
-            dimension = std::make_unique<ORTHOGONAL_DIMENSION>( nullptr );
+            dimension = std::make_unique<PCB_DIM_ORTHOGONAL>( nullptr );
             break;
 
         case T_leader:
-            dimension = std::make_unique<LEADER>( nullptr );
+            dimension = std::make_unique<PCB_DIM_LEADER>( nullptr );
             break;
 
         case T_center:
-            dimension = std::make_unique<CENTER_DIMENSION>( nullptr );
+            dimension = std::make_unique<PCB_DIM_CENTER>( nullptr );
             break;
 
         default:
@@ -2711,7 +2870,7 @@ DIMENSION_BASE* PCB_PARSER::parseDIMENSION()
             wxCHECK_MSG( dimension->Type() == PCB_DIM_ALIGNED_T ||
                          dimension->Type() == PCB_DIM_ORTHOGONAL_T, nullptr,
                          wxT( "Invalid height token" ) );
-            ALIGNED_DIMENSION* aligned = static_cast<ALIGNED_DIMENSION*>( dimension.get() );
+            PCB_DIM_ALIGNED* aligned = static_cast<PCB_DIM_ALIGNED*>( dimension.get() );
             aligned->SetHeight( parseBoardUnits( "dimension height value" ) );
             NeedRIGHT();
             break;
@@ -2721,11 +2880,11 @@ DIMENSION_BASE* PCB_PARSER::parseDIMENSION()
         {
             wxCHECK_MSG( dimension->Type() == PCB_DIM_ORTHOGONAL_T, nullptr,
                          wxT( "Invalid orientation token" ) );
-            ORTHOGONAL_DIMENSION* ortho = static_cast<ORTHOGONAL_DIMENSION*>( dimension.get() );
+            PCB_DIM_ORTHOGONAL* ortho = static_cast<PCB_DIM_ORTHOGONAL*>( dimension.get() );
 
             int orientation = parseInt( "orthogonal dimension orientation" );
             orientation     = std::max( 0, std::min( 1, orientation ) );
-            ortho->SetOrientation( static_cast<ORTHOGONAL_DIMENSION::DIR>( orientation ) );
+            ortho->SetOrientation( static_cast<PCB_DIM_ORTHOGONAL::DIR>( orientation ) );
             NeedRIGHT();
             break;
         }
@@ -2826,7 +2985,7 @@ DIMENSION_BASE* PCB_PARSER::parseDIMENSION()
 
                 case T_extension_height:
                 {
-                    ALIGNED_DIMENSION* aligned = dynamic_cast<ALIGNED_DIMENSION*>( dimension.get() );
+                    PCB_DIM_ALIGNED* aligned = dynamic_cast<PCB_DIM_ALIGNED*>( dimension.get() );
                     wxCHECK_MSG( aligned, nullptr, wxT( "Invalid extension_height token" ) );
                     aligned->SetExtensionHeight( parseBoardUnits( "extension height" ) );
                     NeedRIGHT();
@@ -2846,7 +3005,7 @@ DIMENSION_BASE* PCB_PARSER::parseDIMENSION()
                 {
                     wxCHECK_MSG( dimension->Type() == PCB_DIM_LEADER_T, nullptr,
                                  wxT( "Invalid text_frame token" ) );
-                    LEADER* leader = static_cast<LEADER*>( dimension.get() );
+                    PCB_DIM_LEADER* leader = static_cast<PCB_DIM_LEADER*>( dimension.get() );
 
                     int textFrame = parseInt( "dimension text frame mode" );
                     textFrame = std::max( 0, std::min( 3, textFrame ) );
@@ -2913,7 +3072,7 @@ DIMENSION_BASE* PCB_PARSER::parseDIMENSION()
             if( token == T_pts )
             {
                 // If we have a crossbar, we know we're an old aligned dimension
-                ALIGNED_DIMENSION* aligned = static_cast<ALIGNED_DIMENSION*>( dimension.get() );
+                PCB_DIM_ALIGNED* aligned = static_cast<PCB_DIM_ALIGNED*>( dimension.get() );
 
                 // Old style: calculate height from crossbar
                 wxPoint point1, point2;
@@ -3016,7 +3175,7 @@ FOOTPRINT* PCB_PARSER::parseFOOTPRINT( wxArrayString* aInitialComments )
 
 FOOTPRINT* PCB_PARSER::parseFOOTPRINT_unchecked( wxArrayString* aInitialComments )
 {
-    wxCHECK_MSG( CurTok() == T_module || CurTok() == T_footprint, NULL,
+    wxCHECK_MSG( CurTok() == T_module || CurTok() == T_footprint, nullptr,
                  wxT( "Cannot parse " ) + GetTokenString( CurTok() ) + wxT( " as FOOTPRINT." ) );
 
     wxString name;
@@ -3041,7 +3200,7 @@ FOOTPRINT* PCB_PARSER::parseFOOTPRINT_unchecked( wxArrayString* aInitialComments
     if( !name.IsEmpty() && fpid.Parse( name, true ) >= 0 )
     {
         wxString error;
-        error.Printf( _( "Invalid footprint ID in\nfile: \"%s\"\nline: %d\noffset: %d" ),
+        error.Printf( _( "Invalid footprint ID in\nfile: '%s'\nline: %d\noffset: %d." ),
                       CurSource(), CurLineNumber(), CurOffset() );
         THROW_IO_ERROR( error );
     }
@@ -3087,9 +3246,9 @@ FOOTPRINT* PCB_PARSER::parseFOOTPRINT_unchecked( wxArrayString* aInitialComments
             // acceptable layer is set for the footprint
             PCB_LAYER_ID layer = parseBoardItemLayer();
             footprint->SetLayer( layer == B_Cu ? B_Cu : F_Cu );
-        }
             NeedRIGHT();
             break;
+        }
 
         case T_tedit:
             footprint->SetLastEditTime( parseHex() );
@@ -3153,7 +3312,8 @@ FOOTPRINT* PCB_PARSER::parseFOOTPRINT_unchecked( wxArrayString* aInitialComments
             break;
 
         case T_solder_mask_margin:
-            footprint->SetLocalSolderMaskMargin( parseBoardUnits( "local solder mask margin value" ) );
+            footprint->SetLocalSolderMaskMargin( parseBoardUnits( "local solder mask margin "
+                                                                  "value" ) );
             NeedRIGHT();
             break;
 
@@ -3223,6 +3383,7 @@ FOOTPRINT* PCB_PARSER::parseFOOTPRINT_unchecked( wxArrayString* aInitialComments
                                "or exclude_from_bom" );
                 }
             }
+
             break;
 
         case T_fp_text:
@@ -3251,8 +3412,9 @@ FOOTPRINT* PCB_PARSER::parseFOOTPRINT_unchecked( wxArrayString* aInitialComments
             default:
                 footprint->Add( text, ADD_MODE::APPEND );
             }
-        }
+
             break;
+        }
 
         case T_fp_arc:
         {
@@ -3266,9 +3428,12 @@ FOOTPRINT* PCB_PARSER::parseFOOTPRINT_unchecked( wxArrayString* aInitialComments
                 footprint->Add( shape, ADD_MODE::APPEND );
             }
             else
+            {
                 delete shape;
-        }
+            }
+
             break;
+        }
 
         case T_fp_circle:
         case T_fp_curve:
@@ -3280,8 +3445,8 @@ FOOTPRINT* PCB_PARSER::parseFOOTPRINT_unchecked( wxArrayString* aInitialComments
             shape->SetParent( footprint.get() );
             shape->SetDrawCoord();
             footprint->Add( shape, ADD_MODE::APPEND );
-        }
             break;
+        }
 
         case T_pad:
         {
@@ -3291,23 +3456,23 @@ FOOTPRINT* PCB_PARSER::parseFOOTPRINT_unchecked( wxArrayString* aInitialComments
             RotatePoint( &pt, footprint->GetOrientation() );
             pad->SetPosition( pt + footprint->GetPosition() );
             footprint->Add( pad, ADD_MODE::APPEND );
-        }
             break;
+        }
 
         case T_model:
         {
             FP_3DMODEL* model = parse3DModel();
             footprint->Add3DModel( model );
             delete model;
-        }
             break;
+        }
 
         case T_zone:
         {
             ZONE* zone = parseZONE( footprint.get() );
             footprint->Add( zone, ADD_MODE::APPEND );
-        }
             break;
+        }
 
         case T_group:
             parseGROUP( footprint.get() );
@@ -3349,10 +3514,9 @@ FOOTPRINT* PCB_PARSER::parseFOOTPRINT_unchecked( wxArrayString* aInitialComments
 
 FP_TEXT* PCB_PARSER::parseFP_TEXT()
 {
-    wxCHECK_MSG( CurTok() == T_fp_text, NULL,
+    wxCHECK_MSG( CurTok() == T_fp_text, nullptr,
                  wxString::Format( wxT( "Cannot parse %s as FP_TEXT at line %d, offset %d." ),
-                                   GetTokenString( CurTok() ),
-                                   CurLineNumber(), CurOffset() ) );
+                                   GetTokenString( CurTok() ), CurLineNumber(), CurOffset() ) );
 
     T token = NextTok();
 
@@ -3451,7 +3615,7 @@ FP_TEXT* PCB_PARSER::parseFP_TEXT()
 FP_SHAPE* PCB_PARSER::parseFP_SHAPE()
 {
     wxCHECK_MSG( CurTok() == T_fp_arc || CurTok() == T_fp_circle || CurTok() == T_fp_curve ||
-                 CurTok() == T_fp_rect || CurTok() == T_fp_line || CurTok() == T_fp_poly, NULL,
+                 CurTok() == T_fp_rect || CurTok() == T_fp_line || CurTok() == T_fp_poly, nullptr,
                  wxT( "Cannot parse " ) + GetTokenString( CurTok() ) + wxT( " as FP_SHAPE." ) );
 
     wxPoint pt;
@@ -3462,7 +3626,7 @@ FP_SHAPE* PCB_PARSER::parseFP_SHAPE()
     switch( CurTok() )
     {
     case T_fp_arc:
-        shape->SetShape( PCB_SHAPE_TYPE::ARC );
+        shape->SetShape( SHAPE_T::ARC );
         token = NextTok();
 
         if( token == T_locked )
@@ -3501,14 +3665,14 @@ FP_SHAPE* PCB_PARSER::parseFP_SHAPE()
         if( token != T_angle )
             Expecting( T_angle );
 
-        // Setting angle will set m_ThirdPoint0, so must be done after setting
-        // m_Start0 and m_End0
+        // Setting angle will set m_thirdPoint0, so must be done after setting
+        // m_start0 and m_end0
         shape->SetAngle( parseDouble( "segment angle" ) * 10.0 );
         NeedRIGHT();
         break;
 
     case T_fp_circle:
-        shape->SetShape( PCB_SHAPE_TYPE::CIRCLE );
+        shape->SetShape( SHAPE_T::CIRCLE );
         token = NextTok();
 
         if( token == T_locked )
@@ -3542,7 +3706,7 @@ FP_SHAPE* PCB_PARSER::parseFP_SHAPE()
         break;
 
     case T_fp_curve:
-        shape->SetShape( PCB_SHAPE_TYPE::CURVE );
+        shape->SetShape( SHAPE_T::BEZIER );
         token = NextTok();
 
         if( token == T_locked )
@@ -3560,14 +3724,14 @@ FP_SHAPE* PCB_PARSER::parseFP_SHAPE()
             Expecting( T_pts );
 
         shape->SetStart0( parseXY() );
-        shape->SetBezier0_C1( parseXY() );
-        shape->SetBezier0_C2( parseXY() );
+        shape->SetBezierC1_0( parseXY() );
+        shape->SetBezierC2_0( parseXY() );
         shape->SetEnd0( parseXY() );
         NeedRIGHT();
         break;
 
     case T_fp_rect:
-        shape->SetShape( PCB_SHAPE_TYPE::RECT );
+        shape->SetShape( SHAPE_T::RECT );
         token = NextTok();
 
         if( token == T_locked )
@@ -3638,7 +3802,10 @@ FP_SHAPE* PCB_PARSER::parseFP_SHAPE()
 
     case T_fp_poly:
     {
-        shape->SetShape( PCB_SHAPE_TYPE::POLYGON );
+        shape->SetShape( SHAPE_T::POLY );
+        shape->SetPolyPoints( {} );
+        SHAPE_LINE_CHAIN& outline = shape->GetPolyShape().Outline( 0 );
+
         token = NextTok();
 
         if( token == T_locked )
@@ -3655,14 +3822,11 @@ FP_SHAPE* PCB_PARSER::parseFP_SHAPE()
         if( token != T_pts )
             Expecting( T_pts );
 
-        std::vector< wxPoint > pts;
-
         while( (token = NextTok() ) != T_RIGHT )
-            pts.push_back( parseXY() );
+            parseOutlinePoints( outline );
 
-        shape->SetPolyPoints( pts );
-    }
         break;
+    }
 
     default:
         Expecting( "fp_arc, fp_circle, fp_curve, fp_line, fp_poly, or fp_rect" );
@@ -3725,7 +3889,7 @@ FP_SHAPE* PCB_PARSER::parseFP_SHAPE()
 
         // We continue to parse the status field but it is no longer written
         case T_status:
-            shape->SetStatus( static_cast<STATUS_FLAGS>( parseHex() ) );
+            shape->SetStatus( static_cast<EDA_ITEM_FLAGS>( parseHex() ) );
             NeedRIGHT();
             break;
 
@@ -3745,13 +3909,12 @@ FP_SHAPE* PCB_PARSER::parseFP_SHAPE()
         // Legacy versions didn't have a filled flag but allowed some shapes to indicate they
         // should be filled by specifying a 0 stroke-width.
         if( shape->GetWidth() == 0
-            && ( shape->GetShape() == PCB_SHAPE_TYPE::RECT
-                 || shape->GetShape() == PCB_SHAPE_TYPE::CIRCLE ) )
+            && ( shape->GetShape() == SHAPE_T::RECT || shape->GetShape() == SHAPE_T::CIRCLE ) )
         {
             shape->SetFilled( true );
         }
         // Polygons on non-Edge_Cuts layers were always filled
-        else if( shape->GetShape() == PCB_SHAPE_TYPE::POLYGON && shape->GetLayer() != Edge_Cuts )
+        else if( shape->GetShape() == SHAPE_T::POLY && shape->GetLayer() != Edge_Cuts )
         {
             shape->SetFilled( true );
         }
@@ -3770,7 +3933,7 @@ FP_SHAPE* PCB_PARSER::parseFP_SHAPE()
 
 PAD* PCB_PARSER::parsePAD( FOOTPRINT* aParent )
 {
-    wxCHECK_MSG( CurTok() == T_pad, NULL,
+    wxCHECK_MSG( CurTok() == T_pad, nullptr,
                  wxT( "Cannot parse " ) + GetTokenString( CurTok() ) + wxT( " as PAD." ) );
 
     wxSize  sz;
@@ -3891,106 +4054,104 @@ PAD* PCB_PARSER::parsePAD( FOOTPRINT* aParent )
             break;
 
         case T_rect_delta:
-            {
-                wxSize delta;
-                delta.SetWidth( parseBoardUnits( "rectangle delta width" ) );
-                delta.SetHeight( parseBoardUnits( "rectangle delta height" ) );
-                pad->SetDelta( delta );
-                NeedRIGHT();
-            }
+        {
+            wxSize delta;
+            delta.SetWidth( parseBoardUnits( "rectangle delta width" ) );
+            delta.SetHeight( parseBoardUnits( "rectangle delta height" ) );
+            pad->SetDelta( delta );
+            NeedRIGHT();
             break;
+        }
 
         case T_drill:
+        {
+            bool   haveWidth = false;
+            wxSize drillSize = pad->GetDrillSize();
+
+            for( token = NextTok(); token != T_RIGHT; token = NextTok() )
             {
-                bool    haveWidth = false;
-                wxSize  drillSize = pad->GetDrillSize();
+                if( token == T_LEFT )
+                    token = NextTok();
 
-                for( token = NextTok();  token != T_RIGHT;  token = NextTok() )
+                switch( token )
                 {
-                    if( token == T_LEFT )
-                        token = NextTok();
+                case T_oval: pad->SetDrillShape( PAD_DRILL_SHAPE_OBLONG ); break;
 
-                    switch( token )
+                case T_NUMBER:
+                {
+                    if( !haveWidth )
                     {
-                    case T_oval:
-                        pad->SetDrillShape( PAD_DRILL_SHAPE_OBLONG );
-                        break;
+                        drillSize.SetWidth( parseBoardUnits() );
 
-                    case T_NUMBER:
-                        {
-                            if( !haveWidth )
-                            {
-                                drillSize.SetWidth( parseBoardUnits() );
-
-                                // If height is not defined the width and height are the same.
-                                drillSize.SetHeight( drillSize.GetWidth() );
-                                haveWidth = true;
-                            }
-                            else
-                            {
-                                drillSize.SetHeight( parseBoardUnits() );
-                            }
-
-                        }
-                        break;
-
-                    case T_offset:
-                        pt.x = parseBoardUnits( "drill offset x" );
-                        pt.y = parseBoardUnits( "drill offset y" );
-                        pad->SetOffset( pt );
-                        NeedRIGHT();
-                        break;
-
-                    default:
-                        Expecting( "oval, size, or offset" );
+                        // If height is not defined the width and height are the same.
+                        drillSize.SetHeight( drillSize.GetWidth() );
+                        haveWidth = true;
+                    }
+                    else
+                    {
+                        drillSize.SetHeight( parseBoardUnits() );
                     }
                 }
 
-                // This fixes a bug caused by setting the default PAD drill size to a value other
-                // than 0 used to fix a bunch of debug assertions even though it is defined as a
-                // through hole pad.  Wouldn't a though hole pad with no drill be a surface mount
-                // pad (or a conn pad which is a smd pad with no solder paste)?
-                if( ( pad->GetAttribute() != PAD_ATTRIB::SMD ) && ( pad->GetAttribute() != PAD_ATTRIB::CONN ) )
-                    pad->SetDrillSize( drillSize );
-                else
-                    pad->SetDrillSize( wxSize( 0, 0 ) );
+                break;
 
+                case T_offset:
+                    pt.x = parseBoardUnits( "drill offset x" );
+                    pt.y = parseBoardUnits( "drill offset y" );
+                    pad->SetOffset( pt );
+                    NeedRIGHT();
+                    break;
+
+                default:
+                    Expecting( "oval, size, or offset" );
+                }
             }
+
+            // This fixes a bug caused by setting the default PAD drill size to a value other
+            // than 0 used to fix a bunch of debug assertions even though it is defined as a
+            // through hole pad.  Wouldn't a though hole pad with no drill be a surface mount
+            // pad (or a conn pad which is a smd pad with no solder paste)?
+            if( ( pad->GetAttribute() != PAD_ATTRIB::SMD )
+                && ( pad->GetAttribute() != PAD_ATTRIB::CONN ) )
+                pad->SetDrillSize( drillSize );
+            else
+                pad->SetDrillSize( wxSize( 0, 0 ) );
+
             break;
+        }
 
         case T_layers:
-            {
-                LSET layerMask = parseBoardItemLayersAsMask();
-                pad->SetLayerSet( layerMask );
-            }
+        {
+            LSET layerMask = parseBoardItemLayersAsMask();
+            pad->SetLayerSet( layerMask );
             break;
+        }
 
         case T_net:
             if( ! pad->SetNetCode( getNetCode( parseInt( "net number" ) ), /* aNoAssert */ true ) )
             {
-                wxLogError( wxString::Format( _( "Invalid net ID in\n"
-                                                 "file: '%s'\n"
-                                                 "line: %d\n"
-                                                 "offset: %d" ),
-                                              CurSource(),
-                                              CurLineNumber(),
-                                              CurOffset() ) );
+                wxLogError( _( "Invalid net ID in\nfile: %s\nline: %d offset: %d" ), CurSource(),
+                            CurLineNumber(), CurOffset() );
             }
 
             NeedSYMBOLorNUMBER();
 
             // Test validity of the netname in file for netcodes expected having a net name
-            if( m_board && pad->GetNetCode() > 0 &&
-                FromUTF8() != m_board->FindNet( pad->GetNetCode() )->GetNetname() )
+            if( m_board && pad->GetNetCode() > 0 )
             {
-                pad->SetNetCode( NETINFO_LIST::ORPHANED, /* aNoAssert */ true );
-                wxLogError( wxString::Format( _( "Net name doesn't match net ID in\n"
-                                                 "file: '%s'\n"
-                                                 "line: %d\n"
-                                                 "offset: %d" ),
-                                              CurSource(),
-                                              CurLineNumber(),
-                                              CurOffset() ) );
+                wxString netName( FromUTF8() );
+
+                // Convert overbar syntax from `~...~` to `~{...}`.  These were left out of the
+                // first merge so the version is a bit later.
+                if( m_requiredVersion < 20210606 )
+                    netName = ConvertToNewOverbarNotation( netName );
+
+                if( netName != m_board->FindNet( pad->GetNetCode() )->GetNetname() )
+                {
+                    pad->SetNetCode( NETINFO_LIST::ORPHANED, /* aNoAssert */ true );
+                    wxLogError( _( "Net name doesn't match ID in\nfile: %s\nline: %d offset: %d" ),
+                                CurSource(), CurLineNumber(), CurOffset() );
+                }
             }
 
             NeedRIGHT();
@@ -4071,6 +4232,7 @@ PAD* PCB_PARSER::parsePAD( FOOTPRINT* aParent )
             while( !end_list )
             {
                 token = NextTok();
+
                 switch( token )
                 {
                 case T_top_left:
@@ -4095,14 +4257,16 @@ PAD* PCB_PARSER::parsePAD( FOOTPRINT* aParent )
                     break;
 
                 default:
-                    Expecting( "chamfer_top_left chamfer_top_right chamfer_bottom_left or chamfer_bottom_right" );
+                    Expecting( "chamfer_top_left chamfer_top_right chamfer_bottom_left or "
+                               "chamfer_bottom_right" );
                 }
             }
 
             if( pad->GetChamferPositions() != RECT_NO_CHAMFER )
                 pad->SetShape( PAD_SHAPE::CHAMFERED_RECT );
-        }
+
             break;
+        }
 
         case T_property:
         {
@@ -4151,8 +4315,9 @@ PAD* PCB_PARSER::parsePAD( FOOTPRINT* aParent )
                     break;
                 }
             }
-        }
+
             break;
+        }
 
         case T_options:
             parsePAD_option( pad.get() );
@@ -4168,46 +4333,46 @@ PAD* PCB_PARSER::parsePAD( FOOTPRINT* aParent )
                 // because they are the same as a PCB_SHAPE.
                 // However it could be better to write a specific parser, to avoid possible issues
                 // if the PCB_SHAPE parser is modified.
-                PCB_SHAPE* dummysegm = NULL;
+                PCB_SHAPE* dummyShape = nullptr;
 
                 switch( token )
                 {
                 case T_gr_arc:
-                    dummysegm = parsePCB_SHAPE();
-                    pad->AddPrimitiveArc( dummysegm->GetCenter(), dummysegm->GetArcStart(),
-                                          dummysegm->GetAngle(), dummysegm->GetWidth() );
+                    dummyShape = parsePCB_SHAPE();
+                    pad->AddPrimitiveArc( dummyShape->GetCenter(), dummyShape->GetArcStart(),
+                                          dummyShape->GetAngle(), dummyShape->GetWidth() );
                     break;
 
                 case T_gr_line:
-                    dummysegm = parsePCB_SHAPE();
-                    pad->AddPrimitiveSegment( dummysegm->GetStart(), dummysegm->GetEnd(),
-                                              dummysegm->GetWidth() );
+                    dummyShape = parsePCB_SHAPE();
+                    pad->AddPrimitiveSegment( dummyShape->GetStart(), dummyShape->GetEnd(),
+                                              dummyShape->GetWidth() );
                     break;
 
                 case T_gr_circle:
-                    dummysegm = parsePCB_SHAPE();
-                    pad->AddPrimitiveCircle( dummysegm->GetCenter(), dummysegm->GetRadius(),
-                                             dummysegm->GetWidth(), dummysegm->IsFilled() );
+                    dummyShape = parsePCB_SHAPE();
+                    pad->AddPrimitiveCircle( dummyShape->GetCenter(), dummyShape->GetRadius(),
+                                             dummyShape->GetWidth(), dummyShape->IsFilled() );
                     break;
 
                 case T_gr_rect:
-                    dummysegm = parsePCB_SHAPE();
-                    pad->AddPrimitiveRect( dummysegm->GetStart(), dummysegm->GetEnd(),
-                                           dummysegm->GetWidth(), dummysegm->IsFilled() );
+                    dummyShape = parsePCB_SHAPE();
+                    pad->AddPrimitiveRect( dummyShape->GetStart(), dummyShape->GetEnd(),
+                                           dummyShape->GetWidth(), dummyShape->IsFilled() );
                     break;
 
 
                 case T_gr_poly:
-                    dummysegm = parsePCB_SHAPE();
-                    pad->AddPrimitivePoly( dummysegm->BuildPolyPointsList(), dummysegm->GetWidth(),
-                                           dummysegm->IsFilled() );
+                    dummyShape = parsePCB_SHAPE();
+                    pad->AddPrimitivePoly( dummyShape->GetPolyShape(), dummyShape->GetWidth(),
+                                           dummyShape->IsFilled() );
                     break;
 
                 case T_gr_curve:
-                    dummysegm = parsePCB_SHAPE();
-                    pad->AddPrimitiveCurve( dummysegm->GetStart(), dummysegm->GetEnd(),
-                                            dummysegm->GetBezControl1(),
-                                            dummysegm->GetBezControl2(), dummysegm->GetWidth() );
+                    dummyShape = parsePCB_SHAPE();
+                    pad->AddPrimitiveCurve( dummyShape->GetStart(), dummyShape->GetEnd(),
+                                            dummyShape->GetBezierC1(),
+                                            dummyShape->GetBezierC2(), dummyShape->GetWidth() );
                     break;
 
                 default:
@@ -4215,8 +4380,9 @@ PAD* PCB_PARSER::parsePAD( FOOTPRINT* aParent )
                     break;
                 }
 
-                delete dummysegm;
+                delete dummyShape;
             }
+
             break;
 
         case T_remove_unused_layers:
@@ -4307,6 +4473,7 @@ bool PCB_PARSER::parsePAD_option( PAD* aPad )
                 // just skip unknown keywords
                 break;
             }
+
             NeedRIGHT();
             break;
 
@@ -4315,6 +4482,7 @@ bool PCB_PARSER::parsePAD_option( PAD* aPad )
             // just skip unknown keywords
             while( (token = NextTok() ) != T_RIGHT )
             {}
+
             break;
         }
     }
@@ -4323,14 +4491,10 @@ bool PCB_PARSER::parsePAD_option( PAD* aPad )
 }
 
 
-// Example of group format:
-//     (group <(name “groupName”)> (id 12345679)
-//         (members id_1 id_2 … id_last )
-//     )
 void PCB_PARSER::parseGROUP( BOARD_ITEM* aParent )
 {
     wxCHECK_RET( CurTok() == T_group,
-            wxT( "Cannot parse " ) + GetTokenString( CurTok() ) + wxT( " as PCB_GROUP." ) );
+                 wxT( "Cannot parse " ) + GetTokenString( CurTok() ) + wxT( " as PCB_GROUP." ) );
 
     wxPoint pt;
     T       token;
@@ -4339,25 +4503,20 @@ void PCB_PARSER::parseGROUP( BOARD_ITEM* aParent )
     GROUP_INFO& groupInfo = m_groupInfos.back();
     groupInfo.parent = aParent;
 
-    token = NextTok();
-
-    if( token != T_LEFT )
+    while( ( token = NextTok() ) != T_LEFT )
     {
-        // Optional group name present.
-
-        if( !IsSymbol( token ) )
-            Expecting( DSN_SYMBOL );
-
-        groupInfo.name = FromUTF8();
+        if( token == T_STRING )
+            groupInfo.name = FromUTF8();
+        else if( token == T_locked )
+            groupInfo.locked = true;
+        else
+            Expecting( "group name or locked" );
     }
 
-    NeedLEFT();
     token = NextTok();
 
     if( token != T_id )
-    {
         Expecting( T_id );
-    }
 
     NextTok();
     groupInfo.uuid = CurStrToKIID();
@@ -4367,9 +4526,7 @@ void PCB_PARSER::parseGROUP( BOARD_ITEM* aParent )
     token = NextTok();
 
     if( token != T_members )
-    {
         Expecting( T_members );
-    }
 
     while( ( token = NextTok() ) != T_RIGHT )
     {
@@ -4384,15 +4541,15 @@ void PCB_PARSER::parseGROUP( BOARD_ITEM* aParent )
 }
 
 
-ARC* PCB_PARSER::parseARC()
+PCB_ARC* PCB_PARSER::parseARC()
 {
-    wxCHECK_MSG( CurTok() == T_arc, NULL,
-            wxT( "Cannot parse " ) + GetTokenString( CurTok() ) + wxT( " as ARC." ) );
+    wxCHECK_MSG( CurTok() == T_arc, nullptr,
+                 wxT( "Cannot parse " ) + GetTokenString( CurTok() ) + wxT( " as ARC." ) );
 
     wxPoint pt;
     T       token;
 
-    std::unique_ptr<ARC> arc = std::make_unique<ARC>( m_board );
+    std::unique_ptr<PCB_ARC> arc = std::make_unique<PCB_ARC>( m_board );
 
     for( token = NextTok(); token != T_RIGHT; token = NextTok() )
     {
@@ -4438,7 +4595,7 @@ ARC* PCB_PARSER::parseARC()
         case T_net:
             if( !arc->SetNetCode( getNetCode( parseInt( "net number" ) ), /* aNoAssert */ true ) )
                 THROW_IO_ERROR( wxString::Format(
-                        _( "Invalid net ID in\nfile: \"%s\"\nline: %d\noffset: %d" ), CurSource(),
+                        _( "Invalid net ID in\nfile: '%s'\nline: %d\noffset: %d." ), CurSource(),
                         CurLineNumber(), CurOffset() ) );
             break;
 
@@ -4449,7 +4606,7 @@ ARC* PCB_PARSER::parseARC()
 
         // We continue to parse the status field but it is no longer written
         case T_status:
-            arc->SetStatus( static_cast<STATUS_FLAGS>( parseHex() ) );
+            arc->SetStatus( static_cast<EDA_ITEM_FLAGS>( parseHex() ) );
             break;
 
         // Continue to process "(locked)" format which was output during 5.99 development
@@ -4468,15 +4625,15 @@ ARC* PCB_PARSER::parseARC()
 }
 
 
-TRACK* PCB_PARSER::parseTRACK()
+PCB_TRACK* PCB_PARSER::parsePCB_TRACK()
 {
-    wxCHECK_MSG( CurTok() == T_segment, NULL,
-                 wxT( "Cannot parse " ) + GetTokenString( CurTok() ) + wxT( " as TRACK." ) );
+    wxCHECK_MSG( CurTok() == T_segment, nullptr,
+                 wxT( "Cannot parse " ) + GetTokenString( CurTok() ) + wxT( " as PCB_TRACK." ) );
 
     wxPoint pt;
     T token;
 
-    std::unique_ptr<TRACK> track = std::make_unique<TRACK>( m_board );
+    std::unique_ptr<PCB_TRACK> track = std::make_unique<PCB_TRACK>( m_board );
 
     for( token = NextTok();  token != T_RIGHT;  token = NextTok() )
     {
@@ -4516,7 +4673,7 @@ TRACK* PCB_PARSER::parseTRACK()
         case T_net:
             if( !track->SetNetCode( getNetCode( parseInt( "net number" ) ), /* aNoAssert */ true ) )
                 THROW_IO_ERROR( wxString::Format(
-                        _( "Invalid net ID in\nfile: \"%s\"\nline: %d\noffset: %d" ), CurSource(),
+                        _( "Invalid net ID in\nfile: '%s'\nline: %d\noffset: %d." ), CurSource(),
                         CurLineNumber(), CurOffset() ) );
             break;
 
@@ -4527,7 +4684,7 @@ TRACK* PCB_PARSER::parseTRACK()
 
         // We continue to parse the status field but it is no longer written
         case T_status:
-            track->SetStatus( static_cast<STATUS_FLAGS>( parseHex() ) );
+            track->SetStatus( static_cast<EDA_ITEM_FLAGS>( parseHex() ) );
             break;
 
         // Continue to process "(locked)" format which was output during 5.99 development
@@ -4546,15 +4703,15 @@ TRACK* PCB_PARSER::parseTRACK()
 }
 
 
-VIA* PCB_PARSER::parseVIA()
+PCB_VIA* PCB_PARSER::parsePCB_VIA()
 {
-    wxCHECK_MSG( CurTok() == T_via, NULL,
-                 wxT( "Cannot parse " ) + GetTokenString( CurTok() ) + wxT( " as VIA." ) );
+    wxCHECK_MSG( CurTok() == T_via, nullptr,
+                 wxT( "Cannot parse " ) + GetTokenString( CurTok() ) + wxT( " as PCB_VIA." ) );
 
     wxPoint pt;
     T token;
 
-    std::unique_ptr<VIA> via = std::make_unique<VIA>( m_board );
+    std::unique_ptr<PCB_VIA> via = std::make_unique<PCB_VIA>( m_board );
 
     for( token = NextTok();  token != T_RIGHT;  token = NextTok() )
     {
@@ -4604,8 +4761,8 @@ VIA* PCB_PARSER::parseVIA()
             layer2 = lookUpLayer<PCB_LAYER_ID>( m_layerIndices );
             via->SetLayerPair( layer1, layer2 );
             NeedRIGHT();
-        }
             break;
+        }
 
         case T_net:
             if( !via->SetNetCode( getNetCode( parseInt( "net number" ) ), /* aNoAssert */ true ) )
@@ -4640,7 +4797,7 @@ VIA* PCB_PARSER::parseVIA()
 
         // We continue to parse the status field but it is no longer written
         case T_status:
-            via->SetStatus( static_cast<STATUS_FLAGS>( parseHex() ) );
+            via->SetStatus( static_cast<EDA_ITEM_FLAGS>( parseHex() ) );
             NeedRIGHT();
             break;
 
@@ -4666,7 +4823,7 @@ VIA* PCB_PARSER::parseVIA()
 
 ZONE* PCB_PARSER::parseZONE( BOARD_ITEM_CONTAINER* aParent )
 {
-    wxCHECK_MSG( CurTok() == T_zone, NULL,
+    wxCHECK_MSG( CurTok() == T_zone, nullptr,
                  wxT( "Cannot parse " ) + GetTokenString( CurTok() ) +
                  wxT( " as ZONE." ) );
 
@@ -4720,8 +4877,10 @@ ZONE* PCB_PARSER::parseZONE( BOARD_ITEM_CONTAINER* aParent )
 
             if( !zone->SetNetCode( tmp, /* aNoAssert */ true ) )
                 THROW_IO_ERROR( wxString::Format(
-                        _( "Invalid net ID in\nfile: \"%s\"\nline: %d\noffset: %d" ), CurSource(),
-                        CurLineNumber(), CurOffset() ) );
+                        _( "Invalid net ID in\n file: '%s;\nline: %d\noffset: %d." ),
+                        CurSource(),
+                        CurLineNumber(),
+                        CurOffset() ) );
 
             NeedRIGHT();
             break;
@@ -4832,12 +4991,13 @@ ZONE* PCB_PARSER::parseZONE( BOARD_ITEM_CONTAINER* aParent )
 
                     if( token == T_segment )    // deprecated
                     {
-                        // SEGMENT fill mode no longer supported.  Make sure user is OK with converting them.
+                        // SEGMENT fill mode no longer supported.  Make sure user is OK with
+                        // converting them.
                         if( m_showLegacyZoneWarning )
                         {
                             KIDIALOG dlg( nullptr,
-                                          _( "The legacy segment fill mode is no longer supported.\n"
-                                             "Convert zones to polygon fills?"),
+                                          _( "The legacy segment fill mode is no longer supported."
+                                             "\nConvert zones to polygon fills?"),
                                           _( "Legacy Zone Warning" ),
                                           wxYES_NO | wxICON_WARNING );
 
@@ -4929,16 +5089,19 @@ ZONE* PCB_PARSER::parseZONE( BOARD_ITEM_CONTAINER* aParent )
                     case T_chamfer:
                         if( !zone->GetIsRuleArea() ) // smoothing has meaning only for filled zones
                             zone->SetCornerSmoothingType( ZONE_SETTINGS::SMOOTHING_CHAMFER );
+
                         break;
 
                     case T_fillet:
                         if( !zone->GetIsRuleArea() ) // smoothing has meaning only for filled zones
                             zone->SetCornerSmoothingType( ZONE_SETTINGS::SMOOTHING_FILLET );
+
                         break;
 
                     default:
                         Expecting( "none, chamfer, or fillet" );
                     }
+
                     NeedRIGHT();
                     break;
 
@@ -4948,7 +5111,6 @@ ZONE* PCB_PARSER::parseZONE( BOARD_ITEM_CONTAINER* aParent )
                        zone->SetCornerRadius( tmp );
                     NeedRIGHT();
                     break;
-
 
                 case T_island_removal_mode:
                     tmp = parseInt( "island_removal_mode" );
@@ -4975,6 +5137,7 @@ ZONE* PCB_PARSER::parseZONE( BOARD_ITEM_CONTAINER* aParent )
                                "island_removal_mode, or island_area_min" );
                 }
             }
+
             break;
 
         case T_keepout:
@@ -5042,27 +5205,27 @@ ZONE* PCB_PARSER::parseZONE( BOARD_ITEM_CONTAINER* aParent )
             break;
 
         case T_polygon:
-            {
-                std::vector< wxPoint > corners;
+        {
+            SHAPE_LINE_CHAIN outline;
 
-                NeedLEFT();
-                token = NextTok();
+            NeedLEFT();
+            token = NextTok();
 
-                if( token != T_pts )
-                    Expecting( T_pts );
+            if( token != T_pts )
+                Expecting( T_pts );
 
-                for( token = NextTok(); token != T_RIGHT; token = NextTok() )
-                {
-                    corners.push_back( parseXY() );
-                }
+            for( token = NextTok(); token != T_RIGHT; token = NextTok() )
+                parseOutlinePoints( outline );
 
-                NeedRIGHT();
+            NeedRIGHT();
 
-                // Remark: The first polygon is the main outline.
-                // Others are holes inside the main outline.
-                zone->AddPolygon( corners );
-            }
+            outline.SetClosed( true );
+
+            // Remark: The first polygon is the main outline.
+            // Others are holes inside the main outline.
+            zone->AddPolygon( outline );
             break;
+        }
 
         case T_filled_polygon:
             {
@@ -5105,66 +5268,64 @@ ZONE* PCB_PARSER::parseZONE( BOARD_ITEM_CONTAINER* aParent )
                 SHAPE_POLY_SET& poly = pts.at( filledLayer );
 
                 int idx = poly.NewOutline();
+                SHAPE_LINE_CHAIN& chain = poly.Outline( idx );
 
                 if( island )
                     zone->SetIsIsland( filledLayer, idx );
 
                 for( token = NextTok();  token != T_RIGHT;  token = NextTok() )
-                {
-                    poly.Append( parseXY() );
-                }
+                    parseOutlinePoints( chain );
 
                 NeedRIGHT();
 
                 addedFilledPolygons |= !poly.IsEmpty();
             }
+
             break;
 
         case T_fill_segments:
-            {
-                ZONE_SEGMENT_FILL segs;
+        {
+            std::vector<SEG> segs;
 
-                for( token = NextTok();  token != T_RIGHT;  token = NextTok() )
+            for( token = NextTok(); token != T_RIGHT; token = NextTok() )
+            {
+                if( token != T_LEFT )
+                    Expecting( T_LEFT );
+
+                token = NextTok();
+
+                if( token == T_layer )
                 {
+                    filledLayer = parseBoardItemLayer();
+                    NeedRIGHT();
+                    token = NextTok();
+
                     if( token != T_LEFT )
                         Expecting( T_LEFT );
 
                     token = NextTok();
-
-                    if( token == T_layer )
-                    {
-                        filledLayer = parseBoardItemLayer();
-                        NeedRIGHT();
-                        token = NextTok();
-
-                        if( token != T_LEFT )
-                            Expecting( T_LEFT );
-
-                        token = NextTok();
-                    }
-                    else
-                    {
-                        filledLayer = zone->GetLayer();
-                    }
-
-                    if( token != T_pts )
-                        Expecting( T_pts );
-
-                    SEG segment( parseXY(), parseXY() );
-                    NeedRIGHT();
-                    segs.push_back( segment );
+                }
+                else
+                {
+                    filledLayer = zone->GetLayer();
                 }
 
-                zone->SetFillSegments( filledLayer, segs );
+                if( token != T_pts )
+                    Expecting( T_pts );
+
+                SEG segment( parseXY(), parseXY() );
+                NeedRIGHT();
+                segs.push_back( segment );
             }
+
+            zone->SetFillSegments( filledLayer, segs );
             break;
+        }
 
         case T_name:
-            {
-                NextTok();
-                zone->SetZoneName( FromUTF8() );
-                NeedRIGHT();
-            }
+            NextTok();
+            zone->SetZoneName( FromUTF8() );
+            NeedRIGHT();
             break;
 
         default:
@@ -5221,6 +5382,7 @@ ZONE* PCB_PARSER::parseZONE( BOARD_ITEM_CONTAINER* aParent )
 
             // Store the new code mapping
             pushValueIntoMap( newnetcode, net->GetNetCode() );
+
             // and update the zone netcode
             zone->SetNetCode( net->GetNetCode() );
         }
@@ -5235,7 +5397,7 @@ ZONE* PCB_PARSER::parseZONE( BOARD_ITEM_CONTAINER* aParent )
 
 PCB_TARGET* PCB_PARSER::parsePCB_TARGET()
 {
-    wxCHECK_MSG( CurTok() == T_target, NULL,
+    wxCHECK_MSG( CurTok() == T_target, nullptr,
                  wxT( "Cannot parse " ) + GetTokenString( CurTok() ) + wxT( " as PCB_TARGET." ) );
 
     wxPoint pt;

@@ -65,8 +65,8 @@ public:
     };
 
     void Clear();
-    void AddStage( VECTOR2I aStart, int aLayer, bool placingVias, DIRECTION_45 direction,
-                   NODE *aNode );
+    void AddStage( const VECTOR2I& aStart, int aLayer, bool placingVias, DIRECTION_45 direction,
+                   NODE* aNode );
     bool PopStage( STAGE& aStage );
     int StageCount() const;
 
@@ -245,7 +245,7 @@ private:
 
     /**
      * Assemble a line starting from segment or arc aLatest, removes collinear segments
-     * and redundant vertexes.  If a simplification has been found, replaces the old line
+     * and redundant vertices.  If a simplification has been found, replaces the old line
      * with the simplified one in \a aNode.
      */
     void simplifyNewLine( NODE* aNode, LINKED_ITEM* aLatest );
@@ -327,6 +327,8 @@ private:
 
     LINE           m_head;          ///< the volatile part of the track from the previously
                                     ///< analyzed point to the current routing destination
+
+    LINE           m_last_head;     ///< Most recent successful (non-colliding) head
 
     LINE           m_tail;          ///< routing "tail": part of the track that has been already
                                     ///< fixed due to collisions with obstacles

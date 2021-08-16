@@ -20,7 +20,6 @@
 #ifndef WX_HTML_REPORT_BOX_H
 #define WX_HTML_REPORT_BOX_H
 
-#include <wx/wx.h>
 #include <reporter.h>
 #include <vector>
 #include <wx/html/htmlwin.h>
@@ -51,7 +50,7 @@ public:
 
     /**
      * Build the HTML messages page.
-     * Call it if the immediate mode is not actived to be able to display them
+     * Call it if the immediate mode is not activated to be able to display them
      */
     void Flush();
 

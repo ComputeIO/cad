@@ -37,8 +37,10 @@
 #include <plotter.h>
 
 #include <board.h>
+#include <board_design_settings.h>
 #include <footprint.h>
-#include <track.h>
+#include <pad.h>
+#include <pcb_track.h>
 #include <zone.h>
 
 #include <board_stackup_manager/stackup_predefined_prms.h>
@@ -147,13 +149,13 @@ bool GERBER_JOBFILE_WRITER::CreateJobFile( const wxString& aFullFilename )
     {
         if( m_reporter )
         {
-            msg.Printf( _( "Unable to create job file \"%s\"" ), aFullFilename );
+            msg.Printf( _( "Failed to create file '%s'." ), aFullFilename );
             m_reporter->Report( msg, RPT_SEVERITY_ERROR );
         }
     }
     else if( m_reporter )
     {
-        msg.Printf( _( "Create Gerber job file \"%s\"" ), aFullFilename );
+        msg.Printf( _( "Created Gerber job file '%s'." ), aFullFilename );
         m_reporter->Report( msg, RPT_SEVERITY_ACTION );
     }
 
@@ -264,7 +266,7 @@ void GERBER_JOBFILE_WRITER::addJSONGeneralSpecs()
     m_json["GeneralSpecs"]["ProjectId"]["GUID"] = guid;
     m_json["GeneralSpecs"]["ProjectId"]["Revision"] = rev.ToAscii();
 
-    // output the bord size in mm:
+    // output the board size in mm:
     EDA_RECT brect = m_pcb->GetBoardEdgesBoundingBox();
 
     m_json["GeneralSpecs"]["Size"]["X"] = mapValue( brect.GetWidth() );
@@ -494,7 +496,7 @@ void GERBER_JOBFILE_WRITER::addJSONDesignRules()
     int mintrackWidthOuter = INT_MAX;
     int mintrackWidthInner = INT_MAX;
 
-    for( TRACK* track : m_pcb->Tracks() )
+    for( PCB_TRACK* track : m_pcb->Tracks() )
     {
         if( track->Type() == PCB_VIA_T )
             continue;
@@ -570,9 +572,7 @@ void GERBER_JOBFILE_WRITER::addJSONMaterialStackup()
     bool uptodate = not brd_stackup.SynchronizeWithBoard( &m_pcb->GetDesignSettings() );
 
     if( !uptodate && m_pcb->GetDesignSettings().m_HasStackup )
-        m_reporter->Report( _( "Board stackup settings not up to date\n"
-                               "Please fix the stackup" ),
-                            RPT_SEVERITY_ERROR );
+        m_reporter->Report( _( "Board stackup settings not up to date." ), RPT_SEVERITY_ERROR );
 
     PCB_LAYER_ID last_copper_layer = F_Cu;
 

@@ -38,8 +38,10 @@
 #include <locale_io.h>
 #include <pcbnew.h>
 #include <board.h>
+#include <board_design_settings.h>
 #include <footprint.h>
-#include <track.h>
+#include <pad.h>
+#include <pcb_track.h>
 #include <vector>
 #include <cctype>
 #include <math/util.h>      // for KiROUND
@@ -173,7 +175,7 @@ static void build_via_testpoints( BOARD *aPcb, std::vector <D356_RECORD>& aRecor
     {
         if( track->Type() == PCB_VIA_T )
         {
-            VIA *via = (VIA*) track;
+            PCB_VIA *via = static_cast<PCB_VIA*>( track );
             NETINFO_ITEM *net = track->GetNet();
 
             D356_RECORD rk;
@@ -336,7 +338,7 @@ void IPC356D_WRITER::Write( const wxString& aFilename )
     if( ( file = wxFopen( aFilename, wxT( "wt" ) ) ) == nullptr )
     {
         wxString details;
-        details.Printf( "The file %s could not be opened for writing", aFilename );
+        details.Printf( "The file %s could not be opened for writing.", aFilename );
         DisplayErrorMessage( m_parent, "Could not write IPC-356D file!", details );
         return;
     }

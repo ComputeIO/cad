@@ -2,6 +2,7 @@
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
  * Copyright (C) 2014-2015 CERN
+ * Copyright (C) 2021 KiCad Developers, see AUTHORS.txt for contributors.
  * Author: Tomasz Wlostowski <tomasz.wlostowski@cern.ch>
  *
  * This program is free software; you can redistribute it and/or
@@ -39,11 +40,11 @@ STATUS_POPUP::STATUS_POPUP( wxWindow* aParent ) :
     m_panel->SetSizer( m_topSizer );
     m_panel->SetBackgroundColour( wxSystemSettings::GetColour( wxSYS_COLOUR_WINDOW ) );
 
-    Connect( wxEVT_TIMER, wxTimerEventHandler( STATUS_POPUP::onExpire ), NULL, this );
+    Connect( wxEVT_TIMER, wxTimerEventHandler( STATUS_POPUP::onExpire ), nullptr, this );
 
 #ifdef __WXOSX_MAC__
     // Key events from popups don't get put through the wxWidgets event system on OSX,
-    // so we have to fall back to the CHAR_HOOK to forwared hotkeys from the popup to
+    // so we have to fall back to the CHAR_HOOK to forward hotkeys from the popup to
     // the canvas / frame.
     Connect( wxEVT_CHAR_HOOK, wxKeyEventHandler( STATUS_POPUP::onCharHook ), nullptr, this );
 #endif

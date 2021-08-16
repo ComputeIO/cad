@@ -34,10 +34,11 @@
 
 #include <wx/menu.h>
 #include <wx/textentry.h>
-#include <tool/tool_action.h>
+#include <tool/tool_event.h>
 
 class KIFACE_I;
 class TOOL_INTERACTIVE;
+class TOOL_MANAGER;
 
 enum class BITMAPS : unsigned int;
 
@@ -114,7 +115,7 @@ public:
      *
      * @param aAppname is the application name to append to the tooltip.
      */
-    void AddClose( wxString aAppname = "" );
+    void AddClose( const wxString& aAppname = "" );
 
     /**
      * Add either a standard Quit or Close item to the menu.

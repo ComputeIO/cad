@@ -23,6 +23,7 @@
 #include <paths.h>
 #include <search_stack.h>
 #include <settings/common_settings.h>
+#include <settings/json_settings_internals.h>
 #include <settings/parameters.h>
 #include <systemdirsappend.h>
 #include <trace_helpers.h>
@@ -95,9 +96,6 @@ COMMON_SETTINGS::COMMON_SETTINGS() :
 
     m_params.emplace_back( new PARAM<int>( "auto_backup.min_interval",
             &m_Backup.min_interval, 300 ) );
-
-    m_params.emplace_back( new PARAM<bool>( "environment.show_warning_dialog",
-            &m_Env.show_warning_dialog, false ) );
 
     m_params.emplace_back( new PARAM_LAMBDA<nlohmann::json>( "environment.vars",
             [&]() -> nlohmann::json
@@ -246,10 +244,10 @@ COMMON_SETTINGS::COMMON_SETTINGS() :
             MOUSE_DRAG_ACTION::NONE ) );
 
     m_params.emplace_back( new PARAM<int>( "graphics.opengl_antialiasing_mode",
-            &m_Graphics.opengl_aa_mode, 0, 0, 4 ) );
+            &m_Graphics.opengl_aa_mode, 0, 0, 2 ) );
 
     m_params.emplace_back( new PARAM<int>( "graphics.cairo_antialiasing_mode",
-            &m_Graphics.cairo_aa_mode, 0, 0, 3 ) );
+            &m_Graphics.cairo_aa_mode, 0, 0, 2 ) );
 
     m_params.emplace_back( new PARAM<int>( "system.autosave_interval",
             &m_System.autosave_interval, 600 ) );
@@ -274,6 +272,15 @@ COMMON_SETTINGS::COMMON_SETTINGS() :
 
     m_params.emplace_back( new PARAM<int>( "system.clear_3d_cache_interval",
             &m_System.clear_3d_cache_interval, 30 ) );
+
+    m_params.emplace_back( new PARAM<bool>( "do_not_show_again.zone_fill_warning",
+            &m_DoNotShowAgain.zone_fill_warning, false ) );
+
+    m_params.emplace_back( new PARAM<bool>( "do_not_show_again.env_var_overwrite_warning",
+            &m_DoNotShowAgain.env_var_overwrite_warning, false ) );
+
+    m_params.emplace_back( new PARAM<bool>( "do_not_show_again.scaled_3d_models_warning",
+            &m_DoNotShowAgain.scaled_3d_models_warning, false ) );
 
     m_params.emplace_back( new PARAM<bool>( "session.remember_open_files",
             &m_Session.remember_open_files, false ) );
@@ -300,8 +307,8 @@ bool COMMON_SETTINGS::migrateSchema0to1()
 
     try
     {
-        mwp = at( mwp_pointer );
-        at( nlohmann::json::json_pointer( "/input"_json_pointer ) ).erase( "mousewheel_pan" );
+        mwp = m_internals->at( mwp_pointer );
+        m_internals->At( "input" ).erase( "mousewheel_pan" );
     }
     catch( ... )
     {
@@ -310,19 +317,19 @@ bool COMMON_SETTINGS::migrateSchema0to1()
 
     if( mwp )
     {
-        ( *this )[nlohmann::json::json_pointer( "/input/horizontal_pan" )] = true;
+        ( *m_internals )[nlohmann::json::json_pointer( "/input/horizontal_pan" )] = true;
 
-        ( *this )[nlohmann::json::json_pointer( "/input/scroll_modifier_pan_h" )] = WXK_SHIFT;
-        ( *this )[nlohmann::json::json_pointer( "/input/scroll_modifier_pan_v" )] = 0;
-        ( *this )[nlohmann::json::json_pointer( "/input/scroll_modifier_zoom" )]  = WXK_CONTROL;
+        ( *m_internals )[nlohmann::json::json_pointer( "/input/scroll_modifier_pan_h" )] = WXK_SHIFT;
+        ( *m_internals )[nlohmann::json::json_pointer( "/input/scroll_modifier_pan_v" )] = 0;
+        ( *m_internals )[nlohmann::json::json_pointer( "/input/scroll_modifier_zoom" )]  = WXK_CONTROL;
     }
     else
     {
-        ( *this )[nlohmann::json::json_pointer( "/input/horizontal_pan" )] = false;
+        ( *m_internals )[nlohmann::json::json_pointer( "/input/horizontal_pan" )] = false;
 
-        ( *this )[nlohmann::json::json_pointer( "/input/scroll_modifier_pan_h" )] = WXK_CONTROL;
-        ( *this )[nlohmann::json::json_pointer( "/input/scroll_modifier_pan_v" )] = WXK_SHIFT;
-        ( *this )[nlohmann::json::json_pointer( "/input/scroll_modifier_zoom" )]  = 0;
+        ( *m_internals )[nlohmann::json::json_pointer( "/input/scroll_modifier_pan_h" )] = WXK_CONTROL;
+        ( *m_internals )[nlohmann::json::json_pointer( "/input/scroll_modifier_pan_v" )] = WXK_SHIFT;
+        ( *m_internals )[nlohmann::json::json_pointer( "/input/scroll_modifier_zoom" )]  = 0;
     }
 
     return true;
@@ -337,8 +344,8 @@ bool COMMON_SETTINGS::migrateSchema1to2()
 
     try
     {
-        prefer_selection = at( v1_pointer );
-        at( nlohmann::json::json_pointer( "/input"_json_pointer ) ).erase( "prefer_select_to_drag" );
+        prefer_selection = m_internals->at( v1_pointer );
+        m_internals->at( nlohmann::json::json_pointer( "/input"_json_pointer ) ).erase( "prefer_select_to_drag" );
     }
     catch( ... )
     {
@@ -346,9 +353,9 @@ bool COMMON_SETTINGS::migrateSchema1to2()
     }
 
     if( prefer_selection )
-        ( *this )[nlohmann::json::json_pointer( "/input/mouse_left" )] = MOUSE_DRAG_ACTION::SELECT;
+        ( *m_internals )[nlohmann::json::json_pointer( "/input/mouse_left" )] = MOUSE_DRAG_ACTION::SELECT;
     else
-        ( *this )[nlohmann::json::json_pointer( "/input/mouse_left" )] = MOUSE_DRAG_ACTION::DRAG_ANY;
+        ( *m_internals )[nlohmann::json::json_pointer( "/input/mouse_left" )] = MOUSE_DRAG_ACTION::DRAG_ANY;
 
     return true;
 }
@@ -366,7 +373,7 @@ bool COMMON_SETTINGS::MigrateFromLegacy( wxConfigBase* aCfg )
 // and was set to 1.0. In v6, the setting is now used by OSX and should default to automatic
 // scaling.
 #ifdef __WXMAC__
-    ( *this )[PointerFromString( "appearance.canvas_scale" )] = 0.0;
+    Set( "appearance.canvas_scale", 0.0 );
 #endif
 
     ret &= fromLegacy<bool>( aCfg, "ShowEnvVarWarningDialog", "environment.show_warning_dialog" );
@@ -374,10 +381,10 @@ bool COMMON_SETTINGS::MigrateFromLegacy( wxConfigBase* aCfg )
     auto load_env_vars = [&] () {
           wxString key, value;
           long index = 0;
-          nlohmann::json::json_pointer ptr = PointerFromString( "environment.vars" );
+          nlohmann::json::json_pointer ptr = m_internals->PointerFromString( "environment.vars" );
 
           aCfg->SetPath( "EnvironmentVariables" );
-          ( *this )[ptr] = nlohmann::json( {} );
+          ( *m_internals )[ptr] = nlohmann::json( {} );
 
           while( aCfg->GetNextEntry( key, index ) )
           {
@@ -394,7 +401,7 @@ bool COMMON_SETTINGS::MigrateFromLegacy( wxConfigBase* aCfg )
                   ptr.push_back( key.ToStdString() );
 
                   wxLogTrace( traceSettings, "Migrate Env: %s=%s", ptr.to_string(), value );
-                  ( *this )[ptr] = value.ToUTF8();
+                  ( *m_internals )[ptr] = value.ToUTF8();
 
                   ptr.pop_back();
               }
@@ -409,11 +416,10 @@ bool COMMON_SETTINGS::MigrateFromLegacy( wxConfigBase* aCfg )
 
     if( aCfg->Read( "MousewheelPAN", &mousewheel_pan ) && mousewheel_pan )
     {
-        ( *this )[PointerFromString( "input.horizontal_pan" )] = true;
-
-        ( *this )[PointerFromString( "input.scroll_modifier_pan_h" )] = WXK_SHIFT;
-        ( *this )[PointerFromString( "input.scroll_modifier_pan_v" )] = 0;
-        ( *this )[PointerFromString( "input.scroll_modifier_zoom" )]  = WXK_CONTROL;
+        Set( "input.horizontal_pan", true );
+        Set( "input.scroll_modifier_pan_h", static_cast<int>( WXK_SHIFT ) );
+        Set( "input.scroll_modifier_pan_v", 0 );
+        Set( "input.scroll_modifier_zoom",  static_cast<int>( WXK_CONTROL ) );
     }
 
     ret &= fromLegacy<bool>( aCfg, "AutoPAN",                   "input.auto_pan" );
@@ -423,11 +429,8 @@ bool COMMON_SETTINGS::MigrateFromLegacy( wxConfigBase* aCfg )
     ret &= fromLegacy<bool>( aCfg, "ZoomNoCenter",              "input.center_on_zoom" );
 
     // This was stored inverted in legacy config
-    if( ret )
-    {
-        auto p = PointerFromString( "input.center_on_zoom" );
-        ( *this )[p] = !( *this )[p];
-    }
+    if( OPT<bool> value = Get<bool>( "input.center_on_zoom" ) )
+        Set( "input.center_on_zoom", !( *value ) );
 
     ret &= fromLegacy<int>( aCfg, "OpenGLAntialiasingMode", "graphics.opengl_antialiasing_mode" );
     ret &= fromLegacy<int>( aCfg, "CairoAntialiasingMode",  "graphics.cairo_antialiasing_mode" );

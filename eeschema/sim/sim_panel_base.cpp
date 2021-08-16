@@ -2,6 +2,7 @@
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
  * Copyright (C) 2016 CERN
+ * Copyright (C) 2021 KiCad Developers, see AUTHORS.txt for contributors.
  * @author Sylwester Kocjan <s.kocjan@o2.pl>
  *
  * This program is free software; you can redistribute it and/or
@@ -22,6 +23,7 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
 
+#include "confirm.h"
 #include "sim_panel_base.h"
 
 #include "sim_plot_frame.h"
@@ -33,12 +35,12 @@ SIM_PANEL_BASE::SIM_PANEL_BASE() : m_simCommand( wxEmptyString )
 }
 
 
-SIM_PANEL_BASE::SIM_PANEL_BASE( wxString aCommand ) : m_simCommand( aCommand )
+SIM_PANEL_BASE::SIM_PANEL_BASE( const wxString& aCommand ) : m_simCommand( aCommand )
 {
 }
 
 
-SIM_PANEL_BASE::SIM_PANEL_BASE( wxString aCommand, wxWindow* parent, wxWindowID id,
+SIM_PANEL_BASE::SIM_PANEL_BASE( const wxString& aCommand, wxWindow* parent, wxWindowID id,
                                 const wxPoint& pos, const wxSize& size, long style,
                                 const wxString& name ) :
         wxWindow( parent, id, pos, size, style, name ),
@@ -73,7 +75,7 @@ SIM_TYPE SIM_PANEL_BASE::GetType() const
 }
 
 
-SIM_NOPLOT_PANEL::SIM_NOPLOT_PANEL( wxString aCommand, wxWindow* parent, wxWindowID id,
+SIM_NOPLOT_PANEL::SIM_NOPLOT_PANEL( const wxString& aCommand, wxWindow* parent, wxWindowID id,
                                     const wxPoint& pos, const wxSize& size, long style,
                                     const wxString& name ) :
         SIM_PANEL_BASE( aCommand, parent, id, pos, size, style, name )
@@ -86,13 +88,8 @@ SIM_NOPLOT_PANEL::SIM_NOPLOT_PANEL( wxString aCommand, wxWindow* parent, wxWindo
     m_textInfo->SetFont( wxFont( wxNORMAL_FONT->GetPointSize(), wxFONTFAMILY_DEFAULT,
             wxFONTSTYLE_NORMAL, wxFONTWEIGHT_BOLD, false, wxEmptyString ) );
     m_textInfo->SetForegroundColour( wxSystemSettings::GetColour( wxSYS_COLOUR_GRAYTEXT ) );
-
-    //ST_UNKNOWN serves purpose of a welcome panel
     m_textInfo->SetLabel(
-            ( GetType() == ST_UNKNOWN )
-                    ? _( "Start the simulation by clicking the Run Simulation button" )
-                    : _( "This simulation provide no plots. Please refer to console window for "
-                         "results" ) );
+            _( "This simulation provide no plots. Please refer to console window for results" ) );
 
     m_sizer->Add( m_textInfo, 1, wxALL | wxEXPAND, 5 );
     m_sizer->Add( 0, 1, 1, wxEXPAND, 5 );

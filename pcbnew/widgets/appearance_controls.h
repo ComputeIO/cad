@@ -25,7 +25,7 @@
 
 #include <board.h>
 #include <gal/color4d.h>
-#include <layers_id_colors_and_visibility.h>
+#include <layer_ids.h>
 #include <project/board_project_settings.h>
 #include <widgets/appearance_controls_base.h>
 
@@ -311,7 +311,9 @@ private:
 
     void syncLayerPresetSelection();
 
-    void onLayerClick( wxMouseEvent& aEvent );
+    void onLayerLeftClick( wxMouseEvent& aEvent );
+
+    void rightClickHandler( wxMouseEvent& aEvent );
 
     void onLayerVisibilityChanged( PCB_LAYER_ID aLayer, bool isVisible, bool isFinal );
 

@@ -26,6 +26,7 @@
 #include <wx/wx.h>
 #include <config.h>
 #include <boost/version.hpp>
+#include <kiplatform/app.h>
 
 // kicad_curl.h must be included before wx headers, to avoid
 // conflicts for some defines, at least on Windows
@@ -37,6 +38,10 @@ extern std::string GetCurlLibVersion();
 
 #if defined( KICAD_USE_OCC ) | defined( KICAD_USE_OCE )
 #include <Standard_Version.hxx>
+#endif
+
+#if defined( KICAD_SPICE )
+#include <ngspice/sharedspice.h>
 #endif
 
 // The include file version.h is always created even if the repo version cannot be
@@ -87,7 +92,8 @@ wxString GetVersionInfoData( const wxString& aTitle, bool aHtml, bool aBrief )
 #define OFF "OFF" << eol
 
     wxString version;
-    version << GetBuildVersion()
+    version << ( KIPLATFORM::APP::IsOperatingSystemUnsupported() ? "(UNSUPPORTED)"
+                                                                 : GetBuildVersion() )
 #ifdef DEBUG
             << ", debug"
 #else
@@ -179,6 +185,8 @@ wxString GetVersionInfoData( const wxString& aTitle, bool aHtml, bool aBrief )
     #undef HAVE_STRNCASECMP     /* is redefined in ngspice/config.h */
     #include <ngspice/config.h>
     aMsg << indent4 << "ngspice: " << PACKAGE_VERSION << eol;
+#elif defined( NGSPICE_PACKAGE_VERSION )
+    aMsg << indent4 << "ngspice: " << NGSPICE_PACKAGE_VERSION << eol;
 #else
     aMsg << indent4 << "ngspice: " << "unknown" << eol;
 #endif

@@ -28,11 +28,12 @@
 #include <kiface_i.h>
 #include <macros.h>
 #include <schematic_settings.h>
+#include <settings/json_settings_internals.h>
 #include <settings/parameters.h>
 #include <sim/spice_settings.h>
 
 
-const int schSettingsSchemaVersion = 0;
+const int schSettingsSchemaVersion = 1;
 
 
 SCHEMATIC_SETTINGS::SCHEMATIC_SETTINGS( JSON_SETTINGS* aParent, const std::string& aPath ) :
@@ -41,10 +42,12 @@ SCHEMATIC_SETTINGS::SCHEMATIC_SETTINGS( JSON_SETTINGS* aParent, const std::strin
         m_DefaultWireThickness( DEFAULT_WIRE_THICKNESS * IU_PER_MILS ),
         m_DefaultBusThickness( DEFAULT_BUS_THICKNESS * IU_PER_MILS ),
         m_DefaultTextSize( DEFAULT_TEXT_SIZE * IU_PER_MILS ),
+        m_LabelSizeRatio( DEFAULT_LABEL_SIZE_RATIO ),
         m_TextOffsetRatio( DEFAULT_TEXT_OFFSET_RATIO ),
         m_PinSymbolSize( DEFAULT_TEXT_SIZE * IU_PER_MILS / 2 ),
         m_JunctionSize( DEFAULT_JUNCTION_DIAM * IU_PER_MILS ),
         m_JunctionSizeChoice( 3 ),
+        m_AnnotateStartNum( 0 ),
         m_IntersheetRefsShow( false ),
         m_IntersheetRefsListOwnPage( true ),
         m_IntersheetRefsFormatShort( false ),
@@ -113,8 +116,10 @@ SCHEMATIC_SETTINGS::SCHEMATIC_SETTINGS( JSON_SETTINGS* aParent, const std::strin
             1 / IU_PER_MILS ) );
 
     m_params.emplace_back( new PARAM<double>( "drawing.text_offset_ratio",
-            &m_TextOffsetRatio,
-            (double) TXT_MARGIN / DEFAULT_SIZE_TEXT, -200.0, 200.0 ) );
+            &m_TextOffsetRatio, DEFAULT_TEXT_OFFSET_RATIO, 0.0, 2.0 ) );
+
+    m_params.emplace_back( new PARAM<double>( "drawing.label_size_ratio",
+            &m_LabelSizeRatio, DEFAULT_LABEL_SIZE_RATIO, 0.0, 2.0 ) );
 
     m_params.emplace_back( new PARAM_SCALED<int>( "drawing.pin_symbol_size",
             &m_PinSymbolSize,
@@ -126,9 +131,9 @@ SCHEMATIC_SETTINGS::SCHEMATIC_SETTINGS( JSON_SETTINGS* aParent, const std::strin
             Mils2iu( defaultJunctionSize ), Mils2iu( 5 ), Mils2iu( 1000 ), 1 / IU_PER_MILS ) );
 
     // User choice for junction dot size ( e.g. none = 0, smallest = 1, small = 2, etc )
-    m_params.emplace_back(new PARAM<int>("drawing.junction_size_choice",
-           &m_JunctionSizeChoice,
-           defaultJunctionSizeChoice) );
+    m_params.emplace_back( new PARAM<int>( "drawing.junction_size_choice",
+            &m_JunctionSizeChoice,
+            defaultJunctionSizeChoice ) );
 
     m_params.emplace_back( new PARAM_LAMBDA<nlohmann::json>( "drawing.field_names",
             [&]() -> nlohmann::json
@@ -188,7 +193,7 @@ SCHEMATIC_SETTINGS::SCHEMATIC_SETTINGS( JSON_SETTINGS* aParent, const std::strin
                 }
             }, {} ) );
 
-    // TOOD(JE) get rid of this static
+    // TODO(JE) get rid of this static
     m_params.emplace_back( new PARAM<wxString>( "page_layout_descr_file",
             &BASE_SCREEN::m_DrawingSheetFileName, "" ) );
 
@@ -204,15 +209,28 @@ SCHEMATIC_SETTINGS::SCHEMATIC_SETTINGS( JSON_SETTINGS* aParent, const std::strin
     m_params.emplace_back( new PARAM<wxString>( "spice_external_command",
             &m_SpiceCommandString, "spice \"%I\"" ) );
 
-    // TODO(JE) should we keep these LIB_PART:: things around?
+    // TODO(JE) should we keep these LIB_SYMBOL:: things around?
     m_params.emplace_back( new PARAM<int>( "subpart_id_separator",
-            LIB_PART::SubpartIdSeparatorPtr(), 0, 0, 126 ) );
+            LIB_SYMBOL::SubpartIdSeparatorPtr(), 0, 0, 126 ) );
 
     m_params.emplace_back( new PARAM<int>( "subpart_first_id",
-            LIB_PART::SubpartFirstIdPtr(), 'A', '1', 'z' ) );
+            LIB_SYMBOL::SubpartFirstIdPtr(), 'A', '1', 'z' ) );
+
+    m_params.emplace_back( new PARAM<int>( "annotate_start_num",
+            &m_AnnotateStartNum, 0 ) );
 
     m_NgspiceSimulatorSettings =
-            std::make_shared<NGSPICE_SIMULATOR_SETTINGS>( this, "ngspice" );
+        std::make_shared<NGSPICE_SIMULATOR_SETTINGS>( this, "ngspice" );
+
+    registerMigration( 0, 1, [&]() -> bool
+    {
+        OPT<double> tor = Get<double>( "drawing.text_offset_ratio" );
+
+        if( tor.is_initialized() )
+            Set( "drawing.label_size_ratio", tor.get() );
+
+        return true;
+    } );
 }
 
 

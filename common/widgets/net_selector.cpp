@@ -21,9 +21,10 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
 
-#include <kicad_string.h>
+#include <string_utils.h>
 #include <kiplatform/ui.h>
 
+#include <widgets/ui_common.h>
 #include <widgets/net_selector.h>
 
 #include <board.h>

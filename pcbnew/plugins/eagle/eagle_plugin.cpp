@@ -2,7 +2,7 @@
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
  * Copyright (C) 2012 SoftPLC Corporation, Dick Hollenbeck <dick@softplc.com>
- * Copyright (C) 2012-2020 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 2012-2021 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -61,20 +61,24 @@ Load() TODO's
 #include <convert_basic_shapes_to_polygon.h>
 #include <core/arraydim.h>
 #include <geometry/geometry_utils.h>
-#include <kicad_string.h>
+#include <string_utils.h>
 #include <locale_io.h>
 #include <macros.h>
 #include <properties.h>
 #include <trigo.h>
 #include <math/util.h>      // for KiROUND
+#include <progress_reporter.h>
 
 #include <board.h>
+#include <board_design_settings.h>
 #include <footprint.h>
-#include <track.h>
+#include <pad.h>
+#include <pcb_track.h>
 #include <fp_shape.h>
 #include <zone.h>
+#include <pad_shapes.h>
 #include <pcb_text.h>
-#include <dimension.h>
+#include <pcb_dimension.h>
 
 #include <plugins/eagle/eagle_plugin.h>
 
@@ -111,6 +115,7 @@ static wxString makeKey( const wxString& aFirst, const wxString& aSecond )
     wxString key = aFirst + '\x02' +  aSecond;
     return key;
 }
+
 
 /// interpret special characters in Eagle text and converts them to KiCAD notation
 static wxString interpret_text( const wxString& aText )
@@ -204,12 +209,14 @@ static void setKeepoutSettingsToZone( ZONE* aZone, LAYER_NUM aLayer )
 }
 
 
-void ERULES::parse( wxXmlNode* aRules )
+void ERULES::parse( wxXmlNode* aRules, std::function<void()> aCheckpoint )
 {
     wxXmlNode* child = aRules->GetChildren();
 
     while( child )
     {
+        aCheckpoint();
+
         if( child->GetName() == "param" )
         {
             const wxString& name = child->GetAttribute( "name" );
@@ -219,7 +226,6 @@ void ERULES::parse( wxXmlNode* aRules )
                 psElongationLong = wxAtoi( value );
             else if( name == "psElongationOffset" )
                 psElongationOffset = wxAtoi( value );
-
             else if( name == "mvStopFrame" )
                 value.ToCDouble( &mvStopFrame );
             else if( name == "mvCreamFrame" )
@@ -232,28 +238,24 @@ void ERULES::parse( wxXmlNode* aRules )
                 mlMinCreamFrame = parseEagle( value );
             else if( name == "mlMaxCreamFrame" )
                 mlMaxCreamFrame = parseEagle( value );
-
             else if( name == "srRoundness" )
                 value.ToCDouble( &srRoundness );
             else if( name == "srMinRoundness" )
                 srMinRoundness = parseEagle( value );
             else if( name == "srMaxRoundness" )
                 srMaxRoundness = parseEagle( value );
-
             else if( name == "psTop" )
                 psTop = wxAtoi( value );
             else if( name == "psBottom" )
                 psBottom = wxAtoi( value );
             else if( name == "psFirst" )
                 psFirst = wxAtoi( value );
-
             else if( name == "rvPadTop" )
                 value.ToCDouble( &rvPadTop );
             else if( name == "rlMinPadTop" )
                 rlMinPadTop = parseEagle( value );
             else if( name == "rlMaxPadTop" )
                 rlMaxPadTop = parseEagle( value );
-
             else if( name == "rvViaOuter" )
                 value.ToCDouble( &rvViaOuter );
             else if( name == "rlMinViaOuter" )
@@ -270,16 +272,20 @@ void ERULES::parse( wxXmlNode* aRules )
 
 
 EAGLE_PLUGIN::EAGLE_PLUGIN() :
-    m_rules( new ERULES() ),
-    m_xpath( new XPATH() ),
-    m_mod_time( wxDateTime::Now() )
+        m_rules( new ERULES() ),
+        m_xpath( new XPATH() ),
+        m_progressReporter( nullptr ),
+        m_doneCount( 0 ),
+        m_lastProgressCount( 0 ),
+        m_totalCount( 0 ),
+        m_mod_time( wxDateTime::Now() )
 {
     using namespace std::placeholders;
 
-    init( NULL );
+    init( nullptr );
     clear_cu_map();
-    RegisterLayerMappingCallback( std::bind(
-        &EAGLE_PLUGIN::DefaultLayerMappingCallback, this, _1 ) );
+    RegisterLayerMappingCallback( std::bind( &EAGLE_PLUGIN::DefaultLayerMappingCallback,
+                                             this, _1 ) );
 }
 
 
@@ -302,6 +308,27 @@ const wxString EAGLE_PLUGIN::GetFileExtension() const
     return wxT( "brd" );
 }
 
+
+void EAGLE_PLUGIN::checkpoint()
+{
+    const unsigned PROGRESS_DELTA = 50;
+
+    if( m_progressReporter )
+    {
+        if( ++m_doneCount > m_lastProgressCount + PROGRESS_DELTA )
+        {
+            m_progressReporter->SetCurrentProgress( ( (double) m_doneCount )
+                                                    / std::max( 1U, m_totalCount ) );
+
+            if( !m_progressReporter->KeepRefreshing() )
+                THROW_IO_ERROR( ( "Open cancelled by user." ) );
+
+            m_lastProgressCount = m_doneCount;
+        }
+    }
+}
+
+
 wxSize inline EAGLE_PLUGIN::kicad_fontz( const ECOORD& d, int aTextThickness ) const
 {
     // Eagle includes stroke thickness in the text size, KiCAD does not
@@ -311,7 +338,8 @@ wxSize inline EAGLE_PLUGIN::kicad_fontz( const ECOORD& d, int aTextThickness ) c
 
 
 BOARD* EAGLE_PLUGIN::Load( const wxString& aFileName, BOARD* aAppendToMe,
-                           const PROPERTIES* aProperties, PROJECT* aProject )
+                           const PROPERTIES* aProperties, PROJECT* aProject,
+                           PROGRESS_REPORTER* aProgressReporter )
 {
     LOCALE_IO       toggle;     // toggles on, then off, the C locale.
     wxXmlNode*      doc;
@@ -319,24 +347,34 @@ BOARD* EAGLE_PLUGIN::Load( const wxString& aFileName, BOARD* aAppendToMe,
     init( aProperties );
 
     m_board = aAppendToMe ? aAppendToMe : new BOARD();
+    m_progressReporter = aProgressReporter;
 
     // Give the filename to the board if it's new
     if( !aAppendToMe )
         m_board->SetFileName( aFileName );
 
     // delete on exception, if I own m_board, according to aAppendToMe
-    unique_ptr<BOARD> deleter( aAppendToMe ? NULL : m_board );
+    unique_ptr<BOARD> deleter( aAppendToMe ? nullptr : m_board );
 
     try
     {
+        if( m_progressReporter )
+        {
+            m_progressReporter->Report( wxString::Format( _( "Loading %s..." ), aFileName ) );
+
+            if( !m_progressReporter->KeepRefreshing() )
+                THROW_IO_ERROR( ( "Open cancelled by user." ) );
+        }
+
         wxFileName fn = aFileName;
+
         // Load the document
         wxFFileInputStream stream( fn.GetFullPath() );
         wxXmlDocument xmlDocument;
 
         if( !stream.IsOk() || !xmlDocument.Load( stream ) )
         {
-            THROW_IO_ERROR( wxString::Format( _( "Unable to read file \"%s\"" ),
+            THROW_IO_ERROR( wxString::Format( _( "Unable to read file '%s'" ),
                                               fn.GetFullPath() ) );
         }
 
@@ -360,8 +398,8 @@ BOARD* EAGLE_PLUGIN::Load( const wxString& aFileName, BOARD* aAppendToMe,
         if( m_min_hole < designSettings.m_MinThroughDrill )
             designSettings.m_MinThroughDrill = m_min_hole;
 
-        if( m_min_annulus < designSettings.m_ViasMinAnnulus )
-            designSettings.m_ViasMinAnnulus = m_min_annulus;
+        if( m_min_annulus < designSettings.m_ViasMinAnnularWidth )
+            designSettings.m_ViasMinAnnularWidth = m_min_annulus;
 
         if( m_rules->mdWireWire )
         {
@@ -375,7 +413,6 @@ BOARD* EAGLE_PLUGIN::Load( const wxString& aFileName, BOARD* aAppendToMe,
         // should be empty, else missing m_xpath->pop()
         wxASSERT( m_xpath->Contents().size() == 0 );
     }
-    // Catch all exceptions thrown from the parser.
     catch( const XML_PARSER_ERROR &exc )
     {
         wxString errmsg = exc.what();
@@ -411,9 +448,7 @@ std::vector<FOOTPRINT*> EAGLE_PLUGIN::GetImportedCachedLibraryFootprints()
     std::vector<FOOTPRINT*> retval;
 
     for( std::pair<wxString, FOOTPRINT*> fp : m_templates )
-    {
         retval.push_back( static_cast<FOOTPRINT*>( fp.second->Clone() ) );
-    }
 
     return retval;
 }
@@ -429,7 +464,7 @@ void EAGLE_PLUGIN::init( const PROPERTIES* aProperties )
     m_xpath->clear();
     m_pads_to_nets.clear();
 
-    m_board = NULL;
+    m_board = nullptr;
     m_props = aProperties;
 
 
@@ -455,12 +490,53 @@ void EAGLE_PLUGIN::loadAllSections( wxXmlNode* aDoc )
     wxXmlNode* board         = drawingChildren["board"];
     NODE_MAP boardChildren   = MapChildren( board );
 
+    auto count_children = [this]( wxXmlNode* aNode )
+            {
+                if( aNode )
+                {
+                    wxXmlNode* child = aNode->GetChildren();
+
+                    while( child )
+                    {
+                        m_totalCount++;
+                        child = child->GetNext();
+                    }
+                }
+            };
+
+    wxXmlNode* designrules = boardChildren["designrules"];
+    wxXmlNode* layers = drawingChildren["layers"];
+    wxXmlNode* plain = boardChildren["plain"];
+    wxXmlNode* signals = boardChildren["signals"];
+    wxXmlNode* libs = boardChildren["libraries"];
+    wxXmlNode* elems = boardChildren["elements"];
+
+    if( m_progressReporter )
+    {
+        m_totalCount = 0;
+        m_doneCount = 0;
+
+        count_children( designrules );
+        count_children( layers );
+        count_children( plain );
+        count_children( signals );
+        count_children( elems );
+
+        while( libs )
+        {
+            count_children( MapChildren( libs )["packages"] );
+            libs = libs->GetNext();
+        }
+
+        // Rewind
+        libs = boardChildren["libraries"];
+    }
+
     m_xpath->push( "eagle.drawing" );
 
     {
         m_xpath->push( "board" );
 
-        wxXmlNode* designrules = boardChildren["designrules"];
         loadDesignRules( designrules );
 
         m_xpath->pop();
@@ -469,7 +545,6 @@ void EAGLE_PLUGIN::loadAllSections( wxXmlNode* aDoc )
     {
         m_xpath->push( "layers" );
 
-        wxXmlNode* layers = drawingChildren["layers"];
         loadLayerDefs( layers );
         mapEagleLayersToKicad();
 
@@ -479,19 +554,12 @@ void EAGLE_PLUGIN::loadAllSections( wxXmlNode* aDoc )
     {
         m_xpath->push( "board" );
 
-        wxXmlNode* plain = boardChildren["plain"];
         loadPlain( plain );
-
-        wxXmlNode*  signals = boardChildren["signals"];
         loadSignals( signals );
-
-        wxXmlNode*  libs = boardChildren["libraries"];
         loadLibraries( libs );
-
-        wxXmlNode* elems = boardChildren["elements"];
         loadElements( elems );
 
-        m_xpath->pop();     // "board"
+        m_xpath->pop();
     }
 
     m_xpath->pop();     // "eagle.drawing"
@@ -503,7 +571,7 @@ void EAGLE_PLUGIN::loadDesignRules( wxXmlNode* aDesignRules )
     if( aDesignRules )
     {
         m_xpath->push( "designrules" );
-        m_rules->parse( aDesignRules );
+        m_rules->parse( aDesignRules, [this](){ checkpoint(); } );
         m_xpath->pop();     // "designrules"
     }
 }
@@ -530,9 +598,7 @@ void EAGLE_PLUGIN::loadLayerDefs( wxXmlNode* aLayers )
 
         // find the subset of layers that are copper and active
         if( elayer.number >= 1 && elayer.number <= 16 && ( !elayer.active || *elayer.active ) )
-        {
             cu.push_back( elayer );
-        }
 
         layerNode = layerNode->GetNext();
     }
@@ -543,9 +609,13 @@ void EAGLE_PLUGIN::loadLayerDefs( wxXmlNode* aLayers )
     for( EITER it = cu.begin();  it != cu.end();  ++it,  ++ki_layer_count )
     {
         if( ki_layer_count == 0 )
+        {
             m_cu_map[it->number] = F_Cu;
+        }
         else if( ki_layer_count == int( cu.size()-1 ) )
+        {
             m_cu_map[it->number] = B_Cu;
+        }
         else
         {
             // some eagle boards do not have contiguous layer number sequences.
@@ -568,6 +638,7 @@ void EAGLE_PLUGIN::loadLayerDefs( wxXmlNode* aLayers )
                 m_board->SetLayerName( layer, FROM_UTF8( it->name.c_str() ) );
                 m_board->SetLayerType( layer, LT_SIGNAL );
             }
+
             // could map the colors here
         }
     }
@@ -575,6 +646,7 @@ void EAGLE_PLUGIN::loadLayerDefs( wxXmlNode* aLayers )
 
 
 #define DIMENSION_PRECISION 1 // 0.001 mm
+
 
 void EAGLE_PLUGIN::loadPlain( wxXmlNode* aGraphics )
 {
@@ -589,6 +661,8 @@ void EAGLE_PLUGIN::loadPlain( wxXmlNode* aGraphics )
     // (polygon | wire | text | circle | rectangle | frame | hole)*
     while( gr )
     {
+        checkpoint();
+
         wxString grName = gr->GetName();
 
         if( grName == "wire" )
@@ -621,7 +695,7 @@ void EAGLE_PLUGIN::loadPlain( wxXmlNode* aGraphics )
                 {
                     wxPoint center = ConvertArcCenter( start, end, *w.curve );
 
-                    shape->SetShape( PCB_SHAPE_TYPE::ARC );
+                    shape->SetShape( SHAPE_T::ARC );
                     shape->SetStart( center );
                     shape->SetEnd( start );
                     shape->SetAngle( *w.curve * -10.0 ); // KiCad rotates the other way
@@ -673,10 +747,14 @@ void EAGLE_PLUGIN::loadPlain( wxXmlNode* aGraphics )
                         pcbtxt->SetTextAngle( sign * 90 * 10 );
                         align = ETEXT::TOP_RIGHT;
                     }
-                    else // Ok so text is not at 90,180 or 270 so do some funny stuff to get placement right
+                    else
                     {
+                        // Ok so text is not at 90,180 or 270 so do some funny stuff to get
+                        // placement right.
                         if( ( degrees > 0 ) &&  ( degrees < 90 ) )
+                        {
                             pcbtxt->SetTextAngle( sign * t.rot->degrees * 10 );
+                        }
                         else if( ( degrees > 90 ) && ( degrees < 180 ) )
                         {
                             pcbtxt->SetTextAngle( sign * ( t.rot->degrees + 180 ) * 10 );
@@ -735,6 +813,7 @@ void EAGLE_PLUGIN::loadPlain( wxXmlNode* aGraphics )
                     break;
                 }
             }
+
             m_xpath->pop();
         }
         else if( grName == "circle" )
@@ -757,6 +836,7 @@ void EAGLE_PLUGIN::loadPlain( wxXmlNode* aGraphics )
                 // approximate circle as polygon with a edge every 10 degree
                 wxPoint center( kicad_x( c.x ), kicad_y( c.y ) );
                 int     outlineRadius = radius + ( width / 2 );
+
                 for( int angle = 0; angle < 360; angle += 10 )
                 {
                     wxPoint rotatedPoint( outlineRadius, 0 );
@@ -768,6 +848,7 @@ void EAGLE_PLUGIN::loadPlain( wxXmlNode* aGraphics )
                 {
                     zone->NewHole();
                     int innerRadius = radius - ( width / 2 );
+
                     for( int angle = 0; angle < 360; angle += 10 )
                     {
                         wxPoint rotatedPoint( innerRadius, 0 );
@@ -788,7 +869,7 @@ void EAGLE_PLUGIN::loadPlain( wxXmlNode* aGraphics )
                     PCB_SHAPE* shape = new PCB_SHAPE( m_board );
                     m_board->Add( shape, ADD_MODE::APPEND );
 
-                    shape->SetShape( PCB_SHAPE_TYPE::CIRCLE );
+                    shape->SetShape( SHAPE_T::CIRCLE );
                     shape->SetFilled( false );
                     shape->SetLayer( layer );
                     shape->SetStart( wxPoint( kicad_x( c.x ), kicad_y( c.y ) ) );
@@ -796,6 +877,7 @@ void EAGLE_PLUGIN::loadPlain( wxXmlNode* aGraphics )
                     shape->SetWidth( width );
                 }
             }
+
             m_xpath->pop();
         }
         else if( grName == "rectangle" )
@@ -868,13 +950,14 @@ void EAGLE_PLUGIN::loadPlain( wxXmlNode* aGraphics )
             if( layer != UNDEFINED_LAYER )
             {
                 const BOARD_DESIGN_SETTINGS& designSettings = m_board->GetDesignSettings();
-                ALIGNED_DIMENSION* dimension = new ALIGNED_DIMENSION( m_board );
+                PCB_DIM_ALIGNED* dimension = new PCB_DIM_ALIGNED( m_board );
                 m_board->Add( dimension, ADD_MODE::APPEND );
 
                 if( d.dimensionType )
                 {
                     // Eagle dimension graphic arms may have different lengths, but they look
-                    // incorrect in KiCad (the graphic is tilted). Make them even length in such case.
+                    // incorrect in KiCad (the graphic is tilted). Make them even length in
+                    // such case.
                     if( *d.dimensionType == "horizontal" )
                     {
                         int newY = ( d.y1.ToPcbUnits() + d.y2.ToPcbUnits() ) / 2;
@@ -891,6 +974,7 @@ void EAGLE_PLUGIN::loadPlain( wxXmlNode* aGraphics )
 
                 dimension->SetLayer( layer );
                 dimension->SetPrecision( DIMENSION_PRECISION );
+
                 // The origin and end are assumed to always be in this order from eagle
                 dimension->SetStart( wxPoint( kicad_x( d.x1 ), kicad_y( d.y1 ) ) );
                 dimension->SetEnd( wxPoint( kicad_x( d.x2 ), kicad_y( d.y2 ) ) );
@@ -913,6 +997,7 @@ void EAGLE_PLUGIN::loadPlain( wxXmlNode* aGraphics )
         // Get next graphic
         gr = gr->GetNext();
     }
+
     m_xpath->pop();
 }
 
@@ -939,6 +1024,8 @@ void EAGLE_PLUGIN::loadLibrary( wxXmlNode* aLib, const wxString* aLibName )
 
     while( package )
     {
+        checkpoint();
+
         m_xpath->push( "package", "name" );
 
         wxString pack_ref = package->GetAttribute( "name" );
@@ -958,8 +1045,9 @@ void EAGLE_PLUGIN::loadLibrary( wxXmlNode* aLib, const wxString* aLibName )
             wxString lib = aLibName ? *aLibName : m_lib_path;
             const wxString& pkg = pack_ref;
 
-            wxString emsg = wxString::Format(
-                    _( "<package> name: \"%s\" duplicated in eagle <library>: \"%s\"" ), pkg, lib );
+            wxString emsg = wxString::Format( _( "<package> '%s' duplicated in <library> '%s'" ),
+                                              pkg,
+                                              lib );
             THROW_IO_ERROR( emsg );
         }
 
@@ -1012,6 +1100,8 @@ void EAGLE_PLUGIN::loadElements( wxXmlNode* aElements )
 
     while( element )
     {
+        checkpoint();
+
         if( element->GetName() != "element" )
         {
             // Get next item
@@ -1033,7 +1123,7 @@ void EAGLE_PLUGIN::loadElements( wxXmlNode* aElements )
 
         if( it == m_templates.end() )
         {
-            wxString emsg = wxString::Format( _( "No \"%s\" package in library \"%s\"" ),
+            wxString emsg = wxString::Format( _( "No '%s' package in library '%s'." ),
                                               FROM_UTF8( e.package.c_str() ),
                                               FROM_UTF8( e.library.c_str() ) );
             THROW_IO_ERROR( emsg );
@@ -1078,15 +1168,17 @@ void EAGLE_PLUGIN::loadElements( wxXmlNode* aElements )
         footprint->SetValue( FROM_UTF8( e.value.c_str() ) );
 
         if( !e.smashed )
-        { // Not smashed so show NAME & VALUE
+        {
+            // Not smashed so show NAME & VALUE
             if( valueNamePresetInPackageLayout )
                 footprint->Value().SetVisible( true );  // Only if place holder in package layout
 
             if( refanceNamePresetInPackageLayout )
-                footprint->Reference().SetVisible( true );   // Only if place holder in package layout
+                footprint->Reference().SetVisible( true ); // Only if place holder in package layout
         }
         else if( *e.smashed == true )
-        { // Smashed so set default to no show for NAME and VALUE
+        {
+            // Smashed so set default to no show for NAME and VALUE
             footprint->Value().SetVisible( false );
             footprint->Reference().SetVisible( false );
 
@@ -1128,9 +1220,10 @@ void EAGLE_PLUGIN::loadElements( wxXmlNode* aElements )
                         {
                             wxString reference = e.name;
 
-                            // EAGLE allows references to be single digits.  This breaks KiCad netlisting, which requires
-                            // parts to have non-digit + digit annotation.  If the reference begins with a number,
-                            // we prepend 'UNK' (unknown) for the symbol designator
+                            // EAGLE allows references to be single digits.  This breaks KiCad
+                            // netlisting, which requires parts to have non-digit + digit
+                            // annotation.  If the reference begins with a number, we prepend
+                            // 'UNK' (unknown) for the symbol designator.
                             if( reference.find_first_not_of( "0123456789" ) == wxString::npos )
                                 reference.Prepend( "UNK" );
 
@@ -1142,12 +1235,14 @@ void EAGLE_PLUGIN::loadElements( wxXmlNode* aElements )
 
                             break;
                         }
+
                         case EATTR::NAME :
                             if( refanceNamePresetInPackageLayout )
                             {
                                 footprint->SetReference( "NAME" );
                                 footprint->Reference().SetVisible( true );
                             }
+
                             break;
 
                         case EATTR::BOTH :
@@ -1170,8 +1265,10 @@ void EAGLE_PLUGIN::loadElements( wxXmlNode* aElements )
                         }
                     }
                     else
+                    {
                         // No display, so default is visible, and show value of NAME
                         footprint->Reference().SetVisible( true );
+                    }
                 }
                 else if( a.name == "VALUE" )
                 {
@@ -1255,12 +1352,11 @@ ZONE* EAGLE_PLUGIN::loadPolygon( wxXmlNode* aPolyNode )
                           || p.layer == EAGLE_LAYER::BRESTRICT
                           || p.layer == EAGLE_LAYER::VRESTRICT );
 
-    if( layer == UNDEFINED_LAYER ) {
-        wxLogMessage( wxString::Format(
-            _( "Ignoring a polygon since Eagle layer '%s' (%d) "
-               "was not mapped" ),
-                    eagle_layer_name( p.layer ),
-                    p.layer ) );
+    if( layer == UNDEFINED_LAYER )
+    {
+        wxLogMessage( wxString::Format( _( "Ignoring a polygon since Eagle layer '%s' (%d) "
+                                           "was not mapped" ),
+                                        eagle_layer_name( p.layer ), p.layer ) );
         return nullptr;
     }
 
@@ -1311,17 +1407,15 @@ ZONE* EAGLE_PLUGIN::loadPolygon( wxXmlNode* aPolyNode )
                                                wxPoint( kicad_x( v2.x ), kicad_y( v2.y ) ),
                                                *v1.curve );
             double angle = DEG2RAD( *v1.curve );
-            double end_angle = atan2( kicad_y( v2.y ) - center.y,
-                                      kicad_x( v2.x ) - center.x );
-            double radius = sqrt( pow( center.x - kicad_x( v1.x ), 2 )
-                                + pow( center.y - kicad_y( v1.y ), 2 ) );
+            double  end_angle = atan2( kicad_y( v2.y ) - center.y, kicad_x( v2.x ) - center.x );
+            double  radius = sqrt( pow( center.x - kicad_x( v1.x ), 2 )
+                                  + pow( center.y - kicad_y( v1.y ), 2 ) );
 
             int segCount = GetArcToSegmentCount( KiROUND( radius ), ARC_HIGH_DEF, *v1.curve );
             double delta_angle = angle / segCount;
 
-            for( double a = end_angle + angle;
-                    fabs( a - end_angle ) > fabs( delta_angle );
-                    a -= delta_angle )
+            for( double a = end_angle + angle; fabs( a - end_angle ) > fabs( delta_angle );
+                 a -= delta_angle )
             {
                 polygon.Append( KiROUND( radius * cos( a ) ) + center.x,
                                 KiROUND( radius * sin( a ) ) + center.y );
@@ -1418,7 +1512,8 @@ void EAGLE_PLUGIN::orientFPText( FOOTPRINT* aFootprint, const EELEMENT& e, FP_TE
 {
     // Smashed part ?
     if( aAttr )
-    { // Yes
+    {
+        // Yes
         const EATTR& a = *aAttr;
 
         if( a.value )
@@ -1527,8 +1622,8 @@ void EAGLE_PLUGIN::orientFPText( FOOTPRINT* aFootprint, const EELEMENT& e, FP_TE
     }
     else
     {
-        // Part is not smash so use Lib default for NAME/VALUE
-        // the text is per the original package, sans <attribute>
+        // Part is not smash so use Lib default for NAME/VALUE // the text is per the original
+        // package, sans <attribute>.
         double degrees = ( aFPText->GetTextAngle() + aFootprint->GetOrientation() ) / 10;
 
         // @todo there are a few more cases than these to contend with:
@@ -1559,28 +1654,20 @@ FOOTPRINT* EAGLE_PLUGIN::makeFootprint( wxXmlNode* aPackage, const wxString& aPk
 
         if( itemName == "description" )
             m->SetDescription( FROM_UTF8( packageItem->GetNodeContent().c_str() ) );
-
         else if( itemName == "wire" )
             packageWire( m.get(), packageItem );
-
         else if( itemName == "pad" )
             packagePad( m.get(), packageItem );
-
         else if( itemName == "text" )
             packageText( m.get(), packageItem );
-
         else if( itemName == "rectangle" )
             packageRectangle( m.get(), packageItem );
-
         else if( itemName == "polygon" )
             packagePolygon( m.get(), packageItem );
-
         else if( itemName == "circle" )
             packageCircle( m.get(), packageItem );
-
         else if( itemName == "hole" )
             packageHole( m.get(), packageItem, false );
-
         else if( itemName == "smd" )
             packageSMD( m.get(), packageItem );
 
@@ -1603,8 +1690,7 @@ void EAGLE_PLUGIN::packageWire( FOOTPRINT* aFootprint, wxXmlNode* aTree ) const
     {
         wxLogMessage( wxString::Format( _( "Ignoring a wire since Eagle layer '%s' (%d) "
                                            "was not mapped" ),
-                                        eagle_layer_name( w.layer ),
-                                        w.layer ) );
+                                        eagle_layer_name( w.layer ), w.layer ) );
         return;
     }
 
@@ -1642,14 +1728,14 @@ void EAGLE_PLUGIN::packageWire( FOOTPRINT* aFootprint, wxXmlNode* aTree ) const
 
     if( !w.curve )
     {
-        dwg = new FP_SHAPE( aFootprint, PCB_SHAPE_TYPE::SEGMENT );
+        dwg = new FP_SHAPE( aFootprint, SHAPE_T::SEGMENT );
 
         dwg->SetStart0( start );
         dwg->SetEnd0( end );
     }
     else
     {
-        dwg = new FP_SHAPE( aFootprint, PCB_SHAPE_TYPE::ARC );
+        dwg = new FP_SHAPE( aFootprint, SHAPE_T::ARC );
         wxPoint center = ConvertArcCenter( start, end, *w.curve );
 
         dwg->SetStart0( center );
@@ -1731,7 +1817,7 @@ void EAGLE_PLUGIN::packagePad( FOOTPRINT* aFootprint, wxXmlNode* aTree )
         // if shape is not present, our default is circle and that matches their default "round"
     }
 
-    if( e.diameter )
+    if( e.diameter && e.diameter->value > 0 )
     {
         int diameter = e.diameter->ToPcbUnits();
         pad->SetSize( wxSize( diameter, diameter ) );
@@ -1776,8 +1862,7 @@ void EAGLE_PLUGIN::packageText( FOOTPRINT* aFootprint, wxXmlNode* aTree ) const
     {
         wxLogMessage( wxString::Format( _( "Ignoring a text since Eagle layer '%s' (%d) "
                                            "was not mapped" ),
-                                        eagle_layer_name( t.layer ),
-                                        t.layer ) );
+                                        eagle_layer_name( t.layer ), t.layer ) );
         return;
     }
 
@@ -1803,7 +1888,6 @@ void EAGLE_PLUGIN::packageText( FOOTPRINT* aFootprint, wxXmlNode* aTree ) const
 
     txt->SetLayer( layer );
 
-
     double ratio = t.ratio ? *t.ratio : 8;  // DTD says 8 is default
     int textThickness = KiROUND( t.size.ToPcbUnits() * ratio / 100 );
 
@@ -1823,9 +1907,13 @@ void EAGLE_PLUGIN::packageText( FOOTPRINT* aFootprint, wxXmlNode* aTree ) const
         double degrees = t.rot->degrees;
 
         if( degrees == 90 || t.rot->spin )
+        {
             txt->SetTextAngle( sign * degrees * 10 );
+        }
         else if( degrees == 180 )
+        {
             align = ETEXT::TOP_RIGHT;
+        }
         else if( degrees == 270 )
         {
             align = ETEXT::TOP_RIGHT;
@@ -1911,12 +1999,11 @@ void EAGLE_PLUGIN::packageRectangle( FOOTPRINT* aFootprint, wxXmlNode* aTree ) c
         {
             wxLogMessage( wxString::Format( _( "Ignoring a rectangle since Eagle layer '%s' (%d) "
                                                "was not mapped" ),
-                                            eagle_layer_name( r.layer ),
-                                            r.layer ) );
+                                            eagle_layer_name( r.layer ), r.layer ) );
             return;
         }
 
-        FP_SHAPE* dwg = new FP_SHAPE( aFootprint, PCB_SHAPE_TYPE::POLYGON );
+        FP_SHAPE* dwg = new FP_SHAPE( aFootprint, SHAPE_T::POLY );
 
         aFootprint->Add( dwg );
 
@@ -1978,14 +2065,13 @@ void EAGLE_PLUGIN::packagePolygon( FOOTPRINT* aFootprint, wxXmlNode* aTree ) con
         if( v1.curve )
         {
             EVERTEX v2 = vertices[i + 1];
-            wxPoint center = ConvertArcCenter(
-                    wxPoint( kicad_x( v1.x ), kicad_y( v1.y ) ),
-                    wxPoint( kicad_x( v2.x ), kicad_y( v2.y ) ), *v1.curve );
+            wxPoint center =
+                    ConvertArcCenter( wxPoint( kicad_x( v1.x ), kicad_y( v1.y ) ),
+                                      wxPoint( kicad_x( v2.x ), kicad_y( v2.y ) ), *v1.curve );
             double angle = DEG2RAD( *v1.curve );
-            double end_angle = atan2( kicad_y( v2.y ) - center.y,
-                                      kicad_x( v2.x ) - center.x );
+            double end_angle = atan2( kicad_y( v2.y ) - center.y, kicad_x( v2.x ) - center.x );
             double radius = sqrt( pow( center.x - kicad_x( v1.x ), 2 )
-                                + pow( center.y - kicad_y( v1.y ), 2 ) );
+                                  + pow( center.y - kicad_y( v1.y ), 2 ) );
 
             // Don't allow a zero-radius curve
             if( KiROUND( radius ) == 0 )
@@ -2026,12 +2112,11 @@ void EAGLE_PLUGIN::packagePolygon( FOOTPRINT* aFootprint, wxXmlNode* aTree ) con
         {
             wxLogMessage( wxString::Format( _( "Ignoring a polygon since Eagle layer '%s' (%d) "
                                                "was not mapped" ),
-                                            eagle_layer_name( p.layer ),
-                                            p.layer ) );
+                                            eagle_layer_name( p.layer ), p.layer ) );
             return;
         }
 
-        FP_SHAPE* dwg = new FP_SHAPE( aFootprint, PCB_SHAPE_TYPE::POLYGON );
+        FP_SHAPE* dwg = new FP_SHAPE( aFootprint, SHAPE_T::POLY );
 
         aFootprint->Add( dwg );
 
@@ -2046,6 +2131,7 @@ void EAGLE_PLUGIN::packagePolygon( FOOTPRINT* aFootprint, wxXmlNode* aTree ) con
                                      SHAPE_POLY_SET::ALLOW_ACUTE_CORNERS );
     }
 }
+
 
 void EAGLE_PLUGIN::packageCircle( FOOTPRINT* aFootprint, wxXmlNode* aTree ) const
 {
@@ -2066,6 +2152,7 @@ void EAGLE_PLUGIN::packageCircle( FOOTPRINT* aFootprint, wxXmlNode* aTree ) cons
         // approximate circle as polygon with a edge every 10 degree
         wxPoint center( kicad_x( e.x ), kicad_y( e.y ) );
         int     outlineRadius = radius + ( width / 2 );
+
         for( int angle = 0; angle < 360; angle += 10 )
         {
             wxPoint rotatedPoint( outlineRadius, 0 );
@@ -2077,6 +2164,7 @@ void EAGLE_PLUGIN::packageCircle( FOOTPRINT* aFootprint, wxXmlNode* aTree ) cons
         {
             zone->NewHole();
             int innerRadius = radius - ( width / 2 );
+
             for( int angle = 0; angle < 360; angle += 10 )
             {
                 wxPoint rotatedPoint( innerRadius, 0 );
@@ -2096,12 +2184,11 @@ void EAGLE_PLUGIN::packageCircle( FOOTPRINT* aFootprint, wxXmlNode* aTree ) cons
         {
             wxLogMessage( wxString::Format( _( "Ignoring a circle since Eagle layer '%s' (%d) "
                                                "was not mapped" ),
-                                            eagle_layer_name( e.layer ),
-                                            e.layer ) );
+                                            eagle_layer_name( e.layer ), e.layer ) );
             return;
         }
 
-        FP_SHAPE* gr = new FP_SHAPE( aFootprint, PCB_SHAPE_TYPE::CIRCLE );
+        FP_SHAPE* gr = new FP_SHAPE( aFootprint, SHAPE_T::CIRCLE );
 
         // with == 0 means filled circle
         if( width <= 0 )
@@ -2133,6 +2220,9 @@ void EAGLE_PLUGIN::packageCircle( FOOTPRINT* aFootprint, wxXmlNode* aTree ) cons
 void EAGLE_PLUGIN::packageHole( FOOTPRINT* aFootprint, wxXmlNode* aTree, bool aCenter ) const
 {
     EHOLE   e( aTree );
+
+    if( e.drill.value == 0 )
+        return;
 
     // we add a PAD_ATTRIB::NPTH pad to this footprint.
     PAD* pad = new PAD( aFootprint );
@@ -2174,7 +2264,7 @@ void EAGLE_PLUGIN::packageSMD( FOOTPRINT* aFootprint, wxXmlNode* aTree ) const
     ESMD e( aTree );
     PCB_LAYER_ID layer = kicad_layer( e.layer );
 
-    if( !IsCopperLayer( layer ) )
+    if( !IsCopperLayer( layer ) || e.dx.value == 0 || e.dy.value == 0 )
         return;
 
     PAD* pad = new PAD( aFootprint );
@@ -2199,8 +2289,9 @@ void EAGLE_PLUGIN::packageSMD( FOOTPRINT* aFootprint, wxXmlNode* aTree ) const
     int minPadSize = std::min( padSize.x, padSize.y );
 
     // Rounded rectangle pads
-    int roundRadius = eagleClamp( m_rules->srMinRoundness * 2,
-            (int)( minPadSize * m_rules->srRoundness ), m_rules->srMaxRoundness * 2 );
+    int roundRadius =
+            eagleClamp( m_rules->srMinRoundness * 2, (int) ( minPadSize * m_rules->srRoundness ),
+                        m_rules->srMaxRoundness * 2 );
 
     if( e.roundness || roundRadius > 0 )
     {
@@ -2218,8 +2309,8 @@ void EAGLE_PLUGIN::packageSMD( FOOTPRINT* aFootprint, wxXmlNode* aTree ) const
         pad->SetOrientation( e.rot->degrees * 10 );
 
     pad->SetLocalSolderPasteMargin( -eagleClamp( m_rules->mlMinCreamFrame,
-                (int) ( m_rules->mvCreamFrame * minPadSize ),
-                m_rules->mlMaxCreamFrame ) );
+                                                 (int) ( m_rules->mvCreamFrame * minPadSize ),
+                                                 m_rules->mlMaxCreamFrame ) );
 
     // Solder mask
     if( e.stop && *e.stop == false )         // enabled by default
@@ -2253,9 +2344,10 @@ void EAGLE_PLUGIN::transferPad( const EPAD_COMMON& aEaglePad, PAD* aPad ) const
     // Solder mask
     const wxSize& padSize( aPad->GetSize() );
 
-    aPad->SetLocalSolderMaskMargin( eagleClamp( m_rules->mlMinStopFrame,
-                                                (int)( m_rules->mvStopFrame * std::min( padSize.x, padSize.y ) ),
-                                                m_rules->mlMaxStopFrame ) );
+    aPad->SetLocalSolderMaskMargin(
+            eagleClamp( m_rules->mlMinStopFrame,
+                        (int) ( m_rules->mvStopFrame * std::min( padSize.x, padSize.y ) ),
+                        m_rules->mlMaxStopFrame ) );
 
     // Solid connection to copper zones
     if( aEaglePad.thermals && !*aEaglePad.thermals )
@@ -2290,6 +2382,8 @@ void EAGLE_PLUGIN::loadSignals( wxXmlNode* aSignals )
 
     while( net )
     {
+        checkpoint();
+
         bool    sawPad = false;
 
         zones.clear();
@@ -2324,15 +2418,15 @@ void EAGLE_PLUGIN::loadSignals( wxXmlNode* aSignals )
                     wxPoint center;
 
                     int width = w.width.ToPcbUnits();
+
                     if( width < m_min_trace )
                         m_min_trace = width;
 
                     if( w.curve )
                     {
-                        center = ConvertArcCenter(
-                                wxPoint( kicad_x( w.x1 ), kicad_y( w.y1 ) ),
-                                wxPoint( kicad_x( w.x2 ), kicad_y( w.y2 ) ),
-                                *w.curve );
+                        center = ConvertArcCenter( wxPoint( kicad_x( w.x1 ), kicad_y( w.y1 ) ),
+                                                   wxPoint( kicad_x( w.x2 ), kicad_y( w.y2 ) ),
+                                                   *w.curve );
 
                         angle = DEG2RAD( *w.curve );
 
@@ -2342,7 +2436,8 @@ void EAGLE_PLUGIN::loadSignals( wxXmlNode* aSignals )
                         radius = sqrt( pow( center.x - kicad_x( w.x1 ), 2 ) +
                                        pow( center.y - kicad_y( w.y1 ), 2 ) );
 
-                        int segs = GetArcToSegmentCount( KiROUND( radius ), ARC_HIGH_DEF, *w.curve );
+                        int segs = GetArcToSegmentCount( KiROUND( radius ), ARC_HIGH_DEF,
+                                                         *w.curve );
                         delta_angle = angle / segs;
                     }
 
@@ -2352,7 +2447,7 @@ void EAGLE_PLUGIN::loadSignals( wxXmlNode* aSignals )
                         wxPoint end( KiROUND( radius * cos( end_angle + angle ) + center.x ),
                                      KiROUND( radius * sin( end_angle + angle ) + center.y ) );
 
-                        TRACK*  t = new TRACK( m_board );
+                        PCB_TRACK*  t = new PCB_TRACK( m_board );
 
                         t->SetPosition( start );
                         t->SetEnd( end );
@@ -2366,7 +2461,7 @@ void EAGLE_PLUGIN::loadSignals( wxXmlNode* aSignals )
                         angle -= delta_angle;
                     }
 
-                    TRACK*  t = new TRACK( m_board );
+                    PCB_TRACK*  t = new PCB_TRACK( m_board );
 
                     t->SetPosition( start );
                     t->SetEnd( wxPoint( kicad_x( w.x2 ), kicad_y( w.y2 ) ) );
@@ -2383,7 +2478,6 @@ void EAGLE_PLUGIN::loadSignals( wxXmlNode* aSignals )
 
                 m_xpath->pop();
             }
-
             else if( itemName == "via" )
             {
                 m_xpath->push( "via" );
@@ -2392,12 +2486,11 @@ void EAGLE_PLUGIN::loadSignals( wxXmlNode* aSignals )
                 PCB_LAYER_ID  layer_front_most = kicad_layer( v.layer_front_most );
                 PCB_LAYER_ID  layer_back_most  = kicad_layer( v.layer_back_most );
 
-                if( IsCopperLayer( layer_front_most ) &&
-                    IsCopperLayer( layer_back_most ) )
+                if( IsCopperLayer( layer_front_most ) && IsCopperLayer( layer_back_most ) )
                 {
-                    int  kidiam;
-                    int  drillz = v.drill.ToPcbUnits();
-                    VIA* via = new VIA( m_board );
+                    int      kidiam;
+                    int      drillz = v.drill.ToPcbUnits();
+                    PCB_VIA* via = new PCB_VIA( m_board );
                     m_board->Add( via );
 
                     via->SetLayerPair( layer_front_most, layer_back_most );
@@ -2422,9 +2515,10 @@ void EAGLE_PLUGIN::loadSignals( wxXmlNode* aSignals )
 
                     if( !v.diam || via->GetWidth() <= via->GetDrill() )
                     {
-                        double annulus = eagleClamp( m_rules->rlMinViaOuter,
-                                (double)( via->GetWidth() / 2 - via->GetDrill() ),
-                                m_rules->rlMaxViaOuter );
+                        double annulus =
+                                eagleClamp( m_rules->rlMinViaOuter,
+                                            (double) ( via->GetWidth() / 2 - via->GetDrill() ),
+                                            m_rules->rlMaxViaOuter );
                         via->SetWidth( drillz + 2 * annulus );
                     }
 
@@ -2500,7 +2594,9 @@ void EAGLE_PLUGIN::loadSignals( wxXmlNode* aSignals )
             // therefore omit this signal/net.
         }
         else
+        {
             netCode++;
+        }
 
         // Get next signal
         net = net->GetNext();
@@ -2508,6 +2604,7 @@ void EAGLE_PLUGIN::loadSignals( wxXmlNode* aSignals )
 
     m_xpath->pop();     // "signals.signal"
 }
+
 
 std::map<wxString, PCB_LAYER_ID> EAGLE_PLUGIN::DefaultLayerMappingCallback(
             const std::vector<INPUT_LAYER_DESC>& aInputLayerDescriptionVector )
@@ -2522,6 +2619,7 @@ std::map<wxString, PCB_LAYER_ID> EAGLE_PLUGIN::DefaultLayerMappingCallback(
 
     return layer_map;
 }
+
 
 void EAGLE_PLUGIN::mapEagleLayersToKicad()
 {
@@ -2543,8 +2641,15 @@ void EAGLE_PLUGIN::mapEagleLayersToKicad()
         inputDescs.push_back( layerDesc );
     }
 
+    if( m_progressReporter && dynamic_cast<wxWindow*>( m_progressReporter ) )
+        dynamic_cast<wxWindow*>( m_progressReporter )->Hide();
+
     m_layer_map = m_layer_mapping_handler( inputDescs );
+
+    if( m_progressReporter && dynamic_cast<wxWindow*>( m_progressReporter ))
+        dynamic_cast<wxWindow*>( m_progressReporter )->Show();
 }
+
 
 PCB_LAYER_ID EAGLE_PLUGIN::kicad_layer( int aEagleLayer ) const
 {
@@ -2552,12 +2657,14 @@ PCB_LAYER_ID EAGLE_PLUGIN::kicad_layer( int aEagleLayer ) const
     return result == m_layer_map.end() ? UNDEFINED_LAYER : result->second;
 }
 
+
 std::tuple<PCB_LAYER_ID, LSET, bool> EAGLE_PLUGIN::defaultKicadLayer( int aEagleLayer ) const
 {
     // eagle copper layer:
     if( aEagleLayer >= 1 && aEagleLayer < int( arrayDim( m_cu_map ) ) )
     {
         LSET copperLayers;
+
         for( int copperLayer : m_cu_map )
         {
             if( copperLayer >= 0 )
@@ -2769,8 +2876,10 @@ void EAGLE_PLUGIN::cacheLib( const wxString& aLibPath )
             wxXmlDocument xmlDocument;
 
             if( !stream.IsOk() || !xmlDocument.Load( stream ) )
-                THROW_IO_ERROR( wxString::Format( _( "Unable to read file \"%s\"" ),
+            {
+                THROW_IO_ERROR( wxString::Format( _( "Unable to read file '%s'." ),
                                                   fn.GetFullPath() ) );
+            }
 
             doc = xmlDocument.GetRoot();
 
@@ -2783,11 +2892,12 @@ void EAGLE_PLUGIN::cacheLib( const wxString& aLibPath )
             m_xpath->push( "eagle.drawing.layers" );
             wxXmlNode* layers  = drawingChildren["layers"];
             loadLayerDefs( layers );
+            mapEagleLayersToKicad();
             m_xpath->pop();
 
             m_xpath->push( "eagle.drawing.library" );
             wxXmlNode* library = drawingChildren["library"];
-            loadLibrary( library, NULL );
+            loadLibrary( library, nullptr );
             m_xpath->pop();
 
             m_mod_time = modtime;
@@ -2844,8 +2954,7 @@ void EAGLE_PLUGIN::FootprintEnumerate( wxArrayString& aFootprintNames, const wxS
 
 
 FOOTPRINT* EAGLE_PLUGIN::FootprintLoad( const wxString& aLibraryPath,
-                                        const wxString& aFootprintName,
-                                        bool  aKeepUUID,
+                                        const wxString& aFootprintName, bool aKeepUUID,
                                         const PROPERTIES* aProperties )
 {
     init( aProperties );
@@ -2853,7 +2962,7 @@ FOOTPRINT* EAGLE_PLUGIN::FootprintLoad( const wxString& aLibraryPath,
     FOOTPRINT_MAP::const_iterator it = m_templates.find( aFootprintName );
 
     if( it == m_templates.end() )
-        return NULL;
+        return nullptr;
 
     // Return a copy of the template
     FOOTPRINT* copy = (FOOTPRINT*) it->second->Duplicate();
@@ -2865,47 +2974,4 @@ FOOTPRINT* EAGLE_PLUGIN::FootprintLoad( const wxString& aLibraryPath,
 void EAGLE_PLUGIN::FootprintLibOptions( PROPERTIES* aListToAppendTo ) const
 {
     PLUGIN::FootprintLibOptions( aListToAppendTo );
-
-    /*
-    (*aListToAppendTo)["ignore_duplicates"] = UTF8( _( "Ignore duplicately named footprints within "
-                                                       "the same Eagle library. "
-                                                       "Only the first similarly named footprint "
-                                                       "will be loaded." ) );
-    */
 }
-
-
-/*
-void EAGLE_PLUGIN::Save( const wxString& aFileName, BOARD* aBoard, const PROPERTIES* aProperties )
-{
-    // Eagle lovers apply here.
-}
-
-
-void EAGLE_PLUGIN::FootprintSave( const wxString& aLibraryPath, const FOOTPRINT* aFootprint,
-                                  const PROPERTIES* aProperties )
-{
-}
-
-
-void EAGLE_PLUGIN::FootprintDelete( const wxString& aLibraryPath, const wxString& aFootprintName )
-{
-}
-
-
-void EAGLE_PLUGIN::FootprintLibCreate( const wxString& aLibraryPath, const PROPERTIES* aProperties )
-{
-}
-
-
-bool EAGLE_PLUGIN::FootprintLibDelete( const wxString& aLibraryPath, const PROPERTIES* aProperties )
-{
-}
-
-
-bool EAGLE_PLUGIN::IsFootprintLibWritable( const wxString& aLibraryPath )
-{
-    return true;
-}
-
-*/

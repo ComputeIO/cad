@@ -25,9 +25,10 @@
 #include <kiway.h>
 #include <pgm_base.h>
 #include <pcb_edit_frame.h>
-#include <3d_viewer/eda_3d_viewer.h>
+#include <3d_viewer/eda_3d_viewer_frame.h>
 #include <fp_lib_table.h>
 #include <bitmaps.h>
+#include <confirm.h>
 #include <trace_helpers.h>
 #include <pcbnew_id.h>
 #include <pcbnew_settings.h>
@@ -40,6 +41,7 @@
 #include <convert_to_biu.h>
 #include <invoke_pcb_dialog.h>
 #include <board.h>
+#include <board_design_settings.h>
 #include <footprint.h>
 #include <drawing_sheet/ds_proxy_view_item.h>
 #include <connectivity/connectivity_data.h>
@@ -101,6 +103,8 @@
 
 #include <action_plugin.h>
 #include "../scripting/python_scripting.h"
+
+#include <wx/filedlg.h>
 
 
 using namespace std::placeholders;
@@ -172,9 +176,9 @@ PCB_EDIT_FRAME::PCB_EDIT_FRAME( KIWAY* aKiway, wxWindow* aParent ) :
 {
     m_maximizeByDefault = true;
     m_showBorderAndTitleBlock = true;   // true to display sheet references
-    m_SelTrackWidthBox = NULL;
-    m_SelViaSizeBox = NULL;
-    m_SelLayerBox = NULL;
+    m_SelTrackWidthBox = nullptr;
+    m_SelViaSizeBox = nullptr;
+    m_SelLayerBox = nullptr;
     m_show_layer_manager_tools = true;
     m_hasAutoSave = true;
 
@@ -425,7 +429,7 @@ void PCB_EDIT_FRAME::SetPageSettings( const PAGE_INFO& aPageSettings )
 
     BASE_SCREEN* screen = GetScreen();
 
-    if( screen != NULL )
+    if( screen != nullptr )
     {
         drawingSheet->SetPageNumber(TO_UTF8( screen->GetPageNumber() ) );
         drawingSheet->SetSheetCount( screen->GetPageCount() );
@@ -547,19 +551,8 @@ void PCB_EDIT_FRAME::setupUIConditions()
     mgr->SetConditions( PCB_ACTIONS::viaDisplayMode, CHECK( !cond.ViaFillDisplay() ) );
     mgr->SetConditions( PCB_ACTIONS::trackDisplayMode, CHECK( !cond.TrackFillDisplay() ) );
 
-    auto pythonConsoleCond =
-        [] ( const SELECTION& )
-        {
-            if( SCRIPTING::IsWxAvailable() )
-            {
-                wxWindow* console = PCB_EDIT_FRAME::findPythonConsole();
-                return console && console->IsShown();
-            }
-
-            return false;
-        };
-
-    mgr->SetConditions( PCB_ACTIONS::showPythonConsole,  CHECK( pythonConsoleCond ) );
+    if( SCRIPTING::IsWxAvailable() )
+        mgr->SetConditions( PCB_ACTIONS::showPythonConsole, CHECK( cond.ScriptingConsoleVisible() ) );
 
     auto enableZoneControlConition =
         [this] ( const SELECTION& )
@@ -568,12 +561,14 @@ void PCB_EDIT_FRAME::setupUIConditions()
                     && GetDisplayOptions().m_ZoneOpacity > 0.0;
         };
 
-    mgr->SetConditions( PCB_ACTIONS::zoneDisplayEnable,
+    mgr->SetConditions( PCB_ACTIONS::zoneDisplayFilled,
                         ENABLE( enableZoneControlConition ).Check( cond.ZoneDisplayMode( ZONE_DISPLAY_MODE::SHOW_FILLED ) ) );
-    mgr->SetConditions( PCB_ACTIONS::zoneDisplayDisable,
+    mgr->SetConditions( PCB_ACTIONS::zoneDisplayOutline,
                         ENABLE( enableZoneControlConition ).Check( cond.ZoneDisplayMode( ZONE_DISPLAY_MODE::SHOW_ZONE_OUTLINE ) ) );
-    mgr->SetConditions( PCB_ACTIONS::zoneDisplayOutlines,
-                        ENABLE( enableZoneControlConition ).Check( cond.ZoneDisplayMode( ZONE_DISPLAY_MODE::SHOW_FILLED_OUTLINE ) ) );
+    mgr->SetConditions( PCB_ACTIONS::zoneDisplayFractured,
+                        ENABLE( enableZoneControlConition ).Check( cond.ZoneDisplayMode( ZONE_DISPLAY_MODE::SHOW_FRACTURE_BORDERS ) ) );
+    mgr->SetConditions( PCB_ACTIONS::zoneDisplayTriangulated,
+                        ENABLE( enableZoneControlConition ).Check( cond.ZoneDisplayMode( ZONE_DISPLAY_MODE::SHOW_TRIANGULATION ) ) );
 
     auto enableBoardSetupCondition =
         [this] ( const SELECTION& )
@@ -817,7 +812,7 @@ bool PCB_EDIT_FRAME::canCloseWindow( wxCloseEvent& aEvent )
     if( IsContentModified() )
     {
         wxFileName fileName = GetBoard()->GetFileName();
-        wxString msg = _( "Save changes to \"%s\" before closing?" );
+        wxString msg = _( "Save changes to '%s' before closing?" );
 
         if( !HandleUnsavedChanges( this, wxString::Format( msg, fileName.GetFullName() ),
                                    [&]() -> bool
@@ -836,7 +831,7 @@ bool PCB_EDIT_FRAME::canCloseWindow( wxCloseEvent& aEvent )
     if( open_dlg )
         open_dlg->Close( true );
 
-    return true;
+    return PCB_BASE_EDIT_FRAME::canCloseWindow( aEvent );
 }
 
 
@@ -868,7 +863,7 @@ void PCB_EDIT_FRAME::doCloseWindow()
     // Remove the auto save file on a normal close of Pcbnew.
     if( fn.FileExists() && !wxRemoveFile( fn.GetFullPath() ) )
     {
-        wxString msg = wxString::Format( _( "The auto save file \"%s\" could not be removed!" ),
+        wxString msg = wxString::Format( _( "The auto save file '%s' could not be removed!" ),
                                          fn.GetFullPath() );
         wxMessageBox( msg, Pgm().App().GetAppName(), wxOK | wxICON_ERROR, this );
     }
@@ -878,7 +873,7 @@ void PCB_EDIT_FRAME::doCloseWindow()
 
     // Do not show the layer manager during closing to avoid flicker
     // on some platforms (Windows) that generate useless redraw of items in
-    // the Layer Manger
+    // the Layer Manager
     if( m_show_layer_manager_tools )
         m_auimgr.GetPane( "LayersManager" ).Show( false );
 
@@ -932,11 +927,11 @@ void PCB_EDIT_FRAME::ShowBoardSetupDialog( const wxString& aInitialPage )
             GetCanvas()->GetView()->UpdateAllItemsConditionally( KIGFX::REPAINT,
                     [&]( KIGFX::VIEW_ITEM* aItem ) -> bool
                     {
-                        TRACK* track = dynamic_cast<TRACK*>( aItem );
-                        PAD*   pad = dynamic_cast<PAD*>( aItem );
+                        PCB_TRACK* track = dynamic_cast<PCB_TRACK*>( aItem );
+                        PAD*       pad = dynamic_cast<PAD*>( aItem );
 
-                        // TRACK is the base class of VIA and ARC so we don't need to
-                        // check them independently
+                        // PCB_TRACK is the base class of PCB_VIA and PCB_ARC so we don't need
+                        // to check them independently
 
                         return ( track && opts.m_ShowTrackClearanceMode )
                                 || ( pad && opts.m_DisplayPadClearance );
@@ -1001,7 +996,7 @@ COLOR4D PCB_EDIT_FRAME::GetGridColor()
 }
 
 
-void PCB_EDIT_FRAME::SetGridColor( COLOR4D aColor )
+void PCB_EDIT_FRAME::SetGridColor( const COLOR4D& aColor )
 {
 
     GetColorSettings()->SetColor( LAYER_GRID, aColor );
@@ -1027,7 +1022,7 @@ void PCB_EDIT_FRAME::SetActiveLayer( PCB_LAYER_ID aLayer )
     GetCanvas()->GetView()->UpdateAllItemsConditionally( KIGFX::REPAINT,
             [&]( KIGFX::VIEW_ITEM* aItem ) -> bool
             {
-                if( VIA* via = dynamic_cast<VIA*>( aItem ) )
+                if( PCB_VIA* via = dynamic_cast<PCB_VIA*>( aItem ) )
                 {
                     // Vias on a restricted layer set must be redrawn when the active layer
                     // is changed
@@ -1055,7 +1050,7 @@ void PCB_EDIT_FRAME::SetActiveLayer( PCB_LAYER_ID aLayer )
                         return true;
                     }
                 }
-                else if( TRACK* track = dynamic_cast<TRACK*>( aItem ) )
+                else if( PCB_TRACK* track = dynamic_cast<PCB_TRACK*>( aItem ) )
                 {
                     // Clearances could be layer-dependent so redraw them when the active layer
                     // is changed
@@ -1239,11 +1234,22 @@ void PCB_EDIT_FRAME::UpdateTitle()
     else
         unsaved = true;
 
-    SetTitle( wxString::Format( wxT( "%s%s %s%s\u2014 " ) + _( "PCB Editor" ),
-                                IsContentModified() ? "*" : "",
-                                fn.GetName(),
-                                readOnly ? _( "[Read Only]" ) + wxS( " " ) : "",
-                                unsaved ? _( "[Unsaved]" ) + wxS( " " ) : "" ) );
+    wxString title;
+
+    if( IsContentModified() )
+        title = wxT( "*" );
+
+    title += fn.GetName();
+
+    if( readOnly )
+        title += wxS( " " ) + _( "[Read Only]" );
+
+    if( unsaved )
+        title += wxS( " " ) + _( "[Unsaved]" );
+
+    title += wxT( " \u2014 " ) + _( "PCB Editor" );
+
+    SetTitle( title );
 }
 
 
@@ -1275,6 +1281,7 @@ void PCB_EDIT_FRAME::UpdateUserInterface()
     {
         // Canonical name
         layerEnum.Map( *seq, LSET::Name( *seq ) );
+
         // User name
         layerEnum.Map( *seq, GetBoard()->GetLayerName( *seq ) );
     }
@@ -1439,7 +1446,7 @@ void PCB_EDIT_FRAME::RunEeschema()
         }
         else
         {
-            msg.Printf( _( "Schematic file \"%s\" not found." ), schematic.GetFullPath() );
+            msg.Printf( _( "Schematic file '%s' not found." ), schematic.GetFullPath() );
             wxMessageBox( msg, _( "KiCad Error" ), wxOK | wxICON_ERROR, this );
             return;
         }
@@ -1470,7 +1477,7 @@ void PCB_EDIT_FRAME::RunEeschema()
             }
             catch( const IO_ERROR& err )
             {
-                wxMessageBox( _( "Eeschema failed to load:\n" ) + err.What(),
+                wxMessageBox( _( "Eeschema failed to load." ) + wxS( "\n" ) + err.What(),
                               _( "KiCad Error" ), wxOK | wxICON_ERROR, this );
                 return;
             }
@@ -1507,7 +1514,7 @@ void PCB_EDIT_FRAME::PythonSyncEnvironmentVariables()
     for( auto& var : vars )
         UpdatePythonEnvVar( var.first, var.second.GetValue() );
 
-    // Because the env vars can de modified by the python scripts (rewritten in UTF8),
+    // Because the env vars can be modified by the python scripts (rewritten in UTF8),
     // regenerate them (in Unicode) for our normal environment
     for( auto& var : vars )
         wxSetEnv( var.first, var.second.GetValue() );
@@ -1528,7 +1535,7 @@ void PCB_EDIT_FRAME::PythonSyncProjectName()
 
 void PCB_EDIT_FRAME::ShowFootprintPropertiesDialog( FOOTPRINT* aFootprint )
 {
-    if( aFootprint == NULL )
+    if( aFootprint == nullptr )
         return;
 
     DIALOG_FOOTPRINT_PROPERTIES dlg( this, aFootprint );
@@ -1605,7 +1612,9 @@ void PCB_EDIT_FRAME::CommonSettingsChanged( bool aEnvVarsChanged, bool aTextVars
     try
     {
         drcTool->GetDRCEngine()->InitEngine( GetDesignRulesPath() );
-        infobar->Hide();
+
+        if( infobar->GetMessageType() == WX_INFOBAR::MESSAGE_TYPE::DRC_RULES_ERROR )
+            infobar->Dismiss();
     }
     catch( PARSE_ERROR& )
     {
@@ -1621,7 +1630,8 @@ void PCB_EDIT_FRAME::CommonSettingsChanged( bool aEnvVarsChanged, bool aTextVars
         infobar->RemoveAllButtons();
         infobar->AddButton( button );
         infobar->AddCloseButton();
-        infobar->ShowMessage( _( "Could not compile custom design rules." ), wxICON_ERROR );
+        infobar->ShowMessage( _( "Could not compile custom design rules." ), wxICON_ERROR,
+                              WX_INFOBAR::MESSAGE_TYPE::DRC_RULES_ERROR );
     }
 
     // Update the environment variables in the Python interpreter

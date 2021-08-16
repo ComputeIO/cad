@@ -49,7 +49,7 @@
 #include <fp_shape.h>
 #include <pcb_group.h>
 #include <pcb_text.h>
-#include <dimension.h>
+#include <pcb_dimension.h>
 #include <zone.h>
 #include <footprint.h>
 #include <preview_items/two_point_assistant.h>
@@ -57,9 +57,10 @@
 #include <ratsnest/ratsnest_data.h>
 #include <pcbnew_id.h>
 #include <dialogs/dialog_track_via_size.h>
-#include <kicad_string.h>
+#include <string_utils.h>
 #include <macros.h>
 #include <widgets/infobar.h>
+#include <board_design_settings.h>
 
 using SCOPED_DRAW_MODE = SCOPED_SET_RESET<DRAWING_TOOL::MODE>;
 
@@ -156,6 +157,7 @@ DRAWING_TOOL::DRAWING_TOOL() :
     m_board( nullptr ),
     m_frame( nullptr ),
     m_mode( MODE::NONE ),
+    m_inDrawingTool( false ),
     m_lineWidth( 1 )
 {
 }
@@ -245,13 +247,18 @@ int DRAWING_TOOL::DrawLine( const TOOL_EVENT& aEvent )
     if( m_isFootprintEditor && !m_frame->GetModel() )
         return 0;
 
+    if( m_inDrawingTool )
+        return 0;
+
+    REENTRANCY_GUARD guard( &m_inDrawingTool );
+
     FOOTPRINT*       parentFootprint = dynamic_cast<FOOTPRINT*>( m_frame->GetModel() );
     PCB_SHAPE*       line = m_isFootprintEditor ? new FP_SHAPE( parentFootprint ) : new PCB_SHAPE;
     BOARD_COMMIT     commit( m_frame );
     SCOPED_DRAW_MODE scopedDrawMode( m_mode, MODE::LINE );
     OPT<VECTOR2D>    startingPoint = boost::make_optional<VECTOR2D>( false, VECTOR2D( 0, 0 ) );
 
-    line->SetShape( PCB_SHAPE_TYPE::SEGMENT );
+    line->SetShape( SHAPE_T::SEGMENT );
     line->SetFlags( IS_NEW );
 
     if( aEvent.HasPosition() )
@@ -278,7 +285,7 @@ int DRAWING_TOOL::DrawLine( const TOOL_EVENT& aEvent )
         }
 
         line = m_isFootprintEditor ? new FP_SHAPE( parentFootprint ) : new PCB_SHAPE;
-        line->SetShape( PCB_SHAPE_TYPE::SEGMENT );
+        line->SetShape( SHAPE_T::SEGMENT );
         line->SetFlags( IS_NEW );
     }
 
@@ -291,13 +298,18 @@ int DRAWING_TOOL::DrawRectangle( const TOOL_EVENT& aEvent )
     if( m_isFootprintEditor && !m_frame->GetModel() )
         return 0;
 
+    if( m_inDrawingTool )
+        return 0;
+
+    REENTRANCY_GUARD guard( &m_inDrawingTool );
+
     FOOTPRINT*       parentFootprint = dynamic_cast<FOOTPRINT*>( m_frame->GetModel() );
     PCB_SHAPE*       rect = m_isFootprintEditor ? new FP_SHAPE( parentFootprint ) : new PCB_SHAPE;
     BOARD_COMMIT     commit( m_frame );
     SCOPED_DRAW_MODE scopedDrawMode( m_mode, MODE::RECTANGLE );
     OPT<VECTOR2D>    startingPoint = boost::make_optional<VECTOR2D>( false, VECTOR2D( 0, 0 ) );
 
-    rect->SetShape( PCB_SHAPE_TYPE::RECT );
+    rect->SetShape( SHAPE_T::RECT );
     rect->SetFilled( false );
     rect->SetFlags(IS_NEW );
 
@@ -322,7 +334,7 @@ int DRAWING_TOOL::DrawRectangle( const TOOL_EVENT& aEvent )
         }
 
         rect = m_isFootprintEditor ? new FP_SHAPE( parentFootprint ) : new PCB_SHAPE;
-        rect->SetShape( PCB_SHAPE_TYPE::RECT );
+        rect->SetShape( SHAPE_T::RECT );
         rect->SetFilled( false );
         rect->SetFlags(IS_NEW );
         startingPoint = NULLOPT;
@@ -337,13 +349,18 @@ int DRAWING_TOOL::DrawCircle( const TOOL_EVENT& aEvent )
     if( m_isFootprintEditor && !m_frame->GetModel() )
         return 0;
 
+    if( m_inDrawingTool )
+        return 0;
+
+    REENTRANCY_GUARD guard( &m_inDrawingTool );
+
     FOOTPRINT*       parentFootprint = dynamic_cast<FOOTPRINT*>( m_frame->GetModel() );
     PCB_SHAPE*       circle = m_isFootprintEditor ? new FP_SHAPE( parentFootprint ) : new PCB_SHAPE;
     BOARD_COMMIT     commit( m_frame );
     SCOPED_DRAW_MODE scopedDrawMode( m_mode, MODE::CIRCLE );
     OPT<VECTOR2D>    startingPoint = boost::make_optional<VECTOR2D>( false, VECTOR2D( 0, 0 ) );
 
-    circle->SetShape( PCB_SHAPE_TYPE::CIRCLE );
+    circle->SetShape( SHAPE_T::CIRCLE );
     circle->SetFilled( false );
     circle->SetFlags( IS_NEW );
 
@@ -368,7 +385,7 @@ int DRAWING_TOOL::DrawCircle( const TOOL_EVENT& aEvent )
         }
 
         circle = m_isFootprintEditor ? new FP_SHAPE( parentFootprint ) : new PCB_SHAPE;
-        circle->SetShape( PCB_SHAPE_TYPE::CIRCLE );
+        circle->SetShape( SHAPE_T::CIRCLE );
         circle->SetFilled( false );
         circle->SetFlags( IS_NEW );
         startingPoint = NULLOPT;
@@ -383,13 +400,18 @@ int DRAWING_TOOL::DrawArc( const TOOL_EVENT& aEvent )
     if( m_isFootprintEditor && !m_frame->GetModel() )
         return 0;
 
+    if( m_inDrawingTool )
+        return 0;
+
+    REENTRANCY_GUARD guard( &m_inDrawingTool );
+
     FOOTPRINT*       parentFootprint = dynamic_cast<FOOTPRINT*>( m_frame->GetModel() );
     PCB_SHAPE*       arc = m_isFootprintEditor ? new FP_SHAPE( parentFootprint ) : new PCB_SHAPE;
     BOARD_COMMIT     commit( m_frame );
     SCOPED_DRAW_MODE scopedDrawMode( m_mode, MODE::ARC );
     bool             immediateMode = aEvent.HasPosition();
 
-    arc->SetShape( PCB_SHAPE_TYPE::ARC );
+    arc->SetShape( SHAPE_T::ARC );
     arc->SetFlags( IS_NEW );
 
     std::string tool = aEvent.GetCommandStr().get();
@@ -410,7 +432,7 @@ int DRAWING_TOOL::DrawArc( const TOOL_EVENT& aEvent )
         }
 
         arc = m_isFootprintEditor ? new FP_SHAPE( parentFootprint ) : new PCB_SHAPE;
-        arc->SetShape( PCB_SHAPE_TYPE::ARC );
+        arc->SetShape( SHAPE_T::ARC );
         arc->SetFlags( IS_NEW );
         immediateMode = false;
     }
@@ -424,7 +446,12 @@ int DRAWING_TOOL::PlaceText( const TOOL_EVENT& aEvent )
     if( m_isFootprintEditor && !m_frame->GetModel() )
         return 0;
 
-    BOARD_ITEM*                  text = NULL;
+    if( m_inDrawingTool )
+        return 0;
+
+    REENTRANCY_GUARD guard( &m_inDrawingTool );
+
+    BOARD_ITEM*                  text = nullptr;
     const BOARD_DESIGN_SETTINGS& dsnSettings = m_frame->GetDesignSettings();
     BOARD_COMMIT                 commit( m_frame );
     SCOPED_DRAW_MODE             scopedDrawMode( m_mode, MODE::TEXT );
@@ -438,7 +465,7 @@ int DRAWING_TOOL::PlaceText( const TOOL_EVENT& aEvent )
                 m_controls->SetAutoPan( false );
                 m_controls->CaptureCursor( false );
                 delete text;
-                text = NULL;
+                text = nullptr;
             };
 
     auto setCursor =
@@ -551,7 +578,8 @@ int DRAWING_TOOL::PlaceText( const TOOL_EVENT& aEvent )
                 else
                 {
                     PCB_TEXT* pcbText = new PCB_TEXT( m_frame->GetModel() );
-                    // TODO we have to set IS_NEW, otherwise InstallTextPCB.. creates an undo entry :| LEGACY_CLEANUP
+                    // TODO we have to set IS_NEW, otherwise InstallTextPCB.. creates an
+                    // undo entry :| LEGACY_CLEANUP
                     pcbText->SetFlags( IS_NEW );
 
                     pcbText->SetLayer( layer );
@@ -636,13 +664,16 @@ int DRAWING_TOOL::PlaceText( const TOOL_EVENT& aEvent )
         }
     }
 
+    m_controls->SetAutoPan( false );
+    m_controls->CaptureCursor( false );
     m_frame->GetCanvas()->SetCurrentCursor( KICURSOR::ARROW );
     m_frame->SetMsgPanel( board() );
+
     return 0;
 }
 
 
-void DRAWING_TOOL::constrainDimension( DIMENSION_BASE* aDim )
+void DRAWING_TOOL::constrainDimension( PCB_DIMENSION_BASE* aDim )
 {
     const VECTOR2I lineVector{ aDim->GetEnd() - aDim->GetStart() };
 
@@ -656,6 +687,11 @@ int DRAWING_TOOL::DrawDimension( const TOOL_EVENT& aEvent )
     if( m_isFootprintEditor && !m_frame->GetModel() )
         return 0;
 
+    if( m_inDrawingTool )
+        return 0;
+
+    REENTRANCY_GUARD guard( &m_inDrawingTool );
+
     enum DIMENSION_STEPS
     {
         SET_ORIGIN = 0,
@@ -665,7 +701,7 @@ int DRAWING_TOOL::DrawDimension( const TOOL_EVENT& aEvent )
     };
 
     TOOL_EVENT             originalEvent = aEvent;
-    DIMENSION_BASE*        dimension     = nullptr;
+    PCB_DIMENSION_BASE*    dimension     = nullptr;
     BOARD_COMMIT           commit( m_frame );
     PCB_GRID_HELPER        grid( m_toolMgr, m_frame->GetMagneticItemsSettings() );
     BOARD_DESIGN_SETTINGS& boardSettings = m_board->GetDesignSettings();
@@ -794,7 +830,7 @@ int DRAWING_TOOL::DrawDimension( const TOOL_EVENT& aEvent )
 
                 // Init the new item attributes
                 auto setMeasurementAttributes =
-                        [&]( DIMENSION_BASE* aDim )
+                        [&]( PCB_DIMENSION_BASE* aDim )
                         {
                             aDim->SetUnitsMode( boardSettings.m_DimensionUnitsMode );
                             aDim->SetUnitsFormat( boardSettings.m_DimensionUnitsFormat );
@@ -809,21 +845,21 @@ int DRAWING_TOOL::DrawDimension( const TOOL_EVENT& aEvent )
 
                 if( originalEvent.IsAction( &PCB_ACTIONS::drawAlignedDimension ) )
                 {
-                    dimension = new ALIGNED_DIMENSION( m_board );
+                    dimension = new PCB_DIM_ALIGNED( m_board );
                     setMeasurementAttributes( dimension );
                 }
                 else if( originalEvent.IsAction( &PCB_ACTIONS::drawOrthogonalDimension ) )
                 {
-                    dimension = new ORTHOGONAL_DIMENSION( m_board );
+                    dimension = new PCB_DIM_ORTHOGONAL( m_board );
                     setMeasurementAttributes( dimension );
                 }
                 else if( originalEvent.IsAction( &PCB_ACTIONS::drawCenterDimension ) )
                 {
-                    dimension = new CENTER_DIMENSION( m_board );
+                    dimension = new PCB_DIM_CENTER( m_board );
                 }
                 else if( originalEvent.IsAction( &PCB_ACTIONS::drawLeader ) )
                 {
-                    dimension = new LEADER( m_board );
+                    dimension = new PCB_DIM_LEADER( m_board );
                     dimension->Text().SetPosition( wxPoint( cursorPos ) );
                 }
                 else
@@ -853,8 +889,8 @@ int DRAWING_TOOL::DrawDimension( const TOOL_EVENT& aEvent )
 
                 m_controls->SetAutoPan( true );
                 m_controls->CaptureCursor( true );
-            }
                 break;
+            }
 
             case SET_END:
             {
@@ -928,7 +964,7 @@ int DRAWING_TOOL::DrawDimension( const TOOL_EVENT& aEvent )
 
                 if( dimension->Type() == PCB_DIM_ORTHOGONAL_T )
                 {
-                    ORTHOGONAL_DIMENSION* ortho = static_cast<ORTHOGONAL_DIMENSION*>( dimension );
+                    PCB_DIM_ORTHOGONAL* ortho = static_cast<PCB_DIM_ORTHOGONAL*>( dimension );
 
                     BOX2I bounds( dimension->GetStart(),
                                   dimension->GetEnd() - dimension->GetStart() );
@@ -936,8 +972,8 @@ int DRAWING_TOOL::DrawDimension( const TOOL_EVENT& aEvent )
                     // Create a nice preview by measuring the longer dimension
                     bool vert = bounds.GetWidth() < bounds.GetHeight();
 
-                    ortho->SetOrientation( vert ? ORTHOGONAL_DIMENSION::DIR::VERTICAL
-                                                : ORTHOGONAL_DIMENSION::DIR::HORIZONTAL );
+                    ortho->SetOrientation( vert ? PCB_DIM_ORTHOGONAL::DIR::VERTICAL
+                                                : PCB_DIM_ORTHOGONAL::DIR::HORIZONTAL );
                 }
 
                 dimension->Update();
@@ -951,7 +987,7 @@ int DRAWING_TOOL::DrawDimension( const TOOL_EVENT& aEvent )
             {
                 if( dimension->Type() == PCB_DIM_ALIGNED_T )
                 {
-                    ALIGNED_DIMENSION* aligned = static_cast<ALIGNED_DIMENSION*>( dimension );
+                    PCB_DIM_ALIGNED* aligned = static_cast<PCB_DIM_ALIGNED*>( dimension );
 
                     // Calculating the direction of travel perpendicular to the selected axis
                     double angle = aligned->GetAngle() + ( M_PI / 2 );
@@ -963,7 +999,7 @@ int DRAWING_TOOL::DrawDimension( const TOOL_EVENT& aEvent )
                 }
                 else if( dimension->Type() == PCB_DIM_ORTHOGONAL_T )
                 {
-                    ORTHOGONAL_DIMENSION* ortho = static_cast<ORTHOGONAL_DIMENSION*>( dimension );
+                    PCB_DIM_ORTHOGONAL* ortho = static_cast<PCB_DIM_ORTHOGONAL*>( dimension );
 
                     BOX2I    bounds( dimension->GetStart(),
                                   dimension->GetEnd() - dimension->GetStart() );
@@ -995,12 +1031,12 @@ int DRAWING_TOOL::DrawDimension( const TOOL_EVENT& aEvent )
                         {
                             vert = std::abs( direction.y ) < std::abs( direction.x );
                         }
-                        ortho->SetOrientation( vert ? ORTHOGONAL_DIMENSION::DIR::VERTICAL
-                                                    : ORTHOGONAL_DIMENSION::DIR::HORIZONTAL );
+                        ortho->SetOrientation( vert ? PCB_DIM_ORTHOGONAL::DIR::VERTICAL
+                                                    : PCB_DIM_ORTHOGONAL::DIR::HORIZONTAL );
                     }
                     else
                     {
-                        vert = ortho->GetOrientation() == ORTHOGONAL_DIMENSION::DIR::VERTICAL;
+                        vert = ortho->GetOrientation() == PCB_DIM_ORTHOGONAL::DIR::VERTICAL;
                     }
 
                     VECTOR2I heightVector( cursorPos - dimension->GetStart() );
@@ -1079,6 +1115,7 @@ int DRAWING_TOOL::DrawDimension( const TOOL_EVENT& aEvent )
 
     m_view->Remove( &preview );
     m_frame->SetMsgPanel( board() );
+
     return 0;
 }
 
@@ -1087,6 +1124,11 @@ int DRAWING_TOOL::PlaceImportedGraphics( const TOOL_EVENT& aEvent )
 {
     if( !m_frame->GetModel() )
         return 0;
+
+    if( m_inDrawingTool )
+        return 0;
+
+    REENTRANCY_GUARD guard( &m_inDrawingTool );
 
     // Note: PlaceImportedGraphics() will convert PCB_SHAPE_T and PCB_TEXT_T to footprint
     // items if needed
@@ -1101,7 +1143,7 @@ int DRAWING_TOOL::PlaceImportedGraphics( const TOOL_EVENT& aEvent )
     // Ensure the list is not empty:
     if( list.empty() )
     {
-        wxMessageBox( _( "No graphic items found in file to import") );
+        wxMessageBox( _( "No graphic items found in file.") );
         return 0;
     }
 
@@ -1235,7 +1277,9 @@ int DRAWING_TOOL::PlaceImportedGraphics( const TOOL_EVENT& aEvent )
     m_view->Remove( &preview );
 
     m_frame->GetCanvas()->SetCurrentCursor( KICURSOR::ARROW );
+
     m_frame->PopTool( tool );
+
     return 0;
 }
 
@@ -1246,6 +1290,11 @@ int DRAWING_TOOL::SetAnchor( const TOOL_EVENT& aEvent )
 
     if( !m_frame->GetModel() )
         return 0;
+
+    if( m_inDrawingTool )
+        return 0;
+
+    REENTRANCY_GUARD guard( &m_inDrawingTool );
 
     SCOPED_DRAW_MODE scopedDrawMode( m_mode, MODE::ANCHOR );
     PCB_GRID_HELPER  grid( m_toolMgr, m_frame->GetMagneticItemsSettings() );
@@ -1311,20 +1360,22 @@ int DRAWING_TOOL::SetAnchor( const TOOL_EVENT& aEvent )
     }
 
     m_frame->GetCanvas()->SetCurrentCursor( KICURSOR::ARROW );
+
     return 0;
 }
 
 
 int DRAWING_TOOL::ToggleLine45degMode( const TOOL_EVENT& toolEvent )
 {
-    m_frame->Settings().m_Use45DegreeGraphicSegments = !m_frame->Settings().m_Use45DegreeGraphicSegments;
+    m_frame->Settings().m_Use45DegreeGraphicSegments =
+            !m_frame->Settings().m_Use45DegreeGraphicSegments;
 
     return 0;
 }
 
 
 /**
- * Update an PCB_SHAPE from the current state of a TWO_POINT_GEOMETRY_MANAGER
+ * Update a #PCB_SHAPE from the current state of a #TWO_POINT_GEOMETRY_MANAGER.
  */
 static void updateSegmentFromGeometryMgr( const KIGFX::PREVIEW::TWO_POINT_GEOMETRY_MANAGER& aMgr,
                                           PCB_SHAPE* aGraphic )
@@ -1340,10 +1391,10 @@ static void updateSegmentFromGeometryMgr( const KIGFX::PREVIEW::TWO_POINT_GEOMET
 bool DRAWING_TOOL::drawSegment( const std::string& aTool, PCB_SHAPE** aGraphic,
                                 OPT<VECTOR2D> aStartingPoint )
 {
-    PCB_SHAPE_TYPE shape = ( *aGraphic )->GetShape();
+    SHAPE_T shape = ( *aGraphic )->GetShape();
+
     // Only three shapes are currently supported
-    wxASSERT( shape == PCB_SHAPE_TYPE::SEGMENT || shape == PCB_SHAPE_TYPE::CIRCLE
-              || shape == PCB_SHAPE_TYPE::RECT );
+    wxASSERT( shape == SHAPE_T::SEGMENT || shape == SHAPE_T::CIRCLE || shape == SHAPE_T::RECT );
 
     EDA_UNITS        userUnits = m_frame->GetUserUnits();
     PCB_GRID_HELPER  grid( m_toolMgr, m_frame->GetMagneticItemsSettings() );
@@ -1509,7 +1560,7 @@ bool DRAWING_TOOL::drawSegment( const std::string& aTool, PCB_SHAPE** aGraphic,
                 m_lineWidth = getSegmentWidth( drawingLayer );
 
                 // Init the new item attributes
-                graphic->SetShape( static_cast<PCB_SHAPE_TYPE>( shape ) );
+                graphic->SetShape( static_cast<SHAPE_T>( shape ) );
                 graphic->SetFilled( false );
                 graphic->SetWidth( m_lineWidth );
                 graphic->SetLayer( drawingLayer );
@@ -1536,7 +1587,7 @@ bool DRAWING_TOOL::drawSegment( const std::string& aTool, PCB_SHAPE** aGraphic,
 
                 started = true;
             }
-            else if( shape == PCB_SHAPE_TYPE::CIRCLE )
+            else if( shape == SHAPE_T::CIRCLE )
             {
                 // No clever logic if drawing a circle
                 preview.Clear();
@@ -1548,7 +1599,7 @@ bool DRAWING_TOOL::drawSegment( const std::string& aTool, PCB_SHAPE** aGraphic,
                 PCB_SHAPE* snapItem = dyn_cast<PCB_SHAPE*>( grid.GetSnapped() );
 
                 if( twoPointManager.GetOrigin() == twoPointManager.GetEnd()
-                    || ( evt->IsDblClick( BUT_LEFT ) && shape == PCB_SHAPE_TYPE::SEGMENT )
+                    || ( evt->IsDblClick( BUT_LEFT ) && shape == SHAPE_T::SEGMENT )
                     || snapItem )
                 // User has clicked twice in the same spot
                 //  or clicked on the end of an existing segment (closing a path)
@@ -1558,7 +1609,7 @@ bool DRAWING_TOOL::drawSegment( const std::string& aTool, PCB_SHAPE** aGraphic,
                     // If the user clicks on an existing snap point from a drawsegment
                     //  we finish the segment as they are likely closing a path
                     if( snapItem
-                        && ( shape == PCB_SHAPE_TYPE::RECT || graphic->GetLength() > 0.0 ) )
+                        && ( shape == SHAPE_T::RECT || graphic->GetLength() > 0.0 ) )
                     {
                         commit.Add( graphic );
                         commit.Push( _( "Draw a line segment" ) );
@@ -1583,13 +1634,13 @@ bool DRAWING_TOOL::drawSegment( const std::string& aTool, PCB_SHAPE** aGraphic,
         {
             // 45 degree lines
             if( started
-                && ( ( limit45 && shape == PCB_SHAPE_TYPE::SEGMENT )
-                     || ( evt->Modifier( MD_SHIFT ) && shape == PCB_SHAPE_TYPE::RECT ) ) )
+                && ( ( limit45 && shape == SHAPE_T::SEGMENT )
+                     || ( evt->Modifier( MD_SHIFT ) && shape == SHAPE_T::RECT ) ) )
             {
                 const VECTOR2I lineVector( cursorPos - VECTOR2I( twoPointManager.GetOrigin() ) );
 
                 // get a restricted 45/H/V line from the last fixed point to the cursor
-                auto newEnd = GetVectorSnapped45( lineVector, ( shape == PCB_SHAPE_TYPE::RECT ) );
+                auto newEnd = GetVectorSnapped45( lineVector, ( shape == SHAPE_T::RECT ) );
                 m_controls->ForceCursorPosition( true, VECTOR2I( twoPointManager.GetEnd() ) );
                 twoPointManager.SetEnd( twoPointManager.GetOrigin() + (wxPoint) newEnd );
                 twoPointManager.SetAngleSnap( true );
@@ -1639,7 +1690,7 @@ bool DRAWING_TOOL::drawSegment( const std::string& aTool, PCB_SHAPE** aGraphic,
         }
     }
 
-    if( !isLocalOriginSet ) // reset the relative coordinte if it was not set before
+    if( !isLocalOriginSet ) // reset the relative coordinate if it was not set before
         m_frame->GetScreen()->m_LocalOrigin = VECTOR2D( 0, 0 );
 
     m_view->Remove( &twoPointAsst );
@@ -1656,8 +1707,7 @@ bool DRAWING_TOOL::drawSegment( const std::string& aTool, PCB_SHAPE** aGraphic,
 
 
 /**
- * Update an arc PCB_SHAPE from the current state
- * of an Arc Geometry Manager
+ * Update an arc PCB_SHAPE from the current state of an Arc Geometry Manager.
  */
 static void updateArcFromConstructionMgr( const KIGFX::PREVIEW::ARC_GEOM_MANAGER& aMgr,
                                           PCB_SHAPE& aArc )
@@ -1787,7 +1837,7 @@ bool DRAWING_TOOL::drawArc( const std::string& aTool, PCB_SHAPE** aGraphic, bool
 
                 // Init the new item attributes
                 // (non-geometric, those are handled by the manager)
-                graphic->SetShape( PCB_SHAPE_TYPE::ARC );
+                graphic->SetShape( SHAPE_T::ARC );
                 graphic->SetWidth( m_lineWidth );
 
                 if( !m_view->IsLayerVisible( drawingLayer ) )
@@ -2223,15 +2273,13 @@ int DRAWING_TOOL::DrawVia( const TOOL_EVENT& aEvent )
         int                         m_drcEpsilon;
         int                         m_worstClearance;
         bool                        m_allowDRCViolations;
-        bool                        m_flaggedDRC;
 
         VIA_PLACER( PCB_BASE_EDIT_FRAME* aFrame ) :
             m_frame( aFrame ),
             m_gridHelper( aFrame->GetToolManager(), aFrame->GetMagneticItemsSettings() ),
             m_drcEngine( aFrame->GetBoard()->GetDesignSettings().m_DRCEngine ),
             m_drcEpsilon( aFrame->GetBoard()->GetDesignSettings().GetDRCEpsilon() ),
-            m_worstClearance( 0 ),
-            m_flaggedDRC( false )
+            m_worstClearance( 0 )
         {
             ROUTER_TOOL* router = m_frame->GetToolManager()->GetTool<ROUTER_TOOL>();
 
@@ -2264,7 +2312,7 @@ int DRAWING_TOOL::DrawVia( const TOOL_EVENT& aEvent )
         {
         }
 
-        TRACK* findTrack( VIA* aVia )
+        PCB_TRACK* findTrack( PCB_VIA* aVia )
         {
             const LSET lset = aVia->GetLayerSet();
             wxPoint position = aVia->GetPosition();
@@ -2272,7 +2320,7 @@ int DRAWING_TOOL::DrawVia( const TOOL_EVENT& aEvent )
 
             std::vector<KIGFX::VIEW::LAYER_ITEM_PAIR> items;
             auto view = m_frame->GetCanvas()->GetView();
-            std::vector<TRACK*> possible_tracks;
+            std::vector<PCB_TRACK*> possible_tracks;
 
             view->Query( bbox, items );
 
@@ -2283,7 +2331,7 @@ int DRAWING_TOOL::DrawVia( const TOOL_EVENT& aEvent )
                 if( !(item->GetLayerSet() & lset ).any() )
                     continue;
 
-                if( TRACK* track = dyn_cast<TRACK*>( item ) )
+                if( PCB_TRACK* track = dyn_cast<PCB_TRACK*>( item ) )
                 {
                     if( TestSegmentHit( position, track->GetStart(), track->GetEnd(),
                                         ( track->GetWidth() + aVia->GetWidth() ) / 2 ) )
@@ -2291,10 +2339,10 @@ int DRAWING_TOOL::DrawVia( const TOOL_EVENT& aEvent )
                 }
             }
 
-            TRACK* return_track = nullptr;
+            PCB_TRACK* return_track = nullptr;
             int min_d = std::numeric_limits<int>::max();
 
-            for( TRACK* track : possible_tracks )
+            for( PCB_TRACK* track : possible_tracks )
             {
                 SEG test( track->GetStart(), track->GetEnd() );
                 int dist = ( test.NearestPoint( position ) - position ).EuclideanNorm();
@@ -2309,7 +2357,7 @@ int DRAWING_TOOL::DrawVia( const TOOL_EVENT& aEvent )
             return return_track;
         }
 
-        bool hasDRCViolation( VIA* aVia, BOARD_ITEM* aOther )
+        bool hasDRCViolation( PCB_VIA* aVia, BOARD_ITEM* aOther )
         {
             // It would really be better to know what particular nets a nettie should allow,
             // but for now it is what it is.
@@ -2346,8 +2394,8 @@ int DRAWING_TOOL::DrawVia( const TOOL_EVENT& aEvent )
 
             if( aOther->Type() == PCB_VIA_T )
             {
-                VIA* via = static_cast<VIA*>( aOther );
-                wxPoint pos = via->GetPosition();
+                PCB_VIA* via = static_cast<PCB_VIA*>( aOther );
+                wxPoint  pos = via->GetPosition();
 
                 holeShape.reset( new SHAPE_SEGMENT( pos, pos, via->GetDrill() ) );
             }
@@ -2377,7 +2425,7 @@ int DRAWING_TOOL::DrawVia( const TOOL_EVENT& aEvent )
             return false;
         }
 
-        bool checkDRCViolation( VIA* aVia )
+        bool checkDRCViolation( PCB_VIA* aVia )
         {
             std::vector<KIGFX::VIEW::LAYER_ITEM_PAIR> items;
             std::set<BOARD_ITEM*> checkedItems;
@@ -2414,7 +2462,7 @@ int DRAWING_TOOL::DrawVia( const TOOL_EVENT& aEvent )
             return false;
         }
 
-        PAD* findPad( VIA* aVia )
+        PAD* findPad( PCB_VIA* aVia )
         {
             const wxPoint position = aVia->GetPosition();
             const LSET    lset = aVia->GetLayerSet();
@@ -2432,7 +2480,7 @@ int DRAWING_TOOL::DrawVia( const TOOL_EVENT& aEvent )
             return nullptr;
         }
 
-        int findStitchedZoneNet( VIA* aVia )
+        int findStitchedZoneNet( PCB_VIA* aVia )
         {
             const wxPoint position = aVia->GetPosition();
             const LSET    lset = aVia->GetLayerSet();
@@ -2480,9 +2528,9 @@ int DRAWING_TOOL::DrawVia( const TOOL_EVENT& aEvent )
             // this situation.
 
             m_gridHelper.SetSnap( !( m_modifiers & MD_SHIFT ) );
-            auto    via = static_cast<VIA*>( aItem );
-            wxPoint position = via->GetPosition();
-            TRACK*  track = findTrack( via );
+            PCB_VIA*   via = static_cast<PCB_VIA*>( aItem );
+            wxPoint    position = via->GetPosition();
+            PCB_TRACK* track = findTrack( via );
 
             if( track )
             {
@@ -2495,10 +2543,11 @@ int DRAWING_TOOL::DrawVia( const TOOL_EVENT& aEvent )
 
         bool PlaceItem( BOARD_ITEM* aItem, BOARD_COMMIT& aCommit ) override
         {
-            VIA*    via = static_cast<VIA*>( aItem );
-            wxPoint viaPos = via->GetPosition();
-            TRACK*  track = findTrack( via );
-            PAD *   pad = findPad( via );
+            WX_INFOBAR* infobar = m_frame->GetInfoBar();
+            PCB_VIA*    via = static_cast<PCB_VIA*>( aItem );
+            wxPoint     viaPos = via->GetPosition();
+            PCB_TRACK*  track = findTrack( via );
+            PAD*        pad = findPad( via );
 
             if( track )
                 via->SetNetCode( track->GetNetCode() );
@@ -2507,14 +2556,15 @@ int DRAWING_TOOL::DrawVia( const TOOL_EVENT& aEvent )
 
             if( !m_allowDRCViolations && checkDRCViolation( via ) )
             {
-                m_frame->ShowInfoBarError( _( "Via location violates DRC." ) );
+                m_frame->ShowInfoBarError( _( "Via location violates DRC." ), true,
+                                           WX_INFOBAR::MESSAGE_TYPE::DRC_VIOLATION );
                 via->SetNetCode( 0 );
-                m_flaggedDRC = true;
                 return false;
             }
-            else if( m_flaggedDRC )
+            else
             {
-                m_frame->GetInfoBar()->Dismiss();
+                if( infobar->GetMessageType() == WX_INFOBAR::MESSAGE_TYPE::DRC_VIOLATION )
+                    infobar->Dismiss();
             }
 
             if( track )
@@ -2523,7 +2573,7 @@ int DRAWING_TOOL::DrawVia( const TOOL_EVENT& aEvent )
                 {
                     aCommit.Modify( track );
 
-                    TRACK* newTrack = dynamic_cast<TRACK*>( track->Clone() );
+                    PCB_TRACK* newTrack = dynamic_cast<PCB_TRACK*>( track->Clone() );
                     const_cast<KIID&>( newTrack->m_Uuid ) = KIID();
 
                     track->SetEnd( viaPos );
@@ -2543,15 +2593,15 @@ int DRAWING_TOOL::DrawVia( const TOOL_EVENT& aEvent )
 
         std::unique_ptr<BOARD_ITEM> CreateItem() override
         {
-            auto&   ds = m_board->GetDesignSettings();
-            VIA*    via = new VIA( m_board );
+            BOARD_DESIGN_SETTINGS& bds = m_board->GetDesignSettings();
+            PCB_VIA*               via = new PCB_VIA( m_board );
 
             via->SetNetCode( 0 );
-            via->SetViaType( ds.m_CurrentViaType );
+            via->SetViaType( bds.m_CurrentViaType );
 
             // for microvias, the size and hole will be changed later.
-            via->SetWidth( ds.GetCurrentViaSize() );
-            via->SetDrill( ds.GetCurrentViaDrill() );
+            via->SetWidth( bds.GetCurrentViaSize() );
+            via->SetDrill( bds.GetCurrentViaDrill() );
 
             // Usual via is from copper to component.
             // layer pair is B_Cu and F_Cu.

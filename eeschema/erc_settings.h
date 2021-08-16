@@ -48,9 +48,9 @@ enum ERCE_T
     ERCE_NOCONNECT_NOT_CONNECTED, ///< A no connect symbol is not connected to anything.
     ERCE_LABEL_NOT_CONNECTED,     ///< Label not connected to anything.
     ERCE_SIMILAR_LABELS,          ///< 2 labels are equal for case insensitive comparisons.
-    ERCE_DIFFERENT_UNIT_FP,       ///< Different units of the same component have different
+    ERCE_DIFFERENT_UNIT_FP,       ///< Different units of the same symbol have different
                                   ///< footprints assigned.
-    ERCE_DIFFERENT_UNIT_NET,      ///< Shared pin in a multi-unit component is connected to
+    ERCE_DIFFERENT_UNIT_NET,      ///< Shared pin in a multi-unit symbol is connected to
                                   ///< more than one net.
     ERCE_BUS_ALIAS_CONFLICT,      ///< Conflicting bus alias definitions across sheets.
     ERCE_DRIVER_CONFLICT,         ///< Conflicting drivers (labels, etc) on a subgraph.
@@ -69,8 +69,9 @@ enum ERCE_T
     ERCE_EXTRA_UNITS,             ///< Symbol has more units than are defined.
     ERCE_DIFFERENT_UNIT_VALUE,    ///< Units of same symbol have different values.
     ERCE_DUPLICATE_REFERENCE,     ///< More than one symbol with the same reference.
+    ERCE_BUS_ENTRY_NEEDED,        ///< Importer failed to auto-place a bus entry.
 
-    ERCE_LAST = ERCE_DUPLICATE_REFERENCE,
+    ERCE_LAST = ERCE_BUS_ENTRY_NEEDED,
 
     // Errors after this point will not automatically appear in the Severities Panel
 

@@ -27,6 +27,7 @@
 #include <pcbnew_settings.h>
 #include <wildcards_and_files_ext.h>
 #include <reporter.h>
+#include <board_design_settings.h>
 #include <confirm.h>
 #include <core/arraydim.h>
 #include <core/kicad_algo.h>
@@ -38,6 +39,8 @@
 #include <bitmaps.h>
 #include <widgets/unit_binder.h>
 #include <plotters/plotters_pslike.h>
+#include <wx/dirdlg.h>
+#include <pgm_base.h>
 
 class DIALOG_EXPORT_SVG : public DIALOG_EXPORT_SVG_BASE
 {
@@ -258,7 +261,7 @@ void DIALOG_EXPORT_SVG::ExportSVGFile( bool aOnlyOneFile )
 
     if( !EnsureFileDirectoryExists( &outputDir, boardFilename, &reporter ) )
     {
-        wxString msg = wxString::Format( _( "Could not write plot files to folder \"%s\"." ),
+        wxString msg = wxString::Format( _( "Could not write plot files to folder '%s'." ),
                                          outputDir.GetPath() );
         DisplayError( this, msg );
         return;
@@ -285,11 +288,12 @@ void DIALOG_EXPORT_SVG::ExportSVGFile( bool aOnlyOneFile )
 
         if( CreateSVGFile( svgPath ) )
         {
-            reporter.Report( wxString::Format( _( "Exported \"%s\"." ), svgPath ), RPT_SEVERITY_ACTION );
+            reporter.Report( wxString::Format( _( "Exported '%s'." ), svgPath ),
+                             RPT_SEVERITY_ACTION );
         }
         else    // Error
         {
-            reporter.Report( wxString::Format( _( "Unable to create file \"%s\"." ), svgPath ),
+            reporter.Report( wxString::Format( _( "Failed to create file '%s'." ), svgPath ),
                              RPT_SEVERITY_ERROR );
         }
 

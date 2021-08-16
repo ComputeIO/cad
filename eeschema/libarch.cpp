@@ -25,7 +25,7 @@
 
 /**
  * @file libarch.cpp
- * @brief Module for generation of component archive files.
+ * @brief Module for generation of symbol archive files.
  */
 
 #include <confirm.h>
@@ -33,7 +33,7 @@
 
 #include <sch_edit_frame.h>
 #include <symbol_lib_table.h>
-#include <class_library.h>
+#include <symbol_library.h>
 #include <sch_symbol.h>
 #include <sch_sheet.h>
 #include <schematic.h>
@@ -69,7 +69,7 @@ bool SCH_EDIT_FRAME::CreateArchiveLibrary( const wxString& aFileName )
     SCH_SCREENS       screens( Schematic().Root() );
 
     // Create a new empty library to archive symbols:
-    std::unique_ptr<PART_LIB> archLib = std::make_unique<PART_LIB>( SCH_LIB_TYPE::LT_EESCHEMA,
+    std::unique_ptr<SYMBOL_LIB> archLib = std::make_unique<SYMBOL_LIB>( SCH_LIB_TYPE::LT_EESCHEMA,
                                                                     aFileName );
 
     // Save symbols to file only when the library will be fully filled
@@ -83,23 +83,24 @@ bool SCH_EDIT_FRAME::CreateArchiveLibrary( const wxString& aFileName )
     for( SCH_SCREEN* screen = screens.GetFirst(); screen; screen = screens.GetNext() )
     {
 
-        for( auto aItem : screen->Items().OfType( SCH_COMPONENT_T ) )
+        for( SCH_ITEM* aItem : screen->Items().OfType( SCH_SYMBOL_T ) )
         {
-            LIB_PART*      part = nullptr;
-            SCH_COMPONENT* symbol = static_cast<SCH_COMPONENT*>( aItem );
+            LIB_SYMBOL* libSymbol = nullptr;
+            SCH_SYMBOL* symbol = static_cast<SCH_SYMBOL*>( aItem );
 
             try
             {
-                if( archLib->FindPart( symbol->GetLibId() ) )
+                if( archLib->FindSymbol( symbol->GetLibId() ) )
                     continue;
 
-                part = GetLibPart( symbol->GetLibId(), true );
+                libSymbol = GetLibSymbol( symbol->GetLibId(), true );
             }
             catch( const IO_ERROR& )
             {
                 // Queue up error messages for later.
-                tmp.Printf( _( "Failed to add symbol \"%s\" to library file \"%s\"." ),
-                            symbol->GetLibId().GetUniStringLibItemName(), aFileName );
+                tmp.Printf( _( "Failed to add symbol %s to library file '%s'." ),
+                            symbol->GetLibId().GetUniStringLibItemName(),
+                            aFileName );
 
                 // Don't bail out here.  Attempt to add as many of the symbols to the library
                 // as possible.
@@ -109,15 +110,15 @@ bool SCH_EDIT_FRAME::CreateArchiveLibrary( const wxString& aFileName )
                 tmp = _( "Unexpected exception occurred." );
             }
 
-            if( part )
+            if( libSymbol )
             {
-                std::unique_ptr<LIB_PART> flattenedPart = part->Flatten();
+                std::unique_ptr<LIB_SYMBOL> flattenedSymbol = libSymbol->Flatten();
 
                 // Use the full LIB_ID as the symbol name to prevent symbol name collisions.
-                flattenedPart->SetName( symbol->GetLibId().GetUniStringLibId() );
+                flattenedSymbol->SetName( symbol->GetLibId().GetUniStringLibId() );
 
-                // AddPart() does first clone the part before adding.
-                archLib->AddPart( flattenedPart.get() );
+                // AddSymbol() does first clone the symbol before adding.
+                archLib->AddSymbol( flattenedSymbol.get() );
             }
             else
             {
@@ -149,13 +150,13 @@ bool SCH_EDIT_FRAME::CreateArchiveLibrary( const wxString& aFileName )
     }
     catch( const IO_ERROR& ioe )
     {
-        errorMsg.Printf( _( "Failed to save symbol library file \"%s\"" ), aFileName );
+        errorMsg.Printf( _( "Failed to save symbol library file '%s'." ), aFileName );
         DisplayErrorMessage( this, errorMsg, ioe.What() );
         return false;
     }
     catch( std::exception& error )
     {
-        errorMsg.Printf( _( "Failed to save symbol library file \"%s\"" ), aFileName );
+        errorMsg.Printf( _( "Failed to save symbol library file '%s'." ), aFileName );
         DisplayErrorMessage( this, errorMsg, error.what() );
         return false;
     }

@@ -27,13 +27,14 @@
 #include <widgets/unit_binder.h>
 #include <wx/valnum.h>
 #include <dialog_text_item_properties.h>
+#include <pcb_layer_box_selector.h>
 
 class PCB_BASE_EDIT_FRAME;
 class BOARD_ITEM;
 class EDA_TEXT;
 class FP_TEXT;
 class PCB_TEXT;
-class PCB_LAYER_BOX_SELECTOR;
+class SCINTILLA_TRICKS;
 
 class DIALOG_PCB_TEXT_PROPERTIES : public DIALOG_TEXT_ITEM_PROPERTIES
 {
@@ -49,12 +50,15 @@ public:
     virtual void OnSetFocusText( wxFocusEvent& event ) override;
 
 private:
+    bool TransferDataToWindow() override;
+    bool TransferDataFromWindow() override;
+
+private:
     PCB_BASE_EDIT_FRAME* m_Parent;
     BOARD_ITEM*          m_item;        // FP_TEXT or PCB_TEXT
     //EDA_TEXT*            m_edaText;     // always non-null
     FP_TEXT*             m_fpText;      // only non-null for FP_TEXTs
     PCB_TEXT*            m_pcbText;     // only non-null for PCB_TEXTs
-
     PCB_LAYER_BOX_SELECTOR* m_pcbLayerSelector;
 
     UNIT_BINDER          m_textWidth;
@@ -65,14 +69,13 @@ private:
     UNIT_BINDER          m_orientation;     // rotation in degrees
     double               m_OrientValue;
 
-    bool TransferDataToWindow() override;
-    bool TransferDataFromWindow() override;
-
-    void OnFontFieldChange( wxCommandEvent& aEvent ) override;
+    //void OnFontFieldChange( wxCommandEvent& aEvent ) override;
 
     void OnOkClick( wxCommandEvent& aEvent ) override;
 
-    void OnCharHook( wxKeyEvent& aEvent ) override;
+    //void OnCharHook( wxKeyEvent& aEvent ) override;
+
+    SCINTILLA_TRICKS*    m_scintillaTricks;
 };
 
 #endif //DIALOG_PCB_TEXT_PROPERTIES_H

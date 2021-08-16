@@ -1,7 +1,7 @@
 /*
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
- * Copyright (C) 1992-2020 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 1992-2021 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -43,7 +43,7 @@ using namespace std::placeholders;
 
 void FOOTPRINT_EDIT_FRAME::LoadFootprintFromBoard( wxCommandEvent& event )
 {
-    LoadFootprintFromBoard( NULL );
+    LoadFootprintFromBoard( nullptr );
 }
 
 
@@ -209,8 +209,9 @@ void FOOTPRINT_EDIT_FRAME::OnEditItemRequest( BOARD_ITEM* aItem )
             commit.Push( _( "Edit Zone" ) );
             zoneSettings.ExportSetting( *static_cast<ZONE*>( aItem ) );
         }
+
+        break;
     }
-    break;
 
     case PCB_GROUP_T:
         m_toolManager->RunAction( PCB_ACTIONS::groupProperties, true, aItem );
@@ -282,7 +283,8 @@ void FOOTPRINT_EDIT_FRAME::KiwayMailIn( KIWAY_EXPRESS& mail )
                 msg.Printf( _( "The current configuration does not include a library named '%s'.\n"
                                "Use Manage Footprint Libraries to edit the configuration." ),
                             fpFileName.GetPath() );
-                DisplayErrorMessage( this, _( "Library not found in footprint library table." ), msg );
+                DisplayErrorMessage( this, _( "Library not found in footprint library table." ),
+                                     msg );
                 break;
             }
 
@@ -302,7 +304,7 @@ void FOOTPRINT_EDIT_FRAME::KiwayMailIn( KIWAY_EXPRESS& mail )
             if( m_treePane )
             {
                 m_treePane->GetLibTree()->SelectLibId( fpId );
-                wxCommandEvent event( COMPONENT_SELECTED );
+                wxCommandEvent event( SYMBOL_SELECTED );
                 wxPostEvent( m_treePane, event );
             }
         }

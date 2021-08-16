@@ -2,7 +2,7 @@
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
  * Copyright (C) 2020 Ian McInerney <Ian.S.McInerney at ieee.org>
- * Copyright (C) 2020 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 2020-2021 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * This program is free software: you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -35,7 +35,7 @@ void KIPLATFORM::ENV::Init()
     if( wxGetEnv( wxT( "XDG_CURRENT_DESKTOP" ), &wm ) && wm.CmpNoCase( wxT( "Unity" ) ) == 0 )
         wxSetEnv ( wxT("UBUNTU_MENUPROXY" ), wxT( "0" ) );
 
-    // Force the use of X11 backend (or wayland-x11 compatibilty layer).  This is
+    // Force the use of X11 backend (or wayland-x11 compatibility layer).  This is
     // required until wxWidgets supports the Wayland compositors
     wxSetEnv( wxT( "GDK_BACKEND" ), wxT( "x11" ) );
 
@@ -55,7 +55,7 @@ bool KIPLATFORM::ENV::MoveToTrash( const wxString& aPath, wxString& aError )
     GError* err   = nullptr;
     GFile*  file  = g_file_new_for_path( aPath.fn_str() );
 
-    bool retVal = g_file_trash( file, NULL, &err );
+    bool retVal = g_file_trash( file, nullptr, &err );
 
     // Extract the error string if the operation failed
     if( !retVal && err )

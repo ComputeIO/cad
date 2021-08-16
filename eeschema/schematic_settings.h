@@ -48,11 +48,13 @@ public:
     int       m_DefaultWireThickness;
     int       m_DefaultBusThickness;
     int       m_DefaultTextSize;
+    double    m_LabelSizeRatio;
     double    m_TextOffsetRatio;
     int       m_PinSymbolSize;
     int       m_JunctionSize; // Size of junction dot in mils
     // User choice for junction dot size ( e.g. none = 0, smallest = 1, small = 2, etc )
     int       m_JunctionSizeChoice;
+    int       m_AnnotateStartNum; // Starting value for annotation
 
     bool      m_IntersheetRefsShow;
     bool      m_IntersheetRefsListOwnPage;

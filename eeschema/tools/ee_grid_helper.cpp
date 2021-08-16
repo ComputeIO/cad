@@ -2,7 +2,7 @@
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
  * Copyright (C) 2014 CERN
- * Copyright (C) 2018-2020 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 2018-2021 KiCad Developers, see AUTHORS.txt for contributors.
  * @author Tomasz Wlostowski <tomasz.wlostowski@cern.ch>
  *
  * This program is free software; you can redistribute it and/or
@@ -74,7 +74,7 @@ VECTOR2I EE_GRID_HELPER::BestDragOrigin( const VECTOR2I &aMousePos, int aLayer,
     ANCHOR* nearestOutline = nearestAnchor( aMousePos, OUTLINE, aLayer );
     ANCHOR* nearestCorner = nearestAnchor( aMousePos, CORNER, aLayer );
     ANCHOR* nearestOrigin = nearestAnchor( aMousePos, ORIGIN, aLayer );
-    ANCHOR* best = NULL;
+    ANCHOR* best = nullptr;
     double minDist = std::numeric_limits<double>::max();
 
     if( nearestOrigin )
@@ -266,7 +266,7 @@ void EE_GRID_HELPER::computeAnchors( SCH_ITEM *aItem, const VECTOR2I &aRefPos, b
 {
     switch ( aItem->Type() )
     {
-    case SCH_COMPONENT_T:
+    case SCH_SYMBOL_T:
         case SCH_SHEET_T:
         addAnchor( aItem->GetPosition(), ORIGIN, aItem );
         KI_FALLTHROUGH;
@@ -298,14 +298,16 @@ void EE_GRID_HELPER::computeAnchors( SCH_ITEM *aItem, const VECTOR2I &aRefPos, b
         {
             VECTOR2I possible( line->GetStartPoint().x, pt.y );
 
-            if( TestSegmentHit( wxPoint( possible ), line->GetStartPoint(), line->GetEndPoint(), 0 ) )
+            if( TestSegmentHit( wxPoint( possible ), line->GetStartPoint(), line->GetEndPoint(),
+                                0 ) )
                 addAnchor( possible, SNAPPABLE | VERTICAL, aItem );
         }
         else if( line->GetStartPoint().y == line->GetEndPoint().y )
         {
             VECTOR2I possible( pt.x, line->GetStartPoint().y );
 
-            if( TestSegmentHit( wxPoint( possible ), line->GetStartPoint(), line->GetEndPoint(), 0 ) )
+            if( TestSegmentHit( wxPoint( possible ), line->GetStartPoint(), line->GetEndPoint(),
+                                0 ) )
                 addAnchor( possible, SNAPPABLE | HORIZONTAL, aItem );
         }
 
@@ -317,7 +319,7 @@ EE_GRID_HELPER::ANCHOR* EE_GRID_HELPER::nearestAnchor( const VECTOR2I& aPos, int
                                                        int aMatchLayer )
 {
     double  minDist = std::numeric_limits<double>::max();
-    ANCHOR* best = NULL;
+    ANCHOR* best = nullptr;
 
     for( ANCHOR& a : m_anchors )
     {

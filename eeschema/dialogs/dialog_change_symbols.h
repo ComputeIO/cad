@@ -26,7 +26,7 @@
 #include <dialog_change_symbols_base.h>
 
 class LIB_ID;
-class SCH_COMPONENT;
+class SCH_SYMBOL;
 class SCH_EDIT_FRAME;
 class SCH_SCREEN;
 class SCH_SHEET_PATH;
@@ -39,7 +39,7 @@ class DIALOG_CHANGE_SYMBOLS : public DIALOG_CHANGE_SYMBOLS_BASE
 public:
     enum class MODE { CHANGE = 0, UPDATE };
 
-    DIALOG_CHANGE_SYMBOLS( SCH_EDIT_FRAME* aParent, SCH_COMPONENT* aSymbol,
+    DIALOG_CHANGE_SYMBOLS( SCH_EDIT_FRAME* aParent, SCH_SYMBOL* aSymbol,
                            MODE aMode = MODE::UPDATE );
     ~DIALOG_CHANGE_SYMBOLS() override;
 
@@ -47,6 +47,8 @@ protected:
     void launchMatchIdSymbolBrowser( wxCommandEvent& aEvent ) override;
     void launchNewIdSymbolBrowser( wxCommandEvent& aEvent ) override;
     void onMatchTextKillFocus( wxFocusEvent& event ) override;
+    void onMatchIDKillFocus( wxFocusEvent& event ) override;
+    void onNewLibIDKillFocus( wxFocusEvent& event ) override;
     void onOkButtonClicked( wxCommandEvent& aEvent ) override;
     void onMatchByAll( wxCommandEvent& aEvent ) override;
     void onMatchBySelected( wxCommandEvent& aEvent ) override;
@@ -70,13 +72,13 @@ protected:
 private:
     void updateFieldsList();
 
-    bool isMatch( SCH_COMPONENT* aSymbol, SCH_SHEET_PATH* aInstance );
+    bool isMatch( SCH_SYMBOL* aSymbol, SCH_SHEET_PATH* aInstance );
     bool processMatchingSymbols();
-    bool processSymbol( SCH_COMPONENT* aSymbol, const SCH_SHEET_PATH* aInstance,
+    bool processSymbol( SCH_SYMBOL* aSymbol, const SCH_SHEET_PATH* aInstance,
                         const LIB_ID& aNewId, bool aAppendToUndo );
 
-    SCH_COMPONENT* m_symbol;
-    MODE           m_mode;
+    SCH_SYMBOL* m_symbol;
+    MODE        m_mode;
 
     ///< Set of field names that should have values updated
     std::set<wxString> m_updateFields;

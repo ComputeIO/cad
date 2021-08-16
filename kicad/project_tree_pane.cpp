@@ -97,7 +97,7 @@ static const wxChar* s_allowedExtensionsToList[] = {
     wxT( "^.*\\.xnc$" ),           // Excellon NC drill files (alternate file ext)
     wxT( "^.*\\.svg$" ),           // SVG print/plot files
     wxT( "^.*\\.ps$" ),            // PostScript plot files
-    NULL                           // end of list
+    nullptr                        // end of list
 };
 
 
@@ -106,17 +106,14 @@ static const wxChar* s_allowedExtensionsToList[] = {
  *       library as required.
  */
 
-// File extension definitions.
-const wxChar  TextFileExtension[] = wxT( "txt" );
-
 // Gerber file extension wildcard.
 const wxString GerberFileExtensionWildCard( ".((gbr|gbrjob|(gb|gt)[alops])|pho)" );
 
 
 /**
- * @brief class PROJECT_TREE_PANE is the frame that shows the tree list of files and subdirs
- * inside the working directory.  Files are filtered (see s_allowedExtensionsToList) so
- * only useful files are shown.
+ * The frame that shows the tree list of files and subdirectories inside the working directory.
+ *
+ * Files are filtered (see s_allowedExtensionsToList) so only useful files are shown.
  */
 
 
@@ -140,7 +137,7 @@ PROJECT_TREE_PANE::PROJECT_TREE_PANE( KICAD_MANAGER_FRAME* parent ) :
                             wxNO_BORDER | wxTAB_TRAVERSAL )
 {
     m_Parent = parent;
-    m_TreeProject = NULL;
+    m_TreeProject = nullptr;
     m_isRenaming = false;
     m_selectedItem = nullptr;
     m_watcherNeedReset = false;
@@ -153,7 +150,7 @@ PROJECT_TREE_PANE::PROJECT_TREE_PANE( KICAD_MANAGER_FRAME* parent ) :
      * Filtering is now inverted: the filters are actually used to _enable_ support
      * for a given file type.
      */
-    for( int ii = 0; s_allowedExtensionsToList[ii] != NULL; ii++ )
+    for( int ii = 0; s_allowedExtensionsToList[ii] != nullptr; ii++ )
         m_filters.emplace_back( s_allowedExtensionsToList[ii] );
 
     m_filters.emplace_back( wxT( "^no KiCad files found" ) );
@@ -282,7 +279,7 @@ wxString PROJECT_TREE_PANE::GetFileExt( TREE_FILE_TYPE type )
     case TREE_FILE_TYPE::PDF:                   return PdfFileExtension;
     case TREE_FILE_TYPE::TXT:                   return TextFileExtension;
     case TREE_FILE_TYPE::NET:                   return NetlistFileExtension;
-    case TREE_FILE_TYPE::CMP_LINK:              return ComponentFileExtension;
+    case TREE_FILE_TYPE::CMP_LINK:              return FootprintAssignmentFileExtension;
     case TREE_FILE_TYPE::REPORT:                return ReportFileExtension;
     case TREE_FILE_TYPE::FP_PLACE:              return FootprintPlaceFileExtension;
     case TREE_FILE_TYPE::DRILL:                 return DrillFileExtension;
@@ -505,6 +502,7 @@ wxTreeItemId PROJECT_TREE_PANE::addItemToProjectTree( const wxString& aName,
             bool                  haveFile = dir.GetFirst( &dir_filename );
 
             data->SetPopulated( true );
+
 #ifndef __WINDOWS__
             subdir_populated = aRecurse;
 #endif
@@ -786,20 +784,26 @@ void PROJECT_TREE_PANE::onRight( wxTreeEvent& Event )
             popup_menu.AppendSeparator();
         }
 
+#ifdef __WINDOWS__
         AddMenuItem( &popup_menu, ID_PROJECT_DELETE, _( "Delete" ), help_text,
                      KiBitmap( BITMAPS::trash ) );
+#else
+        AddMenuItem( &popup_menu, ID_PROJECT_DELETE, _( "Move to Trash" ), help_text,
+                     KiBitmap( BITMAPS::trash ) );
+#endif
     }
 
     if( can_print )
     {
         popup_menu.AppendSeparator();
         AddMenuItem( &popup_menu, ID_PROJECT_PRINT,
+
 #ifdef __APPLE__
-                _( "Print..." ),
+                     _( "Print..." ),
 #else
-                _( "Print" ),
+                     _( "Print" ),
 #endif
-                _( "Print the contents of the file" ), KiBitmap( BITMAPS::print_button ) );
+                     _( "Print the contents of the file" ), KiBitmap( BITMAPS::print_button ) );
     }
 
     if( popup_menu.GetMenuItemCount() > 0 )
@@ -836,29 +840,9 @@ void PROJECT_TREE_PANE::onOpenSelectedFileWithTextEditor( wxCommandEvent& event 
 void PROJECT_TREE_PANE::onDeleteFile( wxCommandEvent& event )
 {
     std::vector<PROJECT_TREE_ITEM*> tree_data = GetSelectedData();
-    wxString                        msg, caption;
 
-    if( tree_data.size() == 1 )
-    {
-        bool is_directory = wxDirExists( tree_data[0]->GetFileName() );
-        caption = is_directory ? _( "Delete Directory" ) : _( "Delete File" );
-        msg = wxString::Format( _( "Are you sure you want to delete '%s'?" ),
-                                tree_data[0]->GetFileName() );
-    }
-    else
-    {
-        msg = wxString::Format( _( "Are you sure you want to delete %d items?" ),
-                                (int)tree_data.size() );
-        caption = _( "Delete Multiple Items" );
-    }
-
-    wxMessageDialog dialog( m_parent, msg, caption, wxYES_NO | wxICON_QUESTION );
-
-    if( dialog.ShowModal() == wxID_YES )
-    {
-        for( PROJECT_TREE_ITEM* item_data : tree_data )
-            item_data->Delete();
-    }
+    for( PROJECT_TREE_ITEM* item_data : tree_data )
+        item_data->Delete();
 }
 
 
@@ -984,6 +968,7 @@ void PROJECT_TREE_PANE::onExpand( wxTreeEvent& Event )
             }
 
             itemData->SetPopulated( true );       // set state to populated
+
 #ifndef __WINDOWS__
             subdir_populated = true;
 #endif
@@ -1112,19 +1097,19 @@ void PROJECT_TREE_PANE::onFileSystemEvent( wxFileSystemWatcherEvent& event )
     switch( event.GetChangeType() )
     {
     case wxFSW_EVENT_CREATE:
-        {
-            wxTreeItemId newitem = addItemToProjectTree( pathModified.GetFullPath(), root_id,
-                                                         nullptr, true );
+    {
+        wxTreeItemId newitem =
+                addItemToProjectTree( pathModified.GetFullPath(), root_id, nullptr, true );
 
-            // If we are in the process of renaming a file, select the new one
-            // This is needed for MSW and OSX, since we don't get RENAME events from them, just a
-            // pair of DELETE and CREATE events.
-            if( m_isRenaming && newitem.IsOk() )
-            {
-                m_TreeProject->SelectItem( newitem );
-                m_isRenaming = false;
-            }
+        // If we are in the process of renaming a file, select the new one
+        // This is needed for MSW and OSX, since we don't get RENAME events from them, just a
+        // pair of DELETE and CREATE events.
+        if( m_isRenaming && newitem.IsOk() )
+        {
+            m_TreeProject->SelectItem( newitem );
+            m_isRenaming = false;
         }
+    }
         break;
 
     case wxFSW_EVENT_DELETE:
@@ -1142,45 +1127,45 @@ void PROJECT_TREE_PANE::onFileSystemEvent( wxFileSystemWatcherEvent& event )
         break;
 
     case wxFSW_EVENT_RENAME :
+    {
+        const wxFileName& newpath = event.GetNewPath();
+        wxString newdir = newpath.GetPath();
+        wxString newfn = newpath.GetFullPath();
+
+        while( kid.IsOk() )
         {
-            const wxFileName& newpath = event.GetNewPath();
-            wxString newdir = newpath.GetPath();
-            wxString newfn = newpath.GetFullPath();
+            PROJECT_TREE_ITEM* itemData = GetItemIdData( kid );
 
-            while( kid.IsOk() )
+            if( itemData && itemData->GetFileName() == fn )
             {
-                PROJECT_TREE_ITEM* itemData = GetItemIdData( kid );
-
-                if( itemData && itemData->GetFileName() == fn )
-                {
-                    m_TreeProject->Delete( kid );
-                    break;
-                }
-
-                kid = m_TreeProject->GetNextChild( root_id, cookie );
+                m_TreeProject->Delete( kid );
+                break;
             }
 
-            // Add the new item only if it is not the current project file (root item).
-            // Remember: this code is called by a wxFileSystemWatcherEvent event, and not always
-            // called after an actual file rename, and the cleanup code does not explore the
-            // root item, because it cannot be renamed by the user. Also, ensure the new file
-            // actually exists on the file system before it is readded. On Linux, moving a file
-            // to the trash can cause the same path to be returned in both the old and new paths
-            // of the event, even though the file isn't there anymore.
-            PROJECT_TREE_ITEM* rootData = GetItemIdData( root_id );
-
-            if( newpath.Exists() && ( newfn != rootData->GetFileName() ) )
-            {
-                wxTreeItemId newroot_id = findSubdirTreeItem( newdir );
-                wxTreeItemId newitem = addItemToProjectTree( newfn, newroot_id, nullptr, true );
-
-                // If the item exists, select it
-                if( newitem.IsOk() )
-                    m_TreeProject->SelectItem( newitem );
-            }
-
-            m_isRenaming = false;
+            kid = m_TreeProject->GetNextChild( root_id, cookie );
         }
+
+        // Add the new item only if it is not the current project file (root item).
+        // Remember: this code is called by a wxFileSystemWatcherEvent event, and not always
+        // called after an actual file rename, and the cleanup code does not explore the
+        // root item, because it cannot be renamed by the user. Also, ensure the new file
+        // actually exists on the file system before it is readded. On Linux, moving a file
+        // to the trash can cause the same path to be returned in both the old and new paths
+        // of the event, even though the file isn't there anymore.
+        PROJECT_TREE_ITEM* rootData = GetItemIdData( root_id );
+
+        if( newpath.Exists() && ( newfn != rootData->GetFileName() ) )
+        {
+            wxTreeItemId newroot_id = findSubdirTreeItem( newdir );
+            wxTreeItemId newitem = addItemToProjectTree( newfn, newroot_id, nullptr, true );
+
+            // If the item exists, select it
+            if( newitem.IsOk() )
+                m_TreeProject->SelectItem( newitem );
+        }
+
+        m_isRenaming = false;
+    }
         break;
     }
 
@@ -1195,12 +1180,12 @@ void PROJECT_TREE_PANE::FileWatcherReset()
 
     wxString prj_dir = wxPathOnly( m_Parent->GetProjectFileName() );
 
-    #if defined( _WIN32 )
+#if defined( _WIN32 )
     if( KIPLATFORM::ENV::IsNetworkPath( prj_dir ) )
     {
         // Due to a combination of a bug in SAMBA sending bad change event IDs and wxWidgets
         // choosing to fault on an invalid event ID instead of sanely ignoring them we need to
-        // avoid spawning a filewatcher. Unforunately this punishes corporate environments with
+        // avoid spawning a filewatcher. Unfortunately this punishes corporate environments with
         // Windows Server shares :/
         m_Parent->SetStatusText( _( "Network path: not monitoring folder changes" ), 1 );
         return;
@@ -1209,7 +1194,7 @@ void PROJECT_TREE_PANE::FileWatcherReset()
     {
         m_Parent->SetStatusText( _( "Local path: monitoring folder changes" ), 1 );
     }
-    #endif
+#endif
 
     // Prepare file watcher:
     if( m_watcher )

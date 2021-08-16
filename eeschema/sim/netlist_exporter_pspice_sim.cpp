@@ -25,7 +25,7 @@
  */
 
 #include "netlist_exporter_pspice_sim.h"
-#include <kicad_string.h>
+#include <string_utils.h>
 #include <macros.h>     // for TO_UTF8 def
 #include <wx/regex.h>
 #include <wx/tokenzr.h>
@@ -247,7 +247,7 @@ void NETLIST_EXPORTER_PSPICE_SIM::writeDirectives( OUTPUTFORMATTER* aFormatter, 
     // If we print out .save directives for currents, then it needs to be done for voltages as well
     for( const auto& netMap : GetNetIndexMap() )
     {
-        // the "0" and the "GND" nets are automaticallly saved internally by ngspice.
+        // the "0" and the "GND" nets are automatically saved internally by ngspice.
         // Skip them
         wxString netname = ComponentToVector( netMap.first, SPT_VOLTAGE );
 

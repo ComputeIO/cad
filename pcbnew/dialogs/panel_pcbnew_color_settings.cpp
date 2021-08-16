@@ -22,17 +22,15 @@
 
 #include <board.h>
 #include <gal/gal_display_options.h>
-#include <layers_id_colors_and_visibility.h>
+#include <layer_ids.h>
 #include <panel_pcbnew_color_settings.h>
 #include <pcbnew_settings.h>
 #include <pcb_edit_frame.h>
-#include <pgm_base.h>
 #include <settings/settings_manager.h>
 #include <footprint_preview_panel.h>
 #include <widgets/appearance_controls.h>
 #include <drawing_sheet/ds_proxy_view_item.h>
 #include <pcb_painter.h>
-#include <track.h>
 #include <plugins/kicad/kicad_plugin.h>
 #include <wx/treebook.h>
 
@@ -358,6 +356,8 @@ std::set<int> g_excludedLayers =
             LAYER_VIA_HOLEWALLS,
             LAYER_MOD_FR,
             LAYER_MOD_BK,
+            LAYER_PAD_FR,
+            LAYER_PAD_BK,
             LAYER_MOD_VALUES,
             LAYER_MOD_REFERENCES,
             LAYER_TRACKS,
@@ -381,9 +381,9 @@ PANEL_PCBNEW_COLOR_SETTINGS::PANEL_PCBNEW_COLOR_SETTINGS( PCB_EDIT_FRAME* aFrame
 {
     m_colorNamespace = "board";
 
-    SETTINGS_MANAGER& mgr          = Pgm().GetSettingsManager();
-    PCBNEW_SETTINGS*  app_settings = mgr.GetAppSettings<PCBNEW_SETTINGS>();
-    COLOR_SETTINGS*   current      = mgr.GetColorSettings( app_settings->m_ColorTheme );
+    SETTINGS_MANAGER* mgr          = m_frame->GetSettingsManager();
+    PCBNEW_SETTINGS*  app_settings = mgr->GetAppSettings<PCBNEW_SETTINGS>();
+    COLOR_SETTINGS*   current      = mgr->GetColorSettings( app_settings->m_ColorTheme );
 
     // Saved theme doesn't exist?  Reset to default
     if( current->GetFilename() != app_settings->m_ColorTheme )
@@ -435,8 +435,8 @@ PANEL_PCBNEW_COLOR_SETTINGS::~PANEL_PCBNEW_COLOR_SETTINGS()
 
 bool PANEL_PCBNEW_COLOR_SETTINGS::TransferDataFromWindow()
 {
-    SETTINGS_MANAGER& settingsMgr = Pgm().GetSettingsManager();
-    PCBNEW_SETTINGS* app_settings = settingsMgr.GetAppSettings<PCBNEW_SETTINGS>();
+    SETTINGS_MANAGER* settingsMgr = m_frame->GetSettingsManager();
+    PCBNEW_SETTINGS* app_settings = settingsMgr->GetAppSettings<PCBNEW_SETTINGS>();
     app_settings->m_ColorTheme = m_currentSettings->GetFilename();
 
     return true;
@@ -503,7 +503,7 @@ void PANEL_PCBNEW_COLOR_SETTINGS::createPreviewItems()
 
     try
     {
-        pi.DoLoad( reader, m_preview->GetBoard(), nullptr );
+        pi.DoLoad( reader, m_preview->GetBoard(), nullptr, nullptr, 0 );
     }
     catch( const IO_ERROR& )
     {

@@ -2,7 +2,7 @@
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
  * Copyright (C) 2012 SoftPLC Corporation, Dick Hollenbeck <dick@softplc.com>
- * Copyright (C) 2015-2020 KiCad Developers, see change_log.txt for contributors.
+ * Copyright (C) 2015-2021 KiCad Developers, see change_log.txt for contributors.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -33,7 +33,7 @@
 #include <settings/settings_manager.h>
 #include <confirm.h>
 #include <preview_items/selection_area.h>
-#include <class_library.h>
+#include <symbol_library.h>
 #include <sch_base_frame.h>
 #include <symbol_lib_table.h>
 #include <tool/action_toolbar.h>
@@ -43,12 +43,12 @@
 #include <tools/ee_selection_tool.h>
 
 
-LIB_PART* SchGetLibPart( const LIB_ID& aLibId, SYMBOL_LIB_TABLE* aLibTable, PART_LIB* aCacheLib,
-                         wxWindow* aParent, bool aShowErrorMsg )
+LIB_SYMBOL* SchGetLibSymbol( const LIB_ID& aLibId, SYMBOL_LIB_TABLE* aLibTable,
+                             SYMBOL_LIB* aCacheLib, wxWindow* aParent, bool aShowErrorMsg )
 {
     wxCHECK_MSG( aLibTable, nullptr, "Invalid symbol library table." );
 
-    LIB_PART* symbol = nullptr;
+    LIB_SYMBOL* symbol = nullptr;
 
     try
     {
@@ -60,14 +60,14 @@ LIB_PART* SchGetLibPart( const LIB_ID& aLibId, SYMBOL_LIB_TABLE* aLibTable, PART
 
             wxString cacheName = aLibId.GetLibNickname().wx_str();
             cacheName += "_" + aLibId.GetLibItemName();
-            symbol = aCacheLib->FindPart( cacheName );
+            symbol = aCacheLib->FindSymbol( cacheName );
         }
     }
     catch( const IO_ERROR& ioe )
     {
         if( aShowErrorMsg )
         {
-            wxString msg = wxString::Format( _( "Error loading symbol '%s' from library '%s'." ),
+            wxString msg = wxString::Format( _( "Error loading symbol %s from library '%s'." ),
                                              aLibId.GetLibItemName().wx_str(),
                                              aLibId.GetLibNickname().wx_str() );
             DisplayErrorMessage( aParent, msg, ioe.What() );
@@ -192,11 +192,12 @@ void SCH_BASE_FRAME::UpdateStatusBar()
 }
 
 
-LIB_PART* SCH_BASE_FRAME::GetLibPart( const LIB_ID& aLibId, bool aUseCacheLib, bool aShowErrorMsg )
+LIB_SYMBOL* SCH_BASE_FRAME::GetLibSymbol( const LIB_ID& aLibId, bool aUseCacheLib,
+                                          bool aShowErrorMsg )
 {
-    PART_LIB* cache = ( aUseCacheLib ) ? Prj().SchLibs()->GetCacheLibrary() : NULL;
+    SYMBOL_LIB* cache = ( aUseCacheLib ) ? Prj().SchLibs()->GetCacheLibrary() : nullptr;
 
-    return SchGetLibPart( aLibId, Prj().SchSymbolLibTable(), cache, this, aShowErrorMsg );
+    return SchGetLibSymbol( aLibId, Prj().SchSymbolLibTable(), cache, this, aShowErrorMsg );
 }
 
 
@@ -230,7 +231,8 @@ bool SCH_BASE_FRAME::saveSymbolLibTables( bool aGlobal, bool aProject )
         catch( const IO_ERROR& ioe )
         {
             success = false;
-            msg.Printf( _( "Error saving project-specific symbol library table:\n%s" ), ioe.What() );
+            msg.Printf( _( "Error saving project-specific symbol library table:\n%s" ),
+                        ioe.What() );
             wxMessageBox( msg, _( "File Save Error" ), wxOK | wxICON_ERROR );
         }
     }
@@ -314,7 +316,7 @@ void SCH_BASE_FRAME::UpdateItem( EDA_ITEM* aItem, bool isAddOrDelete )
             GetCanvas()->GetView()->Update( aItem );
 
         // Some children are drawn from their parents.  Mark them for re-paint.
-        static KICAD_T parentTypes[] = { SCH_COMPONENT_T, SCH_SHEET_T, SCH_GLOBAL_LABEL_T, EOT };
+        static KICAD_T parentTypes[] = { SCH_SYMBOL_T, SCH_SHEET_T, SCH_GLOBAL_LABEL_T, EOT };
 
         if( parent && parent->IsType( parentTypes ) )
             GetCanvas()->GetView()->Update( parent, KIGFX::REPAINT );
@@ -350,8 +352,8 @@ void SCH_BASE_FRAME::RefreshSelection()
             {
                 view->Update( item, KIGFX::REPAINT );
 
-                // Component children are drawn from their parents.  Mark them for re-paint.
-                if( parent && parent->Type() == SCH_COMPONENT_T )
+                // Symbol children are drawn from their parents.  Mark them for re-paint.
+                if( parent && parent->Type() == SCH_SYMBOL_T )
                     GetCanvas()->GetView()->Update( parent, KIGFX::REPAINT );
             }
         }

@@ -2,7 +2,7 @@
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
  * Copyright (C) 2014 Henner Zeller <h.zeller@acm.org>
- * Copyright (C) 2014-2020 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 2014-2021 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -30,8 +30,10 @@
 #include <wx/html/htmlwin.h>
 #include <tool/tool_interactive.h>
 #include <tool/tool_manager.h>
+#include <wx/srchctrl.h>
 #include <wx/settings.h>
 #include <wx/statbmp.h>
+#include <wx/timer.h>
 
 
 LIB_TREE::LIB_TREE( wxWindow* aParent, LIB_TABLE* aLibTable,
@@ -44,19 +46,25 @@ LIB_TREE::LIB_TREE( wxWindow* aParent, LIB_TABLE* aLibTable,
       m_query_ctrl( nullptr ),
       m_details_ctrl( nullptr )
 {
-    auto sizer = new wxBoxSizer( wxVERTICAL );
+    wxBoxSizer* sizer = new wxBoxSizer( wxVERTICAL );
 
     // Search text control
     if( aWidgets & SEARCH )
     {
-        auto search_sizer = new wxBoxSizer( wxHORIZONTAL );
+        wxBoxSizer* search_sizer = new wxBoxSizer( wxHORIZONTAL );
 
-        m_query_ctrl = new wxTextCtrl( this, wxID_ANY, wxEmptyString, wxDefaultPosition,
-                                       wxDefaultSize, wxTE_PROCESS_ENTER );
+        m_query_ctrl = new wxSearchCtrl( this, wxID_ANY, wxEmptyString, wxDefaultPosition,
+                                         wxDefaultSize );
+
+        m_query_ctrl->ShowCancelButton( true );
+
+        m_debounceTimer = new wxTimer( this );
 
 // Additional visual cue for GTK, which hides the placeholder text on focus
 #ifdef __WXGTK__
-        auto bitmap = new wxStaticBitmap( this, wxID_ANY, wxArtProvider::GetBitmap( wxART_FIND, wxART_FRAME_ICON ) );
+        wxStaticBitmap* bitmap = new wxStaticBitmap( this, wxID_ANY,
+                                                     wxArtProvider::GetBitmap( wxART_FIND,
+                                                                               wxART_FRAME_ICON ) );
 
         search_sizer->Add( bitmap, 0, wxALIGN_CENTER | wxRIGHT, 5 );
 #endif
@@ -65,8 +73,17 @@ LIB_TREE::LIB_TREE( wxWindow* aParent, LIB_TABLE* aLibTable,
         sizer->Add( search_sizer, 0, wxEXPAND, 5 );
 
         m_query_ctrl->Bind( wxEVT_TEXT, &LIB_TREE::onQueryText, this );
+
+#if wxCHECK_VERSION( 3, 1, 1 )
+        m_query_ctrl->Bind( wxEVT_SEARCH, &LIB_TREE::onQueryEnter, this );
+#else
         m_query_ctrl->Bind( wxEVT_TEXT_ENTER, &LIB_TREE::onQueryEnter, this );
+#endif
+
         m_query_ctrl->Bind( wxEVT_CHAR_HOOK, &LIB_TREE::onQueryCharHook, this );
+
+
+        Bind( wxEVT_TIMER, &LIB_TREE::onDebounceTimer, this, m_debounceTimer->GetId() );
     }
 
     // Tree control
@@ -106,13 +123,13 @@ LIB_TREE::LIB_TREE( wxWindow* aParent, LIB_TABLE* aLibTable,
     m_tree_ctrl->Bind( wxEVT_DATAVIEW_SELECTION_CHANGED, &LIB_TREE::onTreeSelect, this );
     m_tree_ctrl->Bind( wxEVT_COMMAND_DATAVIEW_ITEM_CONTEXT_MENU, &LIB_TREE::onContextMenu, this );
 
-    Bind( COMPONENT_PRESELECTED, &LIB_TREE::onPreselect, this );
+    Bind( SYMBOL_PRESELECTED, &LIB_TREE::onPreselect, this );
 
     // If wxTextCtrl::SetHint() is called before binding wxEVT_TEXT, the event
     // handler will intermittently fire.
     if( m_query_ctrl )
     {
-        m_query_ctrl->SetHint( _( "Filter" ) );
+        m_query_ctrl->SetDescriptiveText( _( "Filter" ) );
         m_query_ctrl->SetFocus();
         m_query_ctrl->SetValue( wxEmptyString );
 
@@ -140,6 +157,9 @@ LIB_TREE::LIB_TREE( wxWindow* aParent, LIB_TABLE* aLibTable,
 
 LIB_TREE::~LIB_TREE()
 {
+    // Stop the timer during destruction early to avoid potential race conditions (that do happen)
+    m_debounceTimer->Stop();
+
     // Save the column widths to the config file
     m_adapter->SaveColWidths();
 
@@ -149,14 +169,10 @@ LIB_TREE::~LIB_TREE()
 
 LIB_ID LIB_TREE::GetSelectedLibId( int* aUnit ) const
 {
-    auto sel = m_tree_ctrl->GetSelection();
+    wxDataViewItem sel = m_tree_ctrl->GetSelection();
 
     if( !sel )
-    {
-        LIB_ID emptyId;
-
-        return emptyId;
-    }
+        return LIB_ID();
 
     if( aUnit )
         *aUnit = m_adapter->GetUnitFor( sel );
@@ -167,7 +183,7 @@ LIB_ID LIB_TREE::GetSelectedLibId( int* aUnit ) const
 
 LIB_TREE_NODE* LIB_TREE::GetCurrentTreeNode() const
 {
-    auto sel = m_tree_ctrl->GetSelection();
+    wxDataViewItem sel = m_tree_ctrl->GetSelection();
 
     if( !sel )
         return nullptr;
@@ -271,14 +287,14 @@ void LIB_TREE::expandIfValid( const wxDataViewItem& aTreeId )
 
 void LIB_TREE::postPreselectEvent()
 {
-    wxCommandEvent event( COMPONENT_PRESELECTED );
+    wxCommandEvent event( SYMBOL_PRESELECTED );
     wxPostEvent( this, event );
 }
 
 
 void LIB_TREE::postSelectEvent()
 {
-    wxCommandEvent event( COMPONENT_SELECTED );
+    wxCommandEvent event( SYMBOL_SELECTED );
     wxPostEvent( this, event );
 }
 
@@ -319,7 +335,7 @@ void LIB_TREE::setState( const STATE& aState )
 
 void LIB_TREE::onQueryText( wxCommandEvent& aEvent )
 {
-    Regenerate( false );
+    m_debounceTimer->StartOnce( 200 );
 
     // Required to avoid interaction with SetHint()
     // See documentation for wxTextEntry::SetHint
@@ -331,6 +347,12 @@ void LIB_TREE::onQueryEnter( wxCommandEvent& aEvent )
 {
     if( GetSelectedLibId().IsValid() )
         postSelectEvent();
+}
+
+
+void LIB_TREE::onDebounceTimer( wxTimerEvent& aEvent )
+{
+    Regenerate( false );
 }
 
 
@@ -367,7 +389,7 @@ void LIB_TREE::onQueryCharHook( wxKeyEvent& aKeyStroke )
             toggleExpand( sel );
             break;
         }
-        // Intentionally fall through, so the selected component will be treated as the selected one
+        // Intentionally fall through, so the selected symbol will be treated as the selected one
         KI_FALLTHROUGH;
 
     default:
@@ -448,5 +470,5 @@ void LIB_TREE::onContextMenu( wxDataViewEvent& aEvent )
 }
 
 
-wxDEFINE_EVENT( COMPONENT_PRESELECTED, wxCommandEvent );
-wxDEFINE_EVENT( COMPONENT_SELECTED, wxCommandEvent );
+wxDEFINE_EVENT( SYMBOL_PRESELECTED, wxCommandEvent );
+wxDEFINE_EVENT( SYMBOL_SELECTED, wxCommandEvent );

@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2015 Jean-Pierre Charras, jp.charras at wanadoo.fr
  * Copyright (C) 2012 SoftPLC Corporation, Dick Hollenbeck <dick@softplc.com>
- * Copyright (C) 1992-2020 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 1992-2021 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -24,11 +24,12 @@
  */
 
 #include <board.h>
-#include <board_item.h>
+#include <board_connected_item.h>
+#include <board_design_settings.h>
 #include <connectivity/connectivity_data.h>
-#include <drc/drc_engine.h>
-#include <kicad_string.h>
+#include <string_utils.h>
 #include <i18n_utility.h>
+#include <netinfo.h>
 
 using namespace std::placeholders;
 
@@ -58,14 +59,10 @@ bool BOARD_CONNECTED_ITEM::SetNetCode( int aNetCode, bool aNoAssert )
     if( !aNoAssert )
         wxASSERT( m_netinfo );
 
-    return ( m_netinfo != NULL );
+    return ( m_netinfo != nullptr );
 }
 
 
-/*
- * This method returns the Default netclass for nets which don't have their own, and the
- * Orphaned netclass for unassigned nets (netCode == 0)
- */
 NETCLASS* BOARD_CONNECTED_ITEM::GetEffectiveNetclass() const
 {
     // NB: we must check the net first, as when it is 0 GetNetClass() will return the
@@ -77,9 +74,6 @@ NETCLASS* BOARD_CONNECTED_ITEM::GetEffectiveNetclass() const
 }
 
 
-/*
- * Returns the item's "own" clearance (ie: that not affected by other items).
- */
 int BOARD_CONNECTED_ITEM::GetOwnClearance( PCB_LAYER_ID aLayer, wxString* aSource ) const
 {
     DRC_CONSTRAINT constraint;
@@ -103,6 +97,12 @@ int BOARD_CONNECTED_ITEM::GetOwnClearance( PCB_LAYER_ID aLayer, wxString* aSourc
 }
 
 
+int BOARD_CONNECTED_ITEM::GetNetCode() const
+{
+    return m_netinfo ? m_netinfo->GetNetCode() : -1;
+}
+
+
 // Note: do NOT return a std::shared_ptr from this.  It is used heavily in DRC, and the
 // std::shared_ptr stuff shows up large in performance profiling.
 NETCLASS* BOARD_CONNECTED_ITEM::GetNetClass() const
@@ -123,6 +123,12 @@ wxString BOARD_CONNECTED_ITEM::GetNetClassName() const
 }
 
 
+wxString BOARD_CONNECTED_ITEM::GetNetname() const
+{
+    return m_netinfo ? m_netinfo->GetNetname() : wxString();
+}
+
+
 wxString BOARD_CONNECTED_ITEM::GetNetnameMsg() const
 {
     if( !GetBoard() )
@@ -136,6 +142,12 @@ wxString BOARD_CONNECTED_ITEM::GetNetnameMsg() const
         return wxT( "[" + UnescapeString( netname ) + "](" + _( "Not Found" ) + ")" );
     else
         return wxT( "[" + UnescapeString( netname ) + "]" );
+}
+
+
+wxString BOARD_CONNECTED_ITEM::GetShortNetname() const
+{
+    return m_netinfo->GetShortNetname();
 }
 
 

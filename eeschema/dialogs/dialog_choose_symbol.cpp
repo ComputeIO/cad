@@ -2,7 +2,7 @@
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
  * Copyright (C) 2014 Henner Zeller <h.zeller@acm.org>
- * Copyright (C) 2016-2019 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 2016-2021 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -23,7 +23,7 @@
  */
 
 #include <algorithm>
-#include <class_library.h>
+#include <symbol_library.h>
 #include <dialog_choose_symbol.h>
 #include <eeschema_settings.h>
 #include <kiface_i.h>
@@ -71,7 +71,7 @@ DIALOG_CHOOSE_SYMBOL::DIALOG_CHOOSE_SYMBOL( SCH_BASE_FRAME* aParent, const wxStr
           m_external_browser_requested( false )
 {
     // Never show footprints in power symbol mode
-    if( aAdapter->GetFilter() == SYMBOL_TREE_MODEL_ADAPTER::CMP_FILTER_POWER )
+    if( aAdapter->GetFilter() == SYMBOL_TREE_MODEL_ADAPTER::SYM_FILTER_POWER )
         m_show_footprints = false;
 
     wxBoxSizer* sizer = new wxBoxSizer( wxVERTICAL );
@@ -96,7 +96,7 @@ DIALOG_CHOOSE_SYMBOL::DIALOG_CHOOSE_SYMBOL( SCH_BASE_FRAME* aParent, const wxStr
         m_hsplitter = new wxSplitterWindow( m_vsplitter, wxID_ANY, wxDefaultPosition, wxDefaultSize,
                                             wxSP_LIVE_UPDATE | wxSP_NOBORDER | wxSP_3DSASH );
 
-        //Avoid the splitter window being assigned as the Parent to additional windows
+        // Avoid the splitter window being assigned as the parent to additional windows.
         m_vsplitter->SetExtraStyle( wxWS_EX_TRANSIENT );
         m_hsplitter->SetExtraStyle( wxWS_EX_TRANSIENT );
 
@@ -201,8 +201,8 @@ DIALOG_CHOOSE_SYMBOL::DIALOG_CHOOSE_SYMBOL( SCH_BASE_FRAME* aParent, const wxStr
 
     Bind( wxEVT_INIT_DIALOG, &DIALOG_CHOOSE_SYMBOL::OnInitDialog, this );
     Bind( wxEVT_TIMER, &DIALOG_CHOOSE_SYMBOL::OnCloseTimer, this, m_dbl_click_timer->GetId() );
-    Bind( COMPONENT_PRESELECTED, &DIALOG_CHOOSE_SYMBOL::OnComponentPreselected, this );
-    Bind( COMPONENT_SELECTED, &DIALOG_CHOOSE_SYMBOL::OnComponentSelected, this );
+    Bind( SYMBOL_PRESELECTED, &DIALOG_CHOOSE_SYMBOL::OnComponentPreselected, this );
+    Bind( SYMBOL_SELECTED, &DIALOG_CHOOSE_SYMBOL::OnComponentSelected, this );
 
     if( m_browser_button )
     {
@@ -219,7 +219,7 @@ DIALOG_CHOOSE_SYMBOL::DIALOG_CHOOSE_SYMBOL( SCH_BASE_FRAME* aParent, const wxStr
     if( m_details )
     {
         m_details->Connect( wxEVT_CHAR_HOOK, wxKeyEventHandler( DIALOG_CHOOSE_SYMBOL::OnCharHook ),
-                            NULL, this );
+                            nullptr, this );
     }
 }
 
@@ -228,8 +228,12 @@ DIALOG_CHOOSE_SYMBOL::~DIALOG_CHOOSE_SYMBOL()
 {
     Unbind( wxEVT_INIT_DIALOG, &DIALOG_CHOOSE_SYMBOL::OnInitDialog, this );
     Unbind( wxEVT_TIMER, &DIALOG_CHOOSE_SYMBOL::OnCloseTimer, this );
-    Unbind( COMPONENT_PRESELECTED, &DIALOG_CHOOSE_SYMBOL::OnComponentPreselected, this );
-    Unbind( COMPONENT_SELECTED, &DIALOG_CHOOSE_SYMBOL::OnComponentSelected, this );
+    Unbind( SYMBOL_PRESELECTED, &DIALOG_CHOOSE_SYMBOL::OnComponentPreselected, this );
+    Unbind( SYMBOL_SELECTED, &DIALOG_CHOOSE_SYMBOL::OnComponentSelected, this );
+
+    // Stop the timer during destruction early to avoid potential race conditions (that do happen)
+    m_dbl_click_timer->Stop();
+    delete m_dbl_click_timer;
 
     if( m_browser_button )
     {
@@ -246,12 +250,9 @@ DIALOG_CHOOSE_SYMBOL::~DIALOG_CHOOSE_SYMBOL()
     if( m_details )
     {
         m_details->Disconnect( wxEVT_CHAR_HOOK,
-                               wxKeyEventHandler( DIALOG_CHOOSE_SYMBOL::OnCharHook ), NULL, this );
+                               wxKeyEventHandler( DIALOG_CHOOSE_SYMBOL::OnCharHook ), nullptr,
+                               this );
     }
-
-    // I am not sure the following two lines are necessary, but they will not hurt anyone
-    m_dbl_click_timer->Stop();
-    delete m_dbl_click_timer;
 
     if( EESCHEMA_SETTINGS* cfg = dynamic_cast<EESCHEMA_SETTINGS*>( Kiface().KifaceSettings() ) )
     {
@@ -356,19 +357,14 @@ void DIALOG_CHOOSE_SYMBOL::OnUseBrowser( wxCommandEvent& aEvent )
 {
     m_external_browser_requested = true;
 
-    if( IsQuasiModal() )
-        EndQuasiModal( wxID_OK );
-    else if( IsModal() )
-        EndModal( wxID_OK );
-    else
-        wxFAIL_MSG( "Dialog called with neither Modal nor QuasiModal" );
+    wxPostEvent( this, wxCommandEvent( wxEVT_COMMAND_BUTTON_CLICKED, wxID_OK ) );
 }
 
 
 void DIALOG_CHOOSE_SYMBOL::OnCloseTimer( wxTimerEvent& aEvent )
 {
     // Hack handler because of eaten MouseUp event. See
-    // DIALOG_CHOOSE_COMPONENT::OnComponentSelected for the beginning
+    // DIALOG_CHOOSE_SYMBOL::OnComponentSelected for the beginning
     // of this spaghetti noodle.
 
     auto state = wxGetMouseState();
@@ -381,12 +377,7 @@ void DIALOG_CHOOSE_SYMBOL::OnCloseTimer( wxTimerEvent& aEvent )
     }
     else
     {
-        if( IsQuasiModal() )
-            EndQuasiModal( wxID_OK );
-        else if( IsModal() )
-            EndModal( wxID_OK );
-        else
-            wxFAIL_MSG( "Dialog called with neither Modal nor QuasiModal" );
+        wxPostEvent( this, wxCommandEvent( wxEVT_COMMAND_BUTTON_CLICKED, wxID_OK ) );
     }
 }
 
@@ -396,7 +387,7 @@ void DIALOG_CHOOSE_SYMBOL::ShowFootprintFor( LIB_ID const& aLibId )
     if( !m_fp_preview || !m_fp_preview->IsInitialized() )
         return;
 
-    LIB_PART* symbol = nullptr;
+    LIB_SYMBOL* symbol = nullptr;
 
     try
     {
@@ -404,10 +395,10 @@ void DIALOG_CHOOSE_SYMBOL::ShowFootprintFor( LIB_ID const& aLibId )
     }
     catch( const IO_ERROR& ioe )
     {
-        wxLogError( wxString::Format( _( "Error loading symbol %s from library %s.\n\n%s" ),
-                                      aLibId.GetLibItemName().wx_str(),
-                                      aLibId.GetLibNickname().wx_str(),
-                                      ioe.What() ) );
+        wxLogError( _( "Error loading symbol %s from library '%s'." ) + wxS( "\n%s" ),
+                    aLibId.GetLibItemName().wx_str(),
+                    aLibId.GetLibNickname().wx_str(),
+                    ioe.What() );
     }
 
     if( !symbol )
@@ -453,7 +444,7 @@ void DIALOG_CHOOSE_SYMBOL::PopulateFootprintSelector( LIB_ID const& aLibId )
 
     m_fp_sel_ctrl->ClearFilters();
 
-    LIB_PART* symbol = nullptr;
+    LIB_SYMBOL* symbol = nullptr;
 
     if( aLibId.IsValid() )
     {
@@ -463,11 +454,10 @@ void DIALOG_CHOOSE_SYMBOL::PopulateFootprintSelector( LIB_ID const& aLibId )
         }
         catch( const IO_ERROR& ioe )
         {
-            wxLogError( wxString::Format( _( "Error occurred loading symbol %s from library %s."
-                                             "\n\n%s" ),
-                                          aLibId.GetLibItemName().wx_str(),
-                                          aLibId.GetLibNickname().wx_str(),
-                                          ioe.What() ) );
+            wxLogError( _( "Error loading symbol %s from library '%s'." ) + wxS( "\n%s" ),
+                        aLibId.GetLibItemName().wx_str(),
+                        aLibId.GetLibNickname().wx_str(),
+                        ioe.What() );
         }
     }
 
@@ -549,7 +539,7 @@ void DIALOG_CHOOSE_SYMBOL::OnComponentSelected( wxCommandEvent& aEvent )
         // possible (docs are vague). To get around this, we use a one-shot
         // timer to schedule the dialog close.
         //
-        // See DIALOG_CHOOSE_COMPONENT::OnCloseTimer for the other end of this
+        // See DIALOG_CHOOSE_SYMBOL::OnCloseTimer for the other end of this
         // spaghetti noodle.
         m_dbl_click_timer->StartOnce( DIALOG_CHOOSE_SYMBOL::DblClickDelay );
     }

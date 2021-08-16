@@ -139,7 +139,7 @@ public:
     virtual SHAPE* Clone() const
     {
         assert( false );
-        return NULL;
+        return nullptr;
     };
 
     /**
@@ -281,7 +281,7 @@ public:
      * For closed shapes only.
      *
      * @param aPt point to check
-     * @param aUseBBoxCache gives better peformance if the bounding box caches have been
+     * @param aUseBBoxCache gives better performance if the bounding box caches have been
      *                      generated.
      * @return true if the point is inside the shape (edge is not treated as being inside).
      */

@@ -113,7 +113,7 @@ bool PGM_KICAD::OnPgmInit()
     m_bm.Init();
 
     // Add search paths to feed the PGM_KICAD::SysSearch() function,
-    // currenly limited in support to only look for project templates
+    // currently limited in support to only look for project templates
     {
         SEARCH_STACK bases;
 
@@ -148,7 +148,7 @@ bool PGM_KICAD::OnPgmInit()
             m_bm.m_search.Insert( it->second.GetValue(), 0 );
     }
 
-    KICAD_MANAGER_FRAME* frame = new KICAD_MANAGER_FRAME( NULL, wxT( "KiCad" ),
+    KICAD_MANAGER_FRAME* frame = new KICAD_MANAGER_FRAME( nullptr, wxT( "KiCad" ),
                                                           wxDefaultPosition, wxSize( 775, -1 ) );
     App().SetTopWindow( frame );
 

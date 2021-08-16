@@ -30,10 +30,10 @@
 #include <tools/kicad_manager_control.h>
 #include <dialogs/dialog_template_selector.h>
 #include <gestfich.h>
+#include <paths.h>
 #include <wx/checkbox.h>
 #include <wx/dir.h>
 #include <wx/filedlg.h>
-
 
 ///< Helper widget to select whether a new directory should be created for a project.
 class DIR_CHECKBOX : public wxPanel
@@ -43,7 +43,7 @@ public:
             : wxPanel( aParent )
     {
         m_cbCreateDir = new wxCheckBox( this, wxID_ANY,
-                                        _( "Create a new directory for the project" ) );
+                                        _( "Create a new folder for the project" ) );
         m_cbCreateDir->SetValue( true );
 
         wxBoxSizer* sizer = new wxBoxSizer( wxHORIZONTAL );
@@ -116,8 +116,8 @@ int KICAD_MANAGER_CONTROL::NewProject( const TOOL_EVENT& aEvent )
         if( !pro.Mkdir() )
         {
             wxString msg;
-            msg.Printf( _( "Directory \"%s\" could not be created.\n\n"
-                           "Please make sure you have write permissions and try again." ),
+            msg.Printf( _( "Folder '%s' could not be created.\n\n"
+                           "Make sure you have write permissions and try again." ),
                         pro.GetPath() );
             DisplayErrorMessage( m_frame, msg );
             return -1;
@@ -125,9 +125,9 @@ int KICAD_MANAGER_CONTROL::NewProject( const TOOL_EVENT& aEvent )
     }
     else if( directory.HasFiles() )
     {
-        wxString msg = _( "The selected directory is not empty.  It is recommended that you "
-                          "create projects in their own empty directory.\n\nDo you "
-                          "want to continue?" );
+        wxString msg = _( "The selected folder is not empty.  It is recommended that you "
+                          "create projects in their own empty folder.\n\n"
+                          "Do you want to continue?" );
 
         if( !IsOK( m_frame, msg ) )
             return -1;
@@ -191,8 +191,8 @@ int KICAD_MANAGER_CONTROL::NewFromTemplate( const TOOL_EVENT& aEvent )
 
     wxFileName fn( dlg.GetPath() );
 
-    // wxFileName automatically extracts an extension.  But if it isn't
-    // a .pro extension, we should keep it as part of the filename
+    // wxFileName automatically extracts an extension.  But if it isn't a .kicad_pro extension,
+    // we should keep it as part of the filename
     if( !fn.GetExt().IsEmpty() && fn.GetExt().ToStdString() != ProjectFileExtension )
         fn.SetName( fn.GetName() + wxT( "." ) + fn.GetExt() );
 
@@ -213,8 +213,8 @@ int KICAD_MANAGER_CONTROL::NewFromTemplate( const TOOL_EVENT& aEvent )
         if( !fn.Mkdir() )
         {
             wxString msg;
-            msg.Printf( _( "Directory \"%s\" could not be created.\n\n"
-                           "Please make sure you have write permissions and try again." ),
+            msg.Printf( _( "Folder '%s' could not be created.\n\n"
+                           "Make sure you have write permissions and try again." ),
                         fn.GetPath() );
             DisplayErrorMessage( m_frame, msg );
             return -1;
@@ -225,10 +225,8 @@ int KICAD_MANAGER_CONTROL::NewFromTemplate( const TOOL_EVENT& aEvent )
     {
         wxString msg;
 
-        msg.Printf( _( "Cannot write to folder \"%s\"." ), fn.GetPath() );
-        wxMessageDialog msgDlg( m_frame, msg, _( "Error!" ), wxICON_ERROR | wxOK | wxCENTER );
-        msgDlg.SetExtendedMessage( _( "Please check your access permissions to this folder "
-                                      "and try again." ) );
+        msg.Printf( _( "Insufficient permissions to write to folder '%s'." ), fn.GetPath() );
+        wxMessageDialog msgDlg( m_frame, msg, _( "Error" ), wxICON_ERROR | wxOK | wxCENTER );
         msgDlg.ShowModal();
         return -1;
     }
@@ -271,8 +269,8 @@ int KICAD_MANAGER_CONTROL::NewFromTemplate( const TOOL_EVENT& aEvent )
     if( !ps->GetSelectedTemplate()->CreateProject( fn, &errorMsg ) )
     {
         wxMessageDialog createDlg( m_frame,
-                                   _( "A problem occurred creating new project from template!" ),
-                                   _( "Template Error" ),
+                                   _( "A problem occurred creating new project from template." ),
+                                   _( "Error" ),
                                    wxOK | wxICON_ERROR );
 
         if( !errorMsg.empty() )
@@ -288,14 +286,13 @@ int KICAD_MANAGER_CONTROL::NewFromTemplate( const TOOL_EVENT& aEvent )
 }
 
 
-int KICAD_MANAGER_CONTROL::OpenProject( const TOOL_EVENT& aEvent )
+int KICAD_MANAGER_CONTROL::openProject( const wxString& aDefaultDir )
 {
     wxString wildcard = AllProjectFilesWildcard() + "|" + ProjectFileWildcard() + "|"
                         + LegacyProjectFileWildcard();
 
-    wxString     default_dir = m_frame->GetMruPath();
-    wxFileDialog dlg( m_frame, _( "Open Existing Project" ), default_dir, wxEmptyString,
-                      wildcard, wxFD_OPEN | wxFD_FILE_MUST_EXIST );
+    wxFileDialog dlg( m_frame, _( "Open Existing Project" ), aDefaultDir, wxEmptyString, wildcard,
+                      wxFD_OPEN | wxFD_FILE_MUST_EXIST );
 
     if( dlg.ShowModal() == wxID_CANCEL )
         return -1;
@@ -309,8 +306,22 @@ int KICAD_MANAGER_CONTROL::OpenProject( const TOOL_EVENT& aEvent )
         return -1;
 
     m_frame->LoadProject( pro );
+
     return 0;
 }
+
+
+int KICAD_MANAGER_CONTROL::OpenDemoProject( const TOOL_EVENT& aEvent )
+{
+    return openProject( PATHS::GetStockDemosPath() );
+}
+
+
+int KICAD_MANAGER_CONTROL::OpenProject( const TOOL_EVENT& aEvent )
+{
+    return openProject( m_frame->GetMruPath() );
+}
+
 
 int KICAD_MANAGER_CONTROL::CloseProject( const TOOL_EVENT& aEvent )
 {
@@ -387,7 +398,7 @@ public:
                || ext == LegacyPcbFileExtension
                || ext == KiCadFootprintFileExtension
                || ext == LegacyFootprintLibPathExtension
-               || ext == ComponentFileExtension
+               || ext == FootprintAssignmentFileExtension
                || destFile.GetName() == "fp-lib-table" )
         {
             KIFACE* pcbnew = m_frame->Kiway().KiFACE( KIWAY::FACE_PCB );
@@ -473,7 +484,7 @@ public:
             if( !m_errors.empty() )
                 m_errors += "\n";
 
-            msg.Printf( _( "Cannot copy folder \"%s\"." ), destDir.GetFullPath() );
+            msg.Printf( _( "Cannot copy folder '%s'." ), destDir.GetFullPath() );
             m_errors += msg;
         }
 
@@ -529,14 +540,14 @@ int KICAD_MANAGER_CONTROL::SaveProjectAs( const TOOL_EVENT& aEvent )
 
     if( wxDirExists( newProjectDir.GetFullPath() ) )
     {
-        msg.Printf( _( "\"%s\" already exists." ), newProjectDir.GetFullPath() );
+        msg.Printf( _( "'%s' already exists." ), newProjectDir.GetFullPath() );
         DisplayErrorMessage( m_frame, msg );
         return -1;
     }
 
     if( !wxMkdir( newProjectDir.GetFullPath() ) )
     {
-        msg.Printf( _( "Directory \"%s\" could not be created.\n\n"
+        msg.Printf( _( "Folder '%s' could not be created.\n\n"
                        "Please make sure you have write permissions and try again." ),
                     newProjectDir.GetPath() );
         DisplayErrorMessage( m_frame, msg );
@@ -545,10 +556,9 @@ int KICAD_MANAGER_CONTROL::SaveProjectAs( const TOOL_EVENT& aEvent )
 
     if( !newProjectDir.IsDirWritable() )
     {
-        msg.Printf( _( "Cannot write to folder \"%s\"." ), newProjectDir.GetFullPath() );
+        msg.Printf( _( "Insufficient permissions to write to folder '%s'." ),
+                    newProjectDir.GetFullPath() );
         wxMessageDialog msgDlg( m_frame, msg, _( "Error!" ), wxICON_ERROR | wxOK | wxCENTER );
-        msgDlg.SetExtendedMessage( _( "Please check your access permissions to this folder "
-                                      "and try again." ) );
         msgDlg.ShowModal();
         return -1;
     }
@@ -665,18 +675,16 @@ int KICAD_MANAGER_CONTROL::ShowPlayer( const TOOL_EVENT& aEvent )
                 filepath = legacy_board.GetFullPath();
         }
 
-        // Show the frame (and update widgets to set valid sizes),
-        // after creating player and before calling OpenProjectFiles().
-        // Useful because loading a complex board and building its internal data can be
-        // time consuming
-        player->Show( true );
-        wxSafeYield();
-
         if( !filepath.IsEmpty() )
         {
             if( !player->OpenProjectFiles( std::vector<wxString>( 1, filepath ) ) )
+            {
+                player->Destroy();
                 return -1;
+            }
         }
+
+        player->Show( true );
     }
 
     // Needed on Windows, other platforms do not use it, but it creates no issue
@@ -786,6 +794,7 @@ void KICAD_MANAGER_CONTROL::setTransitions()
 {
     Go( &KICAD_MANAGER_CONTROL::NewProject,      KICAD_MANAGER_ACTIONS::newProject.MakeEvent() );
     Go( &KICAD_MANAGER_CONTROL::NewFromTemplate, KICAD_MANAGER_ACTIONS::newFromTemplate.MakeEvent() );
+    Go( &KICAD_MANAGER_CONTROL::OpenDemoProject, KICAD_MANAGER_ACTIONS::openDemoProject.MakeEvent() );
     Go( &KICAD_MANAGER_CONTROL::OpenProject,     KICAD_MANAGER_ACTIONS::openProject.MakeEvent() );
     Go( &KICAD_MANAGER_CONTROL::CloseProject,    KICAD_MANAGER_ACTIONS::closeProject.MakeEvent() );
     Go( &KICAD_MANAGER_CONTROL::SaveProjectAs,   ACTIONS::saveAs.MakeEvent() );

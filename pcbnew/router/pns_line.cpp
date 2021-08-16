@@ -355,6 +355,13 @@ bool LINE::Walkaround( const SHAPE_LINE_CHAIN& aObstacle, SHAPE_LINE_CHAIN& aPat
             vc->neighbours.push_back(vnext);
     }
 
+    // In the case that the initial path ends *inside* the current obstacle (i.e. the mouse cursor
+    // is somewhere inside the hull for the current obstacle) we want to end the walkaround at the
+    // point closest to the cursor
+    bool inLast  = aObstacle.PointInside( CPoint( -1 ) ) && !aObstacle.PointOnEdge( CPoint( -1 ) );
+    bool appendV = true;
+    int  lastDst = INT_MAX;
+
     int i = 0;
 #ifdef TOM_EXTRA_DEBUG
     for(auto &v: vts)
@@ -373,7 +380,7 @@ bool LINE::Walkaround( const SHAPE_LINE_CHAIN& aObstacle, SHAPE_LINE_CHAIN& aPat
     int iterLimit = 1000;
 
     // keep scanning the graph until we reach the end point of the path
-    while ( v->indexp != (pnew.PointCount() - 1) )
+    while( v->indexp != ( pnew.PointCount() - 1 ) )
     {
         iterLimit--;
 
@@ -384,7 +391,7 @@ bool LINE::Walkaround( const SHAPE_LINE_CHAIN& aObstacle, SHAPE_LINE_CHAIN& aPat
             return false;
         }
 
-        if(v->visited)
+        if( v->visited )
         {
             // loop found? stop walking
             break;
@@ -396,17 +403,18 @@ bool LINE::Walkaround( const SHAPE_LINE_CHAIN& aObstacle, SHAPE_LINE_CHAIN& aPat
 
         VERTEX* v_next = nullptr;
 
-        if (v->type == OUTSIDE)
+        if( v->type == OUTSIDE )
         {
             // current vertex is outside? first look for any vertex further down the path
             // that is not inside the hull
-            out.Append(v->pos);
+            out.Append( v->pos );
             VERTEX* v_next_fallback = nullptr;
             for( auto vn : v->neighbours )
             {
-                if( areNeighbours( vn->indexp , v->indexp, pnew.PointCount() ) && vn->type != INSIDE )
+                if( areNeighbours( vn->indexp , v->indexp, pnew.PointCount() ) &&
+                    vn->type != INSIDE )
                 {
-                    if( !vn->visited)
+                    if( !vn->visited )
                     {
                         v_next = vn;
                         break;
@@ -416,11 +424,11 @@ bool LINE::Walkaround( const SHAPE_LINE_CHAIN& aObstacle, SHAPE_LINE_CHAIN& aPat
                 }
             }
 
-            if(!v_next)
+            if( !v_next )
                 v_next = v_next_fallback;
 
             // such a vertex must always be present, if not, bummer.
-            if (!v_next)
+            if( !v_next )
             {
                 #ifdef TOM_EXTRA_DEBUG
                 printf("FAIL VN fallback %p\n", v_next_fallback );
@@ -429,7 +437,7 @@ bool LINE::Walkaround( const SHAPE_LINE_CHAIN& aObstacle, SHAPE_LINE_CHAIN& aPat
             }
 
         }
-        else if (v->type == ON_EDGE)
+        else if( v->type == ON_EDGE )
         {
             // look first for the first vertex outside the hull
             for( VERTEX* vn : v->neighbours )
@@ -448,12 +456,12 @@ bool LINE::Walkaround( const SHAPE_LINE_CHAIN& aObstacle, SHAPE_LINE_CHAIN& aPat
             // no outside vertices found? continue traversing the hull
             if( !v_next )
             {
-                for( VERTEX* vn: v->neighbours)
+                for( VERTEX* vn : v->neighbours )
                 {
                     #ifdef TOM_EXTRA_DEBUG
                     printf("- scan ip %d ih %d type %d\n", vn->indexp, vn->indexh, vn->type );
                     #endif
-                    if( vn->type == ON_EDGE &&
+                    if( vn->type == ON_EDGE && !vn->isHull &&
                         areNeighbours( vn->indexp, v->indexp, pnew.PointCount() ) &&
                         ( vn->indexh == ( ( v->indexh + 1 ) % hnew.PointCount() ) ) )
                     {
@@ -467,16 +475,35 @@ bool LINE::Walkaround( const SHAPE_LINE_CHAIN& aObstacle, SHAPE_LINE_CHAIN& aPat
             // we should never reach this part of the code, but who really knows?
             if( !v_next )
             {
-                for( VERTEX* vn: v->neighbours)
+                for( VERTEX* vn : v->neighbours )
                 {
-                    if ( vn->type == ON_EDGE )
+                    if( vn->type == ON_EDGE )
                     {
-                        if( vn->indexh == ( (v->indexh + 1) % hnew.PointCount() ) )
+                        if( vn->indexh == ( ( v->indexh + 1 ) % hnew.PointCount() ) )
                         {
                             v_next = vn;
-
                             break;
                         }
+                    }
+                }
+
+                // Did we get the next hull point but the end of the line is inside?  Instead of walking
+                // around the hull some more (which will just end up taking us back to the start), lets
+                // just project the normal of the endpoint onto this next segment and call it quits.
+                if( inLast && v_next )
+                {
+                    int d = ( v_next->pos - CPoint( -1 ) ).SquaredEuclideanNorm();
+
+                    if( d < lastDst )
+                    {
+                        lastDst = d;
+                    }
+                    else
+                    {
+                        VECTOR2I proj = SEG( v->pos, v_next->pos ).NearestPoint( CPoint( -1 ) );
+                        out.Append( proj );
+                        appendV = false;
+                        break;
                     }
                 }
             }
@@ -486,15 +513,15 @@ bool LINE::Walkaround( const SHAPE_LINE_CHAIN& aObstacle, SHAPE_LINE_CHAIN& aPat
         v_prev = v;
         v = v_next;
 
-        
-
         if( !v )
         {
             return false;
         }
     }
 
-    out.Append( v->pos );
+    if( appendV )
+        out.Append( v->pos );
+
     aPath = out;
 
     return true;
@@ -513,7 +540,7 @@ bool LINE::Is45Degree() const
     {
         const SEG& s = m_line.CSegment( i );
 
-        if( m_line.isArc( i ) )
+        if( m_line.IsArcSegment( i ) )
             continue;
 
         if( s.Length() < 10 )
@@ -660,7 +687,7 @@ void LINE::dragCorner45( const VECTOR2I& aP, int aIndex )
     else
     {
         // Are we next to an arc? Insert a new point so we slice correctly
-        if( m_line.CShapes()[aIndex + 1] >= 0 )
+        if( m_line.IsPtOnArc( static_cast<size_t>( aIndex ) + 1 ) )
             m_line.Insert( aIndex + 1, m_line.CPoint( aIndex + 1 ) );
 
         // fixme: awkward behaviour for "outwards" drags
@@ -678,23 +705,28 @@ void LINE::dragCorner45( const VECTOR2I& aP, int aIndex )
 
 void LINE::dragCornerFree( const VECTOR2I& aP, int aIndex )
 {
-    const std::vector<ssize_t>& shapes = m_line.CShapes();
+    ssize_t idx = static_cast<ssize_t>( aIndex );
+    ssize_t numpts = static_cast<ssize_t>( m_line.PointCount() );
 
     // If we're asked to drag the end of an arc, insert a new vertex to drag instead
-    if( shapes[aIndex] >= 0 )
+    if( m_line.IsPtOnArc( idx ) )
     {
-        if( aIndex > 0 && shapes[aIndex - 1] == -1 )
-            m_line.Insert( aIndex, m_line.GetPoint( aIndex ) );
-        else if( aIndex < shapes.size() - 1 && shapes[aIndex + 1] != shapes[aIndex] )
+        if( idx == 0 || ( idx > 0 && !m_line.IsPtOnArc( idx - 1 ) ) )
         {
-            aIndex++;
-            m_line.Insert( aIndex, m_line.GetPoint( aIndex ) );
+            m_line.Insert( idx, m_line.GetPoint( idx ) );
+        }
+        else if( ( idx == numpts - 1 ) || ( idx < numpts - 1 && !m_line.IsArcSegment( idx ) ) )
+        {
+            idx++;
+            m_line.Insert( idx, m_line.GetPoint( idx ) );
         }
         else
+        {
             wxASSERT_MSG( false, "Attempt to dragCornerFree in the middle of an arc!" );
+        }
     }
 
-    m_line.SetPoint( aIndex, aP );
+    m_line.SetPoint( idx, aP );
     m_line.Simplify();
 }
 
@@ -823,14 +855,12 @@ void LINE::dragSegment45( const VECTOR2I& aP, int aIndex )
 
     target = snapToNeighbourSegments( path, aP, aIndex );
 
-    const std::vector<ssize_t>& shapes = path.CShapes();
-
     // We require a valid s_prev and s_next.  If we are at the start or end of the line, we insert
     // a new point at the start or end so there is a zero-length segment for prev or next (we will
     // resize it as part of the drag operation).  If we are next to an arc, we do this also, as we
     // cannot drag away one of the arc's points.
 
-    if( index == 0 || shapes[index] >= 0 )
+    if( index == 0 || path.IsPtOnArc( index ) )
     {
         path.Insert( index > 0 ? index + 1 : 0, path.CPoint( index ) );
         index++;
@@ -840,7 +870,7 @@ void LINE::dragSegment45( const VECTOR2I& aP, int aIndex )
     {
         path.Insert( path.PointCount() - 1, path.CPoint( -1 ) );
     }
-    else if( shapes[index + 1] >= 0 )
+    else if( path.IsPtOnArc( index + 1 ) )
     {
         path.Insert( index + 1, path.CPoint( index + 1 ) );
     }
@@ -1052,31 +1082,14 @@ void LINE::ClipVertexRange( int aStart, int aEnd )
     int arcIdx    = -1;
     int linkIdx   = 0;
 
-    auto shapes    = m_line.CShapes();
-    int  numPoints = static_cast<int>( shapes.size() );
+    int numPoints = static_cast<int>( m_line.PointCount() );
 
-    for( int i = 0; i < m_line.PointCount(); i++ )
+    for( int i = 0; i < m_line.PointCount(); i = m_line.NextShape( i ) )
     {
         if( i <= aStart )
             firstLink = linkIdx;
 
-        if( shapes[i] >= 0 )
-        {
-            // Account for "hidden segments" between two arcs
-            if( i > aStart && ( shapes[i - 1] >= 0 ) && ( shapes[i - 1] != shapes[i] ) )
-                linkIdx++;
-
-            arcIdx = shapes[i];
-
-            // Skip over the rest of the arc vertices
-            while( i < numPoints && shapes[i] == arcIdx )
-                i++;
-
-            // Back up two vertices to restart at the segment coincident with the end of the arc
-            i -= 2;
-        }
-
-        if( i >= aEnd - 1 || linkIdx >= lastLink )
+        if( i < 0 || i >= aEnd - 1 || linkIdx >= lastLink )
         {
             lastLink = linkIdx;
             break;

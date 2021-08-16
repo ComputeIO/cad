@@ -2,6 +2,7 @@
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
  * Copyright (C) 2020 CERN
+ * Copyright (C) 2021 KiCad Developers, see AUTHORS.txt for contributors.
  * @author Jon Evans <jon@craftyjon.com>
  *
  * This program is free software: you can redistribute it and/or modify it
@@ -21,6 +22,7 @@
 #include <config_params.h>
 #include <project.h>
 #include <project/net_settings.h>
+#include <settings/json_settings_internals.h>
 #include <project/project_file.h>
 #include <settings/common_settings.h>
 #include <settings/parameters.h>
@@ -35,12 +37,12 @@ const int projectFileSchemaVersion = 1;
 
 PROJECT_FILE::PROJECT_FILE( const wxString& aFullPath ) :
         JSON_SETTINGS( aFullPath, SETTINGS_LOC::PROJECT, projectFileSchemaVersion ),
-        m_sheets(),
-        m_boards(),
-        m_project( nullptr ),
         m_ErcSettings( nullptr ),
         m_SchematicSettings( nullptr ),
-        m_BoardSettings()
+        m_BoardSettings(),
+        m_sheets(),
+        m_boards(),
+        m_project( nullptr )
 {
     // Keep old files around
     m_deleteLegacyAfterMigration = false;
@@ -142,7 +144,7 @@ bool PROJECT_FILE::MigrateFromLegacy( wxConfigBase* aCfg )
                     libKey << ++libIndex;
                 }
 
-                ( *this )[PointerFromString( aDest )] = libs;
+                Set( aDest, libs );
             };
 
     aCfg->SetPath( wxT( "/LibeditFrame" ) );
@@ -168,7 +170,7 @@ bool PROJECT_FILE::MigrateFromLegacy( wxConfigBase* aCfg )
             eqKey << ++eqIdx;
         }
 
-        ( *this )[PointerFromString( "cvpcb.equivalence_files" )] = eqs;
+        Set( "cvpcb.equivalence_files", eqs );
     }
 
     // All CvPcb params that we want to keep have been migrated above
@@ -194,7 +196,7 @@ bool PROJECT_FILE::MigrateFromLegacy( wxConfigBase* aCfg )
             libKey << ++libIdx;
         }
 
-        ( *this )[PointerFromString( "schematic.legacy_lib_list" )] = libs;
+        Set( "schematic.legacy_lib_list", libs );
     }
 
     group_blacklist.insert( wxT( "/eeschema" ) );
@@ -219,7 +221,7 @@ bool PROJECT_FILE::MigrateFromLegacy( wxConfigBase* aCfg )
             txtKey << ++txtIdx;
         }
 
-        ( *this )[PointerFromString( "text_variables" )] = vars;
+        Set( "text_variables", vars );
     }
 
     group_blacklist.insert( wxT( "/text_variables" ) );
@@ -241,7 +243,13 @@ bool PROJECT_FILE::MigrateFromLegacy( wxConfigBase* aCfg )
     fromLegacy<int>( aCfg, "JunctionSize",          "schematic.drawing.default_junction_size" );
 
     fromLegacyString(   aCfg, "FieldNameTemplates", "schematic.drawing.field_names" );
-    fromLegacy<double>( aCfg, "TextOffsetRatio",    "schematic.drawing.text_offset_ratio" );
+
+    if( !fromLegacy<double>( aCfg, "TextOffsetRatio", "schematic.drawing.text_offset_ratio" ) )
+    {
+        // Use the spacing of Eeschema V5
+        Set( "schematic.drawing.text_offset_ratio", 0.08 );
+        Set( "schematic.drawing.label_size_ratio", 0.25 );
+    }
 
     // All schematic_editor keys we keep are migrated above
     group_blacklist.insert( wxT( "/schematic_editor" ) );
@@ -273,7 +281,7 @@ bool PROJECT_FILE::MigrateFromLegacy( wxConfigBase* aCfg )
             key << ++idx;
         }
 
-        ( *this )[PointerFromString( bp + "drc_exclusions" )] = exclusions;
+        Set( bp + "drc_exclusions", exclusions );
     }
 
     fromLegacy<bool>( aCfg,   "AllowMicroVias",  bp + "rules.allow_microvias" );
@@ -372,7 +380,7 @@ bool PROJECT_FILE::MigrateFromLegacy( wxConfigBase* aCfg )
             key << ++idx;
         }
 
-        ( *this )[PointerFromString( bp + "track_widths" )] = widths;
+        Set( bp + "track_widths", widths );
     }
 
     {
@@ -398,7 +406,7 @@ bool PROJECT_FILE::MigrateFromLegacy( wxConfigBase* aCfg )
             key << ++idx;
         }
 
-        ( *this )[PointerFromString( bp + "via_dimensions" )] = vias;
+        Set( bp + "via_dimensions", vias );
     }
 
     {
@@ -428,7 +436,7 @@ bool PROJECT_FILE::MigrateFromLegacy( wxConfigBase* aCfg )
             key << ++idx;
         }
 
-        ( *this )[PointerFromString( bp + "diff_pair_dimensions" )] = pairs;
+        Set( bp + "diff_pair_dimensions",  pairs );
     }
 
     group_blacklist.insert( wxT( "/pcbnew" ) );
@@ -461,7 +469,7 @@ bool PROJECT_FILE::MigrateFromLegacy( wxConfigBase* aCfg )
                     }
                 }
 
-                ( *this )[PointerFromString( "sheets" )] = arr;
+                Set( "sheets", arr );
 
                 aCfg->SetPath( "/" );
 
@@ -494,8 +502,7 @@ bool PROJECT_FILE::MigrateFromLegacy( wxConfigBase* aCfg )
 
                     try
                     {
-                        nlohmann::json::json_pointer ptr( "/legacy" + aGroup + "/" + key );
-                        ( *this )[ptr] = val;
+                        Set( "legacy." + aGroup + "." + key, val );
                     }
                     catch( ... )
                     {
@@ -543,8 +550,7 @@ bool PROJECT_FILE::SaveToFile( const wxString& aDirectory, bool aForce )
 {
     wxASSERT( m_project );
 
-    ( *this )[PointerFromString( "meta.filename" )] =
-            m_project->GetProjectName() + "." + ProjectFileExtension;
+    Set( "meta.filename", m_project->GetProjectName() + "." + ProjectFileExtension );
 
     return JSON_SETTINGS::SaveToFile( aDirectory, aForce );
 }

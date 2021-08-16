@@ -22,13 +22,15 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
 
-#include <kicad_string.h>
+#include <string_utils.h>
 #include <board_commit.h>
 #include <pcb_edit_frame.h>
 #include <pcb_layer_box_selector.h>
+#include <pcbnew.h>
 #include <board.h>
+#include <board_design_settings.h>
 #include <footprint.h>
-#include <dimension.h>
+#include <pcb_dimension.h>
 #include <fp_shape.h>
 #include <pcb_text.h>
 #include <widgets/unit_binder.h>
@@ -136,9 +138,7 @@ DIALOG_GLOBAL_EDIT_TEXT_AND_GRAPHICS::DIALOG_GLOBAL_EDIT_TEXT_AND_GRAPHICS( PCB_
     m_LayerCtrl->Resync();
 
     m_grid->SetCellHighlightPenWidth( 0 );
-    wxFont infoFont = wxSystemSettings::GetFont( wxSYS_DEFAULT_GUI_FONT );
-    infoFont.SetSymbolicSize( wxFONTSIZE_SMALL );
-    m_grid->SetDefaultCellFont( infoFont );
+    m_grid->SetDefaultCellFont( KIUI::GetInfoFont() );
 
     m_sdbSizerButtonsOK->SetDefault();
 
@@ -285,10 +285,10 @@ void DIALOG_GLOBAL_EDIT_TEXT_AND_GRAPHICS::processItem( BOARD_COMMIT& aCommit, B
 {
     aCommit.Modify( aItem );
 
-    EDA_TEXT*       textItem = dynamic_cast<EDA_TEXT*>( aItem );
-    FP_TEXT*        fpTextItem = dynamic_cast<FP_TEXT*>( aItem );
-    PCB_SHAPE*      drawItem = dynamic_cast<PCB_SHAPE*>( aItem );
-    DIMENSION_BASE* dimension = dynamic_cast<DIMENSION_BASE*>( aItem );
+    EDA_TEXT*           textItem = dynamic_cast<EDA_TEXT*>( aItem );
+    FP_TEXT*            fpTextItem = dynamic_cast<FP_TEXT*>( aItem );
+    PCB_SHAPE*          drawItem = dynamic_cast<PCB_SHAPE*>( aItem );
+    PCB_DIMENSION_BASE* dimension = dynamic_cast<PCB_DIMENSION_BASE*>( aItem );
 
     if( dimension )
         textItem = &dimension->Text();

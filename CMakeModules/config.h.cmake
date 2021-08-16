@@ -7,7 +7,7 @@
 
 #cmakedefine HAVE_STRNCASECMP
 
-#cmakedefine HAVE_STRTOKR       // spelled odly to differ from wx's similar test
+#cmakedefine HAVE_STRTOKR       // spelled oddly to differ from wx's similar test
 
 // Handle platform differences in math.h
 #cmakedefine HAVE_MATH_H
@@ -98,5 +98,8 @@
 
 /// When pkg-config config is not available for ngspice, use ngspice/config.h for version.
 #cmakedefine NGSPICE_HAVE_CONFIG_H
+
+/// Path to the python executable that should be used by KiCad
+#define PYTHON_EXECUTABLE               "@PYTHON_EXECUTABLE@"
 
 #endif  // CONFIG_H_

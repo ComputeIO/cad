@@ -26,12 +26,15 @@
  *  2 - create a footprint report (pos and footprint descr) (ascii file)
  */
 
-#include <kicad_string.h>
+#include <string_utils.h>
 #include <macros.h>
 #include <locale_io.h>
+#include <board_design_settings.h>
 #include <build_version.h>
 #include <export_footprints_placefile.h>
+#include <pad.h>
 
+#include <wx/dirdlg.h>
 
 class LIST_MOD      // An helper class used to build a list of useful footprints.
 {
@@ -71,7 +74,8 @@ enum SELECT_SIDE
 };
 
 PLACE_FILE_EXPORTER::PLACE_FILE_EXPORTER( BOARD* aBoard, bool aUnitsMM, bool aExcludeAllTH,
-                                          bool aTopSide, bool aBottomSide, bool aFormatCSV )
+                                          bool aTopSide, bool aBottomSide, bool aFormatCSV,
+                                          bool aUseAuxOrigin )
 {
     m_board        = aBoard;
     m_unitsMM      = aUnitsMM;
@@ -88,6 +92,11 @@ PLACE_FILE_EXPORTER::PLACE_FILE_EXPORTER( BOARD* aBoard, bool aUnitsMM, bool aEx
         m_side = PCB_NO_SIDE;
 
     m_formatCSV = aFormatCSV;
+
+    if( aUseAuxOrigin )
+        m_place_Offset = m_board->GetDesignSettings().m_AuxOrigin;
+    else
+        m_place_Offset = wxPoint( 0, 0 );
 }
 
 
@@ -101,8 +110,6 @@ std::string PLACE_FILE_EXPORTER::GenPositionData()
     int lenRefText = 8;
     int lenValText = 8;
     int lenPkgText = 16;
-
-    m_place_Offset = m_board->GetDesignSettings().m_AuxOrigin;
 
     // Calculating the number of useful footprints (CMS attribute, not VIRTUAL)
     m_fpCount = 0;

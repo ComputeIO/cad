@@ -23,6 +23,7 @@
 #include <geometry/seg.h>    // for SEG
 #include <geometry/shape.h>  // for MIN_PRECISION_IU
 
+const int MIN_PRECISION_45DEG = KiROUND( (double) SHAPE::MIN_PRECISION_IU * 0.7071 );
 
 bool CompareLength( int aLengthA, int aLengthB )
 {
@@ -70,6 +71,112 @@ BOOST_AUTO_TEST_CASE( ParameterCtorMod )
     BOOST_CHECK_EQUAL( circle.Center, VECTOR2I( 20, 30 ) );
     BOOST_CHECK_EQUAL( circle.Radius, 30 );
 }
+
+
+/**
+ * Struct to hold test cases for a given circle, a point and an expected return boolean
+ */
+struct CIR_PT_BOOL_CASE
+{
+    std::string m_case_name;
+    CIRCLE      m_circle;
+    VECTOR2I    m_point;
+    bool        m_exp_result;
+};
+
+// clang-format off
+/**
+ * Test cases for #CIRCLE::Contains
+ */
+static const std::vector<CIR_PT_BOOL_CASE> contains_cases = {
+    {
+        "on center",
+        { { 100, 100 }, 200 },
+        { 100, 100 },
+        false,
+    },
+    {
+        "0 deg",
+        { { 100, 100 }, 200 },
+        { 300, 100 },
+        true,
+    },
+    {
+        "0 deg, allowed tolerance pos",
+        { { 100, 100 }, 200 },
+        { 100, 300 + SHAPE::MIN_PRECISION_IU },
+        true,
+    },
+    {
+        "0 deg, allowed tolerance neg",
+        { { 100, 100 }, 200 },
+        { 100, 300 - SHAPE::MIN_PRECISION_IU },
+        true,
+    },
+    {
+        "0 deg, allowed tolerance pos + 1",
+        { { 100, 100 }, 200 },
+        { 100, 300 + SHAPE::MIN_PRECISION_IU + 1 },
+        false,
+    },
+    {
+        "0 deg, allowed tolerance neg - 1",
+        { { 100, 100 }, 200 },
+        { 100, 300 - SHAPE::MIN_PRECISION_IU - 1 },
+        false,
+    },
+    {
+        "45 deg",
+        { { 100, 100 }, 200 },
+        { 241, 241 },
+        true,
+    },
+    {
+        "45 deg, allowed tolerance pos",
+        { { 100, 100 }, 200 },
+        { 241 + MIN_PRECISION_45DEG, 241 + MIN_PRECISION_45DEG },
+        true,
+    },
+    {
+        "45 deg, allowed tolerance pos + 1",
+        { { 100, 100 }, 200 },
+        { 241 + MIN_PRECISION_45DEG + 1, 241 + MIN_PRECISION_45DEG + 1 },
+        false,
+    },
+    {
+        "90 deg",
+        { { 100, 100 }, 200 },
+        { 100, 300 },
+        true,
+    },
+    {
+        "180 deg",
+        { { 100, 100 }, 200 },
+        { -100, 100 },
+        true,
+    },
+    {
+        "270 deg",
+        { { 100, 100 }, 200 },
+        { 100, -100 },
+        true,
+    },
+};
+// clang-format on
+
+
+BOOST_AUTO_TEST_CASE( Contains )
+{
+    for( const auto& c : contains_cases )
+    {
+        BOOST_TEST_CONTEXT( c.m_case_name )
+        {
+            bool ret = c.m_circle.Contains( c.m_point );
+            BOOST_CHECK_EQUAL( ret, c.m_exp_result );
+        }
+    }
+}
+
 
 
 /**
@@ -179,6 +286,38 @@ static const std::vector<CIR_CIR_VECPT_CASE> intersect_circle_cases = {
             //no points
         },
     },
+    {
+        "KiROUND overflow 1",
+        { { 44798001, -94001999 }, 200001 },
+        { { 44797999, -94001999 }, 650001 },
+        {
+            //no points
+        },
+    },
+    {
+        "KiROUND overflow 2",
+        { { 50747999, -92402001 }, 650001 },
+        { { 50748001, -92402001 }, 200001 },
+        {
+            //no points
+        },
+    },
+    {
+        "KiROUND overflow 3",
+        { { 43947999, -92402001 }, 650001 },
+        { { 43948001, -92402001 }, 200001 },
+        {
+            //no points
+        },
+    },
+    {
+        "KiROUND overflow 4",
+        { { 46497999, -94001999 }, 200001 },
+        { { 46498001, -94001999 }, 650001 },
+        {
+            //no points
+        },
+    },
 };
 // clang-format on
 
@@ -220,6 +359,71 @@ struct SEG_SEG_VECPT_CASE
 /**
  * Test cases for #CIRCLE::Intersect( const SEG& aSeg )
  */
+static const std::vector<SEG_SEG_VECPT_CASE> intersect_seg_cases = {
+    {
+        "two point aligned",
+        { { 0, 0 }, 20 },
+        { { 10, -40 }, {10, 40} },
+        {
+            { 10, -17 },
+            { 10, 17 },
+        },
+    },
+    {
+        "two point angled",
+        { { 0, 0 }, 20 },
+        { { -20, -40 }, {20, 40} },
+        {
+            { 8, 17 },
+            { -8, -17 },
+        },
+    },
+    {
+        "tangent",
+        { { 0, 0 }, 20 },
+        { { 20, 0 }, {20, 40} },
+        {
+            { 20, 0 }
+        },
+    },
+    {
+        "no intersection",
+        { { 0, 0 }, 20 },
+        { { 25, 0 }, {25, 40} },
+        {
+            //no points
+        },
+    },
+    {
+        "no intersection: seg end points inside circle",
+        { { 0, 0 }, 20 },
+        { { 0, 10 }, {0, -10} },
+        {
+            //no points
+        },
+    },
+};
+// clang-format on
+
+
+BOOST_AUTO_TEST_CASE( Intersect )
+{
+    for( const auto& c : intersect_seg_cases )
+    {
+        BOOST_TEST_CONTEXT( c.m_case_name )
+        {
+            std::vector<VECTOR2I> ret = c.m_circle.Intersect( c.m_seg );
+            BOOST_CHECK_EQUAL( c.m_exp_result.size(), ret.size() );
+            KI_TEST::CheckUnorderedMatches( c.m_exp_result, ret, CompareVector2I );
+        }
+    }
+}
+
+
+// clang-format off
+/**
+ * Test cases for #CIRCLE::IntersectLine( const SEG& aSeg )
+ */
 static const std::vector<SEG_SEG_VECPT_CASE> intersect_line_cases = {
     {
         "two point aligned",
@@ -255,6 +459,15 @@ static const std::vector<SEG_SEG_VECPT_CASE> intersect_line_cases = {
             //no points
         },
     },
+    {
+        "intersection, seg end points inside circle",
+        { { 0, 0 }, 20 },
+        { { 0, 10 }, {0, -10} },
+        {
+            { 0, 20 },
+            { 0, -20 }
+        },
+    },
 };
 // clang-format on
 
@@ -265,12 +478,14 @@ BOOST_AUTO_TEST_CASE( IntersectLine )
     {
         BOOST_TEST_CONTEXT( c.m_case_name )
         {
-            std::vector<VECTOR2I> ret = c.m_circle.Intersect( c.m_seg );
+            std::vector<VECTOR2I> ret = c.m_circle.IntersectLine( c.m_seg );
             BOOST_CHECK_EQUAL( c.m_exp_result.size(), ret.size() );
             KI_TEST::CheckUnorderedMatches( c.m_exp_result, ret, CompareVector2I );
         }
     }
 }
+
+
 
 /**
  * Struct to hold test cases for two lines, a point and an expected returned circle
@@ -322,7 +537,7 @@ static const std::vector<CIR_SEG_VECPT_CASE> construct_tan_tan_pt_cases = {
         { { 0, 0 }, {  1000000,       0 } },
         { { 0, 0 }, { -1000000, 1000000 } },
         { 400000, 0 },
-        { { 400009, 965709 } , 965709 }, // ammended to get the test to pass
+        { { 400009, 965709 } , 965709 }, // amended to get the test to pass
         //{ { 400000, 965686 } , 965686 }, // result from LibreCAD 2.2.0-rc2
     },
     {
@@ -330,7 +545,7 @@ static const std::vector<CIR_SEG_VECPT_CASE> construct_tan_tan_pt_cases = {
         { { 0, 0 }, {  1000,    0 } },
         { { 0, 0 }, { -1000, 1000 } },
         { 200, 100 },
-        { { 814, 1964} , 1964 }, // ammended to get the test to pass
+        { { 814, 1964} , 1964 }, // amended to get the test to pass
         //{ { 822, 1985} , 1985 }, // result from LibreCAD 2.2.0-rc2
     },
     {

@@ -318,11 +318,12 @@ public:
     }
 
     // Set a new filename without changing anything else
-    void SetFileName( wxString aFilename )
+    void SetFileName( const wxString& aFilename )
     {
         // Filenames are stored using unix notation
-        aFilename.Replace( wxT("\\"), wxT("/") );
-        m_fields[ SHEETFILENAME ].SetText( aFilename );
+        wxString tmp = aFilename;
+        tmp.Replace( wxT( "\\" ), wxT( "/" ) );
+        m_fields[ SHEETFILENAME ].SetText( tmp );
     }
 
     // Geometric transforms (used in block operations):
@@ -330,7 +331,7 @@ public:
     void Move( const wxPoint& aMoveVector ) override;
     void MirrorHorizontally( int aCenter ) override;
     void MirrorVertically( int aCenter ) override;
-    void Rotate( wxPoint aCenter ) override;
+    void Rotate( const wxPoint& aCenter ) override;
 
     bool Matches( const wxFindReplaceData& aSearchData, void* aAuxData ) const override;
 
@@ -357,7 +358,7 @@ public:
         return ( aItem->Type() == SCH_LINE_T && aItem->GetLayer() == LAYER_WIRE )
                 || ( aItem->Type() == SCH_LINE_T && aItem->GetLayer() == LAYER_BUS )
                 || ( aItem->Type() == SCH_NO_CONNECT_T )
-                || ( aItem->Type() == SCH_COMPONENT_T );
+                || ( aItem->Type() == SCH_SYMBOL_T );
     }
 
     std::vector<wxPoint> GetConnectionPoints() const override;
@@ -423,7 +424,7 @@ public:
      *
      * @return 0 if the page numbers are equal, -1 if aPageNumberA < aPageNumberB, 1 otherwise
      */
-    static int ComparePageNum( const wxString& aPageNumberA, const wxString aPageNumberB );
+    static int ComparePageNum( const wxString& aPageNumberA, const wxString& aPageNumberB );
 
 #if defined(DEBUG)
     void Show( int nestLevel, std::ostream& os ) const override;

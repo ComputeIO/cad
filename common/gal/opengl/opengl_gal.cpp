@@ -80,7 +80,7 @@ using namespace KIGFX::BUILTIN_FONT;
 static void      InitTesselatorCallbacks( GLUtesselator* aTesselator );
 static const int glAttributes[] = { WX_GL_RGBA, WX_GL_DOUBLEBUFFER, WX_GL_DEPTH_SIZE, 8, 0 };
 
-wxGLContext* OPENGL_GAL::m_glMainContext = NULL;
+wxGLContext* OPENGL_GAL::m_glMainContext = nullptr;
 int          OPENGL_GAL::m_instanceCounter = 0;
 GLuint       OPENGL_GAL::g_fontTexture = 0;
 bool         OPENGL_GAL::m_isBitmapFontLoaded = false;
@@ -205,7 +205,7 @@ OPENGL_GAL::OPENGL_GAL( GAL_DISPLAY_OPTIONS& aDisplayOptions, wxWindow* aParent,
         m_overlayManager( nullptr ), m_mainBuffer( 0 ), m_overlayBuffer( 0 ),
         m_isContextLocked( false ), m_lockClientCookie( 0 )
 {
-    if( m_glMainContext == NULL )
+    if( m_glMainContext == nullptr )
     {
         m_glMainContext = GL_CONTEXT_MANAGER::Get().CreateCtx( this );
 
@@ -232,7 +232,7 @@ OPENGL_GAL::OPENGL_GAL( GAL_DISPLAY_OPTIONS& aDisplayOptions, wxWindow* aParent,
     m_groupCounter = 0;
 
     // Connect the native cursor handler
-    Connect( wxEVT_SET_CURSOR, wxSetCursorEventHandler( OPENGL_GAL::onSetNativeCursor ), NULL,
+    Connect( wxEVT_SET_CURSOR, wxSetCursorEventHandler( OPENGL_GAL::onSetNativeCursor ), nullptr,
              this );
 
     // Connecting the event handlers
@@ -272,7 +272,7 @@ OPENGL_GAL::OPENGL_GAL( GAL_DISPLAY_OPTIONS& aDisplayOptions, wxWindow* aParent,
 
     SetTarget( TARGET_NONCACHED );
 
-    // Avoid unitialized variables:
+    // Avoid uninitialized variables:
     ufm_worldPixelSize = 1;
     ufm_screenPixelSize = 1;
     ufm_pixelSizeMultiplier = 1;
@@ -320,7 +320,7 @@ OPENGL_GAL::~OPENGL_GAL()
 
         GL_CONTEXT_MANAGER::Get().UnlockCtx( m_glMainContext );
         GL_CONTEXT_MANAGER::Get().DestroyCtx( m_glMainContext );
-        m_glMainContext = NULL;
+        m_glMainContext = nullptr;
     }
 }
 
@@ -329,8 +329,8 @@ wxString OPENGL_GAL::CheckFeatures( GAL_DISPLAY_OPTIONS& aOptions )
 {
     wxString retVal = wxEmptyString;
 
-    wxFrame* testFrame = new wxFrame( NULL, wxID_ANY, wxT( "" ), wxDefaultPosition, wxSize( 1, 1 ),
-                                      wxFRAME_TOOL_WINDOW | wxNO_BORDER );
+    wxFrame* testFrame = new wxFrame( nullptr, wxID_ANY, wxT( "" ), wxDefaultPosition,
+                                      wxSize( 1, 1 ), wxFRAME_TOOL_WINDOW | wxNO_BORDER );
 
     KIGFX::OPENGL_GAL* opengl_gal = nullptr;
 
@@ -445,6 +445,7 @@ void OPENGL_GAL::beginDrawing()
             wxLogVerbose( "Could not create a framebuffer for overlays.\n" );
             m_overlayBuffer = 0;
         }
+
         m_isFramebufferInitialized = true;
     }
 
@@ -1000,6 +1001,17 @@ void OPENGL_GAL::DrawPolyline( const std::deque<VECTOR2D>& aPointList )
 }
 
 
+void OPENGL_GAL::DrawPolyline( const std::vector<VECTOR2D>& aPointList )
+{
+    drawPolyline(
+            [&]( int idx )
+            {
+                return aPointList[idx];
+            },
+            aPointList.size() );
+}
+
+
 void OPENGL_GAL::DrawPolyline( const VECTOR2D aPointList[], int aListSize )
 {
     drawPolyline(
@@ -1063,7 +1075,8 @@ void OPENGL_GAL::DrawPolygon( const VECTOR2D aPointList[], int aListSize )
 }
 
 
-void OPENGL_GAL::drawTriangulatedPolyset( const SHAPE_POLY_SET& aPolySet )
+void OPENGL_GAL::drawTriangulatedPolyset( const SHAPE_POLY_SET& aPolySet,
+                                          bool aStrokeTriangulation )
 {
     m_currentManager->Shader( SHADER_NONE );
     m_currentManager->Color( m_fillColor.r, m_fillColor.g, m_fillColor.b, m_fillColor.a );
@@ -1100,11 +1113,16 @@ void OPENGL_GAL::drawTriangulatedPolyset( const SHAPE_POLY_SET& aPolySet )
 
     if( ADVANCED_CFG::GetCfg().m_DrawTriangulationOutlines )
     {
+        aStrokeTriangulation = true;
+        SetStrokeColor( COLOR4D( 0.0, 1.0, 0.2, 1.0 ) );
+    }
+
+    if( aStrokeTriangulation )
+    {
         COLOR4D oldStrokeColor = m_strokeColor;
         double  oldLayerDepth = m_layerDepth;
 
         SetLayerDepth( m_layerDepth - 1 );
-        SetStrokeColor( COLOR4D( 0.0, 1.0, 0.2, 1.0 ) );
 
         for( unsigned int j = 0; j < aPolySet.TriangulatedPolyCount(); ++j )
         {
@@ -1126,11 +1144,11 @@ void OPENGL_GAL::drawTriangulatedPolyset( const SHAPE_POLY_SET& aPolySet )
 }
 
 
-void OPENGL_GAL::DrawPolygon( const SHAPE_POLY_SET& aPolySet )
+void OPENGL_GAL::DrawPolygon( const SHAPE_POLY_SET& aPolySet, bool aStrokeTriangulation )
 {
     if( aPolySet.IsTriangulationUpToDate() )
     {
-        drawTriangulatedPolyset( aPolySet );
+        drawTriangulatedPolyset( aPolySet, aStrokeTriangulation );
         return;
     }
 
@@ -1243,17 +1261,14 @@ void OPENGL_GAL::BitmapText( const wxString& aText, const VECTOR2D& aPosition,
     if( IsTextMirrored() || aText.Contains( wxT( "^{" ) ) || aText.Contains( wxT( "_{" ) ) )
         return GAL::BitmapText( aText, aPosition, aRotationAngle );
 
-    const UTF8 text( aText );
-    // Compute text size, so it can be properly justified
-    VECTOR2D textSize;
-    float    commonOffset;
+    const UTF8   text( aText );
+    VECTOR2D     textSize;
+    float        commonOffset;
     std::tie( textSize, commonOffset ) = computeBitmapTextSize( text );
 
     const double SCALE = 1.4 * GetGlyphSize().y / textSize.y;
-    bool         overbar = false;
-
-    int    overbarLength = 0;
-    double overbarHeight = textSize.y;
+    int          overbarLength = 0;
+    double       overbarHeight = textSize.y;
 
     Save();
 
@@ -1297,58 +1312,55 @@ void OPENGL_GAL::BitmapText( const wxString& aText, const VECTOR2D& aPosition,
     case TEXT_ATTRIBUTES::V_BOTTOM: break;
     }
 
-    int i = 0;
+    int overbarDepth = -1;
+    int braceNesting = 0;
 
     for( UTF8::uni_iter chIt = text.ubegin(), end = text.uend(); chIt < end; ++chIt )
     {
-        unsigned int c = *chIt;
-        wxASSERT_MSG( c != '\n' && c != '\r', wxT( "No support for multiline bitmap text yet" ) );
+        wxASSERT_MSG( *chIt != '\n' && *chIt != '\r',
+                wxT( "No support for multiline bitmap text yet" ) );
 
-        bool wasOverbar = overbar;
-
-        if( c == '~' )
+        if( *chIt == '~' && overbarDepth == -1 )
         {
-            if( ++chIt == end )
-                break;
+            UTF8::uni_iter lookahead = chIt;
 
-            c = *chIt;
-
-            if( c == '~' )
+            if( ++lookahead != end && *lookahead == '{' )
             {
-                // double ~ is really a ~ so go ahead and process the second one
-
-                // so what's a triple ~?  It could be a real ~ followed by an overbar, or
-                // it could be an overbar followed by a real ~.  The old algorithm did the
-                // former so we will too....
-            }
-            else
-            {
-                overbar = !overbar;
+                chIt = lookahead;
+                overbarDepth = braceNesting;
+                braceNesting++;
+                continue;
             }
         }
-        else if( c == ' ' || c == '}' || c == ')' )
+        else if( *chIt == '{' )
         {
-            overbar = false;
+            braceNesting++;
+        }
+        else if( *chIt == '}' )
+        {
+            if( braceNesting > 0 )
+                braceNesting--;
+
+            if( braceNesting == overbarDepth )
+            {
+                drawBitmapOverbar( overbarLength, overbarHeight );
+                overbarLength = 0;
+
+                overbarDepth = -1;
+                continue;
+            }
         }
 
-        if( wasOverbar && !overbar )
-        {
-            drawBitmapOverbar( overbarLength, overbarHeight );
-            overbarLength = 0;
-        }
-
-        if( overbar )
-            overbarLength += drawBitmapChar( c );
+        if( overbarDepth != -1 )
+            overbarLength += drawBitmapChar( *chIt );
         else
-            drawBitmapChar( c );
-
-        ++i;
+            drawBitmapChar( *chIt );
     }
 
     // Handle the case when overbar is active till the end of the drawn text
     m_currentManager->Translate( 0, commonOffset, 0 );
 
-    if( overbar && overbarLength > 0 )
+    if( overbarDepth != -1 && overbarLength > 0 )
         drawBitmapOverbar( overbarLength, overbarHeight );
 
     Restore();
@@ -2032,7 +2044,7 @@ void OPENGL_GAL::drawBitmapOverbar( double aLength, double aHeight )
 
     Save();
 
-    Translate( VECTOR2D( -aLength, -aHeight - 1.5 * H ) );
+    Translate( VECTOR2D( -aLength, -aHeight ) );
 
     m_currentManager->Reserve( 6 );
     m_currentManager->Color( m_strokeColor.r, m_strokeColor.g, m_strokeColor.b, m_strokeColor.a );
@@ -2058,33 +2070,38 @@ std::pair<VECTOR2D, float> OPENGL_GAL::computeBitmapTextSize( const UTF8& aText 
 
     VECTOR2D textSize( 0, 0 );
     float    commonOffset = std::numeric_limits<float>::max();
-    bool     in_overbar = false;
-    float    char_height = font_information.max_y - defaultGlyph->miny;
+    float    charHeight = font_information.max_y - defaultGlyph->miny;
+    int      overbarDepth = -1;
+    int braceNesting = 0;
 
     for( UTF8::uni_iter chIt = aText.ubegin(), end = aText.uend(); chIt < end; ++chIt )
     {
-        if( *chIt == '~' )
+        if( *chIt == '~' && overbarDepth == -1 )
         {
-            if( ++chIt == end )
-                break;
+            UTF8::uni_iter lookahead = chIt;
 
-            if( *chIt == '~' )
+            if( ++lookahead != end && *lookahead == '{' )
             {
-                // double ~ is really a ~ so go ahead and process the second one
-
-                // so what's a triple ~?  It could be a real ~ followed by an overbar, or
-                // it could be an overbar followed by a real ~.  The old algorithm did the
-                // former so we will too....
-            }
-            else
-            {
-                // single ~ toggles overbar
-                in_overbar = !in_overbar;
+                chIt = lookahead;
+                overbarDepth = braceNesting;
+                braceNesting++;
+                continue;
             }
         }
-        else if( in_overbar && ( *chIt == ' ' || *chIt == '}' || *chIt == ')' ) )
+        else if( *chIt == '{' )
         {
-            in_overbar = false;
+            braceNesting++;
+        }
+        else if( *chIt == '}' )
+        {
+            if( braceNesting > 0 )
+                braceNesting--;
+
+            if( braceNesting == overbarDepth )
+            {
+                overbarDepth = -1;
+                continue;
+            }
         }
 
         const FONT_GLYPH_TYPE* glyph = LookupGlyph( *chIt );
@@ -2096,18 +2113,10 @@ std::pair<VECTOR2D, float> OPENGL_GAL::computeBitmapTextSize( const UTF8& aText 
         }
 
         if( glyph )
-        {
             textSize.x += glyph->advance;
-
-            if( in_overbar )
-            {
-                const float H = lineGlyph->maxy - lineGlyph->miny;
-                textSize.y = std::max<float>( textSize.y, char_height + 1.5 * H );
-            }
-        }
     }
 
-    textSize.y = std::max<float>( textSize.y, char_height );
+    textSize.y = std::max<float>( textSize.y, charHeight );
     commonOffset = std::min<float>( font_information.max_y - defaultGlyph->maxy, commonOffset );
     textSize.y -= commonOffset;
 
@@ -2194,7 +2203,7 @@ void OPENGL_GAL::init()
     if( !m_glPrivContext )
         throw std::runtime_error( "Could not create a private OpenGL context" );
 
-    if( m_tesselator == NULL )
+    if( m_tesselator == nullptr )
         throw std::runtime_error( "Could not create the m_tesselator" );
     // End initialization checks
 
@@ -2327,6 +2336,7 @@ inline double round_to_half_pixel( double f, double r )
     return ( ceil( f / r ) - 0.5 ) * r;
 }
 
+
 void OPENGL_GAL::ComputeWorldScreenMatrix()
 {
     computeWorldScale();
@@ -2341,9 +2351,22 @@ void OPENGL_GAL::ComputeWorldScreenMatrix()
 }
 
 
-void OPENGL_GAL::DrawGlyph( const SHAPE_POLY_SET& aPolySet, int aNth, int aTotal )
+void OPENGL_GAL::DrawGlyph( const KIFONT::GLYPH& aGlyph, int aNth, int aTotal )
 {
-    fillPolygonAsTriangles( aPolySet );
+#ifdef DEBUG
+    std::cerr << "OPENGL_GAL::DrawGlyph( [aGlyph], " << aNth << ", " <<  aTotal << " )" << std::endl;
+#endif
+    if( aGlyph.IsStroke() )
+    {
+        for( auto pointList : aGlyph.GetPoints() )
+        {
+            DrawPolyline( pointList );
+        }
+    }
+    else if( aGlyph.IsOutline() )
+    {
+        fillPolygonAsTriangles( aGlyph.GetPolylist() );
+    }
 }
 
 

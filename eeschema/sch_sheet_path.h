@@ -31,11 +31,9 @@
 #ifndef CLASS_DRAWSHEET_PATH_H
 #define CLASS_DRAWSHEET_PATH_H
 
-#include <eda_item.h>
-#include <erc_item.h>
-
 #include <map>
 
+#include <kiid.h>
 
 /**
  * A simple container for schematic symbol instance information.
@@ -70,7 +68,7 @@ struct SCH_SHEET_INSTANCE
  *
  * A hierarchical schematic uses sheets (hierarchical sheets) included in a given sheet.
  * Each sheet corresponds to a schematic drawing handled by a SCH_SCREEN structure.  A
- * SCH_SCREEN structure contains drawings, and have a filename to write it's data.  Also a
+ * SCH_SCREEN structure contains drawings, and have a filename to write its data.  Also a
  * SCH_SCREEN displays a sheet number and the name of the sheet.
  *
  * In simple (and flat) hierarchies a sheet is linked to a SCH_SCREEN, and a SCH_SCREEN is
@@ -104,11 +102,12 @@ struct SCH_SHEET_INSTANCE
 
 
 class wxFindReplaceData;
+class EDA_ITEM;
 class SCH_SHEET;
 class SCH_SCREEN;
 class SCH_MARKER;
 class SCH_ITEM;
-class SCH_COMPONENT;
+class SCH_SYMBOL;
 class SCH_REFERENCE_LIST;
 
 
@@ -271,7 +270,7 @@ public:
     /**
      * Return the sheet path in a human readable form made from the sheet names.
      *
-     * The the "normal" path instead uses the #KIID objects in the path that do not change
+     * The "normal" path instead uses the #KIID objects in the path that do not change
      * even when editing sheet parameters.
      */
     wxString PathHumanReadable( bool aUseShortRootName = true ) const;
@@ -294,7 +293,7 @@ public:
      *                                   in lib.   The normal option is false, and set to true
      *                                   only to build the full list of symbols.
      */
-    void AppendSymbol( SCH_REFERENCE_LIST& aReferences, SCH_COMPONENT* aSymbol,
+    void AppendSymbol( SCH_REFERENCE_LIST& aReferences, SCH_SYMBOL* aSymbol,
                        bool aIncludePowerSymbols = true,
                        bool aForceIncludeOrphanSymbols = false ) const;
 
@@ -320,7 +319,7 @@ public:
      * @param aSymbol A symbol to add to aRefList
      * @param aIncludePowerSymbols Set to false to only get normal symbols.
      */
-    void AppendMultiUnitSymbol( SCH_MULTI_UNIT_REFERENCE_MAP& aRefList, SCH_COMPONENT* aSymbol,
+    void AppendMultiUnitSymbol( SCH_MULTI_UNIT_REFERENCE_MAP& aRefList, SCH_SYMBOL* aSymbol,
                                 bool aIncludePowerSymbols = true ) const;
 
     /**
@@ -347,7 +346,7 @@ public:
     bool TestForRecursion( const wxString& aSrcFileName, const wxString& aDestFileName );
 
     /**
-     * Make the sheet file name relative to it's parent sheet.
+     * Make the sheet file name relative to its parent sheet.
      *
      * This should only be called when changing the parent sheet path such performing a save
      * as or a new schematic without a project in stand alone mode.  The sheet file name is

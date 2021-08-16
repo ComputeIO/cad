@@ -135,17 +135,18 @@ public:
 
     /// @copydoc GAL::DrawPolyline()
     void DrawPolyline( const std::deque<VECTOR2D>& aPointList ) override;
+    void DrawPolyline( const std::vector<VECTOR2D>& aPointList ) override;
     void DrawPolyline( const VECTOR2D aPointList[], int aListSize ) override;
     void DrawPolyline( const SHAPE_LINE_CHAIN& aLineChain ) override;
 
     /// @copydoc GAL::DrawPolygon()
     void DrawPolygon( const std::deque<VECTOR2D>& aPointList ) override;
     void DrawPolygon( const VECTOR2D aPointList[], int aListSize ) override;
-    void DrawPolygon( const SHAPE_POLY_SET& aPolySet ) override;
+    void DrawPolygon( const SHAPE_POLY_SET& aPolySet, bool aStrokeTriangulation = false ) override;
     void DrawPolygon( const SHAPE_LINE_CHAIN& aPolySet ) override;
 
     /// @copydoc GAL::DrawGlyph()
-    virtual void DrawGlyph( const SHAPE_POLY_SET& aPolySet, int aNth, int aTotal ) override;
+    virtual void DrawGlyph( const KIFONT::GLYPH& aGlyph, int aNth, int aTotal ) override;
 
     /// @copydoc GAL::DrawCurve()
     void DrawCurve( const VECTOR2D& startPoint, const VECTOR2D& controlPointA,
@@ -282,14 +283,14 @@ public:
     }
 
     ///< Parameters passed to the GLU tesselator
-    typedef struct
+    struct TessParams
     {
         /// Manager used for storing new vertices
         VERTEX_MANAGER* vboManager;
 
         /// Intersect points, that have to be freed after tessellation
         std::deque< boost::shared_array<GLdouble> >& intersectPoints;
-    } TessParams;
+    };
 
 private:
     /// Super class definition
@@ -428,8 +429,11 @@ private:
 
     /**
      * Draw a set of polygons with a cached triangulation. Way faster than drawPolygon.
+     *
+     * @param aStrokeTriangulation indicates the triangulation should be stroked rather than
+     *                             filled.  Used for debugging.
      */
-    void drawTriangulatedPolyset( const SHAPE_POLY_SET& aPoly );
+    void drawTriangulatedPolyset( const SHAPE_POLY_SET& aPoly, bool aStrokeTriangulation );
 
 
     /**

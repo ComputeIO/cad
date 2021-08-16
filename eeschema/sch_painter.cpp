@@ -28,7 +28,7 @@
 #include <sch_item.h>
 
 #include <bezier_curves.h>
-#include <class_library.h>
+#include <symbol_library.h>
 #include <connection_graph.h>
 #include <gal/graphics_abstraction_layer.h>
 #include <geometry/geometry_utils.h>
@@ -63,14 +63,23 @@
 #include <kiface_i.h>
 #include <default_values.h>
 #include <advanced_config.h>
+#include <string_utils.h>
 #include "sch_painter.h"
 
 namespace KIGFX
 {
 SCH_RENDER_SETTINGS::SCH_RENDER_SETTINGS() :
-        m_ShowUnit( 0 ), m_ShowConvert( 0 ), m_ShowHiddenText( true ), m_ShowHiddenPins( true ),
-        m_ShowPinsElectricalType( true ), m_ShowDisabled( false ), m_ShowGraphicsDisabled( false ),
-        m_ShowUmbilicals( true ), m_OverrideItemColors( false ), m_TextOffsetRatio( 0.08 ),
+        m_ShowUnit( 0 ),
+        m_ShowConvert( 0 ),
+        m_ShowHiddenText( true ),
+        m_ShowHiddenPins( true ),
+        m_ShowPinsElectricalType( true ),
+        m_ShowDisabled( false ),
+        m_ShowGraphicsDisabled( false ),
+        m_ShowUmbilicals( true ),
+        m_OverrideItemColors( false ),
+        m_LabelSizeRatio( DEFAULT_LABEL_SIZE_RATIO ),
+        m_TextOffsetRatio( DEFAULT_TEXT_OFFSET_RATIO ),
         m_DefaultWireThickness( DEFAULT_WIRE_THICKNESS * IU_PER_MILS ),
         m_DefaultBusThickness( DEFAULT_BUS_THICKNESS * IU_PER_MILS ),
         m_PinSymbolSize( DEFAULT_TEXT_SIZE * IU_PER_MILS / 2 ),
@@ -111,7 +120,7 @@ EESCHEMA_SETTINGS* eeconfig()
 
 
 /**
- * Used when a LIB_PART is not found in library to draw a dummy shape.
+ * Used when a LIB_SYMBOL is not found in library to draw a dummy shape.
  * This symbol is a 400 mils square with the text "??"
  *
  *   DEF DUMMY U 0 40 Y Y 1 0 N
@@ -123,29 +132,29 @@ EESCHEMA_SETTINGS* eeconfig()
  *     ENDDRAW
  *   ENDDEF
  */
-static LIB_PART* dummy()
+static LIB_SYMBOL* dummy()
 {
-    static LIB_PART* part;
+    static LIB_SYMBOL* symbol;
 
-    if( !part )
+    if( !symbol )
     {
-        part = new LIB_PART( wxEmptyString );
+        symbol = new LIB_SYMBOL( wxEmptyString );
 
-        LIB_RECTANGLE* square = new LIB_RECTANGLE( part );
+        LIB_RECTANGLE* square = new LIB_RECTANGLE( symbol );
 
         square->MoveTo( wxPoint( Mils2iu( -200 ), Mils2iu( 200 ) ) );
         square->SetEndPosition( wxPoint( Mils2iu( 200 ), Mils2iu( -200 ) ) );
 
-        LIB_TEXT* text = new LIB_TEXT( part );
+        LIB_TEXT* text = new LIB_TEXT( symbol );
 
         text->SetTextSize( wxSize( Mils2iu( 150 ), Mils2iu( 150 ) ) );
         text->SetText( wxString( wxT( "??" ) ) );
 
-        part->AddDrawItem( square );
-        part->AddDrawItem( text );
+        symbol->AddDrawItem( square );
+        symbol->AddDrawItem( text );
     }
 
-    return part;
+    return symbol;
 }
 
 
@@ -186,8 +195,8 @@ bool SCH_PAINTER::Draw( const VIEW_ITEM* aItem, int aLayer )
     {
         BOX2I box = item->GetBoundingBox();
 
-        if( item->Type() == SCH_COMPONENT_T )
-            box = static_cast<const SCH_COMPONENT*>( item )->GetBodyBoundingBox();
+        if( item->Type() == SCH_SYMBOL_T )
+            box = static_cast<const SCH_SYMBOL*>( item )->GetBodyBoundingBox();
 
         m_gal->SetIsFill( false );
         m_gal->SetIsStroke( true );
@@ -199,30 +208,30 @@ bool SCH_PAINTER::Draw( const VIEW_ITEM* aItem, int aLayer )
 
     switch( item->Type() )
     {
-        HANDLE_ITEM( LIB_PART_T, LIB_PART );
-        HANDLE_ITEM( LIB_RECTANGLE_T, LIB_RECTANGLE );
-        HANDLE_ITEM( LIB_POLYLINE_T, LIB_POLYLINE );
-        HANDLE_ITEM( LIB_CIRCLE_T, LIB_CIRCLE );
-        HANDLE_ITEM( LIB_PIN_T, LIB_PIN );
-        HANDLE_ITEM( LIB_ARC_T, LIB_ARC );
-        HANDLE_ITEM( LIB_FIELD_T, LIB_FIELD );
-        HANDLE_ITEM( LIB_TEXT_T, LIB_TEXT );
-        HANDLE_ITEM( LIB_BEZIER_T, LIB_BEZIER );
-        HANDLE_ITEM( SCH_COMPONENT_T, SCH_COMPONENT );
-        HANDLE_ITEM( SCH_JUNCTION_T, SCH_JUNCTION );
-        HANDLE_ITEM( SCH_LINE_T, SCH_LINE );
-        HANDLE_ITEM( SCH_TEXT_T, SCH_TEXT );
-        HANDLE_ITEM( SCH_LABEL_T, SCH_TEXT );
-        HANDLE_ITEM( SCH_FIELD_T, SCH_FIELD );
-        HANDLE_ITEM( SCH_HIER_LABEL_T, SCH_HIERLABEL );
-        HANDLE_ITEM( SCH_GLOBAL_LABEL_T, SCH_GLOBALLABEL );
-        HANDLE_ITEM( SCH_SHEET_T, SCH_SHEET );
-        HANDLE_ITEM( SCH_SHEET_PIN_T, SCH_HIERLABEL );
-        HANDLE_ITEM( SCH_NO_CONNECT_T, SCH_NO_CONNECT );
-        HANDLE_ITEM( SCH_BUS_WIRE_ENTRY_T, SCH_BUS_ENTRY_BASE );
-        HANDLE_ITEM( SCH_BUS_BUS_ENTRY_T, SCH_BUS_ENTRY_BASE );
-        HANDLE_ITEM( SCH_BITMAP_T, SCH_BITMAP );
-        HANDLE_ITEM( SCH_MARKER_T, SCH_MARKER );
+    HANDLE_ITEM( LIB_SYMBOL_T, LIB_SYMBOL );
+    HANDLE_ITEM( LIB_RECTANGLE_T, LIB_RECTANGLE );
+    HANDLE_ITEM( LIB_POLYLINE_T, LIB_POLYLINE );
+    HANDLE_ITEM( LIB_CIRCLE_T, LIB_CIRCLE );
+    HANDLE_ITEM( LIB_PIN_T, LIB_PIN );
+    HANDLE_ITEM( LIB_ARC_T, LIB_ARC );
+    HANDLE_ITEM( LIB_FIELD_T, LIB_FIELD );
+    HANDLE_ITEM( LIB_TEXT_T, LIB_TEXT );
+    HANDLE_ITEM( LIB_BEZIER_T, LIB_BEZIER );
+    HANDLE_ITEM( SCH_SYMBOL_T, SCH_SYMBOL );
+    HANDLE_ITEM( SCH_JUNCTION_T, SCH_JUNCTION );
+    HANDLE_ITEM( SCH_LINE_T, SCH_LINE );
+    HANDLE_ITEM( SCH_TEXT_T, SCH_TEXT );
+    HANDLE_ITEM( SCH_LABEL_T, SCH_TEXT );
+    HANDLE_ITEM( SCH_FIELD_T, SCH_FIELD );
+    HANDLE_ITEM( SCH_HIER_LABEL_T, SCH_HIERLABEL );
+    HANDLE_ITEM( SCH_GLOBAL_LABEL_T, SCH_GLOBALLABEL );
+    HANDLE_ITEM( SCH_SHEET_T, SCH_SHEET );
+    HANDLE_ITEM( SCH_SHEET_PIN_T, SCH_HIERLABEL );
+    HANDLE_ITEM( SCH_NO_CONNECT_T, SCH_NO_CONNECT );
+    HANDLE_ITEM( SCH_BUS_WIRE_ENTRY_T, SCH_BUS_ENTRY_BASE );
+    HANDLE_ITEM( SCH_BUS_BUS_ENTRY_T, SCH_BUS_ENTRY_BASE );
+    HANDLE_ITEM( SCH_BITMAP_T, SCH_BITMAP );
+    HANDLE_ITEM( SCH_MARKER_T, SCH_MARKER );
 
     default: return false;
     }
@@ -257,8 +266,8 @@ float SCH_PAINTER::getShadowWidth() const
 
     // For best visuals the selection width must be a cross between the zoom level and the
     // default line width.
-    return (float) std::fabs( matrix.GetScale().x * 2.75 )
-           + Mils2iu( eeconfig()->m_Selection.thickness );
+    return (float) std::fabs( matrix.GetScale().x * 2.75 ) +
+           Mils2iu( eeconfig()->m_Selection.thickness );
 }
 
 
@@ -424,6 +433,7 @@ void SCH_PAINTER::strokeText( const wxString& aText, const VECTOR2D& aPosition,
 }
 
 
+
 void SCH_PAINTER::strokeText( const EDA_TEXT* aText, const VECTOR2D& aPosition, const EDA_ANGLE& aAngle )
 {
 #ifdef DEBUG
@@ -446,8 +456,7 @@ void SCH_PAINTER::strokeText( const EDA_TEXT* aText, const VECTOR2D& aPosition )
 }
 
 
-void SCH_PAINTER::draw( const LIB_PART* aPart, int aLayer, bool aDrawFields, int aUnit,
-                        int aConvert )
+void SCH_PAINTER::draw( const LIB_SYMBOL *aSymbol, int aLayer, bool aDrawFields, int aUnit, int aConvert )
 {
     if( !aUnit )
         aUnit = m_schSettings.m_ShowUnit;
@@ -455,16 +464,16 @@ void SCH_PAINTER::draw( const LIB_PART* aPart, int aLayer, bool aDrawFields, int
     if( !aConvert )
         aConvert = m_schSettings.m_ShowConvert;
 
-    std::unique_ptr<LIB_PART> tmpPart;
-    const LIB_PART*           drawnPart = aPart;
+    std::unique_ptr< LIB_SYMBOL > tmpSymbol;
+    const LIB_SYMBOL* drawnSymbol = aSymbol;
 
-    if( aPart->IsAlias() )
+    if( aSymbol->IsAlias() )
     {
-        tmpPart = aPart->Flatten();
-        drawnPart = tmpPart.get();
+        tmpSymbol = aSymbol->Flatten();
+        drawnSymbol = tmpSymbol.get();
     }
 
-    for( const LIB_ITEM& item : drawnPart->GetDrawItems() )
+    for( const LIB_ITEM& item : drawnSymbol->GetDrawItems() )
     {
         if( ( !aDrawFields && item.Type() == LIB_FIELD_T )
             || ( aUnit && item.GetUnit() && aUnit != item.GetUnit() )
@@ -696,11 +705,7 @@ void SCH_PAINTER::draw( const LIB_FIELD* aField, int aLayer )
         m_gal->SetGlyphSize( VECTOR2D( aField->GetTextSize() ) );
         m_gal->SetFontItalic( aField->IsItalic() );
 
-#ifdef DEBUG
-        std::cerr << "SCH_PAINTER::draw( LIB_FIELD*, " << aLayer << " ) " << std::endl;
-        //m_gal->SetStrokeColor( COLOR4D( 0, 0, 1, .5 ) );
-#endif
-        strokeText( aField, pos );
+        strokeText( UnescapeString( aField->GetText() ), pos, aField->GetTextEdaAngle(), aField->GetFont() );
     }
 
     // Draw the umbilical line
@@ -972,11 +977,11 @@ void SCH_PAINTER::draw( LIB_PIN* aPin, int aLayer )
     if( dangling )
         drawPinDanglingSymbol( pos, drawingShadows );
 
-    LIB_PART* libEntry = aPin->GetParent();
+    LIB_SYMBOL* libEntry = aPin->GetParent();
 
     // Draw the labels
     if( drawingShadows
-            && ( libEntry->Type() == LIB_PART_T || libEntry->IsSelected() )
+            && ( libEntry->Type() == LIB_SYMBOL_T || libEntry->IsSelected() )
             && !eeconfig()->m_Selection.draw_selected_children )
     {
         return;
@@ -1009,26 +1014,26 @@ void SCH_PAINTER::draw( LIB_PIN* aPin, int aLayer )
     {
         size[INSIDE] = libEntry->ShowPinNames() ? aPin->GetNameTextSize() : 0;
         thickness[INSIDE] = nameLineWidth;
-        colour[INSIDE] = getRenderColor( aPin, LAYER_PINNAM, drawingShadows );
-        text[INSIDE] = aPin->GetName();
+        colour   [INSIDE] = getRenderColor( aPin, LAYER_PINNAM, drawingShadows );
+        text     [INSIDE] = aPin->GetShownName();
 
         size[ABOVE] = libEntry->ShowPinNumbers() ? aPin->GetNumberTextSize() : 0;
         thickness[ABOVE] = numLineWidth;
-        colour[ABOVE] = getRenderColor( aPin, LAYER_PINNUM, drawingShadows );
-        text[ABOVE] = aPin->GetNumber();
+        colour   [ABOVE] = getRenderColor( aPin, LAYER_PINNUM, drawingShadows );
+        text     [ABOVE] = aPin->GetShownNumber();
     }
     // Otherwise pin NAMES go above and pin NUMBERS go below
     else
     {
         size[ABOVE] = libEntry->ShowPinNames() ? aPin->GetNameTextSize() : 0;
         thickness[ABOVE] = nameLineWidth;
-        colour[ABOVE] = getRenderColor( aPin, LAYER_PINNAM, drawingShadows );
-        text[ABOVE] = aPin->GetName();
+        colour   [ABOVE] = getRenderColor( aPin, LAYER_PINNAM, drawingShadows );
+        text     [ABOVE] = aPin->GetShownName();
 
         size[BELOW] = libEntry->ShowPinNumbers() ? aPin->GetNumberTextSize() : 0;
         thickness[BELOW] = numLineWidth;
-        colour[BELOW] = getRenderColor( aPin, LAYER_PINNUM, drawingShadows );
-        text[BELOW] = aPin->GetNumber();
+        colour   [BELOW] = getRenderColor( aPin, LAYER_PINNUM, drawingShadows );
+        text     [BELOW] = aPin->GetShownNumber();
     }
 
     if( m_schSettings.m_ShowPinsElectricalType )
@@ -1472,7 +1477,7 @@ void SCH_PAINTER::draw( const SCH_TEXT* aText, int aLayer )
 }
 
 
-static void orientPart( LIB_PART* part, int orientation )
+static void orientSymbol( LIB_SYMBOL* symbol, int orientation )
 {
     struct ORIENT
     {
@@ -1480,20 +1485,24 @@ static void orientPart( LIB_PART* part, int orientation )
         int n_rots;
         int mirror_x;
         int mirror_y;
-    } orientations[] = { { CMP_ORIENT_0, 0, 0, 0 },
-                         { CMP_ORIENT_90, 1, 0, 0 },
-                         { CMP_ORIENT_180, 2, 0, 0 },
-                         { CMP_ORIENT_270, 3, 0, 0 },
-                         { CMP_MIRROR_X + CMP_ORIENT_0, 0, 1, 0 },
-                         { CMP_MIRROR_X + CMP_ORIENT_90, 1, 1, 0 },
-                         { CMP_MIRROR_Y, 0, 0, 1 },
-                         { CMP_MIRROR_X + CMP_ORIENT_270, 3, 1, 0 },
-                         { CMP_MIRROR_Y + CMP_ORIENT_0, 0, 0, 1 },
-                         { CMP_MIRROR_Y + CMP_ORIENT_90, 1, 0, 1 },
-                         { CMP_MIRROR_Y + CMP_ORIENT_180, 2, 0, 1 },
-                         { CMP_MIRROR_Y + CMP_ORIENT_270, 3, 0, 1 } };
+    }
+    orientations[] =
+    {
+        { SYM_ORIENT_0,                  0, 0, 0 },
+        { SYM_ORIENT_90,                 1, 0, 0 },
+        { SYM_ORIENT_180,                2, 0, 0 },
+        { SYM_ORIENT_270,                3, 0, 0 },
+        { SYM_MIRROR_X + SYM_ORIENT_0,   0, 1, 0 },
+        { SYM_MIRROR_X + SYM_ORIENT_90,  1, 1, 0 },
+        { SYM_MIRROR_Y,                  0, 0, 1 },
+        { SYM_MIRROR_X + SYM_ORIENT_270, 3, 1, 0 },
+        { SYM_MIRROR_Y + SYM_ORIENT_0,   0, 0, 1 },
+        { SYM_MIRROR_Y + SYM_ORIENT_90,  1, 0, 1 },
+        { SYM_MIRROR_Y + SYM_ORIENT_180, 2, 0, 1 },
+        { SYM_MIRROR_Y + SYM_ORIENT_270, 3, 0, 1 }
+    };
 
-    ORIENT o = orientations[0];
+    ORIENT o = orientations[ 0 ];
 
     for( auto& i : orientations )
     {
@@ -1504,7 +1513,7 @@ static void orientPart( LIB_PART* part, int orientation )
         }
     }
 
-    for( auto& item : part->GetDrawItems() )
+    for( auto& item : symbol->GetDrawItems() )
     {
         for( int i = 0; i < o.n_rots; i++ )
             item.Rotate( wxPoint( 0, 0 ), true );
@@ -1518,26 +1527,27 @@ static void orientPart( LIB_PART* part, int orientation )
 }
 
 
-void SCH_PAINTER::draw( SCH_COMPONENT* aSymbol, int aLayer )
+void SCH_PAINTER::draw( SCH_SYMBOL* aSymbol, int aLayer )
 {
     int unit = aSymbol->GetUnitSelection( &m_schematic->CurrentSheet() );
     int convert = aSymbol->GetConvert();
 
-    // Use dummy part if the actual couldn't be found (or couldn't be locked).
-    LIB_PART* originalPart = aSymbol->GetPartRef() ? aSymbol->GetPartRef().get() : dummy();
+    // Use dummy symbol if the actual couldn't be found (or couldn't be locked).
+    LIB_SYMBOL* originalSymbol = aSymbol->GetLibSymbolRef() ?
+                                 aSymbol->GetLibSymbolRef().get() : dummy();
     LIB_PINS  originalPins;
-    originalPart->GetPins( originalPins, unit, convert );
+    originalSymbol->GetPins( originalPins, unit, convert );
 
     // Copy the source so we can re-orient and translate it.
-    LIB_PART tempPart( *originalPart );
+    LIB_SYMBOL tempSymbol( *originalSymbol );
     LIB_PINS tempPins;
-    tempPart.GetPins( tempPins, unit, convert );
+    tempSymbol.GetPins( tempPins, unit, convert );
 
-    tempPart.SetFlags( aSymbol->GetFlags() );
+    tempSymbol.SetFlags( aSymbol->GetFlags() );
 
-    orientPart( &tempPart, aSymbol->GetOrientation() );
+    orientSymbol( &tempSymbol, aSymbol->GetOrientation() );
 
-    for( auto& tempItem : tempPart.GetDrawItems() )
+    for( auto& tempItem : tempSymbol.GetDrawItems() )
     {
         tempItem.SetFlags( aSymbol->GetFlags() ); // SELECTED, HIGHLIGHTED, BRIGHTENED
         tempItem.MoveTo( tempItem.GetPosition() + (wxPoint) mapCoords( aSymbol->GetPosition() ) );
@@ -1552,7 +1562,7 @@ void SCH_PAINTER::draw( SCH_COMPONENT* aSymbol, int aLayer )
         tempPin->ClearFlags();
         tempPin->SetFlags( symbolPin->GetFlags() ); // SELECTED, HIGHLIGHTED, BRIGHTENED
 
-        tempPin->SetName( symbolPin->GetName() );
+        tempPin->SetName( symbolPin->GetShownName() );
         tempPin->SetType( symbolPin->GetType() );
         tempPin->SetShape( symbolPin->GetShape() );
 
@@ -1560,9 +1570,9 @@ void SCH_PAINTER::draw( SCH_COMPONENT* aSymbol, int aLayer )
             tempPin->SetFlags( IS_DANGLING );
     }
 
-    draw( &tempPart, aLayer, false, aSymbol->GetUnit(), aSymbol->GetConvert() );
+    draw( &tempSymbol, aLayer, false, aSymbol->GetUnit(), aSymbol->GetConvert() );
 
-    // The fields are SCH_COMPONENT-specific so don't need to be copied/oriented/translated
+    // The fields are SCH_SYMBOL-specific so don't need to be copied/oriented/translated
     for( const SCH_FIELD& field : aSymbol->GetFields() )
         draw( &field, aLayer );
 }
@@ -1608,8 +1618,8 @@ void SCH_PAINTER::draw( const SCH_FIELD* aField, int aLayer )
     // Calculate the text orientation according to the parent orientation.
     EDA_ANGLE orient( aField->GetTextEdaAngle() );
 
-    if( aField->GetParent() && aField->GetParent()->Type() == SCH_COMPONENT_T
-        && static_cast<SCH_COMPONENT*>( aField->GetParent() )->GetTransform().y1 )
+    if( aField->GetParent() && aField->GetParent()->Type() == SCH_SYMBOL_T
+        && ( static_cast<SCH_SYMBOL*>( aField->GetParent() )->GetTransform().y1 ) )
     {
         // Rotate symbol 90 degrees.
         if( orient.IsZero() )
@@ -1871,6 +1881,7 @@ void SCH_PAINTER::draw( const SCH_BUS_ENTRY_BASE* aEntry, int aLayer )
     line.SetStartPoint( aEntry->GetPosition() );
     line.SetEndPoint( aEntry->GetEnd() );
     line.SetStroke( aEntry->GetStroke() );
+    line.SetLineWidth( getLineWidth( aEntry, drawingShadows ) );
 
     COLOR4D color = getRenderColor( aEntry, LAYER_WIRE, drawingShadows );
 

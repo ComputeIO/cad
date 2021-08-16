@@ -86,8 +86,6 @@ public:
             return CAIRO_ANTIALIASING_MODE::FAST;
         case CAIRO_ANTIALIAS_GOOD:
             return CAIRO_ANTIALIASING_MODE::GOOD;
-        case CAIRO_ANTIALIAS_BEST:
-            return CAIRO_ANTIALIASING_MODE::BEST;
         default:
             return CAIRO_ANTIALIASING_MODE::NONE;
         }
@@ -120,12 +118,12 @@ protected:
     }
 
     typedef uint32_t* BitmapPtr;
-    typedef struct
+    struct CAIRO_BUFFER
     {
         cairo_t*            context;        ///< Main texture handle
         cairo_surface_t*    surface;        ///< Point to which an image from texture is attached
         BitmapPtr           bitmap;         ///< Pixel storage
-    } CAIRO_BUFFER;
+    };
 
     unsigned int            m_current;      ///< Currently used buffer handle
     typedef std::deque<CAIRO_BUFFER> CAIRO_BUFFERS;

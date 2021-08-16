@@ -30,7 +30,7 @@
 #define GERBER_DRAW_ITEM_H
 
 #include <eda_item.h>
-#include <layers_id_colors_and_visibility.h>
+#include <layer_ids.h>
 #include <gr_basic.h>
 #include <gbr_netlist_metadata.h>
 #include <dcode.h>
@@ -192,7 +192,8 @@ public:
     /**
      * Print the polygon stored in m_PolyCorners.
      */
-    void PrintGerberPoly( wxDC* aDC, COLOR4D aColor, const wxPoint& aOffset, bool aFilledShape );
+    void PrintGerberPoly( wxDC* aDC, const COLOR4D& aColor, const wxPoint& aOffset,
+                          bool aFilledShape );
 
     int Shape() const { return m_Shape; }
 

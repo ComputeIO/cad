@@ -35,17 +35,18 @@
 #include "../3d_cache/3d_cache.h"
 #include "../common_ogl/ogl_attr_list.h"
 
-#include <layers_id_colors_and_visibility.h>
+#include <layer_ids.h>
 #include <pad.h>
-#include <track.h>
+#include <pcb_track.h>
 #include <wx/gdicmn.h>
 #include <pcb_base_frame.h>
 #include <pcb_text.h>
 #include <pcb_shape.h>
-#include <dimension.h>
+#include <pcb_dimension.h>
 #include <zone.h>
 #include <footprint.h>
 #include <reporter.h>
+#include <dialogs/dialog_color_picker.h>
 
 class COLOR_SETTINGS;
 
@@ -339,10 +340,10 @@ public:
     SFVEC4F GetItemColor( int aItemId ) const;
 
     /**
-     * @param aColor the color mapped.
+     * @param[in] aColor is the color mapped.
      * @return the color in SFVEC3F format
      */
-    SFVEC4F GetColor( COLOR4D aColor ) const;
+    SFVEC4F GetColor( const COLOR4D& aColor ) const;
 
     /**
      * Get the top z position.
@@ -564,10 +565,11 @@ private:
     void destroyLayers();
 
     // Helper functions to create the board
-     void createTrack( const TRACK* aTrack, CONTAINER_2D_BASE* aDstContainer, int aClearanceValue );
+     void createTrack( const PCB_TRACK* aTrack, CONTAINER_2D_BASE* aDstContainer,
+                       int aClearanceValue );
 
     void createPadWithClearance( const PAD *aPad, CONTAINER_2D_BASE* aDstContainer,
-                                 PCB_LAYER_ID aLayer, wxSize aClearanceValue ) const;
+                                 PCB_LAYER_ID aLayer, const wxSize& aClearanceValue ) const;
 
     OBJECT_2D* createPadWithDrill( const PAD* aPad, int aInflateValue );
 
@@ -586,8 +588,9 @@ private:
     void addShapeWithClearance( const PCB_SHAPE* aShape, CONTAINER_2D_BASE* aDstContainer,
                                 PCB_LAYER_ID aLayerId, int aClearanceValue );
 
-    void addShapeWithClearance( const DIMENSION_BASE* aDimension, CONTAINER_2D_BASE* aDstContainer,
-                                PCB_LAYER_ID aLayerId, int aClearanceValue );
+    void addShapeWithClearance( const PCB_DIMENSION_BASE* aDimension,
+                                CONTAINER_2D_BASE* aDstContainer, PCB_LAYER_ID aLayerId,
+                                int aClearanceValue );
 
     void addSolidAreasShapes( const ZONE* aZoneContainer, CONTAINER_2D_BASE* aDstContainer,
                               PCB_LAYER_ID aLayerId );
@@ -604,6 +607,21 @@ private:
 
     void transformFPShapesToPolygon( const FOOTPRINT* aFootprint, PCB_LAYER_ID aLayer,
                                      SHAPE_POLY_SET& aCornerBuffer ) const;
+
+public:
+    static CUSTOM_COLORS_LIST   g_SilkscreenColors;
+    static CUSTOM_COLORS_LIST   g_MaskColors;
+    static CUSTOM_COLORS_LIST   g_PasteColors;
+    static CUSTOM_COLORS_LIST   g_FinishColors;
+    static CUSTOM_COLORS_LIST   g_BoardColors;
+
+    static KIGFX::COLOR4D       g_DefaultBackgroundTop;
+    static KIGFX::COLOR4D       g_DefaultBackgroundBot;
+    static KIGFX::COLOR4D       g_DefaultSilkscreen;
+    static KIGFX::COLOR4D       g_DefaultSolderMask;
+    static KIGFX::COLOR4D       g_DefaultSolderPaste;
+    static KIGFX::COLOR4D       g_DefaultSurfaceFinish;
+    static KIGFX::COLOR4D       g_DefaultBoardBody;
 
 public:
     SFVEC4F m_BgColorBot;         ///< background bottom color

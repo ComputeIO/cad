@@ -27,8 +27,6 @@
 
 #include <eda_draw_frame.h>
 #include <frame_type.h>
-#include <lib_id.h>
-#include <page_info.h>
 #include <sch_draw_panel.h>
 #include <sch_screen.h>
 #include <schematic_settings.h>
@@ -52,8 +50,8 @@ class PAGE_INFO;
 class TITLE_BLOCK;
 class SYMBOL_VIEWER_FRAME;
 class SYMBOL_EDIT_FRAME;
-class LIB_PART;
-class PART_LIB;
+class LIB_SYMBOL;
+class SYMBOL_LIB;
 class SCHLIB_FILTER;
 class LIB_ID;
 class SYMBOL_LIB_TABLE;
@@ -74,9 +72,9 @@ class SYMBOL_EDITOR_SETTINGS;
  *
  * @return The symbol found in the library or NULL if the symbol was not found.
  */
-LIB_PART* SchGetLibPart( const LIB_ID& aLibId, SYMBOL_LIB_TABLE* aLibTable,
-                         PART_LIB* aCacheLib = NULL, wxWindow* aParent = NULL,
-                         bool aShowErrorMsg = false );
+LIB_SYMBOL* SchGetLibSymbol( const LIB_ID& aLibId, SYMBOL_LIB_TABLE* aLibTable,
+                             SYMBOL_LIB* aCacheLib = nullptr, wxWindow* aParent = nullptr,
+                             bool aShowErrorMsg = false );
 
 /**
  * A shim class between EDA_DRAW_FRAME and several derived classes:
@@ -179,10 +177,8 @@ public:
      * @param aShowErrorMessage set to true to show any error messages.
      * @return The symbol found in the library or NULL if the symbol was not found.
      */
-    LIB_PART* GetLibPart( const LIB_ID& aLibId, bool aUseCacheLib = false,
-                          bool aShowErrorMsg = false );
-
-    LIB_PART* GetFlattenedLibPart( const LIB_ID& aLibId, bool aShowErrorMsg = false );
+    LIB_SYMBOL* GetLibSymbol( const LIB_ID& aLibId, bool aUseCacheLib = false,
+                              bool aShowErrorMsg = false );
 
     /**
      * Call the library viewer to select symbol to import into schematic.

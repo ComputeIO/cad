@@ -31,7 +31,7 @@
 #include <board_item.h>
 #include <collectors.h>
 #include <convert_to_biu.h>
-#include <layers_id_colors_and_visibility.h> // ALL_LAYERS definition.
+#include <layer_ids.h> // ALL_LAYERS definition.
 #include <lib_id.h>
 #include <list>
 
@@ -133,6 +133,15 @@ public:
      * the board editor for instance, because net info become fully broken
      */
     void ClearAllNets();
+
+    /**
+     * Old footprints do not alway have a valid UUID (some can be set to null uuid)
+     * However null UUIDs, having a special meaning in editor, create issues when
+     * editing a footprint
+     * So all null uuids a re replaced by a valid uuid
+     * @return true if at least one uuid is changed, false if no change
+     */
+    bool FixUuids();
 
     /**
      * Return the bounding box containing pads when the footprint is on the front side,
@@ -323,7 +332,7 @@ public:
     */
 
     void SetLastEditTime( timestamp_t aTime ) { m_lastEditTime = aTime; }
-    void SetLastEditTime() { m_lastEditTime = time( NULL ); }
+    void SetLastEditTime() { m_lastEditTime = time( nullptr ); }
     timestamp_t GetLastEditTime() const { return m_lastEditTime; }
 
     /**
@@ -643,8 +652,13 @@ public:
      *
      * @return the courtyard polygon.
      */
-    const SHAPE_POLY_SET& GetPolyCourtyardFront() const { return m_poly_courtyard_front; }
-    const SHAPE_POLY_SET& GetPolyCourtyardBack() const { return m_poly_courtyard_back; }
+    const SHAPE_POLY_SET& GetPolyCourtyard( PCB_LAYER_ID aLayer ) const
+    {
+        if( IsBackLayer( aLayer ) )
+            return m_poly_courtyard_back;
+        else
+            return m_poly_courtyard_front;
+    }
 
     /**
      * Build complex polygons of the courtyard areas from graphic items on the courtyard layers.

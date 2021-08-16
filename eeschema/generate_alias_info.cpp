@@ -19,7 +19,7 @@
  */
 
 #include <generate_alias_info.h>
-#include <kicad_string.h>
+#include <string_utils.h>
 #include <template_fieldnames.h>
 #include <lib_symbol.h>
 #include <symbol_lib_table.h>
@@ -50,7 +50,7 @@ class FOOTPRINT_INFO_GENERATOR
     wxString m_html;
     SYMBOL_LIB_TABLE* m_sym_lib_table;
     LIB_ID const m_lib_id;
-    LIB_PART* m_symbol;
+    LIB_SYMBOL* m_symbol;
     int m_unit;
 
 public:
@@ -78,11 +78,10 @@ public:
         }
         catch( const IO_ERROR& ioe )
         {
-            wxLogError( wxString::Format( _( "Error occurred loading symbol %s from library %s."
-                                             "\n\n%s" ),
-                                          m_lib_id.GetLibItemName().wx_str(),
-                                          m_lib_id.GetLibNickname().wx_str(),
-                                          ioe.What() ) );
+            wxLogError( _( "Error loading symbol %s from library '%s'." ) + wxS( "\n%s" ),
+                        m_lib_id.GetLibItemName().wx_str(),
+                        m_lib_id.GetLibNickname().wx_str(),
+                        ioe.What() );
             return;
         }
 
@@ -107,7 +106,7 @@ public:
 protected:
     void SetHtmlName()
     {
-        m_html.Replace( "__NAME__", EscapeHTML( m_symbol->GetName() ) );
+        m_html.Replace( "__NAME__", EscapeHTML( UnescapeString( m_symbol->GetName() ) ) );
     }
 
 
@@ -122,7 +121,7 @@ protected:
             wxString root_name = _( "Unknown" );
             wxString root_desc = "";
 
-            std::shared_ptr< LIB_PART > parent = m_symbol->GetParent().lock();
+            std::shared_ptr< LIB_SYMBOL > parent = m_symbol->GetParent().lock();
 
             if( parent )
             {
@@ -131,7 +130,7 @@ protected:
             }
 
             m_html.Replace( "__ALIASOF__", wxString::Format(  AliasOfFormat,
-                                                              EscapeHTML( root_name ),
+                                                              EscapeHTML( UnescapeString( root_name ) ),
                                                               EscapeHTML( root_desc ) ) );
         }
     }
@@ -212,7 +211,7 @@ protected:
 
         if( m_symbol->IsAlias() )
         {
-            std::shared_ptr<LIB_PART> parent = m_symbol->GetParent().lock();
+            std::shared_ptr<LIB_SYMBOL> parent = m_symbol->GetParent().lock();
 
             // Append all of the unique parent fields if this is an alias.
             if( parent )

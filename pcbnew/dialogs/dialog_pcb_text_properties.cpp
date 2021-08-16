@@ -22,13 +22,13 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
 
+#include <string_utils.h>
 #include <dialog_pcb_text_properties.h>
 #include <confirm.h>
 #include <widgets/unit_binder.h>
 #include <board_commit.h>
 #include <board.h>
 #include <footprint.h>
-#include <kicad_string.h>
 #include <pcb_text.h>
 #include <fp_text.h>
 #include <pcb_edit_frame.h>
@@ -36,8 +36,7 @@
 #include <wx/valnum.h>
 #include <math/util.h> // for KiROUND
 #include <wx/numformatter.h>
-
-#define OUTLINEFONT_DEBUG
+#include <pcbnew.h>
 
 DIALOG_PCB_TEXT_PROPERTIES::DIALOG_PCB_TEXT_PROPERTIES( PCB_BASE_EDIT_FRAME* aParent, BOARD_ITEM* aItem ) :
         DIALOG_TEXT_ITEM_PROPERTIES( aParent, nullptr ), m_Parent( aParent ), m_item( aItem ),
@@ -141,25 +140,33 @@ DIALOG_PCB_TEXT_PROPERTIES::DIALOG_PCB_TEXT_PROPERTIES( PCB_BASE_EDIT_FRAME* aPa
 
     // We can't set the tab order through wxWidgets due to shortcomings in their mnemonics
     // implementation on MSW
-    m_tabOrder = { m_LayerLabel,    m_pcbLayerSelector, m_SizeXCtrl,     m_SizeYCtrl,
-                   m_ThicknessCtrl, m_PositionXCtrl,      m_PositionYCtrl, m_Visible,
-                   m_Justify,       m_OrientCtrl,         m_Mirrored,      m_KeepUpright,
-                   m_sdbSizerOK,    m_sdbSizerCancel };
+    m_tabOrder = {
+            m_LayerLabel,
+            m_pcbLayerSelector,
+            m_SizeXCtrl,
+            m_SizeYCtrl,
+            m_ThicknessCtrl,
+            m_PositionXCtrl,
+            m_PositionYCtrl,
+            m_Visible,
+            //m_Italic,
+            m_Justify,
+            m_OrientCtrl,
+            m_Mirrored,
+            m_KeepUpright,
+            m_sdbSizerOK,
+            m_sdbSizerCancel
+    };
 
     // wxTextCtrls fail to generate wxEVT_CHAR events when the wxTE_MULTILINE flag is set,
     // so we have to listen to wxEVT_CHAR_HOOK events instead.
-    Connect( wxEVT_CHAR_HOOK, wxKeyEventHandler( DIALOG_PCB_TEXT_PROPERTIES::OnCharHook ), NULL, this );
+    //Connect( wxEVT_CHAR_HOOK, wxKeyEventHandler( DIALOG_PCB_TEXT_PROPERTIES::OnCharHook ), NULL, this );
 
     // If this item has a custom font, display font name
     // Default font is named "" so it's OK to always display font name
     m_FontCtrl->SetValue( m_edaText->GetFont()->Name() );
-#if 0
-    m_FontBold->SetValue( m_edaText->GetFont()->IsBold() );
-    m_FontItalic->SetValue( m_edaText->GetFont()->IsItalic() );
-#else
     m_FontBold->SetValue( m_edaText->IsBold() );
     m_FontItalic->SetValue( m_edaText->IsItalic() );
-#endif
 
     finishDialogSettings();
 }
@@ -180,104 +187,6 @@ void PCB_BASE_EDIT_FRAME::ShowTextPropertiesDialog( BOARD_ITEM* aText )
 }
 
 
-void DIALOG_PCB_TEXT_PROPERTIES::OnCharHook( wxKeyEvent& aEvent )
-{
-    if( aEvent.GetKeyCode() == WXK_RETURN && aEvent.ShiftDown() )
-    {
-        if( TransferDataFromWindow() )
-        {
-            // Do not use EndModal to close the dialog that can be opened
-            // in quasi modal mode
-            SetReturnCode( wxID_OK );
-            Close();
-        }
-    }
-    else if( m_MultiLineText->IsShown() && m_MultiLineText->HasFocus() )
-    {
-        if( aEvent.GetKeyCode() == WXK_TAB && !aEvent.ControlDown() )
-        {
-            m_MultiLineText->Tab();
-        }
-        else if( IsCtrl( 'Z', aEvent ) )
-        {
-            m_MultiLineText->Undo();
-        }
-        else if( IsShiftCtrl( 'Z', aEvent ) || IsCtrl( 'Y', aEvent ) )
-        {
-            m_MultiLineText->Redo();
-        }
-        else if( IsCtrl( 'X', aEvent ) )
-        {
-            m_MultiLineText->Cut();
-        }
-        else if( IsCtrl( 'C', aEvent ) )
-        {
-            m_MultiLineText->Copy();
-        }
-        else if( IsCtrl( 'V', aEvent ) )
-        {
-            m_MultiLineText->Paste();
-        }
-        else if( IsCtrl( 'A', aEvent ) )
-        {
-            m_MultiLineText->SelectAll();
-        }
-        else
-        {
-            aEvent.Skip();
-        }
-    }
-    else
-    {
-        aEvent.Skip();
-    }
-}
-
-
-#ifdef OUTLINEFONT_DEBUG
-std::ostream& operator<<( std::ostream& os, const wxFont& aFont )
-{
-    os << "(font " << aFont.GetFaceName() << " [" << aFont.GetNativeFontInfoDesc() << ","
-       << aFont.GetNativeFontInfoUserDesc() << "] ";
-    switch( aFont.GetStyle() )
-    {
-    case wxFONTSTYLE_NORMAL: os << "normal"; break;
-    case wxFONTSTYLE_ITALIC: os << "italic"; break;
-    case wxFONTSTYLE_SLANT: os << "slant"; break;
-    default: os << "unknown style";
-    }
-    os << ",";
-    switch( aFont.GetWeight() )
-    {
-    case wxFONTWEIGHT_NORMAL: os << "normal"; break;
-    case wxFONTWEIGHT_LIGHT: os << "light"; break;
-    case wxFONTWEIGHT_BOLD: os << "bold"; break;
-    default: os << "unknown style";
-    }
-    if( aFont.GetUnderlined() )
-        os << ",underlined";
-    if( aFont.IsFixedWidth() )
-        os << ",fixed-width";
-    os << "," << ( aFont.IsOk() ? "OK" : "not-ok" ) << ")" << std::endl;
-
-    return os;
-}
-#endif
-
-
-void DIALOG_PCB_TEXT_PROPERTIES::OnFontFieldChange( wxCommandEvent& aEvent )
-{
-#if 0
-    bool enableOutlineFontControls = !m_FontCtrl->GetValue().IsEmpty();
-
-    m_FontBold->Enable( enableOutlineFontControls );
-    m_FontItalic->Enable( enableOutlineFontControls );
-    m_FontLineSpacingLabel->Enable( enableOutlineFontControls );
-    m_FontLineSpacing->Enable( enableOutlineFontControls );
-#endif
-
-    aEvent.Skip();
-}
 
 
 void DIALOG_PCB_TEXT_PROPERTIES::OnOkClick( wxCommandEvent& aEvent )

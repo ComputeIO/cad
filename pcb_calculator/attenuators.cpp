@@ -25,9 +25,8 @@
  * or you may write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
-#include <wx/wx.h>
 
-#include <dialog_helpers.h>
+#include <string_utils.h>
 
 #include "pcb_calculator_frame.h"
 

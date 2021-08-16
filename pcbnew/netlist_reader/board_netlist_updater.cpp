@@ -4,7 +4,7 @@
  * Copyright (C) 2015 Jean-Pierre Charras, jp.charras at wanadoo.fr
  * Copyright (C) 2015 CERN
  * Copyright (C) 2012 SoftPLC Corporation, Dick Hollenbeck <dick@softplc.com>
- * Copyright (C) 2011 Wayne Stambaugh <stambaughw@verizon.net>
+ * Copyright (C) 2011 Wayne Stambaugh <stambaughw@gmail.com>
  *
  * Copyright (C) 1992-2021 KiCad Developers, see AUTHORS.txt for contributors.
  *
@@ -33,9 +33,9 @@
 #include <netinfo.h>
 #include <footprint.h>
 #include <pad.h>
-#include <track.h>
+#include <pcb_track.h>
 #include <zone.h>
-#include <kicad_string.h>
+#include <string_utils.h>
 #include <pcbnew_settings.h>
 #include <pcb_edit_frame.h>
 #include <netlist_reader/pcb_netlist.h>
@@ -149,7 +149,7 @@ FOOTPRINT* BOARD_NETLIST_UPDATER::addNewFootprint( COMPONENT* aComponent )
 
     if( footprint == nullptr )
     {
-        msg.Printf( _( "Cannot add %s (footprint \"%s\" not found)." ),
+        msg.Printf( _( "Cannot add %s (footprint '%s' not found)." ),
                     aComponent->GetReference(),
                     aComponent->GetFPID().Format().wx_str() );
         m_reporter->Report( msg, RPT_SEVERITY_ERROR );
@@ -159,7 +159,7 @@ FOOTPRINT* BOARD_NETLIST_UPDATER::addNewFootprint( COMPONENT* aComponent )
 
     if( m_isDryRun )
     {
-        msg.Printf( _( "Add %s (footprint \"%s\")." ),
+        msg.Printf( _( "Add %s (footprint '%s')." ),
                     aComponent->GetReference(),
                     aComponent->GetFPID().Format().wx_str() );
 
@@ -183,7 +183,7 @@ FOOTPRINT* BOARD_NETLIST_UPDATER::addNewFootprint( COMPONENT* aComponent )
         m_addedFootprints.push_back( footprint );
         m_commit.Add( footprint );
 
-        msg.Printf( _( "Added %s (footprint \"%s\")." ),
+        msg.Printf( _( "Added %s (footprint '%s')." ),
                     aComponent->GetReference(),
                     aComponent->GetFPID().Format().wx_str() );
     }
@@ -213,7 +213,7 @@ FOOTPRINT* BOARD_NETLIST_UPDATER::replaceFootprint( NETLIST& aNetlist, FOOTPRINT
 
     if( newFootprint == nullptr )
     {
-        msg.Printf( _( "Cannot update %s (footprint \"%s\" not found)." ),
+        msg.Printf( _( "Cannot update %s (footprint '%s' not found)." ),
                     aNewComponent->GetReference(),
                     aNewComponent->GetFPID().Format().wx_str() );
         m_reporter->Report( msg, RPT_SEVERITY_ERROR );
@@ -438,7 +438,9 @@ bool BOARD_NETLIST_UPDATER::updateComponentPadConnections( FOOTPRINT* aFootprint
             }
         }
         else
+        {
             cachePinFunction( pad, pinFunction );
+        }
 
         // Test if new footprint pad has no net (pads not on copper layers have no net).
         if( !net.IsValid() || !pad->IsOnCopperLayer() )
@@ -481,7 +483,9 @@ bool BOARD_NETLIST_UPDATER::updateComponentPadConnections( FOOTPRINT* aFootprint
 
             }
             else
+            {
                 cacheNetname( pad, wxEmptyString );
+            }
         }
         else                                 // New footprint pad has a net.
         {
@@ -601,6 +605,7 @@ bool BOARD_NETLIST_UPDATER::updateCopperZoneNets( NETLIST& aNetlist )
     for( int ii = 0; ii < (int) aNetlist.GetCount(); ii++ )
     {
         const COMPONENT* component = aNetlist.GetComponent( ii );
+
         for( unsigned jj = 0; jj < component->GetNetCount(); jj++ )
         {
             const COMPONENT_NET& net = component->GetNet( jj );
@@ -608,7 +613,7 @@ bool BOARD_NETLIST_UPDATER::updateCopperZoneNets( NETLIST& aNetlist )
         }
     }
 
-    for( TRACK* via : m_board->Tracks() )
+    for( PCB_TRACK* via : m_board->Tracks() )
     {
         if( via->Type() != PCB_VIA_T )
             continue;
@@ -776,7 +781,7 @@ bool BOARD_NETLIST_UPDATER::deleteSinglePadNets()
     int       count = 0;
     wxString  netname;
     wxString  msg;
-    PAD*      previouspad = NULL;
+    PAD*      previouspad = nullptr;
 
     // We need the pad list for next tests.
 
@@ -1008,7 +1013,7 @@ bool BOARD_NETLIST_UPDATER::UpdateNetlist( NETLIST& aNetlist )
         }
         else if( matchCount > 1 )
         {
-            msg.Printf( _( "Multiple footprints found for \"%s\"." ),
+            msg.Printf( _( "Multiple footprints found for '%s'." ),
                         component->GetReference() );
             m_reporter->Report( msg, RPT_SEVERITY_ERROR );
         }

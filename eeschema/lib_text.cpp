@@ -1,7 +1,7 @@
 /*
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
- * Copyright (C) 2004-2020 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 2004-2021 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -42,7 +42,7 @@
 #include <default_values.h>    // For some default values
 
 
-LIB_TEXT::LIB_TEXT( LIB_PART* aParent ) :
+LIB_TEXT::LIB_TEXT( LIB_SYMBOL* aParent ) :
     LIB_ITEM( LIB_TEXT_T, aParent ),
     EDA_TEXT( wxEmptyString )
 {
@@ -235,7 +235,7 @@ void LIB_TEXT::Rotate( const wxPoint& center, bool aRotateCCW )
 void LIB_TEXT::Plot( PLOTTER* plotter, const wxPoint& offset, bool fill,
                      const TRANSFORM& aTransform ) const
 {
-    wxASSERT( plotter != NULL );
+    wxASSERT( plotter != nullptr );
 
     EDA_RECT bBox = GetBoundingBox();
     // convert coordinates from draw Y axis to symbol_editor Y axis
@@ -364,7 +364,7 @@ BITMAPS LIB_TEXT::GetMenuImage() const
 }
 
 
-void LIB_TEXT::BeginEdit( const wxPoint aPosition )
+void LIB_TEXT::BeginEdit( const wxPoint& aPosition )
 {
     SetTextPos( aPosition );
 }

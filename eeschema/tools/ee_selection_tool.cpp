@@ -57,10 +57,10 @@ SELECTION_CONDITION EE_CONDITIONS::SingleSymbol = []( const SELECTION& aSel )
 {
     if( aSel.GetSize() == 1 )
     {
-        SCH_COMPONENT* symbol = dynamic_cast<SCH_COMPONENT*>( aSel.Front() );
+        SCH_SYMBOL* symbol = dynamic_cast<SCH_SYMBOL*>( aSel.Front() );
 
         if( symbol )
-            return !symbol->GetPartRef() || !symbol->GetPartRef()->IsPower();
+            return !symbol->GetLibSymbolRef() || !symbol->GetLibSymbolRef()->IsPower();
     }
 
     return false;
@@ -69,7 +69,7 @@ SELECTION_CONDITION EE_CONDITIONS::SingleSymbol = []( const SELECTION& aSel )
 
 SELECTION_CONDITION EE_CONDITIONS::SingleSymbolOrPower = []( const SELECTION& aSel )
 {
-    return aSel.GetSize() == 1 && aSel.Front()->Type() == SCH_COMPONENT_T;
+    return aSel.GetSize() == 1 && aSel.Front()->Type() == SCH_SYMBOL_T;
 };
 
 
@@ -77,10 +77,10 @@ SELECTION_CONDITION EE_CONDITIONS::SingleDeMorganSymbol = []( const SELECTION& a
 {
     if( aSel.GetSize() == 1 )
     {
-        SCH_COMPONENT* symbol = dynamic_cast<SCH_COMPONENT*>( aSel.Front() );
+        SCH_SYMBOL* symbol = dynamic_cast<SCH_SYMBOL*>( aSel.Front() );
 
         if( symbol )
-            return symbol->GetPartRef() && symbol->GetPartRef()->HasConversion();
+            return symbol->GetLibSymbolRef() && symbol->GetLibSymbolRef()->HasConversion();
     }
 
     return false;
@@ -91,10 +91,10 @@ SELECTION_CONDITION EE_CONDITIONS::SingleMultiUnitSymbol = []( const SELECTION& 
 {
     if( aSel.GetSize() == 1 )
     {
-        SCH_COMPONENT* symbol = dynamic_cast<SCH_COMPONENT*>( aSel.Front() );
+        SCH_SYMBOL* symbol = dynamic_cast<SCH_SYMBOL*>( aSel.Front() );
 
         if( symbol )
-            return symbol->GetPartRef() && symbol->GetPartRef()->GetUnitCount() >= 2;
+            return symbol->GetLibSymbolRef() && symbol->GetLibSymbolRef()->GetUnitCount() >= 2;
     }
 
     return false;
@@ -184,10 +184,11 @@ bool EE_SELECTION_TOOL::Init()
                         && editFrame->GetCurrentSheet().Last() != &editFrame->Schematic().Root();
             };
 
-    auto havePartCondition =
+    auto haveSymbolCondition =
             [&]( const SELECTION& sel )
             {
-                return m_isSymbolEditor && static_cast<SYMBOL_EDIT_FRAME*>( m_frame )->GetCurPart();
+                return m_isSymbolEditor &&
+                       static_cast<SYMBOL_EDIT_FRAME*>( m_frame )->GetCurSymbol();
             };
 
     auto& menu = m_menu.GetMenu();
@@ -219,8 +220,10 @@ bool EE_SELECTION_TOOL::Init()
     menu.AddItem( EE_ACTIONS::editPageNumber,     schEditSheetPageNumberCondition, 250 );
 
     menu.AddSeparator( 400 );
-    menu.AddItem( EE_ACTIONS::symbolProperties,   havePartCondition && EE_CONDITIONS::Empty, 400 );
-    menu.AddItem( EE_ACTIONS::pinTable,           havePartCondition && EE_CONDITIONS::Empty, 400 );
+    menu.AddItem( EE_ACTIONS::symbolProperties,
+                  haveSymbolCondition && EE_CONDITIONS::Empty, 400 );
+    menu.AddItem( EE_ACTIONS::pinTable,
+                  haveSymbolCondition && EE_CONDITIONS::Empty, 400 );
 
     menu.AddSeparator( 1000 );
     m_frame->AddStandardSubMenus( m_menu );
@@ -291,7 +294,7 @@ const KICAD_T movableSchematicItems[] =
     SCH_GLOBAL_LABEL_T,
     SCH_HIER_LABEL_T,
     SCH_FIELD_T,
-    SCH_COMPONENT_T,
+    SCH_SYMBOL_T,
     SCH_SHEET_PIN_T,
     SCH_SHEET_T,
     EOT
@@ -312,13 +315,20 @@ const KICAD_T movableSymbolItems[] =
 };
 
 
+const KICAD_T movableSymbolAliasItems[] =
+{
+    LIB_FIELD_T,
+    EOT
+};
+
+
 void EE_SELECTION_TOOL::setModifiersState( bool aShiftState, bool aCtrlState, bool aAltState )
 {
     // Set the configuration of m_additive, m_subtractive, m_exclusive_or
     // from the state of modifier keys SHIFT, CTRL, ALT and the OS
 
     // on left click, a selection is made, depending on modifiers ALT, SHIFT, CTRL:
-    // Due to the fact ALT key modifier cannot be useed freely on Windows and Linux,
+    // Due to the fact ALT key modifier cannot be used freely on Windows and Linux,
     // actions are different on OSX and others OS
     // Especially, ALT key cannot be used to force showing the full selection choice
     // context menu (the menu is immediately closed on Windows )
@@ -411,7 +421,7 @@ int EE_SELECTION_TOOL::Main( const TOOL_EVENT& aEvent )
                         SCH_CONNECTION* connection = collector[0]->Connection();
 
                         if( ( connection && ( connection->IsNet() || connection->IsUnconnected() ) )
-                            || collector[0]->Type() == SCH_COMPONENT_T )
+                            || collector[0]->Type() == SCH_SYMBOL_T )
                         {
                             newEvt = EE_ACTIONS::drawWire.MakeEvent();
                         }
@@ -549,29 +559,26 @@ int EE_SELECTION_TOOL::Main( const TOOL_EVENT& aEvent )
             }
             else
             {
-                // selection is empty? try to start dragging the item under the point where drag
-                // started
-                if( m_isSymbolEditor && m_selection.Empty() )
-                    m_selection = RequestSelection( movableSymbolItems );
-                else if( m_selection.Empty() )
+                if( m_isSymbolEditor )
+                {
+                    if( static_cast<SYMBOL_EDIT_FRAME*>( m_frame )->IsSymbolAlias() )
+                        m_selection = RequestSelection( movableSymbolAliasItems );
+                    else
+                        m_selection = RequestSelection( movableSymbolItems );
+                }
+                else
+                {
                     m_selection = RequestSelection( movableSchematicItems );
+                }
 
                 // Check if dragging has started within any of selected items bounding box
                 if( selectionContains( evt->Position() ) )
                 {
                     // Yes -> run the move tool and wait till it finishes
                     if( m_isSymbolEditor )
-                    {
-                        SYMBOL_EDIT_FRAME* libFrame = dynamic_cast<SYMBOL_EDIT_FRAME*>( m_frame );
-
-                        // Cannot move any derived symbol elements for now.
-                        if( libFrame && libFrame->GetCurPart() && libFrame->GetCurPart()->IsRoot() )
-                            m_toolMgr->InvokeTool( "eeschema.SymbolMoveTool" );
-                    }
+                        m_toolMgr->InvokeTool( "eeschema.SymbolMoveTool" );
                     else
-                    {
                         m_toolMgr->InvokeTool( "eeschema.InteractiveMove" );
-                    }
                 }
                 else
                 {
@@ -584,13 +591,13 @@ int EE_SELECTION_TOOL::Main( const TOOL_EVENT& aEvent )
         {
             // context sub-menu selection?  Handle unit selection or bus unfolding
             if( evt->GetCommandId().get() >= ID_POPUP_SCH_SELECT_UNIT_CMP
-                && evt->GetCommandId().get() <= ID_POPUP_SCH_SELECT_UNIT_CMP_MAX )
+                && evt->GetCommandId().get() <= ID_POPUP_SCH_SELECT_UNIT_SYM_MAX )
             {
-                SCH_COMPONENT* component = dynamic_cast<SCH_COMPONENT*>( m_selection.Front() );
+                SCH_SYMBOL* symbol = dynamic_cast<SCH_SYMBOL*>( m_selection.Front() );
                 int unit = evt->GetCommandId().get() - ID_POPUP_SCH_SELECT_UNIT_CMP;
 
-                if( component )
-                    static_cast<SCH_EDIT_FRAME*>( m_frame )->SelectUnit( component, unit );
+                if( symbol )
+                    static_cast<SCH_EDIT_FRAME*>( m_frame )->SelectUnit( symbol, unit );
             }
             else if( evt->GetCommandId().get() >= ID_POPUP_SCH_UNFOLD_BUS
                      && evt->GetCommandId().get() <= ID_POPUP_SCH_UNFOLD_BUS_END )
@@ -636,7 +643,7 @@ int EE_SELECTION_TOOL::Main( const TOOL_EVENT& aEvent )
                         SCH_CONNECTION* connection = collector[0]->Connection();
 
                         if( ( connection && ( connection->IsNet() || connection->IsUnconnected() ) )
-                            || collector[0]->Type() == SCH_COMPONENT_T )
+                            || collector[0]->Type() == SCH_SYMBOL_T )
                         {
                             displayWireCursor = true;
                         }
@@ -772,12 +779,12 @@ bool EE_SELECTION_TOOL::CollectHits( EE_COLLECTOR& aCollector, const VECTOR2I& a
 
     if( m_isSymbolEditor )
     {
-        LIB_PART* part = static_cast<SYMBOL_EDIT_FRAME*>( m_frame )->GetCurPart();
+        LIB_SYMBOL* symbol = static_cast<SYMBOL_EDIT_FRAME*>( m_frame )->GetCurSymbol();
 
-        if( !part )
+        if( !symbol )
             return false;
 
-        aCollector.Collect( part->GetDrawItems(), aFilterList, (wxPoint) aWhere, m_unit,
+        aCollector.Collect( symbol->GetDrawItems(), aFilterList, (wxPoint) aWhere, m_unit,
                             m_convert );
     }
     else
@@ -1003,7 +1010,7 @@ void EE_SELECTION_TOOL::GuessSelectionCandidates( EE_COLLECTOR& collector, const
         SCH_ITEM* item  = collector[i];
         SCH_ITEM* other = collector[( i + 1 ) % 2];
 
-        if( item->Type() == SCH_COMPONENT_T && other->Type() == SCH_PIN_T )
+        if( item->Type() == SCH_SYMBOL_T && other->Type() == SCH_PIN_T )
         {
             // Make sure we aren't clicking on the pin anchor itself, only the rest of the
             // pin should select the symbol with this setting
@@ -1041,7 +1048,7 @@ void EE_SELECTION_TOOL::GuessSelectionCandidates( EE_COLLECTOR& collector, const
         EDA_ITEM* item = collector[ i ];
         EDA_ITEM* other = collector[ ( i + 1 ) % 2 ];
 
-        if( preferred.count( item->Type() ) && other->Type() == SCH_COMPONENT_T )
+        if( preferred.count( item->Type() ) && other->Type() == SCH_SYMBOL_T )
             collector.Transfer( other );
     }
 
@@ -1077,7 +1084,11 @@ void EE_SELECTION_TOOL::GuessSelectionCandidates( EE_COLLECTOR& collector, const
 
     for( EDA_ITEM* item : collector )
     {
-        int dist = EuclideanNorm( item->GetBoundingBox().GetCenter() - (wxPoint) aPos );
+        int dist = EuclideanNorm( item->GetBoundingBox().GetCenter() - wxPoint( aPos ) );
+
+        // For wires, if we hit one of the endpoints, consider that perfect
+        if( item->Type() == SCH_LINE_T && ( item->GetFlags() & ( STARTPOINT | ENDPOINT ) ) )
+            dist = 0;
 
         if( dist < closestDist )
         {
@@ -1230,7 +1241,7 @@ bool EE_SELECTION_TOOL::selectMultiple()
                         children.emplace_back( KIGFX::VIEW::LAYER_ITEM_PAIR( pin, layer ) );
                 }
 
-                SCH_COMPONENT* symbol = dynamic_cast<SCH_COMPONENT*>( pair.first );
+                SCH_SYMBOL* symbol = dynamic_cast<SCH_SYMBOL*>( pair.first );
 
                 if( symbol )
                 {
@@ -1311,7 +1322,7 @@ bool EE_SELECTION_TOOL::selectMultiple()
 
 static KICAD_T nodeTypes[] =
 {
-    SCH_COMPONENT_LOCATE_POWER_T,
+    SCH_SYMBOL_LOCATE_POWER_T,
     SCH_PIN_T,
     SCH_LINE_LOCATE_WIRE_T,
     SCH_LINE_LOCATE_BUS_T,
@@ -1508,7 +1519,7 @@ void EE_SELECTION_TOOL::RebuildSelection()
 
     if( m_isSymbolEditor )
     {
-        LIB_PART* start = static_cast<SYMBOL_EDIT_FRAME*>( m_frame )->GetCurPart();
+        LIB_SYMBOL* start = static_cast<SYMBOL_EDIT_FRAME*>( m_frame )->GetCurSymbol();
 
         for( LIB_ITEM& item : start->GetDrawItems() )
         {
@@ -1520,7 +1531,7 @@ void EE_SELECTION_TOOL::RebuildSelection()
     {
         for( SCH_ITEM* item : m_frame->GetScreen()->Items() )
         {
-            // If the field and component are selected, only use the component
+            // If the field and symbol are selected, only use the symbol
             if( item->IsSelected() )
             {
                 select( item );
@@ -1723,7 +1734,7 @@ bool EE_SELECTION_TOOL::Selectable( const EDA_ITEM* aItem, bool checkVisibilityO
             return false;
         break;
 
-    case LIB_PART_T:    // In symbol_editor we do not want to select the symbol itself.
+    case LIB_SYMBOL_T:    // In symbol_editor we do not want to select the symbol itself.
         return false;
 
     case LIB_FIELD_T:   // LIB_FIELD object can always be edited.
@@ -1804,8 +1815,8 @@ void EE_SELECTION_TOOL::highlight( EDA_ITEM* aItem, int aMode, EE_SELECTION* aGr
     if( aGroup )
         aGroup->Add( aItem );
 
-    // Highlight pins and fields.  (All the other component children are currently only
-    // represented in the LIB_PART and will inherit the settings of the parent component.)
+    // Highlight pins and fields.  (All the other symbol children are currently only
+    // represented in the LIB_SYMBOL and will inherit the settings of the parent symbol.)
     if( SCH_ITEM* sch_item = dynamic_cast<SCH_ITEM*>( aItem ) )
     {
         sch_item->RunOnChildren(
@@ -1837,8 +1848,8 @@ void EE_SELECTION_TOOL::unhighlight( EDA_ITEM* aItem, int aMode, EE_SELECTION* a
     if( aGroup )
         aGroup->Remove( aItem );
 
-    // Unhighlight pins and fields.  (All the other component children are currently only
-    // represented in the LIB_PART.)
+    // Unhighlight pins and fields.  (All the other symbol children are currently only
+    // represented in the LIB_SYMBOL.)
     if( SCH_ITEM* sch_item = dynamic_cast<SCH_ITEM*>( aItem ) )
     {
         sch_item->RunOnChildren(

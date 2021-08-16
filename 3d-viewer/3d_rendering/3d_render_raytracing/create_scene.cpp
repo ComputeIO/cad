@@ -471,7 +471,7 @@ void RENDER_3D_RAYTRACE::Reload( REPORTER* aStatusReporter, REPORTER* aWarningRe
             for( int iOutlinePolyIdx = 0; iOutlinePolyIdx < antiboardPoly.OutlineCount();
                  iOutlinePolyIdx++ )
             {
-                CovertPolygonToBlocks( antiboardPoly,
+                ConvertPolygonToBlocks( antiboardPoly,
                         *m_antioutlineBoard2dObjects, m_boardAdapter.BiuTo3dUnits(), -1.0f,
                         *dynamic_cast<const BOARD_ITEM*>( m_boardAdapter.GetBoard() ),
                         iOutlinePolyIdx );
@@ -483,7 +483,7 @@ void RENDER_3D_RAYTRACE::Reload( REPORTER* aStatusReporter, REPORTER* aWarningRe
 
             for( int iOutlinePolyIdx = 0; iOutlinePolyIdx < outlineCount; iOutlinePolyIdx++ )
             {
-                CovertPolygonToBlocks( boardPolyCopy, *m_outlineBoard2dObjects,
+                ConvertPolygonToBlocks( boardPolyCopy, *m_outlineBoard2dObjects,
                                        m_boardAdapter.BiuTo3dUnits(), divFactor,
                                        *dynamic_cast<const BOARD_ITEM*>( m_boardAdapter.GetBoard() ),
                                        iOutlinePolyIdx );
@@ -878,9 +878,9 @@ void RENDER_3D_RAYTRACE::Reload( REPORTER* aStatusReporter, REPORTER* aWarningRe
 #endif
 
     if( aStatusReporter )
-        aStatusReporter->Report( _( "Loading 3D models" ) );
+        aStatusReporter->Report( _( "Loading 3D models..." ) );
 
-    loadModels( m_objectContainer, aOnlyLoadCopperAndShapes );
+    load3DModels( m_objectContainer, aOnlyLoadCopperAndShapes );
 
 #ifdef PRINT_STATISTICS_3D_VIEWER
     unsigned stats_endLoad3DmodelsTime = GetRunningMicroSecs();
@@ -958,7 +958,10 @@ void RENDER_3D_RAYTRACE::Reload( REPORTER* aStatusReporter, REPORTER* aWarningRe
         }
 
         // Init initial lights
-        m_lights.Clear();
+        for( LIGHT* light : m_lights )
+            delete light;
+
+        m_lights.clear();
 
         auto IsColorZero =
                 []( const SFVEC3F& aSource )
@@ -972,19 +975,23 @@ void RENDER_3D_RAYTRACE::Reload( REPORTER* aStatusReporter, REPORTER* aWarningRe
         m_cameraLight->SetCastShadows( false );
 
         if( !IsColorZero( m_boardAdapter.m_RtCameraLightColor ) )
-            m_lights.Add( m_cameraLight );
+            m_lights.push_back( m_cameraLight );
 
         const SFVEC3F& boardCenter = m_boardAdapter.GetBBox().GetCenter();
 
         if( !IsColorZero( m_boardAdapter.m_RtLightColorTop ) )
-            m_lights.Add( new POINT_LIGHT( SFVEC3F( boardCenter.x, boardCenter.y,
-                                                    +RANGE_SCALE_3D * 2.0f ),
-                                           m_boardAdapter.m_RtLightColorTop ) );
+        {
+            m_lights.push_back( new POINT_LIGHT( SFVEC3F( boardCenter.x, boardCenter.y,
+                                                          +RANGE_SCALE_3D * 2.0f ),
+                                                 m_boardAdapter.m_RtLightColorTop ) );
+        }
 
         if( !IsColorZero( m_boardAdapter.m_RtLightColorBottom ) )
-            m_lights.Add( new POINT_LIGHT( SFVEC3F( boardCenter.x, boardCenter.y,
-                                                    -RANGE_SCALE_3D * 2.0f ),
-                                           m_boardAdapter.m_RtLightColorBottom ) );
+        {
+            m_lights.push_back( new POINT_LIGHT( SFVEC3F( boardCenter.x, boardCenter.y,
+                                                          -RANGE_SCALE_3D * 2.0f ),
+                                                 m_boardAdapter.m_RtLightColorBottom ) );
+        }
 
         wxASSERT( m_boardAdapter.m_RtLightColor.size()
                   == m_boardAdapter.m_RtLightSphericalCoords.size() );
@@ -995,7 +1002,7 @@ void RENDER_3D_RAYTRACE::Reload( REPORTER* aStatusReporter, REPORTER* aWarningRe
             {
                 const SFVEC2F sc = m_boardAdapter.m_RtLightSphericalCoords[i];
 
-                m_lights.Add( new DIRECTIONAL_LIGHT(
+                m_lights.push_back( new DIRECTIONAL_LIGHT(
                         SphericalToCartesian( glm::pi<float>() * sc.x, glm::pi<float>() * sc.y ),
                         m_boardAdapter.m_RtLightColor[i] ) );
             }
@@ -1003,27 +1010,20 @@ void RENDER_3D_RAYTRACE::Reload( REPORTER* aStatusReporter, REPORTER* aWarningRe
     }
 
     // Create an accelerator
-    if( m_accelerator )
-    {
-        delete m_accelerator;
-    }
-
-    m_accelerator = 0;
-
+    delete m_accelerator;
     m_accelerator = new BVH_PBRT( m_objectContainer, 8, SPLITMETHOD::MIDDLE );
 
     if( aStatusReporter )
     {
         // Calculation time in seconds
-        const double calculation_time =
-                (double) ( GetRunningMicroSecs() - stats_startReloadTime ) / 1e6;
+        double calculation_time = (double) GetRunningMicroSecs() - stats_startReloadTime / 1e6;
 
         aStatusReporter->Report( wxString::Format( _( "Reload time %.3f s" ), calculation_time ) );
     }
 }
 
 
-void RENDER_3D_RAYTRACE::insertHole( const VIA* aVia )
+void RENDER_3D_RAYTRACE::insertHole( const PCB_VIA* aVia )
 {
     PCB_LAYER_ID top_layer, bottom_layer;
     int          radiusBUI = ( aVia->GetDrillValue() / 2 );
@@ -1051,9 +1051,12 @@ void RENDER_3D_RAYTRACE::insertHole( const VIA* aVia )
 
     if( m_boardAdapter.GetFlag( FL_USE_REALISTIC_MODE ) )
         objPtr->SetColor( ConvertSRGBToLinear( (SFVEC3F) m_boardAdapter.m_CopperColor ) );
+    else if( aVia->GetViaType() == VIATYPE::MICROVIA )
+        objPtr->SetColor( ConvertSRGBToLinear( m_boardAdapter.GetItemColor( LAYER_VIA_MICROVIA ) ) );
+    else if( aVia->GetViaType() == VIATYPE::BLIND_BURIED )
+        objPtr->SetColor( ConvertSRGBToLinear( m_boardAdapter.GetItemColor( LAYER_VIA_BBLIND ) ) );
     else
-        objPtr->SetColor( ConvertSRGBToLinear( m_boardAdapter.GetItemColor(
-                LAYER_VIAS + static_cast<int>( aVia->GetViaType() ) ) ) );
+        objPtr->SetColor( ConvertSRGBToLinear( m_boardAdapter.GetItemColor( LAYER_VIAS ) ) );
 
     m_objectContainer.Add( objPtr );
 }
@@ -1251,14 +1254,17 @@ void RENDER_3D_RAYTRACE::insertHole( const PAD* aPad )
 
 void RENDER_3D_RAYTRACE::addPadsAndVias()
 {
+    if( !m_boardAdapter.GetBoard() )
+        return;
+
     // Insert plated vertical holes inside the board
 
     // Insert vias holes (vertical cylinders)
-    for( TRACK* track : m_boardAdapter.GetBoard()->Tracks() )
+    for( PCB_TRACK* track : m_boardAdapter.GetBoard()->Tracks() )
     {
         if( track->Type() == PCB_VIA_T )
         {
-            const VIA* via = static_cast<const VIA*>( track );
+            const PCB_VIA* via = static_cast<const PCB_VIA*>( track );
             insertHole( via );
         }
     }
@@ -1277,8 +1283,18 @@ void RENDER_3D_RAYTRACE::addPadsAndVias()
 }
 
 
-void RENDER_3D_RAYTRACE::loadModels( CONTAINER_3D& aDstContainer, bool aSkipMaterialInformation )
+void RENDER_3D_RAYTRACE::load3DModels( CONTAINER_3D& aDstContainer, bool aSkipMaterialInformation )
 {
+    if( !m_boardAdapter.GetBoard() )
+        return;
+
+    if( !m_boardAdapter.GetFlag( FL_FP_ATTRIBUTES_NORMAL )
+      && !m_boardAdapter.GetFlag( FL_FP_ATTRIBUTES_NORMAL_INSERT )
+      && !m_boardAdapter.GetFlag( FL_FP_ATTRIBUTES_VIRTUAL ) )
+    {
+        return;
+    }
+
     // Go for all footprints
     for( FOOTPRINT* fp : m_boardAdapter.GetBoard()->Footprints() )
     {

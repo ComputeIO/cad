@@ -28,17 +28,17 @@ set(3D-VIEWER_SRCS
     3d_cache/3d_cache.cpp
     3d_cache/3d_plugin_manager.cpp
     ${DIR_DLG}/3d_cache_dialogs.cpp
-    ${DIR_DLG}/dlg_select_3dmodel_base.cpp
-    ${DIR_DLG}/dlg_select_3dmodel.cpp
-    ${DIR_DLG}/panel_prev_3d_base.cpp
-    ${DIR_DLG}/panel_prev_3d.cpp
+    ${DIR_DLG}/dialog_select_3d_model_base.cpp
+    ${DIR_DLG}/dialog_select_3d_model.cpp
+    ${DIR_DLG}/panel_preview_3d_model_base.cpp
+    ${DIR_DLG}/panel_preview_3d_model.cpp
     3d_canvas/board_adapter.cpp
     3d_canvas/create_layer_items.cpp
     3d_canvas/create_3Dgraphic_brd_items.cpp
     3d_canvas/create_layer_poly.cpp
     3d_canvas/eda_3d_canvas.cpp
     3d_canvas/eda_3d_canvas_pivot.cpp
-    3d_model_viewer/3d_model_viewer.cpp
+    3d_model_viewer/eda_3d_model_viewer.cpp
     3d_rendering/legacy/3d_model.cpp
     3d_rendering/legacy/ogl_legacy_utils.cpp
     3d_rendering/legacy/create_scene.cpp
@@ -87,13 +87,19 @@ set(3D-VIEWER_SRCS
     3d_rendering/trackball.cpp
     3d_viewer/3d_menubar.cpp
     3d_viewer/3d_toolbar.cpp
-    3d_viewer/dialogs/dialog_3D_view_option.cpp
-    3d_viewer/dialogs/dialog_3D_view_option_base.cpp
-    3d_viewer/tools/3d_actions.cpp
-    3d_viewer/tools/3d_conditions.cpp
-    3d_viewer/tools/3d_controller.cpp
-    3d_viewer/eda_3d_viewer.cpp
-    3d_viewer/3d_viewer_settings.cpp
+    3d_viewer/dialogs/panel_3D_colors.cpp
+    3d_viewer/dialogs/panel_3D_colors_base.cpp
+    3d_viewer/dialogs/panel_3D_display_options.cpp
+    3d_viewer/dialogs/panel_3D_display_options_base.cpp
+    3d_viewer/dialogs/panel_3D_opengl_options.cpp
+    3d_viewer/dialogs/panel_3D_opengl_options_base.cpp
+    3d_viewer/dialogs/panel_3D_raytracing_options.cpp
+    3d_viewer/dialogs/panel_3D_raytracing_options_base.cpp
+    3d_viewer/tools/eda_3d_actions.cpp
+    3d_viewer/tools/eda_3d_conditions.cpp
+    3d_viewer/tools/eda_3d_controller.cpp
+    3d_viewer/eda_3d_viewer_frame.cpp
+    3d_viewer/eda_3d_viewer_settings.cpp
     common_ogl/ogl_attr_list.cpp
     common_ogl/ogl_utils.cpp
     3d_fastmath.cpp

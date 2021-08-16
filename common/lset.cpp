@@ -30,10 +30,10 @@
 
 #include <core/arraydim.h>
 #include <math/util.h>                        // for Clamp
-#include <layers_id_colors_and_visibility.h>  // for LSET, PCB_LAYER_ID, LSEQ
+#include <layer_ids.h>  // for LSET, PCB_LAYER_ID, LSEQ
 #include <macros.h>                           // for arrayDim
 #include <wx/debug.h>                         // for wxASSERT, wxASSERT_MSG
-#include <wx/wx.h>                            // for wxT, wxChar
+#include <wx/string.h>
 
 
 LSET::LSET( const PCB_LAYER_ID* aArray, unsigned aCount ) :

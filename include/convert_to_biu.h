@@ -52,12 +52,12 @@
     wx to handle something outside INT_MIN to INT_MAX, there are unreported
     problems in the non-Debug build because wxRound() goes silent.
 
-    Pcbnew uses nanometers because we ned to convert coordintes and size between
-    milimeters and inches. using a iu = 1 nm avoid rounding issues
+    Pcbnew uses nanometers because we need to convert coordinates and size between
+    millimeters and inches. using a iu = 1 nm avoid rounding issues
 
-    Gerbview uses iu = 10 nm because we can have coordintes far from origin, and
+    Gerbview uses iu = 10 nm because we can have coordinates far from origin, and
     1 nm is too small to avoid int overflow.
-    (Conversions between milimeters and inches are not critical)
+    (Conversions between millimeters and inches are not critical)
 */
 
 /**
@@ -142,7 +142,7 @@ constexpr int ARC_HIGH_DEF = Millimeter2iu( 0.005 );
 constexpr double PCB_IU_PER_MILS = (PCB_IU_PER_MM * 0.0254);
 constexpr double SCH_IU_PER_MILS = (SCH_IU_PER_MM * 0.0254);
 
-constexpr inline int SchMils2iu( int mils )
+constexpr inline int SchMils2iu( double mils )
 {
     double x = mils * SCH_IU_PER_MILS;
     return int( x < 0 ? x - 0.5 : x + 0.5 );
@@ -152,11 +152,11 @@ constexpr inline double SchIu2Mils( int iu )
     return iu / SCH_IU_PER_MILS;
 }
 
-constexpr inline int PcbMillimeter2iu( double mm )
+constexpr inline int PcbMm2iu( double mm )
 {
     return (int) ( mm < 0 ? mm * PCB_IU_PER_MM - 0.5 : mm * PCB_IU_PER_MM + 0.5 );
 }
-constexpr inline double PcbIu2Millimeter( int iu )
+constexpr inline double PcbIu2mm( int iu )
 {
     return iu / PCB_IU_PER_MM;
 }

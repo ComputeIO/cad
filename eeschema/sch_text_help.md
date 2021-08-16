@@ -31,7 +31,7 @@
         <td></td>
     </tr>
     <tr>
-        <td> &nbsp;<br><samp>~overbar</samp><br> &nbsp;<br><samp>~CLK</samp><br> &nbsp;<br><samp>~~</samp> </td>
+        <td> &nbsp;<br><samp>~{overbar}</samp><br> &nbsp;<br><samp>~{CLK}</samp><br> &nbsp;<br><samp>~~</samp> </td>
         <td></td>
         <td> <samp><u>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</u></samp><br> <samp>overbar</samp><br> <samp><u>&nbsp;&nbsp;&nbsp;</u></samp><br> <samp>CLK</samp><br> <samp>&nbsp;</samp><br> <samp>~</samp> </td>
     </tr>
@@ -121,4 +121,11 @@
         <td></td>
         <td> <samp>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<sub>&nbsp;</sub>&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<sub>&nbsp;</sub>&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;<u>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</u></samp><br> <samp>MEM.D<sub>1</sub>, MEM.D<sub>2</sub>, MEM.LATCH</samp> </td>
     </tr>
+    <tr>
+        <td><br></td>
+    </tr>
 </table>
+<p></p>
+<p></p>
+<i>Note that markup has precedence over bus definitions.</i>
+

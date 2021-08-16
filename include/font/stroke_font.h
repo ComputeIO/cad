@@ -67,20 +67,6 @@ public:
     bool LoadFont( const wxString& aFontName = "", bool aBold = false,
                    bool aItalic = false ) override;
 
-#if 0
-    /**
-     * Draw a string.
-     *
-     * @param aGal
-     * @param aText is the text to be drawn.
-     * @param aPosition is the text position in world coordinates.
-     * @param aAttributes contains the text attributes (angle, line spacing, etc.)
-     * @return bounding box width/height
-     */
-    VECTOR2D Draw( KIGFX::GAL* aGal, const UTF8& aText, const VECTOR2D& aPosition,
-                   const VECTOR2D& aOrigin, const TEXT_ATTRIBUTES& aRotationAngle ) const override;
-#endif
-
     /**
      * Compute the boundary limits of aText (the bounding box of all shapes).
      *
@@ -120,6 +106,11 @@ public:
      */
     VECTOR2D ComputeTextLineSize( const KIGFX::GAL* aGal, const UTF8& aText ) const override;
 
+    VECTOR2I GetTextAsPolygon( BOX2I* aBoundingBox, GLYPH_LIST& aGlyphs, const UTF8& aText,
+                               const VECTOR2D& aGlyphSize, const wxPoint& aPosition,
+                               const EDA_ANGLE& aAngle, bool aIsMirrored,
+                               TEXT_STYLE_FLAGS aTextStyle = 0 ) const override;
+
 protected:
     VECTOR2D getBoundingBox( const UTF8& aString, const VECTOR2D& aGlyphSize,
                              TEXT_STYLE_FLAGS aTextStyle = 0 ) const override;
@@ -157,30 +148,16 @@ private:
      * @param aGlyphWidth is the x-component of the bounding box size.
      * @return is the complete bounding box size.
      */
-    BOX2D computeBoundingBox( const GLYPH* aGlyph, double aGlyphWidth ) const;
-
-    /**
-     * Draw a single line of text. Multiline texts should be split before using the
-     * function.
-     *
-     * @param aText is the text to be drawn.
-     * @param aPosition is ignored; always draws at (0,0)
-     * @param aAngle is text angle.
-     * @return bounding box width/height
-     */
-    VECTOR2D drawSingleLineText( KIGFX::GAL* aGal, const UTF8& aText,
-                                 const VECTOR2D&  aPosition = VECTOR2D( 0, 0 ),
-                                 const EDA_ANGLE& aAngle = EDA_ANGLE() ) const override;
+    //BOX2D computeBoundingBox( std::shared_ptr<GLYPH> aGlyph, double aGlyphWidth ) const;
 
     /**
      * Process a string representing a Hershey font glyph. Not used for Newstroke font
      * as the format is slightly different from the original Hershey format.
      *
      * @param aGlyphString String containing the glyph data
-     * @param aGlyphWidth Computed glyph width is stored here
      * @return newly created GLYPH
      */
-    GLYPH* processGlyph( std::string aGlyphString, double& aGlyphWidth );
+    std::shared_ptr<GLYPH> processGlyph( std::string aGlyphString );
 
     const GLYPH_LIST*              m_glyphs;             ///< Glyph list
     const GLYPH_BOUNDING_BOX_LIST* m_glyphBoundingBoxes; ///< Bounding boxes of the glyphs

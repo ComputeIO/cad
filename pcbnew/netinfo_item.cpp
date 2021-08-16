@@ -7,7 +7,7 @@
  *
  * Copyright (C) 2012 Jean-Pierre Charras, jean-pierre.charras@ujf-grenoble.fr
  * Copyright (C) 2012 SoftPLC Corporation, Dick Hollenbeck <dick@softplc.com>
- * Copyright (C) 1992-2012 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 1992-2021 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -28,18 +28,15 @@
  */
 
 #include <pcb_base_frame.h>
-#include <kicad_string.h>
+#include <string_utils.h>
 #include <widgets/msgpanel.h>
 #include <base_units.h>
 #include <board.h>
+#include <board_design_settings.h>
 #include <footprint.h>
-#include <track.h>
+#include <pcb_track.h>
 #include <pad.h>
 
-
-/*********************************************************/
-/* class NETINFO_ITEM: handle data relative to a given net */
-/*********************************************************/
 
 NETINFO_ITEM::NETINFO_ITEM( BOARD* aParent, const wxString& aNetName, int aNetCode ) :
         BOARD_ITEM( aParent, PCB_NETINFO_T ),
@@ -79,12 +76,12 @@ void NETINFO_ITEM::GetMsgPanelInfo( EDA_DRAW_FRAME* aFrame, std::vector<MSG_PANE
     aList.emplace_back( _( "Net Code" ), wxString::Format( "%d", GetNetCode() ) );
 
     // Warning: for netcode == NETINFO_LIST::ORPHANED, the parent or the board can be NULL
-    BOARD * board = m_parent ? m_parent->GetBoard() : NULL;
+    BOARD * board = m_parent ? m_parent->GetBoard() : nullptr;
 
     if( board )
     {
-        int    count      = 0;
-        TRACK* startTrack = nullptr;
+        int        count      = 0;
+        PCB_TRACK* startTrack = nullptr;
 
         for( FOOTPRINT* footprint : board->Footprints() )
         {
@@ -99,7 +96,7 @@ void NETINFO_ITEM::GetMsgPanelInfo( EDA_DRAW_FRAME* aFrame, std::vector<MSG_PANE
 
         count = 0;
 
-        for( TRACK* track : board->Tracks() )
+        for( PCB_TRACK* track : board->Tracks() )
         {
             if( track->GetNetCode() == GetNetCode() )
             {

@@ -53,14 +53,19 @@ void MOUSE_TRAIL_TRACER::AddTrailPoint( const VECTOR2I& aP )
     {
         SEG s_new( m_trail.CPoint( -1 ), aP );
 
-        for( int i = 0; i < m_trail.SegmentCount() - 1; i++ )
+        if( m_trail.SegmentCount() > 2 )
         {
-            const SEG& s_trail = m_trail.CSegment( i );
+            SEG::ecoord limit = ( static_cast<SEG::ecoord>( m_tolerance ) * m_tolerance );
 
-            if( s_trail.Distance( s_new ) <= m_tolerance )
+            for( int i = 0; i < m_trail.SegmentCount() - 2; i++ )
             {
-                m_trail = m_trail.Slice( 0, i );
-                break;
+                const SEG& s_trail = m_trail.CSegment( i );
+
+                if( s_trail.SquaredDistance( s_new ) <= limit )
+                {
+                    m_trail = m_trail.Slice( 0, i );
+                    break;
+                }
             }
         }
 
@@ -71,7 +76,7 @@ void MOUSE_TRAIL_TRACER::AddTrailPoint( const VECTOR2I& aP )
 
     DEBUG_DECORATOR *dbg = ROUTER::GetInstance()->GetInterface()->GetDebugDecorator();
 
-    PNS_DBG( dbg, AddLine, m_trail, CYAN, 100000, "mt-trail" );
+    PNS_DBG( dbg, AddLine, m_trail, CYAN, 50000, "mt-trail" );
 }
 
 
@@ -114,7 +119,7 @@ DIRECTION_45 MOUSE_TRAIL_TRACER::GetPosture( const VECTOR2I& aP )
 
     PNS_DBG( dbg, AddLine, straight, m_forced ? BLUE : GREEN, 100000, "mt-straight" );
 
-    double areaS = std::abs( straight.Area() );
+    double areaS = straight.Area();
 
     SHAPE_LINE_CHAIN diag( DIRECTION_45().BuildInitialTrace( p0, aP, true, false ) );
     diag.Append( m_trail.Reverse() );
@@ -123,7 +128,7 @@ DIRECTION_45 MOUSE_TRAIL_TRACER::GetPosture( const VECTOR2I& aP )
 
     PNS_DBG( dbg, AddLine, diag, YELLOW, 100000, "mt-diag" );
 
-    double areaDiag = std::abs( diag.Area() );
+    double areaDiag = diag.Area();
     double ratio    = areaS / ( areaDiag + 1.0 );
 
     // heuristic to detect that the user dragged back the cursor to the beginning of the trace
@@ -147,7 +152,7 @@ DIRECTION_45 MOUSE_TRAIL_TRACER::GetPosture( const VECTOR2I& aP )
         SHAPE_LINE_CHAIN trail( m_trail );
         trail.SetClosed( true );
 
-        if( std::abs( trail.Area() ) > areaCutoff )
+        if( trail.Area() > areaCutoff )
             areaOk = true;
 }
 
@@ -167,8 +172,8 @@ DIRECTION_45 MOUSE_TRAIL_TRACER::GetPosture( const VECTOR2I& aP )
 
     if( !m_disableMouse && newDirection != m_direction )
     {
-        PNS_DBG( dbg, Message, wxString::Format( "Posture: direction update %s => %s", m_direction.Format(),
-                    newDirection.Format() ) );
+        PNS_DBG( dbg, Message, wxString::Format( "Posture: direction update %s => %s",
+                                                 m_direction.Format(), newDirection.Format() ) );
         m_direction = newDirection;
     }
 
@@ -176,14 +181,16 @@ DIRECTION_45 MOUSE_TRAIL_TRACER::GetPosture( const VECTOR2I& aP )
     // to correct to the least obtuse
     if( !m_manuallyForced && !m_disableMouse && m_lastSegDirection != DIRECTION_45::UNDEFINED )
     {
-        PNS_DBG( dbg, Message, wxString::Format( "Posture: checking direction %s against last seg %s",
-                    m_direction.Format(), m_lastSegDirection.Format() ) );
+        PNS_DBG( dbg, Message,
+                 wxString::Format( "Posture: checking direction %s against last seg %s",
+                                   m_direction.Format(), m_lastSegDirection.Format() ) );
 
         if( straightDirection == m_lastSegDirection )
         {
             if( m_direction != straightDirection )
             {
-                PNS_DBG( dbg, Message, wxString::Format( "Posture: forcing straight => %s", straightDirection.Format() ) );
+                PNS_DBG( dbg, Message, wxString::Format( "Posture: forcing straight => %s",
+                                                         straightDirection.Format() ) );
             }
 
             m_direction = straightDirection;
@@ -192,7 +199,8 @@ DIRECTION_45 MOUSE_TRAIL_TRACER::GetPosture( const VECTOR2I& aP )
         {
             if( m_direction != straightDirection )
             {
-                PNS_DBG( dbg, Message, wxString::Format( "Posture: forcing diagonal => %s", diagDirection.Format() ) );
+                PNS_DBG( dbg, Message, wxString::Format( "Posture: forcing diagonal => %s",
+                                                         diagDirection.Format() ) );
             }
 
             m_direction = diagDirection;
@@ -204,7 +212,8 @@ DIRECTION_45 MOUSE_TRAIL_TRACER::GetPosture( const VECTOR2I& aP )
             case DIRECTION_45::ANG_HALF_FULL:
                 // Force a better (acute) connection
                 m_direction = m_direction.IsDiagonal() ? straightDirection : diagDirection;
-                PNS_DBG( dbg, Message, wxString::Format( "Posture: correcting half full => %s", m_direction.Format() ) );
+                PNS_DBG( dbg, Message, wxString::Format( "Posture: correcting half full => %s",
+                                                         m_direction.Format() ) );
                 break;
 
             case DIRECTION_45::ANG_ACUTE:
@@ -215,7 +224,8 @@ DIRECTION_45 MOUSE_TRAIL_TRACER::GetPosture( const VECTOR2I& aP )
 
                 if( candidate.Angle( m_lastSegDirection ) == DIRECTION_45::ANG_RIGHT )
                 {
-                    PNS_DBG( dbg, Message, wxString::Format( "Posture: correcting right => %s", candidate.Format() ) );
+                    PNS_DBG( dbg, Message, wxString::Format( "Posture: correcting right => %s",
+                                                             candidate.Format() ) );
                     m_direction = candidate;
                 }
 
@@ -230,7 +240,8 @@ DIRECTION_45 MOUSE_TRAIL_TRACER::GetPosture( const VECTOR2I& aP )
 
                 if( candidate.Angle( m_lastSegDirection ) == DIRECTION_45::ANG_OBTUSE )
                 {
-                    PNS_DBG( dbg, Message, wxString::Format( "Posture: correcting obtuse => %s", candidate.Format() ) );
+                    PNS_DBG( dbg, Message, wxString::Format( "Posture: correcting obtuse => %s",
+                                                             candidate.Format() ) );
                     m_direction = candidate;
                 }
 

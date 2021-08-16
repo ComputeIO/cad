@@ -2,7 +2,7 @@
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
  * Copyright (C) 2015 Jean-Pierre Charras, jp.charras at wanadoo.fr
- * Copyright (C) 1992-2020 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 1992-2021 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -36,7 +36,7 @@
 #include <board_item.h>
 
 SCH_LINE::SCH_LINE( const wxPoint& pos, int layer ) :
-    SCH_ITEM( NULL, SCH_LINE_T )
+    SCH_ITEM( nullptr, SCH_LINE_T )
 {
     m_start           = pos;
     m_end             = pos;
@@ -392,20 +392,20 @@ void SCH_LINE::MirrorHorizontally( int aCenter )
 }
 
 
-void SCH_LINE::Rotate( wxPoint aCenter )
+void SCH_LINE::Rotate( const wxPoint& aCenter )
 {
     RotatePoint( &m_start, aCenter, 900 );
     RotatePoint( &m_end, aCenter, 900 );
 }
 
 
-void SCH_LINE::RotateStart( wxPoint aCenter )
+void SCH_LINE::RotateStart( const wxPoint& aCenter )
 {
     RotatePoint( &m_start, aCenter, 900 );
 }
 
 
-void SCH_LINE::RotateEnd( wxPoint aCenter )
+void SCH_LINE::RotateEnd( const wxPoint& aCenter )
 {
     RotatePoint( &m_end, aCenter, 900 );
 }
@@ -439,7 +439,7 @@ int SCH_LINE::GetReverseAngleFrom( const wxPoint& aPoint ) const
 
 bool SCH_LINE::IsParallel( const SCH_LINE* aLine ) const
 {
-    wxCHECK_MSG( aLine != NULL && aLine->Type() == SCH_LINE_T, false,
+    wxCHECK_MSG( aLine != nullptr && aLine->Type() == SCH_LINE_T, false,
                  wxT( "Cannot test line segment for overlap." ) );
 
     wxPoint firstSeg   = m_end - m_start;
@@ -460,7 +460,7 @@ SCH_LINE* SCH_LINE::MergeOverlap( SCH_SCREEN* aScreen, SCH_LINE* aLine, bool aCh
         return lhs.x < rhs.x;
     };
 
-    wxCHECK_MSG( aLine != NULL && aLine->Type() == SCH_LINE_T, NULL,
+    wxCHECK_MSG( aLine != nullptr && aLine->Type() == SCH_LINE_T, nullptr,
                  wxT( "Cannot test line segment for overlap." ) );
 
     if( this == aLine || GetLayer() != aLine->GetLayer() )
@@ -661,7 +661,7 @@ bool SCH_LINE::CanConnect( const SCH_ITEM* aItem ) const
         case SCH_GLOBAL_LABEL_T:
         case SCH_HIER_LABEL_T:
         case SCH_BUS_WIRE_ENTRY_T:
-        case SCH_COMPONENT_T:
+        case SCH_SYMBOL_T:
         case SCH_SHEET_T:
         case SCH_SHEET_PIN_T:
             return true;

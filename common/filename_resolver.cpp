@@ -234,7 +234,7 @@ bool FILENAME_RESOLVER::UpdatePathList( const std::vector< SEARCH_PATH >& aPathL
     for( const SEARCH_PATH& path : aPathList )
         addPath( path );
 
-    return writePathList();
+    return WritePathList( m_configDir, RESOLVER_CONFIG, false );
 }
 
 
@@ -594,15 +594,16 @@ bool FILENAME_RESOLVER::readPathList()
     cfgFile.close();
 
     if( vnum < CFGFILE_VERSION )
-        writePathList();
+        WritePathList( m_configDir, RESOLVER_CONFIG, false );
 
     return( m_paths.size() != nitems );
 }
 
 
-bool FILENAME_RESOLVER::writePathList()
+bool FILENAME_RESOLVER::WritePathList( const wxString& aDir, const wxString& aFilename,
+                                       bool aResolvePaths )
 {
-    if( m_configDir.empty() )
+    if( aDir.empty() )
     {
         std::ostringstream ostr;
         ostr << __FILE__ << ": " << __FUNCTION__ << ": " << __LINE__ << "\n";
@@ -614,14 +615,20 @@ bool FILENAME_RESOLVER::writePathList()
         return false;
     }
 
-    // skip all ${ENV_VAR} alias names
-    std::list< SEARCH_PATH >::const_iterator sPL = m_paths.begin();
+    std::list<SEARCH_PATH>::const_iterator sPL = m_paths.begin();
 
-    while( sPL != m_paths.end() &&
-           ( sPL->m_Alias.StartsWith( "${" ) || sPL->m_Alias.StartsWith( "$(" ) ) )
-        ++sPL;
+    if( !aResolvePaths )
+    {
+        // skip all ${ENV_VAR} alias names
 
-    wxFileName cfgpath( m_configDir, RESOLVER_CONFIG );
+        while( sPL != m_paths.end()
+                && ( sPL->m_Alias.StartsWith( "${" ) || sPL->m_Alias.StartsWith( "$(" ) ) )
+        {
+            ++sPL;
+        }
+    }
+
+    wxFileName cfgpath( aDir, aFilename );
     wxString cfgname = cfgpath.GetFullPath();
     std::ofstream cfgFile;
 
@@ -646,10 +653,17 @@ bool FILENAME_RESOLVER::writePathList()
     {
         tstr = sPL->m_Alias.ToUTF8();
         cfgFile << "\"" << tstr.size() << ":" << tstr << "\",";
-        tstr = sPL->m_Pathvar.ToUTF8();
+
+        if( aResolvePaths )
+            tstr = ResolvePath( sPL->m_Pathvar ).ToUTF8();
+        else
+            tstr = sPL->m_Pathvar.ToUTF8();
+
         cfgFile << "\"" << tstr.size() << ":" << tstr << "\",";
+
         tstr = sPL->m_Description.ToUTF8();
         cfgFile << "\"" << tstr.size() << ":" << tstr << "\"\n";
+
         ++sPL;
     }
 

@@ -26,11 +26,9 @@
 
 #include <cassert>
 #include <cmath>
-#include <wx/wx.h>
 #include <kiface_i.h>
-#include <dialog_helpers.h>
 
-#include "attenuators/attenuator_classes.h"
+#include <string_utils.h>
 #include "class_regulator_data.h"
 #include "pcb_calculator_frame.h"
 #include "pcb_calculator_settings.h"

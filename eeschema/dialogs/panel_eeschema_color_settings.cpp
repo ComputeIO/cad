@@ -23,7 +23,7 @@
 #include <bitmaps.h>
 #include <eeschema_settings.h>
 #include <gal/gal_display_options.h>
-#include <layers_id_colors_and_visibility.h>
+#include <layer_ids.h>
 #include <lib_polyline.h>
 #include <page_info.h>
 #include <panel_eeschema_color_settings.h>
@@ -331,26 +331,26 @@ void PANEL_EESCHEMA_COLOR_SETTINGS::createPreviewItems()
     t2->SetSelected();
 
     {
-        LIB_PART* part = new LIB_PART( wxEmptyString );
+        LIB_SYMBOL* symbol = new LIB_SYMBOL( wxEmptyString );
         wxPoint p( 2625, -1600 );
 
-        LIB_FIELD& ref = part->GetReferenceField();
+        LIB_FIELD& ref = symbol->GetReferenceField();
 
         ref.SetText( wxT( "U1" ) );
         ref.SetPosition( MILS_POINT( p.x + 30, p.y + 260 ) );
         ref.Align( TEXT_ATTRIBUTES::H_LEFT );
 
-        LIB_FIELD& value = part->GetValueField();
+        LIB_FIELD& value = symbol->GetValueField();
 
         value.SetText( wxT( "OPA604" ) );
         value.SetPosition( MILS_POINT( p.x + 30, p.y + 180 ) );
         value.Align( TEXT_ATTRIBUTES::H_LEFT );
 
-        part->SetShowPinNames( true );
-        part->SetShowPinNumbers( true );
-        part->SetPinNameOffset( 0 );
+        symbol->SetShowPinNames( true );
+        symbol->SetShowPinNumbers( true );
+        symbol->SetPinNameOffset( 0 );
 
-        LIB_POLYLINE* comp_body = new LIB_POLYLINE( part );
+        LIB_POLYLINE* comp_body = new LIB_POLYLINE( symbol );
 
         comp_body->SetUnit( 0 );
         comp_body->SetConvert( 0 );
@@ -363,7 +363,7 @@ void PANEL_EESCHEMA_COLOR_SETTINGS::createPreviewItems()
 
         addItem( comp_body );
 
-        LIB_PIN* pin = new LIB_PIN( part );
+        LIB_PIN* pin = new LIB_PIN( symbol );
 
         pin->SetPosition( MILS_POINT( p.x - 200, p.y + 100 ) );
         pin->SetLength( Mils2iu( 100 ) );
@@ -372,9 +372,9 @@ void PANEL_EESCHEMA_COLOR_SETTINGS::createPreviewItems()
         pin->SetNumber( wxT( "1" ) );
         pin->SetName( wxT( "-" ) );
 
-        part->AddDrawItem( pin );
+        symbol->AddDrawItem( pin );
 
-        pin = new LIB_PIN( part );
+        pin = new LIB_PIN( symbol );
 
         pin->SetPosition( MILS_POINT( p.x - 200, p.y - 100 ) );
         pin->SetLength( Mils2iu( 100 ) );
@@ -383,9 +383,9 @@ void PANEL_EESCHEMA_COLOR_SETTINGS::createPreviewItems()
         pin->SetNumber( wxT( "2" ) );
         pin->SetName( wxT( "+" ) );
 
-        part->AddDrawItem( pin );
+        symbol->AddDrawItem( pin );
 
-        pin = new LIB_PIN( part );
+        pin = new LIB_PIN( symbol );
 
         pin->SetPosition( MILS_POINT( p.x + 200, p.y ) );
         pin->SetLength( Mils2iu( 100 ) );
@@ -394,9 +394,9 @@ void PANEL_EESCHEMA_COLOR_SETTINGS::createPreviewItems()
         pin->SetNumber( wxT( "3" ) );
         pin->SetName( wxT( "OUT" ) );
 
-        part->AddDrawItem( pin );
+        symbol->AddDrawItem( pin );
 
-        addItem( part );
+        addItem( symbol );
     }
 
     SCH_SHEET* s = new SCH_SHEET( nullptr, MILS_POINT( 4000, 1300 ) );
@@ -445,7 +445,7 @@ void PANEL_EESCHEMA_COLOR_SETTINGS::updatePreview()
 
 void PANEL_EESCHEMA_COLOR_SETTINGS::zoomFitPreview()
 {
-    auto view = m_preview->GetView();
+    KIGFX::VIEW* view = m_preview->GetView();
 
     view->SetScale( 1.0 );
     VECTOR2D screenSize = view->ToWorld( m_preview->GetClientSize(), false );
@@ -454,7 +454,7 @@ void PANEL_EESCHEMA_COLOR_SETTINGS::zoomFitPreview()
     double scale = view->GetScale() / std::max( fabs( psize.x / screenSize.x ),
                                                 fabs( psize.y / screenSize.y ) );
 
-    view->SetScale( scale * 1.1 );
+    view->SetScale( scale * m_galDisplayOptions.m_scaleFactor * 0.8 /* margin */ );
     view->SetCenter( m_drawingSheet->ViewBBox().Centre() );
     m_preview->ForceRefresh();
 }

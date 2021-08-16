@@ -41,17 +41,18 @@
 #include <core/mirror.h>
 #include <kiway.h>
 #include <general.h>
-#include <class_library.h>
+#include <symbol_library.h>
 #include <sch_symbol.h>
 #include <sch_field.h>
 #include <schematic.h>
 #include <settings/color_settings.h>
-#include <kicad_string.h>
+#include <string_utils.h>
 #include <trace_helpers.h>
 #include <trigo.h>
 #include <eeschema_id.h>
 #include <tool/tool_manager.h>
 #include <tools/ee_actions.h>
+
 
 SCH_FIELD::SCH_FIELD( const wxPoint& aPos, int aFieldId, SCH_ITEM* aParent,
                       const wxString& aName ) :
@@ -114,7 +115,7 @@ wxString SCH_FIELD::GetShownText( int aDepth ) const
                 }
                 else
                 {
-                    SCH_COMPONENT* parentSymbol = static_cast<SCH_COMPONENT*>( m_parent );
+                    SCH_SYMBOL* parentSymbol = static_cast<SCH_SYMBOL*>( m_parent );
 
                     if( parentSymbol->ResolveTextVar( token, aDepth + 1 ) )
                         return true;
@@ -144,17 +145,20 @@ wxString SCH_FIELD::GetShownText( int aDepth ) const
             };
 
     PROJECT*  project = nullptr;
-    bool      processTextVars = false;
-    wxString  text = EDA_TEXT::GetShownText( &processTextVars );
+    wxString  text = EDA_TEXT::GetShownText();
 
-    if( processTextVars )
+    if( text == "~" )    // Legacy placeholder for empty string
+    {
+        text = "";
+    }
+    else if( HasTextVars() )
     {
         if( Schematic() )
             project = &Schematic()->Prj();
 
         if( aDepth < 10 )
         {
-            if( m_parent && m_parent->Type() == SCH_COMPONENT_T )
+            if( m_parent && m_parent->Type() == SCH_SYMBOL_T )
                 text = ExpandTextVars( text, &symbolResolver, nullptr, project );
             else if( m_parent && m_parent->Type() == SCH_SHEET_T )
                 text = ExpandTextVars( text, &sheetResolver, nullptr, project );
@@ -168,16 +172,16 @@ wxString SCH_FIELD::GetShownText( int aDepth ) const
     // WARNING: the IDs of FIELDS and SHEETS overlap, so one must check *both* the
     // id and the parent's type.
 
-    if( m_parent && m_parent->Type() == SCH_COMPONENT_T )
+    if( m_parent && m_parent->Type() == SCH_SYMBOL_T )
     {
-        SCH_COMPONENT* parentSymbol = static_cast<SCH_COMPONENT*>( m_parent );
+        SCH_SYMBOL* parentSymbol = static_cast<SCH_SYMBOL*>( m_parent );
 
         if( m_id == REFERENCE_FIELD )
         {
             // For more than one part per package, we must add the part selection
             // A, B, ... or 1, 2, .. to the reference.
             if( parentSymbol->GetUnitCount() > 1 )
-                text << LIB_PART::SubReference( parentSymbol->GetUnit() );
+                text << LIB_SYMBOL::SubReference( parentSymbol->GetUnit() );
         }
     }
     else if( m_parent && m_parent->Type() == SCH_SHEET_T )
@@ -209,9 +213,9 @@ void SCH_FIELD::Print( const RENDER_SETTINGS* aSettings, const wxPoint& aOffset 
     // Calculate the text orientation according to the symbol orientation.
     EDA_ANGLE orient = GetTextEdaAngle();
 
-    if( m_parent && m_parent->Type() == SCH_COMPONENT_T )
+    if( m_parent && m_parent->Type() == SCH_SYMBOL_T )
     {
-        SCH_COMPONENT* parentSymbol = static_cast<SCH_COMPONENT*>( m_parent );
+        SCH_SYMBOL* parentSymbol = static_cast<SCH_SYMBOL*>( m_parent );
 
         if( parentSymbol && parentSymbol->GetTransform().y1 )  // Rotate symbol 90 degrees.
         {
@@ -248,7 +252,7 @@ void SCH_FIELD::ImportValues( const LIB_FIELD& aSource )
 
 void SCH_FIELD::SwapData( SCH_ITEM* aItem )
 {
-    wxCHECK_RET( (aItem != NULL) && (aItem->Type() == SCH_FIELD_T),
+    wxCHECK_RET( ( aItem != nullptr ) && ( aItem->Type() == SCH_FIELD_T ),
                  wxT( "Cannot swap field data with invalid item." ) );
 
     SCH_FIELD* item = (SCH_FIELD*) aItem;
@@ -275,9 +279,9 @@ const EDA_RECT SCH_FIELD::GetBoundingBox() const
     // Now, apply the symbol transform (mirror/rot)
     TRANSFORM transform;
 
-    if( m_parent && m_parent->Type() == SCH_COMPONENT_T )
+    if( m_parent && m_parent->Type() == SCH_SYMBOL_T )
     {
-        SCH_COMPONENT* parentSymbol = static_cast<SCH_COMPONENT*>( m_parent );
+        SCH_SYMBOL* parentSymbol = static_cast<SCH_SYMBOL*>( m_parent );
 
         // Due to the Y axis direction, we must mirror the bounding box,
         // relative to the text position:
@@ -338,12 +342,12 @@ bool SCH_FIELD::Matches( const wxFindReplaceData& aSearchData, void* aAuxData ) 
     if( !IsVisible() && !searchHiddenFields )
         return false;
 
-    if( m_parent && m_parent->Type() == SCH_COMPONENT_T && m_id == REFERENCE_FIELD )
+    if( m_parent && m_parent->Type() == SCH_SYMBOL_T && m_id == REFERENCE_FIELD )
     {
         if( searchAndReplace && !replaceReferences )
             return false;
 
-        SCH_COMPONENT* parentSymbol = static_cast<SCH_COMPONENT*>( m_parent );
+        SCH_SYMBOL* parentSymbol = static_cast<SCH_SYMBOL*>( m_parent );
         wxASSERT( aAuxData );
 
         // Take sheet path into account which effects the reference field and the unit for
@@ -356,7 +360,7 @@ bool SCH_FIELD::Matches( const wxFindReplaceData& aSearchData, void* aAuxData ) 
                 return true;
 
             if( parentSymbol->GetUnitCount() > 1 )
-                text << LIB_PART::SubReference( parentSymbol->GetUnit() );
+                text << LIB_SYMBOL::SubReference( parentSymbol->GetUnit() );
         }
     }
 
@@ -366,13 +370,13 @@ bool SCH_FIELD::Matches( const wxFindReplaceData& aSearchData, void* aAuxData ) 
 
 bool SCH_FIELD::IsReplaceable() const
 {
-    if( m_parent && m_parent->Type() == SCH_COMPONENT_T )
+    if( m_parent && m_parent->Type() == SCH_SYMBOL_T )
     {
-        SCH_COMPONENT* parentSymbol = static_cast<SCH_COMPONENT*>( m_parent );
+        SCH_SYMBOL* parentSymbol = static_cast<SCH_SYMBOL*>( m_parent );
 
         if( m_id == VALUE_FIELD )
         {
-            if( parentSymbol->GetPartRef() && parentSymbol->GetPartRef()->IsPower() )
+            if( parentSymbol->GetLibSymbolRef() && parentSymbol->GetLibSymbolRef()->IsPower() )
                 return false;
         }
     }
@@ -397,9 +401,9 @@ bool SCH_FIELD::Replace( const wxFindReplaceData& aSearchData, void* aAuxData )
     bool     resolve = false;    // Replace in source text, not shown text
     bool     isReplaced = false;
 
-    if( m_parent && m_parent->Type() == SCH_COMPONENT_T )
+    if( m_parent && m_parent->Type() == SCH_SYMBOL_T )
     {
-        SCH_COMPONENT* parentSymbol = static_cast<SCH_COMPONENT*>( m_parent );
+        SCH_SYMBOL* parentSymbol = static_cast<SCH_SYMBOL*>( m_parent );
 
         switch( m_id )
         {
@@ -459,7 +463,7 @@ bool SCH_FIELD::Replace( const wxFindReplaceData& aSearchData, void* aAuxData )
 }
 
 
-void SCH_FIELD::Rotate( wxPoint aCenter )
+void SCH_FIELD::Rotate( const wxPoint& aCenter )
 {
     wxPoint pt = GetPosition();
     RotatePoint( &pt, aCenter, 900 );
@@ -469,9 +473,7 @@ void SCH_FIELD::Rotate( wxPoint aCenter )
 
 wxString SCH_FIELD::GetSelectMenuText( EDA_UNITS aUnits ) const
 {
-    return wxString::Format( "%s '%s'",
-                             GetName(),
-                             ShortenedShownText() );
+    return wxString::Format( "%s '%s'", GetName(), ShortenedShownText() );
 }
 
 
@@ -545,7 +547,7 @@ wxString SCH_FIELD::GetName( bool aUseDefaultName ) const
         return m_name;
     else if( aUseDefaultName )
     {
-        if( m_parent && m_parent->Type() == SCH_COMPONENT_T )
+        if( m_parent && m_parent->Type() == SCH_SYMBOL_T )
             return TEMPLATE_FIELDNAME::GetDefaultFieldName( m_id );
         else if( m_parent && m_parent->Type() == SCH_SHEET_T )
             return SCH_SHEET::GetDefaultFieldName( m_id );
@@ -559,7 +561,7 @@ wxString SCH_FIELD::GetName( bool aUseDefaultName ) const
 
 wxString SCH_FIELD::GetCanonicalName() const
 {
-    if( m_parent && m_parent->Type() == SCH_COMPONENT_T )
+    if( m_parent && m_parent->Type() == SCH_SYMBOL_T )
     {
         switch( m_id )
         {
@@ -588,7 +590,7 @@ wxString SCH_FIELD::GetCanonicalName() const
 
 BITMAPS SCH_FIELD::GetMenuImage() const
 {
-    if( m_parent && m_parent->Type() == SCH_COMPONENT_T )
+    if( m_parent && m_parent->Type() == SCH_SYMBOL_T )
     {
         switch( m_id )
         {
@@ -651,9 +653,9 @@ void SCH_FIELD::Plot( PLOTTER* aPlotter ) const
     // Calculate the text orientation, according to the symbol orientation/mirror
     int orient = GetTextAngle();
 
-    if( m_parent && m_parent->Type() == SCH_COMPONENT_T )
+    if( m_parent && m_parent->Type() == SCH_SYMBOL_T )
     {
-        SCH_COMPONENT* parentSymbol = static_cast<SCH_COMPONENT*>( m_parent );
+        SCH_SYMBOL* parentSymbol = static_cast<SCH_SYMBOL*>( m_parent );
 
         if( parentSymbol->GetTransform().y1 )  // Rotate symbol 90 deg.
         {
@@ -692,10 +694,10 @@ void SCH_FIELD::SetPosition( const wxPoint& aPosition )
     // Actual positions are calculated by the rotation/mirror transform of the parent symbol
     // of the field.  The inverse transform is used to calculate the position relative to the
     // parent symbol.
-    if( m_parent && m_parent->Type() == SCH_COMPONENT_T )
+    if( m_parent && m_parent->Type() == SCH_SYMBOL_T )
     {
-        SCH_COMPONENT* parentSymbol = static_cast<SCH_COMPONENT*>( m_parent );
-        wxPoint        relPos = aPosition - parentSymbol->GetPosition();
+        SCH_SYMBOL* parentSymbol = static_cast<SCH_SYMBOL*>( m_parent );
+        wxPoint     relPos = aPosition - parentSymbol->GetPosition();
 
         relPos = parentSymbol->GetTransform().InverseTransform().TransformCoordinate( relPos );
 
@@ -709,10 +711,10 @@ void SCH_FIELD::SetPosition( const wxPoint& aPosition )
 
 wxPoint SCH_FIELD::GetPosition() const
 {
-    if( m_parent && m_parent->Type() == SCH_COMPONENT_T )
+    if( m_parent && m_parent->Type() == SCH_SYMBOL_T )
     {
-        SCH_COMPONENT* parentSymbol = static_cast<SCH_COMPONENT*>( m_parent );
-        wxPoint        relativePos = GetTextPos() - parentSymbol->GetPosition();
+        SCH_SYMBOL* parentSymbol = static_cast<SCH_SYMBOL*>( m_parent );
+        wxPoint     relativePos = GetTextPos() - parentSymbol->GetPosition();
 
         relativePos = parentSymbol->GetTransform().TransformCoordinate( relativePos );
 

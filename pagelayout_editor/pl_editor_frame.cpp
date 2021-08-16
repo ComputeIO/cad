@@ -85,11 +85,11 @@ PL_EDITOR_FRAME::PL_EDITOR_FRAME( KIWAY* aKiway, wxWindow* aParent ) :
         EDA_DRAW_FRAME( aKiway, aParent, FRAME_PL_EDITOR, wxT( "PlEditorFrame" ),
                         wxDefaultPosition, wxDefaultSize,
                         KICAD_DEFAULT_DRAWFRAME_STYLE, PL_EDITOR_FRAME_NAME ),
+        m_propertiesPagelayout( nullptr ),
         m_propertiesFrameWidth( 200 ),
         m_originSelectBox( nullptr ),
         m_originSelectChoice( 0 ),
-        m_pageSelectBox( nullptr ),
-        m_propertiesPagelayout( nullptr )
+        m_pageSelectBox( nullptr )
 {
     m_maximizeByDefault = true;
     m_userUnits = EDA_UNITS::MILLIMETRES;
@@ -202,7 +202,7 @@ PL_EDITOR_FRAME::PL_EDITOR_FRAME( KIWAY* aKiway, wxWindow* aParent ) :
 #if 0       //start with empty layout
     DS_DATA_MODEL::GetTheInstance().AllowVoidList( true );
     DS_DATA_MODEL::GetTheInstance().ClearList();
-#else       // start with the default Kicad layout
+#else       // start with the default KiCad layout
     DS_DATA_MODEL::GetTheInstance().LoadDrawingSheet();
 #endif
     OnNewDrawingSheet();
@@ -222,6 +222,9 @@ PL_EDITOR_FRAME::PL_EDITOR_FRAME( KIWAY* aKiway, wxWindow* aParent ) :
 
 PL_EDITOR_FRAME::~PL_EDITOR_FRAME()
 {
+    // Ensure m_canvasType is up to date, to save it in config
+    m_canvasType = GetCanvas()->GetBackend();
+
     // Shutdown all running tools
     if( m_toolManager )
         m_toolManager->ShutdownAllTools();
@@ -283,17 +286,25 @@ void PL_EDITOR_FRAME::setupUIConditions()
     mgr->SetConditions( ACTIONS::paste,             ENABLE( SELECTION_CONDITIONS::Idle ) );
     mgr->SetConditions( ACTIONS::doDelete,          ENABLE( SELECTION_CONDITIONS::NotEmpty ) );
 
-    mgr->SetConditions( ACTIONS::zoomTool,          CHECK( cond.CurrentTool( ACTIONS::zoomTool ) ) );
-    mgr->SetConditions( ACTIONS::selectionTool,     CHECK( cond.CurrentTool( ACTIONS::selectionTool ) ) );
-    mgr->SetConditions( ACTIONS::deleteTool,        CHECK( cond.CurrentTool( ACTIONS::deleteTool ) ) );
+    mgr->SetConditions( ACTIONS::zoomTool,
+                        CHECK( cond.CurrentTool( ACTIONS::zoomTool ) ) );
+    mgr->SetConditions( ACTIONS::selectionTool,
+                        CHECK( cond.CurrentTool( ACTIONS::selectionTool ) ) );
+    mgr->SetConditions( ACTIONS::deleteTool,
+                        CHECK( cond.CurrentTool( ACTIONS::deleteTool ) ) );
 
-    mgr->SetConditions( PL_ACTIONS::drawLine,       CHECK( cond.CurrentTool( PL_ACTIONS::drawLine ) ) );
-    mgr->SetConditions( PL_ACTIONS::drawRectangle,  CHECK( cond.CurrentTool( PL_ACTIONS::drawRectangle ) ) );
-    mgr->SetConditions( PL_ACTIONS::placeText,      CHECK( cond.CurrentTool( PL_ACTIONS::placeText ) ) );
-    mgr->SetConditions( PL_ACTIONS::placeImage,     CHECK( cond.CurrentTool( PL_ACTIONS::placeImage ) ) );
+    mgr->SetConditions( PL_ACTIONS::drawLine,
+                        CHECK( cond.CurrentTool( PL_ACTIONS::drawLine ) ) );
+    mgr->SetConditions( PL_ACTIONS::drawRectangle,
+                        CHECK( cond.CurrentTool( PL_ACTIONS::drawRectangle ) ) );
+    mgr->SetConditions( PL_ACTIONS::placeText,
+                        CHECK( cond.CurrentTool( PL_ACTIONS::placeText ) ) );
+    mgr->SetConditions( PL_ACTIONS::placeImage,
+                        CHECK( cond.CurrentTool( PL_ACTIONS::placeImage ) ) );
 
     // Not a tool, just a way to activate the action
-    mgr->SetConditions( PL_ACTIONS::appendImportedDrawingSheet, CHECK( SELECTION_CONDITIONS::ShowNever ) );
+    mgr->SetConditions( PL_ACTIONS::appendImportedDrawingSheet,
+                        CHECK( SELECTION_CONDITIONS::ShowNever ) );
 
     auto titleBlockNormalMode =
         [] ( const SELECTION& )
@@ -321,7 +332,7 @@ bool PL_EDITOR_FRAME::OpenProjectFiles( const std::vector<wxString>& aFileSet, i
 
     if( !LoadDrawingSheetFile( fn ) )
     {
-        wxMessageBox( wxString::Format( _( "Error when loading file \"%s\"" ), fn ) );
+        wxMessageBox( wxString::Format( _( "Error loading drawing sheet '%s'." ), fn ) );
         return false;
     }
     else
@@ -361,7 +372,7 @@ bool PL_EDITOR_FRAME::canCloseWindow( wxCloseEvent& aEvent )
     if( IsContentModified() )
     {
         wxFileName filename = GetCurrentFileName();
-        wxString   msg      = _( "Save changes to \"%s\" before closing?" );
+        wxString   msg      = _( "Save changes to '%s' before closing?" );
 
         if( !HandleUnsavedChanges( this, wxString::Format( msg, filename.GetFullName() ),
                                    [&]() -> bool
@@ -392,8 +403,6 @@ void PL_EDITOR_FRAME::doCloseWindow()
 }
 
 
-/* Handles the selection of tools, menu, and popup menu commands.
- */
 void PL_EDITOR_FRAME::OnSelectPage( wxCommandEvent& event )
 {
     KIGFX::VIEW* view = GetCanvas()->GetView();
@@ -403,9 +412,6 @@ void PL_EDITOR_FRAME::OnSelectPage( wxCommandEvent& event )
 }
 
 
-/* called when the user select one of the 4 page corner as corner
- * reference (or the left top paper corner)
- */
 void PL_EDITOR_FRAME::OnSelectCoordOriginCorner( wxCommandEvent& event )
 {
     m_originSelectChoice = m_originSelectBox->GetSelection();
@@ -423,7 +429,7 @@ void PL_EDITOR_FRAME::ToPrinter( bool doPreview )
 
     const PAGE_INFO& pageInfo = GetPageSettings();
 
-    if( s_PrintData == NULL )  // First print
+    if( s_PrintData == nullptr )  // First print
     {
         s_PrintData = new wxPrintData();
         s_PrintData->SetQuality( wxPRINT_QUALITY_HIGH );      // Default resolution = HIGH;
@@ -435,7 +441,7 @@ void PL_EDITOR_FRAME::ToPrinter( bool doPreview )
         return;
     }
 
-    if( s_pageSetupData == NULL )
+    if( s_pageSetupData == nullptr )
         s_pageSetupData = new wxPageSetupDialogData( *s_PrintData );
 
     s_pageSetupData->SetPaperId( pageInfo.GetPaperId() );
@@ -474,7 +480,8 @@ void PL_EDITOR_FRAME::InstallPreferences( PAGED_DIALOG* aParent,
 
     book->AddPage( new wxPanel( book ), _( "Drawing Sheet Editor" ) );
     book->AddSubPage( new PANEL_GAL_DISPLAY_OPTIONS( this, aParent ), _( "Display Options" ) );
-    book->AddSubPage( new PANEL_PL_EDITOR_COLOR_SETTINGS( this, aParent->GetTreebook() ), _( "Colors" ) );
+    book->AddSubPage( new PANEL_PL_EDITOR_COLOR_SETTINGS( this, aParent->GetTreebook() ),
+                      _( "Colors" ) );
 
     aHotkeysPanel->AddHotKeys( GetToolManager() );
 }
@@ -540,8 +547,13 @@ void PL_EDITOR_FRAME::UpdateTitleAndInfo()
     wxString title;
     wxFileName file( GetCurrentFileName() );
 
-    title.Printf( wxT( "%s \u2014 " ) + _( "Drawing Sheet Editor" ),
-                  file.IsOk() ? file.GetName() : _( "no file selected" ) );
+    if( file.IsOk() )
+        title = file.GetName();
+    else
+        title = _( "[no drawing sheet loaded]" );
+
+    title += wxT( " \u2014 " ) + _( "Drawing Sheet Editor" ),
+
     SetTitle( title );
 }
 
@@ -653,9 +665,6 @@ wxPoint PL_EDITOR_FRAME::ReturnCoordOriginCorner() const
 }
 
 
-/*
- * Display the grid status.
- */
 void PL_EDITOR_FRAME::DisplayGridMsg()
 {
     wxString line;
@@ -810,7 +819,7 @@ void PL_EDITOR_FRAME::HardRedraw()
 
 DS_DATA_ITEM* PL_EDITOR_FRAME::AddDrawingSheetItem( int aType )
 {
-    DS_DATA_ITEM * item = NULL;
+    DS_DATA_ITEM * item = nullptr;
 
     switch( aType )
     {
@@ -837,13 +846,13 @@ DS_DATA_ITEM* PL_EDITOR_FRAME::AddDrawingSheetItem( int aType )
                               wxFD_OPEN );
 
         if( fileDlg.ShowModal() != wxID_OK )
-            return NULL;
+            return nullptr;
 
         wxString fullFilename = fileDlg.GetPath();
 
         if( !wxFileExists( fullFilename ) )
         {
-            wxMessageBox( _( "Couldn't load image from \"%s\"" ), fullFilename );
+            wxMessageBox( _( "Could not load image from '%s'." ), fullFilename );
             break;
         }
 
@@ -851,20 +860,20 @@ DS_DATA_ITEM* PL_EDITOR_FRAME::AddDrawingSheetItem( int aType )
 
         if( !image->ReadImageFile( fullFilename ) )
         {
-            wxMessageBox( _( "Couldn't load image from \"%s\"" ), fullFilename );
+            wxMessageBox( _( "Could not load image from '%s'." ), fullFilename );
             delete image;
             break;
         }
 
-        // Set the scale factor for pl_editor (it is set for eeschema by default)
+        // Set the scale factor for pl_editor (it is set for Eeschema by default)
         image->SetPixelSizeIu( IU_PER_MILS * 1000.0 / image->GetPPI() );
         item = new DS_DATA_ITEM_BITMAP( image );
     }
     break;
     }
 
-    if( item == NULL )
-        return NULL;
+    if( item == nullptr )
+        return nullptr;
 
     DS_DATA_MODEL::GetTheInstance().Append( item );
     item->SyncDrawItems( nullptr, GetCanvas()->GetView() );

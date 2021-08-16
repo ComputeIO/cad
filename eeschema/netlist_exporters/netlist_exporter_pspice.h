@@ -35,7 +35,7 @@ class PROJECT;
 /// Flags for Spice netlist generation (can be combined)
 enum SPICE_NETLIST_OPTIONS {
     NET_ADJUST_INCLUDE_PATHS = 8, // use full paths for included files (if they are in search path)
-    NET_ADJUST_PASSIVE_VALS = 16, // reformat passive component values (e.g. 1M -> 1Meg)
+    NET_ADJUST_PASSIVE_VALS = 16, // reformat passive symbol values (e.g. 1M -> 1Meg)
     NET_ALL_FLAGS = 0xffff
 };
 
@@ -67,31 +67,20 @@ enum SPICE_PRIMITIVE {
 ///       export dialog.
 
 /**
- * Structure to represent a schematic component in the Spice simulation.
+ * Structure to represent a schematic symbol in the Spice simulation.
  */
 struct SPICE_ITEM
 {
-    ///< Schematic component represented by this SPICE_ITEM.
-    SCH_COMPONENT* m_parent;
 
-    ///< Spice primitive type (@see SPICE_PRIMITIVE).
-    wxChar m_primitive;
-
-    ///< Library model (for semiconductors and subcircuits), component value (for passive
-    ///< components) or voltage/current (for sources).
-    wxString m_model;
-
-    ///<
-    wxString m_refName;
-
-    ///< Flag to indicate whether the component should be used in simulation.
-    bool m_enabled;
-
-    ///< Array containing Standard Pin Name
-    std::vector<wxString> m_pins;
-
-    ///< Numeric indices into m_SortedComponentPinList
-    std::vector<int> m_pinSequence;
+    SCH_SYMBOL*           m_parent;        ///< Schematic symbol represented by this SPICE_ITEM.
+    wxChar                m_primitive;     ///< Spice primitive type (@see SPICE_PRIMITIVE).
+    wxString              m_model;         ///< Library model (for semiconductors and subcircuits),
+                                           ///<   component value (for passive components) or
+                                           ///<   voltage/current (for sources).
+    wxString              m_refName;
+    bool                  m_enabled;       ///< Whether the symbol should be used in simulation.
+    std::vector<wxString> m_pins;          ///< Array containing Standard Pin Name
+    std::vector<int>      m_pinSequence;   ///< Numeric indices into m_SortedSymbolPinList
 };
 
 
@@ -110,29 +99,24 @@ public:
     {
     }
 
-    typedef std::list<SPICE_ITEM> SPICE_ITEM_LIST;
-
-    ///< Net name to circuit node number mapping
-    typedef std::map<wxString, int> NET_INDEX_MAP;
-
     /**
      * Return list of items representing schematic components in the Spice world.
      */
-    const SPICE_ITEM_LIST& GetSpiceItems() const
+    const std::list<SPICE_ITEM>& GetSpiceItems() const
     {
         return m_spiceItems;
     }
 
     /**
-     * Return name of Spice device corresponding to a schematic component.
+     * Return name of Spice device corresponding to a schematic symbol.
      *
-     * @param aComponent is the component reference.
-     * @return Spice device name or empty string if there is no such component in the netlist. The
+     * @param aSymbol is the component reference.
+     * @return Spice device name or empty string if there is no such symbol in the netlist. The
      * name is either plain reference if the first character of reference corresponds to the
      * assigned device model type or it is the reference prefixed with a character defining
      * the device model type.
      */
-    wxString GetSpiceDevice( const wxString& aComponent ) const;
+    wxString GetSpiceDevice( const wxString& aSymbol ) const;
 
     /**
      * Write to specified output file
@@ -153,15 +137,13 @@ public:
 
     /**
      * Replace illegal spice net name characters with an underscore.
-     *
-     * @param aNetName is the net name to modify.
      */
      static void ReplaceForbiddenChars( wxString& aNetName );
 
     /**
      * Return a map of circuit nodes to net names.
      */
-    const NET_INDEX_MAP& GetNetIndexMap() const
+    const std::map<wxString, int>& GetNetIndexMap() const
     {
         return m_netMap;
     }
@@ -185,13 +167,12 @@ public:
     /**
      * Retrieve either the requested field value or the default value.
      */
-    static wxString GetSpiceField( SPICE_FIELD aField, SCH_COMPONENT* aSymbol, unsigned aCtl );
+    static wxString GetSpiceField( SPICE_FIELD aField, SCH_SYMBOL* aSymbol, unsigned aCtl );
 
     /**
      * Retrieve the default value for a given field.
      */
-    static wxString GetSpiceFieldDefVal( SPICE_FIELD aField, SCH_COMPONENT* aSymbol,
-                                         unsigned aCtl );
+    static wxString GetSpiceFieldDefVal( SPICE_FIELD aField, SCH_SYMBOL* aSymbol, unsigned aCtl );
 
     /**
      * Update the vector of Spice directives placed in the schematics.
@@ -227,20 +208,12 @@ protected:
     virtual void writeDirectives( OUTPUTFORMATTER* aFormatter, unsigned aCtl ) const;
 
 private:
-    ///< Spice simulation title found in the processed schematic sheet
-    wxString m_title;
 
-    ///< Spice directives found in the processed schematic sheet
-    std::vector<wxString> m_directives;
-
-    ///< Libraries used by the simulated circuit
-    std::set<wxString> m_libraries;
-
-    ///< Map circuit nodes to net names
-    NET_INDEX_MAP m_netMap;
-
-    ///< List of items representing schematic components in the Spice world
-    SPICE_ITEM_LIST m_spiceItems;
+    wxString                m_title;       ///< Spice simulation title found in the schematic sheet
+    std::vector<wxString>   m_directives;  ///< Spice directives found in the schematic sheet
+    std::set<wxString>      m_libraries;   ///< Spice libraries used by the simulated circuit
+    std::map<wxString, int> m_netMap;      ///< Map spice nodes to net codes
+    std::list<SPICE_ITEM>   m_spiceItems;  ///< Items representing schematic symbols in Spice world
 
     // Component fields that are processed during netlist export & simulation
     static const std::vector<wxString> m_spiceFields;

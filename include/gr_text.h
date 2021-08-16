@@ -2,7 +2,7 @@
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
  * Copyright (C) 2009-2014 Jerry Jacobs
- * Copyright (C) 1992-2020 KiCad Developers, see CHANGELOG.TXT for contributors.
+ * Copyright (C) 1992-2021 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -64,7 +64,7 @@ class PLOTTER;
  */
 int   Clamp_Text_PenSize( int aPenSize, int aSize, bool aBold = true );
 float Clamp_Text_PenSize( float aPenSize, int aSize, bool aBold = true );
-int   Clamp_Text_PenSize( int aPenSize, wxSize aSize, bool aBold = true );
+int Clamp_Text_PenSize( int aPenSize, const wxSize& aSize, bool aBold = true );
 
 /**
  * @param aTextSize the char size (height or width).

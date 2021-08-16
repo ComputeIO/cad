@@ -26,6 +26,7 @@
 #include <pcbnew_utils/board_construction_utils.h>
 #include <pcbnew_utils/board_file_utils.h>
 #include <board.h>
+#include <board_design_settings.h>
 #include <footprint.h>
 #include <pcb_marker.h>
 #include <drc/drc_item.h>
@@ -392,7 +393,7 @@ static bool CollisionMatchesExpected( BOARD& aBoard, const PCB_MARKER& aMarker,
     const FOOTPRINT* item_a = dynamic_cast<FOOTPRINT*>( aBoard.GetItem( reporter->GetMainItemID() ) );
     const FOOTPRINT* item_b = dynamic_cast<FOOTPRINT*>( aBoard.GetItem( reporter->GetAuxItemID() ) );
 
-    // cant' find the items!
+    // can't find the items!
     if( !item_a || !item_b )
         return false;
 

@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2017 Chris Pavlina <pavlina.chris@gmail.com>
  * Copyright (C) 2014 Henner Zeller <h.zeller@acm.org>
- * Copyright (C) 2014-2020 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 2014-2021 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * This program is free software: you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -193,7 +193,7 @@ public:
      * All fields will be populated from the LIB_ALIAS, including children
      * (unit nodes will be generated automatically).  This does not keep
      * the pointer to the #LIB_ALIAS object because at any time, a #LIB_ALIAS
-     * can be remove from a libray which will result in an invalid pointer.
+     * can be remove from a library which will result in an invalid pointer.
      * The alias must be resolved at the time of use.  Anything else is a bug.
      *
      * @param aParent   parent node, should be a CMP_TREE_NODE_LIB
@@ -241,7 +241,7 @@ public:
      * @param aName     display name of the library
      * @param aDesc     a description of the library
      */
-    LIB_TREE_NODE_LIB( LIB_TREE_NODE* aParent, wxString const& aName, wxString const& aDesc );
+    LIB_TREE_NODE_LIB( LIB_TREE_NODE* aParent, const wxString& aName, const wxString& aDesc );
 
     /**
      * Construct a new alias node, add it to this library, and return it.

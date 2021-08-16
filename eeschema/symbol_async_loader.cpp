@@ -23,12 +23,12 @@
 #include <core/wx_stl_compat.h>
 #include <symbol_async_loader.h>
 #include <symbol_lib_table.h>
-#include <widgets/progress_reporter.h>
+#include <progress_reporter.h>
 
 
 SYMBOL_ASYNC_LOADER::SYMBOL_ASYNC_LOADER( const std::vector<wxString>& aNicknames,
         SYMBOL_LIB_TABLE* aTable, bool aOnlyPowerSymbols,
-        std::unordered_map<wxString, std::vector<LIB_PART*>>* aOutput,
+        std::unordered_map<wxString, std::vector<LIB_SYMBOL*>>* aOutput,
         PROGRESS_REPORTER* aReporter ) :
         m_nicknames( aNicknames ),
         m_table( aTable ),
@@ -131,7 +131,7 @@ std::vector<SYMBOL_ASYNC_LOADER::LOADED_PAIR> SYMBOL_ASYNC_LOADER::worker()
         }
 
         if( m_reporter )
-            m_reporter->AdvancePhase( wxString::Format( _( "Loading library \"%s\"" ), nickname ) );
+            m_reporter->AdvancePhase( wxString::Format( _( "Loading library %s..." ), nickname ) );
     }
 
     return ret;

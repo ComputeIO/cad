@@ -21,8 +21,11 @@
 #ifndef KICAD_BOARD_PROJECT_SETTINGS_H
 #define KICAD_BOARD_PROJECT_SETTINGS_H
 
-#include <layers_id_colors_and_visibility.h>
+#include <layer_ids.h>
 #include <settings/parameters.h>
+
+// Can be removed by refactoring PARAM_LAYER_PRESET
+#include <nlohmann/json.hpp>
 
 /**
  * This file contains data structures that are saved in the project file or project local settings
@@ -95,9 +98,13 @@ enum class HIGH_CONTRAST_MODE
 ///< Determine how zones should be displayed.
 enum class ZONE_DISPLAY_MODE
 {
-    SHOW_FILLED,          ///< Filled polygons are shown
-    SHOW_ZONE_OUTLINE,    ///< Only the zone outline is shown
-    SHOW_FILLED_OUTLINE   ///< Outlines of filled polygons are shown
+    SHOW_FILLED,
+    SHOW_ZONE_OUTLINE,
+
+    // Debug modes
+
+    SHOW_FRACTURE_BORDERS,
+    SHOW_TRIANGULATION
 };
 
 ///< Determine how net color overrides should be applied.
@@ -120,12 +127,6 @@ enum class RATSNEST_MODE
  */
 struct LAYER_PRESET
 {
-    wxString     name;          ///< A name for this layer set
-    LSET         layers;        ///< Board layers that are visible
-    GAL_SET      renderLayers;  ///< Render layers (e.g. object types) that are visible
-    PCB_LAYER_ID activeLayer;   ///< Optional layer to set active when this preset is loaded
-    bool         readOnly;      ///< True if this is a read-only (built-in) preset
-
     LAYER_PRESET( const wxString& aName = wxEmptyString ) :
             name( aName ),
             activeLayer( UNSELECTED_LAYER )
@@ -158,6 +159,12 @@ struct LAYER_PRESET
     {
         return aOther.layers == layers && aOther.renderLayers == renderLayers;
     }
+
+    wxString     name;          ///< A name for this layer set
+    LSET         layers;        ///< Board layers that are visible
+    GAL_SET      renderLayers;  ///< Render layers (e.g. object types) that are visible
+    PCB_LAYER_ID activeLayer;   ///< Optional layer to set active when this preset is loaded
+    bool         readOnly;      ///< True if this is a read-only (built-in) preset
 };
 
 

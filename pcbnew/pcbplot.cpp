@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2018 Jean-Pierre Charras, jp.charras at wanadoo.fr
  * Copyright (C) 2012 SoftPLC Corporation, Dick Hollenbeck <dick@softplc.com>
- * Copyright (C) 1992-2018 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 1992-2021 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -33,6 +33,7 @@
 #include <locale_io.h>
 #include <reporter.h>
 #include <board.h>
+#include <board_design_settings.h>
 #include <plotcontroller.h>
 #include <pcb_plot_params.h>
 #include <wx/ffile.h>
@@ -259,9 +260,11 @@ static const wxString GetGerberFilePolarityAttribute( LAYER_NUM aLayer )
     return filePolarity;
 }
 
+
 /* Add some X2 attributes to the file header, as defined in the
  * Gerber file format specification J4 and "Revision 2015.06"
  */
+
 
 // A helper function to convert a X2 attribute string to a X1 structured comment:
 static wxString& makeStringCompatX1( wxString& aText, bool aUseX1CompatibilityMode )
@@ -294,9 +297,9 @@ void AddGerberX2Header( PLOTTER* aPlotter, const BOARD* aBoard, bool aUseX1Compa
     // Creates the TF,.ProjectId. Format is (from Gerber file format doc):
     // %TF.ProjectId,<project id>,<project GUID>,<revision id>*%
     // <project id> is the name of the project, restricted to basic ASCII symbols only,
-    // Rem: <project id> accepts only ASCII 7 code (only basic ASCII codes are allowed in gerber files).
-    // and comma not accepted
-    // All illegal chars will be replaced by underscore
+    // Rem: <project id> accepts only ASCII 7 code (only basic ASCII codes are allowed in
+    // gerber files) and comma not accepted.
+    // All illegal chars will be replaced by underscore.
     //
     // <project GUID> is a string which is an unique id of a project.
     // However Kicad does not handle such a project GUID, so it is built from the board name
@@ -333,7 +336,7 @@ void AddGerberX2Header( PLOTTER* aPlotter, const BOARD* aBoard, bool aUseX1Compa
     // plot origin and use the same registration
     //
     // Currently the key is "Original" when using absolute Pcbnew coordinates,
-    // and te PY ans PY position od auxiliary axis, when using it.
+    // and the PY and PY position of auxiliary axis, when using it.
     // Please, if absolute Pcbnew coordinates, one day, are set by user, change the way
     // the key is built to ensure file only using the *same* axis have the same key.
     wxString registration_id = "Original";
@@ -347,8 +350,8 @@ void AddGerberX2Header( PLOTTER* aPlotter, const BOARD* aBoard, bool aUseX1Compa
 }
 
 
-void AddGerberX2Attribute( PLOTTER* aPlotter,
-            const BOARD* aBoard, LAYER_NUM aLayer, bool aUseX1CompatibilityMode )
+void AddGerberX2Attribute( PLOTTER* aPlotter, const BOARD* aBoard, LAYER_NUM aLayer,
+                           bool aUseX1CompatibilityMode )
 {
     AddGerberX2Header( aPlotter, aBoard, aUseX1CompatibilityMode );
 
@@ -400,7 +403,7 @@ void BuildPlotFileName( wxFileName* aFilename, const wxString& aOutputDir,
 
 PLOT_CONTROLLER::PLOT_CONTROLLER( BOARD* aBoard )
 {
-    m_plotter = NULL;
+    m_plotter = nullptr;
     m_board = aBoard;
     m_plotLayer = UNDEFINED_LAYER;
 }
@@ -415,7 +418,6 @@ PLOT_CONTROLLER::~PLOT_CONTROLLER()
 /* IMPORTANT THING TO KNOW: the locale during plots *MUST* be kept as
  * C/POSIX using a LOCALE_IO object on the stack. This even when
  * opening/closing the plotfile, since some drivers do I/O even then */
-
 void PLOT_CONTROLLER::ClosePlot()
 {
     LOCALE_IO toggle;
@@ -427,13 +429,13 @@ void PLOT_CONTROLLER::ClosePlot()
         delete m_plotter->RenderSettings();
         delete m_plotter;
 
-        m_plotter = NULL;
+        m_plotter = nullptr;
     }
 }
 
 
-bool PLOT_CONTROLLER::OpenPlotfile(
-        const wxString& aSuffix, PLOT_FORMAT aFormat, const wxString& aSheetDesc )
+bool PLOT_CONTROLLER::OpenPlotfile( const wxString& aSuffix, PLOT_FORMAT aFormat,
+                                    const wxString& aSheetDesc )
 {
     LOCALE_IO toggle;
 
@@ -471,7 +473,7 @@ bool PLOT_CONTROLLER::OpenPlotfile(
                                     m_plotFile.GetFullPath(), aSheetDesc );
     }
 
-    return( m_plotter != NULL );
+    return ( m_plotter != nullptr );
 }
 
 

@@ -25,11 +25,12 @@
 
 #include <functional>
 #include <board.h>
-#include <dimension.h>
+#include <pcb_dimension.h>
 #include <fp_shape.h>
 #include <footprint.h>
+#include <pad.h>
 #include <pcb_group.h>
-#include <track.h>
+#include <pcb_track.h>
 #include <zone.h>
 #include <geometry/shape_circle.h>
 #include <geometry/shape_line_chain.h>
@@ -87,14 +88,22 @@ VECTOR2I PCB_GRID_HELPER::AlignToSegment( const VECTOR2I& aPoint, const SEG& aSe
 
     VECTOR2I nearest = Align( aPoint );
 
+    SEG pos_slope( nearest + VECTOR2I( -1, 1 ), nearest + VECTOR2I( 1, -1 ) );
+    SEG neg_slope( nearest + VECTOR2I( -1, -1 ), nearest + VECTOR2I( 1, 1 ) );
+    int max_i = 2;
+
     pts[0] = aSeg.A;
     pts[1] = aSeg.B;
-    pts[2] = aSeg.IntersectLines( SEG( nearest + VECTOR2I( -1, 1 ), nearest + VECTOR2I( 1, -1 ) ) );
-    pts[3] = aSeg.IntersectLines( SEG( nearest + VECTOR2I( -1, -1 ), nearest + VECTOR2I( 1, 1 ) ) );
+
+    if( !aSeg.ApproxParallel( pos_slope ) )
+        pts[max_i++] = aSeg.IntersectLines( pos_slope );
+
+    if( !aSeg.ApproxParallel( neg_slope ) )
+        pts[max_i++] = aSeg.IntersectLines( neg_slope );
 
     int min_d = std::numeric_limits<int>::max();
 
-    for( int i = 0; i < 4; i++ )
+    for( int i = 0; i < max_i; i++ )
     {
         if( pts[i] && aSeg.Distance( *pts[i] ) <= c_gridSnapEpsilon )
         {
@@ -156,7 +165,7 @@ VECTOR2I PCB_GRID_HELPER::BestDragOrigin( const VECTOR2I &aMousePos,
     ANCHOR* nearestOutline = nearestAnchor( aMousePos, OUTLINE, LSET::AllLayersMask() );
     ANCHOR* nearestCorner = nearestAnchor( aMousePos, CORNER, LSET::AllLayersMask() );
     ANCHOR* nearestOrigin = nearestAnchor( aMousePos, ORIGIN, LSET::AllLayersMask() );
-    ANCHOR* best = NULL;
+    ANCHOR* best = nullptr;
     double minDist = std::numeric_limits<double>::max();
 
     if( nearestOrigin )
@@ -521,7 +530,7 @@ void PCB_GRID_HELPER::computeAnchors( BOARD_ITEM* aItem, const VECTOR2I& aRefPos
 
             switch( shape->GetShape() )
             {
-                case PCB_SHAPE_TYPE::CIRCLE:
+                case SHAPE_T::CIRCLE:
                 {
                     int r = ( start - end ).EuclideanNorm();
 
@@ -533,14 +542,14 @@ void PCB_GRID_HELPER::computeAnchors( BOARD_ITEM* aItem, const VECTOR2I& aRefPos
                     break;
                 }
 
-                case PCB_SHAPE_TYPE::ARC:
+                case SHAPE_T::ARC:
                     addAnchor( shape->GetArcStart(), CORNER | SNAPPABLE, shape );
                     addAnchor( shape->GetArcEnd(), CORNER | SNAPPABLE, shape );
                     addAnchor( shape->GetArcMid(), CORNER | SNAPPABLE, shape );
                     addAnchor( shape->GetCenter(), ORIGIN | SNAPPABLE, shape );
                     break;
 
-                case PCB_SHAPE_TYPE::RECT:
+                case SHAPE_T::RECT:
                 {
                     VECTOR2I point2( end.x, start.y );
                     VECTOR2I point3( start.x, end.y );
@@ -560,13 +569,13 @@ void PCB_GRID_HELPER::computeAnchors( BOARD_ITEM* aItem, const VECTOR2I& aRefPos
                     break;
                 }
 
-                case PCB_SHAPE_TYPE::SEGMENT:
+                case SHAPE_T::SEGMENT:
                     addAnchor( start, CORNER | SNAPPABLE, shape );
                     addAnchor( end, CORNER | SNAPPABLE, shape );
                     addAnchor( shape->GetCenter(), CORNER | SNAPPABLE, shape );
                     break;
 
-                case PCB_SHAPE_TYPE::POLYGON:
+                case SHAPE_T::POLY:
                 {
                     SHAPE_LINE_CHAIN lc;
                     lc.SetClosed( true );
@@ -581,7 +590,7 @@ void PCB_GRID_HELPER::computeAnchors( BOARD_ITEM* aItem, const VECTOR2I& aRefPos
                     break;
                 }
 
-                case PCB_SHAPE_TYPE::CURVE:
+                case SHAPE_T::BEZIER:
                     addAnchor( start, CORNER | SNAPPABLE, shape );
                     addAnchor( end, CORNER | SNAPPABLE, shape );
                     KI_FALLTHROUGH;
@@ -598,7 +607,7 @@ void PCB_GRID_HELPER::computeAnchors( BOARD_ITEM* aItem, const VECTOR2I& aRefPos
         {
             if( aFrom || m_magneticSettings->tracks == MAGNETIC_OPTIONS::CAPTURE_ALWAYS )
             {
-                TRACK* track = static_cast<TRACK*>( aItem );
+                PCB_TRACK* track = static_cast<PCB_TRACK*>( aItem );
 
                 addAnchor( track->GetStart(), CORNER | SNAPPABLE, track );
                 addAnchor( track->GetEnd(), CORNER | SNAPPABLE, track );
@@ -642,7 +651,7 @@ void PCB_GRID_HELPER::computeAnchors( BOARD_ITEM* aItem, const VECTOR2I& aRefPos
         case PCB_DIM_ALIGNED_T:
         case PCB_DIM_ORTHOGONAL_T:
         {
-            const ALIGNED_DIMENSION* dim = static_cast<const ALIGNED_DIMENSION*>( aItem );
+            const PCB_DIM_ALIGNED* dim = static_cast<const PCB_DIM_ALIGNED*>( aItem );
             addAnchor( dim->GetCrossbarStart(), CORNER | SNAPPABLE, aItem );
             addAnchor( dim->GetCrossbarEnd(), CORNER | SNAPPABLE, aItem );
             addAnchor( dim->GetStart(), CORNER | SNAPPABLE, aItem );
@@ -652,7 +661,7 @@ void PCB_GRID_HELPER::computeAnchors( BOARD_ITEM* aItem, const VECTOR2I& aRefPos
 
         case PCB_DIM_CENTER_T:
         {
-            const CENTER_DIMENSION* dim = static_cast<const CENTER_DIMENSION*>( aItem );
+            const PCB_DIM_CENTER* dim = static_cast<const PCB_DIM_CENTER*>( aItem );
             addAnchor( dim->GetStart(), CORNER | SNAPPABLE, aItem );
             addAnchor( dim->GetEnd(), CORNER | SNAPPABLE, aItem );
 
@@ -670,7 +679,7 @@ void PCB_GRID_HELPER::computeAnchors( BOARD_ITEM* aItem, const VECTOR2I& aRefPos
 
         case PCB_DIM_LEADER_T:
         {
-            const LEADER* leader = static_cast<const LEADER*>( aItem );
+            const PCB_DIM_LEADER* leader = static_cast<const PCB_DIM_LEADER*>( aItem );
             addAnchor( leader->GetStart(), CORNER | SNAPPABLE, aItem );
             addAnchor( leader->GetEnd(), CORNER | SNAPPABLE, aItem );
             addAnchor( leader->Text().GetPosition(), CORNER | SNAPPABLE, aItem );
@@ -702,7 +711,7 @@ PCB_GRID_HELPER::ANCHOR* PCB_GRID_HELPER::nearestAnchor( const VECTOR2I& aPos, i
                                                          LSET aMatchLayers )
 {
     double  minDist = std::numeric_limits<double>::max();
-    ANCHOR* best = NULL;
+    ANCHOR* best = nullptr;
 
     for( ANCHOR& a : m_anchors )
     {

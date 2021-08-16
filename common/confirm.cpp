@@ -2,7 +2,7 @@
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
  * Copyright (C) 2007 Jean-Pierre Charras, jp.charras at wanadoo.fr
- * Copyright (C) 1992-2019 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 1992-2021 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -151,11 +151,11 @@ long KIDIALOG::getStyle( KD_TYPE aType )
 }
 
 
-int UnsavedChangesDialog( wxWindow* parent, wxString aMessage, bool* aApplyToAll )
+int UnsavedChangesDialog( wxWindow* parent, const wxString& aMessage, bool* aApplyToAll )
 {
     static bool s_apply_to_all = false;
 
-    wxRichMessageDialog dlg( parent, aMessage, wxEmptyString,
+    wxRichMessageDialog dlg( parent, aMessage, _( "Save Changes?" ),
                              wxYES_NO | wxCANCEL | wxYES_DEFAULT | wxICON_WARNING | wxCENTER );
     dlg.SetExtendedMessage( _( "If you don't save, all your changes will be permanently lost." ) );
     dlg.SetYesNoLabels( _( "Save" ), _( "Discard Changes" ) );
@@ -182,7 +182,7 @@ int UnsavedChangesDialog( wxWindow* parent, const wxString& aMessage )
     // wxWidgets gets the button order wrong on Mac so use the other dialog.
     return UnsavedChangesDialog( parent, aMessage, nullptr );
 #else
-    wxMessageDialog dlg( parent, aMessage, wxEmptyString,
+    wxMessageDialog dlg( parent, aMessage, _( "Save Changes?" ),
                          wxYES_NO | wxCANCEL | wxYES_DEFAULT | wxICON_WARNING | wxCENTER );
     dlg.SetExtendedMessage( _( "If you don't save, all your changes will be permanently lost." ) );
     dlg.SetYesNoLabels( _( "Save" ), _( "Discard Changes" ) );
@@ -218,19 +218,14 @@ bool HandleUnsavedChanges( wxWindow* aParent, const wxString& aMessage,
 
 
 int OKOrCancelDialog( wxWindow* aParent, const wxString& aWarning, const wxString& aMessage,
-                      wxString aDetailedMessage, wxString aOKLabel, wxString aCancelLabel,
-                      bool* aApplyToAll )
+                      const wxString& aDetailedMessage, const wxString& aOKLabel,
+                      const wxString& aCancelLabel, bool* aApplyToAll )
 {
     wxRichMessageDialog dlg( aParent, aMessage, aWarning,
                              wxOK | wxCANCEL | wxOK_DEFAULT | wxICON_WARNING | wxCENTER );
 
-    if( aOKLabel.IsEmpty() )
-        aOKLabel = _( "OK" );
-
-    if( aCancelLabel.IsEmpty() )
-        aCancelLabel = _( "Cancel" );
-
-    dlg.SetOKCancelLabels( aOKLabel, aCancelLabel );
+    dlg.SetOKCancelLabels( ( aOKLabel.IsEmpty() ) ? _( "OK" ) : aOKLabel,
+                           ( aCancelLabel.IsEmpty() ) ?  _( "Cancel" ) : aCancelLabel );
 
     if( !aDetailedMessage.IsEmpty() )
         dlg.SetExtendedMessage( aDetailedMessage );

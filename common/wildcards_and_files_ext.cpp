@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2018 Jean-Pierre Charras, jp.charras at wanadoo.fr
  * Copyright (C) 2008 Wayne Stambaugh <stambaughw@gmail.com>
- * Copyright (C) 1992-2020 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 1992-2021 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -29,9 +29,9 @@
  */
 #include <regex>
 #include <wildcards_and_files_ext.h>
+#include <wx/filedlg.h>
 #include <wx/regex.h>
-#include <wx/wx.h>
-
+#include <wx/translation.h>
 
 bool compareFileExtensions( const std::string& aExtension,
         const std::vector<std::string>& aReference, bool aCaseSensitive )
@@ -103,7 +103,7 @@ wxString AddFileExtListToFilter( const std::vector<std::string>& aExts )
 
     files_filter << ")|*.";
 
-    // Add extensions to the filter list, using a formated string (GTK specific):
+    // Add extensions to the filter list, using a formatted string (GTK specific):
     bool first = true;
     for( const auto& ext : aExts )
     {
@@ -133,11 +133,12 @@ const std::string ProjectLocalSettingsFileExtension( "kicad_prl" );
 const std::string LegacySchematicFileExtension( "sch" );
 const std::string KiCadSchematicFileExtension( "kicad_sch" );
 const std::string NetlistFileExtension( "net" );
-const std::string ComponentFileExtension( "cmp" );
+const std::string FootprintAssignmentFileExtension( "cmp" );
 const std::string GerberFileExtension( "gbr" );
 const std::string GerberJobFileExtension( "gbrjob" );
 const std::string HtmlFileExtension( "html" );
 const std::string EquFileExtension( "equ" );
+const std::string HotkeyFileExtension( "hotkeys" );
 
 const std::string ArchiveFileExtension( "zip" );
 
@@ -160,10 +161,13 @@ const std::string GedaPcbFootprintLibFileExtension( "fp" );     // this is a fil
 
 const std::string KiCadFootprintFileExtension( "kicad_mod" );
 const std::string SpecctraDsnFileExtension( "dsn" );
+const std::string SpecctraSessionFileExtension( "ses" );
 const std::string IpcD356FileExtension( "d356" );
+const std::string WorkbookFileExtension( "wbk" );
 
 const std::string PngFileExtension( "png" );
 const std::string JpegFileExtension( "jpg" );
+const std::string TextFileExtension( "txt" );
 
 
 bool IsProtelExtension( const wxString& ext )
@@ -188,7 +192,8 @@ wxString SchematicSymbolFileWildcard()
 
 wxString KiCadSymbolLibFileWildcard()
 {
-    return _( "KiCad symbol library files" ) + AddFileExtListToFilter( { "kicad_sym" } );
+    return _( "KiCad symbol library files" )
+            + AddFileExtListToFilter( { KiCadSymbolLibFileExtension } );
 }
 
 
@@ -200,37 +205,42 @@ wxString LegacySymbolLibFileWildcard()
 
 wxString AllSymbolLibFilesWildcard()
 {
-    return _( "All KiCad symbol library files" ) + AddFileExtListToFilter( { "kicad_sym", "lib" } );
+    return _( "All KiCad symbol library files" )
+            + AddFileExtListToFilter( { KiCadSymbolLibFileExtension, "lib" } );
 }
 
 
 wxString ProjectFileWildcard()
 {
-    return _( "KiCad project files" ) + AddFileExtListToFilter( { "kicad_pro" } );
+    return _( "KiCad project files" ) + AddFileExtListToFilter( { ProjectFileExtension } );
 }
 
 
 wxString LegacyProjectFileWildcard()
 {
-    return _( "KiCad legacy project files" ) + AddFileExtListToFilter( { "pro" } );
+    return _( "KiCad legacy project files" )
+            + AddFileExtListToFilter( { LegacyProjectFileExtension } );
 }
 
 
 wxString AllProjectFilesWildcard()
 {
-    return _( "All KiCad project files" ) + AddFileExtListToFilter( { "kicad_pro", "pro" } );
+    return _( "All KiCad project files" )
+            + AddFileExtListToFilter( { ProjectFileExtension, LegacyProjectFileExtension } );
 }
 
 
 wxString LegacySchematicFileWildcard()
 {
-    return _( "KiCad legacy schematic files" ) + AddFileExtListToFilter( { "sch" } );
+    return _( "KiCad legacy schematic files" )
+            + AddFileExtListToFilter( { LegacySchematicFileExtension } );
 }
 
 
 wxString KiCadSchematicFileWildcard()
 {
-    return _( "KiCad s-expression schematic files" ) + AddFileExtListToFilter( { "kicad_sch" } );
+    return _( "KiCad s-expression schematic files" )
+            + AddFileExtListToFilter( { KiCadSchematicFileExtension } );
 }
 
 
@@ -319,19 +329,22 @@ wxString FabmasterPcbFileWildcard()
 
 wxString PcbFileWildcard()
 {
-    return _( "KiCad printed circuit board files" ) + AddFileExtListToFilter( { "kicad_pcb" } );
+    return _( "KiCad printed circuit board files" ) +
+           AddFileExtListToFilter( { KiCadPcbFileExtension } );
 }
 
 
 wxString KiCadFootprintLibFileWildcard()
 {
-    return _( "KiCad footprint files" ) + AddFileExtListToFilter( { "kicad_mod" } );
+    return _( "KiCad footprint files" )
+            + AddFileExtListToFilter( { KiCadFootprintFileExtension } );
 }
 
 
 wxString KiCadFootprintLibPathWildcard()
 {
-    return _( "KiCad footprint library paths" ) + AddFileExtListToFilter( { "pretty" } );
+    return _( "KiCad footprint library paths" )
+            + AddFileExtListToFilter( { KiCadFootprintLibPathExtension } );
 }
 
 
@@ -355,27 +368,30 @@ wxString GedaPcbFootprintLibFileWildcard()
 
 wxString DrawingSheetFileWildcard()
 {
-    return _( "Drawing sheet files" ) + AddFileExtListToFilter( { "kicad_wks" } );
+    return _( "Drawing sheet files" )
+            + AddFileExtListToFilter( { DrawingSheetFileExtension } );
 }
 
 
 // Wildcard for cvpcb symbol to footprint link file
-wxString ComponentFileWildcard()
+wxString FootprintAssignmentFileWildcard()
 {
-    return _( "KiCad symbol footprint link files" ) + AddFileExtListToFilter( { "cmp" } );
+    return _( "KiCad symbol footprint link files" )
+            + AddFileExtListToFilter( { FootprintAssignmentFileExtension } );
 }
 
 
 // Wildcard for reports and fabrication documents
 wxString DrillFileWildcard()
 {
-    return _( "Drill files" ) + AddFileExtListToFilter( { "drl", "nc", "xnc", "txt" } );
+    return _( "Drill files" )
+            + AddFileExtListToFilter( { DrillFileExtension, "nc", "xnc", "txt" } );
 }
 
 
 wxString SVGFileWildcard()
 {
-    return _( "SVG files" ) + AddFileExtListToFilter( { "svg" } );
+    return _( "SVG files" ) + AddFileExtListToFilter( { SVGFileExtension } );
 }
 
 
@@ -489,25 +505,35 @@ wxString DxfFileWildcard()
 
 wxString GerberJobFileWildcard()
 {
-    return _( "Gerber job file" ) + AddFileExtListToFilter( { "gbrjob" } );
+    return _( "Gerber job file" ) + AddFileExtListToFilter( { GerberJobFileExtension } );
 }
 
 
 wxString SpecctraDsnFileWildcard()
 {
-    return _( "Specctra DSN file" ) + AddFileExtListToFilter( { "dsn" } );
+    return _( "Specctra DSN file" )
+            + AddFileExtListToFilter( { SpecctraDsnFileExtension } );
+}
+
+
+wxString SpecctraSessionFileWildcard()
+{
+    return _( "Specctra Session file" )
+            + AddFileExtListToFilter( { SpecctraSessionFileExtension } );
 }
 
 
 wxString IpcD356FileWildcard()
 {
-    return _( "IPC-D-356 Test Files" ) + AddFileExtListToFilter( { "d356" } );
+    return _( "IPC-D-356 Test Files" )
+            + AddFileExtListToFilter( { IpcD356FileExtension } );
 }
 
 
 wxString WorkbookFileWildcard()
 {
-    return _( "Workbook file" ) + AddFileExtListToFilter( { "wbk" } );
+    return _( "Workbook file" )
+            + AddFileExtListToFilter( { WorkbookFileExtension } );
 }
 
 
@@ -520,4 +546,10 @@ wxString PngFileWildcard()
 wxString JpegFileWildcard()
 {
     return _( "Jpeg file" ) + AddFileExtListToFilter( { "jpg", "jpeg" } );
+}
+
+
+wxString HotkeyFileWildcard()
+{
+    return _( "Hotkey file" ) + AddFileExtListToFilter( { HotkeyFileExtension } );
 }

@@ -49,7 +49,7 @@ if( APPLE )
         MACOSX_PACKAGE_LOCATION Resources
         )
     set( MACOSX_BUNDLE_ICON_FILE kicad.icns )
-    set( MACOSX_BUNDLE_GUI_IDENTIFIER org.kicad-pcb.kicad )
+    set( MACOSX_BUNDLE_GUI_IDENTIFIER org.kicad.kicad )
     set( MACOSX_BUNDLE_NAME kicad )
 endif()
 
@@ -85,7 +85,7 @@ else()
     target_link_libraries( kicad
         common
         gal
-        common      #repeated due to a circular dependancy bewteen gal and common
+        common      #repeated due to a circular dependency between gal and common
         ${wxWidgets_LIBRARIES}
         ${GDI_PLUS_LIBRARIES}
         )
@@ -95,11 +95,17 @@ install( TARGETS kicad
     DESTINATION ${KICAD_BIN}
     COMPONENT binary
     )
+
+if( KICAD_WIN32_INSTALL_PDBS )
+    # Get the PDBs to copy over for MSVC
+    install(FILES $<TARGET_PDB_FILE:kicad> DESTINATION ${KICAD_BIN})
+endif()
+
 if( APPLE )
     # "install( CODE ... )" will launch its own CMake, so no variables from
     # this CMake instance are accessible... use helper to transfer
     set( SCRIPTING_HELPER "1" )
-    
+
     if( KICAD_SPICE )
         set( SPICE_HELPER "1" )
     else()

@@ -22,11 +22,11 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
 
-#include <class_library.h>
+#include <symbol_library.h>
 #include <confirm.h>
 #include <widgets/infobar.h>
 #include <connection_graph.h>
-#include <dialogs/dialog_fields_editor_global.h>
+#include <dialogs/dialog_symbol_fields_table.h>
 #include <dialogs/dialog_eeschema_page_settings.h>
 #include <dialogs/dialog_paste_special.h>
 #include <dialogs/dialog_plot_schematic.h>
@@ -34,7 +34,7 @@
 #include <project_rescue.h>
 #include <erc.h>
 #include <invoke_sch_dialog.h>
-#include <kicad_string.h>
+#include <string_utils.h>
 #include <kiway.h>
 #include <kiway_player.h>
 #include <netlist_exporters/netlist_exporter_pspice.h>
@@ -60,7 +60,7 @@
 #include <tools/sch_editor_control.h>
 #include <drawing_sheet/ds_proxy_undo_item.h>
 #include <dialog_update_from_pcb.h>
-#include <dialog_helpers.h>
+#include <eda_list_dialog.h>
 
 
 int SCH_EDITOR_CONTROL::New( const TOOL_EVENT& aEvent )
@@ -320,9 +320,9 @@ SCH_ITEM* SCH_EDITOR_CONTROL::nextMatch( SCH_SCREEN* aScreen, SCH_SHEET_PATH* aS
             if( item->Matches( *aData, aSheet ) )
                 return item;
 
-            if( item->Type() == SCH_COMPONENT_T )
+            if( item->Type() == SCH_SYMBOL_T )
             {
-                SCH_COMPONENT* cmp = static_cast<SCH_COMPONENT*>( item );
+                SCH_SYMBOL* cmp = static_cast<SCH_SYMBOL*>( item );
 
                 for( SCH_FIELD& field : cmp->GetFields() )
                 {
@@ -446,8 +446,8 @@ int SCH_EDITOR_CONTROL::FindNext( const TOOL_EVENT& aEvent )
                                        : _( "Reached end of sheet." );
 
        // Show the popup during the time period the user can wrap the search
-        m_frame->ShowFindReplaceStatus( msg + wxS( " " ) + _( "Find again to wrap around to the start." ),
-                                        4000 );
+        m_frame->ShowFindReplaceStatus( msg + wxS( " " ) +
+                                        _( "Find again to wrap around to the start." ), 4000 );
         wrapAroundTimer.StartOnce( 4000 );
     }
 
@@ -548,7 +548,7 @@ void SCH_EDITOR_CONTROL::doCrossProbeSchToPcb( const TOOL_EVENT& aEvent, bool aF
 
     EE_SELECTION_TOOL* selTool = m_toolMgr->GetTool<EE_SELECTION_TOOL>();
     SCH_ITEM*          item = nullptr;
-    SCH_COMPONENT*     symbol = nullptr;
+    SCH_SYMBOL*        symbol = nullptr;
 
     if( aForce )
     {
@@ -578,20 +578,20 @@ void SCH_EDITOR_CONTROL::doCrossProbeSchToPcb( const TOOL_EVENT& aEvent, bool aF
     {
     case SCH_FIELD_T:
     case LIB_FIELD_T:
-        if( item->GetParent() && item->GetParent()->Type() == SCH_COMPONENT_T )
+        if( item->GetParent() && item->GetParent()->Type() == SCH_SYMBOL_T )
         {
-            symbol = (SCH_COMPONENT*) item->GetParent();
+            symbol = (SCH_SYMBOL*) item->GetParent();
             m_frame->SendMessageToPCBNEW( item, symbol );
         }
         break;
 
-    case SCH_COMPONENT_T:
-        symbol = (SCH_COMPONENT*) item;
+    case SCH_SYMBOL_T:
+        symbol = (SCH_SYMBOL*) item;
         m_frame->SendMessageToPCBNEW( item, symbol );
         break;
 
     case SCH_PIN_T:
-        symbol = (SCH_COMPONENT*) item->GetParent();
+        symbol = (SCH_SYMBOL*) item->GetParent();
         m_frame->SendMessageToPCBNEW( static_cast<SCH_PIN*>( item ), symbol );
         break;
 
@@ -610,7 +610,7 @@ void SCH_EDITOR_CONTROL::doCrossProbeSchToPcb( const TOOL_EVENT& aEvent, bool aF
 
 static KICAD_T wires[] = { SCH_LINE_LOCATE_WIRE_T, EOT };
 static KICAD_T wiresAndPins[] = { SCH_LINE_LOCATE_WIRE_T, SCH_PIN_T, SCH_SHEET_PIN_T, EOT };
-static KICAD_T fieldsAndComponents[] = { SCH_COMPONENT_T, SCH_FIELD_T, EOT };
+static KICAD_T fieldsAndSymbols[] = { SCH_SYMBOL_T, SCH_FIELD_T, EOT };
 
 #define HITTEST_THRESHOLD_PIXELS 5
 
@@ -633,8 +633,7 @@ int SCH_EDITOR_CONTROL::SimProbe( const TOOL_EVENT& aEvent )
             [this, simFrame]( const VECTOR2D& aPosition )
             {
                 EE_SELECTION_TOOL* selTool = m_toolMgr->GetTool<EE_SELECTION_TOOL>();
-                EDA_ITEM*          item = nullptr;
-                selTool->SelectPoint( aPosition, wiresAndPins, &item );
+                EDA_ITEM*          item = selTool->GetNode( aPosition );
 
                 if( !item )
                     return false;
@@ -646,10 +645,10 @@ int SCH_EDITOR_CONTROL::SimProbe( const TOOL_EVENT& aEvent )
                 }
                 else if( item->Type() == SCH_PIN_T )
                 {
-                    SCH_PIN*       pin = (SCH_PIN*) item;
-                    SCH_COMPONENT* symbol = (SCH_COMPONENT*) item->GetParent();
-                    wxString       param;
-                    wxString       primitive;
+                    SCH_PIN*    pin = (SCH_PIN*) item;
+                    SCH_SYMBOL* symbol = (SCH_SYMBOL*) item->GetParent();
+                    wxString    param;
+                    wxString    primitive;
 
                     primitive = NETLIST_EXPORTER_PSPICE::GetSpiceField( SF_PRIMITIVE, symbol, 0 );
                     primitive.LowerCase();
@@ -659,7 +658,7 @@ int SCH_EDITOR_CONTROL::SimProbe( const TOOL_EVENT& aEvent )
                     else if( primitive == "d" )
                         param = wxT( "Id" );
                     else
-                        param = wxString::Format( wxT( "I%s" ), pin->GetName().Lower() );
+                        param = wxString::Format( wxT( "I%s" ), pin->GetShownName().Lower() );
 
                     simFrame->AddCurrentPlot( symbol->GetRef( &m_frame->GetCurrentSheet() ),
                                               param );
@@ -755,16 +754,16 @@ int SCH_EDITOR_CONTROL::SimTune( const TOOL_EVENT& aEvent )
             {
                 EE_SELECTION_TOOL* selTool = m_toolMgr->GetTool<EE_SELECTION_TOOL>();
                 EDA_ITEM*          item = nullptr;
-                selTool->SelectPoint( aPosition, fieldsAndComponents, &item );
+                selTool->SelectPoint( aPosition, fieldsAndSymbols, &item );
 
                 if( !item )
                     return false;
 
-                if( item->Type() != SCH_COMPONENT_T )
+                if( item->Type() != SCH_SYMBOL_T )
                 {
                     item = item->GetParent();
 
-                    if( item->Type() != SCH_COMPONENT_T )
+                    if( item->Type() != SCH_SYMBOL_T )
                         return false;
                 }
 
@@ -772,7 +771,7 @@ int SCH_EDITOR_CONTROL::SimTune( const TOOL_EVENT& aEvent )
                         (SIM_PLOT_FRAME*) m_frame->Kiway().Player( FRAME_SIMULATOR, false );
 
                 if( simFrame )
-                    simFrame->AddTuner( static_cast<SCH_COMPONENT*>( item ) );
+                    simFrame->AddTuner( static_cast<SCH_SYMBOL*>( item ) );
 
                 return true;
             } );
@@ -782,7 +781,7 @@ int SCH_EDITOR_CONTROL::SimTune( const TOOL_EVENT& aEvent )
             {
                 EE_COLLECTOR collector;
                 collector.m_Threshold = KiROUND( getView()->ToWorld( HITTEST_THRESHOLD_PIXELS ) );
-                collector.Collect( m_frame->GetScreen(), fieldsAndComponents, (wxPoint) aPos );
+                collector.Collect( m_frame->GetScreen(), fieldsAndSymbols, (wxPoint) aPos );
 
                 EE_SELECTION_TOOL* selectionTool = m_toolMgr->GetTool<EE_SELECTION_TOOL>();
                 selectionTool->GuessSelectionCandidates( collector, aPos );
@@ -842,15 +841,15 @@ static bool highlightNet( TOOL_MANAGER* aToolMgr, const VECTOR2D& aPosition )
         }
         else
         {
-            SCH_ITEM*      item   = static_cast<SCH_ITEM*>( selTool->GetNode( aPosition ) );
-            SCH_COMPONENT* symbol = dynamic_cast<SCH_COMPONENT*>( item );
+            SCH_ITEM*   item   = static_cast<SCH_ITEM*>( selTool->GetNode( aPosition ) );
+            SCH_SYMBOL* symbol = dynamic_cast<SCH_SYMBOL*>( item );
 
             if( item )
             {
                 if( item->Type() == SCH_FIELD_T )
-                    symbol = dynamic_cast<SCH_COMPONENT*>( item->GetParent() );
+                    symbol = dynamic_cast<SCH_SYMBOL*>( item->GetParent() );
 
-                if( symbol && symbol->GetPartRef() && symbol->GetPartRef()->IsPower() )
+                if( symbol && symbol->GetLibSymbolRef() && symbol->GetLibSymbolRef()->IsPower() )
                 {
                     std::vector<SCH_PIN*> pins = symbol->GetPins();
 
@@ -923,17 +922,39 @@ int SCH_EDITOR_CONTROL::AssignNetclass( const TOOL_EVENT& aEvent )
 
     if( conn )
     {
-        if( !conn->Driver() || CONNECTION_SUBGRAPH::GetDriverPriority( conn->Driver() )
-                                                < CONNECTION_SUBGRAPH::PRIORITY::SHEET_PIN )
+        if( !conn->IsBus()
+            && ( !conn->Driver()
+                 || CONNECTION_SUBGRAPH::GetDriverPriority( conn->Driver() )
+                            < CONNECTION_SUBGRAPH::PRIORITY::SHEET_PIN ) )
         {
             m_frame->ShowInfoBarError( _( "Net must be labeled to assign a netclass." ) );
             highlightNet( m_toolMgr, CLEAR );
             return 0;
         }
+        else if( conn->IsBus() && conn->Members().size() == 0 )
+        {
+            m_frame->ShowInfoBarError( _( "Bus must have at least one member to assign a netclass "
+                                          "to members." ) );
+            highlightNet( m_toolMgr, CLEAR );
+            return 0;
+        }
 
-        wxString      netName = conn->Name();
+        wxArrayString netNames;
+
+        if( conn->IsBus() )
+        {
+            for( auto& m : conn->Members() )
+            {
+                netNames.Add( m->Name() );
+            }
+        }
+        else
+        {
+            netNames.Add( conn->Name() );
+        }
+
         NET_SETTINGS& netSettings = m_frame->Schematic().Prj().GetProjectFile().NetSettings();
-        wxString      netclassName = netSettings.GetNetclassName( netName );
+        wxString      netclassName = netSettings.GetNetclassName( netNames.front() );
 
         wxArrayString headers;
         std::vector<wxArrayString> items;
@@ -958,24 +979,27 @@ int SCH_EDITOR_CONTROL::AssignNetclass( const TOOL_EVENT& aEvent )
         {
             netclassName = dlg.GetTextSelection();
 
-            // Remove from old netclass membership list
-            if( netSettings.m_NetClassAssignments.count( netName ) )
+            for( auto& netName : netNames )
             {
-                const wxString oldNetclassName = netSettings.m_NetClassAssignments[ netName ];
-                NETCLASSPTR    oldNetclass = netSettings.m_NetClasses.Find( oldNetclassName );
+                // Remove from old netclass membership list
+                if( netSettings.m_NetClassAssignments.count( netName ) )
+                {
+                    const wxString oldNetclassName = netSettings.m_NetClassAssignments[netName];
+                    NETCLASSPTR    oldNetclass = netSettings.m_NetClasses.Find( oldNetclassName );
 
-                if( oldNetclass )
-                    oldNetclass->Remove( netName );
+                    if( oldNetclass )
+                        oldNetclass->Remove( netName );
+                }
+
+                // Add to new netclass membership list
+                NETCLASSPTR newNetclass = netSettings.m_NetClasses.Find( netclassName );
+
+                if( newNetclass )
+                    newNetclass->Add( netName );
+
+                netSettings.m_NetClassAssignments[netName] = netclassName;
+                netSettings.ResolveNetClassAssignments();
             }
-
-            // Add to new netclass membership list
-            NETCLASSPTR newNetclass = netSettings.m_NetClasses.Find( netclassName );
-
-            if( newNetclass )
-                newNetclass->Add( netName );
-
-            netSettings.m_NetClassAssignments[ netName ] = netclassName;
-            netSettings.ResolveNetClassAssignments();
         }
     }
 
@@ -1009,14 +1033,14 @@ int SCH_EDITOR_CONTROL::UpdateNetHighlighting( const TOOL_EVENT& aEvent )
     for( SCH_ITEM* item : screen->Items() )
     {
         SCH_CONNECTION* itemConn  = nullptr;
-        SCH_COMPONENT*  symbol    = nullptr;
+        SCH_SYMBOL*     symbol    = nullptr;
         bool            redraw    = item->IsBrightened();
         bool            highlight = false;
 
-        if( item->Type() == SCH_COMPONENT_T )
-            symbol = static_cast<SCH_COMPONENT*>( item );
+        if( item->Type() == SCH_SYMBOL_T )
+            symbol = static_cast<SCH_SYMBOL*>( item );
 
-        if( symbol && symbol->GetPartRef() && symbol->GetPartRef()->IsPower() )
+        if( symbol && symbol->GetLibSymbolRef() && symbol->GetLibSymbolRef()->IsPower() )
             itemConn = symbol->Connection();
         else
             itemConn = item->Connection();
@@ -1066,7 +1090,7 @@ int SCH_EDITOR_CONTROL::UpdateNetHighlighting( const TOOL_EVENT& aEvent )
 
         redraw |= item->IsBrightened();
 
-        // symbol is only non-null if the item is a SCH_COMPONENT_T
+        // symbol is only non-null if the item is a SCH_SYMBOL_T
         if( symbol )
         {
             redraw |= symbol->HasBrightenedPins();
@@ -1084,7 +1108,7 @@ int SCH_EDITOR_CONTROL::UpdateNetHighlighting( const TOOL_EVENT& aEvent )
                 }
             }
 
-            if( symbol->GetPartRef() && symbol->GetPartRef()->IsPower() )
+            if( symbol->GetLibSymbolRef() && symbol->GetLibSymbolRef()->IsPower() )
             {
                 std::vector<SCH_FIELD>& fields = symbol->GetFields();
 
@@ -1167,17 +1191,22 @@ int SCH_EDITOR_CONTROL::Undo( const TOOL_EVENT& aEvent )
 
     /* Get the old list */
     PICKED_ITEMS_LIST* List = m_frame->PopCommandFromUndoList();
+    size_t num_undos = m_frame->m_undoList.m_CommandsList.size();
 
     /* Undo the command */
     m_frame->PutDataInPreviousState( List );
 
-    /* Put the old list in RedoList */
-    List->ReversePickersListOrder();
-    m_frame->PushCommandToRedoList( List );
-
     m_frame->SetSheetNumberAndCount();
     m_frame->TestDanglingEnds();
     m_frame->OnPageSettingsChange();
+
+    // If we modified anything during cleanup we don't want it going on the undolist
+    while( m_frame->m_undoList.m_CommandsList.size() > num_undos )
+        delete m_frame->PopCommandFromUndoList();
+
+    // Now push the old command to the RedoList
+    List->ReversePickersListOrder();
+    m_frame->PushCommandToRedoList( List );
 
     m_toolMgr->GetTool<EE_SELECTION_TOOL>()->RebuildSelection();
 
@@ -1244,10 +1273,10 @@ bool SCH_EDITOR_CONTROL::doCopy( bool aUseLocalClipboard )
 
     STRING_FORMATTER formatter;
     SCH_SEXPR_PLUGIN plugin;
-    SCH_SHEET_LIST   hiearchy = schematic.GetSheets();
+    SCH_SHEET_LIST   hierarchy = schematic.GetSheets();
     SCH_SHEET_PATH   selPath = m_frame->GetCurrentSheet();
 
-    plugin.Format( &selection, &selPath, &hiearchy, &formatter );
+    plugin.Format( &selection, &selPath, &hierarchy, &formatter );
 
     if( aUseLocalClipboard )
     {
@@ -1314,7 +1343,7 @@ int SCH_EDITOR_CONTROL::Copy( const TOOL_EVENT& aEvent )
 }
 
 
-void SCH_EDITOR_CONTROL::updatePastedSymbol( SCH_COMPONENT* aSymbol, SCH_SCREEN* aPasteScreen,
+void SCH_EDITOR_CONTROL::updatePastedSymbol( SCH_SYMBOL* aSymbol, SCH_SCREEN* aPasteScreen,
                                              const SCH_SHEET_PATH& aPastePath,
                                              const KIID_PATH&      aClipPath,
                                              bool                  aForceKeepAnnotations )
@@ -1387,9 +1416,9 @@ SCH_SHEET_PATH SCH_EDITOR_CONTROL::updatePastedSheet( const SCH_SHEET_PATH& aPas
 
     for( SCH_ITEM* item : aSheet->GetScreen()->Items() )
     {
-        if( item->Type() == SCH_COMPONENT_T )
+        if( item->Type() == SCH_SYMBOL_T )
         {
-            SCH_COMPONENT* symbol = static_cast<SCH_COMPONENT*>( item );
+            SCH_SYMBOL* symbol = static_cast<SCH_SYMBOL*>( item );
 
             updatePastedSymbol( symbol, aSheet->GetScreen(), sheetPath, aClipPath,
                                 aForceKeepAnnotations );
@@ -1516,7 +1545,7 @@ int SCH_EDITOR_CONTROL::Paste( const TOOL_EVENT& aEvent )
     existingRefs.SortByReferenceOnly();
 
     // Keep track of pasted sheets and symbols for the different
-    // paths to the hiearchy
+    // paths to the hierarchy
     std::map<SCH_SHEET_PATH, SCH_REFERENCE_LIST> pastedSymbols;
     std::map<SCH_SHEET_PATH, SCH_SHEET_LIST>     pastedSheets;
 
@@ -1537,7 +1566,7 @@ int SCH_EDITOR_CONTROL::Paste( const TOOL_EVENT& aEvent )
 
             if( hierarchy.TestForRecursion( sheetHierarchy, destFn.GetFullPath( wxPATH_UNIX ) ) )
             {
-                auto msg = wxString::Format( _( "The pasted sheet \"%s\"\n"
+                auto msg = wxString::Format( _( "The pasted sheet '%s'\n"
                                                 "was dropped because the destination already has "
                                                 "the sheet or one of its subsheets as a parent." ),
                                              sheet->GetFileName() );
@@ -1555,9 +1584,9 @@ int SCH_EDITOR_CONTROL::Paste( const TOOL_EVENT& aEvent )
         EDA_ITEM* item = loadedItems[i];
         KIID_PATH clipPath( wxT("/") ); // clipboard is at root
 
-        if( item->Type() == SCH_COMPONENT_T )
+        if( item->Type() == SCH_SYMBOL_T )
         {
-            SCH_COMPONENT* symbol = static_cast<SCH_COMPONENT*>( item );
+            SCH_SYMBOL* symbol = static_cast<SCH_SYMBOL*>( item );
 
             // The library symbol gets set from the cached library symbols in the current
             // schematic not the symbol libraries.  The cached library symbol may have
@@ -1577,12 +1606,12 @@ int SCH_EDITOR_CONTROL::Paste( const TOOL_EVENT& aEvent )
                 end = paste_screen->GetLibSymbols().end();
             }
 
-            LIB_PART* libPart = nullptr;
+            LIB_SYMBOL* libSymbol = nullptr;
 
             if( it != end )
             {
-                libPart = new LIB_PART( *it->second );
-                symbol->SetLibSymbol( libPart );
+                libSymbol = new LIB_SYMBOL( *it->second );
+                symbol->SetLibSymbol( libSymbol );
             }
 
             for( SCH_SHEET_PATH& instance : pasteInstances )
@@ -1600,10 +1629,11 @@ int SCH_EDITOR_CONTROL::Paste( const TOOL_EVENT& aEvent )
 
             for( SCH_SHEET_PATH& instance : pasteInstances )
             {
-                // Ignore pseudo-symbols (e.g. power symbols) and symbols from a non-existant library
-                if( libPart && symbol->GetRef( &instance )[0] != wxT( '#' ) )
+                // Ignore pseudo-symbols (e.g. power symbols) and symbols from a non-existant
+                // library.
+                if( libSymbol && symbol->GetRef( &instance )[0] != wxT( '#' ) )
                 {
-                    SCH_REFERENCE schReference( symbol, libPart, instance );
+                    SCH_REFERENCE schReference( symbol, libSymbol, instance );
                     schReference.SetSheetNumber( instance.GetVirtualPageNumber() );
                     pastedSymbols[instance].AddItem( schReference );
                 }
@@ -1622,9 +1652,12 @@ int SCH_EDITOR_CONTROL::Paste( const TOOL_EVENT& aEvent )
                 number = baseName.Last() + number;
                 baseName.RemoveLast();
             }
+            // Update hierarchy to include any other sheets we already added, avoiding
+            // duplicate sheet names
+            hierarchy = m_frame->Schematic().GetSheets();
 
             //@todo: it might be better to just iterate through the sheet names
-            // in this screen instead of the whole hiearchy.
+            // in this screen instead of the whole hierarchy.
             int uniquifier = std::max( 0, wxAtoi( number ) ) + 1;
 
             while( hierarchy.NameExists( candidateName ) )
@@ -1769,12 +1802,12 @@ int SCH_EDITOR_CONTROL::Paste( const TOOL_EVENT& aEvent )
 int SCH_EDITOR_CONTROL::EditWithSymbolEditor( const TOOL_EVENT& aEvent )
 {
     EE_SELECTION_TOOL* selTool = m_toolMgr->GetTool<EE_SELECTION_TOOL>();
-    EE_SELECTION&      selection = selTool->RequestSelection( EE_COLLECTOR::ComponentsOnly );
-    SCH_COMPONENT*     symbol = nullptr;
+    EE_SELECTION&      selection = selTool->RequestSelection( EE_COLLECTOR::SymbolsOnly );
+    SCH_SYMBOL*        symbol = nullptr;
     SYMBOL_EDIT_FRAME* symbolEditor;
 
     if( selection.GetSize() >= 1 )
-        symbol = (SCH_COMPONENT*) selection.Front();
+        symbol = (SCH_SYMBOL*) selection.Front();
 
     if( !symbol || symbol->GetEditFlags() != 0 )
         return 0;
@@ -1807,7 +1840,7 @@ int SCH_EDITOR_CONTROL::ShowCvpcb( const TOOL_EVENT& aEvent )
 
 int SCH_EDITOR_CONTROL::EditSymbolFields( const TOOL_EVENT& aEvent )
 {
-    DIALOG_FIELDS_EDITOR_GLOBAL dlg( m_frame );
+    DIALOG_SYMBOL_FIELDS_TABLE dlg( m_frame );
     dlg.ShowQuasiModal();
     return 0;
 }
@@ -1815,7 +1848,7 @@ int SCH_EDITOR_CONTROL::EditSymbolFields( const TOOL_EVENT& aEvent )
 
 int SCH_EDITOR_CONTROL::EditSymbolLibraryLinks( const TOOL_EVENT& aEvent )
 {
-    if( InvokeDialogEditComponentsLibId( m_frame ) )
+    if( InvokeDialogEditSymbolsLibId( m_frame ) )
         m_frame->HardRedraw();
 
     return 0;

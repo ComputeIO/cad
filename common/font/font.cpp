@@ -25,8 +25,8 @@
  */
 
 #include <common.h>
+#include <string_utils.h>
 #include <core/wx_stl_compat.h>
-#include <kicad_string.h>
 #include <font/stroke_font.h>
 #include <font/outline_font.h>
 #include <trigo.h>
@@ -170,7 +170,7 @@ VECTOR2D FONT::doDrawString( KIGFX::GAL* aGal, const UTF8& aText, const VECTOR2D
                              bool aParse, const VECTOR2D& aGlyphSize,
                              const TEXT_ATTRIBUTES& aAttributes ) const
 {
-#ifdef OUTLINEFONT_DEBUG
+#ifdef DEBUG
     std::cerr << "FONT::doDrawString( aGal, \"" << aText << "\", " << aPosition << ", "
               << ", " << ( aParse ? "true" : "false" ) << ", "
               << ", " << aGlyphSize << ", " << aAttributes << " ) const" << std::endl;
@@ -232,7 +232,6 @@ VECTOR2D FONT::doDrawString( KIGFX::GAL* aGal, const UTF8& aText, const VECTOR2D
         }
         else
         {
-            //drawSingleLineText( aGal, strings.Item( i ), positions[i], aRotationAngle );
             lineBoundingBox = Draw( aGal, strings.Item( i ), positions[i], aPosition, aAttributes );
         }
 
@@ -264,35 +263,36 @@ void FONT::getLinePositions( const UTF8& aText, const VECTOR2D& aPosition,
     aLineCount = aStringList.Count();
     aPositions.reserve( aLineCount );
 
-    VECTOR2D maxBoundingBox;
+    wxPoint origin( aPosition.x, aPosition.y );
+    int     interline = GetInterline( aGlyphSize.y, aAttributes.GetLineSpacing() );
 
     for( int i = 0; i < aLineCount; i++ )
     {
-        VECTOR2D textSize = getBoundingBox( aStringList[i], aGlyphSize );
+        BOX2I lineBoundingBox;
+        GLYPH_LIST ignore;
+        MARKUP::MARKUP_NODE root;
+        VECTOR2D linePosition( origin.x, origin.y + i * interline );
 
-        if( textSize.x > maxBoundingBox.x )
-            maxBoundingBox.x = textSize.x;
-        if( textSize.y > maxBoundingBox.y )
-            maxBoundingBox.y = textSize.y;
+        VECTOR2D cursor = boundingBoxSingleLine( &lineBoundingBox, aStringList[i], linePosition, aGlyphSize );
 
-        aBoundingBoxes.push_back( textSize );
+        // VECTOR2D bBox( lineBoundingBox.GetWidth(), lineBoundingBox.GetHeight() ) );
+        VECTOR2D bBox( cursor - linePosition );
+
+        aBoundingBoxes.push_back( bBox );
     }
 
-    wxPoint origin( aPosition.x, aPosition.y );
-    int     interline = GetInterline( aGlyphSize.y, aAttributes.GetLineSpacing() );
 #ifdef DEBUG
     std::cerr << "\"" << aText << "\" line spacing " << aAttributes.GetLineSpacing()
               << " glyph size " << aGlyphSize << " GetInterline() " << GetInterline( aGlyphSize.y )
               << " -> interline " << interline << std::endl;
 #endif
 
-    wxPoint offset( 0, 0 );
-    TEXT_ATTRIBUTES::VERTICAL_ALIGNMENT vAlignment = aAttributes.GetVerticalAlignment();
+    wxPoint                               offset( 0, 0 );
+    TEXT_ATTRIBUTES::VERTICAL_ALIGNMENT   vAlignment = aAttributes.GetVerticalAlignment();
     TEXT_ATTRIBUTES::HORIZONTAL_ALIGNMENT hAlignment = aAttributes.GetHorizontalAlignment();
-    EDA_ANGLE angle = aAttributes.GetAngle();
+    EDA_ANGLE                             angle = aAttributes.GetAngle();
 
-    if( aAttributes.IsKeepUpright()
-        && aAttributes.GetAngle() > EDA_ANGLE::ANGLE_90 )
+    if( aAttributes.IsKeepUpright() && aAttributes.GetAngle() > EDA_ANGLE::ANGLE_90 )
     {
         angle = angle.RotateCW().RotateCW();
         hAlignment = TEXT_ATTRIBUTES::OppositeAlignment( hAlignment );
@@ -309,15 +309,15 @@ void FONT::getLinePositions( const UTF8& aText, const VECTOR2D& aPosition,
     int mirrorX = aAttributes.IsMirrored() ? -1 : 1;
     for( int i = 0; i < aLineCount; i++ )
     {
-        VECTOR2D textSize = aBoundingBoxes.at( i );
+        VECTOR2D lineSize = aBoundingBoxes.at( i );
         wxPoint  lineOffset( offset );
         lineOffset.y += i * interline;
 
         switch( hAlignment )
         {
         case TEXT_ATTRIBUTES::H_LEFT: break;
-        case TEXT_ATTRIBUTES::H_CENTER: lineOffset.x = mirrorX * -textSize.x / 2; break;
-        case TEXT_ATTRIBUTES::H_RIGHT: lineOffset.x = mirrorX * -textSize.x;
+        case TEXT_ATTRIBUTES::H_CENTER: lineOffset.x = mirrorX * -lineSize.x / 2; break;
+        case TEXT_ATTRIBUTES::H_RIGHT: lineOffset.x = mirrorX * -lineSize.x;
         }
 
         wxPoint pos( aPosition.x + lineOffset.x, aPosition.y + lineOffset.y );
@@ -326,7 +326,7 @@ void FONT::getLinePositions( const UTF8& aText, const VECTOR2D& aPosition,
 #ifdef DEBUG
         std::cerr << "Line #" << i << "/" << aLineCount << " pos " << pos << " aPosition "
                   << aPosition << " origin " << origin << " offset " << offset << " lineOffset "
-                  << lineOffset << " interline " << interline << " textSize " << textSize
+                  << lineOffset << " interline " << interline << " lineSize " << lineSize
                   << " mirrorX " << mirrorX << " angle " << angle << std::endl;
 #endif
 
@@ -334,7 +334,7 @@ void FONT::getLinePositions( const UTF8& aText, const VECTOR2D& aPosition,
     }
 
 #ifdef DEBUG
-    std::cerr << std::fixed << "FONT::getLinePositions ( \"" << aText << "\", " << aPosition
+    std::cerr << std::fixed << "... FONT::getLinePositions ( \"" << aText << "\", " << aPosition
               << ", ..., " << aGlyphSize << ", " << aAttributes << " ) "
               << " offset " << offset.x << "," << offset.y << " interline " << interline
               << " returns " << aLineCount << " lines:" << std::endl;
@@ -366,7 +366,7 @@ VECTOR2D FONT::getBoundingBox( const UTF8& aText, const VECTOR2D& aGlyphSize,
         /* ... */
     }
 
-#ifdef OUTLINEFONT_DEBUG
+#ifdef DEBUG
     std::cerr << "FONT::getBoundingBox( \"" << aText << "\", " << aGlyphSize << ", " << aTextStyle
               << ", " << aAttributes << " )" << std::endl;
 #endif
@@ -465,10 +465,11 @@ VECTOR2D FONT::Draw( KIGFX::GAL* aGal, const UTF8& aText, const VECTOR2D& aPosit
     std::vector<VECTOR2D> boundingBoxes;
     int                   n;
 
-    getLinePositions( aText, position, strings_list, positions, n, boundingBoxes,
-                      glyphSize, aAttributes );
+    getLinePositions( aText, position, strings_list, positions, n, boundingBoxes, glyphSize,
+                      aAttributes );
 
     VECTOR2D boundingBox( 0, 0 );
+    BOX2I lineBoundingBox;
     for( int i = 0; i < n; i++ )
     {
 #ifdef DEBUG
@@ -501,11 +502,12 @@ VECTOR2D FONT::Draw( KIGFX::GAL* aGal, const UTF8& aText, const VECTOR2D& aPosit
             aGal->Rotate( rotationAngle.AsRadians() );
         }
 
-        VECTOR2D lineBoundingBox = drawSingleLineText( aGal, strings_list[i], VECTOR2D( 0, 0 ) );
+        (void) drawSingleLineText( aGal, &lineBoundingBox, strings_list[i], VECTOR2D( 0, 0 ),
+                                   aAttributes.GetAngle(), aAttributes.IsMirrored() );
         aGal->Restore();
 
         // expand bounding box of whole text
-        boundingBox.x = std::max( boundingBox.x, lineBoundingBox.x );
+        boundingBox.x = std::max( boundingBox.x, (double) lineBoundingBox.GetWidth() );
 
         double lineHeight = GetInterline( glyphSize.y, aAttributes.GetLineSpacing() );
         boundingBox.y += lineHeight;
@@ -535,4 +537,156 @@ VECTOR2D FONT::BoundingBox( const EDA_TEXT& aText )
 {
     // TODO: text style flags unconditionally set to 0 - are they even used?
     return getBoundingBox( aText.GetShownText(), aText.GetTextSize(), 0, aText.GetAttributes() );
+}
+
+
+/**
+   @return position of cursor for drawing next substring
+ */
+VECTOR2D FONT::drawMarkup( BOX2I* aBoundingBox, GLYPH_LIST& aGlyphs,
+                           const MARKUP::MARKUP_NODE& aNode, const VECTOR2D& aPosition,
+                           const VECTOR2D& aGlyphSize, const EDA_ANGLE& aAngle, bool aIsMirrored,
+                           TEXT_STYLE_FLAGS aTextStyle, int aLevel ) const
+{
+#ifdef DEBUG
+    std::cerr << "FONT::drawMarkup( ";
+    if( aBoundingBox )
+    {
+        std::cerr << "[aBoundingBox " << aBoundingBox->GetOrigin() << " "
+                  << aBoundingBox->GetSize() << "]";
+    }
+    else
+    {
+        std::cerr << "(null)";
+    }
+    std::cerr << ", [aGlyphs], " << aNode << ", " << aPosition << ", " << aGlyphSize << ", "
+              << aAngle << ", " << ( aIsMirrored ? "mirrored" : "not mirrored" ) << ", " << aTextStyle
+              << ", " << aLevel << ", ... )";
+    std::cerr << std::endl;
+#endif
+    VECTOR2D nextPosition = aPosition;
+
+    TEXT_STYLE_FLAGS textStyle = aTextStyle;
+
+    if( !aNode->is_root() )
+    {
+        if( aNode->isSubscript() )
+        {
+            textStyle = TEXT_STYLE::SUBSCRIPT;
+        }
+        else if( aNode->isSuperscript() )
+        {
+            textStyle = TEXT_STYLE::SUPERSCRIPT;
+        }
+
+        if( aNode->isOverbar() )
+        {
+            textStyle |= TEXT_STYLE::OVERBAR;
+        }
+
+        if( aNode->has_content() )
+        {
+            std::string txt = aNode->string();
+            //std::vector<SHAPE_POLY_SET> glyphs;
+            wxPoint pt( aPosition.x, aPosition.y );
+
+            BOX2I bbox;
+            nextPosition = GetTextAsPolygon( &bbox, aGlyphs, txt, aGlyphSize, pt, aAngle, aIsMirrored,
+                                             textStyle );
+
+            if( aBoundingBox )
+            {
+                BOX2I boundingBox;
+                boundingBox = aBoundingBox->Merge( bbox );
+                aBoundingBox->SetOrigin( boundingBox.GetOrigin() );
+                aBoundingBox->SetSize( boundingBox.GetSize() );
+            }
+        }
+    }
+
+    for( const auto& child : aNode->children )
+    {
+        nextPosition = drawMarkup( aBoundingBox, aGlyphs, child, nextPosition, aGlyphSize, aAngle,
+                                   aIsMirrored, textStyle, aLevel + 1 );
+    }
+
+#ifdef DEBUG
+    std::cerr << "FONT::drawMarkup( ..., " << ( aIsMirrored ? "mirrored" : "not mirrored" )
+              << ", ... ) nextPosition " << nextPosition;
+    if( aBoundingBox )
+    {
+        std::cerr << ", aBoundingBox " << aBoundingBox->GetOrigin() << " " << aBoundingBox->GetSize();
+    }
+    std::cerr << std::endl;
+#endif
+    return nextPosition;
+}
+
+
+VECTOR2D FONT::drawSingleLineText( KIGFX::GAL* aGal, BOX2I* aBoundingBox, const UTF8& aText,
+                                   const VECTOR2D& aPosition, const EDA_ANGLE& aAngle,
+                                   bool aIsMirrored ) const
+{
+    if( !aGal )
+    {
+        // do nothing, cursor does not move
+        return aPosition;
+    }
+
+#ifdef DEBUG
+    std::cerr << "FONT::drawSingleLineText( aGal, \"" << aText << "\", " << aPosition
+              << ", " << aAngle << ", " << ( aIsMirrored ? "mirrored" : "not mirrored" )
+              << " )";
+#endif
+
+    MARKUP::MARKUP_PARSER markupParser( aText );
+    auto                  markupRoot = markupParser.Parse();
+
+    GLYPH_LIST glyphs;
+    VECTOR2D   nextPosition =
+            drawMarkup( aBoundingBox, glyphs, markupRoot, aPosition, aGal->GetGlyphSize(), aAngle,
+                        IsStroke() ? false : aIsMirrored );
+
+#if 0
+    if( IsStroke() && aIsMirrored )
+    {
+        for( auto it = glyphs.begin(); it != glyphs.end(); it++ )
+        {
+            (*it)->Mirror( aPosition );
+        }
+    }
+#endif
+
+    for( auto glyph : glyphs )
+    {
+        if( IsStroke() && aIsMirrored )
+        {
+            glyph->Mirror( aPosition );
+        }
+        aGal->DrawGlyph( glyph );
+    }
+
+    return nextPosition;
+}
+
+
+VECTOR2D FONT::boundingBoxSingleLine( BOX2I* aBoundingBox, const UTF8& aText,
+                                      const VECTOR2D& aPosition, const VECTOR2D& aGlyphSize,
+                                      const EDA_ANGLE& aAngle, bool aIsMirrored ) const
+{
+#ifdef DEBUG
+    std::cerr << "FONT::boundingBoxSingleLine( aGal, \"" << aText << "\", " << aPosition << ", "
+              << aGlyphSize << ", " << aAngle << ", "
+              << ( aIsMirrored ? "mirrored" : "(not mirrored)" ) << " )" << std::endl;
+#endif
+
+    MARKUP::MARKUP_PARSER markupParser( aText );
+    auto markupRoot = markupParser.Parse();
+
+    GLYPH_LIST glyphs; // ignored
+    VECTOR2D   nextPosition = drawMarkup( aBoundingBox, glyphs, markupRoot, aPosition, aGlyphSize,
+                                          aAngle, aIsMirrored );
+
+    //return nextPosition - aPosition;
+    return nextPosition;
 }

@@ -39,7 +39,14 @@
 using namespace KIGFX;
 
 
-GAL::GAL( GAL_DISPLAY_OPTIONS& aDisplayOptions ) : m_options( aDisplayOptions )
+GAL::GAL( GAL_DISPLAY_OPTIONS& aDisplayOptions ) :
+        m_options( aDisplayOptions ),
+        // m_currentNativeCursor is initialized with KICURSOR::DEFAULT value to avoid
+        // if comparison with uninitialized value on SetNativeCursorStyle method.
+        // Some classes inheriting from GAL has different SetNativeCursorStyle method
+        // implementation and therefore it's called also on constructor
+        // to change the value from DEFAULT to KICURSOR::ARROW
+        m_currentNativeCursor( KICURSOR::DEFAULT )
 {
     // Set the default values for the internal variables
     SetIsFill( false );
@@ -293,11 +300,11 @@ void GAL::StrokeText( const wxString& aText, const VECTOR2D& aPosition, double a
 }
 
 
-void GAL::DrawGlyphs( const std::vector<SHAPE_POLY_SET> aGlyphs )
+void GAL::DrawGlyphs( const KIFONT::GLYPH_LIST& aGlyphs )
 {
     int nth = 0;
     int total = aGlyphs.size();
-    for( const SHAPE_POLY_SET& glyph : aGlyphs )
+    for( auto glyph : aGlyphs )
     {
         DrawGlyph( glyph, nth, total );
         nth++;

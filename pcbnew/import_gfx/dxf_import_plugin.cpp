@@ -66,9 +66,9 @@
         - Hatch
         - Image
         - Text
- *   5. Object coordinates must be run through the arbtirary axis
+ *   5. Object coordinates must be run through the arbitrary axis
  *      translation even though they are 2D drawings and most of the time
- *      the import is fine. Sometimes, agaisnt all logic, CAD tools like
+ *      the import is fine. Sometimes, against all logic, CAD tools like
  *      SolidWorks may randomly insert circles "mirror" that must be unflipped
  *      by following the object to world conversion
  *    6. Blocks are virtual groups, blocks must be placed by a INSERT entity
@@ -99,6 +99,8 @@ DXF_IMPORT_PLUGIN::DXF_IMPORT_PLUGIN() : DL_CreationAdapter()
     m_minX = m_minY = std::numeric_limits<double>::max();
     m_maxX = m_maxY = std::numeric_limits<double>::min();
     m_currentUnit = DXF_IMPORT_UNITS::DEFAULT;
+    m_importCoordinatePrecision = 4;    // initial value per dxf spec
+    m_importAnglePrecision = 0;         // initial value per dxf spec
 
     // placeholder layer so we can fallback to something later
     std::unique_ptr<DXF_IMPORT_LAYER> layer0 =
@@ -940,6 +942,18 @@ void DXF_IMPORT_PLUGIN::setVariableInt( const std::string& key, int value, int c
     if( key == "$DWGCODEPAGE" )
     {
         m_codePage = value;
+        return;
+    }
+
+    if( key == "$AUPREC" )
+    {
+        m_importAnglePrecision = value;
+        return;
+    }
+
+    if( key == "$LUPREC" )
+    {
+        m_importCoordinatePrecision = value;
         return;
     }
 

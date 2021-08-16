@@ -24,7 +24,6 @@
 #include <unordered_map>
 #include <map>
 #include "pcb_base_edit_frame.h"
-#include "undo_redo_container.h"
 #include "zones.h"
 #include <mail_type.h>
 
@@ -34,12 +33,12 @@ class BOARD;
 class BOARD_COMMIT;
 class BOARD_ITEM_CONTAINER;
 class FOOTPRINT;
-class TRACK;
-class VIA;
+class PCB_TRACK;
+class PCB_VIA;
 class PAD;
 class PCB_TARGET;
 class PCB_GROUP;
-class DIMENSION_BASE;
+class PCB_DIMENSION_BASE;
 class DRC;
 class DIALOG_PLOT;
 class ZONE;
@@ -149,9 +148,9 @@ public:
     COLOR4D GetGridColor() override;
 
     /**
-     * @param aColor the new color of the grid.
+     * @param[in] aColor the new color of the grid.
      */
-    void SetGridColor( COLOR4D aColor ) override;
+    void SetGridColor( const COLOR4D& aColor ) override;
 
     // Configurations:
     void Process_Config( wxCommandEvent& event );
@@ -293,7 +292,7 @@ public:
      */
     int DoGenFootprintsPositionFile( const wxString& aFullFileName, bool aUnitsMM,
                                      bool aForceSmdItems, bool aTopSide, bool aBottomSide,
-                                     bool aFormatCSV = false );
+                                     bool aFormatCSV, bool aUseAuxOrigin );
 
     /**
      * Call #DoGenFootprintsReport to create a footprint report file
@@ -413,7 +412,7 @@ public:
      *                 \a aStoreInNewLib as true.
      */
     void ExportFootprintsToLibrary( bool aStoreInNewLib, const wxString& aLibName = wxEmptyString,
-                                    wxString* aLibPath = NULL );
+                                    wxString* aLibPath = nullptr );
 
     /**
      * Create a BOM file from the current loaded board.
@@ -545,7 +544,7 @@ public:
      * @param aUseNetclassValue true to use NetClass value, false to use current designSettings
      *                          value.
      */
-    void SetTrackSegmentWidth( TRACK* aTrackItem, PICKED_ITEMS_LIST* aItemsListPicker,
+    void SetTrackSegmentWidth( PCB_TRACK* aTrackItem, PICKED_ITEMS_LIST* aItemsListPicker,
                                bool aUseNetclassValue );
 
 
@@ -556,7 +555,7 @@ public:
 
     // Properties dialogs
     void ShowTargetOptionsDialog( PCB_TARGET* aTarget );
-    void ShowDimensionPropertiesDialog( DIMENSION_BASE* aDimension );
+    void ShowDimensionPropertiesDialog( PCB_DIMENSION_BASE* aDimension );
     void InstallNetlistFrame();
 
     /**
@@ -582,7 +581,7 @@ public:
      * @param aReporter is a #REPORTER object to display messages.
      * @return true if the netlist was read successfully.
      */
-    bool ReadNetlistFromFile( const wxString &aFilename, NETLIST& aNetlist, REPORTER& aReporter );
+    bool ReadNetlistFromFile( const wxString& aFilename, NETLIST& aNetlist, REPORTER& aReporter );
 
     /**
      * Called after netlist is updated.
@@ -707,25 +706,6 @@ protected:
      * @param aEvent sent by wx
      */
     void OnActionPluginButton( wxCommandEvent& aEvent );
-
-
-    /**
-     * Has meaning only if KICAD_SCRIPTING_WXPYTHON option is not defined.
-     *
-     * @return the frame name identifier for the python console frame.
-     */
-    static const wxChar * pythonConsoleNameId()
-    {
-        return wxT( "PythonConsole" );
-    }
-
-    /**
-     * @return a pointer to the python console frame, or NULL if not exist
-     */
-    static wxWindow * findPythonConsole()
-    {
-       return FindWindowByName( pythonConsoleNameId() );
-    }
 
     /**
      * Update the state of the GUI after a new board is loaded or created.

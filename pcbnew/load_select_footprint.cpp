@@ -32,23 +32,22 @@ using namespace std::placeholders;
 #include <connectivity/connectivity_data.h>
 #include <dialog_choose_footprint.h>
 #include <dialog_get_footprint_by_name.h>
-#include <dialog_helpers.h>
+#include <eda_list_dialog.h>
 #include <footprint_edit_frame.h>
 #include <footprint_info_impl.h>
 #include <footprint_tree_pane.h>
 #include <footprint_viewer_frame.h>
 #include <fp_lib_table.h>
 #include <io_mgr.h>
-#include <kicad_string.h>
+#include <string_utils.h>
 #include <kiway.h>
 #include <lib_id.h>
 #include <macros.h>
 #include <pcb_edit_frame.h>
 #include <pcbnew_settings.h>
-#include <pgm_base.h>
 #include <view/view_controls.h>
 #include <widgets/lib_tree.h>
-#include <widgets/progress_reporter.h>
+#include <widgets/wx_progress_reporters.h>
 #include <dialog_pad_properties.h>
 
 #include "fp_tree_model_adapter.h"
@@ -136,7 +135,7 @@ bool FOOTPRINT_EDIT_FRAME::LoadFootprintFromBoard( FOOTPRINT* aFootprint )
 
     // Clear references to any net info, because the footprint editor does know any thing about
     // nets handled by the current edited board.
-    // Morever we do not want to save any reference to an unknown net when saving the footprint
+    // Moreover we do not want to save any reference to an unknown net when saving the footprint
     // in lib cache so we force the ORPHANED dummy net info for all pads.
     newFootprint->ClearAllNets();
 
@@ -429,7 +428,7 @@ bool FOOTPRINT_EDIT_FRAME::SaveLibraryAs( const wxString& aLibraryPath )
             const FOOTPRINT* footprint = cur->GetEnumeratedFootprint( curLibPath, footprints[i] );
             dst->FootprintSave( dstLibPath, footprint );
 
-            msg = wxString::Format( _( "Footprint \"%s\" saved" ), footprints[i] );
+            msg = wxString::Format( _( "Footprint '%s' saved." ), footprints[i] );
             SetStatusText( msg );
         }
     }
@@ -439,7 +438,7 @@ bool FOOTPRINT_EDIT_FRAME::SaveLibraryAs( const wxString& aLibraryPath )
         return false;
     }
 
-    msg = wxString::Format( _( "Footprint library \"%s\" saved as \"%s\"." ),
+    msg = wxString::Format( _( "Footprint library '%s' saved as '%s'." ),
                             curLibPath,
                             dstLibPath );
 

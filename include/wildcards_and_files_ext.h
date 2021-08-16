@@ -126,6 +126,7 @@ extern const std::string GerberFileExtension;
 extern const std::string GerberJobFileExtension;
 extern const std::string HtmlFileExtension;
 extern const std::string EquFileExtension;
+extern const std::string HotkeyFileExtension;
 
 extern const std::string ArchiveFileExtension;
 
@@ -139,7 +140,7 @@ extern const std::string DesignRulesFileExtension;
 extern const std::string LegacyFootprintLibPathExtension;
 extern const std::string PdfFileExtension;
 extern const std::string MacrosFileExtension;
-extern const std::string ComponentFileExtension;
+extern const std::string FootprintAssignmentFileExtension;
 extern const std::string DrillFileExtension;
 extern const std::string SVGFileExtension;
 extern const std::string ReportFileExtension;
@@ -148,13 +149,15 @@ extern const std::string KiCadFootprintFileExtension;
 extern const std::string KiCadFootprintLibPathExtension;
 extern const std::string GedaPcbFootprintLibFileExtension;
 extern const std::string EagleFootprintLibPathExtension;
-extern const std::string ComponentFileExtension;
 extern const std::string DrawingSheetFileExtension;
 extern const std::string SpecctraDsnFileExtension;
+extern const std::string SpecctraSessionFileExtension;
 extern const std::string IpcD356FileExtension;
+extern const std::string WorkbookFileExtension;
 
 extern const std::string PngFileExtension;
 extern const std::string JpegFileExtension;
+extern const std::string TextFileExtension;
 
 
 bool IsProtelExtension( const wxString& ext );
@@ -176,7 +179,7 @@ bool IsProtelExtension( const wxString& ext );
 
 extern wxString AllFilesWildcard();
 
-extern wxString ComponentFileWildcard();
+extern wxString FootprintAssignmentFileWildcard();
 extern wxString DrawingSheetFileWildcard();
 extern wxString SchematicSymbolFileWildcard();
 extern wxString KiCadSymbolLibFileWildcard();
@@ -209,7 +212,6 @@ extern wxString FabmasterPcbFileWildcard();
 extern wxString PdfFileWildcard();
 extern wxString PSFileWildcard();
 extern wxString MacrosFileWildcard();
-extern wxString ComponentFileWildcard();
 extern wxString DrillFileWildcard();
 extern wxString SVGFileWildcard();
 extern wxString ReportFileWildcard();
@@ -234,10 +236,12 @@ extern wxString GencadFileWildcard();
 extern wxString DxfFileWildcard();
 extern wxString GerberJobFileWildcard();
 extern wxString SpecctraDsnFileWildcard();
+extern wxString SpecctraSessionFileWildcard();
 extern wxString IpcD356FileWildcard();
 extern wxString WorkbookFileWildcard();
 extern wxString PngFileWildcard();
 extern wxString JpegFileWildcard();
+extern wxString HotkeyFileWildcard();
 
 /**
  * @}

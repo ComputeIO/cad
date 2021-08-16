@@ -30,9 +30,10 @@
 #include <tool/selection.h>
 #include <tool/tool_action.h>
 
+#include <pcb_base_frame.h>
+
 class EDA_BASE_FRAME;
 class EDA_DRAW_FRAME;
-class PCB_BASE_FRAME;
 
 /**
  * Group generic conditions for PCB editor states.
@@ -47,7 +48,7 @@ public:
     /**
      * Create a functor that tests if there are items in the board
      *
-     * @return Functor returning true if the the current board has items
+     * @return Functor returning true if the current board has items
      */
     SELECTION_CONDITION HasItems();
 

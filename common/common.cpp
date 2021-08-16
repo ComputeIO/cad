@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2014-2020 Jean-Pierre Charras, jp.charras at wanadoo.fr
  * Copyright (C) 2008 Wayne Stambaugh <stambaughw@gmail.com>
- * Copyright (C) 1992-2020 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 1992-2021 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -24,17 +24,23 @@
  */
 
 #include <eda_base_frame.h>
+#include <kiplatform/app.h>
 #include <project.h>
 #include <common.h>
 #include <reporter.h>
 #include <macros.h>
 #include <mutex>
-#include <wx/process.h>
 #include <wx/config.h>
-#include <wx/utils.h>
+#include <wx/log.h>
+#include <wx/msgdlg.h>
+#include <wx/process.h>
 #include <wx/stdpaths.h>
 #include <wx/url.h>
-#include <wx/wx.h>
+#include <wx/utils.h>
+
+#ifdef _WIN32
+#include <Windows.h>
+#endif
 
 
 int ProcessExecute( const wxString& aCommandLine, int aFlags, wxProcess *callback )
@@ -311,7 +317,7 @@ bool EnsureFileDirectoryExists( wxFileName*     aTargetFullFileName,
     {
         if( aReporter )
         {
-            msg.Printf( _( "Cannot make path \"%s\" absolute with respect to \"%s\"." ),
+            msg.Printf( _( "Cannot make path '%s' absolute with respect to '%s'." ),
                         aTargetFullFileName->GetPath(),
                         baseFilePath );
             aReporter->Report( msg, RPT_SEVERITY_ERROR );
@@ -330,7 +336,7 @@ bool EnsureFileDirectoryExists( wxFileName*     aTargetFullFileName,
         {
             if( aReporter )
             {
-                msg.Printf( _( "Output directory \"%s\" created.\n" ), outputPath );
+                msg.Printf( _( "Output directory '%s' created." ), outputPath );
                 aReporter->Report( msg, RPT_SEVERITY_INFO );
                 return true;
             }
@@ -339,7 +345,7 @@ bool EnsureFileDirectoryExists( wxFileName*     aTargetFullFileName,
         {
             if( aReporter )
             {
-                msg.Printf( _( "Cannot create output directory \"%s\".\n" ), outputPath );
+                msg.Printf( _( "Cannot create output directory '%s'." ), outputPath );
                 aReporter->Report( msg, RPT_SEVERITY_ERROR );
             }
 
@@ -375,8 +381,8 @@ bool matchWild( const char* pat, const char* text, bool dot_special )
 
     const char *m = pat,
     *n = text,
-    *ma = NULL,
-    *na = NULL;
+    *ma = nullptr,
+    *na = nullptr;
     int just = 0,
     acount = 0,
     count = 0;
@@ -414,6 +420,7 @@ bool matchWild( const char* pat, const char* text, bool dot_special )
                 if( !*m )
                     return false;
             }
+
             if( !*m )
             {
                 /*
@@ -486,7 +493,7 @@ bool matchWild( const char* pat, const char* text, bool dot_special )
 static wxInt64 EPOCH_OFFSET_IN_MSEC = wxLL(11644473600000);
 
 
-static void ConvertFileTimeToWx( wxDateTime *dt, const FILETIME &ft )
+static void ConvertFileTimeToWx( wxDateTime* dt, const FILETIME& ft )
 {
     wxLongLong t( ft.dwHighDateTime, ft.dwLowDateTime );
     t /= 10000; // Convert hundreds of nanoseconds to milliseconds.
@@ -499,13 +506,12 @@ static void ConvertFileTimeToWx( wxDateTime *dt, const FILETIME &ft )
 
 
 /**
- * TimestampDir
- *
  * This routine offers SIGNIFICANT performance benefits over using wxWidgets to gather
  * timestamps from matching files in a directory.
- * @param aDirPath the directory to search
- * @param aFilespec a (wildcarded) file spec to match against
- * @return a hash of the last-mod-dates of all matching files in the directory
+ *
+ * @param aDirPath is the directory to search.
+ * @param aFilespec is a (wildcarded) file spec to match against.
+ * @return a hash of the last-mod-dates of all matching files in the directory.
  */
 long long TimestampDir( const wxString& aDirPath, const wxString& aFilespec )
 {
@@ -531,7 +537,9 @@ long long TimestampDir( const wxString& aDirPath, const wxString& aFilespec )
         {
             ConvertFileTimeToWx( &lastModDate, findData.ftLastWriteTime );
             timestamp += lastModDate.GetValue().GetValue();
-            timestamp += findData.nFileSizeLow; // Get the file size (partial) as well to check for sneaky changes
+
+            // Get the file size (partial) as well to check for sneaky changes.
+            timestamp += findData.nFileSizeLow;
         }
         while ( FindNextFile( fileHandle, &findData ) != 0 );
     }
@@ -584,7 +592,9 @@ long long TimestampDir( const wxString& aDirPath, const wxString& aFilespec )
                 if( S_ISREG( entry_stat.st_mode ) )    // wxFileExists()
                 {
                     timestamp += entry_stat.st_mtime * 1000;
-                    timestamp += entry_stat.st_size;    // Get the file size as well to check for sneaky changes
+
+                    // Get the file size as well to check for sneaky changes.
+                    timestamp += entry_stat.st_size;
                 }
             }
             else
@@ -599,4 +609,22 @@ long long TimestampDir( const wxString& aDirPath, const wxString& aFilespec )
 #endif
 
     return timestamp;
+}
+
+
+bool WarnUserIfOperatingSystemUnsupported()
+{
+    if( !KIPLATFORM::APP::IsOperatingSystemUnsupported() )
+        return false;
+
+    wxMessageDialog dialog( nullptr, _( "This operating system is not supported "
+                                        "by KiCad and its dependencies." ),
+                            _( "Unsupported Operating System" ),
+                            wxOK | wxICON_EXCLAMATION );
+
+    dialog.SetExtendedMessage( _( "Any issues with KiCad on this system cannot "
+                                  "be reported to the official bugtracker." ) );
+    dialog.ShowModal();
+
+    return true;
 }

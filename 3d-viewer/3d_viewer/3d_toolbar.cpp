@@ -27,15 +27,15 @@
 #include <wx/wupdlock.h>
 
 #include <bitmaps.h>
-#include <eda_3d_viewer.h>
+#include <eda_3d_viewer_frame.h>
 #include <menus_helpers.h>
 #include <tool/action_toolbar.h>
-#include <tools/3d_actions.h>
+#include <tools/eda_3d_actions.h>
 #include <3d_viewer_id.h>
 
-void EDA_3D_VIEWER::ReCreateMainToolbar()
+void EDA_3D_VIEWER_FRAME::ReCreateMainToolbar()
 {
-    wxLogTrace( m_logTrace, "EDA_3D_VIEWER::ReCreateMainToolbar" );
+    wxLogTrace( m_logTrace, "EDA_3D_VIEWER_FRAME::ReCreateMainToolbar" );
 
     wxWindowUpdateLocker dummy( this );
 
@@ -58,11 +58,6 @@ void EDA_3D_VIEWER::ReCreateMainToolbar()
     m_mainToolBar->AddTool( ID_TOOL_SCREENCOPY_TOCLIBBOARD, wxEmptyString,
                             KiScaledBitmap( BITMAPS::copy, this ),
                             _( "Copy 3D image to clipboard" ) );
-
-    m_mainToolBar->AddScaledSeparator( this );
-    m_mainToolBar->AddTool( ID_TOOL_SET_VISIBLE_ITEMS, wxEmptyString,
-                            KiScaledBitmap( BITMAPS::config, this ),
-                            _( "Set display options, and some layers visibility" ) );
 
     m_mainToolBar->AddScaledSeparator( this );
     m_mainToolBar->AddTool( ID_RENDER_CURRENT_VIEW, wxEmptyString,

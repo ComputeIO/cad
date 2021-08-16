@@ -22,42 +22,42 @@
  * or you may write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
+
+#include <functional>
+#include <memory>
+
 #include <advanced_config.h>
 #include "board_editor_control.h"
-#include "drawing_tool.h"
-#include "pcb_actions.h"
-#include "pcb_picker_tool.h"
-#include "pcb_selection_tool.h"
-#include "edit_tool.h"
-#include "tool/tool_event.h"
 #include <bitmaps.h>
-#include <board_commit.h>
 #include <board.h>
+#include <board_commit.h>
+#include <board_design_settings.h>
 #include <pcb_group.h>
 #include <footprint.h>
+#include <pad.h>
 #include <pcb_target.h>
-#include <track.h>
+#include <pcb_track.h>
 #include <zone.h>
 #include <pcb_marker.h>
-#include <collectors.h>
 #include <confirm.h>
-#include <cstdint>
 #include <dialogs/dialog_page_settings.h>
 #include <dialogs/dialog_update_pcb.h>
-#include <functional>
-#include <gestfich.h>
 #include <kiface_i.h>
 #include <kiway.h>
-#include <memory>
 #include <netlist_reader/pcb_netlist.h>
 #include <origin_viewitem.h>
-#include <painter.h>
 #include <pcb_edit_frame.h>
 #include <pcbnew_id.h>
 #include <pcbnew_settings.h>
 #include <project.h>
 #include <project/project_file.h> // LAST_PATH_TYPE
 #include <tool/tool_manager.h>
+#include <tool/tool_event.h>
+#include <tools/drawing_tool.h>
+#include <tools/pcb_actions.h>
+#include <tools/pcb_picker_tool.h>
+#include <tools/pcb_selection_tool.h>
+#include <tools/edit_tool.h>
 #include <tools/tool_event_utils.h>
 #include <router/router_tool.h>
 #include <view/view_controls.h>
@@ -175,7 +175,9 @@ protected:
 
 BOARD_EDITOR_CONTROL::BOARD_EDITOR_CONTROL() :
     PCB_TOOL_BASE( "pcbnew.EditorControl" ),
-    m_frame( nullptr )
+    m_frame( nullptr ),
+    m_inPlaceFootprint( false ),
+    m_inPlaceTarget( false )
 {
     m_placeOrigin = std::make_unique<KIGFX::ORIGIN_VIEWITEM>(
             KIGFX::COLOR4D( 0.8, 0.0, 0.0, 1.0 ),
@@ -371,10 +373,12 @@ int BOARD_EDITOR_CONTROL::ImportSpecctraSession( const TOOL_EVENT& aEvent )
     wxString ext;
 
     wxFileName::SplitPath( fullFileName, &path, &name, &ext );
-    name += wxT( ".ses" );
+    name += wxT( "." ) + SpecctraSessionFileExtension;
 
-    fullFileName = EDA_FILE_SELECTOR( _( "Merge Specctra Session file:" ), path, name,
-                                      wxT( ".ses" ), wxT( "*.ses" ), frame(), wxFD_OPEN, false );
+    fullFileName = wxFileSelector( _( "Specctra Session File" ), path, name,
+                                   wxT( "." ) + SpecctraSessionFileExtension,
+                                   SpecctraSessionFileWildcard(), wxFD_OPEN | wxFD_CHANGE_DIR,
+                                   frame() );
 
     if( !fullFileName.IsEmpty() )
         getEditFrame<PCB_EDIT_FRAME>()->ImportSpecctraSession( fullFileName );
@@ -396,9 +400,9 @@ int BOARD_EDITOR_CONTROL::ExportSpecctraDSN( const TOOL_EVENT& aEvent )
     else
         fn = fullFileName;
 
-    fullFileName = EDA_FILE_SELECTOR( _( "Specctra DSN File" ), fn.GetPath(), fn.GetFullName(),
-                                      SpecctraDsnFileExtension, SpecctraDsnFileWildcard(),
-                                      frame(), wxFD_SAVE | wxFD_OVERWRITE_PROMPT, false );
+    fullFileName = wxFileSelector( _( "Specctra DSN File" ), fn.GetPath(), fn.GetFullName(),
+                                   SpecctraDsnFileExtension, SpecctraDsnFileWildcard(),
+                                   wxFD_SAVE | wxFD_OVERWRITE_PROMPT | wxFD_CHANGE_DIR, frame() );
 
     if( !fullFileName.IsEmpty() )
     {
@@ -417,7 +421,7 @@ int BOARD_EDITOR_CONTROL::ExportNetlist( const TOOL_EVENT& aEvent )
     wxFileName fn = m_frame->Prj().GetProjectFullName();
 
     // Use a different file extension for the board netlist so the schematic netlist file
-    // is accidently overwritten.
+    // is accidentally overwritten.
     fn.SetExt( "pcb_net" );
 
     wxFileDialog dlg( m_frame, _( "Export Board Netlist" ), fn.GetPath(), fn.GetFullName(),
@@ -499,10 +503,7 @@ int BOARD_EDITOR_CONTROL::RepairBoard( const TOOL_EVENT& aEvent )
     wxString details;
     bool     quiet = aEvent.Parameter<bool>();
 
-    /*******************************
-     * Repair duplicate IDs and missing nets
-     */
-
+    // Repair duplicate IDs and missing nets.
     std::set<KIID> ids;
     int            duplicates = 0;
 
@@ -549,7 +550,7 @@ int BOARD_EDITOR_CONTROL::RepairBoard( const TOOL_EVENT& aEvent )
             processItem( pad );
     }
 
-    for( TRACK* track : board()->Tracks() )
+    for( PCB_TRACK* track : board()->Tracks() )
         processItem( track );
 
     // From here out I don't think order matters much.
@@ -686,7 +687,7 @@ int BOARD_EDITOR_CONTROL::TrackWidthInc( const TOOL_EVENT& aEvent )
         {
             if( item->Type() == PCB_TRACE_T )
             {
-                TRACK* track = (TRACK*) item;
+                PCB_TRACK* track = static_cast<PCB_TRACK*>( item );
 
                 for( int candidate : designSettings.m_TrackWidthList )
                 {
@@ -752,7 +753,7 @@ int BOARD_EDITOR_CONTROL::TrackWidthDec( const TOOL_EVENT& aEvent )
         {
             if( item->Type() == PCB_TRACE_T )
             {
-                TRACK* track = (TRACK*) item;
+                PCB_TRACK* track = static_cast<PCB_TRACK*>( item );
 
                 for( int i = designSettings.m_TrackWidthList.size() - 1; i >= 0; --i )
                 {
@@ -820,7 +821,7 @@ int BOARD_EDITOR_CONTROL::ViaSizeInc( const TOOL_EVENT& aEvent )
         {
             if( item->Type() == PCB_VIA_T )
             {
-                VIA* via = (VIA*) item;
+                PCB_VIA* via = static_cast<PCB_VIA*>( item );
 
                 for( VIA_DIMENSION candidate : designSettings.m_ViasDimensionsList )
                 {
@@ -869,7 +870,7 @@ int BOARD_EDITOR_CONTROL::ViaSizeDec( const TOOL_EVENT& aEvent )
         {
             if( item->Type() == PCB_VIA_T )
             {
-                VIA* via = (VIA*) item;
+                PCB_VIA* via = static_cast<PCB_VIA*>( item );
 
                 for( int i = designSettings.m_ViasDimensionsList.size() - 1; i >= 0; --i )
                 {
@@ -914,6 +915,11 @@ int BOARD_EDITOR_CONTROL::ViaSizeDec( const TOOL_EVENT& aEvent )
 
 int BOARD_EDITOR_CONTROL::PlaceFootprint( const TOOL_EVENT& aEvent )
 {
+    if( m_inPlaceFootprint )
+        return 0;
+
+    REENTRANCY_GUARD guard( &m_inPlaceFootprint );
+
     FOOTPRINT*            fp = aEvent.Parameter<FOOTPRINT*>();
     KIGFX::VIEW_CONTROLS* controls = getViewControls();
     BOARD_COMMIT          commit( m_frame );
@@ -976,7 +982,7 @@ int BOARD_EDITOR_CONTROL::PlaceFootprint( const TOOL_EVENT& aEvent )
                         }
                     }
 
-                    fp = NULL;
+                    fp = nullptr;
                 };
 
         if( evt->IsCancelInteractive() )
@@ -1012,7 +1018,7 @@ int BOARD_EDITOR_CONTROL::PlaceFootprint( const TOOL_EVENT& aEvent )
                 // Pick the footprint to be placed
                 fp = m_frame->SelectFootprintFromLibTree();
 
-                if( fp == NULL )
+                if( fp == nullptr )
                     continue;
 
                 fp->SetLink( niluuid );
@@ -1046,7 +1052,7 @@ int BOARD_EDITOR_CONTROL::PlaceFootprint( const TOOL_EVENT& aEvent )
             {
                 m_toolMgr->RunAction( PCB_ACTIONS::selectionClear, true );
                 commit.Push( _( "Place a footprint" ) );
-                fp = NULL;  // to indicate that there is no footprint that we currently modify
+                fp = nullptr;  // to indicate that there is no footprint that we currently modify
             }
         }
         else if( evt->IsClick( BUT_RIGHT ) )
@@ -1071,11 +1077,14 @@ int BOARD_EDITOR_CONTROL::PlaceFootprint( const TOOL_EVENT& aEvent )
         }
 
         // Enable autopanning and cursor capture only when there is a footprint to be placed
-        controls->SetAutoPan( !!fp );
-        controls->CaptureCursor( !!fp );
+        controls->SetAutoPan( fp != nullptr );
+        controls->CaptureCursor( fp != nullptr );
     }
 
+    controls->SetAutoPan( false );
+    controls->CaptureCursor( false );
     m_frame->GetCanvas()->SetCurrentCursor( KICURSOR::ARROW );
+
     return 0;
 }
 
@@ -1159,6 +1168,11 @@ int BOARD_EDITOR_CONTROL::modifyLockSelected( MODIFY_MODE aMode )
 
 int BOARD_EDITOR_CONTROL::PlaceTarget( const TOOL_EVENT& aEvent )
 {
+    if( m_inPlaceTarget )
+        return 0;
+
+    REENTRANCY_GUARD guard( &m_inPlaceTarget );
+
     KIGFX::VIEW* view = getView();
     KIGFX::VIEW_CONTROLS* controls = getViewControls();
     BOARD* board = getModel<BOARD>();
@@ -1265,6 +1279,7 @@ int BOARD_EDITOR_CONTROL::PlaceTarget( const TOOL_EVENT& aEvent )
     view->Remove( &preview );
 
     m_frame->GetCanvas()->SetCurrentCursor( KICURSOR::ARROW );
+
     return 0;
 }
 
@@ -1284,7 +1299,7 @@ static bool mergeZones( BOARD_COMMIT& aCommit, std::vector<ZONE*>& aOriginZones,
 
     // We should have one polygon with hole
     // We can have 2 polygons with hole, if the 2 initial polygons have only one common corner
-    // and therefore cannot be merged (they are dectected as intersecting)
+    // and therefore cannot be merged (they are detected as intersecting)
     // but we should never have more than 2 polys
     if( aOriginZones[0]->Outline()->OutlineCount() > 1 )
     {
@@ -1402,7 +1417,7 @@ int BOARD_EDITOR_CONTROL::ZoneDuplicate( const TOOL_EVENT& aEvent )
     newZone->UnFill();
     zoneSettings.ExportSetting( *newZone );
 
-    // If the new zone is on the same layer(s) as the the initial zone,
+    // If the new zone is on the same layer(s) as the initial zone,
     // offset it a bit so it can more easily be picked.
     if( oldZone->GetIsRuleArea() && ( oldZone->GetLayerSet() == zoneSettings.m_Layers ) )
         newZone->Move( wxPoint( IU_PER_MM, IU_PER_MM ) );
@@ -1489,17 +1504,20 @@ void BOARD_EDITOR_CONTROL::setTransitions()
 
     Go( &BOARD_EDITOR_CONTROL::BoardSetup,             PCB_ACTIONS::boardSetup.MakeEvent() );
     Go( &BOARD_EDITOR_CONTROL::ImportNetlist,          PCB_ACTIONS::importNetlist.MakeEvent() );
-    Go( &BOARD_EDITOR_CONTROL::ImportSpecctraSession,  PCB_ACTIONS::importSpecctraSession.MakeEvent() );
+    Go( &BOARD_EDITOR_CONTROL::ImportSpecctraSession,
+        PCB_ACTIONS::importSpecctraSession.MakeEvent() );
     Go( &BOARD_EDITOR_CONTROL::ExportSpecctraDSN,      PCB_ACTIONS::exportSpecctraDSN.MakeEvent() );
 
     if( ADVANCED_CFG::GetCfg().m_ShowPcbnewExportNetlist && m_frame &&
         m_frame->GetExportNetlistAction() )
         Go( &BOARD_EDITOR_CONTROL::ExportNetlist, m_frame->GetExportNetlistAction()->MakeEvent() );
 
-    Go( &BOARD_EDITOR_CONTROL::GenerateDrillFiles,     PCB_ACTIONS::generateDrillFiles.MakeEvent() );
+    Go( &BOARD_EDITOR_CONTROL::GenerateDrillFiles,
+        PCB_ACTIONS::generateDrillFiles.MakeEvent() );
     Go( &BOARD_EDITOR_CONTROL::GenerateFabFiles,       PCB_ACTIONS::generateGerbers.MakeEvent() );
     Go( &BOARD_EDITOR_CONTROL::GeneratePosFile,        PCB_ACTIONS::generatePosFile.MakeEvent() );
-    Go( &BOARD_EDITOR_CONTROL::GenerateFabFiles,       PCB_ACTIONS::generateReportFile.MakeEvent() );
+    Go( &BOARD_EDITOR_CONTROL::GenerateFabFiles,
+        PCB_ACTIONS::generateReportFile.MakeEvent() );
     Go( &BOARD_EDITOR_CONTROL::GenerateFabFiles,       PCB_ACTIONS::generateD356File.MakeEvent() );
     Go( &BOARD_EDITOR_CONTROL::GenerateFabFiles,       PCB_ACTIONS::generateBOM.MakeEvent() );
 
@@ -1525,8 +1543,10 @@ void BOARD_EDITOR_CONTROL::setTransitions()
     Go( &BOARD_EDITOR_CONTROL::LockSelected,           PCB_ACTIONS::lock.MakeEvent() );
     Go( &BOARD_EDITOR_CONTROL::UnlockSelected,         PCB_ACTIONS::unlock.MakeEvent() );
 
-    Go( &BOARD_EDITOR_CONTROL::UpdatePCBFromSchematic, ACTIONS::updatePcbFromSchematic.MakeEvent() );
-    Go( &BOARD_EDITOR_CONTROL::UpdateSchematicFromPCB, ACTIONS::updateSchematicFromPcb.MakeEvent() );
+    Go( &BOARD_EDITOR_CONTROL::UpdatePCBFromSchematic,
+        ACTIONS::updatePcbFromSchematic.MakeEvent() );
+    Go( &BOARD_EDITOR_CONTROL::UpdateSchematicFromPCB,
+        ACTIONS::updateSchematicFromPcb.MakeEvent() );
     Go( &BOARD_EDITOR_CONTROL::ShowEeschema,           PCB_ACTIONS::showEeschema.MakeEvent() );
     Go( &BOARD_EDITOR_CONTROL::ToggleLayersManager,    PCB_ACTIONS::showLayersManager.MakeEvent() );
     Go( &BOARD_EDITOR_CONTROL::TogglePythonConsole,    PCB_ACTIONS::showPythonConsole.MakeEvent() );

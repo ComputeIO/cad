@@ -25,7 +25,7 @@
 
 #include <common.h>
 #include <footprint_editor_settings.h>
-#include <layers_id_colors_and_visibility.h>
+#include <layer_ids.h>
 #include <pcbnew_settings.h>
 #include <pgm_base.h>
 #include <router/pns_routing_settings.h>
@@ -39,7 +39,7 @@
 #include <widgets/ui_common.h>
 #include <base_units.h>
 
-#include "../3d-viewer/3d_viewer/3d_viewer_settings.h"
+#include "../3d-viewer/3d_viewer/eda_3d_viewer_settings.h"
 
 
 ///! Update the schema version whenever a migration is required
@@ -181,7 +181,7 @@ PCBNEW_SETTINGS::PCBNEW_SETTINGS()
 
     m_params.emplace_back( new PARAM_ENUM<ZONE_DISPLAY_MODE>( "pcb_display.zone_mode",
             &m_Display.m_ZoneDisplayMode, ZONE_DISPLAY_MODE::SHOW_FILLED,
-            ZONE_DISPLAY_MODE::SHOW_FILLED_OUTLINE, ZONE_DISPLAY_MODE::SHOW_FILLED ) );
+            ZONE_DISPLAY_MODE::SHOW_TRIANGULATION, ZONE_DISPLAY_MODE::SHOW_FILLED ) );
 
     m_params.emplace_back( new PARAM<int>( "pcb_display.origin_mode",
             reinterpret_cast<int*>( &m_Display.m_DisplayOrigin ),
@@ -195,6 +195,9 @@ PCBNEW_SETTINGS::PCBNEW_SETTINGS()
 
     m_params.emplace_back( new PARAM<bool>( "pcb_display.live_3d_refresh",
             &m_Display.m_Live3DRefresh, false ) );
+
+    m_params.emplace_back( new PARAM<bool>( "pcb_display.show_page_borders",
+            &m_ShowPageLimits, true ) );
 
     m_params.emplace_back( new PARAM<bool>( "cleanup.cleanup_vias",
             &m_Cleanup.cleanup_vias, true ) );
@@ -232,7 +235,8 @@ PCBNEW_SETTINGS::PCBNEW_SETTINGS()
     m_params.emplace_back( new PARAM<bool>( "gen_drill.minimal_header",
             &m_GenDrill.minimal_header, false ) );
 
-    m_params.emplace_back( new PARAM<bool>( "gen_drill.mirror", &m_GenDrill.mirror, false ) );
+    m_params.emplace_back( new PARAM<bool>( "gen_drill.mirror",
+            &m_GenDrill.mirror, false ) );
 
     m_params.emplace_back( new PARAM<bool>( "gen_drill.unit_drill_is_inch",
             &m_GenDrill.unit_drill_is_inch, true ) );
@@ -240,8 +244,8 @@ PCBNEW_SETTINGS::PCBNEW_SETTINGS()
     m_params.emplace_back( new PARAM<bool>( "gen_drill.use_route_for_oval_holes",
             &m_GenDrill.use_route_for_oval_holes, true ) );
 
-    m_params.emplace_back( new PARAM<int>(
-            "gen_drill.drill_file_type", &m_GenDrill.drill_file_type, 0 ) );
+    m_params.emplace_back( new PARAM<int>( "gen_drill.drill_file_type",
+            &m_GenDrill.drill_file_type, 0 ) );
 
     m_params.emplace_back( new PARAM<int>( "gen_drill.map_file_type",
             &m_GenDrill.map_file_type, 1 ) );
@@ -278,6 +282,12 @@ PCBNEW_SETTINGS::PCBNEW_SETTINGS()
 
     m_params.emplace_back( new PARAM<bool>( "export_step.no_virtual",
             &m_ExportStep.no_virtual, false ) );
+
+    m_params.emplace_back( new PARAM<bool>( "export_step.replace_models",
+            &m_ExportStep.replace_models, false ) );
+
+    m_params.emplace_back( new PARAM<bool>( "export_step.overwrite_file",
+            &m_ExportStep.overwrite_file, true ) );
 
     m_params.emplace_back( new PARAM<bool>( "export_svg.black_and_white",
             &m_ExportSvg.black_and_white, false ) );
@@ -324,11 +334,8 @@ PCBNEW_SETTINGS::PCBNEW_SETTINGS()
     m_params.emplace_back( new PARAM<int>( "zones.hatching_style",
             &m_Zones.hatching_style, 0 ) );
 
-    m_params.emplace_back( new PARAM<wxString>( "zones.net_filter",
-            &m_Zones.net_filter, "" ) );
-
     m_params.emplace_back( new PARAM<int>( "zones.net_sort_mode",
-            &m_Zones.net_sort_mode, 1 ) );
+            &m_Zones.net_sort_mode, -1 ) );
 
     m_params.emplace_back( new PARAM<double>( "zones.clearance",
             &m_Zones.clearance, ZONE_CLEARANCE_MIL ) );
@@ -395,6 +402,9 @@ PCBNEW_SETTINGS::PCBNEW_SETTINGS()
 
     m_params.emplace_back( new PARAM<bool>( "place_file.include_board_edge",
             &m_PlaceFile.include_board_edge, false ) );
+
+    m_params.emplace_back( new PARAM<bool>( "place_file.use_place_file_origin",
+            &m_PlaceFile.use_aux_origin, true ) );
 
     m_params.emplace_back( new PARAM<int>( "plot.all_layers_on_one_page",
             &m_Plot.all_layers_on_one_page, 1 ) );
@@ -608,7 +618,7 @@ bool PCBNEW_SETTINGS::MigrateFromLegacy( wxConfigBase* aCfg )
                 js.push_back( i );
         }
 
-        ( *this )[PointerFromString( "export_svg.layers" ) ] = js;
+        Set( "export_svg.layers", js );
     }
 
     {
@@ -633,13 +643,13 @@ bool PCBNEW_SETTINGS::MigrateFromLegacy( wxConfigBase* aCfg )
                 }
 
                 std::string key( pluginTokenizer.GetNextToken().ToUTF8() );
+                bool        value( pluginTokenizer.GetNextToken().Cmp( wxT( "Visible" ) ) == 0 );
 
-                js.push_back( nlohmann::json( {
-                        { key, pluginTokenizer.GetNextToken().Cmp( wxT( "Visible" ) ) == 0 } } ) );
+                js.push_back( nlohmann::json( { { key, value } } ) );
             }
         }
 
-        ( *this )[PointerFromString( "action_plugins" ) ] = js;
+        Set( "action_plugins", js );
     }
 
     //
@@ -654,7 +664,6 @@ bool PCBNEW_SETTINGS::MigrateFromLegacy( wxConfigBase* aCfg )
     ret &= fromLegacy<int>   ( aCfg, "VrmlOriginMode",       "export_vrml.origin_mode" );
 
     ret &= fromLegacy<int>(    aCfg, "Zone_Ouline_Hatch_Opt", "zones.hatching_style" );
-    ret &= fromLegacyString(   aCfg, "Zone_Filter_Opt",       "zones.net_filter" );
     ret &= fromLegacy<int>(    aCfg, "Zone_NetSort_Opt",      "zones.net_sort_mode" );
     ret &= fromLegacy<double>( aCfg, "Zone_Clearance",        "zones.clearance" );
     ret &= fromLegacy<double>( aCfg, "Zone_Thickness",        "zones.min_thickness" );
@@ -706,10 +715,10 @@ bool PCBNEW_SETTINGS::MigrateFromLegacy( wxConfigBase* aCfg )
 
     const std::string p = "pcbnew.InteractiveRouter.";
 
-    ( *this )[PointerFromString( "tools.pns.meta" )] = nlohmann::json( {
-                                                                           { "filename", "pns" },
-                                                                           { "version", 0 }
-                                                                       } );
+    Set( "tools.pns.meta", nlohmann::json( {
+                                               { "filename", "pns" },
+                                               { "version", 0 }
+                                           } ) );
 
     ret &= fromLegacy<int>(  aCfg, p + "Mode",                  "tools.pns.mode" );
     ret &= fromLegacy<int>(  aCfg, p + "OptimizerEffort",       "tools.pns.effort" );
@@ -728,18 +737,20 @@ bool PCBNEW_SETTINGS::MigrateFromLegacy( wxConfigBase* aCfg )
     ret &= fromLegacy<bool>( aCfg, p + "InlineDragEnabled",     "tools.pns.inline_drag" );
 
     // Initialize some new PNS settings to legacy behaviors if coming from legacy
-    ( *this )[PointerFromString( "tools.pns.fix_all_segments" )] = false;
+    Set( "tools.pns.fix_all_segments", false );
 
     // Migrate color settings that were stored in the pcbnew config file
 
     COLOR_SETTINGS* cs = Pgm().GetSettingsManager().GetMigratedColorSettings();
 
-    auto migrateLegacyColor = [&] ( const std::string& aKey, int aLayerId ) {
-        wxString str;
+    auto migrateLegacyColor =
+            [&] ( const std::string& aKey, int aLayerId )
+            {
+                wxString str;
 
-        if( aCfg->Read( aKey, &str ) )
-            cs->SetColor( aLayerId, COLOR4D( str ) );
-    };
+                if( aCfg->Read( aKey, &str ) )
+                    cs->SetColor( aLayerId, COLOR4D( str ) );
+            };
 
     for( int i = 0; i < PCB_LAYER_ID_COUNT; ++i )
     {
@@ -752,8 +763,6 @@ bool PCBNEW_SETTINGS::MigrateFromLegacy( wxConfigBase* aCfg )
     migrateLegacyColor( "Color4DGrid",               LAYER_GRID );
     migrateLegacyColor( "Color4DNoNetPadMarker",     LAYER_NO_CONNECTS );
     migrateLegacyColor( "Color4DNonPlatedEx",        LAYER_NON_PLATEDHOLES );
-    migrateLegacyColor( "Color4DPadBackEx",          LAYER_PAD_BK );
-    migrateLegacyColor( "Color4DPadFrontEx",         LAYER_PAD_FR );
     migrateLegacyColor( "Color4DPadThruHoleEx",      LAYER_PADS_TH );
     migrateLegacyColor( "Color4DPCBBackground",      LAYER_PCB_BACKGROUND );
     migrateLegacyColor( "Color4DPCBCursor",          LAYER_CURSOR );
@@ -766,7 +775,7 @@ bool PCBNEW_SETTINGS::MigrateFromLegacy( wxConfigBase* aCfg )
 
     Pgm().GetSettingsManager().SaveColorSettings( cs, "board" );
 
-    ( *this )[PointerFromString( "appearance.color_theme" )] = cs->GetFilename();
+    Set( "appearance.color_theme", cs->GetFilename() );
 
     double x, y;
 
@@ -779,8 +788,8 @@ bool PCBNEW_SETTINGS::MigrateFromLegacy( wxConfigBase* aCfg )
         x = From_User_Unit( u, x );
         y = From_User_Unit( u, y );
 
-        ( *this )[PointerFromString( "window.grid.user_grid_x" )] = StringFromValue( u, x );
-        ( *this )[PointerFromString( "window.grid.user_grid_y" )] = StringFromValue( u, y );
+        Set( "window.grid.user_grid_x", StringFromValue( u, x ) );
+        Set( "window.grid.user_grid_y", StringFromValue( u, y ) );
     }
 
     // Footprint editor settings were stored in pcbnew config file.  Migrate them here.

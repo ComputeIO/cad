@@ -28,7 +28,7 @@
 
 #include <sch_plugins/cadstar/cadstar_sch_archive_parser.h>
 
-#include <layers_id_colors_and_visibility.h> // SCH_LAYER_ID
+#include <layer_ids.h> // SCH_LAYER_ID
 #include <plotter.h>                         // PLOT_DASH_TYPE
 #include <pin_type.h>                        // ELECTRICAL_PINTYPE
 #include <sch_io_mgr.h>
@@ -38,8 +38,8 @@ class BUS_ALIAS;
 class EDA_TEXT;
 class LABEL_SPIN_STYLE;
 class LIB_FIELD;
-class LIB_PART;
-class SCH_COMPONENT;
+class LIB_SYMBOL;
+class SCH_SYMBOL;
 class SCH_ITEM;
 class SCH_FIELD;
 class SCH_GLOBALLABEL;
@@ -98,12 +98,12 @@ private:
     std::map<LAYER_ID, SCH_SHEET*> m_sheetMap;       ///< Map between Cadstar and KiCad Sheets
     std::map<BLOCK_PIN_ID, SCH_HIERLABEL*>
                                  m_sheetPinMap; ///< Map between Cadstar and KiCad Sheets Pins
-    std::map<PART_ID, LIB_PART*> m_partMap;     ///< Map between Cadstar and KiCad Parts
+    std::map<PART_ID, LIB_SYMBOL*> m_partMap;     ///< Map between Cadstar and KiCad Parts
     std::map<PART_GATE_ID, SYMDEF_ID> m_partSymbolsMap; ///< Map holding the symbols loaded so far
                                                         ///  for a particular PART_ID and GATE_ID
     std::map<PART_ID, TERMINAL_TO_PINNUM_MAP> m_pinNumsMap; ///< Map of pin numbers in CADSTAR parts
-    std::map<wxString, LIB_PART*> m_powerSymLibMap; ///< Map of KiCad Power Symbol Library items
-    std::map<SYMBOL_ID, SCH_COMPONENT*>
+    std::map<wxString, LIB_SYMBOL*> m_powerSymLibMap; ///< Map of KiCad Power Symbol Library items
+    std::map<SYMBOL_ID, SCH_SYMBOL*>
             m_powerSymMap; ///< Map between Cadstar and KiCad Power Symbols
     std::map<SYMBOL_ID, SCH_GLOBALLABEL*>
             m_globalLabelsMap; ///< Map between Cadstar and KiCad Global Labels
@@ -121,8 +121,8 @@ private:
     void loadTextVariables();
 
     //Helper Functions for loading sheets
-    void loadSheetAndChildSheets( LAYER_ID aCadstarSheetID, wxPoint aPosition, wxSize aSheetSize,
-            const SCH_SHEET_PATH& aParentSheet );
+    void loadSheetAndChildSheets( LAYER_ID aCadstarSheetID, const wxPoint& aPosition,
+                                  wxSize aSheetSize, const SCH_SHEET_PATH& aParentSheet );
 
     void loadChildSheets( LAYER_ID aCadstarSheetID, const SCH_SHEET_PATH& aSheet );
 
@@ -134,16 +134,16 @@ private:
 
     //Helper Functions for loading library items
     void loadSymDefIntoLibrary( const SYMDEF_ID& aSymdefID, const PART* aCadstarPart,
-            const GATE_ID& aGateID, LIB_PART* aPart );
+            const GATE_ID& aGateID, LIB_SYMBOL* aSymbol );
 
     void loadLibrarySymbolShapeVertices( const std::vector<VERTEX>& aCadstarVertices,
-            wxPoint aSymbolOrigin, LIB_PART* aPart, int aGateNumber );
+            wxPoint aSymbolOrigin, LIB_SYMBOL* aSymbol, int aGateNumber );
 
     void applyToLibraryFieldAttribute( const ATTRIBUTE_LOCATION& aCadstarAttrLoc,
             wxPoint aSymbolOrigin, LIB_FIELD* aKiCadField );
 
     //Helper Functions for loading symbols in schematic
-    SCH_COMPONENT* loadSchematicSymbol( const SYMBOL& aCadstarSymbol, const LIB_PART& aKiCadPart,
+    SCH_SYMBOL* loadSchematicSymbol( const SYMBOL& aCadstarSymbol, const LIB_SYMBOL& aKiCadPart,
             double& aComponentOrientationDeciDeg );
 
     void loadSymbolFieldAttribute( const ATTRIBUTE_LOCATION& aCadstarAttrLoc,
@@ -211,16 +211,16 @@ private:
 
     //General Graphical manipulation functions
 
-    LIB_PART* getScaledLibPart( const LIB_PART* aPart, long long aScalingFactorNumerator,
-                                long long aScalingFactorDenominator );
+    LIB_SYMBOL* getScaledLibPart( const LIB_SYMBOL* aSymbol, long long aScalingFactorNumerator,
+                                  long long aScalingFactorDenominator );
 
-    void fixUpLibraryPins( LIB_PART* aPartToFix, int aGateNumber );
+    void fixUpLibraryPins( LIB_SYMBOL* aSymbolToFix, int aGateNumber );
 
     std::pair<wxPoint, wxSize> getFigureExtentsKiCad( const FIGURE& aCadstarFigure );
 
-    wxPoint getKiCadPoint( wxPoint aCadstarPoint );
+    wxPoint getKiCadPoint( const wxPoint& aCadstarPoint );
 
-    wxPoint getKiCadLibraryPoint( wxPoint aCadstarPoint, wxPoint aCadstarCentre );
+    wxPoint getKiCadLibraryPoint( const wxPoint& aCadstarPoint, const wxPoint& aCadstarCentre );
 
     wxPoint applyTransform( const wxPoint& aPoint, const wxPoint& aMoveVector = { 0, 0 },
             const double& aRotationAngleDeciDeg = 0.0, const double& aScalingFactor = 1.0,
@@ -281,14 +281,14 @@ private:
      * @param aPoint
      * @return Angle in decidegrees of the polar representation of the point, scaled 0..360
      */
-    double getPolarAngle( wxPoint aPoint );
+    double getPolarAngle( const wxPoint& aPoint );
 
     /**
      * @brief
      * @param aPoint
      * @return Radius of polar representation of the point
      */
-    double getPolarRadius( wxPoint aPoint );
+    double getPolarRadius( const wxPoint& aPoint );
 
 }; // CADSTAR_SCH_ARCHIVE_LOADER
 

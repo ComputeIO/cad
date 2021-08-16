@@ -26,7 +26,6 @@
 #define DIALOG_SHIM_
 
 #include <wx/dialog.h>
-#include <hashtables.h>
 #include <kiway_player.h>
 class wxGridEvent;
 
@@ -217,6 +216,9 @@ protected:
     EDA_BASE_FRAME*        m_parentFrame;
 
     std::vector<wxWindow*> m_tabOrder;
+
+    // The size asked by the caller, used the first time the dialog is created
+    wxSize                 m_initialSize;
 };
 
 #endif  // DIALOG_SHIM_

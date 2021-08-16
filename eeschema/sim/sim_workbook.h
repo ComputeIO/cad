@@ -22,148 +22,58 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
 
-#include "dialog_sim_settings.h"
+#ifndef __SIM_WORKBOOK__
+#define __SIM_WORKBOOK__
+
+#include <dialog_sim_settings.h>
 #include <sim/sim_panel_base.h>
 #include <sim/sim_plot_panel.h>
 
 
-///< Trace descriptor class
-class TRACE_DESC
+class SIM_WORKBOOK : public wxAuiNotebook
 {
 public:
-    TRACE_DESC( const NETLIST_EXPORTER_PSPICE_SIM& aExporter, const wxString& aName,
-            SIM_PLOT_TYPE aType, const wxString& aParam );
-
-    ///< Modifies an existing TRACE_DESC simulation type
-    TRACE_DESC( const NETLIST_EXPORTER_PSPICE_SIM& aExporter,
-            const TRACE_DESC& aDescription, SIM_PLOT_TYPE aNewType )
-        : TRACE_DESC( aExporter, aDescription.GetName(), aNewType, aDescription.GetParam() )
-    {
-    }
-
-    const wxString& GetTitle() const
-    {
-        return m_title;
-    }
-
-    const wxString& GetName() const
-    {
-        return m_name;
-    }
-
-    const wxString& GetParam() const
-    {
-        return m_param;
-    }
-
-    SIM_PLOT_TYPE GetType() const
-    {
-        return m_type;
-    }
-
-private:
-    // Three basic parameters
-    ///< Name of the measured net/device
-    wxString m_name;
-
-    ///< Type of the signal
-    SIM_PLOT_TYPE m_type;
-
-    ///< Name of the signal parameter
-    wxString m_param;
-
-    // Generated data
-    ///< Title displayed in the signal list/plot legend
-    wxString m_title;
-};
-
-
-class SIM_WORKBOOK
-{
-public:
-    typedef std::map<wxString, TRACE_DESC> TRACE_MAP;
-
-    struct PLOT_INFO
-    {
-        ///< Map of the traces displayed on the plot
-        TRACE_MAP m_traces;
-
-        ///< Spice directive used to execute the simulation
-        wxString m_simCommand;
-
-        ///< The current position of the plot in the notebook
-        unsigned int pos;
-    };
-
-    typedef std::map<const SIM_PANEL_BASE*, PLOT_INFO> PLOT_MAP;
-
     SIM_WORKBOOK();
+    SIM_WORKBOOK( wxWindow* aParent, wxWindowID aId=wxID_ANY, const wxPoint&
+            aPos=wxDefaultPosition, const wxSize& aSize=wxDefaultSize, long
+            aStyle=wxAUI_NB_DEFAULT_STYLE );
 
-    void Clear();
+    // Methods from wxAuiNotebook
+    
+    bool AddPage( wxWindow* aPage, const wxString& aCaption, bool aSelect=false, const wxBitmap& aBitmap=wxNullBitmap );
+    bool AddPage( wxWindow* aPage, const wxString& aText, bool aSelect, int aImageId ) override;
 
-    void AddPlotPanel( SIM_PANEL_BASE* aPlotPanel );
-    void RemovePlotPanel( SIM_PANEL_BASE* aPlotPanel );
+    bool DeleteAllPages() override; 
+    bool DeletePage( size_t aPage ) override;
 
-    std::vector<const SIM_PANEL_BASE*> GetSortedPlotPanels() const;
+    // Custom methods
 
-    bool HasPlotPanel( SIM_PANEL_BASE* aPlotPanel ) const
+    bool AddTrace( SIM_PLOT_PANEL* aPlotPanel, const wxString& aName, int aPoints, const double*
+                   aX, const double* aY, SIM_PLOT_TYPE aType, const wxString& aParam );
+    bool DeleteTrace( SIM_PLOT_PANEL* aPlotPanel, const wxString& aName );
+    
+    void SetSimCommand( SIM_PANEL_BASE* aPlotPanel, const wxString& aSimCommand )
     {
-        return m_plots.count( aPlotPanel ) == 1;
+        aPlotPanel->setSimCommand( aSimCommand );
+        setModified();
     }
 
-    void AddTrace( const SIM_PANEL_BASE* aPlotPanel, const wxString& aName,
-            const TRACE_DESC& aTrace );
-    void RemoveTrace( const SIM_PANEL_BASE* aPlotPanel, const wxString& aName );
-    TRACE_MAP::const_iterator RemoveTrace( const SIM_PANEL_BASE* aPlotPanel, TRACE_MAP::const_iterator aIt );
-
-    TRACE_MAP::const_iterator TracesBegin( const SIM_PANEL_BASE* aPlotPanel ) const
+    const wxString& GetSimCommand( const SIM_PANEL_BASE* aPlotPanel )
     {
-        return m_plots.at( aPlotPanel ).m_traces.cbegin();
+        return aPlotPanel->getSimCommand();
     }
 
-    TRACE_MAP::const_iterator TracesEnd( const SIM_PANEL_BASE* aPlotPanel ) const
-    {
-        return m_plots.at( aPlotPanel ).m_traces.cend();
-    }
-
-    void SetPlotPanelPosition( const SIM_PANEL_BASE* aPlotPanel, unsigned int pos )
-    {
-        if( pos != m_plots.at( aPlotPanel ).pos )
-            m_flagModified = true;
-
-        m_plots.at( aPlotPanel ).pos = pos;
-    }
-
-    void SetSimCommand( const SIM_PANEL_BASE* aPlotPanel, const wxString& aSimCommand )
-    {
-        if( m_plots.at( aPlotPanel ).m_simCommand != aSimCommand )
-            m_flagModified = true;
-
-        m_plots.at( aPlotPanel ).m_simCommand = aSimCommand;
-    }
-
-    const wxString& GetSimCommand( const SIM_PANEL_BASE* aPlotPanel ) const
-    {
-        return m_plots.at( aPlotPanel ).m_simCommand;
-    }
-
-    PLOT_INFO GetPlot( const SIM_PANEL_BASE* aPlotPanel ) const
-    {
-        return m_plots.at( aPlotPanel );
-    }
-
-    const TRACE_MAP GetTraces( const SIM_PANEL_BASE* aPlotPanel ) const
-    {
-        return m_plots.at( aPlotPanel ).m_traces;
-    }
-
-    void ClrModified() { m_flagModified = false; }
-    bool IsModified() const { return m_flagModified; }
+    void ClrModified();
+    bool IsModified() const { return m_modified; }
 
 private:
-    ///< Dirty bit, indicates something in the workbook has changed
-    bool m_flagModified;
+    void setModified( bool value = true );
 
-    ///< Map of plot panels and associated data
-    std::map<const SIM_PANEL_BASE*, PLOT_INFO> m_plots;
+    ///< Dirty bit, indicates something in the workbook has changed
+    bool m_modified;
 };
+
+wxDECLARE_EVENT( EVT_WORKBOOK_MODIFIED, wxCommandEvent );
+wxDECLARE_EVENT( EVT_WORKBOOK_CLR_MODIFIED, wxCommandEvent );
+
+#endif // __SIM_WORKBOOK__

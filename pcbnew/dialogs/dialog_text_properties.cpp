@@ -2,7 +2,7 @@
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
  * Copyright (C) 2004-2018 Jean-Pierre Charras jp.charras at wanadoo.fr
- * Copyright (C) 2010-2020 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 2010-2021 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -28,17 +28,16 @@
 #include <board_commit.h>
 #include <board.h>
 #include <footprint.h>
-#include <kicad_string.h>
+#include <string_utils.h>
 #include <pcb_text.h>
 #include <fp_text.h>
+#include <pcbnew.h>
 #include <pcb_edit_frame.h>
 #include <pcb_layer_box_selector.h>
 #include <wx/valnum.h>
-#include <math/util.h> // for KiROUND
-#include <wx/fontdlg.h>
-#include <wx/numformatter.h>
+#include <math/util.h>      // for KiROUND
+#include <scintilla_tricks.h>
 
-#define OUTLINEFONT_DEBUG
 
 DIALOG_TEXT_PROPERTIES::DIALOG_TEXT_PROPERTIES( PCB_BASE_EDIT_FRAME* aParent, BOARD_ITEM* aItem ) :
         DIALOG_TEXT_ITEM_PROPERTIES_BASE( aParent ), m_Parent( aParent ), m_item( aItem ),
@@ -57,6 +56,12 @@ DIALOG_TEXT_PROPERTIES::DIALOG_TEXT_PROPERTIES( PCB_BASE_EDIT_FRAME* aParent, BO
     m_posY.SetCoordType( ORIGIN_TRANSFORMS::ABS_Y_COORD );
 
     m_MultiLineText->SetEOLMode( wxSTC_EOL_LF );
+
+    m_scintillaTricks = new SCINTILLA_TRICKS( m_MultiLineText, wxT( "{}" ), false,
+            [this]()
+            {
+                wxPostEvent( this, wxCommandEvent( wxEVT_COMMAND_BUTTON_CLICKED, wxID_OK ) );
+            } );
 
     // A hack which causes Scintilla to auto-size the text editor canvas
     // See: https://github.com/jacobslusser/ScintillaNET/issues/216
@@ -89,15 +94,6 @@ DIALOG_TEXT_PROPERTIES::DIALOG_TEXT_PROPERTIES( PCB_BASE_EDIT_FRAME* aParent, BO
 
         SetInitialFocus( m_MultiLineText );
         m_SingleLineSizer->Show( false );
-
-        int    size = wxNORMAL_FONT->GetPointSize();
-        wxFont fixedFont( size, wxFONTFAMILY_TELETYPE, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL );
-
-        for( size_t i = 0; i < wxSTC_STYLE_MAX; ++i )
-            m_MultiLineText->StyleSetFont( i, fixedFont );
-
-        // Addresses a bug in wx3.0 where styles are not correctly set
-        m_MultiLineText->StyleClearAll();
 
         // This option makes sense only for footprint texts; texts on board are always visible.
         m_Visible->SetValue( true );
@@ -134,7 +130,7 @@ DIALOG_TEXT_PROPERTIES::DIALOG_TEXT_PROPERTIES( PCB_BASE_EDIT_FRAME* aParent, BO
         m_OrientCtrl->SetString( ii, wxString::Format( "%.1f", rot_list[ii] ) );
 
     // Set font sizes
-    wxFont infoFont = wxSystemSettings::GetFont( wxSYS_DEFAULT_GUI_FONT );
+    wxFont infoFont = KIUI::GetInfoFont();
     infoFont.SetSymbolicSize( wxFONTSIZE_X_SMALL );
     m_statusLine->SetFont( infoFont );
 
@@ -149,7 +145,8 @@ DIALOG_TEXT_PROPERTIES::DIALOG_TEXT_PROPERTIES( PCB_BASE_EDIT_FRAME* aParent, BO
 
     // wxTextCtrls fail to generate wxEVT_CHAR events when the wxTE_MULTILINE flag is set,
     // so we have to listen to wxEVT_CHAR_HOOK events instead.
-    Connect( wxEVT_CHAR_HOOK, wxKeyEventHandler( DIALOG_TEXT_PROPERTIES::OnCharHook ), NULL, this );
+    Connect( wxEVT_CHAR_HOOK, wxKeyEventHandler( DIALOG_TEXT_PROPERTIES::OnCharHook ),
+             nullptr, this );
 
     // If this item has a custom font, display font name
     // Default font is named "" so it's OK to always display font name
@@ -163,185 +160,17 @@ DIALOG_TEXT_PROPERTIES::DIALOG_TEXT_PROPERTIES( PCB_BASE_EDIT_FRAME* aParent, BO
 
 DIALOG_TEXT_PROPERTIES::~DIALOG_TEXT_PROPERTIES()
 {
-    Disconnect( wxEVT_CHAR_HOOK, wxKeyEventHandler( DIALOG_TEXT_PROPERTIES::OnCharHook ), NULL,
-                this );
+    Disconnect( wxEVT_CHAR_HOOK, wxKeyEventHandler( DIALOG_TEXT_PROPERTIES::OnCharHook ),
+                nullptr, this );
+
+    delete m_scintillaTricks;
 }
 
 
-// Launch the text properties dialog in quasi modal mode.
 void PCB_BASE_EDIT_FRAME::ShowTextPropertiesDialog( BOARD_ITEM* aText )
 {
     DIALOG_TEXT_PROPERTIES dlg( this, aText );
     dlg.ShowQuasiModal();
-}
-
-
-void DIALOG_TEXT_PROPERTIES::OnCharHook( wxKeyEvent& aEvent )
-{
-    if( aEvent.GetKeyCode() == WXK_RETURN && aEvent.ShiftDown() )
-    {
-        if( TransferDataFromWindow() )
-        {
-            // Do not use EndModal to close the dialog that can be opened
-            // in quasi modal mode
-            SetReturnCode( wxID_OK );
-            Close();
-        }
-    }
-    else if( m_MultiLineText->IsShown() && m_MultiLineText->HasFocus() )
-    {
-        if( aEvent.GetKeyCode() == WXK_TAB && !aEvent.ControlDown() )
-        {
-            m_MultiLineText->Tab();
-        }
-        else if( IsCtrl( 'Z', aEvent ) )
-        {
-            m_MultiLineText->Undo();
-        }
-        else if( IsShiftCtrl( 'Z', aEvent ) || IsCtrl( 'Y', aEvent ) )
-        {
-            m_MultiLineText->Redo();
-        }
-        else if( IsCtrl( 'X', aEvent ) )
-        {
-            m_MultiLineText->Cut();
-        }
-        else if( IsCtrl( 'C', aEvent ) )
-        {
-            m_MultiLineText->Copy();
-        }
-        else if( IsCtrl( 'V', aEvent ) )
-        {
-            m_MultiLineText->Paste();
-        }
-        else if( IsCtrl( 'A', aEvent ) )
-        {
-            m_MultiLineText->SelectAll();
-        }
-        else
-        {
-            aEvent.Skip();
-        }
-    }
-    else
-    {
-        aEvent.Skip();
-    }
-}
-
-
-#ifdef OUTLINEFONT_DEBUG
-std::ostream& operator<<( std::ostream& os, const wxFont& aFont )
-{
-    os << "(font " << aFont.GetFaceName() << " [" << aFont.GetNativeFontInfoDesc() << ","
-       << aFont.GetNativeFontInfoUserDesc() << "] ";
-    switch( aFont.GetStyle() )
-    {
-    case wxFONTSTYLE_NORMAL: os << "normal"; break;
-    case wxFONTSTYLE_ITALIC: os << "italic"; break;
-    case wxFONTSTYLE_SLANT: os << "slant"; break;
-    default: os << "unknown style";
-    }
-    os << ",";
-    switch( aFont.GetWeight() )
-    {
-    case wxFONTWEIGHT_NORMAL: os << "normal"; break;
-    case wxFONTWEIGHT_LIGHT: os << "light"; break;
-    case wxFONTWEIGHT_BOLD: os << "bold"; break;
-    default: os << "unknown style";
-    }
-    if( aFont.GetUnderlined() )
-        os << ",underlined";
-    if( aFont.IsFixedWidth() )
-        os << ",fixed-width";
-    os << "," << ( aFont.IsOk() ? "OK" : "not-ok" ) << ")" << std::endl;
-
-    return os;
-}
-#endif
-
-
-void DIALOG_TEXT_PROPERTIES::OnFontFieldChange( wxCommandEvent& aEvent )
-{
-#if 0
-    bool enableOutlineFontControls = !m_FontCtrl->GetValue().IsEmpty();
-
-    m_FontBold->Enable( enableOutlineFontControls );
-    m_FontItalic->Enable( enableOutlineFontControls );
-    m_FontLineSpacingLabel->Enable( enableOutlineFontControls );
-    m_FontLineSpacing->Enable( enableOutlineFontControls );
-#endif
-
-    aEvent.Skip();
-}
-
-
-void DIALOG_TEXT_PROPERTIES::OnShowFontDialog( wxCommandEvent& aEvent )
-{
-    wxFontData fontData;
-
-    fontData.SetShowHelp( true );
-
-    wxFontDialog* fontDialog = new wxFontDialog( this, fontData );
-    if( fontDialog->ShowModal() == wxID_OK )
-    {
-        wxFont theFont = fontDialog->GetFontData().GetChosenFont();
-        bool   bold = false;
-        bool   italic = false;
-        switch( theFont.GetStyle() )
-        {
-        case wxFONTSTYLE_ITALIC:
-        case wxFONTSTYLE_SLANT: italic = true; break;
-        default: break;
-        }
-        switch( theFont.GetWeight() )
-        {
-        case wxFONTWEIGHT_BOLD: bold = true; break;
-        default: break;
-        }
-#ifdef OUTLINEFONT_DEBUG
-        std::cerr << "DIALOG_TEXT_PROPERTIES::OnShowFontDialog() face name \""
-                  << theFont.GetFaceName() << "\"" << ( bold ? "bold " : "" )
-                  << ( italic ? "italic " : "" ) << std::endl;
-#endif
-        KIFONT::FONT* font = KIFONT::FONT::GetFont( theFont.GetFaceName(), bold, italic );
-#ifdef OUTLINEFONT_DEBUG
-        std::cerr << "DIALOG_TEXT_PROPERTIES::OnShowFontDialog() face \"" << theFont.GetFaceName()
-                  << "\" font \"" << font->Name() << "\"" << std::endl;
-#endif
-        m_FontCtrl->SetValue( font->Name() );
-        m_FontBold->SetValue( bold );
-        m_FontItalic->SetValue( italic );
-    }
-}
-
-
-void DIALOG_TEXT_PROPERTIES::OnOkClick( wxCommandEvent& aEvent )
-{
-    bool requestingOutlineFont = !m_FontCtrl->GetValue().IsEmpty();
-    bool bold = requestingOutlineFont ? m_FontBold->GetValue() : false;
-    bool italic = requestingOutlineFont ? m_FontItalic->GetValue() : false;
-
-    SetFontByName( m_FontCtrl->GetValue(), bold, italic );
-
-    aEvent.Skip();
-}
-
-
-void DIALOG_TEXT_PROPERTIES::SetFontByName( const wxString& aFontName, bool aBold, bool aItalic )
-{
-#ifdef OUTLINEFONT_DEBUG
-    std::cerr << "DIALOG_TEXT_PROPERTIES::SetFontByName( \"" << aFontName << "\", "
-              << ( aBold ? "true, " : "false, " ) << ( aItalic ? "true" : "false" ) << " )"
-              << std::endl;
-#endif
-    m_edaText->SetFont( KIFONT::FONT::GetFont( aFontName, aBold, aItalic ) );
-    m_FontCtrl->SetValue( m_edaText->GetFont()->Name() );
-    m_edaText->SetBold( aBold );
-    m_edaText->SetItalic( aBold );
-#ifdef OUTLINEFONT_DEBUG
-    std::cerr << "font is now \"" << m_edaText->GetFont()->Name() << "\"" << std::endl;
-#endif
 }
 
 
@@ -475,7 +304,11 @@ bool DIALOG_TEXT_PROPERTIES::TransferDataFromWindow()
             BOARD*   board = m_Parent->GetBoard();
             wxString txt = board->ConvertCrossReferencesToKIIDs( m_MultiLineText->GetValue() );
 
-#ifdef __WINDOWS__
+#ifdef __WXMAC__
+            // On macOS CTRL+Enter produces '\r' instead of '\n' regardless of EOL setting.
+            // Replace it now.
+            txt.Replace( "\r", "\n" );
+#elif defined( __WINDOWS__ )
             // On Windows, a new line is coded as \r\n.  We use only \n in kicad files and in
             // drawing routines so strip the \r char.
             txt.Replace( "\r", "" );

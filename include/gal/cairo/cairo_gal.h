@@ -104,11 +104,11 @@ public:
         drawPoly( aPointList, aListSize );
     }
 
-    void DrawPolygon( const SHAPE_POLY_SET& aPolySet ) override;
+    void DrawPolygon( const SHAPE_POLY_SET& aPolySet, bool aStrokeTriangulation = false ) override;
     void DrawPolygon( const SHAPE_LINE_CHAIN& aPolySet ) override;
 
     /// @copydoc GAL::DrawGlyph()
-    virtual void DrawGlyph( const SHAPE_POLY_SET& aPolySet, int aNth, int aTotal ) override;
+    virtual void DrawGlyph( const KIFONT::GLYPH& aPolySet, int aNth, int aTotal ) override;
 
     /// @copydoc GAL::DrawCurve()
     void DrawCurve( const VECTOR2D& startPoint, const VECTOR2D& controlPointA,
@@ -313,16 +313,16 @@ protected:
     };
 
     /// Type definition for an graphics group element
-    typedef struct
+    struct GROUP_ELEMENT
     {
         GRAPHICS_COMMAND m_Command;                 ///< Command to execute
         union {
             double DblArg[MAX_CAIRO_ARGUMENTS];     ///< Arguments for Cairo commands
             bool   BoolArg;                         ///< A bool argument
-            int    IntArg;                          ///< An int argument
+            int    IntArg = 0;                      ///< An int argument
         }                m_Argument;
-        cairo_path_t*    m_CairoPath;               ///< Pointer to a Cairo path
-    } GROUP_ELEMENT;
+        cairo_path_t*    m_CairoPath = nullptr;     ///< Pointer to a Cairo path
+    };
 
     typedef std::deque<GROUP_ELEMENT> GROUP;        ///< A graphic group type definition
 

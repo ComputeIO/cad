@@ -29,15 +29,17 @@
 #include <refdes_utils.h>
 #include <bitmaps.h>
 #include <unordered_set>
-#include <kicad_string.h>
+#include <string_utils.h>
 #include <pcb_edit_frame.h>
 #include <board.h>
+#include <board_design_settings.h>
 #include <fp_shape.h>
 #include <macros.h>
+#include <pad.h>
 #include <pcb_text.h>
 #include <pcb_marker.h>
 #include <pcb_group.h>
-#include <track.h>
+#include <pcb_track.h>
 #include <footprint.h>
 #include <zone.h>
 #include <view/view.h>
@@ -166,7 +168,10 @@ FOOTPRINT::FOOTPRINT( const FOOTPRINT& aFootprint ) :
         newGroup->GetItems().clear();
 
         for( BOARD_ITEM* member : group->GetItems() )
-            newGroup->AddItem( ptrMap[ member ] );
+        {
+            if( ptrMap.count( member ) )
+                newGroup->AddItem( ptrMap[ member ] );
+        }
     }
 
     // Copy auxiliary data: 3D_Drawings info
@@ -216,6 +221,44 @@ FOOTPRINT::~FOOTPRINT()
         delete d;
 
     m_drawings.clear();
+}
+
+
+bool FOOTPRINT::FixUuids()
+{
+    // replace null UUIDs if any by a valid uuid
+    std::vector< BOARD_ITEM* > item_list;
+
+    item_list.push_back( m_reference );
+    item_list.push_back( m_value );
+
+    for( PAD* pad : m_pads )
+        item_list.push_back( pad );
+
+    for( BOARD_ITEM* gr_item : m_drawings )
+        item_list.push_back( gr_item );
+
+    // Note: one cannot fix null UUIDs inside the group, but it should not happen
+    // because null uuids can be found in old footprints, therefore without group
+    for( PCB_GROUP* group : m_fp_groups )
+        item_list.push_back( group );
+
+    // Probably notneeded, because old fp do not have zones. But just in case.
+    for( FP_ZONE* zone : m_fp_zones )
+        item_list.push_back( zone );
+
+    bool changed = false;
+
+    for( BOARD_ITEM* item : item_list )
+    {
+        if( item->m_Uuid == niluuid )
+        {
+            const_cast<KIID&>( item->m_Uuid ) = KIID();
+            changed = true;
+        }
+    }
+
+    return changed;
 }
 
 
@@ -638,7 +681,7 @@ const EDA_RECT FOOTPRINT::GetBoundingBox() const
 
 const EDA_RECT FOOTPRINT::GetBoundingBox( bool aIncludeText, bool aIncludeInvisibleText ) const
 {
-    BOARD* board = GetBoard();
+    const BOARD* board = GetBoard();
 
     if( board )
     {
@@ -677,9 +720,10 @@ const EDA_RECT FOOTPRINT::GetBoundingBox( bool aIncludeText, bool aIncludeInvisi
     for( FP_ZONE* zone : m_fp_zones )
         area.Merge( zone->GetBoundingBox() );
 
-    // Groups do not contribute to the rect, only their members
+    bool noDrawItems = ( m_drawings.empty() && m_pads.empty() && m_fp_zones.empty() );
 
-    if( aIncludeText )
+    // Groups do not contribute to the rect, only their members
+    if( aIncludeText || noDrawItems )
     {
         for( BOARD_ITEM* item : m_drawings )
         {
@@ -708,16 +752,18 @@ const EDA_RECT FOOTPRINT::GetBoundingBox( bool aIncludeText, bool aIncludeInvisi
         }
 
 
-        if( ( m_value->IsVisible() && valueLayerIsVisible ) || aIncludeInvisibleText )
+        if( ( m_value->IsVisible() && valueLayerIsVisible )
+          || aIncludeInvisibleText || noDrawItems )
             area.Merge( m_value->GetBoundingBox() );
 
-        if( ( m_reference->IsVisible() && refLayerIsVisible ) || aIncludeInvisibleText )
+        if( ( m_reference->IsVisible() && refLayerIsVisible )
+          || aIncludeInvisibleText || noDrawItems )
             area.Merge( m_reference->GetBoundingBox() );
     }
 
     if( board )
     {
-        if( aIncludeText && aIncludeInvisibleText )
+        if( ( aIncludeText && aIncludeInvisibleText ) || noDrawItems )
         {
             m_boundingBoxCacheTimeStamp = board->GetTimeStamp();
             m_cachedBoundingBox = area;
@@ -740,7 +786,7 @@ const EDA_RECT FOOTPRINT::GetBoundingBox( bool aIncludeText, bool aIncludeInvisi
 
 SHAPE_POLY_SET FOOTPRINT::GetBoundingHull() const
 {
-    BOARD* board = GetBoard();
+    const BOARD* board = GetBoard();
 
     if( board )
     {
@@ -788,9 +834,10 @@ SHAPE_POLY_SET FOOTPRINT::GetBoundingHull() const
     if( rawPolys.OutlineCount() == 0 )
     {
         // generate a small dummy rectangular outline around the anchor
-        const int halfsize = Millimeter2iu( 0.02 );
+        const int halfsize = Millimeter2iu( 1.0 );
 
         rawPolys.NewOutline();
+
         // add a square:
         rawPolys.Append( GetPosition().x - halfsize,  GetPosition().y - halfsize );
         rawPolys.Append( GetPosition().x + halfsize,  GetPosition().y - halfsize );
@@ -922,12 +969,18 @@ bool FOOTPRINT::HitTest( const EDA_RECT& aRect, bool aContained, int aAccuracy )
     arect.Inflate( aAccuracy );
 
     if( aContained )
+    {
         return arect.Contains( GetBoundingBox( false, false ) );
+    }
     else
     {
         // If the rect does not intersect the bounding box, skip any tests
         if( !aRect.Intersects( GetBoundingBox( false, false ) ) )
             return false;
+
+        // The empty footprint dummy rectangle intersects the selection area.
+        if( m_pads.empty() && m_fp_zones.empty() && m_drawings.empty() )
+            return GetBoundingBox( true, false ).Intersects( arect );
 
         // Determine if any elements in the FOOTPRINT intersect the rect
         for( PAD* pad : m_pads )
@@ -1296,7 +1349,7 @@ const BOX2I FOOTPRINT::ViewBBox() const
 
     // Add the Clearance shape size: (shape around the pads when the clearance is shown.  Not
     // optimized, but the draw cost is small (perhaps smaller than optimization).
-    BOARD* board = GetBoard();
+    const BOARD* board = GetBoard();
 
     if( board )
     {
@@ -1378,7 +1431,7 @@ void FOOTPRINT::Flip( const wxPoint& aCentre, bool aFlipLeftRight )
     // footprint from library.
     // When flipped around the X axis (Y coordinates changed) orientation is negated
     // When flipped around the Y axis (X coordinates changed) orientation is 180 - old orient.
-    // Because it is specfic to a footprint, we flip around the X axis, and after rotate 180 deg
+    // Because it is specific to a footprint, we flip around the X axis, and after rotate 180 deg
 
     MIRROR( finalPos.y, aCentre.y );     /// Mirror the Y position (around the X axis)
 
@@ -1793,14 +1846,14 @@ double FOOTPRINT::GetCoverageArea( const BOARD_ITEM* aItem, const GENERAL_COLLEC
 
         switch( shape->GetShape() )
         {
-        case PCB_SHAPE_TYPE::SEGMENT:
-        case PCB_SHAPE_TYPE::ARC:
-        case PCB_SHAPE_TYPE::CURVE:
+        case SHAPE_T::SEGMENT:
+        case SHAPE_T::ARC:
+        case SHAPE_T::BEZIER:
             return shape->GetWidth() * shape->GetWidth();
 
-        case PCB_SHAPE_TYPE::RECT:
-        case PCB_SHAPE_TYPE::CIRCLE:
-        case PCB_SHAPE_TYPE::POLYGON:
+        case SHAPE_T::RECT:
+        case SHAPE_T::CIRCLE:
+        case SHAPE_T::POLY:
         {
             if( !shape->IsFilled() )
                 return shape->GetWidth() * shape->GetWidth();
@@ -1815,7 +1868,7 @@ double FOOTPRINT::GetCoverageArea( const BOARD_ITEM* aItem, const GENERAL_COLLEC
     }
     else if( aItem->Type() == PCB_TRACE_T || aItem->Type() == PCB_ARC_T )
     {
-        double width = static_cast<const TRACK*>( aItem )->GetWidth();
+        double width = static_cast<const PCB_TRACK*>( aItem )->GetWidth();
         return width * width;
     }
     else
@@ -2085,14 +2138,18 @@ static struct FOOTPRINT_DESC
         propMgr.AddProperty( new PROPERTY<FOOTPRINT, int>( _HKI( "Solderpaste Margin Override" ),
                     &FOOTPRINT::SetLocalSolderPasteMargin, &FOOTPRINT::GetLocalSolderPasteMargin,
                     PROPERTY_DISPLAY::DISTANCE ) );
-        propMgr.AddProperty( new PROPERTY<FOOTPRINT, double>( _HKI( "Solderpaste Margin Ratio Override" ),
-                    &FOOTPRINT::SetLocalSolderPasteMarginRatio, &FOOTPRINT::GetLocalSolderPasteMarginRatio ) );
+        propMgr.AddProperty( new PROPERTY<FOOTPRINT,
+                             double>( _HKI( "Solderpaste Margin Ratio Override" ),
+                                      &FOOTPRINT::SetLocalSolderPasteMarginRatio,
+                                      &FOOTPRINT::GetLocalSolderPasteMarginRatio ) );
         propMgr.AddProperty( new PROPERTY<FOOTPRINT, int>( _HKI( "Thermal Relief Width" ),
-                    &FOOTPRINT::SetThermalWidth, &FOOTPRINT::GetThermalWidth,
-                    PROPERTY_DISPLAY::DISTANCE ) );
+                                                           &FOOTPRINT::SetThermalWidth,
+                                                           &FOOTPRINT::GetThermalWidth,
+                                                           PROPERTY_DISPLAY::DISTANCE ) );
         propMgr.AddProperty( new PROPERTY<FOOTPRINT, int>( _HKI( "Thermal Relief Gap" ),
-                    &FOOTPRINT::SetThermalGap, &FOOTPRINT::GetThermalGap,
-                    PROPERTY_DISPLAY::DISTANCE ) );
+                                                           &FOOTPRINT::SetThermalGap,
+                                                           &FOOTPRINT::GetThermalGap,
+                                                           PROPERTY_DISPLAY::DISTANCE ) );
         // TODO zone connection, FPID?
     }
 } _FOOTPRINT_DESC;

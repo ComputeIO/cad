@@ -2,7 +2,7 @@
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
  * Copyright (C) 2020 Jon Evans <jon@craftyjon.com>
- * Copyright (C) 2020 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 2020-2021 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * This program is free software: you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -55,12 +55,6 @@ public:
     virtual void SetDefault() = 0;
 
     /**
-     * Checks whether or not this param has been changed from its default value
-     * @return true if the parameter in memory matches its default value
-     */
-    virtual bool IsDefault() const = 0;
-
-    /**
      * Checks whether the parameter in memory matches the one in a given JSON file
      * @param aSettings is a JSON_SETTINGS to check the JSON file contents of
      * @return true if the parameter in memory matches its value in the file
@@ -69,7 +63,7 @@ public:
 
     /**
      * @return the path name of the parameter used to store it in the json file
-     * mainly usefull in error messages
+     * mainly useful in error messages
      */
     const std::string& GetJsonPath() const { return m_path; }
 
@@ -144,11 +138,6 @@ public:
         *m_ptr = m_default;
     }
 
-    bool IsDefault() const override
-    {
-        return *m_ptr == m_default;
-    }
-
     bool MatchesFile( JSON_SETTINGS* aSettings ) const override
     {
         if( OPT<ValueType> optval = aSettings->Get<ValueType>( m_path ) )
@@ -173,7 +162,7 @@ protected:
 class PARAM_PATH : public PARAM<wxString>
 {
 public:
-    PARAM_PATH( const std::string& aJsonPath, wxString* aPtr, wxString aDefault,
+    PARAM_PATH( const std::string& aJsonPath, wxString* aPtr, const wxString& aDefault,
                 bool aReadOnly = false ) :
             PARAM( aJsonPath, aPtr, aDefault, aReadOnly )
     { }
@@ -268,11 +257,6 @@ public:
         *m_ptr = m_default;
     }
 
-    bool IsDefault() const override
-    {
-        return *m_ptr == m_default;
-    }
-
     bool MatchesFile( JSON_SETTINGS* aSettings ) const override
     {
         if( OPT<int> val = aSettings->Get<int>( m_path ) )
@@ -305,26 +289,7 @@ public:
             m_setter( aSetter )
     { }
 
-    void Load( JSON_SETTINGS* aSettings, bool aResetIfMissing = true ) const override
-    {
-        if( m_readOnly )
-            return;
-
-        if( std::is_same<ValueType, nlohmann::json>::value )
-        {
-            if( OPT<nlohmann::json> optval = aSettings->GetJson( m_path ) )
-                m_setter( *optval );
-            else
-                m_setter( m_default );
-        }
-        else
-        {
-            if( OPT<ValueType> optval = aSettings->Get<ValueType>( m_path ) )
-                m_setter( *optval );
-            else
-                m_setter( m_default );
-        }
-    }
+    void Load( JSON_SETTINGS* aSettings, bool aResetIfMissing = true ) const override;
 
     void Store( JSON_SETTINGS* aSettings ) const override
     {
@@ -347,27 +312,7 @@ public:
         m_setter( m_default );
     }
 
-    bool IsDefault() const override
-    {
-        return m_getter() == m_default;
-    }
-
-    bool MatchesFile( JSON_SETTINGS* aSettings ) const override
-    {
-        if( std::is_same<ValueType, nlohmann::json>::value )
-        {
-            if( OPT<nlohmann::json> optval = aSettings->GetJson( m_path ) )
-                return *optval == m_getter();
-        }
-        else
-        {
-            if( OPT<ValueType> optval = aSettings->Get<ValueType>( m_path ) )
-                return *optval == m_getter();
-        }
-
-        // Not in file
-        return false;
-    }
+    bool MatchesFile( JSON_SETTINGS* aSettings ) const override;
 
 private:
     ValueType m_default;
@@ -448,11 +393,6 @@ public:
         *m_ptr = m_default;
     }
 
-    bool IsDefault() const override
-    {
-        return *m_ptr == m_default;
-    }
-
     bool MatchesFile( JSON_SETTINGS* aSettings ) const override
     {
         if( OPT<double> optval = aSettings->Get<double>( m_path ) )
@@ -488,64 +428,16 @@ public:
             m_default( aDefault )
     { }
 
-    void Load( JSON_SETTINGS* aSettings, bool aResetIfMissing = true ) const override
-    {
-        if( m_readOnly )
-            return;
+    void Load( JSON_SETTINGS* aSettings, bool aResetIfMissing = true ) const override;
 
-        if( OPT<nlohmann::json> js = aSettings->GetJson( m_path ) )
-        {
-            std::vector<Type> val;
-
-            if( js->is_array() )
-            {
-                for( const auto& el : js->items() )
-                    val.push_back( el.value().get<Type>() );
-            }
-
-            *m_ptr = val;
-        }
-        else if( aResetIfMissing )
-            *m_ptr = m_default;
-    }
-
-    void Store( JSON_SETTINGS* aSettings) const override
-    {
-        nlohmann::json js = nlohmann::json::array();
-
-        for( const auto& el : *m_ptr )
-            js.push_back( el );
-
-        aSettings->Set<nlohmann::json>( m_path, js );
-    }
+    void Store( JSON_SETTINGS* aSettings) const override;
 
     void SetDefault() override
     {
         *m_ptr = m_default;
     }
 
-    bool IsDefault() const override
-    {
-        return *m_ptr == m_default;
-    }
-
-    bool MatchesFile( JSON_SETTINGS* aSettings ) const override
-    {
-        if( OPT<nlohmann::json> js = aSettings->GetJson( m_path ) )
-        {
-            if( js->is_array() )
-            {
-                std::vector<Type> val;
-
-                for( const auto& el : js->items() )
-                    val.emplace_back( el.value().get<Type>() );
-
-                return val == *m_ptr;
-            }
-        }
-
-        return false;
-    }
+    bool MatchesFile( JSON_SETTINGS* aSettings ) const override;
 
 protected:
     std::vector<Type>* m_ptr;
@@ -581,33 +473,9 @@ public:
             ( *m_ptr )[i] = fromFileFormat( ( *m_ptr )[i] );
     }
 
-    void Store( JSON_SETTINGS* aSettings) const override
-    {
-        nlohmann::json js = nlohmann::json::array();
+    void Store( JSON_SETTINGS* aSettings) const override;
 
-        for( const auto& el : *m_ptr )
-            js.push_back( toFileFormat( el ) );
-
-        aSettings->Set<nlohmann::json>( m_path, js );
-    }
-
-    bool MatchesFile( JSON_SETTINGS* aSettings ) const override
-    {
-        if( OPT<nlohmann::json> js = aSettings->GetJson( m_path ) )
-        {
-            if( js->is_array() )
-            {
-                std::vector<wxString> val;
-
-                for( const auto& el : js->items() )
-                    val.emplace_back( fromFileFormat( el.value().get<wxString>() ) );
-
-                return val == *m_ptr;
-            }
-        }
-
-        return false;
-    }
+    bool MatchesFile( JSON_SETTINGS* aSettings ) const override;
 
 private:
     wxString toFileFormat( const wxString& aString ) const
@@ -651,65 +519,16 @@ public:
             m_default( aDefault )
     { }
 
-    void Load( JSON_SETTINGS* aSettings, bool aResetIfMissing = true ) const override
-    {
-        if( m_readOnly )
-            return;
+    void Load( JSON_SETTINGS* aSettings, bool aResetIfMissing = true ) const override;
 
-        if( OPT<nlohmann::json> js = aSettings->GetJson( m_path ) )
-        {
-            if( js->is_object() )
-            {
-                m_ptr->clear();
-
-                for( const auto& el : js->items() )
-                    ( *m_ptr )[ el.key() ] = el.value().get<Value>();
-            }
-        }
-        else if( aResetIfMissing )
-            *m_ptr = m_default;
-    }
-
-    void Store( JSON_SETTINGS* aSettings) const override
-    {
-        nlohmann::json js( {} );
-
-        for( const auto& el : *m_ptr )
-            js[ el.first ] = el.second;
-
-        aSettings->Set<nlohmann::json>( m_path, js );
-    }
+    void Store( JSON_SETTINGS* aSettings) const override;
 
     virtual void SetDefault() override
     {
         *m_ptr = m_default;
     }
 
-    bool IsDefault() const override
-    {
-        return *m_ptr == m_default;
-    }
-
-    bool MatchesFile( JSON_SETTINGS* aSettings ) const override
-    {
-        if( OPT<nlohmann::json> js = aSettings->GetJson( m_path ) )
-        {
-            if( js->is_object() )
-            {
-                if( m_ptr->size() != js->size() )
-                    return false;
-
-                std::map<std::string, Value> val;
-
-                for( const auto& el : js->items() )
-                    val[ el.key() ] = el.value().get<Value>();
-
-                return val == *m_ptr;
-            }
-        }
-
-        return false;
-    }
+    bool MatchesFile( JSON_SETTINGS* aSettings ) const override;
 
 private:
     std::map<std::string, Value>* m_ptr;
@@ -732,74 +551,16 @@ public:
             m_default( aDefault )
     { }
 
-    void Load( JSON_SETTINGS* aSettings, bool aResetIfMissing = true ) const override
-    {
-        if( m_readOnly )
-            return;
+    void Load( JSON_SETTINGS* aSettings, bool aResetIfMissing = true ) const override;
 
-        if( OPT<nlohmann::json> js = aSettings->GetJson( m_path ) )
-        {
-            if( js->is_object() )
-            {
-                m_ptr->clear();
-
-                for( const auto& el : js->items() )
-                {
-                    ( *m_ptr )[wxString( el.key().c_str(), wxConvUTF8 )] =
-                            el.value().get<wxString>();
-                }
-            }
-        }
-        else if( aResetIfMissing )
-            *m_ptr = m_default;
-    }
-
-    void Store( JSON_SETTINGS* aSettings) const override
-    {
-        nlohmann::json js( {} );
-
-        for( const auto& el : *m_ptr )
-        {
-            std::string key( el.first.ToUTF8() );
-            js[ key ] = el.second;
-        }
-
-        aSettings->Set<nlohmann::json>( m_path, js );
-    }
+    void Store( JSON_SETTINGS* aSettings) const override;
 
     virtual void SetDefault() override
     {
         *m_ptr = m_default;
     }
 
-    bool IsDefault() const override
-    {
-        return *m_ptr == m_default;
-    }
-
-    bool MatchesFile( JSON_SETTINGS* aSettings ) const override
-    {
-        if( OPT<nlohmann::json> js = aSettings->GetJson( m_path ) )
-        {
-            if( js->is_object() )
-            {
-                if( m_ptr->size() != js->size() )
-                    return false;
-
-                std::map<wxString, wxString> val;
-
-                for( const auto& el : js->items() )
-                {
-                    wxString key( el.key().c_str(), wxConvUTF8 );
-                    val[key] = el.value().get<wxString>();
-                }
-
-                return val == *m_ptr;
-            }
-        }
-
-        return false;
-    }
+    bool MatchesFile( JSON_SETTINGS* aSettings ) const override;
 
 private:
     std::map<wxString, wxString>* m_ptr;

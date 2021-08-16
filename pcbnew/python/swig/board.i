@@ -42,20 +42,21 @@ file near the top; only class BOARD functions go in board.i.
 HANDLE_EXCEPTIONS(BOARD::TracksInNetBetweenPoints)
 
 
-%include layers_id_colors_and_visibility.i
+%include layer_ids.i
 %include board_item.i
 %include board_item_container.i
 %include board_connected_item.i
 %include board_design_settings.i
 %include connectivity.i
+%include pcb_item_containers.i
 %include pad.i
 %include track.i
 %include zone.i
 %include zone_settings.i
 %include pcb_text.i
-%include dimension.i
+%include pcb_dimension.i
 %include pcb_shape.i
-%include marker_pcb.i
+%include pcb_marker.i
 %include pcb_target.i
 %include fp_shape.i
 %include fp_text.i
@@ -95,7 +96,7 @@ HANDLE_EXCEPTIONS(BOARD::TracksInNetBetweenPoints)
                 return
     %}
 }
-%extend std::deque<TRACK *>
+%extend std::deque<PCB_TRACK *>
 {
     %pythoncode
     %{

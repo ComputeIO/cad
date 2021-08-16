@@ -2,7 +2,7 @@
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
  * Copyright (C) 2017 Jean-Pierre Charras, jp.charras at wanadoo.fr
- * Copyright (C) 2004-2020 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 2004-2021 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -36,7 +36,7 @@
 #include <transform.h>
 
 
-LIB_POLYLINE::LIB_POLYLINE( LIB_PART* aParent ) :
+LIB_POLYLINE::LIB_POLYLINE( LIB_SYMBOL* aParent ) :
     LIB_ITEM( LIB_POLYLINE_T, aParent )
 {
     m_fill  = FILL_TYPE::NO_FILL;
@@ -121,7 +121,7 @@ void LIB_POLYLINE::Rotate( const wxPoint& aCenter, bool aRotateCCW )
 void LIB_POLYLINE::Plot( PLOTTER* aPlotter, const wxPoint& aOffset, bool aFill,
                          const TRANSFORM& aTransform ) const
 {
-    wxASSERT( aPlotter != NULL );
+    wxASSERT( aPlotter != nullptr );
 
     static std::vector< wxPoint > cornerList;
     cornerList.clear();
@@ -348,8 +348,7 @@ void LIB_POLYLINE::GetMsgPanelInfo( EDA_DRAW_FRAME* aFrame, MSG_PANEL_ITEMS& aLi
 
 wxString LIB_POLYLINE::GetSelectMenuText( EDA_UNITS aUnits ) const
 {
-    return wxString::Format( _( "Polyline, %d points" ),
-                             int( m_PolyPoints.size() ) );
+    return wxString::Format( _( "Polyline, %d points" ), int( m_PolyPoints.size() ) );
 }
 
 
@@ -359,14 +358,14 @@ BITMAPS LIB_POLYLINE::GetMenuImage() const
 }
 
 
-void LIB_POLYLINE::BeginEdit( const wxPoint aPosition )
+void LIB_POLYLINE::BeginEdit( const wxPoint& aPosition )
 {
     m_PolyPoints.push_back( aPosition );    // Start point of first segment.
     m_PolyPoints.push_back( aPosition );    // End point of first segment.
 }
 
 
-bool LIB_POLYLINE::ContinueEdit( const wxPoint aPosition )
+bool LIB_POLYLINE::ContinueEdit( const wxPoint& aPosition )
 {
     // do not add zero length segments
     if( m_PolyPoints[m_PolyPoints.size() - 2] != m_PolyPoints.back() )

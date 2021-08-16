@@ -127,44 +127,16 @@ void draw_fullscreen_primitive()
 // ANTIALIASING_SUPERSAMPLING
 // =========================
 
-ANTIALIASING_SUPERSAMPLING::ANTIALIASING_SUPERSAMPLING( OPENGL_COMPOSITOR* aCompositor,
-                                                        SUPERSAMPLING_MODE aMode ) :
+ANTIALIASING_SUPERSAMPLING::ANTIALIASING_SUPERSAMPLING( OPENGL_COMPOSITOR* aCompositor ) :
         compositor( aCompositor ),
-        mode( aMode ), ssaaMainBuffer( 0 ), areBuffersCreated( false ), areShadersCreated( false )
+        ssaaMainBuffer( 0 ), areBuffersCreated( false ), areShadersCreated( false )
 {
 }
 
 
 bool ANTIALIASING_SUPERSAMPLING::Init()
 {
-    if( mode == SUPERSAMPLING_MODE::X4 && !areShadersCreated )
-    {
-        x4_shader = std::make_unique<SHADER>();
-        x4_shader->LoadShaderFromStrings( KIGFX::SHADER_TYPE_VERTEX,
-                                          BUILTIN_SHADERS::ssaa_x4_vertex_shader );
-        x4_shader->LoadShaderFromStrings( KIGFX::SHADER_TYPE_FRAGMENT,
-                                          BUILTIN_SHADERS::ssaa_x4_fragment_shader );
-        x4_shader->Link();
-        checkGlError( "linking supersampling x4 shader", __FILE__, __LINE__ );
-
-        GLint source_parameter = x4_shader->AddParameter( "source" );
-        checkGlError( "getting pass 1 colorTex", __FILE__, __LINE__ );
-
-        x4_shader->Use();
-        checkGlError( "using pass 1 shader", __FILE__, __LINE__ );
-        x4_shader->SetParameter( source_parameter, 0 );
-        checkGlError( "setting colorTex uniform", __FILE__, __LINE__ );
-        x4_shader->Deactivate();
-        checkGlError( "deactivating pass 2 shader", __FILE__, __LINE__ );
-
-        areShadersCreated = true;
-    }
-
-    if( areShadersCreated && mode != SUPERSAMPLING_MODE::X4 )
-    {
-        x4_shader.reset();
-        areShadersCreated = false;
-    }
+    areShadersCreated = false;
 
     if( !areBuffersCreated )
     {
@@ -181,8 +153,7 @@ bool ANTIALIASING_SUPERSAMPLING::Init()
 
 VECTOR2U ANTIALIASING_SUPERSAMPLING::GetInternalBufferSize()
 {
-    unsigned int factor = ( mode == SUPERSAMPLING_MODE::X2 ) ? 2 : 4;
-    return compositor->GetScreenSize() * factor;
+    return compositor->GetScreenSize() * 2;
 }
 
 
@@ -207,19 +178,7 @@ void ANTIALIASING_SUPERSAMPLING::Present()
     glBindTexture( GL_TEXTURE_2D, compositor->GetBufferTexture( ssaaMainBuffer ) );
     compositor->SetBuffer( OPENGL_COMPOSITOR::DIRECT_RENDERING );
 
-    if( mode == SUPERSAMPLING_MODE::X4 )
-    {
-        x4_shader->Use();
-        checkGlError( "activating supersampling x4 shader", __FILE__, __LINE__ );
-    }
-
     draw_fullscreen_primitive();
-
-    if( mode == SUPERSAMPLING_MODE::X4 )
-    {
-        x4_shader->Deactivate();
-        checkGlError( "deactivating supersampling x4 shader", __FILE__, __LINE__ );
-    }
 }
 
 
@@ -238,10 +197,9 @@ unsigned int ANTIALIASING_SUPERSAMPLING::CreateBuffer()
 // ANTIALIASING_SMAA
 // ===============================
 
-ANTIALIASING_SMAA::ANTIALIASING_SMAA( OPENGL_COMPOSITOR* aCompositor, SMAA_QUALITY aQuality ) :
+ANTIALIASING_SMAA::ANTIALIASING_SMAA( OPENGL_COMPOSITOR* aCompositor ) :
         areBuffersInitialized( false ),
         shadersLoaded( false ),
-        quality( aQuality ),
         compositor( aCompositor )
 {
     smaaBaseBuffer = 0;
@@ -288,17 +246,29 @@ void ANTIALIASING_SMAA::loadShaders()
                   GL_UNSIGNED_BYTE, searchTexBytes );
     checkGlError( "loading smaa search tex", __FILE__, __LINE__ );
 
+    // Quality settings:
+    // THRESHOLD: intended to exclude spurious edges in photorealistic game graphics
+    //            but in a high-contrast CAD application, all edges are intentional
+    //            should be set fairly low, so user color choices do not affect antialiasing
+    // MAX_SEARCH_STEPS: steps of 2px, searched in H/V direction to discover true angle of edges
+    //                   improves AA for lines close H/V but creates fuzzyness at junctions
+    // MAX_SEARCH_STEPS_DIAG: steps of 1px, searched in diagonal direction
+    //                        improves lines close to 45deg but turns small circles into octagons
+    // CORNER_ROUNDING: SMAA can distinguish actual corners from aliasing jaggies,
+    //                  we want to preserve those as much as possible
+    // Edge Detection: In Eeschema, when a single pixel line changes color, edge detection using
+    //                 color is too aggressive and leads to a white spot at the transition point
     std::string quality_string;
+    const char* edge_detect_shader;
 
-    if( quality == SMAA_QUALITY::HIGH )
-    {
-        quality_string = "#define SMAA_PRESET_HIGH\n";
-    }
-    else
-    {
-        quality_string = "#define SMAA_PRESET_ULTRA\n";
-    }
-
+    // trades imperfect AA of shallow angles for a near artifact-free reproduction of fine features
+    // jaggies are smoothed over max 5px (original step + 2px in both directions)
+    quality_string = "#define SMAA_THRESHOLD 0.005\n"
+                     "#define SMAA_MAX_SEARCH_STEPS 1\n"
+                     "#define SMAA_MAX_SEARCH_STEPS_DIAG 2\n"
+                     "#define SMAA_LOCAL_CONTRAST_ADAPTATION_FACTOR 1.5\n"
+                     "#define SMAA_CORNER_ROUNDING 0\n";
+    edge_detect_shader = BUILTIN_SHADERS::smaa_pass_1_fragment_shader_luma;
 
     // set up shaders
     std::string vert_preamble( R"SHADER(
@@ -329,8 +299,7 @@ uniform vec4 SMAA_RT_METRICS;
     pass_1_shader->LoadShaderFromStrings( KIGFX::SHADER_TYPE_VERTEX, vert_preamble, quality_string,
                                           smaa_source, BUILTIN_SHADERS::smaa_pass_1_vertex_shader );
     pass_1_shader->LoadShaderFromStrings( KIGFX::SHADER_TYPE_FRAGMENT, frag_preamble,
-                                          quality_string, smaa_source,
-                                          BUILTIN_SHADERS::smaa_pass_1_fragment_shader );
+                                          quality_string, smaa_source, edge_detect_shader );
     pass_1_shader->Link();
     checkGlError( "linking pass 1 shader", __FILE__, __LINE__ );
 

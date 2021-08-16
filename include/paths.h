@@ -92,12 +92,17 @@ public:
     static wxString GetStockPluginsPath();
 
     /**
-     * Gets the stock (install) 3d viewer pluginspath
+     * Gets the stock (install) 3d viewer plugins path
      */
     static wxString GetStockPlugins3DPath();
 
     /**
-     * Gets the stock (install) 3d viewer pluginspath
+     * Gets the stock (install) demos path
+     */
+    static wxString GetStockDemosPath();
+
+    /**
+     * Gets the stock (install) 3d viewer plugins path
      */
     static wxString GetUserCachePath();
 
@@ -145,6 +150,15 @@ private:
      * @param aPath Variable to receive the path
      */
     static void getUserDocumentPath( wxFileName& aPath );
+
+#ifdef __WXWINDOWS__
+    /**
+     * Gets the root of the kicad install on Windows specifically.
+     * KiCad on Windows has a pseudo posix folder structure contained in its installed folder
+     * This retrieves that root for usage in other methods
+     */
+    static wxString getWindowsKiCadRoot();
+#endif
 };
 
 #endif

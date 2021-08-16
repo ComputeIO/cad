@@ -22,13 +22,11 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
 
-#include <pgm_base.h>
 #include <gerbview.h>
 #include <gerbview_frame.h>
 #include <gerbview_id.h>
 #include <gerber_file_image.h>
 #include <gerber_file_image_list.h>
-#include <dialog_helpers.h>
 #include <gal/graphics_abstraction_layer.h>
 #include <tool/tool_manager.h>
 #include <tool/selection.h>
@@ -177,7 +175,7 @@ void GERBVIEW_FRAME::ShowChangedLanguage()
     m_LayersManager->SetLayersManagerTabsText();
 
     wxAuiPaneInfo& pane_info = m_auimgr.GetPane( m_LayersManager );
-    pane_info.Caption( _( "Visibles" ) );
+    pane_info.Caption( _( "Layers Manager" ) );
     m_auimgr.Update();
 
     ReFillLayerWidget();

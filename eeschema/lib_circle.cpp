@@ -2,7 +2,7 @@
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
  * Copyright (C) 2017 Jean-Pierre Charras, jp.charras at wanadoo.fr
- * Copyright (C) 2004-2020 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 2004-2021 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -36,7 +36,7 @@
 #include <transform.h>
 
 
-LIB_CIRCLE::LIB_CIRCLE( LIB_PART* aParent ) :
+LIB_CIRCLE::LIB_CIRCLE( LIB_SYMBOL* aParent ) :
     LIB_ITEM( LIB_CIRCLE_T, aParent )
 {
     m_Width      = 0;
@@ -284,7 +284,7 @@ BITMAPS LIB_CIRCLE::GetMenuImage() const
 }
 
 
-void LIB_CIRCLE::BeginEdit( const wxPoint aPosition )
+void LIB_CIRCLE::BeginEdit( const wxPoint& aPosition )
 {
     m_Pos = aPosition;
 }

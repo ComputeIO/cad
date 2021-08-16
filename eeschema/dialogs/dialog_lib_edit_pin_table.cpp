@@ -24,16 +24,15 @@
 #include "dialog_lib_edit_pin_table.h"
 #include "grid_tricks.h"
 #include "lib_pin.h"
-#include "pin_number.h"
+#include "pin_numbers.h"
 #include <bitmaps.h>
 #include <confirm.h>
 #include <symbol_edit_frame.h>
 #include <symbol_editor_settings.h>
 #include <widgets/grid_icon_text_helpers.h>
 #include <widgets/wx_grid.h>
-#include <pgm_base.h>
 #include <settings/settings_manager.h>
-#include <kicad_string.h>
+#include <string_utils.h>
 
 class PIN_TABLE_DATA_MODEL : public wxGridTableBase
 {
@@ -255,12 +254,11 @@ public:
         {
         case COL_NUMBER:
         case COL_NAME:
-            res = cmp( PinNumbers::Compare( lhStr, rhStr ), 0 );
+            res = cmp( PIN_NUMBERS::Compare( lhStr, rhStr ), 0 );
             break;
         case COL_NUMBER_SIZE:
         case COL_NAME_SIZE:
-            res = cmp( ValueFromString( units, lhStr ),
-                    ValueFromString( units, rhStr ) );
+            res = cmp( ValueFromString( units, lhStr ), ValueFromString( units, rhStr ) );
             break;
         case COL_LENGTH:
         case COL_POSX:
@@ -342,7 +340,7 @@ public:
         std::sort( aRow.begin(), aRow.end(),
                    []( LIB_PIN* lhs, LIB_PIN* rhs ) -> bool
                    {
-                       return PinNumbers::Compare( lhs->GetNumber(), rhs->GetNumber() ) < 0;
+                       return PIN_NUMBERS::Compare( lhs->GetNumber(), rhs->GetNumber() ) < 0;
                    } );
     }
 
@@ -417,10 +415,11 @@ private:
 };
 
 
-DIALOG_LIB_EDIT_PIN_TABLE::DIALOG_LIB_EDIT_PIN_TABLE( SYMBOL_EDIT_FRAME* parent, LIB_PART* aPart ) :
+DIALOG_LIB_EDIT_PIN_TABLE::DIALOG_LIB_EDIT_PIN_TABLE( SYMBOL_EDIT_FRAME* parent,
+                                                      LIB_SYMBOL* aSymbol ) :
         DIALOG_LIB_EDIT_PIN_TABLE_BASE( parent ),
         m_editFrame( parent ),
-        m_part( aPart )
+        m_part( aSymbol )
 {
     m_dataModel = new PIN_TABLE_DATA_MODEL( GetUserUnits() );
 
@@ -605,7 +604,7 @@ void DIALOG_LIB_EDIT_PIN_TABLE::OnAddRow( wxCommandEvent& event )
 
         wxPoint pos = last->GetPosition();
 
-        auto* cfg = Pgm().GetSettingsManager().GetAppSettings<SYMBOL_EDITOR_SETTINGS>();
+        SYMBOL_EDITOR_SETTINGS* cfg = m_editFrame->GetSettings();
 
         if( last->GetOrientation() == PIN_LEFT || last->GetOrientation() == PIN_RIGHT )
             pos.y -= Mils2iu(cfg->m_Repeat.pin_step);
@@ -766,7 +765,7 @@ void DIALOG_LIB_EDIT_PIN_TABLE::OnClose( wxCloseEvent& event )
             if( IsQuasiModal() )
                 EndQuasiModal( retval );
             else
-                EndModal( retval );
+                EndDialog( retval );
 
             return;
         }
@@ -781,7 +780,7 @@ void DIALOG_LIB_EDIT_PIN_TABLE::OnClose( wxCloseEvent& event )
     if( IsQuasiModal() )
         EndQuasiModal( retval );
     else
-        EndModal( retval );
+        EndDialog( retval );
 
     return;
 }
@@ -789,7 +788,7 @@ void DIALOG_LIB_EDIT_PIN_TABLE::OnClose( wxCloseEvent& event )
 
 void DIALOG_LIB_EDIT_PIN_TABLE::updateSummary()
 {
-    PinNumbers pinNumbers;
+    PIN_NUMBERS pinNumbers;
 
     for( LIB_PIN* pin : m_pins )
     {

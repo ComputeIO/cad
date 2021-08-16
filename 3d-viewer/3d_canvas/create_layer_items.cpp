@@ -37,6 +37,7 @@
 #include "../3d_rendering/3d_render_raytracing/shapes3D/cylinder_3d.h"
 
 #include <board.h>
+#include <board_design_settings.h>
 #include <footprint.h>
 #include <pad.h>
 #include <pcb_text.h>
@@ -147,23 +148,26 @@ void BOARD_ADAPTER::createLayers( REPORTER* aStatusReporter )
     m_holeCount                = 0;
     m_averageHoleDiameter      = 0;
 
+    if( !m_board )
+        return;
+
     // Prepare track list, convert in a vector. Calc statistic for the holes
-    std::vector< const TRACK *> trackList;
+    std::vector<const PCB_TRACK*> trackList;
     trackList.clear();
     trackList.reserve( m_board->Tracks().size() );
 
-    for( TRACK* track : m_board->Tracks() )
+    for( PCB_TRACK* track : m_board->Tracks() )
     {
         if( !Is3dLayerEnabled( track->GetLayer() ) ) // Skip non enabled layers
             continue;
 
-        // Note: a TRACK holds normal segment tracks and
-        // also vias circles (that have also drill values)
+        // Note: a PCB_TRACK holds normal segment tracks and also vias circles (that have also
+        // drill values)
         trackList.push_back( track );
 
         if( track->Type() == PCB_VIA_T )
         {
-            const VIA *via = static_cast< const VIA*>( track );
+            const PCB_VIA *via = static_cast< const PCB_VIA*>( track );
             m_viaCount++;
             m_averageViaHoleDiameter += via->GetDrillValue() * m_biuTo3Dunits;
         }
@@ -234,14 +238,14 @@ void BOARD_ADAPTER::createLayers( REPORTER* aStatusReporter )
 
         for( unsigned int trackIdx = 0; trackIdx < nTracks; ++trackIdx )
         {
-            const TRACK *track = trackList[trackIdx];
+            const PCB_TRACK *track = trackList[trackIdx];
 
             // NOTE: Vias can be on multiple layers
             if( !track->IsOnLayer( curr_layer_id ) )
                 continue;
 
             // Skip vias annulus when not connected on this layer (if removing is enabled)
-            const VIA *via = dyn_cast< const VIA*>( track );
+            const PCB_VIA *via = dyn_cast< const PCB_VIA*>( track );
 
             if( via && !via->FlashLayer( curr_layer_id ) && IsCopperLayer( curr_layer_id ) )
                 continue;
@@ -259,7 +263,7 @@ void BOARD_ADAPTER::createLayers( REPORTER* aStatusReporter )
 
         for( unsigned int trackIdx = 0; trackIdx < nTracks; ++trackIdx )
         {
-            const TRACK *track = trackList[trackIdx];
+            const PCB_TRACK *track = trackList[trackIdx];
 
             if( !track->IsOnLayer( curr_layer_id ) )
                 continue;
@@ -267,14 +271,14 @@ void BOARD_ADAPTER::createLayers( REPORTER* aStatusReporter )
             // ADD VIAS and THT
             if( track->Type() == PCB_VIA_T )
             {
-                const VIA*    via               = static_cast<const VIA*>( track );
-                const VIATYPE viatype           = via->GetViaType();
-                const float   holediameter      = via->GetDrillValue() * BiuTo3dUnits();
+                const PCB_VIA* via               = static_cast<const PCB_VIA*>( track );
+                const VIATYPE  viatype           = via->GetViaType();
+                const float    holediameter      = via->GetDrillValue() * BiuTo3dUnits();
 
                 // holes and layer copper extend half info cylinder wall to hide transition
-                const float   thickness         = GetHolePlatingThickness() * BiuTo3dUnits() / 2.0f;
-                const float   hole_inner_radius = ( holediameter / 2.0f );
-                const float   ring_radius       = via->GetWidth() * BiuTo3dUnits() / 2.0f;
+                const float    thickness         = GetHolePlatingThickness() * BiuTo3dUnits() / 2.0f;
+                const float    hole_inner_radius = holediameter / 2.0f;
+                const float    ring_radius       = via->GetWidth() * BiuTo3dUnits() / 2.0f;
 
                 const SFVEC2F via_center( via->GetStart().x * m_biuTo3Dunits,
                                           -via->GetStart().y * m_biuTo3Dunits );
@@ -336,7 +340,7 @@ void BOARD_ADAPTER::createLayers( REPORTER* aStatusReporter )
 
         for( unsigned int trackIdx = 0; trackIdx < nTracks; ++trackIdx )
         {
-            const TRACK *track = trackList[trackIdx];
+            const PCB_TRACK *track = trackList[trackIdx];
 
             if( !track->IsOnLayer( curr_layer_id ) )
                 continue;
@@ -344,12 +348,12 @@ void BOARD_ADAPTER::createLayers( REPORTER* aStatusReporter )
             // ADD VIAS and THT
             if( track->Type() == PCB_VIA_T )
             {
-                const VIA *via = static_cast< const VIA*>( track );
-                const VIATYPE viatype = via->GetViaType();
+                const PCB_VIA* via = static_cast<const PCB_VIA*>( track );
+                const VIATYPE  viatype = via->GetViaType();
 
                 if( viatype != VIATYPE::THROUGH )
                 {
-                    // Add VIA hole contours
+                    // Add PCB_VIA hole contours
 
                     // Add outer holes of VIAs
                     SHAPE_POLY_SET *layerOuterHolesPoly = nullptr;
@@ -429,13 +433,13 @@ void BOARD_ADAPTER::createLayers( REPORTER* aStatusReporter )
 
             for( unsigned int trackIdx = 0; trackIdx < nTracks; ++trackIdx )
             {
-                const TRACK *track = trackList[trackIdx];
+                const PCB_TRACK *track = trackList[trackIdx];
 
                 if( !track->IsOnLayer( curr_layer_id ) )
                     continue;
 
                 // Skip vias annulus when not connected on this layer (if removing is enabled)
-                const VIA *via = dyn_cast< const VIA*>( track );
+                const PCB_VIA *via = dyn_cast<const PCB_VIA*>( track );
 
                 if( via && !via->FlashLayer( curr_layer_id ) && IsCopperLayer( curr_layer_id ) )
                     continue;
@@ -624,7 +628,7 @@ void BOARD_ADAPTER::createLayers( REPORTER* aStatusReporter )
             case PCB_DIM_CENTER_T:
             case PCB_DIM_ORTHOGONAL_T:
             case PCB_DIM_LEADER_T:
-                addShapeWithClearance( static_cast<DIMENSION_BASE*>( item ),
+                addShapeWithClearance( static_cast<PCB_DIMENSION_BASE*>( item ),
                                        layerContainer, curr_layer_id, 0 );
             break;
 
@@ -682,19 +686,24 @@ void BOARD_ADAPTER::createLayers( REPORTER* aStatusReporter )
         if( aStatusReporter )
             aStatusReporter->Report( _( "Create zones" ) );
 
-        std::vector<std::pair<const ZONE*, PCB_LAYER_ID>> zones;
+        std::vector<std::pair<ZONE*, PCB_LAYER_ID>> zones;
+        std::unordered_map<PCB_LAYER_ID, std::unique_ptr<std::mutex>> layer_lock;
 
         for( ZONE* zone : m_board->Zones() )
         {
             for( PCB_LAYER_ID layer : zone->GetLayerSet().Seq() )
+            {
                 zones.emplace_back( std::make_pair( zone, layer ) );
+                layer_lock.emplace( layer, std::make_unique<std::mutex>() );
+            }
         }
 
         // Add zones objects
         std::atomic<size_t> nextZone( 0 );
         std::atomic<size_t> threadsFinished( 0 );
 
-        size_t parallelThreadCount = std::max<size_t>( std::thread::hardware_concurrency(), 2 );
+        size_t parallelThreadCount = std::min<size_t>( zones.size(),
+                std::max<size_t>( std::thread::hardware_concurrency(), 2 ) );
 
         for( size_t ii = 0; ii < parallelThreadCount; ++ii )
         {
@@ -704,7 +713,7 @@ void BOARD_ADAPTER::createLayers( REPORTER* aStatusReporter )
                             areaId < zones.size();
                             areaId = nextZone.fetch_add( 1 ) )
                 {
-                    const ZONE* zone = zones[areaId].first;
+                    ZONE* zone = zones[areaId].first;
 
                     if( zone == nullptr )
                         break;
@@ -712,9 +721,22 @@ void BOARD_ADAPTER::createLayers( REPORTER* aStatusReporter )
                     PCB_LAYER_ID layer = zones[areaId].second;
 
                     auto layerContainer = m_layerMap.find( layer );
+                    auto layerPolyContainer = m_layers_poly.find( layer );
 
                     if( layerContainer != m_layerMap.end() )
+                    {
                         addSolidAreasShapes( zone, layerContainer->second, layer );
+                    }
+
+                    if( GetFlag( FL_RENDER_OPENGL_COPPER_THICKNESS )
+                      && ( m_renderEngine == RENDER_ENGINE::OPENGL_LEGACY )
+                      && layerPolyContainer != m_layers_poly.end() )
+                    {
+                        auto mut_it = layer_lock.find( layer );
+
+                        std::lock_guard< std::mutex > lock( *( mut_it->second ) );
+                        zone->TransformSolidAreasShapesToPolygon( layer, *layerPolyContainer->second );
+                    }
                 }
 
                 threadsFinished++;
@@ -726,25 +748,6 @@ void BOARD_ADAPTER::createLayers( REPORTER* aStatusReporter )
         while( threadsFinished < parallelThreadCount )
             std::this_thread::sleep_for( std::chrono::milliseconds( 10 ) );
 
-    }
-
-    if( GetFlag( FL_ZONE ) && GetFlag( FL_RENDER_OPENGL_COPPER_THICKNESS )
-      && ( m_renderEngine == RENDER_ENGINE::OPENGL_LEGACY ) )
-    {
-        // Add copper zones
-        for( ZONE* zone : m_board->Zones() )
-        {
-            if( zone == nullptr )
-                break;
-
-            for( PCB_LAYER_ID layer : zone->GetLayerSet().Seq() )
-            {
-                auto layerContainer = m_layers_poly.find( layer );
-
-                if( layerContainer != m_layers_poly.end() )
-                    zone->TransformSolidAreasShapesToPolygon( layer, *layerContainer->second );
-            }
-        }
     }
 
     // Simplify layer polygons
@@ -759,14 +762,20 @@ void BOARD_ADAPTER::createLayers( REPORTER* aStatusReporter )
         {
             if( m_frontPlatedPadPolys && ( m_layers_poly.find( F_Cu ) != m_layers_poly.end() ) )
             {
+                if( aStatusReporter )
+                    aStatusReporter->Report( _( "Simplifying polygons on F_Cu" ) );
+
                 SHAPE_POLY_SET *layerPoly_F_Cu = m_layers_poly[F_Cu];
                 layerPoly_F_Cu->BooleanSubtract( *m_frontPlatedPadPolys, SHAPE_POLY_SET::PM_FAST );
 
-                m_frontPlatedPadPolys->Simplify( SHAPE_POLY_SET::PM_FAST );
+                 m_frontPlatedPadPolys->Simplify( SHAPE_POLY_SET::PM_FAST );
             }
 
             if( m_backPlatedPadPolys && ( m_layers_poly.find( B_Cu ) != m_layers_poly.end() ) )
             {
+                if( aStatusReporter )
+                    aStatusReporter->Report( _( "Simplifying polygons on B_Cu" ) );
+
                 SHAPE_POLY_SET *layerPoly_B_Cu = m_layers_poly[B_Cu];
                 layerPoly_B_Cu->BooleanSubtract( *m_backPlatedPadPolys, SHAPE_POLY_SET::PM_FAST );
 
@@ -793,6 +802,11 @@ void BOARD_ADAPTER::createLayers( REPORTER* aStatusReporter )
 
         if( selected_layer_id.size() > 0 )
         {
+            if( aStatusReporter )
+                aStatusReporter->Report( wxString::Format(
+                                         _( "Simplifying %d copper layers" ),
+                                         (int)selected_layer_id.size() ) );
+
             std::atomic<size_t> nextItem( 0 );
             std::atomic<size_t> threadsFinished( 0 );
 
@@ -890,6 +904,10 @@ void BOARD_ADAPTER::createLayers( REPORTER* aStatusReporter )
         if( !Is3dLayerEnabled( curr_layer_id ) )
             continue;
 
+        if( aStatusReporter )
+            aStatusReporter->Report( wxString::Format(
+                                     _( "Build Tech layer %d" ), (int)curr_layer_id ) );
+
         BVH_CONTAINER_2D *layerContainer = new BVH_CONTAINER_2D;
         m_layerMap[curr_layer_id] = layerContainer;
 
@@ -918,7 +936,7 @@ void BOARD_ADAPTER::createLayers( REPORTER* aStatusReporter )
             case PCB_DIM_CENTER_T:
             case PCB_DIM_ORTHOGONAL_T:
             case PCB_DIM_LEADER_T:
-                addShapeWithClearance( static_cast<DIMENSION_BASE*>( item ), layerContainer,
+                addShapeWithClearance( static_cast<PCB_DIMENSION_BASE*>( item ), layerContainer,
                                        curr_layer_id, 0 );
                 break;
 

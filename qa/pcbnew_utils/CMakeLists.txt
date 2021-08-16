@@ -20,7 +20,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
 # Pcbnew-related auxiliary functions that are useful for QA purposes
-# (both unit tests ans utility programs)
+# (both unit tests and utility programs)
 
 # This is a massive hack in the CMake as I have no idea how to get this to
 # link against pcbnew/pcbcommon/etc and still allow a dependency to also link
@@ -83,3 +83,9 @@ target_link_libraries( qa_pcbnew_utils PUBLIC
 target_compile_definitions( qa_pcbnew_utils
     PUBLIC PCBNEW
 )
+
+# Pass in the default data location
+set_source_files_properties( board_file_utils.cpp PROPERTIES
+    COMPILE_DEFINITIONS "QA_PCBNEW_DATA_LOCATION=(\"${CMAKE_CURRENT_SOURCE_DIR}/../data\")"
+)
+

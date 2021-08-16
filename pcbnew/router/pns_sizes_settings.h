@@ -25,7 +25,7 @@
 #include <map>
 #include <core/optional.h>
 
-#include "track.h" // for VIATYPE_T
+#include "pcb_track.h" // for VIATYPE_T
 
 class BOARD;
 class BOARD_DESIGN_SETTINGS;
@@ -40,6 +40,7 @@ public:
     SIZES_SETTINGS() :
             m_minClearance( 0 ),
             m_trackWidth( 155000 ),
+            m_trackWidthIsExplicit( true ),
             m_viaType( VIATYPE::THROUGH ),
             m_viaDiameter( 600000 ),
             m_viaDrill( 250000 ),
@@ -47,7 +48,8 @@ public:
             m_diffPairGap( 180000 ),
             m_diffPairViaGap( 180000 ),
             m_diffPairViaGapSameAsTraceGap( true ),
-            m_holeToHole( 0 )
+            m_holeToHole( 0 ),
+            m_widthSource()
     {};
 
     ~SIZES_SETTINGS() {};
@@ -60,6 +62,9 @@ public:
 
     int TrackWidth() const { return m_trackWidth; }
     void SetTrackWidth( int aWidth ) { m_trackWidth = aWidth; }
+
+    bool TrackWidthIsExplicit() const { return m_trackWidthIsExplicit; }
+    void SetTrackWidthIsExplicit( bool aIsExplicit ) { m_trackWidthIsExplicit = aIsExplicit; }
 
     int DiffPairWidth() const { return m_diffPairWidth; }
     int DiffPairGap() const { return m_diffPairGap; }
@@ -99,9 +104,13 @@ public:
     void SetViaType( VIATYPE aViaType ) { m_viaType = aViaType; }
     VIATYPE ViaType() const { return m_viaType; }
 
+    wxString GetWidthSource() const { return m_widthSource; }
+    void SetWidthSource( const wxString& aSource ) { m_widthSource = aSource; }
+
 private:
     int     m_minClearance;
     int     m_trackWidth;
+    bool    m_trackWidthIsExplicit;
 
     VIATYPE m_viaType;
     int     m_viaDiameter;
@@ -115,6 +124,8 @@ private:
     int     m_holeToHole;
 
     std::map<int, int> m_layerPairs;
+
+    wxString m_widthSource;
 };
 
 }

@@ -27,6 +27,7 @@
 #include <connectivity/connectivity_data.h>
 #include <connectivity/connectivity_algo.h>
 
+#include <drc/drc_engine.h>
 #include <drc/drc_item.h>
 #include <drc/drc_rule.h>
 #include <drc/drc_test_provider.h>
@@ -89,7 +90,7 @@ bool DRC_TEST_PROVIDER_CONNECTIVITY::Run()
     ii += count;      // We gave half of this phase to CONNECTIVITY_DATA::Build()
     count += count;
 
-    for( TRACK* track : board->Tracks() )
+    for( PCB_TRACK* track : board->Tracks() )
     {
         bool exceedT = m_drcEngine->IsErrorLimitExceeded( DRCE_DANGLING_TRACK );
         bool exceedV = m_drcEngine->IsErrorLimitExceeded( DRCE_DANGLING_VIA );

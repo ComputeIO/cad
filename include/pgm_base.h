@@ -36,7 +36,6 @@
 #include <search_stack.h>
 #include <settings/environment.h>
 #include <wx/filename.h>
-#include <wx/gdicmn.h>
 
 #undef pid_t
 #include <pybind11/embed.h>
@@ -196,13 +195,13 @@ public:
     /**
      * Set the default language without reference to any preferences.  Can be used to set
      * the language for dialogs that show before preferences are loaded
-     * @param aErrMsg String to return the error messsage(s) in
+     * @param aErrMsg String to return the error message(s) in
      * @return false if the language could not be set
      */
     bool SetDefaultLanguage( wxString& aErrMsg );
 
     /**
-     * Set in .m_language_id member the wxWidgets language identifier ID fromthe KiCad
+     * Set in .m_language_id member the wxWidgets language identifier ID from the KiCad
      * menu id (internal menu identifier).
      *
      * @param menu_id The KiCad menuitem id (returned by Menu Event, when clicking on a
@@ -309,9 +308,6 @@ protected:
 
     std::unique_ptr<SCRIPTING> m_python_scripting;
 
-    /// prevents multiple instances of a program from being run at the same time.
-    wxSingleInstanceChecker* m_pgm_checker;
-
     /// full path to this program
     wxString        m_bin_dir;
 
@@ -330,10 +326,6 @@ protected:
     /// The file name of the the program selected for browsing pdf files.
     wxString        m_pdf_browser;
     wxString        m_editor_name;
-    wxSize          m_help_size;
-
-    /// Flag to indicate if the environment variable overwrite warning dialog should be shown.
-    bool            m_show_env_var_dialog;
 
 };
 

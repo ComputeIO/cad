@@ -2,7 +2,7 @@
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
  * Copyright (C) 2007-2008 SoftPLC Corporation, Dick Hollenbeck <dick@softplc.com>
- * Copyright (C) 2004-2018 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 2004-2021 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -28,9 +28,9 @@
 #include <footprint.h>
 #include <fp_shape.h>
 #include <pad.h>
-#include <track.h>
+#include <pcb_track.h>
 #include <pcb_marker.h>
-#include <dimension.h>
+#include <pcb_dimension.h>
 #include <zone.h>
 #include <pcb_shape.h>
 #include <pcb_group.h>
@@ -156,16 +156,16 @@ const KICAD_T GENERAL_COLLECTOR::DraggableItems[] = {
 
 SEARCH_RESULT GENERAL_COLLECTOR::Inspect( EDA_ITEM* testItem, void* testData )
 {
-    BOARD_ITEM*     item        = (BOARD_ITEM*) testItem;
-    FOOTPRINT*      footprint   = nullptr;
-    PCB_GROUP*      group       = nullptr;
-    PAD*            pad         = nullptr;
-    bool            pad_through = false;
-    VIA*            via         = nullptr;
-    PCB_MARKER*     marker      = nullptr;
-    ZONE*           zone        = nullptr;
-    PCB_SHAPE*      shape       = nullptr;
-    DIMENSION_BASE* dimension   = nullptr;
+    BOARD_ITEM*         item        = (BOARD_ITEM*) testItem;
+    FOOTPRINT*          footprint   = nullptr;
+    PCB_GROUP*          group       = nullptr;
+    PAD*                pad         = nullptr;
+    bool                pad_through = false;
+    PCB_VIA*            via         = nullptr;
+    PCB_MARKER*         marker      = nullptr;
+    ZONE*               zone        = nullptr;
+    PCB_SHAPE*          shape       = nullptr;
+    PCB_DIMENSION_BASE* dimension   = nullptr;
 
 #if 0   // debugging
     static int  breakhere = 0;
@@ -231,20 +231,19 @@ SEARCH_RESULT GENERAL_COLLECTOR::Inspect( EDA_ITEM* testItem, void* testData )
 
 #endif
 
-
     switch( item->Type() )
     {
     case PCB_PAD_T:
         // there are pad specific visibility controls.
-        // Criterias to select a pad is:
+        // Criteria to select a pad is:
         // for smd pads: the footprint parent must be visible, and pads on the corresponding
         // board side must be visible
         // if pad is a thru hole, then it can be visible when its parent footprint is not.
         // for through pads: pads on Front or Back board sides must be visible
         pad = static_cast<PAD*>( item );
 
-        if( (pad->GetAttribute() != PAD_ATTRIB::SMD) &&
-            (pad->GetAttribute() != PAD_ATTRIB::CONN) )   // a hole is present, so multiple layers
+        if( ( pad->GetAttribute() != PAD_ATTRIB::SMD ) &&
+            ( pad->GetAttribute() != PAD_ATTRIB::CONN ) )  // a hole is present, so multiple layers
         {
             // proceed to the common tests below, but without the parent footprint test,
             // by leaving footprint==NULL, but having pad != null
@@ -258,13 +257,14 @@ SEARCH_RESULT GENERAL_COLLECTOR::Inspect( EDA_ITEM* testItem, void* testData )
         break;
 
     case PCB_VIA_T:     // vias are on many layers, so layer test is specific
-        via = static_cast<VIA*>( item );
+        via = static_cast<PCB_VIA*>( item );
         break;
 
     case PCB_TRACE_T:
     case PCB_ARC_T:
         if( m_Guide->IgnoreTracks() )
             goto exit;
+
         break;
 
     case PCB_FP_ZONE_T:
@@ -288,53 +288,57 @@ SEARCH_RESULT GENERAL_COLLECTOR::Inspect( EDA_ITEM* testItem, void* testData )
     case PCB_DIM_CENTER_T:
     case PCB_DIM_ORTHOGONAL_T:
     case PCB_DIM_LEADER_T:
-        dimension = static_cast<DIMENSION_BASE*>( item );
+        dimension = static_cast<PCB_DIMENSION_BASE*>( item );
         break;
 
     case PCB_TARGET_T:
         break;
 
     case PCB_FP_TEXT_T:
+    {
+        FP_TEXT *text = static_cast<FP_TEXT*>( item );
+
+        if( m_Guide->IgnoreHiddenFPText() && !text->IsVisible() )
+            goto exit;
+
+        if( m_Guide->IgnoreFPTextOnBack() && IsBackLayer( text->GetLayer() ) )
+            goto exit;
+
+        if( m_Guide->IgnoreFPTextOnFront() && IsFrontLayer( text->GetLayer() ) )
+            goto exit;
+
+        /* The three text types have different criteria: reference
+         * and value have their own ignore flags; user text instead
+         * follows their layer visibility. Checking this here is
+         * simpler than later (when layer visibility is checked for
+         * other entities) */
+
+        switch( text->GetType() )
         {
-            FP_TEXT *text = static_cast<FP_TEXT*>( item );
-            if( m_Guide->IgnoreHiddenFPText() && !text->IsVisible() )
+        case FP_TEXT::TEXT_is_REFERENCE:
+            if( m_Guide->IgnoreFPReferences() )
                 goto exit;
 
-            if( m_Guide->IgnoreFPTextOnBack() && IsBackLayer( text->GetLayer() ) )
+            break;
+
+        case FP_TEXT::TEXT_is_VALUE:
+            if( m_Guide->IgnoreFPValues() )
                 goto exit;
 
-            if( m_Guide->IgnoreFPTextOnFront() && IsFrontLayer( text->GetLayer() ) )
+            break;
+
+        case FP_TEXT::TEXT_is_DIVERS:
+            if( !m_Guide->IsLayerVisible( text->GetLayer() )
+              && m_Guide->IgnoreNonVisibleLayers() )
                 goto exit;
 
-            /* The three text types have different criteria: reference
-             * and value have their own ignore flags; user text instead
-             * follows their layer visibility. Checking this here is
-             * simpler than later (when layer visibility is checked for
-             * other entities) */
-
-            switch( text->GetType() )
-            {
-            case FP_TEXT::TEXT_is_REFERENCE:
-                if( m_Guide->IgnoreFPReferences() )
-                    goto exit;
-                break;
-
-            case FP_TEXT::TEXT_is_VALUE:
-                if( m_Guide->IgnoreFPValues() )
-                    goto exit;
-                break;
-
-            case FP_TEXT::TEXT_is_DIVERS:
-                if( !m_Guide->IsLayerVisible( text->GetLayer() )
-                        && m_Guide->IgnoreNonVisibleLayers() )
-                    goto exit;
-                break;
-            }
-
-            // Extract the footprint since it could be hidden
-            footprint = static_cast<FOOTPRINT*>( item->GetParent() );
+            break;
         }
+
+        // Extract the footprint since it could be hidden
+        footprint = static_cast<FOOTPRINT*>( item->GetParent() );
         break;
+    }
 
     case PCB_FP_SHAPE_T:
         shape = static_cast<FP_SHAPE*>( item );
@@ -360,10 +364,10 @@ SEARCH_RESULT GENERAL_COLLECTOR::Inspect( EDA_ITEM* testItem, void* testData )
 
     if( footprint )    // true from case PCB_PAD_T, PCB_FP_TEXT_T, or PCB_FOOTPRINT_T
     {
-        if( m_Guide->IgnoreFootprintsOnBack() && ( footprint->GetLayer() == B_Cu) )
+        if( m_Guide->IgnoreFootprintsOnBack() && ( footprint->GetLayer() == B_Cu ) )
             goto exit;
 
-        if( m_Guide->IgnoreFootprintsOnFront() && ( footprint->GetLayer() == F_Cu) )
+        if( m_Guide->IgnoreFootprintsOnFront() && ( footprint->GetLayer() == F_Cu ) )
             goto exit;
     }
 
@@ -465,7 +469,7 @@ SEARCH_RESULT GENERAL_COLLECTOR::Inspect( EDA_ITEM* testItem, void* testData )
                     else if( dimension )
                     {
                         // Dimensions feel particularly hard to select, probably due to their
-                        // noisy shape making it feel like they should have a larger bounary.
+                        // noisy shape making it feel like they should have a larger boundary.
                         if( dimension->HitTest( m_refPos, KiROUND( accuracy * 1.5 ) ) )
                         {
                             Append( dimension );
@@ -539,7 +543,7 @@ SEARCH_RESULT GENERAL_COLLECTOR::Inspect( EDA_ITEM* testItem, void* testData )
                     else if( dimension )
                     {
                         // Dimensions feels particularly hard to select, probably due to their
-                        // noisy shape making it feel like they should have a larger bounary.
+                        // noisy shape making it feel like they should have a larger boundary.
                         if( dimension->HitTest( m_refPos, KiROUND( accuracy * 1.5 ) ) )
                         {
                             Append2nd( dimension );
@@ -579,7 +583,7 @@ void GENERAL_COLLECTOR::Collect( BOARD_ITEM* aItem, const KICAD_T aScanList[],
     // the Inspect() function.
     SetRefPos( aRefPos );
 
-    aItem->Visit( m_inspector, NULL, m_scanTypes );
+    aItem->Visit( m_inspector, nullptr, m_scanTypes );
 
     // record the length of the primary list before concatenating on to it.
     m_PrimaryLength = m_list.size();
@@ -606,7 +610,7 @@ void PCB_TYPE_COLLECTOR::Collect( BOARD_ITEM* aBoard, const KICAD_T aScanList[] 
 {
     Empty();        // empty any existing collection
 
-    aBoard->Visit( m_inspector, NULL, aScanList );
+    aBoard->Visit( m_inspector, nullptr, aScanList );
 }
 
 
@@ -625,5 +629,5 @@ void PCB_LAYER_COLLECTOR::Collect( BOARD_ITEM* aBoard, const KICAD_T aScanList[]
 {
     Empty();
 
-    aBoard->Visit( m_inspector, NULL, aScanList );
+    aBoard->Visit( m_inspector, nullptr, aScanList );
 }

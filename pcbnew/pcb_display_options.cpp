@@ -26,8 +26,9 @@
 
 #include <common.h>
 #include <pcbnew.h>
+#include <pad.h>
 #include <board_design_settings.h>
-#include <layers_id_colors_and_visibility.h>
+#include <layer_ids.h>
 #include <pcb_display_options.h>
 #include <eda_text.h>
 

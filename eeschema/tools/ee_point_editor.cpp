@@ -375,7 +375,7 @@ int EE_POINT_EDITOR::Main( const TOOL_EVENT& aEvent )
 }
 
 /**
- * Update the coordinates of 4 corners of a rectangle, accordint to constraints
+ * Update the coordinates of 4 corners of a rectangle, according to constraints
  * and the moved corner
  * @param aEditedPointIndex is the corner id
  * @param minWidth is the minimal width constraint
@@ -580,7 +580,7 @@ void EE_POINT_EDITOR::updateParentItem() const
 
         // Update the fields if we're in autoplace mode
         if( sheet->GetFieldsAutoplaced() == FIELDS_AUTOPLACED_AUTO )
-            sheet->AutoplaceFields( /* aScreen */ NULL, /* aManual */ false );
+            sheet->AutoplaceFields( /* aScreen */ nullptr, /* aManual */ false );
 
         // Keep sheet pins attached to edges:
         for( SCH_SHEET_PIN* pin : sheet->GetPins() )

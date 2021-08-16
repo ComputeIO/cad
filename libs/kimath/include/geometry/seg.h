@@ -170,7 +170,7 @@ public:
       *
       * @return the nearest point
       */
-    const VECTOR2I NearestPoint( const VECTOR2I &aP ) const;
+    const VECTOR2I NearestPoint( const VECTOR2I& aP ) const;
 
     /**
       * Compute a point on the segment (this) that is closest to any point on \a aSeg.
@@ -395,7 +395,7 @@ private:
                      VECTOR2I* aPt = nullptr ) const;
 
 private:
-    ///< index withing the parent shape (used when m_is_local == false)
+    ///< index within the parent shape (used when m_is_local == false)
     int m_index;
 };
 

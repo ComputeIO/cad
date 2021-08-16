@@ -29,10 +29,10 @@
 #include <functional>
 #include <tool/selection.h>
 #include <tool/selection_conditions.h>
-#include <tool/tool_action.h>
 
 class EDA_BASE_FRAME;
 class EDA_DRAW_FRAME;
+class TOOL_ACTION;
 
 /**
  * Class that groups generic conditions for editor states.
@@ -118,6 +118,15 @@ public:
      */
     SELECTION_CONDITION FullscreenCursor();
 
+    /**
+     * Create a functor testing if the python scripting console window is visible.
+     *
+     * @note This requires the frame passed into the constructor be be derived from EDA_DRAW_FRAME.
+     *
+     * @return Functor testing if the python scripting console window is visible
+     */
+    SELECTION_CONDITION ScriptingConsoleVisible();
+
 protected:
     ///< Helper function used by ContentModified().
     static bool contentModifiedFunc( const SELECTION& aSelection, EDA_BASE_FRAME* aFrame );
@@ -147,9 +156,8 @@ protected:
     ///< Helper function used by FullscreenCursor().
     static bool cursorFunc( const SELECTION& aSelection, EDA_DRAW_FRAME* aFrame );
 
-    ///< Helper function used by CanvasType().
-    static bool canvasTypeFunc( const SELECTION& aSelection, EDA_DRAW_FRAME* aFrame,
-                                EDA_DRAW_PANEL_GAL::GAL_TYPE aType );
+    ///< Helper function used by ScriptingConsoleVisible().
+    static bool consoleVisibleFunc( const SELECTION& aSelection, EDA_DRAW_FRAME* aFrame );
 
     ///< The frame to apply the conditions to.
     EDA_BASE_FRAME* m_frame;

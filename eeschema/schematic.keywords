@@ -39,6 +39,7 @@ font
 footprint
 free
 global_label
+hcenter
 hide
 hierarchical_label
 hint_alt_swap
@@ -54,6 +55,7 @@ iref
 italic
 junction
 justify
+keep_upright
 kicad_sch
 kicad_symbol_lib
 label
@@ -126,6 +128,7 @@ unit
 unspecified
 uuid
 value
+vcenter
 version
 width
 wire

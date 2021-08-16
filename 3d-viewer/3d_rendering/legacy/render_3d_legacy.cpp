@@ -39,8 +39,8 @@
  */
 #define UNITS3D_TO_UNITSPCB (IU_PER_MM)
 
-RENDER_3D_LEGACY::RENDER_3D_LEGACY( BOARD_ADAPTER& aAdapter, CAMERA& aCamera ) :
-        RENDER_3D_BASE( aAdapter, aCamera )
+RENDER_3D_LEGACY::RENDER_3D_LEGACY( EDA_3D_CANVAS* aCanvas, BOARD_ADAPTER& aAdapter, CAMERA& aCamera ) :
+        RENDER_3D_BASE( aCanvas, aAdapter, aCamera )
 {
     wxLogTrace( m_logTrace, wxT( "RENDER_3D_LEGACY::RENDER_3D_LEGACY" ) );
 
@@ -1174,6 +1174,8 @@ void RENDER_3D_LEGACY::renderSolderMaskLayer( PCB_LAYER_ID aLayerID, float aZPos
 void RENDER_3D_LEGACY::render3dModelsSelected( bool aRenderTopOrBot, bool aRenderTransparentOnly,
                                                bool aRenderSelectedOnly )
 {
+    if( !m_boardAdapter.GetBoard() )
+        return;
 
     MODEL_3D::BeginDrawMulti( !aRenderSelectedOnly );
 

@@ -33,9 +33,11 @@
 #include <panel_pcbnew_display_origin.h>
 #include <tool/tool_manager.h>
 #include <tools/pcb_selection_tool.h>
+#include <board_design_settings.h>
 #include <drawing_sheet/ds_data_model.h>
 #include <pcbplot.h>
 #include <pcb_painter.h>
+#include <project.h>
 #include <invoke_pcb_dialog.h>
 #include <widgets/appearance_controls.h>
 #include <widgets/paged_dialog.h>
@@ -78,7 +80,7 @@ bool PCB_EDIT_FRAME::LoadProjectSettings()
 
     if( !DS_DATA_MODEL::GetTheInstance().LoadDrawingSheet( filename ) )
     {
-        ShowInfoBarError( _( "Error loading drawing sheet" ), true );
+        ShowInfoBarError( _( "Error loading drawing sheet." ), true );
     }
 
     // Load render settings that aren't stored in PCB_DISPLAY_OPTIONS

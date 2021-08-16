@@ -27,6 +27,7 @@
 #include <bitmaps.h>
 #include <filehistory.h>
 #include <menus_helpers.h>
+#include <paths.h>
 #include <tool/action_manager.h>
 #include <tool/action_toolbar.h>
 #include <tool/tool_manager.h>
@@ -36,6 +37,7 @@
 #include "pgm_kicad.h"
 #include "kicad_id.h"
 #include <widgets/wx_menubar.h>
+#include <wx/dir.h>
 
 
 void KICAD_MANAGER_FRAME::ReCreateMenuBar()
@@ -69,6 +71,12 @@ void KICAD_MANAGER_FRAME::ReCreateMenuBar()
 
     fileMenu->Add( KICAD_MANAGER_ACTIONS::newProject );
     fileMenu->Add( KICAD_MANAGER_ACTIONS::newFromTemplate );
+
+    if( wxDir::Exists( PATHS::GetStockDemosPath() ) )
+    {
+        fileMenu->Add( KICAD_MANAGER_ACTIONS::openDemoProject );
+    }
+
     fileMenu->Add( KICAD_MANAGER_ACTIONS::openProject );
 
     wxMenuItem* item = fileMenu->Add( openRecentMenu );
@@ -163,7 +171,13 @@ void KICAD_MANAGER_FRAME::ReCreateMenuBar()
     prefsMenu->Add( ACTIONS::configurePaths );
     prefsMenu->Add( ACTIONS::showSymbolLibTable );
     prefsMenu->Add( ACTIONS::showFootprintLibTable );
-    prefsMenu->Add( ACTIONS::openPreferences );
+
+    // We can't use ACTIONS::showPreferences yet because wxWidgets moves this on
+    // Mac, and it needs the wxID_PREFERENCES id to find it.
+    prefsMenu->Add( _( "Preferences..." ) + "\tCtrl+,",
+                    _( "Show preferences for all open tools" ),
+                    wxID_PREFERENCES,
+                    BITMAPS::preference );
 
     prefsMenu->AppendSeparator();
     AddMenuLanguageList( prefsMenu, controlTool );

@@ -1,7 +1,7 @@
 /*
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
- * Copyright (C) 2020 KiCad Developers, see change_log.txt for contributors.
+ * Copyright (C) 2020-2021 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -24,7 +24,7 @@
 #include <drc/drc_engine.h>
 #include <drc/drc_item.h>
 #include <drc/drc_test_provider.h>
-#include <track.h>
+#include <pcb_track.h>
 #include <footprint.h>
 #include <pad.h>
 #include <zone.h>
@@ -53,7 +53,8 @@ const wxString DRC_TEST_PROVIDER::GetName() const { return "<no name test>"; }
 const wxString DRC_TEST_PROVIDER::GetDescription() const { return ""; }
 
 
-void DRC_TEST_PROVIDER::reportViolation( std::shared_ptr<DRC_ITEM>& item, wxPoint aMarkerPos )
+void DRC_TEST_PROVIDER::reportViolation( std::shared_ptr<DRC_ITEM>& item,
+                                         const wxPoint& aMarkerPos )
 {
     if( item->GetViolatingRule() )
         accountCheck( item->GetViolatingRule() );
@@ -167,7 +168,7 @@ int DRC_TEST_PROVIDER::forEachGeometryItem( const std::vector<KICAD_T>& aTypes, 
             typeMask[ aType ] = true;
     }
 
-    for( TRACK* item : brd->Tracks() )
+    for( PCB_TRACK* item : brd->Tracks() )
     {
         if( (item->GetLayerSet() & aLayers).any() )
         {

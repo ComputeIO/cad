@@ -1,7 +1,7 @@
 /*
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
- * Copyright (C) 1992-2014 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 1992-2021 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -32,25 +32,16 @@ public:
     DIALOG_GLOBAL_DELETION( PCB_EDIT_FRAME* parent );
     void SetCurrentLayer( LAYER_NUM aLayer );
 
+    ///< @todo Move this back into the tool rather than having the dialog do the deleting.
+    void DoGlobalDeletions();
+
 private:
-    PCB_EDIT_FRAME* m_Parent;
-    LAYER_NUM m_currentLayer;
-
-    void onOkClick( wxCommandEvent& event ) override
-    {
-        doGlobalDeletions();
-        EndModal(wxID_OK);
-    }
-
-    void onCancelClick( wxCommandEvent& event ) override
-    {
-        EndModal(wxID_CANCEL);
-    }
-
-    void doGlobalDeletions();
     void onCheckDeleteTracks( wxCommandEvent& event ) override;
     void onCheckDeleteFootprints( wxCommandEvent& event ) override;
     void onCheckDeleteDrawings( wxCommandEvent& event ) override;
+
+    PCB_EDIT_FRAME* m_Parent;
+    LAYER_NUM m_currentLayer;
 };
 
 #endif  // _DIALOG_GLOBAL_DELETION_H_

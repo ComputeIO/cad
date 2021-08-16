@@ -2,7 +2,7 @@
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
  * Copyright (C) 2015 Jean-Pierre Charras, jaen-pierre.charras@gipsa-lab.inpg.com
- * Copyright (C) 1992-2020 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 1992-2021 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -82,7 +82,7 @@ const EDA_RECT EDA_ITEM::GetBoundingBox() const
 
 EDA_ITEM* EDA_ITEM::Clone() const
 {
-    wxCHECK_MSG( false, NULL, wxT( "Clone not implemented in derived class " ) + GetClass() +
+    wxCHECK_MSG( false, nullptr, wxT( "Clone not implemented in derived class " ) + GetClass() +
                  wxT( ".  Bad programmer!" ) );
 }
 
@@ -146,7 +146,7 @@ bool EDA_ITEM::Replace( const wxFindReplaceData& aSearchData, wxString& aText )
 {
     wxString searchString = (aSearchData.GetFlags() & wxFR_MATCHCASE) ? aText : aText.Upper();
 
-    int result = searchString.Find( (aSearchData.GetFlags() & wxFR_MATCHCASE) ?
+    int result = searchString.Find( ( aSearchData.GetFlags() & wxFR_MATCHCASE ) ?
                                     aSearchData.GetFindString() :
                                     aSearchData.GetFindString().Upper() );
 
@@ -171,10 +171,11 @@ bool EDA_ITEM::Replace( const wxFindReplaceData& aSearchData, wxString& aText )
 bool EDA_ITEM::operator<( const EDA_ITEM& aItem ) const
 {
     wxFAIL_MSG( wxString::Format( wxT( "Less than operator not defined for item type %s." ),
-                                 GetClass() ) );
+                                  GetClass() ) );
 
     return false;
 }
+
 
 EDA_ITEM& EDA_ITEM::operator=( const EDA_ITEM& aItem )
 {
@@ -188,6 +189,7 @@ EDA_ITEM& EDA_ITEM::operator=( const EDA_ITEM& aItem )
 
     return *this;
 }
+
 
 const BOX2I EDA_ITEM::ViewBBox() const
 {
@@ -205,12 +207,14 @@ void EDA_ITEM::ViewGetLayers( int aLayers[], int& aCount ) const
     aLayers[0]  = 0;
 }
 
+
 BITMAPS EDA_ITEM::GetMenuImage() const
 {
     return BITMAPS::dummy_item;
 }
 
-#if defined(DEBUG)
+
+#if defined( DEBUG )
 
 void EDA_ITEM::ShowDummy( std::ostream& os ) const
 {
@@ -234,9 +238,6 @@ std::ostream& EDA_ITEM::NestedSpace( int nestLevel, std::ostream& os )
 }
 
 #endif
-
-
-
 
 
 static struct EDA_ITEM_DESC
@@ -280,7 +281,7 @@ static struct EDA_ITEM_DESC
             .Map( SCH_GLOBAL_LABEL_T,   _HKI( "Global Label" ) )
             .Map( SCH_HIER_LABEL_T,     _HKI( "Hierarchical Label" ) )
             .Map( SCH_FIELD_T,          _HKI( "Schematic Field" ) )
-            .Map( SCH_COMPONENT_T,      _HKI( "Component" ) )
+            .Map( SCH_SYMBOL_T,         _HKI( "Schematic Symbol" ) )
             .Map( SCH_SHEET_PIN_T,      _HKI( "Sheet Pin" ) )
             .Map( SCH_SHEET_T,          _HKI( "Sheet" ) )
 
@@ -291,7 +292,7 @@ static struct EDA_ITEM_DESC
 
             .Map( SCH_SCREEN_T,         _HKI( "SCH Screen" ) )
 
-            .Map( LIB_PART_T,           _HKI( "Symbol" ) )
+            .Map( LIB_SYMBOL_T,         _HKI( "Symbol" ) )
             .Map( LIB_ALIAS_T,          _HKI( "Alias" ) )
             .Map( LIB_ARC_T,            _HKI( "Arc" ) )
             .Map( LIB_CIRCLE_T,         _HKI( "Circle" ) )

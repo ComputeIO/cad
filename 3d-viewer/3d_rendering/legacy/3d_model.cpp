@@ -149,7 +149,8 @@ MODEL_3D::MODEL_3D( const S3DMODEL& a3DModel, MATERIAL_MODE aMaterialMode )
         auto& mesh_group = mesh_groups[mesh.m_MaterialIdx];
         auto& material = m_materials[mesh.m_MaterialIdx];
 
-        if( material.IsTransparent() )
+        if( material.IsTransparent()
+                && m_materialMode != MATERIAL_MODE::DIFFUSE_ONLY )
             m_have_transparent_meshes = true;
          else
             m_have_opaque_meshes = true;
@@ -431,10 +432,14 @@ void MODEL_3D::Draw( bool aTransparent, float aOpacity, bool aUseSelectedMateria
     glTexEnvfv( GL_TEXTURE_ENV, GL_TEXTURE_ENV_COLOR, (const float*)&param.x );
 
     // BeginDrawMulti();
-    for( auto& mat : m_materials )
+    for( const MODEL_3D::MATERIAL& mat : m_materials )
     {
-        if( ( mat.IsTransparent() != aTransparent ) && ( aOpacity >= 1.0f ) )
+        if( ( mat.IsTransparent() != aTransparent )
+                && ( aOpacity >= 1.0f )
+                && m_materialMode != MATERIAL_MODE::DIFFUSE_ONLY )
+        {
             continue;
+        }
 
         switch( m_materialMode )
         {
@@ -455,7 +460,8 @@ void MODEL_3D::Draw( bool aTransparent, float aOpacity, bool aUseSelectedMateria
         }
 
         glDrawElements( GL_TRIANGLES, mat.m_render_idx_count, m_index_buffer_type,
-                        reinterpret_cast<const void*>( mat.m_render_idx_buffer_offset ) );
+                        reinterpret_cast<const void*>(
+                                static_cast<uintptr_t>( mat.m_render_idx_buffer_offset ) ) );
     }
 }
 
@@ -487,7 +493,7 @@ void MODEL_3D::DrawBbox() const
                     reinterpret_cast<const void*>( offsetof( VERTEX, m_color ) ) );
 
     glDrawElements( GL_LINES, bbox_idx_count, m_bbox_index_buffer_type,
-                    reinterpret_cast<const void*>( NULL ) );
+                    reinterpret_cast<const void*>( 0 ) );
 }
 
 
@@ -509,6 +515,7 @@ void MODEL_3D::DrawBboxes() const
                             ? sizeof( GLushort ) : sizeof( GLuint );
 
     glDrawElements( GL_LINES, bbox_idx_count * m_meshes_bbox.size(), m_bbox_index_buffer_type,
-                    reinterpret_cast<const void*>( bbox_idx_count * idx_size ) );
+                    reinterpret_cast<const void*>( 
+                        static_cast<uintptr_t>( bbox_idx_count * idx_size ) ) );
 }
 

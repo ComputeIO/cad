@@ -5,7 +5,7 @@
 /*
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
- * Copyright (C) 2017 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 2017-2021 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -29,7 +29,7 @@
 #include <fill_type.h>
 #include <plotters_specific.h>
 #include <macros.h>
-#include <kicad_string.h>
+#include <string_utils.h>
 #include <convert_basic_shapes_to_polygon.h>
 #include <render_settings.h>
 #include <trigo.h>
@@ -115,7 +115,7 @@ static const char* getDXFLineType( PLOT_DASH_TYPE aType )
 
 // A helper function to create a color name acceptable in DXF files
 // DXF files do not use a RGB definition
-static wxString getDXFColorName( COLOR4D aColor )
+static wxString getDXFColorName( const COLOR4D& aColor )
 {
     EDA_COLOR_T color = COLOR4D::FindNearestLegacyColor( int( aColor.r * 255 ),
                                                          int( aColor.g * 255 ),
@@ -144,11 +144,6 @@ void DXF_PLOTTER::SetUnits( DXF_UNITS aUnit )
 }
 
 
-/**
- * Set the scale/position for the DXF plot
- * The DXF engine doesn't support line widths and mirroring. The output
- * coordinate system is in the first quadrant (in mm)
- */
 void DXF_PLOTTER::SetViewport( const wxPoint& aOffset, double aIusPerDecimil,
                                double aScale, bool aMirror )
 {
@@ -172,9 +167,7 @@ void DXF_PLOTTER::SetViewport( const wxPoint& aOffset, double aIusPerDecimil,
     m_currentColor = COLOR4D::BLACK;
 }
 
-/**
- * Opens the DXF plot with a skeleton header
- */
+
 bool DXF_PLOTTER::StartPlot()
 {
     wxASSERT( m_outputFile );
@@ -398,16 +391,13 @@ bool DXF_PLOTTER::EndPlot()
            "  0\n"
            "EOF\n", m_outputFile );
     fclose( m_outputFile );
-    m_outputFile = NULL;
+    m_outputFile = nullptr;
 
     return true;
 }
 
 
-/**
- * The DXF exporter handles 'colors' as layers...
- */
-void DXF_PLOTTER::SetColor( COLOR4D color )
+void DXF_PLOTTER::SetColor( const COLOR4D& color )
 {
     if( ( m_colorMode )
        || ( color == COLOR4D::BLACK )
@@ -421,9 +411,7 @@ void DXF_PLOTTER::SetColor( COLOR4D color )
     }
 }
 
-/**
- * DXF rectangle: fill not supported
- */
+
 void DXF_PLOTTER::Rect( const wxPoint& p1, const wxPoint& p2, FILL_TYPE fill, int width )
 {
     wxASSERT( m_outputFile );
@@ -435,17 +423,12 @@ void DXF_PLOTTER::Rect( const wxPoint& p1, const wxPoint& p2, FILL_TYPE fill, in
 }
 
 
-/**
- * DXF circle: full functionality; it even does 'fills' drawing a
- * circle with a dual-arc polyline wide as the radius.
- *
- * I could use this trick to do other filled primitives
- */
 void DXF_PLOTTER::Circle( const wxPoint& centre, int diameter, FILL_TYPE fill, int width )
 {
     wxASSERT( m_outputFile );
     double radius = userToDeviceSize( diameter / 2 );
     DPOINT centre_dev = userToDeviceCoordinates( centre );
+
     if( radius > 0 )
     {
         wxString cname = getDXFColorName( m_currentColor );
@@ -460,29 +443,23 @@ void DXF_PLOTTER::Circle( const wxPoint& centre, int diameter, FILL_TYPE fill, i
         if( fill == FILL_TYPE::FILLED_SHAPE )
         {
             double r = radius*0.5;
-            fprintf( m_outputFile, "0\nPOLYLINE\n");
-            fprintf( m_outputFile, "8\n%s\n66\n1\n70\n1\n", TO_UTF8( cname ));
+            fprintf( m_outputFile, "0\nPOLYLINE\n" );
+            fprintf( m_outputFile, "8\n%s\n66\n1\n70\n1\n", TO_UTF8( cname ) );
             fprintf( m_outputFile, "40\n%g\n41\n%g\n", radius, radius);
-            fprintf( m_outputFile, "0\nVERTEX\n8\n%s\n", TO_UTF8( cname ));
+            fprintf( m_outputFile, "0\nVERTEX\n8\n%s\n", TO_UTF8( cname ) );
             fprintf( m_outputFile, "10\n%g\n 20\n%g\n42\n1.0\n",
-                    centre_dev.x-r, centre_dev.y );
-            fprintf( m_outputFile, "0\nVERTEX\n8\n%s\n", TO_UTF8( cname ));
+                     centre_dev.x-r, centre_dev.y );
+            fprintf( m_outputFile, "0\nVERTEX\n8\n%s\n", TO_UTF8( cname ) );
             fprintf( m_outputFile, "10\n%g\n 20\n%g\n42\n1.0\n",
-                    centre_dev.x+r, centre_dev.y );
+                     centre_dev.x+r, centre_dev.y );
             fprintf( m_outputFile, "0\nSEQEND\n");
         }
     }
 }
 
 
-/**
- * DXF polygon: doesn't fill it but at least it close the filled ones
- * DXF does not know thick outline.
- * It does not know thick segments, therefore filled polygons with thick outline
- * are converted to inflated polygon by aWidth/2
- */
 void DXF_PLOTTER::PlotPoly( const std::vector<wxPoint>& aCornerList,
-                            FILL_TYPE aFill, int aWidth, void * aData )
+                            FILL_TYPE aFill, int aWidth, void* aData )
 {
     if( aCornerList.size() <= 1 )
         return;
@@ -509,7 +486,6 @@ void DXF_PLOTTER::PlotPoly( const std::vector<wxPoint>& aCornerList,
         return;
     }
 
-
     // if the polygon outline has thickness, and is not filled
     // (i.e. is a polyline) plot outlines with thick segments
     if( aWidth > 0 && aFill == FILL_TYPE::NO_FILL )
@@ -517,8 +493,7 @@ void DXF_PLOTTER::PlotPoly( const std::vector<wxPoint>& aCornerList,
         MoveTo( aCornerList[0] );
 
         for( unsigned ii = 1; ii < aCornerList.size(); ii++ )
-            ThickSegment( aCornerList[ii-1], aCornerList[ii],
-                          aWidth, FILLED, NULL );
+            ThickSegment( aCornerList[ii-1], aCornerList[ii], aWidth, FILLED, nullptr );
 
         return;
     }
@@ -591,6 +566,7 @@ void DXF_PLOTTER::PenTo( const wxPoint& pos, char plume )
     {
         return;
     }
+
     DPOINT pos_dev = userToDeviceCoordinates( pos );
     DPOINT pen_lastpos_dev = userToDeviceCoordinates( m_penLastpos );
 
@@ -605,6 +581,7 @@ void DXF_PLOTTER::PenTo( const wxPoint& pos, char plume )
                  TO_UTF8( cname ), lname,
                  pen_lastpos_dev.x, pen_lastpos_dev.y, pos_dev.x, pos_dev.y );
     }
+
     m_penLastpos = pos;
 }
 
@@ -628,6 +605,7 @@ void DXF_PLOTTER::ThickSegment( const wxPoint& aStart, const wxPoint& aEnd, int 
         const SHAPE_LINE_CHAIN& path = outlineBuffer.COutline( 0 );
 
         cornerList.reserve( path.PointCount() );
+
         for( int jj = 0; jj < path.PointCount(); jj++ )
             cornerList.emplace_back( path.CPoint( jj ).x, path.CPoint( jj ).y );
 
@@ -644,9 +622,7 @@ void DXF_PLOTTER::ThickSegment( const wxPoint& aStart, const wxPoint& aEnd, int 
     }
 }
 
-/* Plot an arc in DXF format
- * Filling is not supported
- */
+
 void DXF_PLOTTER::Arc( const wxPoint& centre, double StAngle, double EndAngle, int radius,
                        FILL_TYPE fill, int width )
 {
@@ -675,9 +651,7 @@ void DXF_PLOTTER::Arc( const wxPoint& centre, double StAngle, double EndAngle, i
              StAngle / 10.0, EndAngle / 10.0 );
 }
 
-/**
- * DXF oval pad: always done in sketch mode
- */
+
 void DXF_PLOTTER::FlashPadOval( const wxPoint& pos, const wxSize& aSize, double orient,
                                 OUTLINE_MODE trace_mode, void* aData )
 {
@@ -696,21 +670,14 @@ void DXF_PLOTTER::FlashPadOval( const wxPoint& pos, const wxSize& aSize, double 
 }
 
 
-/**
- * DXF round pad: always done in sketch mode; it could be filled but it isn't
- * pretty if other kinds of pad aren't...
- */
 void DXF_PLOTTER::FlashPadCircle( const wxPoint& pos, int diametre,
-                                    OUTLINE_MODE trace_mode, void* aData )
+                                  OUTLINE_MODE trace_mode, void* aData )
 {
     wxASSERT( m_outputFile );
     Circle( pos, diametre, FILL_TYPE::NO_FILL );
 }
 
 
-/**
- * DXF rectangular pad: always done in sketch mode
- */
 void DXF_PLOTTER::FlashPadRect( const wxPoint& pos, const wxSize& padsize,
                                 double orient, OUTLINE_MODE trace_mode, void* aData )
 {
@@ -723,6 +690,7 @@ void DXF_PLOTTER::FlashPadRect( const wxPoint& pos, const wxSize& padsize,
 
     if( size.x < 0 )
         size.x = 0;
+
     if( size.y < 0 )
         size.y = 0;
 
@@ -739,6 +707,7 @@ void DXF_PLOTTER::FlashPadRect( const wxPoint& pos, const wxSize& padsize,
         FinishTo( wxPoint( fx, fy ) );
         return;
     }
+
     if( size.y == 0 )
     {
         ox = pos.x - size.x;
@@ -775,13 +744,14 @@ void DXF_PLOTTER::FlashPadRect( const wxPoint& pos, const wxSize& padsize,
     FinishTo( wxPoint( ox, oy ) );
 }
 
+
 void DXF_PLOTTER::FlashPadRoundRect( const wxPoint& aPadPos, const wxSize& aSize,
                                      int aCornerRadius, double aOrient,
                                      OUTLINE_MODE aTraceMode, void* aData )
 {
     SHAPE_POLY_SET outline;
-    TransformRoundChamferedRectToPolygon( outline, aPadPos, aSize, aOrient,
-                                          aCornerRadius, 0.0, 0, GetPlotterArcHighDef(), ERROR_INSIDE );
+    TransformRoundChamferedRectToPolygon( outline, aPadPos, aSize, aOrient, aCornerRadius,
+                                          0.0, 0, 0, GetPlotterArcHighDef(), ERROR_INSIDE );
 
     // TransformRoundRectToPolygon creates only one convex polygon
     SHAPE_LINE_CHAIN& poly = outline.Outline( 0 );
@@ -812,9 +782,6 @@ void DXF_PLOTTER::FlashPadCustom( const wxPoint& aPadPos, const wxSize& aSize,
 }
 
 
-/**
- * DXF trapezoidal pad: only sketch mode is supported
- */
 void DXF_PLOTTER::FlashPadTrapez( const wxPoint& aPadPos, const wxPoint *aCorners,
                                   double aPadOrient, OUTLINE_MODE aTrace_Mode, void* aData )
 {
@@ -837,9 +804,8 @@ void DXF_PLOTTER::FlashPadTrapez( const wxPoint& aPadPos, const wxPoint *aCorner
 }
 
 
-void DXF_PLOTTER::FlashRegularPolygon( const wxPoint& aShapePos,
-                            int aRadius, int aCornerCount,
-                            double aOrient, OUTLINE_MODE aTraceMode, void* aData )
+void DXF_PLOTTER::FlashRegularPolygon( const wxPoint& aShapePos, int aRadius, int aCornerCount,
+                                       double aOrient, OUTLINE_MODE aTraceMode, void* aData )
 {
     // Do nothing
     wxASSERT( 0 );
@@ -847,10 +813,12 @@ void DXF_PLOTTER::FlashRegularPolygon( const wxPoint& aShapePos,
 
 
 /**
- * Checks if a given string contains non-ASCII characters.
- * FIXME: the performance of this code is really poor, but in this case it can be
- * acceptable because the plot operation is not called very often.
- * @param string String to check
+ * Check if a given string contains non-ASCII characters.
+ *
+ * @fixme The performance of this code is really poor, but in this case it can be
+ *        acceptable because the plot operation is not called very often.
+ *
+ * @param string String to check.
  * @return true if it contains some non-ASCII character, false if all characters are
  *         inside ASCII range (<=255).
  */
@@ -865,8 +833,9 @@ bool containsNonAsciiChars( const wxString& string )
     return false;
 }
 
+
 void DXF_PLOTTER::Text( const wxPoint&              aPos,
-                        COLOR4D                     aColor,
+                        const COLOR4D&              aColor,
                         const wxString&             aText,
                         const EDA_ANGLE&            aOrient,
                         const wxSize&               aSize,
@@ -903,6 +872,7 @@ void DXF_PLOTTER::Text( const wxPoint&              aPos,
         wxString cname = getDXFColorName( m_currentColor );
         DPOINT size_dev = userToDeviceSize( aSize );
         int h_code = 0, v_code = 0;
+
         switch( aHorizontalAlignment )
         {
         case TEXT_ATTRIBUTES::H_LEFT:
@@ -915,6 +885,7 @@ void DXF_PLOTTER::Text( const wxPoint&              aPos,
             h_code = 2;
             break;
         }
+
         switch( aVerticalAlignment )
         {
         case TEXT_ATTRIBUTES::V_TOP:
@@ -993,11 +964,12 @@ void DXF_PLOTTER::Text( const wxPoint&              aPos,
            in no more details...
          */
 
-        bool overlining = false;
+        int braceNesting = 0;
+        int overbarDepth = -1;
 
         fputs( "  1\n", m_outputFile );
 
-        for( unsigned i = 0; i < aText.length(); i++ )
+        for( unsigned int i = 0; i < aText.length(); i++ )
         {
             /* Here I do a bad thing: writing the output one byte at a time!
                but today I'm lazy and I have no idea on how to coerce a Unicode
@@ -1014,42 +986,42 @@ void DXF_PLOTTER::Text( const wxPoint&              aPos,
             }
             else
             {
-                if( ch == '~' )
+                if( aText[i] == '~' && i+1 < aText.length() && aText[i+1] == '{' )
                 {
-                    if( ++i == aText.length() )
-                        break;
+                    fputs( "%%o", m_outputFile );
+                    overbarDepth = braceNesting;
 
-                    ch = aText[i];
-
-                    if( ch == '~' )
-                    {
-                        // double ~ is really a ~ so go ahead and process the second one
-
-                        // so what's a triple ~?  It could be a real ~ followed by an overbar,
-                        // or it could be an overbar followed by a real ~.  The old algorithm
-                        // did the former so we will too....
-                    }
-                    else
-                    {
-                        // Handle the overline toggle
-                        fputs( overlining ? "%%o" : "%%O", m_outputFile );
-                        overlining = !overlining;
-                    }
+                    // Skip the '{'
+                    i++;
+                    continue;
                 }
-                else if( ch == ' ' || ch == '}' || ch == ')' )
+                else if( aText[i] == '{' )
                 {
-                    overlining = false;
+                    braceNesting++;
+                }
+                else if( aText[i] == '}' )
+                {
+                    if( braceNesting > 0 )
+                        braceNesting--;
+
+                    if( braceNesting == overbarDepth )
+                    {
+                        fputs( "%%O", m_outputFile );
+                        overbarDepth = -1;
+                        continue;
+                    }
                 }
 
                 putc( ch, m_outputFile );
             }
         }
+
         putc( '\n', m_outputFile );
     }
 }
 
 
-void DXF_PLOTTER::Text( const EDA_TEXT* aText, const COLOR4D aColor, void* aData )
+void DXF_PLOTTER::Text( const EDA_TEXT* aText, const COLOR4D& aColor, void* aData )
 {
     Text( aText->GetTextPos(), aColor, aText->GetShownText(), aText->GetTextEdaAngle(),
           aText->GetTextSize(), aText->GetHorizontalAlignment(), aText->GetVerticalAlignment(),

@@ -29,10 +29,29 @@
 
 #include <string>
 #include <tool/tool_menu.h>
-#include <tool/tool_event.h>
+#include <tool/tool_event.h>    // Needed for CONTEXT_MENU_TRIGGER
 #include <tool/tool_base.h>
 
 class ACTION_MENU;
+
+
+struct REENTRANCY_GUARD
+{
+    REENTRANCY_GUARD( bool* aFlag ) :
+            m_flag( aFlag )
+    {
+        *m_flag = true;
+    }
+
+    ~REENTRANCY_GUARD()
+    {
+        *m_flag = false;
+    }
+
+private:
+    bool* m_flag;
+};
+
 
 class TOOL_INTERACTIVE : public TOOL_BASE
 {

@@ -3,7 +3,7 @@
  *
  * Copyright (C) 1992-2018 jp.charras at wanadoo.fr
  * Copyright (C) 2013 SoftPLC Corporation, Dick Hollenbeck <dick@softplc.com>
- * Copyright (C) 1992-2020 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 1992-2021 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -27,7 +27,7 @@
 #include <confirm.h>
 
 #include <connection_graph.h>
-#include <kicad_string.h>
+#include <string_utils.h>
 #include <sch_edit_frame.h>
 #include <sch_reference_list.h>
 
@@ -36,24 +36,25 @@
 /* Generate CADSTAR net list. */
 static wxString StartLine( wxT( "." ) );
 
-bool NETLIST_EXPORTER_CADSTAR::WriteNetlist( const wxString& aOutFileName, unsigned aNetlistOptions )
+bool NETLIST_EXPORTER_CADSTAR::WriteNetlist( const wxString& aOutFileName,
+                                             unsigned aNetlistOptions )
 {
     (void)aNetlistOptions;      //unused
     int ret = 0;
-    FILE* f = NULL;
+    FILE* f = nullptr;
 
-    if( ( f = wxFopen( aOutFileName, wxT( "wt" ) ) ) == NULL )
+    if( ( f = wxFopen( aOutFileName, wxT( "wt" ) ) ) == nullptr )
     {
         wxString msg;
-        msg.Printf( _( "Failed to create file \"%s\"" ), aOutFileName );
-        DisplayError( NULL, msg );
+        msg.Printf( _( "Failed to create file '%s'." ), aOutFileName );
+        DisplayError( nullptr, msg );
         return false;
     }
 
     wxString StartCmpDesc = StartLine + wxT( "ADD_COM" );
     wxString msg;
     wxString footprint;
-    SCH_COMPONENT* symbol;
+    SCH_SYMBOL* symbol;
     wxString title = wxT( "Eeschema " ) + GetBuildVersion();
 
     ret |= fprintf( f, "%sHEA\n", TO_UTF8( StartLine ) );
@@ -69,7 +70,7 @@ bool NETLIST_EXPORTER_CADSTAR::WriteNetlist( const wxString& aOutFileName, unsig
 
     for( unsigned i = 0; i < sheetList.size(); i++ )
     {
-        for( SCH_ITEM* item : sheetList[i].LastScreen()->Items().OfType( SCH_COMPONENT_T ) )
+        for( SCH_ITEM* item : sheetList[i].LastScreen()->Items().OfType( SCH_SYMBOL_T ) )
         {
             symbol = findNextSymbol( item, &sheetList[ i ] );
 
@@ -143,7 +144,7 @@ bool NETLIST_EXPORTER_CADSTAR::writeListOfNets( FILE* f )
                     wxString ref_b = b.first->GetParentSymbol()->GetRef( &b.second );
 
                     if( ref_a == ref_b )
-                        return a.first->GetNumber() < b.first->GetNumber();
+                        return a.first->GetShownNumber() < b.first->GetShownNumber();
 
                     return ref_a < ref_b;
                 } );
@@ -157,7 +158,7 @@ bool NETLIST_EXPORTER_CADSTAR::writeListOfNets( FILE* f )
                     wxString ref_a = a.first->GetParentSymbol()->GetRef( &a.second );
                     wxString ref_b = b.first->GetParentSymbol()->GetRef( &b.second );
 
-                    return ref_a == ref_b && a.first->GetNumber() == b.first->GetNumber();
+                    return ref_a == ref_b && a.first->GetShownNumber() == b.first->GetShownNumber();
                 } ),
                 sorted_items.end() );
 
@@ -169,7 +170,7 @@ bool NETLIST_EXPORTER_CADSTAR::writeListOfNets( FILE* f )
             SCH_SHEET_PATH sheet = pair.second;
 
             wxString refText = pin->GetParentSymbol()->GetRef( &sheet );
-            wxString pinText = pin->GetNumber();
+            wxString pinText = pin->GetShownNumber();
 
             // Skip power symbols and virtual symbols
             if( refText[0] == wxChar( '#' ) )

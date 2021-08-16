@@ -35,27 +35,27 @@
 #include <vector>
 
 
-typedef struct
+struct POLYSEGMENT
 {
     SFVEC2F m_Start;
-    float   m_inv_JY_minus_IY;
-    float   m_JX_minus_IX;
-} POLYSEGMENT;
+    float   m_inv_JY_minus_IY = 0.0;
+    float   m_JX_minus_IX = 0.0;
+};
 
 
-typedef struct
+struct SEG_NORMALS
 {
     SFVEC2F m_Start;
     SFVEC2F m_End;
-} SEG_NORMALS;
+};
 
 
-typedef struct
+struct SEGMENT_WITH_NORMALS
 {
     SFVEC2F     m_Start;
     SFVEC2F     m_Precalc_slope;
     SEG_NORMALS m_Normals;
-} SEGMENT_WITH_NORMALS;
+};
 
 
 typedef std::vector< POLYSEGMENT > SEGMENTS;
@@ -75,11 +75,11 @@ typedef std::vector< SEGMENT_WITH_NORMALS > SEGMENTS_WIDTH_NORMALS;
  * It can contain multiple closed polygons and holes and us used to test if points are inside.
  * A point will be inside the polygon if it is not inside a hole and it is inside an outer polygon.
  */
-typedef struct
+struct OUTERS_AND_HOLES
 {
     std::vector<SEGMENTS> m_Outers;
     std::vector<SEGMENTS> m_Holes;
-} OUTERS_AND_HOLES;
+};
 
 
 /**
@@ -148,7 +148,7 @@ public:
  * @param aDivFactor a division factor (in 3Dunits) to divide the polygon plane,
  *                   0.0f will use the internal polygon segm statistics
  */
-void CovertPolygonToBlocks( const SHAPE_POLY_SET& aMainPath, CONTAINER_2D_BASE& aDstContainer,
+void ConvertPolygonToBlocks( const SHAPE_POLY_SET& aMainPath, CONTAINER_2D_BASE& aDstContainer,
                             float aBiuTo3dUnitsScale, float aDivFactor,
                             const BOARD_ITEM& aBoardItem, int aPolyIndex );
 

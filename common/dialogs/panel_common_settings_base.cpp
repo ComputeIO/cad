@@ -74,7 +74,7 @@ PANEL_COMMON_SETTINGS_BASE::PANEL_COMMON_SETTINGS_BASE( wxWindow* parent, wxWind
 	antialiasingLabel->Wrap( -1 );
 	gbSizer1->Add( antialiasingLabel, wxGBPosition( 4, 0 ), wxGBSpan( 1, 1 ), wxALIGN_CENTER_VERTICAL, 5 );
 
-	wxString m_antialiasingChoices[] = { _("No Antialiasing"), _("Subpixel Antialiasing (High Quality)"), _("Subpixel Antialiasing (Ultra Quality)"), _("Supersampling (2x)"), _("Supersampling (4x)") };
+	wxString m_antialiasingChoices[] = { _("No Antialiasing"), _("Fast Antialiasing"), _("High Quality Antialiasing") };
 	int m_antialiasingNChoices = sizeof( m_antialiasingChoices ) / sizeof( wxString );
 	m_antialiasing = new wxChoice( this, wxID_ANY, wxDefaultPosition, wxDefaultSize, m_antialiasingNChoices, m_antialiasingChoices, 0 );
 	m_antialiasing->SetSelection( 0 );
@@ -84,7 +84,7 @@ PANEL_COMMON_SETTINGS_BASE::PANEL_COMMON_SETTINGS_BASE( wxWindow* parent, wxWind
 	m_antialiasingFallbackLabel->Wrap( -1 );
 	gbSizer1->Add( m_antialiasingFallbackLabel, wxGBPosition( 6, 0 ), wxGBSpan( 1, 1 ), wxALIGN_CENTER_VERTICAL, 5 );
 
-	wxString m_antialiasingFallbackChoices[] = { _("No Antialiasing"), _("Fast Antialiasing"), _("Balanced Antialiasing"), _("High Quality Antialiasing") };
+	wxString m_antialiasingFallbackChoices[] = { _("No Antialiasing"), _("Fast Antialiasing"), _("High Quality Antialiasing") };
 	int m_antialiasingFallbackNChoices = sizeof( m_antialiasingFallbackChoices ) / sizeof( wxString );
 	m_antialiasingFallback = new wxChoice( this, wxID_ANY, wxDefaultPosition, wxDefaultSize, m_antialiasingFallbackNChoices, m_antialiasingFallbackChoices, 0 );
 	m_antialiasingFallback->SetSelection( 0 );
@@ -153,9 +153,10 @@ PANEL_COMMON_SETTINGS_BASE::PANEL_COMMON_SETTINGS_BASE( wxWindow* parent, wxWind
 	sbSizerIconsOpts = new wxStaticBoxSizer( new wxStaticBox( this, wxID_ANY, _("User Interface") ), wxVERTICAL );
 
 	wxGridBagSizer* gbSizer4;
-	gbSizer4 = new wxGridBagSizer( 10, 0 );
+	gbSizer4 = new wxGridBagSizer( 2, 0 );
 	gbSizer4->SetFlexibleDirection( wxBOTH );
 	gbSizer4->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
+	gbSizer4->SetEmptyCellSize( wxSize( -1,10 ) );
 
 	m_staticTexticonscale = new wxStaticText( sbSizerIconsOpts->GetStaticBox(), wxID_ANY, _("Icon scale:"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_staticTexticonscale->Wrap( -1 );
@@ -171,37 +172,37 @@ PANEL_COMMON_SETTINGS_BASE::PANEL_COMMON_SETTINGS_BASE( wxWindow* parent, wxWind
 
 	m_staticTextCanvasScale = new wxStaticText( sbSizerIconsOpts->GetStaticBox(), wxID_ANY, _("Canvas scale:"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_staticTextCanvasScale->Wrap( -1 );
-	gbSizer4->Add( m_staticTextCanvasScale, wxGBPosition( 1, 0 ), wxGBSpan( 1, 1 ), wxRIGHT|wxLEFT|wxALIGN_CENTER_VERTICAL, 5 );
+	gbSizer4->Add( m_staticTextCanvasScale, wxGBPosition( 2, 0 ), wxGBSpan( 1, 1 ), wxRIGHT|wxLEFT|wxALIGN_CENTER_VERTICAL, 5 );
 
 	m_canvasScaleCtrl = new wxSpinCtrlDouble( sbSizerIconsOpts->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, 0, 100, 0, 1 );
 	m_canvasScaleCtrl->SetDigits( 0 );
-	gbSizer4->Add( m_canvasScaleCtrl, wxGBPosition( 1, 1 ), wxGBSpan( 1, 1 ), wxRIGHT|wxLEFT|wxALIGN_CENTER_VERTICAL|wxEXPAND, 5 );
+	gbSizer4->Add( m_canvasScaleCtrl, wxGBPosition( 2, 1 ), wxGBSpan( 1, 1 ), wxRIGHT|wxLEFT|wxALIGN_CENTER_VERTICAL|wxEXPAND, 5 );
 
 	m_canvasScaleAuto = new wxCheckBox( sbSizerIconsOpts->GetStaticBox(), wxID_ANY, _("Automatic"), wxDefaultPosition, wxDefaultSize, 0 );
-	gbSizer4->Add( m_canvasScaleAuto, wxGBPosition( 1, 2 ), wxGBSpan( 1, 1 ), wxALIGN_CENTER_VERTICAL|wxEXPAND|wxRIGHT|wxLEFT, 15 );
+	gbSizer4->Add( m_canvasScaleAuto, wxGBPosition( 2, 2 ), wxGBSpan( 1, 1 ), wxALIGN_CENTER_VERTICAL|wxEXPAND|wxRIGHT|wxLEFT, 15 );
 
 	m_checkBoxIconsInMenus = new wxCheckBox( sbSizerIconsOpts->GetStaticBox(), wxID_ANY, _("Show icons in menus"), wxDefaultPosition, wxDefaultSize, 0 );
-	gbSizer4->Add( m_checkBoxIconsInMenus, wxGBPosition( 2, 0 ), wxGBSpan( 1, 2 ), wxALIGN_CENTER_VERTICAL|wxTOP|wxLEFT, 5 );
+	gbSizer4->Add( m_checkBoxIconsInMenus, wxGBPosition( 4, 0 ), wxGBSpan( 1, 2 ), wxALIGN_CENTER_VERTICAL|wxTOP|wxLEFT, 5 );
 
 	m_stIconTheme = new wxStaticText( sbSizerIconsOpts->GetStaticBox(), wxID_ANY, _("Icon theme:"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_stIconTheme->Wrap( -1 );
-	gbSizer4->Add( m_stIconTheme, wxGBPosition( 3, 0 ), wxGBSpan( 1, 3 ), wxLEFT|wxRIGHT, 5 );
+	gbSizer4->Add( m_stIconTheme, wxGBPosition( 6, 0 ), wxGBSpan( 1, 3 ), wxLEFT|wxRIGHT, 5 );
 
 	m_rbIconThemeLight = new wxRadioButton( sbSizerIconsOpts->GetStaticBox(), wxID_ANY, _("Light"), wxDefaultPosition, wxDefaultSize, wxRB_GROUP );
 	m_rbIconThemeLight->SetToolTip( _("Use icons designed for light window backgrounds") );
 
-	gbSizer4->Add( m_rbIconThemeLight, wxGBPosition( 4, 0 ), wxGBSpan( 1, 1 ), wxLEFT|wxRIGHT, 5 );
+	gbSizer4->Add( m_rbIconThemeLight, wxGBPosition( 7, 0 ), wxGBSpan( 1, 1 ), wxLEFT|wxRIGHT, 5 );
 
 	m_rbIconThemeDark = new wxRadioButton( sbSizerIconsOpts->GetStaticBox(), wxID_ANY, _("Dark"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_rbIconThemeDark->SetToolTip( _("Use icons designed for dark window backgrounds") );
 
-	gbSizer4->Add( m_rbIconThemeDark, wxGBPosition( 4, 1 ), wxGBSpan( 1, 1 ), wxLEFT|wxRIGHT, 5 );
+	gbSizer4->Add( m_rbIconThemeDark, wxGBPosition( 7, 1 ), wxGBSpan( 1, 1 ), wxLEFT|wxRIGHT, 5 );
 
 	m_rbIconThemeAuto = new wxRadioButton( sbSizerIconsOpts->GetStaticBox(), wxID_ANY, _("Automatic"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_rbIconThemeAuto->SetValue( true );
 	m_rbIconThemeAuto->SetToolTip( _("Automatically choose light or dark icons based on the system color theme") );
 
-	gbSizer4->Add( m_rbIconThemeAuto, wxGBPosition( 4, 2 ), wxGBSpan( 1, 1 ), wxLEFT|wxRIGHT, 5 );
+	gbSizer4->Add( m_rbIconThemeAuto, wxGBPosition( 7, 2 ), wxGBSpan( 1, 1 ), wxLEFT|wxRIGHT, 15 );
 
 
 	gbSizer4->AddGrowableCol( 1 );

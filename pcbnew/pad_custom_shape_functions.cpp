@@ -23,6 +23,7 @@
  */
 
 #include <board.h>
+#include <board_design_settings.h>
 #include <board_item.h>
 #include <pcb_shape.h>
 #include <pad.h>
@@ -38,24 +39,26 @@
 
 void PAD::AddPrimitivePoly( const SHAPE_POLY_SET& aPoly, int aThickness, bool aFilled )
 {
-    std::vector<wxPoint> points;
-
     // If aPoly has holes, convert it to a polygon with no holes.
     SHAPE_POLY_SET poly_no_hole;
     poly_no_hole.Append( aPoly );
     poly_no_hole.Fracture( SHAPE_POLY_SET::PM_STRICTLY_SIMPLE );
 
-    for( auto iter = poly_no_hole.CIterate(); iter; iter++ )
-        points.emplace_back( iter->x, iter->y );
-
-    AddPrimitivePoly( points, aThickness, aFilled );
+    PCB_SHAPE* item = new PCB_SHAPE();
+    item->SetShape( SHAPE_T::POLY );
+    item->SetFilled( aFilled );
+    item->SetPolyShape( poly_no_hole );
+    item->SetWidth( aThickness );
+    item->SetParent( this );
+    m_editPrimitives.emplace_back( item );
+    SetDirty();
 }
 
 
 void PAD::AddPrimitivePoly( const std::vector<wxPoint>& aPoly, int aThickness, bool aFilled )
 {
     PCB_SHAPE* item = new PCB_SHAPE();
-    item->SetShape( PCB_SHAPE_TYPE::POLYGON );
+    item->SetShape( SHAPE_T::POLY );
     item->SetFilled( aFilled );
     item->SetPolyPoints( aPoly );
     item->SetWidth( aThickness );
@@ -68,7 +71,7 @@ void PAD::AddPrimitivePoly( const std::vector<wxPoint>& aPoly, int aThickness, b
 void PAD::AddPrimitiveSegment( const wxPoint& aStart, const wxPoint& aEnd, int aThickness )
 {
     PCB_SHAPE* item = new PCB_SHAPE();
-    item->SetShape( PCB_SHAPE_TYPE::SEGMENT );
+    item->SetShape( SHAPE_T::SEGMENT );
     item->SetFilled( false );
     item->SetStart( aStart );
     item->SetEnd( aEnd );
@@ -83,7 +86,7 @@ void PAD::AddPrimitiveArc( const wxPoint& aCenter, const wxPoint& aStart, int aA
                            int aThickness )
 {
     PCB_SHAPE* item = new PCB_SHAPE();
-    item->SetShape( PCB_SHAPE_TYPE::ARC );
+    item->SetShape( SHAPE_T::ARC );
     item->SetFilled( false );
     item->SetCenter( aCenter );
     item->SetArcStart( aStart );
@@ -99,12 +102,12 @@ void PAD::AddPrimitiveCurve( const wxPoint& aStart, const wxPoint& aEnd, const w
                              const wxPoint& aCtrl2, int aThickness )
 {
     PCB_SHAPE* item = new PCB_SHAPE();
-    item->SetShape( PCB_SHAPE_TYPE::CURVE );
+    item->SetShape( SHAPE_T::BEZIER );
     item->SetFilled( false );
     item->SetStart( aStart );
     item->SetEnd( aEnd );
-    item->SetBezControl1( aCtrl1 );
-    item->SetBezControl2( aCtrl2 );
+    item->SetBezierC1( aCtrl1 );
+    item->SetBezierC2( aCtrl2 );
     item->SetWidth( aThickness );
     item->SetParent( this );
     m_editPrimitives.emplace_back( item );
@@ -115,7 +118,7 @@ void PAD::AddPrimitiveCurve( const wxPoint& aStart, const wxPoint& aEnd, const w
 void PAD::AddPrimitiveCircle( const wxPoint& aCenter, int aRadius, int aThickness, bool aFilled )
 {
     PCB_SHAPE* item = new PCB_SHAPE();
-    item->SetShape( PCB_SHAPE_TYPE::CIRCLE );
+    item->SetShape( SHAPE_T::CIRCLE );
     item->SetFilled( aFilled );
     item->SetStart( aCenter );
     item->SetEnd( wxPoint( aCenter.x + aRadius, aCenter.y ) );
@@ -130,7 +133,7 @@ void PAD::AddPrimitiveRect( const wxPoint& aStart, const wxPoint& aEnd, int aThi
                             bool aFilled)
 {
     PCB_SHAPE* item = new PCB_SHAPE();
-    item->SetShape( PCB_SHAPE_TYPE::RECT );
+    item->SetShape( SHAPE_T::RECT );
     item->SetFilled( aFilled );
     item->SetStart( aStart );
     item->SetEnd( aEnd );
@@ -203,8 +206,8 @@ void PAD::addPadPrimitivesToPolygon( SHAPE_POLY_SET* aMergedPolygon, PCB_LAYER_I
 void PAD::MergePrimitivesAsPolygon( SHAPE_POLY_SET* aMergedPolygon, PCB_LAYER_ID aLayer,
                                     ERROR_LOC aErrorLoc ) const
 {
-    BOARD* board = GetBoard();
-    int    maxError = board ? board->GetDesignSettings().m_MaxError: ARC_HIGH_DEF;
+    const BOARD* board = GetBoard();
+    int          maxError = board ? board->GetDesignSettings().m_MaxError : ARC_HIGH_DEF;
 
     aMergedPolygon->RemoveAllContours();
 

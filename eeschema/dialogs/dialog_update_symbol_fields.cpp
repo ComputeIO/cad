@@ -25,6 +25,7 @@
 #include <lib_symbol.h>
 #include <symbol_edit_frame.h>
 #include <template_fieldnames.h>
+#include <string_utils.h>
 
 
 bool g_removeExtraLibFields      = false;
@@ -36,7 +37,7 @@ bool g_resetLibFieldPositions    = true;
 
 
 DIALOG_UPDATE_SYMBOL_FIELDS::DIALOG_UPDATE_SYMBOL_FIELDS( SYMBOL_EDIT_FRAME* aParent,
-                                                          LIB_PART* aSymbol ) :
+                                                          LIB_SYMBOL* aSymbol ) :
         DIALOG_UPDATE_SYMBOL_FIELDS_BASE( aParent ),
         m_editFrame( aParent ),
         m_symbol( aSymbol)
@@ -44,7 +45,7 @@ DIALOG_UPDATE_SYMBOL_FIELDS::DIALOG_UPDATE_SYMBOL_FIELDS( SYMBOL_EDIT_FRAME* aPa
     wxASSERT( aParent );
     wxASSERT( aSymbol );
 
-    m_parentSymbolReadOnly->SetValue( m_symbol->GetParent().lock()->GetName() );
+    m_parentSymbolReadOnly->SetValue( UnescapeString( m_symbol->GetParent().lock()->GetName() ) );
 
     for( int i = 0; i < MANDATORY_FIELDS; ++i )
     {
@@ -82,9 +83,9 @@ DIALOG_UPDATE_SYMBOL_FIELDS::~DIALOG_UPDATE_SYMBOL_FIELDS()
 void DIALOG_UPDATE_SYMBOL_FIELDS::updateFieldsList()
 {
     // Load non-mandatory fields from the parent part
-    std::vector<LIB_FIELD*>    libFields;
-    std::set<wxString>         fieldNames;
-    std::unique_ptr<LIB_PART>  flattenedParent = m_symbol->GetParent().lock()->Flatten();
+    std::vector<LIB_FIELD*>      libFields;
+    std::set<wxString>           fieldNames;
+    std::unique_ptr<LIB_SYMBOL>  flattenedParent = m_symbol->GetParent().lock()->Flatten();
 
     flattenedParent->GetFields( libFields );
 
@@ -135,7 +136,7 @@ void DIALOG_UPDATE_SYMBOL_FIELDS::onOkButtonClicked( wxCommandEvent& aEvent )
             m_updateFields.insert( m_fieldsBox->GetString( i ) );
     }
 
-    std::unique_ptr<LIB_PART> flattenedParent = m_symbol->GetParent().lock()->Flatten();
+    std::unique_ptr<LIB_SYMBOL> flattenedParent = m_symbol->GetParent().lock()->Flatten();
 
     bool removeExtras = m_removeExtraBox->GetValue();
     bool resetVis = m_resetFieldVisibilities->GetValue();
@@ -216,7 +217,7 @@ void DIALOG_UPDATE_SYMBOL_FIELDS::onOkButtonClicked( wxCommandEvent& aEvent )
 
     m_editFrame->RebuildView();
     m_editFrame->OnModify();
-    EndModal( wxID_OK );
+    wxPostEvent( this, wxCommandEvent( wxEVT_COMMAND_BUTTON_CLICKED, wxID_OK ) );
 }
 
 

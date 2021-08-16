@@ -28,12 +28,14 @@
 #include <base_units.h>
 #include <bitmaps.h>
 #include <board.h>
+#include <board_design_settings.h>
 #include <core/mirror.h>
 #include <footprint.h>
 #include <pcb_text.h>
 #include <pcb_painter.h>
 #include <trigo.h>
-#include <kicad_string.h>
+#include <string_utils.h>
+#include <geometry/shape_compound.h>
 
 using KIGFX::PCB_RENDER_SETTINGS;
 
@@ -86,10 +88,9 @@ wxString PCB_TEXT::GetShownText( int aDepth ) const
         return board->ResolveTextVar( token, aDepth + 1 );
     };
 
-    bool     processTextVars = false;
-    wxString text = EDA_TEXT::GetShownText( &processTextVars );
+    wxString text = EDA_TEXT::GetShownText();
 
-    if( board && processTextVars && aDepth < 10 )
+    if( board && HasTextVars() && aDepth < 10 )
         text = ExpandTextVars( text, &pcbTextResolver, &boardTextResolver, board->GetProject() );
 
     return text;

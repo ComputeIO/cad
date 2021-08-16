@@ -26,17 +26,20 @@
 #include <wx/stdpaths.h>
 #include <wx/process.h>
 
-#include "pcb_edit_frame.h"
-#include "kiface_i.h"
-#include "confirm.h"
-#include "reporter.h"
-#include "board.h"
-#include "dialog_export_step_base.h"
+#include <pgm_base.h>
+#include <board.h>
+#include <confirm.h>
+#include <dialog_export_step_base.h>
+#include <footprint.h>
+#include <kiface_i.h>
 #include <locale_io.h>
+#include <math/vector3.h>
+#include <pcb_edit_frame.h>
 #include <pcbnew_settings.h>
 #include <project/project_file.h> // LAST_PATH_TYPE
+#include <reporter.h>
 #include <widgets/text_ctrl_eval.h>
-
+#include <filename_resolver.h>
 
 class DIALOG_EXPORT_STEP: public DIALOG_EXPORT_STEP_BASE
 {
@@ -55,7 +58,6 @@ private:
     // The last preference for STEP Origin:
     STEP_ORG_OPT m_STEP_org_opt;
     bool   m_noVirtual;     // remember last preference for No Virtual Component
-    static bool m_overwriteFile; // remember last preference for overwrite file
     int    m_OrgUnits;      // remember last units for User Origin
     double m_XOrg;          // remember last User Origin X value
     double m_YOrg;          // remember last User Origin Y value
@@ -89,6 +91,11 @@ protected:
         return m_cbRemoveVirtual->GetValue();
     }
 
+    bool GetSubstOption()
+    {
+        return m_cbSubstModels->GetValue();
+    }
+
     bool GetOverwriteFile()
     {
         return m_cbOverwriteFile->GetValue();
@@ -96,29 +103,8 @@ protected:
 
 public:
     DIALOG_EXPORT_STEP( PCB_EDIT_FRAME* aParent, const wxString& aBoardPath );
-
-    ~DIALOG_EXPORT_STEP()
-    {
-        GetOriginOption(); // Update m_STEP_org_opt member.
-
-        auto cfg = m_parent->GetPcbNewSettings();
-
-        cfg->m_ExportStep.origin_mode = static_cast<int>( m_STEP_org_opt );
-        cfg->m_ExportStep.origin_units = m_STEP_OrgUnitChoice->GetSelection();
-
-        double val = 0.0;
-
-        m_STEP_Xorg->GetValue().ToDouble( &val );
-        cfg->m_ExportStep.origin_x = val;
-
-        m_STEP_Yorg->GetValue().ToDouble( &val );
-        cfg->m_ExportStep.origin_y = val;
-
-        cfg->m_ExportStep.no_virtual = m_cbRemoveVirtual->GetValue();
-    }
+    ~DIALOG_EXPORT_STEP();
 };
-
-bool DIALOG_EXPORT_STEP::m_overwriteFile = false;
 
 
 DIALOG_EXPORT_STEP::DIALOG_EXPORT_STEP( PCB_EDIT_FRAME* aParent, const wxString& aBoardPath ) :
@@ -163,7 +149,8 @@ DIALOG_EXPORT_STEP::DIALOG_EXPORT_STEP( PCB_EDIT_FRAME* aParent, const wxString&
     m_noVirtual = cfg->m_ExportStep.no_virtual;
 
     m_cbRemoveVirtual->SetValue( m_noVirtual );
-    m_cbOverwriteFile->SetValue( m_overwriteFile );
+    m_cbSubstModels->SetValue( cfg->m_ExportStep.replace_models );
+    m_cbOverwriteFile->SetValue( cfg->m_ExportStep.overwrite_file );
 
     m_STEP_OrgUnitChoice->SetSelection( m_OrgUnits );
     wxString tmpStr;
@@ -173,8 +160,69 @@ DIALOG_EXPORT_STEP::DIALOG_EXPORT_STEP( PCB_EDIT_FRAME* aParent, const wxString&
     tmpStr << m_YOrg;
     m_STEP_Yorg->SetValue( tmpStr );
 
+    wxString bad_scales;
+    size_t   bad_count = 0;
+
+    for( auto& fp : aParent->GetBoard()->Footprints() )
+    {
+        for( auto& model : fp->Models() )
+        {
+
+            if( model.m_Scale.x != 1.0 ||
+                model.m_Scale.y != 1.0 ||
+                model.m_Scale.z != 1.0 )
+            {
+                bad_scales.Append( wxS("\n") );
+                bad_scales.Append( model.m_Filename );
+                bad_count++;
+            }
+        }
+
+        if( bad_count >= 5 )
+            break;
+    }
+
+    if( !bad_scales.empty()
+            && !Pgm().GetCommonSettings()->m_DoNotShowAgain.scaled_3d_models_warning )
+    {
+        wxString extendedMsg = _( "Non-unity scaled models:" ) + "\n" + bad_scales;
+
+        KIDIALOG msgDlg( m_parent, _( "Scaled models detected.  "
+                                      "Model scaling is not reliable for mechanical export." ),
+                         _( "Model Scale Warning" ), wxOK | wxICON_WARNING );
+        msgDlg.SetExtendedMessage( extendedMsg );
+        msgDlg.DoNotShowCheckbox( __FILE__, __LINE__ );
+
+        msgDlg.ShowModal();
+
+        if( msgDlg.DoNotShowAgain() )
+            Pgm().GetCommonSettings()->m_DoNotShowAgain.scaled_3d_models_warning = true;
+    }
     // Now all widgets have the size fixed, call FinishDialogSettings
     finishDialogSettings();
+}
+
+
+DIALOG_EXPORT_STEP::~DIALOG_EXPORT_STEP()
+{
+    GetOriginOption(); // Update m_STEP_org_opt member.
+
+    auto cfg = m_parent->GetPcbNewSettings();
+
+    cfg->m_ExportStep.origin_mode = static_cast<int>( m_STEP_org_opt );
+    cfg->m_ExportStep.origin_units = m_STEP_OrgUnitChoice->GetSelection();
+    cfg->m_ExportStep.replace_models = m_cbSubstModels->GetValue();
+    cfg->m_ExportStep.overwrite_file = m_cbOverwriteFile->GetValue();
+
+    double val = 0.0;
+
+    m_STEP_Xorg->GetValue().ToDouble( &val );
+    cfg->m_ExportStep.origin_x = val;
+
+    m_STEP_Yorg->GetValue().ToDouble( &val );
+    cfg->m_ExportStep.origin_y = val;
+
+    cfg->m_ExportStep.no_virtual = m_cbRemoveVirtual->GetValue();
 }
 
 
@@ -284,6 +332,10 @@ void DIALOG_EXPORT_STEP::onExportButton( wxCommandEvent& aEvent )
             return;
     }
 
+    FILENAME_RESOLVER* fnResolver = m_parent->Prj().Get3DFilenameResolver();
+
+    fnResolver->WritePathList( wxStandardPaths::Get().GetTempDir(), "ExportPaths.cfg", true );
+
     DIALOG_EXPORT_STEP::STEP_ORG_OPT orgOpt = GetOriginOption();
     double xOrg = 0.0;
     double yOrg = 0.0;
@@ -310,6 +362,9 @@ void DIALOG_EXPORT_STEP::onExportButton( wxCommandEvent& aEvent )
 
     if( GetNoVirtOption() )
         cmdK2S.Append( " --no-virtual" );
+
+    if( GetSubstOption() )
+        cmdK2S.Append( " --subst-models" );
 
     switch( orgOpt )
     {

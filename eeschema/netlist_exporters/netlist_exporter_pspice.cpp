@@ -31,23 +31,25 @@
 #include <search_stack.h>
 
 #include <connection_graph.h>
-#include <kicad_string.h>
+#include <string_utils.h>
 #include <sch_edit_frame.h>
 #include <sch_reference_list.h>
 #include <env_paths.h>
+#include <pgm_base.h>
+#include <common.h>
 
 #include <wx/tokenzr.h>
 #include <wx/regex.h>
 
 
-wxString NETLIST_EXPORTER_PSPICE::GetSpiceDevice( const wxString& aComponent ) const
+wxString NETLIST_EXPORTER_PSPICE::GetSpiceDevice( const wxString& aSymbol ) const
 {
     const std::list<SPICE_ITEM>& spiceItems = GetSpiceItems();
 
     auto it = std::find_if( spiceItems.begin(), spiceItems.end(),
                             [&]( const SPICE_ITEM& item )
                             {
-                                return item.m_refName == aComponent;
+                                return item.m_refName == aSymbol;
                             } );
 
     if( it == spiceItems.end() )
@@ -65,6 +67,7 @@ bool NETLIST_EXPORTER_PSPICE::WriteNetlist( const wxString& aOutFileName, unsign
 
     return Format( &outputFile, aNetlistOptions );
 }
+
 
 void  NETLIST_EXPORTER_PSPICE::ReplaceForbiddenChars( wxString &aNetName )
 {
@@ -92,24 +95,27 @@ bool NETLIST_EXPORTER_PSPICE::Format( OUTPUTFORMATTER* aFormatter, unsigned aCtl
     aFormatter->Print( 0, ".title %s\n", TO_UTF8( m_title ) );
 
     // Write .include directives
-    for( const wxString& lib : m_libraries )
+    for( const wxString& curr_lib : m_libraries )
     {
+        // First, expand env vars, if any
+        wxString libname = ExpandEnvVarSubstitutions( curr_lib, &m_schematic->Prj() );
         wxString full_path;
 
         if( ( aCtl & NET_ADJUST_INCLUDE_PATHS ) )
         {
             // Look for the library in known search locations
-            full_path = ResolveFile( lib, &Pgm().GetLocalEnvVariables(), &m_schematic->Prj() );
+            full_path = ResolveFile( libname, &Pgm().GetLocalEnvVariables(), &m_schematic->Prj() );
 
             if( full_path.IsEmpty() )
             {
-                DisplayError( NULL, wxString::Format( _( "Could not find library file %s." ), lib ) );
-                full_path = lib;
+                DisplayError( nullptr, wxString::Format( _( "Could not find library file %s." ),
+                                                         libname ) );
+                full_path = libname;
             }
         }
         else
         {
-            full_path = lib;    // just use the unaltered path
+            full_path = libname;    // just use the unaltered path
         }
 
         aFormatter->Print( 0, ".include \"%s\"\n", TO_UTF8( full_path ) );
@@ -125,12 +131,15 @@ bool NETLIST_EXPORTER_PSPICE::Format( OUTPUTFORMATTER* aFormatter, unsigned aCtl
         wxString device = GetSpiceDevice( item.m_refName );
         aFormatter->Print( 0, "%s ", TO_UTF8( device ) );
 
-        size_t pspiceNodes = item.m_pinSequence.empty() ? item.m_pins.size() : item.m_pinSequence.size();
+        size_t pspiceNodes =
+                item.m_pinSequence.empty() ? item.m_pins.size() : item.m_pinSequence.size();
 
         for( size_t ii = 0; ii < pspiceNodes; ii++ )
         {
-            // Use the custom order if defined, otherwise use the standard pin order as defined in the compon
+            // Use the custom order if defined, otherwise use the standard pin order as defined
+            // in the symbol.
             size_t activePinIndex = item.m_pinSequence.empty() ? ii : item.m_pinSequence[ii];
+
             // Valid used Node Indexes are in the set
             // {0,1,2,...m_item.m_pin.size()-1}
             if( activePinIndex >= item.m_pins.size() )
@@ -175,7 +184,7 @@ bool NETLIST_EXPORTER_PSPICE::Format( OUTPUTFORMATTER* aFormatter, unsigned aCtl
 }
 
 
-wxString NETLIST_EXPORTER_PSPICE::GetSpiceField( SPICE_FIELD aField, SCH_COMPONENT* aSymbol,
+wxString NETLIST_EXPORTER_PSPICE::GetSpiceField( SPICE_FIELD aField, SCH_SYMBOL* aSymbol,
                                                  unsigned aCtl )
 {
     SCH_FIELD* field = aSymbol->FindField( GetSpiceFieldName( aField ) );
@@ -183,7 +192,7 @@ wxString NETLIST_EXPORTER_PSPICE::GetSpiceField( SPICE_FIELD aField, SCH_COMPONE
 }
 
 
-wxString NETLIST_EXPORTER_PSPICE::GetSpiceFieldDefVal( SPICE_FIELD aField, SCH_COMPONENT* aSymbol,
+wxString NETLIST_EXPORTER_PSPICE::GetSpiceFieldDefVal( SPICE_FIELD aField, SCH_SYMBOL* aSymbol,
                                                        unsigned aCtl )
 {
     switch( aField )
@@ -204,7 +213,8 @@ wxString NETLIST_EXPORTER_PSPICE::GetSpiceFieldDefVal( SPICE_FIELD aField, SCH_C
         {
             // Regular expression to match common formats used for passive parts description
             // (e.g. 100k, 2k3, 1 uF)
-            wxRegEx passiveVal( "^([0-9\\. ]+)([fFpPnNuUmMkKgGtT]|M(e|E)(g|G))?([fFhH]|ohm)?([-1-9 ]*)$" );
+            wxRegEx passiveVal(
+                    "^([0-9\\. ]+)([fFpPnNuUmMkKgGtT]|M(e|E)(g|G))?([fFhH]|ohm)?([-1-9 ]*)$" );
 
             if( passiveVal.Matches( value ) )
             {
@@ -235,8 +245,8 @@ wxString NETLIST_EXPORTER_PSPICE::GetSpiceFieldDefVal( SPICE_FIELD aField, SCH_C
         wxString nodeSeq;
         std::vector<LIB_PIN*> pins;
 
-        wxCHECK( aSymbol->GetPartRef(), wxString() );
-        aSymbol->GetPartRef()->GetPins( pins );
+        wxCHECK( aSymbol->GetLibSymbolRef(), wxString() );
+        aSymbol->GetLibSymbolRef()->GetPins( pins );
 
         for( LIB_PIN* pin : pins )
             nodeSeq += pin->GetNumber() + " ";
@@ -259,11 +269,9 @@ wxString NETLIST_EXPORTER_PSPICE::GetSpiceFieldDefVal( SPICE_FIELD aField, SCH_C
 
 bool NETLIST_EXPORTER_PSPICE::ProcessNetlist( unsigned aCtl )
 {
-    const wxString      delimiters( "{:,; }" );
-
-    SCH_SHEET_LIST      sheetList = m_schematic->GetSheets();
-    // Set of reference names, to check for duplications
-    std::set<wxString>  refNames;
+    const wxString     delimiters( "{:,; }" );
+    SCH_SHEET_LIST     sheetList = m_schematic->GetSheets();
+    std::set<wxString> refNames;       // Set of reference names, to check for duplication
 
     m_netMap.clear();
     m_netMap["GND"] = 0;        // 0 is reserved for "GND"
@@ -279,10 +287,10 @@ bool NETLIST_EXPORTER_PSPICE::ProcessNetlist( unsigned aCtl )
     {
         SCH_SHEET_PATH sheet = sheetList[sheet_idx];
 
-        // Process component attributes to find Spice directives
-        for( SCH_ITEM* item : sheet.LastScreen()->Items().OfType( SCH_COMPONENT_T ) )
+        // Process symbol attributes to find Spice directives
+        for( SCH_ITEM* item : sheet.LastScreen()->Items().OfType( SCH_SYMBOL_T ) )
         {
-            SCH_COMPONENT* symbol = findNextSymbol( item, &sheet );
+            SCH_SYMBOL* symbol = findNextSymbol( item, &sheet );
 
             if( !symbol )
                 continue;
@@ -302,14 +310,14 @@ bool NETLIST_EXPORTER_PSPICE::ProcessNetlist( unsigned aCtl )
             // Duplicate references will result in simulation errors
             if( refNames.count( spiceItem.m_refName ) )
             {
-                DisplayError( NULL, wxT( "Multiple symbols have the same reference designator.\n"
-                                         "Annotation must be corrected before simulating." ) );
+                DisplayError( nullptr, _( "Multiple symbols have the same reference designator.\n"
+                                          "Annotation must be corrected before simulating." ) );
                 return false;
             }
 
             refNames.insert( spiceItem.m_refName );
 
-            // Check to see if component should be removed from Spice netlist
+            // Check to see if symbol should be removed from Spice netlist
             spiceItem.m_enabled = StringToBool( GetSpiceField( SF_ENABLED, symbol, aCtl ) );
 
             if( fieldLibFile && !fieldLibFile->GetShownText().IsEmpty() )
@@ -320,7 +328,7 @@ bool NETLIST_EXPORTER_PSPICE::ProcessNetlist( unsigned aCtl )
             // Store pin information
             for( const PIN_INFO& pin : m_sortedSymbolPinList )
             {
-                    // Create net mapping
+                // Create net mapping
                 spiceItem.m_pins.push_back( pin.netName );
                 pinNames.Add( pin.num );
 
@@ -423,15 +431,14 @@ void NETLIST_EXPORTER_PSPICE::UpdateDirectives( unsigned aCtl )
                     m_title = line.AfterFirst( ' ' );
                 }
 
-                else if( line.StartsWith( '.' )                           // one-line directives
-                        || controlBlock                                   // .control .. .endc block
-                        || circuitBlock                                   // .subckt  .. .ends block
-                        || couplingK.Matches( line )                      // K## L## L## coupling constant
+                else if( line.StartsWith( '.' )                    // one-line directives
+                        || controlBlock                            // .control .. .endc block
+                        || circuitBlock                            // .subckt  .. .ends block
+                        || couplingK.Matches( line )               // K## L## L## coupling constant
                         || ( directiveStarted && line.StartsWith( '+' ) ) ) // multiline directives
                 {
                     m_directives.push_back( line );
                 }
-
 
                 // Handle .control .. .endc blocks
                 if( lowercaseline.IsSameAs( ".control" ) && ( !controlBlock ) )
@@ -449,7 +456,7 @@ void NETLIST_EXPORTER_PSPICE::UpdateDirectives( unsigned aCtl )
 
                 // Mark directive as started or continued in case it is a multi-line one
                 directiveStarted = line.StartsWith( '.' )
-                    || ( directiveStarted && line.StartsWith( '+' ) );
+                                        || ( directiveStarted && line.StartsWith( '+' ) );
             }
         }
     }
@@ -459,9 +466,7 @@ void NETLIST_EXPORTER_PSPICE::UpdateDirectives( unsigned aCtl )
 void NETLIST_EXPORTER_PSPICE::writeDirectives( OUTPUTFORMATTER* aFormatter, unsigned aCtl ) const
 {
     for( const wxString& dir : m_directives )
-    {
         aFormatter->Print( 0, "%s\n", TO_UTF8( dir ) );
-    }
 }
 
 

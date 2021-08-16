@@ -152,14 +152,14 @@ public:
 
     void MirrorVertically( int aCenter ) override;
     void MirrorHorizontally( int aCenter ) override;
-    void Rotate( wxPoint aCenter ) override;
+    void Rotate( const wxPoint& aCenter ) override;
 
     bool Matches( const wxFindReplaceData& aSearchData, void* aAuxData ) const override
     {
         return SCH_ITEM::Matches( GetText(), aSearchData );
     }
 
-    bool Replace( const wxFindReplaceData& aSearchData, void* aAuxData = NULL ) override
+    bool Replace( const wxFindReplaceData& aSearchData, void* aAuxData = nullptr ) override
     {
         return EDA_TEXT::Replace( aSearchData );
     }

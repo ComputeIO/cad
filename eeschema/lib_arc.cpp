@@ -2,7 +2,7 @@
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
  * Copyright (C) 2017 Jean-Pierre Charras, jp.charras at wanadoo.fr
- * Copyright (C) 2004-2020 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 2004-2021 KiCad Developers, see AUTHORS.txt for contributors.
  * Copyright (C) 2019 CERN
  *
  * This program is free software; you can redistribute it and/or
@@ -44,7 +44,7 @@ static inline wxPoint twoPointVector( const wxPoint &startPoint, const wxPoint &
 }
 
 
-LIB_ARC::LIB_ARC( LIB_PART*      aParent ) : LIB_ITEM( LIB_ARC_T, aParent )
+LIB_ARC::LIB_ARC( LIB_SYMBOL* aParent ) : LIB_ITEM( LIB_ARC_T, aParent )
 {
     m_Radius        = 0;
     m_t1            = 0;
@@ -189,6 +189,7 @@ void LIB_ARC::MirrorHorizontal( const wxPoint& aCenter )
     std::swap( m_t1, m_t2 );
     m_t1 = 1800 - m_t1;
     m_t2 = 1800 - m_t2;
+
     if( m_t1 > 3600 || m_t2 > 3600 )
     {
         m_t1 -= 3600;
@@ -200,6 +201,7 @@ void LIB_ARC::MirrorHorizontal( const wxPoint& aCenter )
         m_t2 += 3600;
     }
 }
+
 
 void LIB_ARC::MirrorVertical( const wxPoint& aCenter )
 {
@@ -216,6 +218,7 @@ void LIB_ARC::MirrorVertical( const wxPoint& aCenter )
     std::swap( m_t1, m_t2 );
     m_t1 = - m_t1;
     m_t2 = - m_t2;
+
     if( m_t1 > 3600 || m_t2 > 3600 )
     {
         m_t1 -= 3600;
@@ -227,6 +230,7 @@ void LIB_ARC::MirrorVertical( const wxPoint& aCenter )
         m_t2 += 3600;
     }
 }
+
 
 void LIB_ARC::Rotate( const wxPoint& aCenter, bool aRotateCCW )
 {
@@ -236,6 +240,7 @@ void LIB_ARC::Rotate( const wxPoint& aCenter, bool aRotateCCW )
     RotatePoint( &m_ArcEnd, aCenter, rot_angle );
     m_t1 -= rot_angle;
     m_t2 -= rot_angle;
+
     if( m_t1 > 3600 || m_t2 > 3600 )
     {
         m_t1 -= 3600;
@@ -249,11 +254,10 @@ void LIB_ARC::Rotate( const wxPoint& aCenter, bool aRotateCCW )
 }
 
 
-
 void LIB_ARC::Plot( PLOTTER* aPlotter, const wxPoint& aOffset, bool aFill,
                     const TRANSFORM& aTransform ) const
 {
-    wxASSERT( aPlotter != NULL );
+    wxASSERT( aPlotter != nullptr );
 
     int t1 = m_t1;
     int t2 = m_t2;
@@ -421,7 +425,7 @@ BITMAPS LIB_ARC::GetMenuImage() const
 }
 
 
-void LIB_ARC::BeginEdit( const wxPoint aPosition )
+void LIB_ARC::BeginEdit( const wxPoint& aPosition )
 {
     m_ArcStart  = m_ArcEnd = aPosition;
     m_editState = 1;
@@ -541,7 +545,7 @@ void LIB_ARC::CalcRadiusAngles()
 
     m_Radius = KiROUND( EuclideanNorm( centerStartVector ) );
 
-    // Angles in eeschema are still integers
+    // Angles in Eeschema are still integers
     m_t1 = KiROUND( ArcTangente( centerStartVector.y, centerStartVector.x ) );
     m_t2 = KiROUND( ArcTangente( centerEndVector.y, centerEndVector.x ) );
 
@@ -550,18 +554,18 @@ void LIB_ARC::CalcRadiusAngles()
 
     // Restrict angle to less than 180 to avoid PBS display mirror Trace because it is
     // assumed that the arc is less than 180 deg to find orientation after rotate or mirror.
-    if( (m_t2 - m_t1) > 1800 )
+    if( ( m_t2 - m_t1 ) > 1800 )
         m_t2 -= 3600;
-    else if( (m_t2 - m_t1) <= -1800 )
+    else if( ( m_t2 - m_t1 ) <= -1800 )
         m_t2 += 3600;
 
-    while( (m_t2 - m_t1) >= 1800 )
+    while( ( m_t2 - m_t1 ) >= 1800 )
     {
         m_t2--;
         m_t1++;
     }
 
-    while( (m_t1 - m_t2) >= 1800 )
+    while( ( m_t1 - m_t2 ) >= 1800 )
     {
         m_t2++;
         m_t1--;
@@ -591,4 +595,17 @@ VECTOR2I LIB_ARC::CalcMidPoint() const
     midPoint.y = KiROUND( y ) + m_Pos.y;
 
     return midPoint;
+}
+
+
+void LIB_ARC::CalcEndPoints()
+{
+    double startAngle = DEG2RAD( static_cast<double>( m_t1 ) / 10.0 );
+    double endAngle = DEG2RAD( static_cast<double>( m_t2 ) / 10.0 );
+
+    m_ArcStart.x = KiROUND( cos( startAngle ) * m_Radius ) + m_Pos.x;
+    m_ArcStart.y = KiROUND( sin( startAngle ) * m_Radius ) + m_Pos.y;
+
+    m_ArcEnd.x = KiROUND( cos( endAngle ) * m_Radius ) + m_Pos.x;
+    m_ArcEnd.y = KiROUND( sin( endAngle ) * m_Radius ) + m_Pos.y;
 }

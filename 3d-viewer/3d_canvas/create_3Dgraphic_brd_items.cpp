@@ -41,7 +41,7 @@
 #include <pcb_text.h>
 #include <fp_shape.h>
 #include <zone.h>
-#include <kicad_string.h>
+#include <string_utils.h>
 #include <fp_text.h>
 #include <convert_basic_shapes_to_polygon.h>
 #include <trigo.h>
@@ -105,7 +105,7 @@ void BOARD_ADAPTER::addShapeWithClearance( const PCB_TEXT* aText, CONTAINER_2D_B
     if( font->IsOutline() )
     {
         const KIFONT::OUTLINE_FONT* outlineFont = dynamic_cast<const KIFONT::OUTLINE_FONT*>( font );
-        std::vector<SHAPE_POLY_SET> glyphs;
+        KIFONT::GLYPH_LIST          glyphs;
         VECTOR2I                    textSize = outlineFont->GetLinesAsPolygon( glyphs, aText );
         int                         textHeight = 0;
         double                      textWidth = 0;
@@ -161,7 +161,7 @@ void BOARD_ADAPTER::addShapeWithClearance( const PCB_TEXT* aText, CONTAINER_2D_B
             aDstContainer->Add( new TRIANGLE_2D( v1, v2, v3, *aText ) );
         };
 
-        for( SHAPE_POLY_SET& glyph : glyphs )
+        for( auto glyph : glyphs )
         {
             // TODO: triangulate all glyphs in one go - needed for adding a label background rect
             bool callbackFlag = true;
@@ -171,7 +171,7 @@ void BOARD_ADAPTER::addShapeWithClearance( const PCB_TEXT* aText, CONTAINER_2D_B
                maxX = std::numeric_limits<double>::lowest();
                 maxY = std::numeric_limits<double>::lowest();
 #endif
-            Triangulate( glyph, triangleCallback, &callbackFlag );
+                Triangulate( glyph, triangleCallback, &callbackFlag );
         }
 #ifdef DEBUG
         std::cerr << "[" << minX << "," << minY << "]->"
@@ -186,9 +186,9 @@ void BOARD_ADAPTER::addShapeWithClearance( const PCB_TEXT* aText, CONTAINER_2D_B
 }
 
 
-void BOARD_ADAPTER::addShapeWithClearance( const DIMENSION_BASE* aDimension,
-                                           CONTAINER_2D_BASE* aDstContainer, PCB_LAYER_ID aLayerId,
-                                           int aClearanceValue )
+void BOARD_ADAPTER::addShapeWithClearance( const PCB_DIMENSION_BASE* aDimension,
+                                           CONTAINER_2D_BASE* aDstContainer,
+                                           PCB_LAYER_ID aLayerId, int aClearanceValue )
 {
     addShapeWithClearance( &aDimension->Text(), aDstContainer, aLayerId, aClearanceValue );
 
@@ -288,7 +288,7 @@ void BOARD_ADAPTER::addFootprintShapesWithClearance( const FOOTPRINT*   aFootpri
 }
 
 
-void BOARD_ADAPTER::createTrack( const TRACK* aTrack, CONTAINER_2D_BASE* aDstContainer,
+void BOARD_ADAPTER::createTrack( const PCB_TRACK* aTrack, CONTAINER_2D_BASE* aDstContainer,
                                  int aClearanceValue )
 {
     SFVEC2F start3DU( aTrack->GetStart().x * m_biuTo3Dunits,
@@ -305,11 +305,11 @@ void BOARD_ADAPTER::createTrack( const TRACK* aTrack, CONTAINER_2D_BASE* aDstCon
 
     case PCB_ARC_T:
     {
-        const ARC* arc = static_cast<const ARC*>( aTrack );
-        VECTOR2D   center( arc->GetCenter() );
-        double     arc_angle = arc->GetAngle();
-        double     radius = arc->GetRadius();
-        int arcsegcount = GetArcToSegmentCount( radius, Millimeter2iu( 0.005 ), arc_angle / 10 );
+        const PCB_ARC* arc = static_cast<const PCB_ARC*>( aTrack );
+        VECTOR2D center( arc->GetCenter() );
+        double arc_angle = arc->GetAngle();
+        double radius = arc->GetRadius();
+        int arcsegcount = GetArcToSegmentCount( radius, Millimeter2iu( 0.005), arc_angle/10 );
         int circlesegcount;
 
         // We need a circle to segment count. However, the arc angle can be small, and the
@@ -367,9 +367,11 @@ void BOARD_ADAPTER::createTrack( const TRACK* aTrack, CONTAINER_2D_BASE* aDstCon
 
 
 void BOARD_ADAPTER::createPadWithClearance( const PAD* aPad, CONTAINER_2D_BASE* aDstContainer,
-                                            PCB_LAYER_ID aLayer, wxSize aClearanceValue ) const
+                                            PCB_LAYER_ID aLayer,
+                                            const wxSize& aClearanceValue ) const
 {
     SHAPE_POLY_SET poly;
+    wxSize clearance = aClearanceValue;
 
     // Our shape-based builder can't handle negative or differing x:y clearance values (the
     // former are common for solder paste while the later get generated when a relative paste
@@ -378,13 +380,13 @@ void BOARD_ADAPTER::createPadWithClearance( const PAD* aPad, CONTAINER_2D_BASE* 
     // Of course being a hack it falls down when dealing with custom shape pads (where the size
     // is only the size of the anchor), so for those we punt and just use aClearanceValue.x.
 
-    if( ( aClearanceValue.x < 0 || aClearanceValue.x != aClearanceValue.y )
-        && aPad->GetShape() != PAD_SHAPE::CUSTOM )
+    if( ( clearance.x < 0 || clearance.x != clearance.y )
+            && aPad->GetShape() != PAD_SHAPE::CUSTOM )
     {
         PAD dummy( *aPad );
-        dummy.SetSize( aPad->GetSize() + aClearanceValue + aClearanceValue );
+        dummy.SetSize( aPad->GetSize() + clearance + clearance );
         dummy.TransformShapeWithClearanceToPolygon( poly, aLayer, 0, ARC_HIGH_DEF, ERROR_INSIDE );
-        aClearanceValue = { 0, 0 };
+        clearance = { 0, 0 };
     }
     else
     {
@@ -399,15 +401,16 @@ void BOARD_ADAPTER::createPadWithClearance( const PAD* aPad, CONTAINER_2D_BASE* 
                 const SHAPE_SEGMENT* seg = (SHAPE_SEGMENT*) shape;
                 const SFVEC2F        start3DU( seg->GetSeg().A.x * m_biuTo3Dunits,
                                                -seg->GetSeg().A.y * m_biuTo3Dunits );
-                const SFVEC2F        end3DU( seg->GetSeg().B.x * m_biuTo3Dunits,
-                                             -seg->GetSeg().B.y * m_biuTo3Dunits );
-                const int            width = seg->GetWidth() + aClearanceValue.x * 2;
+                const SFVEC2F        end3DU  (  seg->GetSeg().B.x * m_biuTo3Dunits,
+                                               -seg->GetSeg().B.y * m_biuTo3Dunits );
+                const int            width = seg->GetWidth() + clearance.x * 2;
 
                 // Cannot add segments that have the same start and end point
                 if( Is_segment_a_circle( start3DU, end3DU ) )
                 {
-                    aDstContainer->Add( new FILLED_CIRCLE_2D(
-                            start3DU, ( width / 2 ) * m_biuTo3Dunits, *aPad ) );
+                    aDstContainer->Add( new FILLED_CIRCLE_2D( start3DU,
+                                                              ( width / 2 ) * m_biuTo3Dunits,
+                                                              *aPad ) );
                 }
                 else
                 {
@@ -420,9 +423,9 @@ void BOARD_ADAPTER::createPadWithClearance( const PAD* aPad, CONTAINER_2D_BASE* 
             case SH_CIRCLE:
             {
                 const SHAPE_CIRCLE* circle = (SHAPE_CIRCLE*) shape;
-                const int           radius = circle->GetRadius() + aClearanceValue.x;
-                const SFVEC2F       center( circle->GetCenter().x * m_biuTo3Dunits,
-                                            -circle->GetCenter().y * m_biuTo3Dunits );
+                const int           radius = circle->GetRadius() + clearance.x;
+                const SFVEC2F       center(  circle->GetCenter().x * m_biuTo3Dunits,
+                                             -circle->GetCenter().y * m_biuTo3Dunits );
 
                 aDstContainer->Add(
                         new FILLED_CIRCLE_2D( center, radius * m_biuTo3Dunits, *aPad ) );
@@ -459,13 +462,14 @@ void BOARD_ADAPTER::createPadWithClearance( const PAD* aPad, CONTAINER_2D_BASE* 
                                             -seg.GetSeg().A.y * m_biuTo3Dunits );
                     const SFVEC2F end3DU( seg.GetSeg().B.x * m_biuTo3Dunits,
                                           -seg.GetSeg().B.y * m_biuTo3Dunits );
-                    const int     width = arc->GetWidth() + aClearanceValue.x * 2;
+                    const int width = arc->GetWidth() + clearance.x * 2;
 
                     // Cannot add segments that have the same start and end point
                     if( Is_segment_a_circle( start3DU, end3DU ) )
                     {
-                        aDstContainer->Add( new FILLED_CIRCLE_2D(
-                                start3DU, ( width / 2 ) * m_biuTo3Dunits, *aPad ) );
+                        aDstContainer->Add( new FILLED_CIRCLE_2D( start3DU,
+                                                                  ( width / 2 ) * m_biuTo3Dunits,
+                                                                  *aPad ) );
                     }
                     else
                     {
@@ -486,8 +490,8 @@ void BOARD_ADAPTER::createPadWithClearance( const PAD* aPad, CONTAINER_2D_BASE* 
 
     if( !poly.IsEmpty() )
     {
-        if( aClearanceValue.x )
-            poly.Inflate( aClearanceValue.x, 32 );
+        if( clearance.x )
+            poly.Inflate( clearance.x, 32 );
 
         // Add the PAD polygon
         ConvertPolygonToTriangles( poly, *aDstContainer, m_biuTo3Dunits, *aPad );
@@ -555,11 +559,13 @@ void BOARD_ADAPTER::addPadsWithClearance( const FOOTPRINT*   aFootprint,
                 case PAD_SHAPE::CIRCLE:
                     if( pad->GetDrillShape() == PAD_DRILL_SHAPE_CIRCLE )
                         continue;
+
                     break;
 
                 case PAD_SHAPE::OVAL:
                     if( pad->GetDrillShape() != PAD_DRILL_SHAPE_CIRCLE )
                         continue;
+
                     break;
 
                 default: break;
@@ -678,7 +684,7 @@ void BOARD_ADAPTER::addShapeWithClearance( const PCB_SHAPE*   aShape,
 
     switch( aShape->GetShape() )
     {
-    case PCB_SHAPE_TYPE::CIRCLE:
+    case SHAPE_T::CIRCLE:
     {
         const SFVEC2F center3DU( aShape->GetCenter().x * m_biuTo3Dunits,
                                  -aShape->GetCenter().y * m_biuTo3Dunits );
@@ -696,7 +702,7 @@ void BOARD_ADAPTER::addShapeWithClearance( const PCB_SHAPE*   aShape,
     }
     break;
 
-    case PCB_SHAPE_TYPE::RECT:
+    case SHAPE_T::RECT:
         if( aShape->IsFilled() )
         {
             SHAPE_POLY_SET polyList;
@@ -728,7 +734,7 @@ void BOARD_ADAPTER::addShapeWithClearance( const PCB_SHAPE*   aShape,
         }
         break;
 
-    case PCB_SHAPE_TYPE::ARC:
+    case SHAPE_T::ARC:
     {
         unsigned int segCount = GetCircleSegmentCount( aShape->GetBoundingBox().GetSizeMax() );
 
@@ -737,7 +743,7 @@ void BOARD_ADAPTER::addShapeWithClearance( const PCB_SHAPE*   aShape,
     }
     break;
 
-    case PCB_SHAPE_TYPE::SEGMENT:
+    case SHAPE_T::SEGMENT:
     {
         const SFVEC2F start3DU( aShape->GetStart().x * m_biuTo3Dunits,
                                 -aShape->GetStart().y * m_biuTo3Dunits );
@@ -758,8 +764,8 @@ void BOARD_ADAPTER::addShapeWithClearance( const PCB_SHAPE*   aShape,
     }
     break;
 
-    case PCB_SHAPE_TYPE::CURVE:
-    case PCB_SHAPE_TYPE::POLYGON:
+    case SHAPE_T::BEZIER:
+    case SHAPE_T::POLY:
     {
         SHAPE_POLY_SET polyList;
 
@@ -777,7 +783,7 @@ void BOARD_ADAPTER::addShapeWithClearance( const PCB_SHAPE*   aShape,
 
     default:
         wxFAIL_MSG( "BOARD_ADAPTER::addShapeWithClearance no implementation for "
-                    + PCB_SHAPE_TYPE_T_asString( aShape->GetShape() ) );
+                    + SHAPE_T_asString( aShape->GetShape()) );
         break;
     }
 }

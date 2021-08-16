@@ -23,6 +23,7 @@
 
 #include <base_units.h>
 #include <board_commit.h>
+#include <board_design_settings.h>
 #include <pad.h>
 #include <fp_shape.h>
 #include <footprint.h>
@@ -429,7 +430,7 @@ FOOTPRINT* MICROWAVE_TOOL::createMicrowaveInductor( MICROWAVE_INDUCTOR_PATTERN& 
         seg->SetEnd( buffer[jj] );
         seg->SetWidth( aInductorPattern.m_Width );
         seg->SetLayer( footprint->GetLayer() );
-        seg->SetShape( PCB_SHAPE_TYPE::SEGMENT );
+        seg->SetShape( SHAPE_T::SEGMENT );
         seg->SetStart0( seg->GetStart() - footprint->GetPosition() );
         seg->SetEnd0( seg->GetEnd() - footprint->GetPosition() );
         footprint->Add( seg );

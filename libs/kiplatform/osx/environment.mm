@@ -2,7 +2,7 @@
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
  * Copyright (C) 2020 Ian McInerney <Ian.S.McInerney at ieee.org>
- * Copyright (C) 2020 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 2020-2021 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * This program is free software: you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -39,7 +39,7 @@ bool KIPLATFORM::ENV::MoveToTrash( const wxString& aPath, wxString& aError )
 {
     bool     isDirectory = wxDirExists( aPath );
     NSURL*   url = [NSURL fileURLWithPath:wxCFStringRef( aPath ).AsNSString() isDirectory:isDirectory];
-    NSError* err = NULL;
+    NSError* err = nullptr;
 
     BOOL result = [[NSFileManager defaultManager] trashItemAtURL:url resultingItemURL:nil error:&err];
 
@@ -47,7 +47,17 @@ bool KIPLATFORM::ENV::MoveToTrash( const wxString& aPath, wxString& aError )
     if( result == NO )
     {
         NSString* errmsg;
-        errmsg = [err.localizedFailureReason stringByAppendingFormat:@"\n\n%@", err.localizedRecoverySuggestion];
+
+        if( err.localizedRecoverySuggestion == nil )
+        {
+            errmsg = err.localizedFailureReason;
+        }
+        else
+        {
+            errmsg = [err.localizedFailureReason stringByAppendingFormat:@"\n\n%@",
+                      err.localizedRecoverySuggestion];
+        }
+
         aError = wxCFStringRef::AsString( (CFStringRef) errmsg );
         return false;
     }
@@ -82,5 +92,5 @@ wxString KIPLATFORM::ENV::GetUserCachePath()
                                                  appropriateForURL:nil
                                                  create:NO error:nil];
 
-    return wxCFStringRef::AsString((CFStringRef)url.path);
+    return wxCFStringRef::AsString( ( CFStringRef) url.path );
 }

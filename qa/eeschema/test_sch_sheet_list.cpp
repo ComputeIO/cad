@@ -70,7 +70,7 @@ void TEST_SCH_SHEET_LIST_FIXTURE::loadSchematic( const wxString& aRelativePath )
     m_schematic.CurrentSheet().clear();
 
     m_manager.LoadProject( pro.GetFullPath() );
-    m_manager.Prj().SetElem( PROJECT::ELEM_SCH_PART_LIBS, nullptr );
+    m_manager.Prj().SetElem( PROJECT::ELEM_SCH_SYMBOL_LIBS, nullptr );
 
     m_schematic.SetProject( &m_manager.Prj() );
 
@@ -165,7 +165,7 @@ BOOST_AUTO_TEST_CASE( TestEditPageNumbersInSharedDesign )
     {
         SCH_SHEET_LIST sheets = m_schematic.GetSheets();
 
-        // Ammend Page numbers
+        // Amend Page numbers
         sheets.at( 0 ).SetPageNumber( "A" );
         sheets.at( 1 ).SetPageNumber( "B" );
         sheets.at( 2 ).SetPageNumber( "C" );

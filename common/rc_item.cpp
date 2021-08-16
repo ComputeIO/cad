@@ -1,7 +1,7 @@
 /*
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
- * Copyright (C) 2020 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 2020-2021 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -29,6 +29,7 @@
 #include <marker_base.h>
 #include <eda_draw_frame.h>
 #include <rc_item.h>
+#include <eda_item.h>
 #include <base_units.h>
 
 #define WX_DATAVIEW_WINDOW_PADDING 6
@@ -48,6 +49,30 @@ wxString RC_ITEM::ShowCoord( EDA_UNITS aUnits, const wxPoint& aPos )
     return wxString::Format( "@(%s, %s)",
                              MessageTextFromValue( aUnits, aPos.x ),
                              MessageTextFromValue( aUnits, aPos.y ) );
+}
+
+
+void RC_ITEM::AddItem( EDA_ITEM* aItem )
+{
+    m_ids.push_back( aItem->m_Uuid );
+}
+
+
+void RC_ITEM::SetItems( const EDA_ITEM* aItem, const EDA_ITEM* bItem,
+                        const EDA_ITEM* cItem, const EDA_ITEM* dItem )
+{
+    m_ids.clear();
+
+    m_ids.push_back( aItem->m_Uuid );
+
+    if( bItem )
+        m_ids.push_back( bItem->m_Uuid );
+
+    if( cItem )
+        m_ids.push_back( cItem->m_Uuid );
+
+    if( dItem )
+        m_ids.push_back( dItem->m_Uuid );
 }
 
 
@@ -153,7 +178,7 @@ RC_TREE_MODEL::RC_TREE_MODEL( EDA_DRAW_FRAME* aParentFrame, wxDataViewCtrl* aVie
 {
     m_view->GetMainWindow()->Connect( wxEVT_SIZE,
                                       wxSizeEventHandler( RC_TREE_MODEL::onSizeView ),
-                                      NULL, this );
+                                      nullptr, this );
 }
 
 
@@ -233,7 +258,7 @@ void RC_TREE_MODEL::rebuildModel( RC_ITEMS_PROVIDER* aProvider, int aSeverities 
     // The fastest method to update wxDataViewCtrl is to rebuild from
     // scratch by calling Cleared(). Linux requires to reassociate model to
     // display data, but Windows will create multiple associations.
-    // On MacOS, this crashes kicad. See https://gitlab.com/kicad/code/kicad/issues/3666
+    // On MacOS, this crashes KiCad. See https://gitlab.com/kicad/code/kicad/issues/3666
     // and https://gitlab.com/kicad/code/kicad/issues/3653
     m_view->AssociateModel( this );
 #endif
@@ -296,7 +321,7 @@ wxDataViewItem RC_TREE_MODEL::GetParent( wxDataViewItem const& aItem ) const
 
 
 unsigned int RC_TREE_MODEL::GetChildren( wxDataViewItem const& aItem,
-                                          wxDataViewItemArray&  aChildren ) const
+                                         wxDataViewItemArray&  aChildren ) const
 {
     const RC_TREE_NODE* node = ToNode( aItem );
     const std::vector<RC_TREE_NODE*>& children = node ? node->m_Children : m_tree;
@@ -308,9 +333,6 @@ unsigned int RC_TREE_MODEL::GetChildren( wxDataViewItem const& aItem,
 }
 
 
-/**
- * Called by the wxDataView to fetch an item's value.
- */
 void RC_TREE_MODEL::GetValue( wxVariant&              aVariant,
                               wxDataViewItem const&   aItem,
                               unsigned int            aCol ) const
@@ -375,10 +397,6 @@ void RC_TREE_MODEL::GetValue( wxVariant&              aVariant,
 }
 
 
-/**
- * Called by the wxDataView to fetch an item's formatting.  Return true iff the
- * item has non-default attributes.
- */
 bool RC_TREE_MODEL::GetAttr( wxDataViewItem const&   aItem,
                              unsigned int            aCol,
                              wxDataViewItemAttr&     aAttr ) const
@@ -458,7 +476,7 @@ void RC_TREE_MODEL::DeleteItems( bool aCurrentOnly, bool aIncludeExclusions, boo
     if( m_view )
     {
         m_view->UnselectAll();
-        wxYield();
+        wxSafeYield();
         m_view->Freeze();
     }
 

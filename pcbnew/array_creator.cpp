@@ -2,7 +2,7 @@
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
  * Created on: 11 Mar 2016, author John Beard
- * Copyright (C) 1992-2020 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 2016-2021 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -64,7 +64,7 @@ void ARRAY_CREATOR::Invoke()
 
     int ret = dialog.ShowModal();
 
-    if( ret != wxID_OK || array_opts == NULL )
+    if( ret != wxID_OK || array_opts == nullptr )
         return;
 
     BOARD_COMMIT commit( &m_parent );
@@ -108,6 +108,7 @@ void ARRAY_CREATOR::Invoke()
                     case PCB_SHAPE_T:
                     case PCB_TEXT_T:
                     case PCB_TRACE_T:
+                    case PCB_ARC_T:
                     case PCB_VIA_T:
                     case PCB_DIM_ALIGNED_T:
                     case PCB_DIM_CENTER_T:

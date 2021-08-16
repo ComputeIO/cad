@@ -32,39 +32,21 @@
 #include <dialog_footprint_properties_fp_editor_base.h>
 
 
-class PANEL_PREV_3D;
 class FOOTPRINT_EDIT_FRAME;
+class PANEL_FP_PROPERTIES_3D_MODEL;
 
+
+enum class NOTEBOOK_PAGES
+{
+    PAGE_UNKNOWN = -1,
+    PAGE_GENERAL = 0,
+    PAGE_CLEARANCES = 1,
+    PAGE_3D_MODELS = 2
+};
 
 class DIALOG_FOOTPRINT_PROPERTIES_FP_EDITOR : public DIALOG_FOOTPRINT_PROPERTIES_FP_EDITOR_BASE
 {
-private:
-    FOOTPRINT_EDIT_FRAME*    m_frame;
-    FOOTPRINT*               m_footprint;
-
-    static int               m_page;       // remember the last open page during session
-
-    FP_TEXT_GRID_TABLE*     m_texts;
-
-    UNIT_BINDER              m_netClearance;
-    UNIT_BINDER              m_solderMask;
-    UNIT_BINDER              m_solderPaste;
-
-    std::vector<FP_3DMODEL>  m_shapes3D_list;
-    PANEL_PREV_3D*           m_PreviewPane;
-
-    wxControl*               m_delayedFocusCtrl;
-    int                      m_delayedFocusPage;
-
-    WX_GRID*                 m_delayedFocusGrid;
-    int                      m_delayedFocusRow;
-    int                      m_delayedFocusColumn;
-    wxString                 m_delayedErrorMessage;
-
-    bool                     m_inSelect;
-
 public:
-    // Constructor and destructor
     DIALOG_FOOTPRINT_PROPERTIES_FP_EDITOR( FOOTPRINT_EDIT_FRAME* aParent, FOOTPRINT* aFootprint );
     ~DIALOG_FOOTPRINT_PROPERTIES_FP_EDITOR() override;
 
@@ -75,12 +57,6 @@ public:
 
 private:
     // virtual event functions
-    void On3DModelSelected( wxGridEvent&  ) override;
-    void On3DModelCellChanged( wxGridEvent& aEvent ) override;
-    void OnRemove3DModel( wxCommandEvent& event ) override;
-    void OnAdd3DModel( wxCommandEvent& event ) override;
-    void OnAdd3DRow( wxCommandEvent& event ) override;
-    void Cfg3DPath( wxCommandEvent& event ) override;
     void OnGridSize( wxSizeEvent& event ) override;
     void OnFootprintNameText( wxCommandEvent& event ) override;
     void OnGridCellChanging( wxGridEvent& event );
@@ -90,9 +66,30 @@ private:
 
     bool checkFootprintName( const wxString& aFootprintName );
 
-    void select3DModel( int aModelIdx );
-
     void adjustGridColumns( int aWidth );
+
+private:
+    FOOTPRINT_EDIT_FRAME*    m_frame;
+    FOOTPRINT*               m_footprint;
+
+    static NOTEBOOK_PAGES    m_page;       // remember the last open page during session
+
+    FP_TEXT_GRID_TABLE*      m_texts;
+
+    UNIT_BINDER              m_netClearance;
+    UNIT_BINDER              m_solderMask;
+    UNIT_BINDER              m_solderPaste;
+    UNIT_BINDER              m_solderPasteRatio;
+
+    wxControl*               m_delayedFocusCtrl;
+    NOTEBOOK_PAGES           m_delayedFocusPage;
+
+    WX_GRID*                 m_delayedFocusGrid;
+    int                      m_delayedFocusRow;
+    int                      m_delayedFocusColumn;
+    wxString                 m_delayedErrorMessage;
+
+    PANEL_FP_PROPERTIES_3D_MODEL* m_3dPanel;
 };
 
 

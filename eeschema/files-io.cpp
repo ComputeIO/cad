@@ -24,14 +24,12 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
 
-#include <advanced_config.h>
-#include <class_library.h>
+#include <symbol_library.h>
 #include <confirm.h>
 #include <connection_graph.h>
 #include <dialog_migrate_buses.h>
 #include <dialog_symbol_remap.h>
 #include <eeschema_settings.h>
-#include <gestfich.h>
 #include <id.h>
 #include <kiface_i.h>
 #include <kiplatform/app.h>
@@ -58,9 +56,12 @@
 #include <wildcards_and_files_ext.h>
 #include <drawing_sheet/ds_data_model.h>
 #include <wx/ffile.h>
-#include <tools/ee_actions.h>
+#include <wx/filedlg.h>
+#include <wx/log.h>
 #include <tools/ee_inspection_tool.h>
 #include <paths.h>
+#include <wx_filename.h>  // For ::ResolvePossibleSymlinks
+#include <widgets/wx_progress_reporters.h>
 
 bool SCH_EDIT_FRAME::SaveEEFile( SCH_SHEET* aSheet, bool aSaveUnderNewName )
 {
@@ -109,6 +110,9 @@ bool SCH_EDIT_FRAME::SaveEEFile( SCH_SHEET* aSheet, bool aSaveUnderNewName )
             schematicFileName.SetExt( KiCadSchematicFileExtension );
     }
 
+    // Write through symlinks, don't replace them
+    WX_FILENAME::ResolvePossibleSymlinks( schematicFileName );
+
     if( !IsWritable( schematicFileName ) )
         return false;
 
@@ -134,11 +138,13 @@ bool SCH_EDIT_FRAME::SaveEEFile( SCH_SHEET* aSheet, bool aSaveUnderNewName )
     }
     catch( const IO_ERROR& ioe )
     {
-        msg.Printf( _( "Error saving schematic file \"%s\".\n%s" ),
-                    schematicFileName.GetFullPath(), ioe.What() );
+        msg.Printf( _( "Error saving schematic file '%s'.\n%s" ),
+                    schematicFileName.GetFullPath(),
+                    ioe.What() );
         DisplayError( this, msg );
 
-        msg.Printf( _( "Failed to create temporary file \"%s\"" ), tempFile.GetFullPath() );
+        msg.Printf( _( "Failed to create temporary file '%s'." ),
+                    tempFile.GetFullPath() );
         SetMsgPanel( wxEmptyString, msg );
 
         // In case we started a file but didn't fully write it, clean up
@@ -154,12 +160,14 @@ bool SCH_EDIT_FRAME::SaveEEFile( SCH_SHEET* aSheet, bool aSaveUnderNewName )
 
         if( !success )
         {
-            msg.Printf( _( "Error saving schematic file \"%s\".\n"
-                           "Failed to rename temporary file %s" ),
-                        schematicFileName.GetFullPath(), tempFile.GetFullPath() );
+            msg.Printf( _( "Error saving schematic file '%s'.\n"
+                           "Failed to rename temporary file '%s'." ),
+                        schematicFileName.GetFullPath(),
+                        tempFile.GetFullPath() );
             DisplayError( this, msg );
 
-            msg.Printf( _( "Failed to rename temporary file \"%s\"" ), tempFile.GetFullPath() );
+            msg.Printf( _( "Failed to rename temporary file '%s'." ),
+                        tempFile.GetFullPath() );
             SetMsgPanel( wxEmptyString, msg );
         }
     }
@@ -192,7 +200,7 @@ bool SCH_EDIT_FRAME::SaveEEFile( SCH_SHEET* aSheet, bool aSaveUnderNewName )
         screen->SetContentModified( false );
         UpdateTitle();
 
-        msg.Printf( _( "File \"%s\" saved." ),  screen->GetFileName() );
+        msg.Printf( _( "File '%s' saved." ),  screen->GetFileName() );
         SetStatusText( msg, 0 );
     }
     else
@@ -243,7 +251,7 @@ bool SCH_EDIT_FRAME::OpenProjectFiles( const std::vector<wxString>& aFileSet, in
     // implement the pseudo code from KIWAY_PLAYER.h:
     wxString msg;
 
-    auto cfg = dynamic_cast<EESCHEMA_SETTINGS*>( Kiface().KifaceSettings() );
+    EESCHEMA_SETTINGS* cfg = dynamic_cast<EESCHEMA_SETTINGS*>( Kiface().KifaceSettings() );
 
     // This is for python:
     if( aFileSet.size() != 1 )
@@ -260,7 +268,7 @@ bool SCH_EDIT_FRAME::OpenProjectFiles( const std::vector<wxString>& aFileSet, in
 
     if( !LockFile( fullFileName ) )
     {
-        msg.Printf( _( "Schematic file \"%s\" is already open." ), fullFileName );
+        msg.Printf( _( "Schematic file '%s' is already open." ), fullFileName );
         DisplayError( this, msg );
         return false;
     }
@@ -281,16 +289,12 @@ bool SCH_EDIT_FRAME::OpenProjectFiles( const std::vector<wxString>& aFileSet, in
     if( is_new && !( aCtl & KICTL_CREATE ) )
     {
         // notify user that fullFileName does not exist, ask if user wants to create it.
-        msg.Printf( _( "Schematic \"%s\" does not exist.  Do you wish to create it?" ),
+        msg.Printf( _( "Schematic '%s' does not exist.  Do you wish to create it?" ),
                     fullFileName );
 
         if( !IsOK( this, msg ) )
             return false;
     }
-
-    // Loading a complex project and build data can be time
-    // consumming, so display a busy cursor
-    wxBusyCursor dummy;
 
     // unload current project file before loading new
     {
@@ -302,17 +306,8 @@ bool SCH_EDIT_FRAME::OpenProjectFiles( const std::vector<wxString>& aFileSet, in
     SetStatusText( wxEmptyString );
     m_infoBar->Dismiss();
 
-    SCH_IO_MGR::SCH_FILE_T schFileType = SCH_IO_MGR::GuessPluginTypeFromSchPath( fullFileName );
-
-    // PROJECT::SetProjectFullName() is an impactful function.  It should only be
-    // called under carefully considered circumstances.
-
-    // The calling code should know not to ask me here to change projects unless
-    // it knows what consequences that will have on other KIFACEs running and using
-    // this same PROJECT.  It can be very harmful if that calling code is stupid.
-
-    // NOTE: The calling code should never call this in hosted (non-standalone) mode with a
-    // different project than what has been loaded by the manager frame.  This will crash.
+    WX_PROGRESS_REPORTER progressReporter( this, is_new ? _( "Creating Schematic" )
+                                                        : _( "Loading Schematic" ), 1 );
 
     bool differentProject = pro.GetFullPath() != Prj().GetProjectFullName();
 
@@ -337,25 +332,27 @@ bool SCH_EDIT_FRAME::OpenProjectFiles( const std::vector<wxString>& aFileSet, in
         CreateScreens();
     }
 
+    SCH_IO_MGR::SCH_FILE_T schFileType = SCH_IO_MGR::GuessPluginTypeFromSchPath( fullFileName );
+
     if( schFileType == SCH_IO_MGR::SCH_LEGACY )
     {
         // Don't reload the symbol libraries if we are just launching Eeschema from KiCad again.
         // They are already saved in the kiface project object.
-        if( differentProject || !Prj().GetElem( PROJECT::ELEM_SCH_PART_LIBS ) )
+        if( differentProject || !Prj().GetElem( PROJECT::ELEM_SCH_SYMBOL_LIBS ) )
         {
             // load the libraries here, not in SCH_SCREEN::Draw() which is a context
             // that will not tolerate DisplayError() dialog since we're already in an
             // event handler in there.
             // And when a schematic file is loaded, we need these libs to initialize
             // some parameters (links to PART LIB, dangling ends ...)
-            Prj().SetElem( PROJECT::ELEM_SCH_PART_LIBS, nullptr );
+            Prj().SetElem( PROJECT::ELEM_SCH_SYMBOL_LIBS, nullptr );
             Prj().SchLibs();
         }
     }
     else
     {
         // No legacy symbol libraries including the cache are loaded with the new file format.
-        Prj().SetElem( PROJECT::ELEM_SCH_PART_LIBS, nullptr );
+        Prj().SetElem( PROJECT::ELEM_SCH_SYMBOL_LIBS, nullptr );
     }
 
     // Load the symbol library table, this will be used forever more.
@@ -393,32 +390,42 @@ bool SCH_EDIT_FRAME::OpenProjectFiles( const std::vector<wxString>& aFileSet, in
         SCH_PLUGIN* plugin = SCH_IO_MGR::FindPlugin( schFileType );
         SCH_PLUGIN::SCH_PLUGIN_RELEASER pi( plugin );
 
+        pi->SetProgressReporter( &progressReporter );
+
         bool failedLoad = false;
+
         try
         {
             Schematic().SetRoot( pi->Load( fullFileName, &Schematic() ) );
 
             if( !pi->GetError().IsEmpty() )
             {
-                DisplayErrorMessage( this,
-                                     _( "The entire schematic could not be loaded.  Errors "
-                                        "occurred attempting to load \nhierarchical sheet "
-                                        "schematics." ),
+                DisplayErrorMessage( this, _( "The entire schematic could not be loaded.  Errors "
+                                              "occurred attempting to load hierarchical sheets." ),
                                      pi->GetError() );
             }
         }
+        catch( const FUTURE_FORMAT_ERROR& ffe )
+        {
+            msg.Printf( _( "Error loading schematic '%s'." ), fullFileName);
+            progressReporter.Hide();
+            DisplayErrorMessage( this, msg, ffe.Problem() );
+
+            failedLoad = true;
+        }
         catch( const IO_ERROR& ioe )
         {
-            msg.Printf( _( "Error loading schematic file \"%s\"" ),
-                        fullFileName);
+            msg.Printf( _( "Error loading schematic '%s'." ), fullFileName);
+            progressReporter.Hide();
             DisplayErrorMessage( this, msg, ioe.What() );
 
             failedLoad = true;
         }
         catch( const std::bad_alloc& )
         {
-            msg.Printf( _( "Memory exhausted loading schematic file \"%s\"" ), fullFileName );
-            DisplayErrorMessage( this, msg );
+            msg.Printf( _( "Memory exhausted loading schematic '%s'." ), fullFileName );
+            progressReporter.Hide();
+            DisplayErrorMessage( this, msg, wxEmptyString );
 
             failedLoad = true;
         }
@@ -430,7 +437,7 @@ bool SCH_EDIT_FRAME::OpenProjectFiles( const std::vector<wxString>& aFileSet, in
             CreateScreens();
             m_toolManager->RunAction( ACTIONS::zoomFitScreen, true );
 
-            msg.Printf( _( "Failed to load \"%s\"" ), fullFileName );
+            msg.Printf( _( "Failed to load '%s'." ), fullFileName );
             SetMsgPanel( wxEmptyString, msg );
 
             return false;
@@ -473,7 +480,7 @@ bool SCH_EDIT_FRAME::OpenProjectFiles( const std::vector<wxString>& aFileSet, in
                 wxString paths;
                 wxArrayString libNames;
 
-                PART_LIBS::LibNamesAndPaths( &Prj(), false, &paths, &libNames );
+                SYMBOL_LIBS::LibNamesAndPaths( &Prj(), false, &paths, &libNames );
 
                 if( !libNames.IsEmpty() )
                 {
@@ -497,7 +504,7 @@ bool SCH_EDIT_FRAME::OpenProjectFiles( const std::vector<wxString>& aFileSet, in
 
                     libNames.Clear();
                     paths.Clear();
-                    PART_LIBS::LibNamesAndPaths( &Prj(), true, &paths, &libNames );
+                    SYMBOL_LIBS::LibNamesAndPaths( &Prj(), true, &paths, &libNames );
                 }
 
                 if( !cfg || !cfg->m_RescueNeverShow )
@@ -508,7 +515,7 @@ bool SCH_EDIT_FRAME::OpenProjectFiles( const std::vector<wxString>& aFileSet, in
             }
 
             // Ensure there is only one legacy library loaded and that it is the cache library.
-            PART_LIBS* legacyLibs = Schematic().Prj().SchLibs();
+            SYMBOL_LIBS* legacyLibs = Schematic().Prj().SchLibs();
 
             if( legacyLibs->GetLibraryCount() == 0 )
             {
@@ -614,6 +621,7 @@ bool SCH_EDIT_FRAME::OpenProjectFiles( const std::vector<wxString>& aFileSet, in
     SyncView();
     GetScreen()->ClearDrawingState();
 
+    UpdateHierarchyNavigator();
     UpdateTitle();
 
     wxFileName fn = Prj().AbsolutePath( GetScreen()->GetFileName() );
@@ -622,7 +630,7 @@ bool SCH_EDIT_FRAME::OpenProjectFiles( const std::vector<wxString>& aFileSet, in
     {
         m_infoBar->RemoveAllButtons();
         m_infoBar->AddCloseButton();
-        m_infoBar->ShowMessage( _( "Schematic file is read only." ), wxICON_WARNING );
+        m_infoBar->ShowMessage( _( "Schematic is read only." ), wxICON_WARNING );
     }
 
 #ifdef PROFILE
@@ -647,7 +655,7 @@ bool SCH_EDIT_FRAME::AppendSchematic()
     // open file chooser dialog
     wxString path = wxPathOnly( Prj().GetProjectFullName() );
 
-    wxFileDialog dlg( this, _( "Append Schematic" ), path, wxEmptyString,
+    wxFileDialog dlg( this, _( "Insert Schematic" ), path, wxEmptyString,
                       KiCadSchematicFileWildcard(), wxFD_OPEN | wxFD_FILE_MUST_EXIST );
 
     if( dlg.ShowModal() == wxID_CANCEL )
@@ -664,6 +672,8 @@ bool SCH_EDIT_FRAME::AppendSchematic()
     SyncView();
     OnModify();
     HardRedraw();   // Full reinit of the current screen and the display.
+
+    UpdateHierarchyNavigator();
 
     return true;
 }
@@ -707,7 +717,7 @@ void SCH_EDIT_FRAME::OnImportProject( wxCommandEvent& aEvent )
     wxString fileFilters;
     wxString allWildcards;
 
-    for( auto& loader : loaders )
+    for( std::pair<const wxString, const SCH_IO_MGR::SCH_FILE_T>& loader : loaders )
     {
         if( !fileFilters.IsEmpty() )
             fileFilters += wxChar( '|' );
@@ -745,7 +755,7 @@ void SCH_EDIT_FRAME::OnImportProject( wxCommandEvent& aEvent )
 
     SCH_IO_MGR::SCH_FILE_T pluginType = SCH_IO_MGR::SCH_FILE_T::SCH_FILE_UNKNOWN;
 
-    for( auto& loader : loaders )
+    for( std::pair<const wxString, const SCH_IO_MGR::SCH_FILE_T>& loader : loaders )
     {
         if( fn.GetExt().CmpNoCase( SCH_IO_MGR::GetFileExtension( loader.second ) ) == 0 )
         {
@@ -756,11 +766,15 @@ void SCH_EDIT_FRAME::OnImportProject( wxCommandEvent& aEvent )
 
     if( pluginType == SCH_IO_MGR::SCH_FILE_T::SCH_FILE_UNKNOWN )
     {
-        wxLogError( wxString::Format( "unexpected file extension: %s", fn.GetExt() ) );
+        wxLogError( _( "Unexpected file extension: '%s'." ), fn.GetExt() );
         return;
     }
 
+    m_toolManager->GetTool<EE_SELECTION_TOOL>()->ClearSelection();
+
     importFile( dlg.GetPath(), pluginType );
+
+    RefreshCanvas();
 }
 
 
@@ -795,26 +809,16 @@ bool SCH_EDIT_FRAME::SaveProject()
         if( newFileName.GetExt().IsEmpty() )
             newFileName.SetExt( KiCadSchematicFileExtension );
 
-        if( !newFileName.DirExists() && !newFileName.Mkdir() )
+        if( ( !newFileName.DirExists() && !newFileName.Mkdir() ) || !newFileName.IsDirWritable() )
         {
-            msg.Printf( _( "Cannot create folder \"%s\"." ), newFileName.GetPath() );
+            msg.Printf( _( "Folder '%s' could not be created.\n\n"
+                           "Make sure you have write permissions and try again." ),
+                        newFileName.GetPath() );
 
             wxMessageDialog dlgBadPath( this, msg, _( "Error" ),
                                         wxOK | wxICON_EXCLAMATION | wxCENTER );
 
             dlgBadPath.ShowModal();
-            return false;
-        }
-
-        if( !newFileName.IsDirWritable() )
-        {
-            msg.Printf( _( "You do not have write permissions to folder \"%s\"." ),
-                        newFileName.GetPath() );
-
-            wxMessageDialog dlgBadPerms( this, msg, _( "Error" ),
-                                         wxOK | wxICON_EXCLAMATION | wxCENTER );
-
-            dlgBadPerms.ShowModal();
             return false;
         }
 
@@ -858,12 +862,15 @@ bool SCH_EDIT_FRAME::SaveProject()
             }
 
             wxLogTrace( tracePathsAndFiles,
-                        wxT( "Changing schematic file name path from '%s' to '%s'." ),
-                        screen->GetFileName(), tmp.GetFullPath() );
+                        wxT( "Moving schematic from '%s' to '%s'." ),
+                        screen->GetFileName(),
+                        tmp.GetFullPath() );
 
             if( !tmp.DirExists() && !tmp.Mkdir() )
             {
-                msg.Printf( _( "Cannot create folder \"%s\"." ), newFileName.GetPath() );
+                msg.Printf( _( "Folder '%s' could not be created.\n\n"
+                               "Make sure you have write permissions and try again." ),
+                            newFileName.GetPath() );
 
                 wxMessageDialog dlgBadFilePath( this, msg, _( "Error" ),
                                                 wxOK | wxICON_EXCLAMATION | wxCENTER );
@@ -1016,7 +1023,8 @@ bool SCH_EDIT_FRAME::SaveProject()
 
     UpdateTitle();
 
-    m_infoBar->DismissOutdatedSave();
+    if( m_infoBar->GetMessageType() == WX_INFOBAR::MESSAGE_TYPE::OUTDATED_SAVE )
+        m_infoBar->Dismiss();
 
     return success;
 }
@@ -1103,8 +1111,7 @@ bool SCH_EDIT_FRAME::importFile( const wxString& aFileName, int aFileType )
 
         if( !LockFile( aFileName ) )
         {
-            wxString msg = wxString::Format( _( "Schematic file \"%s\" is already open." ),
-                                             aFileName );
+            wxString msg = wxString::Format( _( "Schematic '%s' is already open." ), aFileName );
             DisplayError( this, msg );
             return false;
         }
@@ -1112,19 +1119,18 @@ bool SCH_EDIT_FRAME::importFile( const wxString& aFileName, int aFileType )
         try
         {
             SCH_PLUGIN::SCH_PLUGIN_RELEASER pi( SCH_IO_MGR::FindPlugin( fileType ) );
-            DIALOG_HTML_REPORTER*           reporter = new DIALOG_HTML_REPORTER( this );
+            DIALOG_HTML_REPORTER            errorReporter( this );
+            WX_PROGRESS_REPORTER            progressReporter( this, _( "Importing Schematic" ), 1 );
 
-            pi->SetReporter( reporter->m_Reporter );
+            pi->SetReporter( errorReporter.m_Reporter );
+            pi->SetProgressReporter( &progressReporter );
             Schematic().SetRoot( pi->Load( aFileName, &Schematic() ) );
 
-            if( reporter->m_Reporter->HasMessage() )
+            if( errorReporter.m_Reporter->HasMessage() )
             {
-                reporter->m_Reporter->Flush();  // Build HTML messages
-                reporter->ShowModal();
+                errorReporter.m_Reporter->Flush();  // Build HTML messages
+                errorReporter.ShowModal();
             }
-
-            pi->SetReporter( &WXLOG_REPORTER::GetInstance() );
-            delete reporter;
 
             // Non-KiCad schematics do not use a drawing-sheet (or if they do, it works differently
             // to KiCad), so set it to an empty one
@@ -1167,6 +1173,8 @@ bool SCH_EDIT_FRAME::importFile( const wxString& aFileName, int aFileType )
             initScreenZoom();
             SetSheetNumberAndCount();
             SyncView();
+
+            UpdateHierarchyNavigator();
             UpdateTitle();
         }
         catch( const IO_ERROR& ioe )
@@ -1176,11 +1184,10 @@ bool SCH_EDIT_FRAME::importFile( const wxString& aFileName, int aFileType )
             CreateScreens();
             m_toolManager->RunAction( ACTIONS::zoomFitScreen, true );
 
-            wxString msg;
-            msg.Printf( _( "Error loading schematic \"%s\".\n%s" ), aFileName, ioe.What() );
-            DisplayError( this, msg );
+            wxString msg = wxString::Format( _( "Error loading schematic '%s'." ), aFileName );
+            DisplayErrorMessage( this, msg, ioe.What() );
 
-            msg.Printf( _( "Failed to load \"%s\"" ), aFileName );
+            msg.Printf( _( "Failed to load '%s'." ), aFileName );
             SetMsgPanel( wxEmptyString, msg );
 
             return false;

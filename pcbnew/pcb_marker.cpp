@@ -25,10 +25,11 @@
 
 #include <bitmaps.h>
 #include <base_units.h>
-#include <pcb_base_frame.h>
+#include <eda_draw_frame.h>
 #include <board.h>
+#include <board_design_settings.h>
 #include <pcb_marker.h>
-#include <layers_id_colors_and_visibility.h>
+#include <layer_ids.h>
 #include <settings/color_settings.h>
 #include <settings/settings_manager.h>
 #include <geometry/shape_null.h>

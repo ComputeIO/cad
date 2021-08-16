@@ -22,6 +22,7 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
 
+#include <wx/filedlg.h>
 #include <wx/wfstream.h>
 #include <wx/zipstrm.h>
 #include <reporter.h>
@@ -32,7 +33,7 @@
 #include <gerber_file_image_list.h>
 #include <excellon_image.h>
 #include <wildcards_and_files_ext.h>
-#include <widgets/progress_reporter.h>
+#include <widgets/wx_progress_reporters.h>
 #include "widgets/gerbview_layer_widget.h"
 
 // HTML Messages used more than one time:
@@ -192,7 +193,17 @@ bool GERBVIEW_FRAME::LoadGerberFiles( const wxString& aFullFileName )
     // Set the busy cursor
     wxBusyCursor wait;
 
-    return LoadListOfGerberAndDrillFiles( currentPath, filenamesList );
+    bool isFirstFile = GetImagesList()->GetLoadedImageCount() == 0;
+
+    bool success = LoadListOfGerberAndDrillFiles( currentPath, filenamesList );
+
+    // Auto zoom is only applied if there is only one file loaded
+    if( isFirstFile )
+    {
+        Zoom_Automatique( false );
+    }
+
+    return success;
 }
 
 
@@ -238,15 +249,20 @@ bool GERBVIEW_FRAME::LoadListOfGerberAndDrillFiles( const wxString& aPath,
         if( !progress && ( aFilenameList.GetCount() > 1 ) )
         {
             progress = std::make_unique<WX_PROGRESS_REPORTER>( this,
-                            _( "Loading Gerber files..." ), 1, false );
+                                                               _( "Loading Gerber files..." ), 1,
+                                                               false );
             progress->SetMaxProgress( aFilenameList.GetCount() - 1 );
-            progress->Report( wxString::Format( _("Loading %u/%zu %s" ), ii+1,
-                                            aFilenameList.GetCount(), m_lastFileName ) );
+            progress->Report( wxString::Format( _("Loading %u/%zu %s..." ),
+                                                ii+1,
+                                                aFilenameList.GetCount(),
+                                                m_lastFileName ) );
         }
         else if( progress )
         {
-            progress->Report( wxString::Format( _("Loading %u/%zu %s" ), ii+1,
-                                            aFilenameList.GetCount(), m_lastFileName ) );
+            progress->Report( wxString::Format( _("Loading %u/%zu %s..." ),
+                                                ii+1,
+                                                aFilenameList.GetCount(),
+                                                m_lastFileName ) );
             progress->KeepRefreshing();
         }
 
@@ -322,8 +338,6 @@ bool GERBVIEW_FRAME::LoadListOfGerberAndDrillFiles( const wxString& aPath,
     }
 
     SetVisibleLayers( visibility );
-
-    Zoom_Automatique( false );
 
     // Synchronize layers tools with actual active layer:
     ReFillLayerWidget();
@@ -462,7 +476,7 @@ bool GERBVIEW_FRAME::unarchiveFiles( const wxString& aFullFileName, REPORTER* aR
     {
         if( aReporter )
         {
-            msg.Printf( _( "Zip file \"%s\" cannot be opened" ), aFullFileName );
+            msg.Printf( _( "Zip file '%s' cannot be opened." ), aFullFileName );
             aReporter->Report( msg, RPT_SEVERITY_ERROR );
         }
 
@@ -504,7 +518,7 @@ bool GERBVIEW_FRAME::unarchiveFiles( const wxString& aFullFileName, REPORTER* aR
         {
             if( aReporter )
             {
-                msg.Printf( _( "Info: skip file \"%s\" (unknown type)\n" ), entry->GetName() );
+                msg.Printf( _( "Skipped file '%s' (unknown type).\n" ), entry->GetName() );
                 aReporter->Report( msg, RPT_SEVERITY_WARNING );
             }
 
@@ -516,7 +530,7 @@ bool GERBVIEW_FRAME::unarchiveFiles( const wxString& aFullFileName, REPORTER* aR
             //We cannot read a gerber job file as a gerber plot file: skip it
             if( aReporter )
             {
-                msg.Printf( _( "Info: skip file \"%s\" (gerber job file)\n" ), entry->GetName() );
+                msg.Printf( _( "Skipped file '%s' (gerber job file).\n" ), entry->GetName() );
                 aReporter->Report( msg, RPT_SEVERITY_WARNING );
             }
 
@@ -557,7 +571,7 @@ bool GERBVIEW_FRAME::unarchiveFiles( const wxString& aFullFileName, REPORTER* aR
 
                 if( aReporter )
                 {
-                    msg.Printf( _( "<b>Unable to create temporary file \"%s\"</b>\n"),
+                    msg.Printf( _( "<b>Unable to create temporary file '%s'.</b>\n"),
                                 unzipped_tempfile );
                     aReporter->Report( msg, RPT_SEVERITY_ERROR );
                 }

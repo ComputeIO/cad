@@ -31,8 +31,8 @@
 #include <menus_helpers.h>
 #include <pcb_edit_frame.h>
 #include <pcbnew_id.h>
-#include <pgm_base.h>
 #include <python_scripting.h>
+#include <tool/action_manager.h>
 #include <tool/actions.h>
 #include <tool/tool_manager.h>
 #include <tools/pcb_actions.h>
@@ -260,9 +260,14 @@ void PCB_EDIT_FRAME::ReCreateMenuBar()
     drawingModeSubMenu->SetTitle( _( "&Drawing Mode" ) );
     drawingModeSubMenu->SetIcon( BITMAPS::add_zone );
 
-    drawingModeSubMenu->Add( PCB_ACTIONS::zoneDisplayEnable,   ACTION_MENU::CHECK );
-    drawingModeSubMenu->Add( PCB_ACTIONS::zoneDisplayDisable,  ACTION_MENU::CHECK );
-    drawingModeSubMenu->Add( PCB_ACTIONS::zoneDisplayOutlines, ACTION_MENU::CHECK );
+    drawingModeSubMenu->Add( PCB_ACTIONS::zoneDisplayFilled,   ACTION_MENU::CHECK );
+    drawingModeSubMenu->Add( PCB_ACTIONS::zoneDisplayOutline,  ACTION_MENU::CHECK );
+
+    if( ADVANCED_CFG::GetCfg().m_ExtraZoneDisplayModes )
+    {
+        drawingModeSubMenu->Add( PCB_ACTIONS::zoneDisplayFractured,    ACTION_MENU::CHECK );
+        drawingModeSubMenu->Add( PCB_ACTIONS::zoneDisplayTriangulated, ACTION_MENU::CHECK );
+    }
 
     drawingModeSubMenu->AppendSeparator();
     drawingModeSubMenu->Add( PCB_ACTIONS::padDisplayMode,      ACTION_MENU::CHECK );
@@ -435,7 +440,12 @@ void PCB_EDIT_FRAME::ReCreateMenuBar()
     prefsMenu->Add( ACTIONS::configurePaths );
     prefsMenu->Add( ACTIONS::showFootprintLibTable );
 
-    prefsMenu->Add( ACTIONS::openPreferences );
+    // We can't use ACTIONS::showPreferences yet because wxWidgets moves this on
+    // Mac, and it needs the wxID_PREFERENCES id to find it.
+    prefsMenu->Add( _( "Preferences..." ) + "\tCtrl+,",
+                    _( "Show preferences for all open tools" ),
+                    wxID_PREFERENCES,
+                    BITMAPS::preference );
 
     prefsMenu->AppendSeparator();
     AddMenuLanguageList( prefsMenu, selTool );

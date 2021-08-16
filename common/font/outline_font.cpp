@@ -25,7 +25,6 @@
  */
 
 #include <limits>
-#include <kicad_string.h>
 #include <pgm_base.h>
 #include <settings/settings_manager.h>
 #include <harfbuzz/hb-ft.h>
@@ -44,7 +43,7 @@ using namespace KIFONT;
 
 FT_Library OUTLINE_FONT::mFreeType = nullptr;
 
-OUTLINE_FONT::OUTLINE_FONT() : mFaceSize( 16 ), mSubscriptSize( 10 )
+OUTLINE_FONT::OUTLINE_FONT() : mFaceSize( 16 ), mSubscriptSize( 13 )
 {
     if( !mFreeType )
     {
@@ -169,109 +168,6 @@ FT_Error OUTLINE_FONT::loadFace( const wxString& aFontFileName )
 }
 
 
-#if 0
-/**
- * Draw a string.
- *
- * @param aGal
- * @param aText is the text to be drawn.
- * @param aPosition is the text position in world coordinates.
- * @param aAngle is the text rotation angle
- */
-VECTOR2D OUTLINE_FONT::Draw( KIGFX::GAL* aGal, const UTF8& aText, const VECTOR2D& aPosition,
-                             const VECTOR2D& aOrigin, const TEXT_ATTRIBUTES& aAttributes ) const
-{
-#ifdef DEBUG
-    std::cerr << "OUTLINE_FONT::Draw( aGal, \"" << aText << "\", " << aPosition << ", " << aOrigin
-              << ", " << aAttributes << " ) const\n";
-    bool   drawDebugShapes = false;
-    double dbg = 200000;
-#endif
-    if( aText.empty() )
-        return VECTOR2D( 0, 0 );
-
-    EDA_ANGLE angle = aAttributes.GetAngle();
-
-    // FT_Select_Charmap( mFace, FT_Encoding::FT_ENCODING_UNICODE );
-
-    // FT_Set_Char_Size(
-    //   <handle to face object>,
-    //   <char_width in 1/64th of points>,
-    //   <char_height in 1/64th of points>,
-    //   <horizontal device resolution>,
-    //   <vertical device resolution>
-    // )
-    // handle == variable (reference)
-    // If only one of char_width/char_height == 0, it defaults to "same as the non-zero one"
-    // Ditto if only one of horizontal/vertical resolution == 0
-    // If both horizontal/vertical resolution == 0, 72 dpi is default
-    //
-    // 16 * 64 is chosen as an arbitrary default for width/height
-    // TODO: come up with a non-arbitrary default (and/or use a better
-    // value for H/V reso)
-
-    //FT_Set_Char_Size( mFace, 0, 16 * 64, 0, 0 );
-
-    if( aGal )
-    {
-#ifdef OUTLINEFONT_DEBUG
-        KIGFX::COLOR4D oldColor = aGal->GetStrokeColor();
-        if( drawDebugShapes )
-        {
-            aGal->SetStrokeColor( KIGFX::COLOR4D( 1, 1, 0, 1 ) );
-            aGal->DrawCircle( aPosition, dbg );
-            aGal->SetStrokeColor( oldColor );
-        }
-#endif
-        // Context needs to be saved before any transformations
-        aGal->Save();
-        //aGal->Translate( aPosition );
-        aGal->Rotate( angle.Invert().AsRadians() );
-    }
-
-    // Split multiline strings into separate ones and draw them line by line
-    wxArrayString         strings_list;
-    std::vector<wxPoint>  positions;
-    std::vector<VECTOR2D> boundingBoxes;
-    int n;
-
-    getLinePositions( aText, aPosition, strings_list, positions, n, boundingBoxes,
-                      aGal->GetGlyphSize(), aAttributes );
-
-    VECTOR2D boundingBox( 0, 0 );
-    int      y = 0;
-    for( int i = 0; i < n; i++ )
-    {
-#ifdef DEBUG
-        std::cerr << "OUTLINE_FONT::Draw( aGal, \"" << aText << "\", " << aPosition << ", "
-                  << aOrigin << ", " << aAttributes << " ) const "
-                  << "drawing line #" << i << "/" << n << " \"" << strings_list[i] << "\" @0," << y << std::endl;
-#endif
-        //wxPoint  linePosition( 0, y );
-        VECTOR2D lineBoundingBox = drawSingleLineText( aGal, strings_list[i], positions[i] );
-
-        // expand bounding box of whole text
-        boundingBox.x = std::max( boundingBox.x, lineBoundingBox.x );
-
-        if( aGal )
-        {
-            double lineHeight =
-                    GetInterline( aGal->GetGlyphSize().y, aAttributes.GetLineSpacing() );
-            //aGal->Translate( VECTOR2D( 0, lineHeight ) );
-            y += lineHeight;
-            boundingBox.y += lineHeight;
-        }
-    }
-
-    if( aGal ) {
-        // undo rotation
-        aGal->Restore();
-    }
-
-    return boundingBox;
-}
-#endif
-
 /**
  * Compute the boundary limits of aText (the bounding box of all shapes).
  *
@@ -295,7 +191,7 @@ VECTOR2D OUTLINE_FONT::StringBoundaryLimits( const KIGFX::GAL* aGal, const UTF8&
     //hb_glyph_position_t* glyphPos = hb_buffer_get_glyph_positions( buf, &glyphCount );
 
     hb_ft_font_set_funcs( referencedFont );
-    hb_shape( referencedFont, buf, NULL, 0 );
+    hb_shape( referencedFont, buf, nullptr, 0 );
 
     int width = 0;
     int height = mFace->size->metrics.height;
@@ -391,150 +287,7 @@ static bool contourIsHole( const CONTOUR& c )
 }
 
 
-/**
-   @return position of cursor for drawing next substring
- */
-VECTOR2D OUTLINE_FONT::drawMarkup( KIGFX::GAL* aGal, const MARKUP::MARKUP_NODE& aNode,
-                                   const VECTOR2D& aPosition, const EDA_ANGLE& aAngle,
-                                   TEXT_STYLE_FLAGS aTextStyle, int aLevel ) const
-{
-    if( !aGal )
-        return VECTOR2D( 0, 0 );
-
-    VECTOR2D nextPosition = aPosition;
-
-    TEXT_STYLE_FLAGS textStyle = aTextStyle;
-
-    if( !aNode->is_root() )
-    {
-        if( aNode->isSubscript() )
-        {
-            textStyle = TEXT_STYLE::SUBSCRIPT;
-        }
-        else if( aNode->isSuperscript() )
-        {
-            textStyle = TEXT_STYLE::SUPERSCRIPT;
-        }
-
-        if( aNode->isOverbar() )
-        {
-            textStyle |= TEXT_STYLE::OVERBAR;
-        }
-
-        if( aNode->has_content() )
-        {
-            std::string                 txt = aNode->string();
-            std::vector<SHAPE_POLY_SET> glyphs;
-            wxPoint                     pt( aPosition.x, aPosition.y );
-            VECTOR2D                    glyphSize = aGal->GetGlyphSize();
-            bool                        mirrored = aGal->IsTextMirrored();
-
-#ifdef DEBUG
-            std::cerr << "OUTLINE_FONT::drawMarkup( [aGal], " << aNode->asString() << ", "
-                      << aPosition << ", " << aAngle << ", " << TextStyleAsString( aTextStyle )
-                      << ", " << aLevel << " ) const; txt \"" << txt << "\" pt " << pt.x << ","
-                      << pt.y << " glyphSize " << glyphSize << " textStyle {"
-                      << TextStyleAsString( textStyle ) << "}" << std::endl;
-#endif
-            nextPosition =
-                    GetTextAsPolygon( glyphs, txt, glyphSize, pt, aAngle, mirrored, textStyle );
-
-            for( auto glyph : glyphs )
-                aGal->DrawGlyph( glyph );
-        }
-    }
-
-    for( const auto& child : aNode->children )
-    {
-        nextPosition = drawMarkup( aGal, child, nextPosition, aAngle, textStyle, aLevel + 1 );
-    }
-
-#ifdef OUTLINEFONT_DEBUG
-    std::cerr << " returns " << nextPosition << std::endl;
-#endif
-    return nextPosition;
-}
-
-
-/**
-   @return position of cursor for drawing next substring
- */
-VECTOR2D OUTLINE_FONT::drawMarkup( std::vector<SHAPE_POLY_SET>& aGlyphs,
-                                   const MARKUP::MARKUP_NODE& aNode, const VECTOR2D& aPosition,
-                                   const VECTOR2D& aGlyphSize, bool aIsMirrored,
-                                   const EDA_ANGLE& aAngle, TEXT_STYLE_FLAGS aTextStyle,
-                                   int aLevel ) const
-{
-    VECTOR2D nextPosition = aPosition;
-
-    TEXT_STYLE_FLAGS textStyle = aTextStyle;
-
-    if( !aNode->is_root() )
-    {
-        if( aNode->isSubscript() )
-        {
-            textStyle = TEXT_STYLE::SUBSCRIPT;
-        }
-        else if( aNode->isSuperscript() )
-        {
-            textStyle = TEXT_STYLE::SUPERSCRIPT;
-        }
-
-        if( aNode->isOverbar() )
-        {
-            textStyle |= TEXT_STYLE::OVERBAR;
-        }
-
-#ifdef OUTLINEFONT_DEBUG
-        std::cerr << "OUTLINE_FONT::drawMarkup( [aGlyphs], " << aNode->asString() << ", "
-                  << aPosition << ", " << aGlyphSize << ", " << aAngle << ", "
-                  << TextStyleAsString( aTextStyle ) << ", " << aLevel << " ) const; textStyle "
-                  << TextStyleAsString( textStyle ) << std::endl;
-#endif
-        if( aNode->has_content() )
-        {
-            std::string txt = aNode->string();
-            //std::vector<SHAPE_POLY_SET> glyphs;
-            wxPoint pt( aPosition.x, aPosition.y );
-
-            nextPosition = GetTextAsPolygon( aGlyphs, txt, aGlyphSize, pt, aAngle, aIsMirrored,
-                                             textStyle );
-        }
-    }
-
-    for( const auto& child : aNode->children )
-    {
-        nextPosition = drawMarkup( aGlyphs, child, nextPosition, aGlyphSize, aIsMirrored, aAngle,
-                                   textStyle, aLevel + 1 );
-    }
-
-#ifdef OUTLINEFONT_DEBUG
-    std::cerr << " returns " << nextPosition << std::endl;
-#endif
-    return nextPosition;
-}
-
-
-VECTOR2D OUTLINE_FONT::drawSingleLineText( KIGFX::GAL* aGal, const UTF8& aText,
-                                           const VECTOR2D&  aPosition,
-                                           const EDA_ANGLE& aAngle ) const
-{
-#ifdef DEBUG
-    std::cerr << "OUTLINE_FONT::drawSingleLineText( aGal, \"" << aText << "\", " << aPosition
-              << " )";
-#endif
-
-    MARKUP::MARKUP_PARSER markupParser( aText );
-    auto                  markupRoot = markupParser.Parse();
-
-    VECTOR2D position( aPosition );
-    drawMarkup( aGal, markupRoot, position, aAngle );
-
-    return position;
-}
-
-
-BOX2I OUTLINE_FONT::getBoundingBox( const std::vector<SHAPE_POLY_SET>& aGlyphs ) const
+BOX2I OUTLINE_FONT::getBoundingBox( const GLYPH_LIST& aGlyphs ) const
 {
     int minX = INT_MAX;
     int minY = INT_MAX;
@@ -543,7 +296,7 @@ BOX2I OUTLINE_FONT::getBoundingBox( const std::vector<SHAPE_POLY_SET>& aGlyphs )
 
     for( auto glyph : aGlyphs )
     {
-        BOX2I bbox = glyph.BBox();
+        BOX2D bbox = glyph->BoundingBox();
         bbox.Normalize();
         if( minX > bbox.GetX() )
             minX = bbox.GetX();
@@ -561,8 +314,7 @@ BOX2I OUTLINE_FONT::getBoundingBox( const std::vector<SHAPE_POLY_SET>& aGlyphs )
 }
 
 
-VECTOR2I OUTLINE_FONT::GetLinesAsPolygon( std::vector<SHAPE_POLY_SET>& aGlyphs,
-                                          const EDA_TEXT*              aText ) const
+VECTOR2I OUTLINE_FONT::GetLinesAsPolygon( GLYPH_LIST& aGlyphs, const EDA_TEXT* aText ) const
 {
 #ifdef DEBUG
     std::cerr << "OUTLINE_FONT::GetLinesAsPolygon( ..., " << aText << " ) const" << std::endl;
@@ -580,15 +332,12 @@ VECTOR2I OUTLINE_FONT::GetLinesAsPolygon( std::vector<SHAPE_POLY_SET>& aGlyphs,
 
     for( int i = 0; i < n; i++ )
     {
-        MARKUP::MARKUP_PARSER       markupParser( UTF8( strings.Item( i ) ) );
-        auto                        markupRoot = markupParser.Parse();
-        std::vector<SHAPE_POLY_SET> lineGlyphs;
-
-        //VECTOR2D position( 0, 0 ); //position(aPosition);
-        //drawMarkup( aGal, markupRoot, position, aAngle );
+        MARKUP::MARKUP_PARSER markupParser( UTF8( strings.Item( i ) ) );
+        auto                  markupRoot = markupParser.Parse();
+        GLYPH_LIST            lineGlyphs;
 
         ret = drawMarkup( lineGlyphs, markupRoot, positions[i], aText->GetTextSize(),
-                          aText->IsMirrored(), attributes.GetAngle() );
+                          attributes.GetAngle(), aText->IsMirrored() );
 
         for( auto glyph : lineGlyphs )
         {
@@ -599,7 +348,7 @@ VECTOR2I OUTLINE_FONT::GetLinesAsPolygon( std::vector<SHAPE_POLY_SET>& aGlyphs,
 }
 
 
-VECTOR2I OUTLINE_FONT::GetTextAsPolygon( std::vector<SHAPE_POLY_SET>& aGlyphs, const UTF8& aText,
+VECTOR2I OUTLINE_FONT::GetTextAsPolygon( BOX2I* aBoundingBox, GLYPH_LIST& aGlyphs, const UTF8& aText,
                                          const VECTOR2D& aGlyphSize, const wxPoint& aPosition,
                                          const EDA_ANGLE& aOrientation, bool aIsMirrored,
                                          TEXT_STYLE_FLAGS aTextStyle ) const
@@ -627,7 +376,7 @@ VECTOR2I OUTLINE_FONT::GetTextAsPolygon( std::vector<SHAPE_POLY_SET>& aGlyphs, c
 
     referencedFont = hb_ft_font_create_referenced( face );
     hb_ft_font_set_funcs( referencedFont );
-    hb_shape( referencedFont, buf, NULL, 0 );
+    hb_shape( referencedFont, buf, nullptr, 0 );
 
     const double   mirror_factor = ( aIsMirrored ? 1 : -1 );
     const VECTOR2D scaleFactor( glyphSize.x * mirror_factor / scaler, glyphSize.y / scaler );
@@ -673,24 +422,24 @@ VECTOR2I OUTLINE_FONT::GetTextAsPolygon( std::vector<SHAPE_POLY_SET>& aGlyphs, c
 
         FT_Load_Glyph( face, codepoint, FT_LOAD_NO_BITMAP );
 
-        FT_GlyphSlot glyph = face->glyph;
+        FT_GlyphSlot faceGlyph = face->glyph;
 
         // contours is a collection of all outlines in the glyph;
         // example: glyph for 'o' generally contains 2 contours,
         // one for the glyph outline and one for the hole
         CONTOURS contours;
 
-        OUTLINE_DECOMPOSER decomposer( glyph->outline );
+        OUTLINE_DECOMPOSER decomposer( faceGlyph->outline );
         decomposer.OutlineToSegments( &contours );
 #ifdef DEBUG_GETTEXTASPOLYGON
         static const unsigned int bufsize = 512;
         char                      glyphName[bufsize];
-        FT_Get_Glyph_Name( face, glyph->glyph_index, &glyphName[0], bufsize );
+        FT_Get_Glyph_Name( face, faceGlyph->glyph_index, &glyphName[0], bufsize );
         std::cerr << "[Glyph '" << glyphName << "' pos ";
         std::cerr << pos.x_advance << "," << pos.y_advance << "," << pos.x_offset << ","
                   << pos.y_offset;
-        std::cerr << " codepoint " << codepoint << ", " << glyph->outline.n_contours << " contours "
-                  << glyph->outline.n_points << " points]->";
+        std::cerr << " codepoint " << codepoint << ", " << faceGlyph->outline.n_contours
+                  << " contours " << faceGlyph->outline.n_points << " points]->";
         std::cerr << "{" << contours.size() << " contours ";
         for( int foofaa = 0; foofaa < (int) contours.size(); foofaa++ )
         {
@@ -717,7 +466,7 @@ VECTOR2I OUTLINE_FONT::GetTextAsPolygon( std::vector<SHAPE_POLY_SET>& aGlyphs, c
             if( IsSubscript( aTextStyle ) )
                 offset.y += glyphSize.y * 0.1;
             else if( IsSuperscript( aTextStyle ) )
-                offset.y -= glyphSize.y * 0.45;
+                offset.y -= glyphSize.y * 0.2;
 
             for( const VECTOR2D& v : points )
             {
@@ -800,7 +549,8 @@ VECTOR2I OUTLINE_FONT::GetTextAsPolygon( std::vector<SHAPE_POLY_SET>& aGlyphs, c
             nthHole++;
         }
 
-        aGlyphs.push_back( poly );
+        auto glyph = std::make_shared<OUTLINE_GLYPH>( poly );
+        aGlyphs.push_back( glyph );
 
         cursor.x += pos.x_advance;
         cursor.y += pos.y_advance;
@@ -813,31 +563,32 @@ VECTOR2I OUTLINE_FONT::GetTextAsPolygon( std::vector<SHAPE_POLY_SET>& aGlyphs, c
         SHAPE_POLY_SET   overbarGlyph;
         SHAPE_LINE_CHAIN overbar;
 
-        std::vector<VECTOR2D> tmp;
-        int                   left = extentBottomLeft.x;
-        int                   right = extentTopRight.x;
-        int                   top = extentBottomLeft.y - 800;
-        int                   barHeight = -800;
+        int left = extentBottomLeft.x;
+        int right = extentTopRight.x;
+        int top = extentBottomLeft.y - 800;
+        int barHeight = -3200;
 
-        tmp.push_back( VECTOR2D( left, top ) );
-        tmp.push_back( VECTOR2D( right, top ) );
-        tmp.push_back( VECTOR2D( right, top + barHeight ) );
-        tmp.push_back( VECTOR2D( left, top + barHeight ) );
-
-        for( const VECTOR2D& pt : tmp )
-        {
-            overbar.Append( pt );
-        }
-
+        overbar.Append( VECTOR2D( left, top ) );
+        overbar.Append( VECTOR2D( right, top ) );
+        overbar.Append( VECTOR2D( right, top + barHeight ) );
+        overbar.Append( VECTOR2D( left, top + barHeight ) );
         overbar.SetClosed( true );
+
         overbarGlyph.AddOutline( overbar );
 
-        aGlyphs.push_back( overbarGlyph );
+        aGlyphs.push_back( std::make_shared<OUTLINE_GLYPH>( overbarGlyph ) );
     }
 
     hb_buffer_destroy( buf );
 
     VECTOR2I cursorDisplacement( -cursorEnd.x * scaleFactor.x, cursorEnd.y * scaleFactor.y );
+
+    if( aBoundingBox )
+    {
+        aBoundingBox->SetOrigin( aPosition.x, aPosition.y );
+        aBoundingBox->SetEnd( cursorDisplacement );
+    }
+
     return VECTOR2I( aPosition.x + cursorDisplacement.x, aPosition.y + cursorDisplacement.y );
 }
 
@@ -860,7 +611,7 @@ VECTOR2D OUTLINE_FONT::getBoundingBox( const UTF8& aString, const VECTOR2D& aGly
 
     hb_font_t* referencedFont = hb_ft_font_create_referenced( face );
     hb_ft_font_set_funcs( referencedFont );
-    hb_shape( referencedFont, buf, NULL, 0 );
+    hb_shape( referencedFont, buf, nullptr, 0 );
 
     unsigned int     glyphCount;
     hb_glyph_info_t* glyphInfo = hb_buffer_get_glyph_infos( buf, &glyphCount );
@@ -904,7 +655,7 @@ VECTOR2D OUTLINE_FONT::getBoundingBox( const UTF8& aString, const VECTOR2D& aGly
 
     hb_buffer_destroy( buf );
 
-#ifdef OUTLINEFONT_DEBUG
+#ifdef DEBUG
     std::cerr << "OUTLINE_FONT::getBoundingBox( \"" << aString << "\", " << aGlyphSize << ", "
               << aTextStyle << " ) returns " << boundingBox << std::endl;
 #endif
@@ -934,7 +685,7 @@ void OUTLINE_FONT::RenderToOpenGLCanvas( KIGFX::OPENGL_GAL& aGal, const UTF8& aS
     hb_font_t*           referencedFont = hb_ft_font_create_referenced( mFace );
 
     hb_ft_font_set_funcs( referencedFont );
-    hb_shape( referencedFont, buf, NULL, 0 );
+    hb_shape( referencedFont, buf, nullptr, 0 );
 
     const double mirror_factor = ( aIsMirrored ? 1 : -1 );
     const double x_scaleFactor = mirror_factor * aGlyphSize.x / mScaler;

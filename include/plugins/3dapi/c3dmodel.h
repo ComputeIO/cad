@@ -34,7 +34,7 @@
 #include "plugins/3dapi/xv3d_types.h"
 
 
-typedef struct
+struct SMATERIAL
 {
     SFVEC3F m_Ambient;          //
     SFVEC3F m_Diffuse;          ///< Default diffuse color if m_Color is NULL
@@ -54,7 +54,7 @@ typedef struct
         wxString m_Displacement;       // disp
         wxString m_Alpha;              // map_d
     };*/
-} SMATERIAL;
+};
 
 
 /// Per-vertex normal/color/texcoors structure.
@@ -70,10 +70,10 @@ typedef struct
 ///  1.0 unit ==  1.0 mm
 /// 10.0 unit == 10.0 mm
 ///
-/// To convert this units to pcbunits, use the convertion facto UNITS3D_TO_UNITSPCB
+/// To convert this units to pcbunits, use the conversion facto UNITS3D_TO_UNITSPCB
 ///
-/// m_Normals, m_Color and m_Texcoords are beween 0.0f and 1.0f
-typedef struct
+/// m_Normals, m_Color and m_Texcoords are between 0.0f and 1.0f
+struct SMESH
 {
     unsigned int    m_VertexSize;   ///< Number of vertex in the arrays
     SFVEC3F        *m_Positions;    ///< Vertex position array
@@ -83,17 +83,17 @@ typedef struct
     unsigned int    m_FaceIdxSize;  ///< Number of elements of the m_FaceIdx array
     unsigned int   *m_FaceIdx;      ///< Triangle Face Indexes
     unsigned int    m_MaterialIdx;  ///< Material Index to be used in this mesh (must be < m_MaterialsSize )
-} SMESH;
+};
 
 
 /// Store the a model based on meshes and materials
-typedef struct
+struct S3DMODEL
 {
     unsigned int    m_MeshesSize;       ///< Number of meshes in the array
     SMESH          *m_Meshes;           ///< The meshes list of this model
 
     unsigned int    m_MaterialsSize;    ///< Number of materials in the material array
     SMATERIAL      *m_Materials;        ///< The materials list of this model
-} S3DMODEL;
+};
 
 #endif // C3DMODEL_H

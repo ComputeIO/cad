@@ -29,11 +29,6 @@
 
 #include <tool/tool_action.h>
 #include <tool/actions.h>
-#include <core/optional.h>
-#include <layers_id_colors_and_visibility.h>
-
-class TOOL_EVENT;
-class TOOL_MANAGER;
 
 enum class ZONE_MODE
 {
@@ -248,9 +243,10 @@ public:
     static TOOL_ACTION trackDisplayMode;
     static TOOL_ACTION padDisplayMode;
     static TOOL_ACTION viaDisplayMode;
-    static TOOL_ACTION zoneDisplayEnable;
-    static TOOL_ACTION zoneDisplayDisable;
-    static TOOL_ACTION zoneDisplayOutlines;
+    static TOOL_ACTION zoneDisplayFilled;
+    static TOOL_ACTION zoneDisplayOutline;
+    static TOOL_ACTION zoneDisplayFractured;
+    static TOOL_ACTION zoneDisplayTriangulated;
     static TOOL_ACTION zoneDisplayToggle;
     static TOOL_ACTION showPadNumbers;
     static TOOL_ACTION zoomFootprintAutomatically;
@@ -481,8 +477,6 @@ public:
     static TOOL_ACTION convertToLines;
     static TOOL_ACTION convertToArc;
     static TOOL_ACTION convertToTracks;
-
-    static TOOL_ACTION* LayerToAction( PCB_LAYER_ID aLayer );
 };
 
 #endif

@@ -26,15 +26,14 @@
 
 #include <vector>
 #include <view/view_controls.h>
-#include <tool/action_manager.h>
 #include <tool/selection.h>
 #include <tool/tool_action.h>
 
+struct ACTION_CONDITIONS;
 
-class TOOL_MANAGER;
-class TOOL_DISPATCHER;
 class ACTIONS;
-
+class TOOL_DISPATCHER;
+class TOOL_MANAGER;
 
 /*
  * A mix-in class which allows its owner to hold a set of tools from the tool framework.
@@ -120,6 +119,8 @@ public:
     bool IsCurrentTool( const TOOL_ACTION& aAction ) const;
 
     virtual void DisplayToolMsg( const wxString& msg ) {};
+
+    virtual void ShowChangedLanguage();
 
     /**
      * Indicate that hotkeys should perform an immediate action even if another tool is

@@ -36,6 +36,7 @@
 #include <connectivity/from_to_cache.h>
 
 #include <ratsnest/ratsnest_data.h>
+#include <trigo.h>
 
 CONNECTIVITY_DATA::CONNECTIVITY_DATA()
 {
@@ -484,23 +485,23 @@ bool CONNECTIVITY_DATA::CheckConnectivity( std::vector<CN_DISJOINT_NET_ENTRY>& a
 }
 
 
-const std::vector<TRACK*> CONNECTIVITY_DATA::GetConnectedTracks( const BOARD_CONNECTED_ITEM* aItem )
-const
+const std::vector<PCB_TRACK*> CONNECTIVITY_DATA::GetConnectedTracks(
+                                                        const BOARD_CONNECTED_ITEM* aItem ) const
 {
     auto& entry = m_connAlgo->ItemEntry( aItem );
 
-    std::set<TRACK*> tracks;
-    std::vector<TRACK*> rv;
+    std::set<PCB_TRACK*> tracks;
+    std::vector<PCB_TRACK*> rv;
 
-    for( auto citem : entry.GetItems() )
+    for( CN_ITEM* citem : entry.GetItems() )
     {
-        for( auto connected : citem->ConnectedItems() )
+        for( CN_ITEM* connected : citem->ConnectedItems() )
         {
             if( connected->Valid() &&
                     ( connected->Parent()->Type() == PCB_TRACE_T ||
                             connected->Parent()->Type() == PCB_VIA_T ||
                             connected->Parent()->Type() == PCB_ARC_T ) )
-                tracks.insert( static_cast<TRACK*> ( connected->Parent() ) );
+                tracks.insert( static_cast<PCB_TRACK*> ( connected->Parent() ) );
         }
     }
 
@@ -586,9 +587,28 @@ void CONNECTIVITY_DATA::GetUnconnectedEdges( std::vector<CN_EDGE>& aEdges) const
 }
 
 
-bool CONNECTIVITY_DATA::TestTrackEndpointDangling( TRACK* aTrack, wxPoint* aPos )
+static int getMinDist( BOARD_CONNECTED_ITEM* aItem, const wxPoint& aPoint )
 {
-    auto items = GetConnectivityAlgo()->ItemEntry( aTrack ).GetItems();
+    switch( aItem->Type() )
+    {
+    case PCB_TRACE_T:
+    case PCB_ARC_T:
+    {
+        PCB_TRACK* track = static_cast<PCB_TRACK*>( aItem );
+
+        return std::min( GetLineLength( track->GetStart(), aPoint ),
+                         GetLineLength( track->GetEnd(), aPoint ) );
+    }
+
+    default:
+        return GetLineLength( aItem->GetPosition(), aPoint );
+    }
+}
+
+
+bool CONNECTIVITY_DATA::TestTrackEndpointDangling( PCB_TRACK* aTrack, wxPoint* aPos )
+{
+    std::list<CN_ITEM*> items = GetConnectivityAlgo()->ItemEntry( aTrack ).GetItems();
 
     // Not in the connectivity system.  This is a bug!
     if( items.empty() )
@@ -602,23 +622,61 @@ bool CONNECTIVITY_DATA::TestTrackEndpointDangling( TRACK* aTrack, wxPoint* aPos 
     if( !citem->Valid() )
         return false;
 
-    for( const std::shared_ptr<CN_ANCHOR>& anchor : citem->Anchors() )
+    if( aTrack->Type() == PCB_TRACE_T || aTrack->Type() == PCB_ARC_T )
     {
-        if( anchor->IsDangling() )
+        // Test if a segment is connected on each end.
+        //
+        // NB: be wary of short segments which can be connected to the *same* other item on
+        // each end.  If that's their only connection then they're still dangling.
+
+        PCB_LAYER_ID layer = aTrack->GetLayer();
+        int          accuracy = KiROUND( aTrack->GetWidth() / 2 );
+        int          start_count = 0;
+        int          end_count = 0;
+
+        for( CN_ITEM* connected : citem->ConnectedItems() )
         {
-            if( aPos )
-                *aPos = static_cast<wxPoint>( anchor->Pos() );
+            BOARD_CONNECTED_ITEM* item = connected->Parent();
 
-            return true;
+            if( item->GetFlags() & IS_DELETED )
+                continue;
+
+            std::shared_ptr<SHAPE> shape = item->GetEffectiveShape( layer );
+
+            bool hitStart = shape->Collide( aTrack->GetStart(), accuracy );
+            bool hitEnd = shape->Collide( aTrack->GetEnd(), accuracy );
+
+            if( hitStart && hitEnd )
+            {
+                if( getMinDist( item, aTrack->GetStart() ) < getMinDist( item, aTrack->GetEnd() ) )
+                    start_count++;
+                else
+                    end_count++;
+            }
+            else if( hitStart )
+            {
+                start_count++;
+            }
+            else if( hitEnd )
+            {
+                end_count++;
+            }
+
+            if( start_count > 0 && end_count > 0 )
+                return false;
         }
+
+        if( aPos )
+            *aPos = (start_count == 0 ) ? aTrack->GetStart() : aTrack->GetEnd();
+
+        return true;
     }
-
-    // Test if a via is only connected on one layer
-    if( aTrack->Type() == PCB_VIA_T )
+    else if( aTrack->Type() == PCB_VIA_T )
     {
-        const CN_ITEM::CONNECTED_ITEMS& connected = citem->ConnectedItems();
+        // Test if a via is only connected on one layer
 
-        // This is a bit redundant but better safe than sorry here
+        const std::vector<CN_ITEM*>& connected = citem->ConnectedItems();
+
         if( connected.empty() )
         {
             if( aPos )
@@ -628,11 +686,16 @@ bool CONNECTIVITY_DATA::TestTrackEndpointDangling( TRACK* aTrack, wxPoint* aPos 
         }
 
         // Here, we check if the via is connected only to items on a single layer
-        int first_layer = connected.front()->Layer();
+        int first_layer = UNDEFINED_LAYER;
 
-        for( auto& item : connected )
+        for( CN_ITEM* item : connected )
         {
-           if( item->Layer() != first_layer )
+            if( item->Parent()->GetFlags() & IS_DELETED )
+                continue;
+
+            if( first_layer == UNDEFINED_LAYER )
+                first_layer = item->Layer();
+            else if( item->Layer() != first_layer )
                return false;
         }
 
@@ -640,6 +703,10 @@ bool CONNECTIVITY_DATA::TestTrackEndpointDangling( TRACK* aTrack, wxPoint* aPos 
             *aPos = aTrack->GetPosition();
 
         return true;
+    }
+    else
+    {
+        wxFAIL_MSG( "CONNECTIVITY_DATA::TestTrackEndpointDangling: unknown track type" );
     }
 
     return false;

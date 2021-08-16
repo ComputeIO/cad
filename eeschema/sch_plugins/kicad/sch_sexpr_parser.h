@@ -2,6 +2,7 @@
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
  * Copyright (C) 2020 CERN
+ * Copyright (C) 2021 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * @author Wayne Stambaugh <stambaughw@gmail.com>
  *
@@ -33,7 +34,7 @@
 
 #include <convert_to_biu.h>                      // IU_PER_MM
 
-#include <class_library.h>
+#include <symbol_library.h>
 #include <schematic_lexer.h>
 #include <sch_file_versions.h>
 #include <default_values.h>    // For some default values
@@ -49,7 +50,7 @@ class LIB_TEXT;
 class PAGE_INFO;
 class SCH_BITMAP;
 class SCH_BUS_WIRE_ENTRY;
-class SCH_COMPONENT;
+class SCH_SYMBOL;
 class SCH_FIELD;
 class SCH_JUNCTION;
 class SCH_LINE;
@@ -83,17 +84,24 @@ class SCH_SEXPR_PARSER : public SCHEMATIC_LEXER
     int m_convert;          ///< The current body style being parsed.
     wxString m_symbolName;  ///< The current symbol name.
 
+    PROGRESS_REPORTER* m_progressReporter;  // optional; may be nullptr
+    const LINE_READER* m_lineReader;        // for progress reporting
+    unsigned           m_lastProgressLine;
+    unsigned           m_lineCount;         // for progress reporting
+
+    void checkpoint();
+
     void parseHeader( TSCHEMATIC_T::T aHeaderType, int aFileVersion );
 
     inline long parseHex()
     {
         NextTok();
-        return strtol( CurText(), NULL, 16 );
+        return strtol( CurText(), nullptr, 16 );
     }
 
     inline int parseInt()
     {
-        return (int)strtol( CurText(), NULL, 10 );
+        return (int)strtol( CurText(), nullptr, 10 );
     }
 
     inline int parseInt( const char* aExpected )
@@ -152,10 +160,10 @@ class SCH_SEXPR_PARSER : public SCHEMATIC_LEXER
 
     void parseFill( FILL_PARAMS& aFill );
 
-    void parseEDA_TEXT( EDA_TEXT* aText );
-    void parsePinNames( std::unique_ptr<LIB_PART>& aSymbol );
+    void parseEDA_TEXT( EDA_TEXT* aText, bool aConvertOverbarSyntax );
+    void parsePinNames( std::unique_ptr<LIB_SYMBOL>& aSymbol );
 
-    LIB_FIELD* parseProperty( std::unique_ptr<LIB_PART>& aSymbol );
+    LIB_FIELD* parseProperty( std::unique_ptr<LIB_SYMBOL>& aSymbol );
 
     LIB_ARC* parseArc();
     LIB_BEZIER* parseBezier();
@@ -172,7 +180,7 @@ class SCH_SEXPR_PARSER : public SCHEMATIC_LEXER
 
     SCH_SHEET_PIN* parseSchSheetPin( SCH_SHEET* aSheet );
     SCH_FIELD* parseSchField( SCH_ITEM* aParent );
-    SCH_COMPONENT* parseSchematicSymbol();
+    SCH_SYMBOL* parseSchematicSymbol();
     SCH_BITMAP* parseImage();
     SCH_SHEET* parseSheet();
     SCH_JUNCTION* parseJunction();
@@ -183,12 +191,13 @@ class SCH_SEXPR_PARSER : public SCHEMATIC_LEXER
     void parseBusAlias( SCH_SCREEN* aScreen );
 
 public:
-    SCH_SEXPR_PARSER( LINE_READER* aLineReader = nullptr );
+    SCH_SEXPR_PARSER( LINE_READER* aLineReader = nullptr,
+                      PROGRESS_REPORTER* aProgressReporter = nullptr, unsigned aLineCount = 0 );
 
-    void ParseLib( LIB_PART_MAP& aSymbolLibMap );
+    void ParseLib( LIB_SYMBOL_MAP& aSymbolLibMap );
 
-    LIB_PART* ParseSymbol( LIB_PART_MAP& aSymbolLibMap,
-                           int aFileVersion = SEXPR_SYMBOL_LIB_FILE_VERSION );
+    LIB_SYMBOL* ParseSymbol( LIB_SYMBOL_MAP& aSymbolLibMap,
+                             int aFileVersion = SEXPR_SYMBOL_LIB_FILE_VERSION );
 
     LIB_ITEM* ParseDrawItem();
 
@@ -211,11 +220,6 @@ public:
      */
     void ParseSchematic( SCH_SHEET* aSheet, bool aIsCopyablyOnly = false,
                          int aFileVersion = SEXPR_SCHEMATIC_FILE_VERSION );
-
-    /**
-     * Return whether a version number, if any was parsed, was too recent
-     */
-    bool IsTooRecent() const;
 };
 
 #endif    // __SCH_SEXPR_PARSER_H__

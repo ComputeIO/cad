@@ -2,7 +2,7 @@
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
  * Copyright (C) 2018 Jean-Pierre Charras, jp.charras at wanadoo.fr
- * Copyright (C) 1992-2019 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 1992-2021 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -27,7 +27,7 @@
  * @brief a few functions useful in geometry calculations.
  */
 
-#include <stdint.h>          // for int64_t
+#include <cstdint>
 #include <algorithm>         // for max, min
 
 #include <eda_rect.h>
@@ -61,6 +61,25 @@ int GetArcToSegmentCount( int aRadius, int aErrorMax, double aArcAngleDegree )
 
     // Ensure at least two segments are used for algorithmic safety
     return std::max( segCount, 2 );
+}
+
+
+int CircleToEndSegmentDeltaRadius( int aRadius, int aSegCount )
+{
+    // The minimal seg count is 3, otherwise we cannot calculate the result
+    // in practice, the min count is clamped to 8 in kicad
+    if( aSegCount <= 2 )
+        aSegCount = 3;
+
+    // The angle between the center of the segment and one end of the segment
+    // when the circle is approximated by aSegCount segments
+    double alpha = M_PI / aSegCount;
+
+    // aRadius is the radius of the circle tangent to the middle of each segment
+    // and aRadius/cos(aplha) is the radius of the circle defined by seg ends
+    int delta = KiROUND( aRadius * ( 1/cos(alpha) - 1 ) );
+
+    return delta;
 }
 
 // When creating polygons to create a clearance polygonal area, the polygon must
@@ -142,22 +161,22 @@ bool ClipLine( const EDA_RECT *aClipBox, int &x1, int &y1, int &x2, int &y2 )
         if( thisoutcode & 1 ) // Clip the bottom
         {
             y = aClipBox->GetBottom();
-            x = x1 + (x2 - x1) * int64_t(y - y1) / (y2 - y1);
+            x = x1 + (x2 - x1) * std::int64_t(y - y1) / (y2 - y1);
         }
         else if( thisoutcode & 2 ) // Clip the top
         {
             y = aClipBox->GetY();
-            x = x1 + (x2 - x1) * int64_t(y - y1) / (y2 - y1);
+            x = x1 + ( x2 - x1 ) * std::int64_t( y - y1 ) / ( y2 - y1 );
         }
         else if( thisoutcode & 8 ) // Clip the right
         {
             x = aClipBox->GetRight();
-            y = y1 + (y2 - y1) * int64_t(x - x1) / (x2 - x1);
+            y = y1 + ( y2 - y1 ) * std::int64_t( x - x1 ) / ( x2 - x1 );
         }
         else // if( thisoutcode & 4), obviously, clip the left
         {
             x = aClipBox->GetX();
-            y = y1 + (y2 - y1) * int64_t(x - x1) / (x2 - x1);
+            y = y1 + ( y2 - y1 ) * std::int64_t( x - x1 ) / ( x2 - x1 );
         }
 
         // Put the result back and update the boundary code

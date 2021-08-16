@@ -20,7 +20,7 @@
  * with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
+#include <string_utils.h>
 #include <sch_edit_frame.h>
 #include <base_units.h>
 #include <sch_validators.h>
@@ -32,7 +32,6 @@
 #include <sch_reference_list.h>
 #include <schematic.h>
 #include <dialogs/html_messagebox.h>
-#include <kicad_string.h>
 #include <tool/actions.h>
 #include <scintilla_tricks.h>
 #include <bitmaps.h>
@@ -77,7 +76,7 @@ DIALOG_SCH_TEXT_PROPERTIES::DIALOG_SCH_TEXT_PROPERTIES( SCH_EDIT_FRAME* aParent,
 
     m_MultiLineText->SetEOLMode( wxSTC_EOL_LF );
 
-    m_scintillaTricks = new SCINTILLA_TRICKS( m_MultiLineText, wxT( "()" ) );
+    m_scintillaTricks = new SCINTILLA_TRICKS( m_MultiLineText, wxT( "()" ), false );
 
     if( m_CurrentText->IsMultilineAllowed() )
     {
@@ -318,7 +317,7 @@ void DIALOG_SCH_TEXT_PROPERTIES::onScintillaCharAdded( wxStyledTextEvent& aEvent
             wxString           ref = te->GetRange( refStart, start - 1 );
             SCH_SHEET_LIST     sheets = m_Parent->Schematic().GetSheets();
             SCH_REFERENCE_LIST refs;
-            SCH_COMPONENT*     refSymbol = nullptr;
+            SCH_SYMBOL*        refSymbol = nullptr;
 
             sheets.GetSymbols( refs );
 

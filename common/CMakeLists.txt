@@ -19,11 +19,6 @@ include_directories(
     ${INC_AFTER}
     )
 
-if( NOT APPLE )     # windows and linux use openssl under curl
-    find_package( OpenSSL REQUIRED )
-    include_directories( SYSTEM ${OPENSSL_INCLUDE_DIR} )
-endif()
-
 set( GAL_SRCS
     # Common part
     basic_gal.cpp
@@ -113,7 +108,7 @@ add_library( singletop STATIC EXCLUDE_FROM_ALL
 # Functions and data all need to use the #include <import_export.h> and be declared
 # as APIEXPORT
 set( LIB_KICAD_SRCS
-    string.cpp
+    string_utils.cpp
     )
 
 if( future )
@@ -239,7 +234,7 @@ set( COMMON_WIDGET_SRCS
     widgets/msgpanel.cpp
     widgets/number_badge.cpp
     widgets/paged_dialog.cpp
-    widgets/progress_reporter.cpp
+    widgets/progress_reporter_base.cpp
     widgets/split_button.cpp
     widgets/stepped_slider.cpp
     widgets/text_ctrl_eval.cpp
@@ -251,6 +246,7 @@ set( COMMON_WIDGET_SRCS
     widgets/wx_busy_indicator.cpp
     widgets/wx_ellipsized_static_text.cpp
     widgets/wx_grid.cpp
+    widgets/wx_progress_reporters.cpp
     )
 
 set( COMMON_DRAWING_SHEET_SRCS
@@ -305,6 +301,7 @@ set( PLUGINS_EAGLE_SRCS
 set( FONT_SRCS
     parser/markup_parser.cpp
     font/font.cpp
+    font/glyph.cpp
     font/stroke_font.cpp
 	font/outline_font.cpp
 	font/outline_decomposer.cpp
@@ -351,7 +348,6 @@ set( COMMON_SRCS
     eda_item.cpp
     eda_pattern_match.cpp
     eda_rect.cpp
-    eda_size_ctrl.cpp
     eda_units.cpp
     env_paths.cpp
     env_vars.cpp
@@ -458,6 +454,7 @@ set( COMMON_SRCS
     tool/grid_helper.cpp
     tool/grid_menu.cpp
     tool/picker_tool.cpp
+    tool/selection.cpp
     tool/selection_conditions.cpp
     tool/tool_action.cpp
     tool/tool_base.cpp
@@ -475,6 +472,7 @@ set( COMMON_SRCS
     settings/common_settings.cpp
     settings/json_settings.cpp
     settings/nested_settings.cpp
+    settings/parameters.cpp
     settings/settings_manager.cpp
 
     project/board_project_settings.cpp
@@ -505,7 +503,6 @@ target_link_libraries( common
     pybind11::embed
     ${Boost_LIBRARIES}
     ${CURL_LIBRARIES}
-    ${OPENSSL_LIBRARIES}        # empty on Apple
     ${wxWidgets_LIBRARIES}
     ${EXTRA_LIBS}
     )
@@ -541,7 +538,7 @@ set( PCB_COMMON_SRCS
     ${CMAKE_SOURCE_DIR}/pcbnew/board_items_to_polygon_shape_transform.cpp
     ${CMAKE_SOURCE_DIR}/pcbnew/board.cpp
     ${CMAKE_SOURCE_DIR}/pcbnew/board_item.cpp
-    ${CMAKE_SOURCE_DIR}/pcbnew/dimension.cpp
+    ${CMAKE_SOURCE_DIR}/pcbnew/pcb_dimension.cpp
     ${CMAKE_SOURCE_DIR}/pcbnew/pcb_shape.cpp
     ${CMAKE_SOURCE_DIR}/pcbnew/fp_shape.cpp
     ${CMAKE_SOURCE_DIR}/pcbnew/pcb_group.cpp
@@ -554,7 +551,7 @@ set( PCB_COMMON_SRCS
     ${CMAKE_SOURCE_DIR}/pcbnew/pcb_text.cpp
     ${CMAKE_SOURCE_DIR}/pcbnew/board_stackup_manager/board_stackup.cpp
     ${CMAKE_SOURCE_DIR}/pcbnew/fp_text.cpp
-    ${CMAKE_SOURCE_DIR}/pcbnew/track.cpp
+    ${CMAKE_SOURCE_DIR}/pcbnew/pcb_track.cpp
     ${CMAKE_SOURCE_DIR}/pcbnew/zone.cpp
     ${CMAKE_SOURCE_DIR}/pcbnew/collectors.cpp
     ${CMAKE_SOURCE_DIR}/pcbnew/connectivity/connectivity_algo.cpp

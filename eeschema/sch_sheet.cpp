@@ -29,7 +29,7 @@
 #include <trigo.h>
 #include <sch_edit_frame.h>
 #include <plotter.h>
-#include <kicad_string.h>
+#include <string_utils.h>
 #include <widgets/msgpanel.h>
 #include <math/util.h>      // for KiROUND
 #include <sch_sheet.h>
@@ -77,7 +77,7 @@ SCH_SHEET::SCH_SHEET( EDA_ITEM* aParent, const wxPoint& pos ) :
     m_layer = LAYER_SHEET;
     m_pos = pos;
     m_size = wxSize( Mils2iu( MIN_SHEET_WIDTH ), Mils2iu( MIN_SHEET_HEIGHT ) );
-    m_screen = NULL;
+    m_screen = nullptr;
 
     for( int i = 0; i < SHEET_MANDATORY_FIELDS; ++i )
     {
@@ -159,14 +159,14 @@ void SCH_SHEET::SetScreen( SCH_SCREEN* aScreen )
     if( aScreen == m_screen )
         return;
 
-    if( m_screen != NULL )
+    if( m_screen != nullptr )
     {
         m_screen->DecRefCount();
 
         if( m_screen->GetRefCount() == 0 )
         {
             delete m_screen;
-            m_screen = NULL;
+            m_screen = nullptr;
         }
     }
 
@@ -179,7 +179,7 @@ void SCH_SHEET::SetScreen( SCH_SCREEN* aScreen )
 
 int SCH_SHEET::GetScreenCount() const
 {
-    if( m_screen == NULL )
+    if( m_screen == nullptr )
         return 0;
 
     return m_screen->GetRefCount();
@@ -299,7 +299,7 @@ void SCH_SHEET::SwapData( SCH_ITEM* aItem )
 
 void SCH_SHEET::AddPin( SCH_SHEET_PIN* aSheetPin )
 {
-    wxASSERT( aSheetPin != NULL );
+    wxASSERT( aSheetPin != nullptr );
     wxASSERT( aSheetPin->Type() == SCH_SHEET_PIN_T );
 
     aSheetPin->SetParent( this );
@@ -310,7 +310,7 @@ void SCH_SHEET::AddPin( SCH_SHEET_PIN* aSheetPin )
 
 void SCH_SHEET::RemovePin( const SCH_SHEET_PIN* aSheetPin )
 {
-    wxASSERT( aSheetPin != NULL );
+    wxASSERT( aSheetPin != nullptr );
     wxASSERT( aSheetPin->Type() == SCH_SHEET_PIN_T );
 
     for( auto i = m_pins.begin(); i < m_pins.end(); ++i )
@@ -476,7 +476,7 @@ void SCH_SHEET::CleanupSheet()
     while( i != m_pins.end() )
     {
         /* Search the schematic for a hierarchical label corresponding to this sheet label. */
-        const SCH_HIERLABEL* HLabel = NULL;
+        const SCH_HIERLABEL* HLabel = nullptr;
 
         for( SCH_ITEM* aItem : m_screen->Items().OfType( SCH_HIER_LABEL_T ) )
         {
@@ -487,7 +487,7 @@ void SCH_SHEET::CleanupSheet()
             }
         }
 
-        if( HLabel == NULL )   // Hlabel not found: delete sheet label.
+        if( HLabel == nullptr )   // Hlabel not found: delete sheet label.
             i = m_pins.erase( i );
         else
             ++i;
@@ -503,7 +503,7 @@ SCH_SHEET_PIN* SCH_SHEET::GetPin( const wxPoint& aPosition )
             return pin;
     }
 
-    return NULL;
+    return nullptr;
 }
 
 
@@ -607,9 +607,9 @@ int SCH_SHEET::SymbolCount() const
 
     if( m_screen )
     {
-        for( SCH_ITEM* aItem : m_screen->Items().OfType( SCH_COMPONENT_T ) )
+        for( SCH_ITEM* aItem : m_screen->Items().OfType( SCH_SYMBOL_T ) )
         {
-            SCH_COMPONENT* symbol = (SCH_COMPONENT*) aItem;
+            SCH_SYMBOL* symbol = (SCH_SYMBOL*) aItem;
 
             if( symbol->GetField( VALUE_FIELD )->GetText().GetChar( 0 ) != '#' )
                 n++;
@@ -691,7 +691,7 @@ int SCH_SHEET::CountSheets() const
 
     if( m_screen )
     {
-        for( auto aItem : m_screen->Items().OfType( SCH_SHEET_T ) )
+        for( SCH_ITEM* aItem : m_screen->Items().OfType( SCH_SHEET_T ) )
             count += static_cast<SCH_SHEET*>( aItem )->CountSheets();
     }
 
@@ -727,7 +727,7 @@ void SCH_SHEET::Move( const wxPoint& aMoveVector )
 }
 
 
-void SCH_SHEET::Rotate( wxPoint aCenter )
+void SCH_SHEET::Rotate( const wxPoint& aCenter )
 {
     wxPoint prev = m_pos;
 
@@ -753,7 +753,7 @@ void SCH_SHEET::Rotate( wxPoint aCenter )
 
     if( m_fieldsAutoplaced == FIELDS_AUTOPLACED_AUTO )
     {
-        AutoplaceFields( /* aScreen */ NULL, /* aManual */ false );
+        AutoplaceFields( /* aScreen */ nullptr, /* aManual */ false );
     }
     else
     {
@@ -806,7 +806,7 @@ void SCH_SHEET::Resize( const wxSize& aSize )
 
     // Move the fields if we're in autoplace mode
     if( m_fieldsAutoplaced == FIELDS_AUTOPLACED_AUTO )
-        AutoplaceFields( /* aScreen */ NULL, /* aManual */ false );
+        AutoplaceFields( /* aScreen */ nullptr, /* aManual */ false );
 
     // Move the sheet labels according to the new sheet size.
     for( SCH_SHEET_PIN* sheetPin : m_pins )
@@ -879,7 +879,7 @@ SEARCH_RESULT SCH_SHEET::Visit( INSPECTOR aInspector, void* testData, const KICA
         // If caller wants to inspect my type
         if( stype == SCH_LOCATE_ANY_T || stype == Type() )
         {
-            if( SEARCH_RESULT::QUIT == aInspector( this, NULL ) )
+            if( SEARCH_RESULT::QUIT == aInspector( this, nullptr ) )
                 return SEARCH_RESULT::QUIT;
         }
 
@@ -969,34 +969,19 @@ void SCH_SHEET::Plot( PLOTTER* aPlotter ) const
     if( override || backgroundColor == COLOR4D::UNSPECIFIED )
         backgroundColor = aPlotter->RenderSettings()->GetLayerColor( LAYER_SHEET_BACKGROUND );
 
-    aPlotter->SetColor( backgroundColor );
     // Do not fill shape in B&W mode, otherwise texts are unreadable
     bool fill = aPlotter->GetColorMode();
 
-    aPlotter->Rect( m_pos, m_pos + m_size, fill ? FILL_TYPE::FILLED_SHAPE : FILL_TYPE::NO_FILL,
-                    1.0 );
+    if( fill )
+    {
+        aPlotter->SetColor( backgroundColor );
+        aPlotter->Rect( m_pos, m_pos + m_size, FILL_TYPE::FILLED_SHAPE, 1 );
+    }
 
     aPlotter->SetColor( borderColor );
 
     int penWidth = std::max( GetPenWidth(), aPlotter->RenderSettings()->GetMinPenWidth() );
-    aPlotter->SetCurrentLineWidth( penWidth );
-
-    aPlotter->MoveTo( m_pos );
-    pos = m_pos;
-    pos.x += m_size.x;
-
-    aPlotter->LineTo( pos );
-    pos.y += m_size.y;
-
-    aPlotter->LineTo( pos );
-    pos = m_pos;
-    pos.y += m_size.y;
-
-    aPlotter->LineTo( pos );
-    aPlotter->FinishTo( m_pos );
-
-    for( SCH_FIELD field : m_fields )
-        field.Plot( aPlotter );
+    aPlotter->Rect( m_pos, m_pos + m_size, FILL_TYPE::NO_FILL, penWidth );
 
     /* Draw texts : SheetLabel */
     for( SCH_SHEET_PIN* sheetPin : m_pins )
@@ -1144,7 +1129,7 @@ void SCH_SHEET::SetPageNumber( const SCH_SHEET_PATH& aInstance, const wxString& 
 }
 
 
-int SCH_SHEET::ComparePageNum( const wxString& aPageNumberA, const wxString aPageNumberB )
+int SCH_SHEET::ComparePageNum( const wxString& aPageNumberA, const wxString& aPageNumberB )
 {
     if( aPageNumberA == aPageNumberB )
         return 0; // A == B

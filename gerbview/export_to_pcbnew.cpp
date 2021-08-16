@@ -2,7 +2,7 @@
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
  * Copyright (C) 2007-2014 Jean-Pierre Charras  jp.charras at wanadoo.fr
- * Copyright (C) 1992-2020 KiCad Developers, see change_log.txt for contributors.
+ * Copyright (C) 1992-2021 KiCad Developers, see change_log.txt for contributors.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -27,7 +27,7 @@
 #include <export_to_pcbnew.h>
 
 #include <confirm.h>
-#include <kicad_string.h>
+#include <string_utils.h>
 #include <locale_io.h>
 #include <macros.h>
 #include <trigo.h>
@@ -46,7 +46,7 @@ GBR_TO_PCB_EXPORTER::GBR_TO_PCB_EXPORTER( GERBVIEW_FRAME* aFrame, const wxString
 {
     m_gerbview_frame    = aFrame;
     m_pcb_file_name     = aFileName;
-    m_fp                = NULL;
+    m_fp                = nullptr;
     m_pcbCopperLayersCount = 2;
 }
 
@@ -62,10 +62,10 @@ bool GBR_TO_PCB_EXPORTER::ExportPcb( const LAYER_NUM* aLayerLookUpTable, int aCo
 
     m_fp = wxFopen( m_pcb_file_name, wxT( "wt" ) );
 
-    if( m_fp == NULL )
+    if( m_fp == nullptr )
     {
         wxString msg;
-        msg.Printf( _( "Cannot create file \"%s\"" ), m_pcb_file_name );
+        msg.Printf( _( "Failed to create file '%s'." ), m_pcb_file_name );
         DisplayError( m_gerbview_frame, msg );
         return false;
     }
@@ -83,7 +83,7 @@ bool GBR_TO_PCB_EXPORTER::ExportPcb( const LAYER_NUM* aLayerLookUpTable, int aCo
     {
         EXCELLON_IMAGE* excellon = dynamic_cast<EXCELLON_IMAGE*>( images->GetGbrImage( layer ) );
 
-        if( excellon == NULL )    // Layer not yet used or not a drill image
+        if( excellon == nullptr )    // Layer not yet used or not a drill image
             continue;
 
         for(  GERBER_DRAW_ITEM* gerb_item : excellon->GetItems() )
@@ -95,7 +95,7 @@ bool GBR_TO_PCB_EXPORTER::ExportPcb( const LAYER_NUM* aLayerLookUpTable, int aCo
     {
         GERBER_FILE_IMAGE* gerber = images->GetGbrImage( layer );
 
-        if( gerber == NULL )    // Graphic layer not yet used
+        if( gerber == nullptr )    // Graphic layer not yet used
             continue;
 
         LAYER_NUM pcb_layer_number = aLayerLookUpTable[layer];
@@ -115,7 +115,7 @@ bool GBR_TO_PCB_EXPORTER::ExportPcb( const LAYER_NUM* aLayerLookUpTable, int aCo
     {
         GERBER_FILE_IMAGE* gerber = images->GetGbrImage( layer );
 
-        if( gerber == NULL )    // Graphic layer not yet used
+        if( gerber == nullptr )    // Graphic layer not yet used
             continue;
 
         LAYER_NUM pcb_layer_number = aLayerLookUpTable[layer];
@@ -134,12 +134,13 @@ bool GBR_TO_PCB_EXPORTER::ExportPcb( const LAYER_NUM* aLayerLookUpTable, int aCo
     fprintf( m_fp, ")\n" );
 
     fclose( m_fp );
-    m_fp = NULL;
+    m_fp = nullptr;
     return true;
 }
 
 
-void GBR_TO_PCB_EXPORTER::export_non_copper_item( const GERBER_DRAW_ITEM* aGbrItem, LAYER_NUM aLayer )
+void GBR_TO_PCB_EXPORTER::export_non_copper_item( const GERBER_DRAW_ITEM* aGbrItem,
+                                                  LAYER_NUM aLayer )
 {
     // used when a D_CODE is not found. default D_CODE to draw a flashed item
     static D_CODE  dummyD_CODE( 0 );
@@ -149,7 +150,7 @@ void GBR_TO_PCB_EXPORTER::export_non_copper_item( const GERBER_DRAW_ITEM* aGbrIt
     D_CODE*        d_codeDescr = aGbrItem->GetDcodeDescr();
     SHAPE_POLY_SET polygon;
 
-    if( d_codeDescr == NULL )
+    if( d_codeDescr == nullptr )
         d_codeDescr = &dummyD_CODE;
 
     switch( aGbrItem->m_Shape )
@@ -159,6 +160,13 @@ void GBR_TO_PCB_EXPORTER::export_non_copper_item( const GERBER_DRAW_ITEM* aGbrIt
         break;
 
     case GBR_SPOT_CIRCLE:
+    {
+        VECTOR2I center = aGbrItem->GetABPosition( seg_start );
+        int radius = d_codeDescr->m_Size.x / 2;
+        writePcbFilledCircle( center, radius, aLayer );
+    }
+        break;
+
     case GBR_SPOT_RECT:
     case GBR_SPOT_OVAL:
     case GBR_SPOT_POLY:
@@ -242,17 +250,6 @@ void GBR_TO_PCB_EXPORTER::export_non_copper_item( const GERBER_DRAW_ITEM* aGbrIt
 }
 
 
-/*
- * Many holes will be pads, but we have no way to create those without footprints, and creating
- * a footprint per pad is not really viable.
- *
- * So we use vias to mimic holes, with the loss of any hole shape (as we only have round holes
- * in vias at present).
- *
- * We start out with a via size minimally larger than the hole.  We'll leave it this way if
- * the pad gets drawn as a copper polygon, or increase it to the proper size if it has a
- * circular, concentric copper flashing.
- */
 void GBR_TO_PCB_EXPORTER::collect_hole( const GERBER_DRAW_ITEM* aGbrItem )
 {
     int size = std::min( aGbrItem->m_Size.x, aGbrItem->m_Size.y );
@@ -298,7 +295,7 @@ void GBR_TO_PCB_EXPORTER::export_copper_item( const GERBER_DRAW_ITEM* aGbrItem, 
         // One can use a polygon or a zone to output a Gerber region.
         // none are perfect.
         // The current way is use a polygon, as the zone export
-        // is exprimental and only for tests.
+        // is experimental and only for tests.
 #if 1
         writePcbPolygon( aGbrItem->m_Polygon, aLayer );
 #else
@@ -314,7 +311,8 @@ void GBR_TO_PCB_EXPORTER::export_copper_item( const GERBER_DRAW_ITEM* aGbrItem, 
 }
 
 
-void GBR_TO_PCB_EXPORTER::export_segline_copper_item( const GERBER_DRAW_ITEM* aGbrItem, LAYER_NUM aLayer )
+void GBR_TO_PCB_EXPORTER::export_segline_copper_item( const GERBER_DRAW_ITEM* aGbrItem,
+                                                      LAYER_NUM aLayer )
 {
     wxPoint seg_start, seg_end;
 
@@ -343,7 +341,8 @@ void GBR_TO_PCB_EXPORTER::writeCopperLineItem( const wxPoint& aStart,
 }
 
 
-void GBR_TO_PCB_EXPORTER::export_segarc_copper_item( const GERBER_DRAW_ITEM* aGbrItem, LAYER_NUM aLayer )
+void GBR_TO_PCB_EXPORTER::export_segarc_copper_item( const GERBER_DRAW_ITEM* aGbrItem,
+                                                     LAYER_NUM aLayer )
 {
     double  a = atan2( (double) ( aGbrItem->m_Start.y - aGbrItem->m_ArcCentre.y ),
                        (double) ( aGbrItem->m_Start.x - aGbrItem->m_ArcCentre.x ) );
@@ -377,6 +376,7 @@ void GBR_TO_PCB_EXPORTER::export_segarc_copper_item( const GERBER_DRAW_ITEM* aGb
         RotatePoint( &curr_end, aGbrItem->m_ArcCentre,
                      -RAD2DECIDEG( DELTA_ANGLE * ii ) );
         seg_end = curr_end;
+
         // Reverse Y axis:
         seg_start.y = -seg_start.y;
         seg_end.y = -seg_end.y;
@@ -388,6 +388,7 @@ void GBR_TO_PCB_EXPORTER::export_segarc_copper_item( const GERBER_DRAW_ITEM* aGb
     {
         seg_start   = curr_start;
         seg_end     = end;
+
         // Reverse Y axis:
         seg_start.y = -seg_start.y;
         seg_end.y = -seg_end.y;
@@ -396,14 +397,6 @@ void GBR_TO_PCB_EXPORTER::export_segarc_copper_item( const GERBER_DRAW_ITEM* aGb
 }
 
 
-/*
- * Flashed items are usually pads or vias.  Pads are problematic because we have no way to
- * represent one in Pcbnew outside of a footprint (and creating a footprint per pad isn't really
- * viable).
- * If we've already created a via from a hole, and the flashed copper item is a simple circle
- * then we'll enlarge the via to the proper size.  Otherwise we create a copper polygon to
- * represent the flashed item (which is presumably a pad).
- */
 void GBR_TO_PCB_EXPORTER::export_flashed_copper_item( const GERBER_DRAW_ITEM* aGbrItem,
                                                       LAYER_NUM aLayer )
 {
@@ -412,7 +405,7 @@ void GBR_TO_PCB_EXPORTER::export_flashed_copper_item( const GERBER_DRAW_ITEM* aG
     D_CODE*        d_codeDescr = aGbrItem->GetDcodeDescr();
     SHAPE_POLY_SET polygon;
 
-    if( d_codeDescr == NULL )
+    if( d_codeDescr == nullptr )
         d_codeDescr = &flashed_item_D_CODE;
 
     if( aGbrItem->m_Shape == GBR_SPOT_CIRCLE )
@@ -428,17 +421,40 @@ void GBR_TO_PCB_EXPORTER::export_flashed_copper_item( const GERBER_DRAW_ITEM* aG
         }
     }
 
-    d_codeDescr->ConvertShapeToPolygon();
     wxPoint offset = aGbrItem->GetABPosition( aGbrItem->m_Start );
 
+    if( aGbrItem->m_Shape == GBR_SPOT_CIRCLE ) // export it as filled circle
+    {
+        VECTOR2I center = offset;
+        int radius = d_codeDescr->m_Size.x / 2;
+        writePcbFilledCircle( center, radius, aLayer );
+        return;
+    }
+
+    d_codeDescr->ConvertShapeToPolygon();
     writePcbPolygon( d_codeDescr->m_Polygon, aLayer, offset );
+}
+
+
+void GBR_TO_PCB_EXPORTER::writePcbFilledCircle( const VECTOR2I& aCenterPosition, int aRadius,
+                                                LAYER_NUM aLayer )
+{
+
+    fprintf( m_fp, "(gr_circle (center %s %s) (end %s %s)",
+             Double2Str( MapToPcbUnits( aCenterPosition.x ) ).c_str(),
+             Double2Str( MapToPcbUnits( aCenterPosition.y ) ).c_str(),
+             Double2Str( MapToPcbUnits( aCenterPosition.x + aRadius ) ).c_str(),
+             Double2Str( MapToPcbUnits( aCenterPosition.y ) ).c_str() );
+
+
+    fprintf( m_fp, "(layer %s) (width 0) (fill solid) )\n",
+             TO_UTF8( GetPCBDefaultLayerName( aLayer ) ) );
 }
 
 
 void GBR_TO_PCB_EXPORTER::writePcbHeader( const LAYER_NUM* aLayerLookUpTable )
 {
-    fprintf( m_fp, "(kicad_pcb (version 4) (host Gerbview \"%s\")\n\n",
-             TO_UTF8( GetBuildVersion() ) );
+    fprintf( m_fp, "(kicad_pcb (version 4) (generator gerbview)\n\n" );
 
     // Write layers section
     fprintf( m_fp, "  (layers \n" );
@@ -500,8 +516,8 @@ void GBR_TO_PCB_EXPORTER::writePcbPolygon( const SHAPE_POLY_SET& aPolys, LAYER_N
         }
 
         fprintf( m_fp, " (xy %s %s)",
-                Double2Str( MapToPcbUnits( poly.CPoint( ii ).x + aOffset.x ) ).c_str(),
-                Double2Str( MapToPcbUnits( -poly.CPoint( ii ).y + aOffset.y ) ).c_str() );
+                 Double2Str( MapToPcbUnits( poly.CPoint( ii ).x + aOffset.x ) ).c_str(),
+                 Double2Str( MapToPcbUnits( -poly.CPoint( ii ).y + aOffset.y ) ).c_str() );
     }
 
     fprintf( m_fp, ")" );
@@ -509,8 +525,7 @@ void GBR_TO_PCB_EXPORTER::writePcbPolygon( const SHAPE_POLY_SET& aPolys, LAYER_N
     if( jj != MAX_COORD_CNT )
         fprintf( m_fp, "\n" );
 
-    fprintf( m_fp, "(layer %s) (width 0) )\n",
-             TO_UTF8( GetPCBDefaultLayerName( aLayer ) ) );
+    fprintf( m_fp, "(layer %s) (width 0) )\n", TO_UTF8( GetPCBDefaultLayerName( aLayer ) ) );
 }
 
 
@@ -523,7 +538,7 @@ void GBR_TO_PCB_EXPORTER::writePcbZoneItem( const GERBER_DRAW_ITEM* aGbrItem, LA
         return;
 
     fprintf( m_fp, "(zone (net 0) (net_name \"\") (layer %s) (tstamp 0000000) (hatch edge 0.508)\n",
-            TO_UTF8( GetPCBDefaultLayerName( aLayer ) ) );
+             TO_UTF8( GetPCBDefaultLayerName( aLayer ) ) );
 
     fprintf( m_fp, "  (connect_pads (clearance 0.0))\n" );
 

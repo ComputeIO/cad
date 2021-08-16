@@ -106,6 +106,26 @@ protected:
     }
 
 public:
+    void SetValue( int aRow, int aCol, const wxString &aValue ) override
+    {
+        LIB_TABLE_GRID::SetValue( aRow, aCol, aValue );
+
+        // If setting a filepath, attempt to auto-detect the format
+        if( aCol == COL_URI )
+        {
+            wxFileName fn( aValue );
+
+            for( SCH_IO_MGR::SCH_FILE_T piType : SCH_IO_MGR::SCH_FILE_T_vector )
+            {
+                if( SCH_IO_MGR::GetLibraryFileExtension( piType ).Lower() == fn.GetExt().Lower() )
+                {
+                    SetValue( aRow, COL_TYPE, SCH_IO_MGR::ShowType( piType ) );
+                    break;
+                }
+            }
+        }
+    }
+
 
     SYMBOL_LIB_TABLE_GRID( const SYMBOL_LIB_TABLE& aTableToEdit )
     {
@@ -176,7 +196,7 @@ protected:
 };
 
 
-PANEL_SYM_LIB_TABLE::PANEL_SYM_LIB_TABLE( DIALOG_EDIT_LIBRARY_TABLES* aParent, PROJECT* aProject ,
+PANEL_SYM_LIB_TABLE::PANEL_SYM_LIB_TABLE( DIALOG_EDIT_LIBRARY_TABLES* aParent, PROJECT* aProject,
                                           SYMBOL_LIB_TABLE* aGlobalTable,
                                           const wxString& aGlobalTablePath,
                                           SYMBOL_LIB_TABLE* aProjectTable,
@@ -436,11 +456,10 @@ bool PANEL_SYM_LIB_TABLE::verifyTables()
             }
             catch( const IO_ERROR& ioe )
             {
-                msg = wxString::Format( _( "Symbol library \"%s\" failed to load.\n %s" ),
-                                        row.GetNickName(),
-                                        ioe.What() );
+                msg.Printf( _( "Symbol library '%s' failed to load." ), row.GetNickName() );
 
-                wxMessageDialog errdlg( this, msg, _( "Error Loading Library" ) );
+                wxMessageDialog errdlg( this, msg + wxS( "\n" ) + ioe.What(),
+                                        _( "Error Loading Library" ) );
                 errdlg.ShowModal();
 
                 return false;
@@ -468,26 +487,20 @@ void PANEL_SYM_LIB_TABLE::browseLibrariesHandler( wxCommandEvent& event )
     EESCHEMA_SETTINGS* cfg = Pgm().GetSettingsManager().GetAppSettings<EESCHEMA_SETTINGS>();
 
     wxString openDir = cfg->m_lastSymbolLibDir;
-    if( m_cur_grid == m_project_grid )
-    {
-        openDir = m_lastProjectLibDir;
-    }
 
-    wxFileDialog dlg( this, _( "Select Library" ),
-                      openDir, wxEmptyString, wildcards,
+    if( m_cur_grid == m_project_grid )
+        openDir = m_lastProjectLibDir;
+
+    wxFileDialog dlg( this, _( "Select Library" ), openDir, wxEmptyString, wildcards,
                       wxFD_OPEN | wxFD_FILE_MUST_EXIST | wxFD_MULTIPLE );
 
     if( dlg.ShowModal() == wxID_CANCEL )
         return;
 
     if( m_cur_grid == m_global_grid )
-    {
         cfg->m_lastSymbolLibDir = dlg.GetPath();
-    }
     else
-    {
         m_lastProjectLibDir = dlg.GetPath();
-    }
 
     const ENV_VAR_MAP& envVars       = Pgm().GetLocalEnvVariables();
     bool               addDuplicates = false;
@@ -504,7 +517,7 @@ void PANEL_SYM_LIB_TABLE::browseLibrariesHandler( wxCommandEvent& event )
     {
         wxString   filePath = dlg.GetDirectory() + wxFileName::GetPathSeparator() + file;
         wxFileName fn( filePath );
-        wxString   nickname = LIB_ID::FixIllegalChars( fn.GetName() );
+        wxString   nickname = LIB_ID::FixIllegalChars( fn.GetName(), true );
         bool       doAdd = true;
 
         if( cur_model()->ContainsNickname( nickname ) )
@@ -526,10 +539,7 @@ void PANEL_SYM_LIB_TABLE::browseLibrariesHandler( wxCommandEvent& event )
 
             m_cur_grid->SetCellValue( last_row, COL_NICKNAME, nickname );
 
-            // TODO the following code can detect only schematic types, not libs
-            // SCH_IO_MGR needs to provide file extension information for libraries too
-
-            // auto detect the plugin type
+            // attempt to auto-detect the plugin type
             for( SCH_IO_MGR::SCH_FILE_T piType : SCH_IO_MGR::SCH_FILE_T_vector )
             {
                 if( SCH_IO_MGR::GetLibraryFileExtension( piType ).Lower() == fn.GetExt().Lower() )
@@ -720,22 +730,22 @@ void PANEL_SYM_LIB_TABLE::onConvertLegacyLibraries( wxCommandEvent& event )
 
     if( legacyRows.size() <= 0 )
     {
-        wxMessageBox( _( "Select one or more table rows containing legacy libraries to save as "
-                         "current format (*.kicad_sym)." ) );
+        wxMessageBox( _( "Select one or more rows containing libraries in Legacy format (*.lib) "
+                         "to save as current KiCad format (*.kicad_sym)." ) );
         return;
     }
     else
     {
         if( legacyRows.size() == 1 )
         {
-            msg.Printf( _( "Save '%s' as current format (*.kicad_sym) and "
-                           "replace legacy entry in table?" ),
+            msg.Printf( _( "Save '%s' as current KiCad format (*.kicad_sym) "
+                           "and replace legacy entry in table?" ),
                         m_cur_grid->GetCellValue( legacyRows[0], COL_NICKNAME ) );
         }
         else
         {
-            msg.Printf( _( "Save %d legacy libraries as current format (*.kicad_sym) and "
-                           "replace legacy entries in table?" ),
+            msg.Printf( _( "Save %d Legacy format libraries as current KiCad format (*.kicad_sym) "
+                           "and replace legacy entries in table?" ),
                         (int) legacyRows.size() );
         }
 
@@ -799,11 +809,11 @@ void PANEL_SYM_LIB_TABLE::onConvertLegacyLibraries( wxCommandEvent& event )
 bool PANEL_SYM_LIB_TABLE::convertLibrary( const wxString& aLibrary, const wxString& legacyFilepath,
                                           const wxString& newFilepath )
 {
-    SCH_PLUGIN::SCH_PLUGIN_RELEASER legacyPI( SCH_IO_MGR::FindPlugin( SCH_IO_MGR::SCH_LEGACY ) );
-    SCH_PLUGIN::SCH_PLUGIN_RELEASER kicadPI( SCH_IO_MGR::FindPlugin( SCH_IO_MGR::SCH_KICAD ) );
-    std::vector<LIB_PART*>          parts;
-    std::vector<LIB_PART*>          newParts;
-    std::map<LIB_PART*, LIB_PART*>  partMap;
+    SCH_PLUGIN::SCH_PLUGIN_RELEASER    legacyPI( SCH_IO_MGR::FindPlugin( SCH_IO_MGR::SCH_LEGACY ) );
+    SCH_PLUGIN::SCH_PLUGIN_RELEASER    kicadPI( SCH_IO_MGR::FindPlugin( SCH_IO_MGR::SCH_KICAD ) );
+    std::vector<LIB_SYMBOL*>           symbols;
+    std::vector<LIB_SYMBOL*>           newSymbols;
+    std::map<LIB_SYMBOL*, LIB_SYMBOL*> symbolMap;
 
     try
     {
@@ -816,32 +826,36 @@ bool PANEL_SYM_LIB_TABLE::convertLibrary( const wxString& aLibrary, const wxStri
         // This will write the file
         delete formatter;
 
-        legacyPI->EnumerateSymbolLib( parts, legacyFilepath );
+        legacyPI->EnumerateSymbolLib( symbols, legacyFilepath );
 
-        // Copy non-aliases first so we can build a map from parts to newParts
-        for( LIB_PART* part : parts )
+        // Copy non-aliases first so we can build a map from symbols to newSymbols
+        for( LIB_SYMBOL* symbol : symbols )
         {
-            if( part->IsAlias() )
+            if( symbol->IsAlias() )
                 continue;
 
-            newParts.push_back( new LIB_PART( *part ) );
-            partMap[part] = newParts.back();
+            symbol->SetName( EscapeString( symbol->GetName(), CTX_LIBID ) );
+
+            newSymbols.push_back( new LIB_SYMBOL( *symbol ) );
+            symbolMap[symbol] = newSymbols.back();
         }
 
-        // Now do the aliases using the map to hook them up to their newPart parents
-        for( LIB_PART* part : parts )
+        // Now do the aliases using the map to hook them up to their newSymbol parents
+        for( LIB_SYMBOL* symbol : symbols )
         {
-            if( !part->IsAlias() )
+            if( !symbol->IsAlias() )
                 continue;
 
-            newParts.push_back( new LIB_PART( *part ) );
-            newParts.back()->SetParent( partMap[ part->GetParent().lock().get() ] );
+            symbol->SetName( EscapeString( symbol->GetName(), CTX_LIBID ) );
+
+            newSymbols.push_back( new LIB_SYMBOL( *symbol ) );
+            newSymbols.back()->SetParent( symbolMap[ symbol->GetParent().lock().get() ] );
         }
 
-        // Finally write out newParts
-        for( LIB_PART* part : newParts )
+        // Finally write out newSymbols
+        for( LIB_SYMBOL* symbol : newSymbols )
         {
-            kicadPI->SaveSymbol( newFilepath, part );
+            kicadPI->SaveSymbol( newFilepath, symbol );
         }
     }
     catch( ... )
@@ -893,7 +907,7 @@ void PANEL_SYM_LIB_TABLE::populateEnvironReadOnlyTable()
     std::set< wxString > unique;
 
     // clear the table
-    m_path_subs_grid->DeleteRows( 0, m_path_subs_grid->GetNumberRows() );
+    m_path_subs_grid->ClearRows();
 
     for( SYMBOL_LIB_TABLE_GRID* tbl : { global_model(), project_model() } )
     {

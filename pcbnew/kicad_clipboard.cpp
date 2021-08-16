@@ -27,7 +27,7 @@
 
 #include <build_version.h>
 #include <board.h>
-#include <track.h>
+#include <pad.h>
 #include <pcb_group.h>
 #include <pcb_shape.h>
 #include <pcb_text.h>
@@ -95,7 +95,7 @@ void CLIPBOARD_IO::SaveSelection( const PCB_SELECTION& aSelected, bool isFootpri
     {
         FOOTPRINT partialFootprint( m_board );
 
-        // Usefull to copy the selection to the board editor (if any), and provides
+        // Useful to copy the selection to the board editor (if any), and provides
         // a dummy lib id.
         // Perhaps not a good Id, but better than a empty id
         KIID dummy;
@@ -106,6 +106,12 @@ void CLIPBOARD_IO::SaveSelection( const PCB_SELECTION& aSelected, bool isFootpri
         {
             const PCB_GROUP* group = dynamic_cast<const PCB_GROUP*>( item );
             BOARD_ITEM*      clone;
+
+            if( const FP_TEXT* text = dyn_cast<const FP_TEXT*>( item ) )
+            {
+                if( text->GetType() != FP_TEXT::TEXT_is_DIVERS )
+                    continue;
+            }
 
             if( group )
                 clone = static_cast<BOARD_ITEM*>( group->DeepClone() );
@@ -352,7 +358,8 @@ void CLIPBOARD_IO::Save( const wxString& aFileName, BOARD* aBoard,
 
 
 BOARD* CLIPBOARD_IO::Load( const wxString& aFileName, BOARD* aAppendToMe,
-                           const PROPERTIES* aProperties, PROJECT* aProject )
+                           const PROPERTIES* aProperties, PROJECT* aProject,
+                           PROGRESS_REPORTER* aProgressReporter )
 {
     std::string result;
 

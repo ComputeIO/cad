@@ -25,8 +25,9 @@
 #include <cstdio>
 #include <memory>
 #include <board.h>
+#include <board_design_settings.h>
 #include <drc/drc_rtree.h>
-#include <track.h>
+#include <pcb_track.h>
 #include <pcb_group.h>
 #include <geometry/shape_segment.h>
 #include <pcb_expr_evaluator.h>
@@ -86,35 +87,78 @@ static void existsOnLayer( LIBEVAL::CONTEXT* aCtx, void *self )
     if( !item )
         return;
 
-    if( !arg && aCtx->HasErrorCallback() )
+    if( !arg )
     {
-        aCtx->ReportError( wxString::Format( _( "Missing argument to '%s'" ),
-                                             wxT( "existsOnLayer()" ) ) );
+        if( aCtx->HasErrorCallback() )
+        {
+            aCtx->ReportError( wxString::Format( _( "Missing argument to '%s'" ),
+                                                 wxT( "existsOnLayer()" ) ) );
+        }
+
         return;
     }
 
-    wxString     layerName = arg->AsString();
-    wxPGChoices& layerMap = ENUM_MAP<PCB_LAYER_ID>::Instance().Choices();
-    bool         anyMatch = false;
+    const wxString& layerName = arg->AsString();
+    wxPGChoices&    layerMap = ENUM_MAP<PCB_LAYER_ID>::Instance().Choices();
 
-    for( unsigned ii = 0; ii < layerMap.GetCount(); ++ii )
+    if( aCtx->HasErrorCallback() )
     {
-        wxPGChoiceEntry& entry = layerMap[ii];
+        /*
+         * Interpreted version
+         */
 
-        if( entry.GetText().Matches( layerName ) )
+        bool anyMatch = false;
+
+        for( unsigned ii = 0; ii < layerMap.GetCount(); ++ii )
         {
-            anyMatch = true;
+            wxPGChoiceEntry& entry = layerMap[ii];
 
-            if( item->IsOnLayer( ToLAYER_ID( entry.GetValue() ) ) )
+            if( entry.GetText().Matches( layerName ) )
             {
-                result->Set( 1.0 );
-                return;
+                anyMatch = true;
+
+                if( item->IsOnLayer( ToLAYER_ID( entry.GetValue() ) ) )
+                {
+                    result->Set( 1.0 );
+                    return;
+                }
             }
         }
-    }
 
-    if( !anyMatch && aCtx->HasErrorCallback() )
-        aCtx->ReportError( wxString::Format( _( "Unrecognized layer '%s'" ), layerName ) );
+        if( !anyMatch )
+            aCtx->ReportError( wxString::Format( _( "Unrecognized layer '%s'" ), layerName ) );
+    }
+    else
+    {
+        /*
+         * Compiled version
+         */
+
+        BOARD*                       board = item->GetBoard();
+        std::unique_lock<std::mutex> cacheLock( board->m_CachesMutex );
+        auto                         i = board->m_LayerExpressionCache.find( layerName );
+        LSET                         mask;
+
+        if( i == board->m_LayerExpressionCache.end() )
+        {
+            for( unsigned ii = 0; ii < layerMap.GetCount(); ++ii )
+            {
+                wxPGChoiceEntry& entry = layerMap[ii];
+
+                if( entry.GetText().Matches( layerName ) )
+                    mask.set( ToLAYER_ID( entry.GetValue() ) );
+            }
+
+            board->m_LayerExpressionCache[ layerName ] = mask;
+        }
+        else
+        {
+            mask = i->second;
+        }
+
+        if( ( item->GetLayerSet() & mask ).any() )
+            result->Set( 1.0 );
+    }
 }
 
 
@@ -144,14 +188,7 @@ static bool insideFootprintCourtyard( BOARD_ITEM* aItem, const EDA_RECT& aItemBB
 {
     SHAPE_POLY_SET footprintCourtyard;
 
-    if( aSide == F_Cu )
-        footprintCourtyard = aFootprint->GetPolyCourtyardFront();
-    else if( aSide == B_Cu )
-        footprintCourtyard = aFootprint->GetPolyCourtyardBack();
-    else if( aFootprint->IsFlipped() )
-        footprintCourtyard = aFootprint->GetPolyCourtyardBack();
-    else
-        footprintCourtyard = aFootprint->GetPolyCourtyardFront();
+    footprintCourtyard = aFootprint->GetPolyCourtyard( aSide );
 
     if( aItem->Type() == PCB_ZONE_T || aItem->Type() == PCB_FP_ZONE_T )
     {
@@ -475,7 +512,7 @@ static void insideArea( LIBEVAL::CONTEXT* aCtx, void* self )
                     }
                     else if( item->Type() == PCB_VIA_T )
                     {
-                        VIA*               via = static_cast<VIA*>( item );
+                        PCB_VIA*           via = static_cast<PCB_VIA*>( item );
                         const SHAPE_CIRCLE holeShape( via->GetPosition(), via->GetDrillValue() );
 
                         return areaOutline.Collide( &holeShape );
@@ -498,7 +535,7 @@ static void insideArea( LIBEVAL::CONTEXT* aCtx, void* self )
 
                     if( ( area->GetLayerSet() & LSET::FrontMask() ).any() )
                     {
-                        SHAPE_POLY_SET courtyard = footprint->GetPolyCourtyardFront();
+                        SHAPE_POLY_SET courtyard = footprint->GetPolyCourtyard( F_CrtYd );
 
                         if( courtyard.OutlineCount() == 0 )
                         {
@@ -515,7 +552,7 @@ static void insideArea( LIBEVAL::CONTEXT* aCtx, void* self )
 
                     if( ( area->GetLayerSet() & LSET::BackMask() ).any() )
                     {
-                        SHAPE_POLY_SET courtyard = footprint->GetPolyCourtyardBack();
+                        SHAPE_POLY_SET courtyard = footprint->GetPolyCourtyard( B_CrtYd );
 
                         if( courtyard.OutlineCount() == 0 )
                         {
@@ -711,12 +748,10 @@ static void isMicroVia( LIBEVAL::CONTEXT* aCtx, void* self )
     result->Set( 0.0 );
     aCtx->Push( result );
 
-    auto via = dyn_cast<VIA*>( item );
+    PCB_VIA* via = dyn_cast<PCB_VIA*>( item );
 
     if( via && via->GetViaType() == VIATYPE::MICROVIA )
-    {
         result->Set ( 1.0 );
-    }
 }
 
 
@@ -729,12 +764,10 @@ static void isBlindBuriedVia( LIBEVAL::CONTEXT* aCtx, void* self )
     result->Set( 0.0 );
     aCtx->Push( result );
 
-    auto via = dyn_cast<VIA*>( item );
+    PCB_VIA* via = dyn_cast<PCB_VIA*>( item );
 
     if( via && via->GetViaType() == VIATYPE::BLIND_BURIED )
-    {
         result->Set ( 1.0 );
-    }
 }
 
 
@@ -848,24 +881,39 @@ public:
         LIBEVAL::VALUE( double( aLayer ) )
     {};
 
-    virtual bool EqualTo( const VALUE* b ) const override
+    virtual bool EqualTo( LIBEVAL::CONTEXT* aCtx, const VALUE* b ) const override
     {
         // For boards with user-defined layer names there will be 2 entries for each layer
         // in the ENUM_MAP: one for the canonical layer name and one for the user layer name.
         // We need to check against both.
 
-        wxPGChoices& layerMap = ENUM_MAP<PCB_LAYER_ID>::Instance().Choices();
-        PCB_LAYER_ID layerId = ToLAYER_ID( (int) AsDouble() );
+        wxPGChoices&                 layerMap = ENUM_MAP<PCB_LAYER_ID>::Instance().Choices();
+        const wxString&              layerName = b->AsString();
+        BOARD*                       board = static_cast<PCB_EXPR_CONTEXT*>( aCtx )->GetBoard();
+        std::unique_lock<std::mutex> cacheLock( board->m_CachesMutex );
+        auto                         i = board->m_LayerExpressionCache.find( layerName );
+        LSET                         mask;
 
-        for( unsigned ii = 0; ii < layerMap.GetCount(); ++ii )
+        if( i == board->m_LayerExpressionCache.end() )
         {
-            wxPGChoiceEntry& entry = layerMap[ii];
+            for( unsigned ii = 0; ii < layerMap.GetCount(); ++ii )
+            {
+                wxPGChoiceEntry& entry = layerMap[ii];
 
-            if( entry.GetValue() == layerId && entry.GetText().Matches( b->AsString() ) )
-                return true;
+                if( entry.GetText().Matches( layerName ) )
+                    mask.set( ToLAYER_ID( entry.GetValue() ) );
+            }
+
+            board->m_LayerExpressionCache[ layerName ] = mask;
+        }
+        else
+        {
+            mask = i->second;
         }
 
-        return false;
+        PCB_LAYER_ID layerId = ToLAYER_ID( (int) AsDouble() );
+
+        return mask.test( layerId );
     }
 };
 
@@ -888,7 +936,7 @@ LIBEVAL::VALUE PCB_EXPR_VAR_REF::GetValue( LIBEVAL::CONTEXT* aCtx )
     if( it == m_matchingTypes.end() )
     {
         // Don't force user to type "A.Type == 'via' && A.Via_Type == 'buried'" when the
-        // simplier "A.Via_Type == 'buried'" is perfectly clear.  Instead, return an undefined
+        // simpler "A.Via_Type == 'buried'" is perfectly clear.  Instead, return an undefined
         // value when the property doesn't appear on a particular object.
 
         return LIBEVAL::VALUE();
@@ -949,6 +997,17 @@ LIBEVAL::VALUE PCB_EXPR_NETNAME_REF::GetValue( LIBEVAL::CONTEXT* aCtx )
 }
 
 
+LIBEVAL::VALUE PCB_EXPR_TYPE_REF::GetValue( LIBEVAL::CONTEXT* aCtx )
+{
+    BOARD_ITEM* item = GetObject( aCtx );
+
+    if( !item )
+        return LIBEVAL::VALUE();
+
+    return LIBEVAL::VALUE( ENUM_MAP<KICAD_T>::Instance().ToString( item->Type() ) );
+}
+
+
 LIBEVAL::FUNC_CALL_REF PCB_EXPR_UCODE::CreateFuncCall( const wxString& aName )
 {
     PCB_EXPR_BUILTIN_FUNCTIONS& registry = PCB_EXPR_BUILTIN_FUNCTIONS::Instance();
@@ -980,6 +1039,15 @@ std::unique_ptr<LIBEVAL::VAR_REF> PCB_EXPR_UCODE::CreateVarRef( const wxString& 
             return std::make_unique<PCB_EXPR_NETNAME_REF>( 0 );
         else if( aVar == "B" )
             return std::make_unique<PCB_EXPR_NETNAME_REF>( 1 );
+        else
+            return nullptr;
+    }
+    else if( aField.CmpNoCase( "Type" ) == 0 )
+    {
+        if( aVar == "A" )
+            return std::make_unique<PCB_EXPR_TYPE_REF>( 0 );
+        else if( aVar == "B" )
+            return std::make_unique<PCB_EXPR_TYPE_REF>( 1 );
         else
             return nullptr;
     }
@@ -1036,6 +1104,15 @@ std::unique_ptr<LIBEVAL::VAR_REF> PCB_EXPR_UCODE::CreateVarRef( const wxString& 
         vref->SetType( LIBEVAL::VT_PARSE_ERROR );
 
     return std::move( vref );
+}
+
+
+BOARD* PCB_EXPR_CONTEXT::GetBoard() const
+{
+    if( m_items[0] )
+        return m_items[0]->GetBoard();
+
+    return nullptr;
 }
 
 

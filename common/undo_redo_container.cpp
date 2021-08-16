@@ -2,8 +2,8 @@
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
  * Copyright (C) 2018 jp.charras at wanadoo.fr
- * Copyright (C) 2011 Wayne Stambaugh <stambaughw@verizon.net>
- * Copyright (C) 2018 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 2011 Wayne Stambaugh <stambaughw@gmail.com>
+ * Copyright (C) 2021 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -27,23 +27,12 @@
 #include <undo_redo_container.h>
 
 
-/*
-ITEM_PICKER::ITEM_PICKER( EDA_ITEM* aItem, UNDO_REDO aUndoRedoStatus )
-{
-    m_undoRedoStatus = aUndoRedoStatus;
-    SetItem( aItem );
-    m_pickerFlags = 0;
-    m_link = nullptr;
-    m_screen = nullptr;
-}
-*/
-
 ITEM_PICKER::ITEM_PICKER()
 {
     m_undoRedoStatus = UNDO_REDO::UNSPECIFIED;
     SetItem( nullptr );
     m_pickerFlags = 0;
-    m_link = NULL;
+    m_link = nullptr;
     m_screen = nullptr;
 }
 
@@ -53,14 +42,22 @@ ITEM_PICKER::ITEM_PICKER( BASE_SCREEN* aScreen, EDA_ITEM* aItem, UNDO_REDO aUndo
     m_undoRedoStatus = aUndoRedoStatus;
     SetItem( aItem );
     m_pickerFlags = 0;
-    m_link = NULL;
+    m_link = nullptr;
     m_screen = aScreen;
+}
+
+
+void ITEM_PICKER::SetItem( EDA_ITEM* aItem )
+{
+    m_pickedItem = aItem;
+    m_pickedItemType = aItem ? aItem->Type() : TYPE_NOT_INIT;
 }
 
 
 PICKED_ITEMS_LIST::PICKED_ITEMS_LIST()
 {
 }
+
 
 PICKED_ITEMS_LIST::~PICKED_ITEMS_LIST()
 {
@@ -123,7 +120,8 @@ void PICKED_ITEMS_LIST::ClearListAndDeleteItems()
     while( GetCount() > 0 )
     {
         ITEM_PICKER wrapper = PopItem();
-        if( wrapper.GetItem() == NULL ) // No more item in list.
+
+        if( wrapper.GetItem() == nullptr ) // No more items in list.
             break;
 
         // The Link is an undo construct; it is always owned by the undo/redo container
@@ -160,7 +158,7 @@ EDA_ITEM* PICKED_ITEMS_LIST::GetPickedItem( unsigned int aIdx ) const
     if( aIdx < m_ItemsList.size() )
         return m_ItemsList[aIdx].GetItem();
 
-    return NULL;
+    return nullptr;
 }
 
 
@@ -169,7 +167,7 @@ BASE_SCREEN* PICKED_ITEMS_LIST::GetScreenForItem( unsigned int aIdx ) const
     if( aIdx < m_ItemsList.size() )
         return m_ItemsList[aIdx].GetScreen();
 
-    return NULL;
+    return nullptr;
 }
 
 
@@ -178,7 +176,7 @@ EDA_ITEM* PICKED_ITEMS_LIST::GetPickedItemLink( unsigned int aIdx ) const
     if( aIdx < m_ItemsList.size() )
         return m_ItemsList[aIdx].GetLink();
 
-    return NULL;
+    return nullptr;
 }
 
 
@@ -191,7 +189,7 @@ UNDO_REDO PICKED_ITEMS_LIST::GetPickedItemStatus( unsigned int aIdx ) const
 }
 
 
-STATUS_FLAGS PICKED_ITEMS_LIST::GetPickerFlags( unsigned aIdx ) const
+EDA_ITEM_FLAGS PICKED_ITEMS_LIST::GetPickerFlags( unsigned aIdx ) const
 {
     if( aIdx < m_ItemsList.size() )
         return m_ItemsList[aIdx].GetFlags();
@@ -249,7 +247,7 @@ bool PICKED_ITEMS_LIST::SetPickedItemStatus( UNDO_REDO aStatus, unsigned aIdx )
 }
 
 
-bool PICKED_ITEMS_LIST::SetPickerFlags( STATUS_FLAGS aFlags, unsigned aIdx )
+bool PICKED_ITEMS_LIST::SetPickerFlags( EDA_ITEM_FLAGS aFlags, unsigned aIdx )
 {
     if( aIdx < m_ItemsList.size() )
     {
@@ -280,6 +278,7 @@ void PICKED_ITEMS_LIST::CopyList( const PICKED_ITEMS_LIST& aSource )
 void PICKED_ITEMS_LIST::ReversePickersListOrder()
 {
     std::vector <ITEM_PICKER> tmp;
+
     while( !m_ItemsList.empty() )
     {
         tmp.push_back( m_ItemsList.back() );
@@ -289,10 +288,6 @@ void PICKED_ITEMS_LIST::ReversePickersListOrder()
     m_ItemsList.swap( tmp );
 }
 
-
-/**********************************************/
-/********** UNDO_REDO_CONTAINER ***************/
-/**********************************************/
 
 UNDO_REDO_CONTAINER::UNDO_REDO_CONTAINER()
 {
@@ -329,5 +324,5 @@ PICKED_ITEMS_LIST* UNDO_REDO_CONTAINER::PopCommand()
         return item;
     }
 
-    return NULL;
+    return nullptr;
 }

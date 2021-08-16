@@ -26,6 +26,7 @@
 #include <rc_item.h>
 #include <dialogs/panel_setup_severities.h>
 #include <wx/radiobut.h>
+#include <wx/scrolwin.h>
 #include <wx/stattext.h>
 #include <wx/treebook.h>
 
@@ -46,6 +47,7 @@ PANEL_SETUP_SEVERITIES::PANEL_SETUP_SEVERITIES( PAGED_DIALOG* aParent,
     wxScrolledWindow* scrollWin     = new wxScrolledWindow( this, wxID_ANY,
                                                             wxDefaultPosition, wxDefaultSize,
                                                             wxTAB_TRAVERSAL | wxVSCROLL );
+    bool              firstLine     = true;
 
     scrollWin->SetScrollRate( 0, 5 );
 
@@ -68,8 +70,11 @@ PANEL_SETUP_SEVERITIES::PANEL_SETUP_SEVERITIES( PAGED_DIALOG* aParent,
 
             heading->SetFont( headingFont.Bold() );
 
-            gridSizer->AddSpacer( 5 );  // col 1
-            gridSizer->AddSpacer( 5 );  // col 2
+            if( !firstLine )
+            {
+                gridSizer->AddSpacer( 5 );  // col 1
+                gridSizer->AddSpacer( 5 );  // col 2
+            }
 
             gridSizer->Add( heading, 0, wxALIGN_BOTTOM | wxALL | wxEXPAND, 4  );
             gridSizer->AddSpacer( 0 );  // col 2
@@ -99,6 +104,8 @@ PANEL_SETUP_SEVERITIES::PANEL_SETUP_SEVERITIES( PAGED_DIALOG* aParent,
             radioPanel->Layout();
             gridSizer->Add( radioPanel, 0, wxALIGN_CENTER_VERTICAL  );
         }
+
+        firstLine = false;
     }
 
 

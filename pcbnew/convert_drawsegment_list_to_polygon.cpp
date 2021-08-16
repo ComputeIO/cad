@@ -29,6 +29,7 @@
 #include <math/vector2d.h>
 #include <pcb_shape.h>
 #include <footprint.h>
+#include <pad.h>
 #include <base_units.h>
 #include <convert_basic_shapes_to_polygon.h>
 #include <geometry/shape_poly_set.h>
@@ -96,7 +97,7 @@ static PCB_SHAPE* findNext( PCB_SHAPE* aShape, const wxPoint& aPoint,
 
         switch( graphic->GetShape() )
         {
-        case PCB_SHAPE_TYPE::ARC:
+        case SHAPE_T::ARC:
             if( aPoint == graphic->GetArcStart() || aPoint == graphic->GetArcEnd() )
                 return graphic;
 
@@ -122,7 +123,7 @@ static PCB_SHAPE* findNext( PCB_SHAPE* aShape, const wxPoint& aPoint,
 
         switch( graphic->GetShape() )
         {
-        case PCB_SHAPE_TYPE::ARC:
+        case SHAPE_T::ARC:
             d_sq = ( pt - graphic->GetArcStart() ).SquaredEuclideanNorm();
 
             if( d_sq < closest_dist_sq )
@@ -201,8 +202,8 @@ bool ConvertOutlineToPolygon( std::vector<PCB_SHAPE*>& aSegList, SHAPE_POLY_SET&
 
         switch( graphic->GetShape() )
         {
-        case PCB_SHAPE_TYPE::RECT:
-        case PCB_SHAPE_TYPE::SEGMENT:
+        case SHAPE_T::RECT:
+        case SHAPE_T::SEGMENT:
             {
                 if( graphic->GetStart().x < xmin.x )
                 {
@@ -218,7 +219,7 @@ bool ConvertOutlineToPolygon( std::vector<PCB_SHAPE*>& aSegList, SHAPE_POLY_SET&
             }
             break;
 
-        case PCB_SHAPE_TYPE::ARC:
+        case SHAPE_T::ARC:
             {
                 wxPoint  pstart = graphic->GetArcStart();
                 wxPoint  center = graphic->GetCenter();
@@ -244,7 +245,7 @@ bool ConvertOutlineToPolygon( std::vector<PCB_SHAPE*>& aSegList, SHAPE_POLY_SET&
             }
             break;
 
-        case PCB_SHAPE_TYPE::CIRCLE:
+        case SHAPE_T::CIRCLE:
             {
                 wxPoint pt = graphic->GetCenter();
 
@@ -260,7 +261,7 @@ bool ConvertOutlineToPolygon( std::vector<PCB_SHAPE*>& aSegList, SHAPE_POLY_SET&
             }
             break;
 
-        case PCB_SHAPE_TYPE::CURVE:
+        case SHAPE_T::BEZIER:
             {
                 graphic->RebuildBezierToSegmentsPointsList( graphic->GetWidth() );
 
@@ -275,7 +276,7 @@ bool ConvertOutlineToPolygon( std::vector<PCB_SHAPE*>& aSegList, SHAPE_POLY_SET&
             }
             break;
 
-        case PCB_SHAPE_TYPE::POLYGON:
+        case SHAPE_T::POLY:
             {
                 const SHAPE_POLY_SET poly = graphic->GetPolyShape();
                 double               orientation = 0.0;
@@ -330,13 +331,13 @@ bool ConvertOutlineToPolygon( std::vector<PCB_SHAPE*>& aSegList, SHAPE_POLY_SET&
     startCandidates.erase( graphic );
 
     // Output the outline perimeter as polygon.
-    if( graphic->GetShape() == PCB_SHAPE_TYPE::CIRCLE )
+    if( graphic->GetShape() == SHAPE_T::CIRCLE )
     {
         TransformCircleToPolygon( aPolygons, graphic->GetCenter(), graphic->GetRadius(),
                                   ARC_LOW_DEF, ERROR_INSIDE );
         polygonComplete = true;
     }
-    else if( graphic->GetShape() == PCB_SHAPE_TYPE::RECT )
+    else if( graphic->GetShape() == SHAPE_T::RECT )
     {
         std::vector<wxPoint> pts = graphic->GetRectCorners();
 
@@ -352,7 +353,7 @@ bool ConvertOutlineToPolygon( std::vector<PCB_SHAPE*>& aSegList, SHAPE_POLY_SET&
 
         polygonComplete = true;
     }
-    else if( graphic->GetShape() == PCB_SHAPE_TYPE::POLYGON )
+    else if( graphic->GetShape() == SHAPE_T::POLY )
     {
         double   orientation = 0.0;
         VECTOR2I offset = VECTOR2I( 0, 0 );
@@ -388,8 +389,8 @@ bool ConvertOutlineToPolygon( std::vector<PCB_SHAPE*>& aSegList, SHAPE_POLY_SET&
         // Polygon start point. Arbitrarily chosen end of the
         // segment and build the poly from here.
 
-        wxPoint startPt = graphic->GetShape() == PCB_SHAPE_TYPE::ARC ? graphic->GetArcEnd()
-                                                       : graphic->GetEnd();
+        wxPoint startPt = graphic->GetShape() == SHAPE_T::ARC ? graphic->GetArcEnd()
+                                                              : graphic->GetEnd();
 
         prevPt = startPt;
         aPolygons.NewOutline();
@@ -402,8 +403,8 @@ bool ConvertOutlineToPolygon( std::vector<PCB_SHAPE*>& aSegList, SHAPE_POLY_SET&
         {
             switch( graphic->GetShape() )
             {
-            case PCB_SHAPE_TYPE::RECT:
-            case PCB_SHAPE_TYPE::CIRCLE:
+            case SHAPE_T::RECT:
+            case SHAPE_T::CIRCLE:
             {
                 // As a non-first item, closed shapes can't be anything but self-intersecting
 
@@ -419,7 +420,7 @@ bool ConvertOutlineToPolygon( std::vector<PCB_SHAPE*>& aSegList, SHAPE_POLY_SET&
             }
                 break;
 
-            case PCB_SHAPE_TYPE::SEGMENT:
+            case SHAPE_T::SEGMENT:
             {
                 wxPoint  nextPt;
 
@@ -437,7 +438,7 @@ bool ConvertOutlineToPolygon( std::vector<PCB_SHAPE*>& aSegList, SHAPE_POLY_SET&
             }
                 break;
 
-            case PCB_SHAPE_TYPE::ARC:
+            case SHAPE_T::ARC:
             {
                 // We do not support arcs in polygons, so approximate an arc with a series of
                 // short lines and put those line segments into the !same! PATH.
@@ -476,7 +477,7 @@ bool ConvertOutlineToPolygon( std::vector<PCB_SHAPE*>& aSegList, SHAPE_POLY_SET&
             }
                 break;
 
-            case PCB_SHAPE_TYPE::CURVE:
+            case SHAPE_T::BEZIER:
             {
                 // We do not support Bezier curves in polygons, so approximate with a series
                 // of short lines and put those line segments into the !same! PATH.
@@ -592,7 +593,7 @@ bool ConvertOutlineToPolygon( std::vector<PCB_SHAPE*>& aSegList, SHAPE_POLY_SET&
 
         // Both circles and polygons on the edge cuts layer are closed items that
         // do not connect to other elements, so we process them independently
-        if( graphic->GetShape() == PCB_SHAPE_TYPE::POLYGON )
+        if( graphic->GetShape() == SHAPE_T::POLY )
         {
             double   orientation = 0.0;
             VECTOR2I offset = VECTOR2I( 0, 0 );
@@ -619,7 +620,7 @@ bool ConvertOutlineToPolygon( std::vector<PCB_SHAPE*>& aSegList, SHAPE_POLY_SET&
                 prevPt = (wxPoint) pt;
             }
         }
-        else if( graphic->GetShape() == PCB_SHAPE_TYPE::CIRCLE )
+        else if( graphic->GetShape() == SHAPE_T::CIRCLE )
         {
             // make a circle by segments;
             wxPoint  center  = graphic->GetCenter();
@@ -646,7 +647,7 @@ bool ConvertOutlineToPolygon( std::vector<PCB_SHAPE*>& aSegList, SHAPE_POLY_SET&
                 prevPt = nextPt;
             }
         }
-        else if( graphic->GetShape() == PCB_SHAPE_TYPE::RECT )
+        else if( graphic->GetShape() == SHAPE_T::RECT )
         {
             std::vector<wxPoint> pts = graphic->GetRectCorners();
 
@@ -676,7 +677,7 @@ bool ConvertOutlineToPolygon( std::vector<PCB_SHAPE*>& aSegList, SHAPE_POLY_SET&
             {
                 switch( graphic->GetShape() )
                 {
-                case PCB_SHAPE_TYPE::SEGMENT:
+                case SHAPE_T::SEGMENT:
                     {
                         wxPoint nextPt;
 
@@ -695,7 +696,7 @@ bool ConvertOutlineToPolygon( std::vector<PCB_SHAPE*>& aSegList, SHAPE_POLY_SET&
                     }
                     break;
 
-                case PCB_SHAPE_TYPE::ARC:
+                case SHAPE_T::ARC:
                     // We do not support arcs in polygons, so approximate an arc with a series of
                     // short lines and put those line segments into the !same! PATH.
                     {
@@ -734,7 +735,7 @@ bool ConvertOutlineToPolygon( std::vector<PCB_SHAPE*>& aSegList, SHAPE_POLY_SET&
                     }
                     break;
 
-                case PCB_SHAPE_TYPE::CURVE:
+                case SHAPE_T::BEZIER:
                     // We do not support Bezier curves in polygons, so approximate with a series
                     // of short lines and put those line segments into the !same! PATH.
                     {

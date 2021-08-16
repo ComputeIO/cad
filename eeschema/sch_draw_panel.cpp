@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2014-2019 CERN
  * @author Maciej Suminski <maciej.suminski@cern.ch>
- * Copyright (C) 2019 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 2019-2021 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -38,7 +38,7 @@
 #include <eda_draw_frame.h>
 #include <gal/definitions.h>
 #include <gal/graphics_abstraction_layer.h>
-#include <layers_id_colors_and_visibility.h>
+#include <layer_ids.h>
 #include <math/vector2d.h>
 #include <pgm_base.h>
 #include <settings/settings_manager.h>
@@ -105,10 +105,10 @@ SCH_DRAW_PANEL::~SCH_DRAW_PANEL()
 }
 
 
-void SCH_DRAW_PANEL::DisplayComponent( LIB_PART* aComponent )
+void SCH_DRAW_PANEL::DisplaySymbol( LIB_SYMBOL* aSymbol )
 {
     GetView()->Clear();
-    GetView()->DisplayComponent( aComponent );
+    GetView()->DisplaySymbol( aSymbol );
 }
 
 

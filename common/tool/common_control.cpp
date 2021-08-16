@@ -2,8 +2,8 @@
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
  * Copyright (C) 2014-2016 CERN
- * @author Maciej Suminski <maciej.suminski@cern.ch>
  * Copyright (C) 2021 KiCad Developers, see AUTHORS.txt for contributors.
+ * @author Maciej Suminski <maciej.suminski@cern.ch>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -50,6 +50,7 @@
 wxString COMMON_CONTROL::m_bugReportUrl =
         "https://gitlab.com/kicad/code/kicad/issues/new?issue[description]=%s";
 
+
 /// Issue template to use for reporting bugs (this should not be translated)
 wxString COMMON_CONTROL::m_bugReportTemplate =
         "<!-- Before Creating a New Issue:\n"
@@ -80,7 +81,10 @@ void COMMON_CONTROL::Reset( RESET_REASON aReason )
 
 int COMMON_CONTROL::OpenPreferences( const TOOL_EVENT& aEvent )
 {
-    m_frame->OnPreferences();
+    wxCommandEvent dummy;
+
+    m_frame->OnPreferences( dummy );
+
     return 0;
 }
 
@@ -210,10 +214,10 @@ int COMMON_CONTROL::ShowHelp( const TOOL_EVENT& aEvent )
 
         if( !helpFile )
         {
-            msg = wxString::Format( _( "Help file \"%s\" or\n\"%s\" could not be found.\n"
+            msg = wxString::Format( _( "Help file '%s' or\n'%s' could not be found.\n"
                                        "Do you want to access the KiCad online help?" ),
                                     names[0], names[1] );
-            wxMessageDialog dlg( NULL, msg, _( "File Not Found" ),
+            wxMessageDialog dlg( nullptr, msg, _( "File Not Found" ),
                                  wxYES_NO | wxNO_DEFAULT | wxCANCEL );
 
             if( dlg.ShowModal() != wxID_YES )
@@ -230,10 +234,10 @@ int COMMON_CONTROL::ShowHelp( const TOOL_EVENT& aEvent )
 
         if( !helpFile )
         {
-            msg = wxString::Format( _( "Help file \"%s\" could not be found.\n"
+            msg = wxString::Format( _( "Help file '%s' could not be found.\n"
                                        "Do you want to access the KiCad online help?" ),
                                     base_name );
-            wxMessageDialog dlg( NULL, msg, _( "File Not Found" ),
+            wxMessageDialog dlg( nullptr, msg, _( "File Not Found" ),
                                  wxYES_NO | wxNO_DEFAULT | wxCANCEL );
 
             if( dlg.ShowModal() != wxID_YES )
@@ -265,6 +269,7 @@ int COMMON_CONTROL::GetInvolved( const TOOL_EVENT& aEvent )
                     URL_GET_INVOLVED );
         wxMessageBox( msg, _( "Get involved with KiCad" ), wxOK, m_frame );
     }
+
     return 0;
 }
 
@@ -279,12 +284,16 @@ int COMMON_CONTROL::Donate( const TOOL_EVENT& aEvent )
                     URL_DONATE );
         wxMessageBox( msg, _( "Donate to KiCad" ), wxOK, m_frame );
     }
+
     return 0;
 }
 
 
 int COMMON_CONTROL::ReportBug( const TOOL_EVENT& aEvent )
 {
+    if( WarnUserIfOperatingSystemUnsupported() )
+        return 0;
+
     wxString version = GetVersionInfoData( m_frame->GetAboutTitle(), false, true );
 
     wxString message;

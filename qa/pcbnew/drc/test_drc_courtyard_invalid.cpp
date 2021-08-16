@@ -1,7 +1,7 @@
 /*
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
- * Copyright (C) 2018 KiCad Developers, see CHANGELOG.TXT for contributors.
+ * Copyright (C) 2018-2021 KiCad Developers, see CHANGELOG.TXT for contributors.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -26,6 +26,7 @@
 #include <pcbnew_utils/board_construction_utils.h>
 #include <pcbnew_utils/board_file_utils.h>
 #include <board.h>
+#include <board_design_settings.h>
 #include <footprint.h>
 #include <pcb_marker.h>
 #include <drc/drc_engine.h>
@@ -235,10 +236,16 @@ static bool InvalidMatchesExpected( BOARD& aBoard, const PCB_MARKER& aMarker,
     auto reporter = std::static_pointer_cast<DRC_ITEM>( aMarker.GetRCItem() );
     const FOOTPRINT* item_a = dynamic_cast<FOOTPRINT*>( aBoard.GetItem( reporter->GetMainItemID() ) );
 
-    // This one is more than just a mis-match!
+    // This one is more than just a mismatch!
     if( reporter->GetAuxItemID() != niluuid )
     {
         BOOST_WARN_MESSAGE( false, "Expected no auxiliary item for invalid courtyard DRC." );
+        return false;
+    }
+
+    if( item_a == nullptr )
+    {
+        BOOST_ERROR( "Could not get board DRC item." );
         return false;
     }
 

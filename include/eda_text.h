@@ -2,7 +2,7 @@
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
  * Copyright (C) 2013 Jean-Pierre Charras, jpe.charras at wanadoo.fr
- * Copyright (C) 2004-2020 KiCad Developers, see change_log.txt for contributors.
+ * Copyright (C) 2004-2021 KiCad Developers, see change_log.txt for contributors.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -105,21 +105,14 @@ public:
     virtual wxString GetShownText( int aDepth = 0 ) const { return m_shown_text; }
 
     /**
-     * A version of GetShownText() which also indicates whether or not the text needs
-     * to be processed for text variables.
-     *
-     * @param processTextVars [out]
-     */
-    wxString GetShownText( bool* processTextVars ) const
-    {
-        *processTextVars = m_shown_text_has_text_var_refs;
-        return m_shown_text;
-    }
-
-    /**
      * Returns a shortened version (max 15 characters) of the shown text
      */
     wxString ShortenedShownText() const;
+
+    /**
+     * Indicates the ShownText has text var references which need to be processed.
+     */
+    bool HasTextVars() const { return m_shown_text_has_text_var_refs; }
 
     virtual void SetText( const wxString& aText );
 
@@ -135,14 +128,14 @@ public:
      */
     int GetEffectiveTextPenWidth( int aDefaultWidth = 0 ) const;
 
+    virtual void SetTextAngle( const EDA_ANGLE& aAngle );
     virtual void SetTextAngle( double aAngle )
     {
         // Higher level classes may be more restrictive than this by overloading
         // SetTextAngle() or merely calling EDA_TEXT::SetTextAngle() after clamping
         // aAngle before calling this lowest inline accessor.
-        m_attributes.SetAngle( EDA_ANGLE( aAngle, EDA_ANGLE::TENTHS_OF_A_DEGREE ) );
+        SetTextAngle( EDA_ANGLE( aAngle, EDA_ANGLE::TENTHS_OF_A_DEGREE ) );
     }
-    virtual void SetTextAngle( EDA_ANGLE aAngle ) { m_attributes.SetAngle( aAngle ); }
 
     EDA_ANGLE GetTextEdaAngle() const { return m_attributes.GetAngle(); }
     double    GetTextAngle() const { return GetTextEdaAngle().AsTenthsOfADegree(); }
@@ -155,8 +148,8 @@ public:
     void SetBold( bool aBold ) { m_attributes.SetBold( aBold ); }
     bool IsBold() const { return m_attributes.IsBold(); }
 
-    void SetVisible( bool aVisible ) { m_attributes.SetVisible( aVisible ); }
-    bool IsVisible() const { return m_attributes.IsVisible(); }
+    virtual void SetVisible( bool aVisible ) { m_attributes.SetVisible( aVisible ); }
+    virtual bool IsVisible() const { return m_attributes.IsVisible(); }
 
     void SetMirrored( bool aMirrored ) { m_attributes.SetMirrored( aMirrored ); }
     bool IsMirrored() const { return m_attributes.IsMirrored(); }
@@ -287,8 +280,8 @@ public:
      * @param aColor text color.
      * @param aDisplay_mode #FILLED or #SKETCH.
      */
-    void Print( const RENDER_SETTINGS* aSettings, const wxPoint& aOffset, COLOR4D aColor,
-                OUTLINE_MODE aDisplay_mode = FILLED );
+    void Print( const RENDER_SETTINGS* aSettings, const wxPoint& aOffset,
+                const COLOR4D& aColor, OUTLINE_MODE aDisplay_mode = FILLED );
 
     /**
      * Convert the text shape to a list of segment.
@@ -426,6 +419,8 @@ public:
     void Draw( KIGFX::GAL* aGal ) const { Draw( aGal, GetTextPos() ); }
 
 private:
+    void cacheShownText();
+
     /**
      * Print each line of this EDA_TEXT.
      *
@@ -436,7 +431,7 @@ private:
      * @param aPos the position of this line ).
      */
     void printOneLineOfText( const RENDER_SETTINGS* aSettings, const wxPoint& aOffset,
-                             COLOR4D aColor, OUTLINE_MODE aFillMode, const wxString& aText,
+                             const COLOR4D& aColor, OUTLINE_MODE aFillMode, const wxString& aText,
                              const wxPoint& aPos );
 
     wxString m_text;
@@ -454,7 +449,7 @@ inline std::ostream& operator<<( std::ostream& os, const EDA_TEXT& aText )
 {
     os << "(eda_text \"" << aText.m_text << "\" (shown \"" << aText.m_shown_text << "\") "
        << ( aText.m_shown_text_has_text_var_refs ? "has_text_var_refs " : "" ) << aText.m_attributes
-       << " (position " << aText.m_pos.x << " " << aText.m_pos.y << ")";
+       << " (position " << aText.m_pos.x << " " << aText.m_pos.y << "))";
 
     return os;
 }

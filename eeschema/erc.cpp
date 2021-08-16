@@ -26,7 +26,7 @@
 #include "connection_graph.h"
 #include <common.h>     // for ExpandEnvVarSubstitutions
 #include <erc.h>
-#include <kicad_string.h>
+#include <string_utils.h>
 #include <lib_pin.h>
 #include <sch_edit_frame.h>
 #include <sch_marker.h>
@@ -193,9 +193,9 @@ void ERC_TESTER::TestTextVars( DS_PROXY_VIEW_ITEM* aDrawingSheet )
 
         for( SCH_ITEM* item : screen->Items().OfType( SCH_LOCATE_ANY_T ) )
         {
-            if( item->Type() == SCH_COMPONENT_T )
+            if( item->Type() == SCH_SYMBOL_T )
             {
-                SCH_COMPONENT* symbol = static_cast<SCH_COMPONENT*>( item );
+                SCH_SYMBOL* symbol = static_cast<SCH_SYMBOL*>( item );
 
                 for( SCH_FIELD& field : symbol->GetFields() )
                 {
@@ -205,7 +205,8 @@ void ERC_TESTER::TestTextVars( DS_PROXY_VIEW_ITEM* aDrawingSheet )
                         pos = symbol->GetTransform().TransformCoordinate( pos );
                         pos += symbol->GetPosition();
 
-                        std::shared_ptr<ERC_ITEM> ercItem = ERC_ITEM::Create( ERCE_UNRESOLVED_VARIABLE );
+                        std::shared_ptr<ERC_ITEM> ercItem =
+                                ERC_ITEM::Create( ERCE_UNRESOLVED_VARIABLE );
                         ercItem->SetItems( &field );
 
                         SCH_MARKER* marker = new SCH_MARKER( ercItem, pos );
@@ -221,7 +222,8 @@ void ERC_TESTER::TestTextVars( DS_PROXY_VIEW_ITEM* aDrawingSheet )
                 {
                     if( unresolved( field.GetShownText() ) )
                     {
-                        std::shared_ptr<ERC_ITEM> ercItem = ERC_ITEM::Create( ERCE_UNRESOLVED_VARIABLE );
+                        std::shared_ptr<ERC_ITEM> ercItem =
+                                ERC_ITEM::Create( ERCE_UNRESOLVED_VARIABLE );
                         ercItem->SetItems( &field );
 
                         SCH_MARKER* marker = new SCH_MARKER( ercItem, field.GetPosition() );
@@ -233,7 +235,8 @@ void ERC_TESTER::TestTextVars( DS_PROXY_VIEW_ITEM* aDrawingSheet )
                 {
                     if( pin->GetShownText().Matches( wxT( "*${*}*" ) ) )
                     {
-                        std::shared_ptr<ERC_ITEM> ercItem = ERC_ITEM::Create( ERCE_UNRESOLVED_VARIABLE );
+                        std::shared_ptr<ERC_ITEM> ercItem =
+                                ERC_ITEM::Create( ERCE_UNRESOLVED_VARIABLE );
                         ercItem->SetItems( pin );
 
                         SCH_MARKER* marker = new SCH_MARKER( ercItem, pin->GetPosition() );
@@ -245,7 +248,8 @@ void ERC_TESTER::TestTextVars( DS_PROXY_VIEW_ITEM* aDrawingSheet )
             {
                 if( text->GetShownText().Matches( wxT( "*${*}*" ) ) )
                 {
-                    std::shared_ptr<ERC_ITEM> ercItem = ERC_ITEM::Create( ERCE_UNRESOLVED_VARIABLE );
+                    std::shared_ptr<ERC_ITEM> ercItem =
+                            ERC_ITEM::Create( ERCE_UNRESOLVED_VARIABLE );
                     ercItem->SetItems( text );
 
                     SCH_MARKER* marker = new SCH_MARKER( ercItem, text->GetPosition() );
@@ -260,7 +264,8 @@ void ERC_TESTER::TestTextVars( DS_PROXY_VIEW_ITEM* aDrawingSheet )
             {
                 if( text->GetShownText().Matches( wxT( "*${*}*" ) ) )
                 {
-                    std::shared_ptr<ERC_ITEM> ercItem = ERC_ITEM::Create( ERCE_UNRESOLVED_VARIABLE );
+                    std::shared_ptr<ERC_ITEM> ercItem =
+                            ERC_ITEM::Create( ERCE_UNRESOLVED_VARIABLE );
                     ercItem->SetErrorMessage( _( "Unresolved text variable in drawing sheet." ) );
 
                     SCH_MARKER* marker = new SCH_MARKER( ercItem, text->GetPosition() );
@@ -282,7 +287,7 @@ int ERC_TESTER::TestConflictingBusAliases()
     SCH_SCREENS screens( m_schematic->Root() );
     std::vector< std::shared_ptr<BUS_ALIAS> > aliases;
 
-    for( SCH_SCREEN* screen = screens.GetFirst(); screen != NULL; screen = screens.GetNext() )
+    for( SCH_SCREEN* screen = screens.GetFirst(); screen != nullptr; screen = screens.GetNext() )
     {
         std::unordered_set< std::shared_ptr<BUS_ALIAS> > screen_aliases = screen->GetBusAliases();
 
@@ -324,9 +329,9 @@ int ERC_TESTER::TestMultiunitFootprints()
     SCH_MULTI_UNIT_REFERENCE_MAP refMap;
     sheets.GetMultiUnitSymbols( refMap, true );
 
-    for( std::pair<const wxString, SCH_REFERENCE_LIST>& component : refMap )
+    for( std::pair<const wxString, SCH_REFERENCE_LIST>& symbol : refMap )
     {
-        SCH_REFERENCE_LIST& refList = component.second;
+        SCH_REFERENCE_LIST& refList = symbol.second;
 
         if( refList.GetCount() == 0 )
         {
@@ -335,9 +340,9 @@ int ERC_TESTER::TestMultiunitFootprints()
         }
 
         // Reference footprint
-        SCH_COMPONENT* unit = nullptr;
-        wxString       unitName;
-        wxString       unitFP;
+        SCH_SYMBOL* unit = nullptr;
+        wxString    unitName;
+        wxString    unitFP;
 
         for( unsigned i = 0; i < refList.GetCount(); ++i )
         {
@@ -355,7 +360,7 @@ int ERC_TESTER::TestMultiunitFootprints()
         for( unsigned i = 0; i < refList.GetCount(); ++i )
         {
             SCH_REFERENCE& secondRef = refList.GetItem( i );
-            SCH_COMPONENT* secondUnit = secondRef.GetSymbol();
+            SCH_SYMBOL*    secondUnit = secondRef.GetSymbol();
             wxString       secondName = secondUnit->GetRef( &secondRef.GetSheetPath(), true );
             const wxString secondFp = secondRef.GetFootprint();
             wxString       msg;
@@ -389,9 +394,9 @@ int ERC_TESTER::TestNoConnectPins()
     {
         std::map<wxPoint, std::vector<SCH_PIN*>> pinMap;
 
-        for( SCH_ITEM* item : sheet.LastScreen()->Items().OfType( SCH_COMPONENT_T ) )
+        for( SCH_ITEM* item : sheet.LastScreen()->Items().OfType( SCH_SYMBOL_T ) )
         {
-            SCH_COMPONENT* symbol = static_cast<SCH_COMPONENT*>( item );
+            SCH_SYMBOL* symbol = static_cast<SCH_SYMBOL*>( item );
 
             for( SCH_PIN* pin : symbol->GetPins( &sheet ) )
             {
@@ -579,7 +584,7 @@ int ERC_TESTER::TestMultUnitPinConflicts()
                         continue;
 
                     wxString name = pin->GetParentSymbol()->GetRef( &subgraph->m_sheet ) +
-                                      + ":" + pin->GetNumber();
+                                      + ":" + pin->GetShownNumber();
 
                     if( !pinToNetMap.count( name ) )
                     {
@@ -592,7 +597,9 @@ int ERC_TESTER::TestMultUnitPinConflicts()
 
                         ercItem->SetErrorMessage( wxString::Format(
                                 _( "Pin %s is connected to both %s and %s" ),
-                                pin->GetNumber(), netName, pinToNetMap[name].first ) );
+                                pin->GetShownNumber(),
+                                netName,
+                                pinToNetMap[name].first ) );
 
                         ercItem->SetItems( pin, pinToNetMap[name].second );
                         ercItem->SetIsSheetSpecific();
@@ -675,17 +682,17 @@ int ERC_TESTER::TestLibSymbolIssues()
 
     SCH_SCREENS screens( m_schematic->Root() );
 
-    for( SCH_SCREEN* screen = screens.GetFirst(); screen != NULL; screen = screens.GetNext() )
+    for( SCH_SCREEN* screen = screens.GetFirst(); screen != nullptr; screen = screens.GetNext() )
     {
         std::vector<SCH_MARKER*> markers;
 
-        for( SCH_ITEM* item : screen->Items().OfType( SCH_COMPONENT_T ) )
+        for( SCH_ITEM* item : screen->Items().OfType( SCH_SYMBOL_T ) )
         {
-            SCH_COMPONENT* symbol = dynamic_cast<SCH_COMPONENT*>( item );
+            SCH_SYMBOL* symbol = dynamic_cast<SCH_SYMBOL*>( item );
 
             wxCHECK2( symbol, continue );
 
-            LIB_PART* libSymbolInSchematic = symbol->GetPartRef().get();
+            LIB_SYMBOL* libSymbolInSchematic = symbol->GetLibSymbolRef().get();
 
             wxCHECK2( libSymbolInSchematic, continue );
 
@@ -697,49 +704,49 @@ int ERC_TESTER::TestLibSymbolIssues()
                 std::shared_ptr<ERC_ITEM> ercItem = ERC_ITEM::Create( ERCE_LIB_SYMBOL_ISSUES );
                 ercItem->SetItems( symbol );
                 msg.Printf( _( "The current configuration does not include the library '%s'." ),
-                            libName );
+                            UnescapeString( libName ) );
                 ercItem->SetErrorMessage( msg );
 
                 markers.emplace_back( new SCH_MARKER( ercItem, symbol->GetPosition() ) );
-                break;
+                continue;
             }
             else if( !libTable->HasLibrary( libName, true ) )
             {
                 std::shared_ptr<ERC_ITEM> ercItem = ERC_ITEM::Create( ERCE_LIB_SYMBOL_ISSUES );
                 ercItem->SetItems( symbol );
                 msg.Printf( _( "The library '%s' is not enabled in the current configuration." ),
-                            libName );
+                            UnescapeString( libName ) );
                 ercItem->SetErrorMessage( msg );
 
                 markers.emplace_back( new SCH_MARKER( ercItem, symbol->GetPosition() ) );
-                break;
+                continue;
             }
 
-            wxString  symbolName = symbol->GetLibId().GetLibItemName();
-            LIB_PART* libSymbol = SchGetLibPart( symbol->GetLibId(), libTable );
+            wxString    symbolName = symbol->GetLibId().GetLibItemName();
+            LIB_SYMBOL* libSymbol = SchGetLibSymbol( symbol->GetLibId(), libTable );
 
             if( libSymbol == nullptr )
             {
                 std::shared_ptr<ERC_ITEM> ercItem = ERC_ITEM::Create( ERCE_LIB_SYMBOL_ISSUES );
                 ercItem->SetItems( symbol );
                 msg.Printf( "Symbol '%s' not found in symbol library '%s'.",
-                            symbolName,
-                            libName );
+                            UnescapeString( symbolName ),
+                            UnescapeString( libName ) );
                 ercItem->SetErrorMessage( msg );
 
                 markers.emplace_back( new SCH_MARKER( ercItem, symbol->GetPosition() ) );
-                break;
+                continue;
             }
 
-            std::unique_ptr<LIB_PART> flattenedSymbol = libSymbol->Flatten();
+            std::unique_ptr<LIB_SYMBOL> flattenedSymbol = libSymbol->Flatten();
 
             if( *flattenedSymbol != *libSymbolInSchematic )
             {
                 std::shared_ptr<ERC_ITEM> ercItem = ERC_ITEM::Create( ERCE_LIB_SYMBOL_ISSUES );
                 ercItem->SetItems( symbol );
                 msg.Printf( "Symbol '%s' has been modified in library '%s'.",
-                            symbolName,
-                            libName );
+                            UnescapeString( symbolName ),
+                            UnescapeString( libName ) );
                 ercItem->SetErrorMessage( msg );
 
                 markers.emplace_back( new SCH_MARKER( ercItem, symbol->GetPosition() ) );

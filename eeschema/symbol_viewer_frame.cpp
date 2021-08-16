@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2018 Jean-Pierre Charras, jp.charras at wanadoo.fr
  * Copyright (C) 2008 Wayne Stambaugh <stambaughw@gmail.com>
- * Copyright (C) 2004-2019 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 2004-2021 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -24,9 +24,8 @@
  */
 
 #include <bitmaps.h>
-#include <class_library.h>
+#include <symbol_library.h>
 #include <confirm.h>
-#include <dialog_helpers.h>
 #include <dialog_choose_symbol.h>
 #include <eeschema_id.h>
 #include <eeschema_settings.h>
@@ -55,8 +54,9 @@
 #include <wx/listbox.h>
 
 #include <default_values.h>
+#include <string_utils.h>
 
-// Save previous component library viewer state.
+// Save previous symbol library viewer state.
 wxString SYMBOL_VIEWER_FRAME::m_libraryName;
 wxString SYMBOL_VIEWER_FRAME::m_entryName;
 
@@ -73,18 +73,18 @@ BEGIN_EVENT_TABLE( SYMBOL_VIEWER_FRAME, EDA_DRAW_FRAME )
     EVT_TOOL( ID_LIBVIEW_SELECT_PART, SYMBOL_VIEWER_FRAME::OnSelectSymbol )
     EVT_TOOL( ID_LIBVIEW_NEXT, SYMBOL_VIEWER_FRAME::onSelectNextSymbol )
     EVT_TOOL( ID_LIBVIEW_PREVIOUS, SYMBOL_VIEWER_FRAME::onSelectPreviousSymbol )
-    EVT_CHOICE( ID_LIBVIEW_SELECT_PART_NUMBER, SYMBOL_VIEWER_FRAME::onSelectSymbolUnit )
+    EVT_CHOICE( ID_LIBVIEW_SELECT_UNIT_NUMBER, SYMBOL_VIEWER_FRAME::onSelectSymbolUnit )
 
     // listbox events
     EVT_LISTBOX( ID_LIBVIEW_LIB_LIST, SYMBOL_VIEWER_FRAME::ClickOnLibList )
-    EVT_LISTBOX( ID_LIBVIEW_CMP_LIST, SYMBOL_VIEWER_FRAME::ClickOnCmpList )
-    EVT_LISTBOX_DCLICK( ID_LIBVIEW_CMP_LIST, SYMBOL_VIEWER_FRAME::DClickOnCmpList )
+    EVT_LISTBOX( ID_LIBVIEW_SYM_LIST, SYMBOL_VIEWER_FRAME::ClickOnCmpList )
+    EVT_LISTBOX_DCLICK( ID_LIBVIEW_SYM_LIST, SYMBOL_VIEWER_FRAME::DClickOnCmpList )
 
     // Menu (and/or hotkey) events
     EVT_MENU( wxID_CLOSE, SYMBOL_VIEWER_FRAME::CloseLibraryViewer )
     EVT_MENU( ID_GRID_SETTINGS, SCH_BASE_FRAME::OnGridSettings )
 
-    EVT_UPDATE_UI( ID_LIBVIEW_SELECT_PART_NUMBER, SYMBOL_VIEWER_FRAME::onUpdateUnitChoice )
+    EVT_UPDATE_UI( ID_LIBVIEW_SELECT_UNIT_NUMBER, SYMBOL_VIEWER_FRAME::onUpdateUnitChoice )
 
 END_EVENT_TABLE()
 
@@ -126,7 +126,7 @@ SYMBOL_VIEWER_FRAME::SYMBOL_VIEWER_FRAME( KIWAY* aKiway, wxWindow* aParent, FRAM
 
     m_libListWidth = 200;
     m_symbolListWidth = 300;
-    m_listPowerCmpOnly = false;
+    m_listPowerOnly = false;
 
     SetScreen( new SCH_SCREEN );
     GetScreen()->m_Center = true;      // Axis origin centered on screen.
@@ -153,10 +153,10 @@ SYMBOL_VIEWER_FRAME::SYMBOL_VIEWER_FRAME( KIWAY* aKiway, wxWindow* aParent, FRAM
     ReCreateMenuBar();
 
     m_libList = new wxListBox( this, ID_LIBVIEW_LIB_LIST, wxDefaultPosition, wxDefaultSize,
-                               0, NULL, wxLB_HSCROLL | wxNO_BORDER );
+                               0, nullptr, wxLB_HSCROLL | wxNO_BORDER );
 
-    m_symbolList = new wxListBox( this, ID_LIBVIEW_CMP_LIST, wxDefaultPosition, wxDefaultSize,
-                                  0, NULL, wxLB_HSCROLL | wxNO_BORDER );
+    m_symbolList = new wxListBox( this, ID_LIBVIEW_SYM_LIST, wxDefaultPosition, wxDefaultSize,
+                                  0, nullptr, wxLB_HSCROLL | wxNO_BORDER );
 
     if( aLibraryName.empty() )
     {
@@ -177,13 +177,15 @@ SYMBOL_VIEWER_FRAME::SYMBOL_VIEWER_FRAME( KIWAY* aKiway, wxWindow* aParent, FRAM
     m_auimgr.SetManagedWindow( this );
 
     // Manage main toolbar
-    m_auimgr.AddPane( m_mainToolBar, EDA_PANE().HToolbar().Name( "MainToolbar" ).Top().Layer(6) );
-    m_auimgr.AddPane( m_messagePanel, EDA_PANE().Messages().Name( "MsgPanel" ).Bottom().Layer(6) );
+    m_auimgr.AddPane( m_mainToolBar, EDA_PANE().HToolbar().Name( "MainToolbar" ).Top().Layer( 6 ) );
+    m_auimgr.AddPane( m_messagePanel, EDA_PANE().Messages().Name( "MsgPanel" )
+                      .Bottom().Layer( 6 ) );
 
     m_auimgr.AddPane( m_libList, EDA_PANE().Palette().Name( "Libraries" ).Left().Layer(3)
                       .CaptionVisible( false ).MinSize( 80, -1 ).BestSize( m_libListWidth, -1 ) );
     m_auimgr.AddPane( m_symbolList, EDA_PANE().Palette().Name( "Symbols" ).Left().Layer(1)
-                      .CaptionVisible( false ).MinSize( 80, -1 ).BestSize( m_symbolListWidth, -1 ) );
+                      .CaptionVisible( false ).MinSize( 80, -1 )
+                      .BestSize( m_symbolListWidth, -1 ) );
 
     m_auimgr.AddPane( GetCanvas(), EDA_PANE().Canvas().Name( "DrawFrame" ).Center() );
 
@@ -207,7 +209,7 @@ SYMBOL_VIEWER_FRAME::SYMBOL_VIEWER_FRAME( KIWAY* aKiway, wxWindow* aParent, FRAM
     double max_size_x = Millimeter2iu( 450 );
     double max_size_y = Millimeter2iu( 450 );
     BOX2D bbox;
-    bbox.SetOrigin( -max_size_x /2, -max_size_y/2 );
+    bbox.SetOrigin( -max_size_x / 2, -max_size_y / 2 );
     bbox.SetSize( max_size_x, max_size_y );
     GetCanvas()->GetView()->SetBoundary( bbox );
     GetToolManager()->RunAction( ACTIONS::zoomFitScreen, true );
@@ -275,7 +277,7 @@ void SYMBOL_VIEWER_FRAME::setupUIConditions()
     auto demorganCond =
         [this] ( const SELECTION& )
         {
-            LIB_PART* symbol = GetSelectedSymbol();
+            LIB_SYMBOL* symbol = GetSelectedSymbol();
 
             return symbol && symbol->HasConversion();
         };
@@ -295,7 +297,7 @@ void SYMBOL_VIEWER_FRAME::setupUIConditions()
     auto haveDatasheetCond =
         [this] ( const SELECTION& )
         {
-            LIB_PART* symbol = GetSelectedSymbol();
+            LIB_SYMBOL* symbol = GetSelectedSymbol();
 
             return symbol && !symbol->GetDatasheetField().GetText().IsEmpty();
         };
@@ -323,9 +325,9 @@ void SYMBOL_VIEWER_FRAME::SetUnitAndConvert( int aUnit, int aConvert )
 }
 
 
-LIB_PART* SYMBOL_VIEWER_FRAME::GetSelectedSymbol() const
+LIB_SYMBOL* SYMBOL_VIEWER_FRAME::GetSelectedSymbol() const
 {
-    LIB_PART* symbol = nullptr;
+    LIB_SYMBOL* symbol = nullptr;
 
     if( !m_libraryName.IsEmpty() && !m_entryName.IsEmpty() )
         symbol = Prj().SchSymbolLibTable()->LoadSymbol( m_libraryName, m_entryName );
@@ -336,7 +338,7 @@ LIB_PART* SYMBOL_VIEWER_FRAME::GetSelectedSymbol() const
 
 void SYMBOL_VIEWER_FRAME::updatePreviewSymbol()
 {
-    LIB_PART* symbol = GetSelectedSymbol();
+    LIB_SYMBOL* symbol = GetSelectedSymbol();
     KIGFX::SCH_VIEW* view = GetCanvas()->GetView();
 
     if( m_previewItem )
@@ -356,13 +358,13 @@ void SYMBOL_VIEWER_FRAME::updatePreviewSymbol()
         view->Add( m_previewItem );
 
         wxString parentName;
-        std::shared_ptr<LIB_PART> parent  = m_previewItem->GetParent().lock();
+        std::shared_ptr<LIB_SYMBOL> parent  = m_previewItem->GetParent().lock();
 
         if( parent )
             parentName = parent->GetName();
 
-        AppendMsgPanel( _( "Name" ), m_previewItem->GetName() );
-        AppendMsgPanel( _( "Parent" ),  parentName );
+        AppendMsgPanel( _( "Name" ), UnescapeString( m_previewItem->GetName() ) );
+        AppendMsgPanel( _( "Parent" ),  UnescapeString( parentName ) );
         AppendMsgPanel( _( "Description" ), m_previewItem->GetDescription() );
         AppendMsgPanel( _( "Keywords" ), m_previewItem->GetKeyWords() );
     }
@@ -389,14 +391,14 @@ bool SYMBOL_VIEWER_FRAME::ShowModal( wxString* aSymbol, wxWindow* aParent )
             {
                 msg.Printf( _( "The current configuration does not include the library '%s'.\n"
                                "Use Manage Symbol Libraries to edit the configuration." ),
-                             libName );
+                             UnescapeString( libName ) );
                 DisplayErrorMessage( this, _( "Library not found in symbol library table." ), msg );
             }
             else if ( !libTable->HasLibrary( libid.GetLibNickname(), true ) )
             {
                 msg.Printf( _( "The library '%s' is not enabled in the current configuration.\n"
                                "Use Manage Symbol Libraries to edit the configuration." ),
-                             libName );
+                             UnescapeString( libName ) );
                 DisplayErrorMessage( aParent, _( "Symbol library not enabled." ), msg );
             }
             else
@@ -440,12 +442,12 @@ void SYMBOL_VIEWER_FRAME::OnSize( wxSizeEvent& SizeEv )
 
 void SYMBOL_VIEWER_FRAME::onUpdateUnitChoice( wxUpdateUIEvent& aEvent )
 {
-    LIB_PART* part = GetSelectedSymbol();
+    LIB_SYMBOL* symbol = GetSelectedSymbol();
 
     int unit_count = 1;
 
-    if( part )
-        unit_count = std::max( part->GetUnitCount(), 1 );
+    if( symbol )
+        unit_count = std::max( symbol->GetUnitCount(), 1 );
 
     m_unitChoice->Enable( unit_count > 1 );
 
@@ -465,7 +467,9 @@ void SYMBOL_VIEWER_FRAME::onUpdateUnitChoice( wxUpdateUIEvent& aEvent )
             m_unitChoice->SetSelection( std::max( 0, m_unit - 1 ) );
     }
     else if( m_unitChoice->GetCount() )
+    {
         m_unitChoice->Clear();
+    }
 }
 
 
@@ -476,7 +480,7 @@ bool SYMBOL_VIEWER_FRAME::ReCreateLibList()
 
     m_libList->Clear();
 
-    std::vector< wxString > libs = Prj().SchSymbolLibTable()->GetLogicalLibs();
+    std::vector<wxString> libs = Prj().SchSymbolLibTable()->GetLogicalLibs();
 
     // Remove not allowed libs from main list, if the allowed lib list is not empty
     if( m_allowedLibs.GetCount() )
@@ -490,8 +494,8 @@ bool SYMBOL_VIEWER_FRAME::ReCreateLibList()
         }
     }
 
-    // Remove libs which have no power components, if this filter is activated
-    if( m_listPowerCmpOnly )
+    // Remove libs which have no power symbols, if this filter is activated
+    if( m_listPowerOnly )
     {
         for( unsigned ii = 0; ii < libs.size(); )
         {
@@ -512,12 +516,12 @@ bool SYMBOL_VIEWER_FRAME::ReCreateLibList()
     wxArrayString libNames;
 
     for( const auto& name : libs )
-        libNames.Add( name );
+        libNames.Add( UnescapeString( name ) );
 
     m_libList->Append( libNames );
 
     // Search for a previous selection:
-    int index = m_libList->FindString( m_libraryName );
+    int index = m_libList->FindString( UnescapeString( m_libraryName ) );
 
     if( index != wxNOT_FOUND )
     {
@@ -543,7 +547,7 @@ bool SYMBOL_VIEWER_FRAME::ReCreateLibList()
 
 bool SYMBOL_VIEWER_FRAME::ReCreateSymbolList()
 {
-    if( m_symbolList == NULL )
+    if( m_symbolList == nullptr )
         return false;
 
     wxArrayString aliasNames;
@@ -551,7 +555,7 @@ bool SYMBOL_VIEWER_FRAME::ReCreateSymbolList()
     try
     {
         Prj().SchSymbolLibTable()->EnumerateSymbolLib( m_libraryName, aliasNames,
-                                                       m_listPowerCmpOnly );
+                                                       m_listPowerOnly );
     }
     catch( const IO_ERROR& ) {}   // ignore, it is handled below
 
@@ -566,9 +570,14 @@ bool SYMBOL_VIEWER_FRAME::ReCreateSymbolList()
         return true;
     }
 
-    m_symbolList->Append( aliasNames );
+    wxArrayString unescapedNames;
 
-    int  index = m_symbolList->FindString( m_entryName );
+    for( const wxString& name : aliasNames )
+        unescapedNames.Add( UnescapeString( name ) );
+
+    m_symbolList->Append( unescapedNames );
+
+    int  index = m_symbolList->FindString( UnescapeString( m_entryName ) );
     bool changed = false;
 
     if( index == wxNOT_FOUND )
@@ -584,7 +593,7 @@ bool SYMBOL_VIEWER_FRAME::ReCreateSymbolList()
 
     m_symbolList->SetSelection( index, true );
 
-    wxCommandEvent evt( wxEVT_COMMAND_LISTBOX_SELECTED, ID_LIBVIEW_CMP_LIST );
+    wxCommandEvent evt( wxEVT_COMMAND_LISTBOX_SELECTED, ID_LIBVIEW_SYM_LIST );
     ProcessEvent( evt );
 
     return changed;
@@ -600,7 +609,7 @@ void SYMBOL_VIEWER_FRAME::ClickOnLibList( wxCommandEvent& event )
 
     m_selection_changed = true;
 
-    SetSelectedLibrary( m_libList->GetString( ii ) );
+    SetSelectedLibrary( EscapeString( m_libList->GetString( ii ), CTX_LIBID ) );
 }
 
 
@@ -617,7 +626,7 @@ void SYMBOL_VIEWER_FRAME::SetSelectedLibrary( const wxString& aLibraryName )
     // Ensure the corresponding line in m_libList is selected
     // (which is not necessary the case if SetSelectedLibrary is called
     // by another caller than ClickOnLibList.
-    m_libList->SetStringSelection( m_libraryName, true );
+    m_libList->SetStringSelection( UnescapeString( m_libraryName ), true );
 
     // The m_libList has now the focus, in order to be able to use arrow keys
     // to navigate inside the list.
@@ -636,7 +645,7 @@ void SYMBOL_VIEWER_FRAME::ClickOnCmpList( wxCommandEvent& event )
 
     m_selection_changed = true;
 
-    SetSelectedSymbol( m_symbolList->GetString( ii ));
+    SetSelectedSymbol( EscapeString( m_symbolList->GetString( ii ), CTX_LIBID ) );
 
     // The m_symbolList has now the focus, in order to be able to use arrow keys
     // to navigate inside the list.
@@ -655,7 +664,7 @@ void SYMBOL_VIEWER_FRAME::SetSelectedSymbol( const wxString& aSymbolName )
         // Ensure the corresponding line in m_symbolList is selected
         // (which is not necessarily the case if SetSelectedSymbol is called
         // by another caller than ClickOnCmpList.
-        m_symbolList->SetStringSelection( aSymbolName, true );
+        m_symbolList->SetStringSelection( UnescapeString( aSymbolName ), true );
         DisplayLibInfos();
 
         if( m_selection_changed )
@@ -763,13 +772,13 @@ void SYMBOL_VIEWER_FRAME::CloseLibraryViewer( wxCommandEvent& event )
 
 void SYMBOL_VIEWER_FRAME::SetFilter( const SCHLIB_FILTER* aFilter )
 {
-    m_listPowerCmpOnly = false;
+    m_listPowerOnly = false;
     m_allowedLibs.Clear();
 
     if( aFilter )
     {
         m_allowedLibs = aFilter->GetAllowedLibList();
-        m_listPowerCmpOnly = aFilter->GetFilterPowerParts();
+        m_listPowerOnly = aFilter->GetFilterPowerSymbols();
     }
 
     ReCreateLibList();
@@ -778,17 +787,17 @@ void SYMBOL_VIEWER_FRAME::SetFilter( const SCHLIB_FILTER* aFilter )
 
 const BOX2I SYMBOL_VIEWER_FRAME::GetDocumentExtents( bool aIncludeAllVisible ) const
 {
-    LIB_PART* part = GetSelectedSymbol();
+    LIB_SYMBOL* symbol = GetSelectedSymbol();
 
-    if( !part )
+    if( !symbol )
     {
         return BOX2I( VECTOR2I(-200, -200), VECTOR2I( 400, 400 ) );
     }
     else
     {
-        std::shared_ptr< LIB_PART > tmp;
+        std::shared_ptr< LIB_SYMBOL > tmp;
 
-        tmp = ( part->IsAlias() ) ? part->GetParent().lock() : part->SharedPtr();
+        tmp = ( symbol->IsAlias() ) ? symbol->GetParent().lock() : symbol->SharedPtr();
 
         wxCHECK( tmp, BOX2I( VECTOR2I(-200, -200), VECTOR2I( 400, 400 ) ) );
 
@@ -801,9 +810,14 @@ const BOX2I SYMBOL_VIEWER_FRAME::GetDocumentExtents( bool aIncludeAllVisible ) c
 void SYMBOL_VIEWER_FRAME::FinishModal()
 {
     if( m_symbolList->GetSelection() >= 0 )
-        DismissModal( true, m_libraryName + ':' + m_symbolList->GetStringSelection() );
+    {
+        DismissModal( true, m_libraryName + ':'
+                                + EscapeString( m_symbolList->GetStringSelection(), CTX_LIBID ) );
+    }
     else
+    {
         DismissModal( false );
+    }
 
     Close( true );
 }
@@ -813,18 +827,19 @@ void SYMBOL_VIEWER_FRAME::OnSelectSymbol( wxCommandEvent& aEvent )
 {
     std::unique_lock<std::mutex> dialogLock( DIALOG_CHOOSE_SYMBOL::g_Mutex, std::defer_lock );
 
-    // One CHOOSE_COMPONENT dialog at a time.  User probaby can't handle more anyway.
+    // One CHOOSE_SYMBOL dialog at a time.  User probably can't handle more anyway.
     if( !dialogLock.try_lock() )
         return;
 
     // Container doing search-as-you-type.
     SYMBOL_LIB_TABLE* libs = Prj().SchSymbolLibTable();
-    wxObjectDataPtr<LIB_TREE_MODEL_ADAPTER> adapter = SYMBOL_TREE_MODEL_ADAPTER::Create( this, libs );
+    wxObjectDataPtr<LIB_TREE_MODEL_ADAPTER> adapter =
+            SYMBOL_TREE_MODEL_ADAPTER::Create( this, libs );
 
     const auto libNicknames = libs->GetLogicalLibs();
     static_cast<SYMBOL_TREE_MODEL_ADAPTER*>( adapter.get() )->AddLibraries( libNicknames, this );
 
-    LIB_PART* current = GetSelectedSymbol();
+    LIB_SYMBOL* current = GetSelectedSymbol();
     LIB_ID id;
     int unit = 0;
 
@@ -855,7 +870,7 @@ void SYMBOL_VIEWER_FRAME::OnSelectSymbol( wxCommandEvent& aEvent )
 
 void SYMBOL_VIEWER_FRAME::onSelectNextSymbol( wxCommandEvent& aEvent )
 {
-    wxCommandEvent evt( wxEVT_COMMAND_LISTBOX_SELECTED, ID_LIBVIEW_CMP_LIST );
+    wxCommandEvent evt( wxEVT_COMMAND_LISTBOX_SELECTED, ID_LIBVIEW_SYM_LIST );
     int            ii = m_symbolList->GetSelection();
 
     // Select the next symbol or stop at the end of the list.
@@ -869,7 +884,7 @@ void SYMBOL_VIEWER_FRAME::onSelectNextSymbol( wxCommandEvent& aEvent )
 
 void SYMBOL_VIEWER_FRAME::onSelectPreviousSymbol( wxCommandEvent& aEvent )
 {
-    wxCommandEvent evt( wxEVT_COMMAND_LISTBOX_SELECTED, ID_LIBVIEW_CMP_LIST );
+    wxCommandEvent evt( wxEVT_COMMAND_LISTBOX_SELECTED, ID_LIBVIEW_SYM_LIST );
     int            ii = m_symbolList->GetSelection();
 
     // Select the previous symbol or stop at the beginning of list.
@@ -900,8 +915,9 @@ void SYMBOL_VIEWER_FRAME::DisplayLibInfos()
     {
         const SYMBOL_LIB_TABLE_ROW* row = Prj().SchSymbolLibTable()->FindRow( m_libraryName, true );
 
-        wxString title = wxString::Format( wxT( "%s \u2014 " ) + _( "Symbol Library Browser" ),
-                                           row ? row->GetFullURI() : _( "no library selected" ) );
+        wxString title = row ? row->GetFullURI( true ) : _( "[no library selected]" );
+
+        title += wxT( " \u2014 " ) + _( "Symbol Library Browser" );
         SetTitle( title );
     }
 }

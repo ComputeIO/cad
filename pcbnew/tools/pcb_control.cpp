@@ -2,7 +2,7 @@
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
  * Copyright (C) 2014-2016 CERN
- * Copyright (C) 2019-2020 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 2019-2021 KiCad Developers, see AUTHORS.txt for contributors.
  * @author Maciej Suminski <maciej.suminski@cern.ch>
  *
  * This program is free software; you can redistribute it and/or
@@ -24,21 +24,23 @@
  */
 
 #include "edit_tool.h"
+#include <pgm_base.h>
 #include "pcb_actions.h"
 #include "pcb_control.h"
 #include "pcb_picker_tool.h"
 #include "pcb_selection_tool.h"
 #include "board_reannotate_tool.h"
-#include <3d_viewer/eda_3d_viewer.h>
+#include <3d_viewer/eda_3d_viewer_frame.h>
 #include <bitmaps.h>
 #include <board_commit.h>
 #include <board.h>
+#include <board_design_settings.h>
 #include <board_item.h>
 #include <dialogs/dialog_paste_special.h>
-#include <dimension.h>
+#include <pcb_dimension.h>
 #include <footprint.h>
 #include <pcb_group.h>
-#include <track.h>
+#include <pcb_track.h>
 #include <zone.h>
 #include <fp_shape.h>
 #include <confirm.h>
@@ -51,9 +53,11 @@
 #include <properties.h>
 #include <settings/color_settings.h>
 #include <tool/tool_manager.h>
-#include <view/view_controls.h>
 #include <footprint_viewer_frame.h>
 #include <footprint_edit_frame.h>
+#include <widgets/wx_progress_reporters.h>
+#include <widgets/infobar.h>
+#include <wx/hyperlink.h>
 
 using namespace std::placeholders;
 
@@ -121,7 +125,7 @@ template<class T> void Flip( T& aValue )
 
 int PCB_CONTROL::TrackDisplayMode( const TOOL_EVENT& aEvent )
 {
-    auto opts = displayOptions();
+    PCB_DISPLAY_OPTIONS opts = displayOptions();
 
     Flip( opts.m_DisplayPcbTrackFill );
     m_frame->SetDisplayOptions( opts );
@@ -140,7 +144,7 @@ int PCB_CONTROL::TrackDisplayMode( const TOOL_EVENT& aEvent )
 
 int PCB_CONTROL::ToggleRatsnest( const TOOL_EVENT& aEvent )
 {
-    auto opts = displayOptions();
+    PCB_DISPLAY_OPTIONS opts = displayOptions();
 
     if( aEvent.IsAction( &PCB_ACTIONS::showRatsnest ) )
     {
@@ -166,7 +170,7 @@ int PCB_CONTROL::ToggleRatsnest( const TOOL_EVENT& aEvent )
 
 int PCB_CONTROL::ViaDisplayMode( const TOOL_EVENT& aEvent )
 {
-    auto opts = displayOptions();
+    PCB_DISPLAY_OPTIONS opts = displayOptions();
 
     Flip( opts.m_DisplayViaFill );
     m_frame->SetDisplayOptions( opts );
@@ -183,27 +187,82 @@ int PCB_CONTROL::ViaDisplayMode( const TOOL_EVENT& aEvent )
 }
 
 
+/**
+ * We have bug reports indicating that some new users confuse zone filling/unfilling with the
+ * display modes.  This will put up a warning if they show zone fills when one or more zones
+ * are unfilled.
+ */
+void PCB_CONTROL::unfilledZoneCheck()
+{
+    if( Pgm().GetCommonSettings()->m_DoNotShowAgain.zone_fill_warning )
+        return;
+
+    bool unfilledZones = false;
+
+    for( const ZONE* zone : board()->Zones() )
+    {
+        if( !zone->IsFilled() )
+        {
+            unfilledZones = true;
+            break;
+        }
+    }
+
+    if( unfilledZones )
+    {
+        WX_INFOBAR*      infobar = frame()->GetInfoBar();
+        wxHyperlinkCtrl* button = new wxHyperlinkCtrl( infobar, wxID_ANY, _( "Don't show again" ),
+                                                       wxEmptyString );
+
+        button->Bind( wxEVT_COMMAND_HYPERLINK, std::function<void( wxHyperlinkEvent& aEvent )>(
+                [&]( wxHyperlinkEvent& aEvent )
+                {
+                    Pgm().GetCommonSettings()->m_DoNotShowAgain.zone_fill_warning = true;
+                    frame()->GetInfoBar()->Dismiss();
+                } ) );
+
+        infobar->RemoveAllButtons();
+        infobar->AddButton( button );
+
+        wxString msg;
+        msg.Printf( _( "Not all zones are filled. Use Edit > Fill All Zones (%s) "
+                      "if you wish to see all fills." ),
+                    KeyNameFromKeyCode( PCB_ACTIONS::zoneFillAll.GetHotKey() ) );
+
+        infobar->ShowMessageFor( msg, 10000, wxICON_WARNING  );
+    }
+}
+
+
 int PCB_CONTROL::ZoneDisplayMode( const TOOL_EVENT& aEvent )
 {
-    auto opts = displayOptions();
+    PCB_DISPLAY_OPTIONS opts = displayOptions();
 
     // Apply new display options to the GAL canvas
-    if( aEvent.IsAction( &PCB_ACTIONS::zoneDisplayEnable ) )
+    if( aEvent.IsAction( &PCB_ACTIONS::zoneDisplayFilled ) )
     {
+        unfilledZoneCheck();
+
         opts.m_ZoneDisplayMode = ZONE_DISPLAY_MODE::SHOW_FILLED;
     }
-    else if( aEvent.IsAction( &PCB_ACTIONS::zoneDisplayDisable ) )
+    else if( aEvent.IsAction( &PCB_ACTIONS::zoneDisplayOutline ) )
     {
         opts.m_ZoneDisplayMode = ZONE_DISPLAY_MODE::SHOW_ZONE_OUTLINE;
     }
-    else if( aEvent.IsAction( &PCB_ACTIONS::zoneDisplayOutlines ) )
+    else if( aEvent.IsAction( &PCB_ACTIONS::zoneDisplayFractured ) )
     {
-        opts.m_ZoneDisplayMode = ZONE_DISPLAY_MODE::SHOW_FILLED_OUTLINE;
+        opts.m_ZoneDisplayMode = ZONE_DISPLAY_MODE::SHOW_FRACTURE_BORDERS;
+    }
+    else if( aEvent.IsAction( &PCB_ACTIONS::zoneDisplayTriangulated ) )
+    {
+        opts.m_ZoneDisplayMode = ZONE_DISPLAY_MODE::SHOW_TRIANGULATION;
     }
     else if( aEvent.IsAction( &PCB_ACTIONS::zoneDisplayToggle ) )
     {
-        int nextMode = ( static_cast<int>( opts.m_ZoneDisplayMode ) + 1 ) % 3;
-        opts.m_ZoneDisplayMode = static_cast<ZONE_DISPLAY_MODE>( nextMode );
+        if( opts.m_ZoneDisplayMode == ZONE_DISPLAY_MODE::SHOW_FILLED )
+            opts.m_ZoneDisplayMode = ZONE_DISPLAY_MODE::SHOW_ZONE_OUTLINE;
+        else
+            opts.m_ZoneDisplayMode = ZONE_DISPLAY_MODE::SHOW_FILLED;
     }
     else
     {
@@ -223,7 +282,7 @@ int PCB_CONTROL::ZoneDisplayMode( const TOOL_EVENT& aEvent )
 
 int PCB_CONTROL::HighContrastMode( const TOOL_EVENT& aEvent )
 {
-    auto opts = displayOptions();
+    PCB_DISPLAY_OPTIONS opts = displayOptions();
 
     opts.m_ContrastModeDisplay =
             ( opts.m_ContrastModeDisplay == HIGH_CONTRAST_MODE::NORMAL ) ?
@@ -238,7 +297,7 @@ int PCB_CONTROL::HighContrastMode( const TOOL_EVENT& aEvent )
 
 int PCB_CONTROL::HighContrastModeCycle( const TOOL_EVENT& aEvent )
 {
-    auto opts = displayOptions();
+    PCB_DISPLAY_OPTIONS opts = displayOptions();
 
     switch( opts.m_ContrastModeDisplay )
     {
@@ -261,10 +320,9 @@ int PCB_CONTROL::HighContrastModeCycle( const TOOL_EVENT& aEvent )
 }
 
 
-// Layer control
 int PCB_CONTROL::LayerSwitch( const TOOL_EVENT& aEvent )
 {
-    m_frame->SwitchLayer( NULL, aEvent.Parameter<PCB_LAYER_ID>() );
+    m_frame->SwitchLayer( nullptr, aEvent.Parameter<PCB_LAYER_ID>() );
 
     return 0;
 }
@@ -290,7 +348,7 @@ int PCB_CONTROL::LayerNext( const TOOL_EVENT& aEvent )
     }
 
     wxCHECK( IsCopperLayer( layer ), 0 );
-    editFrame->SwitchLayer( NULL, ToLAYER_ID( layer ) );
+    editFrame->SwitchLayer( nullptr, ToLAYER_ID( layer ) );
 
     return 0;
 }
@@ -318,7 +376,7 @@ int PCB_CONTROL::LayerPrev( const TOOL_EVENT& aEvent )
 
 
     wxCHECK( IsCopperLayer( layer ), 0 );
-    editFrame->SwitchLayer( NULL, ToLAYER_ID( layer ) );
+    editFrame->SwitchLayer( nullptr, ToLAYER_ID( layer ) );
 
     return 0;
 }
@@ -330,9 +388,9 @@ int PCB_CONTROL::LayerToggle( const TOOL_EVENT& aEvent )
     PCB_SCREEN* screen = m_frame->GetScreen();
 
     if( currentLayer == screen->m_Route_Layer_TOP )
-        m_frame->SwitchLayer( NULL, screen->m_Route_Layer_BOTTOM );
+        m_frame->SwitchLayer( nullptr, screen->m_Route_Layer_BOTTOM );
     else
-        m_frame->SwitchLayer( NULL, screen->m_Route_Layer_TOP );
+        m_frame->SwitchLayer( nullptr, screen->m_Route_Layer_TOP );
 
     return 0;
 }
@@ -343,6 +401,7 @@ int PCB_CONTROL::LayerToggle( const TOOL_EVENT& aEvent )
 #define ALPHA_MIN 0.20
 #define ALPHA_MAX 1.00
 #define ALPHA_STEP 0.05
+
 
 int PCB_CONTROL::LayerAlphaInc( const TOOL_EVENT& aEvent )
 {
@@ -396,13 +455,14 @@ int PCB_CONTROL::LayerAlphaDec( const TOOL_EVENT& aEvent )
         static_cast<PCB_BASE_EDIT_FRAME*>( m_frame )->OnLayerAlphaChanged();
     }
     else
+    {
         wxBell();
+    }
 
     return 0;
 }
 
 
-// Grid control
 void PCB_CONTROL::DoSetGridOrigin( KIGFX::VIEW* aView, PCB_BASE_FRAME* aFrame,
                                    EDA_ITEM* originViewItem, const VECTOR2D& aPoint )
 {
@@ -514,9 +574,11 @@ int PCB_CONTROL::DeleteItemCursor( const TOOL_EVENT& aEvent )
             collector.m_Threshold = KiROUND( getView()->ToWorld( HITTEST_THRESHOLD_PIXELS ) );
 
             if( m_isFootprintEditor )
-                collector.Collect( board, GENERAL_COLLECTOR::FootprintItems, (wxPoint) aPos, guide );
+                collector.Collect( board, GENERAL_COLLECTOR::FootprintItems,
+                                   (wxPoint) aPos, guide );
             else
-                collector.Collect( board, GENERAL_COLLECTOR::BoardLevelItems, (wxPoint) aPos, guide );
+                collector.Collect( board, GENERAL_COLLECTOR::BoardLevelItems,
+                                   (wxPoint) aPos, guide );
 
             // Remove unselectable items
             for( int i = collector.GetCount() - 1; i >= 0; --i )
@@ -863,7 +925,7 @@ int PCB_CONTROL::placeBoardItems( BOARD* aBoard, bool aAnchorAtOrigin, bool aRea
     // PCB_SELECTION_TOOL::highlightInternal runs, which does a SetSelected() on all
     // descendants. In PCB_CONTROL::placeBoardItems, below, we skip that and
     // mark items non-recursively.  That works because the saving of the
-    // selection created aBoard that has the group and all descendents in it.
+    // selection created aBoard that has the group and all descendants in it.
     moveUnflaggedItems( aBoard->Groups(), items, isNew );
 
     return placeBoardItems( items, isNew, aAnchorAtOrigin, aReannotateDuplicates );
@@ -899,15 +961,15 @@ int PCB_CONTROL::placeBoardItems( std::vector<BOARD_ITEM*>& aItems, bool aIsNew,
         case PCB_DIM_CENTER_T:
         case PCB_DIM_ORTHOGONAL_T:
         case PCB_DIM_LEADER_T:
-            {
+        {
             // Dimensions need to have their units updated if they are automatic
-            DIMENSION_BASE* dim = static_cast<DIMENSION_BASE*>( item );
+            PCB_DIMENSION_BASE* dim = static_cast<PCB_DIMENSION_BASE*>( item );
 
             if( dim->GetUnitsMode() == DIM_UNITS_MODE::AUTOMATIC )
                 dim->SetUnits( frame()->GetUserUnits() );
 
             break;
-            }
+        }
 
         case PCB_FOOTPRINT_T:
             // Update the footprint path with the new KIID path if the footprint is new
@@ -981,7 +1043,7 @@ int PCB_CONTROL::AppendBoard( PLUGIN& pi, wxString& fileName )
 
     // Mark existing items, in order to know what are the new items so we can select only
     // the new items after loading
-    for( TRACK* track : brd->Tracks() )
+    for( PCB_TRACK* track : brd->Tracks() )
         track->SetFlags( SKIP_STRUCT );
 
     for( FOOTPRINT* footprint : brd->Footprints() )
@@ -1017,8 +1079,10 @@ int PCB_CONTROL::AppendBoard( PLUGIN& pi, wxString& fileName )
         props["page_width"]  = xbuf;
         props["page_height"] = ybuf;
 
+        WX_PROGRESS_REPORTER progressReporter( editFrame, _( "Loading PCB" ), 1 );
+
         editFrame->GetDesignSettings().GetNetClasses().Clear();
-        pi.Load( fileName, brd, &props );
+        pi.Load( fileName, brd, &props, nullptr, &progressReporter );
     }
     catch( const IO_ERROR& ioe )
     {
@@ -1169,9 +1233,10 @@ void PCB_CONTROL::setTransitions()
     Go( &PCB_CONTROL::ToggleRatsnest,        PCB_ACTIONS::showRatsnest.MakeEvent() );
     Go( &PCB_CONTROL::ToggleRatsnest,        PCB_ACTIONS::ratsnestLineMode.MakeEvent() );
     Go( &PCB_CONTROL::ViaDisplayMode,        PCB_ACTIONS::viaDisplayMode.MakeEvent() );
-    Go( &PCB_CONTROL::ZoneDisplayMode,       PCB_ACTIONS::zoneDisplayEnable.MakeEvent() );
-    Go( &PCB_CONTROL::ZoneDisplayMode,       PCB_ACTIONS::zoneDisplayDisable.MakeEvent() );
-    Go( &PCB_CONTROL::ZoneDisplayMode,       PCB_ACTIONS::zoneDisplayOutlines.MakeEvent() );
+    Go( &PCB_CONTROL::ZoneDisplayMode,       PCB_ACTIONS::zoneDisplayFilled.MakeEvent() );
+    Go( &PCB_CONTROL::ZoneDisplayMode,       PCB_ACTIONS::zoneDisplayOutline.MakeEvent() );
+    Go( &PCB_CONTROL::ZoneDisplayMode,       PCB_ACTIONS::zoneDisplayFractured.MakeEvent() );
+    Go( &PCB_CONTROL::ZoneDisplayMode,       PCB_ACTIONS::zoneDisplayTriangulated.MakeEvent() );
     Go( &PCB_CONTROL::ZoneDisplayMode,       PCB_ACTIONS::zoneDisplayToggle.MakeEvent() );
     Go( &PCB_CONTROL::HighContrastMode,      ACTIONS::highContrastMode.MakeEvent() );
     Go( &PCB_CONTROL::HighContrastModeCycle, ACTIONS::highContrastModeCycle.MakeEvent() );

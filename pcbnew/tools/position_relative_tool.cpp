@@ -1,7 +1,7 @@
 /*
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
- * Copyright (C) 2017 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 2017-2021 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -36,13 +36,14 @@ using namespace std::placeholders;
 #include <bitmaps.h>
 #include <confirm.h>
 #include <collectors.h>
+#include <pad.h>
 
 
 POSITION_RELATIVE_TOOL::POSITION_RELATIVE_TOOL() :
     PCB_TOOL_BASE( "pcbnew.PositionRelative" ),
-    m_dialog( NULL ),
-    m_selectionTool( NULL ),
-    m_anchor_item( NULL )
+    m_dialog( nullptr ),
+    m_selectionTool( nullptr ),
+    m_anchor_item( nullptr )
 {
 }
 
@@ -132,7 +133,8 @@ int POSITION_RELATIVE_TOOL::PositionRelative( const TOOL_EVENT& aEvent )
 }
 
 
-int POSITION_RELATIVE_TOOL::RelativeItemSelectionMove( wxPoint aPosAnchor, wxPoint aTranslation )
+int POSITION_RELATIVE_TOOL::RelativeItemSelectionMove( const wxPoint& aPosAnchor,
+                                                       const wxPoint& aTranslation )
 {
     wxPoint aggregateTranslation = aPosAnchor + aTranslation - GetSelectionAnchorPosition();
 
@@ -234,5 +236,5 @@ void POSITION_RELATIVE_TOOL::setTransitions()
 {
     Go( &POSITION_RELATIVE_TOOL::PositionRelative, PCB_ACTIONS::positionRelative.MakeEvent() );
     Go( &POSITION_RELATIVE_TOOL::SelectPositionRelativeItem,
-            PCB_ACTIONS::selectpositionRelativeItem.MakeEvent() );
+        PCB_ACTIONS::selectpositionRelativeItem.MakeEvent() );
 }

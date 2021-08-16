@@ -1,7 +1,7 @@
 /*
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
- * Copyright (C) 1992-2019 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 1992-2021 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -59,18 +59,18 @@ void SYMBOL_EDIT_FRAME::SVGPlotSymbol( const wxString& aFullFileName )
 
     plotter->StartPlot();
 
-    if( m_my_part )
+    if( m_symbol )
     {
         TRANSFORM   temp;     // Uses default transform
         wxPoint     plotPos;
 
-        plotPos.x = pageInfo.GetWidthIU() /2;
-        plotPos.y = pageInfo.GetHeightIU()/2;
+        plotPos.x = pageInfo.GetWidthIU() / 2;
+        plotPos.y = pageInfo.GetHeightIU() / 2;
 
-        m_my_part->Plot( plotter, GetUnit(), GetConvert(), plotPos, temp );
+        m_symbol->Plot( plotter, GetUnit(), GetConvert(), plotPos, temp );
 
-        // Plot lib fields, not plotted by m_my_part->Plot():
-        m_my_part->PlotLibFields( plotter, GetUnit(), GetConvert(), plotPos, temp );
+        // Plot lib fields, not plotted by m_symbol->Plot():
+        m_symbol->PlotLibFields( plotter, GetUnit(), GetConvert(), plotPos, temp );
     }
 
     plotter->EndPlot();
@@ -80,18 +80,18 @@ void SYMBOL_EDIT_FRAME::SVGPlotSymbol( const wxString& aFullFileName )
 
 void SYMBOL_EDIT_FRAME::PrintPage( const RENDER_SETTINGS* aSettings )
 {
-    if( !m_my_part )
+    if( !m_symbol )
         return;
 
     wxSize pagesize = GetScreen()->GetPageSettings().GetSizeIU();
 
     /* Plot item centered to the page
-     * In symbol_editor, the component is centered at 0,0 coordinates.
+     * In symbol_editor, the symbol is centered at 0,0 coordinates.
      * So we must plot it with an offset = pagesize/2.
      */
     wxPoint plot_offset;
     plot_offset.x = pagesize.x / 2;
     plot_offset.y = pagesize.y / 2;
 
-    m_my_part->Print( aSettings, plot_offset, m_unit, m_convert, PART_DRAW_OPTIONS() );
+    m_symbol->Print( aSettings, plot_offset, m_unit, m_convert, LIB_SYMBOL_OPTIONS() );
 }

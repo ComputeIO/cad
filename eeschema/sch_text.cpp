@@ -34,7 +34,7 @@
 #include <widgets/msgpanel.h>
 #include <font/stroke_font.h>
 #include <bitmaps.h>
-#include <kicad_string.h>
+#include <string_utils.h>
 #include <sch_text.h>
 #include <schematic.h>
 #include <settings/color_settings.h>
@@ -46,7 +46,6 @@
 #include <project/project_file.h>
 #include <project/net_settings.h>
 #include <core/mirror.h>
-#include <dialog_helpers.h>
 #include <trigo.h>
 
 using KIGFX::SCH_RENDER_SETTINGS;
@@ -87,6 +86,7 @@ bool IncrementLabelMember( wxString& name, int aIncrement )
             return true;
         }
     }
+
     return false;
 }
 
@@ -147,7 +147,7 @@ static int* getTemplateShape( PINSHEETLABEL_SHAPE aShape, EDA_ANGLE aAngle )
 
 
 SCH_TEXT::SCH_TEXT( const wxPoint& pos, const wxString& text, KICAD_T aType ) :
-        SCH_ITEM( NULL, aType ), EDA_TEXT( text ), m_shape( PINSHEETLABEL_SHAPE::PS_INPUT ),
+        SCH_ITEM( nullptr, aType ), EDA_TEXT( text ), m_shape( PINSHEETLABEL_SHAPE::PS_INPUT ),
         m_isDangling( false ), m_connectionType( CONNECTION_TYPE::NONE )
 {
     m_layer = LAYER_NOTES;
@@ -225,7 +225,7 @@ void SCH_TEXT::MirrorVertically( int aCenter )
 }
 
 
-void SCH_TEXT::Rotate( wxPoint aCenter )
+void SCH_TEXT::Rotate( const wxPoint& aCenter )
 {
     Rotate90( false );
 }
@@ -284,11 +284,22 @@ int SCH_TEXT::GetTextOffset( const RENDER_SETTINGS* aSettings ) const
     else
         ratio = DEFAULT_TEXT_OFFSET_RATIO; // For previews (such as in Preferences), etc.
 
-    int ret = KiROUND( ratio * GetTextSize().y );
-#ifdef DEBUG
-    std::cerr << "SCH_TEXT::GetTextOffset( ... ) " << *this << " offset " << ret << std::endl;
-#endif
-    return ret;
+    return KiROUND( ratio * GetTextSize().y );
+}
+
+
+int SCH_TEXT::GetLabelBoxExpansion( const RENDER_SETTINGS* aSettings ) const
+{
+    double ratio;
+
+    if( aSettings )
+        ratio = static_cast<const SCH_RENDER_SETTINGS*>( aSettings )->m_LabelSizeRatio;
+    else if( Schematic() )
+        ratio = Schematic()->Settings().m_LabelSizeRatio;
+    else
+        ratio = DEFAULT_LABEL_SIZE_RATIO; // For previews (such as in Preferences), etc.
+
+    return KiROUND( ratio * GetTextSize().y );
 }
 
 
@@ -309,7 +320,7 @@ COLOR4D SCH_TEXT::doPrint( const RENDER_SETTINGS* aSettings, const wxPoint& aOff
               << position << " angle " << GetTextEdaAngle() << " H alignment "
               << GetHorizontalAlignment() << std::endl;
 #endif
-    GRText( this, position, color );
+    GRText( aSettings->GetPrintDC(), this, position, color );
     return color;
 }
 
@@ -365,8 +376,9 @@ bool SCH_TEXT::UpdateDanglingState( std::vector<DANGLING_END_ITEM>& aItemList,
 
             break;
 
-
-        case BUS_START_END: m_connectionType = CONNECTION_TYPE::BUS; KI_FALLTHROUGH;
+        case BUS_START_END:
+            m_connectionType = CONNECTION_TYPE::BUS;
+            KI_FALLTHROUGH;
 
         case WIRE_START_END:
         {
@@ -530,10 +542,19 @@ wxString SCH_TEXT::GetShownText( int aDepth ) const
         return false;
     };
 
-    bool     processTextVars = false;
-    wxString text = EDA_TEXT::GetShownText( &processTextVars );
+    std::function<bool( wxString* )> schematicTextResolver =
+            [&]( wxString* token ) -> bool
+            {
+                return Schematic()->ResolveTextVar( token, aDepth + 1 );
+            };
 
-    if( processTextVars )
+    wxString text = EDA_TEXT::GetShownText();
+
+    if( text == "~" )   // Legacy placeholder for empty string
+    {
+        text = "";
+    }
+    else if( HasTextVars() )
     {
         wxCHECK_MSG( Schematic(), wxEmptyString, "No parent SCHEMATIC set for SCH_TEXT!" );
 
@@ -543,7 +564,7 @@ wxString SCH_TEXT::GetShownText( int aDepth ) const
             project = &Schematic()->Prj();
 
         if( aDepth < 10 )
-            text = ExpandTextVars( text, &textResolver, nullptr, project );
+            text = ExpandTextVars( text, &textResolver, &schematicTextResolver, project );
     }
 
     return text;
@@ -634,16 +655,37 @@ void SCH_TEXT::GetMsgPanelInfo( EDA_DRAW_FRAME* aFrame, MSG_PANEL_ITEMS& aList )
     msg = GetTextEdaAngle().AsDegreesString();
     aList.push_back( MSG_PANEL_ITEM( _( "Angle" ), msg, BROWN ) );
 
-    wxString textStyle[] = { _( "Normal" ), _( "Italic" ), _( "Bold" ), _( "Bold Italic" ) };
-    int      style = 0;
-
-    if( IsItalic() )
-        style = 1;
+    std::stringstream ss;
 
     if( IsBold() )
-        style += 2;
+    {
+        if( IsItalic() )
+        {
+            ss << _( "Bold Italic" );
+        }
+        else
+        {
+            ss << _( "Bold" );
+        }
+    }
+    else
+    {
+        if( IsItalic() )
+        {
+            ss << _( "Italic" );
+        }
+        else
+        {
+            ss << _("Normal");
+        }
+    }
 
-    aList.push_back( MSG_PANEL_ITEM( _( "Style" ), textStyle[style] ) );
+    if( IsKeepUpright() )
+    {
+        ss << ", " << _("Keep Upright");
+    }
+
+    aList.push_back( MSG_PANEL_ITEM( _( "Style" ), ss.str() ) );
 
     // Display electrical type if it is relevant
     if( Type() == SCH_GLOBAL_LABEL_T || Type() == SCH_HIER_LABEL_T || Type() == SCH_SHEET_PIN_T )
@@ -676,7 +718,7 @@ void SCH_TEXT::GetMsgPanelInfo( EDA_DRAW_FRAME* aFrame, MSG_PANEL_ITEMS& aList )
     }
 }
 
-#if defined( DEBUG )
+#if defined(DEBUG)
 
 void SCH_TEXT::Show( int nestLevel, std::ostream& os ) const
 {
@@ -854,7 +896,7 @@ SEARCH_RESULT SCH_GLOBALLABEL::Visit( INSPECTOR aInspector, void* testData,
         // If caller wants to inspect my type
         if( stype == SCH_LOCATE_ANY_T || stype == Type() )
         {
-            if( SEARCH_RESULT::QUIT == aInspector( this, NULL ) )
+            if( SEARCH_RESULT::QUIT == aInspector( this, nullptr ) )
                 return SEARCH_RESULT::QUIT;
         }
 
@@ -877,15 +919,17 @@ void SCH_GLOBALLABEL::RunOnChildren( const std::function<void( SCH_ITEM* )>& aFu
 
 wxPoint SCH_GLOBALLABEL::GetSchematicTextOffset( const RENDER_SETTINGS* aSettings ) const
 {
-    wxPoint text_offset;
-    int     dist = GetTextOffset( aSettings );
+    int horiz = GetLabelBoxExpansion( aSettings );
+
+    // Center the text on the center line of "E" instead of "R" to make room for an overbar
+    int vert = GetTextHeight() * 0.0715;
 
     switch( m_shape )
     {
     case PINSHEETLABEL_SHAPE::PS_INPUT:
     case PINSHEETLABEL_SHAPE::PS_BIDI:
     case PINSHEETLABEL_SHAPE::PS_TRISTATE:
-        dist += GetTextHeight() * 3 / 4; // Use three-quarters-height as proxy for triangle size
+        horiz += GetTextHeight() * 3 / 4;  // Use three-quarters-height as proxy for triangle size
         break;
 
     case PINSHEETLABEL_SHAPE::PS_OUTPUT:
@@ -896,23 +940,15 @@ wxPoint SCH_GLOBALLABEL::GetSchematicTextOffset( const RENDER_SETTINGS* aSetting
     switch( GetTextEdaAngle().AsDegrees() )
     {
     default:
-    case 0: text_offset.x += dist; break;
-    case 90: text_offset.y -= dist; break;
-    case 180: text_offset.x -= dist; break;
-    case 270: text_offset.y += dist; break;
+    case 0: return wxPoint( -horiz, vert ); break;
+    case 90: return wxPoint( vert, -horiz); break;
+    case 180: return wxPoint( horiz, vert ); break;
+    case 270: return wxPoint( vert, horiz ); break;
     }
-
-#ifdef DEBUG
-    std::cerr << "SCH_GLOBALLABEL::GetSchematicTextOffset( ... ) \"" << GetText() << "\" angle "
-              << GetTextEdaAngle() << " H alignment " << GetHorizontalAlignment() << " dist "
-              << dist << " (" << GetTextOffset( aSettings ) << ") text_offset " << text_offset
-              << std::endl;
-#endif
-    return text_offset;
 }
 
 
-void SCH_GLOBALLABEL::Rotate( wxPoint aCenter )
+void SCH_GLOBALLABEL::Rotate( const wxPoint& aCenter )
 {
     wxPoint pt = GetTextPos();
     RotatePoint( &pt, aCenter, 900 );
@@ -1189,17 +1225,15 @@ void SCH_GLOBALLABEL::CreateGraphicShape( const RENDER_SETTINGS* aRenderSettings
 #ifdef DEBUG
     std::cerr << "SCH_GLOBALLABEL::CreateGraphicShape( ... )" << std::endl;
 #endif
+    // TODO the code has been modified in upstream and does not use bbox;
+    // figure out which parts assume stroke font and change those
     VECTOR2D bbox = GetFont()->BoundingBox( *this );
-
-    int margin = GetTextOffset( aRenderSettings );
-    //int halfSize = ( GetTextHeight() / 2 ) + margin;
-    int halfSize = ( bbox.y / 2 ) + margin;
-    int linewidth = GetFont()->IsOutline() ? 0 : GetPenWidth();
-    //int symb_len = LenSize( GetShownText(), linewidth ) + 2 * margin;
-    int symb_len = bbox.x + 2 * margin;
-
-    int x = symb_len + linewidth + 3;
-    int y = halfSize + linewidth + 3;
+    int      margin = GetLabelBoxExpansion( aRenderSettings );
+    int      halfSize = ( GetTextHeight() / 2 ) + margin;
+    int      linewidth = GetPenWidth();
+    int      symb_len = LenSize( GetShownText(), linewidth ) + 2 * margin;
+    int      x = symb_len + linewidth + 3;
+    int      y = halfSize + linewidth + 3;
 
     aPoints.clear();
 

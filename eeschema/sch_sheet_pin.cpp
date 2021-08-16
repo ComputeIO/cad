@@ -2,7 +2,7 @@
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
  * Copyright (C) 2006 Jean-Pierre Charras, jaen-pierre.charras@gipsa-lab.inpg.com
- * Copyright (C) 1992-2019 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 1992-2021 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -28,7 +28,7 @@
 #include <general.h>
 #include <geometry/shape_line_chain.h>
 #include <gr_text.h>
-#include <kicad_string.h>
+#include <string_utils.h>
 #include <plotter.h>
 #include <sch_draw_panel.h>
 #include <sch_edit_frame.h>
@@ -75,8 +75,8 @@ void SCH_SHEET_PIN::Print( const RENDER_SETTINGS* aSettings, const wxPoint& aOff
 void SCH_SHEET_PIN::SwapData( SCH_ITEM* aItem )
 {
     wxCHECK_RET( aItem->Type() == SCH_SHEET_PIN_T,
-            wxString::Format( wxT( "SCH_SHEET_PIN object cannot swap data with %s object." ),
-                    aItem->GetClass() ) );
+                 wxString::Format( wxT( "SCH_SHEET_PIN object cannot swap data with %s object." ),
+                                   aItem->GetClass() ) );
 
     SCH_SHEET_PIN* pin = ( SCH_SHEET_PIN* ) aItem;
     SCH_TEXT::SwapData( (SCH_TEXT*) pin );
@@ -157,7 +157,7 @@ void SCH_SHEET_PIN::ConstrainOnEdge( wxPoint Pos )
 {
     SCH_SHEET* sheet = GetParent();
 
-    if( sheet == NULL )
+    if( sheet == nullptr )
         return;
 
     int leftSide  = sheet->m_pos.x;
@@ -244,7 +244,7 @@ void SCH_SHEET_PIN::MirrorHorizontally( int aCenter )
 }
 
 
-void SCH_SHEET_PIN::Rotate( wxPoint aCenter )
+void SCH_SHEET_PIN::Rotate( const wxPoint& aCenter )
 {
     wxPoint pt = GetTextPos();
     RotatePoint( &pt, aCenter, 900 );

@@ -1,7 +1,7 @@
 /*
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
- * Copyright (C) 2020  KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 2020-2021 KiCad Developers, see AUTHORS.txt for contributors.
  * Copyright (C) 2016-2017 CERN
  * @author Maciej Suminski <maciej.suminski@cern.ch>
  *
@@ -29,6 +29,7 @@
 #include <sim/spice_value.h>
 #include <confirm.h>
 #include <project.h>
+#include <common.h>
 
 #include <wx/textfile.h>
 #include <wx/tokenzr.h>
@@ -47,7 +48,8 @@ static bool empty( const wxTextCtrl* aCtrl )
 
 
 // Function to sort PWL values list
-static int wxCALLBACK comparePwlValues( wxIntPtr aItem1, wxIntPtr aItem2, wxIntPtr WXUNUSED( aSortData ) )
+static int wxCALLBACK comparePwlValues( wxIntPtr aItem1, wxIntPtr aItem2,
+                                        wxIntPtr WXUNUSED( aSortData ) )
 {
     float* t1 = reinterpret_cast<float*>( &aItem1 );
     float* t2 = reinterpret_cast<float*>( &aItem2 );
@@ -106,8 +108,9 @@ static int getModelTypeIdx( char aPrimitive )
 }
 
 
-DIALOG_SPICE_MODEL::DIALOG_SPICE_MODEL( wxWindow* aParent, SCH_COMPONENT& aComponent, SCH_FIELDS* aFields )
-    : DIALOG_SPICE_MODEL_BASE( aParent ), m_component( aComponent ), m_schfields( aFields ),
+DIALOG_SPICE_MODEL::DIALOG_SPICE_MODEL( wxWindow* aParent, SCH_SYMBOL& aSymbol,
+                                        SCH_FIELDS* aFields )
+    : DIALOG_SPICE_MODEL_BASE( aParent ), m_symbol( aSymbol ), m_schfields( aFields ),
       m_libfields( nullptr ), m_useSchFields( true ),
       m_spiceEmptyValidator( true ), m_notEmptyValidator( wxFILTER_EMPTY )
 {
@@ -115,10 +118,10 @@ DIALOG_SPICE_MODEL::DIALOG_SPICE_MODEL( wxWindow* aParent, SCH_COMPONENT& aCompo
 }
 
 
-DIALOG_SPICE_MODEL::DIALOG_SPICE_MODEL( wxWindow* aParent, SCH_COMPONENT& aComponent,
+DIALOG_SPICE_MODEL::DIALOG_SPICE_MODEL( wxWindow* aParent, SCH_SYMBOL& aSymbol,
                                         std::vector<LIB_FIELD>* aFields ) :
         DIALOG_SPICE_MODEL_BASE( aParent ),
-        m_component( aComponent ),
+        m_symbol( aSymbol ),
         m_schfields( nullptr ),
         m_libfields( aFields ),
         m_useSchFields( false ),
@@ -244,22 +247,19 @@ bool DIALOG_SPICE_MODEL::TransferDataFromWindow()
 
         switch( m_pasType->GetSelection() )
         {
-            case 0: m_fieldsTmp[SF_PRIMITIVE] = (char) SP_RESISTOR; break;
-            case 1: m_fieldsTmp[SF_PRIMITIVE] = (char) SP_CAPACITOR; break;
-            case 2: m_fieldsTmp[SF_PRIMITIVE] = (char) SP_INDUCTOR; break;
+        case 0: m_fieldsTmp[SF_PRIMITIVE] = (char) SP_RESISTOR; break;
+        case 1: m_fieldsTmp[SF_PRIMITIVE] = (char) SP_CAPACITOR; break;
+        case 2: m_fieldsTmp[SF_PRIMITIVE] = (char) SP_INDUCTOR; break;
 
-            default:
-                wxASSERT_MSG( false, "Unhandled passive type" );
-                return false;
-                break;
+        default:
+            wxASSERT_MSG( false, "Unhandled passive type" );
+            return false;
+            break;
         }
 
         m_fieldsTmp[SF_MODEL] = m_pasValue->GetValue();
     }
-
-
-    // Model
-    else if( page == m_model )
+    else if( page == m_model )    // Model
     {
         if( !m_model->Validate() )
             return false;
@@ -274,9 +274,7 @@ bool DIALOG_SPICE_MODEL::TransferDataFromWindow()
         if( !empty( m_modelLibrary ) )
             m_fieldsTmp[SF_LIB_FILE] = m_modelLibrary->GetValue();
     }
-
-    // Power source
-    else if( page == m_power )
+    else if( page == m_power )    // Power source
     {
         wxString model;
 
@@ -286,8 +284,6 @@ bool DIALOG_SPICE_MODEL::TransferDataFromWindow()
         m_fieldsTmp[SF_PRIMITIVE] = (char)( m_pwrType->GetSelection() ? SP_ISOURCE : SP_VSOURCE );
         m_fieldsTmp[SF_MODEL] = model;
     }
-
-
     else
     {
         wxASSERT_MSG( false, "Unhandled model type" );
@@ -310,7 +306,8 @@ bool DIALOG_SPICE_MODEL::TransferDataFromWindow()
         else
         {
             // Erase empty fields (having empty fields causes a warning in the properties dialog)
-            const wxString& spiceField = NETLIST_EXPORTER_PSPICE::GetSpiceFieldName( (SPICE_FIELD) i );
+            const wxString& spiceField =
+                    NETLIST_EXPORTER_PSPICE::GetSpiceFieldName( (SPICE_FIELD ) i );
 
             if( m_useSchFields )
             {
@@ -346,8 +343,9 @@ bool DIALOG_SPICE_MODEL::TransferDataToWindow()
     {
         const wxString& spiceField = spiceFields[idx];
 
-        m_fieldsTmp[idx] = NETLIST_EXPORTER_PSPICE::GetSpiceFieldDefVal( (SPICE_FIELD) idx, &m_component,
-            NET_ADJUST_INCLUDE_PATHS | NET_ADJUST_PASSIVE_VALS );
+        m_fieldsTmp[idx] = NETLIST_EXPORTER_PSPICE::GetSpiceFieldDefVal(
+                (SPICE_FIELD ) idx, &m_symbol,
+                NET_ADJUST_INCLUDE_PATHS | NET_ADJUST_PASSIVE_VALS );
 
         // Do not modify the existing value, just add missing fields with default values
         if( m_useSchFields && m_schfields )
@@ -361,7 +359,7 @@ bool DIALOG_SPICE_MODEL::TransferDataToWindow()
                 }
             }
         }
-        else if( m_libfields)
+        else if( m_libfields )
         {
             // TODO: There must be a good way to template out these repetitive calls
             for( const LIB_FIELD& field : *m_libfields )
@@ -375,7 +373,7 @@ bool DIALOG_SPICE_MODEL::TransferDataToWindow()
         }
     }
 
-    // Analyze the component fields to fill out the dialog
+    // Analyze the symbol fields to fill out the dialog.
     unsigned int primitive = toupper( m_fieldsTmp[SF_PRIMITIVE][0] );
 
     switch( primitive )
@@ -427,7 +425,7 @@ bool DIALOG_SPICE_MODEL::TransferDataToWindow()
 
     // Check if node sequence is different than the default one
     if( m_fieldsTmp[SF_NODE_SEQUENCE]
-            != NETLIST_EXPORTER_PSPICE::GetSpiceFieldDefVal( SF_NODE_SEQUENCE, &m_component, 0 ) )
+            != NETLIST_EXPORTER_PSPICE::GetSpiceFieldDefVal( SF_NODE_SEQUENCE, &m_symbol, 0 ) )
     {
         m_nodeSeqCheck->SetValue( true );
         m_nodeSeqVal->SetValue( m_fieldsTmp[SF_NODE_SEQUENCE] );
@@ -540,15 +538,14 @@ bool DIALOG_SPICE_MODEL::parsePowerSource( const wxString& aModel )
             genericControls = { m_pulseInit, m_pulseNominal, m_pulseDelay,
                 m_pulseRise, m_pulseFall, m_pulseWidth, m_pulsePeriod };
         }
-
-
         else if( tkn == "sin" )
         {
             m_powerNotebook->SetSelection( m_powerNotebook->FindPage( m_pwrSin ) );
 
             genericProcessing = true;
             genericReqParamsCount = 2;
-            genericControls = { m_sinOffset, m_sinAmplitude, m_sinFreq, m_sinDelay, m_sinDampFactor };
+            genericControls = { m_sinOffset, m_sinAmplitude, m_sinFreq, m_sinDelay,
+                m_sinDampFactor };
         }
         else if( tkn == "exp" )
         {
@@ -657,7 +654,7 @@ bool DIALOG_SPICE_MODEL::parsePowerSource( const wxString& aModel )
 }
 
 
-bool DIALOG_SPICE_MODEL::generatePowerSource( wxString& aTarget ) const
+bool DIALOG_SPICE_MODEL::generatePowerSource( wxString& aTarget )
 {
     wxString acdc, trans;
     wxWindow* page = m_powerNotebook->GetCurrentPage();
@@ -673,11 +670,12 @@ bool DIALOG_SPICE_MODEL::generatePowerSource( wxString& aTarget ) const
     try
     {
         if( !empty( m_genDc ) )
-            acdc += wxString::Format( "dc %s ", SPICE_VALUE( m_genDc->GetValue() ).ToSpiceString() );
+            acdc += wxString::Format( "dc %s ",
+                                      SPICE_VALUE( m_genDc->GetValue() ).ToSpiceString() );
     }
     catch( ... )
     {
-        DisplayError( NULL, wxT( "Invalid DC value" ) );
+        DisplayError( this, wxT( "Invalid DC value" ) );
         return false;
     }
 
@@ -685,15 +683,17 @@ bool DIALOG_SPICE_MODEL::generatePowerSource( wxString& aTarget ) const
     {
         if( !empty( m_genAcMag ) )
         {
-            acdc += wxString::Format( "ac %s ", SPICE_VALUE( m_genAcMag->GetValue() ).ToSpiceString() );
+            acdc += wxString::Format( "ac %s ",
+                                      SPICE_VALUE( m_genAcMag->GetValue() ).ToSpiceString() );
 
             if( !empty( m_genAcPhase ) )
-                acdc += wxString::Format( "%s ", SPICE_VALUE( m_genAcPhase->GetValue() ).ToSpiceString() );
+                acdc += wxString::Format( "%s ",
+                                          SPICE_VALUE( m_genAcPhase->GetValue() ).ToSpiceString() );
         }
     }
     catch( ... )
     {
-        DisplayError( NULL, wxT( "Invalid AC magnitude or phase" ) );
+        DisplayError( this, wxT( "Invalid AC magnitude or phase" ) );
         return false;
     }
 
@@ -792,26 +792,26 @@ bool DIALOG_SPICE_MODEL::generatePowerSource( wxString& aTarget ) const
             // all empty
             useTrans = false;
         }
-        else if( std::distance( genericControls.begin(), first_empty ) < (int)genericReqParamsCount )
+        else if( std::distance( genericControls.begin(),
+                                first_empty ) < (int)genericReqParamsCount )
         {
             DisplayError( nullptr,
-                    wxString::Format( wxT( "You need to specify at least the "
-                                           "first %d parameters for the transient source" ),
-                            genericReqParamsCount ) );
+                    wxString::Format( _( "You need to specify at least the "
+                                         "first %d parameters for the transient source" ),
+                                      genericReqParamsCount ) );
 
             return false;
         }
         else if( std::find_if_not( first_empty, genericControls.end(),
-                         empty ) != genericControls.end() )
+                                   empty ) != genericControls.end() )
         {
-            DisplayError( nullptr, wxT( "You cannot leave interleaved empty fields "
-                                        "when defining a transient source" ) );
+            DisplayError( nullptr, _( "You cannot leave interleaved empty fields "
+                                      "when defining a transient source" ) );
             return false;
         }
         else
         {
-            std::for_each( genericControls.begin(), first_empty,
-                    [&trans] ( wxTextCtrl* ctrl ) {
+            std::for_each( genericControls.begin(), first_empty, [&trans] ( wxTextCtrl* ctrl ) {
                 trans += wxString::Format( "%s ", ctrl->GetValue() );
             } );
         }
@@ -835,19 +835,19 @@ bool DIALOG_SPICE_MODEL::generatePowerSource( wxString& aTarget ) const
 
 void DIALOG_SPICE_MODEL::loadLibrary( const wxString& aFilePath )
 {
+    //First, expand env vars, if any
+    wxString libname = ExpandEnvVarSubstitutions( aFilePath, &Prj() );
+
+    // Make path absolute, especially if it is relative to the project path
+    libname = Prj().AbsolutePath( libname );
+
     wxString curModel = m_modelName->GetValue();
     m_models.clear();
-    wxFileName filePath( aFilePath );
+    wxFileName filePath( libname );
     bool in_subckt = false;        // flag indicating that the parser is inside a .subckt section
 
-    // Look for the file in the project path
     if( !filePath.Exists() )
-    {
-        filePath.SetPath( Prj().GetProjectPath() + filePath.GetPath() );
-
-        if( !filePath.Exists() )
-            return;
-    }
+        return;
 
     // Display the library contents
     wxWindowUpdateLocker updateLock( this );
@@ -858,10 +858,10 @@ void DIALOG_SPICE_MODEL::loadLibrary( const wxString& aFilePath )
     file.Open( filePath.GetFullPath() );
     int line_nr = 0;
 
-    // Stores the libray content. It will be displayed after reading the full library
+    // Stores the library content. It will be displayed after reading the full library
     wxString fullText;
 
-    // Process the file, looking for components
+    // Process the file, looking for symbols.
     while( !file.Eof() )
     {
         const wxString& line = line_nr == 0 ? file.GetFirstLine() : file.GetNextLine();
@@ -888,7 +888,6 @@ void DIALOG_SPICE_MODEL::loadLibrary( const wxString& aFilePath )
                 if( type != SP_UNKNOWN )
                     m_models.emplace( name, MODEL( line_nr, type ) );
             }
-
             else if( token == ".subckt" )
             {
                 wxASSERT( !in_subckt );
@@ -901,7 +900,6 @@ void DIALOG_SPICE_MODEL::loadLibrary( const wxString& aFilePath )
 
                 m_models.emplace( name, MODEL( line_nr, SP_SUBCKT ) );
             }
-
             else if( token == ".ends" )
             {
                 wxASSERT( in_subckt );
@@ -939,25 +937,29 @@ void DIALOG_SPICE_MODEL::loadLibrary( const wxString& aFilePath )
 
 SCH_FIELD& DIALOG_SPICE_MODEL::getSchField( int aFieldType )
 {
-    const wxString& spiceField = NETLIST_EXPORTER_PSPICE::GetSpiceFieldName( (SPICE_FIELD) aFieldType );
+    const wxString& spiceField =
+            NETLIST_EXPORTER_PSPICE::GetSpiceFieldName( (SPICE_FIELD) aFieldType );
 
-    auto fieldIt = std::find_if( m_schfields->begin(), m_schfields->end(), [&]( const SCH_FIELD& f ) {
-        return f.GetName() == spiceField;
-    } );
+    auto fieldIt = std::find_if( m_schfields->begin(), m_schfields->end(),
+                                 [&]( const SCH_FIELD& f )
+                                 {
+                                     return f.GetName() == spiceField;
+                                 } );
 
     // Found one, so return it
     if( fieldIt != m_schfields->end() )
         return *fieldIt;
 
     // Create a new field with requested name
-    m_schfields->emplace_back( wxPoint(), m_schfields->size(), &m_component, spiceField );
+    m_schfields->emplace_back( wxPoint(), m_schfields->size(), &m_symbol, spiceField );
     return m_schfields->back();
 }
 
 
 LIB_FIELD& DIALOG_SPICE_MODEL::getLibField( int aFieldType )
 {
-    const wxString& spiceField = NETLIST_EXPORTER_PSPICE::GetSpiceFieldName( (SPICE_FIELD) aFieldType );
+    const wxString& spiceField =
+            NETLIST_EXPORTER_PSPICE::GetSpiceFieldName( ( SPICE_FIELD ) aFieldType );
 
     auto fieldIt = std::find_if( m_libfields->begin(), m_libfields->end(),
                                  [&]( const LIB_FIELD& f )
@@ -1008,14 +1010,20 @@ bool DIALOG_SPICE_MODEL::addPwlValue( const wxString& aTime, const wxString& aVa
 
 void DIALOG_SPICE_MODEL::onSelectLibrary( wxCommandEvent& event )
 {
-    wxString searchPath = wxFileName( m_modelLibrary->GetValue() ).GetPath();
+    //First, expand env vars, if any, in lib path
+    wxString libname = ExpandEnvVarSubstitutions( m_modelLibrary->GetValue(), &Prj() );
+
+    // Make path absolute, especially if it is relative to the project path
+    libname = Prj().AbsolutePath( libname );
+
+    wxString searchPath = wxFileName( libname ).GetPath();
 
     if( searchPath.IsEmpty() )
         searchPath = Prj().GetProjectPath();
 
     wxString     wildcards = SpiceLibraryFileWildcard() + "|" + AllFilesWildcard();
     wxFileDialog openDlg( this, _( "Select library" ), searchPath, "", wildcards,
-            wxFD_OPEN | wxFD_FILE_MUST_EXIST );
+                          wxFD_OPEN | wxFD_FILE_MUST_EXIST );
 
     if( openDlg.ShowModal() == wxID_CANCEL )
         return;
@@ -1023,7 +1031,8 @@ void DIALOG_SPICE_MODEL::onSelectLibrary( wxCommandEvent& event )
     wxFileName libPath( openDlg.GetPath() );
 
     // Try to convert the path to relative to project
-    if( libPath.MakeRelativeTo( Prj().GetProjectPath() ) && !libPath.GetFullPath().StartsWith( ".." ) )
+    if( libPath.MakeRelativeTo( Prj().GetProjectPath() )
+      && !libPath.GetFullPath().StartsWith( ".." ) )
         m_modelLibrary->SetValue( libPath.GetFullPath() );
     else
         m_modelLibrary->SetValue( openDlg.GetPath() );

@@ -2,7 +2,7 @@
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
  * Copyright (C) 2020 Jon Evans <jon@craftyjon.com>
- * Copyright (C) 2020 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 2021 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * This program is free software: you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -22,7 +22,8 @@
 
 #include <bitmaps.h>
 #include <board.h>
-#include <dialog_helpers.h>
+#include <board_design_settings.h>
+#include <eda_list_dialog.h>
 #include <footprint_edit_frame.h>
 #include <menus_helpers.h>
 #include <pcb_display_options.h>
@@ -42,8 +43,14 @@
 #include <widgets/indicator_icon.h>
 #include <widgets/infobar.h>
 #include <widgets/wx_grid.h>
+#include <wx/bmpbuttn.h>
+#include <wx/checkbox.h>
 #include <wx/hyperlink.h>
+#include <wx/radiobut.h>
+#include <wx/sizer.h>
+#include <wx/slider.h>
 #include <wx/statline.h>
+#include <wx/textdlg.h>
 
 
 NET_GRID_TABLE::NET_GRID_TABLE( PCB_BASE_FRAME* aFrame, wxColor aBackgroundColor ) :
@@ -302,7 +309,7 @@ void NET_GRID_TABLE::HideOtherNets( const NET_GRID_ENTRY& aNet )
 void NET_GRID_TABLE::updateNetVisibility( const NET_GRID_ENTRY& aNet )
 {
     const TOOL_ACTION& action = aNet.visible ? PCB_ACTIONS::showNet : PCB_ACTIONS::hideNet;
-    m_frame->GetToolManager()->RunAction( action, true, aNet.code );
+    m_frame->GetToolManager()->RunAction( action, true, static_cast<intptr_t>( aNet.code ) );
 }
 
 
@@ -364,6 +371,7 @@ static std::set<int> s_allowedInFpEditor =
             LAYER_PADS_TH,
             LAYER_MOD_VALUES,
             LAYER_MOD_REFERENCES,
+            LAYER_MOD_TEXT_FR,
             LAYER_MOD_TEXT_INVISIBLE,
             LAYER_GRID
         };
@@ -1422,10 +1430,10 @@ void APPEARANCE_CONTROLS::rebuildLayers()
                 aSetting->ctl_color      = swatch;
                 aSetting->ctl_text       = label;
 
-                panel->Bind( wxEVT_LEFT_DOWN, &APPEARANCE_CONTROLS::onLayerClick, this );
-                indicator->Bind( wxEVT_LEFT_DOWN, &APPEARANCE_CONTROLS::onLayerClick, this );
-                swatch->Bind( wxEVT_LEFT_DOWN, &APPEARANCE_CONTROLS::onLayerClick, this );
-                label->Bind( wxEVT_LEFT_DOWN, &APPEARANCE_CONTROLS::onLayerClick, this );
+                panel->Bind( wxEVT_LEFT_DOWN, &APPEARANCE_CONTROLS::onLayerLeftClick, this );
+                indicator->Bind( wxEVT_LEFT_DOWN, &APPEARANCE_CONTROLS::onLayerLeftClick, this );
+                swatch->Bind( wxEVT_LEFT_DOWN, &APPEARANCE_CONTROLS::onLayerLeftClick, this );
+                label->Bind( wxEVT_LEFT_DOWN, &APPEARANCE_CONTROLS::onLayerLeftClick, this );
 
                 btn_visible->Bind( TOGGLE_CHANGED,
                         [&]( wxCommandEvent& aEvent )
@@ -1452,20 +1460,16 @@ void APPEARANCE_CONTROLS::rebuildLayers()
                                                        this ) );
                 swatch->SetReadOnly( readOnly );
 
-                auto rightClickHandler =
-                        [&]( wxMouseEvent& aEvent )
-                        {
-                            wxASSERT( m_layerContextMenu );
-                            PopupMenu( m_layerContextMenu );
-                            passOnFocus();
-                        };
-
-                panel->Bind( wxEVT_RIGHT_DOWN, rightClickHandler );
-                indicator->Bind( wxEVT_RIGHT_DOWN, rightClickHandler );
-                swatch->Bind( wxEVT_RIGHT_DOWN, rightClickHandler );
-                btn_visible->Bind( wxEVT_RIGHT_DOWN, rightClickHandler );
-                label->Bind( wxEVT_RIGHT_DOWN, rightClickHandler );
+                panel->Bind( wxEVT_RIGHT_DOWN, &APPEARANCE_CONTROLS::rightClickHandler, this );
+                indicator->Bind( wxEVT_RIGHT_DOWN, &APPEARANCE_CONTROLS::rightClickHandler, this );
+                swatch->Bind( wxEVT_RIGHT_DOWN, &APPEARANCE_CONTROLS::rightClickHandler, this );
+                btn_visible->Bind( wxEVT_RIGHT_DOWN, &APPEARANCE_CONTROLS::rightClickHandler, this );
+                label->Bind( wxEVT_RIGHT_DOWN, &APPEARANCE_CONTROLS::rightClickHandler, this );
             };
+
+    // Add right click handling to show the conterxt menu when clicking to the free area in
+    // m_windowLayers (below the layer items)
+    m_windowLayers->Bind( wxEVT_RIGHT_DOWN, &APPEARANCE_CONTROLS::rightClickHandler, this );
 
     wxString dsc;
 
@@ -1772,7 +1776,7 @@ void APPEARANCE_CONTROLS::syncColorsAndVisibility()
 }
 
 
-void APPEARANCE_CONTROLS::onLayerClick( wxMouseEvent& aEvent )
+void APPEARANCE_CONTROLS::onLayerLeftClick( wxMouseEvent& aEvent )
 {
     auto eventSource = static_cast<wxWindow*>( aEvent.GetEventObject() );
 
@@ -1784,6 +1788,14 @@ void APPEARANCE_CONTROLS::onLayerClick( wxMouseEvent& aEvent )
     m_frame->SetActiveLayer( layer );
     passOnFocus();
 }
+
+
+void APPEARANCE_CONTROLS::rightClickHandler( wxMouseEvent& aEvent )
+{
+    wxASSERT( m_layerContextMenu );
+    PopupMenu( m_layerContextMenu );
+    passOnFocus();
+};
 
 
 void APPEARANCE_CONTROLS::onLayerVisibilityChanged( PCB_LAYER_ID aLayer, bool isVisible,
@@ -1840,10 +1852,26 @@ void APPEARANCE_CONTROLS::onObjectVisibilityChanged( GAL_LAYER_ID aLayer, bool i
     case LAYER_MOD_TEXT_FR:
         // Because Footprint Text is a meta-control that also can disable values/references,
         // drag them along here so that the user is less likely to be confused.
-        onObjectVisibilityChanged( LAYER_MOD_REFERENCES, isVisible, false );
-        onObjectVisibilityChanged( LAYER_MOD_VALUES, isVisible, false );
-        m_objectSettingsMap[LAYER_MOD_REFERENCES]->ctl_visibility->SetValue( isVisible );
-        m_objectSettingsMap[LAYER_MOD_VALUES]->ctl_visibility->SetValue( isVisible );
+        if( isFinal )
+        {
+            // Should only trigger when you actually click the Footprint Text button
+            // Otherwise it goes into infinite recursive loop with the following case section
+            onObjectVisibilityChanged( LAYER_MOD_REFERENCES, isVisible, false );
+            onObjectVisibilityChanged( LAYER_MOD_VALUES, isVisible, false );
+            m_objectSettingsMap[LAYER_MOD_REFERENCES]->ctl_visibility->SetValue( isVisible );
+            m_objectSettingsMap[LAYER_MOD_VALUES]->ctl_visibility->SetValue( isVisible );
+        }
+        break;
+
+    case LAYER_MOD_REFERENCES:
+    case LAYER_MOD_VALUES:
+        // In case that user changes Footprint Value/References when the Footprint Text
+        // meta-control is disabled, we should put it back on.
+        if( isVisible )
+        {
+            onObjectVisibilityChanged( LAYER_MOD_TEXT_FR, isVisible, false );
+            m_objectSettingsMap[LAYER_MOD_TEXT_FR]->ctl_visibility->SetValue( isVisible );
+        }
         break;
 
     default:
@@ -2348,7 +2376,7 @@ void APPEARANCE_CONTROLS::onLayerPresetChanged( wxCommandEvent& aEvent )
             }
         }
 
-        EDA_LIST_DIALOG dlg( m_frame, _( "Delete Preset" ), headers, items, wxEmptyString );
+        EDA_LIST_DIALOG dlg( m_frame, _( "Delete Preset" ), headers, items );
         dlg.SetListLabel( _( "Select preset:" ) );
 
         if( dlg.ShowModal() == wxID_OK )
@@ -2488,21 +2516,24 @@ void APPEARANCE_CONTROLS::onNetContextMenu( wxCommandEvent& aEvent )
 
     case ID_HIGHLIGHT_NET:
     {
-        m_frame->GetToolManager()->RunAction( PCB_ACTIONS::highlightNet, true, net.code );
+        m_frame->GetToolManager()->RunAction( PCB_ACTIONS::highlightNet, true,
+                                              static_cast<intptr_t>( net.code ) );
         m_frame->GetCanvas()->Refresh();
         break;
     }
 
     case ID_SELECT_NET:
     {
-        m_frame->GetToolManager()->RunAction( PCB_ACTIONS::selectNet, true, net.code );
+        m_frame->GetToolManager()->RunAction( PCB_ACTIONS::selectNet, true,
+                                              static_cast<intptr_t>( net.code ) );
         m_frame->GetCanvas()->Refresh();
         break;
     }
 
     case ID_DESELECT_NET:
     {
-        m_frame->GetToolManager()->RunAction( PCB_ACTIONS::deselectNet, true, net.code );
+        m_frame->GetToolManager()->RunAction( PCB_ACTIONS::deselectNet, true,
+                                              static_cast<intptr_t>( net.code ) );
         m_frame->GetCanvas()->Refresh();
         break;
     }
@@ -2553,7 +2584,7 @@ void APPEARANCE_CONTROLS::showNetclass( const wxString& aClassName, bool aShow )
         {
             if( net->GetNetClass() == defaultClass )
             {
-                manager->RunAction( action, true, net->GetNetCode() );
+                manager->RunAction( action, true, static_cast<intptr_t>( net->GetNetCode() ) );
 
                 int row = m_netsTable->GetRowByNetcode( net->GetNetCode() );
 
@@ -2571,7 +2602,7 @@ void APPEARANCE_CONTROLS::showNetclass( const wxString& aClassName, bool aShow )
             if( NETINFO_ITEM* net = nets.GetNetItem( member ) )
             {
                 int code = net->GetNetCode();
-                manager->RunAction( action, true, code );
+                manager->RunAction( action, true, static_cast<intptr_t>( code ) );
 
                 int row = m_netsTable->GetRowByNetcode( code );
 
@@ -2746,7 +2777,7 @@ void APPEARANCE_CONTROLS::onNetclassContextMenu( wxCommandEvent& aEvent )
                             if( !aItem )
                                 return;
 
-                            int code = aItem->GetNetCode();
+                            intptr_t code = static_cast<intptr_t>( aItem->GetNetCode() );
                             m_frame->GetToolManager()->RunAction( action, true, code );
                         } );
             }
@@ -2817,7 +2848,8 @@ void APPEARANCE_CONTROLS::onReadOnlySwatch()
     button->Bind( wxEVT_COMMAND_HYPERLINK, std::function<void( wxHyperlinkEvent& aEvent )>(
             [&]( wxHyperlinkEvent& aEvent )
             {
-                m_frame->OnPreferences();
+                 wxCommandEvent dummy;
+                 m_frame->OnPreferences( dummy );
             } ) );
 
     infobar->RemoveAllButtons();

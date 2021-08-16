@@ -27,7 +27,7 @@
 
 #include <plugins/eagle/eagle_parser.h>
 
-#include <kicad_string.h>
+#include <string_utils.h>
 #include <richio.h>
 #include <wx/log.h>
 
@@ -195,7 +195,7 @@ EROT Convert<EROT>( const wxString& aRot )
                             + 1                        // skip leading 'R'
                             + int( value.spin )       // skip optional leading 'S'
                             + int( value.mirror ),    // skip optional leading 'M'
-                            NULL );
+                            nullptr );
 
     return value;
 }

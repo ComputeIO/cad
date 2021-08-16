@@ -25,8 +25,6 @@
 #ifndef _SCH_EAGLE_PLUGIN_H_
 #define _SCH_EAGLE_PLUGIN_H_
 
-#include <wx/xml/xml.h>
-
 #include <sch_line.h>
 #include <sch_io_mgr.h>
 #include <plugins/eagle/eagle_parser.h>
@@ -47,28 +45,29 @@ class SCH_LINE;
 class SCH_BUS_ENTRY_BASE;
 class SCH_TEXT;
 class SCH_GLOBALLABEL;
-class SCH_COMPONENT;
+class SCH_SYMBOL;
 class SCH_FIELD;
 class PROPERTIES;
 class SCH_EAGLE_PLUGIN_CACHE;
-class LIB_PART;
-class PART_LIB;
+class LIB_SYMBOL;
+class SYMBOL_LIB;
 class LIB_CIRCLE;
 class LIB_FIELD;
 class LIB_RECTANGLE;
 class LIB_POLYLINE;
 class LIB_PIN;
 class LIB_TEXT;
+class wxXmlNode;
 
 
-typedef struct EAGLE_LIBRARY
+struct EAGLE_LIBRARY
 {
     wxString name;
-    boost::ptr_map<wxString, LIB_PART> KiCadSymbols;
+    boost::ptr_map<wxString, LIB_SYMBOL> KiCadSymbols;
     std::unordered_map<wxString, wxXmlNode*> SymbolNodes;
     std::unordered_map<wxString, int> GateUnit;
     std::unordered_map<wxString, wxString> package;
-} EAGLE_LIBRARY;
+};
 
 typedef boost::ptr_map<wxString, EPART> EPART_LIST;
 
@@ -88,6 +87,11 @@ public:
 
     void SetReporter( REPORTER* aReporter ) override { m_reporter = aReporter; }
 
+    void SetProgressReporter( PROGRESS_REPORTER* aReporter ) override
+    {
+        m_progressReporter = aReporter;
+    }
+
     const wxString GetFileExtension() const override;
 
     const wxString GetLibraryFileExtension() const override;
@@ -100,8 +104,9 @@ public:
 
     bool CheckHeader( const wxString& aFileName ) override;
 
-
 private:
+    void checkpoint();
+
     void loadDrawing( wxXmlNode* aDrawingNode );
     void loadLayerDefs( wxXmlNode* aLayers );
     void loadSchematic( wxXmlNode* aSchematicNode );
@@ -121,29 +126,29 @@ private:
     SCH_LAYER_ID kiCadLayer( int aEagleLayer );
 
     std::pair<VECTOR2I, const SEG*> findNearestLinePoint( const wxPoint& aPoint,
-            const std::vector<SEG>& aLines ) const;
+                                                          const std::vector<SEG>& aLines ) const;
 
-    void                loadSegments( wxXmlNode* aSegmentsNode, const wxString& aNetName,
-                                      const wxString& aNetClass );
-    SCH_LINE*           loadWire( wxXmlNode* aWireNode );
-    SCH_TEXT*           loadLabel( wxXmlNode* aLabelNode, const wxString& aNetName );
-    SCH_JUNCTION*       loadJunction( wxXmlNode* aJunction );
-    SCH_TEXT*           loadPlainText( wxXmlNode* aSchText );
-    void                loadFrame( wxXmlNode* aFrameNode, std::vector<SCH_LINE*>& aLines );
+    void            loadSegments( wxXmlNode* aSegmentsNode, const wxString& aNetName,
+                                  const wxString& aNetClass );
+    SCH_LINE*       loadWire( wxXmlNode* aWireNode );
+    SCH_TEXT*       loadLabel( wxXmlNode* aLabelNode, const wxString& aNetName );
+    SCH_JUNCTION*   loadJunction( wxXmlNode* aJunction );
+    SCH_TEXT*       loadPlainText( wxXmlNode* aSchText );
+    void            loadFrame( wxXmlNode* aFrameNode, std::vector<SCH_LINE*>& aLines );
 
-    bool            loadSymbol( wxXmlNode* aSymbolNode, std::unique_ptr<LIB_PART>& aPart,
+    bool            loadSymbol( wxXmlNode* aSymbolNode, std::unique_ptr<LIB_SYMBOL>& aSymbol,
                                 EDEVICE* aDevice, int aGateNumber, const wxString& aGateName );
-    LIB_CIRCLE*     loadSymbolCircle( std::unique_ptr<LIB_PART>& aPart, wxXmlNode* aCircleNode,
+    LIB_CIRCLE*     loadSymbolCircle( std::unique_ptr<LIB_SYMBOL>& aSymbol, wxXmlNode* aCircleNode,
                                       int aGateNumber );
-    LIB_RECTANGLE*  loadSymbolRectangle( std::unique_ptr<LIB_PART>& aPart, wxXmlNode* aRectNode,
+    LIB_RECTANGLE*  loadSymbolRectangle( std::unique_ptr<LIB_SYMBOL>& aSymbol, wxXmlNode* aRectNode,
                                          int aGateNumber );
-    LIB_POLYLINE*   loadSymbolPolyLine( std::unique_ptr<LIB_PART>& aPart, wxXmlNode* aPolygonNode,
-                                        int aGateNumber );
-    LIB_ITEM*       loadSymbolWire( std::unique_ptr<LIB_PART>& aPart, wxXmlNode* aWireNode,
+    LIB_POLYLINE*   loadSymbolPolyLine( std::unique_ptr<LIB_SYMBOL>& aSymbol,
+                                        wxXmlNode* aPolygonNode, int aGateNumber );
+    LIB_ITEM*       loadSymbolWire( std::unique_ptr<LIB_SYMBOL>& aSymbol, wxXmlNode* aWireNode,
                                     int aGateNumber );
-    LIB_PIN*        loadPin( std::unique_ptr<LIB_PART>& aPart, wxXmlNode*, EPIN* epin,
+    LIB_PIN*        loadPin( std::unique_ptr<LIB_SYMBOL>& aSymbol, wxXmlNode*, EPIN* epin,
                              int aGateNumber );
-    LIB_TEXT*       loadSymbolText( std::unique_ptr<LIB_PART>& aPart, wxXmlNode* aLibText,
+    LIB_TEXT*       loadSymbolText( std::unique_ptr<LIB_SYMBOL>& aSymbol, wxXmlNode* aLibText,
                                     int aGateNumber );
     void            loadFrame( wxXmlNode* aFrameNode, std::vector<LIB_ITEM*>& aLines );
 
@@ -167,7 +172,7 @@ private:
     wxFileName      getLibFileName();
 
     ///< Checks if there are other wires or pins at the position of the tested pin
-    bool checkConnections( const SCH_COMPONENT* aComponent, const LIB_PIN* aPin ) const;
+    bool checkConnections( const SCH_SYMBOL* aSymbol, const LIB_PIN* aPin ) const;
 
     /**
      * Create net labels to emulate implicit connections in Eagle.
@@ -177,37 +182,27 @@ private:
      * units that are not instantiated in the schematics, therefore such units need to be stored
      * in order to create them at later stage.
      *
-     * @param aComponent is the component to process.
+     * @param aSymbol is the symbol to process.
      * @param aScreen is the screen where net labels should be added.
      * @param aUpdateSet decides whether the missing units data should be updated.
      */
-    void addImplicitConnections( SCH_COMPONENT* aComponent, SCH_SCREEN* aScreen, bool aUpdateSet );
+    void addImplicitConnections( SCH_SYMBOL* aSymbol, SCH_SCREEN* aScreen, bool aUpdateSet );
 
     bool netHasPowerDriver( SCH_LINE* aLine, const wxString& aNetName ) const;
-
-    /**
-     * Fix invalid characters in Eagle symbol names.
-     *
-     * It changes invalid characters to underscores.
-     *
-     * @param aName is the symbol name to be fixed.
-     * @return Fixed symbol name.
-     */
-    static wxString fixSymbolName( const wxString& aName );
 
     // Describe missing units containing pins creating implicit connections
     // (named power pins in Eagle).
     struct EAGLE_MISSING_CMP
     {
-        EAGLE_MISSING_CMP( const SCH_COMPONENT* aComponent = nullptr )
-            : cmp( aComponent )
+        EAGLE_MISSING_CMP( const SCH_SYMBOL* aSymbol = nullptr )
+            : cmp( aSymbol )
         {
         }
 
-        ///< Link to the parent component
-        const SCH_COMPONENT* cmp;
+        ///< Link to the parent symbol
+        const SCH_SYMBOL* cmp;
 
-        /* Map of the component units: for each unit there is a flag saying
+        /* Map of the symbol units: for each unit there is a flag saying
          * whether the unit needs to be instantiated with appropriate net labels to
          * emulate implicit connections as is done in Eagle.
          */
@@ -216,7 +211,7 @@ private:
 
     REPORTER*   m_reporter;       ///< Reporter for warnings/errors
 
-    ///< Map references to missing component units data
+    ///< Map references to missing symbol units data
     std::map<wxString, EAGLE_MISSING_CMP> m_missingCmps;
 
     SCH_SHEET*  m_rootSheet;      ///< The root sheet of the schematic being loaded
@@ -229,8 +224,13 @@ private:
     EPART_MAP                         m_partlist;
     std::map<wxString, EAGLE_LIBRARY> m_eagleLibs;
 
-    SCH_PLUGIN::SCH_PLUGIN_RELEASER   m_pi;         ///< Plugin to create the KiCad symbol library.
-    std::unique_ptr< PROPERTIES >     m_properties; ///< Library plugin properties.
+    SCH_PLUGIN::SCH_PLUGIN_RELEASER   m_pi;                ///< PI to create KiCad symbol library.
+    std::unique_ptr< PROPERTIES >     m_properties;        ///< Library plugin properties.
+
+    PROGRESS_REPORTER*                m_progressReporter;  ///< optional; may be nullptr
+    unsigned                          m_doneCount;
+    unsigned                          m_lastProgressCount;
+    unsigned                          m_totalCount;        ///< for progress reporting
 
     std::map<wxString, int>           m_netCounts;
     std::map<int, SCH_LAYER_ID>       m_layerMap;
@@ -240,14 +240,14 @@ private:
     std::vector<VECTOR2I> m_wireIntersections;
 
     ///< Wires and labels of a single connection (segment in Eagle nomenclature)
-    typedef struct SEG_DESC_STRUCT
+    struct SEG_DESC
     {
         ///< Test if a particular label is attached to any of the stored segments
         const SEG* LabelAttached( const SCH_TEXT* aLabel ) const;
 
         std::vector<SCH_TEXT*> labels;
         std::vector<SEG> segs;
-    } SEG_DESC;
+    };
 
     ///< Segments representing wires for intersection checking
     std::vector<SEG_DESC> m_segments;

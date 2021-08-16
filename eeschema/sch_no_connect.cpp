@@ -2,7 +2,7 @@
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
  * Copyright (C) 2015 Jean-Pierre Charras, jp.charras at wanoadoo.fr
- * Copyright (C) 1992-2019 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 1992-2021 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -39,7 +39,7 @@
 
 
 SCH_NO_CONNECT::SCH_NO_CONNECT( const wxPoint& pos ) :
-    SCH_ITEM( NULL, SCH_NO_CONNECT_T )
+    SCH_ITEM( nullptr, SCH_NO_CONNECT_T )
 {
     m_pos    = pos;
     m_size   = Mils2iu( DEFAULT_NOCONNECT_SIZE );      ///< No-connect symbol size.
@@ -56,7 +56,7 @@ EDA_ITEM* SCH_NO_CONNECT::Clone() const
 
 void SCH_NO_CONNECT::SwapData( SCH_ITEM* aItem )
 {
-    wxCHECK_RET( (aItem != NULL) && (aItem->Type() == SCH_NO_CONNECT_T),
+    wxCHECK_RET( ( aItem != nullptr ) && ( aItem->Type() == SCH_NO_CONNECT_T ),
                  wxT( "Cannot swap no connect data with invalid item." ) );
 
     SCH_NO_CONNECT* item = (SCH_NO_CONNECT*)aItem;
@@ -127,7 +127,7 @@ void SCH_NO_CONNECT::MirrorHorizontally( int aCenter )
 }
 
 
-void SCH_NO_CONNECT::Rotate( wxPoint aCenter )
+void SCH_NO_CONNECT::Rotate( const wxPoint& aCenter )
 {
     RotatePoint( &m_pos, aCenter, 900 );
 }
@@ -143,6 +143,7 @@ bool SCH_NO_CONNECT::doIsConnected( const wxPoint& aPosition ) const
 {
     return m_pos == aPosition;
 }
+
 
 bool SCH_NO_CONNECT::HitTest( const wxPoint& aPosition, int aAccuracy ) const
 {

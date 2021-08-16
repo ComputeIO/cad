@@ -22,11 +22,13 @@
  */
 
 #include <common.h>
+#include <board_design_settings.h>
 #include <footprint.h>
 #include <pad.h>
-#include <track.h>
+#include <pcb_track.h>
 #include <geometry/shape_segment.h>
 #include <geometry/shape_circle.h>
+#include <drc/drc_engine.h>
 #include <drc/drc_item.h>
 #include <drc/drc_rule.h>
 #include <drc/drc_test_provider_clearance_base.h>
@@ -82,7 +84,7 @@ static std::shared_ptr<SHAPE_CIRCLE> getDrilledHoleShape( BOARD_ITEM* aItem )
 {
     if( aItem->Type() == PCB_VIA_T )
     {
-        VIA* via = static_cast<VIA*>( aItem );
+        PCB_VIA* via = static_cast<PCB_VIA*>( aItem );
         return std::make_shared<SHAPE_CIRCLE>( via->GetCenter(), via->GetDrillValue() / 2 );
     }
     else if( aItem->Type() == PCB_PAD_T )
@@ -156,7 +158,7 @@ bool DRC_TEST_PROVIDER_HOLE_TO_HOLE::Run()
                 }
                 else if( item->Type() == PCB_VIA_T )
                 {
-                    VIA* via = static_cast<VIA*>( item );
+                    PCB_VIA* via = static_cast<PCB_VIA*>( item );
 
                     // We only care about mechanically drilled (ie: non-laser) holes
                     if( via->GetViaType() == VIATYPE::THROUGH )
@@ -174,12 +176,12 @@ bool DRC_TEST_PROVIDER_HOLE_TO_HOLE::Run()
 
     std::map< std::pair<BOARD_ITEM*, BOARD_ITEM*>, int> checkedPairs;
 
-    for( TRACK* track : m_board->Tracks() )
+    for( PCB_TRACK* track : m_board->Tracks() )
     {
         if( track->Type() != PCB_VIA_T )
             continue;
 
-        VIA* via = static_cast<VIA*>( track );
+        PCB_VIA* via = static_cast<PCB_VIA*>( track );
 
         if( !reportProgress( ii++, count, delta ) )
             return false;   // DRC cancelled

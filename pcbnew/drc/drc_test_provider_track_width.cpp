@@ -22,7 +22,8 @@
  */
 
 //#include <common.h>
-#include <track.h>
+#include <pcb_track.h>
+#include <drc/drc_engine.h>
 #include <drc/drc_item.h>
 #include <drc/drc_rule.h>
 #include <drc/drc_test_provider.h>
@@ -91,12 +92,12 @@ bool DRC_TEST_PROVIDER_TRACK_WIDTH::Run()
                 int     actual;
                 wxPoint p0;
 
-                if( ARC* arc = dyn_cast<ARC*>( item ) )
+                if( PCB_ARC* arc = dyn_cast<PCB_ARC*>( item ) )
                 {
                     actual = arc->GetWidth();
                     p0 = arc->GetStart();
                 }
-                else if( TRACK* trk = dyn_cast<TRACK*>( item ) )
+                else if( PCB_TRACK* trk = dyn_cast<PCB_TRACK*>( item ) )
                 {
                     actual = trk->GetWidth();
                     p0 = ( trk->GetStart() + trk->GetEnd() ) / 2;
@@ -155,7 +156,7 @@ bool DRC_TEST_PROVIDER_TRACK_WIDTH::Run()
 
     int ii = 0;
 
-    for( TRACK* item : m_drcEngine->GetBoard()->Tracks() )
+    for( PCB_TRACK* item : m_drcEngine->GetBoard()->Tracks() )
     {
         if( !reportProgress( ii++, m_drcEngine->GetBoard()->Tracks().size(), delta ) )
             break;

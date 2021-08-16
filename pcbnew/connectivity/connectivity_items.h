@@ -32,7 +32,7 @@
 #include <board.h>
 #include <pad.h>
 #include <footprint.h>
-#include <track.h>
+#include <pcb_track.h>
 #include <zone.h>
 
 #include <geometry/shape_poly_set.h>
@@ -67,7 +67,6 @@ public:
     }
 
     bool Valid() const;
-
 
     CN_ITEM* Item() const
     {
@@ -115,7 +114,7 @@ public:
         return m_noline;
     }
 
-    inline void SetCluster( std::shared_ptr<CN_CLUSTER> aCluster )
+    inline void SetCluster( std::shared_ptr<CN_CLUSTER>& aCluster )
     {
         m_cluster = aCluster;
     }
@@ -127,7 +126,7 @@ public:
 
     /**
      * The anchor point is dangling if the parent is a track and this anchor point is not
-     * connected to another item ( track, vas pad or zone) or if the parent is a via and
+     * connected to another item ( track, vias pad or zone) or if the parent is a via and
      * this anchor point is connected to only one track and not to another item.
      *
      * @return true if this anchor is dangling.
@@ -324,7 +323,7 @@ public:
         return ContainsPoint( anchor->Pos(), 0 );
     }
 
-    bool ContainsPoint( const VECTOR2I p, int aAccuracy = 0 ) const
+    bool ContainsPoint( const VECTOR2I& p, int aAccuracy = 0 ) const
     {
         ZONE* zone = static_cast<ZONE*>( Parent() );
         int clearance = aAccuracy;
@@ -398,7 +397,7 @@ public:
     CN_ITEM* operator[] ( int aIndex ) { return m_items[aIndex]; }
 
     template <class T>
-    void FindNearby( CN_ITEM *aItem, T aFunc )
+    void FindNearby( CN_ITEM* aItem, T aFunc )
     {
         m_index.Query( aItem->BBox(), aItem->Layers(), aFunc );
     }
@@ -433,11 +432,11 @@ public:
 
     CN_ITEM* Add( PAD* pad );
 
-    CN_ITEM* Add( TRACK* track );
+    CN_ITEM* Add( PCB_TRACK* track );
 
-    CN_ITEM* Add( ARC* track );
+    CN_ITEM* Add( PCB_ARC* track );
 
-    CN_ITEM* Add( VIA* via );
+    CN_ITEM* Add( PCB_VIA* via );
 
     const std::vector<CN_ITEM*> Add( ZONE* zone, PCB_LAYER_ID aLayer );
 

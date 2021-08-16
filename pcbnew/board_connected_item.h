@@ -27,11 +27,9 @@
 #define BOARD_CONNECTED_ITEM_H
 
 #include <board_item.h>
-#include <netinfo.h>
-#include <reporter.h>
 
 class NETCLASS;
-class TRACK;
+class NETINFO_ITEM;
 class PAD;
 
 /**
@@ -48,7 +46,7 @@ public:
 
     static inline bool ClassOf( const EDA_ITEM* aItem )
     {
-        if( aItem == NULL )
+        if( aItem == nullptr )
             return false;
 
         switch( aItem->Type() )
@@ -90,10 +88,7 @@ public:
     /**
      * @return the net code.
      */
-    int GetNetCode() const
-    {
-        return m_netinfo ? m_netinfo->GetNetCode() : -1;
-    }
+    int GetNetCode() const;
 
     /**
      * Set net using a net code.
@@ -116,10 +111,7 @@ public:
     /**
      * @return the full netname.
      */
-    wxString GetNetname() const
-    {
-        return m_netinfo ? m_netinfo->GetNetname() : wxString();
-    }
+    wxString GetNetname() const;
 
     /**
      * @return the full netname or "<no net>" in square braces, followed by "(Not Found)" if the
@@ -130,10 +122,7 @@ public:
     /**
      * @return the short netname.
      */
-    wxString GetShortNetname() const
-    {
-        return m_netinfo->GetShortNetname();
-    }
+    wxString GetShortNetname() const;
 
     /**
      * Return an item's "own" clearance in internal units.

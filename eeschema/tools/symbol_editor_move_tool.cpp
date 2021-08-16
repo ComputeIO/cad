@@ -119,7 +119,7 @@ int SYMBOL_EDITOR_MOVE_TOOL::Main( const TOOL_EVENT& aEvent )
     VECTOR2I    prevPos;
 
     if( !selection.Front()->IsNew() )
-        saveCopyInUndoList( m_frame->GetCurPart(), UNDO_REDO::LIBEDIT );
+        saveCopyInUndoList( m_frame->GetCurSymbol(), UNDO_REDO::LIBEDIT );
 
     m_cursor = controls->GetCursorPosition();
 
@@ -154,12 +154,13 @@ int SYMBOL_EDITOR_MOVE_TOOL::Main( const TOOL_EVENT& aEvent )
                         if(  lib_item->Type() == LIB_PIN_T )
                         {
                             LIB_PIN* cur_pin = static_cast<LIB_PIN*>( lib_item );
-                            LIB_PART* part = m_frame->GetCurPart();
-                            std::vector<bool> got_unit( part->GetUnitCount() );
+                            LIB_SYMBOL* symbol = m_frame->GetCurSymbol();
+                            std::vector<bool> got_unit( symbol->GetUnitCount() );
 
                             got_unit[cur_pin->GetUnit()] = true;
 
-                            for( LIB_PIN* pin = part->GetNextPin(); pin; pin = part->GetNextPin( pin ) )
+                            for( LIB_PIN* pin = symbol->GetNextPin(); pin;
+                                 pin = symbol->GetNextPin( pin ) )
                             {
                                 if( !got_unit[pin->GetUnit()]
                                  && pin->GetPosition() == cur_pin->GetPosition()
@@ -338,7 +339,7 @@ int SYMBOL_EDITOR_MOVE_TOOL::Main( const TOOL_EVENT& aEvent )
 
     m_anchorPos = { 0, 0 };
 
-    for( auto item : selection )
+    for( EDA_ITEM* item : selection )
         item->ClearEditFlags();
 
     if( restore_state )

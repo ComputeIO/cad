@@ -23,7 +23,7 @@
 
 #include <connection_graph.h>
 #include <dialog_global_edit_text_and_graphics_base.h>
-#include <kicad_string.h>
+#include <string_utils.h>
 #include <sch_symbol.h>
 #include <sch_connection.h>
 #include <sch_edit_frame.h>
@@ -328,9 +328,9 @@ void DIALOG_GLOBAL_EDIT_TEXT_AND_GRAPHICS::visitItem( const SCH_SHEET_PATH& aShe
 
     if( m_referenceFilterOpt->GetValue() && !m_referenceFilter->GetValue().IsEmpty() )
     {
-        if( aItem->Type() == SCH_COMPONENT_T )
+        if( aItem->Type() == SCH_SYMBOL_T )
         {
-            wxString ref = static_cast<SCH_COMPONENT*>( aItem )->GetRef( &aSheetPath );
+            wxString ref = static_cast<SCH_SYMBOL*>( aItem )->GetRef( &aSheetPath );
 
             if( !WildCompareString( m_referenceFilter->GetValue(), ref, false ) )
                 return;
@@ -339,9 +339,9 @@ void DIALOG_GLOBAL_EDIT_TEXT_AND_GRAPHICS::visitItem( const SCH_SHEET_PATH& aShe
 
     if( m_symbolFilterOpt->GetValue() && !m_symbolFilter->GetValue().IsEmpty() )
     {
-        if( aItem->Type() == SCH_COMPONENT_T )
+        if( aItem->Type() == SCH_SYMBOL_T )
         {
-            wxString id = static_cast<SCH_COMPONENT*>( aItem )->GetLibId().Format();
+            wxString id = UnescapeString( static_cast<SCH_SYMBOL*>( aItem )->GetLibId().Format() );
 
             if( !WildCompareString( m_symbolFilter->GetValue(), id, false ) )
                 return;
@@ -350,9 +350,9 @@ void DIALOG_GLOBAL_EDIT_TEXT_AND_GRAPHICS::visitItem( const SCH_SHEET_PATH& aShe
 
     if( m_typeFilterOpt->GetValue() )
     {
-        if( aItem->Type() == SCH_COMPONENT_T )
+        if( aItem->Type() == SCH_SYMBOL_T )
         {
-            bool isPower = static_cast<SCH_COMPONENT*>( aItem )->GetPartRef()->IsPower();
+            bool isPower = static_cast<SCH_SYMBOL*>( aItem )->GetLibSymbolRef()->IsPower();
 
             if( isPower != ( m_typeFilter->GetSelection() == 1 ) )
                 return;
@@ -363,9 +363,9 @@ void DIALOG_GLOBAL_EDIT_TEXT_AND_GRAPHICS::visitItem( const SCH_SHEET_PATH& aShe
     static KICAD_T busTypes[] = { SCH_LINE_LOCATE_BUS_T, SCH_LABEL_LOCATE_BUS_T, EOT };
     static KICAD_T schTextAndGraphics[] = { SCH_TEXT_T, SCH_LINE_LOCATE_GRAPHIC_LINE_T, EOT };
 
-    if( aItem->Type() == SCH_COMPONENT_T )
+    if( aItem->Type() == SCH_SYMBOL_T )
     {
-        SCH_COMPONENT* symbol = (SCH_COMPONENT*) aItem;
+        SCH_SYMBOL* symbol = (SCH_SYMBOL*) aItem;
 
         if( m_references->GetValue() )
             processItem( aSheetPath, symbol->GetField( REFERENCE_FIELD ), aItem );
@@ -467,6 +467,7 @@ bool DIALOG_GLOBAL_EDIT_TEXT_AND_GRAPHICS::TransferDataFromWindow()
         return false;
 
     SCH_SHEET_PATH currentSheet = m_parent->GetCurrentSheet();
+    m_appendUndo = false;
 
     // Go through sheets
     for( const SCH_SHEET_PATH& sheetPath : m_parent->Schematic().GetSheets() )
@@ -476,17 +477,16 @@ bool DIALOG_GLOBAL_EDIT_TEXT_AND_GRAPHICS::TransferDataFromWindow()
         if( screen )
         {
             m_parent->SetCurrentSheet( sheetPath );
-            m_appendUndo = false;
 
             for( SCH_ITEM* item : screen->Items() )
                 visitItem( sheetPath, item );
-
-            if( m_appendUndo )
-            {
-                m_parent->OnModify();
-                m_parent->HardRedraw();
-            }
         }
+    }
+
+    if( m_appendUndo )
+    {
+        m_parent->OnModify();
+        m_parent->HardRedraw();
     }
 
     // Reset the view to where we left the user

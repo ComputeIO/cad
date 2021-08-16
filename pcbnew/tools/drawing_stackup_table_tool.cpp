@@ -35,19 +35,22 @@
 #include <bitmaps.h>
 #include <painter.h>
 #include <board.h>
+#include <board_design_settings.h>
 #include <footprint.h>
 #include <fp_shape.h>
 #include <pcb_group.h>
 #include <pcb_text.h>
-#include <kicad_string.h>
+#include <string_utils.h>
 #include <wx/utils.h>
 
 
 using SCOPED_DRAW_MODE = SCOPED_SET_RESET<DRAWING_TOOL::MODE>;
 
+
 static std::vector<BOARD_ITEM*> initTextTable( std::vector<std::vector<PCB_TEXT*>> aContent,
-                                        wxPoint origin, PCB_LAYER_ID aLayer, wxPoint* aTableSize,
-                                        bool aDrawFrame = true )
+                                               wxPoint origin, PCB_LAYER_ID aLayer,
+                                               wxPoint* aTableSize,
+                                               bool aDrawFrame = true )
 {
     int i;
     int j;
@@ -67,7 +70,7 @@ static std::vector<BOARD_ITEM*> initTextTable( std::vector<std::vector<PCB_TEXT*
 
     std::vector<BOARD_ITEM*> table;
 
-    // xmargin and ymargin are margins between the text and the the table lines.
+    // xmargin and ymargin are margins between the text and the table lines.
     //
     //  +--------------------------------+
     //  |            ^                   |
@@ -171,6 +174,7 @@ static std::vector<BOARD_ITEM*> initTextTable( std::vector<std::vector<PCB_TEXT*
         line->SetEndY( origin.y + height );
         table.push_back( line );
     }
+
     //Now add the text
     i           = 0;
     wxPoint pos = wxPoint( origin.x + xmargin, origin.y + ymargin );
@@ -205,7 +209,7 @@ static std::vector<BOARD_ITEM*> initTextTable( std::vector<std::vector<PCB_TEXT*
 
 
 std::vector<BOARD_ITEM*> DRAWING_TOOL::DrawSpecificationStackup(
-        wxPoint aOrigin, PCB_LAYER_ID aLayer, bool aDrawNow, wxPoint* tableSize )
+        const wxPoint& aOrigin, PCB_LAYER_ID aLayer, bool aDrawNow, wxPoint* tableSize )
 {
     BOARD_COMMIT               commit( m_frame );
     std::vector<std::vector<PCB_TEXT*>> texts;
@@ -233,6 +237,8 @@ std::vector<BOARD_ITEM*> DRAWING_TOOL::DrawSpecificationStackup(
     //Get Layer names
     BOARD_DESIGN_SETTINGS&           dsnSettings = m_frame->GetDesignSettings();
     BOARD_STACKUP&                   stackup     = dsnSettings.GetStackupDescriptor();
+    stackup.SynchronizeWithBoard( &dsnSettings );
+
     std::vector<BOARD_STACKUP_ITEM*> layers      = stackup.GetList();
 
     std::vector<PCB_TEXT*> colLayer;
@@ -278,39 +284,55 @@ std::vector<BOARD_ITEM*> DRAWING_TOOL::DrawSpecificationStackup(
     t->SetText( _( "Loss Tangent" ) );
     colTanD.push_back( t );
 
-    int i;
+    int i, j;
 
     for( i = 0; i < stackup.GetCount(); i++ )
     {
-        t = static_cast<PCB_TEXT*>( dataStyle->Duplicate() );
-        t->SetText( layers.at( i )->GetLayerName() );
-        colLayer.push_back( t );
+        for( j = 0; j < layers.at( i )->GetSublayersCount(); j++ )
+        {
+            // Layer names are empty until we close at least once the board setup dialog.
+            // If the user did not open the dialog, then get the names from the board.
+            // But dielectric layer names will be missing.
+            t = static_cast<PCB_TEXT*>( dataStyle->Duplicate() );
 
-        t = static_cast<PCB_TEXT*>( dataStyle->Duplicate() );
-        t->SetText( layers.at( i )->GetTypeName() );
-        colType.push_back( t );
+            if( layers.at( i )->GetLayerName().IsEmpty() )
+            {
+                t->SetText( m_frame->GetBoard()->GetLayerName( layers.at( i )->GetBrdLayerId() ) );
+            }
+            else
+            {
+                t->SetText( layers.at( i )->GetLayerName() );
+            }
 
-        t = static_cast<PCB_TEXT*>( dataStyle->Duplicate() );
-        t->SetText( layers.at( i )->GetMaterial() );
-        colMaterial.push_back( t );
+            colLayer.push_back( t );
 
-        t = static_cast<PCB_TEXT*>( dataStyle->Duplicate() );
-        t->SetText(
-                StringFromValue( m_frame->GetUserUnits(), layers.at( i )->GetThickness(), true ) );
-        colThickness.push_back( t );
+            t = static_cast<PCB_TEXT*>( dataStyle->Duplicate() );
+            t->SetText( layers.at( i )->GetTypeName() );
+            colType.push_back( t );
 
-        t = static_cast<PCB_TEXT*>( dataStyle->Duplicate() );
-        t->SetText( layers.at( i )->GetColor() );
-        colColor.push_back( t );
+            t = static_cast<PCB_TEXT*>( dataStyle->Duplicate() );
+            t->SetText( layers.at( i )->GetMaterial( j ) );
+            colMaterial.push_back( t );
 
-        t = static_cast<PCB_TEXT*>( dataStyle->Duplicate() );
-        t->SetText( StringFromValue( EDA_UNITS::UNSCALED, layers.at( i )->GetEpsilonR(), false ) );
-        colEpsilon.push_back( t );
+            t = static_cast<PCB_TEXT*>( dataStyle->Duplicate() );
+            t->SetText( StringFromValue( m_frame->GetUserUnits(), layers.at( i )->GetThickness( j ),
+                                         true ) );
+            colThickness.push_back( t );
 
-        t = static_cast<PCB_TEXT*>( dataStyle->Duplicate() );
-        t->SetText(
-                StringFromValue( EDA_UNITS::UNSCALED, layers.at( i )->GetLossTangent(), false ) );
-        colTanD.push_back( t );
+            t = static_cast<PCB_TEXT*>( dataStyle->Duplicate() );
+            t->SetText( layers.at( i )->GetColor() );
+            colColor.push_back( t );
+
+            t = static_cast<PCB_TEXT*>( dataStyle->Duplicate() );
+            t->SetText( StringFromValue( EDA_UNITS::UNSCALED, layers.at( i )->GetEpsilonR( j ),
+                                         false ) );
+            colEpsilon.push_back( t );
+
+            t = static_cast<PCB_TEXT*>( dataStyle->Duplicate() );
+            t->SetText( StringFromValue( EDA_UNITS::UNSCALED, layers.at( i )->GetLossTangent( j ),
+                                         false ) );
+            colTanD.push_back( t );
+        }
     }
 
     texts.push_back( colLayer );
@@ -320,12 +342,10 @@ std::vector<BOARD_ITEM*> DRAWING_TOOL::DrawSpecificationStackup(
     texts.push_back( colColor );
     texts.push_back( colEpsilon );
     texts.push_back( colTanD );
-    std::vector<BOARD_ITEM*> table =
-            initTextTable( texts, aOrigin, aLayer, tableSize, true );
+    std::vector<BOARD_ITEM*> table = initTextTable( texts, aOrigin, aLayer, tableSize, true );
 
     if( aDrawNow )
     {
-
         for( auto item : table )
             commit.Add( item );
 
@@ -335,8 +355,9 @@ std::vector<BOARD_ITEM*> DRAWING_TOOL::DrawSpecificationStackup(
     return table;
 }
 
+
 std::vector<BOARD_ITEM*> DRAWING_TOOL::DrawBoardCharacteristics(
-        wxPoint aOrigin, PCB_LAYER_ID aLayer, bool aDrawNow, wxPoint* tableSize )
+        const wxPoint& aOrigin, PCB_LAYER_ID aLayer, bool aDrawNow, wxPoint* tableSize )
 {
     BOARD_COMMIT        commit( m_frame );
     std::vector<BOARD_ITEM*> objects;
@@ -509,8 +530,8 @@ int DRAWING_TOOL::InteractivePlaceWithPreview( const TOOL_EVENT& aEvent,
 
     m_toolMgr->RunAction( PCB_ACTIONS::selectionClear, true );
     m_controls->ShowCursor( true );
-    // do not capture or auto-pan until we start placing the table
 
+    // do not capture or auto-pan until we start placing the table
     SCOPED_DRAW_MODE scopedDrawMode( m_mode, MODE::TEXT );
 
     std::string tool = aEvent.GetCommandStr().get();
@@ -585,7 +606,7 @@ int DRAWING_TOOL::InteractivePlaceWithPreview( const TOOL_EVENT& aEvent,
         }
         else if( evt->IsClick( BUT_LEFT ) )
         {
-            if( aLayers != NULL )
+            if( aLayers != nullptr )
             {
                 PCB_LAYER_ID targetLayer = frame()->SelectOneLayer(
                                             PCB_LAYER_ID::PCB_LAYER_ID_COUNT,
@@ -631,9 +652,10 @@ int DRAWING_TOOL::InteractivePlaceWithPreview( const TOOL_EVENT& aEvent,
 
             break;
         }
-
         else
+        {
             evt->SetPassEvent();
+        }
     }
 
     view()->ClearPreview();
@@ -644,6 +666,7 @@ int DRAWING_TOOL::InteractivePlaceWithPreview( const TOOL_EVENT& aEvent,
 
     return 0;
 }
+
 
 int DRAWING_TOOL::PlaceCharacteristics( const TOOL_EVENT& aEvent )
 {
@@ -717,6 +740,7 @@ int DRAWING_TOOL::PlaceCharacteristics( const TOOL_EVENT& aEvent )
 
     return 0;
 }
+
 
 int DRAWING_TOOL::PlaceStackup( const TOOL_EVENT& aEvent )
 {

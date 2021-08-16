@@ -38,7 +38,7 @@ SYMBOL_EDITOR_SETTINGS::SYMBOL_EDITOR_SETTINGS() :
         m_Repeat(),
         m_ShowPinElectricalType( true ),
         m_LibWidth(),
-        m_EditComponentVisibleColumns()
+        m_EditSymbolVisibleColumns()
 {
     // Make Coverity happy
     m_UseEeschemaColorSettings = true;;
@@ -75,7 +75,7 @@ SYMBOL_EDITOR_SETTINGS::SYMBOL_EDITOR_SETTINGS() :
     m_params.emplace_back( new PARAM<int>( "lib_table_width", &m_LibWidth, 250 ) );
 
     m_params.emplace_back( new PARAM<wxString>( "edit_component_visible_columns",
-            &m_EditComponentVisibleColumns, "0 1 2 3 4 5 6 7" ) );
+            &m_EditSymbolVisibleColumns, "0 1 2 3 4 5 6 7" ) );
 
     m_params.emplace_back( new PARAM<wxString>( "pin_table_visible_columns",
             &m_PinTableVisibleColumns, "0 1 2 3 4 8 9" ) );
@@ -92,16 +92,16 @@ bool SYMBOL_EDITOR_SETTINGS::MigrateFromLegacy( wxConfigBase* aCfg )
     // Now modify the loaded grid selection, because in earlier versions the grids index was shared
     // between all applications and started at 1000 mils.  There is a 4-position offset between
     // this index and the possible eeschema grids list that we have to subtract.
-    nlohmann::json::json_pointer gridSizePtr = PointerFromString( "window.grid.last_size" );
+    std::string gridSizePtr = "window.grid.last_size";
 
-    try
+    if( OPT<int> currentSize = Get<int>( gridSizePtr ) )
     {
-        ( *this )[gridSizePtr] = ( *this )[gridSizePtr].get<int>() - 4;
+        Set( gridSizePtr, *currentSize - 4 );
     }
-    catch( ... )
+    else
     {
         // Otherwise, default grid size should be 50 mils; index 1
-        ( *this )[gridSizePtr] = 1;
+        Set( gridSizePtr,  1 );
     }
 
     ret &= fromLegacy<int>( aCfg, "DefaultWireWidth",      "defaults.line_width" );

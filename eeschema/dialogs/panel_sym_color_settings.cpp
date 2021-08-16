@@ -1,7 +1,7 @@
 /*
 * This program source code file is part of KiCad, a free EDA CAD application.
 *
-* Copyright (C) 2020 KiCad Developers, see AUTHORS.txt for contributors.
+* Copyright (C) 2020-2021 KiCad Developers, see AUTHORS.txt for contributors.
 *
 * This program is free software; you can redistribute it and/or
 * modify it under the terms of the GNU General Public License
@@ -24,11 +24,8 @@
 #include <eeschema_settings.h>
 #include <symbol_edit_frame.h>
 #include <symbol_editor_settings.h>
-#include <pgm_base.h>
 #include <sch_painter.h>
 #include <settings/settings_manager.h>
-#include <view/view.h>
-
 #include "panel_sym_color_settings.h"
 
 
@@ -41,33 +38,33 @@ PANEL_SYM_COLOR_SETTINGS::PANEL_SYM_COLOR_SETTINGS( SYMBOL_EDIT_FRAME* aFrame,
 
 bool PANEL_SYM_COLOR_SETTINGS::TransferDataToWindow()
 {
-    auto cfg = Pgm().GetSettingsManager().GetAppSettings<SYMBOL_EDITOR_SETTINGS>();
+    SYMBOL_EDITOR_SETTINGS* cfg = m_frame->GetSettings();
 
-    m_useEeschemaTheme->SetValue( cfg->m_UseEeschemaColorSettings );
+    if( cfg->m_UseEeschemaColorSettings )
+        m_eeschemaRB->SetValue( true );
+    else
+        m_themeRB->SetValue( true );
 
-    COLOR_SETTINGS* current = Pgm().GetSettingsManager().GetColorSettings( cfg->m_ColorTheme );
+    COLOR_SETTINGS* current = m_frame->GetSettingsManager()->GetColorSettings( cfg->m_ColorTheme );
 
     int width    = 0;
     int height   = 0;
     int minwidth = width;
 
-    m_themeSelection->Clear();
+    m_themes->Clear();
 
-    for( COLOR_SETTINGS* settings : Pgm().GetSettingsManager().GetColorSettingsList() )
+    for( COLOR_SETTINGS* settings : m_frame->GetSettingsManager()->GetColorSettingsList() )
     {
-        int pos = m_themeSelection->Append( settings->GetName(), static_cast<void*>( settings ) );
+        int pos = m_themes->Append( settings->GetName(), static_cast<void*>( settings ) );
 
         if( settings == current )
-            m_themeSelection->SetSelection( pos );
+            m_themes->SetSelection( pos );
 
-        m_themeSelection->GetTextExtent( settings->GetName(), &width, &height );
+        m_themes->GetTextExtent( settings->GetName(), &width, &height );
         minwidth = std::max( minwidth, width );
     }
 
-    m_themeSelection->SetMinSize( wxSize( minwidth + 50, -1 ) );
-
-    m_txtTheme->Enable( !m_useEeschemaTheme->GetValue() );
-    m_themeSelection->Enable( !m_useEeschemaTheme->GetValue() );
+    m_themes->SetMinSize( wxSize( minwidth + 50, -1 ) );
 
     Fit();
 
@@ -77,35 +74,31 @@ bool PANEL_SYM_COLOR_SETTINGS::TransferDataToWindow()
 
 bool PANEL_SYM_COLOR_SETTINGS::TransferDataFromWindow()
 {
-    SETTINGS_MANAGER& mgr = Pgm().GetSettingsManager();
+    SETTINGS_MANAGER* mgr = m_frame->GetSettingsManager();
+    int               sel = m_themes->GetSelection();
+    COLOR_SETTINGS*   colors = static_cast<COLOR_SETTINGS*>( m_themes->GetClientData( sel ) );
 
-    auto selected = static_cast<COLOR_SETTINGS*>(
-            m_themeSelection->GetClientData( m_themeSelection->GetSelection() ) );
-
-    SYMBOL_EDITOR_SETTINGS* cfg = mgr.GetAppSettings<SYMBOL_EDITOR_SETTINGS>();
-
-    cfg->m_UseEeschemaColorSettings = m_useEeschemaTheme->GetValue();
-
-    if( !cfg->m_UseEeschemaColorSettings )
-        cfg->m_ColorTheme = selected->GetFilename();
+    SYMBOL_EDITOR_SETTINGS* cfg = mgr->GetAppSettings<SYMBOL_EDITOR_SETTINGS>();
+    cfg->m_UseEeschemaColorSettings = m_eeschemaRB->GetValue();
 
     if( cfg->m_UseEeschemaColorSettings )
     {
-        EESCHEMA_SETTINGS* eecfg = mgr.GetAppSettings<EESCHEMA_SETTINGS>();
-        selected                 = mgr.GetColorSettings( eecfg->m_ColorTheme );
+        EESCHEMA_SETTINGS* eecfg = mgr->GetAppSettings<EESCHEMA_SETTINGS>();
+        colors = mgr->GetColorSettings( eecfg->m_ColorTheme );
+    }
+    else
+    {
+        cfg->m_ColorTheme = colors->GetFilename();
     }
 
-    auto settings = m_frame->GetCanvas()->GetView()->GetPainter()->GetSettings();
-    settings->LoadColors( selected );
+    RENDER_SETTINGS* settings = m_frame->GetCanvas()->GetView()->GetPainter()->GetSettings();
+    settings->LoadColors( colors );
 
     return true;
 }
 
 
-void PANEL_SYM_COLOR_SETTINGS::OnUseEeschemaThemeChanged( wxCommandEvent& event )
+void PANEL_SYM_COLOR_SETTINGS::OnThemeChanged( wxCommandEvent& event )
 {
-    bool useEeschema = m_useEeschemaTheme->GetValue();
-
-    m_txtTheme->Enable( !useEeschema );
-    m_themeSelection->Enable( !useEeschema );
+    m_themeRB->SetValue( true );
 }

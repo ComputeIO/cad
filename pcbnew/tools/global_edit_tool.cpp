@@ -22,7 +22,7 @@
  */
 
 #include <footprint.h>
-#include <track.h>
+#include <pcb_track.h>
 #include <zone.h>
 #include <tool/tool_manager.h>
 #include <tools/pcb_actions.h>
@@ -94,10 +94,6 @@ int GLOBAL_EDIT_TOOL::ExchangeFootprints( const TOOL_EVENT& aEvent )
     else
         wxFAIL_MSG( "ExchangeFootprints: unexpected action" );
 
-    // Footprint exchange could remove footprints, so they have to be
-    // removed from the selection first
-    m_toolMgr->RunAction( PCB_ACTIONS::selectionClear, true );
-
     // invoke the exchange dialog process
     {
         PCB_EDIT_FRAME* editFrame = getEditFrame<PCB_EDIT_FRAME>();
@@ -135,11 +131,11 @@ int GLOBAL_EDIT_TOOL::SwapLayers( const TOOL_EVENT& aEvent )
     bool hasChanges = false;
 
     // Change tracks.
-    for( TRACK* segm : frame()->GetBoard()->Tracks() )
+    for( PCB_TRACK* segm : frame()->GetBoard()->Tracks() )
     {
         if( segm->Type() == PCB_VIA_T )
         {
-            VIA*         via = (VIA*) segm;
+            PCB_VIA*     via = static_cast<PCB_VIA*>( segm );
             PCB_LAYER_ID top_layer, bottom_layer;
 
             if( via->GetViaType() == VIATYPE::THROUGH )

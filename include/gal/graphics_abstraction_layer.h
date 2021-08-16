@@ -114,6 +114,7 @@ public:
      * @param aPointList is a list of 2D-Vectors containing the polyline points.
      */
     virtual void DrawPolyline( const std::deque<VECTOR2D>& aPointList ){};
+    virtual void DrawPolyline( const std::vector<VECTOR2D>& aPointList ){};
     virtual void DrawPolyline( const VECTOR2D aPointList[], int aListSize ){};
     virtual void DrawPolyline( const SHAPE_LINE_CHAIN& aLineChain ){};
 
@@ -134,7 +135,7 @@ public:
      * @param aEndAngle     is the end angle of the arc.
      */
     virtual void DrawArc( const VECTOR2D& aCenterPoint, double aRadius, double aStartAngle,
-                          double aEndAngle ){};
+                          double aEndAngle ) {};
 
     /**
      * Draw an arc segment.
@@ -153,7 +154,7 @@ public:
      * @param aWidth        is the thickness of the arc (pen size).
      */
     virtual void DrawArcSegment( const VECTOR2D& aCenterPoint, double aRadius, double aStartAngle,
-                                 double aEndAngle, double aWidth ){};
+                                 double aEndAngle, double aWidth ) {};
 
     /**
      * Draw a rectangle.
@@ -167,23 +168,27 @@ public:
     }
 
     /**
-     * Draw a polygon.
-     *
-     * @param aPointList is the list of the polygon points.
-     */
-    virtual void DrawPolygon( const std::deque<VECTOR2D>& aPointList ){};
-    virtual void DrawPolygon( const VECTOR2D aPointList[], int aListSize ){};
-    virtual void DrawPolygon( const SHAPE_POLY_SET& aPolySet ){};
-    virtual void DrawPolygon( const SHAPE_LINE_CHAIN& aPolySet ){};
-
-    /**
      * Draw a polygon representing an outline font glyph.
      *
      * @param aPointList is the list of the polygon points.
      */
-    virtual void DrawGlyph( const SHAPE_POLY_SET& aPolySet, int aNth = 0, int aTotal = 1 ) = 0;
+    virtual void DrawGlyph( const KIFONT::GLYPH& aGlyph, int aNth = 0, int aTotal = 1 ) = 0;
+    void DrawGlyph( const std::shared_ptr<KIFONT::GLYPH>& aGlyph, int aNth = 0, int aTotal = 1 )
+    {
+        DrawGlyph( *aGlyph, aNth, aTotal );
+    }
 
-    void DrawGlyphs( const std::vector<SHAPE_POLY_SET> aGlyphs );
+    void DrawGlyphs( const KIFONT::GLYPH_LIST& aGlyphs );
+
+    /**
+     * Draw a polygon.
+     *
+     * @param aPointList is the list of the polygon points.
+     */
+    virtual void DrawPolygon( const std::deque<VECTOR2D>& aPointList ) {};
+    virtual void DrawPolygon( const VECTOR2D aPointList[], int aListSize ) {};
+    virtual void DrawPolygon( const SHAPE_POLY_SET& aPolySet, bool aStrokeTriangulation = false ) {};
+    virtual void DrawPolygon( const SHAPE_LINE_CHAIN& aPolySet ) {};
 
     /**
      * Draw a cubic bezier spline.
@@ -756,6 +761,7 @@ public:
                || ( m_gridVisibility
                     && m_options.m_gridSnapping == KIGFX::GRID_SNAPPING::WITH_GRID );
     }
+
     /**
      * Set the origin point for the grid.
      *
@@ -849,7 +855,7 @@ public:
     /**
      * Compute the point position in world coordinates from given screen coordinates.
      *
-     * @param aPoint the pointposition in screen coordinates.
+     * @param aPoint the point position in screen coordinates.
      * @return the point position in world coordinates.
      */
     inline VECTOR2D ToWorld( const VECTOR2D& aPoint ) const
@@ -860,7 +866,7 @@ public:
     /**
      * Compute the point position in screen coordinates from given world coordinates.
      *
-     * @param aPoint the pointposition in world coordinates.
+     * @param aPoint the point position in world coordinates.
      * @return the point position in screen coordinates.
      */
     inline VECTOR2D ToScreen( const VECTOR2D& aPoint ) const
@@ -1049,6 +1055,7 @@ protected:
     VECTOR2D m_cursorPosition;     ///< Current cursor position (world coordinates)
 
     KICURSOR m_currentNativeCursor; ///< Current cursor
+
 private:
     TEXT_ATTRIBUTES m_attributes;
 };

@@ -25,7 +25,8 @@
 #ifndef BOARD_DESIGN_SETTINGS_H_
 #define BOARD_DESIGN_SETTINGS_H_
 
-#include <pad.h>
+#include <memory>
+
 #include <netclass.h>
 #include <config_params.h>
 #include <board_stackup_manager/board_stackup.h>
@@ -211,6 +212,7 @@ enum class DIM_UNITS_FORMAT : int;
 enum class DIM_TEXT_POSITION : int;
 enum class DIM_UNITS_MODE : int;
 
+class PAD;
 
 /**
  * Container for design settings for a #BOARD object.
@@ -681,7 +683,7 @@ public:
                                             // connected track
     int        m_MinClearance;              // overall min clearance
     int        m_TrackMinWidth;             // overall min track width
-    int        m_ViasMinAnnulus;            // overall minimum width of the via copper ring
+    int        m_ViasMinAnnularWidth;       // overall minimum width of the via copper ring
     int        m_ViasMinSize;               // overall vias (not micro vias) min diameter
     int        m_MinThroughDrill;           // through hole (not micro vias) min drill diameter
     int        m_MicroViasMinSize;          // micro vias min diameter
@@ -750,8 +752,8 @@ public:
     wxPoint    m_AuxOrigin;                 ///< origin for plot exports
     wxPoint    m_GridOrigin;                ///< origin for grid offsets
 
-    PAD        m_Pad_Master;                // A dummy pad to store all default parameters
-                                            // when importing values or creating a new pad
+    std::unique_ptr<PAD> m_Pad_Master; // A dummy pad to store all default parameters
+                                       // when importing values or creating a new pad
 
     // Set to true if the board has a stackup management.
     // If not set a default basic stackup will be used to generate the gbrjob file.

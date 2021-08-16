@@ -31,12 +31,12 @@
 #include <vector>
 
 #include <math/vector2d.h>
-#include <tool/tool_event.h>
 #include <sch_edit_frame.h>
 #include <sch_line.h>
 
 #include <ee_tool_base.h>
 
+class TOOL_EVENT;
 
 class SCH_BUS_WIRE_ENTRY;
 class SCH_LABEL;
@@ -96,7 +96,7 @@ public:
 private:
     int       doDrawSegments( const std::string& aTool, int aType, bool aQuitOnDraw );
     SCH_LINE* startSegments( int aType, const VECTOR2D& aPos );
-    SCH_LINE* doUnfoldBus( const wxString& aNet, wxPoint aPos = wxDefaultPosition );
+    SCH_LINE* doUnfoldBus( const wxString& aNet, const wxPoint& aPos = wxDefaultPosition );
     void finishSegments();
 
     /**

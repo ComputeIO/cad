@@ -33,7 +33,9 @@
 #include <wx/string.h>
 
 #include <utf8.h>
+#include <font/glyph.h>
 #include <font/text_attributes.h>
+#include <parser/markup_parser.h>
 
 namespace KIGFX
 {
@@ -188,8 +190,6 @@ public:
     /**
      * Compute the boundary limits of aText (the bounding box of all shapes).
      *
-     * The overbar and attributes are not taken in account, '~' characters are skipped.
-     *
      * @return a VECTOR2D giving the width and height of text.
      */
     virtual VECTOR2D StringBoundaryLimits( const KIGFX::GAL* aGal, const UTF8& aText,
@@ -247,6 +247,38 @@ public:
 
     VECTOR2D BoundingBox( const EDA_TEXT& aText );
 
+    /**
+     * Convert text string to polygon (outline font) or polyline (stroke font).
+     *
+     * @param aBoundingBox pointer to a BOX2I that will set to the bounding box, or nullptr
+     * @param aText text to convert to polygon/polyline
+     * @param aGlyphSize glyph size
+     * @param aPosition position of text (cursor position before this text)
+     * @param aAngle text angle (default 0)
+     * @param aIsMirrored is text mirrored? (default false)
+     * @param aTextStyle text style flags (default 0 = no flags)
+     * @return text cursor position after this text
+     */
+    virtual VECTOR2I GetTextAsPolygon( BOX2I* aBoundingBox, GLYPH_LIST& aGlyphs, const UTF8& aText,
+                                       const VECTOR2D& aGlyphSize, const wxPoint& aPosition,
+                                       const EDA_ANGLE& aAngle = EDA_ANGLE::ANGLE_0,
+                                       bool             aIsMirrored = false,
+                                       TEXT_STYLE_FLAGS aTextStyle = 0 ) const = 0;
+
+    /**
+     * Convert text string to polygon (outline font) or polyline (stroke font).
+     * Bounding box is not returned.
+     * Parameters: see above.
+     */
+    VECTOR2I GetTextAsPolygon( GLYPH_LIST& aGlyphs, const UTF8& aText, const VECTOR2D& aGlyphSize,
+                               const wxPoint&   aPosition,
+                               const EDA_ANGLE& aAngle = EDA_ANGLE::ANGLE_0,
+                               bool aIsMirrored = false, TEXT_STYLE_FLAGS aTextStyle = 0 ) const
+    {
+        return GetTextAsPolygon( nullptr, aGlyphs, aText, aGlyphSize, aPosition, aAngle,
+                                 aIsMirrored, aTextStyle );
+    }
+
 protected:
     wxString m_fontName;     ///< Font name
     wxString m_fontFileName; ///< Font file name
@@ -270,14 +302,36 @@ protected:
      * Draws a single line of text. Multiline texts should be split before using the
      * function.
      *
+     * @param aGal is a pointer to the graphics abstraction layer, or nullptr (nothing is drawn)
+     * @param aBoundingBox is a pointer to a BOX2I variable which will be set to the bounding box, or nullptr
      * @param aText is the text to be drawn.
      * @param aPosition is text position.
      * @param aAngle is text angle.
-     * @return bounding box width/height
+     * @param aIsMirrored is true if text should be drawn mirrored, false otherwise.
+     * @return new cursor position
      */
-    virtual VECTOR2D drawSingleLineText( KIGFX::GAL* aGal, const UTF8& aText,
+    virtual VECTOR2D drawSingleLineText( KIGFX::GAL* aGal, BOX2I* aBoundingBox, const UTF8& aText,
                                          const VECTOR2D&  aPosition,
-                                         const EDA_ANGLE& aAngle = EDA_ANGLE() ) const = 0;
+                                         const EDA_ANGLE& aAngle = EDA_ANGLE(),
+                                         bool aIsMirrored = false ) const;
+
+    /**
+     * Computes the bounding box for a single line of text.
+     * Multiline texts should be split before using the function.
+     *
+     * @param aBoundingBox is a pointer to a BOX2I variable which will be set to the bounding box, or nullptr
+     * @param aText is the text to be drawn.
+     * @param aPosition is text position.
+     * @param aGlyphSize is glyph size.
+     * @param aAngle is text angle.
+     * @param aIsMirrored is true if text should be drawn mirrored, false otherwise.
+     * @return new cursor position
+     */
+    VECTOR2D boundingBoxSingleLine( BOX2I* aBoundingBox, const UTF8& aText,
+                                    const VECTOR2D&  aPosition,
+                                    const VECTOR2D&  aGlyphSize,
+                                    const EDA_ANGLE& aAngle = EDA_ANGLE(),
+                                    bool aIsMirrored = false ) const;
 
     void getLinePositions( const UTF8& aText, const VECTOR2D& aPosition, wxArrayString& aStringList,
                            std::vector<wxPoint>& aPositions, int& aLineCount,
@@ -287,7 +341,19 @@ protected:
     virtual VECTOR2D getBoundingBox( const UTF8& aString, const VECTOR2D& aGlyphSize,
                                      TEXT_STYLE_FLAGS aTextStyle = 0 ) const = 0;
 
-protected:
+    VECTOR2D drawMarkup( BOX2I* aBoundingBox, GLYPH_LIST& aGlyphs, const MARKUP::MARKUP_NODE& aNode,
+                         const VECTOR2D& aPosition, const VECTOR2D& aGlyphSize,
+                         const EDA_ANGLE& aAngle = EDA_ANGLE::ANGLE_0, bool aIsMirrored = false,
+                         TEXT_STYLE_FLAGS aTextStyle = 0, int aLevel = 0 ) const;
+    VECTOR2D drawMarkup( GLYPH_LIST& aGlyphs, const MARKUP::MARKUP_NODE& aNode,
+                         const VECTOR2D& aPosition, const VECTOR2D& aGlyphSize,
+                         const EDA_ANGLE& aAngle = EDA_ANGLE::ANGLE_0, bool aIsMirrored = false,
+                         TEXT_STYLE_FLAGS aTextStyle = 0, int aLevel = 0 ) const
+    {
+        return drawMarkup( nullptr, aGlyphs, aNode, aPosition, aGlyphSize, aAngle, aIsMirrored,
+                           aTextStyle, aLevel );
+    }
+
     static wxString getFontNameForFontconfig( const wxString& aFontName, bool aBold, bool aItalic );
 
 private:

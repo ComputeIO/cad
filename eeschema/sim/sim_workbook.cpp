@@ -24,93 +24,79 @@
 
 #include <sim/sim_workbook.h>
 
-TRACE_DESC::TRACE_DESC( const NETLIST_EXPORTER_PSPICE_SIM& aExporter, const wxString& aName,
-                        SIM_PLOT_TYPE aType, const wxString& aParam ) :
-    m_name( aName ),
-    m_type( aType ),
-    m_param( aParam )
-{
-    // Title generation
-    m_title = wxString::Format( "%s(%s)", aParam, aName );
 
-    if( aType & SPT_AC_MAG )
-        m_title += " (mag)";
-    else if( aType & SPT_AC_PHASE )
-        m_title += " (phase)";
+SIM_WORKBOOK::SIM_WORKBOOK() : wxAuiNotebook()
+{
+    m_modified = false;
 }
 
 
-SIM_WORKBOOK::SIM_WORKBOOK() :
-    m_flagModified( false )
+SIM_WORKBOOK::SIM_WORKBOOK( wxWindow* aParent, wxWindowID aId, const wxPoint& aPos, const wxSize&
+        aSize, long aStyle ) : wxAuiNotebook( aParent, aId, aPos, aSize, aStyle )
 {
+    m_modified = false;
 }
 
 
-void SIM_WORKBOOK::Clear()
+bool SIM_WORKBOOK::AddPage( wxWindow* page, const wxString& caption, bool select, const wxBitmap& bitmap )
 {
-    m_plots.clear();
+    bool res = wxAuiNotebook::AddPage( page, caption, select, bitmap );
+    setModified( res );
+    return res;
 }
 
 
-void SIM_WORKBOOK::AddPlotPanel( SIM_PANEL_BASE* aPlotPanel )
+bool SIM_WORKBOOK::AddPage( wxWindow* page, const wxString& text, bool select, int imageId )
 {
-    wxASSERT( m_plots.count( aPlotPanel ) == 0 );
-    m_plots[aPlotPanel] = PLOT_INFO();
-
-    m_flagModified = true;
+    bool res = wxAuiNotebook::AddPage( page, text, select, imageId );
+    setModified( res );
+    return res;
 }
 
 
-void SIM_WORKBOOK::RemovePlotPanel( SIM_PANEL_BASE* aPlotPanel )
+bool SIM_WORKBOOK::DeleteAllPages()
 {
-    wxASSERT( m_plots.count( aPlotPanel ) == 1 );
-    m_plots.erase( aPlotPanel );
-
-    m_flagModified = true;
+    bool res = wxAuiNotebook::DeleteAllPages();
+    setModified( res );
+    return res;
 }
 
 
-std::vector<const SIM_PANEL_BASE*> SIM_WORKBOOK::GetSortedPlotPanels() const
+bool SIM_WORKBOOK::DeletePage( size_t page )
 {
-    std::vector<const SIM_PANEL_BASE*> plotPanels;
-
-    for( const auto& plot : m_plots )
-        plotPanels.push_back( plot.first );
-
-    std::sort( plotPanels.begin(), plotPanels.end(),
-    [&]( const SIM_PANEL_BASE*& a, const SIM_PANEL_BASE*& b )
-    {
-        return m_plots.at( a ).pos < m_plots.at( b ).pos;
-    });
-
-    return plotPanels;
+    bool res = wxAuiNotebook::DeletePage( page );
+    setModified( res );
+    return res;
 }
 
 
-void SIM_WORKBOOK::AddTrace( const SIM_PANEL_BASE* aPlotPanel, const wxString& aName,
-        const TRACE_DESC& aTrace )
+bool SIM_WORKBOOK::AddTrace( SIM_PLOT_PANEL* aPlotPanel, const wxString& aName, int aPoints, const
+        double* aX, const double* aY, SIM_PLOT_TYPE aType, const wxString& aParam )
 {
-    m_plots.at( aPlotPanel ).m_traces.insert(
-            std::make_pair( aName, aTrace ) );
-
-    m_flagModified = true;
+    bool res = aPlotPanel->addTrace( aName, aPoints, aX, aY, aType, aParam );
+    setModified( res );
+    return res;
 }
 
 
-void SIM_WORKBOOK::RemoveTrace( const SIM_PANEL_BASE* aPlotPanel, const wxString& aName )
+bool SIM_WORKBOOK::DeleteTrace( SIM_PLOT_PANEL* aPlotPanel, const wxString& aName )
 {
-    auto& traceMap = m_plots.at( aPlotPanel ).m_traces;
-    auto traceIt = traceMap.find( aName );
-    wxASSERT( traceIt != traceMap.end() );
-    traceMap.erase( traceIt );
-
-    m_flagModified = true;
+    bool res = aPlotPanel->deleteTrace( aName );
+    setModified( res );
+    return res;
 }
 
-
-SIM_WORKBOOK::TRACE_MAP::const_iterator SIM_WORKBOOK::RemoveTrace( const SIM_PANEL_BASE* aPlotPanel,
-        TRACE_MAP::const_iterator aIt )
+void SIM_WORKBOOK::ClrModified()
 {
-    m_flagModified = true;
-    return m_plots.at( aPlotPanel ).m_traces.erase( aIt );
+    m_modified = false;
+    wxPostEvent( GetParent(), wxCommandEvent( EVT_WORKBOOK_CLR_MODIFIED ) );
 }
+
+void SIM_WORKBOOK::setModified( bool value )
+{
+    m_modified = value;
+    wxPostEvent( GetParent(), wxCommandEvent( EVT_WORKBOOK_MODIFIED ) );
+}
+
+wxDEFINE_EVENT( EVT_WORKBOOK_MODIFIED, wxCommandEvent );
+wxDEFINE_EVENT( EVT_WORKBOOK_CLR_MODIFIED, wxCommandEvent );

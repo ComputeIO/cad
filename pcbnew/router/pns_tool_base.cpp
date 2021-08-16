@@ -2,7 +2,7 @@
  * KiRouter - a push-and-(sometimes-)shove PCB router
  *
  * Copyright (C) 2013  CERN
- * Copyright (C) 2016-2020 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 2016-2021 KiCad Developers, see AUTHORS.txt for contributors.
  * Author: Tomasz Wlostowski <tomasz.wlostowski@cern.ch>
  *
  * This program is free software: you can redistribute it and/or modify it
@@ -113,6 +113,9 @@ ITEM* TOOL_BASE::pickSingleItem( const VECTOR2I& aWhere, int aNet, int aLayer, b
 
     ITEM_SET candidates = m_router->QueryHoverItems( aWhere );
 
+    if( candidates.Empty() )
+        candidates = m_router->QueryHoverItems( aWhere, true );
+
     for( ITEM* item : candidates.Items() )
     {
         if( !item->IsRoutable() )
@@ -171,9 +174,9 @@ ITEM* TOOL_BASE::pickSingleItem( const VECTOR2I& aWhere, int aNet, int aLayer, b
                 }
             }
         }
-        // Allow unconnected items as last resort in RM_MarkObstacles mode
         else if ( item->Net() == 0 && m_router->Settings().Mode() == RM_MarkObstacles )
         {
+            // Allow unconnected items as last resort in RM_MarkObstacles mode
             if( item->OfKind( ITEM::SOLID_T ) && aIgnorePads )
                 continue;
 
@@ -182,7 +185,7 @@ ITEM* TOOL_BASE::pickSingleItem( const VECTOR2I& aWhere, int aNet, int aLayer, b
         }
     }
 
-    ITEM* rv = NULL;
+    ITEM* rv = nullptr;
 
     bool highContrast = ( displayOptions().m_ContrastModeDisplay != HIGH_CONTRAST_MODE::NORMAL );
 
@@ -202,7 +205,8 @@ ITEM* TOOL_BASE::pickSingleItem( const VECTOR2I& aWhere, int aNet, int aLayer, b
 
     if( rv )
     {
-        wxLogTrace( "PNS", "%s, layer : %d, tl: %d", rv->KindStr().c_str(), rv->Layers().Start(), tl );
+        wxLogTrace( "PNS", "%s, layer : %d, tl: %d", rv->KindStr().c_str(), rv->Layers().Start(),
+                    tl );
     }
 
     return rv;
@@ -233,6 +237,7 @@ void TOOL_BASE::highlightNet( bool aEnabled, int aNetcode )
     getView()->UpdateAllLayersColor();
 }
 
+
 bool TOOL_BASE::checkSnap( ITEM *aItem )
 {
     // Sync PNS engine settings with the general PCB editor options.
@@ -256,6 +261,7 @@ bool TOOL_BASE::checkSnap( ITEM *aItem )
 
     return false;
 }
+
 
 void TOOL_BASE::updateStartItem( const TOOL_EVENT& aEvent, bool aIgnorePads )
 {
@@ -349,7 +355,7 @@ ROUTER *TOOL_BASE::Router() const
 }
 
 
-const VECTOR2I TOOL_BASE::snapToItem( ITEM* aItem, VECTOR2I aP )
+const VECTOR2I TOOL_BASE::snapToItem( ITEM* aItem, const VECTOR2I& aP )
 {
     if( !aItem || !m_iface->IsItemVisible( aItem ) )
     {
@@ -378,9 +384,9 @@ const VECTOR2I TOOL_BASE::snapToItem( ITEM* aItem, VECTOR2I aP )
         {
             return ( distA_sq < distB_sq ) ? A : B;
         }
-        // TODO(snh): Clean this up
         else if( aItem->Kind() == ITEM::SEGMENT_T )
         {
+            // TODO(snh): Clean this up
             SEGMENT* seg = static_cast<SEGMENT*>( li );
             return m_gridHelper->AlignToSegment( aP, seg->Seg() );
         }
@@ -389,8 +395,9 @@ const VECTOR2I TOOL_BASE::snapToItem( ITEM* aItem, VECTOR2I aP )
             ARC* arc = static_cast<ARC*>( li );
             return m_gridHelper->AlignToArc( aP, *static_cast<const SHAPE_ARC*>( arc->Shape() ) );
         }
-    }
+
         break;
+    }
 
     default:
         break;

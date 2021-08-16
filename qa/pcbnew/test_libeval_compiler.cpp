@@ -25,11 +25,11 @@
 
 #include <qa_utils/wx_utils/unit_test_utils.h>
 
-#include <layers_id_colors_and_visibility.h>
+#include <layer_ids.h>
 #include <pcbnew/pcb_expr_evaluator.h>
 
 #include <pcbnew/board.h>
-#include <pcbnew/track.h>
+#include <pcbnew/pcb_track.h>
 
 BOOST_AUTO_TEST_SUITE( Libeval_Compiler )
 
@@ -119,7 +119,7 @@ static bool testEvalExpr( const wxString& expr, LIBEVAL::VALUE expectedResult,
     if( ok )
     {
         result = *ucode.Run( &context );
-        ok     = ( result.EqualTo( &expectedResult ) );
+        ok     = ( result.EqualTo( &context, &expectedResult ) );
     }
 
 
@@ -162,8 +162,8 @@ BOOST_AUTO_TEST_CASE( IntrospectedProperties )
     net1info->SetNetClass( netclass1 );
     net2info->SetNetClass( netclass2 );
 
-    TRACK trackA( &brd );
-    TRACK trackB( &brd );
+    PCB_TRACK trackA( &brd );
+    PCB_TRACK trackB( &brd );
 
     trackA.SetNet( net1info );
     trackB.SetNet( net2info );

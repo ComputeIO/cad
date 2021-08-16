@@ -23,6 +23,7 @@
 
 #include <pgm_base.h>
 #include <settings/common_settings.h>
+#include <tool/action_manager.h>
 #include <tool/action_menu.h>
 #include <tool/actions.h>
 #include <tool/tools_holder.h>
@@ -111,6 +112,16 @@ bool TOOLS_HOLDER::IsCurrentTool( const TOOL_ACTION& aAction ) const
         return &aAction == &ACTIONS::selectionTool;
     else
         return m_toolStack.back() == aAction.GetName();
+}
+
+
+void TOOLS_HOLDER::ShowChangedLanguage()
+{
+    std::string  actionName = CurrentToolName();
+    TOOL_ACTION* action = m_toolManager->GetActionManager()->FindAction( actionName );
+
+    if( action )
+        DisplayToolMsg( action->GetLabel() );
 }
 
 

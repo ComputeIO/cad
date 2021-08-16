@@ -24,6 +24,7 @@
  */
 #include <convert_to_biu.h>
 #include <pcb_edit_frame.h>
+#include <layer_ids.h>
 #include <settings/color_settings.h>
 
 #include <board.h>

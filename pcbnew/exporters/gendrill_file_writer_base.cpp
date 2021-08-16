@@ -25,7 +25,8 @@
 
 #include <board.h>
 #include <footprint.h>
-#include <track.h>
+#include <pad.h>
+#include <pcb_track.h>
 #include <collectors.h>
 #include <reporter.h>
 
@@ -80,8 +81,8 @@ void GENDRILL_WRITER_BASE::buildHolesList( DRILL_LAYER_PAIR aLayerPair,
             if( track->Type() != PCB_VIA_T )
                 continue;
 
-            auto via = static_cast<VIA*>( track );
-            int hole_sz = via->GetDrillValue();
+            PCB_VIA* via = static_cast<PCB_VIA*>( track );
+            int      hole_sz = via->GetDrillValue();
 
             if( hole_sz == 0 )   // Should not occur.
                 continue;
@@ -221,7 +222,7 @@ std::vector<DRILL_LAYER_PAIR> GENDRILL_WRITER_BASE::getUniqueLayerPairs() const
 
     for( int i = 0; i < vias.GetCount(); ++i )
     {
-        VIA*  v = (VIA*) vias[i];
+        PCB_VIA*  v = static_cast<PCB_VIA*>( vias[i] );
 
         v->LayerPair( &layer_pair.first, &layer_pair.second );
 
@@ -340,8 +341,8 @@ void GENDRILL_WRITER_BASE::CreateMapFilesSet( const wxString& aPlotDirectory,
             {
                 if( aReporter )
                 {
-                    msg.Printf( _( "** Unable to create %s **\n" ), fullfilename );
-                    aReporter->Report( msg );
+                    msg.Printf( _( "Failed to create file '%s'." ), fullfilename );
+                    aReporter->Report( msg, RPT_SEVERITY_ERROR );
                 }
 
                 return;
@@ -350,8 +351,8 @@ void GENDRILL_WRITER_BASE::CreateMapFilesSet( const wxString& aPlotDirectory,
             {
                 if( aReporter )
                 {
-                    msg.Printf( _( "Create file %s\n" ), fullfilename );
-                    aReporter->Report( msg );
+                    msg.Printf( _( "Created file '%s'." ), fullfilename );
+                    aReporter->Report( msg, RPT_SEVERITY_INFO );
                 }
             }
         }

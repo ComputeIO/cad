@@ -26,7 +26,6 @@
 #include <cmath>
 #include <math/vector2d.h>
 #include <eda_angle.h>
-#include <kicad_string.h>
 
 class EDA_TEXT;
 
@@ -147,6 +146,7 @@ public:
     TEXT_ATTRIBUTES& RotateCW();
 
 
+#if 0
     /**
      * Spin counterclockwise by 90 degrees.
      * Flip horizontal alignment (left<->right) when going from 270 to 0, or 90 to 180 degrees.
@@ -163,7 +163,7 @@ public:
      * @return the attributes after rotation
      */
     TEXT_ATTRIBUTES& SpinCW();
-
+#endif
 
     TEXT_ATTRIBUTES& Align( HORIZONTAL_ALIGNMENT aHorizontalAlignment );
 
@@ -554,15 +554,7 @@ public:
      */
     bool IsKeepUpright() const { return m_keepUpright; }
 
-#ifdef DEBUG
-    void SetKeepUpright( bool aKeepUpright )
-    {
-        std::cerr << "SetKeepUpright( " << ( aKeepUpright ? "TRUE" : "false" ) << " )\n";
-        m_keepUpright = aKeepUpright;
-    }
-#else
     void SetKeepUpright( bool aKeepUpright ) { m_keepUpright = aKeepUpright; }
-#endif
 
 private:
     KIFONT::FONT*        m_font = nullptr;

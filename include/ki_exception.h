@@ -110,7 +110,7 @@ protected:
 
 /**
  * A filename or source description, a problem input line, a line number, a byte
- * offset, and an error message which contains the the caller's report and his call
+ * offset, and an error message which contains the caller's report and his call
  * site information: CPP source file, function, and line number.
  *
  * @author Dick Hollenbeck
@@ -121,7 +121,7 @@ struct PARSE_ERROR : public IO_ERROR
     int         byteIndex;      ///< at which byte offset within the line, 1 based index
 
     /// problem line of input [say, from a LINE_READER].
-    /// this is brought up in original byte format rather than wxString form, incase
+    /// this is brought up in original byte format rather than wxString form, in case
     /// there was a problem with the encoding, in which case converting to wxString is
     /// not reliable in this context.
     std::string inputLine;
@@ -175,8 +175,11 @@ struct FUTURE_FORMAT_ERROR : public PARSE_ERROR
 {
     wxString requiredVersion;   ///< version or date of KiCad required to open file
 
+    FUTURE_FORMAT_ERROR( const wxString& aRequiredVersion );
     FUTURE_FORMAT_ERROR( const PARSE_ERROR& aParseError, const wxString& aRequiredVersion );
     ~FUTURE_FORMAT_ERROR() throw () {}
+
+    void init( const wxString& aRequiredVersion );
 };
 
 /** @} exception_types */

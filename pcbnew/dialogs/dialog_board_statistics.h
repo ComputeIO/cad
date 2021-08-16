@@ -30,8 +30,7 @@
 #include <base_units.h>
 #include <board.h>
 #include <footprint.h>
-#include <track.h>
-#include <confirm.h>
+#include <pcb_track.h>
 #include <dialog_board_statistics_base.h>
 #include <pad_shapes.h>
 #include <pcb_base_frame.h>
@@ -51,7 +50,7 @@ public:
     template <typename T>
     struct typeContainer_t
     {
-        typeContainer_t<T>( T aAttribute, wxString aTitle )
+        typeContainer_t<T>( T aAttribute, const wxString& aTitle )
                 : attribute( aAttribute ),
                   title( aTitle ),
                   qty( 0 )

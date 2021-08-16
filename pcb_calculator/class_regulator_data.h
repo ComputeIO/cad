@@ -2,7 +2,7 @@
  * This program source code file is part of KICAD, a free EDA CAD application.
  *
  * Copyright (C) 1992-2011 jean-pierre.charras
- * Copyright (C) 1992-2020 Kicad Developers, see change_log.txt for contributors.
+ * Copyright (C) 1992-2021 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -40,13 +40,6 @@
 class REGULATOR_DATA
 {
 public:
-    wxString m_Name;        // Regulator name
-    int m_Type;             // type: with separate sense pin (normal) (=0)
-                            // or adjustable 3 pins reg (=1)
-    double m_Vref;          // Vreference in volt
-    double m_Iadj;          // 3 pin type only: I adjust in micro amp
-
-public:
     REGULATOR_DATA( const wxString& aName, double aVref, int aType, double aIadj = 0)
     {
         m_Type = aType;
@@ -54,14 +47,18 @@ public:
         m_Name = aName;
         m_Iadj = aIadj;
     }
+
+public:
+    wxString m_Name;        // Regulator name
+    int m_Type;             // type: with separate sense pin (normal) (=0)
+                            // or adjustable 3 pins reg (=1)
+    double m_Vref;          // Vreference in volt
+    double m_Iadj;          // 3 pin type only: I adjust in micro amp
 };
 
 // Helper class to store the list of known regulators
 class REGULATOR_LIST
 {
-public:
-    std::vector <REGULATOR_DATA*> m_List;
-
 public:
     REGULATOR_LIST() {};
     ~REGULATOR_LIST()
@@ -79,13 +76,15 @@ public:
     {
         // add new item an try to keep alphabetic order,
         // and because name have numbers inside, use a KiCad compare function
-        // that handles number as numbers not ascii chars
+        // that handles number as numbers not ASCII chars
         unsigned ii = 0;
+
         for( ; ii < m_List.size(); ii++ )
         {
             if( UTIL::RefDesStringCompare( aItem->m_Name, m_List[ii]->m_Name ) < 0 )
                 break;
         }
+
         m_List.insert( m_List.begin() + ii, aItem );
     }
 
@@ -98,10 +97,10 @@ public:
                 return  m_List[ii];
             }
         }
-        return NULL;
+        return nullptr;
     }
 
-    void Remove( const wxString & aRegName )
+    void Remove( const wxString& aRegName )
     {
         for( unsigned ii = 0; ii < m_List.size(); ii++ )
         {
@@ -142,6 +141,8 @@ public:
 
         return list;
     }
+
+    std::vector <REGULATOR_DATA*> m_List;
 };
 
 #endif  // CLASS_REGULATOR_DATA_H

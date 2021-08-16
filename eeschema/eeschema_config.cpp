@@ -23,7 +23,7 @@
 
 #include <mutex>
 
-#include <class_library.h>
+#include <symbol_library.h>
 #include <confirm.h>
 #include <dialogs/panel_eeschema_color_settings.h>
 #include <dialogs/panel_eeschema_display_options.h>
@@ -80,14 +80,15 @@ bool SCH_EDIT_FRAME::LoadProjectSettings()
     GetRenderSettings()->SetDefaultPenWidth( m_defaults->m_DefaultLineWidth );
     GetRenderSettings()->m_DefaultWireThickness = m_defaults->m_DefaultWireThickness;
     GetRenderSettings()->m_DefaultBusThickness  = m_defaults->m_DefaultBusThickness;
+    GetRenderSettings()->m_LabelSizeRatio       = m_defaults->m_LabelSizeRatio;
     GetRenderSettings()->m_TextOffsetRatio      = m_defaults->m_TextOffsetRatio;
     GetRenderSettings()->m_PinSymbolSize        = m_defaults->m_PinSymbolSize;
     GetRenderSettings()->m_JunctionSize         = m_defaults->m_JunctionSize;
 
     // Verify some values, because the config file can be edited by hand,
     // and have bad values:
-    LIB_PART::SetSubpartIdNotation( LIB_PART::GetSubpartIdSeparator(),
-                                    LIB_PART::GetSubpartFirstId() );
+    LIB_SYMBOL::SetSubpartIdNotation( LIB_SYMBOL::GetSubpartIdSeparator(),
+                                      LIB_SYMBOL::GetSubpartFirstId() );
 
     // Load the drawing sheet description file, from the filename stored in
     // BASE_SCREEN::m_DrawingSheetFileName, read in config project file
@@ -97,7 +98,7 @@ bool SCH_EDIT_FRAME::LoadProjectSettings()
 
     if( !DS_DATA_MODEL::GetTheInstance().LoadDrawingSheet( filename ) )
     {
-        ShowInfoBarError( _( "Error loading drawing sheet" ), true );
+        ShowInfoBarError( _( "Error loading drawing sheet." ), true );
     }
 
     return true;
@@ -139,7 +140,7 @@ void SCH_EDIT_FRAME::SaveProjectSettings()
 
 void SCH_EDIT_FRAME::LoadSettings( APP_SETTINGS_BASE* aCfg )
 {
-    // For now, axes are forced off in eeschema even if turned on in config
+    // For now, axes are forced off in Eeschema even if turned on in config
     eeconfig()->m_Window.grid.axes_enabled = false;
 
     SCH_BASE_FRAME::LoadSettings( eeconfig() );
@@ -185,7 +186,7 @@ void SCH_BASE_FRAME::LoadSettings( APP_SETTINGS_BASE* aCfg )
          * schematic: Because wires and pins are considered as connected when the are to the
          * same coordinate we cannot mix coordinates in mils (internal units) and mm (that
          * cannot exactly converted in mils in many cases).  In fact schematic must only use
-         * 50 and 25 mils to place labels, wires and components others values are useful only
+         * 50 and 25 mils to place labels, wires and symbols others values are useful only
          * for graphic items (mainly in library editor) so use integer values in mils only.
          * The 100 mil grid is added to help conform to the KiCad Library Convention which
          * states: "Using a 100mil grid, pin ends and origin must lie on grid nodes IEC-60617"
@@ -268,9 +269,9 @@ SYMBOL_LIB_TABLE* PROJECT::SchSymbolLibTable()
             catch( const IO_ERROR& ioe )
             {
                 wxString msg;
-                msg.Printf( _( "An error occurred loading the symbol library table \"%s\"." ),
+                msg.Printf( _( "Error loading the symbol library table '%s'." ),
                             fn.GetFullPath() );
-                DisplayErrorMessage( NULL, msg, ioe.What() );
+                DisplayErrorMessage( nullptr, msg, ioe.What() );
             }
         }
     }

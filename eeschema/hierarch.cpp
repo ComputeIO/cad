@@ -43,7 +43,6 @@
 #include "eeschema_settings.h"
 
 #include <wx/object.h>
-#include <wx/wx.h>
 
 class HIERARCHY_NAVIG_DLG;
 
@@ -129,7 +128,7 @@ HIERARCHY_NAVIG_DLG::HIERARCHY_NAVIG_DLG( SCH_EDIT_FRAME* aParent ) :
 
     SetClientSize( tree_size );
 
-    // manage the ESC key to close the dialog, because thre is no Cancel button
+    // manage the ESC key to close the dialog, because there is no Cancel button
     // in dialog
     m_Tree->Connect( wxEVT_CHAR, wxKeyEventHandler( HIERARCHY_TREE::onChar ) );
 
@@ -271,7 +270,7 @@ wxString HIERARCHY_NAVIG_DLG::getRootString()
 }
 
 
-wxString HIERARCHY_NAVIG_DLG::formatPageString( wxString aName, wxString aPage )
+wxString HIERARCHY_NAVIG_DLG::formatPageString( const wxString& aName, const wxString& aPage )
 {
     return aName + wxT( " " ) + wxString::Format( _( "(page %s)" ), aPage );
 }

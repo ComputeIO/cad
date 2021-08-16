@@ -22,13 +22,12 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
 
-#ifndef DEFAUT_VALUES_H
-#define DEFAUT_VALUES_H
+#ifndef DEFAULT_VALUES_H
+#define DEFAULT_VALUES_H
 
 
+///< The size of the rectangle indicating an unconnected wire or label
 #define DANGLING_SYMBOL_SIZE 12
-
-#define TXT_MARGIN 15
 
 ///< The default pin len value when creating pins(can be changed in preference menu)
 #define DEFAULT_PIN_LENGTH 100
@@ -57,14 +56,17 @@
 ///< The default junction diameter in mils. (can be changed in preference menu)
 #define DEFAULT_JUNCTION_DIAM 36
 
-///< The default bus and wire enty size in mils.
+///< The default bus and wire entry size in mils.
 #define DEFAULT_SCH_ENTRY_SIZE 100
 
 ///< The default text size in mils. (can be changed in preference menu)
 #define DEFAULT_TEXT_SIZE 50
 
 ///< Ratio of the font height to the baseline of the text above the wire.
-#define DEFAULT_TEXT_OFFSET_RATIO 0.08
+#define DEFAULT_TEXT_OFFSET_RATIO 0.15
+
+///< Ratio of the font height to space around global labels
+#define DEFAULT_LABEL_SIZE_RATIO 0.375
 
 ///< The offset of the pin name string from the end of the pin in mils.
 #define DEFAULT_PIN_NAME_OFFSET 20

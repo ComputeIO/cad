@@ -2,7 +2,7 @@
  * KiRouter - a push-and-(sometimes-)shove PCB router
  *
  * Copyright (C) 2013-2014 CERN
- * Copyright (C) 2016 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 2016-2021 KiCad Developers, see AUTHORS.txt for contributors.
  * Author: Tomasz Wlostowski <tomasz.wlostowski@cern.ch>
  *
  * This program is free software: you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #include <geometry/shape_rect.h>
 #include <geometry/shape_simple.h>
 #include <pcb_painter.h>
+#include <trigo.h>
 
 #include "router_preview_item.h"
 
@@ -34,6 +35,7 @@
 #include "pns_via.h"
 
 using namespace KIGFX;
+
 
 ROUTER_PREVIEW_ITEM::ROUTER_PREVIEW_ITEM( const PNS::ITEM* aItem, KIGFX::VIEW* aView ) :
     EDA_ITEM( NOT_USED )
@@ -49,7 +51,7 @@ ROUTER_PREVIEW_ITEM::ROUTER_PREVIEW_ITEM( const PNS::ITEM* aItem, KIGFX::VIEW* a
     m_showViaClearance = false;
 
     // initialize variables, overwritten by Update( aItem ), if aItem != NULL
-    m_router = NULL;
+    m_router = nullptr;
     m_type = PR_SHAPE;
     m_style = 0;
     m_width = 0;
@@ -298,6 +300,7 @@ void ROUTER_PREVIEW_ITEM::drawShape( const SHAPE* aShape, KIGFX::GAL* gal ) cons
         {
             gal->SetIsStroke( true );
             gal->SetLineWidth( 2 * m_clearance );
+
             // need the implicit last segment to be explicit for DrawPolyline
             polygon.push_back( c->CDPoint( 0 ) );
             gal->DrawPolyline( polygon );
@@ -364,6 +367,7 @@ void ROUTER_PREVIEW_ITEM::ViewDraw( int aLayer, KIGFX::VIEW* aView ) const
         // Cairo doesn't current support z-ordering, so we need
         // to draw the clearance first to ensure it is in the background
         gal->SetLayerDepth( ClearanceOverlayDepth );
+
         //TODO(snh) Add configuration option for the color/alpha here
         gal->SetStrokeColor( COLOR4D( DARKDARKGRAY ).WithAlpha( 0.9 ) );
         gal->SetFillColor( COLOR4D( DARKDARKGRAY ).WithAlpha( 0.7 ) );

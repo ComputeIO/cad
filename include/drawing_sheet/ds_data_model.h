@@ -2,7 +2,7 @@
  * This program source code file is part of KiCad, a free EDA CAD application.
  *
  * Copyright (C) 2013-2014 Jean-Pierre Charras, jp.charras at wanadoo.fr
- * Copyright (C) 1992-2020 KiCad Developers, see AUTHORS.txt for contributors.
+ * Copyright (C) 1992-2021 KiCad Developers, see AUTHORS.txt for contributors.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -55,7 +55,10 @@ public:
      *
      * @param aLayout the alternate drawing sheet; if null restore the default drawing sheet
      */
-    static void SetAltInstance( DS_DATA_MODEL* aLayout = NULL );
+    static void SetAltInstance( DS_DATA_MODEL* aLayout = nullptr );
+
+    int GetFileFormatVersionAtLoad() { return m_fileFormatVersionAtLoad; }
+    void SetFileFormatVersionAtLoad( int aVersion ) { m_fileFormatVersionAtLoad = aVersion; }
 
     double GetLeftMargin() { return m_leftMargin; }
     void SetLeftMargin( double aMargin ) { m_leftMargin = aMargin; }
@@ -101,12 +104,12 @@ public:
      *
      * @param aOutputString is a wxString to store the S expr string
      */
-    void SaveInString( wxString& aOutputString );
+    void SaveInString( wxString* aOutputString );
 
     /**
      * Fill the given string with an S-expr serialization of the WS_DATA_ITEMs.
      */
-    void SaveInString( std::vector<DS_DATA_ITEM*> aItemsList, wxString& aOutputString );
+    void SaveInString( std::vector<DS_DATA_ITEM*>& aItemsList, wxString* aOutputString );
 
     void Append( DS_DATA_ITEM* aItem );
     void Remove( DS_DATA_ITEM* aItem );
@@ -117,7 +120,7 @@ public:
     int GetItemIndex( DS_DATA_ITEM* aItem ) const;
 
     /**
-     * @return is the item from it's index \a aIdx, or NULL if does not exist.
+     * @return is the item from its index \a aIdx, or NULL if does not exist.
      */
     DS_DATA_ITEM* GetItem( unsigned aIdx ) const;
 
@@ -208,12 +211,11 @@ private:
     bool   m_allowVoidList;         // If false, the default drawing sheet will be loaded the
                                     // first time DS_DRAW_ITEM_LIST::BuildDrawItemsList is run
                                     // (useful mainly for drawing sheet editor)
+    int m_fileFormatVersionAtLoad;
     double m_leftMargin;            // the left page margin in mm
     double m_rightMargin;           // the right page margin in mm
     double m_topMargin;             // the top page margin in mm
     double m_bottomMargin;          // the bottom page margin in mm
-
-
 };
 
 #endif      // DS_DATA_MODEL_H

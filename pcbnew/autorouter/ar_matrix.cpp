@@ -777,15 +777,15 @@ void AR_MATRIX::TraceSegmentPcb( PCB_SHAPE* pt_segm, int color, int marge,
 
     switch( pt_segm->GetShape() )
     {
-    case PCB_SHAPE_TYPE::CIRCLE:
+    case SHAPE_T::CIRCLE:
         traceCircle( ux0, uy0, ux1, uy1, half_width, layer, color, op_logic );
         break;
 
-    case PCB_SHAPE_TYPE::ARC:
+    case SHAPE_T::ARC:
         traceArc( ux0, uy0, ux1, uy1, pt_segm->GetAngle(), half_width, layer, color, op_logic );
         break;
 
-    case PCB_SHAPE_TYPE::SEGMENT:
+    case SHAPE_T::SEGMENT:
         drawSegmentQcq( ux0, uy0, ux1, uy1, half_width, layer, color, op_logic );
         break;
 
@@ -874,11 +874,11 @@ void AR_MATRIX::CreateKeepOutRectangle(
 
         for( col = col_min; col <= col_max; col++ )
         {
-            // RoutingMatrix Dist map containt the "cost" of the cell
+            // RoutingMatrix Dist map contained the "cost" of the cell
             // at position (row, col)
             // in autoplace this is the cost of the cell, when
             // a footprint overlaps it, near a "master" footprint
-            // this cost is hight near the "master" footprint
+            // this cost is high near the "master" footprint
             // and decrease with the distance
             cgain = 256;
             LocalKeepOut = aKeepOut;
