@@ -284,11 +284,7 @@ int SCH_TEXT::GetTextOffset( const RENDER_SETTINGS* aSettings ) const
     else
         ratio = DEFAULT_TEXT_OFFSET_RATIO; // For previews (such as in Preferences), etc.
 
-    int ret = KiROUND( ratio * GetTextSize().y );
-#ifdef DEBUG
-    std::cerr << "SCH_TEXT::GetTextOffset( ... ) " << *this << " offset " << ret << std::endl;
-#endif
-    return ret;
+    return KiROUND( ratio * GetTextSize().y );
 }
 
 
@@ -304,8 +300,6 @@ int SCH_TEXT::GetLabelBoxExpansion( const RENDER_SETTINGS* aSettings ) const
         ratio = DEFAULT_LABEL_SIZE_RATIO; // For previews (such as in Preferences), etc.
 
     return KiROUND( ratio * GetTextSize().y );
-
-    return 0;
 }
 
 
