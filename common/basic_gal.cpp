@@ -339,41 +339,35 @@ void BASIC_GAL::DrawGlyph( const KIFONT::GLYPH& aGlyph, int aNth, int aTotal )
         {
             if( m_DC )
             {
-            auto           polylist = aGlyph.GetPolylist();
-            const wxBrush& saveBrush = m_DC->GetBrush();
+                auto           polylist = aGlyph.GetPolylist();
+                const wxBrush& saveBrush = m_DC->GetBrush();
 
-            for( int iOutline = 0; iOutline < polylist.OutlineCount(); ++iOutline )
-            {
-                const SHAPE_LINE_CHAIN& outline = polylist.COutline( iOutline );
-                std::vector<wxPoint>    outline_with_transform;
+                for( int iOutline = 0; iOutline < polylist.OutlineCount(); ++iOutline )
+                {
+                    const SHAPE_LINE_CHAIN& outline = polylist.COutline( iOutline );
+                    std::vector<wxPoint>    outline_with_transform;
 
-                for( int i = 0; i < outline.PointCount(); i++ )
-                    outline_with_transform.emplace_back(
-                            (wxPoint) transform( outline.CPoint( i ) ) );
+                    for( int i = 0; i < outline.PointCount(); i++ )
+                        outline_with_transform.emplace_back(
+                                (wxPoint) transform( outline.CPoint( i ) ) );
+
+                    m_DC->SetBrush( saveBrush );
+                    doDrawPolyline( outline_with_transform, true );
+
+                    m_DC->SetBrush( *wxWHITE_BRUSH );
+                    for( int iHole = 0; iHole < polylist.HoleCount( iOutline ); iHole++ )
+                    {
+                        const SHAPE_LINE_CHAIN& hole = polylist.CHole( iOutline, iHole );
+                        std::vector<wxPoint>    hole_with_transform;
+                        for( int i = 0; i < hole.PointCount(); i++ )
+                            hole_with_transform.emplace_back(
+                                    (wxPoint) transform( hole.CPoint( i ) ) );
+
+                        doDrawPolyline( hole_with_transform, true );
+                    }
+                }
 
                 m_DC->SetBrush( saveBrush );
-                doDrawPolyline( outline_with_transform, true );
-
-                m_DC->SetBrush( *wxWHITE_BRUSH );
-                for( int iHole = 0; iHole < polylist.HoleCount( iOutline ); iHole++ )
-                {
-                    const SHAPE_LINE_CHAIN& hole = polylist.CHole( iOutline, iHole );
-                    std::vector<wxPoint>    hole_with_transform;
-                    for( int i = 0; i < hole.PointCount(); i++ )
-                        hole_with_transform.emplace_back( (wxPoint) transform( hole.CPoint( i ) ) );
-
-                    doDrawPolyline( hole_with_transform, true );
-                }
-            }
-
-            m_DC->SetBrush( saveBrush );
-            }
-            else
-            {
-#ifdef DEBUG
-                std::cerr << "BASIC_GAL::DrawGlyph( [aGlyph], " << aNth << ", " << aTotal
-                          << " ) m_DC is null?" << std::endl;
-#endif
             }
         }
 #else

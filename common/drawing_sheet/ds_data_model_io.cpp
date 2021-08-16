@@ -272,8 +272,7 @@ void DS_DATA_MODEL_IO::format( DS_DATA_ITEM_TEXT* aItem, int aNestLevel ) const
     }
 
     // Write text justification
-    if( aItem->m_Halign != TEXT_ATTRIBUTES::H_LEFT ||
-        aItem->m_Valign != TEXT_ATTRIBUTES::V_CENTER )
+    if( aItem->m_Halign != TEXT_ATTRIBUTES::H_LEFT || aItem->m_Valign != TEXT_ATTRIBUTES::V_CENTER )
     {
         m_out->Print( 0, " (%s", getTokenName( T_justify ) );
 

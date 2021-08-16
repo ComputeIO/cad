@@ -59,8 +59,7 @@ class OUTPUTFORMATTER;
 class wxFindReplaceData;
 
 
-EDA_TEXT::EDA_TEXT( const wxString& text ) :
-        m_text( text )
+EDA_TEXT::EDA_TEXT( const wxString& text ) : m_text( text )
 {
     int sz = Mils2iu( DEFAULT_SIZE_TEXT );
     SetTextSize( wxSize( sz, sz ) );
@@ -69,8 +68,7 @@ EDA_TEXT::EDA_TEXT( const wxString& text ) :
 
 
 EDA_TEXT::EDA_TEXT( const EDA_TEXT& aText ) :
-        m_text( aText.m_text ),
-        m_attributes( aText.m_attributes )
+        m_text( aText.m_text ), m_attributes( aText.m_attributes )
 {
     cacheShownText();
 }
@@ -233,10 +231,10 @@ EDA_RECT EDA_TEXT::GetTextBox( int aLine, bool aInvertY ) const
 
     // calculate the H and V size
     KIFONT::FONT* font = KIFONT::FONT::GetFont();
-    VECTOR2D    fontSize( GetTextSize() );
-    double      penWidth( thickness );
-    int         dx = KiROUND( font->StringBoundaryLimits( text, fontSize, penWidth ).x );
-    int         dy = GetInterline();
+    VECTOR2D      fontSize( GetTextSize() );
+    double        penWidth( thickness );
+    int           dx = KiROUND( font->StringBoundaryLimits( text, fontSize, penWidth ).x );
+    int           dy = GetInterline();
 
     // Creates bounding box (rectangle) for horizontal, left and top justified text. The
     // bounding box will be moved later according to the actual text options
@@ -369,11 +367,6 @@ bool EDA_TEXT::TextHitTest( const EDA_RECT& aRect, bool aContains, int aAccuracy
 void EDA_TEXT::Print( const RENDER_SETTINGS* aSettings, const wxPoint& aOffset,
                       const COLOR4D& aColor, OUTLINE_MODE aFillMode )
 {
-#ifdef DEBUG
-    std::cerr << "EDA_TEXT::Print( " << aSettings << ", " << aOffset << ", " << aColor << ", "
-              << ( aFillMode ? "t" : "f" ) << "  ) \"" << GetShownText() << "\"" << std::endl;
-#endif
-
     if( IsMultilineAllowed() )
     {
         std::vector<wxPoint> positions;
@@ -432,12 +425,6 @@ void EDA_TEXT::printOneLineOfText( const RENDER_SETTINGS* aSettings, const wxPoi
                                    const COLOR4D& aColor, OUTLINE_MODE aFillMode,
                                    const wxString& aText, const wxPoint &aPos )
 {
-#ifdef DEBUG
-    std::cerr << "EDA_TEXT::printOneLineOfText( " << aSettings << ", " << aOffset << ", " << aColor
-              << ", " << ( aFillMode ? "t" : "f" ) << " , \"" << aText << "\", " << aPos << " )"
-              << std::endl;
-#endif
-
     wxDC* DC = aSettings->GetPrintDC();
     int   penWidth = std::max( GetEffectiveTextPenWidth(), aSettings->GetDefaultPenWidth() );
 
@@ -464,12 +451,8 @@ wxString EDA_TEXT::GetTextStyleName() const
     if( IsBold() )
         style += 2;
 
-    static const wxString stylemsg[4] = {
-        _("Normal"),
-        _("Italic"),
-        _("Bold"),
-        _("Bold+Italic")
-    };
+    static const wxString stylemsg[4] = { _( "Normal" ), _( "Italic" ), _( "Bold" ),
+                                          _( "Bold+Italic" ) };
 
     return stylemsg[style];
 }
@@ -477,15 +460,9 @@ wxString EDA_TEXT::GetTextStyleName() const
 
 bool EDA_TEXT::IsDefaultFormatting() const
 {
-    return ( IsVisible()
-             && !IsMirrored()
-             && GetHorizontalAlignment() == TEXT_ATTRIBUTES::H_CENTER
-             && GetVerticalAlignment() == TEXT_ATTRIBUTES::V_CENTER
-             && GetTextThickness() == 0
-             && !IsItalic()
-             && !IsBold()
-             && !IsMultilineAllowed()
-           );
+    return ( IsVisible() && !IsMirrored() && GetHorizontalAlignment() == TEXT_ATTRIBUTES::H_CENTER
+             && GetVerticalAlignment() == TEXT_ATTRIBUTES::V_CENTER && GetTextThickness() == 0
+             && !IsItalic() && !IsBold() && !IsMultilineAllowed() );
 }
 
 
@@ -528,9 +505,8 @@ void EDA_TEXT::Format( OUTPUTFORMATTER* aFormatter, int aNestLevel, int aControl
     if( IsKeepUpright() )
         aFormatter->Print( 0, " (keep_upright yes)" );
 
-    if( IsMirrored() ||
-        GetHorizontalAlignment() != TEXT_ATTRIBUTES::H_CENTER ||
-        GetVerticalAlignment() != TEXT_ATTRIBUTES::V_CENTER )
+    if( IsMirrored() || GetHorizontalAlignment() != TEXT_ATTRIBUTES::H_CENTER
+        || GetVerticalAlignment() != TEXT_ATTRIBUTES::V_CENTER )
     {
         aFormatter->Print( 0, " (justify");
 
@@ -644,23 +620,16 @@ void EDA_TEXT::SetDefaultAlignment()
     {
         default:
         case 0:
-        case 90:
-            SetHorizontalAlignment( TEXT_ATTRIBUTES::H_LEFT );
-            break;
+        case 90: SetHorizontalAlignment( TEXT_ATTRIBUTES::H_LEFT ); break;
         case 180:
-        case 270:
-            SetHorizontalAlignment( TEXT_ATTRIBUTES::H_RIGHT );
-            break;
+        case 270: SetHorizontalAlignment( TEXT_ATTRIBUTES::H_RIGHT ); break;
     }
 }
 
 
-void EDA_TEXT::Draw( KIGFX::GAL* aGal, const VECTOR2D& aPosition, const TEXT_ATTRIBUTES& aAttributes ) const
+void EDA_TEXT::Draw( KIGFX::GAL* aGal, const VECTOR2D& aPosition,
+                     const TEXT_ATTRIBUTES& aAttributes ) const
 {
-#ifdef DEBUG
-    std::cerr << "EDA_TEXT::Draw( [aGal], " << aPosition << ", " << aAttributes << " ) " << *this
-              << std::endl;
-#endif
     aGal->SetGlyphSize( aAttributes.GetSize() );
 
     GetFont()->Draw( aGal, *this, aPosition );

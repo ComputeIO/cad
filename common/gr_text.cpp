@@ -134,17 +134,6 @@ void GRText( wxDC* aDC, const wxPoint& aPos, const COLOR4D& aColor, const wxStri
              bool  aBold, void ( *aCallback )( int x0, int y0, int xf, int yf, void* aData ),
              void* aCallbackData, PLOTTER* aPlotter )
 {
-#ifdef DEBUG
-    std::cerr << "GRText( ..., " << aPos << ", " << aColor << ", \"" << aText << "\", " << aOrient
-              << ", " << aSize << ", " << aHorizontalAlignment << ", " << aVerticalAlignment << ", "
-              << aWidth << ", " << ( aItalic ? "italic, " : "!italic, " )
-              << ( aBold ? "bold, " : "!bold, " ) << " ..., ";
-    if( aPlotter )
-        std::cerr << aPlotter;
-    else
-        std::cerr << "nullptr";
-    std::cerr << " )" << std::endl;
-#endif
     bool fill_mode = true;
 
     if( aWidth == 0 && aBold ) // Use default values if aWidth == 0
@@ -193,11 +182,7 @@ void GRText( wxDC* aDC, const EDA_TEXT* aText, const VECTOR2D& aPosition, const 
              void ( *aCallback )( int x0, int y0, int xf, int yf, void* aData ),
              void* aCallbackData, PLOTTER* aPlotter )
 {
-#ifdef DEBUG
-    std::cerr << "GRText( " << ( aDC ? "[wxDC]" : "nullptr" ) << ", " << *aText << ", " << aPosition
-              << ", " << aColor << ", ... )";
-#endif
-    int    penWidth = aText->GetEffectiveTextPenWidth();
+    int penWidth = aText->GetEffectiveTextPenWidth();
 
     if( penWidth == 0 ) // Use default values if aWidth == 0
     {

@@ -241,10 +241,6 @@ void KIGFX::DS_PAINTER::draw( const DS_DRAW_ITEM_TEXT* aItem, int aLayer ) const
     m_gal->SetIsStroke( true );
     m_gal->SetStrokeColor( m_renderSettings.GetColor( aItem, aLayer ) );
     m_gal->Rotate( -aItem->GetTextAngle() * M_PI / 1800.0 );
-#ifdef DEBUG
-    std::cerr << "DS_PAINTER::draw( DS_DRAW_ITEM_TEXT{" << aItem->GetShownText() << "}, " << aLayer << " ) @"
-              << aItem->GetTextPos() << std::endl;
-#endif
     aItem->Draw( m_gal );
     m_gal->Restore();
 }

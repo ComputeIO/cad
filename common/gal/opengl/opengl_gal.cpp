@@ -2353,9 +2353,6 @@ void OPENGL_GAL::ComputeWorldScreenMatrix()
 
 void OPENGL_GAL::DrawGlyph( const KIFONT::GLYPH& aGlyph, int aNth, int aTotal )
 {
-#ifdef DEBUG
-    std::cerr << "OPENGL_GAL::DrawGlyph( [aGlyph], " << aNth << ", " <<  aTotal << " )" << std::endl;
-#endif
     if( aGlyph.IsStroke() )
     {
         for( auto pointList : aGlyph.GetPoints() )
@@ -2379,10 +2376,6 @@ void OPENGL_GAL::fillPolygonAsTriangles( const SHAPE_POLY_SET& aPolyList )
                                  const VECTOR2D& aVertex2, const VECTOR2D& aVertex3,
                                  void* aCallbackData )
     {
-#if 0 //def DEBUG
-        std::cerr << "OPENGL_GAL::fillPolygonAsTriangles( ... ) " << aVertex1 << " " << aVertex2
-                  << " " << aVertex3 << std::endl;
-#endif
         m_currentManager->Vertex( aVertex1.x, aVertex1.y, m_layerDepth );
         m_currentManager->Vertex( aVertex2.x, aVertex2.y, m_layerDepth );
         m_currentManager->Vertex( aVertex3.x, aVertex3.y, m_layerDepth );

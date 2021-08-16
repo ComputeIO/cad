@@ -112,17 +112,6 @@ void BOARD_ADAPTER::addShapeWithClearance( const PCB_TEXT* aText, CONTAINER_2D_B
         bool                        rotateGlyphs = aText->GetTextAngle() != 0;
         double                      glyphRotationAngle = -aText->GetTextAngleRadians();
         const VECTOR2D              conversionFactor( m_biuTo3Dunits, -m_biuTo3Dunits );
-#ifdef DEBUG
-        double minX = std::numeric_limits<double>::max();
-        double minY = std::numeric_limits<double>::max();
-        double maxX = std::numeric_limits<double>::lowest();
-        double maxY = std::numeric_limits<double>::lowest();
-
-        std::cerr << "[" << minX << "," << minY << "]->"
-                  << "[" << maxX << "," << maxY << "]"
-                  << " conversionFactor " << conversionFactor
-                  << std::endl;
-#endif
 
         auto triangleCallback = [&]( int aPolygonIndex, const VECTOR2D& aVertex1,
                                      const VECTOR2D& aVertex2, const VECTOR2D& aVertex3,
@@ -132,32 +121,6 @@ void BOARD_ADAPTER::addShapeWithClearance( const PCB_TEXT* aText, CONTAINER_2D_B
             SFVEC2F v2( aVertex2.x * conversionFactor.x, aVertex2.y * conversionFactor.y );
             SFVEC2F v3( aVertex3.x * conversionFactor.x, aVertex3.y * conversionFactor.y );
 
-#ifdef DEBUG
-            if (minX > v1.x) minX = v1.x;
-            if (minX > v2.x) minX = v2.x;
-            if (minX > v3.x) minX = v3.x;
-            if (minY > v1.y) minY = v1.y;
-            if (minY > v2.y) minY = v2.y;
-            if (minY > v3.y) minY = v3.y;
-            if (maxX < v1.x) maxX = v1.x;
-            if (maxX < v2.x) maxX = v2.x;
-            if (maxX < v3.x) maxX = v3.x;
-            if (maxY < v1.y) maxY = v1.y;
-            if (maxY < v2.y) maxY = v2.y;
-            if (maxY < v3.y) maxY = v3.y;
-            //std::cerr << "triangleCallback " << aCallbackData;
-#if 0
-            if( aCallbackData ) {
-                bool* callbackFlagPtr = (bool*) aCallbackData;
-                if( *callbackFlagPtr )
-                {
-                    std::cerr << "[" << minX << "," << minY << "]->"
-                              << "[" << maxX << "," << maxY << "]" << std::endl;
-                    *callbackFlagPtr = false;
-                }
-            }
-#endif//0
-#endif
             aDstContainer->Add( new TRIANGLE_2D( v1, v2, v3, *aText ) );
         };
 
@@ -165,18 +128,8 @@ void BOARD_ADAPTER::addShapeWithClearance( const PCB_TEXT* aText, CONTAINER_2D_B
         {
             // TODO: triangulate all glyphs in one go - needed for adding a label background rect
             bool callbackFlag = true;
-#ifdef DEBUG
-             minX = std::numeric_limits<double>::max();
-              minY = std::numeric_limits<double>::max();
-               maxX = std::numeric_limits<double>::lowest();
-                maxY = std::numeric_limits<double>::lowest();
-#endif
-                Triangulate( glyph, triangleCallback, &callbackFlag );
+            Triangulate( glyph, triangleCallback, &callbackFlag );
         }
-#ifdef DEBUG
-        std::cerr << "[" << minX << "," << minY << "]->"
-                  << "[" << maxX << "," << maxY << "]" << std::endl;
-#endif
     }
     else
     {
