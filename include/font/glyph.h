@@ -130,6 +130,8 @@ public:
     const std::vector<std::vector<VECTOR2D>>& GetPoints() const override { return m_pointLists; }
 
 private:
+    void clearBoundingBox() { m_boundingBox.SetOrigin( 0, 0 ); m_boundingBox.SetSize( 0, 0 ); }
+
     bool                               m_penIsDown = false;
     std::vector<std::vector<VECTOR2D>> m_pointLists;
     BOX2D                              m_boundingBox;
