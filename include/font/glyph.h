@@ -43,7 +43,8 @@ public:
     virtual BOX2D                  BoundingBox() = 0;
     virtual std::shared_ptr<GLYPH> Resize( const VECTOR2D& aGlyphSize ) const = 0;
     virtual std::shared_ptr<GLYPH> Translate( const VECTOR2D& aOffset ) const = 0;
-    virtual std::shared_ptr<GLYPH> Mirror( bool aMirror ) const = 0;
+    virtual std::shared_ptr<GLYPH> Mirror( bool aMirror, const VECTOR2D& aMirrorOrigin = VECTOR2D( 0, 0 ) ) const = 0;
+    virtual void Mirror( const VECTOR2D& aMirrorOrigin = VECTOR2D( 0, 0 ) ) = 0;
     virtual const SHAPE_POLY_SET&  GetPolylist() const = 0;
     virtual const std::vector<std::vector<VECTOR2D>>& GetPoints() const = 0;
 
@@ -81,10 +82,14 @@ public:
         wxASSERT( 0 == 1 );
         return nullptr;
     }
-    std::shared_ptr<GLYPH> Mirror( bool aMirror ) const override
+    std::shared_ptr<GLYPH> Mirror( bool aMirror, const VECTOR2D& aMirrorOrigin = VECTOR2D( 0, 0 ) ) const override
     {
         wxASSERT( 0 == 1 );
         return nullptr;
+    }
+    void Mirror( const VECTOR2D& aMirrorOrigin = VECTOR2D( 0, 0 ) ) override
+    {
+        wxASSERT( 0 == 1 );
     }
     const std::vector<std::vector<VECTOR2D>>& GetPoints() const override
     {
@@ -116,7 +121,9 @@ public:
 
     std::shared_ptr<GLYPH> Translate( const VECTOR2D& aOffset ) const override;
 
-    std::shared_ptr<GLYPH> Mirror( bool aMirror ) const override;
+    std::shared_ptr<GLYPH> Mirror( bool aMirror, const VECTOR2D& aMirrorOrigin = VECTOR2D( 0, 0 ) ) const override;
+
+    void Mirror( const VECTOR2D& aMirrorOrigin = VECTOR2D( 0, 0 ) ) override;
 
     bool IsStroke() const override { return true; }
 

@@ -147,38 +147,43 @@ std::shared_ptr<GLYPH> STROKE_GLYPH::Translate( const VECTOR2D& aOffset ) const
 }
 
 
-std::shared_ptr<GLYPH> STROKE_GLYPH::Mirror( bool aMirror ) const
+std::shared_ptr<GLYPH> STROKE_GLYPH::Mirror( bool aMirror, const VECTOR2D& aMirrorOrigin ) const
 {
     // TODO figure out a way to not make a copy if aMirror is false
     auto glyph = std::make_shared<STROKE_GLYPH>( *this );
 
     if( aMirror )
     {
-        double originX = glyph->BoundingBox().GetX() + 0.5 * glyph->BoundingBox().GetWidth();
-        //double originX;
-
-        glyph->clearBoundingBox();
-
-        bool first = true;
-        for( std::vector<VECTOR2D>& pointList : glyph->m_pointLists )
-        {
-            for( VECTOR2D& point : pointList )
-            {
-                if( first )
-                {
-                    //originX = point.x;
-                    point.x = originX - ( point.x - originX );
-                    glyph->m_boundingBox.SetOrigin( point );
-                    first = false;
-                }
-                else
-                {
-                    point.x = originX - ( point.x - originX );
-                    glyph->m_boundingBox.Merge( point );
-                }
-            }
-        }
+        glyph->Mirror( aMirrorOrigin );
     }
 
     return glyph;
+}
+
+
+void STROKE_GLYPH::Mirror( const VECTOR2D& aMirrorOrigin )
+{
+    double originX = aMirrorOrigin.x;
+
+    clearBoundingBox();
+
+    bool first = true;
+    for( std::vector<VECTOR2D>& pointList : m_pointLists )
+    {
+        for( VECTOR2D& point : pointList )
+        {
+            if( first )
+            {
+                //originX = point.x;
+                point.x = originX - ( point.x - originX );
+                m_boundingBox.SetOrigin( point );
+                first = false;
+            }
+            else
+            {
+                point.x = originX - ( point.x - originX );
+                m_boundingBox.Merge( point );
+            }
+        }
+    }
 }
