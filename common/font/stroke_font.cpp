@@ -536,6 +536,12 @@ VECTOR2I STROKE_FONT::GetTextAsPolygon( BOX2I* aBoundingBox, GLYPH_LIST& aGlyphs
                                         const EDA_ANGLE& aAngle, bool aIsMirrored,
                                         TEXT_STYLE_FLAGS aTextStyle ) const
 {
+#ifdef DEBUG
+    std::cerr << "STROKE_FONT::GetTextAsPolygon( ..., " << aText << ", " << aGlyphSize << ", "
+              << aPosition << ", " << aAngle << ", "
+              << ( aIsMirrored ? "mirrored" : "not mirrored" ) << ", " << aTextStyle << " )"
+              << std::endl;
+#endif
     std::shared_ptr<GLYPH> glyph = nullptr;
     wxPoint cursor( aPosition );
     VECTOR2D glyphSize( aGlyphSize );
@@ -558,88 +564,43 @@ VECTOR2I STROKE_FONT::GetTextAsPolygon( BOX2I* aBoundingBox, GLYPH_LIST& aGlyphs
         }
     }
 
-    int nth = 0;
     for( UTF8::uni_iter i = aText.ubegin(), end = aText.uend(); i < end; ++i )
     {
-#ifdef DEBUG
-        std::cerr << "Glyph #" << nth << " " << *i << " ";
-#endif
-        nth = nth + 1;
-
         // Index into bounding boxes table
         int dd = (signed) *i - ' ';
 
         if( dd >= (int) m_glyphBoundingBoxes->size() || dd < 0 )
         {
-            int substitute = *i == '\t' ? ' ' : '?';
-            dd = substitute - ' ';
+            switch( *i )
+            {
+                case '\t':
+                    // TAB->SPACE
+                    dd = 0;
+                    break;
+                default:
+                    // everything else is turned into a '?'
+                    dd = '?' - ' ';
+            }
         }
 
-        if( aIsMirrored )
-        {
-            glyph = m_glyphs->at( dd )->Resize( glyphSize );
-            double glyphWidth = glyph->BoundingBox().GetWidth();
-            glyph = glyph->Translate( VECTOR2D( cursor.x - glyphWidth, cursor.y ) )->Mirror( aIsMirrored );
-        }
-        else
-        {
-            glyph = m_glyphs->at( dd )->Resize( glyphSize )->Translate( cursor );
-        }
+        glyph = m_glyphs->at( dd )->Resize( glyphSize )->Translate( cursor );
 
+#ifdef DEBUG
+        std::cerr << "[Glyph " << *i << "->" << dd << " cursor " << cursor << "]";
+#endif
         if( dd == 0 )
         {
             // 'space' character - draw nothing, advance cursor position
             constexpr double spaceAdvance = 0.6;
-            cursor.x += glyphSize.x * ( aIsMirrored ? -spaceAdvance : spaceAdvance );
+            cursor.x += glyphSize.x * spaceAdvance;
         }
         else
         {
             constexpr double interGlyphSpaceMultiplier = 0.15;
             double           interGlyphSpace = glyphSize.x * interGlyphSpaceMultiplier;
-            double           glyphAdvance = glyph->BoundingBox().GetWidth() + interGlyphSpace;
-#ifdef DEBUG
-            std::cerr << "glyph advance " << glyphAdvance
-                      << " origin " << glyph->BoundingBox().GetOrigin()
-                      << " width " << glyph->BoundingBox().GetWidth();
-#endif
-            if( aIsMirrored )
-            {
-                // cursor.x = glyphAdvance;
-                cursor.x = glyph->BoundingBox().GetX() // - glyph->BoundingBox().GetWidth()
-                           - 4 * interGlyphSpace;
-            }
-            else
-            {
-                cursor.x = glyph->BoundingBox().GetEnd().x + interGlyphSpace;
-                // cursor.x += glyphAdvance;
-            }
+            cursor.x = glyph->BoundingBox().GetEnd().x + interGlyphSpace;
+            aGlyphs.push_back( glyph );
         }
-#undef STROKE_FONT_DEBUG
-#ifdef STROKE_FONT_DEBUG
-#if 0
-        // pass the bounding box rectangle instead of the actual glyph
-        auto g = std::make_shared<STROKE_GLYPH>();
-        g->AddPoint( glyph->BoundingBox().GetOrigin() );
-        g->AddPoint( VECTOR2D( glyph->BoundingBox().GetEnd().x, glyph->BoundingBox().GetOrigin().y ) );
-        g->AddPoint( VECTOR2D( glyph->BoundingBox().GetEnd().x, glyph->BoundingBox().GetEnd().y ) );
-        g->AddPoint( VECTOR2D( glyph->BoundingBox().GetOrigin().x, glyph->BoundingBox().GetEnd().y ) );
-        g->AddPoint( glyph->BoundingBox().GetOrigin() );
-        g->Finalize();
-        aGlyphs.push_back( g );
-#else
-        // add bounding box rectangle to glyph
-        glyph->RaisePen();
-        glyph->AddPoint( glyph->BoundingBox().GetOrigin() );
-        glyph->AddPoint( VECTOR2D( glyph->BoundingBox().GetEnd().x, glyph->BoundingBox().GetOrigin().y ) );
-        glyph->AddPoint( VECTOR2D( glyph->BoundingBox().GetEnd().x, glyph->BoundingBox().GetEnd().y ) );
-        glyph->AddPoint( VECTOR2D( glyph->BoundingBox().GetOrigin().x, glyph->BoundingBox().GetEnd().y ) );
-        glyph->AddPoint( glyph->BoundingBox().GetOrigin() );
-        glyph->Finalize();
-        aGlyphs.push_back( glyph );
-#endif
-#else
-        aGlyphs.push_back( glyph );
-#endif
     }
 
     int barY = 0;
@@ -658,17 +619,19 @@ VECTOR2I STROKE_FONT::GetTextAsPolygon( BOX2I* aBoundingBox, GLYPH_LIST& aGlyphs
         aGlyphs.push_back( overbarGlyph );
     }
 
-#ifdef DEBUG
-    std::cerr << "cursor[" << aText << "@" << aPosition << ":" << cursor.x << "," << cursor.y << "]";
-#endif
+    if( aIsMirrored )
+    {
+        for( auto it = aGlyphs.begin(); it != aGlyphs.end(); it++ )
+        {
+            (*it)->Mirror( aPosition );
+        }
+    }
 
+    // TODO: bounding box computation when mirrored - check?
     if( aBoundingBox )
     {
         aBoundingBox->SetOrigin( aPosition.x, aPosition.y );
         aBoundingBox->SetEnd( cursor.x, cursor.y + std::max( glyphSize.y, (double) barY ) );
-#ifdef DEBUG
-        std::cerr << "aBoundingBox[" << aBoundingBox->GetOrigin() << " " << aBoundingBox->GetSize() << "]";
-#endif
         aBoundingBox->Normalize();
     }
 
