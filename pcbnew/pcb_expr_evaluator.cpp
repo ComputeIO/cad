@@ -100,26 +100,65 @@ static void existsOnLayer( LIBEVAL::CONTEXT* aCtx, void *self )
 
     wxString     layerName = arg->AsString();
     wxPGChoices& layerMap = ENUM_MAP<PCB_LAYER_ID>::Instance().Choices();
-    bool         anyMatch = false;
 
-    for( unsigned ii = 0; ii < layerMap.GetCount(); ++ii )
+    if( aCtx->HasErrorCallback() )
     {
-        wxPGChoiceEntry& entry = layerMap[ii];
+        /*
+         * Interpreted version
+         */
 
-        if( entry.GetText().Matches( layerName ) )
+        bool anyMatch = false;
+
+        for( unsigned ii = 0; ii < layerMap.GetCount(); ++ii )
         {
-            anyMatch = true;
+            wxPGChoiceEntry& entry = layerMap[ii];
 
-            if( item->IsOnLayer( ToLAYER_ID( entry.GetValue() ) ) )
+            if( entry.GetText().Matches( layerName ) )
             {
-                result->Set( 1.0 );
-                return;
+                anyMatch = true;
+
+                if( item->IsOnLayer( ToLAYER_ID( entry.GetValue() ) ) )
+                {
+                    result->Set( 1.0 );
+                    return;
+                }
             }
         }
-    }
 
-    if( !anyMatch && aCtx->HasErrorCallback() )
-        aCtx->ReportError( wxString::Format( _( "Unrecognized layer '%s'" ), layerName ) );
+        if( !anyMatch )
+            aCtx->ReportError( wxString::Format( _( "Unrecognized layer '%s'" ), layerName ) );
+    }
+    else
+    {
+        /*
+         * Compiled version
+         */
+
+        BOARD*                       board = item->GetBoard();
+        std::unique_lock<std::mutex> cacheLock( board->m_CachesMutex );
+        auto                         i = board->m_LayerExpressionCache.find( layerName );
+        LSET                         mask;
+
+        if( i == board->m_LayerExpressionCache.end() )
+        {
+            for( unsigned ii = 0; ii < layerMap.GetCount(); ++ii )
+            {
+                wxPGChoiceEntry& entry = layerMap[ii];
+
+                if( entry.GetText().Matches( layerName ) )
+                    mask.set( ToLAYER_ID( entry.GetValue() ) );
+            }
+
+            board->m_LayerExpressionCache[ layerName ] = mask;
+        }
+        else
+        {
+            mask = i->second;
+        }
+
+        if( ( item->GetLayerSet() & mask ).any() )
+            result->Set( 1.0 );
+    }
 }
 
 
@@ -149,14 +188,7 @@ static bool insideFootprintCourtyard( BOARD_ITEM* aItem, const EDA_RECT& aItemBB
 {
     SHAPE_POLY_SET footprintCourtyard;
 
-    if( aSide == F_Cu )
-        footprintCourtyard = aFootprint->GetPolyCourtyardFront();
-    else if( aSide == B_Cu )
-        footprintCourtyard = aFootprint->GetPolyCourtyardBack();
-    else if( aFootprint->IsFlipped() )
-        footprintCourtyard = aFootprint->GetPolyCourtyardBack();
-    else
-        footprintCourtyard = aFootprint->GetPolyCourtyardFront();
+    footprintCourtyard = aFootprint->GetPolyCourtyard( aSide );
 
     if( aItem->Type() == PCB_ZONE_T || aItem->Type() == PCB_FP_ZONE_T )
     {
@@ -503,7 +535,7 @@ static void insideArea( LIBEVAL::CONTEXT* aCtx, void* self )
 
                     if( ( area->GetLayerSet() & LSET::FrontMask() ).any() )
                     {
-                        SHAPE_POLY_SET courtyard = footprint->GetPolyCourtyardFront();
+                        SHAPE_POLY_SET courtyard = footprint->GetPolyCourtyard( F_CrtYd );
 
                         if( courtyard.OutlineCount() == 0 )
                         {
@@ -520,7 +552,7 @@ static void insideArea( LIBEVAL::CONTEXT* aCtx, void* self )
 
                     if( ( area->GetLayerSet() & LSET::BackMask() ).any() )
                     {
-                        SHAPE_POLY_SET courtyard = footprint->GetPolyCourtyardBack();
+                        SHAPE_POLY_SET courtyard = footprint->GetPolyCourtyard( B_CrtYd );
 
                         if( courtyard.OutlineCount() == 0 )
                         {
