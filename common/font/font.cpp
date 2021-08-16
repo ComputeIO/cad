@@ -548,6 +548,22 @@ VECTOR2D FONT::drawMarkup( BOX2I* aBoundingBox, GLYPH_LIST& aGlyphs,
                            const VECTOR2D& aGlyphSize, const EDA_ANGLE& aAngle, bool aIsMirrored,
                            TEXT_STYLE_FLAGS aTextStyle, int aLevel ) const
 {
+#ifdef DEBUG
+    std::cerr << "FONT::drawMarkup( ";
+    if( aBoundingBox )
+    {
+        std::cerr << "[aBoundingBox " << aBoundingBox->GetOrigin() << " "
+                  << aBoundingBox->GetSize() << "]";
+    }
+    else
+    {
+        std::cerr << "(null)";
+    }
+    std::cerr << ", [aGlyphs], " << aNode << ", " << aPosition << ", " << aGlyphSize << ", "
+              << aAngle << ", " << ( aIsMirrored ? "mirrored" : "not mirrored" ) << ", " << aTextStyle
+              << ", " << aLevel << ", ... )";
+    std::cerr << std::endl;
+#endif
     VECTOR2D nextPosition = aPosition;
 
     TEXT_STYLE_FLAGS textStyle = aTextStyle;
@@ -595,7 +611,8 @@ VECTOR2D FONT::drawMarkup( BOX2I* aBoundingBox, GLYPH_LIST& aGlyphs,
     }
 
 #ifdef DEBUG
-    std::cerr << "FONT::drawMarkup( ... ) nextPosition " << nextPosition;
+    std::cerr << "FONT::drawMarkup( ..., " << ( aIsMirrored ? "mirrored" : "not mirrored" )
+              << ", ... ) nextPosition " << nextPosition;
     if( aBoundingBox )
     {
         std::cerr << ", aBoundingBox " << aBoundingBox->GetOrigin() << " " << aBoundingBox->GetSize();
@@ -618,6 +635,7 @@ VECTOR2D FONT::drawSingleLineText( KIGFX::GAL* aGal, BOX2I* aBoundingBox, const 
 
 #ifdef DEBUG
     std::cerr << "FONT::drawSingleLineText( aGal, \"" << aText << "\", " << aPosition
+              << ", " << aAngle << ", " << ( aIsMirrored ? "mirrored" : "not mirrored" )
               << " )";
 #endif
 
@@ -625,11 +643,28 @@ VECTOR2D FONT::drawSingleLineText( KIGFX::GAL* aGal, BOX2I* aBoundingBox, const 
     auto                  markupRoot = markupParser.Parse();
 
     GLYPH_LIST glyphs;
-    VECTOR2D   nextPosition = drawMarkup( aBoundingBox, glyphs, markupRoot, aPosition,
-                                          aGal->GetGlyphSize(), aAngle, aIsMirrored );
+    VECTOR2D   nextPosition =
+            drawMarkup( aBoundingBox, glyphs, markupRoot, aPosition, aGal->GetGlyphSize(), aAngle,
+                        IsStroke() ? false : aIsMirrored );
+
+#if 0
+    if( IsStroke() && aIsMirrored )
+    {
+        for( auto it = glyphs.begin(); it != glyphs.end(); it++ )
+        {
+            (*it)->Mirror( aPosition );
+        }
+    }
+#endif
 
     for( auto glyph : glyphs )
+    {
+        if( IsStroke() && aIsMirrored )
+        {
+            glyph->Mirror( aPosition );
+        }
         aGal->DrawGlyph( glyph );
+    }
 
     return nextPosition;
 }

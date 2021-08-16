@@ -537,7 +537,7 @@ VECTOR2I STROKE_FONT::GetTextAsPolygon( BOX2I* aBoundingBox, GLYPH_LIST& aGlyphs
                                         TEXT_STYLE_FLAGS aTextStyle ) const
 {
 #ifdef DEBUG
-    std::cerr << "STROKE_FONT::GetTextAsPolygon( ..., " << aText << ", " << aGlyphSize << ", "
+    std::cerr << "STROKE_FONT::GetTextAsPolygon( ..., \"" << aText << "\", " << aGlyphSize << ", "
               << aPosition << ", " << aAngle << ", "
               << ( aIsMirrored ? "mirrored" : "not mirrored" ) << ", " << aTextStyle << " )"
               << std::endl;
@@ -619,6 +619,7 @@ VECTOR2I STROKE_FONT::GetTextAsPolygon( BOX2I* aBoundingBox, GLYPH_LIST& aGlyphs
         aGlyphs.push_back( overbarGlyph );
     }
 
+#if 0
     if( aIsMirrored )
     {
         for( auto it = aGlyphs.begin(); it != aGlyphs.end(); it++ )
@@ -626,6 +627,7 @@ VECTOR2I STROKE_FONT::GetTextAsPolygon( BOX2I* aBoundingBox, GLYPH_LIST& aGlyphs
             (*it)->Mirror( aPosition );
         }
     }
+#endif
 
     // TODO: bounding box computation when mirrored - check?
     if( aBoundingBox )
