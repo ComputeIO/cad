@@ -184,12 +184,14 @@ void GRText( wxDC* aDC, const EDA_TEXT* aText, const VECTOR2D& aPosition, const 
 {
     int penWidth = aText->GetEffectiveTextPenWidth();
 
-    if( penWidth == 0 ) // Use default values if aWidth == 0
+    if( penWidth == 0 )
     {
+        // Use default values
         penWidth = GetPenSizeForBold( std::min( aText->GetTextSize().x, aText->GetTextSize().y ) );
     }
 
     bool fill_mode = true;
+
     if( penWidth < 0 )
     {
         penWidth = std::abs( penWidth );
