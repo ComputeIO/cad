@@ -219,11 +219,6 @@ void FONT::getLinePositions( const UTF8& aText, const VECTOR2D& aPosition,
                              int& aLineCount, std::vector<VECTOR2D>& aBoundingBoxes,
                              const VECTOR2D& aGlyphSize, const TEXT_ATTRIBUTES& aAttributes ) const
 {
-#ifdef DEBUG
-    std::cerr << "FONT::getLinePositions( \"" << aText << "\", " << aPosition << ", ..., "
-              << aGlyphSize << ", " << aAttributes << " )" << std::endl;
-#endif
-
     wxStringSplit( aText, aStringList, '\n' );
     aLineCount = aStringList.Count();
     aPositions.reserve( aLineCount );

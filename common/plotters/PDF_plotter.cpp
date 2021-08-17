@@ -919,14 +919,6 @@ void PDF_PLOTTER::Text( const EDA_TEXT* aText, const COLOR4D& aColor, void* aDat
     std:: string txt_pdf = encodeStringForPlotter( aText->GetShownText() );
     fprintf( workFile, "%s Tj ET\n", txt_pdf.c_str() );
 
-#ifdef DEBUG //FOOFAA
-    fprintf( stderr, "q %f %f %f %f %g %g cm BT %s %g Tf %d Tr %g Tz ",
-             ctm_a, ctm_b, ctm_c, ctm_d, ctm_e, ctm_f,
-             fontname, heightFactor, render_mode, wideningFactor * 100 );
-
-    fprintf( stderr, "%s Tj ET\n", txt_pdf.c_str() );
-#endif
-
     // Restore the CTM
     fputs( "Q\n", workFile );
 
