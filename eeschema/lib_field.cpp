@@ -108,7 +108,7 @@ void LIB_FIELD::print( const RENDER_SETTINGS* aSettings, const wxPoint& aOffset,
 {
     wxDC*    DC = aSettings->GetPrintDC();
     COLOR4D  color = aSettings->GetLayerColor( IsVisible() ? GetDefaultLayer() : LAYER_HIDDEN );
-    int      penWidth = std::max( GetPenWidth(), aSettings->GetDefaultPenWidth() );
+    int      penWidth = GetEffectivePenWidth( aSettings );
     wxPoint  text_pos = aTransform.TransformCoordinate( GetTextPos() ) + aOffset;
 
     if( aData )
@@ -288,6 +288,10 @@ void LIB_FIELD::Plot( PLOTTER* aPlotter, const wxPoint& aOffset, bool aFill,
 
     if( aPlotter->GetColorMode() )
         color = aPlotter->RenderSettings()->GetLayerColor( GetDefaultLayer() );
+    else
+        color = COLOR4D::BLACK;
+
+    int penWidth = GetEffectivePenWidth( aPlotter->RenderSettings() );
 
     aPlotter->Text( this, color );
 }
