@@ -75,9 +75,6 @@ void Triangulate( const SHAPE_POLY_SET& aPolylist, TRIANGULATE_CALLBACK aCallbac
 
 void Triangulate( const KIFONT::GLYPH& aGlyph, TRIANGULATE_CALLBACK aCallback, void* aCallbackData )
 {
-#ifdef DEBUG
-    std::cerr << "void Triangulate( [aGlyph], ... )" << std::endl;
-#endif
     Triangulate( aGlyph.GetPolylist(), aCallback, aCallbackData );
 }
 

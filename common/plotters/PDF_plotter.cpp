@@ -317,10 +317,6 @@ void PDF_PLOTTER::PlotPoly( const std::vector< wxPoint >& aCornerList,
     if( aCornerList.size() <= 1 )
         return;
 
-#ifdef DEBUG
-    std::cerr << "PDF_PLOTTER::PlotPoly( aCornerList, " << aFill << ", " << aWidth << ", ... )"
-              << std::endl;
-#endif
     SetCurrentLineWidth( aWidth );
 
     DPOINT pos = userToDeviceCoordinates( aCornerList[0] );
@@ -880,11 +876,6 @@ void PDF_PLOTTER::Text( const wxPoint&              aPos,
 
 void PDF_PLOTTER::Text( const EDA_TEXT* aText, const COLOR4D& aColor, void* aData )
 {
-#ifdef DEBUG
-    std::cerr << "PDF_PLOTTER::Text( " << *aText << ", " << aColor << ", [aData] ) \""
-              << aText->GetShownText() << "\" size " << aText->GetTextSize() << " w "
-              << aText->GetTextWidth() << " h " << aText->GetTextHeight() << std::endl;
-#endif
     // PDF files do not like 0 sized texts which create broken files.
     if( aText->GetTextWidth() == 0 || aText->GetTextHeight() == 0 )
         return;
@@ -892,10 +883,6 @@ void PDF_PLOTTER::Text( const EDA_TEXT* aText, const COLOR4D& aColor, void* aDat
     // Also ignore empty text
     if( aText->GetShownText().IsEmpty() )
         return;
-
-#ifdef DEBUG
-    std::cerr << "Plotting \"" << aText->GetShownText() << "\"... ";
-#endif
 
     // Render phantom text (which will be searchable) behind the stroke font.  This won't
     // be pixel-accurate, but it doesn't matter for searching.

@@ -39,19 +39,12 @@ EDA_ANGLE EDA_ANGLE::KeepUpright() const
     else
         outDegrees = 90;
 
-#ifdef DEBUG
-    std::cerr << "EDA_ANGLE::KeepUpright() original " << *this << " in " << inAngle << " inDegrees "
-              << inDegrees << " outDegrees " << outDegrees << std::endl;
-#endif
     return EDA_ANGLE( outDegrees, EDA_ANGLE::DEGREES );
 }
 
 
 void EDA_ANGLE::normalize( bool n720 )
 {
-#ifdef DEBUG
-    std::cerr << "EDA_ANGLE::normalize( " << (n720 ? "T" : "f") << " ) " << *this;
-#endif
     if( GetInitialAngleType() == EDA_ANGLE::RADIANS )
     {
         m_radians = normalize( m_radians, EDA_ANGLE::RADIANS, n720 );
@@ -61,9 +54,6 @@ void EDA_ANGLE::normalize( bool n720 )
     {
         m_value = normalize( m_value, EDA_ANGLE::TENTHS_OF_A_DEGREE, n720 );
     }
-#ifdef DEBUG
-    std::cerr << "m_value " << m_value << *this << std::endl;
-#endif
 }
 
 

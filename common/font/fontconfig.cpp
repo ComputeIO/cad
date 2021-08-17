@@ -90,9 +90,6 @@ bool FONTCONFIG::ListFonts( std::vector<std::string>& aFonts )
     if( !fs )
         return false;
 
-#ifdef OUTLINEFONT_DEBUG
-    std::cerr << "ListFonts() Total matching: " << fs->nfont << " fonts" << std::endl;
-#endif
     for( int i = 0; fs && i < fs->nfont; ++i )
     {
         FcPattern* font = fs->fonts[i];
@@ -109,10 +106,7 @@ bool FONTCONFIG::ListFonts( std::vector<std::string>& aFonts )
             std::string theFile( (char*) file );
             std::string theFamily( (char*) family );
             std::string theStyle( (char*) style );
-#ifdef OUTLINEFONT_DEBUG
-            std::cerr << "family [" << family << "] style [" << style << "] file [" << file << "]"
-                      << std::endl;
-#endif
+
             auto it = mFonts.find( s.str() );
             if( it == mFonts.end() )
             {

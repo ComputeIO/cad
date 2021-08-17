@@ -57,12 +57,6 @@ const VECTOR2D BASIC_GAL::transform( const VECTOR2D& aPoint ) const
 
 void BASIC_GAL::doDrawPolyline( const std::vector<wxPoint>& aLocalPointList, bool aFill )
 {
-#ifdef DEBUG
-    std::cerr << "BASIC_GAL::doDrawPolyline( ... ) " << aLocalPointList.size() << " pts, "
-              << ( m_DC ? ( m_isFillEnabled ? "DC fill " : "DC no_fill " ) : "!DC " )
-              << ( m_plotter ? "plotter " : "!plotter " )
-              << ( m_callback ? "callback " : "!callback " ) << std::endl;
-#endif
     if( m_DC )
     {
         if( m_isFillEnabled )
@@ -151,18 +145,6 @@ void BASIC_GAL::DrawPolyline( const VECTOR2D aPointList[], int aListSize )
 
 void BASIC_GAL::DrawPolyline( const SHAPE_LINE_CHAIN& aLineChain )
 {
-#ifdef DEBUG
-    std::cerr << "BASIC_GAL::DrawPolyline( " << aLineChain << " ";
-    if( m_DC )
-        std::cerr << "DC ";
-    if( m_isFillEnabled )
-        std::cerr << "fill ";
-    if( m_plotter )
-        std::cerr << "plotter ";
-    if( m_callback )
-        std::cerr << "callback ";
-    std::cerr << " )" << std::endl;
-#endif
     if( aLineChain.PointCount() < 2 )
         return;
 
@@ -213,15 +195,6 @@ void BASIC_GAL::DrawLine( const VECTOR2D& aStartPoint, const VECTOR2D& aEndPoint
 
 void BASIC_GAL::DrawGlyph( const KIFONT::GLYPH& aGlyph, int aNth, int aTotal )
 {
-#ifdef DEBUG
-    std::cerr << "BASIC_GAL::DrawGlyph( [aGlyph], " << aNth << ", " << aTotal << " ) ";
-    if( m_plotter )
-        std::cerr << m_plotter->GetPlotterType();
-    else
-        std::cerr << "!plotter";
-    std::cerr << ( m_DC ? " DC " : " !DC " ) << std::endl;
-#endif
-
     if( m_plotter )
     {
         switch( m_plotter->GetPlotterType() )

@@ -291,11 +291,6 @@ void GAL::StrokeText( const wxString& aText, const VECTOR2D& aPosition, double a
     attributes.Align( GetHorizontalAlignment(), GetVerticalAlignment() );
     attributes.SetLineSpacing( aLineSpacing );
 
-#ifdef DEBUG
-    std::cerr << "GAL::StrokeText( \"" << aText << "\", " << aPosition << ", " << aRotationAngle
-              << ", font{" << aFont->Name() << "}, " << aLineSpacing << " ) m_lineWidth "
-              << GetLineWidth() << " attributes " << attributes << std::endl;
-#endif
     aFont->Draw( this, aText, aPosition, attributes );
 }
 

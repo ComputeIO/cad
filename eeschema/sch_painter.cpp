@@ -407,10 +407,6 @@ float SCH_PAINTER::getTextThickness( const LIB_TEXT* aItem, bool aDrawingShadows
 void SCH_PAINTER::doStrokeText( const wxString& aText, const VECTOR2D& aPosition,
                                 const TEXT_ATTRIBUTES& aAttributes )
 {
-#ifdef DEBUG
-    std::cerr << "SCH_PAINTER::doStrokeText( \"" << aText << "\", " << aPosition << ", "
-              << aAttributes << " )" << std::endl;
-#endif
     KIFONT::FONT* font = aAttributes.GetFont();
     if( !font )
         font = KIFONT::FONT::GetFont();
@@ -436,10 +432,6 @@ void SCH_PAINTER::strokeText( const wxString& aText, const VECTOR2D& aPosition,
 
 void SCH_PAINTER::strokeText( const EDA_TEXT* aText, const VECTOR2D& aPosition, const EDA_ANGLE& aAngle )
 {
-#ifdef DEBUG
-    std::cerr << "SCH_PAINTER::strokeText( " << *aText << ", " << aPosition << ", " << aAngle
-              << " )\n";
-#endif
     TEXT_ATTRIBUTES attributes( *aText );
     attributes.SetAngle( aAngle );
 
@@ -449,9 +441,6 @@ void SCH_PAINTER::strokeText( const EDA_TEXT* aText, const VECTOR2D& aPosition, 
 
 void SCH_PAINTER::strokeText( const EDA_TEXT* aText, const VECTOR2D& aPosition )
 {
-#ifdef DEBUG
-    std::cerr << "SCH_PAINTER::strokeText( " << *aText << ", " << aPosition << " )\n";
-#endif
     aText->Draw( m_gal, aPosition );
 }
 
@@ -751,18 +740,7 @@ void SCH_PAINTER::draw( const LIB_TEXT* aText, int aLayer )
     m_gal->SetFontItalic( aText->IsItalic() );
     m_gal->SetFontUnderlined( false );
 
-#if 0
-    VECTOR2D pos = mapCoords( bBox.Centre() );
-    strokeText( aText->GetShownText(), pos, aText->GetTextAngleRadians() );
-#else
-#ifdef DEBUG
-    //m_gal->SetStrokeColor( COLOR4D( .5, 1, .5, 1 ) );
-    std::cerr << "SCH_PAINTER::draw( LIB_TEXT{" << aText->GetShownText() << "}, " << aLayer
-              << " ) @" << aText->GetTextPos() << std::endl;
-#endif
     strokeText( aText );
-    //strokeText( aText->GetShownText(), aText->GetTextPos(), aText->GetTextAngleRadians(), aText->GetFont() );
-#endif
 }
 
 
@@ -1367,15 +1345,7 @@ void SCH_PAINTER::draw( const SCH_TEXT* aText, int aLayer )
     if( drawingShadows && !aText->IsSelected() )
         return;
 
-#ifdef DEBUG
-    std::cerr << "SCH_PAINTER::draw( " << *aText << ", " << aLayer << " )";
-#endif
     aLayer = aText->SchematicLayer();
-
-#ifdef DEBUG
-    std::cerr << " drawing " << ( drawingShadows ? "shadows " : "" ) << " on layer " << aLayer
-              << std::endl;
-#endif
 
     COLOR4D color = getRenderColor( aText, aLayer, drawingShadows );
 
@@ -1441,15 +1411,6 @@ void SCH_PAINTER::draw( const SCH_TEXT* aText, int aLayer )
     if( !shownText.IsEmpty() )
     {
         strokeText( aText, offsetPosition );
-#ifdef DEBUG
-        std::cerr << aText->GetText() << " @" << aText->GetTextPos() << " angle "
-                  << aText->GetTextEdaAngle() << " HAlign " << aText->GetHorizontalAlignment()
-                  << ", drawing @ offsetPosition " << offsetPosition << " diff "
-                  << ( offsetPosition - aText->GetTextPos() ) << std::endl;
-        m_gal->SetLineWidth( drawingShadows ? getShadowWidth()
-                                            : m_schSettings.GetDanglingSymbolThickness() );
-        // m_gal->DrawCircle( offsetPosition, 15000 );
-#endif
     }
 
     // Draw text origin indicator
@@ -1678,9 +1639,6 @@ void SCH_PAINTER::draw( const SCH_FIELD* aField, int aLayer )
         m_gal->SetTextMirrored( aField->IsMirrored() );
         m_gal->SetLineWidth( getTextThickness( aField, drawingShadows ) );
 
-#ifdef DEBUG
-        std::cerr << "textpos " << textpos << " item @" << aField->GetTextPos() << std::endl;
-#endif
         strokeText( aField, textpos, orient );
     }
 
@@ -1696,10 +1654,6 @@ void SCH_PAINTER::draw( const SCH_FIELD* aField, int aLayer )
 
 void SCH_PAINTER::draw( SCH_GLOBALLABEL* aLabel, int aLayer )
 {
-#ifdef DEBUG
-    std::cerr << "SCH_PAINTER::draw( SCH_GLOBALLABEL{" << *aLabel << "}, " << aLayer << " )"
-              << std::endl;
-#endif
     bool drawingShadows = aLayer == LAYER_SELECTION_SHADOWS;
 
     if( !drawingShadows || aLabel->IsSelected() )

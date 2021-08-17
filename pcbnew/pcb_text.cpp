@@ -164,16 +164,10 @@ bool PCB_TEXT::TextHitTest( const EDA_RECT& aRect, bool aContains, int aAccuracy
 void PCB_TEXT::Rotate( const wxPoint& aRotCentre, double aAngle )
 {
     wxPoint pt = GetTextPos();
-#ifdef OUTLINEFONT_DEBUG
-    std::cerr << "PCB_TEXT::Rotate( {" << aRotCentre.x << "," << aRotCentre.y << "}, " << aAngle
-              << " ) " << GetShownText() << "@" << pt << " angle " << GetTextAngle();
-#endif
     RotatePoint( &pt, aRotCentre, aAngle );
     SetTextPos( pt );
+
     double angle = GetTextAngle() + aAngle;
-#ifdef OUTLINEFONT_DEBUG
-    std::cerr << "->" << pt << " angle " << angle << std::endl;
-#endif
     SetTextAngle( angle );
 }
 

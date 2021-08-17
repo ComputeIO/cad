@@ -199,10 +199,6 @@ wxPoint SCH_TEXT::GetSchematicTextOffset( const RENDER_SETTINGS* aSettings ) con
     case 270: text_offset.x = -dist; break;
     }
 
-#ifdef DEBUG
-    std::cerr << "SCH_TEXT::GetSchematicTextOffset( ... ) " << *this << " offset " << text_offset
-              << std::endl;
-#endif
     return text_offset;
 }
 
@@ -314,13 +310,9 @@ COLOR4D SCH_TEXT::doPrint( const RENDER_SETTINGS* aSettings, const wxPoint& aOff
     COLOR4D  color = aSettings->GetLayerColor( aLayer );
     wxPoint  offset( aOffset + GetSchematicTextOffset( aSettings ) );
     VECTOR2D position( GetTextPos().x + offset.x, GetTextPos().y + offset.y );
-#ifdef DEBUG
-    std::cerr << "SCH_TEXT::doPrint( ..., " << aOffset << ", " << aLayer << " ) \"" << GetText()
-              << "\"@" << GetTextPos() << " color " << color << " offset " << offset << " position "
-              << position << " angle " << GetTextEdaAngle() << " H alignment "
-              << GetHorizontalAlignment() << std::endl;
-#endif
+
     GRText( aSettings->GetPrintDC(), this, position, color );
+
     return color;
 }
 
@@ -605,9 +597,6 @@ bool SCH_TEXT::HitTest( const EDA_RECT& aRect, bool aContained, int aAccuracy ) 
 
 void SCH_TEXT::Plot( PLOTTER* aPlotter ) const
 {
-#ifdef DEBUG
-    std::cerr << "SCH_TEXT::Plot( " << aPlotter << " ) " << *this << std::endl;
-#endif
     static std::vector<wxPoint> s_poly;
 
     RENDER_SETTINGS* settings = aPlotter->RenderSettings();
@@ -816,10 +805,6 @@ const EDA_RECT SCH_LABEL::GetBoundingBox() const
     // Labels have a position point that is outside of the TextBox
     rect.Merge( GetPosition() );
 
-#ifdef DEBUG
-    std::cerr << "SCH_LABEL::GetBoundingBox() \"" << GetShownText() << "\"@" << GetTextPos() << " "
-              << GetTextAngle() << " bbox " << bbox << " rect " << rect << std::endl;
-#endif
     return rect;
 }
 
@@ -963,10 +948,6 @@ void SCH_GLOBALLABEL::Rotate( const wxPoint& aCenter )
 
 void SCH_GLOBALLABEL::Rotate90( bool aClockwise )
 {
-#ifdef DEBUG
-    std::cerr << "SCH_GLOBALLABEL::Rotate90( " << ( aClockwise ? "CW" : "CCW" ) << " )"
-              << std::endl;
-#endif
     SCH_TEXT::Rotate90( aClockwise );
 
     if( m_intersheetRefsField.GetTextAngle() == TEXT_ANGLE_VERT )
@@ -1087,9 +1068,6 @@ void SCH_GLOBALLABEL::UpdateIntersheetRefProps()
 
 void SCH_GLOBALLABEL::AutoplaceFields( SCH_SCREEN* aScreen, bool aManual )
 {
-#ifdef DEBUG
-    std::cerr << "SCH_GLOBALLABEL::AutoplaceFields( ... )" << std::endl;
-#endif
     int margin = GetTextOffset();
     int labelLen = GetBoundingBoxBase().GetSizeMax();
     int penOffset = GetPenWidth() / 2;
@@ -1222,9 +1200,6 @@ void SCH_GLOBALLABEL::Plot( PLOTTER* aPlotter ) const
 void SCH_GLOBALLABEL::CreateGraphicShape( const RENDER_SETTINGS* aRenderSettings,
                                           std::vector<wxPoint>& aPoints, const wxPoint& Pos ) const
 {
-#ifdef DEBUG
-    std::cerr << "SCH_GLOBALLABEL::CreateGraphicShape( ... )" << std::endl;
-#endif
     // TODO the code has been modified in upstream and does not use bbox;
     // figure out which parts assume stroke font and change those
     VECTOR2D bbox = GetFont()->BoundingBox( *this );
@@ -1287,9 +1262,6 @@ void SCH_GLOBALLABEL::CreateGraphicShape( const RENDER_SETTINGS* aRenderSettings
 
 const EDA_RECT SCH_GLOBALLABEL::GetBoundingBoxBase() const
 {
-#ifdef DEBUG
-    std::cerr << "SCH_GLOBALLABEL::GetBoundingBoxBase()" << std::endl;
-#endif
     // build the bounding box on the global label only, without taking in account
     // the intersheets references, just the bounding box of the graphic shape
     int x = GetTextPos().x;
@@ -1436,10 +1408,6 @@ void SCH_HIERLABEL::CreateGraphicShape( const RENDER_SETTINGS* aSettings,
 
 const EDA_RECT SCH_HIERLABEL::GetBoundingBox() const
 {
-#ifdef DEBUG
-    std::cerr << "SCH_HIERLABEL::GetBoundingBox() \"" << GetShownText() << "\"@" << GetTextPos()
-              << " " << GetTextAngle() << std::endl;
-#endif
     int penWidth = GetEffectiveTextPenWidth();
     int margin = GetTextOffset();
 
@@ -1485,9 +1453,7 @@ const EDA_RECT SCH_HIERLABEL::GetBoundingBox() const
 
     EDA_RECT box( wxPoint( x, y ), wxSize( dx, dy ) );
     box.Normalize();
-#ifdef DEBUG
-    std::cerr << "bbox " << box << std::endl;
-#endif
+
     return box;
 }
 

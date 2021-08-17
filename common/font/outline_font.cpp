@@ -37,8 +37,6 @@
 #include <trigo.h>
 #include <font/fontconfig.h>
 
-#define OUTLINEFONT_DEBUG
-
 using namespace KIFONT;
 
 FT_Library OUTLINE_FONT::mFreeType = nullptr;
@@ -56,30 +54,15 @@ OUTLINE_FONT::OUTLINE_FONT() : mFaceSize( 16 ), mSubscriptSize( 13 )
 
 bool OUTLINE_FONT::LoadFont( const wxString& aFontName, bool aBold, bool aItalic )
 {
-#ifdef OUTLINEFONT_DEBUG
-    std::cerr << "OUTLINE_FONT::LoadFont( \"" << aFontName << "\", "
-              << ( aBold ? "true, " : "false, " ) << ( aBold ? "true" : "false" ) << " )\n";
-#endif
     wxString fontFile;
     wxString fontName = getFontNameForFontconfig( aFontName, aBold, aItalic );
 
     bool r = Fontconfig().FindFont( fontName, fontFile );
-#ifdef OUTLINEFONT_DEBUG
-    std::cerr << "Fontconfig ";
-    if( r )
-        std::cerr << "found  [" << fontFile << "]";
-    else
-        std::cerr << "did not find font";
-    std::cerr << " for [" << fontName << "]" << std::endl;
-#endif
     if( r )
     {
         FT_Error e = loadFace( fontFile );
         if( e )
         {
-#ifdef OUTLINEFONT_DEBUG
-            std::cerr << "Could not load [" << fontFile << "]" << std::endl;
-#endif
             return false;
         }
         return true;
@@ -160,10 +143,7 @@ FT_Error OUTLINE_FONT::loadFace( const wxString& aFontFileName )
             m_fontName = wxString( mFace->family_name );
         }
     }
-#ifdef OUTLINEFONT_DEBUG
-    std::cerr << "OUTLINE_FONT::loadFace( " << aFontFileName << " ) "
-              << ( e ? "did not load" : "loaded" ) << std::endl;
-#endif
+
     return e;
 }
 
@@ -216,11 +196,7 @@ VECTOR2D OUTLINE_FONT::StringBoundaryLimits( const KIGFX::GAL* aGal, const UTF8&
         previous = codepoint;
     }
 
-    VECTOR2D r = VECTOR2D( width * mFaceScaler, height * mFaceScaler );
-#ifdef OUTLINEFONT_DEBUG
-    std::cerr << "outline string boundary limits " << r << std::endl;
-#endif
-    return r;
+    return VECTOR2D( width * mFaceScaler, height * mFaceScaler );
 }
 
 
@@ -316,10 +292,6 @@ BOX2I OUTLINE_FONT::getBoundingBox( const GLYPH_LIST& aGlyphs ) const
 
 VECTOR2I OUTLINE_FONT::GetLinesAsPolygon( GLYPH_LIST& aGlyphs, const EDA_TEXT* aText ) const
 {
-#ifdef DEBUG
-    std::cerr << "OUTLINE_FONT::GetLinesAsPolygon( ..., " << aText << " ) const" << std::endl;
-#endif
-
     wxArrayString         strings;
     std::vector<wxPoint>  positions;
     int                   n;
@@ -381,35 +353,8 @@ VECTOR2I OUTLINE_FONT::GetTextAsPolygon( BOX2I* aBoundingBox, GLYPH_LIST& aGlyph
     const double   mirror_factor = ( aIsMirrored ? 1 : -1 );
     const VECTOR2D scaleFactor( glyphSize.x * mirror_factor / scaler, glyphSize.y / scaler );
 
-#ifdef OUTLINEFONT_DEBUG //_GETTEXTASPOLYGON //STROKEFONT
-    std::cerr << "[OUTLINE_FONT::GetTextAsPolygon( &aGlyphs, \"" << aText << "\", " << aGlyphSize
-              << ", " << aPosition << ", " << aOrientation << ", "
-              << ( aIsMirrored ? "true" : "false" ) << ", " << TextStyleAsString( aTextStyle )
-              << " ) const; glyphCount " << glyphCount << " mirror_factor " << mirror_factor
-              << " scaler " << scaler << " scaleFactor " << scaleFactor << " font " << Name()
-              << " c_str " << aText.c_str() << " ";
-
-    for( unsigned int i = 0; i < glyphCount; i++ )
-    {
-        hb_glyph_position_t& pos = glyphPos[i];
-        int                  codepoint = glyphInfo[i].codepoint;
-
-        FT_Load_Glyph( face, codepoint, FT_LOAD_NO_BITMAP );
-
-        FT_GlyphSlot              glyph = face->glyph;
-        static const unsigned int bufsize = 512;
-        char                      glyphName[bufsize];
-        FT_Get_Glyph_Name( face, glyph->glyph_index, &glyphName[0], bufsize );
-        std::cerr << "<glyph " << codepoint << " '" << glyphName << "' pos ";
-        std::cerr << pos.x_advance << "," << pos.y_advance << "," << pos.x_offset << ","
-                  << pos.y_offset << ">";
-    }
-    std::cerr << "]" << std::endl;
-#endif
-
     VECTOR2I cursor( 0, 0 );
     VECTOR2I cursorStart( cursor );
-
     VECTOR2I extentBottomLeft( INT_MAX, INT_MAX );
     VECTOR2I extentTopRight( INT_MIN, INT_MIN );
     VECTOR2I vBottomLeft( INT_MAX, INT_MAX );
@@ -431,26 +376,6 @@ VECTOR2I OUTLINE_FONT::GetTextAsPolygon( BOX2I* aBoundingBox, GLYPH_LIST& aGlyph
 
         OUTLINE_DECOMPOSER decomposer( faceGlyph->outline );
         decomposer.OutlineToSegments( &contours );
-#ifdef DEBUG_GETTEXTASPOLYGON
-        static const unsigned int bufsize = 512;
-        char                      glyphName[bufsize];
-        FT_Get_Glyph_Name( face, faceGlyph->glyph_index, &glyphName[0], bufsize );
-        std::cerr << "[Glyph '" << glyphName << "' pos ";
-        std::cerr << pos.x_advance << "," << pos.y_advance << "," << pos.x_offset << ","
-                  << pos.y_offset;
-        std::cerr << " codepoint " << codepoint << ", " << faceGlyph->outline.n_contours
-                  << " contours " << faceGlyph->outline.n_points << " points]->";
-        std::cerr << "{" << contours.size() << " contours ";
-        for( int foofaa = 0; foofaa < (int) contours.size(); foofaa++ )
-        {
-            if( foofaa > 0 )
-                std::cerr << "/";
-            std::cerr << contours[foofaa].points.size();
-        }
-        if( contours.size() > 0 )
-            std::cerr << " pts";
-        std::cerr << "}";
-#endif
 
         SHAPE_POLY_SET                poly;
         std::vector<SHAPE_LINE_CHAIN> holes;
@@ -643,22 +568,11 @@ VECTOR2D OUTLINE_FONT::getBoundingBox( const UTF8& aString, const VECTOR2D& aGly
         if( height > maxHeight )
             maxHeight = height;
 
-#ifdef OUTLINEFONT_DEBUG
-        std::cerr << "#" << i << "/" << glyphCount << " codepoint " << codepoint << " boundingBox "
-                  << boundingBox << " controlBox " << controlBox.xMax << "," << controlBox.yMax
-                  << " aGlyphSize " << aGlyphSize << " scaler " << scaler << " width " << width
-                  << " height " << height << " maxHeight " << maxHeight << std::endl;
-#endif
         FT_Done_Glyph( glyph );
     }
     boundingBox.y = aGlyphSize.y; //maxHeight;
 
     hb_buffer_destroy( buf );
-
-#ifdef DEBUG
-    std::cerr << "OUTLINE_FONT::getBoundingBox( \"" << aString << "\", " << aGlyphSize << ", "
-              << aTextStyle << " ) returns " << boundingBox << std::endl;
-#endif
 
     return boundingBox;
 }
@@ -709,10 +623,6 @@ void OUTLINE_FONT::RenderToOpenGLCanvas( KIGFX::OPENGL_GAL& aGal, const UTF8& aS
         wxPoint pt( aPosition );
         pt.x += ( cursor_x >> 6 ) * x_scaleFactor;
         pt.y += ( cursor_y >> 6 ) * y_scaleFactor;
-
-#if 0
-        aGal.DrawGlyph();
-#endif
 
         cursor_x += pos.x_advance;
         cursor_y += pos.y_advance;

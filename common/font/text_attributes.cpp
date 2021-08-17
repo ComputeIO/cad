@@ -141,9 +141,6 @@ TEXT_ATTRIBUTES& TEXT_ATTRIBUTES::SpinCW()
 
 TEXT_ATTRIBUTES& TEXT_ATTRIBUTES::Align( HORIZONTAL_ALIGNMENT aHorizontalAlignment )
 {
-#ifdef OUTLINEFONT_DEBUG
-    std::cerr << "TEXT_ATTRIBUTES::Align( " << aHorizontalAlignment << " )" << std::endl;
-#endif
     m_horizontal_alignment = aHorizontalAlignment;
     return *this;
 }
@@ -151,9 +148,6 @@ TEXT_ATTRIBUTES& TEXT_ATTRIBUTES::Align( HORIZONTAL_ALIGNMENT aHorizontalAlignme
 
 TEXT_ATTRIBUTES& TEXT_ATTRIBUTES::Align( VERTICAL_ALIGNMENT aVerticalAlignment )
 {
-#ifdef OUTLINEFONT_DEBUG
-    std::cerr << "TEXT_ATTRIBUTES::Align( " << aVerticalAlignment << " )" << std::endl;
-#endif
     m_vertical_alignment = aVerticalAlignment;
     return *this;
 }

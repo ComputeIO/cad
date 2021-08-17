@@ -615,10 +615,6 @@ void PLOTTER::FilledCircle( const wxPoint& pos, int diametre, OUTLINE_MODE trace
 void PLOTTER::PlotPoly( const SHAPE_LINE_CHAIN& aCornerList, FILL_TYPE aFill,
                         int aWidth, void* aData )
 {
-#ifdef DEBUG
-    std::cerr << "PLOTTER::PlotPoly( [SHAPE_LINE_CHAIN], " << aFill << ", " << aWidth << ", ... )"
-              << std::endl;
-#endif
     std::vector<wxPoint> cornerList;
     cornerList.reserve( aCornerList.PointCount() );
 
@@ -656,12 +652,6 @@ void PLOTTER::Text( const wxPoint& aPos, const COLOR4D& aColor, const wxString& 
                     bool aItalic, bool aBold, bool aMultilineAllowed, KIFONT::FONT* aFont,
                     void* aData )
 {
-#ifdef DEBUG
-    std::cerr << "PLOTTER::Text( " << aPos << ", " << aColor << ", \"" << aText << "\", " << aOrient
-              << ", " << aSize << ", " << aHorizontalAlignment << ", " << aVerticalAlignment << ", "
-              << aPenWidth << ", " << aItalic << ", " << aBold << ", " << aMultilineAllowed << ", "
-              << ( aFont ? aFont->Name() : "(default font)" ) << ", [aData] )" << std::endl;
-#endif
     SetColor( aColor );
     SetCurrentLineWidth( aPenWidth, aData );
     SetFont( aFont ? aFont : KIFONT::FONT::GetFont() );
@@ -673,14 +663,6 @@ void PLOTTER::Text( const wxPoint& aPos, const COLOR4D& aColor, const wxString& 
 
 void PLOTTER::Text( const EDA_TEXT* aText, const COLOR4D& aColor, void* aData )
 {
-#ifdef DEBUG
-    std::cerr << "PLOTTER::Text( ";
-    if( aText )
-        std::cerr << *aText;
-    else
-        std::cerr << "nullptr";
-    std::cerr << ", " << aColor << ", [aData] )" << std::endl;
-#endif
     wxSize size = aText->GetTextSize();
     if( aText->IsMirrored() )
         size.x = -size.x;

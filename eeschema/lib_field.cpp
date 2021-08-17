@@ -289,18 +289,7 @@ void LIB_FIELD::Plot( PLOTTER* aPlotter, const wxPoint& aOffset, bool aFill,
     if( aPlotter->GetColorMode() )
         color = aPlotter->RenderSettings()->GetLayerColor( GetDefaultLayer() );
 
-#if 0
-    aPlotter->Text( textpos, color, GetShownText(), orient, GetTextSize(),
-                    TEXT_ATTRIBUTES::H_CENTER, TEXT_ATTRIBUTES::V_CENTER, penWidth, IsItalic(),
-                    IsBold() );
-#else
-#ifdef DEBUG
-    std::cerr << "LIB_FIELD::Plot( [aPlotter " << aPlotter->GetPlotterType() << "], " << aOffset
-              << ", " << ( aFill ? "t" : "f" ) << ", [aTransform] ) shown text \"" << GetShownText()
-              << "\"" << std::endl;
-#endif
     aPlotter->Text( this, color );
-#endif
 }
 
 

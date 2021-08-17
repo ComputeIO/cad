@@ -400,126 +400,16 @@ VECTOR2D STROKE_FONT::StringBoundaryLimits( const KIGFX::GAL* aGal, const UTF8& 
                                             const VECTOR2D& aGlyphSize,
                                             double          aGlyphThickness ) const
 {
-#if 1
     // TODO do we need to parse every time - have we already parsed?
     MARKUP::MARKUP_PARSER markupParser( aText );
     auto                  root = markupParser.Parse();
 
     GLYPH_LIST glyphs; // ignored
-    //bool isMirrored = false; // TODO is this needed/does this information exist here?
-    BOX2I boundingBox;
+    BOX2I      boundingBox;
+
     (void) drawMarkup( &boundingBox, glyphs, root, VECTOR2D( 0, 0 ), aGlyphSize );
-#ifdef DEBUG
-    std::cerr << "STROKE_FONT::StringBoundaryLimits( ... ) returns " << boundingBox.GetSize() << std::endl;
-#endif
+
     return boundingBox.GetSize();
-#else
-    // TODO: needs to be redone using MarkupParser
-
-    VECTOR2D string_bbox;
-    int      line_count = 1;
-    double   maxX = 0.0, curX = 0.0;
-
-    double curScale = 1.0;
-    bool   in_overbar = false;
-    bool   in_super_or_subscript = false;
-
-    for( UTF8::uni_iter it = aText.ubegin(), end = aText.uend(); it < end; ++it )
-    {
-        if( *it == '\n' )
-        {
-            curX = 0.0;
-            maxX = std::max( maxX, curX );
-            ++line_count;
-            continue;
-        }
-
-        // Handle tabs as locked to the nearest 4th column (counting in spaces)
-        // The choice of spaces is somewhat arbitrary but sufficient for aligning text
-        if( *it == '\t' )
-        {
-            double spaces = m_glyphBoundingBoxes->at( 0 ).GetEnd().x;
-            double addlSpace = 3.0 * spaces - std::fmod( curX, 4.0 * spaces );
-
-            // Add the remaining space (between 0 and 3 spaces)
-            curX += addlSpace;
-
-            // Tab ends an overbar
-            in_overbar = false;
-        }
-        else if( *it == '~' )
-        {
-            if( ++it == end )
-                break;
-
-            if( *it == '~' )
-            {
-                // double ~ is really a ~ so go ahead and process the second one
-
-                // so what's a triple ~?  It could be a real ~ followed by an overbar, or
-                // it could be an overbar followed by a real ~.  The old algorithm did the
-                // former so we will too....
-            }
-            else
-            {
-                // single ~ toggles overbar
-                in_overbar = !in_overbar;
-            }
-        }
-        else if( *it == '^' || *it == '_' )
-        {
-            auto lookahead = it;
-
-            if( ++lookahead != end && *lookahead == '{' )
-            {
-                //  process superscript
-                it = lookahead;
-                in_super_or_subscript = true;
-                curScale = 0.8;
-                continue;
-            }
-        }
-        else if( *it == '}' && in_super_or_subscript )
-        {
-            in_super_or_subscript = false;
-            curScale = 1.0;
-            continue;
-        }
-        // Overbar syntax is less precise so we have to have some special cases
-        else if( in_overbar && ( *it == ' ' || *it == '}' || *it == ')' ) )
-        {
-            in_overbar = false;
-        }
-
-        // Index in the bounding boxes table
-        int dd = (signed) *it - ' ';
-
-        if( dd >= (int) m_glyphBoundingBoxes->size() || dd < 0 )
-        {
-            int substitute = *it == '\t' ? ' ' : '?';
-            dd = substitute - ' ';
-        }
-
-        const BOX2D& box = m_glyphBoundingBoxes->at( dd );
-        curX += box.GetEnd().x * curScale;
-    }
-
-    string_bbox.x = std::max( maxX, curX ) * aGlyphSize.x;
-    string_bbox.x += aGlyphThickness;
-    string_bbox.y = line_count * GetInterline( aGlyphSize.y );
-
-    // For italic correction, take in account italic tilt
-    if( aGal && aGal->IsFontItalic() )
-        string_bbox.x += string_bbox.y * STROKE_FONT::ITALIC_TILT;
-
-#if 0 //def OUTLINEFONT_DEBUG
-    std::cerr << "STROKE_FONT::StringBoundaryLimits( " << ( aGal ? "aGal" : "nullptr" ) << ", \""
-              << aText << "\", " << aGlyphSize << ", " << aGlyphThickness << " ) bbox "
-              << string_bbox << " lines " << line_count << " interline "
-              << GetInterline( aGlyphSize.y ) << std::endl;
-#endif
-    return string_bbox;
-#endif
 }
 
 
@@ -536,12 +426,6 @@ VECTOR2I STROKE_FONT::GetTextAsPolygon( BOX2I* aBoundingBox, GLYPH_LIST& aGlyphs
                                         const EDA_ANGLE& aAngle, bool aIsMirrored,
                                         TEXT_STYLE_FLAGS aTextStyle ) const
 {
-#ifdef DEBUG
-    std::cerr << "STROKE_FONT::GetTextAsPolygon( ..., \"" << aText << "\", " << aGlyphSize << ", "
-              << aPosition << ", " << aAngle << ", "
-              << ( aIsMirrored ? "mirrored" : "not mirrored" ) << ", " << aTextStyle << " )"
-              << std::endl;
-#endif
     std::shared_ptr<GLYPH> glyph = nullptr;
     wxPoint cursor( aPosition );
     VECTOR2D glyphSize( aGlyphSize );
@@ -585,9 +469,6 @@ VECTOR2I STROKE_FONT::GetTextAsPolygon( BOX2I* aBoundingBox, GLYPH_LIST& aGlyphs
 
         glyph = m_glyphs->at( dd )->Resize( glyphSize )->Translate( cursor );
 
-#ifdef DEBUG
-        std::cerr << "[Glyph " << *i << "->" << dd << " cursor " << cursor << "]";
-#endif
         if( dd == 0 )
         {
             // 'space' character - draw nothing, advance cursor position
@@ -618,16 +499,6 @@ VECTOR2I STROKE_FONT::GetTextAsPolygon( BOX2I* aBoundingBox, GLYPH_LIST& aGlyphs
 
         aGlyphs.push_back( overbarGlyph );
     }
-
-#if 0
-    if( aIsMirrored )
-    {
-        for( auto it = aGlyphs.begin(); it != aGlyphs.end(); it++ )
-        {
-            (*it)->Mirror( aPosition );
-        }
-    }
-#endif
 
     // TODO: bounding box computation when mirrored - check?
     if( aBoundingBox )
