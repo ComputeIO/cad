@@ -641,11 +641,11 @@ static struct EDA_TEXT_DESC
     EDA_TEXT_DESC()
     {
         ENUM_MAP<TEXT_ATTRIBUTES::HORIZONTAL_ALIGNMENT>::Instance()
-                .Map( TEXT_ATTRIBUTES::H_LEFT,   _HKI( "Left" ) )
+                .Map( TEXT_ATTRIBUTES::H_LEFT, _HKI( "Left" ) )
                 .Map( TEXT_ATTRIBUTES::H_CENTER, _HKI( "Center" ) )
-                .Map( TEXT_ATTRIBUTES::H_RIGHT,  _HKI( "Right" ) );
+                .Map( TEXT_ATTRIBUTES::H_RIGHT, _HKI( "Right" ) );
         ENUM_MAP<TEXT_ATTRIBUTES::VERTICAL_ALIGNMENT>::Instance()
-                .Map( TEXT_ATTRIBUTES::V_TOP,    _HKI( "Top" ) )
+                .Map( TEXT_ATTRIBUTES::V_TOP, _HKI( "Top" ) )
                 .Map( TEXT_ATTRIBUTES::V_CENTER, _HKI( "Center" ) )
                 .Map( TEXT_ATTRIBUTES::V_BOTTOM, _HKI( "Bottom" ) );
 
