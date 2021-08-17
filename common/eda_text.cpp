@@ -618,11 +618,11 @@ void EDA_TEXT::SetDefaultAlignment()
 
     switch( GetTextEdaAngle().AsDegrees() )
     {
-        default:
-        case 0:
-        case 90: SetHorizontalAlignment( TEXT_ATTRIBUTES::H_LEFT ); break;
-        case 180:
-        case 270: SetHorizontalAlignment( TEXT_ATTRIBUTES::H_RIGHT ); break;
+    default:
+    case 0:
+    case 90: SetHorizontalAlignment( TEXT_ATTRIBUTES::H_LEFT ); break;
+    case 180:
+    case 270: SetHorizontalAlignment( TEXT_ATTRIBUTES::H_RIGHT ); break;
     }
 }
 

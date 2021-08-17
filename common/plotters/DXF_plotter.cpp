@@ -868,64 +868,56 @@ void DXF_PLOTTER::Text( const wxPoint& aPos, const COLOR4D& aColor, const wxStri
 
         switch( aHorizontalAlignment )
         {
-        case TEXT_ATTRIBUTES::H_LEFT:
-            h_code = 0;
-            break;
-        case TEXT_ATTRIBUTES::H_CENTER:
-            h_code = 1;
-            break;
-        case TEXT_ATTRIBUTES::H_RIGHT:
-            h_code = 2;
-            break;
+        case TEXT_ATTRIBUTES::H_LEFT: h_code = 0; break;
+
+        case TEXT_ATTRIBUTES::H_CENTER: h_code = 1; break;
+
+        case TEXT_ATTRIBUTES::H_RIGHT: h_code = 2; break;
         }
 
         switch( aVerticalAlignment )
         {
-        case TEXT_ATTRIBUTES::V_TOP:
-            v_code = 3;
-            break;
-        case TEXT_ATTRIBUTES::V_CENTER:
-            v_code = 2;
-            break;
-        case TEXT_ATTRIBUTES::V_BOTTOM:
-            v_code = 1;
-            break;
+        case TEXT_ATTRIBUTES::V_TOP: v_code = 3; break;
+
+        case TEXT_ATTRIBUTES::V_CENTER: v_code = 2; break;
+
+        case TEXT_ATTRIBUTES::V_BOTTOM: v_code = 1; break;
         }
 
         // Position, size, rotation and alignment
         // The two alignment point usages is somewhat idiot (see the DXF ref)
         // Anyway since we don't use the fit/aligned options, they're the same
         fprintf( m_outputFile,
-                "  0\n"
-                "TEXT\n"
-                "  7\n"
-                "%s\n"          // Text style
-                "  8\n"
-                "%s\n"          // Layer name
-                "  10\n"
-                "%g\n"          // First point X
-                "  11\n"
-                "%g\n"          // Second point X
-                "  20\n"
-                "%g\n"          // First point Y
-                "  21\n"
-                "%g\n"          // Second point Y
-                "  40\n"
-                "%g\n"          // Text height
-                "  41\n"
-                "%g\n"          // Width factor
-                "  50\n"
-                "%g\n"          // Rotation
-                "  51\n"
-                "%g\n"          // Oblique angle
-                "  71\n"
-                "%d\n"          // Mirror flags
-                "  72\n"
-                "%d\n"          // H alignment
-                "  73\n"
-                "%d\n",         // V alignment
-                aBold ? (aItalic ? "KICADBI" : "KICADB")
-                      : (aItalic ? "KICADI" : "KICAD"),
+                 "  0\n"
+                 "TEXT\n"
+                 "  7\n"
+                 "%s\n"          // Text style
+                 "  8\n"
+                 "%s\n"          // Layer name
+                 "  10\n"
+                 "%g\n"          // First point X
+                 "  11\n"
+                 "%g\n"          // Second point X
+                 "  20\n"
+                 "%g\n"          // First point Y
+                 "  21\n"
+                 "%g\n"          // Second point Y
+                 "  40\n"
+                 "%g\n"          // Text height
+                 "  41\n"
+                 "%g\n"          // Width factor
+                 "  50\n"
+                 "%g\n"          // Rotation
+                 "  51\n"
+                 "%g\n"          // Oblique angle
+                 "  71\n"
+                 "%d\n"          // Mirror flags
+                 "  72\n"
+                 "%d\n"          // H alignment
+                 "  73\n"
+                 "%d\n",         // V alignment
+                 aBold ? (aItalic ? "KICADBI" : "KICADB")
+                 : (aItalic ? "KICADI" : "KICAD"),
                  TO_UTF8( cname ),
                  origin_dev.x, origin_dev.x,
                  origin_dev.y, origin_dev.y,
@@ -933,7 +925,7 @@ void DXF_PLOTTER::Text( const wxPoint& aPos, const COLOR4D& aColor, const wxStri
                  aOrient.AsTenthsOfADegree() / 10.0,
                  aItalic ? DXF_OBLIQUE_ANGLE : 0,
                  size_dev.x < 0 ? 2 : 0, // X mirror flag
-                h_code, v_code );
+                 h_code, v_code );
 
         /* There are two issue in emitting the text:
            - Our overline character (~) must be converted to the appropriate

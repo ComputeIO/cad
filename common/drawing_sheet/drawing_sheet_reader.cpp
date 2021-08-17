@@ -733,21 +733,13 @@ void DRAWING_SHEET_READER_PARSER::parseText( DS_DATA_ITEM_TEXT* aItem )
                     aItem->m_Valign = TEXT_ATTRIBUTES::V_CENTER;
                     break;
 
-                case T_left:
-                    aItem->m_Halign = TEXT_ATTRIBUTES::H_LEFT;
-                    break;
+                case T_left: aItem->m_Halign = TEXT_ATTRIBUTES::H_LEFT; break;
 
-                case T_right:
-                    aItem->m_Halign = TEXT_ATTRIBUTES::H_RIGHT;
-                    break;
+                case T_right: aItem->m_Halign = TEXT_ATTRIBUTES::H_RIGHT; break;
 
-                case T_top:
-                    aItem->m_Valign = TEXT_ATTRIBUTES::V_TOP;
-                    break;
+                case T_top: aItem->m_Valign = TEXT_ATTRIBUTES::V_TOP; break;
 
-                case T_bottom:
-                    aItem->m_Valign = TEXT_ATTRIBUTES::V_BOTTOM;
-                    break;
+                case T_bottom: aItem->m_Valign = TEXT_ATTRIBUTES::V_BOTTOM; break;
 
                 default:
                     Unexpected( CurText() );

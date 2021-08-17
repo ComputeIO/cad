@@ -862,7 +862,7 @@ void PDF_PLOTTER::Text( const wxPoint&              aPos,
              fontname, heightFactor, render_mode, wideningFactor * 100 );
 
     // The text must be escaped correctly
-    std:: string txt_pdf = encodeStringForPlotter( aText );
+    std::string txt_pdf = encodeStringForPlotter( aText );
     fprintf( workFile, "%s Tj ET\n", txt_pdf.c_str() );
 
     // Restore the CTM
@@ -886,7 +886,7 @@ void PDF_PLOTTER::Text( const EDA_TEXT* aText, const COLOR4D& aColor, void* aDat
 
     // Render phantom text (which will be searchable) behind the stroke font.  This won't
     // be pixel-accurate, but it doesn't matter for searching.
-    int render_mode = 3;    // invisible
+    int render_mode = 3; // invisible
 
     const char* fontname = aText->IsItalic() ? ( aText->IsBold() ? "/KicadFontBI" : "/KicadFontI" )
                                              : ( aText->IsBold() ? "/KicadFontB" : "/KicadFont" );
