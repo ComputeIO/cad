@@ -25,13 +25,10 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
 
-#include <eda_base_frame.h>
-#include <fill_type.h>
-#include <plotters_specific.h>
+#include "plotter_dxf.h"
 #include <macros.h>
 #include <string_utils.h>
 #include <convert_basic_shapes_to_polygon.h>
-#include <render_settings.h>
 #include <trigo.h>
 
 /**
@@ -1006,10 +1003,10 @@ void DXF_PLOTTER::Text( const wxPoint& aPos, const COLOR4D& aColor, const wxStri
 }
 
 
-void DXF_PLOTTER::Text( const EDA_TEXT* aText, const COLOR4D& aColor, void* aData )
+void DXF_PLOTTER::Text( const EDA_TEXT* aText, const COLOR4D& aColor, int aPenWidth, void* aData )
 {
     Text( aText->GetTextPos(), aColor, aText->GetShownText(), aText->GetTextEdaAngle(),
           aText->GetTextSize(), aText->GetHorizontalAlignment(), aText->GetVerticalAlignment(),
-          aText->GetTextThickness(), aText->IsItalic(), aText->IsBold(),
-          aText->IsMultilineAllowed(), aText->GetFont(), aData );
+          aPenWidth, aText->IsItalic(), aText->IsBold(), aText->IsMultilineAllowed(),
+          aText->GetFont(), aData );
 }

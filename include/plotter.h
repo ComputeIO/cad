@@ -418,8 +418,10 @@ public:
                                       double aOrient, OUTLINE_MODE aTraceMode, void* aData ) = 0;
 
     /**
-     * Draws text with the plotter. For convenience it accepts the color to use
-     * for specific plotters (GERBER) aData is used to pass extra parameters
+     * Draw text with the plotter.
+     *
+     * @param aColor the color to use for specific plotters (GERBER)
+     * @param aData used to pass extra parameters
      */
     virtual void Text( const wxPoint& aPos, const COLOR4D& aColor, const wxString& aText,
                        const EDA_ANGLE& aOrient, const wxSize& aSize,
@@ -428,7 +430,12 @@ public:
                        bool aItalic, bool aBold, bool aMultilineAllowed = false,
                        KIFONT::FONT* aFont = nullptr, void* aData = nullptr );
 
-    virtual void Text( const EDA_TEXT* aText, const COLOR4D& aColor, void* aData = nullptr );
+    virtual void Text( const EDA_TEXT* aText, const COLOR4D& aColor, int aPenWidth, void* aData = nullptr );
+
+    void Text( const EDA_TEXT* aText, const COLOR4D& aColor, void* aData = nullptr )
+    {
+        Text( aText, aColor, aText->GetTextThickness(), aData );
+    }
 
     /**
      * Draw a marker (used for the drill map).

@@ -279,19 +279,16 @@ void LIB_FIELD::Plot( PLOTTER* aPlotter, const wxPoint& aOffset, bool aFill,
             orient = TEXT_ANGLE_HORIZ;
     }
 
-    EDA_RECT BoundaryBox = GetBoundingBox();
-    BoundaryBox.RevertYAxis();
+    // EDA_RECT BoundaryBox = GetBoundingBox();
+    // BoundaryBox.RevertYAxis();
 
-    wxPoint textpos = aTransform.TransformCoordinate( BoundaryBox.Centre() ) + aOffset;
-    int     penWidth = std::max( GetPenWidth(), aPlotter->RenderSettings()->GetMinPenWidth() );
+    // wxPoint textpos = aTransform.TransformCoordinate( BoundaryBox.Centre() ) + aOffset;
     COLOR4D color = COLOR4D::BLACK;
 
     if( aPlotter->GetColorMode() )
         color = aPlotter->RenderSettings()->GetLayerColor( GetDefaultLayer() );
     else
         color = COLOR4D::BLACK;
-
-    int penWidth = GetEffectivePenWidth( aPlotter->RenderSettings() );
 
     aPlotter->Text( this, color );
 }

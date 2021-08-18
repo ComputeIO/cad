@@ -23,13 +23,10 @@
  * @brief specialized plotter for GERBER files format
  */
 
-#include <eda_base_frame.h>
-#include <fill_type.h>
 #include <string_utils.h>
 #include <convert_basic_shapes_to_polygon.h>
 #include <macros.h>
 #include <math/util.h>      // for KiROUND
-#include <render_settings.h>
 #include <trigo.h>
 #include <wx/log.h>
 
@@ -1943,14 +1940,14 @@ void GERBER_PLOTTER::Text( const wxPoint& aPos, const COLOR4D& aColor, const wxS
 }
 
 
-void GERBER_PLOTTER::Text( const EDA_TEXT* aText, const COLOR4D& aColor, void* aData )
+void GERBER_PLOTTER::Text( const EDA_TEXT* aText, const COLOR4D& aColor, int aPenWidth, void* aData )
 {
     GBR_METADATA* gbr_metadata = static_cast<GBR_METADATA*>( aData );
 
     if( gbr_metadata )
         formatNetAttribute( &gbr_metadata->m_NetlistMetadata );
 
-    PLOTTER::Text( aText, aColor, aData );
+    PLOTTER::Text( aText, aColor, aPenWidth, aData );
 }
 
 

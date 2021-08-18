@@ -509,7 +509,13 @@ SCH_SHEET_PIN* SCH_SHEET::GetPin( const wxPoint& aPosition )
 
 int SCH_SHEET::GetPenWidth() const
 {
-    return std::max( GetBorderWidth(), 1 );
+    if( GetBorderWidth() > 0 )
+        return GetBorderWidth();
+
+    if( Schematic() )
+        return Schematic()->Settings().m_DefaultLineWidth;
+
+    return DEFAULT_LINE_THICKNESS;
 }
 
 
@@ -983,9 +989,13 @@ void SCH_SHEET::Plot( PLOTTER* aPlotter ) const
     int penWidth = std::max( GetPenWidth(), aPlotter->RenderSettings()->GetMinPenWidth() );
     aPlotter->Rect( m_pos, m_pos + m_size, FILL_TYPE::NO_FILL, penWidth );
 
-    /* Draw texts : SheetLabel */
+    // Plot sheet pins
     for( SCH_SHEET_PIN* sheetPin : m_pins )
         sheetPin->Plot( aPlotter );
+
+    // Plot the fields
+    for( const SCH_FIELD& field : m_fields )
+        field.Plot( aPlotter );
 }
 
 
@@ -1019,7 +1029,6 @@ void SCH_SHEET::Print( const RENDER_SETTINGS* aSettings, const wxPoint& aOffset 
     for( SCH_FIELD& field : m_fields )
         field.Print( aSettings, aOffset );
 
-    /* Draw text : SheetLabel */
     for( SCH_SHEET_PIN* sheetPin : m_pins )
         sheetPin->Print( aSettings, aOffset );
 }

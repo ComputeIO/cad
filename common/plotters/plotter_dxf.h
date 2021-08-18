@@ -25,8 +25,6 @@
 
 #pragma once
 
-#include <vector>
-#include <math/box2.h>
 #include <plotter.h>
 
 
@@ -61,7 +59,7 @@ public:
     }
 
     /**
-     * Opens the DXF plot with a skeleton header.
+     * Open the DXF plot with a skeleton header.
      */
     virtual bool StartPlot() override;
     virtual bool EndPlot() override;
@@ -165,7 +163,8 @@ public:
                        KIFONT::FONT*               aFont = nullptr,
                        void*                       aData = nullptr ) override;
 
-    virtual void Text( const EDA_TEXT* aText, const COLOR4D& aColor, void* aData = nullptr ) override;
+    virtual void Text( const EDA_TEXT* aText, const COLOR4D& aColor, int aPenWidth,
+                       void* aData = nullptr ) override;
 
     /**
      * Set the units to use for plotting the DXF file.

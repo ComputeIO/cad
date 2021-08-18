@@ -25,8 +25,6 @@
 
 #pragma once
 
-#include <vector>
-#include <math/box2.h>
 #include <plotter.h>
 
 
@@ -348,7 +346,8 @@ public:
                        KIFONT::FONT*               aFont = nullptr,
                        void*                       aData = nullptr ) override;
 
-    virtual void Text( const EDA_TEXT* aText, const COLOR4D& aColor, void* aData = nullptr ) override;
+    virtual void Text( const EDA_TEXT* aText, const COLOR4D& aColor, int aPenWidth,
+                       void* aData = nullptr ) override;
 
     /**
      * PDF images are handles as inline, not XObject streams...
@@ -449,7 +448,7 @@ public:
     virtual void SetDash( PLOT_DASH_TYPE dashed ) override;
 
     virtual void SetViewport( const wxPoint& aOffset, double aIusPerDecimil,
-                  double aScale, bool aMirror ) override;
+                              double aScale, bool aMirror ) override;
     virtual void Rect( const wxPoint& p1, const wxPoint& p2, FILL_TYPE fill,
                        int width = USE_DEFAULT_LINE_WIDTH ) override;
     virtual void Circle( const wxPoint& pos, int diametre, FILL_TYPE fill,
@@ -515,7 +514,8 @@ public:
                        KIFONT::FONT*               aFont = nullptr,
                        void*                       aData = nullptr ) override;
 
-    virtual void Text( const EDA_TEXT* aText, const COLOR4D& aColor, void* aData = nullptr ) override;
+    virtual void Text( const EDA_TEXT* aText, const COLOR4D& aColor, int aPenWidth,
+                       void* aData = nullptr ) override;
 
 protected:
     /**

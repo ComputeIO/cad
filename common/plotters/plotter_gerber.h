@@ -26,9 +26,6 @@
 
 #pragma once
 
-#include <vector>
-#include <math/box2.h>
-
 #include <plotter.h>
 #include "gbr_plotter_apertures.h"
 
@@ -116,7 +113,7 @@ public:
                        KIFONT::FONT*               aFont = nullptr,
                        void*                       aData = nullptr ) override;
 
-    virtual void Text( const EDA_TEXT* aText, const COLOR4D& aColor, void* aData = nullptr ) override;
+    virtual void Text( const EDA_TEXT* aText, const COLOR4D& aColor, int aPenWidth, void* aData = nullptr ) override;
 
     /**
      * Filled circular flashes are stored as apertures
