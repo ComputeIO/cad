@@ -30,14 +30,13 @@
  */
 
 #include <gr_basic.h>
-#include <plotter.h>
+#include <plotters/plotter.h>
 #include <eda_text.h>
 #include <trigo.h>
 #include <base_screen.h>
 #include <gr_text.h>
 #include <math/util.h> // for KiROUND
-#include <font/font.h> // for KiROUND
-
+#include <font/font.h>
 #include <basic_gal.h>
 
 

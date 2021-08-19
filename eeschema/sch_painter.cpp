@@ -44,7 +44,7 @@
 #include <lib_rectangle.h>
 #include <lib_text.h>
 #include <math/util.h>
-#include <plotter.h>
+#include <plotters/plotter.h>
 #include <sch_bitmap.h>
 #include <sch_bus_entry.h>
 #include <sch_symbol.h>
@@ -521,7 +521,7 @@ bool SCH_PAINTER::setDeviceColors( const LIB_ITEM* aItem, int aLayer )
         m_gal->SetIsFill( aItem->GetFillMode() == FILL_TYPE::FILLED_SHAPE );
         m_gal->SetFillColor( getRenderColor( aItem, LAYER_DEVICE, false ) );
 
-        if( aItem->GetPenWidth() > 0 || aItem->GetFillMode() == FILL_TYPE::NO_FILL )
+        if( aItem->GetPenWidth() >= 0 || aItem->GetFillMode() == FILL_TYPE::NO_FILL )
         {
             m_gal->SetIsStroke( true );
             m_gal->SetLineWidth( getLineWidth( aItem, false ) );
