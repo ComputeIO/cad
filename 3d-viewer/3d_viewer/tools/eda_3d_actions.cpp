@@ -211,19 +211,19 @@ TOOL_ACTION EDA_3D_ACTIONS::showTHT( "3DViewer.Control.attributesTHT",
         AS_ACTIVE,
         'T', "",
         _( "Toggle Through Hole 3D models" ), _( "Toggle 3D models for 'Through hole' type components" ),
-        BITMAPS::shape_3d, AF_NONE, (void*) FL_FP_ATTRIBUTES_NORMAL );
+        BITMAPS::show_tht, AF_NONE, (void*) FL_FP_ATTRIBUTES_NORMAL );
 
 TOOL_ACTION EDA_3D_ACTIONS::showSMD( "3DViewer.Control.attributesSMD",
         AS_ACTIVE,
         'S', "",
         _( "Toggle SMD 3D models" ), _( "Toggle 3D models for 'Surface mount' type components" ),
-        BITMAPS::icon_gerbview_24, AF_NONE, (void*) FL_FP_ATTRIBUTES_NORMAL_INSERT );
+        BITMAPS::show_footprint, AF_NONE, (void*) FL_FP_ATTRIBUTES_NORMAL_INSERT );
 
 TOOL_ACTION EDA_3D_ACTIONS::showVirtual( "3DViewer.Control.attributesOther",
         AS_ACTIVE,
         'V', "",
         _( "Toggle Other 3D models" ), _( "Toggle 3D models for 'Other' type components" ),
-        BITMAPS::unknown, AF_NONE, (void*) FL_FP_ATTRIBUTES_VIRTUAL );
+        BITMAPS::show_other, AF_NONE, (void*) FL_FP_ATTRIBUTES_VIRTUAL );
 
 TOOL_ACTION EDA_3D_ACTIONS::showBBoxes( "3DViewer.Control.showBoundingBoxes",
          AS_GLOBAL, 0, "",
