@@ -34,6 +34,7 @@
 #include <gr_basic.h>
 #include <plotter.h>
 #include <trigo.h>
+#include <macros.h>
 #include <geometry/shape_poly_set.h>
 #include <font/triangulate.h>
 
