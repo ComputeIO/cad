@@ -7,41 +7,41 @@
    xmlns="http://www.w3.org/2000/svg"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
-   inkscape:version="1.0 (4035a4fb49, 2020-05-01)"
-   sodipodi:docname="show_tht.svg"
-   version="1.1"
-   viewBox="0 0 24 24"
+   id="Слой_1"
    data-name="Слой 1"
-   id="Слой_1">
+   viewBox="0 0 24 24"
+   version="1.1"
+   sodipodi:docname="show_tht.svg"
+   inkscape:version="1.0 (4035a4fb49, 2020-05-01)">
   <sodipodi:namedview
-     inkscape:current-layer="Слой_1"
-     inkscape:document-rotation="0"
-     inkscape:window-maximized="1"
-     inkscape:window-y="-8"
-     inkscape:window-x="-8"
-     inkscape:cy="13"
-     inkscape:cx="3.3259971"
-     inkscape:zoom="27.961538"
-     showgrid="true"
-     id="namedview30"
-     inkscape:window-height="1377"
-     inkscape:window-width="2560"
-     inkscape:pageshadow="2"
-     inkscape:pageopacity="0"
-     guidetolerance="10"
-     gridtolerance="10"
-     objecttolerance="10"
-     borderopacity="1"
+     pagecolor="#ffffff"
      bordercolor="#666666"
-     pagecolor="#ffffff">
+     borderopacity="1"
+     objecttolerance="10"
+     gridtolerance="10"
+     guidetolerance="10"
+     inkscape:pageopacity="0"
+     inkscape:pageshadow="2"
+     inkscape:window-width="2560"
+     inkscape:window-height="1377"
+     id="namedview30"
+     showgrid="true"
+     inkscape:zoom="27.961538"
+     inkscape:cx="3.3259971"
+     inkscape:cy="13"
+     inkscape:window-x="-8"
+     inkscape:window-y="-8"
+     inkscape:window-maximized="1"
+     inkscape:document-rotation="0"
+     inkscape:current-layer="Слой_1">
     <inkscape:grid
-       empspacing="2"
-       opacity="0.13"
-       color="#9999ff"
-       spacingy="0.5"
-       spacingx="0.5"
+       type="xygrid"
        id="grid_kicad"
-       type="xygrid" />
+       spacingx="0.5"
+       spacingy="0.5"
+       color="#9999ff"
+       opacity="0.13"
+       empspacing="2" />
   </sodipodi:namedview>
   <metadata
      id="metadata43">
@@ -80,95 +80,54 @@
   <title
      id="title24665">show_tht</title>
   <line
-     id="line24667"
-     y2="23.3456"
-     x2="5.1465998"
-     y1="16.841299"
-     x1="5.1465998"
-     class="cls-1" />
+     class="cls-1"
+     x1="9.0886002"
+     y1="17.0173"
+     x2="9.0886002"
+     y2="23.521601"
+     id="line24667" />
   <line
-     id="line24669"
-     y2="23.3456"
-     x2="11.614"
-     y1="16.841299"
-     x1="11.614"
-     class="cls-1" />
+     class="cls-1"
+     x1="15.556001"
+     y1="17.0173"
+     x2="15.556001"
+     y2="23.521601"
+     id="line24669" />
   <rect
-     id="rect24671"
+     class="cls-2"
+     x="4.9495001"
+     y="1.8302001"
+     width="14.0805"
      height="10.0092"
-     width="14.0805"
-     y="1.6542001"
-     x="1.0074999"
-     class="cls-2" />
+     id="rect24671" />
   <polygon
-     transform="translate(-1,-1)"
+     class="cls-3"
+     points="15.038,0.98 16.088,2.654 2.007,2.654 3.058,0.98 "
      id="polygon24673"
-     points="2.007,2.654 3.058,0.98 15.038,0.98 16.088,2.654 "
-     class="cls-3" />
+     transform="translate(2.942,-0.824)" />
   <polygon
-     transform="translate(-1,-1)"
+     class="cls-4"
+     points="3.058,14.337 2.007,12.663 16.088,12.663 15.038,14.337 "
      id="polygon24675"
-     points="16.088,12.663 15.038,14.337 3.058,14.337 2.007,12.663 "
-     class="cls-4" />
+     transform="translate(2.942,-0.824)" />
   <polygon
-     transform="translate(-1,-1)"
+     class="cls-3"
+     points="15.038,14.324 16.088,15.997 2.007,15.997 3.058,14.324 "
      id="polygon24677"
-     points="2.007,15.997 3.058,14.324 15.038,14.324 16.088,15.997 "
-     class="cls-3" />
+     transform="translate(2.942,-0.824)" />
   <rect
-     id="rect24679"
-     height="2.0009"
+     class="cls-2"
+     x="4.9495001"
+     y="15.1734"
      width="14.0805"
-     y="14.9974"
-     x="1.0074999"
-     class="cls-2" />
+     height="2.0009"
+     id="rect24679" />
   <rect
-     id="rect24681"
-     height="1.9814"
-     width="22.3253"
-     y="18.011"
+     style="stroke-width:1.03697"
+     class="cls-5"
      x="-0.0062000155"
-     class="cls-5" />
-  <g
-     style="stroke-width:1.00092"
-     transform="matrix(0.99907229,0,0,0.99907223,16.682391,0.46108398)"
-     id="g2825">
-    <path
-       inkscape:connector-curvature="0"
-       sodipodi:nodetypes="sccccs"
-       style="fill:#c22341;fill-opacity:1;stroke-width:1.00093"
-       id="path2817"
-       d="M 7.162202,23.370209 C 6.5124046,24.078317 5.4928555,23.954675 4.8015019,23.26329 l -1.7168621,-1.653884 2.2532079,-2.253298 1.7169509,1.653973 c 0.657845,0.790765 0.7644375,1.644134 0.1074034,2.360128 z"
-       class="cls-4" />
-    <g
-       transform="matrix(3.7830372,0,0,3.7830374,-13.47019,2.2657407)"
-       id="g2823">
-      <path
-         inkscape:connector-curvature="0"
-         style="opacity:1;fill:none;stroke:#c22340;stroke-width:0.635;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
-         id="path2819"
-         d="M 4.3134957,2.271524 A 1.4570598,1.4568993 0 1 1 2.2538348,2.272498 1.4563738,1.4562132 0 0 1 4.3134957,2.271524 Z"
-         class="cls-4" />
-    </g>
-    <g
-       id="g851"
-       transform="matrix(2.3621654,0,0,2.3621656,-8.8058418,6.9577514)"
-       style="opacity:1;fill:#ffffff;fill-opacity:0.45098;stroke:none;stroke-width:1.60299">
-      <path
-         class="cls-5"
-         d="m 4.5707641,2.0043869 a 1.8322519,1.8324268 0 1 1 -2.5912073,0 1.8322519,1.8324268 0 0 1 2.5912073,0 z"
-         id="path849"
-         style="fill:#ffffff;fill-opacity:0.45098;stroke:none;stroke-width:0.25424;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
-         inkscape:connector-curvature="0" />
-    </g>
-    <rect
-       style="fill:#c22341;fill-opacity:1;stroke:none;stroke-width:1.00093;stroke-linecap:round;stroke-linejoin:round"
-       id="rect2815"
-       transform="rotate(-45.000001)"
-       height="3.0027859"
-       width="2.001857"
-       y="15.823131"
-       x="-12.42106"
-       class="cls-3" />
-  </g>
+     y="18.011"
+     width="24.006201"
+     height="1.9814"
+     id="rect24681" />
 </svg>

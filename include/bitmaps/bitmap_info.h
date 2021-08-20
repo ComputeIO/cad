@@ -451,6 +451,7 @@ const std::vector<BITMAP_INFO> g_BitmapInfo = {
     { BITMAPS::showtrack, wxT( "showtrack_24.png" ), 24, wxT( "light" ) },
     { BITMAPS::show_other, wxT( "show_other_24.png" ), 24, wxT( "light" ) },
     { BITMAPS::show_tht, wxT( "show_tht_24.png" ), 24, wxT( "light" ) },
+    { BITMAPS::show_smt, wxT( "show_smt_24.png" ), 24, wxT( "light" ) },
     { BITMAPS::show_zone, wxT( "show_zone_24.png" ), 24, wxT( "light" ) },
     { BITMAPS::show_zone_disable, wxT( "show_zone_disable_24.png" ), 24, wxT( "light" ) },
     { BITMAPS::show_zone_outline_only, wxT( "show_zone_outline_only_24.png" ), 24, wxT( "light" ) },

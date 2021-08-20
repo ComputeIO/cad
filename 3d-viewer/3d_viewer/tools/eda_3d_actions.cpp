@@ -217,7 +217,7 @@ TOOL_ACTION EDA_3D_ACTIONS::showSMD( "3DViewer.Control.attributesSMD",
         AS_ACTIVE,
         'S', "",
         _( "Toggle SMD 3D models" ), _( "Toggle 3D models for 'Surface mount' type components" ),
-        BITMAPS::show_footprint, AF_NONE, (void*) FL_FP_ATTRIBUTES_NORMAL_INSERT );
+        BITMAPS::show_smt, AF_NONE, (void*) FL_FP_ATTRIBUTES_NORMAL_INSERT );
 
 TOOL_ACTION EDA_3D_ACTIONS::showVirtual( "3DViewer.Control.attributesOther",
         AS_ACTIVE,
