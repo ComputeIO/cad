@@ -227,63 +227,8 @@ void BASIC_GAL::DrawGlyph( const KIFONT::GLYPH& aGlyph, int aNth, int aTotal )
         switch( m_plotter->GetPlotterType() )
         {
         case PLOT_FORMAT::GERBER:
-        {
-            if( aGlyph.IsStroke() )
-            {
-                m_plotter->SetLayerPolarity( true );
-                for( auto pointList : aGlyph.GetPoints() )
-                {
-                    DrawPolyline( pointList );
-                }
-                m_plotter->PenFinish();
-            }
-            else if( aGlyph.IsOutline() )
-            {
-                // TODO move this to GERBER_plotter.cpp
-                std::vector<wxPoint> polygon_with_transform;
-                int                  i;
-                auto                 polylist = aGlyph.GetPolylist();
-
-                for( int iOutline = 0; iOutline < polylist.OutlineCount(); ++iOutline )
-                {
-                    const SHAPE_LINE_CHAIN& outline = polylist.COutline( iOutline );
-
-                    if( outline.PointCount() < 2 )
-                        continue;
-
-                    polygon_with_transform.clear();
-
-                    for( i = 0; i < outline.PointCount(); i++ )
-                        polygon_with_transform.emplace_back(
-                                (wxPoint) transform( outline.CPoint( i ) ) );
-
-                    m_plotter->SetLayerPolarity( true );
-                    m_plotter->PlotPoly( polygon_with_transform, FILL_TYPE::FILLED_SHAPE );
-
-                    for( int iHole = 0; iHole < polylist.HoleCount( iOutline ); iHole++ )
-                    {
-                        const SHAPE_LINE_CHAIN& hole = polylist.CHole( iOutline, iHole );
-
-                        if( hole.PointCount() < 2 )
-                            continue;
-
-                        polygon_with_transform.clear();
-
-                        for( i = 0; i < hole.PointCount(); i++ )
-                            polygon_with_transform.emplace_back(
-                                    (wxPoint) transform( hole.CPoint( i ) ) );
-
-                        // Note: holes in glyphs are erased, they are not see-thru
-                        m_plotter->SetLayerPolarity( false );
-                        m_plotter->PlotPoly( polygon_with_transform, FILL_TYPE::FILLED_SHAPE );
-                    }
-
-                    m_plotter->SetLayerPolarity( true );
-                    m_plotter->PenFinish();
-                }
-            }
-        }
-        break;
+            m_plotter->SetLayerPolarity( true );
+            KI_FALLTHROUGH;
 
         case PLOT_FORMAT::POST:
         case PLOT_FORMAT::PDF:
@@ -293,7 +238,6 @@ void BASIC_GAL::DrawGlyph( const KIFONT::GLYPH& aGlyph, int aNth, int aTotal )
         {
             if( aGlyph.IsStroke() )
             {
-                //m_plotter->SetLayerPolarity( true );
                 for( auto pointList : aGlyph.GetPoints() )
                 {
                     DrawPolyline( pointList );
