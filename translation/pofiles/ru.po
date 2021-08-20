@@ -34585,7 +34585,7 @@ msgstr "Провести диагностику и применить восст
 
 #: pcbnew/tools/pcb_actions.cpp:1102
 msgid "Align to Top"
-msgstr "Выравнять сверху"
+msgstr "Выровнять сверху"
 
 #: pcbnew/tools/pcb_actions.cpp:1103
 msgid "Aligns selected items to the top edge"
@@ -34593,7 +34593,7 @@ msgstr "Выровнять выбранные элементы по верхне
 
 #: pcbnew/tools/pcb_actions.cpp:1107
 msgid "Align to Bottom"
-msgstr "Выравнять снизу"
+msgstr "Выровнять снизу"
 
 #: pcbnew/tools/pcb_actions.cpp:1108
 msgid "Aligns selected items to the bottom edge"
@@ -34601,7 +34601,7 @@ msgstr "Выровнять выбранные элементы по нижнем
 
 #: pcbnew/tools/pcb_actions.cpp:1112
 msgid "Align to Left"
-msgstr "Выравнять слева"
+msgstr "Выровнять слева"
 
 #: pcbnew/tools/pcb_actions.cpp:1113
 msgid "Aligns selected items to the left edge"
@@ -34609,7 +34609,7 @@ msgstr "Выровнять выбранные элементы по левому
 
 #: pcbnew/tools/pcb_actions.cpp:1117
 msgid "Align to Right"
-msgstr "Выравнять справа"
+msgstr "Выровнять справа"
 
 #: pcbnew/tools/pcb_actions.cpp:1118
 msgid "Aligns selected items to the right edge"
