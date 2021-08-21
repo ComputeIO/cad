@@ -35,6 +35,8 @@
 #include <sparselizard/sparselizard.h>
 
 #include <pcbnew/board.h>
+#include <pcbnew/footprint.h>
+#include <pcbnew/pad.h>
 
 using namespace sl;
 

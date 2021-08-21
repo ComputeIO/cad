@@ -25,11 +25,14 @@
 #include "gmsh_mesher.h"
 #include <gmsh.h>
 
+#include "board_design_settings.h"
 #include <convert_basic_shapes_to_polygon.h>
 
 #include "board.h"
+#include "footprint.h"
 #include "pad.h"
-#include "track.h"
+#include "pcb_track.h"
+#include "zone.h"
 
 double TransformPoint( double aCoordinate )
 {
@@ -157,12 +160,12 @@ void GMSH_MESHER::Load25DMesh()
             if( holeHeight_mm != 0. )
             {
                 // Via holes
-                for( const TRACK* track : m_board->Tracks() )
+                for( const PCB_TRACK* track : m_board->Tracks() )
                 {
-                    if( !track->IsOnLayer( layer ) || !VIA::ClassOf( track ) )
+                    if( !track->IsOnLayer( layer ) || !PCB_VIA::ClassOf( track ) )
                         continue;
 
-                    int viaHoleSurface = ViaHoleToCurveLoop( static_cast<const VIA*>( track ),
+                    int viaHoleSurface = ViaHoleToCurveLoop( static_cast<const PCB_VIA*>( track ),
                                                              -currentHeight_mm );
                     int extrudedSurface = CurveLoopToPlaneSurfaces( viaHoleSurface, holeHeight_mm );
                     fragments.emplace_back( 2, extrudedSurface );
@@ -515,12 +518,12 @@ void GMSH_MESHER::GenerateNet3D( int aRegionId, int aNetcode,
     }
 
     // Via holes
-    for( const TRACK* track : m_board->Tracks() )
+    for( const PCB_TRACK* track : m_board->Tracks() )
     {
-        if( track->GetNetCode() != aNetcode || !VIA::ClassOf( track ) )
+        if( track->GetNetCode() != aNetcode || !PCB_VIA::ClassOf( track ) )
             continue;
 
-        const VIA* via = static_cast<const VIA*>( track );
+        const PCB_VIA* via = static_cast<const PCB_VIA*>( track );
 
         GenerateDrill3D( aRegionId, aStackup, aMaxError, via->TopLayer(), via->BottomLayer(),
                          via->GetPosition(), via->GetDrillValue(), aFragments, aRegions,
@@ -993,12 +996,12 @@ std::vector<int> GMSH_MESHER::HolesTo2DPlaneSurfaces( PCB_LAYER_ID aLayer, doubl
     int maxError = m_board->GetDesignSettings().m_MaxError;
 
     // Vias
-    for( const TRACK* track : m_board->Tracks() )
+    for( const PCB_TRACK* track : m_board->Tracks() )
     {
-        if( !track->IsOnLayer( aLayer ) || !VIA::ClassOf( track ) )
+        if( !track->IsOnLayer( aLayer ) || !PCB_VIA::ClassOf( track ) )
             continue;
 
-        double radius = static_cast<const VIA*>( track )->GetDrillValue() / 2.;
+        double radius = static_cast<const PCB_VIA*>( track )->GetDrillValue() / 2.;
         gmshSurfaces.emplace_back( gmsh::model::occ::addDisk(
                 TransformPoint( track->GetPosition().x ), TransformPoint( track->GetPosition().y ),
                 aOffsetZ, TransformPoint( radius ), TransformPoint( radius ) ) );
@@ -1032,7 +1035,7 @@ std::vector<int> GMSH_MESHER::HolesTo2DPlaneSurfaces( PCB_LAYER_ID aLayer, doubl
     return gmshSurfaces;
 }
 
-int GMSH_MESHER::ViaHoleToCurveLoop( const VIA* aVia, double aOffsetZ, double aCopperOffset )
+int GMSH_MESHER::ViaHoleToCurveLoop( const PCB_VIA* aVia, double aOffsetZ, double aCopperOffset )
 {
     double radius = aVia->GetDrillValue() / 2. - aCopperOffset;
     return gmsh::model::occ::addCircle( TransformPoint( aVia->GetPosition().x ),
@@ -1080,7 +1083,7 @@ GMSH_MESHER::NetTo2DPlaneSurfaces( PCB_LAYER_ID aLayer, double aOffsetZ, const i
 
     // inspired by board_items_to_polygon_shape_transform.cpp
     // convert tracks and vias:
-    for( const TRACK* track : m_board->Tracks() )
+    for( const PCB_TRACK* track : m_board->Tracks() )
     {
         if( !track->IsOnLayer( aLayer ) || track->GetNetCode() != aNetcode )
             continue;

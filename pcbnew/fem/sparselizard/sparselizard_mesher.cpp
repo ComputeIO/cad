@@ -24,11 +24,15 @@
 
 #include "sparselizard_mesher.h"
 
+#include "board_design_settings.h"
 #include <convert_basic_shapes_to_polygon.h>
 
 #include "board.h"
+#include "footprint.h"
 #include "pad.h"
-#include "track.h"
+#include "pcb_track.h"
+#include "zone.h"
+#include "layer_ids.h"
 
 #include <sparselizard/shape.h>
 
@@ -218,7 +222,7 @@ void SPARSELIZARD_MESHER::SetPolysetOfNetRegion( SHAPE_POLY_SET& aPolyset, int a
     // inspired by board_items_to_polygon_shape_transform.cpp
 
     // convert tracks and vias:
-    for( const TRACK* track : m_board->Tracks() )
+    for( const PCB_TRACK* track : m_board->Tracks() )
     {
         if( !track->IsOnLayer( aLayer ) || track->GetNetCode() != netcode )
             continue;
@@ -267,14 +271,14 @@ void SPARSELIZARD_MESHER::SetPolysetOfHolesOfNetRegion( SHAPE_POLY_SET& aPolyset
     int netcode = netRegion->second;
     int maxError = m_board->GetDesignSettings().m_MaxError;
 
-    for( const TRACK* track : m_board->Tracks() )
+    for( const PCB_TRACK* track : m_board->Tracks() )
     {
         // assuming proper zone fills and no overlapping vias and pads of different nets!!!
         if( track->GetNetCode() != netcode || !track->IsOnLayer( aLayer )
-            || !VIA::ClassOf( track ) )
+            || !PCB_VIA::ClassOf( track ) )
             continue;
 
-        int radius = ( static_cast<const VIA*>( track )->GetDrill() / 2 );
+        int radius = ( static_cast<const PCB_VIA*>( track )->GetDrill() / 2 );
         TransformCircleToPolygon( aPolyset, track->GetPosition(), radius, maxError, ERROR_INSIDE );
     }
 
@@ -310,13 +314,13 @@ void SPARSELIZARD_MESHER::SetPolysetOfHolewallOfNetRegion( SHAPE_POLY_SET& aPoly
         int netcode = netRegion->second;
         int maxError = m_board->GetDesignSettings().m_MaxError;
 
-        for( const TRACK* track : m_board->Tracks() )
+        for( const PCB_TRACK* track : m_board->Tracks() )
         {
             // assuming proper zone fills and no overlapping vias and pads of different nets!!!
-            if( track->GetNetCode() != netcode || !VIA::ClassOf( track ) )
+            if( track->GetNetCode() != netcode || !PCB_VIA::ClassOf( track ) )
                 continue;
 
-            int radius = ( static_cast<const VIA*>( track )->GetDrill() / 2 );
+            int radius = ( static_cast<const PCB_VIA*>( track )->GetDrill() / 2 );
             TransformCircleToPolygon( aPolyset, track->GetPosition(), radius, maxError,
                                       ERROR_INSIDE );
             TransformCircleToPolygon( substractPolyset, track->GetPosition(), radius - aThickness,

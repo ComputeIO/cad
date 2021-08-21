@@ -22,6 +22,8 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
 
+#include <pad.h>
+
 #include <sparselizard/sparselizard.h>
 #include "sparselizard_solver.h"
 #include "sparselizard_mesher.h"

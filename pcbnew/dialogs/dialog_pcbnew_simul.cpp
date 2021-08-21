@@ -39,6 +39,7 @@
 #include <widgets/infobar.h>
 #include <widgets/resettable_panel.h>
 #include <wildcards_and_files_ext.h>
+#include <wx/treebook.h>
 
 #include "dialog_pcbnew_simul.h"
 #include "panel_setup_rules.h"

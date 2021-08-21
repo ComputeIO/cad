@@ -22,9 +22,11 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
 
+#include <reporter.h>
 #include <panel_pcbnew_simul_DC_plane_capacitance.h>
 #include <pcb_edit_frame.h>
 #include <widgets/paged_dialog.h>
+#include <wx/treebook.h>
 
 #ifdef KICAD_SPARSELIZARD // we are in a different compilation unit. Thus, this hack
 #include "fem/common/fem_descriptor.h"

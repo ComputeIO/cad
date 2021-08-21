@@ -13,6 +13,7 @@ add_executable( fem_proto
     ../qa_utils/utility_program.cpp
     ../qa_utils/stdstream_line_reader.cpp
     ../../common/base_units.cpp
+    ../../3d-viewer/3d_viewer/eda_3d_viewer_settings.cpp
 )
 
 add_dependencies( fem_proto pcbcommon ${PCBNEW_IO_LIBRARIES} )
@@ -26,6 +27,7 @@ add_executable( fem_currentDensity
     ../qa_utils/utility_program.cpp
     ../qa_utils/stdstream_line_reader.cpp
     ../../common/base_units.cpp
+    ../../3d-viewer/3d_viewer/eda_3d_viewer_settings.cpp
 )
 
 add_dependencies( fem_currentDensity pcbcommon ${PCBNEW_IO_LIBRARIES} )
@@ -66,7 +68,6 @@ target_link_libraries( fem_proto
     tinyspline_lib
     nanosvg
     idf3
-    unit_test_utils
     ${PCBNEW_IO_LIBRARIES}
     ${PCBNEW_FEM_LIBRARIES}
     ${wxWidgets_LIBRARIES}
@@ -90,7 +91,6 @@ target_link_libraries( fem_currentDensity
     tinyspline_lib
     nanosvg
     idf3
-    unit_test_utils
     ${PCBNEW_IO_LIBRARIES}
     ${PCBNEW_FEM_LIBRARIES}
     ${wxWidgets_LIBRARIES}
@@ -118,6 +118,7 @@ add_executable( sparselizard_DC
     ../qa_utils/utility_program.cpp
     ../qa_utils/stdstream_line_reader.cpp
     ../../common/base_units.cpp
+    ../../3d-viewer/3d_viewer/eda_3d_viewer_settings.cpp
 )
 
 add_dependencies( sparselizard_DC pcbcommon ${PCBNEW_IO_LIBRARIES} )
@@ -129,7 +130,6 @@ target_link_libraries( sparselizard_DC
     pcbcommon
     common
     qa_utils
-    unit_test_utils
     ${PCBNEW_IO_LIBRARIES}
     ${PCBNEW_FEM_LIBRARIES}
     ${wxWidgets_LIBRARIES}

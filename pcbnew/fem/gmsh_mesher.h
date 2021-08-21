@@ -29,7 +29,7 @@
 #include <memory>
 #include <vector>
 
-#include <layers_id_colors_and_visibility.h>
+#include "layer_ids.h"
 #include <geometry/geometry_utils.h>
 
 // sparselizard
@@ -39,9 +39,9 @@ class SHAPE_POLY_SET;
 class SHAPE_LINE_CHAIN;
 
 class BOARD;
-class TRACK;
+class PCB_TRACK;
 class PAD;
-class VIA;
+class PCB_VIA;
 class ZONE;
 
 
@@ -182,7 +182,7 @@ private:
 
     std::vector<int> HolesTo2DPlaneSurfaces( PCB_LAYER_ID aLayer, double aOffsetZ );
 
-    int ViaHoleToCurveLoop( const VIA* aVia, double aOffsetZ, double aCopperOffset = 0 );
+    int ViaHoleToCurveLoop( const PCB_VIA* aVia, double aOffsetZ, double aCopperOffset = 0 );
 
     int PadHoleToCurveLoop( const PAD* aPad, double aOffsetZ, double aCopperOffset = 0 );
 

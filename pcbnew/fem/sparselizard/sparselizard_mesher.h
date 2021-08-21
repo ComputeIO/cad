@@ -29,7 +29,7 @@
 #include <memory>
 #include <vector>
 
-#include <layers_id_colors_and_visibility.h>
+#include <layer_ids.h>
 #include <geometry/geometry_utils.h>
 
 // sparselizard
@@ -38,7 +38,7 @@ class shape;
 class SHAPE_POLY_SET;
 
 class BOARD;
-class TRACK;
+class PCB_TRACK;
 class PAD;
 class ZONE;
 

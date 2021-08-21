@@ -22,7 +22,7 @@
  */
 
 
-#include <unit_test_utils/unit_test_utils.h>
+#include <qa_utils/wx_utils/unit_test_utils.h>
 // Code under test
 
 #include <iostream>
@@ -38,7 +38,14 @@
 #include <pcb_shape.h>
 #include <io_mgr.h>
 #include <board_commit.h>
+#include <board_design_settings.h>
 #include "../pcbnew_utils/include/pcbnew_utils/board_file_utils.h"
+
+#include <pcbnew/board.h>
+#include <pcbnew/footprint.h>
+#include <pcbnew/pad.h>
+#include <pcbnew/pcb_track.h>
+#include <pcbnew/pcb_shape.h>
 
 class TEST_SPARSELIZARD_DC
 {
@@ -98,7 +105,7 @@ bool testSetGet( FEM_SIMULATION_DIMENSION aDim )
     fp->Add( pad2 );
     board->Add( fp );
 
-    TRACK* track = new TRACK( board );
+    PCB_TRACK* track = new PCB_TRACK( board );
     track->SetWidth( From_User_Unit( EDA_UNITS::MILLIMETRES, 3 ) );
     track->SetStart( wxPoint( From_User_Unit( EDA_UNITS::MILLIMETRES, -5 ),
                               From_User_Unit( EDA_UNITS::MILLIMETRES, 0 ) ) );
@@ -300,7 +307,7 @@ bool testCurrentConservation( double x, double y, double d, double I, double nbS
         descriptor->AddPort( port2 );
     }
 
-    TRACK* track = new TRACK( board );
+    PCB_TRACK* track = new PCB_TRACK( board );
     track->SetWidth( From_User_Unit( EDA_UNITS::MILLIMETRES, 1.5 * x * 1000 ) );
     track->SetStart( wxPoint( From_User_Unit( EDA_UNITS::MILLIMETRES, 0 ),
                               From_User_Unit( EDA_UNITS::MILLIMETRES, 0 ) ) );
@@ -619,7 +626,7 @@ bool simulPlaneCapacitance( double x, double y, double epsilonr, double d, doubl
     board->Add( fp2 );
 
     PCB_SHAPE* rect = new PCB_SHAPE;
-    rect->SetShape( PCB_SHAPE_TYPE::RECT );
+    rect->SetShape( SHAPE_T::RECT );
     rect->SetFilled( false );
     rect->SetStartX( From_User_Unit( EDA_UNITS::MILLIMETRES, -x / 2 * 1000 ) );
     rect->SetStartY( From_User_Unit( EDA_UNITS::MILLIMETRES, -y / 2 * 1000 ) );
