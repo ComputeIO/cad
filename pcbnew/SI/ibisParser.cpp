@@ -42,12 +42,30 @@ public:
     IbisTypMinMaxValue m_Cpkg;
 };
 
+class IbisComponentPin
+{
+public:
+    wxString           m_pinName;
+    wxString           m_signalName;
+    wxString           m_modelName;
+    IbisTypMinMaxValue m_Rpin;
+    IbisTypMinMaxValue m_Lpin;
+    IbisTypMinMaxValue m_Cpin;
+
+    int m_Rcol = 0;
+    int m_Lcol = 0;
+    int m_Ccol = 0;
+
+    bool m_virtual = false; // The table header regiters as a virtual pin.
+};
+
 class IbisComponent
 {
 public:
     wxString             m_name;
     wxString             m_manufacturer;
     IbisComponentPackage m_package;
+    std::vector<IbisComponentPin> m_pins;
     wxString             m_pin;
     wxString             m_mapping;
     wxString             m_busLabel;
@@ -107,6 +125,7 @@ enum class IBIS_PARSER_CONTINUE
     NONE,
     STRING,
     COMPONENT_PACKAGE,
+    COMPONENT_PIN,
     IV_TABLE,
     VT_TABLE
 };
@@ -129,6 +148,7 @@ public:
 
     IbisFile*      m_ibisFile;
     IbisComponent* m_currentComponent;
+
 
     bool parseFile( wxFileName aFileName, IbisFile* );
     bool parseHeader( wxString );
@@ -160,6 +180,7 @@ private:
     bool ReadCopyright();
 
     bool readPackage();
+    bool readPin();
 
 
     bool ReadManufacturer();
@@ -188,7 +209,7 @@ bool IbisParser::parseFile( wxFileName aFileName, IbisFile* aFile )
         m_buffer = new char[size];
         pbuf->sgetn( m_buffer, size );
 
-        for( int i = 0; i < 100; i++ )
+        for( int i = 0; i < 200; i++ )
         {
             if( !GetNextLine() )
             {
@@ -583,33 +604,9 @@ bool IbisParser::parseComponent( wxString aKeyword )
     {
         readPackage();
     }
-    else if( aKeyword == "File_Name" )
+    else if( aKeyword == "Pin" )
     {
-        StoreString( &( m_ibisFile->m_header.m_fileName ), false );
-    }
-    else if( aKeyword == "File_Rev" )
-    {
-        ReadFileRev();
-    }
-    else if( aKeyword == "Source" )
-    {
-        StoreString( &( m_ibisFile->m_header.m_notes ), false );
-    }
-    else if( aKeyword == "Notes" )
-    {
-        StoreString( &( m_ibisFile->m_header.m_notes ), true );
-    }
-    else if( aKeyword == "Disclaimer" )
-    {
-        StoreString( &( m_ibisFile->m_header.m_disclaimer ), true );
-    }
-    else if( aKeyword == "Copyright" )
-    {
-        StoreString( &( m_ibisFile->m_header.m_copyright ), true );
-    }
-    else if( aKeyword == "Date" )
-    {
-        StoreString( &( m_ibisFile->m_header.m_date ), false );
+        readPin();
     }
     else
     {
@@ -644,7 +641,7 @@ std::vector<wxString> IbisParser::ReadTableLine()
 
 bool IbisParser::readPackage()
 {
-    bool status;
+    bool status = true;
 
     std::vector<wxString> fields;
 
@@ -693,6 +690,90 @@ bool IbisParser::readPackage()
     return true;
 }
 
+
+bool IbisParser::readPin()
+{
+    bool status = true;
+
+    std::vector<wxString> fields;
+
+    fields = ReadTableLine();
+
+    IbisComponentPin pin;
+
+    if( ( fields.size() == 3 ) )
+    {
+        if( m_continue == IBIS_PARSER_CONTINUE::COMPONENT_PIN ) // No info on first line
+        {
+            pin.m_pinName = fields.at( 0 );
+            pin.m_signalName = fields.at( 1 );
+            pin.m_modelName = fields.at( 2 );
+        }
+        else
+        {
+            pin.m_virtual = true;
+        }
+    }
+    else
+    {
+        if( m_continue == IBIS_PARSER_CONTINUE::COMPONENT_PIN ) // Not on the first line
+        {
+            pin.m_pinName = fields.at( 0 );
+            pin.m_signalName = fields.at( 1 );
+            pin.m_modelName = fields.at( 2 );
+
+            pin.m_Rcol = m_currentComponent->m_pins.back().m_Rcol;
+            pin.m_Lcol = m_currentComponent->m_pins.back().m_Lcol;
+            pin.m_Ccol = m_currentComponent->m_pins.back().m_Ccol;
+
+            if( pin.m_Rcol == 0 || pin.m_Lcol == 0 || pin.m_Ccol == 0 )
+            {
+                status = false; // Did we just try to go from a 3 column table to a 6 ?
+            }
+            else
+            {
+                parseDouble( &( pin.m_Rpin.typ ), fields.at( pin.m_Rcol ), true );
+                parseDouble( &( pin.m_Lpin.typ ), fields.at( pin.m_Lcol ), true );
+                parseDouble( &( pin.m_Cpin.typ ), fields.at( pin.m_Ccol ), true );
+            }
+        }
+        else
+        {
+            for( int i = 3; i < 6; i++ )
+            {
+                if( fields.at( i ) == "R_pin" )
+                {
+                    pin.m_Rcol = i;
+                }
+                else if( fields.at( i ) == "L_pin" )
+                {
+                    pin.m_Lcol = i;
+                }
+                else if( fields.at( i ) == "C_pin" )
+                {
+                    pin.m_Ccol = i;
+                }
+                else
+                {
+                    std::cerr << "[Pin]: Invalid field name" << std::endl;
+                    status = false;
+                }
+            }
+
+            if( pin.m_Rcol == 0 || pin.m_Lcol == 0 || pin.m_Ccol == 0 )
+            {
+                std::cerr << "[Pin]: Missing argument" << std::endl;
+                status = false;
+            }
+            pin.m_virtual = true;
+        }
+    }
+    m_continue = IBIS_PARSER_CONTINUE::COMPONENT_PIN;
+    m_currentComponent->m_pins.push_back( pin );
+
+    return true;
+}
+
 bool IbisParser::onNewLine()
 {
     bool      status = true;
@@ -733,7 +814,8 @@ bool IbisParser::onNewLine()
             *m_continuingString += '\n';
             readString( m_continuingString );
             break;
-        case IBIS_PARSER_CONTINUE::COMPONENT_PACKAGE: readPackage(); break;
+        case IBIS_PARSER_CONTINUE::COMPONENT_PACKAGE: status &= readPackage(); break;
+        case IBIS_PARSER_CONTINUE::COMPONENT_PIN: status &= readPin(); break;
         case IBIS_PARSER_CONTINUE::NONE:
         default:
             std::cerr << "Missing keyword" << std::endl;
