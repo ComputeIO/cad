@@ -36,6 +36,7 @@ public:
 
 class IbisComponentPackage
 {
+public:
     IbisTypMinMaxValue m_Rpkg;
     IbisTypMinMaxValue m_Lpkg;
     IbisTypMinMaxValue m_Cpkg;
@@ -132,7 +133,7 @@ public:
     bool parseFile( wxFileName aFileName, IbisFile* );
     bool parseHeader( wxString );
     bool parseComponent( wxString );
-    bool parseDouble( double* aDest, bool aAllowModifiers = false );
+    bool parseDouble( double* aDest, wxString aStr, bool aAllowModifiers = false );
 
 private:
     wxString* m_continuingString;
@@ -228,21 +229,70 @@ bool IbisParser::checkEndofLine()
 }
 
 
-bool parseDouble( double* aDest, bool aAllowModifiers )
+bool IbisParser::parseDouble( double* aDest, wxString aStr, bool aAllowModifiers )
 {
     // "  an entry of the C matrix could be given as 1.23e-12 or as 1.23p or 1.23pF."
     skipWhitespaces();
 
-    wxString str;
-    while( !( isspace( m_line[m_lineIndex] ) ) && m_lineIndex < m_lineLength )
+    bool status = true;
+
+    wxString str = aStr;
+
+    double result;
+
+    if( !str.ToDouble( &result ) )
     {
-        str += m_line[m_lineIndex++];
+        if( aAllowModifiers )
+        {
+            int i;
+            // Start at 1 because the first character cannot be the modifier
+            for( i = 1; i < str.length(); i++ )
+            {
+                if( str.at( i ) == 'T' || str.at( i ) == 'G' || str.at( i ) == 'M'
+                    || str.at( i ) == 'k' || str.at( i ) == 'm' || str.at( i ) == 'u'
+                    || str.at( i ) == 'n' || str.at( i ) == 'p' || str.at( i ) == 'f' )
+                {
+                    break;
+                }
+            }
+            wxString str2 = str.SubString( 0, i - 1 );
+
+            if( !str2.ToDouble( &result ) )
+            {
+                status = false;
+            }
+            else
+            {
+                switch( static_cast<char>( str.at( i ) ) )
+                {
+                case 'T': result *= 1e12; break;
+                case 'G': result *= 1e9; break;
+                case 'M': result *= 1e6; break;
+                case 'k': result *= 1e3; break;
+                case 'm': result *= 1e-3; break;
+                case 'u': result *= 1e-6; break;
+                case 'n': result *= 1e-9; break;
+                case 'p': result *= 1e-12; break;
+                case 'f': result *= 1e-15; break;
+                default:
+                    std::cerr << "Internal error: could not apply modifier to double" << std::endl;
+                    status = false;
+                }
+            }
+        }
+        else
+        {
+            status = false;
+        }
+    }
+    if( status = false )
+    {
+        result = std::nan( " " );
     }
 
-    double = result;
-    if( !str.ToString( &result ) )
-    {
-    }
+    *aDest = result;
+
+    return status;
 }
 
 
@@ -594,21 +644,49 @@ std::vector<wxString> IbisParser::ReadTableLine()
 
 bool IbisParser::readPackage()
 {
+    bool status;
+
     std::vector<wxString> fields;
 
     fields = ReadTableLine();
 
-    if( fields.at( 0 ) == "R_pkg" )
+    int extraArg = ( m_continue == IBIS_PARSER_CONTINUE::NONE ) ? 1 : 0;
+    if( ( fields.size() == 4 + extraArg ) || ( fields.size() == extraArg ) )
     {
-        std::cout << "Resistance" << std::endl;
+        if( fields.at( 0 ) == "R_pkg" )
+        {
+            if( parseDouble( &( m_currentComponent->m_package.m_Rpkg.typ ), fields.at( 1 ), true ) )
+            {
+                status = false;
+            }
+
+            parseDouble( &( m_currentComponent->m_package.m_Rpkg.min ), fields.at( 2 ), true );
+            parseDouble( &( m_currentComponent->m_package.m_Rpkg.max ), fields.at( 3 ), true );
+        }
+        else if( fields.at( 0 ) == "L_pkg" )
+        {
+            if( parseDouble( &( m_currentComponent->m_package.m_Lpkg.typ ), fields.at( 1 ), true ) )
+            {
+                status = false;
+            }
+
+            parseDouble( &( m_currentComponent->m_package.m_Lpkg.min ), fields.at( 2 ), true );
+            parseDouble( &( m_currentComponent->m_package.m_Lpkg.max ), fields.at( 3 ), true );
+        }
+        else if( fields.at( 0 ) == "C_pkg" )
+        {
+            if( parseDouble( &( m_currentComponent->m_package.m_Cpkg.typ ), fields.at( 1 ), true ) )
+            {
+                status = false;
+            }
+
+            parseDouble( &( m_currentComponent->m_package.m_Cpkg.min ), fields.at( 2 ), true );
+            parseDouble( &( m_currentComponent->m_package.m_Cpkg.max ), fields.at( 3 ), true );
+        }
     }
-    else if( fields.at( 0 ) == "L_pkg" )
+    else
     {
-        std::cout << "Inductance" << std::endl;
-    }
-    else if( fields.at( 0 ) == "C_pkg" )
-    {
-        std::cout << "Capacitance" << std::endl;
+        std::cerr << "A [Package] line requires exactly 4 elements" << std::endl;
     }
     m_continue = IBIS_PARSER_CONTINUE::COMPONENT_PACKAGE;
 
