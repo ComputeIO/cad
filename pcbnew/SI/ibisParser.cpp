@@ -100,6 +100,45 @@ public:
     std::vector<IbisModelSelectorEntry> m_models;
 };
 
+class IVtableEntry
+{
+public:
+    double V;
+    double Ityp;
+    double Imin;
+    double Imax;
+};
+
+class IVtable
+{
+public:
+    std::vector<IVtableEntry> m_entries;
+};
+
+class VTtableEntry
+{
+public:
+    double t;
+    double Vtyp;
+    double Vmin;
+    double Vmax;
+};
+
+class VTtable
+{
+public:
+    std::vector<VTtableEntry> m_entries;
+};
+
+class IbisModel
+{
+public:
+    IVtable m_GNDClamp;
+    IVtable m_POWERClamp;
+    VTtable m_risingEdge;
+    VTtable m_fallingEdge;
+};
+
 bool IbisHeader::CheckHeader()
 {
     bool status = true;
@@ -165,12 +204,14 @@ enum class IBIS_PARSER_CONTEXT
 {
     HEADER,
     COMPONENT,
-    MODELSELECTOR
+    MODELSELECTOR,
+    MODEL
 };
 
 class IbisParser
 {
 public:
+    long  m_lineCounter;
     char  m_commentChar = '|';
     char* m_buffer;
     int   m_bufferIndex;
@@ -247,15 +288,19 @@ bool IbisParser::parseFile( wxFileName aFileName, IbisFile* aFile )
         m_buffer = new char[size];
         pbuf->sgetn( m_buffer, size );
 
+        m_lineCounter = 0;
+
         for( int i = 0; i < 400; i++ )
         {
             if( !GetNextLine() )
             {
+                std::cout << "Unexpected end of file. Missing [END] ?" << std::endl;
                 return false;
             }
             PrintLine();
             if( !onNewLine() )
             {
+                std::cout << "Error at line " << m_lineCounter << std::endl;
                 return false;
             }
         }
@@ -299,7 +344,11 @@ bool IbisParser::parseDouble( double* aDest, wxString aStr, bool aAllowModifiers
 
     double result;
 
-    if( !str.ToDouble( &result ) )
+    if( str == "NA" )
+    {
+        result = std::nan( "NA" );
+    }
+    else if( !str.ToDouble( &result ) )
     {
         if( aAllowModifiers )
         {
@@ -357,6 +406,8 @@ bool IbisParser::parseDouble( double* aDest, wxString aStr, bool aAllowModifiers
 
 bool IbisParser::GetNextLine()
 {
+    m_lineCounter++;
+
     long tmpIndex = m_bufferIndex;
 
     m_line = m_buffer + m_bufferIndex;
@@ -968,7 +1019,6 @@ bool IbisParser::onNewLine()
         {
             m_continue = IBIS_PARSER_CONTINUE::NONE;
         }
-        std::cout << "NEW KEYWORD" << std::endl;
         switch( m_context )
         {
         case IBIS_PARSER_CONTEXT::HEADER: status &= parseHeader( keyword ); break;
