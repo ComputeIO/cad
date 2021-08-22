@@ -4,7 +4,7 @@ int main( void )
 {
     IbisParser* parser = new IbisParser();
     IbisFile*   file = new IbisFile();
-    parser->parseFile( wxFileName( "z11b_ver7.ibs" ), file );
+    parser->parseFile( wxFileName( "sn74lvc541a.ibs" ), file );
 
     std::cout << "Done" << std::endl;
     return 1;

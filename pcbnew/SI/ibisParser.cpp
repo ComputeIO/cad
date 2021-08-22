@@ -59,6 +59,19 @@ public:
     bool m_virtual = false; // The table header regiters as a virtual pin.
 };
 
+class IbisComponentPinMapping
+{
+public:
+    wxString m_pinName;
+    wxString m_PDref;
+    wxString m_PUref;
+    wxString m_GNDClampRef;
+    wxString m_POWERClampRef;
+    wxString m_extRef;
+
+    bool m_virtual;
+};
+
 class IbisComponent
 {
 public:
@@ -66,11 +79,25 @@ public:
     wxString             m_manufacturer;
     IbisComponentPackage m_package;
     std::vector<IbisComponentPin> m_pins;
-    wxString             m_pin;
-    wxString             m_mapping;
+    std::vector<IbisComponentPinMapping> m_pinMappings;
+    wxString                             m_packageModel;
     wxString             m_busLabel;
     wxString             m_dieSupplyPads;
     wxString             m_diffPins;
+};
+
+class IbisModelSelectorEntry
+{
+public:
+    wxString m_modelName;
+    wxString m_modelDescription;
+};
+
+class IbisModelSelector
+{
+public:
+    wxString                            m_name;
+    std::vector<IbisModelSelectorEntry> m_models;
 };
 
 bool IbisHeader::CheckHeader()
@@ -117,6 +144,7 @@ class IbisFile
 public:
     IbisHeader                 m_header;
     std::vector<IbisComponent> m_components;
+    std::vector<IbisModelSelector> m_modelSelectors;
 };
 
 
@@ -125,7 +153,10 @@ enum class IBIS_PARSER_CONTINUE
     NONE,
     STRING,
     COMPONENT_PACKAGE,
+    COMPONENT_PINMAPPING,
+    COMPONENT_DIESUPPLYPADS,
     COMPONENT_PIN,
+    MODELSELECTOR,
     IV_TABLE,
     VT_TABLE
 };
@@ -133,7 +164,8 @@ enum class IBIS_PARSER_CONTINUE
 enum class IBIS_PARSER_CONTEXT
 {
     HEADER,
-    COMPONENT
+    COMPONENT,
+    MODELSELECTOR
 };
 
 class IbisParser
@@ -148,11 +180,13 @@ public:
 
     IbisFile*      m_ibisFile;
     IbisComponent* m_currentComponent;
+    IbisModelSelector* m_currentModelSelector;
 
 
     bool parseFile( wxFileName aFileName, IbisFile* );
     bool parseHeader( wxString );
     bool parseComponent( wxString );
+    bool parseModelSelector( wxString );
     bool parseDouble( double* aDest, wxString aStr, bool aAllowModifiers = false );
 
 private:
@@ -167,6 +201,7 @@ private:
     bool      checkEndofLine(); // To be used when there cannot be any character left on the line
     wxString* getKeyword();
     bool      readDouble( double* );
+    bool      readWord( wxString* );
     bool      readString( wxString* );
     bool      StoreString( wxString* aDest, bool aMultiline );
     std::vector<wxString> ReadTableLine();
@@ -178,9 +213,12 @@ private:
     bool ReadNotes();
     bool ReadDisclaimer();
     bool ReadCopyright();
+    //bool ReadDieSupplyPads();
 
     bool readPackage();
     bool readPin();
+    bool readPinMapping();
+    bool readModelSelector();
 
 
     bool ReadManufacturer();
@@ -209,7 +247,7 @@ bool IbisParser::parseFile( wxFileName aFileName, IbisFile* aFile )
         m_buffer = new char[size];
         pbuf->sgetn( m_buffer, size );
 
-        for( int i = 0; i < 200; i++ )
+        for( int i = 0; i < 400; i++ )
         {
             if( !GetNextLine() )
             {
@@ -370,6 +408,21 @@ bool IbisParser::readDouble( double* aDest )
     }
 
     return str.ToDouble( aDest );
+}
+
+bool IbisParser::readWord( wxString* aDest )
+{
+    skipWhitespaces();
+
+    wxString str;
+    while( ( !isspace( m_line[m_lineIndex] ) ) && ( m_lineIndex < m_lineLength ) )
+    {
+        str += m_line[m_lineIndex++];
+    }
+
+    *( aDest ) = str;
+
+    return ( str.size() > 0 );
 }
 
 bool IbisParser::readString( wxString* aDest )
@@ -535,10 +588,80 @@ bool IbisParser::changeContext( wxString aKeyword )
         else
             status = false;
         break;
+    case ::IBIS_PARSER_CONTEXT::COMPONENT:
+
+        if( aKeyword == "Component" )
+        {
+            IbisComponent comp;
+            StoreString( &( comp.m_name ), false );
+            m_ibisFile->m_components.push_back( comp );
+            m_currentComponent = &( m_ibisFile->m_components.back() );
+            m_context = IBIS_PARSER_CONTEXT::COMPONENT;
+        }
+        else if( aKeyword == "Model_Selector" )
+        {
+            IbisModelSelector MS;
+            StoreString( &( MS.m_name ), false );
+            m_ibisFile->m_modelSelectors.push_back( MS );
+            m_currentModelSelector = &( m_ibisFile->m_modelSelectors.back() );
+            m_context = IBIS_PARSER_CONTEXT::MODELSELECTOR;
+            m_continue = IBIS_PARSER_CONTINUE::MODELSELECTOR;
+        }
+        else
+            status = false;
+        break;
+    case ::IBIS_PARSER_CONTEXT::MODELSELECTOR:
+        if( aKeyword == "Model_Selector" )
+        {
+            IbisModelSelector MS;
+            StoreString( &( MS.m_name ), false );
+            m_ibisFile->m_modelSelectors.push_back( MS );
+            m_currentModelSelector = &( m_ibisFile->m_modelSelectors.back() );
+            m_context = IBIS_PARSER_CONTEXT::MODELSELECTOR;
+            m_continue = IBIS_PARSER_CONTINUE::MODELSELECTOR;
+        }
+        else
+            status = false;
+        break;
     default: status = false;
     }
     return status;
 }
+
+
+bool IbisParser::parseModelSelector( wxString aKeyword )
+{
+    bool status = true;
+
+    if( !changeContext( aKeyword ) )
+    {
+        std::cerr << "unknwon keyword in MODEL SELECTOR context." << std::endl;
+        status = false;
+    }
+    return status;
+}
+
+bool IbisParser::readModelSelector()
+{
+    bool status = true;
+
+    IbisModelSelectorEntry model;
+
+    if( readWord( &( model.m_modelName ) ) )
+    {
+        if( !readString( &( model.m_modelDescription ) ) )
+        {
+            status &= false;
+        }
+        m_currentModelSelector->m_models.push_back( model );
+    }
+    else
+    {
+        status = false;
+    }
+    return status;
+}
+
 
 bool IbisParser::parseHeader( wxString aKeyword )
 {
@@ -598,15 +721,28 @@ bool IbisParser::parseComponent( wxString aKeyword )
 
     if( aKeyword == "Manufacturer" )
     {
-        StoreString( &( m_currentComponent->m_manufacturer ), true );
+        status &= StoreString( &( m_currentComponent->m_manufacturer ), true );
     }
     else if( aKeyword == "Package" )
     {
-        readPackage();
+        status &= readPackage();
     }
     else if( aKeyword == "Pin" )
     {
-        readPin();
+        status &= readPin();
+    }
+    else if( aKeyword == "Pin_Mapping" )
+    {
+        status &= readPinMapping();
+    }
+    /*
+    else if( aKeyword == "Die_Supply_Pads" )
+    {
+        status &= ReadDieSupplyPads();
+    }*/
+    else if( aKeyword == "Package_Model" )
+    {
+        status &= StoreString( &( m_currentComponent->m_packageModel ), true );
     }
     else
     {
@@ -774,12 +910,56 @@ bool IbisParser::readPin()
     return true;
 }
 
+
+bool IbisParser::readPinMapping()
+{
+    bool status = true;
+
+    std::vector<wxString> fields;
+
+    fields = ReadTableLine();
+
+    IbisComponentPinMapping pinMapping;
+
+    if( m_continue == IBIS_PARSER_CONTINUE::NONE ) // No info on first line
+    {
+        m_continue = IBIS_PARSER_CONTINUE::COMPONENT_PINMAPPING;
+    }
+    else
+    {
+        if( fields.size() != 0 )
+        {
+            if( fields.size() > 6 && fields.size() < 3 )
+            {
+                std::cerr << "[Pin Mapping]: wrong number of columns" << std::endl;
+                status = false;
+            }
+            else
+            {
+                pinMapping.m_pinName = fields.at( 0 );
+                pinMapping.m_PDref = fields.at( 1 );
+                pinMapping.m_PUref = fields.at( 2 );
+                if( fields.size() > 3 )
+                    pinMapping.m_GNDClampRef = fields.at( 3 );
+                if( fields.size() > 4 )
+                    pinMapping.m_POWERClampRef = fields.at( 4 );
+                if( fields.size() > 5 )
+                    pinMapping.m_extRef = fields.at( 5 );
+            }
+            m_currentComponent->m_pinMappings.push_back( pinMapping );
+        }
+    }
+    return status;
+}
+
+
 bool IbisParser::onNewLine()
 {
     bool      status = true;
     char      c;
     wxString* pKeyword = getKeyword();
     // New line
+
     if( pKeyword ) // New keyword
     {
         wxString keyword = *pKeyword;
@@ -787,13 +967,13 @@ bool IbisParser::onNewLine()
         if( m_continue != IBIS_PARSER_CONTINUE::NONE )
         {
             m_continue = IBIS_PARSER_CONTINUE::NONE;
-            std::cout << *m_continuingString << std::endl;
         }
-
+        std::cout << "NEW KEYWORD" << std::endl;
         switch( m_context )
         {
         case IBIS_PARSER_CONTEXT::HEADER: status &= parseHeader( keyword ); break;
         case IBIS_PARSER_CONTEXT::COMPONENT: status &= parseComponent( keyword ); break;
+        case IBIS_PARSER_CONTEXT::MODELSELECTOR: status &= parseModelSelector( keyword ); break;
         default: std::cerr << "Internal error: Bad parser context." << std::endl; status = false;
         }
     }
@@ -816,6 +996,8 @@ bool IbisParser::onNewLine()
             break;
         case IBIS_PARSER_CONTINUE::COMPONENT_PACKAGE: status &= readPackage(); break;
         case IBIS_PARSER_CONTINUE::COMPONENT_PIN: status &= readPin(); break;
+        case IBIS_PARSER_CONTINUE::COMPONENT_PINMAPPING: status &= readPinMapping(); break;
+        case IBIS_PARSER_CONTINUE::MODELSELECTOR: status &= readModelSelector(); break;
         case IBIS_PARSER_CONTINUE::NONE:
         default:
             std::cerr << "Missing keyword" << std::endl;
