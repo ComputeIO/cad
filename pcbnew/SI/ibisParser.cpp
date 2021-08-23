@@ -26,7 +26,7 @@ public:
     bool CheckHeader();
 };
 
-class IbisTypMinMaxValue
+class TypMinMaxValue
 {
 public:
     double min = std::nan( " " );
@@ -37,9 +37,9 @@ public:
 class IbisComponentPackage
 {
 public:
-    IbisTypMinMaxValue m_Rpkg;
-    IbisTypMinMaxValue m_Lpkg;
-    IbisTypMinMaxValue m_Cpkg;
+    TypMinMaxValue m_Rpkg;
+    TypMinMaxValue m_Lpkg;
+    TypMinMaxValue m_Cpkg;
 };
 
 class IbisComponentPin
@@ -48,9 +48,9 @@ public:
     wxString           m_pinName;
     wxString           m_signalName;
     wxString           m_modelName;
-    IbisTypMinMaxValue m_Rpin;
-    IbisTypMinMaxValue m_Lpin;
-    IbisTypMinMaxValue m_Cpin;
+    TypMinMaxValue     m_Rpin;
+    TypMinMaxValue     m_Lpin;
+    TypMinMaxValue     m_Cpin;
 
     int m_Rcol = 0;
     int m_Lcol = 0;
@@ -104,9 +104,7 @@ class IVtableEntry
 {
 public:
     double V;
-    double Ityp;
-    double Imin;
-    double Imax;
+    TypMinMaxValue I;
 };
 
 class IVtable
@@ -130,11 +128,59 @@ public:
     std::vector<VTtableEntry> m_entries;
 };
 
+/*
+Model_type must be one of the following: 
+Input, Output, I/O, 3-state, Open_drain, I/O_open_drain, Open_sink, I/O_open_sink, 
+Open_source, I/O_open_source, Input_ECL, Output_ECL, I/O_ECL, 3-state_ECL, Terminator, 
+Series, and Series_switch. 
+*/
+
+enum class IBIS_MODEL_TYPE
+{
+    UNDEFINED,
+    INPUT,
+    OUTPUT,
+    IO,
+    THREE_STATE,
+    OPEN_DRAIN,
+    IO_OPEN_DRAIN,
+    OPEN_SINK,
+    IO_OPEN_SINK,
+    OPEN_SOURCE,
+    IO_OPEN_SOURCE,
+    INPUT_ECL,
+    OUTPUT_ECL,
+    IO_ECL,
+    THREE_STATE_ECL,
+    TERMINATOR,
+    SERIES,
+    SERIES_SWITCH
+};
+
+enum class IBIS_MODEL_ENABLE
+{
+    UNDEFINED,
+    ACTIVE_HIGH,
+    ACTIVE_LOW
+};
+
+/* Model_type, Polarity, Enable, Vinl, Vinh, C_comp, C_comp_pullup, 
+C_comp_pulldown, C_comp_power_clamp, C_comp_gnd_clamp, Vmeas, Cref, Rref, Vref 
+*/
 class IbisModel
 {
 public:
+    wxString          m_name;
+    IBIS_MODEL_TYPE   m_type = IBIS_MODEL_TYPE::UNDEFINED;
+    IBIS_MODEL_ENABLE m_enable = IBIS_MODEL_ENABLE::UNDEFINED;
+    double            m_vinl, m_vinh, m_vref, m_rref, m_cref, m_vmeas;
+    TypMinMaxValue    m_C_comp;
+    TypMinMaxValue    m_voltageRange;
+    TypMinMaxValue    m_temperatureRange;
     IVtable m_GNDClamp;
     IVtable m_POWERClamp;
+    IVtable           m_pullup;
+    IVtable           m_pulldown;
     VTtable m_risingEdge;
     VTtable m_fallingEdge;
 };
@@ -184,6 +230,7 @@ public:
     IbisHeader                 m_header;
     std::vector<IbisComponent> m_components;
     std::vector<IbisModelSelector> m_modelSelectors;
+    std::vector<IbisModel>         m_models;
 };
 
 
@@ -196,6 +243,7 @@ enum class IBIS_PARSER_CONTINUE
     COMPONENT_DIESUPPLYPADS,
     COMPONENT_PIN,
     MODELSELECTOR,
+    MODEL,
     IV_TABLE,
     VT_TABLE
 };
@@ -222,12 +270,15 @@ public:
     IbisFile*      m_ibisFile;
     IbisComponent* m_currentComponent;
     IbisModelSelector* m_currentModelSelector;
+    IbisModel*         m_currentModel;
+    IVtable*           m_currentIVtable;
 
 
     bool parseFile( wxFileName aFileName, IbisFile* );
     bool parseHeader( wxString );
     bool parseComponent( wxString );
     bool parseModelSelector( wxString );
+    bool parseModel( wxString );
     bool parseDouble( double* aDest, wxString aStr, bool aAllowModifiers = false );
 
 private:
@@ -254,12 +305,17 @@ private:
     bool ReadNotes();
     bool ReadDisclaimer();
     bool ReadCopyright();
+    bool readNumericSubparam( wxString aSubparam, double* aDest );
+    bool readIVtableEntry( IVtable* aTable );
+    bool readTypMinMaxValue( TypMinMaxValue* aDest );
+    bool readTypMinMaxValueSubparam( wxString aSubparam, TypMinMaxValue* aDest );
     //bool ReadDieSupplyPads();
 
     bool readPackage();
     bool readPin();
     bool readPinMapping();
     bool readModelSelector();
+    bool readModel();
 
 
     bool ReadManufacturer();
@@ -290,7 +346,7 @@ bool IbisParser::parseFile( wxFileName aFileName, IbisFile* aFile )
 
         m_lineCounter = 0;
 
-        for( int i = 0; i < 400; i++ )
+        for( int i = 0; i < 4000; i++ )
         {
             if( !GetNextLine() )
             {
@@ -393,7 +449,7 @@ bool IbisParser::parseDouble( double* aDest, wxString aStr, bool aAllowModifiers
             status = false;
         }
     }
-    if( status = false )
+    if( status == false )
     {
         result = std::nan( " " );
     }
@@ -671,6 +727,28 @@ bool IbisParser::changeContext( wxString aKeyword )
             m_context = IBIS_PARSER_CONTEXT::MODELSELECTOR;
             m_continue = IBIS_PARSER_CONTINUE::MODELSELECTOR;
         }
+        else if( aKeyword == "Model" )
+        {
+            IbisModel model;
+            StoreString( &( model.m_name ), false );
+            m_ibisFile->m_models.push_back( model );
+            m_currentModel = &( m_ibisFile->m_models.back() );
+            m_context = IBIS_PARSER_CONTEXT::MODEL;
+            m_continue = IBIS_PARSER_CONTINUE::MODEL;
+        }
+        else
+            status = false;
+        break;
+    case ::IBIS_PARSER_CONTEXT::MODEL:
+        if( aKeyword == "Model" )
+        {
+            IbisModel model;
+            StoreString( &( model.m_name ), false );
+            m_ibisFile->m_models.push_back( model );
+            m_currentModel = &( m_ibisFile->m_models.back() );
+            m_context = IBIS_PARSER_CONTEXT::MODEL;
+            m_continue = IBIS_PARSER_CONTINUE::MODEL;
+        }
         else
             status = false;
         break;
@@ -692,6 +770,34 @@ bool IbisParser::parseModelSelector( wxString aKeyword )
     return status;
 }
 
+bool IbisParser::parseModel( wxString aKeyword )
+{
+    bool status = true;
+
+    if( !aKeyword.CmpNoCase( "Voltage_Range" ) )
+        readTypMinMaxValue( &( m_currentModel->m_voltageRange ) );
+    else if( !aKeyword.CmpNoCase( "Temperature_Range" ) )
+        readTypMinMaxValue( &( m_currentModel->m_temperatureRange ) );
+    else if( !aKeyword.CmpNoCase( "GND_Clamp" ) )
+        readIVtableEntry( &( m_currentModel->m_GNDClamp ) );
+    else if( !aKeyword.CmpNoCase( "POWER_Clamp" ) )
+        readIVtableEntry( &( m_currentModel->m_POWERClamp ) );
+    else if( !aKeyword.CmpNoCase( "Pulldown" ) )
+        readIVtableEntry( &( m_currentModel->m_pulldown ) );
+    else if( !aKeyword.CmpNoCase( "Pullup" ) )
+        readIVtableEntry( &( m_currentModel->m_pullup ) );
+    else
+    {
+        if( !changeContext( aKeyword ) )
+        {
+            std::cerr << "unknwon keyword in MODEL context." << std::endl;
+            status = false;
+        }
+    }
+    return status;
+}
+
+
 bool IbisParser::readModelSelector()
 {
     bool status = true;
@@ -710,6 +816,242 @@ bool IbisParser::readModelSelector()
     {
         status = false;
     }
+    return status;
+}
+
+bool IbisParser::readNumericSubparam( wxString aSubparam, double* aDest )
+{
+    wxString paramName;
+    bool     status = true;
+
+    m_lineIndex = 0;
+    if( aSubparam.size() < m_lineLength )
+    {
+        for( int i = 0; i < aSubparam.size(); i++ )
+        {
+            paramName += m_line[m_lineIndex++];
+        }
+
+        if( paramName == aSubparam )
+        {
+            skipWhitespaces();
+            if( m_line[m_lineIndex++] == '=' )
+            {
+                skipWhitespaces();
+
+                wxString strValue;
+
+                if( !StoreString( &strValue, false ) )
+                {
+                    status = false;
+                }
+                else
+                {
+                    if( !parseDouble( aDest, strValue, true ) )
+                    {
+                        status = false;
+                    }
+                }
+            }
+            else
+            {
+                status = false;
+            }
+        }
+        else
+        {
+            status = false;
+        }
+    }
+    else
+    {
+        status = false;
+    }
+
+    return status;
+}
+
+
+bool IbisParser::readTypMinMaxValue( TypMinMaxValue* aDest )
+{
+    bool status = true;
+
+    skipWhitespaces();
+
+    wxString strValue;
+
+
+    if( !readWord( &strValue ) )
+    {
+        status = false;
+    }
+    else
+    {
+        if( parseDouble( &( ( *aDest ).typ ), strValue, true ) )
+        {
+            if( readWord( &strValue ) )
+            {
+                parseDouble( &( ( *aDest ).min ), strValue, true );
+                if( readWord( &strValue ) )
+                {
+                    parseDouble( &( ( *aDest ).max ), strValue, true );
+                }
+            }
+        }
+        else
+        {
+            status = false;
+            std::cout << "Typ-Min-Max Values requires at least Typ." << std::endl;
+        }
+    }
+    return status;
+}
+
+bool IbisParser::readTypMinMaxValueSubparam( wxString aSubparam, TypMinMaxValue* aDest )
+{
+    wxString paramName;
+    bool     status = true;
+
+    m_lineIndex = 0; // rewind
+
+    if( aSubparam.size() < m_lineLength )
+    {
+        for( int i = 0; i < aSubparam.size(); i++ )
+        {
+            paramName += m_line[m_lineIndex++];
+        }
+
+        if( paramName == aSubparam )
+        {
+            readTypMinMaxValue( aDest );
+        }
+        else
+        {
+            status = false;
+        }
+    }
+    else
+    {
+        status = false;
+    }
+
+    return status;
+}
+
+bool IbisParser::readModel()
+{
+    bool status = true;
+
+    IbisModel model;
+
+    int startOfLine = m_lineIndex;
+
+    wxString subparam;
+    if( readWord( &subparam ) )
+    {
+        switch( m_continue )
+        {
+        case IBIS_PARSER_CONTINUE::MODEL:
+            if( subparam.SubString( 0, 9 ) == "Model_type" )
+            {
+                if( readWord( &subparam ) )
+                {
+                    if( subparam == "Input" )
+                        m_currentModel->m_type = IBIS_MODEL_TYPE::INPUT;
+                    else if( subparam == "Output" )
+                        m_currentModel->m_type = IBIS_MODEL_TYPE::OUTPUT;
+                    else if( subparam == "I/O" )
+                        m_currentModel->m_type = IBIS_MODEL_TYPE::IO;
+                    else if( subparam == "3-state" )
+                        m_currentModel->m_type = IBIS_MODEL_TYPE::THREE_STATE;
+                    else if( subparam == "Open_drain" )
+                        m_currentModel->m_type = IBIS_MODEL_TYPE::OPEN_DRAIN;
+                    else if( subparam == "I/O_Open_drain" )
+                        m_currentModel->m_type = IBIS_MODEL_TYPE::IO_OPEN_DRAIN;
+                    else if( subparam == "Open_sink" )
+                        m_currentModel->m_type = IBIS_MODEL_TYPE::OPEN_SINK;
+                    else if( subparam == "I/O_open_sink" )
+                        m_currentModel->m_type = IBIS_MODEL_TYPE::IO_OPEN_SINK;
+                    else if( subparam == "Open_source" )
+                        m_currentModel->m_type = IBIS_MODEL_TYPE::OPEN_SOURCE;
+                    else if( subparam == "I/O_open_source" )
+                        m_currentModel->m_type = IBIS_MODEL_TYPE::IO_OPEN_SOURCE;
+                    else if( subparam == "Input_ECL" )
+                        m_currentModel->m_type = IBIS_MODEL_TYPE::INPUT_ECL;
+                    else if( subparam == "Output_ECL" )
+                        m_currentModel->m_type = IBIS_MODEL_TYPE::OUTPUT_ECL;
+                    else if( subparam == "I/O_ECL" )
+                        m_currentModel->m_type = IBIS_MODEL_TYPE::IO_ECL;
+                    else if( subparam == "3-state_ECL" )
+                        m_currentModel->m_type = IBIS_MODEL_TYPE::THREE_STATE_ECL;
+                    else if( subparam == "Terminator" )
+                        m_currentModel->m_type = IBIS_MODEL_TYPE::TERMINATOR;
+                    else if( subparam == "Series" )
+                        m_currentModel->m_type = IBIS_MODEL_TYPE::SERIES;
+                    else if( subparam == "Series_switch" )
+                        m_currentModel->m_type = IBIS_MODEL_TYPE::SERIES_SWITCH;
+                    else
+                    {
+                        std::cout << "Unknown Model_type: " << subparam << std::endl;
+                        status = false;
+                    }
+                }
+                else
+                {
+                    std::cout << "Internal Error while reading model_type" << std::endl;
+                    status = false;
+                }
+            }
+            else if( subparam.SubString( 0, 6 ) == "Enable" )
+            {
+                if( readWord( &subparam ) )
+                {
+                    if( subparam == "Active-High" )
+                        m_currentModel->m_enable = IBIS_MODEL_ENABLE::ACTIVE_HIGH;
+                    else if( subparam == "Active-Low" )
+                        m_currentModel->m_enable = IBIS_MODEL_ENABLE::ACTIVE_LOW;
+                    else
+                    {
+                        std::cout << "Unknown Enable: " << subparam << std::endl;
+                        status = false;
+                    }
+                }
+                else
+                {
+                    std::cout << "Internal Error while reading Enable" << std::endl;
+                    status = false;
+                }
+            }
+            else if( readNumericSubparam( wxString( "Vinl" ), &( m_currentModel->m_vinl ) ) )
+                ;
+            else if( readNumericSubparam( wxString( "Vinh" ), &( m_currentModel->m_vinh ) ) )
+                ;
+            else if( readNumericSubparam( wxString( "Vref" ), &( m_currentModel->m_vref ) ) )
+                ;
+            else if( readNumericSubparam( wxString( "Rref" ), &( m_currentModel->m_rref ) ) )
+                ;
+            else if( readNumericSubparam( wxString( "Cref" ), &( m_currentModel->m_cref ) ) )
+                ;
+            else if( readNumericSubparam( wxString( "Vmeas" ), &( m_currentModel->m_vmeas ) ) )
+                ;
+            else if( readTypMinMaxValueSubparam( wxString( "C_comp" ),
+                                                 &( m_currentModel->m_C_comp ) ) )
+                ;
+            else
+            {
+                status = false;
+            }
+
+            m_continue = IBIS_PARSER_CONTINUE::MODEL;
+
+            break;
+        default:
+            status = false;
+            std::cerr << "Internal error: continued reading a model that is not started."
+                      << std::endl;
+        }
+    }
+
     return status;
 }
 
@@ -1004,6 +1346,47 @@ bool IbisParser::readPinMapping()
 }
 
 
+bool IbisParser::readIVtableEntry( IVtable* aDest )
+{
+    bool status = true;
+
+    skipWhitespaces();
+
+    IVtableEntry entry;
+
+    if( m_lineIndex < m_lineLength )
+    {
+        wxString str;
+        if( readWord( &str ) )
+        {
+            if( parseDouble( &( entry.V ), str, true ) )
+            {
+                if( readTypMinMaxValue( &( entry.I ) ) )
+                {
+                }
+                else
+                {
+                    status = false;
+                }
+            }
+            else
+            {
+                status = false;
+            }
+        }
+        else
+        {
+            status = false;
+        }
+    }
+
+    m_continue = IBIS_PARSER_CONTINUE::IV_TABLE;
+    m_currentIVtable = aDest;
+
+    return status;
+}
+
+
 bool IbisParser::onNewLine()
 {
     bool      status = true;
@@ -1024,6 +1407,7 @@ bool IbisParser::onNewLine()
         case IBIS_PARSER_CONTEXT::HEADER: status &= parseHeader( keyword ); break;
         case IBIS_PARSER_CONTEXT::COMPONENT: status &= parseComponent( keyword ); break;
         case IBIS_PARSER_CONTEXT::MODELSELECTOR: status &= parseModelSelector( keyword ); break;
+        case IBIS_PARSER_CONTEXT::MODEL: status &= parseModel( keyword ); break;
         default: std::cerr << "Internal error: Bad parser context." << std::endl; status = false;
         }
     }
@@ -1048,6 +1432,8 @@ bool IbisParser::onNewLine()
         case IBIS_PARSER_CONTINUE::COMPONENT_PIN: status &= readPin(); break;
         case IBIS_PARSER_CONTINUE::COMPONENT_PINMAPPING: status &= readPinMapping(); break;
         case IBIS_PARSER_CONTINUE::MODELSELECTOR: status &= readModelSelector(); break;
+        case IBIS_PARSER_CONTINUE::MODEL: status &= readModel(); break;
+        case IBIS_PARSER_CONTINUE::IV_TABLE: status &= readIVtableEntry( m_currentIVtable ); break;
         case IBIS_PARSER_CONTINUE::NONE:
         default:
             std::cerr << "Missing keyword" << std::endl;
