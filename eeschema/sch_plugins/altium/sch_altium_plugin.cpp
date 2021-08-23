@@ -745,9 +745,6 @@ void SCH_ALTIUM_PLUGIN::ParsePin( const std::map<wxString, wxString>& aPropertie
 void SetTextPositioning( EDA_TEXT* text, ASCH_LABEL_JUSTIFICATION justification,
                          ASCH_RECORD_ORIENTATION orientation )
 {
-    int    vjustify, hjustify;
-    double angle = TEXT_ANGLE_HORIZ;
-
     switch( justification )
     {
     default:
@@ -755,17 +752,17 @@ void SetTextPositioning( EDA_TEXT* text, ASCH_LABEL_JUSTIFICATION justification,
     case ASCH_LABEL_JUSTIFICATION::BOTTOM_LEFT:
     case ASCH_LABEL_JUSTIFICATION::BOTTOM_CENTER:
     case ASCH_LABEL_JUSTIFICATION::BOTTOM_RIGHT:
-        vjustify = EDA_TEXT_VJUSTIFY_T::GR_TEXT_VJUSTIFY_BOTTOM;
+        text->Align( TEXT_ATTRIBUTES::V_BOTTOM );
         break;
     case ASCH_LABEL_JUSTIFICATION::CENTER_LEFT:
     case ASCH_LABEL_JUSTIFICATION::CENTER_CENTER:
     case ASCH_LABEL_JUSTIFICATION::CENTER_RIGHT:
-        vjustify = EDA_TEXT_VJUSTIFY_T::GR_TEXT_VJUSTIFY_CENTER;
+        text->Align( TEXT_ATTRIBUTES::V_CENTER );
         break;
     case ASCH_LABEL_JUSTIFICATION::TOP_LEFT:
     case ASCH_LABEL_JUSTIFICATION::TOP_CENTER:
     case ASCH_LABEL_JUSTIFICATION::TOP_RIGHT:
-        vjustify = EDA_TEXT_VJUSTIFY_T::GR_TEXT_VJUSTIFY_TOP;
+        text->Align( TEXT_ATTRIBUTES::V_TOP );
         break;
     }
 
@@ -776,43 +773,35 @@ void SetTextPositioning( EDA_TEXT* text, ASCH_LABEL_JUSTIFICATION justification,
     case ASCH_LABEL_JUSTIFICATION::BOTTOM_LEFT:
     case ASCH_LABEL_JUSTIFICATION::CENTER_LEFT:
     case ASCH_LABEL_JUSTIFICATION::TOP_LEFT:
-        hjustify = EDA_TEXT_HJUSTIFY_T::GR_TEXT_HJUSTIFY_LEFT;
+        text->Align( TEXT_ATTRIBUTES::H_LEFT );
         break;
     case ASCH_LABEL_JUSTIFICATION::BOTTOM_CENTER:
     case ASCH_LABEL_JUSTIFICATION::CENTER_CENTER:
     case ASCH_LABEL_JUSTIFICATION::TOP_CENTER:
-        hjustify = EDA_TEXT_HJUSTIFY_T::GR_TEXT_HJUSTIFY_CENTER;
+        text->Align( TEXT_ATTRIBUTES::H_CENTER );
         break;
     case ASCH_LABEL_JUSTIFICATION::BOTTOM_RIGHT:
     case ASCH_LABEL_JUSTIFICATION::CENTER_RIGHT:
     case ASCH_LABEL_JUSTIFICATION::TOP_RIGHT:
-        hjustify = EDA_TEXT_HJUSTIFY_T::GR_TEXT_HJUSTIFY_RIGHT;
+        text->Align( TEXT_ATTRIBUTES::H_RIGHT );
         break;
     }
 
     switch( orientation )
     {
     case ASCH_RECORD_ORIENTATION::RIGHTWARDS:
-        angle = TEXT_ANGLE_HORIZ;
+        text->SetTextAngle( EDA_ANGLE::ANGLE_0 );
         break;
     case ASCH_RECORD_ORIENTATION::LEFTWARDS:
-        vjustify *= -1;
-        hjustify *= -1;
-        angle = TEXT_ANGLE_HORIZ;
+        text->SetTextAngle( EDA_ANGLE::ANGLE_180 );
         break;
     case ASCH_RECORD_ORIENTATION::UPWARDS:
-        angle = TEXT_ANGLE_VERT;
+        text->SetTextAngle( EDA_ANGLE::ANGLE_90 );
         break;
     case ASCH_RECORD_ORIENTATION::DOWNWARDS:
-        vjustify *= -1;
-        hjustify *= -1;
-        angle = TEXT_ANGLE_VERT;
+        text->SetTextAngle( EDA_ANGLE::ANGLE_270 );
         break;
     }
-
-    text->SetVertJustify( static_cast<EDA_TEXT_VJUSTIFY_T>( vjustify ) );
-    text->SetHorizJustify( static_cast<EDA_TEXT_HJUSTIFY_T>( hjustify ) );
-    text->SetTextAngle( angle );
 }
 
 
@@ -899,14 +888,13 @@ void SCH_ALTIUM_PLUGIN::ParseTextFrame( const std::map<wxString, wxString>& aPro
     {
     default:
     case ASCH_TEXT_FRAME_ALIGNMENT::LEFT:
-        text->SetLabelSpinStyle( LABEL_SPIN_STYLE::SPIN::RIGHT );
+        text->SetHorizontalAlignment( TEXT_ATTRIBUTES::H_LEFT );
         break;
     case ASCH_TEXT_FRAME_ALIGNMENT::CENTER:
-        // No support for centered text in Eeschema yet...
-        text->SetLabelSpinStyle( LABEL_SPIN_STYLE::SPIN::RIGHT );
+        text->SetHorizontalAlignment( TEXT_ATTRIBUTES::H_CENTER );
         break;
     case ASCH_TEXT_FRAME_ALIGNMENT::RIGHT:
-        text->SetLabelSpinStyle( LABEL_SPIN_STYLE::SPIN::LEFT );
+        text->SetHorizontalAlignment( TEXT_ATTRIBUTES::H_RIGHT );
         break;
     }
 
@@ -939,14 +927,13 @@ void SCH_ALTIUM_PLUGIN::ParseNote( const std::map<wxString, wxString>& aProperti
     {
     default:
     case ASCH_TEXT_FRAME_ALIGNMENT::LEFT:
-        text->SetLabelSpinStyle( LABEL_SPIN_STYLE::SPIN::RIGHT );
+        text->SetHorizontalAlignment( TEXT_ATTRIBUTES::H_LEFT );
         break;
     case ASCH_TEXT_FRAME_ALIGNMENT::CENTER:
-        // No support for centered text in Eeschema yet...
-        text->SetLabelSpinStyle( LABEL_SPIN_STYLE::SPIN::RIGHT );
+        text->SetHorizontalAlignment( TEXT_ATTRIBUTES::H_CENTER );
         break;
     case ASCH_TEXT_FRAME_ALIGNMENT::RIGHT:
-        text->SetLabelSpinStyle( LABEL_SPIN_STYLE::SPIN::LEFT );
+        text->SetHorizontalAlignment( TEXT_ATTRIBUTES::H_RIGHT );
         break;
     }
 
@@ -1523,8 +1510,6 @@ void SCH_ALTIUM_PLUGIN::ParseSheetEntry( const std::map<wxString, wxString>& aPr
 
     sheetPin->SetText( elem.name );
     sheetPin->SetShape( PINSHEETLABEL_SHAPE::PS_UNSPECIFIED );
-    //sheetPin->SetLabelSpinStyle( getSpinStyle( term.OrientAngle, false ) );
-    //sheetPin->SetPosition( getKiCadPoint( term.Position ) );
 
     wxPoint pos  = sheetIt->second->GetPosition();
     wxSize  size = sheetIt->second->GetSize();
@@ -1534,22 +1519,22 @@ void SCH_ALTIUM_PLUGIN::ParseSheetEntry( const std::map<wxString, wxString>& aPr
     default:
     case ASCH_SHEET_ENTRY_SIDE::LEFT:
         sheetPin->SetPosition( { pos.x, pos.y + elem.distanceFromTop } );
-        sheetPin->SetLabelSpinStyle( LABEL_SPIN_STYLE::LEFT );
+        sheetPin->SetAlignedAngle( EDA_ANGLE::ANGLE_180 );
         sheetPin->SetEdge( SHEET_SIDE::LEFT );
         break;
     case ASCH_SHEET_ENTRY_SIDE::RIGHT:
         sheetPin->SetPosition( { pos.x + size.x, pos.y + elem.distanceFromTop } );
-        sheetPin->SetLabelSpinStyle( LABEL_SPIN_STYLE::RIGHT );
+        sheetPin->SetAlignedAngle( EDA_ANGLE::ANGLE_0 );
         sheetPin->SetEdge( SHEET_SIDE::RIGHT );
         break;
     case ASCH_SHEET_ENTRY_SIDE::TOP:
         sheetPin->SetPosition( { pos.x + elem.distanceFromTop, pos.y } );
-        sheetPin->SetLabelSpinStyle( LABEL_SPIN_STYLE::UP );
+        sheetPin->SetAlignedAngle( EDA_ANGLE::ANGLE_90 );
         sheetPin->SetEdge( SHEET_SIDE::TOP );
         break;
     case ASCH_SHEET_ENTRY_SIDE::BOTTOM:
         sheetPin->SetPosition( { pos.x + elem.distanceFromTop, pos.y + size.y } );
-        sheetPin->SetLabelSpinStyle( LABEL_SPIN_STYLE::BOTTOM );
+        sheetPin->SetAlignedAngle( EDA_ANGLE::ANGLE_270 );
         sheetPin->SetEdge( SHEET_SIDE::BOTTOM );
         break;
     }
@@ -1848,23 +1833,23 @@ void SCH_ALTIUM_PLUGIN::ParsePowerPort( const std::map<wxString, wxString>& aPro
     {
     case ASCH_RECORD_ORIENTATION::RIGHTWARDS:
         symbol->SetOrientation( SYMBOL_ORIENTATION_T::SYM_ORIENT_90 );
-        valueField->SetTextAngle( TEXT_ANGLE_VERT );
-        valueField->SetHorizJustify( EDA_TEXT_HJUSTIFY_T::GR_TEXT_HJUSTIFY_RIGHT );
+        valueField->SetTextAngle( -900. );
+        valueField->Align( TEXT_ATTRIBUTES::H_LEFT );
         break;
     case ASCH_RECORD_ORIENTATION::UPWARDS:
         symbol->SetOrientation( SYMBOL_ORIENTATION_T::SYM_ORIENT_180 );
-        valueField->SetTextAngle( TEXT_ANGLE_HORIZ );
-        valueField->SetHorizJustify( EDA_TEXT_HJUSTIFY_T::GR_TEXT_HJUSTIFY_CENTER );
+        valueField->SetTextAngle( -1800. );
+        valueField->Align( TEXT_ATTRIBUTES::H_CENTER );
         break;
     case ASCH_RECORD_ORIENTATION::LEFTWARDS:
         symbol->SetOrientation( SYMBOL_ORIENTATION_T::SYM_ORIENT_270 );
-        valueField->SetTextAngle( TEXT_ANGLE_VERT );
-        valueField->SetHorizJustify( EDA_TEXT_HJUSTIFY_T::GR_TEXT_HJUSTIFY_RIGHT );
+        valueField->SetTextAngle( -2700. );
+        valueField->Align( TEXT_ATTRIBUTES::H_RIGHT );
         break;
     case ASCH_RECORD_ORIENTATION::DOWNWARDS:
         symbol->SetOrientation( SYMBOL_ORIENTATION_T::SYM_ORIENT_0 );
-        valueField->SetTextAngle( TEXT_ANGLE_HORIZ );
-        valueField->SetHorizJustify( EDA_TEXT_HJUSTIFY_T::GR_TEXT_HJUSTIFY_CENTER );
+        valueField->SetTextAngle( 0. );
+        valueField->Align( TEXT_ATTRIBUTES::H_CENTER );
         break;
     default:
         m_reporter->Report( _( "Pin has unexpected orientation." ), RPT_SEVERITY_WARNING );
@@ -1968,18 +1953,30 @@ void SCH_ALTIUM_PLUGIN::ParsePort( const ASCH_PORT& aElem )
     case ASCH_PORT_STYLE::RIGHT:
     case ASCH_PORT_STYLE::LEFT_RIGHT:
         if( ( startIsWireTerminal || startIsBusTerminal ) )
-            label->SetLabelSpinStyle( LABEL_SPIN_STYLE::RIGHT );
+        {
+            label->SetTextAngle( EDA_ANGLE( 0, EDA_ANGLE::DEGREES ) );
+            label->Align( TEXT_ATTRIBUTES::H_LEFT );
+        }
         else
-            label->SetLabelSpinStyle( LABEL_SPIN_STYLE::LEFT );
+        {
+            label->SetTextAngle( EDA_ANGLE( 180, EDA_ANGLE::DEGREES ) );
+            label->Align( TEXT_ATTRIBUTES::H_RIGHT );
+        }
         break;
     case ASCH_PORT_STYLE::NONE_VERTICAL:
     case ASCH_PORT_STYLE::TOP:
     case ASCH_PORT_STYLE::BOTTOM:
     case ASCH_PORT_STYLE::TOP_BOTTOM:
         if( ( startIsWireTerminal || startIsBusTerminal ) )
-            label->SetLabelSpinStyle( LABEL_SPIN_STYLE::UP );
+        {
+            label->SetTextAngle( EDA_ANGLE( 90, EDA_ANGLE::DEGREES ) );
+            label->Align( TEXT_ATTRIBUTES::H_LEFT );
+        }
         else
-            label->SetLabelSpinStyle( LABEL_SPIN_STYLE::BOTTOM );
+        {
+            label->SetTextAngle( EDA_ANGLE( 270, EDA_ANGLE::DEGREES ) );
+            label->Align( TEXT_ATTRIBUTES::H_RIGHT );
+        }
         break;
     }
 
@@ -2029,16 +2026,16 @@ void SCH_ALTIUM_PLUGIN::ParseNetLabel( const std::map<wxString, wxString>& aProp
     switch( elem.orientation )
     {
     case ASCH_RECORD_ORIENTATION::RIGHTWARDS:
-        label->SetLabelSpinStyle( LABEL_SPIN_STYLE::RIGHT );
+        label->SetAlignedAngle( EDA_ANGLE::ANGLE_0 );
         break;
     case ASCH_RECORD_ORIENTATION::UPWARDS:
-        label->SetLabelSpinStyle( LABEL_SPIN_STYLE::UP );
+        label->SetAlignedAngle( EDA_ANGLE::ANGLE_90 );
         break;
     case ASCH_RECORD_ORIENTATION::LEFTWARDS:
-        label->SetLabelSpinStyle( LABEL_SPIN_STYLE::LEFT );
+        label->SetAlignedAngle( EDA_ANGLE::ANGLE_180 );
         break;
     case ASCH_RECORD_ORIENTATION::DOWNWARDS:
-        label->SetLabelSpinStyle( LABEL_SPIN_STYLE::BOTTOM );
+        label->SetAlignedAngle( EDA_ANGLE::ANGLE_270 );
         break;
     default:
         break;
@@ -2248,7 +2245,6 @@ void SCH_ALTIUM_PLUGIN::ParseFileName( const std::map<wxString, wxString>& aProp
     }
 
     filenameField.SetText( elem.text );
-
     filenameField.SetVisible( !elem.isHidden );
     SetTextPositioning( &filenameField, ASCH_LABEL_JUSTIFICATION::BOTTOM_LEFT, elem.orientation );
 }

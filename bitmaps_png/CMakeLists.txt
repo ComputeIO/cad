@@ -585,6 +585,11 @@ set( BMAPS_OTHER
     color_code_value_and_name
     cpw
     cpw_back
+    label_bidirectional
+    label_input
+    label_output
+    label_passive
+    label_tristate
     microstrip
     microstrip_zodd_zeven
     pads_npth

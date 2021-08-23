@@ -40,18 +40,14 @@
 
 
 DIALOG_TEXT_PROPERTIES::DIALOG_TEXT_PROPERTIES( PCB_BASE_EDIT_FRAME* aParent, BOARD_ITEM* aItem ) :
-    DIALOG_TEXT_PROPERTIES_BASE( aParent ),
-    m_Parent( aParent ),
-    m_item( aItem ),
-    m_edaText( nullptr ),
-    m_fpText( nullptr ),
-    m_pcbText( nullptr ),
-    m_textWidth( aParent, m_SizeXLabel, m_SizeXCtrl, m_SizeXUnits ),
-    m_textHeight( aParent, m_SizeYLabel, m_SizeYCtrl, m_SizeYUnits ),
-    m_thickness( aParent, m_ThicknessLabel, m_ThicknessCtrl, m_ThicknessUnits ),
-    m_posX( aParent, m_PositionXLabel, m_PositionXCtrl, m_PositionXUnits ),
-    m_posY( aParent, m_PositionYLabel, m_PositionYCtrl, m_PositionYUnits ),
-    m_orientation( aParent, m_OrientLabel, m_OrientCtrl, nullptr )
+        DIALOG_TEXT_ITEM_PROPERTIES_BASE( aParent ), m_Parent( aParent ), m_item( aItem ),
+        m_edaText( nullptr ), m_fpText( nullptr ), m_pcbText( nullptr ),
+        m_textWidth( aParent, m_SizeXLabel, m_SizeXCtrl, m_SizeXUnits ),
+        m_textHeight( aParent, m_SizeYLabel, m_SizeYCtrl, m_SizeYUnits ),
+        m_thickness( aParent, m_ThicknessLabel, m_ThicknessCtrl, m_ThicknessUnits ),
+        m_posX( aParent, m_PositionXLabel, m_PositionXCtrl, m_PositionXUnits ),
+        m_posY( aParent, m_PositionYLabel, m_PositionYCtrl, m_PositionYUnits ),
+        m_orientation( aParent, m_OrientLabel, m_OrientCtrl, nullptr )
 {
     wxString title;
 
@@ -81,9 +77,9 @@ DIALOG_TEXT_PROPERTIES::DIALOG_TEXT_PROPERTIES( PCB_BASE_EDIT_FRAME* aParent, BO
 
         switch( m_fpText->GetType() )
         {
-        case FP_TEXT::TEXT_is_REFERENCE: m_TextLabel->SetLabel( _( "Reference:" ) ); break;
-        case FP_TEXT::TEXT_is_VALUE:     m_TextLabel->SetLabel( _( "Value:" ) );     break;
-        case FP_TEXT::TEXT_is_DIVERS:    m_TextLabel->SetLabel( _( "Text:" ) );      break;
+        case FP_TEXT::TEXT_is_REFERENCE: m_SingleLineLabel->SetLabel( _( "Reference:" ) ); break;
+        case FP_TEXT::TEXT_is_VALUE: m_SingleLineLabel->SetLabel( _( "Value:" ) ); break;
+        case FP_TEXT::TEXT_is_DIVERS: m_SingleLineLabel->SetLabel( _( "Text:" ) ); break;
         }
 
         SetInitialFocus( m_SingleLineText );
@@ -110,14 +106,17 @@ DIALOG_TEXT_PROPERTIES::DIALOG_TEXT_PROPERTIES( PCB_BASE_EDIT_FRAME* aParent, BO
     SetTitle( title );
     m_hash_key = title;
 
+	m_pcbLayerSelector = new PCB_LAYER_BOX_SELECTOR( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0, NULL, 0 );
+    fgSizerSetup->Replace( m_LayerSelectionCtrl, m_pcbLayerSelector );
+
     // Configure the layers list selector.  Note that footprints are built outside the current
     // board and so we may need to show all layers if the text is on an unactivated layer.
     if( !m_Parent->GetBoard()->IsLayerEnabled( m_item->GetLayer() ) )
-        m_LayerSelectionCtrl->ShowNonActivatedLayers( true );
+        m_pcbLayerSelector->ShowNonActivatedLayers( true );
 
-    m_LayerSelectionCtrl->SetLayersHotkeys( false );
-    m_LayerSelectionCtrl->SetBoardFrame( m_Parent );
-    m_LayerSelectionCtrl->Resync();
+    m_pcbLayerSelector->SetLayersHotkeys( false );
+    m_pcbLayerSelector->SetBoardFrame( m_Parent );
+    m_pcbLayerSelector->Resync();
 
     m_OrientValue = 0.0;
     m_orientation.SetUnits( EDA_UNITS::DEGREES );
@@ -139,28 +138,21 @@ DIALOG_TEXT_PROPERTIES::DIALOG_TEXT_PROPERTIES( PCB_BASE_EDIT_FRAME* aParent, BO
 
     // We can't set the tab order through wxWidgets due to shortcomings in their mnemonics
     // implementation on MSW
-    m_tabOrder = {
-            m_LayerLabel,
-            m_LayerSelectionCtrl,
-            m_SizeXCtrl,
-            m_SizeYCtrl,
-            m_ThicknessCtrl,
-            m_PositionXCtrl,
-            m_PositionYCtrl,
-            m_Visible,
-            m_Italic,
-            m_JustifyChoice,
-            m_OrientCtrl,
-            m_Mirrored,
-            m_KeepUpright,
-            m_sdbSizerOK,
-            m_sdbSizerCancel
-    };
+    m_tabOrder = { m_LayerLabel,    m_pcbLayerSelector, m_SizeXCtrl,     m_SizeYCtrl,
+                   m_ThicknessCtrl, m_PositionXCtrl,      m_PositionYCtrl, m_Visible,
+                   m_Justify,       m_OrientCtrl,         m_Mirrored,      m_KeepUpright,
+                   m_sdbSizerOK,    m_sdbSizerCancel };
 
     // wxTextCtrls fail to generate wxEVT_CHAR events when the wxTE_MULTILINE flag is set,
     // so we have to listen to wxEVT_CHAR_HOOK events instead.
     Connect( wxEVT_CHAR_HOOK, wxKeyEventHandler( DIALOG_TEXT_PROPERTIES::OnCharHook ),
              nullptr, this );
+
+    // If this item has a custom font, display font name
+    // Default font is named "" so it's OK to always display font name
+    m_FontCtrl->SetValue( m_edaText->GetFont()->Name() );
+    m_FontBold->SetValue( m_edaText->IsBold() );
+    m_FontItalic->SetValue( m_edaText->IsItalic() );
 
     finishDialogSettings();
 }
@@ -231,8 +223,7 @@ bool DIALOG_TEXT_PROPERTIES::TransferDataToWindow()
 
         if( footprint )
         {
-            msg.Printf( _( "Footprint %s (%s), %s, rotated %.1f deg"),
-                        footprint->GetReference(),
+            msg.Printf( _( "Footprint %s (%s), %s, rotated %.1f deg" ), footprint->GetReference(),
                         footprint->GetValue(),
                         footprint->IsFlipped() ? _( "back side (mirrored)" ) : _( "front side" ),
                         footprint->GetOrientation() / 10.0 );
@@ -247,7 +238,7 @@ bool DIALOG_TEXT_PROPERTIES::TransferDataToWindow()
 
     m_cbLocked->SetValue( m_item->IsLocked() );
 
-    m_LayerSelectionCtrl->SetLayerSelection( m_item->GetLayer() );
+    m_pcbLayerSelector->SetLayerSelection( m_item->GetLayer() );
 
     m_textWidth.SetValue( m_edaText->GetTextSize().x );
     m_textHeight.SetValue( m_edaText->GetTextSize().y );
@@ -256,9 +247,16 @@ bool DIALOG_TEXT_PROPERTIES::TransferDataToWindow()
     m_posY.SetValue( m_edaText->GetTextPos().y );
 
     m_Visible->SetValue( m_edaText->IsVisible() );
-    m_Italic->SetValue( m_edaText->IsItalic() );
-    EDA_TEXT_HJUSTIFY_T hJustify = m_edaText->GetHorizJustify();
-    m_JustifyChoice->SetSelection( (int) hJustify + 1 );
+    m_FontBold->SetValue( m_edaText->IsBold() );
+    m_FontItalic->SetValue( m_edaText->IsItalic() );
+    m_FontLineSpacing->SetValue( wxNumberFormatter::ToString( m_edaText->GetLineSpacing(), 2 ) );
+    switch( m_edaText->GetHorizontalAlignment() )
+    {
+    default:
+    case TEXT_ATTRIBUTES::H_LEFT: m_Justify->SetSelection( 0 );
+    case TEXT_ATTRIBUTES::H_CENTER: m_Justify->SetSelection( 1 );
+    case TEXT_ATTRIBUTES::H_RIGHT: m_Justify->SetSelection( 2 );
+    }
     m_OrientValue = m_edaText->GetTextAngle();
     m_orientation.SetDoubleValue( m_OrientValue );
     m_Mirrored->SetValue( m_edaText->IsMirrored() );
@@ -266,13 +264,13 @@ bool DIALOG_TEXT_PROPERTIES::TransferDataToWindow()
     if( m_fpText )
         m_KeepUpright->SetValue( m_fpText->IsKeepUpright() );
 
-    return DIALOG_TEXT_PROPERTIES_BASE::TransferDataToWindow();
+    return DIALOG_TEXT_ITEM_PROPERTIES_BASE::TransferDataToWindow();
 }
 
 
 bool DIALOG_TEXT_PROPERTIES::TransferDataFromWindow()
 {
-    if( !DIALOG_TEXT_PROPERTIES_BASE::TransferDataFromWindow() )
+    if( !DIALOG_TEXT_ITEM_PROPERTIES_BASE::TransferDataFromWindow() )
         return false;
 
     if( !m_textWidth.Validate( TEXTS_MIN_SIZE, TEXTS_MAX_SIZE )
@@ -321,7 +319,7 @@ bool DIALOG_TEXT_PROPERTIES::TransferDataFromWindow()
 
     m_item->SetLocked( m_cbLocked->GetValue() );
 
-    m_item->SetLayer( ToLAYER_ID( m_LayerSelectionCtrl->GetLayerSelection() ) );
+    m_item->SetLayer( ToLAYER_ID( m_pcbLayerSelector->GetLayerSelection() ) );
 
     m_edaText->SetTextSize( wxSize( m_textWidth.GetValue(), m_textHeight.GetValue() ) );
     m_edaText->SetTextThickness( m_thickness.GetValue() );
@@ -340,8 +338,17 @@ bool DIALOG_TEXT_PROPERTIES::TransferDataFromWindow()
         m_edaText->SetTextThickness( maxPenWidth );
     }
 
+    double lineSpacing;
+    if( !m_FontLineSpacing->GetValue().ToDouble( &lineSpacing ) )
+    {
+        // error in reading line spacing, defaulting to 1.0
+        lineSpacing = 1.0;
+    }
+
     m_edaText->SetVisible( m_Visible->GetValue() );
-    m_edaText->SetItalic( m_Italic->GetValue() );
+    m_edaText->SetBold( m_FontBold->GetValue() );
+    m_edaText->SetItalic( m_FontItalic->GetValue() );
+    m_edaText->SetLineSpacing( lineSpacing );
     m_OrientValue = m_orientation.GetDoubleValue();
     m_edaText->SetTextAngle( m_OrientValue );
     m_edaText->SetMirrored( m_Mirrored->GetValue() );
@@ -349,11 +356,11 @@ bool DIALOG_TEXT_PROPERTIES::TransferDataFromWindow()
     if( m_fpText )
         m_fpText->SetKeepUpright( m_KeepUpright->GetValue() );
 
-    switch( m_JustifyChoice->GetSelection() )
+    switch( m_Justify->GetSelection() )
     {
-    case 0: m_edaText->SetHorizJustify( GR_TEXT_HJUSTIFY_LEFT );   break;
-    case 1: m_edaText->SetHorizJustify( GR_TEXT_HJUSTIFY_CENTER ); break;
-    case 2: m_edaText->SetHorizJustify( GR_TEXT_HJUSTIFY_RIGHT );  break;
+    case 0: m_edaText->Align( TEXT_ATTRIBUTES::H_LEFT ); break;
+    case 1: m_edaText->Align( TEXT_ATTRIBUTES::H_CENTER ); break;
+    case 2: m_edaText->Align( TEXT_ATTRIBUTES::H_RIGHT ); break;
     default: break;
     }
 

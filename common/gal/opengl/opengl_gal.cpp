@@ -44,6 +44,7 @@
 #include <bezier_curves.h>
 #include <math/util.h> // for KiROUND
 #include <trace_helpers.h>
+#include <font/triangulate.h>
 
 #include <wx/frame.h>
 
@@ -199,16 +200,10 @@ OPENGL_GAL::OPENGL_GAL( GAL_DISPLAY_OPTIONS& aDisplayOptions, wxWindow* aParent,
         GAL( aDisplayOptions ),
         HIDPI_GL_CANVAS( aParent, wxID_ANY, (int*) glAttributes, wxDefaultPosition, wxDefaultSize,
                          wxEXPAND, aName ),
-        m_mouseListener( aMouseListener ),
-        m_paintListener( aPaintListener ),
-        m_currentManager( nullptr ),
-        m_cachedManager( nullptr ),
-        m_nonCachedManager( nullptr ),
-        m_overlayManager( nullptr ),
-        m_mainBuffer( 0 ),
-        m_overlayBuffer( 0 ),
-        m_isContextLocked( false ),
-        m_lockClientCookie( 0 )
+        m_mouseListener( aMouseListener ), m_paintListener( aPaintListener ),
+        m_currentManager( nullptr ), m_cachedManager( nullptr ), m_nonCachedManager( nullptr ),
+        m_overlayManager( nullptr ), m_mainBuffer( 0 ), m_overlayBuffer( 0 ),
+        m_isContextLocked( false ), m_lockClientCookie( 0 )
 {
     if( m_glMainContext == nullptr )
     {
@@ -407,8 +402,8 @@ double OPENGL_GAL::getWorldPixelSize() const
 VECTOR2D OPENGL_GAL::getScreenPixelSize() const
 {
     double sf = GetScaleFactor();
-    return VECTOR2D( 2.0 / (double) ( m_screenSize.x * sf ), 2.0 /
-                     (double) ( m_screenSize.y * sf ) );
+    return VECTOR2D( 2.0 / (double) ( m_screenSize.x * sf ),
+                     2.0 / (double) ( m_screenSize.y * sf ) );
 }
 
 
@@ -433,8 +428,8 @@ void OPENGL_GAL::beginDrawing()
     glLoadIdentity();
 
     // Create the screen transformation (Do the RH-LH conversion here)
-    glOrtho( 0, (GLint) m_screenSize.x, (GLsizei) m_screenSize.y, 0,
-             -m_depthRange.x, -m_depthRange.y );
+    glOrtho( 0, (GLint) m_screenSize.x, (GLsizei) m_screenSize.y, 0, -m_depthRange.x,
+             -m_depthRange.y );
 
     if( !m_isFramebufferInitialized )
     {
@@ -626,8 +621,9 @@ void OPENGL_GAL::unlockContext( int aClientCookie )
     wxASSERT_MSG( m_isContextLocked, "Context not locked.  A GAL_CONTEXT_LOCKER RAII object must "
                                      "be stacked rather than making separate lock/unlock calls." );
 
-    wxASSERT_MSG( m_lockClientCookie == aClientCookie, "Context was locked by a different client. "
-                                                       "Should not be possible with RAII objects." );
+    wxASSERT_MSG( m_lockClientCookie == aClientCookie,
+                  "Context was locked by a different client. "
+                  "Should not be possible with RAII objects." );
 
     m_isContextLocked = false;
 
@@ -1005,6 +1001,17 @@ void OPENGL_GAL::DrawPolyline( const std::deque<VECTOR2D>& aPointList )
 }
 
 
+void OPENGL_GAL::DrawPolyline( const std::vector<VECTOR2D>& aPointList )
+{
+    drawPolyline(
+            [&]( int idx )
+            {
+                return aPointList[idx];
+            },
+            aPointList.size() );
+}
+
+
 void OPENGL_GAL::DrawPolyline( const VECTOR2D aPointList[], int aListSize )
 {
     drawPolyline(
@@ -1275,37 +1282,34 @@ void OPENGL_GAL::BitmapText( const wxString& aText, const VECTOR2D& aPosition,
     m_currentManager->Scale( sx, sy, 0 );
     m_currentManager->Translate( 0, -commonOffset, 0 );
 
-    switch( GetHorizontalJustify() )
+    switch( GetHorizontalAlignment() )
     {
-    case GR_TEXT_HJUSTIFY_CENTER:
-        Translate( VECTOR2D( -textSize.x / 2.0, 0 ) );
-        break;
+    case TEXT_ATTRIBUTES::H_CENTER: Translate( VECTOR2D( -textSize.x / 2.0, 0 ) ); break;
 
-    case GR_TEXT_HJUSTIFY_RIGHT:
+    case TEXT_ATTRIBUTES::H_RIGHT:
         //if( !IsTextMirrored() )
         Translate( VECTOR2D( -textSize.x, 0 ) );
         break;
 
-    case GR_TEXT_HJUSTIFY_LEFT:
+    case TEXT_ATTRIBUTES::H_LEFT:
         //if( IsTextMirrored() )
         //Translate( VECTOR2D( -textSize.x, 0 ) );
         break;
     }
 
-    switch( GetVerticalJustify() )
+    switch( GetVerticalAlignment() )
     {
-    case GR_TEXT_VJUSTIFY_TOP:
+    case TEXT_ATTRIBUTES::V_TOP:
         Translate( VECTOR2D( 0, -textSize.y ) );
         overbarHeight = -textSize.y / 2.0;
         break;
 
-    case GR_TEXT_VJUSTIFY_CENTER:
+    case TEXT_ATTRIBUTES::V_CENTER:
         Translate( VECTOR2D( 0, -textSize.y / 2.0 ) );
         overbarHeight = 0;
         break;
 
-    case GR_TEXT_VJUSTIFY_BOTTOM:
-        break;
+    case TEXT_ATTRIBUTES::V_BOTTOM: break;
     }
 
     int overbarDepth = -1;
@@ -1371,8 +1375,8 @@ void OPENGL_GAL::DrawGrid()
     m_nonCachedManager->EnableDepthTest( false );
 
     // sub-pixel lines all render the same
-    float minorLineWidth = std::fmax( 1.0f,
-                                      m_gridLineWidth ) * getWorldPixelSize() / GetScaleFactor();
+    float minorLineWidth =
+            std::fmax( 1.0f, m_gridLineWidth ) * getWorldPixelSize() / GetScaleFactor();
     float majorLineWidth = minorLineWidth * 2.0f;
 
     // Draw the axis and grid
@@ -1680,9 +1684,9 @@ void OPENGL_GAL::SetTarget( RENDER_TARGET aTarget )
     switch( aTarget )
     {
     default:
-    case TARGET_CACHED:    m_currentManager = m_cachedManager;    break;
+    case TARGET_CACHED: m_currentManager = m_cachedManager; break;
     case TARGET_NONCACHED: m_currentManager = m_nonCachedManager; break;
-    case TARGET_OVERLAY:   m_currentManager = m_overlayManager;   break;
+    case TARGET_OVERLAY: m_currentManager = m_overlayManager; break;
     }
 
     m_currentTarget = aTarget;
@@ -1705,9 +1709,7 @@ void OPENGL_GAL::ClearTarget( RENDER_TARGET aTarget )
     // Cached and noncached items are rendered to the same buffer
     default:
     case TARGET_CACHED:
-    case TARGET_NONCACHED:
-        m_compositor->SetBuffer( m_mainBuffer );
-        break;
+    case TARGET_NONCACHED: m_compositor->SetBuffer( m_mainBuffer ); break;
 
     case TARGET_OVERLAY:
         if( m_overlayBuffer )
@@ -1732,7 +1734,7 @@ bool OPENGL_GAL::HasTarget( RENDER_TARGET aTarget )
     default:
     case TARGET_CACHED:
     case TARGET_NONCACHED: return true;
-    case TARGET_OVERLAY:   return ( m_overlayBuffer != 0 );
+    case TARGET_OVERLAY: return ( m_overlayBuffer != 0 );
     }
 }
 
@@ -1787,8 +1789,8 @@ void OPENGL_GAL::drawLineQuad( const VECTOR2D& aStartPoint, const VECTOR2D& aEnd
 
     auto v1 = m_currentManager->GetTransformation()
               * glm::vec4( aStartPoint.x, aStartPoint.y, 0.0, 0.0 );
-    auto v2 = m_currentManager->GetTransformation()
-              * glm::vec4( aEndPoint.x, aEndPoint.y, 0.0, 0.0 );
+    auto v2 =
+            m_currentManager->GetTransformation() * glm::vec4( aEndPoint.x, aEndPoint.y, 0.0, 0.0 );
 
     VECTOR2D vs( v2.x - v1.x, v2.y - v1.y );
 
@@ -1940,15 +1942,17 @@ void OPENGL_GAL::drawPolyline( const std::function<VECTOR2D( int )>& aPointGette
 {
     wxCHECK( aPointCount >= 2, /* return */ );
 
-    m_currentManager->Color( m_strokeColor.r, m_strokeColor.g, m_strokeColor.b, m_strokeColor.a );
-    int i;
+    m_currentManager->Color( m_strokeColor );
 
-    for( i = 1; i < aPointCount; ++i )
+    auto start = aPointGetter( 0 );
+
+    for( int i = 1; i < aPointCount; ++i )
     {
-        auto start = aPointGetter( i - 1 );
         auto end = aPointGetter( i );
 
         drawLineQuad( start, end );
+
+        start = end;
     }
 }
 
@@ -2344,4 +2348,38 @@ void OPENGL_GAL::ComputeWorldScreenMatrix()
     m_lookAtPoint.y = round_to_half_pixel( m_lookAtPoint.y, pixelSize );
 
     GAL::ComputeWorldScreenMatrix();
+}
+
+
+void OPENGL_GAL::DrawGlyph( const KIFONT::GLYPH& aGlyph, int aNth, int aTotal )
+{
+    if( aGlyph.IsStroke() )
+    {
+        for( auto pointList : aGlyph.GetPoints() )
+        {
+            DrawPolyline( pointList );
+        }
+    }
+    else if( aGlyph.IsOutline() )
+    {
+        fillPolygonAsTriangles( aGlyph.GetPolylist() );
+    }
+}
+
+
+void OPENGL_GAL::fillPolygonAsTriangles( const SHAPE_POLY_SET& aPolyList )
+{
+    m_currentManager->Shader( SHADER_NONE );
+    m_currentManager->Color( m_fillColor );
+
+    auto triangleCallback = [&]( int aPolygonIndex, const VECTOR2D& aVertex1,
+                                 const VECTOR2D& aVertex2, const VECTOR2D& aVertex3,
+                                 void* aCallbackData )
+    {
+        m_currentManager->Vertex( aVertex1.x, aVertex1.y, m_layerDepth );
+        m_currentManager->Vertex( aVertex2.x, aVertex2.y, m_layerDepth );
+        m_currentManager->Vertex( aVertex3.x, aVertex3.y, m_layerDepth );
+    };
+
+    Triangulate( aPolyList, triangleCallback );
 }

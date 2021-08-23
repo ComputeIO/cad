@@ -43,24 +43,25 @@
 #include <geometry/shape_line_chain.h>
 #include <geometry/geometry_utils.h>
 #include <bezier_curves.h>
-#include <math/util.h>      // for KiROUND
+#include <math/util.h> // for KiROUND
+#include <font/font.h>
 
 
-PLOTTER::PLOTTER( )
+PLOTTER::PLOTTER()
 {
     m_plotScale = 1;
-    m_currentPenWidth = -1;       // To-be-set marker
-    m_penState = 'Z';             // End-of-path idle
-    m_plotMirror = false;       // Plot mirror option flag
+    m_currentPenWidth = -1; // To-be-set marker
+    m_penState = 'Z';       // End-of-path idle
+    m_plotMirror = false;   // Plot mirror option flag
     m_mirrorIsHorizontal = true;
     m_yaxisReversed = false;
     m_outputFile = nullptr;
-    m_colorMode = false;          // Starts as a BW plot
+    m_colorMode = false; // Starts as a BW plot
     m_negativeMode = false;
 
     // Temporary init to avoid not initialized vars, will be set later
-    m_IUsPerDecimil = 1;        // will be set later to the actual value
-    m_iuPerDeviceUnit = 1;        // will be set later to the actual value
+    m_IUsPerDecimil = 1;   // will be set later to the actual value
+    m_iuPerDeviceUnit = 1; // will be set later to the actual value
     m_renderSettings = nullptr;
 }
 
@@ -83,7 +84,7 @@ bool PLOTTER::OpenFile( const wxString& aFullFilename )
     m_outputFile = wxFopen( m_filename, wxT( "wt" ) );
 
     if( m_outputFile == nullptr )
-        return false ;
+        return false;
 
     return true;
 }
@@ -165,7 +166,7 @@ void PLOTTER::Arc( const wxPoint& centre, double StAngle, double EndAngle, int r
                    FILL_TYPE fill, int width )
 {
     wxPoint   start, end;
-    const int delta = 50;   // increment (in 0.1 degrees) to draw circles
+    const int delta = 50; // increment (in 0.1 degrees) to draw circles
 
     if( StAngle > EndAngle )
         std::swap( StAngle, EndAngle );
@@ -209,11 +210,11 @@ void PLOTTER::Arc( const wxPoint& centre, double StAngle, double EndAngle, int r
 
 
 void PLOTTER::BezierCurve( const wxPoint& aStart, const wxPoint& aControl1,
-                           const wxPoint& aControl2, const wxPoint& aEnd,
-                           int aTolerance, int aLineThickness )
+                           const wxPoint& aControl2, const wxPoint& aEnd, int aTolerance,
+                           int aLineThickness )
 {
     // Generic fallback: Quadratic Bezier curve plotted as a polyline
-    int minSegLen = aLineThickness;  // The segment min length to approximate a bezier curve
+    int minSegLen = aLineThickness; // The segment min length to approximate a bezier curve
 
     std::vector<wxPoint> ctrlPoints;
     ctrlPoints.push_back( aStart );
@@ -229,14 +230,14 @@ void PLOTTER::BezierCurve( const wxPoint& aStart, const wxPoint& aControl1,
     SetCurrentLineWidth( aLineThickness );
     MoveTo( aStart );
 
-    for( unsigned ii = 1; ii < approxPoints.size()-1; ii++ )
+    for( unsigned ii = 1; ii < approxPoints.size() - 1; ii++ )
         LineTo( approxPoints[ii] );
 
     FinishTo( aEnd );
 }
 
 
-void PLOTTER::PlotImage(const wxImage& aImage, const wxPoint& aPos, double aScaleFactor )
+void PLOTTER::PlotImage( const wxImage& aImage, const wxPoint& aPos, double aScaleFactor )
 {
     wxSize size( aImage.GetWidth() * aScaleFactor, aImage.GetHeight() * aScaleFactor );
 
@@ -254,9 +255,9 @@ void PLOTTER::PlotImage(const wxImage& aImage, const wxPoint& aPos, double aScal
 
 void PLOTTER::markerSquare( const wxPoint& position, int radius )
 {
-    double r = KiROUND( radius / 1.4142 );
-    std::vector< wxPoint > corner_list;
-    wxPoint corner;
+    double               r = KiROUND( radius / 1.4142 );
+    std::vector<wxPoint> corner_list;
+    wxPoint              corner;
     corner.x = position.x + r;
     corner.y = position.y + r;
     corner_list.push_back( corner );
@@ -285,14 +286,13 @@ void PLOTTER::markerCircle( const wxPoint& position, int radius )
 
 void PLOTTER::markerLozenge( const wxPoint& position, int radius )
 {
-    std::vector< wxPoint > corner_list;
-    wxPoint corner;
+    std::vector<wxPoint> corner_list;
+    wxPoint              corner;
     corner.x = position.x;
     corner.y = position.y + radius;
     corner_list.push_back( corner );
     corner.x = position.x + radius;
-    corner.y = position.y,
-    corner_list.push_back( corner );
+    corner.y = position.y, corner_list.push_back( corner );
     corner.x = position.x;
     corner.y = position.y - radius;
     corner_list.push_back( corner );
@@ -348,7 +348,6 @@ void PLOTTER::Marker( const wxPoint& position, int diametre, unsigned aShapeId )
        If Visual C++ supported the 0b literals they would be optimally
        and easily encoded as an integer array. We have to do with octal */
     static const unsigned char marker_patterns[MARKER_COUNT] = {
-
         // Bit order:  O Square Lozenge - | \ /
         // First choice: simple shapes
         0003,  // X
@@ -460,7 +459,7 @@ void PLOTTER::Marker( const wxPoint& position, int diametre, unsigned aShapeId )
 void PLOTTER::segmentAsOval( const wxPoint& start, const wxPoint& end, int width,
                              OUTLINE_MODE tracemode )
 {
-    wxPoint center( (start.x + end.x) / 2, (start.y + end.y) / 2 );
+    wxPoint center( ( start.x + end.x ) / 2, ( start.y + end.y ) / 2 );
     wxSize  size( end.x - start.x, end.y - start.y );
     double  orient;
 
@@ -482,7 +481,7 @@ void PLOTTER::sketchOval( const wxPoint& pos, const wxSize& aSize, double orient
 {
     SetCurrentLineWidth( width );
     width = m_currentPenWidth;
-    int radius, deltaxy, cx, cy;
+    int    radius, deltaxy, cx, cy;
     wxSize size( aSize );
 
     if( size.x > size.y )
@@ -491,8 +490,8 @@ void PLOTTER::sketchOval( const wxPoint& pos, const wxSize& aSize, double orient
         orient = AddAngles( orient, 900 );
     }
 
-    deltaxy = size.y - size.x;       /* distance between centers of the oval */
-    radius   = ( size.x - width ) / 2;
+    deltaxy = size.y - size.x; /* distance between centers of the oval */
+    radius = ( size.x - width ) / 2;
     cx = -radius;
     cy = -deltaxy / 2;
     RotatePoint( &cx, &cy, orient );
@@ -514,15 +513,12 @@ void PLOTTER::sketchOval( const wxPoint& pos, const wxSize& aSize, double orient
     cx = 0;
     cy = deltaxy / 2;
     RotatePoint( &cx, &cy, orient );
-    Arc( wxPoint( cx + pos.x, cy + pos.y ),
-         orient + 1800, orient + 3600,
-         radius, FILL_TYPE::NO_FILL );
+    Arc( wxPoint( cx + pos.x, cy + pos.y ), orient + 1800, orient + 3600, radius,
+         FILL_TYPE::NO_FILL );
     cx = 0;
     cy = -deltaxy / 2;
     RotatePoint( &cx, &cy, orient );
-    Arc( wxPoint( cx + pos.x, cy + pos.y ),
-         orient, orient + 1800,
-         radius, FILL_TYPE::NO_FILL );
+    Arc( wxPoint( cx + pos.x, cy + pos.y ), orient, orient + 1800, radius, FILL_TYPE::NO_FILL );
 }
 
 
@@ -550,8 +546,8 @@ void PLOTTER::ThickSegment( const wxPoint& start, const wxPoint& end, int width,
 }
 
 
-void PLOTTER::ThickArc( const wxPoint& centre, double StAngle, double EndAngle,
-                        int radius, int width, OUTLINE_MODE tracemode, void* aData )
+void PLOTTER::ThickArc( const wxPoint& centre, double StAngle, double EndAngle, int radius,
+                        int width, OUTLINE_MODE tracemode, void* aData )
 {
     if( tracemode == FILLED )
     {
@@ -560,16 +556,16 @@ void PLOTTER::ThickArc( const wxPoint& centre, double StAngle, double EndAngle,
     else
     {
         SetCurrentLineWidth( -1 );
-        Arc( centre, StAngle, EndAngle,
-             radius - ( width - m_currentPenWidth ) / 2, FILL_TYPE::NO_FILL, -1 );
-        Arc( centre, StAngle, EndAngle,
-             radius + ( width - m_currentPenWidth ) / 2, FILL_TYPE::NO_FILL, -1 );
+        Arc( centre, StAngle, EndAngle, radius - ( width - m_currentPenWidth ) / 2,
+             FILL_TYPE::NO_FILL, -1 );
+        Arc( centre, StAngle, EndAngle, radius + ( width - m_currentPenWidth ) / 2,
+             FILL_TYPE::NO_FILL, -1 );
     }
 }
 
 
-void PLOTTER::ThickRect( const wxPoint& p1, const wxPoint& p2, int width,
-                         OUTLINE_MODE tracemode, void* aData )
+void PLOTTER::ThickRect( const wxPoint& p1, const wxPoint& p2, int width, OUTLINE_MODE tracemode,
+                         void* aData )
 {
     if( tracemode == FILLED )
     {
@@ -582,6 +578,7 @@ void PLOTTER::ThickRect( const wxPoint& p1, const wxPoint& p2, int width,
                           p1.y - (width - m_currentPenWidth) / 2 );
         wxPoint offsetp2( p2.x + (width - m_currentPenWidth) / 2,
                           p2.y + (width - m_currentPenWidth) / 2 );
+
         Rect( offsetp1, offsetp2, FILL_TYPE::NO_FILL, -1 );
         offsetp1.x += ( width - m_currentPenWidth );
         offsetp1.y += ( width - m_currentPenWidth );
@@ -635,4 +632,51 @@ void PLOTTER::PlotPoly( const SHAPE_LINE_CHAIN& aCornerList, FILL_TYPE aFill,
         cornerList.emplace_back( aCornerList.CPoint( 0 ) );
 
     PlotPoly( cornerList, aFill, aWidth, aData );
+}
+
+
+/**
+ * Function PLOTTER::Text
+ * same as GRText, but plot graphic text insteed of draw it
+ *  @param aPos = text position (according to a{Horizontal,Vertical}Alignment)
+ *  @param aColor (COLOR4D) = text color
+ *  @param aText = text to draw
+ *  @param aOrient = angle
+ *  @param aSize = text size (size.x or size.y can be < 0 for mirrored texts)
+ *  @param aHorizontalAlignment = horizontal alignment (Left, Center, Right)
+ *  @param aVerticalAlignment = vertical alignment (Top, Center, Bottom)
+ *  @param aPenWidth = line width (if = 0, use plot default line width)
+ *  @param aItalic = true to simulate an italic font
+ *  @param aBold = true to use a bold font Useful only with default width value (aWidth = 0)
+ *  @param aMultilineAllowed = true to plot text as multiline, otherwise single line
+ *  @param aData = a parameter used by some plotters in SetCurrentLineWidth(),
+ * not directly used here.
+ */
+void PLOTTER::Text( const wxPoint& aPos, const COLOR4D& aColor, const wxString& aText,
+                    const EDA_ANGLE& aOrient, const wxSize& aSize,
+                    TEXT_ATTRIBUTES::HORIZONTAL_ALIGNMENT aHorizontalAlignment,
+                    TEXT_ATTRIBUTES::VERTICAL_ALIGNMENT aVerticalAlignment, int aPenWidth,
+                    bool aItalic, bool aBold, bool aMultilineAllowed, KIFONT::FONT* aFont,
+                    void* aData )
+{
+    SetColor( aColor );
+    SetCurrentLineWidth( aPenWidth, aData );
+    SetFont( aFont ? aFont : KIFONT::FONT::GetFont() );
+
+    GRText( NULL, aPos, aColor, aText, aOrient, aSize, aHorizontalAlignment, aVerticalAlignment,
+            aPenWidth, aItalic, aBold, nullptr, nullptr, this );
+}
+
+
+void PLOTTER::Text( const EDA_TEXT* aText, const COLOR4D& aColor, int aPenWidth, void* aData )
+{
+    wxSize size = aText->GetTextSize();
+    if( aText->IsMirrored() )
+        size.x = -size.x;
+
+    SetColor( aColor );
+    SetCurrentLineWidth( aPenWidth, aData );
+    SetFont( aText->GetFont() );
+
+    GRText( aText, aColor, nullptr, nullptr, this );
 }

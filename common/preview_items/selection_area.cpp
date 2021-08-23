@@ -28,6 +28,7 @@
 #include <painter.h>
 #include <view/view.h>
 
+using namespace KIGFX;
 using namespace KIGFX::PREVIEW;
 
 struct SELECTION_COLORS

@@ -246,10 +246,26 @@ void DIALOG_GLOBAL_EDIT_TEXT_AND_GRAPHICS::processItem( const SCH_SHEET_PATH& aS
             eda_text->SetTextSize( wxSize( m_textSize.GetValue(), m_textSize.GetValue() ) );
 
         if( m_hAlign->GetStringSelection() != INDETERMINATE_ACTION )
-            eda_text->SetHorizJustify( EDA_TEXT::MapHorizJustify( m_hAlign->GetSelection() - 1 ) );
+        {
+            switch( m_hAlign->GetSelection() )
+            {
+                default:
+                case 0: eda_text->Align( TEXT_ATTRIBUTES::H_LEFT ); break;
+                case 1: eda_text->Align( TEXT_ATTRIBUTES::H_CENTER ); break;
+                case 2: eda_text->Align( TEXT_ATTRIBUTES::H_RIGHT ); break;
+            }
+        }
 
         if( m_vAlign->GetStringSelection() != INDETERMINATE_ACTION )
-            eda_text->SetVertJustify( EDA_TEXT::MapVertJustify( m_vAlign->GetSelection() - 1 ) );
+        {
+            switch( m_vAlign->GetSelection() )
+            {
+                default:
+                case 0: eda_text->Align( TEXT_ATTRIBUTES::V_TOP ); break;
+                case 1: eda_text->Align( TEXT_ATTRIBUTES::V_CENTER ); break;
+                case 2: eda_text->Align( TEXT_ATTRIBUTES::V_BOTTOM ); break;
+            }
+        }
 
         if( m_Visible->Get3StateValue() != wxCHK_UNDETERMINED )
             eda_text->SetVisible( m_Visible->GetValue() );
@@ -265,7 +281,17 @@ void DIALOG_GLOBAL_EDIT_TEXT_AND_GRAPHICS::processItem( const SCH_SHEET_PATH& aS
     if( sch_text )
     {
         if( m_orientation->GetStringSelection() != INDETERMINATE_ACTION )
-            sch_text->SetLabelSpinStyle( (LABEL_SPIN_STYLE::SPIN) m_orientation->GetSelection() );
+        {
+            switch( m_orientation->GetSelection() )
+            {
+                default:
+                case 0: sch_text->SetTextAngle( EDA_ANGLE( 0, EDA_ANGLE::DEGREES ) ); break;
+                case 1: sch_text->SetTextAngle( EDA_ANGLE( 90, EDA_ANGLE::DEGREES ) ); break;
+                case 2: sch_text->SetTextAngle( EDA_ANGLE( 180, EDA_ANGLE::DEGREES ) ); break;
+                case 3: sch_text->SetTextAngle( EDA_ANGLE( 270, EDA_ANGLE::DEGREES ) ); break;
+            }
+
+        }
     }
 
     if( lineItem )

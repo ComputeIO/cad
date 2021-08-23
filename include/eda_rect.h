@@ -31,6 +31,7 @@
 
 #include <wx/gdicmn.h>
 #include <math/box2.h>
+#include <iostream>
 
 /**
  * Handle the component boundary box.
@@ -42,15 +43,14 @@
 class EDA_RECT
 {
 public:
-    EDA_RECT() : m_init( false ) { };
+    EDA_RECT() : m_init( false ){};
 
     EDA_RECT( const wxPoint& aPos, const wxSize& aSize ) :
-            m_pos( aPos ),
-            m_size( aSize ),
-            m_init( true )
-    { }
+            m_pos( aPos ), m_size( aSize ), m_init( true )
+    {
+    }
 
-    virtual ~EDA_RECT() { };
+    virtual ~EDA_RECT(){};
 
     wxPoint Centre() const
     {
@@ -111,12 +111,9 @@ public:
     int GetRight() const { return m_pos.x + m_size.x; }
     int GetLeft() const { return m_pos.x; }
     int GetTop() const { return m_pos.y; }
-    int GetBottom() const { return m_pos.y + m_size.y; }    // Y axis from top to bottom
+    int GetBottom() const { return m_pos.y + m_size.y; } // Y axis from top to bottom
 
-    bool IsValid() const
-    {
-        return m_init;
-    }
+    bool IsValid() const { return m_init; }
 
     void SetOrigin( const wxPoint& pos )
     {
@@ -197,7 +194,7 @@ public:
      */
     void RevertYAxis()
     {
-        m_pos.y  = -m_pos.y;
+        m_pos.y = -m_pos.y;
         m_size.y = -m_size.y;
         Normalize();
     }
@@ -238,8 +235,8 @@ public:
      * @param aIntersection2 will be filled with the second intersection point, if any.
      * @return true if the segment intersects the rect.
      */
-    bool Intersects( const wxPoint& aPoint1, const wxPoint& aPoint2,
-                     wxPoint* aIntersection1, wxPoint* aIntersection2 ) const;
+    bool Intersects( const wxPoint& aPoint1, const wxPoint& aPoint2, wxPoint* aIntersection1,
+                     wxPoint* aIntersection2 ) const;
 
     /**
      * Return the point in this rect that is closest to the provided point
@@ -350,5 +347,16 @@ private:
     bool    m_init;     // Is the rectangle initialized
 };
 
+
+inline std::ostream& operator<<( std::ostream& os, const EDA_RECT& aRect )
+{
+    if( aRect.IsValid() )
+        os << "[rect " << aRect.GetOrigin().x << "," << aRect.GetOrigin().y << "..."
+           << aRect.GetEnd().x << "," << aRect.GetEnd().y << "]";
+    else
+        os << "[rect]";
+
+    return os;
+}
 
 #endif // EDA_RECT_H

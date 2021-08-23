@@ -411,7 +411,8 @@ void PCB_PARSER::parseEDA_TEXT( EDA_TEXT* aText )
 
     // Prior to v5.0 text size was omitted from file format if equal to 60mils
     // Now, it is always explicitly written to file
-    bool foundTextSize = false;
+    bool     foundTextSize = false;
+    wxString faceName;
 
     for( token = NextTok();  token != T_RIGHT;  token = NextTok() )
     {
@@ -428,6 +429,15 @@ void PCB_PARSER::parseEDA_TEXT( EDA_TEXT* aText )
 
                 switch( token )
                 {
+                case T_face:
+                    {
+                        // parser treats double-quoted strings as symbols
+                        NeedSYMBOL();
+                        faceName = FromUTF8();
+                        NeedRIGHT();
+                    }
+                    break;
+
                 case T_size:
                 {
                     wxSize sz;
@@ -439,6 +449,11 @@ void PCB_PARSER::parseEDA_TEXT( EDA_TEXT* aText )
                     foundTextSize = true;
                     break;
                 }
+
+                case T_line_spacing:
+                    aText->SetLineSpacing( parseDouble( "line spacing" ) );
+                    NeedRIGHT();
+                    break;
 
                 case T_thickness:
                     aText->SetTextThickness( parseBoardUnits( "text thickness" ) );
@@ -454,9 +469,17 @@ void PCB_PARSER::parseEDA_TEXT( EDA_TEXT* aText )
                     break;
 
                 default:
-                    Expecting( "size, bold, or italic" );
+                    Expecting( "face, size, thickness, bold, or italic" );
                 }
             }
+
+            if( !faceName.IsEmpty() )
+            {
+                // TODO: notify user about missing font
+                aText->SetFont(
+                    KIFONT::FONT::GetFont( faceName, aText->IsBold(), aText->IsItalic() ) );
+            }
+
             break;
 
         case T_justify:
@@ -468,19 +491,19 @@ void PCB_PARSER::parseEDA_TEXT( EDA_TEXT* aText )
                 switch( token )
                 {
                 case T_left:
-                    aText->SetHorizJustify( GR_TEXT_HJUSTIFY_LEFT );
+                    aText->Align( TEXT_ATTRIBUTES::H_LEFT );
                     break;
 
                 case T_right:
-                    aText->SetHorizJustify( GR_TEXT_HJUSTIFY_RIGHT );
+                    aText->Align( TEXT_ATTRIBUTES::H_RIGHT );
                     break;
 
                 case T_top:
-                    aText->SetVertJustify( GR_TEXT_VJUSTIFY_TOP );
+                    aText->Align( TEXT_ATTRIBUTES::V_TOP );
                     break;
 
                 case T_bottom:
-                    aText->SetVertJustify( GR_TEXT_VJUSTIFY_BOTTOM );
+                    aText->Align( TEXT_ATTRIBUTES::V_BOTTOM );
                     break;
 
                 case T_mirror:
@@ -495,12 +518,18 @@ void PCB_PARSER::parseEDA_TEXT( EDA_TEXT* aText )
 
             break;
 
+        case T_keep_upright:
+            {
+                aText->SetKeepUpright( parseBool() );
+                NeedRIGHT();
+                break;
+            }
+
         case T_hide:
             aText->SetVisible( false );
             break;
 
-        default:
-            Expecting( "font, justify, or hide" );
+        default: Expecting( "font, justify, keep_upright, or hide" );
         }
     }
 

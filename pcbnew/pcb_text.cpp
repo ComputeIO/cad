@@ -40,9 +40,7 @@
 using KIGFX::PCB_RENDER_SETTINGS;
 
 
-PCB_TEXT::PCB_TEXT( BOARD_ITEM* parent ) :
-    BOARD_ITEM( parent, PCB_TEXT_T ),
-    EDA_TEXT()
+PCB_TEXT::PCB_TEXT( BOARD_ITEM* parent ) : BOARD_ITEM( parent, PCB_TEXT_T ), EDA_TEXT()
 {
     SetMultilineAllowed( true );
 }
@@ -57,40 +55,38 @@ wxString PCB_TEXT::GetShownText( int aDepth ) const
 {
     BOARD* board = dynamic_cast<BOARD*>( GetParent() );
 
-    std::function<bool( wxString* )> pcbTextResolver =
-            [&]( wxString* token ) -> bool
+    std::function<bool( wxString* )> pcbTextResolver = [&]( wxString* token ) -> bool
+    {
+        if( token->IsSameAs( wxT( "LAYER" ) ) )
+        {
+            *token = GetLayerName();
+            return true;
+        }
+
+        if( token->Contains( ':' ) )
+        {
+            wxString    remainder;
+            wxString    ref = token->BeforeFirst( ':', &remainder );
+            BOARD_ITEM* refItem = board->GetItem( KIID( ref ) );
+
+            if( refItem && refItem->Type() == PCB_FOOTPRINT_T )
             {
-                if( token->IsSameAs( wxT( "LAYER" ) ) )
+                FOOTPRINT* refFP = static_cast<FOOTPRINT*>( refItem );
+
+                if( refFP->ResolveTextVar( &remainder, aDepth + 1 ) )
                 {
-                    *token = GetLayerName();
+                    *token = remainder;
                     return true;
                 }
+            }
+        }
+        return false;
+    };
 
-                if( token->Contains( ':' ) )
-                {
-                    wxString      remainder;
-                    wxString      ref = token->BeforeFirst( ':', &remainder );
-                    BOARD_ITEM*   refItem = board->GetItem( KIID( ref ) );
-
-                    if( refItem && refItem->Type() == PCB_FOOTPRINT_T )
-                    {
-                        FOOTPRINT* refFP = static_cast<FOOTPRINT*>( refItem );
-
-                        if( refFP->ResolveTextVar( &remainder, aDepth + 1 ) )
-                        {
-                            *token = remainder;
-                            return true;
-                        }
-                    }
-                }
-                return false;
-            };
-
-    std::function<bool( wxString* )> boardTextResolver =
-            [&]( wxString* token ) -> bool
-            {
-                return board->ResolveTextVar( token, aDepth + 1 );
-            };
+    std::function<bool( wxString* )> boardTextResolver = [&]( wxString* token ) -> bool
+    {
+        return board->ResolveTextVar( token, aDepth + 1 );
+    };
 
     wxString text = EDA_TEXT::GetShownText();
 
@@ -126,6 +122,12 @@ void PCB_TEXT::GetMsgPanelInfo( EDA_DRAW_FRAME* aFrame, std::vector<MSG_PANEL_IT
     aList.emplace_back( _( "Thickness" ), MessageTextFromValue( units, GetTextThickness() ) );
     aList.emplace_back( _( "Width" ), MessageTextFromValue( units, GetTextWidth() ) );
     aList.emplace_back( _( "Height" ), MessageTextFromValue( units, GetTextHeight() ) );
+
+    std::ostringstream alignment;
+    alignment << GetHorizontalAlignment();
+    aList.emplace_back( _( "Justification" ), alignment.str() );
+
+    aList.emplace_back( _( "Line Spacing" ), wxString::Format( "%f", GetLineSpacing() ) );
 }
 
 
@@ -155,7 +157,7 @@ bool PCB_TEXT::TextHitTest( const EDA_RECT& aRect, bool aContains, int aAccuracy
     if( aContains )
         return rect.Contains( GetBoundingBox() );
     else
-        return rect.Intersects( GetTextBox(), GetDrawRotation() );
+        return rect.Intersects( GetTextBox(), GetDrawRotation().AsTenthsOfADegree() );
 }
 
 
@@ -165,7 +167,8 @@ void PCB_TEXT::Rotate( const wxPoint& aRotCentre, double aAngle )
     RotatePoint( &pt, aRotCentre, aAngle );
     SetTextPos( pt );
 
-    SetTextAngle( GetTextAngle() + aAngle );
+    double angle = GetTextAngle() + aAngle;
+    SetTextAngle( angle );
 }
 
 
@@ -189,7 +192,7 @@ void PCB_TEXT::Flip( const wxPoint& aCentre, bool aFlipLeftRight )
 
 wxString PCB_TEXT::GetSelectMenuText( EDA_UNITS aUnits ) const
 {
-    return wxString::Format( _( "PCB Text '%s' on %s"), ShortenedShownText(), GetLayerName() );
+    return wxString::Format( _( "PCB Text '%s' on %s" ), ShortenedShownText(), GetLayerName() );
 }
 
 
@@ -209,7 +212,7 @@ void PCB_TEXT::SwapData( BOARD_ITEM* aImage )
 {
     assert( aImage->Type() == PCB_TEXT_T );
 
-    std::swap( *((PCB_TEXT*) this), *((PCB_TEXT*) aImage) );
+    std::swap( *( (PCB_TEXT*) this ), *( (PCB_TEXT*) aImage ) );
 }
 
 

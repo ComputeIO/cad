@@ -1252,17 +1252,6 @@ void SCH_SEXPR_PLUGIN::saveText( SCH_TEXT* aText, int aNestLevel )
 {
     wxCHECK_RET( aText != nullptr && m_out != nullptr, "" );
 
-    double angle;
-
-    switch( aText->GetLabelSpinStyle() )
-    {
-    case LABEL_SPIN_STYLE::RIGHT:    angle = 0.0;    break;
-    case LABEL_SPIN_STYLE::UP:       angle = 90.0;   break;
-    case LABEL_SPIN_STYLE::LEFT:     angle = 180.0;  break;
-    case LABEL_SPIN_STYLE::BOTTOM:   angle = 270.0;  break;
-    default:      wxFAIL;            angle = 0.0;    break;
-    }
-
     m_out->Print( aNestLevel, "(%s %s",
                   getTextTypeToken( aText->Type() ),
                   m_out->Quotew( aText->GetText() ).c_str() );
@@ -1275,7 +1264,7 @@ void SCH_SEXPR_PLUGIN::saveText( SCH_TEXT* aText, int aNestLevel )
         m_out->Print( 0, " (at %s %s %s)",
                       FormatInternalUnits( aText->GetPosition().x ).c_str(),
                       FormatInternalUnits( aText->GetPosition().y ).c_str(),
-                      FormatAngle( angle * 10.0 ).c_str() );
+                      FormatAngle( aText->GetTextAngle() ).c_str() );
     }
     else
     {

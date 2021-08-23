@@ -818,14 +818,15 @@ bool PDF_PLOTTER::EndPlot()
 void PDF_PLOTTER::Text( const wxPoint&              aPos,
                         const COLOR4D&              aColor,
                         const wxString&             aText,
-                        double                      aOrient,
+                        const EDA_ANGLE&            aOrient,
                         const wxSize&               aSize,
-                        enum EDA_TEXT_HJUSTIFY_T    aH_justify,
-                        enum EDA_TEXT_VJUSTIFY_T    aV_justify,
+                        TEXT_ATTRIBUTES::HORIZONTAL_ALIGNMENT aHorizontalAlignment,
+                        TEXT_ATTRIBUTES::VERTICAL_ALIGNMENT aVerticalAlignment,
                         int                         aWidth,
                         bool                        aItalic,
                         bool                        aBold,
                         bool                        aMultilineAllowed,
+                        KIFONT::FONT*               aFont,
                         void*                       aData )
 {
     // PDF files do not like 0 sized texts which create broken files.
@@ -843,10 +844,9 @@ void PDF_PLOTTER::Text( const wxPoint&              aPos,
     double ctm_a, ctm_b, ctm_c, ctm_d, ctm_e, ctm_f;
     double wideningFactor, heightFactor;
 
-    computeTextParameters( aPos, aText, aOrient, aSize, m_plotMirror, aH_justify,
-                           aV_justify, aWidth, aItalic, aBold,
-                           &wideningFactor, &ctm_a, &ctm_b, &ctm_c,
-                           &ctm_d, &ctm_e, &ctm_f, &heightFactor );
+    computeTextParameters( aPos, aText, aOrient, aSize, m_plotMirror, aHorizontalAlignment,
+                           aVerticalAlignment, aWidth, aItalic, aBold, &wideningFactor, &ctm_a,
+                           &ctm_b, &ctm_c, &ctm_d, &ctm_e, &ctm_f, &heightFactor );
 
     SetColor( aColor );
     SetCurrentLineWidth( aWidth, aData );
@@ -860,14 +860,66 @@ void PDF_PLOTTER::Text( const wxPoint&              aPos,
              fontname, heightFactor, render_mode, wideningFactor * 100 );
 
     // The text must be escaped correctly
-    std:: string txt_pdf = encodeStringForPlotter( aText );
+    std::string txt_pdf = encodeStringForPlotter( aText );
     fprintf( workFile, "%s Tj ET\n", txt_pdf.c_str() );
 
     // Restore the CTM
     fputs( "Q\n", workFile );
 
     // Plot the stroked text (if requested)
-    PLOTTER::Text( aPos, aColor, aText, aOrient, aSize, aH_justify, aV_justify, aWidth,
-                   aItalic, aBold, aMultilineAllowed );
+    PLOTTER::Text( aPos, aColor, aText, aOrient, aSize, aHorizontalAlignment, aVerticalAlignment,
+                   aWidth, aItalic, aBold, aMultilineAllowed, aFont, aData );
 }
 
+
+void PDF_PLOTTER::Text( const EDA_TEXT* aText, const COLOR4D& aColor, int aPenWidth, void* aData )
+{
+    // PDF files do not like 0 sized texts which create broken files.
+    if( aText->GetTextWidth() == 0 || aText->GetTextHeight() == 0 )
+        return;
+
+    // Also ignore empty text
+    if( aText->GetShownText().IsEmpty() )
+        return;
+
+    // Render phantom text (which will be searchable) behind the stroke font.  This won't
+    // be pixel-accurate, but it doesn't matter for searching.
+    int render_mode = 3; // invisible
+
+    const char* fontname = aText->IsItalic() ? ( aText->IsBold() ? "/KicadFontBI" : "/KicadFontI" )
+                                             : ( aText->IsBold() ? "/KicadFontB" : "/KicadFont" );
+
+    // Compute the copious transformation parameters of the Current Transform Matrix
+    double ctm_a, ctm_b, ctm_c, ctm_d, ctm_e, ctm_f;
+    double wideningFactor, heightFactor;
+
+    computeTextParameters( aText->GetTextPos(), aText->GetShownText(), aText->GetTextEdaAngle(),
+                           aText->GetTextSize(), m_plotMirror, aText->GetHorizontalAlignment(),
+                           aText->GetVerticalAlignment(), aText->GetTextWidth(), aText->IsItalic(),
+                           aText->IsBold(), &wideningFactor, &ctm_a, &ctm_b, &ctm_c, &ctm_d, &ctm_e,
+                           &ctm_f, &heightFactor );
+
+    int textWidth = aText->GetTextWidth();
+    if( !textWidth )
+        textWidth = m_renderSettings->GetDefaultPenWidth();
+    SetCurrentLineWidth( textWidth, aData );
+    SetColor( aColor );
+
+    /* We use the full CTM instead of the text matrix because the same
+       coordinate system will be used for the overlining. Also the %f
+       for the trig part of the matrix to avoid %g going in exponential
+       format (which is not supported) */
+    fprintf( workFile, "q %f %f %f %f %g %g cm BT %s %g Tf %d Tr %g Tz ",
+             ctm_a, ctm_b, ctm_c, ctm_d, ctm_e, ctm_f,
+             fontname, heightFactor, render_mode, wideningFactor * 100 );
+
+    // The text must be escaped correctly
+    std:: string txt_pdf = encodeStringForPlotter( aText->GetShownText() );
+    fprintf( workFile, "%s Tj ET\n", txt_pdf.c_str() );
+
+    // Restore the CTM
+    fputs( "Q\n", workFile );
+
+    // Plot the stroked text (if requested)
+    PLOTTER::Text( aText, aColor, aPenWidth, aData );
+}

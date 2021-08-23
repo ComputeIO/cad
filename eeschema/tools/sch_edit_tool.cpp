@@ -64,9 +64,9 @@
 #include <pgm_base.h>
 #include <settings/settings_manager.h>
 #include <symbol_editor_settings.h>
-#include <dialogs/dialog_text_and_label_properties.h>
+#include <dialogs/dialog_sch_text_properties.h>
+//#include <dialogs/dialog_text_and_label_properties.h>
 #include <core/kicad_algo.h>
-//#include <wx/filedlg.h>
 #include <wx/textdlg.h>
 
 
@@ -270,11 +270,11 @@ bool SCH_EDIT_TOOL::Init()
     static KICAD_T toLabelTypes[] = { SCH_GLOBAL_LABEL_T, SCH_HIER_LABEL_T, SCH_TEXT_T, EOT };
     auto toLabelCondition = E_C::Count( 1 ) && E_C::OnlyTypes( toLabelTypes );
 
-    static KICAD_T toHLableTypes[] = { SCH_LABEL_T, SCH_GLOBAL_LABEL_T, SCH_TEXT_T, EOT };
-    auto toHLabelCondition = E_C::Count( 1 ) && E_C::OnlyTypes( toHLableTypes );
+    static KICAD_T toHLabelTypes[] = { SCH_LABEL_T, SCH_GLOBAL_LABEL_T, SCH_TEXT_T, EOT };
+    auto toHLabelCondition = E_C::Count( 1 ) && E_C::OnlyTypes( toHLabelTypes );
 
-    static KICAD_T toGLableTypes[] = { SCH_LABEL_T, SCH_HIER_LABEL_T, SCH_TEXT_T, EOT };
-    auto toGLabelCondition = E_C::Count( 1 ) && E_C::OnlyTypes( toGLableTypes );
+    static KICAD_T toGLabelTypes[] = { SCH_LABEL_T, SCH_HIER_LABEL_T, SCH_TEXT_T, EOT };
+    auto toGLabelCondition = E_C::Count( 1 ) && E_C::OnlyTypes( toGLabelTypes );
 
     static KICAD_T toTextTypes[] = { SCH_LABEL_T, SCH_GLOBAL_LABEL_T, SCH_HIER_LABEL_T, EOT };
     auto toTextlCondition = E_C::Count( 1 ) && E_C::OnlyTypes( toTextTypes );
@@ -678,7 +678,10 @@ int SCH_EDIT_TOOL::Mirror( const TOOL_EVENT& aEvent )
         case SCH_HIER_LABEL_T:
         {
             SCH_TEXT* textItem = static_cast<SCH_TEXT*>( item );
-            textItem->MirrorSpinStyle( !vertical );
+            if( vertical )
+                textItem->MirrorAcrossXAxis();
+            else
+                textItem->MirrorAcrossYAxis();
             break;
         }
 
@@ -709,9 +712,9 @@ int SCH_EDIT_TOOL::Mirror( const TOOL_EVENT& aEvent )
             SCH_FIELD* field = static_cast<SCH_FIELD*>( item );
 
             if( vertical )
-                field->SetVertJustify( (EDA_TEXT_VJUSTIFY_T)-field->GetVertJustify() );
+                field->FlipVerticalAlignment();
             else
-                field->SetHorizJustify( (EDA_TEXT_HJUSTIFY_T)-field->GetHorizJustify() );
+                field->FlipHorizontalAlignment();
 
             // Now that we're re-justifying a field, they're no longer autoplaced.
             static_cast<SCH_ITEM*>( item->GetParent() )->ClearFieldsAutoplaced();
@@ -1398,7 +1401,7 @@ int SCH_EDIT_TOOL::Properties( const TOOL_EVENT& aEvent )
     case SCH_GLOBAL_LABEL_T:
     case SCH_HIER_LABEL_T:
     {
-        DIALOG_TEXT_AND_LABEL_PROPERTIES dlg( m_frame, (SCH_TEXT*) item );
+        DIALOG_SCH_TEXT_PROPERTIES dlg( m_frame, (SCH_TEXT*) item );
 
         // Must be quasi modal for syntax help
         if( dlg.ShowQuasiModal() == wxID_OK )
@@ -1514,7 +1517,6 @@ int SCH_EDIT_TOOL::ChangeTextType( const TOOL_EVENT& aEvent )
             bool             selected    = text->IsSelected();
             SCH_TEXT*        newtext     = nullptr;
             const wxPoint&   position    = text->GetPosition();
-            LABEL_SPIN_STYLE orientation = text->GetLabelSpinStyle();
             wxString         txt         = UnescapeString( text->GetText() );
 
             // There can be characters in a SCH_TEXT object that can break labels so we have to
@@ -1549,12 +1551,13 @@ int SCH_EDIT_TOOL::ChangeTextType( const TOOL_EVENT& aEvent )
             //
             newtext->SetFlags( text->GetEditFlags() );
             newtext->SetShape( text->GetShape() );
-            newtext->SetLabelSpinStyle( orientation );
+            newtext->SetAlignedAngle( text->GetTextEdaAngle() );
             newtext->SetTextSize( text->GetTextSize() );
             newtext->SetTextThickness( text->GetTextThickness() );
             newtext->SetItalic( text->IsItalic() );
             newtext->SetBold( text->IsBold() );
             newtext->SetIsDangling( text->IsDangling() );
+            newtext->SetFont( text->GetFont() );
 
             if( selected )
                 m_toolMgr->RunAction( EE_ACTIONS::removeItemFromSel, true, text );

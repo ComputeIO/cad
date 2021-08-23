@@ -21,14 +21,13 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
  */
 
-#ifndef DIALOG_TEXT_PROPERTIES_H
-#define DIALOG_TEXT_PROPERTIES_H
+#ifndef DIALOG_PCB_TEXT_PROPERTIES_H
+#define DIALOG_PCB_TEXT_PROPERTIES_H
 
 #include <widgets/unit_binder.h>
 #include <wx/valnum.h>
-
-#include <dialog_text_properties_base.h>
-
+#include <dialog_text_item_properties.h>
+#include <pcb_layer_box_selector.h>
 
 class PCB_BASE_EDIT_FRAME;
 class BOARD_ITEM;
@@ -37,12 +36,11 @@ class FP_TEXT;
 class PCB_TEXT;
 class SCINTILLA_TRICKS;
 
-
-class DIALOG_TEXT_PROPERTIES : public DIALOG_TEXT_PROPERTIES_BASE
+class DIALOG_PCB_TEXT_PROPERTIES : public DIALOG_TEXT_ITEM_PROPERTIES
 {
 public:
-    DIALOG_TEXT_PROPERTIES( PCB_BASE_EDIT_FRAME* aParent, BOARD_ITEM* aItem );
-    ~DIALOG_TEXT_PROPERTIES();
+    DIALOG_PCB_TEXT_PROPERTIES( PCB_BASE_EDIT_FRAME* aParent, BOARD_ITEM* aItem );
+    ~DIALOG_PCB_TEXT_PROPERTIES();
 
     /**
      * Used to select the variant part of some text fields (for instance, the question mark
@@ -58,9 +56,10 @@ private:
 private:
     PCB_BASE_EDIT_FRAME* m_Parent;
     BOARD_ITEM*          m_item;        // FP_TEXT or PCB_TEXT
-    EDA_TEXT*            m_edaText;     // always non-null
+    //EDA_TEXT*            m_edaText;     // always non-null
     FP_TEXT*             m_fpText;      // only non-null for FP_TEXTs
     PCB_TEXT*            m_pcbText;     // only non-null for PCB_TEXTs
+    PCB_LAYER_BOX_SELECTOR* m_pcbLayerSelector;
 
     UNIT_BINDER          m_textWidth;
     UNIT_BINDER          m_textHeight;
@@ -70,8 +69,13 @@ private:
     UNIT_BINDER          m_orientation;     // rotation in degrees
     double               m_OrientValue;
 
+    //void OnFontFieldChange( wxCommandEvent& aEvent ) override;
+
+    void OnOkClick( wxCommandEvent& aEvent ) override;
+
+    //void OnCharHook( wxKeyEvent& aEvent ) override;
+
     SCINTILLA_TRICKS*    m_scintillaTricks;
 };
 
-
-#endif //DIALOG_TEXT_PROPERTIES_H
+#endif //DIALOG_PCB_TEXT_PROPERTIES_H

@@ -69,9 +69,10 @@ public:
 
     void AddPolygon( const std::vector< VECTOR2D >& aVertices, double aWidth ) override;
 
-    void AddText( const VECTOR2D& aOrigin, const wxString& aText,
-            double aHeight, double aWidth, double aThickness, double aOrientation,
-            EDA_TEXT_HJUSTIFY_T aHJustify, EDA_TEXT_VJUSTIFY_T aVJustify ) override;
+    void AddText( const VECTOR2D& aOrigin, const wxString& aText, double aHeight, double aWidth,
+                  double aThickness, double aOrientation,
+                  TEXT_ATTRIBUTES::HORIZONTAL_ALIGNMENT aHJustify,
+                  TEXT_ATTRIBUTES::VERTICAL_ALIGNMENT   aVJustify ) override;
 
     void AddSpline( const VECTOR2D& aStart, const VECTOR2D& aBezierControl1,
                     const VECTOR2D& aBezierControl2, const VECTOR2D& aEnd,

@@ -185,6 +185,8 @@ public:
 
     EDA_ITEM* Clone() const override;
 
+    virtual int SchematicLayer() const override { return LAYER_SHEETLABEL; }
+
 private:
     int m_number;       ///< Label number use for saving sheet label to file.
                         ///< Sheet label numbering begins at 2.

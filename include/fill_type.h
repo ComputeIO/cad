@@ -20,6 +20,8 @@
 #ifndef FILL_TYPE_H
 #define FILL_TYPE_H
 
+#include <iostream>
+
 /**
  * The set of fill types used in plotting or drawing enclosed areas.
  *
@@ -33,5 +35,22 @@ enum class FILL_TYPE : int
                                   //   (not filled in B&W mode when plotting or printing)
     FILLED_WITH_COLOR =3          // Fill with a user-defined color (currently sheets only)
 };
+
+
+inline std::ostream& operator<<( std::ostream& os, FILL_TYPE aFillType )
+{
+    os << "FILL_TYPE::";
+
+    switch( aFillType )
+    {
+    case FILL_TYPE::NO_FILL: os << "NO_FILL"; break;
+    case FILL_TYPE::FILLED_SHAPE: os << "FILLED_SHAPE"; break;
+    case FILL_TYPE::FILLED_WITH_BG_BODYCOLOR: os << "FILLED_WITH_BG_BODYCOLOR"; break;
+    case FILL_TYPE::FILLED_WITH_COLOR: os << "FILLED_WITH_COLOR"; break;
+    default: os << "*Unknown*";
+    }
+
+    return os;
+}
 
 #endif

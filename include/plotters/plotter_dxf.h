@@ -152,16 +152,19 @@ public:
     virtual void Text( const wxPoint&              aPos,
                        const COLOR4D&              aColor,
                        const wxString&             aText,
-                       double                      aOrient,
+                       const EDA_ANGLE&            aOrient,
                        const wxSize&               aSize,
-                       enum EDA_TEXT_HJUSTIFY_T    aH_justify,
-                       enum EDA_TEXT_VJUSTIFY_T    aV_justify,
+                       TEXT_ATTRIBUTES::HORIZONTAL_ALIGNMENT aHorizontalAlignment,
+                       TEXT_ATTRIBUTES::VERTICAL_ALIGNMENT aVerticalAlignment,
                        int                         aWidth,
                        bool                        aItalic,
                        bool                        aBold,
                        bool                        aMultilineAllowed = false,
-                       void* aData = nullptr ) override;
+                       KIFONT::FONT*               aFont = nullptr,
+                       void*                       aData = nullptr ) override;
 
+    virtual void Text( const EDA_TEXT* aText, const COLOR4D& aColor, int aPenWidth,
+                       void* aData = nullptr ) override;
 
     /**
      * Set the units to use for plotting the DXF file.

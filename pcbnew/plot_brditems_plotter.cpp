@@ -384,7 +384,7 @@ void BRDITEMS_PLOTTER::PlotFootprintTextItem( const FP_TEXT* aTextMod, const COL
     // calculate some text parameters :
     wxSize  size      = aTextMod->GetTextSize();
     wxPoint pos       = aTextMod->GetTextPos();
-    double  orient    = aTextMod->GetDrawRotation();
+    EDA_ANGLE orient  = aTextMod->GetDrawRotation();
     int     thickness = aTextMod->GetEffectiveTextPenWidth();
 
     if( aTextMod->IsMirrored() )
@@ -407,9 +407,7 @@ void BRDITEMS_PLOTTER::PlotFootprintTextItem( const FP_TEXT* aTextMod, const COL
 
     m_plotter->SetCurrentLineWidth( thickness );
 
-    m_plotter->Text( pos, aColor, aTextMod->GetShownText(), orient, size,
-                     aTextMod->GetHorizJustify(), aTextMod->GetVertJustify(), thickness,
-                     aTextMod->IsItalic(), allow_bold, false, &gbr_metadata );
+    m_plotter->Text( aTextMod, aColor, &gbr_metadata );
 }
 
 
@@ -729,29 +727,7 @@ void BRDITEMS_PLOTTER::PlotPcbText( const PCB_TEXT* aText )
 
     m_plotter->SetCurrentLineWidth( thickness );
 
-    if( aText->IsMultilineAllowed() )
-    {
-        std::vector<wxPoint> positions;
-        wxArrayString strings_list;
-        wxStringSplit( shownText, strings_list, '\n' );
-        positions.reserve(  strings_list.Count() );
-
-        aText->GetLinePositions( positions, strings_list.Count() );
-
-        for( unsigned ii = 0; ii < strings_list.Count(); ii++ )
-        {
-            wxString& txt =  strings_list.Item( ii );
-            m_plotter->Text( positions[ii], color, txt, orient, size, aText->GetHorizJustify(),
-                             aText->GetVertJustify(), thickness, aText->IsItalic(),
-                             allow_bold, false, &gbr_metadata );
-        }
-    }
-    else
-    {
-        m_plotter->Text( pos, color, shownText, orient, size, aText->GetHorizJustify(),
-                         aText->GetVertJustify(), thickness, aText->IsItalic(), allow_bold,
-                         false, &gbr_metadata );
-    }
+    m_plotter->Text( aText, color, &gbr_metadata );
 }
 
 

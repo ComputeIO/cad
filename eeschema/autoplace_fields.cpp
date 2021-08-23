@@ -86,9 +86,13 @@ template<typename T> T round_n( const T& value, const T& n, bool aRoundUp )
 /**
  * Convert an integer to a horizontal justification; neg=L zero=C pos=R
  */
-EDA_TEXT_HJUSTIFY_T TO_HJUSTIFY( int x )
+TEXT_ATTRIBUTES::HORIZONTAL_ALIGNMENT TO_HJUSTIFY( int x )
 {
-    return static_cast<EDA_TEXT_HJUSTIFY_T>( x );
+    if( x < 0 )
+        return TEXT_ATTRIBUTES::H_LEFT;
+    if( x > 0 )
+        return TEXT_ATTRIBUTES::H_RIGHT;
+    return TEXT_ATTRIBUTES::H_CENTER;
 }
 
 
@@ -500,10 +504,10 @@ protected:
     void justifyField( SCH_FIELD* aField, SIDE aFieldSide )
     {
         // Justification is set twice to allow IsHorizJustifyFlipped() to work correctly.
-        aField->SetHorizJustify( TO_HJUSTIFY( -aFieldSide.x ) );
-        aField->SetHorizJustify( TO_HJUSTIFY( -aFieldSide.x
+        aField->Align( TO_HJUSTIFY( -aFieldSide.x ) );
+        aField->Align( TO_HJUSTIFY( -aFieldSide.x
                                                  * ( aField->IsHorizJustifyFlipped() ? -1 : 1 ) ) );
-        aField->SetVertJustify( GR_TEXT_VJUSTIFY_CENTER );
+        aField->Align( TEXT_ATTRIBUTES::V_CENTER );
     }
 
     /**
@@ -588,31 +592,22 @@ protected:
      */
     int fieldHorizPlacement( SCH_FIELD *aField, const EDA_RECT &aFieldBox )
     {
-        int field_hjust;
-        int field_xcoord;
+        TEXT_ATTRIBUTES::HORIZONTAL_ALIGNMENT field_hjust;
 
         if( aField->IsHorizJustifyFlipped() )
-            field_hjust = -aField->GetHorizJustify();
+            field_hjust = aField->GetAttributes().OppositeHorizontalAlignment();
         else
-            field_hjust = aField->GetHorizJustify();
+            field_hjust = aField->GetHorizontalAlignment();
 
         switch( field_hjust )
         {
-        case GR_TEXT_HJUSTIFY_LEFT:
-            field_xcoord = aFieldBox.GetLeft();
-            break;
-        case GR_TEXT_HJUSTIFY_CENTER:
-            field_xcoord = aFieldBox.Centre().x;
-            break;
-        case GR_TEXT_HJUSTIFY_RIGHT:
-            field_xcoord = aFieldBox.GetRight();
-            break;
+        case TEXT_ATTRIBUTES::H_LEFT: return aFieldBox.GetLeft();
+        case TEXT_ATTRIBUTES::H_CENTER: return aFieldBox.Centre().x;
+        case TEXT_ATTRIBUTES::H_RIGHT: return aFieldBox.GetRight();
         default:
-            wxFAIL_MSG( "Unexpected value for SCH_FIELD::GetHorizJustify()" );
-            field_xcoord = aFieldBox.Centre().x; // Most are centered
+            wxFAIL_MSG( "Unexpected value for SCH_FIELD horizontal alignment" );
+            return aFieldBox.Centre().x; // Most are centered
         }
-
-        return field_xcoord;
     }
 
     /**

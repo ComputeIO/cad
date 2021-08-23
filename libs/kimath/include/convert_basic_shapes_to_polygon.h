@@ -28,7 +28,7 @@
 #include <geometry/shape_poly_set.h>
 #include <geometry/geometry_utils.h>
 #include <wx/gdicmn.h>      // for wxPoint
-
+#include <eda_angle.h>
 
 // The chamfer positions of chamfered rect shape.
 // the position is relative to a pad with orientation = 0
@@ -158,9 +158,21 @@ void TransformTrapezoidToPolygon( SHAPE_POLY_SET& aCornerBuffer,
  */
 void TransformRoundChamferedRectToPolygon( SHAPE_POLY_SET& aCornerBuffer,
                                            const wxPoint& aPosition, const wxSize& aSize,
-                                           double aRotation, int aCornerRadius,
+                                           const EDA_ANGLE& aRotation, int aCornerRadius,
                                            double aChamferRatio, int aChamferCorners, int aInflate,
                                            int aError, ERROR_LOC aErrorLoc );
+
+inline void TransformRoundChamferedRectToPolygon( SHAPE_POLY_SET& aCornerBuffer,
+                                                  const wxPoint& aPosition, const wxSize& aSize,
+                                                  double aRotation, int aCornerRadius,
+                                                  double aChamferRatio, int aChamferCorners,
+                                                  int aInflate, int aError, ERROR_LOC aErrorLoc )
+{
+    TransformRoundChamferedRectToPolygon(
+            aCornerBuffer, aPosition, aSize, EDA_ANGLE( aRotation, EDA_ANGLE::RADIANS ),
+            aCornerRadius, aChamferRatio, aChamferCorners, aInflate, aError, aErrorLoc );
+}
+
 
 /**
  * Convert arc to multiple straight segments.

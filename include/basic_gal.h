@@ -27,9 +27,9 @@
 
 #include <eda_rect.h>
 
-#include <gal/stroke_font.h>
+//#include <gal/stroke_font.h>
 #include <gal/graphics_abstraction_layer.h>
-#include <newstroke_font.h>
+//#include <newstroke_font.h>
 
 class PLOTTER;
 
@@ -114,7 +114,18 @@ public:
      */
     virtual void DrawPolyline( const std::deque<VECTOR2D>& aPointList ) override;
 
+    virtual void DrawPolyline( const std::vector<VECTOR2D>& aPointList ) override;
+
     virtual void DrawPolyline( const VECTOR2D aPointList[], int aListSize ) override;
+
+    virtual void DrawPolyline( const SHAPE_LINE_CHAIN& aLineChain ) override;
+
+    /**
+     * Draw a polygon representing a font glyph.
+     *
+     * @param aGlyph is the glyph to be drawn.
+     */
+    virtual void DrawGlyph( const KIFONT::GLYPH& aGlyph, int aNth, int aTotal ) override;
 
     /**
      * Start and end points are defined as 2D-Vectors.
@@ -146,14 +157,14 @@ public:
     }
 
 private:
-    void doDrawPolyline( const std::vector<wxPoint>& aLocalPointList );
+    void doDrawPolyline( const std::vector<wxPoint>& aLocalPointList, bool aFill = false );
 
     // Apply the rotation/translation transform to aPoint
     const VECTOR2D transform( const VECTOR2D& aPoint ) const;
 
 public:
     wxDC* m_DC;
-    COLOR4D m_Color;
+    KIGFX::COLOR4D m_Color;
 
 private:
     TRANSFORM_PRM m_transform;

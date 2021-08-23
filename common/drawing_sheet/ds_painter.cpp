@@ -235,14 +235,13 @@ void KIGFX::DS_PAINTER::draw( const DS_DRAW_ITEM_TEXT* aItem, int aLayer ) const
                                   m_renderSettings.GetDefaultPenWidth() );
 
     m_gal->Save();
-    m_gal->Translate( position );
-    m_gal->Rotate( -aItem->GetTextAngle() * M_PI / 1800.0 );
-    m_gal->SetStrokeColor( m_renderSettings.GetColor( aItem, aLayer ) );
     m_gal->SetLineWidth( penWidth );
     m_gal->SetTextAttributes( aItem );
     m_gal->SetIsFill( false );
     m_gal->SetIsStroke( true );
-    m_gal->StrokeText( aItem->GetShownText(), VECTOR2D( 0, 0 ), 0.0 );
+    m_gal->SetStrokeColor( m_renderSettings.GetColor( aItem, aLayer ) );
+    m_gal->Rotate( -aItem->GetTextAngle() * M_PI / 1800.0 );
+    aItem->Draw( m_gal );
     m_gal->Restore();
 }
 

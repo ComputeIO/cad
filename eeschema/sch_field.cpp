@@ -203,7 +203,6 @@ void SCH_FIELD::Print( const RENDER_SETTINGS* aSettings, const wxPoint& aOffset 
 {
     wxDC*    DC = aSettings->GetPrintDC();
     COLOR4D  color = aSettings->GetLayerColor( IsForceVisible() ? LAYER_HIDDEN : m_layer );
-    int      orient;
     wxPoint  textpos;
     int      penWidth = GetEffectiveTextPenWidth( aSettings->GetDefaultPenWidth() );
 
@@ -211,7 +210,7 @@ void SCH_FIELD::Print( const RENDER_SETTINGS* aSettings, const wxPoint& aOffset 
         return;
 
     // Calculate the text orientation according to the symbol orientation.
-    orient = GetTextAngle();
+    EDA_ANGLE orient = GetTextEdaAngle();
 
     if( m_parent && m_parent->Type() == SCH_SYMBOL_T )
     {
@@ -219,10 +218,10 @@ void SCH_FIELD::Print( const RENDER_SETTINGS* aSettings, const wxPoint& aOffset 
 
         if( parentSymbol && parentSymbol->GetTransform().y1 )  // Rotate symbol 90 degrees.
         {
-            if( orient == TEXT_ANGLE_HORIZ )
-                orient = TEXT_ANGLE_VERT;
+            if( orient == EDA_ANGLE::ANGLE_0 )
+                orient = EDA_ANGLE::ANGLE_90;
             else
-                orient = TEXT_ANGLE_HORIZ;
+                orient = EDA_ANGLE::ANGLE_0;
         }
     }
 
@@ -239,8 +238,8 @@ void SCH_FIELD::Print( const RENDER_SETTINGS* aSettings, const wxPoint& aOffset 
     EDA_RECT boundaryBox = GetBoundingBox();
     textpos = boundaryBox.Centre() + aOffset;
 
-    GRText( DC, textpos, color, GetShownText(), orient, GetTextSize(), GR_TEXT_HJUSTIFY_CENTER,
-            GR_TEXT_VJUSTIFY_CENTER, penWidth, IsItalic(), IsBold() );
+    GRText( DC, textpos, color, GetShownText(), orient, GetTextSize(), TEXT_ATTRIBUTES::H_CENTER,
+            TEXT_ATTRIBUTES::V_CENTER, penWidth, IsItalic(), IsBold() );
 }
 
 
@@ -310,11 +309,11 @@ bool SCH_FIELD::IsHorizJustifyFlipped() const
     wxPoint render_center = GetBoundingBox().Centre();
     wxPoint pos = GetPosition();
 
-    switch( GetHorizJustify() )
+    switch( GetHorizontalAlignment() )
     {
-    case GR_TEXT_HJUSTIFY_LEFT:
+    case TEXT_ATTRIBUTES::H_LEFT:
         return render_center.x < pos.x;
-    case GR_TEXT_HJUSTIFY_RIGHT:
+    case TEXT_ATTRIBUTES::H_RIGHT:
         return render_center.x > pos.x;
     default:
         return false;
@@ -677,12 +676,15 @@ void SCH_FIELD::Plot( PLOTTER* aPlotter ) const
      *   GetBoundingBox to know the text coordinate considered as centered
      */
     EDA_RECT BoundaryBox = GetBoundingBox();
-    EDA_TEXT_HJUSTIFY_T hjustify = GR_TEXT_HJUSTIFY_CENTER;
-    EDA_TEXT_VJUSTIFY_T vjustify = GR_TEXT_VJUSTIFY_CENTER;
     wxPoint  textpos = BoundaryBox.Centre();
 
-    aPlotter->Text( textpos, color, GetShownText(), orient, GetTextSize(),  hjustify, vjustify,
-                    penWidth, IsItalic(), IsBold() );
+#if 0
+    aPlotter->Text( textpos, color, GetShownText(), orient, GetTextSize(),
+                    TEXT_ATTRIBUTES::H_CENTER, TEXT_ATTRIBUTES::V_CENTER, penWidth, IsItalic(),
+                    IsBold() );
+#else
+    aPlotter->Text( this, color );
+#endif
 }
 
 

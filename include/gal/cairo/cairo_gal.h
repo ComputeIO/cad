@@ -107,6 +107,9 @@ public:
     void DrawPolygon( const SHAPE_POLY_SET& aPolySet, bool aStrokeTriangulation = false ) override;
     void DrawPolygon( const SHAPE_LINE_CHAIN& aPolySet ) override;
 
+    /// @copydoc GAL::DrawGlyph()
+    virtual void DrawGlyph( const KIFONT::GLYPH& aPolySet, int aNth, int aTotal ) override;
+
     /// @copydoc GAL::DrawCurve()
     void DrawCurve( const VECTOR2D& startPoint, const VECTOR2D& controlPointA,
                     const VECTOR2D& controlPointB, const VECTOR2D& endPoint,

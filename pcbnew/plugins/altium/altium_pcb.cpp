@@ -1211,12 +1211,12 @@ void ALTIUM_PCB::HelperParseDimensions6Radial(const ADIMENSION6 &aElem)
     dimension->Text().SetTextSize( wxSize( aElem.textheight, aElem.textheight ) );
     dimension->Text().SetBold( aElem.textbold );
     dimension->Text().SetItalic( aElem.textitalic );
-    dimension->Text().SetVertJustify( EDA_TEXT_VJUSTIFY_T::GR_TEXT_VJUSTIFY_BOTTOM );
-    dimension->Text().SetHorizJustify( EDA_TEXT_HJUSTIFY_T::GR_TEXT_HJUSTIFY_LEFT );
+    dimension->Text().Align( TEXT_ATTRIBUTES::V_BOTTOM );
+    dimension->Text().Align( TEXT_ATTRIBUTES::H_LEFT );
 
     int yAdjust = dimension->Text().GetCenter().y - dimension->Text().GetPosition().y;
     dimension->Text().Move( wxPoint( 0, yAdjust + aElem.textgap ) );
-    dimension->Text().SetVertJustify( EDA_TEXT_VJUSTIFY_T::GR_TEXT_VJUSTIFY_CENTER );
+    dimension->Text().Align( TEXT_ATTRIBUTES::V_CENTER );
 }
 
 
@@ -1295,8 +1295,7 @@ void ALTIUM_PCB::HelperParseDimensions6Leader( const ADIMENSION6& aElem )
     text->SetLayer( klayer );
     text->SetTextSize( wxSize( aElem.textheight, aElem.textheight ) ); // TODO: parse text width
     text->SetTextThickness( aElem.textlinewidth );
-    text->SetHorizJustify( EDA_TEXT_HJUSTIFY_T::GR_TEXT_HJUSTIFY_LEFT );
-    text->SetVertJustify( EDA_TEXT_VJUSTIFY_T::GR_TEXT_VJUSTIFY_BOTTOM );
+    text->Align( TEXT_ATTRIBUTES::H_LEFT, TEXT_ATTRIBUTES::V_BOTTOM );
 }
 
 
@@ -2765,8 +2764,7 @@ void ALTIUM_PCB::ParseTexts6Data( const CFB::CompoundFileReader& aReader,
 
         if( elem.isDesignator || elem.isComment ) // That's just a bold assumption
         {
-            tx->SetHorizJustify( EDA_TEXT_HJUSTIFY_T::GR_TEXT_HJUSTIFY_LEFT );
-            tx->SetVertJustify( EDA_TEXT_VJUSTIFY_T::GR_TEXT_VJUSTIFY_BOTTOM );
+            tx->Align( TEXT_ATTRIBUTES::H_LEFT, TEXT_ATTRIBUTES::V_BOTTOM );
         }
         else
         {
@@ -2775,17 +2773,17 @@ void ALTIUM_PCB::ParseTexts6Data( const CFB::CompoundFileReader& aReader,
             case ALTIUM_TEXT_POSITION::LEFT_TOP:
             case ALTIUM_TEXT_POSITION::LEFT_CENTER:
             case ALTIUM_TEXT_POSITION::LEFT_BOTTOM:
-                tx->SetHorizJustify( EDA_TEXT_HJUSTIFY_T::GR_TEXT_HJUSTIFY_LEFT );
+                tx->Align( TEXT_ATTRIBUTES::H_LEFT );
                 break;
             case ALTIUM_TEXT_POSITION::CENTER_TOP:
             case ALTIUM_TEXT_POSITION::CENTER_CENTER:
             case ALTIUM_TEXT_POSITION::CENTER_BOTTOM:
-                tx->SetHorizJustify( EDA_TEXT_HJUSTIFY_T::GR_TEXT_HJUSTIFY_CENTER );
+                tx->Align( TEXT_ATTRIBUTES::H_CENTER );
                 break;
             case ALTIUM_TEXT_POSITION::RIGHT_TOP:
             case ALTIUM_TEXT_POSITION::RIGHT_CENTER:
             case ALTIUM_TEXT_POSITION::RIGHT_BOTTOM:
-                tx->SetHorizJustify( EDA_TEXT_HJUSTIFY_T::GR_TEXT_HJUSTIFY_RIGHT );
+                tx->Align( TEXT_ATTRIBUTES::H_RIGHT );
                 break;
             default:
                 wxLogError( "Unexpected horizontal Text Position. This should never happen." );
@@ -2797,17 +2795,17 @@ void ALTIUM_PCB::ParseTexts6Data( const CFB::CompoundFileReader& aReader,
             case ALTIUM_TEXT_POSITION::LEFT_TOP:
             case ALTIUM_TEXT_POSITION::CENTER_TOP:
             case ALTIUM_TEXT_POSITION::RIGHT_TOP:
-                tx->SetVertJustify( EDA_TEXT_VJUSTIFY_T::GR_TEXT_VJUSTIFY_TOP );
+                tx->Align( TEXT_ATTRIBUTES::V_TOP );
                 break;
             case ALTIUM_TEXT_POSITION::LEFT_CENTER:
             case ALTIUM_TEXT_POSITION::CENTER_CENTER:
             case ALTIUM_TEXT_POSITION::RIGHT_CENTER:
-                tx->SetVertJustify( EDA_TEXT_VJUSTIFY_T::GR_TEXT_VJUSTIFY_CENTER );
+                tx->Align( TEXT_ATTRIBUTES::V_CENTER );
                 break;
             case ALTIUM_TEXT_POSITION::LEFT_BOTTOM:
             case ALTIUM_TEXT_POSITION::CENTER_BOTTOM:
             case ALTIUM_TEXT_POSITION::RIGHT_BOTTOM:
-                tx->SetVertJustify( EDA_TEXT_VJUSTIFY_T::GR_TEXT_VJUSTIFY_BOTTOM );
+                tx->Align( TEXT_ATTRIBUTES::V_BOTTOM );
                 break;
             default:
                 wxLogError( "Unexpected vertical text position. This should never happen." );

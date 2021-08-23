@@ -27,6 +27,7 @@
 
 #include <view/view.h>
 
+using namespace KIGFX;
 using namespace KIGFX::PREVIEW;
 
 

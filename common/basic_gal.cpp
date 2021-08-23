@@ -34,6 +34,9 @@
 #include <gr_basic.h>
 #include <plotters/plotter.h>
 #include <trigo.h>
+#include <macros.h>
+#include <geometry/shape_poly_set.h>
+#include <font/triangulate.h>
 
 #include <basic_gal.h>
 
@@ -53,7 +56,7 @@ const VECTOR2D BASIC_GAL::transform( const VECTOR2D& aPoint ) const
 }
 
 
-void BASIC_GAL::doDrawPolyline( const std::vector<wxPoint>& aLocalPointList )
+void BASIC_GAL::doDrawPolyline( const std::vector<wxPoint>& aLocalPointList, bool aFill )
 {
     if( m_DC )
     {
@@ -66,34 +69,54 @@ void BASIC_GAL::doDrawPolyline( const std::vector<wxPoint>& aLocalPointList )
         {
             for( unsigned ii = 1; ii < aLocalPointList.size(); ++ii )
             {
-                GRCSegm( m_isClipped ? &m_clipBox : nullptr, m_DC, aLocalPointList[ ii - 1],
+                GRCSegm( m_isClipped ? &m_clipBox : nullptr, m_DC, aLocalPointList[ii - 1],
                          aLocalPointList[ii], GetLineWidth(), m_Color );
             }
         }
     }
     else if( m_plotter )
     {
-        m_plotter->MoveTo( aLocalPointList[0] );
-
-        for( unsigned ii = 1; ii < aLocalPointList.size(); ii++ )
+        if( aFill )
         {
-            m_plotter->LineTo( aLocalPointList[ii] );
+            m_plotter->PlotPoly( aLocalPointList, FILL_TYPE::FILLED_SHAPE );
         }
+        else
+        {
+            m_plotter->MoveTo( aLocalPointList[0] );
 
+            for( unsigned ii = 1; ii < aLocalPointList.size(); ii++ )
+            {
+                m_plotter->LineTo( aLocalPointList[ii] );
+            }
+        }
         m_plotter->PenFinish();
     }
     else if( m_callback )
     {
         for( unsigned ii = 1; ii < aLocalPointList.size(); ii++ )
         {
-            m_callback( aLocalPointList[ ii - 1].x, aLocalPointList[ ii - 1].y,
-                        aLocalPointList[ii].x, aLocalPointList[ii].y, m_callbackData );
+            m_callback( aLocalPointList[ii - 1].x, aLocalPointList[ii - 1].y, aLocalPointList[ii].x,
+                        aLocalPointList[ii].y, m_callbackData );
         }
     }
 }
 
 
 void BASIC_GAL::DrawPolyline( const std::deque<VECTOR2D>& aPointList )
+{
+    if( aPointList.size() < 2 )
+        return;
+
+    std::vector<wxPoint> polyline_corners;
+
+    for( const VECTOR2D& pt : aPointList )
+        polyline_corners.emplace_back( (wxPoint) transform( pt ) );
+
+    doDrawPolyline( polyline_corners );
+}
+
+
+void BASIC_GAL::DrawPolyline( const std::vector<VECTOR2D>& aPointList )
 {
     if( aPointList.size() < 2 )
         return;
@@ -115,7 +138,26 @@ void BASIC_GAL::DrawPolyline( const VECTOR2D aPointList[], int aListSize )
     std::vector<wxPoint> polyline_corners;
 
     for( int ii = 0; ii < aListSize; ++ii )
-        polyline_corners.emplace_back( (wxPoint) transform( aPointList[ ii ] ) );
+        polyline_corners.emplace_back( (wxPoint) transform( aPointList[ii] ) );
+
+    doDrawPolyline( polyline_corners );
+}
+
+
+void BASIC_GAL::DrawPolyline( const SHAPE_LINE_CHAIN& aLineChain )
+{
+    if( aLineChain.PointCount() < 2 )
+        return;
+
+    std::vector<wxPoint> polyline_corners;
+
+    for( int i = 0; i < aLineChain.PointCount(); i++ )
+    {
+        polyline_corners.emplace_back( (wxPoint) transform( aLineChain.CPoint( i ) ) );
+    }
+
+    if( aLineChain.IsClosed() )
+        polyline_corners.emplace_back( (wxPoint) transform( aLineChain.CPoint( 0 ) ) );
 
     doDrawPolyline( polyline_corners );
 }
@@ -148,5 +190,133 @@ void BASIC_GAL::DrawLine( const VECTOR2D& aStartPoint, const VECTOR2D& aEndPoint
     else if( m_callback )
     {
         m_callback( startVector.x, startVector.y, endVector.x, endVector.y, m_callbackData );
+    }
+}
+
+
+void BASIC_GAL::DrawGlyph( const KIFONT::GLYPH& aGlyph, int aNth, int aTotal )
+{
+    if( m_plotter )
+    {
+        switch( m_plotter->GetPlotterType() )
+        {
+        case PLOT_FORMAT::GERBER:
+            m_plotter->SetLayerPolarity( true );
+            KI_FALLTHROUGH;
+
+        case PLOT_FORMAT::POST:
+        case PLOT_FORMAT::PDF:
+        case PLOT_FORMAT::DXF:
+        case PLOT_FORMAT::HPGL:
+        case PLOT_FORMAT::SVG:
+        {
+            if( aGlyph.IsStroke() )
+            {
+                for( auto pointList : aGlyph.GetPoints() )
+                {
+                    DrawPolyline( pointList );
+                }
+                m_plotter->PenFinish();
+            }
+            else
+            {
+                // TODO move this to the appropriate plotter (PDF?) class
+                auto triangleCallback = [&]( int aPolygonIndex, const VECTOR2D& aVertex1,
+                                             const VECTOR2D& aVertex2, const VECTOR2D& aVertex3,
+                                             void* aCallbackData )
+                {
+                    std::vector<wxPoint> corners;
+                    corners.emplace_back( (wxPoint) transform( aVertex1 ) );
+                    corners.emplace_back( (wxPoint) transform( aVertex2 ) );
+                    corners.emplace_back( (wxPoint) transform( aVertex3 ) );
+                    m_plotter->PlotPoly( corners, FILL_TYPE::FILLED_SHAPE, 0 );
+                };
+
+                Triangulate( aGlyph.GetPolylist(), triangleCallback );
+                m_plotter->PenFinish();
+            }
+        }
+        break;
+
+        default:
+            // TODO: some sort of error notification might be handy
+            break;
+        }
+    }
+    else
+    {
+#if 1
+        if( aGlyph.IsStroke() )
+        {
+            for( auto pointList : aGlyph.GetPoints() )
+            {
+                DrawPolyline( pointList );
+            }
+        }
+        else
+        {
+            if( m_DC )
+            {
+                auto           polylist = aGlyph.GetPolylist();
+                const wxBrush& saveBrush = m_DC->GetBrush();
+
+                for( int iOutline = 0; iOutline < polylist.OutlineCount(); ++iOutline )
+                {
+                    const SHAPE_LINE_CHAIN& outline = polylist.COutline( iOutline );
+                    std::vector<wxPoint>    outline_with_transform;
+
+                    for( int i = 0; i < outline.PointCount(); i++ )
+                        outline_with_transform.emplace_back(
+                                (wxPoint) transform( outline.CPoint( i ) ) );
+
+                    m_DC->SetBrush( saveBrush );
+                    doDrawPolyline( outline_with_transform, true );
+
+                    m_DC->SetBrush( *wxWHITE_BRUSH );
+                    for( int iHole = 0; iHole < polylist.HoleCount( iOutline ); iHole++ )
+                    {
+                        const SHAPE_LINE_CHAIN& hole = polylist.CHole( iOutline, iHole );
+                        std::vector<wxPoint>    hole_with_transform;
+                        for( int i = 0; i < hole.PointCount(); i++ )
+                            hole_with_transform.emplace_back(
+                                    (wxPoint) transform( hole.CPoint( i ) ) );
+
+                        doDrawPolyline( hole_with_transform, true );
+                    }
+                }
+
+                m_DC->SetBrush( saveBrush );
+            }
+        }
+#else
+        // TODO move this to the appropriate plotter (PDF?) class
+        auto triangleCallback = [&]( int aPolygonIndex, const VECTOR2D& aVertex1,
+                                     const VECTOR2D& aVertex2, const VECTOR2D& aVertex3,
+                                     void* aCallbackData )
+        {
+            std::vector<wxPoint> corners;
+            corners.emplace_back( (wxPoint) transform( aVertex1 ) );
+            corners.emplace_back( (wxPoint) transform( aVertex2 ) );
+            corners.emplace_back( (wxPoint) transform( aVertex3 ) );
+            // m_plotter->PlotPoly( corners, FILL_TYPE::FILLED_SHAPE, 0 );
+            doDrawPolyline( corners, true );
+        };
+
+        if( m_DC )
+        {
+            const wxPen&   savePen = m_DC->GetPen();
+            const wxBrush& saveBrush = m_DC->GetBrush();
+            m_DC->SetPen( wxNullPen );
+            // TODO: support other colors
+            m_DC->SetBrush( *wxBLACK_BRUSH );
+            Triangulate( aPolySet, triangleCallback );
+            m_DC->SetPen( savePen );
+            m_DC->SetBrush( saveBrush );
+        }
+        else
+        {
+            Triangulate( aPolySet, triangleCallback );
+        }
+#endif
     }
 }

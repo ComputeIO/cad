@@ -46,7 +46,8 @@
 #include <schematic.h>
 #include <symbol_library.h>
 #include <eeschema_settings.h>
-#include <dialogs/dialog_text_and_label_properties.h>
+#include <dialogs/dialog_sch_text_properties.h>
+//#include <dialogs/dialog_text_and_label_properties.h>
 #include <dialogs/dialog_line_wire_bus_properties.h>
 #include <dialogs/dialog_junction_props.h>
 #include <dialogs/dialog_sheet_pin_properties.h>
@@ -59,14 +60,9 @@ SCH_DRAWING_TOOLS::SCH_DRAWING_TOOLS() :
         EE_TOOL_BASE<SCH_EDIT_FRAME>( "eeschema.InteractiveDrawing" ),
         m_lastSheetPinType( PINSHEETLABEL_SHAPE::PS_INPUT ),
         m_lastGlobalLabelShape( PINSHEETLABEL_SHAPE::PS_INPUT ),
-        m_lastTextOrientation( LABEL_SPIN_STYLE::RIGHT ),
-        m_lastTextBold( false ),
-        m_lastTextItalic( false ),
-        m_inPlaceSymbol( false ),
-        m_inPlaceImage( false ),
-        m_inSingleClickPlace( false ),
-        m_inTwoClickPlace( false ),
-        m_inDrawSheet( false )
+        m_lastTextAngle( EDA_ANGLE::ANGLE_0 ),
+        m_lastTextHorizontalAlignment( TEXT_ATTRIBUTES::H_LEFT ),
+        m_lastTextVerticalAlignment( TEXT_ATTRIBUTES::V_BOTTOM )
 {
 }
 
@@ -895,11 +891,14 @@ SCH_TEXT* SCH_DRAWING_TOOLS::createNewText( const VECTOR2I& aPosition, int aType
     textItem->SetParent( schematic );
     textItem->SetBold( m_lastTextBold );
     textItem->SetItalic( m_lastTextItalic );
-    textItem->SetLabelSpinStyle( m_lastTextOrientation );
+    textItem->SetTextAngle( m_lastTextAngle );
+    textItem->Align( m_lastTextHorizontalAlignment );
+    textItem->Align( m_lastTextVerticalAlignment );
+    textItem->SetFont( m_lastFont );
     textItem->SetTextSize( wxSize( settings.m_DefaultTextSize, settings.m_DefaultTextSize ) );
     textItem->SetFlags( IS_NEW | IS_MOVING );
 
-    DIALOG_TEXT_AND_LABEL_PROPERTIES dlg( m_frame, textItem );
+    DIALOG_SCH_TEXT_PROPERTIES dlg( m_frame, textItem );
 
     // Must be quasi modal for syntax help
     if( dlg.ShowQuasiModal() != wxID_OK || NoPrintableChars( textItem->GetText() ) )
@@ -910,7 +909,10 @@ SCH_TEXT* SCH_DRAWING_TOOLS::createNewText( const VECTOR2I& aPosition, int aType
 
     m_lastTextBold = textItem->IsBold();
     m_lastTextItalic = textItem->IsItalic();
-    m_lastTextOrientation = textItem->GetLabelSpinStyle();
+    m_lastTextAngle = textItem->GetTextEdaAngle();
+    m_lastTextHorizontalAlignment = textItem->GetHorizontalAlignment();
+    m_lastTextVerticalAlignment = textItem->GetVerticalAlignment();
+    m_lastFont = textItem->GetFont();
 
     if( textItem->Type() == SCH_GLOBAL_LABEL_T || textItem->Type() == SCH_HIER_LABEL_T )
         m_lastGlobalLabelShape = textItem->GetShape();

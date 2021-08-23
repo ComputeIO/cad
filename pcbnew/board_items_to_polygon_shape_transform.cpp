@@ -294,15 +294,15 @@ void FP_TEXT::TransformTextShapeWithClearanceToPolygon( SHAPE_POLY_SET& aCornerB
     prms.m_cornerBuffer = &aCornerBuffer;
     prms.m_textWidth  = GetEffectiveTextPenWidth() + ( 2 * aClearance );
     prms.m_error = aError;
+#if 0
     wxSize size = GetTextSize();
     int  penWidth = GetEffectiveTextPenWidth();
 
     if( IsMirrored() )
         size.x = -size.x;
+#endif
 
-    GRText( nullptr, GetTextPos(), BLACK, GetShownText(), GetDrawRotation(), size,
-            GetHorizJustify(), GetVertJustify(), penWidth, IsItalic(), IsBold(),
-            addTextSegmToPoly, &prms );
+    GRText( this, BLACK, addTextSegmToPoly, &prms );
 }
 
 
@@ -316,7 +316,7 @@ void FP_TEXT::TransformShapeWithClearanceToPolygon( SHAPE_POLY_SET& aCornerBuffe
     const FOOTPRINT* parentFootprint = static_cast<const FOOTPRINT*>( m_parent );
 
     if( parentFootprint )
-        aCornerBuffer.Rotate( DECIDEG2RAD( GetDrawRotation() ), GetTextPos() );
+        aCornerBuffer.Rotate( GetDrawRotation().AsRadians(), GetTextPos() );
 }
 
 
@@ -386,20 +386,20 @@ void PCB_TEXT::TransformTextShapeWithClearanceToPolygon( SHAPE_POLY_SET& aCorner
                                                          PCB_LAYER_ID aLayer, int aClearanceValue,
                                                          int aError, ERROR_LOC aErrorLoc ) const
 {
+#if 0
     wxSize size = GetTextSize();
 
     if( IsMirrored() )
         size.x = -size.x;
+#endif
 
     int  penWidth = GetEffectiveTextPenWidth();
 
     prms.m_cornerBuffer = &aCornerBuffer;
     prms.m_textWidth = GetEffectiveTextPenWidth() + ( 2 * aClearanceValue );
     prms.m_error = aError;
-    COLOR4D color;  // not actually used, but needed by GRText
 
-    GRText( nullptr, GetTextPos(), color, GetShownText(), GetTextAngle(), size, GetHorizJustify(),
-            GetVertJustify(), penWidth, IsItalic(), IsBold(), addTextSegmToPoly, &prms );
+    GRText( this, addTextSegmToPoly, &prms );
 }
 
 
