@@ -33,9 +33,7 @@
 
 [Component]     Virtual
 [Manufacturer]  KiCad    
-[Package]
-# variable      typ             min             max 
-R_pkg           1m              0.8m            2m
+[Package]      R_pkg           1m              0.8m            2m 
 L_pkg           1m              0.8m            2m
 C_pkg           1m              0.8m            2m
 

@@ -1,5 +1,6 @@
 #include <wx/string.h>
 #include <wx/filename.h>
+#include <reporter.h>
 //#include "common.h"
 #include <iostream>
 #include <fstream>
@@ -381,11 +382,14 @@ private:
 
     IBIS_PARSER_CONTINUE m_continue = IBIS_PARSER_CONTINUE::NONE;
     IBIS_PARSER_CONTEXT  m_context = IBIS_PARSER_CONTEXT::HEADER;
+
+    REPORTER *m_reporter  = new STDOUT_REPORTER();
 };
 
 bool IbisParser::parseFile( wxFileName aFileName, IbisFile* aFile )
 {
     m_ibisFile = aFile;
+    wxString err_msg;
 
     std::ifstream ibisFile;
     ibisFile.open( aFileName.GetFullName() );
@@ -395,7 +399,6 @@ bool IbisParser::parseFile( wxFileName aFileName, IbisFile* aFile )
         long          size = pbuf->pubseekoff( 0, ibisFile.end );
         pbuf->pubseekoff( 0, ibisFile.beg ); // rewind
 
-        std::cout << size << std::endl;
         m_buffer = new char[size];
         pbuf->sgetn( m_buffer, size );
 
@@ -405,13 +408,15 @@ bool IbisParser::parseFile( wxFileName aFileName, IbisFile* aFile )
         {
             if( !GetNextLine() )
             {
-                std::cout << "Unexpected end of file. Missing [END] ?" << std::endl;
+                m_reporter->Report( "Unexpected end of file. Missing [END] ?", RPT_SEVERITY_ERROR );
                 return false;
             }
             PrintLine();
             if( !onNewLine() )
             {
-                std::cout << "Error at line " << m_lineCounter << std::endl;
+                err_msg = wxString("Error at line ");
+                err_msg << m_lineCounter;
+                m_reporter->Report( err_msg, RPT_SEVERITY_ERROR );
                 return false;
             }
             if( m_context == IBIS_PARSER_CONTEXT::END )
@@ -422,7 +427,9 @@ bool IbisParser::parseFile( wxFileName aFileName, IbisFile* aFile )
     }
     else
     {
-        std::cout << "Could not open file " << aFileName.GetFullName() << std::endl;
+        err_msg = wxString("Could not open file ");
+        err_msg += aFileName.GetFullName();
+        m_reporter->Report( err_msg, RPT_SEVERITY_ERROR );
     }
     return true;
 }
@@ -484,7 +491,6 @@ bool IbisParser::readDvdt( wxString aString, dvdt* aDest )
     else
     {
         status = false;
-        std::cerr << "Can't read ramp value" << std::endl;
     }
 
     return status;
@@ -584,7 +590,7 @@ bool IbisParser::GetNextLine()
 
     if( i == IBIS_MAX_LINE_LENGTH )
     {
-        std::cerr << "Line too long" << std::endl;
+        m_reporter->Report( "Line exceeds maximum length.", RPT_SEVERITY_ERROR );
         return false;
     }
 
@@ -710,7 +716,7 @@ bool IbisParser::ChangeCommentChar()
            || c == '>' || c == '?' || c == '@' || c == '\\' || c == '^' || c == '`' || c == '{'
            || c == '|' || c == '}' || c == '~' || c == ')' ) )
     {
-        std::cerr << "New comment char is not valid" << std::endl;
+        m_reporter->Report( "New comment character is invalid.", RPT_SEVERITY_ERROR );
     }
 
     c = m_line[m_lineIndex++];
@@ -723,7 +729,7 @@ bool IbisParser::ChangeCommentChar()
 
     if( !strChar.IsSameAs( wxString( "_char" ) ) )
     {
-        std::cerr << "Invalid syntax. Should be |_char or &_char, etc..." << std::endl;
+        m_reporter->Report( "Invalid syntax. Should be |_char or &_char, etc...", RPT_SEVERITY_ERROR );
         return false;
     }
 
@@ -735,7 +741,7 @@ bool IbisParser::ChangeCommentChar()
 
     if( ( !isspace( c ) ) && c != d )
     {
-        std::cerr << "No extra argument was expected" << std::endl;
+        m_reporter->Report( "No extra argument was expected", RPT_SEVERITY_ERROR );
         return false;
     }
 
@@ -875,6 +881,24 @@ bool IbisParser::changeContext( wxString aKeyword )
     {
         m_context = IBIS_PARSER_CONTEXT::END;
     }
+
+    if ( status == false )
+    {
+        wxString err_msg = wxString("Unknown keyword in ");
+
+        switch( m_context )
+        {
+            case IBIS_PARSER_CONTEXT::HEADER: err_msg += "HEADER";
+            case IBIS_PARSER_CONTEXT::COMPONENT: err_msg += "COMPONENT";
+            case IBIS_PARSER_CONTEXT::MODELSELECTOR: err_msg += "MODEL_SELECTOR";
+            case IBIS_PARSER_CONTEXT::MODEL: err_msg += "MODEL";
+            default: err_msg += "???";
+        }
+
+        err_msg += "context.";
+
+        m_reporter->Report( err_msg, RPT_SEVERITY_ERROR );
+    }
     return status;
 }
 
@@ -885,7 +909,6 @@ bool IbisParser::parseModelSelector( wxString aKeyword )
 
     if( !changeContext( aKeyword ) )
     {
-        std::cerr << "unknwon keyword in MODEL SELECTOR context." << std::endl;
         status = false;
     }
     return status;
@@ -965,7 +988,6 @@ bool IbisParser::parseModel( wxString aKeyword )
     {
         if( !changeContext( aKeyword ) )
         {
-            std::cerr << "unknown keyword in MODEL context." << std::endl;
             status = false;
         }
     }
@@ -1076,7 +1098,7 @@ bool IbisParser::readTypMinMaxValue( TypMinMaxValue* aDest )
         else
         {
             status = false;
-            std::cout << "Typ-Min-Max Values requires at least Typ." << std::endl;
+            m_reporter->Report( "Typ-Min-Max Values requires at least Typ.", RPT_SEVERITY_ERROR );
         }
     }
     return status;
@@ -1167,13 +1189,15 @@ bool IbisParser::readModel()
                         m_currentModel->m_type = IBIS_MODEL_TYPE::SERIES_SWITCH;
                     else
                     {
-                        std::cout << "Unknown Model_type: " << subparam << std::endl;
+                        wxString err_msg = wxString( "Unknown Model_type: ");
+                        err_msg += subparam;
+                        m_reporter->Report( err_msg, RPT_SEVERITY_ERROR );
                         status = false;
                     }
                 }
                 else
                 {
-                    std::cout << "Internal Error while reading model_type" << std::endl;
+                    m_reporter->Report( "Internal Error while reading model_type", RPT_SEVERITY_ERROR );
                     status = false;
                 }
             }
@@ -1187,13 +1211,15 @@ bool IbisParser::readModel()
                         m_currentModel->m_enable = IBIS_MODEL_ENABLE::ACTIVE_LOW;
                     else
                     {
-                        std::cout << "Unknown Enable: " << subparam << std::endl;
+                        wxString err_msg = wxString("Unknown Enable: ");
+                        err_msg += subparam;
+                        m_reporter->Report( err_msg, RPT_SEVERITY_ERROR );
                         status = false;
                     }
                 }
                 else
                 {
-                    std::cout << "Internal Error while reading Enable" << std::endl;
+                    m_reporter->Report( "Internal Error while reading Enable", RPT_SEVERITY_ERROR );
                     status = false;
                 }
             }
@@ -1207,13 +1233,15 @@ bool IbisParser::readModel()
                         m_currentModel->m_enable = IBIS_MODEL_ENABLE::ACTIVE_LOW;
                     else
                     {
-                        std::cout << "Unknown Polairity: " << subparam << std::endl;
+                        wxString err_msg = wxString( "Unknown Polarity: ");
+                        err_msg += subparam;
+                        m_reporter->Report( err_msg , RPT_SEVERITY_ERROR );
                         status = false;
                     }
                 }
                 else
                 {
-                    std::cout << "Internal Error while reading Enable" << std::endl;
+                    m_reporter->Report( "Internal Error while reading Enable" , RPT_SEVERITY_ERROR );
                     status = false;
                 }
             }
@@ -1242,8 +1270,7 @@ bool IbisParser::readModel()
             break;
         default:
             status = false;
-            std::cerr << "Internal error: continued reading a model that is not started."
-                      << std::endl;
+            m_reporter->Report( "Internal error: continued reading a model that is not started.", RPT_SEVERITY_ERROR );
         }
     }
 
@@ -1295,7 +1322,6 @@ bool IbisParser::parseHeader( wxString aKeyword )
     {
         if( !changeContext( aKeyword ) )
         {
-            std::cerr << "unknwon keyword in HEADER context." << std::endl;
             status = false;
         }
     }
@@ -1336,7 +1362,6 @@ bool IbisParser::parseComponent( wxString aKeyword )
     {
         if( !changeContext( aKeyword ) )
         {
-            std::cerr << "unknwon keyword in COMPONENT context." << std::endl;
             status = false;
         }
     }
@@ -1372,7 +1397,8 @@ bool IbisParser::readPackage()
     fields = ReadTableLine();
 
     int extraArg = ( m_continue == IBIS_PARSER_CONTINUE::NONE ) ? 1 : 0;
-    if( ( fields.size() == 4 + extraArg ) || ( fields.size() == extraArg ) )
+
+    if( fields.size() == 4  )
     {
         if( fields.at( 0 ) == "R_pkg" )
         {
@@ -1407,7 +1433,12 @@ bool IbisParser::readPackage()
     }
     else
     {
-        std::cerr << "A [Package] line requires exactly 4 elements" << std::endl;
+        if ( fields.size() != 0 )
+        { 
+            m_reporter->Report( "A [Package] line requires exactly 4 elements." , RPT_SEVERITY_ERROR );
+            std::cout << fields.size() << std::endl;
+            status = false;
+        }
     }
     m_continue = IBIS_PARSER_CONTINUE::COMPONENT_PACKAGE;
 
@@ -1479,14 +1510,14 @@ bool IbisParser::readPin()
                 }
                 else
                 {
-                    std::cerr << "[Pin]: Invalid field name" << std::endl;
+                    m_reporter->Report( "[Pin]: Invalid field name" , RPT_SEVERITY_ERROR );
                     status = false;
                 }
             }
 
             if( pin.m_Rcol == 0 || pin.m_Lcol == 0 || pin.m_Ccol == 0 )
             {
-                std::cerr << "[Pin]: Missing argument" << std::endl;
+                m_reporter->Report( "[Pin]: Missing argument"  , RPT_SEVERITY_ERROR );
                 status = false;
             }
             pin.m_virtual = true;
@@ -1519,7 +1550,7 @@ bool IbisParser::readPinMapping()
         {
             if( fields.size() > 6 && fields.size() < 3 )
             {
-                std::cerr << "[Pin Mapping]: wrong number of columns" << std::endl;
+                m_reporter->Report( "[Pin Mapping]: wrong number of columns"  , RPT_SEVERITY_ERROR );
                 status = false;
             }
             else
@@ -1646,7 +1677,7 @@ bool IbisParser::readWaveform( IbisWaveform* aDest, IBIS_WAVEFORM_TYPE aType )
     {
     case IBIS_WAVEFORM_TYPE::FALLING: wf = &( m_currentModel->m_fallingWaveform ); break;
     case IBIS_WAVEFORM_TYPE::RISING: wf = &( m_currentModel->m_risingWaveform ); break;
-    default: std::cerr << "Unknown waveform type" << std::endl; status = false;
+    default: m_reporter->Report( "Unknown waveform type"   , RPT_SEVERITY_ERROR );
     }
     m_currentWaveform = wf;
     if( status )
@@ -1702,7 +1733,7 @@ bool IbisParser::onNewLine()
         case IBIS_PARSER_CONTEXT::COMPONENT: status &= parseComponent( keyword ); break;
         case IBIS_PARSER_CONTEXT::MODELSELECTOR: status &= parseModelSelector( keyword ); break;
         case IBIS_PARSER_CONTEXT::MODEL: status &= parseModel( keyword ); break;
-        default: std::cerr << "Internal error: Bad parser context." << std::endl; status = false;
+        default: m_reporter->Report( "Internal error: Bad parser context.", RPT_SEVERITY_ERROR ); 
         }
     }
     else
@@ -1735,7 +1766,7 @@ bool IbisParser::onNewLine()
         case IBIS_PARSER_CONTINUE::RAMP: status &= readRamp(); break;
         case IBIS_PARSER_CONTINUE::NONE:
         default:
-            std::cerr << "Missing keyword" << std::endl;
+            m_reporter->Report( "Missing keyword.", RPT_SEVERITY_ERROR ); 
             return false;
             break;
         }
