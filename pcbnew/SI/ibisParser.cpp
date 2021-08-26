@@ -117,9 +117,7 @@ class VTtableEntry
 {
 public:
     double t;
-    double Vtyp;
-    double Vmin;
-    double Vmax;
+    TypMinMaxValue V;
 };
 
 class VTtable
@@ -164,9 +162,48 @@ enum class IBIS_MODEL_ENABLE
     ACTIVE_LOW
 };
 
-/* Model_type, Polarity, Enable, Vinl, Vinh, C_comp, C_comp_pullup, 
-C_comp_pulldown, C_comp_power_clamp, C_comp_gnd_clamp, Vmeas, Cref, Rref, Vref 
-*/
+class dvdt
+{
+public:
+    double m_dv;
+    double m_dt;
+};
+
+class dvdtTypMinMax
+{
+public:
+    dvdt m_typ;
+    dvdt m_min;
+    dvdt m_max;
+};
+
+class IbisRamp
+{
+public:
+    dvdtTypMinMax m_falling;
+    dvdtTypMinMax m_rising;
+    double        m_Rload;
+};
+
+enum class IBIS_WAVEFORM_TYPE
+{
+    RISING,
+    FALLING
+};
+
+class IbisWaveform
+{
+public:
+    VTtable            m_table;
+    IBIS_WAVEFORM_TYPE m_type;
+    double             m_R_fixture;
+    double             m_C_fixture;
+    double             m_L_fixture;
+    double             m_V_fixture;
+    double             m_V_fixture_min;
+    double             m_V_fixture_max;
+};
+
 class IbisModel
 {
 public:
@@ -181,8 +218,9 @@ public:
     IVtable m_POWERClamp;
     IVtable           m_pullup;
     IVtable           m_pulldown;
-    VTtable m_risingEdge;
-    VTtable m_fallingEdge;
+    IbisWaveform      m_risingWaveform;
+    IbisWaveform      m_fallingWaveform;
+    IbisRamp          m_ramp;
 };
 
 bool IbisHeader::CheckHeader()
@@ -245,7 +283,9 @@ enum class IBIS_PARSER_CONTINUE
     MODELSELECTOR,
     MODEL,
     IV_TABLE,
-    VT_TABLE
+    VT_TABLE,
+    RAMP,
+    WAVEFORM
 };
 
 enum class IBIS_PARSER_CONTEXT
@@ -272,6 +312,8 @@ public:
     IbisModelSelector* m_currentModelSelector;
     IbisModel*         m_currentModel;
     IVtable*           m_currentIVtable;
+    VTtable*           m_currentVTtable;
+    IbisWaveform*      m_currentWaveform;
 
 
     bool parseFile( wxFileName aFileName, IbisFile* );
@@ -294,6 +336,9 @@ private:
     wxString* getKeyword();
     bool      readDouble( double* );
     bool      readWord( wxString* );
+    bool      readDvdt( wxString, dvdt* );
+    bool      readRamp();
+    bool      readWaveform( IbisWaveform* aDest, IBIS_WAVEFORM_TYPE aType );
     bool      readString( wxString* );
     bool      StoreString( wxString* aDest, bool aMultiline );
     std::vector<wxString> ReadTableLine();
@@ -307,6 +352,7 @@ private:
     bool ReadCopyright();
     bool readNumericSubparam( wxString aSubparam, double* aDest );
     bool readIVtableEntry( IVtable* aTable );
+    bool readVTtableEntry( VTtable* aTable );
     bool readTypMinMaxValue( TypMinMaxValue* aDest );
     bool readTypMinMaxValueSubparam( wxString aSubparam, TypMinMaxValue* aDest );
     //bool ReadDieSupplyPads();
@@ -386,6 +432,49 @@ bool IbisParser::checkEndofLine()
         return false;
     }
     return true;
+}
+
+bool IbisParser::readDvdt( wxString aString, dvdt* aDest )
+{
+    bool status = true;
+
+    int i = 0;
+
+    for( i = 1; i < aString.length(); i++ )
+    {
+        if( aString.at( i ) == '/' )
+        {
+            break;
+        }
+    }
+
+    if( aString.at( i ) == '/' )
+    {
+        wxString str1 = aString.SubString( 0, i - 1 );
+        wxString str2 = aString.SubString( i + 1, aString.size() );
+
+        if( parseDouble( &( aDest->m_dv ), str1, true ) )
+        {
+            if( parseDouble( &( aDest->m_dt ), str2, true ) )
+            {
+            }
+            else
+            {
+                status = false;
+            }
+        }
+        else
+        {
+            status = false;
+        }
+    }
+    else
+    {
+        status = false;
+        std::cerr << "Can't read ramp value" << std::endl;
+    }
+
+    return status;
 }
 
 
@@ -770,6 +859,53 @@ bool IbisParser::parseModelSelector( wxString aKeyword )
     return status;
 }
 
+bool IbisParser::readRamp()
+{
+    bool status = true;
+
+    if( readNumericSubparam( wxString( "R_load" ), &( m_currentModel->m_ramp.m_Rload ) ) )
+        ;
+    else
+    {
+        wxString str;
+
+        readWord( &str ); // skip a word
+
+        m_continue = IBIS_PARSER_CONTINUE::RAMP;
+        if( readWord( &str ) )
+        {
+            dvdtTypMinMax ramp;
+
+            if( readDvdt( str, &( ramp.m_typ ) ) )
+            {
+                if( readDvdt( str, &( ramp.m_min ) ) )
+                {
+                    if( readDvdt( str, &( ramp.m_max ) ) )
+                    {
+                    }
+                    else
+                    {
+                        status = false;
+                    }
+                }
+                else
+                {
+                    status = false;
+                }
+            }
+            else
+            {
+                status = false;
+            }
+        }
+    }
+    if( status == false )
+    {
+    }
+    return status;
+}
+
+
 bool IbisParser::parseModel( wxString aKeyword )
 {
     bool status = true;
@@ -786,6 +922,13 @@ bool IbisParser::parseModel( wxString aKeyword )
         readIVtableEntry( &( m_currentModel->m_pulldown ) );
     else if( !aKeyword.CmpNoCase( "Pullup" ) )
         readIVtableEntry( &( m_currentModel->m_pullup ) );
+    else if( !aKeyword.CmpNoCase( "Rising_Waveform" ) )
+        readWaveform( &( m_currentModel->m_risingWaveform ), IBIS_WAVEFORM_TYPE::RISING );
+    else if( !aKeyword.CmpNoCase( "Falling_Waveform" ) )
+        readWaveform( &( m_currentModel->m_fallingWaveform ), IBIS_WAVEFORM_TYPE::FALLING );
+    else if( !aKeyword.CmpNoCase( "Ramp" ) )
+        readRamp();
+
     else
     {
         if( !changeContext( aKeyword ) )
@@ -1383,9 +1526,108 @@ bool IbisParser::readIVtableEntry( IVtable* aDest )
     m_continue = IBIS_PARSER_CONTINUE::IV_TABLE;
     m_currentIVtable = aDest;
 
+    if( status )
+    {
+        aDest->m_entries.push_back( entry );
+    }
+
     return status;
 }
 
+bool IbisParser::readVTtableEntry( VTtable* aDest )
+{
+    bool status = true;
+    skipWhitespaces();
+
+    VTtableEntry entry;
+
+    if( m_lineIndex < m_lineLength )
+    {
+        wxString str;
+        if( readWord( &str ) )
+        {
+            if( parseDouble( &( entry.t ), str, true ) )
+            {
+                if( readTypMinMaxValue( &( entry.V ) ) )
+                {
+                }
+                else
+                {
+                    status = false;
+                }
+            }
+            else
+            {
+                status = false;
+            }
+        }
+        else
+        {
+            status = false;
+        }
+    }
+
+    m_continue = IBIS_PARSER_CONTINUE::IV_TABLE;
+    m_currentVTtable = aDest;
+
+    if( status )
+    {
+        aDest->m_entries.push_back( entry );
+    }
+    else
+    {
+    }
+
+
+    return status;
+}
+
+bool IbisParser::readWaveform( IbisWaveform* aDest, IBIS_WAVEFORM_TYPE aType )
+{
+    bool status = true;
+
+    aDest->m_type = aType;
+
+    IbisWaveform* wf;
+
+    switch( aType )
+    {
+    case IBIS_WAVEFORM_TYPE::FALLING: wf = &( m_currentModel->m_fallingWaveform ); break;
+    case IBIS_WAVEFORM_TYPE::RISING: wf = &( m_currentModel->m_risingWaveform ); break;
+    default: std::cerr << "Unknown waveform type" << std::endl; status = false;
+    }
+    m_currentWaveform = wf;
+    if( status )
+    {
+        if( readNumericSubparam( wxString( "R_fixture" ), &( wf->m_R_fixture ) ) )
+            ;
+        else if( readNumericSubparam( wxString( "L_fixture" ), &( wf->m_L_fixture ) ) )
+            ;
+        else if( readNumericSubparam( wxString( "C_fixture" ), &( wf->m_C_fixture ) ) )
+            ;
+        else if( readNumericSubparam( wxString( "V_fixture" ), &( wf->m_V_fixture ) ) )
+            ;
+        else if( readNumericSubparam( wxString( "V_fixture_min" ), &( wf->m_V_fixture_min ) ) )
+            ;
+        else if( readNumericSubparam( wxString( "V_fixture_max" ), &( wf->m_V_fixture_max ) ) )
+            ;
+        else
+        {
+            VTtableEntry entry;
+
+            if( readVTtableEntry( &m_currentWaveform->m_table ) )
+            {
+            }
+            else
+            {
+                status = false;
+            }
+        }
+    }
+
+    m_continue = IBIS_PARSER_CONTINUE::WAVEFORM;
+    return status;
+}
 
 bool IbisParser::onNewLine()
 {
@@ -1434,6 +1676,11 @@ bool IbisParser::onNewLine()
         case IBIS_PARSER_CONTINUE::MODELSELECTOR: status &= readModelSelector(); break;
         case IBIS_PARSER_CONTINUE::MODEL: status &= readModel(); break;
         case IBIS_PARSER_CONTINUE::IV_TABLE: status &= readIVtableEntry( m_currentIVtable ); break;
+        case IBIS_PARSER_CONTINUE::VT_TABLE: status &= readVTtableEntry( m_currentVTtable ); break;
+        case IBIS_PARSER_CONTINUE::WAVEFORM:
+            status &= readWaveform( m_currentWaveform, m_currentWaveform->m_type );
+            break;
+        case IBIS_PARSER_CONTINUE::RAMP: status &= readRamp(); break;
         case IBIS_PARSER_CONTINUE::NONE:
         default:
             std::cerr << "Missing keyword" << std::endl;
