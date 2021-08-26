@@ -293,7 +293,8 @@ enum class IBIS_PARSER_CONTEXT
     HEADER,
     COMPONENT,
     MODELSELECTOR,
-    MODEL
+    MODEL,
+    END
 };
 
 class IbisParser
@@ -404,6 +405,10 @@ bool IbisParser::parseFile( wxFileName aFileName, IbisFile* aFile )
             {
                 std::cout << "Error at line " << m_lineCounter << std::endl;
                 return false;
+            }
+            if( m_context == IBIS_PARSER_CONTEXT::END )
+            {
+                return true;
             }
         }
     }
@@ -769,79 +774,86 @@ bool IbisParser::changeContext( wxString aKeyword )
 {
     bool status = true;
 
-    switch( m_context )
+    if( aKeyword != "END" )
     {
-    case ::IBIS_PARSER_CONTEXT::HEADER:
+        switch( m_context )
+        {
+        case ::IBIS_PARSER_CONTEXT::HEADER:
 
-        if( aKeyword == "Component" )
-        {
-            IbisComponent comp;
-            StoreString( &( comp.m_name ), false );
-            m_ibisFile->m_components.push_back( comp );
-            m_currentComponent = &( m_ibisFile->m_components.back() );
-            m_context = IBIS_PARSER_CONTEXT::COMPONENT;
-        }
-        else
-            status = false;
-        break;
-    case ::IBIS_PARSER_CONTEXT::COMPONENT:
+            if( aKeyword == "Component" )
+            {
+                IbisComponent comp;
+                StoreString( &( comp.m_name ), false );
+                m_ibisFile->m_components.push_back( comp );
+                m_currentComponent = &( m_ibisFile->m_components.back() );
+                m_context = IBIS_PARSER_CONTEXT::COMPONENT;
+            }
+            else
+                status = false;
+            break;
+        case ::IBIS_PARSER_CONTEXT::COMPONENT:
 
-        if( aKeyword == "Component" )
-        {
-            IbisComponent comp;
-            StoreString( &( comp.m_name ), false );
-            m_ibisFile->m_components.push_back( comp );
-            m_currentComponent = &( m_ibisFile->m_components.back() );
-            m_context = IBIS_PARSER_CONTEXT::COMPONENT;
+            if( aKeyword == "Component" )
+            {
+                IbisComponent comp;
+                StoreString( &( comp.m_name ), false );
+                m_ibisFile->m_components.push_back( comp );
+                m_currentComponent = &( m_ibisFile->m_components.back() );
+                m_context = IBIS_PARSER_CONTEXT::COMPONENT;
+            }
+            else if( aKeyword == "Model_Selector" )
+            {
+                IbisModelSelector MS;
+                StoreString( &( MS.m_name ), false );
+                m_ibisFile->m_modelSelectors.push_back( MS );
+                m_currentModelSelector = &( m_ibisFile->m_modelSelectors.back() );
+                m_context = IBIS_PARSER_CONTEXT::MODELSELECTOR;
+                m_continue = IBIS_PARSER_CONTINUE::MODELSELECTOR;
+            }
+            else
+                status = false;
+            break;
+        case ::IBIS_PARSER_CONTEXT::MODELSELECTOR:
+            if( aKeyword == "Model_Selector" )
+            {
+                IbisModelSelector MS;
+                StoreString( &( MS.m_name ), false );
+                m_ibisFile->m_modelSelectors.push_back( MS );
+                m_currentModelSelector = &( m_ibisFile->m_modelSelectors.back() );
+                m_context = IBIS_PARSER_CONTEXT::MODELSELECTOR;
+                m_continue = IBIS_PARSER_CONTINUE::MODELSELECTOR;
+            }
+            else if( aKeyword == "Model" )
+            {
+                IbisModel model;
+                StoreString( &( model.m_name ), false );
+                m_ibisFile->m_models.push_back( model );
+                m_currentModel = &( m_ibisFile->m_models.back() );
+                m_context = IBIS_PARSER_CONTEXT::MODEL;
+                m_continue = IBIS_PARSER_CONTINUE::MODEL;
+            }
+            else
+                status = false;
+            break;
+        case ::IBIS_PARSER_CONTEXT::MODEL:
+            if( aKeyword == "Model" )
+            {
+                IbisModel model;
+                StoreString( &( model.m_name ), false );
+                m_ibisFile->m_models.push_back( model );
+                m_currentModel = &( m_ibisFile->m_models.back() );
+                m_context = IBIS_PARSER_CONTEXT::MODEL;
+                m_continue = IBIS_PARSER_CONTINUE::MODEL;
+            }
+            else
+                status = false;
+            break;
+        default: status = false;
         }
-        else if( aKeyword == "Model_Selector" )
-        {
-            IbisModelSelector MS;
-            StoreString( &( MS.m_name ), false );
-            m_ibisFile->m_modelSelectors.push_back( MS );
-            m_currentModelSelector = &( m_ibisFile->m_modelSelectors.back() );
-            m_context = IBIS_PARSER_CONTEXT::MODELSELECTOR;
-            m_continue = IBIS_PARSER_CONTINUE::MODELSELECTOR;
-        }
-        else
-            status = false;
-        break;
-    case ::IBIS_PARSER_CONTEXT::MODELSELECTOR:
-        if( aKeyword == "Model_Selector" )
-        {
-            IbisModelSelector MS;
-            StoreString( &( MS.m_name ), false );
-            m_ibisFile->m_modelSelectors.push_back( MS );
-            m_currentModelSelector = &( m_ibisFile->m_modelSelectors.back() );
-            m_context = IBIS_PARSER_CONTEXT::MODELSELECTOR;
-            m_continue = IBIS_PARSER_CONTINUE::MODELSELECTOR;
-        }
-        else if( aKeyword == "Model" )
-        {
-            IbisModel model;
-            StoreString( &( model.m_name ), false );
-            m_ibisFile->m_models.push_back( model );
-            m_currentModel = &( m_ibisFile->m_models.back() );
-            m_context = IBIS_PARSER_CONTEXT::MODEL;
-            m_continue = IBIS_PARSER_CONTINUE::MODEL;
-        }
-        else
-            status = false;
-        break;
-    case ::IBIS_PARSER_CONTEXT::MODEL:
-        if( aKeyword == "Model" )
-        {
-            IbisModel model;
-            StoreString( &( model.m_name ), false );
-            m_ibisFile->m_models.push_back( model );
-            m_currentModel = &( m_ibisFile->m_models.back() );
-            m_context = IBIS_PARSER_CONTEXT::MODEL;
-            m_continue = IBIS_PARSER_CONTINUE::MODEL;
-        }
-        else
-            status = false;
-        break;
-    default: status = false;
+    }
+    else
+    {
+        m_context = IBIS_PARSER_CONTEXT::END;
     }
     return status;
 }
@@ -933,7 +945,7 @@ bool IbisParser::parseModel( wxString aKeyword )
     {
         if( !changeContext( aKeyword ) )
         {
-            std::cerr << "unknwon keyword in MODEL context." << std::endl;
+            std::cerr << "unknown keyword in MODEL context." << std::endl;
             status = false;
         }
     }
