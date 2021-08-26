@@ -204,12 +204,20 @@ public:
     double             m_V_fixture_max;
 };
 
+enum class IBIS_MODEL_POLARITY
+{
+    UNDEFINED,
+    INVERTING,
+    NON_INVERTING
+};
+
 class IbisModel
 {
 public:
     wxString          m_name;
     IBIS_MODEL_TYPE   m_type = IBIS_MODEL_TYPE::UNDEFINED;
     IBIS_MODEL_ENABLE m_enable = IBIS_MODEL_ENABLE::UNDEFINED;
+    IBIS_MODEL_ENABLE m_polarity = IBIS_MODEL_ENABLE::UNDEFINED;
     double            m_vinl, m_vinh, m_vref, m_rref, m_cref, m_vmeas;
     TypMinMaxValue    m_C_comp;
     TypMinMaxValue    m_voltageRange;
@@ -506,9 +514,11 @@ bool IbisParser::parseDouble( double* aDest, wxString aStr, bool aAllowModifiers
             // Start at 1 because the first character cannot be the modifier
             for( i = 1; i < str.length(); i++ )
             {
-                if( str.at( i ) == 'T' || str.at( i ) == 'G' || str.at( i ) == 'M'
-                    || str.at( i ) == 'k' || str.at( i ) == 'm' || str.at( i ) == 'u'
-                    || str.at( i ) == 'n' || str.at( i ) == 'p' || str.at( i ) == 'f' )
+                if( ( str.at( i ) == 'T' || str.at( i ) == 'G' || str.at( i ) == 'M'
+                      || str.at( i ) == 'k' || str.at( i ) == 'm' || str.at( i ) == 'u'
+                      || str.at( i ) == 'n' || str.at( i ) == 'p' || str.at( i ) == 'f' )
+                    || std::isalpha(
+                            str.at( i ) ) ) // Apparently some manufacturers could write "9.5V"
                 {
                     break;
                 }
@@ -533,8 +543,9 @@ bool IbisParser::parseDouble( double* aDest, wxString aStr, bool aAllowModifiers
                 case 'p': result *= 1e-12; break;
                 case 'f': result *= 1e-15; break;
                 default:
-                    std::cerr << "Internal error: could not apply modifier to double" << std::endl;
-                    status = false;
+                    break;
+                    //std::cerr << "Internal error: could not apply modifier to double" << std::endl;
+                    //status = false;
                 }
             }
         }
@@ -809,6 +820,15 @@ bool IbisParser::changeContext( wxString aKeyword )
                 m_currentModelSelector = &( m_ibisFile->m_modelSelectors.back() );
                 m_context = IBIS_PARSER_CONTEXT::MODELSELECTOR;
                 m_continue = IBIS_PARSER_CONTINUE::MODELSELECTOR;
+            }
+            else if( aKeyword == "Model" )
+            {
+                IbisModel model;
+                StoreString( &( model.m_name ), false );
+                m_ibisFile->m_models.push_back( model );
+                m_currentModel = &( m_ibisFile->m_models.back() );
+                m_context = IBIS_PARSER_CONTEXT::MODEL;
+                m_continue = IBIS_PARSER_CONTINUE::MODEL;
             }
             else
                 status = false;
@@ -1177,6 +1197,26 @@ bool IbisParser::readModel()
                     status = false;
                 }
             }
+            else if( subparam.SubString( 0, 8 ) == "Polarity" )
+            {
+                if( readWord( &subparam ) )
+                {
+                    if( subparam == "Inverting" )
+                        m_currentModel->m_enable = IBIS_MODEL_ENABLE::ACTIVE_HIGH;
+                    else if( subparam == "Non-Inverting" )
+                        m_currentModel->m_enable = IBIS_MODEL_ENABLE::ACTIVE_LOW;
+                    else
+                    {
+                        std::cout << "Unknown Polairity: " << subparam << std::endl;
+                        status = false;
+                    }
+                }
+                else
+                {
+                    std::cout << "Internal Error while reading Enable" << std::endl;
+                    status = false;
+                }
+            }
             else if( readNumericSubparam( wxString( "Vinl" ), &( m_currentModel->m_vinl ) ) )
                 ;
             else if( readNumericSubparam( wxString( "Vinh" ), &( m_currentModel->m_vinh ) ) )
@@ -1215,39 +1255,39 @@ bool IbisParser::parseHeader( wxString aKeyword )
 {
     bool status = true;
 
-    if( aKeyword == "IBIS_Ver" )
+    if( !aKeyword.CmpNoCase( "IBIS_Ver" ) )
     {
         ReadIbisVersion();
     }
-    else if( aKeyword == "Comment_char" )
+    else if( !aKeyword.CmpNoCase( "Comment_char" ) )
     {
         ChangeCommentChar();
     }
-    else if( aKeyword == "File_Name" )
+    else if( !aKeyword.CmpNoCase( "File_Name" ) )
     {
         StoreString( &( m_ibisFile->m_header.m_fileName ), false );
     }
-    else if( aKeyword == "File_Rev" )
+    else if( !aKeyword.CmpNoCase( "File_Rev" ) )
     {
         ReadFileRev();
     }
-    else if( aKeyword == "Source" )
+    else if( !aKeyword.CmpNoCase( "Source" ) )
     {
-        StoreString( &( m_ibisFile->m_header.m_source ), false );
+        StoreString( &( m_ibisFile->m_header.m_source ), true );
     }
-    else if( aKeyword == "Notes" )
+    else if( !aKeyword.CmpNoCase( "Notes" ) )
     {
         StoreString( &( m_ibisFile->m_header.m_notes ), true );
     }
-    else if( aKeyword == "Disclaimer" )
+    else if( !aKeyword.CmpNoCase( "Disclaimer" ) )
     {
         StoreString( &( m_ibisFile->m_header.m_disclaimer ), true );
     }
-    else if( aKeyword == "Copyright" )
+    else if( !aKeyword.CmpNoCase( "Copyright" ) )
     {
         StoreString( &( m_ibisFile->m_header.m_copyright ), true );
     }
-    else if( aKeyword == "Date" )
+    else if( !aKeyword.CmpNoCase( "Date" ) )
     {
         StoreString( &( m_ibisFile->m_header.m_date ), false );
     }

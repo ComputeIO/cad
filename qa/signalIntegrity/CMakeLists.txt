@@ -76,3 +76,5 @@ target_link_libraries( ibis_proto
     ${Boost_LIBRARIES}
     ${PCBNEW_EXTRA_LIBS}    # -lrt must follow Boost
 )
+
+configure_file( "ibis_v1_1.ibs" "ibis_v1_1.ibs" COPYONLY )
