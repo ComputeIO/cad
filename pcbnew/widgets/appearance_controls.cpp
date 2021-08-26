@@ -1867,7 +1867,7 @@ void APPEARANCE_CONTROLS::onObjectVisibilityChanged( GAL_LAYER_ID aLayer, bool i
     case LAYER_MOD_VALUES:
         // In case that user changes Footprint Value/References when the Footprint Text
         // meta-control is disabled, we should put it back on.
-        if( isVisible )
+        if( isVisible && m_objectSettingsMap.count( LAYER_MOD_TEXT_FR ) )
         {
             onObjectVisibilityChanged( LAYER_MOD_TEXT_FR, isVisible, false );
             m_objectSettingsMap[LAYER_MOD_TEXT_FR]->ctl_visibility->SetValue( isVisible );
