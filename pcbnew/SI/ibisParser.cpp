@@ -491,6 +491,8 @@ bool IbisModel::Check()
         std::cerr << "Model: model name cannot be empty" << std::endl;
         status = false;
     }
+
+    std::cout << "Checking model " << m_name << "..." << std::endl;
     if (m_type == IBIS_MODEL_TYPE::UNDEFINED)
     {
         std::cerr << "Model: Undefined model type" << std::endl;
