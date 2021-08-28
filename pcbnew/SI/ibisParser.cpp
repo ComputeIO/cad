@@ -6,11 +6,28 @@
 #include <fstream>
 #include <vector>
 #include <math.h>
+#include <cstring>
 
+#define NAN_NA "1"
+#define NAN_INVALID "0"
 
 #define IBIS_MAX_VERSION 7.0      // Up to v7.0, IBIS is fully backward compatible
 #define IBIS_MAX_LINE_LENGTH 2048 // official limit is 1024
-#define IBIS_
+
+
+bool isNumberNA( double aNumber )
+{
+    bool result = false;
+
+    double NA = std::nan( NAN_NA );
+
+    std::uint64_t resultBinNA;
+    std::memcpy( &resultBinNA, &( NA ), sizeof NA );
+    std::uint64_t resultBin;
+    std::memcpy( &resultBin, &( aNumber ), sizeof aNumber );
+
+    return resultBin == resultBinNA;
+}
 
 class IbisHeader
 {
@@ -30,10 +47,26 @@ public:
 class TypMinMaxValue
 {
 public:
-    double min = std::nan( " " );
-    double typ = std::nan( " " );
-    double max = std::nan( " " );
+    double min = std::nan( NAN_INVALID );
+    double typ = std::nan( NAN_INVALID );
+    double max = std::nan( NAN_INVALID );
+
+    bool Check();
 };
+
+bool TypMinMaxValue::Check()
+{
+    bool status = true;
+
+    if( std::isnan( typ ) )
+        status = false;
+    if( std::isnan( min ) && !isNumberNA( min ) )
+        status = false;
+    if( std::isnan( max ) && !isNumberNA( max ) )
+        status = false;
+
+    return status;
+}
 
 class IbisComponentPackage
 {
@@ -76,8 +109,8 @@ public:
 class IbisComponent
 {
 public:
-    wxString             m_name;
-    wxString             m_manufacturer;
+    wxString                             m_name = "";
+    wxString                             m_manufacturer = "";
     IbisComponentPackage m_package;
     std::vector<IbisComponentPin> m_pins;
     std::vector<IbisComponentPinMapping> m_pinMappings;
@@ -89,9 +122,41 @@ public:
     bool Check();
 };
 
+
 bool IbisComponent::Check()
 {
-    return true;
+    bool status = true;
+
+    if( m_name.IsEmpty() )
+    {
+        std::cerr << "Component: name cannot be empty." << std::endl;
+        status = false;
+    }
+
+    std::cout << "Checking component " << m_name << "..." << std::endl;
+
+    if( m_manufacturer.IsEmpty() )
+    {
+        std::cerr << "Component: manufacturer cannot be empty." << std::endl;
+        status = false;
+    }
+
+    if( !m_package.m_Rpkg.Check() )
+    {
+        std::cerr << "Invalid R_pkg" << std::endl;
+        status = false;
+    }
+    if( !m_package.m_Lpkg.Check() )
+    {
+        std::cerr << "Invalid L_pkg" << std::endl;
+        status = false;
+    }
+    if( !m_package.m_Cpkg.Check() )
+    {
+        std::cerr << "Invalid C_pkg" << std::endl;
+        status = false;
+    }
+    return status;
 }
 
 
@@ -272,7 +337,7 @@ bool IbisHeader::Check()
         status = false;
     }
 
-    if( m_ibisVersion == -1 )
+    if( m_fileRevision == -1 )
     {
         std::cerr << "Missing [File Rev]" << std::endl;
         status = false;
@@ -288,6 +353,7 @@ bool IbisHeader::Check()
            || m_fileName.EndsWith( ".ebd" ) || m_fileName.EndsWith( ".ims" ) ) )
     {
         std::cerr << "[File Name]: Extension is not allowed" << std::endl;
+        status = false;
     }
 
 
@@ -523,7 +589,7 @@ bool IbisParser::parseDouble( double* aDest, wxString aStr, bool aAllowModifiers
 
     if( str == "NA" )
     {
-        result = std::nan( "NA" );
+        result = std::nan( NAN_NA );
     }
     else if( !str.ToDouble( &result ) )
     {
@@ -575,7 +641,7 @@ bool IbisParser::parseDouble( double* aDest, wxString aStr, bool aAllowModifiers
     }
     if( status == false )
     {
-        result = std::nan( " " );
+        result = std::nan( NAN_INVALID );
     }
 
     *aDest = result;
@@ -794,18 +860,19 @@ bool IbisParser::changeContext( wxString aKeyword )
     // Old context;
     switch( m_context )
     {
-    case IBIS_PARSER_CONTEXT::HEADER: m_ibisFile->m_header.Check(); break;
-    case IBIS_PARSER_CONTEXT::COMPONENT: m_currentComponent->Check(); break;
-    case IBIS_PARSER_CONTEXT::MODEL: m_currentModel->Check(); break;
-    case IBIS_PARSER_CONTEXT::MODELSELECTOR: m_currentModel->Check(); break;
+    case IBIS_PARSER_CONTEXT::HEADER: status &= m_ibisFile->m_header.Check(); break;
+    case IBIS_PARSER_CONTEXT::COMPONENT: status &= m_currentComponent->Check(); break;
+    case IBIS_PARSER_CONTEXT::MODEL: status &= m_currentModel->Check(); break;
+    case IBIS_PARSER_CONTEXT::MODELSELECTOR: status &= m_currentModel->Check(); break;
     case IBIS_PARSER_CONTEXT::END:
         m_reporter->Report( "Internal Error: Cannot change context after [END]" );
+        status = false;
         break;
 
     default: m_reporter->Report( "Internal Error: Changing context from undefined context" );
     }
 
-    if( aKeyword != "END" )
+    if( aKeyword != "END" && status )
     {
         //New context
         if( aKeyword == "Component" )
@@ -1397,7 +1464,6 @@ bool IbisParser::readPackage()
         {
             m_reporter->Report( "A [Package] line requires exactly 4 elements.",
                                 RPT_SEVERITY_ERROR );
-            std::cout << fields.size() << std::endl;
             status = false;
         }
     }
