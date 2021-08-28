@@ -33,14 +33,15 @@
 
 [Component]     Virtual
 [Manufacturer]  KiCad    
-[Package]      R_pkg           1m              0.8m            2m 
-L_pkg           1m              0.8m            2m
-C_pkg           1m              0.8m            2m
+[Package]     
+R_pkg           1m              0.8m            NA 
+L_pkg           1m              NA              NA
+C_pkg           1m              NA            NA
 
 [Pin]   signal_name     model_name      R_pin   L_pin   C_pin             
-  1     VCC             POWER           1m      0.8m    2m            
-  2     GND             GND             1m      0.8m    2m               
-  3     X               Input           1m      0.8m    2m
+  1     VCC             POWER           1m      0.8m    NA            
+  2     GND             GND             1m      NA      2m               
+  3     X               Input           1m      NA      NA
   4     Y               Ouput           1m      0.8m    2m
 
 [Model]         Input
@@ -82,7 +83,7 @@ C_comp          10.0pF          8.0pF          15.0pF
 
 [Ramp]
 # variable      typ             min             max 
-dV/dt_r         3.0/2n          2.8/3n          3.2/1n 
+dV/dt_r         3.0/2n          2.8/3n          NA 
 dV/dt_f         3.0/2n          2.8/3n          3.2/1n 
 
 [END]

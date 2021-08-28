@@ -47,6 +47,7 @@ public:
 class TypMinMaxValue
 {
 public:
+
     double min = std::nan( NAN_INVALID );
     double typ = std::nan( NAN_INVALID );
     double max = std::nan( NAN_INVALID );
@@ -74,7 +75,32 @@ public:
     TypMinMaxValue m_Rpkg;
     TypMinMaxValue m_Lpkg;
     TypMinMaxValue m_Cpkg;
+
+    bool Check();
 };
+
+bool IbisComponentPackage::Check()
+{
+    bool status =  true;
+
+    if( !m_Rpkg.Check() )
+    {
+        std::cerr << "Package: Invalid R_pkg" << std::endl;
+        status = false;
+    }
+    if( !m_Lpkg.Check() )
+    {
+        std::cerr << "Package: Invalid L_pkg" << std::endl;
+        status = false;
+    }
+    if( !m_Cpkg.Check() )
+    {
+        std::cerr << "Package: Invalid C_pkg" << std::endl;
+        status = false;
+    }
+
+    return status;
+}
 
 class IbisComponentPin
 {
@@ -82,16 +108,58 @@ public:
     wxString           m_pinName;
     wxString           m_signalName;
     wxString           m_modelName;
-    TypMinMaxValue     m_Rpin;
-    TypMinMaxValue     m_Lpin;
-    TypMinMaxValue     m_Cpin;
+    double     m_Rpin = std::nan( NAN_INVALID );
+    double     m_Lpin = std::nan( NAN_INVALID );
+    double     m_Cpin = std::nan( NAN_INVALID );
 
     int m_Rcol = 0;
     int m_Lcol = 0;
     int m_Ccol = 0;
 
-    bool m_virtual = false; // The table header regiters as a virtual pin.
+    bool Check();
+
+    bool m_dummy = false;
 };
+
+bool IbisComponentPin::Check()
+{
+    bool status = true;
+    if ( !m_dummy )
+    {
+
+        if( m_pinName.IsEmpty() )
+        {
+            std::cerr << "Pin: pin name cannot be empty." << std::endl;
+            status = false;
+        }
+        if( m_signalName.IsEmpty() )
+        {
+            std::cerr << "Pin: signal name cannot be empty." << std::endl;
+            status = false;
+        }
+        if( m_modelName.IsEmpty() )
+        {
+            std::cerr << "Pin: model name cannot be empty." << std::endl;
+            status = false;
+        }
+        if( std::isnan( m_Rpin ) && !isNumberNA( m_Rpin ) )
+        {
+            std::cerr << "Pin: Rpin is not valid." << std::endl;
+            status = false;
+        }
+        if( std::isnan( m_Lpin )&& !isNumberNA( m_Lpin )  )
+        {
+            std::cerr << "Pin: Lpin is not valid." << std::endl;
+            status = false;
+        }
+        if( std::isnan( m_Cpin )&& !isNumberNA( m_Cpin ) )
+        {
+            std::cerr << "Pin: Cpin is not valid." << std::endl;
+            status = false;
+        }
+    }
+    return status;
+}
 
 class IbisComponentPinMapping
 {
@@ -141,21 +209,23 @@ bool IbisComponent::Check()
         status = false;
     }
 
-    if( !m_package.m_Rpkg.Check() )
+    if ( !m_package.Check() )
     {
-        std::cerr << "Invalid R_pkg" << std::endl;
+        std::cerr << "Component: Invalid Package." << std::endl;
+        status = false;        
+    }
+    
+    if ( m_pins.size() < 1 )
+    {
+        std::cerr << "Component: no pin" << std::endl;    
         status = false;
     }
-    if( !m_package.m_Lpkg.Check() )
+
+    for ( IbisComponentPin pin: m_pins )
     {
-        std::cerr << "Invalid L_pkg" << std::endl;
-        status = false;
+        status &= pin.Check();
     }
-    if( !m_package.m_Cpkg.Check() )
-    {
-        std::cerr << "Invalid C_pkg" << std::endl;
-        status = false;
-    }
+
     return status;
 }
 
@@ -193,8 +263,37 @@ class IVtable
 {
 public:
     std::vector<IVtableEntry> m_entries;
+
+    bool Check();
+
+    private:
 };
 
+bool IVtable::Check()
+{
+    bool status = true;
+    for ( IVtableEntry entry : m_entries )
+    {
+        if ( std::isnan( entry.V ) )
+        {
+            std::cerr << "IV table: voltage is nan." << std::endl;
+            status = false;
+            break;
+        }
+
+        if ( !entry.I.Check() )
+        {
+            std::cerr << "IV table: current is incorrect" << std::endl;
+            status = false;
+            break;
+        }
+    }
+    // TODO: Check if the IV table is monotonic :
+    // IBIS standard defines 8 criteria for an IV table to be monotonic
+    // Issue a warning, not an error
+
+    return status;
+}
 class VTtableEntry
 {
 public:
@@ -257,15 +356,70 @@ public:
     dvdt m_typ;
     dvdt m_min;
     dvdt m_max;
+
+    bool Check();
 };
+
+bool dvdtTypMinMax::Check()
+{
+    bool status = true;
+
+    if ( std::isnan( m_typ.m_dv) )
+        status = false;
+    if ( std::isnan( m_typ.m_dt) )
+        status = false; 
+
+
+    if ( std::isnan( m_min.m_dv) && !isNumberNA( m_min.m_dv) )
+        status = false;
+    if ( std::isnan( m_min.m_dt) && !isNumberNA( m_min.m_dt) )
+        status = false;
+
+    if ( std::isnan( m_max.m_dv) && !isNumberNA( m_max.m_dv) )
+        status = false;
+    if ( std::isnan( m_max.m_dt) && !isNumberNA( m_max.m_dt) )
+        status = false;
+
+    if ( !status )
+    {
+        std::cout << "dv/dt: Incorrect dv/dt" << std::endl;
+    }
+
+    return status;
+}
 
 class IbisRamp
 {
 public:
     dvdtTypMinMax m_falling;
     dvdtTypMinMax m_rising;
-    double        m_Rload;
+    double        m_Rload = 50 ; // The R_load subparameter is optional if the default 50 ohm load is used
+
+    bool Check();
 };
+
+bool IbisRamp::Check()
+{
+    bool status = true;
+
+    if ( std::isnan( m_Rload ) )
+    {
+        status = false;
+        std::cerr << "Ramp: Invalid R_load" << std::endl;
+    }
+    if ( !m_falling.Check() )
+    {
+        std::cerr << "Ramp: falling invalid" << std::endl;
+        status = false;
+    }
+    if ( !m_rising.Check() )
+    {
+        std::cerr << "Ramp: rising invalid" << std::endl;
+        status = false;
+    }
+
+    return status;
+}
 
 enum class IBIS_WAVEFORM_TYPE
 {
@@ -298,12 +452,25 @@ class IbisModel
 public:
     wxString          m_name;
     IBIS_MODEL_TYPE   m_type = IBIS_MODEL_TYPE::UNDEFINED;
+    /* The Polarity, Enable, Vinl, Vinh, Vmeas, Cref, Rref, and Vref subparameters are optional. */
+    /* the default values of Vinl = 0.8 V and Vinh = 2.0 V are assumed. */
+    double m_vinl = 0.8;
+    double m_vinh = 2;
+    double m_vref = 0;
+    double m_rref = 0;
+    double m_cref = 0;
+    double m_vmeas = 0;
     IBIS_MODEL_ENABLE m_enable = IBIS_MODEL_ENABLE::UNDEFINED;
-    IBIS_MODEL_ENABLE m_polarity = IBIS_MODEL_ENABLE::UNDEFINED;
-    double            m_vinl, m_vinh, m_vref, m_rref, m_cref, m_vmeas;
+    IBIS_MODEL_POLARITY m_polarity = IBIS_MODEL_POLARITY::UNDEFINED;
+    // End of optional subparameters
+
     TypMinMaxValue    m_C_comp;
     TypMinMaxValue    m_voltageRange;
     TypMinMaxValue    m_temperatureRange;
+    TypMinMaxValue    m_pullupReference;
+    TypMinMaxValue    m_pulldownReference;
+    TypMinMaxValue    m_GNDClampReference;
+    TypMinMaxValue    m_POWERClampReference;
     IVtable m_GNDClamp;
     IVtable m_POWERClamp;
     IVtable           m_pullup;
@@ -317,7 +484,111 @@ public:
 
 bool IbisModel::Check()
 {
-    return true;
+    bool status = true;
+
+    if( m_name.IsEmpty() )
+    {
+        std::cerr << "Model: model name cannot be empty" << std::endl;
+        status = false;
+    }
+    if (m_type == IBIS_MODEL_TYPE::UNDEFINED)
+    {
+        std::cerr << "Model: Undefined model type" << std::endl;
+        status = false;
+    }
+
+    if ( isnan( m_vinh ) && !isNumberNA( m_vinh ) )
+    {
+        std::cerr << "Model: Vinh is invalid." << std::endl;
+        status = false;
+    }
+    if ( isnan( m_vinl ) && !isNumberNA( m_vinl ) )
+    {
+        std::cerr << "Model: Vinh is invalid." << std::endl;
+        status = false;
+    }
+    if ( isnan( m_rref ) && !isNumberNA( m_rref ) )
+    {
+        std::cerr << "Model: R_ref is invalid." << std::endl;
+        status = false;
+    }
+    if ( isnan( m_cref ) && !isNumberNA( m_cref ) )
+    {
+        std::cerr << "Model: C_ref is invalid." << std::endl;
+        status = false;
+    }
+    if ( isnan( m_vref ) && !isNumberNA( m_vref ) )
+    {
+        std::cerr << "Model: V_ref is invalid." << std::endl;
+        status = false;
+    }
+    if ( isnan( m_vmeas ) && !isNumberNA( m_vmeas ) )
+    {
+        std::cerr << "Model: V_meas is invalid." << std::endl;
+        status = false;
+    }
+    if ( !m_C_comp.Check() )
+    {
+        std::cerr << "Model: C_comp is invalid." << std::endl;
+        status = false;
+    }
+    if ( !m_temperatureRange.Check() )
+    {
+        std::cerr << "Model: Temperature Range is invalid." << std::endl;
+        status = false;
+    }
+
+    if ( !m_voltageRange.Check() )
+    {
+        // If the voltage range is not valid, it's ok, only if we have pulls and clamps
+        if ( !m_pulldownReference.Check() )
+        {
+            status = false;
+        }
+        if ( !m_pullupReference.Check() )
+        {
+            status = false;
+        }
+        if ( !m_GNDClampReference.Check() )
+        {
+            status = false;
+        }
+        if ( !m_POWERClampReference.Check() )
+        {
+            status = false;
+        }
+        if ( !status )
+        {
+        std::cerr << "Model: Voltage Range is invalid." << std::endl;
+        }
+        status = false;
+    }
+    if ( !m_pulldown.Check() )
+    {
+        std::cerr << "Model: Invalid pulldown." << std::endl;
+        status = false;
+    } 
+    if ( !m_pullup.Check() )
+    {
+        std::cerr << "Model: Invalid pullup." << std::endl;
+        status = false;
+    } 
+    if ( !m_POWERClamp.Check() )
+    {
+        std::cerr << "Model: Invalid POWER clamp." << std::endl;
+        status = false;
+    } 
+    if ( !m_GNDClamp.Check() )
+    {
+        std::cerr << "Model: Invalid GND clamp." << std::endl;
+        status = false;
+    } 
+
+    if ( !m_ramp.Check() )
+    {
+        std::cerr << "Invalid Ramp" << std::endl;
+    }
+    return status;
 }
 
 bool IbisHeader::Check()
@@ -436,6 +707,7 @@ private:
     bool      readDouble( double* aDest );
     bool      readWord( wxString* );
     bool      readDvdt( wxString, dvdt* );
+    bool      readRampdvdt( dvdtTypMinMax* aDest);
     bool      readRamp();
     bool      readWaveform( IbisWaveform* aDest, IBIS_WAVEFORM_TYPE aType );
     bool      readString( wxString* );
@@ -569,7 +841,15 @@ bool IbisParser::readDvdt( wxString aString, dvdt* aDest )
     }
     else
     {
-        status = false;
+        if ( aString == "NA" )
+        {
+            aDest->m_dv = std::nan( NAN_NA );
+            aDest->m_dt = std::nan( NAN_NA );
+        }
+        else
+        {
+            status = false;
+        }
     }
 
     return status;
@@ -895,6 +1175,9 @@ bool IbisParser::changeContext( wxString aKeyword )
         else if( aKeyword == "Model" )
         {
             IbisModel model;
+            model.m_temperatureRange.min = 0;
+            model.m_temperatureRange.typ = 50;
+            model.m_temperatureRange.max = 100;
             StoreString( &( model.m_name ), false );
             m_ibisFile->m_models.push_back( model );
             m_currentModel = &( m_ibisFile->m_models.back() );
@@ -939,34 +1222,23 @@ bool IbisParser::parseModelSelector( wxString aKeyword )
     return status;
 }
 
-bool IbisParser::readRamp()
+
+bool IbisParser::readRampdvdt( dvdtTypMinMax* aDest )
 {
     bool status = true;
+    wxString str;
 
-    if( readNumericSubparam( wxString( "R_load" ), &( m_currentModel->m_ramp.m_Rload ) ) )
-        ;
-    else
+    if( readWord( &str ) )
     {
-        wxString str;
+        dvdtTypMinMax ramp;
 
-        readWord( &str ); // skip a word
-
-        m_continue = IBIS_PARSER_CONTINUE::RAMP;
-        if( readWord( &str ) )
+        if( readDvdt( str, &( ramp.m_typ ) ) )
         {
-            dvdtTypMinMax ramp;
-
-            if( readDvdt( str, &( ramp.m_typ ) ) )
+            if( readDvdt( str, &( ramp.m_min ) ) )
             {
-                if( readDvdt( str, &( ramp.m_min ) ) )
+                if( readDvdt( str, &( ramp.m_max ) ) )
                 {
-                    if( readDvdt( str, &( ramp.m_max ) ) )
-                    {
-                    }
-                    else
-                    {
-                        status = false;
-                    }
+                    *aDest = ramp;
                 }
                 else
                 {
@@ -978,6 +1250,50 @@ bool IbisParser::readRamp()
                 status = false;
             }
         }
+        else
+        {
+            status = false;
+        }
+    }
+    else
+    {
+        status = false;
+    }
+
+    return status;
+}
+
+bool IbisParser::readRamp()
+{
+    bool status = true;
+
+    m_continue = IBIS_PARSER_CONTINUE::RAMP;
+
+    if( readNumericSubparam( wxString( "R_load" ), &( m_currentModel->m_ramp.m_Rload ) ) )
+        ;
+    else
+    {
+        wxString str;
+
+        if ( readWord( &str ) )
+        {
+            if ( str == "dV/dt_r" )
+            {
+                readRampdvdt( &(m_currentModel->m_ramp.m_rising) );
+            }
+            else if ( str == "dV/dt_f" )
+            {
+                readRampdvdt( &(m_currentModel->m_ramp.m_falling) );
+            }
+            else
+            {
+                std::cerr << "Ramp: Invalid line: "<< str << std::endl;
+                status = false;
+            }
+
+
+        }
+
     }
     if( status == false )
     {
@@ -1008,7 +1324,6 @@ bool IbisParser::parseModel( wxString aKeyword )
         readWaveform( &( m_currentModel->m_fallingWaveform ), IBIS_WAVEFORM_TYPE::FALLING );
     else if( !aKeyword.CmpNoCase( "Ramp" ) )
         readRamp();
-
     else
     {
         if( !changeContext( aKeyword ) )
@@ -1046,6 +1361,7 @@ bool IbisParser::readNumericSubparam( wxString aSubparam, double* aDest )
     wxString paramName;
     bool     status = true;
 
+    int old_index = m_lineIndex;
     m_lineIndex = 0;
     if( aSubparam.size() < m_lineLength )
     {
@@ -1088,6 +1404,11 @@ bool IbisParser::readNumericSubparam( wxString aSubparam, double* aDest )
     else
     {
         status = false;
+    }
+
+    if ( status == false )
+    {
+        m_lineIndex = old_index;
     }
 
     return status;
@@ -1490,10 +1811,12 @@ bool IbisParser::readPin()
             pin.m_pinName = fields.at( 0 );
             pin.m_signalName = fields.at( 1 );
             pin.m_modelName = fields.at( 2 );
+
+            m_currentComponent->m_pins.push_back( pin );
         }
         else
         {
-            pin.m_virtual = true;
+            pin.m_dummy = true;
         }
     }
     else
@@ -1514,9 +1837,28 @@ bool IbisParser::readPin()
             }
             else
             {
-                parseDouble( &( pin.m_Rpin.typ ), fields.at( pin.m_Rcol ), true );
-                parseDouble( &( pin.m_Lpin.typ ), fields.at( pin.m_Lcol ), true );
-                parseDouble( &( pin.m_Cpin.typ ), fields.at( pin.m_Ccol ), true );
+                if ( parseDouble( &( pin.m_Rpin ), fields.at( pin.m_Rcol ), true ) )
+                {
+                    if ( parseDouble( &( pin.m_Lpin ), fields.at( pin.m_Lcol ), true ) )
+                    {
+                        if ( parseDouble( &( pin.m_Cpin ), fields.at( pin.m_Ccol ), true ) )
+                        {
+                                m_currentComponent->m_pins.push_back( pin );
+                        }
+                        else
+                        {
+                            status = false;
+                        }
+                    }
+                    else
+                    {
+                        status = false;
+                    }
+                }
+                else
+                {
+                    status = false;
+                }
             }
         }
         else
@@ -1547,11 +1889,13 @@ bool IbisParser::readPin()
                 m_reporter->Report( "[Pin]: Missing argument", RPT_SEVERITY_ERROR );
                 status = false;
             }
-            pin.m_virtual = true;
+            pin.m_dummy = true;
         }
     }
-    m_continue = IBIS_PARSER_CONTINUE::COMPONENT_PIN;
+
     m_currentComponent->m_pins.push_back( pin );
+    m_continue = IBIS_PARSER_CONTINUE::COMPONENT_PIN;
+
 
     return true;
 }
@@ -1616,6 +1960,7 @@ bool IbisParser::readIVtableEntry( IVtable* aDest )
             {
                 if( readTypMinMaxValue( &( entry.I ) ) )
                 {
+                    aDest->m_entries.push_back( entry );
                 }
                 else
                 {
@@ -1636,10 +1981,6 @@ bool IbisParser::readIVtableEntry( IVtable* aDest )
     m_continue = IBIS_PARSER_CONTINUE::IV_TABLE;
     m_currentIVtable = aDest;
 
-    if( status )
-    {
-        aDest->m_entries.push_back( entry );
-    }
 
     return status;
 }
