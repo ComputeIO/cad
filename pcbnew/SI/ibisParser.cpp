@@ -344,7 +344,7 @@ private:
     void      skipWhitespaces();
     bool      checkEndofLine(); // To be used when there cannot be any character left on the line
     wxString* getKeyword();
-    bool      readDouble( double* );
+    bool      readDouble( double* aDest );
     bool      readWord( wxString* );
     bool      readDvdt( wxString, dvdt* );
     bool      readRamp();
@@ -353,13 +353,6 @@ private:
     bool      StoreString( wxString* aDest, bool aMultiline );
     std::vector<wxString> ReadTableLine();
 
-    bool ReadIbisVersion();
-    bool ReadFileName();
-    bool ReadFileRev();
-    bool ReadSource();
-    bool ReadNotes();
-    bool ReadDisclaimer();
-    bool ReadCopyright();
     bool readNumericSubparam( wxString aSubparam, double* aDest );
     bool readIVtableEntry( IVtable* aTable );
     bool readVTtableEntry( VTtable* aTable );
@@ -372,9 +365,6 @@ private:
     bool readPinMapping();
     bool readModelSelector();
     bool readModel();
-
-
-    bool ReadManufacturer();
 
 
     bool ChangeCommentChar();
@@ -619,13 +609,29 @@ void IbisParser::PrintLine()
 
 bool IbisParser::readDouble( double* aDest )
 {
+    bool status = true;
     wxString str;
-    while( ( !isspace( m_line[m_lineIndex] ) ) && ( m_lineIndex < m_lineLength ) )
+
+    if ( readWord( &str ) )
     {
-        str += m_line[m_lineIndex++];
+        if ( parseDouble( aDest, str,  true ) )
+        {
+            m_reporter->Report( "double: ok", RPT_SEVERITY_WARNING);   
+        }
+        else
+        {
+            m_reporter->Report( "Can't read double", RPT_SEVERITY_WARNING);
+            status = false;
+        }
+
+    }
+    else
+    {
+        m_reporter->Report( "Can't read word", RPT_SEVERITY_WARNING);
+        status = false;
     }
 
-    return str.ToDouble( aDest );
+    return status;
 }
 
 bool IbisParser::readWord( wxString* aDest )
@@ -654,36 +660,6 @@ bool IbisParser::readString( wxString* aDest )
     aDest->Trim();
 
     return true;
-}
-
-bool IbisParser::ReadIbisVersion()
-{
-    skipWhitespaces();
-
-    if( !readDouble( &( m_ibisFile->m_header.m_ibisVersion ) ) )
-    {
-        std::cerr << "Invalid Ibis version format." << std::endl;
-        return false;
-    }
-
-    m_continue = IBIS_PARSER_CONTINUE::NONE;
-
-    return checkEndofLine();
-}
-
-bool IbisParser::ReadFileRev()
-{
-    skipWhitespaces();
-
-    if( !readDouble( &( m_ibisFile->m_header.m_fileRevision ) ) )
-    {
-        std::cerr << "Invalid file revision Format." << std::endl;
-        return false;
-    }
-
-    m_continue = IBIS_PARSER_CONTINUE::NONE;
-
-    return checkEndofLine();
 }
 
 bool IbisParser::StoreString( wxString* aDest, bool aMultiline )
@@ -1287,7 +1263,7 @@ bool IbisParser::parseHeader( wxString aKeyword )
 
     if( !aKeyword.CmpNoCase( "IBIS_Ver" ) )
     {
-        ReadIbisVersion();
+        status &= readDouble( &( m_ibisFile->m_header.m_ibisVersion ) );
     }
     else if( !aKeyword.CmpNoCase( "Comment_char" ) )
     {
@@ -1299,7 +1275,7 @@ bool IbisParser::parseHeader( wxString aKeyword )
     }
     else if( !aKeyword.CmpNoCase( "File_Rev" ) )
     {
-        ReadFileRev();
+        status &= readDouble( &( m_ibisFile->m_header.m_fileRevision) );
     }
     else if( !aKeyword.CmpNoCase( "Source" ) )
     {

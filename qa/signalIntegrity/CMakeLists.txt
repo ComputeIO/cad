@@ -78,3 +78,4 @@ target_link_libraries( ibis_proto
 )
 
 configure_file( "ibis_v1_1.ibs" "ibis_v1_1.ibs" COPYONLY )
+configure_file( "ibis_v2_1.ibs" "ibis_v2_1.ibs" COPYONLY )
