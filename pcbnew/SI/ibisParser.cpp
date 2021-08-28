@@ -1140,19 +1140,7 @@ bool IbisParser::changeContext( wxString aKeyword )
     bool status = true;
 
     // Old context;
-    switch( m_context )
-    {
-    case IBIS_PARSER_CONTEXT::HEADER: status &= m_ibisFile->m_header.Check(); break;
-    case IBIS_PARSER_CONTEXT::COMPONENT: status &= m_currentComponent->Check(); break;
-    case IBIS_PARSER_CONTEXT::MODEL: status &= m_currentModel->Check(); break;
-    case IBIS_PARSER_CONTEXT::MODELSELECTOR: status &= m_currentModel->Check(); break;
-    case IBIS_PARSER_CONTEXT::END:
-        m_reporter->Report( "Internal Error: Cannot change context after [END]" );
-        status = false;
-        break;
-
-    default: m_reporter->Report( "Internal Error: Changing context from undefined context" );
-    }
+    IBIS_PARSER_CONTEXT old_context = m_context;
 
     if( aKeyword != "END" && status )
     {
@@ -1193,14 +1181,14 @@ bool IbisParser::changeContext( wxString aKeyword )
 
             switch( m_context )
             {
-            case IBIS_PARSER_CONTEXT::HEADER: err_msg += "HEADER";
-            case IBIS_PARSER_CONTEXT::COMPONENT: err_msg += "COMPONENT";
-            case IBIS_PARSER_CONTEXT::MODELSELECTOR: err_msg += "MODEL_SELECTOR";
-            case IBIS_PARSER_CONTEXT::MODEL: err_msg += "MODEL";
-            default: err_msg += "???";
+            case IBIS_PARSER_CONTEXT::HEADER: err_msg += "HEADER"; break;
+            case IBIS_PARSER_CONTEXT::COMPONENT: err_msg += "COMPONENT"; break;
+            case IBIS_PARSER_CONTEXT::MODELSELECTOR: err_msg += "MODEL_SELECTOR"; break;
+            case IBIS_PARSER_CONTEXT::MODEL: err_msg += "MODEL"; break;
+            default: err_msg += "???"; break;
             }
 
-            err_msg += "context.";
+            err_msg += " context.";
 
             m_reporter->Report( err_msg, RPT_SEVERITY_ERROR );
         }
@@ -1208,6 +1196,23 @@ bool IbisParser::changeContext( wxString aKeyword )
     else
     {
         m_context = IBIS_PARSER_CONTEXT::END;
+    }
+
+    if( status )
+    {
+        switch( old_context )
+        {
+        case IBIS_PARSER_CONTEXT::HEADER: status &= m_ibisFile->m_header.Check(); break;
+        case IBIS_PARSER_CONTEXT::COMPONENT: status &= m_currentComponent->Check(); break;
+        case IBIS_PARSER_CONTEXT::MODEL: status &= m_currentModel->Check(); break;
+        case IBIS_PARSER_CONTEXT::MODELSELECTOR: status &= m_currentModel->Check(); break;
+        case IBIS_PARSER_CONTEXT::END:
+            m_reporter->Report( "Internal Error: Cannot change context after [END]" );
+            status = false;
+            break;
+
+        default: m_reporter->Report( "Internal Error: Changing context from undefined context" );
+        }
     }
     return status;
 }
