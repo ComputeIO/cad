@@ -24,7 +24,7 @@ public:
     wxString m_disclaimer;
     wxString m_copyright;
 
-    bool CheckHeader();
+    bool Check();
 };
 
 class TypMinMaxValue
@@ -255,7 +255,7 @@ bool IbisModel::Check()
     return true;
 }
 
-bool IbisHeader::CheckHeader()
+bool IbisHeader::Check()
 {
     bool status = true;
 
@@ -794,7 +794,7 @@ bool IbisParser::changeContext( wxString aKeyword )
     // Old context;
     switch( m_context )
     {
-    case IBIS_PARSER_CONTEXT::HEADER: m_ibisFile->m_header.CheckHeader(); break;
+    case IBIS_PARSER_CONTEXT::HEADER: m_ibisFile->m_header.Check(); break;
     case IBIS_PARSER_CONTEXT::COMPONENT: m_currentComponent->Check(); break;
     case IBIS_PARSER_CONTEXT::MODEL: m_currentModel->Check(); break;
     case IBIS_PARSER_CONTEXT::MODELSELECTOR: m_currentModel->Check(); break;
