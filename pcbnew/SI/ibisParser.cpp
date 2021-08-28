@@ -85,7 +85,15 @@ public:
     wxString             m_busLabel;
     wxString             m_dieSupplyPads;
     wxString             m_diffPins;
+
+    bool Check();
 };
+
+bool IbisComponent::Check()
+{
+    return true;
+}
+
 
 class IbisModelSelectorEntry
 {
@@ -99,7 +107,15 @@ class IbisModelSelector
 public:
     wxString                            m_name;
     std::vector<IbisModelSelectorEntry> m_models;
+
+    bool Check();
 };
+
+bool IbisModelSelector::Check()
+{
+    return true;
+}
+
 
 class IVtableEntry
 {
@@ -230,7 +246,14 @@ public:
     IbisWaveform      m_risingWaveform;
     IbisWaveform      m_fallingWaveform;
     IbisRamp          m_ramp;
+
+    bool Check();
 };
+
+bool IbisModel::Check()
+{
+    return true;
+}
 
 bool IbisHeader::CheckHeader()
 {
@@ -768,113 +791,71 @@ bool IbisParser::changeContext( wxString aKeyword )
 {
     bool status = true;
 
+    // Old context;
+    switch( m_context )
+    {
+    case IBIS_PARSER_CONTEXT::HEADER: m_ibisFile->m_header.CheckHeader(); break;
+    case IBIS_PARSER_CONTEXT::COMPONENT: m_currentComponent->Check(); break;
+    case IBIS_PARSER_CONTEXT::MODEL: m_currentModel->Check(); break;
+    case IBIS_PARSER_CONTEXT::MODELSELECTOR: m_currentModel->Check(); break;
+    case IBIS_PARSER_CONTEXT::END:
+        m_reporter->Report( "Internal Error: Cannot change context after [END]" );
+        break;
+
+    default: m_reporter->Report( "Internal Error: Changing context from undefined context" );
+    }
+
     if( aKeyword != "END" )
     {
-        switch( m_context )
+        //New context
+        if( aKeyword == "Component" )
         {
-        case ::IBIS_PARSER_CONTEXT::HEADER:
+            IbisComponent comp;
+            StoreString( &( comp.m_name ), false );
+            m_ibisFile->m_components.push_back( comp );
+            m_currentComponent = &( m_ibisFile->m_components.back() );
+            m_context = IBIS_PARSER_CONTEXT::COMPONENT;
+        }
+        else if( aKeyword == "Model_Selector" )
+        {
+            IbisModelSelector MS;
+            StoreString( &( MS.m_name ), false );
+            m_ibisFile->m_modelSelectors.push_back( MS );
+            m_currentModelSelector = &( m_ibisFile->m_modelSelectors.back() );
+            m_context = IBIS_PARSER_CONTEXT::MODELSELECTOR;
+            m_continue = IBIS_PARSER_CONTINUE::MODELSELECTOR;
+        }
+        else if( aKeyword == "Model" )
+        {
+            IbisModel model;
+            StoreString( &( model.m_name ), false );
+            m_ibisFile->m_models.push_back( model );
+            m_currentModel = &( m_ibisFile->m_models.back() );
+            m_context = IBIS_PARSER_CONTEXT::MODEL;
+            m_continue = IBIS_PARSER_CONTINUE::MODEL;
+        }
+        else
+        {
+            status = false;
+            wxString err_msg = wxString( "Unknown keyword in " );
 
-            if( aKeyword == "Component" )
+            switch( m_context )
             {
-                IbisComponent comp;
-                StoreString( &( comp.m_name ), false );
-                m_ibisFile->m_components.push_back( comp );
-                m_currentComponent = &( m_ibisFile->m_components.back() );
-                m_context = IBIS_PARSER_CONTEXT::COMPONENT;
+            case IBIS_PARSER_CONTEXT::HEADER: err_msg += "HEADER";
+            case IBIS_PARSER_CONTEXT::COMPONENT: err_msg += "COMPONENT";
+            case IBIS_PARSER_CONTEXT::MODELSELECTOR: err_msg += "MODEL_SELECTOR";
+            case IBIS_PARSER_CONTEXT::MODEL: err_msg += "MODEL";
+            default: err_msg += "???";
             }
-            else
-                status = false;
-            break;
-        case ::IBIS_PARSER_CONTEXT::COMPONENT:
 
-            if( aKeyword == "Component" )
-            {
-                IbisComponent comp;
-                StoreString( &( comp.m_name ), false );
-                m_ibisFile->m_components.push_back( comp );
-                m_currentComponent = &( m_ibisFile->m_components.back() );
-                m_context = IBIS_PARSER_CONTEXT::COMPONENT;
-            }
-            else if( aKeyword == "Model_Selector" )
-            {
-                IbisModelSelector MS;
-                StoreString( &( MS.m_name ), false );
-                m_ibisFile->m_modelSelectors.push_back( MS );
-                m_currentModelSelector = &( m_ibisFile->m_modelSelectors.back() );
-                m_context = IBIS_PARSER_CONTEXT::MODELSELECTOR;
-                m_continue = IBIS_PARSER_CONTINUE::MODELSELECTOR;
-            }
-            else if( aKeyword == "Model" )
-            {
-                IbisModel model;
-                StoreString( &( model.m_name ), false );
-                m_ibisFile->m_models.push_back( model );
-                m_currentModel = &( m_ibisFile->m_models.back() );
-                m_context = IBIS_PARSER_CONTEXT::MODEL;
-                m_continue = IBIS_PARSER_CONTINUE::MODEL;
-            }
-            else
-                status = false;
-            break;
-        case ::IBIS_PARSER_CONTEXT::MODELSELECTOR:
-            if( aKeyword == "Model_Selector" )
-            {
-                IbisModelSelector MS;
-                StoreString( &( MS.m_name ), false );
-                m_ibisFile->m_modelSelectors.push_back( MS );
-                m_currentModelSelector = &( m_ibisFile->m_modelSelectors.back() );
-                m_context = IBIS_PARSER_CONTEXT::MODELSELECTOR;
-                m_continue = IBIS_PARSER_CONTINUE::MODELSELECTOR;
-            }
-            else if( aKeyword == "Model" )
-            {
-                IbisModel model;
-                StoreString( &( model.m_name ), false );
-                m_ibisFile->m_models.push_back( model );
-                m_currentModel = &( m_ibisFile->m_models.back() );
-                m_context = IBIS_PARSER_CONTEXT::MODEL;
-                m_continue = IBIS_PARSER_CONTINUE::MODEL;
-            }
-            else
-                status = false;
-            break;
-        case ::IBIS_PARSER_CONTEXT::MODEL:
-            if( aKeyword == "Model" )
-            {
-                IbisModel model;
-                StoreString( &( model.m_name ), false );
-                m_ibisFile->m_models.push_back( model );
-                m_currentModel = &( m_ibisFile->m_models.back() );
-                m_context = IBIS_PARSER_CONTEXT::MODEL;
-                m_continue = IBIS_PARSER_CONTINUE::MODEL;
-            }
-            else
-                status = false;
-            break;
-        default: status = false;
+            err_msg += "context.";
+
+            m_reporter->Report( err_msg, RPT_SEVERITY_ERROR );
         }
     }
     else
     {
         m_context = IBIS_PARSER_CONTEXT::END;
-    }
-
-    if( status == false )
-    {
-        wxString err_msg = wxString( "Unknown keyword in " );
-
-        switch( m_context )
-        {
-        case IBIS_PARSER_CONTEXT::HEADER: err_msg += "HEADER";
-        case IBIS_PARSER_CONTEXT::COMPONENT: err_msg += "COMPONENT";
-        case IBIS_PARSER_CONTEXT::MODELSELECTOR: err_msg += "MODEL_SELECTOR";
-        case IBIS_PARSER_CONTEXT::MODEL: err_msg += "MODEL";
-        default: err_msg += "???";
-        }
-
-        err_msg += "context.";
-
-        m_reporter->Report( err_msg, RPT_SEVERITY_ERROR );
     }
     return status;
 }
