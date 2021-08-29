@@ -174,6 +174,21 @@ public:
     bool m_virtual;
 };
 
+class IbisDiffPinEntry
+{
+    public:
+        wxString pinA;
+        wxString pinB;
+        double Vdiff = 0.2 ; // ignored for input
+        TypMinMaxValue tdelay; // ignored for outputs
+};
+
+class IbisDiffPin
+{
+    public:
+        std::vector<IbisDiffPinEntry> m_entries;
+};
+
 class IbisComponent
 {
 public:
@@ -185,7 +200,7 @@ public:
     wxString                             m_packageModel;
     wxString             m_busLabel;
     wxString             m_dieSupplyPads;
-    wxString             m_diffPins;
+    IbisDiffPin            m_diffPin;
 
     bool Check();
 };
@@ -432,6 +447,9 @@ class IbisWaveform
 public:
     VTtable            m_table;
     IBIS_WAVEFORM_TYPE m_type;
+    double             m_R_dut;
+    double             m_C_dut;
+    double             m_L_dut;
     double             m_R_fixture;
     double             m_C_fixture;
     double             m_L_fixture;
@@ -471,6 +489,10 @@ public:
     TypMinMaxValue    m_pulldownReference;
     TypMinMaxValue    m_GNDClampReference;
     TypMinMaxValue    m_POWERClampReference;
+    TypMinMaxValue    m_Rgnd;
+    TypMinMaxValue    m_Rpower;
+    TypMinMaxValue    m_Rac;
+    TypMinMaxValue    m_Cac;
     IVtable m_GNDClamp;
     IVtable m_POWERClamp;
     IVtable           m_pullup;
@@ -597,6 +619,9 @@ bool IbisHeader::Check()
 {
     bool status = true;
 
+
+    std::cout << "Checking Header..." << std::endl;
+
     if( m_ibisVersion == -1 )
     {
         std::cerr << "Missing [IBIS Ver]" << std::endl;
@@ -649,6 +674,7 @@ enum class IBIS_PARSER_CONTINUE
     STRING,
     COMPONENT_PACKAGE,
     COMPONENT_PINMAPPING,
+    COMPONENT_DIFFPIN,
     COMPONENT_DIESUPPLYPADS,
     COMPONENT_PIN,
     MODELSELECTOR,
@@ -671,6 +697,8 @@ enum class IBIS_PARSER_CONTEXT
 class IbisParser
 {
 public:
+    bool m_parrot = false; // Write back all lines.
+
     long  m_lineCounter;
     char  m_commentChar = '|';
     char* m_buffer;
@@ -726,6 +754,7 @@ private:
     bool readPackage();
     bool readPin();
     bool readPinMapping();
+    bool readDiffPin();
     bool readModelSelector();
     bool readModel();
 
@@ -748,6 +777,8 @@ bool IbisParser::parseFile( wxFileName aFileName, IbisFile* aFile )
     ibisFile.open( aFileName.GetFullName() );
     if( ibisFile )
     {
+        err_msg = wxString("Reading file ") + aFileName.GetFullName() + wxString("...");
+        m_reporter->Report( err_msg, RPT_SEVERITY_ACTION );
         std::filebuf* pbuf = ibisFile.rdbuf();
         long          size = pbuf->pubseekoff( 0, ibisFile.end );
         pbuf->pubseekoff( 0, ibisFile.beg ); // rewind
@@ -764,7 +795,12 @@ bool IbisParser::parseFile( wxFileName aFileName, IbisFile* aFile )
                 m_reporter->Report( "Unexpected end of file. Missing [END] ?", RPT_SEVERITY_ERROR );
                 return false;
             }
-            PrintLine();
+            
+            if ( m_parrot )
+            {
+                PrintLine();
+            }
+            
             if( !onNewLine() )
             {
                 err_msg = wxString( "Error at line " );
@@ -986,8 +1022,7 @@ bool IbisParser::readDouble( double* aDest )
     if ( readWord( &str ) )
     {
         if ( parseDouble( aDest, str,  true ) )
-        {
-            m_reporter->Report( "double: ok", RPT_SEVERITY_WARNING);   
+        { 
         }
         else
         {
@@ -1141,7 +1176,7 @@ bool IbisParser::changeContext( wxString aKeyword )
 
     // Old context;
     IBIS_PARSER_CONTEXT old_context = m_context;
-
+    
     if( aKeyword != "END" && status )
     {
         //New context
@@ -1314,23 +1349,39 @@ bool IbisParser::parseModel( wxString aKeyword )
     bool status = true;
 
     if( !aKeyword.CmpNoCase( "Voltage_Range" ) )
-        readTypMinMaxValue( &( m_currentModel->m_voltageRange ) );
+        status &= readTypMinMaxValue( &( m_currentModel->m_voltageRange ) );
     else if( !aKeyword.CmpNoCase( "Temperature_Range" ) )
-        readTypMinMaxValue( &( m_currentModel->m_temperatureRange ) );
+        status &= readTypMinMaxValue( &( m_currentModel->m_temperatureRange ) );
     else if( !aKeyword.CmpNoCase( "GND_Clamp" ) )
-        readIVtableEntry( &( m_currentModel->m_GNDClamp ) );
+        status &= readIVtableEntry( &( m_currentModel->m_GNDClamp ) );
     else if( !aKeyword.CmpNoCase( "POWER_Clamp" ) )
-        readIVtableEntry( &( m_currentModel->m_POWERClamp ) );
+        status &= readIVtableEntry( &( m_currentModel->m_POWERClamp ) );
     else if( !aKeyword.CmpNoCase( "Pulldown" ) )
-        readIVtableEntry( &( m_currentModel->m_pulldown ) );
+        status &= readIVtableEntry( &( m_currentModel->m_pulldown ) );
     else if( !aKeyword.CmpNoCase( "Pullup" ) )
-        readIVtableEntry( &( m_currentModel->m_pullup ) );
+        status &= readIVtableEntry( &( m_currentModel->m_pullup ) );
     else if( !aKeyword.CmpNoCase( "Rising_Waveform" ) )
-        readWaveform( &( m_currentModel->m_risingWaveform ), IBIS_WAVEFORM_TYPE::RISING );
+        status &= readWaveform( &( m_currentModel->m_risingWaveform ), IBIS_WAVEFORM_TYPE::RISING );
     else if( !aKeyword.CmpNoCase( "Falling_Waveform" ) )
-        readWaveform( &( m_currentModel->m_fallingWaveform ), IBIS_WAVEFORM_TYPE::FALLING );
+        status &= readWaveform( &( m_currentModel->m_fallingWaveform ), IBIS_WAVEFORM_TYPE::FALLING );
     else if( !aKeyword.CmpNoCase( "Ramp" ) )
-        readRamp();
+        status &= readRamp();
+    else if( !aKeyword.CmpNoCase( "Pullup_Reference" ) )
+        status &= readTypMinMaxValue( &(m_currentModel->m_pullupReference) );
+    else if( !aKeyword.CmpNoCase( "Pulldown_Reference" ) )
+        status &= readTypMinMaxValue( &(m_currentModel->m_pulldownReference) );
+    else if( !aKeyword.CmpNoCase( "POWER_Clamp_Reference" ) )
+        status &= readTypMinMaxValue( &(m_currentModel->m_POWERClampReference) );
+    else if( !aKeyword.CmpNoCase( "GND_Clamp_Reference" ) )
+        status &= readTypMinMaxValue( &(m_currentModel->m_GNDClampReference) );
+    else if( !aKeyword.CmpNoCase( "Rac" ) )
+        status &= readTypMinMaxValue( &(m_currentModel->m_Rac) );
+    else if( !aKeyword.CmpNoCase( "Cac" ) )
+        status &= readTypMinMaxValue( &(m_currentModel->m_Cac) );
+    else if( !aKeyword.CmpNoCase( "Rpower" ) )
+        status &= readTypMinMaxValue( &(m_currentModel->m_Rpower) );
+    else if( !aKeyword.CmpNoCase( "Rgnd" ) )
+        status &= readTypMinMaxValue( &(m_currentModel->m_Rgnd) );
     else
     {
         if( !changeContext( aKeyword ) )
@@ -1688,21 +1739,25 @@ bool IbisParser::parseComponent( wxString aKeyword )
 {
     bool status = true;
 
-    if( aKeyword == "Manufacturer" )
+    if( !aKeyword.CmpNoCase( "Manufacturer" ) )
     {
         status &= StoreString( &( m_currentComponent->m_manufacturer ), true );
     }
-    else if( aKeyword == "Package" )
+    else if( !aKeyword.CmpNoCase( "Package" )  )
     {
         status &= readPackage();
     }
-    else if( aKeyword == "Pin" )
+    else if( !aKeyword.CmpNoCase( "Pin" )  )
     {
         status &= readPin();
     }
-    else if( aKeyword == "Pin_Mapping" )
+    else if( !aKeyword.CmpNoCase( "Pin_Mapping" ) )
     {
         status &= readPinMapping();
+    }
+    else if( !aKeyword.CmpNoCase( "Diff_Pin" ) )
+    {
+        status &= readDiffPin();
     }
     /*
     else if( aKeyword == "Die_Supply_Pads" )
@@ -1753,7 +1808,7 @@ bool IbisParser::readPackage()
 
     int extraArg = ( m_continue == IBIS_PARSER_CONTINUE::NONE ) ? 1 : 0;
 
-    if( fields.size() == 4 )
+    if( fields.size() == (4 + extraArg)  )
     {
         if( fields.at( 0 ) == "R_pkg" )
         {
@@ -1950,6 +2005,51 @@ bool IbisParser::readPinMapping()
 }
 
 
+
+bool IbisParser::readDiffPin()
+{
+    bool status = true;
+
+    IbisDiffPinEntry entry;
+
+    if( m_continue == IBIS_PARSER_CONTINUE::NONE ) // No info on first line
+    {
+        m_continue = IBIS_PARSER_CONTINUE::COMPONENT_DIFFPIN;
+    }
+    else
+    {
+        if( readWord( &(entry.pinA ) ) )
+        {
+            if( readWord( &(entry.pinB ) ) )
+            {
+                if( readDouble( &(entry.Vdiff ) ) )
+                {
+                    if( readTypMinMaxValue( &(entry.tdelay ) ) )
+                    {
+                    }
+                    m_currentComponent->m_diffPin.m_entries.push_back( entry );
+                }
+                else
+                {
+                    m_reporter->Report( "[Pin Diff]: Incorrect vdiff", RPT_SEVERITY_ERROR );
+                }
+            }
+            else
+            {
+            std::cout << entry.pinB << std::endl;
+
+                m_reporter->Report( "[Pin Diff]: Incorrect inv_pin", RPT_SEVERITY_ERROR );
+            }
+        }
+        else
+        {
+            m_reporter->Report( "[Pin Diff]: Incorrect pin name", RPT_SEVERITY_ERROR );
+        }       
+    }
+    return status;
+}
+
+
 bool IbisParser::readIVtableEntry( IVtable* aDest )
 {
     bool status = true;
@@ -2069,6 +2169,12 @@ bool IbisParser::readWaveform( IbisWaveform* aDest, IBIS_WAVEFORM_TYPE aType )
             ;
         else if( readNumericSubparam( wxString( "V_fixture_max" ), &( wf->m_V_fixture_max ) ) )
             ;
+        else if( readNumericSubparam( wxString( "R_dut" ), &( wf->m_L_fixture ) ) )
+            ;
+        else if( readNumericSubparam( wxString( "L_dut" ), &( wf->m_L_fixture ) ) )
+            ;
+        else if( readNumericSubparam( wxString( "C_dut" ), &( wf->m_L_fixture ) ) )
+            ;
         else
         {
             VTtableEntry entry;
@@ -2131,6 +2237,7 @@ bool IbisParser::onNewLine()
         case IBIS_PARSER_CONTINUE::COMPONENT_PACKAGE: status &= readPackage(); break;
         case IBIS_PARSER_CONTINUE::COMPONENT_PIN: status &= readPin(); break;
         case IBIS_PARSER_CONTINUE::COMPONENT_PINMAPPING: status &= readPinMapping(); break;
+        case IBIS_PARSER_CONTINUE::COMPONENT_DIFFPIN: status &= readDiffPin(); break;
         case IBIS_PARSER_CONTINUE::MODELSELECTOR: status &= readModelSelector(); break;
         case IBIS_PARSER_CONTINUE::MODEL: status &= readModel(); break;
         case IBIS_PARSER_CONTINUE::IV_TABLE: status &= readIVtableEntry( m_currentIVtable ); break;

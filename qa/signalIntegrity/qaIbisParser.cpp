@@ -10,6 +10,11 @@ int main( void )
     file = new IbisFile();
     parser->parseFile( wxFileName( "ibis_v2_1.ibs" ), file );
 
+    parser = new IbisParser();
+    file = new IbisFile();
+    parser->m_parrot = true;
+    parser->parseFile( wxFileName( "ibis_v2_1.pkg" ), file );
+
     std::cout << "Done" << std::endl;
     return 1;
 }
