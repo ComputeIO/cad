@@ -658,6 +658,17 @@ bool IbisHeader::Check()
     return status;
 }
 
+class IbisPackageModel
+{
+public:
+    wxString              m_manufacturer;
+    wxString              m_OEM;
+    wxString              m_description;
+    int                   m_numberOfPins;
+    std::vector<wxString> m_pins;
+};
+
+
 class IbisFile
 {
 public:
@@ -665,6 +676,7 @@ public:
     std::vector<IbisComponent> m_components;
     std::vector<IbisModelSelector> m_modelSelectors;
     std::vector<IbisModel>         m_models;
+    std::vector<IbisPackageModel>  m_packageModels;
 };
 
 
@@ -682,7 +694,8 @@ enum class IBIS_PARSER_CONTINUE
     IV_TABLE,
     VT_TABLE,
     RAMP,
-    WAVEFORM
+    WAVEFORM,
+    PACKAGEMODEL_PINS
 };
 
 enum class IBIS_PARSER_CONTEXT
@@ -691,6 +704,7 @@ enum class IBIS_PARSER_CONTEXT
     COMPONENT,
     MODELSELECTOR,
     MODEL,
+    PACKAGEMODEL,
     END
 };
 
@@ -711,6 +725,7 @@ public:
     IbisComponent* m_currentComponent;
     IbisModelSelector* m_currentModelSelector;
     IbisModel*         m_currentModel;
+    IbisPackageModel*  m_currentPackageModel;
     IVtable*           m_currentIVtable;
     VTtable*           m_currentVTtable;
     IbisWaveform*      m_currentWaveform;
@@ -721,6 +736,7 @@ public:
     bool parseComponent( wxString );
     bool parseModelSelector( wxString );
     bool parseModel( wxString );
+    bool parsePackageModel( wxString );
     bool parseDouble( double* aDest, wxString aStr, bool aAllowModifiers = false );
 
 private:
@@ -734,6 +750,7 @@ private:
     void      skipWhitespaces();
     bool      checkEndofLine(); // To be used when there cannot be any character left on the line
     wxString* getKeyword();
+    bool      readInt( int* aDest );
     bool      readDouble( double* aDest );
     bool      readWord( wxString* );
     bool      readDvdt( wxString, dvdt* );
@@ -757,6 +774,7 @@ private:
     bool readDiffPin();
     bool readModelSelector();
     bool readModel();
+    bool readPackageModelPins();
 
 
     bool ChangeCommentChar();
@@ -1040,6 +1058,42 @@ bool IbisParser::readDouble( double* aDest )
     return status;
 }
 
+bool IbisParser::readInt( int* aDest )
+{
+    bool     status = true;
+    wxString str;
+    double   buffer;
+
+    if( readWord( &str ) )
+    {
+        if( str.ToDouble( &buffer ) )
+        {
+            int result = static_cast<int>( buffer );
+            if( buffer == static_cast<double>( result ) )
+            {
+                *aDest = result;
+            }
+            else
+            {
+                status = false;
+                m_reporter->Report( "Number is not an integer", RPT_SEVERITY_WARNING );
+            }
+        }
+        else
+        {
+            status = false;
+            m_reporter->Report( "Can't read number", RPT_SEVERITY_WARNING );
+        }
+    }
+    else
+    {
+        m_reporter->Report( "Can't read word", RPT_SEVERITY_WARNING );
+        status = false;
+    }
+
+    return status;
+}
+
 bool IbisParser::readWord( wxString* aDest )
 {
     skipWhitespaces();
@@ -1209,6 +1263,14 @@ bool IbisParser::changeContext( wxString aKeyword )
             m_context = IBIS_PARSER_CONTEXT::MODEL;
             m_continue = IBIS_PARSER_CONTINUE::MODEL;
         }
+        else if( aKeyword == "Define_Package_Model" )
+        {
+            IbisPackageModel PM;
+
+            m_ibisFile->m_packageModels.push_back( PM );
+            m_currentPackageModel = &( m_ibisFile->m_packageModels.back() );
+            m_context = IBIS_PARSER_CONTEXT::PACKAGEMODEL;
+        }
         else
         {
             status = false;
@@ -1220,6 +1282,7 @@ bool IbisParser::changeContext( wxString aKeyword )
             case IBIS_PARSER_CONTEXT::COMPONENT: err_msg += "COMPONENT"; break;
             case IBIS_PARSER_CONTEXT::MODELSELECTOR: err_msg += "MODEL_SELECTOR"; break;
             case IBIS_PARSER_CONTEXT::MODEL: err_msg += "MODEL"; break;
+            case IBIS_PARSER_CONTEXT::PACKAGEMODEL: err_msg += "PACKAGE_MODEL"; break;
             default: err_msg += "???"; break;
             }
 
@@ -1393,6 +1456,40 @@ bool IbisParser::parseModel( wxString aKeyword )
     return status;
 }
 
+bool IbisParser::readPackageModelPins()
+{
+    m_continue = IBIS_PARSER_CONTINUE::PACKAGEMODEL_PINS;
+    wxString str;
+
+    if( readWord( &str ) )
+        m_currentPackageModel->m_pins.push_back( str );
+
+    return true;
+}
+
+bool IbisParser::parsePackageModel( wxString aKeyword )
+{
+    bool status = true;
+
+    if( !aKeyword.CmpNoCase( "Manufacturer" ) )
+        status &= StoreString( &( m_currentPackageModel->m_manufacturer ), false );
+    else if( !aKeyword.CmpNoCase( "OEM" ) )
+        status &= StoreString( &( m_currentPackageModel->m_OEM ), false );
+    else if( !aKeyword.CmpNoCase( "Description" ) )
+        status &= StoreString( &( m_currentPackageModel->m_description ), false );
+    else if( !aKeyword.CmpNoCase( "Number_of_Pins" ) )
+        status &= readInt( &( m_currentPackageModel->m_numberOfPins ) );
+    else if( !aKeyword.CmpNoCase( "Pin_Numbers" ) )
+        status &= readPackageModelPins();
+    else
+    {
+        if( !changeContext( aKeyword ) )
+        {
+            status = false;
+        }
+    }
+    return status;
+}
 
 bool IbisParser::readModelSelector()
 {
@@ -2214,7 +2311,12 @@ bool IbisParser::onNewLine()
         case IBIS_PARSER_CONTEXT::COMPONENT: status &= parseComponent( keyword ); break;
         case IBIS_PARSER_CONTEXT::MODELSELECTOR: status &= parseModelSelector( keyword ); break;
         case IBIS_PARSER_CONTEXT::MODEL: status &= parseModel( keyword ); break;
-        default: m_reporter->Report( "Internal error: Bad parser context.", RPT_SEVERITY_ERROR );
+        case IBIS_PARSER_CONTEXT::PACKAGEMODEL: status &= parsePackageModel( keyword ); break;
+        default:
+        {
+            status = false;
+            m_reporter->Report( "Internal error: Bad parser context.", RPT_SEVERITY_ERROR );
+        }
         }
     }
     else
@@ -2246,6 +2348,7 @@ bool IbisParser::onNewLine()
             status &= readWaveform( m_currentWaveform, m_currentWaveform->m_type );
             break;
         case IBIS_PARSER_CONTINUE::RAMP: status &= readRamp(); break;
+        case IBIS_PARSER_CONTINUE::PACKAGEMODEL_PINS: status &= readPackageModelPins(); break;
         case IBIS_PARSER_CONTINUE::NONE:
         default:
             m_reporter->Report( "Missing keyword.", RPT_SEVERITY_ERROR );
