@@ -176,17 +176,17 @@ public:
 
 class IbisDiffPinEntry
 {
-    public:
-        wxString pinA;
-        wxString pinB;
-        double Vdiff = 0.2 ; // ignored for input
-        TypMinMaxValue tdelay; // ignored for outputs
+public:
+    wxString       pinA;
+    wxString       pinB;
+    double         Vdiff = 0.2; // ignored for input
+    TypMinMaxValue tdelay;      // ignored for outputs
 };
 
 class IbisDiffPin
 {
-    public:
-        std::vector<IbisDiffPinEntry> m_entries;
+public:
+    std::vector<IbisDiffPinEntry> m_entries;
 };
 
 class IbisComponent
@@ -200,7 +200,7 @@ public:
     wxString                             m_packageModel;
     wxString             m_busLabel;
     wxString             m_dieSupplyPads;
-    IbisDiffPin            m_diffPin;
+    IbisDiffPin                          m_diffPin;
 
     bool Check();
 };
@@ -777,7 +777,7 @@ bool IbisParser::parseFile( wxFileName aFileName, IbisFile* aFile )
     ibisFile.open( aFileName.GetFullName() );
     if( ibisFile )
     {
-        err_msg = wxString("Reading file ") + aFileName.GetFullName() + wxString("...");
+        err_msg = wxString( "Reading file " ) + aFileName.GetFullName() + wxString( "..." );
         m_reporter->Report( err_msg, RPT_SEVERITY_ACTION );
         std::filebuf* pbuf = ibisFile.rdbuf();
         long          size = pbuf->pubseekoff( 0, ibisFile.end );
@@ -795,12 +795,12 @@ bool IbisParser::parseFile( wxFileName aFileName, IbisFile* aFile )
                 m_reporter->Report( "Unexpected end of file. Missing [END] ?", RPT_SEVERITY_ERROR );
                 return false;
             }
-            
-            if ( m_parrot )
+
+            if( m_parrot )
             {
                 PrintLine();
             }
-            
+
             if( !onNewLine() )
             {
                 err_msg = wxString( "Error at line " );
@@ -1022,7 +1022,7 @@ bool IbisParser::readDouble( double* aDest )
     if ( readWord( &str ) )
     {
         if ( parseDouble( aDest, str,  true ) )
-        { 
+        {
         }
         else
         {
@@ -1176,7 +1176,7 @@ bool IbisParser::changeContext( wxString aKeyword )
 
     // Old context;
     IBIS_PARSER_CONTEXT old_context = m_context;
-    
+
     if( aKeyword != "END" && status )
     {
         //New context
@@ -1363,25 +1363,26 @@ bool IbisParser::parseModel( wxString aKeyword )
     else if( !aKeyword.CmpNoCase( "Rising_Waveform" ) )
         status &= readWaveform( &( m_currentModel->m_risingWaveform ), IBIS_WAVEFORM_TYPE::RISING );
     else if( !aKeyword.CmpNoCase( "Falling_Waveform" ) )
-        status &= readWaveform( &( m_currentModel->m_fallingWaveform ), IBIS_WAVEFORM_TYPE::FALLING );
+        status &=
+                readWaveform( &( m_currentModel->m_fallingWaveform ), IBIS_WAVEFORM_TYPE::FALLING );
     else if( !aKeyword.CmpNoCase( "Ramp" ) )
         status &= readRamp();
     else if( !aKeyword.CmpNoCase( "Pullup_Reference" ) )
-        status &= readTypMinMaxValue( &(m_currentModel->m_pullupReference) );
+        status &= readTypMinMaxValue( &( m_currentModel->m_pullupReference ) );
     else if( !aKeyword.CmpNoCase( "Pulldown_Reference" ) )
-        status &= readTypMinMaxValue( &(m_currentModel->m_pulldownReference) );
+        status &= readTypMinMaxValue( &( m_currentModel->m_pulldownReference ) );
     else if( !aKeyword.CmpNoCase( "POWER_Clamp_Reference" ) )
-        status &= readTypMinMaxValue( &(m_currentModel->m_POWERClampReference) );
+        status &= readTypMinMaxValue( &( m_currentModel->m_POWERClampReference ) );
     else if( !aKeyword.CmpNoCase( "GND_Clamp_Reference" ) )
-        status &= readTypMinMaxValue( &(m_currentModel->m_GNDClampReference) );
+        status &= readTypMinMaxValue( &( m_currentModel->m_GNDClampReference ) );
     else if( !aKeyword.CmpNoCase( "Rac" ) )
-        status &= readTypMinMaxValue( &(m_currentModel->m_Rac) );
+        status &= readTypMinMaxValue( &( m_currentModel->m_Rac ) );
     else if( !aKeyword.CmpNoCase( "Cac" ) )
-        status &= readTypMinMaxValue( &(m_currentModel->m_Cac) );
+        status &= readTypMinMaxValue( &( m_currentModel->m_Cac ) );
     else if( !aKeyword.CmpNoCase( "Rpower" ) )
-        status &= readTypMinMaxValue( &(m_currentModel->m_Rpower) );
+        status &= readTypMinMaxValue( &( m_currentModel->m_Rpower ) );
     else if( !aKeyword.CmpNoCase( "Rgnd" ) )
-        status &= readTypMinMaxValue( &(m_currentModel->m_Rgnd) );
+        status &= readTypMinMaxValue( &( m_currentModel->m_Rgnd ) );
     else
     {
         if( !changeContext( aKeyword ) )
@@ -1743,11 +1744,11 @@ bool IbisParser::parseComponent( wxString aKeyword )
     {
         status &= StoreString( &( m_currentComponent->m_manufacturer ), true );
     }
-    else if( !aKeyword.CmpNoCase( "Package" )  )
+    else if( !aKeyword.CmpNoCase( "Package" ) )
     {
         status &= readPackage();
     }
-    else if( !aKeyword.CmpNoCase( "Pin" )  )
+    else if( !aKeyword.CmpNoCase( "Pin" ) )
     {
         status &= readPin();
     }
@@ -1808,7 +1809,7 @@ bool IbisParser::readPackage()
 
     int extraArg = ( m_continue == IBIS_PARSER_CONTINUE::NONE ) ? 1 : 0;
 
-    if( fields.size() == (4 + extraArg)  )
+    if( fields.size() == ( 4 + extraArg ) )
     {
         if( fields.at( 0 ) == "R_pkg" )
         {
@@ -2005,7 +2006,6 @@ bool IbisParser::readPinMapping()
 }
 
 
-
 bool IbisParser::readDiffPin()
 {
     bool status = true;
@@ -2018,13 +2018,13 @@ bool IbisParser::readDiffPin()
     }
     else
     {
-        if( readWord( &(entry.pinA ) ) )
+        if( readWord( &( entry.pinA ) ) )
         {
-            if( readWord( &(entry.pinB ) ) )
+            if( readWord( &( entry.pinB ) ) )
             {
-                if( readDouble( &(entry.Vdiff ) ) )
+                if( readDouble( &( entry.Vdiff ) ) )
                 {
-                    if( readTypMinMaxValue( &(entry.tdelay ) ) )
+                    if( readTypMinMaxValue( &( entry.tdelay ) ) )
                     {
                     }
                     m_currentComponent->m_diffPin.m_entries.push_back( entry );
@@ -2036,7 +2036,7 @@ bool IbisParser::readDiffPin()
             }
             else
             {
-            std::cout << entry.pinB << std::endl;
+                std::cout << entry.pinB << std::endl;
 
                 m_reporter->Report( "[Pin Diff]: Incorrect inv_pin", RPT_SEVERITY_ERROR );
             }
@@ -2044,7 +2044,7 @@ bool IbisParser::readDiffPin()
         else
         {
             m_reporter->Report( "[Pin Diff]: Incorrect pin name", RPT_SEVERITY_ERROR );
-        }       
+        }
     }
     return status;
 }
