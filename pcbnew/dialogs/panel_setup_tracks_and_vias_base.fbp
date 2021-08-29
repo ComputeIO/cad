@@ -235,7 +235,7 @@
                                         <property name="permission">none</property>
                                         <object class="sizeritem" expanded="1">
                                             <property name="border">5</property>
-                                            <property name="flag">wxLEFT|wxRIGHT</property>
+                                            <property name="flag">wxALL</property>
                                             <property name="proportion">0</property>
                                             <object class="wxBitmapButton" expanded="1">
                                                 <property name="BottomDockable">1</property>
@@ -318,7 +318,7 @@
                                         </object>
                                         <object class="sizeritem" expanded="1">
                                             <property name="border">5</property>
-                                            <property name="flag">wxLEFT|wxRIGHT</property>
+                                            <property name="flag">wxALL</property>
                                             <property name="proportion">0</property>
                                             <object class="wxBitmapButton" expanded="1">
                                                 <property name="BottomDockable">1</property>
@@ -504,7 +504,7 @@
                                         <property name="permission">none</property>
                                         <object class="sizeritem" expanded="1">
                                             <property name="border">5</property>
-                                            <property name="flag">wxLEFT|wxRIGHT</property>
+                                            <property name="flag">wxALL</property>
                                             <property name="proportion">0</property>
                                             <object class="wxBitmapButton" expanded="1">
                                                 <property name="BottomDockable">1</property>
@@ -587,7 +587,7 @@
                                         </object>
                                         <object class="sizeritem" expanded="1">
                                             <property name="border">5</property>
-                                            <property name="flag">wxLEFT|wxRIGHT</property>
+                                            <property name="flag">wxALL</property>
                                             <property name="proportion">0</property>
                                             <object class="wxBitmapButton" expanded="1">
                                                 <property name="BottomDockable">1</property>
@@ -773,7 +773,7 @@
                                         <property name="permission">none</property>
                                         <object class="sizeritem" expanded="1">
                                             <property name="border">5</property>
-                                            <property name="flag">wxLEFT|wxRIGHT</property>
+                                            <property name="flag">wxALL</property>
                                             <property name="proportion">0</property>
                                             <object class="wxBitmapButton" expanded="1">
                                                 <property name="BottomDockable">1</property>
@@ -856,7 +856,7 @@
                                         </object>
                                         <object class="sizeritem" expanded="1">
                                             <property name="border">5</property>
-                                            <property name="flag">wxLEFT|wxRIGHT</property>
+                                            <property name="flag">wxALL</property>
                                             <property name="proportion">0</property>
                                             <object class="wxBitmapButton" expanded="1">
                                                 <property name="BottomDockable">1</property>
