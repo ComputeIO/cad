@@ -2266,11 +2266,11 @@ bool IbisParser::readWaveform( IbisWaveform* aDest, IBIS_WAVEFORM_TYPE aType )
             ;
         else if( readNumericSubparam( wxString( "V_fixture_max" ), &( wf->m_V_fixture_max ) ) )
             ;
-        else if( readNumericSubparam( wxString( "R_dut" ), &( wf->m_L_fixture ) ) )
+        else if( readNumericSubparam( wxString( "R_dut" ), &( wf->m_R_fixture ) ) )
             ;
         else if( readNumericSubparam( wxString( "L_dut" ), &( wf->m_L_fixture ) ) )
             ;
-        else if( readNumericSubparam( wxString( "C_dut" ), &( wf->m_L_fixture ) ) )
+        else if( readNumericSubparam( wxString( "C_dut" ), &( wf->m_C_fixture ) ) )
             ;
         else
         {
