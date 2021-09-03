@@ -825,6 +825,8 @@ void C_MICROSTRIP::calcAnalyze()
     attenuation();
     /* calculate electrical lengths */
     line_angle();
+    /* calculate diff impedance */
+    diff_impedance();
 }
 
 
