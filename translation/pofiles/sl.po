@@ -20276,8 +20276,8 @@ msgid "Component Parameters"
 msgstr "Parametri komponente"
 
 #: pcb_calculator/dialogs/pcb_calculator_frame_base.cpp:895
-msgid ""
-msgstr ""
+msgid "Zdiff = Zodd * 2"
+msgstr "Zdiff = Zodd * 2"
 
 #: pcb_calculator/dialogs/pcb_calculator_frame_base.cpp:901
 msgid "Zcommon = Zeven / 2"
