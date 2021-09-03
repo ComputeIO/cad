@@ -892,7 +892,7 @@ PCB_CALCULATOR_FRAME_BASE::PCB_CALCULATOR_FRAME_BASE( wxWindow* parent, wxWindow
 	m_fgSizerZcomment->SetFlexibleDirection( wxBOTH );
 	m_fgSizerZcomment->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
 
-	m_staticTextZdiff = new wxStaticText( m_panelTransline, wxID_ANY, _("Zdiff = Zodd * 2"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_staticTextZdiff = new wxStaticText( m_panelTransline, wxID_ANY, _(" "), wxDefaultPosition, wxDefaultSize, 0 );
 	m_staticTextZdiff->Wrap( -1 );
 	m_staticTextZdiff->SetFont( wxFont( wxNORMAL_FONT->GetPointSize(), wxFONTFAMILY_DEFAULT, wxFONTSTYLE_ITALIC, wxFONTWEIGHT_BOLD, false, wxEmptyString ) );
 
