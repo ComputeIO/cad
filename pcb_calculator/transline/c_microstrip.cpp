@@ -895,6 +895,7 @@ void C_MICROSTRIP::show_results()
     setResult( 5, atten_dielectric_o, "dB" );
 
     setResult( 6, m_parameters[SKIN_DEPTH_PRM] / UNIT_MICRON, "µm" );
+    setResult( 7, Zdiff, "Ω" );
 }
 
 
