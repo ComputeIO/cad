@@ -20109,8 +20109,8 @@ msgid "Component Parameters"
 msgstr "Παράμετροι Εξαρτήματος"
 
 #: pcb_calculator/dialogs/pcb_calculator_frame_base.cpp:895
-msgid "Zdiff = Zodd * 2"
-msgstr "Ζδιαφ = Ζμονό * 2"
+msgid ""
+msgstr ""
 
 #: pcb_calculator/dialogs/pcb_calculator_frame_base.cpp:901
 msgid "Zcommon = Zeven / 2"
