@@ -14011,8 +14011,8 @@ msgstr "Conductor mu:"
 msgid "Component Parameters"
 msgstr "Component Parameters"
 
-msgid ""
-msgstr ""
+msgid "Zdiff = Zodd * 2"
+msgstr "Zdiff = Zodd * 2"
 
 msgid "Zcommon = Zeven / 2"
 msgstr "Zcommon = Zeven / 2"

@@ -20066,7 +20066,7 @@ msgid "Component Parameters"
 msgstr "Параметри компоненте:"
 
 #: pcb_calculator/dialogs/pcb_calculator_frame_base.cpp:895
-msgid ""
+msgid "Zdiff = Zodd * 2"
 msgstr ""
 
 #: pcb_calculator/dialogs/pcb_calculator_frame_base.cpp:901

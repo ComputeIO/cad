@@ -886,23 +886,17 @@ PCB_CALCULATOR_FRAME_BASE::PCB_CALCULATOR_FRAME_BASE( wxWindow* parent, wxWindow
 	m_bmCMicrostripZoddZeven = new wxStaticBitmap( m_panelTransline, wxID_ANY, wxNullBitmap, wxDefaultPosition, wxDefaultSize, 0 );
 	bSizerHelpBitmaps->Add( m_bmCMicrostripZoddZeven, 0, wxALL|wxALIGN_CENTER_HORIZONTAL, 10 );
 
-	m_fgSizerZcomment = new wxFlexGridSizer( 0, 2, 0, 15 );
+	m_fgSizerZcomment = new wxFlexGridSizer( 0, 1, 0, 15 );
 	m_fgSizerZcomment->AddGrowableCol( 0 );
 	m_fgSizerZcomment->AddGrowableCol( 1 );
 	m_fgSizerZcomment->SetFlexibleDirection( wxBOTH );
 	m_fgSizerZcomment->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_SPECIFIED );
 
-	m_staticTextZdiff = new wxStaticText( m_panelTransline, wxID_ANY, _(" "), wxDefaultPosition, wxDefaultSize, 0 );
-	m_staticTextZdiff->Wrap( -1 );
-	m_staticTextZdiff->SetFont( wxFont( wxNORMAL_FONT->GetPointSize(), wxFONTFAMILY_DEFAULT, wxFONTSTYLE_ITALIC, wxFONTWEIGHT_BOLD, false, wxEmptyString ) );
-
-	m_fgSizerZcomment->Add( m_staticTextZdiff, 0, wxALL, 5 );
-
-	m_staticTextZcommon = new wxStaticText( m_panelTransline, wxID_ANY, _("Zcommon = Zeven / 2"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_staticTextZcommon = new wxStaticText( m_panelTransline, wxID_ANY, _("Zcommon = Zeven / 2"), wxDefaultPosition, wxDefaultSize, wxALIGN_CENTER_HORIZONTAL );
 	m_staticTextZcommon->Wrap( -1 );
 	m_staticTextZcommon->SetFont( wxFont( wxNORMAL_FONT->GetPointSize(), wxFONTFAMILY_DEFAULT, wxFONTSTYLE_ITALIC, wxFONTWEIGHT_BOLD, false, wxEmptyString ) );
 
-	m_fgSizerZcomment->Add( m_staticTextZcommon, 0, wxALL, 5 );
+	m_fgSizerZcomment->Add( m_staticTextZcommon, 0, wxALIGN_CENTER_HORIZONTAL|wxALL, 5 );
 
 
 	bSizerHelpBitmaps->Add( m_fgSizerZcomment, 0, wxEXPAND, 5 );
@@ -1118,11 +1112,13 @@ PCB_CALCULATOR_FRAME_BASE::PCB_CALCULATOR_FRAME_BASE( wxWindow* parent, wxWindow
 
 	m_left_message8 = new wxStaticText( sbMessagesSizer->GetStaticBox(), wxID_ANY, _("dummy"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_left_message8->Wrap( -1 );
-	fgSizerTranslResults->Add( m_left_message8, 0, wxRIGHT|wxLEFT|wxALIGN_CENTER_VERTICAL|wxALIGN_RIGHT, 5 );
+	fgSizerTranslResults->Add( m_left_message8, 0, wxALIGN_CENTER_VERTICAL|wxALIGN_RIGHT|wxLEFT|wxRIGHT, 5 );
 
 	m_Message8 = new wxStaticText( sbMessagesSizer->GetStaticBox(), wxID_ANY, _("dummy"), wxDefaultPosition, wxDefaultSize, 0 );
 	m_Message8->Wrap( -1 );
-	fgSizerTranslResults->Add( m_Message8, 0, wxRIGHT|wxLEFT|wxEXPAND, 5 );
+	fgSizerTranslResults->Add( m_Message8, 0, wxEXPAND|wxLEFT|wxRIGHT, 5 );
+
+
 	sbMessagesSizer->Add( fgSizerTranslResults, 1, wxEXPAND, 5 );
 
 
