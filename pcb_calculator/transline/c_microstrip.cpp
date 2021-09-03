@@ -48,6 +48,7 @@ C_MICROSTRIP::C_MICROSTRIP() : TRANSLINE(),
         s( 0.0 ),                  // spacing of lines
         Z0_e_0( 0.0 ),             // static even-mode impedance
         Z0_o_0( 0.0 ),             // static odd-mode impedance
+        Zdiff( 0.0),               // differential impedance
         Z0e( 0.0 ),                // even-mode impedance
         Z0o( 0.0 ),                // odd-mode impedance
         c_e( 0.0 ),                // even-mode capacitance
