@@ -27,7 +27,7 @@ class IBIS_MATRIX
 {
 public:
     IBIS_MATRIX_TYPE m_type = IBIS_MATRIX_TYPE::UNDEFINED;
-    int              m_dim = 0;
+    int              m_dim = -1;
     double*          m_data;
 };
 
@@ -35,7 +35,7 @@ class IBIS_MATRIX_BANDED : public IBIS_MATRIX
 {
 public:
     IBIS_MATRIX_TYPE m_type = IBIS_MATRIX_TYPE::BANDED;
-    int              m_dim = 0;
+    int              m_dim = -1;
     int              m_bandwidth = 0;
     double*          m_data;
 };
@@ -43,14 +43,14 @@ class IBIS_MATRIX_SPARSE : public IBIS_MATRIX
 {
 public:
     IBIS_MATRIX_TYPE m_type = IBIS_MATRIX_TYPE::BANDED;
-    int              m_dim = 0;
+    int              m_dim = -1;
     double*          m_data;
 };
 class IBIS_MATRIX_FULL : public IBIS_MATRIX
 {
 public:
     IBIS_MATRIX_TYPE m_type = IBIS_MATRIX_TYPE::FULL;
-    int              m_dim = 0;
+    int              m_dim = -1;
     double*          m_data;
 };
 
@@ -700,6 +700,7 @@ bool IbisHeader::Check()
 class IbisPackageModel
 {
 public:
+    wxString              m_name;
     wxString              m_manufacturer;
     wxString              m_OEM;
     wxString              m_description;
@@ -709,8 +710,71 @@ public:
     IBIS_MATRIX m_resistanceMatrix;
     IBIS_MATRIX m_capacitanceMatrix;
     IBIS_MATRIX m_inductanceMatrix;
+
+    bool Check();
 };
 
+bool IbisPackageModel::Check()
+{
+    bool status = true;
+
+    if( m_name.IsEmpty() )
+    {
+        std::cerr << "Package Model: name cannot be empty." << std::endl;
+        status = false;
+    }
+
+    std::cout << "Checking package model " << m_name << "..." << std::endl;
+
+    if( m_manufacturer.IsEmpty() )
+    {
+        std::cerr << "Package Model: manufacturer cannot be empty." << std::endl;
+        status = false;
+    }
+    if( m_OEM.IsEmpty() )
+    {
+        std::cerr << "Package Model: OEM cannot be empty." << std::endl;
+        status = false;
+    }
+    if( std::isnan( m_numberOfPins ) )
+    {
+        std::cerr << "Package Model: number of pins is NaN." << std::endl;
+        status = false;
+    }
+    if( m_numberOfPins <= 0 )
+    {
+        std::cerr << "Package Model: number of pins is negative." << std::endl;
+        status = false;
+    }
+
+    if( m_pins.size() != m_numberOfPins )
+    {
+        std::cerr << "Package Model: number of pins does not match [Pin Numbers] size" << std::endl;
+        status = false;
+    }
+
+    for( int i = 0; i < m_pins.size(); i++ )
+    {
+        if( m_pins.at( i ).IsEmpty() )
+        {
+            std::cerr << "Package Model: Empty pin number" << std::endl;
+            status = false;
+        }
+    }
+    // resistance matrix is not required
+    if( m_capacitanceMatrix.m_type == IBIS_MATRIX_TYPE::UNDEFINED )
+    {
+        std::cerr << "Package Model: Capacitance matrix is undefined" << std::endl;
+        status = false;
+    }
+    if( m_inductanceMatrix.m_type == IBIS_MATRIX_TYPE::UNDEFINED )
+    {
+        std::cerr << "Package Model: Inductance matrix is undefined" << std::endl;
+        status = false;
+    }
+
+    return status;
+}
 
 class IbisFile
 {
@@ -1327,6 +1391,8 @@ bool IbisParser::changeContext( wxString aKeyword )
         {
             IbisPackageModel PM;
 
+            StoreString( &( PM.m_name ), false );
+
             m_ibisFile->m_packageModels.push_back( PM );
             m_currentPackageModel = &( m_ibisFile->m_packageModels.back() );
             m_context = IBIS_PARSER_CONTEXT::PACKAGEMODEL;
@@ -1380,6 +1446,7 @@ bool IbisParser::changeContext( wxString aKeyword )
         case IBIS_PARSER_CONTEXT::COMPONENT: status &= m_currentComponent->Check(); break;
         case IBIS_PARSER_CONTEXT::MODEL: status &= m_currentModel->Check(); break;
         case IBIS_PARSER_CONTEXT::MODELSELECTOR: status &= m_currentModel->Check(); break;
+        case IBIS_PARSER_CONTEXT::PACKAGEMODEL: status &= m_currentPackageModel->Check(); break;
         case IBIS_PARSER_CONTEXT::END:
             m_reporter->Report( "Internal Error: Cannot change context after [END]" );
             status = false;
