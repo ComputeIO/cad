@@ -14,6 +14,45 @@
 #define IBIS_MAX_VERSION 7.0      // Up to v7.0, IBIS is fully backward compatible
 #define IBIS_MAX_LINE_LENGTH 2048 // official limit is 1024
 
+enum class IBIS_MATRIX_TYPE
+{
+    // All matrices are supposed to be symmetrical, only upper right triangle is given
+    UNDEFINED,
+    BANDED, // Give the main diagonal + [bandwith] elements on the right
+    SPARSE, // Only give non-zero values.
+    FULL,   // Give the whole upper triangle.
+};
+
+class IBIS_MATRIX
+{
+public:
+    IBIS_MATRIX_TYPE m_type = IBIS_MATRIX_TYPE::UNDEFINED;
+    int              m_dim = 0;
+    double*          m_data;
+};
+
+class IBIS_MATRIX_BANDED : public IBIS_MATRIX
+{
+public:
+    IBIS_MATRIX_TYPE m_type = IBIS_MATRIX_TYPE::BANDED;
+    int              m_dim = 0;
+    int              m_bandwidth = 0;
+    double*          m_data;
+};
+class IBIS_MATRIX_SPARSE : public IBIS_MATRIX
+{
+public:
+    IBIS_MATRIX_TYPE m_type = IBIS_MATRIX_TYPE::BANDED;
+    int              m_dim = 0;
+    double*          m_data;
+};
+class IBIS_MATRIX_FULL : public IBIS_MATRIX
+{
+public:
+    IBIS_MATRIX_TYPE m_type = IBIS_MATRIX_TYPE::FULL;
+    int              m_dim = 0;
+    double*          m_data;
+};
 
 bool isNumberNA( double aNumber )
 {
@@ -666,6 +705,10 @@ public:
     wxString              m_description;
     int                   m_numberOfPins;
     std::vector<wxString> m_pins;
+
+    IBIS_MATRIX m_resistanceMatrix;
+    IBIS_MATRIX m_capacitanceMatrix;
+    IBIS_MATRIX m_inductanceMatrix;
 };
 
 
@@ -689,6 +732,7 @@ enum class IBIS_PARSER_CONTINUE
     COMPONENT_DIFFPIN,
     COMPONENT_DIESUPPLYPADS,
     COMPONENT_PIN,
+    MATRIX,
     MODELSELECTOR,
     MODEL,
     IV_TABLE,
@@ -705,6 +749,7 @@ enum class IBIS_PARSER_CONTEXT
     MODELSELECTOR,
     MODEL,
     PACKAGEMODEL,
+    PACKAGEMODEL_MODELDATA,
     END
 };
 
@@ -726,6 +771,9 @@ public:
     IbisModelSelector* m_currentModelSelector;
     IbisModel*         m_currentModel;
     IbisPackageModel*  m_currentPackageModel;
+    IBIS_MATRIX*       m_currentMatrix;
+    int                m_currentMatrixRow;
+    int                m_currentMatrixRowIndex;
     IVtable*           m_currentIVtable;
     VTtable*           m_currentVTtable;
     IbisWaveform*      m_currentWaveform;
@@ -737,6 +785,7 @@ public:
     bool parseModelSelector( wxString );
     bool parseModel( wxString );
     bool parsePackageModel( wxString );
+    bool parsePackageModelModelData( wxString );
     bool parseDouble( double* aDest, wxString aStr, bool aAllowModifiers = false );
 
 private:
@@ -754,6 +803,10 @@ private:
     bool      readDouble( double* aDest );
     bool      readWord( wxString* );
     bool      readDvdt( wxString, dvdt* );
+    bool      readMatrix( IBIS_MATRIX* );
+    bool      readMatrixBanded( wxString, IBIS_MATRIX_BANDED* );
+    bool      readMatrixFull( wxString, IBIS_MATRIX_FULL* );
+    bool      readMatrixSparse( wxString, IBIS_MATRIX_SPARSE* );
     bool      readRampdvdt( dvdtTypMinMax* aDest);
     bool      readRamp();
     bool      readWaveform( IbisWaveform* aDest, IBIS_WAVEFORM_TYPE aType );
@@ -916,7 +969,6 @@ bool IbisParser::parseDouble( double* aDest, wxString aStr, bool aAllowModifiers
 {
     // "  an entry of the C matrix could be given as 1.23e-12 or as 1.23p or 1.23pF."
     skipWhitespaces();
-
     bool status = true;
 
     wxString str = aStr;
@@ -1064,30 +1116,38 @@ bool IbisParser::readInt( int* aDest )
     wxString str;
     double   buffer;
 
-    if( readWord( &str ) )
+    if( aDest != nullptr )
     {
-        if( str.ToDouble( &buffer ) )
+        if( readWord( &str ) )
         {
-            int result = static_cast<int>( buffer );
-            if( buffer == static_cast<double>( result ) )
+            if( str.ToDouble( &buffer ) )
             {
-                *aDest = result;
+                int result = static_cast<int>( buffer );
+                if( buffer == static_cast<double>( result ) )
+                {
+                    *aDest = result;
+                }
+                else
+                {
+                    status = false;
+                    m_reporter->Report( "Number is not an integer", RPT_SEVERITY_WARNING );
+                }
             }
             else
             {
                 status = false;
-                m_reporter->Report( "Number is not an integer", RPT_SEVERITY_WARNING );
+                m_reporter->Report( "Can't read number", RPT_SEVERITY_WARNING );
             }
         }
         else
         {
+            m_reporter->Report( "Can't read word", RPT_SEVERITY_WARNING );
             status = false;
-            m_reporter->Report( "Can't read number", RPT_SEVERITY_WARNING );
         }
     }
     else
     {
-        m_reporter->Report( "Can't read word", RPT_SEVERITY_WARNING );
+        m_reporter->Report( "Internal error while reading int", RPT_SEVERITY_ERROR );
         status = false;
     }
 
@@ -1271,6 +1331,19 @@ bool IbisParser::changeContext( wxString aKeyword )
             m_currentPackageModel = &( m_ibisFile->m_packageModels.back() );
             m_context = IBIS_PARSER_CONTEXT::PACKAGEMODEL;
         }
+        else if( !aKeyword.CmpNoCase( "End_Package_Model" ) )
+        {
+            if( m_currentComponent != nullptr )
+            {
+                m_context = IBIS_PARSER_CONTEXT::COMPONENT;
+                m_continue = IBIS_PARSER_CONTINUE::NONE;
+            }
+            else // .pkg file, we just go back to header, to get the [END] keyword
+            {    // This will cause the header to be checked twice.
+                m_context = IBIS_PARSER_CONTEXT::HEADER;
+                m_continue = IBIS_PARSER_CONTINUE::NONE;
+            }
+        }
         else
         {
             status = false;
@@ -1283,10 +1356,13 @@ bool IbisParser::changeContext( wxString aKeyword )
             case IBIS_PARSER_CONTEXT::MODELSELECTOR: err_msg += "MODEL_SELECTOR"; break;
             case IBIS_PARSER_CONTEXT::MODEL: err_msg += "MODEL"; break;
             case IBIS_PARSER_CONTEXT::PACKAGEMODEL: err_msg += "PACKAGE_MODEL"; break;
+            case IBIS_PARSER_CONTEXT::PACKAGEMODEL_MODELDATA:
+                err_msg += "PACKAGE_MODEL_MODEL_DATA";
+                break;
             default: err_msg += "???"; break;
             }
 
-            err_msg += " context.";
+            err_msg += " context : " + aKeyword;
 
             m_reporter->Report( err_msg, RPT_SEVERITY_ERROR );
         }
@@ -1467,6 +1543,286 @@ bool IbisParser::readPackageModelPins()
     return true;
 }
 
+
+bool IbisParser::readMatrixBanded( wxString aKeyword, IBIS_MATRIX_BANDED* aDest )
+{
+    bool status = true;
+    m_continue = IBIS_PARSER_CONTINUE::MATRIX;
+    m_currentMatrix = static_cast<IBIS_MATRIX_BANDED*>( aDest );
+
+    if( !aKeyword.CmpNoCase( "Bandwidth" ) )
+    {
+        if( m_currentMatrix->m_type == IBIS_MATRIX_TYPE::BANDED )
+        {
+            status &= readInt( &( aDest->m_bandwidth ) );
+            if( status )
+            {
+                if( aDest->m_data != nullptr )
+                {
+                    //free( aDest->m_data );
+                }
+                aDest->m_data = static_cast<double*>(
+                        malloc( ( aDest->m_bandwidth * aDest->m_dim ) * sizeof( double ) ) );
+            }
+        }
+        else
+        {
+            status = false;
+            m_reporter->Report( "[Bandwidth] is reserved for banded matrices.",
+                                RPT_SEVERITY_ERROR );
+        }
+    }
+    if( !aKeyword.CmpNoCase( "Dummy" ) )
+    {
+        int i;
+        for( i = 0; i < aDest->m_bandwidth; i++ )
+        {
+            if( i + m_currentMatrixRowIndex >= aDest->m_bandwidth )
+            {
+                m_reporter->Report( "Banded matrix: too much data to fit into that row.",
+                                    RPT_SEVERITY_ERROR );
+                status = false;
+                break;
+            }
+            if( !readDouble( &( aDest->m_data[i + m_currentMatrixRow * aDest->m_bandwidth] ) ) )
+            {
+                m_reporter->Report( "Banded matrix: can't read row.", RPT_SEVERITY_ERROR );
+                status = false;
+                break;
+            }
+        }
+        m_currentMatrixRowIndex = i;
+    }
+
+    return status;
+}
+
+
+bool IbisParser::readMatrixFull( wxString aKeyword, IBIS_MATRIX_FULL* aDest )
+{
+    bool status = true;
+    m_continue = IBIS_PARSER_CONTINUE::MATRIX;
+    m_currentMatrix = static_cast<IBIS_MATRIX_FULL*>( aDest );
+
+    if( !aKeyword.CmpNoCase( "Dummy" ) )
+    {
+        std::vector<wxString> values = ReadTableLine();
+        int                   i;
+        for( i = 0; i < values.size(); i++ )
+        {
+            int index = i + m_currentMatrixRow * aDest->m_dim + m_currentMatrixRow;
+            // + final m_currentMatrixRow because we don't fill the lower triangle.
+
+            if( i >= ( aDest->m_dim - m_currentMatrixRow - m_currentMatrixRowIndex ) )
+            {
+                m_reporter->Report( "Full matrix : too much data to fit into that row",
+                                    RPT_SEVERITY_ERROR );
+                status = false;
+                break;
+            }
+
+            if( index >= aDest->m_dim * aDest->m_dim )
+            {
+                status = false;
+                m_reporter->Report( "Full matrix : too much data to fit into that matrix",
+                                    RPT_SEVERITY_ERROR );
+                break;
+            }
+            if( !parseDouble( aDest->m_data + index, values.at( i ), true ) )
+            {
+                m_reporter->Report( "Banded matrix: can't read row.", RPT_SEVERITY_ERROR );
+                status = false;
+            }
+            else
+            {
+            }
+        }
+        m_currentMatrixRowIndex = i;
+    }
+    return status;
+}
+
+
+bool IbisParser::readMatrixSparse( wxString aKeyword, IBIS_MATRIX_SPARSE* aDest )
+{
+    bool status = true;
+
+    if( !aKeyword.CmpNoCase( "Dummy" ) )
+    {
+        int    subindex;
+        double value;
+
+        if( readInt( &subindex ) )
+        {
+            if( readDouble( &value ) )
+            {
+                int index = subindex + m_currentMatrixRow * aDest->m_dim + m_currentMatrixRow;
+            }
+            else
+            {
+                m_reporter->Report( "Sparse matrix : can't read value", RPT_SEVERITY_ERROR );
+            }
+        }
+        else
+        {
+            m_reporter->Report( "Sparse matrix : can't read index", RPT_SEVERITY_ERROR );
+        }
+    }
+    return status;
+}
+
+bool IbisParser::readMatrix( IBIS_MATRIX* aSource )
+{
+    bool     status = true;
+    wxString str;
+
+    bool init = false;
+
+    if( aSource != nullptr )
+    {
+        if( aSource->m_type != IBIS_MATRIX_TYPE::UNDEFINED )
+            init = true;
+    }
+    else
+    {
+        m_reporter->Report( "Internal Error: matrix pointer is null." );
+        status = false;
+    }
+
+    if( m_continue != IBIS_PARSER_CONTINUE::MATRIX && status )
+    {
+        if( !init )
+        {
+            if( readWord( &str ) )
+            {
+                if( !str.CmpNoCase( "Banded_Matrix" ) )
+                {
+                    IBIS_MATRIX_BANDED* matrix = new IBIS_MATRIX_BANDED();
+                    matrix->m_dim = m_currentPackageModel->m_numberOfPins;
+                    aSource = static_cast<IBIS_MATRIX*>( matrix );
+                    m_currentMatrix = aSource;
+                    m_currentMatrix->m_type = IBIS_MATRIX_TYPE::BANDED;
+                    m_continue = IBIS_PARSER_CONTINUE::MATRIX;
+                }
+                else if( !str.CmpNoCase( "Full_Matrix" ) )
+                {
+                    IBIS_MATRIX_FULL* matrix = new IBIS_MATRIX_FULL();
+                    matrix->m_dim = m_currentPackageModel->m_numberOfPins;
+                    matrix->m_data = static_cast<double*>(
+                            malloc( ( matrix->m_dim * matrix->m_dim ) * sizeof( double ) ) );
+                    aSource = static_cast<IBIS_MATRIX*>( matrix );
+                    m_currentMatrix = aSource;
+                    m_currentMatrix->m_type = IBIS_MATRIX_TYPE::FULL;
+                    m_continue = IBIS_PARSER_CONTINUE::MATRIX;
+                }
+                else if( !str.CmpNoCase( "Sparse_Matrix" ) )
+                {
+                    IBIS_MATRIX_SPARSE* matrix = new IBIS_MATRIX_SPARSE();
+                    matrix->m_dim = m_currentPackageModel->m_numberOfPins;
+                    matrix->m_data = static_cast<double*>(
+                            malloc( ( matrix->m_dim * matrix->m_dim ) * sizeof( double ) ) );
+                    aSource = static_cast<IBIS_MATRIX*>( matrix );
+                    m_currentMatrix = aSource;
+                    m_currentMatrix->m_type = IBIS_MATRIX_TYPE::SPARSE;
+                    m_continue = IBIS_PARSER_CONTINUE::MATRIX;
+                }
+                else
+                {
+                    status = false;
+                    m_reporter->Report( "Matrix: unknown type.", RPT_SEVERITY_ERROR );
+                    m_reporter->Report( str, RPT_SEVERITY_INFO );
+                }
+            }
+            else
+            {
+                status = false;
+                m_reporter->Report( "Matrix: type missing.", RPT_SEVERITY_ERROR );
+            }
+        }
+        else
+        {
+            status = false;
+            m_reporter->Report( " Matrix :already init. But m_continue was not set" );
+        }
+    }
+    else
+    {
+        if( aSource != nullptr )
+        {
+            // If m_continue is set, ( and no keyword ) then it is a row
+            switch( aSource->m_type )
+            {
+            case IBIS_MATRIX_TYPE::BANDED:
+                readMatrixBanded( wxString( "Dummy" ),
+                                  static_cast<IBIS_MATRIX_BANDED*>( aSource ) );
+                break;
+            case IBIS_MATRIX_TYPE::FULL:
+                readMatrixFull( wxString( "Dummy" ), static_cast<IBIS_MATRIX_FULL*>( aSource ) );
+                break;
+            case IBIS_MATRIX_TYPE::SPARSE:
+                readMatrixSparse( wxString( "Dummy" ),
+                                  static_cast<IBIS_MATRIX_SPARSE*>( aSource ) );
+                break;
+            case IBIS_MATRIX_TYPE::UNDEFINED:
+            default:
+            {
+                std::cout << "UNDEFINED" << std::endl;
+                status = false;
+                m_reporter->Report( " Matrix :Tried to read a row from an undefined matrix" );
+            }
+            }
+        }
+        else
+        {
+            m_reporter->Report( "Internal Error : matrix pointer is null" );
+        }
+    }
+    return status;
+}
+
+bool IbisParser::parsePackageModelModelData( wxString aKeyword )
+{
+    bool status = true;
+
+    if( !aKeyword.CmpNoCase( "Resistance_Matrix" ) )
+    {
+        IBIS_MATRIX dest, source;
+        status &= readMatrix( &( m_currentPackageModel->m_resistanceMatrix ) );
+    }
+    else if( !aKeyword.CmpNoCase( "Capacitance_Matrix" ) )
+    {
+        status &= readMatrix( &( m_currentPackageModel->m_capacitanceMatrix ) );
+    }
+    else if( !aKeyword.CmpNoCase( wxString( "Inductance_Matrix" ) ) )
+    {
+        status &= readMatrix( &( m_currentPackageModel->m_inductanceMatrix ) );
+    }
+    else if( !aKeyword.CmpNoCase( "Bandwidth" ) )
+    {
+        status &= readMatrixBanded( aKeyword, static_cast<IBIS_MATRIX_BANDED*>( m_currentMatrix ) );
+    }
+    else if( !aKeyword.CmpNoCase( wxString( "Row" ) ) )
+    {
+        status &= readInt( &( m_currentMatrixRow ) );
+        m_currentMatrixRow--;        // The matrix starts at 0
+        m_currentMatrixRowIndex = 0; // The matrix starts at 0*/
+        m_continue = IBIS_PARSER_CONTINUE::MATRIX;
+    }
+    else if( !aKeyword.CmpNoCase( "End_Model_Data" ) )
+    {
+        m_context = IBIS_PARSER_CONTEXT::PACKAGEMODEL;
+        m_continue = IBIS_PARSER_CONTINUE::NONE;
+    }
+    else
+    {
+        if( !changeContext( aKeyword ) )
+        {
+            status = false;
+        }
+    }
+    return status;
+}
+
 bool IbisParser::parsePackageModel( wxString aKeyword )
 {
     bool status = true;
@@ -1481,6 +1837,11 @@ bool IbisParser::parsePackageModel( wxString aKeyword )
         status &= readInt( &( m_currentPackageModel->m_numberOfPins ) );
     else if( !aKeyword.CmpNoCase( "Pin_Numbers" ) )
         status &= readPackageModelPins();
+    else if( !aKeyword.CmpNoCase( "Model_Data" ) )
+    {
+        m_context = IBIS_PARSER_CONTEXT::PACKAGEMODEL_MODELDATA;
+        m_continue = IBIS_PARSER_CONTINUE::NONE;
+    }
     else
     {
         if( !changeContext( aKeyword ) )
@@ -2312,6 +2673,9 @@ bool IbisParser::onNewLine()
         case IBIS_PARSER_CONTEXT::MODELSELECTOR: status &= parseModelSelector( keyword ); break;
         case IBIS_PARSER_CONTEXT::MODEL: status &= parseModel( keyword ); break;
         case IBIS_PARSER_CONTEXT::PACKAGEMODEL: status &= parsePackageModel( keyword ); break;
+        case IBIS_PARSER_CONTEXT::PACKAGEMODEL_MODELDATA:
+            status &= parsePackageModelModelData( keyword );
+            break;
         default:
         {
             status = false;
@@ -2349,6 +2713,7 @@ bool IbisParser::onNewLine()
             break;
         case IBIS_PARSER_CONTINUE::RAMP: status &= readRamp(); break;
         case IBIS_PARSER_CONTINUE::PACKAGEMODEL_PINS: status &= readPackageModelPins(); break;
+        case IBIS_PARSER_CONTINUE::MATRIX: status &= readMatrix( m_currentMatrix ); break;
         case IBIS_PARSER_CONTINUE::NONE:
         default:
             m_reporter->Report( "Missing keyword.", RPT_SEVERITY_ERROR );
