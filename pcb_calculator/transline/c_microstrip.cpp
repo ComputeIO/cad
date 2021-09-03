@@ -595,6 +595,15 @@ void C_MICROSTRIP::line_angle()
     ang_l_o = 2.0 * M_PI * m_parameters[PHYS_LEN_PRM] / lambda_g_o; /* in radians */
 }
 
+/* 
+* diff_impedance() - calculate differential impedance
+*/
+void C_MICROSTRIP::diff_impedance()
+{
+    Zdiff = 2*Z0_o_0*(1 - 0.48*exp(-0.96*(m_parameters[PHYS_S_PRM] /m_parameters[H_PRM])));	
+
+}
+
 
 void C_MICROSTRIP::syn_err_fun(
         double* f1, double* f2, double s_h, double w_h, double e_r, double w_h_se, double w_h_so )

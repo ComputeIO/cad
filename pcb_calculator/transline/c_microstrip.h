@@ -80,6 +80,7 @@ private:
     void   dielectric_losses();
     void   attenuation();
     void   line_angle();
+    void   diff_impedance();
     void   syn_err_fun( double*, double*, double, double, double, double, double );
     void   synth_width();
     void   Z0_dispersion();
