@@ -1,4 +1,4 @@
-[IBIS Ver]      2.1  |Let's test a comment      
+[IBIS Ver]      3.2  |Let's test a comment      
 [Comment char]  |_char 
 [File name]     ibis_v2_1.pkg
 [File Rev]      1.0  #Let's test a comment  
@@ -34,6 +34,7 @@
 [Manufacturer]  Kicad
 [OEM]           Kicad Packaging Co.
 [Description]   A 4 pin QFN, really ?
+[Number Of Sections] 2
 [Number of Pins]   4
 [Pin Numbers]
 A1
