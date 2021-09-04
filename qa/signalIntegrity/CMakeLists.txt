@@ -29,6 +29,9 @@ add_definitions(-DBOOST_TEST_DYN_LINK -DPCBNEW -DDRC_PROTO -DTEST_APP_NO_MAIN)
 
 add_executable( ibis_proto
     qaIbisParser.cpp
+    ../../pcbnew/signalIntegrity/ibisParser.cpp
+    ../../pcbnew/signalIntegrity/kibis.cpp
+    ../../pcbnew/signalIntegrity/ibis2kibis.cpp
 )
 
 add_dependencies( ibis_proto pnsrouter pcbcommon ${PCBNEW_IO_LIBRARIES} )
