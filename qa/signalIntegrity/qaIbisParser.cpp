@@ -1,4 +1,4 @@
-#include "../../pcbnew/SI/ibisParser.cpp"
+#include "../../pcbnew/signalIntegrity/ibisParser.cpp"
 
 int main( void )
 {
