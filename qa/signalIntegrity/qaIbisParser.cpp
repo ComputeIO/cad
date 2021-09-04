@@ -12,8 +12,10 @@ int main( void )
 
     parser = new IbisParser();
     file = new IbisFile();
-    //parser->m_parrot = true;
     parser->parseFile( wxFileName( "ibis_v2_1.pkg" ), file );
+    parser = new IbisParser();
+    file = new IbisFile();
+    parser->parseFile( wxFileName( "ad7768_lqfp.ibs" ), file );
 
     std::cout << "Done" << std::endl;
     return 1;
