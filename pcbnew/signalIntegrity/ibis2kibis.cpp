@@ -62,8 +62,8 @@ bool convertKibisModel( IbisParser* aParser, IbisModel* aSource, KIBIS_MODEL* aD
         aDest->m_polarity = aSource->m_polarity;
 
         aDest->m_ramp = aSource->m_ramp;
-        aDest->m_risingWaveform = aSource->m_risingWaveform;
-        aDest->m_fallingWaveform = aSource->m_fallingWaveform;
+        aDest->m_risingWaveforms = aSource->m_risingWaveforms;
+        aDest->m_fallingWaveforms = aSource->m_fallingWaveforms;
         aDest->m_GNDClamp = aSource->m_GNDClamp;
         aDest->m_GNDClampReference = aSource->m_GNDClampReference;
         aDest->m_POWERClamp = aSource->m_POWERClamp;

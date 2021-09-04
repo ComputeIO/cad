@@ -30,7 +30,7 @@ int main( void )
     else
     {
         std::cout << "Model: " << pin->m_models.at( 0 )->m_name << std::endl;
-        for( auto entry : pin->m_models.at( 0 )->m_fallingWaveform.m_table.m_entries )
+        for( auto entry : pin->m_models.at( 0 )->m_risingWaveforms.at( 0 )->m_table.m_entries )
         {
             std::cout << entry.t << " " << entry.V.typ << " ";
         }

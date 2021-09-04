@@ -342,8 +342,8 @@ public:
     IVtable        m_POWERClamp;
     IVtable        m_pullup;
     IVtable        m_pulldown;
-    IbisWaveform   m_risingWaveform;
-    IbisWaveform   m_fallingWaveform;
+    std::vector<IbisWaveform*> m_risingWaveforms;
+    std::vector<IbisWaveform*> m_fallingWaveforms;
     IbisRamp       m_ramp;
 
     bool Check();
@@ -453,6 +453,7 @@ private:
 
     void      skipWhitespaces();
     bool      checkEndofLine(); // To be used when there cannot be any character left on the line
+    bool      isLineEmptyFromCursor();
     wxString* getKeyword();
     bool      readInt( int* aDest );
     bool      readDouble( double* aDest );

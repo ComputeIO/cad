@@ -722,6 +722,19 @@ bool IbisParser::checkEndofLine()
     return true;
 }
 
+
+bool IbisParser::isLineEmptyFromCursor()
+{
+    int cursor = m_lineIndex;
+
+    while( ( isspace( m_line[cursor] ) ) && ( cursor < m_lineLength ) )
+    {
+        cursor++;
+    }
+
+    return ( cursor >= m_lineLength );
+}
+
 bool IbisParser::readDvdt( wxString aString, dvdt* aDest )
 {
     bool status = true;
@@ -1328,10 +1341,9 @@ bool IbisParser::parseModel( wxString aKeyword )
     else if( !aKeyword.CmpNoCase( "Pullup" ) )
         status &= readIVtableEntry( &( m_currentModel->m_pullup ) );
     else if( !aKeyword.CmpNoCase( "Rising_Waveform" ) )
-        status &= readWaveform( &( m_currentModel->m_risingWaveform ), IBIS_WAVEFORM_TYPE::RISING );
+        status &= readWaveform( nullptr, IBIS_WAVEFORM_TYPE::RISING );
     else if( !aKeyword.CmpNoCase( "Falling_Waveform" ) )
-        status &=
-                readWaveform( &( m_currentModel->m_fallingWaveform ), IBIS_WAVEFORM_TYPE::FALLING );
+        status &= readWaveform( nullptr, IBIS_WAVEFORM_TYPE::FALLING );
     else if( !aKeyword.CmpNoCase( "Ramp" ) )
         status &= readRamp();
     else if( !aKeyword.CmpNoCase( "Pullup_Reference" ) )
@@ -2458,7 +2470,15 @@ bool IbisParser::readVTtableEntry( VTtable* aDest )
 
     if( status )
     {
-        aDest->m_entries.push_back( entry );
+        if( aDest != nullptr )
+        {
+            aDest->m_entries.push_back( entry );
+        }
+        else
+        {
+            m_reporter->Report( "Internal Error: destination IV table is empty" );
+            status = false;
+        }
     }
     else
     {
@@ -2472,20 +2492,38 @@ bool IbisParser::readWaveform( IbisWaveform* aDest, IBIS_WAVEFORM_TYPE aType )
 {
     bool status = true;
 
-    aDest->m_type = aType;
 
     IbisWaveform* wf;
 
+    if( m_continue != IBIS_PARSER_CONTINUE::WAVEFORM )
+    {
+        wf = new IbisWaveform();
+        wf->m_type = aType;
+    }
+    else
+    {
+        if( aDest != nullptr )
+        {
+            wf = aDest;
+        }
+        m_reporter->Report( "Internal Error: waveform is nullptr, but should not.",
+                            RPT_SEVERITY_ERROR );
+    }
+
     switch( aType )
     {
-    case IBIS_WAVEFORM_TYPE::FALLING: wf = &( m_currentModel->m_fallingWaveform ); break;
-    case IBIS_WAVEFORM_TYPE::RISING: wf = &( m_currentModel->m_risingWaveform ); break;
-    default: m_reporter->Report( "Unknown waveform type", RPT_SEVERITY_ERROR );
+    case IBIS_WAVEFORM_TYPE::FALLING: m_currentModel->m_fallingWaveforms.push_back( wf ); break;
+    case IBIS_WAVEFORM_TYPE::RISING: m_currentModel->m_risingWaveforms.push_back( wf ); break;
+    default: m_reporter->Report( "Unknown waveform type", RPT_SEVERITY_ERROR ); status = false;
     }
-    m_currentWaveform = wf;
+
     if( status )
     {
-        if( readNumericSubparam( wxString( "R_fixture" ), &( wf->m_R_fixture ) ) )
+        if( isLineEmptyFromCursor() )
+        {
+            std::cout << "That line was empty" << std::endl;
+        }
+        else if( readNumericSubparam( wxString( "R_fixture" ), &( wf->m_R_fixture ) ) )
             ;
         else if( readNumericSubparam( wxString( "L_fixture" ), &( wf->m_L_fixture ) ) )
             ;
@@ -2506,6 +2544,7 @@ bool IbisParser::readWaveform( IbisWaveform* aDest, IBIS_WAVEFORM_TYPE aType )
         else
         {
             VTtableEntry entry;
+            std::cout << "TOTO " << std::endl;
 
             if( readVTtableEntry( &m_currentWaveform->m_table ) )
             {
@@ -2516,7 +2555,7 @@ bool IbisParser::readWaveform( IbisWaveform* aDest, IBIS_WAVEFORM_TYPE aType )
             }
         }
     }
-
+    m_currentWaveform = wf;
     m_continue = IBIS_PARSER_CONTINUE::WAVEFORM;
     return status;
 }

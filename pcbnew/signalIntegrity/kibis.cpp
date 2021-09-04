@@ -5,6 +5,7 @@ bool KibisFromFile( wxString aFileName, std::vector<KIBIS_COMPONENT*>* aDest )
 {
     IbisParser* parser = new IbisParser();
     IbisFile*   file = new IbisFile();
+    parser->m_parrot = true;
     parser->parseFile( wxFileName( aFileName ), file );
     convertKibisAll( parser, aDest );
 
