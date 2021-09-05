@@ -23,7 +23,7 @@ int main( void )
 
     KIBIS_PIN* pin = comp->getPin( "11" );
     wxString*  tmp;
-    pin->writeSpiceDriver( tmp );
+    pin->writeSpiceDriver( tmp, pin->m_models.at( 0 ) );
 
     std::cout << "Done" << std::endl;
     return 1;

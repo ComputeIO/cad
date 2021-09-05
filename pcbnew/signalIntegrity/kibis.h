@@ -83,7 +83,7 @@ public:
 
     std::vector<KIBIS_MODEL*> m_models;
 
-    bool writeSpiceDriver( wxString* aDest );
+    bool writeSpiceDriver( wxString* aDest, KIBIS_MODEL* aModel );
 };
 
 class KIBIS_COMPONENT : public KIBIS_ANY
