@@ -11,9 +11,10 @@ https://github.com/wxWidgets/Phoenix/tree/master/wx/py
 
 import wx
 
-from wx.py import crust, version, dispatcher
+from wx.py import crust, version, dispatcher, editwindow
 from wx.py.editor import Editor
 from wx.py.buffer import Buffer
+from wx import stc
 
 def KiNewId():
     try:
@@ -1072,3 +1073,75 @@ class KiCadEditorNotebook(wx.Notebook):
                         editor=window.editor)
         window.SetFocus()
         event.Skip()
+
+
+def is_using_dark_background():
+    """Backport of wxSystemAppearance::IsUsingDarkBackground() from wxWidgets 3.1."""
+    bg = wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW)
+    fg = wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT)
+
+    return get_luminance(fg) - get_luminance(bg) > 0.2
+
+
+def get_luminance(color):
+    """Backport of wxColour::GetLuminance() from wxWidgets 3.1."""
+    return (0.299*color.Red() + 0.587*color.Green() + 0.114*color.Blue()) / 255.0
+
+
+editwindow_old_init = editwindow.EditWindow.__init__
+
+def editwindow_new_init(self, *args, **kwargs):
+    editwindow_old_init(self, *args, **kwargs)
+    
+    # Cannot be used until we switch to wxWidgets >=3.1.3.
+    #if wx.SystemSettings.GetAppearance().IsUsingDarkBackground():
+
+    # If a dark theme is detected, we set the default system colors and add our own Python
+    # styles (which are not otherwise supplied by the system).
+    if is_using_dark_background():
+        faces = editwindow.FACES
+
+        # Override the background in all styles by setting the default style, then copying this
+        # to all styles with StyleClearAll(). Iterating over all styles would be slower.
+        self.StyleSetForeground(stc.STC_STYLE_DEFAULT,
+            wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT))
+        self.StyleSetBackground(stc.STC_STYLE_DEFAULT,
+            wx.SystemSettings.GetColour(wx.SYS_COLOUR_BACKGROUND))
+        self.StyleClearAll()
+
+        self.SetSelForeground(True,
+                                    wx.SystemSettings.GetColour(wx.SYS_COLOUR_HIGHLIGHTTEXT))
+        self.SetSelBackground(True,
+                                    wx.SystemSettings.GetColour(wx.SYS_COLOUR_HIGHLIGHT))
+
+        # Override the colors set in EditWindow.setStyles(). We go in the same order as in that
+        # function.
+
+        self.StyleSetSpec(stc.STC_STYLE_LINENUMBER,
+                "back:#3F3F3F,face:%(mono)s,size:%(lnsize)d".format(faces))
+        self.StyleSetSpec(stc.STC_STYLE_CONTROLCHAR, "face:%(mono)s".format(faces))
+        self.StyleSetSpec(stc.STC_STYLE_BRACELIGHT, "fore:#FFFF00,back:#FFFF88")
+        self.StyleSetSpec(stc.STC_STYLE_BRACEBAD, "fore:#00FFFF,back:#FFFF88")
+
+        # Python styles
+        self.StyleSetSpec(stc.STC_P_DEFAULT, "face:%(mono)s".format(faces))
+        self.StyleSetSpec(stc.STC_P_COMMENTLINE,
+                "fore:#FF80FF,face:%(mono)s".format(faces))
+        self.StyleSetSpec(stc.STC_P_NUMBER, "")
+        self.StyleSetSpec(stc.STC_P_STRING, "fore:#80FF80,face:%(mono)s".format(faces))
+        self.StyleSetSpec(stc.STC_P_CHARACTER,
+                "fore:#80FF80,face:%(mono)s".format(faces))
+        self.StyleSetSpec(stc.STC_P_WORD, "fore:#FFFF80,bold")
+        self.StyleSetSpec(stc.STC_P_TRIPLE, "fore:#80FFFF")
+        self.StyleSetSpec(stc.STC_P_TRIPLEDOUBLE, "fore:#FFFFCC,back:#000017")
+        self.StyleSetSpec(stc.STC_P_CLASSNAME, "fore:#FFFF00,bold")
+        self.StyleSetSpec(stc.STC_P_DEFNAME, "fore:#FF8080,bold")
+        self.StyleSetSpec(stc.STC_P_OPERATOR, "")
+        self.StyleSetSpec(stc.STC_P_IDENTIFIER, "")
+        self.StyleSetSpec(stc.STC_P_COMMENTBLOCK, "fore:#808080")
+        self.StyleSetSpec(stc.STC_P_STRINGEOL,
+                "fore:#FFFFFF,face:%(mono)s,back:#1F3F1F,eolfilled".format(faces))
+
+
+# HACK: Monkey-patch EditWindow to support dark themes.
+editwindow.EditWindow.__init__ = editwindow_new_init
