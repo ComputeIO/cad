@@ -63,6 +63,9 @@ public:
 
 
     bool writeSpiceDriver( wxString* aDest );
+
+private:
+    std::vector<std::pair<IbisWaveform*, IbisWaveform*>> waveformPairs();
 };
 
 class KIBIS_PIN : public KIBIS_ANY

@@ -26,6 +26,35 @@ KIBIS_PIN* KIBIS_COMPONENT::getPin( wxString aPinNumber )
     return nullptr;
 }
 
+std::vector<std::pair<IbisWaveform*, IbisWaveform*>> KIBIS_MODEL::waveformPairs()
+{
+    std::vector<std::pair<IbisWaveform*, IbisWaveform*>> pairs;
+    IbisWaveform*                                        wf1;
+    IbisWaveform*                                        wf2;
+
+    for( int i = 0; i < m_risingWaveforms.size(); i++ )
+    {
+        for( int j = 0; j < m_fallingWaveforms.size(); j++ )
+        {
+            wf1 = m_risingWaveforms.at( i );
+            wf2 = m_fallingWaveforms.at( j );
+
+            if( wf1->m_R_fixture == wf2->m_R_fixture && wf1->m_L_fixture == wf2->m_L_fixture
+                && wf1->m_C_fixture == wf2->m_C_fixture && wf1->m_V_fixture == wf2->m_V_fixture
+                && wf1->m_V_fixture_min == wf2->m_V_fixture_min
+                && wf1->m_V_fixture_max == wf2->m_V_fixture_max )
+            {
+                std::pair<IbisWaveform*, IbisWaveform*> p;
+                p.first = wf1;
+                p.second = wf2;
+                pairs.push_back( p );
+            }
+        }
+    }
+
+    return pairs;
+}
+
 bool KIBIS_MODEL::writeSpiceDriver( wxString* aDest )
 {
     double   ton = 20e-9;
@@ -39,6 +68,23 @@ bool KIBIS_MODEL::writeSpiceDriver( wxString* aDest )
     result << m_C_comp.typ;
     result += "\n";
     result += "vin DIE GND pwl ( ";
+
+    std::vector<std::pair<IbisWaveform*, IbisWaveform*>> wfPairs = waveformPairs();
+
+    if( wfPairs.size() < 1 )
+    {
+        std::cout << "Model has no waveform pair, using [Ramp] instead, poor accuracy" << std::endl;
+    }
+    else if( wfPairs.size() == 1 )
+    {
+    }
+    else
+    {
+        if( wfPairs.size() > 2 )
+        {
+            std::cout << "Model has more than 2 waveform pairs, using the first two." << std::endl;
+        }
+    }
 
     double lastT;
     for( auto entry : m_risingWaveforms.at( 0 )->m_table.m_entries )
@@ -101,10 +147,9 @@ bool KIBIS_PIN::writeSpiceDriver( wxString* aDest, KIBIS_MODEL* aModel )
     aModel->writeSpiceDriver( &tmp );
 
     result += tmp;
-    result += ".ENDS DRIVER\n\n";
+    result += "\n.ENDS DRIVER\n\n";
 
     *aDest = result;
-    std::cout << result << std::endl;
 
     return true;
 }
