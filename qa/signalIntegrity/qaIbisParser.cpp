@@ -1,4 +1,5 @@
 #include "../../pcbnew/signalIntegrity/kibis.h"
+#include <wx/textfile.h>
 
 int main( void )
 {
@@ -22,8 +23,31 @@ int main( void )
 
 
     KIBIS_PIN* pin = comp->getPin( "11" );
-    wxString*  tmp;
+    wxString*  tmp = new wxString();
     pin->writeSpiceDriver( tmp, pin->m_models.at( 0 ) );
+
+    wxTextFile file( "output.sp" );
+    if( file.Exists() )
+    {
+        file.Clear();
+    }
+    else
+    {
+        file.Create();
+    }
+    file.AddLine( *tmp );
+
+    wxString simul = "";
+    simul += "\n x1 3 0 1 DRIVER \n";
+    simul += ".tran 0.1n 40n \n";
+    simul += ".option xmu=0.49  \n";
+    simul += ".control run \n";
+    simul += "run \n";
+    simul += "plot v(1) \n";
+
+    file.AddLine( simul );
+    file.Write();
+
 
     std::cout << "Done" << std::endl;
     return 1;
