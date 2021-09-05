@@ -22,6 +22,8 @@ int main( void )
 
 
     KIBIS_PIN* pin = comp->getPin( "11" );
+    wxString*  tmp;
+    pin->writeSpiceDriver( tmp );
 
     if( pin == nullptr )
     {
@@ -29,10 +31,16 @@ int main( void )
     }
     else
     {
+        double lastT;
         std::cout << "Model: " << pin->m_models.at( 0 )->m_name << std::endl;
         for( auto entry : pin->m_models.at( 0 )->m_risingWaveforms.at( 0 )->m_table.m_entries )
         {
             std::cout << entry.t << " " << entry.V.typ << " ";
+            lastT = entry.t;
+        }
+        for( auto entry : pin->m_models.at( 0 )->m_fallingWaveforms.at( 0 )->m_table.m_entries )
+        {
+            std::cout << entry.t + lastT + 1e-9 << " " << entry.V.typ << " ";
         }
         std::cout << std::endl;
     }

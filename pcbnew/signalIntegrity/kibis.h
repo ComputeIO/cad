@@ -82,6 +82,8 @@ public:
     TypMinMaxValue C_pin;
 
     std::vector<KIBIS_MODEL*> m_models;
+
+    bool writeSpiceDriver( wxString* aDest );
 };
 
 class KIBIS_COMPONENT : public KIBIS_ANY
