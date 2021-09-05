@@ -2499,6 +2499,13 @@ bool IbisParser::readWaveform( IbisWaveform* aDest, IBIS_WAVEFORM_TYPE aType )
     {
         wf = new IbisWaveform();
         wf->m_type = aType;
+
+        switch( aType )
+        {
+        case IBIS_WAVEFORM_TYPE::FALLING: m_currentModel->m_fallingWaveforms.push_back( wf ); break;
+        case IBIS_WAVEFORM_TYPE::RISING: m_currentModel->m_risingWaveforms.push_back( wf ); break;
+        default: m_reporter->Report( "Unknown waveform type", RPT_SEVERITY_ERROR ); status = false;
+        }
     }
     else
     {
@@ -2510,12 +2517,6 @@ bool IbisParser::readWaveform( IbisWaveform* aDest, IBIS_WAVEFORM_TYPE aType )
                             RPT_SEVERITY_ERROR );
     }
 
-    switch( aType )
-    {
-    case IBIS_WAVEFORM_TYPE::FALLING: m_currentModel->m_fallingWaveforms.push_back( wf ); break;
-    case IBIS_WAVEFORM_TYPE::RISING: m_currentModel->m_risingWaveforms.push_back( wf ); break;
-    default: m_reporter->Report( "Unknown waveform type", RPT_SEVERITY_ERROR ); status = false;
-    }
 
     if( status )
     {

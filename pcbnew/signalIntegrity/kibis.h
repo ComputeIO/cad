@@ -60,6 +60,9 @@ public:
     std::vector<IbisWaveform*> m_risingWaveforms;
     std::vector<IbisWaveform*> m_fallingWaveforms;
     IbisRamp       m_ramp;
+
+
+    bool writeSpiceDriver( wxString* aDest );
 };
 
 class KIBIS_PIN : public KIBIS_ANY

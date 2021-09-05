@@ -26,10 +26,61 @@ KIBIS_PIN* KIBIS_COMPONENT::getPin( wxString aPinNumber )
     return nullptr;
 }
 
-bool KIBIS_PIN::writeSpiceDriver( wxString* aDest, KIBIS_MODEL* aModel )
+bool KIBIS_MODEL::writeSpiceDriver( wxString* aDest )
 {
     double   ton = 20e-9;
     double   toff = 60e-9;
+    bool     status = true;
+
+    *aDest += "\n";
+    *aDest += "CCPOMP DIE GND ";
+    *aDest << m_C_comp.typ;
+    *aDest += "\n";
+    *aDest += "vin DIE GND pwl ( ";
+
+
+    std::cout << "rising waveforms " << m_risingWaveforms.size() << std::endl;
+    std::cout << "falling waveforms " << m_fallingWaveforms.size() << std::endl;
+
+
+    double lastT;
+    for( auto entry : m_risingWaveforms.at( 0 )->m_table.m_entries )
+    {
+        lastT = entry.t;
+        if( ton > entry.t )
+        {
+            *aDest << entry.t;
+            *aDest += " ";
+            *aDest << entry.V.typ;
+            *aDest += " ";
+        }
+        else
+        {
+            std::cout << "WARNING: t_on is smaller than rising waveform. " << std::endl;
+            break;
+        }
+    }
+    for( auto entry : m_fallingWaveforms.at( 1 )->m_table.m_entries )
+    {
+        if( toff > entry.t )
+        {
+            *aDest << entry.t + ton;
+            *aDest += " ";
+            *aDest << entry.V.typ;
+            *aDest += " ";
+        }
+        else
+        {
+            std::cout << "WARNING: t_off is smaller than falling waveform. " << std::endl;
+            break;
+        }
+    }
+    *aDest += ") \n";
+
+    return status;
+}
+bool KIBIS_PIN::writeSpiceDriver( wxString* aDest, KIBIS_MODEL* aModel )
+{
     wxString result;
 
     result += "\n";
@@ -46,45 +97,9 @@ bool KIBIS_PIN::writeSpiceDriver( wxString* aDest, KIBIS_MODEL* aModel )
     result += "CPIN OUT GND ";
     result << C_pin.typ;
     result += "\n";
-    result += "CCPOMP DIE GND ";
-    result << aModel->m_C_comp.typ;
-    result += "\n";
-    result += "\n";
-    result += "vin DIE GND pwl ( ";
 
-    double lastT;
-    for( auto entry : aModel->m_risingWaveforms.at( 0 )->m_table.m_entries )
-    {
-        lastT = entry.t;
-        if( ton > entry.t )
-        {
-            result << entry.t;
-            result += " ";
-            result << entry.V.typ;
-            result += " ";
-        }
-        else
-        {
-            std::cout << "WARNING: t_on is smaller than rising waveform. " << std::endl;
-            break;
-        }
-    }
-    for( auto entry : aModel->m_fallingWaveforms.at( 0 )->m_table.m_entries )
-    {
-        if( toff > entry.t )
-        {
-            result << entry.t + ton;
-            result += " ";
-            result << entry.V.typ;
-            result += " ";
-        }
-        else
-        {
-            std::cout << "WARNING: t_off is smaller than falling waveform. " << std::endl;
-            break;
-        }
-    }
-    result += ") \n";
+    aModel->writeSpiceDriver( &result );
+
     result += ".ENDS DRIVER\n\n";
     std::cout << result << std::endl;
 
