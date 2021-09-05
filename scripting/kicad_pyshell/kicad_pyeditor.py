@@ -1090,9 +1090,12 @@ def get_luminance(color):
 
 editwindow_old_init = editwindow.EditWindow.__init__
 
+calltip_dark_bg_color = wx.SystemSettings.GetColour(wx.SYS_COLOUR_BACKGROUND).ChangeLightness(105)
+calltip_dark_fg_color = wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT).ChangeLightness(105)
+
 def editwindow_new_init(self, *args, **kwargs):
     editwindow_old_init(self, *args, **kwargs)
-    
+
     # Cannot be used until we switch to wxWidgets >=3.1.3.
     #if wx.SystemSettings.GetAppearance().IsUsingDarkBackground():
 
@@ -1109,10 +1112,8 @@ def editwindow_new_init(self, *args, **kwargs):
             wx.SystemSettings.GetColour(wx.SYS_COLOUR_BACKGROUND))
         self.StyleClearAll()
 
-        self.SetSelForeground(True,
-                                    wx.SystemSettings.GetColour(wx.SYS_COLOUR_HIGHLIGHTTEXT))
-        self.SetSelBackground(True,
-                                    wx.SystemSettings.GetColour(wx.SYS_COLOUR_HIGHLIGHT))
+        self.SetSelForeground(True, wx.SystemSettings.GetColour(wx.SYS_COLOUR_HIGHLIGHTTEXT))
+        self.SetSelBackground(True, wx.SystemSettings.GetColour(wx.SYS_COLOUR_HIGHLIGHT))
 
         # Override the colors set in EditWindow.setStyles(). We go in the same order as in that
         # function.
@@ -1142,6 +1143,23 @@ def editwindow_new_init(self, *args, **kwargs):
         self.StyleSetSpec(stc.STC_P_STRINGEOL,
                 "fore:#FFFFFF,face:%(mono)s,back:#1F3F1F,eolfilled".format(faces))
 
+        # Yellow calltip background is too contrasting.
+        self.CallTipSetBackground(calltip_dark_bg_color)
+        self.CallTipSetForeground(calltip_dark_fg_color)
+
 
 # HACK: Monkey-patch EditWindow to support dark themes.
 editwindow.EditWindow.__init__ = editwindow_new_init
+
+
+calltip_old_init = crust.Calltip.__init__
+
+def calltip_new_init(self, *args, **kwargs):
+    calltip_old_init(self, *args, **kwargs)
+
+    if is_using_dark_background():
+        self.SetBackgroundColour(calltip_dark_bg_color)
+        self.SetForegroundColour(calltip_dark_fg_color)
+
+# HACK: Monkey-patch Calltip to support dark themes.
+crust.Calltip.__init__ = calltip_new_init
