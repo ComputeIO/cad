@@ -164,8 +164,7 @@ public:
 
     void ClearTempFlags()
     {
-        ClearFlags( STARTPOINT | ENDPOINT | CANDIDATE | TEMP_SELECTED | IS_LINKED | SKIP_STRUCT |
-                    DO_NOT_DRAW );
+        ClearFlags( CANDIDATE | TEMP_SELECTED | IS_LINKED | SKIP_STRUCT | DO_NOT_DRAW );
     }
 
     void ClearEditFlags()
