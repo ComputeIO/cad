@@ -1090,8 +1090,8 @@ def get_luminance(color):
 
 editwindow_old_init = editwindow.EditWindow.__init__
 
-calltip_dark_bg_color = wx.SystemSettings.GetColour(wx.SYS_COLOUR_BACKGROUND).ChangeLightness(105)
-calltip_dark_fg_color = wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT).ChangeLightness(105)
+calltip_dark_bg_color = wx.SystemSettings.GetColour(wx.SYS_COLOUR_BACKGROUND).ChangeLightness(108)
+calltip_dark_fg_color = wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT).ChangeLightness(108)
 
 def editwindow_new_init(self, *args, **kwargs):
     editwindow_old_init(self, *args, **kwargs)
@@ -1116,13 +1116,20 @@ def editwindow_new_init(self, *args, **kwargs):
         self.SetSelBackground(True, wx.SystemSettings.GetColour(wx.SYS_COLOUR_HIGHLIGHT))
 
         # Override the colors set in EditWindow.setStyles(). We go in the same order as in that
-        # function.
+        # function. Most of the foreground colors are just inverses of the default. The background
+        # colors default system background color with slightly adjusted brightness.
 
         self.StyleSetSpec(stc.STC_STYLE_LINENUMBER,
                 "back:#3F3F3F,face:%(mono)s,size:%(lnsize)d".format(faces))
         self.StyleSetSpec(stc.STC_STYLE_CONTROLCHAR, "face:%(mono)s".format(faces))
-        self.StyleSetSpec(stc.STC_STYLE_BRACELIGHT, "fore:#FFFF00,back:#FFFF88")
-        self.StyleSetSpec(stc.STC_STYLE_BRACEBAD, "fore:#00FFFF,back:#FFFF88")
+
+        self.StyleSetSpec(stc.STC_STYLE_BRACELIGHT, "fore:#FFFF00")
+        self.StyleSetBackground(stc.STC_STYLE_BRACELIGHT,
+                wx.SystemSettings.GetColour(wx.SYS_COLOUR_BACKGROUND).ChangeLightness(120))
+
+        self.StyleSetSpec(stc.STC_STYLE_BRACEBAD, "fore:#FF0000")
+        self.StyleSetBackground(stc.STC_STYLE_BRACEBAD,
+                wx.SystemSettings.GetColour(wx.SYS_COLOUR_BACKGROUND).ChangeLightness(120))
 
         # Python styles
         self.StyleSetSpec(stc.STC_P_DEFAULT, "face:%(mono)s".format(faces))
@@ -1134,7 +1141,11 @@ def editwindow_new_init(self, *args, **kwargs):
                 "fore:#80FF80,face:%(mono)s".format(faces))
         self.StyleSetSpec(stc.STC_P_WORD, "fore:#FFFF80,bold")
         self.StyleSetSpec(stc.STC_P_TRIPLE, "fore:#80FFFF")
-        self.StyleSetSpec(stc.STC_P_TRIPLEDOUBLE, "fore:#FFFFCC,back:#000017")
+
+        self.StyleSetSpec(stc.STC_P_TRIPLEDOUBLE, "fore:#FFFFCC")
+        self.StyleSetBackground(stc.STC_P_TRIPLEDOUBLE,
+                wx.SystemSettings.GetColour(wx.SYS_COLOUR_BACKGROUND).ChangeLightness(105))
+
         self.StyleSetSpec(stc.STC_P_CLASSNAME, "fore:#FFFF00,bold")
         self.StyleSetSpec(stc.STC_P_DEFNAME, "fore:#FF8080,bold")
         self.StyleSetSpec(stc.STC_P_OPERATOR, "")
@@ -1146,6 +1157,9 @@ def editwindow_new_init(self, *args, **kwargs):
         # Yellow calltip background is too contrasting.
         self.CallTipSetBackground(calltip_dark_bg_color)
         self.CallTipSetForeground(calltip_dark_fg_color)
+
+        # Caret is black by default, override this.
+        self.SetCaretForeground(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT))
 
 
 # HACK: Monkey-patch EditWindow to support dark themes.
