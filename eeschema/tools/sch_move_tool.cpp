@@ -573,6 +573,33 @@ void SCH_MOVE_TOOL::getConnectedDragItems( SCH_ITEM* aOriginalItem, const VECTOR
             }
             else
             {
+                switch( aOriginalItem->Type() )
+                {
+                // These items can connect anywhere along a line
+                case SCH_BUS_BUS_ENTRY_T:
+                case SCH_BUS_WIRE_ENTRY_T:
+                case SCH_LABEL_T:
+                case SCH_GLOBAL_LABEL_T:
+                case SCH_HIER_LABEL_T:
+                    if( line->HitTest( aPoint, 1 ) )
+                    {
+                        // Add a new line so we have something to drag
+                        newWire = new SCH_LINE( aPoint, line->GetLayer() );
+                        newWire->SetFlags( IS_NEW );
+                        m_frame->AddToScreen( newWire, m_frame->GetScreen() );
+
+                        newWire->SetFlags( TEMP_SELECTED | STARTPOINT );
+                        aList.push_back( newWire );
+
+                        //We need to add a connection reference here because the normal
+                        //algorithm won't find a new line with a point in the middle of an
+                        //existing line
+                        m_lineConnectionCache[newWire] = { line };
+                    }
+                    break;
+                default: break;
+                }
+
                 break;
             }
 
