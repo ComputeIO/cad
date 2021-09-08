@@ -235,6 +235,45 @@ bool IbisModelSelector::Check()
     return true;
 }
 
+double IVtable::InterpolatedI( double aV )
+{
+    double result;
+    // @TODO change this algorithm
+
+    if( m_entries.at( m_entries.size() - 1 ).V > m_entries.at( 0 ).V )
+    {
+        if( aV >= m_entries.at( m_entries.size() - 1 ).V )
+        {
+            return m_entries.at( m_entries.size() - 1 ).I.typ;
+        }
+
+        if( aV <= m_entries.at( 0 ).V )
+        {
+            return m_entries.at( 0 ).I.typ;
+        }
+
+        for( int i = 1; i < m_entries.size(); i++ )
+        {
+            if( m_entries.at( i ).V > aV )
+            {
+                return m_entries.at( i - 1 ).I.typ
+                       + ( m_entries.at( i ).I.typ - m_entries.at( i - 1 ).I.typ )
+                                 / ( m_entries.at( i ).V - m_entries.at( i - 1 ).V )
+                                 * ( aV - m_entries.at( i - 1 ).V );
+            }
+        }
+
+        std::cout << "ERROR: non monotonic data ? " << std::endl;
+        return 0;
+    }
+    else
+    {
+        std::cout << "ERROR: I guess I need to implement that... " << std::endl;
+        return 0;
+    }
+    // @TODO prefer another method such as a dichotomy
+}
+
 bool IVtable::Check()
 {
     bool status = true;

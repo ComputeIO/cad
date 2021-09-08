@@ -200,6 +200,7 @@ public:
     std::vector<IVtableEntry> m_entries;
 
     bool Check();
+    double InterpolatedI( double aV );
 
 private:
 };

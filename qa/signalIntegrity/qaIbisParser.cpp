@@ -52,5 +52,8 @@ int main( void )
 
 
     std::cout << "Done" << std::endl;
+
+    std::cout << comp->getPin( "11" )->m_models.at( 0 )->m_pulldown.InterpolatedI( 2 ) << std::endl;
+    std::cout << comp->getPin( "11" )->m_models.at( 0 )->m_pullup.InterpolatedI( 2 ) << std::endl;
     return 1;
 }
