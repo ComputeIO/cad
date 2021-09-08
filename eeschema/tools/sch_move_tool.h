@@ -68,6 +68,7 @@ private:
     ///< Find additional items for a drag operation.
     ///< Connected items with no wire are included (as there is no wire to adjust for the drag).
     ///< Connected wires are included with any un-connected ends flagged (STARTPOINT or ENDPOINT).
+    void getConnectedItems( SCH_ITEM* aOriginalItem, const VECTOR2I& aPoint, EDA_ITEMS& aList );
     void getConnectedDragItems( SCH_ITEM* aOriginalItem, const VECTOR2I& aPoint, EDA_ITEMS& aList );
 
     ///< Set up handlers for various events.
@@ -80,6 +81,8 @@ private:
 
     ///< Items (such as wires) which were added to the selection for a drag
     std::vector<KIID>     m_dragAdditions;
+    ///< Items (such as wires) which were added to the selection for a drag
+    std::map<SCH_LINE*, EDA_ITEMS> m_lineConnectionCache;
 
     ///< Used for chaining commands
     VECTOR2I              m_moveOffset;

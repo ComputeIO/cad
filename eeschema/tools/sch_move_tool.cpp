@@ -217,6 +217,23 @@ int SCH_MOVE_TOOL::Main( const TOOL_EVENT& aEvent )
                         m_dragAdditions.push_back( item->m_Uuid );
                         m_selectionTool->AddItemToSel( item, QUIET_MODE );
                     }
+
+                    // Pre-cache all connections of our selected objects so we can keep track of what
+                    // they were originally connected to as we drag them around
+                    for( EDA_ITEM* edaItem : selection )
+                    {
+                        SCH_ITEM* schItem = static_cast<SCH_ITEM*>( edaItem );
+
+                        if( schItem->Type() == SCH_LINE_T )
+                        {
+                            SCH_LINE* line = static_cast<SCH_LINE*>( schItem );
+                            //Also store the original angle of the line, is needed later to decide
+                            //which segment to extend when they've become zero length
+                            line->StoreAngle();
+                            for( wxPoint point : line->GetConnectionPoints() )
+                                getConnectedItems( line, point, m_lineConnectionCache[line] );
+                        }
+                    }
                 }
                 else
                 {
@@ -516,9 +533,105 @@ int SCH_MOVE_TOOL::Main( const TOOL_EVENT& aEvent )
         m_selectionTool->RebuildSelection();  // Schematic cleanup might have merged lines, etc.
 
     m_dragAdditions.clear();
+    m_lineConnectionCache.clear();
     m_moveInProgress = false;
     m_frame->PopTool( tool );
     return 0;
+}
+
+
+void SCH_MOVE_TOOL::getConnectedItems( SCH_ITEM* aOriginalItem, const VECTOR2I& aPoint,
+                                       EDA_ITEMS& aList )
+{
+    EE_RTREE&         items = m_frame->GetScreen()->Items();
+    EE_RTREE::EE_TYPE itemsOverlapping = items.Overlapping( aOriginalItem->GetBoundingBox() );
+
+    // If you're connected to a junction, you're only connected to the junction
+    // (unless you are the junction)
+    for( SCH_ITEM* item : itemsOverlapping )
+    {
+        if( item != aOriginalItem && item->Type() == SCH_JUNCTION_T && item->IsConnected( aPoint ) )
+        {
+            aList.push_back( item );
+            return;
+        }
+    }
+
+    for( SCH_ITEM* test : itemsOverlapping )
+    {
+        if( test == aOriginalItem || !test->CanConnect( aOriginalItem ) )
+            continue;
+
+        switch( test->Type() )
+        {
+        case SCH_LINE_T:
+        {
+            SCH_LINE* line = static_cast<SCH_LINE*>( test );
+
+            //When getting lines for the connection cache, it's important that
+            //we only add items at the unselected end, since that is the only
+            //end that is handled specially. Fully selected lines, and the selected
+            //end of a partially selected line, are moved around normally and
+            //don't care about their connections.
+            if( ( line->HasFlag( STARTPOINT ) && aPoint == line->GetStartPoint() )
+                || ( line->HasFlag( ENDPOINT ) && aPoint == line->GetEndPoint() ) )
+                continue;
+
+            if( test->IsConnected( aPoint ) )
+                aList.push_back( test );
+
+            // Labels can connect to a wire (or bus) anywhere along the length
+            switch( aOriginalItem->Type() )
+            {
+            case SCH_LABEL_T:
+            case SCH_GLOBAL_LABEL_T:
+            case SCH_HIER_LABEL_T:
+                if( static_cast<SCH_LINE*>( test )->HitTest(
+                            static_cast<SCH_LABEL*>( aOriginalItem )->GetTextPos(), 1 ) )
+                    aList.push_back( test );
+                break;
+            default: break;
+            }
+
+            break;
+        }
+        case SCH_SHEET_T:
+        case SCH_SYMBOL_T:
+        case SCH_JUNCTION_T:
+        case SCH_NO_CONNECT_T:
+            if( test->IsConnected( aPoint ) )
+                aList.push_back( test );
+
+            break;
+
+        case SCH_LABEL_T:
+        case SCH_GLOBAL_LABEL_T:
+        case SCH_HIER_LABEL_T:
+            // Labels can connect to a wire (or bus) anywhere along the length
+            if( aOriginalItem->Type() == SCH_LINE_T && test->CanConnect( aOriginalItem ) )
+            {
+                SCH_TEXT* label = static_cast<SCH_TEXT*>( test );
+                SCH_LINE* line = static_cast<SCH_LINE*>( aOriginalItem );
+
+                if( line->HitTest( label->GetTextPos(), 1 ) )
+                    aList.push_back( label );
+            }
+            break;
+        case SCH_BUS_WIRE_ENTRY_T:
+        case SCH_BUS_BUS_ENTRY_T:
+            if( aOriginalItem->Type() == SCH_LINE_T && test->CanConnect( aOriginalItem ) )
+            {
+                SCH_TEXT* label = static_cast<SCH_TEXT*>( test );
+                SCH_LINE* line = static_cast<SCH_LINE*>( aOriginalItem );
+
+                if( line->HitTest( aPoint, 1 ) )
+                    aList.push_back( label );
+            }
+            break;
+
+        default: break;
+        }
+    }
 }
 
 
