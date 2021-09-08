@@ -67,6 +67,86 @@ bool KIBIS_MODEL::writeSpiceDriver( wxString* aDest )
     result += "CCPOMP DIE GND ";
     result << m_C_comp.typ;
     result += "\n";
+    if( m_GNDClamp.m_entries.size() > 0 )
+    {
+        result += "a1 %vd(GND DIE) %id(GND DIE) GNDClampDiode\n";
+        result += "\n";
+        result += ".model GNDClampDiode pwl(\n+ x_array=[";
+        for( auto entry : m_GNDClamp.m_entries )
+        {
+            result << entry.V;
+            result += " ";
+        }
+        result += "]\n+ y_array=[";
+        for( auto entry : m_GNDClamp.m_entries )
+        {
+            result << entry.I.typ;
+            result += " ";
+        }
+        result += "]\n+ input_domain=0.05 fraction=TRUE)\n";
+    }
+
+    result += "\n";
+    if( m_POWERClamp.m_entries.size() > 0 )
+    {
+        result += "a2 %vd(POWER DIE) %id(POWER DIE) POWERClampDiode\n";
+        result += "\n";
+        result += ".model POWERClampDiode pwl(\n+ x_array=[";
+        for( auto entry : m_POWERClamp.m_entries )
+        {
+            result << entry.V;
+            result += " ";
+        }
+        result += "]\n+ y_array=[";
+        for( auto entry : m_POWERClamp.m_entries )
+        {
+            result << entry.I.typ;
+            result += " ";
+        }
+        result += "]\n+ input_domain=0.05 fraction=TRUE)\n";
+    }
+
+    result += "\n";
+    if( m_pulldown.m_entries.size() > 0 )
+    {
+        result += "a3 %vd(GND DIE) %id(GND DIE) pulldown\n";
+        result += "\n";
+        result += ".model pulldown pwl(\n+ x_array=[";
+        for( auto entry : m_pulldown.m_entries )
+        {
+            result << entry.V;
+            result += " ";
+        }
+        result += "]\n+ y_array=[";
+        for( auto entry : m_pulldown.m_entries )
+        {
+            result << entry.I.typ;
+            result += " ";
+        }
+        result += "]\n+ input_domain=0.05 fraction=TRUE)\n";
+    }
+
+    result += "\n";
+    if( m_pulldown.m_entries.size() > 0 )
+    {
+        result += "a3 %vd(POWER DIE) %id(POWER DIE) pullup\n";
+        result += "\n";
+        result += ".model pullup pwl(\n+ x_array=[";
+        for( auto entry : m_pulldown.m_entries )
+        {
+            result << entry.V;
+            result += " ";
+        }
+        result += "]\n+ y_array=[";
+        for( auto entry : m_pulldown.m_entries )
+        {
+            result << entry.I.typ;
+            result += " ";
+        }
+        result += "]\n+ input_domain=0.05 fraction=TRUE)\n";
+    }
+
+
     result += "vin DIE GND pwl ( ";
 
     std::vector<std::pair<IbisWaveform*, IbisWaveform*>> wfPairs = waveformPairs();

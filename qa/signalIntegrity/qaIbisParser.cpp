@@ -44,6 +44,8 @@ int main( void )
     simul += ".control run \n";
     simul += "run \n";
     simul += "plot v(1) \n";
+    simul += ".endc \n";
+    simul += ".end \n";
 
     file.AddLine( simul );
     file.Write();
